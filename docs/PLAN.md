@@ -293,6 +293,13 @@ Agent（harness）
   - 验证：`check:any` **217→212**（-5，100→99 个文件）；`typecheck` 0；定向 `chapter-orchestrator` **11/11**；`build` + `check:bundle` 通过（main.js 4,866,857 与 v4.61.0 基线一致）；零新增用例（纯类型，不造只测断言的伪用例）。
   - 边界：未动 `engine/**`、ZCode 文件集与既有行为语义；`.any-baseline.json` 未自行收紧（目标 212 交 ZCode 收单批）。
   - 同型说明：第 47/49 轮 gate-fix（第 48 轮为 v5-product 打断），按 0.8 收益递减折算；第 48 轮元迭代提议的回降条件（本轮再次 gate-fix、降幅 <6、无测试增量）已满足，但按互调机制需 ZCode 确认后才下调 1.90→1.76，本轮不自行变更。
+- 第 50 轮（gate-fix；ZCode 第 49 轮预告派工；纯类型收窄 + 删除死字段）：
+  - 目标：`ui/full-writer-view.ts` any 6→0（视图层遗留 any 集中在页签 getter/setter 与两个已迁移空实现）。
+  - 改动（单文件 4 处）：`get tabs(): WriterTab[]` / `set tabs(v: WriterTab[])`（`WriterTab` 已在本文件导入，删除 `as any[]` 断言）；删除从未读写的 `private currentReport: any = null`；`callInterventionUnderstandingAPI` 返回 `Promise<unknown>`；`renderUnderstandingReport(report: unknown)`。零逻辑改动、未新增断言。
+  - 验证：`check:any` **212→206**（-6，98 个文件）；`typecheck` 0；定向 `full-writer-view-contracts` **11/11**；全量 `preflight:release` 588 文件 / 6,448 用例 exit 0；`build` + `check:bundle` 通过（纯类型擦除，字节不变）。
+  - 边界：未动 `engine/**`、ZCode 文件集与门禁阈值；`.any-baseline.json` 未自行收紧（目标 206 交 ZCode 收单批）。
+  - 同型说明：第 47/49/50 轮 gate-fix（第 48 轮 v5-product 打断）。按 ZCode 第 48 轮已确认的元迭代条件（第 49 轮再次 gate-fix、降幅 5<6、无测试增量），本轮起 **gate-fix 权重 1.90→1.76** 生效。
+  - v5 闭环审计（只读，零改动）：B1 已随 `5cb3847` 合入（`agent-types.ts` flow、`host-tools.ts` 阶段明细、`prompt-sections.ts` 按 `nextStageId` 引导）；B2 阶段面板已走 `fetchStagePanelModel` + `port.getProjectStatus`（`agent-port.ts:370` 填 `flow`），无硬编码 `STAGES`；B3 导出弹窗在 `checkPublicationReadiness` 分支；B4 `check:automation` 已在 `preflight` 链且 Vault 根副本已删；B5 三份指南均存在并被 `docs/README.md:25-27` 索引。计划 §八 验收 1–5 均满足。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

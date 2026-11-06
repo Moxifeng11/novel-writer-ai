@@ -174,8 +174,6 @@ export class FullWriterView extends ItemView {
     private mainContainer: HTMLElement | null = null;
     private workspace: HTMLElement | null = null;
 
-    private currentReport: any = null;
-
     private get stepCompleted(): Set<string> { return this.chapterStateManager.stepCompleted; }
     private get stepResults(): Record<string, string> { return this.chapterStateManager.stepResults; }
     private get currentStepIndex(): number { return this.chapterStateManager.currentStepIndex; }
@@ -196,8 +194,8 @@ export class FullWriterView extends ItemView {
     private get isLoading(): boolean { return this.state.isLoading; }
     private set isLoading(v: boolean) { this.state.isLoading = v; }
 
-    get tabs(): any[] { return this.state.tabs as any[]; }
-    set tabs(v: any[]) { this.state.tabs = v; }
+    get tabs(): WriterTab[] { return this.state.tabs; }
+    set tabs(v: WriterTab[]) { this.state.tabs = v; }
     private get activeTabId(): string { return this.state.activeTabId; }
     private set activeTabId(v: string) { this.state.activeTabId = v; }
     private get navStack(): string[] { return this.state.navStack; }
@@ -2626,7 +2624,7 @@ export class FullWriterView extends ItemView {
     /**
      * 调用 AI 理解 API
      */
-    private async callInterventionUnderstandingAPI(userInput: string): Promise<any> {
+    private async callInterventionUnderstandingAPI(userInput: string): Promise<unknown> {
         // 已迁移至 InterventionController，保留空实现防止引用错误
         return null;
     }
@@ -2634,7 +2632,7 @@ export class FullWriterView extends ItemView {
     /**
      * 渲染理解报告
      */
-    private renderUnderstandingReport(report: any): void {
+    private renderUnderstandingReport(report: unknown): void {
         // 已迁移至 InterventionController，保留空实现防止引用错误
     }
 

@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 147,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 48 轮收单后实测 git rev-list --count=ahead 147，HEAD 284e4b1；第 44–48 轮取消挂起修复/回归与 any 222→217 已收单，v4.61.0 版本节点提交后 ahead 148）"
+    "localCommitsAhead": 149,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 50 轮实测 git rev-list --count=149，HEAD ee5772b + 第 49/50 轮在途改动；v4.61.0 版本节点已提交）"
   },
   "groups": [
     {
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-07",
+      "group": "G7",
+      "summary": "第 50 轮（gate-fix，ZCode 预告派工）：ui/full-writer-view.ts any 6→0（+1/−4）——页签 getter/setter 收紧为 WriterTab[]（删除 as any[] 断言）；删除从未读写的 private currentReport；两个已迁移空实现返回/参数改 Promise<unknown> / unknown。零逻辑改动。实测 check:any 212→206（-6，98 文件）；typecheck 0；定向 full-writer-view-contracts 11/11；全量 preflight:release 588 文件 / 6,448 用例 exit 0。同轮只读审计确认 v5 计划 §八 验收 1–5 均满足（B1 已合入、阶段面板无硬编码、导出检查接线、check:automation 入 preflight、B5 文档已索引）；gate-fix 权重按 ZCode 已确认条件 1.90→1.76",
+      "evidence": "ui/full-writer-view.ts + docs/PLAN.md 第 50 轮"
+    },
     {
       "date": "2026-11-07",
       "group": "G7",
