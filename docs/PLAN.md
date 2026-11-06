@@ -300,6 +300,14 @@ Agent（harness）
   - 边界：未动 `engine/**`、ZCode 文件集与门禁阈值；`.any-baseline.json` 未自行收紧（目标 206 交 ZCode 收单批）。
   - 同型说明：第 47/49/50 轮 gate-fix（第 48 轮 v5-product 打断）。按 ZCode 第 48 轮已确认的元迭代条件（第 49 轮再次 gate-fix、降幅 5<6、无测试增量），本轮起 **gate-fix 权重 1.90→1.76** 生效。
   - v5 闭环审计（只读，零改动）：B1 已随 `5cb3847` 合入（`agent-types.ts` flow、`host-tools.ts` 阶段明细、`prompt-sections.ts` 按 `nextStageId` 引导）；B2 阶段面板已走 `fetchStagePanelModel` + `port.getProjectStatus`（`agent-port.ts:370` 填 `flow`），无硬编码 `STAGES`；B3 导出弹窗在 `checkPublicationReadiness` 分支；B4 `check:automation` 已在 `preflight` 链且 Vault 根副本已删；B5 三份指南均存在并被 `docs/README.md:25-27` 索引。计划 §八 验收 1–5 均满足。
+- 第 51 轮（test-hardening；v5 B2 端口阶段投影降级契约；第 49/50 轮连续 gate-fix 后按协议换型）：
+  - 目标：为 `ui/services/agent-port.ts::getProjectStatus` 的 `flow` 投影补降级回归，锁定计划 §七「`collectCreationFlowState` 读盘失败 → 省略 `flow`、不阻断章节统计」。
+  - 缺口核实（先问是不是）：全仓无 `agent-port` 单测；第 32/34 轮只测工作台侧 `fetchStagePanelModel` 的 catch，第 37 轮测 engine 侧 `get_project_status` 文案，端口层「采集失败仍返回基础进度」确为空白，不是重复交付。
+  - 新增 3 用例（`tests/unit/ui/agent-port-status.test.ts`，新路径 1）：①采集成功透传完整快照（快照由真实 `resolveCreationFlow` 构造，非手写假数组）；②采集抛错 → `flow` 省略，`mode`/`totalChapters`/`writtenChapters` 不变；③项目元信息读取失败 → 整体 `null` 且不再触发采集（外层兜底不变）。
+  - 做法：`vi.mock` 只替换三个 IO/读盘边界（`readProjectMeta` / `getChaptersForProject` / `collectCreationFlowState`），其余走真实 `parseCreationModeMeta` 与 `summarizeChapterProgress`；零生产代码改动、未新增任何 `any`。
+  - 验证：定向 3/3；`typecheck` 0；全量 `preflight:release` 588→589 文件 / 6,448→6,451 用例 exit 0。
+  - 边界：未动 `engine/**`、ZCode 文件集与门禁阈值；`.any-baseline.json` 未自行收紧（目标 206 交 ZCode）。
+  - 换型说明：第 49/50 轮连续 gate-fix，按协议第 51 轮换型；ZCode 第 50 轮回执里的「之后候选」（`unified-entity-generate-modal` / `prompt-manager-settings`）属建议而非明确派工，且其路径写作 `ui/settings/prompt-manager-settings.ts`，实际文件为 `ui/prompt-manager-settings.ts`（any 实测 4）。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

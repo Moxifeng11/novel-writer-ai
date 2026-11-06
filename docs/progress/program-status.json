@@ -5,8 +5,8 @@
   "baseline": {
     "version": "4.61.0",
     "tests": {
-      "files": 588,
-      "cases": 6448
+      "files": 589,
+      "cases": 6451
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-07",
+      "group": "G7",
+      "summary": "第 51 轮（test-hardening，v5 B2 端口验证；连续 gate-fix 后换型）：新增 tests/unit/ui/agent-port-status.test.ts 3 用例，锁定 AgentPort.getProjectStatus 的 flow 降级契约——①采集成功透传 resolveCreationFlow 快照；②collectCreationFlowState 抛错时省略 flow、mode/totalChapters/writtenChapters 不变；③readProjectMeta 失败整体返回 null 且不触发采集。vi.mock 仅替换 readProjectMeta/getChaptersForProject/collectCreationFlowState 三个 IO 边界，其余真实链路；零生产代码改动、未新增 any。定向 3/3；typecheck 0；全量 preflight:release 589 文件 / 6,451 用例 exit 0",
+      "evidence": "tests/unit/ui/agent-port-status.test.ts + docs/PLAN.md 第 51 轮"
+    },
     {
       "date": "2026-11-07",
       "group": "G7",

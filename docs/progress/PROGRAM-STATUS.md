@@ -5,7 +5,7 @@
 
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-07
-- 当前基线：v4.61.0；单测 588 文件 / 6448 用例；E2E 37 条
+- 当前基线：v4.61.0；单测 589 文件 / 6451 用例；E2E 37 条
 - 任务进度：61/61 已完成（100%），0 进行中，0 受阻
 
 ## 一、任务组总览
@@ -174,6 +174,7 @@
 
 ## 四、进度流水
 
+- 2026-11-07｜G7｜第 51 轮（test-hardening，v5 B2 端口验证；连续 gate-fix 后换型）：新增 tests/unit/ui/agent-port-status.test.ts 3 用例，锁定 AgentPort.getProjectStatus 的 flow 降级契约——①采集成功透传 resolveCreationFlow 快照；②collectCreationFlowState 抛错时省略 flow、mode/totalChapters/writtenChapters 不变；③readProjectMeta 失败整体返回 null 且不触发采集。vi.mock 仅替换 readProjectMeta/getChaptersForProject/collectCreationFlowState 三个 IO 边界，其余真实链路；零生产代码改动、未新增 any。定向 3/3；typecheck 0；全量 preflight:release 589 文件 / 6,451 用例 exit 0（tests/unit/ui/agent-port-status.test.ts + docs/PLAN.md 第 51 轮）
 - 2026-11-07｜G7｜第 50 轮（gate-fix，ZCode 预告派工）：ui/full-writer-view.ts any 6→0（+1/−4）——页签 getter/setter 收紧为 WriterTab[]（删除 as any[] 断言）；删除从未读写的 private currentReport；两个已迁移空实现返回/参数改 Promise<unknown> / unknown。零逻辑改动。实测 check:any 212→206（-6，98 文件）；typecheck 0；定向 full-writer-view-contracts 11/11；全量 preflight:release 588 文件 / 6,448 用例 exit 0。同轮只读审计确认 v5 计划 §八 验收 1–5 均满足（B1 已合入、阶段面板无硬编码、导出检查接线、check:automation 入 preflight、B5 文档已索引）；gate-fix 权重按 ZCode 已确认条件 1.90→1.76（ui/full-writer-view.ts + docs/PLAN.md 第 50 轮）
 - 2026-11-07｜G7｜第 49 轮（gate-fix）：ui/full-writer/chapter-orchestrator.ts any 5→0（+2/−5）——新增 import type StepRunCtx，替换本地 ChapterStepRunner 两个 execute*、makeCtx 返回值、activateStep/runOneStep 参数共 5 处 any；零逻辑改动、未动 engine/**。实测 check:any 217→212（-5，100→99 文件）；定向 11/11；全量 588 文件 / 6,448 用例全绿；main.js 4,866,857 与版本基线一致（纯类型擦除）（ui/full-writer/chapter-orchestrator.ts + docs/PLAN.md 第 49 轮）
 - 2026-11-07｜G3｜第 48 轮（v5-product，元迭代轮）：B3 出版检查边界 +3 用例（纯测试、零生产代码改动）——①draft+EPUB 缺作者为建议而非阻断，且草稿空稿仍 no-body 阻断；②finished 仅传 scope=written-only（未传 excludeEmptyUnits）也豁免空单元，锁住 OR 分支；③submission 下 written-only 仍阻断空单元（投稿必须整包）；④buildPublicationFacts 对 CRLF frontmatter 剥离判空、重复标题按 trim 归并。定向 publication-profile 20/20、agent-stage-panel 20/20、agent-mode-alignment 12/12；全量 preflight:release 588 文件 / 6,448 用例 exit 0；check:any 217/217；元迭代裁决：gate-fix 维持 1.90（第 44 轮回降条件未触发；第 49 轮触发条件为提议，待 ZCode 确认后生效），v5-product 2.00 维持、第 52 轮评估降至 1.50（tests/unit/shared/publication-profile.test.ts + docs/PLAN.md 第 48 轮）
