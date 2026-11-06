@@ -709,7 +709,7 @@ export class GoldenOpeningModal extends Modal {
             const obj = JSON.parse(jsonMatch[0]);
             if (!obj.chapters || !Array.isArray(obj.chapters)) return [];
 
-            return obj.chapters.map((c: any) => ({
+            return obj.chapters.map((c: Partial<ChapterOutline>) => ({
                 chapterNum: c.chapterNum || 1,
                 title: c.title || '未命名章节',
                 structure: Array.isArray(c.structure) ? c.structure : [],
@@ -799,7 +799,7 @@ export class GoldenOpeningModal extends Modal {
             const obj = JSON.parse(jsonMatch[0]);
             if (!obj.hooks || !Array.isArray(obj.hooks)) return [];
 
-            return obj.hooks.filter((h: any) => typeof h === 'string');
+            return obj.hooks.filter((h: unknown): h is string => typeof h === 'string');
         } catch (e) {
             log.warn('[GoldenOpeningModal] 解析钩子响应失败:', e);
             return [];
@@ -887,7 +887,7 @@ ${this.textInput.slice(0, 1000)}
 
             const obj = JSON.parse(jsonMatch[0]);
             return {
-                hooks: Array.isArray(obj.hooks) ? obj.hooks.map((h: any) => ({
+                hooks: Array.isArray(obj.hooks) ? obj.hooks.map((h: Partial<HookResult['hooks'][number]>) => ({
                     type: h.type || '未知',
                     content: h.content || '',
                     strength: Math.max(1, Math.min(10, h.strength || 5))
@@ -986,7 +986,7 @@ ${this.textInput}
                 paceScore: Math.max(1, Math.min(10, obj.paceScore || 5)),
                 infoDensity: obj.infoDensity || '适中',
                 densityScore: Math.max(1, Math.min(10, obj.densityScore || 5)),
-                paragraphAnalysis: Array.isArray(obj.paragraphAnalysis) ? obj.paragraphAnalysis.map((p: any) => ({
+                paragraphAnalysis: Array.isArray(obj.paragraphAnalysis) ? obj.paragraphAnalysis.map((p: Partial<RhythmAnalysis['paragraphAnalysis'][number]>) => ({
                     para: p.para || 1,
                     pace: p.pace || '中节奏',
                     suggestion: p.suggestion || ''
@@ -1076,7 +1076,7 @@ ${this.textInput}
             const obj = JSON.parse(jsonMatch[0]);
             return {
                 protagonistIntro: obj.protagonistIntro || '',
-                sideCharacters: Array.isArray(obj.sideCharacters) ? obj.sideCharacters.map((c: any) => ({
+                sideCharacters: Array.isArray(obj.sideCharacters) ? obj.sideCharacters.map((c: Partial<CharacterIntro['sideCharacters'][number]>) => ({
                     name: c.name || '未命名',
                     timing: c.timing || '',
                     role: c.role || '',
@@ -1274,7 +1274,7 @@ ${this.textInput}
                 charCharm: Math.max(1, Math.min(10, obj.charCharm || 5)),
                 suspense: Math.max(1, Math.min(10, obj.suspense || 5)),
                 overall: Math.max(1, Math.min(10, obj.overall || 5)),
-                improvements: Array.isArray(obj.improvements) ? obj.improvements.map((i: any) => ({
+                improvements: Array.isArray(obj.improvements) ? obj.improvements.map((i: Partial<OpeningScore['improvements'][number]>) => ({
                     priority: i.priority === 'high' || i.priority === 'medium' || i.priority === 'low' ? i.priority : 'medium',
                     content: i.content || ''
                 })) : []

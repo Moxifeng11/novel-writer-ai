@@ -19,7 +19,7 @@
       "check:write-entry"
     ],
     "localCommitsAhead": 139,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-06 第 41 轮实测 git status -sb=ahead 139，HEAD 5ef5ed5；第 40 轮 5 路径已由 ZCode 随 5ef5ed5 收单并把 any 基线收紧到 242）"
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-06 第 42 轮实测 git status -sb=ahead 139，HEAD 5ef5ed5；第 40 轮 5 路径已由 ZCode 随 5ef5ed5 收单并把 any 基线收紧到 242；第 41/42 轮 6 路径待收单）"
   },
   "groups": [
     {
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-06",
+      "group": "G7",
+      "summary": "第 42 轮（gate-fix，ZCode 第 41 轮候选②）：ui/golden-opening-modal.ts any 6→0（纯类型收窄、零运行时行为变化）——6 处 any 全在 AI JSON 解析回调参数：①三章大纲 → Partial<ChapterOutline>；②钩子字符串 filter → (h: unknown): h is string（显式类型谓词，保留 typeof 过滤语义）；③钩子检测 → Partial<HookResult['hooks'][number]>；④节奏段落 → Partial<RhythmAnalysis['paragraphAnalysis'][number]>；⑤人物登场 → Partial<CharacterIntro['sideCharacters'][number]>；⑥评分改进项 → Partial<OpeningScore['improvements'][number]>。默认值/Math.max 夹取/Array.isArray 兜底均未改动。实测 check:any 235→229（-6，103→102 个文件）；typecheck 0；全量 npm test 586 文件 / 6,437 用例全绿；build + check:bundle 通过（main.js 4,866,080 字节与基线逐字节一致）；eslint 改动文件 0 error（6 既有 warning）",
+      "evidence": "ui/golden-opening-modal.ts + docs/PLAN.md 第 42 轮"
+    },
     {
       "date": "2026-11-06",
       "group": "G7",

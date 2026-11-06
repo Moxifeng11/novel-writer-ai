@@ -249,6 +249,12 @@ Agent（harness）
   - 验证：`check:any` **242→235**（-7，104→103 文件）；`typecheck` 0；`build` + `check:bundle` 通过，`main.js` 4,866,080 字节与基线逐字节一致；改动文件 eslint 0 error（6 条既有 UI 文案/内联样式 warning）。零新增用例（纯类型，不造只测断言的伪用例）。
   - 边界：未动 `engine/**`、ZCode 文件集与既有行为语义；`.any-baseline.json` 未自行收紧（基线收紧权归 ZCode 收单批次，目标值 235）。
   - 同型说明：第 40/41 轮连续 gate-fix，按评分协议计 -20% 同型惩罚；选择依据是「类型擦除不产生 bundle 增量」，在 200B/批预算下风险最低，且直接兑现第 40 轮遗留候选。
+- 第 42 轮（gate-fix，ZCode 第 41 轮候选②；纯类型收窄、零运行时行为变化）：
+  - 目标：`ui/golden-opening-modal.ts` any 6→0（黄金开篇弹窗的 6 处 any 全部位于 AI 返回 JSON 的解析回调参数，字段漂移不会被类型层拦住）。
+  - 改动（单文件 6 处，全部为回调参数注解，未加任何运行时校验）：①三章大纲 `map((c: any)` → `Partial<ChapterOutline>`；②钩子字符串 `filter((h: any)` → `filter((h: unknown): h is string)`（显式类型谓词，保留原 `typeof` 过滤语义）；③钩子检测 → `Partial<HookResult['hooks'][number]>`；④节奏段落 → `Partial<RhythmAnalysis['paragraphAnalysis'][number]>`；⑤人物登场 → `Partial<CharacterIntro['sideCharacters'][number]>`；⑥评分改进项 → `Partial<OpeningScore['improvements'][number]>`。默认值、`Math.max` 夹取与 `Array.isArray` 兜底一律不动。
+  - 验证：`check:any` **235→229**（-6，103→102 文件）；`typecheck` 0；全量 `npm test` **586 文件 / 6,437 用例全绿**；`build` + `check:bundle` 通过，`main.js` 4,866,080 字节与基线逐字节一致（类型擦除零增量，未动用 200B/批预算）；改动文件 eslint 0 error（6 条既有 warning）。零新增用例（纯类型，不造只测断言的伪用例）。
+  - 边界：未动 `engine/**`、ZCode 文件集与既有行为语义；`.any-baseline.json` 未自行收紧（目标 229 交 ZCode 收单批）。
+  - 同型说明：第 40/41/42 轮连续三轮 gate-fix，本轮按 -20% 同型惩罚评分；第 43 轮须换型（除非 ZCode 明确派工）。选择依据：ZCode 15:34Z 派工候选②，且类型擦除不产生 bundle 增量。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
