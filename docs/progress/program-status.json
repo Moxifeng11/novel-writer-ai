@@ -6,7 +6,7 @@
     "version": "4.60.0",
     "tests": {
       "files": 588,
-      "cases": 6445
+      "cases": 6448
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 144,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 45 轮收单后实测 git rev-list --count=ahead 144，HEAD 1c3c2b0；第 40–44 轮 any 收窄 251→222 与取消挂起修复均已收单，v4.60.0 版本节点已提交）"
+    "localCommitsAhead": 146,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 48 轮实测 git rev-list --count=ahead 146，HEAD 2a2c91f；第 47 轮 svg-charts any 5→0 与基线 222→217 已收单，v4.60.0 版本节点已提交）"
   },
   "groups": [
     {
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-07",
+      "group": "G3",
+      "summary": "第 48 轮（v5-product，元迭代轮）：B3 出版检查边界 +3 用例（纯测试、零生产代码改动）——①draft+EPUB 缺作者为建议而非阻断，且草稿空稿仍 no-body 阻断；②finished 仅传 scope=written-only（未传 excludeEmptyUnits）也豁免空单元，锁住 OR 分支；③submission 下 written-only 仍阻断空单元（投稿必须整包）；④buildPublicationFacts 对 CRLF frontmatter 剥离判空、重复标题按 trim 归并。定向 publication-profile 20/20、agent-stage-panel 20/20、agent-mode-alignment 12/12；全量 preflight:release 588 文件 / 6,448 用例 exit 0；check:any 217/217；元迭代裁决：gate-fix 维持 1.90（第 44 轮回降条件未触发；第 49 轮触发条件为提议，待 ZCode 确认后生效），v5-product 2.00 维持、第 52 轮评估降至 1.50",
+      "evidence": "tests/unit/shared/publication-profile.test.ts + docs/PLAN.md 第 48 轮"
+    },
     {
       "date": "2026-11-07",
       "group": "G7",

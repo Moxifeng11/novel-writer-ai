@@ -101,6 +101,20 @@ describe('buildPublicationFacts（导出弹窗口径）', () => {
         expect(built.wordCount).toBe(10);
     });
 
+    it('CRLF 换行的 frontmatter 也能剥离；重复标题按 trim 归并', () => {
+        const built = buildPublicationFacts(
+            [
+                { unit: '第1章', title: '开端', content: '---\r\nstatus: written\r\n---\r\n第一章正文' },
+                { unit: '第2章', title: ' 开端 ', content: '---\r\nstatus: written\r\n---\r\n' },
+            ],
+            { mode: 'long', title: '示例书', author: '作者', unitLabel: '章', includeChapterTitles: true, format: 'epub' },
+        );
+        expect(built.unitCount).toBe(2);
+        expect(built.writtenCount).toBe(1);
+        expect(built.wordCount).toBe(5);
+        expect(built.duplicateTitleCount).toBe(1);
+    });
+
     it('短篇严格口径：EPUB 缺作者与空节为阻断；Markdown 不因缺作者阻断', () => {
         const units = Array.from({ length: 8 }, (_, index) => ({
             unit: `第${index + 1}节`,
@@ -203,6 +217,22 @@ describe('交付级别与导出范围（B3 三档口径）', () => {
         expect(markdown.find(issue => issue.code === 'missing-author')?.level).toBe('warning');
         const epub = checkPublicationReadiness(facts({ level: 'finished', author: '', format: 'epub' }));
         expect(epub.find(issue => issue.code === 'missing-author')?.level).toBe('blocker');
+    });
+
+    it('draft：EPUB 缺作者仍只是建议，但无正文仍阻断（空稿任何档不可导出）', () => {
+        const epub = checkPublicationReadiness(facts({ level: 'draft', author: '', format: 'epub' }));
+        expect(epub.find(issue => issue.code === 'missing-author')?.level).toBe('warning');
+
+        const empty = checkPublicationReadiness(facts({ level: 'draft', writtenCount: 0, unitCount: 0 }));
+        expect(empty.find(issue => issue.code === 'no-body')?.level).toBe('blocker');
+    });
+
+    it('仅传 scope=written-only 也豁免空单元（finished）；submission 仍必须整包', () => {
+        const finished = checkPublicationReadiness(facts({ level: 'finished', scope: 'written-only', emptyUnits: ['第3章 空白'] }));
+        expect(finished.map(issue => issue.code)).not.toContain('empty-units');
+
+        const submission = checkPublicationReadiness(facts({ level: 'submission', scope: 'written-only', emptyUnits: ['第3章 空白'] }));
+        expect(submission.find(issue => issue.code === 'empty-units')?.level).toBe('blocker');
     });
 
     it('submission：作者全格式必填、字数低于一半阻断、空单元不豁免', () => {

@@ -281,6 +281,12 @@ Agent（harness）
   - 做法：新增文件内 `TimelineLayoutItem` 类型（基础字段必填、排布后回填的层级字段可选），`map` 回调显式标注返回类型；删除 4 处 `(item as any)` 写回与 1 处 `eventsWithLayout[0] as any`。零运行时变化（纯类型擦除）。
   - 验证：`typecheck` 0；`check:any` 217/222（已消除 5 处，基线可下调 222→217，由 ZCode 收单时执行）；定向 `smart-chart` + `pure-helpers-coverage` 150/150；`build` 后 main.js 4,866,414 与基线逐字节一致（未动用 200B/批预算）。
   - 边界：未动 `engine/**`、ZCode 文件集与门禁阈值；未新增测试（类型收窄无行为分支）。
+- 第 48 轮（v5-product；元迭代轮）：
+  - 目标：B3 出版检查「边界」补齐（只补测试、不改生产代码）+ 第 48 轮 gate-fix 权重裁决。
+  - 做法：`tests/unit/shared/publication-profile.test.ts` +3 用例——①draft+EPUB 缺作者为建议且草稿空稿仍阻断；②finished 仅传 `scope=written-only` 也豁免空单元；③submission 下 written-only 仍阻断空单元；④`buildPublicationFacts` 支持 CRLF frontmatter 与 trim 重复标题。
+  - 验证：定向 `publication-profile` 20/20、`agent-stage-panel` 20/20、`agent-mode-alignment` 12/12；全量 `preflight:release` 588 文件 / 6,448 用例 exit 0；`check:any` 217/217；`check:docs` / `check:automation` 绿。
+  - 元迭代：gate-fix 维持 1.90（第 44 轮回降条件未触发；提议「第 49 轮再次 gate-fix 且无测试增量、any 降幅 <6 → 回降 1.76」，待 ZCode 确认后生效）；v5-product 2.00 维持，第 52 轮评估降至 1.50。
+  - 边界：未动 `engine/**`、ZCode 文件集与门禁阈值；ZCode 已随 `2a2c91f` 收单第 47 轮并把 any 基线降至 217。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

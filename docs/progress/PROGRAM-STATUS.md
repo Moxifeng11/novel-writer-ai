@@ -5,7 +5,7 @@
 
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-07
-- 当前基线：v4.60.0；单测 588 文件 / 6445 用例；E2E 37 条
+- 当前基线：v4.60.0；单测 588 文件 / 6448 用例；E2E 37 条
 - 任务进度：61/61 已完成（100%），0 进行中，0 受阻
 
 ## 一、任务组总览
@@ -174,6 +174,7 @@
 
 ## 四、进度流水
 
+- 2026-11-07｜G3｜第 48 轮（v5-product，元迭代轮）：B3 出版检查边界 +3 用例（纯测试、零生产代码改动）——①draft+EPUB 缺作者为建议而非阻断，且草稿空稿仍 no-body 阻断；②finished 仅传 scope=written-only（未传 excludeEmptyUnits）也豁免空单元，锁住 OR 分支；③submission 下 written-only 仍阻断空单元（投稿必须整包）；④buildPublicationFacts 对 CRLF frontmatter 剥离判空、重复标题按 trim 归并。定向 publication-profile 20/20、agent-stage-panel 20/20、agent-mode-alignment 12/12；全量 preflight:release 588 文件 / 6,448 用例 exit 0；check:any 217/217；元迭代裁决：gate-fix 维持 1.90（第 44 轮回降条件未触发；第 49 轮触发条件为提议，待 ZCode 确认后生效），v5-product 2.00 维持、第 52 轮评估降至 1.50（tests/unit/shared/publication-profile.test.ts + docs/PLAN.md 第 48 轮）
 - 2026-11-07｜G7｜第 43 轮（gate-fix，ZCode 第 42 轮明确派工）：services/worker-manager.ts any 7→0（纯类型收窄、零运行时行为变化）——①TaskState<P = any, R = any> → <P = unknown, R = unknown>；②reject:(reason:any) → unknown；③executeTask<P = any, R = any> → unknown 默认；④resolveTask(result:any) → unknown；⑤rejectTask(error:any) → unknown。未新增 any、未加局部断言、未改公开签名形状；调用点无扩散（deconstruction-worker-manager 显式传类型参、heavy-task-worker-manager 已 as CancelablePromise<T>）。实测 check:any 229→222（-7，102→101 个文件）；typecheck 0；引用 WorkerManager 的 2 个测试文件 16/16；build + check:bundle 通过（main.js 4,866,080 字节与基线逐字节一致）；eslint 改动文件 0 error（2 既有 warning）（services/worker-manager.ts + docs/PLAN.md 第 43 轮）
 - 2026-11-06｜G7｜第 42 轮（gate-fix，ZCode 第 41 轮候选②）：ui/golden-opening-modal.ts any 6→0（纯类型收窄、零运行时行为变化）——6 处 any 全在 AI JSON 解析回调参数：①三章大纲 → Partial<ChapterOutline>；②钩子字符串 filter → (h: unknown): h is string（显式类型谓词，保留 typeof 过滤语义）；③钩子检测 → Partial<HookResult['hooks'][number]>；④节奏段落 → Partial<RhythmAnalysis['paragraphAnalysis'][number]>；⑤人物登场 → Partial<CharacterIntro['sideCharacters'][number]>；⑥评分改进项 → Partial<OpeningScore['improvements'][number]>。默认值/Math.max 夹取/Array.isArray 兜底均未改动。实测 check:any 235→229（-6，103→102 个文件）；typecheck 0；全量 npm test 586 文件 / 6,437 用例全绿；build + check:bundle 通过（main.js 4,866,080 字节与基线逐字节一致）；eslint 改动文件 0 error（6 既有 warning）（ui/golden-opening-modal.ts + docs/PLAN.md 第 42 轮）
 - 2026-11-06｜G7｜第 41 轮（gate-fix，ZCode 第 40 轮候选①）：ui/manage-providers-modal.ts any 7→0（纯类型收窄、零运行时行为变化）——①settings: any 收紧为 NovelWriterSettings（type-only 自 @/main）；②getAllProviders(): any[] 收紧为本地最小投影 ProviderSummary（含 sourceType/apiFormat/isDefault/isHidden），3 处 (p: any) 注解消失；③updateProvider(id, updates: any) 收紧为 Partial<CustomProvider>（8 处调用点零断言通过）；④getRawProvider(): any 收紧为 CustomProvider | undefined。实测 check:any 242→235（-7，104→103 个文件）；typecheck 0；build + check:bundle 通过（main.js 4,866,080 字节与基线一致）；eslint 改动文件 0 error（6 既有 warning）（ui/manage-providers-modal.ts + docs/PLAN.md 第 41 轮）
