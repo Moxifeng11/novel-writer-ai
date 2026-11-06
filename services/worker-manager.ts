@@ -382,9 +382,7 @@ export class WorkerManager {
     }
 
     private rejectTask(task: TaskState, error: unknown): void {
-        if (!task.cancelled) {
-            task.reject(error);
-        }
+        task.reject(error);
         this.activeTasks.delete(task.taskId);
     }
 
