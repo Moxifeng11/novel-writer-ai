@@ -6,7 +6,7 @@
     "version": "4.53.0",
     "tests": {
       "files": 586,
-      "cases": 6396
+      "cases": 6401
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-06",
+      "group": "G7",
+      "summary": "v4.53.0 第一批（v5 最小闭环 B2/B3/B4/B5）：①B3 商业化出版检查 shared/publication-profile.ts（三模式阻断/建议 + 文案，7 用例），导出弹窗新增「严格出版检查（阻断导出）」；②B2 工作台「创作阶段」改为 CreationFlowSnapshot 真实快照（ui/agent-workbench/stage-panel.ts，5 用例），删除硬编码 8 阶段，agent-port 注入 flow；③B4 自动化状态单一真相源（删除 Vault 根旧副本）+ scripts/check-automation.mjs 入 preflight；④B5 新增用户手册、商业化指南、双自动化运维手册。全量 586 文件 / 6,398 用例、tsc 0、lint 0 error/1,809 warnings、any 260/260；B1 engine 侧 flow 契约待 ZCode。",
+      "evidence": "ui/agent-workbench/stage-panel.ts + shared/publication-profile.ts + scripts/check-automation.mjs + docs/guides/USER-GUIDE.md + docs/guides/COMMERCIAL-GUIDE.md + docs/handbook/13-dual-automation-ops.md"
+    },
     {
       "date": "2026-11-06",
       "group": "G7",

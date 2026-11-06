@@ -2,7 +2,7 @@
 /**
  * check-linked-scenarios.mjs — G7-5：联动场景清单不能与代码脱节
  *
- * docs/regression/LINKED-SCENARIOS.md 描述三条跨模块链路的关键入口。
+ * docs/regression/LINKED-SCENARIOS.md 描述四条跨模块链路的关键入口。
  * 命令改名、文件搬家、函数删除都不会让文档报错，只会让它变成误导。
  * 这里把文档里承诺的锚点做成门禁：缺一个就失败，要求同步更新文档与清单。
  */
@@ -45,6 +45,15 @@ const ANCHORS = {
         { file: 'shared/mode-content.ts', text: 'SCRIPT_CONTENT_ROOT', why: '剧本内容根' },
         { file: 'shared/command-mode-rules.ts', text: 'COMMAND_MODE_RULES', why: '命令模式守卫' },
         { file: 'tests/unit/domains/domain-project-factory.test.ts', text: '回滚', why: '创建失败回滚' },
+    ],
+    '链 4 · Agent 阶段引导→商业化导出检查': [
+        { file: 'shared/creation-flow.ts', text: 'resolveCreationFlow', why: '三模式阶段唯一事实源' },
+        { file: 'ui/agent-workbench/stage-panel.ts', text: 'buildStagePanelModel', why: '工作台阶段面板投影' },
+        { file: 'shared/publication-profile.ts', text: 'checkPublicationReadiness', why: '商业化出版检查' },
+        { file: 'ui/export-manuscript-modal.ts', text: 'strictPublication', why: '导出严格模式开关' },
+        { file: 'scripts/check-automation.mjs', text: 'trae-loop-state.json', why: '自动化一致性门禁' },
+        { file: 'tests/unit/ui/agent-stage-panel.test.ts', why: '阶段面板用例' },
+        { file: 'tests/unit/shared/publication-profile.test.ts', why: '出版检查用例' },
     ],
 };
 
@@ -92,4 +101,4 @@ if (problems.length > 0) {
     process.exit(1);
 }
 
-console.log(`✅ 联动场景清单锚点全部有效（3 条链 / ${checked} 个锚点）`);
+console.log(`✅ 联动场景清单锚点全部有效（${Object.keys(ANCHORS).length} 条链 / ${checked} 个锚点）`);

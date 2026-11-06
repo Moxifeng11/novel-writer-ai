@@ -5,7 +5,7 @@
 
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-06
-- 当前基线：v4.53.0；单测 586 文件 / 6396 用例；E2E 37 条
+- 当前基线：v4.53.0；单测 586 文件 / 6401 用例；E2E 37 条
 - 任务进度：61/61 已完成（100%），0 进行中，0 受阻
 
 ## 一、任务组总览
@@ -174,6 +174,7 @@
 
 ## 四、进度流水
 
+- 2026-11-06｜G7｜v4.53.0 第一批（v5 最小闭环 B2/B3/B4/B5）：①B3 商业化出版检查 shared/publication-profile.ts（三模式阻断/建议 + 文案，7 用例），导出弹窗新增「严格出版检查（阻断导出）」；②B2 工作台「创作阶段」改为 CreationFlowSnapshot 真实快照（ui/agent-workbench/stage-panel.ts，5 用例），删除硬编码 8 阶段，agent-port 注入 flow；③B4 自动化状态单一真相源（删除 Vault 根旧副本）+ scripts/check-automation.mjs 入 preflight；④B5 新增用户手册、商业化指南、双自动化运维手册。全量 586 文件 / 6,398 用例、tsc 0、lint 0 error/1,809 warnings、any 260/260；B1 engine 侧 flow 契约待 ZCode。（ui/agent-workbench/stage-panel.ts + shared/publication-profile.ts + scripts/check-automation.mjs + docs/guides/USER-GUIDE.md + docs/guides/COMMERCIAL-GUIDE.md + docs/handbook/13-dual-automation-ops.md）
 - 2026-11-06｜G7｜第三十二批（v4.52.0 之后待提交，Trae 第 29 轮）：test-hardening ui/states/chapter-state-manager.ts 失效标脏链（零源码改动）——①空 chapDir 早退且不清空既有状态；②chapDir 非 TFolder 早退；③质量控制文件晚于修正记录时把 fix 标脏并移出 stepCompleted；④分析报告含 CRITICAL_FAIL 时标脏 finalFix；⑤正文已完稿时跳过 mtime/时序标脏（防结算后误判需重做）；⑥正文 mtime 新于审查文件时标脏 fix/qualityControl/analysisReport；⑦step_status=reviewed 的空内容文件仍计为 complete。tests/unit/ui/chapter-state-recognition.test.ts 3 → 10 用例（+7，+160 行）；定向口径（8 个引用测试文件驱动）st 70.65%→85.07%（142→171/201）、br 72.86%→87.14%（51→61/70）、fn 88.9%→100%。前提纠偏：遗留候选写的 ui/states/state-manager.ts 不存在，真实文件为 ui/states/chapter-state-manager.ts，且基线 br 实测 72.86% 而非 54.6%（tests/unit/ui/chapter-state-recognition.test.ts + docs/PLAN.md 第 29 轮）
 - 2026-11-06｜G7｜第三十一批（v4.52.0 之后待提交，Trae 第 28 轮）：gate-fix ui/components/smart-chart.ts any 16→0（纯类型收窄、零运行时行为变化）——新增 ChartData 联合类型（13 种图表数据形态）+ ChartRenderOptions（padding/size/width/height/showLegend）+ chartRenderer<T,O> 单点泛型适配函数，14 个注册项由内联 (data: any, opts) => fn(...) lambda 改为 chartRenderer(fn)；类内 data 字段、setData、getSortedData（排序比较器）、baseOpts、isScatterData 类型守卫、transformData、recommendType 全部去 any，改用 unknown + 结构化断言。测试守护 +2 用例（tests/unit/ui/smart-chart.test.ts）：①十四种图表类型逐型渲染出内容（注册表接线未断）；②柱状图渲染器收到 width/height/padding（适配函数原样透传选项）。实测：check:any 276→260（-16，106 文件）；bundle main.js 4,855,784 < 4,855,864 基线（-80B）；typecheck 0 错误（ui/components/smart-chart.ts + tests/unit/ui/smart-chart.test.ts + docs/PLAN.md 第 28 轮）
 - 2026-11-06｜G7｜第三十批（v4.52.0 待发版，Trae 第 27 轮）：test-hardening engine/body-writer.ts 备份链（P0-3 数据安全，零源码改动、零新增待提交路径）——①默认在覆盖已有非空正文前备份一次，旧正文与 {type:'manual', note:'覆盖前自动备份'} 正确交给 ChapterVersionService.saveVersion，且备份不阻断写入；②backupBeforeOverwrite=false 跳过（导入/迁移全量替换）；③旧文件只有 frontmatter 时跳过；④请求缺 project 时跳过；⑤版本服务抛错只记日志、正文照常落盘；⑥同一路径 5 分钟内二次写入只备份第一次（协同自动保存节流）。测试用 vi.spyOn(ChapterVersionService.prototype,'saveVersion') 拦截，无需给 engine 加注入点（推翻第 12 轮「不可测」结论）；tests/unit/engine/body-writer.test.ts 25 → 31 用例（+6）；定向口径 st 67.35%→76.16%、br 68.78%→77.70%、lines 68.45%→76.19%，原未覆盖 L444-454 全部点亮（tests/unit/engine/body-writer.test.ts + docs/PLAN.md 第 27 轮）

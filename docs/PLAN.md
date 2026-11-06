@@ -184,6 +184,17 @@ Agent（harness）
   - 验证：`npx vitest run tests/unit/ui/chapter-state-recognition.test.ts` **10/10 通过**；定向覆盖率 **st 70.65%→85.07%（142→171/201）、br 72.86%→87.14%（51→61/70）、fn 88.9%→100%（8→9/9）**，上述零覆盖行段全部点亮。
   - 成本与边界：未新增 app 假件范式（复用既有 `new App()` + 手写 `TFolder.children` 记忆桩），未动 `engine/**` 与被 ZCode 认领的 `ui/agent-workbench*` 文件集。
   - 本轮性质：与 ZCode 在途的 agent-workbench 特性（6 个新路径）并行；本轮仅 +1 待提交路径，文件集无交集，ZCode 可单独分批提交。
+- 第 30 轮（gate-fix，ZCode 派工；`v4.53.0` 已本地发版 `d57dd33`，v5 B2/B3/B4/B5 已入库）：
+  - 归属澄清：ZCode 来信质疑工作树 13 条「未声明改动」；实测全部为 Trae 侧 v5 批次（B2 阶段面板/agent-port、B3 出版检查/导出严格模式、B4 check:automation、B5 手册与指南），非第三方；第 29 轮「bundle 红归因 ZCode agent-workbench」**不成立**，+4,375B 实为 Trae B2/B3 特性体量，ZCode 已在特性提交中按功能增长文档化上调基线至 4,860,701。
+  - 改动（`ui/full-writer/intervention-controller.ts`，any 9→0，纯类型收窄、零运行时行为变化）：①步骤依赖接口 `getVars/setVar` 由 `any` 收紧为 `Record<string,string>`；②`makeStepRunCtx` 由 `() => any` → `() => StepRunCtx`（type-only 引入，不新增运行时依赖）；③`onUnderstand` 的 `catch (e: any)` → `catch (e)` + `instanceof Error` 窄化（非 Error 抛出的提示由 `undefined` 变为 `String(e)`）；④`currentReport.actions.map((a: any))` 去注解（元素类型由报告结构推导）；⑤语音识别 `onresult/onerror` 由 `any` → 本地 `SpeechResultEvent/SpeechErrorEvent`（只声明 `results` 与 `error` 两个用到的字段）。
+  - 测试守护（既有 `tests/unit/ui/full-writer-view-contracts.test.ts` +2 用例，**零新增路径**）：①同一报告并发点两次「确认执行」只执行一次（`executing` 守卫生效，`setVar` 恰好 1 次）；②理解后步骤切换（`infoPlan`→`plotDistill`）拒绝执行且不写 `userIntervention`（防把 A 步意见注入 B 步）。
+  - 实测：`typecheck` 0 错误；定向 **11/11 通过**；`check:any` **260→251**（-9，105 个文件，基线可下调）；`npx eslint` 改动文件 0 error（5 条既有 warning，未顺手改）。
+  - 边界：未动 `engine/**`、未动 ZCode 文件集（`scripts/check-linked-scenarios.mjs` 的链 4 改动属 ZCode 在途，未触碰）；B1 engine 侧 flow 契约仍待 ZCode。
+- 第 31 轮（v5-product，B2 收口 + 剧本模式回归；ZCode 在途 B1，本轮回填我方测试面）：
+  - 类型收口：ZCode 已在 `engine/agent/agent-types.ts` 声明 `AgentProjectStatus.flow?: CreationFlowSnapshot`，本轮删除 Trae 侧临时交叉断言 `AgentProjectStatus & { flow?: CreationFlowSnapshot }`（`ui/services/agent-port.ts`、`ui/agent-workbench-view.ts` 各 1 行，纯类型、零运行时行为变化），B2 类型收口完成。
+  - 三模式回归补齐（`tests/unit/ui/agent-stage-panel.test.ts` +3 用例，5→8）：此前只有长篇/短篇，缺剧本；新增 ①剧本五阶段顺序（`research→outline→storyboard→units→export`，分镜表为下一步时 `units=todo` / `export=blocked`）；②分镜表完成后进入「分集写作」；③预填话术带分集单元标签。
+  - 验证：`npx vitest run tests/unit/ui/agent-stage-panel.test.ts` **8/8 通过**；`npm run typecheck` 0 错误。
+  - 边界：未动 `engine/**`（`agent-types/host-tools/prompt-sections` 为 ZCode B1 在途改动）、未动红线文件；新增待提交路径 0（均属既有 M/已入库文件）。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

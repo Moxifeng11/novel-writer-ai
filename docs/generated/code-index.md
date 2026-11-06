@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 305 | 132753 | 1607 | 1346 | 84% |
+| `engine/` | 305 | 132774 | 1607 | 1346 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
 | `shared/` | 174 | 39180 | 1564 | 1300 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 101282 | 733 | 637 | 87% |
+| `ui/` | 239 | 101293 | 733 | 637 | 87% |
 
 ## 文件清单
 
@@ -35,7 +35,7 @@
 | `domains/script/tool-catalog.ts` | 43 | 1 | 0 |
 | `domains/short/harness-profile.ts` | 42 | 1 | 1 |
 | `domains/short/tool-catalog.ts` | 42 | 1 | 0 |
-| `engine/agent/agent-types.ts` | 364 | 23 | 17 |
+| `engine/agent/agent-types.ts` | 370 | 23 | 17 |
 | `engine/agent/conversation-engine.ts` | 1267 | 1 | 1 |
 | `engine/agent/dsh/dsh-launch.ts` | 92 | 6 | 5 |
 | `engine/agent/dsh/dsh-process.ts` | 271 | 7 | 7 |
@@ -47,8 +47,8 @@
 | `engine/agent/harness/creation-plan.ts` | 73 | 6 | 6 |
 | `engine/agent/harness/harness-engine.ts` | 589 | 7 | 4 |
 | `engine/agent/harness/harness-types.ts` | 213 | 14 | 12 |
-| `engine/agent/harness/host-tools.ts` | 985 | 6 | 6 |
-| `engine/agent/harness/prompt-sections.ts` | 147 | 2 | 2 |
+| `engine/agent/harness/host-tools.ts` | 998 | 6 | 6 |
+| `engine/agent/harness/prompt-sections.ts` | 149 | 2 | 2 |
 | `engine/agent/harness/session-log.ts` | 269 | 1 | 1 |
 | `engine/agent/harness/session-snapshot.ts` | 163 | 8 | 8 |
 | `engine/agent/harness/spill-store.ts` | 112 | 6 | 6 |
@@ -660,7 +660,7 @@
 | `ui/full-writer/full-writer-store.ts` | 401 | 5 | 5 |
 | `ui/full-writer/full-writer-utils.ts` | 114 | 6 | 6 |
 | `ui/full-writer/fw-styles.ts` | 15 | 1 | 1 |
-| `ui/full-writer/intervention-controller.ts` | 401 | 3 | 3 |
+| `ui/full-writer/intervention-controller.ts` | 412 | 3 | 3 |
 | `ui/full-writer/project-selector-controller.ts` | 949 | 3 | 3 |
 | `ui/full-writer/quick-tools-panel.ts` | 150 | 3 | 3 |
 | `ui/full-writer/scene-outline-controller.ts` | 1147 | 2 | 1 |
