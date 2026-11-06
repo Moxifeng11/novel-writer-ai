@@ -53,6 +53,39 @@ export function buildStagePrompt(stage: CreationFlowStageStatus): string {
 }
 
 /**
+ * 阶段面板的状态来源（只要求可选实现，便于无 port 环境降级）。
+ */
+export interface StagePanelStatusPort {
+    /** 可选：未提供时不请求阶段快照，直接按占位渲染 */
+    getProjectStatus?: (project: string) => Promise<{ flow?: CreationFlowSnapshot } | null>;
+}
+
+/**
+ * 请求项目状态并投影为面板模型；读取失败时保留占位，不抛出。
+ *
+ * @param project - 当前项目 ID（空串表示未选择项目）
+ * @param getStatus - 项目状态读取器；缺省或抛错时按占位渲染
+ * @returns 阶段面板视图模型
+ * @example
+ * await fetchStagePanelModel('长篇小说/示例', (p) => port.getProjectStatus?.(p))
+ */
+export async function fetchStagePanelModel(
+    project: string,
+    getStatus: StagePanelStatusPort['getProjectStatus'],
+): Promise<StagePanelModel> {
+    let flow: CreationFlowSnapshot | undefined;
+    if (project && getStatus) {
+        try {
+            flow = (await getStatus(project))?.flow;
+        } catch {
+            // 读取失败不影响工作台：按「阶段读取失败」占位渲染
+            flow = undefined;
+        }
+    }
+    return buildStagePanelModel(flow, project);
+}
+
+/**
  * 把统一阶段快照投影为工作台面板模型。
  *
  * @param flow - 阶段快照；未采集到时为 null/undefined

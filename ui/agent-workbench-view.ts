@@ -24,9 +24,8 @@ import { showErrorNotice, showWarningNotice } from './components/notice-helpers'
 import { GuideAgentEngine } from '@/engine/agent/conversation-engine';
 import { AgentHarnessEngine, type HarnessTelemetry } from '@/engine/agent/harness/harness-engine';
 import { createCallAIAdapter } from '@/engine/agent/harness/agent-adapter';
-import type { AgentChip, AgentContext, AgentIntent, AgentMessage, AgentProjectStatus, AgentTurnResult, GuideAgentPort } from '@/engine/agent/agent-types';
-import type { CreationFlowSnapshot } from '@/shared/creation-flow';
-import { buildStagePanelModel } from './agent-workbench/stage-panel';
+import type { AgentChip, AgentContext, AgentIntent, AgentMessage, AgentTurnResult, GuideAgentPort } from '@/engine/agent/agent-types';
+import { fetchStagePanelModel } from './agent-workbench/stage-panel';
 import type { HarnessTurnOutcome } from '@/engine/agent/harness/harness-types';
 import { createAgentPort, getAgentContext } from './services/agent-port';
 import { listProjectIds } from '@/shared/project-catalog';
@@ -389,16 +388,10 @@ export class AgentWorkbenchView extends ItemView {
     private async refreshStagePanel(): Promise<void> {
         if (!this.stagesEl) return;
         const project = this.activeProject;
-        let flow: CreationFlowSnapshot | undefined;
-        if (project && this.port.getProjectStatus) {
-            try {
-                const status = await this.port.getProjectStatus(project) as AgentProjectStatus | null;
-                flow = status?.flow;
-            } catch {
-                flow = undefined;
-            }
-        }
-        const model = buildStagePanelModel(flow, project);
+        const model = await fetchStagePanelModel(project, this.port.getProjectStatus);
+        // 快速切换项目时旧请求可能晚到：结果已过期则丢弃，避免把上一个项目的阶段
+        // 显示到新项目上（此时 activeProject 已不是请求时的 project）
+        if (!this.stagesEl || this.activeProject !== project) return;
         this.stagesEl.empty();
         if (model.emptyText) {
             this.stagesEl.createDiv({ cls: 'nw-awb-stage' }).createSpan({
