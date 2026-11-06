@@ -1,11 +1,32 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TFile, Vault } from 'obsidian';
 import type { GatheredContext } from '../../../engine/context/context-types';
 import {
     applyStoryContextBus,
     buildContextVars,
     buildEntityVars,
+    buildSceneStyleHint,
+    buildTemplateVars,
     type TemplateVarsDeps,
 } from '../../../ui/full-writer/template-vars-builder';
+import { extractCharacterCoreFromContent } from '@/engine/character-soul';
+
+// compact 口径依赖正文文件定位与涉及实体抽取：只替换这两个出口，其余实现保持真实
+// （filterForeshadowsByChapter 等仍走原实现，避免影响本文件既有 40 条用例）
+const { mockFindBodyFileV4, mockGetInvolvedEntities } = vi.hoisted(() => ({
+    mockFindBodyFileV4: vi.fn(),
+    mockGetInvolvedEntities: vi.fn(),
+}));
+
+vi.mock('@/engine/chapter-utils', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@/engine/chapter-utils')>();
+    return { ...actual, findBodyFileV4: mockFindBodyFileV4 };
+});
+
+vi.mock('@/engine/chapter-context-builder', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@/engine/chapter-context-builder')>();
+    return { ...actual, getInvolvedEntities: mockGetInvolvedEntities };
+});
 
 function makeContext(): GatheredContext {
     return {
@@ -272,6 +293,30 @@ describe('buildContextVars — 上下文变量装配', () => {
         expect(vars.outlineContent).toBe('第1章细纲');
     });
 
+    it('上一章字段全为空时返回空摘要，不写入审查与情绪变量', async () => {
+        const vars: Record<string, string> = {};
+        const d = {
+            timeline: [],
+            previous_chapter: {
+                bodySummary: '',
+                ending: '',
+                outline: '',
+                analysisReport: '',
+                continuityReview: '',
+                infoPlan: '',
+            },
+        } as unknown as GatheredContext['data'];
+
+        await buildContextVars(makeDeps(makeContext()), vars, d);
+
+        expect(vars.prevChaptersSummary).toBe('');
+        expect(vars.prevChapEnding).toBe('');
+        expect(vars.prevChapterStateSnapshot).toBe('');
+        expect(vars.prevReview).toBeUndefined();
+        expect(vars.emotionContext).toBeUndefined();
+        expect(vars.timelineEvents).toBe('');
+    });
+
     it('压缩上下文直接透传世界观/设定库/时间线', async () => {
         const vars: Record<string, string> = {};
         await buildContextVars(makeDeps(makeContext()), vars, {
@@ -338,5 +383,599 @@ describe('buildEntityVars — 实体变量装配', () => {
         expect(vars.allChars).toBe('');
         expect(vars.allFactions).toBe('');
         expect(vars._contextTokens).toBe('0');
+    });
+
+    it('四类实体字段全量时按约定顺序拼装（含别名与备用键）', async () => {
+        const d = {
+            outline: { raw: '沈砚 天阙 断魂桥 月牙匕' },
+            character_state: [
+                {
+                    name: '沈砚',
+                    角色定位: '主角',
+                    身份: '砂民少年',
+                    当前状态: '复测前',
+                    核心动机: '救母',
+                    性格标签: '倔',
+                    当前目标: '过桥',
+                    '金手指/特殊能力': '逆脉感知',
+                    所属势力: '砂民区',
+                    年龄: '十六',
+                    人物背景: '父亲卖匣凑费',
+                    外貌特征: '眉间疤',
+                    核心驱动力_软肋: '母亲',
+                    习惯性小动作: '搓指',
+                    当前情绪: '压着怒',
+                    '功法/技能树': '逆脉诀',
+                },
+            ],
+            factions: [
+                { 名称: '天阙', 别称: '测脉司', 类型: '王朝', '地位/排名': '第一', 领袖: '国师', 描述: '控制测脉' },
+            ],
+            locations: [
+                {
+                    name: '断魂桥',
+                    别称: '棺桥',
+                    类型: '关隘',
+                    '所在世界/区域': '砂峡',
+                    重要程度: '高',
+                    '地理特征': '单索',
+                    '主要居民/势力': '砂民',
+                    描述: '唯一通道',
+                },
+            ],
+            items: [
+                { name: '月牙匕', 类型: '兵器', '品阶/等级': '凡品', 效果: '割雾', '所属/归属': '沈砚', 描述: '旧刃' },
+            ],
+        } as unknown as GatheredContext['data'];
+        const vars: Record<string, string> = {};
+
+        await buildEntityVars(makeDeps(makeContext()), vars, d);
+
+        expect(vars.allChars).toContain('沈砚：定位：主角，身份：砂民少年，状态：复测前，动机：救母');
+        expect(vars.allChars).toContain('性格：倔，目标：过桥，能力：逆脉感知，势力：砂民区');
+        expect(vars.allChars).toContain('年龄：十六，背景：父亲卖匣凑费，外貌：眉间疤');
+        expect(vars.allChars).toContain('软肋：母亲，习惯：搓指，情绪：压着怒，功法：逆脉诀');
+        expect(vars.allFactions).toContain('天阙：别称：测脉司，类型：王朝，地位：第一，领袖：国师，描述：控制测脉');
+        expect(vars.allLocs).toContain('断魂桥：别称：棺桥，类型：关隘，区域：砂峡，重要程度：高');
+        expect(vars.allLocs).toContain('地理特征：单索，居民：砂民，描述：唯一通道');
+        expect(vars.allItems).toContain('月牙匕：类型：兵器，等级：凡品，效果：割雾，归属：沈砚，描述：旧刃');
+    });
+
+    it('实体字段缺省时按备用键取名，非字符串与空值字段被跳过', async () => {
+        const d = {
+            previous_chapter: {},
+            character_state: [
+                { 姓名: '沈砚', 角色定位: '主角' },
+                { fileName: '路人甲.md', 年龄: 16, 当前状态: '' },
+                { 备注: '无名' },
+            ],
+            factions: [{ 名称: '天阙', 描述: '' }],
+            locations: [{ fileName: '断魂桥.md', 重要程度: 5 }],
+            items: [{ name: '月牙匕', 效果: null }],
+        } as unknown as GatheredContext['data'];
+        const vars: Record<string, string> = {};
+
+        await buildEntityVars(makeDeps(makeContext()), vars, d);
+
+        // 姓名 / fileName / 无名为第四条兜底，三档备用键依次命中
+        expect(vars.allChars).toContain('- 沈砚：定位：主角');
+        expect(vars.allChars).toContain('- 路人甲.md：年龄：16');
+        expect(vars.allChars).toContain('- ?：');
+        // 空字符串与非字符串字段不进入字段表，因此不产生空标签
+        expect(vars.allChars).not.toContain('当前状态：');
+        expect(vars.allFactions).toBe('- 天阙：');
+        expect(vars.allLocs).toContain('- 断魂桥.md：重要程度：5');
+        expect(vars.allItems).toBe('- 月牙匕：');
+    });
+});
+
+function makeForeshadows(count: number, plannedReveal: string) {
+    return {
+        unrevealed: Array.from({ length: count }, (_, i) => ({
+            id: `F${i + 1}`,
+            name: `伏笔${i + 1}`,
+            importance: '中',
+            buryChapter: '第1章',
+            plannedReveal,
+            relatedChars: '沈砚',
+            status: '未揭示',
+        })),
+        revealed: [],
+        abandoned: [],
+    };
+}
+
+/** 便于在测试内替换 vault 行为的窄类型，避免使用 any（any 基线已无余量） */
+type MutableVaultApp = {
+    vault: {
+        getAbstractFileByPath: (path: string) => unknown;
+        read: (file: unknown) => Promise<string>;
+    };
+};
+
+/**
+ * 构造带文笔风格文件的 deps。
+ * @param styleContent - 风格文件正文；null 表示路径下无文件
+ * @param opts - readError 让读取抛错；notTFile 让路径命中非 TFile 对象
+ * @returns 可直接传入 buildSceneStyleHint 的依赖
+ * @example
+ * const deps = await makeStyleDeps('### 战斗/冲突场景样本\n刀锋压到喉间。');
+ * await buildSceneStyleHint(deps, { infoPlan: '情感温度：8' });
+ */
+async function makeStyleDeps(
+    styleContent: string | null,
+    opts: { readError?: boolean; notTFile?: boolean } = {},
+): Promise<TemplateVarsDeps> {
+    const deps = makeDeps(makeContext());
+    if (styleContent === null) return deps;
+    const app = deps.app as unknown as MutableVaultApp;
+    if (opts.notTFile) {
+        app.vault.getAbstractFileByPath = () => ({ path: '九霄逆脉行/文笔风格.md' });
+        return deps;
+    }
+    const { TFile } = await import('obsidian');
+    const file = new TFile();
+    file.path = '九霄逆脉行/文笔风格.md';
+    app.vault.getAbstractFileByPath = () => file;
+    app.vault.read = async () => {
+        if (opts.readError) throw new Error('读取风格文件失败');
+        return styleContent;
+    };
+    return deps;
+}
+
+describe('buildSceneStyleHint — 场景类型与节奏推导', () => {
+    it('无风格文件时提前返回，不写入任何变量', async () => {
+        const deps = await makeStyleDeps(null);
+        const vars: Record<string, string> = {};
+
+        await buildSceneStyleHint(deps, vars);
+
+        expect(vars.sceneStyleSnippet).toBeUndefined();
+        expect(vars.suggestedRhythm).toBeUndefined();
+        expect(vars._sceneType).toBeUndefined();
+    });
+
+    it('路径命中非 TFile 对象时同样早退', async () => {
+        const deps = await makeStyleDeps('### 日常/对话场景样本\n两人对坐。', { notTFile: true });
+        const vars: Record<string, string> = {};
+
+        await buildSceneStyleHint(deps, vars);
+
+        expect(vars.suggestedRhythm).toBeUndefined();
+        expect(vars._sceneType).toBeUndefined();
+    });
+
+    it('情感温度≥7 判为 battle，片段去除注释与代码围栏', async () => {
+        const content = [
+            '### 战斗/冲突场景样本',
+            '刀锋压到喉间。<!-- 内部批注 -->',
+            '```',
+            '血从指缝渗出。',
+            '```',
+            '### 日常/对话场景样本',
+            '寒暄两句。',
+        ].join('\n');
+        const deps = await makeStyleDeps(content);
+        const vars: Record<string, string> = { infoPlan: '情感温度：8\n冲突强度：2' };
+
+        await buildSceneStyleHint(deps, vars);
+
+        expect(vars._sceneType).toBe('battle');
+        expect(vars.sceneStyleSnippet).toContain('刀锋压到喉间。');
+        expect(vars.sceneStyleSnippet).toContain('血从指缝渗出。');
+        expect(vars.sceneStyleSnippet).not.toContain('内部批注');
+        expect(vars.sceneStyleSnippet).not.toContain('```');
+        expect(vars.sceneStyleSnippet).not.toContain('寒暄两句。');
+        expect(vars.suggestedRhythm).toContain('急起急落');
+    });
+
+    it('仅冲突强度≥4 也判为 battle', async () => {
+        const deps = await makeStyleDeps('### 战斗/冲突场景样本\n一刀劈落。');
+        const vars: Record<string, string> = { infoPlan: '冲突强度：5' };
+
+        await buildSceneStyleHint(deps, vars);
+
+        expect(vars._sceneType).toBe('battle');
+        expect(vars.sceneStyleSnippet).toContain('一刀劈落。');
+    });
+
+    it('情感温度≥4 判为 emotional；段落未命中时只给节奏不给片段', async () => {
+        const deps = await makeStyleDeps('### 日常/对话场景样本\n寒暄两句。');
+        const vars: Record<string, string> = { infoPlan: '情感温度：5' };
+
+        await buildSceneStyleHint(deps, vars);
+
+        expect(vars._sceneType).toBe('emotional');
+        expect(vars.sceneStyleSnippet).toBeUndefined();
+        expect(vars.suggestedRhythm).toContain('倒叙切入');
+    });
+
+    it('仅冲突强度≥2 判为 emotional，并命中情绪段', async () => {
+        const deps = await makeStyleDeps('### 情绪/心理场景样本\n她攥紧了袖口。');
+        const vars: Record<string, string> = { infoPlan: '冲突强度：2' };
+
+        await buildSceneStyleHint(deps, vars);
+
+        expect(vars._sceneType).toBe('emotional');
+        expect(vars.sceneStyleSnippet).toContain('她攥紧了袖口。');
+    });
+
+    it('无 infoPlan 时默认 dialogue', async () => {
+        const deps = await makeStyleDeps('### 日常/对话场景样本\n两人对坐。');
+        const vars: Record<string, string> = {};
+
+        await buildSceneStyleHint(deps, vars);
+
+        expect(vars._sceneType).toBe('dialogue');
+        expect(vars.suggestedRhythm).toContain('对话推进');
+        expect(vars.sceneStyleSnippet).toContain('两人对坐。');
+    });
+
+    it('vars 中没有信息计划时回退到 stepResults', async () => {
+        const deps = await makeStyleDeps('### 情绪/心理场景样本\n她攥紧了袖口。');
+        deps.stepResults = { infoPlan: '情感温度：6' };
+        const vars: Record<string, string> = {};
+
+        await buildSceneStyleHint(deps, vars);
+
+        expect(vars._sceneType).toBe('emotional');
+        expect(vars.sceneStyleSnippet).toContain('她攥紧了袖口。');
+    });
+
+    it('读取风格文件失败时吞掉异常，不写入任何变量', async () => {
+        const deps = await makeStyleDeps('', { readError: true });
+        const vars: Record<string, string> = {};
+
+        await expect(buildSceneStyleHint(deps, vars)).resolves.toBeUndefined();
+
+        expect(vars.sceneStyleSnippet).toBeUndefined();
+        expect(vars.suggestedRhythm).toBeUndefined();
+    });
+});
+
+describe('buildContextVars — 信息债阶梯', () => {
+    it('严重档（>20）且无临近揭示窗口时给出检查计划文案', async () => {
+        const vars: Record<string, string> = {};
+        await buildContextVars(makeDeps(makeContext()), vars, {
+            foreshadows: makeForeshadows(25, '第100章'),
+        } as unknown as GatheredContext['data']);
+
+        expect(vars.forcedRevealHint).toContain('信息债严重（25个未揭示）');
+        expect(vars.forcedRevealHint).toContain('当前无临近揭示窗口内的伏笔');
+        expect(vars.revealInstruction).toContain('信息债严重：但当前无临近揭示窗口内的伏笔');
+    });
+
+    it('过高档（>阈值）且无窗口时提示回顾伏笔计划', async () => {
+        const vars: Record<string, string> = {};
+        await buildContextVars(makeDeps(makeContext()), vars, {
+            foreshadows: makeForeshadows(18, '第100章'),
+        } as unknown as GatheredContext['data']);
+
+        expect(vars.forcedRevealHint).toContain('信息债过高（18个未揭示）');
+        expect(vars.revealInstruction).toContain('信息债过高：但当前无临近揭示窗口内的伏笔，建议回顾伏笔计划');
+    });
+
+    it('偏高档（>10）且有窗口时列出建议揭示的伏笔', async () => {
+        const vars: Record<string, string> = {};
+        await buildContextVars(makeDeps(makeContext()), vars, {
+            foreshadows: makeForeshadows(12, '第3章'),
+        } as unknown as GatheredContext['data']);
+
+        expect(vars.forcedRevealHint).toContain('信息债偏高（12个未揭示）');
+        expect(vars.revealInstruction).toContain('信息债偏高：建议揭示');
+    });
+
+    it('轻档（>5）且无窗口时给出「有N个未揭示」提示', async () => {
+        const vars: Record<string, string> = {};
+        await buildContextVars(makeDeps(makeContext()), vars, {
+            foreshadows: makeForeshadows(7, '第100章'),
+        } as unknown as GatheredContext['data']);
+
+        expect(vars.forcedRevealHint).toContain('有7个未揭示伏笔，当前无临近揭示窗口的伏笔');
+        expect(vars.revealInstruction).toBe('每章至少回收1个旧伏笔、埋下1个新伏笔');
+    });
+
+    it('健康档（≤5）时给出健康文案', async () => {
+        const vars: Record<string, string> = {};
+        await buildContextVars(makeDeps(makeContext()), vars, {
+            foreshadows: makeForeshadows(3, '第100章'),
+        } as unknown as GatheredContext['data']);
+
+        expect(vars.forcedRevealHint).toBe('当前伏笔生态健康');
+        expect(vars.revealInstruction).toBe('每章至少回收1个旧伏笔、埋下1个新伏笔');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// buildTemplateVars — 信号段（灵魂层 / 上下文体检 / 自定义模板覆盖 / 变体开关）
+// ---------------------------------------------------------------------------
+
+const SOUL_FM = `---
+tags: [人物]
+姓名: 沈砚
+character_core:
+  desire: 活着走过断魂桥
+  fear: 被天阙再次标记
+  obsession: 查明母亲死因
+  shame: 复测前退缩过一次
+  trauma: 父亲卖掉梳妆匣
+  weakness: 听见「逆脉」会手抖
+  soft_spot: 砂民区的孩童
+  rage_trigger: 有人拿测脉碑威胁弱者
+  moral_boundary: 不连累无辜
+---`;
+
+function makeFullDeps(opts: {
+    context?: GatheredContext | null;
+    stepResults?: Record<string, string>;
+    settings?: Record<string, unknown>;
+} = {}): TemplateVarsDeps {
+    const vault = new Vault();
+    const app = { vault, metadataCache: { getFileCache: () => null } };
+    return {
+        app: app as never,
+        plugin: {
+            app,
+            settings: {
+                contextScope: 'full',
+                dedupeRulesInStyle: true,
+                storyContextTier: 'cloud',
+                maxContext: 128000,
+                maxOutput: 8192,
+                defaultWordCount: 3000,
+                activeRulesVersion: undefined,
+                ...(opts.settings ?? {}),
+            },
+        } as never,
+        project: '长篇小说/书A',
+        chapterName: '第3章',
+        chapterNum: 3,
+        volume: '第1卷',
+        chapDir: '',
+        context: opts.context === undefined ? makeContext() : opts.context,
+        viewVars: {},
+        stepResults: opts.stepResults ?? {},
+    };
+}
+
+function makeSoulContext(cores: unknown[]): GatheredContext {
+    const ctx = makeContext();
+    (ctx.data as unknown as Record<string, unknown>).character_cores = cores;
+    return ctx;
+}
+
+function longWorldText(seed: string): string {
+    return Array.from({ length: 20 }, (_, i) => `${seed}第${i}段：灵气从地脉升起，断魂桥的冷雾贴着桥栏，砂民把手炉抱得更紧。`).join('\n');
+}
+
+describe('buildTemplateVars — 信号分支', () => {
+    it('context 有完整灵魂层时注入摘要，并写出 9 字段主角详情与就绪标记', async () => {
+        const soul = extractCharacterCoreFromContent('沈砚', SOUL_FM);
+        const vars = await buildTemplateVars(makeFullDeps({ context: makeSoulContext([soul]) }));
+
+        expect(vars.characterCores).toContain('沈砚');
+        expect(vars.protagonistSoulDetail).toContain('他/她最渴望的是：活着走过断魂桥');
+        expect(vars.characterSoulReady).toBe('1');
+    });
+
+    it('步骤结果里手工编辑的灵魂层优先于 context 摘要（避免编辑保存后被旧快照覆盖）', async () => {
+        const soul = extractCharacterCoreFromContent('沈砚', SOUL_FM);
+        const vars = await buildTemplateVars(makeFullDeps({
+            context: makeSoulContext([soul]),
+            stepResults: { characterSoul: '  手工编辑的灵魂层  ' },
+        }));
+
+        expect(vars.characterCores).toBe('手工编辑的灵魂层');
+        expect(vars.protagonistSoulDetail).toContain('他/她最渴望的是：');
+    });
+
+    it('context 无灵魂层但步骤结果有内容时回退到步骤结果', async () => {
+        const vars = await buildTemplateVars(makeFullDeps({
+            stepResults: { characterSoul: '仅步骤结果的灵魂层' },
+        }));
+
+        expect(vars.characterCores).toBe('仅步骤结果的灵魂层');
+        expect(vars.protagonistSoulDetail).toBe('仅步骤结果的灵魂层');
+        expect(vars.characterSoulReady).toBe('1');
+    });
+
+    it('context 灵魂层没有匹配主角时不写主角详情与就绪标记', async () => {
+        const soul = extractCharacterCoreFromContent('路人甲', SOUL_FM);
+        const vars = await buildTemplateVars(makeFullDeps({ context: makeSoulContext([soul]) }));
+
+        expect(vars.protagonistSoulDetail).toBe('');
+        expect(vars.characterSoulReady).toBe('');
+    });
+
+    it('既无 context 灵魂层也无步骤结果时三个灵魂变量均为空', async () => {
+        const vars = await buildTemplateVars(makeFullDeps());
+
+        expect(vars.characterCores).toBe('');
+        expect(vars.protagonistSoulDetail).toBe('');
+        expect(vars.characterSoulReady).toBe('');
+    });
+
+    it('世界观与设定库重复时按体检清空设定库并记录 dropped', async () => {
+        const text = longWorldText('世界观');
+        const ctx = makeContext();
+        const data = ctx.data as unknown as {
+            world_view: { raw: string; sections: unknown[] };
+            setting_lib: { raw: string; sections: unknown[] };
+        };
+        data.world_view = { raw: text, sections: [] };
+        data.setting_lib = { raw: `${text}\n`, sections: [] };
+
+        const vars = await buildTemplateVars(makeFullDeps({ context: ctx }));
+
+        expect(vars.settingLib).toBe('');
+        expect(vars._contextHygiene).toContain('duplicate');
+        expect(vars._contextHygiene).toContain('settingLib');
+    });
+
+    it('体检自动修复关闭时只告警、不清空重复段', async () => {
+        const text = longWorldText('世界观');
+        const ctx = makeContext();
+        const data = ctx.data as unknown as {
+            world_view: { raw: string; sections: unknown[] };
+            setting_lib: { raw: string; sections: unknown[] };
+        };
+        data.world_view = { raw: text, sections: [] };
+        data.setting_lib = { raw: `${text}\n`, sections: [] };
+
+        const vars = await buildTemplateVars(makeFullDeps({
+            context: ctx,
+            settings: { contextHygieneAutoFix: false },
+        }));
+
+        expect(vars.settingLib).toContain(text);
+        expect(vars._contextHygiene).toContain('duplicate');
+        expect(JSON.parse(vars._contextHygiene).dropped).toEqual([]);
+    });
+
+    it('步骤结果只引用旧章节时写入串章告警', async () => {
+        const vars = await buildTemplateVars(makeFullDeps({
+            stepResults: { infoPlan: '## 第1章 信息规划\n本章承接第1章结尾。' },
+        }));
+
+        expect(vars._contextHygiene).toContain('staleChapter');
+    });
+
+    it('仅用户改过的模板才写入 _stepOverrides', async () => {
+        const deps = makeFullDeps();
+        (deps.plugin as unknown as Record<string, unknown>).promptManager = {
+            getTemplateById: (id: string) => (id === 'info-plan' ? { id } : null),
+            renderPrompt: () => ({ systemPrompt: '自定义 system', userPrompt: '自定义 user' }),
+            config: { customTemplates: [{ id: 'info-plan' }] },
+        };
+
+        const vars = await buildTemplateVars(deps);
+
+        expect(JSON.parse(vars._stepOverrides)).toEqual({
+            infoPlan: { system: '自定义 system', user: '自定义 user' },
+        });
+    });
+
+    it('没有自定义模板时不写入 _stepOverrides（避免默认值二份漂移）', async () => {
+        const deps = makeFullDeps();
+        (deps.plugin as unknown as Record<string, unknown>).promptManager = {
+            getTemplateById: (id: string) => (id === 'info-plan' ? { id } : null),
+            renderPrompt: () => ({ systemPrompt: '默认 system', userPrompt: '默认 user' }),
+            config: { customTemplates: [] },
+        };
+
+        const vars = await buildTemplateVars(deps);
+
+        expect(vars._stepOverrides).toBeUndefined();
+    });
+
+    it('quota 人味模式与强制正文变体按设置生效', async () => {
+        const vars = await buildTemplateVars(makeFullDeps({
+            settings: {
+                humanVoiceMode: 'quota',
+                activeBodyTemplate: 'v2',
+                countableHumanHints: true,
+                experimentGroup: 'E9',
+            },
+        }));
+
+        expect(JSON.parse(vars._voiceMeta).id).toBe('voice.quota');
+        expect(vars._bodyVariant).toBe('v2');
+        expect(vars._countableHints).toBe('1');
+        expect(vars._experimentGroup).toBe('E9');
+    });
+});
+
+function makeCompactContext(): GatheredContext {
+    const ctx = makeContext();
+    const data = ctx.data as unknown as Record<string, unknown>;
+    data.character_state = [
+        { name: '沈砚', 角色定位: '主角', 身份: '砂民少年', 当前状态: '复测前' },
+        { name: '沈铁山', 身份: '铁匠' },
+        { name: '柳婆', 当前状态: '守桥', 核心动机: '护孙' },
+        { name: '路人丙' },
+    ];
+    data.factions = [
+        { name: '天阙', 类型: '王朝', 描述: '控制测脉。' },
+        { name: '玄门', 类型: '宗门', 领袖: '玄尊', '地位/排名': '第一' },
+        { name: '无名帮' },
+    ];
+    data.locations = [
+        { name: '断魂桥', 类型: '关隘', 描述: '砂峡唯一通道。' },
+        { name: '落霞谷', 类型: '秘境', '所在世界/区域': '东域', 重要程度: '高' },
+        { name: '荒滩' },
+    ];
+    data.items = [
+        { name: '测脉石', 类型: '法器', 描述: '测脉用。' },
+        { name: '玄铁令', 类型: '令牌', '品阶/等级': '天级', '所属/归属': '玄门' },
+        { name: '破碗' },
+    ];
+    return ctx;
+}
+
+describe('buildEntityVars — compact 涉及实体口径', () => {
+    beforeEach(() => {
+        mockFindBodyFileV4.mockReturnValue(undefined);
+        mockGetInvolvedEntities.mockReturnValue({ chars: [], locs: [], factions: [], items: [] });
+    });
+
+    it('compact 模式找不到正文文件时退化为全量实体清单，不抽取涉及实体', async () => {
+        const deps = makeFullDeps({ settings: { contextScope: 'compact' } });
+
+        const vars = await buildTemplateVars(deps);
+
+        expect(mockFindBodyFileV4).toHaveBeenCalledWith(deps.app, deps.project, 1, 3);
+        expect(mockGetInvolvedEntities).not.toHaveBeenCalled();
+        expect(vars.allChars).toContain('定位：主角');
+        expect(vars.allChars).toContain('状态：复测前');
+    });
+
+    it('compact 模式按涉及实体精简非涉及项，卷名缺章号时回落第 0 卷', async () => {
+        const deps = makeFullDeps({ context: makeCompactContext(), settings: { contextScope: 'compact' } });
+        deps.volume = '序章';
+        const bodyFile = Object.assign(new TFile(), { path: '长篇小说/书A/正文/第1卷/第3章.md' });
+        mockFindBodyFileV4.mockReturnValue(bodyFile);
+        mockGetInvolvedEntities.mockReturnValue({
+            chars: ['沈砚'],
+            locs: ['断魂桥'],
+            factions: ['天阙'],
+            items: ['测脉石'],
+        });
+
+        const vars = await buildTemplateVars(deps);
+
+        expect(mockFindBodyFileV4).toHaveBeenCalledWith(deps.app, deps.project, 0, 3);
+        expect(mockGetInvolvedEntities).toHaveBeenCalledWith(deps.app, bodyFile);
+        // 涉及人物保留全量字段，非涉及人物只留身份/状态/动机摘要
+        expect(vars.allChars).toContain('定位：主角');
+        expect(vars.allChars).toContain('沈铁山：身份：铁匠');
+        expect(vars.allChars).toContain('柳婆：当前状态：守桥；核心动机：护孙');
+        // 涉及势力保留描述，非涉及势力只留类型/领袖/地位摘要
+        expect(vars.allFactions).toContain('描述：控制测脉。');
+        expect(vars.allFactions).toContain('玄门：类型：宗门');
+        expect(vars.allFactions).toContain('领袖：玄尊');
+        expect(vars.allFactions).toContain('地位：第一');
+        // 涉及地点保留描述，非涉及地点只留类型/区域/重要程度摘要
+        expect(vars.allLocs).toContain('描述：砂峡唯一通道。');
+        expect(vars.allLocs).toContain('落霞谷：类型：秘境');
+        expect(vars.allLocs).toContain('区域：东域');
+        expect(vars.allLocs).toContain('重要程度：高');
+        // 涉及物品保留描述，非涉及物品只留类型/等级/归属摘要
+        expect(vars.allItems).toContain('描述：测脉用。');
+        expect(vars.allItems).toContain('玄铁令：类型：令牌');
+        expect(vars.allItems).toContain('天级');
+        expect(vars.allItems).toContain('归属：玄门');
+    });
+
+    it('compact 模式抽到空涉及集合时仍按全量输出', async () => {
+        const deps = makeFullDeps({ context: makeCompactContext(), settings: { contextScope: 'compact' } });
+        mockFindBodyFileV4.mockReturnValue(Object.assign(new TFile(), { path: '长篇小说/书A/正文/第1卷/第3章.md' }));
+
+        const vars = await buildTemplateVars(deps);
+
+        expect(vars.allChars).toContain('沈铁山：身份：铁匠');
+        expect(vars.allFactions).toContain('描述：控制测脉。');
+        expect(vars.allLocs).toContain('描述：砂峡唯一通道。');
+        expect(vars.allItems).toContain('描述：测脉用。');
     });
 });

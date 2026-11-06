@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { TFile } from 'obsidian';
-import { ObsidianFileSystem } from '../../../shared/file-system-port';
+import { TFile, TFolder } from 'obsidian';
+import { ObsidianFileSystem, ObsidianVaultMeta, writeVaultText } from '../../../shared/file-system-port';
 
 /**
  * 插件数据目录（.obsidian/plugins/<id>/data）不在 vault 索引里：
@@ -160,5 +160,140 @@ describe('ObsidianFileSystem · 插件数据目录（索引外路径）', () => 
 
         expect(h.adapter.remove).toHaveBeenCalledWith(`${DATA_DIR}/old.json`);
         expect(await h.adapter.exists(`${DATA_DIR}/old.json`)).toBe(false);
+    });
+});
+
+describe('ObsidianFileSystem · 索引外/索引内分支加固', () => {
+    it('getFileStamp：索引内文件缺 stat 时回落 0', async () => {
+        const h = makeHarness();
+        h.indexed.set('indexed.md', Object.assign(new TFile(), { path: 'indexed.md', stat: undefined }));
+
+        expect(await h.fs.getFileStamp('indexed.md')).toEqual({ mtime: 0, size: 0 });
+    });
+
+    it('getFileStamp：索引外走 adapter.stat，缺字段回落 0，stat 为空返回 null', async () => {
+        const h = makeHarness();
+        h.adapter.stat.mockImplementationOnce(async () => ({ type: 'file' }));
+
+        expect(await h.fs.getFileStamp('ext.md')).toEqual({ mtime: 0, size: 0 });
+        expect(await h.fs.getFileStamp('missing.md')).toBeNull();
+    });
+
+    it('getFileStamp：adapter.stat 抛错时返回 null', async () => {
+        const h = makeHarness();
+        h.adapter.stat.mockRejectedValueOnce(new Error('stat failed'));
+
+        expect(await h.fs.getFileStamp('broken.md')).toBeNull();
+    });
+
+    it('delete：索引内文件夹递归删除，索引外文件夹走 rmdir', async () => {
+        const h = makeHarness();
+        const folder = Object.assign(new TFolder(), { path: '正文' });
+        h.indexed.set('正文', folder);
+
+        await h.fs.delete('正文');
+        expect(h.vault.delete).toHaveBeenCalledWith(folder, true);
+
+        h.dirs.add(`${DATA_DIR}/old`);
+        await h.fs.delete(`${DATA_DIR}/old`);
+        expect(h.adapter.rmdir).toHaveBeenCalledWith(`${DATA_DIR}/old`, true);
+    });
+
+    it('delete：索引外路径不存在时静默返回，不调用 remove/rmdir', async () => {
+        const h = makeHarness();
+
+        await h.fs.delete(`${DATA_DIR}/ghost.json`);
+
+        expect(h.adapter.remove).not.toHaveBeenCalled();
+        expect(h.adapter.rmdir).not.toHaveBeenCalled();
+    });
+
+    it('write：目标是文件夹时抛错，不落到 create', async () => {
+        const h = makeHarness();
+        h.indexed.set('dir', Object.assign(new TFolder(), { path: 'dir' }));
+
+        await expect(h.fs.write('dir', 'x')).rejects.toThrow(/folder/);
+        expect(h.vault.create).not.toHaveBeenCalled();
+    });
+
+    it('mkdir：createFolder 报“已存在”时跳过，其他错误原样抛出', async () => {
+        const h = makeHarness();
+        h.vault.createFolder.mockRejectedValueOnce(new Error('Folder already exists'));
+
+        await expect(h.fs.mkdir('a/b')).resolves.toBeUndefined();
+        expect(h.vault.createFolder).toHaveBeenCalledTimes(2);
+
+        h.vault.createFolder.mockRejectedValueOnce(new Error('EACCES'));
+        await expect(h.fs.mkdir('c/d')).rejects.toThrow('EACCES');
+    });
+
+    it('mkdir：配置目录已存在时不再调用 adapter.mkdir', async () => {
+        const h = makeHarness();
+        h.dirs.add(CONFIG_DIR);
+
+        await h.fs.mkdir(DATA_DIR);
+
+        expect(h.adapter.mkdir).toHaveBeenCalledTimes(4);
+        expect(h.adapter.mkdir).toHaveBeenCalledWith(DATA_DIR);
+        expect(h.adapter.mkdir).not.toHaveBeenCalledWith(CONFIG_DIR);
+    });
+
+    it('listFolders：索引外目录走 adapter 递归，adapter.list 失败返回空数组', async () => {
+        const h = makeHarness();
+        h.dirs.add('ext');
+        h.dirs.add('ext/sub');
+
+        expect((await h.fs.listFolders('ext')).map(f => f.path)).toEqual(['ext/sub']);
+
+        h.adapter.list.mockRejectedValueOnce(new Error('list failed'));
+        expect(await h.fs.listFolders('ext2')).toEqual([]);
+    });
+
+    it('listFiles：索引外文件无扩展名、stat 缺失时仍构造出可用形状', async () => {
+        const h = makeHarness();
+        h.adapter.list.mockImplementationOnce(async () => ({ files: ['cfg/README'], folders: [] }));
+
+        const files = await h.fs.listFiles('cfg');
+
+        expect(files).toHaveLength(1);
+        expect(files[0].name).toBe('README');
+        expect(files[0].basename).toBe('README');
+        expect(files[0].extension).toBe('');
+        expect(files[0].stat).toEqual({ ctime: 0, mtime: 0, size: 0 });
+    });
+
+    it('ObsidianVaultMeta.getFolders 忽略非文件夹子项', () => {
+        const child = Object.assign(new TFolder(), { path: 'a', children: [] });
+        const root = Object.assign(new TFolder(), { path: '', children: [child, new TFile()] });
+        const meta = new ObsidianVaultMeta({ vault: { getRoot: () => root } } as never);
+
+        expect(meta.getFolders().map(f => f.path)).toEqual(['a']);
+    });
+
+    it('writeVaultText：无 adapter 抛错；最小 adapter 回退写；完整 App 走索引', async () => {
+        await expect(writeVaultText({} as never, 'a.md', 'x')).rejects.toThrow(/adapter/);
+
+        const disk = new Map<string, string>();
+        const mkdir = vi.fn(async () => undefined);
+        const adapter = {
+            mkdir,
+            write: vi.fn(async (p: string, c: string) => {
+                disk.set(p, c);
+            }),
+        };
+        const minimal = { vault: { adapter } } as never;
+
+        await writeVaultText(minimal, 'a.md', 'hi');
+        expect(mkdir).not.toHaveBeenCalled();
+        expect(adapter.write).toHaveBeenCalledWith('a.md', 'hi');
+
+        await writeVaultText(minimal, 'dir/b.md', 'hi');
+        expect(mkdir).toHaveBeenCalledWith('dir');
+
+        const h = makeHarness();
+        await writeVaultText({ vault: h.vault } as never, '正文/第1章.md', 'hi');
+        expect(h.vault.createFolder).toHaveBeenCalledWith('正文');
+        expect(h.vault.create).toHaveBeenCalledWith('正文/第1章.md', 'hi');
+        expect(h.adapter.write).not.toHaveBeenCalled();
     });
 });

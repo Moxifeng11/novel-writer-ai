@@ -4,7 +4,7 @@ vi.mock('../../../main', () => ({
     default: class NovelWriterPlugin {},
 }));
 
-import { TFile } from 'obsidian';
+import { TFile, TFolder } from 'obsidian';
 import { RealtimeQualityController, type RealtimeQualityHost } from '../../../ui/cowrite/realtime-quality-controller';
 
 const BODY_ROOT = '书甲/03-大纲与章节/正文/第1卷';
@@ -28,10 +28,21 @@ function makeFile(path: string, store: FakeStore): TFile {
 function makeController(store: FakeStore, files: TFile[]) {
     let resolvable = true;
     const cachedRead = vi.fn(async (file: TFile) => store.contents.get(file.path) ?? '');
+    // 真实 vault 里目录有 children；补全后路径遍历（listFolderFiles）才能命中正文文件
+    const contentFolder = new TFolder();
+    contentFolder.path = '书甲/03-大纲与章节/正文';
+    contentFolder.name = '正文';
+    const volumeFolder = new TFolder();
+    volumeFolder.path = BODY_ROOT;
+    volumeFolder.name = '第1卷';
+    volumeFolder.children = files;
+    contentFolder.children = [volumeFolder];
     const vault = {
         getFiles: () => files,
         getAbstractFileByPath: (path: string) => {
             if (!resolvable) return null;
+            if (path === contentFolder.path) return contentFolder;
+            if (path === BODY_ROOT) return volumeFolder;
             return files.find((file) => file.path === path) ?? null;
         },
         cachedRead,

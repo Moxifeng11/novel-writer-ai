@@ -33,6 +33,8 @@ describe('BatchPipelineRunner — v4 续跑读取', () => {
         const folder = new TFolder();
         folder.path = chapDir;
         folder.name = '第1章';
+        // 真实 vault 里目录有 children；补全后路径遍历（listFolderFiles）才能命中步骤结果文件
+        folder.children = [fileObjects.get(`${chapDir}/第1章_大纲摘要.md`)!];
 
         const app = {
             vault: {

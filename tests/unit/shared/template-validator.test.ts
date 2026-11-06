@@ -7,6 +7,15 @@ import {
     validateLocationOutput,
     validateSettingLibOutput,
     validateWritingStyleOutput,
+    validateWorldviewOutput,
+    validateOutlineOutput,
+    validateBulletFormat,
+    validateFanficSettings,
+    detectTimelineStrategy,
+    loadFanficRules,
+    isFanficValueFilled,
+    parseCanonTimelineTable,
+    parseTimelineBoardTable,
     WRITING_STYLE_REQUIRED_SECTIONS,
 } from '../../../shared/template-validator';
 import { ENTITY_BODY_SECTIONS, SL_SECTIONS } from '../../../shared/format-constants';
@@ -270,5 +279,166 @@ tags: [势力]
 `);
         expect(result.valid).toBe(false);
         expect(result.missingFields).toContain('tags 缺失 [人物] 标签');
+    });
+
+    it('人物卡：尾部缺少闭合符时回退解析，不误报 PARSE_ERROR', () => {
+        const result = validateCharacterOutput('---\ntags: [人物]\n姓名: 张三\n');
+        expect(result.errorType).toBeUndefined();
+        expect(result.missingFields).not.toContain('姓名');
+        expect(result.missingFields).not.toContain('YAML frontmatter 未闭合');
+    });
+
+    it('势力卡：YAML 块标量（> 与 |）视为有值', () => {
+        const card = (marker: '>' | '|'): string => {
+            const yaml = [
+                'tags: [势力]',
+                '名称: 天剑宗',
+                '别称: 无',
+                '类型: 宗门',
+                `描述: ${marker}`,
+                '  东域剑道',
+                '',
+                '  第一宗门',
+                '领袖: 李沧澜',
+                '地位/排名: 东域第一',
+                'entity_status: active',
+                'entity_created_at: 2026-01-01',
+            ].join('\n');
+            const body = ENTITY_BODY_SECTIONS.map(section => `## ${section}\n- 具体内容`).join('\n\n');
+            return `---\n${yaml}\n---\n\n${body}\n`;
+        };
+
+        expect(validateFactionOutput(card('>')).valid).toBe(true);
+        expect(validateFactionOutput(card('|')).valid).toBe(true);
+    });
+
+    it('地点卡：tags 缺少「地点」标签时单独报错', () => {
+        const result = validateLocationOutput(entityCard(locationFields({ tags: '[势力]' })));
+        expect(result.missingFields).toContain('tags 缺失 [地点] 标签');
+    });
+
+    it('物品卡：必填值字段为空时判定缺失', () => {
+        const result = validateItemOutput(entityCard(itemFields({ '品阶/等级': '""' })));
+        expect(result.missingFields).toContain('品阶/等级（值为空）');
+    });
+
+    it('物品卡：必填键完全缺失时按缺键报告', () => {
+        const content = entityCard(itemFields()).replace('品阶/等级: 地阶\n', '');
+        const result = validateItemOutput(content);
+        expect(result.missingFields).toContain('品阶/等级');
+    });
+
+    it('物品卡：缺少正文分节时报告分节缺失', () => {
+        const section = ENTITY_BODY_SECTIONS[1];
+        const content = entityCard(itemFields()).replace(`## ${section}\n- 具体内容\n\n`, '');
+        const result = validateItemOutput(content);
+        expect(result.missingFields).toContain(`正文分节: ${section}`);
+    });
+});
+
+describe('template-validator 零依赖分支尾盘', () => {
+    it('同人字段：null 与占位值一律未填，明确值算已填', () => {
+        expect(isFanficValueFilled(null)).toBe(false);
+        expect(isFanficValueFilled('（待补充）')).toBe(false);
+        expect(isFanficValueFilled('未知')).toBe(true);
+    });
+
+    it('设定库：分节里只有空标签或空链接时判为内容为空', () => {
+        const onlyLabels = `## ${SL_SECTIONS[0]}\n- 外貌：\n- [[链接]]`;
+        const rest = SL_SECTIONS.slice(1).map(section => `## ${section}\n- 有内容`).join('\n\n');
+        const result = validateSettingLibOutput(`${onlyLabels}\n\n${rest}`);
+        expect(result.missingFields).toEqual([`模块内容为空: ${SL_SECTIONS[0]}`]);
+    });
+
+    it('设定库：整节缺失时报「模块」而不是「模块内容为空」', () => {
+        const broken = settingLibSample.replace(
+            `## ${SL_SECTIONS[0]}\n- 这是「${SL_SECTIONS[0]}」的具体内容，不能为空。\n\n`,
+            ''
+        );
+        const result = validateSettingLibOutput(broken);
+        expect(result.missingFields).toEqual([`模块: ${SL_SECTIONS[0]}`]);
+    });
+
+    it('文笔风格：空内容直接失败', () => {
+        expect(validateWritingStyleOutput('   ')).toEqual({ valid: false, missingFields: ['内容为空'] });
+    });
+
+    it('连续 200+ 中文字符无换行判定为散文段落（世界观输出同口径生效）', () => {
+        const prose = '这'.repeat(220);
+        expect(validateBulletFormat(prose).errorType).toBe('prose_detected');
+        const worldview = validateWorldviewOutput(prose);
+        expect(worldview.valid).toBe(false);
+        expect(worldview.missingFields).toContain(
+            '散文段落检测：发现连续200+中文字符无换行的大段叙述'
+        );
+    });
+
+    it('大纲：章节范围格式不合法时单独报错', () => {
+        const result = validateOutlineOutput('### 第1卷\n- **卷名**：开篇');
+        expect(result.missingFields).toContain('第1卷.章节范围格式(需为"第X章 - 第Y章")');
+    });
+
+    it('大纲：没有任何分卷时提示未找到分卷', () => {
+        expect(validateOutlineOutput('随便写点内容').missingFields).toEqual([
+            '未找到任何分卷(### 第N卷)',
+        ]);
+    });
+
+    it('同人设定：时间线整节缺失时报表格缺失', () => {
+        const filled = `---
+作品名称: 星尘学院
+作品类型: 同人
+作者: 张三
+---
+- **世界观类型**：星际
+- **力量体系**：观测系
+- **核心规则**：原作优先
+- **必须遵守的原作规则**：主线不变
+- **允许改编的范围**：支线
+- **禁止触及的红线**：不改结局
+`;
+        expect(validateFanficSettings(filled).missingFields).toEqual([
+            '原作剧情时间线(表格)',
+            '故事背景时间线(表格)',
+        ]);
+    });
+
+    it('时间线策略：原创项目走 original，行内式「类型：同人」识别为同人且无路径', () => {
+        expect(detectTimelineStrategy('## 类型\n原创')).toEqual({
+            strategy: 'original',
+            timelines: ['board'],
+            rules: false,
+        });
+        const fanfic = detectTimelineStrategy('类型：同人');
+        expect(fanfic.strategy).toBe('fanfic');
+        expect(fanfic.fanficSettingsPath).toBeUndefined();
+    });
+
+    it('同人规则：完全没有规则文本时返回空规则', () => {
+        expect(loadFanficRules('')).toEqual({ mustFollow: [], adaptScope: '', redlines: [] });
+    });
+
+    it('时间线看板：缺少纪元时间轴分节时返回空数组', () => {
+        expect(parseTimelineBoardTable('## 其他\n| # | 事件名称 |')).toEqual([]);
+    });
+
+    it('时间线看板：遇到下一个标题即停止收集', () => {
+        const content = `## 纪元 / 时间轴
+| # | 事件名称 | 时间 | 地点 | 涉及人物 | 章节 | 类型 |
+|---|---|---|---|---|---|---|
+| 1 | 星门崩裂 | 星历 301 年 | 东域 | 林澈 | 第 12 章 | 转折 |
+## 后记
+| 2 | 不该被收录 |`;
+        expect(parseTimelineBoardTable(content)).toHaveLength(1);
+    });
+
+    it('原作时间线：数据行列数不足时后续列补空串', () => {
+        const content = `## 原作剧情时间线
+| 时间节点 | 原作事件 |
+|---|---|
+| 星历 301 年 | 星门崩裂 |
+`;
+        const rows = parseCanonTimelineTable(content);
+        expect(rows[0]['章节参考']).toBe('');
     });
 });
