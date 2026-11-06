@@ -6,17 +6,32 @@ import { ModelPickerModal } from './model-picker-modal';
 import { describeSecretForInput, isStoredCiphertext } from '@/shared/secret-display';
 import { lookupModelCapability } from '@/shared/model-capabilities';
 import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
+import type { CustomProvider, NovelWriterSettings } from '@/main';
+
+/** 供应商列表的最小投影（对应 core/provider-manager.getAllProviders 返回结构的只读子集） */
+interface ProviderSummary {
+    id: string;
+    name: string;
+    endpoint: string;
+    models: string[];
+    maxContext: number;
+    maxOutput: number;
+    sourceType?: 'cloud' | 'local';
+    apiFormat?: string;
+    isDefault?: boolean;
+    isHidden?: boolean;
+}
 
 interface ManageProvidersPlugin {
-    settings: any;
-    getAllProviders(): any[];
+    settings: NovelWriterSettings;
+    getAllProviders(): ProviderSummary[];
     getCurrentProviderId(): string | null;
     switchProviderByEndpoint(endpoint: string): boolean;
     addCustomProvider(name: string, endpoint: string, models: string[], maxContext: number, maxOutput: number, apiKey: string, apiFormat?: ApiFormat): string | null;
     deleteCustomProvider(id: string): boolean;
     setHidden(id: string, hidden: boolean): boolean;
     restoreDefaultProviders(): void;
-    updateProvider(id: string, updates: any): boolean;
+    updateProvider(id: string, updates: Partial<CustomProvider>): boolean;
     saveSettings(): Promise<void>;
     updateStatusBarText(): void;
 }
@@ -47,8 +62,8 @@ export class ManageProvidersModal extends Modal {
         this.render();
     }
 
-    private getRawProvider(id: string): any {
-        return (this.plugin.settings.customProviders || []).find((p: any) => p.id === id);
+    private getRawProvider(id: string): CustomProvider | undefined {
+        return (this.plugin.settings.customProviders || []).find(p => p.id === id);
     }
 
     private formatCapacity(value: number | undefined): string {
@@ -150,7 +165,7 @@ export class ManageProvidersModal extends Modal {
 
     private renderDetail(container: HTMLElement, providerId: string): void {
         const raw = this.getRawProvider(providerId);
-        const provider = this.plugin.getAllProviders().find((p: any) => p.id === providerId);
+        const provider = this.plugin.getAllProviders().find(p => p.id === providerId);
         if (!raw || !provider) {
             container.createDiv({ cls: 'nw-api-empty', text: '该供应商已不可用。' });
             return;
@@ -500,7 +515,7 @@ export class ManageProvidersModal extends Modal {
                 });
                 save.onclick = async () => {
                     if (!idValue) { new Notice('模型 ID 不能为空'); return; }
-                    const current = (plugin.settings.customProviders || []).find((p: any) => p.id === providerId);
+                    const current = (plugin.settings.customProviders || []).find(p => p.id === providerId);
                     if (!current) { showErrorNotice('该供应商已不存在'); return; }
 
                     const models = [...current.models];

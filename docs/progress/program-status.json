@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 138,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-06 第 40 轮实测 git rev-list --count origin/master..master=138，HEAD 768fe34；第 39 轮 4 路径已由 ZCode 随 768fe34 收单）"
+    "localCommitsAhead": 139,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-06 第 41 轮实测 git status -sb=ahead 139，HEAD 5ef5ed5；第 40 轮 5 路径已由 ZCode 随 5ef5ed5 收单并把 any 基线收紧到 242）"
   },
   "groups": [
     {
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-06",
+      "group": "G7",
+      "summary": "第 41 轮（gate-fix，ZCode 第 40 轮候选①）：ui/manage-providers-modal.ts any 7→0（纯类型收窄、零运行时行为变化）——①settings: any 收紧为 NovelWriterSettings（type-only 自 @/main）；②getAllProviders(): any[] 收紧为本地最小投影 ProviderSummary（含 sourceType/apiFormat/isDefault/isHidden），3 处 (p: any) 注解消失；③updateProvider(id, updates: any) 收紧为 Partial<CustomProvider>（8 处调用点零断言通过）；④getRawProvider(): any 收紧为 CustomProvider | undefined。实测 check:any 242→235（-7，104→103 个文件）；typecheck 0；build + check:bundle 通过（main.js 4,866,080 字节与基线一致）；eslint 改动文件 0 error（6 既有 warning）",
+      "evidence": "ui/manage-providers-modal.ts + docs/PLAN.md 第 41 轮"
+    },
     {
       "date": "2026-11-06",
       "group": "G7",

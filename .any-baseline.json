@@ -1,9 +1,8 @@
 {
-  "total": 242,
+  "total": 235,
   "generatedAt": "2026-11-06",
   "files": {
     "services/worker-manager.ts": 7,
-    "ui/manage-providers-modal.ts": 7,
     "engine/ai-outline-generator.ts": 6,
     "engine/analysis-session-manager.ts": 6,
     "engine/deconstructors/commercial-deconstructor.ts": 6,

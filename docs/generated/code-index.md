@@ -11,7 +11,7 @@
 | `shared/` | 174 | 39408 | 1571 | 1307 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 101377 | 735 | 639 | 87% |
+| `ui/` | 239 | 101392 | 735 | 639 | 87% |
 
 ## 文件清单
 
@@ -696,7 +696,7 @@
 | `ui/knowledge-folder-navigation.ts` | 15 | 1 | 1 |
 | `ui/knowledge-monitor-modal.ts` | 505 | 1 | 1 |
 | `ui/knowledge-rebuild-action.ts` | 47 | 1 | 1 |
-| `ui/manage-providers-modal.ts` | 615 | 1 | 1 |
+| `ui/manage-providers-modal.ts` | 630 | 1 | 1 |
 | `ui/memory-preview.ts` | 158 | 2 | 1 |
 | `ui/mini-settings-modal.ts` | 88 | 1 | 0 |
 | `ui/mode-document-modal.ts` | 201 | 2 | 2 |

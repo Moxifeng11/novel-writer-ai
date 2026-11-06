@@ -243,6 +243,12 @@ Agent（harness）
   - 验证：`check:any` **251→242**（-9，105→104 文件）；`typecheck` 0；全量 `npm test` **586 文件 / 6,437 用例全绿**；`build` + `check:bundle` 通过，`main.js` 4,866,080 字节与 v4.59.0 基线一致（类型擦除未产生运行时差异）；改动文件 eslint 0 error（7 条既有 warning）。零新增路径、零新增用例（纯类型，不造只测断言的伪用例）。
   - 边界：未动 `engine/**`、ZCode 文件集与既有行为语义；`.any-baseline.json` 未自行收紧（按协作口径由 ZCode 收单时执行 `npm run any:baseline` 到 242）。
   - 元迭代（第 40 轮）：`test-hardening` 2.13→2.00 封顶（多次 +10% 已过度主导；封顶值与 v5-product 一致），其余权重维持；`bundleBudgetBytesPerBatch=200` 继续有效（本轮类型擦除未动用）。
+- 第 41 轮（gate-fix，ZCode 第 40 轮候选①；纯类型收窄、零运行时行为变化）：
+  - 目标：`ui/manage-providers-modal.ts` any 7→0（提供商管理弹窗是设置页/迷你设置/模型弹层三处共用入口，此前插件接口整体为 `any`，任何字段改名都不会被类型检查拦住）。
+  - 改动（单文件 7 处）：①`settings: any` → `NovelWriterSettings`（`import type` 自 `@/main`，与 `ui/settings/api-section.ts` 既有范式一致）；②`getAllProviders(): any[]` → 本地最小投影 `ProviderSummary`（id/name/endpoint/models/maxContext/maxOutput/sourceType/apiFormat/isDefault/isHidden，对应 `core/provider-manager.getAllProviders` 返回结构的只读子集），3 处 `(p: any)` 注解随之消失；③`updateProvider(id, updates: any)` → `Partial<CustomProvider>`（8 处调用点均为该形状，无需断言）；④`getRawProvider(): any` → `CustomProvider | undefined`。
+  - 验证：`check:any` **242→235**（-7，104→103 文件）；`typecheck` 0；`build` + `check:bundle` 通过，`main.js` 4,866,080 字节与基线逐字节一致；改动文件 eslint 0 error（6 条既有 UI 文案/内联样式 warning）。零新增用例（纯类型，不造只测断言的伪用例）。
+  - 边界：未动 `engine/**`、ZCode 文件集与既有行为语义；`.any-baseline.json` 未自行收紧（基线收紧权归 ZCode 收单批次，目标值 235）。
+  - 同型说明：第 40/41 轮连续 gate-fix，按评分协议计 -20% 同型惩罚；选择依据是「类型擦除不产生 bundle 增量」，在 200B/批预算下风险最低，且直接兑现第 40 轮遗留候选。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
