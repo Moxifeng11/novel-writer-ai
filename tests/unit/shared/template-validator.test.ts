@@ -2,11 +2,14 @@ import { describe, it, expect } from 'vitest';
 import {
     isMeaningfulValue,
     validateCharacterOutput,
+    validateFactionOutput,
+    validateItemOutput,
+    validateLocationOutput,
     validateSettingLibOutput,
     validateWritingStyleOutput,
     WRITING_STYLE_REQUIRED_SECTIONS,
 } from '../../../shared/template-validator';
-import { SL_SECTIONS } from '../../../shared/format-constants';
+import { ENTITY_BODY_SECTIONS, SL_SECTIONS } from '../../../shared/format-constants';
 
 const settingLibSample = SL_SECTIONS
     .map(section => `## ${section}\n- 这是「${section}」的具体内容，不能为空。`)
@@ -145,5 +148,127 @@ character_core:
         const result = validateCharacterOutput(content);
         expect(result.valid).toBe(false);
         expect(result.missingFields).toContain('姓名');
+    });
+});
+
+describe('实体卡校验器：未闭合 / 空值 / 标签分支', () => {
+    /** 拼装通用实体卡（地点/势力/物品共用 ENTITY_BODY_SECTIONS） */
+    function entityCard(fields: Record<string, string>, closeYaml = true): string {
+        const yaml = Object.entries(fields).map(([key, value]) => `${key}: ${value}`).join('\n');
+        const body = ENTITY_BODY_SECTIONS.map(section => `## ${section}\n- 具体内容`).join('\n\n');
+        const frontmatter = closeYaml ? `---\n${yaml}\n---` : `---\n${yaml}`;
+        return `${frontmatter}\n\n${body}\n`;
+    }
+
+    const factionFields = (overrides: Record<string, string> = {}): Record<string, string> => ({
+        tags: '[势力]',
+        名称: '天剑宗',
+        别称: '无',
+        类型: '宗门',
+        描述: '东域剑道第一宗门',
+        领袖: '李沧澜',
+        '地位/排名': '东域第一',
+        entity_status: 'active',
+        entity_created_at: '2026-01-01',
+        ...overrides,
+    });
+
+    const locationFields = (overrides: Record<string, string> = {}): Record<string, string> => ({
+        tags: '[地点]',
+        名称: '落霞谷',
+        别称: '无',
+        类型: '山谷',
+        描述: '常年瘴气弥漫的峡谷',
+        重要程度: '高',
+        地理特征: '两山夹一谷',
+        '主要居民/势力': '散修',
+        '所在世界/区域': '东域',
+        ...overrides,
+    });
+
+    const itemFields = (overrides: Record<string, string> = {}): Record<string, string> => ({
+        tags: '[物品功法]',
+        名称: '青锋剑',
+        类型: '兵器',
+        描述: '一柄三寸青锋',
+        效果: '斩金断玉',
+        '品阶/等级': '地阶',
+        '所属/归属': '天剑宗',
+        entity_status: 'active',
+        entity_created_at: '2026-01-01',
+        ...overrides,
+    });
+
+    it('势力卡：完整输出通过', () => {
+        const result = validateFactionOutput(entityCard(factionFields()));
+        expect(result.valid).toBe(true);
+        expect(result.missingFields).toEqual([]);
+    });
+
+    it('势力卡：YAML 未闭合返回 PARSE_ERROR', () => {
+        const result = validateFactionOutput(entityCard(factionFields(), false));
+        expect(result.valid).toBe(false);
+        expect(result.errorType).toBe('PARSE_ERROR');
+        expect(result.missingFields).toEqual(['YAML frontmatter 未闭合']);
+    });
+
+    it('势力卡：必填值字段为空时判定缺失（区别于键不存在）', () => {
+        const result = validateFactionOutput(entityCard(factionFields({ 描述: '""' })));
+        expect(result.valid).toBe(false);
+        expect(result.missingFields).toContain('描述（值为空）');
+        expect(result.missingFields).not.toContain('描述');
+    });
+
+    it('势力卡：tags 缺少「势力」标签时单独报错', () => {
+        const result = validateFactionOutput(entityCard(factionFields({ tags: '[人物]' })));
+        expect(result.valid).toBe(false);
+        expect(result.missingFields).toContain('tags 缺失 [势力] 标签');
+    });
+
+    it('地点卡：YAML 未闭合返回 PARSE_ERROR', () => {
+        const result = validateLocationOutput(entityCard(locationFields(), false));
+        expect(result.valid).toBe(false);
+        expect(result.errorType).toBe('PARSE_ERROR');
+    });
+
+    it('地点卡：名称为空时判定缺失', () => {
+        const result = validateLocationOutput(entityCard(locationFields({ 名称: '""' })));
+        expect(result.valid).toBe(false);
+        expect(result.missingFields).toContain('名称（值为空）');
+    });
+
+    it('物品卡：YAML 未闭合返回 PARSE_ERROR', () => {
+        const result = validateItemOutput(entityCard(itemFields(), false));
+        expect(result.valid).toBe(false);
+        expect(result.errorType).toBe('PARSE_ERROR');
+    });
+
+    it('物品卡：效果为空且标签错误时同时报告两处', () => {
+        const result = validateItemOutput(
+            entityCard(itemFields({ 效果: '""', tags: '[地点]' }))
+        );
+        expect(result.valid).toBe(false);
+        expect(result.missingFields).toContain('效果（值为空）');
+        expect(result.missingFields).toContain('tags 缺失 [物品功法] 标签');
+    });
+
+    it('人物卡：完全没有 YAML 头部时返回 PARSE_ERROR', () => {
+        const result = validateCharacterOutput('# 张三\n\n没有任何 frontmatter 的人物卡');
+        expect(result.valid).toBe(false);
+        expect(result.errorType).toBe('PARSE_ERROR');
+        expect(result.missingFields).toEqual(['YAML frontmatter 未闭合']);
+    });
+
+    it('人物卡：tags 缺少「人物」标签时单独报错', () => {
+        const result = validateCharacterOutput(`---
+tags: [势力]
+姓名: 张三
+---
+
+## 确定性设定（已揭露，不可违背）
+- 出身寒门
+`);
+        expect(result.valid).toBe(false);
+        expect(result.missingFields).toContain('tags 缺失 [人物] 标签');
     });
 });

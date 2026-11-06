@@ -96,7 +96,9 @@ Agent（harness）
 - 第九批收口 + **切片主线正式停止（2026-11-06 用户拍板）**：分解前的「控制台 ≥143 行」高估——实测 `886-993` 为 108 行、`867-993` 为 127 行；扣掉宿主句柄回填后单片净减约 80 行。本批三次切片 bundle 累计 **+3,664B**，切片对包体积是净增（审计归因：适配层 宿主回调 739B + 句柄回填 693B + handles 返回 315B ≈ 1,747B，占净增 100%）。**≤3,300 行目标废弃**，`ui/co-writing-view.ts` 保留 3,363 行现状，后续不再按行数切片；主指标改为 net-bundle + 模块内聚度。
 - 第十六批（v4.52.0 待发版）：Notice 尾盘 `command-ui-executor` 20 处逐条核对——18 处为守卫/预检/进度/无变化（按既有口径保留），2 处告警（版本服务未就绪、旧版命令弃用）改走 `showWarningNotice`，文件确认收敛（**20→18**）；无新增测试，改用既有 `notice-helpers` 覆盖。同轮修复 v4.51.0 版本节点遗留的 `check:bundle` 红灯（`changelog-data` +452B 未实测 + 本轮 +32B，基线上调 4,854,975→4,855,459 并在 note 注明归因）。
 - 第十七批（v4.52.0 待发版）：test-hardening `ui/command-ui-executor.ts`——口径纠偏：该文件并非「无单测」，`pure-helpers-coverage.test.ts` 已有 3 条路由/无项目短路用例；真实缺口是执行器级守卫。本轮新增 `tests/unit/ui/command-ui-executor-guards.test.ts` 3 条（模式守卫拦截且不开弹窗、模式匹配放行、旧版命令弃用提示按命令名去重），不改源码；全量 584 文件 / 6,278 用例、lint 0 error / 1,854 warnings。
-- 下一步主线：Notice 存量只剩各文件守卫/进度类，尾盘结束；下一批按 net-bundle + 内聚度挑选 test-hardening（执行器守卫已补，剩余缺口按覆盖率实测挑选）/ gate-fix 候选。知识库面板装配（`renderKnowledgeTab`）不再作为切片候选。
+- 第十八批（v4.52.0 待发版）：test-hardening `shared/template-validator.ts`——按覆盖率实测（st 252/339、br 155/222）挑出四类实体校验器（人物/势力/地点/物品）的未覆盖分支：未闭合 YAML 的 `PARSE_ERROR`、必填键存在但值为空（「（值为空）」区别于键缺失）、tags 缺少对应实体标签；`tests/unit/shared/template-validator.test.ts` **9 → 19 用例**，不改源码；全量 584 文件 / 6,288 用例、lint 0 error / 1,854 warnings、preflight:release 全绿（bundle 持平）。
+- 覆盖率实测附带结论（同轮）：`parseCharacterBlocks`（`template-validator.ts:883`）全仓仅有定义、无任何调用，0% 覆盖——属死代码，删除或接入需产品语义拍板，本轮未改；下一批覆盖率候选 `ui/full-writer/template-vars-builder.ts`（br 401/699）、`shared/file-system-port.ts`（br 88/133）。
+- 下一步主线：Notice 存量只剩各文件守卫/进度类，尾盘结束（notice 权重已下调至 0.75）；下一批优先 gate-fix（any 基线可 306→298 收紧，需与 ZCode 同步避免并发误伤）/ test-hardening（按未覆盖分支实测排序）。知识库面板装配（`renderKnowledgeTab`）不再作为切片候选。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
