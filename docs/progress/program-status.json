@@ -572,6 +572,12 @@
     {
       "date": "2026-11-06",
       "group": "G7",
+      "summary": "第三十七批（Trae 第 37 轮，B1 引导真实回归）：agent-mode-alignment 8→12 用例，新增 realFlow() 直调 resolveCreationFlow——覆盖长篇 56%/章节写作/成稿导出阻塞、短篇 25%/分节写作、剧本 20% 分镜表→30% 分集写作、旧端口无 flow 不输出阶段行；零源码改动",
+      "evidence": "tests/unit/engine/agent-mode-alignment.test.ts + docs/PLAN.md 第 37 轮"
+    },
+    {
+      "date": "2026-11-06",
+      "group": "G7",
       "summary": "v4.53.0 第一批（v5 最小闭环 B2/B3/B4/B5）：①B3 商业化出版检查 shared/publication-profile.ts（三模式阻断/建议 + 文案，7 用例），导出弹窗新增「严格出版检查（阻断导出）」；②B2 工作台「创作阶段」改为 CreationFlowSnapshot 真实快照（ui/agent-workbench/stage-panel.ts，5 用例），删除硬编码 8 阶段，agent-port 注入 flow；③B4 自动化状态单一真相源（删除 Vault 根旧副本）+ scripts/check-automation.mjs 入 preflight；④B5 新增用户手册、商业化指南、双自动化运维手册。全量 586 文件 / 6,398 用例、tsc 0、lint 0 error/1,809 warnings、any 260/260；B1 engine 侧 flow 契约待 ZCode。",
       "evidence": "ui/agent-workbench/stage-panel.ts + shared/publication-profile.ts + scripts/check-automation.mjs + docs/guides/USER-GUIDE.md + docs/guides/COMMERCIAL-GUIDE.md + docs/handbook/13-dual-automation-ops.md"
     },
