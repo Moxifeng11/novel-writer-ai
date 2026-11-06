@@ -1,10 +1,9 @@
 {
-  "total": 306,
-  "generatedAt": "2026-11-05",
+  "total": 298,
+  "generatedAt": "2026-11-06",
   "files": {
     "engine/deconstruction-scheduler.ts": 22,
     "ui/components/smart-chart.ts": 16,
-    "ui/co-writing-view.ts": 9,
     "ui/full-writer/intervention-controller.ts": 9,
     "ui/views/knowledge-base-modals.ts": 9,
     "services/worker-manager.ts": 7,
@@ -86,6 +85,7 @@
     "shared/prompt-manager-types.ts": 1,
     "shared/store/middleware/logger.ts": 1,
     "ui/character-recognition-modal.ts": 1,
+    "ui/co-writing-view.ts": 1,
     "ui/components/character-review-panel.ts": 1,
     "ui/cowrite/history-modal.ts": 1,
     "ui/cowrite/iterate-instruction-modal.ts": 1,
