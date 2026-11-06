@@ -2,6 +2,8 @@
  * publication-profile.test.ts — 商业化出版检查
  */
 import { describe, expect, it } from 'vitest';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import {
     buildPublicationFacts,
     checkPublicationReadiness,
@@ -268,5 +270,40 @@ describe('splitUnitsByBody', () => {
         ]);
         expect(nonEmptyIndexes).toEqual([0]);
         expect(emptyLabels).toEqual(['第2章 待写', '第3章']);
+    });
+});
+
+describe('导出弹窗接线（B3 三档交付与导出范围）', () => {
+    const root = path.resolve(__dirname, '../../..');
+    const modal = fs.readFileSync(path.join(root, 'ui/export-manuscript-modal.ts'), 'utf8');
+
+    it('平台投稿档锁定整包并禁用范围选择', () => {
+        // submission 分支必须同时回到 full（内存状态）与下拉显示值，否则放宽后仍会按残留下拉走「仅已写」
+        const branch = /if \(this\.publicationLevel === 'submission'\) \{[\s\S]*?\n\s*\}/.exec(modal)?.[0] ?? '';
+        expect(branch).toContain("this.publicationScope = 'full';");
+        expect(branch).toContain("this.scopeDropdownRef?.setValue('full');");
+        expect(branch).toContain('this.scopeSettingRef?.setDisabled(true);');
+    });
+
+    it('「仅已写单元」在出版检查前过滤，且投稿档不生效', () => {
+        expect(modal).toContain(
+            "const writtenOnly = this.publicationScope === 'written-only' && this.publicationLevel !== 'submission';",
+        );
+        const splitAt = modal.indexOf('splitUnitsByBody(unitsForCheck)');
+        const checkAt = modal.indexOf('checkPublicationReadiness(buildPublicationFacts(');
+        expect(splitAt).toBeGreaterThan(-1);
+        // 顺序不可颠倒：先过滤再检查，否则空骨架仍会把成品档钉死
+        expect(checkAt).toBeGreaterThan(splitAt);
+        // 检查项必须使用过滤后的 exportChapters，而不是原始 chapters
+        expect(modal).toContain("scope: writtenOnly ? 'written-only' : 'full'");
+        expect(modal).toContain('excludeEmptyUnits: writtenOnly');
+    });
+
+    it('阻断项中止导出，成品档提示改用仅已写单元', () => {
+        const blockersAt = modal.indexOf('publicationIssues.filter(issue => issue.level === ');
+        expect(blockersAt).toBeGreaterThan(-1);
+        const tail = modal.slice(blockersAt, blockersAt + 600);
+        expect(tail).toContain('throw new Error');
+        expect(modal).toContain('可将「导出范围」改为「仅已写单元」后重试。');
     });
 });

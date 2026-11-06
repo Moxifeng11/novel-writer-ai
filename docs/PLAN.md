@@ -315,6 +315,12 @@ Agent（harness）
   - 验证：`check:any` **206→198**（-8，98→96 个文件）；`typecheck` 0；`eslint` 两文件 0 error；`build` + `check:bundle` 通过（main.js 4,866,833 与第 51 轮产物逐字节一致，纯类型擦除）；定向 `chapter-generation-unify` **32/32**；全量 `preflight:release` 589 文件 / 6,451 用例 exit 0。
   - 边界：未动 `engine/**`、ZCode 文件集与门禁阈值；`.any-baseline.json` 未自行收紧（目标 198 交 ZCode 收单批）；未新增测试（纯类型收窄无行为分支）。
   - 评分与元迭代：第 51 轮 test-hardening → 本轮 gate-fix（换型合规），gate-fix 维持 1.76；第 48 轮预告的「v5-product 2.00→1.50」本轮触发评估，按互调机制**仅提议、不自行生效**，待 ZCode 信箱确认。
+- 第 53 轮（test-hardening；v5 收口，补最后一个零测试 seam）：
+  - 盘点（先问是不是）：v5 B1–B5 代码与文档全部落地且各有回归（B2 阶段面板 15 例 + `agent-port` flow 3 例、B3 出版语义 20 例、B4 `check:automation` 在 `preflight`、B5 三文档在库），无重复交付；`grep tests` 显示 `ui/export-manuscript-modal.ts` 零引用，是唯一未覆盖 seam。
+  - 新增 3 用例（`tests/unit/shared/publication-profile.test.ts` 20→23）：①「平台投稿」分支必须同时回写内存 `scope='full'`、下拉 `setValue('full')`、`setDisabled(true)`；②`splitUnitsByBody` 必须先于 `checkPublicationReadiness`，且检查项使用过滤后的单元与 `writtenOnly` 派生的 `scope`/`excludeEmptyUnits`；③`blocker` 必须 `throw` 中止导出，`finished` 档附「改为仅已写单元」提示。
+  - 做法：沿用仓内「源码契约」范式（同 `agent-stage-panel.test.ts`），断言业务语义而非 UI 细节；零生产代码改动、零新增路径、未新增 `any`。
+  - 验证：定向 23/23；`typecheck` 0；`tests/**` 属 eslint ignore（口径不适用）；全量 `preflight` 由 ZCode 版本节点统一跑。
+  - 并发说明：执行期间工作树为 ZCode 的 v4.62.0 版本节点（20 M + 新增 release note），按 §7.4 未碰其文件集；基线用例数 6,451→6,454 已托付 ZCode 落账。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
