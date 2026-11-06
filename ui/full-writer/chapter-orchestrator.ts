@@ -6,6 +6,7 @@
  * 因此步骤文件、校验、截断标记、失效传播、手动重生成全部保留。
  */
 import { ALL_FULL_STEPS } from '@/engine/step-definitions';
+import type { StepRunCtx } from '@/engine/step-definitions';
 import { isBodySettled } from './batch-targets';
 import type { ChapterRunMode } from '@/shared/chapter-run';
 
@@ -13,8 +14,8 @@ export type { ChapterRunMode } from '@/shared/chapter-run';
 
 /** 仅描述编排器实际用到的 StepRunner 能力，避免 UI -> engine 的运行时/类型环。 */
 interface ChapterStepRunner {
-    executePlanningCombined(ctx: any, options?: { signal?: AbortSignal; force?: boolean }): Promise<{ success: boolean; error?: string }>;
-    executeStepsSequential(stepKeys: string[], ctx: any): Promise<unknown>;
+    executePlanningCombined(ctx: StepRunCtx, options?: { signal?: AbortSignal; force?: boolean }): Promise<{ success: boolean; error?: string }>;
+    executeStepsSequential(stepKeys: string[], ctx: StepRunCtx): Promise<unknown>;
 }
 
 interface ChapterRunState {
@@ -73,7 +74,7 @@ export interface ChapterRunResult {
 export interface ChapterOrchestratorDeps {
     stepRunner: ChapterStepRunner;
     state: ChapterRunState;
-    makeCtx: () => any;
+    makeCtx: () => StepRunCtx;
     loadContext: () => Promise<void>;
     render: (container: HTMLElement) => Promise<void>;
     getTabContent: () => HTMLElement;
@@ -425,7 +426,7 @@ export class ChapterOrchestrator {
         }
     }
 
-    private async activateStep(stepKey: string, ctx: any): Promise<void> {
+    private async activateStep(stepKey: string, ctx: StepRunCtx): Promise<void> {
         const step = ALL_FULL_STEPS.find(s => s.key === stepKey);
         if (!step) return;
         ctx.setCurrentStepIndex(step.index);
@@ -433,7 +434,7 @@ export class ChapterOrchestrator {
         await this.deps.render(this.deps.getTabContent());
     }
 
-    private async runOneStep(stepKey: string, ctx: any, tabContent: HTMLElement): Promise<void> {
+    private async runOneStep(stepKey: string, ctx: StepRunCtx, tabContent: HTMLElement): Promise<void> {
         await this.activateStep(stepKey, ctx);
         // 单步看门狗：网络/模型无响应时不再无限停留，超时主动取消并抛可重试错误。
         const timeoutMs = this.deps.stepTimeoutMs ?? 8 * 60_000;

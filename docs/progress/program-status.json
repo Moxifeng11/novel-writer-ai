@@ -571,6 +571,12 @@
   "changelog": [
     {
       "date": "2026-11-07",
+      "group": "G7",
+      "summary": "第 49 轮（gate-fix）：ui/full-writer/chapter-orchestrator.ts any 5→0（+2/−5）——新增 import type StepRunCtx，替换本地 ChapterStepRunner 两个 execute*、makeCtx 返回值、activateStep/runOneStep 参数共 5 处 any；零逻辑改动、未动 engine/**。实测 check:any 217→212（-5，100→99 文件）；定向 11/11；全量 588 文件 / 6,448 用例全绿；main.js 4,866,857 与版本基线一致（纯类型擦除）",
+      "evidence": "ui/full-writer/chapter-orchestrator.ts + docs/PLAN.md 第 49 轮"
+    },
+    {
+      "date": "2026-11-07",
       "group": "G3",
       "summary": "第 48 轮（v5-product，元迭代轮）：B3 出版检查边界 +3 用例（纯测试、零生产代码改动）——①draft+EPUB 缺作者为建议而非阻断，且草稿空稿仍 no-body 阻断；②finished 仅传 scope=written-only（未传 excludeEmptyUnits）也豁免空单元，锁住 OR 分支；③submission 下 written-only 仍阻断空单元（投稿必须整包）；④buildPublicationFacts 对 CRLF frontmatter 剥离判空、重复标题按 trim 归并。定向 publication-profile 20/20、agent-stage-panel 20/20、agent-mode-alignment 12/12；全量 preflight:release 588 文件 / 6,448 用例 exit 0；check:any 217/217；元迭代裁决：gate-fix 维持 1.90（第 44 轮回降条件未触发；第 49 轮触发条件为提议，待 ZCode 确认后生效），v5-product 2.00 维持、第 52 轮评估降至 1.50",
       "evidence": "tests/unit/shared/publication-profile.test.ts + docs/PLAN.md 第 48 轮"
