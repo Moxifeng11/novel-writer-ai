@@ -2,6 +2,18 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.58.0（2026-11-06）
+
+### 📤 严格模式口径澄清（整包交付）
+
+- 导出弹窗严格模式描述改为：「按整包交付校验：缺作者、空正文（含任一空单元）、严重字数不足等阻断项会中止导出；只导样章或部分单元请保持关闭」。
+- `docs/guides/USER-GUIDE.md` / `COMMERCIAL-GUIDE.md` 同步整包口径，避免用户只导样章时被误阻断。
+- **无行为变更**，仅文案与文档；bundle +90B 已 note 登记。
+
+### 🧪 验证
+
+- 全量 **586 文件 / 6,423 用例** 全绿；preflight 全绿；any 251/251。
+
 ## v4.57.0（2026-11-06）
 
 ### 🐛 B2：Agent 工作台阶段面板竞态修复

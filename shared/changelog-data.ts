@@ -21,6 +21,21 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.58.0',
+        date: '2026-11-06',
+        title: '严格模式整包口径澄清',
+        sections: [
+            {
+                type: 'improved',
+                label: '📤 导出',
+                items: [
+                    '严格模式说明改为整包交付口径（只导样章请关闭）',
+                    'USER-GUIDE / COMMERCIAL-GUIDE 同步；无行为变更',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.57.0',
         date: '2026-11-06',
         title: 'B2 阶段面板竞态修复',
