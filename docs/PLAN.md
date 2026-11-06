@@ -270,6 +270,12 @@ Agent（harness）
   - 评分与换型：第 40–43 轮连续 gate-fix，本轮按协议强制换型为 test-hardening；元迭代审视点在 canonical 状态记录（gate-fix 维持 1.90 并设「连续 2 轮无测试增量且 any 降幅 <6 → 回降 1.76」复核条件）。
   - 验证：定向 6/6；`typecheck` 0；`check:any` 222 不变；改动文件 eslint 0 error；bundle 因删除守卫净减（不触顶）。
   - 边界：未动 `engine/**`、ZCode 文件集与既有类型基线；`docs/progress/*` 与版本节点文件属 ZCode 在途批次，仅同步本轮测试计数并在回执中声明。
+- 第 46 轮（test-hardening；兑现 ZCode 信箱「第 45 轮」派工，两方编号差见 canonical 台账）：
+  - 目标：为 `engine/deconstruction-scheduler.ts` 的 abort 路径补回归，验证第 44 轮 `WorkerManager.rejectTask` 修复在真实调用方生效；只改 `tests/unit/engine/`，不动 engine 源码。
+  - 新增 2 用例（`tests/unit/engine/deconstruction-scheduler-abort.test.ts`，新路径 1）：①在途 worker 任务收到 abort → `runDimensionWithFallback` 以 `Task cancelled` 及时结算（100ms race 断言，不回退即超时）；②维度已完成后再 abort 不触发 `cancel`，结果不变（用计数适配器锁住 abort 监听器已移除）。
+  - 缺口核实（先问是不是）：既有 `deconstruction-scheduler.test.ts` 与 `-a2.test.ts` 只覆盖 `cancelByBook` 的状态位，无一例断言「取消后等待中的 Promise 会结算」；第 44 轮仅在 `WorkerManager` 层测了 `cancelAll`，调用方集成路径确实无回归。
+  - 验证：定向 2/2；全量 `preflight:release` exit 0（588 文件 / 6,445 用例，覆盖率 statements 43.39%）；`typecheck` 0；`check:any` 222/222 未动；新增文件不进 bundle。
+  - 边界：仅新增测试文件，未改 `engine/**`、未改任何源码、未放松门禁、未新增 any；`program-status` 测试计数 587/6,443→588/6,445 并已 `program:render`。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

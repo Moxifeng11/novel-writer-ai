@@ -5,8 +5,8 @@
   "baseline": {
     "version": "4.60.0",
     "tests": {
-      "files": 587,
-      "cases": 6443
+      "files": 588,
+      "cases": 6445
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 142,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 43 轮收单后实测 git rev-list --count=ahead 142，HEAD 503ba8c；第 40–43 轮四个 any 收窄批次已全部收单并收紧基线 251→222，v4.60.0 版本节点提交后 ahead 143）"
+    "localCommitsAhead": 144,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 45 轮收单后实测 git rev-list --count=ahead 144，HEAD 1c3c2b0；第 40–44 轮 any 收窄 251→222 与取消挂起修复均已收单，v4.60.0 版本节点已提交）"
   },
   "groups": [
     {
