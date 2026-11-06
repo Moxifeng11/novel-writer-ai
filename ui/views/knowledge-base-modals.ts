@@ -9,12 +9,21 @@ import { isImeComposing } from '@/shared/keyboard';
 
 const log = createLogger('KnowledgeBaseModals');
 
+/** 分类渠道下拉值；与 BookBasicInfo.genreChannel 共用同一联合类型，避免两处口径漂移 */
+type GenreChannelKey = NonNullable<BookBasicInfo['genreChannel']>;
+
+/** 桌面端 FileSystemAdapter 的目录能力；移动端 adapter 无 mkdir，沿用原运行时行为 */
+type MkdirCapableAdapter = {
+    mkdir(path: string): Promise<void>;
+    write(path: string, data: string): Promise<void>;
+};
+
 /**
  * 导入书籍弹窗。
  */
 export class ImportBookModal extends Modal {
     private kbManager: KnowledgeBaseManager | null;
-    private onImported: (book: any) => void;
+    private onImported: (book: BookBasicInfo) => void;
     private nameValue: string = '';
     private authorValue: string = '';
     private sourcePath: string = '';
@@ -22,7 +31,7 @@ export class ImportBookModal extends Modal {
     /** 导入进行中：确认按钮不禁用的话，双击会建出「书名 (2)」 */
     private importInFlight = false;
 
-    constructor(app: App, kbManager: KnowledgeBaseManager | null, onImported: (book: any) => void) {
+    constructor(app: App, kbManager: KnowledgeBaseManager | null, onImported: (book: BookBasicInfo) => void) {
         super(app);
         this.kbManager = kbManager;
         this.onImported = onImported;
@@ -239,7 +248,7 @@ export class ImportBookModal extends Modal {
             });
 
             if (content) {
-                const fs = (this.app.vault.adapter as any);
+                const fs = this.app.vault.adapter as unknown as MkdirCapableAdapter;
                 const baseDir = this.kbManager.getBaseDir();
                 // 必须用 book.name：addBook 遇到同名会自动加「(2)」后缀，
                 // 沿用入参 name 会把源文本写进另一个目录，
@@ -285,7 +294,7 @@ export class EditBookModal extends Modal {
     private nameValue: string;
     private authorValue: string;
     private synopsisValue: string;
-    private channelValue: string;
+    private channelValue: GenreChannelKey | '';
     private genreValue: string;
     private subGenreValue: string;
     private customTagsList: string[];
@@ -361,7 +370,7 @@ export class EditBookModal extends Modal {
                 d.addOption('neutral', '中性');
                 d.setValue(this.channelValue);
                 d.onChange(v => {
-                    this.channelValue = v;
+                    this.channelValue = v as GenreChannelKey | '';
                     this.genreValue = '';
                     this.subGenreValue = '';
                     this.render();
@@ -374,7 +383,7 @@ export class EditBookModal extends Modal {
             .addDropdown(d => {
                 d.addOption('', '请选择');
                 if (this.kb && this.channelValue) {
-                    this.kb.getGenresByCategory(this.channelValue as any).forEach(g => {
+                    this.kb.getGenresByCategory(this.channelValue).forEach(g => {
                         d.addOption(g.id, g.name);
                     });
                 } else if (this.kb) {
@@ -494,7 +503,7 @@ export class EditBookModal extends Modal {
             return;
         }
 
-        const channelChanged = (this.channelValue as any) !== (this.book.genreChannel || '');
+        const channelChanged = this.channelValue !== (this.book.genreChannel || '');
         const genreChanged = (this.genreValue || '') !== (this.book.primaryGenre || '');
         const subGenreChanged = (this.subGenreValue || '') !== (this.book.primarySubGenre || '');
 
@@ -502,7 +511,7 @@ export class EditBookModal extends Modal {
             name: this.nameValue.trim(),
             author: this.authorValue.trim(),
             synopsis: this.synopsisValue.trim(),
-            genreChannel: (this.channelValue as any) || undefined,
+            genreChannel: this.channelValue || undefined,
             primaryGenre: this.genreValue || undefined,
             primarySubGenre: this.subGenreValue || undefined,
             customTags: this.customTagsList,
@@ -510,7 +519,7 @@ export class EditBookModal extends Modal {
             if (channelChanged || genreChanged || subGenreChanged) {
                 try {
                     await this.kbManager!.recordGenreCorrection(this.book.id, {
-                        channel: (this.channelValue as any) || undefined,
+                        channel: this.channelValue || undefined,
                         primaryGenre: this.genreValue || undefined,
                         primarySubGenre: this.subGenreValue || undefined,
                     });
@@ -1189,7 +1198,7 @@ export class BatchOperationsModal extends Modal {
             cls: 'nw-u-d-flex nw-u-gap-8px nw-u-marginbottom-16px'
         });
 
-        const operations = [
+        const operations: Array<{ key: 'classify'; label: string; desc: string }> = [
             { key: 'classify', label: '🏷️ 自动分类', desc: '自动识别书籍分类' },
         ];
 
@@ -1200,7 +1209,7 @@ export class BatchOperationsModal extends Modal {
                 attr: { style: 'flex:1;padding:12px;text-align:left;' }
             });
             btn.addEventListener('click', () => {
-                this.operation = op.key as any;
+                this.operation = op.key;
                 this.render();
             });
         });
@@ -1318,7 +1327,7 @@ export class BatchOperationsModal extends Modal {
         const executeBtn = btnGroup.createEl('button', {
             text: this.processing ? '处理中...' : '执行',
             cls: 'nw-btn nw-btn-primary',
-            attr: { disabled: this.selectedBooks.size === 0 || this.processing ? 'true' : null as any }
+            attr: { disabled: this.selectedBooks.size === 0 || this.processing ? 'true' : null }
         });
         executeBtn.addEventListener('click', async () => {
             if (this.selectedBooks.size === 0 || this.processing) return;

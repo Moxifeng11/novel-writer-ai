@@ -1,8 +1,7 @@
 {
-  "total": 251,
+  "total": 242,
   "generatedAt": "2026-11-06",
   "files": {
-    "ui/views/knowledge-base-modals.ts": 9,
     "services/worker-manager.ts": 7,
     "ui/manage-providers-modal.ts": 7,
     "engine/ai-outline-generator.ts": 6,

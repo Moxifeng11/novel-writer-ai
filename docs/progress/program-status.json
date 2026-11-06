@@ -19,7 +19,7 @@
       "check:write-entry"
     ],
     "localCommitsAhead": 138,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-06 第 29 轮实测 git rev-list --count origin/master..master=115；第 28 轮 smart-chart 与 any 基线收紧已由 ZCode 提交为 dfc8292 / eb92893，本轮 chapter-state-manager 测试仍在工作树未提交）"
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-06 第 40 轮实测 git rev-list --count origin/master..master=138，HEAD 768fe34；第 39 轮 4 路径已由 ZCode 随 768fe34 收单）"
   },
   "groups": [
     {
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-06",
+      "group": "G7",
+      "summary": "第 40 轮（gate-fix，ZCode 候选③）：ui/views/knowledge-base-modals.ts any 9→0（纯类型收窄、零运行时行为变化）——①onImported 回调与构造函数参数由 any 收紧为 BookBasicInfo；②vault.adapter as any 改为窄接口 MkdirCapableAdapter（mkdir/write，保留桌面端 mkdir 能力与移动端回退）；③channelValue: string 收紧为 GenreChannelKey | ''（复用 BookBasicInfo['genreChannel'] 联合类型，删除 4 处 as any）；④批量操作数组显式字面量 key 类型，删除 op.key as any；⑤attr.disabled 去掉 null as any（Obsidian DomElementInfo.attr 本就允许 null）。实测 check:any 251→242（-9，105→104 个文件）；typecheck 0；全量 586 文件 / 6,437 用例全绿；main.js 4,866,080 字节与基线一致（类型擦除零字节变化）；eslint 改动文件 0 error（7 既有 warning）",
+      "evidence": "ui/views/knowledge-base-modals.ts + docs/PLAN.md 第 40 轮"
+    },
     {
       "date": "2026-11-06",
       "group": "G7",

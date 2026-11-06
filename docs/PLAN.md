@@ -237,6 +237,12 @@ Agent（harness）
   - 语义观察（不擅自改）：剧本的 `storyboard` 与 `research/outline` 同受 `written>0` 的「既有正文跳过」规则影响，存量项目若缺分镜表也会显示 done（提示文案为「已按既有正文跳过」）。与长篇/短篇口径一致，如产品要让分镜表对剧本强制必填，需用户/ZCode 拍板后改 `shared/creation-flow.ts`（Trae 不改语义）。
   - 验证：定向 **20/20**；`npm run typecheck` 0 错误；eslint 对该测试文件在 ignore 范围（0 error）；零源码改动 → bundle/any 基线不受影响；`program:render` → `gen:docs` → `check:docs` / `check:program` 绿。全量 `preflight` 按第 30 轮协作口径由 ZCode 统一跑。
   - 边界：只改既有测试文件，零新增路径、零源码改动；未动 `engine/**` 与 ZCode 文件集。
+- 第 40 轮（gate-fix，ZCode 候选③；本轮为元迭代轮）：
+  - 目标：`ui/views/knowledge-base-modals.ts` any 9→0（纯类型收窄、零运行时行为变化，复用第 28 轮 smart-chart 范式）。
+  - 改动（单文件 9 处）：①`onImported` 字段与构造函数参数 `(book: any)` → `BookBasicInfo`；②`this.app.vault.adapter as any` → 本地窄接口 `MkdirCapableAdapter`（`mkdir`/`write`），保留桌面端 mkdir 与移动端回退；③`channelValue: string` → `GenreChannelKey | ''`（`NonNullable<BookBasicInfo['genreChannel']>`），`getGenresByCategory` 与 `updateBook`/`recordGenreCorrection` 的 4 处 `as any` 自然消失，下拉 `onChange` 仅保留 1 处 `as GenreChannelKey | ''`；④批量操作数组显式 `Array<{ key: 'classify'; … }>`，删除 `op.key as any`；⑤`attr.disabled` 的 `null as any` 删除（`DomElementInfo.attr` 本就允许 `null`）。
+  - 验证：`check:any` **251→242**（-9，105→104 文件）；`typecheck` 0；全量 `npm test` **586 文件 / 6,437 用例全绿**；`build` + `check:bundle` 通过，`main.js` 4,866,080 字节与 v4.59.0 基线一致（类型擦除未产生运行时差异）；改动文件 eslint 0 error（7 条既有 warning）。零新增路径、零新增用例（纯类型，不造只测断言的伪用例）。
+  - 边界：未动 `engine/**`、ZCode 文件集与既有行为语义；`.any-baseline.json` 未自行收紧（按协作口径由 ZCode 收单时执行 `npm run any:baseline` 到 242）。
+  - 元迭代（第 40 轮）：`test-hardening` 2.13→2.00 封顶（多次 +10% 已过度主导；封顶值与 v5-product 一致），其余权重维持；`bundleBudgetBytesPerBatch=200` 继续有效（本轮类型擦除未动用）。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
