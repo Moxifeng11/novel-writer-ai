@@ -19,6 +19,7 @@ import { SettlementEngine } from '@/engine/settlement-engine';
 import { writeChapterStateSnapshot } from '@/engine/chapter-state-snapshot-service';
 import { ENGINE_NAMES } from '@/engine/engine-registry';
 import { pjStepDir, pjNarrativeOverview } from '@/shared/paths';
+import { listFolderFiles } from '@/shared/vault-tree';
 import { resolveBodyFilePath } from '@/engine/chapter-utils';
 import { stripFrontmatter } from '@/utils/helpers';
 import { isTemplateSkeleton, isStepResultComplete } from '@/engine/step-validator';
@@ -406,7 +407,8 @@ export class BatchPipelineRunner {
         const folder = this.app.vault.getAbstractFileByPath(chapDir);
         if (!folder) return results;
 
-        const files = this.app.vault.getFiles().filter(f => f.path.startsWith(`${chapDir}/`));
+        // 断点续跑每章都会走这里：只遍历本章目录，避免 vault.getFiles() 全库扫描（G6-4）
+        const files = listFolderFiles<TFile>(this.app.vault, chapDir, { recursive: true });
         for (const [stepKey, type] of Object.entries(CHAPTER_FILE_TYPES)) {
             if (stepKey === 'body') continue;
             const file = findChapterFile(files, chapDir, type, this.app);

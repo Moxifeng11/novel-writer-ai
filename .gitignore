@@ -9,6 +9,7 @@ workers/
 
 # Coverage
 coverage/
+tmp/
 
 # Test output
 playwright-report/

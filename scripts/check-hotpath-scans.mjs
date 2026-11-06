@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * check-hotpath-scans.mjs — G6-4：热路径不得退回全库 getFiles()
+ * check-hotpath-scans.mjs — G6-4：热路径不得退回全库扫描
  *
  * 落盘、结算、字数统计每写一章会跑很多次；一次 vault.getFiles() 就是
- * 整库文件数组的构造，且随用户其它笔记数量线性变慢。
+ * 整库文件数组的构造，且随用户其它笔记数量线性变慢。getMarkdownFiles()
+ * 与 getAllLoadedFiles() 同样是 O(全库)，只是多/少一层过滤，一并禁止。
  * 这些路径必须走 shared/vault-tree.ts 的目录遍历（getAbstractFileByPath + children）。
  *
  * 新增热路径模块时把它加进 HOT_FILES，并在文件里保留「为什么不能全库扫」的注释。
@@ -28,6 +29,9 @@ const HOT_FILES = [
     'engine/analysis-report-engine.ts',
     'services/writing-stats-service.ts',
     'ui/continue-chapters-modal.ts',
+    // 每章断点续跑 / 每次质量刷新都会调用的 UI 侧热路径（第 21 轮接入）
+    'ui/full-writer/batch-pipeline-runner.ts',
+    'ui/cowrite/realtime-quality-controller.ts',
 ];
 
 /** 去掉注释，避免把说明文字当成调用 */
@@ -37,6 +41,14 @@ function stripComments(source) {
         .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
 }
 
+// 三种 API 都会构造整库文件数组（getMarkdownFiles 只是多一层扩展名过滤，仍是 O(全库)），
+// 热路径一律禁止；只查 getFiles() 会给「换成 getMarkdownFiles 规避门禁」留后门。
+const FULL_SCAN_APIS = [
+    { pattern: /\bgetFiles\s*\(/, name: 'vault.getFiles()', hint: '请改用 listFolderFiles/listChapterBodyFiles' },
+    { pattern: /\bgetMarkdownFiles\s*\(/, name: 'vault.getMarkdownFiles()', hint: '请先用 getAbstractFileByPath + children 限定目录' },
+    { pattern: /\bgetAllLoadedFiles\s*\(/, name: 'vault.getAllLoadedFiles()', hint: '请先用 getAbstractFileByPath + children 限定目录' },
+];
+
 const offenders = [];
 for (const rel of HOT_FILES) {
     const file = path.join(ROOT, rel);
@@ -45,9 +57,12 @@ for (const rel of HOT_FILES) {
         continue;
     }
     const source = stripComments(fs.readFileSync(file, 'utf8'));
-    if (/\bgetFiles\s*\(/.test(source)) {
-        const line = source.split('\n').findIndex(text => /\bgetFiles\s*\(/.test(text)) + 1;
-        offenders.push(`${rel}:${line} 调用了 vault.getFiles()，请改用 listFolderFiles/listChapterBodyFiles`);
+    const lines = source.split('\n');
+    for (const api of FULL_SCAN_APIS) {
+        const index = lines.findIndex(text => api.pattern.test(text));
+        if (index < 0) continue;
+        offenders.push(`${rel}:${index + 1} 调用了 ${api.name}，${api.hint}`);
+        break;
     }
 }
 
@@ -57,4 +72,4 @@ if (offenders.length > 0) {
     process.exit(1);
 }
 
-console.log(`✅ 热路径 0 次全库 getFiles()（${HOT_FILES.length} 个模块）`);
+console.log(`✅ 热路径 0 次全库扫描（getFiles/getMarkdownFiles/getAllLoadedFiles，${HOT_FILES.length} 个模块）`);

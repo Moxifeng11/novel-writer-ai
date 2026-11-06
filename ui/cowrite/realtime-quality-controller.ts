@@ -31,6 +31,7 @@ import {
     type PreviousChapterSource,
 } from '@/shared/previous-chapter-window';
 import { SUBDIR_BODY_ROOT } from '@/shared/paths';
+import { listFolderFiles } from '@/shared/vault-tree';
 import { createLogger } from '@/shared/logger';
 
 const log = createLogger('RealtimeQuality');
@@ -397,8 +398,8 @@ export class RealtimeQualityController {
         if (chapterNum <= 1 || !project || !volume) return [];
 
         const bodyRoot = `${project}/${SUBDIR_BODY_ROOT}/`;
-        const files = this.host.app.vault.getFiles()
-            .filter(file => file.path.startsWith(bodyRoot))
+        // 每次质量刷新都会走到这里：只遍历正文目录，避免 vault.getFiles() 全库扫描（G6-4）
+        const files = listFolderFiles<TFile>(this.host.app.vault, bodyRoot, { recursive: true })
             .map(file => ({ path: file.path, name: file.name }));
         const candidates = selectPreviousChapterFiles(files, chapterNum);
         if (candidates.length === 0) return [];
