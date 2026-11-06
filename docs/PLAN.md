@@ -75,6 +75,15 @@ Agent（harness）
 
 ## 三、待办矩阵（按风险与成本）
 
+### v5 最小闭环（2026-11-06 启动）
+
+- B1（ZCode）：`AgentProjectStatus` 增 `flow`，`get_project_status` 输出三模式阶段快照，prompt 按 `nextStageId` 引导。
+- B2（Trae）：`agent-port` 注入 flow；工作台阶段面板改为统一快照（删除硬编码 8 阶段）。
+- B3（Trae）：`shared/publication-profile.ts` 三模式出版阻断/建议；导出弹窗严格模式。
+- B4（Trae）：自动化状态单一真相源 + `check:automation` 入 preflight；Trae 任务改 v5 使命。
+- B5（Trae）：`docs/guides/USER-GUIDE.md`、`docs/guides/COMMERCIAL-GUIDE.md`、`docs/handbook/13-dual-automation-ops.md`。
+- 验收：三模式阶段面板真实进度 + Agent 可答下一步；严格出版检查可阻断；`npm run check:automation` 通过；全量门禁不回归。
+
 ### v4.42.0 四批（2026-11-05，已完成）
 
 - `ui/co-writing-view.ts`：Notice 第六批 40 处（成功/失败/告警，60→20），守卫/进度类保留；抽出 `ui/co-writing/markdown-shortcut.ts` / `quality-highlight.ts` / `friendly-error.ts` / `kb-panel.ts`，文件 4,986 → **4,645 行**（达标 ≤4,700）。
@@ -161,6 +170,20 @@ Agent（harness）
   - 验证：定向口径（仅本文件驱动）**st 67.35%→76.16%、br 68.78%→77.70%、lines 68.45%→76.19%**，原未覆盖的 L444-454（备份守卫/成功/失败）全部点亮；`npx vitest run` 31/31 通过。
   - 余量：`engine/body-writer.ts` 单文件口径剩余未覆盖为辅助函数分支（`dirOf`/`project` 推导等），由其他 4 个 body-writer 测试文件在全量口径补齐；本轮目标是数据安全主链，不再为覆盖率凑数。
   - 积压不变：14 M（本轮仅改既有 M 文件，测试清单 +6 用例）；`HEAD` 仍 `e390636`。
+- 第 28 轮（gate-fix，ZCode 派工；积压已清零（`95fbf40`，ahead 112），`newPathBudget` 解锁）：
+  - 依据：ZCode 拍板「smart-chart any 16→4（含测试守护）」，`engine/deconstruction-scheduler.ts` any 22 由其本人于 `95fbf40` 收紧（本轮实测 engine 已 0）；第 23 轮实测非 engine 首位即 `ui/components/smart-chart.ts` 16。
+  - 改动（`ui/components/smart-chart.ts`，16→0，零运行时行为变化）：新增 `ChartData` 联合（13 种图表数据形态）、`ChartRenderOptions`（padding/size/width/height/showLegend）、`chartRenderer<T,O>` 单点泛型适配函数；14 个注册项的内联 `(data: any, opts) => fn(data, opts)` 改为 `chartRenderer(fn)`；类内 `data`/`setData`/`getSortedData`（含两条比较器）/`baseOpts`/`isScatterData`/`transformData`/`recommendType` 全部去 any，统一 unknown + 结构化断言（排序比较器语义逐条对齐 `(a.value ?? 0) - (b.value ?? 0)` / 反向）。
+  - 测试守护（`tests/unit/ui/smart-chart.test.ts` +2）：①十四种图表类型逐型渲染均产出内容（防注册表接线断裂）；②`bar` 渲染器收到 `width: 400 / height: 250 / padding: {40,20,50,50}`（防适配函数丢选项）。定向 37/37 通过。
+  - 实测：`check:any` **276→260**（-16，106 个文件）；`main.js` **4,855,784 < 4,855,864**（ZCode v4.52.0 基线，-80B）；`typecheck` 0 错误。
+  - 基线处理（协作口径）：本轮不自行改 `.any-baseline.json`（该文件随 `95fbf40` 刚落地，改动归属 ZCode 批次）；已回执实测 260，请 ZCode 在提交本批时执行 `npm run any:baseline` 将上限收紧到 260（余量 16 暂留，不放宽）。
+  - 第 28 轮元迭代（每 4 轮）：gate-fix **1.76→1.90**（本轮首次以类型收窄直接降低 any 密度、成本低且验证强；按封顶口径只给 +8% 不给 +10%）；docs-correction **1.30→1.20**（台账属强制记账，不抢占优化动作，第 20 轮已降一档，本轮再降）；test-hardening 1.45 / audit-only 1.40 / perf 1.49 / notice 0.75 / slice 0.70 维持（无新基准、避免审计自循环）；`explorationRate` 0.15 未触发（最高分候选与上轮不同型，多样性无需干预）；`newPathBudget` 由 0 解除为 1（仅本轮 2 个文件）。
+- 第 29 轮（test-hardening，换型执行；上轮 gate-fix，本轮避开「为降 any 而降 any」的指标化倾向）：
+  - 前提纠偏（先问是不是）：第 28 轮遗留候选写的是 `ui/states/state-manager.ts`（br 54.6%），实测**该文件不存在**，真实文件为 `ui/states/chapter-state-manager.ts`（403 行）；且定向口径实测 br **72.86%**（51/70），并非 54.6%——该数字应为全量口径旧值，本轮以 8 个引用测试文件驱动重测为基线。
+  - 缺口归因：未覆盖分支集中在**失效标脏链**——`dependsOnBody` 正文 mtime 比较（L325-331）、正文已结算跳过（L336-338）、审计→修正时序（L350-358）、分析报告 CRITICAL_FAIL → finalFix（L364-369）、`step_status=reviewed`（L239）、`chapDir` 空/非文件夹早退（L111/L115），此前全部零覆盖；这些分支决定「哪些步骤需要重做」，错了会让用户重跑已完成步骤或漏跑必要步骤。
+  - 改动（仅 `tests/unit/ui/chapter-state-recognition.test.ts`，+7 用例 / +160 行，零源码改动、零行为变化）：①空 `chapDir` 早退且不清空既有状态；②`chapDir` 非 `TFolder` 早退；③质量控制文件晚于修正记录时把 `fix` 标脏且移出 `stepCompleted`；④分析报告含 `CRITICAL_FAIL` 时标脏 `finalFix`；⑤正文 `已完稿` 时**跳过** mtime/时序标脏（防结算后被误判需重做）；⑥正文 mtime 新于审查文件时把 `fix/qualityControl/analysisReport` 全部标脏；⑦`step_status=reviewed` 的空内容文件仍计为 `complete`。
+  - 验证：`npx vitest run tests/unit/ui/chapter-state-recognition.test.ts` **10/10 通过**；定向覆盖率 **st 70.65%→85.07%（142→171/201）、br 72.86%→87.14%（51→61/70）、fn 88.9%→100%（8→9/9）**，上述零覆盖行段全部点亮。
+  - 成本与边界：未新增 app 假件范式（复用既有 `new App()` + 手写 `TFolder.children` 记忆桩），未动 `engine/**` 与被 ZCode 认领的 `ui/agent-workbench*` 文件集。
+  - 本轮性质：与 ZCode 在途的 agent-workbench 特性（6 个新路径）并行；本轮仅 +1 待提交路径，文件集无交集，ZCode 可单独分批提交。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

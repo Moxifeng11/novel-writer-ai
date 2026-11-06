@@ -86,6 +86,13 @@ npm run bench:hotpath        # 200 章基准（见 scripts/bench/get-files-hotpa
 
 回归建议：`main.js` 体积变化超过 2%（约 ±97KB）时复测一次本节基线，并记录差值来源。
 
+### 5.2 v5 自动化与出版检查（2026-11-06）
+
+- `npm run check:automation` 只读取 JSON/文本（状态台账、HANDOFF、版本文件、信箱末行），无目录遍历；纳入 `preflight` 后为常量级开销。
+- 工作台阶段面板复用 `collectCreationFlowState` 的既有采集结果，不新增全库扫描。
+- 出版检查为纯内存计算（章节内容在导出时已加载），严格模式只增加一次遍历，不改变导出 I/O 次数。
+- 回归口径：`check:automation` 必须通过；`bench:hotpath` 不新增违规模块；导出与阶段面板改动按链 4 手工验收。
+
 ## 6. 相关
 
 - 门禁表：[generated/gates.md](generated/gates.md)

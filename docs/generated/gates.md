@@ -14,6 +14,7 @@
 | `npm run build:styles` | 拼接 styles-src → styles.css |
 | `npm run check-engines` | EngineRegistry 实例白名单/超限检查 |
 | `npm run check:any` | — |
+| `npm run check:automation` | — |
 | `npm run check:bundle` | — |
 | `npm run check:changelog` | — |
 | `npm run check:css` | CSS 预算与命名棘轮 |
@@ -76,14 +77,15 @@
 13. npm run check:hotpaths
 14. npm run check:write-entry
 15. npm run check:linked-scenarios
-16. npm run check:dsh-isolation
-17. npm run check:jsdoc
-18. npm run check:any
-19. npm run check:changelog
-20. npm run check:docs
-21. npm run build
-22. npm run check:bundle
-23. npm run check:release
+16. npm run check:automation
+17. npm run check:dsh-isolation
+18. npm run check:jsdoc
+19. npm run check:any
+20. npm run check:changelog
+21. npm run check:docs
+22. npm run build
+23. npm run check:bundle
+24. npm run check:release
 ```
 
 ## 说明

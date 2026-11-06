@@ -1,6 +1,6 @@
 # 联动场景回归清单（G7-5）
 
-> 单模块全绿不代表链路可用。本清单定义三条跨模块联动链：
+> 单模块全绿不代表链路可用。本清单定义四条跨模块联动链：
 > 每次改动落在哪条链上，就按对应一节跑完自动化 + 手工验收；
 > `npm run check:linked-scenarios` 会校验清单引用的入口仍然存在（防文档腐烂）。
 
@@ -11,9 +11,9 @@
 | 步骤引擎 / 提示词 / 结算 / 导出 | 链 1 | 单测 + E2E 全套 + 手工导出一次 |
 | 知识库 / 向量检索 / 注入 / RAG 归因 | 链 2 | 单测 + `tests/integration/linked-scenarios.test.ts` |
 | 创建向导 / 模式内容结构 / 领域工厂 | 链 3 | 单测 + E2E 短篇用例 |
-| 跨链（如上下文总线、路径常量） | 全部三条 | 全套 E2E + 三条手工验收 |
+| 跨链（如上下文总线、路径常量） | 全部四条 | 全套 E2E + 四条手工验收 |
 
-三条链的自动化兜底：`npm run preflight` + `npx playwright test --project=obsidian-electron`
+四条链的自动化兜底：`npm run preflight` + `npx playwright test --project=obsidian-electron`
 （E2E 需要 `OBSIDIAN_PATH`，没配置时整组显式 skip，不算通过）。
 
 ---
@@ -77,6 +77,22 @@
 2. 短篇写一节正文，确认 `status` 回写且单元列表刷新。
 3. 在短篇项目里执行长篇专属命令，确认给出「仅适用于长篇」类提示而不是静默失败。
 4. 创建过程中强制失败（占位目录冲突），确认工厂回滚、不留半成品目录。
+
+---
+
+## 链 4：Agent 阶段引导 → 商业化导出检查
+
+| 环节 | 入口 | 产物 | 自动化覆盖 |
+|---|---|---|---|
+| 阶段快照 | 工作台左栏阶段面板 / `get_project_status` | 统一 `CreationFlowSnapshot`（三模式阶段/进度/阻塞/下一步） | `agent-stage-panel.test`、`creation-flow.test` |
+| 出版检查 | 导出弹窗「严格出版检查」 | blockers / warnings；严格模式中止导出 | `publication-profile.test`、`export-precheck.test` |
+| 自动化配置 | `npm run check:automation` | 单一 loop-state + HANDOFF/版本/信箱一致 | `scripts/check-automation.mjs` |
+
+手工验收：
+
+1. 三模式各建一个项目，工作台阶段面板显示阶段与 `.project`/章节目录一致；点击阶段把指令预填到输入框。
+2. 对 Agent 说「我现在到哪一步 / 下一步做什么」，回答与阶段面板一致。
+3. 导出时分别测试：不填作者、留一个空章、字数不足；确认非严格模式给出提示，严格模式中止并说明阻断项。
 
 ---
 

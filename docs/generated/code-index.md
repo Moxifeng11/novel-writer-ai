@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132753 | 1607 | 1346 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
-| `shared/` | 173 | 38982 | 1556 | 1292 | 83% |
+| `shared/` | 174 | 39157 | 1564 | 1300 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 238 | 101082 | 729 | 633 | 87% |
+| `ui/` | 239 | 101282 | 733 | 637 | 87% |
 
 ## 文件清单
 
@@ -481,6 +481,7 @@
 | `shared/prose-naturalizer.ts` | 238 | 3 | 3 |
 | `shared/protagonist.ts` | 40 | 2 | 2 |
 | `shared/provider-detection.ts` | 240 | 4 | 4 |
+| `shared/publication-profile.ts` | 175 | 8 | 8 |
 | `shared/quality-baseline.ts` | 184 | 10 | 10 |
 | `shared/quality-benchmark.ts` | 112 | 6 | 6 |
 | `shared/quality-grade.ts` | 117 | 9 | 9 |
@@ -546,7 +547,8 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 525 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1704 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1746 | 1 | 1 |
+| `ui/agent-workbench/stage-panel.ts` | 101 | 4 | 4 |
 | `ui/ai-builder-modal.ts` | 1141 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |
 | `ui/asset-registry-modal.ts` | 151 | 1 | 1 |
@@ -631,7 +633,7 @@
 | `ui/draggable-panel.ts` | 307 | 2 | 2 |
 | `ui/existing-entity-manager.ts` | 553 | 1 | 1 |
 | `ui/expand-text-modal.ts` | 236 | 1 | 1 |
-| `ui/export-manuscript-modal.ts` | 570 | 4 | 4 |
+| `ui/export-manuscript-modal.ts` | 616 | 4 | 4 |
 | `ui/fanfic-prompt-notice.ts` | 20 | 1 | 1 |
 | `ui/fanfic-review-modal.ts` | 419 | 1 | 1 |
 | `ui/fingerprint-blend-modal.ts` | 629 | 2 | 2 |
@@ -727,7 +729,7 @@
 | `ui/review-chapter-modal.ts` | 70 | 1 | 1 |
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
-| `ui/services/agent-port.ts` | 624 | 2 | 2 |
+| `ui/services/agent-port.ts` | 635 | 2 | 2 |
 | `ui/services/agent-session-store.ts` | 211 | 5 | 5 |
 | `ui/services/agent-spill-store.ts` | 105 | 3 | 2 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |

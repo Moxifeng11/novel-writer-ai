@@ -22,6 +22,9 @@
 | 维护文档本身 | [handbook/10-documentation-policy.md](handbook/10-documentation-policy.md) |
 | 依赖升级 / 平台兼容 | [handbook/11-dependency-and-platform-compatibility.md](handbook/11-dependency-and-platform-compatibility.md) |
 | 模板加载/渲染/缓存/销毁 | [handbook/12-template-lifecycle.md](handbook/12-template-lifecycle.md) |
+| 双自动化运维（Trae/ZCode） | [handbook/13-dual-automation-ops.md](handbook/13-dual-automation-ops.md) |
+| 用户使用手册 | [guides/USER-GUIDE.md](guides/USER-GUIDE.md) |
+| 商业化落地指南 | [guides/COMMERCIAL-GUIDE.md](guides/COMMERCIAL-GUIDE.md) |
 | 产品定位与用户 | [PRODUCT.md](PRODUCT.md) |
 | 下一阶段排期 | [roadmap/ROADMAP.md](roadmap/ROADMAP.md) |
 | 当前架构审计与问题清单 | [audits/v4.27.0-architecture-and-roadmap.md](audits/v4.27.0-architecture-and-roadmap.md) |
