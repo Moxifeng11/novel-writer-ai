@@ -215,6 +215,55 @@ describe('TabController — 切章取消在跑任务、重渲染不换 stepResul
     });
 });
 
+describe('InterventionController — 执行边界（幂等 / 步骤切换）', () => {
+    async function makeHarness(stepIndex: () => number) {
+        const { InterventionController } = await import('../../../ui/full-writer/intervention-controller');
+        const { ALL_FULL_STEPS } = await import('../../../engine/step-runner');
+        const executed = vi.fn(async () => undefined);
+        const setVar = vi.fn();
+        const deps = {
+            getVars: () => ({}),
+            setVar,
+            deleteVar: vi.fn(),
+            getStepResults: () => ({}),
+            setStepResult: vi.fn(),
+            getAIEngine: () => ({} as never),
+            getStepRunner: () => ({ executeCurrentStep: executed } as never),
+            getCurrentStepIndex: stepIndex,
+            makeStepRunCtx: () => ({} as never),
+            onRenderNeeded: vi.fn(async () => undefined),
+            getFlashModel: () => 'flash',
+        };
+        const controller = new InterventionController({} as never, {} as never, deps);
+        (controller as any).currentReport = {
+            summary: '调整开头',
+            actions: [{ type: 'modify', target: '第2段', content: '改成雨夜' }],
+        };
+        return { controller, executed, setVar, ALL_FULL_STEPS };
+    }
+
+    it('同一报告重复点击「确认执行」只跑一次（并发/幂等守卫）', async () => {
+        const { controller, executed, setVar, ALL_FULL_STEPS } = await makeHarness(() => 1);
+        (controller as any).reportStepKey = ALL_FULL_STEPS[1].key;
+        await Promise.all([
+            (controller as any).executeIntervention(),
+            (controller as any).executeIntervention(),
+        ]);
+        expect(executed).toHaveBeenCalledTimes(1);
+        expect(setVar).toHaveBeenCalledTimes(1);
+    });
+
+    it('理解后步骤切换则拒绝执行，不写入 userIntervention', async () => {
+        let index = 1;
+        const { controller, executed, setVar, ALL_FULL_STEPS } = await makeHarness(() => index);
+        (controller as any).reportStepKey = ALL_FULL_STEPS[1].key;
+        index = 2;
+        await (controller as any).executeIntervention();
+        expect(executed).not.toHaveBeenCalled();
+        expect(setVar).not.toHaveBeenCalled();
+    });
+});
+
 describe('SceneOutlineController — 防抖保存写回编辑发生时的章节', () => {
     const originalWindow = (globalThis as any).window;
 

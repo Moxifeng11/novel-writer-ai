@@ -10,8 +10,19 @@ import { App, Notice } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { AIEngine } from '@/engine/ai-engine';
 import { StepRunner, ALL_FULL_STEPS } from '@/engine/step-runner';
+import type { StepRunCtx } from '@/engine/step-runner';
 import { showProgress, hideProgress, showError } from '@/utils/helpers';
 import { createLogger } from '@/shared/logger';
+
+/** 语音识别结果事件（只声明本文件用到的字段） */
+interface SpeechResultEvent {
+    results: ArrayLike<ArrayLike<{ transcript: string }>>;
+}
+
+/** 语音识别错误事件 */
+interface SpeechErrorEvent {
+    error: string;
+}
 
 
 const log = createLogger('InterventionController');
@@ -34,15 +45,15 @@ export interface InterventionReport {
  * InterventionDeps 类型定义。
  */
 export interface InterventionDeps {
-    getVars: () => Record<string, any>;
-    setVar: (key: string, value: any) => void;
+    getVars: () => Record<string, string>;
+    setVar: (key: string, value: string) => void;
     deleteVar: (key: string) => void;
     getStepResults: () => Record<string, string>;
     setStepResult: (key: string, value: string) => void;
     getAIEngine: () => AIEngine;
     getStepRunner: () => StepRunner;
     getCurrentStepIndex: () => number;
-    makeStepRunCtx: () => any;
+    makeStepRunCtx: () => StepRunCtx;
     onRenderNeeded: () => Promise<void>;
     getFlashModel: () => string;
 }
@@ -145,8 +156,8 @@ export class InterventionController {
             this.reportStepKey = this.getCurrentStepKey();
             this.renderReport(report);
             new Notice('✅ AI 理解完成，请确认报告');
-        } catch (e: any) {
-            showError(`AI 理解失败: ${e.message}`);
+        } catch (e) {
+            showError(`AI 理解失败: ${e instanceof Error ? e.message : String(e)}`);
         } finally {
             hideProgress();
         }
@@ -299,7 +310,7 @@ ${userInput}
         }
         this.executing = true;
 
-        const interventionText = this.currentReport.actions.map((a: any) =>
+        const interventionText = this.currentReport.actions.map((a) =>
             `[${a.type}] ${a.target}: ${a.content}`
         ).join('\n');
 
@@ -340,8 +351,8 @@ ${userInput}
             interimResults: boolean;
             start(): void;
             stop(): void;
-            onresult: ((event: any) => void) | null;
-            onerror: ((event: any) => void) | null;
+            onresult: ((event: SpeechResultEvent) => void) | null;
+            onerror: ((event: SpeechErrorEvent) => void) | null;
         };
         const w = window as unknown as { webkitSpeechRecognition?: SpeechRecognitionCtor; SpeechRecognition?: SpeechRecognitionCtor };
         const SpeechRecognition = w.webkitSpeechRecognition ?? w.SpeechRecognition;
@@ -376,7 +387,7 @@ ${userInput}
             }
         });
 
-        recognition.onresult = (event: any) => {
+        recognition.onresult = (event) => {
             let transcript = '';
             for (let i = 0; i < event.results.length; i++) {
                 transcript += event.results[i][0].transcript;
@@ -384,7 +395,7 @@ ${userInput}
             this.inputEl.value = transcript;
         };
 
-        recognition.onerror = (event: any) => {
+        recognition.onerror = (event) => {
             log.error('Speech recognition error:', event.error);
             this.inputEl.placeholder = '输入您的介入意见...';
             isRecording = false;
