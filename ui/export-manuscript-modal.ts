@@ -5,7 +5,7 @@
  * HTML 带打印样式，可在浏览器中打印为 PDF；EPUB/DOCX 由本地构建器生成二进制。
  */
 
-import { App, Modal, Notice, Setting, TFile } from 'obsidian';
+import { App, Modal, Notice, Setting, TFile, type DropdownComponent } from 'obsidian';
 import { isChapterSettledText } from '@/shared/chapter-status';
 import type NovelWriterPlugin from '@/main';
 import {
@@ -25,7 +25,7 @@ import { showErrorNotice, showSuccessNotice, showWarningNotice } from './compone
 import type { CreationMode } from '@/shared/creation-mode';
 import { collectModeManuscript, listModeUnits } from '@/shared/mode-content';
 import { formatExportPrecheck } from '@/shared/export-precheck';
-import { buildPublicationFacts, checkPublicationReadiness, formatPublicationReport } from '@/shared/publication-profile';
+import { buildPublicationFacts, checkPublicationReadiness, formatPublicationReport, PUBLICATION_LEVEL_LABELS, splitUnitsByBody, type PublicationLevel, type PublicationScope } from '@/shared/publication-profile';
 import { getExecutionLedger } from '@/services/execution-ledger';
 import type { JobRunContext } from '@/services/job-service';
 import { yieldToUI } from '@/shared/yield';
@@ -96,8 +96,12 @@ export class ExportManuscriptModal extends Modal {
     private textBom = false;
     /** EPUB 是否带封面（读取项目内 封面/cover.png|jpg|jpeg|webp） */
     private includeCover = true;
-    /** 严格出版检查：勾选后阻断项会中止导出 */
-    private strictPublication = false;
+    /** 交付级别（默认成品：阻断空单元/无正文，字数与作者仅提示） */
+    private publicationLevel: PublicationLevel = 'finished';
+    /** 导出范围：full 整包 / written-only 仅已写单元 */
+    private publicationScope: PublicationScope = 'full';
+    private scopeSettingRef: Setting | null = null;
+    private scopeDropdownRef: DropdownComponent | null = null;
 
     private summaryEl!: HTMLElement;
     private hintEl!: HTMLElement;
@@ -206,13 +210,41 @@ export class ExportManuscriptModal extends Modal {
             );
 
         new Setting(contentEl)
-            .setName('严格出版检查（阻断导出）')
-            .setDesc('勾选后按整包交付校验：缺作者、空正文（含任一空单元）、严重字数不足等阻断项会中止导出；只导样章或部分单元请保持关闭')
-            .addToggle((toggle) =>
-                toggle.setValue(this.strictPublication).onChange((value) => {
-                    this.strictPublication = value;
-                })
-            );
+            .setName('交付检查')
+            .setDesc('草稿仅提示；成品阻断空单元/无正文；平台投稿额外要求作者（全格式）与字数下限一半')
+            .addDropdown((dropdown) => {
+                for (const [value, label] of Object.entries(PUBLICATION_LEVEL_LABELS)) {
+                    dropdown.addOption(value, label);
+                }
+                dropdown.setValue(this.publicationLevel);
+                dropdown.onChange((value) => {
+                    this.publicationLevel = value as PublicationLevel;
+                    // 平台投稿必须整包：强制 full 并禁用范围选择
+                    if (this.publicationLevel === 'submission') {
+                        this.publicationScope = 'full';
+                        this.scopeDropdownRef?.setValue('full');
+                        this.scopeSettingRef?.setDisabled(true);
+                    } else {
+                        this.scopeSettingRef?.setDisabled(false);
+                    }
+                    this.syncFormatRows();
+                    this.refreshHint();
+                });
+            });
+
+        const scopeSetting = new Setting(contentEl)
+            .setName('导出范围')
+            .setDesc('「仅已写单元」会跳过空正文单元（批量建章留下的骨架），不会出现在导出文件里')
+            .addDropdown((dropdown) => {
+                dropdown.addOption('full', '全部单元（整包）');
+                dropdown.addOption('written-only', '仅已写单元（跳过空单元）');
+                dropdown.setValue(this.publicationScope);
+                dropdown.onChange((value) => {
+                    this.publicationScope = value as PublicationScope;
+                });
+                this.scopeDropdownRef = dropdown;
+            });
+        this.scopeSettingRef = scopeSetting;
 
         this.summaryEl = contentEl.createDiv({ cls: 'nw-export-summary' });
         this.hintEl = contentEl.createDiv({ cls: 'nw-export-hint' });
@@ -300,7 +332,12 @@ export class ExportManuscriptModal extends Modal {
                 ? '包含集标题'
                 : '包含章标题';
         if (this.authorRowEl) {
-            this.authorRowEl.style.display = this.format === 'epub' || this.format === 'docx' ? '' : 'none';
+            const needsAuthorRow = this.format === 'epub' || this.format === 'docx' || this.publicationLevel === 'submission';
+            this.authorRowEl.style.display = needsAuthorRow ? '' : 'none';
+            const nameEl = this.authorRowEl.querySelector('.setting-item-name');
+            if (nameEl) {
+                nameEl.setText(this.publicationLevel === 'submission' ? '作者（平台投稿必填）' : '作者（EPUB/DOCX 元数据）');
+            }
         }
         if (this.bomRowEl) {
             this.bomRowEl.style.display = this.format === 'text' ? '' : 'none';
@@ -367,6 +404,25 @@ export class ExportManuscriptModal extends Modal {
             return;
         }
 
+        // 交付检查范围：平台投稿强制整包；其余档可选「仅已写单元」并跳过空骨架
+        const unitsForCheck = chapters.map(chapter => ({
+            unit: chapter.chapter,
+            title: chapter.title,
+            content: chapter.content,
+        }));
+        const writtenOnly = this.publicationScope === 'written-only' && this.publicationLevel !== 'submission';
+        let exportChapters = chapters;
+        let skippedEmptyUnits = 0;
+        if (writtenOnly) {
+            const split = splitUnitsByBody(unitsForCheck);
+            exportChapters = split.nonEmptyIndexes.map(index => chapters[index]);
+            skippedEmptyUnits = split.emptyLabels.length;
+            if (exportChapters.length === 0) {
+                new Notice(`⚠️ 没有已写正文可导出（已跳过 ${skippedEmptyUnits} 个空${this.unitLabel}）`);
+                return;
+            }
+        }
+
         // v4.25/v4.28 导出前质量门槛（只告警不阻断）：长篇列未结算/未过质控的章，
         // 短篇/剧本列未完成的节/集，让「导出」成为一次显式的质量确认点，而不是静默打包半成品。
         let precheck: string | null = null;
@@ -403,12 +459,12 @@ export class ExportManuscriptModal extends Modal {
         let platformPackage: PlatformPackageInfo | null = null;
         if (this.creationMode === 'short' || this.creationMode === 'script') {
             const preResearch = await readPreResearchData(this.app.vault.adapter, this.project);
-            const platformWordCount = chapters.reduce((sum, chapter) => sum + countCjkChars(chapter.content), 0);
+            const platformWordCount = exportChapters.reduce((sum, chapter) => sum + countCjkChars(chapter.content), 0);
             platformPackage = buildPlatformPackage({
                 mode: this.creationMode,
                 project: this.project,
                 preResearch,
-                chapters,
+                chapters: exportChapters,
                 wordCount: platformWordCount,
             });
             if (platformPackage.hits.length > 0) {
@@ -417,9 +473,9 @@ export class ExportManuscriptModal extends Modal {
 ` : ''}⚠️ 平台敏感词预检：${hits}。建议导出前替换或确认上下文。`;
             }
         }
-        // 商业化出版检查：阻断项默认仅提示；勾选严格模式时中止导出（job 会标失败并展示原因）
+        // 商业化出版检查：按交付级别分级（草稿仅提示 / 成品阻断空单元 / 投稿全格式作者+字数）
         const publicationIssues = checkPublicationReadiness(buildPublicationFacts(
-            chapters.map(chapter => ({ unit: chapter.chapter, title: chapter.title, content: chapter.content })),
+            exportChapters.map(chapter => ({ unit: chapter.chapter, title: chapter.title, content: chapter.content })),
             {
                 mode: this.creationMode,
                 title: this.project.split('/').pop() || this.project,
@@ -427,13 +483,17 @@ export class ExportManuscriptModal extends Modal {
                 unitLabel: this.unitLabel,
                 includeChapterTitles: this.includeChapterTitles,
                 format: this.format,
+                level: this.publicationLevel,
+                scope: writtenOnly ? 'written-only' : 'full',
+                excludeEmptyUnits: writtenOnly,
             },
         ));
-        if (this.strictPublication) {
-            const blockers = publicationIssues.filter(issue => issue.level === 'blocker');
-            if (blockers.length > 0) {
-                throw new Error(formatPublicationReport(blockers) || '出版检查未通过');
-            }
+        const blockers = publicationIssues.filter(issue => issue.level === 'blocker');
+        if (blockers.length > 0) {
+            const hint = this.publicationLevel === 'finished' && blockers.some(issue => issue.code === 'empty-units')
+                ? '\n可将「导出范围」改为「仅已写单元」后重试。'
+                : '';
+            throw new Error(`${formatPublicationReport(blockers) || '出版检查未通过'}${hint}`);
         }
         const publicationReport = formatPublicationReport(publicationIssues);
         if (publicationReport) {
@@ -478,14 +538,14 @@ export class ExportManuscriptModal extends Modal {
                 bookOptions.metadata.cover = cover;
             }
             const built = this.format === 'epub'
-                ? buildEpub(chapters, bookOptions)
-                : buildDocx(chapters, bookOptions);
+                ? buildEpub(exportChapters, bookOptions)
+                : buildDocx(exportChapters, bookOptions);
             chapterCount = built.chapterCount;
             wordCount = built.wordCount;
             emptyChapters = built.emptyChapters;
             result = await exportBinaryFile(this.app, filename, built.data, { mime: option.mime });
         } else {
-            const compiled = compileManuscript(chapters, {
+            const compiled = compileManuscript(exportChapters, {
                 format: this.format,
                 includeVolumeHeadings,
                 includeChapterTitles: this.includeChapterTitles,
@@ -508,8 +568,9 @@ export class ExportManuscriptModal extends Modal {
         if (!result.ok) return;
 
         const emptyNote = emptyChapters > 0 ? `，其中 ${emptyChapters} ${this.unitLabel}为空` : '';
+        const skippedNote = skippedEmptyUnits > 0 ? `，已跳过 ${skippedEmptyUnits} 个空${this.unitLabel}` : '';
         showSuccessNotice(
-            `已导出 ${chapterCount} ${this.unitLabel} / ${wordCount} 字${emptyNote}${platformPackage ? `（${platformPackage.platform.name}）` : ''}`,
+            `已导出 ${chapterCount} ${this.unitLabel} / ${wordCount} 字${emptyNote}${skippedNote}${platformPackage ? `（${platformPackage.platform.name}）` : ''}`,
             { timeout: 6000 }
         );
         log.info('[ExportManuscript] 导出完成:', {

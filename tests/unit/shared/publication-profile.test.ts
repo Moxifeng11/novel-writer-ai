@@ -7,6 +7,7 @@ import {
     checkPublicationReadiness,
     formatPublicationReport,
     resolvePublicationProfile,
+    splitUnitsByBody,
     type PublicationFacts,
 } from '../../../shared/publication-profile';
 
@@ -162,5 +163,80 @@ describe('formatPublicationReport', () => {
         expect(report).toContain('出版阻断');
         expect(report).toContain('书名不能为空');
         expect(report).toContain('低于出版下限');
+    });
+});
+
+
+describe('交付级别与导出范围（B3 三档口径）', () => {
+    it('draft：空单元/字数不足/缺作者均为建议，无阻断', () => {
+        const issues = checkPublicationReadiness(facts({
+            level: 'draft',
+            author: '',
+            format: 'markdown',
+            wordCount: 1000,
+            emptyUnits: ['第3章 空白'],
+            writtenCount: 199,
+        }));
+        expect(issues.every(issue => issue.level === 'warning')).toBe(true);
+        const codes = issues.map(issue => issue.code);
+        expect(codes).toEqual(expect.arrayContaining(['missing-author', 'empty-units', 'word-count-low']));
+    });
+
+    it('finished：空单元阻断；排除后豁免；字数不足仅建议', () => {
+        const blocked = checkPublicationReadiness(facts({ level: 'finished', emptyUnits: ['第3章 空白'] }));
+        expect(blocked.find(issue => issue.code === 'empty-units')?.level).toBe('blocker');
+
+        const excluded = checkPublicationReadiness(facts({
+            level: 'finished',
+            scope: 'written-only',
+            excludeEmptyUnits: true,
+            emptyUnits: ['第3章 空白'],
+        }));
+        expect(excluded.map(issue => issue.code)).not.toContain('empty-units');
+
+        const lowWords = checkPublicationReadiness(facts({ level: 'finished', wordCount: 12000 }));
+        expect(lowWords.find(issue => issue.code === 'word-count-low')?.level).toBe('warning');
+    });
+
+    it('finished：TXT/MD 缺作者仅建议，EPUB 缺作者阻断', () => {
+        const markdown = checkPublicationReadiness(facts({ level: 'finished', author: '', format: 'markdown' }));
+        expect(markdown.find(issue => issue.code === 'missing-author')?.level).toBe('warning');
+        const epub = checkPublicationReadiness(facts({ level: 'finished', author: '', format: 'epub' }));
+        expect(epub.find(issue => issue.code === 'missing-author')?.level).toBe('blocker');
+    });
+
+    it('submission：作者全格式必填、字数低于一半阻断、空单元不豁免', () => {
+        const noAuthor = checkPublicationReadiness(facts({ level: 'submission', author: '', format: 'markdown' }));
+        expect(noAuthor.find(issue => issue.code === 'missing-author')?.level).toBe('blocker');
+
+        const lowWords = checkPublicationReadiness(facts({ level: 'submission', wordCount: 40000 }));
+        expect(lowWords.find(issue => issue.code === 'word-count-too-low')?.level).toBe('blocker');
+
+        const empty = checkPublicationReadiness(facts({
+            level: 'submission',
+            emptyUnits: ['第3章 空白'],
+            excludeEmptyUnits: true,
+        }));
+        expect(empty.find(issue => issue.code === 'empty-units')?.level).toBe('blocker');
+    });
+
+    it('不传 level 时保持 v4.58.0 旧矩阵（向后兼容）', () => {
+        const legacy = checkPublicationReadiness(facts({ emptyUnits: ['第3章 空白'], wordCount: 1000, author: '' }));
+        const codes = legacy.map(issue => issue.code);
+        expect(legacy.find(issue => issue.code === 'empty-units')?.level).toBe('blocker');
+        expect(legacy.find(issue => issue.code === 'word-count-too-low')?.level).toBe('blocker');
+        expect(codes).toContain('missing-author');
+    });
+});
+
+describe('splitUnitsByBody', () => {
+    it('按剥离 frontmatter 后的正文拆分空/非空单元', () => {
+        const { nonEmptyIndexes, emptyLabels } = splitUnitsByBody([
+            { unit: '第1章', title: '开端', content: '正文' },
+            { unit: '第2章', title: '待写', content: '---\nstatus: pending\n---\n' },
+            { unit: '第3章', content: '   ' },
+        ]);
+        expect(nonEmptyIndexes).toEqual([0]);
+        expect(emptyLabels).toEqual(['第2章 待写', '第3章']);
     });
 });

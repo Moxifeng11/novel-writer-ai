@@ -27,6 +27,25 @@ export interface PublicationIssue {
 }
 
 /**
+ * 交付级别：决定检查强度（草稿只提示 / 成品阻断空单元 / 平台投稿全格式作者+字数）。
+ */
+export type PublicationLevel = 'draft' | 'finished' | 'submission';
+
+/**
+ * 导出范围：full 为整包；written-only 表示调用方已排除空单元。
+ */
+export type PublicationScope = 'full' | 'written-only';
+
+/**
+ * 交付级别文案（UI 下拉与报告复用，避免第二套）。
+ */
+export const PUBLICATION_LEVEL_LABELS: Record<PublicationLevel, string> = {
+    draft: '草稿导出（仅提示）',
+    finished: '成品导出（推荐）',
+    submission: '平台投稿（严格）',
+};
+
+/**
  * 出版检查输入事实。
  */
 export interface PublicationFacts {
@@ -50,6 +69,15 @@ export interface PublicationFacts {
     /** 导出时是否包含单元标题 */
     includeChapterTitles: boolean;
     format: PublicationFormat;
+    /**
+     * 交付级别。缺省时不传 → 沿用 v4.58.0 旧矩阵（向后兼容）；
+     * 新 UI 必须显式传入。
+     */
+    level?: PublicationLevel;
+    /** 导出范围（缺省 full） */
+    scope?: PublicationScope;
+    /** 是否已排除空单元（finished 档豁免空单元阻断；submission 不豁免） */
+    excludeEmptyUnits?: boolean;
 }
 
 /**
@@ -111,6 +139,31 @@ export function buildPublicationFacts(
 }
 
 /**
+ * 把导出单元按「正文是否为空」拆分（frontmatter 剥离后判空）。
+ *
+ * 供「仅已写单元」导出使用：调用方按 nonEmptyIndexes 过滤实际导出内容，
+ * 再以 excludeEmptyUnits=true 交给出版检查。
+ *
+ * @param units - 导出单元
+ * @returns nonEmptyIndexes：有正文的下标；emptyLabels：空单元显示名
+ * @example
+ * splitUnitsByBody([{ unit: '第1章', content: '正文' }, { unit: '第2章', content: '---\nstatus: pending\n---' }])
+ * // { nonEmptyIndexes: [0], emptyLabels: ['第2章'] }
+ */
+export function splitUnitsByBody(
+    units: ReadonlyArray<PublicationUnitInput>,
+): { nonEmptyIndexes: number[]; emptyLabels: string[] } {
+    const bodyOf = (content: string) => content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '').trim();
+    const nonEmptyIndexes: number[] = [];
+    const emptyLabels: string[] = [];
+    units.forEach((unit, index) => {
+        if (bodyOf(unit.content).length > 0) nonEmptyIndexes.push(index);
+        else emptyLabels.push(`${unit.unit}${unit.title ? ` ${unit.title}` : ''}`);
+    });
+    return { nonEmptyIndexes, emptyLabels };
+}
+
+/**
  * 出版参数档位。
  */
 export interface PublicationProfile {
@@ -157,27 +210,43 @@ export function checkPublicationReadiness(facts: PublicationFacts): PublicationI
     const profile = resolvePublicationProfile(facts.mode);
     const issues: PublicationIssue[] = [];
     const unit = facts.unitLabel || '章';
+    // level 缺省 = v4.58.0 旧矩阵（向后兼容）；新调用方显式传入三档级别
+    const legacy = facts.level === undefined;
+    const level: PublicationLevel = facts.level ?? 'finished';
+    const excludedEmpty = facts.excludeEmptyUnits === true || facts.scope === 'written-only';
 
     if (!facts.title.trim()) {
         issues.push({ level: 'blocker', code: 'missing-title', message: '书名不能为空' });
     }
-    const needAuthor = profile.requiresAuthor && (facts.format === 'epub' || facts.format === 'docx');
+
+    // 作者：投稿档全格式必填；成品档 EPUB/DOCX 必填、其它仅提示；草稿仅提示
+    const needAuthor = level === 'submission'
+        ? true
+        : (facts.format === 'epub' || facts.format === 'docx');
     if (needAuthor && !(facts.author || '').trim()) {
-        issues.push({ level: 'blocker', code: 'missing-author', message: 'EPUB/DOCX 需要填写作者元数据' });
+        const message = level === 'submission'
+            ? '平台投稿需要填写作者（所有格式）'
+            : 'EPUB/DOCX 需要填写作者元数据';
+        issues.push({ level: level === 'draft' ? 'warning' : 'blocker', code: 'missing-author', message });
+    } else if (!legacy && level !== 'submission' && !(facts.author || '').trim()) {
+        issues.push({ level: 'warning', code: 'missing-author', message: '未填写作者：平台/编辑器可能无法识别署名' });
     }
+
     if (facts.writtenCount <= 0) {
         issues.push({ level: 'blocker', code: 'no-body', message: `没有可导出的正文${unit}` });
     }
-    if (facts.emptyUnits.length > 0) {
+
+    // 空单元：旧调用始终阻断；草稿仅提示；成品可在「仅已写单元」范围下豁免；投稿必须整包
+    if (facts.emptyUnits.length > 0 && !(!legacy && level === 'finished' && excludedEmpty)) {
         issues.push({
-            level: 'blocker',
+            level: level === 'draft' ? 'warning' : 'blocker',
             code: 'empty-units',
             message: `存在 ${facts.emptyUnits.length} 个空正文${unit}（${facts.emptyUnits.slice(0, 5).join('、')}）`,
         });
     }
 
     const halfMin = Math.floor(profile.targetWords.min / 2);
-    if (facts.wordCount < halfMin) {
+    if ((legacy || level === 'submission') && facts.wordCount < halfMin) {
         issues.push({
             level: 'blocker',
             code: 'word-count-too-low',
@@ -187,9 +256,12 @@ export function checkPublicationReadiness(facts: PublicationFacts): PublicationI
         issues.push({
             level: 'warning',
             code: 'word-count-low',
-            message: `总字数 ${facts.wordCount}，低于建议下限 ${profile.targetWords.min}`,
+            message: legacy || level === 'submission'
+                ? `总字数 ${facts.wordCount}，低于建议下限 ${profile.targetWords.min}`
+                : `总字数 ${facts.wordCount}，低于建议下限 ${profile.targetWords.min}（草稿/成品档仅提示）`,
         });
     }
+
     if (facts.unitCount < profile.targetUnits.min) {
         issues.push({
             level: 'warning',

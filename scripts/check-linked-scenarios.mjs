@@ -50,7 +50,7 @@ const ANCHORS = {
         { file: 'shared/creation-flow.ts', text: 'resolveCreationFlow', why: '三模式阶段唯一事实源' },
         { file: 'ui/agent-workbench/stage-panel.ts', text: 'buildStagePanelModel', why: '工作台阶段面板投影' },
         { file: 'shared/publication-profile.ts', text: 'checkPublicationReadiness', why: '商业化出版检查' },
-        { file: 'ui/export-manuscript-modal.ts', text: 'strictPublication', why: '导出严格模式开关' },
+        { file: 'ui/export-manuscript-modal.ts', text: 'publicationLevel', why: '导出严格模式开关' },
         { file: 'scripts/check-automation.mjs', text: 'trae-loop-state.json', why: '自动化一致性门禁' },
         { file: 'tests/unit/ui/agent-stage-panel.test.ts', why: '阶段面板用例' },
         { file: 'tests/unit/shared/publication-profile.test.ts', why: '出版检查用例' },
