@@ -11,7 +11,7 @@
 | `shared/` | 174 | 39445 | 1571 | 1307 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 101407 | 735 | 639 | 87% |
+| `ui/` | 239 | 101411 | 735 | 639 | 87% |
 
 ## 文件清单
 
@@ -719,7 +719,7 @@
 | `ui/project-health-modal.ts` | 134 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 406 | 5 | 5 |
 | `ui/project-utils.ts` | 364 | 11 | 10 |
-| `ui/prompt-manager-settings.ts` | 1143 | 1 | 1 |
+| `ui/prompt-manager-settings.ts` | 1144 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 90 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 482 | 2 | 2 |
 | `ui/rebuild-chapters-modal.ts` | 325 | 1 | 1 |
@@ -759,7 +759,7 @@
 | `ui/svg-charts.ts` | 2337 | 49 | 49 |
 | `ui/template-manager.ts` | 710 | 5 | 2 |
 | `ui/tomato-rank-modal.ts` | 135 | 1 | 1 |
-| `ui/unified-entity-generate-modal.ts` | 1089 | 1 | 1 |
+| `ui/unified-entity-generate-modal.ts` | 1092 | 1 | 1 |
 | `ui/unified-entity-manager-modal.ts` | 951 | 1 | 1 |
 | `ui/usage-ledger-modal.ts` | 182 | 1 | 1 |
 | `ui/utils/worldview-utils.ts` | 103 | 1 | 1 |

@@ -308,6 +308,13 @@ Agent（harness）
   - 验证：定向 3/3；`typecheck` 0；全量 `preflight:release` 588→589 文件 / 6,448→6,451 用例 exit 0。
   - 边界：未动 `engine/**`、ZCode 文件集与门禁阈值；`.any-baseline.json` 未自行收紧（目标 206 交 ZCode）。
   - 换型说明：第 49/50 轮连续 gate-fix，按协议第 51 轮换型；ZCode 第 50 轮回执里的「之后候选」（`unified-entity-generate-modal` / `prompt-manager-settings`）属建议而非明确派工，且其路径写作 `ui/settings/prompt-manager-settings.ts`，实际文件为 `ui/prompt-manager-settings.ts`（any 实测 4）。
+- 第 52 轮（gate-fix；兑现 ZCode 第 51 轮明确派工 A；纯类型收窄、零运行时行为变化）：
+  - 目标：`ui/unified-entity-generate-modal.ts` any 4→0 + `ui/prompt-manager-settings.ts` any 4→0，合计 -8；同一批提交、回执列两文件。
+  - 路径纠偏：ZCode 写 `ui/settings/prompt-manager-settings.ts`，实际文件为 `ui/prompt-manager-settings.ts`（已实测 any 4）。
+  - 改动（两文件 8 处）：①`unified-entity-generate-modal` 新增文件内 `CategoryCardElement = HTMLElement & { _catKey?: ModelCategory }`，替换 2 处 `(card as any)._catKey`；两处 `catch (e: any)` → `catch (e)` + 结构性断言 `(e as { name?: string }).name` / `(e as { message?: string }).message`（保留 `name === 'AbortError'` 语义，DOMException 不被 `instanceof Error` 误杀），模板串 `|| e` 原样保留。②`prompt-manager-settings` 的 `renderVariantStats` 参数 `metrics: any` → `ABTestMetrics`（type-only 导入）；`const template: any` → `PromptTemplate`；两处 `updateTemplate(...) as any` 直接删除（实参本就满足 `Partial<PromptTemplate>`）。
+  - 验证：`check:any` **206→198**（-8，98→96 个文件）；`typecheck` 0；`eslint` 两文件 0 error；`build` + `check:bundle` 通过（main.js 4,866,833 与第 51 轮产物逐字节一致，纯类型擦除）；定向 `chapter-generation-unify` **32/32**；全量 `preflight:release` 589 文件 / 6,451 用例 exit 0。
+  - 边界：未动 `engine/**`、ZCode 文件集与门禁阈值；`.any-baseline.json` 未自行收紧（目标 198 交 ZCode 收单批）；未新增测试（纯类型收窄无行为分支）。
+  - 评分与元迭代：第 51 轮 test-hardening → 本轮 gate-fix（换型合规），gate-fix 维持 1.76；第 48 轮预告的「v5-product 2.00→1.50」本轮触发评估，按互调机制**仅提议、不自行生效**，待 ZCode 信箱确认。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

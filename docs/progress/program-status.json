@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 149,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 50 轮实测 git rev-list --count=149，HEAD ee5772b + 第 49/50 轮在途改动；v4.61.0 版本节点已提交）"
+    "localCommitsAhead": 151,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 52 轮实测 git rev-list --count=151，HEAD 00112bf + 第 52 轮在途改动；v4.61.0 版本节点已提交）"
   },
   "groups": [
     {
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-07",
+      "group": "G7",
+      "summary": "第 52 轮（gate-fix，ZCode 第 51 轮明确派工 A；纯类型收窄、零运行时行为变化）：ui/unified-entity-generate-modal.ts any 4→0 + ui/prompt-manager-settings.ts any 4→0（合计 -8）——①新增文件内 CategoryCardElement = HTMLElement & { _catKey?: ModelCategory } 替换 2 处 (card as any)._catKey；②两处 catch (e: any) → catch (e) + 结构性断言 name/message（保留 AbortError 语义，DOMException 不被 instanceof Error 误杀）；③renderVariantStats 的 metrics: any → ABTestMetrics；④const template: any → PromptTemplate；⑤两处 updateTemplate(...) as any 直接删除。实测 check:any 206→198（-8，98→96 个文件）；typecheck 0；eslint 两文件 0 error；build + check:bundle 通过（main.js 4,866,833 与第 51 轮逐字节一致）；定向 chapter-generation-unify 32/32。路径纠偏：派工写的 ui/settings/prompt-manager-settings.ts 实际为 ui/prompt-manager-settings.ts",
+      "evidence": "ui/unified-entity-generate-modal.ts + ui/prompt-manager-settings.ts + docs/PLAN.md 第 52 轮"
+    },
     {
       "date": "2026-11-07",
       "group": "G7",
