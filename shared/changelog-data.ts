@@ -21,6 +21,21 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.55.0',
+        date: '2026-11-06',
+        title: 'B3 出版事实纯函数化',
+        sections: [
+            {
+                type: 'improved',
+                label: '📤 导出',
+                items: [
+                    'buildPublicationFacts 抽取，导出弹窗行为等价',
+                    'B3 口径 11 用例（短篇/剧本阻断与告警）',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.54.0',
         date: '2026-11-06',
         title: 'v5 B1 阶段快照契约与 any 第三批',

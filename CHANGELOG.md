@@ -2,6 +2,18 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.55.0（2026-11-06）
+
+### 📤 B3：出版事实构建抽为纯函数（导出弹窗回归）
+
+- `shared/publication-profile.ts` 新增 `buildPublicationFacts()`：把导出弹窗内联的「章节 → 出版事实」搬运为纯函数（frontmatter 判空、重复标题分组、CJK 字数），弹窗改为调用，**零运行时行为变化**。
+- 用例 7→11，覆盖 B3 回归口径：导出单元计数；短篇 EPUB「缺作者 + 空节」= blocker 而 Markdown 缺作者不阻断；短篇字数 3 万=warning / 2 万=blocker；剧本 30 集仅 unit-count-low warning、全空集 no-body+empty-units。
+- 严格模式阻断语义**保持现方案**（缺作者仅 EPUB/DOCX 阻断、字数低于下限一半才 blocker），待用户拍板后再调整。
+
+### 🧪 测试与门禁
+
+- 全量单测 **586 文件 / 6,408 用例**；preflight 全绿（bundle +103B 按功能增长 note 登记；any 251/251）。
+
 ## v4.54.0（2026-11-06）
 
 ### 🧭 v5 B1：Agent 阶段快照契约（唯一阶段事实源）
