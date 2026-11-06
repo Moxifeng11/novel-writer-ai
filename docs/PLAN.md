@@ -212,6 +212,11 @@ Agent（harness）
   - 新增 8 用例（`tests/unit/ui/agent-stage-panel.test.ts`，8→16）：①有项目用 port 快照渲染真实阶段；②未选择项目不请求 port 并显示占位；③切换项目晚到的旧结果仍带原项目标识（可被视图丢弃）；④port 抛错按「阶段读取失败」占位、不中断；⑤port 返回 null / 缺失同样占位；⑥⑦⑧接线契约（过期结果按 `activeProject` 丢弃、初次渲染/列表刷新/切换项目三处刷新、点击阶段只 `prefillComposer` 不自动执行）。
   - 验证：定向 **16/16**；`npm run typecheck` 0 错误；改动文件 eslint 0 error（既有 warning 未顺手改）；`check:any` / `check:jsdoc` 绿；全量 `preflight` 按第 30 轮协作口径由 ZCode 统一跑。
   - 边界：未动 `engine/**`、未动 ZCode 文件集、未新增待提交路径（3 个文件均为已跟踪）；B3 严格模式产品口径仍待用户拍板。
+- 第 36 轮（v5-product，B3 严格模式文案澄清；用户拍板）：
+  - 背景：第 32/35 轮确认短篇/剧本与长篇共用同一分级器，blocker 含「任一空节/空集」；用户拍板维持策略不改语义，只补「整包交付」口径澄清，避免剧本用户把严格模式的空集阻断误判为缺陷。
+  - 做法：`ui/export-manuscript-modal.ts` 严格模式 desc 改为「勾选后按整包交付校验：缺作者、空正文（含任一空单元）、严重字数不足等阻断项会中止导出；只导样章或部分单元请保持关闭」；`docs/guides/USER-GUIDE.md` §5、`docs/guides/COMMERCIAL-GUIDE.md` §2 同步补同一口径。
+  - 验证：定向 `publication-profile` **11/11**；`npm run typecheck` 0 错误；改动文件 eslint 0 error（5 处 warning 为既有 UI 文案告警，未顺手改）；`check:bundle` **红 +90B**（main.js 4,863,063 > 基线 4,862,973），来源为纯文案字符串、无逻辑分支，按 §5.3 交 ZCode 在版本节点记录上调，Trae 不自行 `--update-baseline`。
+  - 边界：零逻辑变更、未新增测试（纯文案）、未动 `engine/**` 与 ZCode 文件集、零新增路径。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

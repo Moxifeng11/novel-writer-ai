@@ -207,7 +207,7 @@ export class ExportManuscriptModal extends Modal {
 
         new Setting(contentEl)
             .setName('严格出版检查（阻断导出）')
-            .setDesc('勾选后，缺作者、空正文、严重字数不足等阻断项会中止导出')
+            .setDesc('勾选后按整包交付校验：缺作者、空正文（含任一空单元）、严重字数不足等阻断项会中止导出；只导样章或部分单元请保持关闭')
             .addToggle((toggle) =>
                 toggle.setValue(this.strictPublication).onChange((value) => {
                     this.strictPublication = value;
