@@ -21,6 +21,21 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.60.0',
+        date: '2026-11-07',
+        title: '四个文件 any 清零（251→222）',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧹 类型安全',
+                items: [
+                    'knowledge-base-modals / manage-providers-modal / golden-opening-modal / worker-manager 共 29 处 any 清零',
+                    '全部为纯类型改动，bundle 零增长；剧本阶段面板四态回归 +4 用例',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.59.0',
         date: '2026-11-06',
         title: 'B3 三档交付级别与导出范围',

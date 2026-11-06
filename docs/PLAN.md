@@ -1,6 +1,6 @@
 # 插件结构化规划（PLAN）
 
-> 版本：v4.59.0 · 更新：2026-11-06
+> 版本：v4.60.0 · 更新：2026-11-07
 > 定位：**本文件是插件仓的唯一结构性规划入口**。代码是最终真相源；本文件只回答「有哪些模块、边界在哪、下一轮做什么」。
 > 历史文档：`docs/audits/`（各轮取证）、`docs/releases/`（各版本交付）、`CHANGELOG.md`（变更流水）。
 > **全系统优化专项**（16 板块 / 7 任务组 / 排期与验收）：[`docs/PROGRAM.md`](PROGRAM.md) · 进度报告：[`docs/progress/PROGRAM-STATUS.md`](progress/PROGRAM-STATUS.md)。
@@ -263,6 +263,13 @@ Agent（harness）
   - 边界：未动 `engine/**`、ZCode 文件集与既有行为语义；`.any-baseline.json` 未自行收紧（目标 222 交 ZCode 收单批）。
   - 同型说明：第 40/41/42 轮连续 gate-fix，本轮本应换型，但 ZCode 第 42 轮明确派工该文件，按决策阶梯「明确派工优先」执行；仍按 -20% 同型惩罚评分。
   - 并发事实：本轮执行期间 ZCode 以 b45cc64 收单第 42 轮 5 路径（golden-opening-modal + any 基线 235→229 + PLAN/两份 progress），ahead 140→141；本轮收尾以 git 实测为准（b45cc64 / ahead 141）。
+- 第 44 轮（test-hardening，元迭代轮；兑现 ZCode 第 43 轮建议与 HANDOFF 候选）：
+  - 目标：为 `services/worker-manager.ts` 补主线程降级与任务生命周期行为测试（第 43 轮泛型收窄的安全网），零新增功能、零新增 any。
+  - 新增 6 用例（`tests/unit/services/worker-manager.test.ts`，新路径 1）：①无 Worker 环境经降级处理器成功完成并透传进度；②处理器抛错时任务以同一错误拒绝；③未注册降级处理器按任务类型拒绝；④`cancelAll` 拒绝全部在跑任务且不再执行处理器；⑤`destroy` 幂等且新任务直接拒绝；⑥Worker 初始化超时（stub `Worker` + fake timers）且禁用降级时以超时错误拒绝。
+  - 真实缺陷（测试暴露，先问是不是）：`cancelTask` 先置 `task.cancelled = true`，随后调用的 `rejectTask` 带 `if (!task.cancelled)` 守卫，导致取消后的 Promise 永不结算；`engine/deconstruction-scheduler.ts` 在 `signal.abort` 时 `await taskPromise` 会永久挂起（abort 无法收敛）。修复：删除 `rejectTask` 的 `!cancelled` 守卫（重复结算对已 settle 的 Promise 为 no-op），`resolveTask`、队列、降级路径不动。
+  - 评分与换型：第 40–43 轮连续 gate-fix，本轮按协议强制换型为 test-hardening；元迭代审视点在 canonical 状态记录（gate-fix 维持 1.90 并设「连续 2 轮无测试增量且 any 降幅 <6 → 回降 1.76」复核条件）。
+  - 验证：定向 6/6；`typecheck` 0；`check:any` 222 不变；改动文件 eslint 0 error；bundle 因删除守卫净减（不触顶）。
+  - 边界：未动 `engine/**`、ZCode 文件集与既有类型基线；`docs/progress/*` 与版本节点文件属 ZCode 在途批次，仅同步本轮测试计数并在回执中声明。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

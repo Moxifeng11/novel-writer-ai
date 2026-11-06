@@ -2,6 +2,21 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.60.0（2026-11-07）
+
+### 🧹 类型收窄：四个文件 any 清零（251→222）
+
+- `ui/views/knowledge-base-modals.ts` 9→0：导入回调改 `BookBasicInfo`，`vault.adapter` 改窄接口 `MkdirCapableAdapter`（保留桌面端 mkdir 与移动端回退），`channelValue` 改 `GenreChannelKey | ''`，删除批量操作的 `op.key as any` 与 `attr.disabled` 的 `null as any`。
+- `ui/manage-providers-modal.ts` 7→0：新增只读投影 `ProviderSummary`，`settings: NovelWriterSettings`，`updateProvider` 改 `Partial<CustomProvider>`，`getRawProvider` 改 `CustomProvider | undefined`。
+- `ui/golden-opening-modal.ts` 6→0：6 处 AI 返回 JSON 的解析回调改用既有 `Partial<...>` 类型与 `unknown` 类型谓词；`Math.max` 夹取、`Array.isArray` 与默认值兜底未变。
+- `services/worker-manager.ts` 7→0：`TaskState` / `executeTask` 泛型默认值与 `reject`/`resolveTask`/`rejectTask` 参数改 `unknown`；调用点零扩散（engine/** 未动）。
+- 全部为纯类型改动：`main.js` 4,866,080 字节与 v4.59.0 逐字节一致；any 基线 251→222（104→101 个文件）。
+
+### 🧪 测试与门禁
+
+- 剧本阶段面板四态真实回归 +4 用例：冷启动阻塞链、分镜表完成但无骨架（提示「创建 12 集骨架」）、12/12 完成 85%、旧剧本无分镜表跳过前置。
+- 全量 **586 文件 / 6,437 用例**（+4）；`preflight:release` 全绿；bundle 零增长。
+
 ## v4.59.0（2026-11-06）
 
 ### 📤 B3 口径改造：三档交付级别 + 导出范围
