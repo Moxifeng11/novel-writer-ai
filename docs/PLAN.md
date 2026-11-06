@@ -255,6 +255,14 @@ Agent（harness）
   - 验证：`check:any` **235→229**（-6，103→102 文件）；`typecheck` 0；全量 `npm test` **586 文件 / 6,437 用例全绿**；`build` + `check:bundle` 通过，`main.js` 4,866,080 字节与基线逐字节一致（类型擦除零增量，未动用 200B/批预算）；改动文件 eslint 0 error（6 条既有 warning）。零新增用例（纯类型，不造只测断言的伪用例）。
   - 边界：未动 `engine/**`、ZCode 文件集与既有行为语义；`.any-baseline.json` 未自行收紧（目标 229 交 ZCode 收单批）。
   - 同型说明：第 40/41/42 轮连续三轮 gate-fix，本轮按 -20% 同型惩罚评分；第 43 轮须换型（除非 ZCode 明确派工）。选择依据：ZCode 15:34Z 派工候选②，且类型擦除不产生 bundle 增量。
+- 第 43 轮（gate-fix，ZCode 第 42 轮明确派工；纯类型收窄、零运行时行为变化）：
+  - 目标：`services/worker-manager.ts` any 7→0（Worker 主线程侧管理器；任务泛型此前默认 `any`，内部 resolve/reject 参数亦为 `any`，跨线程结果字段漂移不会被类型层拦住）。
+  - 改动（单文件 5 行）：①`interface TaskState<P = any, R = any>` → `<P = unknown, R = unknown>`；②`reject: (reason: any) => void` → `(reason: unknown) => void`（`Promise` 构造器的 `(reason?: any)` 仍可赋值，运行时不变）；③`executeTask<P = any, R = any>` → `<P = unknown, R = unknown>`；④`resolveTask(task, result: any)` → `result: unknown`；⑤`rejectTask(task, error: any)` → `error: unknown`。未新增 any、未加局部 `as`、未改公开签名形状。
+  - 调用点影响评估（先问是不是）：`executeTask` 仅 2 处外部调用——`engine/deconstruction-worker-manager.ts` 显式传 `<{ text: string; antiAiWords?: string[] }, T>`，不受默认值影响；`engine/heavy-task-worker-manager.ts` 无显式泛型但结果已 `as CancelablePromise<T>`，`Promise<unknown>` 可断言到 `Promise<T>`，故无调用点扩散（`engine/**` 未改动）。
+  - 验证：`check:any` **229→222**（-7，102→101 个文件）；`typecheck` 0；引用 WorkerManager 的 2 个测试文件 **16/16** 通过；`build` + `check:bundle` 通过，`main.js` 4,866,080 字节与基线逐字节一致（类型擦除零增量，未动用 200B/批预算）；改动文件 eslint 0 error（2 条既有 `prefer-window-timers` warning）。零新增用例（纯类型，不造只测断言的伪用例）。
+  - 边界：未动 `engine/**`、ZCode 文件集与既有行为语义；`.any-baseline.json` 未自行收紧（目标 222 交 ZCode 收单批）。
+  - 同型说明：第 40/41/42 轮连续 gate-fix，本轮本应换型，但 ZCode 第 42 轮明确派工该文件，按决策阶梯「明确派工优先」执行；仍按 -20% 同型惩罚评分。
+  - 并发事实：本轮执行期间 ZCode 以 b45cc64 收单第 42 轮 5 路径（golden-opening-modal + any 基线 235→229 + PLAN/两份 progress），ahead 140→141；本轮收尾以 git 实测为准（b45cc64 / ahead 141）。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

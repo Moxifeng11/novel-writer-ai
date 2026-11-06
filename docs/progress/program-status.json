@@ -1,7 +1,7 @@
 {
   "program": "全系统业务板块优化专项",
   "rev": "v5-plan-1",
-  "updatedAt": "2026-11-06",
+  "updatedAt": "2026-11-07",
   "baseline": {
     "version": "4.59.0",
     "tests": {
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 139,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-06 第 42 轮实测 git status -sb=ahead 139，HEAD 5ef5ed5；第 40 轮 5 路径已由 ZCode 随 5ef5ed5 收单并把 any 基线收紧到 242；第 41/42 轮 6 路径待收单）"
+    "localCommitsAhead": 141,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 43 轮实测 git rev-list --count=ahead 141，HEAD b45cc64；第 42 轮 5 路径已由 ZCode 随 b45cc64 收单并把 any 基线收紧到 229；第 43 轮 4 路径待收单）"
   },
   "groups": [
     {
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-07",
+      "group": "G7",
+      "summary": "第 43 轮（gate-fix，ZCode 第 42 轮明确派工）：services/worker-manager.ts any 7→0（纯类型收窄、零运行时行为变化）——①TaskState<P = any, R = any> → <P = unknown, R = unknown>；②reject:(reason:any) → unknown；③executeTask<P = any, R = any> → unknown 默认；④resolveTask(result:any) → unknown；⑤rejectTask(error:any) → unknown。未新增 any、未加局部断言、未改公开签名形状；调用点无扩散（deconstruction-worker-manager 显式传类型参、heavy-task-worker-manager 已 as CancelablePromise<T>）。实测 check:any 229→222（-7，102→101 个文件）；typecheck 0；引用 WorkerManager 的 2 个测试文件 16/16；build + check:bundle 通过（main.js 4,866,080 字节与基线逐字节一致）；eslint 改动文件 0 error（2 既有 warning）",
+      "evidence": "services/worker-manager.ts + docs/PLAN.md 第 43 轮"
+    },
     {
       "date": "2026-11-06",
       "group": "G7",

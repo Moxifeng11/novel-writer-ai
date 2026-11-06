@@ -40,13 +40,13 @@ const DEFAULT_OPTIONS: Required<Pick<WorkerManagerOptions, 'maxWorkers' | 'fallb
     fallbackToMain: true,
 };
 
-interface TaskState<P = any, R = any> {
+interface TaskState<P = unknown, R = unknown> {
     taskId: string;
     taskType: string;
     input: P;
     onProgress?: (progress: number, message?: string) => void;
     resolve: (value: R) => void;
-    reject: (reason: any) => void;
+    reject: (reason: unknown) => void;
     worker?: Worker;
     cancelled: boolean;
     abortController?: AbortController;
@@ -136,7 +136,7 @@ export class WorkerManager {
      * @param onProgress - 参数值
       * @returns CancelablePromise<R> 实例
      */
-    executeTask<P = any, R = any>(
+    executeTask<P = unknown, R = unknown>(
         taskType: string,
         input: P,
         onProgress?: (progress: number, message?: string) => void
@@ -374,14 +374,14 @@ export class WorkerManager {
         return !networkErrors.some((keyword) => errorMessage.toLowerCase().includes(keyword));
     }
 
-    private resolveTask(task: TaskState, result: any): void {
+    private resolveTask(task: TaskState, result: unknown): void {
         if (!task.cancelled) {
             task.resolve(result);
         }
         this.activeTasks.delete(task.taskId);
     }
 
-    private rejectTask(task: TaskState, error: any): void {
+    private rejectTask(task: TaskState, error: unknown): void {
         if (!task.cancelled) {
             task.reject(error);
         }
