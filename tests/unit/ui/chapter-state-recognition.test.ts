@@ -242,4 +242,105 @@ describe('ChapterStateManager — 失效标脏链', () => {
         expect(mgr.stepCompleted.has('outline')).toBe(true);
         expect(mgr.stepLevels['outline']).toBe('complete');
     });
+
+    it('历史 source=ai-generated 的空骨架内容至少升级为 partial', async () => {
+        const outline = makeChapterFile('第1章_大纲摘要.md', 100);
+        const app = makeChapterApp({
+            stepFiles: [outline],
+            stepContents: { [outline.path]: '一段没有大纲结构标记的普通文本。'.repeat(12) },
+            stepCaches: { [outline.path]: { frontmatter: { source: 'ai-generated' } } },
+        });
+        const mgr = new ChapterStateManager(app);
+
+        await mgr.restoreChapterState(CHAP_DIR);
+
+        // 旧数据没有 step_status，只有 source 标记；不能因结构校验不足显示为空/骨架
+        expect(['partial', 'complete']).toContain(mgr.stepLevels['outline']);
+        expect(mgr.stepLevels['outline']).not.toBe('skeleton');
+    });
+});
+
+describe('ChapterStateManager — 状态一致性契约', () => {
+    it('invalidateSteps 把已完成步骤降为 partial 并保留结果，同时标脏', () => {
+        const mgr = new ChapterStateManager(new App());
+        mgr.stepCompleted.add('fix');
+        mgr.stepLevels['fix'] = 'complete';
+        mgr.stepResults['fix'] = '已有的修正内容';
+
+        mgr.invalidateSteps(['fix']);
+
+        expect(mgr.stepCompleted.has('fix')).toBe(false);
+        expect(mgr.stepLevels['fix']).toBe('partial');
+        expect(mgr.staleSteps.has('fix')).toBe(true);
+        expect(mgr.stepResults['fix']).toBe('已有的修正内容');
+    });
+
+    it('invalidateSteps(markStale=false) 只降级不标脏', () => {
+        const mgr = new ChapterStateManager(new App());
+        mgr.stepCompleted.add('outline');
+        mgr.stepLevels['outline'] = 'complete';
+
+        mgr.invalidateSteps(['outline'], false);
+
+        expect(mgr.stepCompleted.has('outline')).toBe(false);
+        expect(mgr.stepLevels['outline']).toBe('partial');
+        expect(mgr.staleSteps.has('outline')).toBe(false);
+    });
+
+    it('updateStepState 按结构化校验分级并同步 completed/missing/results', () => {
+        const mgr = new ChapterStateManager(new App());
+
+        mgr.updateStepState('unknownStep', '字'.repeat(600));
+        expect(mgr.stepLevels['unknownStep']).toBe('complete');
+        expect(mgr.stepCompleted.has('unknownStep')).toBe(true);
+        expect(mgr.stepMissing['unknownStep']).toEqual([]);
+        expect(mgr.stepResults['unknownStep']).toHaveLength(600);
+
+        mgr.updateStepState('unknownStep', '字'.repeat(120));
+        expect(mgr.stepLevels['unknownStep']).toBe('partial');
+        expect(mgr.stepCompleted.has('unknownStep')).toBe(false);
+        expect(mgr.stepMissing['unknownStep']).toContain('内容不足');
+    });
+
+    it('updateStepState forceComplete 时空内容也算完成（历史兼容）', () => {
+        const mgr = new ChapterStateManager(new App());
+        mgr.updateStepState('outline', '', true);
+
+        expect(mgr.stepLevels['outline']).toBe('complete');
+        expect(mgr.stepCompleted.has('outline')).toBe(true);
+        expect(mgr.stepMissing['outline']).toEqual([]);
+    });
+
+    it('reset 清空全部内存状态', () => {
+        const mgr = new ChapterStateManager(new App());
+        mgr.stepCompleted.add('outline');
+        mgr.stepLevels['outline'] = 'complete';
+        mgr.stepResults['outline'] = '内容';
+        mgr.stepMissing['outline'] = ['缺项'];
+        mgr.currentStepIndex = 8;
+        mgr.generatedThisSession.add('outline');
+        mgr.staleSteps.add('outline');
+
+        mgr.reset();
+
+        expect(mgr.stepCompleted.size).toBe(0);
+        expect(mgr.stepLevels).toEqual({});
+        expect(mgr.stepResults).toEqual({});
+        expect(mgr.stepMissing).toEqual({});
+        expect(mgr.currentStepIndex).toBe(0);
+        expect(mgr.generatedThisSession.size).toBe(0);
+        expect(mgr.staleSteps.size).toBe(0);
+    });
+
+    it('migrateLegacyStepIndex 只在索引变化时迁移，无映射值原样保留', () => {
+        const mgr = new ChapterStateManager(new App());
+
+        mgr.currentStepIndex = 12;
+        mgr.migrateLegacyStepIndex();
+        expect(mgr.currentStepIndex).toBe(3);
+
+        mgr.currentStepIndex = 99;
+        mgr.migrateLegacyStepIndex();
+        expect(mgr.currentStepIndex).toBe(99);
+    });
 });
