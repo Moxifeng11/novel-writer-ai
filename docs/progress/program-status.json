@@ -3,10 +3,10 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-06",
   "baseline": {
-    "version": "4.51.0",
+    "version": "4.52.0",
     "tests": {
       "files": 584,
-      "cases": 6298
+      "cases": 6375
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 104,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-06 Trae 第 9 轮实测 git rev-list --count origin/master..master=104；Trae 改动尚未提交，提交后以实测为准）"
+    "localCommitsAhead": 110,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-06 第 10 轮实测 git rev-list --count origin/master..master=106；第 12-27 轮 Trae 改动仍在工作树未提交，ZCode 提交后以实测为准）"
   },
   "groups": [
     {
@@ -569,6 +569,66 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-06",
+      "group": "G7",
+      "summary": "第三十批（v4.52.0 待发版，Trae 第 27 轮）：test-hardening engine/body-writer.ts 备份链（P0-3 数据安全，零源码改动、零新增待提交路径）——①默认在覆盖已有非空正文前备份一次，旧正文与 {type:'manual', note:'覆盖前自动备份'} 正确交给 ChapterVersionService.saveVersion，且备份不阻断写入；②backupBeforeOverwrite=false 跳过（导入/迁移全量替换）；③旧文件只有 frontmatter 时跳过；④请求缺 project 时跳过；⑤版本服务抛错只记日志、正文照常落盘；⑥同一路径 5 分钟内二次写入只备份第一次（协同自动保存节流）。测试用 vi.spyOn(ChapterVersionService.prototype,'saveVersion') 拦截，无需给 engine 加注入点（推翻第 12 轮「不可测」结论）；tests/unit/engine/body-writer.test.ts 25 → 31 用例（+6）；定向口径 st 67.35%→76.16%、br 68.78%→77.70%、lines 68.45%→76.19%，原未覆盖 L444-454 全部点亮",
+      "evidence": "tests/unit/engine/body-writer.test.ts + docs/PLAN.md 第 27 轮"
+    },
+    {
+      "date": "2026-11-06",
+      "group": "G7",
+      "summary": "第二十九批（v4.52.0 待发版，Trae 第 26 轮）：gate-fix 热路径门禁补全覆盖面（零源码改动、零新增待提交路径）——scripts/check-hotpath-scans.mjs 原只匹配字面 getFiles(，现抽出 FULL_SCAN_APIS 同时检查 vault.getFiles() / vault.getMarkdownFiles() / vault.getAllLoadedFiles()（三者均为 O(全库)，各带整改提示），逐行扫描 10 个 HOT_FILES 模块，命中任一即失败、每文件报首个命中行；同步脚本头注释与成功输出文案。实测：check:hotpaths 通过（10 模块 0 违规）；非测试代码中 getMarkdownFiles/getAllLoadedFiles 共 7 处全部为冷路径（弹窗/工作台/建章向导/项目工具），ui/project-utils.ts#getChaptersForProject 的 2 次全库遍历调用方均为渲染/导航，不属每章热路径，故不扩充 HOT_FILES（第 21 轮「82 处中仅 2 处按章/按次」的结论未被推翻）",
+      "evidence": "scripts/check-hotpath-scans.mjs + docs/PERFORMANCE.md §2 + docs/PLAN.md 第二十六轮"
+    },
+    {
+      "date": "2026-11-06",
+      "group": "G7",
+      "summary": "第二十八批（v4.52.0 待发版，Trae 第 22 轮）：test-hardening compact 涉及实体口径（零源码改动，只改既有 M 测试文件）——①compact 找不到正文文件时退化为全量实体清单，且不调用 getInvolvedEntities；②compact 命中真实 TFile 且涉及集合非空时，涉及人物/势力/地点/物品保留描述，非涉及项只留摘要字段（人物身份/状态/动机、势力类型/领袖/地位、地点类型/区域/重要程度、物品类型/等级/归属），卷名无「第N卷」时 volN 回落 0；③涉及集合为空时仍按全量输出。tests/unit/ui/template-vars-story-context.test.ts 40 → 43 用例（+3，经 vi.hoisted + 局部 mock 仅替换 findBodyFileV4/getInvolvedEntities，其余实现保持真实）；定向口径（仅本文件驱动）br 450/699 → 490/699（+40 分支路径，未覆盖分支点 171→145）",
+      "evidence": "tests/unit/ui/template-vars-story-context.test.ts + docs/PLAN.md 第二十八批"
+    },
+    {
+      "date": "2026-11-06",
+      "group": "G7",
+      "summary": "第二十七批（v4.52.0 待发版，Trae 第 21 轮）：perf 实测 + 热路径收口——ui/full-writer/batch-pipeline-runner.ts#loadStepResults（每章断点续跑一次全库 vault.getFiles）与 ui/cowrite/realtime-quality-controller.ts#loadPreviousChapterContext（每次质量刷新一次全库扫描）改用 shared/vault-tree 的 listFolderFiles 目录遍历；两处测试 mock 同步补建 TFolder.children；check-hotpath-scans 的 HOT_FILES 8 → 10；preflight:release EXIT=0，main.js 4,855,459 → 4,855,409（-50B），用例数不变（6,366）；bench:hotpath（10,080 文件）全库 0.523ms/次 vs 目录 0.004ms/次",
+      "evidence": "ui/full-writer/batch-pipeline-runner.ts + ui/cowrite/realtime-quality-controller.ts + scripts/check-hotpath-scans.mjs + tests/unit/ui/batch-pipeline-resume.test.ts + tests/unit/ui/cowrite-previous-chapter-cache.test.ts + docs/PLAN.md 第二十七批"
+    },
+    {
+      "date": "2026-11-06",
+      "group": "G7",
+      "summary": "第二十六批（v4.52.0 待发版，Trae 第 20 轮）：test-hardening buildTemplateVars 信号段（第 19 轮审计 A 档，零源码改动，只改既有 M 文件）——灵魂层 5 条（context character_cores 摘要+9 字段主角详情+就绪、步骤结果覆盖、回退、无匹配主角、三者皆空）、上下文体检 3 条（重复自动清空并记 dropped、关闭修复只告警、旧章 staleChapter）、自定义步骤模板 2 条（命中 customTemplates 才写 _stepOverrides、无自定义不写）、变体开关 1 条（quota/v2/countableHints/experimentGroup）；tests/unit/ui/template-vars-story-context.test.ts 29 → 40 用例（+11），不改源码；定向口径（仅本文件）br 450/699、st 541/724，全量口径未重复跑不与上轮 495/699 直接相减",
+      "evidence": "tests/unit/ui/template-vars-story-context.test.ts + docs/PLAN.md 第二十六批"
+    },
+    {
+      "date": "2026-11-06",
+      "group": "G7",
+      "summary": "第二十五批（v4.52.0 待发版，Trae 第 18 轮）：test-hardening template-vars-builder 实体字段缺省段——buildContextVars 上一章六字段全空时不写摘要/审查/情绪变量；buildEntityVars 四类实体备用键取名（姓名/fileName/?、名称），非字符串（年龄 16、重要程度 5）与空值/null（当前状态 ''、效果 null、描述 ''）被跳过不产生空标签；tests/unit/ui/template-vars-story-context.test.ts 27 → 29 用例（+2），不改源码；定向覆盖率 br 468→495/699（+27 分支路径）、st 605/724 不变",
+      "evidence": "tests/unit/ui/template-vars-story-context.test.ts + docs/PLAN.md 第二十五批"
+    },
+    {
+      "date": "2026-11-06",
+      "group": "G7",
+      "summary": "第二十四批（v4.52.0 待发版，Trae 第 17 轮，台账补记）：test-hardening shared/template-validator.ts 生产调用但零直接测试的校验器分支（worldview 散文检测、outline 范围/分卷、detectTimelineStrategy 同人、loadFanficRules 空文本、fanfic 时间线缺节、YAML 块标量与尾部回退解析、textHasContent、设定库空节、文笔风格空、看板解表、地点/物品缺键）；tests/unit/shared/template-validator.test.ts 19 → 38 用例（+19），不改源码；全量口径 st 81.41%→91.15%、br 79.27%→92.34%（46→17）、lines 83.89%→91.94%，余量为 L884-942 死代码",
+      "evidence": "tests/unit/shared/template-validator.test.ts + docs/PLAN.md 第二十四批"
+    },
+    {
+      "date": "2026-11-06",
+      "group": "G7",
+      "summary": "第二十三批（v4.52.0 待发版，Trae 第 15 轮）：test-hardening buildSceneStyleHint（ui/full-writer/template-vars-builder.ts:1108-1153）边界分支——非 TFile 对象早退、仅冲突强度≥4 判 battle、仅冲突强度≥2 判 emotional、段落未命中只给节奏不给片段、infoPlan 缺失回退 stepResults、读取抛错被吞掉；tests/unit/ui/template-vars-story-context.test.ts 18 → 27 用例（+9），不改源码；定向覆盖率 br 466→468/699、st 604→605/724、fn 39→39/42（边际仅 +2 分支，因既有 pure-helpers 用例已覆盖主路径）",
+      "evidence": "tests/unit/ui/template-vars-story-context.test.ts + docs/PLAN.md 第二十三批"
+    },
+    {
+      "date": "2026-11-06",
+      "group": "G5",
+      "summary": "第二十二批（v4.52.0 待发版，Trae 第 13 轮）：test-hardening template-vars-builder 剩余纯逻辑分支——四类实体字段全量拼装（含别名与备用键）、信息债阶梯四档与临近揭示窗口文案；tests/unit/ui/template-vars-story-context.test.ts 12 → 18 用例（+6），不改源码；定向覆盖率 br 416→466/699（+50）、st 565→604/724；同轮把 PLAN 的 br 401 口径纠偏为 416",
+      "evidence": "tests/unit/ui/template-vars-story-context.test.ts + docs/PLAN.md 第二十二批"
+    },
+    {
+      "date": "2026-11-06",
+      "group": "G7",
+      "summary": "第二十一批（v4.52.0 待发版，ZCode 派工）：test-hardening engine/body-writer.ts 纯逻辑分支——parseChapterNum 三条分叉（阿拉伯数字命中 / 无章号 / 中文数字 parseInt→NaN 回落）、chapterNum 与 chapterName 双缺省时无标题行与「章/标题」字段、write 空 path 守卫、dirOf 无目录分隔符退化、defaultBodyPath 卷号/章名/章号三条路径；tests/unit/engine/body-writer.test.ts 16 → 25 用例（+9），不改源码；单跑 4 个 body-writer 测试文件 br 75.15%→85.98%、st 82.9%→88.6%、lines 85.71%→89.88%、fn 88.88%→100%",
+      "evidence": "tests/unit/engine/body-writer.test.ts + docs/PLAN.md 第二十一批"
+    },
     {
       "date": "2026-11-06",
       "group": "G5",
