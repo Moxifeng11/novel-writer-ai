@@ -1320,6 +1320,22 @@ export function scatterToHistogram(
 // Task 8/9: timelineChart（响应式 + 交互）
 // ============================================================================
 
+/** 时间线标签布局项：基础字段由映射生成，层级字段在标签排布后回填。 */
+type TimelineLayoutItem = {
+	event: TimelineEvent;
+	idx: number;
+	x: number;
+	color: string;
+	displayLabel: string;
+	labelWidth: number;
+	autoLevel: number;
+	side: number;
+	maxUpperLevel?: number;
+	maxLowerLevel?: number;
+	levelHeight?: number;
+	baseOffset?: number;
+};
+
 /**
  * 渲染时间线图。
  *
@@ -1353,7 +1369,7 @@ export function timelineChart(events: TimelineEvent[], options: TimelineChartOpt
 	const charWidth = 7;
 	const minGap = 8;
 
-	const eventsWithLayout = sortedEvents.map((event, idx) => {
+	const eventsWithLayout = sortedEvents.map((event, idx): TimelineLayoutItem => {
 		const x = padding.left + event.position * chartWidth;
 		const displayLabel = truncateText(event.label, 12);
 		const labelWidth = Math.max(40, displayLabel.length * charWidth);
@@ -1407,14 +1423,14 @@ export function timelineChart(events: TimelineEvent[], options: TimelineChartOpt
 		const baseOffset = 20;
 
 		for (const item of eventsWithLayout) {
-			(item as any).maxUpperLevel = maxUpperLevel;
-			(item as any).maxLowerLevel = maxLowerLevel;
-			(item as any).levelHeight = levelHeight;
-			(item as any).baseOffset = baseOffset;
+			item.maxUpperLevel = maxUpperLevel;
+			item.maxLowerLevel = maxLowerLevel;
+			item.levelHeight = levelHeight;
+			item.baseOffset = baseOffset;
 		}
 	}
 
-	const firstItem = eventsWithLayout[0] as any;
+	const firstItem = eventsWithLayout[0];
 	const maxUpper = firstItem?.maxUpperLevel ?? 0;
 	const maxLower = firstItem?.maxLowerLevel ?? 0;
 	const levelHeight = firstItem?.levelHeight ?? 24;

@@ -276,6 +276,11 @@ Agent（harness）
   - 缺口核实（先问是不是）：既有 `deconstruction-scheduler.test.ts` 与 `-a2.test.ts` 只覆盖 `cancelByBook` 的状态位，无一例断言「取消后等待中的 Promise 会结算」；第 44 轮仅在 `WorkerManager` 层测了 `cancelAll`，调用方集成路径确实无回归。
   - 验证：定向 2/2；全量 `preflight:release` exit 0（588 文件 / 6,445 用例，覆盖率 statements 43.39%）；`typecheck` 0；`check:any` 222/222 未动；新增文件不进 bundle。
   - 边界：仅新增测试文件，未改 `engine/**`、未改任何源码、未放松门禁、未新增 any；`program-status` 测试计数 587/6,443→588/6,445 并已 `program:render`。
+- 第 47 轮（gate-fix；ZCode 第 46 轮候选②）：
+  - 目标：`ui/svg-charts.ts` any 5→0（`timelineChart` 标签排布动态字段）。
+  - 做法：新增文件内 `TimelineLayoutItem` 类型（基础字段必填、排布后回填的层级字段可选），`map` 回调显式标注返回类型；删除 4 处 `(item as any)` 写回与 1 处 `eventsWithLayout[0] as any`。零运行时变化（纯类型擦除）。
+  - 验证：`typecheck` 0；`check:any` 217/222（已消除 5 处，基线可下调 222→217，由 ZCode 收单时执行）；定向 `smart-chart` + `pure-helpers-coverage` 150/150；`build` 后 main.js 4,866,414 与基线逐字节一致（未动用 200B/批预算）。
+  - 边界：未动 `engine/**`、ZCode 文件集与门禁阈值；未新增测试（类型收窄无行为分支）。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
