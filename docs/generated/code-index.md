@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132774 | 1607 | 1346 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
-| `shared/` | 174 | 39203 | 1564 | 1300 | 83% |
+| `shared/` | 174 | 39262 | 1567 | 1303 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 101293 | 733 | 637 | 87% |
+| `ui/` | 239 | 101281 | 733 | 637 | 87% |
 
 ## 文件清单
 
@@ -481,7 +481,7 @@
 | `shared/prose-naturalizer.ts` | 238 | 3 | 3 |
 | `shared/protagonist.ts` | 40 | 2 | 2 |
 | `shared/provider-detection.ts` | 240 | 4 | 4 |
-| `shared/publication-profile.ts` | 175 | 8 | 8 |
+| `shared/publication-profile.ts` | 234 | 11 | 11 |
 | `shared/quality-baseline.ts` | 184 | 10 | 10 |
 | `shared/quality-benchmark.ts` | 112 | 6 | 6 |
 | `shared/quality-grade.ts` | 117 | 9 | 9 |
@@ -633,7 +633,7 @@
 | `ui/draggable-panel.ts` | 307 | 2 | 2 |
 | `ui/existing-entity-manager.ts` | 553 | 1 | 1 |
 | `ui/expand-text-modal.ts` | 236 | 1 | 1 |
-| `ui/export-manuscript-modal.ts` | 616 | 4 | 4 |
+| `ui/export-manuscript-modal.ts` | 604 | 4 | 4 |
 | `ui/fanfic-prompt-notice.ts` | 20 | 1 | 1 |
 | `ui/fanfic-review-modal.ts` | 419 | 1 | 1 |
 | `ui/fingerprint-blend-modal.ts` | 629 | 2 | 2 |

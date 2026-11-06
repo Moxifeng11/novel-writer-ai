@@ -195,6 +195,12 @@ Agent（harness）
   - 三模式回归补齐（`tests/unit/ui/agent-stage-panel.test.ts` +3 用例，5→8）：此前只有长篇/短篇，缺剧本；新增 ①剧本五阶段顺序（`research→outline→storyboard→units→export`，分镜表为下一步时 `units=todo` / `export=blocked`）；②分镜表完成后进入「分集写作」；③预填话术带分集单元标签。
   - 验证：`npx vitest run tests/unit/ui/agent-stage-panel.test.ts` **8/8 通过**；`npm run typecheck` 0 错误。
   - 边界：未动 `engine/**`（`agent-types/host-tools/prompt-sections` 为 ZCode B1 在途改动）、未动红线文件；新增待提交路径 0（均属既有 M/已入库文件）。
+- 第 32 轮（v5-product，B3 导出弹窗出版检查回归；v4.54.0 已入库 `ba50871`，工作树干净后开工）：
+  - 回归方式（先问是不是）：「真实弹窗点击」在无 Obsidian GUI 的测试环境不可执行；原实现把「章节 → 出版事实」（剥离 frontmatter 判空、重复标题分组、CJK 字数）内联在 `exportManuscript`，测试无法直接命中。本轮抽出纯函数 `buildPublicationFacts(units, base)`（`shared/publication-profile.ts`），导出弹窗改为调用它——**纯搬运，零运行时行为变化**，字数仍按原始正文（含 frontmatter）、空正文仍只看剥离后的正文。
+  - 新增 4 用例（`tests/unit/shared/publication-profile.test.ts`，7→11）：①导出单元口径（空单元标签、重复标题 1 组、字数 10）；②短篇 8 节严格模式——EPUB 缺作者 + 空节为阻断，Markdown 缺作者不阻断；③短篇字数分级——3 万字为建议、2 万字（低于下限一半）为阻断；④剧本 30 集——集数不足仅建议、无阻断，全空集触发 `no-body` + `empty-units`。
+  - 文档核对（B5）：`docs/guides/COMMERCIAL-GUIDE.md` §2 的阻断/建议清单与代码逐条一致（书名、EPUB/DOCX 作者、无正文、空单元、低于下限一半 / 字数低于下限、单元数不足、EPUB 无标题、重复标题），无需纠偏。
+  - 验证：定向 `publication-profile.test.ts` **11/11**；`npm run typecheck` 0；改动文件 lint 0 error；`check:jsdoc` / `check:any`（251/251）/ `check:inline-styles` 绿；`program:render` → `gen:docs` → `check:docs` / `check:program` 绿。全量 `preflight` 按第 30 轮协作口径由 ZCode 统一跑。
+  - 边界：未动 `engine/**`、未动 ZCode 文件集、未新增路径；严格模式语义未自行调整（产品口径仍待用户拍板）。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
