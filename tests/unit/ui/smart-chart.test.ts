@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SmartChart } from '../../../ui/components/smart-chart';
+import { barChart } from '../../../ui/svg-charts';
 import type { ChartType, ChartDensity, SmartChartOptions } from '../../../engine/types/chart-config';
 
 vi.mock('../../../ui/components/chart-toolbar', () => ({
@@ -233,6 +234,41 @@ describe('SmartChart — 渲染', () => {
         const chartContent = container.querySelector('.nw-smart-chart-content');
         expect(chartContent).toBeTruthy();
         expect(chartContent.innerHTML).toBeTruthy();
+    });
+});
+
+describe('SmartChart — 渲染器注册表', () => {
+    const allTypes: ChartType[] = [
+        'radar', 'bar', 'horizontalBar', 'donut', 'line', 'scatter', 'heatmap',
+        'densityHeatmap', 'area', 'tree', 'violin', 'histogram', 'timeline', 'wordCloud',
+    ];
+
+    it('十四种图表类型均可渲染出内容', () => {
+        for (const type of allTypes) {
+            const container = createMockContainer();
+            const chart = new SmartChart(container, createMockOptions({
+                availableTypes: [type],
+                preferredType: type,
+            }));
+            const content = container.querySelector('.nw-smart-chart-content');
+            expect(content?.innerHTML).toBeTruthy();
+            chart.destroy();
+        }
+    });
+
+    it('柱状图渲染器收到 padding 与默认宽高', () => {
+        const container = createMockContainer();
+        new SmartChart(container, createMockOptions({
+            availableTypes: ['bar'],
+            preferredType: 'bar',
+        }));
+        const calls = vi.mocked(barChart).mock.calls;
+        const lastOptions = calls[calls.length - 1]?.[1];
+        expect(lastOptions).toMatchObject({
+            width: 400,
+            height: 250,
+            padding: { top: 40, right: 20, bottom: 50, left: 50 },
+        });
     });
 });
 

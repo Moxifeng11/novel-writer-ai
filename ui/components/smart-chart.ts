@@ -33,7 +33,43 @@ import type {
 	ViolinDataItem
 } from '@/ui/svg-charts';
 
-type ChartRenderer = (data: any, options?: any) => string;
+type ChartData =
+	| RadarDataItem[]
+	| BarDataItem[]
+	| DonutDataItem[]
+	| WordCloudItem[]
+	| LineChartSeries[]
+	| ScatterDataPoint[]
+	| TimelineEvent[]
+	| HeatmapCell[]
+	| TreeNode
+	| AreaSeries[]
+	| DensityPoint[]
+	| HorizontalBarItem[]
+	| ViolinDataItem[];
+
+interface ChartRenderOptions {
+	padding?: { top: number; right: number; bottom: number; left: number };
+	size?: number;
+	width?: number;
+	height?: number;
+	showLegend?: boolean;
+}
+
+type ChartRenderer = (data: ChartData, options?: ChartRenderOptions) => string;
+
+/**
+ * 把各图表渲染器的精确签名收敛为注册表统一签名。
+ *
+ * @example
+ * ```ts
+ * const renderer = chartRenderer(radarChart);
+ * renderer([{ label: 'A', value: 1 }], { size: 320 });
+ * ```
+ */
+function chartRenderer<T, O>(render: (data: T, options?: O) => string): ChartRenderer {
+	return (data, options) => render(data as T, options as unknown as O);
+}
 
 interface ChartMeta {
 	renderer: ChartRenderer;
@@ -44,85 +80,85 @@ interface ChartMeta {
 
 const CHART_META: Record<ChartType, ChartMeta> = {
 	radar: {
-		renderer: (data: RadarDataItem[], opts) => radarChart(data, opts),
+		renderer: chartRenderer(radarChart),
 		defaultWidth: 320,
 		defaultHeight: 320,
 		supportsPadding: false
 	},
 	bar: {
-		renderer: (data: BarDataItem[], opts) => barChart(data, opts),
+		renderer: chartRenderer(barChart),
 		defaultWidth: 400,
 		defaultHeight: 250,
 		supportsPadding: true
 	},
 	horizontalBar: {
-		renderer: (data: HorizontalBarItem[], opts) => horizontalBarChart(data, opts),
+		renderer: chartRenderer(horizontalBarChart),
 		defaultWidth: 450,
 		defaultHeight: 300,
 		supportsPadding: true
 	},
 	donut: {
-		renderer: (data: DonutDataItem[], opts) => donutChart(data, opts),
+		renderer: chartRenderer(donutChart),
 		defaultWidth: 280,
 		defaultHeight: 280,
 		supportsPadding: false
 	},
 	line: {
-		renderer: (data: LineChartSeries[], opts) => lineChart(data, opts),
+		renderer: chartRenderer(lineChart),
 		defaultWidth: 400,
 		defaultHeight: 250,
 		supportsPadding: true
 	},
 	scatter: {
-		renderer: (data: ScatterDataPoint[], opts) => scatterChart(data, opts),
+		renderer: chartRenderer(scatterChart),
 		defaultWidth: 400,
 		defaultHeight: 250,
 		supportsPadding: true
 	},
 	heatmap: {
-		renderer: (data: HeatmapCell[], opts) => heatmap(data, opts),
+		renderer: chartRenderer(heatmap),
 		defaultWidth: 500,
 		defaultHeight: 320,
 		supportsPadding: true
 	},
 	densityHeatmap: {
-		renderer: (data: DensityPoint[], opts) => densityHeatmap(data, opts),
+		renderer: chartRenderer(densityHeatmap),
 		defaultWidth: 500,
 		defaultHeight: 320,
 		supportsPadding: true
 	},
 	area: {
-		renderer: (data: AreaSeries[], opts) => areaChart(data, opts),
+		renderer: chartRenderer(areaChart),
 		defaultWidth: 400,
 		defaultHeight: 250,
 		supportsPadding: true
 	},
 	tree: {
-		renderer: (data: TreeNode, opts) => treeChart(data, opts),
+		renderer: chartRenderer(treeChart),
 		defaultWidth: 500,
 		defaultHeight: 320,
 		supportsPadding: true
 	},
 	violin: {
-		renderer: (data: ViolinDataItem[], opts) => violinChart(data, opts),
+		renderer: chartRenderer(violinChart),
 		defaultWidth: 480,
 		defaultHeight: 320,
 		supportsPadding: true
 	},
 	timeline: {
-		renderer: (data: TimelineEvent[], opts) => timelineChart(data, opts),
+		renderer: chartRenderer(timelineChart),
 		defaultWidth: 500,
 		defaultHeight: 140,
 		supportsPadding: true
 	},
 	wordCloud: {
-		renderer: (data: WordCloudItem[], opts) => wordCloud(data, opts),
+		renderer: chartRenderer(wordCloud),
 		defaultWidth: 400,
 		defaultHeight: 200,
 		supportsPadding: false
 	},
 	histogram: {
-		renderer: (data: BarDataItem[], opts) => barChart(data, opts),
+		renderer: chartRenderer(barChart),
 		defaultWidth: 400,
 		defaultHeight: 250,
 		supportsPadding: true
@@ -148,7 +184,7 @@ export class SmartChart {
 	private toolbarContainer: HTMLElement;
 	private currentType: ChartType;
 	private currentDensity: ChartDensity;
-	private data: any;
+	private data: unknown;
 	private options: SmartChartOptions;
 	private sortOrder: 'asc' | 'desc' | 'none' = 'none';
 	private destroyed = false;
@@ -218,7 +254,7 @@ export class SmartChart {
 	 * 设置数据。
 	 * @param data - 数据
 	 */
-	setData(data: any): void {
+	setData(data: unknown): void {
 		this.data = data;
 		this.render();
 	}
@@ -260,15 +296,16 @@ export class SmartChart {
 		return sortableTypes.includes(this.currentType);
 	}
 
-	private getSortedData(data: any): any {
+	private getSortedData(data: ChartData): ChartData {
 		if (this.sortOrder === 'none') return data;
 
 		const sortFn = this.sortOrder === 'asc'
-			? (a: any, b: any) => (a.value ?? 0) - (b.value ?? 0)
-			: (a: any, b: any) => (b.value ?? 0) - (a.value ?? 0);
+			? (a: { value?: number }, b: { value?: number }) => (a.value ?? 0) - (b.value ?? 0)
+			: (a: { value?: number }, b: { value?: number }) => (b.value ?? 0) - (a.value ?? 0);
 
 		if (Array.isArray(data)) {
-			return [...data].sort(sortFn);
+			const items = data as unknown as { value?: number }[];
+			return [...items].sort(sortFn) as unknown as ChartData;
 		}
 		return data;
 	}
@@ -287,7 +324,7 @@ export class SmartChart {
 		const data = this.transformData(this.data, this.currentType);
 		const sortedData = this.supportsSorting() ? this.getSortedData(data) : data;
 		const padding = this.getDensityPadding();
-		const baseOpts: any = {};
+		const baseOpts: ChartRenderOptions = {};
 
 		if (meta.supportsPadding) {
 			baseOpts.padding = padding;
@@ -307,24 +344,22 @@ export class SmartChart {
 		return meta.renderer(sortedData, baseOpts);
 	}
 
-	private isScatterData(data: any): data is ScatterDataPoint[] {
-		return Array.isArray(data)
-			&& data.length > 0
-			&& typeof data[0]?.x === 'number'
-			&& typeof data[0]?.y === 'number';
+	private isScatterData(data: unknown): data is ScatterDataPoint[] {
+		if (!Array.isArray(data) || data.length === 0) return false;
+		const first = data[0] as { x?: unknown; y?: unknown };
+		return typeof first?.x === 'number'
+			&& typeof first?.y === 'number';
 	}
 
-	private transformData(data: any, targetType: ChartType): any {
-		if (!this.isScatterData(data)) return data;
-
-		const scatterData = data as ScatterDataPoint[];
+	private transformData(data: unknown, targetType: ChartType): ChartData {
+		if (!this.isScatterData(data)) return data as ChartData;
 
 		switch (targetType) {
 			case 'scatter':
-				return scatterData;
+				return data;
 
 			case 'densityHeatmap':
-				return scatterData.map(p => ({
+				return data.map(p => ({
 					x: p.x,
 					y: p.y,
 					value: 1
@@ -332,10 +367,10 @@ export class SmartChart {
 
 			case 'bar':
 			case 'histogram':
-				return scatterToHistogram(scatterData, { bins: 10 });
+				return scatterToHistogram(data, { bins: 10 });
 
 			default:
-				return data;
+				return data as ChartData;
 		}
 	}
 
@@ -357,7 +392,7 @@ export class SmartChart {
 	 * @param context - 上下文
 	 * @returns 结果数组
 	 */
-	static recommendType(data: any, context?: string): ChartType[] {
+	static recommendType(data: unknown, context?: string): ChartType[] {
 		const scores: { type: ChartType; score: number }[] = [];
 
 		if (!data) return ['bar'];
@@ -365,7 +400,20 @@ export class SmartChart {
 		if (Array.isArray(data)) {
 			if (data.length === 0) return ['bar'];
 
-			const first = data[0];
+			const first = data[0] as {
+				x?: unknown;
+				y?: unknown;
+				label?: unknown;
+				value?: unknown;
+				text?: unknown;
+				weight?: unknown;
+				values?: unknown;
+				position?: unknown;
+				row?: unknown;
+				col?: unknown;
+				data?: unknown;
+				points?: unknown;
+			};
 			const hasXY = typeof first?.x === 'number' && typeof first?.y === 'number';
 			const hasLabelValue = typeof first?.label === 'string' && typeof first?.value === 'number';
 			const hasTextWeight = typeof first?.text === 'string' && typeof first?.weight === 'number';
@@ -375,7 +423,7 @@ export class SmartChart {
 			const hasData = Array.isArray(first?.data);
 			const hasPoints = Array.isArray(first?.points);
 
-			const longLabels = hasLabelValue && data.some((d: any) => d.label?.length > 8);
+			const longLabels = hasLabelValue && data.some((item: { label?: string }) => (item.label?.length ?? 0) > 8);
 
 			if (hasXY) {
 				scores.push({ type: 'scatter', score: 10 });
@@ -431,7 +479,8 @@ export class SmartChart {
 				scores.push({ type: 'bar', score: 4 });
 			}
 		} else if (data && typeof data === 'object') {
-			if (data.name !== undefined && data.children !== undefined) {
+			const node = data as { name?: unknown; children?: unknown };
+			if (node.name !== undefined && node.children !== undefined) {
 				scores.push({ type: 'tree', score: 10 });
 			}
 		}
