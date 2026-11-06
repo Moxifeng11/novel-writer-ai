@@ -21,6 +21,21 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.63.0',
+        date: '2026-11-07',
+        title: '测试与文档加固（+9 用例）',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧪 测试',
+                items: [
+                    'B3 导出弹窗接线契约 20→23；platform-export 边界现状锁定 3→9',
+                    'B3 三档口径纠偏 + 联动锚点 32→35；新增 v5 验收清单',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.62.0',
         date: '2026-11-07',
         title: '四文件 any 清零与端口 flow 回归',

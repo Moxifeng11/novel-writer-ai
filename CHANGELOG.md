@@ -2,6 +2,20 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.63.0（2026-11-07）
+
+### 🧪 测试与文档加固（+9 用例）
+
+- **B3 导出弹窗接线契约**（20→23）：投稿档必须同时回写内存 `scope` + 下拉 `setValue` + 禁用；`splitUnitsByBody` 必须先于 `checkPublicationReadiness`；blocker 必须 `throw` 且成品档附「仅已写单元」提示。
+- **platform-export 边界现状锁定**（3→9）：无调研时简介回退 storyDoc 首行/标签回退平台默认、空简介占位、项目名空或尾斜杠回退、字数只透传不做下限阻断、敏感词覆盖简介+正文并按次数降序。注：平台包「简介/标签完整度校验」仍待产品接入（v4.59.0 记录项）。
+- **B3 三档口径纠偏**：`LINKED-SCENARIOS` 链 4 由「布尔严格检查/二档」重写为三档矩阵 + 范围语义；`docs/README` 联动链三条→四条；b3 设计文档增 §〇 落地差异表、§五 改为拍板结论。
+- **联动锚点 32→35**：新增 `splitUnitsByBody`、`agent-port::collectCreationFlowState`、`agent-port-status.test.ts`，文档承诺的锚点由门禁校验。
+- **v5 验收清单**：新增 `docs/progress/v5-acceptance.md`，B1–B5 逐项列文件/行号、测试、命令、结果、git blob 哈希与落地提交；单列四项「需用户授权」。
+
+### 🧪 测试与门禁
+
+- 全量 **589 文件 / 6,460 用例**（v4.62.0 为 589/6,451，+9）；`preflight:release` 全绿；any 198 不变；bundle 零增长（4,867,168）。
+
 ## v4.62.0（2026-11-07）
 
 ### 🧹 类型收窄：四文件 any 清零（212→198）

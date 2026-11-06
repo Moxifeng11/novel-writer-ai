@@ -3,7 +3,7 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-07",
   "baseline": {
-    "version": "4.62.0",
+    "version": "4.63.0",
     "tests": {
       "files": 589,
       "cases": 6460
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 157,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 实测 git rev-list --count=ahead 157，HEAD 7a17de4 = 第 55 轮 v5 验收清单收单；第 49–56 轮 any 212→198、B2 端口回归、B3 导出接线回归与 platform-export 边界补测已/待收单）"
+    "localCommitsAhead": 158,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 56 轮收单后实测 git rev-list --count=ahead 158，HEAD e85534f；第 53–56 轮测试与文档加固已收单，v4.63.0 版本节点提交后 ahead 159）"
   },
   "groups": [
     {

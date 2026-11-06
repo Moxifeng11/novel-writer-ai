@@ -1,6 +1,6 @@
 # 插件结构化规划（PLAN）
 
-> 版本：v4.62.0 · 更新：2026-11-07
+> 版本：v4.63.0 · 更新：2026-11-07
 > 定位：**本文件是插件仓的唯一结构性规划入口**。代码是最终真相源；本文件只回答「有哪些模块、边界在哪、下一轮做什么」。
 > 历史文档：`docs/audits/`（各轮取证）、`docs/releases/`（各版本交付）、`CHANGELOG.md`（变更流水）。
 > **全系统优化专项**（16 板块 / 7 任务组 / 排期与验收）：[`docs/PROGRAM.md`](PROGRAM.md) · 进度报告：[`docs/progress/PROGRAM-STATUS.md`](progress/PROGRAM-STATUS.md)。
@@ -335,6 +335,12 @@ Agent（harness）
   - 边界：未动 `engine/**`、`shared/platform-export.ts`、ZCode 文件集与门禁阈值；零新增路径、零新增 `any`、零运行时行为变化。
   - 并发事实：开工后 ZCode 以 `7a17de4` 收单第 55 轮 `docs/progress/v5-acceptance.md`，ahead 157；收尾工作树为本轮测试 + PLAN/program-status 台账。
   - 元迭代（第 56 轮）：test-hardening 维持 2.00 封顶（成功不复利）；v5-product 1.50、gate-fix 1.76、audit-only 1.40、perf 1.49、docs-correction 1.20、notice 0.75、slice 0.70 维持；无参数变更，故不触发互调确认。
+- 第 57 轮（docs-correction；v5 阶段面板性能口径纠偏；零源码）：
+  - 盘点（先问是不是）：`docs/PERFORMANCE.md` §5.2 原写「阶段面板复用 `collectCreationFlowState` 的既有采集结果，不新增全库扫描」。对照代码不成立——`ui/agent-workbench-view.ts::refreshStagePanel` 每次都调用 `fetchStagePanelModel` → `port.getProjectStatus` → `collectCreationFlowState`，无缓存；单次采集为 3 次全库遍历（`ui/full-writer/creation-flow-state.ts::hasExportArtifact` 的 `getFiles()`；长篇 `getChaptersForProject()` 的 `getFiles()` + `getAllLoadedFiles()`；短篇/剧本 `listModeUnits()` 的 own + legacy 两次 `getFiles()`）。触发点至少两处（左栏初次渲染、`refreshProjectList()` 收尾）。属文档口径错误，不是重复交付。
+  - 改动（1 路径）：`docs/PERFORMANCE.md` §5.2 两行——写清真实扫描构成、触发次数与门禁覆盖边界（不在 `check:hotpath-scans` 的 `HOT_FILES` 内），并列出待优化项（`hasExportArtifact` 改目录存在性判断、短篇/剧本两次 `getFiles()` 合并），预期单次采集长篇 3→2、短篇/剧本 3→1。
+  - 验证：`check:docs` / `check:automation` / `check:linked-scenarios`；零源码、零测试、零 `any`、零 bundle 变化。
+  - 边界：未动 `engine/**`、ZCode 文件集与门禁阈值；未新增文件；优化项仅记录，未实施（工作树有第 56 轮 4 路径待 ZCode 收单）。
+  - 换型说明：第 56 轮 test-hardening → 本轮 docs-correction（换型合规），docs-correction 1.20 维持。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
