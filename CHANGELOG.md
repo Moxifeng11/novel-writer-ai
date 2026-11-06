@@ -2,6 +2,24 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.54.0（2026-11-06）
+
+### 🧭 v5 B1：Agent 阶段快照契约（唯一阶段事实源）
+
+- `AgentProjectStatus` 新增 `flow?: CreationFlowSnapshot`（engine 只投影 `shared/creation-flow` 类型，不定义阶段）。
+- `get_project_status` 输出阶段进度百分比、下一步阶段（含 blockedReason）、阶段明细（✓/→/!/○），`data.flow` 携带完整 stages。
+- 提示词改为「先查 status → 按 flow.nextStageId 引导」，硬编码八阶段仅作无 flow 时的通用回退；阻塞阶段必须先说明原因。
+- B2 收口：`agent-port` / 工作台移除本地交叉类型（依赖 B1 字段），剧本分镜阶段用例补齐。
+
+### 🔤 any 收口第三批
+
+- `ui/full-writer/intervention-controller.ts` any **9→0**（Record<string,string> / StepRunCtx / 错误窄化 / 语音事件本地类型）；全仓 any **260→251**，基线收紧。
+
+### 🔗 联动与门禁
+
+- `check:linked-scenarios` 增加「Agent 阶段引导→商业化导出检查」链（4 链 / 32 锚点）。
+- 全量 **586 文件 / 6,404 用例**；preflight 全绿（B1/B2 + any 收口；bundle +869B 已 note）。
+
 ## v4.53.0（2026-11-06）
 
 ### 📤 出版检查与导出严格模式

@@ -21,6 +21,29 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.54.0',
+        date: '2026-11-06',
+        title: 'v5 B1 阶段快照契约与 any 第三批',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧭 Agent',
+                items: [
+                    'AgentProjectStatus 增 flow；get_project_status 输出阶段进度/下一步/阻塞',
+                    '提示词按 flow.nextStageId 引导；B2 类型收口与分镜阶段用例',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🔤 技术债',
+                items: [
+                    'intervention-controller any 9→0；全仓 260→251',
+                    '联动清单增阶段引导→出版检查链（4 链 32 锚点）',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.53.0',
         date: '2026-11-06',
         title: '出版检查、Agent 阶段面板与 any 收口',
