@@ -3,10 +3,10 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-06",
   "baseline": {
-    "version": "4.52.0",
+    "version": "4.53.0",
     "tests": {
-      "files": 584,
-      "cases": 6375
+      "files": 586,
+      "cases": 6396
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 110,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-06 第 10 轮实测 git rev-list --count origin/master..master=106；第 12-27 轮 Trae 改动仍在工作树未提交，ZCode 提交后以实测为准）"
+    "localCommitsAhead": 119,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-06 第 29 轮实测 git rev-list --count origin/master..master=115；第 28 轮 smart-chart 与 any 基线收紧已由 ZCode 提交为 dfc8292 / eb92893，本轮 chapter-state-manager 测试仍在工作树未提交）"
   },
   "groups": [
     {
@@ -569,6 +569,18 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-06",
+      "group": "G7",
+      "summary": "第三十二批（v4.52.0 之后待提交，Trae 第 29 轮）：test-hardening ui/states/chapter-state-manager.ts 失效标脏链（零源码改动）——①空 chapDir 早退且不清空既有状态；②chapDir 非 TFolder 早退；③质量控制文件晚于修正记录时把 fix 标脏并移出 stepCompleted；④分析报告含 CRITICAL_FAIL 时标脏 finalFix；⑤正文已完稿时跳过 mtime/时序标脏（防结算后误判需重做）；⑥正文 mtime 新于审查文件时标脏 fix/qualityControl/analysisReport；⑦step_status=reviewed 的空内容文件仍计为 complete。tests/unit/ui/chapter-state-recognition.test.ts 3 → 10 用例（+7，+160 行）；定向口径（8 个引用测试文件驱动）st 70.65%→85.07%（142→171/201）、br 72.86%→87.14%（51→61/70）、fn 88.9%→100%。前提纠偏：遗留候选写的 ui/states/state-manager.ts 不存在，真实文件为 ui/states/chapter-state-manager.ts，且基线 br 实测 72.86% 而非 54.6%",
+      "evidence": "tests/unit/ui/chapter-state-recognition.test.ts + docs/PLAN.md 第 29 轮"
+    },
+    {
+      "date": "2026-11-06",
+      "group": "G7",
+      "summary": "第三十一批（v4.52.0 之后待提交，Trae 第 28 轮）：gate-fix ui/components/smart-chart.ts any 16→0（纯类型收窄、零运行时行为变化）——新增 ChartData 联合类型（13 种图表数据形态）+ ChartRenderOptions（padding/size/width/height/showLegend）+ chartRenderer<T,O> 单点泛型适配函数，14 个注册项由内联 (data: any, opts) => fn(...) lambda 改为 chartRenderer(fn)；类内 data 字段、setData、getSortedData（排序比较器）、baseOpts、isScatterData 类型守卫、transformData、recommendType 全部去 any，改用 unknown + 结构化断言。测试守护 +2 用例（tests/unit/ui/smart-chart.test.ts）：①十四种图表类型逐型渲染出内容（注册表接线未断）；②柱状图渲染器收到 width/height/padding（适配函数原样透传选项）。实测：check:any 276→260（-16，106 文件）；bundle main.js 4,855,784 < 4,855,864 基线（-80B）；typecheck 0 错误",
+      "evidence": "ui/components/smart-chart.ts + tests/unit/ui/smart-chart.test.ts + docs/PLAN.md 第 28 轮"
+    },
     {
       "date": "2026-11-06",
       "group": "G7",

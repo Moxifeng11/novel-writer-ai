@@ -2,6 +2,35 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.53.0（2026-11-06）
+
+### 📤 出版检查与导出严格模式
+
+- 新增 `shared/publication-profile.ts`：纯函数判定出版阻断/建议（标题、作者、空正文、字数不足、重复标题等），规格复用 `CREATION_MODE_SPECS`，不产生第二套口径。
+- 导出弹窗新增「严格出版检查（阻断导出）」开关；默认仅提示，勾选后阻断项会中止导出并给出可读原因。
+
+### 🧭 Agent 工作台「创作阶段」面板
+
+- 新增 `ui/agent-workbench/stage-panel.ts`：由统一 `CreationFlowSnapshot` 构建左栏阶段模型，不复制阶段常量。
+- `agent-port` 采集 flow 快照（失败降级不影响基础进度）；工作台随活动项目刷新阶段面板。
+
+### 🛡️ 自动化一致性门禁
+
+- 新增 `scripts/check-automation.mjs` 并接入 preflight：校验 HANDOFF 快照行数/版本一致性、信箱可解析，防双份自动化台账漂移。
+- 新增 `docs/handbook/13-dual-automation-ops.md` 与 `docs/guides/`（用户指南、商业化指南）。
+
+### 🔤 any 收口（两批）
+
+- `engine/deconstruction-scheduler` any **22→0**（AnalysisResult 联合 + 维度方法具体返回类型 + 显式泛型）。
+- `ui/components/smart-chart` any **16→0**（ChartData 13 形态联合 + 泛型适配器）。
+- 全仓 any **298→260**，基线已收紧。
+
+### 🧪 覆盖率与稳定性
+
+- `chapter-state-manager` 失效标脏链补测 7 例（定向 br 72.86%→87.14%）。
+- 修复 `engine-registry` listEngines 微基准的负载敏感假失败（预热 + 3 次取最小值）。
+- 全量单测 **586 文件 / 6,396 用例**；preflight 全绿（bundle +4,375B 为新增功能，note 已登记）。
+
 ## v4.52.0（2026-11-06）
 
 ### 🧪 覆盖率攻坚（Trae 协作，多轮 test-hardening）

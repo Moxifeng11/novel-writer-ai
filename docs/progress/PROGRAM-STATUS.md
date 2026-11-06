@@ -5,7 +5,7 @@
 
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-06
-- 当前基线：v4.52.0；单测 584 文件 / 6375 用例；E2E 37 条
+- 当前基线：v4.53.0；单测 586 文件 / 6396 用例；E2E 37 条
 - 任务进度：61/61 已完成（100%），0 进行中，0 受阻
 
 ## 一、任务组总览
@@ -174,6 +174,8 @@
 
 ## 四、进度流水
 
+- 2026-11-06｜G7｜第三十二批（v4.52.0 之后待提交，Trae 第 29 轮）：test-hardening ui/states/chapter-state-manager.ts 失效标脏链（零源码改动）——①空 chapDir 早退且不清空既有状态；②chapDir 非 TFolder 早退；③质量控制文件晚于修正记录时把 fix 标脏并移出 stepCompleted；④分析报告含 CRITICAL_FAIL 时标脏 finalFix；⑤正文已完稿时跳过 mtime/时序标脏（防结算后误判需重做）；⑥正文 mtime 新于审查文件时标脏 fix/qualityControl/analysisReport；⑦step_status=reviewed 的空内容文件仍计为 complete。tests/unit/ui/chapter-state-recognition.test.ts 3 → 10 用例（+7，+160 行）；定向口径（8 个引用测试文件驱动）st 70.65%→85.07%（142→171/201）、br 72.86%→87.14%（51→61/70）、fn 88.9%→100%。前提纠偏：遗留候选写的 ui/states/state-manager.ts 不存在，真实文件为 ui/states/chapter-state-manager.ts，且基线 br 实测 72.86% 而非 54.6%（tests/unit/ui/chapter-state-recognition.test.ts + docs/PLAN.md 第 29 轮）
+- 2026-11-06｜G7｜第三十一批（v4.52.0 之后待提交，Trae 第 28 轮）：gate-fix ui/components/smart-chart.ts any 16→0（纯类型收窄、零运行时行为变化）——新增 ChartData 联合类型（13 种图表数据形态）+ ChartRenderOptions（padding/size/width/height/showLegend）+ chartRenderer<T,O> 单点泛型适配函数，14 个注册项由内联 (data: any, opts) => fn(...) lambda 改为 chartRenderer(fn)；类内 data 字段、setData、getSortedData（排序比较器）、baseOpts、isScatterData 类型守卫、transformData、recommendType 全部去 any，改用 unknown + 结构化断言。测试守护 +2 用例（tests/unit/ui/smart-chart.test.ts）：①十四种图表类型逐型渲染出内容（注册表接线未断）；②柱状图渲染器收到 width/height/padding（适配函数原样透传选项）。实测：check:any 276→260（-16，106 文件）；bundle main.js 4,855,784 < 4,855,864 基线（-80B）；typecheck 0 错误（ui/components/smart-chart.ts + tests/unit/ui/smart-chart.test.ts + docs/PLAN.md 第 28 轮）
 - 2026-11-06｜G7｜第三十批（v4.52.0 待发版，Trae 第 27 轮）：test-hardening engine/body-writer.ts 备份链（P0-3 数据安全，零源码改动、零新增待提交路径）——①默认在覆盖已有非空正文前备份一次，旧正文与 {type:'manual', note:'覆盖前自动备份'} 正确交给 ChapterVersionService.saveVersion，且备份不阻断写入；②backupBeforeOverwrite=false 跳过（导入/迁移全量替换）；③旧文件只有 frontmatter 时跳过；④请求缺 project 时跳过；⑤版本服务抛错只记日志、正文照常落盘；⑥同一路径 5 分钟内二次写入只备份第一次（协同自动保存节流）。测试用 vi.spyOn(ChapterVersionService.prototype,'saveVersion') 拦截，无需给 engine 加注入点（推翻第 12 轮「不可测」结论）；tests/unit/engine/body-writer.test.ts 25 → 31 用例（+6）；定向口径 st 67.35%→76.16%、br 68.78%→77.70%、lines 68.45%→76.19%，原未覆盖 L444-454 全部点亮（tests/unit/engine/body-writer.test.ts + docs/PLAN.md 第 27 轮）
 - 2026-11-06｜G7｜第二十九批（v4.52.0 待发版，Trae 第 26 轮）：gate-fix 热路径门禁补全覆盖面（零源码改动、零新增待提交路径）——scripts/check-hotpath-scans.mjs 原只匹配字面 getFiles(，现抽出 FULL_SCAN_APIS 同时检查 vault.getFiles() / vault.getMarkdownFiles() / vault.getAllLoadedFiles()（三者均为 O(全库)，各带整改提示），逐行扫描 10 个 HOT_FILES 模块，命中任一即失败、每文件报首个命中行；同步脚本头注释与成功输出文案。实测：check:hotpaths 通过（10 模块 0 违规）；非测试代码中 getMarkdownFiles/getAllLoadedFiles 共 7 处全部为冷路径（弹窗/工作台/建章向导/项目工具），ui/project-utils.ts#getChaptersForProject 的 2 次全库遍历调用方均为渲染/导航，不属每章热路径，故不扩充 HOT_FILES（第 21 轮「82 处中仅 2 处按章/按次」的结论未被推翻）（scripts/check-hotpath-scans.mjs + docs/PERFORMANCE.md §2 + docs/PLAN.md 第二十六轮）
 - 2026-11-06｜G7｜第二十八批（v4.52.0 待发版，Trae 第 22 轮）：test-hardening compact 涉及实体口径（零源码改动，只改既有 M 测试文件）——①compact 找不到正文文件时退化为全量实体清单，且不调用 getInvolvedEntities；②compact 命中真实 TFile 且涉及集合非空时，涉及人物/势力/地点/物品保留描述，非涉及项只留摘要字段（人物身份/状态/动机、势力类型/领袖/地位、地点类型/区域/重要程度、物品类型/等级/归属），卷名无「第N卷」时 volN 回落 0；③涉及集合为空时仍按全量输出。tests/unit/ui/template-vars-story-context.test.ts 40 → 43 用例（+3，经 vi.hoisted + 局部 mock 仅替换 findBodyFileV4/getInvolvedEntities，其余实现保持真实）；定向口径（仅本文件驱动）br 450/699 → 490/699（+40 分支路径，未覆盖分支点 171→145）（tests/unit/ui/template-vars-story-context.test.ts + docs/PLAN.md 第二十八批）

@@ -21,6 +21,29 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.53.0',
+        date: '2026-11-06',
+        title: '出版检查、Agent 阶段面板与 any 收口',
+        sections: [
+            {
+                type: 'added',
+                label: '📤 出版',
+                items: [
+                    'publication-profile 出版检查 + 导出严格模式开关',
+                    'Agent 工作台创作阶段面板；check:automation 一致性门禁',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🔤 技术债',
+                items: [
+                    'engine deconstruction-scheduler any 22→0；smart-chart 16→0',
+                    '全仓 any 298→260，基线收紧；chapter-state 补测 7 例',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.52.0',
         date: '2026-11-06',
         title: '覆盖率攻坚与热路径收口',
