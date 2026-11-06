@@ -2,6 +2,24 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.62.0（2026-11-07）
+
+### 🧹 类型收窄：四文件 any 清零（212→198）
+
+- `ui/full-writer/chapter-orchestrator.ts` 5→0：`import type StepRunCtx` 替换两个 `execute*`、`makeCtx` 返回值与 `activateStep`/`runOneStep` 参数。
+- `ui/full-writer-view.ts` 6→0：`tabs` 收紧为 `WriterTab[]`，删除从未读写的 `currentReport`，两处空实现改 `unknown`。
+- `ui/unified-entity-generate-modal.ts` 4→0：`CategoryCardElement` 承载分类 key；两处 `catch (e: any)` 改结构断言（刻意不用 `instanceof Error`，因 `DOMException` 不是 Error 子类）。
+- `ui/prompt-manager-settings.ts` 4→0：`ABTestMetrics` / `PromptTemplate` 类型化，删除两处多余 `as any`。
+- any 基线 206→198（96 个文件）；`main.js` 零字节变化（纯类型擦除）。
+
+### 🧪 回归
+
+- 新增 `tests/unit/ui/agent-port-status.test.ts` 3 用例：B2 端口 `flow` 降级契约——采集成功透传、采集抛错省略 `flow` 但不阻断章节统计、元信息失败整体返回 `null` 且不触发采集。
+
+### 🧪 测试与门禁
+
+- 全量 **589 文件 / 6,451 用例**（v4.61.0 为 588/6,448，+3）；`preflight:release` 全绿；bundle 4,866,833（较基线 -24）。
+
 ## v4.61.0（2026-11-07）
 
 ### 🐛 取消语义修复：被取消任务不再永久挂起

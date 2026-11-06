@@ -21,6 +21,21 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.62.0',
+        date: '2026-11-07',
+        title: '四文件 any 清零与端口 flow 回归',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧹 类型安全',
+                items: [
+                    'chapter-orchestrator / full-writer-view / unified-entity-generate-modal / prompt-manager-settings 共 19 处 any 清零',
+                    'B2 端口 flow 降级契约 +3 用例；any 基线 212→198',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.61.0',
         date: '2026-11-07',
         title: '取消挂起修复与 B3 出版边界补测',
