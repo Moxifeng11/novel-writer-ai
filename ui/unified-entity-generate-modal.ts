@@ -29,6 +29,9 @@ interface ManagedEntity {
     validated: boolean;
 }
 
+/** 类型选择卡片：承载分类 key 的临时属性（仅类型层，不入运行时） */
+type CategoryCardElement = HTMLElement & { _catKey?: ModelCategory };
+
 type GenerateStep = 'type-select' | 'basic-info' | 'params' | 'preview' | 'confirm';
 
 /**
@@ -376,7 +379,7 @@ export class UnifiedEntityGenerateModal extends Modal {
                 attr: { style: 'font-size:var(--nw-font-size-sm, 12px); color:var(--text-muted);' },
             });
 
-            (card as any)._catKey = cat.key;
+            (card as CategoryCardElement)._catKey = cat.key;
         }
 
         const btnRow = container.createDiv({
@@ -409,7 +412,7 @@ export class UnifiedEntityGenerateModal extends Modal {
         if (!grid) return;
         const cards = grid.querySelectorAll('button');
         cards.forEach((card) => {
-            const key = (card as any)._catKey;
+            const key = (card as CategoryCardElement)._catKey;
             if (key === this._selectedCategory) {
                 (card as HTMLElement).style.borderColor = 'var(--text-accent)';
                 (card as HTMLElement).style.background = 'var(--background-primary-alt)';
@@ -722,13 +725,13 @@ export class UnifiedEntityGenerateModal extends Modal {
             hideProgress();
             this._generating = false;
             this._goToStep('preview');
-        } catch (e: any) {
+        } catch (e) {
             hideProgress();
             this._generating = false;
-            if (e.name === 'AbortError') {
+            if ((e as { name?: string }).name === 'AbortError') {
                 new Notice('⚠️ 生成已取消', 3000);
             } else {
-                showError(`生成失败：${e.message || e}`);
+                showError(`生成失败：${(e as { message?: string }).message || e}`);
                 log.error('[统一生成] 生成失败:', e);
             }
         }
@@ -1014,9 +1017,9 @@ export class UnifiedEntityGenerateModal extends Modal {
             }
             showSuccess(`✅ ${formatSaveOutcome(outcome, kind)}`);
             this._goToStep('confirm');
-        } catch (e: any) {
+        } catch (e) {
             hideProgress();
-            showError(`保存失败：${e.message || e}`);
+            showError(`保存失败：${(e as { message?: string }).message || e}`);
         }
     }
 

@@ -1,5 +1,5 @@
 {
-  "total": 206,
+  "total": 198,
   "generatedAt": "2026-11-06",
   "files": {
     "engine/ai-outline-generator.ts": 6,
@@ -21,8 +21,6 @@
     "main.ts": 4,
     "services/knowledge-base-manager.ts": 4,
     "ui/full-writer/scene-outline-controller.ts": 4,
-    "ui/prompt-manager-settings.ts": 4,
-    "ui/unified-entity-generate-modal.ts": 4,
     "engine/cache/preload-manager.ts": 3,
     "engine/deconstructors/rhythm-deconstructor.ts": 3,
     "engine/embedding/openai-provider.ts": 3,

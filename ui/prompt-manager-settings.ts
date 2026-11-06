@@ -5,6 +5,7 @@ import type {
     PromptTemplate,
     PromptCategory,
     ABTest,
+    ABTestMetrics,
     PromptTemplateVersion,
 } from '@/shared/prompt-manager-types';
 import { OperationConfirmModal } from './components/progress';
@@ -531,7 +532,7 @@ export class PromptManagerSettings {
         };
     }
 
-    private renderVariantStats(container: HTMLElement, label: string, variant: { version: string; metrics: any }, traffic: number): void {
+    private renderVariantStats(container: HTMLElement, label: string, variant: { version: string; metrics: ABTestMetrics }, traffic: number): void {
         const card = container.createDiv({
             cls: 'nw-u-p-10px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2'
         });
@@ -730,7 +731,7 @@ export class PromptManagerSettings {
                     return;
                 }
                 const now = Date.now();
-                const template: any = {
+                const template: PromptTemplate = {
                     id: `custom-${now}`,
                     name,
                     category,
@@ -840,7 +841,7 @@ export class PromptManagerSettings {
                     name,
                     description,
                     updatedAt: Date.now(),
-                } as any);
+                });
                 showSuccessNotice('已保存');
             } else {
                 const currentVersion = activeVersion.version;
@@ -858,7 +859,7 @@ export class PromptManagerSettings {
                 await this.promptManager.updateTemplate(template.id, {
                     name,
                     description,
-                } as any);
+                });
                 showSuccessNotice(`已保存为 v${nextVersion}`);
             }
             modal.close();
