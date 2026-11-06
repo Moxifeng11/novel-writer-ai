@@ -1,6 +1,6 @@
 # 插件结构化规划（PLAN）
 
-> 版本：v4.58.0 · 更新：2026-11-06
+> 版本：v4.59.0 · 更新：2026-11-06
 > 定位：**本文件是插件仓的唯一结构性规划入口**。代码是最终真相源；本文件只回答「有哪些模块、边界在哪、下一轮做什么」。
 > 历史文档：`docs/audits/`（各轮取证）、`docs/releases/`（各版本交付）、`CHANGELOG.md`（变更流水）。
 > **全系统优化专项**（16 板块 / 7 任务组 / 排期与验收）：[`docs/PROGRAM.md`](PROGRAM.md) · 进度报告：[`docs/progress/PROGRAM-STATUS.md`](progress/PROGRAM-STATUS.md)。
@@ -217,6 +217,20 @@ Agent（harness）
   - 做法：`ui/export-manuscript-modal.ts` 严格模式 desc 改为「勾选后按整包交付校验：缺作者、空正文（含任一空单元）、严重字数不足等阻断项会中止导出；只导样章或部分单元请保持关闭」；`docs/guides/USER-GUIDE.md` §5、`docs/guides/COMMERCIAL-GUIDE.md` §2 同步补同一口径。
   - 验证：定向 `publication-profile` **11/11**；`npm run typecheck` 0 错误；改动文件 eslint 0 error（5 处 warning 为既有 UI 文案告警，未顺手改）；`check:bundle` **红 +90B**（main.js 4,863,063 > 基线 4,862,973），来源为纯文案字符串、无逻辑分支，按 §5.3 交 ZCode 在版本节点记录上调，Trae 不自行 `--update-baseline`。
   - 边界：零逻辑变更、未新增测试（纯文案）、未动 `engine/**` 与 ZCode 文件集、零新增路径。
+- 第 37 轮（v5-product，B1 引导真实回归；ZCode 派工优先①）：
+  - 缺口核实（先问是不是）：B1 已合入（`agent-types.ts` 的 `flow`、`host-tools.ts` 的阶段投影、`agent-port.ts` 的采集填充），但既有 `get_project_status` 用例全部用手写 3 阶段 fixture（`flowFixture`），**真实 `resolveCreationFlow` 的 4/5 阶段标签、权重百分比与依赖阻塞链从未经过该工具**——真实回归缺口，非假设。
+  - 做法：仅扩展现有 `tests/unit/engine/agent-mode-alignment.test.ts`，新增 `realFlow()` 辅助（直接调用 `shared/creation-flow` 的 `resolveCreationFlow`），喂给 `get_project_status` 做端到端文案回归。
+  - 新增 4 用例（8→12）：①长篇真实四阶段（56%、下一步「章节写作」、阻塞「成稿导出（先完成：章节写作）」、明细 `✓→→!`）；②短篇真实四阶段（25%、下一步「分节写作」、导出被依赖阻塞）；③剧本真实五阶段（分镜表未完成时 20% 停「分镜表」、完成后 30% 进「分集写作」，并断言 stage id 顺序）；④旧端口未提供 `flow` 时保留基础进度、不输出阶段行、不抛错。
+  - 验证：定向 `agent-mode-alignment` **12/12**；`npm run typecheck` 0 错误；eslint 对该测试文件在 ignore 范围（0 error）；零源码改动 → `check:any` / bundle 基线不受影响。
+  - 边界：未动 `engine/**`、未新增测试文件（仅扩既有文件）；待提交路径为第 36 轮 4 路径 + 本测试文件 + 本文档/生成物，交 ZCode 统一收单。
+- 第 38 轮（v5-product，B3 方案 A 三档交付级别落地；用户拍板）：
+  - 背景：第 36 轮「严格模式=整包交付」文案只能提示、不能解决「批量建章留下空骨架 → 严格模式必然阻断」的死锁；用户在 B3 口径方案对比中拍板方案 A（三档交付级别 + 显式导出范围），设计见 `docs/design/b3-publication-strict-mode-plan.md`。
+  - `shared/publication-profile.ts`：新增 `PublicationLevel`（draft/finished/submission）、`PublicationScope`（full/written-only）、`PUBLICATION_LEVEL_LABELS` 与 `splitUnitsByBody`；`checkPublicationReadiness` 按级别分级——草稿只提示；成品阻断空单元/无正文；投稿档作者全格式必填、字数低于下限一半阻断、强制整包。`level` 缺省时保留 v4.58.0 旧矩阵（向后兼容）。
+  - `ui/export-manuscript-modal.ts`：布尔开关改为「交付检查」三档下拉 + 「导出范围」（全部单元 / 仅已写单元）；投稿档锁定整包并禁用范围选择；「仅已写单元」在编译前过滤空正文单元并统计跳过数量；阻断提示在成品档附带「改为仅已写单元」的操作建议；作者行在投稿档对全部格式可见。
+  - 本轮修复（开机盘点发现）：投稿档强制 `full` 时只改了状态未回写范围下拉显示，会出现「状态整包、界面显示仅已写单元」的错位；已补 `scopeDropdownRef.setValue('full')`，并删掉 `publicationLevel` 上重复的 JSDoc 行。
+  - 文档：`USER-GUIDE.md` §3/§5/§7、`COMMERCIAL-GUIDE.md` §2/§4/§5 同步三档口径与阻断分级；`scripts/check-linked-scenarios.mjs` 锚点从 `strictPublication` 更新为 `publicationLevel`。
+  - 验证：定向 `publication-profile` **17/17**（11→17）；全量 `npm test` **586 文件 / 6,433 用例全绿**（6,427→6,433）；`typecheck` 0；改动文件 eslint 0 error（6 warning 为既有 UI 文案告警）；`check:linked-scenarios` / `check:inline-styles` 绿。
+  - 边界：未动 `engine/**` 与 ZCode 文件集；新增待提交路径 1（设计文档，`newPathBudget=1`）；基线未自行上调（bundle 实测由收单回执给出）。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

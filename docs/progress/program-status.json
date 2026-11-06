@@ -3,10 +3,10 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-06",
   "baseline": {
-    "version": "4.58.0",
+    "version": "4.59.0",
     "tests": {
       "files": 586,
-      "cases": 6423
+      "cases": 6433
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
@@ -18,7 +18,7 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 134,
+    "localCommitsAhead": 136,
     "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-06 第 29 轮实测 git rev-list --count origin/master..master=115；第 28 轮 smart-chart 与 any 基线收紧已由 ZCode 提交为 dfc8292 / eb92893，本轮 chapter-state-manager 测试仍在工作树未提交）"
   },
   "groups": [

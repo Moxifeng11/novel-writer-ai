@@ -21,6 +21,21 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.59.0',
+        date: '2026-11-06',
+        title: 'B3 三档交付级别与导出范围',
+        sections: [
+            {
+                type: 'improved',
+                label: '📤 导出',
+                items: [
+                    '草稿/成品/平台投稿三档；投稿要求作者全格式+字数下限一半',
+                    '新增「仅已写单元」范围，跳过空骨架并豁免空单元阻断',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.58.0',
         date: '2026-11-06',
         title: '严格模式整包口径澄清',

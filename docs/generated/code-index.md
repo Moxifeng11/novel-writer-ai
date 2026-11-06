@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132774 | 1607 | 1346 | 84% |
 | `services/` | 32 | 12577 | 186 | 147 | 79% |
-| `shared/` | 174 | 39321 | 1567 | 1303 | 83% |
+| `shared/` | 174 | 39408 | 1571 | 1307 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 101307 | 735 | 639 | 87% |
+| `ui/` | 239 | 101368 | 735 | 639 | 87% |
 
 ## 文件清单
 
@@ -383,7 +383,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 1863 | 3 | 3 |
+| `shared/changelog-data.ts` | 1878 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -481,7 +481,7 @@
 | `shared/prose-naturalizer.ts` | 238 | 3 | 3 |
 | `shared/protagonist.ts` | 40 | 2 | 2 |
 | `shared/provider-detection.ts` | 240 | 4 | 4 |
-| `shared/publication-profile.ts` | 234 | 11 | 11 |
+| `shared/publication-profile.ts` | 306 | 15 | 15 |
 | `shared/quality-baseline.ts` | 184 | 10 | 10 |
 | `shared/quality-benchmark.ts` | 112 | 6 | 6 |
 | `shared/quality-grade.ts` | 117 | 9 | 9 |
@@ -633,7 +633,7 @@
 | `ui/draggable-panel.ts` | 307 | 2 | 2 |
 | `ui/existing-entity-manager.ts` | 553 | 1 | 1 |
 | `ui/expand-text-modal.ts` | 236 | 1 | 1 |
-| `ui/export-manuscript-modal.ts` | 604 | 4 | 4 |
+| `ui/export-manuscript-modal.ts` | 665 | 4 | 4 |
 | `ui/fanfic-prompt-notice.ts` | 20 | 1 | 1 |
 | `ui/fanfic-review-modal.ts` | 419 | 1 | 1 |
 | `ui/fingerprint-blend-modal.ts` | 629 | 2 | 2 |
