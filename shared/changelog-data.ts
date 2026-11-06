@@ -21,6 +21,29 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.52.0',
+        date: '2026-11-06',
+        title: '覆盖率攻坚与热路径收口',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧪 覆盖率',
+                items: [
+                    'body-writer 备份链全链测试（原型 spy，无需注入点）',
+                    'fs-adapter / template-validator / template-vars 共 +100 用例',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '⚡ 性能',
+                items: [
+                    '两处 UI 热路径全库扫描改目录遍历（0.523ms→0.004ms/次）',
+                    'check:hotpaths 覆盖 getMarkdownFiles/getAllLoadedFiles',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.51.0',
         date: '2026-11-06',
         title: '协同视图切片第九批收口（内聚优先）',

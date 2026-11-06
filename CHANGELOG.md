@@ -2,6 +2,26 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.52.0（2026-11-06）
+
+### 🧪 覆盖率攻坚（Trae 协作，多轮 test-hardening）
+
+- `body-writer` 25→31 用例：备份链全链 6 例（`spyOn(ChapterVersionService.prototype, 'saveVersion')`——推翻「无注入点不可测」结论，无需改 engine），及 parseChapterNum/dirOf/defaultBodyPath 纯逻辑 9 例。
+- `obsidian-fs-adapter-fallback` 7→21：索引内外 stat/递归删除/mkdir 分叉/listFolders/writeVaultText 回退。
+- `template-validator` 19→38：YAML 块标量、未闭合回退、同人/时间线、实体缺键与空值。
+- `template-vars-story-context` 12→43：buildContextVars/buildEntityVars/buildTemplateVars 信号段与 compact 实体口径。
+- 全仓 **584 文件 / 6,375 用例**（v4.51.0 为 6,275，+100）。
+
+### ⚡ 热路径收口（perf）
+
+- `batch-pipeline-runner#loadStepResults`、`realtime-quality-controller#loadPreviousChapterContext` 的全库 `vault.getFiles()` 改为 `listFolderFiles` 目录遍历：10,080 文件实测 0.523ms → **0.004ms**/次。
+- `check:hotpaths` HOT_FILES 8→10；门禁正则扩到 `getMarkdownFiles`/`getAllLoadedFiles`，堵住换 API 绕过的静默回归。
+
+### 🧹 仓库与门禁
+
+- `.gitignore` 纳入 `tmp/`：覆盖率中间产物不再污染 `git status`。
+- `check:hotpaths` 扩容属收紧；any 298/298 零余量维持；bundle 4,855,409B（-50B）。
+
 ## v4.51.0（2026-11-06）
 
 ### ✂️ 协同视图切片第九批收口（3,581 → 3,363，内聚优先）
