@@ -1,8 +1,7 @@
 {
-  "total": 276,
+  "total": 260,
   "generatedAt": "2026-11-06",
   "files": {
-    "ui/components/smart-chart.ts": 16,
     "ui/full-writer/intervention-controller.ts": 9,
     "ui/views/knowledge-base-modals.ts": 9,
     "services/worker-manager.ts": 7,
