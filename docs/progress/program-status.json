@@ -6,7 +6,7 @@
     "version": "4.62.0",
     "tests": {
       "files": 589,
-      "cases": 6454
+      "cases": 6460
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 154,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 实测 git rev-list --count=ahead 154，HEAD 9f7cc12 = v4.62.0 版本节点；第 49–53 轮 any 212→198、B2 端口回归与 B3 导出接线回归已/待收单）"
+    "localCommitsAhead": 157,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 实测 git rev-list --count=ahead 157，HEAD 7a17de4 = 第 55 轮 v5 验收清单收单；第 49–56 轮 any 212→198、B2 端口回归、B3 导出接线回归与 platform-export 边界补测已/待收单）"
   },
   "groups": [
     {
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-07",
+      "group": "G7",
+      "summary": "第 56 轮（test-hardening，ZCode 第 55 轮派工前提纠偏）：tests/unit/shared/platform-export.test.ts 3→9 用例——派工 ①长篇模式/③字数下限/④未知平台回退在源码中不存在（mode 仅 short|script、函数内无字数校验、类型不允许未知平台），故按真实分支等价落点补测：无调研回退 storyDoc 首个实质行 + 默认标签、无 storyDoc 头部占位、空标签兜底、标题未命名/末段目录名回退、字数仅透传（下限归 publication-profile 三档）、敏感词覆盖简介+正文并按次数降序。零源码、零新增路径、零 any；定向 9/9，全量 589 文件 / 6,460 用例，check:any 198/198，automation/docs/jsdoc/linked 绿；bundle 不变",
+      "evidence": "tests/unit/shared/platform-export.test.ts + docs/PLAN.md 第 56 轮"
+    },
     {
       "date": "2026-11-07",
       "group": "G7",

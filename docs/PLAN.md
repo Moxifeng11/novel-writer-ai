@@ -328,6 +328,13 @@ Agent（harness）
   - 边界：未动 `engine/**`、ZCode 文件集与门禁阈值；未新增路径；未改变任何运行时行为（仅文档 + 门禁脚本锚点清单）。
   - 换型说明：第 53 轮 test-hardening → 本轮 docs-correction（换型合规）。v5-product 权重维持 1.50（ZCode 第 52 轮裁决），docs-correction 1.2 维持。仍待拍板三项（push/tag/Release、剧本 storyboard 必填语义、`E2E_REWRITE=1`）未变。
   - 并发事实：执行期间 ZCode 已收单第 53 轮（`a20fb3d`），故收尾工作树仅本轮 5 M；`npm run preflight` 本轮实测 exit 0（main.js 4,867,168 与 v4.62.0 一致）。
+- 第 56 轮（test-hardening；兑现 ZCode 第 55 轮派工；派工前提纠偏后按真实分支补测）：
+  - 盘点（先问是不是）：派工四项中 ①「长篇模式平台包」、③「字数下限边界」、④「未知平台回退」与源码事实不符——`buildPlatformPackage` 的 `mode` 类型仅 `'short' | 'script'`，`PLATFORM_EXPORT_PROFILES` 只有两项，无长篇分支；函数内无字数下限校验（`wordCount` 仅原样写入 header）；类型约束下不存在未知平台输入；导出弹窗也只在 `short`/`script` 分支调用（`ui/export-manuscript-modal.ts:459-469`）。故不按错误前提造伪用例、不改 `shared/platform-export.ts`。
+  - 等价落点新增 6 用例（`tests/unit/shared/platform-export.test.ts` 3→9）：①无前期调研 → 简介回退 `storyDoc` 首个实质行 + 默认标签；②无调研且无 `storyDoc` → 简介为空 + 头部补填占位（注释注明 v4.59.0「未校验简介/标签完整度」待产品接入）；③调研字段为空 → 标签回退平台默认；④项目名为空/尾斜杠 → 标题回退「未命名」/末段目录名（对应派工④的真实回退语义）；⑤字数只透传、不做下限阻断（对应派工③真实语义；下限由 `publication-profile` 三档判定）；⑥敏感词覆盖简介与正文并按命中次数降序。
+  - 验证：定向 9/9；`typecheck` 0；全量 `npm test` 589 文件 / 6,460 用例通过；`check:any` 198/198（96 文件）；`check:automation` / `check:docs` / `check:jsdoc` / `check:linked-scenarios` 全绿；纯测试文件不进 bundle（未 build，main.js 维持 4,867,168）。
+  - 边界：未动 `engine/**`、`shared/platform-export.ts`、ZCode 文件集与门禁阈值；零新增路径、零新增 `any`、零运行时行为变化。
+  - 并发事实：开工后 ZCode 以 `7a17de4` 收单第 55 轮 `docs/progress/v5-acceptance.md`，ahead 157；收尾工作树为本轮测试 + PLAN/program-status 台账。
+  - 元迭代（第 56 轮）：test-hardening 维持 2.00 封顶（成功不复利）；v5-product 1.50、gate-fix 1.76、audit-only 1.40、perf 1.49、docs-correction 1.20、notice 0.75、slice 0.70 维持；无参数变更，故不触发互调确认。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
