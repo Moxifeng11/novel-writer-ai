@@ -111,6 +111,82 @@ describe('buildStagePanelModel', () => {
         expect(buildStagePrompt(unitStage!)).toContain('集');
     });
 
+    it('剧本：冷启动按五阶段顺序逐级阻塞，不停在未建骨架上', () => {
+        const flow = resolveCreationFlow('script', '剧本/冷启动', {
+            ...BASE_FACTS,
+            unitTarget: 12,
+        });
+        const model = buildStagePanelModel(flow, '剧本/冷启动');
+
+        expect(model.items.map(item => item.id)).toEqual(['research', 'outline', 'storyboard', 'units', 'export']);
+        expect(model.items.map(item => item.state)).toEqual(['active', 'blocked', 'blocked', 'blocked', 'blocked']);
+        expect(model.percent).toBe(0);
+        expect(model.nextLabel).toBe('前期调研');
+        // 阻塞原因必须指向实际的直接依赖，而不是统一文案
+        expect(model.items[1].progressText).toContain('先完成：前期调研');
+        expect(model.items[2].progressText).toContain('先完成：分集大纲');
+        expect(model.items[3].progressText).toContain('先完成：分集大纲');
+        expect(model.items[4].progressText).toContain('先完成：分集写作');
+    });
+
+    it('剧本：分镜表完成但未建分集骨架时引导按集数建骨架', () => {
+        const flow = resolveCreationFlow('script', '剧本/待建骨架', {
+            ...BASE_FACTS,
+            preResearchDone: true,
+            docs: { outline: true, storyboard: true },
+            unitTarget: 12,
+        });
+        const model = buildStagePanelModel(flow, '剧本/待建骨架');
+
+        expect(model.percent).toBe(30);
+        expect(model.nextLabel).toBe('分集写作');
+        expect(model.items[3].state).toBe('active');
+        expect(model.items[3].progressText).toBe('尚未创建集骨架');
+        expect(model.items[3].prompt).toContain('创建 12 集骨架');
+        expect(model.items[4].state).toBe('blocked');
+    });
+
+    it('剧本：分集全部写完时下一步进入导出，而不是留在分集写作', () => {
+        const flow = resolveCreationFlow('script', '剧本/全写完', {
+            ...BASE_FACTS,
+            preResearchDone: true,
+            docs: { outline: true, storyboard: true },
+            unitTotal: 12,
+            unitTarget: 12,
+            unitWritten: 12,
+            exportExists: false,
+        });
+        const model = buildStagePanelModel(flow, '剧本/全写完');
+
+        expect(model.percent).toBe(85);
+        expect(model.nextLabel).toBe('导出成稿');
+        expect(model.items[3].state).toBe('done');
+        expect(model.items[3].ratioPercent).toBe(100);
+        expect(model.items[4].state).toBe('active');
+        expect(model.items[4].prompt).toContain('导出成稿');
+        expect(model.items[4].progressText).toContain('已写 12 集');
+    });
+
+    it('剧本：已有正文的项目按既有正文跳过前置设定，只推进剩余分集', () => {
+        const flow = resolveCreationFlow('script', '剧本/存量', {
+            ...BASE_FACTS,
+            unitTotal: 12,
+            unitWritten: 3,
+            nextUnitNumber: 4,
+        });
+        const model = buildStagePanelModel(flow, '剧本/存量');
+
+        expect(model.items.slice(0, 3).map(item => item.state)).toEqual(['done', 'done', 'done']);
+        expect(model.items[0].progressText).toContain('已按既有正文跳过');
+        expect(model.items[2].progressText).toContain('已按既有正文跳过');
+        expect(model.items[3].state).toBe('active');
+        expect(model.items[3].ratioPercent).toBe(25);
+        expect(model.items[3].progressText).toBe('3/12 集已写');
+        expect(model.items[3].prompt).toContain('继续写第4集');
+        expect(model.percent).toBe(44);
+        expect(model.nextLabel).toBe('分集写作');
+    });
+
     it('无项目/无快照时给出占位文案而不是硬编码阶段', () => {
         expect(buildStagePanelModel(null, '').emptyText).toContain('未选择项目');
         expect(buildStagePanelModel(undefined, '长篇小说/示例').emptyText).toContain('阶段读取失败');

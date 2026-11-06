@@ -231,6 +231,12 @@ Agent（harness）
   - 文档：`USER-GUIDE.md` §3/§5/§7、`COMMERCIAL-GUIDE.md` §2/§4/§5 同步三档口径与阻断分级；`scripts/check-linked-scenarios.mjs` 锚点从 `strictPublication` 更新为 `publicationLevel`。
   - 验证：定向 `publication-profile` **17/17**（11→17）；全量 `npm test` **586 文件 / 6,433 用例全绿**（6,427→6,433）；`typecheck` 0；改动文件 eslint 0 error（6 warning 为既有 UI 文案告警）；`check:linked-scenarios` / `check:inline-styles` 绿。
   - 边界：未动 `engine/**` 与 ZCode 文件集；新增待提交路径 1（设计文档，`newPathBudget=1`）；基线未自行上调（bundle 实测由收单回执给出）。
+- 第 39 轮（test-hardening，剧本阶段面板与 creation-flow 真实态一致性；ZCode 派工候选①）：
+  - 缺口核实（先问是不是）：派工中的四条断言（五阶段顺序、分镜未完成时 units=todo/export=blocked、分镜完成后 units=active、预填话术含分集标签）**已由第 31 轮 3 个用例用真实 `resolveCreationFlow` 覆盖**，不重复实现；真实缺口在剧本的冷启动、未建骨架、全写完与存量项目四种状态：面板从不曾被这些真实事实组合驱动过。
+  - 新增 4 用例（`tests/unit/ui/agent-stage-panel.test.ts`，16→20）：①冷启动 → research active、outline/storyboard/units/export 逐级 blocked，且阻塞原因分别指向直接依赖（前期调研/分集大纲/分集写作）；②分镜表完成但未建骨架 → 30%、units active 且话术为「创建 12 集骨架」、export blocked；③分集 12/12 写完 → 85%、units done 100%、下一步「导出成稿」（不滞留在分集写作）；④存量剧本（已写 3 集、无前置文档）→ 三前置阶段按「已按既有正文跳过」置 done，units 25% active、话术「继续写第4集」、总进度 44%。
+  - 语义观察（不擅自改）：剧本的 `storyboard` 与 `research/outline` 同受 `written>0` 的「既有正文跳过」规则影响，存量项目若缺分镜表也会显示 done（提示文案为「已按既有正文跳过」）。与长篇/短篇口径一致，如产品要让分镜表对剧本强制必填，需用户/ZCode 拍板后改 `shared/creation-flow.ts`（Trae 不改语义）。
+  - 验证：定向 **20/20**；`npm run typecheck` 0 错误；eslint 对该测试文件在 ignore 范围（0 error）；零源码改动 → bundle/any 基线不受影响；`program:render` → `gen:docs` → `check:docs` / `check:program` 绿。全量 `preflight` 按第 30 轮协作口径由 ZCode 统一跑。
+  - 边界：只改既有测试文件，零新增路径、零源码改动；未动 `engine/**` 与 ZCode 文件集。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
