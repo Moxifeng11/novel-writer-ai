@@ -2,6 +2,18 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.57.0（2026-11-06）
+
+### 🐛 B2：Agent 工作台阶段面板竞态修复
+
+- **真实缺口**：`refreshStagePanel` 先记 `activeProject` 再 `await port.getProjectStatus`，返回后未复检项目——快速切换甲乙项目时，甲的快照可能晚到并覆盖乙。现于 await 后以 `this.activeProject !== project` 丢弃过期结果。
+- 新增纯函数 `fetchStagePanelModel(project, getStatus)`（stage-panel）：内置 try/catch → 占位模型，读取失败不抛；工作台改用该 seam，删除两处失效类型导入。
+- 测试 8→16：有项目渲染 / 未选项目不请求 port / 切换项目晚到旧结果仍带原项目标识 / port 抛错与 null 占位 / 三条接线契约（过期丢弃、三处刷新、点击只预填不提交）。
+
+### 🧪 测试与门禁
+
+- 全量单测 **586 文件 / 6,423 用例**（+8）；preflight 全绿；any 251/251；bundle +70B 按修复必需文档化上调。
+
 ## v4.56.0（2026-11-06）
 
 ### 🧪 chapter-state 失效标脏与状态机补测（+7 用例）

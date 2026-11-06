@@ -21,6 +21,21 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.57.0',
+        date: '2026-11-06',
+        title: 'B2 阶段面板竞态修复',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🐛 Agent',
+                items: [
+                    '切项目时旧阶段快照晚到覆盖新项目：await 后复检并丢弃过期结果',
+                    'fetchStagePanelModel seam + 读取失败占位；测试 8→16',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.56.0',
         date: '2026-11-06',
         title: 'chapter-state 失效标脏补测',
