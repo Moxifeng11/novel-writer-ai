@@ -510,6 +510,13 @@ Agent（harness）
   - 改动（3 文档、零源码）：13 §1/§2/§3 对齐脚本与台账口径；04 §2.7 改为实际导出清单、§2.8 按 `sideEffect` 分为 write / dangerous 两组；02 §1 补 Domains / Utils 两行与 `repository` dead allowance 说明，并把「门禁未覆盖」改为「门禁之外或需额外评审」，domains/utils 标注已纳入 `check:deps`。
   - 验证：`check:docs`（19 文档 / v4.69.0）、`check:automation`（round 83 / HANDOFF 9 行）、`check:any` 148/148、`check:bundle` 4,869,777 全绿；全量 `preflight:release` 见 canonical 记录。
   - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`、源码与测试；零新增文件；`main.ts` 的「经派工确认」口径来自第 73 轮既有实践，不追溯扩大授权。
+- 第 84 轮（audit-only；兑现 ZCode 第 83 轮批准：门禁覆盖边界 + 零覆盖模块清单）：
+  - 盘点：开工 HEAD `4c5a3f0` / ahead 196（ZCode 已收单第 82 轮 5 文档）；工作树仅第 83 轮 4 文档路径未收单；信箱 1 条未读＝第 82 轮收单回执 + 第 83 轮批准（gate-fix 无合规批次，转 audit-only/test-hardening，测试候选须先列清单再动手）。v5 B1–B5 无未完成代码项 → 按决策阶梯第 1 级执行派工。
+  - 门禁审计（读脚本 + 取证，6 个）：`check:hotpaths`（11 热路径模块 / 3 类全库 API；间接扫描边界已于第 62 轮由 ZCode 裁决不立项）；`check:silent-failures`（仅扫 `ui/`，engine/services 降级由日志承担为既定口径）；`check:write-entry`（只匹配 `adapter.write/append`，`writeBinary` 未覆盖但全仓 0 处调用，无实际风险）；`check:dsh-isolation`（含根级 `main.ts`/`plugin-api.ts` 与反向依赖）；`check:relationship-authority`（白名单 7 文件）；`check:linked-scenarios`（4 链 / 35 锚点）。结论：**无新增值得修补的门禁缺口**，不引入推测性规则（避免假阳性占比上升）。
+  - 零覆盖候选（取自 v4.69.0 `coverage/` HTML，仅非 engine / 非 ui/views）：①`shared/entity-integrity.ts` Lines 0/10、Branches 0/6、Funcs 0/1，契约「只有 valid 才允许 saveEntities」，3 个 UI 模态调用，纯编排可测——首选；②`shared/desktop-shell.ts` 0/16、0/13、0/4，平台分支 + 动态 `child_process`，需 mock，次选；③`shared/internal-registry.ts` Lines 1/10、Branches 0/2、Funcs 0/4，命令桥接在用但行为价值低；④`shared/plugin-capabilities.ts` 0/1、0 分支，不满足「有分支语义」不入选。`services/prompt-manager.ts` 虽 0.41% 但 242 语句 / 122 分支，超出单切片粒度。
+  - 改动：仅本台账 + canonical 状态；零源码、零测试、零新增文件。
+  - 验证：`check:docs` / `check:automation`；全量 `preflight:release` 见 canonical 记录。
+  - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`；未趁审计顺手改门禁或造用例，测试落地待 ZCode 确认候选后执行。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
