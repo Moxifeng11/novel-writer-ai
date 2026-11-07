@@ -1,18 +1,19 @@
 # v5 验收清单：Agent 对话 + 多步骤协同写作最小闭环
 
 > 用途：给用户逐批验收 B1–B5，不再重复论证设计。
-> 生成口径：当前 HEAD 实测（2026-11-07 06:35 +08:00）。
-> 版本：v4.62.0 · HEAD `49f6635` · ahead 156 · 工作树干净。
+> 生成口径：committed HEAD 实测（2026-11-07 11:34 +08:00）。
+> 版本：v4.65.0 · HEAD `c8147e5` · ahead 171 · 工作树干净。
 > 证据哈希 = `git hash-object <path>`（Git blob SHA-1，取前 12 位），用于确认验收时文件未被改动。
 
 ## 〇、全局基线（当前 HEAD 实测）
 
 | 指标 | 实测值 | 命令 / 来源 |
 |---|---|---|
-| 单测文件 | 589 passed | `npm run test` |
-| 单测用例 | 6,454 passed | `npm run test` |
-| any 预算 | 198/198（96 文件） | `npm run check:any` |
-| 构建产物 | `main.js` 4,867,168 字节；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
+| 单测文件 | 591 passed | `npm run test` |
+| 单测用例 | 6,480 passed | `npm run test` |
+| v5 锚点定向复验 | 6 文件 / 90 用例通过（2026-11-07 实测） | 见 §一–§三 的定向命令 |
+| any 预算 | 187/198（94 文件） | `npm run check:any` |
+| 构建产物 | `main.js` 4,867,954 字节；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
 | 类型 | 0 error | `npm run typecheck` |
 | 架构守护 | exit 0（9 个既有豁免项，非本轮引入） | `npm run check-engines` |
 | E2E | 基线 37 passed，本轮未重跑（需授权，见 §五） | `npm run test:e2e` |
@@ -70,10 +71,10 @@
 
 | 锚点 | 内容 |
 |---|---|
-| 关键文件 | `.trae/automation/trae-loop-state.json`（唯一 canonical）<br>`scripts/check-automation.mjs`：schema、round 单调、`updatedAt` 时区、红线字段、HANDOFF 行数、信箱可解析、版本四文件一致（L53–L83）<br>`package.json`：`check:automation` 已挂入 `preflight`（L13） |
+| 关键文件 | `.trae/automation/trae-loop-state.json`（唯一 canonical）<br>`scripts/check-automation.mjs`：schema、round 单调、`updatedAt` 时区、红线字段、HANDOFF 行数、信箱可解析、版本四文件一致（L53–L83）<br>`package.json`：`check:automation` 已挂入 `preflight`（L56） |
 | 测试 / 校验 | `npm run check:automation`（结构校验，不校验业务内容） |
-| 当前结果 | 通过：活跃台账 round 54、HANDOFF 9 行、版本 4.62.0、信箱可解析；Vault 根副本 `Test-Path = False`，插件仓副本 `True` |
-| 证据哈希 | `check-automation.mjs` `016fab19e0d1` · `package.json` `a6d1376d1405` |
+| 当前结果 | 通过：活跃台账 round 64、HANDOFF 9 行、版本 4.64.0、信箱可解析；Vault 根副本 `Test-Path = False`，插件仓副本 `True` |
+| 证据哈希 | `check-automation.mjs` `016fab19e0d1` · `package.json` `16b21230f921`（`check:automation` 在 L56） |
 | 落地提交 | `76a124b` |
 
 验收要点：只允许一份活跃状态文件；未来新增自动化检查项失败时，门禁会给出修复命令而不是静默通过。
@@ -87,8 +88,8 @@
 | 关键文件 | `docs/guides/USER-GUIDE.md`（7 节：安装、首个项目、Agent 工作台、三模式流水线、导出与出版检查、数据位置、FAQ）<br>`docs/guides/COMMERCIAL-GUIDE.md`（7 节：三形态参数、出版检查、质量校验、批量 SOP、投稿检查表、验收指标、合规）<br>`docs/handbook/13-dual-automation-ops.md`（6 节：角色与文件集、循环配置、状态与交接、互调流程、故障处理、收尾检查表） |
 | 可执行命令 | `npm run check:docs` · `npm run check:jsdoc` · `npm run check:program` · `npm run check:linked-scenarios` |
 | 当前结果 | `check:docs` 通过（19 个活跃文档）；`check:jsdoc` 100%，`@example` 52/52（747 文件）；`check:program` 与台账一致；`check:linked-scenarios` 4 链 35 锚点 |
-| 证据哈希 | `USER-GUIDE.md` `a194edc0e430` · `COMMERCIAL-GUIDE.md` `bdb6eb3a2f41` · `13-dual-automation-ops.md` `975b4c620742` |
-| 落地提交 | 指南 `067f1e9` · 运维手册 `c6017b8` |
+| 证据哈希 | `USER-GUIDE.md` `86871ba84d8e` · `COMMERCIAL-GUIDE.md` `0363c5673ad1` · `13-dual-automation-ops.md` `975b4c620742` |
+| 落地提交 | 指南 `067f1e9` → `653170c`（第 61 轮补强：导出落点/文件名口径/成品档作者建议） · 运维手册 `c6017b8` |
 
 验收要点：三份文档可独立阅读，不依赖会话上下文；文档中的命令均真实存在于 `package.json`。
 
@@ -100,11 +101,11 @@
 |---|---|---|
 | B5 手工验收（真实三模式流程） | 未执行；`E2E_REWRITE=1` 会改写 E2E 基线 | 明确授权后跑 `E2E_REWRITE=1 npm run test:e2e`，再人工走「创建→大纲→人设→写 1 章→质检→导出」 |
 | E2E 全量 | 基线 37 passed，本轮未重跑 | 授权后 `npm run test:e2e` |
-| push / tag / Release | ahead 156，未推送；v4.62.0 节点 `9f7cc12` 已出 | 用户明确指令后才执行 |
+| push / tag / Release | ahead 171，未推送；v4.65.0 节点 `c8147e5` 已出 | 用户明确指令后才执行 |
 | 剧本 `storyboard` 必填语义 | 当前为可选字段；三形态中剧本是否强制 storyboard 无产品口径 | 产品语义确认后，由 ZCode 改 engine 契约，Trae 同步 UI/测试 |
 
 ---
 
 ## 七、结论
 
-B1–B5 代码、测试、门禁与文档均已在当前 HEAD 可复验：全量 589 文件 / 6,454 用例通过，any 198/198，bundle 4,867,168，六道相关门禁全绿。剩余事项只有 §六 的四项授权型工作，不含待补代码。
+B1–B5 代码、测试、门禁与文档均已在当前 HEAD 可复验：全量 591 文件 / 6,480 用例通过，any 187/198（94 文件），bundle 4,867,954，六道相关门禁全绿；v5 锚点 6 文件 / 90 用例定向复验通过。剩余事项只有 §六 的四项授权型工作，不含待补代码。
