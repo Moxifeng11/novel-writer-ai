@@ -2,6 +2,32 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.69.0（2026-11-07）
+
+### 🎬 剧本分镜表改为强制必填（用户拍板）
+
+- `storyboard` 阶段不再按「已有正文」跳过，只以分镜表文档是否就绪为准。
+- 新增 `CreationFlowStage.hardDependsOn`：剧本 `units` 声明 `hardDependsOn: ['storyboard']`——**未完成分镜表时分集写作显示 blocked**（即使已有剧集正文），阶段面板与 Agent `get_project_status` 都会提示「先完成：分镜表」。
+- 长篇/短篇的存量项目跳过规则不变（避免老项目被拉回调研）。
+- 更新 4 个测试文件的断言（旧「存量剧本跳过分镜」语义改为强制断言）；bundle +180B 已按 §7.4e note 上调。
+
+### 🧪 E2E 全量重跑 37/37 通过，修复两处 B3 欠账
+
+- `exportTxtViaUi` 原来假设导出弹窗只有 2 个 `select`；v4.59.0 后为项目/格式/交付检查/导出范围 4 个 → 改为**按「格式」下拉的选项内容定位**，不再依赖数量。
+- 短篇 EPUB 用例未填作者，被成品档「EPUB/DOCX 需要作者元数据」正确阻断 → 改为按真实用户路径填作者，而不是降档绕过。
+
+### 📚 文档
+
+- `USER-GUIDE` 补剧本分镜强制前置说明；`COMMERCIAL-GUIDE` 纠正「参数唯一来源」错误：出版检查阈值来自 `CREATION_MODE_SPECS` 平台规格区间，项目内目标值只驱动阶段面板骨架提示。
+
+### 🧹 类型收窄
+
+- `shared/entity-models.ts` / `ui/views/knowledge-base-view.ts` / `ui/settings/general-sections.ts` any 共 9→0；基线 163→154（85 文件）。
+
+### 🧪 测试与门禁
+
+- 全量 **591 文件 / 6,491 用例** 全绿；`preflight:release` 全绿；E2E 五个 project **37/37**；any 154；`main.js` 4,869,380（分镜强制 +180B 已 note，版本数据增量另计）。
+
 ## v4.68.0（2026-11-07）
 
 ### 🧹 类型收窄：三文件 any 11→0（174→163）

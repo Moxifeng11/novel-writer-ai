@@ -21,6 +21,27 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.69.0',
+        date: '2026-11-07',
+        title: '剧本分镜表强制必填与 E2E 37/37',
+        sections: [
+            {
+                type: 'breaking',
+                label: '🎬 行为变更',
+                items: [
+                    '剧本分镜表强制必填：未完成分镜表时分集写作显示阻塞（存量剧本不再跳过）',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '🧪 验证',
+                items: [
+                    'E2E 全量 37/37 通过；修复导出 helper 下拉定位与短篇 EPUB 缺作者两处欠账',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.68.0',
         date: '2026-11-07',
         title: '三文件 any 清零与 v5 模块 API 文档',

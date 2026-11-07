@@ -1,6 +1,6 @@
 # 插件结构化规划（PLAN）
 
-> 版本：v4.68.0 · 更新：2026-11-07
+> 版本：v4.69.0 · 更新：2026-11-07
 > 定位：**本文件是插件仓的唯一结构性规划入口**。代码是最终真相源；本文件只回答「有哪些模块、边界在哪、下一轮做什么」。
 > 历史文档：`docs/audits/`（各轮取证）、`docs/releases/`（各版本交付）、`CHANGELOG.md`（变更流水）。
 > **全系统优化专项**（16 板块 / 7 任务组 / 排期与验收）：[`docs/PROGRAM.md`](PROGRAM.md) · 进度报告：[`docs/progress/PROGRAM-STATUS.md`](progress/PROGRAM-STATUS.md)。
@@ -233,8 +233,8 @@ Agent（harness）
   - 边界：未动 `engine/**` 与 ZCode 文件集；新增待提交路径 1（设计文档，`newPathBudget=1`）；基线未自行上调（bundle 实测由收单回执给出）。
 - 第 39 轮（test-hardening，剧本阶段面板与 creation-flow 真实态一致性；ZCode 派工候选①）：
   - 缺口核实（先问是不是）：派工中的四条断言（五阶段顺序、分镜未完成时 units=todo/export=blocked、分镜完成后 units=active、预填话术含分集标签）**已由第 31 轮 3 个用例用真实 `resolveCreationFlow` 覆盖**，不重复实现；真实缺口在剧本的冷启动、未建骨架、全写完与存量项目四种状态：面板从不曾被这些真实事实组合驱动过。
-  - 新增 4 用例（`tests/unit/ui/agent-stage-panel.test.ts`，16→20）：①冷启动 → research active、outline/storyboard/units/export 逐级 blocked，且阻塞原因分别指向直接依赖（前期调研/分集大纲/分集写作）；②分镜表完成但未建骨架 → 30%、units active 且话术为「创建 12 集骨架」、export blocked；③分集 12/12 写完 → 85%、units done 100%、下一步「导出成稿」（不滞留在分集写作）；④存量剧本（已写 3 集、无前置文档）→ 三前置阶段按「已按既有正文跳过」置 done，units 25% active、话术「继续写第4集」、总进度 44%。
-  - 语义观察（不擅自改）：剧本的 `storyboard` 与 `research/outline` 同受 `written>0` 的「既有正文跳过」规则影响，存量项目若缺分镜表也会显示 done（提示文案为「已按既有正文跳过」）。与长篇/短篇口径一致，如产品要让分镜表对剧本强制必填，需用户/ZCode 拍板后改 `shared/creation-flow.ts`（Trae 不改语义）。
+  - 新增 4 用例（`tests/unit/ui/agent-stage-panel.test.ts`，16→20）：①冷启动 → research active、outline/storyboard/units/export 逐级 blocked，且阻塞原因分别指向直接依赖（前期调研/分集大纲/分集写作）；②分镜表完成但未建骨架 → 30%、units active 且话术为「创建 12 集骨架」、export blocked；③分集 12/12 写完 → 85%、units done 100%、下一步「导出成稿」（不滞留在分集写作）；④存量剧本（已写 3 集、无前置文档）→ 三前置阶段按「已按既有正文跳过」置 done，units 25% active、话术「继续写第4集」、总进度 44%。（第 79 轮语义变更后该用例已改写为：仅前期调研/分集大纲按既有正文跳过，分镜表为 active、分集写作 blocked。）
+  - 语义观察（不擅自改）：剧本的 `storyboard` 与 `research/outline` 同受 `written>0` 的「既有正文跳过」规则影响，存量项目若缺分镜表也会显示 done（提示文案为「已按既有正文跳过」）。与长篇/短篇口径一致，如产品要让分镜表对剧本强制必填，需用户/ZCode 拍板后改 `shared/creation-flow.ts`（Trae 不改语义）。（已于第 79 轮由用户拍板改为强制必填：`hardDependsOn:['storyboard']`，随 `e1c3820` 入库。）
   - 验证：定向 **20/20**；`npm run typecheck` 0 错误；eslint 对该测试文件在 ignore 范围（0 error）；零源码改动 → bundle/any 基线不受影响；`program:render` → `gen:docs` → `check:docs` / `check:program` 绿。全量 `preflight` 按第 30 轮协作口径由 ZCode 统一跑。
   - 边界：只改既有测试文件，零新增路径、零源码改动；未动 `engine/**` 与 ZCode 文件集。
 - 第 40 轮（gate-fix，ZCode 候选③；本轮为元迭代轮）：
@@ -486,6 +486,12 @@ Agent（harness）
   - 验证：定向 3 文件 / 49 用例通过（`creation-flow` 17、`agent-stage-panel` 20、`agent-mode-alignment` 12）；build 后 `main.js` 4,869,380（+180B，≤200B/批预算，已按规则 `--update-baseline --note` 显式上调）；全量 `preflight:release` 见 canonical 记录。
   - 文档收口：`USER-GUIDE §4` 补剧本分镜强制前置说明；`v5-acceptance` 头部/any/bundle/§六/§七对齐 `dc03546`；v5 计划文件待拍板项 ③ 关闭为「已落地待收单」。
   - 边界：零新增文件、未动 `engine/**`、`ui/views` 指纹视图、`.any-baseline.json`（154/154 为 ZCode 收单结果）；产品语义来源需 ZCode 收单时复核。
+- 第 80 轮（docs-correction；兑现 ZCode 派工：分镜强制语义文档一致性 + 旧语义测试盘点）：
+  - 盘点：开工 HEAD `3e5b9d4` / ahead 192，信箱 1 条未读＝ZCode 收单回执（`e1c3820` 代码 + `aa2b4c9` E2E 37/37）并派工三项：①核对 USER-GUIDE 分镜描述与 `hardDependsOn`；②清掉 COMMERCIAL-GUIDE/handbook 的旧「分镜可选/可跳过」表述；③列出仍按旧语义的测试（Trae 不改测试）。工作树为 ZCode 的 v4.69.0 版本节点（18 路径 + release 说明），本轮避开其文件集。
+  - 核对结论：USER-GUIDE §4 已与 `hardDependsOn` 一致（分镜未完成时分集写作 blocked，仅调研/大纲仍按存量正文跳过）；handbook 无分镜语义表述；旧语义测试**零残留**——`agent-stage-panel.test.ts` 存量剧本用例已改为「调研/大纲跳过、分镜 active、分集写作 blocked」，`creation-flow.test.ts` 的「已按既有正文跳过」断言只覆盖短篇。真实偏差 2 处：COMMERCIAL-GUIDE §4 把分镜表写成「第 2 步补」且未说明强制前置；第 39 轮台账与「语义观察」条目未标注已被第 79 轮推翻。
+  - 改动（4 文档、零源码）：COMMERCIAL-GUIDE §4 重写剧本流程与强制前置、§5 检查表补「每集分镜表已完成」；PLAN 第 39 轮条目补语义变更注记；v5-acceptance 头部/§〇 bundle/§六/§七刷新到 `3e5b9d4`、ahead 192、bundle 4,869,777（v4.69.0 +397B）；Vault 根 v5 计划文件实施状态与未闭环项同步（③ 已闭环）。
+  - 验证：文档类门禁（`check:docs` / `check:automation` / `check:linked-scenarios`）；全量 `preflight:release` 由 ZCode 在 v4.69.0 节点统一跑（本轮工作树含其版本节点，避免并发 build 覆盖基线）。
+  - 边界：未动 `engine/**`、`ui/views`、ZCode 版本节点文件集（package/manifest/versions/CHANGELOG/README/generated）；零新增文件；未改测试与源码。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
