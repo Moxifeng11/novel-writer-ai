@@ -365,6 +365,14 @@ Agent（harness）
   - 验证：`npm run check:docs` 绿（19 活跃文档 / 4.64.0）；全量 `preflight:release` EXIT=0（590 文件 / 6,471 用例，statements 43.5% / branches 43.21% / functions 44.22% / lines 43.82%）。
   - 边界：未改代码、未动 `engine/**` 与 ZCode 文件集；`newPathBudget=0` 遵守（仅 2 个已跟踪指南 + 本台账）。
   - 并发事实：开工 HEAD `75a0d06` → ZCode 提交 `4919c76`（ahead 166）；本轮未触碰版本四文件与 release 说明。
+- 第 63 轮（gate-fix；ZCode 第 63 轮明确派工：worker 协议 any 清零）：
+  - 盘点（先问是不是）：信箱 2 条未读（第 62 轮零代码已核 + 第 63 轮派工）；工作树干净、HEAD `653170c`；v5 B1–B5 均已收单，剩余项均为用户拍板项，无 v5 代码缺口，故按决策阶梯执行明确派工。
+  - 实测纠偏：派工写「各 5→0」，实际基线为 `worker-protocol.ts` 5 处、`worker-runtime.ts` **6 处**（`TaskHandler` 行含入参/返回值两个 any），全部清零后总数 198→**187**（派工预期 188，多消除 1 处）。
+  - 交付：`services/worker-protocol.ts` 5→0（`WorkerMessage.payload`、`WorkerTaskDefinition.input`、`TaskCompletePayload.result` 改 `unknown`；`FallbackHandler` 改注册侧泛型 `FallbackHandler<I = WorkerTaskInput, R = unknown>`，新增 `WorkerTaskInput { text; context?: never }` 供 engine 隐式入参沿用上下文类型）；`services/worker-runtime.ts` 6→0（`TaskHandler` 入参 `never`/返回 `Promise<unknown>`、`postMessageToMain` payload `unknown`、`sendComplete` result `unknown`、两处 `(self as any)` 改本地窄接口 `WorkerScope` + 惰性 `getWorkerScope()` 避免 Node/Vitest import 期触发 `self`）；`services/worker-manager.ts` 连带 2 行（`Map<string, FallbackHandler<never>>` 与 `executeFallback` 的 `handler(task.input as never, …)`）。
+  - 设计取舍：`strictFunctionTypes: true` 下若把降级入参直接改 `unknown`，`engine/deconstruction-worker-manager.ts`、`engine/heavy-task-worker-manager.ts` 的隐式 `input.text/context` 会被推断为 `never` 而报错；`engine/**` 属红线不可改，故用注册侧泛型 + 默认协议形状让 engine 零改动通过类型检查，运行时消息结构不变。
+  - 验证：`typecheck` 0；定向 8/8（worker-manager 6 + deconstruction-scheduler-abort 2）；`check:any` 198→187（94 文件）；`eslint` 改动文件 0 error（3 处既有 warning，非本轮引入）；`build` + `check:bundle` 通过，`main.js` 4,867,954 逐字节不变（纯类型擦除）。
+  - 边界：未改 `engine/**`、ZCode 文件集与 `.any-baseline.json`（按派工留给 ZCode 收单时下调）；未新增文件与运行时代码依赖。
+  - 并发事实：开工 HEAD `653170c`，ahead 167；本轮 3 个 services 文件 + 台账，未触碰版本四文件。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

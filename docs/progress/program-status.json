@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 166,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 60 轮收单后实测 git rev-list --count=ahead 165，HEAD 75a0d06；第 59–60 轮 perf 收敛与导出目录修复已收单，v4.64.0 版本节点提交后 ahead 166）"
+    "localCommitsAhead": 167,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 63 轮开工实测 git rev-list --count=167，HEAD 653170c；第 61 轮文档补强收单后 ahead 167）"
   },
   "groups": [
     {
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-07",
+      "group": "G7",
+      "summary": "第 63 轮（gate-fix，ZCode 第 63 轮明确派工）：worker 协议 any 清零——worker-protocol.ts 5→0（payload/input/result 改 unknown；FallbackHandler 改注册侧泛型并新增 WorkerTaskInput{text,context?}）；worker-runtime.ts 6→0（TaskHandler 入参 never/返回 Promise<unknown>、sendComplete 与 postMessage payload 改 unknown、两处 (self as any) 改本地窄接口 WorkerScope+惰性 getWorkerScope）；worker-manager.ts 连带 2 行（FallbackHandler<never> 映射与 executeFallback 断言）。实测 check:any 198→187（94 文件，派工预期 188，runtime 实为 6 处）；定向 8/8；typecheck 0；eslint 改动文件 0 error；main.js 4,867,954 逐字节不变",
+      "evidence": "services/worker-protocol.ts + services/worker-runtime.ts + services/worker-manager.ts；engine/** 零改动；全量 preflight:release exit 0（590 文件 / 6,471 用例，statements 43.50% / branches 43.21% / functions 44.21% / lines 43.82%）；check:any 187/198（94 文件，已消除 11 处）；main.js 4,867,954 逐字节不变；docs/generated 已同步（code-index、jsdoc-coverage）"
+    },
     {
       "date": "2026-11-07",
       "group": "G6",

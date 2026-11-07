@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132774 | 1607 | 1346 | 84% |
-| `services/` | 32 | 12575 | 186 | 147 | 79% |
+| `services/` | 32 | 12606 | 187 | 148 | 79% |
 | `shared/` | 174 | 39498 | 1571 | 1307 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
@@ -367,9 +367,9 @@
 | `services/update-checker.ts` | 391 | 9 | 2 |
 | `services/usage-ledger.ts` | 393 | 13 | 5 |
 | `services/vector-rebuild-service.ts` | 141 | 8 | 8 |
-| `services/worker-manager.ts` | 545 | 1 | 1 |
-| `services/worker-protocol.ts` | 107 | 11 | 11 |
-| `services/worker-runtime.ts` | 262 | 8 | 8 |
+| `services/worker-manager.ts` | 546 | 1 | 1 |
+| `services/worker-protocol.ts` | 121 | 12 | 12 |
+| `services/worker-runtime.ts` | 278 | 8 | 8 |
 | `services/worldview-cache-service.ts` | 627 | 4 | 4 |
 | `services/writing-stats-service.ts` | 336 | 6 | 6 |
 | `shared/adaptive-debounce-manager.ts` | 315 | 2 | 2 |
