@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 181,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 71 轮收单后实测 git rev-list --count=ahead 181，HEAD 5c53e34；第 70–71 轮场景细纲补测与 any 174 已收单，v4.67.0 版本节点提交后 ahead 182）"
+    "localCommitsAhead": 184,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 74 轮实测 git rev-list --count=184，HEAD fcd9fde；第 72 轮 c5eabb0 与第 73 轮 fcd9fde 已收单，any 基线 170/170）"
   },
   "groups": [
     {

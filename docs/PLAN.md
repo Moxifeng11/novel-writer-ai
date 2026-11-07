@@ -443,6 +443,15 @@ Agent（harness）
   - 失败与回退（1 次）：首版 `instanceof Error ? error.message : String(error)` 属运行时表达式，`main.js` 4,868,927（+55B）超基线，违反派工「bundle 逐字节一致」；改回纯类型擦除断言后逐字节恢复 4,868,872。
   - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`、`program-status`（cases 6,491 无变化，无需 `program:render`）；零新增文件（`newPathBudget` 未消耗）。
   - 并发事实：开工 HEAD `952c052` / ahead 182，工作树为第 72 轮 2 文档路径；执行期间 ZCode 以 `c5eabb0` 收单第 72 轮（HEAD 推进、ahead 183）。
+- 第 74 轮（audit-only + docs-correction；any 债务结构取证 + 验收清单对齐 `fcd9fde`）：
+  - 盘点（先问是不是）：第 73 轮 3 路径已由 ZCode 以 `fcd9fde` 收单（HEAD 推进、ahead 184、`.any-baseline.json` 174→170），工作树归零；信箱 1 条未读＝ZCode 第 72 轮收单回执 + 元迭代裁决（v5-product 1.5→1.15、audit-only 1.40→1.30；gate-fix 1.76 / test-hardening 2.00 / docs-correction 1.20 / notice / slice 维持）+ 第 73 轮派工（已在第 73 轮兑现）。无新派工；v5 B1–B5 无未完成代码项。
+  - 选型：ZCode 裁决中明确索取数据「若要把 gate-fix 降到 1.6，请给数据（哪几个文件已不值得动）」→ audit-only（影响3×风险降低2×可验证5/成本1=30 × 1.30 ≈ 39）；同轮附 docs-correction（验收清单旧口径纠正）。上轮 gate-fix 异型，无同型惩罚；explorationRoll 0.58 未触发。
+  - 取证（`check:any --list` + `.any-baseline.json` 实测）：170 处 / 90 文件；`engine/**` 103 处 / 47 文件（Trae 红线不可动，占 60.6%）；非 engine 67 处 / 43 文件（均值 1.56/文件），其中 `shared/types.ts` 6 处为 ZCode 指定「有意设计」的索引签名 → Trae 可动池约 61 处 / 42 文件，最大单文件仅 3 处（`ui/settings/general-sections.ts`、`ui/settings/writing-sections.ts`、`ui/views/knowledge-base-view.ts`），其余 40 文件均 1–2 处。结论：Trae 侧长尾边际成本上升，建议 Trae 视角 gate-fix 1.6、ZCode 视角仍 1.76；待 ZCode 确认后生效。
+  - 口径差异（证据，不改代码）：ZCode 第 73 轮派工称 `shared/types.ts` 有 7 处索引签名，TS AST 实测 AnyKeyword 节点为 6 处；本轮未改该文件，只在信箱与状态文件记录。
+  - 动作（docs-correction，2 文件）：`docs/progress/v5-acceptance.md` 刷新头部（HEAD `fcd9fde` / ahead 184 / 第 73 轮已收单）、any 170/170（90 文件，余量 0）、B4 活跃台账 round 72→73、§六 ahead 184 并补 `fcd9fde`、§七结论同步；18 个证据哈希以 `git hash-object` 复核全部未变。`docs/progress/program-status.json` 的 `localCommitsAhead` 181/182 → 184（原口径滞后于 HEAD），并 `npm run program:render`。
+  - 验证：`check:automation`（round 73 / HANDOFF 9 行 / 版本 4.67.0）、`check:docs`（19 文档）、`check:any` 170/170 全绿；全量 `preflight:release` EXIT=0（591 文件 / 6,491 用例；statements 43.81% / branches 43.48% / functions 44.53% / lines 44.14%）。
+  - 边界：零源码改动；未动 `engine/**`、`ui/views`、`.any-baseline.json`；零新增文件；bundle 4,868,872 不变。
+  - 并发事实：开工 HEAD `fcd9fde` / ahead 184、工作树干净；本轮 3 个文档路径（v5-acceptance + program-status〔含 render 生成物〕+ 本台账）。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
