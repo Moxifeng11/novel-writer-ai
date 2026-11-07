@@ -21,7 +21,6 @@
 - `preflight`：<文件数/用例数>
 - `check:release -- --tag vX.Y.Z`：通过
 - 真实 Electron E2E：<通过条数 / 未跑及原因>
-- 真实链路（`E2E_REWRITE=1`）：<已跑/未跑及原因>
 
 ## 影响与迁移
 

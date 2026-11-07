@@ -83,7 +83,6 @@ git push origin master && git push origin v4.24.0
 - [ ] `preflight:release` 全绿。
 - [ ] 生成物漂移检查为空（`git diff --exit-code`）。
 - [ ] E2E（如本次涉及 UI/启动/数据链路）已跑或明确记录未跑。
-- [ ] 真实链路（`E2E_REWRITE=1`）如未跑，在发布说明中写明。
 
 ## 7. 相关
 

@@ -80,7 +80,6 @@ describe('模块名 — 行为域', () => {
 
 危险开关：
 
-- `E2E_REWRITE=1`：**会改写真实 vault 章节**，必须先把目标复制到副本并设置 `E2E_VAULT_PATH`。
 - `E2E_REAL_AI=1`：会消耗真实 API 额度。
 
 未设置 `OBSIDIAN_PATH` 时 Electron 用例会 skip 且退出码 0（**假绿**），CI 用 `playwright test --list` 只做解析校验。

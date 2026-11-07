@@ -59,10 +59,8 @@ npm run dev     # 前置生成 + esbuild --watch
 |---|---|---|
 | `OBSIDIAN_PATH` | 跑 Electron E2E | 指向 Obsidian 可执行文件；未设置时 E2E 用例**显式 skip**（退出码 0，属假绿） |
 | `E2E_REAL_AI=1` | 真实 AI 链路 | 会消耗 API 额度 |
-| `E2E_REWRITE=1` | 真实重写链路 | **会改写真实 vault 章节**，必须先备份/用副本 |
 | `E2E_VAULT_PATH` | 覆盖 E2E vault | 默认就是真实 vault，务必显式指定副本 |
-| `E2E_REAL_PROJECT` | 指定项目 | 默认 `长篇小说/九霄逆脉行` |
-| `E2E_REWRITE_CHAPTERS` | 指定章 | 默认 `1,2` |
+| `E2E_REAL_PROJECT` | 指定项目（real-ai） | 默认 `长篇小说/九霄逆脉行`（该项目已删除，跑 real-ai 前需显式指定） |
 | `KEEP_E2E_VAULT=1` | 保留现场 | 失败排查时使用 |
 | `DEEPSEEK_API_KEY` | dsh 子进程 | 由插件运行时注入，不写配置文件 |
 
@@ -97,4 +95,3 @@ OBSIDIAN_PATH="C:\Users\<你>\AppData\Local\Programs\Obsidian\Obsidian.exe" npm 
 
 - 不要把 `data.json`、API Key、真实 vault 路径提交进仓库。
 - E2E 临时 vault 不会复制 `data.json`，因此不会带真实 Key。
-- `E2E_REWRITE=1` 前必须确认目标 vault 是副本。

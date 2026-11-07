@@ -573,7 +573,7 @@ Agent（harness）
 
 ### 真实链路
 
-- `E2E_REWRITE=1` 全链回归（生成→质控→修订→复检→结算），核对归因字段/settled/账本/登记表
+- ~~`E2E_REWRITE=1` 全链回归~~（2026-11-07 下线：重写脚本随 `九霄逆脉行` 项目删除移除；真实链路验收改由 full-journey / mode-journey 的 mock AI 旅程覆盖）
 - 遗留：`word_count: 0`（SETTLE_ONLY 特有）、复检事件未进轮询 status
 
 ---
@@ -585,7 +585,7 @@ Agent（harness）
 | M0 | v4.21.1 已发布（RAG/Agent/执行登记表） | ✅ |
 | M1 | 人味重建 + 版本治理 + 上下文体检 + 修订闭环 | ✅ v4.22.0 |
 | M2 | 全插件排查 Batch 2（P1 十八条） | 已随 v4.42–v4.51 落地（逐条证据以 `program-status.json` G1–G7 为准，均 `done`；P1-6 契约缓存失效已有 `body-writer-contract-cache` 单测）；唯一未决 P1-5 `adapter.write` 绕过 `modify` 事件范围待拍板 |
-| M3 | Batch 3 + 门禁补强 + 真实链路回归 | 进行中：`preflight` 已补 `lint`/`build`/文档与注释门禁；`check:release` 已入 preflight；`E2E_REWRITE=1` 待授权 |
+| M3 | Batch 3 + 门禁补强 + 真实链路回归 | ✅：`preflight` 已补 `lint`/`build`/文档与注释门禁；`check:release` 已入 preflight；真实链路验收由 full-journey / mode-journey 覆盖（重写脚本已随 `九霄逆脉行` 下线，2026-11-07） |
 | M4 | 发布 v4.23.x（远端 tag + Release） | ✅ v4.23.0 → v4.23.4 已发布 |
 
 ---
