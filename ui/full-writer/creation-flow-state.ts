@@ -26,6 +26,7 @@ import {
 } from '@/shared/creation-flow';
 import { isChapterWritten } from '@/shared/chapter-progress';
 import { EXPORT_FALLBACK_DIR } from '@/shared/export-file';
+import { listFolderFiles } from '@/shared/vault-tree';
 import { getChaptersForProject, sortChaptersByNumber, type ChapterListEntry } from '@/ui/project-utils';
 import { rememberProjectMode, resolveProjectMode } from '@/shared/project-mode';
 import { STORAGE_KEY_PREFIXES, projectScopedKey } from '@/shared/storage-keys';
@@ -121,12 +122,14 @@ function hasExportArtifact(app: App, project: string): boolean {
     if (readExportFlag(project)) return true;
     const baseName = project.split('/').pop() || project;
     try {
-        const files = app.vault.getFiles();
-        if (files.some(file => file.path.startsWith(`${EXPORT_FALLBACK_DIR}/`) && file.name.includes(baseName))) {
+        // 只列导出目录（O(1) 定位 + 局部遍历），不再全库 getFiles()
+        const exportDirs = [`${project}/05-导出`, `${project}/06-导出`];
+        if (exportDirs.some(dir =>
+            listFolderFiles(app.vault, dir, { recursive: true, extensions: [] }).length > 0)) {
             return true;
         }
-        return files.some(file =>
-            file.path.startsWith(`${project}/05-导出/`) || file.path.startsWith(`${project}/06-导出/`));
+        return listFolderFiles<{ name: string }>(app.vault, EXPORT_FALLBACK_DIR, { recursive: true, extensions: [] })
+            .some(file => file.name.includes(baseName));
     } catch { // silent-ok: 只读检查导出目录，失败按未导出处理
         return false;
     }

@@ -371,7 +371,9 @@ export function listModeUnits(app: App, project: string, mode: CreationMode): Mo
     if (mode === 'long') return [];
     const dir = modeBodyDir(project, mode);
     const pattern = mode === 'short' ? /第\d{1,3}节\.md$/ : /第\d{1,3}集\.md$/;
-    const own = app.vault.getFiles()
+    // own 与 legacy 共用同一次全库扫描：own 命中时不跑 legacy，命中语义不变
+    const files = app.vault.getFiles();
+    const own = files
         .filter(file => file.path.startsWith(`${dir}/`) && pattern.test(file.name))
         .map(file => unitInfo(app, file, mode, false))
         .filter((item): item is ModeUnitInfo => !!item);
@@ -380,7 +382,7 @@ export function listModeUnits(app: App, project: string, mode: CreationMode): Mo
 
     // 兼容旧短篇/剧本项目：此前写入 03-大纲与章节/正文/第N卷/第N章_正文.md
     const legacyPrefix = `${project}/03-大纲与章节/正文/`;
-    const legacy = app.vault.getFiles()
+    const legacy = files
         .filter(file => file.path.startsWith(legacyPrefix) && /第\d+章_正文\.md$/.test(file.name))
         .map(file => {
             const numMatch = file.name.match(/第(\d+)章/);
