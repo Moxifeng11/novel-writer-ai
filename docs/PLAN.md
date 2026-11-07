@@ -1,6 +1,6 @@
 # 插件结构化规划（PLAN）
 
-> 版本：v4.66.0 · 更新：2026-11-07
+> 版本：v4.67.0 · 更新：2026-11-07
 > 定位：**本文件是插件仓的唯一结构性规划入口**。代码是最终真相源；本文件只回答「有哪些模块、边界在哪、下一轮做什么」。
 > 历史文档：`docs/audits/`（各轮取证）、`docs/releases/`（各版本交付）、`CHANGELOG.md`（变更流水）。
 > **全系统优化专项**（16 板块 / 7 任务组 / 排期与验收）：[`docs/PROGRAM.md`](PROGRAM.md) · 进度报告：[`docs/progress/PROGRAM-STATUS.md`](progress/PROGRAM-STATUS.md)。
@@ -79,7 +79,7 @@ Agent（harness）
 
 - B1（ZCode）：`AgentProjectStatus` 增 `flow`，`get_project_status` 输出三模式阶段快照，prompt 按 `nextStageId` 引导。
 - B2（Trae）：`agent-port` 注入 flow；工作台阶段面板改为统一快照（删除硬编码 8 阶段）。
-- B3（Trae）：`shared/publication-profile.ts` 三模式出版阻断/建议；导出弹窗严格模式。
+- B3（Trae）：`shared/publication-profile.ts` 三模式出版阻断/建议；导出弹窗改为三档交付级别（draft / finished / submission）+ 导出范围（布尔严格模式已废弃）。
 - B4（Trae）：自动化状态单一真相源 + `check:automation` 入 preflight；Trae 任务改 v5 使命。
 - B5（Trae）：`docs/guides/USER-GUIDE.md`、`docs/guides/COMMERCIAL-GUIDE.md`、`docs/handbook/13-dual-automation-ops.md`。
 - 验收：三模式阶段面板真实进度 + Agent 可答下一步；严格出版检查可阻断；`npm run check:automation` 通过；全量门禁不回归。
@@ -428,6 +428,13 @@ Agent（harness）
   - 验证：`typecheck` 0 error；`eslint` 改动文件 0；`check:any` 174/179（91 文件，-5，余量 5，未自改 `.any-baseline.json`）；`build` 后 `main.js` 4,868,593 逐字节不变、`check:bundle` 绿；全量 `preflight:release` EXIT=0（见本轮状态记录）。
   - 边界：未动 `engine/**`、`ui/views` 指纹视图、`.any-baseline.json`、`program-status`（cases 6,491 无变化）；零新增文件（`newPathBudget` 未消耗）；按「改代码后同步更新项目状态」就地更新 `v5-acceptance` any 口径为本轮实测。
   - 并发事实：开工 HEAD `f550a80` / ahead 178；工作树第 70 轮 5 路径仍在待收单，本轮新增 1 个源码路径并就地更新 2 个文档（与既有 pending 重叠），pending 合计 6 路径。
+- 第 72 轮（docs-correction；v5 模块在 API/ARCHITECTURE 的可发现性补全）：
+  - 盘点（先问是不是）：信箱最新未读即第 70 轮收单 + 第 71 轮派工（memory-manager-modal any 5→0），已在第 71 轮兑现，无新派工；HANDOFF 下一步为「B2 阶段面板/端口回归复验」。实测 `docs/API.md` 对 v5 五个模块零命中、`docs/ARCHITECTURE.md` 仅 agent-port 两处、`docs/PLAN.md` §v5 仍写「导出弹窗严格模式」，属 ZCode 第 62 轮派工（API/ARCHITECTURE 覆盖核对）未兑现的真实文档缺口，非重复交付。
+  - 选型：docs-correction（影响3×风险降低2×可验证5/成本1=30 × 1.2 ≈ 36）；上轮 gate-fix 异型、距第 62 轮 docs-correction 已 10 轮，无同型惩罚/无收益递减；explorationRoll 0.58 未触发；B2 回归复验作为同一轮低成本验证并入。
+  - 动作：`docs/API.md` 新增 §十「v5 协同写作闭环 API」（10.1 阶段唯一事实源 / 10.2 端口与工作台投影 / 10.3 三档出版检查 / 10.4 平台投稿包），原「相关文档」顺延为 §十一；`docs/ARCHITECTURE.md` 新增 4.10 模块表与 §八「v5 协同写作闭环」索引；`docs/PLAN.md` §v5 纠偏 B3 旧布尔「严格模式」表述。只改文档，零源码。
+  - 验证：v5 锚点 6 文件 / 90 用例定向通过（B2 回归复验：阶段面板 20 / 端口 3 / B1 契约 40 / 出版检查 27）；`check:docs`/`check:jsdoc`/`check:any`（174/179）/`check:bundle`/`check:automation`/`check:linked-scenarios` 全绿；全量 `preflight:release` 本轮结果见状态文件。
+  - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`、`program-status`（用例数与 any 未变）；零新增文件。
+  - 并发事实：开工 HEAD `c61a025` / ahead 180；工作树为第 71 轮 4 路径待收单，本轮叠加 3 个文档路径。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

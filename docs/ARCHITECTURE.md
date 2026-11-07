@@ -1,6 +1,6 @@
 # 小说工坊 AI 插件架构文档
 
-> **版本**: v4.66.0
+> **版本**: v4.67.0
 > **最后更新**: 2026-11-02
 > **状态**: 活跃可信 · 与代码同步
 > **唯一可执行分层口径**: `scripts/check-dependencies.mjs`（目标边界与差异见 [handbook/02-architecture.md](handbook/02-architecture.md)）
@@ -560,6 +560,20 @@ export interface FileSystemPort {
 
 **人味校准**：`shared/human-similarity.ts` 用真人语料分布（句长/段长/标点/对话占比）算 `humanSim`，并做保真校验（长度 ±15%、2-gram 覆盖、数字保留）。样文来自 `npm run sample:human`（本机《指纹资料库》，仅落 `data/`，不入包）。**已知局限**：`humanSim` 不能当 AI 检测器——第2章 AI 正文 0.636 高于真人样文均值 0.578，因为表层分布早被提示词优化；判据是 `antiAI + 章级对话下限（<12% 判不保真）+ 保真`。`shared/iterative-refine.ts` 用这三项做「接受/回滚」的迭代精修调度。
 
+### 4.10 v5 协同写作闭环（阶段投影 / 出版检查 / 平台包）
+
+阶段定义只有一处：`shared/creation-flow.ts`（`getCreationFlowStages` + `resolveCreationFlow`）。其余模块只做投影或消费，不复制阶段常量。
+
+| 组件 | 文件 | 职责 |
+|------|------|------|
+| 阶段事实采集 | `ui/full-writer/creation-flow-state.ts` | `collectCreationFlowState` 读项目文档与单元进度 → `{ mode, facts, snapshot }`；`markFlowExported` 记录桌面端导出标记 |
+| Agent 端口投影 | `ui/services/agent-port.ts` | `getProjectStatus` 把快照填入 `AgentProjectStatus.flow`；采集失败时省略 `flow`，章节统计照常返回 |
+| 工作台阶段面板 | `ui/agent-workbench/stage-panel.ts` | `buildStagePanelModel` / `fetchStagePanelModel` 把快照投影为阶段条目与预填话术；无快照按占位渲染 |
+| 出版前检查 | `shared/publication-profile.ts` | 三档交付级别（`draft/finished/submission`）+ 导出范围（`full/written-only`）；`checkPublicationReadiness` 输出 blocker / warning |
+| 平台投稿包 | `shared/platform-export.ts` | 番茄短篇 / 红果短剧的投稿信息头与内置敏感词预检 |
+
+边界：Agent 侧只读取 `flow` 做引导，不定义阶段；UI 不复制阶段常量；`engine/agent/**` 依赖 `shared` 类型，不反向依赖 `ui/`。
+
 ### 5. 知识库系统（services/ + engine/）
 
 知识库系统是插件的核心模块之一，负责管理参考书籍的导入、拆解、向量索引和相似性检索。
@@ -750,6 +764,14 @@ processing (恢复)
 
 ### 性能监控
 - `services/performance-monitor.ts` — 唯一性能监控实现（分层埋点、慢操作、报告）
+
+### v5 协同写作闭环
+- `shared/creation-flow.ts` — 三模式阶段唯一事实源（阶段清单 + 快照解析 + 摘要）
+- `ui/full-writer/creation-flow-state.ts` — 项目阶段事实采集与导出标记
+- `ui/services/agent-port.ts` — Agent 端口（`getProjectStatus` 的 flow 投影）
+- `ui/agent-workbench/stage-panel.ts` — 工作台阶段面板视图模型与预取
+- `shared/publication-profile.ts` — 三档出版前检查与导出范围
+- `shared/platform-export.ts` — 平台投稿包与敏感词预检
 
 ### 开发文档
 - `docs/ARCHITECTURE.md` — 本文件

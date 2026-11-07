@@ -2,6 +2,24 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.67.0（2026-11-07）
+
+### 🧪 测试：场景细纲语义补测（1→7 用例）
+
+- `full-writer-view-contracts.test.ts` 场景细纲从 1 例扩到 7 例：`parseScenes` 中英字段别名与枚举/状态归一化、`saveScenes → parseScenes` 往返（三组字段不丢，cliffhanger 仅末场）、`mergeScene` 拼接/累加/删项/重排、`splitScene` 就地插入并继承地点人物、Tab 点击切 `activeTab` 并按组渲染、基本信息文本与名场面勾选写回置脏。
+- 零生产代码改动；用既有 `FakeUiEl` 假 DOM 约定。
+
+### 🧹 类型收窄：memory-manager-modal any 5→0（179→174）
+
+- 新增本地只读视图 `MemorySnapshotView` / `MemoryStylePatternView` / `MemoryPreferenceView`，只列弹窗实际读取的字段，避免 UI 反向依赖 engine 内部类型。
+- `onAddPreference` 的 `category` 改六值联合 `PreferenceCategory`（与 `UserPreference['category']` 一致），调用点一处收窄。
+- `constructor(app: App)` 使用 Obsidian 类型。
+- any 基线 179→174（91 个文件）；`main.js` 逐字节不变。
+
+### 🧪 测试与门禁
+
+- 全量 **591 文件 / 6,491 用例**（v4.66.0 为 591/6,485，+6）；`preflight:release` 全绿；any 174；bundle 4,868,593（版本数据增量另计）。
+
 ## v4.66.0（2026-11-07）
 
 ### 🧹 类型收窄：两文件 any 各 4→0（187→179）

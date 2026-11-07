@@ -21,6 +21,21 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.67.0',
+        date: '2026-11-07',
+        title: '场景细纲补测与 memory-modal 类型收窄',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧪 质量',
+                items: [
+                    '场景细纲解析/往返/合并/拆分/Tab/写回 1→7 用例',
+                    'memory-manager-modal any 179→174；main.js 逐字节不变',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.66.0',
         date: '2026-11-07',
         title: '两文件 any 清零与 Worker 消息路径测试',

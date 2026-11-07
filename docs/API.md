@@ -1,6 +1,6 @@
 # API 文档
 
-> **版本**: v4.66.0
+> **版本**: v4.67.0
 > **最后更新**: 2026-11-02
 > **状态**: 活跃可信 · 签名参考（契约规则见 [handbook/04-interface-contracts.md](handbook/04-interface-contracts.md)）
 > **说明**: 本文是签名索引，不定义兼容承诺；公开/内部边界与废弃策略以 handbook 04 为准。
@@ -1592,7 +1592,69 @@ const chart = createChartContainer({
 
 ---
 
-## 十、相关文档
+## 十、v5 协同写作闭环 API（阶段投影 / 出版检查 / 平台包）
+
+> v5 最小闭环的唯一事实源是 `shared/creation-flow.ts`：Agent 端口、工作台阶段面板、出版前检查都只是它的投影或消费方，禁止在各自模块复制阶段常量。
+
+### 导入
+
+```typescript
+import {
+    getCreationFlowStages, resolveCreationFlow, formatCreationFlowSummary,
+    type CreationFlowSnapshot, type CreationFlowStageStatus,
+} from '../shared/creation-flow';
+import {
+    buildPublicationFacts, splitUnitsByBody, checkPublicationReadiness, formatPublicationReport,
+    type PublicationLevel, type PublicationScope, type PublicationIssue,
+} from '../shared/publication-profile';
+import { buildStagePanelModel, fetchStagePanelModel, buildStagePrompt } from '../ui/agent-workbench/stage-panel';
+import { buildPlatformPackage, scanPlatformSensitive } from '../shared/platform-export';
+import { collectCreationFlowState, markFlowExported } from '../ui/full-writer/creation-flow-state';
+```
+
+### 10.1 阶段唯一事实源（shared/creation-flow.ts）
+
+| API | 职责 |
+|------|------|
+| `getCreationFlowStages(mode)` | 返回长篇 / 短篇 / 剧本的规范阶段清单（id / label / 依赖 / 权重） |
+| `resolveCreationFlow(mode, project, facts)` | 把项目事实投影为带 `state` / `ratio` / `ctaLabel` / `blockedReason` 的 `CreationFlowSnapshot` |
+| `formatCreationFlowSummary(snapshot)` | Agent 与 UI 共用的单行摘要（当前阶段、下一步、阻塞原因） |
+
+### 10.2 Agent 端口与工作台投影
+
+| API | 位置 | 职责 |
+|------|------|------|
+| `getProjectStatus(project)` | `ui/services/agent-port.ts` | 返回 `AgentProjectStatus`；`flow?: CreationFlowSnapshot` 由 `collectCreationFlowState` 填充，采集失败时省略 `flow` 而不阻断章节统计 |
+| `collectCreationFlowState(app, project, { mode })` | `ui/full-writer/creation-flow-state.ts` | 读项目文档与单元进度，产出 `{ mode, facts, snapshot }`；同时识别导出产物 |
+| `markFlowExported(project)` | 同上 | 记录「已导出」项目级标记（桌面端导出走浏览器下载，磁盘不可见） |
+| `buildStagePanelModel(flow, project)` | `ui/agent-workbench/stage-panel.ts` | 纯函数：快照 → 阶段条目（`ratioPercent` / `progressText` / `prompt` / `tooltip`）；无快照时给占位文案 |
+| `fetchStagePanelModel(project, getStatus)` | 同上 | 请求状态并投影；读取失败按占位渲染，不抛错 |
+| `buildStagePrompt(stage)` | 同上 | 点击阶段时预填的「继续『阶段』：CTA」话术 |
+
+### 10.3 出版前检查（shared/publication-profile.ts）
+
+| API | 职责 |
+|------|------|
+| `PublicationLevel` | `'draft' \| 'finished' \| 'submission'`：草稿只提示；成品阻断空单元 / 无正文；投稿档最严 |
+| `PublicationScope` | `'full' \| 'written-only'`：仅已写单元可豁免空单元；投稿档强制整包 |
+| `buildPublicationFacts(units, base)` | 导出单元 → 出版事实（空正文、重复标题、CJK 字数） |
+| `splitUnitsByBody(units)` | 返回 `{ nonEmptyIndexes, emptyLabels }`，供「仅已写单元」范围过滤 |
+| `checkPublicationReadiness(facts)` | 返回 `PublicationIssue[]`（`blocker` / `warning` 两级） |
+| `formatPublicationReport(issues)` | 组装 Notice / 弹窗文案；无问题时返回 `null` |
+
+> 历史口径：v4.58.0 的布尔「严格模式」已废弃，当前为三档交付级别 + 导出范围（用户拍板，设计见 `docs/design/b3-publication-strict-mode-plan.md`）。
+
+### 10.4 平台投稿包（shared/platform-export.ts）
+
+| API | 职责 |
+|------|------|
+| `PLATFORM_EXPORT_PROFILES` | 番茄短篇 / 红果短剧的平台参数（文件名前缀、单元标签、简介标签、默认标签） |
+| `scanPlatformSensitive(text)` | 内置敏感词预检，返回 `{ term, category, count }[]` 并按命中次数排序（只提示，不自动改写） |
+| `buildPlatformPackage(options)` | 组装平台投稿信息头（平台 / 标题 / 简介 / 标签 / 字数 / 单元 / 风险提示），供导出时并入正文 |
+
+---
+
+## 十一、相关文档
 
 - [架构视图](./ARCHITECTURE.md) — 分层架构与设计决策
 - [开发指南](./DEVELOPMENT.md) — 如何新增功能
