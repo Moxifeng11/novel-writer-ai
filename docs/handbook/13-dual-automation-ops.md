@@ -7,7 +7,7 @@
 
 | 体系 | 职责 | 可写范围 | 禁区 |
 |---|---|---|---|
-| Trae | 功能实现、测试、文档、导出规范、UI 切片 | `ui/**`、`shared/**`、`services/**`、`tests/**`、`docs/**`、`scripts/**`、`core/**`（经确认） | `engine/**`、`ui/views/writing-fingerprint-view.ts`、`ui/views/fingerprint-v2-detail.ts`；不 commit/push/tag/Release |
+| Trae | 功能实现、测试、文档、导出规范、UI 切片 | `ui/**`、`shared/**`、`services/**`、`tests/**`、`docs/**`、`scripts/**`、`core/**`（经确认）、`main.ts`（经派工确认）、`.trae/automation/**`（仅本轮状态台账） | `engine/**`、`ui/views/writing-fingerprint-view.ts`、`ui/views/fingerprint-v2-detail.ts`；不 commit/push/tag/Release |
 | ZCode | engine 侧实现、统一 preflight、分批提交、版本节点、远端发布授权后执行 | `engine/**`、全仓库提交 | 不单方面改 Trae 的循环条件；不 push/tag/Release（需用户授权） |
 
 跨目录引用一律 `@/` 别名；新文件内联样式基线 0；导出函数 JSDoc 带 `@example`；改 `docs/progress/program-status.json` 必须 `npm run program:render`。
@@ -16,7 +16,7 @@
 
 - Trae：定时任务 `af06e242`，每 30 分钟，Asia/Shanghai。任务内容含「状态盘点 → 动态候选池 → 自适应评分 → 决策阶梯 → 小步验证 → 反馈闭环 → 双向派工」。
 - ZCode：由用户侧创建的同频自动化；每轮轮询信箱 → 核对 Trae diff → `npm run preflight:release` → 分批提交/版本节点 → 回执并派下一批。
-- 并发护栏：工作树有非本批次改动时跳过本轮；`newPathBudget=0` 时不新增待提交文件。
+- 并发护栏：工作树有非本批次改动时跳过本轮；`constraints.backlog.newPathBudget` 为 0 时不新增待提交文件（当前值以状态台账为准，本手册不抄数字）。
 
 ## 3. 状态与交接
 
@@ -24,10 +24,10 @@
 |---|---|---|
 | 循环状态 | 插件仓 `.trae/automation/trae-loop-state.json` | 含 round、params、typeWeights、constraints、lastRound；保留最近 12 轮 |
 | 旧副本 | Vault 根同路径 | **禁止存在**；仅允许 `stale: true` + `supersededBy` tombstone |
-| 交接快照 | Vault 根 `PROJECT-RULES.md` 的 `<!-- HANDOFF:START -->` | ≤10 行，含当前阶段/交付/进行中/下一步/待确认 |
+| 交接快照 | Vault 根 `PROJECT-RULES.md` 的 `<!-- HANDOFF:START -->` | ≤10 行，含 `当前阶段`/`最近交付`/`正在进行`/`下一步（ZCode）`/`下一步（Trae）`/`待确认` |
 | 信箱 | Vault 根 `.trae/mailbox/` | `novel-mailbox` 消息通道；不是状态真相源 |
 
-`npm run check:automation` 校验：状态 schema、round 单调且顶层 round / `lastRound.round` / `rounds` 末条一致、`updatedAt` 带时区、类型权重（含 `v5-product`）、红线字段、旧副本 tombstone、HANDOFF 字段与行数、版本四文件一致、信箱可解析。该命令已挂在 `npm run preflight`。
+`npm run check:automation` 校验：状态 schema、round 单调且顶层 round / `lastRound.round` / `rounds` 末条一致、`updatedAt` 带时区、类型权重（含 `v5-product`）、红线字段、旧副本 tombstone（`stale: true` 且 `supersededBy` 指向插件仓同路径）、HANDOFF 字段与行数（`当前阶段`/`最近交付`/`正在进行`/`下一步（ZCode）`/`下一步（Trae）`/`待确认`，≤10 行）、版本四文件一致；信箱可解析仅告警、不阻断。该命令已挂在 `npm run preflight`。
 
 ## 4. 互调流程
 

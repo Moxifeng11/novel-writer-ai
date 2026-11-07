@@ -504,6 +504,12 @@ Agent（harness）
   - 改动（3 文档、零源码）：06 §1 改为 24 步准确清单并声明「逐步展开以 `docs/generated/gates.md` 为准，不得另抄清单」；05 §3 表格与说明同步 10/9/10/8 与上拧来源（pure-helpers 实测 lines 12.04）；02 §3 编号归位。
   - 验证：`check:docs` / `check:automation` / `check:linked-scenarios` 全绿；全量 `preflight:release` 见 canonical 记录。
   - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`、源码与测试；零新增文件；历史发布说明与历史台账中的「22 道门禁」属当时口径，不回改。
+- 第 83 轮（docs-correction；兑现 ZCode 第 82 轮派工剩余项：13 / 04 / 02 与源码对齐）：
+  - 盘点：开工工作树为第 82 轮 5 路径（未收单），HEAD `af9df7b` / ahead 195；信箱 1 条未读＝第 81 轮收单 + 第 82 轮批准（点名 13 / 04 / 02 三篇 handbook 对照源码审计）。
+  - 实测漂移：①`13-dual-automation-ops.md` §2 把 `newPathBudget=0` 写死（台账实际为 1）、§3 HANDOFF 字段用了简称且未区分「信箱仅告警」、§1 Trae 可写范围漏 `main.ts` 与 `.trae/automation/**`；②`04-interface-contracts.md` §2.7 的 `listProjects` / `detectProjects` / `getActiveProject` 与 `project-catalog` 实际导出（`listProjectIds` / `projectIdFromPath` / `isProjectDirectory` / `projectIdentityExists` / `removeProjectDirectory`）不符，§2.8「全权限工具」漏三个 `create_*_project`；③`02-architecture.md` §1 分层表缺 `domains/`、`utils/` 两行，且「门禁未覆盖」仍称 domains 不受 `check:deps` 约束（实际 `LAYERS` 已覆盖）。
+  - 改动（3 文档、零源码）：13 §1/§2/§3 对齐脚本与台账口径；04 §2.7 改为实际导出清单、§2.8 按 `sideEffect` 分为 write / dangerous 两组；02 §1 补 Domains / Utils 两行与 `repository` dead allowance 说明，并把「门禁未覆盖」改为「门禁之外或需额外评审」，domains/utils 标注已纳入 `check:deps`。
+  - 验证：`check:docs`（19 文档 / v4.69.0）、`check:automation`（round 83 / HANDOFF 9 行）、`check:any` 148/148、`check:bundle` 4,869,777 全绿；全量 `preflight:release` 见 canonical 记录。
+  - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`、源码与测试；零新增文件；`main.ts` 的「经派工确认」口径来自第 73 轮既有实践，不追溯扩大授权。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

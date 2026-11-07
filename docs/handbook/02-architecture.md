@@ -9,12 +9,16 @@
 
 | 层 | 目录 | 允许依赖 | 说明 |
 |---|---|---|---|
-| UI | `ui/` | `engine/`、`services/`、`shared/`、`core/` | 视图、Modal、设置面板 |
-| Engine | `engine/` | `services/`、`shared/`、`core/`、`engine/repository/` | 业务引擎；`repository` 是 engine 子目录，不是独立层 |
-| Services | `services/` | `shared/`、`core/` | 跨引擎协调（Worker、版本、规则、统计） |
+| UI | `ui/` | `engine/`、`services/`、`domains/`、`utils/`、`shared/`、`core/` | 视图、Modal、设置面板 |
+| Engine | `engine/` | `services/`、`domains/`、`utils/`、`shared/`、`core/`、`engine/repository/` | 业务引擎；`repository` 不对应独立层 |
+| Services | `services/` | `domains/`、`shared/`、`core/` | 跨引擎协调（Worker、版本、规则、统计） |
 | Shared | `shared/` | 仅 `shared/` | 跨层原语（路径、锁、端口、纯函数） |
 | Core | `core/` | 仅 `shared/` | 插件级单例服务（设置、命令注册、缓存等） |
+| Domains | `domains/` | 仅 `shared/` | 三域领域内核（项目定位、工具目录、领域工厂） |
+| Utils | `utils/` | 仅 `shared/` | 历史工具（`helpers.ts`） |
 
+- `repository` 目录未单独建层：脚本中 `engine.allowed` 的 `repository` 是 dead allowance（`getFileLayer` 对 `engine/repository/` 返回 `null` 直接跳过）。
+- `ui`/`engine`/`services` 依赖 `domains`、`utils` 属合法「入站」；反向只允许依赖 `shared`。
 - `import type` 不计入分层与成环（编译后擦除）。
 - 运行时循环依赖单独检查（`.arch-baseline.json` 的 `dependencyCycles`）。
 - 门禁是**棘轮**：新增违规失败，存量只允许减少。
@@ -29,14 +33,14 @@ UI → Facade(ui/services) → Engine → Repository(engine/repository) → Infr
 - Engine 不应直接 import `obsidian`（应通过 `shared/file-system-port` 等端口）；
 - 现状：UI 直连 `app.vault`、部分 Engine 直接 import `obsidian` 仍存在，**不计入门禁**。新人按目标口径写新代码，不要照抄历史例外。
 
-### 门禁未覆盖的区域
+### 门禁之外或需额外评审的区域
 
 | 区域 | 现状 | 约束来源 |
 |---|---|---|
-| `domains/` | 三域（长篇/短篇/剧本）+ kernel | `tests/unit/architecture/domain-isolation.test.ts` 等源码扫描测试 |
-| 根级 `main.ts` / `plugin-api.ts` | 组合根与类型门面 | 人工评审 + 类型检查 |
+| `domains/` | 已纳入 `check:deps`（只允许依赖 `shared/`）；三域语义另由源码扫描测试 | `check-dependencies.mjs` + `tests/unit/architecture/domain-isolation.test.ts` |
+| `utils/` | 已纳入 `check:deps`（只允许依赖 `shared/`）；`helpers.ts` 内容另需人工评审 | `check-dependencies.mjs` + 人工评审 |
+| 根级 `main.ts` / `plugin-api.ts` | 组合根与类型门面，`getFileLayer` 返回 `null` 不参与分层 | 人工评审 + 类型检查 |
 | `workers/` | 2 个构建产物 | 无分层门禁 |
-| `utils/helpers.ts` | 历史工具 | 人工评审 |
 
 ---
 
