@@ -421,6 +421,13 @@ Agent（harness）
   - 验证：定向 17/17；`typecheck` 0 error；`npm test` 591 文件 / 6,491 用例（6,485→6,491）；全量 `preflight:release` EXIT=0；`check:any` 179/179、`check:bundle`（4,868,593 逐字节不变）、`check:docs`/`check:automation` 全绿。
   - 边界：只改测试文件，零新增文件（`newPathBudget` 未消耗），未动 `engine/**`、`ui/views` 指纹视图、`.any-baseline.json`；按「改代码后同步更新项目状态」同步 `program-status` cases 6,485→6,491 并 `program:render`，`v5-acceptance` 头部/数字对齐 HEAD `f550a80`，并修正其 §七旧口径 bundle 4,868,285→4,868,593。
   - 并发事实：执行期间 ZCode 以 `f550a80` 收单第 69 轮（HEAD 推进，v5-acceptance 第 69 轮 2 路径入库）；本轮 pending 5 路径（测试、program-status json + 渲染产物、v5-acceptance、本台账）。
+- 第 71 轮（gate-fix；兑现 ZCode 第 70 轮派工：`ui/cowrite/memory-manager-modal.ts` any 5→0）：
+  - 盘点（先问是不是）：信箱 1 条未读＝ZCode 第 69 轮收单回执（`f550a80`）+ 第 70 轮派工（memory-manager-modal any 5→0）+ 权重维持（v5-product 1.50 / test-hardening 2.00 / gate-fix 1.76）；HANDOFF 记第 70 轮 5 路径待收单、下一轮 Trae 即本派工；`B2 类型收口`已在第 31 轮完成（`docs/PLAN.md` 旧台账与 CHANGELOG 均有据），本文件 5 处 any 实测属实，无重复交付。
+  - 选型：决策阶梯最高优先级「ZCode 明确派工」；影响3×风险降低2×可验证5/成本1=30 × gate-fix 1.76 ≈ 53 分；上轮 test-hardening 异型，gate-fix 距第 68 轮已 3 轮，无同型惩罚、无收益递减；explorationRoll 0.58 未触发，权重不调整。
+  - 动作（1 文件、纯类型、零运行时）：`snapshot: any` → 本地只读 `MemorySnapshotView`（只列弹窗实际读取的 4 字段，元素视图同样只列读取字段，避免 UI 反向依赖 engine 内部类型）；`onAddPreference` 的 category → `PreferenceCategory` 六值联合（与 `engine/preference-memory.ts::UserPreference['category']` 及本文件下拉选项一致），调用点 1 处 `as PreferenceCategory` 收窄；`constructor(app: any)` → Obsidian `App`。
+  - 验证：`typecheck` 0 error；`eslint` 改动文件 0；`check:any` 174/179（91 文件，-5，余量 5，未自改 `.any-baseline.json`）；`build` 后 `main.js` 4,868,593 逐字节不变、`check:bundle` 绿；全量 `preflight:release` EXIT=0（见本轮状态记录）。
+  - 边界：未动 `engine/**`、`ui/views` 指纹视图、`.any-baseline.json`、`program-status`（cases 6,491 无变化）；零新增文件（`newPathBudget` 未消耗）；按「改代码后同步更新项目状态」就地更新 `v5-acceptance` any 口径为本轮实测。
+  - 并发事实：开工 HEAD `f550a80` / ahead 178；工作树第 70 轮 5 路径仍在待收单，本轮新增 1 个源码路径并就地更新 2 个文档（与既有 pending 重叠），pending 合计 6 路径。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

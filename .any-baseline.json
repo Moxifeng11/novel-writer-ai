@@ -1,5 +1,5 @@
 {
-  "total": 179,
+  "total": 174,
   "generatedAt": "2026-11-07",
   "files": {
     "engine/ai-outline-generator.ts": 6,
@@ -8,7 +8,6 @@
     "shared/types.ts": 6,
     "engine/entity-state-manager.ts": 5,
     "engine/incremental-result-aggregator.ts": 5,
-    "ui/cowrite/memory-manager-modal.ts": 5,
     "engine/analysis-report-engine.ts": 4,
     "engine/deconstructors/foreshadow-deconstructor.ts": 4,
     "engine/engine-registry.ts": 4,

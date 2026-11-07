@@ -1,14 +1,40 @@
-﻿import { Modal, Setting, Notice } from 'obsidian';
+﻿import { Modal, Setting, Notice, type App } from 'obsidian';
 
 // E1/E3: 风格自学习 / 偏好记忆管理弹窗
+// 以下只读视图由 engine 快照投影而来，只列本弹窗实际读取的字段，避免 UI 反向依赖 engine 内部类型
+type PreferenceCategory = 'character' | 'plot' | 'style' | 'pacing' | 'dialogue' | 'description';
+
+interface MemoryStylePatternView {
+    type?: string;
+    frequency?: number;
+    userPreference?: number;
+    pattern?: string;
+}
+
+interface MemoryPreferenceView {
+    category?: string;
+    key?: string;
+    confidence?: number;
+    value?: unknown;
+}
+
+interface MemorySnapshotView {
+    styleGuide?: string;
+    stylePatterns?: MemoryStylePatternView[];
+    preferencePrompt?: string;
+    preferences?: MemoryPreferenceView[];
+}
+
+type AddPreferenceHandler = (category: PreferenceCategory, key: string, value: string) => Promise<void>;
+
 /**
  * 记忆管理器弹窗。
  */
 export class MemoryManagerModal extends Modal {
-    private snapshot: any;
-    private onAddPreference: (category: any, key: string, value: string) => Promise<void>;
+    private snapshot: MemorySnapshotView;
+    private onAddPreference: AddPreferenceHandler;
 
-    constructor(app: any, snapshot: any, onAddPreference: (category: any, key: string, value: string) => Promise<void>) {
+    constructor(app: App, snapshot: MemorySnapshotView, onAddPreference: AddPreferenceHandler) {
         super(app);
         this.snapshot = snapshot;
         this.onAddPreference = onAddPreference;
@@ -109,7 +135,7 @@ export class MemoryManagerModal extends Modal {
             }
             addBtn.disabled = true;
             try {
-                await this.onAddPreference(categorySelect.value, key, value);
+                await this.onAddPreference(categorySelect.value as PreferenceCategory, key, value);
                 this.close();
             } catch (e) {
                 // 弹窗保持打开，方便用户改完重试；失败必须可见

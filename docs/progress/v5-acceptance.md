@@ -2,7 +2,7 @@
 
 > 用途：给用户逐批验收 B1–B5，不再重复论证设计。
 > 生成口径：committed HEAD 实测（2026-11-07 13:40 +08:00）。
-> 版本：v4.66.0 · HEAD `f550a80` · 第 69 轮已由 f550a80 收单；当前工作树为第 70 轮（场景细纲补测 + cases 6,491 渲染），全局基线以 committed HEAD 为准。
+> 版本：v4.66.0 · HEAD `f550a80` · 第 69 轮已由 f550a80 收单；当前工作树为第 70 轮（场景细纲补测 + cases 6,491 渲染）与第 71 轮（`memory-manager-modal` any 5→0），全局基线以 committed HEAD 为准。
 > 证据哈希 = `git hash-object <path>`（Git blob SHA-1，取前 12 位），用于确认验收时文件未被改动。
 
 ## 〇、全局基线（当前 HEAD 实测）
@@ -12,7 +12,7 @@
 | 单测文件 | 591 passed | `npm run test` |
 | 单测用例 | 6,491 passed（第 66 轮 +5 worker-manager；第 67/68 轮零新增；第 70 轮 +6 scene-outline-controller） | `npm run test` |
 | v5 锚点定向复验 | 6 文件 / 90 用例通过（2026-11-07 实测） | 见 §一–§三 的定向命令 |
-| any 预算 | 179/179（92 文件，第 68 轮已收紧基线，余量 0） | `npm run check:any` |
+| any 预算 | committed HEAD 179/179（92 文件，第 68 轮已收紧基线）；当前工作树 174/179（91 文件，第 71 轮 -5，待 ZCode 收单后收紧） | `npm run check:any` |
 | 构建产物 | `main.js` 4,868,593 字节（v4.66.0 版本数据 +308B 已 note）；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
 | 类型 | 0 error | `npm run typecheck` |
 | 架构守护 | exit 0（9 个既有豁免项，非本轮引入） | `npm run check-engines` |
@@ -108,4 +108,4 @@
 
 ## 七、结论
 
-B1–B5 代码、测试、门禁与文档均已在当前 HEAD 可复验：全量 591 文件 / 6,491 用例通过（第 70 轮为场景细纲补测 +6，不属 v5 批次），any 179/179（92 文件），bundle 4,868,593，六道相关门禁全绿；v5 锚点 6 文件 / 90 用例定向复验通过。剩余事项只有 §六 的四项授权型工作，不含待补代码。
+B1–B5 代码、测试、门禁与文档均已在当前 HEAD 可复验：全量 591 文件 / 6,491 用例通过（第 70 轮为场景细纲补测 +6，不属 v5 批次），any committed HEAD 179/179（92 文件）、当前工作树 174/179（91 文件，第 71 轮 -5），bundle 4,868,593，六道相关门禁全绿；v5 锚点 6 文件 / 90 用例定向复验通过。剩余事项只有 §六 的四项授权型工作，不含待补代码。
