@@ -414,6 +414,13 @@ Agent（harness）
   - 验证：v5 锚点 6 文件 / 90 用例定向通过；`check:docs`（19 文档）/`check:automation`（round 69、HANDOFF 9 行、4.66.0）/`check:linked-scenarios`/`check:any` 179/179/`check:bundle` 全绿；全量 `preflight:release` EXIT=0（591 文件 / 6,485 用例；statements 43.63% / branches 43.3% / functions 44.38% / lines 43.96%）。
   - 边界：未动 `engine/**`、`ui/views`、版本节点文件集、`.any-baseline.json`、`program-status`；B1–B3 证据哈希本轮 `git hash-object` 复测全部未变。
   - 并发事实：开工 HEAD `e2c8894` / ahead 175；执行期间 ZCode 提交 `ed6b823`（ahead 176）与 `e6d1bb0`（ahead 177）；本轮 2 路径（本台账 + `docs/progress/v5-acceptance.md`）。
+- 第 70 轮（test-hardening；场景细纲 Tab 渲染与字段写回补测）：
+  - 盘点（先问是不是）：信箱 1 条未读＝ZCode 第 68 轮收单回执 + 第 70 轮预告（`ui/full-writer/scene-outline-controller.ts` 补测）；开工 HEAD `e6d1bb0` / ahead 177，工作树 2 路径为第 69 轮待收单；v5 B1–B5 代码/文档全落地。实测该文件在 `tests/unit/ui/full-writer-view-contracts.test.ts` 仅 1 例（防抖写回编辑发生时的章节），`parseScenes`↔`saveScenes` 往返、合并/拆分/重排、Tab 渲染与文本字段写回确为零覆盖，不是重复交付。
+  - 选型：决策阶梯命中「ZCode 明确派工」最高优先级；test-hardening 权重 2.0，影响3×风险降低2×可验证5/成本1=30 → 60 分；上轮 docs-correction 异型，无同型惩罚，explorationRoll 0.58 未触发。
+  - 动作：在既有 describe 块就地追加最小 `FakeDomEl` 假 DOM（`empty/createDiv/createSpan/createEl/setAttribute/getAttribute/addEventListener/dispatch` + `value/checked/selected`）与仅含 4 个 API 的 `document` 垫片，零生产代码改动；新增 6 例锁真实语义：字段别名与枚举归一化、保存→再解析往返（含 cliffhanger 仅落末场）、`mergeScene` 拼接/累加/删项/重排、`splitScene` 就地插入并继承地点人物、Tab 点击切 `activeTab` 且按组渲染、基本信息文本输入与名场面勾选写回置脏。
+  - 验证：定向 17/17；`typecheck` 0 error；`npm test` 591 文件 / 6,491 用例（6,485→6,491）；全量 `preflight:release` EXIT=0；`check:any` 179/179、`check:bundle`（4,868,593 逐字节不变）、`check:docs`/`check:automation` 全绿。
+  - 边界：只改测试文件，零新增文件（`newPathBudget` 未消耗），未动 `engine/**`、`ui/views` 指纹视图、`.any-baseline.json`；按「改代码后同步更新项目状态」同步 `program-status` cases 6,485→6,491 并 `program:render`，`v5-acceptance` 头部/数字对齐 HEAD `f550a80`，并修正其 §七旧口径 bundle 4,868,285→4,868,593。
+  - 并发事实：执行期间 ZCode 以 `f550a80` 收单第 69 轮（HEAD 推进，v5-acceptance 第 69 轮 2 路径入库）；本轮 pending 5 路径（测试、program-status json + 渲染产物、v5-acceptance、本台账）。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
