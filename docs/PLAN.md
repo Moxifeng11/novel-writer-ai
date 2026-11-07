@@ -524,6 +524,26 @@ Agent（harness）
   - 文档：v5 计划文件《实施状态》刷新到第 85 轮 / v4.69.0 / HEAD `22acb89` / ahead 198；`program-status.json` cases 6,491→6,494、localCommitsAhead 194→198 并 `npm run program:render`。
   - 验证：全量 `preflight:release` 见 canonical 记录。
   - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`；零源码、零新增文件。
+- 第 86 轮（test-hardening；兑现 ZCode 第 85 轮确认：`shared/entity-integrity.ts` 补 6 例）：
+  - 盘点：开工 HEAD `22acb89` / ahead 198，工作树为第 85 轮 4 路径；信箱 1 条未读＝第 84 轮收单（`22acb89`）+ 第 85 轮候选确认（entity-integrity 首选，5 例清单 + repair 抛错边界可选）。按决策阶梯第 1 级执行派工；执行中 ZCode 以 `bd444ea` 收单第 85 轮（HEAD 推进 / ahead 199）。
+  - 契约核对（先问是不是）：`ensureEntityIntegrity` 共 4 条分支——首次 valid 直接返回；无 repair 返回首检缺失项；repair 返回 null 保持原内容；repair 返回内容后二次校验（valid/invalid 两态）。修复器抛错时当前实现向上抛，调用方须自行 catch。
+  - 改动（1 新增测试文件、零源码）：`tests/unit/shared/entity-integrity.test.ts` 6 例——①首检通过不调用修复器；②无修复器返回原内容 + `描述（值为空）`；③修复器返回 null 保留首检缺失项；④修复后仍不完整 → 内容替换、`repaired=true`、缺失项为二次校验结果；⑤修复后通过 + 透传 `{kind,name,content,missingFields}` 上下文；⑥修复器抛错向上传播。用真实 `validateEntityContent`（不 mock），以完整势力卡构造 valid/invalid，避免人物卡嵌套字段的脆弱性。
+  - 覆盖率实测：`shared/entity-integrity.ts` statements / branches / functions / lines 全部 100%（原 0/10 行、0/6 分支、0/1 函数）。
+  - 文档：`program-status.json` files 591→592、cases 6,494→6,500、localCommitsAhead 198→199 并 `npm run program:render`。
+  - 验证：定向 6 例、`npm test` 592 文件 / 6,500 用例全绿；全量 `preflight:release` EXIT=0（statements 43.82% / branches 43.49% / functions 44.55% / lines 44.15%）。
+  - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`；未改 `shared/entity-integrity.ts`；未为不可达防御分支造用例。
+- 第 87 轮（在途收口；advisor 批次归属登记 + 检测器自校准）：
+  - 盘点：`npm run automation:advise -- --json` 输出 tier=`backlog`（工作树 9 M + 4 ??），evidence 与 `git status` 一致；但台账 `constraints.backlog` 只登记第 86 轮 4 路径，实际 13 路径＝第 86 轮 4 + 「自动化能力升级」9 → 以代码为准纠偏。信箱 0 未读、无新派工；HEAD `bd444ea` / ahead 199。
+  - 归属核对：13 路径全部为 Trae 自有（无 ZCode 文件集、无 `engine/**`、无 `ui/views`）；批量验证：定向 advisor 23 例、`npm test` 593 文件 / 6,523 用例、全量 `preflight:release` EXIT=0（statements 43.88% / branches 43.59% / functions 44.59% / lines 44.21%）。
+  - 改动（零打包源码）：`AdvisorFacts.worktree` 增可选 `unrecorded`——只有「未在台账登记的脏路径」才生成 `backlog:worktree` 并进入 tier=`backlog`；已登记批次仅保留告警、不锁定层级（Trae 不 commit，旧口径会让每轮恒为 backlog）。CLI 用 `lastRound.changedFiles ∪ backlog.untracked ∪ backlog.inFlightPaths` 求差集；新增 3 例（全登记不生成候选、部分未登记证据区分条数、全登记后 tier 回到 `score`），旧 20 例语义不变。
+  - 解析缺陷：CLI `git()` 对整段输出 `trim()` 会吃掉 `git status --porcelain` 首行状态列（` M path`），导致 `unrecorded` 误报 1；改为 `trimEnd()` 后 `unrecorded=0`，复跑 advise 层级回到 `score`。
+  - 数据纠偏：`program-status.json` baseline 实测 593 文件 / 6,523 用例（advisor 20 例 + 本轮 3 例）；`localCommitsAhead` 199 不变；`npm run program:render`。
+  - 边界：advisor 纯函数模块不进 esbuild 入口，bundle 逐字节不变；未改 `.any-baseline.json`；未 commit / push。
+- 自动化能力升级（2026-11-07，用户任务；不计入 30 分钟轮次编号）：
+  - 新增 `shared/optimization-advisor.ts` 纯函数模块与 `scripts/optimization-advisor.mjs` CLI，把「候选池 → EV 评分 → 决策阶梯」从提示词固化为可执行、可复现、可单测的规则；新增 `npm run automation:advise`（`--json/--write/--check`）。
+  - 自动识别六类信号：派工新鲜度（第 N 轮 > 当前轮或 6 小时内）、在途收口、preflight 红灯、any 余量、体积显著膨胀（>20KB 或 ≥1%）、文档漂移/测试停滞；输出 1–2 条带 `reason/evidence/score/factors` 的建议。
+  - 门禁：`check:automation` 增加建议台账 schema/新鲜度校验（存在时）；单测 20 例；`npm run automation:advise -- --write` 落盘 canonical 建议。
+  - 边界：零源码运行时改动（新增 pure module 不被打包，bundle 不变）；未动 `engine/**`、`ui/views`；新增文件属用户授权模块。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

@@ -5,7 +5,7 @@
 
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-07
-- 当前基线：v4.69.0；单测 591 文件 / 6494 用例；E2E 37 条
+- 当前基线：v4.69.0；单测 593 文件 / 6523 用例；E2E 37 条
 - 任务进度：61/61 已完成（100%），0 进行中，0 受阻
 
 ## 一、任务组总览
@@ -174,6 +174,7 @@
 
 ## 四、进度流水
 
+- 2026-11-07｜G7｜自动化能力升级（用户任务）：新增 shared/optimization-advisor.ts 纯函数模块与 scripts/optimization-advisor.mjs CLI，把「候选池 → EV 评分 → 决策阶梯」从提示词固化为可执行规则；自动采集 git/台账/门禁/体积/测试/文档/信箱七类事实，输出 1–2 条带 reason/evidence/score/factors 的方向建议；新增 npm run automation:advise（默认 / --json / --write / --check）。派工只认「第 N 轮 > 当前台账轮次」或 6 小时内的消息，避免陈旧派工误判；体积候选设 >20KB 或 ≥1% 阈值抑制噪声。新增 20 例单测；check:automation 增加建议台账 schema/新鲜度校验（存在时）；定时任务 af06e242 第 0 步改为先跑脚本再按 tier 执行。全量 preflight:release EXIT=0（593 文件 / 6,520 用例；statements 43.87% / branches 43.58% / functions 44.59% / lines 44.2%）；bundle 4,869,777 不变；any 148/148（shared/optimization-advisor.ts + scripts/optimization-advisor.mjs + tests/unit/shared/optimization-advisor.test.ts + scripts/check-automation.mjs + docs/handbook/13-dual-automation-ops.md §7 + docs/PLAN.md）
 - 2026-11-07｜G7｜第 63 轮（gate-fix，ZCode 第 63 轮明确派工）：worker 协议 any 清零——worker-protocol.ts 5→0（payload/input/result 改 unknown；FallbackHandler 改注册侧泛型并新增 WorkerTaskInput{text,context?}）；worker-runtime.ts 6→0（TaskHandler 入参 never/返回 Promise<unknown>、sendComplete 与 postMessage payload 改 unknown、两处 (self as any) 改本地窄接口 WorkerScope+惰性 getWorkerScope）；worker-manager.ts 连带 2 行（FallbackHandler<never> 映射与 executeFallback 断言）。实测 check:any 198→187（94 文件，派工预期 188，runtime 实为 6 处）；定向 8/8；typecheck 0；eslint 改动文件 0 error；main.js 4,867,954 逐字节不变（services/worker-protocol.ts + services/worker-runtime.ts + services/worker-manager.ts；engine/** 零改动；全量 preflight:release exit 0（590 文件 / 6,471 用例，statements 43.50% / branches 43.21% / functions 44.21% / lines 43.82%）；check:any 187/198（94 文件，已消除 11 处）；main.js 4,867,954 逐字节不变；docs/generated 已同步（code-index、jsdoc-coverage））
 - 2026-11-07｜G6｜第 61 轮（docs-correction，v5 B5 文档内容补强）：①docs/guides/USER-GUIDE.md §5 补「导出落点」（桌面=浏览器下载 / 移动端写入 vault 根 导出文件/）与「文件名规则」（<项目路径>-<全稿|短篇|剧本>-<日期>，路径 / 替换为 _；短篇/剧本自动叠加平台包 <平台前缀>_<书名>_<日期>），封面扩展名补 png/jpg/jpeg/webp；②docs/guides/COMMERCIAL-GUIDE.md §2 建议项补「成品档 TXT/Markdown/HTML 未填作者仅提示（EPUB/DOCX 成品档为阻断）」。核对源 shared/export-file.ts、ui/export-manuscript-modal.ts、shared/publication-profile.ts。验证：check:docs 绿（19 活跃文档 / 4.64.0）；全量 preflight:release EXIT=0（590 文件 / 6,471 用例；statements 43.5% / branches 43.21% / functions 44.22% / lines 43.82%）。零代码改动，未动 engine/**、ZCode 文件集与版本四文件（docs/guides/USER-GUIDE.md + docs/guides/COMMERCIAL-GUIDE.md + docs/PLAN.md 第 61 轮）
 - 2026-11-07｜G6｜第 60 轮（行为修复 + gate-fix，兑现 ZCode 第 59 轮收单来信派工）：①ui/full-writer/creation-flow-state.ts::hasExportArtifact 增加 mode 参数并按模式映射导出目录——短篇查 短篇创作/05-导出、剧本查 剧本创作/06-导出，并兼容旧版项目根 05-导出/06-导出，目录名复用 SHORT_CONTENT_ROOT/SHORT_DIRS/SCRIPT_CONTENT_ROOT/SCRIPT_DIRS；修复「换设备/清缓存丢失 localStorage 标记后，短篇/剧本误报未导出」的用户可感知问题，长篇行为不变，EXPORT_FALLBACK_DIR 逻辑不变。②tests/unit/ui/creation-flow-state-scan.test.ts +4 条：短篇新目录命中、剧本新目录命中、剧本旧根目录兼容、短篇新目录与旧根目录都为空=未导出（文件共 11 条）。③scripts/check-hotpath-scans.mjs 把 creation-flow-state.ts 纳入 HOT_FILES（11 模块，补第 59 轮未完成派工）。验证：定向 34/34；check:hotpaths 0 违规；typecheck 0；全量 590 文件 / 6,471 用例；main.js 4,867,566（按规则以 --note 显式上调基线 106B，仍在 200B/批预算内）。未动 engine/** 与 ZCode 文件集（ui/full-writer/creation-flow-state.ts + tests/unit/ui/creation-flow-state-scan.test.ts + scripts/check-hotpath-scans.mjs + docs/PERFORMANCE.md §2/§5.2 + docs/PLAN.md 第 60 轮）

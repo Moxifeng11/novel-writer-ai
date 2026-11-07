@@ -51,3 +51,47 @@
 - [ ] 信箱回执已发（模块/行数/测试/门禁/参数变化）
 - [ ] handoff 快照已更新
 - [ ] 未越红线，未新增未授权文件
+
+## 7. 优化方向自动判断（`npm run automation:advise`）
+
+把提示词里的「候选池 → EV 评分 → 决策阶梯」固化为可执行模块，避免每轮靠模型自由发挥。
+
+### 7.1 命令与产物
+
+| 命令 | 用途 |
+|---|---|
+| `npm run automation:advise` | 人类可读摘要：层级、推荐 1–2 条、依据与数据证据 |
+| `npm run automation:advise -- --json` | 结构化 JSON，供 ZCode/CI 消费 |
+| `npm run automation:advise -- --write` | 落盘插件仓 `.trae/automation/optimization-advice.json`（gitignore） |
+| `npm run automation:advise -- --check` | 自检：能生成建议、已落盘建议 schema/round 新鲜 |
+
+产物字段：`schemaVersion`、`generatedAt`（带时区）、`round`、`head`、`ahead`、`worktree`、`tier`、`tierLabel`、`recommended`、`alternatives`、`warnings`、`inputs`。每个推荐项含 `score`、`factors`、`reason`、`evidence`，人工只需核对证据是否与代码事实一致。
+
+### 7.2 数据源
+
+| 维度 | 来源 | 用途 |
+|---|---|---|
+| 运行状态 | `git status/HEAD/ahead`、canonical 台账 `round/rounds/params` | 在途收口、同型连续性、失败/回退 |
+| 门禁压力 | `constraints.gateMargins`（`preflight`/`any`） | 红灯优先、any 长尾收口 |
+| 体积 | `.bundle-baseline.json` + `params.startupEvalBaselineBytes` | 显著膨胀（>20KB 或 ≥1%）才生成 perf 候选 |
+| 测试规模 | `docs/progress/program-status.json` | 连续三轮无新增用例时提示补测 |
+| 文档漂移 | `PROJECT-RULES.md` HANDOFF + `package.json` 版本 | 版本不一致 / 快照超过 24h |
+| 派工 | `.trae/mailbox/messages.jsonl` 最近 40 条 | 只认「第 N 轮 > 当前轮次」的新派工；无轮次按 6 小时时效 |
+
+### 7.3 决策阶梯与评分
+
+- 层级：`dispatch`（新派工）> `backlog`（在途收口）> `gate`（preflight 红灯）> `score`（评分选择）> `idle`。
+- 在途收口口径：只统计「未在台账登记的脏路径」（与 `lastRound.changedFiles` + `backlog.untracked` + `backlog.inFlightPaths` 求差集）；已登记待收单只产生告警，不锁定层级——Trae 不 commit，否则每轮恒为 `backlog`。
+- 评分：`EV = 影响 × 风险降低 × 可验证性 / 成本 × 类型权重`，再乘多样性（同型连续 -20%/轮，下限 0.4）、失败/回退惩罚、收益递减（0.9^n，下限 0.7）、探索加成（`explorationRoll < explorationRate` 时 +15%）。
+- 连续同型达到 `forcedTypeSwitchAfter` 时标记 `forcedSwitch` 并减半；无派工时直接排除，保证强制换型。
+- 全部判断确定：探索只读台账 `explorationRoll`，不使用随机数；同一输入必得同一输出。
+
+### 7.4 扩展方式
+
+新增优化方向只需两步：①在 `shared/optimization-advisor.ts` 的 `detectAdvisorCandidates` 注册一个探测器（返回带 `reason`/`evidence` 的候选）；②在 canonical 台账 `params.typeWeights` 增加该类型权重，并同步 `check-automation` 的类型白名单与 `AdvisorType`。评分、排序、强制换型自动生效。
+
+### 7.5 门禁与验证
+
+- `npm run check:automation` 在建议台账存在时校验：`schemaVersion=1`、`generatedAt` 带时区、`tier` 合法、`recommended` 1–2 条且含 `id/type/reason/evidence`、`round` 落后不超过 1 轮；缺失时只提示、不阻断。
+- 单元测试 `tests/unit/shared/optimization-advisor.test.ts` 锁定：派工优先、在途优先于红灯、同型惩罚、回退惩罚、强制换型、探索加成、陈旧派工过滤、推荐数量上限。
+- 每轮执行顺序：先 `automation:advise`（建议）→ 核对 evidence → 按层级执行 → 收尾时 `--write` 刷新建议台账。

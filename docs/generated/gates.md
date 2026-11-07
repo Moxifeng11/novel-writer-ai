@@ -8,6 +8,7 @@
 |---|---|
 | `npm run any:baseline` | — |
 | `npm run audit:deps` | 生产依赖安全审计 |
+| `npm run automation:advise` | — |
 | `npm run bench:hotpath` | getFiles 热路径基准 |
 | `npm run build` | 版本同步 + 模板生成 + CSS 拼接 + esbuild 打包 |
 | `npm run build:release` | 本地发布构建（preflight:release） |

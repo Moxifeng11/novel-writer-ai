@@ -1,0 +1,534 @@
+/**
+ * optimization-advisor.ts — 自动化优化方向判断纯函数核心
+ *
+ * 把 Trae/ZCode 双自动化台账里的「候选池 → EV 评分 → 决策阶梯」固化成
+ * 可执行、可单测、可复现的规则；CLI（scripts/optimization-advisor.mjs）
+ * 只负责采集事实与渲染，不在这里做 IO。
+ *
+ * 设计约束：
+ * - 零外部依赖、零 `any`，可直接被 Node 类型擦除运行与 vitest 导入；
+ * - 判断完全确定：随机探索只读取台账里的 explorationRoll，不调用 Math.random；
+ * - 新增优化方向只需在 detectAdvisorCandidates 里注册一个探测器并补类型权重。
+ */
+
+/** 优化动作类型（与 canonical 台账 params.typeWeights 的键对齐） */
+export type AdvisorType =
+    | 'gate-fix'
+    | 'test-hardening'
+    | 'perf'
+    | 'docs-correction'
+    | 'audit-only'
+    | 'v5-product'
+    | 'notice'
+    | 'slice';
+
+/** 一轮历史记录（来自台账 rounds，只保留评分需要的字段） */
+export interface AdvisorRoundRecord {
+    /** 轮次序号 */
+    round: number;
+    /** 动作类型（允许复合描述，如 test-hardening + docs-correction） */
+    type: string;
+    /** 该轮是否回退 */
+    reverted?: boolean;
+    /** 该轮是否失败 */
+    failed?: boolean;
+    /** 该轮新增用例数 */
+    testsAdded?: number;
+}
+
+/** 评分参数（来自 canonical 台账 params；缺失字段用默认值补齐） */
+export interface AdvisorParams {
+    /** 各动作类型的权重 */
+    typeWeights: Record<string, number>;
+    /** 同型连续轮次的多样性惩罚系数 */
+    diversityPenalty: number;
+    /** 连续同型达到该轮数后强制换型（派工除外） */
+    forcedTypeSwitchAfter: number;
+    /** 失败/超时/回退的惩罚系数 */
+    failurePenalty: {
+        fail: number;
+        timeout: number;
+        revert: number;
+    };
+    /** 同型连续成功后开始收益递减的轮数 */
+    diminishingReturnsAfter: number;
+    /** 探索触发概率 */
+    explorationRate: number;
+    /** 台账给定的探索掷值（0–1，保证可复现） */
+    explorationRoll: number;
+    /** 单轮最多推荐动作数 */
+    maxActionsPerRound: number;
+}
+
+/** 判断所需事实（由 CLI 从 git、台账、门禁、信箱与文档采集） */
+export interface AdvisorFacts {
+    /** 当前轮次 */
+    round: number;
+    /** 评分参数 */
+    params: AdvisorParams;
+    /** 最近若干轮历史（建议 6 轮） */
+    recentRounds: AdvisorRoundRecord[];
+    /** 工作树状态 */
+    worktree: {
+        modified: number;
+        untracked: number;
+        /** 其中未在台账登记的路径数；缺省（undefined）视为全部未登记，保持旧语义 */
+        unrecorded?: number;
+    };
+    /** 门禁与体积压力 */
+    gates: {
+        /** preflight 是否通过 */
+        preflightOk: boolean;
+        /** any 基线余量（0 表示无合规收口批次） */
+        anyRemaining: number;
+        /** 当前 main.js 体积 */
+        bundleBytes: number;
+        /** 台账记录的启动体积基线 */
+        startupBaselineBytes: number;
+    };
+    /** 文档漂移信号 */
+    docs: {
+        /** package.json 版本与交接快照版本是否不一致 */
+        versionMismatch: boolean;
+        /** 交接快照是否超过 24 小时未更新 */
+        handoffStale: boolean;
+    };
+    /** 测试规模（仅用于展示与停滞判断） */
+    tests: {
+        files: number;
+        cases: number;
+    };
+    /** 信箱里最近一条明确派工（无派工则不填） */
+    dispatch?: {
+        subject: string;
+        hintType?: AdvisorType;
+        sourceId?: string;
+    };
+}
+
+/** 未评分候选 */
+export interface AdvisorCandidate {
+    /** 稳定 id，用于去重与输出排序 */
+    id: string;
+    /** 动作类型 */
+    type: AdvisorType;
+    /** 一句话方向 */
+    title: string;
+    /** 为什么现在做 */
+    reason: string;
+    /** 数据证据（带数值/路径，便于人工复核） */
+    evidence: string;
+    /** 影响面 1–3 */
+    impact: number;
+    /** 风险降低 1–3 */
+    riskReduction: number;
+    /** 可验证性 1–5 */
+    verifiability: number;
+    /** 成本 1–3 */
+    cost: number;
+    /** 是否为明确派工（决策阶梯第 1 级） */
+    dispatchPriority?: boolean;
+    /** 是否为在途收口候选 */
+    backlog?: boolean;
+}
+
+/** 评分明细，便于解释为什么推荐它 */
+export interface AdvisorScoreFactors {
+    /** 影响 × 风险降低 × 可验证性 / 成本 */
+    base: number;
+    /** 类型权重 */
+    weight: number;
+    /** 同型多样性系数 */
+    diversity: number;
+    /** 失败/回退系数 */
+    failure: number;
+    /** 收益递减系数 */
+    diminishing: number;
+    /** 探索加成系数 */
+    exploration: number;
+}
+
+/** 评分后的候选 */
+export interface ScoredAdvisorCandidate extends AdvisorCandidate {
+    /** 最终分数（保留 2 位小数） */
+    score: number;
+    /** 评分明细 */
+    factors: AdvisorScoreFactors;
+    /** 是否因连续同型被判强制换型 */
+    forcedSwitch: boolean;
+}
+
+/** 决策层级（对应自动化提示词里的决策阶梯） */
+export type AdvisorTier = 'dispatch' | 'backlog' | 'gate' | 'score' | 'idle';
+
+/** 判断结果 */
+export interface AdvisorDecision {
+    /** 最高优先级层级 */
+    tier: AdvisorTier;
+    /** 层级中文说明 */
+    tierLabel: string;
+    /** 推荐动作（1–2 个） */
+    recommended: ScoredAdvisorCandidate[];
+    /** 备选动作 */
+    alternatives: ScoredAdvisorCandidate[];
+    /** 数据缺口或并发提醒 */
+    warnings: string[];
+}
+
+/** 已知动作类型 */
+const KNOWN_TYPES: readonly AdvisorType[] = [
+    'gate-fix',
+    'test-hardening',
+    'perf',
+    'docs-correction',
+    'audit-only',
+    'v5-product',
+    'notice',
+    'slice',
+];
+
+/** 台账缺失时的默认评分参数 */
+export const DEFAULT_ADVISOR_PARAMS: AdvisorParams = {
+    typeWeights: {
+        'gate-fix': 1.76,
+        'test-hardening': 2,
+        'perf': 1.49,
+        'docs-correction': 1.2,
+        'audit-only': 1.3,
+        'v5-product': 1.15,
+        'notice': 0.75,
+        'slice': 0.7,
+    },
+    diversityPenalty: 0.2,
+    forcedTypeSwitchAfter: 3,
+    failurePenalty: {
+        fail: 0.15,
+        timeout: 0.15,
+        revert: 0.25,
+    },
+    diminishingReturnsAfter: 2,
+    explorationRate: 0.15,
+    explorationRoll: 0.58,
+    maxActionsPerRound: 2,
+};
+
+/** 把任意台账类型描述归一到已知动作类型
+ * @param value 台账里的 type 文本
+ * @returns 匹配到的已知类型；无法识别时归为 audit-only
+ * @example
+ * normalizeAdvisorType('test-hardening + docs-correction') // 'test-hardening'
+ */
+export function normalizeAdvisorType(value: string): AdvisorType {
+    const normalized = value.toLowerCase();
+    let matched: { type: AdvisorType; index: number } | null = null;
+    for (const type of KNOWN_TYPES) {
+        const index = normalized.indexOf(type);
+        if (index >= 0 && (matched === null || index < matched.index)) matched = { type, index };
+    }
+    if (matched !== null) return matched.type;
+    if (normalized.includes('v5')) return 'v5-product';
+    if (normalized.includes('doc')) return 'docs-correction';
+    if (normalized.includes('test') || normalized.includes('coverage')) return 'test-hardening';
+    if (normalized.includes('gate') || normalized.includes('any')) return 'gate-fix';
+    if (normalized.includes('perf') || normalized.includes('bundle')) return 'perf';
+    if (normalized.includes('slice') || normalized.includes('notice')) return normalized.includes('slice') ? 'slice' : 'notice';
+    return 'audit-only';
+}
+
+/** 统计最近连续同型轮次数
+ * @param rounds 历史轮次（按时间正序）
+ * @param type 目标动作类型
+ * @returns 从最后一轮往前连续命中的轮数
+ */
+function countConsecutiveType(rounds: AdvisorRoundRecord[], type: AdvisorType): number {
+    let count = 0;
+    for (let index = rounds.length - 1; index >= 0; index -= 1) {
+        const record = rounds[index];
+        if (!record.type.toLowerCase().includes(type)) break;
+        count += 1;
+    }
+    return count;
+}
+
+/** 判断一条信箱派工是否仍然新鲜
+ *
+ * 主题里的「第 N 轮」大于当前台账轮次才算新派工；没有轮次时按 6 小时时效。
+ * @param subject 信箱主题
+ * @param currentRound 当前台账轮次
+ * @param messageTs 消息时间（ISO 字符串）
+ * @param now 当前毫秒时间戳
+ * @returns 是否应作为待执行派工
+ * @example
+ * isFreshDispatch('第 87 轮派工：补测试', 86, '', Date.now()) // true
+ */
+export function isFreshDispatch(subject: string, currentRound: number, messageTs: string, now: number): boolean {
+    const matches = [...subject.matchAll(/第\s*(\d+)\s*轮/g)].map(match => Number(match[1]));
+    const targetRound = matches.length > 0 ? Math.max(...matches) : 0;
+    if (targetRound > 0) return targetRound > currentRound;
+    const parsed = Date.parse(messageTs);
+    return !Number.isNaN(parsed) && now - parsed <= 6 * 60 * 60 * 1000;
+}
+
+/** 生成候选方向
+ *
+ * 内置探测器：派工、在途收口、preflight 红灯、any 余量、体积膨胀、
+ * 文档漂移、测试停滞、无候选时探索审计。新增方向在此注册。
+ * @param facts 判断事实
+ * @returns 去重后的候选列表
+ * @example
+ * detectAdvisorCandidates({
+ *     round: 87,
+ *     params: DEFAULT_ADVISOR_PARAMS,
+ *     recentRounds: [],
+ *     worktree: { modified: 0, untracked: 0 },
+ *     gates: { preflightOk: true, anyRemaining: 0, bundleBytes: 4869777, startupBaselineBytes: 4869777 },
+ *     docs: { versionMismatch: false, handoffStale: false },
+ *     tests: { files: 592, cases: 6500 },
+ * }).map(candidate => candidate.type) // ['audit-only']
+ */
+export function detectAdvisorCandidates(facts: AdvisorFacts): AdvisorCandidate[] {
+    const candidates: AdvisorCandidate[] = [];
+    const add = (candidate: AdvisorCandidate): void => {
+        if (!candidates.some(existing => existing.id === candidate.id)) candidates.push(candidate);
+    };
+
+    if (facts.dispatch) {
+        add({
+            id: `dispatch:${facts.dispatch.sourceId ?? 'latest'}`,
+            type: facts.dispatch.hintType ?? 'v5-product',
+            title: `执行派工：${facts.dispatch.subject}`,
+            reason: '决策阶梯第 1 级：ZCode 明确派工优先，不参与评分竞争',
+            evidence: `信箱消息 ${facts.dispatch.sourceId ?? 'latest'}`,
+            impact: 3,
+            riskReduction: 2,
+            verifiability: 5,
+            cost: 1,
+            dispatchPriority: true,
+        });
+    }
+
+    const worktreeCount = facts.worktree.modified + facts.worktree.untracked;
+    const unrecorded = facts.worktree.unrecorded ?? worktreeCount;
+    if (unrecorded > 0) {
+        const lastRound = facts.recentRounds[facts.recentRounds.length - 1];
+        add({
+            id: 'backlog:worktree',
+            type: normalizeAdvisorType(lastRound ? lastRound.type : 'docs-correction'),
+            title: `在途收口：工作树 ${unrecorded} 路径未登记`,
+            reason: '决策阶梯第 2 级：先确认在途改动归属并收口，避免与对方提交互相覆盖',
+            evidence: `git status：${facts.worktree.modified} modified + ${facts.worktree.untracked} untracked（未台账登记 ${unrecorded} 条）`,
+            impact: 3,
+            riskReduction: 3,
+            verifiability: 4,
+            cost: 1,
+            backlog: true,
+        });
+    }
+
+    if (!facts.gates.preflightOk) {
+        add({
+            id: 'gate:preflight',
+            type: 'gate-fix',
+            title: '修复 preflight 红灯',
+            reason: '门禁失败优先于任何收益型动作，避免带病提交',
+            evidence: '台账 gateMargins.preflight 未标记 EXIT=0',
+            impact: 3,
+            riskReduction: 3,
+            verifiability: 5,
+            cost: 1,
+        });
+    } else if (facts.gates.anyRemaining > 0) {
+        add({
+            id: 'gate:any',
+            type: 'gate-fix',
+            title: `收口 any 长尾（余量 ${facts.gates.anyRemaining}）`,
+            reason: 'any 预算有余量时做纯类型收口，零运行时、可逐字节验证体积不变',
+            evidence: `台账 gateMargins.any 余量 ${facts.gates.anyRemaining}`,
+            impact: 2,
+            riskReduction: 2,
+            verifiability: 5,
+            cost: 2,
+        });
+    }
+
+    if (facts.gates.startupBaselineBytes > 0 && facts.gates.bundleBytes > facts.gates.startupBaselineBytes) {
+        const delta = facts.gates.bundleBytes - facts.gates.startupBaselineBytes;
+        const percent = Math.round((delta / facts.gates.startupBaselineBytes) * 10000) / 100;
+        const significant = delta > 20_000 || percent >= 1;
+        if (significant) {
+            add({
+                id: 'perf:bundle',
+                type: 'perf',
+                title: '核对体积增长并定位可拆模块',
+                reason: '体积相对启动基线上涨超过阈值，需确认是功能增量还是重构开销',
+                evidence: `main.js ${facts.gates.bundleBytes}B，较启动基线 +${delta}B（${percent}%）`,
+                impact: 2,
+                riskReduction: 1,
+                verifiability: 3,
+                cost: 2,
+            });
+        }
+    }
+
+    if (facts.docs.versionMismatch) {
+        add({
+            id: 'docs:version',
+            type: 'docs-correction',
+            title: '对齐版本戳',
+            reason: '版本漂移会污染下一轮基线判断',
+            evidence: 'package.json 版本与交接快照版本不一致',
+            impact: 2,
+            riskReduction: 1,
+            verifiability: 5,
+            cost: 1,
+        });
+    }
+
+    if (facts.docs.handoffStale) {
+        add({
+            id: 'docs:handoff',
+            type: 'docs-correction',
+            title: '刷新交接快照',
+            reason: '快照超过 24 小时未更新，对方恢复会话会读到过期状态',
+            evidence: 'PROJECT-RULES.md HANDOFF 更新时间超过 24 小时',
+            impact: 2,
+            riskReduction: 1,
+            verifiability: 5,
+            cost: 1,
+        });
+    }
+
+    const recent = facts.recentRounds.slice(-3);
+    if (recent.length === 3 && recent.every(record => (record.testsAdded ?? 0) === 0)) {
+        add({
+            id: 'test:flat',
+            type: 'test-hardening',
+            title: '找真实未覆盖语义补测',
+            reason: '连续三轮无新增用例，覆盖可能在退坡；只补有生产调用点的分支',
+            evidence: `最近三轮新增用例 0（${recent.map(record => record.round).join('/')}）`,
+            impact: 2,
+            riskReduction: 1,
+            verifiability: 4,
+            cost: 2,
+        });
+    }
+
+    if (candidates.length < 2) {
+        add({
+            id: 'audit:explore',
+            type: 'audit-only',
+            title: '低风险审计或文档纠偏',
+            reason: '无高置信方向时，做只读取证并给下一轮留下可验证建议',
+            evidence: '当前高置信候选不足 2 个',
+            impact: 1,
+            riskReduction: 1,
+            verifiability: 4,
+            cost: 1,
+        });
+    }
+
+    return candidates;
+}
+
+/** 给候选打分
+ *
+ * EV = 影响 × 风险降低 × 可验证性 / 成本 × 类型权重，
+ * 再叠加多样性、失败惩罚、收益递减与探索加成。
+ * @param candidates 未评分候选
+ * @param facts 判断事实
+ * @returns 按分数降序的候选；连续同型且非派工者标记 forcedSwitch
+ * @example
+ * scoreAdvisorCandidates(detectAdvisorCandidates(facts), facts)[0].score
+ */
+export function scoreAdvisorCandidates(
+    candidates: AdvisorCandidate[],
+    facts: AdvisorFacts
+): ScoredAdvisorCandidate[] {
+    const params = facts.params;
+    const lastRound = facts.recentRounds[facts.recentRounds.length - 1];
+    const scored = candidates.map(candidate => {
+        const base = (candidate.impact * candidate.riskReduction * candidate.verifiability) / candidate.cost;
+        const weight = params.typeWeights[candidate.type] ?? 1;
+        const consecutive = countConsecutiveType(facts.recentRounds, candidate.type);
+        const diversity = consecutive > 0
+            ? Math.max(1 - params.diversityPenalty * Math.min(consecutive, 3), 0.4)
+            : 1;
+        let failure = 1;
+        if (lastRound && lastRound.type.toLowerCase().includes(candidate.type)) {
+            if (lastRound.reverted) failure = 1 - params.failurePenalty.revert;
+            else if (lastRound.failed) failure = 1 - params.failurePenalty.fail;
+        }
+        const diminishing = consecutive >= params.diminishingReturnsAfter
+            ? Math.max(0.9 ** (consecutive - params.diminishingReturnsAfter + 1), 0.7)
+            : 1;
+        const exploration = params.explorationRoll < params.explorationRate && consecutive === 0 ? 1.15 : 1;
+        const forcedSwitch = !candidate.dispatchPriority && consecutive >= params.forcedTypeSwitchAfter;
+        const multiplier = weight * diversity * failure * diminishing * exploration * (forcedSwitch ? 0.5 : 1);
+        const score = Math.round(base * multiplier * 100) / 100;
+        return {
+            ...candidate,
+            score,
+            forcedSwitch,
+            factors: { base, weight, diversity, failure, diminishing, exploration },
+        };
+    });
+    return scored.sort((left, right) => right.score - left.score || left.id.localeCompare(right.id));
+}
+
+/** 生成最终建议
+ *
+ * 决策阶梯：派工 > 在途收口 > 门禁红灯 > 评分选择 > 不动手轮。
+ * @param facts 判断事实
+ * @returns 层级、推荐与备选
+ * @example
+ * decideOptimizationAdvice(facts).tier // 'backlog'
+ */
+export function decideOptimizationAdvice(facts: AdvisorFacts): AdvisorDecision {
+    const candidates = scoreAdvisorCandidates(detectAdvisorCandidates(facts), facts);
+    const worktreeCount = facts.worktree.modified + facts.worktree.untracked;
+    const unrecorded = facts.worktree.unrecorded ?? worktreeCount;
+    const tier: AdvisorTier = facts.dispatch
+        ? 'dispatch'
+        : unrecorded > 0
+            ? 'backlog'
+            : !facts.gates.preflightOk
+                ? 'gate'
+                : candidates.length > 0
+                    ? 'score'
+                    : 'idle';
+    const tierLabels: Record<AdvisorTier, string> = {
+        dispatch: '明确派工（决策阶梯第 1 级）',
+        backlog: '在途收口（决策阶梯第 2 级）',
+        gate: '门禁红灯（必须先修复）',
+        score: '评分选择',
+        idle: '不动手轮（只审计/文档纠偏）',
+    };
+    const eligible = facts.dispatch
+        ? candidates
+        : candidates.filter(candidate => !candidate.forcedSwitch || candidate.dispatchPriority);
+    const ranked = (eligible.length > 0 ? eligible : candidates).sort((left, right) => {
+        const rank = (item: ScoredAdvisorCandidate): number => {
+            if (item.dispatchPriority) return 0;
+            if (item.backlog) return 1;
+            if (item.id === 'gate:preflight') return 2;
+            return 3;
+        };
+        return rank(left) - rank(right) || right.score - left.score || left.id.localeCompare(right.id);
+    });
+    const limit = Math.max(1, Math.min(2, facts.params.maxActionsPerRound || 2));
+    const warnings: string[] = [];
+    if (worktreeCount > 0) {
+        warnings.push(unrecorded > 0
+            ? `工作树有 ${worktreeCount} 条在途路径，执行前先确认归属`
+            : `工作树 ${worktreeCount} 条在途路径均已在台账登记，待收单不锁定层级`);
+    }
+    if (facts.gates.anyRemaining <= 0) warnings.push('any 余量为 0，暂无合规收口批次');
+    if (facts.params.explorationRoll < facts.params.explorationRate) warnings.push('探索掷值命中，本轮允许一个异类动作');
+    return {
+        tier,
+        tierLabel: tierLabels[tier],
+        recommended: ranked.slice(0, limit),
+        alternatives: ranked.slice(limit),
+        warnings,
+    };
+}

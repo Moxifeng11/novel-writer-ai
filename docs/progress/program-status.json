@@ -5,8 +5,8 @@
   "baseline": {
     "version": "4.69.0",
     "tests": {
-      "files": 591,
-      "cases": 6494
+      "files": 593,
+      "cases": 6523
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 198,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 实测 git rev-list --count=ahead 198，HEAD 22acb89；ZCode 已收单第 84 轮 22acb89、第 83 轮 fb5b9ef）"
+    "localCommitsAhead": 199,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 实测 git rev-list --count=ahead 199，HEAD bd444ea；ZCode 已收单第 85 轮 bd444ea、第 84 轮 22acb89、第 83 轮 fb5b9ef）"
   },
   "groups": [
     {
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-07",
+      "group": "G7",
+      "summary": "自动化能力升级（用户任务）：新增 shared/optimization-advisor.ts 纯函数模块与 scripts/optimization-advisor.mjs CLI，把「候选池 → EV 评分 → 决策阶梯」从提示词固化为可执行规则；自动采集 git/台账/门禁/体积/测试/文档/信箱七类事实，输出 1–2 条带 reason/evidence/score/factors 的方向建议；新增 npm run automation:advise（默认 / --json / --write / --check）。派工只认「第 N 轮 > 当前台账轮次」或 6 小时内的消息，避免陈旧派工误判；体积候选设 >20KB 或 ≥1% 阈值抑制噪声。新增 20 例单测；check:automation 增加建议台账 schema/新鲜度校验（存在时）；定时任务 af06e242 第 0 步改为先跑脚本再按 tier 执行。全量 preflight:release EXIT=0（593 文件 / 6,520 用例；statements 43.87% / branches 43.58% / functions 44.59% / lines 44.2%）；bundle 4,869,777 不变；any 148/148",
+      "evidence": "shared/optimization-advisor.ts + scripts/optimization-advisor.mjs + tests/unit/shared/optimization-advisor.test.ts + scripts/check-automation.mjs + docs/handbook/13-dual-automation-ops.md §7 + docs/PLAN.md"
+    },
     {
       "date": "2026-11-07",
       "group": "G7",

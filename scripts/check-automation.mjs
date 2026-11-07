@@ -51,11 +51,13 @@ function readText(path) {
 
 // ── 1. 活跃状态台账（唯一真相源） ─────────────────────────────
 const canonicalPath = resolve(repoRoot, '.trae/automation/trae-loop-state.json');
+let canonicalState = null;
 if (!existsSync(canonicalPath)) {
     if (isVaultWorkspace) fail('缺少活跃状态台账：.trae/automation/trae-loop-state.json');
     else warn('缺少 .trae/automation/trae-loop-state.json（独立插件仓/CI 允许缺失）');
 } else {
     const state = readJson(canonicalPath);
+    canonicalState = state;
     if (state) {
         if (state.schemaVersion !== 1) fail(`状态台账 schemaVersion 应为 1，实际 ${state.schemaVersion}`);
         if (!Number.isInteger(state.round) || state.round < 1) fail('状态台账 round 必须是正整数');
@@ -159,6 +161,37 @@ if (existsSync(mailboxPath)) {
     }
 } else {
     warn('未找到 .trae/mailbox/messages.jsonl（尚未使用信箱时正常）');
+}
+
+// ── 6. 优化方向建议台账（存在时校验，防止陈旧或非法建议） ─────
+const advicePath = resolve(repoRoot, '.trae/automation/optimization-advice.json');
+if (existsSync(advicePath)) {
+    const advice = readJson(advicePath);
+    if (advice) {
+        if (advice.schemaVersion !== 1) fail(`建议台账 schemaVersion 应为 1，实际 ${advice.schemaVersion}`);
+        if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:Z|[+-]\d{2}:\d{2})$/.test(advice.generatedAt || '')) {
+            fail('建议台账 generatedAt 必须带时区（如 2026-11-07T22:30+08:00）');
+        }
+        if (!['dispatch', 'backlog', 'gate', 'score', 'idle'].includes(advice.tier)) {
+            fail(`建议台账 tier 非法：${advice.tier}`);
+        }
+        if (!Array.isArray(advice.recommended) || advice.recommended.length < 1 || advice.recommended.length > 2) {
+            fail('建议台账 recommended 应为 1–2 条');
+        }
+        if (!Array.isArray(advice.alternatives)) fail('建议台账 alternatives 必须是数组');
+        if (Number.isInteger(canonicalState?.round) && Number.isInteger(advice.round)
+            && Math.abs(advice.round - canonicalState.round) > 1) {
+            fail(`建议台账 round(${advice.round}) 落后当前台账 round(${canonicalState.round}) 超过 1 轮；运行 npm run automation:advise -- --write 刷新`);
+        }
+        for (const candidate of Array.isArray(advice.recommended) ? advice.recommended : []) {
+            if (!candidate.id || !candidate.type || !candidate.reason || !candidate.evidence) {
+                fail('建议台账推荐项缺少 id/type/reason/evidence');
+            }
+        }
+        info(`优化方向建议：tier=${advice.tier}，推荐 ${advice.recommended?.length ?? 0} 条，round ${advice.round}`);
+    }
+} else {
+    info('未生成优化方向建议（可运行 npm run automation:advise -- --write）');
 }
 
 // ── 输出 ───────────────────────────────────────────────────

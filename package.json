@@ -54,6 +54,7 @@
     "check:write-entry": "node scripts/check-write-entry.mjs",
     "check:linked-scenarios": "node scripts/check-linked-scenarios.mjs",
     "check:automation": "node scripts/check-automation.mjs",
+    "automation:advise": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/optimization-advisor.mjs",
     "check:dsh-isolation": "node scripts/check-dsh-isolation.mjs",
     "bench:hotpath": "node scripts/bench/get-files-hotpath.mjs"
   },
