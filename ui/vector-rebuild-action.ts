@@ -9,7 +9,7 @@
 import { App, Notice } from 'obsidian';
 import { OperationConfirmModal } from './components/progress';
 import { createFingerprintEmbedding } from './fingerprint-embedding';
-import { StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
+import { StyleFingerprintLibrary, type StyleFingerprint } from '@/engine/style-fingerprint-library';
 import {
     rebuildAllVectors,
     type VectorRebuildFingerprintTarget,
@@ -18,8 +18,18 @@ import {
 } from '@/services/vector-rebuild-service';
 import { createLogger } from '@/shared/logger';
 
-
 const log = createLogger('VectorRebuildAction');
+
+interface VectorRebuildPluginHost {
+    knowledgeBaseManager?: {
+        listBooks?: () => Promise<Array<{ id: string; name: string }>>;
+    };
+    deconstructionScheduler?: {
+        revectorizeBook?: (bookId: string, bookName: string) => Promise<void>;
+    };
+    settings?: Parameters<typeof createFingerprintEmbedding>[2];
+    getActiveProject?: () => string | null;
+}
 
 function formatSection(label: string, section: VectorRebuildSectionReport): string {
     const bits = [`${section.rebuilt}/${section.total}`];
@@ -52,7 +62,7 @@ function notifyReport(report: VectorRebuildReport, v2?: { rebuilt: string[]; fai
  * @param plugin - 插件实例
  */
 export async function rebuildAllVectorsWithConfirm(app: App, plugin: unknown): Promise<void> {
-    const p = plugin as any;
+    const p = plugin as VectorRebuildPluginHost;
     const manager = p?.knowledgeBaseManager;
     const scheduler = p?.deconstructionScheduler;
     if (!manager || typeof manager.listBooks !== 'function') {
@@ -84,16 +94,16 @@ export async function rebuildAllVectorsWithConfirm(app: App, plugin: unknown): P
         const library = StyleFingerprintLibrary.get(app, activeProject || undefined);
         const report = await rebuildAllVectors({
             listBooks: async () => {
-                const books = await manager.listBooks();
+                const books = await manager.listBooks!();
                 return books.map((book: { id: string; name: string }) => ({
                     bookId: book.id,
                     bookName: book.name,
                 }));
             },
-            revectorizeBook: (bookId, bookName) => scheduler.revectorizeBook(bookId, bookName),
+            revectorizeBook: (bookId, bookName) => scheduler.revectorizeBook!(bookId, bookName),
             listFingerprints: async () => {
                 const targets: VectorRebuildFingerprintTarget[] = [];
-                const toTarget = (fp: any, scope: 'global' | 'project'): VectorRebuildFingerprintTarget => ({
+                const toTarget = (fp: StyleFingerprint, scope: 'global' | 'project'): VectorRebuildFingerprintTarget => ({
                     id: fp.id,
                     name: fp.name,
                     samples: Array.isArray(fp.samples) ? fp.samples : [],
