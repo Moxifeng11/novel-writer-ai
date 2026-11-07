@@ -1,5 +1,5 @@
 {
-  "total": 140,
+  "total": 136,
   "generatedAt": "2026-11-07",
   "files": {
     "engine/ai-outline-generator.ts": 6,
@@ -18,7 +18,6 @@
     "engine/embedding/openai-provider.ts": 3,
     "engine/style-fingerprint-library.ts": 3,
     "engine/types/analysis-suggestion.ts": 3,
-    "core/settings-service.ts": 2,
     "engine/ai-scene-generator.ts": 2,
     "engine/context/context-diff-detector.ts": 2,
     "engine/knowledge-base-config.ts": 2,
@@ -26,7 +25,6 @@
     "engine/repository/domain/validators/domain-validator.ts": 2,
     "ui/batch-deconstruct-modal.ts": 2,
     "ui/knowledge-detail-modal.ts": 2,
-    "ui/vector-rebuild-action.ts": 2,
     "engine/ai-engine.ts": 1,
     "engine/co-writer/create-session-store.ts": 1,
     "engine/deconstruction-worker-manager.ts": 1,

@@ -42,15 +42,15 @@ export interface SettingsServiceDeps {
     /**
      * Obsidian loadData
      *
-      * @returns any 结果
+      * @returns unknown 结果（调用方负责判型）
      */
-    loadData(): Promise<any>;
+    loadData(): Promise<unknown>;
     /**
      * Obsidian saveData
      *
      * @param data - 数据
      */
-    saveData(data: any): Promise<void>;
+    saveData(data: unknown): Promise<void>;
     /**
      * 迁移/回写前备份当前 data.json（可选；实现方负责写 `<pluginDir>/data.json.bak`）。
      * 只在本次确实要写盘时调用，避免每次启动都覆盖备份。
@@ -145,7 +145,8 @@ export class SettingsService {
 
     /** 加载设置：迁移 → 解密 → 同步自定义模型 */
     async loadSettings(): Promise<void> {
-        const rawData = await this.deps.loadData();
+        // Obsidian 磁盘数据是不可信输入：这里按迁移器契约收窄（纯类型断言，零运行时）
+        const rawData = (await this.deps.loadData()) as Record<string, unknown>;
         const outcome = migrateSettingsWithStatus(rawData);
         const migratedData = outcome.data;
         // v4.27：迁移未完成时不回写 schemaVersion（旧实现会把失败盖章为已完成，永不重试）

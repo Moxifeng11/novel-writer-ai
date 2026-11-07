@@ -1,8 +1,8 @@
 # v5 验收清单：Agent 对话 + 多步骤协同写作最小闭环
 
 > 用途：给用户逐批验收 B1–B5，不再重复论证设计。
-> 生成口径：committed HEAD `6d0ac7f` + 第 103 轮工作树待收单实测（2026-11-08 06:13 +08:00；数据源 `program-status.json` + 门禁实跑）。
-> 版本：v4.72.0（版本节点 `44c38b3`）· 已提交 HEAD `6d0ac7f`（ahead 219，第 102 轮测试已收单）；第 103 轮 any 收口 2 处（实测 138/140，基线待收单下调）+ 在途 registry 七命令批次（bundle +179B 待版本节点定基线）；第 102 轮补 command-registry id 一致性测试（+3 例，7 处历史缺口修复已在工作树待收单）； 第 86/87 轮（`entity-integrity` 6 例 + `optimization-advisor` 23 例 + 文档）已随 `388eb44` 收单；第 88 轮验收清单纠偏已随 `58eab76` 收单；第 89 轮 `agent-port` 补测已随 `b282136` 收单；第 90 轮端口口径对齐已随 `8cceae9` 收单；第 91 轮 `genre-preference-memory` 补测已随 `98945ff` 收单；第 92 轮派工新鲜度边界文档已随 `90b542d` 收单；第 93 轮两项修复（浅拷贝隔离 + 派工判据 A）已随 `0960a99` 收单；v4.71.0 版本节点 `d599410`（版本同步/CHANGELOG/release notes/台账，bundle 4,870,663）；第 95 轮 ZCode engine any 第一批 `frontmatter-serializer` any 4→0 已随 `5472be7` 收单（基线 148→144）。剧本分镜表强制前置随 `e1c3820`、E2E 欠账修复随 `aa2b4c9` 入库。
+> 生成口径：committed HEAD `62780ac` + 第 104 轮工作树待收单实测（2026-11-08 06:45 +08:00；数据源 `program-status.json` + 门禁实跑）。
+> 版本：v4.73.0（版本节点 `bd96408`，已发布）· 已提交 HEAD `62780ac`（ahead 222，第 103 轮 any 收口 2 处已收单）；第 104 轮 `settings-service` 依赖签名（`loadData`/`saveData`）any 2→0 在工作树待收单，基线 140→136（棘轮下调）、bundle 零变化；第 102 轮补 command-registry id 一致性测试（+3 例，7 处历史缺口修复已在工作树待收单）； 第 86/87 轮（`entity-integrity` 6 例 + `optimization-advisor` 23 例 + 文档）已随 `388eb44` 收单；第 88 轮验收清单纠偏已随 `58eab76` 收单；第 89 轮 `agent-port` 补测已随 `b282136` 收单；第 90 轮端口口径对齐已随 `8cceae9` 收单；第 91 轮 `genre-preference-memory` 补测已随 `98945ff` 收单；第 92 轮派工新鲜度边界文档已随 `90b542d` 收单；第 93 轮两项修复（浅拷贝隔离 + 派工判据 A）已随 `0960a99` 收单；v4.71.0 版本节点 `d599410`（版本同步/CHANGELOG/release notes/台账，bundle 4,870,663）；第 95 轮 ZCode engine any 第一批 `frontmatter-serializer` any 4→0 已随 `5472be7` 收单（基线 148→144）。剧本分镜表强制前置随 `e1c3820`、E2E 欠账修复随 `aa2b4c9` 入库。
 > 证据哈希 = `git hash-object <path>`（Git blob SHA-1，取前 12 位），用于确认验收时文件未被改动。
 
 ## 〇、全局基线（当前 HEAD 实测）
@@ -12,8 +12,8 @@
 | 单测文件 | 594 passed | `npm run test` |
 | 单测用例 | 6,560 passed（…第 96 轮 +2 advisor 红线前缀过滤；第 98 轮 +2 advisor 采集面回退；第 100 轮零新增；第 102 轮 +3 command-registry id 一致性） | `npm run test` |
 | v5 锚点定向复验 | 6 文件 / 101 用例通过（2026-11-08 03:12 第 96 轮复验；`agent-port-status` 3→9→11） | 见 §一–§三 的定向命令 |
-| any 预算 | 实测 138/140（77 文件；基线仍 140/78，第 103 轮 `vector-rebuild-action` −2 待 ZCode 收单下调；第 95 轮 ZCode `frontmatter-serializer` any 4→0 随 `5472be7` 收紧；第 81 轮 -6 已随 `af9df7b` 收紧） | `npm run check:any` |
-| 构建产物 | `main.js` 实测 4,871,390 字节（基线 4,871,211；+179B 来自在途 `core/command-registry` 七命令补注册，待 ZCode 版本节点决定基线；v4.72.0 changelog +308B 已随收单入基线；第 93 轮嵌套字段拷贝 + 派工判据 A +195B；第 90 轮端口口径对齐 −11B）；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
+| any 预算 | 实测 136/136（76 文件；基线已于第 104 轮由 140 下调至 136——`vector-rebuild-action` −2 已随 `62780ac`、`settings-service` −2 在工作树待收单；第 95 轮 ZCode `frontmatter-serializer` any 4→0 随 `5472be7` 收紧；第 81 轮 -6 已随 `af9df7b` 收紧） | `npm run check:any` |
+| 构建产物 | `main.js` 实测 4,871,720 字节（= `.bundle-baseline.json` 当前基线；v4.73.0 版本节点 +330B 已入基线；第 104 轮 any→unknown 为类型擦除、零字节；第 93 轮嵌套字段拷贝 + 派工判据 A +195B；第 90 轮端口口径对齐 −11B）；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
 | 类型 | 0 error | `npm run typecheck` |
 | 架构守护 | exit 0（9 个既有豁免项，非本轮引入） | `npm run check-engines` |
 | E2E | 基线 **40 passed**（37 + mode-journey 3；ZCode 第 88 轮实测三模式 3/3，`rewrite-chapters` 已下线） | `npm run test:e2e` |
@@ -101,11 +101,11 @@
 |---|---|---|
 | B5 三模式验收 | **已闭环（2026-11-07）**：full-journey（长篇）+ mode-journey（短篇六维→番茄包 / 剧本可拍→红果包）mock AI 旅程 **3/3 通过**；`rewrite-chapters` 真实重写脚本已随「九霄逆脉行」项目下线（`308e1fe`） | 无需手工走查；如需回退脚本须用户明确确认 |
 | E2E 全量 | 基线 **40 passed**（37 + mode-journey 3，2026-11-07 实测：`aa2b4c9` 37/37 + 三模式 3/3） | 变更后重跑 `npm run test:e2e`（五个 project） |
-| push / tag / Release | ahead 218，未推送；v4.65.0 节点 `c8147e5`、第 67 轮收单 `e2c8894`、第 68 轮 any 收紧 `ed6b823`、v4.66.0 节点 `e6d1bb0`、第 71 轮收单 `5c53e34`、v4.67.0 节点 `952c052`、第 73 轮收单 `fcd9fde`、第 74 轮收单 `a6cb84c`、第 75 轮收单 `7f205b2`、v4.68.0 节点 `cd6750f`、第 76 轮收单 `b135dbc`、剧本分镜 `e1c3820`、E2E 修复 `aa2b4c9`、v4.69.0 节点 `3038735`、第 80 轮收单 `515ba1a`、第 81 轮收单 `af9df7b`、第 82 轮收单 `4c5a3f0`、第 83 轮收单 `fb5b9ef`、第 84 轮收单 `22acb89`、第 85 轮收单 `bd444ea`、第 86/87 轮收单 `388eb44`、v4.70.0 节点 `bb5972a`、第 91 轮收单 `98945ff`、第 92 轮收单 `90b542d`、v4.71.0 节点 `d599410`、第 95 轮 `5472be7`、第 96 轮 `d12b11a`、第 97 轮 `44c38b3`、第 98 轮 `9afba2b`、第 100 轮 `8c7cc88` 已出；第 102 轮 4 路径在途 | 用户明确指令后才执行 |
+| push / tag / Release | ahead 222，未推送；v4.73.0 节点 `bd96408` 已发布、第 67 轮收单 `e2c8894`、第 68 轮 any 收紧 `ed6b823`、v4.66.0 节点 `e6d1bb0`、第 71 轮收单 `5c53e34`、v4.67.0 节点 `952c052`、第 73 轮收单 `fcd9fde`、第 74 轮收单 `a6cb84c`、第 75 轮收单 `7f205b2`、v4.68.0 节点 `cd6750f`、第 76 轮收单 `b135dbc`、剧本分镜 `e1c3820`、E2E 修复 `aa2b4c9`、v4.69.0 节点 `3038735`、第 80 轮收单 `515ba1a`、第 81 轮收单 `af9df7b`、第 82 轮收单 `4c5a3f0`、第 83 轮收单 `fb5b9ef`、第 84 轮收单 `22acb89`、第 85 轮收单 `bd444ea`、第 86/87 轮收单 `388eb44`、v4.70.0 节点 `bb5972a`、第 91 轮收单 `98945ff`、第 92 轮收单 `90b542d`、v4.71.0 节点 `d599410`、第 95 轮 `5472be7`、第 96 轮 `d12b11a`、第 97 轮 `44c38b3`、第 98 轮 `9afba2b`、第 100 轮 `8c7cc88`、第 103 轮收单 `62780ac` 已出；第 104 轮 3 路径在途 | 用户明确指令后才执行 |
 | 剧本 `storyboard` 必填语义 | 已落地并被收单：`shared/creation-flow.ts` 的 `CreationFlowStage.hardDependsOn`（代码 `e1c3820`、文档 `3e5b9d4`），分镜未完成时「分集写作」显示 blocked；`storyboard` 自身不再按「既有正文」跳过 | 已闭环；如需回退须用户明确确认 |
 
 ---
 
 ## 七、结论
 
-B1–B5 代码、测试、门禁与文档均已在当前 HEAD 可复验：全量 594 文件 / 6,560 用例通过（第 86 轮 `entity-integrity` +6、第 87 轮 `optimization-advisor` +23、第 89 轮 `agent-port-status` +6、第 91 轮 `genre-preference-memory` +19、第 93 轮 +2、第 96 轮 +2、第 98 轮 +2、第 102 轮 +3；覆盖率历史值未在本轮复跑），any 140/140（78 文件；基线已随 `8c7cc88` 收紧），bundle 4,871,211（= 当前基线），六道相关门禁全绿；v5 锚点定向第 90 轮复验 6 文件 / 101 用例通过（`agent-mode-alignment` 12 + `agent-harness` 28 + `agent-stage-panel` 20 + `agent-port-status` 11 + `publication-profile` 26 + `export-precheck` 4）。剩余事项只有 §六 的授权型工作，不含待补代码。
+B1–B5 代码、测试、门禁与文档均已在当前 HEAD 可复验：全量 594 文件 / 6,560 用例通过（第 86 轮 `entity-integrity` +6、第 87 轮 `optimization-advisor` +23、第 89 轮 `agent-port-status` +6、第 91 轮 `genre-preference-memory` +19、第 93 轮 +2、第 96 轮 +2、第 98 轮 +2、第 102 轮 +3；覆盖率历史值未在本轮复跑），any 136/136（76 文件；基线已按第 104 轮棘轮下调，`vector-rebuild-action` −2 已收单），bundle 4,871,720（= 当前基线），六道相关门禁全绿；v5 锚点定向第 90 轮复验 6 文件 / 101 用例通过（`agent-mode-alignment` 12 + `agent-harness` 28 + `agent-stage-panel` 20 + `agent-port-status` 11 + `publication-profile` 26 + `export-precheck` 4）。剩余事项只有 §六 的授权型工作，不含待补代码。

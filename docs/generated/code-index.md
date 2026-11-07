@@ -9,7 +9,7 @@
 | `engine/` | 305 | 132774 | 1607 | 1346 | 84% |
 | `services/` | 32 | 12633 | 187 | 148 | 79% |
 | `shared/` | 175 | 40277 | 1587 | 1313 | 83% |
-| `core/` | 7 | 2769 | 28 | 13 | 46% |
+| `core/` | 7 | 2770 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 239 | 101489 | 735 | 639 | 87% |
 
@@ -22,7 +22,7 @@
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 550 | 4 | 2 |
-| `core/settings-service.ts` | 538 | 4 | 3 |
+| `core/settings-service.ts` | 539 | 4 | 3 |
 | `core/theme-manager.ts` | 262 | 3 | 2 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
