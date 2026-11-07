@@ -474,6 +474,18 @@ Agent（harness）
   - 边界：未动 `engine/**`、`ui/views/writing-fingerprint-view.ts`、`ui/views/fingerprint-v2-detail.ts`、`.any-baseline.json`、`program-status`（用例 6,491 无变化）；零新增文件；`docs/generated/code-index.md` 因源码行数变化随 `gen:docs` 纳入本路径。
   - 收口提示：本轮后非 engine 的 ≥3 处 any 文件清空（仅剩 `shared/types.ts` 有意设计），Trae 侧 gate-fix 长尾（1–2 处/文件）不再满足派工门槛，下一轮应强制换型（docs/audit/test-hardening）。
   - 并发事实：开工 HEAD `cd6750f` / ahead 187；执行期间 ZCode 以 `b135dbc` 收单第 76 轮（HEAD 推进、ahead 188），本轮 3 路径（两源码 + code-index）待收单。
+- 第 78 轮（v5-product / docs-correction；兑现 ZCode 第 77 轮派工：B5 三份文档边界审计，只读 + 文档）：
+  - 盘点（先问是不是）：开工 HEAD `b135dbc` / ahead 188，工作树 5 路径为第 77 轮待收单；信箱 1 条未读＝ZCode 第 76 轮收单（`b135dbc`）+ 第 77 轮派工「核对 USER-GUIDE / COMMERCIAL-GUIDE / handbook 的阶段面板、Agent 闭环、三档导出描述与代码偏差，只改文档」。第 77 轮实际执行 gate-fix，派工未兑现。
+  - 审计结论（逐条对源）：①阶段面板文案（`ui/agent-workbench/stage-panel.ts`：`继续「阶段」：CTA` 预填、`阶段读取失败：切换项目或重新打开工作台后重试`）与 USER-GUIDE §3/§7 一致；②三模式阶段标签（`shared/creation-flow.ts`）与 USER-GUIDE §4 表一致；③三档交付检查/导出范围（`shared/publication-profile.ts` + `ui/export-manuscript-modal.ts`：默认 `finished`、投稿档强制整包、成品档可「仅已写单元」豁免）与两份指南一致；④handbook 13 的 `check:automation` 校验项与 `scripts/check-automation.mjs`（round 三处一致、`stale + supersededBy`、「含 v5-product」、HANDOFF 行数/字段、版本四文件、信箱）一致。
+  - 发现的真实偏差（已改文档）：`COMMERCIAL-GUIDE §1` 称「参数唯一来源是项目 `.project`…改项目目标后导出与出版检查自动使用新值」——实际 `resolvePublicationProfile(mode)` 只取 `CREATION_MODE_SPECS` 平台区间，`checkPublicationReadiness` 与导出弹窗均未传入项目目标值（项目「目标节数/集数」仅用于阶段面板 `unitTarget` 骨架数提示）。连同 §2「目标下限」措辞改为「平台规格下限」，`USER-GUIDE §5` 补一行阈值来源说明并同步 UI 标签「成品导出（推荐，默认）」。
+  - 验证：`check:docs` / `check:automation` / `check:linked-scenarios` 与全量 `preflight:release`（见本轮 canonical 记录）。
+  - 边界：零源码改动、零新增文件；未动 `engine/**`、`ui/views` 指纹视图、`.any-baseline.json`、`program-status`（用例数未变，无需 `program:render`）。
+- 第 79 轮（v5-product / docs-correction；在途收口：剧本分镜表强制前置）：
+  - 盘点（先问是不是）：开工 HEAD `dc03546` / ahead 189，信箱 0 未读；工作树除第 78 轮 3 文档外，另有 18:23 未记录的 4 个路径（`shared/creation-flow.ts` + 3 测试），实现「剧本分镜表强制必填」——与 v5-acceptance §六「待拍板」及第 78 轮 HANDOFF「待确认」矛盾。判定为在途批次（代码注释标注用户 2026-11-07 拍板），按决策阶梯第 3 级「在途收口」处理：不重复实现、不擅自回退，验证后补齐文档与状态。
+  - 代码事实：`CreationFlowStage` 新增可选 `hardDependsOn`；剧本 `units` 声明 `hardDependsOn:['storyboard']`；`storyboard` 分支去掉 `|| setupSatisfied`（存量剧本不再跳过）；`resolveCreationFlow` 在「非首个未完成阶段」优先判强制前置 → blocked，再退回原有「有进度 active / 普通依赖 blocked / todo」。
+  - 验证：定向 3 文件 / 49 用例通过（`creation-flow` 17、`agent-stage-panel` 20、`agent-mode-alignment` 12）；build 后 `main.js` 4,869,380（+180B，≤200B/批预算，已按规则 `--update-baseline --note` 显式上调）；全量 `preflight:release` 见 canonical 记录。
+  - 文档收口：`USER-GUIDE §4` 补剧本分镜强制前置说明；`v5-acceptance` 头部/any/bundle/§六/§七对齐 `dc03546`；v5 计划文件待拍板项 ③ 关闭为「已落地待收单」。
+  - 边界：零新增文件、未动 `engine/**`、`ui/views` 指纹视图、`.any-baseline.json`（154/154 为 ZCode 收单结果）；产品语义来源需 ZCode 收单时复核。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

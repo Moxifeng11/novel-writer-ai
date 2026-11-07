@@ -1,8 +1,8 @@
 # v5 验收清单：Agent 对话 + 多步骤协同写作最小闭环
 
 > 用途：给用户逐批验收 B1–B5，不再重复论证设计。
-> 生成口径：committed HEAD 实测（2026-11-07 17:40 +08:00）。
-> 版本：v4.68.0 · HEAD `b135dbc`（ahead 188）· 第 71 轮已由 `5c53e34` 收单并收紧 any 基线；第 72 轮 3 个文档路径已由 `c5eabb0` 收单；第 73 轮 `main.ts` any -4 已由 `fcd9fde` 收单并收紧基线 174→170；第 74 轮 3 文档路径已由 `a6cb84c` 收单；第 75 轮两文件 -7 已由 `7f205b2` 收单并收紧基线 170→163；v4.68.0 节点 `cd6750f` 已入库；第 76 轮 `general-sections.ts` -3 已由 `b135dbc` 收单并收紧基线 163→160；第 77 轮 `shared/entity-models.ts` + `ui/views/knowledge-base-view.ts` any -6 为工作树改动（160→154，基线待 ZCode 收单时下调）。
+> 生成口径：committed HEAD 实测（2026-11-07 18:45 +08:00）。
+> 版本：v4.68.0 · HEAD `dc03546`（ahead 189）· 第 71–78 轮均已被 ZCode 收单（第 77 轮 any -6 与基线 160→154 随 `dc03546` 入库；第 78 轮 3 份文档亦随该提交收单）。第 79 轮为「剧本分镜表强制前置」在途批次：`shared/creation-flow.ts` 新增 `hardDependsOn` + 3 个测试文件断言更新，工作树待 ZCode 收单。
 > 证据哈希 = `git hash-object <path>`（Git blob SHA-1，取前 12 位），用于确认验收时文件未被改动。
 
 ## 〇、全局基线（当前 HEAD 实测）
@@ -12,8 +12,8 @@
 | 单测文件 | 591 passed | `npm run test` |
 | 单测用例 | 6,491 passed（第 66 轮 +5 worker-manager；第 67/68 轮零新增；第 70 轮 +6 scene-outline-controller） | `npm run test` |
 | v5 锚点定向复验 | 6 文件 / 90 用例通过（2026-11-07 实测） | 见 §一–§三 的定向命令 |
-| any 预算 | 154/160（85 文件；第 77 轮 `entity-models.ts` + `knowledge-base-view.ts` 各 -3 为工作树改动，基线 160 待 ZCode 收单时下调）；余量 6 | `npm run check:any` |
-| 构建产物 | `main.js` 4,869,200 字节（v4.68.0 版本数据 +328B，已随 `cd6750f` 入库）；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
+| any 预算 | 154/154（85 文件；第 77 轮 -6 已由 `dc03546` 收单并收紧基线）；余量 0 | `npm run check:any` |
+| 构建产物 | `main.js` 4,869,380 字节（第 79 轮剧本分镜强制前置 +180B，已按预算规则显式上调基线并注明原因）；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
 | 类型 | 0 error | `npm run typecheck` |
 | 架构守护 | exit 0（9 个既有豁免项，非本轮引入） | `npm run check-engines` |
 | E2E | 基线 37 passed，本轮未重跑（需授权，见 §六） | `npm run test:e2e` |
@@ -101,11 +101,11 @@
 |---|---|---|
 | B5 手工验收（真实三模式流程） | 未执行；`E2E_REWRITE=1` 会改写 E2E 基线 | 明确授权后跑 `E2E_REWRITE=1 npm run test:e2e`，再人工走「创建→大纲→人设→写 1 章→质检→导出」 |
 | E2E 全量 | 基线 37 passed，本轮未重跑 | 授权后 `npm run test:e2e` |
-| push / tag / Release | ahead 188，未推送；v4.65.0 节点 `c8147e5`、第 67 轮收单 `e2c8894`、第 68 轮 any 收紧 `ed6b823`、v4.66.0 节点 `e6d1bb0`、第 71 轮收单 `5c53e34`、v4.67.0 节点 `952c052`、第 73 轮收单 `fcd9fde`、第 74 轮收单 `a6cb84c`、第 75 轮收单 `7f205b2`、v4.68.0 节点 `cd6750f`、第 76 轮收单 `b135dbc` 已出 | 用户明确指令后才执行 |
-| 剧本 `storyboard` 必填语义 | 当前为可选字段；三形态中剧本是否强制 storyboard 无产品口径 | 产品语义确认后，由 ZCode 改 engine 契约，Trae 同步 UI/测试 |
+| push / tag / Release | ahead 189，未推送；v4.65.0 节点 `c8147e5`、第 67 轮收单 `e2c8894`、第 68 轮 any 收紧 `ed6b823`、v4.66.0 节点 `e6d1bb0`、第 71 轮收单 `5c53e34`、v4.67.0 节点 `952c052`、第 73 轮收单 `fcd9fde`、第 74 轮收单 `a6cb84c`、第 75 轮收单 `7f205b2`、v4.68.0 节点 `cd6750f`、第 76 轮收单 `b135dbc` 已出 | 用户明确指令后才执行 |
+| 剧本 `storyboard` 必填语义 | 已落地为强制前置：`shared/creation-flow.ts` 的 `CreationFlowStage.hardDependsOn`，分镜未完成时「分集写作」显示 blocked；`storyboard` 自身不再按「既有正文」跳过 | 第 79 轮在途批次，待 ZCode 收单复核；如需回退须用户明确确认 |
 
 ---
 
 ## 七、结论
 
-B1–B5 代码、测试、门禁与文档均已在当前 HEAD 可复验：全量 591 文件 / 6,491 用例通过（第 70 轮为场景细纲补测 +6，不属 v5 批次），any 154/160（85 文件；第 77 轮 -6 为工作树改动、基线待收单下调），bundle 4,869,200（v4.68.0 版本数据已随 `cd6750f` 入库，第 77 轮纯类型擦除逐字节不变），六道相关门禁全绿；v5 锚点 6 文件 / 90 用例定向复验通过（第 72 轮）。剩余事项只有 §六 的四项授权型工作，不含待补代码。
+B1–B5 代码、测试、门禁与文档均已在当前 HEAD 可复验：全量 591 文件 / 6,491 用例通过（第 70 轮为场景细纲补测 +6，不属 v5 批次），any 154/154（85 文件；第 78 轮已收单），bundle 4,869,380（第 79 轮剧本分镜强制前置 +180B，已显式上调基线），六道相关门禁全绿；v5 锚点定向第 79 轮 3 文件 / 49 用例通过（`creation-flow` 17 + `agent-stage-panel` 20 + `agent-mode-alignment` 12）。剩余事项只有 §六 的授权型工作与第 79 轮待收单，不含待补代码。
