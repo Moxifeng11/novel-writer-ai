@@ -5,8 +5,8 @@
   "baseline": {
     "version": "4.70.0",
     "tests": {
-      "files": 593,
-      "cases": 6531
+      "files": 594,
+      "cases": 6550
     },
     "e2e": 40,
     "e2eNote": "E2E 通过总数：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27 = 40（2026-11-07 全量实测）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑（rewrite-chapters 已随「九霄逆脉行」项目删除而下线）",
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 205,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 第 90 轮收尾实测 git rev-list --count=205，HEAD b282136；第 72–89 轮已全部收单，第 90 轮在途）"
+    "localCommitsAhead": 206,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 第 91 轮收尾实测 git rev-list --count=206，HEAD 8cceae9；第 90 轮已随 8cceae9 收单，第 91 轮测试文件在途）"
   },
   "groups": [
     {
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-08",
+      "group": "G7",
+      "summary": "第 91 轮（test-hardening，兑现 ZCode 派工）：services/genre-preference-memory.ts 由 4.7% 覆盖补到 lines 100% / statements 97.5% / branches 92.94% / functions 91.17%。新增 tests/unit/services/genre-preference-memory.test.ts 19 例，锁定偏好语义：默认值与部分持久化合并、setData 500ms 防抖单次落盘、连续自动分类防抖合并、纠正记录置顶/200 条上限/计数与 lastUpdated、题材·子题材·频道偏置 +0.15 累积与原值下调、0.95 衰减后 <0.01 删除键、准确率无样本=1 且纠正多于分类夹到 0、getStats 降序 Top10、findSimilarCorrections 关键词命中排序/大小写不敏感/上限/空输入、export/importConfig 往返与非法 JSON 返回 false、flush 立即落盘并清定时器、两条落盘路径吞错、reset 清空。零源码改动；全量 preflight:release EXIT=0（594 文件 / 6,550 用例；lines 44.34% / branches 43.75% / functions 44.80%；any 148/148；bundle 4,870,136 逐字节不变）",
+      "evidence": "tests/unit/services/genre-preference-memory.test.ts + services/genre-preference-memory.ts + docs/PLAN.md 第 91 轮"
+    },
     {
       "date": "2026-11-08",
       "group": "G7",

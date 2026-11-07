@@ -2,15 +2,15 @@
 
 > 用途：给用户逐批验收 B1–B5，不再重复论证设计。
 > 生成口径：committed HEAD 实测（2026-11-08 00:22 +08:00；数据源 `program-status.json`）。
-> 版本：v4.70.0（版本节点 `bb5972a`）· 已提交 HEAD `b282136`（ahead 205）· 第 86/87 轮（`entity-integrity` 6 例 + `optimization-advisor` 23 例 + 文档）已随 `388eb44` 收单；第 88 轮验收清单纠偏已随 `58eab76` 收单；第 89 轮 `agent-port` 补测已随 `b282136` 收单；第 90 轮端口口径对齐在途。剧本分镜表强制前置随 `e1c3820`、E2E 欠账修复随 `aa2b4c9` 入库。
+> 版本：v4.70.0（版本节点 `bb5972a`）· 已提交 HEAD `8cceae9`（ahead 206）· 第 86/87 轮（`entity-integrity` 6 例 + `optimization-advisor` 23 例 + 文档）已随 `388eb44` 收单；第 88 轮验收清单纠偏已随 `58eab76` 收单；第 89 轮 `agent-port` 补测已随 `b282136` 收单；第 90 轮端口口径对齐已随 `8cceae9` 收单；第 91 轮 `genre-preference-memory` 补测在途。剧本分镜表强制前置随 `e1c3820`、E2E 欠账修复随 `aa2b4c9` 入库。
 > 证据哈希 = `git hash-object <path>`（Git blob SHA-1，取前 12 位），用于确认验收时文件未被改动。
 
 ## 〇、全局基线（当前 HEAD 实测）
 
 | 指标 | 实测值 | 命令 / 来源 |
 |---|---|---|
-| 单测文件 | 593 passed | `npm run test` |
-| 单测用例 | 6,531 passed（第 66 轮 +5 worker-manager；第 70 轮 +6 scene-outline-controller；第 86 轮 +6 `entity-integrity`；第 87 轮 +23 `optimization-advisor`；第 89 轮 +6、第 90 轮 +2 `agent-port-status`） | `npm run test` |
+| 单测文件 | 594 passed | `npm run test` |
+| 单测用例 | 6,550 passed（第 66 轮 +5 worker-manager；第 70 轮 +6 scene-outline-controller；第 86 轮 +6 `entity-integrity`；第 87 轮 +23 `optimization-advisor`；第 89 轮 +6、第 90 轮 +2 `agent-port-status`；第 91 轮 +19 `genre-preference-memory`） | `npm run test` |
 | v5 锚点定向复验 | 6 文件 / 101 用例通过（2026-11-08 00:07 实测；`agent-port-status` 3→9→11） | 见 §一–§三 的定向命令 |
 | any 预算 | 148/148（82 文件；第 81 轮 -6 已由 ZCode 随 `af9df7b` 收紧基线）；余量 0 | `npm run check:any` |
 | 构建产物 | `main.js` 4,870,136 字节（第 90 轮端口口径对齐 −11B；v4.70.0 版本数据 +370B，叠加 v4.69.0 +397B 与第 79 轮分镜强制前置 +180B）；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
@@ -73,7 +73,7 @@
 |---|---|
 | 关键文件 | `.trae/automation/trae-loop-state.json`（唯一 canonical）<br>`scripts/check-automation.mjs`：schema、round 单调、`updatedAt` 时区、红线字段、HANDOFF 行数、信箱可解析、版本四文件一致（L52–L160）<br>`package.json`：`check:automation` 已挂入 `preflight`（L56） |
 | 测试 / 校验 | `npm run check:automation`（结构校验，不校验业务内容） |
-| 当前结果 | 通过：活跃台账 round 90、HANDOFF 9 行、版本 4.70.0（committed HEAD `b282136`）、信箱可解析；Vault 根副本 `Test-Path = False`，插件仓副本 `True` |
+| 当前结果 | 通过：活跃台账 round 91、HANDOFF 9 行、版本 4.70.0（committed HEAD `8cceae9`）、信箱可解析；Vault 根副本 `Test-Path = False`，插件仓副本 `True` |
 | 证据哈希 | `check-automation.mjs` `4160a26ee521` · `package.json` `d896d425b927`（committed HEAD / v4.70.0） |
 | 落地提交 | `76a124b` → `e2c8894`（第 67 轮边界加固：v5-product 必检权重 + round 三处一致） |
 

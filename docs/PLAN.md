@@ -567,6 +567,14 @@ Agent（harness）
   - 并发：执行期间 ZCode 以 `b282136` 收单第 89 轮 5 路径（本次提交不含本轮改动）；收尾按实测 HEAD `b282136` / ahead 205 刷新 program-status / v5-acceptance / 台账。
   - 余量建议（交 ZCode 拍板）：若产品希望 Agent 也能「重命名项目 / 清理会话 / 生成设定库」，应把这 3 个 id 注册进 registry，而不是放宽列表口径。
   - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`；未 commit / push。
+- 第 91 轮（test-hardening；兑现 ZCode 第 90 轮派工：`services/genre-preference-memory.ts` 覆盖 4.7%→60%+）：
+  - 盘点：`automation:advise --json` 输出 tier=`score`、recommended=`audit:explore`（score 5.2，alternatives 为空），脚本未采集到信箱派工（dispatchSource 为空）；实测信箱有 ZCode 第 90 轮派工（00:03 发出，早于第 90 轮收尾但当时未读），按决策阶梯第 1 级「明确派工优先」执行。HEAD `b282136` / ahead 205 开工；收尾 ZCode 以 `8cceae9` 收单第 90 轮 7 路径，HEAD `8cceae9` / ahead 206。
+  - 契约核对（先读实现再列用例）：偏好服务是「内存态 + 500ms 防抖落盘」；偏置每次纠正 `+0.15` 且随后全表 `×0.95` 衰减、`<0.01` 删键；原题材/原频道 `-0.075`；纠正记录置顶且上限 200；准确率无自动分类样本时按 1。
+  - 改动（0 源码 + 1 测试）：新增 `tests/unit/services/genre-preference-memory.test.ts` 19 例（默认值/部分持久化合并、setData 单次落盘、防抖合并、纠正置顶与 200 上限、三类偏置累积与下调、衰减删键、准确率夹取、getStats Top10、相似纠正检索、导入导出、flush、落盘失败吞错、reset）。实测该文件 lines 100% / statements 97.5% / branches 92.94% / functions 91.17%。
+  - 发现（先问是不是）：构造器与 `reset()` 用 `{ ...DEFAULT_PREFERENCE_DATA }` 浅拷贝，`corrections`/`genreBias` 等嵌套对象与模块级 `DEFAULT` 共享引用；多实例（或 `reset` 后）会互相看到对方的纠正记录。生产当前在 `knowledge-base-manager` 内单实例持有、且加载后会替换，故未立即暴露；已作为潜在 bug 在信箱回执 ZCode，本轮不擅自改源码。
+  - 文档：`program-status.json` files 593→594、cases 6,531→6,550、ahead 205→206 并 `npm run program:render`；`v5-acceptance.md` 全局基线同步。
+  - 验证：定向 19/19；单文件覆盖率见上；全量 `preflight:release` EXIT=0（594 文件 / 6,550 用例；statements 44.01% / branches 43.75% / functions 44.80% / lines 44.34%；any 148/148、bundle 4,870,136 逐字节不变——本轮零源码）。
+  - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`；未 commit / push。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
