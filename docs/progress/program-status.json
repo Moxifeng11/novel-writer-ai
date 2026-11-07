@@ -6,7 +6,7 @@
     "version": "4.63.0",
     "tests": {
       "files": 589,
-      "cases": 6460
+      "cases": 6467
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 158,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 56 轮收单后实测 git rev-list --count=ahead 158，HEAD e85534f；第 53–56 轮测试与文档加固已收单，v4.63.0 版本节点提交后 ahead 159）"
+    "localCommitsAhead": 161,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 59 轮收尾实测 git rev-list --count=ahead 161，HEAD 06f84b0；第 56–58 轮测试/审计均已收单）"
   },
   "groups": [
     {
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-07",
+      "group": "G6",
+      "summary": "第 59 轮（perf，兑现 ZCode 第 58 轮派工 A1+A2）：阶段采集全库遍历收敛——①ui/full-writer/creation-flow-state.ts::hasExportArtifact 改用 shared/vault-tree.listFolderFiles 只列 05-导出/06-导出/EXPORT_FALLBACK_DIR（递归、任意扩展名、空目录=未导出），不再 getFiles() 全库扫描，无目录/读取异常按未导出，四种判定语义不变；②shared/mode-content.ts::listModeUnits 先取一次 files 快照，own 与 legacy 共用过滤（own 命中即返回，legacy 仅回退）；③新增 tests/unit/ui/creation-flow-state-scan.test.ts 7 条锁定扫描次数（长篇 2、短篇新结构 1、旧结构 1）与导出语义四例。实测单次采集长篇 3→2、短篇/剧本 3→1（阶段刷新 5→4 / 3→2）；main.js 4,867,445（基线 −15B）；定向 15/15，typecheck 0，用例 6,460→6,467。未动 engine/**、ZCode 文件集与 HOT_FILES；记录既有缺口：短篇/剧本导出目录在 短篇创作/05-导出、剧本创作/06-导出，与项目根检查路径不一致（行为未变）",
+      "evidence": "ui/full-writer/creation-flow-state.ts + shared/mode-content.ts + tests/unit/ui/creation-flow-state-scan.test.ts + docs/PERFORMANCE.md §5.2 + docs/PLAN.md 第 59 轮"
+    },
     {
       "date": "2026-11-07",
       "group": "G7",

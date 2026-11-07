@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132774 | 1607 | 1346 | 84% |
 | `services/` | 32 | 12575 | 186 | 147 | 79% |
-| `shared/` | 174 | 39475 | 1571 | 1307 | 83% |
+| `shared/` | 174 | 39477 | 1571 | 1307 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 101411 | 735 | 639 | 87% |
+| `ui/` | 239 | 101414 | 735 | 639 | 87% |
 
 ## 文件清单
 
@@ -451,7 +451,7 @@
 | `shared/logger.ts` | 101 | 5 | 5 |
 | `shared/lru-cache.ts` | 221 | 2 | 2 |
 | `shared/memory-rank.ts` | 104 | 4 | 4 |
-| `shared/mode-content.ts` | 445 | 19 | 19 |
+| `shared/mode-content.ts` | 447 | 19 | 19 |
 | `shared/mode-unit-outline.ts` | 87 | 2 | 2 |
 | `shared/model-capabilities.ts` | 168 | 11 | 9 |
 | `shared/model-pricing.ts` | 86 | 3 | 2 |
@@ -650,7 +650,7 @@
 | `ui/full-writer/chapter-orchestrator.ts` | 503 | 10 | 9 |
 | `ui/full-writer/context-loader-controller.ts` | 256 | 2 | 2 |
 | `ui/full-writer/cover-picker-controller.ts` | 146 | 1 | 1 |
-| `ui/full-writer/creation-flow-state.ts` | 241 | 4 | 4 |
+| `ui/full-writer/creation-flow-state.ts` | 244 | 4 | 4 |
 | `ui/full-writer/entity-state-controller.ts` | 135 | 2 | 2 |
 | `ui/full-writer/execution-panels.ts` | 383 | 4 | 4 |
 | `ui/full-writer/execution-run-store.ts` | 280 | 5 | 5 |

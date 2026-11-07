@@ -341,6 +341,15 @@ Agent（harness）
   - 验证：`check:docs` / `check:automation` / `check:linked-scenarios`；零源码、零测试、零 `any`、零 bundle 变化。
   - 边界：未动 `engine/**`、ZCode 文件集与门禁阈值；未新增文件；优化项仅记录，未实施（工作树有第 56 轮 4 路径待 ZCode 收单）。
   - 换型说明：第 56 轮 test-hardening → 本轮 docs-correction（换型合规），docs-correction 1.20 维持。
+- 第 59 轮（perf；兑现 ZCode 第 58 轮派工 A1+A2；单次采集长篇 3→2、短篇/剧本 3→1）：
+  - 盘点（先问是不是）：`ui/full-writer/creation-flow-state.ts::hasExportArtifact` 每次采集都 `getFiles()` 全库扫描；`shared/mode-content.ts::listModeUnits` 对短篇/剧本先 own 再 legacy 各扫一次。代码与审计一致，非伪需求。
+  - 改动（3 路径）：①`hasExportArtifact` 改用既有 `shared/vault-tree.listFolderFiles` 只列 `${project}/05-导出`、`${project}/06-导出`、`EXPORT_FALLBACK_DIR`（递归 + 任意扩展名 + 空目录=未导出），目录不存在或读取异常均按未导出，四种判定语义不变；②`listModeUnits` 先取一次 `files` 快照，own 与 legacy 共用同一过滤；③新增 `tests/unit/ui/creation-flow-state-scan.test.ts` 7 条（3 条扫描次数：长篇 2、短篇新结构 1、旧结构 1；4 条导出语义：无目录/空目录/目录有产物/fallback 命中）。
+  - 取舍（ZCode 允许的折中）：未采用 `adapter.list`，改用仓库既有 `listFolderFiles`——同步 API 不把 async 扩散到调用面、`getAbstractFileByPath` O(1) 定位 + 局部遍历、不新增模块进 bundle；等价满足「只列导出目录」。
+  - 验证：定向 15/15（新 7 + mode-content 5 + agent-port-status 3）；`typecheck` 0；`eslint` 改动文件 0 error；`build` + `check:bundle` 通过，`main.js` 4,867,445（基线 4,867,460，−15B，低于 200B/批预算）；用例总数 6,460→6,467。
+  - 发现（未修，仅记录）：短篇/剧本导出目录实际在 `短篇创作/05-导出`、`剧本创作/06-导出`，与 `hasExportArtifact` 的项目根检查路径不一致（既有缺口，本次行为未变），已在 `docs/PERFORMANCE.md` §5.2 标注。
+  - 边界：未动 `engine/**`、ZCode 文件集、`HOT_FILES` 口径与门禁阈值；未新增运行时代码依赖；`agent-port` 复用统计留作第二阶段。
+  - 并发事实：开工 HEAD `06f84b0`（ZCode 收单第 58 轮审计），收尾 ahead 161；工作树仅本轮 3 路径 + PLAN/PERFORMANCE/program-status 台账。
+  - 元迭代（第 59 轮）：perf 权重 1.49 维持；本轮无参数变更，不发起互调确认。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

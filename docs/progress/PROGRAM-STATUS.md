@@ -5,7 +5,7 @@
 
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-07
-- 当前基线：v4.63.0；单测 589 文件 / 6460 用例；E2E 37 条
+- 当前基线：v4.63.0；单测 589 文件 / 6467 用例；E2E 37 条
 - 任务进度：61/61 已完成（100%），0 进行中，0 受阻
 
 ## 一、任务组总览
@@ -174,6 +174,7 @@
 
 ## 四、进度流水
 
+- 2026-11-07｜G6｜第 59 轮（perf，兑现 ZCode 第 58 轮派工 A1+A2）：阶段采集全库遍历收敛——①ui/full-writer/creation-flow-state.ts::hasExportArtifact 改用 shared/vault-tree.listFolderFiles 只列 05-导出/06-导出/EXPORT_FALLBACK_DIR（递归、任意扩展名、空目录=未导出），不再 getFiles() 全库扫描，无目录/读取异常按未导出，四种判定语义不变；②shared/mode-content.ts::listModeUnits 先取一次 files 快照，own 与 legacy 共用过滤（own 命中即返回，legacy 仅回退）；③新增 tests/unit/ui/creation-flow-state-scan.test.ts 7 条锁定扫描次数（长篇 2、短篇新结构 1、旧结构 1）与导出语义四例。实测单次采集长篇 3→2、短篇/剧本 3→1（阶段刷新 5→4 / 3→2）；main.js 4,867,445（基线 −15B）；定向 15/15，typecheck 0，用例 6,460→6,467。未动 engine/**、ZCode 文件集与 HOT_FILES；记录既有缺口：短篇/剧本导出目录在 短篇创作/05-导出、剧本创作/06-导出，与项目根检查路径不一致（行为未变）（ui/full-writer/creation-flow-state.ts + shared/mode-content.ts + tests/unit/ui/creation-flow-state-scan.test.ts + docs/PERFORMANCE.md §5.2 + docs/PLAN.md 第 59 轮）
 - 2026-11-07｜G7｜第 56 轮（test-hardening，ZCode 第 55 轮派工前提纠偏）：tests/unit/shared/platform-export.test.ts 3→9 用例——派工 ①长篇模式/③字数下限/④未知平台回退在源码中不存在（mode 仅 short|script、函数内无字数校验、类型不允许未知平台），故按真实分支等价落点补测：无调研回退 storyDoc 首个实质行 + 默认标签、无 storyDoc 头部占位、空标签兜底、标题未命名/末段目录名回退、字数仅透传（下限归 publication-profile 三档）、敏感词覆盖简介+正文并按次数降序。零源码、零新增路径、零 any；定向 9/9，全量 589 文件 / 6,460 用例，check:any 198/198，automation/docs/jsdoc/linked 绿；bundle 不变（tests/unit/shared/platform-export.test.ts + docs/PLAN.md 第 56 轮）
 - 2026-11-07｜G7｜第 53 轮（test-hardening，v5 收口）：B3 导出弹窗三档/范围接线回归 +3 用例（publication-profile 20→23，纯测试、零生产代码、零新增路径）——①「平台投稿」分支须同时回写内存 scope=full、下拉 setValue('full')、setDisabled(true)；②splitUnitsByBody 必须先于 checkPublicationReadiness，且检查项用过滤后单元与 writtenOnly 派生的 scope/excludeEmptyUnits；③blocker 必须 throw 中止导出、finished 档附「仅已写单元」提示。定位依据：v5 B1–B5 均有回归，仅该 seam 零测试引用。定向 23/23、typecheck 0；全量 preflight 由 ZCode v4.62.0 节点统一跑（基线用例 6,451→6,454）（tests/unit/shared/publication-profile.test.ts + docs/PLAN.md 第 53 轮）
 - 2026-11-07｜G7｜第 52 轮（gate-fix，ZCode 第 51 轮明确派工 A；纯类型收窄、零运行时行为变化）：ui/unified-entity-generate-modal.ts any 4→0 + ui/prompt-manager-settings.ts any 4→0（合计 -8）——①新增文件内 CategoryCardElement = HTMLElement & { _catKey?: ModelCategory } 替换 2 处 (card as any)._catKey；②两处 catch (e: any) → catch (e) + 结构性断言 name/message（保留 AbortError 语义，DOMException 不被 instanceof Error 误杀）；③renderVariantStats 的 metrics: any → ABTestMetrics；④const template: any → PromptTemplate；⑤两处 updateTemplate(...) as any 直接删除。实测 check:any 206→198（-8，98→96 个文件）；typecheck 0；eslint 两文件 0 error；build + check:bundle 通过（main.js 4,866,833 与第 51 轮逐字节一致）；定向 chapter-generation-unify 32/32。路径纠偏：派工写的 ui/settings/prompt-manager-settings.ts 实际为 ui/prompt-manager-settings.ts（ui/unified-entity-generate-modal.ts + ui/prompt-manager-settings.ts + docs/PLAN.md 第 52 轮）
