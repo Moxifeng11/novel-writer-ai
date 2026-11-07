@@ -1,5 +1,5 @@
 {
-  "total": 174,
+  "total": 170,
   "generatedAt": "2026-11-07",
   "files": {
     "engine/ai-outline-generator.ts": 6,
@@ -14,7 +14,6 @@
     "engine/heavy-task-worker-manager.ts": 4,
     "engine/repository/domain/serializers/frontmatter-serializer.ts": 4,
     "engine/types/analysis-session.ts": 4,
-    "main.ts": 4,
     "services/knowledge-base-manager.ts": 4,
     "engine/cache/preload-manager.ts": 3,
     "engine/deconstructors/rhythm-deconstructor.ts": 3,

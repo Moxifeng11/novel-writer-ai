@@ -435,6 +435,14 @@ Agent（harness）
   - 验证：v5 锚点 6 文件 / 90 用例定向通过（B2 回归复验：阶段面板 20 / 端口 3 / B1 契约 40 / 出版检查 27）；`check:docs`/`check:jsdoc`/`check:any`（174/174，基线已收紧）/`check:bundle`/`check:automation`/`check:linked-scenarios` 全绿；全量 `preflight:release` 本轮结果见状态文件。
   - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`、`program-status`（用例数与 any 未变）；零新增文件。
   - 并发事实：开工 HEAD `c61a025` / ahead 180；工作树为第 71 轮 4 路径待收单，本轮叠加 3 个文档路径。
+- 第 73 轮（gate-fix；兑现 ZCode 第 72 轮派工：`main.ts` any 4→0）：
+  - 盘点（先问是不是）：HANDOFF 记第 72 轮 3 文档路径待收单、下一步为「按候选池评分选异类动作（优先信箱新派工）」；信箱 1 条未读＝ZCode 第 71 轮收单（`5c53e34`）+ v4.67.0（`952c052`）+ 第 72 轮派工（`main.ts` any 4→0）。第 72 轮实际做的是 docs-correction，派工未被执行；实测 `main.ts` 恰 4 处 any（L978 catch / L1125 / L1337 `let leaf` / L1644 `updateProvider`），与派工口径一致，非重复交付。
+  - 选型：决策阶梯最高优先级「ZCode 明确派工」；影响3×风险降低2×可验证5/成本1=30 × gate-fix 1.76 ≈ 53 分（首版失败已按 -15% 记入状态文件）；最近 3 轮为 test-hardening/docs-correction/gate-fix，无同型连续 3 轮惩罚；explorationRoll 0.58 未触发。
+  - 动作（1 文件、纯类型、零运行时）：`catch (error: any)` → `catch (error)` + 编译期擦除结构断言 `(error as { message?: string }).message`（不用 `instanceof Error`：DOMException 等抛出物不是 Error 子类）；两处 `let leaf: any` → Obsidian `WorkspaceLeaf`（`existing[0]` 与 `getLeaf('tab')` 均返回该类型，已在文件首行导入）；`updateProvider(id, updates: any)` → `Partial<CustomProvider>`，与 `core/provider-manager.ts:482` 实现及 `ui/manage-providers-modal.ts:34` 接口声明一致。
+  - 验证：`typecheck` 0 error；`eslint main.ts` 0 error（42 条既有 warning 未变）；`check:any` 170/174（90 文件，-4，未自改 `.any-baseline.json`）；`build` 后 `main.js` 4,868,872 逐字节不变、`check:bundle` 绿；`check:docs`/`check:jsdoc`/`check:automation`/`check:linked-scenarios`/`check:release` 全绿；全量 `preflight:release` EXIT=0（591 文件 / 6,491 用例，statements 43.8% / branches 43.47% / functions 44.53% / lines 44.13%）。
+  - 失败与回退（1 次）：首版 `instanceof Error ? error.message : String(error)` 属运行时表达式，`main.js` 4,868,927（+55B）超基线，违反派工「bundle 逐字节一致」；改回纯类型擦除断言后逐字节恢复 4,868,872。
+  - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`、`program-status`（cases 6,491 无变化，无需 `program:render`）；零新增文件（`newPathBudget` 未消耗）。
+  - 并发事实：开工 HEAD `952c052` / ahead 182，工作树为第 72 轮 2 文档路径；执行期间 ZCode 以 `c5eabb0` 收单第 72 轮（HEAD 推进、ahead 183）。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

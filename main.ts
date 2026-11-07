@@ -975,10 +975,11 @@ export default class NovelWriterPlugin extends Plugin {
             this._scheduleSessionRetentionPrune();
 
             log.info('[小说工坊] 插件加载完成！');
-        } catch (error: any) {
-            log.error('[小说工坊] 插件加载失败:', error.message);
-            log.error('[小说工坊] 错误堆栈:', error.stack);
-            new Notice(`❌ 小说工坊插件加载失败: ${error.message}`);
+        } catch (error) {
+            // 结构断言（纯类型擦除，零运行时）：不用 instanceof Error —— DOMException 等抛出物不是 Error 子类
+            log.error('[小说工坊] 插件加载失败:', (error as { message?: string }).message);
+            log.error('[小说工坊] 错误堆栈:', (error as { stack?: string }).stack);
+            new Notice(`❌ 小说工坊插件加载失败: ${(error as { message?: string }).message}`);
         }
     }
 
@@ -1122,7 +1123,7 @@ export default class NovelWriterPlugin extends Plugin {
         const { workspace } = this.app;
         // 优先复用已有视图，避免每次热重载开新窗口（v3.4.7 P0-7）
         const existing = workspace.getLeavesOfType(FULL_WRITER_VIEW_TYPE);
-        let leaf: any;
+        let leaf: WorkspaceLeaf;
         if (existing.length > 0) {
             leaf = existing[0];
             // v4.5.1: 清理重复实例（避免多 leaf 共存导致 tabContent undefined 等问题）
@@ -1334,7 +1335,7 @@ export default class NovelWriterPlugin extends Plugin {
     public async openKnowledgeBaseView(): Promise<void> {
         const { workspace } = this.app;
         const existing = workspace.getLeavesOfType(VIEW_TYPE_KNOWLEDGE_BASE);
-        let leaf: any;
+        let leaf: WorkspaceLeaf;
         if (existing.length > 0) {
             leaf = existing[0];
             for (let i = 1; i < existing.length; i++) {
@@ -1641,7 +1642,7 @@ export default class NovelWriterPlugin extends Plugin {
         return service.canDecryptStoredSecret(password);
     }
     public restoreDefaultProviders(): void { this._providerManager.restoreDefaultProviders(); }
-    public updateProvider(id: string, updates: any): boolean { return this._providerManager.updateProvider(id, updates); }
+    public updateProvider(id: string, updates: Partial<CustomProvider>): boolean { return this._providerManager.updateProvider(id, updates); }
     public hidePreset(presetId: string): boolean { return this._providerManager.hidePreset(presetId); }
     public restorePreset(presetId: string): boolean { return this._providerManager.restorePreset(presetId); }
     public restoreAllPresets(): void { this._providerManager.restoreAllPresets(); }
