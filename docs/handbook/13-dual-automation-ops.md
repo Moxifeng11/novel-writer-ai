@@ -76,7 +76,7 @@
 | 体积 | `.bundle-baseline.json` + `params.startupEvalBaselineBytes` | 显著膨胀（>20KB 或 ≥1%）才生成 perf 候选 |
 | 测试规模 | `docs/progress/program-status.json` | 连续三轮无新增用例时提示补测 |
 | 文档漂移 | `PROJECT-RULES.md` HANDOFF + `package.json` 版本 | 版本不一致 / 快照超过 24h |
-| 派工 | `.trae/mailbox/messages.jsonl` 最近 40 条 | 只认「第 N 轮 > 当前轮次」的新派工；无轮次按 6 小时时效 |
+| 派工 | `.trae/mailbox/messages.jsonl` 最近 40 条 | 只认「第 N 轮 > 当前轮次」的新派工；无轮次按 6 小时时效。**已知边界**：若对方派工编号恰好等于台账当前轮（跨方编号漂移），会被判陈旧过滤，需人工第 1 步读信箱补位（第 91 轮实测：派工 00:03 发出时新鲜，下一轮开工时台账已前进一轮而漏判） |
 
 ### 7.3 决策阶梯与评分
 

@@ -575,6 +575,13 @@ Agent（harness）
   - 文档：`program-status.json` files 593→594、cases 6,531→6,550、ahead 205→206 并 `npm run program:render`；`v5-acceptance.md` 全局基线同步。
   - 验证：定向 19/19；单文件覆盖率见上；全量 `preflight:release` EXIT=0（594 文件 / 6,550 用例；statements 44.01% / branches 43.75% / functions 44.80% / lines 44.34%；any 148/148、bundle 4,870,136 逐字节不变——本轮零源码）。
   - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`；未 commit / push。
+- 第 92 轮（audit-only + docs-correction；advise tier=`score` 建议 audit:explore，人工补充「派工采集缺口」候选）：
+  - 盘点：`automation:advise --json` 输出 tier=`score`、recommended=`audit:explore`（score 5.2，alternatives 为空）、dispatchSource 为空；信箱未读 1 条＝ZCode 第 90 轮收单 + 「第 91 轮按 advise 走 audit/docs」；开工工作树 4 M + 1 ?? 为第 91 轮待收单批次；执行中 ZCode 以 `98945ff` 收单第 91 轮 5 路径（HEAD `8cceae9`→`98945ff` / ahead 206→207），本轮 2 文档路径未被裹挟。
+  - 根因取证（先问是不是）：`isFreshDispatch` 判据为「消息内最大轮次 > 当前轮次」，CLI `collectDispatch` 传入 `state.round`（上一次已完成轮）。用真实派工 subject 实测：stateRound=89 → `true`、90 → `false`、91 → `false`。ZCode 00:03「第 90 轮派工（genre-preference-memory）」发送时台账 `round=89`（新鲜），第 91 轮开工时台账已记 90 → 同号被判陈旧丢弃；属跨方轮次编号漂移，不是脚本解析损坏（subject 同时含「已收单」与「派工」时按派工处理，逻辑正确）。
+  - 动作：判据属循环条件，按互调规则需 ZCode 确认后才生效，本轮不单方面改源码；只做审计取证 + 文档补边界 + 信箱提案（候选修法：①判据改 `>=` 并在台账记录最近已执行派工 id 去重；②CLI 显式「待执行轮次 = round+1」；③维持现状、由人工第 1 步信箱兜底）。
+  - 文档：handbook 13 §7.2 派工行补「已知边界」；PLAN 第 92 轮台账。
+  - 验证：定向 `tests/unit/shared/optimization-advisor.test.ts` 23/23；`check:docs`（4.70.0 / 19 文档）与 `check:automation` 绿；全量 `preflight:release` EXIT=0（594 文件 / 6,550 用例；statements 44.01% / branches 43.75% / functions 44.80% / lines 44.34%；any 148/148、bundle 4,870,136 逐字节不变、jsdoc 748、linked-scenarios 35 锚点、release 校验 v4.70.0 全绿）。
+  - 边界：零源码（未改 `shared/optimization-advisor.ts` / CLI / 测试）、未动 `engine/**`、`ui/views`、`.any-baseline.json`；未 commit / push。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
