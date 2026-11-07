@@ -5,6 +5,7 @@ vi.mock('../../../main', () => ({
 }));
 
 import { CommandRegistry, CommandIds } from '../../../core/command-registry';
+import { COMMAND_MODE_RULES } from '../../../shared/command-mode-rules';
 
 /**
  * CommandRegistry 的命令注册护栏。
@@ -178,5 +179,49 @@ describe('命令面板与定义表一致', () => {
             .filter(cmd => !cmd.internalOnly)
             .map(cmd => cmd.id);
         expect(new Set(ids)).toEqual(new Set(expected));
+    });
+});
+
+describe('命令 id 跨表一致性', () => {
+    const allCommandIds = new Set<string>(Object.values(CommandIds));
+
+    // 已知缺口（ZCode 待拍板补注册）：面板可点但 InternalRegistry 无执行体。
+    // 本清单只允许缩短；修复后删除豁免并恢复 `toEqual([])` 断言。
+    const KNOWN_PALETTE_REGISTRY_GAPS = [
+        CommandIds.OPEN_HOME,
+        CommandIds.JOB_CENTER,
+        CommandIds.PROJECT_HEALTH,
+        CommandIds.ASSET_REGISTRY,
+        CommandIds.USAGE_LEDGER,
+        CommandIds.BACKUP_CENTER,
+        CommandIds.OPEN_ONBOARDING,
+    ];
+
+    it('调色板可见命令都能在 InternalRegistry 中执行', () => {
+        const { registry, register } = makeHarness();
+        registry.registerInternalCommands();
+        const executableIds = new Set(register.mock.calls.map(args => args[0] as string));
+        const paletteIds: string[] = [];
+        registry.registerObsidianCommands(cmd => { paletteIds.push(cmd.id); });
+
+        // 历史缺口：面板已注册但 registry 缺失 → execute 找不到、点了没反应
+        const missing = paletteIds.filter(id => !executableIds.has(id));
+        expect(missing).toEqual(KNOWN_PALETTE_REGISTRY_GAPS);
+    });
+
+    it('InternalRegistry 的命令 id 均来自 CommandIds 清单', () => {
+        const { registry, register } = makeHarness();
+        registry.registerInternalCommands();
+
+        const unknown = register.mock.calls
+            .map(args => args[0] as string)
+            .filter(id => !allCommandIds.has(id));
+        expect(unknown).toEqual([]);
+    });
+
+    it('command-mode-rules 引用的命令 id 均真实存在', () => {
+        const unknown = Object.keys(COMMAND_MODE_RULES)
+            .filter(id => !allCommandIds.has(id));
+        expect(unknown).toEqual([]);
     });
 });

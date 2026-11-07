@@ -6,7 +6,7 @@
     "version": "4.72.0",
     "tests": {
       "files": 594,
-      "cases": 6557
+      "cases": 6560
     },
     "e2e": 40,
     "e2eNote": "E2E 通过总数：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27 = 40（2026-11-07 全量实测）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑（rewrite-chapters 已随「九霄逆脉行」项目删除而下线）",
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 215,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 第 98 轮收单时点实测 git rev-list --count=ahead 215，HEAD 44c38b3；tests 6,557 = committed 6,555 + 第 98 轮 advisor 采集面回退 +2 例；check:bundle +308B 为 v4.72.0 changelog-data 条目进 bundle 未入基线，待 ZCode 收单时 --update-baseline --note 处理；changelog 4.72.0 与 package.json 4.71.0 版本差属版本节点在途，待 bump）"
+    "localCommitsAhead": 218,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 第 102 轮实测 git rev-list --count=ahead 218，HEAD 8c7cc88；tests 6,560 = 6,557 + 第 102 轮 command-registry id 一致性 +3 例；main.js 4,871,211=基线；v4.72.0 已随 44c38b3/9afba2b 收单）"
   },
   "groups": [
     {
