@@ -19,6 +19,7 @@ import { WizardChecker } from '../../../ui/wizard-checker';
 import { SceneOutlineController } from '../../../ui/full-writer/scene-outline-controller';
 import { TEMPLATE_VAR_FALLBACK_KEYS } from '../../../ui/full-writer/template-vars-builder';
 import { pjSettingLib, pjStepFile } from '../../../shared/paths';
+import { createDefaultScene } from '../../../shared/types';
 
 class MemoryStorage {
     private map = new Map<string, string>();
@@ -331,5 +332,358 @@ describe('SceneOutlineController — 防抖保存写回编辑发生时的章节'
 
         expect(writes).toHaveLength(1);
         expect(writes[0].path).toBe(pjStepFile('A书', 1, 1, 'Scene展开'));
+    });
+});
+
+/**
+ * 最小假 DOM：只覆盖 scene-outline-controller 用到的 Obsidian HTMLElement 扩展。
+ * 仓库测试环境为 node（无 jsdom），沿用 pure-helpers-coverage.test.ts 的假元素约定。
+ */
+class FakeDomEl {
+    tagName: string;
+    className = '';
+    textContent = '';
+    value = '';
+    checked = false;
+    selected = false;
+    disabled = false;
+    id = '';
+    cssText = '';
+    children: FakeDomEl[] = [];
+    parent: FakeDomEl | null = null;
+    onclick: (() => void) | null = null;
+    onchange: (() => void) | null = null;
+    private listeners = new Map<string, Array<(e: Record<string, unknown>) => void>>();
+
+    constructor(tag = 'div') {
+        this.tagName = tag;
+    }
+
+    setAttribute(name: string, value: string): void {
+        if (name === 'class') this.className = value;
+        else if (name === 'style') this.cssText = value;
+        else (this as unknown as Record<string, unknown>)[name] = value;
+    }
+
+    getAttribute(name: string): string | null {
+        const value = (this as unknown as Record<string, unknown>)[name];
+        return value === undefined ? null : String(value);
+    }
+
+    setText(text: string): this {
+        this.textContent = text;
+        return this;
+    }
+
+    empty(): this {
+        this.children = [];
+        return this;
+    }
+
+    appendChild(child: FakeDomEl): FakeDomEl {
+        child.parent = this;
+        this.children.push(child);
+        return child;
+    }
+
+    createChild(tag: string, o?: { cls?: string; text?: string; attr?: Record<string, string> }): FakeDomEl {
+        const el = new FakeDomEl(tag);
+        if (o?.cls) el.className = o.cls;
+        if (o?.text !== undefined) el.textContent = o.text;
+        if (o?.attr) for (const [k, v] of Object.entries(o.attr)) el.setAttribute(k, v);
+        return this.appendChild(el);
+    }
+
+    createDiv(o?: { cls?: string; text?: string; attr?: Record<string, string> }): FakeDomEl {
+        return this.createChild('div', o);
+    }
+
+    createSpan(o?: { cls?: string; text?: string; attr?: Record<string, string> }): FakeDomEl {
+        return this.createChild('span', o);
+    }
+
+    createEl(tag: string, o?: { cls?: string; text?: string; attr?: Record<string, string> }): FakeDomEl {
+        return this.createChild(tag, o);
+    }
+
+    addEventListener(type: string, fn: (e: Record<string, unknown>) => void): void {
+        const list = this.listeners.get(type) ?? [];
+        list.push(fn);
+        this.listeners.set(type, list);
+    }
+
+    dispatch(type: string, event: Record<string, unknown> = {}): void {
+        for (const fn of this.listeners.get(type) ?? []) fn({ preventDefault() { }, ...event });
+        if (type === 'click' && this.onclick) this.onclick();
+        if (type === 'change' && this.onchange) this.onchange();
+    }
+}
+
+function collectTexts(root: FakeDomEl): string[] {
+    const out: string[] = [];
+    const walk = (el: FakeDomEl): void => {
+        if (el.textContent) out.push(el.textContent);
+        el.children.forEach(walk);
+    };
+    walk(root);
+    return out;
+}
+
+function collectByTag(root: FakeDomEl, tag: string): FakeDomEl[] {
+    const out: FakeDomEl[] = [];
+    const walk = (el: FakeDomEl): void => {
+        if (el.tagName === tag) out.push(el);
+        el.children.forEach(walk);
+    };
+    walk(root);
+    return out;
+}
+
+describe('SceneOutlineController — 解析往返、场景操作与 Tab 字段写回', () => {
+    const originalWindow = (globalThis as any).window;
+    const originalDocument = (globalThis as any).document;
+
+    beforeEach(() => {
+        (globalThis as any).window = {
+            setTimeout: (fn: () => void, ms?: number) => setTimeout(fn, ms),
+            clearTimeout: (id: any) => clearTimeout(id),
+        };
+        // 只装 refreshAll / injectStyles 用到的三处 document API
+        (globalThis as any).document = {
+            querySelector: () => null,
+            getElementById: () => null,
+            createElement: (tag: string) => new FakeDomEl(tag),
+            head: { appendChild: () => undefined },
+        };
+    });
+    afterEach(() => {
+        (globalThis as any).window = originalWindow;
+        (globalThis as any).document = originalDocument;
+    });
+
+    function makeOpsController() {
+        const writes: Array<{ path: string; content: string }> = [];
+        const files = new Map<string, string>();
+        const app = {
+            vault: {
+                getAbstractFileByPath: (path: string) => (files.has(path) ? { path } : null),
+                read: async (file: { path: string }) => files.get(file.path) || '',
+                modify: async (file: { path: string }, content: string) => {
+                    writes.push({ path: file.path, content });
+                    files.set(file.path, content);
+                },
+                create: async (path: string, content: string) => {
+                    writes.push({ path, content });
+                    files.set(path, content);
+                    return { path };
+                },
+                createFolder: async () => undefined,
+            },
+        };
+        const controller = new SceneOutlineController({
+            app: app as never,
+            plugin: {} as never,
+            getProject: () => 'A书',
+            getChapterNum: () => 1,
+            getVolume: () => '第1卷',
+            getChapDir: () => '',
+        });
+        return { controller, writes, files };
+    }
+
+    function seedScenes(controller: SceneOutlineController, scenes: ReturnType<typeof createDefaultScene>[]): void {
+        (controller as any).scenes = scenes;
+        (controller as any).currentSceneIndex = 0;
+    }
+
+    it('parseScenes 同时识别中英字段别名，并把枚举/状态归一化', () => {
+        const { controller } = makeOpsController();
+        const md = [
+            '## 场景1：雨夜客栈',
+            '视角: 旁白',
+            'conflict_type: 内在冲突',
+            'pleasure_type: 打脸',
+            'key_scene: ⭐ 名场面',
+            'word_count: 500',
+            'status: 已完成',
+            '',
+            '## 场景2：断桥',
+            'location: 断桥',
+            'status: 进行中',
+        ].join('\n');
+
+        const scenes = (controller as any).parseScenes(md) as ReturnType<typeof createDefaultScene>[];
+        expect(scenes).toHaveLength(2);
+        expect(scenes[0].name).toBe('雨夜客栈');
+        expect(scenes[0].pov).toBe('旁白');
+        expect(scenes[0].conflictType).toBe('internal');
+        expect(scenes[0].pleasureType).toBe('face_slap');
+        expect(scenes[0].isKeyScene).toBe(true);
+        expect(scenes[0].wordCountEstimate).toBe(500);
+        expect(scenes[0].status).toBe('completed');
+        expect(scenes[1].location).toBe('断桥');
+        expect(scenes[1].status).toBe('in_progress');
+    });
+
+    it('saveScenes 产物可被 parseScenes 再解析，三组字段不丢', async () => {
+        const { controller, writes } = makeOpsController();
+        const first = createDefaultScene(1);
+        first.name = '开场';
+        first.pov = '林墨';
+        first.location = '客栈';
+        first.entryState = '受伤';
+        first.objective = '拿到线索';
+        first.conflict = '掌柜阻拦';
+        first.turn = '身份暴露';
+        first.emotionArc = '警惕→震惊';
+        first.subtext = '他知道我是谁';
+        first.keyScene = '⭐ 名场面';
+        first.isKeyScene = true;
+        first.characters = '林墨、掌柜';
+        first.timelinePosition = '第三日';
+        first.conflictType = 'interpersonal';
+        first.pleasureType = 'reveal';
+        first.infoIncrement = '掌柜是旧部';
+        first.foreshadowPlant = '铜牌';
+        first.foreshadowRecover = '旧伤';
+        first.wordCountEstimate = 600;
+        first.status = 'completed';
+
+        const last = createDefaultScene(2);
+        last.name = '断桥';
+        last.location = '断桥';
+        last.cliffhanger = '门外脚步声';
+
+        seedScenes(controller, [first, last]);
+        (controller as any).originalContent = '';
+        (controller as any).markDirty();
+        const timer = (controller as any).saveTimer;
+        if (timer) clearTimeout(timer);
+
+        expect(await controller.saveScenes()).toBe(true);
+        expect(writes).toHaveLength(1);
+
+        const round = (controller as any).parseScenes(writes[0].content) as ReturnType<typeof createDefaultScene>[];
+        expect(round).toHaveLength(2);
+        expect(round[0].pov).toBe('林墨');
+        expect(round[0].entryState).toBe('受伤');
+        expect(round[0].turn).toBe('身份暴露');
+        expect(round[0].subtext).toBe('他知道我是谁');
+        expect(round[0].characters).toBe('林墨、掌柜');
+        expect(round[0].timelinePosition).toBe('第三日');
+        expect(round[0].conflictType).toBe('interpersonal');
+        expect(round[0].pleasureType).toBe('reveal');
+        expect(round[0].infoIncrement).toBe('掌柜是旧部');
+        expect(round[0].foreshadowPlant).toBe('铜牌');
+        expect(round[0].foreshadowRecover).toBe('旧伤');
+        expect(round[0].wordCountEstimate).toBe(600);
+        expect(round[0].status).toBe('completed');
+        expect(round[0].isKeyScene).toBe(true);
+        // cliffhanger 只写在本卷最后一个场景
+        expect(round[1].cliffhanger).toBe('门外脚步声');
+    });
+
+    it('mergeScene 拼接共有字段、累加字数、删除被并入项并重排索引', () => {
+        const { controller } = makeOpsController();
+        const a = createDefaultScene(1);
+        a.name = 'A';
+        a.objective = '甲';
+        a.conflict = '冲突甲';
+        a.infoIncrement = '信息甲';
+        a.wordCountEstimate = 300;
+        const b = createDefaultScene(2);
+        b.name = 'B';
+        b.objective = '乙';
+        b.wordCountEstimate = 400;
+        b.cliffhanger = '钩子乙';
+        const c = createDefaultScene(3);
+        c.name = 'C';
+
+        seedScenes(controller, [a, b, c]);
+        (controller as any).mergeScene();
+
+        const scenes = (controller as any).scenes as ReturnType<typeof createDefaultScene>[];
+        expect(scenes).toHaveLength(2);
+        expect(scenes[0].name).toBe('A + B');
+        expect(scenes[0].objective).toBe('甲\n乙');
+        expect(scenes[0].infoIncrement).toBe('信息甲');
+        expect(scenes[0].wordCountEstimate).toBe(700);
+        expect(scenes[0].cliffhanger).toBe('钩子乙');
+        expect(scenes.map(s => s.index)).toEqual([1, 2]);
+        expect(scenes[1].name).toBe('C');
+    });
+
+    it('splitScene 在当前场景后就地插入并继承地点/人物', () => {
+        const { controller } = makeOpsController();
+        const a = createDefaultScene(1);
+        a.name = 'A';
+        a.location = '客栈';
+        a.characters = '林墨';
+        seedScenes(controller, [a]);
+
+        (controller as any).splitScene();
+
+        const scenes = (controller as any).scenes as ReturnType<typeof createDefaultScene>[];
+        expect(scenes).toHaveLength(2);
+        expect(scenes[1].name).toBe('A (下)');
+        expect(scenes[1].location).toBe('客栈');
+        expect(scenes[1].characters).toBe('林墨');
+        expect(scenes.map(s => s.index)).toEqual([1, 2]);
+        expect((controller as any).currentSceneIndex).toBe(0);
+    });
+
+    it('Tab 栏点击切换 activeTab，内容区按当前 Tab 渲染对应分组', () => {
+        const { controller } = makeOpsController();
+        const scene = createDefaultScene(1);
+        scene.name = '开场';
+        scene.conflict = '掌柜阻拦';
+        seedScenes(controller, [scene]);
+
+        const tabBar = new FakeDomEl('div');
+        (controller as any).renderTabBar(tabBar);
+        const texts = collectTexts(tabBar);
+        expect(texts).toContain('📝 基本信息');
+        expect(texts).toContain('⚔️ 冲突爽点');
+        expect(texts).toContain('🔮 伏笔信息');
+
+        const conflictTab = collectByTag(tabBar, 'div').find(el => el.textContent.includes('冲突爽点'));
+        expect(conflictTab).toBeDefined();
+        conflictTab!.dispatch('click');
+        expect((controller as any).activeTab).toBe('conflict');
+
+        const content = new FakeDomEl('div');
+        (controller as any).renderTabContent(content, scene);
+        const contentTexts = collectTexts(content);
+        expect(contentTexts).toContain('⚔️ 核心冲突 (conflict)');
+        expect(contentTexts).toContain('冲突类型');
+        const options = collectByTag(content, 'option').map(o => o.textContent);
+        expect(options).toContain('外在冲突');
+        expect(options).toContain('打脸');
+    });
+
+    it('基本信息 Tab 的文本输入与名场面勾选写回场景数据并标记脏', () => {
+        const { controller } = makeOpsController();
+        const scene = createDefaultScene(1);
+        scene.name = '开场';
+        seedScenes(controller, [scene]);
+
+        const container = new FakeDomEl('div');
+        (controller as any).renderBasicTab(container, scene);
+
+        const textInputs = collectByTag(container, 'input').filter(el => el.getAttribute('type') === 'text');
+        expect(textInputs.length).toBeGreaterThan(0);
+        const nameInput = textInputs[0];
+        expect(nameInput.value).toBe('开场');
+        nameInput.value = '改名后';
+        nameInput.dispatch('input');
+        expect(scene.name).toBe('改名后');
+        expect((controller as any).isDirty).toBe(true);
+
+        const checkbox = collectByTag(container, 'input').find(el => el.getAttribute('type') === 'checkbox');
+        expect(checkbox).toBeDefined();
+        checkbox!.checked = true;
+        checkbox!.dispatch('change');
+        expect(scene.isKeyScene).toBe(true);
+        expect(scene.keyScene).toContain('⭐');
     });
 });
