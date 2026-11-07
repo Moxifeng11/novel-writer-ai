@@ -28,7 +28,7 @@ export type WorkerMessageType =
 export interface WorkerMessage {
     type: WorkerMessageType;
     taskId?: string;
-    payload?: any;
+    payload?: unknown;
     error?: string;
 }
 
@@ -37,7 +37,7 @@ export interface WorkerMessage {
  */
 export interface WorkerTaskDefinition {
     taskType: string;
-    input: any;
+    input: unknown;
 }
 
 /**
@@ -52,7 +52,7 @@ export interface TaskProgressPayload {
  * 完成负载。
  */
 export interface TaskCompletePayload {
-    result: any;
+    result: unknown;
 }
 
 /**
@@ -71,12 +71,26 @@ export interface WorkerErrorPayload {
 }
 
 /**
- * 主线程降级处理器。
+ * 降级处理器通用入参形状。
+ *
+ * 拆解/质控类任务的降级处理器都以正文为主；具体上下文由各处理器按自身约定收窄，
+ * 协议层不约束（`context?: never` 保证任意下游上下文类型都可直接传递）。
  */
-export type FallbackHandler = (
-    input: any,
+export interface WorkerTaskInput {
+    text: string;
+    context?: never;
+}
+
+/**
+ * 主线程降级处理器。
+ *
+ * 注册侧泛型：任意具体入参类型的处理器都可登记，实际负载由
+ * `WorkerManager.executeFallback` 传入。
+ */
+export type FallbackHandler<I = WorkerTaskInput, R = unknown> = (
+    input: I,
     onProgress?: (progress: number, message?: string) => void
-) => Promise<any>;
+) => Promise<R>;
 
 /**
  * Worker 管理器选项。

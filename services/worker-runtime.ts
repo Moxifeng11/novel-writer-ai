@@ -26,15 +26,31 @@ export interface TaskHandlerContext {
 
 /**
  * 任务处理器。
+ *
+ * 入参按 `never` 建模：任意具体入参类型的处理器都可注册，
+ * 实际负载由 handleTaskStart 断言后传入。
  */
-export type TaskHandler = (input: any, context: TaskHandlerContext) => Promise<any>;
+export type TaskHandler = (input: never, context: TaskHandlerContext) => Promise<unknown>;
 
 const taskHandlers: Map<string, TaskHandler> = new Map();
 const abortControllers: Map<string, AbortController> = new Map();
 
-function postMessageToMain(type: WorkerMessageType, taskId?: string, payload?: any, error?: string): void {
+/**
+ * Worker 作用域最小形状（避免对 self 做 any 断言，也不依赖 worker 全局类型）。
+ */
+interface WorkerScope {
+    postMessage: (message: WorkerMessage) => void;
+    onmessage: ((event: MessageEvent<WorkerMessage>) => void) | null;
+}
+
+/** 惰性读取 self：主线程/Node 环境 import 本模块时不触发 worker 全局。 */
+function getWorkerScope(): WorkerScope {
+    return self as unknown as WorkerScope;
+}
+
+function postMessageToMain(type: WorkerMessageType, taskId?: string, payload?: unknown, error?: string): void {
     const message: WorkerMessage = { type, taskId, payload, error };
-    (self as any).postMessage(message);
+    getWorkerScope().postMessage(message);
 }
 
 function sendProgress(taskId: string, progress: number, message?: string): void {
@@ -42,7 +58,7 @@ function sendProgress(taskId: string, progress: number, message?: string): void 
     postMessageToMain('task:progress', taskId, payload);
 }
 
-function sendComplete(taskId: string, result: any): void {
+function sendComplete(taskId: string, result: unknown): void {
     const payload: TaskCompletePayload = { result };
     postMessageToMain('task:complete', taskId, payload);
 }
@@ -72,7 +88,7 @@ async function handleTaskStart(payload: TaskStartPayload): Promise<void> {
     abortControllers.set(taskId, abortController);
 
     try {
-        const result = await handler(input, {
+        const result = await handler(input as never, {
             onProgress: (progress: number, message?: string) => {
                 sendProgress(taskId, progress, message);
             },
@@ -128,7 +144,7 @@ export function registerTaskHandler(taskType: string, handler: TaskHandler): voi
  * 启动 Worker 运行时。
  */
 export function startWorkerRuntime(): void {
-    (self as any).onmessage = handleMessage;
+    getWorkerScope().onmessage = handleMessage;
     postMessageToMain('worker:ready');
 }
 

@@ -26,6 +26,7 @@ import type {
     WorkerMessage,
     WorkerManagerOptions,
     FallbackHandler,
+    WorkerTaskInput,
     TaskProgressPayload,
     TaskCompletePayload,
     WorkerPoolStats,
@@ -75,7 +76,7 @@ export class WorkerManager {
     private workers: WorkerWrapper[] = [];
     private taskQueue: TaskState[] = [];
     private activeTasks: Map<string, TaskState> = new Map();
-    private fallbackHandlers: Map<string, FallbackHandler> = new Map();
+    private fallbackHandlers: Map<string, FallbackHandler<never>> = new Map();
     private workerAvailable: boolean = true;
     private destroyed: boolean = false;
 
@@ -125,7 +126,7 @@ export class WorkerManager {
      * @param taskType - 任务类型
      * @param handler - 降级处理函数
      */
-    registerFallbackHandler(taskType: string, handler: FallbackHandler): void {
+    registerFallbackHandler<I = WorkerTaskInput, R = unknown>(taskType: string, handler: FallbackHandler<I, R>): void {
         this.fallbackHandlers.set(taskType, handler);
     }
 
@@ -445,7 +446,7 @@ export class WorkerManager {
             if (task.cancelled) return;
 
             try {
-                const result = await handler(task.input, task.onProgress);
+                const result = await handler(task.input as never, task.onProgress);
                 if (!task.cancelled) {
                     this.resolveTask(task, result);
                 }

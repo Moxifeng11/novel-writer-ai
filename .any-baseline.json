@@ -1,15 +1,13 @@
 {
-  "total": 198,
-  "generatedAt": "2026-11-06",
+  "total": 187,
+  "generatedAt": "2026-11-07",
   "files": {
     "engine/ai-outline-generator.ts": 6,
     "engine/analysis-session-manager.ts": 6,
     "engine/deconstructors/commercial-deconstructor.ts": 6,
-    "services/worker-runtime.ts": 6,
     "shared/types.ts": 6,
     "engine/entity-state-manager.ts": 5,
     "engine/incremental-result-aggregator.ts": 5,
-    "services/worker-protocol.ts": 5,
     "ui/cowrite/memory-manager-modal.ts": 5,
     "core/command-registry.ts": 4,
     "engine/analysis-report-engine.ts": 4,
