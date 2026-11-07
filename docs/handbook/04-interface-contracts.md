@@ -81,6 +81,7 @@
   - `write`：写文件/移动文件（默认放行，重复调用会被拦截）；
   - `dangerous`：删除项目/删除文件/批量命令（必须用户确认，未提供确认端口一律拒绝）。
 - 写类工具（`sideEffect: 'write'`）：`create_long_project`、`create_short_project`、`create_script_project`、`write_file`、`move_file`；危险类（`sideEffect: 'dangerous'`，必须用户确认）：`delete_file`、`delete_project`、`run_command`。写正文仍优先走写作命令，避免绕过 `BodyWriter` 的 frontmatter/格式契约。
+- `run_command`（v4.72.0，用户拍板）：`list_commands` 与可执行集合统一以 `plugin.registry.has(id)` 为准；`rename-project`（打开重命名 Modal 自带确认）、`prune-sessions`、`populate-setting-lib` 已注册进 registry 可由 Agent 执行；`prune`/`populate` 命中危险关键词正则，执行前必须确认。
 - 工具执行后必须同步 `AgentContext.projects`；项目删除走 `delete_project` 时由工具本身刷新，其他视图删除由 Agent 工作台的 vault 事件刷新。
 - 新增/删除工具必须同步本节与 `tests/unit/engine/harness/host-tools-guard.test.ts`。
 

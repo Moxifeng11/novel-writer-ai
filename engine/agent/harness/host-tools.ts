@@ -949,7 +949,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
  * 批量生成/重建/结算/导出会在后台写大量文件或消耗大量额度，
  * 执行前必须让用户看到「将要对哪个项目做什么」并确认。
  */
-const DANGEROUS_COMMAND_PATTERN = /(batch|auto-writer|write-chapter|continue-chapters|settle|settlement|export|rebuild|backup|protect|deconstruct)/i;
+const DANGEROUS_COMMAND_PATTERN = /(batch|auto-writer|write-chapter|continue-chapters|settle|settlement|export|rebuild|backup|protect|deconstruct|prune|populate)/i;
 
 /**
  * 判断命令是否属于危险操作。

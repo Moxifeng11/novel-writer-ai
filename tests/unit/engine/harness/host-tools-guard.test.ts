@@ -98,6 +98,13 @@ describe('命令白名单与危险确认', () => {
         expect(isDangerousCommand('novel-writer-export-manuscript')).toBe(true);
         expect(isDangerousCommand('novel-writer-open-settings')).toBe(false);
     });
+
+    it('v4.72.0：prune/populate 进危险清单（Agent 执行前需确认）', () => {
+        expect(isDangerousCommand('novel-writer-prune-sessions')).toBe(true);
+        expect(isDangerousCommand('novel-writer-populate-setting-lib')).toBe(true);
+        // rename-project 打开重命名 Modal 自带确认环，不走 dangerous
+        expect(isDangerousCommand('novel-writer-rename-project')).toBe(false);
+    });
 });
 
 describe('项目路径不接受穿越', () => {

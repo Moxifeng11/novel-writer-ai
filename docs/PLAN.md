@@ -591,6 +591,8 @@ Agent（harness）
   - 验证：定向 44/44；全量 `preflight:release` EXIT=0（594 文件 / 6,552 用例；statements 44.01% / branches 43.76% / functions 44.81% / lines 44.34%；any 148/148）、bundle 4,870,342（基线 4,870,147→4,870,342，+195B 已按规则 `--update-baseline --note` 显式记录，200B/批预算内）。
   - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`；未 commit / push。
 
+- 第 97 轮（ZCode，用户拍板）：三个调色板命令 id（rename-project / prune-sessions / populate-setting-lib）注册进 InternalRegistry——此前「Agent 可见不可执行」（listCommands 按前缀枚举、runCommand 按 registry 校验，两侧不一致）。修 listCommands 过滤为 registry.has + 注册三 id + 危险正则补 prune|populate（Agent 执行前确认）；rename-project 打开 Modal 自带确认环不走 dangerous。handbook 04 §2.8 同步。+1 例危险清单断言。
+
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
 ### Batch 2｜P1 正确性（历史清单；逐条状态以 program-status 为准）

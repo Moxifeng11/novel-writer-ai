@@ -396,6 +396,13 @@ export class CommandRegistry {
         r.register(CommandIds.SWITCH_PROVIDER, async () => this.deps.openProviderSwitcher());
         r.register(CommandIds.EXTRACT_ELEMENTS, async () => { this.extractElementsCommand(); });
         r.register(CommandIds.POPULATE_SETTING_LIB_INTERNAL, () => this.deps.populateSettingLib());
+        // v4.72.0（用户拍板）：这三个调色板命令此前「Agent 可见不可执行」（调色板 id 未进
+        // InternalRegistry）；口径统一后（list_commands = run_command 可执行集合）把它们
+        // 注册进来，让 Agent 能真正执行重命名项目 / 清理会话 / 生成设定库。
+        // prune/populate 在 Agent 侧走 dangerous 确认（host-tools 的危险关键词正则）。
+        r.register(CommandIds.RENAME_PROJECT, async () => { this.renameProject(); });
+        r.register(CommandIds.PRUNE_SESSIONS, async () => { void this.ui.executeCommand(CommandIds.PRUNE_SESSIONS); });
+        r.register(CommandIds.POPULATE_SETTING_LIB, async () => { await this.deps.populateSettingLib(); });
         r.register(CommandIds.CLEAR_WORLDVIEW_CACHE, async () => {
             const cacheService = this.deps.plugin.worldviewCacheService;
             if (cacheService) {

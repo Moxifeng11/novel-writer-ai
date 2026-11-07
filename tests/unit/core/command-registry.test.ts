@@ -95,6 +95,10 @@ const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.CREATION_FLOW,
     CommandIds.WRITING_STATS,
     CommandIds.TOGGLE_PET,
+    // v4.72.0（用户拍板）：Agent 端口口径统一后，三个「可见不可执行」的调色板命令进 registry
+    CommandIds.RENAME_PROJECT,
+    CommandIds.PRUNE_SESSIONS,
+    CommandIds.POPULATE_SETTING_LIB,
 ];
 
 interface Harness {
