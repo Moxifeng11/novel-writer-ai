@@ -1,5 +1,5 @@
 {
-  "total": 170,
+  "total": 163,
   "generatedAt": "2026-11-07",
   "files": {
     "engine/ai-outline-generator.ts": 6,
@@ -14,7 +14,6 @@
     "engine/heavy-task-worker-manager.ts": 4,
     "engine/repository/domain/serializers/frontmatter-serializer.ts": 4,
     "engine/types/analysis-session.ts": 4,
-    "services/knowledge-base-manager.ts": 4,
     "engine/cache/preload-manager.ts": 3,
     "engine/deconstructors/rhythm-deconstructor.ts": 3,
     "engine/embedding/openai-provider.ts": 3,
@@ -22,7 +21,6 @@
     "engine/types/analysis-suggestion.ts": 3,
     "shared/entity-models.ts": 3,
     "ui/settings/general-sections.ts": 3,
-    "ui/settings/writing-sections.ts": 3,
     "ui/views/knowledge-base-view.ts": 3,
     "core/settings-service.ts": 2,
     "engine/ai-scene-generator.ts": 2,

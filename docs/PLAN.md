@@ -452,6 +452,13 @@ Agent（harness）
   - 验证：`check:automation`（round 73 / HANDOFF 9 行 / 版本 4.67.0）、`check:docs`（19 文档）、`check:any` 170/170 全绿；全量 `preflight:release` EXIT=0（591 文件 / 6,491 用例；statements 43.81% / branches 43.48% / functions 44.53% / lines 44.14%）。
   - 边界：零源码改动；未动 `engine/**`、`ui/views`、`.any-baseline.json`；零新增文件；bundle 4,868,872 不变。
   - 并发事实：开工 HEAD `fcd9fde` / ahead 184、工作树干净；本轮 3 个文档路径（v5-acceptance + program-status〔含 render 生成物〕+ 本台账）。
+- 第 75 轮（gate-fix；兑现 ZCode 第 74 轮派工：`knowledge-base-manager.ts` 4→0 + `writing-sections.ts` 3→0）：
+  - 盘点（先问是不是）：开工时第 74 轮 3 文档路径在工作树、HEAD `fcd9fde` / ahead 184；执行期间 ZCode 以 `a6cb84c` 收单第 74 轮（HEAD 推进、ahead 185），本轮工作树为 5 路径。信箱 1 条未读＝ZCode 第 73 轮收单（`fcd9fde`）+ 权重生效重申 + 第 74 轮派工（两文件合计 -7，目标 170→163）。实测 any 恰为 4（`services/knowledge-base-manager.ts` 的 `(cache as any).maxSize/ttlMs` ×4）+ 3（`ui/settings/writing-sections.ts` 的三个 `let …Dropdown: any`），与派工口径一致；第 74 轮做的是 audit-only + docs-correction，派工未被执行，非重复交付。
+  - 动作（2 文件、纯类型、零运行时）：①`knowledge-base-manager.ts` 新增本地 `interface LruCapacityView { maxSize; ttlMs }`（注释说明 TS 的 `private readonly` 仅编译期约束、运行时为普通可写字段），4 处 `as any` → `as unknown as LruCapacityView`；`shared/lru-cache.ts` 的 `maxSize/ttlMs` 确为 `private readonly` 且无公共 setter/configure，按派工走窄接口而非新增运行时方法。②`ui/settings/writing-sections.ts` 三个下拉引用 `any` → `DropdownComponent | null`（`import { …, type DropdownComponent } from 'obsidian'`，与 `ui/export-manuscript-modal.ts` 既有写法一致；`selectEl`/`addOption`/`setValue` 均在 `DropdownComponent` 公共 API 内）。
+  - 验证：`typecheck` 0 error；`eslint` 两文件 0 error（11 条既有 warning，其中 `cloudProviderDropdown` 仅写未读为既有问题）；`check:any` 170→**163**（88 文件，-7，未自改 `.any-baseline.json`，余量 7 留 ZCode 收单时下调）；`build` 后 `main.js` **4,868,872 逐字节不变**、`check:bundle` 绿；全量 `preflight:release` EXIT=0（591 文件 / 6,491 用例）。
+  - 评分：影响3×风险降低2×可验证5/成本1=30，×gate-fix 1.76 ≈ 53；派工优先级最高（决策阶梯第 1 级），无需评分竞争；上轮 audit-only 异型，无同型惩罚；explorationRoll 0.58 未触发。
+  - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`、`program-status`（cases 6,491 无变化；`localCommitsAhead` 仍为 184，由 ZCode 收单/版本节点时一并刷新，避免与其在途改动冲突）；零新增文件；`docs/generated/code-index.md` 因源码行数变化随 `gen:docs` 纳入本路径。
+  - 并发事实：执行期间 ZCode 以 `a6cb84c` 收单第 74 轮（HEAD `fcd9fde`→`a6cb84c`、ahead 185），第 74 轮 3 文档路径已出，本轮 5 路径待收单。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

@@ -134,6 +134,16 @@ interface KnowledgeBaseCacheOptions {
 }
 
 /**
+ * LruCache 容量可调视图。
+ * TS 的 `private readonly` 只是编译期约束，运行时 maxSize/ttlMs 是普通可写字段；
+ * 这里只做类型收窄，不新增运行时方法、不改变既有行为。
+ */
+interface LruCapacityView {
+    maxSize: number;
+    ttlMs: number;
+}
+
+/**
  * 知识基础管理器。
  */
 export class KnowledgeBaseManager {
@@ -203,10 +213,10 @@ export class KnowledgeBaseManager {
         const breakdownMaxSize = Math.max(20, Math.min(bookCount * 6, 300));
         const ttlMs = bookCount > 100 ? 5 * 60 * 1000 : 15 * 60 * 1000;
 
-        (this.bookInfoCache as any).maxSize = infoMaxSize;
-        (this.breakdownCache as any).maxSize = breakdownMaxSize;
-        (this.bookInfoCache as any).ttlMs = ttlMs;
-        (this.breakdownCache as any).ttlMs = ttlMs * 2;
+        (this.bookInfoCache as unknown as LruCapacityView).maxSize = infoMaxSize;
+        (this.breakdownCache as unknown as LruCapacityView).maxSize = breakdownMaxSize;
+        (this.bookInfoCache as unknown as LruCapacityView).ttlMs = ttlMs;
+        (this.breakdownCache as unknown as LruCapacityView).ttlMs = ttlMs * 2;
     }
 
     private getFS(): FileSystemPort {

@@ -6,7 +6,7 @@
  * 来源：原 settings-tab.ts L1364-L1820、L3471-L3719（按分区顺序物理搬移）。
  * 依赖：宿主提供的 app/plugin/refresh/reopen（见 section-base.ts）。
  */
-import { Setting, Notice } from 'obsidian';
+import { Setting, Notice, type DropdownComponent } from 'obsidian';
 import { renderAppearanceSettings } from '@/ui/appearance-settings';
 import { renderWritingStatsAndPetSettings } from '@/ui/writing-stats-settings';
 import { TemplateManager } from '@/ui/template-manager';
@@ -36,9 +36,9 @@ export class CoWriteSection extends SettingsSection {
             cls: 'setting-item-description'
         });
 
-        let localModelDropdown: any = null;
-        let cloudProviderDropdown: any = null;
-        let cloudModelDropdown: any = null;
+        let localModelDropdown: DropdownComponent | null = null;
+        let cloudProviderDropdown: DropdownComponent | null = null;
+        let cloudModelDropdown: DropdownComponent | null = null;
         let localModelSetting: Setting | null = null;
         let cloudProviderSetting: Setting | null = null;
         let cloudModelSetting: Setting | null = null;
