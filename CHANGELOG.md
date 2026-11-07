@@ -2,6 +2,36 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.70.0（2026-11-07）
+
+### ✨ 新增：优化方向判断模块 `automation:advise`
+
+- 把双方协作循环的「候选池 → EV 评分 → 决策阶梯」固化为可执行模块：
+  - `shared/optimization-advisor.ts`：纯函数核心（探测/评分/决策），零依赖零 any，不进 bundle；
+  - `scripts/optimization-advisor.mjs`：采集 git/台账/门禁/体积/测试/文档/信箱七类事实并渲染决策（tier：dispatch/backlog/gate/score/idle）；`npm run automation:advise`（默认摘要 / `--json` / `--write` / `--check`）。
+- `check:automation` 补建议台账校验（schema / 时区 / tier / 推荐 1–2 条 / round 落后 ≤1）。
+- 关键约束：派工只认「轮次号 > 当前台账 round」或 6 小时内消息（陈旧派工过滤）；体积候选只在 >20KB 或 ≥1% 时触发。
+
+### 🧪 测试：+32 用例（三处零覆盖/边界收口）
+
+- `entity-integrity` 6 例（覆盖 0→100%）：锁定「只有 valid 才允许 saveEntities」契约，含修复器抛错向上抛的现状语义。
+- `worker-runtime` 9 例：Worker 侧消息协议边界（ready/error/progress/complete/cancel/Blob 构造）。
+- `optimization-advisor` 20 例：派工优先、在途优先于红灯、同型惩罚、回退惩罚、强制换型、探索加成、陈旧派工过滤、推荐上限。
+
+### 🧹 类型收窄：六文件 any 15→0（163→148）
+
+- `general-sections`（3）/ `entity-models`（3）/ `knowledge-base-view`（3）/ `multi-layer-cache`（2）/ `suggestion-edit-modal`（2）/ `ai-builder-modal`（2）。
+- any 基线 163→148（82 文件）；`main.js` 4,869,777 逐字节不变。
+
+### 📚 文档
+
+- handbook 三篇与源码对齐：preflight 24 步清单、ui 覆盖率阈值 10/9/10/8、分层表补 domains/utils 与 repository dead allowance、项目目录 API 实名与工具 sideEffect 拆分。
+- `USER-GUIDE` 补剧本分镜强制前置与出版阈值来源；`COMMERCIAL-GUIDE` 纠正「参数唯一来源」错误。
+
+### 🧪 测试与门禁
+
+- 全量 **593 文件 / 6,523 用例**（v4.69.0 为 591/6,491，+32）；`preflight:release` 全绿；E2E 五个 project **37/37**；any 148。
+
 ## v4.69.0（2026-11-07）
 
 ### 🎬 剧本分镜表改为强制必填（用户拍板）

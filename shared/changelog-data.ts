@@ -21,6 +21,21 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.70.0',
+        date: '2026-11-07',
+        title: '优化方向判断模块 automation:advise',
+        sections: [
+            {
+                type: 'added',
+                label: '✨ 自动化',
+                items: [
+                    'npm run automation:advise：采集七类事实并给出本轮决策建议（dispatch/backlog/gate/score/idle）',
+                    'check:automation 补建议台账校验；+32 用例（entity-integrity/worker-runtime/optimization-advisor）',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.69.0',
         date: '2026-11-07',
         title: '剧本分镜表强制必填与 E2E 37/37',

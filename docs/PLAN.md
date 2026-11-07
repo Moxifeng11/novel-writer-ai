@@ -1,6 +1,6 @@
 # 插件结构化规划（PLAN）
 
-> 版本：v4.69.0 · 更新：2026-11-07
+> 版本：v4.70.0 · 更新：2026-11-07
 > 定位：**本文件是插件仓的唯一结构性规划入口**。代码是最终真相源；本文件只回答「有哪些模块、边界在哪、下一轮做什么」。
 > 历史文档：`docs/audits/`（各轮取证）、`docs/releases/`（各版本交付）、`CHANGELOG.md`（变更流水）。
 > **全系统优化专项**（16 板块 / 7 任务组 / 排期与验收）：[`docs/PROGRAM.md`](PROGRAM.md) · 进度报告：[`docs/progress/PROGRAM-STATUS.md`](progress/PROGRAM-STATUS.md)。
@@ -539,6 +539,12 @@ Agent（harness）
   - 解析缺陷：CLI `git()` 对整段输出 `trim()` 会吃掉 `git status --porcelain` 首行状态列（` M path`），导致 `unrecorded` 误报 1；改为 `trimEnd()` 后 `unrecorded=0`，复跑 advise 层级回到 `score`。
   - 数据纠偏：`program-status.json` baseline 实测 593 文件 / 6,523 用例（advisor 20 例 + 本轮 3 例）；`localCommitsAhead` 199 不变；`npm run program:render`。
   - 边界：advisor 纯函数模块不进 esbuild 入口，bundle 逐字节不变；未改 `.any-baseline.json`；未 commit / push。
+- 第 88 轮（audit-only + docs-correction；v5 验收清单与当前台账/代码对齐）：
+  - 盘点：`automation:advise --json` 输出 tier=`score`、recommended=`audit:explore`（score 4.16，alternatives 为空）；evidence 与事实一致（preflightOk=true、anyRemaining=0、tests 593/6,523、worktree 9 M + 4 ??、unrecorded=0）。信箱仅 1 条已回复的 ZCode 求证；HEAD `bd444ea` / ahead 199；无新派工。
+  - 审计（先问是不是）：以 `git hash-object` 逐文件比对 `v5-acceptance.md` 的 18 个证据哈希，识别 8 处漂移（2 个测试文件、`check-automation.mjs`、`package.json`、3 份文档），全部可由已知轮次解释、无语义破坏；并实测 v5 锚点 6 文件 / 93 用例（原记 90，`publication-profile` 实为 26 例非 23）。
+  - 改动（零源码、零测试）：`docs/progress/v5-acceptance.md` 刷新全局基线（591→593 文件、6,491→6,523 用例、锚点 90→93、jsdoc 747→748）、B4 round/版本、8 处证据哈希、§六 ahead/提交列表、§七结论；Vault 根 v5 计划《实施状态》刷新到第 88 轮。
+  - 验证：定向 6 文件 / 93 例通过；全量 `preflight:release` 见 canonical 记录。
+  - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`；未改 `program-status.json`（用例数与 ahead 未变，无需 `program:render`）；未 commit / push。
 - 自动化能力升级（2026-11-07，用户任务；不计入 30 分钟轮次编号）：
   - 新增 `shared/optimization-advisor.ts` 纯函数模块与 `scripts/optimization-advisor.mjs` CLI，把「候选池 → EV 评分 → 决策阶梯」从提示词固化为可执行、可复现、可单测的规则；新增 `npm run automation:advise`（`--json/--write/--check`）。
   - 自动识别六类信号：派工新鲜度（第 N 轮 > 当前轮或 6 小时内）、在途收口、preflight 红灯、any 余量、体积显著膨胀（>20KB 或 ≥1%）、文档漂移/测试停滞；输出 1–2 条带 `reason/evidence/score/factors` 的建议。

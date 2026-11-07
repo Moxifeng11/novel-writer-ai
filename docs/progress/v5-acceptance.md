@@ -1,17 +1,17 @@
 # v5 验收清单：Agent 对话 + 多步骤协同写作最小闭环
 
 > 用途：给用户逐批验收 B1–B5，不再重复论证设计。
-> 生成口径：committed HEAD 实测（2026-11-07 20:20 +08:00）。
-> 版本：v4.69.0（已提交 `3038735`）· 已提交 HEAD `af9df7b`（ahead 195）· 第 81 轮已收单（`af9df7b`，三文件 any 6→0 且基线 154→148）；剧本分镜表强制前置随 `e1c3820`、E2E 欠账修复随 `aa2b4c9` 入库。
+> 生成口径：committed HEAD 实测（2026-11-07 23:05 +08:00；数据源 `program-status.json`）。
+> 版本：v4.69.0（已提交 `3038735`）· 已提交 HEAD `bd444ea`（ahead 199）· 第 85 轮已收单（`bd444ea`）；第 86/87 轮（`entity-integrity` 6 例 + `optimization-advisor` 23 例 + 文档）待 ZCode 收单。剧本分镜表强制前置随 `e1c3820`、E2E 欠账修复随 `aa2b4c9` 入库。
 > 证据哈希 = `git hash-object <path>`（Git blob SHA-1，取前 12 位），用于确认验收时文件未被改动。
 
 ## 〇、全局基线（当前 HEAD 实测）
 
 | 指标 | 实测值 | 命令 / 来源 |
 |---|---|---|
-| 单测文件 | 591 passed | `npm run test` |
-| 单测用例 | 6,491 passed（第 66 轮 +5 worker-manager；第 67/68 轮零新增；第 70 轮 +6 scene-outline-controller） | `npm run test` |
-| v5 锚点定向复验 | 6 文件 / 90 用例通过（2026-11-07 实测） | 见 §一–§三 的定向命令 |
+| 单测文件 | 593 passed | `npm run test` |
+| 单测用例 | 6,523 passed（第 66 轮 +5 worker-manager；第 70 轮 +6 scene-outline-controller；第 86 轮 +6 `entity-integrity`；第 87 轮 +23 `optimization-advisor`） | `npm run test` |
+| v5 锚点定向复验 | 6 文件 / 93 用例通过（2026-11-07 23:05 实测） | 见 §一–§三 的定向命令 |
 | any 预算 | 148/148（82 文件；第 81 轮 -6 已由 ZCode 随 `af9df7b` 收紧基线）；余量 0 | `npm run check:any` |
 | 构建产物 | `main.js` 4,869,777 字节（v4.69.0 版本数据 +397B，叠加第 79 轮分镜强制前置 +180B）；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
 | 类型 | 0 error | `npm run typecheck` |
@@ -30,7 +30,7 @@
 | 测试文件 | `tests/unit/engine/agent-mode-alignment.test.ts`（12 用例）<br>`tests/unit/engine/agent-harness.test.ts`（28 用例） |
 | 可执行命令 | `npx vitest run tests/unit/engine/agent-mode-alignment.test.ts tests/unit/engine/agent-harness.test.ts` |
 | 当前结果 | 定向 40/40 通过；`typecheck` 0；`check-engines` exit 0 |
-| 证据哈希 | `agent-types.ts` `325c5685b1f7` · `host-tools.ts` `9c35387dbc7d` · `prompt-sections.ts` `933a9d021b95` · `agent-mode-alignment.test.ts` `db04b7baa791` · `agent-harness.test.ts` `90dbb06cfc76` |
+| 证据哈希 | `agent-types.ts` `325c5685b1f7` · `host-tools.ts` `9c35387dbc7d` · `prompt-sections.ts` `933a9d021b95` · `agent-mode-alignment.test.ts` `ba923cd71d0e` · `agent-harness.test.ts` `90dbb06cfc76` |
 | 落地提交 | `d7568cb` |
 
 验收要点：Agent 回答「当前阶段 / 下一步 / 为什么卡住」时，来源是 `flow` 投影，而不是硬编码八阶段话术。
@@ -45,7 +45,7 @@
 | 测试文件 | `tests/unit/ui/agent-stage-panel.test.ts`（20 用例）<br>`tests/unit/ui/agent-port-status.test.ts`（3 用例） |
 | 可执行命令 | `npx vitest run tests/unit/ui/agent-stage-panel.test.ts tests/unit/ui/agent-port-status.test.ts` |
 | 当前结果 | 定向 23/23 通过；阶段面板无硬编码阶段常量；端口降级契约有独立用例 |
-| 证据哈希 | `agent-port.ts` `93e14445ce92` · `agent-workbench-view.ts` `ffd5b0d3a253` · `agent-stage-panel.test.ts` `13640ae5079d` · `agent-port-status.test.ts` `4271ace0d72c` |
+| 证据哈希 | `agent-port.ts` `93e14445ce92` · `agent-workbench-view.ts` `ffd5b0d3a253` · `agent-stage-panel.test.ts` `e5b412f7c726` · `agent-port-status.test.ts` `4271ace0d72c` |
 | 落地提交 | `d7568cb`（契约）→ `28ac9e2`（竞态修复 + fetchStagePanelModel seam） |
 
 验收要点：老项目打开时阶段面板不倒退；`creation-flow-state` 读盘异常时面板回退但不阻断 Agent。
@@ -57,10 +57,10 @@
 | 锚点 | 内容 |
 |---|---|
 | 关键文件 | `shared/publication-profile.ts`：`PublicationLevel`（draft/finished/submission）、`PublicationScope`（full/written-only）、`splitUnitsByBody`、`checkPublicationReadiness`、`formatPublicationReport`（L32–L297）<br>`ui/export-manuscript-modal.ts`：三档下拉 + 范围下拉 + 导出前检查接线（L100–L102、L216–L243、L417、L477–L488） |
-| 测试文件 | `tests/unit/shared/publication-profile.test.ts`（23 用例）<br>`tests/unit/shared/export-precheck.test.ts`（4 用例） |
+| 测试文件 | `tests/unit/shared/publication-profile.test.ts`（26 用例）<br>`tests/unit/shared/export-precheck.test.ts`（4 用例） |
 | 可执行命令 | `npx vitest run tests/unit/shared/publication-profile.test.ts tests/unit/shared/export-precheck.test.ts` |
-| 当前结果 | 定向 27/27 通过；投稿档作者全格式必填、字数不足下限一半阻断、强制整包；成品档空单元/无正文阻断；草稿档只提示 |
-| 证据哈希 | `publication-profile.ts` `4e20dc2486c5` · `export-manuscript-modal.ts` `a8323fe4b88c` · `publication-profile.test.ts` `0127a9b9e3fb` · `export-precheck.test.ts` `016af8eebd39` |
+| 当前结果 | 定向 30/30 通过；投稿档作者全格式必填、字数不足下限一半阻断、强制整包；成品档空单元/无正文阻断；草稿档只提示 |
+| 证据哈希 | `publication-profile.ts` `4e20dc2486c5` · `export-manuscript-modal.ts` `a8323fe4b88c` · `publication-profile.test.ts` `7a58bd62222d` · `export-precheck.test.ts` `016af8eebd39` |
 | 落地提交 | `76a124b` → `466c61e`（纯函数抽取）→ `067f1e9`（三档/范围）→ `a20fb3d`（接线防回归 20→23） |
 
 验收要点：布尔「严格模式」复选框方案**未采用**；以三档交付级别 + 导出范围代替（用户拍板）。设计口径见 `docs/design/b3-publication-strict-mode-plan.md`。
@@ -73,8 +73,8 @@
 |---|---|
 | 关键文件 | `.trae/automation/trae-loop-state.json`（唯一 canonical）<br>`scripts/check-automation.mjs`：schema、round 单调、`updatedAt` 时区、红线字段、HANDOFF 行数、信箱可解析、版本四文件一致（L52–L160）<br>`package.json`：`check:automation` 已挂入 `preflight`（L56） |
 | 测试 / 校验 | `npm run check:automation`（结构校验，不校验业务内容） |
-| 当前结果 | 通过：活跃台账 round 73、HANDOFF 9 行、版本 4.67.0（committed HEAD）、信箱可解析；Vault 根副本 `Test-Path = False`，插件仓副本 `True` |
-| 证据哈希 | `check-automation.mjs` `afef76c2b7ae` · `package.json` `229dfaf6a59c`（committed HEAD / v4.67.0） |
+| 当前结果 | 通过：活跃台账 round 88、HANDOFF 9 行、版本 4.69.0（committed HEAD）、信箱可解析；Vault 根副本 `Test-Path = False`，插件仓副本 `True` |
+| 证据哈希 | `check-automation.mjs` `4160a26ee521` · `package.json` `7ee1e746dc96`（第 87 轮 advisor 批次在途，待收单后即为 committed 内容哈希） |
 | 落地提交 | `76a124b` → `e2c8894`（第 67 轮边界加固：v5-product 必检权重 + round 三处一致） |
 
 验收要点：只允许一份活跃状态文件；未来新增自动化检查项失败时，门禁会给出修复命令而不是静默通过。
@@ -87,8 +87,8 @@
 |---|---|
 | 关键文件 | `docs/guides/USER-GUIDE.md`（7 节：安装、首个项目、Agent 工作台、三模式流水线、导出与出版检查、数据位置、FAQ）<br>`docs/guides/COMMERCIAL-GUIDE.md`（7 节：三形态参数、出版检查、质量校验、批量 SOP、投稿检查表、验收指标、合规）<br>`docs/handbook/13-dual-automation-ops.md`（6 节：角色与文件集、循环配置、状态与交接、互调流程、故障处理、收尾检查表） |
 | 可执行命令 | `npm run check:docs` · `npm run check:jsdoc` · `npm run check:program` · `npm run check:linked-scenarios` |
-| 当前结果 | `check:docs` 通过（19 个活跃文档）；`check:jsdoc` 100%，`@example` 52/52（747 文件）；`check:program` 与台账一致；`check:linked-scenarios` 4 链 35 锚点 |
-| 证据哈希 | `USER-GUIDE.md` `86871ba84d8e` · `COMMERCIAL-GUIDE.md` `0363c5673ad1` · `13-dual-automation-ops.md` `e8d68f3fb85c` |
+| 当前结果 | `check:docs` 通过（19 个活跃文档）；`check:jsdoc` 100%，`@example` 52/52（748 文件）；`check:program` 与台账一致；`check:linked-scenarios` 4 链 35 锚点 |
+| 证据哈希 | `USER-GUIDE.md` `d0c0817308b7` · `COMMERCIAL-GUIDE.md` `88a956e52e67` · `13-dual-automation-ops.md` `eceba9bb57bb` |
 | 落地提交 | 指南 `067f1e9` → `653170c`（第 61 轮补强：导出落点/文件名口径/成品档作者建议） · 运维手册 `c6017b8` → `e2c8894`（第 67 轮校验清单同步） |
 
 验收要点：三份文档可独立阅读，不依赖会话上下文；文档中的命令均真实存在于 `package.json`。
@@ -101,11 +101,11 @@
 |---|---|---|
 | B5 手工验收（真实三模式流程） | 未执行；`E2E_REWRITE=1` 会改写 E2E 基线 | 明确授权后跑 `E2E_REWRITE=1 npm run test:e2e`，再人工走「创建→大纲→人设→写 1 章→质检→导出」 |
 | E2E 全量 | 基线 37 passed（ZCode 第 79 轮已复跑 37/37），本轮未重跑 | 授权后 `npm run test:e2e` |
-| push / tag / Release | ahead 195，未推送；v4.65.0 节点 `c8147e5`、第 67 轮收单 `e2c8894`、第 68 轮 any 收紧 `ed6b823`、v4.66.0 节点 `e6d1bb0`、第 71 轮收单 `5c53e34`、v4.67.0 节点 `952c052`、第 73 轮收单 `fcd9fde`、第 74 轮收单 `a6cb84c`、第 75 轮收单 `7f205b2`、v4.68.0 节点 `cd6750f`、第 76 轮收单 `b135dbc`、剧本分镜 `e1c3820`、E2E 修复 `aa2b4c9`、v4.69.0 节点 `3038735`、第 80 轮收单 `515ba1a`、第 81 轮收单 `af9df7b` 已出 | 用户明确指令后才执行 |
+| push / tag / Release | ahead 199，未推送；v4.65.0 节点 `c8147e5`、第 67 轮收单 `e2c8894`、第 68 轮 any 收紧 `ed6b823`、v4.66.0 节点 `e6d1bb0`、第 71 轮收单 `5c53e34`、v4.67.0 节点 `952c052`、第 73 轮收单 `fcd9fde`、第 74 轮收单 `a6cb84c`、第 75 轮收单 `7f205b2`、v4.68.0 节点 `cd6750f`、第 76 轮收单 `b135dbc`、剧本分镜 `e1c3820`、E2E 修复 `aa2b4c9`、v4.69.0 节点 `3038735`、第 80 轮收单 `515ba1a`、第 81 轮收单 `af9df7b`、第 82 轮收单 `4c5a3f0`、第 83 轮收单 `fb5b9ef`、第 84 轮收单 `22acb89`、第 85 轮收单 `bd444ea` 已出 | 用户明确指令后才执行 |
 | 剧本 `storyboard` 必填语义 | 已落地并被收单：`shared/creation-flow.ts` 的 `CreationFlowStage.hardDependsOn`（代码 `e1c3820`、文档 `3e5b9d4`），分镜未完成时「分集写作」显示 blocked；`storyboard` 自身不再按「既有正文」跳过 | 已闭环；如需回退须用户明确确认 |
 
 ---
 
 ## 七、结论
 
-B1–B5 代码、测试、门禁与文档均已在当前 HEAD 可复验：全量 591 文件 / 6,491 用例通过（第 70 轮为场景细纲补测 +6，不属 v5 批次），any 148/148（82 文件；第 81 轮 -6 已随 `af9df7b` 收紧基线），bundle 4,869,777（第 79 轮剧本分镜强制前置 +180B + v4.69.0 版本数据 +397B），六道相关门禁全绿；v5 锚点定向第 79 轮 3 文件 / 49 用例通过（`creation-flow` 17 + `agent-stage-panel` 20 + `agent-mode-alignment` 12）。剩余事项只有 §六 的授权型工作，不含待补代码。
+B1–B5 代码、测试、门禁与文档均已在当前 HEAD 可复验：全量 593 文件 / 6,523 用例通过（第 86 轮 `entity-integrity` +6、第 87 轮 `optimization-advisor` +23），any 148/148（82 文件；第 81 轮 -6 已随 `af9df7b` 收紧基线），bundle 4,869,777（第 79 轮剧本分镜强制前置 +180B + v4.69.0 版本数据 +397B），六道相关门禁全绿；v5 锚点定向第 88 轮复验 6 文件 / 93 用例通过（`agent-mode-alignment` 12 + `agent-harness` 28 + `agent-stage-panel` 20 + `agent-port-status` 3 + `publication-profile` 26 + `export-precheck` 4）。剩余事项只有 §六 的授权型工作，不含待补代码。
