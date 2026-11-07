@@ -2,6 +2,29 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.66.0（2026-11-07）
+
+### 🧹 类型收窄：两文件 any 各 4→0（187→179）
+
+- `ui/full-writer/scene-outline-controller.ts`：下拉值用 `ConflictType`/`PleasureType` 断言；新增 `SceneTextFieldKey` 映射类型（只收类型恰为 `string` 的字段，排除 boolean/number/字面量联合），两处 `(scene as any)[fieldKey]` 改为类型安全的写回。
+- `core/command-registry.ts`：`ctxManager` 收为 `unknown`（全类零调用，保留注入点）；两处 `(plugin as any).worldviewCacheService` 改为直接取（`main.ts` 已 public 声明）；`editorCallback` 返回类型改 `void`（3 个注册点均返回 void）。
+- any 基线 187→179（92 个文件）；`main.js` 逐字节不变。
+- **取舍记录**：首版用 `options.find` 白名单运行时查找，bundle +72B，违反「零运行时」约束；已改为联合类型断言。
+
+### 🧪 测试：worker-manager Worker 侧消息路径（6→11 用例）
+
+- `worker:ready` 后 progress/complete 驱动结果且空闲 Worker 复用；可恢复 `task:error` 降级主线程；网络关键词 `task:error` 拒绝并释放；`worker:error` 回收且禁用降级时拒绝；`worker:warning` 注入降级通知。
+
+### 🛡️ 门禁：check:automation 边界加固
+
+- `params.typeWeights` 必检键补 `v5-product`（此前漏检）。
+- 新增轮次三处一致性校验：顶层 `round` ↔ `lastRound.round` ↔ `rounds` 末条，字段缺失时跳过，不误伤旧台账。
+- handbook/13 校验清单同步。
+
+### 🧪 测试与门禁
+
+- 全量 **591 文件 / 6,485 用例**（v4.65.0 为 591/6,480，+5）；`preflight:release` 全绿；any 179；bundle 4,868,285（版本数据增量另计）。
+
 ## v4.65.0（2026-11-07）
 
 ### 🧹 类型收窄：worker 协议 any 11→0（198→187）

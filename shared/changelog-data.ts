@@ -21,6 +21,21 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.66.0',
+        date: '2026-11-07',
+        title: '两文件 any 清零与 Worker 消息路径测试',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧹 质量',
+                items: [
+                    'scene-outline / command-registry any 187→179；Worker 侧消息路径 6→11 用例',
+                    'check:automation 补 v5-product 权重与轮次三处一致校验',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.65.0',
         date: '2026-11-07',
         title: 'worker 协议 any 清零与协议边界测试',
