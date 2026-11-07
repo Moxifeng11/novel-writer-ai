@@ -399,6 +399,14 @@ Agent（harness）
   - 验证：`check:automation` 正向 EXIT=0；临时夹具（缺 `v5-product` + `lastRound.round=1`）负向 EXIT=1，两条 error 精确命中后夹具已清理；全量 `preflight:release` 见本轮回执。
   - 边界：只新增校验、未放松门禁；未动 `engine/**`、ZCode 文件集、canonical 台账与 `program-status`（无质量数字变化）。
   - 并发事实：开工 HEAD `7f5f412` / ahead 172；执行期间 ZCode 以 `7448e3d` + `5183dd7` 收单第 66 轮（ahead 174）；本轮 3 路径（`scripts/check-automation.mjs` + `docs/handbook/13-dual-automation-ops.md` + 本台账）。
+- 第 68 轮（gate-fix；兑现 ZCode 第 67 轮派工：两个文件 any 各 4→0）：
+  - 盘点（先问是不是）：信箱 1 条未读即第 67 轮派工，第 67 轮做的是 `check:automation` 加固（派工在盘点后才到），派工未被执行；HANDOFF 与本仓 canonical 状态均记「3 路径待 ZCode 收单」；v5 B1–B5 全落地，剩余均为用户拍板项。按决策阶梯「ZCode 明确派工优先」执行派工，不重复造门禁动作。
+  - 缺口实测：`ui/full-writer/scene-outline-controller.ts` 4 处 any（两个 `select.value`、两处 `(scene as any)[fieldKey]`）；`core/command-registry.ts` 4 处 any（`ctxManager`、两处 `(plugin as any).worldviewCacheService`、`editorCallback` 返回类型）。
+  - 交付：场景侧用 `ConflictType`/`PleasureType` 联合类型断言 + 新增 `SceneTextFieldKey` 映射类型（只允许类型恰为 `string` 的字段写回）替换强转；命令侧 `ctxManager: unknown`（本类未调用其方法）、直接读 `plugin.worldviewCacheService`（`main.ts` 已声明公开字段）、`editorCallback` 返回 `void`。纯类型，零运行时。
+  - 验证：`typecheck` 0；eslint 改动文件 0 error（6 条既有 warning 未变）；`check:any` 187→179（92 文件，恰好 -8）；`build` 后 `main.js` 4,868,285 与基线逐字节一致；定向 `command-registry` 4/4；全量 `preflight:release` EXIT=0（591 文件 / 6,485 用例）。
+  - 门禁插曲：首次全量跑到 `check:docs` 因 `docs/generated` 漂移（`check:jsdoc` 重写生成物）失败，按 `npm run gen:docs` → `check:docs` 复核后再跑全量通过；生成物 `docs/generated/code-index.md` 随行数变化入库。
+  - 边界：未自改 `.any-baseline.json`（余量 8 留给 ZCode 收紧到 179）；未动 `engine/**`、`ui/views`、`program-status`（用例数与 ahead 均未变）。
+  - 并发事实：开工 HEAD `5183dd7` / ahead 174；执行期间 ZCode 以 `e2c8894` 收单第 67 轮（ahead 175）；本轮 3 路径（两个源码文件 + `docs/generated/code-index.md`）。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

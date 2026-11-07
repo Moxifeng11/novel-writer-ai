@@ -189,7 +189,8 @@ export interface CommandRegistryDeps {
     app: App;
     registry: InternalRegistry;
     aiEngine: { extractElements(content: string): Promise<{ error?: string }> };
-    ctxManager: any;
+    /** 上下文管理器注入点（本类暂未调用其方法，保持最小类型，待有调用时收窄为实际方法集） */
+    ctxManager: unknown;
     foreshadowManager: { refreshInfoDebt(): void };
     /** UI 执行端口：Modal / 视图类命令由 ui 层实现，core 只按 id 委托 */
     ui?: CommandUiPort;
@@ -396,7 +397,7 @@ export class CommandRegistry {
         r.register(CommandIds.EXTRACT_ELEMENTS, async () => { this.extractElementsCommand(); });
         r.register(CommandIds.POPULATE_SETTING_LIB_INTERNAL, () => this.deps.populateSettingLib());
         r.register(CommandIds.CLEAR_WORLDVIEW_CACHE, async () => {
-            const cacheService = (this.deps.plugin as any).worldviewCacheService;
+            const cacheService = this.deps.plugin.worldviewCacheService;
             if (cacheService) {
                 cacheService.clearAll();
                 new Notice('✅ 世界观缓存已清空');
@@ -404,7 +405,7 @@ export class CommandRegistry {
             }
         });
         r.register(CommandIds.WORLDVIEW_CACHE_STATS, async () => {
-            const cacheService = (this.deps.plugin as any).worldviewCacheService;
+            const cacheService = this.deps.plugin.worldviewCacheService;
             if (cacheService) {
                 const stats = cacheService.getStats();
                 log.info('[WorldviewCache] 缓存统计:', stats);
@@ -425,7 +426,7 @@ export class CommandRegistry {
         name: string;
         callback?: () => void;
         checkCallback?: (checking: boolean) => boolean | void;
-        editorCallback?: (editor: Editor, ctx: MarkdownView | MarkdownFileInfo) => any;
+        editorCallback?: (editor: Editor, ctx: MarkdownView | MarkdownFileInfo) => void;
     }) => void): void {
         const exec = (id: string) => () => {
             this.deps.registry.execute(id).catch(err => log.error('[小说工坊]', err));

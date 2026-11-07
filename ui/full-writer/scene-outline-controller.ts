@@ -12,7 +12,7 @@
  */
 
 import { App, TFile, Notice } from 'obsidian';
-import { ExtendedSceneData, createDefaultScene, SceneStatus } from '@/shared/types';
+import { ExtendedSceneData, createDefaultScene, SceneStatus, ConflictType, PleasureType } from '@/shared/types';
 import { pjStepDir, pjStepFile } from '@/shared/paths';
 import { parseSceneHeadings } from '@/engine/scene-expander';
 import { createLogger } from '@/shared/logger';
@@ -25,6 +25,19 @@ import { stripFrontmatter } from '@/utils/helpers';
 
 
 const log = createLogger('SceneOutlineController');
+
+/**
+ * 场景卡纯文本字段键
+ *
+ * 只保留类型恰为 `string` 的字段：排除 `boolean`（isKeyScene）、`number`（字数预估）
+ * 与字面量联合类型（conflictType/pleasureType），使文本输入写回无需类型断言。
+ */
+type SceneTextFieldKey = {
+    [K in keyof ExtendedSceneData]-?:
+        string extends ExtendedSceneData[K]
+            ? (ExtendedSceneData[K] extends string ? K : never)
+            : never;
+}[keyof ExtendedSceneData];
 /** 场景细纲控制器依赖 */
 export interface SceneOutlineControllerDeps {
     app: App;
@@ -430,7 +443,7 @@ export class SceneOutlineController {
                 style: 'width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--background-modifier-border); font-size: 0.85em; background: var(--background-primary);'
             }
         });
-        const conflictOptions = [
+        const conflictOptions: { value: ConflictType; label: string }[] = [
             { value: '', label: '未分类' },
             { value: 'internal', label: '内在冲突' },
             { value: 'external', label: '外在冲突' },
@@ -441,7 +454,7 @@ export class SceneOutlineController {
             if (scene.conflictType === opt.value) optEl.selected = true;
         });
         conflictSelect.onchange = () => {
-            scene.conflictType = conflictSelect.value as any;
+            scene.conflictType = conflictSelect.value as ConflictType;
             this.markDirty();
         };
 
@@ -455,7 +468,7 @@ export class SceneOutlineController {
                 style: 'width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--background-modifier-border); font-size: 0.85em; background: var(--background-primary);'
             }
         });
-        const pleasureOptions = [
+        const pleasureOptions: { value: PleasureType; label: string }[] = [
             { value: '', label: '未分类' },
             { value: 'face_slap', label: '打脸' },
             { value: 'level_up', label: '升级' },
@@ -467,7 +480,7 @@ export class SceneOutlineController {
             if (scene.pleasureType === opt.value) optEl.selected = true;
         });
         pleasureSelect.onchange = () => {
-            scene.pleasureType = pleasureSelect.value as any;
+            scene.pleasureType = pleasureSelect.value as PleasureType;
             this.markDirty();
         };
     }
@@ -511,7 +524,7 @@ export class SceneOutlineController {
     }
 
     /** 创建单行文本输入 */
-    private createTextInput(container: HTMLElement, label: string, fieldKey: keyof ExtendedSceneData, scene: ExtendedSceneData): void {
+    private createTextInput(container: HTMLElement, label: string, fieldKey: SceneTextFieldKey, scene: ExtendedSceneData): void {
         const wrap = container.createDiv({ cls: 'nw-u-marginbottom-10px-2' });
         wrap.createEl('div', {
             text: label,
@@ -525,7 +538,7 @@ export class SceneOutlineController {
             }
         }) as HTMLInputElement;
         input.addEventListener('input', () => {
-            (scene as any)[fieldKey] = input.value;
+            scene[fieldKey] = input.value;
             this.markDirty();
             if (fieldKey === 'name') {
                 this.refreshList();
@@ -538,7 +551,7 @@ export class SceneOutlineController {
     }
 
     /** 创建多行文本域 */
-    private createTextArea(container: HTMLElement, label: string, fieldKey: keyof ExtendedSceneData, scene: ExtendedSceneData): void {
+    private createTextArea(container: HTMLElement, label: string, fieldKey: SceneTextFieldKey, scene: ExtendedSceneData): void {
         const wrap = container.createDiv({ cls: 'nw-u-marginbottom-10px-2' });
         wrap.createEl('div', {
             text: label,
@@ -552,7 +565,7 @@ export class SceneOutlineController {
         }) as HTMLTextAreaElement;
         textarea.value = value;
         textarea.addEventListener('input', () => {
-            (scene as any)[fieldKey] = textarea.value;
+            scene[fieldKey] = textarea.value;
             this.markDirty();
         });
     }

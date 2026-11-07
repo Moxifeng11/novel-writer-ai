@@ -9,15 +9,15 @@
 | `engine/` | 305 | 132774 | 1607 | 1346 | 84% |
 | `services/` | 32 | 12606 | 187 | 148 | 79% |
 | `shared/` | 174 | 39513 | 1571 | 1307 | 83% |
-| `core/` | 7 | 2746 | 28 | 13 | 46% |
+| `core/` | 7 | 2747 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 101423 | 735 | 639 | 87% |
+| `ui/` | 239 | 101436 | 735 | 639 | 87% |
 
 ## 文件清单
 
 | 文件 | 行数 | 导出 | 有 JSDoc |
 |---|---:|---:|---:|
-| `core/command-registry.ts` | 681 | 6 | 2 |
+| `core/command-registry.ts` | 682 | 6 | 2 |
 | `core/crypto-service.ts` | 379 | 3 | 1 |
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
@@ -663,7 +663,7 @@
 | `ui/full-writer/intervention-controller.ts` | 412 | 3 | 3 |
 | `ui/full-writer/project-selector-controller.ts` | 949 | 3 | 3 |
 | `ui/full-writer/quick-tools-panel.ts` | 150 | 3 | 3 |
-| `ui/full-writer/scene-outline-controller.ts` | 1147 | 2 | 1 |
+| `ui/full-writer/scene-outline-controller.ts` | 1160 | 2 | 1 |
 | `ui/full-writer/setting-lib-controller.ts` | 63 | 1 | 1 |
 | `ui/full-writer/status-bar-controller.ts` | 90 | 2 | 2 |
 | `ui/full-writer/step-render-controller.ts` | 685 | 2 | 2 |

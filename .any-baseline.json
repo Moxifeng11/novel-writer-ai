@@ -1,5 +1,5 @@
 {
-  "total": 187,
+  "total": 179,
   "generatedAt": "2026-11-07",
   "files": {
     "engine/ai-outline-generator.ts": 6,
@@ -9,7 +9,6 @@
     "engine/entity-state-manager.ts": 5,
     "engine/incremental-result-aggregator.ts": 5,
     "ui/cowrite/memory-manager-modal.ts": 5,
-    "core/command-registry.ts": 4,
     "engine/analysis-report-engine.ts": 4,
     "engine/deconstructors/foreshadow-deconstructor.ts": 4,
     "engine/engine-registry.ts": 4,
@@ -18,7 +17,6 @@
     "engine/types/analysis-session.ts": 4,
     "main.ts": 4,
     "services/knowledge-base-manager.ts": 4,
-    "ui/full-writer/scene-outline-controller.ts": 4,
     "engine/cache/preload-manager.ts": 3,
     "engine/deconstructors/rhythm-deconstructor.ts": 3,
     "engine/embedding/openai-provider.ts": 3,
