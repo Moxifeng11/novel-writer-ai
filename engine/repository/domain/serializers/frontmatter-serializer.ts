@@ -44,8 +44,8 @@ export class FrontmatterSerializer {
      * - 多行字符串（下一行缩进）
      * - 引号包裹的字符串
      */
-    private static parseYaml(text: string): Record<string, any> {
-        const result: Record<string, any> = {};
+    private static parseYaml(text: string): Record<string, unknown> {
+        const result: Record<string, unknown> = {};
         const lines = text.split('\n');
         let i = 0;
 
@@ -135,7 +135,7 @@ export class FrontmatterSerializer {
     /**
      * 序列化单个字段
      */
-    private static serializeField(key: string, value: any): string {
+    private static serializeField(key: string, value: unknown): string {
         if (Array.isArray(value)) {
             if (value.length === 0) {
                 return `${key}: []`;
@@ -145,7 +145,7 @@ export class FrontmatterSerializer {
         }
 
         if (typeof value === 'object') {
-            return `${key}:\n${FrontmatterSerializer.serializeObject(value, 2)}`;
+            return `${key}:\n${FrontmatterSerializer.serializeObject(value as Record<string, unknown>, 2)}`;
         }
 
         const strValue = String(value);
@@ -160,7 +160,7 @@ export class FrontmatterSerializer {
     /**
      * 序列化嵌套对象
      */
-    private static serializeObject(obj: Record<string, any>, indent: number): string {
+    private static serializeObject(obj: Record<string, unknown>, indent: number): string {
         const prefix = ' '.repeat(indent);
         const lines: string[] = [];
 
@@ -168,7 +168,7 @@ export class FrontmatterSerializer {
             if (value === undefined || value === null) continue;
 
             if (typeof value === 'object' && !Array.isArray(value)) {
-                lines.push(`${prefix}${key}:\n${FrontmatterSerializer.serializeObject(value, indent + 2)}`);
+                lines.push(`${prefix}${key}:\n${FrontmatterSerializer.serializeObject(value as Record<string, unknown>, indent + 2)}`);
             } else if (Array.isArray(value)) {
                 if (value.length === 0) {
                     lines.push(`${prefix}${key}: []`);
