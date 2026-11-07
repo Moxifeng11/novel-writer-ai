@@ -498,6 +498,12 @@ Agent（harness）
   - 改动（3 源码文件、纯类型）：①`shared/multi-layer-cache.ts` 2 处 `(this.l1 as any).maxSize` → 内联 `as unknown as { maxSize: number }`（`LruCache` 的 `maxSize` 为 private readonly，仅编译期约束）；②`ui/cowrite/suggestion-edit-modal.ts` 构造参数 `app: any` → `App`（type-only import，参数未被使用）+ `showValidationDone(err?: any)` → `unknown`（内部已有 `instanceof Error` 收窄）；③`ui/ai-builder-modal.ts` 2 处 `catch (e: any)` → `catch (e)` + 编译期结构断言 `(e as { message?: string }).message`（沿用第 73 轮范式，不用 `instanceof Error` 以兼容 DOMException）。
   - 验证：`typecheck` 0 error；`check:any` 154→148（85→82 文件，-6，未自改基线）；`build` 后 `main.js` 4,869,777 逐字节不变、`check:bundle` 绿；改动文件 eslint 0 error；定向缓存相关 2 文件 / 49 用例通过；全量 `preflight:release` 见 canonical 记录。
   - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`、ZCode 版本节点文件集；零新增文件；零运行时改动。
+- 第 82 轮（docs-correction；handbook 14 篇与代码一致性审计）：
+  - 盘点：开工 HEAD `af9df7b` / ahead 195（ZCode 已收单第 81 轮三源码文件并把 any 基线收紧 154→148）；信箱 0 未读、无新派工；v5 B1–B5 无未完成代码项；`check:any --list` 实测非 engine 仅余 `shared/types.ts` 6 处（有意设计）→ Trae 侧「单文件 ≥3 处」与「1–2 处长尾凑批」均已耗尽，gate-fix 无合规批次。
+  - 审计方法：脚本扫描 handbook 全部 `npm run <script>` 与路径引用（脚本名全部存在、路径 0 缺失），再逐篇比对门禁组合、覆盖率阈值与编号。真实漂移 3 处：①`06-gates-and-release.md` §1 的 `preflight` 清单停在 15 项旧口径，漏 `check:any` / `check:automation` / `check:changelog` / `check:write-entry` / `check:bundle`，且把「生成物漂移」写成独立门禁；②`05-testing.md` §3 `ui/**` 阈值仍写首期 3/3/4/3，实际 `vitest.config.ts` 已上拧到 10/9/10/8；③`02-architecture.md` §3 不变量 8 排在 7 之前。
+  - 改动（3 文档、零源码）：06 §1 改为 24 步准确清单并声明「逐步展开以 `docs/generated/gates.md` 为准，不得另抄清单」；05 §3 表格与说明同步 10/9/10/8 与上拧来源（pure-helpers 实测 lines 12.04）；02 §3 编号归位。
+  - 验证：`check:docs` / `check:automation` / `check:linked-scenarios` 全绿；全量 `preflight:release` 见 canonical 记录。
+  - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`、源码与测试；零新增文件；历史发布说明与历史台账中的「22 道门禁」属当时口径，不回改。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

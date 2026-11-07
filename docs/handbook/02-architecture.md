@@ -83,8 +83,8 @@ UI 事件/命令
 4. **幂等**：重复结算/重复生成不得重复追加（按章名/内容去重）。
 5. **设置唯一源**：`main.ts#NovelWriterSettings` + `core/settings-service.ts` 默认值 + `shared/settings-migrator.ts` 迁移；不要在模块里私存配置。
 6. **进度唯一源**：`docs/progress/program-status.json`，报告由 `program:render` 生成。
-8. **模板解析唯一入口**：`engine/prompt-resolver.ts#resolveStepPrompt`（vault 自定义 > 用户覆盖 > 内置）。交互单步、批量、继续生成、合并规划、情绪/Scene 特例都经它；细节见 [12-template-lifecycle.md](12-template-lifecycle.md)。
-7. **项目发现唯一源**：`shared/project-catalog.ts#listProjectIds`。UI/Engine 不得再自己遍历 `vault.getRoot().children` 判断项目；项目身份只认 `作品信息.md`、`世界观总览.md`、`00-系统模板`、`01-世界架构`、`.project` 等标志，**不认**单独的 `03-大纲与章节`（删除残留会被它复活）。
+7. **模板解析唯一入口**：`engine/prompt-resolver.ts#resolveStepPrompt`（vault 自定义 > 用户覆盖 > 内置）。交互单步、批量、继续生成、合并规划、情绪/Scene 特例都经它；细节见 [12-template-lifecycle.md](12-template-lifecycle.md)。
+8. **项目发现唯一源**：`shared/project-catalog.ts#listProjectIds`。UI/Engine 不得再自己遍历 `vault.getRoot().children` 判断项目；项目身份只认 `作品信息.md`、`世界观总览.md`、`00-系统模板`、`01-世界架构`、`.project` 等标志，**不认**单独的 `03-大纲与章节`（删除残留会被它复活）。
 
 ---
 

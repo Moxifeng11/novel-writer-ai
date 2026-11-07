@@ -28,7 +28,7 @@ npx playwright test --list     # 只校验用例可解析（CI 用）
 
 ## 3. 覆盖率阈值（当前）
 
-与 `vitest.config.ts` 的 `coverage.thresholds` 一一对应（2026-11-05 核对）：
+与 `vitest.config.ts` 的 `coverage.thresholds` 一一对应（2026-11-07 核对）：
 
 | 域 | lines | statements | branches | functions |
 |---|---|---|---|---|
@@ -37,11 +37,11 @@ npx playwright test --list     # 只校验用例可解析（CI 用）
 | `core/**` | 45 | 45 | 49 | 14 |
 | `shared/**` | 85 | 84 | 77 | 80 |
 | `domains/**` | 84 | 82 | 70 | 70 |
-| `ui/**` | 3 | 3 | 4 | 3 |
+| `ui/**` | 10 | 9 | 10 | 8 |
 
 - 口径：`engine/`、`services/`、`core/`、`shared/`、`domains/`、`ui/` 全部纳入统计；排除 `tests/`、`**/*.d.ts`、Worker 入口、构建期嵌入资产与纯类型声明文件。无全局阈值。
 - 2026-11-05 移除全局四项阈值、全部改为 per-glob：纳入 `ui/`、`domains/` 后全局并集从约 65% 摊薄到约 40%，全局阈值既不代表任何单一域，也压不住新纳入的低覆盖目录；per-glob 让每个域对自己的真实基线负责。
-- `ui/**` 的 3/3/4/3 是**首期诚实基线**（2026-11-05 实测仅约 6%——此前全部 ui 文件游离在门禁之外），不是目标值。
+- `ui/**` 首期基线 3/3/4/3（2026-11-05 实测仅约 6%——此前全部 ui 文件游离在门禁之外）已于同日上拧到 10/9/10/8：pure-helpers 纯函数 + fake-DOM 测试把实测抬到 lines 12.04 / statements 11.95 / branches 12.52 / functions 10.1。它仍是全仓最低域，不是目标值。
 - `domains/**` 首期实测 lines 86.91 / statements 84.03 / branches 72.41 / functions 72.72，各下浮约 2 点取整为基线。
 - 棘轮纪律：per-glob 阈值只升不降；下调必须在 PR 里说明理由。
 - 语义注意：threshold glob 按相对路径精确匹配，`services/**` 阈值只管 `services/` 顶层目录；被 include 连带纳入统计的 `ui/services/` 由 `ui/**` 阈值接管。

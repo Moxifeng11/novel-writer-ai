@@ -10,12 +10,13 @@
 | 组 | 命令 | 包含 | 用途 |
 |---|---|---|---|
 | 快速 | `npm run typecheck` / `npm run test -- <file>` | 类型 + 指定测试 | 编辑期 |
-| 本地总门禁 | `npm run preflight` | 类型、Lint、全量测试、模板/样式/CSS/内联/分层/引擎/台账/权威源/静默失败/热路径/联动/隔离、JSDoc、文档、生成物漂移、构建、发布资产 | 提交前 |
+| 本地总门禁 | `npm run preflight` | 24 步：类型、Lint、全量测试、模板/样式/CSS/内联样式、分层依赖、引擎注册、台账（program）、关系权威源、静默失败、热路径、写入入口、联动场景、自动化台账、dsh 隔离、JSDoc、any 预算、变更日志、文档（含 `docs/generated/*` 漂移）、构建、bundle 体积、发布资产 | 提交前 |
 | 发布前 | `npm run preflight:release` | `preflight` + `test:cov` | 打 tag 前 |
 | CI | `.github/workflows/ci.yml` | `preflight:release` 等价 + 生产依赖审计 + 构建产物入仓检查 + Playwright 用例解析 | PR / master |
 | 发布 | `.github/workflows/release.yml` | 同一组门禁 + `check:release -- --tag` | 推 `v*` tag |
 
 > `preflight` 不含覆盖率（太慢），但**包含** `check:release` 与 `build`；`preflight:release` 才跑 `test:cov`。
+> 逐步展开以生成物 [../generated/gates.md](../generated/gates.md) 为准（`npm run gen:docs` 生成，禁止手改）；本文表格只做分组说明，新增门禁后不要在本文另抄一份清单。
 
 ## 2. 失败时的处理顺序
 
