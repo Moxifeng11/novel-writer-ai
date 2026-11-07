@@ -6,7 +6,7 @@
     "version": "4.70.0",
     "tests": {
       "files": 594,
-      "cases": 6550
+      "cases": 6552
     },
     "e2e": 40,
     "e2eNote": "E2E 通过总数：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27 = 40（2026-11-07 全量实测）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑（rewrite-chapters 已随「九霄逆脉行」项目删除而下线）",
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 206,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 第 91 轮收尾实测 git rev-list --count=206，HEAD 8cceae9；第 90 轮已随 8cceae9 收单，第 91 轮测试文件在途）"
+    "localCommitsAhead": 208,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 第 93 轮收尾实测 git rev-list --count=208，HEAD 90b542d；第 92 轮 2 文档已随 90b542d 收单，第 93 轮 6 路径在途）"
   },
   "groups": [
     {

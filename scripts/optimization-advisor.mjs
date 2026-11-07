@@ -110,7 +110,7 @@ function inferHintType(subject) {
     return undefined;
 }
 
-function collectDispatch(currentRound) {
+function collectDispatch(currentRound, lastDispatchId) {
     const mailboxPath = path.join(VAULT_ROOT, '.trae/mailbox/messages.jsonl');
     if (!fs.existsSync(mailboxPath)) return undefined;
     let lines = [];
@@ -133,7 +133,10 @@ function collectDispatch(currentRound) {
         const subject = message.subject || '';
         if (!/派工|候选|请执行|请确认|批准/.test(subject)) continue;
         if (/已收单/.test(subject) && !/派工/.test(subject)) continue;
-        if (!core.isFreshDispatch(subject, currentRound, message.ts || '', Date.now())) continue;
+        if (!core.isFreshDispatch(subject, currentRound, message.ts || '', Date.now(), {
+            messageId: message.id,
+            lastDispatchId,
+        })) continue;
         return {
             subject,
             hintType: inferHintType(subject),
@@ -169,7 +172,7 @@ function collectFacts(params, rounds) {
             handoffStale: handoff.stale,
         },
         tests: { files: tests.files ?? 0, cases: tests.cases ?? 0 },
-        dispatch: collectDispatch(state?.round ?? 0),
+        dispatch: collectDispatch(state?.round ?? 0, state?.lastDispatchId),
     };
 }
 

@@ -252,19 +252,33 @@ function countConsecutiveType(rounds: AdvisorRoundRecord[], type: AdvisorType): 
 
 /** 判断一条信箱派工是否仍然新鲜
  *
- * 主题里的「第 N 轮」大于当前台账轮次才算新派工；没有轮次时按 6 小时时效。
+ * 主题里的「第 N 轮」不小于当前台账轮次即视为新派工（跨方「上一轮 + 1」编号
+ * 会与台账同号，故用 `>=`）；同一消息 id 已在台账 `lastDispatchId` 记录时不再执行。
+ * 主题无轮次时仍按 6 小时时效。
  * @param subject 信箱主题
  * @param currentRound 当前台账轮次
  * @param messageTs 消息时间（ISO 字符串）
  * @param now 当前毫秒时间戳
+ * @param dedupe 去重信息：消息 id 与台账最近一次已执行派工 id
  * @returns 是否应作为待执行派工
  * @example
  * isFreshDispatch('第 87 轮派工：补测试', 86, '', Date.now()) // true
+ * @example
+ * isFreshDispatch('第 92 轮派工：补测试', 92, '', Date.now()) // true
+ * @example
+ * isFreshDispatch('第 92 轮派工：补测试', 92, '', Date.now(), { messageId: 'm-1', lastDispatchId: 'm-1' }) // false
  */
-export function isFreshDispatch(subject: string, currentRound: number, messageTs: string, now: number): boolean {
+export function isFreshDispatch(
+    subject: string,
+    currentRound: number,
+    messageTs: string,
+    now: number,
+    dedupe: { messageId?: string; lastDispatchId?: string } = {},
+): boolean {
+    if (dedupe.messageId && dedupe.lastDispatchId === dedupe.messageId) return false;
     const matches = [...subject.matchAll(/第\s*(\d+)\s*轮/g)].map(match => Number(match[1]));
     const targetRound = matches.length > 0 ? Math.max(...matches) : 0;
-    if (targetRound > 0) return targetRound > currentRound;
+    if (targetRound > 0) return targetRound >= currentRound;
     const parsed = Date.parse(messageTs);
     return !Number.isNaN(parsed) && now - parsed <= 6 * 60 * 60 * 1000;
 }

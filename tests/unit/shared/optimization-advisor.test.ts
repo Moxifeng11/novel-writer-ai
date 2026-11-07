@@ -66,10 +66,10 @@ describe('normalizeAdvisorType', () => {
 });
 
 describe('isFreshDispatch', () => {
-    it('派工轮次大于当前轮次才算新鲜', () => {
+    it('派工轮次不小于当前轮次即新鲜，旧轮次视为陈旧', () => {
         expect(isFreshDispatch('第 87 轮派工：补 entity 测试', 86, '', 1_000)).toBe(true);
-        expect(isFreshDispatch('第 86 轮确认 entity-integrity 5 例', 86, '', 1_000)).toBe(false);
-        expect(isFreshDispatch('第 85 轮已收单 + 第 86 轮确认', 86, '', 1_000)).toBe(false);
+        expect(isFreshDispatch('第 86 轮派工：补 entity 测试', 86, '', 1_000)).toBe(true);
+        expect(isFreshDispatch('第 85 轮派工：补 entity 测试', 86, '', 1_000)).toBe(false);
     });
 
     it('主题含多个轮次时按最大轮次判断', () => {
@@ -80,6 +80,17 @@ describe('isFreshDispatch', () => {
         const now = Date.parse('2026-11-07T22:00:00+08:00');
         expect(isFreshDispatch('请执行体积审计', 86, '2026-11-07T19:00:00+08:00', now)).toBe(true);
         expect(isFreshDispatch('请执行体积审计', 86, '2026-11-07T10:00:00+08:00', now)).toBe(false);
+    });
+
+    it('同一消息 id 已执行过则去重', () => {
+        expect(isFreshDispatch('第 92 轮派工：浅拷贝修复', 92, '', 1_000, {
+            messageId: 'm-1',
+            lastDispatchId: 'm-1',
+        })).toBe(false);
+        expect(isFreshDispatch('第 92 轮派工：浅拷贝修复', 92, '', 1_000, {
+            messageId: 'm-2',
+            lastDispatchId: 'm-1',
+        })).toBe(true);
     });
 });
 

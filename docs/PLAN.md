@@ -582,6 +582,14 @@ Agent（harness）
   - 文档：handbook 13 §7.2 派工行补「已知边界」；PLAN 第 92 轮台账。
   - 验证：定向 `tests/unit/shared/optimization-advisor.test.ts` 23/23；`check:docs`（4.70.0 / 19 文档）与 `check:automation` 绿；全量 `preflight:release` EXIT=0（594 文件 / 6,550 用例；statements 44.01% / branches 43.75% / functions 44.80% / lines 44.34%；any 148/148、bundle 4,870,136 逐字节不变、jsdoc 748、linked-scenarios 35 锚点、release 校验 v4.70.0 全绿）。
   - 边界：零源码（未改 `shared/optimization-advisor.ts` / CLI / 测试）、未动 `engine/**`、`ui/views`、`.any-baseline.json`；未 commit / push。
+- 第 93 轮（v5-product 修复；兑现 ZCode 第 93 轮派工：浅拷贝隔离 + 派工判据 A）：
+  - 盘点：`automation:advise --json` 输出 tier=`score`、dispatchSource 为空；信箱有 ZCode 明确派工（先裁「浅拷贝修复 + 6 小时时间窗」，随后更新为「方案 A：`>=` + lastDispatchId 去重」并明确以 A 为准），按决策阶梯第 1 级执行。开工 HEAD `98945ff` / ahead 207；执行中 ZCode 以 `90b542d` 收单第 92 轮 2 文档（HEAD→`90b542d` / ahead 208）。
+  - 修复一（`services/genre-preference-memory.ts`）：构造器与 `reset()` 原先 `{ ...DEFAULT_PREFERENCE_DATA }` 浅拷贝，`corrections`/`genreBias`/`subGenreBias`/`channelBias` 与模块级常量共享引用；改为 `createDefaultPreferenceData()` 工厂每次新建嵌套对象，构造器对传入 `savedData` 的四个嵌套字段同样做拷贝。生产单实例暂未暴露，但多实例/reset 会互相污染。
+  - 修复二（`shared/optimization-advisor.ts::isFreshDispatch`）：判据由「最大轮次 > 当前轮次」改为「最大轮次 ≥ 当前轮次」，并新增按消息 id 去重（canonical `lastDispatchId` 已执行过则不再执行）；跨方「上一轮 + 1」同号漂移不再漏判，旧轮次仍判陈旧。
+  - 测试：`genre-preference-memory.test.ts` +1 例（多实例互不可见、reset 不污染其他实例）；`optimization-advisor.test.ts` +1 例（同号新鲜、同号 + lastDispatchId 相同去重、旧轮次陈旧）。
+  - 文档：handbook 13 §7 派工行同步新口径（`>=` + 消息 id 去重）与「主题须含派工二字」边界；`program-status.json` cases 6,550→6,552、ahead 206→208 并 `npm run program:render`（另 `gen:docs` 同步 code-index）。
+  - 验证：定向 44/44；全量 `preflight:release` EXIT=0（594 文件 / 6,552 用例；statements 44.01% / branches 43.76% / functions 44.81% / lines 44.34%；any 148/148）、bundle 4,870,342（基线 4,870,147→4,870,342，+195B 已按规则 `--update-baseline --note` 显式记录，200B/批预算内）。
+  - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`；未 commit / push。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

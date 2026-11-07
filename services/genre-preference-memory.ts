@@ -30,15 +30,23 @@ export interface GenrePreferenceData {
     lastUpdated: number;
 }
 
-const DEFAULT_PREFERENCE_DATA: GenrePreferenceData = {
-    corrections: [],
-    genreBias: {},
-    subGenreBias: {},
-    channelBias: {},
-    autoClassifyCount: 0,
-    manualCorrectionCount: 0,
-    lastUpdated: 0,
-};
+/**
+ * 生成一份全新的默认偏好数据。
+ *
+ * 每次构造/reset 都新建嵌套对象，避免多实例共享同一份引用而互相污染。
+ * @returns 默认偏好数据
+ */
+function createDefaultPreferenceData(): GenrePreferenceData {
+    return {
+        corrections: [],
+        genreBias: {},
+        subGenreBias: {},
+        channelBias: {},
+        autoClassifyCount: 0,
+        manualCorrectionCount: 0,
+        lastUpdated: 0,
+    };
+}
 
 const MAX_CORRECTIONS = 200;
 const BIAS_DECAY = 0.95;
@@ -57,7 +65,16 @@ export class GenrePreferenceMemory {
         savedData?: GenrePreferenceData | null,
         saveCallback?: (data: GenrePreferenceData) => Promise<void>
     ) {
-        this.data = savedData ? { ...DEFAULT_PREFERENCE_DATA, ...savedData } : { ...DEFAULT_PREFERENCE_DATA };
+        this.data = savedData
+            ? {
+                ...createDefaultPreferenceData(),
+                ...savedData,
+                corrections: savedData.corrections ? [...savedData.corrections] : [],
+                genreBias: savedData.genreBias ? { ...savedData.genreBias } : {},
+                subGenreBias: savedData.subGenreBias ? { ...savedData.subGenreBias } : {},
+                channelBias: savedData.channelBias ? { ...savedData.channelBias } : {},
+            }
+            : createDefaultPreferenceData();
         this.saveCallback = saveCallback;
     }
 
@@ -308,7 +325,7 @@ export class GenrePreferenceMemory {
      * 重置偏好。
      */
     reset(): void {
-        this.data = { ...DEFAULT_PREFERENCE_DATA };
+        this.data = createDefaultPreferenceData();
         this.markDirty();
         this.scheduleSave().catch((e: unknown) => log.warn('[GenrePreferenceMemory] 保存失败:', e));
     }

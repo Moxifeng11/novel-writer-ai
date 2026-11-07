@@ -7,8 +7,8 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132774 | 1607 | 1346 | 84% |
-| `services/` | 32 | 12616 | 187 | 148 | 79% |
-| `shared/` | 175 | 40187 | 1586 | 1312 | 83% |
+| `services/` | 32 | 12633 | 187 | 148 | 79% |
+| `shared/` | 175 | 40201 | 1586 | 1312 | 83% |
 | `core/` | 7 | 2747 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 239 | 101479 | 735 | 639 | 87% |
@@ -349,7 +349,7 @@
 | `services/execution-ledger.ts` | 325 | 10 | 7 |
 | `services/font-manager.ts` | 219 | 14 | 12 |
 | `services/genre-classifier.ts` | 858 | 2 | 2 |
-| `services/genre-preference-memory.ts` | 360 | 3 | 3 |
+| `services/genre-preference-memory.ts` | 377 | 3 | 3 |
 | `services/job-service.ts` | 364 | 9 | 1 |
 | `services/knowledge-base-manager.ts` | 1558 | 5 | 4 |
 | `services/knowledge-original-chunker.ts` | 119 | 3 | 3 |
@@ -458,7 +458,7 @@
 | `shared/model-source.ts` | 43 | 3 | 1 |
 | `shared/multi-layer-cache.ts` | 556 | 6 | 6 |
 | `shared/novel-format.ts` | 348 | 12 | 12 |
-| `shared/optimization-advisor.ts` | 535 | 15 | 5 |
+| `shared/optimization-advisor.ts` | 549 | 15 | 5 |
 | `shared/paths.ts` | 1410 | 189 | 183 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |

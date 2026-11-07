@@ -284,4 +284,22 @@ describe('GenrePreferenceMemory', () => {
         expect(memory.getData().manualCorrectionCount).toBe(0);
         expect(memory.getGenreBias('xuanhuan')).toBe(0);
     });
+
+    it('多实例互不可见，reset 也不污染其他实例', () => {
+        const first = new GenrePreferenceMemory();
+        const second = new GenrePreferenceMemory({ autoClassifyCount: 4 } as GenrePreferenceData);
+
+        first.recordCorrection(correction({ correctedGenre: 'xuanhuan', originalGenre: 'dushi' }));
+
+        expect(first.getData().corrections).toHaveLength(1);
+        expect(second.getData().corrections).toHaveLength(0);
+        expect(second.getGenreBias('xuanhuan')).toBe(0);
+
+        second.recordCorrection(correction({ correctedGenre: 'yanqing' }));
+        first.reset();
+
+        expect(first.getData()).toEqual(emptyData());
+        expect(second.getData().corrections).toHaveLength(1);
+        expect(second.getGenreBias('yanqing')).toBeGreaterThan(0);
+    });
 });
