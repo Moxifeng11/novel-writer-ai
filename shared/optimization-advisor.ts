@@ -81,9 +81,9 @@ export interface AdvisorFacts {
     gates: {
         /** preflight 是否通过 */
         preflightOk: boolean;
-        /** any 基线余量（0 表示无合规收口批次） */
+        /** any 基线存量（采集自 .any-baseline.json total，缺失时回退台账 gateMargins 余量；0 表示无合规收口批次） */
         anyRemaining: number;
-        /** 当前 main.js 体积 */
+        /** 当前 main.js 体积（采集自实文件 stat，缺失时回退 .bundle-baseline.json 基线值） */
         bundleBytes: number;
         /** 台账记录的启动体积基线 */
         startupBaselineBytes: number;
@@ -213,6 +213,18 @@ export const DEFAULT_ADVISOR_PARAMS: AdvisorParams = {
     explorationRoll: 0.58,
     maxActionsPerRound: 2,
 };
+
+/** 采集回退：主源数值缺失/非法时回退基线值，不抛错
+ * @param primary 主源采集值（bundle=main.js 实文件 stat；any=.any-baseline.json total），缺失/非法时为 undefined 或 NaN
+ * @param fallback 基线回退值（bundle=.bundle-baseline.json 基线；any=台账 gateMargins 余量旧口径）
+ * @returns 主源值；主源缺失时返回基线值
+ * @example
+ * resolveMetricWithFallback(4870903, 4870663) // 4870903（main.js 实文件优先）
+ * resolveMetricWithFallback(undefined, 144) // 144（回退 .any-baseline.json total）
+ */
+export function resolveMetricWithFallback(primary: number | undefined, fallback: number): number {
+    return typeof primary === 'number' && Number.isFinite(primary) ? primary : fallback;
+}
 
 /** 把任意台账类型描述归一到已知动作类型
  * @param value 台账里的 type 文本

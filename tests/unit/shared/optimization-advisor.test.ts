@@ -11,6 +11,7 @@ import {
     detectAdvisorCandidates,
     isFreshDispatch,
     normalizeAdvisorType,
+    resolveMetricWithFallback,
     scoreAdvisorCandidates,
 } from '@/shared/optimization-advisor';
 import type {
@@ -306,5 +307,21 @@ describe('decideOptimizationAdvice', () => {
         }));
         expect(decision.recommended.length).toBeLessThanOrEqual(2);
         expect(decision.alternatives.length).toBeGreaterThan(0);
+    });
+});
+
+describe('采集面回退（resolveMetricWithFallback）', () => {
+    it('bundle 体积实文件优先，缺失/非法时回退基线值且不抛错', () => {
+        expect(resolveMetricWithFallback(4_870_903, 4_870_663)).toBe(4_870_903);
+        expect(resolveMetricWithFallback(undefined, 4_870_663)).toBe(4_870_663);
+        expect(resolveMetricWithFallback(Number.NaN, 4_870_663)).toBe(4_870_663);
+        expect(resolveMetricWithFallback(undefined, 0)).toBe(0);
+    });
+
+    it('any 存量基线 total 优先，缺失/非法时回退台账余量且不抛错', () => {
+        expect(resolveMetricWithFallback(144, 0)).toBe(144);
+        expect(resolveMetricWithFallback(undefined, 4)).toBe(4);
+        expect(resolveMetricWithFallback(Number.NaN, 4)).toBe(4);
+        expect(resolveMetricWithFallback(undefined, 0)).toBe(0);
     });
 });

@@ -36,6 +36,14 @@ function readJson(file, fallback) {
     }
 }
 
+function statSize(file) {
+    try {
+        return fs.statSync(file).size;
+    } catch {
+        return undefined;
+    }
+}
+
 function git(...gitArgs) {
     try {
         // 只裁尾部：`git status --porcelain` 首行以空格开头（" M path"），整体 trim() 会吃掉状态列
@@ -158,9 +166,16 @@ function collectFacts(params, rounds) {
     const preflightText = String(gateMargins.preflight ?? '');
     const preflightOk = preflightText ? preflightText.includes('EXIT=0') : true;
     if (!preflightText) warnings.push('台账缺少 preflight 结果，按通过处理');
+    const anyBaseline = readJson(path.join(ROOT, '.any-baseline.json'), null);
     const anyMatch = String(gateMargins.any ?? '').match(/余量\s*(\d+)/);
-    const anyRemaining = anyMatch ? Number(anyMatch[1]) : 0;
-    const bundleBytes = bundle?.files?.['main.js'] ?? 0;
+    const anyRemaining = core.resolveMetricWithFallback(
+        typeof anyBaseline?.total === 'number' ? anyBaseline.total : undefined,
+        anyMatch ? Number(anyMatch[1]) : 0,
+    );
+    const bundleBytes = core.resolveMetricWithFallback(
+        statSize(path.join(ROOT, 'main.js')),
+        bundle?.files?.['main.js'] ?? 0,
+    );
     const startupBaselineBytes = state?.params?.startupEvalBaselineBytes ?? 0;
     const tests = program?.baseline?.tests ?? { files: 0, cases: 0 };
     return {
