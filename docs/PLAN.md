@@ -392,6 +392,13 @@ Agent（harness）
   - 验证：定向 11/11；`typecheck` 0；用例 6,480→6,485；`check:docs`/`check:jsdoc`/`check:linked-scenarios`/`check:automation` 绿；全量 `preflight:release` EXIT=0。
   - 边界：零生产代码改动；未动 `engine/**`、ZCode 文件集与 `.any-baseline.json`；同步更新 `program-status`（cases 6,485、ahead 172）并 `program:render`。
   - 并发事实：开工 HEAD `c8147e5`（v4.65.0）/ahead 171；执行期间 ZCode 以 `7f5f412` 收单第 65 轮验收清单（ahead 172）；本轮 5 路径（测试 + PLAN + program-status + PROGRAM-STATUS + v5 验收清单）。
+- 第 67 轮（gate-fix；`check:automation` 边界加固；无 ZCode 新派工）：
+  - 盘点（先问是不是）：信箱 0 未读、无新派工；HEAD `7f5f412`、ahead 172；工作树仍为第 66 轮 5 路径待 ZCode 收单；v5 B1–B5 全落地，剩余均为用户拍板项（push/tag/Release、`E2E_REWRITE=1`、剧本 storyboard 语义），故按决策阶梯选门禁边界，不重复交付。
+  - 缺口实测：`check:automation` 的 `typeWeights` 必填键漏了 v5 使命新增的 `v5-product`；轮次校验只查 `rounds` 内部单调，未锁定顶层 `round` 与 `lastRound.round` / `rounds` 末条一致——「round 前进但历史未追加」可静默通过。
+  - 交付：`scripts/check-automation.mjs` 必填权重补 `v5-product`，新增轮次三处一致性校验；`docs/handbook/13-dual-automation-ops.md` 同步校验清单。零业务代码、零用例增减。
+  - 验证：`check:automation` 正向 EXIT=0；临时夹具（缺 `v5-product` + `lastRound.round=1`）负向 EXIT=1，两条 error 精确命中后夹具已清理；全量 `preflight:release` 见本轮回执。
+  - 边界：只新增校验、未放松门禁；未动 `engine/**`、ZCode 文件集、canonical 台账与 `program-status`（无质量数字变化）。
+  - 并发事实：开工 HEAD `7f5f412` / ahead 172；执行期间 ZCode 以 `7448e3d` + `5183dd7` 收单第 66 轮（ahead 174）；本轮 3 路径（`scripts/check-automation.mjs` + `docs/handbook/13-dual-automation-ops.md` + 本台账）。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

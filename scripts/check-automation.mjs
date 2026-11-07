@@ -63,7 +63,7 @@ if (!existsSync(canonicalPath)) {
             fail('状态台账 updatedAt 必须带时区（如 2026-11-06T17:41+08:00）');
         }
         const weights = state.params?.typeWeights ?? {};
-        for (const key of ['slice', 'notice', 'test-hardening', 'docs-correction', 'gate-fix', 'perf', 'audit-only']) {
+        for (const key of ['slice', 'notice', 'test-hardening', 'docs-correction', 'gate-fix', 'perf', 'audit-only', 'v5-product']) {
             if (typeof weights[key] !== 'number') fail(`状态台账缺少类型权重：${key}`);
         }
         const redLines = state.constraints?.redLines ?? [];
@@ -84,6 +84,14 @@ if (!existsSync(canonicalPath)) {
                     break;
                 }
             }
+        }
+        // 轮次三处一致：顶层 round、最近一轮 lastRound、history 末条，避免「round 前进但历史未追加」的漂移
+        if (Number.isInteger(state.lastRound?.round) && state.lastRound.round !== state.round) {
+            fail(`状态台账 lastRound.round(${state.lastRound.round}) 与 round(${state.round}) 不一致`);
+        }
+        const lastHistory = Array.isArray(state.rounds) ? state.rounds[state.rounds.length - 1] : null;
+        if (Number.isInteger(lastHistory?.round) && lastHistory.round !== state.round) {
+            fail(`状态台账 rounds 末条 round(${lastHistory.round}) 与 round(${state.round}) 不一致`);
         }
         info(`活跃状态台账：round ${state.round}，${state.updatedAt}`);
     }

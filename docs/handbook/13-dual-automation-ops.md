@@ -27,7 +27,7 @@
 | 交接快照 | Vault 根 `PROJECT-RULES.md` 的 `<!-- HANDOFF:START -->` | ≤10 行，含当前阶段/交付/进行中/下一步/待确认 |
 | 信箱 | Vault 根 `.trae/mailbox/` | `novel-mailbox` 消息通道；不是状态真相源 |
 
-`npm run check:automation` 校验：状态 schema、round 单调、`updatedAt` 带时区、红线字段、旧副本 tombstone、HANDOFF 字段与行数、版本四文件一致、信箱可解析。该命令已挂在 `npm run preflight`。
+`npm run check:automation` 校验：状态 schema、round 单调且顶层 round / `lastRound.round` / `rounds` 末条一致、`updatedAt` 带时区、类型权重（含 `v5-product`）、红线字段、旧副本 tombstone、HANDOFF 字段与行数、版本四文件一致、信箱可解析。该命令已挂在 `npm run preflight`。
 
 ## 4. 互调流程
 
