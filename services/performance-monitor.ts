@@ -459,7 +459,7 @@ export class PerformanceMonitor {
 
     private getCurrentMemory(): number | undefined {
         if (typeof performance !== 'undefined' && 'memory' in performance) {
-            return (performance as any).memory.usedJSHeapSize;
+            return (performance as Performance & { memory: { usedJSHeapSize: number } }).memory.usedJSHeapSize;
         }
         return undefined;
     }

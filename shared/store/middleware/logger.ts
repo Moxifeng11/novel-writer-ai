@@ -31,7 +31,7 @@ export function logger<T extends State>(
                 : partial;
 
             const action = typeof partial === 'function'
-                ? (partial as any).name || 'setState (function)'
+                ? (partial as { name?: string }).name || 'setState (function)'
                 : 'setState (object)';
 
             console.log(

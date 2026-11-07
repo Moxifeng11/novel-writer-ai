@@ -167,7 +167,8 @@ function collectFacts(params, rounds) {
     const preflightOk = preflightText ? preflightText.includes('EXIT=0') : true;
     if (!preflightText) warnings.push('台账缺少 preflight 结果，按通过处理');
     const anyBaseline = readJson(path.join(ROOT, '.any-baseline.json'), null);
-    const anyMatch = String(gateMargins.any ?? '').match(/余量\s*(\d+)/);
+    const anyText = String(gateMargins.any ?? '');
+    const anyMatch = anyText.match(/存量\s*(\d+)/) ?? anyText.match(/余量\s*(\d+)/);
     const anyRemaining = core.resolveMetricWithFallback(
         typeof anyBaseline?.total === 'number' ? anyBaseline.total : undefined,
         anyMatch ? Number(anyMatch[1]) : 0,

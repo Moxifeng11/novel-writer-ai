@@ -81,7 +81,7 @@ export interface AdvisorFacts {
     gates: {
         /** preflight 是否通过 */
         preflightOk: boolean;
-        /** any 基线存量（采集自 .any-baseline.json total，缺失时回退台账 gateMargins 余量；0 表示无合规收口批次） */
+        /** any 基线存量（采集自 .any-baseline.json total，缺失时回退台账 gateMargins 存量；0 表示无待收口存量） */
         anyRemaining: number;
         /** 当前 main.js 体积（采集自实文件 stat，缺失时回退 .bundle-baseline.json 基线值） */
         bundleBytes: number;
@@ -216,7 +216,7 @@ export const DEFAULT_ADVISOR_PARAMS: AdvisorParams = {
 
 /** 采集回退：主源数值缺失/非法时回退基线值，不抛错
  * @param primary 主源采集值（bundle=main.js 实文件 stat；any=.any-baseline.json total），缺失/非法时为 undefined 或 NaN
- * @param fallback 基线回退值（bundle=.bundle-baseline.json 基线；any=台账 gateMargins 余量旧口径）
+ * @param fallback 基线回退值（bundle=.bundle-baseline.json 基线；any=台账 gateMargins 存量旧口径）
  * @returns 主源值；主源缺失时返回基线值
  * @example
  * resolveMetricWithFallback(4870903, 4870663) // 4870903（main.js 实文件优先）
@@ -316,7 +316,7 @@ function countActionableUnrecorded(worktree: AdvisorFacts['worktree']): number {
 
 /** 生成候选方向
  *
- * 内置探测器：派工、在途收口、preflight 红灯、any 余量、体积膨胀、
+ * 内置探测器：派工、在途收口、preflight 红灯、any 存量、体积膨胀、
  * 文档漂移、测试停滞、无候选时探索审计。新增方向在此注册。
  * @param facts 判断事实
  * @returns 去重后的候选列表
@@ -385,9 +385,9 @@ export function detectAdvisorCandidates(facts: AdvisorFacts): AdvisorCandidate[]
         add({
             id: 'gate:any',
             type: 'gate-fix',
-            title: `收口 any 长尾（余量 ${facts.gates.anyRemaining}）`,
-            reason: 'any 预算有余量时做纯类型收口，零运行时、可逐字节验证体积不变',
-            evidence: `台账 gateMargins.any 余量 ${facts.gates.anyRemaining}`,
+            title: `收口 any 长尾（存量 ${facts.gates.anyRemaining}）`,
+            reason: 'any 存量大于 0 时做纯类型收口，零运行时、可逐字节验证体积不变',
+            evidence: `any 存量 ${facts.gates.anyRemaining}（.any-baseline.json total，缺失回退台账）`,
             impact: 2,
             riskReduction: 2,
             verifiability: 5,
@@ -567,7 +567,7 @@ export function decideOptimizationAdvice(facts: AdvisorFacts): AdvisorDecision {
             ? `工作树有 ${worktreeCount} 条在途路径，执行前先确认归属`
             : `工作树 ${worktreeCount} 条在途路径均已在台账登记，待收单不锁定层级`);
     }
-    if (facts.gates.anyRemaining <= 0) warnings.push('any 余量为 0，暂无合规收口批次');
+    if (facts.gates.anyRemaining <= 0) warnings.push('any 存量为 0，暂无合规收口批次');
     if (facts.params.explorationRoll < facts.params.explorationRate) warnings.push('探索掷值命中，本轮允许一个异类动作');
     return {
         tier,

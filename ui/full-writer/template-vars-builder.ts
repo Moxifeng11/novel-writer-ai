@@ -6,7 +6,7 @@
  */
 import { App, TFile } from 'obsidian';
 import NovelWriterPlugin from '@/main';
-import { GatheredContext, CharacterData } from '@/engine/context-manager';
+import { GatheredContext, CharacterData, ForeshadowItem } from '@/engine/context-manager';
 import { getForeshadowWarnings } from '@/engine/foreshadow-manager';
 import { RulesService } from '@/services/rules-service';
 import { filterForeshadowsByChapter, getInvolvedEntities } from '@/engine/chapter-context-builder';
@@ -394,7 +394,7 @@ export async function buildContextVars(deps: TemplateVarsDeps, vars: Record<stri
       vars["unrevealedForeshadow"] += "\n" + filtered.summary;
     }
 
-    const scoreForeshadow = (f: any): number => {
+    const scoreForeshadow = (f: ForeshadowItem): number => {
       let impScore = 2;
       const imp = (f.importance || "中").toString();
       if (imp.includes("高") || imp.includes("重要") || imp.includes("关键")) impScore = 3;
@@ -421,7 +421,7 @@ export async function buildContextVars(deps: TemplateVarsDeps, vars: Record<stri
       return impScore * 3 + urgencyScore * 2 + relevanceScore * 2;
     };
 
-    const isInRevealWindow = (f: any): boolean => {
+    const isInRevealWindow = (f: ForeshadowItem): boolean => {
       const plannedStr = f.plannedReveal || "";
       const plannedMatch = plannedStr.match(/第(\d+)章/);
       if (!plannedMatch) return false;

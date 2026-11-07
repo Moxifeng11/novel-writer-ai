@@ -1,5 +1,5 @@
 {
-  "total": 144,
+  "total": 140,
   "generatedAt": "2026-11-07",
   "files": {
     "engine/ai-outline-generator.ts": 6,
@@ -25,7 +25,6 @@
     "engine/preference-memory.ts": 2,
     "engine/repository/domain/validators/domain-validator.ts": 2,
     "ui/batch-deconstruct-modal.ts": 2,
-    "ui/full-writer/template-vars-builder.ts": 2,
     "ui/knowledge-detail-modal.ts": 2,
     "ui/vector-rebuild-action.ts": 2,
     "engine/ai-engine.ts": 1,
@@ -54,9 +53,7 @@
     "engine/style-vector-store.ts": 1,
     "engine/suggestion-manager.ts": 1,
     "engine/types/chart-config.ts": 1,
-    "services/performance-monitor.ts": 1,
     "shared/prompt-manager-types.ts": 1,
-    "shared/store/middleware/logger.ts": 1,
     "ui/character-recognition-modal.ts": 1,
     "ui/co-writing-view.ts": 1,
     "ui/components/character-review-panel.ts": 1,

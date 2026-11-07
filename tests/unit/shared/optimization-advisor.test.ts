@@ -139,13 +139,13 @@ describe('detectAdvisorCandidates', () => {
         expect(ids).not.toContain('gate:any');
     });
 
-    it('any 有余量时生成 gate-fix 候选', () => {
+    it('any 有存量时生成 gate-fix 候选', () => {
         const facts = makeFacts({
             gates: { preflightOk: true, anyRemaining: 4, bundleBytes: 1, startupBaselineBytes: 1 },
         });
         const anyCandidate = detectAdvisorCandidates(facts).find(candidate => candidate.id === 'gate:any');
         expect(anyCandidate?.type).toBe('gate-fix');
-        expect(anyCandidate?.evidence).toContain('余量 4');
+        expect(anyCandidate?.evidence).toContain('存量 4');
     });
 
     it('体积超过启动基线时生成 perf 候选并给出百分比', () => {
@@ -318,7 +318,7 @@ describe('采集面回退（resolveMetricWithFallback）', () => {
         expect(resolveMetricWithFallback(undefined, 0)).toBe(0);
     });
 
-    it('any 存量基线 total 优先，缺失/非法时回退台账余量且不抛错', () => {
+    it('any 存量基线 total 优先，缺失/非法时回退台账存量且不抛错', () => {
         expect(resolveMetricWithFallback(144, 0)).toBe(144);
         expect(resolveMetricWithFallback(undefined, 4)).toBe(4);
         expect(resolveMetricWithFallback(Number.NaN, 4)).toBe(4);
