@@ -1,6 +1,6 @@
 # 插件结构化规划（PLAN）
 
-> 版本：v4.67.0 · 更新：2026-11-07
+> 版本：v4.68.0 · 更新：2026-11-07
 > 定位：**本文件是插件仓的唯一结构性规划入口**。代码是最终真相源；本文件只回答「有哪些模块、边界在哪、下一轮做什么」。
 > 历史文档：`docs/audits/`（各轮取证）、`docs/releases/`（各版本交付）、`CHANGELOG.md`（变更流水）。
 > **全系统优化专项**（16 板块 / 7 任务组 / 排期与验收）：[`docs/PROGRAM.md`](PROGRAM.md) · 进度报告：[`docs/progress/PROGRAM-STATUS.md`](progress/PROGRAM-STATUS.md)。
@@ -459,6 +459,13 @@ Agent（harness）
   - 评分：影响3×风险降低2×可验证5/成本1=30，×gate-fix 1.76 ≈ 53；派工优先级最高（决策阶梯第 1 级），无需评分竞争；上轮 audit-only 异型，无同型惩罚；explorationRoll 0.58 未触发。
   - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`、`program-status`（cases 6,491 无变化；`localCommitsAhead` 仍为 184，由 ZCode 收单/版本节点时一并刷新，避免与其在途改动冲突）；零新增文件；`docs/generated/code-index.md` 因源码行数变化随 `gen:docs` 纳入本路径。
   - 并发事实：执行期间 ZCode 以 `a6cb84c` 收单第 74 轮（HEAD `fcd9fde`→`a6cb84c`、ahead 185），第 74 轮 3 文档路径已出，本轮 5 路径待收单。
+- 第 76 轮（gate-fix；兑现 ZCode 第 75 轮派工的第 3 文件：`ui/settings/general-sections.ts` any 3→0）：
+  - 盘点（先问是不是）：开工工作树为第 75 轮 5 路径、HEAD `a6cb84c` / ahead 185；执行期间 ZCode 以 `7f205b2` 收单第 75 轮两源码文件并把 any 基线收紧 170→163（HEAD 推进、ahead 186）。信箱 1 条未读＝第 75 轮派工（3 文件合计 -10，目标 170→160；Trae 只接单文件 ≥3 处的批次）。实测 `general-sections.ts` 恰 3 处 any（L339/L588 `getOrNull<any>(CACHE_MANAGER)`、L508 匿名 Modal `constructor(app: any)`），与前两文件 -7 合并正好兑现 -10，不是重复交付。
+  - 动作（1 源码文件、纯类型、零运行时）：①两处 `getOrNull<any>(ENGINE_NAMES.CACHE_MANAGER)` → `getOrNull(ENGINE_NAMES.CACHE_MANAGER)`，由 `EngineServiceMap` 推导为 `PluginCacheManager | null`；`getUpdateLastResult()` 的 `unknown` 返回值按 `UpdateCheckResult | null` 编译期断言（与 `services/update-checker.ts:170` 既有写法一致，`as` 被擦除）。②匿名 Modal 的 `constructor(app: any)` → `App`，新增 `import type { App } from 'obsidian'` 与 `import type { UpdateCheckResult } from '@/services/update-checker'`（均为 type-only，构建期擦除）。
+  - 验证：`typecheck` 0 error；`eslint general-sections.ts` 0 error（13 条既有 warning）；`check:any` **163→160**（87 文件，-3，未自改 `.any-baseline.json`，余量 3 留 ZCode 收单时下调）；`build` + `check:bundle` 通过（`main.js` 4,869,200 与 ZCode 在途 v4.68.0 基线一致，本轮零体积变化）；全量 `preflight:release` EXIT=0（591 文件 / 6,491 用例）。
+  - 评分：影响3×风险降低2×可验证5/成本1=30，×gate-fix 1.76 ≈ 53；派工优先级最高（决策阶梯第 1 级），无需评分竞争；上轮 gate-fix 同型 -20% ≈ 42（派工仍优先）；explorationRoll 0.58 未触发。
+  - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`、ZCode 版本节点文件集（package/manifest/versions/CHANGELOG/README/program-status/generated）；`docs/generated/code-index.md` 因源码行数变化随 `gen:docs` 纳入本路径。
+  - 并发事实：开工 HEAD `a6cb84c` / ahead 185；执行期间 ZCode 提交 `7f205b2`（第 75 轮两文件收单 + any 基线 163），并在工作树展开 v4.68.0 版本节点（20 路径 + `docs/releases/v4.68.0.md` 未跟踪）；本轮只改 `general-sections.ts` 与 2 个文档，未触碰其节点文件集。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

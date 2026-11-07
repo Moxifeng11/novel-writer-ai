@@ -2,6 +2,24 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.68.0（2026-11-07）
+
+### 🧹 类型收窄：三文件 any 11→0（174→163）
+
+- `main.ts` 4→0：`catch (error)` + 编译期结构断言（不用 `instanceof Error`——`DOMException` 非子类；三元也会引入运行时体积）、两处 `WorkspaceLeaf`、`updateProvider` 改 `Partial<CustomProvider>`。
+- `services/knowledge-base-manager.ts` 4→0：新增本地 `LruCapacityView` 窄接口（`private readonly` 只是编译期约束，运行时为普通字段），不新增运行时方法。
+- `ui/settings/writing-sections.ts` 3→0：三个 dropdown 引用改 `DropdownComponent | null`。
+- **catch 收口范式**：优先 `as { message?: string }` 结构断言；改用 `instanceof Error` 三元会带来 +55B 运行时增量。
+
+### 📚 文档
+
+- `docs/API.md` 新增 §十「v5 协同写作闭环 API」（阶段事实源 / 端口投影 / 三档出版 / 平台包）；`docs/ARCHITECTURE.md` 新增 4.10 模块表与 §八索引；PLAN §v5 纠偏旧布尔「严格模式」表述。
+- any 债务取证：全仓 170→163 处 / 88 文件；`engine/**` 仍占约 60%，由 ZCode 自行接手，Trae 只接单文件 ≥3 处的批次。
+
+### 🧪 测试与门禁
+
+- 全量 **591 文件 / 6,491 用例** 全绿（v4.67.0 同数，本版无新增用例）；`preflight:release` 全绿；any 163；`main.js` 4,868,872 逐字节不变。
+
 ## v4.67.0（2026-11-07）
 
 ### 🧪 测试：场景细纲语义补测（1→7 用例）

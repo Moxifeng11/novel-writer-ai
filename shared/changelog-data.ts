@@ -21,6 +21,21 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.68.0',
+        date: '2026-11-07',
+        title: '三文件 any 清零与 v5 模块 API 文档',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧹 质量',
+                items: [
+                    'main / knowledge-base-manager / writing-sections 共 11 处 any 清零；any 基线 174→163',
+                    'API §十 v5 闭环模块与 ARCHITECTURE 4.10 模块表；main.js 逐字节不变',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.67.0',
         date: '2026-11-07',
         title: '场景细纲补测与 memory-modal 类型收窄',
