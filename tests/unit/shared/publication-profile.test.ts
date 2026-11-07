@@ -82,6 +82,13 @@ describe('checkPublicationReadiness', () => {
         expect(codes).toContain('epub-no-titles');
         expect(codes).toContain('duplicate-titles');
     });
+
+    it('未提供 duplicateTitleCount 时按 0 处理，不产生重复标题建议', () => {
+        const withoutCount = facts();
+        delete withoutCount.duplicateTitleCount;
+        const issues = checkPublicationReadiness(withoutCount);
+        expect(issues.map(issue => issue.code)).not.toContain('duplicate-titles');
+    });
 });
 
 describe('buildPublicationFacts（导出弹窗口径）', () => {
@@ -115,6 +122,21 @@ describe('buildPublicationFacts（导出弹窗口径）', () => {
         expect(built.writtenCount).toBe(1);
         expect(built.wordCount).toBe(5);
         expect(built.duplicateTitleCount).toBe(1);
+    });
+
+    it('缺标题/空标题：空单元标签不带尾随空格，且不参与重复标题分组', () => {
+        const built = buildPublicationFacts(
+            [
+                { unit: '第1章', content: '---\nstatus: planned\n---\n' },
+                { unit: '第2章', title: '', content: '第2章正文' },
+                { unit: '第3章', title: '开端', content: '第3章正文' },
+            ],
+            { mode: 'long', title: '示例书', author: '作者', unitLabel: '章', includeChapterTitles: true, format: 'epub' },
+        );
+        expect(built.emptyUnits).toEqual(['第1章']);
+        expect(built.writtenCount).toBe(2);
+        // 空标题不能被 trim 成同一个「空标题」分组
+        expect(built.duplicateTitleCount).toBe(0);
     });
 
     it('短篇严格口径：EPUB 缺作者与空节为阻断；Markdown 不因缺作者阻断', () => {
@@ -179,6 +201,12 @@ describe('formatPublicationReport', () => {
         expect(report).toContain('出版阻断');
         expect(report).toContain('书名不能为空');
         expect(report).toContain('低于出版下限');
+    });
+
+    it('只有建议项时只输出建议段，不出现阻断段', () => {
+        const report = formatPublicationReport(checkPublicationReadiness(facts({ wordCount: 60000 })));
+        expect(report).toContain('出版建议');
+        expect(report).not.toContain('出版阻断');
     });
 });
 

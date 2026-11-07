@@ -6,7 +6,7 @@
     "version": "4.69.0",
     "tests": {
       "files": 591,
-      "cases": 6491
+      "cases": 6494
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 194,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 实测 git rev-list --count=ahead 194，HEAD 515ba1a；v4.69.0 版本节点 3038735 与第 80 轮收单 515ba1a 已提交）"
+    "localCommitsAhead": 198,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 实测 git rev-list --count=ahead 198，HEAD 22acb89；ZCode 已收单第 84 轮 22acb89、第 83 轮 fb5b9ef）"
   },
   "groups": [
     {

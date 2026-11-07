@@ -517,6 +517,13 @@ Agent（harness）
   - 改动：仅本台账 + canonical 状态；零源码、零测试、零新增文件。
   - 验证：`check:docs` / `check:automation`；全量 `preflight:release` 见 canonical 记录。
   - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`；未趁审计顺手改门禁或造用例，测试落地待 ZCode 确认候选后执行。
+- 第 85 轮（test-hardening + docs-correction；B3 出版检查边界收口 + v5 状态刷新）：
+  - 盘点：开工 HEAD `fb5b9ef` / ahead 197，工作树仅第 84 轮台账未收单；信箱 1 条未读＝第 83 轮收单（逐条核对通过）+ 第 84 轮 audit-only 批准（建议落点 hotpaths / silent-failures，第 84 轮已取证并结论无缺口）。零覆盖候选 `shared/entity-integrity.ts` 仍待 ZCode 确认，不抢跑；v5 计划 B3 标注「待补边界与文档」→ 取该真实缺口。执行中 ZCode 以 `22acb89` 收单第 84 轮台账（HEAD 推进 / ahead 198）。
+  - 候选实测（`coverage/shared/publication-profile.ts.html`）：statements 97.14% / branches 90.24% / functions 93.75%；未覆盖分支全部落在 B3 新增口径：①`buildPublicationFacts` 空单元标签在缺标题时的拼接、空白标题 trim 后不参与重复分组；②`checkPublicationReadiness` 可选字段 `duplicateTitleCount` 缺省；③`formatPublicationReport` 仅建议项时只出建议段。`CREATION_MODE_SPECS[mode] ?? long` 与 `unitLabel || '章'` 属类型约束内不可达的防御分支，不造用例（先问是不是）。
+  - 改动（1 测试文件、零源码）：`tests/unit/shared/publication-profile.test.ts` 新增 3 例，锁定上述三条用户可见文案/计数语义；定向 4 文件 61 例通过（含 B2 回归：agent-stage-panel / agent-port-status / agent-mode-alignment）。
+  - 文档：v5 计划文件《实施状态》刷新到第 85 轮 / v4.69.0 / HEAD `22acb89` / ahead 198；`program-status.json` cases 6,491→6,494、localCommitsAhead 194→198 并 `npm run program:render`。
+  - 验证：全量 `preflight:release` 见 canonical 记录。
+  - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`；零源码、零新增文件。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
