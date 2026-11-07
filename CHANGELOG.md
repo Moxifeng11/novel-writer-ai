@@ -2,6 +2,28 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.65.0（2026-11-07）
+
+### 🧹 类型收窄：worker 协议 any 11→0（198→187）
+
+- `services/worker-protocol.ts` 5→0：`payload`/`input`/`result` 改 `unknown`；`FallbackHandler` 改为注册侧泛型（`I = WorkerTaskInput`、`R = unknown`），新增协议通用入参形状。
+- `services/worker-runtime.ts` 6→0：`TaskHandler` 入参按 `never` 建模（注册表逆变）、返回 `Promise<unknown>`；两处 `(self as any)` 改本地 `WorkerScope` 窄接口并用惰性 `getWorkerScope()`，避免 Node 导入期触发 `self`。
+- `services/worker-manager.ts` 2 行连带：`Map<string, FallbackHandler<never>>` 与 `handler(input as never)`——严格模式下安全，engine/** 零改动。
+- any 基线 198→187（94 个文件）；`main.js` 逐字节不变。
+
+### 🧪 测试：Worker 侧协议边界（+9 用例）
+
+- 新增 `tests/unit/services/worker-runtime.test.ts` 9 例：`worker:ready` 与 `onmessage` 安装、未知任务 `task:error`、进度+完成与 signal 暴露、非 Error 拒绝归一、`AbortError` 静默、`task:cancel` 中止、重复注册后者生效、内联源码与 Blob Worker 构造。
+- 目的：第 63 轮改了跨线程协议类型，用测试锁定消息结构防止后续重构悄悄破坏。
+
+### 📚 文档
+
+- `USER-GUIDE` 补导出落点（桌面下载 / 移动端 `导出文件/`）与文件名规则、封面格式；`COMMERCIAL-GUIDE` 补成品档作者建议项。
+
+### 🧪 测试与门禁
+
+- 全量 **591 文件 / 6,480 用例**（v4.64.0 为 590/6,471，+9）；`preflight:release` 全绿；any 187；bundle 4,867,954（版本数据增量另计）。
+
 ## v4.64.0（2026-11-07）
 
 ### 🐛 修复：短篇/剧本导出产物误报「未导出」

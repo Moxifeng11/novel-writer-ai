@@ -21,6 +21,21 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.65.0',
+        date: '2026-11-07',
+        title: 'worker 协议 any 清零与协议边界测试',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧹 类型安全',
+                items: [
+                    'worker-protocol / worker-runtime / worker-manager 共 11 处 any 清零；any 基线 198→187',
+                    'Worker 侧协议边界 +9 用例（ready/error/progress/cancel/Blob 构造）',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.64.0',
         date: '2026-11-07',
         title: '短篇/剧本导出误报修复与采集性能',
