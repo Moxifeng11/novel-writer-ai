@@ -2,6 +2,27 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.71.0（2026-11-08）
+
+### 🐛 修复：GenrePreferenceMemory 默认数据浅拷贝互相污染
+
+- `constructor` / `reset` 原以 `{ ...DEFAULT_PREFERENCE_DATA }` 浅拷贝：`corrections` / `genreBias` / `subGenreBias` / `channelBias` 与模块级 DEFAULT **共享引用**——多实例或 reset 后互相污染（push 会写进 DEFAULT）。
+- 改为 `createDefaultPreferenceData()` 每次新建嵌套对象；`savedData` 合并时对四个嵌套字段逐一拷贝。零外部行为变化；+1 例「两实例互不可见 + reset 不污染」。
+
+### 🐛 修复：派工新鲜度判据漏掉同号派工
+
+- `isFreshDispatch` 原判 `targetRound > currentRound`：跨方「上一轮 +1」编号会与台账同号（ZCode 上一轮+1 = Trae 当前轮），派工被误判陈旧过滤（第 91 轮实测漏掉一次派工）。
+- 改为 `>=` + `lastDispatchId` 去重（CLI 传 `message.id`、canonical 记最近已执行派工，同号重复投递不再执行）；无轮次主题仍按 6 小时时效。+1 例（同号新鲜 / 同号去重 / 旧轮次陈旧）。
+- `handbook/13` §7 派工新口径：**派工主题须显式含「派工」二字**（「已收单」且不含「派工」的主题会被采集器跳过）。
+
+### 📚 文档
+
+- handbook 13 §1/§2/§3 与源码对齐（Trae 可写范围、newPathBudget、check:automation 校验项）；PLAN 第 92/93 轮台账；v5-acceptance 刷新（E2E 基线 40、B5 三模式闭环）。
+
+### 🧪 测试与门禁
+
+- 全量 **594 文件 / 6,552 用例**（v4.70.0 为 593/6,523，+29）；`preflight:release` 全绿；any 148；bundle 4,870,342（两处修复 +195B 已 note）。
+
 ## v4.70.0（2026-11-07）
 
 ### ✨ 新增：优化方向判断模块 `automation:advise`

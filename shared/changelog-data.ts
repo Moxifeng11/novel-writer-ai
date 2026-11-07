@@ -21,6 +21,21 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.71.0',
+        date: '2026-11-08',
+        title: '偏好记忆浅拷贝修复与派工新鲜度判据',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🐛 修复',
+                items: [
+                    'GenrePreferenceMemory 多实例/reset 后与默认数据共享引用互相污染',
+                    '双自动化派工在同号轮次被误判陈旧（改 >= + lastDispatchId 去重）',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.70.0',
         date: '2026-11-07',
         title: '优化方向判断模块 automation:advise',
