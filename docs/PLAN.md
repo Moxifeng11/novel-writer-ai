@@ -465,7 +465,7 @@ Agent（harness）
   - 验证：`typecheck` 0 error；`eslint general-sections.ts` 0 error（13 条既有 warning）；`check:any` **163→160**（87 文件，-3，未自改 `.any-baseline.json`，余量 3 留 ZCode 收单时下调）；`build` + `check:bundle` 通过（`main.js` 4,869,200 与 ZCode 在途 v4.68.0 基线一致，本轮零体积变化）；全量 `preflight:release` EXIT=0（591 文件 / 6,491 用例）。
   - 评分：影响3×风险降低2×可验证5/成本1=30，×gate-fix 1.76 ≈ 53；派工优先级最高（决策阶梯第 1 级），无需评分竞争；上轮 gate-fix 同型 -20% ≈ 42（派工仍优先）；explorationRoll 0.58 未触发。
   - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`、ZCode 版本节点文件集（package/manifest/versions/CHANGELOG/README/program-status/generated）；`docs/generated/code-index.md` 因源码行数变化随 `gen:docs` 纳入本路径。
-  - 并发事实：开工 HEAD `a6cb84c` / ahead 185；执行期间 ZCode 提交 `7f205b2`（第 75 轮两文件收单 + any 基线 163），并在工作树展开 v4.68.0 版本节点（20 路径 + `docs/releases/v4.68.0.md` 未跟踪）；本轮只改 `general-sections.ts` 与 2 个文档，未触碰其节点文件集。
+  - 并发事实：开工 HEAD `a6cb84c` / ahead 185；执行期间 ZCode 提交 `7f205b2`（第 75 轮两文件收单 + any 基线 163）与 `cd6750f`（v4.68.0 版本节点，含 PLAN/code-index 文档刷新）；本次节点收单后 HEAD `cd6750f` / ahead 187，工作树仅剩 `general-sections.ts` 与 `v5-acceptance.md` 待收。本轮未触碰 ZCode 源码文件集。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

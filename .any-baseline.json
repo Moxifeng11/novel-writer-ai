@@ -1,5 +1,5 @@
 {
-  "total": 163,
+  "total": 160,
   "generatedAt": "2026-11-07",
   "files": {
     "engine/ai-outline-generator.ts": 6,
@@ -20,7 +20,6 @@
     "engine/style-fingerprint-library.ts": 3,
     "engine/types/analysis-suggestion.ts": 3,
     "shared/entity-models.ts": 3,
-    "ui/settings/general-sections.ts": 3,
     "ui/views/knowledge-base-view.ts": 3,
     "core/settings-service.ts": 2,
     "engine/ai-scene-generator.ts": 2,

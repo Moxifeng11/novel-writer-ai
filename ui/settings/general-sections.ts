@@ -7,6 +7,8 @@
  * 来源：原 settings-tab.ts，方法体逐行搬移，无逻辑改动。
  */
 import { Setting, Notice, Modal, TFile } from 'obsidian';
+import type { App } from 'obsidian';
+import type { UpdateCheckResult } from '@/services/update-checker';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 import { performanceMonitor } from '@/services/performance-monitor';
 import { ENGINE_NAMES } from '@/shared/engine-names';
@@ -334,10 +336,10 @@ export class PerformanceSection extends SettingsSection {
 
     private renderUpdateBanner(container: HTMLElement): void {
         try {
-            const cacheManager = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.CACHE_MANAGER);
+            const cacheManager = this.plugin.engineRegistry.getOrNull(ENGINE_NAMES.CACHE_MANAGER);
             if (!cacheManager) return;
 
-            const lastResult = cacheManager.getUpdateLastResult();
+            const lastResult = cacheManager.getUpdateLastResult() as UpdateCheckResult | null;
             if (!lastResult?.hasUpdate || !lastResult.latestVersion) return;
 
             const latestVersion = lastResult.latestVersion;
@@ -503,7 +505,7 @@ export class RulesSection extends SettingsSection {
             viewBtn.addEventListener('click', async () => {
                 const rules = await rulesService.getWritingRules();
                 const modal = new (class extends Modal {
-                    constructor(app: any) { super(app); }
+                    constructor(app: App) { super(app); }
                     onOpen() {
                         const { contentEl } = this;
                         contentEl.createEl('h3', { text: '写作规则内容' });
@@ -583,13 +585,13 @@ export class AboutSection extends SettingsSection {
         let lastCheckInfo = '从未检查';
         let latestVersionInfo = '—';
         try {
-            const cacheManager = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.CACHE_MANAGER);
+            const cacheManager = this.plugin.engineRegistry.getOrNull(ENGINE_NAMES.CACHE_MANAGER);
             if (cacheManager) {
                 const lastCheck = cacheManager.getUpdateLastCheck();
                 if (lastCheck) {
                     lastCheckInfo = new Date(lastCheck).toLocaleString('zh-CN');
                 }
-                const lastResult = cacheManager.getUpdateLastResult();
+                const lastResult = cacheManager.getUpdateLastResult() as UpdateCheckResult | null;
                 if (lastResult?.latestVersion) {
                     latestVersionInfo = `v${lastResult.latestVersion}` + (lastResult.hasUpdate ? ' (有更新)' : ' (已是最新)');
                 } else if (lastResult?.error) {

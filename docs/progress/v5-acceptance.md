@@ -2,7 +2,7 @@
 
 > 用途：给用户逐批验收 B1–B5，不再重复论证设计。
 > 生成口径：committed HEAD 实测（2026-11-07 16:05 +08:00）。
-> 版本：v4.67.0 · HEAD `a6cb84c`（ahead 185）· 第 71 轮已由 `5c53e34` 收单并收紧 any 基线；第 72 轮 3 个文档路径已由 `c5eabb0` 收单；第 73 轮 `main.ts` any -4 已由 `fcd9fde` 收单并收紧基线 174→170；第 74 轮 3 文档路径已由 `a6cb84c` 收单；第 75 轮 `knowledge-base-manager.ts` -4 + `writing-sections.ts` -3 为工作树改动（any 170→163，基线待 ZCode 收单时下调）。
+> 版本：v4.68.0 · HEAD `cd6750f`（ahead 187）· 第 71 轮已由 `5c53e34` 收单并收紧 any 基线；第 72 轮 3 个文档路径已由 `c5eabb0` 收单；第 73 轮 `main.ts` any -4 已由 `fcd9fde` 收单并收紧基线 174→170；第 74 轮 3 文档路径已由 `a6cb84c` 收单；第 75 轮两文件 -7 已由 `7f205b2` 收单并收紧基线 170→163；v4.68.0 节点 `cd6750f` 已入库；第 76 轮 `general-sections.ts` -3 为工作树改动（any 163→160，基线待 ZCode 收单时下调）。
 > 证据哈希 = `git hash-object <path>`（Git blob SHA-1，取前 12 位），用于确认验收时文件未被改动。
 
 ## 〇、全局基线（当前 HEAD 实测）
@@ -12,8 +12,8 @@
 | 单测文件 | 591 passed | `npm run test` |
 | 单测用例 | 6,491 passed（第 66 轮 +5 worker-manager；第 67/68 轮零新增；第 70 轮 +6 scene-outline-controller） | `npm run test` |
 | v5 锚点定向复验 | 6 文件 / 90 用例通过（2026-11-07 实测） | 见 §一–§三 的定向命令 |
-| any 预算 | 163/170（88 文件；第 75 轮 `knowledge-base-manager.ts` -4 + `writing-sections.ts` -3 为工作树改动，基线 170 待 ZCode 收单时下调）；余量 7 | `npm run check:any` |
-| 构建产物 | `main.js` 4,868,872 字节（v4.67.0 版本数据 +279B）；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
+| any 预算 | 160/163（87 文件；第 76 轮 `general-sections.ts` -3 为工作树改动，基线 163 待 ZCode 收单时下调）；余量 3 | `npm run check:any` |
+| 构建产物 | `main.js` 4,869,200 字节（v4.68.0 版本数据 +328B，已随 `cd6750f` 入库）；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
 | 类型 | 0 error | `npm run typecheck` |
 | 架构守护 | exit 0（9 个既有豁免项，非本轮引入） | `npm run check-engines` |
 | E2E | 基线 37 passed，本轮未重跑（需授权，见 §六） | `npm run test:e2e` |
@@ -108,4 +108,4 @@
 
 ## 七、结论
 
-B1–B5 代码、测试、门禁与文档均已在当前 HEAD 可复验：全量 591 文件 / 6,491 用例通过（第 70 轮为场景细纲补测 +6，不属 v5 批次），any 163/170（88 文件；第 75 轮 -7 为工作树改动、基线待收单下调），bundle 4,868,872，六道相关门禁全绿；v5 锚点 6 文件 / 90 用例定向复验通过（第 72 轮）。剩余事项只有 §六 的四项授权型工作，不含待补代码。
+B1–B5 代码、测试、门禁与文档均已在当前 HEAD 可复验：全量 591 文件 / 6,491 用例通过（第 70 轮为场景细纲补测 +6，不属 v5 批次），any 160/163（87 文件；第 76 轮 -3 为工作树改动、基线待收单下调），bundle 4,869,200（v4.68.0 版本数据已随 `cd6750f` 入库），六道相关门禁全绿；v5 锚点 6 文件 / 90 用例定向复验通过（第 72 轮）。剩余事项只有 §六 的四项授权型工作，不含待补代码。
