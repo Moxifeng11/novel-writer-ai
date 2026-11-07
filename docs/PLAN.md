@@ -545,6 +545,14 @@ Agent（harness）
   - 改动（零源码、零测试）：`docs/progress/v5-acceptance.md` 刷新全局基线（591→593 文件、6,491→6,523 用例、锚点 90→93、jsdoc 747→748）、B4 round/版本、8 处证据哈希、§六 ahead/提交列表、§七结论；Vault 根 v5 计划《实施状态》刷新到第 88 轮。
   - 验证：定向 6 文件 / 93 例通过；全量 `preflight:release` 见 canonical 记录。
   - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`；未改 `program-status.json`（用例数与 ahead 未变，无需 `program:render`）；未 commit / push。
+- 第 89 轮（test-hardening；兑现 ZCode 第 89 轮派工：`ui/services/agent-port.ts` 正常路径补测）：
+  - 盘点：`automation:advise --json` 输出 tier=`dispatch`，recommended=`dispatch:m-1794064942847-f8030d86`（明确派工优先，score 60）；HEAD `58eab76`（ZCode 已收单第 88 轮 v5-acceptance）/ ahead 204；工作树仅本轮测试文件。
+  - 契约核对（先读实现再列用例）：`getProjectStatus` 从 `.project` 的「## 创作模式」段推断 long/short/script，非长篇走 `listModeUnits` 并以 `{ mode }` 采集阶段快照；`runCommand` 未注册 id 返回 false 并 `recordFailed`（不抛错），已注册但执行返回 false / 抛错同样登记后返回 false。
+  - 改动（1 测试文件、零源码）：`tests/unit/ui/agent-port-status.test.ts` 新增 6 例——①短篇模式：按「节」统计单元、`getChaptersForProject` 不参与、`{ mode:'short' }` 透传；②剧本模式：同上按「集」（两例为 `it.each` 参数化）；③未注册命令 → false、不进入执行、登记「未在插件注册表」；④已注册成功 → true 且不登记；⑤已注册执行返回 false → 登记「命令执行抛错」；⑥执行抛错 → 吞异常、返回 false、记录 error.message。
+  - 覆盖率实测：`ui/services/agent-port.ts` statements 1.73%→14.68%、branches 8.09%、functions 11.11%、lines 15.68%（余下未测为创建项目/界面打开/文件读写等重依赖路径，非本轮切片范围）。
+  - 文档：`program-status.json` cases 6,523→6,529、localCommitsAhead 200→204 并 `npm run program:render`；`v5-acceptance.md` 刷新全局基线/锚点 93→99/B2 用例 3→9/哈希/E2E 40/§七结论。
+  - 验证：定向 9/9；全量 `preflight:release` EXIT=0（593 文件 / 6,529 用例；statements 43.89% / branches 43.60% / functions 44.61% / lines 44.22%；any 148/148、bundle 4,870,147 逐字节不变）。
+  - 边界：未改 `agent-port.ts`、`engine/**`、`ui/views`、`.any-baseline.json`；不为不可达防御分支造用例。
 - 自动化能力升级（2026-11-07，用户任务；不计入 30 分钟轮次编号）：
   - 新增 `shared/optimization-advisor.ts` 纯函数模块与 `scripts/optimization-advisor.mjs` CLI，把「候选池 → EV 评分 → 决策阶梯」从提示词固化为可执行、可复现、可单测的规则；新增 `npm run automation:advise`（`--json/--write/--check`）。
   - 自动识别六类信号：派工新鲜度（第 N 轮 > 当前轮或 6 小时内）、在途收口、preflight 红灯、any 余量、体积显著膨胀（>20KB 或 ≥1%）、文档漂移/测试停滞；输出 1–2 条带 `reason/evidence/score/factors` 的建议。
