@@ -2,6 +2,28 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.72.0（2026-11-08）
+
+### ✨ Agent 可执行命令扩容（用户拍板）
+
+- `rename-project` / `prune-sessions` / `populate-setting-lib` 三个调色板命令注册进 InternalRegistry——此前「Agent 可见不可执行」（`list_commands` 按前缀枚举、`run_command` 按 registry 校验，两侧不一致，第 90 轮发现）。
+- `list_commands` 过滤已统一为 `plugin.registry.has(id)`（第 90 轮），三命令从此「可见即可执行」。
+- **安全边界**：危险关键词正则补 `prune|populate`——Agent 执行清理会话 / 生成设定库前必须获用户确认；`rename-project` 打开重命名 Modal 自带确认环，不走 dangerous。
+- `handbook/04` §2.8 同步；+1 例危险清单断言。
+
+### 🧹 类型收窄：engine any 第一批
+
+- `engine/repository/domain/serializers/frontmatter-serializer.ts` any 4→0（`parseYaml` 返回 `Record<string, unknown>`，`Frontmatter.from` 签名天然兼容；序列化递归补断言）。
+- any 基线 148→144（81 文件）。
+
+### 🛡️ 自动化
+
+- `automation:advise` 的 backlog 判定按分工红线前缀过滤：`engine/**` 与 `ui/views/**` 的脏路径属 ZCode 分工，不计入 Trae 的在途收口（+2 例）。
+
+### 🧪 测试与门禁
+
+- 全量 **594 文件 / 6,555 用例**（v4.71.0 为 594/6,552，+3）；`preflight:release` 全绿；E2E 五 project **40/40**；any 144；bundle 4,870,903（三命令注册 +240B 已 note）。
+
 ## v4.71.0（2026-11-08）
 
 ### 🐛 修复：GenrePreferenceMemory 默认数据浅拷贝互相污染
