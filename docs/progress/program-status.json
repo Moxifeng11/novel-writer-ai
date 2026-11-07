@@ -18,7 +18,7 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 165,
+    "localCommitsAhead": 166,
     "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 60 轮收单后实测 git rev-list --count=ahead 165，HEAD 75a0d06；第 59–60 轮 perf 收敛与导出目录修复已收单，v4.64.0 版本节点提交后 ahead 166）"
   },
   "groups": [
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-07",
+      "group": "G6",
+      "summary": "第 61 轮（docs-correction，v5 B5 文档内容补强）：①docs/guides/USER-GUIDE.md §5 补「导出落点」（桌面=浏览器下载 / 移动端写入 vault 根 导出文件/）与「文件名规则」（<项目路径>-<全稿|短篇|剧本>-<日期>，路径 / 替换为 _；短篇/剧本自动叠加平台包 <平台前缀>_<书名>_<日期>），封面扩展名补 png/jpg/jpeg/webp；②docs/guides/COMMERCIAL-GUIDE.md §2 建议项补「成品档 TXT/Markdown/HTML 未填作者仅提示（EPUB/DOCX 成品档为阻断）」。核对源 shared/export-file.ts、ui/export-manuscript-modal.ts、shared/publication-profile.ts。验证：check:docs 绿（19 活跃文档 / 4.64.0）；全量 preflight:release EXIT=0（590 文件 / 6,471 用例；statements 43.5% / branches 43.21% / functions 44.22% / lines 43.82%）。零代码改动，未动 engine/**、ZCode 文件集与版本四文件",
+      "evidence": "docs/guides/USER-GUIDE.md + docs/guides/COMMERCIAL-GUIDE.md + docs/PLAN.md 第 61 轮"
+    },
     {
       "date": "2026-11-07",
       "group": "G6",

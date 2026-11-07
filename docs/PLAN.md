@@ -358,6 +358,13 @@ Agent（harness）
   - 用户可感知修复：短篇/剧本阶段面板在磁盘已有导出产物时正确显示「已导出」，不再依赖 localStorage 标记。
   - 边界：未动 `engine/**`、ZCode 文件集；`HOT_FILES` 只收紧未放松；未新增运行时代码依赖；`agent-port` 复用统计仍留第二阶段。
   - 并发事实：开工 HEAD `c3e3706`，ahead 163；ZCode 收单与写信期间未冲突。
+- 第 61 轮（docs-correction；v5 B5 文档内容补强；ZCode 版本节点后开工）：
+  - 盘点（先问是不是）：信箱 0 未读、无新派工；ZCode 已收单第 60 轮并提交 v4.64.0（`4919c76`）。B5 两份指南实测两处缺口：导出落点与文件名口径未写明；建议项漏列成品档 TXT/MD/HTML 缺作者。
+  - 交付：`docs/guides/USER-GUIDE.md` §5 增「导出落点」（桌面=浏览器下载 / 移动端=vault 根 `导出文件/`）与「文件名规则」（`<项目路径>-<全稿|短篇|剧本>-<日期>`，路径 `/` 替换为 `_`；短篇/剧本自动叠加平台包 `<平台前缀>_<书名>_<日期>`），封面扩展名补 png/jpg/jpeg/webp；`docs/guides/COMMERCIAL-GUIDE.md` §2 建议项补「成品档 TXT/Markdown/HTML 未填作者仅提示」；两份指南版本戳同步 v4.64.0 / 2026-11-07。
+  - 核对源：`shared/export-file.ts`（移动端/preferVault 落盘、桌面 blob 下载）、`ui/export-manuscript-modal.ts`（文件名模板与平台包 filenamePrefix）、`shared/publication-profile.ts`（作者分级：投稿全格式阻断、成品 EPUB/DOCX 阻断、其余 warning）。
+  - 验证：`npm run check:docs` 绿（19 活跃文档 / 4.64.0）；全量 `preflight:release` EXIT=0（590 文件 / 6,471 用例，statements 43.5% / branches 43.21% / functions 44.22% / lines 43.82%）。
+  - 边界：未改代码、未动 `engine/**` 与 ZCode 文件集；`newPathBudget=0` 遵守（仅 2 个已跟踪指南 + 本台账）。
+  - 并发事实：开工 HEAD `75a0d06` → ZCode 提交 `4919c76`（ahead 166）；本轮未触碰版本四文件与 release 说明。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
