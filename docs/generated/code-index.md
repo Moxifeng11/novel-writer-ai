@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132774 | 1607 | 1346 | 84% |
 | `services/` | 32 | 12616 | 187 | 148 | 79% |
-| `shared/` | 174 | 39558 | 1571 | 1307 | 83% |
+| `shared/` | 174 | 39592 | 1571 | 1307 | 83% |
 | `core/` | 7 | 2747 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 101464 | 735 | 639 | 87% |
+| `ui/` | 239 | 101476 | 735 | 639 | 87% |
 
 ## 文件清单
 
@@ -412,7 +412,7 @@
 | `shared/entity-field-mappings.ts` | 223 | 10 | 10 |
 | `shared/entity-integrity.ts` | 79 | 4 | 4 |
 | `shared/entity-links.ts` | 128 | 9 | 9 |
-| `shared/entity-models.ts` | 754 | 34 | 24 |
+| `shared/entity-models.ts` | 788 | 34 | 24 |
 | `shared/entity-persistence.ts` | 232 | 9 | 9 |
 | `shared/entity-placeholder.ts` | 30 | 1 | 1 |
 | `shared/entity-reader.ts` | 101 | 8 | 6 |
@@ -771,7 +771,7 @@
 | `ui/views/kb-detail-actions.ts` | 200 | 2 | 2 |
 | `ui/views/kb-stats-panel.ts` | 197 | 2 | 2 |
 | `ui/views/knowledge-base-modals.ts` | 1371 | 4 | 4 |
-| `ui/views/knowledge-base-view.ts` | 3228 | 10 | 10 |
+| `ui/views/knowledge-base-view.ts` | 3240 | 10 | 10 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/writing-fingerprint-view.ts` | 2037 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |

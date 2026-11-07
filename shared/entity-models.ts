@@ -87,6 +87,40 @@ export interface CharacterArc {
     arcType: '成长弧' | '堕落弧' | '幻灭弧' | '扁平弧';
 }
 
+/**
+ * frontmatter 动态嵌套字段的只读视图（旧/新字段名混用时的取值形状）。
+ *
+ * `CharacterFrontmatter` 的索引签名返回 `any`，此处用窄视图收窄为具体字段，
+ * 仅编译期生效、不新增运行时逻辑。
+ */
+interface CharacterCoreSource {
+    desire?: string;
+    fear?: string;
+    obsession?: string;
+    shame?: string;
+    trauma?: string;
+    weakness?: string;
+    soft_spot?: string;
+    rage_trigger?: string;
+    moral_boundary?: string;
+}
+
+interface PersonalityLayersSource {
+    '表层_面具'?: string;
+    surface?: string;
+    '中层_真实'?: string;
+    middle?: string;
+    '深层_内核'?: string;
+    deep?: string;
+}
+
+interface CharacterArcSource {
+    '起点状态'?: string;
+    '成长触发点'?: string;
+    '终点状态'?: string;
+    '弧光类型'?: CharacterArc['arcType'];
+}
+
 /** 角色关系 */
 export interface CharacterRelation {
     fromName: string;
@@ -250,7 +284,7 @@ export function characterFromFrontmatter(
     const base = buildBaseEntity(fm, name, rawContent, filePath);
 
     let soul: CharacterSoulData | null = null;
-    const core = (fm as any).character_core;
+    const core = fm.character_core as CharacterCoreSource | undefined;
     if (core && typeof core === 'object') {
         soul = {
             desire: core.desire || '',
@@ -266,7 +300,7 @@ export function characterFromFrontmatter(
     }
 
     let personality: PersonalityLayers | null = null;
-    const layers = (fm as any)['性格三层'];
+    const layers = fm['性格三层'] as PersonalityLayersSource | undefined;
     if (layers && typeof layers === 'object') {
         personality = {
             surface: layers['表层_面具'] || layers.surface || '',
@@ -276,7 +310,7 @@ export function characterFromFrontmatter(
     }
 
     let arc: CharacterArc | null = null;
-    const arcData = (fm as any)['角色弧光'];
+    const arcData = fm['角色弧光'] as CharacterArcSource | undefined;
     if (arcData && typeof arcData === 'object') {
         arc = {
             startState: arcData['起点状态'] || '',

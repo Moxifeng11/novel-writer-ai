@@ -466,6 +466,14 @@ Agent（harness）
   - 评分：影响3×风险降低2×可验证5/成本1=30，×gate-fix 1.76 ≈ 53；派工优先级最高（决策阶梯第 1 级），无需评分竞争；上轮 gate-fix 同型 -20% ≈ 42（派工仍优先）；explorationRoll 0.58 未触发。
   - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`、ZCode 版本节点文件集（package/manifest/versions/CHANGELOG/README/program-status/generated）；`docs/generated/code-index.md` 因源码行数变化随 `gen:docs` 纳入本路径。
   - 并发事实：开工 HEAD `a6cb84c` / ahead 185；执行期间 ZCode 提交 `7f205b2`（第 75 轮两文件收单 + any 基线 163）与 `cd6750f`（v4.68.0 版本节点，含 PLAN/code-index 文档刷新）；本次节点收单后 HEAD `cd6750f` / ahead 187，工作树仅剩 `general-sections.ts` 与 `v5-acceptance.md` 待收。本轮未触碰 ZCode 源码文件集。
+- 第 77 轮（gate-fix；兑现 ZCode「≥3 处文件接批次」指令：`shared/entity-models.ts` 3→0 + `ui/views/knowledge-base-view.ts` 3→0）：
+  - 盘点（先问是不是）：开工时第 76 轮 3 路径在工作树、HEAD `cd6750f` / ahead 187；信箱 1 条未读＝ZCode 第 75 轮收单回执（`7f205b2`）+ v4.68.0 节点（`cd6750f`）+ 「第 76 轮收尾 general-sections 后按 ≥3 处文件规则接批次；engine/** 的 any 从下一轮由 ZCode 自接、不再派给 Trae」。执行期间 ZCode 以 `b135dbc` 收单第 76 轮并把 any 基线收紧 163→160（工作树清零）。`node scripts/check-any-budget.mjs --list` 实测：非 engine 且 ≥3 处仅两个文件（`shared/entity-models.ts` 3、`ui/views/knowledge-base-view.ts` 3；`shared/types.ts` 6 处为 ZCode 指定的索引签名有意设计），其余 40 个非 engine 文件均 1–2 处，符合「单文件 ≥3 处」门槛，非重复交付。
+  - 动作（2 文件、纯类型、零运行时）：①`shared/entity-models.ts` 新增三个本地只读视图接口（`CharacterCoreSource` / `PersonalityLayersSource` / `CharacterArcSource`，`弧光类型` 收窄为 `CharacterArc['arcType']` 联合），三处 `(fm as any).xxx` → `fm.xxx as XSource | undefined`；`CharacterFrontmatter` 索引签名为 `any`，故断言只做编译期收窄，`typeof === 'object'` 运行时守卫不变。②`ui/views/knowledge-base-view.ts` 新增 `LegacyVectorSettingsView`（`vectorProvider` / `vectorModel` / `vectorConnectionStatus` 三个历史键），三处 `(settings as any)` → 内联 `(settings as unknown as LegacyVectorSettingsView)`。
+  - 验证：`typecheck` 0 error；`eslint` 两文件 0 error（10 条既有 warning）；`check:any` **160→154**（85 文件，-6，未自改 `.any-baseline.json`，余量 6 留 ZCode 收单时下调）；`build` 后 `main.js` **4,869,200 逐字节不变**、`check:bundle` 绿；定向 `entity-reader`/`entity-persistence` 16 例 + `publication-profile` 23 例通过；全量 `preflight:release` EXIT=0（591 文件 / 6,491 用例；statements 43.8% / branches 43.47% / functions 44.53% / lines 44.13%）。
+  - 评分：影响3×风险降低2×可验证5/成本1=30，×gate-fix 1.76 ≈ 53；派工优先级最高（决策阶梯第 1 级，指令来自 ZCode 信箱）；上两轮均为 gate-fix，同型 -20% ≈ 42（派工仍优先）；explorationRoll 0.58 未触发。首版 `knowledge-base-view` 用本地别名 `const legacySettings = …` 曾使 `main.js` 变 4,869,204（+4B，esbuild 保留 const 绑定），改为内联断言后逐字节回到基线——**零体积收口时不要引入变量别名**。
+  - 边界：未动 `engine/**`、`ui/views/writing-fingerprint-view.ts`、`ui/views/fingerprint-v2-detail.ts`、`.any-baseline.json`、`program-status`（用例 6,491 无变化）；零新增文件；`docs/generated/code-index.md` 因源码行数变化随 `gen:docs` 纳入本路径。
+  - 收口提示：本轮后非 engine 的 ≥3 处 any 文件清空（仅剩 `shared/types.ts` 有意设计），Trae 侧 gate-fix 长尾（1–2 处/文件）不再满足派工门槛，下一轮应强制换型（docs/audit/test-hardening）。
+  - 并发事实：开工 HEAD `cd6750f` / ahead 187；执行期间 ZCode 以 `b135dbc` 收单第 76 轮（HEAD 推进、ahead 188），本轮 3 路径（两源码 + code-index）待收单。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

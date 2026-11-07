@@ -44,6 +44,18 @@ export const VIEW_TYPE_KNOWLEDGE_BASE = 'novel-writer-knowledge-base';
 
 type MainTabKey = 'books' | 'config' | 'tasks' | 'stats';
 type BookDetailTabKey = 'overview' | 'style' | 'rhythm' | 'technique' | 'structure' | 'character' | 'foreshadow' | 'commercial' | 'readability' | 'tags';
+
+/**
+ * 旧版向量设置键视图。
+ *
+ * 仅用于兼容历史 `data.json`（新键为 `vectorProviderType` / `vectorOllamaModel`），
+ * 只读不写，避免为遗留键在设置类型中新增字段。
+ */
+interface LegacyVectorSettingsView {
+    vectorProvider?: string;
+    vectorModel?: string;
+    vectorConnectionStatus?: string;
+}
 type ConfigCategoryKey = 'male' | 'female' | 'neutral';
 
 interface FilterState {
@@ -3188,11 +3200,11 @@ export class KnowledgeBaseView extends ItemView {
             doubao: '豆包',
             qwen: '通义千问',
         };
-        const providerType = (settings as any).vectorProvider || settings.vectorProviderType || 'ollama';
+        const providerType = (settings as unknown as LegacyVectorSettingsView).vectorProvider || settings.vectorProviderType || 'ollama';
         const providerName = providerMap[providerType] || providerType;
-        const modelName = (settings as any).vectorModel || settings.vectorOllamaModel || 'bge-m3';
+        const modelName = (settings as unknown as LegacyVectorSettingsView).vectorModel || settings.vectorOllamaModel || 'bge-m3';
 
-        const connStatus = (settings as any).vectorConnectionStatus || 'idle';
+        const connStatus = (settings as unknown as LegacyVectorSettingsView).vectorConnectionStatus || 'idle';
         const statusColor = connStatus === 'connected'
             ? '#4caf50'
             : connStatus === 'disconnected'
