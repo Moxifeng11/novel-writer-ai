@@ -58,7 +58,7 @@ function localNow() {
 
 function collectWorktree(state) {
     const status = git('status', '--porcelain');
-    if (!status) return { modified: 0, untracked: 0, unrecorded: 0 };
+    if (!status) return { modified: 0, untracked: 0, unrecorded: 0, unrecordedPaths: [] };
     const lines = status.split('\n').filter(Boolean);
     const paths = lines.map(line => line.slice(3).trim());
     const backlog = state?.constraints?.backlog ?? {};
@@ -67,10 +67,12 @@ function collectWorktree(state) {
         ...(Array.isArray(backlog.untracked) ? backlog.untracked : []),
         ...(Array.isArray(backlog.inFlightPaths) ? backlog.inFlightPaths : []),
     ]);
+    const unrecordedPaths = paths.filter(item => !recorded.has(item));
     return {
         modified: lines.filter(line => !line.startsWith('??')).length,
         untracked: lines.filter(line => line.startsWith('??')).length,
-        unrecorded: paths.filter(item => !recorded.has(item)).length,
+        unrecorded: unrecordedPaths.length,
+        unrecordedPaths,
     };
 }
 

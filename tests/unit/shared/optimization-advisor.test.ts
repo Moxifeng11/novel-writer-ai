@@ -162,6 +162,35 @@ describe('detectAdvisorCandidates', () => {
         expect(candidates).toHaveLength(1);
         expect(candidates[0].type).toBe('audit-only');
     });
+
+    it('engine 与 ui/views 脏路径属 ZCode 分工红线，不产生在途收口候选', () => {
+        const worktree = {
+            modified: 2,
+            untracked: 0,
+            unrecorded: 2,
+            unrecordedPaths: [
+                'engine/repository/domain/serializers/frontmatter-serializer.ts',
+                'ui/views/writing-fingerprint-view.ts',
+            ],
+        };
+        const facts = makeFacts({ worktree });
+        expect(detectAdvisorCandidates(facts).some(candidate => candidate.id === 'backlog:worktree')).toBe(false);
+        expect(decideOptimizationAdvice(facts).tier).toBe('score');
+    });
+
+    it('混合红线与非红线脏路径时只按非红线计数', () => {
+        const facts = makeFacts({
+            worktree: {
+                modified: 2,
+                untracked: 0,
+                unrecorded: 2,
+                unrecordedPaths: ['engine/repository/domain/index.ts', 'shared/optimization-advisor.ts'],
+            },
+        });
+        const backlog = detectAdvisorCandidates(facts).find(candidate => candidate.id === 'backlog:worktree');
+        expect(backlog?.title).toContain('1 路径');
+        expect(backlog?.evidence).toContain('未台账登记 1 条');
+    });
 });
 
 describe('scoreAdvisorCandidates', () => {

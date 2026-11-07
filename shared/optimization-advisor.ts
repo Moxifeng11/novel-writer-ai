@@ -74,6 +74,8 @@ export interface AdvisorFacts {
         untracked: number;
         /** 其中未在台账登记的路径数；缺省（undefined）视为全部未登记，保持旧语义 */
         unrecorded?: number;
+        /** 未在台账登记的脏路径清单；提供时按既定分工红线前缀过滤（缺省沿用 unrecorded 计数） */
+        unrecordedPaths?: string[];
     };
     /** 门禁与体积压力 */
     gates: {
@@ -283,6 +285,23 @@ export function isFreshDispatch(
     return !Number.isNaN(parsed) && now - parsed <= 6 * 60 * 60 * 1000;
 }
 
+/** 既定分工红线：这些前缀的脏路径由 ZCode 负责，不计入 Trae 的在途收口。 */
+const ZCODE_OWNED_PREFIXES = ['engine/', 'ui/views/'];
+
+/**
+ * 未登记且需要 Trae 收口的路径数。
+ *
+ * 提供路径清单时按分工红线前缀过滤；缺省时沿用 unrecorded / 脏路径总数，保持旧语义。
+ */
+function countActionableUnrecorded(worktree: AdvisorFacts['worktree']): number {
+    if (worktree.unrecordedPaths) {
+        return worktree.unrecordedPaths.filter(
+            path => !ZCODE_OWNED_PREFIXES.some(prefix => path.startsWith(prefix)),
+        ).length;
+    }
+    return worktree.unrecorded ?? worktree.modified + worktree.untracked;
+}
+
 /** 生成候选方向
  *
  * 内置探测器：派工、在途收口、preflight 红灯、any 余量、体积膨胀、
@@ -321,16 +340,15 @@ export function detectAdvisorCandidates(facts: AdvisorFacts): AdvisorCandidate[]
         });
     }
 
-    const worktreeCount = facts.worktree.modified + facts.worktree.untracked;
-    const unrecorded = facts.worktree.unrecorded ?? worktreeCount;
-    if (unrecorded > 0) {
+    const actionable = countActionableUnrecorded(facts.worktree);
+    if (actionable > 0) {
         const lastRound = facts.recentRounds[facts.recentRounds.length - 1];
         add({
             id: 'backlog:worktree',
             type: normalizeAdvisorType(lastRound ? lastRound.type : 'docs-correction'),
-            title: `在途收口：工作树 ${unrecorded} 路径未登记`,
+            title: `在途收口：工作树 ${actionable} 路径未登记`,
             reason: '决策阶梯第 2 级：先确认在途改动归属并收口，避免与对方提交互相覆盖',
-            evidence: `git status：${facts.worktree.modified} modified + ${facts.worktree.untracked} untracked（未台账登记 ${unrecorded} 条）`,
+            evidence: `git status：${facts.worktree.modified} modified + ${facts.worktree.untracked} untracked（未台账登记 ${actionable} 条；engine/** 与 ui/views/** 属 ZCode 分工红线，已排除）`,
             impact: 3,
             riskReduction: 3,
             verifiability: 4,
@@ -501,9 +519,10 @@ export function decideOptimizationAdvice(facts: AdvisorFacts): AdvisorDecision {
     const candidates = scoreAdvisorCandidates(detectAdvisorCandidates(facts), facts);
     const worktreeCount = facts.worktree.modified + facts.worktree.untracked;
     const unrecorded = facts.worktree.unrecorded ?? worktreeCount;
+    const actionable = countActionableUnrecorded(facts.worktree);
     const tier: AdvisorTier = facts.dispatch
         ? 'dispatch'
-        : unrecorded > 0
+        : actionable > 0
             ? 'backlog'
             : !facts.gates.preflightOk
                 ? 'gate'
