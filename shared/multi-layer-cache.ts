@@ -372,7 +372,7 @@ export class MultiLayerCache {
 
         this.projectSizeTier = tier;
 
-        (this.l1 as any).maxSize = l1MaxSize;
+        (this.l1 as unknown as { maxSize: number }).maxSize = l1MaxSize;
 
         if (l2Enabled && !this.l2 && this.fs) {
             this.l2 = new FileCache(this.fs, {
@@ -431,7 +431,7 @@ export class MultiLayerCache {
         return {
             l1: {
                 size: this.l1.size,
-                maxSize: (this.l1 as any).maxSize,
+                maxSize: (this.l1 as unknown as { maxSize: number }).maxSize,
                 hitRate: totalL1Accesses > 0 ? this.stats.l1Hits / totalL1Accesses : 0,
                 hits: this.stats.l1Hits,
                 misses: this.stats.l1Misses,

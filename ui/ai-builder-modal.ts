@@ -595,9 +595,9 @@ export class AiBuilderModal extends Modal {
                 if (file) {
                     await this.plugin.safeOpenFile(file as TFile);
                 }
-            } catch (e: any) {
+            } catch (e) {
                 genNotice.hide();
-                showErrorNotice(e.message || '未知错误', { title: '生成失败', timeout: 8000 });
+                showErrorNotice((e as { message?: string }).message || '未知错误', { title: '生成失败', timeout: 8000 });
             }
         };
     }
@@ -755,9 +755,9 @@ export class AiBuilderModal extends Modal {
             // 刷新统计
             await this.loadWorldContent(this.selectedProject);
             this.renderDashboard();
-        } catch (e: any) {
+        } catch (e) {
             genNotice.hide();
-            showErrorNotice(e.message || '未知错误', { title: `${cfg.label}生成失败`, timeout: 8000 });
+            showErrorNotice((e as { message?: string }).message || '未知错误', { title: `${cfg.label}生成失败`, timeout: 8000 });
             log.error(`[小说工坊] ${cfg.label}生成失败:`, e);
         }
     }

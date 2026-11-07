@@ -1,4 +1,5 @@
 import { Notice } from 'obsidian';
+import type { App } from 'obsidian';
 import { SuggestionRecord } from '@/shared/types';
 
 // 编辑并验证浮窗（非遮挡抽屉式，Task 3 重构）
@@ -17,7 +18,7 @@ export class SuggestionEditModal {
     private cancelBtn: HTMLButtonElement | null = null;
     private isSubmitting = false;
 
-    constructor(app: any, suggestion: SuggestionRecord, initialText: string, onSubmit: (text: string) => Promise<void>) {
+    constructor(app: App, suggestion: SuggestionRecord, initialText: string, onSubmit: (text: string) => Promise<void>) {
         this.suggestion = suggestion;
         this.initialText = initialText;
         this.onSubmit = onSubmit;
@@ -129,7 +130,7 @@ export class SuggestionEditModal {
         loading.createSpan({ text: '正在传回 AI 验证，请稍候…' });
     }
 
-    private showValidationDone(isError: boolean, err?: any): void {
+    private showValidationDone(isError: boolean, err?: unknown): void {
         if (!this.validationPanel) return;
         this.validationPanel.empty();
         const title = this.validationPanel.createDiv({ cls: 'nw-suggestion-drawer-validation-title' });

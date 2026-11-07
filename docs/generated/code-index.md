@@ -11,7 +11,7 @@
 | `shared/` | 174 | 39637 | 1571 | 1307 | 83% |
 | `core/` | 7 | 2747 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 101476 | 735 | 639 | 87% |
+| `ui/` | 239 | 101477 | 735 | 639 | 87% |
 
 ## 文件清单
 
@@ -625,7 +625,7 @@
 | `ui/cowrite/live-analysis-controller.ts` | 279 | 2 | 1 |
 | `ui/cowrite/memory-manager-modal.ts` | 155 | 1 | 1 |
 | `ui/cowrite/realtime-quality-controller.ts` | 456 | 2 | 1 |
-| `ui/cowrite/suggestion-edit-modal.ts` | 155 | 1 | 1 |
+| `ui/cowrite/suggestion-edit-modal.ts` | 156 | 1 | 1 |
 | `ui/cowrite/suggestion-history-store.ts` | 111 | 1 | 1 |
 | `ui/create-project-modal.ts` | 488 | 2 | 2 |
 | `ui/cross-volume-state-modal.ts` | 234 | 1 | 1 |

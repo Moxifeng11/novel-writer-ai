@@ -492,6 +492,12 @@ Agent（harness）
   - 改动（4 文档、零源码）：COMMERCIAL-GUIDE §4 重写剧本流程与强制前置、§5 检查表补「每集分镜表已完成」；PLAN 第 39 轮条目补语义变更注记；v5-acceptance 头部/§〇 bundle/§六/§七刷新到 `3e5b9d4`、ahead 192、bundle 4,869,777（v4.69.0 +397B）；Vault 根 v5 计划文件实施状态与未闭环项同步（③ 已闭环）。
   - 验证：文档类门禁（`check:docs` / `check:automation` / `check:linked-scenarios`）；全量 `preflight:release` 由 ZCode 在 v4.69.0 节点统一跑（本轮工作树含其版本节点，避免并发 build 覆盖基线）。
   - 边界：未动 `engine/**`、`ui/views`、ZCode 版本节点文件集（package/manifest/versions/CHANGELOG/README/generated）；零新增文件；未改测试与源码。
+- 第 81 轮（gate-fix；兑现 ZCode 第 81 轮派工：长尾 any 3 文件 ≥4 处）：
+  - 盘点：开工 HEAD `515ba1a` / ahead 194，工作树干净；信箱 2 条未读＝①剧本 storyboard 拍板来源复核（`e1c3820` 已提交，非无记录在途）；②第 80 轮收单（`515ba1a`）+ 第 81 轮派工：按 `check:any --list` 选 3 个非 engine、非 ui/views 文件，合计 ≥4 处，纯类型零运行时，bundle 逐字节一致。
+  - 候选实测（`.any-baseline.json`）：非 engine/非 views 共 50 处 / 37 文件，单文件最高 2 处（`shared/types.ts` 6 处为 ZCode 指定有意设计，不动）；按「单文件 2 处」取 3 文件成批，合计 6 处。
+  - 改动（3 源码文件、纯类型）：①`shared/multi-layer-cache.ts` 2 处 `(this.l1 as any).maxSize` → 内联 `as unknown as { maxSize: number }`（`LruCache` 的 `maxSize` 为 private readonly，仅编译期约束）；②`ui/cowrite/suggestion-edit-modal.ts` 构造参数 `app: any` → `App`（type-only import，参数未被使用）+ `showValidationDone(err?: any)` → `unknown`（内部已有 `instanceof Error` 收窄）；③`ui/ai-builder-modal.ts` 2 处 `catch (e: any)` → `catch (e)` + 编译期结构断言 `(e as { message?: string }).message`（沿用第 73 轮范式，不用 `instanceof Error` 以兼容 DOMException）。
+  - 验证：`typecheck` 0 error；`check:any` 154→148（85→82 文件，-6，未自改基线）；`build` 后 `main.js` 4,869,777 逐字节不变、`check:bundle` 绿；改动文件 eslint 0 error；定向缓存相关 2 文件 / 49 用例通过；全量 `preflight:release` 见 canonical 记录。
+  - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`、ZCode 版本节点文件集；零新增文件；零运行时改动。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

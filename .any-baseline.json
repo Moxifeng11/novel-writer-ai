@@ -1,5 +1,5 @@
 {
-  "total": 154,
+  "total": 148,
   "generatedAt": "2026-11-07",
   "files": {
     "engine/ai-outline-generator.ts": 6,
@@ -25,10 +25,7 @@
     "engine/knowledge-base-config.ts": 2,
     "engine/preference-memory.ts": 2,
     "engine/repository/domain/validators/domain-validator.ts": 2,
-    "shared/multi-layer-cache.ts": 2,
-    "ui/ai-builder-modal.ts": 2,
     "ui/batch-deconstruct-modal.ts": 2,
-    "ui/cowrite/suggestion-edit-modal.ts": 2,
     "ui/full-writer/template-vars-builder.ts": 2,
     "ui/knowledge-detail-modal.ts": 2,
     "ui/vector-rebuild-action.ts": 2,
