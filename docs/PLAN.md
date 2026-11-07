@@ -373,6 +373,13 @@ Agent（harness）
   - 验证：`typecheck` 0；定向 8/8（worker-manager 6 + deconstruction-scheduler-abort 2）；`check:any` 198→187（94 文件）；`eslint` 改动文件 0 error（3 处既有 warning，非本轮引入）；`build` + `check:bundle` 通过，`main.js` 4,867,954 逐字节不变（纯类型擦除）。
   - 边界：未改 `engine/**`、ZCode 文件集与 `.any-baseline.json`（按派工留给 ZCode 收单时下调）；未新增文件与运行时代码依赖。
   - 并发事实：开工 HEAD `653170c`，ahead 167；本轮 3 个 services 文件 + 台账，未触碰版本四文件。
+- 第 64 轮（test-hardening；worker-runtime 协议边界单测补齐；兑现 HANDOFF「下一步（Trae）」）：
+  - 盘点（先问是不是）：信箱 0 未读；ZCode 已以 `055809b`（代码）+ `7089dae`（台账）收单第 63 轮，工作树干净、HEAD `7089dae`、ahead 169；v5 B1–B5 全落地，无新派工，故按 HANDOFF 指定补测缺口。
+  - 缺口实测：`services/worker-runtime.ts` 仅被 `worker-manager` 主线程侧间接覆盖；Worker 侧 `registerTaskHandler`/`startWorkerRuntime` 消息流（未知任务、进度/完成上报、非 Error 归一、AbortError 静默、`task:cancel` 传播）与 `createInlineWorkerCode`/`createWorkerFromHandlers` 源码内联均无单测。
+  - 交付：新增 `tests/unit/services/worker-runtime.test.ts` 9 例——ready 上报与 `onmessage` 安装、未知任务回 `task:error`、进度+完成与 `signal` 暴露、字符串拒绝归一为 `String`、`AbortError` 静默、取消中止 signal 且不额外发消息、重复注册后者生效、裸/自定义内联代码、Blob Worker 生成。
+  - 验证：定向 9/9；`typecheck` 0 error；`eslint` 0 error（tests 目录命中仓库忽略规则）；用例总数 6,471→6,480；全量 `preflight:release` EXIT=0。
+  - 边界：零生产代码改动；未动 `engine/**`、ZCode 文件集；`newPathBudget=1` 恰好用尽（仅 1 个新测试文件）。
+  - 并发事实：开工 HEAD `7089dae`（ZCode 在盘点期间收单），ahead 169；本轮仅 1 个新测试文件 + 台账。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
