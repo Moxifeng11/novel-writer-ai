@@ -2,6 +2,33 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.73.0（2026-11-08）
+
+### ✨ Agent 可执行命令扩容（用户拍板）
+
+- `rename-project` / `prune-sessions` / `populate-setting-lib` 三个调色板命令注册进 InternalRegistry——此前「Agent 可见不可执行」（`list_commands` 按前缀枚举、`run_command` 按 registry 校验，两侧不一致，第 90 轮发现）。
+- `list_commands` 过滤已统一为 `plugin.registry.has(id)`（第 90 轮），三命令从此「可见即可执行」。
+- **安全边界**：危险关键词正则补 `prune|populate`——Agent 执行清理会话 / 生成设定库前必须获用户确认；`rename-project` 打开重命名 Modal 自带确认环，不走 dangerous。
+- **统一入口七命令**补进 registry：open-home / job-center / project-health / asset-registry / usage-ledger / backup-center / onboarding（面板可点但 registry 无执行体的历史缺口，一致性测试的豁免清单已删除并恢复严格断言）。
+- `handbook/04` §2.8 同步。
+
+### 🧪 测试：command id 三语义一致性（+3 例）
+
+- 调色板 addCommand id ⊆ InternalRegistry 注册集（发现 7 处真实缺口的测试）；InternalRegistry id ⊆ CommandIds；command-mode-rules key ⊆ CommandIds。
+- `KNOWN_PALETTE_REGISTRY_GAPS` 豁免已删除，恢复 `toEqual([])` 严格断言。
+
+### 🛡️ 自动化：advisor 分工红线过滤与采集面鲁棒性
+
+- backlog 判定按路径前缀过滤：`engine/**` 与 `ui/views/**` 的脏路径属 ZCode 分工红线，不计入 Trae 的在途收口（+2 例；缺省回退旧语义）。
+- `resolveMetricWithFallback`：`bundleBytes` 读 `main.js` 实文件、`anyRemaining` 读 `.any-baseline.json` total（不再解析 gateMargins 正则）。
+- `isFreshDispatch` 判据改 `>=` + `lastDispatchId` 去重（跨方轮次编号漂移不再漏判同号派工）。
+- `GenrePreferenceMemory` 默认数据浅拷贝修复（多实例/reset 不再与 DEFAULT 共享引用互相污染）。
+
+### 🧪 测试与门禁
+
+- 全量 **594 文件 / 6,560 用例**（v4.72.0 为 594/6,555，+5）；`preflight:release` 全绿；any 144→140（78 文件）；E2E 五 project **40/40**；三模式 mock AI 旅程 **3/3**。
+- bundle 4,871,398（三命令注册 +240B 与七命令注册 +179B 已 note）。
+
 ## v4.72.0（2026-11-08）
 
 ### ✨ Agent 可执行命令扩容（用户拍板）

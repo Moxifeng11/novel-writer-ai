@@ -1,8 +1,8 @@
 # v5 验收清单：Agent 对话 + 多步骤协同写作最小闭环
 
 > 用途：给用户逐批验收 B1–B5，不再重复论证设计。
-> 生成口径：committed HEAD `8c7cc88` + 第 102 轮工作树待收单实测（2026-11-08 05:38 +08:00；数据源 `program-status.json` + 门禁实跑）。
-> 版本：v4.72.0（版本节点 `44c38b3`）· 已提交 HEAD `8c7cc88`（ahead 218）· 第 98 轮 advisor 采集面鲁棒性已随 `9afba2b` 收单；第 100 轮 any 收口 4 处（140/144）+ advisor 文案/回退正则已随 `8c7cc88` 收单；第 102 轮补 command-registry id 一致性测试（+3 例，7 处历史缺口待 ZCode 拍板）； 第 86/87 轮（`entity-integrity` 6 例 + `optimization-advisor` 23 例 + 文档）已随 `388eb44` 收单；第 88 轮验收清单纠偏已随 `58eab76` 收单；第 89 轮 `agent-port` 补测已随 `b282136` 收单；第 90 轮端口口径对齐已随 `8cceae9` 收单；第 91 轮 `genre-preference-memory` 补测已随 `98945ff` 收单；第 92 轮派工新鲜度边界文档已随 `90b542d` 收单；第 93 轮两项修复（浅拷贝隔离 + 派工判据 A）已随 `0960a99` 收单；v4.71.0 版本节点 `d599410`（版本同步/CHANGELOG/release notes/台账，bundle 4,870,663）；第 95 轮 ZCode engine any 第一批 `frontmatter-serializer` any 4→0 已随 `5472be7` 收单（基线 148→144）。剧本分镜表强制前置随 `e1c3820`、E2E 欠账修复随 `aa2b4c9` 入库。
+> 生成口径：committed HEAD `6d0ac7f` + 第 103 轮工作树待收单实测（2026-11-08 06:13 +08:00；数据源 `program-status.json` + 门禁实跑）。
+> 版本：v4.72.0（版本节点 `44c38b3`）· 已提交 HEAD `6d0ac7f`（ahead 219，第 102 轮测试已收单）；第 103 轮 any 收口 2 处（实测 138/140，基线待收单下调）+ 在途 registry 七命令批次（bundle +179B 待版本节点定基线）；第 102 轮补 command-registry id 一致性测试（+3 例，7 处历史缺口修复已在工作树待收单）； 第 86/87 轮（`entity-integrity` 6 例 + `optimization-advisor` 23 例 + 文档）已随 `388eb44` 收单；第 88 轮验收清单纠偏已随 `58eab76` 收单；第 89 轮 `agent-port` 补测已随 `b282136` 收单；第 90 轮端口口径对齐已随 `8cceae9` 收单；第 91 轮 `genre-preference-memory` 补测已随 `98945ff` 收单；第 92 轮派工新鲜度边界文档已随 `90b542d` 收单；第 93 轮两项修复（浅拷贝隔离 + 派工判据 A）已随 `0960a99` 收单；v4.71.0 版本节点 `d599410`（版本同步/CHANGELOG/release notes/台账，bundle 4,870,663）；第 95 轮 ZCode engine any 第一批 `frontmatter-serializer` any 4→0 已随 `5472be7` 收单（基线 148→144）。剧本分镜表强制前置随 `e1c3820`、E2E 欠账修复随 `aa2b4c9` 入库。
 > 证据哈希 = `git hash-object <path>`（Git blob SHA-1，取前 12 位），用于确认验收时文件未被改动。
 
 ## 〇、全局基线（当前 HEAD 实测）
@@ -12,8 +12,8 @@
 | 单测文件 | 594 passed | `npm run test` |
 | 单测用例 | 6,560 passed（…第 96 轮 +2 advisor 红线前缀过滤；第 98 轮 +2 advisor 采集面回退；第 100 轮零新增；第 102 轮 +3 command-registry id 一致性） | `npm run test` |
 | v5 锚点定向复验 | 6 文件 / 101 用例通过（2026-11-08 03:12 第 96 轮复验；`agent-port-status` 3→9→11） | 见 §一–§三 的定向命令 |
-| any 预算 | 140/140（78 文件；基线已随 `8c7cc88` 收紧为 140/78；第 95 轮 ZCode `frontmatter-serializer` any 4→0 随 `5472be7` 收紧；第 81 轮 -6 已随 `af9df7b` 收紧）；余量 0 | `npm run check:any` |
-| 构建产物 | `main.js` 4,871,211 字节（= `.bundle-baseline.json` 基线；v4.72.0 changelog +308B 已随收单入基线；v4.71.0 版本数据 +321B；第 93 轮嵌套字段拷贝 + 派工判据 A +195B；第 90 轮端口口径对齐 −11B；v4.70.0 版本数据 +370B，叠加 v4.69.0 +397B 与第 79 轮分镜强制前置 +180B）；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
+| any 预算 | 实测 138/140（77 文件；基线仍 140/78，第 103 轮 `vector-rebuild-action` −2 待 ZCode 收单下调；第 95 轮 ZCode `frontmatter-serializer` any 4→0 随 `5472be7` 收紧；第 81 轮 -6 已随 `af9df7b` 收紧） | `npm run check:any` |
+| 构建产物 | `main.js` 实测 4,871,390 字节（基线 4,871,211；+179B 来自在途 `core/command-registry` 七命令补注册，待 ZCode 版本节点决定基线；v4.72.0 changelog +308B 已随收单入基线；第 93 轮嵌套字段拷贝 + 派工判据 A +195B；第 90 轮端口口径对齐 −11B）；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
 | 类型 | 0 error | `npm run typecheck` |
 | 架构守护 | exit 0（9 个既有豁免项，非本轮引入） | `npm run check-engines` |
 | E2E | 基线 **40 passed**（37 + mode-journey 3；ZCode 第 88 轮实测三模式 3/3，`rewrite-chapters` 已下线） | `npm run test:e2e` |

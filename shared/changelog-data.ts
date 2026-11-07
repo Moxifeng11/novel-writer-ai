@@ -21,6 +21,21 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.73.0',
+        date: '2026-11-08',
+        title: 'Agent 可执行命令扩容与一致性护栏',
+        sections: [
+            {
+                type: 'added',
+                label: '✨ Agent',
+                items: [
+                    'rename-project / prune-sessions / populate-setting-lib 与统一入口七命令注册进 registry',
+                    'prune/populate 执行前走危险确认；command id 三语义一致性测试 +3 例',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.72.0',
         date: '2026-11-08',
         title: 'Agent 可执行命令扩容与类型收窄',
