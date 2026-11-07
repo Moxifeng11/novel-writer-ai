@@ -380,6 +380,18 @@ Agent（harness）
   - 验证：定向 9/9；`typecheck` 0 error；`eslint` 0 error（tests 目录命中仓库忽略规则）；用例总数 6,471→6,480；全量 `preflight:release` EXIT=0。
   - 边界：零生产代码改动；未动 `engine/**`、ZCode 文件集；`newPathBudget=1` 恰好用尽（仅 1 个新测试文件）。
   - 并发事实：开工 HEAD `7089dae`（ZCode 在盘点期间收单），ahead 169；本轮仅 1 个新测试文件 + 台账。
+- 第 65 轮（docs-correction；v5 验收清单刷新）：
+  - 盘点（先问是不是）：信箱仅 1 条已履行的第 64 轮派工、无新派工；v5 B1–B5 全落地；`docs/progress/v5-acceptance.md` 全局基线仍停在 v4.62.0，属用户验收入口的旧信息污染，非重复交付。
+  - 交付：刷新头部版本/HEAD/ahead/在途说明、全局基线（591/6,480、any 187/198 94 文件、bundle 4,867,954、v5 锚点 90 用例复验行）、B4 台账 round 与 `package.json` 哈希（L56）、B5 指南哈希与第 61 轮补强提交 `653170c`、§六 ahead 与版本节点、§七结论；逐批用例数（40/23/27）复验无误。
+  - 验证：`check:docs`（19 文档）/ `check:jsdoc`（100%，`@example` 52/52）/ `check:linked-scenarios`（4 链 35 锚点）/ `check:automation` 全绿；零源码改动。
+  - 边界：未碰 ZCode 在途版本节点文件集与 `engine/**`；未改 `program-status`（ZCode 在途），PLAN 台账留待收单后追加。
+- 第 66 轮（test-hardening；worker-manager Worker 侧消息路径；兑现 ZCode 第 66 轮预告）：
+  - 盘点（先问是不是）：信箱 1 条 ZCode 收单第 64 轮 + v4.65.0 提交确认 + 第 66 轮预告；HANDOFF 同口径；工作树仅第 65 轮验收清单。`worker-manager.test.ts` 原 6 例只覆盖主线程降级、未注册处理器、取消、销毁、初始化超时，Worker 消息流无回归。
+  - 缺口实测：`handleWorkerMessage` 的 progress/complete/error/worker:error/worker:warning 分支与 Worker 空闲复用、错误回收均无单测（`timeout` 已由既有用例覆盖，不重复造）。
+  - 交付：`tests/unit/services/worker-manager.test.ts` 6→11 例——ready 后 progress/complete 驱动结果且空闲 Worker 复用、可恢复 `task:error` 降级主线程、网络关键词错误拒绝并释放、`worker:error` 回收且禁用降级时拒绝、`worker:warning` 注入降级写入通知；`FakeWorker` 增 `emit` 与握手辅助。
+  - 验证：定向 11/11；`typecheck` 0；用例 6,480→6,485；`check:docs`/`check:jsdoc`/`check:linked-scenarios`/`check:automation` 绿；全量 `preflight:release` EXIT=0。
+  - 边界：零生产代码改动；未动 `engine/**`、ZCode 文件集与 `.any-baseline.json`；同步更新 `program-status`（cases 6,485、ahead 172）并 `program:render`。
+  - 并发事实：开工 HEAD `c8147e5`（v4.65.0）/ahead 171；执行期间 ZCode 以 `7f5f412` 收单第 65 轮验收清单（ahead 172）；本轮 5 路径（测试 + PLAN + program-status + PROGRAM-STATUS + v5 验收清单）。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 
