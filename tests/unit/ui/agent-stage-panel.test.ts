@@ -77,7 +77,9 @@ describe('buildStagePanelModel', () => {
 
         expect(model.items.map(item => item.id)).toEqual(['research', 'outline', 'storyboard', 'units', 'export']);
         expect(model.items[2].state).toBe('active');
-        expect(model.items[3].state).toBe('todo');
+        // 分镜表是分集写作的强制前置：未完成时既不是 todo 也不是 active
+        expect(model.items[3].state).toBe('blocked');
+        expect(model.items[3].progressText).toContain('先完成：分镜表');
         expect(model.items[4].state).toBe('blocked');
         expect(model.nextLabel).toBe('分镜表');
     });
@@ -125,7 +127,8 @@ describe('buildStagePanelModel', () => {
         // 阻塞原因必须指向实际的直接依赖，而不是统一文案
         expect(model.items[1].progressText).toContain('先完成：前期调研');
         expect(model.items[2].progressText).toContain('先完成：分集大纲');
-        expect(model.items[3].progressText).toContain('先完成：分集大纲');
+        // 分镜表是分集写作的强制前置（2026-11-07 拍板），优先于分集大纲展示
+        expect(model.items[3].progressText).toContain('先完成：分镜表');
         expect(model.items[4].progressText).toContain('先完成：分集写作');
     });
 
@@ -167,7 +170,7 @@ describe('buildStagePanelModel', () => {
         expect(model.items[4].progressText).toContain('已写 12 集');
     });
 
-    it('剧本：已有正文的项目按既有正文跳过前置设定，只推进剩余分集', () => {
+    it('剧本：存量项目仍强制分镜表，只有调研/大纲按既有正文跳过', () => {
         const flow = resolveCreationFlow('script', '剧本/存量', {
             ...BASE_FACTS,
             unitTotal: 12,
@@ -176,15 +179,14 @@ describe('buildStagePanelModel', () => {
         });
         const model = buildStagePanelModel(flow, '剧本/存量');
 
-        expect(model.items.slice(0, 3).map(item => item.state)).toEqual(['done', 'done', 'done']);
+        expect(model.items.slice(0, 3).map(item => item.state)).toEqual(['done', 'done', 'active']);
         expect(model.items[0].progressText).toContain('已按既有正文跳过');
-        expect(model.items[2].progressText).toContain('已按既有正文跳过');
-        expect(model.items[3].state).toBe('active');
-        expect(model.items[3].ratioPercent).toBe(25);
-        expect(model.items[3].progressText).toBe('3/12 集已写');
-        expect(model.items[3].prompt).toContain('继续写第4集');
-        expect(model.percent).toBe(44);
-        expect(model.nextLabel).toBe('分集写作');
+        expect(model.items[2].progressText).toBe('尚未编写分镜表');
+        expect(model.items[3].state).toBe('blocked');
+        expect(model.items[3].progressText).toContain('先完成：分镜表');
+        expect(model.items[4].state).toBe('blocked');
+        expect(model.percent).toBe(34);
+        expect(model.nextLabel).toBe('分镜表');
     });
 
     it('无项目/无快照时给出占位文案而不是硬编码阶段', () => {

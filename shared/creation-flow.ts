@@ -42,6 +42,11 @@ export interface CreationFlowStage {
     weight: number;
     /** 依赖的阶段 id；依赖未完成时该阶段显示 blocked */
     dependsOn?: string[];
+    /**
+     * 强制前置：依赖未完成时即使本阶段已有进度也显示 blocked。
+     * 仅用于「必填、不可因存量正文跳过」的前置（如剧本分镜表）。
+     */
+    hardDependsOn?: string[];
 }
 
 /**
@@ -202,6 +207,8 @@ const STAGE_LABELS: Record<CreationMode, CreationFlowStage[]> = {
             action: 'write-unit',
             weight: 0.55,
             dependsOn: ['outline'],
+            // 分镜表强制必填（用户 2026-11-07 拍板）：未完成分镜表不得进入分集写作
+            hardDependsOn: ['storyboard'],
         },
         {
             id: 'export',
@@ -264,7 +271,8 @@ function evaluateStage(
     const total = Math.max(0, facts.unitTotal || 0);
     const settled = Math.max(0, facts.unitSettled || 0);
     const next = facts.nextUnitNumber;
-    // 已经写出正文的项目，前置设定阶段视为已跨过：否则老项目会被拉回「去做前期调研」
+    // 已经写出正文的项目，前置设定阶段视为已跨过：否则老项目会被拉回「去做前期调研」。
+    // 例外：剧本分镜表（storyboard）强制必填，见该分支注释。
     const setupSatisfied = written > 0;
 
     switch (stage.id) {
@@ -308,13 +316,13 @@ function evaluateStage(
         }
         case 'storyboard': {
             const ownDone = !!facts.docs.storyboard;
-            const done = ownDone || setupSatisfied;
+            // 用户拍板（2026-11-07）：剧本分镜表强制必填，不因「已有正文」跳过——
+            // 分镜是剧本可拍性的前置条件，与前期调研/大纲的存量项目跳过规则不同。
+            const done = ownDone;
             return {
                 ratio: done ? 1 : 0,
                 done,
-                progressText: done
-                    ? (ownDone ? '分镜表已就绪' : '已按既有正文跳过')
-                    : '尚未编写分镜表',
+                progressText: done ? '分镜表已就绪' : '尚未编写分镜表',
                 ctaLabel: '编写分镜表',
                 primaryAction: 'document',
             };
@@ -451,19 +459,35 @@ export function resolveCreationFlow(
 
         if (doneFlags[index]) {
             state = 'done';
-        } else if (computation.ratio > 0 || index === firstNotDone) {
+        } else if (index === firstNotDone) {
+            // 第一个未完成阶段永远是 active（引导用户从这里继续）
             state = 'active';
         } else {
-            blockedBy = (stage.dependsOn || []).find(dep => {
+            // 强制前置（hardDependsOn）：即使本阶段已有进度，也要按 blocked 展示。
+            // 用于剧本分镜表这类「必填、不可因存量正文跳过」的前置。
+            const hardBlocked = (stage.hardDependsOn || []).find(dep => {
                 const depIndex = stages.findIndex(item => item.id === dep);
                 return depIndex >= 0 && !doneFlags[depIndex];
             });
-            if (blockedBy) {
+            if (hardBlocked) {
                 state = 'blocked';
-                const depStage = stageById.get(blockedBy);
-                blockedReason = `先完成：${depStage?.label || blockedBy}`;
+                const depStage = stageById.get(hardBlocked);
+                blockedBy = hardBlocked;
+                blockedReason = `先完成：${depStage?.label || hardBlocked}`;
+            } else if (computation.ratio > 0) {
+                state = 'active';
             } else {
-                state = 'todo';
+                blockedBy = (stage.dependsOn || []).find(dep => {
+                    const depIndex = stages.findIndex(item => item.id === dep);
+                    return depIndex >= 0 && !doneFlags[depIndex];
+                });
+                if (blockedBy) {
+                    state = 'blocked';
+                    const depStage = stageById.get(blockedBy);
+                    blockedReason = `先完成：${depStage?.label || blockedBy}`;
+                } else {
+                    state = 'todo';
+                }
             }
         }
 

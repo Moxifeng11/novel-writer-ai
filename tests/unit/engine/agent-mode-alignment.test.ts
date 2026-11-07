@@ -272,7 +272,8 @@ describe('B1 真实阶段快照回归（get_project_status ↔ resolveCreationFl
 
         expect(result.content).toContain('阶段进度：20%');
         expect(result.content).toContain('下一步：分镜表');
-        expect(result.content).toContain('阶段明细：✓前期调研 ✓分集大纲 →分镜表 ○分集写作 !导出成稿');
+        // 分镜表为分集写作的强制前置（2026-11-07 拍板）：未完成时写作阶段直接显示阻塞
+        expect(result.content).toContain('阶段明细：✓前期调研 ✓分集大纲 →分镜表 !分集写作 !导出成稿');
         const data = result.data as unknown as AgentProjectStatus;
         expect(data.flow?.stages.map(item => item.id))
             .toEqual(['research', 'outline', 'storyboard', 'units', 'export']);

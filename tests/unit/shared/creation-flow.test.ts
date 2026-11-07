@@ -126,7 +126,7 @@ describe('creation-flow — 短篇', () => {
 });
 
 describe('creation-flow — 剧本', () => {
-    it('大纲完成后先做分镜，写作阶段等待大纲而不是卡在分镜', () => {
+    it('大纲完成后必须先做分镜，写作阶段被分镜表阻塞（2026-11-07 拍板）', () => {
         const snapshot = resolveCreationFlow('script', '剧本', facts({
             preResearchDone: true,
             docs: { outline: true },
@@ -135,8 +135,9 @@ describe('creation-flow — 剧本', () => {
         expect(snapshot.stages.map(s => s.id)).toEqual(['research', 'outline', 'storyboard', 'units', 'export']);
         expect(snapshot.stages[2].state).toBe('active');
         expect(snapshot.stages[2].ctaLabel).toBe('编写分镜表');
-        expect(snapshot.stages[3].state).toBe('todo');
-        expect(snapshot.stages[3].ctaLabel).toBe('继续写第1集');
+        expect(snapshot.stages[3].state).toBe('blocked');
+        expect(snapshot.stages[3].blockedReason).toBe('先完成：分镜表');
+        expect(snapshot.stages[3].ctaLabel).toBe('先完成：分镜表');
     });
 });
 

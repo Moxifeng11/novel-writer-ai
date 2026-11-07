@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132774 | 1607 | 1346 | 84% |
 | `services/` | 32 | 12616 | 187 | 148 | 79% |
-| `shared/` | 174 | 39592 | 1571 | 1307 | 83% |
+| `shared/` | 174 | 39616 | 1571 | 1307 | 83% |
 | `core/` | 7 | 2747 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 239 | 101476 | 735 | 639 | 87% |
@@ -398,7 +398,7 @@
 | `shared/context-budget-policy.ts` | 148 | 7 | 6 |
 | `shared/context-hygiene.ts` | 282 | 11 | 11 |
 | `shared/contrast-library.ts` | 104 | 4 | 4 |
-| `shared/creation-flow.ts` | 563 | 11 | 11 |
+| `shared/creation-flow.ts` | 587 | 11 | 11 |
 | `shared/creation-mode.ts` | 441 | 22 | 18 |
 | `shared/cursor-position.ts` | 31 | 2 | 2 |
 | `shared/deconstruction-settings.ts` | 78 | 6 | 6 |
