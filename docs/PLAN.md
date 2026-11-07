@@ -407,6 +407,13 @@ Agent（harness）
   - 门禁插曲：首次全量跑到 `check:docs` 因 `docs/generated` 漂移（`check:jsdoc` 重写生成物）失败，按 `npm run gen:docs` → `check:docs` 复核后再跑全量通过；生成物 `docs/generated/code-index.md` 随行数变化入库。
   - 边界：未自改 `.any-baseline.json`（余量 8 留给 ZCode 收紧到 179）；未动 `engine/**`、`ui/views`、`program-status`（用例数与 ahead 均未变）。
   - 并发事实：开工 HEAD `5183dd7` / ahead 174；执行期间 ZCode 以 `e2c8894` 收单第 67 轮（ahead 175）；本轮 3 路径（两个源码文件 + `docs/generated/code-index.md`）。
+- 第 69 轮（docs-correction；v5 验收清单刷新）：
+  - 盘点（先问是不是）：信箱 1 条未读即第 67/68 轮 any -8 派工，已在第 68 轮兑现；HANDOFF 记「第 68 轮 3 路径待收单」，执行期间 ZCode 以 `ed6b823` 收单并收紧 any 基线 187→179，随后提交 v4.66.0 节点 `e6d1bb0`（ahead 177）。v5 B1–B5 代码/测试/文档全落地，剩余仅四种用户拍板项，无待补代码。
+  - 选型：候选 docs-correction（验收清单旧口径 36 分）/ gate-fix（`ui/cowrite/memory-manager-modal.ts` any 5→0）/ audit-only；按「v5 未完成批次与在途收口优先」且验收清单是用户入口，选 docs-correction；上轮 gate-fix 异型，explorationRoll 0.58 未触发。
+  - 交付（1 路径 `docs/progress/v5-acceptance.md`）：HEAD/ahead/版本 7f5f412→`e6d1bb0`、172→177；any 187/198（94 文件）→179/179（92 文件）；bundle 4,868,285→4,868,593（+308B 版本数据）；B4 round 66→69、`check-automation.mjs` 哈希 `016fab19e0d1`→`afef76c2b7ae`（L53–L83→L52–L160）、`package.json` 哈希 `dfb14d32073f`→`20a4a8efda0f`；B5 handbook 哈希 `975b4c620742`→`e8d68f3fb85c`；§六 ahead 与授权引用 §五→§六 纠错；结论 any 同步。
+  - 验证：v5 锚点 6 文件 / 90 用例定向通过；`check:docs`（19 文档）/`check:automation`（round 69、HANDOFF 9 行、4.66.0）/`check:linked-scenarios`/`check:any` 179/179/`check:bundle` 全绿；全量 `preflight:release` EXIT=0（591 文件 / 6,485 用例；statements 43.63% / branches 43.3% / functions 44.38% / lines 43.96%）。
+  - 边界：未动 `engine/**`、`ui/views`、版本节点文件集、`.any-baseline.json`、`program-status`；B1–B3 证据哈希本轮 `git hash-object` 复测全部未变。
+  - 并发事实：开工 HEAD `e2c8894` / ahead 175；执行期间 ZCode 提交 `ed6b823`（ahead 176）与 `e6d1bb0`（ahead 177）；本轮 2 路径（本台账 + `docs/progress/v5-acceptance.md`）。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

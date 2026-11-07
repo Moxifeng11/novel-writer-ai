@@ -1,8 +1,8 @@
 # v5 验收清单：Agent 对话 + 多步骤协同写作最小闭环
 
 > 用途：给用户逐批验收 B1–B5，不再重复论证设计。
-> 生成口径：committed HEAD 实测（2026-11-07 12:05 +08:00）。
-> 版本：v4.65.0 · HEAD `7f5f412` · ahead 172 · 工作树另有第 66 轮 5 路径待 ZCode 收单，全局基线以 committed HEAD 为准。
+> 生成口径：committed HEAD 实测（2026-11-07 13:40 +08:00）。
+> 版本：v4.66.0 · HEAD `e6d1bb0` · ahead 177 · 工作树仅第 69 轮验收清单 1 路径待 ZCode 收单，全局基线以 committed HEAD 为准。
 > 证据哈希 = `git hash-object <path>`（Git blob SHA-1，取前 12 位），用于确认验收时文件未被改动。
 
 ## 〇、全局基线（当前 HEAD 实测）
@@ -10,13 +10,13 @@
 | 指标 | 实测值 | 命令 / 来源 |
 |---|---|---|
 | 单测文件 | 591 passed | `npm run test` |
-| 单测用例 | 6,485 passed（第 66 轮 +5 worker-manager 消息路径用例） | `npm run test` |
+| 单测用例 | 6,485 passed（第 66 轮 +5 worker-manager 消息路径用例；第 67/68 轮零新增） | `npm run test` |
 | v5 锚点定向复验 | 6 文件 / 90 用例通过（2026-11-07 实测） | 见 §一–§三 的定向命令 |
-| any 预算 | 187/198（94 文件） | `npm run check:any` |
-| 构建产物 | `main.js` 4,868,285 字节（v4.65.0 版本数据 +331B 已 note）；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
+| any 预算 | 179/179（92 文件，第 68 轮已收紧基线，余量 0） | `npm run check:any` |
+| 构建产物 | `main.js` 4,868,593 字节（v4.66.0 版本数据 +308B 已 note）；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
 | 类型 | 0 error | `npm run typecheck` |
 | 架构守护 | exit 0（9 个既有豁免项，非本轮引入） | `npm run check-engines` |
-| E2E | 基线 37 passed，本轮未重跑（需授权，见 §五） | `npm run test:e2e` |
+| E2E | 基线 37 passed，本轮未重跑（需授权，见 §六） | `npm run test:e2e` |
 
 复验顺序建议：`npm run typecheck` → `npm run test` → `npm run check:automation` → `npm run preflight:release`。
 
@@ -71,11 +71,11 @@
 
 | 锚点 | 内容 |
 |---|---|
-| 关键文件 | `.trae/automation/trae-loop-state.json`（唯一 canonical）<br>`scripts/check-automation.mjs`：schema、round 单调、`updatedAt` 时区、红线字段、HANDOFF 行数、信箱可解析、版本四文件一致（L53–L83）<br>`package.json`：`check:automation` 已挂入 `preflight`（L56） |
+| 关键文件 | `.trae/automation/trae-loop-state.json`（唯一 canonical）<br>`scripts/check-automation.mjs`：schema、round 单调、`updatedAt` 时区、红线字段、HANDOFF 行数、信箱可解析、版本四文件一致（L52–L160）<br>`package.json`：`check:automation` 已挂入 `preflight`（L56） |
 | 测试 / 校验 | `npm run check:automation`（结构校验，不校验业务内容） |
-| 当前结果 | 通过：活跃台账 round 66、HANDOFF 9 行、版本 4.65.0、信箱可解析；Vault 根副本 `Test-Path = False`，插件仓副本 `True` |
-| 证据哈希 | `check-automation.mjs` `016fab19e0d1` · `package.json` `dfb14d32073f`（`check:automation` 在 L56） |
-| 落地提交 | `76a124b` |
+| 当前结果 | 通过：活跃台账 round 69、HANDOFF 9 行、版本 4.66.0（committed HEAD）、信箱可解析；Vault 根副本 `Test-Path = False`，插件仓副本 `True` |
+| 证据哈希 | `check-automation.mjs` `afef76c2b7ae` · `package.json` `20a4a8efda0f`（committed HEAD / v4.66.0） |
+| 落地提交 | `76a124b` → `e2c8894`（第 67 轮边界加固：v5-product 必检权重 + round 三处一致） |
 
 验收要点：只允许一份活跃状态文件；未来新增自动化检查项失败时，门禁会给出修复命令而不是静默通过。
 
@@ -88,8 +88,8 @@
 | 关键文件 | `docs/guides/USER-GUIDE.md`（7 节：安装、首个项目、Agent 工作台、三模式流水线、导出与出版检查、数据位置、FAQ）<br>`docs/guides/COMMERCIAL-GUIDE.md`（7 节：三形态参数、出版检查、质量校验、批量 SOP、投稿检查表、验收指标、合规）<br>`docs/handbook/13-dual-automation-ops.md`（6 节：角色与文件集、循环配置、状态与交接、互调流程、故障处理、收尾检查表） |
 | 可执行命令 | `npm run check:docs` · `npm run check:jsdoc` · `npm run check:program` · `npm run check:linked-scenarios` |
 | 当前结果 | `check:docs` 通过（19 个活跃文档）；`check:jsdoc` 100%，`@example` 52/52（747 文件）；`check:program` 与台账一致；`check:linked-scenarios` 4 链 35 锚点 |
-| 证据哈希 | `USER-GUIDE.md` `86871ba84d8e` · `COMMERCIAL-GUIDE.md` `0363c5673ad1` · `13-dual-automation-ops.md` `975b4c620742` |
-| 落地提交 | 指南 `067f1e9` → `653170c`（第 61 轮补强：导出落点/文件名口径/成品档作者建议） · 运维手册 `c6017b8` |
+| 证据哈希 | `USER-GUIDE.md` `86871ba84d8e` · `COMMERCIAL-GUIDE.md` `0363c5673ad1` · `13-dual-automation-ops.md` `e8d68f3fb85c` |
+| 落地提交 | 指南 `067f1e9` → `653170c`（第 61 轮补强：导出落点/文件名口径/成品档作者建议） · 运维手册 `c6017b8` → `e2c8894`（第 67 轮校验清单同步） |
 
 验收要点：三份文档可独立阅读，不依赖会话上下文；文档中的命令均真实存在于 `package.json`。
 
@@ -101,11 +101,11 @@
 |---|---|---|
 | B5 手工验收（真实三模式流程） | 未执行；`E2E_REWRITE=1` 会改写 E2E 基线 | 明确授权后跑 `E2E_REWRITE=1 npm run test:e2e`，再人工走「创建→大纲→人设→写 1 章→质检→导出」 |
 | E2E 全量 | 基线 37 passed，本轮未重跑 | 授权后 `npm run test:e2e` |
-| push / tag / Release | ahead 172，未推送；v4.65.0 节点 `c8147e5`、第 65 轮验收清单提交 `7f5f412` 已出 | 用户明确指令后才执行 |
+| push / tag / Release | ahead 177，未推送；v4.65.0 节点 `c8147e5`、第 67 轮收单 `e2c8894`、第 68 轮 any 收紧 `ed6b823`、v4.66.0 节点 `e6d1bb0` 已出 | 用户明确指令后才执行 |
 | 剧本 `storyboard` 必填语义 | 当前为可选字段；三形态中剧本是否强制 storyboard 无产品口径 | 产品语义确认后，由 ZCode 改 engine 契约，Trae 同步 UI/测试 |
 
 ---
 
 ## 七、结论
 
-B1–B5 代码、测试、门禁与文档均已在当前 HEAD 可复验：全量 591 文件 / 6,485 用例通过，any 187/198（94 文件），bundle 4,868,285，六道相关门禁全绿；v5 锚点 6 文件 / 90 用例定向复验通过。剩余事项只有 §六 的四项授权型工作，不含待补代码。
+B1–B5 代码、测试、门禁与文档均已在当前 HEAD 可复验：全量 591 文件 / 6,485 用例通过，any 179/179（92 文件），bundle 4,868,285，六道相关门禁全绿；v5 锚点 6 文件 / 90 用例定向复验通过。剩余事项只有 §六 的四项授权型工作，不含待补代码。
