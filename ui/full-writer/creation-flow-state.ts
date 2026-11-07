@@ -14,6 +14,10 @@ import {
     listModeUnits,
     modeDocPath,
     modeDocStarter,
+    SCRIPT_CONTENT_ROOT,
+    SCRIPT_DIRS,
+    SHORT_CONTENT_ROOT,
+    SHORT_DIRS,
     type ModeUnitInfo,
 } from '@/shared/mode-content';
 import { isPreResearchComplete, readPreResearchData } from '@/shared/pre-research';
@@ -118,12 +122,17 @@ async function readDocFacts(app: App, project: string, mode: CreationMode): Prom
     return facts;
 }
 
-function hasExportArtifact(app: App, project: string): boolean {
+function hasExportArtifact(app: App, project: string, mode: CreationMode): boolean {
     if (readExportFlag(project)) return true;
     const baseName = project.split('/').pop() || project;
     try {
         // 只列导出目录（O(1) 定位 + 局部遍历），不再全库 getFiles()
-        const exportDirs = [`${project}/05-导出`, `${project}/06-导出`];
+        // 短篇/剧本的产物落在模式子目录下；第二项兼容旧版项目根目录导出
+        const exportDirs = mode === 'short'
+            ? [`${project}/${SHORT_CONTENT_ROOT}/${SHORT_DIRS.export}`, `${project}/05-导出`]
+            : mode === 'script'
+                ? [`${project}/${SCRIPT_CONTENT_ROOT}/${SCRIPT_DIRS.export}`, `${project}/06-导出`]
+                : [`${project}/05-导出`, `${project}/06-导出`];
         if (exportDirs.some(dir =>
             listFolderFiles(app.vault, dir, { recursive: true, extensions: [] }).length > 0)) {
             return true;
@@ -232,7 +241,7 @@ export async function collectCreationFlowState(
         unitWritten: units.written,
         unitSettled: mode === 'long' ? units.settled : undefined,
         nextUnitNumber: units.nextNumber,
-        exportExists: hasExportArtifact(app, project),
+        exportExists: hasExportArtifact(app, project, mode),
     };
 
     return {

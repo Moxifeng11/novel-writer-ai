@@ -32,6 +32,8 @@ const HOT_FILES = [
     // 每章断点续跑 / 每次质量刷新都会调用的 UI 侧热路径（第 21 轮接入）
     'ui/full-writer/batch-pipeline-runner.ts',
     'ui/cowrite/realtime-quality-controller.ts',
+    // 工作台阶段面板每次刷新都会整包采集（第 60 轮接入，第 59 轮已把导出检查改为目录局部遍历）
+    'ui/full-writer/creation-flow-state.ts',
 ];
 
 /** 去掉注释，避免把说明文字当成调用 */

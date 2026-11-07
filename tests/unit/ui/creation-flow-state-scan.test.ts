@@ -88,8 +88,8 @@ describe('collectCreationFlowState — 整库遍历预算', () => {
 });
 
 describe('collectCreationFlowState — 导出判定语义', () => {
-    async function flowWithExport(app: App, project: string) {
-        const state = await collectCreationFlowState(app as never, project, { mode: 'short' });
+    async function flowWithExport(app: App, project: string, mode: 'long' | 'short' | 'script' = 'short') {
+        const state = await collectCreationFlowState(app as never, project, { mode });
         return state.facts.exportExists;
     }
 
@@ -122,5 +122,38 @@ describe('collectCreationFlowState — 导出判定语义', () => {
         app.vault._seedFile('导出文件/回退示例_稿.epub', 'epub');
 
         expect(await flowWithExport(app, '回退示例')).toBe(true);
+    });
+
+    it('短篇产物在 短篇创作/05-导出 时算已导出', async () => {
+        const app = await makeApp();
+        app.vault._seedFile('短篇新目录/.project', SHORT_META);
+        app.vault._seedFile('短篇新目录/短篇创作/05-导出/短篇新目录.epub', 'epub');
+
+        expect(await flowWithExport(app, '短篇新目录', 'short')).toBe(true);
+    });
+
+    it('剧本产物在 剧本创作/06-导出 时算已导出', async () => {
+        const app = await makeApp();
+        app.vault._seedFile('剧本新目录/.project', SHORT_META);
+        app.vault._seedFile('剧本新目录/剧本创作/06-导出/剧本新目录.docx', 'docx');
+
+        expect(await flowWithExport(app, '剧本新目录', 'script')).toBe(true);
+    });
+
+    it('剧本旧版根目录 06-导出 仍算已导出（兼容）', async () => {
+        const app = await makeApp();
+        app.vault._seedFile('旧剧本/.project', SHORT_META);
+        app.vault._seedFile('旧剧本/06-导出/旧剧本.epub', 'epub');
+
+        expect(await flowWithExport(app, '旧剧本', 'script')).toBe(true);
+    });
+
+    it('短篇新目录与旧根目录都为空时不算已导出', async () => {
+        const app = await makeApp();
+        app.vault._seedFile('双空示例/.project', SHORT_META);
+        await app.vault.createFolder('双空示例/短篇创作/05-导出');
+        await app.vault.createFolder('双空示例/05-导出');
+
+        expect(await flowWithExport(app, '双空示例', 'short')).toBe(false);
     });
 });
