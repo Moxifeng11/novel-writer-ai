@@ -409,9 +409,21 @@ export async function exportTxtViaUi(page: Page, vaultPath: string): Promise<str
     const modal = modalPage.locator('.modal-container').last();
     await expect(modal).toBeVisible();
 
+    // 按「格式」下拉的选项内容定位，不依赖弹窗里 select 的数量
+    // （v4.59.0 起弹窗有项目/格式/交付检查/导出范围四个下拉，旧的 nth(1) 已失效）
     const selects = modal.locator('select:visible');
-    await expect.poll(() => selects.count(), { timeout: 10_000 }).toBe(2);
-    await selects.nth(1).selectOption('text');
+    await expect.poll(() => selects.count(), { timeout: 10_000 }).toBeGreaterThanOrEqual(2);
+    const selectCount = await selects.count();
+    let formatSelect: ReturnType<typeof selects.nth> | null = null;
+    for (let index = 0; index < selectCount; index += 1) {
+        const labels = await selects.nth(index).locator('option').allTextContents();
+        if (labels.some(label => label.includes('TXT'))) {
+            formatSelect = selects.nth(index);
+            break;
+        }
+    }
+    expect(formatSelect).not.toBeNull();
+    await formatSelect!.selectOption('text');
 
     const exportButton = modal.getByRole('button', { name: /^导出$/ });
     await expect(exportButton).toBeEnabled();

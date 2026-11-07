@@ -1914,6 +1914,14 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         expect(mobileOverridden).toBe(true);
 
         await formatSelect!.selectOption('epub');
+
+        // 成品档（默认）EPUB/DOCX 必须填作者：按真实用户路径补上作者，而不是降档绕过检查
+        const authorSettingRow = exportModal.locator('.setting-item', {
+            has: exportModalPage.locator('.setting-item-name', { hasText: '作者' }),
+        });
+        await expect(authorSettingRow).toBeVisible();
+        await authorSettingRow.locator('input[type="text"]').first().fill('E2E 作者');
+
         await exportModal.getByRole('button', { name: '导出', exact: true }).click();
 
         await expect.poll(() => {
