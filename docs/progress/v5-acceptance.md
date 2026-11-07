@@ -1,8 +1,8 @@
 # v5 验收清单：Agent 对话 + 多步骤协同写作最小闭环
 
 > 用途：给用户逐批验收 B1–B5，不再重复论证设计。
-> 生成口径：committed HEAD 实测（2026-11-07 13:40 +08:00）。
-> 版本：v4.66.0 · HEAD `f550a80` · 第 69 轮已由 f550a80 收单；当前工作树为第 70 轮（场景细纲补测 + cases 6,491 渲染）与第 71 轮（`memory-manager-modal` any 5→0），全局基线以 committed HEAD 为准。
+> 生成口径：committed HEAD 实测（2026-11-07 15:20 +08:00）。
+> 版本：v4.67.0 · HEAD `952c052` · 第 71 轮已由 `5c53e34` 收单并收紧 any 基线；第 72 轮 3 个文档路径随版本节点 `952c052` 一并入库；当前工作树仅本清单自身待收单（已随第 72 轮更新）。
 > 证据哈希 = `git hash-object <path>`（Git blob SHA-1，取前 12 位），用于确认验收时文件未被改动。
 
 ## 〇、全局基线（当前 HEAD 实测）
@@ -12,8 +12,8 @@
 | 单测文件 | 591 passed | `npm run test` |
 | 单测用例 | 6,491 passed（第 66 轮 +5 worker-manager；第 67/68 轮零新增；第 70 轮 +6 scene-outline-controller） | `npm run test` |
 | v5 锚点定向复验 | 6 文件 / 90 用例通过（2026-11-07 实测） | 见 §一–§三 的定向命令 |
-| any 预算 | committed HEAD 179/179（92 文件，第 68 轮已收紧基线）；当前工作树 174/179（91 文件，第 71 轮 -5，待 ZCode 收单后收紧） | `npm run check:any` |
-| 构建产物 | `main.js` 4,868,593 字节（v4.66.0 版本数据 +308B 已 note）；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
+| any 预算 | committed HEAD 174/174（91 文件，第 71 轮 -5 后由 ZCode 收紧）；第 72 轮未改源码 | `npm run check:any` |
+| 构建产物 | `main.js` 4,868,872 字节（v4.67.0 版本数据 +279B）；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
 | 类型 | 0 error | `npm run typecheck` |
 | 架构守护 | exit 0（9 个既有豁免项，非本轮引入） | `npm run check-engines` |
 | E2E | 基线 37 passed，本轮未重跑（需授权，见 §六） | `npm run test:e2e` |
@@ -73,8 +73,8 @@
 |---|---|
 | 关键文件 | `.trae/automation/trae-loop-state.json`（唯一 canonical）<br>`scripts/check-automation.mjs`：schema、round 单调、`updatedAt` 时区、红线字段、HANDOFF 行数、信箱可解析、版本四文件一致（L52–L160）<br>`package.json`：`check:automation` 已挂入 `preflight`（L56） |
 | 测试 / 校验 | `npm run check:automation`（结构校验，不校验业务内容） |
-| 当前结果 | 通过：活跃台账 round 69、HANDOFF 9 行、版本 4.66.0（committed HEAD）、信箱可解析；Vault 根副本 `Test-Path = False`，插件仓副本 `True` |
-| 证据哈希 | `check-automation.mjs` `afef76c2b7ae` · `package.json` `20a4a8efda0f`（committed HEAD / v4.66.0） |
+| 当前结果 | 通过：活跃台账 round 72、HANDOFF 9 行、版本 4.67.0（committed HEAD）、信箱可解析；Vault 根副本 `Test-Path = False`，插件仓副本 `True` |
+| 证据哈希 | `check-automation.mjs` `afef76c2b7ae` · `package.json` `229dfaf6a59c`（committed HEAD / v4.67.0） |
 | 落地提交 | `76a124b` → `e2c8894`（第 67 轮边界加固：v5-product 必检权重 + round 三处一致） |
 
 验收要点：只允许一份活跃状态文件；未来新增自动化检查项失败时，门禁会给出修复命令而不是静默通过。
@@ -101,11 +101,11 @@
 |---|---|---|
 | B5 手工验收（真实三模式流程） | 未执行；`E2E_REWRITE=1` 会改写 E2E 基线 | 明确授权后跑 `E2E_REWRITE=1 npm run test:e2e`，再人工走「创建→大纲→人设→写 1 章→质检→导出」 |
 | E2E 全量 | 基线 37 passed，本轮未重跑 | 授权后 `npm run test:e2e` |
-| push / tag / Release | ahead 177，未推送；v4.65.0 节点 `c8147e5`、第 67 轮收单 `e2c8894`、第 68 轮 any 收紧 `ed6b823`、v4.66.0 节点 `e6d1bb0` 已出 | 用户明确指令后才执行 |
+| push / tag / Release | ahead 182，未推送；v4.65.0 节点 `c8147e5`、第 67 轮收单 `e2c8894`、第 68 轮 any 收紧 `ed6b823`、v4.66.0 节点 `e6d1bb0`、第 71 轮收单 `5c53e34`、v4.67.0 节点 `952c052` 已出 | 用户明确指令后才执行 |
 | 剧本 `storyboard` 必填语义 | 当前为可选字段；三形态中剧本是否强制 storyboard 无产品口径 | 产品语义确认后，由 ZCode 改 engine 契约，Trae 同步 UI/测试 |
 
 ---
 
 ## 七、结论
 
-B1–B5 代码、测试、门禁与文档均已在当前 HEAD 可复验：全量 591 文件 / 6,491 用例通过（第 70 轮为场景细纲补测 +6，不属 v5 批次），any committed HEAD 179/179（92 文件）、当前工作树 174/179（91 文件，第 71 轮 -5），bundle 4,868,593，六道相关门禁全绿；v5 锚点 6 文件 / 90 用例定向复验通过。剩余事项只有 §六 的四项授权型工作，不含待补代码。
+B1–B5 代码、测试、门禁与文档均已在当前 HEAD 可复验：全量 591 文件 / 6,491 用例通过（第 70 轮为场景细纲补测 +6，不属 v5 批次），any committed HEAD 174/174（91 文件，第 71 轮 -5 后收紧）、工作树同值，bundle 4,868,872，六道相关门禁全绿；v5 锚点 6 文件 / 90 用例定向复验通过（第 72 轮）。剩余事项只有 §六 的四项授权型工作，不含待补代码。

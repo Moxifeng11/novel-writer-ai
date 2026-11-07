@@ -432,7 +432,7 @@ Agent（harness）
   - 盘点（先问是不是）：信箱最新未读即第 70 轮收单 + 第 71 轮派工（memory-manager-modal any 5→0），已在第 71 轮兑现，无新派工；HANDOFF 下一步为「B2 阶段面板/端口回归复验」。实测 `docs/API.md` 对 v5 五个模块零命中、`docs/ARCHITECTURE.md` 仅 agent-port 两处、`docs/PLAN.md` §v5 仍写「导出弹窗严格模式」，属 ZCode 第 62 轮派工（API/ARCHITECTURE 覆盖核对）未兑现的真实文档缺口，非重复交付。
   - 选型：docs-correction（影响3×风险降低2×可验证5/成本1=30 × 1.2 ≈ 36）；上轮 gate-fix 异型、距第 62 轮 docs-correction 已 10 轮，无同型惩罚/无收益递减；explorationRoll 0.58 未触发；B2 回归复验作为同一轮低成本验证并入。
   - 动作：`docs/API.md` 新增 §十「v5 协同写作闭环 API」（10.1 阶段唯一事实源 / 10.2 端口与工作台投影 / 10.3 三档出版检查 / 10.4 平台投稿包），原「相关文档」顺延为 §十一；`docs/ARCHITECTURE.md` 新增 4.10 模块表与 §八「v5 协同写作闭环」索引；`docs/PLAN.md` §v5 纠偏 B3 旧布尔「严格模式」表述。只改文档，零源码。
-  - 验证：v5 锚点 6 文件 / 90 用例定向通过（B2 回归复验：阶段面板 20 / 端口 3 / B1 契约 40 / 出版检查 27）；`check:docs`/`check:jsdoc`/`check:any`（174/179）/`check:bundle`/`check:automation`/`check:linked-scenarios` 全绿；全量 `preflight:release` 本轮结果见状态文件。
+  - 验证：v5 锚点 6 文件 / 90 用例定向通过（B2 回归复验：阶段面板 20 / 端口 3 / B1 契约 40 / 出版检查 27）；`check:docs`/`check:jsdoc`/`check:any`（174/174，基线已收紧）/`check:bundle`/`check:automation`/`check:linked-scenarios` 全绿；全量 `preflight:release` 本轮结果见状态文件。
   - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`、`program-status`（用例数与 any 未变）；零新增文件。
   - 并发事实：开工 HEAD `c61a025` / ahead 180；工作树为第 71 轮 4 路径待收单，本轮叠加 3 个文档路径。
 
