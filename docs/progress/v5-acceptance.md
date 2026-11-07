@@ -1,8 +1,8 @@
 # v5 验收清单：Agent 对话 + 多步骤协同写作最小闭环
 
 > 用途：给用户逐批验收 B1–B5，不再重复论证设计。
-> 生成口径：committed HEAD 实测（2026-11-08 01:45 +08:00；数据源 `program-status.json`）。
-> 版本：v4.70.0（版本节点 `bb5972a`）· 已提交 HEAD `90b542d`（ahead 208）· 第 86/87 轮（`entity-integrity` 6 例 + `optimization-advisor` 23 例 + 文档）已随 `388eb44` 收单；第 88 轮验收清单纠偏已随 `58eab76` 收单；第 89 轮 `agent-port` 补测已随 `b282136` 收单；第 90 轮端口口径对齐已随 `8cceae9` 收单；第 91 轮 `genre-preference-memory` 补测已随 `98945ff` 收单；第 92 轮派工新鲜度边界文档已随 `90b542d` 收单；第 93 轮两项修复（浅拷贝隔离 + 派工判据 A）在途。剧本分镜表强制前置随 `e1c3820`、E2E 欠账修复随 `aa2b4c9` 入库。
+> 生成口径：committed HEAD 实测（2026-11-08 02:34 +08:00；数据源 `program-status.json`）。
+> 版本：v4.71.0（版本节点 `d599410`）· 已提交 HEAD `5472be7`（ahead 211）· 第 86/87 轮（`entity-integrity` 6 例 + `optimization-advisor` 23 例 + 文档）已随 `388eb44` 收单；第 88 轮验收清单纠偏已随 `58eab76` 收单；第 89 轮 `agent-port` 补测已随 `b282136` 收单；第 90 轮端口口径对齐已随 `8cceae9` 收单；第 91 轮 `genre-preference-memory` 补测已随 `98945ff` 收单；第 92 轮派工新鲜度边界文档已随 `90b542d` 收单；第 93 轮两项修复（浅拷贝隔离 + 派工判据 A）已随 `0960a99` 收单；v4.71.0 版本节点 `d599410`（版本同步/CHANGELOG/release notes/台账，bundle 4,870,663）；第 95 轮 ZCode engine any 第一批 `frontmatter-serializer` any 4→0 已随 `5472be7` 收单（基线 148→144）。剧本分镜表强制前置随 `e1c3820`、E2E 欠账修复随 `aa2b4c9` 入库。
 > 证据哈希 = `git hash-object <path>`（Git blob SHA-1，取前 12 位），用于确认验收时文件未被改动。
 
 ## 〇、全局基线（当前 HEAD 实测）
@@ -11,9 +11,9 @@
 |---|---|---|
 | 单测文件 | 594 passed | `npm run test` |
 | 单测用例 | 6,552 passed（第 66 轮 +5 worker-manager；第 70 轮 +6 scene-outline-controller；第 86 轮 +6 `entity-integrity`；第 87 轮 +23 `optimization-advisor`；第 89 轮 +6、第 90 轮 +2 `agent-port-status`；第 91 轮 +19 `genre-preference-memory`；第 93 轮 +1 偏好隔离 +1 派工判据 A） | `npm run test` |
-| v5 锚点定向复验 | 6 文件 / 101 用例通过（2026-11-08 00:07 实测；`agent-port-status` 3→9→11） | 见 §一–§三 的定向命令 |
-| any 预算 | 148/148（82 文件；第 81 轮 -6 已由 ZCode 随 `af9df7b` 收紧基线）；余量 0 | `npm run check:any` |
-| 构建产物 | `main.js` 4,870,342 字节（第 93 轮嵌套字段拷贝 + 派工判据 A +195B；第 90 轮端口口径对齐 −11B；v4.70.0 版本数据 +370B，叠加 v4.69.0 +397B 与第 79 轮分镜强制前置 +180B）；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
+| v5 锚点定向复验 | 6 文件 / 101 用例通过（2026-11-08 02:33 实测；`agent-port-status` 3→9→11） | 见 §一–§三 的定向命令 |
+| any 预算 | 144/144（81 文件；第 95 轮 ZCode `frontmatter-serializer` any 4→0 随 `5472be7` 收紧；第 81 轮 -6 已随 `af9df7b` 收紧）；余量 0 | `npm run check:any` |
+| 构建产物 | `main.js` 4,870,663 字节（v4.71.0 版本数据 +321B；第 93 轮嵌套字段拷贝 + 派工判据 A +195B；第 90 轮端口口径对齐 −11B；v4.70.0 版本数据 +370B，叠加 v4.69.0 +397B 与第 79 轮分镜强制前置 +180B）；`styles.css` 见 `.bundle-baseline.json` | `Get-Item main.js` / `npm run check:bundle` |
 | 类型 | 0 error | `npm run typecheck` |
 | 架构守护 | exit 0（9 个既有豁免项，非本轮引入） | `npm run check-engines` |
 | E2E | 基线 **40 passed**（37 + mode-journey 3；ZCode 第 88 轮实测三模式 3/3，`rewrite-chapters` 已下线） | `npm run test:e2e` |
