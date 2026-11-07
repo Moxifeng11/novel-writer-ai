@@ -100,6 +100,14 @@ const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.RENAME_PROJECT,
     CommandIds.PRUNE_SESSIONS,
     CommandIds.POPULATE_SETTING_LIB,
+    // v4.73.0（用户拍板）：统一入口七命令补进 registry（面板可点但 registry 无执行体的缺口）
+    CommandIds.OPEN_HOME,
+    CommandIds.JOB_CENTER,
+    CommandIds.PROJECT_HEALTH,
+    CommandIds.ASSET_REGISTRY,
+    CommandIds.USAGE_LEDGER,
+    CommandIds.BACKUP_CENTER,
+    CommandIds.OPEN_ONBOARDING,
 ];
 
 interface Harness {
@@ -185,18 +193,6 @@ describe('命令面板与定义表一致', () => {
 describe('命令 id 跨表一致性', () => {
     const allCommandIds = new Set<string>(Object.values(CommandIds));
 
-    // 已知缺口（ZCode 待拍板补注册）：面板可点但 InternalRegistry 无执行体。
-    // 本清单只允许缩短；修复后删除豁免并恢复 `toEqual([])` 断言。
-    const KNOWN_PALETTE_REGISTRY_GAPS = [
-        CommandIds.OPEN_HOME,
-        CommandIds.JOB_CENTER,
-        CommandIds.PROJECT_HEALTH,
-        CommandIds.ASSET_REGISTRY,
-        CommandIds.USAGE_LEDGER,
-        CommandIds.BACKUP_CENTER,
-        CommandIds.OPEN_ONBOARDING,
-    ];
-
     it('调色板可见命令都能在 InternalRegistry 中执行', () => {
         const { registry, register } = makeHarness();
         registry.registerInternalCommands();
@@ -204,9 +200,9 @@ describe('命令 id 跨表一致性', () => {
         const paletteIds: string[] = [];
         registry.registerObsidianCommands(cmd => { paletteIds.push(cmd.id); });
 
-        // 历史缺口：面板已注册但 registry 缺失 → execute 找不到、点了没反应
+        // v4.73.0：七处缺口已补注册，恢复严格断言——新增面板命令必须同步 registry
         const missing = paletteIds.filter(id => !executableIds.has(id));
-        expect(missing).toEqual(KNOWN_PALETTE_REGISTRY_GAPS);
+        expect(missing).toEqual([]);
     });
 
     it('InternalRegistry 的命令 id 均来自 CommandIds 清单', () => {

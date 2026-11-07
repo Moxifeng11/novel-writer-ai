@@ -378,6 +378,21 @@ export class CommandRegistry {
             r.register(id, async () => { await this.ui.executeCommand(id); });
         }
 
+        // v4.73.0（用户拍板）：统一入口七命令补进 registry——此前「面板可点但 InternalRegistry
+        // 无执行体」（command-ui-executor 已有分支，exec(id) 找不到执行体静默失效）。
+        // 一致性测试的 KNOWN_PALETTE_REGISTRY_GAPS 豁免已随本批删除。
+        for (const id of [
+            CommandIds.OPEN_HOME,
+            CommandIds.JOB_CENTER,
+            CommandIds.PROJECT_HEALTH,
+            CommandIds.ASSET_REGISTRY,
+            CommandIds.USAGE_LEDGER,
+            CommandIds.BACKUP_CENTER,
+            CommandIds.OPEN_ONBOARDING,
+        ]) {
+            r.register(id, async () => { await this.ui.executeCommand(id); });
+        }
+
         // ── 非 UI 命令：留在 core（示例项目导入 / 信息债 / 元素提取 / 版本与缓存） ──
         r.register(CommandIds.IMPORT_EXAMPLE, async () => {
             const { created, project } = await importExampleProject(this.deps.app);
