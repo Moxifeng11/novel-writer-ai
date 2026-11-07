@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
     registryHas: vi.fn(),
     executeCommandAsync: vi.fn(),
     recordFailed: vi.fn(),
+    listCommands: vi.fn(),
 }));
 
 vi.mock('@/main', () => ({ default: class NovelWriterPlugin {} }));
@@ -246,5 +247,45 @@ describe('AgentPort.runCommand — 命令 id 校验与失败登记', () => {
             commandId: 'novel-writer:write-next',
             failure: 'boom',
         }));
+    });
+});
+
+describe('AgentPort.listCommands — 可发现集合与可执行集合一致', () => {
+    function listPort() {
+        return createAgentPort(
+            { commands: { listCommands: mocks.listCommands } } as never,
+            { registry: { has: mocks.registryHas } } as never,
+        );
+    }
+
+    beforeEach(() => {
+        mocks.listCommands.mockReset();
+        mocks.registryHas.mockReset();
+    });
+
+    it('只列出插件注册表可执行的命令：含无前缀 id，排除不可执行命令与第三方命令', () => {
+        mocks.listCommands.mockReturnValue([
+            { id: 'novel-writer-write-chapter', name: '小说工坊: 写章节' },
+            { id: 'switch-provider', name: '快速切换 AI 提供商' },
+            { id: 'novel-writer-rename-project', name: '小说工坊: 重命名当前项目' },
+            { id: 'other-plugin:command', name: '其他插件的命令' },
+        ]);
+        mocks.registryHas.mockImplementation(
+            (id: string) => id === 'novel-writer-write-chapter' || id === 'switch-provider',
+        );
+
+        expect(listPort().listCommands!()).toEqual([
+            { id: 'novel-writer-write-chapter', name: '写章节', group: '写作' },
+            { id: 'switch-provider', name: '快速切换 AI 提供商', group: '工具' },
+        ]);
+        expect(mocks.registryHas).toHaveBeenCalledWith('other-plugin:command');
+    });
+
+    it('命令列表读取抛错时返回空数组，不阻断 Agent', () => {
+        mocks.listCommands.mockImplementation(() => {
+            throw new Error('boom');
+        });
+
+        expect(listPort().listCommands!()).toEqual([]);
     });
 });

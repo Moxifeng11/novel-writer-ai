@@ -558,6 +558,15 @@ Agent（harness）
   - 自动识别六类信号：派工新鲜度（第 N 轮 > 当前轮或 6 小时内）、在途收口、preflight 红灯、any 余量、体积显著膨胀（>20KB 或 ≥1%）、文档漂移/测试停滞；输出 1–2 条带 `reason/evidence/score/factors` 的建议。
   - 门禁：`check:automation` 增加建议台账 schema/新鲜度校验（存在时）；单测 20 例；`npm run automation:advise -- --write` 落盘 canonical 建议。
   - 边界：零源码运行时改动（新增 pure module 不被打包，bundle 不变）；未动 `engine/**`、`ui/views`；新增文件属用户授权模块。
+- 第 90 轮（行为修复，v5 B2 端口契约；advise tier=`score` 时人工补充产品语义候选）：
+  - 盘点：`automation:advise --json` 输出 tier=`score`、recommended=`audit:explore`（score 5.2，alternatives 为空）；evidence 与事实一致（preflightOk=true、anyRemaining=0、tests 593/6,529、worktree 5 M、unrecorded=0）。信箱唯一未读为 ZCode 第 88 轮收单确认（第 89 轮回执 15:43 已发）。HEAD `58eab76` / ahead 204；无新派工、无红灯、无可收口批次。
+  - 审计（先问是不是）：`AgentPort.listCommands` 以 `id.startsWith('novel-writer')` 枚举命令，而 `runCommand` 以 `plugin.registry.has(id)` 校验——两套口径不一致。实证：`RENAME_PROJECT`、`PRUNE_SESSIONS`、`POPULATE_SETTING_LIB`（调色板 id）在列表可见但 registry 未注册，执行必失败；`SWITCH_PROVIDER`（`switch-provider`）在 registry 可执行却因无前缀被漏列。影响：Agent 按列表引导会静默失败，违背 v5 验收「引导到正确入口」。
+  - 改动（1 源码 + 1 测试）：`ui/services/agent-port.ts::listCommands` 过滤条件改为 `plugin.registry.has(cmd.id)`，列表即 `run_command` 可执行集合；`tests/unit/ui/agent-port-status.test.ts` +2 例（可执行集对齐：保留无前缀 `switch-provider`、剔除未注册与第三方命令；列表读取抛错 → 返回 `[]` 不阻断）。
+  - 文档：`program-status.json` cases 6,529→6,531、changelog 追加第 90 轮并 `npm run program:render`；`v5-acceptance.md` 全局基线/锚点 99→101/B2 用例 9→11、bundle 4,870,136 与 2 处哈希；`gen:docs` 同步 code-index（check:docs 首次红灯由此而来，重生成后转绿）。
+  - 验证：定向 11/11；全量 `preflight:release` EXIT=0（593 文件 / 6,531 用例；statements 43.91% / branches 43.62% / functions 44.62% / lines 44.24%；any 148/148；bundle 4,870,136，较基线 −11B）。
+  - 并发：执行期间 ZCode 以 `b282136` 收单第 89 轮 5 路径（本次提交不含本轮改动）；收尾按实测 HEAD `b282136` / ahead 205 刷新 program-status / v5-acceptance / 台账。
+  - 余量建议（交 ZCode 拍板）：若产品希望 Agent 也能「重命名项目 / 清理会话 / 生成设定库」，应把这 3 个 id 注册进 registry，而不是放宽列表口径。
+  - 边界：未动 `engine/**`、`ui/views`、`.any-baseline.json`；未 commit / push。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

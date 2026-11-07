@@ -445,7 +445,9 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
             try {
                 const commands = app.commands.listCommands() as Array<{ id: string; name: string }>;
                 return commands
-                    .filter(cmd => cmd.id.startsWith('novel-writer'))
+                    // 只列 run_command 真正可执行的命令：两者都以 registry 为准，
+                    // 避免「列表能看到、执行必失败」或反之。
+                    .filter(cmd => plugin.registry.has(cmd.id))
                     .map(cmd => ({
                         id: cmd.id,
                         name: cmd.name.replace(/^小说工坊[·:]?\s*/, ''),

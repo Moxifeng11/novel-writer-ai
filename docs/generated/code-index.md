@@ -11,7 +11,7 @@
 | `shared/` | 175 | 40187 | 1586 | 1312 | 83% |
 | `core/` | 7 | 2747 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 101477 | 735 | 639 | 87% |
+| `ui/` | 239 | 101479 | 735 | 639 | 87% |
 
 ## 文件清单
 
@@ -730,7 +730,7 @@
 | `ui/review-chapter-modal.ts` | 70 | 1 | 1 |
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
-| `ui/services/agent-port.ts` | 635 | 2 | 2 |
+| `ui/services/agent-port.ts` | 637 | 2 | 2 |
 | `ui/services/agent-session-store.ts` | 211 | 5 | 5 |
 | `ui/services/agent-spill-store.ts` | 105 | 3 | 2 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |

@@ -1,12 +1,12 @@
 {
   "program": "全系统业务板块优化专项",
   "rev": "v5-plan-1",
-  "updatedAt": "2026-11-07",
+  "updatedAt": "2026-11-08",
   "baseline": {
     "version": "4.70.0",
     "tests": {
       "files": 593,
-      "cases": 6529
+      "cases": 6531
     },
     "e2e": 40,
     "e2eNote": "E2E 通过总数：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27 = 40（2026-11-07 全量实测）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑（rewrite-chapters 已随「九霄逆脉行」项目删除而下线）",
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 204,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 89 轮实测 git rev-list --count=204，HEAD 58eab76；第 72–88 轮已全部收单）"
+    "localCommitsAhead": 205,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 第 90 轮收尾实测 git rev-list --count=205，HEAD b282136；第 72–89 轮已全部收单，第 90 轮在途）"
   },
   "groups": [
     {
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-08",
+      "group": "G7",
+      "summary": "第 90 轮（行为修复，v5 B2 端口契约；advise tier=score 下人工补充产品语义候选）：AgentPort.listCommands 与 runCommand 口径对齐——列表原按 id 前缀 'novel-writer' 过滤、执行按 plugin.registry.has 校验，导致 3 个不可执行命令（rename-project / prune-sessions / populate-setting-lib 的调色板 id）被列出却必然执行失败，同时可执行的 switch-provider（无前缀）被漏列。改为 listCommands 统一用 plugin.registry.has(cmd.id)，列表即 run_command 可执行集合。tests/unit/ui/agent-port-status.test.ts +2 例（可执行集对齐、listCommands 抛错降级）。定向 11/11；全量 preflight:release EXIT=0（593 文件 / 6,531 用例；statements 43.91% / branches 43.62% / functions 44.62% / lines 44.24%；any 148/148；bundle 4,870,136 较基线 −11B）。余量提示：若产品需要 Agent 重命名项目/清理会话/生成设定库，应把这 3 个 id 注册进 registry，而非放宽列表",
+      "evidence": "ui/services/agent-port.ts + tests/unit/ui/agent-port-status.test.ts + docs/PLAN.md 第 90 轮 + docs/progress/v5-acceptance.md §二"
+    },
     {
       "date": "2026-11-07",
       "group": "G7",
