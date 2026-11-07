@@ -2,6 +2,25 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.64.0（2026-11-07）
+
+### 🐛 修复：短篇/剧本导出产物误报「未导出」
+
+- **根因**：`hasExportArtifact` 只查项目根 `05-导出`/`06-导出`，而短篇/剧本的产物落在 `短篇创作/05-导出`、`剧本创作/06-导出` 下，磁盘检测恒不命中。
+- **影响**：`localStorage` 导出标记丢失（换设备、清缓存、换浏览器）后，已有导出文件的短篇/剧本仍显示「未导出」。
+- **修复**：`hasExportArtifact(app, project, mode)` 按模式映射目录（目录名复用 `mode-content` 常量），并兼容旧版项目根目录；长篇行为不变。+4 用例覆盖短篇/剧本新目录、旧根兼容、双目录皆空。
+
+### ⚡ 性能：阶段采集全库遍历 3→2 / 3→1
+
+- `hasExportArtifact` 改用 `listFolderFiles` 局部遍历导出目录，不再 `vault.getFiles()` 全库扫描。
+- `listModeUnits` 的 own/legacy 共用一次 `getFiles()` 快照（own 优先语义不变），旧结构 2→1。
+- 单次采集：长篇 3→2、短篇/剧本 1–3→1；新增 7 用例用 fake vault 统计扫描次数并锁定四种导出语义。
+- `ui/full-writer/creation-flow-state.ts` 纳入 `check:hotpath-scans` 的 `HOT_FILES`（10→11）防回退。
+
+### 🧪 测试与门禁
+
+- 全量 **590 文件 / 6,471 用例**（v4.63.0 为 589/6,460，+11）；`preflight:release` 全绿；any 198 不变；bundle 4,867,566（行为修复 +112B 已 note）。
+
 ## v4.63.0（2026-11-07）
 
 ### 🧪 测试与文档加固（+9 用例）

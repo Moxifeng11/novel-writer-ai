@@ -21,6 +21,27 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.64.0',
+        date: '2026-11-07',
+        title: '短篇/剧本导出误报修复与采集性能',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🐛 修复',
+                items: [
+                    '短篇/剧本导出产物按模式目录检测，清缓存后不再误报「未导出」',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '⚡ 性能',
+                items: [
+                    '阶段采集全库遍历 长篇 3→2、短篇/剧本 3→1；creation-flow-state 纳入热路径门禁',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.63.0',
         date: '2026-11-07',
         title: '测试与文档加固（+9 用例）',
