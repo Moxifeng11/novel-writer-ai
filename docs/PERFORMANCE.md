@@ -89,7 +89,8 @@ npm run bench:hotpath        # 200 章基准（见 scripts/bench/get-files-hotpa
 ### 5.2 v5 自动化与出版检查（2026-11-06）
 
 - `npm run check:automation` 只读取 JSON/文本（状态台账、HANDOFF、版本文件、信箱末行），无目录遍历；纳入 `preflight` 后为常量级开销。
-- 工作台阶段面板复用 `collectCreationFlowState` 的既有采集结果，不新增全库扫描。
+- 工作台阶段面板每次刷新都调用 `collectCreationFlowState`（**无缓存复用**），单次采集触发 **3 次全库遍历**：`hasExportArtifact` 的 `vault.getFiles()`；长篇 `getChaptersForProject()` 的 `getFiles()` + `getAllLoadedFiles()`；短篇/剧本 `listModeUnits()` 的 own + legacy 两次 `getFiles()`。触发点至少两处（左栏初次渲染、`refreshProjectList()` 收尾），一次工作台打开 ≥2 次采集。该路径属 UI 交互、不在 `check:hotpath-scans` 的 `HOT_FILES` 内，门禁不会报警。**2026-11-07 纠偏**：此前「复用既有采集结果、不新增全库扫描」的结论与代码不符。
+- 待优化（未实施，待未提交工作树收敛后立项）：`hasExportArtifact` 改为目录存在性判断（省 1 次全库遍历）；短篇/剧本把 own + legacy 两次 `getFiles()` 合并为一次。预期单次采集：长篇 3→2、短篇/剧本 3→1。
 - 出版检查为纯内存计算（章节内容在导出时已加载），严格模式只增加一次遍历，不改变导出 I/O 次数。
 - 回归口径：`check:automation` 必须通过；`bench:hotpath` 不新增违规模块；导出与阶段面板改动按链 4 手工验收。
 
