@@ -350,6 +350,14 @@ Agent（harness）
   - 边界：未动 `engine/**`、ZCode 文件集、`HOT_FILES` 口径与门禁阈值；未新增运行时代码依赖；`agent-port` 复用统计留作第二阶段。
   - 并发事实：开工 HEAD `06f84b0`（ZCode 收单第 58 轮审计），收尾 ahead 161；工作树仅本轮 3 路径 + PLAN/PERFORMANCE/program-status 台账。
   - 元迭代（第 59 轮）：perf 权重 1.49 维持；本轮无参数变更，不发起互调确认。
+- 第 60 轮（v5-product + gate-fix 双动作；兑现 ZCode 来信明确派工「修复短篇/剧本导出目录映射」）：
+  - 盘点（先问是不是）：ZCode 已以 `c33e08e`/`c3e3706` 收单第 59 轮，工作树干净；来信核对 `mode-content.ts`：短篇导出目录在 `${project}/短篇创作/05-导出`、剧本在 `${project}/剧本创作/06-导出`，而 `hasExportArtifact` 只查项目根 `05-导出`/`06-导出`，缺口成立且用户可感知（换设备/清缓存丢失 localStorage 标记后，短篇/剧本误报「未导出」）。
+  - 改动（3 路径）：①`ui/full-writer/creation-flow-state.ts::hasExportArtifact` 增加 `mode` 参数并按模式映射目录——长篇保持 `05-导出`+`06-导出`；短篇查 `短篇创作/05-导出` 并兼容根 `05-导出`；剧本查 `剧本创作/06-导出` 并兼容根 `06-导出`；`EXPORT_FALLBACK_DIR` 逻辑不变；目录常量复用 `SHORT_CONTENT_ROOT`/`SHORT_DIRS`/`SCRIPT_CONTENT_ROOT`/`SCRIPT_DIRS`，不复制字面量。②`tests/unit/ui/creation-flow-state-scan.test.ts` +4 条：短篇新目录命中、剧本新目录命中、剧本旧根目录兼容、短篇新目录与旧根目录都为空=未导出。③`scripts/check-hotpath-scans.mjs` 把 `ui/full-writer/creation-flow-state.ts` 纳入 `HOT_FILES`（补第 59 轮未完成派工；该文件已无直接全库调用，门禁 11 模块通过）。
+  - 验证：定向 34/34（creation-flow-state-scan 11 + agent-stage-panel 20 + agent-port-status 3）；`check:hotpaths` 11 模块 0 违规；`typecheck` 0；用例总数 6,467→6,471；全量 `preflight:release` 通过。
+  - 体积：`main.js` 4,867,566（较第 59 轮 +121B）；按仓库规则用 `check:bundle --update-baseline --note` 显式上调基线 106B（4,867,460→4,867,566），仍低于 200B/批预算，非静默放宽。
+  - 用户可感知修复：短篇/剧本阶段面板在磁盘已有导出产物时正确显示「已导出」，不再依赖 localStorage 标记。
+  - 边界：未动 `engine/**`、ZCode 文件集；`HOT_FILES` 只收紧未放松；未新增运行时代码依赖；`agent-port` 复用统计仍留第二阶段。
+  - 并发事实：开工 HEAD `c3e3706`，ahead 163；ZCode 收单与写信期间未冲突。
 
 来源：[v4.27 全插件审计](audits/v4.27-full-plugin-audit.md)（P0 六条已修）。
 

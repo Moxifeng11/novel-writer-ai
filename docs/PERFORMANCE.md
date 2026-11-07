@@ -25,13 +25,13 @@
 
 以下文件禁止退回全库扫描（`vault.getFiles()` / `vault.getMarkdownFiles()` / `vault.getAllLoadedFiles()` 三者都是 O(全库)，门禁 `scripts/check-hotpath-scans.mjs` 逐文件检查 `HOT_FILES`）：
 
-- 正文落盘、结算、统计、上下文装配、实体读取、知识库索引等 8 个模块，以及 UI 侧每章/每次质量刷新各跑一次的 `ui/full-writer/batch-pipeline-runner.ts`（断点续跑读步骤结果）与 `ui/cowrite/realtime-quality-controller.ts`（前文窗口扫描）——共 10 个模块（以脚本清单为准）。
+- 正文落盘、结算、统计、上下文装配、实体读取、知识库索引等 8 个模块，以及 UI 侧每章/每次质量刷新各跑一次的 `ui/full-writer/batch-pipeline-runner.ts`（断点续跑读步骤结果）、`ui/cowrite/realtime-quality-controller.ts`（前文窗口扫描）与 `ui/full-writer/creation-flow-state.ts`（工作台阶段面板每次刷新整包采集，第 60 轮接入）——共 11 个模块（以脚本清单为准）。
 
 门禁覆盖面（第 26 轮实测，防止「换个 API 绕过」）：
 
 - 三个 API 都按行文本检查，命中任一即失败；每文件只报首个命中行号。
 - 非测试代码中 `getMarkdownFiles()` / `getAllLoadedFiles()` 共 7 处，**全部是冷路径**：`ui/add-fanfic-setting-modal.ts:337`、`ui/batch-import-modal.ts:1622`、`ui/agent-workbench-view.ts:651`、`ui/plan-book-modal.ts:262`、`ui/full-writer/wizard-step-renderers.ts:288`、`ui/project-utils.ts:282`、`ui/project-utils.ts:312`。
-- `ui/project-utils.ts#getChaptersForProject` 一次调用 = `getFiles()` + `getAllLoadedFiles()` 两次全库遍历，但调用方全是视图渲染/弹窗/导航（`full-writer/title-bar-controller.ts:94`、`full-writer-view.ts:1510/1526/1634`、`full-writer/project-selector-controller.ts:196`、`services/agent-port.ts:297/327/347`、`full-writer/creation-flow-state.ts:217`、`quality-dashboard-modal.ts:159`、`story-linkage-modal.ts:65`），不在每章写/每次刷新的热路径内，故未纳入 `HOT_FILES`。若将来接入每章流程，必须先改为目录遍历再纳入清单。
+- `ui/project-utils.ts#getChaptersForProject` 一次调用 = `getFiles()` + `getAllLoadedFiles()` 两次全库遍历，调用方多为视图渲染/弹窗/导航（`full-writer/title-bar-controller.ts:94`、`full-writer-view.ts:1510/1526/1634`、`full-writer/project-selector-controller.ts:196`、`services/agent-port.ts:297/327/347`、`ui/full-writer/creation-flow-state.ts:220`、`quality-dashboard-modal.ts:159`、`story-linkage-modal.ts:65`）。第 60 轮已把 `ui/full-writer/creation-flow-state.ts`（阶段面板刷新）纳入 `HOT_FILES`，但门禁只查文件内直接调用、不追间接 helper，经该 helper 产生的扫描仍不报警；要彻底收敛需把 helper 改为目录遍历，受其它冷路径调用方影响，单独立项。
 
 排查方法：
 
@@ -89,9 +89,9 @@ npm run bench:hotpath        # 200 章基准（见 scripts/bench/get-files-hotpa
 ### 5.2 v5 自动化与出版检查（2026-11-06）
 
 - `npm run check:automation` 只读取 JSON/文本（状态台账、HANDOFF、版本文件、信箱末行），无目录遍历；纳入 `preflight` 后为常量级开销。
-- 工作台阶段面板每次刷新都调用 `collectCreationFlowState`（**无缓存复用**），单次采集的全库遍历数按模式/分支：**长篇 2 次**（`getChaptersForProject` 的 `getFiles()` + `getAllLoadedFiles()`；`hasExportArtifact` 已改目录局部遍历，不再整库扫描）；**短篇/剧本 1 次**（`listModeUnits` 的 own + legacy 共用一次 `getFiles()`；`hasExportArtifact` 同上）；**旧结构 1 次**（同一快照内 own 为空即复用 legacy 过滤）。叠加 `agent-port.getProjectStatus` 先自行统计章节/单元、再整包调用采集，一次阶段刷新实际为**长篇 4 次**、**短篇/剧本 2 次**。触发点：左栏首次渲染 2 次（`refreshProjectList` 尾部 + 显式调用，且并发重叠）、每回合结束 1 次、切换项目 2 次。该路径不在 `check:hotpath-scans` 的 `HOT_FILES` 内，门禁不会报警。**2026-11-07 纠偏**：此前「复用既有采集结果、不新增全库扫描」的结论与代码不符。
+- 工作台阶段面板每次刷新都调用 `collectCreationFlowState`（**无缓存复用**），单次采集的全库遍历数按模式/分支：**长篇 2 次**（`getChaptersForProject` 的 `getFiles()` + `getAllLoadedFiles()`；`hasExportArtifact` 已改目录局部遍历，不再整库扫描）；**短篇/剧本 1 次**（`listModeUnits` 的 own + legacy 共用一次 `getFiles()`；`hasExportArtifact` 同上）；**旧结构 1 次**（同一快照内 own 为空即复用 legacy 过滤）。叠加 `agent-port.getProjectStatus` 先自行统计章节/单元、再整包调用采集，一次阶段刷新实际为**长篇 4 次**、**短篇/剧本 2 次**。触发点：左栏首次渲染 2 次（`refreshProjectList` 尾部 + 显式调用，且并发重叠）、每回合结束 1 次、切换项目 2 次。该文件已在第 60 轮纳入 `check:hotpath-scans` 的 `HOT_FILES`，但门禁只防文件内直接调用回退，经 `getChaptersForProject` 的间接扫描仍需单独立项。**2026-11-07 纠偏**：此前「复用既有采集结果、不新增全库扫描」的结论与代码不符。
 - 取证与量化见 [audits/v4.63-collect-creation-flow-perf.md](audits/v4.63-collect-creation-flow-perf.md)：10,080 文件合成基准下，单次全库遍历+过滤约 0.2–0.5 ms，随 vault 文件总数线性增长；真机无埋点数据，不写毫秒断言。
-- 已实施（第 59 轮，ZCode 第 58 轮派工 A1+A2）：① `hasExportArtifact` 改为 `shared/vault-tree.listFolderFiles` 只列 `${project}/05-导出`、`${project}/06-导出` 与 `EXPORT_FALLBACK_DIR`（递归、任意扩展名、空目录算未导出），保持同步调用面与四种判定语义不变；② `listModeUnits` 的 own + legacy 合并为一次 `getFiles()` 快照。实测单次采集：长篇 3→2、短篇/剧本 3→1；阶段刷新长篇 5→4、短篇/剧本 3→2；`main.js` 4,867,445（较基线 −15B）。回归由 `tests/unit/ui/creation-flow-state-scan.test.ts` 7 条锁定（3 条扫描次数 + 4 条导出语义）。**注意既有缺口（未在本轮扩大范围）**：短篇/剧本的实际导出目录是 `短篇创作/05-导出`、`剧本创作/06-导出`，与 `hasExportArtifact` 检查的项目根路径不一致，磁盘产物检测在这两种模式下恒不命中（浏览器下载走 localStorage 标记，不受影响）；如需修复应单独立项并补模式路径映射。
+- 已实施（第 59 轮，ZCode 第 58 轮派工 A1+A2）：① `hasExportArtifact` 改为 `shared/vault-tree.listFolderFiles` 只列 `${project}/05-导出`、`${project}/06-导出` 与 `EXPORT_FALLBACK_DIR`（递归、任意扩展名、空目录算未导出），保持同步调用面与四种判定语义不变；② `listModeUnits` 的 own + legacy 合并为一次 `getFiles()` 快照。实测单次采集：长篇 3→2、短篇/剧本 3→1；阶段刷新长篇 5→4、短篇/剧本 3→2；`main.js` 4,867,445（较基线 −15B）。回归由 `tests/unit/ui/creation-flow-state-scan.test.ts` 锁定（3 条扫描次数 + 4 条导出语义 + 第 60 轮 4 条模式目录映射）。**导出目录缺口（第 60 轮已修复）**：短篇/剧本产物实际落在 `短篇创作/05-导出`、`剧本创作/06-导出`；`hasExportArtifact` 现按模式映射到模式子目录，并兼容旧版项目根 `05-导出`/`06-导出`，修复了「换设备/清缓存丢失 localStorage 标记后误报未导出」的用户可感知问题。
 - 待优化（第二阶段，未实施）：`agent-port.getProjectStatus` 复用已统计的章节/单元，避免整包采集重复 `getChaptersForProject`/`listModeUnits`；预期阶段刷新长篇 4→2、短篇/剧本 2→1（需改签名并补测试）。
 - 出版检查为纯内存计算（章节内容在导出时已加载），严格模式只增加一次遍历，不改变导出 I/O 次数。
 - 回归口径：`check:automation` 必须通过；`bench:hotpath` 不新增违规模块；导出与阶段面板改动按链 4 手工验收。

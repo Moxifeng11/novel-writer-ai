@@ -11,7 +11,7 @@
 | `shared/` | 174 | 39477 | 1571 | 1307 | 83% |
 | `core/` | 7 | 2746 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 101414 | 735 | 639 | 87% |
+| `ui/` | 239 | 101423 | 735 | 639 | 87% |
 
 ## 文件清单
 
@@ -650,7 +650,7 @@
 | `ui/full-writer/chapter-orchestrator.ts` | 503 | 10 | 9 |
 | `ui/full-writer/context-loader-controller.ts` | 256 | 2 | 2 |
 | `ui/full-writer/cover-picker-controller.ts` | 146 | 1 | 1 |
-| `ui/full-writer/creation-flow-state.ts` | 244 | 4 | 4 |
+| `ui/full-writer/creation-flow-state.ts` | 253 | 4 | 4 |
 | `ui/full-writer/entity-state-controller.ts` | 135 | 2 | 2 |
 | `ui/full-writer/execution-panels.ts` | 383 | 4 | 4 |
 | `ui/full-writer/execution-run-store.ts` | 280 | 5 | 5 |

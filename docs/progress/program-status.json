@@ -5,8 +5,8 @@
   "baseline": {
     "version": "4.63.0",
     "tests": {
-      "files": 589,
-      "cases": 6467
+      "files": 590,
+      "cases": 6471
     },
     "e2e": 37,
     "e2eNote": "mock AI / 真实 Electron 五个 project（full-journey 1 + button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27）的 passed 总数；perf-smoke 1 条单独执行，不计入此数",
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 161,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 59 轮收尾实测 git rev-list --count=ahead 161，HEAD 06f84b0；第 56–58 轮测试/审计均已收单）"
+    "localCommitsAhead": 163,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-07 第 60 轮收尾实测 git rev-list --count=ahead 163，HEAD c3e3706；第 56–59 轮测试/审计均已收单）"
   },
   "groups": [
     {
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-07",
+      "group": "G6",
+      "summary": "第 60 轮（行为修复 + gate-fix，兑现 ZCode 第 59 轮收单来信派工）：①ui/full-writer/creation-flow-state.ts::hasExportArtifact 增加 mode 参数并按模式映射导出目录——短篇查 短篇创作/05-导出、剧本查 剧本创作/06-导出，并兼容旧版项目根 05-导出/06-导出，目录名复用 SHORT_CONTENT_ROOT/SHORT_DIRS/SCRIPT_CONTENT_ROOT/SCRIPT_DIRS；修复「换设备/清缓存丢失 localStorage 标记后，短篇/剧本误报未导出」的用户可感知问题，长篇行为不变，EXPORT_FALLBACK_DIR 逻辑不变。②tests/unit/ui/creation-flow-state-scan.test.ts +4 条：短篇新目录命中、剧本新目录命中、剧本旧根目录兼容、短篇新目录与旧根目录都为空=未导出（文件共 11 条）。③scripts/check-hotpath-scans.mjs 把 creation-flow-state.ts 纳入 HOT_FILES（11 模块，补第 59 轮未完成派工）。验证：定向 34/34；check:hotpaths 0 违规；typecheck 0；全量 590 文件 / 6,471 用例；main.js 4,867,566（按规则以 --note 显式上调基线 106B，仍在 200B/批预算内）。未动 engine/** 与 ZCode 文件集",
+      "evidence": "ui/full-writer/creation-flow-state.ts + tests/unit/ui/creation-flow-state-scan.test.ts + scripts/check-hotpath-scans.mjs + docs/PERFORMANCE.md §2/§5.2 + docs/PLAN.md 第 60 轮"
+    },
     {
       "date": "2026-11-07",
       "group": "G6",
