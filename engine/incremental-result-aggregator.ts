@@ -940,11 +940,11 @@ export class IncrementalResultAggregator {
                     protagonistGoal: goldenThreeChapters.subScores.protagonistGoal || 30,
                     goldenFinger: goldenThreeChapters.subScores.goldenFinger || 30,
                     chapterHooks: goldenThreeChapters.subScores.chapterHooks || 30,
-                    characterImmersion: (goldenThreeChapters.subScores as any).characterImmersion || 25,
-                    worldviewAttraction: (goldenThreeChapters.subScores as any).worldviewAttraction || 35,
-                    dialogueQuality: (goldenThreeChapters.subScores as any).dialogueQuality || 40,
-                    suspenseIntensity: (goldenThreeChapters.subScores as any).suspenseIntensity || 30,
-                    emotionalImpact: (goldenThreeChapters.subScores as any).emotionalImpact || 20,
+                    characterImmersion: goldenThreeChapters.subScores.characterImmersion || 25,
+                    worldviewAttraction: goldenThreeChapters.subScores.worldviewAttraction || 35,
+                    dialogueQuality: goldenThreeChapters.subScores.dialogueQuality || 40,
+                    suspenseIntensity: goldenThreeChapters.subScores.suspenseIntensity || 30,
+                    emotionalImpact: goldenThreeChapters.subScores.emotionalImpact || 20,
                 },
             };
             log.info('goldenThreeChapters 全 0，回退为保守估值');

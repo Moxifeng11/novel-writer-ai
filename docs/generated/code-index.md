@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 305 | 132832 | 1609 | 1348 | 84% |
+| `engine/` | 305 | 132834 | 1609 | 1348 | 84% |
 | `services/` | 32 | 12641 | 187 | 148 | 79% |
 | `shared/` | 176 | 40487 | 1593 | 1318 | 83% |
 | `core/` | 7 | 2770 | 28 | 13 | 46% |
@@ -148,7 +148,7 @@
 | `engine/entity-graph.ts` | 198 | 6 | 6 |
 | `engine/entity-link-migrator.ts` | 168 | 5 | 5 |
 | `engine/entity-scorer.ts` | 182 | 6 | 5 |
-| `engine/entity-state-manager.ts` | 519 | 4 | 3 |
+| `engine/entity-state-manager.ts` | 521 | 4 | 3 |
 | `engine/export/docx-builder.ts` | 231 | 1 | 1 |
 | `engine/export/epub-builder.ts` | 413 | 7 | 7 |
 | `engine/export/manuscript-compiler.ts` | 288 | 12 | 12 |

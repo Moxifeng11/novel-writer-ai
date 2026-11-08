@@ -1,10 +1,8 @@
 {
-  "total": 84,
+  "total": 74,
   "generatedAt": "2026-11-08",
   "files": {
     "shared/types.ts": 6,
-    "engine/entity-state-manager.ts": 5,
-    "engine/incremental-result-aggregator.ts": 5,
     "engine/analysis-report-engine.ts": 4,
     "engine/deconstructors/foreshadow-deconstructor.ts": 4,
     "engine/engine-registry.ts": 4,

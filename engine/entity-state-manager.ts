@@ -14,6 +14,7 @@ import { pjCharsDir } from '@/shared/paths';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
 import type { NovelWriterPluginAPI } from '@/plugin-api';
 import type { CharacterRepository } from './repository';
+import type { Character, CharacterProps } from './repository/domain/aggregates/character-aggregate';
 import type { EngineRegistry } from './engine-registry';
 import { createLogger } from '@/shared/logger';
 import { setFrontmatterValue } from '@/shared/frontmatter';
@@ -134,11 +135,11 @@ export class EntityStateManager {
                 // 忽略错误，返回 null
             }
         }
-        // 尝试从 plugin 获取 engineRegistry
+        // 尝试从 plugin 获取 engineRegistry（plugin-api 已声明该字段；运行时仍做空值守卫）
         try {
-            const pluginAny = this.plugin as any;
-            if (pluginAny.engineRegistry && project) {
-                const repo = pluginAny.engineRegistry.getCharacterRepository(project);
+            const registry = this.plugin.engineRegistry;
+            if (registry && project) {
+                const repo = registry.getCharacterRepository(project);
                 this.characterRepo = repo;
                 return repo;
             }
@@ -397,11 +398,11 @@ ${bodyContent.slice(0, 6000)}
      * 使用 Character 聚合根的方式更新状态
      */
     private updateCharacterWithStateChange(
-        char: any,
+        char: Character,
         change: EntityStateChange,
         chapterNum: number,
         chapterName: string,
-    ): any {
+    ): Character {
         // 由于 Character 是不可变对象，我们通过 toJSON 获取所有属性，更新后重新创建
         const charData = char.toJSON();
         
@@ -423,10 +424,11 @@ ${bodyContent.slice(0, 6000)}
         charData.lastChangedAt = chapterName || `第${chapterNum}章`;
         charData.lastChangedReason = change.reason;
 
-        // 使用 from 方法重新创建（假设 Character 有 from 静态方法）
-        const CharacterClass = char.constructor;
-        if (typeof (CharacterClass as any).from === 'function') {
-            return (CharacterClass as any).from(charData);
+        // 使用 from 方法重新创建（Character 提供静态 from）
+        const CharacterClass = char.constructor as typeof Character;
+        if (typeof CharacterClass.from === 'function') {
+            // toJSON 是聚合根自述快照（Record<string, any>），from 的入参是同一份 props
+            return CharacterClass.from(charData as unknown as CharacterProps);
         }
         return char;
     }
