@@ -656,14 +656,17 @@ export class AboutSection extends SettingsSection {
             }).open();
         });
 
-        // 支持作者（2026-11-09 用户要求）：只展示支付宝收款账号 + 复制，
-        // 插件不发起支付、不读取支付信息（详见 shared/support-author.ts 说明）。
-        const supportRow = section.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-gap-10px-2 nw-u-marginbottom-24px-2 nw-u-fwr-wrap-2'
+        // 支持作者（2026-11-09 用户要求）：独立卡片 + 放大按钮，点开直接展示支付宝收钱码
+        // （账号方式已作废；插件不发起支付、不读取支付信息）。
+        const supportCard = section.createDiv({ cls: 'nw-support-author-card' });
+        supportCard.createEl('h4', { text: '💝 支持作者', cls: 'nw-support-author-title' });
+        supportCard.createEl('p', {
+            text: '如果这个插件帮到了你，欢迎扫码请作者喝杯咖啡。',
+            cls: 'nw-support-author-desc',
         });
-        const supportBtn = supportRow.createEl('button', {
+        const supportBtn = supportCard.createEl('button', {
             text: '💝 支持作者',
-            cls: 'nw-btn nw-btn-primary',
+            cls: 'nw-btn nw-btn-primary nw-support-author-btn',
         });
         supportBtn.addEventListener('click', () => new SupportAuthorModal(this.app).open());
 

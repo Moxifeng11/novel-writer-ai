@@ -1,13 +1,12 @@
 /**
- * support-author-modal.ts — 「支持作者」面板（支付宝转账）
+ * support-author-modal.ts — 「支持作者」面板（支付宝收钱码）
  *
- * 只展示收款账号与操作步骤：插件不发起支付、不读取支付信息。
- * 复制走 `navigator.clipboard`，失败时回退为「选中输入框内容」让用户手动复制
- * （移动端 WebView 偶尔拒绝 clipboard 权限）。
+ * 直接展示静态收钱码图片（data URI 内嵌，社区市场只分发 main.js/manifest/styles），
+ * 用户用支付宝扫码即可。插件不发起支付、不读取支付信息。
  */
-import { Modal, Notice, Setting } from 'obsidian';
+import { Modal } from 'obsidian';
+import { ALIPAY_SUPPORT_QR_DATA_URI } from '@/shared/support-qr.generated';
 import { describeAlipaySupport } from '@/shared/support-author';
-import { showSuccessNotice } from '@/ui/components/notice-helpers';
 
 /** 支持作者面板 */
 export class SupportAuthorModal extends Modal {
@@ -21,34 +20,16 @@ export class SupportAuthorModal extends Modal {
         contentEl.createEl('h3', { text: `💝 ${info.title}` });
         contentEl.createEl('p', { text: info.intro });
 
-        const accountInput = contentEl.createEl('input', {
-            type: 'text',
-            value: info.account,
-            cls: 'nw-input',
-            attr: { readonly: 'readonly', 'aria-label': '支付宝账号' },
+        const qrWrap = contentEl.createDiv({ cls: 'nw-support-qr-wrap' });
+        qrWrap.createEl('img', {
+            cls: 'nw-support-qr-img',
+            attr: {
+                src: ALIPAY_SUPPORT_QR_DATA_URI,
+                alt: '支付宝收钱码',
+            },
         });
-        // 只读输入框：让用户可以手动选中/复制（clipboard 被拒时的兜底）
-        accountInput.addEventListener('click', () => accountInput.select());
+        qrWrap.createEl('p', { text: info.caption, cls: 'nw-support-qr-caption' });
 
-        new Setting(contentEl)
-            .setName('支付宝账号')
-            .setDesc('点击右侧复制，或直接选中账号')
-            .addButton(btn => btn
-                .setButtonText('📋 复制账号')
-                .onClick(async () => {
-                    try {
-                        await navigator.clipboard.writeText(info.account);
-                        showSuccessNotice('已复制支付宝账号', { timeout: 2000 });
-                    } catch {
-                        accountInput.select();
-                        new Notice('已选中账号，请手动复制（Ctrl+C / 长按复制）', 4000);
-                    }
-                }));
-
-        const stepsEl = contentEl.createEl('ol');
-        for (const step of info.steps) {
-            stepsEl.createEl('li', { text: step });
-        }
         contentEl.createEl('p', { text: info.note, cls: 'nw-text-12-muted' });
     }
 

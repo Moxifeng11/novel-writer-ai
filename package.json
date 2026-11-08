@@ -58,7 +58,9 @@
     "check:dsh-isolation": "node scripts/check-dsh-isolation.mjs",
     "bench:hotpath": "node scripts/bench/get-files-hotpath.mjs",
     "check:obsidian-api": "node scripts/check-obsidian-api.mjs",
-    "check:secrets": "node scripts/check-secrets.mjs"
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "gen:support-qr": "node scripts/gen-support-qr.mjs",
+    "check:support-qr": "node scripts/gen-support-qr.mjs --check"
   },
   "engines": {
     "node": ">=20",

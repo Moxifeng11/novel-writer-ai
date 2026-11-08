@@ -1,24 +1,31 @@
 import { describe, it, expect } from 'vitest';
-import { ALIPAY_SUPPORT_ACCOUNT, describeAlipaySupport } from '../../../shared/support-author';
+import { ALIPAY_SUPPORT_CAPTION, describeAlipaySupport } from '../../../shared/support-author';
+import { ALIPAY_SUPPORT_QR_DATA_URI } from '../../../shared/support-qr.generated';
 
 /**
- * 「支持作者」展示信息（2026-11-09 用户要求：设置页增加支付宝支持按钮）。
+ * 「支持作者」展示信息（2026-11-09 用户要求：直接展示支付宝收钱码，账号方式作废）。
  *
- * 这里只锁定纯展示契约：账号形态、步骤包含转账指引、边界说明明确「不发起支付」。
+ * 这里锁定纯展示契约：收钱码是有效内嵌图片、指引包含扫码、边界说明明确「不发起支付」。
  * 不做真实支付——纯客户端插件不能内嵌商户私钥（见 support-author.ts 注释）。
  */
-describe('describeAlipaySupport', () => {
-    it('账号是纯数字的收款账号', () => {
-        expect(ALIPAY_SUPPORT_ACCOUNT).toMatch(/^\d{8,16}$/);
-        expect(describeAlipaySupport().account).toBe(ALIPAY_SUPPORT_ACCOUNT);
+describe('describeAlipaySupport（收钱码）', () => {
+    it('收钱码以 data URI 内嵌且是 JPEG 图片', () => {
+        expect(ALIPAY_SUPPORT_QR_DATA_URI.startsWith('data:image/jpeg;base64,')).toBe(true);
+        // 生成物应包含实际图像数据（不是空占位）
+        expect(ALIPAY_SUPPORT_QR_DATA_URI.length).toBeGreaterThan(10_000);
     });
 
-    it('步骤包含「打开支付宝 → 转账 → 输入账号」', () => {
+    it('扫码指引提到支付宝扫一扫', () => {
         const info = describeAlipaySupport();
-        const joined = info.steps.join(' ');
-        expect(joined).toContain('支付宝');
-        expect(joined).toContain('转账');
-        expect(joined).toContain(ALIPAY_SUPPORT_ACCOUNT);
+        expect(info.caption).toBe(ALIPAY_SUPPORT_CAPTION);
+        expect(info.caption).toContain('支付宝');
+        expect(info.caption).toContain('扫一扫');
+    });
+
+    it('不再展示转账账号', () => {
+        const info = describeAlipaySupport();
+        expect(JSON.stringify(info)).not.toContain('2667520188');
+        expect(info).not.toHaveProperty('account');
     });
 
     it('边界说明明确自愿且不发起支付/不收集信息', () => {

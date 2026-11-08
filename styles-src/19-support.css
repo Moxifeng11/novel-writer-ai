@@ -1,0 +1,54 @@
+/* 支持作者（设置 → 关于页）：独立卡片 + 放大按钮 + 收钱码 */
+.nw-support-author-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 20px;
+    margin-bottom: 24px;
+    border-radius: 12px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+    text-align: center;
+}
+
+.nw-support-author-title {
+    margin: 0;
+}
+
+.nw-support-author-desc {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.nw-support-author-btn {
+    min-width: 240px;
+    padding: 12px 32px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.nw-support-qr-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.nw-support-qr-img {
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+    border-radius: 8px;
+}
+
+.nw-support-qr-caption {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}

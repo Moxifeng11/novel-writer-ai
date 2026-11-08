@@ -33,6 +33,7 @@
 | `npm run check:secrets` | — |
 | `npm run check:silent-failures` | 用户操作型静默失败检查 |
 | `npm run check:styles` | 校验 styles.css 与 styles-src 一致 |
+| `npm run check:support-qr` | — |
 | `npm run check:templates` | 校验模板生成物与 assets 一致 |
 | `npm run check:write-entry` | — |
 | `npm run css:baseline` | 更新 CSS 基线 |
@@ -45,6 +46,7 @@
 | `npm run eval:quality` | 质量基准评估 |
 | `npm run eval:rag` | RAG 检索评估 |
 | `npm run gen:docs` | 生成 docs/generated/* |
+| `npm run gen:support-qr` | — |
 | `npm run gen:templates` | 把 assets/template-scaffold 嵌入 shared/template-scaffold-assets.generated.ts |
 | `npm run handoff` | — |
 | `npm run inline:baseline` | 更新内联样式基线 |
