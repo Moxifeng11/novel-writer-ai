@@ -73,7 +73,7 @@ export class ContextPanel {
 
         // 上下文模式状态提示 + token 估算
         const modeHint = plugin.settings.contextScope === 'full' ? '（完整遍历所有实体）' : '（仅注入本章涉及实体）';
-        panel.createEl('div', { text: `当前：${modeHint}`, cls: 'novel-writer-context-mode-hint' }).style.cssText = 'font-size:11px;color:var(--text-faint);margin-bottom:6px;';
+        panel.createEl('div', { text: `当前：${modeHint}`, cls: 'novel-writer-context-mode-hint' });
         
         // v3.5.0: token 预算（从 vars 读取，运行时由 FullWriterView 注入到 plugin 上）
         const fwView = (plugin as unknown as { fullWriterView?: { vars?: Record<string, string> } }).fullWriterView;

@@ -32,7 +32,7 @@ import { fileURLToPath } from 'node:url';
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = path.resolve(SCRIPT_DIR, '..');
 const BASELINE_FILE = '.obsidian-api-baseline.json';
-const SCAN_DIRS = ['main.ts', 'ui', 'core', 'engine', 'services', 'shared', 'domains'];
+const SCAN_DIRS = ['main.ts', 'ui', 'core', 'engine', 'services', 'shared', 'domains', 'utils'];
 const SKIP_DIRS = new Set(['node_modules', 'docs', 'scripts', 'tests', '.git', 'coverage', 'dist']);
 
 /**
@@ -99,11 +99,38 @@ const RULES = [
         //   - el.style.width = someWidth / `...${x}`      → 不算（动态值）
         //   - setAttribute('style', '...')                → 违规
         pattern: /\.style\.[A-Za-z_$][\w$]*\s*=\s*(?:['"`]|-?\d|true\b|false\b|null\b)|\.style\.setProperty\(\s*['"][^'"]+['"]\s*,\s*(?:['"`]|-?\d|true\b|false\b|null\b)|setAttribute\(\s*['"]style['"]\s*,/,
-        // 含插值的模板字符串属于动态样式，ESLint 不报；整行排除避免误伤
-        exclude: /\$\{/,
+        // 整行 exclude 会把「静态赋值 + 同行动态模板」一起放过；改为按命中片段判断：
+        // 仅当该赋值的右侧字面量本身含 ${} 时才跳过（与 ESLint 的 Literal 判定一致）。
+        test: hasStaticStyleViolation,
         allow: [],
     },
 ];
+
+/** `el.style.x = ...` 的右侧是否为字面量；含插值的模板属于动态值，不算违规 */
+function hasStaticStyleViolation(line) {
+    const literalStart = /^(?:['"]|-?\d|true\b|false\b|null\b)/;
+    const literalOrDynamic = (rhs) => {
+        if (rhs.startsWith('`')) {
+            const end = rhs.indexOf('`', 1);
+            const literal = end >= 0 ? rhs.slice(0, end + 1) : rhs;
+            return literal.includes('${') ? false : true;
+        }
+        return literalStart.test(rhs);
+    };
+
+    const assign = /\.style\.[A-Za-z_$][\w$]*\s*=\s*/g;
+    let match;
+    while ((match = assign.exec(line))) {
+        if (literalOrDynamic(line.slice(match.index + match[0].length))) return true;
+    }
+
+    const setProperty = /\.style\.setProperty\(\s*['"][^'"]+['"]\s*,\s*/g;
+    while ((match = setProperty.exec(line))) {
+        if (literalOrDynamic(line.slice(match.index + match[0].length))) return true;
+    }
+
+    return /setAttribute\(\s*['"]style['"]\s*,/.test(line);
+}
 
 function parseArgs(argv) {
     const args = { update: false, json: false, note: '', root: DEFAULT_ROOT, baseline: null };
@@ -152,8 +179,8 @@ function collectViolations(root) {
             if (isCommentLine(line)) return;
             for (const rule of RULES) {
                 if (rule.allow.some((prefix) => rel === prefix || rel.startsWith(prefix))) continue;
-                if (rule.exclude && rule.exclude.test(line)) continue;
-                if (!rule.pattern.test(line)) continue;
+                const violated = rule.test ? rule.test(line) : rule.pattern.test(line);
+                if (!violated) continue;
                 const entry = report[rule.id];
                 entry.count += 1;
                 entry.files[rel] = (entry.files[rel] || 0) + 1;

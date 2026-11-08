@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-08T22:39:55.140Z",
-  "note": "v4.80.0 批量 B4：新增 26-cleanup-utilities.css（共用间距/按钮行/预览框/表格局/弹窗尺寸/禁用态/拖拽态/指纹视图/知识库选择器）；+10038B/+80 类；!important 19→24 仅来自拖拽面板固定定位/尺寸（position/z-index/resize 共 5 行，替代原 setProperty(...,'important')）；hex/rgb 不变",
-  "bytes": 543390,
+  "generatedAt": "2026-11-08T23:26:40.816Z",
+  "note": "v4.80.0 审计维度④ C-3：上下文模式提示的静态 cssText 改为 .novel-writer-context-mode-hint 类（+111B，类数不变）；无颜色/important 变化",
+  "bytes": 543501,
   "important": 24,
   "hardcodedHex": 161,
   "rgbHsl": 188,

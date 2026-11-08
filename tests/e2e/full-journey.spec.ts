@@ -121,6 +121,11 @@ test.describe('Novel Writer AI · 完整用户旅程（mock AI）', () => {
         const exported = await exportTxtViaUi(page, vault.path);
         expect(exported.toLowerCase().endsWith('.txt')).toBe(true);
         expect(fs.statSync(exported).size).toBeGreaterThan(0);
+        // v4.80.0 审计：不只断言“有文件”，还要证明正文进了导出（取正文前 40 字忽略空白）
+        const exportedText = fs.readFileSync(exported, 'utf8');
+        const expectedSnippet = bodyWithoutFrontmatter.replace(/^#.*$/m, '').replace(/s+/g, ' ').trim().slice(0, 40);
+        expect(expectedSnippet.length).toBeGreaterThan(20);
+        expect(exportedText.replace(/s+/g, ' ')).toContain(expectedSnippet);
 
         // 6) 禁用/启用插件后，项目文件与结算状态仍在
         await page.evaluate(async (pluginId) => {

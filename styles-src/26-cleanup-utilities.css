@@ -436,3 +436,8 @@
     color: var(--text-muted);
     font-size: 12px;
 }
+.novel-writer-context-mode-hint {
+    margin-bottom: 6px;
+    color: var(--text-faint);
+    font-size: 11px;
+}

@@ -164,6 +164,33 @@ describe('check:obsidian-api 门禁', () => {
         expect(Object.keys(report.rules['static-style-assignment'].files)).toEqual(['ui/bad.ts']);
     });
 
+    it('utils 目录纳入扫描；同行静态+动态只报静态片段', () => {
+        const root = fixture({
+            'ui/mixed.ts': [
+                'export function mixed(el: HTMLElement, w: number) {',
+                "    el.style.color = 'red'; const x = `${w}px`;",
+                '    el.style.width = `${w}px`;',
+                '}',
+            ].join('\n'),
+            'utils/bad.ts': [
+                'export function inject(el: HTMLElement) {',
+                "    el.createEl('style');",
+                '}',
+            ].join('\n'),
+        });
+        const result = run(root);
+        expect(result.code).toBe(1);
+        expect(result.stderr).toContain('style-element');
+        expect(result.stderr).toContain('static-style-assignment');
+
+        const report = JSON.parse(run(root, ['--json']).stdout);
+        expect(report.rules['style-element'].count).toBe(1);
+        // 只报 mixed.ts 的 'red'；动态 width 不报
+        expect(report.rules['static-style-assignment'].count).toBe(1);
+        expect(report.rules['static-style-assignment'].files).toEqual({ 'ui/mixed.ts': 1 });
+        expect(report.rules['style-element'].files).toEqual({ 'utils/bad.ts': 1 });
+    });
+
     it('单源文件（shared/paths.ts）属于合法例外，不被误报', () => {
         const root = fixture({
             'shared/paths.ts': "const DEFAULT_PLUGIN_ROOT_DIR = '.obsidian/plugins/novel-writer-ai';\nexport const d = DEFAULT_PLUGIN_ROOT_DIR;\n",
