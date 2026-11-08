@@ -105,61 +105,46 @@ export class TaskCardComponent {
         this.updateStatusBadge(state.status);
 
         if (state.currentStep) {
-            this.stepInfoEl.style.display = 'flex';
+            this.stepInfoEl.removeClass('nw-u-d-none');
             const stepNameEl = this.stepInfoEl.querySelector<HTMLElement>('.nw-task-step-name');
             if (stepNameEl) {
                 stepNameEl.setText(state.currentStep);
             }
         } else {
-            this.stepInfoEl.style.display = 'none';
+            this.stepInfoEl.addClass('nw-u-d-none');
         }
 
         this.updateTimeInfo(state);
 
         if (state.error && this.errorEl) {
-            this.errorEl.style.display = 'block';
+            this.errorEl.removeClass('nw-u-d-none');
             const errorMsgEl = this.errorEl.querySelector<HTMLElement>('.nw-task-error-message');
             if (errorMsgEl) {
                 errorMsgEl.setText(state.error);
             }
         } else if (this.errorEl) {
-            this.errorEl.style.display = 'none';
+            this.errorEl.addClass('nw-u-d-none');
         }
 
         this.updateCancelButton(state.status);
     }
 
     private updateStatusBadge(status: string): void {
-        const statusMap: Record<string, { label: string; style: string }> = {
-            pending: {
-                label: '等待中',
-                style: 'background:rgba(245,158,11,0.15);color:#f59e0b;'
-            },
-            running: {
-                label: '运行中',
-                style: 'background:rgba(59,130,246,0.15);color:#3b82f6;'
-            },
-            paused: {
-                label: '已暂停',
-                style: 'background:var(--background-secondary);color:var(--text-muted);'
-            },
-            completed: {
-                label: '已完成',
-                style: 'background:rgba(46,204,113,0.15);color:#2ecc71;'
-            },
-            failed: {
-                label: '失败',
-                style: 'background:rgba(231,76,60,0.15);color:#e74c3c;'
-            },
-            cancelled: {
-                label: '已取消',
-                style: 'background:var(--background-secondary);color:var(--text-muted);'
-            },
+        const labels: Record<string, string> = {
+            pending: '等待中',
+            running: '运行中',
+            paused: '已暂停',
+            completed: '已完成',
+            failed: '失败',
+            cancelled: '已取消',
         };
-
-        const config = statusMap[status] || statusMap.pending;
-        this.statusBadgeEl.setText(config.label);
-        this.statusBadgeEl.style.cssText = `padding:4px 12px;font-size:12px;border-radius:12px;${config.style}`;
+        const known = labels[status] ? status : 'pending';
+        this.statusBadgeEl.setText(labels[known]);
+        this.statusBadgeEl.removeClass(
+            'nw-is-pending', 'nw-is-running', 'nw-is-paused',
+            'nw-is-completed', 'nw-is-failed', 'nw-is-cancelled',
+        );
+        this.statusBadgeEl.addClass(`nw-is-${known}`);
     }
 
     private updateTimeInfo(state: ProgressState): void {
@@ -175,12 +160,12 @@ export class TaskCardComponent {
                 etaEl.setText(this.formatDuration(state.eta));
                 const etaContainer = this.timeInfoEl.querySelector<HTMLElement>('.nw-task-eta-container');
                 if (etaContainer) {
-                    etaContainer.style.display = 'flex';
+                    etaContainer.removeClass('nw-u-d-none');
                 }
             } else {
                 const etaContainer = this.timeInfoEl.querySelector<HTMLElement>('.nw-task-eta-container');
                 if (etaContainer) {
-                    etaContainer.style.display = 'none';
+                    etaContainer.addClass('nw-u-d-none');
                 }
             }
         }
@@ -190,15 +175,15 @@ export class TaskCardComponent {
         if (!this.cancelBtn) return;
 
         if (status === 'running' || status === 'pending') {
-            this.cancelBtn.style.display = 'inline-flex';
+            this.cancelBtn.removeClass('nw-u-d-none');
             this.cancelBtn.disabled = false;
             this.cancelBtn.setText('✕ 取消');
         } else if (status === 'failed') {
-            this.cancelBtn.style.display = 'inline-flex';
+            this.cancelBtn.removeClass('nw-u-d-none');
             this.cancelBtn.disabled = false;
             this.cancelBtn.setText('🔄 重试');
         } else {
-            this.cancelBtn.style.display = 'none';
+            this.cancelBtn.addClass('nw-u-d-none');
         }
     }
 
@@ -227,41 +212,19 @@ export class TaskCardComponent {
     }
 
     private render(): void {
-        this.cardEl = this.container.createDiv({
-            cls: 'nw-task-card',
-            attr: {
-                style: 'border:1px solid var(--background-modifier-border);border-radius:8px;padding:16px;background:var(--background-primary);'
-            }
-        });
+        this.cardEl = this.container.createDiv({ cls: 'nw-task-card' });
 
-        const headerRow = this.cardEl.createDiv({
-            cls: 'nw-task-header',
-            attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;' }
-        });
+        const headerRow = this.cardEl.createDiv({ cls: 'nw-task-header' });
 
-        const titleInfo = headerRow.createDiv({
-            cls: 'nw-task-title-info',
-            attr: { style: 'display:flex;align-items:center;gap:10px;min-width:0;flex:1;' }
-        });
+        const titleInfo = headerRow.createDiv({ cls: 'nw-task-title-info' });
 
-        this.titleEl = titleInfo.createDiv({
-            cls: 'nw-task-title',
-            attr: { style: 'font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' }
-        });
+        this.titleEl = titleInfo.createDiv({ cls: 'nw-task-title' });
         this.titleEl.setText('任务');
 
-        this.statusBadgeEl = headerRow.createSpan({
-            cls: 'nw-task-status-badge',
-            attr: {
-                style: 'padding:4px 12px;font-size:12px;border-radius:12px;background:var(--background-secondary);color:var(--text-muted);'
-            }
-        });
+        this.statusBadgeEl = headerRow.createSpan({ cls: 'nw-task-status-badge' });
         this.statusBadgeEl.setText('等待中');
 
-        const progressContainer = this.cardEl.createDiv({
-            cls: 'nw-task-progress',
-            attr: { style: 'margin-bottom:12px;' }
-        });
+        const progressContainer = this.cardEl.createDiv({ cls: 'nw-task-progress' });
 
         this.progressBar = new ProgressBarComponent(progressContainer, {
             height: '8px',
@@ -269,65 +232,37 @@ export class TaskCardComponent {
             showMessage: false,
         });
 
-        this.stepInfoEl = this.cardEl.createDiv({
-            cls: 'nw-task-step-info',
-            attr: { style: 'display:none;align-items:center;gap:8px;margin-bottom:12px;font-size:13px;color:var(--text-muted);' }
-        });
-        this.stepInfoEl.createSpan({ text: '📍', attr: { style: 'font-size:14px;' } });
-        const stepNameSpan = this.stepInfoEl.createSpan({
-            cls: 'nw-task-step-name',
-            attr: { style: 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' }
-        });
+        this.stepInfoEl = this.cardEl.createDiv({ cls: 'nw-task-step-info nw-u-d-none' });
+        this.stepInfoEl.createSpan({ text: '📍', cls: 'nw-task-step-icon' });
+        const stepNameSpan = this.stepInfoEl.createSpan({ cls: 'nw-task-step-name' });
         void stepNameSpan;
 
-        this.timeInfoEl = this.cardEl.createDiv({
-            cls: 'nw-task-time-info',
-            attr: { style: 'display:flex;gap:20px;margin-bottom:12px;font-size:12px;color:var(--text-muted);flex-wrap:wrap;' }
-        });
+        this.timeInfoEl = this.cardEl.createDiv({ cls: 'nw-task-time-info' });
 
-        const elapsedContainer = this.timeInfoEl.createDiv({
-            cls: 'nw-task-elapsed-container',
-            attr: { style: 'display:flex;align-items:center;gap:4px;' }
-        });
-        elapsedContainer.createSpan({ text: '⏱️', attr: { style: 'font-size:12px;' } });
+        const elapsedContainer = this.timeInfoEl.createDiv({ cls: 'nw-task-time-item' });
+        elapsedContainer.createSpan({ text: '⏱️', cls: 'nw-task-time-icon' });
         elapsedContainer.createSpan({ text: '已用：' });
-        elapsedContainer.createSpan({
-            cls: 'nw-task-elapsed',
-            attr: { style: 'font-weight:500;color:var(--text-normal);' }
-        }).setText('0秒');
+        elapsedContainer.createSpan({ cls: 'nw-task-time-value nw-task-elapsed' }).setText('0秒');
 
         const etaContainer = this.timeInfoEl.createDiv({
-            cls: 'nw-task-eta-container',
-            attr: { style: 'display:flex;align-items:center;gap:4px;display:none;' }
+            cls: 'nw-task-time-item nw-task-eta-container nw-u-d-none',
         });
-        etaContainer.createSpan({ text: '⏳', attr: { style: 'font-size:12px;' } });
+        etaContainer.createSpan({ text: '⏳', cls: 'nw-task-time-icon' });
         etaContainer.createSpan({ text: '剩余：' });
-        etaContainer.createSpan({
-            cls: 'nw-task-eta',
-            attr: { style: 'font-weight:500;color:var(--text-normal);' }
-        }).setText('0秒');
+        etaContainer.createSpan({ cls: 'nw-task-time-value nw-task-eta' }).setText('0秒');
 
-        this.errorEl = this.cardEl.createDiv({
-            cls: 'nw-task-error',
-            attr: {
-                style: 'display:none;padding:10px 12px;background:rgba(231,76,60,0.1);border-radius:6px;margin-bottom:12px;font-size:12px;color:#e74c3c;'
-            }
-        });
-        this.errorEl.createSpan({ text: '错误：', attr: { style: 'font-weight:600;' } });
+        this.errorEl = this.cardEl.createDiv({ cls: 'nw-task-error nw-u-d-none' });
+        this.errorEl.createSpan({ text: '错误：', cls: 'nw-task-error-label' });
         this.errorEl.createSpan({ cls: 'nw-task-error-message' });
 
         this.actionsEl = this.cardEl.createDiv({
-            cls: 'nw-task-actions',
-            attr: {
-                style: `display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;${this.options.showCancel ? '' : 'display:none;'}`
-            }
+            cls: this.options.showCancel ? 'nw-task-actions' : 'nw-task-actions nw-u-d-none',
         });
 
         if (this.options.showCancel) {
             this.cancelBtn = this.actionsEl.createEl('button', {
-                cls: 'nw-btn nw-btn-danger nw-btn-sm',
+                cls: 'nw-btn nw-btn-danger nw-btn-sm nw-u-d-none',
                 text: '✕ 取消',
-                attr: { style: 'display:none;' }
             });
             this.cancelBtn.addEventListener('click', () => {
                     this.handleCancel();

@@ -11,7 +11,7 @@
 | `shared/` | 178 | 40658 | 1601 | 1320 | 82% |
 | `core/` | 7 | 2821 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 238 | 100165 | 733 | 638 | 87% |
+| `ui/` | 238 | 99998 | 733 | 638 | 87% |
 
 ## 文件清单
 
@@ -612,11 +612,11 @@
 | `ui/components/error-state.ts` | 57 | 3 | 3 |
 | `ui/components/notice-helpers.ts` | 156 | 3 | 3 |
 | `ui/components/progress/index.ts` | 28 | 4 | 0 |
-| `ui/components/progress/loading-overlay.ts` | 230 | 2 | 2 |
+| `ui/components/progress/loading-overlay.ts` | 205 | 2 | 2 |
 | `ui/components/progress/operation-confirm-modal.ts` | 325 | 2 | 2 |
-| `ui/components/progress/progress-bar.ts` | 146 | 2 | 2 |
-| `ui/components/progress/step-list.ts` | 285 | 1 | 1 |
-| `ui/components/progress/task-card.ts` | 338 | 2 | 2 |
+| `ui/components/progress/progress-bar.ts` | 131 | 2 | 2 |
+| `ui/components/progress/step-list.ts` | 223 | 1 | 1 |
+| `ui/components/progress/task-card.ts` | 273 | 2 | 2 |
 | `ui/components/smart-chart.ts` | 519 | 1 | 1 |
 | `ui/context-injector-modal.ts` | 215 | 1 | 1 |
 | `ui/continue-chapters-modal.ts` | 566 | 1 | 1 |

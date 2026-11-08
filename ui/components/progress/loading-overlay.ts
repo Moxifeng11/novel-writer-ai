@@ -70,7 +70,7 @@ export class LoadingOverlayComponent {
      */
     show(): void {
         this.isVisible = true;
-        this.overlayEl.style.display = 'flex';
+        this.overlayEl.removeClass('nw-u-d-none');
     }
 
     /**
@@ -78,7 +78,7 @@ export class LoadingOverlayComponent {
      */
     hide(): void {
         this.isVisible = false;
-        this.overlayEl.style.display = 'none';
+        this.overlayEl.addClass('nw-u-d-none');
     }
 
     /**
@@ -139,7 +139,7 @@ export class LoadingOverlayComponent {
         }
 
         if (this.options.showSteps && state.steps && state.steps.length > 0) {
-            this.stepsContainer.style.display = 'block';
+            this.stepsContainer.removeClass('nw-u-d-none');
             if (!this.stepList) {
                 this.stepList = new StepListComponent(
                     this.stepsContainer,
@@ -147,7 +147,7 @@ export class LoadingOverlayComponent {
                 );
             }
         } else if (this.options.showSteps) {
-            this.stepsContainer.style.display = 'none';
+            this.stepsContainer.addClass('nw-u-d-none');
         }
 
         if (state.status === 'completed' ||
@@ -168,32 +168,14 @@ export class LoadingOverlayComponent {
     }
 
     private render(): void {
-        this.overlayEl = this.container.createDiv({
-            cls: 'nw-loading-overlay',
-            attr: {
-                style: 'position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(2px);'
-            }
-        });
+        this.overlayEl = this.container.createDiv({ cls: 'nw-loading-overlay nw-u-d-none' });
 
-        this.modalEl = this.overlayEl.createDiv({
-            cls: 'nw-loading-modal',
-            attr: {
-                style: 'background:var(--background-primary);border-radius:12px;padding:24px;min-width:320px;max-width:480px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);border:1px solid var(--background-modifier-border);'
-            }
-        });
+        this.modalEl = this.overlayEl.createDiv({ cls: 'nw-loading-modal' });
 
-        this.titleEl = this.modalEl.createDiv({
-            cls: 'nw-loading-title',
-            attr: {
-                style: 'font-size:16px;font-weight:600;margin-bottom:16px;text-align:center;'
-            }
-        });
+        this.titleEl = this.modalEl.createDiv({ cls: 'nw-loading-title' });
         this.titleEl.setText(this.options.title);
 
-        this.progressContainer = this.modalEl.createDiv({
-            cls: 'nw-loading-progress',
-            attr: { style: 'margin-bottom:16px;' }
-        });
+        this.progressContainer = this.modalEl.createDiv({ cls: 'nw-loading-progress' });
 
         this.progressBar = new ProgressBarComponent(this.progressContainer, {
             height: '8px',
@@ -202,24 +184,17 @@ export class LoadingOverlayComponent {
         });
 
         this.stepsContainer = this.modalEl.createDiv({
-            cls: 'nw-loading-steps',
-            attr: {
-                style: `margin-bottom:16px;max-height:200px;overflow-y:auto;${this.options.showSteps ? '' : 'display:none;'}`
-            }
+            cls: this.options.showSteps ? 'nw-loading-steps' : 'nw-loading-steps nw-u-d-none',
         });
 
         this.actionsContainer = this.modalEl.createDiv({
-            cls: 'nw-loading-actions',
-            attr: {
-                style: `display:flex;justify-content:center;gap:12px;${this.options.showCancel ? '' : 'display:none;'}`
-            }
+            cls: this.options.showCancel ? 'nw-loading-actions' : 'nw-loading-actions nw-u-d-none',
         });
 
         if (this.options.showCancel) {
             this.cancelBtn = this.actionsContainer.createEl('button', {
-                cls: 'nw-btn nw-btn-secondary',
+                cls: 'nw-btn nw-btn-secondary nw-loading-cancel-btn',
                 text: '取消',
-                attr: { style: 'padding:8px 24px;' }
             });
             this.cancelBtn.addEventListener('click', () => {
                 this.handleCancel();

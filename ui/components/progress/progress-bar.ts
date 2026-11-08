@@ -104,42 +104,27 @@ export class ProgressBarComponent {
     }
 
     private render(): void {
-        this.wrapperEl = this.container.createDiv({
-            cls: 'nw-progress-bar-wrapper',
-            attr: { style: 'width:100%;' }
-        });
+        this.wrapperEl = this.container.createDiv({ cls: 'nw-progress-bar-wrapper' });
+        // 高度/颜色来自调用方选项，属于动态值：用自定义属性交给 CSS，不写内联样式
+        this.wrapperEl.style.setProperty('--nw-progress-h', this.options.height);
+        this.wrapperEl.style.setProperty('--nw-progress-color', this.options.color);
 
-        const topRow = this.wrapperEl.createDiv({
-            attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;' }
-        });
+        const topRow = this.wrapperEl.createDiv({ cls: 'nw-progress-bar-top' });
 
         this.messageEl = topRow.createSpan({
-            cls: 'nw-progress-bar-message',
-            attr: {
-                style: `font-size:13px;color:var(--text-normal);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${this.options.showMessage ? '' : 'display:none;'}`
-            }
+            cls: this.options.showMessage
+                ? 'nw-progress-bar-message'
+                : 'nw-progress-bar-message nw-u-d-none',
         });
 
         this.percentEl = topRow.createSpan({
-            cls: 'nw-progress-bar-percent',
-            attr: {
-                style: `font-size:12px;color:var(--text-muted);margin-left:12px;font-weight:500;${this.options.showPercent ? '' : 'display:none;'}`
-            }
+            cls: this.options.showPercent
+                ? 'nw-progress-bar-percent'
+                : 'nw-progress-bar-percent nw-u-d-none',
         });
         this.percentEl.setText('0%');
 
-        this.barContainerEl = this.wrapperEl.createDiv({
-            cls: 'nw-progress-bar-container',
-            attr: {
-                style: `width:100%;height:${this.options.height};background:var(--background-secondary);border-radius:${this.options.height};overflow:hidden;`
-            }
-        });
-
-        this.barFillEl = this.barContainerEl.createDiv({
-            cls: 'nw-progress-bar-fill',
-            attr: {
-                style: `height:100%;width:0%;background:${this.options.color};border-radius:${this.options.height};transition:width 0.3s ease;`
-            }
-        });
+        this.barContainerEl = this.wrapperEl.createDiv({ cls: 'nw-progress-bar-container' });
+        this.barFillEl = this.barContainerEl.createDiv({ cls: 'nw-progress-bar-fill' });
     }
 }

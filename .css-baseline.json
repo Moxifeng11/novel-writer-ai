@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-08T21:47:31.640Z",
-  "note": "v4.80.0 批量 A+B1：A 迁移运行时 <style>（+29380B/+193 类，plan-book 根类 +600B/+1，transition:all 改具名 +218B）；B1 把 step-modal-controller 的 15 处字面量样式改为 nw-u-d-none 与 15 个语义类（+1537B/+15 类）。19 个 !important、+7 hex、+8 rgb 为 A 迁移带入，后续批次清理后只降不升",
-  "bytes": 504516,
+  "generatedAt": "2026-11-08T22:01:31.107Z",
+  "note": "v4.80.0 批量 B2：新增 styles-src/21-progress-components.css（进度条/步骤/任务卡/遮罩），+7338B/+45 类；颜色全部走主题变量/color-mix，hex 与 rgb 指标未增；nw-u-d-none 用 0,2,0 压过组件 display，不用 !important",
+  "bytes": 511854,
   "important": 19,
   "hardcodedHex": 161,
   "rgbHsl": 188,
-  "uniqueClasses": 2703,
+  "uniqueClasses": 2748,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

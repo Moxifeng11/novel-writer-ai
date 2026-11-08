@@ -2042,6 +2042,9 @@ class FakeUiEl {
 
     constructor(tag = 'div') {
         this.tagName = tag;
+        (this.style as Record<string, unknown>).setProperty = (name: string, value: string) => {
+            this.style[name] = value;
+        };
     }
 
     get classList() {
@@ -2080,8 +2083,20 @@ class FakeUiEl {
         this.classList.add(cls);
         return this;
     }
-    empty(): this {
-        this.children = [];
+    removeClass(...cls: string[]): this {
+        this.classList.remove(...cls);
+        return this;
+    }
+    toggleClass(cls: string, force?: boolean): this {
+        const shouldAdd = force === undefined ? !this.classList.contains(cls) : force;
+        if (shouldAdd) this.classList.add(cls);
+        else this.classList.remove(cls);
+        return this;
+    }
+    setProperty(name: string, value: string): void {
+        this.style[name] = value;
+    }
+    empty(): this {        this.children = [];
         return this;
     }
     appendChild<T extends FakeUiEl>(child: T): T {
@@ -2418,6 +2433,7 @@ describe('progress-bar / task-card（fake DOM）', () => {
         const message = wrapper.findByClass('nw-progress-bar-message');
         expect(fill).not.toBeNull();
         expect(percent?.textContent).toBe('0%');
+        expect(wrapper.style['--nw-progress-h']).toBe('8px');
 
         bar.setProgress(50, '正在生成');
         expect(fill?.style.width).toBe('50%');
@@ -2462,7 +2478,7 @@ describe('progress-bar / task-card（fake DOM）', () => {
 
         // 取消按钮：pending 态可见，点击触发回调
         const cancelBtn = cardEl.findByClass('nw-btn-danger');
-        expect(cancelBtn?.style.display).toBe('inline-flex');
+        expect(cancelBtn?.classList.contains('nw-u-d-none')).toBe(false);
         cancelBtn?.dispatch('click');
         expect(cancelled).toHaveBeenCalledTimes(1);
 
@@ -2470,7 +2486,7 @@ describe('progress-bar / task-card（fake DOM）', () => {
         emitter.fail('模型超时');
         expect(cardEl.findByClass('nw-task-status-badge')?.textContent).toBe('失败');
         const errorBox = cardEl.findByClass('nw-task-error');
-        expect(errorBox?.style.display).toBe('block');
+        expect(errorBox?.classList.contains('nw-u-d-none')).toBe(false);
         expect(errorBox?.findByClass('nw-task-error-message')?.textContent).toBe('模型超时');
         expect(cancelBtn?.textContent).toBe('🔄 重试');
 
@@ -2542,9 +2558,9 @@ describe('step-list（fake DOM）', () => {
 
         expect(items[0].findByClass('nw-step-icon')?.textContent).toBe('✓');
         expect(items[1].findByClass('nw-step-icon')?.textContent).toBe('●');
-        expect(items[1].findByClass('nw-step-progress-bar')?.style.display).toBe('block');
+        expect(items[1].findByClass('nw-step-progress-bar')?.classList.contains('nw-is-visible')).toBe(true);
         expect(items[2].findByClass('nw-step-icon')?.textContent).toBe('○');
-        expect(items[2].style.opacity).toBe('0.6');
+        expect(items[2].classList.contains('nw-is-pending')).toBe(true);
     });
 
     it('updateStep：写入子进度条宽度与消息；越界索引安全返回', () => {
@@ -2558,7 +2574,7 @@ describe('step-list（fake DOM）', () => {
         list.updateStep(1, 50, '正在展开场景');
         expect(fill?.style.width).toBe('50%');
         expect(message?.textContent).toBe('正在展开场景');
-        expect(message?.style.display).toBe('block');
+        expect(message?.classList.contains('nw-is-visible')).toBe(true);
 
         list.updateStep(99, 100, '越界');
         expect(fill?.style.width).toBe('50%');
@@ -2569,7 +2585,7 @@ describe('step-list（fake DOM）', () => {
         list.markStepComplete(0);
         const item = container.children[0].querySelectorAll<FakeUiEl>('.nw-step-item')[0];
         expect(item.findByClass('nw-step-icon')?.textContent).toBe('✓');
-        expect(item.findByClass('nw-step-progress-fill')?.style.width).toBe('100%');
+        expect(item.findByClass('nw-step-progress-fill')?.classList.contains('nw-is-full')).toBe(true);
     });
 
     it('bindEmitter：按 emitter.steps 同步状态，长度变化时重建渲染', () => {
@@ -2612,12 +2628,13 @@ describe('loading-overlay（fake DOM）', () => {
         const container = new FakeUiEl();
         const overlay = new LoadingOverlayComponent(container as unknown as HTMLElement);
         const overlayEl = container.children[0];
-        expect(overlayEl.className).toBe('nw-loading-overlay');
+        expect(overlayEl.className).toContain('nw-loading-overlay');
+        expect(overlayEl.classList.contains('nw-u-d-none')).toBe(true);
 
         overlay.show();
-        expect(overlayEl.style.display).toBe('flex');
+        expect(overlayEl.classList.contains('nw-u-d-none')).toBe(false);
         overlay.hide();
-        expect(overlayEl.style.display).toBe('none');
+        expect(overlayEl.classList.contains('nw-u-d-none')).toBe(true);
         expect(overlayEl.findByClass('nw-loading-title')?.textContent).toBe('处理中...');
         overlay.destroy();
         expect(container.children).toHaveLength(0);
@@ -2656,8 +2673,7 @@ describe('loading-overlay（fake DOM）', () => {
         overlay.onCancel(cancelled);
         const overlayEl = container.children[0];
         const stepsContainer = overlayEl.findByClass('nw-loading-steps');
-        // 该容器的 display:none 来自 attr style（cssText）
-        expect(stepsContainer?.cssText).toContain('display:none');
+        expect(stepsContainer?.classList.contains('nw-u-d-none')).toBe(true);
 
         const emitter = fakeEmitterState({ name: 'x', status: 'running', steps: [{ name: 'a', status: 'running', progress: 1 }] });
         overlay.bindEmitter(emitter as never);

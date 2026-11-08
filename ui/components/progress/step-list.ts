@@ -53,6 +53,7 @@ export class StepListComponent {
         const clampedProgress = Math.max(0, Math.min(100, progress));
         const fillEl = this.stepProgressFills[stepIndex];
         if (fillEl) {
+            fillEl.removeClass('nw-is-full');
             fillEl.style.width = `${clampedProgress}%`;
         }
 
@@ -61,7 +62,7 @@ export class StepListComponent {
             const msgSpan = labelEl.querySelector<HTMLElement>('.nw-step-message');
             if (msgSpan) {
                 msgSpan.setText(message);
-                msgSpan.style.display = 'block';
+                msgSpan.addClass('nw-is-visible');
             }
         }
     }
@@ -76,39 +77,25 @@ export class StepListComponent {
         this.currentStepIndex = stepIndex;
 
         for (let i = 0; i < this.steps.length; i++) {
-            const itemEl = this.stepItems[i];
-            const iconEl = this.stepIcons[i];
-            const progressBar = this.stepProgressBars[i];
-
             if (i < stepIndex) {
-                itemEl.style.color = 'var(--nw-success, #0f7b6c)';
-                itemEl.style.opacity = '1';
-                iconEl.setText('✓');
-                iconEl.style.background = 'var(--nw-success-bg, rgba(15, 123, 108, 0.08))';
-                iconEl.style.color = 'var(--nw-success, #0f7b6c)';
-                if (progressBar) {
-                    progressBar.style.display = 'none';
-                }
+                this.applyStepState(i, 'done');
             } else if (i === stepIndex) {
-                itemEl.style.color = 'var(--text-normal)';
-                itemEl.style.opacity = '1';
-                iconEl.setText('●');
-                iconEl.style.background = 'var(--interactive-accent)';
-                iconEl.style.color = 'var(--text-on-accent)';
-                if (progressBar) {
-                    progressBar.style.display = 'block';
-                }
+                this.applyStepState(i, 'running');
             } else {
-                itemEl.style.color = 'var(--text-muted)';
-                itemEl.style.opacity = '0.6';
-                iconEl.setText('○');
-                iconEl.style.background = 'transparent';
-                iconEl.style.color = 'var(--text-muted)';
-                if (progressBar) {
-                    progressBar.style.display = 'none';
-                }
+                this.applyStepState(i, 'pending');
             }
         }
+    }
+
+    /** 应用步骤状态类（done / running / pending），状态外观全部由 CSS 决定 */
+    private applyStepState(stepIndex: number, state: 'done' | 'running' | 'pending'): void {
+        const itemEl = this.stepItems[stepIndex];
+        const iconEl = this.stepIcons[stepIndex];
+        const progressBar = this.stepProgressBars[stepIndex];
+        itemEl.removeClass('nw-is-done', 'nw-is-running', 'nw-is-pending');
+        itemEl.addClass(`nw-is-${state}`);
+        iconEl.setText(state === 'done' ? '✓' : state === 'running' ? '●' : '○');
+        progressBar?.toggleClass('nw-is-visible', state === 'running');
     }
 
     /**
@@ -118,22 +105,10 @@ export class StepListComponent {
     markStepComplete(stepIndex: number): void {
         if (stepIndex < 0 || stepIndex >= this.steps.length) return;
 
-        const itemEl = this.stepItems[stepIndex];
-        const iconEl = this.stepIcons[stepIndex];
-        const progressBar = this.stepProgressBars[stepIndex];
-
-        itemEl.style.color = 'var(--nw-success, #0f7b6c)';
-        itemEl.style.opacity = '1';
-        iconEl.setText('✓');
-        iconEl.style.background = 'var(--nw-success-bg, rgba(15, 123, 108, 0.08))';
-        iconEl.style.color = 'var(--nw-success, #0f7b6c)';
-        if (progressBar) {
-            progressBar.style.display = 'none';
-        }
-
+        this.applyStepState(stepIndex, 'done');
         const fillEl = this.stepProgressFills[stepIndex];
         if (fillEl) {
-            fillEl.style.width = '100%';
+            fillEl.addClass('nw-is-full');
         }
     }
 
@@ -217,67 +192,30 @@ export class StepListComponent {
         this.stepIcons = [];
         this.stepLabels = [];
 
-        this.wrapperEl = this.container.createDiv({
-            cls: 'nw-step-list-wrapper',
-            attr: { style: 'display:flex;flex-direction:column;gap:8px;' }
-        });
+        this.wrapperEl = this.container.createDiv({ cls: 'nw-step-list-wrapper' });
 
         this.steps.forEach((stepName, index) => {
-            const stepItem = this.wrapperEl.createDiv({
-                cls: 'nw-step-item',
-                attr: {
-                    style: 'display:flex;gap:12px;align-items:flex-start;transition:all 0.2s ease;'
-                }
-            });
+            const stepItem = this.wrapperEl.createDiv({ cls: 'nw-step-item' });
             this.stepItems.push(stepItem);
 
-            const iconEl = stepItem.createDiv({
-                cls: 'nw-step-icon',
-                attr: {
-                    style: 'width:24px;height:24px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;transition:all 0.2s ease;'
-                }
-            });
+            const iconEl = stepItem.createDiv({ cls: 'nw-step-icon' });
             iconEl.setText('○');
-            iconEl.style.background = 'transparent';
-            iconEl.style.color = 'var(--text-muted)';
             this.stepIcons.push(iconEl);
 
-            const contentEl = stepItem.createDiv({
-                cls: 'nw-step-content',
-                attr: { style: 'flex:1;min-width:0;padding-top:2px;' }
-            });
+            const contentEl = stepItem.createDiv({ cls: 'nw-step-content' });
 
-            const labelEl = contentEl.createDiv({
-                cls: 'nw-step-label',
-                attr: { style: 'display:flex;flex-direction:column;' }
-            });
+            const labelEl = contentEl.createDiv({ cls: 'nw-step-label' });
             this.stepLabels.push(labelEl);
 
-            const nameSpan = labelEl.createSpan({
-                cls: 'nw-step-name',
-                attr: { style: 'font-size:13px;font-weight:500;' }
-            });
+            const nameSpan = labelEl.createSpan({ cls: 'nw-step-name' });
             nameSpan.setText(stepName);
 
-            const messageSpan = labelEl.createSpan({
-                cls: 'nw-step-message',
-                attr: { style: 'font-size:12px;color:var(--text-muted);margin-top:2px;display:none;' }
-            });
+            const messageSpan = labelEl.createSpan({ cls: 'nw-step-message' });
 
-            const progressBar = contentEl.createDiv({
-                cls: 'nw-step-progress-bar',
-                attr: {
-                    style: 'height:4px;background:var(--background-secondary);border-radius:2px;margin-top:6px;overflow:hidden;display:none;'
-                }
-            });
+            const progressBar = contentEl.createDiv({ cls: 'nw-step-progress-bar' });
             this.stepProgressBars.push(progressBar);
 
-            const progressFill = progressBar.createDiv({
-                cls: 'nw-step-progress-fill',
-                attr: {
-                    style: 'height:100%;width:0%;background:var(--interactive-accent);border-radius:2px;transition:width 0.3s ease;'
-                }
-            });
+            const progressFill = progressBar.createDiv({ cls: 'nw-step-progress-fill' });
             this.stepProgressFills.push(progressFill);
         });
     }

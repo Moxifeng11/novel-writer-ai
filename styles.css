@@ -22,6 +22,7 @@
  *   - styles-src/17-home-jobs-health.css
  *   - styles-src/19-support.css
  *   - styles-src/20-runtime-modals.css
+ *   - styles-src/21-progress-components.css
  *
  * 修改样式请编辑 styles-src/ 下对应源文件，然后运行 npm run build:styles
  * （npm run build 与 preflight 均已包含该步骤 / 一致性校验）。
@@ -18297,3 +18298,307 @@ body.nw-panel-resizing .nw-awb-center iframe {
         .novel-writer-polish-editor:focus { outline: 2px solid var(--interactive-accent); }
         .novel-writer-polish-editor .nw-entity-tag:hover { outline: 2px dashed currentColor; }
 
+/* ==========================================================================
+ * 21-progress-components.css — 进度组件（v4.80.0 批次 B2）
+ * ==========================================================================
+ * 原先全部写在 JS 的 attr: { style: '...' } 或 .style.* 里；社区目录审核
+ * （obsidianmd/no-static-styles-assignment）要求静态外观回到 CSS。
+ *
+ * 约定：
+ *   - 显示/隐藏统一 nw-u-d-none；状态统一 nw-is-*；
+ *   - 高度/颜色等调用方选项经 --nw-progress-* 自定义属性传入；
+ *   - 不再新增字面量内联样式，check:obsidian-api 会拦截回流。
+ * ========================================================================== */
+
+/* ── 进度条 ── */
+.nw-progress-bar-wrapper {
+    width: 100%;
+}
+.nw-progress-bar-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+.nw-progress-bar-message {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    color: var(--text-normal);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.nw-progress-bar-percent {
+    margin-left: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+}
+.nw-progress-bar-container {
+    width: 100%;
+    height: var(--nw-progress-h, 6px);
+    background: var(--background-secondary);
+    border-radius: var(--nw-progress-h, 6px);
+    overflow: hidden;
+}
+.nw-progress-bar-fill {
+    height: 100%;
+    width: 0;
+    background: var(--nw-progress-color, var(--interactive-accent));
+    border-radius: var(--nw-progress-h, 6px);
+    transition: width 0.3s ease;
+}
+
+/* ── 步骤列表 ── */
+.nw-step-list-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.nw-step-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+.nw-step-item.nw-is-done {
+    color: var(--nw-success, var(--text-success));
+    opacity: 1;
+}
+.nw-step-item.nw-is-running {
+    color: var(--text-normal);
+    opacity: 1;
+}
+.nw-step-item.nw-is-pending {
+    color: var(--text-muted);
+    opacity: 0.6;
+}
+.nw-step-icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    background: transparent;
+    color: var(--text-muted);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.nw-step-item.nw-is-done .nw-step-icon {
+    background: color-mix(in srgb, var(--nw-success, var(--text-success)) 12%, transparent);
+    color: var(--nw-success, var(--text-success));
+}
+.nw-step-item.nw-is-running .nw-step-icon {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+.nw-step-content {
+    flex: 1;
+    min-width: 0;
+    padding-top: 2px;
+}
+.nw-step-label {
+    display: flex;
+    flex-direction: column;
+}
+.nw-step-name {
+    font-size: 13px;
+    font-weight: 500;
+}
+.nw-step-message {
+    display: none;
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+.nw-step-message.nw-is-visible {
+    display: block;
+}
+.nw-step-progress-bar {
+    display: none;
+    height: 4px;
+    margin-top: 6px;
+    background: var(--background-secondary);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.nw-step-progress-bar.nw-is-visible {
+    display: block;
+}
+.nw-step-progress-fill {
+    height: 100%;
+    width: 0;
+    background: var(--interactive-accent);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+.nw-step-progress-fill.nw-is-full {
+    width: 100%;
+}
+
+/* ── 任务卡片 ── */
+.nw-task-card {
+    padding: 16px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background: var(--background-primary);
+}
+.nw-task-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.nw-task-title-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+.nw-task-title {
+    font-size: 15px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.nw-task-status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    background: var(--background-secondary);
+    color: var(--text-muted);
+}
+.nw-task-status-badge.nw-is-pending {
+    background: color-mix(in srgb, var(--nw-warning) 18%, transparent);
+    color: var(--nw-warning);
+}
+.nw-task-status-badge.nw-is-running {
+    background: color-mix(in srgb, var(--interactive-accent) 18%, transparent);
+    color: var(--interactive-accent);
+}
+.nw-task-status-badge.nw-is-completed {
+    background: color-mix(in srgb, var(--nw-success) 18%, transparent);
+    color: var(--nw-success);
+}
+.nw-task-status-badge.nw-is-failed {
+    background: color-mix(in srgb, var(--nw-danger) 18%, transparent);
+    color: var(--nw-danger);
+}
+.nw-task-status-badge.nw-is-paused,
+.nw-task-status-badge.nw-is-cancelled {
+    background: var(--background-secondary);
+    color: var(--text-muted);
+}
+.nw-task-progress {
+    margin-bottom: 12px;
+}
+.nw-task-step-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+.nw-task-step-icon {
+    font-size: 14px;
+}
+.nw-task-step-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.nw-task-time-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+.nw-task-time-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.nw-task-time-icon {
+    font-size: 12px;
+}
+.nw-task-time-value {
+    font-weight: 500;
+    color: var(--text-normal);
+}
+.nw-task-error {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--nw-danger) 10%, transparent);
+    color: var(--nw-danger);
+    font-size: 12px;
+}
+.nw-task-error-label {
+    font-weight: 600;
+}
+.nw-task-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* ── 加载遮罩 ── */
+.nw-loading-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, black 50%, transparent);
+    backdrop-filter: blur(2px);
+}
+.nw-loading-modal {
+    width: 90%;
+    min-width: 320px;
+    max-width: 480px;
+    padding: 24px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 12px;
+    background: var(--background-primary);
+    box-shadow: var(--nw-card-shadow-hover);
+}
+.nw-loading-title {
+    margin-bottom: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+}
+.nw-loading-progress {
+    margin-bottom: 16px;
+}
+.nw-loading-steps {
+    max-height: 200px;
+    margin-bottom: 16px;
+    overflow-y: auto;
+}
+.nw-loading-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+.nw-loading-cancel-btn {
+    padding: 8px 24px;
+}
+
+/* 隐藏工具类必须压过组件基础 display（0,2,0 提高优先级，不使用 !important） */
+.nw-u-d-none.nw-u-d-none {
+    display: none;
+}

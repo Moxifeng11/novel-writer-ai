@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-08T21:47:32.250Z",
-  "note": "v4.80.0 批量 B1：engine/step-modal-controller 15→0、shared/export-file 1→0（nw-u-d-none + 语义类）；static-style-assignment 558→542，剩余 85→83 文件，B2–B4 继续",
+  "generatedAt": "2026-11-08T22:01:30.928Z",
+  "note": "v4.80.0 批量 B2：progress-bar / step-list / task-card / loading-overlay 共 37 处字面量样式与静态 attr style 改为 nw-* 类；static-style-assignment 542→505",
   "rules": {
     "plugin-path-hardcoded": {
       "count": 0,
@@ -27,7 +27,7 @@
       "files": {}
     },
     "static-style-assignment": {
-      "count": 542,
+      "count": 505,
       "files": {
         "ui/add-fanfic-setting-modal.ts": 3,
         "ui/agent-workbench-view.ts": 1,
@@ -47,10 +47,7 @@
         "ui/co-writing/control-panel.ts": 2,
         "ui/co-writing/suggestion-cards.ts": 3,
         "ui/components/analysis-report-panel.ts": 1,
-        "ui/components/progress/loading-overlay.ts": 4,
         "ui/components/progress/operation-confirm-modal.ts": 3,
-        "ui/components/progress/step-list.ts": 24,
-        "ui/components/progress/task-card.ts": 9,
         "ui/context-injector-modal.ts": 3,
         "ui/continue-chapters-modal.ts": 3,
         "ui/cowrite/suggestion-edit-modal.ts": 2,
