@@ -2,6 +2,25 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.75.0（2026-11-08）
+
+### 🗑️ 移除：批量拆解模态（从未可用，用户拍板 ③b）
+
+- `ui/batch-deconstruct-modal.ts`（409 行）删除。根因：模态从 `plugin.deconstructionWorkerManager`（**该属性从不存在**；WorkerManager 是 `DeconstructionScheduler` 的私有字段，构造函数内自建）取依赖，选第一个文件必然 TypeError；即使能跑，结果也只存在内存 `partialResult`，`viewResult` 只弹一条 Notice，从不落盘。
+- **能力没有损失**：真正的批量拆解链路一直在知识库——`engine/batch-import-manager.ts` 建书 → 存源文 → `scheduler.addTask(bookId, text, dimensions)`，幂等、带进度、可重试，结果持久化到拆解库；另有 `knowledge-base-view` / `refill-modal` / `knowledge-monitor-modal` 三处生产入口。
+- `novel-writer-batch-deconstruct` 命令**保留**，改指知识库视图（调色板描述同步为“批量导入书籍并按维度拆解，结果持久化”）；`CommandIds` / 模式规则（LONG_ONLY）/ 注册快照均未变。
+
+### 🧹 门禁与基线同步
+
+- any 108/49 → **106/48**（删除 2 处可动 any）；`optimization-advisor.mjs` 的 `FROZEN_ANY_PATHS` 清零（冻结桶机制保留）。
+- 内联样式、JSDoc、代码索引基线随文件删除重新生成；JSDoc 导出覆盖 100%、`@example` 52/52、747 文件。
+- bundle：main.js 4,871,801 → **4,864,382**（−7,419B），基线同步收紧。
+
+### 🧪 测试与门禁
+
+- 全量 **594 文件 / 6,570 用例**全绿；`preflight:release` EXIT=0（24 步 + 覆盖率 44.09/43.83/44.92/44.42）。
+- 命令三语义一致性测试（调色板 ⊆ registry ⊆ CommandIds）保持严格断言，零豁免。
+
 ## v4.74.0（2026-11-08）
 
 ### 🐛 修复：knowledge-detail-modal「转为指纹」死读取（行为修复）

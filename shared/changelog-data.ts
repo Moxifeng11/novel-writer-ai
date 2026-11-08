@@ -21,6 +21,22 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.75.0',
+        date: '2026-11-08',
+        title: '移除从未可用的批量拆解模态',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧹 优化',
+                items: [
+                    '删除批量拆解模态（依赖不存在的 workerManager，选文件必崩、结果不落盘）',
+                    '「批量拆解」命令改指知识库：批量导入 → 勾选维度 → 结果持久化到拆解库',
+                    'any 106/48，main.js −7,419B；内联样式/JSDoc/代码索引基线同步',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.74.0',
         date: '2026-11-08',
         title: '「转为指纹」死读取修复',
