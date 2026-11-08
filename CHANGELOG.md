@@ -2,6 +2,16 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.80.0（2026-11-09）
+
+### 🎨 社区目录样式合规重构（无功能变更）
+
+- **动态 `<style>` 清零**：11 处运行时注入（写作步骤弹窗、章节/场景大纲、黄金开篇、灵感、AI 规划、润色编辑器、全屏写作）迁入 `styles-src/20-runtime-modals.css`；主题变量改 `documentElement.setCssProps`（1.4 回退 `style.setProperty`），不再拼 CSS 文本。
+- **字面量内联样式 558 → 0**：`engine/step-modal-controller`、进度四组件、30 个 Modal 重复的 margin/width/overflow、5 个实体生成弹窗、实体向导/管理面板、扩写编辑器，以及 55 个零散文件全部改为语义类或 `nw-is-*` 状态类。
+- **门禁与文档**：`check:obsidian-api` 新增 `style-element` 与 `static-style-assignment`（对齐官方 ESLint 字面量判定，动态值不误报）+ 故意违规自测；`docs/handbook/06-gates-and-release.md` §3 写明允许/禁止写法；README/PLAN 同步。
+- **样式源**：新增 `styles-src/20-runtime-modals.css`、`21-progress-components.css`、`22-modal-layout.css`、`23-generate-modals.css`、`24-unified-entity.css`、`25-outline-expand.css`、`26-cleanup-utilities.css`。
+- 视觉等价：迁移保留原选择器、层级与颜色 token；颜色统一走主题变量/`color-mix`，硬编码色值未增；`!important` 19 → 24（仅拖拽面板固定定位/尺寸 5 行，替代原 `setProperty(...,'important')`）。
+
 ## v4.79.2（2026-11-09）
 
 ### 🧹 清理社区目录非阻断建议项

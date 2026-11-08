@@ -35,12 +35,13 @@ test.describe('Novel Writer AI · 生命周期', () => {
                 return {
                     loaded: Boolean(app.plugins?.plugins?.[pluginId]),
                     command: Boolean(app.commands?.commands?.[commandId]),
-                    styles: document.querySelectorAll('style[id^="novel-writer-"]').length,
+                    injectedStyles: document.querySelectorAll('style[id^="novel-writer-"]').length,
                 };
             }, { pluginId: PLUGIN_ID, commandId: COMMAND_ID });
             expect(state.loaded).toBe(true);
             expect(state.command).toBe(true);
-            expect(state.styles).toBeGreaterThan(0);
+            // v4.80.0：运行时 <style> 注入已清零，样式走打包 styles.css；这里断言不再注入
+            expect(state.injectedStyles).toBe(0);
 
             await page.evaluate(async (pluginId) => {
                 const app = (window as unknown as { app: any }).app;
@@ -53,12 +54,12 @@ test.describe('Novel Writer AI · 生命周期', () => {
                 return {
                     loaded: Boolean(app.plugins?.plugins?.[pluginId]),
                     command: Boolean(app.commands?.commands?.[commandId]),
-                    styles: document.querySelectorAll('style[id^="novel-writer-"]').length,
+                    injectedStyles: document.querySelectorAll('style[id^="novel-writer-"]').length,
                 };
             }, { pluginId: PLUGIN_ID, commandId: COMMAND_ID });
             expect(disabled.loaded).toBe(false);
             expect(disabled.command).toBe(false);
-            expect(disabled.styles).toBe(0);
+            expect(disabled.injectedStyles).toBe(0);
 
             // 重复 3 轮：禁用/启用必须幂等，样式与命令不能跨轮残留
             for (let cycle = 0; cycle < 3; cycle += 1) {
@@ -73,12 +74,12 @@ test.describe('Novel Writer AI · 生命周期', () => {
                     return {
                         loaded: Boolean(app.plugins?.plugins?.[pluginId]),
                         command: Boolean(app.commands?.commands?.[commandId]),
-                        styles: document.querySelectorAll('style[id^="novel-writer-"]').length,
+                        injectedStyles: document.querySelectorAll('style[id^="novel-writer-"]').length,
                     };
                 }, { pluginId: PLUGIN_ID, commandId: COMMAND_ID });
                 expect(disabled.loaded).toBe(false);
                 expect(disabled.command).toBe(false);
-                expect(disabled.styles).toBe(0);
+                expect(disabled.injectedStyles).toBe(0);
 
                 await page.evaluate(async (pluginId) => {
                     const app = (window as unknown as { app: any }).app;
@@ -91,12 +92,12 @@ test.describe('Novel Writer AI · 生命周期', () => {
                     return {
                         loaded: Boolean(app.plugins?.plugins?.[pluginId]),
                         command: Boolean(app.commands?.commands?.[commandId]),
-                        styles: document.querySelectorAll('style[id^="novel-writer-"]').length,
+                        injectedStyles: document.querySelectorAll('style[id^="novel-writer-"]').length,
                     };
                 }, { pluginId: PLUGIN_ID, commandId: COMMAND_ID });
                 expect(reenabled.loaded).toBe(true);
                 expect(reenabled.command).toBe(true);
-                expect(reenabled.styles).toBeGreaterThan(0);
+                expect(reenabled.injectedStyles).toBe(0);
             }
         } finally {
             await session.close().catch(() => undefined);

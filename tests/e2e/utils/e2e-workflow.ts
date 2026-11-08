@@ -389,21 +389,6 @@ export function listFilesWithExtension(dir: string, extension: string): string[]
  * @returns 导出的 TXT 绝对路径
  */
 export async function exportTxtViaUi(page: Page, vaultPath: string): Promise<string> {
-    const mobileForced = await page.evaluate(() => {
-        const app = (window as unknown as { app?: Record<string, unknown> }).app;
-        if (!app) return false;
-        try {
-            Object.defineProperty(app, 'isMobile', { value: true, configurable: true, writable: true });
-        } catch {
-            try {
-                (app as { isMobile?: boolean }).isMobile = true;
-            } catch {
-                return false;
-            }
-        }
-        return (app as { isMobile?: boolean }).isMobile === true;
-    });
-
     expect(await executeCommand(page, toObsidianCommandId('novel-writer-export-manuscript'))).toBe(true);
     const modalPage = await waitForModalPage(page, 20_000);
     const modal = modalPage.locator('.modal-container').last();
@@ -428,20 +413,9 @@ export async function exportTxtViaUi(page: Page, vaultPath: string): Promise<str
     const exportButton = modal.getByRole('button', { name: /^导出$/ });
     await expect(exportButton).toBeEnabled();
 
-    if (mobileForced) {
-        await exportButton.click();
-    } else {
-        // 兜底：无法改写 isMobile 时，抓 Electron 下载事件
-        const downloadPromise = modalPage.waitForEvent('download', { timeout: 30_000 }).catch(() => null);
-        await exportButton.click();
-        const download = await downloadPromise;
-        if (download) {
-            const dir = path.join(vaultPath, '导出文件');
-            fs.mkdirSync(dir, { recursive: true });
-            const target = path.join(dir, 'e2e-export.txt');
-            await download.saveAs(target);
-        }
-    }
+    // v4.80.0：导出统一走官方 Platform.isMobile，app.isMobile 覆写不再生效；
+    // launchObsidian 已用 CDP 把下载落到 vault 的「导出文件」，这里只点击并轮询。
+    await exportButton.click();
 
     const exportDir = path.join(vaultPath, '导出文件');
     await expect.poll(() => listFilesWithExtension(exportDir, '.txt').length, { timeout: 30_000 })

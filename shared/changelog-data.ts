@@ -21,6 +21,23 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.80.0',
+        date: '2026-11-09',
+        title: '社区目录样式合规重构',
+        sections: [
+            {
+                type: 'improved',
+                label: '🎨 优化',
+                items: [
+                    '动态 <style> 注入 11 处 → 0：全部迁入 styles-src，主题变量改用 setCssProps',
+                    '字面量内联样式 558 → 0：进度组件/实体向导/生成弹窗/55 个文件改用语义类与 nw-is-* 状态',
+                    'check:obsidian-api 新增 style-element / static-style-assignment 两条棘轮门禁 + 自测',
+                ],
+            },
+        ],
+    },
+
+    {
         version: '4.79.2',
         date: '2026-11-09',
         title: '社区目录建议项清理',

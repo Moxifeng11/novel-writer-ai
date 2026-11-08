@@ -3,10 +3,10 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-09",
   "baseline": {
-    "version": "4.79.2",
+    "version": "4.80.0",
     "tests": {
-      "files": 603,
-      "cases": 6647
+      "files": 604,
+      "cases": 6652
     },
     "e2e": 40,
     "e2eNote": "E2E 通过总数：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27 = 40（2026-11-07 全量实测）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑（rewrite-chapters 已随「九霄逆脉行」项目删除而下线）",
@@ -19,7 +19,7 @@
       "check:write-entry"
     ],
     "localCommitsAhead": 0,
-    "localCommitsAheadNote": "相对 origin/master 的未提交数（2026-11-09 v4.79.2 社区建议项清理：CSS !important/:has/滚动条、worker 仅入 zip、构建来源证明；随本批 push；origin/master=662bf19）；全量 603 文件 / 6,647 用例，any 74/42，main.js 4,925,098 = 基线，styles.css 472,781，覆盖率 44.19/43.93/45.00/44.51"
+    "localCommitsAheadNote": "2026-11-09 v4.80.0 社区目录样式合规重构：动态 <style> 11→0、字面量内联样式 558→0；新增 check:obsidian-api style-element/static-style-assignment 门禁与 handbook §3 约束；604 文件 / 6,652 用例，any 74/42，preflight EXIT=0"
   },
   "groups": [
     {

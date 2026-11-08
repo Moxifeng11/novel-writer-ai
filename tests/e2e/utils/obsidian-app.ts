@@ -160,6 +160,17 @@ export async function launchObsidian(vault: TestVault): Promise<ObsidianSession>
     try {
         browser = await connectWithRetry(port, child, 60_000);
         const page = await waitForWorkspacePage(browser, 60_000);
+        // Electron/CDP 下 Playwright 收不到 <a download> 的 download 事件；
+        // 用浏览器级 CDP 把下载直接落到临时 vault 的「导出文件」目录，
+        // 这样「成稿导出」E2E 不依赖操作系统下载目录。
+        const downloadDir = path.join(vault.path, '导出文件');
+        fs.mkdirSync(downloadDir, { recursive: true });
+        const cdp = await browser.newBrowserCDPSession();
+        await cdp.send('Browser.setDownloadBehavior', {
+            behavior: 'allow',
+            downloadPath: downloadDir,
+            eventsEnabled: true,
+        });
         let closed = false;
         const close = async () => {
             if (closed) return;
