@@ -195,10 +195,18 @@ const EXPECTED_MEDIUM_INTERVAL = 5;
 const EXPECTED_BIG_INTERVAL = 15;
 
 /**
+ * 向量增强器的最小契约：商业拆解器只做可用性探测与降级，
+ * 不直接消费检索结果（避免把宿主实现细节带进 engine）。
+ */
+export interface VectorEnhancerPort {
+  isAvailable(): Promise<boolean>;
+}
+
+/**
  * 商业拆解器：黄金三章、波浪节奏与全局分析。
  */
 export class CommercialDeconstructor {
-  private vectorEnhancer: any;
+  private vectorEnhancer?: VectorEnhancerPort;
   private suspenseSet: Set<string>;
   private foreshadowSet: Set<string>;
   private conflictSet: Set<string>;
@@ -216,7 +224,7 @@ export class CommercialDeconstructor {
   // 题材自适应配置（由构造函数注入或 analyze 时自动识别）
   private adaptiveGenreConfig: GenreConfig | null;
 
-  constructor(vectorEnhancer?: any, genreConfig?: GenreConfig) {
+  constructor(vectorEnhancer?: VectorEnhancerPort, genreConfig?: GenreConfig) {
     this.vectorEnhancer = vectorEnhancer;
     this.suspenseSet = new Set(HOOK_WORDS.suspense);
     this.foreshadowSet = new Set(HOOK_WORDS.foreshadow);
@@ -517,7 +525,7 @@ export class CommercialDeconstructor {
    * @param rhythmResult - 节奏结果
     * @returns WaveRhythmResult 实例
    */
-  validateWaveRhythm(text: string, rhythmResult?: any): WaveRhythmResult {
+  validateWaveRhythm(text: string, rhythmResult?: unknown): WaveRhythmResult {
     if (!text || text.length === 0) {
       return {
         complianceRate: 0,
@@ -849,10 +857,10 @@ export class CommercialDeconstructor {
 
     const worldviewDensity = Math.min(1, worldviewWordCount / Math.max(wordCount * 0.02, 1));
 
-    const categories = ['system', 'geography', 'faction', 'rule'];
+    const categories = ['system', 'geography', 'faction', 'rule'] as const;
     let categoryHit = 0;
     for (const cat of categories) {
-      const catWords = (WORLDVIEW_WORDS as any)[cat] || [];
+      const catWords = WORLDVIEW_WORDS[cat] || [];
       for (const word of catWords) {
         if (allText.includes(word)) {
           categoryHit++;
@@ -1162,7 +1170,7 @@ export class CommercialDeconstructor {
       { key: 'dialogueQuality', label: '对话质量', threshold: 65 },
       { key: 'suspenseIntensity', label: '悬念强度', threshold: 65 },
       { key: 'emotionalImpact', label: '情绪感染力', threshold: 65 }
-    ];
+    ] as const;
 
     const suggestionTexts: Record<string, string> = {
       openingConflict: '建议在开篇300字内引入更强的冲突和动作场面，使用更多冲突词汇和动词，快速抓住读者注意力',
@@ -1178,7 +1186,7 @@ export class CommercialDeconstructor {
     };
 
     for (const { key, label, threshold } of scoreCategories) {
-      const score = (subScores as any)[key];
+      const score = subScores[key];
       if (score < threshold) {
         let severity: 'high' | 'medium' | 'low';
         if (score < 40) {
@@ -1541,12 +1549,12 @@ export class CommercialDeconstructor {
   }
 
   private calculateWorldviewCompleteness(text: string): number {
-    const categories = ['system', 'geography', 'faction', 'rule'];
+    const categories = ['system', 'geography', 'faction', 'rule'] as const;
     let categoryHit = 0;
     let categoryScoreSum = 0;
 
     for (const cat of categories) {
-      const catWords = (WORLDVIEW_WORDS as any)[cat] || [];
+      const catWords = WORLDVIEW_WORDS[cat] || [];
       let hitCount = 0;
       for (const word of catWords) {
         hitCount += (text.match(new RegExp(word, 'g')) || []).length;

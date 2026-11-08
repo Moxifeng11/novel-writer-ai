@@ -102,9 +102,9 @@ export class OutlineGenerator {
         const systemPrompt = `你是小说结构师。基于全书的全局骨架，为第${volumeNumber}卷生成详细大纲。
 
 ${blueprint ? `【全局故事线蓝图概要——不可改写的约束】
-- 关键转折点：${blueprint.turningPoints?.map((tp: any) => `第${tp.expectedVolume}卷「${tp.name}」`).join('、') || '无'}
-- 伏笔规划：${blueprint.requiredForeshadows?.map((f: any) => `第${f.buryVolume}卷埋「${f.name}」→第${f.expectedRevealVolume}卷收`).join('、') || '无'}
-- 势力演变：${blueprint.factionTimeline?.map((fe: any) => `第${fe.expectedVolume}卷「${fe.factionName}」${fe.eventType === 'rise' ? '崛起' : '衰落'}`).join('、') || '无'}
+- 关键转折点：${blueprint.turningPoints?.map(tp => `第${tp.expectedVolume}卷「${tp.name}」`).join('、') || '无'}
+- 伏笔规划：${blueprint.requiredForeshadows?.map(f => `第${f.buryVolume}卷埋「${f.name}」→第${f.expectedRevealVolume}卷收`).join('、') || '无'}
+- 势力演变：${blueprint.factionTimeline?.map(fe => `第${fe.expectedVolume}卷「${fe.factionName}」${fe.eventType === 'rise' ? '崛起' : '衰落'}`).join('、') || '无'}
 ` : ''}
 【不可违反的输出契约】
 本卷必须包含以下全部字段，缺一不可：
@@ -160,9 +160,9 @@ ${OUTLINE_TABLE_HEADER}
 
 【输出前自检清单——必须逐项确认】
 在输出大纲前，请逐项检查以下内容。如果缺少任何一项，必须补充后再输出：
-${(blueprint?.turningPoints?.filter((tp: any) => tp.expectedVolume === volumeNumber).length ?? 0) > 0 ? `1. ✅ 本卷必须包含的转折点已在「主要事件」或「三幕结构」中明确描述` : ''}
-${(blueprint?.requiredForeshadows?.filter((f: any) => f.expectedRevealVolume === volumeNumber).length ?? 0) > 0 ? `2. ✅ 本卷必须回收的伏笔已在「主要事件」中安排回收剧情` : ''}
-${(blueprint?.factionTimeline?.filter((fe: any) => fe.expectedVolume === volumeNumber).length ?? 0) > 0 ? `3. ✅ 本卷必须体现的势力演变已在「主要事件」或「核心冲突」中体现` : ''}
+${(blueprint?.turningPoints?.filter(tp => tp.expectedVolume === volumeNumber).length ?? 0) > 0 ? `1. ✅ 本卷必须包含的转折点已在「主要事件」或「三幕结构」中明确描述` : ''}
+${(blueprint?.requiredForeshadows?.filter(f => f.expectedRevealVolume === volumeNumber).length ?? 0) > 0 ? `2. ✅ 本卷必须回收的伏笔已在「主要事件」中安排回收剧情` : ''}
+${(blueprint?.factionTimeline?.filter(fe => fe.expectedVolume === volumeNumber).length ?? 0) > 0 ? `3. ✅ 本卷必须体现的势力演变已在「主要事件」或「核心冲突」中体现` : ''}
 4. ✅ 章节范围字段填写了具体数字（如"第51章 - 第100章"）
 5. ✅ 章节分配表格完整列出了本卷全部 ${chaptersPerVolume} 章
 

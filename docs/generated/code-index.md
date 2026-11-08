@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 305 | 132824 | 1608 | 1347 | 84% |
+| `engine/` | 305 | 132832 | 1609 | 1348 | 84% |
 | `services/` | 32 | 12641 | 187 | 148 | 79% |
 | `shared/` | 176 | 40487 | 1593 | 1318 | 83% |
 | `core/` | 7 | 2770 | 28 | 13 | 46% |
@@ -121,7 +121,7 @@
 | `engine/deconstruction-scheduler.ts` | 2843 | 9 | 8 |
 | `engine/deconstruction-worker-manager.ts` | 688 | 3 | 3 |
 | `engine/deconstructors/character-deconstructor.ts` | 4063 | 14 | 14 |
-| `engine/deconstructors/commercial-deconstructor.ts` | 2044 | 5 | 5 |
+| `engine/deconstructors/commercial-deconstructor.ts` | 2052 | 6 | 6 |
 | `engine/deconstructors/deconstruction-worker.ts` | 205 | 0 | 0 |
 | `engine/deconstructors/foreshadow-deconstructor.ts` | 3994 | 17 | 17 |
 | `engine/deconstructors/readability-deconstructor.ts` | 999 | 7 | 7 |
