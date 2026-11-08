@@ -1,4 +1,5 @@
 import { SuggestionManager } from '@/engine/suggestion-manager';
+import { onNodeDoc } from '@/shared/dom-window';
 import type { AnalysisSuggestion, SuggestionType } from '@/engine/types/analysis-suggestion';
 
 /**
@@ -36,6 +37,8 @@ export class CategorizationReviewPanel {
     private options: CategorizationReviewPanelOptions;
     private filterCategory: string | 'all' = 'all';
     private expandedItems: Set<string> = new Set();
+    /** 分类下拉的外部点击监听解绑器（绑在面板所属窗口，destroy 时释放） */
+    private popupDisposer: (() => void) | null = null;
 
     constructor(container: HTMLElement, options: CategorizationReviewPanelOptions) {
         this.container = container;
@@ -64,6 +67,8 @@ export class CategorizationReviewPanel {
      * 销毁。
      */
     destroy(): void {
+        this.popupDisposer?.();
+        this.popupDisposer = null;
         this.container.empty();
     }
 
@@ -142,7 +147,7 @@ export class CategorizationReviewPanel {
     }
 
     private renderSuggestionItem(suggestion: AnalysisSuggestion, index: number): HTMLElement {
-        const item = document.createElement('div');
+        const item = (this.container.doc ?? document).createElement('div');
         item.className = 'nw-cat-item';
         item.dataset.id = suggestion.id;
         item.dataset.status = suggestion.status;
@@ -315,15 +320,16 @@ export class CategorizationReviewPanel {
             popup.remove();
         };
 
-        setTimeout(() => {
+        this.container.win.setTimeout(() => {
             const closeHandler = (e: MouseEvent) => {
                 const target = e.target as Node;
                 if (!popup.contains(target)) {
                     popup.remove();
-                    document.removeEventListener('click', closeHandler);
+                    this.popupDisposer?.();
+                    this.popupDisposer = null;
                 }
             };
-            document.addEventListener('click', closeHandler);
+            this.popupDisposer = onNodeDoc(this.container, 'click', closeHandler);
         }, 0);
     }
 

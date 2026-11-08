@@ -4,6 +4,7 @@
  */
 import { ItemView, WorkspaceLeaf } from "obsidian";
 import { applyNwScope } from '@/utils/helpers';
+import { onNodeDoc } from '@/shared/dom-window';
 import type NovelWriterPlugin from "@/main";
 
 /**
@@ -37,6 +38,10 @@ export class DraggablePanel extends ItemView {
   private isCollapsed = false;
   private boundDragMove = (e: PointerEvent) => this.onDragMove(e);
   private boundDragEnd = () => this.onDragEnd();
+  /** document 级监听解绑器（绑在视图所属窗口，disposer 用同一 doc 解绑） */
+  private docDisposers: Array<() => void> = [];
+  /** 视图被拖到另一窗口时的重绑回调解绑器 */
+  private unbindWindowMigrated: (() => void) | null = null;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -118,8 +123,12 @@ export class DraggablePanel extends ItemView {
     this.dragHandle.addEventListener("pointerdown", (e) =>
       this.onDragStart(e)
     );
-    document.addEventListener("pointermove", this.boundDragMove);
-    document.addEventListener("pointerup", this.boundDragEnd);
+    this.bindDocListeners();
+    this.unbindWindowMigrated = this.containerEl.onWindowMigrated(() => {
+      // 视图被拖到另一窗口：DOM 被收养，旧 doc 的监听收不到事件；onOpen 不会重跑，必须手动重绑
+      this.unbindDocListeners();
+      this.bindDocListeners();
+    });
 
     // 绑定折叠
     this.collapseBtn.addEventListener("click", () => this.toggleCollapse());
@@ -128,12 +137,28 @@ export class DraggablePanel extends ItemView {
     this.restoreLayout();
   }
 
+  /** 绑定 document 级拖拽监听（目标文档取自宿主元素，popout 内同样生效） */
+  private bindDocListeners(): void {
+    this.docDisposers = [
+      onNodeDoc(this.containerEl, "pointermove", this.boundDragMove),
+      onNodeDoc(this.containerEl, "pointerup", this.boundDragEnd),
+    ];
+  }
+
+  /** 解绑当前文档上的拖拽监听（窗口迁移前必须先解绑旧文档） */
+  private unbindDocListeners(): void {
+    // 测试会绕过字段初始化直接调 onClose（Object.create 构造），这里按空数组兜底
+    for (const dispose of this.docDisposers ?? []) dispose();
+    this.docDisposers = [];
+  }
+
   /**
    * onClose 方法。
    */
   async onClose(): Promise<void> {
-    document.removeEventListener("pointermove", this.boundDragMove);
-    document.removeEventListener("pointerup", this.boundDragEnd);
+    this.unbindDocListeners();
+    this.unbindWindowMigrated?.();
+    this.unbindWindowMigrated = null;
     // 保存布局
     this.saveLayout();
   }
@@ -253,8 +278,9 @@ export class DraggablePanel extends ItemView {
   }
 
   private createDefaultLayoutEntry(): PanelLayoutConfig {
-    const viewportWidth = Math.max(window.innerWidth || 1280, 960);
-    const viewportHeight = Math.max(window.innerHeight || 800, 640);
+    const win = this.containerEl.win;
+    const viewportWidth = Math.max(win.innerWidth || 1280, 960);
+    const viewportHeight = Math.max(win.innerHeight || 800, 640);
     const presets: Record<string, { x: number; y: number; width: number; height: number }> = {
       writing: { x: 24, y: 88, width: Math.min(760, viewportWidth - 360), height: Math.min(680, viewportHeight - 140) },
       "monitor-a": { x: Math.max(360, viewportWidth - 360), y: 88, width: 330, height: Math.min(420, viewportHeight - 140) },
@@ -272,8 +298,9 @@ export class DraggablePanel extends ItemView {
 
   private applyLayoutEntry(entry: PanelLayoutConfig): void {
     if (!this.panelContainer) return;
-    const maxLeft = Math.max(8, (window.innerWidth || 1280) - 120);
-    const maxTop = Math.max(48, (window.innerHeight || 800) - 80);
+    const win = this.containerEl.win;
+    const maxLeft = Math.max(8, (win.innerWidth || 1280) - 120);
+    const maxTop = Math.max(48, (win.innerHeight || 800) - 80);
     this.panelContainer.style.setProperty("position", "fixed", "important");
     this.panelContainer.style.setProperty("left", `${Math.min(Math.max(8, entry.position.x), maxLeft)}px`, "important");
     this.panelContainer.style.setProperty("top", `${Math.min(Math.max(48, entry.position.y), maxTop)}px`, "important");

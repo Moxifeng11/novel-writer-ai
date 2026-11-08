@@ -9,6 +9,7 @@
  * 点击外部关闭。选模型复用 model-quick-switcher 的 applyModelChoice。
  */
 import { Notice } from 'obsidian';
+import { resolveNodeDoc } from '@/shared/dom-window';
 import type NovelWriterPlugin from '@/main';
 import { ManageProvidersModal } from './manage-providers-modal';
 import { applyModelChoice, formatModelSwitcherLabel, resolveProviderDisplayName, type ModelSwitcherPluginLike } from './model-quick-switcher';
@@ -47,7 +48,10 @@ export function openModelPickerPopover(
 ): ModelPickerHandle {
     closeExistingPopovers();
 
-    const root = document.body.createDiv({ cls: POPOVER_CLASS });
+    // 弹层跟着锚点所在的窗口走：ItemView 可能在 popout，全局 document.body 会开在另一个窗口
+    const doc = resolveNodeDoc(anchor) ?? document;
+    const win = doc.defaultView ?? window;
+    const root = doc.body.createDiv({ cls: POPOVER_CLASS });
     let pane: 'root' | 'providers' = 'root';
     let closed = false;
 
@@ -56,8 +60,8 @@ export function openModelPickerPopover(
         closed = true;
         root.remove();
         activeClosers.delete(close);
-        document.removeEventListener('mousedown', onOutside, true);
-        document.removeEventListener('keydown', onKeydown, true);
+        doc.removeEventListener('mousedown', onOutside, true);
+        doc.removeEventListener('keydown', onKeydown, true);
     };
     activeClosers.add(close);
 
@@ -83,10 +87,10 @@ export function openModelPickerPopover(
             const height = root.offsetHeight;
             const width = root.offsetWidth;
             let top = rect.top - height - 8;
-            if (top < 8) top = Math.min(rect.bottom + 8, window.innerHeight - height - 8);
+            if (top < 8) top = Math.min(rect.bottom + 8, win.innerHeight - height - 8);
             let left = rect.right - width;
             if (left < 8) left = 8;
-            if (left + width > window.innerWidth - 8) left = window.innerWidth - width - 8;
+            if (left + width > win.innerWidth - 8) left = win.innerWidth - width - 8;
             root.style.top = `${top}px`;
             root.style.left = `${left}px`;
             root.style.visibility = '';
@@ -156,8 +160,8 @@ export function openModelPickerPopover(
         position();
     };
 
-    document.addEventListener('mousedown', onOutside, true);
-    document.addEventListener('keydown', onKeydown, true);
+    doc.addEventListener('mousedown', onOutside, true);
+    doc.addEventListener('keydown', onKeydown, true);
     render();
 
     return { close };
@@ -172,8 +176,11 @@ export function closeExistingPopovers(): void {
         close();
     }
     activeClosers.clear();
-    // 兜底：父容器被外部移除等异常路径下残留的 DOM 节点
-    document.querySelectorAll(`.${POPOVER_CLASS}`).forEach(el => el.remove());
+    // 兜底：父容器被外部移除等异常路径下残留的 DOM 节点（主窗口 + 活动窗口都清）
+    const docs = new Set<Document>([document]);
+    const activeDoc = typeof activeWindow !== 'undefined' ? activeWindow?.document : undefined;
+    if (activeDoc) docs.add(activeDoc);
+    for (const d of docs) d.querySelectorAll(`.${POPOVER_CLASS}`).forEach(el => el.remove());
 }
 
 function nearestThinkingIntensityLevel(intensity: number) {

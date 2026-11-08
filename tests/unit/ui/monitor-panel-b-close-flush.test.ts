@@ -41,10 +41,11 @@ afterEach(() => {
 
 describe('MonitorPanelB — 关闭时冲刷与释放', () => {
     it('关闭面板先冲刷质量历史，再释放防抖资源，最后走基类收尾', async () => {
-        const removeEventListener = vi.fn();
-        vi.stubGlobal('document', { removeEventListener });
-
         const ctx = makeCtx();
+        // v4.77.0：基类改为「绑定宿主窗口 + disposer 解绑」，不再直接 removeEventListener
+        const disposeMove = vi.fn();
+        const disposeUp = vi.fn();
+        (ctx as unknown as { docDisposers: Array<() => void> }).docDisposers = [disposeMove, disposeUp];
         ctx.currentBaselineProject = 'A书';
         await ctx.onClose();
 
@@ -54,15 +55,13 @@ describe('MonitorPanelB — 关闭时冲刷与释放', () => {
         // 顺序：flush 在 dispose 之前，避免冲刷时的待写任务被取消
         expect(ctx.persistQualityHistory.mock.invocationCallOrder[0])
             .toBeLessThan(ctx.dispose.mock.invocationCallOrder[0]);
-        // 基类收尾：摘掉两个 document 监听并保存布局
-        expect(removeEventListener).toHaveBeenCalledTimes(2);
+        // 基类收尾：释放两个 document 监听并保存布局
+        expect(disposeMove).toHaveBeenCalledTimes(1);
+        expect(disposeUp).toHaveBeenCalledTimes(1);
         expect(ctx.saveLayout).toHaveBeenCalledTimes(1);
     });
 
     it('尚无基线项目时回退到当前项目', async () => {
-        const removeEventListener = vi.fn();
-        vi.stubGlobal('document', { removeEventListener });
-
         const ctx = makeCtx();
         await ctx.onClose();
 

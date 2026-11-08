@@ -69,6 +69,9 @@ export class CharacterRecognitionModal extends Modal {
      * onClose 方法。
      */
     onClose(): void {
+        // 面板持有 document 级监听：必须显式销毁，否则关闭后仍挂在文档上（v4.77.0 泄漏修复）
+        this.categorizationPanel?.destroy();
+        this.categorizationPanel = null;
         this.contentEl.empty();
     }
 

@@ -13,6 +13,7 @@
 
 import type NovelWriterPlugin from '@/main';
 import { formatWords, type StatsSummary } from '@/shared/writing-stats';
+import { onNodeDoc } from '@/shared/dom-window';
 
 /**
  * WritingPetDeps 类型定义。
@@ -64,6 +65,8 @@ export class WritingPet {
     private pulseTimer: ReturnType<typeof setTimeout> | null = null;
     private boundMove = (e: PointerEvent) => this.onPointerMove(e);
     private boundUp = () => this.onPointerUp();
+    /** 拖拽期间 document 级监听的解绑器（绑在宠物所属窗口） */
+    private dragDisposers: Array<() => void> = [];
 
     constructor(deps: WritingPetDeps) {
         this.deps = deps;
@@ -178,13 +181,18 @@ export class WritingPet {
             clearTimeout(this.pulseTimer);
             this.pulseTimer = null;
         }
-        document.removeEventListener('pointermove', this.boundMove);
-        document.removeEventListener('pointerup', this.boundUp);
+        this.disposeDragListeners();
         this.root?.remove();
         this.root = null;
         this.bubbleMain = null;
         this.bubbleSub = null;
         this.card = null;
+    }
+
+    /** 释放拖拽期间的 document 级监听（同一文档解绑，避免重复绑定/泄漏） */
+    private disposeDragListeners(): void {
+        for (const dispose of this.dragDisposers) dispose();
+        this.dragDisposers = [];
     }
 
     private setMood(mood: 'idle' | 'happy' | 'sleep'): void {
@@ -240,8 +248,11 @@ export class WritingPet {
         this.dragStart = { x: event.clientX, y: event.clientY };
         const rect = this.root.getBoundingClientRect();
         this.origin = { x: rect.left, y: rect.top };
-        document.addEventListener('pointermove', this.boundMove);
-        document.addEventListener('pointerup', this.boundUp);
+        this.disposeDragListeners();
+        this.dragDisposers = [
+            onNodeDoc(this.root, 'pointermove', this.boundMove),
+            onNodeDoc(this.root, 'pointerup', this.boundUp),
+        ];
     }
 
     private onPointerMove(event: PointerEvent): void {
@@ -255,8 +266,7 @@ export class WritingPet {
     private onPointerUp(): void {
         if (!this.dragging) return;
         this.dragging = false;
-        document.removeEventListener('pointermove', this.boundMove);
-        document.removeEventListener('pointerup', this.boundUp);
+        this.disposeDragListeners();
         if (!this.moved || !this.root) return;
         const rect = this.root.getBoundingClientRect();
         const settings = this.deps.plugin.settings;

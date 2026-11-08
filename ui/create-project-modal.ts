@@ -21,6 +21,7 @@ import {
 import { buildStoryStructureGuide } from '@/shared/story-structure';
 import { StorySettingsEditor } from './story-settings-form';
 import { createLongNovelProject } from './services/project-create-service';
+import { onNodeDoc } from '@/shared/dom-window';
 
 
 const log = createLogger('CreateProjectModal');
@@ -48,6 +49,8 @@ export class CreateProjectModal extends Modal {
     private adapter: DataAdapter;
     private selectedFanficSettingPath = '';
     private fanficSettingsOutsideClickHandler?: (ev: MouseEvent) => void;
+    /** 监听绑在宿主所属 document（popout 安全），disposer 用同一 doc 解绑 */
+    private fanficOutsideDisposer: (() => void) | null = null;
 
     constructor(app: App, plugin: NovelWriterPlugin, private readonly prefill?: CreateProjectPrefill) {
         super(app);
@@ -345,7 +348,7 @@ ${preferredGenre
                 setSettingsListOpen(false);
             }
         };
-        document.addEventListener('click', this.fanficSettingsOutsideClickHandler);
+        this.fanficOutsideDisposer = onNodeDoc(this.modalEl, 'click', this.fanficSettingsOutsideClickHandler);
 
         loadSettingsLib();
 
@@ -476,10 +479,9 @@ ${preferredGenre
      * onClose 方法。
      */
     onClose(): void {
-        if (this.fanficSettingsOutsideClickHandler) {
-            document.removeEventListener('click', this.fanficSettingsOutsideClickHandler);
-            this.fanficSettingsOutsideClickHandler = undefined;
-        }
+        this.fanficOutsideDisposer?.();
+        this.fanficOutsideDisposer = null;
+        this.fanficSettingsOutsideClickHandler = undefined;
         this.selectedFanficSettingPath = '';
         const { contentEl } = this;
         contentEl.empty();
