@@ -168,12 +168,7 @@ export class UnifiedEntityGenerateModal extends Modal {
     private _renderStepIndicator(): void {
         const { contentEl } = this;
 
-        this._stepIndicatorEl = contentEl.createDiv({
-            attr: {
-                style:
-                    'display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:16px; padding:10px 0; border-bottom:1px solid var(--background-modifier-border);',
-            },
-        });
+        this._stepIndicatorEl = contentEl.createDiv({ cls: 'nw-ue-steps' });
 
         const steps: { key: GenerateStep; label: string; num: number }[] = [
             { key: 'type-select', label: '选择类型', num: 1 },
@@ -190,54 +185,23 @@ export class UnifiedEntityGenerateModal extends Modal {
 
         for (let i = 0; i < steps.length; i++) {
             const step = steps[i];
-            const stepItem = this._stepIndicatorEl.createDiv({
-                attr: {
-                    style:
-                        'display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; min-width:0;',
-                },
-            });
+            const stepItem = this._stepIndicatorEl.createDiv({ cls: 'nw-ue-step' });
+            const stepState = i < currentIdx ? 'done' : i === currentIdx ? 'current' : 'pending';
+            stepItem.addClass(`nw-is-${stepState}`);
 
-            const circle = stepItem.createEl('div', {
+            stepItem.createEl('div', {
                 text: String(step.num),
-                attr: {
-                    style:
-                        'width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:var(--nw-font-size-sm, 12px); font-weight:600; flex-shrink:0;',
-                },
+                cls: 'nw-ue-step-circle',
             });
 
-            const label = stepItem.createEl('span', {
+            stepItem.createEl('span', {
                 text: step.label,
-                attr: {
-                    style:
-                        'font-size:var(--nw-font-size-xs, 11px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;',
-                },
+                cls: 'nw-ue-step-label',
             });
-
-            if (i < currentIdx) {
-                circle.style.background = 'var(--text-accent)';
-                circle.style.color = 'white';
-                label.style.color = 'var(--text-muted)';
-            } else if (i === currentIdx) {
-                circle.style.background = 'var(--text-accent)';
-                circle.style.color = 'white';
-                label.style.color = 'var(--text-accent)';
-                label.style.fontWeight = '600';
-            } else {
-                circle.style.background = 'var(--background-secondary)';
-                circle.style.color = 'var(--text-muted)';
-                label.style.color = 'var(--text-muted)';
-            }
 
             if (i < steps.length - 1) {
-                const line = this._stepIndicatorEl.createDiv({
-                    attr: {
-                        style:
-                            'flex:1; height:2px; background:var(--background-modifier-border); margin:0 4px; margin-bottom:20px;',
-                    },
-                });
-                if (i < currentIdx) {
-                    line.style.background = 'var(--text-accent)';
-                }
+                const line = this._stepIndicatorEl.createDiv({ cls: 'nw-ue-step-line' });
+                if (i < currentIdx) line.addClass('nw-is-done');
             }
         }
     }
@@ -274,29 +238,18 @@ export class UnifiedEntityGenerateModal extends Modal {
     private _renderTypeSelectStep(): void {
         const container = this._contentAreaEl;
 
-        container.createEl('h2', {
-            text: '✨ 选择实体类型',
-            attr: { style: 'margin:0 0 16px 0; font-size:20px;' },
-        });
+        container.createEl('h2', { text: '✨ 选择实体类型', cls: 'nw-ue-heading' });
 
-        const projectRow = container.createDiv({
-            attr: { style: 'margin-bottom:20px;' },
-        });
-        projectRow.createEl('label', {
-            text: '选择项目：',
-            attr: { style: 'display:block; margin-bottom:6px; font-weight:500;' },
-        });
+        const projectRow = container.createDiv({ cls: 'nw-ue-project-info' });
+        projectRow.createEl('label', { text: '选择项目：', cls: 'nw-ue-label' });
         const projectSelect = projectRow.createEl('select', {
             cls: 'nw-select novel-writer-select',
         });
-        projectSelect.style.width = '100%';
+        projectSelect.addClass('nw-ue-w-full');
 
         this.contextManager.detectProjects().then((projects) => {
             if (projects.length === 0) {
-                container.createEl('p', {
-                    text: '❌ 未找到项目，请先创建新项目',
-                    attr: { style: 'color:var(--text-error);' },
-                });
+                container.createEl('p', { text: '❌ 未找到项目，请先创建新项目', cls: 'nw-ue-error' });
                 return;
             }
             projects.forEach((p) => {
@@ -313,12 +266,7 @@ export class UnifiedEntityGenerateModal extends Modal {
             };
         });
 
-        const typeGrid = container.createDiv({
-            attr: {
-                style:
-                    'display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-bottom:20px;',
-            },
-        });
+        const typeGrid = container.createDiv({ cls: 'nw-ue-type-grid' });
 
         const categories: { key: ModelCategory; label: string; icon: string; desc: string }[] = [
             { key: 'character', label: '人物', icon: '👤', desc: '角色、NPC、反派等' },
@@ -328,60 +276,22 @@ export class UnifiedEntityGenerateModal extends Modal {
         ];
 
         for (const cat of categories) {
-            const card = typeGrid.createEl('button', {
-                attr: {
-                    style:
-                        'padding:20px; border-radius:10px; cursor:pointer; text-align:left; border:2px solid var(--background-modifier-border); background:var(--background-primary); transition:all 0.2s;',
-                },
-            });
-
-            const updateCardStyle = () => {
-                if (this._selectedCategory === cat.key) {
-                    card.style.borderColor = 'var(--text-accent)';
-                    card.style.background = 'var(--background-primary-alt)';
-                    card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-                } else {
-                    card.style.borderColor = 'var(--background-modifier-border)';
-                    card.style.background = 'var(--background-primary)';
-                    card.style.boxShadow = 'none';
-                }
-            };
-            updateCardStyle();
-
-            card.onmouseenter = () => {
-                if (this._selectedCategory !== cat.key) {
-                    card.style.borderColor = 'var(--background-modifier-hover)';
-                }
-            };
-            card.onmouseleave = () => {
-                updateCardStyle();
-            };
+            const card = typeGrid.createEl('button', { cls: 'nw-ue-type-card' });
+            card.toggleClass('nw-is-selected', this._selectedCategory === cat.key);
 
             card.onclick = () => {
                 this._selectedCategory = cat.key;
-                typeGrid.querySelectorAll('button').forEach(() => { });
                 this._updateAllTypeCards(categories);
             };
 
-            const iconEl = card.createEl('div', {
-                text: cat.icon,
-                attr: { style: 'font-size:32px; margin-bottom:8px;' },
-            });
-            const nameEl = card.createEl('div', {
-                text: cat.label,
-                attr: { style: 'font-weight:600; font-size:1.1em; margin-bottom:4px;' },
-            });
-            const descEl = card.createEl('div', {
-                text: cat.desc,
-                attr: { style: 'font-size:var(--nw-font-size-sm, 12px); color:var(--text-muted);' },
-            });
+            card.createEl('div', { text: cat.icon, cls: 'nw-ue-type-icon' });
+            card.createEl('div', { text: cat.label, cls: 'nw-ue-type-name' });
+            card.createEl('div', { text: cat.desc, cls: 'nw-ue-muted-sm' });
 
             (card as CategoryCardElement)._catKey = cat.key;
         }
 
-        const btnRow = container.createDiv({
-            attr: { style: 'display:flex; justify-content:flex-end; gap:10px;' },
-        });
+        const btnRow = container.createDiv({ cls: 'nw-ue-row-end' });
 
         const cancelBtn = btnRow.createEl('button', {
             text: '取消',
@@ -403,22 +313,11 @@ export class UnifiedEntityGenerateModal extends Modal {
     }
 
     private _updateAllTypeCards(categories: { key: ModelCategory }[]): void {
-        const grid = this._contentAreaEl.querySelector(
-            'div[style*="grid-template-columns:repeat(auto-fit"]',
-        );
+        const grid = this._contentAreaEl.querySelector('.nw-ue-type-grid');
         if (!grid) return;
-        const cards = grid.querySelectorAll('button');
-        cards.forEach((card) => {
+        grid.querySelectorAll('button').forEach((card) => {
             const key = (card as CategoryCardElement)._catKey;
-            if (key === this._selectedCategory) {
-                (card as HTMLElement).style.borderColor = 'var(--text-accent)';
-                (card as HTMLElement).style.background = 'var(--background-primary-alt)';
-                (card as HTMLElement).style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-            } else {
-                (card as HTMLElement).style.borderColor = 'var(--background-modifier-border)';
-                (card as HTMLElement).style.background = 'var(--background-primary)';
-                (card as HTMLElement).style.boxShadow = 'none';
-            }
+            card.toggleClass('nw-is-selected', key === this._selectedCategory);
         });
     }
 
@@ -428,31 +327,25 @@ export class UnifiedEntityGenerateModal extends Modal {
 
         container.createEl('h2', {
             text: `${config.icon} ${config.label} — 基本信息`,
-            attr: { style: 'margin:0 0 16px 0; font-size:20px;' },
+            cls: 'nw-ue-heading',
         });
 
-        const projectInfo = container.createDiv({
-            attr: {
-                style:
-                    'padding:8px 12px; background:var(--background-secondary); border-radius:6px; margin-bottom:16px; font-size:var(--nw-font-size-base, 13px);',
-            },
-        });
+        const projectInfo = container.createDiv({ cls: 'nw-ue-project-info' });
         projectInfo.createSpan({
             text: `📁 项目：${this._currentProject}`,
-            attr: { style: 'color:var(--text-muted);' },
+            cls: 'nw-ue-muted',
         });
 
         const nameLabel = container.createEl('label', {
             text: `${config.label}名称（逗号分隔，留空由 AI 自动命名）：`,
-            attr: { style: 'display:block; margin-bottom:6px; font-weight:500;' },
+            cls: 'nw-ue-label',
         });
         const nameInput = container.createEl('input', {
             type: 'text',
             placeholder: config.namePlaceholder,
             cls: 'nw-input novel-writer-input',
         });
-        nameInput.style.width = '100%';
-        nameInput.style.marginBottom = '16px';
+        nameInput.addClass('nw-ue-input');
         nameInput.value = this._entityNames;
         nameInput.oninput = () => {
             this._entityNames = nameInput.value;
@@ -460,32 +353,28 @@ export class UnifiedEntityGenerateModal extends Modal {
 
         const descLabel = container.createEl('label', {
             text: '✍️ 提示词（描述你想要的特点，AI 将据此生成）：',
-            attr: { style: 'display:block; margin-bottom:6px; font-weight:500;' },
+            cls: 'nw-ue-label',
         });
         const descInput = container.createEl('textarea', {
             placeholder: config.promptPlaceholder,
             cls: 'nw-textarea novel-writer-textarea',
         });
-        descInput.style.width = '100%';
-        descInput.style.minHeight = '160px';
-        descInput.style.marginBottom = '16px';
+        descInput.addClass('nw-ue-textarea');
         descInput.value = this._description;
         descInput.oninput = () => {
             this._description = descInput.value;
         };
 
-        const btnRow = container.createDiv({
-            attr: { style: 'display:flex; justify-content:space-between; gap:10px;' },
-        });
+        const btnRow = container.createDiv({ cls: 'nw-ue-row-between' });
 
-        const leftBtns = btnRow.createDiv({ attr: { style: 'display:flex; gap:10px;' } });
+        const leftBtns = btnRow.createDiv({ cls: 'nw-ue-row' });
         const prevBtn = leftBtns.createEl('button', {
             text: '← 上一步',
             cls: 'nw-btn nw-gen-modal-cancel-btn',
         });
         prevBtn.onclick = () => this._goToStep('type-select');
 
-        const rightBtns = btnRow.createDiv({ attr: { style: 'display:flex; gap:10px;' } });
+        const rightBtns = btnRow.createDiv({ cls: 'nw-ue-row' });
         const cancelBtn = rightBtns.createEl('button', {
             text: '取消',
             cls: 'nw-btn nw-gen-modal-cancel-btn',
@@ -505,25 +394,18 @@ export class UnifiedEntityGenerateModal extends Modal {
 
         container.createEl('h2', {
             text: `${config.icon} ${config.label} — 生成参数`,
-            attr: { style: 'margin:0 0 16px 0; font-size:20px;' },
+            cls: 'nw-ue-heading',
         });
 
-        const countRow = container.createDiv({
-            attr: {
-                style: 'display:flex; align-items:center; gap:12px; margin-bottom:16px;',
-            },
-        });
-        countRow.createEl('label', {
-            text: '生成数量：',
-            attr: { style: 'font-weight:500; min-width:80px;' },
-        });
+        const countRow = container.createDiv({ cls: 'nw-ue-count-row' });
+        countRow.createEl('label', { text: '生成数量：', cls: 'nw-ue-count-label' });
         const countInput = countRow.createEl('input', {
             type: 'number',
             value: String(this._count),
             attr: { min: '1', max: '20' },
             cls: 'nw-input novel-writer-input',
         });
-        countInput.style.width = '100px';
+        countInput.addClass('nw-ue-count-input');
         countInput.oninput = () => {
             const val = parseInt(countInput.value, 10);
             if (!isNaN(val) && val >= 1 && val <= 20) {
@@ -539,69 +421,42 @@ export class UnifiedEntityGenerateModal extends Modal {
             countInput.disabled = true;
             this._count = nameList.length;
             countInput.value = String(nameList.length);
-            const hint = countRow.createEl('span', {
+            countRow.createEl('span', {
                 text: `（已指定 ${nameList.length} 个名称）`,
-                attr: { style: 'color:var(--text-muted); font-size:var(--nw-font-size-sm, 12px);' },
+                cls: 'nw-ue-muted-sm',
             });
         }
 
-        const summary = container.createDiv({
-            attr: {
-                style:
-                    'padding:12px; background:var(--background-secondary); border-radius:8px; margin-bottom:20px;',
-            },
-        });
-        summary.createEl('div', {
-            text: '📋 生成摘要',
-            attr: { style: 'font-weight:600; margin-bottom:8px;' },
-        });
-        const summaryGrid = summary.createDiv({
-            attr: {
-                style:
-                    'display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-size:var(--nw-font-size-base, 13px);',
-            },
-        });
-        summaryGrid.createSpan({
-            text: '实体类型：',
-            attr: { style: 'color:var(--text-muted);' },
-        });
+        const summary = container.createDiv({ cls: 'nw-ue-summary' });
+        summary.createEl('div', { text: '📋 生成摘要', cls: 'nw-ue-summary-title' });
+        const summaryGrid = summary.createDiv({ cls: 'nw-ue-summary-grid' });
+        summaryGrid.createSpan({ text: '实体类型：', cls: 'nw-ue-muted' });
         summaryGrid.createSpan({ text: `${config.icon} ${config.label}` });
-        summaryGrid.createSpan({
-            text: '生成数量：',
-            attr: { style: 'color:var(--text-muted);' },
-        });
+        summaryGrid.createSpan({ text: '生成数量：', cls: 'nw-ue-muted' });
         summaryGrid.createSpan({ text: `${this._count} 个` });
         if (nameList.length > 0) {
-            summaryGrid.createSpan({
-                text: '指定名称：',
-                attr: { style: 'color:var(--text-muted);' },
-            });
+            summaryGrid.createSpan({ text: '指定名称：', cls: 'nw-ue-muted' });
             summaryGrid.createSpan({ text: nameList.join('、') });
         }
         if (this._description.trim()) {
+            summaryGrid.createSpan({ text: '提示词：', cls: 'nw-ue-muted' });
             summaryGrid.createSpan({
-                text: '提示词：',
-                attr: { style: 'color:var(--text-muted);' },
-            });
-            const descPreview = summaryGrid.createSpan({
                 text: this._description.length > 50
                     ? this._description.substring(0, 50) + '...'
                     : this._description,
             });
         }
 
-        const btnRow = container.createDiv({
-            attr: { style: 'display:flex; justify-content:space-between; gap:10px;' },
-        });
+        const btnRow = container.createDiv({ cls: 'nw-ue-row-between' });
 
-        const leftBtns = btnRow.createDiv({ attr: { style: 'display:flex; gap:10px;' } });
+        const leftBtns = btnRow.createDiv({ cls: 'nw-ue-row' });
         const prevBtn = leftBtns.createEl('button', {
             text: '← 上一步',
             cls: 'nw-btn nw-gen-modal-cancel-btn',
         });
         prevBtn.onclick = () => this._goToStep('basic-info');
 
-        const rightBtns = btnRow.createDiv({ attr: { style: 'display:flex; gap:10px;' } });
+        const rightBtns = btnRow.createDiv({ cls: 'nw-ue-row' });
         const cancelBtn = rightBtns.createEl('button', {
             text: '取消',
             cls: 'nw-btn nw-gen-modal-cancel-btn',
@@ -761,72 +616,35 @@ export class UnifiedEntityGenerateModal extends Modal {
 
         container.createEl('h2', {
             text: `${config.icon} 预览 — ${this._pendingResults.length} 个${config.label}`,
-            attr: { style: 'margin:0 0 16px 0; font-size:20px;' },
+            cls: 'nw-ue-heading',
         });
 
         if (this._pendingResults.length === 0) {
-            container.createEl('p', {
-                text: '❌ 没有生成结果',
-                attr: { style: 'color:var(--text-error); text-align:center; padding:40px;' },
-            });
+            container.createEl('p', { text: '❌ 没有生成结果', cls: 'nw-ue-error-block' });
             return;
         }
 
-        const listEl = container.createDiv({
-            attr: {
-                style:
-                    'max-height:400px; overflow-y:auto; border:1px solid var(--background-modifier-border); border-radius:8px; margin-bottom:16px;',
-            },
-        });
+        const listEl = container.createDiv({ cls: 'nw-ue-result-list' });
 
         this._pendingResults.forEach((item, idx) => {
             if (item.deleted) return;
 
-            const card = listEl.createDiv({
-                attr: {
-                    style:
-                        'padding:12px; border-bottom:1px solid var(--background-modifier-border);',
-                },
-            });
+            const card = listEl.createDiv({ cls: 'nw-ue-result-card' });
+            const titleRow = card.createDiv({ cls: 'nw-ue-result-title' });
 
-            const titleRow = card.createDiv({
-                attr: {
-                    style:
-                        'display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px;',
-                },
-            });
-
-            const nameEl = titleRow.createEl('span', {
+            titleRow.createEl('span', {
                 text: `${idx + 1}. ${item.entity.name}`,
-                attr: { style: 'font-weight:600;' },
+                cls: 'nw-ue-result-name',
             });
 
-            const btns = titleRow.createDiv({
-                attr: { style: 'display:flex; gap:6px;' },
-            });
-
-            const editBtn = btns.createEl('button', {
-                text: '✏️ 编辑',
-                attr: {
-                    style:
-                        'font-size:var(--nw-font-size-sm, 12px); padding:3px 10px; border-radius:4px; cursor:pointer; border:1px solid var(--background-modifier-border); background:var(--background-secondary);',
-                },
-            });
-
+            const btns = titleRow.createDiv({ cls: 'nw-ue-result-btns' });
+            const editBtn = btns.createEl('button', { text: '✏️ 编辑', cls: 'nw-ue-result-btn' });
             const delBtn = btns.createEl('button', {
                 text: '🗑️ 删除',
-                attr: {
-                    style:
-                        'font-size:var(--nw-font-size-sm, 12px); padding:3px 10px; border-radius:4px; cursor:pointer; border:1px solid var(--background-modifier-border); background:var(--background-secondary); color:var(--text-error);',
-                },
+                cls: 'nw-ue-result-btn nw-ue-result-btn-danger',
             });
 
-            const previewEl = card.createDiv({
-                attr: {
-                    style:
-                        'font-size:var(--nw-font-size-sm, 12px); color:var(--text-muted); max-height:60px; overflow:hidden; line-height:1.4;',
-                },
-            });
+            const previewEl = card.createDiv({ cls: 'nw-ue-result-preview' });
 
             const cleanContent = item.entity.content
                 .replace(/^---[\s\S]*?---\s*/, '')
@@ -851,26 +669,19 @@ export class UnifiedEntityGenerateModal extends Modal {
         });
 
         const remaining = this._pendingResults.filter((r) => !r.deleted).length;
-        const countInfo = container.createDiv({
-            attr: {
-                style:
-                    'text-align:right; color:var(--text-muted); font-size:var(--nw-font-size-sm, 12px); margin-bottom:12px;',
-            },
-        });
+        const countInfo = container.createDiv({ cls: 'nw-ue-count-info' });
         countInfo.setText(`共 ${this._pendingResults.length} 个，将保存 ${remaining} 个`);
 
-        const btnRow = container.createDiv({
-            attr: { style: 'display:flex; justify-content:space-between; gap:10px;' },
-        });
+        const btnRow = container.createDiv({ cls: 'nw-ue-row-between' });
 
-        const leftBtns = btnRow.createDiv({ attr: { style: 'display:flex; gap:10px;' } });
+        const leftBtns = btnRow.createDiv({ cls: 'nw-ue-row' });
         const prevBtn = leftBtns.createEl('button', {
             text: '← 重新生成',
             cls: 'nw-btn nw-gen-modal-cancel-btn',
         });
         prevBtn.onclick = () => this._goToStep('params');
 
-        const rightBtns = btnRow.createDiv({ attr: { style: 'display:flex; gap:10px;' } });
+        const rightBtns = btnRow.createDiv({ cls: 'nw-ue-row' });
         const cancelBtn = rightBtns.createEl('button', {
             text: '取消',
             cls: 'nw-btn nw-gen-modal-cancel-btn',
@@ -887,52 +698,31 @@ export class UnifiedEntityGenerateModal extends Modal {
     private _editEntityInline(item: ManagedEntity, cardEl: HTMLElement): void {
         cardEl.empty();
 
-        const titleRow = cardEl.createDiv({
-            attr: { style: 'margin-bottom:8px;' },
-        });
-        const nameLabel = titleRow.createEl('label', {
-            text: '名称：',
-            attr: { style: 'display:block; font-size:var(--nw-font-size-sm, 12px); margin-bottom:4px;' },
-        });
+        const titleRow = cardEl.createDiv({ cls: 'nw-ue-edit-title' });
+        titleRow.createEl('label', { text: '名称：', cls: 'nw-ue-edit-label' });
         const nameInput = titleRow.createEl('input', {
             type: 'text',
             value: item.entity.name,
             cls: 'nw-input novel-writer-input',
         });
-        nameInput.style.width = '100%';
-        nameInput.style.fontSize = '0.9em';
+        nameInput.addClass('nw-ue-edit-name');
 
-        const contentLabel = cardEl.createEl('label', {
-            text: '内容：',
-            attr: { style: 'display:block; font-size:var(--nw-font-size-sm, 12px); margin-bottom:4px;' },
-        });
+        cardEl.createEl('label', { text: '内容：', cls: 'nw-ue-edit-label' });
         const contentInput = cardEl.createEl('textarea', {
             value: item.entity.content,
             cls: 'nw-textarea novel-writer-textarea',
         });
-        contentInput.style.width = '100%';
-        contentInput.style.minHeight = '200px';
-        contentInput.style.fontSize = '0.85em';
+        contentInput.addClass('nw-ue-edit-content');
 
-        const btnRow = cardEl.createDiv({
-            attr: { style: 'display:flex; justify-content:flex-end; gap:8px; margin-top:8px;' },
-        });
-
-        const cancelBtn = btnRow.createEl('button', {
-            text: '取消',
-            attr: {
-                style:
-                    'font-size:var(--nw-font-size-sm, 12px); padding:4px 12px; border-radius:4px; cursor:pointer; border:1px solid var(--background-modifier-border); background:var(--background-secondary);',
-            },
-        });
+        const btnRow = cardEl.createDiv({ cls: 'nw-ue-edit-actions' });
+        const cancelBtn = btnRow.createEl('button', { text: '取消', cls: 'nw-ue-edit-cancel' });
         cancelBtn.onclick = () => this._renderCurrentStep();
 
         const saveBtn = btnRow.createEl('button', {
             text: '保存修改',
             cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
         });
-        saveBtn.style.fontSize = '0.8em';
-        saveBtn.style.padding = '4px 12px';
+        saveBtn.addClass('nw-ue-edit-save');
         saveBtn.onclick = () => {
             item.entity.name = nameInput.value.trim() || item.entity.name;
             item.entity.content = contentInput.value;
@@ -1025,33 +815,20 @@ export class UnifiedEntityGenerateModal extends Modal {
         const config = this.categoryConfig[this._selectedCategory];
         const saved = this._pendingResults.filter((r) => !r.deleted);
 
-        container.createEl('h2', {
-            text: '🎉 生成完成！',
-            attr: { style: 'margin:0 0 16px 0; font-size:24px; text-align:center;' },
-        });
+        container.createEl('h2', { text: '🎉 生成完成！', cls: 'nw-ue-heading-lg' });
 
-        const resultBox = container.createDiv({
-            attr: {
-                style:
-                    'padding:24px; background:var(--background-secondary); border-radius:12px; text-align:center; margin-bottom:20px;',
-            },
-        });
-        resultBox.createEl('div', {
-            text: config.icon,
-            attr: { style: 'font-size:48px; margin-bottom:12px;' },
-        });
+        const resultBox = container.createDiv({ cls: 'nw-ue-confirm-box' });
+        resultBox.createEl('div', { text: config.icon, cls: 'nw-ue-confirm-icon' });
         resultBox.createEl('div', {
             text: `成功生成 ${saved.length} 个${config.label}`,
-            attr: { style: 'font-size:1.2em; font-weight:600; margin-bottom:8px;' },
+            cls: 'nw-ue-confirm-title',
         });
         resultBox.createEl('div', {
             text: `已保存到：${this._currentProject}/${config.subdir}`,
-            attr: { style: 'font-size:var(--nw-font-size-base, 13px); color:var(--text-muted);' },
+            cls: 'nw-ue-confirm-desc',
         });
 
-        const btnRow = container.createDiv({
-            attr: { style: 'display:flex; justify-content:center; gap:12px; flex-wrap:wrap;' },
-        });
+        const btnRow = container.createDiv({ cls: 'nw-ue-row-center' });
 
         const manageBtn = btnRow.createEl('button', {
             text: '📚 打开实体管理',
@@ -1066,8 +843,7 @@ export class UnifiedEntityGenerateModal extends Modal {
             text: '📂 管理文件',
             cls: 'nw-btn',
         });
-        fileMgrBtn.style.cssText =
-            'border:1px solid var(--background-modifier-border); background:var(--background-secondary);';
+        fileMgrBtn.addClass('nw-ue-file-btn');
         fileMgrBtn.onclick = () => {
             this.close();
             new ExistingEntityManagerModal(

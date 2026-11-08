@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-08T22:11:00.591Z",
-  "note": "v4.80.0 批量 B3a：新增 23-generate-modals.css（5 个生成弹窗共用改名/编辑/成功页样式，+2658B/+16 类）；颜色走主题变量，hex/rgb 指标不变",
-  "bytes": 515476,
+  "generatedAt": "2026-11-08T22:26:08.880Z",
+  "note": "v4.80.0 批量 B3b：新增 24-unified-entity.css（五步向导/实体管理面板）与 25-outline-expand.css（扩写编辑器/diff）；+17876B/+134 类，颜色全部主题变量或 color-mix，hex/rgb/important 指标不变",
+  "bytes": 533352,
   "important": 19,
   "hardcodedHex": 161,
   "rgbHsl": 188,
-  "uniqueClasses": 2764,
+  "uniqueClasses": 2898,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

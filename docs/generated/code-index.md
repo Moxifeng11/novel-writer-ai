@@ -11,7 +11,7 @@
 | `shared/` | 178 | 40658 | 1601 | 1320 | 82% |
 | `core/` | 7 | 2821 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 238 | 99887 | 733 | 638 | 87% |
+| `ui/` | 238 | 99452 | 733 | 638 | 87% |
 
 ## 文件清单
 
@@ -634,7 +634,7 @@
 | `ui/cross-volume-state-modal.ts` | 231 | 1 | 1 |
 | `ui/diagnose-writer-modal.ts` | 363 | 1 | 1 |
 | `ui/draggable-panel.ts` | 334 | 2 | 2 |
-| `ui/existing-entity-manager.ts` | 550 | 1 | 1 |
+| `ui/existing-entity-manager.ts` | 554 | 1 | 1 |
 | `ui/expand-text-modal.ts` | 236 | 1 | 1 |
 | `ui/export-manuscript-modal.ts` | 665 | 4 | 4 |
 | `ui/fanfic-prompt-notice.ts` | 20 | 1 | 1 |
@@ -710,7 +710,7 @@
 | `ui/novel-analysis-modal.ts` | 266 | 1 | 1 |
 | `ui/novel-tags-modal.ts` | 335 | 1 | 1 |
 | `ui/onboarding-modal.ts` | 300 | 1 | 1 |
-| `ui/outline-expand-modal.ts` | 900 | 2 | 1 |
+| `ui/outline-expand-modal.ts` | 880 | 2 | 1 |
 | `ui/panel-resizer.ts` | 238 | 4 | 3 |
 | `ui/password-modal.ts` | 145 | 1 | 1 |
 | `ui/plan-book-modal.ts` | 566 | 1 | 1 |
@@ -762,8 +762,8 @@
 | `ui/svg-charts.ts` | 2337 | 49 | 49 |
 | `ui/template-manager.ts` | 710 | 5 | 2 |
 | `ui/tomato-rank-modal.ts` | 132 | 1 | 1 |
-| `ui/unified-entity-generate-modal.ts` | 1089 | 1 | 1 |
-| `ui/unified-entity-manager-modal.ts` | 945 | 1 | 1 |
+| `ui/unified-entity-generate-modal.ts` | 865 | 1 | 1 |
+| `ui/unified-entity-manager-modal.ts` | 750 | 1 | 1 |
 | `ui/usage-ledger-modal.ts` | 182 | 1 | 1 |
 | `ui/utils/worldview-utils.ts` | 103 | 1 | 1 |
 | `ui/vector-rebuild-action.ts` | 148 | 1 | 1 |

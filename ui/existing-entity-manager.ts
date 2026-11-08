@@ -146,10 +146,10 @@ export class ExistingEntityManagerModal extends Modal {
         contentEl.addClass('nw-form-stack');
 
         contentEl.empty();
-        contentEl.createEl('h2', { text: `📂 管理${this.displayLabel}`, attr: { style: 'margin:0; font-size:18px;' } });
+        contentEl.createEl('h2', { text: `📂 管理${this.displayLabel}`, cls: 'nw-ee-heading' });
 
         const tip = contentEl.createEl('p', { text: '⏳ 正在扫描磁盘...' });
-        tip.style.cssText = 'color:var(--text-muted); font-size:var(--nw-font-size-sm, 12px);';
+        tip.addClass('nw-ee-muted-sm');
 
         this.entities = await this._scanEntities();
         tip.remove();
@@ -158,7 +158,7 @@ export class ExistingEntityManagerModal extends Modal {
             const noTip = contentEl.createEl('p', {
                 text: `❌ ${this.project}/${this.folderName} 中未找到任何 .md 文件`,
             });
-            noTip.style.cssText = 'color:var(--text-error);';
+            noTip.addClass('nw-ee-error');
             const closeBtn = contentEl.createEl('button', { text: '关闭' });
             closeBtn.onclick = () => this.close();
             return;
@@ -172,20 +172,21 @@ export class ExistingEntityManagerModal extends Modal {
     private _renderToolbar(): void {
         const { contentEl } = this;
         const bar = contentEl.createDiv();
-        bar.style.cssText = 'display:flex; justify-content:space-between; align-items:center; gap:12px; padding:6px 0; border-bottom:1px solid var(--background-modifier-border); margin-bottom:8px;';
+        bar.addClass('nw-ee-toolbar');
 
         const stats = bar.createDiv();
-        stats.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); color:var(--text-muted);';
+        stats.addClass('nw-ee-muted-sm');
         const unnamedCount = this.entities.filter(e => e.isUnnamed).length;
         stats.innerHTML = `共 <b>${this.entities.length}</b> 个文件` +
             (unnamedCount > 0 ? `（含 <span style="color:var(--text-error)"><b>${unnamedCount}</b></span> 个未命名）` : '');
 
         const filterRow = bar.createDiv();
-        filterRow.style.cssText = 'display:flex; gap:6px;';
+        filterRow.addClass('nw-ee-filter-row');
         const allBtn = filterRow.createEl('button', { text: '全部' });
         const unnamedBtn = filterRow.createEl('button', { text: `🚨 仅未命名（${unnamedCount}）` });
         const styleBtn = (b: HTMLButtonElement, active: boolean) => {
-            b.style.cssText = `font-size:var(--nw-font-size-sm, 12px); padding:4px 10px; cursor:pointer; ${active ? 'background:var(--interactive-accent); color:var(--text-on-accent);' : ''}`;
+            b.addClass('nw-ee-filter-btn');
+            b.toggleClass('nw-is-active', active);
         };
         styleBtn(allBtn, this.filterMode === 'all');
         styleBtn(unnamedBtn, this.filterMode === 'unnamed');
@@ -196,7 +197,7 @@ export class ExistingEntityManagerModal extends Modal {
     private _renderEntityList(): void {
         const { contentEl } = this;
         const list = contentEl.createDiv();
-        list.style.cssText = 'max-height:55vh; overflow-y:auto; margin-bottom:12px; padding-right:4px;';
+        list.addClass('nw-ee-list');
 
         const visible = this.filterMode === 'unnamed'
             ? this.entities.filter(e => e.isUnnamed)
@@ -204,7 +205,7 @@ export class ExistingEntityManagerModal extends Modal {
 
         if (visible.length === 0) {
             const ok = list.createEl('p', { text: '✅ 没有"未命名"开头的文件，目录已规范' });
-            ok.style.cssText = 'color:var(--text-success); padding:20px; text-align:center;';
+            ok.addClass('nw-ee-empty-ok');
             return;
         }
 
@@ -217,39 +218,42 @@ export class ExistingEntityManagerModal extends Modal {
         const isRenamed = this.renameMap.has(ent.path);
 
         const card = parent.createDiv();
-        card.style.cssText = `border:1px solid ${ent.isUnnamed ? 'var(--text-error)' : 'var(--background-modifier-border)'}; border-radius:6px; padding:8px 10px; margin-bottom:8px; ${isDeleted ? 'opacity:0.45;' : ''}`;
+        card.addClass('nw-ee-card');
+        card.toggleClass('nw-is-unnamed', ent.isUnnamed);
+        card.toggleClass('nw-is-deleted', isDeleted);
 
         const head = card.createDiv();
-        head.style.cssText = 'display:flex; align-items:center; gap:8px; flex-wrap:wrap;';
+        head.addClass('nw-ee-head');
 
         const displayName = isRenamed ? this.renameMap.get(ent.path)! : ent.fileName;
         const titleSpan = head.createEl('span', {
             text: `${ent.isUnnamed ? '🚨' : '📄'} ${displayName}`,
         });
-        titleSpan.style.cssText = `font-weight:bold; flex:1; ${isDeleted ? 'text-decoration:line-through;' : ''}`;
+        titleSpan.addClass('nw-ee-title');
+        titleSpan.toggleClass('nw-is-deleted', isDeleted);
 
         if (isDeleted) {
             const b = head.createEl('span', { text: '已删除' });
-            b.style.cssText = 'font-size:var(--nw-font-size-xs, 11px); color:var(--text-error); background:var(--background-modifier-error); padding:1px 6px; border-radius:3px;';
+            b.addClass('nw-ee-badge', 'nw-ee-badge-error');
         } else {
             if (isRenamed) {
                 const b = head.createEl('span', { text: `已改名← ${ent.fileName}` });
-                b.style.cssText = 'font-size:var(--nw-font-size-xs, 11px); color:var(--text-accent); padding:1px 6px; border-radius:3px;';
+                b.addClass('nw-ee-badge', 'nw-ee-badge-accent');
             }
             if (isModified) {
                 const b = head.createEl('span', { text: '已修改' });
-                b.style.cssText = 'font-size:var(--nw-font-size-xs, 11px); color:var(--text-warning); padding:1px 6px; border-radius:3px;';
+                b.addClass('nw-ee-badge', 'nw-ee-badge-warning');
             }
             if (ent.isUnnamed && !isRenamed) {
                 const b = head.createEl('span', { text: '需要改名' });
-                b.style.cssText = 'font-size:var(--nw-font-size-xs, 11px); color:var(--text-error); padding:1px 6px; border-radius:3px;';
+                b.addClass('nw-ee-badge', 'nw-ee-badge-error-text');
             }
         }
 
         if (!isDeleted) {
             // 改名按钮（v3.5.4 修复：prompt() 在 Obsidian Electron 环境下可能不弹出，改为内联编辑）
             const renameBtn = head.createEl('button', { text: '✏️ 改名' });
-            renameBtn.style.cssText = 'font-size:var(--nw-font-size-xs, 11px); padding:2px 6px; cursor:pointer;';
+            renameBtn.addClass('nw-ee-sm-btn');
             renameBtn.onclick = () => {
                 // 如果已有内联编辑器，先移除
                 const existing = card.querySelector('.rename-inline');
@@ -261,13 +265,13 @@ export class ExistingEntityManagerModal extends Modal {
                 const guess = ent.isUnnamed ? this._guessNameFromContent(curContent) : '';
                 
                 const inline = card.createDiv({ cls: 'rename-inline' });
-                inline.style.cssText = 'display:flex; gap:6px; align-items:center; margin-top:6px;';
+                inline.addClass('nw-gen-modal-inline-row');
                 const input = inline.createEl('input', { type: 'text', value: guess || cur });
-                input.style.cssText = 'flex:1; font-size:var(--nw-font-size-sm, 12px); padding:4px 8px; border:1px solid var(--interactive-accent); border-radius:4px;';
+                input.addClass('nw-gen-modal-inline-input');
                 if (guess) input.placeholder = `建议：${guess}`;
                 
                 const confirmBtn = inline.createEl('button', { text: '✅ 确认' });
-                confirmBtn.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 8px; cursor:pointer; background:var(--interactive-accent); color:var(--text-on-accent); border:none; border-radius:4px; white-space:nowrap;';
+                confirmBtn.addClass('nw-gen-modal-inline-btn', 'nw-gen-modal-inline-btn-primary');
                 confirmBtn.onclick = () => {
                     const nm = input.value;
                     if (!nm || !nm.trim()) { inline.remove(); renameBtn.setText('✏️ 改名'); return; }
@@ -281,7 +285,7 @@ export class ExistingEntityManagerModal extends Modal {
                 };
                 
                 const cancelBtn = inline.createEl('button', { text: '取消' });
-                cancelBtn.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 8px; cursor:pointer; border:1px solid var(--background-modifier-border); border-radius:4px; white-space:nowrap;';
+                cancelBtn.addClass('nw-gen-modal-inline-btn');
                 cancelBtn.onclick = () => { inline.remove(); renameBtn.setText('✏️ 改名'); };
                 
                 // 回车确认
@@ -296,7 +300,7 @@ export class ExistingEntityManagerModal extends Modal {
             // 智能猜名按钮（仅对未命名文件）
             if (ent.isUnnamed) {
                 const guessBtn = head.createEl('button', { text: '🔮 智能猜名' });
-                guessBtn.style.cssText = 'font-size:var(--nw-font-size-xs, 11px); padding:2px 6px; cursor:pointer; color:var(--text-accent);';
+                guessBtn.addClass('nw-ee-sm-btn', 'nw-ee-sm-btn-accent');
                 guessBtn.onclick = () => {
                     const curContent = this.modifiedContent.get(ent.path) ?? ent.content;
                     const guess = this._guessNameFromContent(curContent);
@@ -313,20 +317,20 @@ export class ExistingEntityManagerModal extends Modal {
 
             // 编辑按钮
             const editBtn = head.createEl('button', { text: '📝 编辑' });
-            editBtn.style.cssText = 'font-size:var(--nw-font-size-xs, 11px); padding:2px 6px; cursor:pointer;';
+            editBtn.addClass('nw-ee-sm-btn');
             editBtn.onclick = () => {
                 const exist = card.querySelector('.entity-editor');
                 if (exist) { exist.remove(); editBtn.setText('📝 编辑'); return; }
                 editBtn.setText('📝 收起');
                 const ed = card.createDiv({ cls: 'entity-editor' });
-                ed.style.cssText = 'margin-top:8px;';
+                ed.addClass('nw-gen-modal-editor');
                 const ta = ed.createEl('textarea');
                 ta.value = this.modifiedContent.get(ent.path) ?? ent.content;
-                ta.style.cssText = 'width:100%; min-height:240px; font-size:var(--nw-font-size-sm, 12px); font-family:monospace; box-sizing:border-box;';
+                ta.addClass('nw-gen-modal-editor-textarea');
                 const br = ed.createDiv();
-                br.style.cssText = 'display:flex; gap:6px; margin-top:6px;';
+                br.addClass('nw-gen-modal-editor-actions');
                 const sb = br.createEl('button', { text: '💾 暂存修改' });
-                sb.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 10px; cursor:pointer;';
+                sb.addClass('nw-gen-modal-editor-btn');
                 sb.onclick = () => {
                     const v = ta.value;
                     if (v === ent.content) {
@@ -337,15 +341,15 @@ export class ExistingEntityManagerModal extends Modal {
                     this._loadAndRender();
                 };
                 const cb = br.createEl('button', { text: '取消' });
-                cb.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 10px; cursor:pointer;';
+                cb.addClass('nw-gen-modal-editor-btn');
                 cb.onclick = () => this._loadAndRender();
                 const tip = ed.createEl('span', { text: '⚠️ 暂存后点底部"应用变更"才会写入磁盘' });
-                tip.style.cssText = 'font-size:var(--nw-font-size-xs, 11px); color:var(--text-muted); margin-left:8px;';
+                tip.addClass('nw-ee-editor-tip');
             };
 
             // 删除按钮
             const delBtn = head.createEl('button', { text: '🗑️' });
-            delBtn.style.cssText = 'font-size:var(--nw-font-size-xs, 11px); padding:2px 6px; cursor:pointer; color:var(--text-error);';
+            delBtn.addClass('nw-ee-sm-btn', 'nw-ee-sm-btn-danger');
             delBtn.onclick = () => {
                 this.deletedSet.add(ent.path);
                 this._loadAndRender();
@@ -353,7 +357,7 @@ export class ExistingEntityManagerModal extends Modal {
         } else {
             // 已删除 → 恢复按钮
             const rst = head.createEl('button', { text: '↩️ 恢复' });
-            rst.style.cssText = 'font-size:var(--nw-font-size-xs, 11px); padding:2px 6px; cursor:pointer;';
+            rst.addClass('nw-ee-sm-btn');
             rst.onclick = () => {
                 this.deletedSet.delete(ent.path);
                 this._loadAndRender();
@@ -363,11 +367,11 @@ export class ExistingEntityManagerModal extends Modal {
         // 预览
         if (!isDeleted) {
             const pv = card.createEl('details');
-            pv.style.cssText = 'margin-top:6px; font-size:var(--nw-font-size-xs, 11px);';
+            pv.addClass('nw-ee-preview');
             const sum = pv.createEl('summary', { text: '📄 预览内容' });
-            sum.style.cssText = 'cursor:pointer; color:var(--text-muted);';
+            sum.addClass('nw-ee-preview-summary');
             const pc = pv.createEl('pre');
-            pc.style.cssText = 'max-height:140px; overflow-y:auto; font-size:var(--nw-font-size-xs, 11px); white-space:pre-wrap; color:var(--text-muted); background:var(--background-secondary); padding:6px; border-radius:4px;';
+            pc.addClass('nw-ee-preview-content');
             const showContent = this.modifiedContent.get(ent.path) ?? ent.content;
             pc.setText(showContent.slice(0, 500) + (showContent.length > 500 ? '\n...' : ''));
         }
@@ -376,7 +380,7 @@ export class ExistingEntityManagerModal extends Modal {
     private _renderActionBar(): void {
         const { contentEl } = this;
         const bar = contentEl.createDiv();
-        bar.style.cssText = 'display:flex; gap:8px; align-items:center; padding-top:10px; border-top:1px solid var(--background-modifier-border);';
+        bar.addClass('nw-ee-actionbar');
 
         const renamedCount = this.renameMap.size;
         const modifiedCount = this.modifiedContent.size;
@@ -384,7 +388,7 @@ export class ExistingEntityManagerModal extends Modal {
         const hasChanges = renamedCount + modifiedCount + deletedCount > 0;
 
         const summary = bar.createDiv();
-        summary.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); color:var(--text-muted); flex:1;';
+        summary.addClass('nw-ee-actionbar-summary');
         if (hasChanges) {
             const parts: string[] = [];
             if (renamedCount > 0) parts.push(`改名 <b>${renamedCount}</b>`);
@@ -396,12 +400,12 @@ export class ExistingEntityManagerModal extends Modal {
         }
 
         const applyBtn = bar.createEl('button', { text: '🚀 应用变更' });
-        applyBtn.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:6px 14px; cursor:pointer;';
+        applyBtn.addClass('nw-ee-action-btn');
         if (!hasChanges) applyBtn.disabled = true;
         else applyBtn.classList.add('mod-cta');
 
         const closeBtn = bar.createEl('button', { text: '关闭' });
-        closeBtn.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:6px 14px; cursor:pointer;';
+        closeBtn.addClass('nw-ee-action-btn');
         closeBtn.onclick = async () => {
             if (hasChanges) {
                 const confirmed = await OperationConfirmModal.confirm(this.app, {

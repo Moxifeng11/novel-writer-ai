@@ -108,7 +108,9 @@ describe('设定与实体模块前端规范', () => {
     it('统一生成实体使用 900px 档并自适应字段网格', () => {
         const src = read('ui/unified-entity-generate-modal.ts');
         expect(src).toContain("addClass('nw-modal-lg')");
-        expect(src).toContain('repeat(auto-fit, minmax(220px, 1fr))');
+        // v4.80.0 批次 B3b：网格规则从内联样式迁到 styles-src，源码只留类名
+        expect(src).toContain('nw-ue-type-grid');
+        expect(read('styles-src/24-unified-entity.css')).toContain('repeat(auto-fit, minmax(220px, 1fr))');
         expect(src).not.toContain('grid-template-columns:repeat(2, 1fr)');
     });
 

@@ -113,15 +113,11 @@ export class OutlineExpandModal extends Modal {
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         this.modalEl.addClass('nw-modal-xl');
-        this.modalEl.style.height = '80vh';
-        this.modalEl.style.maxHeight = '90vh';
+        this.modalEl.addClass('nw-oe-modal');
 
         const { contentEl } = this;
         contentEl.empty();
-        contentEl.style.height = '100%';
-        contentEl.style.display = 'flex';
-        contentEl.style.flexDirection = 'column';
-        contentEl.style.padding = '0';
+        contentEl.addClass('nw-oe-content');
 
         this.renderHeader(contentEl);
         this.renderMainContent(contentEl);
@@ -193,8 +189,9 @@ export class OutlineExpandModal extends Modal {
         for (const mode of modes) {
             const btn = modeSelector.createEl('button', {
                 text: mode.label,
-                attr: { style: 'padding:4px 12px;border:none;background:transparent;border-radius:4px;cursor:pointer;font-size:13px;' + (this.expandMode === mode.key ? 'background:var(--interactive-accent);color:white;' : 'color:var(--text-muted);') }
+                cls: 'nw-oe-tab',
             });
+            btn.toggleClass('nw-is-active', this.expandMode === mode.key);
             btn.onclick = () => {
                 if (this.expandMode === mode.key) return;
                 this.expandMode = mode.key;
@@ -210,7 +207,7 @@ export class OutlineExpandModal extends Modal {
 
         const strategyLabel = right.createSpan({ text: '策略：', cls: "nw-text-muted nw-u-ws-nowrap-2 nw-u-fsh-0-2", attr: {} });
         const strategySelect = right.createEl('select', {
-            attr: { style: 'padding:4px 8px;border-radius:4px;border:1px solid var(--background-modifier-border);background:var(--background-primary);font-size:13px;' }
+            cls: 'nw-oe-select',
         }) as HTMLSelectElement;
         const strategies: Array<{ key: ExpansionStrategy; label: string }> = [
             { key: 'conservative', label: '保守扩写' },
@@ -230,7 +227,7 @@ export class OutlineExpandModal extends Modal {
         const wordInput = wordInputWrap.createEl('input', {
             type: 'number',
             value: String(this.targetWords),
-            attr: { style: 'width:80px;padding:4px 6px;border-radius:4px;border:1px solid var(--background-modifier-border);font-size:13px;' }
+            cls: 'nw-oe-word-input',
         }) as HTMLInputElement;
         wordInput.onchange = () => {
             const val = parseInt(wordInput.value, 10);
@@ -343,8 +340,9 @@ export class OutlineExpandModal extends Modal {
         for (const vm of viewModes) {
             const btn = viewTabs.createEl('button', {
                 text: vm.label,
-                attr: { style: 'padding:4px 12px;border:none;background:transparent;border-radius:4px;cursor:pointer;font-size:13px;' + (this.viewMode === vm.key ? 'background:var(--interactive-accent);color:white;' : 'color:var(--text-muted);') }
+                cls: 'nw-oe-tab',
             });
+            btn.toggleClass('nw-is-active', this.viewMode === vm.key);
             btn.onclick = () => {
                 this.viewMode = vm.key;
                 this.renderRightPanel();
@@ -402,46 +400,28 @@ export class OutlineExpandModal extends Modal {
         const diffs = lineDiff(this.originalText || this.sourceOutline, this.expandedText);
 
         for (const diff of diffs) {
-            const line = document.createElement('div');
-            line.style.whiteSpace = 'pre-wrap';
-            line.style.wordBreak = 'break-word';
-            line.style.padding = '2px 6px';
-            line.style.borderRadius = '2px';
-            line.style.marginBottom = '1px';
-
-            const line2 = document.createElement('div');
-            line2.style.whiteSpace = 'pre-wrap';
-            line2.style.wordBreak = 'break-word';
-            line2.style.padding = '2px 6px';
-            line2.style.borderRadius = '2px';
-            line2.style.marginBottom = '1px';
+            const line = origContent.createDiv({ cls: 'nw-oe-diff-line' });
+            const line2 = newContent.createDiv({ cls: 'nw-oe-diff-line' });
 
             if (diff.op === 'equal') {
                 line.textContent = diff.content;
-                line.style.opacity = '0.7';
+                line.addClass('nw-is-equal');
                 line2.textContent = diff.content;
-                line2.style.opacity = '0.7';
+                line2.addClass('nw-is-equal');
             } else if (diff.op === 'delete') {
-                line.textContent = diff.content;
-                line.style.background = 'rgba(255, 100, 100, 0.15)';
-                line.style.color = 'var(--text-error)';
                 line.textContent = '- ' + diff.content;
+                line.addClass('nw-is-delete');
                 line2.textContent = '';
             } else if (diff.op === 'insert') {
                 line.textContent = '';
                 line2.textContent = '+ ' + diff.content;
-                line2.style.background = 'rgba(100, 255, 100, 0.15)';
-                line2.style.color = 'var(--text-success)';
+                line2.addClass('nw-is-insert');
             } else if (diff.op === 'replace') {
                 line.textContent = '- ' + diff.content;
-                line.style.background = 'rgba(255, 100, 100, 0.15)';
-                line.style.color = 'var(--text-error)';
+                line.addClass('nw-is-delete');
                 line2.textContent = '+ (修改)';
-                line2.style.background = 'rgba(100, 255, 100, 0.1)';
+                line2.addClass('nw-is-replace-new');
             }
-
-            origContent.appendChild(line);
-            newContent.appendChild(line2);
         }
     }
 
@@ -861,14 +841,14 @@ export class OutlineExpandModal extends Modal {
 
     private showProgress(text: string): void {
         if (this.progressEl) {
-            this.progressEl.style.display = 'block';
+            this.progressEl.removeClass('nw-u-d-none');
             this.progressEl.textContent = text;
         }
     }
 
     private hideProgress(): void {
         if (this.progressEl) {
-            this.progressEl.style.display = 'none';
+            this.progressEl.addClass('nw-u-d-none');
         }
     }
 

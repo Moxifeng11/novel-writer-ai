@@ -1,0 +1,67 @@
+/* ==========================================================================
+ * 25-outline-expand.css — 智能扩写编辑器（v4.80.0 批次 B3b）
+ * ==========================================================================
+ * 原先把弹窗高度、模式切换、策略/字数输入、diff 行的外观全部写在 JS 里；
+ * 这里收敛为 nw-oe-* 类，模式/视图选中态用 nw-is-active，diff 用 nw-is-*。
+ * 颜色走主题变量 + color-mix，不新增硬编码色值。
+ * ========================================================================== */
+
+.nw-oe-modal {
+    height: 80vh;
+    max-height: 90vh;
+}
+.nw-oe-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+}
+.nw-oe-tab {
+    padding: 4px 12px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+}
+.nw-oe-tab.nw-is-active {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+.nw-oe-select {
+    padding: 4px 8px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: var(--background-primary);
+    font-size: 13px;
+}
+.nw-oe-word-input {
+    width: 80px;
+    padding: 4px 6px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    font-size: 13px;
+}
+.nw-oe-diff-line {
+    padding: 2px 6px;
+    border-radius: 2px;
+    margin-bottom: 1px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.nw-oe-diff-line.nw-is-equal {
+    opacity: 0.7;
+}
+.nw-oe-diff-line.nw-is-delete {
+    background: color-mix(in srgb, var(--text-error) 15%, transparent);
+    color: var(--text-error);
+}
+.nw-oe-diff-line.nw-is-insert {
+    background: color-mix(in srgb, var(--text-success) 15%, transparent);
+    color: var(--text-success);
+}
+.nw-oe-diff-line.nw-is-replace-new {
+    background: color-mix(in srgb, var(--text-success) 10%, transparent);
+    color: var(--text-success);
+}
