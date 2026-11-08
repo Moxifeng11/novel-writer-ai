@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 222,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 第 104 轮实测 ahead 222，HEAD 62780ac；v4.73.0 已发布；第 104 轮 settings-service any −2 在工作树待收单）"
+    "localCommitsAhead": 226,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 第 108 轮实测 ahead 226，HEAD 2c0511b；v4.73.0 已发布；第 106 轮 any 收口随 32a38e8、第 107 轮行为修复随 2c0511b 均已收单，工作树干净）"
   },
   "groups": [
     {
