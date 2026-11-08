@@ -114,7 +114,7 @@ export interface PromptUsageRecord {
     wasModified?: boolean;
     abTestId?: string;
     abVariant?: 'a' | 'b';
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 /**
