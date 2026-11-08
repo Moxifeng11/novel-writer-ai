@@ -1,12 +1,12 @@
 {
   "program": "全系统业务板块优化专项",
   "rev": "v5-plan-1",
-  "updatedAt": "2026-11-08",
+  "updatedAt": "2026-11-09",
   "baseline": {
     "version": "4.78.0",
     "tests": {
-      "files": 600,
-      "cases": 6609
+      "files": 601,
+      "cases": 6636
     },
     "e2e": 40,
     "e2eNote": "E2E 通过总数：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27 = 40（2026-11-07 全量实测）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑（rewrite-chapters 已随「九霄逆脉行」项目删除而下线）",
@@ -19,7 +19,7 @@
       "check:write-entry"
     ],
     "localCommitsAhead": 1,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-09 ahead 1：安全 S-5 审批摘要真实参数 + 审计报告 S-3 误报纠偏；origin/master=04b7f48）；全量 600 文件 / 6,609 用例，any 74/42，main.js 4,869,546 = 基线，覆盖率 44.11/43.85/45.01/44.52"
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-09 ahead 1：收单遗留 chapter-recognizer test-hardening 批次（27 例）；前序 40f9c04 为安全 S-5；origin/master=40f9c04）；全量 601 文件 / 6,636 用例，any 74/42，main.js 4,869,546 = 基线，覆盖率 44.11/43.85/45.01/44.52"
   },
   "groups": [
     {
