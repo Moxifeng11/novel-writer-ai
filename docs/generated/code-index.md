@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132951 | 1609 | 1348 | 84% |
 | `services/` | 32 | 12640 | 187 | 148 | 79% |
-| `shared/` | 177 | 40626 | 1600 | 1322 | 83% |
+| `shared/` | 178 | 40676 | 1603 | 1323 | 83% |
 | `core/` | 7 | 2770 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 238 | 101258 | 734 | 639 | 87% |
+| `ui/` | 239 | 101332 | 735 | 639 | 87% |
 
 ## 文件清单
 
@@ -518,6 +518,7 @@
 | `shared/store/shallow.ts` | 51 | 1 | 1 |
 | `shared/store/types.ts` | 208 | 20 | 20 |
 | `shared/story-structure.ts` | 705 | 23 | 23 |
+| `shared/support-author.ts` | 50 | 3 | 1 |
 | `shared/synopsis-spec.ts` | 275 | 15 | 15 |
 | `shared/tag-taxonomy.ts` | 151 | 8 | 6 |
 | `shared/task-budget-engine.ts` | 292 | 13 | 11 |
@@ -745,7 +746,7 @@
 | `ui/settings/deconstruction-section.ts` | 333 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 289 | 1 | 1 |
-| `ui/settings/general-sections.ts` | 1178 | 6 | 6 |
+| `ui/settings/general-sections.ts` | 1190 | 6 | 6 |
 | `ui/settings/knowledge-section.ts` | 810 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
@@ -758,6 +759,7 @@
 | `ui/story-settings-form.ts` | 251 | 2 | 2 |
 | `ui/story-settings-modal.ts` | 115 | 1 | 1 |
 | `ui/style-distiller-modal.ts` | 489 | 1 | 1 |
+| `ui/support-author-modal.ts` | 62 | 1 | 0 |
 | `ui/svg-charts.ts` | 2337 | 49 | 49 |
 | `ui/template-manager.ts` | 710 | 5 | 2 |
 | `ui/tomato-rank-modal.ts` | 135 | 1 | 1 |

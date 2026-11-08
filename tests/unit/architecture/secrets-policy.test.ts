@@ -57,7 +57,8 @@ describe('check:secrets 门禁', () => {
     });
 
     it('被跟踪文件出现真实密钥形态必须失败，且输出脱敏', () => {
-        const secret = 'sk-ABCDEFGHIJKLMNOPQRSTUVWXYZ012345';
+        // 运行时拼接，避免门禁扫到测试文件自身（否则自测夹具会被 check:secrets 命中）
+        const secret = ['sk', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ012345'].join('-');
         const root = makeRepo({ 'src/leak.ts': `export const k = '${secret}';\n` });
         const result = run(root);
         expect(result.code).toBe(1);

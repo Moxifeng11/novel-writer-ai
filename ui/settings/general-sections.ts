@@ -13,6 +13,7 @@ import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/comp
 import { performanceMonitor } from '@/services/performance-monitor';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 import { ChangelogModal } from '@/ui/changelog-modal';
+import { SupportAuthorModal } from '@/ui/support-author-modal';
 import { PromptManagerSettings } from '@/ui/prompt-manager-settings';
 import { RulesService } from '@/services/rules-service';
 import { GITHUB_BRANCH, GITHUB_REPO_SLUG } from '@/shared/github-repo';
@@ -654,6 +655,17 @@ export class AboutSection extends SettingsSection {
                 highlightVersion: currentVersion,
             }).open();
         });
+
+        // 支持作者（2026-11-09 用户要求）：只展示支付宝收款账号 + 复制，
+        // 插件不发起支付、不读取支付信息（详见 shared/support-author.ts 说明）。
+        const supportRow = section.createDiv({
+            cls: 'nw-u-d-flex-2 nw-u-gap-10px-2 nw-u-marginbottom-24px-2 nw-u-fwr-wrap-2'
+        });
+        const supportBtn = supportRow.createEl('button', {
+            text: '💝 支持作者',
+            cls: 'nw-btn nw-btn-primary',
+        });
+        supportBtn.addEventListener('click', () => new SupportAuthorModal(this.app).open());
 
         section.createEl('h4', { text: '⚙️ 更新设置', cls: 'nw-u-marginbottom-12px-2' });
 
