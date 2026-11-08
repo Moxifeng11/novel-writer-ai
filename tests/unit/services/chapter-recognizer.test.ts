@@ -3,7 +3,7 @@
  *
  * 覆盖：format 判定、章节标题多形态、index/startIndex/endIndex 切片、
  * 章节字数与 countCjkAndWords 口径对账、书名/作者提取、无章节回退。
- * 只加测试不改生产代码；全角数字不识别属当前真实行为，已在信箱报备。
+ * 只加测试不改生产代码；全角数字（第１２章 / 第 １２ 章 / １２、）已支持。
  */
 import { describe, expect, it } from 'vitest';
 import {
@@ -64,10 +64,12 @@ describe('chapter-recognizer — 章节标题多形态', () => {
         ]);
     });
 
-    it('卷X 第N章 以整行作为单章标题', () => {
-        const result = recognizeChapters('卷二 第五章 决战\n内容。', 'book.txt');
-        expect(result.chapterCount).toBe(1);
-        expect(result.chapters[0].title).toBe('卷二 第五章 决战');
+    it('卷X 第N章 以整行作为单章标题（含全角卷号）', () => {
+        for (const sample of ['卷二 第五章 决战', '卷１２ 第五章 决战']) {
+            const result = recognizeChapters(`${sample}\n内容。`, 'book.txt');
+            expect(result.chapterCount).toBe(1);
+            expect(result.chapters[0].title).toBe(sample);
+        }
     });
 
     it('纯数字标题（1、/2.）可识别', () => {
@@ -76,10 +78,13 @@ describe('chapter-recognizer — 章节标题多形态', () => {
         expect(result.chapters.map(c => c.title)).toEqual(['1、楔子', '2. 正篇']);
     });
 
-    it('全角数字标题当前不识别（\\d 仅匹配 ASCII，真实行为，已在信箱报备）', () => {
-        const result = recognizeChapters('第１２章 全角\n正文。', 'book.txt');
-        expect(result.chapterCount).toBe(0);
-        expect(result.chapters).toEqual([]);
+    it('全角数字标题可识别：第１２章 / 第 １２ 章 / １２、', () => {
+        const samples = ['第１２章 全角', '第 １２ 章 空格', '１２、楔子'];
+        for (const sample of samples) {
+            const result = recognizeChapters(`${sample}\n正文。`, 'book.txt');
+            expect(result.chapterCount).toBe(1);
+            expect(result.chapters[0].title).toBe(sample);
+        }
     });
 });
 

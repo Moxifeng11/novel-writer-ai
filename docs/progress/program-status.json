@@ -19,7 +19,7 @@
       "check:write-entry"
     ],
     "localCommitsAhead": 1,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-09 ahead 1：收单遗留 chapter-recognizer test-hardening 批次（27 例）；前序 40f9c04 为安全 S-5；origin/master=40f9c04）；全量 601 文件 / 6,636 用例，any 74/42，main.js 4,869,546 = 基线，覆盖率 44.11/43.85/45.01/44.52"
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-09 ahead 1：收单全角数字章节标题识别修复；origin/master=0e3f63b）；全量 601 文件 / 6,636 用例，any 74/42，main.js 4,869,543 = 基线，覆盖率 44.19/43.93/45.01/44.52"
   },
   "groups": [
     {
