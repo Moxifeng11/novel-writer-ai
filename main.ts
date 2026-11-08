@@ -56,6 +56,7 @@ import { CoWritingView, VIEW_TYPE_CO_WRITE } from './ui/co-writing-view';
 import { KnowledgeBaseView, VIEW_TYPE_KNOWLEDGE_BASE } from './ui/views/knowledge-base-view';
 import { AgentWorkbenchView } from './ui/agent-workbench-view';
 import { VIEW_TYPE_AGENT_WORKBENCH } from './shared/view-types';
+import { detachPluginLeaves } from './shared/plugin-leaves';
 import { WritingFingerprintView, VIEW_TYPE_WRITING_FINGERPRINT } from './ui/views/writing-fingerprint-view';
 import { ProjectSidePanelView, VIEW_TYPE_PROJECT_SIDE_PANEL } from './ui/project-side-panel-view';
 import { openModelSwitcherMenu, refreshAllModelSwitchers } from './ui/model-quick-switcher';
@@ -2075,6 +2076,17 @@ export default class NovelWriterPlugin extends Plugin {
         for (const key of LEGACY_STORAGE_KEYS) localStorage.removeItem(key);
         // v5.5: 卸载时关闭分离式浮窗（监控面板A/B + 协同写作视图叶子），避免残留空叶子。
         this.workspaceManager?.closeAll();
+        // v4.79.0（交叉审计）：主视图 leaf 同样摘除。此前只处理浮窗，禁用/热重载后
+        // 7 个主视图会留下空白页签并写回工作区布局（官方样例插件同做法）。
+        detachPluginLeaves(this.app.workspace, [
+            VIEW_TYPE_HOME,
+            FULL_WRITER_VIEW_TYPE,
+            VIEW_TYPE_CO_WRITE,
+            VIEW_TYPE_KNOWLEDGE_BASE,
+            VIEW_TYPE_AGENT_WORKBENCH,
+            VIEW_TYPE_WRITING_FINGERPRINT,
+            VIEW_TYPE_PROJECT_SIDE_PANEL,
+        ]);
         // 2026-10-28: 状态栏浮窗已移除，其点击监听清理随之删除；快速切换器由各视图自行销毁。
         // 注销降级事件 sink
         if (this._degradationSinkUnregister) {

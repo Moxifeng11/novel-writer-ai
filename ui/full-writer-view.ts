@@ -1135,6 +1135,8 @@ export class FullWriterView extends ItemView {
         }
         this.flowPanelController?.dispose();
         this.unitWriterController?.dispose();
+        // v4.79.0：销毁 Tab 栏持有的模型切换器（否则 refreshers 集合保留已脱离 DOM 的按钮）
+        this.tabController?.dispose();
         // 移除 onOpen 注入到 <html> 的响应式变量（构建脚本无法校验，只能靠这里成对清理）
         for (const name of Object.keys(WORKBENCH_ROOT_VARS)) {
             document.documentElement.style.removeProperty(name);

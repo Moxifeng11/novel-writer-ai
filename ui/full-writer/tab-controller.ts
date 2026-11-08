@@ -62,6 +62,17 @@ export class TabController {
     }
 
     /**
+     * 销毁控制器持有的 DOM/订阅。
+     * 视图关闭时必须调用：`renderTabBar()` 只在下一次重绘时销毁旧模型切换器，
+     * 视图直接关闭会把它留在 model-quick-switcher 的模块级 refreshers 集合里，
+     * 之后每次模型/供应商变更都会刷新已脱离 DOM 的按钮（随开关次数线性增长）。
+     */
+    dispose(): void {
+        this.modelSwitcher?.destroy();
+        this.modelSwitcher = null;
+    }
+
+    /**
      * 压入导航。
      *
      * @param tabId - 页签 ID

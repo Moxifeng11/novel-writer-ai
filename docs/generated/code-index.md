@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132834 | 1609 | 1348 | 84% |
 | `services/` | 32 | 12641 | 187 | 148 | 79% |
-| `shared/` | 176 | 40504 | 1593 | 1318 | 83% |
+| `shared/` | 177 | 40538 | 1595 | 1319 | 83% |
 | `core/` | 7 | 2770 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 238 | 101211 | 734 | 639 | 87% |
+| `ui/` | 238 | 101224 | 734 | 639 | 87% |
 
 ## 文件清单
 
@@ -465,6 +465,7 @@
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
 | `shared/plugin-cache.ts` | 405 | 6 | 4 |
 | `shared/plugin-capabilities.ts` | 98 | 4 | 1 |
+| `shared/plugin-leaves.ts` | 34 | 2 | 1 |
 | `shared/plugin-worker-url.ts` | 89 | 3 | 2 |
 | `shared/pre-research.ts` | 464 | 17 | 17 |
 | `shared/prereq-check.ts` | 51 | 3 | 2 |
@@ -644,7 +645,7 @@
 | `ui/fingerprint-library-modal.ts` | 307 | 1 | 1 |
 | `ui/fingerprint-utils.ts` | 209 | 11 | 11 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |
-| `ui/full-writer-view.ts` | 2741 | 2 | 2 |
+| `ui/full-writer-view.ts` | 2743 | 2 | 2 |
 | `ui/full-writer/batch-pipeline-runner.ts` | 492 | 5 | 4 |
 | `ui/full-writer/batch-step-retry.ts` | 26 | 2 | 1 |
 | `ui/full-writer/batch-targets.ts` | 68 | 4 | 4 |
@@ -669,7 +670,7 @@
 | `ui/full-writer/status-bar-controller.ts` | 90 | 2 | 2 |
 | `ui/full-writer/step-render-controller.ts` | 685 | 2 | 2 |
 | `ui/full-writer/streamlined-nav-presenter.ts` | 272 | 12 | 12 |
-| `ui/full-writer/tab-controller.ts` | 368 | 2 | 2 |
+| `ui/full-writer/tab-controller.ts` | 379 | 2 | 2 |
 | `ui/full-writer/template-vars-builder.ts` | 1155 | 7 | 7 |
 | `ui/full-writer/title-bar-controller.ts` | 192 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
