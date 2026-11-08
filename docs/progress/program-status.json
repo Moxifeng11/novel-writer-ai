@@ -3,10 +3,10 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-08",
   "baseline": {
-    "version": "4.76.0",
+    "version": "4.77.0",
     "tests": {
-      "files": 596,
-      "cases": 6579
+      "files": 598,
+      "cases": 6590
     },
     "e2e": 40,
     "e2eNote": "E2E 通过总数：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27 = 40（2026-11-07 全量实测）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑（rewrite-chapters 已随「九霄逆脉行」项目删除而下线）",
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 242,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 v4.76.0 版本节点计入后 ahead 242；前序：第 121 轮收单 7db69ee（ahead 240）、v4.75.0 节点 bb93412（239）、第 119 轮删除 batch-deconstruct 84a5060（238）；全量 596 文件 / 6,579 用例，any 106/48，main.js 4,864,737 起，覆盖率 44.09%）"
+    "localCommitsAhead": 246,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 v4.77.0 版本节点计入后 ahead 246；前序：v4.76.0 节点 34da1e1（242）、第 121 轮 7db69ee（240）、v4.75.0 节点 bb93412（239）；全量 598 文件 / 6,590 用例，any 96/46，main.js 4,866,228 起，覆盖率 44.11%）"
   },
   "groups": [
     {

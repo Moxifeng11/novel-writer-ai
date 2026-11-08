@@ -2,6 +2,33 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.77.0（2026-11-08）
+
+### 🧹 engine any 第二批：analysis-session 系 10→0
+
+- `engine/types/analysis-session.ts`：新增 `CharacterResultSnapshot`（三个候选数组只约束 `name`，兼容历史 JSON 额外字段）；`plotResult` → `unknown`、`otherResults` → `Record<string, unknown>`、`SessionAction.details` → `Record<string, unknown>`。
+- `engine/analysis-session-manager.ts`：`SessionCreateOptions` 复用快照类型；`private vault` 与构造参数改为文件内 `AnalysisSessionVaultPort`（adapter 七方法，按真实用法收窄，不依赖 obsidian `Vault`）。
+- any 基线 106/48 → **96/46**；补 2 例：`llmVerified`/`ruleCandidates` 回退分支、`plotResult`/`otherResults` 导出导入往返。
+
+### 🧹 日志收口：console-direct 24→0
+
+- 19 处 `console.warn/error` 改 `shared/logger`（11 个文件；`agent-loop`/`harness-engine` 因 `log` 名被 `AgentSessionLog` 占用，用模块级别名 `logger`），去掉手写 `[Module]` 前缀避免双前缀。
+- 5 处 logger 基础设施进白名单：`shared/logger.ts` ×4 是 console 的唯一合法出口；`shared/store/middleware/logger.ts` 的 `%c` 样式化调试有 5 条单测断言精确参数。
+
+### 🐛 修复：document 级监听未按窗口归属（popout 失效 + 一处真实泄漏）
+
+- 新增 `shared/dom-window.ts`：`resolveNodeDoc`（`doc` → `ownerDocument` → null）与 `onNodeDoc`（绑定宿主所属 document，返回**同一文档**解绑的 disposer）。
+- 9 处 `document.addEventListener` 全部迁移：create-project-modal、story-linkage-modal、model-picker-popover（root/doc/查询/尺寸整套跟随锚点窗口）、draggable-panel、writing-pet、categorization-review-panel。
+- `draggable-panel`（ItemView 可被拖进 popout）：补 `onWindowMigrated` 重绑——窗口迁移后 onOpen 不重跑，旧文档监听会收不到事件；视口尺寸改用 `containerEl.win`。
+- **真实泄漏修复**：`categorization-review-panel` 的外部点击监听只在「点到外部」时自删，`destroy()` 只清 DOM，且 `CharacterRecognitionModal.onClose()` 从不调用 `destroy()`。现在 destroy 释放监听、模态关闭显式销毁面板。
+- `global-document-listener` 基线 9→**0**。
+
+### 🧪 测试与门禁
+
+- 全量 **598 文件 / 6,590 用例**全绿（v4.76.0 为 596/6,579，+2 文件/+11 例）；`preflight:release` EXIT=0。
+- 新增 `dom-window` 6 例（doc 优先 / ownerDocument 回退 / 同文档解绑 / noop）与分类面板生命周期 3 例（destroy 释放 + 幂等 + 模态关闭链契约）。
+- `.obsidian-api-baseline.json` 五条规则全部归零（仅保留 logger 基础设施白名单）；any 96/46；bundle 4,866,228（+739B：跨窗口监听 helper + 11 个 logger scope + 窗口迁移重绑，均为行为修复所需）。
+
 ## v4.76.0（2026-11-08）
 
 ### 🔧 修复：插件数据目录硬编码（自定义 configDir / BRAT 改名即写错位置）

@@ -1,7 +1,7 @@
 {
     "id": "novel-writer-ai",
     "name": "小说工坊 AI",
-    "version": "4.76.0",
+    "version": "4.77.0",
     "minAppVersion": "1.4.0",
     "description": "全流程AI长篇小说创作系统 — 协同写作工作台 + 多模型智能引擎 + 数据安全架构",
     "author": "南柯一梦",

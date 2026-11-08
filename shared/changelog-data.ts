@@ -21,6 +21,30 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.77.0',
+        date: '2026-11-08',
+        title: '跨窗口监听修复 + 门禁存量清零',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🐛 修复',
+                items: [
+                    '9 处 document 监听改按宿主窗口绑定（popout 里拖拽/点外部不再失效），窗口迁移自动重绑',
+                    '修复分类审核面板关闭后监听泄漏（destroy 未摘监听、模态 onClose 未调 destroy）',
+                    '19 处 console.* 统一改 shared/logger；analysis-session 系 any 10→0',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🛡️ 门禁',
+                items: [
+                    'check:obsidian-api 五条规则全部归零（仅 logger 基础设施白名单）',
+                    '新增 dom-window 6 例 + 面板生命周期 3 例；全量 598 文件 / 6,590 用例',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.76.0',
         date: '2026-11-08',
         title: '插件数据目录单源 + Obsidian API 门禁',
