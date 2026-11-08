@@ -13,7 +13,7 @@ import { API_FORMAT_OPTIONS, normalizeApiFormat, type ApiFormat } from '@/shared
 import { discoverModels } from '@/services/model-discovery';
 import { ModelPickerModal } from '@/ui/model-picker-modal';
 import { PasswordModal } from '@/ui/password-modal';
-import { describeSecretForInput, isStoredCiphertext } from '@/shared/secret-display';
+import { describeKeyEncryptionStatus, describeSecretForInput, isStoredCiphertext } from '@/shared/secret-display';
 import { lookupModelCapability } from '@/shared/model-capabilities';
 import { testProviderConnectivity } from '@/services/api-connectivity-service';
 import {
@@ -679,13 +679,14 @@ export class ApiSection extends SettingsSection {
         const service = this.plugin.getSettingsService?.();
         const locked = service?.lockedSecretCount?.() ?? 0;
         const legacy = service?.legacySecretCount?.() ?? 0;
-        const legacyHint = legacy > 0 ? ` 另有 ${legacy} 项旧版加密条目，下次保存时自动升级。` : '';
+        const encrypted = service?.hasEncryptedSecrets?.() ?? false;
+        // S-4（2026-11-09 用户拍板 B）：未设口令且从未加密过时，密钥以明文落盘。
+        // 文案集中在 describeKeyEncryptionStatus，保证只有一处口径。
+        const status = describeKeyEncryptionStatus({ locked, encrypted, legacy });
 
         const row = new Setting(container)
             .setName('密钥加密')
-            .setDesc((locked > 0
-                ? `磁盘上有 ${locked} 项密钥处于加密状态。重启或更新后需要输入口令才能读取（修复后不会再让你「重设」口令）。`
-                : '磁盘上没有加密的密钥条目。设定口令后，保存的密钥会用口令加密。') + legacyHint);
+            .setDesc(status.text);
 
         row.addButton(btn => btn
             .setButtonText(locked > 0 ? '🔓 输入口令解锁' : '🔐 设定口令')

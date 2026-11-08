@@ -21,7 +21,7 @@
 
 | ID | 严重度 | 位置 | 问题 | 建议 |
 |---|---|---|---|---|
-| S-4 | P1 | `core/settings-service.ts:279/297` | **首次保存密钥默认明文落盘**：无会话口令且该字段磁盘上从无密文时直接 `return value`；当前仓库 `data.json` 已是「部分密文 + 部分 `sk-` 明文」混合状态 | **需用户拍板**：A 强制首次设置口令（fail-closed）；B 保持现状但在设置页明确标注「未设口令＝明文保存」。不宜由自动化单方面改变用户保存行为 |
+| S-4 | **已拍板 B** | `core/settings-service.ts:279/297` + `ui/settings/api-section.ts` | **首次保存密钥默认明文落盘**：无会话口令且该字段磁盘上从无密文时直接 `return value`（当前 `data.json` 已是「部分密文 + 部分明文」混合） | **2026-11-09 用户拍板 B**：保持明文保存，但必须在设置页**明确标注风险**。已实现：`shared/secret-display.describeKeyEncryptionStatus()` 单源生成状态文案（未设口令 → 「⚠️ 明文保存在 data.json，会随 vault 同步/备份扩散」），设置页「密钥加密」行改用它；+3 单测 |
 | S-6 | P2 | `ui/svg-charts.ts:471/552/677/1082/1225/1565…` | `data-value`/`data-x/y`/`fill`/`stroke` 直接拼未校验值；`knowledge-detail` 的图表数据来自 frontmatter `JSON.parse` + 类型断言（无 schema 校验） | 数值入口 `Number()` 强转 + 颜色白名单；或对属性值统一 `escapeHtml`（约 15 行） |
 | S-7 | P2 | `ui/polish-editor.ts:41-45/86-90/251/310` | 本地 `escapeHtml` 用 `textContent→innerHTML` 实现，**不转义双引号**，随后拼进 `title="…" data-entity-name="…"` | 改用 `@/utils/helpers` 的 `escapeHtml`（已覆盖 `"`） |
 | S-8 | P2 | `ui/agent-workbench-view.ts:1191`、`engine/agent/dsh/dsh-launch.ts:55-61` | dsh `workspace` = 整个 vault，`workspace-write` 未排除 `.obsidian`；解密后的 Key 以 `DEEPSEEK_API_KEY` 注入子进程 env | workspace 收窄到当前项目目录；`.obsidian` 排除；Key 改用请求时注入 |
@@ -52,10 +52,7 @@ P3（摘要）：v1 密文种子是公开常量；`iterations` 无上限（PBKDF
 
 ## 四、待用户拍板
 
-- **S-4 密钥默认明文落盘**：这是产品安全语义，不是纯技术缺陷。
-  - A（推荐）：从未设置口令时，首次保存密钥强制走「设置口令」，否则拒绝保存明文；
-  - B：保持现状（无口令＝明文），设置页明确标注风险。
-  影响：A 会让「不设口令」的老用户无法继续保存新 Key，需要迁移提示；B 不改行为但没有实质性改善。
+- **S-4 已拍板（2026-11-09）**：用户选择 **B——保持明文保存，并在设置页明确标注风险**。已实现状态文案单源 `describeKeyEncryptionStatus()`（未设口令时提示「明文保存在 data.json，会随 vault 同步/备份扩散」）+ 3 条单测。若将来要改为 fail-closed（A），只需把该函数 `plaintext` 分支改为阻止保存（届时需要给「不设口令」的老用户加迁移提示）。
 
 ## 五、结论与下一步
 

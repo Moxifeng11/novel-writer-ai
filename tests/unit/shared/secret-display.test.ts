@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+    describeKeyEncryptionStatus,
     describeSecretForInput,
     isStoredCiphertext,
     resolveSecretInput,
@@ -55,5 +56,29 @@ describe('resolveSecretInput', () => {
     it('原值为空且未输入时返回空字符串，而不是 undefined', () => {
         expect(resolveSecretInput('', undefined)).toBe('');
         expect(resolveSecretInput(null, null)).toBe('');
+    });
+});
+
+describe('describeKeyEncryptionStatus — S-4 决策 B（明文但标注风险）', () => {
+    it('未设口令且从未加密：标记明文并给出风险提示', () => {
+        const status = describeKeyEncryptionStatus({ locked: 0, encrypted: false, legacy: 0 });
+        expect(status.plaintext).toBe(true);
+        expect(status.text).toContain('明文');
+        expect(status.text).toContain('同步');
+        expect(status.text).toContain('设定口令');
+    });
+
+    it('有加密条目且已解锁：不标记明文', () => {
+        const status = describeKeyEncryptionStatus({ locked: 0, encrypted: true, legacy: 0 });
+        expect(status.plaintext).toBe(false);
+        expect(status.text).toContain('已加密');
+        expect(status.text).not.toContain('明文');
+    });
+
+    it('有锁定条目：提示输入口令；legacy 追加升级说明', () => {
+        const status = describeKeyEncryptionStatus({ locked: 3, encrypted: true, legacy: 2 });
+        expect(status.plaintext).toBe(false);
+        expect(status.text).toContain('3 项');
+        expect(status.text).toContain('旧版加密条目');
     });
 });

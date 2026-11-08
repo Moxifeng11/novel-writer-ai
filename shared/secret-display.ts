@@ -73,3 +73,53 @@ export function resolveSecretInput(pending: string | undefined | null, current: 
     if (trimmed) return trimmed;
     return typeof current === 'string' ? current : '';
 }
+
+/** 密钥落盘状态的输入（来自 SettingsService 的只读计数） */
+export interface KeyEncryptionStatusInput {
+    /** 磁盘上处于加密状态、当前不可读的条目数 */
+    locked: number;
+    /** 磁盘上是否存在任何加密的密钥条目（含本次会话已解锁的） */
+    encrypted: boolean;
+    /** v1 旧格式条目数（下次保存会升级） */
+    legacy: number;
+}
+
+/** 密钥落盘状态的展示文案 */
+export interface KeyEncryptionStatusDescription {
+    /** 设置页展示的状态说明 */
+    text: string;
+    /** true = 当前密钥以明文落盘（未设口令且从未加密过） */
+    plaintext: boolean;
+}
+
+/**
+ * 描述密钥落盘状态（S-4 决策 B，2026-11-09 用户拍板）。
+ *
+ * 背景：未设置口令且密钥从未加密过时，插件会把 Key **明文**写进 data.json，
+ * 并随 vault 同步/备份扩散。用户拍板「保持明文，但必须明确标注风险」。
+ * 状态文案集中在这里，保证设置页只有一处口径、且可单测。
+ *
+ * @param input - 加密条目计数
+ * @returns 展示文案与「是否明文」标记
+ */
+export function describeKeyEncryptionStatus(input: KeyEncryptionStatusInput): KeyEncryptionStatusDescription {
+    const legacyHint = input.legacy > 0 ? ` 另有 ${input.legacy} 项旧版加密条目，下次保存时自动升级。` : '';
+    if (input.locked > 0) {
+        return {
+            text: `磁盘上有 ${input.locked} 项密钥处于加密状态。重启或更新后需要输入口令才能读取。${legacyHint}`,
+            plaintext: false,
+        };
+    }
+    if (input.encrypted) {
+        return {
+            text: `密钥已加密（本次会话已解锁）。重启或更新后需要输入口令才能读取。${legacyHint}`,
+            plaintext: false,
+        };
+    }
+    return {
+        text: '⚠️ 未设置口令：API Key 等密钥会以**明文**保存在插件 data.json，'
+            + '并随 vault 同步/备份扩散。共享或公开库请勿填写真实 Key；建议点击右侧设定口令。'
+            + legacyHint,
+        plaintext: true,
+    };
+}
