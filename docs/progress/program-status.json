@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 246,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 v4.77.0 版本节点计入后 ahead 246；前序：v4.76.0 节点 34da1e1（242）、第 121 轮 7db69ee（240）、v4.75.0 节点 bb93412（239）；全量 598 文件 / 6,590 用例，any 96/46，main.js 4,866,228 起，覆盖率 44.11%）"
+    "localCommitsAhead": 248,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 ahead 248，含本次台账收单；v4.77.0 节点 2fca1c1 后为 246、docs b922b96 后 247；前序：v4.76.0 34da1e1（242）、第 121 轮 7db69ee（240）、v4.75.0 bb93412（239）；全量 598 文件 / 6,590 用例，any 96/46，main.js 4,866,893 = 基线，覆盖率 44.11/43.86/44.95/44.45）"
   },
   "groups": [
     {
