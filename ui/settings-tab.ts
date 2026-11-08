@@ -164,9 +164,11 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                     chapDir: view.chapDir || ''
                 };
             }
-            this.app.plugins.disablePlugin('novel-writer-ai');
-            await this.app.plugins.enablePlugin('novel-writer-ai');
-            new Notice('✅ 插件已重新加载');
+            // Obsidian 开发者政策禁止插件自行 disable/enable 自身（会被判为
+            // 「静默执行新下载代码」而拒绝上架）。改为提示用户手动切换；
+            // _pendingReloadState 已在上面写入，手动切换后 onload 会恢复工作台。
+            await this.plugin.saveSettings();
+            new Notice('请在「设置 → 第三方插件」中关闭再启用「小说工坊 AI」完成重载（工作台状态会自动恢复）', 6000);
         });
     }
 

@@ -1,8 +1,10 @@
-# 小说工坊 AI（Novel Writer AI）
+# Novel Writer AI（小说工坊 AI）
+
+**Novel Writer AI** is an end-to-end AI writing workspace for Chinese web novels, short stories, and scripts: project setup, outlines, world-building, chapter drafting, co-writing, quality checks, continuity tracking, knowledge-base deconstruction, and manuscript export (Markdown/TXT/HTML/EPUB/DOCX). The plugin UI is Chinese-only. No telemetry is collected; network access is limited to the AI endpoints you configure. MIT licensed.
 
 > 全流程 AI 长篇小说创作系统 —— 在 Obsidian 内完成从构思、大纲、设定管理到正文生成与质量复盘的全链路。
 
-**当前版本**：4.79.0 · **最低 Obsidian**：1.4.0 · **平台**：桌面端 / 移动端（界面仅中文；系统级文件保护仅桌面端）
+**当前版本**：4.79.1 · **最低 Obsidian**：1.4.0 · **平台**：桌面端 / 移动端（界面仅中文；系统级文件保护仅桌面端）
 
 ---
 
@@ -291,7 +293,7 @@ styles.css      插件样式（nw- 命名空间 + token 变量）
 | [CODE-INDEX.md](docs/CODE-INDEX.md) | 文件与模块索引（清单见生成物） |
 | [PERFORMANCE.md](docs/PERFORMANCE.md) | 性能基线与优化记录 |
 | [CHANGELOG.md](CHANGELOG.md) | 完整变更历史 |
-| [v4.79.0 发布说明](docs/releases/v4.79.0.md) | 当前版本发布说明（历史版本见 CHANGELOG） |
+| [v4.79.1 发布说明](docs/releases/v4.79.1.md) | 当前版本发布说明（历史版本见 CHANGELOG） |
 | [v4.17.0 效率审计](docs/analysis/v4.17-pipeline-efficiency.html) | 11 步调用流、点击账单、协同写作调用审计（交互式 HTML） |
 | [v4.18 快捷工具健康度](docs/audits/v4.18-quick-tools-health.md) | 工具可用性、假项目/丢稿修复与待审计清单 |
 | [v4.18.0 验证报告](docs/audits/v4.18.0-verification-report.md) | 版本一致性、功能验证、高危问题与修改清单 |

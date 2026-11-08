@@ -10153,7 +10153,7 @@ button.nw-btn-icon {
 .nw-u-bot-0{bottom:0}
 .nw-u-fd-column{flex-direction:column}
 .nw-u-fsh-0{flex-shrink:0}
-.nw-u-fwr-gap-4px{flex-wrap:gap:4px}
+.nw-u-fwr-gap-4px{flex-wrap:wrap;gap:4px}
 .nw-u-fwr-wrap{flex-wrap:wrap}
 .nw-u-fs-10px{font-size:10px}
 .nw-u-fs-11px{font-size:11px}

@@ -13,8 +13,10 @@ describe('GitHub 仓库元数据一致性', () => {
         expect(String(pkg.bugs?.url || '')).toContain(`${GITHUB_REPO_SLUG}/issues`);
     });
 
-    it('manifest.json 的 authorUrl 指向同一仓库', () => {
+    it('manifest.json 的 authorUrl 指向作者主页，而不是插件自身仓库', () => {
         const manifest = JSON.parse(readFileSync(join(root, 'manifest.json'), 'utf-8'));
-        expect(manifest.authorUrl).toBe(GITHUB_REPO_URL);
+        // 社区目录审核 Warning：authorUrl 指向插件仓库会被要求改为个人/组织主页
+        expect(manifest.authorUrl).not.toBe(GITHUB_REPO_URL);
+        expect(String(manifest.authorUrl)).toMatch(/^https:\/\/github\.com\/[^/]+\/?$/);
     });
 });

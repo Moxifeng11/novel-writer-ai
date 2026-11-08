@@ -2,6 +2,15 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.79.1（2026-11-09）
+
+### 🏪 社区目录自动审核修复
+
+- **移除插件自禁用/自启用**（审核 Error：`app.plugins.disablePlugin` + `enablePlugin` 属「静默执行新下载代码」禁止项）：设置页与工作台 Tab 栏的「热重载」按钮改为提示用户手动关闭再启用，`_pendingReloadState` 仍会在手动切换后恢复工作台。
+- **修复 CSS 漏分号**（审核 Error）：`.nw-u-fwr-gap-4px{flex-wrap:gap:4px}` → `{flex-wrap:wrap;gap:4px}`。
+- **authorUrl 改为个人主页**（审核 Warning）：`https://github.com/Moxifeng11`，不再指向插件自身仓库。
+- **README 首段改为英文**（审核 Warning：README 未检测到英文）：H1 后直接给出英文简介，中文简介保留在其后。
+
 ## v4.79.0（2026-11-09）
 
 ### 🏪 市场上架准备（2026-11-09）

@@ -1,10 +1,10 @@
 {
     "id": "novel-writer-ai",
     "name": "Novel Writer AI",
-    "version": "4.79.0",
+    "version": "4.79.1",
     "minAppVersion": "1.4.0",
     "description": "End-to-end AI writing workspace for Chinese web novels, short stories and scripts: planning, drafting, co-writing, quality checks and knowledge-base deconstruction.",
     "author": "南柯一梦",
-    "authorUrl": "https://github.com/Moxifeng11/novel-writer-ai",
+    "authorUrl": "https://github.com/Moxifeng11",
     "isDesktopOnly": false
 }

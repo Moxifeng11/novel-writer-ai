@@ -3,7 +3,7 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-09",
   "baseline": {
-    "version": "4.79.0",
+    "version": "4.79.1",
     "tests": {
       "files": 603,
       "cases": 6647
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 1,
-    "localCommitsAheadNote": "相对 origin/master 的未提交数（2026-11-09 ahead 1：社区目录发布规范落地——release tag 去 v 前缀 + release.yml 接受数字 tag + handbook 说明；origin/master=4e30323）；社区 listing 已上线（community.obsidian.md/plugins/novel-writer-ai，自动审核中），仓库已转 public；全量 603 文件 / 6,647 用例，any 74/42，main.js 4,924,044"
+    "localCommitsAhead": 0,
+    "localCommitsAheadNote": "相对 origin/master 的未提交数（2026-11-09 v4.79.1 社区审核修复：移除自禁用/自启用、CSS 漏分号、authorUrl 个人主页、README 英文首段；随本批 push；origin/master=4e30323）；全量 603 文件 / 6,647 用例，any 74/42，main.js 4,924,461 = 基线，styles.css 476,809，覆盖率 44.19/43.93/45.00/44.52"
   },
   "groups": [
     {

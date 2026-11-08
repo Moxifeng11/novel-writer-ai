@@ -21,6 +21,23 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.79.1',
+        date: '2026-11-09',
+        title: '社区目录自动审核修复',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🐛 修复',
+                items: [
+                    '移除插件自禁用/自启用（审核 Error）：热重载改为提示手动切换',
+                    '修复 CSS 漏分号（审核 Error，.nw-u-fwr-gap-4px）',
+                    'authorUrl 改为个人主页；README 首段改为英文（审核 Warning）',
+                ],
+            },
+        ],
+    },
+
+    {
         version: '4.79.0',
         date: '2026-11-09',
         title: '结算回滚安全加固 + 密钥门禁 + 支持作者收钱码',

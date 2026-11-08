@@ -305,7 +305,7 @@ export class TabController {
                 title: '热重载插件（按最新文件重新加载 UI 和后端）',
             }
         });
-        reloadBtn.addEventListener('click', async () => {
+        reloadBtn.addEventListener('click', () => {
             this.deps.plugin._pendingReloadState = {
                 project: this.deps.state.project || '',
                 chapterFileName: this.deps.state.chapterName || '',
@@ -313,8 +313,9 @@ export class TabController {
                 chapDir: this.deps.state.chapDir || ''
             };
 
-            this.deps.app.plugins.disablePlugin('novel-writer-ai');
-            await this.deps.app.plugins.enablePlugin('novel-writer-ai');
+            // Obsidian 开发者政策禁止插件自行 disable/enable 自身（会被判为
+            // 「静默执行新下载代码」而拒绝上架）。改为提示手动切换。
+            new Notice('请在「设置 → 第三方插件」中关闭再启用「小说工坊 AI」完成重载（工作台状态会自动恢复）', 6000);
         });
     }
 
