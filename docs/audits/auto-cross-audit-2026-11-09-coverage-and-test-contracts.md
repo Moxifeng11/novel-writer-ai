@@ -22,7 +22,7 @@
 |---|---|---|---|---|
 | C-4 | P1 | `ui/write-chapter-modal.ts:187`（`doWriteChapter`）、`:591/741-764`；`ui/command-ui-executor.ts:373-379` | 正文写入编排层 statements 0.2% / branches 0%；`chapter-generation-unify.test.ts` 只是源码字符串断言 | 抽可注入编排函数，fake App/vault/AIEngine 断言 BodyWriter 路径、abort、结算失败不标 settled、快照/ledger 各一次；另补 `ai-api-stream` SSE/取消夹具 |
 | C-5 | P1 | `engine/settlement-engine.ts:534/668-681/1422-1490/935-1140`；`engine/mode-unit-settlement.ts`（0/22） | 结算回滚与 NEW_* 分支未验证；现有测试只覆盖一次部分回滚 | 多指令报告 + 按步骤注入写失败，断言 journal 逆序、`rollback.failed`、`snapshotIncomplete → rollbackFailed`、新建文件删除计数 |
-| C-6 | P1 | `engine/step-runner.ts:1346-1367`、`engine/quality/gate-snapshot.ts:87`（0/38） | 质量门禁装配从未在单测执行；内部 catch 只 log.warn | 新增 `step-runner-quality-gate.test.ts`（保存后调用一次、失败不阻断）与 `gate-snapshot.test.ts`（空输入/超 12 人物/缺 beats） |
+| C-6 | P1（已修） | `engine/step-runner.ts:1346-1367`、`engine/quality/gate-snapshot.ts:87`（原 0/38） | 质量门禁装配从未在单测执行；内部 catch 只 log.warn | 已新增 `step-runner-quality-gate.test.ts`（调用一次/未通过不阻断/抛错仍完成）与 `gate-snapshot.test.ts`（5 例）；同时修正地点解析被全角 `｜` 污染的问题（`gate-snapshot.ts:99`） |
 | C-7 | P1 | `engine/analysis-report-engine.ts:103/361/1209/1256/1354` | branches 7.25%（29/400）；报告解析后直接写多类实体文件 | fake-vault 覆盖每种 EntityChange/ForeshadowChange/TimelineEvent、字段映射、pending 不落盘、幂等重放 |
 | C-8 | P1 | `.github/workflows/ci.yml:114-115/158-184`、`release.yml` | E2E 仅 `--list`，真实 job 依赖 `vars.OBSIDIAN_PATH`，发布流水线也不跑 E2E | 至少把 mock-AI 全旅程放进 tag 发布门禁；无 `OBSIDIAN_PATH` 时发布分支显式失败而非静默 skip |
 | C-9 | P2 | `tests/e2e/utils/obsidian-app.ts:74-84`、`package.json:21` | E2E 使用预构建 `main.js`，不校验新鲜度 | `test:e2e` 先 `npm run build`，或比较 `main.js` 与 `main.ts/ui` mtime |

@@ -95,8 +95,8 @@ export function buildGateSnapshotFromVars(input: GateSnapshotInput): ChapterStat
     return {
         chapterNumber: input.chapterNum,
         timeline: {
-            time: firstLine((vars.timelineEvents || '').split('\n')[0]?.replace(/^[|\-\s]+/, '').split('|')[0] || '', '未标注'),
-            location: firstLine((vars.sceneCardDigest || '').match(/地点[：:]([^|]+)/)?.[1] || '', '未标注'),
+            time: firstLine((vars.timelineEvents || '').split('\n')[0]?.replace(/^[|\-\s]+/, '').split(/[|｜]/)[0] || '', '未标注'),
+            location: firstLine((vars.sceneCardDigest || '').match(/地点[：:]([^|｜\n]+)/)?.[1]?.trim() || '', '未标注'),
         },
         povCharacter: vars.protagonistName || '主角',
         mainGoal: conflict,
