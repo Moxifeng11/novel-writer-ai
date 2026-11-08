@@ -115,7 +115,6 @@ export class ImportBookModal extends Modal {
                     this.modalEl.addClass('nw-modal-sm');
                     const { contentEl } = this;
                     contentEl.empty();
-                    contentEl.style.width = '100%';
                     contentEl.createEl('h3', { text: '选择文件' });
 
                     const searchInput = contentEl.createEl('input', {

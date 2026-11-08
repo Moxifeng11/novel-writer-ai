@@ -26,10 +26,7 @@ export class ReviewChapterModal extends Modal {
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
             wrapper.addClass('nw-modal');
-            wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.width = '100%';
-        contentEl.style.setProperty('overflow-y', 'auto', 'important');
 
         // 工作台/项目页没有 activeFile：优先用界面当前章节，避免「请先打开正文文件」
         const target = this.plugin.getActiveChapterTarget();

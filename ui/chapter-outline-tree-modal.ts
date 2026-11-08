@@ -115,7 +115,6 @@ export class ChapterOutlineTreeModal extends Modal {
         if (wrapper) {
             wrapper.addClass('nw-modal');
         }
-        contentEl.style.width = '100%';
         contentEl.style.setProperty('padding', '16px 20px', 'important');
 
         contentEl.empty();

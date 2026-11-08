@@ -71,10 +71,7 @@ export class BatchCreateModal extends Modal {
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
             wrapper.addClass('nw-modal');
-            wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.width = '100%';
-        contentEl.style.setProperty('overflow-y', 'auto', 'important');
 
         contentEl.empty();
         const titleEl = contentEl.createEl('h2', { text: '📦 批量建章（按全书规划）' });

@@ -106,8 +106,6 @@ export class FingerprintDetailModal extends Modal {
         if (wrapper) {
             wrapper.addClass('nw-modal');
         }
-        contentEl.style.width = '100%';
-        contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.style.maxHeight = '85vh';
 
         contentEl.createEl('h3', { text: `🔍 ${fp.name}`, cls: 'nw-u-margintop-0 nw-u-marginbottom-8px-2' });

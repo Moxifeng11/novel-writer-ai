@@ -103,7 +103,6 @@ export class UnifiedEntityManagerModal extends Modal {
             // Rev 184：固定 75vh 在小屏挤压内容，改为上限约束
             modalWrapper.style.setProperty('height', 'min(75vh, 860px)', 'important');
         }
-        contentEl.style.width = '100%';
         contentEl.style.height = 'min(75vh, 860px)';
         contentEl.style.display = 'flex';
         contentEl.style.flexDirection = 'column';

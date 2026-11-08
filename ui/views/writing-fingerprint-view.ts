@@ -1852,7 +1852,6 @@ export class ExtractFromChaptersModal extends Modal {
         this.modalEl.addClass('nw-modal');
         const { contentEl } = this;
         contentEl.empty();
-        contentEl.style.width = '100%';
 
         contentEl.createEl('h3', { text: '📖 从章节提取写作指纹' });
 

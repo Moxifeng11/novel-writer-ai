@@ -925,7 +925,6 @@ export class FullWriterView extends ItemView {
         // v3.4.6 flex 容器 + 宽高 100%（防 Obsidian 主题约束）
         contentEl.style.display = 'flex';
         contentEl.style.flexDirection = 'column';
-        contentEl.style.width = '100%';
         contentEl.style.height = '100%';
 
         // v3.4.5: 注入 CSS 响应式变量（全局生效，一次定义，所有弹窗/面板复用）

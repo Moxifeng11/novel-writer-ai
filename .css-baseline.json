@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-08T22:01:31.107Z",
-  "note": "v4.80.0 批量 B2：新增 styles-src/21-progress-components.css（进度条/步骤/任务卡/遮罩），+7338B/+45 类；颜色全部走主题变量/color-mix，hex 与 rgb 指标未增；nw-u-d-none 用 0,2,0 压过组件 display，不用 !important",
-  "bytes": 511854,
+  "generatedAt": "2026-11-08T22:06:20.428Z",
+  "note": "v4.80.0 批量 B3：新增 22-modal-layout.css 两条弹窗布局规则（+964B，类数不变）；替换 30+37+44 处内联样式，无颜色/important 变化",
+  "bytes": 512818,
   "important": 19,
   "hardcodedHex": 161,
   "rgbHsl": 188,

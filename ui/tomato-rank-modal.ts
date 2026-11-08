@@ -30,10 +30,7 @@ export class TomatoRankModal extends Modal {
         const wrapper = contentEl.parentElement as HTMLElement;
         if (wrapper) {
             wrapper.addClass('nw-modal');
-            wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.width = '100%';
-        contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.empty();
         contentEl.createEl('h2', { text: '🍅 番茄榜单分析' });
         contentEl.createEl('p', {

@@ -64,7 +64,6 @@ export class StepResultViewerModal extends Modal {
         contentEl.style.display = 'flex';
         contentEl.style.flexDirection = 'column';
         contentEl.style.height = '100%';
-        contentEl.style.width = '100%';
 
         const header = contentEl.createDiv({
             attr: {

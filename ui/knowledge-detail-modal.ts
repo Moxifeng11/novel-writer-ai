@@ -261,8 +261,6 @@ export class KnowledgeDetailModal extends Modal {
         if (wrapper) {
             wrapper.addClass('nw-modal-lg');
         }
-        contentEl.style.width = '100%';
-        contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.style.maxHeight = '88vh';
 
         if (!this.bookInfo) {

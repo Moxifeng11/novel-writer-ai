@@ -132,10 +132,7 @@ export class UnifiedEntityGenerateModal extends Modal {
         if (wrapper) {
             // Rev 184：640px 下 5 步向导与两列字段挤压，改用 900px 档并允许小屏收缩
             wrapper.addClass('nw-modal-lg');
-            wrapper.style.setProperty('margin', 'auto', 'important');
         }
-        contentEl.style.width = '100%';
-        contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.addClass('nw-entity-scope');
         contentEl.addClass('nw-form-stack');
 

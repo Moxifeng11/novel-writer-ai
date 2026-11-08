@@ -23,6 +23,7 @@
  *   - styles-src/19-support.css
  *   - styles-src/20-runtime-modals.css
  *   - styles-src/21-progress-components.css
+ *   - styles-src/22-modal-layout.css
  *
  * 修改样式请编辑 styles-src/ 下对应源文件，然后运行 npm run build:styles
  * （npm run build 与 preflight 均已包含该步骤 / 一致性校验）。
@@ -18601,4 +18602,24 @@ body.nw-panel-resizing .nw-awb-center iframe {
 /* 隐藏工具类必须压过组件基础 display（0,2,0 提高优先级，不使用 !important） */
 .nw-u-d-none.nw-u-d-none {
     display: none;
+}
+/* ==========================================================================
+ * 22-modal-layout.css — 插件弹窗统一布局（v4.80.0 批次 B3）
+ * ==========================================================================
+ * 30+ 个 Modal 的 onOpen 里重复写：
+ *   wrapper.style.setProperty('margin', 'auto', 'important')
+ *   contentEl.style.width = '100%'
+ *   contentEl.style.setProperty('overflow-y', 'auto', 'important')
+ * 这些属于同一事实的多份实现，也是社区目录审核的字面量内联样式。
+ *
+ * Obsidian 的 Modal DOM：.modal（modalEl / wrapper）> .modal-content（contentEl）。
+ * modalEl 都会加 nw-scope，因此用两条后代规则一次覆盖，不再逐窗写内联样式。
+ * ========================================================================== */
+
+.modal.nw-scope {
+    margin: auto;
+}
+.nw-scope .modal-content {
+    width: 100%;
+    overflow-y: auto;
 }

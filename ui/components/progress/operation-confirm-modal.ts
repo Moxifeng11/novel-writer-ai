@@ -94,8 +94,6 @@ export class OperationConfirmModal extends Modal {
 		if (wrapper) {
 			wrapper.addClass('nw-modal');
 		}
-		contentEl.style.width = '100%';
-		contentEl.style.setProperty('overflow-y', 'auto', 'important');
 		contentEl.style.maxWidth = '480px';
 
 		this.render();

@@ -90,8 +90,6 @@ export class FingerprintIntensityModal extends Modal {
     private render(): void {
         const { contentEl } = this;
         contentEl.empty();
-        contentEl.style.width = '100%';
-        contentEl.style.setProperty('overflow-y', 'auto', 'important');
         contentEl.style.maxHeight = '85vh';
 
         const fp = this.options.fingerprint;

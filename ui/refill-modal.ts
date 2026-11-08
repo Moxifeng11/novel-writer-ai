@@ -210,7 +210,6 @@ export class RefillModal extends Modal {
         contentEl.empty();
 
         this.modalEl.addClass('nw-modal-sm');
-        contentEl.style.width = '100%';
 
         if (this.type === 'fingerprint') {
             this.renderFingerprintRefill(contentEl);
