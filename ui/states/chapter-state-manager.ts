@@ -204,12 +204,10 @@ export class ChapterStateManager {
             // v4.0: 优先读 step_status 字段（新状态机），fallback 旧 source/字节逻辑
             let stepStatus: string | undefined;
             let fmSource: string | undefined;
-            let fmData: Record<string, any> = {};
             try {
                 const fileCache = this.app.metadataCache.getFileCache(file);
                 stepStatus = fileCache?.frontmatter?.['step_status'];
                 fmSource = fileCache?.frontmatter?.['source'];
-                fmData = fileCache?.frontmatter || {};
                 if (!stepStatus) {
                     const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
                     if (fmMatch) {

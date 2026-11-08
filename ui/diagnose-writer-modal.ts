@@ -285,7 +285,7 @@ export class DiagnoseWriterModal extends Modal {
 
         let updateStatus: Record<string, unknown> | null = null;
         try {
-            const cacheManager = this.plugin.engineRegistry.getOrNull<any>(ENGINE_NAMES.CACHE_MANAGER);
+            const cacheManager = this.plugin.engineRegistry.getOrNull(ENGINE_NAMES.CACHE_MANAGER);
             if (cacheManager) {
                 updateStatus = {
                     lastCheck: cacheManager.getUpdateLastCheck?.() ?? null,

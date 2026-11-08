@@ -1,4 +1,4 @@
-﻿import { Modal, Setting, Notice } from 'obsidian';
+﻿import { Modal, Setting, Notice, type App } from 'obsidian';
 
 // B2: 迭代指令输入弹窗
 /**
@@ -8,7 +8,7 @@ export class IterateInstructionModal extends Modal {
     private onResolve: (value: string | null) => void;
     private resolved = false;
 
-    constructor(app: any, onResolve: (value: string | null) => void) {
+    constructor(app: App, onResolve: (value: string | null) => void) {
         super(app);
         this.onResolve = onResolve;
     }

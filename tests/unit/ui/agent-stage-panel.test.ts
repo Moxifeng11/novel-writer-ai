@@ -194,6 +194,29 @@ describe('buildStagePanelModel', () => {
         expect(buildStagePanelModel(undefined, '长篇小说/示例').emptyText).toContain('阶段读取失败');
         expect(buildStagePanelModel(null, '').items).toEqual([]);
     });
+
+    it('全部阶段完成：下一步显示「全部阶段已完成」，完成阶段预填查看话术', () => {
+        const flow = resolveCreationFlow('short', '短篇小说/完稿', {
+            ...BASE_FACTS,
+            preResearchDone: true,
+            docs: { outline: true },
+            unitTotal: 20,
+            unitWritten: 20,
+            exportExists: true,
+        });
+        const model = buildStagePanelModel(flow, '短篇小说/完稿');
+
+        expect(model.percent).toBe(100);
+        // nextStageId 为空串时不能显示空白或旧阶段：必须给出终态文案
+        expect(model.nextLabel).toBe('全部阶段已完成');
+        expect(model.items.every(item => item.state === 'done')).toBe(true);
+        // 已完成阶段点击应预填「查看」话术，而不是继续「写」
+        expect(model.items[3].prompt).toContain('查看导出文件');
+        expect(model.items[3].prompt).not.toContain('继续写');
+        // 无阻塞原因时 tooltip 不带「先完成」前缀，但仍说明点击行为
+        expect(model.items[0].tooltip).toContain('点击预填下一步指令');
+        expect(model.items[0].tooltip).not.toContain('先完成：');
+    });
 });
 
 describe('fetchStagePanelModel（工作台刷新路径）', () => {
@@ -269,6 +292,15 @@ describe('fetchStagePanelModel（工作台刷新路径）', () => {
             .toContain('阶段读取失败');
         expect((await fetchStagePanelModel('长篇小说/甲', undefined)).emptyText)
             .toContain('阶段读取失败');
+    });
+
+    it('port 返回状态但缺少 flow（阶段采集降级）：按占位渲染而非空白', async () => {
+        // 真实路径：agent-port.getProjectStatus 在 collectCreationFlowState 抛错时
+        // 会省略 flow 但仍返回章节统计；面板必须明确提示读取失败。
+        const model = await fetchStagePanelModel('长篇小说/甲', async () => ({}));
+
+        expect(model.emptyText).toContain('阶段读取失败');
+        expect(model.items).toEqual([]);
     });
 });
 

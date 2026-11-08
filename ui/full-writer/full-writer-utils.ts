@@ -1,5 +1,6 @@
 import { TFile } from 'obsidian';
 import { ALL_FULL_STEPS, FullStep } from '@/engine/step-runner';
+import type { GatheredContext } from '@/engine/context-manager';
 import { parseChapterLocation, pjStepDir, projectIdFromPath } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
 
@@ -76,7 +77,7 @@ export function parseChapterFromPath(path: string): {
  * @returns 数值结果
  */
 export function estimateTotalChars(
-    context: any,
+    context: GatheredContext | null,
     stepResults: Record<string, string>,
     systemPromptEl?: HTMLTextAreaElement,
     userPromptEl?: HTMLTextAreaElement

@@ -6,7 +6,7 @@
     "version": "4.74.0",
     "tests": {
       "files": 594,
-      "cases": 6563
+      "cases": 6565
     },
     "e2e": 40,
     "e2eNote": "E2E 通过总数：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27 = 40（2026-11-07 全量实测）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑（rewrite-chapters 已随「九霄逆脉行」项目删除而下线）",
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 230,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 ZCode 收单第 110 轮 4a445c5 后实测 ahead 230；此前 v4.74.0 版本节点为 229；全量用例 6,563 保持不变）"
+    "localCommitsAhead": 232,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 ZCode 收单第 112 轮文档 0e7e863 后实测 ahead 232；第 113 轮新增 2 用例后全量 6,565，any 108/49，main.js 4,871,801）"
   },
   "groups": [
     {
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-08",
+      "group": "G7",
+      "summary": "第 113 轮（gate-fix + test-hardening，1 轮 2 动作）：①按 HANDOFF 派工兑现「可动 any 零发射收口」——14 个可动文件共 14 处 any 全部窄化或删除（catch/构造器/回调/Record 泛型/内部 API 结构类型），并删除 `fmData`、`_updateCount` 两处死赋值；any 122/63→108/49（仅剩红线 100 + 设计性 6 + `ui/batch-deconstruct-modal.ts` 2 处冻结待用户拍板），main.js 4,871,950→4,871,801（−149B，基线同步收紧）。`ui/batch-deconstruct-modal.ts` 的 2 处 any 已按 ZCode 冻结提醒（方向②/③拍板前双方不动）主动撤出。②按 advisor 次选 test:flat 为 v5 阶段面板补 2 个真实未覆盖语义——全部阶段完成时 nextLabel=「全部阶段已完成」/完成阶段预填「查看导出文件」，以及 agent-port 省略 flow 时按「阶段读取失败」占位。**纠偏**：step 0 误依据较旧信箱「非 engine any 阶段性完成」先做 test-hardening，随后 HANDOFF（11:04）明确派工 gate:any，按「ZCode 明确派工 > 评分选择」补做，两者均零运行时风险。全量 preflight:release EXIT=0（594 文件 / 6,565 用例）",
+      "evidence": "14 个 ui/shared 可动文件 + .any-baseline.json + .bundle-baseline.json + tests/unit/ui/agent-stage-panel.test.ts + docs/progress/v5-acceptance.md §〇"
+    },
     {
       "date": "2026-11-08",
       "group": "G7",

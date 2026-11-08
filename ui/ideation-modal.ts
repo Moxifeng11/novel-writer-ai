@@ -28,6 +28,20 @@ interface IdeationIdea {
     coreCompetitive: string;
 }
 
+/** AI 返回的原始创意项（字段可能缺失或类型不规范，解析时再归一化） */
+interface RawIdeationIdea {
+    coreConcept?: string;
+    conflictPoint?: string;
+    sellingPoint?: string;
+    suitableGenres?: unknown;
+    scores?: Partial<IdeationIdea['scores']>;
+    elevatorPitch?: string;
+    titleCandidates?: unknown;
+    genreMatch?: unknown;
+    differentiation?: string;
+    coreCompetitive?: string;
+}
+
 interface SavedIdea extends IdeationIdea {
     savedAt: number;
     keywords: string;
@@ -563,15 +577,15 @@ export class IdeationModal extends Modal {
             const jsonMatch = content.match(/\[[\s\S]*\]/);
             if (!jsonMatch) return [];
 
-            const arr = JSON.parse(jsonMatch[0]);
+            const arr = JSON.parse(jsonMatch[0]) as unknown;
             if (!Array.isArray(arr)) return [];
 
-            return arr.map((item: any, idx: number) => ({
+            return (arr as RawIdeationIdea[]).map((item, idx: number) => ({
                 id: `idea_${Date.now()}_${idx}`,
                 coreConcept: item.coreConcept || '未命名创意',
                 conflictPoint: item.conflictPoint || '',
                 sellingPoint: item.sellingPoint || '',
-                suitableGenres: Array.isArray(item.suitableGenres) ? item.suitableGenres : [],
+                suitableGenres: Array.isArray(item.suitableGenres) ? item.suitableGenres as string[] : [],
                 scores: {
                     marketHeat: item.scores?.marketHeat || 70,
                     innovation: item.scores?.innovation || 70,
@@ -582,7 +596,7 @@ export class IdeationModal extends Modal {
                 titleCandidates: Array.isArray(item.titleCandidates)
                     ? item.titleCandidates.map((value: unknown) => String(value).trim()).filter(Boolean).slice(0, 3)
                     : [],
-                genreMatch: Array.isArray(item.genreMatch) ? item.genreMatch : [],
+                genreMatch: Array.isArray(item.genreMatch) ? item.genreMatch as IdeationIdea['genreMatch'] : [],
                 differentiation: item.differentiation || '',
                 coreCompetitive: item.coreCompetitive || ''
             }));

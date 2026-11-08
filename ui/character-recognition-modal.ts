@@ -183,7 +183,7 @@ export class CharacterRecognitionModal extends Modal {
                 this.suggestionManager.reject(suggestion.id);
                 this.refreshPanels();
             },
-            onModify: (suggestion: AnalysisSuggestion, payload: Record<string, any>) => {
+            onModify: (suggestion: AnalysisSuggestion, payload: Record<string, unknown>) => {
                 this.suggestionManager.adopt(suggestion.id, payload);
                 this.refreshPanels();
             },

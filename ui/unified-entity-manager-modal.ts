@@ -448,11 +448,6 @@ export class UnifiedEntityManagerModal extends Modal {
                 this._updateAllTabStyles();
             };
 
-            const updateCount = () => {
-                const count = this.entities.filter((e) => e.category === cat).length;
-                tabBtn.setText(`${info.icon} ${info.label} (${count})`);
-            };
-            (tabBtn as any)._updateCount = updateCount;
         });
 
         this.listEl = sidebar.createDiv({

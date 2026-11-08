@@ -97,7 +97,7 @@ export class OutlineExpandModal extends Modal {
         this.expander = new OutlineToTextExpander(
             plugin.aiEngine,
             {
-                knowledgeInjector: (plugin as any).knowledgeInjector,
+                knowledgeInjector: plugin.knowledgeInjector,
                 notifier: {
                     showNotice: (msg: string) => {
                         log.info('[OutlineExpand]', msg);

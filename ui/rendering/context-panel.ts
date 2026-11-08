@@ -13,6 +13,26 @@ import { MemoryPreview } from '@/ui/memory-preview';
 
 
 const log = createLogger('ContextPanel');
+
+/** v5 智能实体上下文的只读投影（由外部视图注入到插件实例，未在 NovelWriterPluginAPI 中声明） */
+interface SmartEntityContextView {
+    selectionSummary?: {
+        selectedCount: number;
+        totalEntities: number;
+        byCategory: { character: number; location: number; faction: number; item: number };
+        estimatedTokens: number;
+    };
+    characters?: Array<{
+        name: string;
+        importanceLevel?: string;
+        detailLevel?: string;
+        statusLabel?: string;
+        lastAppearance?: string;
+    }>;
+    relations?: Array<{ from: string; to: string; type: string }>;
+    missingEntities?: string[];
+}
+
 /**
  * 上下文监控面板渲染器。
  * 在右侧栏中渲染人物状态、伏笔库、分卷大纲、时间线、世界观、设定库、写作规则等。
@@ -199,7 +219,8 @@ export class ContextPanel {
         // ✨ 智能实体上下文（v5.0 新增）
         this.renderCollapsibleCard(panel, '✨ 智能实体上下文', async (body) => {
             try {
-                const smartCtx = (plugin as any)._smartEntityContext;
+                const smartCtx = (plugin as unknown as { _smartEntityContext?: SmartEntityContextView })
+                    ._smartEntityContext;
                 if (!smartCtx) {
                     body.createEl('p', { text: '智能上下文加载中...', cls: 'novel-writer-fw-muted' });
                     body.createEl('p', { 

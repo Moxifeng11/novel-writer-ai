@@ -1,5 +1,5 @@
 {
-  "total": 122,
+  "total": 108,
   "generatedAt": "2026-11-08",
   "files": {
     "engine/ai-outline-generator.ts": 6,
@@ -50,20 +50,6 @@
     "engine/style-vector-store.ts": 1,
     "engine/suggestion-manager.ts": 1,
     "engine/types/chart-config.ts": 1,
-    "shared/prompt-manager-types.ts": 1,
-    "ui/character-recognition-modal.ts": 1,
-    "ui/co-writing-view.ts": 1,
-    "ui/components/character-review-panel.ts": 1,
-    "ui/cowrite/history-modal.ts": 1,
-    "ui/cowrite/iterate-instruction-modal.ts": 1,
-    "ui/diagnose-writer-modal.ts": 1,
-    "ui/full-writer/full-writer-utils.ts": 1,
-    "ui/full-writer/wizard-view-access.ts": 1,
-    "ui/ideation-modal.ts": 1,
-    "ui/outline-expand-modal.ts": 1,
-    "ui/rendering/context-panel.ts": 1,
-    "ui/states/chapter-state-manager.ts": 1,
-    "ui/unified-entity-manager-modal.ts": 1,
     "ui/views/writing-fingerprint-view.ts": 1
   }
 }

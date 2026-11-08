@@ -8,7 +8,7 @@ export interface CharacterReviewPanelOptions {
     suggestionManager: SuggestionManager;
     onAdopt: (suggestion: AnalysisSuggestion) => void;
     onReject: (suggestion: AnalysisSuggestion) => void;
-    onModify: (suggestion: AnalysisSuggestion, modifiedPayload: Record<string, any>) => void;
+    onModify: (suggestion: AnalysisSuggestion, modifiedPayload: Record<string, unknown>) => void;
     onBatchAdopt: (count: number) => void;
 }
 

@@ -1,4 +1,4 @@
-﻿import { Modal, Setting, Notice } from 'obsidian';
+﻿import { Modal, Setting, Notice, type App } from 'obsidian';
 import { SentenceEditRecord } from '@/shared/types';
 
 // B3: 历史建议回溯弹窗
@@ -9,7 +9,7 @@ export class HistoryModal extends Modal {
     private records: SentenceEditRecord[];
     private onInsert: (text: string) => void;
 
-    constructor(app: any, records: SentenceEditRecord[], onInsert: (text: string) => void) {
+    constructor(app: App, records: SentenceEditRecord[], onInsert: (text: string) => void) {
         super(app);
         this.records = records;
         this.onInsert = onInsert;

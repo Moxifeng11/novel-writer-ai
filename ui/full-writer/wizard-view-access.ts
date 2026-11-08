@@ -3,6 +3,7 @@
  * 替代 `(this.view as any).xxx` 模式，提供类型安全的成员访问
  */
 import type { App } from 'obsidian';
+import type { WizardStep } from './wizard-types';
 
 /**
  * WizardTabData 类型定义。
@@ -14,7 +15,7 @@ export interface WizardTabData {
     project: string;
     projectType?: 'original' | 'fanfic';
     currentStepIdx: number;
-    steps: any[];
+    steps: WizardStep[];
     chapterKey?: string;
     chapterName?: string;
     volume?: string;

@@ -11,7 +11,7 @@
 | `shared/` | 175 | 40321 | 1587 | 1313 | 83% |
 | `core/` | 7 | 2770 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 101494 | 735 | 639 | 87% |
+| `ui/` | 239 | 101524 | 735 | 639 | 87% |
 
 ## 文件清单
 
@@ -659,7 +659,7 @@
 | `ui/full-writer/flow-panel-controller.ts` | 335 | 3 | 3 |
 | `ui/full-writer/flow-tab.ts` | 59 | 3 | 3 |
 | `ui/full-writer/full-writer-store.ts` | 401 | 5 | 5 |
-| `ui/full-writer/full-writer-utils.ts` | 114 | 6 | 6 |
+| `ui/full-writer/full-writer-utils.ts` | 115 | 6 | 6 |
 | `ui/full-writer/fw-styles.ts` | 15 | 1 | 1 |
 | `ui/full-writer/intervention-controller.ts` | 412 | 3 | 3 |
 | `ui/full-writer/project-selector-controller.ts` | 949 | 3 | 3 |
@@ -681,7 +681,7 @@
 | `ui/full-writer/wizard-step-renderers.ts` | 943 | 1 | 1 |
 | `ui/full-writer/wizard-step-validators.ts` | 148 | 2 | 2 |
 | `ui/full-writer/wizard-types.ts` | 77 | 5 | 3 |
-| `ui/full-writer/wizard-view-access.ts` | 44 | 2 | 2 |
+| `ui/full-writer/wizard-view-access.ts` | 45 | 2 | 2 |
 | `ui/generate-character-modal.ts` | 631 | 1 | 1 |
 | `ui/generate-faction-modal.ts` | 378 | 1 | 1 |
 | `ui/generate-item-modal.ts` | 378 | 1 | 1 |
@@ -690,7 +690,7 @@
 | `ui/golden-opening-modal.ts` | 1926 | 1 | 1 |
 | `ui/home-view.ts` | 230 | 2 | 1 |
 | `ui/humanize-report-modal.ts` | 217 | 2 | 2 |
-| `ui/ideation-modal.ts` | 1218 | 1 | 1 |
+| `ui/ideation-modal.ts` | 1232 | 1 | 1 |
 | `ui/job-center-modal.ts` | 124 | 1 | 1 |
 | `ui/knowledge-detail-format.ts` | 46 | 4 | 4 |
 | `ui/knowledge-detail-modal.ts` | 1700 | 1 | 1 |
@@ -726,7 +726,7 @@
 | `ui/rebuild-chapters-modal.ts` | 325 | 1 | 1 |
 | `ui/refill-modal.ts` | 714 | 1 | 1 |
 | `ui/rename-project-modal.ts` | 105 | 1 | 1 |
-| `ui/rendering/context-panel.ts` | 941 | 1 | 1 |
+| `ui/rendering/context-panel.ts` | 962 | 1 | 1 |
 | `ui/review-chapter-modal.ts` | 70 | 1 | 1 |
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
@@ -751,7 +751,7 @@
 | `ui/settings/section-factory.ts` | 73 | 3 | 1 |
 | `ui/settings/writing-sections.ts` | 800 | 6 | 6 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
-| `ui/states/chapter-state-manager.ts` | 404 | 1 | 1 |
+| `ui/states/chapter-state-manager.ts` | 402 | 1 | 1 |
 | `ui/step-result-viewer-modal.ts` | 445 | 1 | 1 |
 | `ui/story-linkage-modal.ts` | 389 | 1 | 1 |
 | `ui/story-settings-form.ts` | 251 | 2 | 2 |
@@ -761,7 +761,7 @@
 | `ui/template-manager.ts` | 710 | 5 | 2 |
 | `ui/tomato-rank-modal.ts` | 135 | 1 | 1 |
 | `ui/unified-entity-generate-modal.ts` | 1092 | 1 | 1 |
-| `ui/unified-entity-manager-modal.ts` | 951 | 1 | 1 |
+| `ui/unified-entity-manager-modal.ts` | 946 | 1 | 1 |
 | `ui/usage-ledger-modal.ts` | 182 | 1 | 1 |
 | `ui/utils/worldview-utils.ts` | 103 | 1 | 1 |
 | `ui/vector-rebuild-action.ts` | 148 | 1 | 1 |

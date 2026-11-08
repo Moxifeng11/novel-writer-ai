@@ -3265,7 +3265,7 @@ ${text}`;
    */
   handleOpenMemoryManager() {
     const snapshot = this.engine?.getMemorySnapshot?.() || { styleGuide: '', stylePatterns: [], preferencePrompt: '', preferences: [] };
-    new MemoryManagerModal(this.app, snapshot, async (category: any, key: string, value: string) => {
+    new MemoryManagerModal(this.app, snapshot, async (category, key: string, value: string) => {
       await this.facade.addExplicitPreference(category, key, value);
       showSuccessNotice('偏好记忆已写入', { timeout: 2000 });
     }).open();

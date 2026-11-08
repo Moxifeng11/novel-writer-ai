@@ -5,7 +5,7 @@
 
 - 专项版本：v5-plan-1
 - 更新时间：2026-11-08
-- 当前基线：v4.74.0；单测 594 文件 / 6563 用例；E2E 40 条
+- 当前基线：v4.74.0；单测 594 文件 / 6565 用例；E2E 40 条
 - 任务进度：61/61 已完成（100%），0 进行中，0 受阻
 
 ## 一、任务组总览
@@ -174,6 +174,7 @@
 
 ## 四、进度流水
 
+- 2026-11-08｜G7｜第 113 轮（gate-fix + test-hardening，1 轮 2 动作）：①按 HANDOFF 派工兑现「可动 any 零发射收口」——14 个可动文件共 14 处 any 全部窄化或删除（catch/构造器/回调/Record 泛型/内部 API 结构类型），并删除 `fmData`、`_updateCount` 两处死赋值；any 122/63→108/49（仅剩红线 100 + 设计性 6 + `ui/batch-deconstruct-modal.ts` 2 处冻结待用户拍板），main.js 4,871,950→4,871,801（−149B，基线同步收紧）。`ui/batch-deconstruct-modal.ts` 的 2 处 any 已按 ZCode 冻结提醒（方向②/③拍板前双方不动）主动撤出。②按 advisor 次选 test:flat 为 v5 阶段面板补 2 个真实未覆盖语义——全部阶段完成时 nextLabel=「全部阶段已完成」/完成阶段预填「查看导出文件」，以及 agent-port 省略 flow 时按「阶段读取失败」占位。**纠偏**：step 0 误依据较旧信箱「非 engine any 阶段性完成」先做 test-hardening，随后 HANDOFF（11:04）明确派工 gate:any，按「ZCode 明确派工 > 评分选择」补做，两者均零运行时风险。全量 preflight:release EXIT=0（594 文件 / 6,565 用例）（14 个 ui/shared 可动文件 + .any-baseline.json + .bundle-baseline.json + tests/unit/ui/agent-stage-panel.test.ts + docs/progress/v5-acceptance.md §〇）
 - 2026-11-08｜G7｜第 91 轮（test-hardening，兑现 ZCode 派工）：services/genre-preference-memory.ts 由 4.7% 覆盖补到 lines 100% / statements 97.5% / branches 92.94% / functions 91.17%。新增 tests/unit/services/genre-preference-memory.test.ts 19 例，锁定偏好语义：默认值与部分持久化合并、setData 500ms 防抖单次落盘、连续自动分类防抖合并、纠正记录置顶/200 条上限/计数与 lastUpdated、题材·子题材·频道偏置 +0.15 累积与原值下调、0.95 衰减后 <0.01 删除键、准确率无样本=1 且纠正多于分类夹到 0、getStats 降序 Top10、findSimilarCorrections 关键词命中排序/大小写不敏感/上限/空输入、export/importConfig 往返与非法 JSON 返回 false、flush 立即落盘并清定时器、两条落盘路径吞错、reset 清空。零源码改动；全量 preflight:release EXIT=0（594 文件 / 6,550 用例；lines 44.34% / branches 43.75% / functions 44.80%；any 148/148；bundle 4,870,136 逐字节不变）（tests/unit/services/genre-preference-memory.test.ts + services/genre-preference-memory.ts + docs/PLAN.md 第 91 轮）
 - 2026-11-08｜G7｜第 90 轮（行为修复，v5 B2 端口契约；advise tier=score 下人工补充产品语义候选）：AgentPort.listCommands 与 runCommand 口径对齐——列表原按 id 前缀 'novel-writer' 过滤、执行按 plugin.registry.has 校验，导致 3 个不可执行命令（rename-project / prune-sessions / populate-setting-lib 的调色板 id）被列出却必然执行失败，同时可执行的 switch-provider（无前缀）被漏列。改为 listCommands 统一用 plugin.registry.has(cmd.id)，列表即 run_command 可执行集合。tests/unit/ui/agent-port-status.test.ts +2 例（可执行集对齐、listCommands 抛错降级）。定向 11/11；全量 preflight:release EXIT=0（593 文件 / 6,531 用例；statements 43.91% / branches 43.62% / functions 44.62% / lines 44.24%；any 148/148；bundle 4,870,136 较基线 −11B）。余量提示：若产品需要 Agent 重命名项目/清理会话/生成设定库，应把这 3 个 id 注册进 registry，而非放宽列表（ui/services/agent-port.ts + tests/unit/ui/agent-port-status.test.ts + docs/PLAN.md 第 90 轮 + docs/progress/v5-acceptance.md §二）
 - 2026-11-07｜G7｜自动化能力升级（用户任务）：新增 shared/optimization-advisor.ts 纯函数模块与 scripts/optimization-advisor.mjs CLI，把「候选池 → EV 评分 → 决策阶梯」从提示词固化为可执行规则；自动采集 git/台账/门禁/体积/测试/文档/信箱七类事实，输出 1–2 条带 reason/evidence/score/factors 的方向建议；新增 npm run automation:advise（默认 / --json / --write / --check）。派工只认「第 N 轮 > 当前台账轮次」或 6 小时内的消息，避免陈旧派工误判；体积候选设 >20KB 或 ≥1% 阈值抑制噪声。新增 20 例单测；check:automation 增加建议台账 schema/新鲜度校验（存在时）；定时任务 af06e242 第 0 步改为先跑脚本再按 tier 执行。全量 preflight:release EXIT=0（593 文件 / 6,520 用例；statements 43.87% / branches 43.58% / functions 44.59% / lines 44.2%）；bundle 4,869,777 不变；any 148/148（shared/optimization-advisor.ts + scripts/optimization-advisor.mjs + tests/unit/shared/optimization-advisor.test.ts + scripts/check-automation.mjs + docs/handbook/13-dual-automation-ops.md §7 + docs/PLAN.md）
