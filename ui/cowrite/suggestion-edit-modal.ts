@@ -17,18 +17,22 @@ export class SuggestionEditModal {
     private submitBtn: HTMLButtonElement | null = null;
     private cancelBtn: HTMLButtonElement | null = null;
     private isSubmitting = false;
+    /** 抽屉挂载的文档（popout 下必须是视图所属窗口，否则会开在主窗口） */
+    private doc: Document | null;
 
-    constructor(app: App, suggestion: SuggestionRecord, initialText: string, onSubmit: (text: string) => Promise<void>) {
+    constructor(app: App, suggestion: SuggestionRecord, initialText: string, onSubmit: (text: string) => Promise<void>, doc?: Document) {
         this.suggestion = suggestion;
         this.initialText = initialText;
         this.onSubmit = onSubmit;
+        this.doc = doc ?? null;
     }
 
     /**
      * 打开。
      */
     open(): void {
-        const drawer = document.body.createDiv({ cls: 'nw-suggestion-drawer' });
+        // v4.79.0：按宿主窗口挂载（默认主窗口，兼容既有调用方与测试）
+        const drawer = (this.doc ?? document).body.createDiv({ cls: 'nw-suggestion-drawer' });
         this.modalEl = drawer;
 
         // ----- header -----

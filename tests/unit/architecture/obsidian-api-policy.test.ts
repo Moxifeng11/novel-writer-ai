@@ -114,6 +114,22 @@ describe('check:obsidian-api 门禁', () => {
         expect(result.stderr).toContain('console-direct');
     });
 
+    it('绕过写法也必须报错（registerDomEvent(document) / 强转 isMobile）', () => {
+        const root = fixture({
+            'ui/bypass.ts': [
+                "import type { App } from 'obsidian';",
+                'export function bind(host: { registerDomEvent(el: unknown, type: string, cb: () => void): void }, app: App) {',
+                "    host.registerDomEvent(document, 'click', () => {});",
+                '    return (app as unknown as { isMobile?: boolean }).isMobile === true;',
+                '}',
+            ].join('\n'),
+        });
+        const result = run(root);
+        expect(result.code).toBe(1);
+        expect(result.stderr).toContain('global-document-listener');
+        expect(result.stderr).toContain('deprecated-api');
+    });
+
     it('单源文件（shared/paths.ts）属于合法例外，不被误报', () => {
         const root = fixture({
             'shared/paths.ts': "const DEFAULT_PLUGIN_ROOT_DIR = '.obsidian/plugins/novel-writer-ai';\nexport const d = DEFAULT_PLUGIN_ROOT_DIR;\n",

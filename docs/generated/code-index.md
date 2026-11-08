@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 305 | 132834 | 1609 | 1348 | 84% |
+| `engine/` | 305 | 132837 | 1609 | 1348 | 84% |
 | `services/` | 32 | 12641 | 187 | 148 | 79% |
 | `shared/` | 177 | 40538 | 1595 | 1319 | 83% |
 | `core/` | 7 | 2770 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 238 | 101224 | 734 | 639 | 87% |
+| `ui/` | 238 | 101255 | 734 | 639 | 87% |
 
 ## 文件清单
 
@@ -118,7 +118,7 @@
 | `engine/craft-constraints.ts` | 84 | 5 | 5 |
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
 | `engine/cross-volume-outline-validator.ts` | 673 | 16 | 14 |
-| `engine/deconstruction-scheduler.ts` | 2843 | 9 | 8 |
+| `engine/deconstruction-scheduler.ts` | 2846 | 9 | 8 |
 | `engine/deconstruction-worker-manager.ts` | 688 | 3 | 3 |
 | `engine/deconstructors/character-deconstructor.ts` | 4063 | 14 | 14 |
 | `engine/deconstructors/commercial-deconstructor.ts` | 2052 | 6 | 6 |
@@ -569,7 +569,7 @@
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1020 | 2 | 2 |
-| `ui/co-writing-view.ts` | 3364 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3389 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 224 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
@@ -592,7 +592,7 @@
 | `ui/co-writing/monitor-cards.ts` | 322 | 7 | 4 |
 | `ui/co-writing/quality-fix.ts` | 136 | 6 | 4 |
 | `ui/co-writing/quality-highlight.ts` | 102 | 3 | 2 |
-| `ui/co-writing/quality-popup.ts` | 147 | 6 | 5 |
+| `ui/co-writing/quality-popup.ts` | 149 | 6 | 5 |
 | `ui/co-writing/quality-report.ts` | 130 | 2 | 2 |
 | `ui/co-writing/settlement-actions.ts` | 189 | 6 | 5 |
 | `ui/co-writing/suggest-feedback.ts` | 185 | 9 | 7 |
@@ -627,7 +627,7 @@
 | `ui/cowrite/live-analysis-controller.ts` | 279 | 2 | 1 |
 | `ui/cowrite/memory-manager-modal.ts` | 155 | 1 | 1 |
 | `ui/cowrite/realtime-quality-controller.ts` | 456 | 2 | 1 |
-| `ui/cowrite/suggestion-edit-modal.ts` | 156 | 1 | 1 |
+| `ui/cowrite/suggestion-edit-modal.ts` | 160 | 1 | 1 |
 | `ui/cowrite/suggestion-history-store.ts` | 111 | 1 | 1 |
 | `ui/create-project-modal.ts` | 490 | 2 | 2 |
 | `ui/cross-volume-state-modal.ts` | 234 | 1 | 1 |

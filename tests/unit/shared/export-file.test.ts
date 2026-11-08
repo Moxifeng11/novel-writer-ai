@@ -1,6 +1,16 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { TFile } from 'obsidian';
+import { Platform, TFile } from 'obsidian';
 import { exportBinaryFile, exportTextFile, EXPORT_FALLBACK_DIR } from '../../../shared/export-file';
+
+// v4.79.0：导出判断改用官方 Platform.isMobile；这里切换 mock 的平台位（模块级，供所有 describe 使用）
+function setMobile(on: boolean): void {
+    Object.defineProperty(Platform, 'isMobile', { value: on, configurable: true, writable: true });
+}
+
+afterEach(() => {
+    setMobile(false);
+    vi.restoreAllMocks();
+});
 
 describe('exportTextFile — v6.3 跨端导出', () => {
     afterEach(() => {
@@ -29,7 +39,6 @@ describe('exportTextFile — v6.3 跨端导出', () => {
 
         try {
             const app = {
-                isMobile: false,
                 vault: {
                     adapter: { exists: async () => false, mkdir: async () => undefined },
                     getAbstractFileByPath: () => null,
@@ -65,7 +74,6 @@ describe('exportTextFile — v6.3 跨端导出', () => {
         const created: Array<{ path: string; content: string }> = [];
         let mkdirCalled = false;
         const app = {
-            isMobile: false,
             vault: {
                 adapter: {
                     exists: async () => false,
@@ -89,8 +97,8 @@ describe('exportTextFile — v6.3 跨端导出', () => {
         const created: Array<{ path: string; content: string }> = [];
         let mkdirCalled = false;
 
+        setMobile(true);
         const app = {
-            isMobile: true,
             vault: {
                 adapter: {
                     exists: async () => false,
@@ -116,8 +124,8 @@ describe('exportTextFile — v6.3 跨端导出', () => {
         const modified: string[] = [];
         let createCalled = false;
         const existingFile = Object.assign(new TFile(), { path: '导出文件/same.json' });
+        setMobile(true);
         const app = {
-            isMobile: true,
             vault: {
                 adapter: { exists: async () => true, mkdir: async () => undefined },
                 getAbstractFileByPath: () => existingFile,
@@ -136,8 +144,8 @@ describe('exportTextFile — v6.3 跨端导出', () => {
 
     it('二进制导出（EPUB/DOCX）：移动端走 createBinary，文件名净化', async () => {
         const created: Array<{ path: string; buffer: ArrayBuffer }> = [];
+        setMobile(true);
         const app = {
-            isMobile: true,
             vault: {
                 adapter: { exists: async () => false, mkdir: async () => undefined },
                 getAbstractFileByPath: () => null,
@@ -159,8 +167,8 @@ describe('exportTextFile — v6.3 跨端导出', () => {
     it('二进制导出：同名文件存在时覆盖（modifyBinary）', async () => {
         const modified: ArrayBuffer[] = [];
         const existingFile = Object.assign(new TFile(), { path: '导出文件/旧.epub' });
+        setMobile(true);
         const app = {
-            isMobile: true,
             vault: {
                 adapter: { exists: async () => true, mkdir: async () => undefined },
                 getAbstractFileByPath: () => existingFile,

@@ -47,7 +47,8 @@ const RULES = [
     {
         id: 'deprecated-api',
         description: '晚于 minAppVersion 1.4.0 的 API 或已弃用 API',
-        pattern: /MarkdownRenderer\.renderMarkdown|Vault\.getAllFolders|getAllFolders\(|setCssProps|app\.isMobile/,
+        // v4.79.0：补「强转绕过」形态——(app as unknown as { isMobile?: boolean }).isMobile
+        pattern: /MarkdownRenderer\.renderMarkdown|Vault\.getAllFolders|getAllFolders\(|setCssProps|app\.isMobile|\{\s*isMobile\?\s*:/,
         allow: ['shared/file-system-port.ts', 'shared/changelog-data.ts'],
     },
     {
@@ -65,7 +66,8 @@ const RULES = [
     {
         id: 'global-document-listener',
         description: 'document 级监听需在 onClose/destroy 成对移除；popout 窗口下应使用 ownerDocument',
-        pattern: /document\.addEventListener\(/,
+        // v4.79.0：registerDomEvent(document|window, ...) 与 addEventListener 等价，此前漏检
+        pattern: /document\.addEventListener\(|registerDomEvent\(\s*(document|window)\s*,/,
         allow: [],
     },
     {

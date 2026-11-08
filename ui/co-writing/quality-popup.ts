@@ -53,8 +53,10 @@ export function computePopupPosition(
  * ```
  */
 export function showQualityPopup(issue: QualityIssue, event: MouseEvent): HTMLElement {
-    const popup = document.body.createDiv({ cls: 'nw-quality-popup' });
-    const position = computePopupPosition(event.clientX, event.clientY, window.innerWidth, window.innerHeight);
+    // v4.79.0：按鼠标事件所属窗口挂载与定位（popout 下不能写到主窗口 body）
+    const win = event.view ?? window;
+    const popup = win.document.body.createDiv({ cls: 'nw-quality-popup' });
+    const position = computePopupPosition(event.clientX, event.clientY, win.innerWidth, win.innerHeight);
     popup.style.left = `${position.left}px`;
     popup.style.top = `${position.top}px`;
     const header = popup.createDiv({ cls: 'nw-quality-popup-header' });

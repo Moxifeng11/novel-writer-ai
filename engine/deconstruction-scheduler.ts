@@ -2829,6 +2829,9 @@ export class DeconstructionScheduler {
         this.queue = [];
         this.tasks.clear();
         this.activeCount = 0;
+        // v4.79.0（交叉审计 B-1）：防抖队列里的进度回调也要取消——否则卸载后仍会
+        // 回调 knowledgeBaseManager.setBreakdownStatus（落在 flush 之后，写已释放对象）。
+        this.progressDebounceManager.dispose();
 
         this.progressCallbacks.clear();
         this.completeCallbacks.clear();

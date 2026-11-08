@@ -32,6 +32,7 @@ import { LiveAnalysisController } from './cowrite/live-analysis-controller';
 import type { PlotEvalGateState } from '@/shared/plot-eval-throttle';
 import { captureScrollSnapshot, resolveRestoredScrollTop } from '@/shared/preview-scroll';
 import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
+import { onNodeDoc, resolveNodeDoc } from '@/shared/dom-window';
 import { getCustomFontFamilies, registerAllCustomFonts } from '@/services/font-manager';
 import { FontManagerModal } from './font-manager-modal';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from './model-quick-switcher';
@@ -233,6 +234,10 @@ export class CoWritingView extends ItemView {
   qualityReportContainer!: HTMLElement;
   qualityIssues: QualityIssue[] = [];
   qualityReportPopup: HTMLElement | null = null;
+  /** v4.79.0：建议编辑抽屉句柄（关闭视图时一并关闭，避免抽屉留在 body 上） */
+  private suggestionEditModal: SuggestionEditModal | null = null;
+  /** v4.79.0：文档级点击的解绑函数（按视图所属窗口绑定，popout 下才收得到点击） */
+  private documentClickCleanup: (() => void) | null = null;
   private isQualityReportLoading = false;
   // v6.4: 浮窗监控面板
   floatingPanel!: HTMLElement;
@@ -521,6 +526,18 @@ export class CoWritingView extends ItemView {
     this.realtimeQuality.dispose();
     if (this.liveAnalysis && typeof this.liveAnalysis.clearTimers === 'function') {
       this.liveAnalysis.clearTimers();
+    }
+    // v4.79.0（交叉审计 B-3）：浮窗与建议抽屉挂在 body 上，视图关闭必须一并收走
+    if (this.qualityReportPopup) {
+      this.hideQualityPopup();
+    }
+    if (this.suggestionEditModal) {
+      this.suggestionEditModal.close();
+      this.suggestionEditModal = null;
+    }
+    if (this.documentClickCleanup) {
+      this.documentClickCleanup();
+      this.documentClickCleanup = null;
     }
     // NBI-04: 视图卸载后不残留「指令已应用」状态
     this.appliedHint = null;
@@ -887,7 +904,11 @@ export class CoWritingView extends ItemView {
       },
       updateModelToggleBtn: () => this.updateModelToggleBtn(),
       renderMonitorPanel: () => this.renderMonitorPanel(),
-      registerDocumentClick: (handler) => this.registerDomEvent(document, "click", handler),
+      // v4.79.0：按视图所属窗口绑定（此前绑主窗口 document，popout 内点外部不收起）
+      registerDocumentClick: (handler) => {
+        this.documentClickCleanup?.();
+        this.documentClickCleanup = onNodeDoc(this.containerEl, "click", handler);
+      },
     });
   }
 
@@ -1930,8 +1951,12 @@ export class CoWritingView extends ItemView {
           const dismiss = actions.createEl("button", { text: "返回建议", cls: "nw-btn nw-btn-ghost" });
           dismiss.addEventListener("click", () => this.renderSuggestionCards(this.currentSuggestions));
         }
-      }
+      },
+      resolveNodeDoc(this.containerEl) ?? undefined
     );
+    // v4.79.0：记录抽屉句柄（关闭视图时一并关闭；popout 下挂到视图所属窗口）
+    this.suggestionEditModal?.close();
+    this.suggestionEditModal = modal;
     modal.open();
   }
   /**

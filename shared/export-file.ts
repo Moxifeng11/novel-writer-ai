@@ -8,7 +8,7 @@
  * 统一入口的目的：此前 7 处导出各自复制同一段 blob 代码，移动端全部静默失效。
  */
 import type { App } from 'obsidian';
-import { Notice, TFile } from 'obsidian';
+import { Notice, Platform, TFile } from 'obsidian';
 import { createLogger } from './logger';
 
 const log = createLogger('ExportFile');
@@ -67,9 +67,9 @@ export async function exportTextFile(
 ): Promise<ExportFileResult> {
     const safeName = sanitizeFileName(filename);
 
-    // Obsidian 的 `App.isMobile` 在运行时可用，但仓库内置的 obsidian 类型定义未声明该属性，
-    // 故此处做窄化断言（同时兼容测试环境下 App mock 无该字段的情形）。
-    const isMobile = (app as unknown as { isMobile?: boolean })?.isMobile === true;
+    // v4.79.0：改用官方 Platform.isMobile（App.isMobile 未在类型里声明，且强转写法会绕过
+    // check:obsidian-api 的 app.isMobile 正则）。
+    const isMobile = Platform.isMobile === true;
 
     if (isMobile || options?.preferVault === true) {
         try {
@@ -114,7 +114,7 @@ export async function exportBinaryFile(
 ): Promise<ExportFileResult> {
     const safeName = sanitizeFileName(filename);
     const mime = options?.mime || 'application/octet-stream';
-    const isMobile = (app as unknown as { isMobile?: boolean })?.isMobile === true;
+    const isMobile = Platform.isMobile === true;
     // 只取视图本身，避免把底层 buffer 的多余字节一起写出
     const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
 
