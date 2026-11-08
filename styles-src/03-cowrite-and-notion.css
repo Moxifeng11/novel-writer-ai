@@ -39,10 +39,10 @@
     margin: 0;
 }
 .nw-cowrite-streaming-card {
-    border-style: dashed !important;
-    border-color: var(--nw-border, var(--background-modifier-border)) !important;
-    box-shadow: none !important;
-    transform: none !important;
+    border-style: dashed;
+    border-color: var(--nw-border, var(--background-modifier-border));
+    box-shadow: none;
+    transform: none;
 }
 .nw-cowrite-streaming-text {
     min-height: 72px;
@@ -826,9 +826,9 @@
 
 .novel-writer-fw-card-action-btn:not(.secondary),
 .novel-writer-fw-preview-open-btn {
-    background: var(--nw-accent) !important;
-    border-color: var(--nw-accent) !important;
-    color: var(--nw-text-on-accent) !important;
+    background: var(--nw-accent);
+    border-color: var(--nw-accent);
+    color: var(--nw-text-on-accent);
 }
 
 /* 4. 统一按钮样式 */
@@ -967,14 +967,14 @@
     .nw-wizard-sidebar,
     .nw-writer-steps,
     .novel-writer-fw-step-nav {
-        width: 100% !important;
-        max-height: 200px !important;
-        border-right: none !important;
-        border-bottom: 1px solid var(--nw-divider) !important;
+        width: 100%;
+        max-height: 200px;
+        border-right: none;
+        border-bottom: 1px solid var(--nw-divider);
     }
 
     .novel-writer-modal .button-group-buttons {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: 1fr;
     }
 }
 
@@ -1016,11 +1016,11 @@
 }
 
 .novel-writer-fw-toolbar {
-    top: 16px !important;
-    right: 20px !important;
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
+    top: 16px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    padding: 0;
 }
 
 .novel-writer-fw-project-card,
@@ -1035,12 +1035,12 @@
 .novel-writer-fw-tools-btn:hover,
 .nw-wizard-step:hover,
 .nw-wizard-entity-row:hover {
-    transform: none !important;
-    box-shadow: none !important;
+    transform: none;
+    box-shadow: none;
 }
 
 .novel-writer-fw-cover-area:hover {
-    filter: none !important;
+    filter: none;
 }
 
 /* ===== v5.1 A方案：界面层级最终覆盖 ===== */
@@ -1048,7 +1048,7 @@
 .novel-writer-fw-project-area {
     background:
         radial-gradient(circle at 18% 0%, var(--nw-accent-muted) 0, transparent 30%),
-        var(--nw-surface, var(--background-secondary)) !important;
+        var(--nw-surface, var(--background-secondary));
 }
 
 .novel-writer-fw-project-card,
@@ -1059,9 +1059,9 @@
 .novel-writer-inline-preview,
 .novel-writer-fw-context-card,
 .nw-context-bar__collapsible-card {
-    background: var(--nw-card-bg, var(--background-primary)) !important;
-    border: 1px solid var(--nw-card-border, var(--background-modifier-border)) !important;
-    box-shadow: var(--nw-card-shadow) !important;
+    background: var(--nw-card-bg, var(--background-primary));
+    border: 1px solid var(--nw-card-border, var(--background-modifier-border));
+    box-shadow: var(--nw-card-shadow);
 }
 
 .novel-writer-fw-project-card:hover,
@@ -1069,23 +1069,23 @@
 .novel-writer-button:hover,
 .nw-wizard-entity-row:hover,
 .nw-context-bar__collapsible-card:hover {
-    background: var(--nw-card-bg-hover, color-mix(in srgb, var(--background-primary), var(--background-secondary) 20%)) !important;
-    border-color: var(--nw-accent) !important;
-    box-shadow: var(--nw-card-shadow-hover) !important;
+    background: var(--nw-card-bg-hover, color-mix(in srgb, var(--background-primary), var(--background-secondary) 20%));
+    border-color: var(--nw-accent);
+    box-shadow: var(--nw-card-shadow-hover);
 }
 
 .novel-writer-fw-project-card.selected {
-    box-shadow: var(--nw-card-selected-ring), var(--nw-card-shadow-hover) !important;
+    box-shadow: var(--nw-card-selected-ring), var(--nw-card-shadow-hover);
 }
 
 .novel-writer-fw-cover-area {
-    background: linear-gradient(135deg, var(--nw-accent-muted), transparent), var(--nw-surface) !important;
-    border-bottom: 1px solid var(--nw-card-border) !important;
+    background: linear-gradient(135deg, var(--nw-accent-muted), transparent), var(--nw-surface);
+    border-bottom: 1px solid var(--nw-card-border);
 }
 
 .nw-wizard-footer,
 .novel-writer-mini-settings {
-    background: var(--nw-panel-bg, var(--background-secondary)) !important;
+    background: var(--nw-panel-bg, var(--background-secondary));
 }
 
 /* ===== v5.1 A方案：颜色设置与层级预览 ===== */
@@ -1215,6 +1215,6 @@
     padding: 8px;
     font-size: 12px;
 }
-.novel-writer-monitor-body .novel-writer-context-mode-hint { font-size: 11px !important; }
+.novel-writer-monitor-body .novel-writer-context-mode-hint { font-size: 11px; }
 .novel-writer-monitor-body .novel-writer-context-scope-row { margin: 4px 0; }
 

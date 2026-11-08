@@ -20,11 +20,6 @@
     scrollbar-width: none;
 }
 
-.novel-writer-fw-tabs-container::-webkit-scrollbar,
-.novel-writer-fw-tabbar::-webkit-scrollbar {
-    display: none;
-    height: 0;
-}
 
 .novel-writer-fw-tab {
     display: flex;
@@ -298,9 +293,7 @@
     margin-bottom: 16px;
     padding: 14px;
     border-radius: 10px;
-    background: var(--nw-accent-muted, rgba(194, 65, 12, 0.08));
     background: color-mix(in srgb, var(--interactive-accent) 8%, transparent);
-    border: 1px solid var(--nw-accent-muted, rgba(194, 65, 12, 0.25));
     border: 1px solid color-mix(in srgb, var(--interactive-accent) 25%, transparent);
 }
 .novel-writer-fw-planning-title {

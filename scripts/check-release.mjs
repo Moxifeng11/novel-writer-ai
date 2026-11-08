@@ -155,22 +155,20 @@ try {
         if (!assetsMatch) {
             errors.push('release.yml 未找到 ASSETS=(...) 声明，无法校验发布资产（格式变化时必须同步本脚本）');
         } else {
-            // 只校验 worker 和 versions.json：main.js/manifest.json/styles.css/$ZIP 由 requireFile 独立检查
-            const declared = assetsMatch[1]
+            // v4.79.2：社区目录把独立 worker 资产标为「额外不支持的文件」，worker 只进 zip。
+            // 这里校验工作流声明的 worker 数量为 0、versions.json 仍在清单中；
+            // main.js/manifest.json/styles.css/$ZIP 由 requireFile 独立检查。
+            const declaredWorkers = assetsMatch[1]
                 .split(/\s+/)
                 .map((token) => token.replace(/["']/g, '').trim())
-                .filter((token) => token.startsWith('workers/') || token === 'versions.json')
-                .sort();
-            const built = [...workerFiles, 'versions.json'].sort();
-            const missingInBuild = declared.filter((rel) => !built.includes(rel));
-            const missingInRelease = built.filter((rel) => !declared.includes(rel));
-            if (missingInBuild.length > 0 || missingInRelease.length > 0) {
-                errors.push(
-                    `release.yml 资产与构建产物不一致：`
-                    + `工作流多出 [${missingInBuild.join(', ')}]，构建多出 [${missingInRelease.join(', ')}]`
-                );
+                .filter((token) => token.startsWith('workers/'));
+            const declaresVersions = /versions\.json/.test(assetsMatch[1]);
+            if (declaredWorkers.length > 0) {
+                errors.push(`release.yml 不应再上传独立 worker 资产（当前：${declaredWorkers.join(', ')}）；worker 只进 zip`);
+            } else if (!declaresVersions) {
+                errors.push('release.yml 的 ASSETS 缺少 versions.json');
             } else {
-                notes.push(`release.yml 资产一致（${declared.length} 个 worker/versions）`);
+                notes.push('release.yml 资产一致（worker 仅入 zip，versions.json 在清单）');
             }
         }
     }

@@ -106,10 +106,6 @@
     -webkit-overflow-scrolling: touch;
 }
 
-.nw-settings-tabbar::-webkit-scrollbar {
-    display: none;
-    height: 0;
-}
 
 .nw-settings-tab {
     display: flex;

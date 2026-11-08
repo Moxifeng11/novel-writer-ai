@@ -650,8 +650,8 @@ button.nw-btn-icon {
 .modal.nw-scope.nw-modal-md .modal-content,
 .modal.nw-scope.nw-modal-lg .modal-content,
 .modal.nw-scope.nw-modal-xl .modal-content {
-    padding: 0 !important;
-    overflow: visible !important;
+    padding: 0;
+    overflow: visible;
     display: flex;
     flex-direction: column;
     max-height: var(--nw-modal-max-h, 90vh);
@@ -666,7 +666,7 @@ button.nw-btn-icon {
  * 无限循环动画收敛为单次、动画与过渡时长趋零（视觉状态仍可到达）、
  * 平滑滚动关闭。
  *
- * 注：此处 !important 为官方指南允许的例外用法——需覆盖散布于全文件
+ * 注：此处 为官方指南允许的例外用法——需覆盖散布于全文件
  * （含 .nw-scope 与无前缀类）的既有 animation/transition 声明，普通
  * 特异性无法保证兜底完整性。与 Bootstrap 等框架的 reduced-motion
  * 标准模板一致。
@@ -772,10 +772,10 @@ button.nw-btn-icon {
     .nw-scope *,
     [class*="novel-writer-"] *,
     [class*="nw-"] * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
+        animation-duration: 0.01ms;
+        animation-iteration-count: 1;
+        transition-duration: 0.01ms;
+        scroll-behavior: auto;
     }
 
     /* 拖拽态与毛玻璃此前没被覆盖：拖拽时光标/选择变化仍是瞬时切换，
@@ -783,12 +783,12 @@ button.nw-btn-icon {
     .nw-panel-resizer,
     .nw-panel-resizer::before,
     body.nw-panel-resizing {
-        transition: none !important;
+        transition: none;
     }
 
     .nw-awb-header,
     [class*="nw-"] [style*="backdrop-filter"] {
-        backdrop-filter: none !important;
+        backdrop-filter: none;
     }
 }
 

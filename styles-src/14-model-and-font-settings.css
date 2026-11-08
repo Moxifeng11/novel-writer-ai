@@ -795,11 +795,11 @@
     transition: transform 0.15s ease;
 }
 
-.nw-api-switch:has(input:checked)::before {
+.nw-api-switch.nw-is-active::before {
     background: var(--interactive-accent);
 }
 
-.nw-api-switch:has(input:checked)::after {
+.nw-api-switch.nw-is-active::after {
     transform: translateX(16px);
 }
 

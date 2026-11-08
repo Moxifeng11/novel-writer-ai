@@ -42,7 +42,7 @@
 .nw-modal-form .nw-select,
 .nw-modal-lg .nw-input,
 .nw-modal-lg .nw-select {
-    height: 32px !important;
+    height: 32px;
     min-height: 32px;
     line-height: 30px;
 }
@@ -68,8 +68,8 @@
     flex-direction: column;
 }
 .modal.nw-scope.nw-modal-form .modal-content {
-    padding: 0 !important;
-    overflow-y: auto !important;
+    padding: 0;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     max-height: min(86vh, 900px);
@@ -81,10 +81,10 @@
     padding: 18px 20px 20px;
 }
 
-/* .modal-content 的 padding:0 !important 会压掉上面的内边距，需同带 !important */
+/* .modal-content 的 padding:0 会压掉上面的内边距，需同带 */
 .modal.nw-scope.nw-modal-form .modal-content.nw-form-stack,
 .modal.nw-scope.nw-modal-lg .modal-content.nw-form-stack {
-    padding: 18px 20px 20px !important;
+    padding: 18px 20px 20px;
 }
 .nw-form-grid {
     display: grid;
@@ -129,8 +129,8 @@
     flex-direction: column;
 }
 .modal.nw-scope.nw-modal-lg .modal-content {
-    padding: 0 !important;
-    overflow-y: auto !important;
+    padding: 0;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     max-height: min(86vh, 900px);
@@ -244,8 +244,8 @@
     flex-direction: column;
 }
 .modal.nw-scope.nw-step-viewer .modal-content {
-    padding: 0 !important;
-    overflow: hidden !important;
+    padding: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     height: 100%;

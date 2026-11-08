@@ -2,6 +2,19 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.79.2（2026-11-09）
+
+### 🧹 清理社区目录非阻断建议项
+
+- **CSS**：移除 183 处 `!important`（全部规则均以 `.nw-`/`.novel-writer-` 类作用域，靠类选择器本身足够）；
+  `:has(input:checked)` 改为 JS 维护的 `nw-is-active` 状态类；`::-webkit-scrollbar` 改为标准
+  `scrollbar-width`/`scrollbar-color`；删除重复 `background`/`border` 与未被使用的 `webview` 选择器。
+  styles.css 476,809 → 472,781（−4,028B）。
+- **Release 资产**：worker 文件不再作为独立资产上传（社区目录会标为「额外不支持的文件」），只打进
+  `novel-writer-ai-<version>.zip`；SHA256SUMS 与实际资产清单一致；`check:release` 同步校验。
+- **Artifact attestations**：发布流水线为 `main.js`/`styles.css` 生成 GitHub 构建来源证明
+  （`actions/attest-build-provenance@v2`，权限 `id-token`/`attestations`）。
+
 ## v4.79.1（2026-11-09）
 
 ### 🏪 社区目录自动审核修复

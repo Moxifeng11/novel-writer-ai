@@ -576,8 +576,8 @@
     .nw-scope *,
     .nw-scope *::before,
     .nw-scope *::after {
-        animation-duration: 0.001ms !important;
-        transition-duration: 0.001ms !important;
+        animation-duration: 0.001ms;
+        transition-duration: 0.001ms;
     }
 }
 

@@ -951,8 +951,7 @@ body.nw-panel-resizing {
     cursor: col-resize;
 }
 
-body.nw-panel-resizing .nw-awb-center iframe,
-body.nw-panel-resizing .nw-awb-center webview {
+body.nw-panel-resizing .nw-awb-center iframe {
     pointer-events: none;
 }
 

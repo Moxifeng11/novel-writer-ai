@@ -215,7 +215,9 @@ export class ApiSection extends SettingsSection {
         const toggleLabel = head.createEl('label', { cls: 'nw-api-switch', attr: { title: '启用该供应商' } });
         const toggle = toggleLabel.createEl('input', { type: 'checkbox' });
         toggle.checked = isCurrent;
+        toggleLabel.toggleClass('nw-is-active', toggle.checked);
         toggle.addEventListener('change', async () => {
+            toggleLabel.toggleClass('nw-is-active', toggle.checked);
             if (toggle.checked) {
                 this.plugin.switchProviderByEndpoint(raw.endpoint);
                 await this.plugin.saveSettings();
@@ -441,7 +443,9 @@ export class ApiSection extends SettingsSection {
             const enableLabel = rowActions.createEl('label', { cls: 'nw-api-switch', attr: { title: '启用该模型' } });
             const enable = enableLabel.createEl('input', { type: 'checkbox' });
             enable.checked = !disabled.has(modelId);
+            enableLabel.toggleClass('nw-is-active', enable.checked);
             enable.addEventListener('change', async () => {
+                enableLabel.toggleClass('nw-is-active', enable.checked);
                 const next = new Set(this.getRawProvider(raw.id)?.disabledModels || []);
                 if (enable.checked) next.delete(modelId);
                 else next.add(modelId);

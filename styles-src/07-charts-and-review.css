@@ -825,22 +825,10 @@
     color: var(--nw-text-primary, var(--text-normal));
 }
 
-/* ── 滚动条 ── */
-.nw-review-content::-webkit-scrollbar {
-    width: 8px;
-}
-
-.nw-review-content::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.nw-review-content::-webkit-scrollbar-thumb {
-    background: var(--nw-scrollbar-thumb, var(--background-modifier-border));
-    border-radius: 4px;
-}
-
-.nw-review-content::-webkit-scrollbar-thumb:hover {
-    background: var(--nw-scrollbar-thumb-hover, var(--background-modifier-hover));
+/* ── 滚动条（标准属性） ── */
+.nw-review-content {
+    scrollbar-width: thin;
+    scrollbar-color: var(--nw-scrollbar-thumb, var(--background-modifier-border)) transparent;
 }
 
 /* ==========================================================================

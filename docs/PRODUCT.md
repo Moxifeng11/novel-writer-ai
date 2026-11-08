@@ -1,6 +1,6 @@
 # 产品定义（PRODUCT）
 
-> 版本：v4.79.1 · 2026-11-04
+> 版本：v4.79.2 · 2026-11-04
 > 本文回答“为谁做、解决什么、不做什么、如何衡量”。实现细节见 [ARCHITECTURE.md](ARCHITECTURE.md)，排期见 [roadmap/ROADMAP.md](roadmap/ROADMAP.md)。
 
 ## 1. 一句话定位

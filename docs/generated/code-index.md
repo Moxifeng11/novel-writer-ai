@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132951 | 1609 | 1348 | 84% |
 | `services/` | 32 | 12640 | 187 | 148 | 79% |
-| `shared/` | 179 | 40725 | 1604 | 1323 | 82% |
+| `shared/` | 179 | 40741 | 1604 | 1323 | 82% |
 | `core/` | 7 | 2770 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 101319 | 735 | 639 | 87% |
+| `ui/` | 239 | 101327 | 735 | 639 | 87% |
 
 ## 文件清单
 
@@ -383,7 +383,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 2246 | 3 | 3 |
+| `shared/changelog-data.ts` | 2262 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -700,7 +700,7 @@
 | `ui/knowledge-folder-navigation.ts` | 15 | 1 | 1 |
 | `ui/knowledge-monitor-modal.ts` | 505 | 1 | 1 |
 | `ui/knowledge-rebuild-action.ts` | 48 | 1 | 1 |
-| `ui/manage-providers-modal.ts` | 630 | 1 | 1 |
+| `ui/manage-providers-modal.ts` | 634 | 1 | 1 |
 | `ui/memory-preview.ts` | 158 | 2 | 1 |
 | `ui/mini-settings-modal.ts` | 88 | 1 | 0 |
 | `ui/mode-document-modal.ts` | 201 | 2 | 2 |
@@ -743,7 +743,7 @@
 | `ui/settings-tab.ts` | 232 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 151 | 1 | 1 |
-| `ui/settings/api-section.ts` | 1274 | 1 | 1 |
+| `ui/settings/api-section.ts` | 1278 | 1 | 1 |
 | `ui/settings/deconstruction-section.ts` | 333 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 289 | 1 | 1 |

@@ -77,12 +77,12 @@
 }
 
 .novel-writer-otv-selected {
-    background: var(--background-modifier-hover) !important;
+    background: var(--background-modifier-hover);
     box-shadow: inset 2px 0 0 var(--interactive-accent);
 }
 
 .novel-writer-otv-dragging {
-    opacity: 0.4 !important;
+    opacity: 0.4;
 }
 
 .novel-writer-otv-drop-indicator {
@@ -950,40 +950,15 @@
 }
 .nw-suggestion-list { font-size: 10px; }
 
-/* 协同写作面板滚动条统一风格 */
-.nw-cowrite-control-panel::-webkit-scrollbar,
-.nw-cowrite-monitor-panel::-webkit-scrollbar,
-.nw-cowrite-preview-content::-webkit-scrollbar,
-.nw-kb-subtab-content::-webkit-scrollbar,
-.nw-kb-book-list-panel::-webkit-scrollbar,
-.nw-cowrite-tab-content[data-tab='overview'] > .nw-cowrite-control-panel::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-.nw-cowrite-control-panel::-webkit-scrollbar-track,
-.nw-cowrite-monitor-panel::-webkit-scrollbar-track,
-.nw-cowrite-preview-content::-webkit-scrollbar-track,
-.nw-kb-subtab-content::-webkit-scrollbar-track,
-.nw-kb-book-list-panel::-webkit-scrollbar-track,
-.nw-cowrite-tab-content[data-tab='overview'] > .nw-cowrite-control-panel::-webkit-scrollbar-track {
-    background: transparent;
-}
-.nw-cowrite-control-panel::-webkit-scrollbar-thumb,
-.nw-cowrite-monitor-panel::-webkit-scrollbar-thumb,
-.nw-cowrite-preview-content::-webkit-scrollbar-thumb,
-.nw-kb-subtab-content::-webkit-scrollbar-thumb,
-.nw-kb-book-list-panel::-webkit-scrollbar-thumb,
-.nw-cowrite-tab-content[data-tab='overview'] > .nw-cowrite-control-panel::-webkit-scrollbar-thumb {
-    background: var(--nw-scrollbar-thumb, var(--background-modifier-border));
-    border-radius: 4px;
-}
-.nw-cowrite-control-panel::-webkit-scrollbar-thumb:hover,
-.nw-cowrite-monitor-panel::-webkit-scrollbar-thumb:hover,
-.nw-cowrite-preview-content::-webkit-scrollbar-thumb:hover,
-.nw-kb-subtab-content::-webkit-scrollbar-thumb:hover,
-.nw-kb-book-list-panel::-webkit-scrollbar-thumb:hover,
-.nw-cowrite-tab-content[data-tab='overview'] > .nw-cowrite-control-panel::-webkit-scrollbar-thumb:hover {
-    background: var(--nw-scrollbar-thumb-hover, var(--background-modifier-hover));
+/* 协同写作面板滚动条统一风格（标准属性；::-webkit-scrollbar 不受支持/被弃用） */
+.nw-cowrite-control-panel,
+.nw-cowrite-monitor-panel,
+.nw-cowrite-preview-content,
+.nw-kb-subtab-content,
+.nw-kb-book-list-panel,
+.nw-cowrite-tab-content[data-tab='overview'] > .nw-cowrite-control-panel {
+    scrollbar-width: thin;
+    scrollbar-color: var(--nw-scrollbar-thumb, var(--background-modifier-border)) transparent;
 }
 
 /* ══════════════════════════════════════════════════════════════

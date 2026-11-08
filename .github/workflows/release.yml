@@ -10,6 +10,9 @@ on:
 
 permissions:
   contents: write
+  # artifact attestations：为 main.js / styles.css 生成可验证的来源证明
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -97,6 +100,13 @@ jobs:
             workers/deconstruction-worker.js workers/quality-worker.js "$ZIP" \
             > SHA256SUMS.txt
 
+      - name: 生成构建产物证明（GitHub artifact attestations）
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
+        with:
+          subject-path: |
+            main.js
+            styles.css
+
       - name: 发布 GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -107,8 +117,9 @@ jobs:
           if [ ! -f "$NOTES" ]; then
             NOTES="docs/releases/v${TAG#v}.md"
           fi
-          # SHA256SUMS.txt 为校验和清单，不属于 check-release.mjs 的 worker/versions 比对范围（该脚本按前缀过滤）
-          ASSETS=(main.js manifest.json styles.css versions.json workers/deconstruction-worker.js workers/quality-worker.js "$ZIP" SHA256SUMS.txt)
+          # Obsidian 只下载 main.js / manifest.json / styles.css；worker 文件仅放在 zip 中，
+          # 避免社区目录把独立 worker 资产标为「额外不支持的文件」。
+          ASSETS=(main.js manifest.json styles.css versions.json "$ZIP" SHA256SUMS.txt)
 
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG 已存在，覆盖上传资产"

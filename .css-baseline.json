@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-11-08T20:16:21.023Z",
+  "generatedAt": "2026-11-08T20:52:08.625Z",
   "note": "棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因",
-  "bytes": 476809,
-  "important": 164,
+  "bytes": 472781,
+  "important": 0,
   "hardcodedHex": 154,
-  "rgbHsl": 182,
+  "rgbHsl": 180,
   "uniqueClasses": 2494,
   "otherClasses": 87,
   "maxSelectorDepth": 4

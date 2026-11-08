@@ -95,7 +95,7 @@
 }
 /* 兜底：各业务变体（如 .novel-writer-fw-chapter-select）用单类选择器
    覆盖了 padding-right，把箭头位置挤没了。这里用 select.nw-select
-   （多一个元素选择器）提高一格特异性统一兜住，而不是逐个改或上 !important。 */
+   （多一个元素选择器）提高一格特异性统一兜住，而不是逐个改或上。 */
 select.nw-select {
     padding-right: 30px;
     text-overflow: ellipsis;
@@ -295,7 +295,7 @@ select.nw-select {
 
 /* ── 卡片 ──
    C-b2：原 3 处重复定义（基础区 / 统计卡片区 / 协同写作区）合并为单一定义，
-   各属性取层叠终值。作用域覆盖（.nw-scope .nw-card、协同写作组合器 !important）保持不变。 */
+   各属性取层叠终值。作用域覆盖（.nw-scope .nw-card、协同写作组合器）保持不变。 */
 .nw-card {
     background: var(--nw-card-bg, var(--background-primary));
     border: 1px solid var(--nw-card-border, var(--background-modifier-border));

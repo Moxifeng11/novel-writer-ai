@@ -197,7 +197,9 @@ export class ManageProvidersModal extends Modal {
         const toggleLabel = head.createEl('label', { cls: 'nw-api-switch', attr: { title: '启用该供应商' } });
         const toggle = toggleLabel.createEl('input', { type: 'checkbox' });
         toggle.checked = isCurrent;
+        toggleLabel.toggleClass('nw-is-active', toggle.checked);
         toggle.addEventListener('change', async () => {
+            toggleLabel.toggleClass('nw-is-active', toggle.checked);
             if (!toggle.checked) {
                 toggle.checked = true;
                 new Notice('不能用开关停用当前正在使用的供应商，请改为切换到其他供应商', 5000);
@@ -408,7 +410,9 @@ export class ManageProvidersModal extends Modal {
             const enableLabel = rowActions.createEl('label', { cls: 'nw-api-switch', attr: { title: '启用该模型' } });
             const enable = enableLabel.createEl('input', { type: 'checkbox' });
             enable.checked = !disabled.has(modelId);
+            enableLabel.toggleClass('nw-is-active', enable.checked);
             enable.addEventListener('change', async () => {
+                enableLabel.toggleClass('nw-is-active', enable.checked);
                 const next = new Set(this.getRawProvider(raw.id)?.disabledModels || []);
                 if (enable.checked) next.delete(modelId);
                 else next.add(modelId);

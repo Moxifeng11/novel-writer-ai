@@ -21,6 +21,22 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.79.2',
+        date: '2026-11-09',
+        title: '社区目录建议项清理',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧹 优化',
+                items: [
+                    'CSS：!important 183→0、:has 改状态类、滚动条改标准属性、删除重复声明',
+                    'Release：worker 仅入 zip；main.js/styles.css 增加构建来源证明',
+                ],
+            },
+        ],
+    },
+
+    {
         version: '4.79.1',
         date: '2026-11-09',
         title: '社区目录自动审核修复',
