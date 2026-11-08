@@ -2,6 +2,28 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.74.0（2026-11-08）
+
+### 🐛 修复：knowledge-detail-modal「转为指纹」死读取（行为修复）
+
+- `settings.activeProject` 在 `NovelWriterSettings` 上不存在（恒 undefined）→「转为指纹」必然提示「请先打开一个项目」。
+- 改为唯一真源 `plugin.getActiveProject()`（活动文件 → 工作台上下文回退，main.ts:691）。bundle −5B。
+
+### 🧪 测试：knowledge 模态 any 3→0
+
+- `knowledge-detail-modal`：`getPlugin()` → `NovelWriterPlugin`、`ensureScheduler` 断言；
+- `knowledge-rebuild-action`：`plugin: unknown` 以 `KnowledgeVectorStore` 形状断言；
+- any 基线 136→133（74 文件）。
+
+### 📚 文档
+
+- `v5-acceptance` 过期证据纠偏（证据哈希先 `git hash-object` 实测：host-tools 265b99721ec6 / package.json da18733c008b；§四 round 104 / §六 ahead 链）；
+- `COMMERCIAL-GUIDE` §4 剧本流程纠正（分镜表是分集写作的强制前置）；§5 投稿检查表补剧本分镜项。
+
+### 🧪 测试与门禁
+
+- 全量 **594 文件 / 6,560 用例**（v4.73.0 同数，无新增用例，纯收口与修复）；`preflight:release` 全绿；any 133；E2E 五 project **40/40**；三模式 mock AI 旅程 **3/3**。
+
 ## v4.73.0（2026-11-08）
 
 ### ✨ Agent 可执行命令扩容（用户拍板）

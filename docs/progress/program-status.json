@@ -3,10 +3,10 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-08",
   "baseline": {
-    "version": "4.73.0",
+    "version": "4.74.0",
     "tests": {
       "files": 594,
-      "cases": 6560
+      "cases": 6563
     },
     "e2e": 40,
     "e2eNote": "E2E 通过总数：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27 = 40（2026-11-07 全量实测）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑（rewrite-chapters 已随「九霄逆脉行」项目删除而下线）",
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 226,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 第 108 轮实测 ahead 226，HEAD 2c0511b；v4.73.0 已发布；第 106 轮 any 收口随 32a38e8、第 107 轮行为修复随 2c0511b 均已收单，工作树干净）"
+    "localCommitsAhead": 228,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 收单第 108 轮后实测 ahead 228，HEAD 868a820；Trae 并行测试批次使实测用例数持续增长至 6,563；v4.74.0 版本节点提交后 ahead 229）"
   },
   "groups": [
     {

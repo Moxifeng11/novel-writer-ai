@@ -21,6 +21,20 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.74.0',
+        date: '2026-11-08',
+        title: '「转为指纹」死读取修复',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🐛 修复',
+                items: [
+                    'knowledge-detail-modal「转为指纹」恒提示未打开项目（activeProject 字段不存在）',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.73.0',
         date: '2026-11-08',
         title: 'Agent 可执行命令扩容与一致性护栏',
