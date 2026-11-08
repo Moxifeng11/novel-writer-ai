@@ -835,7 +835,7 @@ export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<
       .filter(Boolean);
     vars["entityRelations"] = (await buildEntityRelationsBlock(deps.app, deps.project, charNames, { maxChars: 8 })).trim();
   } catch (e) {
-    console.warn("[TemplateVars] 实体状态速览生成失败:", e);
+    log.warn("实体状态速览生成失败:", e);
     vars["entityRelations"] = "";
   }
   if (deps.stepResults["plotDistill"]) {

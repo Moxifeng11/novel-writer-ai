@@ -11,6 +11,10 @@ import type {
 import { DEFAULT_PROMPT_MANAGER_CONFIG } from '@/shared/prompt-manager-types';
 import { DEFAULT_PROMPT_TEMPLATES } from './prompt-templates-default';
 
+import { createLogger } from '@/shared/logger';
+
+const log = createLogger('PromptManager');
+
 /**
  * 提示词管理器依赖列表结构定义。
  */
@@ -51,7 +55,7 @@ export class PromptManager {
      */
     private flushConfig(): void {
         void this.saveConfig().catch((e: unknown) => {
-            console.error('[PromptManager] 保存提示词配置失败:', e);
+            log.error('保存提示词配置失败:', e);
         });
     }
 

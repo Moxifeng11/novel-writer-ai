@@ -1024,7 +1024,7 @@ export class FullWriterView extends ItemView {
             // 当前章节状态被冲掉。只有「章节正文」才切换工作台上下文。
             if (!file || !this.isChapterBodyPath(file.path)) return;
             void this.handleFileChange(file).catch((error) => {
-                console.error('[FullWriter] 处理章节切换失败:', error);
+                log.error('[FullWriter] 处理章节切换失败:', error);
             });
         }));
 
@@ -2588,7 +2588,7 @@ export class FullWriterView extends ItemView {
                 // P1-18（v4.27）：失败必须可见——旧实现只 console.error，
                 // 渲染再抛错时按钮会永久停在「生成中」，用户看不到原因。
                 const message = e instanceof Error ? e.message : String(e);
-                console.error('[Planning] 一键生成失败:', e);
+                log.error('[Planning] 一键生成失败:', e);
                 this.executionStore.addEvent({
                     type: 'run-error',
                     level: 'error',
@@ -2601,7 +2601,7 @@ export class FullWriterView extends ItemView {
                 try {
                     await this.renderInContainer(this.tabContent);
                 } catch (renderError) {
-                    console.error('[Planning] 失败后重渲染异常:', renderError);
+                    log.error('[Planning] 失败后重渲染异常:', renderError);
                 }
             }
         });

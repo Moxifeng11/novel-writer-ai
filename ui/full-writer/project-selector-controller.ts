@@ -34,6 +34,10 @@ import {
     deleteProject,
 } from '@/ui/project-utils';
 
+import { createLogger } from '@/shared/logger';
+
+const log = createLogger('ProjectSelectorController');
+
 type ProjectMeta = Awaited<ReturnType<typeof getProjectMeta>>;
 
 /**
@@ -892,7 +896,7 @@ export class ProjectSelectorController {
             await this.plugin.engineRegistry.disposeProject(oldProject);
             await this.plugin.engineRegistry.setActiveProject(newProject);
         } catch (e) {
-            console.warn('[ProjectSelector] 重命名后释放旧项目实例失败:', e);
+            log.warn('重命名后释放旧项目实例失败:', e);
         }
         this.plugin.ctxManager.invalidateContextCache(oldProject);
         this.plugin.ctxManager.invalidateContextCache(newProject);

@@ -27,6 +27,10 @@ import { showErrorNotice, showSuccessNotice } from './components/notice-helpers'
 import { AiAssistedPremiseService, type AiPremiseResult } from '@/engine/harness/ai-assisted-premise-service';
 import { creativeRandomizer } from '@/engine/harness/creative-randomizer';
 
+import { createLogger } from '@/shared/logger';
+
+const log = createLogger('PreResearchModal');
+
 type ResearchMode = Extract<CreationMode, 'short' | 'script'>;
 type FieldElement = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
 
@@ -683,7 +687,7 @@ export class PreResearchModal extends Modal {
                     try {
                         await this.plugin.openCreationFlow(project);
                     } catch (navError) {
-                        console.warn('[前期调研] 打开创作流程失败:', navError);
+                        log.warn('打开创作流程失败:', navError);
                         showSuccessNotice('项目已创建，可手动打开「创作流程」继续', { timeout: 6000 });
                     }
                 } catch (e) {

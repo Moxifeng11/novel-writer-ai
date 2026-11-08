@@ -49,6 +49,10 @@ import {
 } from '@/shared/file-mention';
 import { isImeComposing } from '@/shared/keyboard';
 
+import { createLogger } from '@/shared/logger';
+
+const log = createLogger('AgentWorkbench');
+
 const TYPE_SECTIONS: Array<{ mode: CreationMode; label: string }> = [
     { mode: 'long', label: '长篇小说' },
     { mode: 'short', label: '短篇小说' },
@@ -1101,7 +1105,7 @@ export class AgentWorkbenchView extends ItemView {
                 return;
             } catch (e) {
                 if (session !== this.sessionSeq) return;
-                console.warn('[AgentWorkbench] Harness 启动失败，回退规则引擎:', e);
+                log.warn('Harness 启动失败，回退规则引擎:', e);
                 this.harnessEngine = null;
                 showWarningNotice('AI 引导启动失败，已切换到离线逐步引导', { timeout: 5000 });
             }
@@ -1203,7 +1207,7 @@ export class AgentWorkbenchView extends ItemView {
                         ok: result.ok,
                         summary: result.text.slice(0, 300),
                     }),
-                    onStderr: line => console.warn('[dsh]', line),
+                    onStderr: line => log.warn('[dsh]', line),
                 },
             });
             await dsh.initialize({
@@ -1425,7 +1429,7 @@ export class AgentWorkbenchView extends ItemView {
         } catch (e) {
             if (session !== this.sessionSeq) return;
             this.hideTyping();
-            console.error('[AgentWorkbench] 处理输入失败:', e);
+            log.error('处理输入失败:', e);
             showErrorNotice(e instanceof Error ? e.message : String(e), { title: '对话处理失败', timeout: 6000 });
         } finally {
             if (session === this.sessionSeq) this.busy = false;

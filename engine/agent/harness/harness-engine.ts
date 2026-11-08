@@ -29,6 +29,10 @@ import { buildTimeContextMessage, timeContextKey } from '@/shared/time-context';
 import { resolveCompactionCharThreshold } from './context-fit';
 import type { DerivedTurn } from './harness-types';
 
+import { createLogger } from '@/shared/logger';
+
+const logger = createLogger('AgentHarness');
+
 /** 会话压缩配置（吸收 dsh compaction：压力触发 → 范围替换为单个摘要节点） */
 export interface HarnessCompactionOptions {
     /** 派生轮次超过该阈值时触发压缩（默认 30） */
@@ -311,7 +315,7 @@ export class AgentHarnessEngine {
                 });
             }
         } catch (e) {
-            console.warn('[AgentHarness] 会话压缩失败（本轮跳过）:', e);
+            logger.warn('会话压缩失败（本轮跳过）:', e);
         }
     }
 
@@ -471,7 +475,7 @@ export class AgentHarnessEngine {
         try {
             this.options.onSessionChange(this.serialize());
         } catch (e) {
-            console.warn('[AgentHarness] 会话快照回调失败:', e);
+            logger.warn('会话快照回调失败:', e);
         }
     }
 

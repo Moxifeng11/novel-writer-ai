@@ -13,6 +13,10 @@
  * 落盘失败 catch 返回 false，不抛未捕获异常（TR-7.4）。
  */
 
+import { createLogger } from '@/shared/logger';
+
+const log = createLogger('GenerationCheckpoint');
+
 /** 生成断点数据（失败/中断时的现场快照） */
 export interface GenerationCheckpoint {
     projectId: string;
@@ -94,7 +98,7 @@ export class GenerationCheckpointStore {
             return true;
         } catch (e) {
             // 落盘失败不阻断主流程：断点是恢复性增强，写不进去只影响"可恢复"，不影响当前生成
-            console.warn('[GenerationCheckpoint] 断点落盘失败:', e);
+            log.warn('断点落盘失败:', e);
             return false;
         }
     }
@@ -113,7 +117,7 @@ export class GenerationCheckpointStore {
             const parsed = JSON.parse(raw) as GenerationCheckpoint;
             return parsed && typeof parsed.content === 'string' ? parsed : null;
         } catch (e) {
-            console.warn('[GenerationCheckpoint] 断点读取失败:', e);
+            log.warn('断点读取失败:', e);
             return null;
         }
     }
@@ -128,7 +132,7 @@ export class GenerationCheckpointStore {
             const key = makeCheckpointKey(locator.projectId, locator.chapter, locator.sceneNum, locator.promptHash);
             await this.port.remove(key);
         } catch (e) {
-            console.warn('[GenerationCheckpoint] 断点清除失败:', e);
+            log.warn('断点清除失败:', e);
         }
     }
 
@@ -146,7 +150,7 @@ export class GenerationCheckpointStore {
                 ? list.filter((c) => c && typeof c.content === 'string')
                 : [];
         } catch (e) {
-            console.warn('[GenerationCheckpoint] 断点列出失败:', e);
+            log.warn('断点列出失败:', e);
             return [];
         }
     }

@@ -27,6 +27,10 @@ import {
 import { applyFanficReviewMeta, auditFanficSettings } from '@/shared/fanfic-audit';
 import { FanficReviewModal } from './fanfic-review-modal';
 
+import { createLogger } from '@/shared/logger';
+
+const log = createLogger('AddFanficSettingModal');
+
 /**
  * AddFanficSettingModal 类。
  */
@@ -112,7 +116,7 @@ export class AddFanficSettingModal extends Modal {
 
         if (this.project) {
             void ensureFanficTemplate(this.app, this.project).catch((error) => {
-                console.warn('[AddFanficSetting] 恢复同人设定模板失败:', error);
+                log.warn('恢复同人设定模板失败:', error);
             });
             this.renderPendingSection(contentEl);
             this.renderTemplateSection(contentEl, nameInput);

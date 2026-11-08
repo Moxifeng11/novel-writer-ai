@@ -32,6 +32,10 @@ import {
 } from './spill-store';
 import { pushUsageScope } from '@/services/usage-ledger';
 
+import { createLogger } from '@/shared/logger';
+
+const logger = createLogger('AgentHarnessLoop');
+
 /**
  * Harness 循环选项。
  */
@@ -542,7 +546,7 @@ async function runHarnessTurnInner(options: HarnessLoopOptions): Promise<Harness
                     resultContent = replacement;
                 }
             } catch (e) {
-                console.warn('[AgentHarness] 大结果落盘失败，保留原文:', e);
+                logger.warn('大结果落盘失败，保留原文:', e);
             }
         }
         lastToolContent = resultContent;
