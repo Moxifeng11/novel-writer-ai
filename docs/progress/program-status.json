@@ -3,7 +3,7 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-09",
   "baseline": {
-    "version": "4.78.0",
+    "version": "4.79.0",
     "tests": {
       "files": 603,
       "cases": 6647
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 1,
-    "localCommitsAheadNote": "相对 origin/master 的未提交数（2026-11-09 ahead 1：支持作者改为支付宝收钱码（账号作废）+ 放大按钮/卡片排版；origin/master=4bcb7ed）；全量 603 文件 / 6,647 用例，any 74/42，main.js 4,923,241 = 基线，styles.css 476,804，覆盖率 44.19/43.93/45.01/44.52"
+    "localCommitsAhead": 2,
+    "localCommitsAheadNote": "相对 origin/master 的未提交数（2026-11-09 v4.79.0 节点计入后 ahead 2；origin/master=6a1df9d）；全量 603 文件 / 6,647 用例，any 74/42，main.js 4,924,044 = 基线，styles.css 476,804，覆盖率 44.19/43.93/45.00/44.52"
   },
   "groups": [
     {

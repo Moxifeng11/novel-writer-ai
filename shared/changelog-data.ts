@@ -21,6 +21,33 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.79.0',
+        date: '2026-11-09',
+        title: '结算回滚安全加固 + 密钥门禁 + 支持作者收钱码',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🐛 修复',
+                items: [
+                    '结算回滚不再误删用户文件（快照读失败三态化 + DELETE_ENTITY 入 journal）',
+                    'NEW_* 并发新建加锁；回滚后不再误报「新建 N 项」',
+                    '知识库源文本路径穿越、Agent 覆盖确认引号绕过、审批摘要真实参数',
+                    '全角数字章节标题可识别（第１２章 / 卷１２ / １２、）',
+                ],
+            },
+            {
+                type: 'added',
+                label: '🛡️ 新增',
+                items: [
+                    'check:secrets 推送前密钥门禁（只扫跟踪文件，命中输出脱敏）',
+                    '设置-关于页支持作者入口：支付宝收钱码内嵌 + 放大按钮/卡片排版',
+                    '密钥明文风险明确标注（未设口令时提示随同步/备份扩散）',
+                ],
+            },
+        ],
+    },
+
+    {
         version: '4.78.0',
         date: '2026-11-08',
         title: 'engine any 第三/四批收口与首次推送',

@@ -2,6 +2,34 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.79.0（2026-11-09）
+
+### 🛡️ 数据一致性：结算回滚不再误删用户文件（2 项 P1 + 1 项并发 P1）
+
+- `recordWholeFileBefore` 三态化：只有确认文件不存在才登记「本次新建」；「存在但读失败」改为标记 `snapshotIncomplete`（回滚时转 `settlementPartial` 可见），**不再在回滚时删除用户已有文件**；调用方已读内容时传 `knownBefore`，消除二次读与 TOCTOU。
+- `DELETE_ENTITY` 删除前锁内记录整文件前值（人物/地点/势力/物品 + 伏笔库/时间线行），部分失败回滚可重建被删文件。
+- 回滚分支一并清零 `created*` 计数，结算表不再误报「新建 N 项」。
+- `settleStep_create{Characters,Locations,Factions,Items}` 的存在性判断移入 `withWriteLock` 内重查，只有真正新建才登记 `createdFiles`——并发结算不再双写同一路径、也不会在任一方回滚时删掉另一方合法新建的文件。
+
+### 🔐 安全：2 项 P1 修复 + 密钥门禁
+
+- **知识库源文本路径穿越**：源文本文件名此前用原始书名拼接（`../../x` 可写出书目录并覆盖任意 `.txt`）；新增 `kbBookSourceFile()` 单源，目录与文件名两段都净化。
+- **Agent 覆盖确认绕过**：`write_file` 的新文件自动放行用原始路径判断，带引号路径会让 `exists=false` 而跳过覆盖确认；新增 `shouldAutoApproveNewFile()`，先净化再判存在。
+- **审批摘要展示真实参数**：`run_command` 带 `reason` 时也能看到命令 ID，写/删/移显示真实路径。
+- **新增 `check:secrets` 门禁**（preflight + CI）：只扫 git 跟踪文件，检测密钥形态（`sk-…`/`oc_sk_…`/真实密文载荷/长 Bearer）与禁止入库路径（`data.json`/`data/`/`.sessions/`/`.trae/mailbox/`/`*.bak`），命中只打印脱敏片段。
+- **密钥明文风险明确标注**（用户拍板 B）：未设口令时设置页明确提示「密钥以明文保存在 data.json，会随同步/备份扩散」，不改变保存行为。
+
+### 🎁 新增：支持作者（支付宝收钱码）
+
+- 设置「关于」页新增独立支持卡片与放大按钮；点开直接展示支付宝收钱码（39KB 图内嵌 data URI，社区市场只分发 main.js/manifest/styles，独立图片不会随插件安装）。
+- 原转账账号方式作废；插件不发起支付、不读取支付信息、不收集数据。
+
+### 🧹 其他修复
+
+- **全角数字章节标题可识别**：`第１２章` / `第 １２ 章` / `１２、` / `卷１２` / `Chapter １２`；删除 4 条冗余模式，bundle 功能净减 −3B。
+- 新增 `shared/dom-window` 遗留项收口与协同 popout 三连（v4.79.0 前批次）：文档点击按宿主窗口绑定、质量浮窗/建议抽屉按所属窗口挂载并随视图关闭收回。
+- 交叉审计维度①②③报告入库：`docs/audits/auto-cross-audit-2026-11-09-{obsidian-lifecycle,data-consistency,security}.md`（双视角交叉取证；含 1 项误报纠偏）。
+
 ## v4.78.0（2026-11-08）
 
 ### 🧹 engine any 第三/四批（24 处，纯类型擦除）
