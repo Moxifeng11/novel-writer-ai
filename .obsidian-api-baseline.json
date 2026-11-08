@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-08T22:06:20.254Z",
-  "note": "v4.80.0 批量 B3：30 个 Modal 重复的 wrapper margin / contentEl width / overflow-y 内联样式统一为 22-modal-layout.css（.modal.nw-scope / .nw-scope .modal-content）；static-style-assignment 505→394",
+  "generatedAt": "2026-11-08T22:11:00.418Z",
+  "note": "v4.80.0 批量 B3a：角色/势力/物品/地点/世界观 5 个生成弹窗的改名、正文编辑、成功页与进度显隐共 55 处改为 nw-gen-modal-* / nw-u-d-none；static-style-assignment 394→339",
   "rules": {
     "plugin-path-hardcoded": {
       "count": 0,
@@ -27,7 +27,7 @@
       "files": {}
     },
     "static-style-assignment": {
-      "count": 394,
+      "count": 339,
       "files": {
         "ui/agent-workbench-view.ts": 1,
         "ui/ai-builder-modal.ts": 6,
@@ -56,10 +56,6 @@
         "ui/full-writer/step-render-controller.ts": 4,
         "ui/full-writer/title-bar-controller.ts": 1,
         "ui/full-writer/wizard-step-renderers.ts": 6,
-        "ui/generate-character-modal.ts": 16,
-        "ui/generate-faction-modal.ts": 13,
-        "ui/generate-item-modal.ts": 13,
-        "ui/generate-location-modal.ts": 13,
         "ui/knowledge-detail-modal.ts": 1,
         "ui/knowledge-monitor-modal.ts": 2,
         "ui/manage-providers-modal.ts": 1,

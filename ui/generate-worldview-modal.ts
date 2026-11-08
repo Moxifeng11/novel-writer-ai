@@ -45,7 +45,7 @@ export class GenerateWorldviewModal extends Modal {
         contentEl.addClass('nw-form-stack');
 
         contentEl.empty();
-        contentEl.createEl('h2', { text: '🌍 生成世界观', attr: { style: 'margin:0; font-size:18px;' } });
+        contentEl.createEl('h2', { text: '🌍 生成世界观', cls: 'nw-gen-modal-heading' });
 
         const projectSelect = contentEl.createEl('select', { cls: 'nw-select novel-writer-select' });
 

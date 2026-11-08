@@ -145,7 +145,7 @@ export class GenerateFactionModal extends Modal {
             const progressLabel = contentEl.createDiv({ cls: 'nw-gen-modal-progress' });
 
             // 脉冲动画进度条
-            const progressBarTrack = contentEl.createDiv({ cls: 'nw-gen-modal-progress-bar' });
+            const progressBarTrack = contentEl.createDiv({ cls: 'nw-gen-modal-progress-bar nw-u-d-none' });
             const progressBarFill = progressBarTrack.createDiv({ cls: 'nw-gen-modal-progress-fill' });
 
             const generateButton = contentEl.createEl('button', {
@@ -187,9 +187,9 @@ export class GenerateFactionModal extends Modal {
                 generateButton.disabled = true;
                 const modelName = this.plugin.settings.flashModel || this.plugin.settings.defaultModel || 'AI';
                 generateButton.setText(`⏳ 正在生成 ${count} 个势力（模型：${modelName}）...`);
-                progressLabel.style.display = 'block';
+                progressLabel.removeClass('nw-u-d-none');
                 progressLabel.setText(`⏳ 准备中...（模型：${modelName}）`);
-                progressBarTrack.style.display = 'block';
+                progressBarTrack.removeClass('nw-u-d-none');
                 progressBarFill.addClass('nw-progress-anim');
                 showProgress(`⏳ 正在生成势力...（模型：${modelName}）`);
                 // 等一帧让进度条先渲染（后台窗口由 nextFrame 内部超时兜底，见 P0-2）
@@ -221,13 +221,13 @@ export class GenerateFactionModal extends Modal {
                     hideProgress();
                     new Notice(`❌ AI调用失败: ${(e as { message?: string })?.message || e}`, 8000);
                     log.error('[生成势力] AI异常:', e);
-                    generateButton.disabled = false; generateButton.setText(originalButtonText); progressLabel.style.display = 'none'; progressBarTrack.style.display = 'none'; progressBarFill.removeClass('nw-progress-anim');
+                    generateButton.disabled = false; generateButton.setText(originalButtonText); progressLabel.addClass('nw-u-d-none'); progressBarTrack.addClass('nw-u-d-none'); progressBarFill.removeClass('nw-progress-anim');
                     return;
                 }
                 if (results.length === 0) {
                     hideProgress();
                     new Notice('❌ 生成失败', 8000);
-                    generateButton.disabled = false; generateButton.setText(originalButtonText); progressLabel.style.display = 'none'; progressBarTrack.style.display = 'none'; progressBarFill.removeClass('nw-progress-anim');
+                    generateButton.disabled = false; generateButton.setText(originalButtonText); progressLabel.addClass('nw-u-d-none'); progressBarTrack.addClass('nw-u-d-none'); progressBarFill.removeClass('nw-progress-anim');
                     return;
                 }
 
@@ -270,11 +270,11 @@ export class GenerateFactionModal extends Modal {
                     if (existing) { existing.remove(); renameBtn.setText('✏️ 改名'); return; }
                     renameBtn.setText('✏️ 收起');
                     const inline = card.createDiv({ cls: 'rename-inline' });
-                    inline.style.cssText = 'display:flex; gap:6px; align-items:center; margin-top:6px;';
+                    inline.addClass('nw-gen-modal-inline-row');
                     const input = inline.createEl('input', { type: 'text', value: managed.entity.name });
-                    input.style.cssText = 'flex:1; font-size:var(--nw-font-size-sm, 12px); padding:4px 8px; border:1px solid var(--interactive-accent); border-radius:4px;';
+                    input.addClass('nw-gen-modal-inline-input');
                     const confirmBtn = inline.createEl('button', { text: '✅ 确认' });
-                    confirmBtn.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 8px; cursor:pointer; background:var(--interactive-accent); color:var(--text-on-accent); border:none; border-radius:4px; white-space:nowrap;';
+                    confirmBtn.addClass('nw-gen-modal-inline-btn', 'nw-gen-modal-inline-btn-primary');
                     confirmBtn.onclick = () => {
                         const nm = input.value;
                         if (!nm || !nm.trim()) { inline.remove(); renameBtn.setText('✏️ 改名'); return; }
@@ -285,7 +285,7 @@ export class GenerateFactionModal extends Modal {
                         renameBtn.setText('✏️ 改名');
                     };
                     const cancelBtn = inline.createEl('button', { text: '取消' });
-                    cancelBtn.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 8px; cursor:pointer; border:1px solid var(--background-modifier-border); border-radius:4px; white-space:nowrap;';
+                    cancelBtn.addClass('nw-gen-modal-inline-btn');
                     cancelBtn.onclick = () => { inline.remove(); renameBtn.setText('✏️ 改名'); };
                     input.addEventListener('keydown', (e) => {
                         if (isImeComposing(e)) return;
@@ -310,14 +310,14 @@ export class GenerateFactionModal extends Modal {
                     if (exist) { exist.remove(); editBtn.setText('📝 编辑'); return; }
                     editBtn.setText('📝 收起');
                     const ed = card.createDiv({ cls: 'entity-editor' });
-                    ed.style.cssText = 'margin-top:8px;';
+                    ed.addClass('nw-gen-modal-editor');
                     const ta = ed.createEl('textarea');
                     ta.value = managed.entity.content;
-                    ta.style.cssText = 'width:100%; min-height:240px; font-size:var(--nw-font-size-sm, 12px); font-family:monospace; box-sizing:border-box;';
+                    ta.addClass('nw-gen-modal-editor-textarea');
                     const br = ed.createDiv();
-                    br.style.cssText = 'display:flex; gap:6px; margin-top:6px;';
+                    br.addClass('nw-gen-modal-editor-actions');
                     const sb = br.createEl('button', { text: '💾 暂存修改' });
-                    sb.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 10px; cursor:pointer;';
+                    sb.addClass('nw-gen-modal-editor-btn');
                     sb.onclick = () => {
                         managed.entity.content = ta.value;
                         managed.modified = true;
@@ -326,7 +326,7 @@ export class GenerateFactionModal extends Modal {
                         editBtn.setText('📝 编辑');
                     };
                     const cb = br.createEl('button', { text: '取消' });
-                    cb.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 10px; cursor:pointer;';
+                    cb.addClass('nw-gen-modal-editor-btn');
                     cb.onclick = () => { ed.remove(); editBtn.setText('📝 编辑'); };
                 };
                 const delBtn = actionRow.createEl('button', { text: '🗑️ 删除', cls: 'nw-gen-modal-sm-btn nw-gen-modal-del-btn' });

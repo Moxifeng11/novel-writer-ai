@@ -24,6 +24,7 @@
  *   - styles-src/20-runtime-modals.css
  *   - styles-src/21-progress-components.css
  *   - styles-src/22-modal-layout.css
+ *   - styles-src/23-generate-modals.css
  *
  * 修改样式请编辑 styles-src/ 下对应源文件，然后运行 npm run build:styles
  * （npm run build 与 preflight 均已包含该步骤 / 一致性校验）。
@@ -18622,4 +18623,100 @@ body.nw-panel-resizing .nw-awb-center iframe {
 .nw-scope .modal-content {
     width: 100%;
     overflow-y: auto;
+}
+/* ==========================================================================
+ * 23-generate-modals.css — 实体生成弹窗共用样式（v4.80.0 批次 B3a）
+ * ==========================================================================
+ * 角色/势力/物品/地点/世界观 5 个生成弹窗由同一模板复制而来，
+ * 行内改名、正文编辑、成功页三块结构完全一致，原先各自写 cssText。
+ * 这里统一成类，五处共用；新增生成类弹窗请直接复用，不要复制内联样式。
+ * ========================================================================== */
+
+.nw-gen-modal-inline-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+}
+.nw-gen-modal-inline-input {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid var(--interactive-accent);
+    border-radius: 4px;
+    font-size: var(--nw-font-size-sm, 12px);
+}
+.nw-gen-modal-inline-btn {
+    padding: 4px 8px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    font-size: var(--nw-font-size-sm, 12px);
+    white-space: nowrap;
+    cursor: pointer;
+}
+.nw-gen-modal-inline-btn-primary {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+}
+.nw-gen-modal-editor {
+    margin-top: 8px;
+}
+.nw-gen-modal-editor-textarea {
+    width: 100%;
+    min-height: 240px;
+    box-sizing: border-box;
+    font-family: monospace;
+    font-size: var(--nw-font-size-sm, 12px);
+}
+.nw-gen-modal-editor-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+.nw-gen-modal-editor-btn {
+    padding: 4px 10px;
+    font-size: var(--nw-font-size-sm, 12px);
+    cursor: pointer;
+}
+.nw-gen-modal-success {
+    padding: 40px 20px;
+    text-align: center;
+}
+.nw-gen-modal-success-icon {
+    margin-bottom: 16px;
+    font-size: 48px;
+}
+.nw-gen-modal-success-title {
+    margin-bottom: 8px;
+    color: var(--text-normal);
+}
+.nw-gen-modal-success-desc {
+    color: var(--text-muted);
+    font-size: var(--nw-font-size-base, 13px);
+}
+.nw-gen-modal-success-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 24px;
+}
+.nw-gen-modal-next-btn {
+    padding: 8px 24px;
+    border: none;
+    border-radius: 6px;
+    background: var(--text-accent);
+    color: var(--text-on-accent);
+    font-weight: 600;
+    cursor: pointer;
+}
+.nw-gen-modal-close-btn {
+    padding: 8px 24px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    background: var(--background-secondary);
+    cursor: pointer;
+}
+.nw-gen-modal-heading {
+    margin: 0;
+    font-size: 18px;
 }

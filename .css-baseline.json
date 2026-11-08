@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-08T22:06:20.428Z",
-  "note": "v4.80.0 批量 B3：新增 22-modal-layout.css 两条弹窗布局规则（+964B，类数不变）；替换 30+37+44 处内联样式，无颜色/important 变化",
-  "bytes": 512818,
+  "generatedAt": "2026-11-08T22:11:00.591Z",
+  "note": "v4.80.0 批量 B3a：新增 23-generate-modals.css（5 个生成弹窗共用改名/编辑/成功页样式，+2658B/+16 类）；颜色走主题变量，hex/rgb 指标不变",
+  "bytes": 515476,
   "important": 19,
   "hardcodedHex": 161,
   "rgbHsl": 188,
-  "uniqueClasses": 2748,
+  "uniqueClasses": 2764,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

@@ -158,7 +158,7 @@ export class GenerateCharacterModal extends Modal {
             const progressLabel = contentEl.createDiv({ cls: 'nw-gen-modal-progress' });
 
             // 脉冲动画进度条
-            const progressBarTrack = contentEl.createDiv({ cls: 'nw-gen-modal-progress-bar' });
+            const progressBarTrack = contentEl.createDiv({ cls: 'nw-gen-modal-progress-bar nw-u-d-none' });
             const progressBarFill = progressBarTrack.createDiv({ cls: 'nw-gen-modal-progress-fill' });
 
             const generateButton = contentEl.createEl('button', {
@@ -205,9 +205,9 @@ export class GenerateCharacterModal extends Modal {
                 generateButton.disabled = true;
                 const modelName = this.plugin.settings.flashModel || this.plugin.settings.defaultModel || 'AI';
                 generateButton.setText(`⏳ 正在生成 ${count} 个人物（模型：${modelName}）...`);
-                progressLabel.style.display = 'block';
+                progressLabel.removeClass('nw-u-d-none');
                 progressLabel.setText(`⏳ 准备中...（模型：${modelName}）`);
-                progressBarTrack.style.display = 'block';
+                progressBarTrack.removeClass('nw-u-d-none');
                 progressBarFill.addClass('nw-progress-anim');
                 // 等一帧让进度条先渲染（后台窗口由 nextFrame 内部超时兜底，见 P0-2）
                 await nextFrame();
@@ -265,7 +265,7 @@ export class GenerateCharacterModal extends Modal {
                 } catch (e) {
                     showErrorNotice(`AI调用失败: ${(e as { message?: string })?.message || e}`, { timeout: 8000 });
                     log.error('[生成人物] AI异常:', e);
-                    generateButton.disabled = false; generateButton.setText('🚀 批量生成人物'); progressLabel.style.display = 'none'; progressBarTrack.style.display = 'none'; progressBarFill.removeClass('nw-progress-anim');
+                    generateButton.disabled = false; generateButton.setText('🚀 批量生成人物'); progressLabel.addClass('nw-u-d-none'); progressBarTrack.addClass('nw-u-d-none'); progressBarFill.removeClass('nw-progress-anim');
                     return;
                 }
 
@@ -273,7 +273,7 @@ export class GenerateCharacterModal extends Modal {
 
                 if (result.error) {
                     showErrorNotice(`人物生成失败: ${result.error}`, { timeout: 8000 });
-                    generateButton.disabled = false; generateButton.setText('🚀 批量生成人物'); progressLabel.style.display = 'none'; progressBarTrack.style.display = 'none'; progressBarFill.removeClass('nw-progress-anim');
+                    generateButton.disabled = false; generateButton.setText('🚀 批量生成人物'); progressLabel.addClass('nw-u-d-none'); progressBarTrack.addClass('nw-u-d-none'); progressBarFill.removeClass('nw-progress-anim');
                     return;
                 }
 
@@ -355,11 +355,11 @@ export class GenerateCharacterModal extends Modal {
                     if (existing) { existing.remove(); renameBtn.setText('✏️ 改名'); return; }
                     renameBtn.setText('✏️ 收起');
                     const inline = card.createDiv({ cls: 'rename-inline' });
-                    inline.style.cssText = 'display:flex; gap:6px; align-items:center; margin-top:6px;';
+                    inline.addClass('nw-gen-modal-inline-row');
                     const input = inline.createEl('input', { type: 'text', value: managed.entity.name });
-                    input.style.cssText = 'flex:1; font-size:var(--nw-font-size-sm, 12px); padding:4px 8px; border:1px solid var(--interactive-accent); border-radius:4px;';
+                    input.addClass('nw-gen-modal-inline-input');
                     const confirmBtn = inline.createEl('button', { text: '✅ 确认' });
-                    confirmBtn.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 8px; cursor:pointer; background:var(--interactive-accent); color:var(--text-on-accent); border:none; border-radius:4px; white-space:nowrap;';
+                    confirmBtn.addClass('nw-gen-modal-inline-btn', 'nw-gen-modal-inline-btn-primary');
                     confirmBtn.onclick = () => {
                         const nm = input.value;
                         if (!nm || !nm.trim()) { inline.remove(); renameBtn.setText('✏️ 改名'); return; }
@@ -370,7 +370,7 @@ export class GenerateCharacterModal extends Modal {
                         renameBtn.setText('✏️ 改名');
                     };
                     const cancelBtn = inline.createEl('button', { text: '取消' });
-                    cancelBtn.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 8px; cursor:pointer; border:1px solid var(--background-modifier-border); border-radius:4px; white-space:nowrap;';
+                    cancelBtn.addClass('nw-gen-modal-inline-btn');
                     cancelBtn.onclick = () => { inline.remove(); renameBtn.setText('✏️ 改名'); };
                     input.addEventListener('keydown', (e) => {
                         if (isImeComposing(e)) return;
@@ -395,14 +395,14 @@ export class GenerateCharacterModal extends Modal {
                     if (exist) { exist.remove(); editBtn.setText('📝 编辑'); return; }
                     editBtn.setText('📝 收起');
                     const ed = card.createDiv({ cls: 'entity-editor' });
-                    ed.style.cssText = 'margin-top:8px;';
+                    ed.addClass('nw-gen-modal-editor');
                     const ta = ed.createEl('textarea');
                     ta.value = managed.entity.content;
-                    ta.style.cssText = 'width:100%; min-height:240px; font-size:var(--nw-font-size-sm, 12px); font-family:monospace; box-sizing:border-box;';
+                    ta.addClass('nw-gen-modal-editor-textarea');
                     const br = ed.createDiv();
-                    br.style.cssText = 'display:flex; gap:6px; margin-top:6px;';
+                    br.addClass('nw-gen-modal-editor-actions');
                     const sb = br.createEl('button', { text: '💾 暂存修改' });
-                    sb.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 10px; cursor:pointer;';
+                    sb.addClass('nw-gen-modal-editor-btn');
                     sb.onclick = () => {
                         managed.entity.content = ta.value;
                         managed.modified = true;
@@ -411,7 +411,7 @@ export class GenerateCharacterModal extends Modal {
                         editBtn.setText('📝 编辑');
                     };
                     const cb = br.createEl('button', { text: '取消' });
-                    cb.style.cssText = 'font-size:var(--nw-font-size-sm, 12px); padding:4px 10px; cursor:pointer;';
+                    cb.addClass('nw-gen-modal-editor-btn');
                     cb.onclick = () => { ed.remove(); editBtn.setText('📝 编辑'); };
                 };
                 const delBtn = actionRow.createEl('button', { text: '🗑️ 删除', cls: 'nw-gen-modal-sm-btn nw-gen-modal-del-btn' });
@@ -461,17 +461,17 @@ export class GenerateCharacterModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
         const successDiv = contentEl.createDiv({ cls: 'nw-gen-modal-success' });
-        successDiv.style.cssText = 'padding:40px 20px; text-align:center;';
-        successDiv.createEl('div', { text: '✅', attr: { style: 'font-size:48px; margin-bottom:16px;' } });
-        successDiv.createEl('h3', { text: `已保存 ${createdCount} 个${entityLabel}`, attr: { style: 'color:var(--text-normal); margin-bottom:8px;' } });
-        successDiv.createEl('p', { text: '实体已保存到磁盘，关闭窗口后将在向导中自动标记为已完成。', attr: { style: 'color:var(--text-muted); font-size:var(--nw-font-size-base, 13px);' } });
+        successDiv.addClass('nw-gen-modal-success');
+        successDiv.createEl('div', { text: '✅', cls: 'nw-gen-modal-success-icon' });
+        successDiv.createEl('h3', { text: `已保存 ${createdCount} 个${entityLabel}`, cls: 'nw-gen-modal-success-title' });
+        successDiv.createEl('p', { text: '实体已保存到磁盘，关闭窗口后将在向导中自动标记为已完成。', cls: 'nw-gen-modal-success-desc' });
         
-        const btnBar = successDiv.createDiv({ attr: { style: 'display:flex; gap:12px; justify-content:center; margin-top:24px;' } });
+        const btnBar = successDiv.createDiv({ cls: 'nw-gen-modal-success-actions' });
         const nextBtn = btnBar.createEl('button', { text: '下一步 →' });
-        nextBtn.style.cssText = 'padding:8px 24px; border-radius:6px; border:none; background:var(--text-accent); color:white; cursor:pointer; font-weight:600;';
+        nextBtn.addClass('nw-gen-modal-next-btn');
         nextBtn.onclick = () => this.close();
         const closeBtn = btnBar.createEl('button', { text: '关闭' });
-        closeBtn.style.cssText = 'padding:8px 24px; border-radius:6px; border:1px solid var(--background-modifier-border); background:var(--background-secondary); cursor:pointer;';
+        closeBtn.addClass('nw-gen-modal-close-btn');
         closeBtn.onclick = () => this.close();
     }
 
