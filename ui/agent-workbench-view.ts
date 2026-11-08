@@ -29,6 +29,7 @@ import { fetchStagePanelModel } from './agent-workbench/stage-panel';
 import type { HarnessTurnOutcome } from '@/engine/agent/harness/harness-types';
 import { createAgentPort, getAgentContext } from './services/agent-port';
 import { listProjectIds } from '@/shared/project-catalog';
+import { pluginRootDirPath } from '@/shared/paths';
 import type { CreationMode } from '@/shared/creation-mode';
 import { resolveProjectMode as resolveModeFromShared } from '@/shared/project-mode';
 import { openModelPickerPopover, formatWorkbenchModelBadge, closeExistingPopovers } from './model-picker-popover';
@@ -1133,7 +1134,7 @@ export class AgentWorkbenchView extends ItemView {
                 showErrorNotice('无法获取 vault 路径，dsh 后端不可用', { timeout: 6000 });
                 return false;
             }
-            const pluginDir = this.plugin.manifest.dir || `${this.app.vault.configDir}/plugins/novel-writer-ai`;
+            const pluginDir = pluginRootDirPath();
             const relHome = `${pluginDir}/data/dsh`;
             const home = `${base}/${relHome}`;
             if (adapter.exists && adapter.mkdir && !(await adapter.exists(relHome))) {

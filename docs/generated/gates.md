@@ -26,6 +26,7 @@
 | `npm run check:inline-styles` | 内联样式基线棘轮 |
 | `npm run check:jsdoc` | 注释覆盖率（棘轮） |
 | `npm run check:linked-scenarios` | 联动场景文档锚点检查 |
+| `npm run check:obsidian-api` | — |
 | `npm run check:program` | 校验进度报告与台账一致 |
 | `npm run check:relationship-authority` | 关系数据权威源契约检查 |
 | `npm run check:release` | 发布资产/版本/tag/worker/模板嵌入一致性校验 |
@@ -70,23 +71,24 @@
 05. npm run check:styles
 06. npm run check:css
 07. npm run check:inline-styles
-08. npm run check:deps -- --baseline .arch-baseline.json --require-baseline
-09. npm run check-engines
-10. npm run check:program
-11. npm run check:relationship-authority
-12. npm run check:silent-failures
-13. npm run check:hotpaths
-14. npm run check:write-entry
-15. npm run check:linked-scenarios
-16. npm run check:automation
-17. npm run check:dsh-isolation
-18. npm run check:jsdoc
-19. npm run check:any
-20. npm run check:changelog
-21. npm run check:docs
-22. npm run build
-23. npm run check:bundle
-24. npm run check:release
+08. npm run check:obsidian-api
+09. npm run check:deps -- --baseline .arch-baseline.json --require-baseline
+10. npm run check-engines
+11. npm run check:program
+12. npm run check:relationship-authority
+13. npm run check:silent-failures
+14. npm run check:hotpaths
+15. npm run check:write-entry
+16. npm run check:linked-scenarios
+17. npm run check:automation
+18. npm run check:dsh-isolation
+19. npm run check:jsdoc
+20. npm run check:any
+21. npm run check:changelog
+22. npm run check:docs
+23. npm run build
+24. npm run check:bundle
+25. npm run check:release
 ```
 
 ## 说明

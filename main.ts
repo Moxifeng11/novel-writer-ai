@@ -51,7 +51,7 @@ import { WritingStatsModal } from './ui/writing-stats-modal';
 import { WritingPet } from './ui/writing-pet';
 import { formatWords } from './shared/writing-stats';
 import { redactSecrets } from './shared/secret-redaction';
-import { projectIdFromPath } from './shared/paths';
+import { projectIdFromPath, pluginRootDirPath, setPluginRootDir } from './shared/paths';
 import { CoWritingView, VIEW_TYPE_CO_WRITE } from './ui/co-writing-view';
 import { KnowledgeBaseView, VIEW_TYPE_KNOWLEDGE_BASE } from './ui/views/knowledge-base-view';
 import { AgentWorkbenchView } from './ui/agent-workbench-view';
@@ -744,6 +744,12 @@ export default class NovelWriterPlugin extends Plugin {
      */
     async onload() {
         log.info(`[小说工坊] 开始加载插件 v${PLUGIN_VERSION}...`);
+        // v4.76.0：插件数据目录单源。必须先于任何 shared/paths 派生路径调用注入——
+        // 用户可改 vault.configDir（如 .config/obsidian），BRAT 安装的文件夹名也可能不同，
+        // 业务代码不得再硬编码 `.obsidian/plugins/novel-writer-ai`。
+        if (this.manifest.dir) {
+            setPluginRootDir(`${this.app.vault.configDir}/${this.manifest.dir}`);
+        }
         this.engineRegistry = new EngineRegistry();
         // 本地真人样文（仅本机 data 目录）：失败静默，提示词自动退化为弱约束模式
         void loadHumanSamples(this.app);
@@ -1022,9 +1028,8 @@ export default class NovelWriterPlugin extends Plugin {
     private async _pruneSessionsOnce(force = false): Promise<PruneResult[]> {
         try {
             const adapter = this.app.vault.adapter;
-            // 与 step-runner 同源：manifest.dir 理论上必有，兜底走 configDir 拼装
-            const pluginDir = this.manifest.dir
-                ?? `${this.app.vault.configDir}/plugins/novel-writer-ai`;
+            // 与 step-runner 同源：统一走 shared/paths 注入的插件根目录（v4.76.0 单源）
+            const pluginDir = pluginRootDirPath();
             // 独立列举函数：避免为了一次目录列举再实例化 AnalysisSessionManager（引擎守卫）
             const analysisPort: RetentionTarget = {
                 list: () => listAnalysisSessionFiles(this.app.vault, `${pluginDir}/.sessions`, `${pluginDir}/.sessions/_index.json`),

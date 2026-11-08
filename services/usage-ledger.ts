@@ -7,6 +7,7 @@
  */
 import type { App } from 'obsidian';
 import { createLogger } from '@/shared/logger';
+import { pluginDataFile } from '@/shared/paths';
 
 const log = createLogger('UsageLedger');
 
@@ -89,12 +90,13 @@ export interface UsageSummary {
 /**
  * 账本落盘路径（configDir 可能被用户改过，不能硬编码 .obsidian）。
  *
- * @param app - Obsidian 应用实例
+ * v4.76.0：改为走 shared/paths 的插件数据目录——`_onload` 用
+ * `${vault.configDir}/${manifest.dir}` 注入，兼容自定义配置目录与 BRAT 插件文件夹名。
+ *
  * @returns 插件数据目录下的账本文件路径
  */
-function ledgerPath(app: App): string {
-    const configDir = app.vault.configDir;
-    return `${configDir}/plugins/novel-writer-ai/data/usage-ledger.json`;
+function ledgerPath(): string {
+    return pluginDataFile('usage-ledger.json');
 }
 const MAX_RECORDS = 500;
 
@@ -284,7 +286,7 @@ export class UsageLedger {
         this.loaded = true;
         try {
             const adapter = this.app.vault.adapter;
-            const path = ledgerPath(this.app);
+            const path = ledgerPath();
             if (!(await adapter.exists(path))) return;
             const raw = await adapter.read(path);
             const parsed = JSON.parse(raw) as { records?: UsageRecord[] };
@@ -361,7 +363,7 @@ export class UsageLedger {
         if (!this.app) return;
         try {
             const adapter = this.app.vault.adapter;
-            const path = ledgerPath(this.app);
+            const path = ledgerPath();
             const dir = path.substring(0, path.lastIndexOf('/'));
             if (!(await adapter.exists(dir))) await adapter.mkdir(dir);
             // write-entry-allow: 用量账本是 JSON，位于插件数据目录，不在 vault 索引。

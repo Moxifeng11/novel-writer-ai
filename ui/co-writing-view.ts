@@ -2067,11 +2067,11 @@ ${text}`;
       this.previewContent.createDiv({ cls: "novel-writer-cowrite-empty", text: "\u6B63\u6587\u9884\u89C8\u4F1A\u5728\u8FD9\u91CC\u5B9E\u65F6\u540C\u6B65\u3002" });
       return;
     }
-    // renderMarkdown 是异步的：直接写常驻 previewContent 时，旧一轮（或切章前）的
-    // 渲染结果会追加到已清空/已重建的容器里，与新内容混在一起。先渲染到 detached
-    // 容器，代次仍匹配才整体搬运。
+    // v4.76.0：`MarkdownRenderer.renderMarkdown` 自 1.4 起弃用（官方审查会报），
+    // 换成新签名 render(app, markdown, el, sourcePath, component)；异步语义不变，
+    // 仍先渲染到 detached 容器，代次匹配才整体搬运。
     const staging = this.previewContent.ownerDocument.createElement('div');
-    await MarkdownRenderer.renderMarkdown(content, staging, this.getBodyPath(), this);
+    await MarkdownRenderer.render(this.app, content, staging, this.getBodyPath(), this);
     if (token !== this.previewSeq) return;
     this.previewContent.empty();
     while (staging.firstChild) {

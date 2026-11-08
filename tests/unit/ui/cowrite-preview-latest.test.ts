@@ -7,7 +7,7 @@ vi.mock('../../../main', () => ({
 const { renderQueue, markdownMock } = vi.hoisted(() => {
     const renderQueue: Array<{ el: any; resolve: () => void }> = [];
     const markdownMock = vi.fn(
-        (_content: string, el: any) => new Promise<void>(resolve => {
+        (_app: unknown, _content: string, el: any) => new Promise<void>(resolve => {
             renderQueue.push({ el, resolve });
         }),
     );
@@ -16,7 +16,8 @@ const { renderQueue, markdownMock } = vi.hoisted(() => {
 
 vi.mock('obsidian', async (importOriginal) => {
     const actual = await importOriginal<any>();
-    return { ...actual, MarkdownRenderer: { renderMarkdown: markdownMock } };
+    // v4.76.0：CoWritingView 改用新签名 MarkdownRenderer.render(app, md, el, path, component)
+    return { ...actual, MarkdownRenderer: { render: markdownMock } };
 });
 
 import { CoWritingView } from '../../../ui/co-writing-view';

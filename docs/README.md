@@ -1,7 +1,7 @@
 # 开发文档总索引
 
 > 本文件是 `docs/` 的唯一入口。新增文档必须在这里登记，否则 `npm run check:docs` 会失败。
-> 版本：v4.75.0 · 2026-11-04 · 对应插件版本以 `package.json` 为准。
+> 版本：v4.76.0 · 2026-11-04 · 对应插件版本以 `package.json` 为准。
 
 ---
 
@@ -75,6 +75,7 @@
 | 专项任务进度 | `docs/progress/program-status.json` | `check:program` |
 | CSS 预算 | `.css-baseline.json` | `check:css` |
 | 内联样式预算 | `.inline-style-baseline.json` | `check:inline-styles` |
+| Obsidian API 用法（棘轮） | `.obsidian-api-baseline.json` | `check:obsidian-api` |
 | 分层/循环/引擎实例 | `.arch-baseline.json` | `check:deps`、`check-engines` |
 | JSDoc 覆盖 | `.jsdoc-baseline.json` + `generated/jsdoc-coverage.md` | `check:jsdoc` |
 | 发布资产清单 | `.github/workflows/release.yml` 的 `ASSETS` | `check:release` |

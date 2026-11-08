@@ -9,6 +9,7 @@
  * - 记录上次检查时间，避免频繁检查
  */
 
+import { requestUrl, type RequestUrlResponse } from 'obsidian';
 import { PluginCacheManager } from '@/shared/plugin-cache';
 import { GITHUB_REPO_SLUG, buildGitHubLatestReleaseApi, normalizeGitHubRepo } from '@/shared/github-repo';
 
@@ -281,9 +282,10 @@ export class UpdateChecker {
         if (this.config.githubToken?.trim()) {
             headers.Authorization = `Bearer ${this.config.githubToken.trim()}`;
         }
-        let response: Response;
+        let response: RequestUrlResponse;
         try {
-            response = await fetch(url, { headers });
+            // v4.76.0：改 requestUrl——移动端 fetch 无 CORS 豁免，GitHub API 会直接被拦。
+            response = await requestUrl({ url, headers, throw: false });
         } catch (e) {
             throw new UpdateCheckError(
                 'network',
@@ -291,7 +293,7 @@ export class UpdateChecker {
             );
         }
 
-        if (!response.ok) {
+        if (response.status < 200 || response.status >= 300) {
             if (response.status === 404) {
                 throw new UpdateCheckError('http', `仓库或 Release 不存在或无权访问（404）：${safeRepo}`);
             }
@@ -303,7 +305,7 @@ export class UpdateChecker {
 
         let data: Record<string, unknown>;
         try {
-            data = await response.json() as Record<string, unknown>;
+            data = response.json as Record<string, unknown>;
         } catch {
             throw new UpdateCheckError('parse', 'GitHub 返回内容无法解析');
         }
@@ -323,9 +325,10 @@ export class UpdateChecker {
 
     /** 从自定义服务器检查更新 */
     private async checkCustomSource(url: string): Promise<VersionInfo> {
-        let response: Response;
+        let response: RequestUrlResponse;
         try {
-            response = await fetch(url);
+            // v4.76.0：同 checkGitHub——移动端必须走 requestUrl
+            response = await requestUrl({ url, throw: false });
         } catch (e) {
             throw new UpdateCheckError(
                 'network',
@@ -333,13 +336,13 @@ export class UpdateChecker {
             );
         }
 
-        if (!response.ok) {
+        if (response.status < 200 || response.status >= 300) {
             throw new UpdateCheckError('http', `更新服务器返回 HTTP ${response.status}`);
         }
 
         let data: Record<string, unknown>;
         try {
-            data = await response.json() as Record<string, unknown>;
+            data = response.json as Record<string, unknown>;
         } catch {
             throw new UpdateCheckError('parse', '更新服务器返回内容无法解析');
         }

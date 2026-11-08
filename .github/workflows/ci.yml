@@ -45,6 +45,9 @@ jobs:
       - name: 内联样式基线检查
         run: npm run check:inline-styles
 
+      - name: Obsidian API 用法门禁（棘轮基线）
+        run: npm run check:obsidian-api
+
       - name: 分层依赖与循环依赖（棘轮基线）
         run: npm run check:deps -- --baseline .arch-baseline.json --require-baseline
 

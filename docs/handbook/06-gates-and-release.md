@@ -24,7 +24,8 @@
 2. 生成物类：`check:templates` / `check:styles` / `gen:docs` / `check:program` → 重新生成，不要手改。
 3. 预算类：`check:css` / `check:inline-styles` → 降指标或按流程更新基线并写 `note`。
 4. 架构类：`check:deps` / `check-engines` → 修 import 或按白名单登记，禁止直接改基线放行。
-5. 文档类：`check:docs` / `check:jsdoc` → 修链接/版本戳/注释，不要用 `--update-baseline` 掩盖回退。
+5. API 用法类：`check:obsidian-api` → 改用 `shared/paths` 单源 / `requestUrl` / `shared/logger` / 成对移除监听；确需新增才 `--update-baseline` 并写 `note`。
+6. 文档类：`check:docs` / `check:jsdoc` → 修链接/版本戳/注释，不要用 `--update-baseline` 掩盖回退。
 6. 测试类：先复现单文件，再跑全量；不要跳过失败用例。
 
 ## 3. 发布流程（当前口径）

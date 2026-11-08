@@ -10,11 +10,19 @@
 import type { App } from 'obsidian';
 import { setExemplarLibrary, clearExemplarLibrary, type ExemplarSample } from '@/engine/prompts/style-exemplars';
 import { createLogger } from '@/shared/logger';
+import { pluginDataFile } from '@/shared/paths';
 
 const log = createLogger('HumanSamples');
 
-/** 插件 data 目录（vault 相对路径） */
-export const HUMAN_SAMPLE_DIR = '.obsidian/plugins/novel-writer-ai/data/human-samples';
+/**
+ * 插件 data 下的真人样文目录（vault 相对路径）。
+ * 惰性求值：onload 注入 configDir + manifest.dir 后才得到真实路径。
+ *
+ * @returns 样文目录路径
+ */
+export function humanSampleDir(): string {
+    return pluginDataFile('human-samples');
+}
 
 interface SampleFile {
     book?: string;
@@ -30,10 +38,11 @@ interface SampleFile {
 export async function loadHumanSamples(app: App): Promise<number> {
     const adapter = app.vault.adapter;
     try {
-        if (!(await adapter.exists(HUMAN_SAMPLE_DIR))) {
+        const dir = humanSampleDir();
+        if (!(await adapter.exists(dir))) {
             return 0;
         }
-        const listing = await adapter.list(HUMAN_SAMPLE_DIR);
+        const listing = await adapter.list(dir);
         const files = listing.files.filter((file) => file.endsWith('.json') && !file.endsWith('baseline.json'));
         const collected: ExemplarSample[] = [];
         for (const file of files) {

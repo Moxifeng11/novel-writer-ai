@@ -7,7 +7,7 @@
  */
 import { App, TFile } from 'obsidian';
 import { listFolderFiles } from '@/shared/vault-tree';
-import { pjVersionsDir } from '@/shared/paths';
+import { pjVersionsDir, pluginDataFile } from '@/shared/paths';
 import type { VersionMeta } from '@/shared/version-types';
 
 /** 备份条目类型。 */
@@ -34,10 +34,9 @@ export interface BackupCenterReport {
 }
 
 const CONTENT_TYPES: Array<VersionMeta['contentType']> = ['chapter', 'outline', 'worldview', 'character', 'setting'];
-/** 插件配置备份路径（configDir 可能被用户改过） */
-function pluginBackupPath(app: App): string {
-    const configDir = app.vault.configDir;
-    return `${configDir}/plugins/novel-writer-ai/data/data.json.bak`;
+/** 插件配置备份路径：走共享插件数据目录（兼容自定义 configDir 与插件文件夹名） */
+function pluginBackupPath(): string {
+    return pluginDataFile('data.json.bak');
 }
 
 function emptySummary(): Record<BackupEntryKind, number> {
@@ -98,7 +97,7 @@ async function collectStepArtifacts(app: App, project: string): Promise<BackupCe
 async function collectSettingsBackup(app: App): Promise<BackupCenterEntry[]> {
     try {
         const adapter = app.vault.adapter;
-        const backupPath = pluginBackupPath(app);
+        const backupPath = pluginBackupPath();
         if (!(await adapter.exists(backupPath))) return [];
         const stat = await adapter.stat(backupPath).catch(() => null);
         return [{

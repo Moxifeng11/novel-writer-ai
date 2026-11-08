@@ -1,4 +1,20 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
+/**
+ * v4.76.0：更新检查改走 `requestUrl`（移动端 fetch 无 CORS 豁免）。
+ * 因此这里 mock 的是 obsidian 的 requestUrl，而不是全局 fetch；
+ * 返回形状用 `RequestUrlResponse` 的 `{ status, json }`（原实现断言 `response.ok`）。
+ */
+const { requestUrlMock } = vi.hoisted(() => ({ requestUrlMock: vi.fn() }));
+
+vi.mock('obsidian', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('obsidian')>();
+    return {
+        ...actual,
+        requestUrl: (...args: unknown[]) => requestUrlMock(...args),
+    };
+});
+
 import {
     UpdateChecker,
     DEFAULT_UPDATE_CONFIG,
@@ -20,13 +36,22 @@ function makeCache(): PluginCacheManager {
     } as unknown as PluginCacheManager;
 }
 
-function jsonResponse(body: unknown, status = 200): Response {
-    return {
-        ok: status >= 200 && status < 300,
-        status,
-        json: async () => body,
-    } as unknown as Response;
+/** RequestUrlResponse 只用到 status 与 json；json 由代码在 try 内同步取值 */
+function jsonResponse(body: unknown, status = 200): { status: number; json: unknown } {
+    return { status, json: body };
 }
+
+function setResponse(body: unknown, status = 200): void {
+    requestUrlMock.mockResolvedValue(jsonResponse(body, status));
+}
+
+beforeEach(() => {
+    requestUrlMock.mockReset();
+});
+
+afterEach(() => {
+    requestUrlMock.mockReset();
+});
 
 describe('UpdateChecker — 默认配置', () => {
     it('默认仓库与真实发布仓库一致', () => {
@@ -53,17 +78,13 @@ describe('UpdateChecker — GitHub 源', () => {
         cache = makeCache();
     });
 
-    afterEach(() => {
-        vi.unstubAllGlobals();
-    });
-
     it('新版本 tag 返回 hasUpdate=true', async () => {
-        vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({
+        setResponse({
             tag_name: 'v4.12.0',
             published_at: '2026-10-01T00:00:00Z',
             body: 'release notes',
             html_url: 'https://github.com/Moxifeng11/novel-writer-ai/releases/tag/v4.12.0',
-        })));
+        });
         const checker = new UpdateChecker('4.11.0', cache);
         const result = await checker.checkForUpdates(true);
         expect(result.hasUpdate).toBe(true);
@@ -72,7 +93,7 @@ describe('UpdateChecker — GitHub 源', () => {
     });
 
     it('仓库 404 返回 http 错误', async () => {
-        vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({}, 404)));
+        setResponse({}, 404);
         const checker = new UpdateChecker('4.11.0', cache);
         const result = await checker.checkForUpdates(true);
         expect(result.hasUpdate).toBe(false);
@@ -81,7 +102,7 @@ describe('UpdateChecker — GitHub 源', () => {
     });
 
     it('仓库 403 返回 http 错误', async () => {
-        vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({}, 403)));
+        setResponse({}, 403);
         const checker = new UpdateChecker('4.11.0', cache);
         const result = await checker.checkForUpdates(true);
         expect(result.errorKind).toBe('http');
@@ -89,9 +110,7 @@ describe('UpdateChecker — GitHub 源', () => {
     });
 
     it('网络不可达返回 network 错误', async () => {
-        vi.stubGlobal('fetch', vi.fn(async () => {
-            throw new Error('fetch failed');
-        }));
+        requestUrlMock.mockRejectedValue(new Error('request failed'));
         const checker = new UpdateChecker('4.11.0', cache);
         const result = await checker.checkForUpdates(true);
         expect(result.errorKind).toBe('network');
@@ -99,18 +118,17 @@ describe('UpdateChecker — GitHub 源', () => {
     });
 
     it('JSON 解析失败返回 parse 错误', async () => {
-        vi.stubGlobal('fetch', vi.fn(async () => ({
-            ok: true,
+        requestUrlMock.mockResolvedValue({
             status: 200,
-            json: async () => { throw new Error('invalid json'); },
-        } as unknown as Response)));
+            get json(): unknown { throw new Error('invalid json'); },
+        });
         const checker = new UpdateChecker('4.11.0', cache);
         const result = await checker.checkForUpdates(true);
         expect(result.errorKind).toBe('parse');
     });
 
     it('缺少版本号返回 parse 错误', async () => {
-        vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({ body: 'no tag' })));
+        setResponse({ body: 'no tag' });
         const checker = new UpdateChecker('4.11.0', cache);
         const result = await checker.checkForUpdates(true);
         expect(result.errorKind).toBe('parse');
@@ -119,10 +137,6 @@ describe('UpdateChecker — GitHub 源', () => {
 });
 
 describe('UpdateChecker — 自定义源', () => {
-    afterEach(() => {
-        vi.unstubAllGlobals();
-    });
-
     it('缺少自定义 URL 返回 config 错误', async () => {
         const checker = new UpdateChecker('4.11.0', makeCache(), {
             source: 'custom',
@@ -133,10 +147,10 @@ describe('UpdateChecker — 自定义源', () => {
     });
 
     it('自定义源正常返回版本', async () => {
-        vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({
+        setResponse({
             version: 'v4.12.0',
             releaseNotes: 'notes',
-        })));
+        });
         const checker = new UpdateChecker('4.11.0', makeCache(), {
             source: 'custom',
             customUrl: 'https://example.com/update.json',
@@ -148,10 +162,6 @@ describe('UpdateChecker — 自定义源', () => {
 });
 
 describe('UpdateChecker — 缓存版本对齐', () => {
-    afterEach(() => {
-        vi.unstubAllGlobals();
-    });
-
     it('升级后旧缓存 currentVersion 会被当前版本纠正', () => {
         const cache = makeCache();
         cache.setUpdateLastCheck(new Date().toISOString());
@@ -177,20 +187,19 @@ describe('UpdateChecker — 缓存版本对齐', () => {
             error: 'old 404',
             errorKind: 'http',
         });
-        const fetchSpy = vi.fn(async () => jsonResponse({
+        setResponse({
             tag_name: 'v4.18.0',
             published_at: '2026-10-26T00:00:00Z',
             body: '',
             html_url: 'https://github.com/Moxifeng11/novel-writer-ai/releases/tag/v4.18.0',
-        }));
-        vi.stubGlobal('fetch', fetchSpy);
+        });
         const checker = new UpdateChecker('4.18.0', cache);
 
         expect(checker.getLastCheckResult()).toBeNull();
         expect((cache.getUpdateLastResult() as { currentVersion: string }).currentVersion).toBe('4.18.0');
         const result = await checker.checkForUpdates(false);
 
-        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        expect(requestUrlMock).toHaveBeenCalledTimes(1);
         expect(result.currentVersion).toBe('4.18.0');
         expect(result.error).toBeUndefined();
     });
@@ -216,16 +225,13 @@ describe('UpdateChecker — 清空旧仓库缓存', () => {
 });
 
 describe('UpdateChecker — GitHub 仓库与 Token', () => {
-    afterEach(() => { vi.unstubAllGlobals(); });
-
     it('私有仓库 Token 会写入 Authorization 头', async () => {
-        const fetchSpy = vi.fn(async (_url: string, init?: RequestInit) => jsonResponse({
+        setResponse({
             tag_name: 'v4.18.0',
             published_at: '2026-10-26T00:00:00Z',
             body: '',
             html_url: 'https://github.com/Moxifeng11/novel-writer-ai/releases/tag/v4.18.0',
-        }));
-        vi.stubGlobal('fetch', fetchSpy);
+        });
         const checker = new UpdateChecker('4.18.0', makeCache(), {
             enabled: true,
             githubRepo: 'Moxifeng11/novel-writer-ai',
@@ -234,13 +240,11 @@ describe('UpdateChecker — GitHub 仓库与 Token', () => {
 
         await checker.checkForUpdates(true);
 
-        const [, init] = fetchSpy.mock.calls[0];
-        expect((init?.headers as Record<string, string>).Authorization).toBe('Bearer secret-token');
+        const [init] = requestUrlMock.mock.calls[0] as [ { headers?: Record<string, string> } ];
+        expect(init?.headers?.Authorization).toBe('Bearer secret-token');
     });
 
     it('非法仓库格式返回 config 错误且不请求 GitHub', async () => {
-        const fetchSpy = vi.fn();
-        vi.stubGlobal('fetch', fetchSpy);
         const checker = new UpdateChecker('4.18.0', makeCache(), {
             enabled: true,
             githubRepo: 'not a repo',
@@ -248,7 +252,7 @@ describe('UpdateChecker — GitHub 仓库与 Token', () => {
 
         const result = await checker.checkForUpdates(true);
 
-        expect(fetchSpy).not.toHaveBeenCalled();
+        expect(requestUrlMock).not.toHaveBeenCalled();
         expect(result.errorKind).toBe('config');
     });
 });

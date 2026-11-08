@@ -13,7 +13,7 @@ import { auditEmotions } from './emotion-auditor';
 import { KnowledgeInjector } from './knowledge-injector';
 import { buildInjectionLedger, formatInjectionLedger, type InjectionLedgerEntry } from '@/shared/injection-ledger';
 import { WritingProfileManager } from './writing-profile';
-import { pjBodyFile, pjBodyDir, pjCharsDir, pjFactionsDir, pjLocsDir, pjItemsDir } from '@/shared/paths';
+import { pjBodyFile, pjBodyDir, pjCharsDir, pjFactionsDir, pjLocsDir, pjItemsDir, pluginRootDirPath } from '@/shared/paths';
 import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
 import { StepResultSaver, type StepSaveMeta } from './step-result-saver';
 import { StepModalController } from './step-modal-controller';
@@ -1519,8 +1519,7 @@ ${userPrompt}`),
      */
     private async recordAnalysisSession(ctx: StepRunCtx, content: string): Promise<void> {
         try {
-            const pluginDir = this.plugin.manifest?.dir
-                ?? `${this.app.vault.configDir}/plugins/novel-writer-ai`;
+            const pluginDir = pluginRootDirPath();
             const manager = new AnalysisSessionManager({
                 app: { vault: this.app.vault },
                 manifest: { dir: pluginDir },

@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-11-08T12:56:34.144Z",
+  "note": "v4.76.0 建立 Obsidian API 用法棘轮基线。已清零：plugin-path-hardcoded 0（改 shared/paths 注入 configDir+manifest.dir）、deprecated-api 0（renderMarkdown→render）、direct-fetch 0（update-checker 两处改 requestUrl）。存量登记：global-document-listener 9（均已成对 remove，规则防新增）、console-direct 24（后续批次统一改 shared/logger，只降不升）。",
+  "rules": {
+    "plugin-path-hardcoded": {
+      "count": 0,
+      "files": {}
+    },
+    "deprecated-api": {
+      "count": 0,
+      "files": {}
+    },
+    "direct-fetch": {
+      "count": 0,
+      "files": {}
+    },
+    "global-document-listener": {
+      "count": 9,
+      "files": {
+        "ui/components/categorization-review-panel.ts": 1,
+        "ui/create-project-modal.ts": 1,
+        "ui/draggable-panel.ts": 2,
+        "ui/model-picker-popover.ts": 2,
+        "ui/story-linkage-modal.ts": 1,
+        "ui/writing-pet.ts": 2
+      }
+    },
+    "console-direct": {
+      "count": 24,
+      "files": {
+        "engine/agent/harness/agent-loop.ts": 1,
+        "engine/agent/harness/harness-engine.ts": 2,
+        "engine/generation-checkpoint.ts": 4,
+        "engine/knowledge-tags.ts": 1,
+        "services/prompt-manager.ts": 1,
+        "shared/logger.ts": 4,
+        "shared/store/middleware/logger.ts": 1,
+        "ui/add-fanfic-setting-modal.ts": 1,
+        "ui/agent-workbench-view.ts": 3,
+        "ui/full-writer-view.ts": 3,
+        "ui/full-writer/project-selector-controller.ts": 1,
+        "ui/full-writer/template-vars-builder.ts": 1,
+        "ui/pre-research-modal.ts": 1
+      }
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
+import { App, MarkdownRenderer, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
 import { mkdirp, showSuccess, showError, stripFrontmatter } from '@/utils/helpers';
@@ -135,9 +135,12 @@ export class ContinueChaptersModal extends Modal {
             resultMsg += `需要创建的章节：${nextChapter} - ${chapters.length}（共${chapters.length - lastCompleteChapter}章）`;
         }
 
-        const resultEl = document.createElement('div');
-        resultEl.innerHTML = resultMsg;
-        this.contentEl.appendChild(resultEl);
+        // v4.76.0：原实现把 Markdown 串直接赋给 innerHTML——`targetVol`（大纲卷名，AI 可控）
+        // 本身是注入面，而 `##`/`**` 又会原样显示。改为 MarkdownRenderer.render 渲染到容器。
+        const resultEl = this.contentEl.createDiv({ cls: 'nw-continue-result' });
+        // Modal 不是 Component：渲染宿主用插件实例（Plugin extends Component），
+        // 静态结果不注册长生命周期子组件，插件卸载时统一回收。
+        await MarkdownRenderer.render(this.app, resultMsg, resultEl, '', this.plugin);
     }
 
     private async autoCreateChapters(project: string): Promise<void> {

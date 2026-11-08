@@ -904,30 +904,63 @@ export function isInStepDir(project: string, filePath: string): boolean {
 }
 
 // ============================================================
-// 14. 插件数据目录（.obsidian/plugins/ 下）
+// 14. 插件数据目录（配置目录/plugins/ 下）
 // ============================================================
-const PLUGIN_DATA_DIR = '.obsidian/plugins/novel-writer-ai/data';
+/**
+ * 插件根目录的兜底值。Obsidian 允许用户改 `vault.configDir`（如 `.config/obsidian`），
+ * 插件文件夹名也可能是 BRAT 安装的 `obsidian-novel-writer-ai`——因此**不能在业务代码里
+ * 直接拼 `.obsidian/plugins/novel-writer-ai`**。插件 onload 时用
+ * `${vault.configDir}/${manifest.dir}` 调 setPluginRootDir() 覆盖；测试/纯函数环境走兜底。
+ */
+const DEFAULT_PLUGIN_ROOT_DIR = '.obsidian/plugins/novel-writer-ai';
+let pluginRootDir = DEFAULT_PLUGIN_ROOT_DIR;
 
 /**
- * pluginDataDir：返回路径 `PLUGIN_DATA_DIR`。
+ * setPluginRootDir：注入插件实际根目录（`configDir` + `manifest.dir`），onload 时调用一次。
+ *
+ * @param dir - vault 相对的插件根目录，如 `.obsidian/plugins/novel-writer-ai`
+ */
+export function setPluginRootDir(dir: string): void {
+    const cleaned = dir.trim().replace(/[\\/]+$/, '');
+    if (cleaned) pluginRootDir = cleaned;
+}
+
+/**
+ * pluginRootDirPath：返回插件实际根目录（已注入则为真实路径，否则兜底）。
+ *
+ * @returns vault/插件相对路径
+ */
+export function pluginRootDirPath(): string { return pluginRootDir; }
+
+/**
+ * pluginDataDir：返回插件数据目录 `${pluginRootDir}/data`。
  *
  * @returns 拼接后的 vault/插件相对路径
  */
-export function pluginDataDir(): string { return PLUGIN_DATA_DIR; }
+export function pluginDataDir(): string { return `${pluginRootDir}/data`; }
+
 /**
- * pluginPreferenceFile：返回路径 ``${PLUGIN_DATA_DIR}/${project}-preferences.json``。
+ * pluginDataFile：返回插件数据目录下的文件名路径。
+ *
+ * @param name - 数据目录内的文件名（可含子目录）
+ * @returns 拼接后的 vault/插件相对路径
+ */
+export function pluginDataFile(name: string): string { return `${pluginDataDir()}/${name}`; }
+
+/**
+ * pluginPreferenceFile：返回路径 ``${pluginDataDir()}/${project}-preferences.json``。
  *
  * @param project - 项目路径
  * @returns 拼接后的 vault/插件相对路径
  */
-export function pluginPreferenceFile(project: string): string { return `${PLUGIN_DATA_DIR}/${project}-preferences.json`; }
+export function pluginPreferenceFile(project: string): string { return `${pluginDataDir()}/${project}-preferences.json`; }
 /**
- * pluginStylePatternsFile：返回路径 ``${PLUGIN_DATA_DIR}/${project}-style-patterns.json``。
+ * pluginStylePatternsFile：返回路径 ``${pluginDataDir()}/${project}-style-patterns.json``。
  *
  * @param project - 项目路径
  * @returns 拼接后的 vault/插件相对路径
  */
-export function pluginStylePatternsFile(project: string): string { return `${PLUGIN_DATA_DIR}/${project}-style-patterns.json`; }
+export function pluginStylePatternsFile(project: string): string { return `${pluginDataDir()}/${project}-style-patterns.json`; }
 
 // ============================================================
 // 15. 写作指纹库

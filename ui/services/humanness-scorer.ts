@@ -11,10 +11,17 @@ import { AntiAIDetector } from '@/engine/anti-ai-detector';
 import { analyzeDistribution, scoreHumanity, type DistributionHistogram } from '@/shared/human-similarity';
 import type { RefineRoundScore } from '@/shared/iterative-refine';
 import { createLogger } from '@/shared/logger';
+import { pluginDataFile } from '@/shared/paths';
 
 const log = createLogger('HumannessScorer');
 
-const BASELINE_PATH = '.obsidian/plugins/novel-writer-ai/data/human-samples/baseline.json';
+/**
+ * 人味基线文件：走共享插件数据目录。必须是惰性求值——模块顶层求值会读到
+ * onload 注入前的兜底路径（v4.76.0 收口：此前硬编码 `.obsidian/plugins/...`）。
+ */
+function baselinePath(): string {
+    return pluginDataFile('human-samples/baseline.json');
+}
 
 interface BaselineFile {
     distribution?: DistributionHistogram;
@@ -55,8 +62,8 @@ async function loadBaseline(app: App): Promise<DistributionHistogram | null> {
     baselineLoaded = true;
     try {
         const adapter = app.vault.adapter;
-        if (!(await adapter.exists(BASELINE_PATH))) return null;
-        const raw = await adapter.read(BASELINE_PATH);
+        if (!(await adapter.exists(baselinePath()))) return null;
+        const raw = await adapter.read(baselinePath());
         const parsed = JSON.parse(raw) as BaselineFile;
         const dist = parsed.distribution;
         if (dist && Array.isArray(dist.sentence) && Array.isArray(dist.paragraph) && dist.punctuation) {

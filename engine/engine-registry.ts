@@ -156,7 +156,7 @@ import { UpdateChecker } from '@/services/update-checker';
 import { WritingStatsService, type StatsFileLike, type WritingStatsAppLike } from '@/services/writing-stats-service';
 import { isChapterBodyPath, listChapterBodyFiles } from '@/shared/body-path';
 import { ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
-import { pjFactIndexFile } from '@/shared/paths';
+import { pjFactIndexFile, pluginRootDirPath } from '@/shared/paths';
 import { resolvePluginWorkerUrl } from '@/shared/plugin-worker-url';
 import { TemplateService } from './template-service';
 import { ChapterVersionService } from '@/services/chapter-version-service';
@@ -1483,8 +1483,7 @@ export class EngineRegistry {
 
         // ─── Phase 10: 写作统计台账（桌面宠物 / 状态栏 / 统计弹窗共用） ───
         log.info('[EngineRegistry] Phase 10: 初始化写作统计...');
-        const pluginDir = (plugin as unknown as { manifest?: { dir?: string } }).manifest?.dir
-            || `${plugin.app.vault.configDir}/plugins/novel-writer-ai`;
+        const pluginDir = pluginRootDirPath();
         const writingStats = new WritingStatsService({
             app: plugin.app as unknown as WritingStatsAppLike,
             ledgerPath: `${pluginDir}/data/writing-stats.json`,

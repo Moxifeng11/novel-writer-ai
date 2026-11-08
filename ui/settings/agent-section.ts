@@ -10,6 +10,7 @@ import { SettingsSection } from './section-base';
 import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
 import { buildDshLaunchPlan } from '@/engine/agent/dsh/dsh-launch';
 import { probeDshVersion } from '@/engine/agent/dsh/dsh-process';
+import { pluginDataFile } from '@/shared/paths';
 
 /**
  * AgentBackendSection 类。
@@ -116,7 +117,8 @@ export class AgentBackendSection extends SettingsSection {
             probeBtn.setText('检测中…');
             try {
                 const base = (this.app.vault.adapter as unknown as { getBasePath?: () => string }).getBasePath?.() || '';
-                const home = `${base}/${this.app.vault.configDir}/plugins/novel-writer-ai/data/dsh`;
+                // v4.76.0：数据目录走共享单源，兼容自定义 configDir 与 BRAT 插件文件夹名
+                const home = `${base}/${pluginDataFile('dsh')}`;
                 const plan = buildDshLaunchPlan({
                     home,
                     workspace: base,

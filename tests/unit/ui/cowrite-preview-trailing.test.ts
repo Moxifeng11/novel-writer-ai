@@ -5,12 +5,13 @@ vi.mock('../../../main', () => ({
 }));
 
 const { markdownMock } = vi.hoisted(() => ({
-    markdownMock: vi.fn(async (_content: string, _el: unknown) => { /* 渲染立即完成 */ }),
+    // v4.76.0：新签名 render(app, content, el, path, component) —— content 是第 2 参
+    markdownMock: vi.fn(async (_app: unknown, _content: string, _el: unknown) => { /* 渲染立即完成 */ }),
 }));
 
 vi.mock('obsidian', async (importOriginal) => {
     const actual = await importOriginal<any>();
-    return { ...actual, MarkdownRenderer: { renderMarkdown: markdownMock } };
+    return { ...actual, MarkdownRenderer: { render: markdownMock } };
 });
 
 import { CoWritingView } from '../../../ui/co-writing-view';
@@ -84,7 +85,7 @@ describe('CoWritingView — 预览节流的尾随渲染', () => {
         vi.setSystemTime(1500);
         await vi.advanceTimersByTimeAsync(300);
         expect(markdownMock).toHaveBeenCalledTimes(2);
-        expect(markdownMock.mock.calls[1][0]).toBe('第一段+第二段');
+        expect(markdownMock.mock.calls[1][1]).toBe('第一段+第二段');
     });
 
     it('窗口内连续多次触发只补一次渲染，且用最后一次正文', async () => {
@@ -103,7 +104,7 @@ describe('CoWritingView — 预览节流的尾随渲染', () => {
 
         await vi.advanceTimersByTimeAsync(1000);
         expect(markdownMock).toHaveBeenCalledTimes(2);
-        expect(markdownMock.mock.calls[1][0]).toBe('一+二+三+四');
+        expect(markdownMock.mock.calls[1][1]).toBe('一+二+三+四');
     });
 
     it('强制刷新会取消挂起的尾随渲染（不重复渲染）', async () => {
