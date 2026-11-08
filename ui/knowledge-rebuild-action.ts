@@ -9,6 +9,7 @@
 import { App, Notice } from 'obsidian';
 import { OperationConfirmModal } from './components/progress';
 import { createLogger } from '@/shared/logger';
+import type { KnowledgeVectorStore } from '@/engine/knowledge-vector-store';
 
 
 const log = createLogger('KnowledgeRebuildAction');
@@ -32,7 +33,7 @@ export async function rebuildKnowledgeIndexWithConfirm(
     if (!confirmed) return;
     try {
         new Notice('⏳ 正在重建索引...');
-        const store = (plugin as any).knowledgeVectorStore;
+        const store = (plugin as { knowledgeVectorStore?: KnowledgeVectorStore }).knowledgeVectorStore;
         if (store && typeof store.rebuildIndex === 'function') {
             await store.rebuildIndex();
             new Notice('✅ 索引重建完成');

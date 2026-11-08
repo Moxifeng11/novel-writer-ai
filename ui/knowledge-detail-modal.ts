@@ -23,6 +23,7 @@ import { createLogger } from '@/shared/logger';
 import { normalizeDetailNumber } from './knowledge-detail-format';
 import { openKnowledgeFolder } from './knowledge-folder-navigation';
 import { escapeHtml } from '@/utils/helpers';
+import type NovelWriterPlugin from '@/main';
 
 
 const log = createLogger('KnowledgeDetailModal');
@@ -274,10 +275,10 @@ export class KnowledgeDetailModal extends Modal {
         this.renderTabContent(contentEl);
     }
 
-    private getPlugin(): any | null {
+    private getPlugin(): NovelWriterPlugin | null {
         try {
             const plugin = this.app.plugins?.getPlugin('novel-writer-ai');
-            if (plugin) return plugin;
+            if (plugin) return plugin as NovelWriterPlugin;
         } catch {
         }
         return null;
@@ -338,7 +339,8 @@ export class KnowledgeDetailModal extends Modal {
             const fingerprint = await converter.convert(this.bookId, this.bookInfo.name, this.baseDir);
 
             const plugin = this.getPlugin();
-            const activeProject = plugin?.settings?.activeProject;
+            // 历史字段名，settings 上并不存在；行为修复单独走批次，本轮只做类型收口
+            const activeProject = (plugin?.settings as { activeProject?: string } | undefined)?.activeProject;
             if (!activeProject) {
                 new Notice('请先打开一个项目');
                 return;
@@ -1676,7 +1678,7 @@ export class KnowledgeDetailModal extends Modal {
     private ensureScheduler(): DeconstructionScheduler | null {
         if (this.deconstructionScheduler) return this.deconstructionScheduler;
         try {
-            const plugin = this.app.plugins.getPlugin('novel-writer-ai') as any;
+            const plugin = this.app.plugins.getPlugin('novel-writer-ai') as NovelWriterPlugin;
             const embeddingProvider = EmbeddingProviderFactory.fromSettings(plugin?.settings);
             const vectorEnhancer = new VectorEnhancer(embeddingProvider);
             this.deconstructionScheduler = new DeconstructionScheduler(
