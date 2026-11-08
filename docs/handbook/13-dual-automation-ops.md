@@ -72,7 +72,7 @@
 | 维度 | 来源 | 用途 |
 |---|---|---|
 | 运行状态 | `git status/HEAD/ahead`、canonical 台账 `round/rounds/params` | 在途收口、同型连续性、失败/回退 |
-| 门禁压力 | `constraints.gateMargins`（`preflight`/`any`） | 红灯优先、any 长尾收口 |
+| 门禁压力 | `constraints.gateMargins`（`preflight`/`any`）、`.any-baseline.json`（`total` + `files` 分桶） | 红灯优先、any 长尾收口；分桶口径：`engine/**` + `ui/views/**` 为红线、`shared/types.ts` 为设计性、其余为可动 |
 | 体积 | `.bundle-baseline.json` + `params.startupEvalBaselineBytes` | 显著膨胀（>20KB 或 ≥1%）才生成 perf 候选 |
 | 测试规模 | `docs/progress/program-status.json` | 连续三轮无新增用例时提示补测 |
 | 文档漂移 | `PROJECT-RULES.md` HANDOFF + `package.json` 版本 | 版本不一致 / 快照超过 24h |
@@ -84,6 +84,7 @@
 - 在途收口口径：只统计「未在台账登记的脏路径」（与 `lastRound.changedFiles` + `backlog.untracked` + `backlog.inFlightPaths` 求差集）；已登记待收单只产生告警，不锁定层级——Trae 不 commit，否则每轮恒为 `backlog`。
 - 评分：`EV = 影响 × 风险降低 × 可验证性 / 成本 × 类型权重`，再乘多样性（同型连续 -20%/轮，下限 0.4）、失败/回退惩罚、收益递减（0.9^n，下限 0.7）、探索加成（`explorationRoll < explorationRate` 时 +15%）。
 - 连续同型达到 `forcedTypeSwitchAfter` 时标记 `forcedSwitch` 并减半；无派工时直接排除，保证强制换型。
+- `gate:any` 按可动面计分：证据展示「总存量 = 红线 + 设计性 + 可动」；可动面低于 `anyMovableDownweightThreshold`（默认 10）时 impact/风险降为 1 并再乘 `downweight` 0.5，可动面为 0 时不生成候选——避免把对方红线内的存量算成自己的 EV。
 - 全部判断确定：探索只读台账 `explorationRoll`，不使用随机数；同一输入必得同一输出。
 
 ### 7.4 扩展方式

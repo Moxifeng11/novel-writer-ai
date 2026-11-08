@@ -148,6 +148,54 @@ describe('detectAdvisorCandidates', () => {
         expect(anyCandidate?.evidence).toContain('存量 4');
     });
 
+    it('any 存量分桶后按可动面生成候选并给出分桶证据', () => {
+        const facts = makeFacts({
+            gates: {
+                preflightOk: true,
+                anyRemaining: 133,
+                anyBuckets: { redline: 100, design: 6, movable: 27 },
+                bundleBytes: 1,
+                startupBaselineBytes: 1,
+            },
+        });
+        const anyCandidate = detectAdvisorCandidates(facts).find(candidate => candidate.id === 'gate:any');
+        expect(anyCandidate?.title).toContain('可动 27/133');
+        expect(anyCandidate?.evidence).toContain('红线 100');
+        expect(anyCandidate?.evidence).toContain('设计性 6');
+        expect(anyCandidate?.evidence).not.toContain('已降权');
+    });
+
+    it('可动面低于阈值时 gate:any 自动降权', () => {
+        const facts = makeFacts({
+            gates: {
+                preflightOk: true,
+                anyRemaining: 133,
+                anyBuckets: { redline: 100, design: 6, movable: 27 },
+                bundleBytes: 1,
+                startupBaselineBytes: 1,
+            },
+            params: makeParams({ anyMovableDownweightThreshold: 30 }),
+        });
+        const anyCandidate = detectAdvisorCandidates(facts).find(candidate => candidate.id === 'gate:any');
+        expect(anyCandidate?.evidence).toContain('低于阈值 30，已降权');
+        const scored = scoreAdvisorCandidates([anyCandidate!], facts)[0];
+        expect(scored.factors.downweight).toBe(0.5);
+    });
+
+    it('可动面为 0 时不再生成 gate:any 候选', () => {
+        const facts = makeFacts({
+            gates: {
+                preflightOk: true,
+                anyRemaining: 106,
+                anyBuckets: { redline: 100, design: 6, movable: 0 },
+                bundleBytes: 1,
+                startupBaselineBytes: 1,
+            },
+        });
+        const ids = detectAdvisorCandidates(facts).map(candidate => candidate.id);
+        expect(ids).not.toContain('gate:any');
+    });
+
     it('体积超过启动基线时生成 perf 候选并给出百分比', () => {
         const facts = makeFacts({
             gates: { preflightOk: true, anyRemaining: 0, bundleBytes: 4_900_000, startupBaselineBytes: 4_850_000 },
@@ -208,8 +256,10 @@ describe('scoreAdvisorCandidates', () => {
             recentRounds: makeRounds('gate-fix', 2),
         }));
         expect(candidateFacts.round).toBe(87);
-        expect(repeated[0].factors.diversity).toBeLessThan(fresh[0].factors.diversity);
-        expect(repeated[0].score).toBeLessThan(fresh[0].score);
+        const freshGate = fresh.find(candidate => candidate.id === 'gate:any');
+        const repeatedGate = repeated.find(candidate => candidate.id === 'gate:any');
+        expect(repeatedGate?.factors.diversity).toBeLessThan(freshGate?.factors.diversity ?? 0);
+        expect(repeatedGate?.score).toBeLessThan(freshGate?.score ?? 0);
     });
 
     it('最近一轮回退时同型候选受回退惩罚', () => {
@@ -220,8 +270,10 @@ describe('scoreAdvisorCandidates', () => {
         const reverted = scoreAdvisorCandidates(candidates, makeFacts({
             recentRounds: makeRounds('gate-fix', 1, { reverted: true }),
         }));
-        expect(reverted[0].factors.failure).toBeCloseTo(0.75);
-        expect(reverted[0].factors.failure).toBeLessThan(normal[0].factors.failure);
+        const normalGate = normal.find(candidate => candidate.id === 'gate:any');
+        const revertedGate = reverted.find(candidate => candidate.id === 'gate:any');
+        expect(revertedGate?.factors.failure).toBeCloseTo(0.75);
+        expect(revertedGate?.factors.failure).toBeLessThan(normalGate?.factors.failure ?? 0);
     });
 
     it('连续同型达到阈值后标记强制换型并减半', () => {

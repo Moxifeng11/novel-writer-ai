@@ -58,6 +58,8 @@ export interface AdvisorParams {
     explorationRoll: number;
     /** 单轮最多推荐动作数 */
     maxActionsPerRound: number;
+    /** gate:any 可动面低于该值时自动降权，避免按总存量虚高、连续刷长尾 */
+    anyMovableDownweightThreshold: number;
 }
 
 /** 判断所需事实（由 CLI 从 git、台账、门禁、信箱与文档采集） */
@@ -83,6 +85,15 @@ export interface AdvisorFacts {
         preflightOk: boolean;
         /** any 基线存量（采集自 .any-baseline.json total，缺失时回退台账 gateMargins 存量；0 表示无待收口存量） */
         anyRemaining: number;
+        /** any 存量按可动性分桶（缺省时按历史口径把 total 全视为可动） */
+        anyBuckets?: {
+            /** 分工红线：engine/ 与 ui/views/ 前缀，由 ZCode 接手 */
+            redline: number;
+            /** 设计性：shared/types.ts 刻意索引签名 */
+            design: number;
+            /** 可动：其余单点长尾 */
+            movable: number;
+        };
         /** 当前 main.js 体积（采集自实文件 stat，缺失时回退 .bundle-baseline.json 基线值） */
         bundleBytes: number;
         /** 台账记录的启动体积基线 */
@@ -132,6 +143,8 @@ export interface AdvisorCandidate {
     dispatchPriority?: boolean;
     /** 是否为在途收口候选 */
     backlog?: boolean;
+    /** 候选自带降权系数（缺省 1）；用于按可动面收紧虚高分数 */
+    downweight?: number;
 }
 
 /** 评分明细，便于解释为什么推荐它 */
@@ -148,6 +161,8 @@ export interface AdvisorScoreFactors {
     diminishing: number;
     /** 探索加成系数 */
     exploration: number;
+    /** 可动面降权系数 */
+    downweight: number;
 }
 
 /** 评分后的候选 */
@@ -212,6 +227,7 @@ export const DEFAULT_ADVISOR_PARAMS: AdvisorParams = {
     explorationRate: 0.15,
     explorationRoll: 0.58,
     maxActionsPerRound: 2,
+    anyMovableDownweightThreshold: 10,
 };
 
 /** 采集回退：主源数值缺失/非法时回退基线值，不抛错
@@ -382,17 +398,30 @@ export function detectAdvisorCandidates(facts: AdvisorFacts): AdvisorCandidate[]
             cost: 1,
         });
     } else if (facts.gates.anyRemaining > 0) {
-        add({
-            id: 'gate:any',
-            type: 'gate-fix',
-            title: `收口 any 长尾（存量 ${facts.gates.anyRemaining}）`,
-            reason: 'any 存量大于 0 时做纯类型收口，零运行时、可逐字节验证体积不变',
-            evidence: `any 存量 ${facts.gates.anyRemaining}（.any-baseline.json total，缺失回退台账）`,
-            impact: 2,
-            riskReduction: 2,
-            verifiability: 5,
-            cost: 2,
-        });
+        const buckets = facts.gates.anyBuckets;
+        const movable = buckets ? buckets.movable : facts.gates.anyRemaining;
+        if (movable > 0) {
+            const threshold = facts.params.anyMovableDownweightThreshold;
+            const downweighted = movable < threshold;
+            add({
+                id: 'gate:any',
+                type: 'gate-fix',
+                title: `收口 any 长尾（可动 ${movable}/${facts.gates.anyRemaining}）`,
+                reason: downweighted
+                    ? `any 总存量 ${facts.gates.anyRemaining} 中可动面仅 ${movable}（< ${threshold}），按可动面降权，避免连续刷长尾`
+                    : 'any 存量大于 0 时做纯类型收口，零运行时、可逐字节验证体积不变',
+                evidence: buckets
+                    ? `any 存量 ${facts.gates.anyRemaining} = 红线 ${buckets.redline}（engine/**、ui/views/**，ZCode 接手）`
+                        + ` + 设计性 ${buckets.design}（shared/types.ts 索引签名）`
+                        + ` + 可动 ${movable}${downweighted ? `（低于阈值 ${threshold}，已降权）` : ''}`
+                    : `any 存量 ${facts.gates.anyRemaining}（.any-baseline.json total，缺失回退台账）`,
+                impact: downweighted ? 1 : 2,
+                riskReduction: downweighted ? 1 : 2,
+                verifiability: 5,
+                cost: 2,
+                downweight: downweighted ? 0.5 : 1,
+            });
+        }
     }
 
     if (facts.gates.startupBaselineBytes > 0 && facts.gates.bundleBytes > facts.gates.startupBaselineBytes) {
@@ -507,13 +536,14 @@ export function scoreAdvisorCandidates(
             : 1;
         const exploration = params.explorationRoll < params.explorationRate && consecutive === 0 ? 1.15 : 1;
         const forcedSwitch = !candidate.dispatchPriority && consecutive >= params.forcedTypeSwitchAfter;
-        const multiplier = weight * diversity * failure * diminishing * exploration * (forcedSwitch ? 0.5 : 1);
+        const downweight = candidate.downweight ?? 1;
+        const multiplier = weight * diversity * failure * diminishing * exploration * downweight * (forcedSwitch ? 0.5 : 1);
         const score = Math.round(base * multiplier * 100) / 100;
         return {
             ...candidate,
             score,
             forcedSwitch,
-            factors: { base, weight, diversity, failure, diminishing, exploration },
+            factors: { base, weight, diversity, failure, diminishing, exploration, downweight },
         };
     });
     return scored.sort((left, right) => right.score - left.score || left.id.localeCompare(right.id));

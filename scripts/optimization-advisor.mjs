@@ -156,6 +156,19 @@ function collectDispatch(currentRound, lastDispatchId) {
     return undefined;
 }
 
+function collectAnyBuckets(anyBaseline) {
+    const files = anyBaseline?.files;
+    if (!files || typeof files !== 'object') return undefined;
+    const buckets = { redline: 0, design: 0, movable: 0 };
+    for (const [file, count] of Object.entries(files)) {
+        const amount = Number(count) || 0;
+        if (file.startsWith('engine/') || file.startsWith('ui/views/')) buckets.redline += amount;
+        else if (file === 'shared/types.ts') buckets.design += amount;
+        else buckets.movable += amount;
+    }
+    return buckets;
+}
+
 function collectFacts(params, rounds) {
     const state = readJson(STATE_PATH, null);
     const bundle = readJson(path.join(ROOT, '.bundle-baseline.json'), { files: {} });
@@ -173,6 +186,7 @@ function collectFacts(params, rounds) {
         typeof anyBaseline?.total === 'number' ? anyBaseline.total : undefined,
         anyMatch ? Number(anyMatch[1]) : 0,
     );
+    const anyBuckets = collectAnyBuckets(anyBaseline);
     const bundleBytes = core.resolveMetricWithFallback(
         statSize(path.join(ROOT, 'main.js')),
         bundle?.files?.['main.js'] ?? 0,
@@ -184,7 +198,7 @@ function collectFacts(params, rounds) {
         params,
         recentRounds: rounds,
         worktree: collectWorktree(state),
-        gates: { preflightOk, anyRemaining, bundleBytes, startupBaselineBytes },
+        gates: { preflightOk, anyRemaining, anyBuckets, bundleBytes, startupBaselineBytes },
         docs: {
             versionMismatch: handoff.version !== '' && pkg.version !== '' && handoff.version !== pkg.version,
             handoffStale: handoff.stale,
@@ -231,6 +245,7 @@ async function main() {
         inputs: {
             preflightOk: facts.gates.preflightOk,
             anyRemaining: facts.gates.anyRemaining,
+            anyBuckets: facts.gates.anyBuckets ?? null,
             bundleBytes: facts.gates.bundleBytes,
             startupBaselineBytes: facts.gates.startupBaselineBytes,
             tests: facts.tests,
