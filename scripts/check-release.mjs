@@ -78,11 +78,33 @@ if (tagIndex !== -1) {
     }
 }
 
-// 2. manifest 关键字段
+// 2. manifest 关键字段（含社区目录硬性规则，见官方 Manifest 文档）
 if (manifest.id !== 'novel-writer-ai') {
     errors.push(`manifest.id 异常: ${manifest.id}`);
 }
-if (manifest.main !== 'main.js') {
+if (!/^[a-z0-9-]+$/.test(String(manifest.id || ''))) {
+    errors.push(`manifest.id 只能包含小写字母/数字/连字符: ${manifest.id}`);
+}
+if (String(manifest.id || '').includes('obsidian')) {
+    errors.push('manifest.id 不能包含 obsidian（社区目录规则）');
+}
+if (String(manifest.id || '').endsWith('plugin')) {
+    errors.push('manifest.id 不能以 plugin 结尾（社区目录规则）');
+}
+if (!manifest.name || typeof manifest.name !== 'string') {
+    errors.push('manifest.name 缺失');
+} else if (!/^[\x20-\x7E]+$/.test(manifest.name)) {
+    // 官方：名称只用 Basic Latin，不能含中文/emoji/特殊符号
+    errors.push(`manifest.name 必须为 Basic Latin（社区目录要求）: ${manifest.name}`);
+}
+if (!manifest.description) {
+    errors.push('manifest.description 缺失');
+}
+if (!manifest.author) {
+    errors.push('manifest.author 缺失');
+}
+// main.js 是 Obsidian 固定入口，不是 manifest 字段；仅当显式写了 main 时校验
+if (manifest.main !== undefined && manifest.main !== 'main.js') {
     errors.push(`manifest.main 异常: ${manifest.main}`);
 }
 if (!manifest.minAppVersion) {

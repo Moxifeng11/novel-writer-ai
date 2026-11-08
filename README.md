@@ -6,6 +6,22 @@
 
 ---
 
+## English summary (for marketplace review)
+
+**Novel Writer AI** is an end-to-end AI writing workspace for Chinese web novels, short stories, and scripts. It covers project setup, outlines, world-building, chapter drafting, co-writing, quality checks, settlement/continuity tracking, knowledge-base deconstruction, and manuscript export (Markdown/TXT/HTML/EPUB/DOCX). The plugin UI is Chinese-only.
+
+**Network use (disclosed per Developer policies).** The plugin only contacts endpoints you configure. It sends your prompts and the selected context to the AI provider you choose (OpenAI-compatible endpoint, or a local model such as Ollama). Optional features make additional requests: update check (GitHub Releases API), model discovery / connectivity tests (your configured provider), and optional "trend research"/"canon research" (fixed public search endpoints or URLs you provide). No telemetry is collected, and nothing is sent anywhere by default.
+
+**Local data.** Settings, API keys (optionally encrypted with a session passphrase), prompt cache, knowledge-base index and session logs are stored in the plugin's own data folder under your vault's configuration directory (`.obsidian/plugins/novel-writer-ai/`). They are never uploaded by the plugin. `.gitignore` and an explicit `check:secrets` gate keep keys out of this repository.
+
+**Desktop-only optional backend.** On desktop you may opt in to a DeepSeek "dsh" backend. When enabled, the plugin starts an external process (`npx @deepseek-ai/dsh@<pinned version>`) in the vault directory. It is off by default and unavailable on mobile; the built-in Agent works without it.
+
+**No self-update.** The plugin only checks for a newer GitHub release and shows a link; it never downloads or installs updates.
+
+**License.** MIT. See [LICENSE](LICENSE).
+
+---
+
 ## 目录
 
 - [核心能力](#核心能力)

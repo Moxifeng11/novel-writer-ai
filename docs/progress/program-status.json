@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 2,
-    "localCommitsAheadNote": "相对 origin/master 的未提交数（2026-11-09 v4.79.0 节点计入后 ahead 2；origin/master=6a1df9d）；全量 603 文件 / 6,647 用例，any 74/42，main.js 4,924,044 = 基线，styles.css 476,804，覆盖率 44.19/43.93/45.00/44.52"
+    "localCommitsAhead": 0,
+    "localCommitsAheadNote": "相对 origin/master 的未提交数（2026-11-09 ahead 0）；本次为市场上架准备：manifest name 改 Novel Writer AI（Basic Latin）、description 英文、移除 main 字段、README 增加英文披露、check-release 增加社区目录规则校验；全量 603 文件 / 6,647 用例，any 74/42，main.js 4,924,044 = 基线"
   },
   "groups": [
     {

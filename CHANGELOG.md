@@ -4,6 +4,12 @@
 
 ## v4.79.0（2026-11-09）
 
+### 🏪 市场上架准备（2026-11-09）
+
+- manifest：`name` 改为 `Novel Writer AI`（目录要求 Basic Latin，原名含中文会被自动审核拒绝）、`description` 改英文、移除非标准 `main` 字段。
+- README 增加英文概览与披露：网络用途、本地数据落盘、可选桌面 dsh 后端、无自更新、MIT 许可。
+- 唯一性核对：id `novel-writer-ai` 与名称 `Novel Writer AI` 在社区目录（10,124 条）均无冲突。
+
 ### 🛡️ 数据一致性：结算回滚不再误删用户文件（2 项 P1 + 1 项并发 P1）
 
 - `recordWholeFileBefore` 三态化：只有确认文件不存在才登记「本次新建」；「存在但读失败」改为标记 `snapshotIncomplete`（回滚时转 `settlementPartial` 可见），**不再在回滚时删除用户已有文件**；调用方已读内容时传 `knownBefore`，消除二次读与 TOCTOU。
