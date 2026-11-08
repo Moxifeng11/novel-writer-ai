@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132774 | 1607 | 1346 | 84% |
 | `services/` | 32 | 12633 | 187 | 148 | 79% |
-| `shared/` | 175 | 40321 | 1587 | 1313 | 83% |
+| `shared/` | 175 | 40328 | 1587 | 1313 | 83% |
 | `core/` | 7 | 2770 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 239 | 101524 | 735 | 639 | 87% |
@@ -458,7 +458,7 @@
 | `shared/model-source.ts` | 43 | 3 | 1 |
 | `shared/multi-layer-cache.ts` | 556 | 6 | 6 |
 | `shared/novel-format.ts` | 348 | 12 | 12 |
-| `shared/optimization-advisor.ts` | 610 | 16 | 6 |
+| `shared/optimization-advisor.ts` | 617 | 16 | 6 |
 | `shared/paths.ts` | 1410 | 189 | 183 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |

@@ -6,7 +6,7 @@
     "version": "4.74.0",
     "tests": {
       "files": 594,
-      "cases": 6565
+      "cases": 6570
     },
     "e2e": 40,
     "e2eNote": "E2E 通过总数：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27 = 40（2026-11-07 全量实测）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑（rewrite-chapters 已随「九霄逆脉行」项目删除而下线）",
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 234,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 第 113 轮批次已收单（60000d9 + 09dbe30）后实测 ahead 234；全量 6,565，any 108/49，main.js 4,871,801）"
+    "localCommitsAhead": 235,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 第 115 轮 docs 批次已收单（6b937ca）后实测 ahead 235；全量 6,570（第 117 轮 +5），any 108/49，main.js 4,871,801）"
   },
   "groups": [
     {
@@ -569,6 +569,12 @@
     "audits": "docs/audits/"
   },
   "changelog": [
+    {
+      "date": "2026-11-08",
+      "group": "G7",
+      "summary": "第 117 轮（advisor-logic + test-hardening，兑现 ZCode 派工两项）：①gate:any 分桶新增 frozen 桶——CLI 以 `FROZEN_ANY_PATHS`（当前 `ui/batch-deconstruct-modal.ts`）识别用户冻结路径，advisor 判分前从可动面扣除；可动有效值为 0 时不再产出 gate:any 候选（实测 any 108 = 红线 100 + 设计性 6 + 可动 2 − 冻结 2 → 候选消失，消除每轮「可动 2」复现噪声）；advisor 不进 main.js，零体积影响。②store/logger 中间件转发契约补 3 例真实语义（name 透传前缀 / 未传 name 默认 `[Store]` / 函数式 setState 透传函数名并转发新状态）。定向 79/79（advisor 33 + store 46）；全量 594 文件 / 6,570 用例",
+      "evidence": "shared/optimization-advisor.ts + scripts/optimization-advisor.mjs + tests/unit/shared/optimization-advisor.test.ts + tests/unit/shared/store.test.ts + docs/progress/v5-acceptance.md §〇"
+    },
     {
       "date": "2026-11-08",
       "group": "G7",

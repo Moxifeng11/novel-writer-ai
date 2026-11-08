@@ -91,8 +91,10 @@ export interface AdvisorFacts {
             redline: number;
             /** 设计性：shared/types.ts 刻意索引签名 */
             design: number;
-            /** 可动：其余单点长尾 */
+            /** 可动：其余单点长尾（含冻结子集） */
             movable: number;
+            /** 冻结：可动桶中已由用户冻结、拍板前双方不动的处数（计入 movable，判分前扣除） */
+            frozen?: number;
         };
         /** 当前 main.js 体积（采集自实文件 stat，缺失时回退 .bundle-baseline.json 基线值） */
         bundleBytes: number;
@@ -399,7 +401,10 @@ export function detectAdvisorCandidates(facts: AdvisorFacts): AdvisorCandidate[]
         });
     } else if (facts.gates.anyRemaining > 0) {
         const buckets = facts.gates.anyBuckets;
-        const movable = buckets ? buckets.movable : facts.gates.anyRemaining;
+        const frozen = buckets?.frozen ?? 0;
+        const movable = buckets
+            ? Math.max(0, buckets.movable - frozen)
+            : facts.gates.anyRemaining;
         if (movable > 0) {
             const threshold = facts.params.anyMovableDownweightThreshold;
             const downweighted = movable < threshold;
@@ -413,7 +418,9 @@ export function detectAdvisorCandidates(facts: AdvisorFacts): AdvisorCandidate[]
                 evidence: buckets
                     ? `any 存量 ${facts.gates.anyRemaining} = 红线 ${buckets.redline}（engine/**、ui/views/**，ZCode 接手）`
                         + ` + 设计性 ${buckets.design}（shared/types.ts 索引签名）`
-                        + ` + 可动 ${movable}${downweighted ? `（低于阈值 ${threshold}，已降权）` : ''}`
+                        + ` + 可动 ${movable}`
+                        + (frozen > 0 ? ` + 冻结 ${frozen}（用户冻结路径，拍板前双方不动）` : '')
+                        + `${downweighted ? `（低于阈值 ${threshold}，已降权）` : ''}`
                     : `any 存量 ${facts.gates.anyRemaining}（.any-baseline.json total，缺失回退台账）`,
                 impact: downweighted ? 1 : 2,
                 riskReduction: downweighted ? 1 : 2,

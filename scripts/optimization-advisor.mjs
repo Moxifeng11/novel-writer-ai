@@ -138,11 +138,15 @@ function collectDispatch(currentRound, lastDispatchId) {
             // 单行损坏不阻断判断
         }
     }
+    const lastMessage = incoming.find(message => message.id === lastDispatchId);
+    const lastMessageTs = lastMessage ? Date.parse(lastMessage.ts) : NaN;
     for (let index = incoming.length - 1; index >= 0; index -= 1) {
         const message = incoming[index];
         const subject = message.subject || '';
         if (!/派工|候选|请执行|请确认|批准/.test(subject)) continue;
         if (/已收单/.test(subject) && !/派工/.test(subject)) continue;
+        // 已处理过的派工快照之前的消息不再重复首推（无轮次的提醒类消息没有轮次可去重）
+        if (!Number.isNaN(lastMessageTs) && Date.parse(message.ts || '') <= lastMessageTs) continue;
         if (!core.isFreshDispatch(subject, currentRound, message.ts || '', Date.now(), {
             messageId: message.id,
             lastDispatchId,
@@ -156,15 +160,21 @@ function collectDispatch(currentRound, lastDispatchId) {
     return undefined;
 }
 
+/** 用户冻结的路径：拍板前双方不动，其 any 计入 frozen 桶并在判分前从可动面扣除 */
+const FROZEN_ANY_PATHS = ['ui/batch-deconstruct-modal.ts'];
+
 function collectAnyBuckets(anyBaseline) {
     const files = anyBaseline?.files;
     if (!files || typeof files !== 'object') return undefined;
-    const buckets = { redline: 0, design: 0, movable: 0 };
+    const buckets = { redline: 0, design: 0, movable: 0, frozen: 0 };
     for (const [file, count] of Object.entries(files)) {
         const amount = Number(count) || 0;
         if (file.startsWith('engine/') || file.startsWith('ui/views/')) buckets.redline += amount;
         else if (file === 'shared/types.ts') buckets.design += amount;
-        else buckets.movable += amount;
+        else {
+            buckets.movable += amount;
+            if (FROZEN_ANY_PATHS.includes(file)) buckets.frozen += amount;
+        }
     }
     return buckets;
 }

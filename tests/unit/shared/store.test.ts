@@ -386,6 +386,56 @@ describe('Store', () => {
 
             expect(console.log).not.toHaveBeenCalled();
         });
+
+        it('name 透传为日志前缀并记录前后状态', () => {
+            const store = compose(
+                logger<TestState>({ name: 'CustomStore' }),
+            )(createStore<TestState>({ count: 0 }));
+
+            store.setState({ count: 1 });
+
+            expect(console.log).toHaveBeenCalledWith(
+                '%c[CustomStore] setState (object)',
+                'color: #767676; font-weight: bold;',
+                '\nprev:', { count: 0 },
+                '\nnext:', { count: 1 },
+            );
+        });
+
+        it('未传 name 时使用默认前缀 Store', () => {
+            const store = compose(
+                logger<TestState>(),
+            )(createStore<TestState>({ count: 0 }));
+
+            store.setState({ count: 1 });
+
+            expect(console.log).toHaveBeenCalledWith(
+                '%c[Store] setState (object)',
+                'color: #767676; font-weight: bold;',
+                '\nprev:', { count: 0 },
+                '\nnext:', { count: 1 },
+            );
+        });
+
+        it('函数式 setState 透传函数名并转发新状态到 store', () => {
+            function increment(state: TestState) {
+                return { count: state.count + 1 };
+            }
+
+            const store = compose(
+                logger<TestState>({ name: 'FnStore' }),
+            )(createStore<TestState>({ count: 0 }));
+
+            store.setState(increment);
+
+            expect(store.getState().count).toBe(1);
+            expect(console.log).toHaveBeenCalledWith(
+                '%c[FnStore] increment',
+                'color: #767676; font-weight: bold;',
+                '\nprev:', { count: 0 },
+                '\nnext:', { count: 1 },
+            );
+        });
     });
 
     // ============================================================

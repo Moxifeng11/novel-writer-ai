@@ -196,6 +196,36 @@ describe('detectAdvisorCandidates', () => {
         expect(ids).not.toContain('gate:any');
     });
 
+    it('冻结路径从可动面扣除后按有效可动面计分并标注冻结处数', () => {
+        const facts = makeFacts({
+            gates: {
+                preflightOk: true,
+                anyRemaining: 108,
+                anyBuckets: { redline: 100, design: 6, movable: 12, frozen: 10 },
+                bundleBytes: 1,
+                startupBaselineBytes: 1,
+            },
+        });
+        const anyCandidate = detectAdvisorCandidates(facts).find(candidate => candidate.id === 'gate:any');
+        expect(anyCandidate?.title).toContain('可动 2/108');
+        expect(anyCandidate?.evidence).toContain('冻结 10');
+        expect(anyCandidate?.evidence).toContain('已降权');
+    });
+
+    it('可动面全部为冻结路径时不再生成 gate:any 候选', () => {
+        const facts = makeFacts({
+            gates: {
+                preflightOk: true,
+                anyRemaining: 108,
+                anyBuckets: { redline: 100, design: 6, movable: 2, frozen: 2 },
+                bundleBytes: 1,
+                startupBaselineBytes: 1,
+            },
+        });
+        const ids = detectAdvisorCandidates(facts).map(candidate => candidate.id);
+        expect(ids).not.toContain('gate:any');
+    });
+
     it('体积超过启动基线时生成 perf 候选并给出百分比', () => {
         const facts = makeFacts({
             gates: { preflightOk: true, anyRemaining: 0, bundleBytes: 4_900_000, startupBaselineBytes: 4_850_000 },
