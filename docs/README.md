@@ -76,6 +76,7 @@
 | CSS 预算 | `.css-baseline.json` | `check:css` |
 | 内联样式预算 | `.inline-style-baseline.json` | `check:inline-styles` |
 | Obsidian API 用法（棘轮） | `.obsidian-api-baseline.json` | `check:obsidian-api` |
+| 密钥/密文泄露（推送前） | 被 git 跟踪的文件（`git ls-files`）+ `.gitignore` | `check:secrets` |
 | 分层/循环/引擎实例 | `.arch-baseline.json` | `check:deps`、`check-engines` |
 | JSDoc 覆盖 | `.jsdoc-baseline.json` + `generated/jsdoc-coverage.md` | `check:jsdoc` |
 | 发布资产清单 | `.github/workflows/release.yml` 的 `ASSETS` | `check:release` |

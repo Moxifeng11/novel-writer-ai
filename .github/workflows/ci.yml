@@ -48,6 +48,9 @@ jobs:
       - name: Obsidian API 用法门禁（棘轮基线）
         run: npm run check:obsidian-api
 
+      - name: 密钥泄露门禁（被跟踪文件）
+        run: npm run check:secrets
+
       - name: 分层依赖与循环依赖（棘轮基线）
         run: npm run check:deps -- --baseline .arch-baseline.json --require-baseline
 
