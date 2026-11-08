@@ -202,8 +202,8 @@ export class SettlementEngine {
         try {
             // P1-3 遗留：整表读-改-写在锁外会与协同/批量结算互相覆盖，锁内重读最新内容再合并
             await withWriteLock(path, async () => {
-                let content = DEFAULT_PROMISE_LEDGER;
-                if (await fs.exists(path)) content = await fs.read(path);
+                const existed = await fs.exists(path);
+                let content = existed ? await fs.read(path) : DEFAULT_PROMISE_LEDGER;
                 let items = parsePromiseLedger(content);
                 for (const instruction of ctx.instr.promise) {
                     items = applyPromiseInstruction(items, {
@@ -213,7 +213,7 @@ export class SettlementEngine {
                 }
                 const dir = path.slice(0, path.lastIndexOf('/'));
                 await fs.mkdir(dir);
-                await this.recordWholeFileBefore(ctx, path);
+                await this.recordWholeFileBefore(ctx, path, existed ? content : null);
                 await fs.write(path, formatPromiseLedger(items));
             });
             log.info(`[SettlementEngine] 承诺账本更新 ${ctx.instr.promise.length} 条`);
@@ -229,8 +229,8 @@ export class SettlementEngine {
         try {
             // P1-3 遗留：弧线表是整表覆盖写，必须锁内重读后再合并，否则并发结算丢条目
             const written = await withWriteLock(path, async () => {
-                let content = '';
-                if (await fs.exists(path)) content = await fs.read(path);
+                const existed = await fs.exists(path);
+                let content = existed ? await fs.read(path) : '';
                 let rows = content ? parseCharacterArcTable(content) : [];
                 if (rows.length === 0) {
                     rows = buildArcRowsFromCharacters(this.readCharacterArcSeeds(ctx.project));
@@ -241,7 +241,7 @@ export class SettlementEngine {
                 if (rows.length === 0) return false;
                 const dir = path.slice(0, path.lastIndexOf('/'));
                 await fs.mkdir(dir);
-                await this.recordWholeFileBefore(ctx, path);
+                await this.recordWholeFileBefore(ctx, path, existed ? content : null);
                 await fs.write(path, formatCharacterArcTable(rows));
                 return true;
             });
@@ -607,20 +607,47 @@ export class SettlementEngine {
     // ================================================================
     // 回滚快照工具（settle 内部使用，从原内嵌闭包提取）
     // ================================================================
-    /** 记录「整份文件前值」：不存在时登记为本次新建，回滚阶段删除 */
-    private async recordWholeFileBefore(ctx: SettleContext, path: string): Promise<string> {
+    /**
+     * 记录「整份文件前值」：只有确认不存在才登记为本次新建（回滚阶段删除）。
+     *
+     * v4.79.0（交叉审计 ②）修复：旧实现把「存在但读失败」也当成新建 → 回滚时
+     * `createdFiles` 会**永久删除用户已有文件**。现在：
+     * - 调用方已读过内容时传 `knownBefore`（null = 确认不存在），避免二次读与 TOCTOU；
+     * - 未传时若 exists=true 而 read 抛错，只标记 `snapshotIncomplete`（回滚时转 partial），
+     *   绝不再登记 createdFiles。
+     *
+     * @param ctx - 结算上下文
+     * @param path - 文件路径
+     * @param knownBefore - 调用方已读到的内容；`null` 表示确认文件不存在
+     * @returns 记录到的原内容（不存在时为空串）
+     */
+    private async recordWholeFileBefore(
+        ctx: SettleContext,
+        path: string,
+        knownBefore?: string | null,
+    ): Promise<string> {
+        if (knownBefore !== undefined) {
+            if (knownBefore === null) {
+                ctx.createdFiles.push(path);
+                return '';
+            }
+            ctx.journal.recordWholeFile(path, knownBefore);
+            return knownBefore;
+        }
         try {
             const fs = this.getFS();
-            if (await fs.exists(path)) {
-                const before = await fs.read(path);
-                ctx.journal.recordWholeFile(path, before);
-                return before;
+            if (!(await fs.exists(path))) {
+                ctx.createdFiles.push(path);
+                return '';
             }
+            const before = await fs.read(path);
+            ctx.journal.recordWholeFile(path, before);
+            return before;
         } catch (e) {
-            log.warn('[SettlementEngine] 记录文件前值失败:', path, e);
+            log.warn('[SettlementEngine] 记录文件前值失败（将标记回滚不完整）:', path, e);
+            ctx.snapshotIncomplete = true;
+            return '';
         }
-        ctx.createdFiles.push(path);
-        return '';
     }
 
     private async snapshotField(ctx: SettleContext, file: TFile, field: string): Promise<void> {
@@ -889,11 +916,13 @@ export class SettlementEngine {
             await this.getFS().mkdir(dir);
             await withWriteLock(path, async () => {
                 let rows: BehaviorRow[] = [];
+                let rawBefore: string | null = null;
                 if (this.getVaultMeta().getAbstractFileByPath(path) instanceof TFile) {
-                    rows = parseBehaviorLog(await this.getFS().read(path));
+                    rawBefore = await this.getFS().read(path);
+                    rows = parseBehaviorLog(rawBefore);
                 }
                 const merged = mergeBehaviorRows(rows, incoming);
-                await this.recordWholeFileBefore(ctx, path);
+                await this.recordWholeFileBefore(ctx, path, rawBefore);
                 await this.getFS().write(path, formatBehaviorLog(merged));
             });
             ctx.result.recordedBehaviors = incoming.length;
@@ -1345,7 +1374,7 @@ ${ni.description || '暂无描述'}
     /** §16 删除实体（v1.4.0 — 连贯性审查后的清理） */
     private async settleStep_deleteEntities(ctx: SettleContext): Promise<void> {
         for (const d of ctx.instr.del) {
-            await this.deleteEntity(ctx.project, d.entityType, d.entityName);
+            await this.deleteEntity(ctx, d.entityType, d.entityName);
         }
     }
 
@@ -1398,6 +1427,8 @@ ${ni.description || '暂无描述'}
                 const report = await ctx.journal.rollback(fsPort, fmPort);
                 ctx.result.rollback = { reverted: report.reverted, failed: report.failed };
                 if (report.failed > 0) ctx.rollbackFailed = true;
+                // 快照读取失败过 → 无法保证恢复完整性，按回滚不完整处理（可见化）
+                if (ctx.snapshotIncomplete) ctx.rollbackFailed = true;
             }
 
             // 清理 NEW 操作创建的文件
@@ -1409,8 +1440,15 @@ ${ni.description || '暂无描述'}
                 }
             }
 
-            // 将 updated 计数清零（已回滚）
+            // 将 updated / created 计数清零（已回滚，否则结算表仍会报「新建 N 项」）
             ctx.result.updated = 0;
+            ctx.result.created = 0;
+            ctx.result.createdChars = 0;
+            ctx.result.createdLocs = 0;
+            ctx.result.createdFactions = 0;
+            ctx.result.createdItems = 0;
+            ctx.result.createdForeshadows = 0;
+            ctx.result.createdTimelines = 0;
             ctx.result.updatedChars = 0;
             ctx.result.updatedFactions = 0;
             ctx.result.updatedLocations = 0;
@@ -1588,18 +1626,22 @@ ${ni.description || '暂无描述'}
     // ================================================================
     // 实体删除 — v1.4.0 新增, 对齐 shared_utils.js confirmDelete 三重确认
     // ================================================================
-    private async deleteEntity(project: string, entityType: string, entityName: string): Promise<void> {
+    private async deleteEntity(ctx: SettleContext, entityType: string, entityName: string): Promise<void> {
+        const project = ctx.project;
         try {
             if (entityType === '人物') {
                 const fp = pjCharFile(project, entityName);
-                const file = this.getVaultMeta().getAbstractFileByPath(fp);
-                if (file instanceof TFile) {
+                // v4.79.0（交叉审计 ②）：删除前把整文件前值记入 journal——否则部分失败回滚后文件永久消失
+                await withWriteLock(fp, async () => {
+                    const file = this.getVaultMeta().getAbstractFileByPath(fp);
+                    if (!(file instanceof TFile)) return;
                     const content = await this.getFS().read(fp);
                     if (content.includes(entityName)) {  // 三重确认: 文件名匹配 + 内容匹配
+                        ctx.journal.recordWholeFile(fp, content);
                         await this.getFS().delete(fp);
                         log.info(`[SettlementEngine] 删除人物: ${entityName}`);
                     }
-                }
+                });
             } else if (entityType === '伏笔') {
                 const fp = pjForeshadowDB(project);
                 const ff = this.getVaultMeta().getAbstractFileByPath(fp);
@@ -1612,6 +1654,7 @@ ${ni.description || '暂无描述'}
                             line.startsWith('|') && line.includes(`| ${entityName} |`)
                         );
                         if (targetIdx !== -1) {
+                            ctx.journal.recordWholeFile(fp, fc);
                             lines.splice(targetIdx, 1);
                             await this.getFS().write(fp, lines.join('\n'));
                             log.info(`[SettlementEngine] 从伏笔库删除: ${entityName}`);
@@ -1630,25 +1673,36 @@ ${ni.description || '暂无描述'}
                             line.startsWith('|') && line.includes(entityName)
                         );
                         if (targetIdx !== -1) {
+                            ctx.journal.recordWholeFile(fp, fc);
                             lines.splice(targetIdx, 1);
                             await this.getFS().write(fp, lines.join('\n'));
                         }
                     });
                 }
             } else if (entityType === '地点') {
-                const fp = pjLocFile(project, entityName);
-                const file = this.getVaultMeta().getAbstractFileByPath(fp);
-                if (file) await this.getFS().delete(fp);
+                await this.deleteEntityFileWithJournal(ctx, pjLocFile(project, entityName));
             } else if (entityType === '势力') {
-                const fp = pjFactionFile(project, entityName);
-                const file = this.getVaultMeta().getAbstractFileByPath(fp);
-                if (file) await this.getFS().delete(fp);
+                await this.deleteEntityFileWithJournal(ctx, pjFactionFile(project, entityName));
             } else if (entityType === '物品' || entityType === '设定') {
-                const fp = pjItemFile(project, entityName);
-                const file = this.getVaultMeta().getAbstractFileByPath(fp);
-                if (file) await this.getFS().delete(fp);
+                await this.deleteEntityFileWithJournal(ctx, pjItemFile(project, entityName));
             }
         } catch (e) { log.warn('[SettlementEngine] 删除实体失败:', entityType, entityName, e); }
+    }
+
+    /**
+     * 删除实体文件：锁内读前值 → journal → 删除（回滚可重建）。
+     *
+     * @param ctx - 结算上下文
+     * @param path - 实体文件路径
+     */
+    private async deleteEntityFileWithJournal(ctx: SettleContext, path: string): Promise<void> {
+        await withWriteLock(path, async () => {
+            const file = this.getVaultMeta().getAbstractFileByPath(path);
+            if (!file) return;
+            const content = await this.getFS().read(path);
+            ctx.journal.recordWholeFile(path, content);
+            await this.getFS().delete(path);
+        });
     }
 
     // ================================================================

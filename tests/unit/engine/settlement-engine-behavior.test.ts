@@ -13,6 +13,8 @@ import { SettlementEngine } from '../../../engine/settlement-engine';
 import { pjCharFile, pjForeshadowDB, pjTimelineBoard, pjBodyFile } from '../../../shared/paths';
 import type { FileSystemPort, FrontmatterPort, VaultMetaPort } from '../../../shared/file-system-port';
 import { withWriteLock } from '../../../shared/write-lock';
+import { createSettleContext } from '../../../engine/settlement/settle-context';
+import { parseReport } from '../../../engine/settlement/report-parser';
 
 const PROJECT = '长篇小说/测试书';
 const VOL = 1;
@@ -56,7 +58,7 @@ function serializeFm(fm: Record<string, unknown>, body: string): string {
 function makeHarness(
     seed: Record<string, string>,
     failWritesMatching?: RegExp,
-    hooks?: { onProcessFrontmatter?: (file: TFile) => Promise<void> | void },
+    hooks?: { onProcessFrontmatter?: (file: TFile) => Promise<void> | void; failReadsMatching?: RegExp },
 ) {
     const files = new Map<string, string>(Object.entries(seed));
     const fileObjs = new Map<string, TFile>();
@@ -80,6 +82,9 @@ function makeHarness(
 
     const fs: FileSystemPort = {
         read: async (path: string) => {
+            if (hooks?.failReadsMatching?.test(path)) {
+                throw new Error(`模拟读取失败: ${path}`);
+            }
             const content = files.get(path);
             if (content === undefined) throw new Error(`ENOENT: ${path}`);
             return content;
@@ -314,5 +319,47 @@ describe('SettlementEngine — 写锁覆盖快照（P1-3）', () => {
         expect(probed).toBe(true);
         expect(lockHeldDuringSnapshot).toBe(true);
         expect(h.files.get(CHAR_PATH)).toContain('当前状态: 受伤');
+    });
+});
+
+describe('SettlementEngine — 数据一致性修复（v4.79.0 交叉审计）', () => {
+    it('DELETE_ENTITY 后部分失败回滚：人物文件被 journal 恢复', async () => {
+        const h = makeHarness(seedAll(), /伏笔库.md$/);
+        const report = `${REPORT}
+DELETE_ENTITY: 人物 | 甲`;
+        const result = await h.engine.settle(PROJECT, CHAP_DIR, CHAP_NAME, report, BODY_SEED);
+
+        expect(result.rollback).toBeDefined();
+        // 旧实现：删除不进 journal，回滚后文件永久消失
+        const char = h.files.get(CHAR_PATH);
+        expect(char).toBeDefined();
+        expect(char).toContain('甲');
+    });
+
+    it('exists=true 但读失败：不登记 createdFiles，标记 snapshotIncomplete', async () => {
+        const h = makeHarness(seedAll(), undefined, { failReadsMatching: /甲.md$/ });
+        const ctx = createSettleContext(PROJECT, CHAP_DIR, CHAP_NAME, BODY_SEED, '', parseReport(''));
+        const record = Reflect.get(h.engine as object, 'recordWholeFileBefore') as (
+            c: typeof ctx,
+            path: string,
+        ) => Promise<string>;
+
+        await record.call(h.engine, ctx, CHAR_PATH);
+
+        // 旧实现会把「存在但读失败」当成新建 → 回滚时删除用户已有文件
+        expect(ctx.createdFiles).not.toContain(CHAR_PATH);
+        expect(ctx.snapshotIncomplete).toBe(true);
+    });
+
+    it('回滚时 created 计数一并清零（不再报「新建 N 项」）', async () => {
+        const h = makeHarness(seedAll(), /伏笔库.md$/);
+        const report = `${REPORT}
+NEW_CHARACTER: 乙 | 新角色 | 测试
+DELETE_ENTITY: 人物 | 甲`;
+        const result = await h.engine.settle(PROJECT, CHAP_DIR, CHAP_NAME, report, BODY_SEED);
+
+        expect(result.rollback).toBeDefined();
+        expect(result.created).toBe(0);
+        expect(result.createdChars).toBe(0);
     });
 });

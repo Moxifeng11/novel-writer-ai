@@ -6,7 +6,7 @@
     "version": "4.78.0",
     "tests": {
       "files": 600,
-      "cases": 6597
+      "cases": 6600
     },
     "e2e": 40,
     "e2eNote": "E2E 通过总数：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27 = 40（2026-11-07 全量实测）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑（rewrite-chapters 已随「九霄逆脉行」项目删除而下线）",
@@ -19,7 +19,7 @@
       "check:write-entry"
     ],
     "localCommitsAhead": 1,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-09 ahead 1：交叉审计 fix queue 第一批（B-1/B-3/B-4/B-5 + 门禁绕过正则）；origin/master=947b20e）；全量 600 文件 / 6,597 用例，any 74/42，main.js 4,868,093 = 基线，覆盖率 44.11/43.85/44.95/44.44"
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-09 ahead 1：交叉审计维度② + 结算回滚 2 项 P1 修复；origin/master=5d9ff17）；全量 600 文件 / 6,600 用例，any 74/42，main.js 4,868,734 = 基线，覆盖率 44.11/43.86/44.96/44.47"
   },
   "groups": [
     {

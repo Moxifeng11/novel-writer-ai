@@ -61,6 +61,12 @@ export interface SettleContext {
     rollbackFailed: boolean;
 
     /**
+     * 回滚快照读取失败的标志（v4.79.0 交叉审计）：
+     * 读失败 ≠ 文件是本次新建；此时无法保证回滚完整性，回滚发生后应标记 partial。
+     */
+    snapshotIncomplete: boolean;
+
+    /**
      * run 级回滚日志（frontmatter 字段 / 整文件前值 / 追加标记）。
      * 与 snapshots 并存但取代其回滚职责：追加类写入只有 journal 能精确撤销。
      */
@@ -125,6 +131,7 @@ export function createSettleContext(
         createdFiles: [],
         hasPartialFailure: false,
         rollbackFailed: false,
+        snapshotIncomplete: false,
         journal: new SettlementJournal(),
     };
 }

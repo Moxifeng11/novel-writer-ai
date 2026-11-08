@@ -21,7 +21,7 @@ import type { FileSystemPort, VaultMetaPort } from '../../../shared/file-system-
 const CHAP_DIR = '03-大纲与章节/步骤结果/第1卷/第1章';
 
 type StepFn = (this: SettlementEngine, ctx: SettleContext) => Promise<void>;
-type DeleteEntityFn = (this: SettlementEngine, project: string, entityType: string, entityName: string) => Promise<void>;
+type DeleteEntityFn = (this: SettlementEngine, ctx: SettleContext, entityType: string, entityName: string) => Promise<void>;
 
 const createForeshadowsStep = (SettlementEngine.prototype as unknown as {
     settleStep_createForeshadows: StepFn;
@@ -138,9 +138,10 @@ describe('伏笔库 — 并发读改写不丢更新', () => {
             parseReport('NEW_FORESHADOW: 新增伏笔 | 第2章 | 第9章 | 甲 | 主线'),
         );
 
+        const delCtx = createSettleContext(project, `${project}/${CHAP_DIR}`, '第2章', '', '', parseReport(''));
         await Promise.all([
             createForeshadowsStep.call(h.engine, addCtx),
-            deleteEntity.call(h.engine, project, '伏笔', '待删伏笔'),
+            deleteEntity.call(h.engine, delCtx, '伏笔', '待删伏笔'),
         ]);
 
         const content = h.files.get(pjForeshadowDB(project)) || '';
@@ -177,9 +178,11 @@ describe('伏笔库 — 并发读改写不丢更新', () => {
         });
 
         const t0 = Date.now();
+        const delCtxA = createSettleContext(projectA, `${projectA}/${CHAP_DIR}`, '第1章', '', '', parseReport(''));
+        const delCtxB = createSettleContext(projectB, `${projectB}/${CHAP_DIR}`, '第1章', '', '', parseReport(''));
         await Promise.all([
-            deleteEntity.call(h.engine, projectA, '伏笔', '待删伏笔'),
-            deleteEntity.call(h.engine, projectB, '时间线', '不存在的事件'),
+            deleteEntity.call(h.engine, delCtxA, '伏笔', '待删伏笔'),
+            deleteEntity.call(h.engine, delCtxB, '时间线', '不存在的事件'),
         ]);
         // 不同路径各用各的队列：两个调用都正常完成且各自文件状态正确
         expect(Date.now() - t0).toBeLessThan(2000);

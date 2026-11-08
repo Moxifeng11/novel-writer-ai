@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 305 | 132837 | 1609 | 1348 | 84% |
+| `engine/` | 305 | 132898 | 1609 | 1348 | 84% |
 | `services/` | 32 | 12641 | 187 | 148 | 79% |
 | `shared/` | 177 | 40538 | 1595 | 1319 | 83% |
 | `core/` | 7 | 2770 | 28 | 13 | 46% |
@@ -287,10 +287,10 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 1901 | 3 | 3 |
+| `engine/settlement-engine.ts` | 1955 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
-| `engine/settlement/settle-context.ts` | 131 | 2 | 2 |
+| `engine/settlement/settle-context.ts` | 138 | 2 | 2 |
 | `engine/settlement/settlement-artifacts.ts` | 115 | 5 | 5 |
 | `engine/settlement/settlement-coordinator.ts` | 117 | 6 | 6 |
 | `engine/settlement/settlement-journal.ts` | 197 | 6 | 6 |
