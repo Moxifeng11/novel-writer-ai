@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 235,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 第 115 轮 docs 批次已收单（6b937ca）后实测 ahead 235；全量 6,570（第 117 轮 +5），any 108/49，main.js 4,871,801）"
+    "localCommitsAhead": 236,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 第 117 轮批次已由 ZCode 收单（2d85957）后实测 ahead 236；全量 6,570（第 117 轮 +5），any 108/49，main.js 4,871,801）"
   },
   "groups": [
     {
