@@ -58,7 +58,11 @@ function serializeFm(fm: Record<string, unknown>, body: string): string {
 function makeHarness(
     seed: Record<string, string>,
     failWritesMatching?: RegExp,
-    hooks?: { onProcessFrontmatter?: (file: TFile) => Promise<void> | void; failReadsMatching?: RegExp },
+    hooks?: {
+        onProcessFrontmatter?: (file: TFile) => Promise<void> | void;
+        failReadsMatching?: RegExp;
+        beforeWrite?: (path: string) => Promise<void> | void;
+    },
 ) {
     const files = new Map<string, string>(Object.entries(seed));
     const fileObjs = new Map<string, TFile>();
@@ -90,6 +94,7 @@ function makeHarness(
             return content;
         },
         write: async (path: string, content: string) => {
+            await hooks?.beforeWrite?.(path);
             if (failWritesMatching && failWritesMatching.test(path)) {
                 throw new Error(`模拟写入失败: ${path}`);
             }
@@ -361,5 +366,35 @@ DELETE_ENTITY: 人物 | 甲`;
         expect(result.rollback).toBeDefined();
         expect(result.created).toBe(0);
         expect(result.createdChars).toBe(0);
+    });
+});
+
+describe('SettlementEngine — 并发新建同路径（v4.79.0 C-4）', () => {
+    it('存在性判断与写入同锁：并发 NEW_CHARACTER 只创建一个，不重复登记 createdFiles', async () => {
+        const h = makeHarness(seedAll(), undefined, {
+            beforeWrite: async (path) => {
+                // 第一次写人物卡前让出事件循环，强制并发的第二次创建先通过旧实现的锁外检查
+                if (path === CHAR_PATH && !delayed) {
+                    delayed = true;
+                    await new Promise((r) => setTimeout(r, 20));
+                }
+            },
+        });
+        let delayed = false;
+
+        const reportA = 'NEW_CHARACTER: 同名 | 甲描述 | 测试';
+        const reportB = 'NEW_CHARACTER: 同名 | 乙描述 | 测试';
+        const ctxA = createSettleContext(PROJECT, CHAP_DIR, CHAP_NAME, BODY_SEED, reportA, parseReport(reportA));
+        const ctxB = createSettleContext(PROJECT, CHAP_DIR, CHAP_NAME, BODY_SEED, reportB, parseReport(reportB));
+        const step = (SettlementEngine.prototype as unknown as {
+            settleStep_createCharacters: (this: SettlementEngine, c: typeof ctxA) => Promise<void>;
+        }).settleStep_createCharacters;
+
+        await Promise.all([step.call(h.engine, ctxA), step.call(h.engine, ctxB)]);
+
+        // 只登记一次、只计一次；文件内容来自先写入者
+        expect(ctxA.createdFiles.length + ctxB.createdFiles.length).toBe(1);
+        expect(ctxA.result.createdChars + ctxB.result.createdChars).toBe(1);
+        expect(h.files.get(pjCharFile(PROJECT, '同名'))).toContain('甲描述');
     });
 });

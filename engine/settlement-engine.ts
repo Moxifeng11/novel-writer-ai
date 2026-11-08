@@ -935,9 +935,12 @@ export class SettlementEngine {
     private async settleStep_createCharacters(ctx: SettleContext): Promise<void> {
         for (const nc of ctx.instr.nc) {
             const fp = pjCharFile(ctx.project, nc.name);
-            if (this.getVaultMeta().getAbstractFileByPath(fp)) continue;
             try {
-                await this.getFS().mkdir(entityDir(ctx.project, 'characters'));
+                // v4.79.0（交叉审计 C-4）：存在性判断与写入同锁——并发结算不再双写同一路径，
+                // 也不会各自登记 createdFiles 导致一方回滚时删掉另一方合法新建的文件。
+                const created = await withWriteLock(fp, async () => {
+                    if (this.getVaultMeta().getAbstractFileByPath(fp)) return false;
+                    await this.getFS().mkdir(entityDir(ctx.project, 'characters'));
                 const content = `---
 tags: [人物, nw/实体/人物]
 姓名: ${nc.name}
@@ -985,7 +988,10 @@ ${nc.description || '暂无描述'}
 ## 变更记录
 - ${ctx.chapName} | 首次登场 | ${nc.description || '新角色登场'} | 由分析报告自动创建
 `;
-                await this.getFS().write(fp, content);
+                    await this.getFS().write(fp, content);
+                    return true;
+                });
+                if (!created) continue;
                 ctx.createdFiles.push(fp);
                 ctx.result.createdChars++;
                 ctx.result.chars.push(nc.name);
@@ -997,9 +1003,12 @@ ${nc.description || '暂无描述'}
     private async settleStep_createLocations(ctx: SettleContext): Promise<void> {
         for (const nl of ctx.instr.nl) {
             const fp = pjLocFile(ctx.project, nl.name);
-            if (this.getVaultMeta().getAbstractFileByPath(fp)) continue;
             try {
-                await this.getFS().mkdir(entityDir(ctx.project, 'locations'));
+                // v4.79.0（交叉审计 C-4）：存在性判断与写入同锁——并发结算不再双写同一路径，
+                // 也不会各自登记 createdFiles 导致一方回滚时删掉另一方合法新建的文件。
+                const created = await withWriteLock(fp, async () => {
+                    if (this.getVaultMeta().getAbstractFileByPath(fp)) return false;
+                    await this.getFS().mkdir(entityDir(ctx.project, 'locations'));
                 const content = `---
 tags: [地点, nw/实体/地点]
 名称: ${nl.name}
@@ -1027,7 +1036,10 @@ ${nl.description || '暂无描述'}
 ## 变更记录
 - ${ctx.chapName} | 首次登场 | ${nl.description || '新地点'} | 由分析报告自动创建
 `;
-                await this.getFS().write(fp, content);
+                    await this.getFS().write(fp, content);
+                    return true;
+                });
+                if (!created) continue;
                 ctx.createdFiles.push(fp);
                 ctx.result.createdLocs++;
                 ctx.result.locs.push(nl.name);
@@ -1039,9 +1051,12 @@ ${nl.description || '暂无描述'}
     private async settleStep_createFactions(ctx: SettleContext): Promise<void> {
         for (const nf of ctx.instr.nf) {
             const fp = pjFactionFile(ctx.project, nf.name);
-            if (this.getVaultMeta().getAbstractFileByPath(fp)) continue;
             try {
-                await this.getFS().mkdir(entityDir(ctx.project, 'factions'));
+                // v4.79.0（交叉审计 C-4）：存在性判断与写入同锁——并发结算不再双写同一路径，
+                // 也不会各自登记 createdFiles 导致一方回滚时删掉另一方合法新建的文件。
+                const created = await withWriteLock(fp, async () => {
+                    if (this.getVaultMeta().getAbstractFileByPath(fp)) return false;
+                    await this.getFS().mkdir(entityDir(ctx.project, 'factions'));
                 const content = `---
 tags: [势力, nw/实体/势力]
 名称: ${nf.name}
@@ -1067,7 +1082,10 @@ ${nf.description || '暂无描述'}
 ## 变更记录
 - ${ctx.chapName} | 首次登场 | ${nf.description || '新势力'} | 由分析报告自动创建
 `;
-                await this.getFS().write(fp, content);
+                    await this.getFS().write(fp, content);
+                    return true;
+                });
+                if (!created) continue;
                 ctx.createdFiles.push(fp);
                 ctx.result.createdFactions++;
                 ctx.result.factions.push(nf.name);
@@ -1079,9 +1097,12 @@ ${nf.description || '暂无描述'}
     private async settleStep_createItems(ctx: SettleContext): Promise<void> {
         for (const ni of ctx.instr.ni) {
             const fp = pjItemFile(ctx.project, ni.name);
-            if (this.getVaultMeta().getAbstractFileByPath(fp)) continue;
             try {
-                await this.getFS().mkdir(entityDir(ctx.project, 'items'));
+                // v4.79.0（交叉审计 C-4）：存在性判断与写入同锁——并发结算不再双写同一路径，
+                // 也不会各自登记 createdFiles 导致一方回滚时删掉另一方合法新建的文件。
+                const created = await withWriteLock(fp, async () => {
+                    if (this.getVaultMeta().getAbstractFileByPath(fp)) return false;
+                    await this.getFS().mkdir(entityDir(ctx.project, 'items'));
                 const content = `---
 tags: [物品功法, nw/实体/物品]
 名称: ${ni.name}
@@ -1108,7 +1129,10 @@ ${ni.description || '暂无描述'}
 ## 变更记录
 - ${ctx.chapName} | 首次登场 | ${ni.description || '新物品/功法'} | 由分析报告自动创建
 `;
-                await this.getFS().write(fp, content);
+                    await this.getFS().write(fp, content);
+                    return true;
+                });
+                if (!created) continue;
                 ctx.createdFiles.push(fp);
                 ctx.result.createdItems++;
                 ctx.result.items.push(ni.name);
