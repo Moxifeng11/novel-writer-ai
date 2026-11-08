@@ -339,8 +339,8 @@ export class KnowledgeDetailModal extends Modal {
             const fingerprint = await converter.convert(this.bookId, this.bookInfo.name, this.baseDir);
 
             const plugin = this.getPlugin();
-            // 历史字段名，settings 上并不存在；行为修复单独走批次，本轮只做类型收口
-            const activeProject = (plugin?.settings as { activeProject?: string } | undefined)?.activeProject;
+            // settings 上没有 activeProject 字段；唯一真源是 getActiveProject()（活动文件 / 工作台上下文）
+            const activeProject = plugin?.getActiveProject();
             if (!activeProject) {
                 new Notice('请先打开一个项目');
                 return;
