@@ -812,26 +812,6 @@ export class StepRunner {
         this.callbacks.showSuccess(`定向修订完成：${changed || '已更新正文'}（${issues.length} 条问题，单次调用，${result.durationMs}ms）`);
     }
 
-    /**
-     * 注入去 AI 样式。
-     */
-    injectDeaiModalStyles(): void {
-        this.modalController.injectDeaiModalStyles();
-    }
-
-    /**
-     * 注入精修样式。
-     */
-    injectRefineModalStyles(): void {
-        this.modalController.injectRefineModalStyles();
-    }
-
-    /**
-     * 注入轮次选择样式。
-     */
-    injectRoundSelectStyles(): void {
-        this.modalController.injectRoundSelectStyles();
-    }
 
     /**
      * 本步实际可用的窗口/输出上限。

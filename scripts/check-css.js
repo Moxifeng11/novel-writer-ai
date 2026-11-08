@@ -77,6 +77,8 @@ const metrics = {
 };
 
 const updateBaseline = process.argv.includes('--update-baseline');
+const noteIndex = process.argv.indexOf('--note');
+const baselineNote = noteIndex !== -1 ? process.argv[noteIndex + 1] : '';
 
 console.log('=== CSS 检查 ===');
 console.log(`文件: styles.css`);
@@ -94,7 +96,7 @@ if (issues.length > 0) {
 if (updateBaseline) {
     const baseline = {
         generatedAt: new Date().toISOString(),
-        note: '棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因',
+        note: baselineNote || '棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因',
         bytes: metrics.bytes,
         important: metrics.important,
         hardcodedHex: metrics.hardcodedHex,

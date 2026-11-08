@@ -41,7 +41,6 @@ import { InterventionController } from './full-writer/intervention-controller';
 import type { WizardViewAccess } from './full-writer/wizard-view-access';
 import { WizardStepRenderers } from './full-writer/wizard-step-renderers';
 import { WizardStepExecutors } from './full-writer/wizard-step-executors';
-import { injectFullWriterStyles } from './full-writer/fw-styles';
 import NovelWriterPlugin from '@/main';
 import { AIEngine, APIResponse } from '@/engine/ai-engine';
 import { ContextManager, GatheredContext, CharacterData, ForeshadowData, TimelineEvent, MarkdownContent } from '@/engine/context-manager';
@@ -1910,8 +1909,6 @@ export class FullWriterView extends ItemView {
             // 状态栏
             this.renderStatusBar(mainContainer);
 
-            // 注入样式
-            injectFullWriterStyles();
         } catch (e: unknown) {
             const errMsg = e instanceof Error ? e.message : String(e);
             log.error('[小说工坊] 渲染失败:', errMsg);

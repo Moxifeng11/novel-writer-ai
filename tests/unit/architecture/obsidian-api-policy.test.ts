@@ -130,6 +130,40 @@ describe('check:obsidian-api 门禁', () => {
         expect(result.stderr).toContain('deprecated-api');
     });
 
+    it('动态 <style> 与字面量内联样式必须报错，动态值不误报', () => {
+        const root = fixture({
+            'ui/bad.ts': [
+                'export function inject(el: HTMLElement) {',
+                "    const style = document.createElement('style');",
+                "    style.textContent = 'color: red';",
+                "    el.style.color = 'red';",
+                "    el.style.cssText = 'color: red';",
+                "    el.style.setProperty('color', 'red');",
+                "    el.setAttribute('style', 'color: red');",
+                '}',
+            ].join('\n'),
+            'ui/good.ts': [
+                'export function apply(el: HTMLElement, width: number, offset: number) {',
+                "    el.style.width = width + 'px';",
+                '    el.style.transform = `translateX(${offset}px)`;',
+                "    el.style.setProperty('--nw-x', String(offset));",
+                "    el.style.setProperty('--nw-y', offset + 'px');",
+                '}',
+            ].join('\n'),
+        });
+        const result = run(root);
+        expect(result.code).toBe(1);
+        expect(result.stderr).toContain('style-element');
+        expect(result.stderr).toContain('static-style-assignment');
+
+        // 只统计 bad.ts 的 4 处字面量赋值；good.ts 的动态值不得计入
+        const json = run(root, ['--json']);
+        const report = JSON.parse(json.stdout);
+        expect(report.rules['style-element'].count).toBe(1);
+        expect(report.rules['static-style-assignment'].count).toBe(4);
+        expect(Object.keys(report.rules['static-style-assignment'].files)).toEqual(['ui/bad.ts']);
+    });
+
     it('单源文件（shared/paths.ts）属于合法例外，不被误报', () => {
         const root = fixture({
             'shared/paths.ts': "const DEFAULT_PLUGIN_ROOT_DIR = '.obsidian/plugins/novel-writer-ai';\nexport const d = DEFAULT_PLUGIN_ROOT_DIR;\n",

@@ -129,14 +129,6 @@ export interface StepRunnerCallbacks {
     // ── 状态类 ──────────────────────────────────────────────
     /** A7: 统一失效传播（下游审查/分析/结算）；未提供时回退为调用方自行清理 */
     invalidateSteps?(stepKeys: string[], markStale?: boolean): void;
-
-    // ── 样式注入 ─────────────────────────────────────────────
-    /** 注入 DEAI 弹窗样式（幂等） */
-    injectDeaiModalStyles(): void;
-    /** 注入精修弹窗样式（幂等） */
-    injectRefineModalStyles(): void;
-    /** 注入版本选择弹窗样式（幂等） */
-    injectRoundSelectStyles(): void;
 }
 
 /** 默认空实现 — 用于测试或不关心某些回调的场景 */
@@ -150,7 +142,4 @@ export const NOOP_CALLBACKS: StepRunnerCallbacks = {
     showDeaiTwoPhaseModal: () => {},
     showRefineTwoPhaseModal: () => {},
     showRoundSelectModal: () => {},
-    injectDeaiModalStyles: () => {},
-    injectRefineModalStyles: () => {},
-    injectRoundSelectStyles: () => {},
 };

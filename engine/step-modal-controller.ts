@@ -9,7 +9,6 @@
 import { TFile } from 'obsidian';
 import { AIEngine } from './ai-engine';
 import { LongNovelSingleCallTasks } from './harness/long-novel-tasks';
-import { injectDeaiModalStyles as _injectDeai, injectRefineModalStyles as _injectRefine, injectRoundSelectStyles as _injectRound } from '@/shared/step-modal-styles';
 import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
 import { FileSystemPort, ObsidianFileSystem } from '@/shared/file-system-port';
 import { TemplateService } from './template-service';
@@ -138,7 +137,6 @@ export class StepModalController {
         const deaiRewriteSystemPrompt = deaiRewriteTemplate.system;
         const deaiRewriteUserTemplate = deaiRewriteTemplate.user;
 
-        this.injectDeaiModalStyles();
         this.showDeaiTwoPhaseModal(
             bodyText, stepResults, renderInContainer, tabContent, setIsLoading, chapDir, chapterName, volume, stepCompleted,
             deaiCheckSystemPrompt, deaiRewriteSystemPrompt, deaiRewriteUserTemplate
@@ -401,7 +399,6 @@ export class StepModalController {
         if (v['allLocs']) contextParts.push(`【地点】\n${v['allLocs']}`);
         const contextPrompt = contextParts.join('\n\n');
 
-        this.injectRefineModalStyles();
         this.showRefineTwoPhaseModal(
             bodyText, contextPrompt, v['chapNum'] || String(chapterNum || 1),
             stepResults, renderInContainer, tabContent, setIsLoading,
@@ -653,31 +650,5 @@ export class StepModalController {
                 }
             };
         }
-
-        this.injectRoundSelectStyles();
-    }
-
-    // ============================================================
-    // 模态框样式注入
-    // ============================================================
-    /**
-     * injectDeaiModalStyles 方法。
-     */
-    injectDeaiModalStyles(): void {
-        _injectDeai();
-    }
-
-    /**
-     * injectRefineModalStyles 方法。
-     */
-    injectRefineModalStyles(): void {
-        _injectRefine();
-    }
-
-    /**
-     * injectRoundSelectStyles 方法。
-     */
-    injectRoundSelectStyles(): void {
-        _injectRound();
     }
 }

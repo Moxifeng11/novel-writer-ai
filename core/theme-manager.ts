@@ -60,19 +60,39 @@ type ThemeLayoutVarMap = Record<(typeof THEME_LAYOUT_VARS)[number], string>;
 export class ThemeManager {
     private getSettings: () => ThemeSettings;
     private getLayoutSizes?: () => LayoutSizeSettings;
+    /** 已写入 documentElement 的主题变量名，dispose 时严格对称移除 */
+    private appliedThemeVars = new Set<string>();
 
     constructor(getSettings: () => ThemeSettings, getLayoutSizes?: () => LayoutSizeSettings) {
         this.getSettings = getSettings;
         this.getLayoutSizes = getLayoutSizes;
     }
 
+    /**
+     * 写入 CSS 变量。
+     *
+     * 社区目录禁止动态创建 <style>，主题色又必须随用户设置变化，因此直接写
+     * documentElement 的自定义属性：优先 setCssProps（Obsidian 1.5+，按自定义
+     * 属性写入），1.4.x 退回 style.setProperty（值来自变量，不是静态字面量）。
+     */
+    private applyCssVars(vars: Record<string, string>): void {
+        const root = document.documentElement as HTMLElement & {
+            setCssProps?: (props: Record<string, string>) => void;
+        };
+        if (typeof root.setCssProps === 'function') {
+            root.setCssProps(vars);
+        } else {
+            for (const [name, value] of Object.entries(vars)) {
+                root.style.setProperty(name, value);
+            }
+        }
+        for (const name of Object.keys(vars)) this.appliedThemeVars.add(name);
+    }
+
     /** 注入主题 CSS 变量（暗色/亮色 + 用户自定义覆盖） */
     injectThemeVariables(): void {
-        const old = document.getElementById('novel-writer-theme-vars');
-        if (old) old.remove();
-
-        const style = document.createElement('style');
-        style.id = 'novel-writer-theme-vars';
+        // 旧版本通过 <style id="novel-writer-theme-vars"> 注入；升级后清掉残留
+        document.getElementById('novel-writer-theme-vars')?.remove();
 
         const settings = this.getSettings();
         const isDark = settings.theme === 'dark' ||
@@ -96,8 +116,12 @@ export class ThemeManager {
         const gradient = `--nw-accent-gradient: linear-gradient(90deg, ${palette.accent}, ${palette.accentHover});`;
         const muted = `--nw-text-accent: ${palette.accent};`;
 
-        style.textContent = `:root { ${baseVars} ${overrides} ${gradient} ${muted} }`;
-        document.head.appendChild(style);
+        this.applyCssVars({
+            ...parseCssVars(baseVars),
+            ...parseCssVars(overrides),
+            ...parseCssVars(gradient),
+            ...parseCssVars(muted),
+        });
     }
 
     /** 注入布局 CSS 变量（全插件生命周期可用） */
@@ -132,8 +156,14 @@ export class ThemeManager {
         }
     }
 
-    /** 清理所有注入的样式 */
+    /** 清理主题变量与旧版本遗留的运行时 style 标签 */
     cleanup(): void {
+        const root = document.documentElement;
+        for (const name of this.appliedThemeVars) {
+            root.style.removeProperty(name);
+        }
+        this.appliedThemeVars.clear();
+        // 兼容旧版本动态注入的样式标签（升级后到下一次重载之间可能仍在 DOM）
         const allStyles = document.querySelectorAll('style[id^="novel-writer-"]');
         allStyles.forEach(el => el.remove());
     }
@@ -141,7 +171,7 @@ export class ThemeManager {
     /**
      * 释放 ThemeManager 注入的全部 DOM 资源（满足 EngineRegistry 的 Disposable 契约）。
      *
-     * - 移除注入的 style[id^="novel-writer-"] 标签（cleanup()）；
+     * - 移除主题变量与旧版本遗留的 style 标签（cleanup()）；
      * - 从 documentElement 逐个移除 injectLayoutVariables set 过的 --nw-* 布局变量
      *   （set 与 remove 共用 THEME_LAYOUT_VARS，保证对称）。
      *
@@ -156,6 +186,27 @@ export class ThemeManager {
             root.style.removeProperty(name);
         }
     }
+}
+
+/**
+ * 把 `--x: value; --y: value;` 形式的声明块解析为键值对。
+ *
+ * 主题变量常量与 paletteToCssVars 都产出这种声明字符串；改成对象后才能交给
+ * setCssProps / setProperty 逐个写入（不再拼接整段 CSS 文本）。
+ *
+ * @param declarations - CSS 自定义属性声明块（可含换行与缩进）
+ * @returns 变量名到取值的映射；非法片段静默跳过
+ */
+export function parseCssVars(declarations: string): Record<string, string> {
+    const vars: Record<string, string> = {};
+    for (const part of declarations.split(';')) {
+        const colon = part.indexOf(':');
+        if (colon === -1) continue;
+        const name = part.slice(0, colon).trim();
+        const value = part.slice(colon + 1).trim();
+        if (name.startsWith('--') && value) vars[name] = value;
+    }
+    return vars;
 }
 
 // ─── 主题 CSS 变量常量 ───

@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 305 | 132951 | 1609 | 1348 | 84% |
+| `engine/` | 305 | 132895 | 1609 | 1348 | 84% |
 | `services/` | 32 | 12640 | 187 | 148 | 79% |
-| `shared/` | 179 | 40741 | 1604 | 1323 | 82% |
-| `core/` | 7 | 2770 | 28 | 13 | 46% |
+| `shared/` | 178 | 40658 | 1601 | 1320 | 82% |
+| `core/` | 7 | 2821 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 101327 | 735 | 639 | 87% |
+| `ui/` | 238 | 100168 | 733 | 638 | 87% |
 
 ## 文件清单
 
@@ -23,7 +23,7 @@
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 550 | 4 | 2 |
 | `core/settings-service.ts` | 539 | 4 | 3 |
-| `core/theme-manager.ts` | 262 | 3 | 2 |
+| `core/theme-manager.ts` | 313 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
 | `domains/kernel/project-locator.ts` | 106 | 7 | 7 |
@@ -296,12 +296,12 @@
 | `engine/settlement/settlement-journal.ts` | 197 | 6 | 6 |
 | `engine/settlement/settlement-types.ts` | 46 | 2 | 1 |
 | `engine/step-definitions.ts` | 264 | 13 | 11 |
-| `engine/step-modal-controller.ts` | 684 | 2 | 2 |
+| `engine/step-modal-controller.ts` | 657 | 2 | 2 |
 | `engine/step-prompt-assembly.ts` | 166 | 5 | 4 |
 | `engine/step-result-saver.ts` | 558 | 5 | 4 |
-| `engine/step-runner-callbacks.ts` | 157 | 5 | 0 |
+| `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 223 | 6 | 5 |
-| `engine/step-runner.ts` | 2063 | 2 | 1 |
+| `engine/step-runner.ts` | 2045 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 205 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |
@@ -506,7 +506,6 @@
 | `shared/session-retention.ts` | 186 | 6 | 6 |
 | `shared/settings-migrator.ts` | 303 | 7 | 7 |
 | `shared/step-frontmatter.ts` | 154 | 5 | 4 |
-| `shared/step-modal-styles.ts` | 83 | 3 | 3 |
 | `shared/storage-keys.ts` | 50 | 5 | 2 |
 | `shared/store/compose.ts` | 64 | 2 | 2 |
 | `shared/store/createStore.ts` | 152 | 2 | 2 |
@@ -566,7 +565,7 @@
 | `ui/batch-novels-modal.ts` | 236 | 1 | 1 |
 | `ui/button-busy.ts` | 37 | 1 | 1 |
 | `ui/changelog-modal.ts` | 193 | 1 | 1 |
-| `ui/chapter-outline-tree-modal.ts` | 1322 | 1 | 1 |
+| `ui/chapter-outline-tree-modal.ts` | 1282 | 1 | 1 |
 | `ui/chapter-settlement-modal.ts` | 409 | 1 | 1 |
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
@@ -647,7 +646,7 @@
 | `ui/fingerprint-library-modal.ts` | 307 | 1 | 1 |
 | `ui/fingerprint-utils.ts` | 209 | 11 | 11 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |
-| `ui/full-writer-view.ts` | 2743 | 2 | 2 |
+| `ui/full-writer-view.ts` | 2740 | 2 | 2 |
 | `ui/full-writer/batch-pipeline-runner.ts` | 492 | 5 | 4 |
 | `ui/full-writer/batch-step-retry.ts` | 26 | 2 | 1 |
 | `ui/full-writer/batch-targets.ts` | 68 | 4 | 4 |
@@ -663,11 +662,10 @@
 | `ui/full-writer/flow-tab.ts` | 59 | 3 | 3 |
 | `ui/full-writer/full-writer-store.ts` | 401 | 5 | 5 |
 | `ui/full-writer/full-writer-utils.ts` | 115 | 6 | 6 |
-| `ui/full-writer/fw-styles.ts` | 15 | 1 | 1 |
 | `ui/full-writer/intervention-controller.ts` | 412 | 3 | 3 |
 | `ui/full-writer/project-selector-controller.ts` | 953 | 3 | 3 |
 | `ui/full-writer/quick-tools-panel.ts` | 150 | 3 | 3 |
-| `ui/full-writer/scene-outline-controller.ts` | 1160 | 2 | 1 |
+| `ui/full-writer/scene-outline-controller.ts` | 1139 | 2 | 1 |
 | `ui/full-writer/setting-lib-controller.ts` | 63 | 1 | 1 |
 | `ui/full-writer/status-bar-controller.ts` | 90 | 2 | 2 |
 | `ui/full-writer/step-render-controller.ts` | 685 | 2 | 2 |
@@ -690,10 +688,10 @@
 | `ui/generate-item-modal.ts` | 378 | 1 | 1 |
 | `ui/generate-location-modal.ts` | 378 | 1 | 1 |
 | `ui/generate-worldview-modal.ts` | 292 | 1 | 1 |
-| `ui/golden-opening-modal.ts` | 1926 | 1 | 1 |
+| `ui/golden-opening-modal.ts` | 1408 | 1 | 1 |
 | `ui/home-view.ts` | 230 | 2 | 1 |
 | `ui/humanize-report-modal.ts` | 217 | 2 | 2 |
-| `ui/ideation-modal.ts` | 1232 | 1 | 1 |
+| `ui/ideation-modal.ts` | 817 | 1 | 1 |
 | `ui/job-center-modal.ts` | 124 | 1 | 1 |
 | `ui/knowledge-detail-format.ts` | 46 | 4 | 4 |
 | `ui/knowledge-detail-modal.ts` | 1700 | 1 | 1 |
@@ -715,10 +713,10 @@
 | `ui/outline-expand-modal.ts` | 900 | 2 | 1 |
 | `ui/panel-resizer.ts` | 238 | 4 | 3 |
 | `ui/password-modal.ts` | 145 | 1 | 1 |
-| `ui/plan-book-modal.ts` | 698 | 1 | 1 |
+| `ui/plan-book-modal.ts` | 569 | 1 | 1 |
 | `ui/plot-canvas-modal.ts` | 331 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
-| `ui/polish-editor.ts` | 822 | 6 | 5 |
+| `ui/polish-editor.ts` | 804 | 5 | 5 |
 | `ui/pre-research-modal.ts` | 711 | 2 | 2 |
 | `ui/project-health-modal.ts` | 134 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 406 | 5 | 5 |

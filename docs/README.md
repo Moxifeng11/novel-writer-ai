@@ -74,6 +74,7 @@
 | 测试与 E2E 基线 | `docs/progress/program-status.json` 的 `baseline` | `check:program`、`check:docs` |
 | 专项任务进度 | `docs/progress/program-status.json` | `check:program` |
 | CSS 预算 | `.css-baseline.json` | `check:css` |
+| 静态样式来源 | `styles-src/*.css`（拼接为 `styles.css`） | `check:styles`、`check:css` |
 | 内联样式预算 | `.inline-style-baseline.json` | `check:inline-styles` |
 | Obsidian API 用法（棘轮） | `.obsidian-api-baseline.json` | `check:obsidian-api` |
 | 密钥/密文泄露（推送前） | 被 git 跟踪的文件（`git ls-files`）+ `.gitignore` | `check:secrets` |

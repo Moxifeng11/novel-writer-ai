@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-08T20:52:08.625Z",
-  "note": "棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因",
-  "bytes": 472781,
-  "important": 0,
-  "hardcodedHex": 154,
-  "rgbHsl": 180,
-  "uniqueClasses": 2494,
-  "otherClasses": 87,
+  "generatedAt": "2026-11-08T21:32:15.812Z",
+  "note": "v4.80.0 批量 A：11 处运行时 <style> 注入的静态 CSS 迁入 styles-src/20-runtime-modals.css。+29380B/+193 类来自迁移；plan-book 通用类挂 .novel-writer-plan-book-modal 根类（+600B/+1 类）；5 处 transition:all 改为具名属性（+218B，通过既有动效门禁）。19 个 !important、+7 hex、+8 rgb 为迁移带入，后续批次清理后只降不升",
+  "bytes": 502979,
+  "important": 19,
+  "hardcodedHex": 161,
+  "rgbHsl": 188,
+  "uniqueClasses": 2688,
+  "otherClasses": 92,
   "maxSelectorDepth": 4
 }

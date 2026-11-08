@@ -6,7 +6,6 @@
  *
  * 提取自 full-writer-view.ts:
  *   - escapeHtml (L4068)
- *   - injectPolishEditorStyles (L4077)
  *   - buildEntityMarkedHtml (L4025)
  *   - extractPlainTextFromEditor (L4049)
  *   - renderPolishEditor (L3898) → PolishEditor.render()
@@ -42,24 +41,6 @@ export function escapeHtml(text: string): string {
     const div = document.createElement('div');
     div.appendChild(document.createTextNode(text));
     return div.innerHTML;
-}
-
-/** 注入润色编辑器的实体颜色 CSS（幂等） */
-export function injectPolishEditorStyles(): void {
-    const styleId = 'nw-polish-editor-styles';
-    if (document.getElementById(styleId)) return;
-    const style = document.createElement('style');
-    style.id = styleId;
-    style.textContent = `
-        .nw-entity-char { color: #e74c3c !important; background: rgba(231,76,60,0.1) !important; }
-        .nw-entity-locs { color: #3498db !important; background: rgba(52,152,219,0.1) !important; }
-        .nw-entity-factions { color: #2ecc71 !important; background: rgba(46,204,113,0.1) !important; }
-        .nw-entity-items { color: #f39c12 !important; background: rgba(243,156,18,0.1) !important; }
-        .nw-entity-tag[contenteditable="false"] { cursor: default !important; }
-        .novel-writer-polish-editor:focus { outline: 2px solid var(--interactive-accent); }
-        .novel-writer-polish-editor .nw-entity-tag:hover { outline: 2px dashed currentColor; }
-    `;
-    document.head.appendChild(style);
 }
 
 /**
@@ -164,8 +145,6 @@ export class PolishEditor {
         }
         log.warn('[小说工坊] PolishEditor.render: project=%s bodyLen=%d', project, bodyText.length);
 
-        // 注入实体颜色 CSS
-        injectPolishEditorStyles();
 
         // 分割线
         area.createEl('hr', { cls: 'nw-u-m-16px-0-12px-0 nw-u-bordercolor-background-modifier-bo' });

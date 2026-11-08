@@ -69,6 +69,8 @@ const EXAMPLE_REQUIRED_FILES = new Set([
 const EXAMPLE_REQUIRED_PREFIXES = ['ui/components/'];
 
 const UPDATE = process.argv.includes('--update-baseline') || process.argv.includes('--init');
+const NOTE_INDEX = process.argv.indexOf('--note');
+const BASELINE_NOTE = NOTE_INDEX !== -1 ? process.argv[NOTE_INDEX + 1] : '';
 const REPORT = !process.argv.includes('--no-report');
 // 诊断用：列出每个文件仍未注释的符号名，便于分批补注释（不影响门禁结果）。
 const LIST_MISSING = process.argv.includes('--list-missing');
@@ -404,7 +406,7 @@ function main() {
         }
         const payload = {
             generatedAt: new Date().toISOString(),
-            note: '棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。',
+            note: BASELINE_NOTE || '棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。',
             layers,
             files: baselineFiles,
         };

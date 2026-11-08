@@ -129,7 +129,6 @@ export class ChapterOutlineTreeModal extends Modal {
         }
 
         this.volumes.forEach((_, i) => this.expandedVolumes.add(i));
-        this.injectStyles();
         this.render();
     }
 
@@ -1279,43 +1278,4 @@ export class ChapterOutlineTreeModal extends Modal {
         return src.lines.length;
     }
 
-    private injectStyles(): void {
-        const styleId = 'nw-outline-tree-styles';
-        if (document.getElementById(styleId)) return;
-        const style = document.createElement('style');
-        style.id = styleId;
-        style.textContent = `
-            .nw-outline-tree-modal input:focus {
-                outline: none;
-                box-shadow: 0 0 0 2px var(--text-accent);
-            }
-            .nw-outline-tree-modal input[type="number"]::-webkit-inner-spin-button,
-            .nw-outline-tree-modal input[type="number"]::-webkit-outer-spin-button {
-                opacity: 0.5;
-            }
-            .nw-drag-over-top {
-                border-top: 2px solid var(--text-accent) !important;
-                margin-top: -1px !important;
-            }
-            .nw-drag-over-bottom {
-                border-bottom: 2px solid var(--text-accent) !important;
-                margin-bottom: -1px !important;
-            }
-            .nw-outline-tree-modal [draggable="true"] {
-                cursor: grab;
-            }
-            .nw-outline-tree-modal [draggable="true"]:active {
-                cursor: grabbing;
-            }
-            .nw-scene-drag-over-top {
-                border-top: 2px solid var(--text-accent) !important;
-                margin-top: -1px !important;
-            }
-            .nw-scene-drag-over-bottom {
-                border-bottom: 2px solid var(--text-accent) !important;
-                margin-bottom: -1px !important;
-            }
-        `;
-        document.head.appendChild(style);
-    }
 }

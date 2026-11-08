@@ -99,7 +99,6 @@ export class SceneOutlineController {
         this.renderHeader(wrap);
         this.renderMainContent(wrap);
         this.renderFooter(wrap);
-        this.injectStyles();
     }
 
     /** 头部工具栏 */
@@ -1136,24 +1135,4 @@ export class SceneOutlineController {
     }
 
     /** 样式注入 */
-    private injectStyles(): void {
-        const styleId = 'nw-scene-outline-styles';
-        if (document.getElementById(styleId)) return;
-
-        const style = document.createElement('style');
-        style.id = styleId;
-        style.textContent = `
-            .nw-scene-outline-container textarea:focus,
-            .nw-scene-outline-container input:focus,
-            .nw-scene-outline-container select:focus {
-                outline: none;
-                border-color: var(--text-accent) !important;
-                box-shadow: 0 0 0 2px rgba(var(--color-accent-rgb), 0.2);
-            }
-            .nw-scene-outline-container button:hover {
-                background: var(--background-modifier-hover) !important;
-            }
-        `;
-        document.head.appendChild(style);
-    }
 }

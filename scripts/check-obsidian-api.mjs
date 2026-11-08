@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * check-obsidian-api.mjs — Obsidian 插件缺陷类静态门禁（v4.76.0）
+ * check-obsidian-api.mjs — Obsidian 插件缺陷类静态门禁（v4.76.0；v4.80.0 增补样式规则）
  *
  * 为什么存在：`check:any` 管类型、`check:bundle` 管体积、`check:inline-styles` 管样式，
  * 但没有一条管「Obsidian API 用法」。以下缺陷类能过全部现有门禁，却会被官方审查打回、
@@ -11,6 +11,8 @@
  *  3. direct-fetch              非流式 HTTP 未走 requestUrl（移动端无 CORS 豁免）
  *  4. global-document-listener  document 级监听（需成对移除；新处必须显式登记）
  *  5. console-direct            运行时直接 console.*（统一走 shared/logger）
+ *  6. style-element             动态创建 <style> 注入（社区目录审核 Error）
+ *  7. static-style-assignment   字面量内联样式赋值（社区目录审核 Error；动态值不算）
  *
  * 语义：棘轮 —— 违规数只允许下降。基线见 `.obsidian-api-baseline.json`；
  * 新增违规（含「换个文件继续违规」）会让门禁失败。确认要增加的，必须
@@ -49,7 +51,9 @@ const RULES = [
         description: '晚于 minAppVersion 1.4.0 的 API 或已弃用 API',
         // v4.79.0：补「强转绕过」形态——(app as unknown as { isMobile?: boolean }).isMobile
         pattern: /MarkdownRenderer\.renderMarkdown|Vault\.getAllFolders|getAllFolders\(|setCssProps|app\.isMobile|\{\s*isMobile\?\s*:/,
-        allow: ['shared/file-system-port.ts', 'shared/changelog-data.ts'],
+        // theme-manager：setCssProps 为 1.5+ API，代码做了 typeof 运行时探测，
+        // 1.4.x 退回 style.setProperty；这是社区目录推荐的动态变量写法。
+        allow: ['shared/file-system-port.ts', 'shared/changelog-data.ts', 'core/theme-manager.ts'],
     },
     {
         id: 'direct-fetch',
@@ -77,6 +81,27 @@ const RULES = [
         // 白名单是 console 的合法出口：logger sink 本身 + store 中间件（%c 样式化调试，
         // 有 5 条单测断言精确参数；换 logger 会丢样式且默认 warn 级别下静默）
         allow: ['shared/logger.ts', 'shared/store/middleware/logger.ts'],
+    },
+    {
+        id: 'style-element',
+        description: '不得动态创建 <style> 元素注入样式；静态样式写入 styles-src/*.css',
+        // 社区目录 obsidianmd/no-forbidden-style-element：addStyle/动态 <style> 都是 Error
+        pattern: /(?:createElement|createEl)\(\s*['"`]style['"`]/,
+        allow: [],
+    },
+    {
+        id: 'static-style-assignment',
+        description: '不得用字面量赋内联样式（社区目录 no-static-styles-assignment）',
+        // 对齐 eslint-plugin-obsidianmd 的判定：
+        //   - el.style.color = 'red' / 0 / true / `red`   → 违规
+        //   - el.style.cssText = '...'                    → 违规
+        //   - el.style.setProperty('color', 'red')        → 违规（两参都是字面量）
+        //   - el.style.width = someWidth / `...${x}`      → 不算（动态值）
+        //   - setAttribute('style', '...')                → 违规
+        pattern: /\.style\.[A-Za-z_$][\w$]*\s*=\s*(?:['"`]|-?\d|true\b|false\b|null\b)|\.style\.setProperty\(\s*['"][^'"]+['"]\s*,\s*(?:['"`]|-?\d|true\b|false\b|null\b)|setAttribute\(\s*['"]style['"]\s*,/,
+        // 含插值的模板字符串属于动态样式，ESLint 不报；整行排除避免误伤
+        exclude: /\$\{/,
+        allow: [],
     },
 ];
 
@@ -127,6 +152,7 @@ function collectViolations(root) {
             if (isCommentLine(line)) return;
             for (const rule of RULES) {
                 if (rule.allow.some((prefix) => rel === prefix || rel.startsWith(prefix))) continue;
+                if (rule.exclude && rule.exclude.test(line)) continue;
                 if (!rule.pattern.test(line)) continue;
                 const entry = report[rule.id];
                 entry.count += 1;

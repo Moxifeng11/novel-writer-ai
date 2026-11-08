@@ -44,6 +44,9 @@ export class PlanBookModal extends Modal {
      */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
+        // 迁入 styles.css 的样式统一挂在这个根类下，避免 .novel-writer-input/-textarea
+        // 等通用类影响其他界面（v4.80.0 批量 A）
+        this.modalEl.addClass('novel-writer-plan-book-modal');
         const { contentEl } = this;
 
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
@@ -58,7 +61,6 @@ export class PlanBookModal extends Modal {
         contentEl.empty();
         contentEl.createEl('h2', { text: '📋 AI全书规划' });
 
-        this.injectStyles();
 
         const projectSelect = contentEl.createEl('select', { cls: 'nw-select novel-writer-select' });
         
@@ -389,6 +391,7 @@ ${worldviewResult.content}`;
                  */
                 onOpen(): void {
     this.modalEl.addClass('nw-scope');
+                    this.modalEl.addClass('novel-writer-plan-book-modal');
                     const { contentEl } = this;
                     contentEl.empty();
                     contentEl.createEl('h3', { text: '请选择题材与主题' });
@@ -537,138 +540,6 @@ ${worldviewResult.content}`;
         return isNaN(n) || n === 0 ? 1000000 : n;
     }
 
-    private injectStyles(): void {
-        const styleId = 'novel-writer-plan-book-styles';
-        if (document.getElementById(styleId)) return;
-
-        const style = document.createElement('style');
-        style.id = styleId;
-        style.textContent = `
-.novel-writer-plan-section {
-    margin: 16px 0;
-    padding: 12px;
-    background: var(--background-secondary);
-    border-radius: 8px;
-}
-
-.novel-writer-section-title {
-    margin: 0 0 12px 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.novel-writer-input-row {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-    gap: 10px;
-}
-
-.novel-writer-input-label {
-    min-width: 100px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-secondary);
-}
-
-.novel-writer-input {
-    flex: 1;
-    padding: 8px 12px;
-    background: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 6px;
-    font-size: 13px;
-    color: var(--text-primary);
-}
-
-.novel-writer-input:focus {
-    outline: none;
-    border-color: var(--interactive-accent);
-}
-
-.novel-writer-textarea {
-    width: 100%;
-    padding: 10px 12px;
-    background: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 6px;
-    font-size: 13px;
-    color: var(--text-primary);
-    font-family: var(--font-text);
-    resize: vertical;
-    box-sizing: border-box;
-}
-
-.novel-writer-textarea:focus {
-    outline: none;
-    border-color: var(--interactive-accent);
-}
-
-.novel-writer-context-preview {
-    padding: 10px;
-    background: var(--background-primary);
-    border-radius: 6px;
-    border: 1px solid var(--background-modifier-border);
-}
-
-.novel-writer-context-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.novel-writer-context-list li {
-    padding: 6px 0;
-    font-size: 13px;
-    border-bottom: 1px solid var(--background-modifier-border-hover);
-}
-
-.novel-writer-context-list li:last-child {
-    border-bottom: none;
-}
-
-.novel-writer-context-name {
-    font-weight: 500;
-    color: var(--text-primary);
-}
-
-.novel-writer-context-sep {
-    color: var(--text-muted);
-}
-
-.novel-writer-context-status {
-    font-size: 12px;
-}
-
-.novel-writer-status-ok {
-    color: var(--text-success);
-}
-
-.novel-writer-status-missing {
-    color: var(--text-muted);
-}
-
-.novel-writer-context-tip {
-    margin: 10px 0 0 0;
-    padding: 8px;
-    background: var(--background-secondary-alt);
-    border-radius: 4px;
-    font-size: 12px;
-    color: var(--text-muted);
-}
-
-.novel-writer-muted {
-    color: var(--text-muted);
-    font-size: 13px;
-}
-
-.novel-writer-preset-section {
-    margin-top: 8px;
-}
-`;
-        document.head.appendChild(style);
-    }
 
     private fallbackDetectProjects(): string[] {
         const projectDirs = new Set<string>();

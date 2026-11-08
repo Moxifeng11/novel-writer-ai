@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-11-08T11:43:54.022Z",
-  "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
+  "generatedAt": "2026-11-08T21:36:01.040Z",
+  "note": "v4.80.0 批量 A：删除三处纯死代码的样式注入方法（StepModalController 3 / StepRunner 3 / polish-editor 1 导出），已注释数随之下降；导出覆盖率仍 100%、@example 52/52，不是丢注释",
   "layers": {
     "engine": {
       "files": 288,
-      "exports": 1583,
-      "documented": 1582,
-      "methods": 1245,
-      "methodsDocumented": 1245,
+      "exports": 1585,
+      "documented": 1584,
+      "methods": 1239,
+      "methodsDocumented": 1239,
       "incomplete": 0
     },
     "services": {
@@ -19,17 +19,17 @@
       "incomplete": 0
     },
     "shared": {
-      "files": 174,
-      "exports": 1592,
-      "documented": 1592,
+      "files": 177,
+      "exports": 1606,
+      "documented": 1606,
       "methods": 149,
       "methodsDocumented": 149,
       "incomplete": 0
     },
     "core": {
       "files": 6,
-      "exports": 23,
-      "documented": 23,
+      "exports": 24,
+      "documented": 24,
       "methods": 50,
       "methodsDocumented": 50,
       "incomplete": 0
@@ -44,10 +44,10 @@
     },
     "ui": {
       "files": 236,
-      "exports": 725,
-      "documented": 725,
-      "methods": 645,
-      "methodsDocumented": 645,
+      "exports": 724,
+      "documented": 724,
+      "methods": 648,
+      "methodsDocumented": 648,
       "incomplete": 0
     }
   },
@@ -649,8 +649,8 @@
       "incomplete": 0
     },
     "engine/deconstructors/commercial-deconstructor.ts": {
-      "exports": 5,
-      "documented": 5,
+      "exports": 6,
+      "documented": 6,
       "methods": 5,
       "methodsDocumented": 5,
       "incomplete": 0
@@ -1775,8 +1775,8 @@
     "engine/step-modal-controller.ts": {
       "exports": 2,
       "documented": 2,
-      "methods": 7,
-      "methodsDocumented": 7,
+      "methods": 4,
+      "methodsDocumented": 4,
       "incomplete": 0
     },
     "engine/step-prompt-assembly.ts": {
@@ -1810,8 +1810,8 @@
     "engine/step-runner.ts": {
       "exports": 1,
       "documented": 1,
-      "methods": 17,
-      "methodsDocumented": 17,
+      "methods": 14,
+      "methodsDocumented": 14,
       "incomplete": 0
     },
     "engine/step-sequential.ts": {
@@ -2025,8 +2025,8 @@
       "incomplete": 0
     },
     "engine/types/analysis-session.ts": {
-      "exports": 8,
-      "documented": 8,
+      "exports": 9,
+      "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2546,6 +2546,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "shared/dom-window.ts": {
+      "exports": 3,
+      "documented": 3,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "shared/embedding-provider.ts": {
       "exports": 4,
       "documented": 4,
@@ -2689,8 +2696,8 @@
       "incomplete": 0
     },
     "shared/file-path-guard.ts": {
-      "exports": 10,
-      "documented": 10,
+      "exports": 11,
+      "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2922,8 +2929,8 @@
       "incomplete": 0
     },
     "shared/paths.ts": {
-      "exports": 189,
-      "documented": 189,
+      "exports": 193,
+      "documented": 193,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2952,6 +2959,13 @@
     "shared/plugin-capabilities.ts": {
       "exports": 4,
       "documented": 4,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "shared/plugin-leaves.ts": {
+      "exports": 2,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3197,8 +3211,8 @@
       "incomplete": 0
     },
     "shared/secret-display.ts": {
-      "exports": 4,
-      "documented": 4,
+      "exports": 7,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3234,13 +3248,6 @@
     "shared/step-frontmatter.ts": {
       "exports": 4,
       "documented": 4,
-      "methods": 0,
-      "methodsDocumented": 0,
-      "incomplete": 0
-    },
-    "shared/step-modal-styles.ts": {
-      "exports": 3,
-      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3317,6 +3324,20 @@
     "shared/story-structure.ts": {
       "exports": 23,
       "documented": 23,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "shared/support-author.ts": {
+      "exports": 3,
+      "documented": 3,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "shared/support-qr.generated.ts": {
+      "exports": 1,
+      "documented": 1,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3578,8 +3599,8 @@
       "incomplete": 0
     },
     "core/theme-manager.ts": {
-      "exports": 3,
-      "documented": 3,
+      "exports": 4,
+      "documented": 4,
       "methods": 4,
       "methodsDocumented": 4,
       "incomplete": 0
@@ -4461,13 +4482,6 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
-    "ui/full-writer/fw-styles.ts": {
-      "exports": 1,
-      "documented": 1,
-      "methods": 0,
-      "methodsDocumented": 0,
-      "incomplete": 0
-    },
     "ui/full-writer/intervention-controller.ts": {
       "exports": 3,
       "documented": 3,
@@ -4527,8 +4541,8 @@
     "ui/full-writer/tab-controller.ts": {
       "exports": 2,
       "documented": 2,
-      "methods": 7,
-      "methodsDocumented": 7,
+      "methods": 8,
+      "methodsDocumented": 8,
       "incomplete": 0
     },
     "ui/full-writer/template-vars-builder.ts": {
@@ -4847,8 +4861,8 @@
       "incomplete": 0
     },
     "ui/polish-editor.ts": {
-      "exports": 6,
-      "documented": 6,
+      "exports": 5,
+      "documented": 5,
       "methods": 4,
       "methodsDocumented": 4,
       "incomplete": 0
@@ -5136,6 +5150,13 @@
       "incomplete": 0
     },
     "ui/style-distiller-modal.ts": {
+      "exports": 1,
+      "documented": 1,
+      "methods": 2,
+      "methodsDocumented": 2,
+      "incomplete": 0
+    },
+    "ui/support-author-modal.ts": {
       "exports": 1,
       "documented": 1,
       "methods": 2,
