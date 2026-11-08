@@ -71,9 +71,13 @@ if (tagIndex !== -1) {
     } else if (tag.replace(/^v/, '') !== pkg.version) {
         errors.push(`tag 与 package.json 版本不一致: tag=${tag} version=${pkg.version}`);
     } else {
-        const notesPath = path.join(rootDir, 'docs', 'releases', `${tag}.md`);
-        if (!fs.existsSync(notesPath)) {
-            errors.push(`缺少发布说明: docs/releases/${tag}.md（release.yml 会退化为自动生成 notes）`);
+        // 社区目录要求 tag 不带 v，但仓库发布说明历史文件名带 v；两种都接受
+        const candidates = [
+            path.join(rootDir, 'docs', 'releases', `${tag}.md`),
+            path.join(rootDir, 'docs', 'releases', `v${tag.replace(/^v/, '')}.md`),
+        ];
+        if (!candidates.some((candidate) => fs.existsSync(candidate))) {
+            errors.push(`缺少发布说明: docs/releases/${tag}.md 或 v${tag.replace(/^v/, '')}.md（release.yml 会退化为自动生成 notes）`);
         }
     }
 }

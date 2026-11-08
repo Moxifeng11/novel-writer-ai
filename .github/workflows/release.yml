@@ -104,6 +104,9 @@ jobs:
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
           NOTES="docs/releases/${TAG}.md"
+          if [ ! -f "$NOTES" ]; then
+            NOTES="docs/releases/v${TAG#v}.md"
+          fi
           # SHA256SUMS.txt 为校验和清单，不属于 check-release.mjs 的 worker/versions 比对范围（该脚本按前缀过滤）
           ASSETS=(main.js manifest.json styles.css versions.json workers/deconstruction-worker.js workers/quality-worker.js "$ZIP" SHA256SUMS.txt)
 
