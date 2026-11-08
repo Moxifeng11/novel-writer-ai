@@ -3,7 +3,10 @@ name: Release
 on:
   push:
     tags:
+      # Obsidian 社区目录要求 Release tag 与 manifest.version 完全一致（不带 v 前缀）。
+      # 正式发版使用 4.x.y；v* 仅为历史版本兼容保留。
       - 'v*'
+      - '[0-9]*'
 
 permissions:
   contents: write

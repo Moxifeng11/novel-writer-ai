@@ -9,6 +9,8 @@
 - manifest：`name` 改为 `Novel Writer AI`（目录要求 Basic Latin，原名含中文会被自动审核拒绝）、`description` 改英文、移除非标准 `main` 字段。
 - README 增加英文概览与披露：网络用途、本地数据落盘、可选桌面 dsh 后端、无自更新、MIT 许可。
 - 唯一性核对：id `novel-writer-ai` 与名称 `Novel Writer AI` 在社区目录（10,124 条）均无冲突。
+- 已提交社区目录：listing 已上线（https://community.obsidian.md/plugins/novel-writer-ai），自动审核进行中；仓库转为 public。
+- Release tag 规范改为**不带 v 前缀**（`4.79.0`），`release.yml` 同时接受 `v*` 与数字 tag；Obsidian 安装按 manifest.version 拼 `releases/download/<version>/`。
 
 ### 🛡️ 数据一致性：结算回滚不再误删用户文件（2 项 P1 + 1 项并发 P1）
 

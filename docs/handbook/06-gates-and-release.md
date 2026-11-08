@@ -31,6 +31,10 @@
 
 ## 3. 发布流程（当前口径）
 
+> **社区目录要求**：Release tag 必须与 `manifest.version` **完全一致（不带 `v` 前缀）**，
+> 因为 Obsidian 按 `releases/download/<version>/main.js` 下载。正式发版请用 `4.x.y`；
+> `v*` tag 仅保留给历史版本，且不会被 Obsidian 识别。
+
 ```bash
 # 1) 版本（package.json 是唯一源）
 npm version 4.24.0 --no-git-tag-version
