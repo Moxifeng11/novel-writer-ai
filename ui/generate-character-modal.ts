@@ -265,8 +265,8 @@ export class GenerateCharacterModal extends Modal {
                 let result;
                 try {
                     result = await this.aiEngine.generateCharacters(worldView, count, effectivePrompt, undefined, isFirstCharacter, nameList, settingLib, signal, existingEntities);
-                } catch (e: any) {
-                    showErrorNotice(`AI调用失败: ${e?.message || e}`, { timeout: 8000 });
+                } catch (e) {
+                    showErrorNotice(`AI调用失败: ${(e as { message?: string })?.message || e}`, { timeout: 8000 });
                     log.error('[生成人物] AI异常:', e);
                     generateButton.disabled = false; generateButton.setText('🚀 批量生成人物'); progressLabel.style.display = 'none'; progressBarTrack.style.display = 'none'; progressBarFill.removeClass('nw-progress-anim');
                     return;

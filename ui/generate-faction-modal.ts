@@ -220,9 +220,9 @@ export class GenerateFactionModal extends Modal {
                 let results;
                 try {
                     results = await this.aiEngine.generateFactionsBatch(wv, nameList, effectivePrompt, count, '', settingLib);
-                } catch (e: any) {
+                } catch (e) {
                     hideProgress();
-                    new Notice(`❌ AI调用失败: ${e?.message || e}`, 8000);
+                    new Notice(`❌ AI调用失败: ${(e as { message?: string })?.message || e}`, 8000);
                     log.error('[生成势力] AI异常:', e);
                     generateButton.disabled = false; generateButton.setText(originalButtonText); progressLabel.style.display = 'none'; progressBarTrack.style.display = 'none'; progressBarFill.removeClass('nw-progress-anim');
                     return;

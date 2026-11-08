@@ -272,11 +272,11 @@ ${result.content}`;
             }
 
             this.close();
-        } catch (error: any) {
+        } catch (error) {
             completed = true;
             if (this.timeoutTimer) clearTimeout(this.timeoutTimer);
             genNotice.hide();
-            showError(`世界观生成异常: ${error.message || '未知错误'}`);
+            showError(`世界观生成异常: ${(error as { message?: string }).message || '未知错误'}`);
         }
     }
 

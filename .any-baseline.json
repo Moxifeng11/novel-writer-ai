@@ -1,5 +1,5 @@
 {
-  "total": 133,
+  "total": 128,
   "generatedAt": "2026-11-08",
   "files": {
     "engine/ai-outline-generator.ts": 6,
@@ -64,11 +64,6 @@
     "ui/full-writer/setting-lib-controller.ts": 1,
     "ui/full-writer/tab-controller.ts": 1,
     "ui/full-writer/wizard-view-access.ts": 1,
-    "ui/generate-character-modal.ts": 1,
-    "ui/generate-faction-modal.ts": 1,
-    "ui/generate-item-modal.ts": 1,
-    "ui/generate-location-modal.ts": 1,
-    "ui/generate-worldview-modal.ts": 1,
     "ui/ideation-modal.ts": 1,
     "ui/outline-expand-modal.ts": 1,
     "ui/plan-book-modal.ts": 1,
