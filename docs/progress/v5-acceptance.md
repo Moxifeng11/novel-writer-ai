@@ -106,7 +106,7 @@
 |---|---|---|
 | B5 三模式验收 | **已闭环（2026-11-07）**：full-journey（长篇）+ mode-journey（短篇六维→番茄包 / 剧本可拍→红果包）mock AI 旅程 **3/3 通过**；`rewrite-chapters` 真实重写脚本已随「九霄逆脉行」项目下线（`308e1fe`），`E2E_REWRITE` 无消费者 | 无需手工走查；如需回退脚本须用户明确确认 |
 | E2E 全量 | 基线 **40 passed**（37 + mode-journey 3，2026-11-07 实测：`aa2b4c9` 37/37 + 三模式 3/3） | 变更后重跑 `npm run test:e2e`（五个 project） |
-| push / tag / Release | ahead **249**，未推送；最近节点 v4.77.0 `2fca1c1`（跨窗口监听 + 门禁存量清零）、any 第三批 `d307dd0`；v4.75.0 `bb93412`（删批量拆解模态）、v4.74.0 `4c6798f`（已发布）、v4.72.0 `44c38b3`、v4.71.0 `d599410`、v4.70.0 `bb5972a`、v4.69.0 `3038735`、v4.68.0 `cd6750f`、v4.67.0 `952c052`、v4.66.0 `e6d1bb0` 等 18 个本地节点待统一发布（历史收单哈希见 `git log`） | 用户明确指令后才执行（可只 push 不发版；tag 需与 package.json 版本一致） |
+| push / tag / Release | **已推送（2026-11-08 用户授权）**：origin/master = `510c49c`，ahead 0（250 个本地提交一次性推送）；**未打 tag/发版**，远端最新 Release 仍为 v4.23.4。本地 18 个版本节点 v4.60.0–v4.77.0 已随推送公开 | tag/Release 仍待单独授权：tag 版本必须等于 package.json（当前 4.77.0），若要把 any 第三批 `d307dd0` 写进发布说明建议先补 v4.78.0 节点 |
 | 剧本 `storyboard` 必填语义 | 已落地并被收单：`shared/creation-flow.ts` 的 `CreationFlowStage.hardDependsOn`（代码 `e1c3820`、文档 `3e5b9d4`），分镜未完成时「分集写作」显示 blocked；`storyboard` 自身不再按「既有正文」跳过 | 已闭环；如需回退须用户明确确认 |
 
 ---
