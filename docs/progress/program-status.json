@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 228,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 收单第 108 轮后实测 ahead 228，HEAD 868a820；Trae 并行测试批次使实测用例数持续增长至 6,563；v4.74.0 版本节点提交后 ahead 229）"
+    "localCommitsAhead": 230,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 ZCode 收单第 110 轮 4a445c5 后实测 ahead 230；此前 v4.74.0 版本节点为 229；全量用例 6,563 保持不变）"
   },
   "groups": [
     {

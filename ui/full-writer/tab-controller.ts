@@ -5,6 +5,7 @@ import NovelWriterPlugin from '@/main';
 import { pjStepDir } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
+import type { ChapterStateManager } from '@/ui/states/chapter-state-manager';
 
 
 const log = createLogger('TabController');
@@ -26,7 +27,7 @@ export interface TabControllerDeps {
     renderUnitTabContent?: (tab: WriterTab) => Promise<void>;
     renderInContainer: (container: HTMLElement) => Promise<void>;
     loadContext: () => Promise<void>;
-    getChapterStateManager: () => any;
+    getChapterStateManager: () => ChapterStateManager;
     calcResumeStepIndex: () => number;
     rebuildChapDirIfNeeded: (project: string, chapterName: string, volume: string, chapterNum?: number) => string;
     /**

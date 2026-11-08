@@ -92,9 +92,9 @@ export class CoverPickerController {
                 try {
                     await this.app.vault.createFolder(coverDir);
                     log.info('[小说工坊] 创建封面目录:', coverDir);
-                } catch (e: any) {
+                } catch (e) {
                     // 多语言兼容：Obsidian 可能返回 "Folder already exists" / "文件夹已存在" 等
-                    log.warn('[小说工坊] 创建封面目录失败（将尝试继续）:', coverDir, e?.message || e);
+                    log.warn('[小说工坊] 创建封面目录失败（将尝试继续）:', coverDir, (e as { message?: string })?.message || e);
                     // 不 rethrow — 后续 createBinary 若真的缺目录会自然失败
                 }
             }

@@ -11,7 +11,7 @@
 | `shared/` | 175 | 40321 | 1587 | 1313 | 83% |
 | `core/` | 7 | 2770 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 101492 | 735 | 639 | 87% |
+| `ui/` | 239 | 101494 | 735 | 639 | 87% |
 
 ## 文件清单
 
@@ -652,7 +652,7 @@
 | `ui/full-writer/context-loader-controller.ts` | 256 | 2 | 2 |
 | `ui/full-writer/cover-picker-controller.ts` | 146 | 1 | 1 |
 | `ui/full-writer/creation-flow-state.ts` | 253 | 4 | 4 |
-| `ui/full-writer/entity-state-controller.ts` | 135 | 2 | 2 |
+| `ui/full-writer/entity-state-controller.ts` | 136 | 2 | 2 |
 | `ui/full-writer/execution-panels.ts` | 383 | 4 | 4 |
 | `ui/full-writer/execution-run-store.ts` | 280 | 5 | 5 |
 | `ui/full-writer/fanfic-settings-utils.ts` | 299 | 13 | 13 |
@@ -669,7 +669,7 @@
 | `ui/full-writer/status-bar-controller.ts` | 90 | 2 | 2 |
 | `ui/full-writer/step-render-controller.ts` | 685 | 2 | 2 |
 | `ui/full-writer/streamlined-nav-presenter.ts` | 272 | 12 | 12 |
-| `ui/full-writer/tab-controller.ts` | 367 | 2 | 2 |
+| `ui/full-writer/tab-controller.ts` | 368 | 2 | 2 |
 | `ui/full-writer/template-vars-builder.ts` | 1155 | 7 | 7 |
 | `ui/full-writer/title-bar-controller.ts` | 192 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |

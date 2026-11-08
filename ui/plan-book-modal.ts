@@ -326,9 +326,9 @@ ${worldviewResult.content}`;
             // 替换旧版 renderOutlineTree（只能解析 #### 第X章 格式，不兼容 v4.0 表格格式）
             this.close();
             new ChapterOutlineTreeModal(this.app, this.plugin, project).open();
-        } catch (error: any) {
+        } catch (error) {
             genNotice.hide();
-            const errorMsg = error.message || '生成失败';
+            const errorMsg = (error as { message?: string }).message || '生成失败';
             showErrorNotice(errorMsg, { title: '全书规划生成失败', timeout: 12000 });
             log.error('[小说工坊] 大纲生成异常:', error);
         }

@@ -1,5 +1,5 @@
 {
-  "total": 128,
+  "total": 122,
   "generatedAt": "2026-11-08",
   "files": {
     "engine/ai-outline-generator.ts": 6,
@@ -57,16 +57,10 @@
     "ui/cowrite/history-modal.ts": 1,
     "ui/cowrite/iterate-instruction-modal.ts": 1,
     "ui/diagnose-writer-modal.ts": 1,
-    "ui/fingerprint-library-modal.ts": 1,
-    "ui/full-writer/cover-picker-controller.ts": 1,
-    "ui/full-writer/entity-state-controller.ts": 1,
     "ui/full-writer/full-writer-utils.ts": 1,
-    "ui/full-writer/setting-lib-controller.ts": 1,
-    "ui/full-writer/tab-controller.ts": 1,
     "ui/full-writer/wizard-view-access.ts": 1,
     "ui/ideation-modal.ts": 1,
     "ui/outline-expand-modal.ts": 1,
-    "ui/plan-book-modal.ts": 1,
     "ui/rendering/context-panel.ts": 1,
     "ui/states/chapter-state-manager.ts": 1,
     "ui/unified-entity-manager-modal.ts": 1,

@@ -54,9 +54,9 @@ export class SettingLibController {
             progressNotice.hide();
             new Notice('✅ 设定库生成完成');
             await this.refresh();
-        } catch (e: any) {
+        } catch (e) {
             progressNotice.hide();
-            new Notice(`设定库生成失败: ${e.message || e}`);
+            new Notice(`设定库生成失败: ${(e as { message?: string }).message || e}`);
         }
     }
 }

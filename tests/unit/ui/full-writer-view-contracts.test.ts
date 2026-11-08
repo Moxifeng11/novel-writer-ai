@@ -20,6 +20,7 @@ import { SceneOutlineController } from '../../../ui/full-writer/scene-outline-co
 import { TEMPLATE_VAR_FALLBACK_KEYS } from '../../../ui/full-writer/template-vars-builder';
 import { pjSettingLib, pjStepFile } from '../../../shared/paths';
 import { createDefaultScene } from '../../../shared/types';
+import type { ChapterStateManager } from '../../../ui/states/chapter-state-manager';
 
 class MemoryStorage {
     private map = new Map<string, string>();
@@ -176,7 +177,7 @@ describe('TabController — 切章取消在跑任务、重渲染不换 stepResul
             renderWizardTabContent: async () => undefined,
             renderInContainer,
             loadContext: async () => undefined,
-            getChapterStateManager: () => chapterState,
+            getChapterStateManager: () => chapterState as unknown as ChapterStateManager,
             calcResumeStepIndex: () => 0,
             rebuildChapDirIfNeeded: () => 'dir',
             cancelActiveRun,

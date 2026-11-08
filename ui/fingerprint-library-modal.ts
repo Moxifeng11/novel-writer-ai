@@ -278,12 +278,12 @@ export class AddFingerprintModal extends Modal {
             }
             new Notice('✅ 指纹提取完成');
             this.close();
-        } catch (e: any) {
-            if (e.name === 'AbortError' || e.message === '提取已取消') {
+        } catch (e) {
+            if ((e as { name?: string }).name === 'AbortError' || (e as { message?: string }).message === '提取已取消') {
                 new Notice('已取消提取');
             } else {
                 log.error('[AddFingerprintModal] 提取失败:', e);
-                new Notice(`❌ 提取失败：${e.message || '未知错误'}`);
+                new Notice(`❌ 提取失败：${(e as { message?: string }).message || '未知错误'}`);
             }
             this.isExtracting = false;
             this.abortController = null;
