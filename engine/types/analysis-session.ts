@@ -8,6 +8,20 @@
 import type { AnalysisSuggestion } from './analysis-suggestion';
 
 /**
+ * 角色识别结果快照
+ *
+ * 会话只做「原样存取 + 按 name 对比」，因此这里只约束三个候选数组的 `name`；
+ * 其余字段（confidence/evidence 等）随历史 JSON 一起保留，不做逐字段建模。
+ * 生产端真实类型是 `Character[]` / `CharacterCandidate[]`（见
+ * character-recognition-pipeline），结构上可赋值给本快照。
+ */
+export interface CharacterResultSnapshot {
+    finalCharacters?: Array<{ name?: string }>;
+    llmVerified?: Array<{ name?: string }>;
+    ruleCandidates?: Array<{ name?: string }>;
+}
+
+/**
  * 分析会话
  *
  * 保存一次完整分析的所有相关数据，包括分析结果快照、
@@ -20,9 +34,11 @@ export interface AnalysisSession {
     file: string;
     title: string;
 
-    characterResult: any;
-    plotResult?: any;
-    otherResults?: Record<string, any>;
+    characterResult?: CharacterResultSnapshot | null;
+    /** 剧情分析结果：当前无生产者/消费者，仅随会话 JSON 原样存取 */
+    plotResult?: unknown;
+    /** 其他分析结果（已知键 `analysisReport: string`，其余按不透明负载处理） */
+    otherResults?: Record<string, unknown>;
 
     suggestions: AnalysisSuggestion[];
 
@@ -49,7 +65,8 @@ export interface SessionAction {
     timestamp: number;
     type: SessionActionType;
     suggestionId?: string;
-    details?: Record<string, any>;
+    /** 动作附加信息（analyze 固定写 wordCount/characterCount，其余调用方自定义） */
+    details?: Record<string, unknown>;
 }
 
 /**

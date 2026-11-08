@@ -1,9 +1,8 @@
 {
-  "total": 106,
+  "total": 96,
   "generatedAt": "2026-11-08",
   "files": {
     "engine/ai-outline-generator.ts": 6,
-    "engine/analysis-session-manager.ts": 6,
     "engine/deconstructors/commercial-deconstructor.ts": 6,
     "shared/types.ts": 6,
     "engine/entity-state-manager.ts": 5,
@@ -12,7 +11,6 @@
     "engine/deconstructors/foreshadow-deconstructor.ts": 4,
     "engine/engine-registry.ts": 4,
     "engine/heavy-task-worker-manager.ts": 4,
-    "engine/types/analysis-session.ts": 4,
     "engine/cache/preload-manager.ts": 3,
     "engine/deconstructors/rhythm-deconstructor.ts": 3,
     "engine/embedding/openai-provider.ts": 3,

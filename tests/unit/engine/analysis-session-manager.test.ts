@@ -451,6 +451,50 @@ describe('AnalysisSessionManager — 会话对比', () => {
         expect(diff.removedCharacters).toContain('角色B');
     });
 
+    it('对比角色变化（finalCharacters 缺失时回退 llmVerified / ruleCandidates）', () => {
+        const session1 = manager.createSession({
+            file: 'test.md',
+            // 历史会话只有 LLM 复核结果
+            characterResult: {
+                llmVerified: [{ name: '角色A' }, { name: '角色B' }],
+            },
+            suggestions: [],
+            metadata: createMockMetadata(),
+        });
+
+        const session2 = manager.createSession({
+            file: 'test.md',
+            // 另一条历史会话只有规则候选
+            characterResult: {
+                ruleCandidates: [{ name: '角色A' }, { name: '角色C' }],
+            },
+            suggestions: [],
+            metadata: createMockMetadata(),
+        });
+
+        const diff = manager.compareSessions(session1.id, session2.id);
+
+        expect(diff.addedCharacters).toContain('角色C');
+        expect(diff.removedCharacters).toContain('角色B');
+    });
+
+    it('plotResult / otherResults 随导出导入原样保留', () => {
+        const session = manager.createSession({
+            file: 'test.md',
+            plotResult: { arcs: [{ name: '主线', tension: 0.8 }] },
+            otherResults: { analysisReport: '## 分析\n内容' },
+            suggestions: [],
+            metadata: createMockMetadata(),
+        });
+
+        const parsed = JSON.parse(manager.exportSession(session.id));
+        parsed.id = 'roundtrip-id';
+        const imported = manager.importSession(JSON.stringify(parsed));
+
+        expect(imported.plotResult).toEqual({ arcs: [{ name: '主线', tension: 0.8 }] });
+        expect(imported.otherResults).toEqual({ analysisReport: '## 分析\n内容' });
+    });
+
     it('会话不存在时抛出错误', () => {
         const session = manager.createSession({
             file: 'test.md',

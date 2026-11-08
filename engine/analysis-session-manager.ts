@@ -14,6 +14,7 @@
 import { createLogger } from '@/shared/logger';
 import type {
     AnalysisSession,
+    CharacterResultSnapshot,
     SessionAction,
     SessionListEntry,
     SessionDiff,
@@ -30,12 +31,30 @@ const SESSIONS_DIR = '.sessions';
 const INDEX_FILE = '_index.json';
 const INDEX_VERSION = 1;
 
+/**
+ * 会话管理器实际使用的 vault 端口（adapter 七方法）。
+ *
+ * 不直接依赖 obsidian 的 `Vault` 类：本模块要在测试里用内存 mock 离线跑，
+ * 也只用到这些方法；接口面按真实用法收窄，避免引入整个 Vault。
+ */
+interface AnalysisSessionVaultPort {
+    adapter: {
+        exists(path: string): Promise<boolean>;
+        read(path: string): Promise<string>;
+        write(path: string, content: string): Promise<void>;
+        mkdir(path: string): Promise<void>;
+        remove(path: string): Promise<void>;
+        list(path: string): Promise<{ files?: string[]; folders?: string[] }>;
+        stat(path: string): Promise<{ mtime?: number } | null>;
+    };
+}
+
 interface SessionCreateOptions {
     file: string;
     title?: string;
-    characterResult?: any;
-    plotResult?: any;
-    otherResults?: Record<string, any>;
+    characterResult?: CharacterResultSnapshot | null;
+    plotResult?: unknown;
+    otherResults?: Record<string, unknown>;
     suggestions: AnalysisSuggestion[];
     metadata: SessionMetadata;
 }
@@ -45,13 +64,13 @@ interface SessionCreateOptions {
  */
 export class AnalysisSessionManager {
     private sessions: Map<string, AnalysisSession> = new Map();
-    private vault: any;
+    private vault: AnalysisSessionVaultPort;
     private pluginDir: string;
     private sessionsDir: string;
     private indexPath: string;
     private index: SessionIndex;
 
-    constructor(plugin: { app: { vault: any }; manifest: { dir: string } }) {
+    constructor(plugin: { app: { vault: AnalysisSessionVaultPort }; manifest: { dir: string } }) {
         this.vault = plugin.app.vault;
         this.pluginDir = plugin.manifest.dir;
         this.sessionsDir = `${this.pluginDir}/${SESSIONS_DIR}`;
@@ -665,7 +684,7 @@ export class AnalysisSessionManager {
         return fileName.replace(/\.[^.]+$/, '');
     }
 
-    private extractCharacterNames(characterResult: any): string[] {
+    private extractCharacterNames(characterResult: CharacterResultSnapshot | null | undefined): string[] {
         if (!characterResult) return [];
 
         const names: string[] = [];
