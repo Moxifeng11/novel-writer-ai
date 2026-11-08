@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 305 | 132922 | 1609 | 1348 | 84% |
+| `engine/` | 305 | 132951 | 1609 | 1348 | 84% |
 | `services/` | 32 | 12641 | 187 | 148 | 79% |
 | `shared/` | 177 | 40576 | 1597 | 1321 | 83% |
 | `core/` | 7 | 2770 | 28 | 13 | 46% |
@@ -42,7 +42,7 @@
 | `engine/agent/dsh/dsh-protocol.ts` | 159 | 4 | 4 |
 | `engine/agent/dsh/dsh-session.ts` | 283 | 7 | 7 |
 | `engine/agent/harness/agent-adapter.ts` | 83 | 2 | 1 |
-| `engine/agent/harness/agent-loop.ts` | 590 | 6 | 6 |
+| `engine/agent/harness/agent-loop.ts` | 619 | 6 | 6 |
 | `engine/agent/harness/context-fit.ts` | 137 | 6 | 6 |
 | `engine/agent/harness/creation-plan.ts` | 73 | 6 | 6 |
 | `engine/agent/harness/harness-engine.ts` | 593 | 7 | 4 |

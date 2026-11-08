@@ -288,9 +288,38 @@ function parseChips(value: unknown): HarnessChip[] | undefined {
 
 function summarizeToolArgs(name: string, args: Record<string, unknown>): string {
     const keys = Object.keys(args);
+    const text = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
+    const clip = (value: string, max = 80): string => (value.length > max ? `${value.slice(0, max - 1)}…` : value);
     if (name === 'update_memory') return `记录 ${keys.length} 项信息`;
     const projectName = typeof args.projectName === 'string' ? args.projectName : '';
     if (projectName) return projectName;
+
+    // v4.79.0（安全审计 S-5）：审批摘要必须展示真实关键参数。
+    // 旧实现对多参数工具只列参数名——run_command 带上 reason 后，
+    // 确认框显示「commandId、reason」而看不到实际命令，写入/删除也看不到路径。
+    if (name === 'run_command') {
+        const commandId = text(args.commandId);
+        const reason = text(args.reason);
+        if (commandId) return clip(reason ? `${commandId} — ${reason}` : commandId);
+    }
+    if (name === 'write_file') {
+        const path = text(args.path);
+        if (path) return clip(`写入 ${path}`);
+    }
+    if (name === 'delete_file') {
+        const path = text(args.path);
+        if (path) return clip(`删除 ${path}`);
+    }
+    if (name === 'move_file') {
+        const from = text(args.from);
+        const to = text(args.to);
+        if (from || to) return clip(`${from} → ${to}`);
+    }
+    if (name === 'delete_project') {
+        const project = text(args.project);
+        if (project) return clip(`删除项目 ${project}`);
+    }
+
     // 单个短字符串参数直接展示值（如 echo 的消息、open 的目标）
     if (keys.length === 1) {
         const value = args[keys[0]];

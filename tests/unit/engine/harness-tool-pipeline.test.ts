@@ -295,3 +295,66 @@ describe('用量归因（步骤级 + 工具级 scope）', () => {
         });
     });
 });
+
+describe('审批摘要展示真实参数（v4.79.0 安全审计 S-5）', () => {
+    function baseOptions(registry: HarnessToolRegistry, requestApproval: (r: { reason: string }) => Promise<boolean>) {
+        return {
+            adapter: scripted([FINAL]),
+            registry,
+            log: new AgentSessionLog(),
+            memory: { slots: {} },
+            projects: [],
+            activeProject: null,
+            writeApproval: 'ask',
+            requestApproval,
+        };
+    }
+
+    it('run_command 带 reason 时摘要仍包含命令 ID', async () => {
+        const registry = new HarnessToolRegistry();
+        registry.register(tool({
+            name: 'run_command',
+            sideEffect: 'dangerous',
+            parameters: {
+                commandId: { type: 'string', description: '命令 id' },
+                reason: { type: 'string', description: '说明' },
+            },
+        }));
+        const seen: string[] = [];
+        await runHarnessTurn({
+            ...baseOptions(registry, async (r) => { seen.push(r.reason); return false; }),
+            adapter: scripted([
+                { tool: { name: 'run_command', args: { commandId: 'novel-writer-batch-chapters', reason: '补齐第 3-5 章' } } },
+                FINAL,
+            ]),
+        } as never);
+
+        expect(seen[0]).toContain('novel-writer-batch-chapters');
+        expect(seen[0]).toContain('补齐第 3-5 章');
+    });
+
+    it('write_file 摘要显示路径，move_file 显示 from → to', async () => {
+        const registry = new HarnessToolRegistry();
+        registry.register(tool({
+            name: 'write_file', sideEffect: 'write',
+            parameters: { path: { type: 'string', description: 'p' }, content: { type: 'string', description: 'c' } },
+        }));
+        registry.register(tool({
+            name: 'move_file', sideEffect: 'dangerous',
+            parameters: { from: { type: 'string', description: 'f' }, to: { type: 'string', description: 't' } },
+        }));
+        const seen: string[] = [];
+        await runHarnessTurn({
+            ...baseOptions(registry, async (r) => { seen.push(r.reason); return false; }),
+            adapter: scripted([
+                { tool: { name: 'write_file', args: { path: '长篇小说/甲/正文.md', content: 'x' } } },
+                { tool: { name: 'move_file', args: { from: '长篇小说/甲/旧.md', to: '长篇小说/甲/新.md' } } },
+                FINAL,
+            ]),
+        } as never);
+
+        expect(seen[0]).toContain('长篇小说/甲/正文.md');
+        expect(seen[1]).toContain('长篇小说/甲/旧.md');
+        expect(seen[1]).toContain('长篇小说/甲/新.md');
+    });
+});

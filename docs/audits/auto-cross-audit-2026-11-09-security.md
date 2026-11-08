@@ -3,7 +3,8 @@
 - 日期：2026-11-09
 - 触发：HANDOFF `nextAudit=security`（无 Trae 消息，分支 B2）
 - 审计方式：**两个独立只读视角交叉取证**——A 视角做全仓安全模式扫描（密钥/注入/路径/权限/网络，302 次工具调用）；B 视角精读密钥链路、Agent 审批、内容注入、外部输入落盘与网络（134 次工具调用）。ZCode 对全部 P1 逐条复核并修复其中 2 项。
-- 结论：**P1 5 项（本轮修 2 项）**、P2 8 项、P3 若干；已排除 12 类「疑似问题」。**无 P0。**
+- 结论：**P1 3 项（本轮修 2 项、1 项经复核判为误报）**、P2 8 项、P3 若干；已排除 13 类「疑似问题」。**无 P0。**
+- **交叉核对纠偏**：两方审计都报「向量/同人/更新 Token 的密文被当凭据发送（S-3）」，ZCode 复核发现 `core/settings-service.ts:200-208` 已对 `vectorOpenaiApiKey` / `vectorDoubaoApiKey` / `vectorQwenApiKey` / `updateGithubToken` / `canonResearch.apiKey` 统一 `decryptWithoutPrompt`，**该条不成立**，已移入 §三。这条也说明「双方同报≠事实」，必须落到代码行复核。
 
 ## 一、已修（本轮，P1，均带测试）
 
@@ -12,15 +13,15 @@
 | S-1 | `engine/batch-import-manager.ts:504`、`services/knowledge-base-manager.ts:963`、`ui/views/knowledge-base-modals.ts:258` | 源文本路径 `${kbBookDir(bookName)}/${bookName}.txt` 的**文件名段用原始书名**（目录段已净化） | 导入一本首行为 `../../README` 的 txt（书名取自首行）或手填含 `/` 的书名 | 可穿越出书目录并向 vault 内任意 `.txt`（含 `.obsidian/**/*.txt`）写入/覆盖；`getSourceText` 可反向读取 | 复核成立（`sanitizeName` 只保护了目录段）；修法：新增 `kbBookSourceFile()` 单源，目录与文件名两段都净化，三处调用统一 |
 | S-2 | `ui/agent-workbench-view.ts:1055-1062` | `write_file` 新文件自动放行用**原始** `args.path` 调 `adapter.exists`，而真正写入前 `sanitizeVaultPath` 会剥掉首尾引号 | 模型传 `path: "\"项目/正文/第1章_正文.md\""`（带引号） | `exists=false` → 自动放行；净化后命中已有正文并覆盖，**覆盖确认被完全跳过** | 复核成立；修法：新增 `shouldAutoApproveNewFile()`——先净化再探测，净化失败/探测异常一律走确认 |
 
-测试：`tests/unit/shared/paths-sanitize.test.ts` +3（穿越/普通/非法字符）；`tests/unit/shared/file-path-guard.test.ts` +3（带引号已存在 → 必须确认；新文件放行；非法路径/异常 → 确认）。
+| S-5 | `engine/agent/harness/agent-loop.ts:289-303` | 审批摘要只列**参数名**：`run_command` 一旦带 `reason`，确认框显示「commandId、reason」而不显示实际命令 ID；`write_file` 显示「path、content」 | 模型（或 prompt injection）给命令加 `reason` 字段 | 用户对删除/移动/覆盖/批量命令的确认退化为「盲点确认」 | 复核成立；修法：写/删/移/命令工具生成真实摘要（`写入 <path>` / `删除 <path>` / `<from> → <to>` / `<commandId> — <reason>`，长值截断 80 字符） |
+
+测试：`tests/unit/shared/paths-sanitize.test.ts` +3（穿越/普通/非法字符）；`tests/unit/shared/file-path-guard.test.ts` +3（带引号已存在 → 必须确认；新文件放行；非法路径/异常 → 确认）；`tests/unit/engine/harness-tool-pipeline.test.ts` +2（`run_command` 带 reason 仍显示命令 ID；`write_file`/`move_file` 显示真实路径）。
 
 ## 二、Fix queue（未修）
 
 | ID | 严重度 | 位置 | 问题 | 建议 |
 |---|---|---|---|---|
-| S-3 | P1 | `engine/embedding/provider-factory.ts:113`、`services/canon-research-service.ts:100/282-334`、`services/update-checker.ts:282-284`、`services/model-discovery.ts:233-236` | 旁路把**存储密文**当凭据发送（向量 Key / 同人考据 Key / 更新 Token / 模型发现）：`loadSettings` 只解密 `apiKey` 与 `providerKeys`，其余密钥字段可能仍是 `aes256v2:` 密文 | 统一 `requirePlaintextSecret()` 守卫：检测到密文则不发起请求并给出「密钥未解锁」提示（约 20-30 行 + 单测断言 Authorization 不含 `aes256`） |
 | S-4 | P1 | `core/settings-service.ts:279/297` | **首次保存密钥默认明文落盘**：无会话口令且该字段磁盘上从无密文时直接 `return value`；当前仓库 `data.json` 已是「部分密文 + 部分 `sk-` 明文」混合状态 | **需用户拍板**：A 强制首次设置口令（fail-closed）；B 保持现状但在设置页明确标注「未设口令＝明文保存」。不宜由自动化单方面改变用户保存行为 |
-| S-5 | P1 | `engine/agent/harness/agent-loop.ts:289-303` | 审批摘要只列**参数名**：`run_command` 一旦带 `reason`，确认框显示「commandId、reason」而不显示实际命令 ID；`write_file` 显示「path、content」 | 为写/删/移/命令工具生成真实摘要（`run_command: <id> — <reason>`、`move: <from>→<to>`），约 15 行 + 既有审批测试断言 |
 | S-6 | P2 | `ui/svg-charts.ts:471/552/677/1082/1225/1565…` | `data-value`/`data-x/y`/`fill`/`stroke` 直接拼未校验值；`knowledge-detail` 的图表数据来自 frontmatter `JSON.parse` + 类型断言（无 schema 校验） | 数值入口 `Number()` 强转 + 颜色白名单；或对属性值统一 `escapeHtml`（约 15 行） |
 | S-7 | P2 | `ui/polish-editor.ts:41-45/86-90/251/310` | 本地 `escapeHtml` 用 `textContent→innerHTML` 实现，**不转义双引号**，随后拼进 `title="…" data-entity-name="…"` | 改用 `@/utils/helpers` 的 `escapeHtml`（已覆盖 `"`） |
 | S-8 | P2 | `ui/agent-workbench-view.ts:1191`、`engine/agent/dsh/dsh-launch.ts:55-61` | dsh `workspace` = 整个 vault，`workspace-write` 未排除 `.obsidian`；解密后的 Key 以 `DEEPSEEK_API_KEY` 注入子进程 env | workspace 收窄到当前项目目录；`.obsidian` 排除；Key 改用请求时注入 |
@@ -35,6 +36,7 @@ P3（摘要）：v1 密文种子是公开常量；`iterations` 无上限（PBKDF
 
 | 项 | 证据 |
 |---|---|
+| 旁路密钥未解密（S-3，原报 P1） | `core/settings-service.ts:200-208` 已在加载时统一解密 `apiKey`/`providerKeys`/三个向量 Key/`updateGithubToken`/`canonResearch.apiKey`；消费方拿到的都是明文或空串 |
 | 密钥进入日志/Notice/账本 | 全仓无 `log.*apiKey` / `Authorization` / `Bearer` 组合；账本只记模型/token/耗时/错误文本；诊断包只输出 `apiKeyConfigured` 布尔与脱敏 host |
 | v2 加密算法 | PBKDF2 210k + 随机 salt/iv + GCM 校验；解密失败返回密文而非明文；主 AI 请求对密文有 `isEncryptedSecret` 拦截与「密钥未解锁」 |
 | Agent 越出 vault / 读写 `.obsidian` | `sanitizeVaultPath` 拒绝绝对路径、盘符、`..`、控制字符、隐藏目录；读写删与删项目全部接入 |
@@ -57,6 +59,6 @@ P3（摘要）：v1 密文种子是公开常量；`iterations` 无上限（PBKDF
 
 ## 五、结论与下一步
 
-- 本轮修复 2 项 P1（S-1 路径穿越、S-2 审批绕过），均带回归；**导入不可信书名不再能写出知识库目录，Agent 也不能再用带引号路径跳过覆盖确认**。
-- Fix queue 优先：S-3（密文当凭据）→ S-5（审批摘要）→ S-9（危险命令覆盖）→ S-6/S-7（转义）→ S-8/S-10/S-11/S-12。
+- 本轮修复 2 项 P1（S-1 路径穿越、S-2 审批绕过）+ 1 项 P1（S-5 审批摘要），均带回归；**导入不可信书名不再能写出知识库目录，Agent 也不能再用带引号路径跳过覆盖确认，确认框能看到真实命令 ID 与路径**。S-3 经复核为误报。
+- Fix queue 优先：S-9（危险命令覆盖）→ S-6/S-7（转义）→ S-8（dsh workspace/Key）→ S-10/S-11/S-12。
 - 下一审计维度：**④ 覆盖率盲区与测试契约**（`nextAudit=coverage`）。
