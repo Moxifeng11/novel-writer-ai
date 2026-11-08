@@ -1193,6 +1193,19 @@ export function kbBookDir(bookName: string, baseDir?: string): string {
     return `${kbKnowledgeBaseDir(baseDir)}/${safeBookName}`;
 }
 /**
+ * kbBookSourceFile：知识库源文本文件路径。
+ *
+ * v4.79.0（安全审计 ③）：文件名段此前直接用**原始书名**拼接（书名来自导入文件首行/用户手填），
+ * `../../x` 可穿越出书目录并向 vault 内任意 .txt 写入。目录与文件名两段都必须走 sanitizeName。
+ *
+ * @param bookName - 书名
+ * @param baseDir - 知识库根目录（可选）
+ * @returns 源文本文件路径
+ */
+export function kbBookSourceFile(bookName: string, baseDir?: string): string {
+    return `${kbBookDir(bookName, baseDir)}/${sanitizeName(bookName)}.txt`;
+}
+/**
  * kbBookBasicInfoFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_BASIC_INFO_FILE}``。
  *
  * @param bookName - 书名

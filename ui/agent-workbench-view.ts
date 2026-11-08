@@ -30,6 +30,7 @@ import type { HarnessTurnOutcome } from '@/engine/agent/harness/harness-types';
 import { createAgentPort, getAgentContext } from './services/agent-port';
 import { listProjectIds } from '@/shared/project-catalog';
 import { pluginRootDirPath } from '@/shared/paths';
+import { shouldAutoApproveNewFile } from '@/shared/file-path-guard';
 import type { CreationMode } from '@/shared/creation-mode';
 import { resolveProjectMode as resolveModeFromShared } from '@/shared/project-mode';
 import { openModelPickerPopover, formatWorkbenchModelBadge, closeExistingPopovers } from './model-picker-popover';
@@ -1054,12 +1055,13 @@ export class AgentWorkbenchView extends ItemView {
                 // write_file 新建文件自动放行，覆盖/追加已有文件才确认。
                 requestApproval: async (request) => {
                     if (request.sideEffect === 'write' && request.tool === 'write_file') {
+                        // v4.79.0（安全审计 ③）：必须先净化再判断存在性——带引号路径
+                        // 会让 exists=false 而自动放行，随后净化后的路径可能覆盖已有正文。
                         const target = String(request.args.path || '').trim();
-                        if (target) {
-                            try {
-                                if (!(await this.app.vault.adapter.exists(target))) return true;
-                            } catch { /* 路径异常时走确认 */ }
-                        }
+                        if (target && await shouldAutoApproveNewFile(
+                            target,
+                            (p) => this.app.vault.adapter.exists(p),
+                        )) return true;
                     }
                     const confirm = this.port.confirmDangerousAction;
                     if (!confirm) return false;

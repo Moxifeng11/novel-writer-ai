@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132922 | 1609 | 1348 | 84% |
 | `services/` | 32 | 12641 | 187 | 148 | 79% |
-| `shared/` | 177 | 40538 | 1595 | 1319 | 83% |
+| `shared/` | 177 | 40576 | 1597 | 1321 | 83% |
 | `core/` | 7 | 2770 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 238 | 101255 | 734 | 639 | 87% |
+| `ui/` | 238 | 101257 | 734 | 639 | 87% |
 
 ## 文件清单
 
@@ -427,7 +427,7 @@
 | `shared/fanfic-rules.ts` | 738 | 25 | 20 |
 | `shared/file-cache.ts` | 492 | 3 | 3 |
 | `shared/file-mention.ts` | 165 | 9 | 9 |
-| `shared/file-path-guard.ts` | 174 | 10 | 10 |
+| `shared/file-path-guard.ts` | 199 | 11 | 11 |
 | `shared/file-system-port.ts` | 790 | 8 | 8 |
 | `shared/foreshadow-config.ts` | 112 | 4 | 4 |
 | `shared/foreshadow-loop.ts` | 157 | 3 | 3 |
@@ -460,7 +460,7 @@
 | `shared/multi-layer-cache.ts` | 556 | 6 | 6 |
 | `shared/novel-format.ts` | 348 | 12 | 12 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1443 | 192 | 186 |
+| `shared/paths.ts` | 1456 | 193 | 187 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
 | `shared/plugin-cache.ts` | 405 | 6 | 4 |
@@ -550,7 +550,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 529 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1744 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1746 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1141 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |

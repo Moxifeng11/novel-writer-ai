@@ -6,7 +6,7 @@
 
 import { App } from 'obsidian';
 import { FileSystemPort, ObsidianFileSystem } from '@/shared/file-system-port';
-import { kbImportHistoryFile, kbImportPresetsFile, kbBookDir } from '@/shared/paths';
+import { kbImportHistoryFile, kbImportPresetsFile, kbBookDir, kbBookSourceFile } from '@/shared/paths';
 import { KnowledgeBaseManager } from '@/services/knowledge-base-manager';
 import { DeconstructionScheduler, type BreakdownDimension } from './deconstruction-scheduler';
 import { ChapterRecognizer, type BookRecognitionResult } from '@/services/chapter-recognizer';
@@ -501,7 +501,7 @@ export class BatchImportManager {
     private async saveSourceText(bookName: string, content: string): Promise<void> {
         const fs = this.getFS();
         const bookDir = kbBookDir(bookName, this.baseDir);
-        const sourceFile = `${bookDir}/${bookName}.txt`;
+        const sourceFile = kbBookSourceFile(bookName, this.baseDir);
         await fs.mkdir(bookDir).catch(() => undefined);
         await fs.write(sourceFile, content);
     }

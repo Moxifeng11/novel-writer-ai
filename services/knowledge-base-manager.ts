@@ -18,6 +18,7 @@ import {
     kbKnowledgeBaseDir,
     kbIndexFile,
     kbBookDir,
+    kbBookSourceFile,
     kbBookBasicInfoFile,
     kbBookStyleFingerprintFile,
     kbBookRhythmAnalysisFile,
@@ -959,8 +960,7 @@ export class KnowledgeBaseManager {
         }
 
         const fs = this.getFS();
-        const bookDir = kbBookDir(book.name, this.baseDir);
-        const sourceTxtFile = `${bookDir}/${book.name}.txt`;
+        const sourceTxtFile = kbBookSourceFile(book.name, this.baseDir);
 
         let text: string;
         try {

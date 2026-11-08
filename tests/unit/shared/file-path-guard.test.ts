@@ -5,6 +5,7 @@ import {
     extractLineWindow,
     sanitizeVaultPath,
     summarizeHitLine,
+    shouldAutoApproveNewFile,
 } from '../../../shared/file-path-guard';
 
 describe('file-path-guard — Agent 读文件的路径守卫', () => {
@@ -106,5 +107,21 @@ describe('file-path-guard — 命中行摘要', () => {
         const summary = summarizeHitLine('字'.repeat(50), 10);
         expect(summary).toHaveLength(10);
         expect(summary.endsWith('…')).toBe(true);
+    });
+});
+
+describe('shouldAutoApproveNewFile — 覆盖确认不可被引号路径绕过（v4.79.0 安全审计）', () => {
+    it('带引号且净化后已存在的路径必须走确认', async () => {
+        const exists = async (p: string) => p === '项目/正文/第1章_正文.md';
+        await expect(shouldAutoApproveNewFile('"项目/正文/第1章_正文.md"', exists)).resolves.toBe(false);
+    });
+
+    it('净化后不存在的新文件可自动放行', async () => {
+        await expect(shouldAutoApproveNewFile('项目/正文/第9章_正文.md', async () => false)).resolves.toBe(true);
+    });
+
+    it('非法路径与探测异常一律走确认', async () => {
+        await expect(shouldAutoApproveNewFile('../../etc/passwd', async () => false)).resolves.toBe(false);
+        await expect(shouldAutoApproveNewFile('项目/x.md', async () => { throw new Error('io'); })).resolves.toBe(false);
     });
 });

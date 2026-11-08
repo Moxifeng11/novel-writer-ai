@@ -172,3 +172,27 @@ export function summarizeHitLine(line: string, maxChars = 120): string {
     if (compact.length <= maxChars) return compact;
     return `${compact.slice(0, Math.max(1, maxChars - 1))}…`;
 }
+/**
+ * shouldAutoApproveNewFile：`write_file` 审批用——判断目标是否为「确实不存在的新文件」。
+ *
+ * v4.79.0（安全审计 ③）：此前直接用模型给的**原始** `args.path` 调 `adapter.exists`，
+ * 而真正写入前 `sanitizeVaultPath` 会剥掉首尾引号。模型传 `"项目/正文/第1章_正文.md"` 时
+ * `exists` 返回 false → 自动放行；随后净化后的路径命中已有正文并覆盖，覆盖确认被完全跳过。
+ * 因此必须先净化再判断存在性；净化失败一律走确认（返回 false）。
+ *
+ * @param raw - 模型传入的原始路径
+ * @param exists - 存在性探测（通常是 `vault.adapter.exists`）
+ * @returns true = 可自动放行（净化成功且文件不存在）
+ */
+export async function shouldAutoApproveNewFile(
+    raw: string,
+    exists: (path: string) => Promise<boolean>,
+): Promise<boolean> {
+    const guard = sanitizeVaultPath(raw);
+    if (!guard.ok || !guard.path) return false;
+    try {
+        return !(await exists(guard.path));
+    } catch {
+        return false;
+    }
+}

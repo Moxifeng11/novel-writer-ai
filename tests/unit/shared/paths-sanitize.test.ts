@@ -13,6 +13,7 @@ import {
     pjItemFile,
     pjFanficFile,
     kbBookDir,
+    kbBookSourceFile,
 } from '../../../shared/paths';
 
 
@@ -87,5 +88,25 @@ describe('kbBookDir（F5 补 `..` 过滤）', () => {
         expect(kbBookDir('诡秘之主')).toBe('写作知识库/诡秘之主');
         // 原有非法字符替换行为保留
         expect(kbBookDir('a:b')).toBe('写作知识库/a_b');
+    });
+});
+
+describe('kbBookSourceFile — 源文本文件名净化（v4.79.0 安全审计）', () => {
+    it('书名含路径分隔/.. 时不得逃出书目录', () => {
+        const path = kbBookSourceFile('../../evil');
+        expect(path).not.toContain('../');
+        expect(path).toContain('写作知识库/');
+        expect(path.endsWith('.txt')).toBe(true);
+    });
+
+    it('普通书名的目录与文件名一致', () => {
+        const path = kbBookSourceFile('测试书');
+        expect(path).toBe('写作知识库/测试书/测试书.txt');
+    });
+
+    it('反斜杠/冒号等非法字符被净化', () => {
+        const path = kbBookSourceFile('a\\b:c');
+        expect(path).not.toContain('\\');
+        expect(path).toContain('a_b_c');
     });
 });

@@ -1,7 +1,7 @@
 import { Modal, App, Notice, Setting, TFile } from 'obsidian';
 import { KnowledgeBaseManager, type BookBasicInfo } from '@/services/knowledge-base-manager';
 import { WebnovelKnowledgeBase, type GenreConfig, type SubGenreConfig, type TechniqueDef } from '@/shared/webnovel-knowledge-base';
-import { kbBookDir } from '@/shared/paths';
+import { kbBookDir, kbBookSourceFile } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
 import { OperationConfirmModal } from '@/ui/components/progress';
 import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
@@ -255,7 +255,7 @@ export class ImportBookModal extends Modal {
                 // 之后 getSourceText 按 book.name 拼路径 → 永远「源文本文件不存在」。
                 const bookDir = kbBookDir(book.name, baseDir);
                 await fs.mkdir(bookDir).catch(() => { });
-                await fs.write(`${bookDir}/${book.name}.txt`, content);
+                await fs.write(kbBookSourceFile(book.name, baseDir), content);
             }
 
             try {
