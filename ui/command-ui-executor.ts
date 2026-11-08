@@ -444,11 +444,13 @@ export class CommandUiExecutor implements CommandUiPort {
             case CommandIds.CONTEXT_INJECTOR:
                 new ContextInjectorModal(app, plugin).open();
                 return true;
-            case CommandIds.BATCH_DECONSTRUCT: {
-                const { BatchDeconstructModal } = await import('./batch-deconstruct-modal');
-                new BatchDeconstructModal(app, plugin).open();
+            // v4.75.0（用户拍板 ③b）：原「批量拆解」模态依赖 plugin.deconstructionWorkerManager，
+            // 但该属性从不存在（WorkerManager 是 scheduler 的私有字段）——选第一个文件必然 TypeError，
+            // 且结果只存内存、从不落盘。批量拆解真实链路在知识库：导入为书 → 勾选维度 → scheduler.addTask
+            // 持久化到拆解库。命令保留，改指知识库视图。
+            case CommandIds.BATCH_DECONSTRUCT:
+                await this.openKnowledgeBase();
                 return true;
-            }
             case CommandIds.CHARACTER_RECOGNITION: {
                 const { CharacterRecognitionModal } = await import('./character-recognition-modal');
                 new CharacterRecognitionModal(app, plugin).open();

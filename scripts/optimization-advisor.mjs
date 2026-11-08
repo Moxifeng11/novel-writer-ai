@@ -160,8 +160,12 @@ function collectDispatch(currentRound, lastDispatchId) {
     return undefined;
 }
 
-/** 用户冻结的路径：拍板前双方不动，其 any 计入 frozen 桶并在判分前从可动面扣除 */
-const FROZEN_ANY_PATHS = ['ui/batch-deconstruct-modal.ts'];
+/**
+ * 用户冻结的路径：拍板前双方不动，其 any 计入 frozen 桶并在判分前从可动面扣除。
+ * v4.75.0 起为空——唯一冻结项 `ui/batch-deconstruct-modal.ts` 已按拍板 ③b 删除；
+ * 机制保留，后续若双方再次冻结文件只需在此登记路径。
+ */
+const FROZEN_ANY_PATHS = [];
 
 function collectAnyBuckets(anyBaseline) {
     const files = anyBaseline?.files;

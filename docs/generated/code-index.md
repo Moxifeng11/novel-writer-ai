@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132774 | 1607 | 1346 | 84% |
 | `services/` | 32 | 12633 | 187 | 148 | 79% |
-| `shared/` | 175 | 40328 | 1587 | 1313 | 83% |
+| `shared/` | 175 | 40344 | 1587 | 1313 | 83% |
 | `core/` | 7 | 2770 | 28 | 13 | 46% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 101524 | 735 | 639 | 87% |
+| `ui/` | 238 | 101116 | 734 | 638 | 87% |
 
 ## 文件清单
 
@@ -383,7 +383,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 271 | 18 | 17 |
-| `shared/changelog-data.ts` | 2121 | 3 | 3 |
+| `shared/changelog-data.ts` | 2137 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
@@ -558,7 +558,6 @@
 | `ui/backup-yuan-modal.ts` | 128 | 1 | 1 |
 | `ui/batch-chapters-modal.ts` | 339 | 1 | 1 |
 | `ui/batch-create-modal.ts` | 524 | 1 | 1 |
-| `ui/batch-deconstruct-modal.ts` | 410 | 1 | 1 |
 | `ui/batch-import-modal.ts` | 1869 | 1 | 1 |
 | `ui/batch-novels-modal.ts` | 236 | 1 | 1 |
 | `ui/button-busy.ts` | 37 | 1 | 1 |
@@ -599,7 +598,7 @@
 | `ui/co-writing/suggestion-flow.ts` | 473 | 3 | 2 |
 | `ui/co-writing/suggestion-loading.ts` | 130 | 4 | 2 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
-| `ui/command-ui-executor.ts` | 657 | 2 | 2 |
+| `ui/command-ui-executor.ts` | 659 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 104 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
 | `ui/components/categorization-review-panel.ts` | 442 | 2 | 2 |
