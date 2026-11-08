@@ -21,6 +21,23 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.78.0',
+        date: '2026-11-08',
+        title: 'engine any 第三/四批收口与首次推送',
+        sections: [
+            {
+                type: 'improved',
+                label: '🧹 优化',
+                items: [
+                    'engine any 24 处清零（ai-outline-generator / commercial-deconstructor / entity-state-manager / incremental-result-aggregator）',
+                    'any 108/49 → 74/42，纯类型擦除零运行时；待拍板清单收敛为仅 tag/Release',
+                    '首次 push：250 提交公开，CI 两轮 success（未打 tag/发版）',
+                ],
+            },
+        ],
+    },
+
+    {
         version: '4.77.0',
         date: '2026-11-08',
         title: '跨窗口监听修复 + 门禁存量清零',

@@ -3,7 +3,7 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-08",
   "baseline": {
-    "version": "4.77.0",
+    "version": "4.78.0",
     "tests": {
       "files": 598,
       "cases": 6590
@@ -18,8 +18,8 @@
       "check:release",
       "check:write-entry"
     ],
-    "localCommitsAhead": 1,
-    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 ahead 1：any 第四批；origin/master 停在 a420b00，该批按自动化红线不 push，等用户授权）；全量 598 文件 / 6,590 用例，any 74/42，main.js 4,866,893 = 基线"
+    "localCommitsAhead": 2,
+    "localCommitsAheadNote": "相对 origin/master 的未推送提交数（2026-11-08 v4.78.0 版本节点计入后 ahead 2：7f604c7 any 第四批（已推送至 7f604c7，节点提交本地）与版本节点；origin/master=7f604c7）；全量 598 文件 / 6,590 用例，any 74/42，main.js 4,866,893 起，覆盖率 44.11/43.86/44.94/44.44"
   },
   "groups": [
     {

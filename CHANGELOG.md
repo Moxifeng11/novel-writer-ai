@@ -2,6 +2,25 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.78.0（2026-11-08）
+
+### 🧹 engine any 第三/四批（24 处，纯类型擦除）
+
+- 第三批：`ai-outline-generator` 6（blueprint 已由 `GlobalStorylineBlueprint` 类型化，删冗余注解）、`commercial-deconstructor` 6（新增 `VectorEnhancerPort` 最小契约、`WORLDVIEW_WORDS`/`scoreCategories` 以 `as const` 收窄）。
+- 第四批：`entity-state-manager` 5（`plugin.engineRegistry` 直读 + `Character`/`CharacterProps` 聚合根类型）、`incremental-result-aggregator` 5（删 `GoldenThreeChaptersResult.subScores` 历史冗余 `as any`）。
+- any 108/49 → **74/42**；纯类型擦除，**零运行时变更、bundle 不变**。
+
+### 🧾 待拍板清单纠偏
+
+- `E2E_REWRITE=1` 判为**失效项**：`rewrite-chapters` spec 与 playwright project 已随项目下线，全仓无脚本消费该变量，仅 `AGENTS.md` 保留破坏性 E2E 通用红线。
+- `settleLight`「事务语义」确认为 v4.48.0 **决策 3 已实施**（best-effort + `lightFailures` + `settlement_partial`，见 `docs/design/g1-authority-decisions.md` §2），不再列为待拍板。
+- HANDOFF / `v5-acceptance §六` / `DOCUMENTATION-INDEX` 同步收敛：待拍板只剩 **tag/Release**。
+
+### 🚀 首次推送与 CI
+
+- 2026-11-08 用户授权首次 push：250 个本地提交一次性推送到 `origin/master`（`fee1ae1..510c49c`），随后台账对齐提交 `a420b00`；CI 两轮均 **success**（4m59s / 7m9s）。
+- `v4.24.0–v4.77.0` 共 18 个版本节点的代码已公开，但**未打 tag/发版**，市场/BRAT 用户仍看到 v4.23.4。
+
 ## v4.77.0（2026-11-08）
 
 ### 🧹 engine any 第二批：analysis-session 系 10→0
