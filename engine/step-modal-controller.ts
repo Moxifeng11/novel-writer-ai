@@ -162,40 +162,40 @@ export class StepModalController {
     ): void {
         const { overlay, panel } = this.createStepOverlay(tabContent);
         panel.createEl('h3', { text: '🧹 AI消痕改写 — 提示词预览' });
-        panel.createEl('p', { text: '可在下方编辑提示词后点击执行，非黑盒。自定义模板：prompts/deaiCheck-system.md', attr: { style: 'font-size:12px;color:var(--text-muted);margin-bottom:12px;' } });
+        panel.createEl('p', { text: '可在下方编辑提示词后点击执行，非黑盒。自定义模板：prompts/deaiCheck-system.md', cls: 'novel-writer-fw-step-hint' });
 
         const sectionSys = panel.createDiv({ cls: 'novel-writer-fw-deai-section' });
-        sectionSys.createEl('label', { text: '检测系统提示词', attr: { style: 'font-weight:600;font-size:13px;display:block;margin-bottom:4px;' } });
+        sectionSys.createEl('label', { text: '检测系统提示词', cls: 'novel-writer-fw-step-label' });
         const detectSysTA = sectionSys.createEl('textarea', {
-            attr: { style: 'width:100%;height:120px;font-size:12px;padding:6px;border-radius:4px;border:1px solid var(--background-modifier-border);resize:vertical;' }
+            cls: 'novel-writer-fw-step-textarea nw-is-h120'
         }) as HTMLTextAreaElement;
         detectSysTA.value = deaiCheckSystemPrompt;
 
-        const sectionUser = panel.createDiv({ cls: 'novel-writer-fw-deai-section', attr: { style: 'margin-top:10px;' } });
-        sectionUser.createEl('label', { text: '检测用户提示词（正文）', attr: { style: 'font-weight:600;font-size:13px;display:block;margin-bottom:4px;' } });
+        const sectionUser = panel.createDiv({ cls: 'novel-writer-fw-deai-section' });
+        sectionUser.createEl('label', { text: '检测用户提示词（正文）', cls: 'novel-writer-fw-step-label' });
         const detectUserTA = sectionUser.createEl('textarea', {
-            attr: { style: 'width:100%;height:200px;font-size:12px;padding:6px;border-radius:4px;border:1px solid var(--background-modifier-border);resize:vertical;' }
+            cls: 'novel-writer-fw-step-textarea nw-is-h200'
         }) as HTMLTextAreaElement;
         detectUserTA.value = DEAI_CHECK_USER_TEMPLATE.replace('${bodyText}', bodyText);
 
-        const rewriteSection = panel.createDiv({ cls: 'novel-writer-fw-deai-section', attr: { style: 'margin-top:10px;display:none;' } });
-        rewriteSection.createEl('label', { text: '改写系统提示词', attr: { style: 'font-weight:600;font-size:13px;display:block;margin-bottom:4px;' } });
+        const rewriteSection = panel.createDiv({ cls: 'novel-writer-fw-deai-section nw-u-d-none' });
+        rewriteSection.createEl('label', { text: '改写系统提示词', cls: 'novel-writer-fw-step-label' });
         const rewriteSysTA = rewriteSection.createEl('textarea', {
-            attr: { style: 'width:100%;height:120px;font-size:12px;padding:6px;border-radius:4px;border:1px solid var(--background-modifier-border);resize:vertical;' }
+            cls: 'novel-writer-fw-step-textarea nw-is-h120'
         }) as HTMLTextAreaElement;
         rewriteSysTA.value = deaiRewriteSystemPrompt;
 
-        const rewriteUserSection = rewriteSection.createDiv({ attr: { style: 'margin-top:6px;' } });
-        rewriteUserSection.createEl('label', { text: '改写用户提示词', attr: { style: 'font-weight:600;font-size:13px;display:block;margin-bottom:4px;' } });
+        const rewriteUserSection = rewriteSection.createDiv({ cls: 'novel-writer-fw-step-section nw-is-spaced' });
+        rewriteUserSection.createEl('label', { text: '改写用户提示词', cls: 'novel-writer-fw-step-label' });
         const rewriteUserTA = rewriteUserSection.createEl('textarea', {
-            attr: { style: 'width:100%;height:120px;font-size:12px;padding:6px;border-radius:4px;border:1px solid var(--background-modifier-border);resize:vertical;' }
+            cls: 'novel-writer-fw-step-textarea nw-is-h120'
         }) as HTMLTextAreaElement;
 
-        const resultSection = panel.createDiv({ cls: 'novel-writer-fw-deai-section', attr: { style: 'margin-top:10px;display:none;' } });
+        const resultSection = panel.createDiv({ cls: 'novel-writer-fw-deai-section nw-u-d-none' });
         resultSection.createEl('h4', { text: '📊 检测报告' });
         const reportEl = resultSection.createDiv({ cls: 'novel-writer-fw-deai-text' });
 
-        resultSection.createEl('h4', { text: '📄 原文 vs ✨ 改写版', attr: { style: 'margin-top:10px;' } });
+        resultSection.createEl('h4', { text: '📄 原文 vs ✨ 改写版', cls: 'novel-writer-fw-step-section-title' });
         const compareRow = resultSection.createDiv({ cls: 'novel-writer-fw-deai-compare' });
         const origCol = compareRow.createDiv({ cls: 'novel-writer-fw-deai-col' });
         origCol.createEl('h4', { text: '原文' });
@@ -204,7 +204,7 @@ export class StepModalController {
         const rewriteCol = compareRow.createDiv({ cls: 'novel-writer-fw-deai-col' });
         rewriteCol.createEl('h4', { text: '改写版（可编辑）' });
         const rewriteResultTA = rewriteCol.createEl('textarea', {
-            attr: { style: 'width:100%;height:260px;font-size:12px;padding:6px;border-radius:4px;border:1px solid var(--background-modifier-border);resize:vertical;white-space:pre-wrap;' }
+            cls: 'novel-writer-fw-step-textarea nw-is-h260 nw-is-pre'
         }) as HTMLTextAreaElement;
 
         const btnRow = panel.createDiv({ cls: 'novel-writer-fw-deai-btn-row' });
@@ -216,19 +216,16 @@ export class StepModalController {
 
         const rewriteBtn = btnRow.createEl('button', {
             text: '✍️ 执行改写',
-            cls: 'novel-writer-fw-btn novel-writer-fw-btn-primary',
-            attr: { style: 'display:none;' }
+            cls: 'novel-writer-fw-btn novel-writer-fw-btn-primary nw-u-d-none'
         });
 
         const acceptBtn = btnRow.createEl('button', {
             text: '✅ 接受改写',
-            cls: 'novel-writer-fw-btn novel-writer-fw-btn-success',
-            attr: { style: 'display:none;' }
+            cls: 'novel-writer-fw-btn novel-writer-fw-btn-success nw-u-d-none'
         });
         const rejectBtn = btnRow.createEl('button', {
             text: '❌ 保留原文',
-            cls: 'novel-writer-fw-btn novel-writer-fw-btn-danger',
-            attr: { style: 'display:none;' }
+            cls: 'novel-writer-fw-btn novel-writer-fw-btn-danger nw-u-d-none'
         });
 
         detectBtn.setText('✨ 单次完成消痕');
@@ -245,7 +242,7 @@ export class StepModalController {
                     `网络调用 ${result.networkCalls} 次 · 耗时 ${result.durationMs}ms`,
                     ...result.violations.map(v => `${v.ruleId}: ${v.message}`),
                 ].join('\n'));
-                resultSection.style.display = 'block';
+                resultSection.removeClass('nw-u-d-none');
                 origTextEl.setText(bodyText);
 
                 if (!result.ok) {
@@ -260,10 +257,10 @@ export class StepModalController {
                     : '自检未发现明显 AI 痕迹';
                 rewriteResultTA.value = value?.rewritten || result.raw;
 
-                detectBtn.style.display = 'none';
-                rewriteBtn.style.display = 'none';
-                acceptBtn.style.display = '';
-                rejectBtn.style.display = '';
+                detectBtn.addClass('nw-u-d-none');
+                rewriteBtn.addClass('nw-u-d-none');
+                acceptBtn.removeClass('nw-u-d-none');
+                rejectBtn.removeClass('nw-u-d-none');
             } catch (e) {
                 this.deps.callbacks.showError(`消痕异常: ${(e as Error).message}`);
                 detectBtn.disabled = false;
@@ -289,9 +286,9 @@ export class StepModalController {
                 origTextEl.setText(bodyText.slice(0, 2500) + (bodyText.length > 2500 ? '\n\n...（内容过长，已截断）' : ''));
                 compareRow.scrollIntoView({ behavior: 'smooth' });
 
-                rewriteBtn.style.display = 'none';
-                acceptBtn.style.display = '';
-                rejectBtn.style.display = '';
+                rewriteBtn.addClass('nw-u-d-none');
+                acceptBtn.removeClass('nw-u-d-none');
+                rejectBtn.removeClass('nw-u-d-none');
             } catch (e) {
                 this.deps.callbacks.showError(`改写异常: ${(e as Error).message}`);
                 rewriteBtn.disabled = false;
@@ -332,7 +329,7 @@ export class StepModalController {
     createStepOverlay(tabContent: HTMLElement): { overlay: HTMLElement; panel: HTMLElement } {
         const workspace = tabContent.closest('.novel-writer-fw-content') as HTMLElement || tabContent;
         const computed = getComputedStyle(workspace);
-        if (computed.position === 'static') workspace.style.position = 'relative';
+        if (computed.position === 'static') workspace.addClass('novel-writer-fw-step-overlay-host');
 
         const existing = workspace.querySelector('.novel-writer-fw-step-overlay');
         if (existing) existing.remove();
@@ -343,10 +340,8 @@ export class StepModalController {
 
         const closeBtn = panel.createEl('button', {
             text: '✕',
-            attr: { style: 'position:absolute;top:8px;right:12px;width:28px;height:28px;border:none;background:transparent;font-size:16px;color:var(--text-muted);cursor:pointer;border-radius:4px;display:flex;align-items:center;justify-content:center;z-index:2;' }
+            cls: 'novel-writer-fw-step-overlay-close',
         });
-        closeBtn.addEventListener('mouseenter', () => { closeBtn.style.background = 'var(--background-modifier-hover)'; });
-        closeBtn.addEventListener('mouseleave', () => { closeBtn.style.background = 'transparent'; });
         closeBtn.addEventListener('click', () => { overlay.remove(); });
 
         const backdrop = overlay.querySelector('.novel-writer-fw-step-overlay-backdrop') as HTMLElement;
@@ -421,26 +416,26 @@ export class StepModalController {
     ): void {
         const { overlay, panel } = this.createStepOverlay(tabContent);
         panel.createEl('h3', { text: '🔁 自动迭代精修 — 提示词预览' });
-        panel.createEl('p', { text: '可编辑提示词后点击执行，结果可人工审阅修改', attr: { style: 'font-size:12px;color:var(--text-muted);margin-bottom:12px;' } });
+        panel.createEl('p', { text: '可编辑提示词后点击执行，结果可人工审阅修改', cls: 'novel-writer-fw-step-hint' });
 
-        const sectionSys = panel.createDiv({ attr: { style: 'margin-bottom:10px;' } });
-        sectionSys.createEl('label', { text: '审查系统提示词', attr: { style: 'font-weight:600;font-size:13px;display:block;margin-bottom:4px;' } });
+        const sectionSys = panel.createDiv({ cls: 'novel-writer-fw-step-field' });
+        sectionSys.createEl('label', { text: '审查系统提示词', cls: 'novel-writer-fw-step-label' });
         const sysTA = sectionSys.createEl('textarea', {
-            attr: { style: 'width:100%;height:140px;font-size:12px;padding:6px;border-radius:4px;border:1px solid var(--background-modifier-border);resize:vertical;' }
+            cls: 'novel-writer-fw-step-textarea nw-is-h140'
         }) as HTMLTextAreaElement;
         sysTA.value = SELF_CHECK_PROMPTS.systemPrompt;
 
-        const sectionUser = panel.createDiv({ attr: { style: 'margin-bottom:10px;' } });
-        sectionUser.createEl('label', { text: '审查用户提示词', attr: { style: 'font-weight:600;font-size:13px;display:block;margin-bottom:4px;' } });
+        const sectionUser = panel.createDiv({ cls: 'novel-writer-fw-step-field' });
+        sectionUser.createEl('label', { text: '审查用户提示词', cls: 'novel-writer-fw-step-label' });
         const userTA = sectionUser.createEl('textarea', {
-            attr: { style: 'width:100%;height:200px;font-size:12px;padding:6px;border-radius:4px;border:1px solid var(--background-modifier-border);resize:vertical;' }
+            cls: 'novel-writer-fw-step-textarea nw-is-h200'
         }) as HTMLTextAreaElement;
         userTA.value = `【上下文】\n${contextPrompt}\n\n【第${chapNum}章正文】\n${bodyText}`;
 
-        const resultSection = panel.createDiv({ attr: { style: 'margin-top:10px;display:none;' } });
+        const resultSection = panel.createDiv({ cls: 'novel-writer-fw-step-section nw-u-d-none' });
         const summaryEl = resultSection.createDiv({ cls: 'novel-writer-fw-refine-summary' });
         const resultBodyTA = resultSection.createEl('textarea', {
-            attr: { style: 'width:100%;height:260px;font-size:12px;padding:6px;border-radius:4px;border:1px solid var(--background-modifier-border);resize:vertical;white-space:pre-wrap;margin-top:8px;' }
+            cls: 'novel-writer-fw-step-textarea nw-is-h260 nw-is-pre novel-writer-fw-step-refine-result'
         }) as HTMLTextAreaElement;
 
         const btnRow = panel.createDiv({ cls: 'novel-writer-fw-refine-btn-row' });
@@ -452,14 +447,12 @@ export class StepModalController {
 
         const acceptBtn = btnRow.createEl('button', {
             text: '✅ 接受最终版',
-            cls: 'novel-writer-fw-btn novel-writer-fw-btn-success',
-            attr: { style: 'display:none;' }
+            cls: 'novel-writer-fw-btn novel-writer-fw-btn-success nw-u-d-none'
         });
 
         const rejectBtn = btnRow.createEl('button', {
             text: '❌ 使用初版',
-            cls: 'novel-writer-fw-btn novel-writer-fw-btn-danger',
-            attr: { style: 'display:none;' }
+            cls: 'novel-writer-fw-btn novel-writer-fw-btn-danger nw-u-d-none'
         });
 
         execBtn.onclick = async () => {
@@ -552,10 +545,10 @@ export class StepModalController {
                     for (const issue of value.issues) ul.createEl('li', { text: issue });
                 }
                 resultBodyTA.value = value?.polished || result.raw;
-                resultSection.style.display = 'block';
-                execBtn.style.display = 'none';
-                acceptBtn.style.display = '';
-                rejectBtn.style.display = '';
+                resultSection.removeClass('nw-u-d-none');
+                execBtn.addClass('nw-u-d-none');
+                acceptBtn.removeClass('nw-u-d-none');
+                rejectBtn.removeClass('nw-u-d-none');
             } catch (e) {
                 this.deps.callbacks.showError(`单次精修失败: ${(e as Error).message}`);
                 execBtn.disabled = false;

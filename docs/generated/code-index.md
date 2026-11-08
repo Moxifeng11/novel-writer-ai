@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 305 | 132895 | 1609 | 1348 | 84% |
+| `engine/` | 305 | 132884 | 1609 | 1348 | 84% |
 | `services/` | 32 | 12640 | 187 | 148 | 79% |
 | `shared/` | 178 | 40658 | 1601 | 1320 | 82% |
 | `core/` | 7 | 2821 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 238 | 100168 | 733 | 638 | 87% |
+| `ui/` | 238 | 100165 | 733 | 638 | 87% |
 
 ## 文件清单
 
@@ -296,12 +296,12 @@
 | `engine/settlement/settlement-journal.ts` | 197 | 6 | 6 |
 | `engine/settlement/settlement-types.ts` | 46 | 2 | 1 |
 | `engine/step-definitions.ts` | 264 | 13 | 11 |
-| `engine/step-modal-controller.ts` | 657 | 2 | 2 |
+| `engine/step-modal-controller.ts` | 648 | 2 | 2 |
 | `engine/step-prompt-assembly.ts` | 166 | 5 | 4 |
 | `engine/step-result-saver.ts` | 558 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 223 | 6 | 5 |
-| `engine/step-runner.ts` | 2045 | 2 | 1 |
+| `engine/step-runner.ts` | 2043 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 205 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |
@@ -716,7 +716,7 @@
 | `ui/plan-book-modal.ts` | 569 | 1 | 1 |
 | `ui/plot-canvas-modal.ts` | 331 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
-| `ui/polish-editor.ts` | 804 | 5 | 5 |
+| `ui/polish-editor.ts` | 801 | 5 | 5 |
 | `ui/pre-research-modal.ts` | 711 | 2 | 2 |
 | `ui/project-health-modal.ts` | 134 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 406 | 5 | 5 |

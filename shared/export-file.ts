@@ -156,7 +156,7 @@ function downloadBlob(blob: Blob, safeName: string, options?: ExportFileOptions)
     const a = document.createElement('a');
     a.href = url;
     a.download = safeName;
-    a.style.display = 'none';
+    a.className = 'nw-u-d-none';
     document.body.appendChild(a);
     a.click();
     a.remove();

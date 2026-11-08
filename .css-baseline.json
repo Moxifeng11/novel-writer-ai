@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-08T21:32:15.812Z",
-  "note": "v4.80.0 批量 A：11 处运行时 <style> 注入的静态 CSS 迁入 styles-src/20-runtime-modals.css。+29380B/+193 类来自迁移；plan-book 通用类挂 .novel-writer-plan-book-modal 根类（+600B/+1 类）；5 处 transition:all 改为具名属性（+218B，通过既有动效门禁）。19 个 !important、+7 hex、+8 rgb 为迁移带入，后续批次清理后只降不升",
-  "bytes": 502979,
+  "generatedAt": "2026-11-08T21:47:31.640Z",
+  "note": "v4.80.0 批量 A+B1：A 迁移运行时 <style>（+29380B/+193 类，plan-book 根类 +600B/+1，transition:all 改具名 +218B）；B1 把 step-modal-controller 的 15 处字面量样式改为 nw-u-d-none 与 15 个语义类（+1537B/+15 类）。19 个 !important、+7 hex、+8 rgb 为 A 迁移带入，后续批次清理后只降不升",
+  "bytes": 504516,
   "important": 19,
   "hardcodedHex": 161,
   "rgbHsl": 188,
-  "uniqueClasses": 2688,
+  "uniqueClasses": 2703,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

@@ -17149,6 +17149,43 @@ body.nw-panel-resizing .nw-awb-center iframe {
  * ========================================================================== */
 
 /* ── 写作步骤弹窗：遮罩 / 去 AI 味对比（来源：shared/step-modal-styles.ts） ── */
+.novel-writer-fw-step-overlay-host {
+    position: relative;
+}
+.novel-writer-fw-step-overlay-close {
+    position: absolute; top: 8px; right: 12px;
+    width: 28px; height: 28px; padding: 0;
+    border: none; border-radius: 4px;
+    background: transparent; color: var(--text-muted);
+    font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2;
+}
+.novel-writer-fw-step-overlay-close:hover {
+    background: var(--background-modifier-hover);
+}
+.novel-writer-fw-step-hint {
+    font-size: 12px; color: var(--text-muted); margin-bottom: 12px;
+}
+.novel-writer-fw-step-label {
+    display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px;
+}
+.novel-writer-fw-step-textarea {
+    width: 100%; padding: 6px;
+    border: 1px solid var(--background-modifier-border); border-radius: 4px;
+    font-size: 12px; resize: vertical;
+}
+.novel-writer-fw-step-textarea.nw-is-h120 { height: 120px; }
+.novel-writer-fw-step-textarea.nw-is-h140 { height: 140px; }
+.novel-writer-fw-step-textarea.nw-is-h200 { height: 200px; }
+.novel-writer-fw-step-textarea.nw-is-h260 { height: 260px; }
+.novel-writer-fw-step-textarea.nw-is-pre { white-space: pre-wrap; }
+.novel-writer-fw-deai-section { margin-top: 10px; }
+.novel-writer-fw-step-section { margin-top: 10px; }
+.novel-writer-fw-step-section.nw-is-spaced { margin-top: 6px; }
+.novel-writer-fw-step-section-title { margin-top: 10px; }
+.novel-writer-fw-step-field { margin-bottom: 10px; }
+.novel-writer-fw-step-refine-result { margin-top: 8px; }
 .novel-writer-fw-step-overlay {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     z-index: 1000; display: flex; align-items: center; justify-content: center;

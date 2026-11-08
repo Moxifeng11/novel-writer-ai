@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-08T21:26:42.561Z",
-  "note": "v4.80.0 批量 A：11 处动态 <style> 注入全部迁入 styles-src/20-runtime-modals.css（style-element 11→0）；新增 static-style-assignment 棘轮基线 558/85 文件，B1–B4 分批下降",
+  "generatedAt": "2026-11-08T21:47:32.250Z",
+  "note": "v4.80.0 批量 B1：engine/step-modal-controller 15→0、shared/export-file 1→0（nw-u-d-none + 语义类）；static-style-assignment 558→542，剩余 85→83 文件，B2–B4 继续",
   "rules": {
     "plugin-path-hardcoded": {
       "count": 0,
@@ -27,10 +27,8 @@
       "files": {}
     },
     "static-style-assignment": {
-      "count": 558,
+      "count": 542,
       "files": {
-        "engine/step-modal-controller.ts": 15,
-        "shared/export-file.ts": 1,
         "ui/add-fanfic-setting-modal.ts": 3,
         "ui/agent-workbench-view.ts": 1,
         "ui/ai-builder-modal.ts": 9,
