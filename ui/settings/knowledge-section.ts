@@ -260,20 +260,7 @@ export class KnowledgeSection extends SettingsSection {
 
     private renderKnowledgeBookCard(container: HTMLElement, book: BookBasicInfo): void {
         const card = container.createDiv({
-            cls: 'nw-u-p-14px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-8px-2 nw-u-bg-background-primary-2 nw-u-cur-pointer-2 nw-u-transition-all-0-2s-ease nw-u-pos-relative nw-u-ov-hidden-2'
-        });
-
-        card.addEventListener('mouseenter', () => {
-            card.style.borderColor = 'var(--interactive-accent)';
-            card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-            const actions = card.querySelector('.kb-card-actions') as HTMLElement;
-            if (actions) actions.style.opacity = '1';
-        });
-        card.addEventListener('mouseleave', () => {
-            card.style.borderColor = 'var(--background-modifier-border)';
-            card.style.boxShadow = 'none';
-            const actions = card.querySelector('.kb-card-actions') as HTMLElement;
-            if (actions) actions.style.opacity = '0';
+            cls: 'nw-u-p-14px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-8px-2 nw-u-bg-background-primary-2 nw-u-cur-pointer-2 nw-u-transition-all-0-2s-ease nw-u-pos-relative nw-u-ov-hidden-2 nw-kb-book-card'
         });
 
         card.addEventListener('click', () => {
@@ -284,7 +271,7 @@ export class KnowledgeSection extends SettingsSection {
         });
 
         const actionsRow = card.createDiv({
-            cls: "kb-card-actions nw-u-pos-absolute nw-u-t-8px nw-u-r-8px nw-u-d-flex-2 nw-u-gap-4px-2 nw-u-op-0 nw-u-transition-opacity-0-2s-ease nw-u-z-10",
+            cls: "nw-kb-card-actions kb-card-actions nw-u-pos-absolute nw-u-t-8px nw-u-r-8px nw-u-d-flex-2 nw-u-gap-4px-2 nw-u-op-0 nw-u-transition-opacity-0-2s-ease nw-u-z-10",
             attr: {}
         });
 
@@ -596,7 +583,7 @@ export class KnowledgeSection extends SettingsSection {
                         attr: { type: 'button', title: '显示/隐藏密钥' }
                     });
                     if (toggleBtn) {
-                        toggleBtn.style.cssText = 'margin-left:4px;padding:2px 6px;cursor:pointer;border:none;background:var(--background-modifier-border);border-radius:3px;font-size:12px;';
+                        toggleBtn.addClass('nw-kb-toggle-btn');
                         toggleBtn.addEventListener('click', () => {
                             text.inputEl.type = text.inputEl.type === 'password' ? 'text' : 'password';
                             toggleBtn.textContent = text.inputEl.type === 'password' ? '👁' : '🙈';
@@ -654,7 +641,7 @@ export class KnowledgeSection extends SettingsSection {
                         attr: { type: 'button', title: '显示/隐藏密钥' }
                     });
                     if (toggleBtn) {
-                        toggleBtn.style.cssText = 'margin-left:4px;padding:2px 6px;cursor:pointer;border:none;background:var(--background-modifier-border);border-radius:3px;font-size:12px;';
+                        toggleBtn.addClass('nw-kb-toggle-btn');
                         toggleBtn.addEventListener('click', () => {
                             text.inputEl.type = text.inputEl.type === 'password' ? 'text' : 'password';
                             toggleBtn.textContent = text.inputEl.type === 'password' ? '👁' : '🙈';
@@ -712,7 +699,7 @@ export class KnowledgeSection extends SettingsSection {
                         attr: { type: 'button', title: '显示/隐藏密钥' }
                     });
                     if (toggleBtn) {
-                        toggleBtn.style.cssText = 'margin-left:4px;padding:2px 6px;cursor:pointer;border:none;background:var(--background-modifier-border);border-radius:3px;font-size:12px;';
+                        toggleBtn.addClass('nw-kb-toggle-btn');
                         toggleBtn.addEventListener('click', () => {
                             text.inputEl.type = text.inputEl.type === 'password' ? 'text' : 'password';
                             toggleBtn.textContent = text.inputEl.type === 'password' ? '👁' : '🙈';
@@ -792,9 +779,7 @@ export class KnowledgeSection extends SettingsSection {
 
         const statusDesc = statusSetting.descEl;
         if (statusDesc) {
-            statusDesc.style.display = 'flex';
-            statusDesc.style.alignItems = 'center';
-            statusDesc.style.gap = '6px';
+            statusDesc.addClass('nw-kb-status-desc');
             statusDot = statusDesc.createSpan({
                 attr: {
                     style: `width:8px;height:8px;border-radius:50%;background-color:${statusColors[this.vectorConnectionStatus]};display:inline-block;`

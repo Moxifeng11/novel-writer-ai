@@ -583,8 +583,7 @@ export class ContextPanel {
                     }
                 }
                 if (matchedRow && matchedRow.length > 0) {
-                    const table = body.createEl('table', { cls: 'novel-writer-fw-outline-table' });
-                    table.style.cssText = 'width:100%;font-size:11px;border-collapse:collapse;';
+                    const table = body.createEl('table', { cls: 'novel-writer-fw-outline-table nw-ctx-outline-table' });
                     const tbody = table.createEl('tbody');
                     const displayHeaders = headers.length === matchedRow.length ? headers : [];
                     const maxCols = Math.max(displayHeaders.length, matchedRow.length);
@@ -592,10 +591,10 @@ export class ContextPanel {
                         const row = tbody.createEl('tr');
                         if (i < displayHeaders.length) {
                             const th = row.createEl('th', { text: displayHeaders[i] });
-                            th.style.cssText = 'text-align:right;padding:2px 6px;color:var(--text-muted);white-space:nowrap;font-weight:600;';
+                            th.addClass('nw-ctx-outline-th');
                         }
                         const td = row.createEl('td', { text: matchedRow[i] || '' });
-                        td.style.cssText = 'padding:2px 6px;color:var(--text-normal);word-break:break-all;';
+                        td.addClass('nw-ctx-outline-td');
                     }
                 } else {
                     const outline = d.outline as MarkdownContent | null;
@@ -699,7 +698,7 @@ export class ContextPanel {
             if (rules.mustFollow?.length > 0 || rules.redlines?.length > 0) {
                 this.renderCollapsibleCard(panel, '⚠️ OOC 防护规则', (body) => {
                     const warnBox = body.createDiv({ cls: 'nw-context-fanfic-rules' });
-                    warnBox.style.cssText = 'background:#fff3cd;border:2px solid #ffc107;border-radius:6px;padding:12px;margin-top:8px;';
+                    warnBox.addClass('nw-ctx-warn-box');
                     
                     if (rules.mustFollow?.length > 0) {
                         warnBox.createEl('strong', { text: '必须遵守的原作规则：', cls: 'nw-u-c-856404' });
@@ -821,7 +820,7 @@ export class ContextPanel {
             } else if (project) {
                 body.createEl('p', { text: '暂无文笔风格', cls: 'novel-writer-fw-muted' });
                 const createBtn = body.createEl('button', { text: '创建文笔风格' });
-                createBtn.style.cssText = 'padding: 4px 10px; font-size: 0.8em; border: 1px solid var(--background-modifier-border); border-radius: 4px; background: transparent; cursor: pointer; margin-top: 6px;';
+                createBtn.addClass('nw-ctx-create-btn');
                 createBtn.addEventListener('click', async () => {
                     const templatePath = '元文件/00-系统模板/文笔风格模板.md';
                     const targetPath = getWritingStylePath(project);
@@ -853,9 +852,9 @@ export class ContextPanel {
             fill.style.width = `${pct}%`;
 
             if (pct > 80) {
-                fill.style.backgroundColor = '#ff3b30';
+                fill.addClass('nw-token-fill-danger');
             } else if (pct > 60) {
-                fill.style.backgroundColor = '#ff9500';
+                fill.addClass('nw-token-fill-warn');
             }
 
             body.createEl('p', {
@@ -938,12 +937,12 @@ export class ContextPanel {
         const body = container.createDiv({ cls: 'nw-context-bar__collapsible-body' });
         
         let collapsed = true;
-        body.style.display = 'none';
+        body.addClass('nw-u-d-none');
         iconEl.setText('▶');
         
         header.onclick = () => {
             collapsed = !collapsed;
-            body.style.display = collapsed ? 'none' : 'block';
+            body.toggleClass('nw-u-d-none', collapsed);
             iconEl.setText(collapsed ? '▶' : '▼');
             if (reRender && !collapsed) {
                 body.empty();

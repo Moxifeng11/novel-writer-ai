@@ -27,6 +27,7 @@
  *   - styles-src/23-generate-modals.css
  *   - styles-src/24-unified-entity.css
  *   - styles-src/25-outline-expand.css
+ *   - styles-src/26-cleanup-utilities.css
  *
  * 修改样式请编辑 styles-src/ 下对应源文件，然后运行 npm run build:styles
  * （npm run build 与 preflight 均已包含该步骤 / 一致性校验）。
@@ -19489,4 +19490,442 @@ body.nw-panel-resizing .nw-awb-center iframe {
 .nw-oe-diff-line.nw-is-replace-new {
     background: color-mix(in srgb, var(--text-success) 10%, transparent);
     color: var(--text-success);
+}
+/* ==========================================================================
+ * 26-cleanup-utilities.css — B4 收尾共用类（v4.80.0）
+ * ==========================================================================
+ * 剩余零散内联样式按「同一形态」收敛：间距、按钮行、两列对比、预览框、
+ * 弹窗尺寸、禁用态、拖拽光标。能用语义类的用语义类，纯布局用本文件工具类。
+ * 颜色一律取主题变量或 color-mix，不新增硬编码色值。
+ * ========================================================================== */
+
+.nw-section-gap {
+    margin-top: 16px;
+}
+.nw-section-gap-sm {
+    margin-top: 12px;
+}
+.nw-btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.nw-btn-row-end {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 20px;
+}
+.nw-btn-min-64 {
+    min-width: 64px;
+}
+.nw-cols-280 {
+    flex: 1 1 280px;
+    min-width: 280px;
+}
+.nw-compare-row {
+    display: flex;
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.nw-preview-box {
+    padding: 10px 12px;
+    max-height: 160px;
+    overflow: auto;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    background: var(--background-secondary);
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.nw-preview-box-lg {
+    max-height: 320px;
+}
+.nw-preview-box-accent {
+    border-color: var(--interactive-accent);
+}
+.nw-h-auto {
+    height: auto;
+}
+.nw-cursor-pointer {
+    cursor: pointer;
+}
+.nw-is-grab {
+    cursor: grab;
+}
+.nw-is-grabbing {
+    cursor: grabbing;
+}
+.nw-modal-content-85 {
+    max-height: 85vh;
+}
+.nw-modal-content-88 {
+    max-height: 88vh;
+}
+.nw-modal-content-480 {
+    max-width: 480px;
+}
+.nw-disabled-look {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.nw-fade-out {
+    opacity: 0;
+    transition: opacity 1s;
+}
+.nw-p-12 {
+    padding: 12px;
+}
+.nw-ai-builder-root {
+    width: min(1300px, 94vw);
+    height: min(90vh, 900px);
+    max-height: min(90vh, 900px);
+    margin: 0 auto;
+    position: relative;
+}
+.nw-outline-tree-content {
+    padding: 16px 20px;
+}
+.nw-changelog-item {
+    margin-bottom: 2px;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.7;
+}
+.nw-drop-area {
+    border: 1px dashed var(--background-modifier-border);
+    background: var(--background-secondary);
+}
+.nw-drop-area.nw-is-dragover {
+    border-color: var(--interactive-accent);
+    background: color-mix(in srgb, var(--interactive-accent) 5%, transparent);
+}
+.nw-row-hover {
+    background: var(--background-modifier-hover);
+}
+.nw-chip-toggle {
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+    color: var(--text-muted);
+}
+.nw-chip-toggle.nw-is-active {
+    border-color: var(--text-accent);
+    background: var(--text-accent);
+    color: var(--text-on-accent);
+}
+.nw-hidden-visibility {
+    visibility: hidden;
+}
+
+/* 指纹强度预设按钮（blend / intensity 共用） */
+.nw-preset-btn {
+    padding: 4px 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    font-size: 11px;
+    cursor: pointer;
+}
+.nw-preset-btn.nw-is-active {
+    border-color: var(--interactive-accent);
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+.nw-preset-btn-lg {
+    padding: 6px 14px;
+    font-size: 12px;
+}
+.nw-preset-btn-danger:not(.nw-is-active) {
+    background: transparent;
+    color: var(--text-error);
+}
+.nw-drop-area-lg {
+    padding: 32px;
+    border: 2px dashed var(--background-modifier-border);
+    border-radius: 6px;
+    background: var(--background-secondary);
+    text-align: center;
+    cursor: pointer;
+}
+.nw-drop-area-lg.nw-is-dragover {
+    border-color: var(--interactive-accent);
+}
+.nw-plan-chip {
+    padding: 3px 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 12px;
+    background: var(--background-secondary);
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+}
+.nw-plan-chip:hover {
+    border-color: var(--text-accent);
+    background: var(--text-accent);
+    color: var(--text-on-accent);
+}
+.nw-precision-on {
+    background: var(--nw-accent);
+    color: var(--text-on-accent);
+}
+.nw-progress-fill-zero {
+    width: 0;
+}
+.nw-fw-run-strip {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+}
+.nw-fw-run-status {
+    flex: 1;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+.nw-fw-run-info {
+    color: var(--text-faint);
+    font-size: 11px;
+    white-space: nowrap;
+}
+.nw-flex-column-full {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+.nw-scene-editor-wrap {
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+}
+.nw-title-project-select {
+    width: auto;
+    height: 28px;
+    min-width: 120px;
+    padding: 0 8px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 26px;
+}
+.nw-close-hover:hover {
+    background: var(--background-modifier-hover);
+}
+.nw-offscreen-input {
+    position: fixed;
+    opacity: 0;
+}
+.nw-svg-block {
+    display: block;
+}
+.nw-hover-border:hover {
+    border-color: var(--interactive-accent);
+}
+.nw-kb-book-card .nw-kb-card-actions {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.nw-kb-book-card:hover .nw-kb-card-actions {
+    opacity: 1;
+}
+.nw-kb-book-card:hover {
+    border-color: var(--interactive-accent);
+    box-shadow: var(--nw-card-shadow);
+}
+.nw-rec-row {
+    background: transparent;
+}
+.nw-rec-row:hover {
+    background: var(--background-primary);
+}
+.nw-tpl-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-normal);
+    font-size: 12px;
+    cursor: pointer;
+}
+.nw-tpl-btn-sm {
+    padding: 4px 8px;
+}
+.nw-tpl-btn-danger {
+    border-color: var(--text-error);
+    color: var(--text-error);
+}
+.nw-settings-table-th {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+    text-align: left;
+}
+.nw-settings-table-td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+.nw-settings-table-first {
+    font-weight: 600;
+}
+.nw-settings-inline-item {
+    padding: 6px 0;
+    border-bottom: none;
+}
+.nw-ctx-outline-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+}
+.nw-ctx-outline-th {
+    padding: 2px 6px;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-align: right;
+    white-space: nowrap;
+}
+.nw-ctx-outline-td {
+    padding: 2px 6px;
+    color: var(--text-normal);
+    word-break: break-all;
+}
+.nw-ctx-warn-box {
+    margin-top: 8px;
+    padding: 12px;
+    border: 2px solid var(--nw-warning);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--nw-warning) 18%, transparent);
+}
+.nw-ctx-create-btn {
+    margin-top: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: transparent;
+    font-size: 0.8em;
+    cursor: pointer;
+}
+.nw-token-fill-danger {
+    background-color: var(--text-error);
+}
+.nw-token-fill-warn {
+    background-color: var(--text-warning);
+}
+.nw-float-dragging {
+    position: fixed !important;
+    z-index: 1000 !important;
+    cursor: grabbing;
+}
+.nw-float-layout-fixed {
+    position: fixed !important;
+    z-index: 1000 !important;
+    resize: both !important;
+}
+.nw-analysis-apply-btn {
+    padding: 10px 20px;
+    font-weight: 600;
+}
+.nw-mt-8 {
+    margin-top: 8px;
+}
+.nw-kb-toggle-btn {
+    margin-left: 4px;
+    padding: 2px 6px;
+    border: none;
+    border-radius: 3px;
+    background: var(--background-modifier-border);
+    font-size: 12px;
+    cursor: pointer;
+}
+.nw-kb-status-desc {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.nw-tpl-btn-primary {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    cursor: pointer;
+}
+.nw-modal-85 {
+    max-height: 85vh;
+    overflow-y: auto;
+}
+.nw-welcome-item {
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 2;
+}
+.nw-disabled-look-soft {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* 写作指纹视图 */
+.nw-fingerprint-toolbar-btn {
+    flex: 1;
+    min-width: 70px;
+    padding: 4px 8px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    font-size: 11px;
+    cursor: pointer;
+}
+.nw-fingerprint-tag-chip {
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--background-secondary);
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+}
+.nw-fingerprint-tag-chip.nw-is-active {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+.nw-fingerprint-action-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    font-size: 12px;
+    cursor: pointer;
+}
+.nw-fingerprint-action-btn.nw-is-danger {
+    color: var(--text-error);
+}
+.nw-fp-chapter-name {
+    flex: 1;
+    font-size: 13px;
+}
+.nw-kb-picker-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+.nw-kb-picker-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 4px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+.nw-kb-picker-author {
+    color: var(--text-muted);
+    font-size: 12px;
 }

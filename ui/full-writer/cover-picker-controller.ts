@@ -42,7 +42,7 @@ export class CoverPickerController {
             type: 'file',
             attr: { accept: 'image/png,image/jpeg,image/webp' }
         });
-        input.style.display = 'none';
+        input.addClass('nw-u-d-none');
 
         // 60秒安全清理定时器（防止用户取消对话框后 input 残留）
         const cleanupTimer = setTimeout(() => {

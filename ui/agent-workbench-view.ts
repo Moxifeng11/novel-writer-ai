@@ -635,7 +635,7 @@ export class AgentWorkbenchView extends ItemView {
     /** textarea 自适应高度（1–6 行），空值时复位 */
     private autoGrowInput(): void {
         if (!this.inputEl) return;
-        this.inputEl.style.height = 'auto';
+        this.inputEl.addClass('nw-h-auto');
         this.inputEl.style.height = `${Math.min(132, this.inputEl.scrollHeight)}px`;
     }
 

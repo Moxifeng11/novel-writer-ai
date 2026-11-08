@@ -42,7 +42,7 @@ export class NovelAnalysisModal extends Modal {
         if (wrapper) {
             wrapper.addClass('nw-modal');
         }
-        contentEl.style.setProperty('max-height', '85vh', 'important');
+        contentEl.addClass('nw-modal-content-85');
         contentEl.empty();
 
         contentEl.createEl('h3', {
@@ -104,7 +104,7 @@ export class NovelAnalysisModal extends Modal {
             }
 
             this.result = this.analyzer.analyze(text);
-            this.loadingEl.style.display = 'none';
+            this.loadingEl.addClass('nw-u-d-none');
             this.renderResult();
         } catch (e) {
             log.warn('[NovelAnalysisModal] 分析失败:', e);

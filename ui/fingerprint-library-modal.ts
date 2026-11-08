@@ -138,9 +138,8 @@ export class AddFingerprintModal extends Modal {
                 attr: { style: 'font-size:12px;color:var(--text-muted);margin-bottom:4px;' }
             });
             const dropArea = uploadWrap.createDiv({
-                attr: {
-                    style: 'padding:32px;border:2px dashed var(--background-modifier-border);border-radius:6px;text-align:center;cursor:pointer;background:var(--background-secondary);'
-                }
+                cls: 'nw-drop-area-lg',
+                attr: {}
             });
             dropArea.createEl('div', {
                 text: this.textValue ? '已选择文件，点击重新选择' : '点击选择文件或拖拽到此处',
@@ -158,14 +157,14 @@ export class AddFingerprintModal extends Modal {
             dropArea.addEventListener('click', () => fileInput.click());
             dropArea.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                dropArea.style.borderColor = 'var(--interactive-accent)';
+                dropArea.addClass('nw-is-dragover');
             });
             dropArea.addEventListener('dragleave', () => {
-                dropArea.style.borderColor = 'var(--background-modifier-border)';
+                dropArea.removeClass('nw-is-dragover');
             });
             dropArea.addEventListener('drop', (e) => {
                 e.preventDefault();
-                dropArea.style.borderColor = 'var(--background-modifier-border)';
+                dropArea.removeClass('nw-is-dragover');
                 const file = e.dataTransfer?.files[0];
                 if (file) this.handleFile(file);
             });

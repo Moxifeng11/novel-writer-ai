@@ -290,7 +290,7 @@ export function renderStreamingSuggestionCard(
 export function ensureStreamingPreview(container: HTMLElement | null, cards: HTMLElement[]): void {
     if (!container || !container.isConnected) return;
     if (cards.length > 0) {
-        container.style.display = 'block';
+        container.removeClass('nw-u-d-none');
         return;
     }
     const row = container.createDiv({ cls: 'novel-writer-cowrite-card-row nw-cowrite-stream-row' });
@@ -302,7 +302,7 @@ export function ensureStreamingPreview(container: HTMLElement | null, cards: HTM
         textEl.createSpan({ cls: 'nw-cowrite-stream-cursor', text: '▍' });
         cards.push(card);
     }
-    container.style.display = 'block';
+    container.removeClass('nw-u-d-none');
 }
 
 /**
@@ -346,6 +346,6 @@ export function updateStreamingPreview(
 export function clearStreamingPreview(container: HTMLElement | null): void {
     if (container?.isConnected) {
         container.empty();
-        container.style.display = 'none';
+        container.addClass('nw-u-d-none');
     }
 }

@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-08T22:26:08.708Z",
-  "note": "v4.80.0 批量 B3b：unified-entity-generate 38→0、existing-entity-manager 34→0、unified-entity-manager 33→0、outline-expand 27→0；static-style-assignment 339→207",
+  "generatedAt": "2026-11-08T22:39:54.963Z",
+  "note": "v4.80.0 批量 B4 收尾：207 处字面量内联样式全部清零（static-style-assignment 0）；含 writing-fingerprint-view 的 setAttribute style、拖拽面板 setProperty('important')、知识库/上下文/模板/设置页零散样式",
   "rules": {
     "plugin-path-hardcoded": {
       "count": 0,
@@ -27,60 +27,8 @@
       "files": {}
     },
     "static-style-assignment": {
-      "count": 207,
-      "files": {
-        "ui/agent-workbench-view.ts": 1,
-        "ui/ai-builder-modal.ts": 6,
-        "ui/batch-import-modal.ts": 9,
-        "ui/batch-novels-modal.ts": 3,
-        "ui/changelog-modal.ts": 2,
-        "ui/chapter-outline-tree-modal.ts": 9,
-        "ui/co-write-floating-panel.ts": 8,
-        "ui/co-writing-view.ts": 10,
-        "ui/co-writing/asset-status.ts": 2,
-        "ui/co-writing/control-panel.ts": 2,
-        "ui/co-writing/suggestion-cards.ts": 3,
-        "ui/components/analysis-report-panel.ts": 1,
-        "ui/components/progress/operation-confirm-modal.ts": 1,
-        "ui/cowrite/suggestion-edit-modal.ts": 2,
-        "ui/draggable-panel.ts": 8,
-        "ui/expand-text-modal.ts": 9,
-        "ui/fingerprint-blend-modal.ts": 2,
-        "ui/fingerprint-detail-modal.ts": 1,
-        "ui/fingerprint-intensity-modal.ts": 2,
-        "ui/fingerprint-library-modal.ts": 3,
-        "ui/full-writer-view.ts": 6,
-        "ui/full-writer/cover-picker-controller.ts": 1,
-        "ui/full-writer/intervention-controller.ts": 3,
-        "ui/full-writer/step-render-controller.ts": 4,
-        "ui/full-writer/title-bar-controller.ts": 1,
-        "ui/full-writer/wizard-step-renderers.ts": 6,
-        "ui/knowledge-detail-modal.ts": 1,
-        "ui/knowledge-monitor-modal.ts": 2,
-        "ui/manage-providers-modal.ts": 1,
-        "ui/model-picker-popover.ts": 2,
-        "ui/monitor-panel-b.ts": 3,
-        "ui/novel-analysis-modal.ts": 2,
-        "ui/plan-book-modal.ts": 6,
-        "ui/polish-editor.ts": 11,
-        "ui/pre-research-modal.ts": 2,
-        "ui/rendering/context-panel.ts": 8,
-        "ui/settings/api-section.ts": 1,
-        "ui/settings/deconstruction-section.ts": 2,
-        "ui/settings/general-sections.ts": 3,
-        "ui/settings/knowledge-section.ts": 12,
-        "ui/step-result-viewer-modal.ts": 5,
-        "ui/style-distiller-modal.ts": 2,
-        "ui/template-manager.ts": 11,
-        "ui/views/book-detail-renderer.ts": 2,
-        "ui/views/kb-book-card.ts": 2,
-        "ui/views/kb-config-panel.ts": 2,
-        "ui/views/kb-detail-actions.ts": 2,
-        "ui/views/knowledge-base-modals.ts": 4,
-        "ui/views/writing-fingerprint-view.ts": 13,
-        "ui/welcome-modal.ts": 2,
-        "ui/writing-pet.ts": 1
-      }
+      "count": 0,
+      "files": {}
     }
   }
 }

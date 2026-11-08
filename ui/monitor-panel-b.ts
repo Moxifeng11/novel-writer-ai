@@ -698,7 +698,7 @@ export class MonitorPanelB extends DraggablePanel {
     svg.setAttribute("width", chartW.toString());
     svg.setAttribute("height", chartH.toString());
     svg.setAttribute("viewBox", `0 0 ${chartW} ${chartH}`);
-    svg.style.display = "block";
+    svg.addClass('nw-svg-block');
 
     const scores = this.divergenceHistory.map(h => h.overallDivergence);
     const minScore = Math.max(0, Math.min(...scores) - 10);
@@ -1033,7 +1033,7 @@ export class MonitorPanelB extends DraggablePanel {
     svg.setAttribute("width", chartW.toString());
     svg.setAttribute("height", chartH.toString());
     svg.setAttribute("viewBox", `0 0 ${chartW} ${chartH}`);
-    svg.style.display = "block";
+    svg.addClass('nw-svg-block');
 
     const scores = this.history.map(h => h.overallScore);
     const minScore = Math.max(0, Math.min(...scores) - 10);
@@ -1771,7 +1771,7 @@ export class MonitorPanelB extends DraggablePanel {
     svg.setAttribute("width", chartW.toString());
     svg.setAttribute("height", chartH.toString());
     svg.setAttribute("viewBox", `0 0 ${chartW} ${chartH}`);
-    svg.style.display = "block";
+    svg.addClass('nw-svg-block');
 
     const scores = this.qualityHistory.map(h => h.overallScore).slice(-10);
     if (scores.length < 2) return;

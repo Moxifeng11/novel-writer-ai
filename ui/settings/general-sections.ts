@@ -121,7 +121,7 @@ export class PerformanceSection extends SettingsSection {
         ['分类', '次数', '总耗时', '平均耗时', '占比'].forEach(h => {
             const th = headRow.createEl('th');
             th.textContent = h;
-            th.setAttribute('style', 'padding:8px 12px;text-align:left;background:var(--background-secondary);border-bottom:1px solid var(--background-modifier-border);');
+            th.addClass('nw-settings-table-th');
         });
         const tbody = catTable.createEl('tbody');
         for (const [cat, stats] of Object.entries(categoryStats)) {
@@ -131,8 +131,8 @@ export class PerformanceSection extends SettingsSection {
             [cat, stats.count.toString(), this.formatDuration(stats.totalDuration), this.formatDuration(stats.avgDuration), percent].forEach((v, i) => {
                 const td = row.createEl('td');
                 td.textContent = v;
-                td.setAttribute('style', 'padding:8px 12px;border-bottom:1px solid var(--background-modifier-border);');
-                if (i === 0) td.style.fontWeight = '600';
+                td.addClass('nw-settings-table-td');
+                if (i === 0) td.addClass('nw-settings-table-first');
             });
         }
 

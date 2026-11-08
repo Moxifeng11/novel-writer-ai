@@ -122,12 +122,7 @@ export class AiBuilderModal extends Modal {
         modalEl.addClass('novel-writer-ai-builder-modal-root');
 
         // Rev 184：原 96vw × 96vh 近乎全屏，改为带上限的自适应尺寸
-        modalEl.style.width = 'min(1300px, 94vw)';
-        modalEl.addClass('nw-modal-xl');
-        modalEl.style.height = 'min(90vh, 900px)';
-        modalEl.style.maxHeight = 'min(90vh, 900px)';
-        modalEl.style.margin = '0 auto';
-        modalEl.style.position = 'relative';
+        modalEl.addClass('nw-modal-xl', 'nw-ai-builder-root');
 
         // 异步初始化：检测项目数量决定入口
         (async () => {
@@ -402,7 +397,7 @@ export class AiBuilderModal extends Modal {
 
             // 卡片整体点击：如果世界观且未生成、或者非世界观，点卡片也进入
             if (cfg.id === 'worldview' && count === 0) {
-                card.style.cursor = 'pointer';
+                card.addClass('nw-cursor-pointer');
                 card.addEventListener('click', () => this.openGenerationPanel(cfg));
             }
         }

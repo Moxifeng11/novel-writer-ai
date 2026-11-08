@@ -143,12 +143,7 @@ export class KnowledgeMonitorModal extends Modal {
             }
         });
         closeBtn.addEventListener('click', () => this.close());
-        closeBtn.addEventListener('mouseenter', () => {
-            closeBtn.style.background = 'var(--background-modifier-hover)';
-        });
-        closeBtn.addEventListener('mouseleave', () => {
-            closeBtn.style.background = 'transparent';
-        });
+        closeBtn.addClass('nw-close-hover');
 
         const tabBar = contentEl.createDiv({
             attr: { style: 'display:flex;border-bottom:1px solid var(--background-modifier-border);margin-bottom:16px;' }

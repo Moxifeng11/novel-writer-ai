@@ -156,10 +156,10 @@ export function renderAssetStatusBar(
     fpPart.createSpan({ text: fpIcon.icon, attr: { style: `font-size:12px;color:${fpIcon.color};font-weight:600;` } });
 
     badge.addEventListener('mouseenter', () => {
-        badge.style.background = 'var(--background-secondary-alt)';
+        badge.toggleClass('nw-is-active', true);
     });
     badge.addEventListener('mouseleave', () => {
-        badge.style.background = 'var(--background-secondary)';
+        badge.toggleClass('nw-is-active', false);
     });
     badge.addEventListener('click', onKnowledgeClick);
 }

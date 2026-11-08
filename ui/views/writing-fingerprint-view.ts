@@ -420,17 +420,7 @@ export class WritingFingerprintView extends ItemView {
         btn.textContent = text;
         btn.className = 'nw-fingerprint-toolbar-btn';
         if (title) btn.setAttribute('title', title);
-        btn.setAttribute('style', `
-            padding:4px 8px;
-            font-size:11px;
-            cursor:pointer;
-            border:1px solid var(--background-modifier-border);
-            border-radius:4px;
-            background:var(--background-secondary);
-            color:var(--text-normal);
-            flex:1;
-            min-width:70px;
-        `);
+
         btn.addEventListener('click', onClick);
         return btn;
     }
@@ -492,16 +482,7 @@ export class WritingFingerprintView extends ItemView {
         const el = document.createElement('span');
         el.textContent = tag;
         el.className = 'nw-fingerprint-tag-chip';
-        el.setAttribute('style', `
-            padding:2px 8px;
-            font-size:11px;
-            border-radius:10px;
-            cursor:pointer;
-            ${isActive
-                ? 'background:var(--interactive-accent);color:var(--text-on-accent);'
-                : 'background:var(--background-secondary);color:var(--text-muted);'
-            }
-        `);
+        el.toggleClass('nw-is-active', isActive);
         return el;
     }
 
@@ -1041,15 +1022,7 @@ export class WritingFingerprintView extends ItemView {
         btn.textContent = text;
         btn.className = 'nw-fingerprint-action-btn';
         if (title) btn.setAttribute('title', title);
-        btn.setAttribute('style', `
-            padding:6px 14px;
-            font-size:12px;
-            cursor:pointer;
-            border:1px solid var(--background-modifier-border);
-            border-radius:4px;
-            background:var(--background-secondary);
-            color:${isDanger ? '#e74c3c' : 'var(--text-normal)'};
-        `);
+        if (isDanger) btn.addClass('nw-is-danger');
         btn.addEventListener('click', onClick);
         return btn;
     }
@@ -1929,7 +1902,7 @@ export class ExtractFromChaptersModal extends Modal {
 
                 const nameEl = document.createElement('span');
                 nameEl.textContent = fileName;
-                nameEl.style.cssText = 'font-size:13px;flex:1;';
+                nameEl.addClass('nw-fp-chapter-name');
                 item.appendChild(nameEl);
 
                 item.addEventListener('click', (event) => {
@@ -1999,23 +1972,17 @@ class KnowledgeBookPickerModal extends Modal {
         contentEl.createEl('h3', { text: '📚 选择要导入的知识库书籍' });
 
         const list = contentEl.createEl('div');
-        list.style.maxHeight = '400px';
-        list.style.overflowY = 'auto';
+        list.addClass('nw-kb-picker-list');
 
         for (const book of this.books) {
             const row = list.createEl('div');
-            row.style.display = 'flex';
-            row.style.justifyContent = 'space-between';
-            row.style.alignItems = 'center';
-            row.style.padding = '8px 4px';
-            row.style.borderBottom = '1px solid var(--background-modifier-border)';
+        row.addClass('nw-kb-picker-row');
 
             const info = row.createEl('div');
             info.createEl('div', { text: book.name });
             if (book.author) {
                 const author = info.createEl('div', { text: book.author });
-                author.style.fontSize = '12px';
-                author.style.color = 'var(--text-muted)';
+                author.addClass('nw-kb-picker-author');
             }
 
             const btn = row.createEl('button', { text: '导入', cls: 'mod-cta' });

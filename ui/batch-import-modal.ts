@@ -293,7 +293,7 @@ export class BatchImportModal extends Modal {
         });
 
         const dropArea = container.createDiv({
-            cls: 'nw-u-p-32px nw-u-b-2px-dashed-background- nw-u-brd-8px-2 nw-u-ta-center-2 nw-u-cur-pointer-2 nw-u-bg-background-secondary-2 nw-u-marginbottom-12px-2 nw-u-transition-all-0-2s'
+            cls: 'nw-u-p-32px nw-u-brd-8px-2 nw-u-ta-center-2 nw-u-cur-pointer-2 nw-u-marginbottom-12px-2 nw-u-transition-all-0-2s nw-drop-area'
         });
         dropArea.createEl('div', {
             text: '📥 拖拽文件到此处',
@@ -306,17 +306,14 @@ export class BatchImportModal extends Modal {
 
         dropArea.addEventListener('dragover', (e) => {
             e.preventDefault();
-            dropArea.style.borderColor = 'var(--interactive-accent)';
-            dropArea.style.background = 'rgba(var(--interactive-accent-rgb),0.05)';
+            dropArea.addClass('nw-is-dragover');
         });
         dropArea.addEventListener('dragleave', () => {
-            dropArea.style.borderColor = 'var(--background-modifier-border)';
-            dropArea.style.background = 'var(--background-secondary)';
+            dropArea.removeClass('nw-is-dragover');
         });
         dropArea.addEventListener('drop', (e) => {
             e.preventDefault();
-            dropArea.style.borderColor = 'var(--background-modifier-border)';
-            dropArea.style.background = 'var(--background-secondary)';
+            dropArea.removeClass('nw-is-dragover');
             const files = e.dataTransfer?.files;
             if (files && files.length > 0) this.handleLocalFiles(files);
         });
@@ -1478,7 +1475,7 @@ export class BatchImportModal extends Modal {
         pickerModal.titleEl.setText('从库内选择文件');
 
         const content = pickerModal.contentEl;
-        content.style.padding = '12px';
+        content.addClass('nw-p-12');
 
         const searchInput = content.createEl('input', {
             type: 'text',
@@ -1642,7 +1639,7 @@ export class BatchImportModal extends Modal {
         pickerModal.titleEl.setText('从库内选择文件夹');
 
         const content = pickerModal.contentEl;
-        content.style.padding = '12px';
+        content.addClass('nw-p-12');
 
         const searchInput = content.createEl('input', {
             type: 'text',
@@ -1678,9 +1675,7 @@ export class BatchImportModal extends Modal {
                     cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-p-8px-10px-2 nw-u-bb-1px-solid-background-m-2 nw-u-cur-pointer-2'
                 });
 
-                if (selectedFolderPath === item.folder.path) {
-                    row.style.backgroundColor = 'var(--background-modifier-hover)';
-                }
+                row.toggleClass('nw-row-hover', selectedFolderPath === item.folder.path);
 
                 row.createEl('span', { text: '📁', cls: 'nw-u-fs-14px-2' });
                 row.createEl('span', {

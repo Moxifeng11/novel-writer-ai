@@ -49,14 +49,7 @@ export function buildKbBookCard(book: BookBasicInfo, host: KbBookCardHost): HTML
         }
     });
 
-    card.addEventListener('mouseenter', () => {
-        card.style.borderColor = 'var(--interactive-accent)';
-    });
-    card.addEventListener('mouseleave', () => {
-        if (!host.isSelectedBook(book.id)) {
-            card.style.borderColor = 'var(--background-modifier-border)';
-        }
-    });
+    card.addClass('nw-hover-border');
 
     const header = card.createDiv({ cls: 'nw-u-d-flex nw-u-ai-flex-start nw-u-jc-space-between nw-u-marginbottom-8px nw-u-gap-8px' });
     const title = header.createDiv({

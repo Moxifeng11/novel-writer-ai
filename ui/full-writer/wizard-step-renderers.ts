@@ -392,8 +392,7 @@ export class WizardStepRenderers {
                 cls: 'nw-u-m-8px-0 nw-u-p-6px-14px nw-u-bg-f59e0b nw-u-c-white-2 nw-u-b-none nw-u-brd-6px-2 nw-u-cur-pointer-2'
             });
             if (isExecuting) {
-                regenBtn.style.opacity = '0.6';
-                regenBtn.style.cursor = 'not-allowed';
+                regenBtn.addClass('nw-disabled-look');
             } else {
                 regenBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
             }
@@ -755,8 +754,7 @@ export class WizardStepRenderers {
                 });
                 if (isOpening) {
                     regenBtn.disabled = true;
-                    regenBtn.style.opacity = '0.6';
-                    regenBtn.style.cursor = 'not-allowed';
+                    regenBtn.addClass('nw-disabled-look');
                 }
                 regenBtn.addEventListener('click', () => {
                     if (this.entitiesExecuting.has(cfg.id)) return;
@@ -803,8 +801,7 @@ export class WizardStepRenderers {
                 });
                 if (isOpening) {
                     genBtn.disabled = true;
-                    genBtn.style.opacity = '0.6';
-                    genBtn.style.cursor = 'not-allowed';
+                    genBtn.addClass('nw-disabled-look');
                 }
                 genBtn.addEventListener('click', () => {
                     if (this.entitiesExecuting.has(cfg.id)) return;

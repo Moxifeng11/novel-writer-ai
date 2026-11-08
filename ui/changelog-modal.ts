@@ -46,7 +46,7 @@ export class ChangelogModal extends Modal {
         if (wrapper) {
             wrapper.addClass('nw-modal');
         }
-        contentEl.style.maxHeight = '85vh';
+        contentEl.addClass('nw-modal-content-85');
 
         contentEl.createEl('h3', {
             text: '📜 更新日志',
@@ -183,7 +183,7 @@ export class ChangelogModal extends Modal {
 
         section.items.forEach((item) => {
             const li = list.createEl('li');
-            li.style.cssText = 'font-size:13px;line-height:1.7;color:var(--text-muted);margin-bottom:2px;';
+            li.addClass('nw-changelog-item');
             li.textContent = item;
         });
     }

@@ -90,7 +90,7 @@ export class FingerprintIntensityModal extends Modal {
     private render(): void {
         const { contentEl } = this;
         contentEl.empty();
-        contentEl.style.maxHeight = '85vh';
+        contentEl.addClass('nw-modal-content-85');
 
         const fp = this.options.fingerprint;
         contentEl.createEl('h3', {
@@ -169,12 +169,13 @@ export class FingerprintIntensityModal extends Modal {
         presets.forEach(preset => {
             const btn = section.createEl('button', {
                 text: `${INTENSITY_PRESET_LABELS[preset]}（${Math.round(INTENSITY_PRESETS[preset] * 100)}%）`,
+                cls: 'nw-preset-btn nw-preset-btn-lg',
                 attr: {
                     type: 'button',
                     'data-preset': preset,
-                    style: this.getPresetButtonStyle(this.currentConfig.preset === preset)
-                }
+                },
             });
+            btn.toggleClass('nw-is-active', this.currentConfig.preset === preset);
             btn.addEventListener('click', () => {
                 this.currentConfig = {
                     globalIntensity: INTENSITY_PRESETS[preset],
@@ -189,11 +190,10 @@ export class FingerprintIntensityModal extends Modal {
         // 关闭按钮（强度=0，完全禁用指纹影响）
         const disableBtn = section.createEl('button', {
             text: '禁用（0%）',
-            attr: {
-                type: 'button',
-                style: this.getPresetButtonStyle(this.currentConfig.globalIntensity === 0, true)
-            }
+            cls: 'nw-preset-btn nw-preset-btn-lg nw-preset-btn-danger',
+            attr: { type: 'button' },
         });
+        disableBtn.toggleClass('nw-is-active', this.currentConfig.globalIntensity === 0);
         disableBtn.addEventListener('click', () => {
             this.currentConfig = {
                 globalIntensity: 0,
@@ -204,23 +204,11 @@ export class FingerprintIntensityModal extends Modal {
         });
     }
 
-    private getPresetButtonStyle(isActive: boolean, isDanger = false): string {
-        const base = 'padding:6px 14px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;';
-        if (isActive) {
-            return base + 'background:var(--interactive-accent);color:var(--text-on-accent);border-color:var(--interactive-accent);';
-        }
-        if (isDanger) {
-            return base + 'background:transparent;color:var(--text-error);';
-        }
-        return base + 'background:var(--background-primary);color:var(--text-normal);';
-    }
-
     /** 更新预设按钮激活态（不重新渲染整个 Modal） */
     private updatePresetButtons(): void {
-        const buttons = this.contentEl.querySelectorAll('button[data-preset]');
-        buttons.forEach(btn => {
+        this.contentEl.querySelectorAll('button[data-preset]').forEach(btn => {
             const preset = (btn as HTMLElement).dataset.preset as IntensityPreset;
-            (btn as HTMLElement).setAttribute('style', this.getPresetButtonStyle(this.currentConfig.preset === preset));
+            btn.toggleClass('nw-is-active', this.currentConfig.preset === preset);
         });
     }
 

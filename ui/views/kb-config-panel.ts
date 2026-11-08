@@ -153,14 +153,7 @@ export function buildKbConfigPanel(rightContentEl: HTMLElement, host: KbConfigPa
                 }`
             }
         });
-        card.addEventListener('mouseenter', () => {
-            card.style.borderColor = 'var(--interactive-accent)';
-        });
-        card.addEventListener('mouseleave', () => {
-            if (!host.isSelectedGenre(genre.id)) {
-                card.style.borderColor = 'var(--background-modifier-border)';
-            }
-        });
+        card.addClass('nw-hover-border');
 
         const header = card.createDiv({ cls: 'nw-u-d-flex nw-u-ai-flex-start nw-u-jc-space-between nw-u-marginbottom-8px nw-u-gap-8px' });
         const titleWrap = header.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-0' });

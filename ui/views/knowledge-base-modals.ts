@@ -72,12 +72,7 @@ export class ImportBookModal extends Modal {
             const card = contentEl.createDiv({
                 cls: 'nw-u-p-16px nw-u-b-1px-solid-background-m nw-u-brd-8px nw-u-marginbottom-12px nw-u-cur-pointer nw-u-d-flex nw-u-ai-center nw-u-gap-12px nw-u-transition-all-0-15s'
             });
-            card.addEventListener('mouseenter', () => {
-                card.style.borderColor = 'var(--interactive-accent)';
-            });
-            card.addEventListener('mouseleave', () => {
-                card.style.borderColor = 'var(--background-modifier-border)';
-            });
+            card.addClass('nw-hover-border');
 
             card.createSpan({ text: opt.icon, cls: 'nw-u-fs-28px' });
             const info = card.createDiv({ cls: 'nw-u-flex-1' });
@@ -579,8 +574,7 @@ export class GenreEditModal extends Modal {
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         this.modalEl.addClass('nw-modal');
-        this.modalEl.style.maxHeight = '85vh';
-        this.modalEl.style.overflowY = 'auto';
+        this.modalEl.addClass('nw-modal-85');
         this.render();
     }
 

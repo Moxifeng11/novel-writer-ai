@@ -173,7 +173,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
 
     // 逻辑检查结果容器（默认隐藏，检查后显示）
     this.logicCheckContainer = controlPanel.createDiv({ cls: "nw-cowrite-logic-check-panel" });
-    this.logicCheckContainer.style.display = "none";
+    this.logicCheckContainer.addClass('nw-u-d-none');
 
     // === 事件绑定 ===
     this.bindEditorEvents();
@@ -531,7 +531,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
   private showSuggestError(error: string): void {
     if (!this.suggestErrorContainer || !this.suggestRetryBtn || !this.suggestCancelBtn) return;
 
-    this.suggestErrorContainer.style.display = 'block';
+    this.suggestErrorContainer.removeClass('nw-u-d-none');
     this.suggestErrorContainer.empty();
     this.suggestErrorContainer.createDiv({
       text: "❌ 生成失败",
@@ -542,8 +542,8 @@ export class CoWriteFloatingPanel extends DraggablePanel {
       attr: { style: "font-size:11px;color:var(--text-muted);" }
     });
 
-    this.suggestRetryBtn.style.display = 'inline-flex';
-    this.suggestCancelBtn.style.display = 'none';
+    this.suggestRetryBtn.removeClass('nw-u-d-none');
+    this.suggestCancelBtn.addClass('nw-u-d-none');
   }
 
   private cancelSuggestion(): void {
@@ -853,11 +853,11 @@ export class CoWriteFloatingPanel extends DraggablePanel {
 
   private renderRedundancyResult(report: { issues: Array<{ message: string; sample: string; count: number }>; comparedChapters: number }): void {
     this.logicCheckContainer.empty();
-    this.logicCheckContainer.style.display = "block";
+    this.logicCheckContainer.removeClass('nw-u-d-none');
     const header = this.logicCheckContainer.createDiv({ cls: "nw-logic-check-header" });
     header.createSpan({ text: `\uD83E\uDDFE \u5267\u60C5\u5197\u4F59\uFF08\u5BF9\u6BD4 ${report.comparedChapters} \u7AE0\uFF09` });
     const closeBtn = header.createEl("button", { text: "\u2715", cls: "nw-btn nw-btn-ghost" });
-    closeBtn.addEventListener("click", () => { this.logicCheckContainer.style.display = "none"; });
+    closeBtn.addEventListener("click", () => { this.logicCheckContainer.addClass('nw-u-d-none'); });
     if (report.issues.length === 0) {
       this.logicCheckContainer.createDiv({ text: "\u672A\u53D1\u73B0\u4E0E\u524D\u6587\u91CD\u590D\u7684\u573A\u666F\u3001\u51B2\u7A81\u6216\u77ED\u8BED\u3002", cls: "nw-u-fs-12px-2" });
       return;
@@ -874,14 +874,14 @@ export class CoWriteFloatingPanel extends DraggablePanel {
 
   private renderLogicCheckResult(result: ConsistencyCheckResult): void {
     this.logicCheckContainer.empty();
-    this.logicCheckContainer.style.display = "block";
+    this.logicCheckContainer.removeClass('nw-u-d-none');
 
     // 头部：标题 + 关闭按钮
     const header = this.logicCheckContainer.createDiv({ cls: "nw-logic-check-header" });
     header.createSpan({ text: "\uD83D\uDD0D \u903B\u8F91\u68C0\u67E5\u7ED3\u679C" });
     const closeBtn = header.createEl("button", { text: "\u2715", cls: "nw-btn nw-btn-ghost" });
     closeBtn.setCssStyles({ fontSize: "0.75em", padding: "0 4px", lineHeight: "1" });
-    closeBtn.addEventListener("click", () => { this.logicCheckContainer.style.display = "none"; });
+    closeBtn.addEventListener("click", () => { this.logicCheckContainer.addClass('nw-u-d-none'); });
 
     // 总体一致性评分
     const scoreColor =

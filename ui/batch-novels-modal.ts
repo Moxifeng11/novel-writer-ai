@@ -95,7 +95,7 @@ export class BatchNovelsModal extends Modal {
         const btnRow = contentEl.createDiv({ cls: 'modal-button-container' });
         const startBtn = btnRow.createEl('button', { text: '开始批量生成', cls: 'mod-cta' });
         const cancelBtn = btnRow.createEl('button', { text: '取消' });
-        cancelBtn.style.display = 'none';
+        cancelBtn.addClass('nw-u-d-none');
 
         this.progressEl = contentEl.createDiv();
 
@@ -113,7 +113,7 @@ export class BatchNovelsModal extends Modal {
             );
             this.running = true;
             startBtn.disabled = true;
-            cancelBtn.style.display = '';
+            cancelBtn.removeClass('nw-u-d-none');
             this.renderProgress(`准备生成 ${targets.length} 章...`);
 
             const jobs = this.plugin.getJobService();
@@ -152,7 +152,7 @@ export class BatchNovelsModal extends Modal {
                 if (event.type === 'finished' || event.type === 'cancelled') {
                     this.running = false;
                     startBtn.disabled = false;
-                    cancelBtn.style.display = 'none';
+                    cancelBtn.addClass('nw-u-d-none');
                     cancelBtn.removeEventListener('click', onCancel);
                     this.jobUnsubscribe?.();
                     this.jobUnsubscribe = null;

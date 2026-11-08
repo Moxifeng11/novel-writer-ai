@@ -103,8 +103,7 @@ export function buildKbDetailActionButtons(book: BookBasicInfo, actionsEl: HTMLE
             cls: 'nw-btn nw-btn-secondary nw-btn-sm'
         });
         processingBtn.disabled = true;
-        processingBtn.style.opacity = '0.7';
-        processingBtn.style.cursor = 'not-allowed';
+        processingBtn.addClass('nw-disabled-look-soft');
 
         const forceCancelBtn = actionsEl.createEl('button', {
             text: '⚠️ 强制取消',

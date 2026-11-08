@@ -151,7 +151,8 @@ export class PlanBookModal extends Modal {
             for (const p of presets) {
                 const chip = presetContainer.createEl('button', {
                     text: p.label,
-                    attr: { title: p.prompt, style: 'padding:3px 10px; font-size:11px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); border-radius:12px; cursor:pointer; color:var(--text-muted);' }
+                    cls: 'nw-plan-chip',
+                    attr: { title: p.prompt },
                 });
                 chip.addEventListener('click', () => {
                     const current = customPromptInput.value.trim();
@@ -159,16 +160,7 @@ export class PlanBookModal extends Modal {
                     customPromptInput.value = current + sep + p.prompt;
                     customPromptInput.focus();
                 });
-                chip.addEventListener('mouseenter', () => {
-                    chip.style.background = 'var(--text-accent)';
-                    chip.style.color = 'white';
-                    chip.style.borderColor = 'var(--text-accent)';
-                });
-                chip.addEventListener('mouseleave', () => {
-                    chip.style.background = 'var(--background-secondary)';
-                    chip.style.color = 'var(--text-muted)';
-                    chip.style.borderColor = 'var(--background-modifier-border)';
-                });
+
             }
 
             // 异步加载上下文预览

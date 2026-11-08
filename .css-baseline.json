@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-08T22:26:08.880Z",
-  "note": "v4.80.0 批量 B3b：新增 24-unified-entity.css（五步向导/实体管理面板）与 25-outline-expand.css（扩写编辑器/diff）；+17876B/+134 类，颜色全部主题变量或 color-mix，hex/rgb/important 指标不变",
-  "bytes": 533352,
-  "important": 19,
+  "generatedAt": "2026-11-08T22:39:55.140Z",
+  "note": "v4.80.0 批量 B4：新增 26-cleanup-utilities.css（共用间距/按钮行/预览框/表格局/弹窗尺寸/禁用态/拖拽态/指纹视图/知识库选择器）；+10038B/+80 类；!important 19→24 仅来自拖拽面板固定定位/尺寸（position/z-index/resize 共 5 行，替代原 setProperty(...,'important')）；hex/rgb 不变",
+  "bytes": 543390,
+  "important": 24,
   "hardcodedHex": 161,
   "rgbHsl": 188,
-  "uniqueClasses": 2898,
+  "uniqueClasses": 2978,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

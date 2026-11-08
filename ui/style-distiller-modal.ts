@@ -54,7 +54,7 @@ export class StyleDistillerModal extends Modal {
         if (wrapper) {
             wrapper.addClass('nw-modal');
         }
-        contentEl.style.position = 'relative';
+        contentEl.addClass('nw-pos-relative');
 
         contentEl.empty();
         contentEl.addClass('nw-form-stack');
@@ -357,7 +357,7 @@ ${analysis}
 
     private ensureLoadingOverlay(): void {
         if (this.loadingOverlay) return;
-        this.contentEl.style.position = 'relative';
+        this.contentEl.addClass('nw-pos-relative');
         this.loadingOverlay = new LoadingOverlayComponent(this.contentEl, {
             title: '正在分析...',
             showCancel: true,

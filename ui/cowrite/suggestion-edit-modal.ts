@@ -57,7 +57,7 @@ export class SuggestionEditModal {
 
         // 验证结果区（初始隐藏）
         const validationPanel = body.createDiv({ cls: 'nw-suggestion-drawer-validation' });
-        validationPanel.style.display = 'none';
+        validationPanel.addClass('nw-u-d-none');
         this.validationPanel = validationPanel;
 
         // ----- footer -----
@@ -127,7 +127,7 @@ export class SuggestionEditModal {
 
     private showValidationLoading(): void {
         if (!this.validationPanel) return;
-        this.validationPanel.style.display = 'block';
+        this.validationPanel.removeClass('nw-u-d-none');
         this.validationPanel.empty();
         const loading = this.validationPanel.createDiv({ cls: 'nw-suggestion-drawer-validation-loading' });
         loading.createEl('span', { text: '⏳' });

@@ -962,12 +962,7 @@ export class BookDetailRenderer {
                 const recRow = recSection.createDiv({
                     cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-p-6px-8px nw-u-brd-4px nw-u-cur-pointer nw-u-transition-background-0-15s nw-u-marginbottom-4px'
                 });
-                recRow.addEventListener('mouseenter', () => {
-                    recRow.style.background = 'var(--background-primary)';
-                });
-                recRow.addEventListener('mouseleave', () => {
-                    recRow.style.background = 'transparent';
-                });
+                recRow.addClass('nw-rec-row');
                 recRow.addEventListener('click', async () => {
                     await this.deps.onApplyGenreRecommendation(book, rec);
                 });

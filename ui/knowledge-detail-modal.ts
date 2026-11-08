@@ -261,7 +261,7 @@ export class KnowledgeDetailModal extends Modal {
         if (wrapper) {
             wrapper.addClass('nw-modal-lg');
         }
-        contentEl.style.maxHeight = '88vh';
+        contentEl.addClass('nw-modal-content-88');
 
         if (!this.bookInfo) {
             contentEl.createDiv({ text: '书籍不存在或已被删除', cls: 'nw-u-p-40px nw-u-ta-center nw-u-c-text-muted' });

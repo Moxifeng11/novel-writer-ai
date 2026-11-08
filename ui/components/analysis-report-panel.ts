@@ -158,7 +158,7 @@ export class AnalysisReportPanel {
             text: '✅ 确认并应用变更',
             cls: 'mod-cta'
         });
-        applyBtn.style.cssText = 'padding: 10px 20px; font-weight: 600;';
+        applyBtn.addClass('nw-analysis-apply-btn');
         applyBtn.onclick = async () => {
             const result = await this.applyChanges();
             if (result.success) {

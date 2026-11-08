@@ -115,7 +115,7 @@ export class FingerprintBlendModal extends Modal {
     private render(): void {
         const { contentEl } = this;
         contentEl.empty();
-        contentEl.style.maxHeight = '85vh';
+        contentEl.addClass('nw-modal-content-85');
 
         contentEl.createEl('h3', {
             text: '🎨 多指纹融合预览',
@@ -465,14 +465,15 @@ export class FingerprintBlendModal extends Modal {
         presets.forEach(preset => {
             const btn = presetRow.createEl('button', {
                 text: `${INTENSITY_PRESET_LABELS[preset]}`,
+                cls: 'nw-preset-btn',
                 attr: {
                     type: 'button',
                     // 拖滑杆时 updatePresetButtons 靠 data-preset 找回这些按钮，
                     // 缺了它高亮就永远停在初始状态。
                     'data-preset': preset,
-                    style: this.getPresetButtonStyle(this.intensityConfig.preset === preset)
-                }
+                },
             });
+            btn.toggleClass('nw-is-active', this.intensityConfig.preset === preset);
             btn.addEventListener('click', () => {
                 this.intensityConfig = {
                     globalIntensity: INTENSITY_PRESETS[preset],
@@ -513,19 +514,10 @@ export class FingerprintBlendModal extends Modal {
         });
     }
 
-    private getPresetButtonStyle(isActive: boolean): string {
-        const base = 'padding:4px 12px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:11px;';
-        if (isActive) {
-            return base + 'background:var(--interactive-accent);color:var(--text-on-accent);border-color:var(--interactive-accent);';
-        }
-        return base + 'background:var(--background-primary);color:var(--text-normal);';
-    }
-
     private updatePresetButtons(container: HTMLElement): void {
-        const buttons = container.querySelectorAll('button[data-preset]');
-        buttons.forEach(btn => {
+        container.querySelectorAll('button[data-preset]').forEach(btn => {
             const preset = (btn as HTMLElement).dataset.preset as IntensityPreset;
-            (btn as HTMLElement).setAttribute('style', this.getPresetButtonStyle(this.intensityConfig.preset === preset));
+            btn.toggleClass('nw-is-active', this.intensityConfig.preset === preset);
         });
     }
 

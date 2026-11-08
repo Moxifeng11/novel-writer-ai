@@ -61,9 +61,7 @@ export class StepResultViewerModal extends Modal {
 
         const { contentEl } = this;
         contentEl.empty();
-        contentEl.style.display = 'flex';
-        contentEl.style.flexDirection = 'column';
-        contentEl.style.height = '100%';
+        contentEl.addClass('nw-flex-column-full');
 
         const header = contentEl.createDiv({
             attr: {
@@ -321,10 +319,10 @@ export class StepResultViewerModal extends Modal {
         });
 
         row.addEventListener('mouseenter', () => {
-            row.style.background = 'var(--background-modifier-hover)';
+            row.addClass('nw-row-hover');
         });
         row.addEventListener('mouseleave', () => {
-            row.style.background = '';
+            row.removeClass('nw-row-hover');
         });
         row.addEventListener('click', () => {
             this.openFile(info.file);

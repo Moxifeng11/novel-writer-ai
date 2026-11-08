@@ -200,13 +200,11 @@ export class DraggablePanel extends ItemView {
     this.startLeft = rect.left;
     this.startTop = rect.top;
     this.panelContainer.addClass("nw-float-dragging");
-    this.panelContainer.style.cursor = "grabbing";
-    this.panelContainer.style.setProperty("position", "fixed", "important");
     this.panelContainer.style.setProperty("left", `${this.startLeft}px`, "important");
     this.panelContainer.style.setProperty("top", `${this.startTop}px`, "important");
     this.panelContainer.style.setProperty("width", `${rect.width}px`, "important");
     this.panelContainer.style.setProperty("height", `${rect.height}px`, "important");
-    this.panelContainer.style.setProperty("z-index", "1000", "important");
+
   }
 
   private onDragMove(e: PointerEvent): void {
@@ -221,7 +219,6 @@ export class DraggablePanel extends ItemView {
     if (!this.isDragging || !this.panelContainer) return;
     this.isDragging = false;
     this.panelContainer.removeClass("nw-float-dragging");
-    this.panelContainer.style.cursor = "";
     this.saveLayout();
   }
 
@@ -301,16 +298,16 @@ export class DraggablePanel extends ItemView {
     const win = this.containerEl.win;
     const maxLeft = Math.max(8, (win.innerWidth || 1280) - 120);
     const maxTop = Math.max(48, (win.innerHeight || 800) - 80);
-    this.panelContainer.style.setProperty("position", "fixed", "important");
+    this.panelContainer.addClass("nw-float-layout-fixed");
     this.panelContainer.style.setProperty("left", `${Math.min(Math.max(8, entry.position.x), maxLeft)}px`, "important");
     this.panelContainer.style.setProperty("top", `${Math.min(Math.max(48, entry.position.y), maxTop)}px`, "important");
     this.panelContainer.style.setProperty("width", `${Math.max(280, entry.size.width)}px`, "important");
     this.panelContainer.style.setProperty("height", `${Math.max(200, entry.size.height)}px`, "important");
-    this.panelContainer.style.setProperty("resize", "both", "important");
-    this.panelContainer.style.setProperty("z-index", "1000", "important");
+
+
     if (entry.collapsed && this.bodyContainer) {
       this.isCollapsed = true;
-      this.bodyContainer.style.display = "none";
+      this.bodyContainer.addClass('nw-u-d-none');
       if (this.collapseBtn) this.collapseBtn.innerHTML = "▸";
     }
   }

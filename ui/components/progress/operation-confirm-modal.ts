@@ -94,7 +94,7 @@ export class OperationConfirmModal extends Modal {
 		if (wrapper) {
 			wrapper.addClass('nw-modal');
 		}
-		contentEl.style.maxWidth = '480px';
+		contentEl.addClass('nw-modal-content-480');
 
 		this.render();
 	}

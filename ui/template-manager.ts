@@ -142,15 +142,15 @@ export class TemplateManager {
         // 批量操作按钮
         const actionRow = container.createDiv({ attr: { style: 'display:flex;gap:8px;margin:12px 0;' } });
         const exportAllBtn = actionRow.createEl('button', { text: '📤 导出全部', attr: { type: 'button', title: '导出全部模板为文件' } });
-        exportAllBtn.style.cssText = 'padding:6px 14px;cursor:pointer;border:1px solid var(--background-modifier-border);background:transparent;color:var(--text-normal);border-radius:4px;font-size:12px;';
+        exportAllBtn.addClass('nw-tpl-btn');
         exportAllBtn.onclick = () => this.exportAllTemplates();
 
         const importBtn = actionRow.createEl('button', { text: '📥 导入', attr: { type: 'button', title: '从文件导入模板' } });
-        importBtn.style.cssText = 'padding:6px 14px;cursor:pointer;border:1px solid var(--background-modifier-border);background:transparent;color:var(--text-normal);border-radius:4px;font-size:12px;';
+        importBtn.addClass('nw-tpl-btn');
         importBtn.onclick = () => this.showImportModal(container);
 
         const resetAllBtn = actionRow.createEl('button', { text: '🔄 重置全部', attr: { type: 'button', title: '重置全部模板为默认' } });
-        resetAllBtn.style.cssText = 'padding:6px 14px;cursor:pointer;border:1px solid var(--text-error);background:transparent;color:var(--text-error);border-radius:4px;font-size:12px;';
+        resetAllBtn.addClass('nw-tpl-btn', 'nw-tpl-btn-danger');
         resetAllBtn.onclick = () => this.resetAllTemplates(container);
 
         // 模板列表
@@ -202,16 +202,16 @@ export class TemplateManager {
         // 右侧：操作按钮
         const right = item.createDiv({ attr: { style: 'display:flex;gap:6px;flex-shrink:0;' } });
         const editBtn = right.createEl('button', { text: '✏️', attr: { type: 'button', title: '编辑' } });
-        editBtn.style.cssText = 'padding:4px 8px;cursor:pointer;border:1px solid var(--background-modifier-border);background:transparent;border-radius:4px;font-size:12px;';
+        editBtn.addClass('nw-tpl-btn', 'nw-tpl-btn-sm');
         editBtn.onclick = () => this.showEditModal(template);
 
         const exportBtn = right.createEl('button', { text: '📤', attr: { type: 'button', title: '导出' } });
-        exportBtn.style.cssText = 'padding:4px 8px;cursor:pointer;border:1px solid var(--background-modifier-border);background:transparent;border-radius:4px;font-size:12px;';
+        exportBtn.addClass('nw-tpl-btn', 'nw-tpl-btn-sm');
         exportBtn.onclick = () => this.exportTemplate(template);
 
         if (template.hasSystem || template.hasUser) {
             const resetBtn = right.createEl('button', { text: '🔄', attr: { type: 'button', title: '重置' } });
-            resetBtn.style.cssText = 'padding:4px 8px;cursor:pointer;border:1px solid var(--text-error);background:transparent;color:var(--text-error);border-radius:4px;font-size:12px;';
+            resetBtn.addClass('nw-tpl-btn', 'nw-tpl-btn-sm', 'nw-tpl-btn-danger');
             resetBtn.onclick = () => this.resetTemplate(template);
         }
     }
@@ -461,17 +461,17 @@ class TemplateEditModal extends Modal {
         const btnRow = contentEl.createDiv({ attr: { style: 'display:flex;gap:8px;margin-top:16px;justify-content:flex-end;' } });
 
         const cancelBtn = btnRow.createEl('button', { text: '取消' });
-        cancelBtn.style.cssText = 'padding:8px 16px;cursor:pointer;border:1px solid var(--background-modifier-border);background:transparent;border-radius:4px;';
+        cancelBtn.addClass('nw-tpl-btn');
         cancelBtn.onclick = () => this.close();
 
         const deleteBtn = btnRow.createEl('button', { text: '🗑 删除' });
-        deleteBtn.style.cssText = 'padding:8px 16px;cursor:pointer;border:1px solid var(--text-error);background:transparent;color:var(--text-error);border-radius:4px;';
+        deleteBtn.addClass('nw-tpl-btn', 'nw-tpl-btn-danger');
         deleteBtn.onclick = async () => {
             await this.deleteTemplate();
         };
 
         const saveBtn = btnRow.createEl('button', { text: '💾 保存' });
-        saveBtn.style.cssText = 'padding:8px 16px;cursor:pointer;border:none;background:var(--interactive-accent);color:var(--text-on-accent);border-radius:4px;';
+        saveBtn.addClass('nw-tpl-btn-primary');
         saveBtn.onclick = async () => {
             await this.saveTemplate(systemTA.value, userTA.value);
         };
@@ -600,11 +600,11 @@ class TemplateImportModal extends Modal {
         const btnRow = contentEl.createDiv({ attr: { style: 'display:flex;gap:8px;margin-top:16px;justify-content:flex-end;' } });
 
         const cancelBtn = btnRow.createEl('button', { text: '取消' });
-        cancelBtn.style.cssText = 'padding:8px 16px;cursor:pointer;border:1px solid var(--background-modifier-border);background:transparent;border-radius:4px;';
+        cancelBtn.addClass('nw-tpl-btn');
         cancelBtn.onclick = () => this.close();
 
         const importBtn = btnRow.createEl('button', { text: '📥 导入' });
-        importBtn.style.cssText = 'padding:8px 16px;cursor:pointer;border:none;background:var(--interactive-accent);color:var(--text-on-accent);border-radius:4px;';
+        importBtn.addClass('nw-tpl-btn-primary');
         importBtn.disabled = true;
         importBtn.onclick = async () => {
             const file = fileInput.files?.[0];

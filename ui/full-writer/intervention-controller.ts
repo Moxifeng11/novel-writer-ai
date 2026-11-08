@@ -120,7 +120,7 @@ export class InterventionController {
         });
         clearBtn.addEventListener('click', () => {
             this.inputEl.value = '';
-            this.reportEl.style.display = 'none';
+            this.reportEl.addClass('nw-u-d-none');
             this.currentReport = null;
         });
 
@@ -240,7 +240,7 @@ ${userInput}
      */
     private renderReport(report: InterventionReport): void {
         this.reportEl.empty();
-        this.reportEl.style.display = 'block';
+        this.reportEl.removeClass('nw-u-d-none');
 
         this.reportEl.createEl('h4', {
             text: '🤖 AI 理解报告',
@@ -290,7 +290,7 @@ ${userInput}
             attr: { style: 'padding: 6px 16px; cursor: pointer; background: transparent; color: var(--text-muted); border: 1px solid var(--background-modifier-border); border-radius: 6px; font-size: 0.85em;' }
         });
         modifyBtn.addEventListener('click', () => {
-            this.reportEl.style.display = 'none';
+            this.reportEl.addClass('nw-u-d-none');
             this.inputEl.focus();
         });
     }

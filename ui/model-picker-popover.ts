@@ -81,7 +81,7 @@ export function openModelPickerPopover(
     // 定位：锚点上方右对齐（输入框在底部，弹层向上展开）
     const position = (): void => {
         const rect = anchor.getBoundingClientRect();
-        root.style.visibility = 'hidden';
+        root.addClass('nw-hidden-visibility');
         root.classList.remove('nw-model-picker-hidden');
         requestAnimationFrame(() => {
             const height = root.offsetHeight;
@@ -93,7 +93,7 @@ export function openModelPickerPopover(
             if (left + width > win.innerWidth - 8) left = win.innerWidth - width - 8;
             root.style.top = `${top}px`;
             root.style.left = `${left}px`;
-            root.style.visibility = '';
+            root.removeClass('nw-hidden-visibility');
         });
     };
 

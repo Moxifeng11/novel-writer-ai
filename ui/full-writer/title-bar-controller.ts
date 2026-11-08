@@ -61,7 +61,7 @@ export class TitleBarController {
         };
 
         const projectSelect = titleRow.createEl('select', { cls: 'nw-select novel-writer-fw-title' });
-        projectSelect.style.cssText = 'width:auto;height:28px;line-height:26px;font-size:14px;font-weight:bold;background:var(--background-primary);border:1px solid var(--background-modifier-border);border-radius:4px;padding:0 8px;color:var(--text-normal);min-width:120px;';
+        projectSelect.addClass('nw-title-project-select');
 
         const projects = await this.deps.contextManager.detectProjects();
 

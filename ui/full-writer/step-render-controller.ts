@@ -278,7 +278,7 @@ export class StepRenderController {
                 const reBtn = area.createEl('button', {
                     text: '🔄 重新结算', cls: 'novel-writer-fw-btn'
                 });
-                reBtn.style.marginTop = '8px';
+                reBtn.addClass('nw-mt-8');
                 reBtn.onclick = () => {
                     cs.stepCompleted.delete('settlement');
                     void d.stepRunner.executeSettlement(
@@ -305,7 +305,7 @@ export class StepRenderController {
                     const retryBtn = area.createEl('button', {
                         text: '⚙️ 重新结算', cls: 'novel-writer-fw-btn',
                     });
-                    retryBtn.style.marginTop = '8px';
+                    retryBtn.addClass('nw-mt-8');
                     retryBtn.onclick = () => {
                         retryBtn.disabled = true;
                         this.autoSettlementAttempted.add(chapterKey);
@@ -600,9 +600,7 @@ export class StepRenderController {
             attr: { style: 'padding: 0; overflow: hidden;' }
         });
 
-        const sceneEditorWrap = editorContainer.createDiv({
-            attr: { style: 'height: 500px; display: flex; flex-direction: column;' }
-        });
+        const sceneEditorWrap = editorContainer.createDiv({ cls: 'nw-scene-editor-wrap' });
 
         const sceneController = new SceneOutlineController({
             app: d.app,
@@ -636,7 +634,7 @@ export class StepRenderController {
         rawEditBtn.onclick = () => {
             rawMode = !rawMode;
             if (rawMode) {
-                sceneEditorWrap.style.display = 'none';
+                sceneEditorWrap.addClass('nw-u-d-none');
                 rawEditBtn.setText('🎬 场景编辑器');
                 const rawContainer = editorContainer.createDiv({
                     attr: { style: 'padding: 8px;' }
@@ -648,7 +646,7 @@ export class StepRenderController {
                 }) as HTMLTextAreaElement;
                 rawTextarea.value = cs.stepResults['sceneExpand'] || '';
             } else {
-                sceneEditorWrap.style.display = 'flex';
+                sceneEditorWrap.removeClass('nw-u-d-none');
                 rawEditBtn.setText('📝 纯文本编辑');
                 if (rawTextarea && rawTextarea.parentElement) {
                     rawTextarea.parentElement.remove();

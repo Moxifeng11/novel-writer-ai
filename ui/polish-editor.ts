@@ -509,10 +509,10 @@ export class PolishAIPolishModal extends Modal {
 
         // 润色范围
         const scopeSection = contentEl.createDiv();
-        scopeSection.style.cssText = 'margin-top:12px;';
+        scopeSection.addClass('nw-section-gap-sm');
         scopeSection.createEl('h4', { text: '润色范围' });
         const scopeBtns = scopeSection.createDiv();
-        scopeBtns.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
+        scopeBtns.addClass('nw-btn-row');
         const scopeOptions: PolishScope[] = ['全文润色', '选中段落润色'];
         for (const s of scopeOptions) {
             const btn = scopeBtns.createEl('button', { text: s, cls: 'nw-btn' });
@@ -537,10 +537,10 @@ export class PolishAIPolishModal extends Modal {
 
         // 润色风格
         const styleSection = contentEl.createDiv();
-        styleSection.style.cssText = 'margin-top:16px;';
+        styleSection.addClass('nw-section-gap');
         styleSection.createEl('h4', { text: '润色风格' });
         const styleBtns = styleSection.createDiv();
-        styleBtns.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
+        styleBtns.addClass('nw-btn-row');
         const styleOptions: PolishStyle[] = ['精简凝练', '细节丰富', '情感强化', '节奏优化'];
         for (const s of styleOptions) {
             const btn = styleBtns.createEl('button', { text: s, cls: 'nw-btn' });
@@ -555,7 +555,7 @@ export class PolishAIPolishModal extends Modal {
         // 写作指纹应用
         if (this.projectPath) {
             const fingerprintSection = contentEl.createDiv();
-            fingerprintSection.style.cssText = 'margin-top:16px;';
+            fingerprintSection.addClass('nw-section-gap');
             fingerprintSection.createEl('h4', { text: '写作指纹' });
             const fingerprintDesc = fingerprintSection.createEl('p', {
                 text: '应用项目启用的写作指纹风格，让润色结果更贴合你的写作习惯',
@@ -564,7 +564,7 @@ export class PolishAIPolishModal extends Modal {
             void fingerprintDesc;
             
             const fingerprintToggle = fingerprintSection.createDiv();
-            fingerprintToggle.style.cssText = 'display:flex;align-items:center;gap:8px;';
+            fingerprintToggle.addClass('nw-btn-row');
             const checkbox = fingerprintToggle.createEl('input', {
                 type: 'checkbox',
                 cls: 'nw-u-cur-pointer-2'
@@ -584,7 +584,7 @@ export class PolishAIPolishModal extends Modal {
 
         // 操作按钮
         const actions = contentEl.createDiv();
-        actions.style.cssText = 'display:flex;gap:8px;margin-top:20px;justify-content:flex-end;';
+        actions.addClass('nw-btn-row-end');
         const startBtn = actions.createEl('button', {
             text: '开始润色',
             cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
@@ -741,32 +741,26 @@ ${targetText}
 
         // 对比预览（两列）
         const compare = contentEl.createDiv();
-        compare.style.cssText = 'display:flex;gap:12px;align-items:stretch;flex-wrap:wrap;';
+        compare.addClass('nw-compare-row');
 
         const origCol = compare.createDiv();
-        origCol.style.cssText = 'flex:1 1 280px;min-width:280px;';
+        origCol.addClass('nw-cols-280');
         origCol.createEl('h4', { text: '原文' });
         const origBox = origCol.createEl('div');
         const origDisplay = this.polishScope === '选中段落润色' ? this.selection : this.fullText;
         origBox.setText(origDisplay);
-        origBox.style.cssText =
-            'border:1px solid var(--background-modifier-border);border-radius:6px;' +
-            'padding:10px 12px;max-height:320px;overflow:auto;white-space:pre-wrap;' +
-            'word-break:break-word;background:var(--background-secondary);font-size:13px;line-height:1.6;';
+        origBox.addClass('nw-preview-box', 'nw-preview-box-lg');
 
         const newCol = compare.createDiv();
-        newCol.style.cssText = 'flex:1 1 280px;min-width:280px;';
+        newCol.addClass('nw-cols-280');
         newCol.createEl('h4', { text: '润色后' });
         const newBox = newCol.createEl('div');
         newBox.setText(this.resultText);
-        newBox.style.cssText =
-            'border:1px solid var(--interactive-accent);border-radius:6px;' +
-            'padding:10px 12px;max-height:320px;overflow:auto;white-space:pre-wrap;' +
-            'word-break:break-word;background:var(--background-secondary);font-size:13px;line-height:1.6;';
+        newBox.addClass('nw-preview-box', 'nw-preview-box-lg', 'nw-preview-box-accent');
 
         // 操作按钮
         const actions = contentEl.createDiv();
-        actions.style.cssText = 'display:flex;gap:8px;margin-top:20px;justify-content:flex-end;flex-wrap:wrap;';
+        actions.addClass('nw-btn-row-end');
         const applyBtn = actions.createEl('button', {
             text: '✅ 应用润色',
             cls: 'nw-btn nw-btn-primary novel-writer-primary-button',

@@ -127,8 +127,7 @@ export class DeconstructionSection extends SettingsSection {
                         });
                     });
                 });
-            item.settingEl.style.borderBottom = 'none';
-            item.settingEl.style.padding = '6px 0';
+            item.settingEl.addClass('nw-settings-inline-item');
         });
 
         new Setting(dimCard)

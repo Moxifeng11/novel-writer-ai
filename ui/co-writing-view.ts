@@ -752,8 +752,7 @@ export class CoWritingView extends ItemView {
     banner.createEl('span', { text: ` 缺少 ${missing.join('、')}。建议先在「全本写作工作台」中运行前置规划步骤，否则 AI 建议可能缺乏章节上下文和世界观设定信息。` });
     // 8 秒后淡出并移除节点（只把 opacity 设 0 会留下不可见但仍占位的元素）
     setTimeout(() => {
-      banner.style.transition = 'opacity 1s';
-      banner.style.opacity = '0';
+      banner.addClass('nw-fade-out');
       setTimeout(() => banner.remove(), 1100);
     }, 8000);
     log.warn(`[CoWritingView] 前置规划检查 — 缺失: ${missing.join(', ')}`);
@@ -952,7 +951,7 @@ export class CoWritingView extends ItemView {
     if (this.floatingPanel) return;
     const host = this.mainContainer || this.contentEl;
     this.floatingPanel = host.createDiv({ cls: "nw-float-monitor" });
-    this.floatingPanel.style.display = 'none';
+    this.floatingPanel.addClass('nw-u-d-none');
     const head = this.floatingPanel.createDiv({ cls: "nw-float-monitor-head" });
     head.createSpan({ cls: "nw-float-monitor-title", text: "\u{1F4CA} \u5267\u60C5\u76D1\u63A7\u4E2D\u5FC3" });
     const closeBtn = head.createSpan({ cls: "nw-float-monitor-close", text: "\u2715" });
@@ -1458,12 +1457,10 @@ export class CoWritingView extends ItemView {
     const enabled = this.facade.settings.precisionMode || false;
     if (enabled) {
       this.precisionModeBtn.textContent = '🎯 精准模式 ✓';
-      this.precisionModeBtn.style.background = 'var(--nw-accent)';
-      this.precisionModeBtn.style.color = '#fff';
+      this.precisionModeBtn.addClass('nw-precision-on');
     } else {
       this.precisionModeBtn.textContent = '🎯 精准模式';
-      this.precisionModeBtn.style.background = '';
-      this.precisionModeBtn.style.color = '';
+      this.precisionModeBtn.removeClass('nw-precision-on');
     }
   }
 
@@ -2312,7 +2309,7 @@ ${text}`;
   private showSuggestError(error: string): void {
     if (!this.suggestErrorContainer || !this.suggestRetryBtn || !this.suggestCancelBtn) return;
 
-    this.suggestErrorContainer.style.display = 'block';
+    this.suggestErrorContainer.removeClass('nw-u-d-none');
     this.suggestErrorContainer.empty();
     this.suggestErrorContainer.createDiv({
       text: "❌ 生成失败",
@@ -2323,8 +2320,8 @@ ${text}`;
       attr: { style: "font-size:12px;color:var(--text-muted);" }
     });
 
-    this.suggestRetryBtn.style.display = 'inline-flex';
-    this.suggestCancelBtn.style.display = 'none';
+    this.suggestRetryBtn.removeClass('nw-u-d-none');
+    this.suggestCancelBtn.addClass('nw-u-d-none');
 
     if (this.suggestionStatusText) {
       this.suggestionStatusText.textContent = "生成失败";

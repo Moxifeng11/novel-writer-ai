@@ -339,8 +339,7 @@ export class PreResearchModal extends Modal {
             } else {
                 const textarea = document.createElement('textarea');
                 textarea.value = seed;
-                textarea.style.position = 'fixed';
-                textarea.style.opacity = '0';
+                textarea.addClass('nw-offscreen-input');
                 document.body.appendChild(textarea);
                 textarea.select();
                 document.execCommand('copy');

@@ -508,16 +508,16 @@ export class FullWriterView extends ItemView {
         const host = this.contentEl;
         if (!host) return;
         const strip = host.createDiv({ cls: 'novel-writer-fw-btn-row' });
-        strip.style.cssText = 'position:sticky;top:0;z-index:20;background:var(--background-secondary);padding:6px 10px;border-bottom:1px solid var(--background-modifier-border);align-items:center;gap:8px;';
+        strip.addClass('nw-fw-run-strip');
         strip.createSpan({
             text: mode === 'recommended' ? '🚀 一键完成本章（推荐：合并规划）' : '🐢 逐步完成本章',
             cls: 'novel-writer-fw-warning',
         });
         const status = strip.createSpan({ text: '准备中...', cls: 'nw-chapter-run-status' });
-        status.style.cssText = 'font-size:12px;color:var(--text-muted);flex:1;';
+        status.addClass('nw-fw-run-status');
         // P0-5（v4.27）：常驻状态信息——当前模型 / 规则版本 / token 消耗
         const infoSpan = strip.createSpan({ cls: 'nw-chapter-run-info' });
-        infoSpan.style.cssText = 'font-size:11px;color:var(--text-faint);white-space:nowrap;';
+        infoSpan.addClass('nw-fw-run-info');
         const rulesVersion = this.plugin.settings.activeRulesVersion || 'auto';
         const voiceMode = this.plugin.settings.humanVoiceMode === 'quota' ? '配额' : '样文';
         const bodyVariant = (this.plugin.settings.activeBodyTemplate || 'auto').toUpperCase();
@@ -923,9 +923,7 @@ export class FullWriterView extends ItemView {
         this.plugin._isWorkbenchContext = true;
 
         // v3.4.6 flex 容器 + 宽高 100%（防 Obsidian 主题约束）
-        contentEl.style.display = 'flex';
-        contentEl.style.flexDirection = 'column';
-        contentEl.style.height = '100%';
+        contentEl.addClass('nw-flex-column-full');
 
         // v3.4.5: 注入 CSS 响应式变量（全局生效，一次定义，所有弹窗/面板复用）
         // 注：数值与 styles.css :root 保底值保持一致，仅在未来需要动态计算时才覆盖。

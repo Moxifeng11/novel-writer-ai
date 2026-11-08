@@ -115,7 +115,7 @@ export class ChapterOutlineTreeModal extends Modal {
         if (wrapper) {
             wrapper.addClass('nw-modal');
         }
-        contentEl.style.setProperty('padding', '16px 20px', 'important');
+        contentEl.addClass('nw-outline-tree-content');
 
         contentEl.empty();
         contentEl.addClass('nw-outline-tree-modal');
@@ -623,12 +623,13 @@ export class ChapterOutlineTreeModal extends Modal {
                 const dragHandle = chapRow.createSpan({
                     text: '⠿',
                     attr: {
-                        style: 'cursor:grab; margin-right:4px; color:var(--text-faint); user-select:none; font-size:0.9em;',
+                        style: 'margin-right:4px; color:var(--text-faint); user-select:none; font-size:0.9em;',
                         title: '拖拽排序',
                     }
                 });
-                dragHandle.addEventListener('mousedown', () => { dragHandle.style.cursor = 'grabbing'; });
-                dragHandle.addEventListener('mouseup', () => { dragHandle.style.cursor = 'grab'; });
+                dragHandle.addClass('nw-is-grab');
+                dragHandle.addEventListener('mousedown', () => { dragHandle.addClass('nw-is-grabbing'); });
+                dragHandle.addEventListener('mouseup', () => { dragHandle.removeClass('nw-is-grabbing'); });
 
                 // 章号
                 chapRow.createSpan({
@@ -688,12 +689,13 @@ export class ChapterOutlineTreeModal extends Modal {
                     const sceneDragHandle = sceneRow.createSpan({
                         text: '⠿',
                         attr: {
-                            style: 'cursor:grab; margin-right:4px; color:var(--text-faint); user-select:none; font-size:0.8em;',
+                            style: 'margin-right:4px; color:var(--text-faint); user-select:none; font-size:0.8em;',
                             title: '拖拽排序',
                         }
                     });
-                    sceneDragHandle.addEventListener('mousedown', () => { sceneDragHandle.style.cursor = 'grabbing'; });
-                    sceneDragHandle.addEventListener('mouseup', () => { sceneDragHandle.style.cursor = 'grab'; });
+                    sceneDragHandle.addClass('nw-is-grab');
+                    sceneDragHandle.addEventListener('mousedown', () => { sceneDragHandle.addClass('nw-is-grabbing'); });
+                    sceneDragHandle.addEventListener('mouseup', () => { sceneDragHandle.removeClass('nw-is-grabbing'); });
 
                     // 场景编号
                     sceneRow.createSpan({
@@ -779,7 +781,7 @@ export class ChapterOutlineTreeModal extends Modal {
     /** 开始内联编辑 */
     private startEdit(container: HTMLElement, displaySpan: HTMLElement, chap: ChapterNode): void {
         container.querySelectorAll('.nw-inline-editor').forEach(el => el.remove());
-        displaySpan.style.display = 'none';
+        displaySpan.addClass('nw-u-d-none');
 
         const editorWrap = container.createDiv({ cls: "nw-inline-editor nw-u-flex-1-2 nw-u-d-flex-2 nw-u-gap-4px-2", attr: {} });
         const input = editorWrap.createEl('input', {
@@ -816,13 +818,13 @@ export class ChapterOutlineTreeModal extends Modal {
 
     private finishEdit(container: HTMLElement, displaySpan: HTMLElement): void {
         container.querySelectorAll('.nw-inline-editor').forEach(el => el.remove());
-        displaySpan.style.display = '';
+        displaySpan.removeClass('nw-u-d-none');
     }
 
     /** 场景编辑 */
     private startSceneEdit(container: HTMLElement, displaySpan: HTMLElement, scene: SceneNode, chap: ChapterNode): void {
         container.querySelectorAll('.nw-inline-editor').forEach(el => el.remove());
-        displaySpan.style.display = 'none';
+        displaySpan.addClass('nw-u-d-none');
 
         const editorWrap = container.createDiv({ cls: "nw-inline-editor nw-u-flex-1-2 nw-u-d-flex-2 nw-u-gap-4px-2", attr: {} });
         const input = editorWrap.createEl('input', {
@@ -859,7 +861,7 @@ export class ChapterOutlineTreeModal extends Modal {
 
     private finishSceneEdit(container: HTMLElement, displaySpan: HTMLElement): void {
         container.querySelectorAll('.nw-inline-editor').forEach(el => el.remove());
-        displaySpan.style.display = '';
+        displaySpan.removeClass('nw-u-d-none');
     }
 
     /** 添加场景 */

@@ -60,22 +60,19 @@ export class ExpandTextModal extends Modal {
         previewSection.createEl('h4', { text: '选中文本预览' });
         const previewBox = previewSection.createEl('div');
         previewBox.setText(this.selectedText);
-        previewBox.style.cssText =
-            'border:1px solid var(--background-modifier-border);border-radius:6px;' +
-            'padding:10px 12px;max-height:160px;overflow:auto;white-space:pre-wrap;' +
-            'word-break:break-word;background:var(--background-secondary);font-size:13px;line-height:1.6;';
+        previewBox.addClass('nw-preview-box');
 
         // 扩写倍数
         const multSection = contentEl.createDiv();
-        multSection.style.cssText = 'margin-top:16px;';
+        multSection.addClass('nw-section-gap');
         multSection.createEl('h4', { text: '扩写倍数' });
         const multBtns = multSection.createDiv();
-        multBtns.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
+        multBtns.addClass('nw-btn-row');
         const multOptions: [number, string][] = [[1.5, '1.5x'], [2, '2x'], [3, '3x']];
         for (const [val, label] of multOptions) {
             const btn = multBtns.createEl('button', { text: label, cls: 'nw-btn' });
             if (val === this.multiplier) btn.addClass('is-active');
-            btn.style.cssText = 'min-width:64px;';
+            btn.addClass('nw-btn-min-64');
             btn.onclick = () => {
                 this.multiplier = val;
                 multBtns.querySelectorAll('button').forEach(b => b.removeClass('is-active'));
@@ -85,10 +82,10 @@ export class ExpandTextModal extends Modal {
 
         // 扩写风格
         const styleSection = contentEl.createDiv();
-        styleSection.style.cssText = 'margin-top:16px;';
+        styleSection.addClass('nw-section-gap');
         styleSection.createEl('h4', { text: '扩写风格' });
         const styleBtns = styleSection.createDiv();
-        styleBtns.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
+        styleBtns.addClass('nw-btn-row');
         const styleOptions: ExpandStyle[] = ['细节丰富', '情节推进', '情感深化', '场景描写'];
         for (const s of styleOptions) {
             const btn = styleBtns.createEl('button', { text: s, cls: 'nw-btn' });
@@ -102,7 +99,7 @@ export class ExpandTextModal extends Modal {
 
         // 操作按钮
         const actions = contentEl.createDiv();
-        actions.style.cssText = 'display:flex;gap:8px;margin-top:20px;justify-content:flex-end;';
+        actions.addClass('nw-btn-row-end');
         const startBtn = actions.createEl('button', {
             text: '开始扩写',
             cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
@@ -173,32 +170,25 @@ ${this.selectedText}
 
         // 对比预览（两列）
         const compare = contentEl.createDiv();
-        compare.style.cssText =
-            'display:flex;gap:12px;align-items:stretch;flex-wrap:wrap;';
+        compare.addClass('nw-compare-row');
 
         const origCol = compare.createDiv();
-        origCol.style.cssText = 'flex:1 1 280px;min-width:280px;';
+        origCol.addClass('nw-cols-280');
         origCol.createEl('h4', { text: '原文' });
         const origBox = origCol.createEl('div');
         origBox.setText(this.selectedText);
-        origBox.style.cssText =
-            'border:1px solid var(--background-modifier-border);border-radius:6px;' +
-            'padding:10px 12px;max-height:320px;overflow:auto;white-space:pre-wrap;' +
-            'word-break:break-word;background:var(--background-secondary);font-size:13px;line-height:1.6;';
+        origBox.addClass('nw-preview-box', 'nw-preview-box-lg');
 
         const newCol = compare.createDiv();
-        newCol.style.cssText = 'flex:1 1 280px;min-width:280px;';
+        newCol.addClass('nw-cols-280');
         newCol.createEl('h4', { text: '扩写后' });
         const newBox = newCol.createEl('div');
         newBox.setText(this.resultText);
-        newBox.style.cssText =
-            'border:1px solid var(--interactive-accent);border-radius:6px;' +
-            'padding:10px 12px;max-height:320px;overflow:auto;white-space:pre-wrap;' +
-            'word-break:break-word;background:var(--background-secondary);font-size:13px;line-height:1.6;';
+        newBox.addClass('nw-preview-box', 'nw-preview-box-lg', 'nw-preview-box-accent');
 
         // 操作按钮
         const actions = contentEl.createDiv();
-        actions.style.cssText = 'display:flex;gap:8px;margin-top:20px;justify-content:flex-end;flex-wrap:wrap;';
+        actions.addClass('nw-btn-row-end');
         const applyBtn = actions.createEl('button', {
             text: '✅ 应用替换原文',
             cls: 'nw-btn nw-btn-primary novel-writer-primary-button',

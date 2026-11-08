@@ -219,7 +219,7 @@ export function renderControlPanelAssembly(
     completionCard.createDiv({ cls: 'nw-card-title', text: '完成度' });
     completionCard.createDiv({ cls: 'nw-card-value', text: '0%' });
     const completionProgress = completionCard.createDiv({ cls: 'nw-progress' });
-    completionProgress.createDiv({ cls: 'nw-progress-fill' }).style.setProperty('width', '0%');
+    completionProgress.createDiv({ cls: 'nw-progress-fill nw-progress-fill-zero' });
 
     const tractionCard = cardsArea.createDiv({ cls: 'nw-card' });
     tractionCard.createDiv({ cls: 'nw-card-title', text: '情节牵引' });
@@ -237,7 +237,7 @@ export function renderControlPanelAssembly(
     controlHead.createDiv({ cls: 'nw-cowrite-control-title', text: '控制台' });
     // NBI-04: 临时指令「已应用」状态标识，默认隐藏
     const hintStateDisplay = controlHead.createDiv({ cls: 'nw-hint-state', text: '指令已应用' });
-    hintStateDisplay.style.setProperty('display', 'none');
+    hintStateDisplay.addClass('nw-u-d-none');
     const saveStateDisplay = controlHead.createDiv({ cls: 'nw-cowrite-control-state', text: '未保存' });
 
     const hintInput = controlPanel.createEl('input', {

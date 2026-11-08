@@ -255,7 +255,7 @@ export class ManageProvidersModal extends Modal {
             });
             input.value = raw.endpoint;
             const autosize = () => {
-                input.style.height = 'auto';
+                input.addClass('nw-h-auto');
                 input.style.height = `${Math.max(34, input.scrollHeight)}px`;
             };
             window.setTimeout(autosize, 0);

@@ -126,7 +126,7 @@ export class WritingPet {
         });
 
         this.card = root.createDiv({ cls: 'nw-pet-card' });
-        this.card.style.display = 'none';
+        this.card.addClass('nw-u-d-none');
         this.update();
     }
 
@@ -205,7 +205,7 @@ export class WritingPet {
     private toggleCard(): void {
         if (!this.card) return;
         this.expanded = !this.expanded;
-        this.card.style.display = this.expanded ? '' : 'none';
+        this.card.toggleClass('nw-u-d-none', !this.expanded);
         if (this.expanded) this.update();
     }
 

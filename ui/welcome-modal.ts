@@ -45,7 +45,7 @@ export class WelcomeModal extends Modal {
         if (wrapper) {
             wrapper.addClass('nw-modal');
         }
-        contentEl.style.maxHeight = '85vh';
+        contentEl.addClass('nw-modal-content-85');
 
         const hero = contentEl.createDiv({
             attr: {
@@ -224,7 +224,7 @@ export class WelcomeModal extends Modal {
 
         steps.forEach((step) => {
             const li = list.createEl('li');
-            li.style.cssText = 'font-size:13px;line-height:2;color:var(--text-muted);';
+            li.addClass('nw-welcome-item');
             li.textContent = step;
         });
     }
