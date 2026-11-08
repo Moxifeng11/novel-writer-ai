@@ -21,6 +21,30 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.76.0',
+        date: '2026-11-08',
+        title: '插件数据目录单源 + Obsidian API 门禁',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🐛 修复',
+                items: [
+                    '数据目录不再硬编码 .obsidian：按 configDir + manifest.dir 注入，改配置目录/换文件夹名不再丢状态',
+                    '续写检测结果改 Markdown 渲染（此前 innerHTML 注入面 + ## 原样显示）',
+                    'update-checker 改 requestUrl（移动端 fetch 无 CORS 豁免）；弃用 renderMarkdown 已替换',
+                ],
+            },
+            {
+                type: 'added',
+                label: '🛡️ 门禁',
+                items: [
+                    '新增 check:obsidian-api 棘轮门禁：硬编码路径 / 弃用 API / 非流式 fetch / document 监听 / console',
+                    '首版清零前三类，存量 9 + 24 登记只降不升；+6 条违规样例自测，preflight 与 CI 同步接入',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.75.0',
         date: '2026-11-08',
         title: '移除从未可用的批量拆解模态',

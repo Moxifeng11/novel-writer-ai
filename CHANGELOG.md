@@ -2,6 +2,35 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.76.0（2026-11-08）
+
+### 🔧 修复：插件数据目录硬编码（自定义 configDir / BRAT 改名即写错位置）
+
+- `shared/paths.ts` 此前写死 `.obsidian/plugins/novel-writer-ai/data`，被偏好记忆、文笔风格学习、指纹库、版本历史、`cache.json` 用于**实际落盘**。Obsidian 允许用户改 `vault.configDir`，BRAT 安装的文件夹名也可能不同——这些用户的功能会静默丢状态。
+- 改为单源：`setPluginRootDir()` 在 `onload` 用 `${vault.configDir}/${manifest.dir}` 注入，`pluginDataDir()` / `pluginDataFile()` 全部派生；测试/纯函数环境保留兜底。
+- 同步收口 10 处同类硬编码：usage-ledger、backup-center、humanness-scorer、human-sample-loader、agent-section（dsh home），以及 main/engine-registry/step-runner/agent-workbench 的 `manifest.dir ?? 手拼路径` 四份重复实现（+3 用例）。
+
+### 🐛 修复：续写检测结果含注入面且 Markdown 未渲染
+
+- `continue-chapters-modal` 把 `## 续写检测结果` 的 Markdown 串直接赋给 `innerHTML`：`targetVol`（大纲卷名，AI 可控）是注入面，`##`/`**` 又原样显示。改为 `MarkdownRenderer.render` 渲染到容器。
+
+### 🧹 修复：弃用 API 与移动端 CORS
+
+- `co-writing-view` 的 `MarkdownRenderer.renderMarkdown` → 新签名 `MarkdownRenderer.render(app, md, el, path, component)`（弃用 API，官方审查会报）。
+- `update-checker` 两处 `fetch` → `requestUrl`：移动端 fetch 无 CORS 豁免，GitHub API 会被直接拦（15 例测试同步改 mock）。
+
+### 🛡️ 新增门禁：`check:obsidian-api`（棘轮）
+
+- 把「过得了现有门禁、却会在 1.4.x / 移动端 / 第二窗口 / 自定义配置目录静默失效」的缺陷类做成静态门禁：硬编码插件路径、弃用/越界 API、非流式 `fetch`、document 级监听、console 直写。
+- 基线 `.obsidian-api-baseline.json`，违规数**只允许下降**；换文件继续违规也失败；合法例外（`shared/paths.ts`、流式 SSE、change 日志文本）走白名单。
+- 首版即清零前三类（0/0/0）；存量登记 `global-document-listener` 9（均已成对移除）、`console-direct` 24（后续批次改 `shared/logger`，只降不升）。
+- 接入 `preflight` 与 CI；`+6` 条「故意违规必须报错」自测。
+
+### 🧪 测试与门禁
+
+- 全量 **596 文件 / 6,579 用例**全绿（v4.75.0 为 594/6,570，+2 文件/+9 例）；`preflight:release` EXIT=0。
+- any 106/48；bundle main.js 4,864,737（−73B，去掉硬编码与兜底字符串）。
+
 ## v4.75.0（2026-11-08）
 
 ### 🗑️ 移除：批量拆解模态（从未可用，用户拍板 ③b）
