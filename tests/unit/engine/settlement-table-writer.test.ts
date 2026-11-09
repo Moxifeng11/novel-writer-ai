@@ -61,6 +61,30 @@ describe('settlement-table-writer — 路径与写入', () => {
     it('settlementTablePath 卷名/卷号一致', () => {
         expect(settlementTablePath('书甲', '第3卷', 4)).toBe(settlementTablePath('书甲', 3, 4));
     });
+
+    it('F-7：章号解析失败时标准 chapDir 的目录章号优先（不再错位为 第1章）', async () => {
+        const fs = makeFs();
+        const path = await writeSettlementTableFile(fs as never, {
+            project: '书甲',
+            volume: '第2卷',
+            chapterNum: 0, // 序章/楔子解析为 0
+            content: '序章结算',
+            chapDir: '书甲/03-大纲与章节/步骤结果/第2卷/第7章',
+        });
+        expect(path).toBe('书甲/03-大纲与章节/步骤结果/第2卷/第7章/第7章_结算表.md');
+        expect(fs.write).toHaveBeenCalledWith(path, '序章结算');
+    });
+
+    it('F-7：无 chapDir 且章号缺失时维持钳 1（无更可信来源，现状不变）', async () => {
+        const fs = makeFs();
+        const path = await writeSettlementTableFile(fs as never, {
+            project: '书甲',
+            volume: '第1卷',
+            chapterNum: 0,
+            content: 'x',
+        });
+        expect(path).toBe('书甲/03-大纲与章节/步骤结果/第1卷/第1章/第1章_结算表.md');
+    });
 });
 
 describe('buildSettlementTable — 缺省计数', () => {

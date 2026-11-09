@@ -1311,13 +1311,21 @@ ${ni.description || '暂无描述'}
                 const fp = pjCharFile(ctx.project, e.name);
                 const file = this.getVaultMeta().getAbstractFileByPath(fp);
                 if (!file) continue;
-                await withWriteLock(fp, () => this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
-                    fm['当前情绪'] = e.emotion;
-                    // v4.0: 实体状态追踪
-                    if (fm['entity_status'] == null || fm['entity_status'] === '') fm['entity_status'] = 'active';
-                    fm['entity_last_changed_at'] = ctx.chapName;
-                    fm['entity_last_changed_reason'] = `结算：情绪更新为${e.emotion}`;
-                }));
+                // D-6（2026-11-10 审计）：情绪四字段此前不进 journal——部分失败回滚
+                // 时人物卡停在半失败态。与正文步骤同模式：快照读与写入同锁。
+                await withWriteLock(fp, async () => {
+                    await this.snapshotField(ctx, file as TFile, '当前情绪');
+                    await this.snapshotField(ctx, file as TFile, 'entity_status');
+                    await this.snapshotField(ctx, file as TFile, 'entity_last_changed_at');
+                    await this.snapshotField(ctx, file as TFile, 'entity_last_changed_reason');
+                    await this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
+                        fm['当前情绪'] = e.emotion;
+                        // v4.0: 实体状态追踪
+                        if (fm['entity_status'] == null || fm['entity_status'] === '') fm['entity_status'] = 'active';
+                        fm['entity_last_changed_at'] = ctx.chapName;
+                        fm['entity_last_changed_reason'] = `结算：情绪更新为${e.emotion}`;
+                    });
+                });
                 ctx.result.updatedEmotions++;
             } catch (err) { log.warn('[SettlementEngine] 更新情绪失败:', e.name, err); ctx.hasPartialFailure = true; }
         }

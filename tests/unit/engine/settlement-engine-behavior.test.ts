@@ -390,6 +390,26 @@ describe('SettlementEngine — 写锁覆盖快照（P1-3）', () => {
 });
 
 describe('SettlementEngine — 数据一致性修复（v4.79.0 交叉审计）', () => {
+    it('D-6：情绪字段写入失败时，四字段经 journal 回滚到写入前原值', async () => {
+        const h = makeHarness(seedAll(), undefined, {
+            // 情绪步骤经 processFrontmatter 写人物卡；注入失败触发部分失败→回滚
+            onProcessFrontmatter: async (file) => {
+                if (file.path === CHAR_PATH) throw new Error('模拟 frontmatter 写入失败');
+            },
+        });
+        const report = `${REPORT}
+EMOTION: [[甲]] | 惊疑 | 长老念出陌生姓氏后既不安又隐隐期待`;
+        const result = await h.engine.settle(PROJECT, CHAP_DIR, CHAP_NAME, report, BODY_SEED);
+
+        expect(result.rollback).toBeDefined();
+        const char = h.files.get(CHAR_PATH)!;
+        // D-6 修复前：当前情绪/entity_last_changed_* 不进 journal，回滚后残留
+        expect(char).not.toContain('当前情绪: 惊疑');
+        expect(char).toContain('当前状态: 健康');
+    });
+});
+
+describe('SettlementEngine — 数据一致性修复（v4.79.0 交叉审计）', () => {
     it('DELETE_ENTITY 后部分失败回滚：人物文件被 journal 恢复', async () => {
         const h = makeHarness(seedAll(), /伏笔库.md$/);
         const report = `${REPORT}

@@ -58,9 +58,14 @@ export function settlementTablePath(project: string, volume: string | number, ch
  */
 export async function writeSettlementTableFile(fs: FileSystemPort, input: SettlementTableWriteInput): Promise<string> {
     const volNum = volumeNumOf(input.volume);
-    const chapNum = Math.max(1, Math.floor(input.chapterNum || 1));
-    // chapDir 是标准步骤目录时直接沿用（兼容旧数据所在位置）；否则统一到标准路径
     const legacy = input.chapDir?.match(/\/03-大纲与章节\/步骤结果\/第(\d+)卷\/第(\d+)章$/);
+    // F-7（2026-11-10 审计）：章号解析失败（序章/楔子/番外 → 0）时，标准 chapDir
+    // 的目录章号优先——否则产出「第7章/第1章_结算表.md」错位，或非 legacy 路径
+    // 钳到 1 直接覆盖第1章的结算表（数据丢失）。
+    const chapNum = legacy
+        ? Math.max(1, Number.parseInt(legacy[2], 10))
+        : Math.max(1, Math.floor(input.chapterNum || 1));
+    // chapDir 是标准步骤目录时直接沿用（兼容旧数据所在位置）；否则统一到标准路径
     const dir = legacy
         ? `${input.project}/03-大纲与章节/步骤结果/第${legacy[1]}卷/第${legacy[2]}章`
         : pjStepDir(input.project, volNum, chapNum);

@@ -141,13 +141,21 @@ export function relationsFor(ledger: StoryLedger, entityId: string): RelationRec
  * @returns 承诺列表
  */
 export function openPromises(ledger: StoryLedger, chapter: number | null = null): PromiseRecord[] {
-    return ledger.promises.filter((promise) => {
-        const status = promise.status || '';
-        if (/兑现|已解决|放弃|resolved|dropped/.test(status)) return false;
-        if (chapter === null) return true;
-        const expected = Number.parseInt(String(promise.expectedChapter).replace(/[^\d]/g, ''), 10);
-        return !Number.isFinite(expected) || expected >= chapter;
-    });
+    // F-3 二轮复核（2026-11-10）：旧实现按 `expected >= chapter` 过滤会把「已逾期
+    // 仍 open」的承诺剔除——恰是最该提醒的条目。改为仅按状态过滤，逾期项排序置前。
+    return ledger.promises
+        .filter((promise) => {
+            const status = promise.status || '';
+            return !/兑现|已解决|放弃|resolved|dropped/.test(status);
+        })
+        .sort((a, b) => {
+            if (chapter === null) return 0;
+            const expectedOf = (promise: PromiseRecord): number => {
+                const parsed = Number.parseInt(String(promise.expectedChapter).replace(/[^\d]/g, ''), 10);
+                return Number.isFinite(parsed) ? parsed : Number.MAX_SAFE_INTEGER;
+            };
+            return expectedOf(a) - expectedOf(b);
+        });
 }
 
 /**
