@@ -125,6 +125,18 @@ function generateId(): string {
     return 'kb_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
 }
 
+/**
+ * 书籍 ID 只允许作为单个文件名段使用。
+ * 索引文件可随 vault 同步/共享，`../data`、`a/b` 等会让向量文件读写/删除越出向量目录。
+ * 不强制 `kb_` 前缀，兼容旧索引与测试数据。
+ */
+function isSafeBookId(value: unknown): value is string {
+    if (typeof value !== 'string' || value.trim().length === 0) return false;
+    if (value === '.' || value === '..' || value.startsWith('.')) return false;
+    if (/[\\/]/.test(value) || value.includes('..')) return false;
+    return !/[\u0000-\u001f]/.test(value);
+}
+
 interface KnowledgeBaseCacheOptions {
     cacheEnabled?: boolean;
     cacheMaxSize?: number;
@@ -299,10 +311,15 @@ export class KnowledgeBaseManager {
                 const fm = this.parseFrontmatter(content);
                 const booksData = fm.books as Record<string, unknown>[] | undefined;
                 if (Array.isArray(booksData)) {
-                    this.books = new Map(booksData.map(book => {
+                    this.books = new Map();
+                    for (const book of booksData) {
                         const migrated = this.migrateBookData(book);
-                        return [migrated.id, migrated];
-                    }));
+                        if (!isSafeBookId(migrated.id)) {
+                            log.warn('[KnowledgeBaseManager] 索引含非法 book.id，已丢弃:', migrated.id);
+                            continue;
+                        }
+                        this.books.set(migrated.id, migrated);
+                    }
                 } else {
                     // 索引存在但没有 books 数组：要么是空库，要么是结构不认识。
                     // 不能直接当空库——后续任何一次 saveIndex 都会把「读不懂」写成「一本书都没有」。
@@ -517,6 +534,7 @@ export class KnowledgeBaseManager {
      * @returns 无
      */
     async deleteBook(bookId: string): Promise<void> {
+        if (!isSafeBookId(bookId)) return;
         const book = this.books.get(bookId);
         if (!book) return;
 
@@ -545,6 +563,7 @@ export class KnowledgeBaseManager {
      * 不清理会让已删书籍继续出现在检索结果里。
      */
     private async removeVectorArtifacts(bookId: string): Promise<void> {
+        if (!isSafeBookId(bookId)) return;
         const fs = this.getFS();
         const dir = kbVectorsDir();
         await fs.delete(`${dir}/${bookId}.json`).catch(() => undefined);
@@ -571,6 +590,7 @@ export class KnowledgeBaseManager {
      * 原子替换，避免中断留下半写 JSON。内存同步交给向量存储的文件签名（path@mtime:size）重载。
      */
     private async renameVectorArtifacts(bookId: string, newName: string): Promise<void> {
+        if (!isSafeBookId(bookId)) return;
         await withWriteLock(KNOWLEDGE_VECTOR_STATE_LOCK, async () => {
             const fs = this.getFS();
             const dir = kbVectorsDir();

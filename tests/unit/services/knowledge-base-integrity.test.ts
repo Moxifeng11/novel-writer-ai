@@ -113,6 +113,19 @@ describe('KnowledgeBaseManager.init — 索引损坏不得清空知识库', () =
         expect(rewritten.books.map((b: { id: string }) => b.id)).toEqual(['id-书甲']);
     });
 
+    it('索引中的越界 book.id 被丢弃，其余书籍正常加载（安全审计 SEC-3）', async () => {
+        const base = { name: '书', themeTags: [], techniqueTags: [], customTags: [], createdAt: 1, updatedAt: 1, breakdownStatus: 'pending' };
+        fs.files.set(kbIndexFile(), indexContent([
+            { ...base, id: '../data', name: '越界书' },
+            { ...base, id: 'book-1', name: '正常书' },
+        ]));
+
+        await manager.init();
+
+        expect(manager.hasBook('../data')).toBe(false);
+        expect(manager.hasBook('book-1')).toBe(true);
+    });
+
     it('索引是 CRLF 换行时仍能正常读取（不触发重建）', async () => {
         const books = [{ id: 'book-1', name: '书一', themeTags: [], techniqueTags: [], customTags: [], createdAt: 1, updatedAt: 1, breakdownStatus: 'pending' }];
         fs.files.set(kbIndexFile(), indexContent(books).replace(/\n/g, '\r\n'));
