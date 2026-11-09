@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-08T23:26:40.816Z",
-  "note": "v4.80.0 审计维度④ C-3：上下文模式提示的静态 cssText 改为 .novel-writer-context-mode-hint 类（+111B，类数不变）；无颜色/important 变化",
-  "bytes": 543501,
+  "generatedAt": "2026-11-09T06:28:36.582Z",
+  "note": "4.81.0 社区审核：实体标签改 DOM 构建新增 .nw-entity-tag/--nw-entity-* 变量样式（+6 类）；指纹强度预览从内联迁入 7 个语义类（+7 类，其中 1 个替换既有类）；合计 +8 类/+1227B，均为审核 Error 修复必需，无重复样式",
+  "bytes": 544728,
   "important": 24,
   "hardcodedHex": 161,
   "rgbHsl": 188,
-  "uniqueClasses": 2978,
+  "uniqueClasses": 2986,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

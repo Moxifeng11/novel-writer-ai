@@ -21,6 +21,31 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.81.0',
+        date: '2026-11-09',
+        title: '社区目录审核阻断项清零',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🛡️ 修复',
+                items: [
+                    'API 越界：revealLeaf（1.7.2）15 处改走 revealLeafCompat；1.6+ 多窗口 API 补守卫；minAppVersion 提至 1.4.4',
+                    'HTML 注入：50 处 innerHTML 赋值迁入 sanitizeHTMLToDom 封装；润色实体标记改 DOM 构建',
+                    'Modal 生命周期：两个弹窗改用自管 Component 渲染宿主，不再把 plugin 当组件',
+                    '残余静态样式：指纹强度预览改用 .nw-intensity-preview* 类',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🔧 优化',
+                items: [
+                    'ESLint 接入官方审核规则（类型感知）：no-unsupported-api / no-plugin-as-component / no-static-styles-assignment / no-forbidden-elements / no-unsanitized',
+                    'check:obsidian-api 补 revealLeaf/ensureSideLeaf/getFileByPath 检测；handbook 新增 API/HTML/Modal 约束',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.80.0',
         date: '2026-11-09',
         title: '社区目录样式合规重构',

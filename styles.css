@@ -18295,6 +18295,15 @@ body.nw-panel-resizing .nw-awb-center iframe {
 }
 
 /* ── 润色编辑器实体高亮（来源：ui/polish-editor.ts） ── */
+.nw-entity-tag {
+    color: var(--nw-entity-color, var(--text-normal));
+    background: var(--nw-entity-bg, transparent);
+    font-weight: 600;
+    padding: 0 2px;
+    border-radius: 2px;
+    cursor: default;
+    user-select: all;
+}
 .nw-entity-char { color: #e74c3c !important; background: rgba(231,76,60,0.1) !important; }
         .nw-entity-locs { color: #3498db !important; background: rgba(52,152,219,0.1) !important; }
         .nw-entity-factions { color: #2ecc71 !important; background: rgba(46,204,113,0.1) !important; }
@@ -19580,6 +19589,12 @@ body.nw-panel-resizing .nw-awb-center iframe {
 .nw-p-12 {
     padding: 12px;
 }
+.nw-empty-inline {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+}
 .nw-ai-builder-root {
     width: min(1300px, 94vw);
     height: min(90vh, 900px);
@@ -19619,6 +19634,45 @@ body.nw-panel-resizing .nw-awb-center iframe {
 }
 .nw-hidden-visibility {
     visibility: hidden;
+}
+
+/* 指纹强度预览（fingerprint-intensity-modal；原为内联样式） */
+.nw-intensity-preview {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: var(--background-secondary);
+    border-radius: 6px;
+}
+.nw-intensity-preview-title {
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+.nw-intensity-preview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+    font-size: 12px;
+}
+.nw-intensity-preview-row {
+    display: flex;
+    gap: 6px;
+}
+.nw-intensity-preview-label {
+    color: var(--text-muted);
+    min-width: 90px;
+}
+.nw-intensity-preview-value {
+    color: var(--text-normal);
+    font-weight: 500;
+}
+.nw-intensity-preview-warning {
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: var(--background-modifier-error);
+    color: var(--text-error);
+    border-radius: 4px;
+    font-size: 11px;
 }
 
 /* 指纹强度预设按钮（blend / intensity 共用） */

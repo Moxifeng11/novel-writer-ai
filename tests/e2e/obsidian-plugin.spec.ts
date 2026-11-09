@@ -594,16 +594,13 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
             const settings = host.app?.plugins?.plugins?.['novel-writer-ai']?.settings as
                 | { theme?: string; themeColors?: { appBg?: string; activePresetId?: string } }
                 | undefined;
-            const styles = Array.from(document.querySelectorAll('style#novel-writer-theme-vars'))
-                .map(el => el.textContent || '').join('');
             return {
                 theme: settings?.theme,
                 appBg: settings?.themeColors?.appBg,
                 activeId: settings?.themeColors?.activePresetId,
-                cssHasBg: styles.includes('--nw-app-bg: #16211F'),
+                // v4.80 起主题变量走 documentElement.setCssProps，不再注入 <style>；
+                // 计算值是唯一可信的「已生效」证据。
                 resolvedBg: getComputedStyle(document.documentElement).getPropertyValue('--nw-app-bg').trim(),
-                styleCount: document.querySelectorAll('style#novel-writer-theme-vars').length,
-                styleHead: styles.slice(0, 160),
             };
         });
 
@@ -611,7 +608,6 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         expect(state.theme).toBe('dark');
         expect(state.appBg).toBe('#16211F');
         expect(state.activeId).toBe('builtin:celadon:dark');
-        expect(state.cssHasBg).toBe(true);
         expect(state.resolvedBg).toBe('#16211F');
 
         // 还原默认配色，避免影响后续用例的配色假设

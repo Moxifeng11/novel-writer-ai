@@ -68,6 +68,12 @@ export default defineConfig({
     },
 
     {
+      name: 'review-fixes',
+      testMatch: /review-fixes\.spec\.ts/,
+      timeout: 180_000,
+    },
+
+    {
       name: 'button-states',
       testMatch: /button-states\.spec\.ts/,
       timeout: 180_000,

@@ -2,6 +2,16 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.81.0（2026-11-09）
+
+### 🛡️ 社区目录审核阻断项清零（无功能变更）
+
+- **API 越界清零**：`Workspace.revealLeaf`（1.7.2）15 处调用改走 `shared/workspace-reveal.ts::revealLeafCompat`（`setActiveLeaf` + 侧栏 `expand()`）；`onWindowMigrated` / `el.win` 补 1.4.4 运行时守卫；`manifest.minAppVersion` 1.4.0 → **1.4.4**（`processFrontMatter` 的真实下限）。
+- **innerHTML 清零**：50 处 `innerHTML = / +=`（另 8 处清空）迁入 `ui/rendering/safe-html.ts`（唯一 `sanitizeHTMLToDom` 入口）；润色编辑器实体标记改 DOM 构建，实体色改用 `--nw-entity-color` 变量；顺手修 popout 粘贴。
+- **Modal 生命周期**：`ContinueChaptersModal` / `UnifiedEntityManagerModal` 各自持有 `Component` 渲染宿主，`load/unload` 跟随开关，不再把 plugin 当组件传给 `MarkdownRenderer.render`。
+- **残余静态样式**：指纹强度预览迁入 `.nw-intensity-preview*` 类，`updatePreview` 复用 `fillPreview`。
+- **门禁对齐官方审核**：`eslint.config.mjs` 启用类型感知，以 error 运行 `no-unsupported-api` / `no-plugin-as-component` / `no-static-styles-assignment` / `no-forbidden-elements` / `no-unsanitized`；新增配置与源码回流测试；`check:obsidian-api` 补 leaf API 检测；handbook §3.4 写明约束。
+
 ## v4.80.0（2026-11-09）
 
 ### 🎨 社区目录样式合规重构（无功能变更）
