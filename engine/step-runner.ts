@@ -66,7 +66,8 @@ import { createLogger } from '@/shared/logger';
 import { getExecutionLedger, summarizeSettlement } from '@/services/execution-ledger';
 import { pushUsageScope } from '@/services/usage-ledger';
 import { QualityGate } from './quality-gate';
-import { buildGateSnapshotFromVars } from './quality/gate-snapshot';
+import { buildGateBeatsFromVars, buildGateSnapshotFromVars } from './quality/gate-snapshot';
+import { runProjectCharacterConsistency, writeConsistencyReport } from './character-consistency-service';
 import { createStepFailure, type StepFailureKind } from '@/shared/execution-events';
 import { validateStepResult } from './step-validator';
 import { promptVariantOf } from './prompts/prompt-registry';
@@ -1396,10 +1397,21 @@ ${userPrompt}`),
                 if (stepKey === 'bodyGeneration' && verdict.level === 'complete') {
                     try {
                         const gate = new QualityGate();
+                        const beats = buildGateBeatsFromVars(ctx.vars);
+                        let characterReport = undefined;
+                        try {
+                            characterReport = await runProjectCharacterConsistency(this.app, ctx.project, finalContent);
+                            const volumeNum = Number.parseInt(ctx.volume.match(/第(\d+)卷/)?.[1] ?? '1', 10) || 1;
+                            await writeConsistencyReport(
+                                this.getFS(), ctx.project, volumeNum, ctx.chapterNum, ctx.chapterName, characterReport,
+                            );
+                        } catch (e) {
+                            log.warn('[StepRunner] 人物一致性检查失败（不影响正文）:', e);
+                        }
                         const report = await gate.run(finalContent, buildGateSnapshotFromVars({
                             chapterNum: ctx.chapterNum,
                             vars: ctx.vars,
-                        }));
+                        }), { beats, characterReport });
                         const summary = report.summary || (report.passed ? '质量验收通过' : '质量验收未通过');
                         this.emitEvent('step', report.passed ? 'success' : 'warning', summary, stepKey, currentStep.label);
                         this.emitDiagnostic(report.passed ? 'info' : 'warning', 'step', summary, stepKey, currentStep.label);
@@ -1409,6 +1421,21 @@ ${userPrompt}`),
                             source: 'ui',
                             detail: summary.slice(0, 200),
                         });
+                        // 高严重度 OOC / 结构缺口：复用既有定向修订，不硬中断生成
+                        if (!report.passed && this.plugin.settings.autoRevisionAfterQC) {
+                            try {
+                                await this.executeTargetedRevision(
+                                    ctx.stepResults,
+                                    ctx.chapDir,
+                                    ctx.chapterName,
+                                    ctx.volume,
+                                    ctx.stepCompleted,
+                                    extractCharacterNames(ctx.vars.allChars),
+                                );
+                            } catch (e) {
+                                log.warn('[StepRunner] 质量门禁触发的定向修订失败:', e);
+                            }
+                        }
                     } catch (e) {
                         log.warn('[StepRunner] 质量门禁运行失败（不影响正文）:', e);
                     }

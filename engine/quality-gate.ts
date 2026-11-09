@@ -19,6 +19,7 @@ import type { Conflict } from './conflict-detector';
 import { AntiAIDetector } from './anti-ai-detector';
 import type { AIDetectionResult } from './anti-ai-detector';
 import type { ChapterStateSnapshot, StoryBeat } from './story-state-types';
+import type { ConsistencyCheckResult } from './character-consistency-checker';
 
 /**
  * QualityGateLayer 类型定义。
@@ -45,6 +46,8 @@ export interface QualityGateReport {
             repeatedScenes: string[];
         };
         model: QualityGateModelReview | null;
+        /** 人物一致性（注入式；未提供时 undefined） */
+        character?: ConsistencyCheckResult;
     };
     skippedLayers: QualityGateLayer[];
     summary: string;
@@ -59,6 +62,8 @@ export interface QualityGateOptions {
     skipLayers?: QualityGateLayer[];
     /** 第三层模型评审注入；未提供时模型层为 null */
     modelReviewer?: (body: string, snapshot: ChapterStateSnapshot) => Promise<QualityGateModelReview>;
+    /** 人物一致性报告（高严重度 OOC 会使 passed=false） */
+    characterReport?: ConsistencyCheckResult;
     /** 相邻段落重复检测的取前缀长度（默认 16，与既有行为一致） */
     repeatPrefixLen?: number;
     /** 结尾钩子检测的尾段窗口长度（默认 200，与既有行为一致） */
@@ -122,13 +127,14 @@ export class QualityGate {
         }
 
         // v4.26：规则层（冲突/AI词表）降级为报告项——引导型体系下不再一票否决；
-        // passed 只看结构层（节拍完整性），结构失败才是硬问题。
-        const passed = beatVerify.passed;
+        // passed 只看结构层（节拍完整性）+ 人物一致性高严重度。
+        const character = options.characterReport;
+        const passed = beatVerify.passed && (character ? character.passed : true);
         return {
             passed,
-            layers: { rule: { conflicts, aiWords, aiDetection }, structure: { beatVerify, endingHookPresent, repeatedScenes }, model },
+            layers: { rule: { conflicts, aiWords, aiDetection }, structure: { beatVerify, endingHookPresent, repeatedScenes }, model, character },
             skippedLayers,
-            summary: this.buildSummary(passed, conflicts, beatVerify, endingHookPresent, model),
+            summary: this.buildSummary(passed, conflicts, beatVerify, endingHookPresent, model, character),
         };
     }
 
@@ -159,12 +165,16 @@ export class QualityGate {
         conflicts: Conflict[],
         beatVerify: BeatVerifyResult,
         endingHookPresent: boolean,
-        model: QualityGateModelReview | null
+        model: QualityGateModelReview | null,
+        character?: ConsistencyCheckResult,
     ): string {
         if (passed) {
             const hints: string[] = [];
             if (!endingHookPresent) hints.push('结尾钩子缺失');
             if (beatVerify.missingRequired.length === 0 && hints.length === 0) hints.length = 0;
+            if (character && character.worstSeverity !== 'none') {
+                hints.push(`人物一致性 ${character.worstSeverity} 级提示`);
+            }
             return hints.length
                 ? `通过（含 ${hints.length} 项提示：${hints.join('；')}）`
                 : '通过：无冲突，必做剧情全覆盖';
@@ -173,6 +183,9 @@ export class QualityGate {
         if (conflicts.length) parts.push(`${conflicts.length} 项冲突`);
         if (beatVerify.missingRequired.length) {
             parts.push(`${beatVerify.missingRequired.length} 项必做剧情未覆盖（字数达标不代表剧情推进）`);
+        }
+        if (character && !character.passed) {
+            parts.push(`${character.highSeverityCount} 处高严重度人物矛盾`);
         }
         return `未通过：${parts.join('；')}`;
     }

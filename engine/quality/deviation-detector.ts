@@ -21,6 +21,7 @@ import { LruCache } from '@/shared/lru-cache';
 import { analyzeCoherence, CoherenceReport } from '@/engine/coherence-checker';
 import type { CharacterContextInfo } from './quality-score-engine';
 import { DIVERGENCE_CRITICAL, DIVERGENCE_WARNING, FORESHADOW_APPROACHING_CHAPTERS } from '@/shared/thresholds';
+import { APPEARANCE_CONTRADICTIONS as SHARED_APPEARANCE_CONTRADICTIONS } from '@/shared/character-rules';
 
 // ============================================================
 // 一、偏离类型与严重度
@@ -1008,21 +1009,8 @@ export class DeviationDetector {
   ): DeviationIssue[] {
     const issues: DeviationIssue[] = [];
 
-    // 外貌矛盾检测
-    const APPEARANCE_CONTRADICTIONS: Array<{
-      words: string[];
-      opposite: string[];
-    }> = [
-      { words: ['黑发', '乌黑', '墨发'], opposite: ['金发', '白发', '银发', '红发'] },
-      { words: ['金发'], opposite: ['黑发', '白发', '银发', '红发'] },
-      { words: ['白发', '银发'], opposite: ['黑发', '金发', '红发'] },
-      { words: ['高大', '魁梧'], opposite: ['瘦小', '矮小', '侏儒'] },
-      { words: ['瘦小', '矮小'], opposite: ['高大', '魁梧', '壮硕'] },
-      { words: ['英俊', '帅气'], opposite: ['丑陋', '难看'] },
-      { words: ['美丽', '漂亮'], opposite: ['丑陋', '难看'] },
-      { words: ['年轻', '少年'], opposite: ['年老', '年迈', '白发苍苍'] },
-      { words: ['年老', '年迈'], opposite: ['年轻', '少年', '青年'] },
-    ];
+    // 外貌矛盾检测：词表与 CharacterConsistencyChecker 共用（shared/character-rules.ts）
+    const APPEARANCE_CONTRADICTIONS = SHARED_APPEARANCE_CONTRADICTIONS;
 
     for (const char of characterInfos) {
       if (!char.name || !char.appearance) continue;

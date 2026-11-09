@@ -618,6 +618,10 @@ export interface FullAnalysisReport {
         }>;
         summary: string;
         details: string;
+        /** 最严重等级（旧报告可能没有；门禁以高严重度为准） */
+        worstSeverity?: 'none' | 'low' | 'medium' | 'high';
+        highSeverityCount?: number;
+        passed?: boolean;
     };
     
     // 用户可见摘要

@@ -27,6 +27,7 @@ import {
 } from '@/utils/helpers';
 import { appendEventToContent, appendForeshadowToContent, moveForeshadowToRevealedInContent } from './ledger/ledger-write';
 import { invalidateStoryLedger } from './ledger/ledger-io';
+import { loadProjectCharacterInfos, writeConsistencyReport } from './character-consistency-service';
 import { ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
 import { setFrontmatterValue } from '@/shared/frontmatter';
 import type { FileSystemPort, VaultMetaPort } from '@/shared/file-system-port';
@@ -116,7 +117,8 @@ export class AnalysisReportEngine {
         if (existingReport && existingReport.trim()) {
             const instructions = parseReport(existingReport);
             if (this.hasStructuredInstructions(instructions)) {
-                return this.analyzeFromReport(project, existingReport, chapterName, chapterNum, volume, wordCount, startTime);
+                const report = this.analyzeFromReport(project, existingReport, chapterName, chapterNum, volume, wordCount, startTime);
+                return this.attachConsistency(report, chapterText, project, chapterNum, chapterName, volume);
             }
             log.info('[AnalysisReportEngine] 已有报告不含结构化指令，回退 AI 抽取', { chapterNum });
         }
@@ -157,7 +159,48 @@ export class AnalysisReportEngine {
         };
 
         log.info(`[AnalysisReportEngine] 分析完成，耗时 ${report.meta.processingTimeMs}ms`);
-        return report;
+        return this.attachConsistency(report, chapterText, project, chapterNum, chapterName, volume);
+    }
+
+    /**
+     * 把人物一致性结果附加到报告并写 `第N章_一致性检查.md`（失败只告警）。
+     *
+     * @param report - 报告
+     * @param chapterText - 正文
+     * @param project - 项目
+     * @param chapterNum - 章号
+     * @param chapterName - 章名
+     * @param volume - 卷名
+     * @returns 更新后的报告
+     */
+    private async attachConsistency(
+        report: FullAnalysisReport,
+        chapterText: string,
+        project: string,
+        chapterNum: number,
+        chapterName: string,
+        volume: string,
+    ): Promise<FullAnalysisReport> {
+        try {
+            const infos = loadProjectCharacterInfos(this.app, project);
+            if (infos.length === 0) return report;
+            const updated = await this.attachCharacterConsistencyToReport(report, chapterText, infos);
+            if (updated.characterConsistency) {
+                const volumeNum = Number.parseInt(volume.match(/第(\d+)卷/)?.[1] ?? '1', 10) || 1;
+                await writeConsistencyReport(
+                    this.getFS(),
+                    project,
+                    volumeNum,
+                    chapterNum,
+                    chapterName,
+                    updated.characterConsistency as ConsistencyCheckResult,
+                );
+            }
+            return updated;
+        } catch (e) {
+            log.warn('[AnalysisReportEngine] 人物一致性检查失败，跳过:', e);
+            return report;
+        }
     }
 
     /**

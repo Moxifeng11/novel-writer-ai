@@ -45,6 +45,16 @@ function parseCharacterStates(charBlock: string | undefined): CharacterStateBrie
  * @param distilled - 蒸馏结果
  * @returns 结果数组
  */
+/**
+ * 从情节蒸馏里抽「- 节点N：描述」作为 required beats
+ *
+ * @param distilled - 蒸馏结果
+ * @returns 结果数组
+ */
+export function buildGateBeatsFromVars(vars: Record<string, string>): StoryBeat[] {
+    return parseRequiredBeats(vars?.distilledContent);
+}
+
 function parseRequiredBeats(distilled: string | undefined): StoryBeat[] {
     const beats: StoryBeat[] = [];
     let index = 0;

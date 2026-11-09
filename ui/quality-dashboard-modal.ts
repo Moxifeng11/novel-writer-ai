@@ -25,6 +25,7 @@ import type { RadarDataItem } from './svg-charts';
 import { getChaptersForProject } from './project-utils';
 import { createEmptyState } from './components/empty-state';
 import { toCharacterContextInfos } from '@/engine/character-context';
+import { runProjectCharacterConsistency } from '@/engine/character-consistency-service';
 import { findChapterFile, CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
 import { pjStepDir } from '@/shared/paths';
 import { DEVIATION_CHARACTER_INFO_TTL_MS } from '@/shared/thresholds';
@@ -208,6 +209,26 @@ export class QualityDashboardModal extends Modal {
                 const text = await this.app.vault.read(e.file);
                 // C2：与协同写作同源传上下文，否则同一段正文在看板与顶栏的人物维度不同
                 score = await this.engine.evaluate(text, await this.buildQualityContext(e));
+                // 人物一致性：仪表盘直接使用真实 checker（不再只传姓名走 V1 统计）
+                if (this.project) {
+                    try {
+                        const report = await runProjectCharacterConsistency(this.app, this.project, text);
+                        (score as unknown as { characterConsistency?: unknown }).characterConsistency = report;
+                        const issues = score.issues as unknown as Array<Record<string, unknown>>;
+                        for (const [name, entry] of Object.entries(report.characterResults)) {
+                            for (const issue of entry.inconsistencies) {
+                                issues.push({
+                                    id: `ooc-${name}-${issues.length}`,
+                                    dimension: 'characterConsistency',
+                                    description: `${name}：${issue.description}`,
+                                    severity: issue.severity,
+                                });
+                            }
+                        }
+                    } catch (e) {
+                        log.warn('[QualityDashboard] 人物一致性检查失败（不影响六维评分）:', e);
+                    }
+                }
                 this.qualityCache.set(cacheKey, score);
             }
             scores.push({ ...e, score });
