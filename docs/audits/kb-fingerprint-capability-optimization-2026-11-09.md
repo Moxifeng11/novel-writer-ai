@@ -80,6 +80,13 @@
   - 补 `max-height: min(90vh, 90dvh)`、`display:flex; flex-direction:column; overflow:hidden`，长内容在内容区滚动而不是撑出屏幕。
 - E2E 新增：统一实体管理弹窗在 1280×720 / 900×600 / 700×500 / 390×844 下必须完整落在视口内。
 
+### 3.5 后续优化落地（第二轮）
+
+- **指纹文件签名缓存**：`loadTemplate/loadGlobal/loadProject` 先读 `getFileStamp`（mtime+size）；签名未变直接复用内存，不再整文件读取 + V1→V2 迁移。`saveTemplate/saveGlobal/saveProject` 写盘后清签名，外部改文件由 stamp 变化感知；端口不支持 stamp 时退回原行为。
+- **知识库检索 Top-K 剪枝**：`knowledge-vector-store.search` 改为两阶段——先只算语义分，取 `max(200, topN*20)` 个候选；再对候选做关键词重排与 `minScore`/相关性过滤。候选不足 K 时行为与原全量一致；大库显著减少 token 化与 overlap 计算。极端情况下语义很低但关键词精确的样本可能落在 K 外，已用 200 下限控制风险。
+- **精准评分参考源**：`StyleSimilarityScorer` 改为指纹优先——先检索启用指纹的相似风格（top3 平均），无结果再回退知识库 style 向量；两者都没有时返回 `degraded=true, score=null, referenceSource='none'`，不再伪装成 1.0 通过。日志输出参考源，便于排查“为什么评分没生效”。
+- **弹窗族 E2E**：续写规划 + 统一实体管理两个弹窗族都跑 1280×720 / 900×600 / 700×500 / 390×844，并注入 3000px 长内容验证内部滚动与视口边界。
+
 ## 4. 验证
 
 - `npx vitest run tests/unit/ui/knowledge-capability.test.ts tests/unit/ui/fingerprint-capability.test.ts`：10 例通过。

@@ -58,6 +58,7 @@ describe('StyleSimilarityScorer', () => {
             expect(result.degraded).toBe(false);
             expect(result.score).toBeCloseTo((0.85 + 0.80 + 0.78) / 3, 4);
             expect(result.referenceSamples).toHaveLength(3);
+            expect(result.referenceSource).toBe('knowledge');
         });
 
         it('低相似度候选句触发重试提示', async () => {
@@ -76,43 +77,47 @@ describe('StyleSimilarityScorer', () => {
             expect(result.score).toBeCloseTo((0.50 + 0.45 + 0.40) / 3, 4);
             expect(result.retryHint).toBe('请更贴近参考风格');
             expect(result.referenceSamples).toHaveLength(3);
+            expect(result.referenceSource).toBe('knowledge');
         });
 
-        it('向量模型不可用时正确降级（vectorEnhancer 为 undefined）', async () => {
+        it('向量模型不可用时降级放行', async () => {
             const kvs = makeKnowledgeVectorStore([makeSearchResult()]);
             const scorer = new StyleSimilarityScorer(undefined, kvs);
 
             const result = await scorer.score('任意文本');
 
-            expect(result.passed).toBe(false);
+            expect(result.passed).toBe(true);
             expect(result.score).toBeNull();
             expect(result.degraded).toBe(true);
+            expect(result.referenceSource).toBe('none');
         });
 
-        it('知识库不可用时正确降级（knowledgeVectorStore 为 undefined）', async () => {
+        it('知识库不可用时降级放行', async () => {
             const ve = makeVectorEnhancer(SAMPLE_VECTOR);
             const scorer = new StyleSimilarityScorer(ve, undefined);
 
             const result = await scorer.score('任意文本');
 
-            expect(result.passed).toBe(false);
+            expect(result.passed).toBe(true);
             expect(result.score).toBeNull();
             expect(result.degraded).toBe(true);
+            expect(result.referenceSource).toBe('none');
         });
 
-        it('embed() 抛出异常时降级', async () => {
+        it('embed() 抛出异常时降级放行', async () => {
             const ve = makeVectorEnhancer(new Error('模型不可用'));
             const kvs = makeKnowledgeVectorStore([makeSearchResult()]);
             const scorer = new StyleSimilarityScorer(ve, kvs);
 
             const result = await scorer.score('任意文本');
 
-            expect(result.passed).toBe(false);
+            expect(result.passed).toBe(true);
             expect(result.score).toBeNull();
             expect(result.degraded).toBe(true);
+            expect(result.referenceSource).toBe('none');
         });
 
-        it('知识库无匹配结果时默认通过', async () => {
+        it('知识库无匹配结果时降级放行，不再伪装成 1.0', async () => {
             const ve = makeVectorEnhancer(SAMPLE_VECTOR);
             const kvs = makeKnowledgeVectorStore([]);
             const scorer = new StyleSimilarityScorer(ve, kvs);
@@ -120,11 +125,12 @@ describe('StyleSimilarityScorer', () => {
             const result = await scorer.score('任意文本');
 
             expect(result.passed).toBe(true);
-            expect(result.score).toBe(1.0);
-            expect(result.degraded).toBe(false);
+            expect(result.score).toBeNull();
+            expect(result.degraded).toBe(true);
+            expect(result.referenceSource).toBe('none');
         });
 
-        it('position 过滤后无匹配结果时默认通过', async () => {
+        it('position 过滤后无匹配结果时降级放行', async () => {
             const ve = makeVectorEnhancer(SAMPLE_VECTOR);
             const kvs = makeKnowledgeVectorStore([
                 makeSearchResult({ score: 0.9, position: 10 }),
@@ -135,8 +141,9 @@ describe('StyleSimilarityScorer', () => {
             const result = await scorer.score('任意文本', { position: 80 });
 
             expect(result.passed).toBe(true);
-            expect(result.score).toBe(1.0);
-            expect(result.degraded).toBe(false);
+            expect(result.score).toBeNull();
+            expect(result.degraded).toBe(true);
+            expect(result.referenceSource).toBe('none');
         });
 
         it('自定义阈值生效', async () => {
@@ -149,10 +156,72 @@ describe('StyleSimilarityScorer', () => {
 
             const resultDefault = await scorer.score('文本');
             expect(resultDefault.passed).toBe(true);
+            expect(resultDefault.referenceSource).toBe('knowledge');
 
             const resultStrict = await scorer.score('文本', { threshold: 0.80 });
             expect(resultStrict.passed).toBe(false);
             expect(resultStrict.retryHint).toBe('请更贴近参考风格');
+            expect(resultStrict.referenceSource).toBe('knowledge');
+        });
+    });
+
+    describe('指纹参考优先', () => {
+        function makeFingerprintLibrary(
+            results: Array<{ fingerprintId: string; fingerprintName: string; overallScore: number; scope: 'template' | 'global' | 'project' }>,
+            enabled = true,
+        ) {
+            return {
+                searchSimilarStyles: vi.fn(async () => results.map(item => ({
+                    ...item,
+                    dimensionScores: {},
+                }))),
+                isFingerprintEnabledForInjection: vi.fn(() => enabled),
+            };
+        }
+
+        it('有启用指纹时优先使用指纹参考，不再查知识库', async () => {
+            const ve = makeVectorEnhancer(SAMPLE_VECTOR);
+            const kvs = makeKnowledgeVectorStore([makeSearchResult({ score: 0.5 })]);
+            const library = makeFingerprintLibrary([
+                { fingerprintId: 'fp1', fingerprintName: '冷峻', overallScore: 0.8, scope: 'project' },
+                { fingerprintId: 'fp2', fingerprintName: '克制', overallScore: 0.7, scope: 'project' },
+            ]);
+            const scorer = new StyleSimilarityScorer(ve, kvs, library as never);
+
+            const result = await scorer.score('任意文本');
+
+            expect(result.passed).toBe(true);
+            expect(result.referenceSource).toBe('fingerprint');
+            expect(result.score).toBeCloseTo(0.75, 4);
+            expect(kvs.search).not.toHaveBeenCalled();
+        });
+
+        it('指纹全部禁用时回退知识库', async () => {
+            const ve = makeVectorEnhancer(SAMPLE_VECTOR);
+            const kvs = makeKnowledgeVectorStore([makeSearchResult({ score: 0.8 })]);
+            const library = makeFingerprintLibrary([
+                { fingerprintId: 'fp1', fingerprintName: '冷峻', overallScore: 0.9, scope: 'project' },
+            ], false);
+            const scorer = new StyleSimilarityScorer(ve, kvs, library as never);
+
+            const result = await scorer.score('任意文本');
+
+            expect(result.referenceSource).toBe('knowledge');
+            expect(kvs.search).toHaveBeenCalled();
+        });
+
+        it('指纹无结果且知识库无参考时降级放行', async () => {
+            const ve = makeVectorEnhancer(SAMPLE_VECTOR);
+            const kvs = makeKnowledgeVectorStore([]);
+            const library = makeFingerprintLibrary([]);
+            const scorer = new StyleSimilarityScorer(ve, kvs, library as never);
+
+            const result = await scorer.score('任意文本');
+
+            expect(result.passed).toBe(true);
+            expect(result.degraded).toBe(true);
+            expect(result.referenceSource).toBe('none');
+            expect(result.score).toBeNull();
         });
     });
 

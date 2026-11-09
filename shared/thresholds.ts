@@ -385,6 +385,13 @@ export const RETRIEVAL_RELATIVE_MIN_SCORE = 0.85;
 /** 最高分低于此值视为整批噪声（查询与库无关），不注入 */
 export const RETRIEVAL_ABSOLUTE_MIN_SCORE = 0.15;
 /**
+ * 知识库检索语义粗筛下限：先取 max(MIN, topN*FACTOR) 个语义候选，
+ * 再对候选做关键词重排，避免大库每次查询对全部样本做 token 化。
+ */
+export const KNOWLEDGE_SEMANTIC_CANDIDATE_MIN = 200;
+/** 语义候选数与 topN 的倍数（topN 越大，候选池越大） */
+export const KNOWLEDGE_SEMANTIC_CANDIDATE_FACTOR = 20;
+/**
  * v4.0: 模板骨架检测阈值（替代旧字节判定）：FILE_READ_TIMEOUT_MS = 8_000。
  */
 export const FILE_READ_TIMEOUT_MS = 8_000;

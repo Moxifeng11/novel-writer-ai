@@ -15,6 +15,10 @@ import { filterRetrievalResults, filterRetrievalResultsByScope, type RetrievalFi
 import { createLogger } from '@/shared/logger';
 import { withWriteLock, KNOWLEDGE_VECTOR_STATE_LOCK } from '@/shared/write-lock';
 import { extractKeywordTokens, keywordOverlapRatio } from '@/shared/keyword-tokens';
+import {
+    KNOWLEDGE_SEMANTIC_CANDIDATE_FACTOR,
+    KNOWLEDGE_SEMANTIC_CANDIDATE_MIN,
+} from '@/shared/thresholds';
 
 
 const log = createLogger('KnowledgeVectorStore');
@@ -610,10 +614,14 @@ export class KnowledgeVectorStore {
 
         const topN = options?.topN ?? 10;
         const queryVector = await this.embedQuery(query);
-        const queryTokens = extractKeywordTokens(query, 120);
-        const results: KnowledgeSearchResult[] = [];
+        const candidateLimit = Math.max(
+            KNOWLEDGE_SEMANTIC_CANDIDATE_MIN,
+            topN * KNOWLEDGE_SEMANTIC_CANDIDATE_FACTOR,
+        );
+        const semanticCandidates: Array<{ item: KnowledgeVectorSample; semanticScore: number }> = [];
         let skippedByDimension = 0;
 
+        // 第一遍只算语义分：大库不再对每个样本做关键词 token 化。
         for (const [bookId, samples] of this.samples) {
             if (options?.bookIds && !options.bookIds.includes(bookId)) continue;
 
@@ -627,25 +635,42 @@ export class KnowledgeVectorStore {
                     skippedByDimension++;
                     continue;
                 }
-
-                const semanticScore = cosineSimilarity(queryVector, item.vector);
-                // 语义为主、关键词为辅：专有名词/标签命中时明显提分，
-                // 同时避免纯关键词把语义无关的样本顶上来。
-                const lexicalScore = keywordOverlapRatio(queryTokens, item.sample);
-                const score = Math.min(1, semanticScore * 0.9 + lexicalScore * 0.1);
-
-                if (options?.minScore !== undefined && score < options.minScore) continue;
-
-                results.push({
-                    sample: item.sample,
-                    bookId: item.bookId,
-                    bookName: item.bookName,
-                    dimension: item.dimension,
-                    category: item.category,
-                    score,
-                    position: item.position,
+                semanticCandidates.push({
+                    item,
+                    semanticScore: cosineSimilarity(queryVector, item.vector),
                 });
             }
+        }
+
+        // 保守剪枝：候选不足 limit 时保持原全量行为；超过时只对语义 Top-K
+        // 做关键词重排。极端情况下语义很低但关键词精确的样本可能落在 K 外。
+        const rankedCandidates = semanticCandidates.length > candidateLimit
+            ? semanticCandidates
+                .slice()
+                .sort((a, b) => b.semanticScore - a.semanticScore)
+                .slice(0, candidateLimit)
+            : semanticCandidates;
+
+        const queryTokens = extractKeywordTokens(query, 120);
+        const results: KnowledgeSearchResult[] = [];
+
+        for (const { item, semanticScore } of rankedCandidates) {
+            // 语义为主、关键词为辅：专有名词/标签命中时明显提分，
+            // 同时避免纯关键词把语义无关的样本顶上来。
+            const lexicalScore = keywordOverlapRatio(queryTokens, item.sample);
+            const score = Math.min(1, semanticScore * 0.9 + lexicalScore * 0.1);
+
+            if (options?.minScore !== undefined && score < options.minScore) continue;
+
+            results.push({
+                sample: item.sample,
+                bookId: item.bookId,
+                bookName: item.bookName,
+                dimension: item.dimension,
+                category: item.category,
+                score,
+                position: item.position,
+            });
         }
 
         const deduped = new Map<string, KnowledgeSearchResult>();

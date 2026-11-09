@@ -64,7 +64,7 @@ test.describe('4.81.0 审核修复 · 真实 Obsidian', () => {
         page: import('playwright').Page,
         title: string,
         open: () => Promise<void>,
-        inspect?: (modalPage: import('playwright').Page) => Promise<void>,
+        inspect?: (modalPage: import('playwright').Page, title: string) => Promise<void>,
     ): Promise<void> {
         await open();
         await expect.poll(async () => (await pagesWithText(page, title)).length, { timeout: 10_000 })
@@ -74,7 +74,7 @@ test.describe('4.81.0 审核修复 · 真实 Obsidian', () => {
         expect(modalPage).toBeTruthy();
         modalPage!.on('pageerror', (error) => pageErrors.push(error.message));
         await modalPage!.waitForTimeout(400);
-        if (inspect) await inspect(modalPage!);
+        if (inspect) await inspect(modalPage!, title);
 
         await closeTopModal(modalPage!);
         await modalPage!.waitForTimeout(800);
@@ -83,7 +83,7 @@ test.describe('4.81.0 审核修复 · 真实 Obsidian', () => {
     }
 
     /** 极端视口下弹窗必须完整落在窗口内，内容可滚动 */
-    async function assertModalBounds(modalPage: import('playwright').Page): Promise<void> {
+    async function assertModalBounds(modalPage: import('playwright').Page, title: string): Promise<void> {
         const sizes = [
             { width: 1280, height: 720 },
             { width: 900, height: 600 },
@@ -93,10 +93,14 @@ test.describe('4.81.0 审核修复 · 真实 Obsidian', () => {
         for (const size of sizes) {
             await modalPage.setViewportSize(size);
             await modalPage.waitForTimeout(200);
-            const rect = await modalPage.evaluate(() => {
-                const modal = document.querySelector<HTMLElement>('.modal');
-                const content = document.querySelector<HTMLElement>('.modal-content');
+            const rect = await modalPage.evaluate((needle) => {
+                const modals = Array.from(document.querySelectorAll<HTMLElement>('.modal'));
+                const modal = modals.find(item => (item.innerText || '').includes(needle))
+                    || modals[modals.length - 1]
+                    || null;
                 if (!modal) return null;
+                const content = modal.querySelector<HTMLElement>('.nw-uem-detail')
+                    || modal.querySelector<HTMLElement>('.modal-content');
                 const r = modal.getBoundingClientRect();
                 return {
                     left: r.left,
@@ -109,7 +113,7 @@ test.describe('4.81.0 审核修复 · 真实 Obsidian', () => {
                     viewportHeight: window.innerHeight,
                     contentOverflow: content ? getComputedStyle(content).overflowY : '',
                 };
-            });
+            }, title);
             expect(rect, `viewport ${size.width}x${size.height}`).not.toBeNull();
             expect(rect!.left, `left @ ${size.width}x${size.height}`).toBeGreaterThanOrEqual(-1);
             expect(rect!.top, `top @ ${size.width}x${size.height}`).toBeGreaterThanOrEqual(-1);
@@ -119,21 +123,29 @@ test.describe('4.81.0 审核修复 · 真实 Obsidian', () => {
         }
 
         // 超长内容：注入 3000px 占位后，弹窗仍不得越界，内部滚动容器必须可滚动
-        await modalPage.evaluate(() => {
-            const host = document.querySelector<HTMLElement>('.nw-uem-detail')
-                || document.querySelector<HTMLElement>('.modal-content');
+        await modalPage.evaluate((needle) => {
+            const modals = Array.from(document.querySelectorAll<HTMLElement>('.modal'));
+            const modal = modals.find(item => (item.innerText || '').includes(needle))
+                || modals[modals.length - 1]
+                || null;
+            const host = modal?.querySelector<HTMLElement>('.nw-uem-detail')
+                || modal?.querySelector<HTMLElement>('.modal-content');
             if (!host) return;
             const filler = document.createElement('div');
             filler.style.height = '3000px';
+            filler.style.flexShrink = '0';
             filler.textContent = '长内容边界测试';
             host.appendChild(filler);
-        });
+        }, title);
         await modalPage.setViewportSize({ width: 700, height: 500 });
         await modalPage.waitForTimeout(200);
-        const longContent = await modalPage.evaluate(() => {
-            const modal = document.querySelector<HTMLElement>('.modal');
-            const host = document.querySelector<HTMLElement>('.nw-uem-detail')
-                || document.querySelector<HTMLElement>('.modal-content');
+        const longContent = await modalPage.evaluate((needle) => {
+            const modals = Array.from(document.querySelectorAll<HTMLElement>('.modal'));
+            const modal = modals.find(item => (item.innerText || '').includes(needle))
+                || modals[modals.length - 1]
+                || null;
+            const host = modal?.querySelector<HTMLElement>('.nw-uem-detail')
+                || modal?.querySelector<HTMLElement>('.modal-content');
             if (!modal || !host) return null;
             const rect = modal.getBoundingClientRect();
             return {
@@ -144,7 +156,7 @@ test.describe('4.81.0 审核修复 · 真实 Obsidian', () => {
                 clientHeight: host.clientHeight,
                 overflowY: getComputedStyle(host).overflowY,
             };
-        });
+        }, title);
         expect(longContent).not.toBeNull();
         expect(longContent!.top).toBeGreaterThanOrEqual(-1);
         expect(longContent!.bottom).toBeLessThanOrEqual(longContent!.viewportHeight + 1);
@@ -199,7 +211,7 @@ test.describe('4.81.0 审核修复 · 真实 Obsidian', () => {
                     };
                     host.app.commands.executeCommandById('novel-writer-ai:novel-writer-continue-chapters');
                 });
-            });
+            }, round === 0 ? assertModalBounds : undefined);
         }
 
         expect(pageErrors).toEqual([]);

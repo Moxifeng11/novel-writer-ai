@@ -26,6 +26,8 @@
 以下文件禁止退回全库扫描（`vault.getFiles()` / `vault.getMarkdownFiles()` / `vault.getAllLoadedFiles()` 三者都是 O(全库)，门禁 `scripts/check-hotpath-scans.mjs` 逐文件检查 `HOT_FILES`）：
 
 - 正文落盘、结算、统计、上下文装配、实体读取、知识库索引等 8 个模块，以及 UI 侧每章断点续跑的 `ui/full-writer/batch-pipeline-runner.ts`（读步骤结果）与 `ui/full-writer/creation-flow-state.ts`（工作台阶段面板每次刷新整包采集，第 60 轮接入）——共 10 个模块（以脚本清单为准）。
+- 知识库向量检索在 `engine/knowledge-vector-store.ts` 做两阶段剪枝：先按余弦取 `max(200, topN*20)` 个语义候选，再对候选做关键词重排；余弦范数由 `WeakMap` 缓存，避免同一参考向量重复平方和。
+- 指纹文件按 `getFileStamp`（mtime+size）做加载签名缓存，命中时跳过整文件读取与 V1→V2 迁移；写盘后签名失效，外部修改由 stamp 变化感知。
 
 门禁覆盖面（第 26 轮实测，防止「换个 API 绕过」）：
 

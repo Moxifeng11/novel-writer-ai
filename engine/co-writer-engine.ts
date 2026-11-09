@@ -772,7 +772,11 @@ export class CoWriterEngine {
                 try {
                     this.vectorEnhancer = new VectorEnhancer(kbEmbeddingClient);
                     if (this.vectorEnhancer && this.knowledgeVectorStore) {
-                        this.styleScorer = new StyleSimilarityScorer(this.vectorEnhancer, this.knowledgeVectorStore);
+                        this.styleScorer = new StyleSimilarityScorer(
+                            this.vectorEnhancer,
+                            this.knowledgeVectorStore,
+                            this.fingerprintLibrary ?? undefined,
+                        );
                     }
                     log.info('[CoWriterEngine] 精准模式: 向量增强器与风格相似度评分器初始化完成');
                 } catch (veErr) {
@@ -1316,7 +1320,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
                         });
 
                         if (!scoreResult.passed && !scoreResult.degraded && retryCount < maxRetries) {
-                            log.info('[CoWriterEngine] 精准模式: 相似度不足 (', scoreResult.score, '), 重试', retryCount + 1, '/', maxRetries);
+                            log.info('[CoWriterEngine] 精准模式: 相似度不足 (', scoreResult.score, ', 参考源:', scoreResult.referenceSource, '), 重试', retryCount + 1, '/', maxRetries);
                             if (scoreResult.retryHint) {
                                 prompt.system += '\n' + scoreResult.retryHint;
                             }
@@ -1325,7 +1329,9 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
                         }
 
                         if (scoreResult.passed) {
-                            log.info('[CoWriterEngine] 精准模式: 相似度通过 (', scoreResult.score, ')');
+                            log.info('[CoWriterEngine] 精准模式: 相似度通过 (', scoreResult.score, ', 参考源:', scoreResult.referenceSource, ')');
+                        } else if (scoreResult.degraded) {
+                            log.info('[CoWriterEngine] 精准模式: 无可用参考样本，跳过评分（参考源:', scoreResult.referenceSource, '）');
                         }
                     } catch (scoreErr) {
                         log.warn('[CoWriterEngine] 精准模式: 相似度评分失败，跳过评分:', scoreErr);
@@ -1489,7 +1495,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
                     const scoreResult = await this.styleScorer.score(generatedText, {
                         position: precedingText.length
                     });
-                    log.info('[CoWriterEngine] 精准模式: 流式生成相似度评分 (', scoreResult.score, ')');
+                    log.info('[CoWriterEngine] 精准模式: 流式生成相似度评分 (', scoreResult.score, ', 参考源:', scoreResult.referenceSource, ')');
                 } catch (scoreErr) {
                     log.warn('[CoWriterEngine] 精准模式: 相似度评分失败，跳过评分:', scoreErr);
                 }

@@ -201,6 +201,11 @@ export class StyleFingerprintLibrary {
     private intensityLoadFailures = new Set<string>();
     /** 强度配置序列化写入器 */
     private intensityConfigWriter = new SerializedWriter({ debug: false });
+    /**
+     * 指纹文件加载签名（path → mtime:size）。
+     * 同一签名下重复 load 直接复用内存，不再整文件读取 + V1→V2 迁移。
+     */
+    private loadedFileSignatures = new Map<string, string>();
 
     constructor(app: App, project?: string) {
         this.app = app;
@@ -359,6 +364,49 @@ export class StyleFingerprintLibrary {
         return this.fs;
     }
 
+    /**
+     * 指纹文件当前的 mtime/size 签名；端口不支持 stamp 时返回 null（禁用缓存）。
+     *
+     * @param path - 指纹文件路径
+     * @returns 签名或 null
+     */
+    private async fingerprintFileSignature(path: string): Promise<string | null> {
+        const fs = this.getFS();
+        if (typeof fs.getFileStamp !== 'function') return null;
+        try {
+            const stamp = await fs.getFileStamp(path);
+            return stamp ? `${stamp.mtime}:${stamp.size}` : 'missing';
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * 判断是否需要重读指纹文件。
+     *
+     * @param path - 指纹文件路径
+     * @returns 是否需要重读与当前签名
+     */
+    private async shouldReloadFingerprintFile(path: string): Promise<{ reload: boolean; signature: string | null }> {
+        const signature = await this.fingerprintFileSignature(path);
+        if (signature === null) return { reload: true, signature: null };
+        return {
+            reload: this.loadedFileSignatures.get(path) !== signature,
+            signature,
+        };
+    }
+
+    /** 记录已加载签名；null 表示端口不支持 stamp，清掉旧缓存 */
+    private markFingerprintFileLoaded(path: string, signature: string | null): void {
+        if (signature === null) this.loadedFileSignatures.delete(path);
+        else this.loadedFileSignatures.set(path, signature);
+    }
+
+    /** 写盘后让下一次 load 重读 */
+    private invalidateFingerprintFile(path: string): void {
+        this.loadedFileSignatures.delete(path);
+    }
+
     // ============================================================
     // Template 层方法
     // ============================================================
@@ -393,16 +441,20 @@ export class StyleFingerprintLibrary {
      * @returns 指纹数组
      */
     async loadTemplate(): Promise<StyleFingerprint[]> {
+        const path = templateFingerprintsFile();
+        const decision = await this.shouldReloadFingerprintFile(path);
+        if (!decision.reload) return Array.from(this.templateFingerprints.values());
         // 自动检测并迁移 V1 → V2 维度（幂等，已迁移则跳过）
         await this.migrateV1ToV2Dimensions('template').catch(() => undefined);
 
-        const parsed = await this.readFingerprintFile(templateFingerprintsFile());
+        const parsed = await this.readFingerprintFile(path);
         if (!parsed) return Array.from(this.templateFingerprints.values());
 
         const items = parsed as (StyleFingerprint | V1StyleFingerprint | V2Fingerprint)[];
         const migrated = items.map(fp => this.migrateFingerprintV1toV2(fp, 'template'));
         this.collectV2Fingerprints(items, 'template');
         this.templateFingerprints = new Map(migrated.map(fp => [fp.id, fp]));
+        this.markFingerprintFileLoaded(path, decision.signature);
         return Array.from(this.templateFingerprints.values());
     }
 
@@ -517,6 +569,7 @@ export class StyleFingerprintLibrary {
                 .map(fp => this.toPersistedFingerprint(fp, 'template'));
             await this.getFS().mkdir(templateFingerprintLibraryDir()).catch(() => undefined);
             await this.getFS().write(templateFingerprintsFile(), JSON.stringify(data, null, 2));
+            this.invalidateFingerprintFile(templateFingerprintsFile());
         }).catch(e => {
             log.warn('[StyleFingerprintLibrary] 模板指纹保存失败:', e);
         });
@@ -531,16 +584,20 @@ export class StyleFingerprintLibrary {
      * @returns 指纹数组
      */
     async loadGlobal(): Promise<StyleFingerprint[]> {
+        const path = globalFingerprintsFile();
+        const decision = await this.shouldReloadFingerprintFile(path);
+        if (!decision.reload) return Array.from(this.globalFingerprints.values());
         // 自动检测并迁移 V1 → V2 维度（幂等，已迁移则跳过）
         await this.migrateV1ToV2Dimensions('global').catch(() => undefined);
 
-        const parsed = await this.readFingerprintFile(globalFingerprintsFile());
+        const parsed = await this.readFingerprintFile(path);
         if (!parsed) return Array.from(this.globalFingerprints.values());
 
         const items = parsed as (StyleFingerprint | V1StyleFingerprint | V2Fingerprint)[];
         const migrated = items.map(fp => this.migrateFingerprintV1toV2(fp, 'global'));
         this.collectV2Fingerprints(items, 'global');
         this.globalFingerprints = new Map(migrated.map(fp => [fp.id, fp]));
+        this.markFingerprintFileLoaded(path, decision.signature);
         return Array.from(this.globalFingerprints.values());
     }
 
@@ -627,6 +684,7 @@ export class StyleFingerprintLibrary {
                 .map(fp => this.toPersistedFingerprint(fp, 'global'));
             await this.getFS().mkdir(globalFingerprintLibraryDir()).catch(() => undefined);
             await this.getFS().write(globalFingerprintsFile(), JSON.stringify(data, null, 2));
+            this.invalidateFingerprintFile(globalFingerprintsFile());
         }).catch(e => {
             log.warn('[StyleFingerprintLibrary] 全局指纹保存失败:', e);
         });
@@ -642,16 +700,20 @@ export class StyleFingerprintLibrary {
      */
     async loadProject(): Promise<StyleFingerprint[]> {
         if (!this.project) return [];
+        const path = projectFingerprintsFile(this.project);
+        const decision = await this.shouldReloadFingerprintFile(path);
+        if (!decision.reload) return Array.from(this.projectFingerprints.values());
         // 自动检测并迁移 V1 → V2 维度（幂等，已迁移则跳过）
         await this.migrateV1ToV2Dimensions('project').catch(() => undefined);
 
-        const parsed = await this.readFingerprintFile(projectFingerprintsFile(this.project));
+        const parsed = await this.readFingerprintFile(path);
         if (!parsed) return Array.from(this.projectFingerprints.values());
 
         const items = parsed as (StyleFingerprint | V1StyleFingerprint | V2Fingerprint)[];
         const migrated = items.map(fp => this.migrateFingerprintV1toV2(fp, 'project'));
         this.collectV2Fingerprints(items, 'project');
         this.projectFingerprints = new Map(migrated.map(fp => [fp.id, fp]));
+        this.markFingerprintFileLoaded(path, decision.signature);
         return Array.from(this.projectFingerprints.values());
     }
 
@@ -902,6 +964,7 @@ export class StyleFingerprintLibrary {
         await this.projectWriter.enqueueAutoClean(async () => {
             await this.getFS().mkdir(projectFingerprintLibraryDir(project)).catch(() => undefined);
             await this.getFS().write(projectFingerprintsFile(project), JSON.stringify(snapshot, null, 2));
+            this.invalidateFingerprintFile(projectFingerprintsFile(project));
         }).catch(e => {
             log.warn('[StyleFingerprintLibrary] 项目指纹保存失败:', e);
         });
@@ -974,6 +1037,27 @@ export class StyleFingerprintLibrary {
         }
         const fp = this.globalFingerprints.get(globalFpId);
         return fp?.enabled ?? true;
+    }
+
+    /**
+     * 指纹是否实际参与注入/评分。
+     *
+     * global 层用项目级覆盖状态；template/project 层用记忆中的 enabled。
+     *
+     * @param fpId - 指纹 ID
+     * @param scope - 作用域
+     * @param project - 项目（global 覆盖查询用）
+     * @returns 是否启用
+     */
+    isFingerprintEnabledForInjection(
+        fpId: string,
+        scope: 'template' | 'global' | 'project',
+        project?: string,
+    ): boolean {
+        const fp = this.getFingerprint(fpId, scope);
+        if (!fp) return false;
+        if (scope === 'global') return this.isGlobalEnabledForProject(fpId, project);
+        return fp.enabled;
     }
 
     /**
