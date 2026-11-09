@@ -89,6 +89,7 @@ import { AnalysisReportEngine } from './engine/analysis-report-engine';
 import { KnowledgeInjector } from './engine/knowledge-injector';
 import { CharacterConsistencyChecker } from './engine/character-consistency-checker';
 import { EntityStateManager } from './engine/entity-state-manager';
+import { EntityRecheckGate } from './shared/entity-recheck-gate';
 import { AdaptiveDebounceManager } from './shared/adaptive-debounce-manager';
 import { getDegradationNotifier } from './shared/degradation-notifier';
 import { AntiAIDetector } from './engine/anti-ai-detector';
@@ -1785,7 +1786,7 @@ export default class NovelWriterPlugin extends Plugin {
     // ─── 正文文件变更监听与实体状态重检 ───
 
     /** 正文重检去重：同一路径 + 同一内容哈希只跑一次（协同 2s 自动保存会反复触发） */
-    private _recheckHashes = new Map<string, string>();
+    private _entityRecheckGate = new EntityRecheckGate();
     /** 实体检测失败提示只弹一次（离线时避免每个文件一条 Notice） */
     private _entityRecheckNoticeShown = false;
     /** 每个正文路径的在途实体重检；新编辑到来时取消上一轮，避免排队抢本地模型 */
@@ -1821,14 +1822,10 @@ export default class NovelWriterPlugin extends Plugin {
             const content = await this.app.vault.read(file);
             if (!content || content.length < 50) return;
 
-            // P1-16：内容没变就跳过（自动保存会以 2s 节奏重复触发 AI 调用，白烧额度）
+            // P1-16 + W-7（2026-11-10 审计）：哈希没变跳过之外，叠加每路径冷却窗口——
+            // 连续写作时内容每 2s 都在变，旧实现每次停顿都发一次 AI 实体检测（无冷却）
             const hash = `${content.length}:${content.slice(-120)}`;
-            if (this._recheckHashes.get(file.path) === hash) return;
-            this._recheckHashes.set(file.path, hash);
-            if (this._recheckHashes.size > 200) {
-                const firstKey = this._recheckHashes.keys().next().value;
-                if (firstKey) this._recheckHashes.delete(firstKey);
-            }
+            if (!this._entityRecheckGate.shouldRun(file.path, hash)) return;
 
             const manager = new EntityStateManager({
                 app: this.app,

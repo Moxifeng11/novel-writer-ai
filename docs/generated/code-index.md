@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137305 | 1724 | 1415 | 82% |
 | `services/` | 32 | 12920 | 187 | 148 | 79% |
-| `shared/` | 184 | 41957 | 1651 | 1353 | 82% |
+| `shared/` | 185 | 42039 | 1652 | 1354 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 242 | 99625 | 753 | 649 | 86% |
@@ -435,6 +435,7 @@
 | `shared/entity-persistence.ts` | 232 | 9 | 9 |
 | `shared/entity-placeholder.ts` | 30 | 1 | 1 |
 | `shared/entity-reader.ts` | 101 | 8 | 6 |
+| `shared/entity-recheck-gate.ts` | 82 | 1 | 1 |
 | `shared/entity-registry.ts` | 16 | 2 | 2 |
 | `shared/entity-templates.ts` | 164 | 4 | 4 |
 | `shared/execution-events.ts` | 144 | 8 | 8 |
