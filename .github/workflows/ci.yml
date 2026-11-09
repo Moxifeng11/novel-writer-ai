@@ -9,6 +9,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# 最小权限（W-6）：verify/e2e 均为只读检查，无需写权限；release.yml 已单独最小化
+permissions:
+  contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
