@@ -6,7 +6,7 @@
     "version": "4.81.1",
     "tests": {
       "files": 612,
-      "cases": 6722
+      "cases": 6723
     },
     "e2e": 43,
     "e2eNote": "E2E 通过总数 42（2026-11-09 实测）：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 26 + review-fixes 3（右栏折叠展开 + 两个 Modal 连续开关）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑",
@@ -19,7 +19,7 @@
       "check:write-entry"
     ],
     "localCommitsAhead": 0,
-    "localCommitsAheadNote": "2026-11-09 后续优化：指纹文件签名缓存、知识库语义 Top-K 剪枝、精准评分指纹优先+知识库兜底、续写/实体弹窗四视口+长内容 E2E；612 文件 / 6,722 用例，E2E 43，preflight EXIT=0；未发新 tag"
+    "localCommitsAheadNote": "2026-11-09 后续优化：指纹加载签名缓存（含切项目失效）、知识库语义 Top-K 剪枝、精准评分指纹优先+知识库兜底、续写/实体弹窗四视口+长内容 E2E；612 文件 / 6,723 用例，E2E 43，preflight EXIT=0；未发新 tag"
   },
   "groups": [
     {

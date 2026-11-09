@@ -279,6 +279,9 @@ export class StyleFingerprintLibrary {
         if (this.project === project) return;
         this.project = project;
         this.projectFingerprints = new Map();
+        // 切项目清空内存 Map 后，旧项目的“已加载签名”必须一起失效，
+        // 否则切回同一项目会命中缓存却返回空表。
+        this.loadedFileSignatures.clear();
         for (const [id, fp] of this.v2Fingerprints) {
             if (fp.scope === 'project') this.v2Fingerprints.delete(id);
         }

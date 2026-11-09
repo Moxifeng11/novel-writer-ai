@@ -64,4 +64,15 @@ describe('StyleFingerprintLibrary — 加载签名缓存', () => {
         await library.loadGlobal();
         expect(read.mock.calls.length).toBeGreaterThan(first);
     });
+
+    it('切换项目会清空签名，切回同一项目仍会重读', async () => {
+        const { library, read } = makeLibrary();
+        library.setProject('项目A');
+        await library.loadProject();
+        const first = read.mock.calls.length;
+        library.setProject('项目B');
+        library.setProject('项目A');
+        await library.loadProject();
+        expect(read.mock.calls.length).toBeGreaterThan(first);
+    });
 });
