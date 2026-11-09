@@ -38,6 +38,12 @@ class FakeWorker {
             listener(event);
         }
     }
+
+    emitRaw(type: string, event: unknown): void {
+        for (const listener of this.listeners.get(type) ?? []) {
+            listener(event);
+        }
+    }
 }
 
 function useWorkerEnvironment(): void {
@@ -126,6 +132,23 @@ describe('WorkerManager — 主线程降级与任务生命周期', () => {
             'WorkerManager has been destroyed'
         );
         expect(manager.isWorkerAvailable()).toBe(false);
+    });
+
+    it('Worker 握手期 error：立即失败，不等待 5 秒超时', async () => {
+        vi.useFakeTimers();
+        vi.stubGlobal('Worker', FakeWorker);
+
+        const manager = new WorkerManager({ maxWorkers: 1, fallbackToMain: false });
+        const task = manager.executeTask('compute', 1);
+        const worker = FakeWorker.instances.at(-1);
+        expect(worker).toBeTruthy();
+
+        // 三文件安装不含 workers/：Worker 不会抛错，只会异步 error
+        worker!.emitRaw('error', { message: '404 workers/deconstruction-worker.js' });
+
+        await expect(task).rejects.toThrow('Worker 脚本加载失败：404 workers/deconstruction-worker.js');
+        expect(worker!.terminated).toBe(true);
+        manager.destroy();
     });
 
     it('Worker 初始化超时且禁用降级时以超时错误拒绝', async () => {

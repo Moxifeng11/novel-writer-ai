@@ -6,7 +6,7 @@
     "version": "4.80.0",
     "tests": {
       "files": 604,
-      "cases": 6661
+      "cases": 6662
     },
     "e2e": 40,
     "e2eNote": "E2E 通过总数：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27 = 40（2026-11-07 全量实测）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑（rewrite-chapters 已随「九霄逆脉行」项目删除而下线）",
@@ -19,7 +19,7 @@
       "check:write-entry"
     ],
     "localCommitsAhead": 0,
-    "localCommitsAheadNote": "2026-11-09 v4.80.0 后代码批次 C-6：新增质量门禁接线 3 例 + gate-snapshot 5 例，修正地点解析全角｜污染；604 文件 / 6,661 用例，preflight:release EXIT=0，覆盖率 44.41/44.11/45.21/44.76"
+    "localCommitsAheadNote": "2026-11-09 v4.80.0 后审计维度⑤：修复 Worker 握手期 error 立即降级（不再等 5s）；604 文件 / 6,662 用例，preflight:release EXIT=0，覆盖率 44.42/44.12/45.22/44.77"
   },
   "groups": [
     {

@@ -240,23 +240,46 @@ export class WorkerManager {
                     blobUrl,
                 };
 
+                let settled = false;
+                let initTimer: ReturnType<typeof setTimeout> | undefined;
+
+                const cleanupHandshake = () => {
+                    worker.removeEventListener('message', handleMessage);
+                    worker.removeEventListener('error', handleEarlyError);
+                    if (initTimer) clearTimeout(initTimer);
+                };
+
                 const handleMessage = (event: MessageEvent<WorkerMessage>) => {
                     if (event.data.type === 'worker:ready') {
+                        if (settled) return;
+                        settled = true;
                         wrapper.ready = true;
-                        worker.removeEventListener('message', handleMessage);
+                        cleanupHandshake();
                         worker.addEventListener('message', (ev) => this.handleWorkerMessage(wrapper, ev));
                         worker.addEventListener('error', (ev) => this.handleWorkerError(wrapper, ev));
                         resolve(wrapper);
                     }
                 };
 
-                worker.addEventListener('message', handleMessage);
+                // 三文件安装（社区目录）不含 workers/：new Worker 不抛错，只会异步 error。
+                // 旧实现只监听 message，必须等 5s 超时才降级；这里监听握手期 error 立即失败。
+                const handleEarlyError = (event: ErrorEvent) => {
+                    if (settled) return;
+                    settled = true;
+                    cleanupHandshake();
+                    this.terminateWorker(wrapper);
+                    reject(new Error(`Worker 脚本加载失败：${event?.message || 'unknown'}`));
+                };
 
-                setTimeout(() => {
-                    if (!wrapper.ready) {
-                        this.terminateWorker(wrapper);
-                        reject(new Error('Worker 初始化超时'));
-                    }
+                worker.addEventListener('message', handleMessage);
+                worker.addEventListener('error', handleEarlyError);
+
+                initTimer = setTimeout(() => {
+                    if (settled) return;
+                    settled = true;
+                    cleanupHandshake();
+                    this.terminateWorker(wrapper);
+                    reject(new Error('Worker 初始化超时'));
                 }, 5000);
             } catch (error) {
                 reject(error);
