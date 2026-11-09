@@ -214,22 +214,18 @@ export class FingerprintIntensityModal extends Modal {
 
     /** 实时预览效果参数 */
     private renderPreview(container: HTMLElement): void {
-        const section = container.createDiv({
-            attr: {
-                style: 'margin-bottom:16px;padding:12px;background:var(--background-secondary);border-radius:6px;'
-            },
-            cls: 'nw-intensity-preview'
-        });
-        section.createEl('div', {
+        const section = container.createDiv({ cls: 'nw-intensity-preview' });
+        this.fillPreview(section);
+    }
+
+    /** 填充预览内容（renderPreview 与 updatePreview 共用，避免样式/结构两处漂移） */
+    private fillPreview(section: HTMLElement): void {
+        section.createDiv({
+            cls: 'nw-intensity-preview-title',
             text: '强度效果预览',
-            attr: { style: 'font-weight:600;font-size:13px;margin-bottom:10px;' }
         });
 
-        const grid = section.createDiv({
-            attr: {
-                style: 'display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:12px;'
-            }
-        });
+        const grid = section.createDiv({ cls: 'nw-intensity-preview-grid' });
 
         const preview = this.computePreview();
         const g = preview.global;
@@ -240,19 +236,17 @@ export class FingerprintIntensityModal extends Modal {
         this.appendPreviewRow(grid, 'Prompt 强调', g.promptEmphasis || '（无）');
 
         if (preview.disabled) {
-            section.createEl('div', {
+            section.createDiv({
+                cls: 'nw-intensity-preview-warning',
                 text: '⚠ 当前强度为 0%，指纹影响已完全禁用',
-                attr: {
-                    style: 'margin-top:8px;padding:6px 10px;background:var(--background-modifier-error);color:var(--text-error);border-radius:4px;font-size:11px;'
-                }
             });
         }
     }
 
     private appendPreviewRow(container: HTMLElement, label: string, value: string): void {
-        const row = container.createDiv({ attr: { style: 'display:flex;gap:6px;' } });
-        row.createEl('span', { text: `${label}:`, attr: { style: 'color:var(--text-muted);min-width:90px;' } });
-        row.createEl('span', { text: value, attr: { style: 'color:var(--text-normal);font-weight:500;' } });
+        const row = container.createDiv({ cls: 'nw-intensity-preview-row' });
+        row.createEl('span', { cls: 'nw-intensity-preview-label', text: `${label}:` });
+        row.createEl('span', { cls: 'nw-intensity-preview-value', text: value });
     }
 
     /** 仅更新预览区块（避免重新渲染滑动条） */
@@ -262,41 +256,9 @@ export class FingerprintIntensityModal extends Modal {
             this.render();
             return;
         }
-        // 替换整个预览区块
-        const parent = previewEl.parentElement;
-        if (!parent) return;
-        const oldEl = previewEl as HTMLElement;
-        const newEl = parent.createDiv({ attr: { style: 'display:none;' } });
-        parent.replaceChild(newEl, oldEl);
-        // 用占位符重新渲染
-        newEl.className = 'nw-intensity-preview';
-        newEl.setAttribute(
-            'style',
-            'margin-bottom:16px;padding:12px;background:var(--background-secondary);border-radius:6px;'
-        );
-        newEl.createEl('div', {
-            text: '强度效果预览',
-            attr: { style: 'font-weight:600;font-size:13px;margin-bottom:10px;' }
-        });
-
-        const grid = newEl.createDiv({
-            attr: { style: 'display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:12px;' }
-        });
-        const preview = this.computePreview();
-        const g = preview.global;
-        this.appendPreviewRow(grid, '描述长度上限', `${g.descriptionLength} 字`);
-        this.appendPreviewRow(grid, '示例数量上限', `${g.sampleCount} 段`);
-        this.appendPreviewRow(grid, '相似度阈值', g.similarityThreshold.toFixed(2));
-        this.appendPreviewRow(grid, 'Prompt 强调', g.promptEmphasis || '（无）');
-
-        if (preview.disabled) {
-            newEl.createEl('div', {
-                text: '⚠ 当前强度为 0%，指纹影响已完全禁用',
-                attr: {
-                    style: 'margin-top:8px;padding:6px 10px;background:var(--background-modifier-error);color:var(--text-error);border-radius:4px;font-size:11px;'
-                }
-            });
-        }
+        const section = previewEl as HTMLElement;
+        section.empty();
+        this.fillPreview(section);
     }
 
     private computePreview(): StyleIntensityPreview {
