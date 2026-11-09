@@ -3,7 +3,7 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-09",
   "baseline": {
-    "version": "4.81.0",
+    "version": "4.81.1",
     "tests": {
       "files": 608,
       "cases": 6699
@@ -19,7 +19,7 @@
       "check:write-entry"
     ],
     "localCommitsAhead": 0,
-    "localCommitsAheadNote": "2026-11-09 v4.81.1（未发版）：协同去重/Agent 真实初始化+图片附件+输入区自适应/更新检查 403 修复/API 页缩短与设置高级分组；608 文件 / 6,699 用例，E2E 42 条通过，preflight EXIT=0；已 push master，未 tag/Release"
+    "localCommitsAheadNote": "2026-11-09 v4.81.1：协同去重/Agent 真实初始化+图片附件+输入区自适应/更新检查 403 修复/API 页缩短与设置高级分组；608 文件 / 6,699 用例，E2E 42 条通过，preflight:release EXIT=0；待打 tag/Release"
   },
   "groups": [
     {

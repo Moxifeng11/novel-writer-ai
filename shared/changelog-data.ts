@@ -21,6 +21,23 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.81.1',
+        date: '2026-11-09',
+        title: '协同/Agent/更新检查与设置体验收口',
+        sections: [
+            {
+                type: 'improved',
+                label: '✨ 优化',
+                items: [
+                    '协同写作顶栏移除「剧情」「实时质量」重复入口；实时质量链路下线，质量能力由 MonitorPanelB/质量仪表盘保留',
+                    'Agent 会话按当前真实项目恢复，不再回放已删除项目的欢迎语；输入区加宽并支持图片选择/粘贴/拖拽与路径引用',
+                    '检查更新补 User-Agent/超时/限流诊断/atom 备用源，失败不再覆盖上次成功结果',
+                    'API 测试连通性上移、模型列表限高、高级块折叠；设置页签分常用/高级并记忆展开',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.81.0',
         date: '2026-11-09',
         title: '社区目录审核阻断项清零',
