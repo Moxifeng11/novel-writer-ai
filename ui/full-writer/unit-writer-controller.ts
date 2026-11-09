@@ -524,6 +524,7 @@ export class UnitWriterController {
         const options: UnitGenerateOptions = {
             model: this.deps.plugin.settings.proModel,
             maxTokens: this.deps.plugin.settings.maxOutput,
+            compressionMode: this.deps.plugin.settings.contextCompressionMode ?? 'extractive',
             selection: selection?.originalText,
             signal: this.abortController.signal,
             onDelta: (chunk) => {

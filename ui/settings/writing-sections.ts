@@ -388,6 +388,18 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
+            .setName('上下文超限处理')
+            .setDesc('extractive：先定向补检再按句抽取压缩，仍超则明确报错；off：超预算直接报错。两种情况都不会静默腰斩正文。')
+            .addDropdown(dropdown => dropdown
+                .addOption('extractive', '抽取压缩（推荐）')
+                .addOption('off', '不压缩，直接报错')
+                .setValue(this.plugin.settings.contextCompressionMode ?? 'extractive')
+                .onChange(async (value) => {
+                    this.plugin.settings.contextCompressionMode = value === 'off' ? 'off' : 'extractive';
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
             .setName('上下文范围')
             .setDesc('紧凑模式只注入本章涉及实体（节省上下文）；完整模式遍历全部实体（质量优先）。')
             .addToggle(toggle => toggle

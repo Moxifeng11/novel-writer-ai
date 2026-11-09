@@ -9,6 +9,8 @@ import type { CreationMode } from '@/shared/creation-mode';
 import { modeUnitLabel } from '@/shared/mode-content';
 import { loadModeRuntimeContext, type ModeRuntimeContext } from './mode-runtime';
 import { collectModeInjection, type ModeInjectionDeps, type ModeInjectionResult } from './mode-injection';
+import { estimateTokens, getModelContextWindow } from '@/shared/token-estimator';
+import { recoverOverflow, type ContextCompressionMode } from './context/overflow-recovery';
 
 /** 可生成的模式文档。 */
 export type ModeDocumentKind = 'storyCore' | 'outline' | 'bible' | 'storyboard';
@@ -25,6 +27,8 @@ export interface ModeDocumentGenerateOptions {
     injectionDeps?: ModeInjectionDeps;
     signal?: AbortSignal;
     onDelta?: (chunk: string) => void;
+    /** 上下文溢出策略；默认 extractive */
+    compressionMode?: ContextCompressionMode;
 }
 
 /** 文档生成所需的 AI 端口。 */
@@ -144,9 +148,22 @@ export async function generateModeDocument(
         injection = await collectModeInjection({ ...options.injectionDeps, project }, query);
     }
     const { system, user } = buildModeDocumentPrompt(mode, kind, runtime, options, injection);
+    const contextWindow = getModelContextWindow(options.model) || 128_000;
+    const maxInput = Math.max(512, contextWindow - options.maxTokens - 500);
+    let effectiveUser = user;
+    if (estimateTokens(system, options.model) + estimateTokens(user, options.model) > maxInput) {
+        const recovered = await recoverOverflow({
+            system,
+            user,
+            maxInputTokens: maxInput,
+            modelId: options.model,
+            mode: options.compressionMode ?? 'extractive',
+        });
+        effectiveUser = recovered.user;
+    }
     const result = await ai.callAI(
         system,
-        user,
+        effectiveUser,
         options.model,
         kind === 'storyCore' ? 0.75 : 0.7,
         options.maxTokens,

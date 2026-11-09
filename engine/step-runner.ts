@@ -232,8 +232,43 @@ export class StepRunner {
             loadBodyKnowledge: (ctx: StepRunCtx) => this.loadBodyKnowledge(ctx),
             loadBodyKnowledgeParts: (ctx: StepRunCtx) => this.loadBodyKnowledgeParts(ctx),
             loadAssociationContext: (ctx: StepRunCtx, stepKey: string) => this.loadAssociationContext(ctx, stepKey),
+            compressionMode: this.plugin.settings.contextCompressionMode ?? 'extractive',
+            retrieveOverflowContext: (ctx: StepRunCtx, deficit: number, focusTerms: string[]) =>
+                this.retrieveOverflowContext(ctx, deficit, focusTerms),
             resolveStepBudgetLimits: (model: string) => this.resolveStepBudgetLimits(model),
         };
+    }
+
+    /**
+     * 溢出补检：用关联查询只取能补缺口的事实（不重复已注入内容）。
+     *
+     * @param ctx - 上下文
+     * @param deficit - 缺口 token
+     * @param focusTerms - 在场人物/场景词
+     * @returns 补检文本
+     */
+    private async retrieveOverflowContext(ctx: StepRunCtx, deficit: number, focusTerms: string[]): Promise<string> {
+        try {
+            const text = [
+                ctx.stepResults['infoPlan'] || '',
+                ctx.stepResults['sceneExpand'] || '',
+                (ctx.stepResults['bodyGeneration'] || '').slice(-1200),
+            ].filter(Boolean).join('\n').slice(0, 4000);
+            const bundle = await resolveAssociations({
+                app: this.app,
+                project: ctx.project,
+                task: 'body',
+                text,
+                presentEntities: focusTerms,
+                chapter: ctx.chapterNum,
+                budgetTokens: Math.max(150, Math.min(deficit, 1200)),
+                alreadyInjected: Object.values(ctx.vars).filter(Boolean),
+            });
+            return bundle.text;
+        } catch (e) {
+            log.warn('[StepRunner] 溢出补检失败，继续压缩:', e);
+            return '';
+        }
     }
 
     /**
@@ -1134,6 +1169,13 @@ ${userPrompt}`),
                         placement: 'user',
                     });
                 }
+                if (promptAssembly.contextBudgetReport) {
+                    extras.push({
+                        key: 'contextBudget', label: '上下文预算恢复', category: '流程',
+                        influence: '流程约束', source: promptAssembly.contextBudgetReport,
+                        chars: 0, estTokens: 0, truncated: true, placement: 'user',
+                    });
+                }
                 if (promptAssembly.droppedExtra) {
                     extras.push({
                         key: 'droppedExtra', label: '知识注入被预算整段丢弃', category: '知识注入',
@@ -1308,6 +1350,7 @@ ${userPrompt}`),
                 maxTokens: stepMaxOutput,
                 // G2：本步骤实际注入的知识片段，保存时写进 rag_sources
                 ragSources: formatRagSources(ctx.ragSources ?? []),
+                contextBudget: promptAssembly.contextBudgetReport,
             };
             ctx.ragSources = [];
             if (!ctx.stepMeta) ctx.stepMeta = {};

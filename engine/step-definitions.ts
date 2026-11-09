@@ -215,6 +215,8 @@ export interface StepRunMeta {
     maxTokens?: number;
     /** G2 可追溯：本步骤实际注入的知识库片段（写入 rag_sources） */
     ragSources?: Array<{ book: string; dimension: string; score: number; excerpt: string }>;
+    /** 上下文预算恢复报告（压缩/补检/token；写入 context_budget） */
+    contextBudget?: string;
 }
 
 /**

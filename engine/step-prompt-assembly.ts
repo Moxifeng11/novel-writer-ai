@@ -6,12 +6,34 @@
  */
 
 import { fitPromptToContext } from '@/shared/prompt-budget';
+import { estimateTokens } from '@/shared/token-estimator';
 import { getBusinessThreshold } from '@/shared/thresholds';
 import { withActiveInputBudget } from '@/shared/context-budget-policy';
 import { createLogger } from '@/shared/logger';
+import { ContextOverflowError, recoverOverflow, type ContextCompressionMode } from './context/overflow-recovery';
 import type { StepRunCtx } from './step-definitions';
 
 const log = createLogger('StepPromptAssembly');
+
+/**
+ * 从模板变量提取在场人物/场景关键词（抽取压缩的保留优先级）。
+ *
+ * @param vars - 模板变量
+ * @returns 关键词
+ */
+function extractFocusTerms(vars?: Record<string, string>): string[] {
+    const source = vars ?? {};
+    const terms = new Set<string>();
+    const protagonist = String(source.protagonistName ?? '').trim();
+    if (protagonist && protagonist !== '主角') terms.add(protagonist);
+    for (const line of String(source.allChars ?? '').split('\n')) {
+        const match = line.match(/^\s*-\s*([^：:｜|]{2,12})[：:｜|]/);
+        if (match) terms.add(match[1].trim());
+    }
+    const digest = String(source.sceneCardDigest ?? '').slice(0, 400);
+    if (digest) terms.add(digest.slice(0, 20));
+    return [...terms].filter(Boolean).slice(0, 12);
+}
 
 /**
  * StepPromptAssemblyHost 类型定义。
@@ -41,6 +63,10 @@ export interface StepPromptAssemblyHost {
      * @returns 关联文本与成本
      */
     loadAssociationContext?(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; tokens: number; skipped?: string }>;
+    /** 上下文压缩模式（默认 extractive） */
+    compressionMode?: ContextCompressionMode;
+    /** 溢出时的定向补检（只补缺口；返回空串表示无补充） */
+    retrieveOverflowContext?(ctx: StepRunCtx, deficitTokens: number, focusTerms: string[]): Promise<string>;
     /**
      * 本步实际模型的窗口/输出上限（budget 由任务层给出时优先采用其 maxInput）
      *
@@ -92,6 +118,8 @@ export interface StepPromptAssemblyResult {
     associationText?: string;
     associationTokens?: number;
     associationSkipped?: string;
+    /** 预算恢复报告（压缩/补检/token），用于注入账本与面板 */
+    contextBudgetReport?: string;
 }
 
 /**
@@ -147,12 +175,42 @@ export async function assembleStepPrompt(
             ? `${systemPrompt}\n\n${systemTail}`
             : systemPrompt;
 
+        // 预算恢复：先定向补检 + 抽取压缩，再交给分段预算闸门；绝不直接腰斩
+        const focusTerms = extractFocusTerms(ctx.vars);
+        let effectiveUserPrompt = userPrompt;
+        let effectiveExtraTail = extraTail;
+        let contextBudgetReport = '';
+        const strictNoTruncation = ['bodyGeneration', 'qualityControl', 'analysisReport'].includes(stepKey);
+        const inputBudget = stepLimits.maxInputTokens
+            ?? Math.max(512, stepLimits.maxContext - stepLimits.maxOutput);
+        const estimatedTotal = estimateTokens(effectiveSystemPrompt, stepModel)
+            + estimateTokens(userPrompt, stepModel)
+            + estimateTokens(extraTail, stepModel);
+        if (estimatedTotal > inputBudget) {
+            const retrieve = host.retrieveOverflowContext;
+            const recovered = await recoverOverflow({
+                system: effectiveSystemPrompt,
+                user: userPrompt,
+                extraTail,
+                maxInputTokens: inputBudget,
+                focusTerms,
+                modelId: stepModel,
+                mode: host.compressionMode,
+                retrieve: retrieve
+                    ? (deficit) => retrieve(ctx, deficit, focusTerms)
+                    : undefined,
+            });
+            effectiveUserPrompt = recovered.user;
+            effectiveExtraTail = recovered.extraTail;
+            contextBudgetReport = recovered.report;
+        }
+
         // prompt 长度校验：system + user + 知识注入一起算，超窗口时先丢注入再截断主体
         // 窗口必须按「本步实际模型」取：settings 是全局单值，本地小窗口模型下永不触发裁剪
         const fit = fitPromptToContext({
             systemPrompt: effectiveSystemPrompt,
-            userPrompt,
-            extraTail,
+            userPrompt: effectiveUserPrompt,
+            extraTail: effectiveExtraTail,
             maxContext: stepLimits.maxContext,
             maxOutput: stepLimits.maxOutput,
             maxInputTokens: stepLimits.maxInputTokens,
@@ -161,6 +219,14 @@ export async function assembleStepPrompt(
             // 章节模板按【标题】分段：先丢低优先段，保住世界观/设定库/人物/大纲/Scene
             sectionAware: true,
         });
+
+        if (strictNoTruncation && (fit.overBudget || fit.truncated)) {
+            throw new ContextOverflowError(
+                Math.max(1, fit.estimatedTokens - fit.maxInputTokens),
+                fit.maxInputTokens,
+                fit.droppedSections.length > 0 ? fit.droppedSections : ['未命名段落'],
+            );
+        }
 
         if (fit.droppedExtra) {
             log.warn(`[StepRunner] 上下文不足，已跳过知识注入（风格/节奏/题材）: ~${fit.estimatedTokens}t`);
@@ -187,6 +253,7 @@ export async function assembleStepPrompt(
             associationText,
             associationTokens,
             associationSkipped,
+            contextBudgetReport,
         };
     });
 }

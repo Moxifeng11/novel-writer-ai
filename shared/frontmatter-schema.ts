@@ -146,6 +146,7 @@ const STEP_PROPERTIES: PropertySpec[] = [
     { key: 'step_status', label: '步骤状态', type: 'select', options: ['pending', 'generated', 'reviewed', 'stale'], required: true, defaultValue: 'pending' },
     { key: 'step_model', label: '生成模型', type: 'text' },
     { key: 'step_timestamp', label: '生成时间', type: 'text' },
+    { key: 'context_budget', label: '上下文预算', type: 'text', describe: '溢出时的补检/压缩/token 报告' },
 ];
 
 /** 台账文件级摘要（时间线看板）：让 Bases/属性搜索能筛到看板 */

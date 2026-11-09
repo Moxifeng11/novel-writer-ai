@@ -62,6 +62,8 @@ export interface StepSaveMeta {
     experimentGroup?: string;
     /** G2 可追溯：本步骤实际注入的知识库片段 */
     ragSources?: Array<{ book: string; dimension: string; score: number; excerpt: string }>;
+    /** 上下文预算恢复报告（压缩/补检/token） */
+    contextBudget?: string;
 }
 
 /**
@@ -273,6 +275,7 @@ export class StepResultSaver {
                 };
                 if (meta?.usage) patch['step_usage'] = meta.usage;
                 if (meta?.maxTokens) patch['step_max_tokens'] = meta.maxTokens;
+                if (meta?.contextBudget) patch['context_budget'] = meta.contextBudget;
                 this.appendVersionFields(patch, stepKey, meta);
                 if (entityNames) {
                     const inBody = (n: string): boolean => content.includes(n);
@@ -342,6 +345,7 @@ export class StepResultSaver {
                             if (meta?.usage) fm['step_usage'] = meta.usage;
                             else delete fm['step_usage'];
                             if (meta?.maxTokens) fm['step_max_tokens'] = meta.maxTokens;
+                            if (meta?.contextBudget) fm['context_budget'] = meta.contextBudget;
                             this.appendVersionFields(fm as Record<string, unknown>, stepKey, meta);
                             fm['step_timestamp'] = new Date().toISOString();
                             this.setStepTags(fm, stepKey, chapName);

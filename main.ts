@@ -240,6 +240,8 @@ export interface NovelWriterSettings {
      * 现在默认按模型能力走；只有用户想控成本时才在此夹一个硬上限（硬上限最大 200K）。
      */
     contextTokenCap?: number;
+    /** 上下文溢出压缩模式：extractive=确定性抽取压缩；off=超预算直接报错 */
+    contextCompressionMode?: 'extractive' | 'off';
     /** 人味约束模式：'exemplar'（样文优先，默认）| 'quota'（旧版数值配额，回退用） */
     humanVoiceMode?: 'exemplar' | 'quota';
     /**

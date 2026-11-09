@@ -416,6 +416,7 @@ export function getDefaultSettings(): NovelWriterSettings {
         precisionMode: false,
         refineRounds: 3,
         contextTokenCap: 0,
+        contextCompressionMode: 'extractive',
         humanVoiceMode: 'exemplar',
         activeRulesVersion: '',
         activeBodyTemplate: 'auto',

@@ -12,6 +12,8 @@ import type { App } from 'obsidian';
 import { TFile } from 'obsidian';
 import type { CreationMode } from '@/shared/creation-mode';
 import { getCreationModeLabel } from '@/shared/creation-mode';
+import { estimateTokens, getModelContextWindow } from '@/shared/token-estimator';
+import { recoverOverflow, type ContextCompressionMode } from './context/overflow-recovery';
 import {
     listModeUnits,
     modeBodyDir,
@@ -106,6 +108,8 @@ export interface UnitGenerateOptions {
     selection?: string;
     signal?: AbortSignal;
     onDelta?: (chunk: string) => void;
+    /** 上下文溢出策略；默认 extractive */
+    compressionMode?: ContextCompressionMode;
 }
 
 // ============================================================
@@ -394,13 +398,33 @@ export async function generateUnitText(
         instruction: options.instruction,
         selection: options.selection,
     });
+    // 单元写入过去没有预算闸门：超窗时整段拼进去，靠服务端截断。
+    // 现在先抽取压缩，仍超则显式报错（不再静默丢内容）。
+    const contextWindow = getModelContextWindow(options.model) || 128_000;
+    const maxInput = Math.max(512, contextWindow - options.maxTokens - 500);
+    let effectiveUser = user;
+    if (estimateTokens(system, options.model) + estimateTokens(user, options.model) > maxInput) {
+        const focusTerms = [ctx.characters, ctx.entities]
+            .filter(Boolean)
+            .join('\n')
+            .match(/[\u4e00-\u9fff]{2,6}/g)?.slice(0, 12) ?? [];
+        const recovered = await recoverOverflow({
+            system,
+            user,
+            maxInputTokens: maxInput,
+            focusTerms,
+            modelId: options.model,
+            mode: options.compressionMode ?? 'extractive',
+        });
+        effectiveUser = recovered.user;
+    }
     const temperature = temperatureFor(action);
     const callOptions = { isWritingTask: true, signal: options.signal };
 
     if (options.onDelta && typeof ai.callAIAsyncIterator === 'function') {
         let accumulated = '';
         try {
-            const stream = ai.callAIAsyncIterator(system, user, options.model, temperature, options.maxTokens, callOptions);
+            const stream = ai.callAIAsyncIterator(system, effectiveUser, options.model, temperature, options.maxTokens, callOptions);
             for await (const chunk of stream) {
                 if (options.signal?.aborted) {
                     const error = new Error('aborted');
@@ -418,7 +442,7 @@ export async function generateUnitText(
         }
     }
 
-    const response = await ai.callAI(system, user, options.model, temperature, options.maxTokens, callOptions);
+    const response = await ai.callAI(system, effectiveUser, options.model, temperature, options.maxTokens, callOptions);
     if (response.error) throw new Error(response.error);
     const content = (response.content || '').trim();
     if (!content) throw new Error('模型返回为空，请重试或更换模型');
