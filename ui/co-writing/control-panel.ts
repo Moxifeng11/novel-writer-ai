@@ -178,7 +178,10 @@ export interface ControlPanelHandles {
     wordGoalDisplay: HTMLElement;
     hintStateDisplay: HTMLElement;
     saveStateDisplay: HTMLElement;
-    hintInput: HTMLInputElement;
+    /** 临时指令输入（多行；Shift+Enter 换行，Enter 应用） */
+    hintInput: HTMLTextAreaElement;
+    /** 人工率仪表盘挂载点（概览 Tab，不再占用 AI 建议面板） */
+    humanRateContainer: HTMLElement;
     modelToggleBtn: HTMLButtonElement;
     nextNodeBtn: HTMLButtonElement;
     suggestBtn: HTMLButtonElement;
@@ -231,6 +234,11 @@ export function renderControlPanelAssembly(
     const wordCountDisplay = wordCard.createDiv({ cls: 'nw-card-value', text: '0' });
     const wordGoalDisplay = wordCard.createDiv({ cls: 'nw-card-sub', text: '目标: 3000' });
 
+    // 人工率仪表盘：属于「概览」数据，不再塞进 AI 建议面板
+    const humanRateContainer = overviewTabContent.createDiv({
+        cls: 'nw-human-rate-dashboard nw-cowrite-human-rate-card',
+    });
+
     // 写作控制台（紧凑模式）
     const controlPanel = overviewTabContent.createDiv({ cls: 'nw-cowrite-control-panel' });
     const controlHead = controlPanel.createDiv({ cls: 'nw-cowrite-control-head' });
@@ -240,10 +248,11 @@ export function renderControlPanelAssembly(
     hintStateDisplay.addClass('nw-u-d-none');
     const saveStateDisplay = controlHead.createDiv({ cls: 'nw-cowrite-control-state', text: '未保存' });
 
-    const hintInput = controlPanel.createEl('input', {
-        type: 'text',
+    // textarea：支持自然换行；Enter 应用，Shift+Enter 换行（见视图 keydown）
+    const hintInput = controlPanel.createEl('textarea', {
         cls: 'nw-hint-input',
-        placeholder: '临时指令 / 方向（Enter 应用）',
+        placeholder: '临时指令 / 方向（Enter 应用，Shift+Enter 换行）',
+        attr: { rows: '2' },
     });
 
     // 按钮竖向 3 分组（核心创作 / 辅助润色 / 更多工具），每按钮带说明 tooltip
@@ -371,6 +380,7 @@ export function renderControlPanelAssembly(
         hintStateDisplay,
         saveStateDisplay,
         hintInput,
+        humanRateContainer,
         modelToggleBtn,
         nextNodeBtn,
         suggestBtn,

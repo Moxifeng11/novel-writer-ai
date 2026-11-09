@@ -1471,6 +1471,41 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         expect(await executeCommand(page, toObsidianCommandId('novel-writer-co-writing'))).toBe(true);
         await expect(page.locator('.nw-cowrite-editor')).toBeVisible({ timeout: 20_000 });
 
+        // 4.81.1 UI 回归：控制台是多行 textarea（不再垂直居中），人工率不在 AI 建议面板
+        const consoleUi = await page.evaluate(() => {
+            const hint = document.querySelector<HTMLTextAreaElement>('.nw-hint-input');
+            const dashboard = document.querySelector<HTMLElement>('.nw-human-rate-dashboard');
+            const suggestionPanel = document.querySelector<HTMLElement>('.nw-cowrite-suggestions-panel');
+            return {
+                tag: hint?.tagName ?? '',
+                hintInSuggestion: Boolean(suggestionPanel && dashboard && suggestionPanel.contains(dashboard)),
+                dashboardParentTab: dashboard?.closest('.nw-cowrite-tab-content')?.getAttribute('data-tab') ?? '',
+                minHeight: hint ? getComputedStyle(hint).minHeight : '',
+                alignItems: hint?.parentElement ? getComputedStyle(hint.parentElement).alignItems : '',
+            };
+        });
+        console.log('COWRITE_CONSOLE_UI ' + JSON.stringify(consoleUi));
+        expect(consoleUi.tag).toBe('TEXTAREA');
+        expect(consoleUi.hintInSuggestion).toBe(false);
+        expect(consoleUi.dashboardParentTab).toBe('overview');
+
+        const hintInput = page.locator('.nw-hint-input');
+        await hintInput.fill('第一行');
+        await hintInput.press('Shift+Enter');
+        await hintInput.type('第二行');
+        expect(await hintInput.inputValue()).toContain('\n');
+        const hintStateAfterShift = await page.evaluate(() =>
+            document.querySelector('.nw-hint-state')?.classList.contains('nw-u-d-none') ?? false,
+        );
+        expect(hintStateAfterShift).toBe(true);
+
+        await hintInput.fill('单行指令');
+        await hintInput.press('Enter');
+        await expect.poll(async () => page.evaluate(() =>
+            document.querySelector('.nw-hint-state')?.classList.contains('nw-u-d-none') ?? true,
+        ), { timeout: 5_000 }).toBe(false);
+        await hintInput.fill('');
+
         // 直接在视图上执行「程序化写入 → 排自动保存 → 保存」，不依赖 AI/绑定流程
         const result = await page.evaluate(async () => {
             const host = window as unknown as {

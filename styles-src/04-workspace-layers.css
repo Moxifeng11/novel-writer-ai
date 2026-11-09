@@ -621,6 +621,50 @@
     white-space: nowrap;
 }
 .nw-hint-input { flex-shrink: 0; }
+
+/* 人工率仪表盘：放在概览 Tab，不再占用 AI 建议面板 */
+.nw-cowrite-human-rate-card {
+    flex-shrink: 0;
+    margin-bottom: var(--nw-space-2, 8px);
+    padding: 8px 10px;
+    border: 1px solid var(--nw-card-border, var(--background-modifier-border));
+    border-radius: var(--nw-radius-md, 8px);
+    background: var(--nw-card-bg, var(--background-primary));
+}
+.nw-hr-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+}
+.nw-hr-score { font-weight: 600; }
+.nw-hr-bar {
+    height: 4px;
+    margin: 6px 0;
+    overflow: hidden;
+    border-radius: 2px;
+    background: var(--background-modifier-border);
+}
+.nw-hr-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: var(--text-accent);
+}
+.nw-hr-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+.nw-hr-high { color: var(--text-success); }
+.nw-hr-mid { color: var(--text-warning); }
+.nw-hr-low { color: var(--text-error); }
+.nw-hr-bar-fill.nw-hr-high { background: var(--text-success); }
+.nw-hr-bar-fill.nw-hr-mid { background: var(--text-warning); }
+.nw-hr-bar-fill.nw-hr-low { background: var(--text-error); }
+.nw-hr-disabled { font-size: 11px; color: var(--text-muted); }
 .nw-cowrite-control-actions {
     display: flex;
     flex-wrap: wrap;

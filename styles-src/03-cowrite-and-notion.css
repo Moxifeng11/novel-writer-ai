@@ -420,14 +420,22 @@
  }
 
  .nw-hint-input {
-     flex: 1;
+     flex: 0 0 auto;
+     width: 100%;
+     max-width: none;
+     min-height: 64px;
+     max-height: 148px;
      padding: 8px 12px;
      border: 1px solid var(--background-modifier-border);
      border-radius: 6px;
      font-size: 13px;
+     line-height: 1.5;
+     font-family: inherit;
      background: var(--background-primary);
      color: var(--text-normal);
-     max-width: 300px;
+     resize: vertical;
+     overflow-y: auto;
+     white-space: pre-wrap;
  }
 
  .nw-hint-input:focus {

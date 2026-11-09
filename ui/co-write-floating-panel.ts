@@ -40,7 +40,7 @@ export const VIEW_TYPE_FLOAT_COWRITE = "nw-float-cowrite";
 export class CoWriteFloatingPanel extends DraggablePanel {
   // === DOM 容器 ===
   private rightEditor!: HTMLTextAreaElement;
-  private hintInput!: HTMLInputElement;
+  private hintInput!: HTMLTextAreaElement;
   private suggestionContainer!: HTMLElement;
   private ghostSuggestionContainer!: HTMLElement;
   private metricsContainer!: HTMLElement;
@@ -138,10 +138,10 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     controlHead.createDiv({ cls: "nw-cowrite-control-title", text: "\u63A7\u5236\u53F0" });
     this.saveStateDisplay = controlHead.createDiv({ cls: "nw-cowrite-control-state", text: "\u672A\u4FDD\u5B58" });
 
-    this.hintInput = controlPanel.createEl("input", {
-      type: "text",
+    this.hintInput = controlPanel.createEl("textarea", {
       cls: "nw-hint-input",
-      placeholder: "\u4E34\u65F6\u6307\u4EE4 / \u65B9\u5411\uFF08Enter \u5E94\u7528\uFF09",
+      placeholder: "\u4E34\u65F6\u6307\u4EE4 / \u65B9\u5411\uFF08Enter \u5E94\u7528\uFF0CShift+Enter \u6362\u884C\uFF09",
+      attr: { rows: "2" },
     });
 
     const actionsRow = controlPanel.createDiv({ cls: "nw-cowrite-control-actions" });
@@ -212,7 +212,11 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     this.hintInput.addEventListener("keydown", (event: KeyboardEvent) => {
       // 组字中回车是确认候选，不能把半截指令应用掉
       if (isImeComposing(event)) return;
-      if (event.key === "Enter") this.applyHint();
+      // Enter 应用；Shift+Enter 保留换行，让临时指令可以多行书写
+      if (event.key === "Enter" && !event.shiftKey && !event.altKey) {
+        event.preventDefault();
+        this.applyHint();
+      }
     });
   }
 

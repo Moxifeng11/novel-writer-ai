@@ -11,7 +11,7 @@
 | `shared/` | 179 | 40784 | 1607 | 1322 | 82% |
 | `core/` | 7 | 2821 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 99476 | 736 | 641 | 87% |
+| `ui/` | 239 | 99495 | 736 | 641 | 87% |
 
 ## 文件清单
 
@@ -570,13 +570,13 @@
 | `ui/chapter-settlement-modal.ts` | 418 | 1 | 1 |
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
-| `ui/co-write-floating-panel.ts` | 1020 | 2 | 2 |
-| `ui/co-writing-view.ts` | 3387 | 3 | 2 |
+| `ui/co-write-floating-panel.ts` | 1024 | 2 | 2 |
+| `ui/co-writing-view.ts` | 3392 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 224 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
 | `ui/co-writing/chapter-match.ts` | 163 | 3 | 3 |
-| `ui/co-writing/control-panel.ts` | 381 | 14 | 8 |
+| `ui/co-writing/control-panel.ts` | 391 | 14 | 8 |
 | `ui/co-writing/dashboard-status.ts` | 180 | 9 | 7 |
 | `ui/co-writing/editor-shortcuts.ts` | 87 | 4 | 2 |
 | `ui/co-writing/friendly-error.ts` | 46 | 1 | 1 |

@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-09T06:28:36.582Z",
-  "note": "4.81.0 社区审核：实体标签改 DOM 构建新增 .nw-entity-tag/--nw-entity-* 变量样式（+6 类）；指纹强度预览从内联迁入 7 个语义类（+7 类，其中 1 个替换既有类）；合计 +8 类/+1227B，均为审核 Error 修复必需，无重复样式",
-  "bytes": 544728,
+  "generatedAt": "2026-11-09T08:40:04.445Z",
+  "note": "v4.81.1 协同写作优化：控制台输入改 textarea（多行/可换行），人工率仪表盘从 AI 建议面板移入概览 Tab 并补 .nw-hr-* 紧凑卡片样式；+10 类/+1500B，纯 UI 结构调整，无新增重复选择器",
+  "bytes": 546228,
   "important": 24,
   "hardcodedHex": 161,
   "rgbHsl": 188,
-  "uniqueClasses": 2986,
+  "uniqueClasses": 2996,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

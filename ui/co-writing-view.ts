@@ -218,7 +218,7 @@ export class CoWritingView extends ItemView {
   rightEditor!: HTMLTextAreaElement;
   /** 编辑器容器（前置规划警告横幅挂在此处，才真正位于编辑器上方） */
   private editorWrapEl: HTMLElement | null = null;
-  hintInput!: HTMLInputElement;
+  hintInput!: HTMLTextAreaElement;
   suggestionContainer!: HTMLElement;
   suggestionContent!: HTMLElement;
   suggestionStatusText!: HTMLElement;
@@ -863,8 +863,6 @@ export class CoWritingView extends ItemView {
       this.toggleSuggestionPanel(false);
     });
     this.suggestionContent = this.suggestionContainer.createDiv({ cls: "nw-cowrite-suggestions-content" });
-    this.humanRateDashboard = this.suggestionContainer.createDiv({ cls: "nw-human-rate-dashboard" });
-    this.renderHumanRateDashboard();
 
     // 右侧：Tab 化面板（概览 + 知识库）—— 装配见 co-writing/control-panel
     const rightPanel = mainArea.createDiv({ cls: "nw-cowrite-right" });
@@ -926,6 +924,9 @@ export class CoWritingView extends ItemView {
     this.hintStateDisplay = h.hintStateDisplay;
     this.saveStateDisplay = h.saveStateDisplay;
     this.hintInput = h.hintInput;
+    // 人工率仪表盘移到概览 Tab（AI 建议面板只显示建议内容）
+    this.humanRateDashboard = h.humanRateContainer;
+    this.renderHumanRateDashboard();
     this.modelToggleBtn = h.modelToggleBtn;
     this.nextNodeBtn = h.nextNodeBtn;
     this.suggestBtn = h.suggestBtn;
@@ -1046,8 +1047,11 @@ export class CoWritingView extends ItemView {
     });
     this.hintInput.addEventListener("keydown", (event: KeyboardEvent) => {
       if (isImeComposing(event)) return;
-      if (event.key === "Enter")
+      // Enter 应用；Shift+Enter 保留换行，让临时指令可以多行书写
+      if (event.key === "Enter" && !event.shiftKey && !event.altKey) {
+        event.preventDefault();
         this.applyHint();
+      }
     });
     // NBI-04: 输入框内容与已应用指令不一致时，标识即时失效
     this.hintInput.addEventListener("input", () => this.refreshHintState());
@@ -1167,7 +1171,8 @@ export class CoWritingView extends ItemView {
     if (!this.hintStateDisplay) return;
     const current = this.hintInput?.value.trim() ?? "";
     const visible = this.appliedHint !== null && this.appliedHint !== "" && current === this.appliedHint;
-    this.hintStateDisplay.style.display = visible ? "" : "none";
+    // 统一走状态类：初始挂载的 nw-u-d-none 必须被移除，否则只改 inline display 会被类继续隐藏
+    this.hintStateDisplay.toggleClass('nw-u-d-none', !visible);
   }
   /** 编辑器顶部：字体选择 + Markdown / 段落 / 一键排版工具条 */
   private buildMarkdownToolbar(wrap: HTMLElement): void {
