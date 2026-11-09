@@ -12,7 +12,6 @@
 import { TFile, TFolder } from 'obsidian';
 import { splitTableCells } from '@/shared/chapter-table';
 import { parseForeshadowRevealState } from '@/shared/foreshadow-status';
-import { mkdirp } from '@/utils/helpers';
 import { getChapterFileName, findChapterFile, getChapterFile , findBodyFileByChapterNum } from './chapter-utils';
 import { CHARACTER_DISPLAY_KEYS } from '@/shared/format-constants';
 import { withWriteLock } from '@/shared/write-lock';
@@ -29,14 +28,8 @@ import { entityDir, listEntityFiles } from '@/shared/entity-reader';
 import { NOTICE_ERROR, NOTICE_WARNING, NOTICE_CRITICAL } from '@/shared/thresholds';
 import type { Instructions, FrontMatter } from './settlement/settlement-types';
 import { parseReport, parseFrontmatterFromText, parseFmList, resolveForceRevealNames } from './settlement/report-parser';
-import {
-    getNextRowNum,
-    hasTableSeparator,
-    appendAfterSeparator,
-    appendAfterSectionHeader,
-    renumberTable,
-    getNextRowNumInSection,
-} from './settlement/markdown-table-utils';
+import { appendEventToContent, appendForeshadowToContent, moveForeshadowToRevealedInContent } from './ledger/ledger-write';
+import { invalidateStoryLedger } from './ledger/ledger-io';
 import { createSettleContext, type SettleContext } from './settlement/settle-context';
 import { parseInfoPlanFields } from '@/shared/info-plan-fields';
 import { getValidFrontmatterKeys } from '@/shared/entity-field-mappings';
@@ -219,6 +212,7 @@ export class SettlementEngine {
             log.info(`[SettlementEngine] 承诺账本更新 ${ctx.instr.promise.length} 条`);
         } catch (e) {
             log.warn('[SettlementEngine] 承诺账本更新失败（不影响结算）:', e);
+            ctx.hasPartialFailure = true;
         }
     }
 
@@ -250,6 +244,7 @@ export class SettlementEngine {
             }
         } catch (e) {
             log.warn('[SettlementEngine] 角色弧线更新失败（不影响结算）:', e);
+            ctx.hasPartialFailure = true;
         }
     }
 
@@ -1167,14 +1162,7 @@ ${ni.description || '暂无描述'}
         }
     }
 
-    /** v4.20 幂等：伏笔名是否已在伏笔库任意表格的行中出现（引擎层不依赖 services，本地实现） */
-    private foreshadowNameExistsInDb(content: string, name: string): boolean {
-        const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const rowPattern = new RegExp(`^\\|\\s*\\d+\\s*\\|\\s*${escaped}\\s*\\|`, 'm');
-        return rowPattern.test(content);
-    }
-
-    /** §10 新增伏笔到伏笔库「未回收伏笔」表格 — v1.4.0 8列表头 */
+    /** §10 新增伏笔到伏笔库「未回收伏笔」表格 — 表头感知（ledger-write） */
     private async settleStep_createForeshadows(ctx: SettleContext): Promise<void> {
         for (const nf of ctx.instr.nfs) {
             try {
@@ -1185,27 +1173,28 @@ ${ni.description || '暂无描述'}
                 await withWriteLock(fp, async () => {
                     const fresh = this.getVaultMeta().getAbstractFileByPath(fp);
                     const exists = fresh instanceof TFile;
-                    let c = exists ? await this.getFS().read(fp) : '';
-                    if (this.foreshadowNameExistsInDb(c, nf.name)) {
+                    const c = exists ? await this.getFS().read(fp) : '';
+                    const written = appendForeshadowToContent(c, {
+                        name: nf.name,
+                        buryChapter: nf.chapter || ctx.chapName,
+                        plannedReveal: nf.reveal || '待定',
+                        relatedChars: nf.relatedChars || '',
+                        mainline: nf.relatedPlotline || '',
+                    });
+                    if (!written.changed) {
                         log.info('[SettlementEngine] 伏笔已存在，跳过:', nf.name);
                         return;
                     }
-                    const newRow = `| ${getNextRowNum(c)} | ${nf.name} | 中 | ${nf.chapter || ctx.chapName} | ${nf.reveal || '待定'} | ${nf.relatedChars || ''} | ${nf.relatedPlotline || ''} | 未揭示 |`;
-                    ctx.journal.recordAppend(fp, newRow);
-                    if (!exists) ctx.createdFiles.push(fp);
-                    if (c.includes('未回收伏笔')) {
-                        c = appendAfterSectionHeader(c, '未回收伏笔', newRow);
-                        await this.getFS().write(fp, c);
-                    } else {
-                        const base = `# 伏笔库\n\n> 所有伏笔总览，追踪状态，避免遗漏。\n\n## 未回收伏笔\n\n| # | 伏笔名称 | 重要程度 | 埋设章节 | 计划回收 | 相关人物 | 关联主线 | 当前状态 |\n|---|---------|---------|---------|---------|---------|---------|---------|\n${newRow}\n\n## 已回收伏笔\n\n| # | 伏笔名称 | 重要程度 | 埋设章节 | 相关人物 | 关联主线 | 回收章节 | 回收方式 |\n|---|---------|---------|---------|---------|---------|---------|---------|\n`;
-                        if (!exists) await this.getFS().mkdir(pjTimelineDir(ctx.project)).catch(() => {});
-                        await this.getFS().write(fp, base);
-                    }
+                    if (exists) ctx.journal.recordWholeFile(fp, c);
+                    else ctx.createdFiles.push(fp);
+                    if (!exists) await this.getFS().mkdir(pjTimelineDir(ctx.project)).catch(() => {});
+                    await this.getFS().write(fp, written.content);
                     created = true;
                 });
                 if (created) ctx.result.createdForeshadows++;
             } catch (e) { log.warn('[SettlementEngine] 追加伏笔失败:', e); this.notifier.showNotice('[SettlementEngine] 数据操作失败，部分功能可能受限'); ctx.hasPartialFailure = true; }
         }
+        invalidateStoryLedger(ctx.project);
     }
 
     /** §11 新增时间线事件 — v1.3.1 区分背景纪元/主线纪元 */
@@ -1216,49 +1205,31 @@ ${ni.description || '暂无描述'}
                 // 时间线看板有三个写入方（结算/分析报告/关联索引），此前的幂等守卫只防重复，
                 // 不防并发覆盖：必须整段加锁，并在锁内重读最新内容再做幂等比对。
                 const appended = await withWriteLock(tlPath, async () => {
-                let tlC = '';
                 const tlF = this.getVaultMeta().getAbstractFileByPath(tlPath);
-                if (tlF instanceof TFile) tlC = await this.getFS().read(tlPath);
-
-                const newRow = `| ${nt.desc} | ${ctx.chapName} | ${nt.event} | |`;
-                ctx.journal.recordAppend(tlPath, newRow);
-                if (!tlF) ctx.createdFiles.push(tlPath);
-
-                // v4.25 幂等守卫：按「时间+章节+事件」三列结构化比对（去空白）。
-                // 旧实现用子串 includes，章名/描述多一个空格就匹配失败 → 重复结算翻倍。
-                const norm = (s: string) => String(s || '').replace(/\s+/g, '');
-                const rowExists = tlC.split('\n').some((line) => {
-                    const trimmed = line.trim();
-                    if (!trimmed.startsWith('|')) return false;
-                    const cells = trimmed.split('|').slice(1, -1).map((c) => norm(c));
-                    if (cells.length < 3) return false;
-                    return cells[0] === norm(nt.desc)
-                        && cells[1] === norm(ctx.chapName)
-                        && cells[2] === norm(nt.event);
+                const previous = tlF instanceof TFile ? await this.getFS().read(tlPath) : '';
+                const isBackground = /背景纪元|纪元前|年前|上古|远古|传说|肇始/.test(nt.desc);
+                const written = appendEventToContent(previous, {
+                    name: nt.event,
+                    time: nt.desc,
+                    chapterKey: ctx.chapName,
+                    era: isBackground ? 'background' : 'main',
+                    importance: 'medium',
+                    source: 'settlement',
                 });
-                if (rowExists) {
+                if (!written.changed) {
                     log.info('[SettlementEngine] 时间线事件已存在，跳过:', nt.desc, nt.event);
                     return false;
                 }
-
-                // 判断应该写入哪个纪元
-                const isBackground = nt.desc.match(/背景纪元|纪元前|年前|上古|远古|传说|肇始/);
-                const sectionTitle = isBackground ? '背景纪元（故事开始前）' : '主线纪元（故事进行中）';
-
-                if (tlC.includes(sectionTitle)) {
-                    tlC = appendAfterSectionHeader(tlC, sectionTitle, newRow);
-                    await this.getFS().write(tlPath, tlC);
-                } else {
-                    // 首次创建：写双表结构
-                    const base = `# 时间线看板\n\n> 按时间顺序排列的关键事件，用于整体把控叙事节奏。\n\n## 纪元 / 时间轴\n\n### 背景纪元（故事开始前）\n\n| 时间 | 对应章节 | 事件 | 影响 |\n|------|---------|------|------|\n${isBackground ? newRow + '\n' : ''}\n### 主线纪元（故事进行中）\n\n| 时间 | 对应章节 | 事件 | 影响 |\n|------|---------|------|------|\n${isBackground ? '' : newRow + '\n'}`;
-                    if (!tlF) await this.getFS().mkdir(pjTimelineDir(ctx.project)).catch(() => {});
-                    await this.getFS().write(tlPath, base);
-                }
+                if (tlF instanceof TFile) ctx.journal.recordWholeFile(tlPath, previous);
+                else ctx.createdFiles.push(tlPath);
+                if (!(tlF instanceof TFile)) await this.getFS().mkdir(pjTimelineDir(ctx.project)).catch(() => {});
+                await this.getFS().write(tlPath, written.content);
                 return true;
                 });
                 if (appended) ctx.result.createdTimelines++;
             } catch (e) { log.warn('[SettlementEngine] 追加时间线失败:', e); this.notifier.showNotice('[SettlementEngine] 数据操作失败，部分功能可能受限'); ctx.hasPartialFailure = true; }
         }
+        invalidateStoryLedger(ctx.project);
     }
 
     /** §12 更新实体关系 — 写入双方实体的互信息章节（v1.3.0） */
@@ -1267,7 +1238,7 @@ ${ni.description || '暂无描述'}
             try {
                 await this.updateRelation(ctx.project, r.entityA, r.entityB, r.relType, r.desc, ctx.chapName, ctx.journal);
                 ctx.result.updatedRelations++;
-            } catch (e) { log.warn('[SettlementEngine] 更新关系失败:', r.entityA, r.entityB, e); }
+            } catch (e) { log.warn('[SettlementEngine] 更新关系失败:', r.entityA, r.entityB, e); ctx.hasPartialFailure = true; }
         }
     }
 
@@ -1318,7 +1289,7 @@ ${ni.description || '暂无描述'}
                     fm['entity_last_changed_reason'] = `结算：情绪更新为${e.emotion}`;
                 }));
                 ctx.result.updatedEmotions++;
-            } catch (err) { log.warn('[SettlementEngine] 更新情绪失败:', e.name, err); }
+            } catch (err) { log.warn('[SettlementEngine] 更新情绪失败:', e.name, err); ctx.hasPartialFailure = true; }
         }
     }
 
@@ -1546,6 +1517,7 @@ ${ni.description || '暂无描述'}
             }
         } catch (e) {
             log.warn('[SettlementEngine] V2 关系状态更新失败（已跳过）:', e);
+            ctx.hasPartialFailure = true;
             this.notifier.showNotice('⚠️ 关系状态更新失败，但不影响其他结算步骤。', NOTICE_ERROR);
         }
         // 合计（V1+V2 避免重复——V2 解析器可能捕获与 V1 相同的 RELATION 行）
@@ -1563,41 +1535,10 @@ ${ni.description || '暂无描述'}
     //   已回收伏笔: | # | 伏笔名称 | 重要程度 | 埋设章节 | 相关人物 | 关联主线 | 回收章节 | 回收方式 |
     // ================================================================
 
-    /** 将伏笔从未回收表删除，在已回收表插入新行 — v1.4.0 8列表头 */
+    /** 将伏笔从未回收表移到已回收表（表头感知，见 ledger-write） */
     private moveForeshadowToRevealed(content: string, name: string, chapName: string): string | null {
-        const lines = content.split('\n');
-        let revealedSepIdx = -1;
-        let foundRow = -1;
-        let foundCols: string[] | null = null;
-
-        for (let i = 0; i < lines.length; i++) {
-            const l = lines[i];
-            if (l.includes('已回收伏笔')) {
-                for (let j = i + 1; j < lines.length && j < i + 10; j++) {
-                    if (lines[j].match(/^\|[-\s]+\|/)) { revealedSepIdx = j; break; }
-                }
-            }
-            if (revealedSepIdx === -1 && l.match(/^\|.*\|/)) {
-                // v4.25：不 filter(Boolean)——空单元格（如「计划回收」为空）会让后续列整体左移，
-                // 把关联主线写进相关人物。保留空位按下标取列。
-                const cells = l.split('|').slice(1, -1).map(s => s.trim());
-                if (cells.length >= 2 && cells[1] === name) { foundRow = i; foundCols = cells; }
-            }
-        }
-        if (foundRow === -1 || !foundCols) return null;
-
-        lines.splice(foundRow, 1);
-        const nextNum = getNextRowNumInSection(lines, revealedSepIdx);
-        // 8列已回收: #(0) | 名称(1) | 重要(2) | 埋设(3) | 相关人物(4) | 关联主线(5) | 回收章节(6) | 回收方式(7)
-        const newRow = `| ${nextNum} | ${foundCols[1]} | ${foundCols[2] || '中'} | ${foundCols[3] || ''} | ${foundCols[5] || ''} | ${foundCols[6] || ''} | ${chapName} | 正文揭示 |`;
-        if (revealedSepIdx !== -1) lines.splice(revealedSepIdx + 1, 0, newRow);
-        else {
-            lines.push('', '## 已回收伏笔', '',
-                '| # | 伏笔名称 | 重要程度 | 埋设章节 | 相关人物 | 关联主线 | 回收章节 | 回收方式 |',
-                '|---|---------|---------|---------|---------|---------|---------|---------|', newRow);
-        }
-        renumberTable(lines, '未回收伏笔');
-        return lines.join('\n');
+        const result = moveForeshadowToRevealedInContent(content, name, chapName);
+        return result.changed ? result.content : null;
     }
 
     /**
@@ -1737,7 +1678,7 @@ ${ni.description || '暂无描述'}
             } else if (entityType === '物品' || entityType === '设定') {
                 await this.deleteEntityFileWithJournal(ctx, pjItemFile(project, entityName));
             }
-        } catch (e) { log.warn('[SettlementEngine] 删除实体失败:', entityType, entityName, e); }
+        } catch (e) { log.warn('[SettlementEngine] 删除实体失败:', entityType, entityName, e); ctx.hasPartialFailure = true; }
     }
 
     /**

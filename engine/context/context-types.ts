@@ -221,6 +221,8 @@ export interface TimelineEvent {
     involvedEntities?: string[];
     type?: string;
     idx?: string;
+    /** 纪元名（台账解析保留；旧数据可能没有） */
+    era?: string;
 }
 
 /**

@@ -380,6 +380,59 @@ export function pjTimelineBoard(project: string) { return `${project}/02-时间�
 export function pjMemoryShardsDir(project: string) { return `${project}/02-时间线与伏笔/记忆碎片`; }
 
 // ============================================================
+// 5.1 故事台账 / 剧情记忆 / 诊断
+// ============================================================
+
+/**
+ * 故事台账目录（关联索引独立落盘，不再写进伏笔库/时间线看板）
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
+export function pjStoryLedgerDir(project: string) { return `${project}/04-项目总控/故事台账`; }
+
+/**
+ * 故事台账关联索引文件
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
+export function pjStoryLedgerIndex(project: string) { return `${pjStoryLedgerDir(project)}/关联索引.md`; }
+
+/**
+ * 剧情记忆（章节摘要）目录
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
+export function pjChapterDigestDir(project: string) { return `${project}/04-项目总控/剧情记忆`; }
+
+/**
+ * 章节摘要文件
+ *
+ * @param project - 项目路径
+ * @param chapterKey - 章名（第N章）
+ * @returns 拼接后的 vault 相对路径
+ */
+export function pjChapterDigestFile(project: string, chapterKey: string) { return `${pjChapterDigestDir(project)}/${chapterKey}_摘要.md`; }
+
+/**
+ * 关系变更待确认队列
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
+export function pjRelationChangeQueue(project: string) { return `${project}/04-项目总控/待确认/关系变更.md`; }
+
+/**
+ * 故事一致性诊断报告（图谱兜底，只读校验输出）
+ *
+ * @param project - 项目路径
+ * @returns 拼接后的 vault 相对路径
+ */
+export function pjGraphDiagnosticReport(project: string) { return `${project}/04-项目总控/诊断/故事一致性报告.md`; }
+
+// ============================================================
 // 6. 封面
 // ============================================================
 /**

@@ -106,29 +106,63 @@ export function truncateTextToTokensHeadTail(
     if (paragraphs.length <= 2) return truncateTextToTokens(text, maxTokens, modelId);
 
     let headCount = Math.max(1, Math.floor(paragraphs.length * 0.6));
-    let tailCount = 1;
+    const tailCount = 1;
     const marker = (dropped: number) => `〔此处省略 ${dropped} 段〕`;
-
+    const tailText = (): string => paragraphs.slice(paragraphs.length - tailCount).join('\n\n');
     const build = (): string => {
         const head = paragraphs.slice(0, headCount).join('\n\n');
-        const tail = paragraphs.slice(paragraphs.length - tailCount).join('\n\n');
-        return `${head}\n\n${marker(paragraphs.length - headCount - tailCount)}\n\n${tail}`;
+        return `${head}\n\n${marker(paragraphs.length - headCount - tailCount)}\n\n${tailText()}`;
     };
+    const over = (value: string): boolean => estimateTokens(value, modelId) > maxTokens;
 
+    // 先缩头，保住结尾的写指令/动作
     let result = build();
-    // 先缩头（保住结尾的写指令/动作），再扩尾
-    while (estimateTokens(result, modelId) > maxTokens && headCount > 1) {
+    while (over(result) && headCount > 1) {
         headCount -= 1;
         result = build();
     }
-    while (estimateTokens(result, modelId) > maxTokens && tailCount < paragraphs.length - headCount) {
-        tailCount += 1;
-        result = build();
+
+    if (!over(result)) return result;
+
+    // 头缩到 1 段仍超：保留尾部，头部只放“能放下的前缀”，不再反向扩尾。
+    const tail = tailText();
+    const markerText = marker(paragraphs.length - 1);
+    const tailTokens = estimateTokens(`${markerText}\n\n${tail}`, modelId);
+    if (tailTokens >= maxTokens) {
+        // 尾部本身超预算：保留尾部后缀（写指令在最后，不能丢），前面加省略标记
+        const suffix = truncateTextToTokensTail(tail, Math.max(1, maxTokens - estimateTokens(markerText, modelId)), modelId);
+        return `${markerText}\n\n${suffix}`;
     }
-    if (estimateTokens(result, modelId) > maxTokens) {
-        return truncateTextToTokens(text, maxTokens, modelId);
+    const headBudget = Math.max(1, maxTokens - tailTokens - 4);
+    const head = truncateTextToTokens(paragraphs[0], headBudget, modelId);
+    const combined = `${head}\n\n${markerText}\n\n${tail}`;
+    if (!over(combined)) return combined;
+
+    // 极端兜底：仍超说明估算与真实分词差异过大，保留尾部后缀而不是纯前缀
+    return `${markerText}\n\n${truncateTextToTokensTail(tail, Math.max(1, maxTokens - estimateTokens(markerText, modelId)), modelId)}`;
+}
+
+/**
+ * 保留文本尾部（与 `truncateTextToTokens` 相反）：写指令/动作通常在段尾。
+ *
+ * @param text - 文本
+ * @param maxTokens - 最大 token
+ * @param modelId - 模型
+ * @returns 尾部文本
+ */
+export function truncateTextToTokensTail(text: string, maxTokens: number, modelId: string = 'default'): string {
+    if (!text || maxTokens <= 0) return '';
+    if (estimateTokens(text, modelId) <= maxTokens) return text;
+    let low = 0;
+    let high = text.length;
+    while (low < high) {
+        const mid = Math.floor((low + high) / 2);
+        if (estimateTokens(text.slice(mid), modelId) <= maxTokens) high = mid;
+        else low = mid + 1;
     }
-    return result;
+    const suffix = text.slice(low);
+    if (suffix) return suffix;
+    return text.slice(-Math.max(1, Math.floor(maxTokens * 1.5)));
 }
 
 /**

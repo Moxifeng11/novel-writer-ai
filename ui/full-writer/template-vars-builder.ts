@@ -334,10 +334,11 @@ export async function buildEntityVars(deps: TemplateVarsDeps, vars: Record<strin
 export async function buildContextVars(deps: TemplateVarsDeps, vars: Record<string, string>, d: ContextData): Promise<void> {
   const compressed = d.compressed;
   if (compressed) {
-    vars["worldView"] = compressed.worldView;
-    const slCompressed = compressed.settingLib;
+    // 压缩器可能因输入异常返回空串；空结果绝不能覆盖完整原文
+    vars["worldView"] = compressed.worldView.trim() ? compressed.worldView : (d.world_view?.raw || "");
+    const slCompressed = compressed.settingLib.trim() ? compressed.settingLib : (d.setting_lib?.raw || "");
     const isSlEmpty = !slCompressed.trim() || slCompressed.includes("<!--") && !slCompressed.replace(/<!--[\s\S]*?-->/g, "").trim();
-    const meta = extractWorldviewMeta(compressed.worldView);
+    const meta = extractWorldviewMeta(compressed.worldView.trim() ? compressed.worldView : (d.world_view?.raw || ""));
     vars["worldType"] = meta.worldType;
     vars["worldEra"] = meta.worldEra;
     vars["forbiddenElements"] = meta.forbiddenElements;
@@ -387,8 +388,9 @@ export async function buildContextVars(deps: TemplateVarsDeps, vars: Record<stri
       filtered.relevant.split("\n").map((s) => s.replace(/^- /, "").trim()).filter(Boolean)
     );
     const filteredUnrevealed = fs.unrevealed.filter((f) => relevantSet.has(f.name));
-    vars["unrevealedForeshadow"] = compressed?.foreshadows || filteredUnrevealed.map(
-      (f) => `[${f.id}] ${f.name}（重要性:${f.importance || "中"}，埋于:${f.buryChapter || "?"}）`
+    const compressedForeshadow = compressed?.foreshadows?.trim() ? compressed.foreshadows : "";
+    vars["unrevealedForeshadow"] = compressedForeshadow || filteredUnrevealed.map(
+      (f) => `[${f.id}] ${f.name}（重要性:${f.importance || "中"}，埋于:${f.buryChapter || "?"}，计划:${f.plannedReveal || "待定"}）`
     ).join("\n");
     if (filtered.summary) {
       vars["unrevealedForeshadow"] += "\n" + filtered.summary;
@@ -511,7 +513,8 @@ ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.planned
     }
   }
   const tl = d.timeline || [];
-  vars["timelineEvents"] = compressed?.timeline || tl.map((t) => `- ${t.time} | ${t.chapter} | ${t.event} | ${t.impact}`).join("\n");
+  const compressedTimeline = compressed?.timeline?.trim() ? compressed.timeline : "";
+  vars["timelineEvents"] = compressedTimeline || tl.map((t) => `- ${t.time} | ${t.chapter} | ${t.event} | ${t.impact}`).join("\n");
   const prev = d.previous_chapter;
   if (prev) {
     const parts = [];

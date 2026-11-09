@@ -21,7 +21,12 @@ import { MemoryShard, gatherTriggeredMemories } from './memory-trigger';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
 import { listProjectIds } from '@/shared/project-catalog';
 import { buildStoryLinkage, type StoryLinkage } from './story-linkage';
-import { buildForeshadowIndexBlock, buildTimelineIndexBlock, upsertLinkageBlock, LINKAGE_BEGIN, LINKAGE_END } from './story-linkage-writer';
+import { stripAutoBlocks } from './ledger/ledger-model';
+import { loadStoryLedger, toForeshadowData, toTimelineEvents } from './ledger/ledger-io';
+import { buildLedgerIndex } from './ledger/ledger-index';
+import { buildLedgerLinks, renderLinkageIndex } from './ledger/ledger-link';
+import { EntityIndex } from '@/shared/entity-index';
+import { pjStoryLedgerDir, pjStoryLedgerIndex } from '@/shared/paths';
 import { PluginCapabilities } from '@/shared/plugin-capabilities';
 import type {
     CharacterRepository,
@@ -1307,12 +1312,7 @@ export class ContextManager {
      * （二次回写时数据自我污染、块内容不再幂等）。
      */
     private stripLinkageBlock(content: string): string {
-        const begin = content.indexOf(LINKAGE_BEGIN);
-        const end = content.indexOf(LINKAGE_END);
-        if (begin >= 0 && end > begin) {
-            return content.slice(0, begin) + content.slice(end + LINKAGE_END.length);
-        }
-        return content;
+        return stripAutoBlocks(content);
     }
 
     /**
@@ -1323,13 +1323,8 @@ export class ContextManager {
      */
     async gatherForeshadows(project: string): Promise<ContextData> {
         try {
-            const path = pjForeshadowDB(project);
-            const file = this.getVaultMeta().getAbstractFileByPath(path);
-            if (file instanceof TFile) {
-                const content = await this.app.vault.cachedRead(file);
-                const result = this.parseForeshadowContent(this.stripLinkageBlock(content));
-                return { foreshadows: result };
-            }
+            const ledger = await loadStoryLedger(this.app, project);
+            return { foreshadows: toForeshadowData(ledger) };
         } catch (e) {
             log.warn('Failed to gather foreshadows:', e);
         }
@@ -1346,44 +1341,16 @@ export class ContextManager {
     async gatherTimeline(project: string, currentChapter?: string): Promise<ContextData> {
         const ctx: ContextData = {};
         try {
-            const path = pjTimelineBoard(project);
-            const file = this.getVaultMeta().getAbstractFileByPath(path);
-            if (file instanceof TFile) {
-                const content = await this.app.vault.cachedRead(file);
-                const parsed = this.parseTimelineContent(this.stripLinkageBlock(content));
-                let events = parsed.events;
-
-                if (parsed.eraCount > 1) {
-                    log.info(`[Timeline] 检测到 ${parsed.eraCount} 个纪元：${parsed.eraNames.join('、')}`);
-                }
-                if (parsed.inconsistencies.length > 0) {
-                    log.warn(`[Timeline] 发现 ${parsed.inconsistencies.length} 处时间线不一致:`, parsed.inconsistencies);
-                }
-
-                if (currentChapter) {
-                    const currentNum = parseInt(currentChapter.match(/第(\d+)章/)?.[1] || '0');
-                    const filtered = events
-                        .filter(e => {
-                            const eventChNum = parseInt(e.chapter.match(/第(\d+)章/)?.[1] || '0');
-                            return eventChNum <= currentNum;
-                        })
-                        .sort((a, b) => {
-                            const aNum = parseInt(a.chapter.match(/第(\d+)章/)?.[1] || '0');
-                            const bNum = parseInt(b.chapter.match(/第(\d+)章/)?.[1] || '0');
-                            return bNum - aNum;
-                        })
-                        .slice(0, TIMELINE_SLICE);
-                    ctx.timeline = filtered;
-                } else {
-                    ctx.timeline = events;
-                }
-
-                if (parsed.eraCount > 0) {
-                    ctx.timeline_eras = parsed.eraNames;
-                    ctx.timeline_inconsistencies = parsed.inconsistencies;
-                }
-            } else {
-                ctx.timeline = [];
+            const ledger = await loadStoryLedger(this.app, project);
+            ctx.timeline = toTimelineEvents(ledger, currentChapter, TIMELINE_SLICE);
+            if (ledger.eras.length > 0) {
+                ctx.timeline_eras = ledger.eras;
+            }
+            const inconsistencies = ledger.issues
+                .filter((issue) => issue.type === 'out-of-order' || issue.type === 'invalid-chapter')
+                .map((issue) => issue.message);
+            if (inconsistencies.length > 0) {
+                ctx.timeline_inconsistencies = inconsistencies;
             }
         } catch (e) {
             log.warn('Failed to gather timeline:', e);
@@ -2473,46 +2440,41 @@ ${usable}`;
     }
 
     /**
-     * Rev 186：把关联索引回写到 伏笔库.md / 时间线看板.md 的标记块。
-     * 只替换 NW-LINKAGE 标记之间内容，用户表格一行不动；文件缺失则跳过。
+     * 回写「故事台账 · 关联索引」到独立文件。
+     *
+     * 旧实现把 NW-LINKAGE 块写进伏笔库/时间线看板，块内表格会被其他解析器
+     * 当成业务数据。现在只写 `04-项目总控/故事台账/关联索引.md`；
+     * 业务表格仍以时间线/伏笔库为权威。
+     *
      * @param project - 项目（路径或对象）
-      * @returns boolean }> 结果
+     * @returns 是否写入成功（两个字段保留兼容旧调用方）
      */
     async writeStoryLinkageIndex(project: string): Promise<{ foreshadow: boolean; timeline: boolean }> {
-        const result = { foreshadow: false, timeline: false };
-        const referenceChapter = Math.max(1, this.resolveLatestBodyChapterNum(project));
-        const linkage = await this.buildStoryLinkage(project, `第${referenceChapter}章`);
-        if (!linkage) return result;
-
-        const generatedAt = this.formatTimestamp();
-        const foreshadowPath = pjForeshadowDB(project);
-        // 关联索引是「读整份 → 替换 NW-LINKAGE 块 → 写整份」，与结算/分析报告共写同一文件，
-        // 必须按路径加锁并在锁内重读，否则会把对方刚写的表格行整段覆盖掉。
-        await withWriteLock(foreshadowPath, async () => {
-            const foreshadowFile = this.getVaultMeta().getAbstractFileByPath(foreshadowPath);
-            if (!(foreshadowFile instanceof TFile)) return;
-            const original = await this.app.vault.read(foreshadowFile);
-            const block = buildForeshadowIndexBlock(
-                [...linkage.due, ...linkage.overdue, ...linkage.upcoming],
-                linkage.warnings,
-                generatedAt,
-                referenceChapter,
-            );
-            await this.app.vault.modify(foreshadowFile, upsertLinkageBlock(original, block));
-            result.foreshadow = true;
-        });
-
-        const timelinePath = pjTimelineBoard(project);
-        await withWriteLock(timelinePath, async () => {
-            const timelineFile = this.getVaultMeta().getAbstractFileByPath(timelinePath);
-            if (!(timelineFile instanceof TFile)) return;
-            const original = await this.app.vault.read(timelineFile);
-            const block = buildTimelineIndexBlock(linkage.timelineAll, linkage.warnings, generatedAt);
-            await this.app.vault.modify(timelineFile, upsertLinkageBlock(original, block));
-            result.timeline = true;
-        });
-
-        return result;
+        try {
+            const ledger = await loadStoryLedger(this.app, project);
+            const entityIndex = EntityIndex.build(this.app, project);
+            const { links } = buildLedgerLinks(ledger, (name) => {
+                const resolution = entityIndex.resolve(name);
+                if (resolution.unresolved) return null;
+                return resolution.matches.map((match) => ({
+                    id: match.id,
+                    name: match.name,
+                    kind: match.kind,
+                    path: match.path,
+                }));
+            });
+            ledger.links = links;
+            const content = renderLinkageIndex(ledger, this.formatTimestamp());
+            const indexPath = pjStoryLedgerIndex(project);
+            await withWriteLock(indexPath, async () => {
+                await this.getFS().mkdir(pjStoryLedgerDir(project)).catch(() => {});
+                await this.getFS().write(indexPath, content);
+            });
+            return { foreshadow: true, timeline: true };
+        } catch (e) {
+            log.warn('[ContextManager] writeStoryLinkageIndex failed:', e);
+            return { foreshadow: false, timeline: false };
+        }
     }
 
     /** 从设定库 / 世界观原文抽取 2–6 级标题作为设定条目名 */

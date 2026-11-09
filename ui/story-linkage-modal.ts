@@ -133,10 +133,9 @@ export class StoryLinkageModal extends Modal {
             try {
                 const result = await this.plugin.ctxManager.writeStoryLinkageIndex(this.project);
                 if (result.foreshadow || result.timeline) {
-                    const targets = [result.foreshadow ? '伏笔库' : '', result.timeline ? '时间线看板' : ''].filter(Boolean).join('、');
-                    new Notice(`✅ 已回写关联索引到 ${targets}`, 4000);
+                    new Notice('✅ 已写入 04-项目总控/故事台账/关联索引.md', 4000);
                 } else {
-                    new Notice('⚠️ 未找到伏笔库 / 时间线看板，未执行回写', 5000);
+                    new Notice('⚠️ 关联索引写入失败：请检查项目目录与写入权限', 5000);
                 }
             } catch (e) {
                 new Notice(`❌ 回写失败：${(e as Error).message}`, 6000);

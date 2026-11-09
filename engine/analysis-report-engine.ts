@@ -23,11 +23,10 @@ import { CharacterConsistencyChecker, ConsistencyCheckResult } from './character
 import { withWriteLock } from '@/shared/write-lock';
 import { VectorEnhancer } from './vector-enhancer';
 import { 
-    hasTableSeparator, 
-    appendAfterSeparator, 
-    getNextRowNum, 
     mkdirp 
 } from '@/utils/helpers';
+import { appendEventToContent, appendForeshadowToContent, moveForeshadowToRevealedInContent } from './ledger/ledger-write';
+import { invalidateStoryLedger } from './ledger/ledger-io';
 import { ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
 import { setFrontmatterValue } from '@/shared/frontmatter';
 import type { FileSystemPort, VaultMetaPort } from '@/shared/file-system-port';
@@ -1261,9 +1260,9 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
 
                 if (foreshadows.recovered && foreshadows.recovered.length > 0) {
                     for (const f of foreshadows.recovered) {
-                        const newContent = this.moveForeshadowToRevealed(content, f.name, chapterName);
-                        if (newContent !== content) {
-                            content = newContent;
+                        const result = moveForeshadowToRevealedInContent(content, f.name, chapterName);
+                        if (result.changed) {
+                            content = result.content;
                             changed = true;
                             appliedCount2++;
                         }
@@ -1272,9 +1271,13 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
 
                 if (foreshadows.planted && foreshadows.planted.length > 0) {
                     for (const f of foreshadows.planted) {
-                        const newRow = `| ${getNextRowNum(content)} | ${f.name} | 中 | 第${chapterNum}章 | 待定 | 未揭示 |`;
-                        if (hasTableSeparator(content)) {
-                            content = appendAfterSeparator(content, newRow);
+                        const result = appendForeshadowToContent(content, {
+                            name: f.name,
+                            buryChapter: chapterName,
+                            plannedReveal: '待定',
+                        });
+                        if (result.changed) {
+                            content = result.content;
                             changed = true;
                             appliedCount2++;
                         }
@@ -1287,6 +1290,7 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
                 }
             });
             appliedCount += appliedCount2;
+            invalidateStoryLedger(project);
 
             return {
                 applied: appliedCount > 0,
@@ -1297,48 +1301,6 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
             log.error('[AnalysisReportEngine] 伏笔库更新失败:', e);
             return { applied: false, pending: true, count };
         }
-    }
-
-    private moveForeshadowToRevealed(content: string, name: string, revealChapter: string): string {
-        const lines = content.split('\n');
-        let foundRow = -1;
-        let foundCols: string[] | null = null;
-
-        for (let i = 0; i < lines.length; i++) {
-            const l = lines[i];
-            if (l.match(/^\|.*\|/)) {
-                const cols = splitTableCells(l);
-                if (cols.length >= 6 && cols[1] === name && !isForeshadowRevealed(cols[cols.length - 1])) {
-                    foundRow = i;
-                    foundCols = cols;
-                }
-            }
-        }
-
-        if (foundRow === -1 || !foundCols) return content;
-
-        lines.splice(foundRow, 1);
-
-        let sepIdx = -1;
-        for (let i = 0; i < lines.length; i++) {
-            if (lines[i].includes('已揭示') || lines[i].includes('已回收')) {
-                for (let j = i + 1; j < lines.length; j++) {
-                    if (lines[j].match(/^\|[- ]+\|/)) {
-                        sepIdx = j;
-                        break;
-                    }
-                }
-                break;
-            }
-        }
-
-        if (sepIdx !== -1) {
-            const newRowNum = getNextRowNum(lines.join('\n'));
-            const newRow = `| ${newRowNum} | ${foundCols[1]} | ${foundCols[2] || '中'} | ${foundCols[3] || ''} | ${foundCols[4] || ''} | ${revealChapter} | 已揭示 |`;
-            lines.splice(sepIdx + 1, 0, newRow);
-        }
-
-        return lines.join('\n');
     }
 
     private async applyTimelineChanges(project: string, timeline: FullAnalysisReport['timeline']): Promise<{ applied: boolean; pending: boolean; count: number }> {
@@ -1354,33 +1316,33 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
             appliedCount = await withWriteLock(fp, async () => {
                 let applied = 0;
                 const ff = this.getVaultMeta().getAbstractFileByPath(fp);
-
-                let content = '';
-                if (ff instanceof TFile) {
-                    content = await this.getFS().read(fp);
-                } else {
-                    const timelineDir = project + '/02-时间线与伏笔';
-                    await mkdirp(this.app, timelineDir, this.getFS());
-                    content = `# 时间线看板\n\n| # | 事件名称 | 时间 | 地点 | 涉及人物 | 章节 | 类型 |\n|---|---|---|---|---|---|---|\n`;
+                let content = ff instanceof TFile ? await this.getFS().read(fp) : '';
+                if (!(ff instanceof TFile)) {
+                    await mkdirp(this.app, project + '/02-时间线与伏笔', this.getFS());
                 }
 
                 const highImportanceEvents = timeline.events.filter(e => e.importance === 'high' || e.importance === 'medium');
-
                 for (const event of highImportanceEvents) {
-                    const rowNum = getNextRowNum(content);
-                    const involved = event.involvedEntities && event.involvedEntities.length > 0
-                        ? event.involvedEntities.join('、')
-                        : '';
-                    const newRow = `| ${rowNum} | ${event.event} | ${event.time || ''} | ${event.location || ''} | ${involved} | 第${event.chapter}章 | ${event.importance === 'high' ? '主线' : '支线'} |`;
-
-                    if (hasTableSeparator(content)) {
-                        content = appendAfterSeparator(content, newRow);
+                    const result = appendEventToContent(content, {
+                        name: event.event,
+                        time: event.time || '',
+                        chapterKey: `第${event.chapter}章`,
+                        impact: '',
+                        location: event.location || '',
+                        involved: event.involvedEntities || [],
+                        type: event.importance === 'high' ? '主线' : '支线',
+                        importance: event.importance,
+                        source: 'analysis',
+                    });
+                    if (result.changed) {
+                        content = result.content;
                         applied++;
                     }
                 }
 
                 if (applied > 0) {
                     await this.getFS().write(fp, content);
+                    invalidateStoryLedger(project);
                     log.info('[AnalysisReportEngine] 时间线更新完成:', applied, '项');
                 }
                 return applied;
