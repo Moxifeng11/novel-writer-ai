@@ -8,6 +8,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
+  /* C-9：E2E 前校验构建产物新鲜度，防止静默跑在旧 main.js/styles.css 上 */
+  globalSetup: './tests/e2e/global-setup.ts',
   /* Electron 启动与项目模板复制较慢，单测上限放宽 */
   timeout: 180_000,
   /* Run tests in files in parallel */
