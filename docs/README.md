@@ -44,6 +44,7 @@
 | [regression/LINKED-SCENARIOS.md](regression/LINKED-SCENARIOS.md) | 四条联动链的自动化 + 手工验收 | 手册 05/06 引用 |
 | [research/deepseek-harness/](research/deepseek-harness/) | dsh 事实档案与集成设计 | 手册 07 的 dsh 排障依据 |
 | [design/](design/) | 设计包与决策 | 决策索引见 [adr/README.md](adr/README.md) |
+| [design/workbench-system-optimization.md](design/workbench-system-optimization.md) | 工作台 10 项系统优化方案（台账/实体/记忆/一致性/预算） | 方案定稿，实施进度看 `progress/auto-iterations.md` |
 | [audits/](audits/) | 历史审计与取证 | 历史快照，不作为现状 |
 | [releases/TEMPLATE.md](releases/TEMPLATE.md) | 发布说明模板 |
 | [releases/](releases/) | 每个版本的发布说明 | 发布流程见手册 06 |
