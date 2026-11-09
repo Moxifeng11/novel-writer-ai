@@ -17,8 +17,10 @@ import {
     pjFactionsDir,
     pjItemsDir,
     pjForeshadowDB,
-    pjTimelineBoard
+    pjTimelineBoard,
+    pjTimelineDir
 } from '@/shared/paths';
+import { SettlementJournal } from './settlement/settlement-journal';
 import { CharacterConsistencyChecker, ConsistencyCheckResult } from './character-consistency-checker';
 import { withWriteLock } from '@/shared/write-lock';
 import { VectorEnhancer } from './vector-enhancer';
@@ -38,6 +40,15 @@ import { parseReport } from './settlement/report-parser';
 
 
 const log = createLogger('AnalysisReportEngine');
+
+/**
+ * apply 路径的 journal 只登记 whole-file 快照，rollback 不会触达 frontmatter 端口；
+ * 传 stub 以便未来若加入字段登记时立刻显式失败，而不是静默丢回滚。
+ */
+const APPLY_JOURNAL_FM_STUB = {
+    readField: async () => { throw new Error('apply journal 不支持字段回滚'); },
+    restoreField: async () => { throw new Error('apply journal 不支持字段回滚'); },
+} as never;
 /** 分析子任务（角色状态/时间线提取）送入模型的正文上限；超过部分不再参与检测 */
 const ANALYSIS_BODY_SLICE = 12_000;
 /**
@@ -402,6 +413,12 @@ export class AnalysisReportEngine {
      */
     async applyReportChanges(project: string, report: FullAnalysisReport): Promise<{ success: boolean; applied: string[]; pending: string[]; details: string }> {
         log.info('[AnalysisReportEngine] 开始应用报告变更...');
+        // F-2（2026-11-10 审计）：与结算 run 共用项目锁——结算的 whole-file 回滚是
+        // 「盲恢复」，若 apply 在结算 run 窗口内写入，回滚会把 apply 刚提交的行清掉。
+        return withWriteLock(`settlement:${project}`, () => this.applyReportChangesUnlocked(project, report));
+    }
+
+    private async applyReportChangesUnlocked(project: string, report: FullAnalysisReport): Promise<{ success: boolean; applied: string[]; pending: string[]; details: string }> {
         const applied: string[] = [];
         const pending: string[] = [];
 
@@ -1285,6 +1302,7 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
         if (count === 0) return { applied: false, pending: false, count: 0 };
 
         let appliedCount = 0;
+        const journal = new SettlementJournal();
 
         try {
             const fp = pjForeshadowDB(project);
@@ -1294,9 +1312,11 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
             }
 
             // P1-1（v4.27）：伏笔库读-改-写整段进锁，防止与结算/协同互相覆盖
+            // F-2（2026-11-10 审计）：写前登记 whole-file 快照，失败按 journal 回滚
             let appliedCount2 = 0;
             await withWriteLock(fp, async () => {
-                let content = await this.getFS().read(fp);
+                const before = await this.getFS().read(fp);
+                let content = before;
                 let changed = false;
 
                 const chapterName = `第${chapterNum}章`;
@@ -1328,6 +1348,7 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
                 }
 
                 if (changed) {
+                    journal.recordWholeFile(fp, before);
                     await this.getFS().write(fp, content);
                     log.info('[AnalysisReportEngine] 伏笔库更新完成:', appliedCount2, '项');
                 }
@@ -1342,6 +1363,15 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
             };
         } catch (e) {
             log.error('[AnalysisReportEngine] 伏笔库更新失败:', e);
+            try {
+                const rollback = await journal.rollback(this.getFS(), APPLY_JOURNAL_FM_STUB);
+                if (rollback.reverted > 0) {
+                    log.warn('[AnalysisReportEngine] 伏笔库 apply 失败并回滚:', e, `恢复 ${rollback.reverted} 项`);
+                    invalidateStoryLedger(project);
+                }
+            } catch (rollbackError) {
+                log.error('[AnalysisReportEngine] 伏笔库 apply 回滚失败:', rollbackError);
+            }
             return { applied: false, pending: true, count };
         }
     }
@@ -1351,17 +1381,22 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
         if (count === 0) return { applied: false, pending: false, count: 0 };
 
         let appliedCount = 0;
+        const journal = new SettlementJournal();
+        const fp = pjTimelineBoard(project);
+        const createdFile = !(this.getVaultMeta().getAbstractFileByPath(fp) instanceof TFile);
 
         try {
-            const fp = pjTimelineBoard(project);
             // 时间线看板被结算/分析报告/关联索引三方读改写，必须整段加锁并在锁内重读，
             // 否则并发时后写方拿旧内容覆盖，丢行。
+            // F-2（2026-11-10 审计）：写前登记 whole-file 快照（新建文件走 delete 回滚），
+            // 失败按 journal 回滚，不再让 apply 的半成品残留。
             appliedCount = await withWriteLock(fp, async () => {
                 let applied = 0;
                 const ff = this.getVaultMeta().getAbstractFileByPath(fp);
-                let content = ff instanceof TFile ? await this.getFS().read(fp) : '';
+                const before = ff instanceof TFile ? await this.getFS().read(fp) : '';
+                let content = before;
                 if (!(ff instanceof TFile)) {
-                    await mkdirp(this.app, project + '/02-时间线与伏笔', this.getFS());
+                    await mkdirp(this.app, pjTimelineDir(project), this.getFS());
                 }
 
                 const highImportanceEvents = timeline.events.filter(e => e.importance === 'high' || e.importance === 'medium');
@@ -1384,6 +1419,7 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
                 }
 
                 if (applied > 0) {
+                    if (!createdFile) journal.recordWholeFile(fp, before);
                     await this.getFS().write(fp, content);
                     invalidateStoryLedger(project);
                     log.info('[AnalysisReportEngine] 时间线更新完成:', applied, '项');
@@ -1398,6 +1434,17 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
             };
         } catch (e) {
             log.error('[AnalysisReportEngine] 时间线更新失败:', e);
+            try {
+                const rollback = createdFile
+                    ? await this.getFS().delete(fp).then(() => ({ reverted: 1, failed: 0, failures: [] as string[] }))
+                    : await journal.rollback(this.getFS(), APPLY_JOURNAL_FM_STUB);
+                if (rollback.reverted > 0) {
+                    log.warn('[AnalysisReportEngine] 时间线 apply 失败并回滚:', e, `恢复 ${rollback.reverted} 项`);
+                    invalidateStoryLedger(project);
+                }
+            } catch (rollbackError) {
+                log.error('[AnalysisReportEngine] 时间线 apply 回滚失败:', rollbackError);
+            }
             return { applied: false, pending: true, count };
         }
     }

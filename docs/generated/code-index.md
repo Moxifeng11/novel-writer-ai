@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137258 | 1724 | 1415 | 82% |
+| `engine/` | 319 | 137305 | 1724 | 1415 | 82% |
 | `services/` | 32 | 12920 | 187 | 148 | 79% |
 | `shared/` | 184 | 41957 | 1651 | 1353 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
@@ -69,7 +69,7 @@
 | `engine/ai-scene-generator.ts` | 289 | 2 | 2 |
 | `engine/ai-types.ts` | 87 | 6 | 6 |
 | `engine/ai-worldview-generator.ts` | 735 | 2 | 1 |
-| `engine/analysis-report-engine.ts` | 1405 | 1 | 1 |
+| `engine/analysis-report-engine.ts` | 1452 | 1 | 1 |
 | `engine/analysis-session-manager.ts` | 755 | 2 | 2 |
 | `engine/anti-ai-detector.ts` | 454 | 6 | 6 |
 | `engine/asset-registry.ts` | 238 | 6 | 1 |

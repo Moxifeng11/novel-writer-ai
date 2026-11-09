@@ -75,3 +75,12 @@ describe('架构契约 — 超长上下文不静默截断', () => {
         expect(compressor).toContain('cutHalfAtBoundary');
     });
 });
+
+describe('架构契约 — 分析报告 apply 与结算互斥（F-2）', () => {
+    it('applyReportChanges 取 settlement 项目锁，apply 写前登记 journal', () => {
+        const analysis = source('engine/analysis-report-engine.ts');
+        expect(analysis).toContain('withWriteLock(`settlement:${project}`');
+        expect(analysis).toContain('journal.recordWholeFile(fp, before)');
+        expect(analysis).toContain('journal.rollback(this.getFS()');
+    });
+});
