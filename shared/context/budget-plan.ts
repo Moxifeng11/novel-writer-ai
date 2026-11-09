@@ -5,7 +5,7 @@
  * 溢出恢复按这份计划先压缩 optional，再在必要时压缩 required 的可缩段，
  * 而不是直接把整段文本腰斩。
  */
-import { estimateTokens } from '../token-estimator';
+import { estimateTokens } from '@/shared/token-estimator';
 
 /** 段落角色 */
 export type ContextSectionRole = 'required' | 'optional';

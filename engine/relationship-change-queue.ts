@@ -64,6 +64,7 @@ export function parseRelationshipChangeQueue(content: string): PendingRelationsh
  * @param chapter - 章名
  * @param changes - 变更
  * @param source - 来源
+ * @returns 新增行数
  */
 export async function appendRelationshipChanges(
     app: App,

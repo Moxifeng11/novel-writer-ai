@@ -16,9 +16,9 @@ import { EntityIndex, normalizeEntityName, type EntityRecord, type IndexedEntity
 import { queryProjectNotes } from '@/shared/obsidian-query';
 import { readTagList, resolveFileKind } from '@/shared/frontmatter-schema';
 import { getLinkPolicy, parseLinkValue } from '@/shared/entity-links';
-import { loadRelationshipStates } from '../relationship-engine';
-import { loadStoryLedger } from '../ledger/ledger-io';
-import type { StoryLedger } from '../ledger/ledger-index';
+import { loadRelationshipStates } from '@/engine/relationship-engine';
+import { loadStoryLedger } from '@/engine/ledger/ledger-io';
+import type { StoryLedger } from '@/engine/ledger/ledger-index';
 import { pjGraphDiagnosticReport } from '@/shared/paths';
 import { withWriteLock } from '@/shared/write-lock';
 import type { FileSystemPort } from '@/shared/file-system-port';

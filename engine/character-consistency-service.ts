@@ -117,6 +117,7 @@ export function formatConsistencyReport(result: ConsistencyCheckResult, chapterK
  * @param chapterNum - 章号
  * @param chapterKey - 章名
  * @param result - 检查结果
+ * @returns 报告文件路径
  */
 export async function writeConsistencyReport(
     fs: FileSystemPort,

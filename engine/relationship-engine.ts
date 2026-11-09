@@ -210,6 +210,7 @@ function applyDelta(value: number, delta: number): number {
 
 /** 关系维度白名单 */
 export const RELATION_DIMENSIONS = ['trust', 'attraction', 'fear', 'resentment', 'dependence'] as const;
+/** 关系维度名（trust/attraction/fear/resentment/dependence） */
 export type RelationDimension = typeof RELATION_DIMENSIONS[number];
 
 /** 一条关系变更 */

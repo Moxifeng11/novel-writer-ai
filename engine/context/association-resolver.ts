@@ -17,11 +17,11 @@ import type { FileSystemPort } from '@/shared/file-system-port';
 import { ObsidianFileSystem } from '@/shared/file-system-port';
 import { estimateTokens } from '@/shared/token-estimator';
 import { EntityIndex, normalizeEntityName, type EntityRecord } from '@/shared/entity-index';
-import { loadRelationshipStates } from '../relationship-engine';
-import { loadStoryLedger } from '../ledger/ledger-io';
-import { dueForeshadows, openPromises, timelineWindow } from '../ledger/ledger-index';
-import { loadRecentChapterDigests, renderChapterDigestBlock } from '../memory/chapter-digest';
-import { parsePromiseLedger } from '../promise-ledger';
+import { loadRelationshipStates } from '@/engine/relationship-engine';
+import { loadStoryLedger } from '@/engine/ledger/ledger-io';
+import { dueForeshadows, openPromises, timelineWindow } from '@/engine/ledger/ledger-index';
+import { loadRecentChapterDigests, renderChapterDigestBlock } from '@/engine/memory/chapter-digest';
+import { parsePromiseLedger } from '@/engine/promise-ledger';
 import { pjPromiseLedger } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
 

@@ -9,12 +9,15 @@
  *
  * 纯函数，不依赖 Obsidian。
  */
-import { chapterNumber, parseChapterRange } from '../../shared/chapter-ref';
+import { chapterNumber, parseChapterRange } from '@/shared/chapter-ref';
 
 /** 记录 ID 前缀 */
 export const EVENT_ID_PREFIX = 'EV-';
+/** 伏笔记录 ID 前缀 */
 export const FORESHADOW_ID_PREFIX = 'FS-';
+/** 承诺记录 ID 前缀 */
 export const PROMISE_ID_PREFIX = 'PR-';
+/** 关系记录 ID 前缀 */
 export const RELATION_ID_PREFIX = 'REL-';
 
 /** 伏笔状态（唯一枚举） */
@@ -261,8 +264,11 @@ export function chapterNumOf(chapter: unknown): number | null {
 
 /** 自动块标记 */
 export const LEGACY_LINKAGE_BEGIN = '<!-- NW-LINKAGE:BEGIN';
+/** 旧关联索引块结束标记 */
 export const LEGACY_LINKAGE_END = '<!-- NW-LINKAGE:END -->';
+/** 新台账块开始标记 */
 export const LEDGER_BLOCK_BEGIN = '<!-- NW-LEDGER:BEGIN';
+/** 新台账块结束标记 */
 export const LEDGER_BLOCK_END = '<!-- NW-LEDGER:END -->';
 
 /**

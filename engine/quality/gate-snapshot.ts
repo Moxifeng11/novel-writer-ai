@@ -48,8 +48,8 @@ function parseCharacterStates(charBlock: string | undefined): CharacterStateBrie
 /**
  * 从情节蒸馏里抽「- 节点N：描述」作为 required beats
  *
- * @param distilled - 蒸馏结果
- * @returns 结果数组
+ * @param vars - 模板变量
+ * @returns 必做节拍
  */
 export function buildGateBeatsFromVars(vars: Record<string, string>): StoryBeat[] {
     return parseRequiredBeats(vars?.distilledContent);

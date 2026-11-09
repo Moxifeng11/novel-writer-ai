@@ -234,12 +234,22 @@ export class EntityIndex {
         return this.issues;
     }
 
-    /** 按 ID 取实体 */
+    /**
+     * 按 ID 取实体。
+     *
+     * @param id - 实体 ID
+     * @returns 实体记录或 undefined
+     */
     get(id: string): EntityRecord | undefined {
         return this.byId.get(id);
     }
 
-    /** 全部实体（可按类型过滤） */
+    /**
+     * 全部实体（可按类型过滤）。
+     *
+     * @param kind - 可选类型
+     * @returns 实体记录
+     */
     list(kind?: IndexedEntityKind): EntityRecord[] {
         return kind ? this.records.filter((item) => item.kind === kind) : [...this.records];
     }

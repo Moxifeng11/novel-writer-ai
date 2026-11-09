@@ -6,23 +6,23 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 305 | 133239 | 1613 | 1352 | 84% |
+| `engine/` | 318 | 137152 | 1721 | 1413 | 82% |
 | `services/` | 32 | 12920 | 187 | 148 | 79% |
-| `shared/` | 179 | 40827 | 1610 | 1324 | 82% |
-| `core/` | 7 | 2822 | 29 | 14 | 48% |
+| `shared/` | 184 | 41957 | 1651 | 1353 | 82% |
+| `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99541 | 753 | 649 | 86% |
+| `ui/` | 242 | 99616 | 753 | 649 | 86% |
 
 ## 文件清单
 
 | 文件 | 行数 | 导出 | 有 JSDoc |
 |---|---:|---:|---:|
-| `core/command-registry.ts` | 704 | 6 | 2 |
+| `core/command-registry.ts` | 707 | 6 | 2 |
 | `core/crypto-service.ts` | 379 | 3 | 1 |
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 550 | 4 | 2 |
-| `core/settings-service.ts` | 540 | 4 | 3 |
+| `core/settings-service.ts` | 541 | 4 | 3 |
 | `core/theme-manager.ts` | 313 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
@@ -69,11 +69,11 @@
 | `engine/ai-scene-generator.ts` | 289 | 2 | 2 |
 | `engine/ai-types.ts` | 87 | 6 | 6 |
 | `engine/ai-worldview-generator.ts` | 735 | 2 | 1 |
-| `engine/analysis-report-engine.ts` | 1400 | 1 | 1 |
+| `engine/analysis-report-engine.ts` | 1405 | 1 | 1 |
 | `engine/analysis-session-manager.ts` | 755 | 2 | 2 |
 | `engine/anti-ai-detector.ts` | 454 | 6 | 6 |
 | `engine/asset-registry.ts` | 238 | 6 | 1 |
-| `engine/bases-generator.ts` | 249 | 8 | 6 |
+| `engine/bases-generator.ts` | 325 | 9 | 7 |
 | `engine/batch-import-manager.ts` | 863 | 9 | 9 |
 | `engine/beat-verifier.ts` | 70 | 3 | 1 |
 | `engine/body-writer.ts` | 525 | 8 | 8 |
@@ -85,11 +85,12 @@
 | `engine/chapter-state-snapshot-service.ts` | 182 | 2 | 2 |
 | `engine/chapter-utils.ts` | 482 | 21 | 19 |
 | `engine/character-arc.ts` | 141 | 9 | 9 |
-| `engine/character-consistency-checker.ts` | 556 | 3 | 3 |
+| `engine/character-consistency-checker.ts` | 520 | 3 | 3 |
+| `engine/character-consistency-service.ts` | 138 | 6 | 4 |
 | `engine/character-context.ts` | 46 | 1 | 1 |
 | `engine/character-recognition-pipeline.ts` | 452 | 1 | 1 |
 | `engine/character-soul.ts` | 268 | 10 | 7 |
-| `engine/co-writer-engine.ts` | 3260 | 3 | 1 |
+| `engine/co-writer-engine.ts` | 3295 | 3 | 1 |
 | `engine/co-writer-state-sync.ts` | 53 | 1 | 1 |
 | `engine/co-writer/ai-response-parse.ts` | 186 | 4 | 4 |
 | `engine/co-writer/co-write-options.ts` | 265 | 9 | 9 |
@@ -106,12 +107,14 @@
 | `engine/coherence-checker.ts` | 108 | 3 | 3 |
 | `engine/conflict-detector.ts` | 247 | 4 | 1 |
 | `engine/content-safety-checker.ts` | 123 | 5 | 5 |
-| `engine/context-compressor.ts` | 316 | 2 | 2 |
-| `engine/context-manager.ts` | 2664 | 3 | 3 |
+| `engine/context-compressor.ts` | 342 | 2 | 2 |
+| `engine/context-manager.ts` | 2654 | 3 | 3 |
 | `engine/context-readiness.ts` | 243 | 3 | 3 |
+| `engine/context/association-resolver.ts` | 302 | 6 | 2 |
 | `engine/context/context-diff-detector.ts` | 403 | 5 | 4 |
-| `engine/context/context-types.ts` | 279 | 16 | 15 |
+| `engine/context/context-types.ts` | 284 | 16 | 15 |
 | `engine/context/incremental-updater.ts` | 302 | 6 | 1 |
+| `engine/context/overflow-recovery.ts` | 322 | 7 | 2 |
 | `engine/context/story-context-graph.ts` | 1573 | 7 | 7 |
 | `engine/context/story-context-service.ts` | 218 | 8 | 8 |
 | `engine/context/story-context-types.ts` | 207 | 13 | 13 |
@@ -166,6 +169,8 @@
 | `engine/genre/genre-detector.ts` | 299 | 1 | 1 |
 | `engine/genre/index.ts` | 12 | 2 | 1 |
 | `engine/genre/types.ts` | 66 | 5 | 5 |
+| `engine/graph/graph-validation-trigger.ts` | 49 | 2 | 2 |
+| `engine/graph/graph-validator.ts` | 328 | 7 | 3 |
 | `engine/harness/ai-assisted-premise-service.ts` | 225 | 3 | 3 |
 | `engine/harness/call-ledger.ts` | 120 | 3 | 3 |
 | `engine/harness/creative-frameworks.ts` | 201 | 6 | 6 |
@@ -186,19 +191,26 @@
 | `engine/knowledge-to-fingerprint-converter.ts` | 345 | 1 | 1 |
 | `engine/knowledge-usage.ts` | 80 | 3 | 3 |
 | `engine/knowledge-vector-store.ts` | 752 | 5 | 4 |
+| `engine/ledger/ledger-index.ts` | 163 | 10 | 8 |
+| `engine/ledger/ledger-io.ts` | 145 | 4 | 4 |
+| `engine/ledger/ledger-link.ts` | 224 | 4 | 2 |
+| `engine/ledger/ledger-model.ts` | 323 | 28 | 11 |
+| `engine/ledger/ledger-parse.ts` | 452 | 4 | 2 |
+| `engine/ledger/ledger-write.ts` | 421 | 8 | 5 |
 | `engine/llm-enhancer.ts` | 633 | 7 | 3 |
 | `engine/llm-prompts.ts` | 364 | 7 | 3 |
 | `engine/local-vector-store.ts` | 338 | 3 | 2 |
 | `engine/logic-consistency-checker.ts` | 140 | 4 | 4 |
 | `engine/long-term-memory.ts` | 154 | 6 | 3 |
 | `engine/memory-trigger.ts` | 408 | 13 | 9 |
+| `engine/memory/chapter-digest.ts` | 340 | 9 | 7 |
 | `engine/memory/memory-shard-writer.ts` | 141 | 5 | 5 |
-| `engine/mode-document-writer.ts` | 160 | 5 | 2 |
+| `engine/mode-document-writer.ts` | 177 | 5 | 2 |
 | `engine/mode-injection.ts` | 117 | 3 | 1 |
 | `engine/mode-runtime.ts` | 189 | 6 | 5 |
 | `engine/mode-unit-quality.ts` | 242 | 5 | 2 |
 | `engine/mode-unit-settlement.ts` | 105 | 2 | 1 |
-| `engine/mode-unit-writer.ts` | 516 | 16 | 16 |
+| `engine/mode-unit-writer.ts` | 543 | 16 | 16 |
 | `engine/note-properties-service.ts` | 286 | 12 | 12 |
 | `engine/novel-analyzer.ts` | 427 | 2 | 2 |
 | `engine/outline-contract.ts` | 737 | 21 | 20 |
@@ -219,7 +231,7 @@
 | `engine/prompts/body-v2-prompts.ts` | 138 | 3 | 3 |
 | `engine/prompts/body-v3-prompts.ts` | 99 | 3 | 3 |
 | `engine/prompts/body-v4-prompts.ts` | 68 | 3 | 3 |
-| `engine/prompts/chapter-pipeline-prompts.ts` | 637 | 11 | 11 |
+| `engine/prompts/chapter-pipeline-prompts.ts` | 641 | 11 | 11 |
 | `engine/prompts/co-write-prompts.ts` | 103 | 4 | 4 |
 | `engine/prompts/deai-prompts.ts` | 100 | 4 | 4 |
 | `engine/prompts/human-countable-hints.ts` | 15 | 1 | 1 |
@@ -232,10 +244,10 @@
 | `engine/prompts/template-utils.ts` | 176 | 4 | 4 |
 | `engine/prompts/writing-rules-format.ts` | 48 | 3 | 3 |
 | `engine/prompts/writing-rules.ts` | 9 | 0 | 0 |
-| `engine/quality-gate.ts` | 180 | 5 | 4 |
+| `engine/quality-gate.ts` | 193 | 5 | 4 |
 | `engine/quality-scorer.ts` | 384 | 5 | 3 |
-| `engine/quality/deviation-detector.ts` | 2068 | 26 | 22 |
-| `engine/quality/gate-snapshot.ts` | 121 | 2 | 2 |
+| `engine/quality/deviation-detector.ts` | 2056 | 26 | 22 |
+| `engine/quality/gate-snapshot.ts` | 131 | 3 | 3 |
 | `engine/quality/quality-engine-factory.ts` | 113 | 5 | 4 |
 | `engine/quality/quality-score-engine.ts` | 2037 | 15 | 12 |
 | `engine/quality/quality-worker.ts` | 86 | 0 | 0 |
@@ -244,7 +256,8 @@
 | `engine/quality/rewrite-suggestion-engine.ts` | 611 | 2 | 2 |
 | `engine/quality/rewrite-types.ts` | 235 | 13 | 13 |
 | `engine/rag/retrieval-service.ts` | 267 | 6 | 6 |
-| `engine/relationship-engine.ts` | 351 | 8 | 6 |
+| `engine/relationship-change-queue.ts` | 234 | 7 | 6 |
+| `engine/relationship-engine.ts` | 469 | 12 | 7 |
 | `engine/repository/base-markdown-repository.ts` | 461 | 1 | 1 |
 | `engine/repository/chapter-repository.ts` | 275 | 1 | 1 |
 | `engine/repository/character-repository.ts` | 117 | 1 | 1 |
@@ -287,7 +300,7 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 2006 | 3 | 3 |
+| `engine/settlement-engine.ts` | 1982 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 138 | 2 | 2 |
@@ -295,13 +308,13 @@
 | `engine/settlement/settlement-coordinator.ts` | 130 | 6 | 6 |
 | `engine/settlement/settlement-journal.ts` | 197 | 6 | 6 |
 | `engine/settlement/settlement-types.ts` | 46 | 2 | 1 |
-| `engine/step-definitions.ts` | 264 | 13 | 11 |
+| `engine/step-definitions.ts` | 266 | 13 | 11 |
 | `engine/step-modal-controller.ts` | 648 | 2 | 2 |
-| `engine/step-prompt-assembly.ts` | 166 | 5 | 4 |
-| `engine/step-result-saver.ts` | 558 | 5 | 4 |
+| `engine/step-prompt-assembly.ts` | 260 | 5 | 4 |
+| `engine/step-result-saver.ts` | 562 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 223 | 6 | 5 |
-| `engine/step-runner.ts` | 2051 | 2 | 1 |
+| `engine/step-runner.ts` | 2169 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 216 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |
@@ -385,18 +398,21 @@
 | `shared/canon-source.ts` | 271 | 18 | 17 |
 | `shared/changelog-data.ts` | 2321 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
+| `shared/chapter-ref.ts` | 205 | 7 | 5 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
 | `shared/chapter-status.ts` | 74 | 6 | 5 |
 | `shared/chapter-table.ts` | 115 | 7 | 7 |
 | `shared/chapter-target.ts` | 118 | 5 | 5 |
 | `shared/chapter-version-port.ts` | 23 | 1 | 1 |
+| `shared/character-rules.ts` | 180 | 10 | 6 |
 | `shared/co-writer-types.ts` | 113 | 0 | 0 |
-| `shared/command-ids.ts` | 118 | 2 | 2 |
+| `shared/command-ids.ts` | 120 | 2 | 2 |
 | `shared/command-mode-rules.ts` | 143 | 8 | 5 |
 | `shared/command-ui-port.ts` | 48 | 4 | 2 |
 | `shared/content-classifier.ts` | 248 | 11 | 11 |
 | `shared/context-budget-policy.ts` | 148 | 7 | 6 |
 | `shared/context-hygiene.ts` | 282 | 11 | 11 |
+| `shared/context/budget-plan.ts` | 119 | 6 | 3 |
 | `shared/contrast-library.ts` | 104 | 4 | 4 |
 | `shared/creation-flow.ts` | 587 | 11 | 11 |
 | `shared/creation-mode.ts` | 441 | 22 | 18 |
@@ -411,6 +427,7 @@
 | `shared/engine-names.ts` | 57 | 1 | 1 |
 | `shared/entity-audit.ts` | 96 | 4 | 4 |
 | `shared/entity-field-mappings.ts` | 223 | 10 | 10 |
+| `shared/entity-index.ts` | 276 | 8 | 6 |
 | `shared/entity-integrity.ts` | 79 | 4 | 4 |
 | `shared/entity-links.ts` | 128 | 9 | 9 |
 | `shared/entity-models.ts` | 788 | 34 | 24 |
@@ -433,7 +450,7 @@
 | `shared/foreshadow-loop.ts` | 157 | 3 | 3 |
 | `shared/foreshadow-status.ts` | 61 | 3 | 2 |
 | `shared/format-constants.ts` | 503 | 65 | 13 |
-| `shared/frontmatter-schema.ts` | 308 | 13 | 9 |
+| `shared/frontmatter-schema.ts` | 445 | 13 | 9 |
 | `shared/frontmatter.ts` | 178 | 6 | 5 |
 | `shared/ghost-trigger.ts` | 26 | 1 | 1 |
 | `shared/github-repo.ts` | 81 | 11 | 11 |
@@ -459,8 +476,9 @@
 | `shared/model-source.ts` | 43 | 3 | 1 |
 | `shared/multi-layer-cache.ts` | 556 | 6 | 6 |
 | `shared/novel-format.ts` | 348 | 12 | 12 |
+| `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1456 | 193 | 187 |
+| `shared/paths.ts` | 1509 | 199 | 193 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
 | `shared/plugin-cache.ts` | 405 | 6 | 4 |
@@ -477,7 +495,7 @@
 | `shared/project-mode.ts` | 86 | 5 | 5 |
 | `shared/project-name.ts` | 93 | 5 | 5 |
 | `shared/project-root.ts` | 48 | 2 | 2 |
-| `shared/prompt-budget.ts` | 541 | 18 | 16 |
+| `shared/prompt-budget.ts` | 575 | 19 | 17 |
 | `shared/prompt-manager-types.ts` | 139 | 11 | 11 |
 | `shared/prompt-template-catalog.ts` | 50 | 3 | 0 |
 | `shared/prose-metrics.ts` | 574 | 10 | 10 |
@@ -520,7 +538,7 @@
 | `shared/support-author.ts` | 44 | 3 | 1 |
 | `shared/support-qr.generated.ts` | 11 | 1 | 0 |
 | `shared/synopsis-spec.ts` | 275 | 15 | 15 |
-| `shared/tag-taxonomy.ts` | 151 | 8 | 6 |
+| `shared/tag-taxonomy.ts` | 171 | 8 | 6 |
 | `shared/task-budget-engine.ts` | 292 | 13 | 11 |
 | `shared/task-model.ts` | 381 | 19 | 18 |
 | `shared/template-scaffold.ts` | 126 | 3 | 3 |
@@ -533,7 +551,7 @@
 | `shared/time-estimator.ts` | 468 | 6 | 2 |
 | `shared/token-estimator.ts` | 187 | 8 | 8 |
 | `shared/true-random.ts` | 134 | 3 | 3 |
-| `shared/types.ts` | 725 | 48 | 11 |
+| `shared/types.ts` | 729 | 48 | 11 |
 | `shared/validators/normalizers-entity.ts` | 232 | 5 | 5 |
 | `shared/vault-tree.ts` | 131 | 6 | 6 |
 | `shared/version-types.ts` | 125 | 10 | 0 |
@@ -602,7 +620,7 @@
 | `ui/co-writing/suggestion-flow.ts` | 473 | 3 | 2 |
 | `ui/co-writing/suggestion-loading.ts` | 130 | 4 | 2 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
-| `ui/command-ui-executor.ts` | 660 | 2 | 2 |
+| `ui/command-ui-executor.ts` | 679 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 105 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
 | `ui/components/categorization-review-panel.ts` | 449 | 2 | 2 |
@@ -671,11 +689,11 @@
 | `ui/full-writer/step-render-controller.ts` | 683 | 2 | 2 |
 | `ui/full-writer/streamlined-nav-presenter.ts` | 272 | 12 | 12 |
 | `ui/full-writer/tab-controller.ts` | 380 | 2 | 2 |
-| `ui/full-writer/template-vars-builder.ts` | 1155 | 7 | 7 |
+| `ui/full-writer/template-vars-builder.ts` | 1164 | 7 | 7 |
 | `ui/full-writer/title-bar-controller.ts` | 192 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |
-| `ui/full-writer/unit-writer-controller.ts` | 779 | 2 | 2 |
+| `ui/full-writer/unit-writer-controller.ts` | 794 | 2 | 2 |
 | `ui/full-writer/wizard-controller.ts` | 420 | 1 | 1 |
 | `ui/full-writer/wizard-results-store.ts` | 81 | 1 | 1 |
 | `ui/full-writer/wizard-step-executors.ts` | 351 | 1 | 1 |
@@ -723,7 +741,7 @@
 | `ui/project-utils.ts` | 364 | 11 | 10 |
 | `ui/prompt-manager-settings.ts` | 1144 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 87 | 1 | 1 |
-| `ui/quality-dashboard-modal.ts` | 483 | 2 | 2 |
+| `ui/quality-dashboard-modal.ts` | 504 | 2 | 2 |
 | `ui/rebuild-chapters-modal.ts` | 322 | 1 | 1 |
 | `ui/refill-modal.ts` | 713 | 1 | 1 |
 | `ui/rename-project-modal.ts` | 105 | 1 | 1 |
@@ -752,11 +770,11 @@
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
 | `ui/settings/section-factory.ts` | 75 | 3 | 1 |
-| `ui/settings/writing-sections.ts` | 800 | 6 | 6 |
+| `ui/settings/writing-sections.ts` | 812 | 6 | 6 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 402 | 1 | 1 |
 | `ui/step-result-viewer-modal.ts` | 442 | 1 | 1 |
-| `ui/story-linkage-modal.ts` | 391 | 1 | 1 |
+| `ui/story-linkage-modal.ts` | 390 | 1 | 1 |
 | `ui/story-settings-form.ts` | 251 | 2 | 2 |
 | `ui/story-settings-modal.ts` | 115 | 1 | 1 |
 | `ui/style-distiller-modal.ts` | 486 | 1 | 1 |

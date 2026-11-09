@@ -15,7 +15,7 @@ import { COMMAND_MODE_RULES } from '../../../shared/command-mode-rules';
  * 非 UI 命令仍留在 core 执行」，避免搬迁时漏注册或把业务命令一起搬走。
  */
 
-/** 重构前 registerInternalCommands 注册的全部命令 id（64 项） */
+/** 重构前 registerInternalCommands 注册的全部命令 id（65 项） */
 const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.CREATE_PROJECT,
     CommandIds.AGENT_GUIDE,
@@ -66,6 +66,8 @@ const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.STEP_RESULT_VIEWER,
     // Rev 186：关联索引看板（时间线/伏笔 ↔ 设定库/全书规划）
     CommandIds.STORY_LINKAGE_BOARD,
+    // B7：只读故事一致性校验
+    CommandIds.VALIDATE_STORY_GRAPH,
     CommandIds.BATCH_DECONSTRUCT,
     CommandIds.FULL_WRITER,
     CommandIds.SWITCH_PROVIDER,

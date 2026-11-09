@@ -6,8 +6,8 @@
  *  - 提供旧版 `ForeshadowData` / `TimelineEvent` 映射，避免一次性改所有下游。
  */
 import { App, TFile } from 'obsidian';
-import { pjForeshadowDB, pjTimelineBoard } from '../../shared/paths';
-import type { ForeshadowData, ForeshadowItem, TimelineEvent } from '../context/context-types';
+import { pjForeshadowDB, pjTimelineBoard } from '@/shared/paths';
+import type { ForeshadowData, ForeshadowItem, TimelineEvent } from '@/engine/context/context-types';
 import { buildLedgerIndex, timelineWindow, type StoryLedger } from './ledger-index';
 import type { ForeshadowRecord } from './ledger-model';
 

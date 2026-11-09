@@ -11,9 +11,9 @@ import { pjChapterDigestDir, pjChapterDigestFile } from '@/shared/paths';
 import { listFolderFiles } from '@/shared/vault-tree';
 import { withWriteLock } from '@/shared/write-lock';
 import type { FileSystemPort } from '@/shared/file-system-port';
-import { chapterNumOf, normalizeLedgerName } from '../ledger/ledger-model';
-import { loadStoryLedger } from '../ledger/ledger-io';
-import { openPromises } from '../ledger/ledger-index';
+import { chapterNumOf, normalizeLedgerName } from '@/engine/ledger/ledger-model';
+import { loadStoryLedger } from '@/engine/ledger/ledger-io';
+import { openPromises } from '@/engine/ledger/ledger-index';
 
 /** 章节摘要 */
 export interface ChapterDigest {
@@ -305,6 +305,7 @@ export function renderChapterDigestBlock(digests: ChapterDigest[]): string {
  * @param chapterKey - 章名
  * @param bodyText - 正文
  * @param involved - 本章涉及人物（可空）
+ * @returns 生成的摘要
  */
 export async function writeChapterDigestFromProject(
     app: App,
