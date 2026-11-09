@@ -7,7 +7,7 @@
  * 只测试与「数据写入正确性」相关的步骤（实体字段/伏笔/时间线/成长/连续性/正文状态），
  * 关系 V2 与承诺账本已有各自单测，不在本文件重复。
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { TFile, TFolder } from '../../__mocks__/obsidian';
 import { SettlementEngine } from '../../../engine/settlement-engine';
 import { pjCharFile, pjForeshadowDB, pjTimelineBoard, pjBodyFile } from '../../../shared/paths';
@@ -259,6 +259,33 @@ describe('SettlementEngine — 成功结算', () => {
 
         const body = h.files.get(BODY_PATH)!;
         expect(body).toContain('status: settled');
+    });
+
+    it('同项目并发 settle 串行化：第二个 run 等第一个释放项目锁', async () => {
+        const h = makeHarness(seedAll());
+        let releaseFirst!: () => void;
+        const firstGate = new Promise<void>((resolve) => { releaseFirst = resolve; });
+        let firstRun = true;
+        const stepSpy = vi
+            .spyOn(h.engine as never as { settleStep_updateCharacters: () => Promise<void> }, 'settleStep_updateCharacters')
+            .mockImplementation(async () => {
+                if (firstRun) {
+                    firstRun = false;
+                    await firstGate;
+                }
+            });
+
+        const first = h.engine.settle(PROJECT, CHAP_DIR, CHAP_NAME, REPORT, BODY_SEED);
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
+        const second = h.engine.settle(PROJECT, CHAP_DIR, CHAP_NAME, REPORT, BODY_SEED);
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+        // 第一个 run 卡在写步骤；第二个 run 必须停在项目锁外，不能开始写
+        expect(stepSpy).toHaveBeenCalledTimes(1);
+
+        releaseFirst();
+        await Promise.all([first, second]);
+        expect(stepSpy).toHaveBeenCalledTimes(2);
     });
 });
 

@@ -291,6 +291,19 @@ export class SettlementEngine {
         bodyText: string,
         options?: SettlementOptions
     ): Promise<SettlementResult> {
+        // 数据一致性审计 C-5：同一项目的轻/重结算必须串行，否则任一 run 回滚
+        // 会用运行前快照覆盖另一 run 已提交的伏笔/时间线/关系/账本写入。
+        return withWriteLock(`settlement:${project}`, () =>
+            this.settleLightUnlocked(project, chapDir, chapName, bodyText, options));
+    }
+
+    private async settleLightUnlocked(
+        project: string,
+        chapDir: string,
+        chapName: string,
+        bodyText: string,
+        options?: SettlementOptions
+    ): Promise<SettlementResult> {
         const result: SettlementResult = {
             updated: 0,
             created: 0,
@@ -532,6 +545,20 @@ export class SettlementEngine {
      * @throws 仅在参数非法等编程错误时抛出；业务失败通过 result 表达
      */
     async settle(
+        project: string,
+        chapDir: string,
+        chapName: string,
+        report: string,
+        bodyText: string,
+        options?: SettlementOptions
+    ): Promise<SettlementResult> {
+        // 数据一致性审计 C-5：重结算与轻结算共用项目级串行锁；不同文件锁 key，
+        // 不会触发 write-lock 的不可重入限制。回滚因此不会覆盖并发 run 的已提交写入。
+        return withWriteLock(`settlement:${project}`, () =>
+            this.settleUnlocked(project, chapDir, chapName, report, bodyText, options));
+    }
+
+    private async settleUnlocked(
         project: string,
         chapDir: string,
         chapName: string,

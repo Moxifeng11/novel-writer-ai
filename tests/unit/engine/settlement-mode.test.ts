@@ -35,11 +35,20 @@ const STEP_METHODS = [
     'refreshInfoDebt',
 ] as const;
 
+const settleUnlockedFn = (SettlementEngine.prototype as unknown as {
+    settleUnlocked: (this: unknown, project: string, chapDir: string, chapName: string, report: string, body: string, options?: unknown) => Promise<{ mode?: string; updated: number }>;
+}).settleUnlocked;
+const settleLightUnlockedFn = (SettlementEngine.prototype as unknown as {
+    settleLightUnlocked: (this: unknown, project: string, chapDir: string, chapName: string, body: string, options?: unknown) => Promise<{ mode?: string }>;
+}).settleLightUnlocked;
+
 function makeSettleStub() {
     const calls: string[] = [];
     const stub: Record<string, unknown> = {
         settleStep_reportGuards: () => undefined,
         settleStep_aggregateAndMaybeRollback: () => undefined,
+        settleUnlocked: settleUnlockedFn,
+        settleLightUnlocked: settleLightUnlockedFn,
     };
     for (const name of STEP_METHODS) {
         stub[name] = async () => { calls.push(name); };
@@ -90,6 +99,7 @@ describe('settleLight — 出场确认语义', () => {
     it('返回 mode=light，且不触碰关系/伏笔/时间线步骤', async () => {
         const calls: string[] = [];
         const stub = {
+            settleLightUnlocked: settleLightUnlockedFn,
             getVaultMeta: () => ({ getAbstractFileByPath: () => null }),
             getFrontmatter: () => ({ processFrontmatter: async () => undefined }),
             getFS: () => ({ read: async () => '', write: async () => undefined }),
