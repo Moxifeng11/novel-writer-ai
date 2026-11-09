@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 305 | 132911 | 1609 | 1348 | 84% |
+| `engine/` | 305 | 132945 | 1609 | 1348 | 84% |
 | `services/` | 32 | 12663 | 187 | 148 | 79% |
 | `shared/` | 178 | 40679 | 1601 | 1320 | 82% |
 | `core/` | 7 | 2821 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 238 | 99313 | 733 | 638 | 87% |
+| `ui/` | 238 | 99341 | 733 | 638 | 87% |
 
 ## 文件清单
 
@@ -291,8 +291,8 @@
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 138 | 2 | 2 |
-| `engine/settlement/settlement-artifacts.ts` | 115 | 5 | 5 |
-| `engine/settlement/settlement-coordinator.ts` | 117 | 6 | 6 |
+| `engine/settlement/settlement-artifacts.ts` | 117 | 5 | 5 |
+| `engine/settlement/settlement-coordinator.ts` | 130 | 6 | 6 |
 | `engine/settlement/settlement-journal.ts` | 197 | 6 | 6 |
 | `engine/settlement/settlement-types.ts` | 46 | 2 | 1 |
 | `engine/step-definitions.ts` | 264 | 13 | 11 |
@@ -301,9 +301,9 @@
 | `engine/step-result-saver.ts` | 558 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 223 | 6 | 5 |
-| `engine/step-runner.ts` | 2043 | 2 | 1 |
+| `engine/step-runner.ts` | 2051 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
-| `engine/step-settlement.ts` | 205 | 3 | 3 |
+| `engine/step-settlement.ts` | 216 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |
 | `engine/step-validator.ts` | 809 | 7 | 7 |
 | `engine/story-beat-extractor.ts` | 73 | 1 | 1 |
@@ -566,7 +566,7 @@
 | `ui/button-busy.ts` | 37 | 1 | 1 |
 | `ui/changelog-modal.ts` | 191 | 1 | 1 |
 | `ui/chapter-outline-tree-modal.ts` | 1283 | 1 | 1 |
-| `ui/chapter-settlement-modal.ts` | 406 | 1 | 1 |
+| `ui/chapter-settlement-modal.ts` | 418 | 1 | 1 |
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1020 | 2 | 2 |
@@ -647,7 +647,7 @@
 | `ui/fingerprint-utils.ts` | 209 | 11 | 11 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |
 | `ui/full-writer-view.ts` | 2737 | 2 | 2 |
-| `ui/full-writer/batch-pipeline-runner.ts` | 492 | 5 | 4 |
+| `ui/full-writer/batch-pipeline-runner.ts` | 500 | 5 | 4 |
 | `ui/full-writer/batch-step-retry.ts` | 26 | 2 | 1 |
 | `ui/full-writer/batch-targets.ts` | 68 | 4 | 4 |
 | `ui/full-writer/chapter-orchestrator.ts` | 503 | 10 | 9 |
@@ -781,7 +781,7 @@
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 562 | 2 | 1 |
 | `ui/workspace-manager.ts` | 143 | 2 | 2 |
-| `ui/write-chapter-modal.ts` | 889 | 1 | 1 |
+| `ui/write-chapter-modal.ts` | 897 | 1 | 1 |
 | `ui/writing-pet.ts` | 289 | 2 | 2 |
 | `ui/writing-stats-modal.ts` | 244 | 1 | 1 |
 | `ui/writing-stats-settings.ts` | 70 | 1 | 1 |

@@ -198,6 +198,18 @@ export class ChapterSettlementModal extends Modal {
             showWarningNotice('分析报告未解析出可应用指令（UPDATE_*/NEW_*/RELATION 等），本次未执行结算；请检查报告，或改用轻结算', { timeout: 8000 });
             return;
         }
+        // 部分失败已回滚：不写结算表/快照/总览，也不把正文标 settled。
+        if (result.rollback || result.settlementPartial) {
+            const detail = result.rollback
+                ? `恢复 ${result.rollback.reverted} 项${result.rollback.failed > 0 ? `，回滚失败 ${result.rollback.failed} 项` : ''}`
+                : '回滚不完整';
+            ledger.finish(runId, {
+                status: 'failed',
+                failure: `${target.chapName} 结算已回滚（${detail}）`,
+            });
+            showWarningNotice(`本次结算失败并已回滚（${detail}）；未写结算表、未标记正文 settled，请修正报告后重试`, { title: '结算未完成', timeout: 10000 });
+            return;
+        }
         // 执行登记表：Agent 通过 get_execution_status 读取本次结算回写量
         ledger.finish(runId, {
             status: 'done',

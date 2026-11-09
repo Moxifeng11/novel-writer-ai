@@ -1681,6 +1681,14 @@ ${userPrompt}`),
             });
             throw e;
         }
+        if (result && (result.rollback || result.settlementPartial)) {
+            const detail = result.rollback
+                ? `恢复 ${result.rollback.reverted} 项${result.rollback.failed > 0 ? `，回滚失败 ${result.rollback.failed} 项` : ''}`
+                : '回滚不完整';
+            const failure = `${chapterName} 结算失败并已回滚（${detail}），本章未完成`;
+            ledger.finish(runId, { status: 'failed', failure });
+            throw new Error(failure);
+        }
         ledger.finish(runId, result
             ? { status: 'done', detail: `${chapterName} 回写完成`, settlement: summarizeSettlement(result) }
             : { status: 'failed', failure: `${chapterName} 结算未产出结果（缺分析报告或已中断）` });

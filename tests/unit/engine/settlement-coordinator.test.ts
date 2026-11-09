@@ -83,6 +83,37 @@ describe('writeSettlementArtifacts', () => {
         expect(settlementArtifactNotice(report)).toContain('磁盘只读');
     });
 
+    it('结算已回滚：不写表/快照/总览，只返回 warning', async () => {
+        const write = vi.fn(async () => {});
+        const report = await writeSettlementArtifacts(
+            input({ result: { ...RESULT, rollback: { reverted: 2, failed: 1 } } }),
+            {
+                writeSettlementTable: write,
+                writeSnapshot: write,
+                refreshNarrativeOverview: write,
+            },
+        );
+        expect(write).not.toHaveBeenCalled();
+        expect(report.written).toEqual([]);
+        expect(report.warnings[0]).toContain('结算已回滚');
+        expect(report.warnings[0]).toContain('回滚失败 1 项');
+    });
+
+    it('回滚不完整（settlement_partial）：同样不写成功产物', async () => {
+        const write = vi.fn(async () => {});
+        const report = await writeSettlementArtifacts(
+            input({ result: { ...RESULT, settlementPartial: true } }),
+            {
+                writeSettlementTable: write,
+                writeSnapshot: write,
+                refreshNarrativeOverview: write,
+            },
+        );
+        expect(write).not.toHaveBeenCalled();
+        expect(report.written).toEqual([]);
+        expect(report.warnings[0]).toContain('回滚不完整');
+    });
+
     it('没有表格端口时只写快照与总览（批量路径）', async () => {
         const report = await writeSettlementArtifacts(input(), {
             writeSnapshot: async () => {},

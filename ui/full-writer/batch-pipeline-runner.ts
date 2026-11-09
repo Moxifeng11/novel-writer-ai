@@ -461,6 +461,14 @@ export class BatchPipelineRunner {
             throw new Error('分析报告未解析出可应用指令（UPDATE_*/NEW_*/RELATION 等），结算未执行');
         }
 
+        // 部分失败已回滚：本章按失败处理，不能写快照/总览或让批量续跑跳过。
+        if (result.rollback || result.settlementPartial) {
+            const detail = result.rollback
+                ? `恢复 ${result.rollback.reverted} 项${result.rollback.failed > 0 ? `，回滚失败 ${result.rollback.failed} 项` : ''}`
+                : '回滚不完整';
+            throw new Error(`结算失败并已回滚（${detail}），本章未完成`);
+        }
+
         const artifactReport = await writeSettlementArtifacts({
             chapterName: target.chapterName,
             volume: target.volume || '',

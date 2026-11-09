@@ -638,6 +638,14 @@ ${reportResult.content}
             showProgress('⏳ 正在执行章节结算...');
             const settleResult = await WriteChapterModal.executeSettlement(plugin, project, chapDir, chapName, reportResult.content, bodyText, selectedToReveal);
             hideProgress();
+            // 部分失败已回滚：不报成功、不把正文改回 written、不登记完成。
+            if (settleResult.rollback || settleResult.settlementPartial) {
+                const detail = settleResult.rollback
+                    ? `恢复 ${settleResult.rollback.reverted} 项${settleResult.rollback.failed > 0 ? `，回滚失败 ${settleResult.rollback.failed} 项` : ''}`
+                    : '回滚不完整';
+                showError(`章节结算失败并已回滚（${detail}）；本章未标记完成，请修正报告后重试`, 10000);
+                return;
+            }
             showSuccess(`结算：更新${settleResult.updated}项 / 新建${settleResult.created}项`, 8000);
             // 执行登记表：Agent 事后可通过 get_execution_status 读取本次成文+结算结果
             getExecutionLedger().recordCompleted({

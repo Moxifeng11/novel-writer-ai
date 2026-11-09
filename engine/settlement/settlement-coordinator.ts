@@ -75,6 +75,19 @@ export async function writeSettlementArtifacts(
     // 空指令集：引擎没有写入任何东西，不能写表/快照/总览，否则会把「未结算」显示成已结算
     if (input.mode === 'empty') return report;
 
+    // 部分失败已回滚：本次没有可确认的结算结果，写「已完成」表/快照/总览会把失败伪装成功。
+    const rollback = input.result.rollback;
+    if (rollback) {
+        report.warnings.push(
+            `结算已回滚（恢复 ${rollback.reverted} 项${rollback.failed > 0 ? `，回滚失败 ${rollback.failed} 项` : ''}），本次未写结算表/快照/总览`,
+        );
+        return report;
+    }
+    if (input.result.settlementPartial) {
+        report.warnings.push('结算回滚不完整（settlement_partial），本次未写结算表/快照/总览');
+        return report;
+    }
+
     const run = async (
         name: 'table' | 'snapshot' | 'overview',
         fn: (() => Promise<void>) | undefined,

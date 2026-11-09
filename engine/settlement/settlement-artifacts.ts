@@ -17,6 +17,8 @@ export interface SettlementTableResult {
     createdItems: number;
     createdForeshadows: number;
     createdTimelines: number;
+    /** 回滚统计（存在即本次结算未成功，不得写「已完成」产物） */
+    rollback?: { reverted: number; failed: number };
     /** 回滚不完整时写入，后续步骤/用户可见 */
     settlementPartial?: boolean;
 }
