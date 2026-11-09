@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 305 | 132945 | 1609 | 1348 | 84% |
+| `engine/` | 305 | 132975 | 1611 | 1350 | 84% |
 | `services/` | 32 | 12726 | 187 | 148 | 79% |
 | `shared/` | 178 | 40679 | 1601 | 1320 | 82% |
 | `core/` | 7 | 2821 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 238 | 99359 | 733 | 638 | 87% |
+| `ui/` | 238 | 99375 | 733 | 638 | 87% |
 
 ## 文件清单
 
@@ -37,7 +37,7 @@
 | `domains/short/tool-catalog.ts` | 42 | 1 | 0 |
 | `engine/agent/agent-types.ts` | 370 | 23 | 17 |
 | `engine/agent/conversation-engine.ts` | 1267 | 1 | 1 |
-| `engine/agent/dsh/dsh-launch.ts` | 92 | 6 | 5 |
+| `engine/agent/dsh/dsh-launch.ts` | 122 | 8 | 7 |
 | `engine/agent/dsh/dsh-process.ts` | 271 | 7 | 7 |
 | `engine/agent/dsh/dsh-protocol.ts` | 159 | 4 | 4 |
 | `engine/agent/dsh/dsh-session.ts` | 283 | 7 | 7 |
@@ -551,7 +551,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 526 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1746 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1762 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |

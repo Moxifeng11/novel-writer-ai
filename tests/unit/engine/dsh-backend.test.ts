@@ -7,7 +7,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { DshJsonRpcClient, DshJsonRpcError } from '../../../engine/agent/dsh/dsh-protocol';
 import { DshSession, textOfContentBlocks, type DshTransport } from '../../../engine/agent/dsh/dsh-session';
-import { buildDshLaunchPlan, buildSandboxPatch } from '../../../engine/agent/dsh/dsh-launch';
+import { buildDshLaunchPlan, buildSandboxPatch, resolveDshWorkspaceRoot, shouldInjectDshApiKey } from '../../../engine/agent/dsh/dsh-launch';
 import { buildDshChildEnv, buildDshSpawnSpec } from '../../../engine/agent/dsh/dsh-process';
 
 function fakeTransport() {
@@ -218,6 +218,29 @@ describe('启动参数', () => {
             home: '/h', workspace: '/v', sandbox: 'read-only', packageVersion: '1.0.0 && calc',
         });
         expect(injected.args[1]).toBe('@deepseek-ai/dsh@0.2.1-rc.5');
+    });
+});
+
+describe('dsh 写入范围与密钥注入（SEC-4）', () => {
+    it('写入模式只返回当前项目目录；无项目/越界路径返回空串', () => {
+        expect(resolveDshWorkspaceRoot('/vault', '长篇小说/书甲', true)).toBe('/vault/长篇小说/书甲');
+        expect(resolveDshWorkspaceRoot('/vault/', '短篇小说/书乙', true)).toBe('/vault/短篇小说/书乙');
+        expect(resolveDshWorkspaceRoot('/vault', '', true)).toBe('');
+        expect(resolveDshWorkspaceRoot('/vault', '../.obsidian', true)).toBe('');
+        expect(resolveDshWorkspaceRoot('/vault', '/etc', true)).toBe('');
+        expect(resolveDshWorkspaceRoot('C:/vault', '长篇小说/书甲', true)).toBe('C:/vault/长篇小说/书甲');
+    });
+
+    it('只读模式仍以 vault 根为工作区', () => {
+        expect(resolveDshWorkspaceRoot('/vault', '', false)).toBe('/vault');
+        expect(resolveDshWorkspaceRoot('/vault', '长篇小说/书甲', false)).toBe('/vault');
+    });
+
+    it('仅 dsh 路由与当前提供商都为 DeepSeek 时注入 Key', () => {
+        expect(shouldInjectDshApiKey('deepseek-official', 'deepseek')).toBe(true);
+        expect(shouldInjectDshApiKey('deepseek-official', 'openai')).toBe(false);
+        expect(shouldInjectDshApiKey('custom', 'deepseek')).toBe(false);
+        expect(shouldInjectDshApiKey('', '')).toBe(false);
     });
 });
 

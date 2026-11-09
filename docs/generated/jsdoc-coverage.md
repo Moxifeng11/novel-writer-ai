@@ -6,7 +6,7 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 24 | 24 | 100% | 50 | 50 | 100% | 0 |
 | `domains/` | 11 | 28 | 28 | 100% | 1 | 1 | 100% | 0 |
-| `engine/` | 288 | 1585 | 1584 | 100% | 1239 | 1239 | 100% | 0 |
+| `engine/` | 288 | 1587 | 1586 | 100% | 1239 | 1239 | 100% | 0 |
 | `services/` | 32 | 187 | 187 | 100% | 221 | 221 | 100% | 0 |
 | `shared/` | 177 | 1606 | 1606 | 100% | 149 | 149 | 100% | 0 |
 | `ui/` | 236 | 724 | 724 | 100% | 648 | 648 | 100% | 0 |
@@ -18,7 +18,7 @@
 | `engine/co-writer/local-model-utils.ts` | 9 | 1 | 0 | 0 |
 | `engine/agent/agent-types.ts` | 23 | 0 | 0 | 0 |
 | `engine/agent/conversation-engine.ts` | 1 | 0 | 5 | 0 |
-| `engine/agent/dsh/dsh-launch.ts` | 6 | 0 | 0 | 0 |
+| `engine/agent/dsh/dsh-launch.ts` | 8 | 0 | 0 | 0 |
 | `engine/agent/dsh/dsh-process.ts` | 7 | 0 | 0 | 0 |
 | `engine/agent/dsh/dsh-protocol.ts` | 4 | 0 | 4 | 0 |
 | `engine/agent/dsh/dsh-session.ts` | 7 | 0 | 5 | 0 |

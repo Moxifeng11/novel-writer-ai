@@ -38,9 +38,10 @@ describe('工作台接线', () => {
         expect(view).toContain('已回退到内置 Agent');
     });
 
-    it('写入前二次确认；默认只读', () => {
+    it('写入前二次确认；默认只读；写入范围限定当前项目', () => {
         const view = read('ui/agent-workbench-view.ts');
-        expect(view).toContain('dsh 将可写入整个 vault');
+        expect(view).toContain('dsh 将可写入当前项目');
+        expect(view).toContain('resolveDshWorkspaceRoot');
         expect(view).toContain("allowWrite ? 'workspace-write' : 'read-only'");
     });
 

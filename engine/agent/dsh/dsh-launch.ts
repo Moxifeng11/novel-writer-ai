@@ -62,6 +62,36 @@ export function buildSandboxPatch(mode: DshSandboxMode, workspaceRoot: string): 
 }
 
 /**
+ * 解析 dsh 写入工作区：写入模式只允许当前项目目录，避免 workspace-write
+ * 覆盖 `.obsidian`（插件代码/密钥）与其它项目；无法定位项目时返回空串由调用方降级。
+ *
+ * @param base - vault 根绝对路径
+ * @param activeProject - 当前项目 ID（模式库/书名）
+ * @param allowWrite - 是否允许写入
+ * @returns 工作区根路径；空串表示写入模式不可用
+ */
+export function resolveDshWorkspaceRoot(base: string, activeProject: string, allowWrite: boolean): string {
+    const root = base.replace(/[\\/]+$/, '');
+    if (!allowWrite) return root;
+    const project = String(activeProject || '').trim().replace(/\\/g, '/');
+    if (!project || project.startsWith('/') || project.includes('..') || /^[A-Za-z]:/.test(project)) return '';
+    return `${root}/${project}`;
+}
+
+/**
+ * 只在 dsh 路由与当前提供商都是 DeepSeek 时注入 API Key；
+ * 否则把非 DeepSeek 的 Key 发给 dsh 既无效也可能造成凭据误用。
+ *
+ * @param dshProvider - dsh 的路由 provider
+ * @param currentProviderId - 插件当前提供商 ID
+ * @returns 是否注入
+ */
+export function shouldInjectDshApiKey(dshProvider: string, currentProviderId: string): boolean {
+    const isDeepSeek = (value: string): boolean => String(value || '').toLowerCase().includes('deepseek');
+    return isDeepSeek(dshProvider) && isDeepSeek(currentProviderId);
+}
+
+/**
  * 构造 dsh 启动计划（含 Windows 命令解释器处理）。
  *
  * @param options - 启动参数（命令、profile、沙箱补丁路径等）

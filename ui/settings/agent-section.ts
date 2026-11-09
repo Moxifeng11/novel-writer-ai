@@ -106,7 +106,7 @@ export class AgentBackendSection extends SettingsSection {
 
         section.createEl('p', {
             text: 'dsh 需你自行安装（插件不自动安装/升级）。完整依赖树包含 bash/pwsh 等工具，接受安装即接受这些工具随包存在；'
-                + '写入只能整会话放开，没有逐文件审批。',
+                + '写入只能整会话放开，范围限定当前项目目录（不含 .obsidian），没有逐文件审批。',
             cls: 'nw-u-c-text-muted-2 nw-u-fs-12px',
         });
 

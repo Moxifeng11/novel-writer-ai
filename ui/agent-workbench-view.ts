@@ -17,7 +17,7 @@ import { applyNwScope } from '@/utils/helpers';
 import { createPanelResizer, type PanelResizerHandle } from './panel-resizer';
 import { Platform } from 'obsidian';
 import { DshSession } from '@/engine/agent/dsh/dsh-session';
-import { buildDshLaunchPlan, buildSandboxPatch } from '@/engine/agent/dsh/dsh-launch';
+import { buildDshLaunchPlan, buildSandboxPatch, resolveDshWorkspaceRoot, shouldInjectDshApiKey } from '@/engine/agent/dsh/dsh-launch';
 import { createDshProcessTransport } from '@/engine/agent/dsh/dsh-process';
 import { OperationConfirmModal } from './components/progress';
 import { showErrorNotice, showWarningNotice } from './components/notice-helpers';
@@ -1148,22 +1148,38 @@ export class AgentWorkbenchView extends ItemView {
             }
 
             let allowWrite = this.plugin.settings.dshAllowVaultWrite === true;
+            let workspace = base;
             if (allowWrite) {
-                const confirmed = await OperationConfirmModal.confirm(this.app, {
-                    title: 'dsh 将可写入整个 vault',
-                    description: 'DeepSeek Harness 的 SDK 协议没有逐次审批通道。确认后，本次会话可以修改 vault 内任何笔记。',
-                    warning: '建议先在测试库试用；只读模式下 dsh 不会写入任何文件。',
-                    confirmText: '仍要允许写入',
-                    cancelText: '改为只读',
-                });
-                allowWrite = await this.withApprovalTimeout(Promise.resolve(confirmed), 'dsh 写入确认');
+                const projectRoot = resolveDshWorkspaceRoot(base, ctx.activeProject || '', true);
+                if (!projectRoot) {
+                    allowWrite = false;
+                    showWarningNotice('dsh 写入需要先选择项目；本次已降级为只读，避免写入整个 vault', { timeout: 8000 });
+                } else {
+                    const confirmed = await OperationConfirmModal.confirm(this.app, {
+                        title: 'dsh 将可写入当前项目',
+                        description: 'DeepSeek Harness 的 SDK 协议没有逐次审批通道。确认后，本次会话可以修改当前项目目录内的笔记；.obsidian 与其它项目不可写。',
+                        warning: '建议先在测试库试用；只读模式下 dsh 不会写入任何文件。',
+                        confirmText: '仍要允许写入',
+                        cancelText: '改为只读',
+                    });
+                    allowWrite = await this.withApprovalTimeout(Promise.resolve(confirmed), 'dsh 写入确认');
+                    if (allowWrite) workspace = projectRoot;
+                }
             }
             const sandbox = allowWrite ? 'workspace-write' : 'read-only';
             const patchPath = `${home}/sandbox.yml`;
-            if (adapter.write) await adapter.write(`${relHome}/sandbox.yml`, buildSandboxPatch(sandbox, base));
+            if (adapter.write) await adapter.write(`${relHome}/sandbox.yml`, buildSandboxPatch(sandbox, workspace));
 
-            // 口令锁定时 settings.apiKey 可能是 aes256... 密文；必须解密后再注入子进程。
-            let dshApiKey = this.plugin.settings.apiKey || '';
+            // 只在 dsh 路由与当前提供商都是 DeepSeek 时注入 Key；否则可能把非 DeepSeek
+            // 凭据发给 dsh，既无效也扩大泄露面（安全审计 SEC-4）。
+            const dshProvider = this.plugin.settings.dshProvider || 'deepseek-official';
+            const currentProviderId = this.plugin.getCurrentProviderId() || '';
+            let dshApiKey = shouldInjectDshApiKey(dshProvider, currentProviderId)
+                ? (this.plugin.settings.apiKey || '')
+                : '';
+            if (!dshApiKey) {
+                showWarningNotice('未向 dsh 注入 API Key：当前提供商不是 DeepSeek，请在 dsh 侧配置凭据', { timeout: 8000 });
+            }
             if (dshApiKey) {
                 try {
                     dshApiKey = await this.plugin.decryptKey(dshApiKey);
@@ -1179,7 +1195,7 @@ export class AgentWorkbenchView extends ItemView {
             }
             const plan = buildDshLaunchPlan({
                 home,
-                workspace: base,
+                workspace,
                 sandbox,
                 sandboxPatchPath: patchPath,
                 packageVersion: this.plugin.settings.dshVersion,
@@ -1191,7 +1207,7 @@ export class AgentWorkbenchView extends ItemView {
                 },
             });
             const transport = await createDshProcessTransport(plan, {
-                cwd: base,
+                cwd: workspace,
                 isDesktop: true,
                 passthroughEnv: {
                     PATH: (globalThis as unknown as { process?: { env?: Record<string, string> } }).process?.env?.PATH || '',
@@ -1213,7 +1229,7 @@ export class AgentWorkbenchView extends ItemView {
                 },
             });
             await dsh.initialize({
-                cwd: base,
+                cwd: workspace,
                 provider: this.plugin.settings.dshProvider || 'deepseek-official',
                 model: this.plugin.settings.dshModel || this.plugin.settings.defaultModel || 'deepseek-chat',
                 maxTokens: 4000,
