@@ -381,7 +381,9 @@ ${bodyContent.slice(0, 6000)}
             content = this.updateFrontmatterField(content, '当前状态', change.newStatus);
 
             // v4.0：以 entity_* 系列字段为唯一权威来源（旧"状态更新*"已弃用，不再写入）
-            content = this.updateFrontmatterField(content, 'entity_last_changed_at', chapterName || `第${chapterNum}章`);
+            // item6-a（2026-11-10 审计）：entity_last_changed_at 统一 ISO 语义，章名入 chapter 字段
+            content = this.updateFrontmatterField(content, 'entity_last_changed_at', now);
+            content = this.updateFrontmatterField(content, 'entity_last_changed_chapter', chapterName || `第${chapterNum}章`);
             content = this.updateFrontmatterField(content, 'entity_last_changed_reason', change.reason);
             if (!content.match(/^entity_status:/m)) {
                 content = this.updateFrontmatterField(content, 'entity_status', 'active');
@@ -409,7 +411,9 @@ ${bodyContent.slice(0, 6000)}
         // 更新 frontmatter 中的字段
         if (charData.frontmatter) {
             charData.frontmatter['当前状态'] = change.newStatus;
-            charData.frontmatter['entity_last_changed_at'] = chapterName || `第${chapterNum}章`;
+            // item6-a：ISO 语义统一；章名入 entity_last_changed_chapter
+            charData.frontmatter['entity_last_changed_at'] = new Date().toISOString();
+            charData.frontmatter['entity_last_changed_chapter'] = chapterName || `第${chapterNum}章`;
             charData.frontmatter['entity_last_changed_reason'] = change.reason;
             if (!charData.frontmatter['entity_status']) {
                 charData.frontmatter['entity_status'] = 'active';
@@ -421,7 +425,7 @@ ${bodyContent.slice(0, 6000)}
 
         // 更新属性
         charData.currentStatus = change.newStatus;
-        charData.lastChangedAt = chapterName || `第${chapterNum}章`;
+        charData.lastChangedAt = new Date().toISOString();
         charData.lastChangedReason = change.reason;
 
         // 使用 from 方法重新创建（Character 提供静态 from）

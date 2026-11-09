@@ -424,7 +424,7 @@ export class AnalysisReportEngine {
 
         try {
             // 1. 更新实体状态（自动应用 + 生成待手动处理清单）
-            const entityResult = await this.applyEntityChanges(project, report.entities);
+            const entityResult = await this.applyEntityChanges(project, report.entities, report.meta.chapterName);
             if (entityResult.applied) applied.push(`实体状态更新（${entityResult.count} 项）`);
             if (entityResult.pending) pending.push(`实体状态手动更新（${entityResult.count} 项）`);
 
@@ -1220,7 +1220,7 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
         return changes;
     }
 
-    private async applyEntityChanges(project: string, entities: FullAnalysisReport['entities']): Promise<{ applied: boolean; pending: boolean; count: number }> {
+    private async applyEntityChanges(project: string, entities: FullAnalysisReport['entities'], chapterName: string): Promise<{ applied: boolean; pending: boolean; count: number }> {
         const count = (entities?.characters?.length || 0) + (entities?.factions?.length || 0) + (entities?.locations?.length || 0) + (entities?.items?.length || 0);
         if (count === 0) return { applied: false, pending: false, count: 0 };
 
@@ -1229,7 +1229,7 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
         try {
             const statusChanges = entities.characters.filter(c => c.changeType === 'status_updated' && c.newValue);
             for (const change of statusChanges) {
-                const success = await this.applySingleCharacterStatusChange(project, change);
+                const success = await this.applySingleCharacterStatusChange(project, change, chapterName);
                 if (success) appliedCount++;
             }
 
@@ -1245,7 +1245,7 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
         }
     }
 
-    private async applySingleCharacterStatusChange(project: string, change: EntityChange): Promise<boolean> {
+    private async applySingleCharacterStatusChange(project: string, change: EntityChange, chapterName: string): Promise<boolean> {
         try {
             const files = listEntityFiles(this.app, project, 'characters');
 
@@ -1270,7 +1270,9 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
                 const now = new Date().toISOString();
 
                 content = this.updateFrontmatterField(content, '当前状态', change.newValue || '');
-                content = this.updateFrontmatterField(content, 'entity_last_changed_at', change.context || `第${change.name}章`);
+                // item6-a（2026-11-10 审计）：entity_last_changed_at 统一 ISO 语义，章名入 chapter 字段
+                content = this.updateFrontmatterField(content, 'entity_last_changed_at', now);
+                content = this.updateFrontmatterField(content, 'entity_last_changed_chapter', chapterName);
                 content = this.updateFrontmatterField(content, 'entity_last_changed_reason', change.context || '');
                 if (!content.match(/^entity_status:/m)) {
                     content = this.updateFrontmatterField(content, 'entity_status', 'active');

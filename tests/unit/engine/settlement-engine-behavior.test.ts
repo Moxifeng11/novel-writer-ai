@@ -262,6 +262,19 @@ describe('SettlementEngine — 成功结算', () => {
         expect(body).toContain('status: settled');
     });
 
+    it('item6-a：EMOTION 指令写 entity_last_changed_at 为 ISO、章名入 entity_last_changed_chapter', async () => {
+        const h = makeHarness(seedAll());
+        const report = `${REPORT}
+EMOTION: [[甲]] | 惊疑 | 长老念出陌生姓氏后既不安又隐隐期待`;
+        await h.engine.settle(PROJECT, CHAP_DIR, CHAP_NAME, report, BODY_SEED);
+
+        const char = h.files.get(CHAR_PATH)!;
+        const fm = parseFm(char).fm;
+        expect(fm['entity_last_changed_chapter']).toBe('第1章');
+        expect(String(fm['entity_last_changed_at'])).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
+        expect(fm['entity_last_changed_reason']).toContain('情绪更新为惊疑');
+    });
+
     it('同项目并发 settle 串行化：第二个 run 等第一个释放项目锁', async () => {
         const h = makeHarness(seedAll());
         let releaseFirst!: () => void;
