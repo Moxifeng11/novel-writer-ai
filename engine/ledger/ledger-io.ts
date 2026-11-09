@@ -9,7 +9,7 @@
 import { App, TFile } from 'obsidian';
 import { pjForeshadowDB, pjPromiseLedger, pjTimelineBoard } from '@/shared/paths';
 import type { ForeshadowData, ForeshadowItem, TimelineEvent } from '@/engine/context/context-types';
-import { parsePromiseLedger } from '../promise-ledger';
+import { parsePromiseLedger } from '@/engine/promise-ledger';
 import { buildLedgerIndex, timelineWindow, type StoryLedger } from './ledger-index';
 import type { ForeshadowRecord, PromiseRecord } from './ledger-model';
 
