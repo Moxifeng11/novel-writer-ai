@@ -945,11 +945,11 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
 }
 
 /**
- * 破坏性/高成本命令（dsh user-approval 的精简版）：
- * 批量生成/重建/结算/导出会在后台写大量文件或消耗大量额度，
- * 执行前必须让用户看到「将要对哪个项目做什么」并确认。
+ * 只读命令白名单：open/show/list/get/status/refresh/view/check/help/guide。
+ * 其余命令一律按危险处理并确认——旧实现用危险词正则，漏掉
+ * targeted-revision / generate-bases / complete-properties / migrate-* 等写盘命令。
  */
-const DANGEROUS_COMMAND_PATTERN = /(batch|auto-writer|write-chapter|continue-chapters|settle|settlement|export|rebuild|backup|protect|deconstruct|prune|populate)/i;
+const READ_ONLY_COMMAND_PATTERN = /^novel-writer[-:](open|show|list|get|status|refresh|view|check|help|guide)\b/i;
 
 /**
  * 判断命令是否属于危险操作。
@@ -958,7 +958,7 @@ const DANGEROUS_COMMAND_PATTERN = /(batch|auto-writer|write-chapter|continue-cha
  * @returns 布尔值
  */
 export function isDangerousCommand(commandId: string): boolean {
-    return DANGEROUS_COMMAND_PATTERN.test(commandId);
+    return !READ_ONLY_COMMAND_PATTERN.test(commandId);
 }
 
 function resolveProject(args: Record<string, unknown>, memory: HarnessMemoryState, ctx: AgentContext): string {

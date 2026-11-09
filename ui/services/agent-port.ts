@@ -5,7 +5,7 @@
  * 章节读取、项目状态、协同写作与「执行任意插件命令」能力，
  * 让 Agent 能覆盖从新建项目到导出成稿的全部插件功能。
  */
-import { App, Notice, TFile } from 'obsidian';
+import { App, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import type {
     AgentChapterSummary,
@@ -32,6 +32,7 @@ import { getProjectModeSync, resolveProjectMode } from '@/shared/project-mode';
 import { ModeDocumentModal } from '@/ui/mode-document-modal';
 import { getStoryStructure } from '@/shared/story-structure';
 import { createLogger } from '@/shared/logger';
+import { spillFolderFor } from './agent-spill-store';
 import { FullWriterView } from '@/ui/full-writer-view';
 import { getChaptersForProject, sortChaptersByNumber, type ChapterListEntry } from '@/ui/project-utils';
 import { isChapterWritten, summarizeChapterProgress } from '@/shared/chapter-progress';
@@ -88,6 +89,13 @@ function toChapterSummary(entry: ChapterListEntry): AgentChapterSummary {
   * @returns GuideAgentPort 实例
  */
 export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgentPort {
+    // 只允许访问当前项目自己的 spill 溢出目录；会话存档 `.sessions/agent/*.jsonl`
+    // 与其它项目 spill 一律不可读写删移（安全审计 SEC-8）。
+    const sessionSpillPrefix = (): string => {
+        const project = plugin.getActiveProject?.() || '';
+        return `${spillFolderFor(project || 'default')}/`;
+    };
+
     /** 打开短篇/剧本的单元写作页签（异步落位，失败时提示） */
     const openUnitTab = async (project: string, unitNumber: number): Promise<boolean> => {
         try {
@@ -465,7 +473,7 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
         readFile: async (path, options): Promise<AgentFileReadResult | null> => {
             // 吸收 dsh context/file-reference：模型按需读物，路径先过守卫。
             // `.sessions/` 是插件自己落的 spill 大结果，必须允许回读。
-            const guard = sanitizeVaultPath(path, { allowHiddenPrefixes: ['.sessions/'] });
+            const guard = sanitizeVaultPath(path, { allowHiddenPrefixes: [sessionSpillPrefix()] });
             if (!guard.ok) throw new Error(guard.reason);
             if (!isTextPath(guard.path)) {
                 throw new Error(`只支持读取文本文件（md/txt/json/yaml 等）：${guard.path}`);
@@ -539,7 +547,7 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
         },
         listProjects: () => listProjectIds(app),
         writeFile: async (path, content, options) => {
-            const guard = sanitizeVaultPath(path, { allowHiddenPrefixes: ['.sessions/'] });
+            const guard = sanitizeVaultPath(path, { allowHiddenPrefixes: [sessionSpillPrefix()] });
             if (!guard.ok) throw new Error(guard.reason);
             if (!isTextPath(guard.path)) {
                 throw new Error(`只支持写入文本文件（md/txt/json/yaml 等）：${guard.path}`);
@@ -572,7 +580,7 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
             return { path: guard.path, created: !existed, bytes: new TextEncoder().encode(next).length };
         },
         deleteFile: async (path, options) => {
-            const guard = sanitizeVaultPath(path, { allowHiddenPrefixes: ['.sessions/'] });
+            const guard = sanitizeVaultPath(path, { allowHiddenPrefixes: [sessionSpillPrefix()] });
             if (!guard.ok) throw new Error(guard.reason);
             const file = app.vault.getAbstractFileByPath(guard.path);
             if (file instanceof TFile) {
@@ -581,17 +589,24 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
                 return { path: guard.path, deleted: true, trashed: !options?.permanent };
             }
             if (await app.vault.adapter.exists(guard.path)) {
+                // 非索引文件无法进回收站；默认不删除，必须显式 permanent=true。
+                if (options?.permanent !== true) {
+                    throw new Error('该文件未进入 vault 索引，无法移入回收站；如确认永久删除请设置 permanent=true');
+                }
                 await app.vault.adapter.remove(guard.path);
                 return { path: guard.path, deleted: true, trashed: false };
             }
             return { path: guard.path, deleted: false, trashed: false };
         },
         moveFile: async (from, to) => {
-            const source = sanitizeVaultPath(from, { allowHiddenPrefixes: ['.sessions/'] });
-            const target = sanitizeVaultPath(to, { allowHiddenPrefixes: ['.sessions/'] });
+            const source = sanitizeVaultPath(from, { allowHiddenPrefixes: [sessionSpillPrefix()] });
+            const target = sanitizeVaultPath(to, { allowHiddenPrefixes: [sessionSpillPrefix()] });
             if (!source.ok) throw new Error(source.reason);
             if (!target.ok) throw new Error(target.reason);
             const file = app.vault.getAbstractFileByPath(source.path);
+            if (file instanceof TFolder) {
+                throw new Error('move_file 只支持文件，不支持目录；整理目录请用命令或手动操作');
+            }
             if (file instanceof TFile) {
                 await app.fileManager.renameFile(file, target.path);
             } else if (await app.vault.adapter.exists(source.path)) {
@@ -608,9 +623,11 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
             if (!guard.ok) return { project, deleted: false, reason: guard.reason };
             const target = guard.path;
             const known = listProjectIds(app).includes(target);
-            // 允许删除「已从列表消失但目录仍残留」的模式库项目（ghost），
-            // 但模式库根、_versions、隐藏目录由 removeProjectDirectory 再拦一次。
-            const underLibrary = MODE_LIBRARY_ROOT_LIST.some(root => target.startsWith(`${root}/`));
+            // ghost 只允许「模式库根/项目名」恰好两段；更深层目录可能是章节目录/正文，
+            // 不能被 delete_project 递归误删（安全审计 SEC-9）。
+            const segments = target.split('/');
+            const underLibrary = segments.length === 2
+                && MODE_LIBRARY_ROOT_LIST.includes(segments[0]);
             if (!known && !underLibrary) {
                 return { project: target, deleted: false, reason: '不是可识别的项目目录' };
             }

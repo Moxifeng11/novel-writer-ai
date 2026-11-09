@@ -99,11 +99,18 @@ describe('命令白名单与危险确认', () => {
         expect(isDangerousCommand('novel-writer-open-settings')).toBe(false);
     });
 
-    it('v4.72.0：prune/populate 进危险清单（Agent 执行前需确认）', () => {
+    it('只读白名单之外的命令一律危险（含旧正则漏网项）', () => {
         expect(isDangerousCommand('novel-writer-prune-sessions')).toBe(true);
         expect(isDangerousCommand('novel-writer-populate-setting-lib')).toBe(true);
-        // rename-project 打开重命名 Modal 自带确认环，不走 dangerous
-        expect(isDangerousCommand('novel-writer-rename-project')).toBe(false);
+        // 旧正则漏网的写盘命令，现在统一走确认
+        expect(isDangerousCommand('novel-writer-targeted-revision')).toBe(true);
+        expect(isDangerousCommand('novel-writer-generate-bases')).toBe(true);
+        expect(isDangerousCommand('novel-writer-complete-properties')).toBe(true);
+        expect(isDangerousCommand('novel-writer-migrate-entity-links')).toBe(true);
+        expect(isDangerousCommand('novel-writer-rename-project')).toBe(true);
+        // 只读动词仍免确认
+        expect(isDangerousCommand('novel-writer-open-settings')).toBe(false);
+        expect(isDangerousCommand('novel-writer-show-home')).toBe(false);
     });
 });
 

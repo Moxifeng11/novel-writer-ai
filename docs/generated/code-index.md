@@ -11,7 +11,7 @@
 | `shared/` | 178 | 40679 | 1601 | 1320 | 82% |
 | `core/` | 7 | 2821 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 238 | 99375 | 733 | 638 | 87% |
+| `ui/` | 238 | 99402 | 734 | 639 | 87% |
 
 ## 文件清单
 
@@ -731,9 +731,9 @@
 | `ui/review-chapter-modal.ts` | 67 | 1 | 1 |
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
-| `ui/services/agent-port.ts` | 637 | 2 | 2 |
+| `ui/services/agent-port.ts` | 654 | 2 | 2 |
 | `ui/services/agent-session-store.ts` | 211 | 5 | 5 |
-| `ui/services/agent-spill-store.ts` | 105 | 3 | 2 |
+| `ui/services/agent-spill-store.ts` | 115 | 4 | 3 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |

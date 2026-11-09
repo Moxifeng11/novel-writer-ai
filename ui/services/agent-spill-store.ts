@@ -25,6 +25,16 @@ function slug(text: string): string {
         .slice(0, 60);
 }
 
+/**
+ * 当前项目 spill 目录；Agent 文件端口只允许访问自己的 spill，不碰会话存档。
+ *
+ * @param scope - 项目作用域（项目 ID/名称）
+ * @returns spill 目录路径
+ */
+export function spillFolderFor(scope: string): string {
+    return `${SPILL_ROOT}/${slug(scope) || 'default'}`;
+}
+
 async function ensureFolder(app: App, folder: string): Promise<void> {
     const parts = folder.split('/').filter(Boolean);
     let current = '';
@@ -46,7 +56,7 @@ export function createVaultSpillSink(app: App, scope: () => string): SpillSink {
     return {
         write: async (name, content) => {
             try {
-                const folder = `${SPILL_ROOT}/${slug(scope()) || 'default'}`;
+                const folder = spillFolderFor(scope());
                 await ensureFolder(app, folder);
                 const base = slug(name) || 'spill';
                 const stamp = Date.now().toString(36);
