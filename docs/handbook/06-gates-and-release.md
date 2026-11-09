@@ -32,7 +32,7 @@
 
 ## 3. 样式写法约束（社区目录审核）
 
-> 来源：Obsidian 社区目录自动审核的 `obsidianmd/no-forbidden-style-element` 与
+> 来源：Obsidian 社区目录自动审核的 `obsidianmd/no-forbidden-elements` 与
 > `obsidianmd/no-static-styles-assignment`（均为 **Error**，不是建议项）+ 2026-11-09 实测打回。
 > 违反后插件会被目录标记 Failed，用户端仍能用，但不会进入审核通过列表。
 
@@ -72,6 +72,26 @@
   `--update-baseline --note` 里写清「为什么不是新增设计」。
 - 新增门禁规则要有「故意违规必须报错」的自测
   （`tests/unit/architecture/obsidian-api-policy.test.ts`），否则规则可能空转。
+
+### 3.4 API / HTML / Modal 审核约束（4.81.0）
+
+社区审核按 `manifest.minAppVersion` 做类型级比对（`obsidianmd/no-unsupported-api`），
+本地 `npm run lint` 已启用同一批规则（`eslint.config.mjs`，`projectService: true`）。
+改 `minAppVersion` 前先跑 `npm run lint`，否则「本地全绿、审核 Failed」会重演。
+
+| 约束 | 正确写法 | 为什么 |
+|---|---|---|
+| 最低版本 | `manifest.minAppVersion = 1.4.4`，`versions.json` 同步 | `FileManager.processFrontMatter` 自 1.4.4 起可用 |
+| leaf 前台化 | `shared/workspace-reveal.ts::revealLeafCompat(workspace, leaf, { side })` | `Workspace.revealLeaf` 自 1.7.2 才定型；兼容实现用 `setActiveLeaf` + `expand()` |
+| HTML 字符串落 DOM | `setSanitizedHtml` / `appendSanitizedHtml`（`ui/rendering/safe-html.ts`） | `innerHTML`/`outerHTML`/`insertAdjacentHTML` 均为审核 Error；`no-unsanitized` 只认 `sanitizeHTMLToDom` |
+| 需要可编辑语义 | 用 `createElement`/`createTextNode` 构建 DOM（参考 `buildEntityMarkedFragment`） | `sanitizeHTMLToDom` 会剥离 `contenteditable` 等属性 |
+| Modal 里的 Markdown | `private renderHost = new Component()`；`onOpen → load()`、`onClose → unload()` | `Modal` 不是 `Component`；把 `this.plugin` 传进去会被 `no-plugin-as-component` 判 Error 并造成生命周期泄漏 |
+| 禁用元素/动态 `<style>` | 样式写 `styles-src/*.css`，状态用 `nw-is-*` 类 | `no-forbidden-elements` 为审核 Error |
+
+对应回归：
+- `tests/unit/architecture/official-review-rules.test.ts`（配置必须保持 error、源码不得回流）；
+- `tests/unit/shared/workspace-reveal.test.ts`、`tests/unit/ui/rendering/safe-html.test.ts`、
+  `tests/unit/architecture/modal-render-host.test.ts`。
 
 ## 4. 发布流程（当前口径）
 

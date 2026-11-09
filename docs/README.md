@@ -77,6 +77,7 @@
 | 静态样式来源 | `styles-src/*.css`（拼接为 `styles.css`） | `check:styles`、`check:css` |
 | 内联样式预算 | `.inline-style-baseline.json` | `check:inline-styles` |
 | Obsidian API 用法（棘轮） | `.obsidian-api-baseline.json` | `check:obsidian-api` |
+| 社区审核规则/最低版本 | `eslint.config.mjs` + `manifest.json` 的 `minAppVersion` | `npm run lint`、`tests/unit/architecture/official-review-rules.test.ts` |
 | 密钥/密文泄露（推送前） | 被 git 跟踪的文件（`git ls-files`）+ `.gitignore` | `check:secrets` |
 | 分层/循环/引擎实例 | `.arch-baseline.json` | `check:deps`、`check-engines` |
 | JSDoc 覆盖 | `.jsdoc-baseline.json` + `generated/jsdoc-coverage.md` | `check:jsdoc` |

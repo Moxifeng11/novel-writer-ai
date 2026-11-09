@@ -97,6 +97,28 @@ describe('check:obsidian-api 门禁', () => {
         expect(result.stderr).toContain('deprecated-api');
     });
 
+    it('1.4.4 之后才有的 leaf API 必须报错', () => {
+        const root = fixture({
+            'ui/leaf.ts': [
+                'interface Leaf { getRoot(): unknown }',
+                'interface Workspace {',
+                '    revealLeaf(leaf: Leaf): Promise<void>;',
+                '    ensureSideLeaf(type: string, side: string): Leaf;',
+                '}',
+                'export function open(ws: Workspace, leaf: Leaf) {',
+                '    ws.ensureSideLeaf(\'nw-view\', \'right\');',
+                '    return ws.revealLeaf(leaf);',
+                '}',
+            ].join('\n'),
+        });
+        const result = run(root);
+        expect(result.code).toBe(1);
+        expect(result.stderr).toContain('deprecated-api');
+        const json = run(root, ['--json']);
+        const report = JSON.parse(json.stdout);
+        expect(report.rules['deprecated-api'].count).toBeGreaterThanOrEqual(2);
+    });
+
     it('非流式 fetch 与 console / document 监听必须报错', () => {
         const root = fixture({
             'services/bad.ts': [

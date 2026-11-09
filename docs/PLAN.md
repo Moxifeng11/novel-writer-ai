@@ -55,6 +55,9 @@ Agent（harness）
 | 设置默认值 | `core/settings-service.ts::getDefaultSettings` |
 | 实体读取/统计 | `shared/entity-reader.ts::listEntityFiles / countProjectEntities` |
 | 等待原语 | `shared/yield.ts::yieldToUI / nextFrame`（禁止裸 setTimeout 等待 UI） |
+| 跨窗口 DOM 监听/窗口解析 | `shared/dom-window.ts::resolveNodeDoc / resolveNodeWindow / onNodeDoc` |
+| leaf 前台化（1.4.4 兼容） | `shared/workspace-reveal.ts::revealLeafCompat`（替代 1.7.2 的 `revealLeaf`） |
+| HTML 字符串落 DOM | `ui/rendering/safe-html.ts::setSanitizedHtml / appendSanitizedHtml`（唯一入口） |
 | 样式源 | `styles-src/*.css` → `npm run build:styles` 生成 `styles.css`（`check:styles` 校验一致） |
 | 样式写法 | 静态样式只放 `styles-src/*.css`；**禁止**动态 `<style>` 与字面量内联样式（社区目录 Error，见 `handbook/06-gates-and-release.md` §3；`check:obsidian-api` 拦截） |
 

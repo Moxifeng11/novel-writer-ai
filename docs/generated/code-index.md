@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132975 | 1611 | 1350 | 84% |
 | `services/` | 32 | 12726 | 187 | 148 | 79% |
-| `shared/` | 178 | 40679 | 1601 | 1320 | 82% |
+| `shared/` | 179 | 40759 | 1607 | 1322 | 82% |
 | `core/` | 7 | 2821 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 238 | 99402 | 734 | 639 | 87% |
+| `ui/` | 239 | 99476 | 736 | 641 | 87% |
 
 ## 文件清单
 
@@ -406,7 +406,7 @@
 | `shared/desktop-shell.ts` | 79 | 3 | 2 |
 | `shared/diff-utils.ts` | 322 | 8 | 8 |
 | `shared/divergence-trend.ts` | 44 | 2 | 2 |
-| `shared/dom-window.ts` | 62 | 3 | 2 |
+| `shared/dom-window.ts` | 77 | 4 | 3 |
 | `shared/embedding-provider.ts` | 43 | 4 | 4 |
 | `shared/engine-names.ts` | 57 | 1 | 1 |
 | `shared/entity-audit.ts` | 96 | 4 | 4 |
@@ -543,6 +543,7 @@
 | `shared/volume-plan.ts` | 307 | 6 | 6 |
 | `shared/webnovel-knowledge-base.ts` | 2793 | 7 | 7 |
 | `shared/word-count.ts` | 149 | 7 | 7 |
+| `shared/workspace-reveal.ts` | 65 | 5 | 1 |
 | `shared/write-lock.ts` | 67 | 2 | 2 |
 | `shared/writing-rules-legacy.ts` | 224 | 2 | 2 |
 | `shared/writing-rules-mode-addons.ts` | 78 | 5 | 2 |
@@ -561,7 +562,7 @@
 | `ui/backup-yuan-modal.ts` | 125 | 1 | 1 |
 | `ui/batch-chapters-modal.ts` | 336 | 1 | 1 |
 | `ui/batch-create-modal.ts` | 521 | 1 | 1 |
-| `ui/batch-import-modal.ts` | 1864 | 1 | 1 |
+| `ui/batch-import-modal.ts` | 1865 | 1 | 1 |
 | `ui/batch-novels-modal.ts` | 236 | 1 | 1 |
 | `ui/button-busy.ts` | 37 | 1 | 1 |
 | `ui/changelog-modal.ts` | 191 | 1 | 1 |
@@ -570,7 +571,7 @@
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1020 | 2 | 2 |
-| `ui/co-writing-view.ts` | 3386 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3387 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 224 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
@@ -601,14 +602,14 @@
 | `ui/co-writing/suggestion-flow.ts` | 473 | 3 | 2 |
 | `ui/co-writing/suggestion-loading.ts` | 130 | 4 | 2 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
-| `ui/command-ui-executor.ts` | 659 | 2 | 2 |
-| `ui/components/ai-detection-report.ts` | 104 | 1 | 1 |
+| `ui/command-ui-executor.ts` | 660 | 2 | 2 |
+| `ui/components/ai-detection-report.ts` | 105 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
-| `ui/components/categorization-review-panel.ts` | 448 | 2 | 2 |
+| `ui/components/categorization-review-panel.ts` | 449 | 2 | 2 |
 | `ui/components/character-review-panel.ts` | 578 | 2 | 2 |
-| `ui/components/chart-toolbar.ts` | 110 | 2 | 2 |
+| `ui/components/chart-toolbar.ts` | 111 | 2 | 2 |
 | `ui/components/emotion-curve-view.ts` | 131 | 1 | 1 |
-| `ui/components/empty-state.ts` | 145 | 3 | 1 |
+| `ui/components/empty-state.ts` | 147 | 3 | 1 |
 | `ui/components/error-state.ts` | 57 | 3 | 3 |
 | `ui/components/notice-helpers.ts` | 156 | 3 | 3 |
 | `ui/components/progress/index.ts` | 28 | 4 | 0 |
@@ -617,9 +618,9 @@
 | `ui/components/progress/progress-bar.ts` | 131 | 2 | 2 |
 | `ui/components/progress/step-list.ts` | 223 | 1 | 1 |
 | `ui/components/progress/task-card.ts` | 273 | 2 | 2 |
-| `ui/components/smart-chart.ts` | 519 | 1 | 1 |
+| `ui/components/smart-chart.ts` | 520 | 1 | 1 |
 | `ui/context-injector-modal.ts` | 212 | 1 | 1 |
-| `ui/continue-chapters-modal.ts` | 563 | 1 | 1 |
+| `ui/continue-chapters-modal.ts` | 567 | 1 | 1 |
 | `ui/cowrite/body-save-controller.ts` | 282 | 3 | 2 |
 | `ui/cowrite/cowrite-mappers.ts` | 111 | 6 | 6 |
 | `ui/cowrite/history-modal.ts` | 55 | 1 | 1 |
@@ -633,16 +634,16 @@
 | `ui/create-project-modal.ts` | 490 | 2 | 2 |
 | `ui/cross-volume-state-modal.ts` | 231 | 1 | 1 |
 | `ui/diagnose-writer-modal.ts` | 363 | 1 | 1 |
-| `ui/draggable-panel.ts` | 331 | 2 | 2 |
-| `ui/existing-entity-manager.ts` | 554 | 1 | 1 |
+| `ui/draggable-panel.ts` | 338 | 2 | 2 |
+| `ui/existing-entity-manager.ts` | 555 | 1 | 1 |
 | `ui/expand-text-modal.ts` | 226 | 1 | 1 |
 | `ui/export-manuscript-modal.ts` | 665 | 4 | 4 |
 | `ui/fanfic-prompt-notice.ts` | 20 | 1 | 1 |
 | `ui/fanfic-review-modal.ts` | 419 | 1 | 1 |
-| `ui/fingerprint-blend-modal.ts` | 619 | 2 | 2 |
-| `ui/fingerprint-detail-modal.ts` | 600 | 1 | 1 |
+| `ui/fingerprint-blend-modal.ts` | 620 | 2 | 2 |
+| `ui/fingerprint-detail-modal.ts` | 601 | 1 | 1 |
 | `ui/fingerprint-embedding.ts` | 32 | 1 | 1 |
-| `ui/fingerprint-intensity-modal.ts` | 441 | 2 | 2 |
+| `ui/fingerprint-intensity-modal.ts` | 403 | 2 | 2 |
 | `ui/fingerprint-library-modal.ts` | 306 | 1 | 1 |
 | `ui/fingerprint-utils.ts` | 209 | 11 | 11 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |
@@ -694,7 +695,7 @@
 | `ui/ideation-modal.ts` | 814 | 1 | 1 |
 | `ui/job-center-modal.ts` | 124 | 1 | 1 |
 | `ui/knowledge-detail-format.ts` | 46 | 4 | 4 |
-| `ui/knowledge-detail-modal.ts` | 1698 | 1 | 1 |
+| `ui/knowledge-detail-modal.ts` | 1699 | 1 | 1 |
 | `ui/knowledge-folder-navigation.ts` | 15 | 1 | 1 |
 | `ui/knowledge-monitor-modal.ts` | 500 | 1 | 1 |
 | `ui/knowledge-rebuild-action.ts` | 48 | 1 | 1 |
@@ -705,9 +706,9 @@
 | `ui/model-picker-modal.ts` | 196 | 2 | 2 |
 | `ui/model-picker-popover.ts` | 298 | 4 | 3 |
 | `ui/model-quick-switcher.ts` | 319 | 13 | 12 |
-| `ui/monitor-panel-a.ts` | 199 | 2 | 2 |
+| `ui/monitor-panel-a.ts` | 200 | 2 | 2 |
 | `ui/monitor-panel-b.ts` | 1909 | 2 | 2 |
-| `ui/novel-analysis-modal.ts` | 266 | 1 | 1 |
+| `ui/novel-analysis-modal.ts` | 267 | 1 | 1 |
 | `ui/novel-tags-modal.ts` | 335 | 1 | 1 |
 | `ui/onboarding-modal.ts` | 300 | 1 | 1 |
 | `ui/outline-expand-modal.ts` | 880 | 2 | 1 |
@@ -716,18 +717,19 @@
 | `ui/plan-book-modal.ts` | 558 | 1 | 1 |
 | `ui/plot-canvas-modal.ts` | 331 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
-| `ui/polish-editor.ts` | 795 | 5 | 5 |
+| `ui/polish-editor.ts` | 834 | 5 | 5 |
 | `ui/pre-research-modal.ts` | 710 | 2 | 2 |
 | `ui/project-health-modal.ts` | 134 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 406 | 5 | 5 |
 | `ui/project-utils.ts` | 364 | 11 | 10 |
 | `ui/prompt-manager-settings.ts` | 1144 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 87 | 1 | 1 |
-| `ui/quality-dashboard-modal.ts` | 482 | 2 | 2 |
+| `ui/quality-dashboard-modal.ts` | 483 | 2 | 2 |
 | `ui/rebuild-chapters-modal.ts` | 322 | 1 | 1 |
 | `ui/refill-modal.ts` | 713 | 1 | 1 |
 | `ui/rename-project-modal.ts` | 105 | 1 | 1 |
 | `ui/rendering/context-panel.ts` | 961 | 1 | 1 |
+| `ui/rendering/safe-html.ts` | 36 | 2 | 2 |
 | `ui/review-chapter-modal.ts` | 67 | 1 | 1 |
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
@@ -759,31 +761,31 @@
 | `ui/story-settings-modal.ts` | 115 | 1 | 1 |
 | `ui/style-distiller-modal.ts` | 486 | 1 | 1 |
 | `ui/support-author-modal.ts` | 43 | 1 | 0 |
-| `ui/svg-charts.ts` | 2355 | 49 | 49 |
+| `ui/svg-charts.ts` | 2356 | 49 | 49 |
 | `ui/template-manager.ts` | 710 | 5 | 2 |
 | `ui/tomato-rank-modal.ts` | 132 | 1 | 1 |
 | `ui/unified-entity-generate-modal.ts` | 865 | 1 | 1 |
-| `ui/unified-entity-manager-modal.ts` | 750 | 1 | 1 |
+| `ui/unified-entity-manager-modal.ts` | 754 | 1 | 1 |
 | `ui/usage-ledger-modal.ts` | 182 | 1 | 1 |
 | `ui/utils/worldview-utils.ts` | 103 | 1 | 1 |
 | `ui/vector-rebuild-action.ts` | 148 | 1 | 1 |
-| `ui/views/book-detail-renderer.ts` | 2447 | 2 | 2 |
+| `ui/views/book-detail-renderer.ts` | 2448 | 2 | 2 |
 | `ui/views/fingerprint-v2-detail.ts` | 126 | 4 | 2 |
 | `ui/views/kb-book-card.ts` | 163 | 2 | 2 |
 | `ui/views/kb-config-panel.ts` | 222 | 3 | 3 |
 | `ui/views/kb-detail-actions.ts` | 199 | 2 | 2 |
 | `ui/views/kb-stats-panel.ts` | 197 | 2 | 2 |
 | `ui/views/knowledge-base-modals.ts` | 1364 | 4 | 4 |
-| `ui/views/knowledge-base-view.ts` | 3240 | 10 | 10 |
+| `ui/views/knowledge-base-view.ts` | 3241 | 10 | 10 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/writing-fingerprint-view.ts` | 2003 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 562 | 2 | 1 |
-| `ui/workspace-manager.ts` | 143 | 2 | 2 |
+| `ui/workspace-manager.ts` | 144 | 2 | 2 |
 | `ui/write-chapter-modal.ts` | 897 | 1 | 1 |
-| `ui/writing-pet.ts` | 289 | 2 | 2 |
-| `ui/writing-stats-modal.ts` | 244 | 1 | 1 |
+| `ui/writing-pet.ts` | 290 | 2 | 2 |
+| `ui/writing-stats-modal.ts` | 245 | 1 | 1 |
 | `ui/writing-stats-settings.ts` | 70 | 1 | 1 |
 | `ui/writing-style-modal.ts` | 589 | 1 | 1 |
 | `ui/writing-style-paths.ts` | 89 | 6 | 6 |

@@ -7,7 +7,7 @@
  * 或在 1.4.x / 移动端 / 第二窗口 / 自定义配置目录上静默失效：
  *
  *  1. plugin-path-hardcoded     插件数据目录硬编码（用户改 configDir 或 BRAT 改名即写错位置）
- *  2. deprecated-api            晚于 minAppVersion 1.4.0 的 API / 已弃用 API
+ *  2. deprecated-api            晚于 minAppVersion 1.4.4 的 API / 已弃用 API
  *  3. direct-fetch              非流式 HTTP 未走 requestUrl（移动端无 CORS 豁免）
  *  4. global-document-listener  document 级监听（需成对移除；新处必须显式登记）
  *  5. console-direct            运行时直接 console.*（统一走 shared/logger）
@@ -48,9 +48,10 @@ const RULES = [
     },
     {
         id: 'deprecated-api',
-        description: '晚于 minAppVersion 1.4.0 的 API 或已弃用 API',
+        description: '晚于 minAppVersion 1.4.4 的 API 或已弃用 API',
         // v4.79.0：补「强转绕过」形态——(app as unknown as { isMobile?: boolean }).isMobile
-        pattern: /MarkdownRenderer\.renderMarkdown|Vault\.getAllFolders|getAllFolders\(|setCssProps|app\.isMobile|\{\s*isMobile\?\s*:/,
+        // 1.4.4 下限内新增：revealLeaf（1.7.2）/ ensureSideLeaf（1.5+）/ getFileByPath（1.5.4）
+        pattern: /MarkdownRenderer\.renderMarkdown|Vault\.getAllFolders|getAllFolders\(|setCssProps|app\.isMobile|\{\s*isMobile\?\s*:|\brevealLeaf\(|\bensureSideLeaf\(|\bgetFileByPath\(/,
         // theme-manager：setCssProps 为 1.5+ API，代码做了 typeof 运行时探测，
         // 1.4.x 退回 style.setProperty；这是社区目录推荐的动态变量写法。
         allow: ['shared/file-system-port.ts', 'shared/changelog-data.ts', 'core/theme-manager.ts'],
@@ -85,7 +86,7 @@ const RULES = [
     {
         id: 'style-element',
         description: '不得动态创建 <style> 元素注入样式；静态样式写入 styles-src/*.css',
-        // 社区目录 obsidianmd/no-forbidden-style-element：addStyle/动态 <style> 都是 Error
+        // 社区目录 obsidianmd/no-forbidden-elements：addStyle/动态 <style> 都是 Error
         pattern: /(?:createElement|createEl)\(\s*['"`]style['"`]/,
         allow: [],
     },

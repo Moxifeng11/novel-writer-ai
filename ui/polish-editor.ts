@@ -21,6 +21,17 @@ import { StyleFingerprintLibrary, StyleFingerprint } from '@/engine/style-finger
 import { getStyleIntensityEngine } from '@/engine/style/style-intensity-engine';
 import { createLogger } from '@/shared/logger';
 import { resolveNodeWindow } from '@/shared/dom-window';
+import { escapeHtml as escapeHtmlText } from '@/utils/helpers';
+
+/**
+ * HTML 实体转义（兼容旧导出；实现统一在 utils/helpers，覆盖 & < > " '）。
+ *
+ * @param text - 原始文本
+ * @returns 转义后的文本
+ */
+export function escapeHtml(text: string): string {
+    return escapeHtmlText(text);
+}
 
 
 const log = createLogger('PolishEditor');

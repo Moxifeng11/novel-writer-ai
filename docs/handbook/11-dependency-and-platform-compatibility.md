@@ -44,7 +44,7 @@ npm audit --omit=dev --audit-level=high
 | Linux（CI Ubuntu） | `verify` 全门禁 + 单测 | 发版前抽查 | 路径大小写敏感 |
 | macOS（CI） | 跨平台矩阵：`typecheck` + `npm test` | 发版前抽查 | 路径分隔符、字体渲染 |
 | iOS / Android Obsidian | 静态检查 + `Platform.isMobile` 守卫 | 每版 | 不跑 Node/Worker/本地模型 |
-| Obsidian 1.4.x（最低支持） | 类型层按 1.14 编译，API 使用需人工核对 | 每版 | `manifest.minAppVersion = 1.4.0` |
+| Obsidian 1.4.x（最低支持） | 类型层按 1.14 编译，API 使用需人工核对 | 每版 | `manifest.minAppVersion = 1.4.4` |
 | Obsidian 1.5.x | 同 1.4.x | 每版 | 兼容层稳定 |
 
 ### 移动端约束
@@ -58,9 +58,9 @@ npm audit --omit=dev --audit-level=high
 
 ### Obsidian 最低版本约束
 
-`minAppVersion` 是 1.4.0，但编译类型是当前最新版。升级类型包后必须检查：
+`minAppVersion` 是 1.4.4，但编译类型是当前最新版。升级类型包后必须检查：
 
-1. 新增 API 是否在 1.4.0 已存在（对照 Obsidian 官方 changelog / d.ts 历史）。
+1. 新增 API 是否在 1.4.4 已存在（对照 Obsidian 官方 changelog / d.ts 历史）。
 2. 新 API 是否被 `Platform` 或 `app.version` 守卫。
 3. 是否影响 `ItemView` / `Plugin` / `Setting` 等基础生命周期。
 
