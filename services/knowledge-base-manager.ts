@@ -45,7 +45,8 @@ import { createLogger } from '@/shared/logger';
 
 const log = createLogger('KnowledgeBaseManager');
 const MAX_SOURCE_TEXT_LENGTH = 20_000_000; // 2000 万字：仅作内存安全上限，非功能性截断；正常全本（含数百万字长篇）不会触发
-export const MAX_SOURCE_FILE_SIZE = 10 * 1024 * 1024; // 10MB（SEC-7：导入硬上限，UI 入口共用）
+/** 导入源文件大小硬上限（10MB）：manager 与两 UI 入口共用，超限在读取前拒绝（SEC-7） */
+export const MAX_SOURCE_FILE_SIZE = 10 * 1024 * 1024;
 
 /**
  * BreakdownStatus 类型定义。
