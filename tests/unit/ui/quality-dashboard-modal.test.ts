@@ -64,6 +64,12 @@ class MockHTMLElement {
     }
 
     appendChild(child: MockHTMLElement): MockHTMLElement {
+        // safe-html 的 sanitizeHTMLToDom 替身返回 { html }：拼进 innerHTML 以保持断言语义
+        const fragment = child as unknown as { html?: unknown };
+        if (!(child instanceof MockHTMLElement) && typeof fragment.html === 'string') {
+            this._innerHTML += fragment.html;
+            return child;
+        }
         child.parentNode = this;
         this.children.push(child);
         return child;

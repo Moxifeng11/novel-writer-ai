@@ -40,6 +40,11 @@ function makeSink() {
             state.entries.push(opts?.text ?? '');
             return el;
         },
+        // safe-html 的 sanitizeHTMLToDom 替身返回 { html }：按字符串记录
+        appendChild(child: { html?: string }) {
+            state.entries.push(child?.html ?? '');
+            return child;
+        },
         set innerHTML(value: string) {
             state.entries = [value];
         },
