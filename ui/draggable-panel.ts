@@ -5,6 +5,7 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
 import { applyNwScope } from '@/utils/helpers';
 import { onNodeDoc, resolveNodeWindow } from '@/shared/dom-window';
+import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 import type NovelWriterPlugin from "@/main";
 
 /**
@@ -98,7 +99,7 @@ export class DraggablePanel extends ItemView {
     const iconSpan = this.dragHandle.createSpan({
       cls: "nw-float-header-icon",
     });
-    iconSpan.innerHTML = this.getIconHtml();
+    setSanitizedHtml(iconSpan, this.getIconHtml());
     this.dragHandle.createSpan({
       cls: "nw-float-header-title",
       text: this.panelTitle,
@@ -109,7 +110,7 @@ export class DraggablePanel extends ItemView {
       cls: "nw-float-collapse-btn",
       attr: { title: "折叠/展开" },
     });
-    this.collapseBtn.innerHTML = "▾";
+    this.collapseBtn.setText("▾");
 
     // 主体
     this.bodyContainer = this.panelContainer.createDiv({
@@ -232,7 +233,7 @@ export class DraggablePanel extends ItemView {
     if (!this.bodyContainer || !this.collapseBtn) return;
     this.isCollapsed = !this.isCollapsed;
     this.bodyContainer.style.display = this.isCollapsed ? "none" : "";
-    this.collapseBtn.innerHTML = this.isCollapsed ? "▸" : "▾";
+    this.collapseBtn.setText(this.isCollapsed ? "▸" : "▾");
     this.saveLayout();
   }
 
@@ -314,7 +315,7 @@ export class DraggablePanel extends ItemView {
     if (entry.collapsed && this.bodyContainer) {
       this.isCollapsed = true;
       this.bodyContainer.addClass('nw-u-d-none');
-      if (this.collapseBtn) this.collapseBtn.innerHTML = "▸";
+      if (this.collapseBtn) this.collapseBtn.setText("▸");
     }
   }
 

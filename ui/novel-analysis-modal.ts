@@ -1,6 +1,7 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
 import { NovelAnalyzer, NovelAnalysisResult } from '@/engine/novel-analyzer';
 import { barChart, donutChart, wordCloud } from './svg-charts';
+import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 import { AddFingerprintModal } from './fingerprint-library-modal';
 import { FingerprintExtractor } from '@/engine/fingerprint-extractor';
 import { createFingerprintEmbedding } from './fingerprint-embedding';
@@ -177,7 +178,7 @@ export class NovelAnalysisModal extends Modal {
             width: 520,
             height: 200
         });
-        sentenceChartSection.createDiv().innerHTML = sentenceChartHtml;
+        setSanitizedHtml(sentenceChartSection.createDiv(), sentenceChartHtml);
 
         const paragraphChartSection = this.contentContainer.createDiv({
             attr: { style: 'margin-bottom:20px;' }
@@ -190,7 +191,7 @@ export class NovelAnalysisModal extends Modal {
             width: 520,
             height: 200
         });
-        paragraphChartSection.createDiv().innerHTML = paragraphChartHtml;
+        setSanitizedHtml(paragraphChartSection.createDiv(), paragraphChartHtml);
 
         const ratioSection = this.contentContainer.createDiv({
             attr: { style: 'margin-bottom:20px;' }
@@ -205,7 +206,7 @@ export class NovelAnalysisModal extends Modal {
             { label: '叙述', value: r.ratio.narrationRatio, color: '#10b981' },
         ];
         const donutHtml = donutChart(donutData, { size: 240 });
-        ratioSection.createDiv().innerHTML = donutHtml;
+        setSanitizedHtml(ratioSection.createDiv(), donutHtml);
 
         const wordCloudSection = this.contentContainer.createDiv();
         wordCloudSection.createEl('h4', {
@@ -217,7 +218,7 @@ export class NovelAnalysisModal extends Modal {
             top20.map(w => ({ text: w.text, weight: w.count })),
             { width: 520, height: 160 }
         );
-        wordCloudSection.createDiv().innerHTML = cloudHtml;
+        setSanitizedHtml(wordCloudSection.createDiv(), cloudHtml);
     }
 
     private handleExtractFingerprint(): void {

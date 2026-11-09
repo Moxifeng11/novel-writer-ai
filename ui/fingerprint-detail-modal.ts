@@ -1,4 +1,5 @@
 import { App, Modal, Notice } from 'obsidian';
+import { appendSanitizedHtml } from '@/ui/rendering/safe-html';
 import { OperationConfirmModal } from './components/progress';
 import { StyleFingerprint, StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
 import { migrateV1ToV2 } from '@/engine/style/fingerprint-migrator';
@@ -175,7 +176,7 @@ export class FingerprintDetailModal extends Modal {
                 value: getDimensionScore(dimData.status, this.extractMetricForRadar(dim.key, dimData)),
             };
         });
-        radarCard.innerHTML += radarChart(radarData, { size: 280 });
+        appendSanitizedHtml(radarCard, radarChart(radarData, { size: 280 }));
 
         const donutCard = chartsRow.createDiv({
             cls: 'nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2'
@@ -188,7 +189,7 @@ export class FingerprintDetailModal extends Modal {
             { label: '描写', value: Math.round(fp.stats.descriptionRatio * 100), color: '#ec4899' },
             { label: '叙述', value: Math.round(narrationRatio * 100), color: '#10b981' },
         ];
-        donutCard.innerHTML += donutChart(donutData, { size: 220 });
+        appendSanitizedHtml(donutCard, donutChart(donutData, { size: 220 }));
 
         const barCard = section.createDiv({
             cls: 'nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2'
@@ -199,7 +200,7 @@ export class FingerprintDetailModal extends Modal {
             { label: '平均句长', value: fp.stats.avgSentenceLength },
             { label: '平均段长', value: fp.stats.avgParagraphLength },
         ];
-        barCard.innerHTML += barChart(barData, { width: 400, height: 180 });
+        appendSanitizedHtml(barCard, barChart(barData, { width: 400, height: 180 }));
     }
 
     /**

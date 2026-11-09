@@ -9,6 +9,7 @@ import type { EngineRegistry } from '@/engine/engine-registry';
 import { createLogger } from '@/shared/logger';
 import { isImeComposing } from '@/shared/keyboard';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
+import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 
 
 const log = createLogger('BatchImportModal');
@@ -942,7 +943,7 @@ export class BatchImportModal extends Modal {
         if (!this.taskListEl) return;
         const tasks = this.batchManager.getAllTasks();
         if (tasks.length === 0) {
-            this.taskListEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:12px;">暂无任务</div>';
+            setSanitizedHtml(this.taskListEl, '<div class="nw-empty-inline">暂无任务</div>');
             return;
         }
 

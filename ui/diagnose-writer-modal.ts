@@ -134,7 +134,7 @@ export class DiagnoseWriterModal extends Modal {
     }
 
     private async populateVolumes(project: string, selectEl: HTMLSelectElement): Promise<void> {
-        selectEl.innerHTML = '';
+        selectEl.empty();
         const volDirs: string[] = [];
         for (const f of this.app.vault.getFiles()) {
             // v4.0：卷目录位于 正文/ 或 步骤结果/ 之下

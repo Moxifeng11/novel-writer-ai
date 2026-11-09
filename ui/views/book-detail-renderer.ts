@@ -18,6 +18,7 @@ import type {
     ReadabilityData,
 } from './knowledge-base-view';
 import { isImeComposing } from '@/shared/keyboard';
+import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 
 const log = createLogger('BookDetailRenderer');
 
@@ -879,7 +880,7 @@ export class BookDetailRenderer {
     }
 
     private renderChart(container: HTMLElement, svgHtml: string): void {
-        container.innerHTML = svgHtml;
+        setSanitizedHtml(container, svgHtml);
         const chartContainer = container.querySelector('.nw-chart-container') as HTMLElement;
         if (chartContainer) {
             attachChartInteractions(chartContainer);

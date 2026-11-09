@@ -17,6 +17,7 @@ import {
     QUALITY_DIMENSIONS,
 } from '@/engine/quality/quality-score-engine';
 import type { QualityScore, EvaluationContext } from '@/engine/quality/quality-score-engine';
+import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 import { createWritingQualityEngine } from '@/engine/quality/quality-engine-factory';
 import { exportTextFile } from '@/shared/export-file';
 import { radarChart } from './svg-charts';
@@ -290,7 +291,7 @@ export class QualityDashboardModal extends Modal {
             value: a.avg,
         }));
         if (this.radarEl) {
-            this.radarEl.innerHTML = radarChart(radarData, { size: 300, title: `聚合评分 ${overall}` });
+            setSanitizedHtml(this.radarEl, radarChart(radarData, { size: 300, title: `聚合评分 ${overall}` }));
         }
 
         // 维度横条（可点击钻取）

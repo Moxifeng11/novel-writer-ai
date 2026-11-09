@@ -87,6 +87,12 @@
 .nw-p-12 {
     padding: 12px;
 }
+.nw-empty-inline {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+}
 .nw-ai-builder-root {
     width: min(1300px, 94vw);
     height: min(90vh, 900px);

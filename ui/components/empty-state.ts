@@ -22,6 +22,8 @@
  * ```
  */
 
+import { setSanitizedHtml } from '@/ui/rendering/safe-html';
+
 /** 空状态图标类型 */
 export type EmptyStateIcon = 'book' | 'chart' | 'data' | 'search' | 'folder' | 'default';
 
@@ -113,7 +115,7 @@ export function createEmptyState(options: EmptyStateOptions): HTMLElement {
     // 图标区域
     const iconWrap = document.createElement('div');
     iconWrap.className = 'nw-empty-state-icon';
-    iconWrap.innerHTML = SVG_ICONS[icon];
+    setSanitizedHtml(iconWrap, SVG_ICONS[icon]);
     container.appendChild(iconWrap);
 
     // 标题

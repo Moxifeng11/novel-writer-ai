@@ -79,7 +79,7 @@ export class CrossVolumeStateModal extends Modal {
     }
 
     private async populateVolumes(project: string, volSelect: HTMLSelectElement): Promise<void> {
-        volSelect.innerHTML = '';
+        volSelect.empty();
         const volDirs: string[] = [];
         for (const f of this.app.vault.getFiles()) {
             // v4.0：正文位于 03-大纲与章节/正文/第N卷/，步骤结果位于 步骤结果/第N卷/

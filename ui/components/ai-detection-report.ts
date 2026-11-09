@@ -8,6 +8,7 @@
 
 import { AntiAIDetector } from '@/engine/anti-ai-detector';
 import { radarChart } from '@/ui/svg-charts';
+import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 
 type ScoreLevel = 'low' | 'medium' | 'high';
 
@@ -59,10 +60,10 @@ export function renderAIDetectionReport(container: HTMLElement, text: string): v
     // 2. 雷达图（至少 3 个维度才渲染）
     if (result.features.length >= 3) {
         const chart = container.createDiv({ cls: 'nw-ai-report-chart' });
-        chart.innerHTML = radarChart(
+        setSanitizedHtml(chart, radarChart(
             result.features.map(f => ({ label: f.displayName, value: f.value })),
             { size: 280, title: 'AI 味特征' },
-        );
+        ));
     }
 
     // 3. 评分构成（各分项的原始得分与相对占比，用于定位主要 AI 味来源）

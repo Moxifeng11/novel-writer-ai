@@ -94,7 +94,7 @@ export class RebuildChaptersModal extends Modal {
     }
 
     private async populateVolumes(project: string, selectEl: HTMLSelectElement): Promise<void> {
-        selectEl.innerHTML = '';
+        selectEl.empty();
         const volDirs: string[] = [];
         for (const f of this.app.vault.getFiles()) {
             // v4.0：卷目录位于 正文/ 与 步骤结果/ 之下

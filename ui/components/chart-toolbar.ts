@@ -1,5 +1,6 @@
 import type { ChartType, ChartDensity } from '@/engine/types/chart-config';
 import { CHART_TYPE_LABELS } from '@/engine/types/chart-config';
+import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 
 /**
  * ChartToolbarOptions 类型定义。
@@ -43,7 +44,7 @@ const DENSITY_TITLES: Record<ChartDensity, string> = {
  * ```
  */
 export function createChartToolbar(container: HTMLElement, options: ChartToolbarOptions): void {
-	container.innerHTML = '';
+	container.empty();
 	container.className = 'nw-chart-toolbar';
 
 	const typeGroup = document.createElement('div');
@@ -72,7 +73,7 @@ export function createChartToolbar(container: HTMLElement, options: ChartToolbar
 		if (density === options.currentDensity) {
 			btn.classList.add('active');
 		}
-		btn.innerHTML = DENSITY_ICONS[density];
+		setSanitizedHtml(btn, DENSITY_ICONS[density]);
 		btn.title = DENSITY_TITLES[density];
 		btn.addEventListener('click', () => {
 			options.onDensityChange(density);
@@ -96,7 +97,7 @@ export function createChartToolbar(container: HTMLElement, options: ChartToolbar
 		sortOrders.forEach(({ order, label, icon }) => {
 			const btn = document.createElement('button');
 			btn.className = 'nw-chart-toolbar-btn nw-chart-toolbar-icon-btn';
-			btn.innerHTML = icon;
+			setSanitizedHtml(btn, icon);
 			btn.title = label;
 			btn.addEventListener('click', () => {
 				options.onSortChange?.(order);

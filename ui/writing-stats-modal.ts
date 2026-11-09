@@ -9,6 +9,7 @@ import { Modal, type App } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import { barChart, attachChartInteractions } from './svg-charts';
 import { formatWords, type DayPoint, type StatsSummary } from '@/shared/writing-stats';
+import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 import { collectKnowledgeUsage } from '@/engine/knowledge-usage';
 import { summarizeRagSources } from '@/shared/rag-sources';
 
@@ -139,11 +140,11 @@ export class WritingStatsModal extends Modal {
             return;
         }
         const data = points.map(point => ({ label: this.formatLabel(point.date, tab), value: point.words }));
-        container.innerHTML = barChart(data, {
+        setSanitizedHtml(container, barChart(data, {
             width: 720,
             height: 240,
             title: tab === 'day' ? '最近 7 天' : tab === 'week' ? '最近 8 周' : '最近 6 个月',
-        });
+        }));
         attachChartInteractions(container);
     }
 

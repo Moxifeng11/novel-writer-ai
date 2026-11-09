@@ -356,7 +356,8 @@ export function attachChartInteractions(container: HTMLElement): void {
 			if (value) parts.push(value);
 			if (count) parts.push(`点数: ${count}`);
 			if (hasXY) parts.push(`(${xVal}, ${yVal})`);
-			tooltip.innerHTML = parts.map(p => `<div>${escapeHtml(p)}</div>`).join('');
+			tooltip.empty();
+			for (const p of parts) tooltip.createDiv({ text: p });
 			tooltip.classList.add('visible');
 			tooltip.setAttribute('aria-hidden', 'false');
 			positionTooltip(tooltip, me, container);

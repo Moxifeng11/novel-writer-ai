@@ -1580,6 +1580,17 @@ class FakeChartEl {
         this.children.push(child);
         return child;
     }
+    empty(): void {
+        this.children = [];
+        this.innerHTML = '';
+    }
+    createDiv(options: { text?: string } = {}): FakeChartEl {
+        const child = new FakeChartEl();
+        child.innerHTML = options.text ?? '';
+        this.children.push(child);
+        this.innerHTML += `<div>${options.text ?? ''}</div>`;
+        return child;
+    }
 }
 
 const INTERACTIVE_SELECTORS = [
@@ -2108,9 +2119,16 @@ class FakeUiEl {
         this.style[name] = value;
     }
     empty(): this {        this.children = [];
+        this.innerHTML = '';
         return this;
     }
     appendChild<T extends FakeUiEl>(child: T): T {
+        // safe-html 的 sanitizeHTMLToDom 替身返回 { html }：按字符串拼接，不进入子节点树
+        const fragment = child as unknown as { html?: unknown };
+        if (!(child instanceof FakeUiEl) && typeof fragment.html === 'string') {
+            this.innerHTML += fragment.html;
+            return child;
+        }
         child.parent = this;
         this.children.push(child);
         return child;

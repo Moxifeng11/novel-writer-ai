@@ -5,8 +5,7 @@
  * 实体用四色标记（不可编辑），正文可自由编辑，实时自动保存
  *
  * 提取自 full-writer-view.ts:
- *   - escapeHtml (L4068)
- *   - buildEntityMarkedHtml (L4025)
+ *   - buildEntityMarkedFragment (DOM 构建，替代字符串拼 HTML)
  *   - extractPlainTextFromEditor (L4049)
  *   - renderPolishEditor (L3898) → PolishEditor.render()
  */
@@ -21,6 +20,7 @@ import type { RhythmAnalysis } from '@/shared/co-writer-types';
 import { StyleFingerprintLibrary, StyleFingerprint } from '@/engine/style-fingerprint-library';
 import { getStyleIntensityEngine } from '@/engine/style/style-intensity-engine';
 import { createLogger } from '@/shared/logger';
+import { resolveNodeWindow } from '@/shared/dom-window';
 
 
 const log = createLogger('PolishEditor');
@@ -32,44 +32,62 @@ const intensityEngine = getStyleIntensityEngine();
 // ============================================================
 
 /**
- * HTML 实体转义（防止 XSS 和标记污染）
+ * 将正文文本转为带实体标记的 DocumentFragment。
  *
- * @param text - 文本内容
- * @returns 文本结果
- */
-export function escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.appendChild(document.createTextNode(text));
-    return div.innerHTML;
-}
-
-/**
- * 将正文文本转为带实体标记的 HTML
+ * 不再拼 HTML 字符串：实体名/类型/颜色都来自项目文件（外部数据），
+ * 用 DOM 构建可以彻底避开 innerHTML 注入面；实体标记本身不可编辑。
  *
  * @param bodyText - 正文文本
  * @param entityMap - 实体映射
  * @param typeLabels - 类型标签列表
- * @returns 文本结果
+ * @param doc - 编辑器所属 document（popout 安全）
+ * @returns 可直接 append 到编辑区的片段
  */
-export function buildEntityMarkedHtml(
+export function buildEntityMarkedFragment(
     bodyText: string,
     entityMap: Map<string, { type: string; color: string }>,
     typeLabels: Record<string, string>,
-): string {
-    // 按长度降序排序，优先匹配长实体名（如"维克多·克劳利" 优先于 "维克多"）
+    doc: Document = document,
+): DocumentFragment {
+    const fragment = doc.createDocumentFragment();
     const sortedNames = [...entityMap.keys()].sort((a, b) => b.length - a.length);
-    if (sortedNames.length === 0) return escapeHtml(bodyText);
+    if (sortedNames.length === 0) {
+        fragment.appendChild(doc.createTextNode(bodyText));
+        return fragment;
+    }
 
-    // 构建正则
+    // 按长度降序排序，优先匹配长实体名（如"维克多·克劳利" 优先于 "维克多"）
     const escapedNames = sortedNames.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    const pattern = new RegExp(escapedNames.join('|'), 'g');
-
-    return escapeHtml(bodyText).replace(pattern, (match) => {
-        const info = entityMap.get(match);
-        if (!info) return match;
-        const typeLabel = typeLabels[info.type] || info.type;
-        return `<span contenteditable="false" class="nw-entity-tag nw-entity-${info.type}" style="color:${info.color};font-weight:600;background:${info.color}18;padding:0 2px;border-radius:2px;cursor:default;user-select:all;" title="${typeLabel}: ${match}" data-entity-type="${info.type}" data-entity-name="${match}">${match}</span>`;
-    });
+    const pattern = new RegExp(`(${escapedNames.join('|')})`, 'g');
+    let lastIndex = 0;
+    for (const match of bodyText.matchAll(pattern)) {
+        const index = match.index ?? 0;
+        if (index > lastIndex) {
+            fragment.appendChild(doc.createTextNode(bodyText.slice(lastIndex, index)));
+        }
+        const name = match[0];
+        const info = entityMap.get(name);
+        if (!info) {
+            fragment.appendChild(doc.createTextNode(name));
+        } else {
+            const typeLabel = typeLabels[info.type] || info.type;
+            const span = doc.createElement('span');
+            span.className = `nw-entity-tag nw-entity-${info.type}`;
+            span.contentEditable = 'false';
+            span.dataset.entityType = info.type;
+            span.dataset.entityName = name;
+            span.title = `${typeLabel}: ${name}`;
+            span.style.setProperty('--nw-entity-color', info.color);
+            span.style.setProperty('--nw-entity-bg', `${info.color}18`);
+            span.setText(name);
+            fragment.appendChild(span);
+        }
+        lastIndex = index + name.length;
+    }
+    if (lastIndex < bodyText.length) {
+        fragment.appendChild(doc.createTextNode(bodyText.slice(lastIndex)));
+    }
+    return fragment;
 }
 
 /**
@@ -218,16 +236,20 @@ export class PolishEditor {
             bodyText.replace(/---[\s\S]*?---\n?/, '').substring(0, 80)
         );
 
-        // 将正文转换为带实体标记的 HTML
-        const markedHtml = buildEntityMarkedHtml(bodyText, entityMap, typeLabels);
-
         // 创建可编辑区域
         const editorWrapper = area.createDiv({ cls: 'novel-writer-polish-editor-wrapper' });
         const editorDiv = editorWrapper.createDiv({
             cls: 'novel-writer-polish-editor',
             attr: { contenteditable: 'true', style: 'min-height:300px;max-height:500px;overflow-y:auto;padding:12px;border:1px solid var(--background-modifier-border);border-radius:6px;font-size:13px;line-height:1.8;white-space:pre-wrap;background:var(--background-primary);font-family:var(--font-text);' }
         }) as HTMLDivElement;
-        editorDiv.innerHTML = markedHtml;
+
+        // 将正文转换为带实体标记的 fragment（DOM 构建，不走 innerHTML）
+        editorDiv.appendChild(buildEntityMarkedFragment(
+            bodyText,
+            entityMap,
+            typeLabels,
+            editorDiv.ownerDocument || document,
+        ));
 
         // 自动保存：debounce 500ms
         const triggerAutoSave = () => {
@@ -261,13 +283,14 @@ export class PolishEditor {
         // 阻止实体 span 内粘贴破坏标记
         editorDiv.addEventListener('paste', (e) => {
             e.preventDefault();
-            const text = (e.clipboardData || window.clipboardData)?.getData('text/plain') || '';
+            const win = resolveNodeWindow(editorDiv);
+            const text = (e.clipboardData || (win as Window & { clipboardData?: DataTransfer }).clipboardData)?.getData('text/plain') || '';
             // 只粘贴纯文本
-            const selection = window.getSelection();
+            const selection = win.getSelection();
             if (selection && selection.rangeCount > 0) {
                 const range = selection.getRangeAt(0);
                 range.deleteContents();
-                range.insertNode(document.createTextNode(text));
+                range.insertNode((editorDiv.ownerDocument || document).createTextNode(text));
                 range.collapse(false);
             }
             triggerAutoSave();
@@ -284,9 +307,14 @@ export class PolishEditor {
                     fullText,
                     selection,
                     (polishedText: string) => {
-                        // 重建带实体标记的 HTML 并替换编辑器内容
-                        const newMarkedHtml = buildEntityMarkedHtml(polishedText, entityMap, typeLabels);
-                        editorDiv.innerHTML = newMarkedHtml;
+                        // 重建带实体标记的 fragment 并替换编辑器内容
+                        editorDiv.empty();
+                        editorDiv.appendChild(buildEntityMarkedFragment(
+                            polishedText,
+                            entityMap,
+                            typeLabels,
+                            editorDiv.ownerDocument || document,
+                        ));
                         triggerAutoSave();
                     },
                     // D6: 指纹风格必须跟随当前章节所属项目，不能由弹窗再猜 activeFile

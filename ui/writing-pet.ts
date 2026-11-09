@@ -13,6 +13,7 @@
 
 import type NovelWriterPlugin from '@/main';
 import { formatWords, type StatsSummary } from '@/shared/writing-stats';
+import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 import { onNodeDoc } from '@/shared/dom-window';
 
 /**
@@ -100,7 +101,7 @@ export class WritingPet {
         });
         // 浮动动画放在内层 HTML 容器：外层是点击/拖拽目标，必须保持几何稳定。
         const floatWrap = petBody.createDiv({ cls: 'nw-pet-float' });
-        floatWrap.innerHTML = PET_SVG;
+        setSanitizedHtml(floatWrap, PET_SVG);
         petBody.addEventListener('pointerdown', (e) => this.onPointerDown(e));
         petBody.addEventListener('click', () => {
             if (this.moved) return;

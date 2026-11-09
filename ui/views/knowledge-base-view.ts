@@ -24,6 +24,7 @@ import { buildKbDetailActionButtons } from './kb-detail-actions';
 import { buildKbConfigPanel } from './kb-config-panel';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
 import { yieldToUI } from '@/shared/yield';
+import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 
 const log = createLogger('KnowledgeBaseView');
 import {
@@ -1713,7 +1714,7 @@ export class KnowledgeBaseView extends ItemView {
     }
 
     private renderChart(container: HTMLElement, svgHtml: string): void {
-        container.innerHTML = svgHtml;
+        setSanitizedHtml(container, svgHtml);
         const chartContainer = container.querySelector('.nw-chart-container') as HTMLElement;
         if (chartContainer) {
             attachChartInteractions(chartContainer);

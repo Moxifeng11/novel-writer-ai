@@ -1,6 +1,7 @@
 import { App, Modal, Notice } from 'obsidian';
 import { OperationConfirmModal } from './components/progress';
 import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
+import { appendSanitizedHtml } from '@/ui/rendering/safe-html';
 import { KnowledgeBaseManager, BookBasicInfo } from '@/services/knowledge-base-manager';
 import { DeconstructionScheduler } from '@/engine/deconstruction-scheduler';
 import { VectorEnhancer } from '@/engine/vector-enhancer';
@@ -479,7 +480,7 @@ export class KnowledgeDetailModal extends Modal {
         const donutCard = chartSection.createDiv({
             cls: 'nw-card-lg'
         });
-        donutCard.innerHTML += donutChart(donutData, { size: 300 });
+        appendSanitizedHtml(donutCard, donutChart(donutData, { size: 300 }));
 
         const actionsSection = container.createDiv({ cls: 'nw-mb-lg' });
         actionsSection.createEl('div', { text: '快速操作', cls: 'nw-section-heading' });
@@ -607,7 +608,7 @@ export class KnowledgeDetailModal extends Modal {
             label,
             value: this.estimateFeatureScore(data.features?.[label] || '')
         }));
-        radarCard.innerHTML += radarChart(radarData, { size: 320 });
+        appendSanitizedHtml(radarCard, radarChart(radarData, { size: 320 }));
 
         const statsSection = container.createDiv({ cls: 'nw-mb-lg' });
         statsSection.createEl('div', { text: '统计数据', cls: 'nw-section-heading' });
@@ -681,7 +682,7 @@ export class KnowledgeDetailModal extends Modal {
                 { name: '事件密度', data: curveData.map(d => ({ label: d.label, value: d.density })), color: '#3b82f6', smooth: true },
                 { name: '综合节奏', data: curveData.map(d => ({ label: d.label, value: d.overall })), color: '#10b981', smooth: true },
             ];
-            curveCard.innerHTML += lineChart(series, { width: 600, height: 280 });
+            appendSanitizedHtml(curveCard, lineChart(series, { width: 600, height: 280 }));
         } else {
             curveCard.createDiv({ text: '暂无情绪曲线数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
         }
@@ -695,7 +696,7 @@ export class KnowledgeDetailModal extends Modal {
 
         const scatterPoints = data.coolPoints;
         if (scatterPoints && scatterPoints.length > 0) {
-            scatterCard.innerHTML += scatterChart(scatterPoints, { width: 600, height: 250, xAxisLabel: '章节进度', yAxisLabel: '爽感强度' });
+            appendSanitizedHtml(scatterCard, scatterChart(scatterPoints, { width: 600, height: 250, xAxisLabel: '章节进度', yAxisLabel: '爽感强度' }));
         } else {
             scatterCard.createDiv({ text: '暂无爽点数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
         }
@@ -709,7 +710,7 @@ export class KnowledgeDetailModal extends Modal {
 
         const matchData = data.structureMatches;
         if (matchData && matchData.length > 0) {
-            structureCard.innerHTML += barChart(matchData, { width: 500, height: 220, horizontal: true });
+            appendSanitizedHtml(structureCard, barChart(matchData, { width: 500, height: 220, horizontal: true }));
         } else {
             structureCard.createDiv({ text: '暂无结构匹配数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
         }
@@ -756,7 +757,7 @@ export class KnowledgeDetailModal extends Modal {
         const categories = data.categories;
         if (categories && Object.keys(categories).length > 0) {
             const barData = Object.entries(categories).map(([label, value]) => ({ label, value }));
-            categoryCard.innerHTML += barChart(barData, { width: 500, height: 220 });
+            appendSanitizedHtml(categoryCard, barChart(barData, { width: 500, height: 220 }));
         } else {
             categoryCard.createDiv({ text: '暂无技巧分类数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
         }
@@ -879,7 +880,7 @@ export class KnowledgeDetailModal extends Modal {
 
         const timelineEvents = data.timeline;
         if (timelineEvents && timelineEvents.length > 0) {
-            timelineCard.innerHTML += timelineChart(timelineEvents, { width: 650, height: 140 });
+            appendSanitizedHtml(timelineCard, timelineChart(timelineEvents, { width: 650, height: 140 }));
         } else {
             timelineCard.createDiv({ text: '暂无起承转合数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
         }
@@ -1038,7 +1039,7 @@ export class KnowledgeDetailModal extends Modal {
         const relationCard = relationSection.createDiv({
             cls: 'nw-p-20-bg2-br8-center'
         });
-        relationCard.innerHTML += this.renderRelationshipGraph(data.relationships || [], mainChars || []);
+        appendSanitizedHtml(relationCard, this.renderRelationshipGraph(data.relationships || [], mainChars || []));
 
         const searchSection = container.createDiv({ cls: 'nw-mb-md' });
         const searchInput = searchSection.createEl('input', {
@@ -1255,7 +1256,7 @@ export class KnowledgeDetailModal extends Modal {
                 { label: '已回收', value: normalizeDetailNumber(stats.resolved), color: '#10b981' },
                 { label: '待回收', value: normalizeDetailNumber(stats.unresolved), color: '#f59e0b' },
             ];
-            donutCard.innerHTML += donutChart(donutData, { size: 220 });
+            appendSanitizedHtml(donutCard, donutChart(donutData, { size: 220 }));
         }
 
         if (data.networkAnalysis?.densityByChapter) {
@@ -1275,14 +1276,14 @@ export class KnowledgeDetailModal extends Modal {
                 value: d.payoffCount,
             }));
 
-            densityCard.innerHTML += lineChart([
+            appendSanitizedHtml(densityCard, lineChart([
                 { name: '埋设', data: setupData, color: '#3b82f6' },
                 { name: '回收', data: payoffData, color: '#10b981' },
             ], {
                 width: 650,
                 height: 180,
                 showLegend: true
-            });
+            }));
         }
 
         const timelineSection = container.createDiv({ cls: 'nw-mb-lg' });
@@ -1294,7 +1295,7 @@ export class KnowledgeDetailModal extends Modal {
 
         const timelineEvents = data.timeline;
         if (timelineEvents && timelineEvents.length > 0) {
-            timelineCard.innerHTML += timelineChart(timelineEvents, { width: 650, height: 160 });
+            appendSanitizedHtml(timelineCard, timelineChart(timelineEvents, { width: 650, height: 160 }));
         } else {
             timelineCard.createDiv({ text: '暂无伏笔时间线数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
         }

@@ -20,6 +20,7 @@
  */
 
 import { App, Modal, Notice } from 'obsidian';
+import { appendSanitizedHtml } from '@/ui/rendering/safe-html';
 import {
     StyleFingerprintLibrary,
     StyleFingerprint,
@@ -271,7 +272,7 @@ export class FingerprintBlendModal extends Modal {
 
         const radarData = this.computeRadarData();
         if (radarData.length > 0) {
-            radarCard.innerHTML += radarChart(radarData, { size: 320 });
+            appendSanitizedHtml(radarCard, radarChart(radarData, { size: 320 }));
         } else {
             radarCard.createDiv({
                 text: '请至少选择一个指纹',

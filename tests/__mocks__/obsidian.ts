@@ -417,6 +417,10 @@ export class MarkdownRenderer {
 }
 
 export function htmlToMarkdown(_html: string): string { return ''; }
+/** 测试替身：只标记已清洗，具体 DOM 解析交给 jsdom/真实运行时 */
+export function sanitizeHTMLToDom(html: string): DocumentFragment {
+    return { html, sanitized: true } as unknown as DocumentFragment;
+}
 export function requestUrl(_req: any): Promise<any> { return Promise.resolve({ status: 200, json: {} }); }
 export function request(_req: any): Promise<any> { return Promise.resolve({ status: 200, json: {} }); }
 export function getIcon(_iconId: string): HTMLElement { return document.createElement('span'); }

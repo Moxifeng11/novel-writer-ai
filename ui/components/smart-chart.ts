@@ -1,5 +1,6 @@
 import type { ChartType, ChartDensity, SmartChartOptions } from '@/engine/types/chart-config';
 import { createChartToolbar } from './chart-toolbar';
+import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 import {
 	radarChart,
 	barChart,
@@ -264,7 +265,7 @@ export class SmartChart {
 	 */
 	destroy(): void {
 		this.destroyed = true;
-		this.container.innerHTML = '';
+		this.container.empty();
 		this.container.classList.remove('nw-smart-chart');
 	}
 
@@ -311,7 +312,7 @@ export class SmartChart {
 	}
 
 	private renderChart(): void {
-		this.chartContainer.innerHTML = this.getChartSvg();
+		setSanitizedHtml(this.chartContainer, this.getChartSvg());
 		attachChartInteractions(this.chartContainer);
 	}
 

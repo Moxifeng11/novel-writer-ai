@@ -58,11 +58,11 @@ export class CoWriteSection extends SettingsSection {
 
         const loadLocalModels = async () => {
             if (!localModelDropdown) return;
-            localModelDropdown.selectEl.innerHTML = '';
+            localModelDropdown.selectEl.empty();
             localModelDropdown.addOption('', '加载中...');
             localModelDropdown.setValue('');
             const models = await getOllamaModelsWithFallback(this.plugin.settings);
-            localModelDropdown.selectEl.innerHTML = '';
+            localModelDropdown.selectEl.empty();
             localModelDropdown.addOption('', '（未设置 — 协同写作将无法使用）');
             for (const m of models) {
                 localModelDropdown.addOption(m, `🖥 ${m}`);
@@ -72,7 +72,7 @@ export class CoWriteSection extends SettingsSection {
 
         const refreshCloudModelDropdown = () => {
             if (!cloudModelDropdown) return;
-            cloudModelDropdown.selectEl.innerHTML = '';
+            cloudModelDropdown.selectEl.empty();
             cloudModelDropdown.addOption('', '（使用默认模型）');
             const providerId = this.plugin.settings.coWriteCloudProvider || '';
             if (providerId) {

@@ -4,6 +4,7 @@ import { showSuccess, showError, showWarning } from '@/utils/helpers';
 import { createLogger } from '@/shared/logger';
 import { OperationConfirmModal } from './components/progress';
 import { isImeComposing } from '@/shared/keyboard';
+import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 
 
 const log = createLogger('ExistingEntityManager');
@@ -177,8 +178,8 @@ export class ExistingEntityManagerModal extends Modal {
         const stats = bar.createDiv();
         stats.addClass('nw-ee-muted-sm');
         const unnamedCount = this.entities.filter(e => e.isUnnamed).length;
-        stats.innerHTML = `共 <b>${this.entities.length}</b> 个文件` +
-            (unnamedCount > 0 ? `（含 <span style="color:var(--text-error)"><b>${unnamedCount}</b></span> 个未命名）` : '');
+        setSanitizedHtml(stats, `共 <b>${this.entities.length}</b> 个文件` +
+            (unnamedCount > 0 ? `（含 <span class="nw-text-error"><b>${unnamedCount}</b></span> 个未命名）` : ''));
 
         const filterRow = bar.createDiv();
         filterRow.addClass('nw-ee-filter-row');
@@ -393,8 +394,8 @@ export class ExistingEntityManagerModal extends Modal {
             const parts: string[] = [];
             if (renamedCount > 0) parts.push(`改名 <b>${renamedCount}</b>`);
             if (modifiedCount > 0) parts.push(`编辑 <b>${modifiedCount}</b>`);
-            if (deletedCount > 0) parts.push(`<span style="color:var(--text-error)">删除 <b>${deletedCount}</b></span>`);
-            summary.innerHTML = '待应用：' + parts.join('，');
+            if (deletedCount > 0) parts.push(`<span class="nw-text-error">删除 <b>${deletedCount}</b></span>`);
+            setSanitizedHtml(summary, '待应用：' + parts.join('，'));
         } else {
             summary.setText('无变更');
         }

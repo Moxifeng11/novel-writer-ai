@@ -1,5 +1,6 @@
 import { SuggestionManager } from '@/engine/suggestion-manager';
 import { onNodeDoc, resolveNodeWindow } from '@/shared/dom-window';
+import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 import type { AnalysisSuggestion, SuggestionType } from '@/engine/types/analysis-suggestion';
 
 /**
@@ -181,7 +182,7 @@ export class CategorizationReviewPanel {
         }
 
         const middleSection = mainRow.createDiv('nw-cat-item-middle');
-        middleSection.innerHTML = this.renderConfidenceBadge(suggestion.confidence);
+        setSanitizedHtml(middleSection, this.renderConfidenceBadge(suggestion.confidence));
 
         if (suggestion.evidence && suggestion.evidence.length > 0) {
             const evidencePreview = middleSection.createSpan({

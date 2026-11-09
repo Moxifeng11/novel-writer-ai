@@ -106,9 +106,20 @@ class MockHTMLElement {
     }
 
     appendChild(child: MockHTMLElement): MockHTMLElement {
+        // safe-html 的 sanitizeHTMLToDom 替身返回 { html }；测试里按 HTML 字符串拼接处理，
+        // 这样 innerHTML 断言仍能反映图表内容。
+        const fragment = child as unknown as { html?: unknown };
+        if (!(child instanceof MockHTMLElement) && typeof fragment.html === 'string') {
+            this._innerHTML += fragment.html;
+            return child;
+        }
         child.parentNode = this;
         this.children.push(child);
         return child;
+    }
+
+    empty(): void {
+        this.innerHTML = '';
     }
 
     removeChild(child: MockHTMLElement): MockHTMLElement {

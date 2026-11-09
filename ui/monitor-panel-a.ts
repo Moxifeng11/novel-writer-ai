@@ -8,6 +8,7 @@ import { DraggablePanel } from "./draggable-panel";
 import { EmotionCurveAnalyzer } from "@/engine/emotion-curve-analyzer";
 import { RhythmAnalyzer } from "@/engine/rhythm-analyzer";
 import { EmotionCurveView } from "./components/emotion-curve-view";
+import { appendSanitizedHtml } from '@/ui/rendering/safe-html';
 import { CoWriteFacade } from "./services/co-write-facade";
 
 /**
@@ -101,7 +102,7 @@ export class MonitorPanelA extends DraggablePanel {
         if (token !== this.analysisSeq) return;
         this.emotionContent.empty();
         const view = new EmotionCurveView();
-        this.emotionContent.innerHTML += view.render(curve);
+        appendSanitizedHtml(this.emotionContent, view.render(curve));
       } catch (e) {
         if (token !== this.analysisSeq) return;
         this.emotionContent.empty();

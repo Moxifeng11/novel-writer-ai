@@ -10,7 +10,6 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
-import { escapeHtml } from '@/utils/helpers';
 import { CoverPickerController } from './cover-picker-controller';
 import { renderQuickToolsPanel, type ProjectQuickAction } from './quick-tools-panel';
 import { WritingStyleModal } from '@/ui/writing-style-modal';
@@ -837,9 +836,10 @@ export class ProjectSelectorController {
 
                 const stIcon = isCompleted ? ' ✅' : (isNext ? ' ✏️ 待写' : ' 📝');
                 const displayChapter = formatUnitDisplay(ch.chapter, unitLabel);
-                // F1：ch.title 来自 frontmatter（AI 生成/导入可写入任意文本），ch.chapter 为解析串，
-                // innerHTML 插值前必须转义，防止章节标题 XSS。
-                item.innerHTML = `<span class="novel-writer-chapter-num">${escapeHtml(displayChapter)}</span><span class="novel-writer-chapter-title">${escapeHtml(ch.title || '无标题')}${stIcon}</span>`;
+                // F1：ch.title 来自 frontmatter（AI 生成/导入可写入任意文本），用 DOM 文本节点
+                // 直接承载，不走 innerHTML，天然无 XSS。
+                item.createSpan({ cls: 'novel-writer-chapter-num', text: displayChapter });
+                item.createSpan({ cls: 'novel-writer-chapter-title', text: `${ch.title || '无标题'}${stIcon}` });
                 item.onclick = async () => {
                     if (openDirectly && ch.file) {
                         await this.app.workspace.getLeaf(false).openFile(ch.file);

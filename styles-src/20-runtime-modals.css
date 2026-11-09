@@ -1164,6 +1164,15 @@
 }
 
 /* ── 润色编辑器实体高亮（来源：ui/polish-editor.ts） ── */
+.nw-entity-tag {
+    color: var(--nw-entity-color, var(--text-normal));
+    background: var(--nw-entity-bg, transparent);
+    font-weight: 600;
+    padding: 0 2px;
+    border-radius: 2px;
+    cursor: default;
+    user-select: all;
+}
 .nw-entity-char { color: #e74c3c !important; background: rgba(231,76,60,0.1) !important; }
         .nw-entity-locs { color: #3498db !important; background: rgba(52,152,219,0.1) !important; }
         .nw-entity-factions { color: #2ecc71 !important; background: rgba(46,204,113,0.1) !important; }
