@@ -621,9 +621,18 @@ export class SettlementEngine {
         this.settleStep_aggregateAndMaybeRollback(ctx);
         // 异步部分（回滚 / V2 关系）放到独立方法，避免上面同步汇总后再 await
         await this.settleStep_finalizeRollback(ctx);
-        await this.settleStep_updateV2Relations(ctx);
-        await this.settleStep_updatePromiseLedger(ctx);
-        await this.settleStep_updateCharacterArcs(ctx);
+        // D-3（2026-11-10 交叉审计）：回滚后 journal 已清空，此时再写 V2 关系/
+        // 承诺账本/角色弧线，会把「已回滚」的章节状态又被部分改写且永不可回滚。
+        // 部分失败的结算一律跳过这三个附加写入，用户重跑结算即可补齐（幂等）。
+        if (ctx.hasPartialFailure) {
+            log.warn('[SettlementEngine] 本次结算部分失败' +
+                (ctx.result.rollback ? '且已回滚' : '') +
+                '，跳过 V2 关系/承诺账本/角色弧线写入（重跑结算可补齐）');
+        } else {
+            await this.settleStep_updateV2Relations(ctx);
+            await this.settleStep_updatePromiseLedger(ctx);
+            await this.settleStep_updateCharacterArcs(ctx);
+        }
 
         // ─── 19: 剧情记忆摘要（派生数据；失败不影响结算）───
         if (!ctx.hasPartialFailure && !ctx.rollbackFailed) {

@@ -10,7 +10,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { TFile, TFolder } from '../../__mocks__/obsidian';
 import { SettlementEngine } from '../../../engine/settlement-engine';
-import { pjCharFile, pjForeshadowDB, pjTimelineBoard, pjBodyFile } from '../../../shared/paths';
+import { getRelationshipFilePath } from '../../../engine/relationship-engine';
+import { pjCharFile, pjForeshadowDB, pjTimelineBoard, pjBodyFile, pjPromiseLedger } from '../../../shared/paths';
 import type { FileSystemPort, FrontmatterPort, VaultMetaPort } from '../../../shared/file-system-port';
 import { withWriteLock } from '../../../shared/write-lock';
 import { createSettleContext } from '../../../engine/settlement/settle-context';
@@ -324,6 +325,40 @@ describe('SettlementEngine — 部分失败回滚', () => {
 
         const body = h.files.get(BODY_PATH)!;
         expect(body).toContain('status: written');
+    });
+});
+
+describe('SettlementEngine — 回滚后不写 V2/承诺/弧线（D-3，2026-11-10 审计）', () => {
+    const RELATION_PATH = getRelationshipFilePath(PROJECT);
+    const RELATION_SEED = `---
+tags: [关系状态]
+---
+
+# 角色关系状态
+`;
+    const D3_REPORT = `${REPORT}
+RELATION_5D: 甲|乙|trust+6|并肩作战
+PROMISE_OPEN: 三年之约 | 角色承诺 | 第6章 | 破案线`;
+
+    it('部分失败回滚后：V2 关系与承诺账本不写入（旧实现会在回滚后脏写且不可回滚）', async () => {
+        const h = makeHarness({ ...seedAll(), [RELATION_PATH]: RELATION_SEED }, /伏笔库\.md$/);
+        const result = await h.engine.settle(PROJECT, CHAP_DIR, CHAP_NAME, D3_REPORT, BODY_SEED);
+
+        expect(result.rollback).toBeDefined();
+        // 回滚后 journal 已清空：这三个附加写入若执行，将永久残留
+        expect(h.files.get(RELATION_PATH)).toBe(RELATION_SEED);
+        expect(h.files.get(pjPromiseLedger(PROJECT))).toBeUndefined();
+    });
+
+    it('结算成功时守卫不误伤：V2 关系增量正常写入', async () => {
+        const h = makeHarness({ ...seedAll(), [RELATION_PATH]: RELATION_SEED });
+        const result = await h.engine.settle(PROJECT, CHAP_DIR, CHAP_NAME, D3_REPORT, BODY_SEED);
+
+        expect(result.rollback).toBeUndefined();
+        const relation = h.files.get(RELATION_PATH)!;
+        expect(relation).toContain('甲 ↔ 乙');
+        expect(relation).toContain('trust: 56');
+        expect(relation).toContain('history_keys');
     });
 });
 
