@@ -43,6 +43,21 @@ export const LEGACY_TO_NAMESPACE: Record<string, string> = {
     连贯性审查: 'nw/步骤/连贯性审查',
     状态快照: 'nw/设定/状态快照',
     记忆碎片: 'nw/设定/记忆碎片',
+    // 台账/看板/镜像实体：写入端历史上用扁平标签，这里补齐映射，避免迁移命令永远补不上
+    章节状态快照: 'nw/设定/状态快照',
+    剧情记忆: 'nw/设定/剧情记忆',
+    伏笔追踪: 'nw/设定/伏笔追踪',
+    看板: 'nw/设定/看板',
+    总览: 'nw/设定/总览',
+    大纲: 'nw/步骤/大纲',
+    分卷大纲: 'nw/步骤/分卷大纲',
+    步骤结果: 'nw/步骤/步骤结果',
+    结算: 'nw/步骤/结算表',
+    质检: 'nw/步骤/质量控制',
+    功法: 'nw/实体/物品',
+    事件: 'nw/实体/事件',
+    伏笔: 'nw/实体/伏笔',
+    关系: 'nw/实体/关系',
 };
 
 /** 类型 → 看板 filter 用的命名空间标签 */
@@ -56,6 +71,11 @@ export const KIND_NAMESPACE_TAG: Partial<Record<NotebookFileKind, string>> = {
     settingLib: 'nw/设定/设定库',
     foreshadow: 'nw/设定/伏笔库',
     timeline: 'nw/设定/时间线',
+    relationship: 'nw/设定/关系状态',
+    event: 'nw/实体/事件',
+    foreshadowItem: 'nw/实体/伏笔',
+    relation: 'nw/实体/关系',
+    chapterDigest: 'nw/设定/剧情记忆',
 };
 
 /**

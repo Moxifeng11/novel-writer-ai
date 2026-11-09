@@ -5,6 +5,7 @@ import {
     buildChapterProgressBase,
     buildCharacterBase,
     buildItemBase,
+    buildLedgerBase,
     buildPlaceFactionBase,
     buildProjectBases,
 } from '../../../engine/bases-generator';
@@ -51,11 +52,13 @@ describe('bases-generator — 实体看板', () => {
         expect(yaml).toContain('property: 身份');
     });
 
-    it('物品看板按持有者分组，含当前状态', () => {
+    it('物品看板按持有者分组，含当前状态与效果', () => {
         const yaml = buildItemBase(PROJECT);
         expect(yaml).toContain('file.hasTag("nw/实体/物品")');
         expect(yaml).toContain('- 所属/归属');
         expect(yaml).toContain('- 当前状态');
+        expect(yaml).toContain('- 效果');
+        expect(yaml).not.toContain('- effect');
         expect(yaml).toContain('property: 所属/归属');
     });
 
@@ -70,16 +73,28 @@ describe('bases-generator — 实体看板', () => {
 });
 
 describe('bases-generator — 项目看板全集', () => {
-    it('四个看板文件路径在 .看板 目录下', () => {
+    it('五个看板文件路径在 .看板 目录下', () => {
         const bases = buildProjectBases(PROJECT);
-        expect(bases).toHaveLength(4);
+        expect(bases).toHaveLength(5);
         expect(bases.every((spec) => spec.relativePath.startsWith(`${BASE_DIR}/`))).toBe(true);
         expect(bases.map((spec) => spec.relativePath)).toEqual([
             '.看板/章节进度.base',
             '.看板/人物状态.base',
             '.看板/物品归属.base',
             '.看板/地点与势力.base',
+            '.看板/故事台账.base',
         ]);
+    });
+
+    it('故事台账看板按文件级摘要筛选四类台账', () => {
+        const yaml = buildLedgerBase(PROJECT);
+        expect(yaml).toContain('file.hasTag("nw/设定/时间线")');
+        expect(yaml).toContain('file.hasTag("nw/设定/伏笔库")');
+        expect(yaml).toContain('file.hasTag("nw/设定/关系状态")');
+        expect(yaml).toContain('file.hasTag("nw/设定/剧情记忆")');
+        expect(yaml).toContain('- 事件总数');
+        expect(yaml).toContain('- 未回收数');
+        expect(yaml).toContain('- 关系对数');
     });
 
     it('绝对路径拼接', () => {
@@ -87,7 +102,10 @@ describe('bases-generator — 项目看板全集', () => {
     });
 
     it('所有看板的 tag 过滤器都指向写入端存在的层级标签', () => {
-        const allowed = new Set(['nw/正文', 'nw/实体/人物', 'nw/实体/地点', 'nw/实体/势力', 'nw/实体/物品']);
+        const allowed = new Set([
+            'nw/正文', 'nw/实体/人物', 'nw/实体/地点', 'nw/实体/势力', 'nw/实体/物品',
+            'nw/设定/时间线', 'nw/设定/伏笔库', 'nw/设定/关系状态', 'nw/设定/剧情记忆',
+        ]);
         for (const spec of buildProjectBases(PROJECT)) {
             for (const match of spec.content.matchAll(/hasTag\("([^"]+)"\)/g)) {
                 expect(allowed.has(match[1]), `${spec.relativePath} → ${match[1]}`).toBe(true);

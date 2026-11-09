@@ -22,6 +22,11 @@ export type NotebookFileKind =
     | 'settingLib'
     | 'foreshadow'
     | 'timeline'
+    | 'relationship'
+    | 'event'
+    | 'foreshadowItem'
+    | 'relation'
+    | 'chapterDigest'
     | 'step'
     | 'unknown';
 
@@ -85,31 +90,53 @@ const CHARACTER_PROPERTIES: PropertySpec[] = [
     { key: '核心动机', label: '核心动机', type: 'text' },
     { key: '当前目标', label: '当前目标', type: 'text' },
     { key: '首次出场', label: '首次出场', type: 'text' },
+    // 人物一致性（OOC）与连续性检查的输入字段：结算/分析会写，属性面板与 Bases 必须可见
+    { key: '性格标签', label: '性格标签', type: 'text', describe: 'OOC 检测输入；多个标签用顿号分隔' },
+    { key: '外貌特征', label: '外貌特征', type: 'text', describe: '外貌矛盾检测输入' },
+    { key: '人物背景', label: '人物背景', type: 'text' },
+    { key: '金手指/特殊能力', label: '金手指/特殊能力', type: 'text' },
+    { key: '功法/技能树', label: '功法/技能树', type: 'text' },
+    { key: '核心驱动力_软肋', label: '核心驱动力/软肋', type: 'text' },
+    { key: '习惯性小动作', label: '习惯性小动作', type: 'text' },
+    { key: '已知信息', label: '已知信息', type: 'text', describe: '连续性账本：角色当前知道什么' },
+    { key: '伤势', label: '伤势', type: 'text' },
+    { key: '持有物品', label: '持有物品', type: 'text' },
+    { key: 'entity_last_changed_at', label: '最后变更时间', type: 'text', describe: 'ISO 时间；跨入口统一语义' },
+    { key: 'entity_last_changed_chapter', label: '最后变更章', type: 'text' },
+    { key: 'entity_last_seen_at', label: '最后出场章', type: 'text' },
 ];
 
 const ITEM_PROPERTIES: PropertySpec[] = [
     { key: '名称', label: '名称', type: 'text', required: true },
+    { key: '别称', label: '别称', type: 'text' },
     { key: '类型', label: '类型', type: 'text' },
     { key: '品阶/等级', label: '品阶/等级', type: 'text' },
     { key: '所属/归属', label: '所属/归属', type: 'text', describe: '结算自动转 [[wiki-link]]（所有权单侧写入）' },
     { key: '当前状态', label: '当前状态', type: 'text', describe: '在谁手里/封印/损毁' },
+    { key: '效果', label: '效果', type: 'text', describe: '与结算写入的 frontmatter 键一致' },
+    { key: '描述', label: '描述', type: 'text' },
     { key: 'entity_status', label: '实体状态', type: 'select', options: [...ENTITY_STATUS_OPTIONS], defaultValue: 'active' },
 ];
 
 const LOCATION_PROPERTIES: PropertySpec[] = [
     { key: '名称', label: '名称', type: 'text', required: true },
+    { key: '别称', label: '别称', type: 'text' },
     { key: '类型', label: '类型', type: 'text' },
     { key: '重要程度', label: '重要程度', type: 'text' },
     { key: '所在世界/区域', label: '所在世界/区域', type: 'text' },
     { key: '主要居民/势力', label: '主要居民/势力', type: 'text' },
+    { key: '地理特征', label: '地理特征', type: 'text' },
+    { key: '描述', label: '描述', type: 'text' },
     { key: 'entity_status', label: '实体状态', type: 'select', options: [...ENTITY_STATUS_OPTIONS], defaultValue: 'active' },
 ];
 
 const FACTION_PROPERTIES: PropertySpec[] = [
     { key: '名称', label: '名称', type: 'text', required: true },
+    { key: '别称', label: '别称', type: 'text' },
     { key: '类型', label: '类型', type: 'text' },
     { key: '领袖', label: '领袖', type: 'text', describe: '结算自动转 [[wiki-link]]' },
     { key: '地位/排名', label: '地位/排名', type: 'text' },
+    { key: '描述', label: '描述', type: 'text' },
     { key: 'entity_status', label: '实体状态', type: 'select', options: [...ENTITY_STATUS_OPTIONS], defaultValue: 'active' },
 ];
 
@@ -119,6 +146,88 @@ const STEP_PROPERTIES: PropertySpec[] = [
     { key: 'step_status', label: '步骤状态', type: 'select', options: ['pending', 'generated', 'reviewed', 'stale'], required: true, defaultValue: 'pending' },
     { key: 'step_model', label: '生成模型', type: 'text' },
     { key: 'step_timestamp', label: '生成时间', type: 'text' },
+];
+
+/** 台账文件级摘要（时间线看板）：让 Bases/属性搜索能筛到看板 */
+const TIMELINE_PROPERTIES: PropertySpec[] = [
+    { key: '最后更新', label: '最后更新', type: 'text' },
+    { key: '事件总数', label: '事件总数', type: 'number' },
+    { key: '主线事件数', label: '主线事件数', type: 'number' },
+    { key: '最新事件章节', label: '最新事件章节', type: 'text' },
+];
+
+/** 台账文件级摘要（伏笔库） */
+const FORESHADOW_PROPERTIES: PropertySpec[] = [
+    { key: '最后更新', label: '最后更新', type: 'text' },
+    { key: '未回收数', label: '未回收数', type: 'number' },
+    { key: '已回收数', label: '已回收数', type: 'number' },
+    { key: '已废弃数', label: '已废弃数', type: 'number' },
+];
+
+/** 关系状态文件级摘要（逐对关系仍以正文表格为权威） */
+const RELATIONSHIP_PROPERTIES: PropertySpec[] = [
+    { key: '关系对数', label: '关系对数', type: 'number' },
+    { key: '最后更新章节', label: '最后更新章节', type: 'text' },
+    { key: '最后更新', label: '最后更新', type: 'text' },
+];
+
+/** 事件镜像笔记（可选，派生数据） */
+const EVENT_PROPERTIES: PropertySpec[] = [
+    { key: '事件名称', label: '事件名称', type: 'text', required: true },
+    { key: '事件ID', label: '事件ID', type: 'text' },
+    { key: '时间', label: '时间', type: 'text' },
+    { key: '章节', label: '章节', type: 'text' },
+    { key: '纪元', label: '纪元', type: 'select', options: ['background', 'main', 'unknown'] },
+    { key: '地点', label: '地点', type: 'text' },
+    { key: '涉及人物', label: '涉及人物', type: 'list' },
+    { key: '类型', label: '类型', type: 'text' },
+    { key: '重要程度', label: '重要程度', type: 'select', options: ['high', 'medium', 'low', 'unknown'] },
+    { key: '状态', label: '状态', type: 'select', options: ['planned', 'occurred', 'unknown'] },
+    { key: '影响', label: '影响', type: 'text' },
+    { key: '关联伏笔', label: '关联伏笔', type: 'list' },
+];
+
+/** 伏笔条目镜像笔记（可选，派生数据） */
+const FORESHADOW_ITEM_PROPERTIES: PropertySpec[] = [
+    { key: '伏笔名称', label: '伏笔名称', type: 'text', required: true },
+    { key: '伏笔ID', label: '伏笔ID', type: 'text' },
+    { key: '重要程度', label: '重要程度', type: 'text' },
+    { key: '埋设章节', label: '埋设章节', type: 'text' },
+    { key: '计划回收', label: '计划回收', type: 'text' },
+    { key: '当前状态', label: '当前状态', type: 'select', options: ['未回收', '已回收', '已废弃'] },
+    { key: '相关人物', label: '相关人物', type: 'list' },
+    { key: '关联主线', label: '关联主线', type: 'text' },
+    { key: '回收章节', label: '回收章节', type: 'text' },
+    { key: '回收方式', label: '回收方式', type: 'text' },
+    { key: '关联事件', label: '关联事件', type: 'list' },
+];
+
+/** 关系对镜像笔记（可选，派生数据；权威仍是 关系状态.md） */
+const RELATION_PROPERTIES: PropertySpec[] = [
+    { key: '人物A', label: '人物A', type: 'text', required: true },
+    { key: '人物B', label: '人物B', type: 'text', required: true },
+    { key: '关系ID', label: '关系ID', type: 'text' },
+    { key: '关系类型', label: '关系类型', type: 'text' },
+    { key: 'trust', label: '信任', type: 'number' },
+    { key: 'attraction', label: '吸引', type: 'number' },
+    { key: 'fear', label: '恐惧', type: 'number' },
+    { key: 'resentment', label: '怨恨', type: 'number' },
+    { key: 'dependence', label: '依赖', type: 'number' },
+    { key: '关系状态', label: '关系状态', type: 'text' },
+    { key: '最后更新章节', label: '最后更新章节', type: 'text' },
+];
+
+/** 章节摘要（剧情记忆） */
+const CHAPTER_DIGEST_PROPERTIES: PropertySpec[] = [
+    { key: '章', label: '章', type: 'text', required: true },
+    { key: '标题', label: '标题', type: 'text' },
+    { key: '在场人物', label: '在场人物', type: 'list' },
+    { key: '关键事件', label: '关键事件', type: 'list' },
+    { key: '未回收线索', label: '未回收线索', type: 'list' },
+    { key: '新事实', label: '新事实', type: 'list' },
+    { key: '未兑现承诺', label: '未兑现承诺', type: 'list' },
+    { key: '结尾钩子', label: '结尾钩子', type: 'text' },
+    { key: '时间跨度', label: '时间跨度', type: 'text' },
 ];
 
 /** 类型 → 属性清单（顺序即面板与看板的列顺序） */
@@ -135,8 +244,13 @@ export const FRONTMATTER_SCHEMAS: Record<NotebookFileKind, PropertySpec[]> = {
         { key: '核心规则', label: '核心规则', type: 'text' },
     ],
     settingLib: [{ key: '名称', label: '名称', type: 'text' }],
-    foreshadow: [],
-    timeline: [],
+    foreshadow: FORESHADOW_PROPERTIES,
+    timeline: TIMELINE_PROPERTIES,
+    relationship: RELATIONSHIP_PROPERTIES,
+    event: EVENT_PROPERTIES,
+    foreshadowItem: FORESHADOW_ITEM_PROPERTIES,
+    relation: RELATION_PROPERTIES,
+    chapterDigest: CHAPTER_DIGEST_PROPERTIES,
     step: STEP_PROPERTIES,
     unknown: [],
 };
@@ -152,6 +266,11 @@ export const FILE_KIND_LABELS: Record<NotebookFileKind, string> = {
     settingLib: '设定库',
     foreshadow: '伏笔库',
     timeline: '时间线',
+    relationship: '关系状态',
+    event: '时间线事件',
+    foreshadowItem: '伏笔条目',
+    relation: '关系对',
+    chapterDigest: '章节摘要',
     step: '步骤结果',
     unknown: '其他笔记',
 };
@@ -169,6 +288,10 @@ const TAG_TO_KIND: Record<string, NotebookFileKind> = {
     '设定库': 'settingLib',
     '伏笔库': 'foreshadow',
     '时间线': 'timeline',
+    '关系状态': 'relationship',
+    '事件': 'event',
+    '伏笔': 'foreshadowItem',
+    '剧情记忆': 'chapterDigest',
     '信息规划': 'step',
     '大纲摘要': 'step',
     '情节蒸馏': 'step',
@@ -198,6 +321,14 @@ const PATH_RULES: Array<{ test: RegExp; kind: NotebookFileKind }> = [
     { test: /(^|\/)01-世界架构\/物品功法\//, kind: 'item' },
     { test: /(^|\/)01-世界架构\/.*世界观/, kind: 'worldview' },
     { test: /(^|\/)01-世界架构\/.*设定库/, kind: 'settingLib' },
+    // 台账与记忆：没有标签的旧项目也能被识别（顺序：具体文件在目录规则之前）
+    { test: /(^|\/)02-时间线与伏笔\/时间线看板\.md$/, kind: 'timeline' },
+    { test: /(^|\/)02-时间线与伏笔\/伏笔库\.md$/, kind: 'foreshadow' },
+    { test: /(^|\/)01-世界架构\/关系状态\.md$/, kind: 'relationship' },
+    { test: /(^|\/)02-时间线与伏笔\/时间线事件\//, kind: 'event' },
+    { test: /(^|\/)02-时间线与伏笔\/伏笔\//, kind: 'foreshadowItem' },
+    { test: /(^|\/)01-世界架构\/关系\//, kind: 'relation' },
+    { test: /(^|\/)04-项目总控\/剧情记忆\//, kind: 'chapterDigest' },
 ];
 
 /**
@@ -230,6 +361,9 @@ function kindFromNamespaceTag(tag: string): NotebookFileKind | null {
         if (entity === '地点') return 'location';
         if (entity === '势力') return 'faction';
         if (entity === '物品') return 'item';
+        if (entity === '事件') return 'event';
+        if (entity === '伏笔') return 'foreshadowItem';
+        if (entity === '关系') return 'relation';
         return null;
     }
     if (rest.startsWith('设定/')) {
@@ -238,6 +372,8 @@ function kindFromNamespaceTag(tag: string): NotebookFileKind | null {
         if (setting === '设定库') return 'settingLib';
         if (setting === '伏笔库') return 'foreshadow';
         if (setting === '时间线') return 'timeline';
+        if (setting === '关系状态') return 'relationship';
+        if (setting === '剧情记忆') return 'chapterDigest';
         return null;
     }
     if (rest.startsWith('步骤/')) return 'step';

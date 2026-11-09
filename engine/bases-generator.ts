@@ -149,7 +149,7 @@ export function buildItemBase(project: string): string {
         { property: '品阶/等级', display: '品阶/等级' },
         { property: '所属/归属', display: '所属/归属' },
         { property: '当前状态', display: '当前状态' },
-        { property: 'effect', display: '效果' },
+        { property: '效果', display: '效果' },
     ];
     return `${GENERATED_MARKER}
 filters:
@@ -224,6 +224,81 @@ ${orderBlock(factionColumns, '      ')}
 export const BASE_DIR = '.看板';
 
 /**
+ * 故事台账看板：文件级摘要（时间线看板/伏笔库/关系状态/章节摘要）
+ *
+ * 注意：Bases 按文件建模，无法展示表格行；逐条事件/伏笔需要开启镜像笔记。
+ * @param project - 项目（路径或对象）
+ * @returns 文本结果
+ */
+export function buildLedgerBase(project: string): string {
+    const timelineTag = KIND_NAMESPACE_TAG.timeline!;
+    const foreshadowTag = KIND_NAMESPACE_TAG.foreshadow!;
+    const relationshipTag = KIND_NAMESPACE_TAG.relationship!;
+    const digestTag = KIND_NAMESPACE_TAG.chapterDigest!;
+    return `${GENERATED_MARKER}
+filters:
+  and:
+    - 'file.inFolder(${quotePath(project)})'
+properties:
+  file.name:
+    displayName: "文件"
+  最后更新:
+    displayName: "最后更新"
+  事件总数:
+    displayName: "事件总数"
+  主线事件数:
+    displayName: "主线事件数"
+  最新事件章节:
+    displayName: "最新事件章节"
+  未回收数:
+    displayName: "未回收数"
+  已回收数:
+    displayName: "已回收数"
+  已废弃数:
+    displayName: "已废弃数"
+  关系对数:
+    displayName: "关系对数"
+  最后更新章节:
+    displayName: "最后更新章节"
+views:
+  - type: table
+    name: "时间线看板"
+    filters: 'file.hasTag("${timelineTag}")'
+    order:
+      - file.name
+      - 事件总数
+      - 主线事件数
+      - 最新事件章节
+      - 最后更新
+  - type: table
+    name: "伏笔库"
+    filters: 'file.hasTag("${foreshadowTag}")'
+    order:
+      - file.name
+      - 未回收数
+      - 已回收数
+      - 已废弃数
+      - 最后更新
+  - type: table
+    name: "关系状态"
+    filters: 'file.hasTag("${relationshipTag}")'
+    order:
+      - file.name
+      - 关系对数
+      - 最后更新章节
+      - 最后更新
+  - type: table
+    name: "剧情记忆"
+    filters: 'file.hasTag("${digestTag}")'
+    order:
+      - file.name
+      - 章
+      - 标题
+      - 最后更新
+`;
+}
+
+/**
  * 构建项目基础列表。
  * @param project - 项目（路径或对象）
  * @returns 结果数组
@@ -234,6 +309,7 @@ export function buildProjectBases(project: string): BaseFileSpec[] {
         { relativePath: `${BASE_DIR}/人物状态.base`, content: buildCharacterBase(project) },
         { relativePath: `${BASE_DIR}/物品归属.base`, content: buildItemBase(project) },
         { relativePath: `${BASE_DIR}/地点与势力.base`, content: buildPlaceFactionBase(project) },
+        { relativePath: `${BASE_DIR}/故事台账.base`, content: buildLedgerBase(project) },
     ];
 }
 
