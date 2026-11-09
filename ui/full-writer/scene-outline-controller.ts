@@ -64,6 +64,8 @@ export class SceneOutlineController {
     /** 脏数据所属章节（markDirty 时捕获，防止切章后写错文件） */
     private pendingSaveTarget: { project: string; volNum: number; chapNum: number } | null = null;
     private dragIndex: number | null = null;
+    /** render 时的宿主容器；refreshAll 用它定位，避免 popout 下误查主窗口 document */
+    private hostEl: HTMLElement | null = null;
 
     constructor(deps: SceneOutlineControllerDeps) {
         this.deps = deps;
@@ -77,6 +79,7 @@ export class SceneOutlineController {
      * @param container - 容器元素
      */
     async render(container: HTMLElement): Promise<void> {
+        this.hostEl = container;
         container.empty();
         const project = this.deps.getProject();
         const chapNum = this.deps.getChapterNum();
@@ -1120,6 +1123,14 @@ export class SceneOutlineController {
     // ============================================================
 
     private refreshAll(): void {
+        // 优先用 render 时记录的宿主：popout 下全局 document 指向主窗口，
+        // 会查不到/重绘错误的工作台实例（审计 O-5）。
+        const host = this.hostEl;
+        const scoped = host?.querySelector('.nw-scene-outline-container') ?? null;
+        if (host && scoped?.parentElement) {
+            void this.render(host);
+            return;
+        }
         const container = document.querySelector('.nw-scene-outline-container');
         if (container && container.parentElement) {
             this.render(container.parentElement as HTMLElement);

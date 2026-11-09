@@ -26,6 +26,8 @@
 | O-14 | P3 | `ui/draggable-panel.ts:127`、`ui/story-linkage-modal.ts:89/124/130`、`ui/components/categorization-review-panel.ts:323` | `onWindowMigrated`/`el.win` 无守卫，但 minAppVersion=1.4.0 | Obsidian <1.6 打开监控/浮窗/关联弹窗 | `onOpen` 首行 TypeError，面板打不开 | `typeof` 守卫；`el.doc?.defaultView ?? window`；或提高 minAppVersion |
 | O-15 | P3 | `main.ts:1612-1616`、`core/command-registry.ts:531` | 移动端宠物命令仍提示“已开启” | 移动端执行宠物命令 | 文案与实际能力不符 | 移动端禁用/说明仅桌面 |
 
+> **2026-11-09 后续代码批次已修 O-5**：`ui/full-writer/scene-outline-controller.ts` 在 `render()` 记录 `hostEl`，`refreshAll()` 优先在宿主内查询 `.nw-scene-outline-container`，仅未记录宿主时回退全局 `document`；新增单测断言 refresh 调用 `render(host)` 且不依赖主窗口 `document.querySelector`（`full-writer-view-contracts.test.ts` 18/18）。O-1/O-2/O-4/O-6 仍留 fix queue。
+
 ## 二、已排除（复核后确认无问题）
 
 | 项 | 证据 |

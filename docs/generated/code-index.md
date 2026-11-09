@@ -11,7 +11,7 @@
 | `shared/` | 178 | 40679 | 1601 | 1320 | 82% |
 | `core/` | 7 | 2821 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 238 | 99302 | 733 | 638 | 87% |
+| `ui/` | 238 | 99313 | 733 | 638 | 87% |
 
 ## 文件清单
 
@@ -665,7 +665,7 @@
 | `ui/full-writer/intervention-controller.ts` | 412 | 3 | 3 |
 | `ui/full-writer/project-selector-controller.ts` | 953 | 3 | 3 |
 | `ui/full-writer/quick-tools-panel.ts` | 150 | 3 | 3 |
-| `ui/full-writer/scene-outline-controller.ts` | 1139 | 2 | 1 |
+| `ui/full-writer/scene-outline-controller.ts` | 1150 | 2 | 1 |
 | `ui/full-writer/setting-lib-controller.ts` | 63 | 1 | 1 |
 | `ui/full-writer/status-bar-controller.ts` | 90 | 2 | 2 |
 | `ui/full-writer/step-render-controller.ts` | 683 | 2 | 2 |

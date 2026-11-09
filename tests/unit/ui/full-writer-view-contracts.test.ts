@@ -352,6 +352,24 @@ class FakeDomEl {
     cssText = '';
     children: FakeDomEl[] = [];
     parent: FakeDomEl | null = null;
+
+    get parentElement(): FakeDomEl | null {
+        return this.parent;
+    }
+
+    querySelector(selector: string): FakeDomEl | null {
+        const cls = selector.startsWith('.') ? selector.slice(1) : '';
+        const walk = (el: FakeDomEl): FakeDomEl | null => {
+            for (const child of el.children) {
+                if (cls && child.className.split(/\s+/).includes(cls)) return child;
+                const found = walk(child);
+                if (found) return found;
+            }
+            return null;
+        };
+        return walk(this);
+    }
+
     onclick: (() => void) | null = null;
     onchange: (() => void) | null = null;
     private listeners = new Map<string, Array<(e: Record<string, unknown>) => void>>();
@@ -524,6 +542,20 @@ describe('SceneOutlineController — 解析往返、场景操作与 Tab 字段�
         expect(scenes[0].status).toBe('completed');
         expect(scenes[1].location).toBe('断桥');
         expect(scenes[1].status).toBe('in_progress');
+    });
+
+    it('refreshAll 使用 render 记录的宿主，不依赖主窗口 document（popout）', () => {
+        const { controller } = makeOpsController();
+        const host = new FakeDomEl();
+        host.createDiv({ cls: 'nw-scene-outline-container' });
+        (controller as any).hostEl = host;
+        const renderSpy = vi.spyOn(controller, 'render').mockResolvedValue(undefined);
+
+        // beforeEach 的 document.querySelector 恒为 null；旧实现会静默不刷新
+        (controller as any).refreshAll();
+
+        expect(renderSpy).toHaveBeenCalledTimes(1);
+        expect(renderSpy).toHaveBeenCalledWith(host);
     });
 
     it('saveScenes 产物可被 parseScenes 再解析，三组字段不丢', async () => {

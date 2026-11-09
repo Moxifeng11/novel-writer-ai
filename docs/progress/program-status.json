@@ -6,7 +6,7 @@
     "version": "4.80.0",
     "tests": {
       "files": 604,
-      "cases": 6663
+      "cases": 6664
     },
     "e2e": 40,
     "e2eNote": "E2E 通过总数：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27 = 40（2026-11-07 全量实测）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑（rewrite-chapters 已随「九霄逆脉行」项目删除而下线）",
@@ -19,7 +19,7 @@
       "check:write-entry"
     ],
     "localCommitsAhead": 0,
-    "localCommitsAheadNote": "2026-11-09 v4.80.0 后 W-1b：模板自举 exists 并发化；604 文件 / 6,663 用例，preflight:release EXIT=0，覆盖率 44.43/44.12/45.22/44.77"
+    "localCommitsAheadNote": "2026-11-09 v4.80.0 后 O-5：场景大纲 refreshAll 改用 render 宿主（popout）；604 文件 / 6,664 用例，preflight:release EXIT=0，覆盖率 44.43/44.13/45.22/44.78"
   },
   "groups": [
     {
