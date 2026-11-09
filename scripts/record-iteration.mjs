@@ -87,7 +87,8 @@ function main() {
         ? fs.readFileSync(args.ledger ? path.resolve(args.ledger) : LEDGER, 'utf8')
         : '# 自动迭代成果台账\n\n| 轮次 | 时间 | 类型 | 本轮成果 | 关键文件 | 提交 | 测试/门禁 | 下一轮 |\n|---:|---|---|---|---|---|---|---|\n';
     const round = Number(args.round) || nextRound(text);
-    const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    // 本地时区时间，便于与 HANDOFF/用户时间对齐
+    const now = new Date().toLocaleString('sv-SE').replace('T', ' ');
     const row = `| ${round} | ${now} | ${type} | ${escapeCell(deliverable)} | ${escapeCell(files)} | ${escapeCell(commit)} | ${escapeCell(`${tests}；${gates}`)} | ${escapeCell(next)} |\n`;
     const target = args.ledger ? path.resolve(args.ledger) : LEDGER;
     fs.writeFileSync(target, text.endsWith('\n') ? text + row : `${text}\n${row}`, 'utf8');
