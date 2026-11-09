@@ -45,7 +45,7 @@ import { createLogger } from '@/shared/logger';
 
 const log = createLogger('KnowledgeBaseManager');
 const MAX_SOURCE_TEXT_LENGTH = 20_000_000; // 2000 万字：仅作内存安全上限，非功能性截断；正常全本（含数百万字长篇）不会触发
-const MAX_SOURCE_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+export const MAX_SOURCE_FILE_SIZE = 10 * 1024 * 1024; // 10MB（SEC-7：导入硬上限，UI 入口共用）
 
 /**
  * BreakdownStatus 类型定义。
@@ -500,10 +500,13 @@ export class KnowledgeBaseManager {
                 const file = await fs.getFile(info.sourcePath);
                 const size = file?.stat?.size;
                 if (size !== undefined && size > MAX_SOURCE_FILE_SIZE) {
-                    log.warn(`[KnowledgeBaseManager] 源文件过大: ${info.sourcePath}, 大小: ${size}, 建议拆分后导入`);
+                    // SEC-7（2026-11-10 审计）：warn+继续改为硬拒绝——超大文件全量读入
+                    // 会拖垮内存（MAX_SOURCE_TEXT_LENGTH 兜底发生在读后，为时已晚）
+                    throw new Error(`源文件过大: ${Math.round(size / 1024 / 1024)}MB（上限 10MB），建议拆分后导入`);
                 }
-            } catch {
-                // 忽略大小检查失败，不阻止导入
+            } catch (e) {
+                if (e instanceof Error && e.message.includes('源文件过大')) throw e;
+                // 大小检查自身失败（文件不存在等），不阻止导入
             }
         }
 

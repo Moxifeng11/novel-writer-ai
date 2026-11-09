@@ -143,10 +143,14 @@ export function relationsFor(ledger: StoryLedger, entityId: string): RelationRec
 export function openPromises(ledger: StoryLedger, chapter: number | null = null): PromiseRecord[] {
     // F-3 二轮复核（2026-11-10）：旧实现按 `expected >= chapter` 过滤会把「已逾期
     // 仍 open」的承诺剔除——恰是最该提醒的条目。改为仅按状态过滤，逾期项排序置前。
+    // 安全盲审（NW-SEC 附注）：子串匹配会把「未兑现/未放弃/未解决」误判为已关闭——
+    // 改精确枚举（parsePromiseLedger 已归一化为 open/advanced/resolved/dropped，
+    // 中文原文按整词匹配）。
+    const CLOSED = new Set(['resolved', 'dropped', '已兑现', '已解决', '已放弃', '已回收']);
     return ledger.promises
         .filter((promise) => {
-            const status = promise.status || '';
-            return !/兑现|已解决|放弃|resolved|dropped/.test(status);
+            const status = String(promise.status || '').trim().toLowerCase();
+            return !CLOSED.has(status);
         })
         .sort((a, b) => {
             if (chapter === null) return 0;

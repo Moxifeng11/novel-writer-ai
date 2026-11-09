@@ -1,5 +1,5 @@
 import { App, Modal, Notice, TFolder, TFile } from 'obsidian';
-import { KnowledgeBaseManager } from '@/services/knowledge-base-manager';
+import { KnowledgeBaseManager, MAX_SOURCE_FILE_SIZE } from '@/services/knowledge-base-manager';
 import { DeconstructionScheduler, type BreakdownDimension } from '@/engine/deconstruction-scheduler';
 import { KnowledgeTagManager } from '@/engine/knowledge-tags';
 import { BatchImportManager, type ImportBookPreview, type ImportHistoryItem, type ImportBatchSettings, type ImportPreset, type BatchImportProgress, type ImportTask } from '@/engine/batch-import-manager';
@@ -1427,6 +1427,11 @@ export class BatchImportModal extends Modal {
         Array.from(fileList).forEach(file => {
             const ext = '.' + file.name.split('.').pop()?.toLowerCase();
             if (!validExtensions.includes(ext)) return;
+            // SEC-7：读前硬限，避免超大文件全量读入拖垮内存
+            if (file.size > MAX_SOURCE_FILE_SIZE) {
+                showWarningNotice(`文件过大已跳过: ${file.name}（${Math.round(file.size / 1024 / 1024)}MB，上限 10MB）`);
+                return;
+            }
 
             const reader = new FileReader();
             // 等所有 FileReader 完成后统一计数并重绘：旧实现用 setTimeout(100ms)

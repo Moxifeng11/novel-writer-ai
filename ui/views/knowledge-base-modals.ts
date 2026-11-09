@@ -1,5 +1,5 @@
 import { Modal, App, Notice, Setting, TFile } from 'obsidian';
-import { KnowledgeBaseManager, type BookBasicInfo } from '@/services/knowledge-base-manager';
+import { KnowledgeBaseManager, MAX_SOURCE_FILE_SIZE, type BookBasicInfo } from '@/services/knowledge-base-manager';
 import { WebnovelKnowledgeBase, type GenreConfig, type SubGenreConfig, type TechniqueDef } from '@/shared/webnovel-knowledge-base';
 import { kbBookDir, kbBookSourceFile } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
@@ -163,6 +163,11 @@ export class ImportBookModal extends Modal {
         input.addEventListener('change', async (e) => {
             const file = (e.target as HTMLInputElement).files?.[0];
             if (!file) return;
+            if (file.size > MAX_SOURCE_FILE_SIZE) {
+                // SEC-7：读前硬限（file.text() 是全量读，兜底截断为时已晚）
+                showErrorNotice(`文件过大: ${file.name}（${Math.round(file.size / 1024 / 1024)}MB，上限 10MB）`);
+                return;
+            }
             try {
                 const text = await file.text();
                 const name = file.name.replace(/\.(txt|md)$/i, '');

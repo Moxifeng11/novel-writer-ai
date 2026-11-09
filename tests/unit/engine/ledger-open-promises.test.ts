@@ -45,6 +45,19 @@ describe('openPromises — 逾期承诺不再被剔除（F-3 二轮）', () => {
         expect(openPromises(ledger, 5).some((record) => record.name === '已兑现')).toBe(false);
     });
 
+    it('安全盲审：否定表述（未兑现/未放弃/未解决）不被子串误判为已关闭', () => {
+        const negationLedger = {
+            events: [], foreshadows: [], links: [], issues: [],
+            promises: [
+                promise('未兑现之诺', '第5章'),
+                promise('未放弃的执念', '第6章'),
+                promise('未解决的谜', '第7章'),
+            ],
+        } as never as Parameters<typeof openPromises>[0];
+        const result = openPromises(negationLedger, 3);
+        expect(result.map((record) => record.name)).toEqual(['未兑现之诺', '未放弃的执念', '未解决的谜']);
+    });
+
     it('chapter=null 时仅按状态过滤', () => {
         expect(openPromises(ledger, null).map((record) => record.name)).toEqual(['未到期', '已逾期', '无预期']);
     });

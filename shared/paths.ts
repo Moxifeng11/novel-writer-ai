@@ -414,7 +414,7 @@ export function pjChapterDigestDir(project: string) { return `${project}/04-项�
  * @param chapterKey - 章名（第N章）
  * @returns 拼接后的 vault 相对路径
  */
-export function pjChapterDigestFile(project: string, chapterKey: string) { return `${pjChapterDigestDir(project)}/${chapterKey}_摘要.md`; }
+export function pjChapterDigestFile(project: string, chapterKey: string) { return `${pjChapterDigestDir(project)}/${sanitizeName(chapterKey)}_摘要.md`; }
 
 /**
  * 关系变更待确认队列

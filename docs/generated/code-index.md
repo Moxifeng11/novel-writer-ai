@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137377 | 1725 | 1416 | 82% |
-| `services/` | 32 | 12920 | 187 | 148 | 79% |
+| `engine/` | 319 | 137381 | 1725 | 1416 | 82% |
+| `services/` | 32 | 12923 | 188 | 148 | 79% |
 | `shared/` | 185 | 42039 | 1652 | 1354 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99625 | 753 | 649 | 86% |
+| `ui/` | 242 | 99635 | 753 | 649 | 86% |
 
 ## 文件清单
 
@@ -191,7 +191,7 @@
 | `engine/knowledge-to-fingerprint-converter.ts` | 345 | 1 | 1 |
 | `engine/knowledge-usage.ts` | 80 | 3 | 3 |
 | `engine/knowledge-vector-store.ts` | 752 | 5 | 4 |
-| `engine/ledger/ledger-index.ts` | 171 | 10 | 8 |
+| `engine/ledger/ledger-index.ts` | 175 | 10 | 8 |
 | `engine/ledger/ledger-io.ts` | 189 | 4 | 4 |
 | `engine/ledger/ledger-link.ts` | 224 | 4 | 2 |
 | `engine/ledger/ledger-model.ts` | 323 | 28 | 11 |
@@ -365,7 +365,7 @@
 | `services/genre-classifier.ts` | 858 | 2 | 2 |
 | `services/genre-preference-memory.ts` | 377 | 3 | 3 |
 | `services/job-service.ts` | 364 | 9 | 1 |
-| `services/knowledge-base-manager.ts` | 1578 | 5 | 4 |
+| `services/knowledge-base-manager.ts` | 1581 | 6 | 4 |
 | `services/knowledge-original-chunker.ts` | 119 | 3 | 3 |
 | `services/local-model-probe.ts` | 185 | 6 | 5 |
 | `services/model-discovery.ts` | 274 | 5 | 5 |
@@ -582,7 +582,7 @@
 | `ui/backup-yuan-modal.ts` | 125 | 1 | 1 |
 | `ui/batch-chapters-modal.ts` | 336 | 1 | 1 |
 | `ui/batch-create-modal.ts` | 521 | 1 | 1 |
-| `ui/batch-import-modal.ts` | 1865 | 1 | 1 |
+| `ui/batch-import-modal.ts` | 1870 | 1 | 1 |
 | `ui/batch-novels-modal.ts` | 236 | 1 | 1 |
 | `ui/button-busy.ts` | 37 | 1 | 1 |
 | `ui/changelog-modal.ts` | 191 | 1 | 1 |
@@ -797,7 +797,7 @@
 | `ui/views/kb-config-panel.ts` | 222 | 3 | 3 |
 | `ui/views/kb-detail-actions.ts` | 199 | 2 | 2 |
 | `ui/views/kb-stats-panel.ts` | 197 | 2 | 2 |
-| `ui/views/knowledge-base-modals.ts` | 1364 | 4 | 4 |
+| `ui/views/knowledge-base-modals.ts` | 1369 | 4 | 4 |
 | `ui/views/knowledge-base-view.ts` | 3250 | 10 | 10 |
 | `ui/views/knowledge-capability.ts` | 81 | 2 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
