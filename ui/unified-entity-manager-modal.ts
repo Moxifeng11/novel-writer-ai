@@ -1,4 +1,4 @@
-import { App, Modal, Notice, TFile, MarkdownRenderer } from 'obsidian';
+import { App, Component, Modal, Notice, TFile, MarkdownRenderer } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { ENTITY_CATEGORIES } from '@/shared/entity-registry';
 import {
@@ -52,6 +52,8 @@ interface EntityItem {
 export class UnifiedEntityManagerModal extends Modal {
     private plugin: NovelWriterPlugin;
     private project: string;
+    /** Markdown 渲染宿主：Modal 不是 Component，必须自管 load/unload */
+    private renderHost = new Component();
 
     private activeCategory: ModelCategory = 'character';
     private entities: EntityItem[] = [];
@@ -92,6 +94,7 @@ export class UnifiedEntityManagerModal extends Modal {
      * onOpen 方法。
      */
     onOpen(): void {
+        this.renderHost.load();
         this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
         contentEl.empty();
@@ -115,6 +118,7 @@ export class UnifiedEntityManagerModal extends Modal {
      * onClose 方法。
      */
     onClose(): void {
+        this.renderHost.unload();
         this.contentEl.empty();
         this.entities = [];
         this.filteredEntities = [];
@@ -625,7 +629,7 @@ export class UnifiedEntityManagerModal extends Modal {
                 body,
                 bodyDiv,
                 entity.file.path,
-                this.plugin,
+                this.renderHost,
             );
         }
 

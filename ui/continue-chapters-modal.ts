@@ -1,4 +1,4 @@
-import { App, MarkdownRenderer, Modal, Notice, TFile, TFolder } from 'obsidian';
+import { App, Component, MarkdownRenderer, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
 import { mkdirp, showSuccess, showError, stripFrontmatter } from '@/utils/helpers';
@@ -23,6 +23,8 @@ const log = createLogger('ContinueChaptersModal');
 export class ContinueChaptersModal extends Modal {
     private plugin: NovelWriterPlugin;
     private contextManager: ContextManager;
+    /** Markdown 渲染宿主：Modal 不是 Component，必须自管 load/unload */
+    private renderHost = new Component();
 
     constructor(app: App, plugin: NovelWriterPlugin) {
         super(app);
@@ -34,7 +36,8 @@ export class ContinueChaptersModal extends Modal {
      * onOpen 方法。
      */
     onOpen(): void {
-    this.modalEl.addClass('nw-scope');
+        this.renderHost.load();
+        this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
 
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
@@ -135,9 +138,9 @@ export class ContinueChaptersModal extends Modal {
         // v4.76.0：原实现把 Markdown 串直接赋给 innerHTML——`targetVol`（大纲卷名，AI 可控）
         // 本身是注入面，而 `##`/`**` 又会原样显示。改为 MarkdownRenderer.render 渲染到容器。
         const resultEl = this.contentEl.createDiv({ cls: 'nw-continue-result' });
-        // Modal 不是 Component：渲染宿主用插件实例（Plugin extends Component），
-        // 静态结果不注册长生命周期子组件，插件卸载时统一回收。
-        await MarkdownRenderer.render(this.app, resultMsg, resultEl, '', this.plugin);
+        // Modal 不是 Component：用本弹窗自管的 Component 作为渲染宿主，
+        // onClose 时统一 unload，避免把 plugin 注册表当弹窗生命周期用。
+        await MarkdownRenderer.render(this.app, resultMsg, resultEl, '', this.renderHost);
     }
 
     private async autoCreateChapters(project: string): Promise<void> {
@@ -550,6 +553,7 @@ ${describeBodyFormat({ ...bodyFormat, allowTitle: true })}`;
      * onClose 方法。
      */
     onClose(): void {
+        this.renderHost.unload();
         const { contentEl } = this;
         contentEl.empty();
     }
