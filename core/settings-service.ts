@@ -438,6 +438,7 @@ export function getDefaultSettings(): NovelWriterSettings {
         agentWorkbenchRightWidth: 360,
         agentWorkbenchLeftCollapsed: false,
         agentWorkbenchRightCollapsed: false,
+        settingsUiShowAdvanced: false,
         agentBackend: 'native',
         dshProvider: 'deepseek-official',
         dshModel: '',

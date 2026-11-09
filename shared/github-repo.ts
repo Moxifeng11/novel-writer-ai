@@ -41,6 +41,30 @@ export function buildGitHubLatestReleaseApi(repoSlug: string = GITHUB_REPO_SLUG)
 }
 
 /**
+ * GitHub Release Atom 地址（API 被限流时的公开备用源）。
+ *
+ * @param repoSlug - 仓库标识
+ * @returns Atom feed URL
+ */
+export function buildGitHubReleasesAtomUrl(repoSlug: string = GITHUB_REPO_SLUG): string {
+    return `https://github.com/${repoSlug}/releases.atom`;
+}
+
+/**
+ * raw.githubusercontent.com 上的 manifest.json 地址。
+ *
+ * @param repoSlug - 仓库标识
+ * @param branch - 分支名
+ * @returns raw URL
+ */
+export function buildGitHubRawManifestUrl(
+    repoSlug: string = GITHUB_REPO_SLUG,
+    branch: string = GITHUB_BRANCH,
+): string {
+    return `https://raw.githubusercontent.com/${repoSlug}/${branch}/manifest.json`;
+}
+
+/**
  * 校验并规范化 owner/repo；非法值返回空串，避免把任意文本拼进 API URL。
  *
  * @param value - 值

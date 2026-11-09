@@ -31,7 +31,6 @@ import {
 } from './settings/writing-sections';
 import {
     PerformanceSection,
-    PromptsSection,
     RulesSection,
     AboutSection,
     RecognitionSection,
@@ -41,7 +40,8 @@ import { AgentBackendSection } from './settings/agent-section';
 import { ModeSection } from './settings/mode-section';
 import { SETTINGS_TAB_DEFINITIONS } from './settings/section-factory';
 
-const SETTINGS_TABS: ReadonlyArray<{ id: string; label: string }> = SETTINGS_TAB_DEFINITIONS.map(({ id, label }) => ({ id, label }));
+const SETTINGS_TABS: ReadonlyArray<{ id: string; label: string; group: 'primary' | 'advanced' }> =
+    SETTINGS_TAB_DEFINITIONS.map(({ id, label, group }) => ({ id, label, group }));
 
 
 /**
@@ -68,7 +68,6 @@ export class NovelWriterSettingTab extends PluginSettingTab {
     private projectLibrary: ProjectLibrarySection;
     private layout: LayoutSection;
     private performance: PerformanceSection;
-    private prompts: PromptsSection;
     private rules: RulesSection;
     private about: AboutSection;
     private recognition: RecognitionSection;
@@ -98,7 +97,6 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         this.projectLibrary = new ProjectLibrarySection(host);
         this.layout = new LayoutSection(host);
         this.performance = new PerformanceSection(host);
-        this.prompts = new PromptsSection(host);
         this.rules = new RulesSection(host);
         this.about = new AboutSection(host);
         this.recognition = new RecognitionSection(host);
@@ -129,20 +127,45 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         this.performance.renderBanner(containerEl);
 
         this.tabBar = containerEl.createDiv({ cls: 'nw-settings-tabbar' });
-        for (const tab of SETTINGS_TABS) {
-            const tabEl = this.tabBar.createDiv({
-                cls: 'nw-settings-tab',
-                text: tab.label,
-                attr: { 'data-tab-id': tab.id },
-            });
-            if (tab.id === this.activeTab) tabEl.addClass('active');
-            tabEl.addEventListener('click', () => {
-                // 重复点击当前 tab 不做任何事，避免无谓重建
-                if (this.activeTab === tab.id) return;
-                this.activeTab = tab.id;
-                this.renderActiveTab(false);
-            });
+        const showAdvanced = this.plugin.settings.settingsUiShowAdvanced === true;
+        if (!showAdvanced && SETTINGS_TABS.find(tab => tab.id === this.activeTab)?.group === 'advanced') {
+            this.activeTab = 'api';
         }
+        const renderTabBar = (): void => {
+            if (!this.tabBar) return;
+            this.tabBar.empty();
+            const advancedOpen = this.plugin.settings.settingsUiShowAdvanced === true;
+            const visible = SETTINGS_TABS.filter(tab => tab.group === 'primary' || advancedOpen);
+            for (const tab of visible) {
+                const tabEl = this.tabBar.createDiv({
+                    cls: 'nw-settings-tab',
+                    text: tab.label,
+                    attr: { 'data-tab-id': tab.id },
+                });
+                if (tab.id === this.activeTab) tabEl.addClass('active');
+                tabEl.addEventListener('click', () => {
+                    // 重复点击当前 tab 不做任何事，避免无谓重建
+                    if (this.activeTab === tab.id) return;
+                    this.activeTab = tab.id;
+                    this.renderActiveTab(false);
+                });
+            }
+            const toggle = this.tabBar.createDiv({
+                cls: 'nw-settings-tab nw-settings-tab-advanced-toggle',
+                text: advancedOpen ? '⚙ 收起高级' : '⚙ 高级设置',
+            });
+            toggle.addEventListener('click', () => {
+                this.plugin.settings.settingsUiShowAdvanced = !advancedOpen;
+                void this.plugin.saveSettings();
+                if (advancedOpen
+                    && SETTINGS_TABS.find(tab => tab.id === this.activeTab)?.group === 'advanced') {
+                    this.activeTab = 'api';
+                    this.renderActiveTab(false);
+                }
+                renderTabBar();
+            });
+        };
+        renderTabBar();
 
         this.tabContent = containerEl.createDiv({ cls: 'nw-settings-tab-content' });
         this.panelCache.clear();

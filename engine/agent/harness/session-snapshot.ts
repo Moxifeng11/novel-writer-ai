@@ -17,6 +17,14 @@ import { PLAN_STEP_STATUSES } from './creation-plan';
 export const SESSION_SNAPSHOT_VERSION = 1;
 
 /**
+ * 快照创建时的项目上下文签名：用于判断旧存档是否仍属于当前 vault 状态。
+ */
+export interface SessionContextSignature {
+    projects: readonly string[];
+    activeProject?: string | null;
+}
+
+/**
  * Harness 会话快照。
  */
 export interface HarnessSessionSnapshot {
@@ -27,6 +35,8 @@ export interface HarnessSessionSnapshot {
     memory: Record<string, unknown>;
     plan: PlanStep[];
     updatedAt: number;
+    /** 创建快照时的项目集合；旧档没有该字段，恢复时按开场事件兜底校验 */
+    context?: SessionContextSignature;
 }
 
 /**
@@ -38,6 +48,8 @@ export interface SnapshotInput {
     memory: Readonly<Record<string, unknown>>;
     plan: readonly PlanStep[];
     now?: number;
+    /** 当前项目上下文；用于恢复时判断快照是否已过期 */
+    context?: SessionContextSignature;
 }
 
 /**
@@ -74,7 +86,50 @@ export function buildSessionSnapshot(input: SnapshotInput): HarnessSessionSnapsh
         memory: { ...input.memory },
         plan: input.plan.map(step => ({ ...step })),
         updatedAt: input.now ?? Date.now(),
+        ...(input.context
+            ? {
+                context: {
+                    projects: [...input.context.projects],
+                    activeProject: input.context.activeProject ?? null,
+                },
+            }
+            : {}),
     };
+}
+
+function sameProjectSet(a: readonly string[], b: readonly string[]): boolean {
+    if (a.length !== b.length) return false;
+    const set = new Set(a);
+    return b.every(item => set.has(item));
+}
+
+/**
+ * 快照是否仍与当前项目状态匹配。
+ *
+ * 旧档没有 `context` 时，解析首条「（会话开始。用户有 N 个项目）」占位；
+ * 与当前项目数量不符即拒绝恢复，避免把已删除项目的欢迎语重新上屏。
+ *
+ * @param snapshot - 已解析快照
+ * @param current - 当前项目上下文
+ * @returns 是否可恢复
+ */
+export function snapshotMatchesContext(
+    snapshot: HarnessSessionSnapshot,
+    current: SessionContextSignature,
+): boolean {
+    if (snapshot.context) {
+        return sameProjectSet(snapshot.context.projects, current.projects)
+            && (snapshot.context.activeProject ?? null) === (current.activeProject ?? null);
+    }
+    const startup = snapshot.events.find(
+        (event): event is Extract<AgentSessionEvent, { type: 'user_message' }> =>
+            event.type === 'user_message' && event.text.trim().startsWith('（会话开始'),
+    );
+    if (!startup) return true;
+    const countMatch = /用户有\s*(\d+)\s*个项目/.exec(startup.text);
+    if (countMatch) return Number(countMatch[1]) === current.projects.length;
+    if (startup.text.includes('用户还没有项目')) return current.projects.length === 0;
+    return true;
 }
 
 function isEvent(value: unknown): value is AgentSessionEvent {
@@ -116,6 +171,19 @@ export function parseSessionSnapshot(text: string): HarnessSessionSnapshot | nul
         const memory = data.memory && typeof data.memory === 'object' && !Array.isArray(data.memory)
             ? { ...(data.memory as Record<string, unknown>) }
             : {};
+        const contextRaw = data.context && typeof data.context === 'object'
+            ? data.context as Record<string, unknown>
+            : null;
+        const context = contextRaw
+            ? {
+                projects: Array.isArray(contextRaw.projects)
+                    ? contextRaw.projects.map(item => String(item)).filter(Boolean)
+                    : [],
+                activeProject: typeof contextRaw.activeProject === 'string' && contextRaw.activeProject
+                    ? contextRaw.activeProject
+                    : null,
+            }
+            : undefined;
         const callSeq = Number(data.callSeq);
         return {
             version: SESSION_SNAPSHOT_VERSION,
@@ -125,6 +193,7 @@ export function parseSessionSnapshot(text: string): HarnessSessionSnapshot | nul
             memory,
             plan,
             updatedAt: Number(data.updatedAt) || 0,
+            ...(context ? { context } : {}),
         };
     } catch {
         return null;

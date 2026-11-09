@@ -11,7 +11,16 @@
 
 import { requestUrl, type RequestUrlResponse } from 'obsidian';
 import { PluginCacheManager } from '@/shared/plugin-cache';
-import { GITHUB_REPO_SLUG, buildGitHubLatestReleaseApi, normalizeGitHubRepo } from '@/shared/github-repo';
+import {
+    GITHUB_BRANCH,
+    GITHUB_REPO_SLUG,
+    GITHUB_REPO_URL,
+    buildGitHubLatestReleaseApi,
+    buildGitHubRawManifestUrl,
+    buildGitHubReleasesAtomUrl,
+    normalizeGitHubRepo,
+} from '@/shared/github-repo';
+import { requestWithPolicy } from '@/shared/http-request';
 
 /** 更新检查源类型 */
 export type UpdateSourceType = 'github' | 'custom';
@@ -35,6 +44,29 @@ export interface UpdateCheckConfig {
     checkIntervalHours: number;
 }
 
+/**
+ * 解析 GitHub releases.atom 的首个 release 条目。
+ *
+ * @param xml - Atom 文本
+ * @param repo - 仓库标识（拼下载链接）
+ * @returns 版本信息；无法解析返回 null
+ */
+function parseGitHubAtom(xml: string, repo: string): VersionInfo | null {
+    const entry = /<entry\b[\s\S]*?<\/entry>/i.exec(xml)?.[0] || xml;
+    const title = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(entry)?.[1] || '';
+    const version = title.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').trim().replace(/^v/, '');
+    if (!/^\d+\.\d+\.\d+(?:[-+][\w.-]+)?$/.test(version)) return null;
+    const updated = /<updated[^>]*>([\s\S]*?)<\/updated>/i.exec(entry)?.[1] || '';
+    const href = /<link[^>]*href="([^"]+)"/i.exec(entry)?.[1]
+        || `https://github.com/${repo}/releases/tag/${version}`;
+    return {
+        version,
+        releaseDate: updated || undefined,
+        releaseNotes: '',
+        downloadUrl: href,
+    };
+}
+
 /** 更新检查错误类型：区分网络/HTTP/解析/配置，避免一律提示"无更新" */
 export type UpdateCheckErrorKind = 'config' | 'network' | 'http' | 'parse';
 
@@ -48,6 +80,12 @@ export interface UpdateCheckResult {
     downloadUrl?: string;
     error?: string;
     errorKind?: UpdateCheckErrorKind;
+    /** 本次检查失败，latestVersion 来自上次成功结果 */
+    stale?: boolean;
+    /** 成功检查时间（ISO） */
+    checkedAt?: string;
+    /** 上次成功检查时间（ISO） */
+    lastSuccessAt?: string;
 }
 
 /** 默认配置 */
@@ -113,6 +151,14 @@ export class UpdateChecker {
     private currentVersion: string;
     private cacheManager: PluginCacheManager;
     private config: UpdateCheckConfig;
+    /** 同一时刻只允许一个检查请求，避免连点触发 GitHub 次级限流 */
+    private inFlight = false;
+    private lastForceAt = 0;
+
+    /** 手动检查最小间隔（毫秒） */
+    private static readonly MIN_FORCE_INTERVAL_MS = 15_000;
+    /** 单次请求超时（毫秒） */
+    private static readonly REQUEST_TIMEOUT_MS = 15_000;
 
     constructor(
         currentVersion: string,
@@ -222,49 +268,72 @@ export class UpdateChecker {
             hasUpdate: false,
             currentVersion: this.currentVersion,
         };
-
-        if (!force && !this.shouldCheck()) {
-            const lastResult = this.getLastCheckResult();
-            if (lastResult) return lastResult;
+        if (this.inFlight) {
+            return {
+                ...baseResult,
+                error: '正在检查更新，请稍候',
+                errorKind: 'config',
+            };
         }
+        const now = Date.now();
+        if (force && this.lastForceAt > 0
+            && now - this.lastForceAt < UpdateChecker.MIN_FORCE_INTERVAL_MS) {
+            const last = this.getLastCheckResult();
+            if (last) return last;
+            return {
+                ...baseResult,
+                error: '检查过于频繁，请稍后再试',
+                errorKind: 'config',
+            };
+        }
+        this.inFlight = true;
+        if (force) this.lastForceAt = now;
 
         try {
-            if (this.config.source === 'github' && !this.config.githubRepo) {
-                throw new UpdateCheckError('config', '未配置 GitHub 仓库（owner/repo）');
-            }
-            if (this.config.source === 'custom' && !this.config.customUrl) {
-                throw new UpdateCheckError('config', '未配置自定义更新 URL');
-            }
-            if (this.config.source !== 'github' && this.config.source !== 'custom') {
-                throw new UpdateCheckError('config', `未知的更新源：${String(this.config.source)}`);
+            if (!force && !this.shouldCheck()) {
+                const lastResult = this.getLastCheckResult();
+                if (lastResult) return lastResult;
             }
 
-            const latestInfo = this.config.source === 'github'
-                ? await this.checkGitHubRelease(this.config.githubRepo as string)
-                : await this.checkCustomSource(this.config.customUrl as string);
+            try {
+                if (this.config.source === 'github' && !this.config.githubRepo) {
+                    throw new UpdateCheckError('config', '未配置 GitHub 仓库（owner/repo）');
+                }
+                if (this.config.source === 'custom' && !this.config.customUrl) {
+                    throw new UpdateCheckError('config', '未配置自定义更新 URL');
+                }
+                if (this.config.source !== 'github' && this.config.source !== 'custom') {
+                    throw new UpdateCheckError('config', `未知的更新源：${String(this.config.source)}`);
+                }
 
-            const hasUpdate = compareVersions(latestInfo.version, this.currentVersion) > 0;
+                const latestInfo = this.config.source === 'github'
+                    ? await this.checkGitHubRelease(this.config.githubRepo as string)
+                    : await this.checkCustomSource(this.config.customUrl as string);
 
-            const result: UpdateCheckResult = {
-                hasUpdate,
-                currentVersion: this.currentVersion,
-                latestVersion: latestInfo.version,
-                releaseDate: latestInfo.releaseDate,
-                releaseNotes: latestInfo.releaseNotes,
-                downloadUrl: latestInfo.downloadUrl,
-            };
+                const hasUpdate = compareVersions(latestInfo.version, this.currentVersion) > 0;
 
-            this.saveCheckResult(result);
-            return result;
-        } catch (e) {
-            const error = e instanceof Error ? e.message : String(e);
-            const result: UpdateCheckResult = {
-                ...baseResult,
-                error,
-                errorKind: e instanceof UpdateCheckError ? e.kind : 'network',
-            };
-            this.saveCheckResult(result);
-            return result;
+                const result: UpdateCheckResult = {
+                    hasUpdate,
+                    currentVersion: this.currentVersion,
+                    latestVersion: latestInfo.version,
+                    releaseDate: latestInfo.releaseDate,
+                    releaseNotes: latestInfo.releaseNotes,
+                    downloadUrl: latestInfo.downloadUrl,
+                };
+
+                this.saveCheckResult(result);
+                return result;
+            } catch (e) {
+                const error = e instanceof Error ? e.message : String(e);
+                const result: UpdateCheckResult = {
+                    ...baseResult,
+                    error,
+                    errorKind: e instanceof UpdateCheckError ? e.kind : 'network',
+                };
+                return this.saveCheckResult(result);
+            }
+        } finally {
+            this.inFlight = false;
         }
     }
 
@@ -274,18 +343,38 @@ export class UpdateChecker {
         if (!safeRepo) {
             throw new UpdateCheckError('config', `GitHub 仓库格式不正确：${repo || '（空）'}`);
         }
-        const url = buildGitHubLatestReleaseApi(safeRepo);
         const headers: Record<string, string> = {
-            Accept: 'application/vnd.github.v3+json',
+            Accept: 'application/vnd.github+json',
             'X-GitHub-Api-Version': '2022-11-28',
+            // GitHub REST 对无合法 User-Agent 的请求直接 403；显式声明也便于排障
+            'User-Agent': `NovelWriterAI/${typeof PLUGIN_VERSION !== 'undefined' ? PLUGIN_VERSION : this.currentVersion || 'unknown'} (+${GITHUB_REPO_URL})`,
         };
         if (this.config.githubToken?.trim()) {
             headers.Authorization = `Bearer ${this.config.githubToken.trim()}`;
         }
+
+        try {
+            return await this.checkGitHubReleaseApi(safeRepo, headers);
+        } catch (primary) {
+            // API 403/429 时 GitHub 仍允许访问公开的 releases.atom 与 raw manifest；
+            // 两者都拿不到再抛原始错误，避免把「限流」误报成「仓库不存在」。
+            const fallback = await this.tryGitHubFallbacks(safeRepo);
+            if (fallback) return fallback;
+            throw primary;
+        }
+    }
+
+    /** GitHub Releases API（主路径） */
+    private async checkGitHubReleaseApi(
+        safeRepo: string,
+        headers: Record<string, string>,
+    ): Promise<VersionInfo> {
+        const url = buildGitHubLatestReleaseApi(safeRepo);
         let response: RequestUrlResponse;
         try {
             // v4.76.0：改 requestUrl——移动端 fetch 无 CORS 豁免，GitHub API 会直接被拦。
-            response = await requestUrl({ url, headers, throw: false });
+            // v4.81.1：加 15s 超时与一次有限重试，避免代理挂起时永远转圈。
+            response = await this.requestWithTimeout(url, headers);
         } catch (e) {
             throw new UpdateCheckError(
                 'network',
@@ -294,13 +383,7 @@ export class UpdateChecker {
         }
 
         if (response.status < 200 || response.status >= 300) {
-            if (response.status === 404) {
-                throw new UpdateCheckError('http', `仓库或 Release 不存在或无权访问（404）：${safeRepo}`);
-            }
-            if (response.status === 401 || response.status === 403) {
-                throw new UpdateCheckError('http', `仓库无访问权限或 API 限流（${response.status}）：${safeRepo}`);
-            }
-            throw new UpdateCheckError('http', `GitHub API 返回 HTTP ${response.status}`);
+            throw new UpdateCheckError('http', this.describeGitHubError(response, safeRepo));
         }
 
         let data: Record<string, unknown>;
@@ -323,12 +406,97 @@ export class UpdateChecker {
         };
     }
 
+    /**
+     * GitHub API 失败后的公开备用源：releases.atom → raw manifest（master/main）。
+     * 只返回版本与链接，不臆造 release notes。
+     */
+    private async tryGitHubFallbacks(safeRepo: string): Promise<VersionInfo | null> {
+        const atomUrl = buildGitHubReleasesAtomUrl(safeRepo);
+        try {
+            const response = await this.requestWithTimeout(atomUrl, { Accept: 'application/atom+xml' }, 8000);
+            if (response.status >= 200 && response.status < 300) {
+                const parsed = parseGitHubAtom(response.text || '', safeRepo);
+                if (parsed) return parsed;
+            }
+        } catch {
+            // 继续尝试 raw manifest
+        }
+
+        for (const branch of [GITHUB_BRANCH, 'main']) {
+            try {
+                const response = await this.requestWithTimeout(
+                    buildGitHubRawManifestUrl(safeRepo, branch),
+                    { Accept: 'application/json' },
+                    8000,
+                );
+                if (response.status < 200 || response.status >= 300) continue;
+                const data = JSON.parse(response.text || '{}') as Record<string, unknown>;
+                const version = String(data.version || '').replace(/^v/, '');
+                if (version) {
+                    return {
+                        version,
+                        releaseDate: typeof data.releaseDate === 'string' ? data.releaseDate : undefined,
+                        downloadUrl: `https://github.com/${safeRepo}/releases/tag/${version}`,
+                    };
+                }
+            } catch {
+                // 下一个分支
+            }
+        }
+        return null;
+    }
+
+    /** 统一请求入口：15s 超时 + 一次重试（备用源可传更短超时） */
+    private async requestWithTimeout(
+        url: string,
+        headers: Record<string, string>,
+        timeoutMs = UpdateChecker.REQUEST_TIMEOUT_MS,
+    ): Promise<RequestUrlResponse> {
+        return requestWithPolicy(
+            (params) => requestUrl({ ...params, throw: false }),
+            { url, headers },
+            { timeoutMs, retries: 1, retryDelayMs: 800 },
+        );
+    }
+
+    /** 把 401/403/429 的 GitHub 响应翻译成可执行提示 */
+    private describeGitHubError(response: RequestUrlResponse, safeRepo: string): string {
+        const headers = (response.headers || {}) as Record<string, string>;
+        const remaining = headers['x-ratelimit-remaining'];
+        const resetSeconds = Number(headers['x-ratelimit-reset']);
+        const retryAfter = headers['retry-after'];
+        let apiMessage = '';
+        try {
+            const body = response.json as Record<string, unknown>;
+            if (typeof body?.message === 'string') apiMessage = body.message;
+        } catch {
+            // 非 JSON 错误体
+        }
+        const resetHint = Number.isFinite(resetSeconds) && resetSeconds > 0
+            ? `，${new Date(resetSeconds * 1000).toLocaleTimeString('zh-CN')} 重置`
+            : retryAfter ? `，${retryAfter}s 后重试` : '';
+
+        if (response.status === 401) {
+            return `GitHub Token 无效或已过期（401）：${safeRepo}`;
+        }
+        if (response.status === 429 || (response.status === 403 && remaining === '0')) {
+            return `GitHub API 限流（未认证每小时 60 次）${resetHint}：${safeRepo}。可在设置中配置 GitHub Token，或稍后重试`;
+        }
+        if (response.status === 403) {
+            return `GitHub API 拒绝请求（403）${apiMessage ? `：${apiMessage}` : ''}：${safeRepo}`;
+        }
+        if (response.status === 404) {
+            return `仓库或 Release 不存在或无权访问（404）：${safeRepo}`;
+        }
+        return `GitHub API 返回 HTTP ${response.status}${apiMessage ? `：${apiMessage}` : ''}`;
+    }
+
     /** 从自定义服务器检查更新 */
     private async checkCustomSource(url: string): Promise<VersionInfo> {
         let response: RequestUrlResponse;
         try {
             // v4.76.0：同 checkGitHub——移动端必须走 requestUrl
-            response = await requestUrl({ url, throw: false });
+            response = await this.requestWithTimeout(url, { Accept: 'application/json' });
         } catch (e) {
             throw new UpdateCheckError(
                 'network',
@@ -366,10 +534,36 @@ export class UpdateChecker {
         };
     }
 
-    /** 保存检查结果到缓存 */
-    private saveCheckResult(result: UpdateCheckResult): void {
-        this.cacheManager.setUpdateLastCheck(new Date().toISOString());
-        this.cacheManager.setUpdateLastResult(result);
+    /** 保存检查结果到缓存，并返回实际落盘的结果（失败时会合并上次成功版本） */
+    private saveCheckResult(result: UpdateCheckResult): UpdateCheckResult {
+        const now = new Date().toISOString();
+        let next = result;
+        if (result.error) {
+            const previous = this.cacheManager.getUpdateLastResult() as UpdateCheckResult | null;
+            if (previous?.latestVersion) {
+                // 本次失败不能抹掉上次成功版本；保留版本并标记 stale，About 页可显示
+                // 「上次已知 vX / 本次检查失败」，而不是整块变成红色失败。
+                next = {
+                    ...previous,
+                    currentVersion: this.currentVersion,
+                    hasUpdate: compareVersions(previous.latestVersion, this.currentVersion) > 0,
+                    error: result.error,
+                    errorKind: result.errorKind,
+                    stale: true,
+                    lastSuccessAt: previous.lastSuccessAt || previous.checkedAt,
+                };
+            }
+        } else {
+            next = {
+                ...result,
+                stale: false,
+                checkedAt: now,
+            };
+            delete next.lastSuccessAt;
+        }
+        this.cacheManager.setUpdateLastCheck(now);
+        this.cacheManager.setUpdateLastResult(next);
+        return next;
     }
 
     /**

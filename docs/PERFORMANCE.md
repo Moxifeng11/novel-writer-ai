@@ -25,7 +25,7 @@
 
 以下文件禁止退回全库扫描（`vault.getFiles()` / `vault.getMarkdownFiles()` / `vault.getAllLoadedFiles()` 三者都是 O(全库)，门禁 `scripts/check-hotpath-scans.mjs` 逐文件检查 `HOT_FILES`）：
 
-- 正文落盘、结算、统计、上下文装配、实体读取、知识库索引等 8 个模块，以及 UI 侧每章/每次质量刷新各跑一次的 `ui/full-writer/batch-pipeline-runner.ts`（断点续跑读步骤结果）、`ui/cowrite/realtime-quality-controller.ts`（前文窗口扫描）与 `ui/full-writer/creation-flow-state.ts`（工作台阶段面板每次刷新整包采集，第 60 轮接入）——共 11 个模块（以脚本清单为准）。
+- 正文落盘、结算、统计、上下文装配、实体读取、知识库索引等 8 个模块，以及 UI 侧每章断点续跑的 `ui/full-writer/batch-pipeline-runner.ts`（读步骤结果）与 `ui/full-writer/creation-flow-state.ts`（工作台阶段面板每次刷新整包采集，第 60 轮接入）——共 10 个模块（以脚本清单为准）。
 
 门禁覆盖面（第 26 轮实测，防止「换个 API 绕过」）：
 

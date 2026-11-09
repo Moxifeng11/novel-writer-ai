@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-08T21:36:01.040Z",
-  "note": "v4.80.0 批量 A：删除三处纯死代码的样式注入方法（StepModalController 3 / StepRunner 3 / polish-editor 1 导出），已注释数随之下降；导出覆盖率仍 100%、@example 52/52，不是丢注释",
+  "generatedAt": "2026-11-09T10:02:34.333Z",
+  "note": "v4.81.1 删除实时质量链路后，shared/thresholds.ts 的 QUALITY_LIVE_PERSIST_INTERVAL_MS 无消费者一并删除；已注释导出 124→123 属代码删除，非文档回退",
   "layers": {
     "engine": {
       "files": 288,
-      "exports": 1585,
-      "documented": 1584,
+      "exports": 1589,
+      "documented": 1588,
       "methods": 1239,
       "methodsDocumented": 1239,
       "incomplete": 0
@@ -19,9 +19,9 @@
       "incomplete": 0
     },
     "shared": {
-      "files": 177,
-      "exports": 1606,
-      "documented": 1606,
+      "files": 178,
+      "exports": 1613,
+      "documented": 1613,
       "methods": 149,
       "methodsDocumented": 149,
       "incomplete": 0
@@ -43,11 +43,11 @@
       "incomplete": 0
     },
     "ui": {
-      "files": 236,
-      "exports": 724,
-      "documented": 724,
-      "methods": 648,
-      "methodsDocumented": 648,
+      "files": 237,
+      "exports": 735,
+      "documented": 735,
+      "methods": 641,
+      "methodsDocumented": 641,
       "incomplete": 0
     }
   },
@@ -67,8 +67,8 @@
       "incomplete": 0
     },
     "engine/agent/dsh/dsh-launch.ts": {
-      "exports": 6,
-      "documented": 6,
+      "exports": 8,
+      "documented": 8,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -158,8 +158,8 @@
       "incomplete": 0
     },
     "engine/agent/harness/session-snapshot.ts": {
-      "exports": 8,
-      "documented": 8,
+      "exports": 10,
+      "documented": 10,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2547,8 +2547,8 @@
       "incomplete": 0
     },
     "shared/dom-window.ts": {
-      "exports": 3,
-      "documented": 3,
+      "exports": 4,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2759,8 +2759,8 @@
       "incomplete": 0
     },
     "shared/github-repo.ts": {
-      "exports": 9,
-      "documented": 9,
+      "exports": 11,
+      "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3406,8 +3406,8 @@
       "incomplete": 0
     },
     "shared/thresholds.ts": {
-      "exports": 124,
-      "documented": 124,
+      "exports": 123,
+      "documented": 123,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3510,6 +3510,13 @@
     "shared/word-count.ts": {
       "exports": 7,
       "documented": 7,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "shared/workspace-reveal.ts": {
+      "exports": 5,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -4244,13 +4251,6 @@
       "methodsDocumented": 2,
       "incomplete": 0
     },
-    "ui/cowrite/realtime-quality-controller.ts": {
-      "exports": 2,
-      "documented": 2,
-      "methods": 7,
-      "methodsDocumented": 7,
-      "incomplete": 0
-    },
     "ui/cowrite/suggestion-edit-modal.ts": {
       "exports": 1,
       "documented": 1,
@@ -4944,6 +4944,13 @@
       "methodsDocumented": 2,
       "incomplete": 0
     },
+    "ui/rendering/safe-html.ts": {
+      "exports": 2,
+      "documented": 2,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "ui/review-chapter-modal.ts": {
       "exports": 1,
       "documented": 1,
@@ -4965,6 +4972,13 @@
       "methodsDocumented": 2,
       "incomplete": 0
     },
+    "ui/services/agent-attachment-store.ts": {
+      "exports": 10,
+      "documented": 10,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "ui/services/agent-port.ts": {
       "exports": 2,
       "documented": 2,
@@ -4980,8 +4994,8 @@
       "incomplete": 0
     },
     "ui/services/agent-spill-store.ts": {
-      "exports": 3,
-      "documented": 3,
+      "exports": 4,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0

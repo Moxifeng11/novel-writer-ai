@@ -692,12 +692,6 @@ button.nw-btn-icon {
     background: var(--background-modifier-hover);
 }
 
-.nw-quality-live {
-    min-width: 96px;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-}
-
 .nw-rewrite-preview {
     max-height: 140px;
     overflow: auto;

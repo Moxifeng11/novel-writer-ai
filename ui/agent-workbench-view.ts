@@ -38,6 +38,15 @@ import { VIEW_TYPE_AGENT_WORKBENCH } from '@/shared/view-types';
 import { classifyPreviewKind } from '@/shared/preview-kind';
 import { createVaultSpillSink, pruneSpillArchive } from './services/agent-spill-store';
 import { createAgentSessionStore, type AgentSessionStore } from './services/agent-session-store';
+import {
+    buildAttachmentBlock,
+    deleteAgentAttachment,
+    isSupportedImage,
+    saveAgentAttachment,
+    splitAttachmentBlock,
+    type AgentAttachment,
+} from './services/agent-attachment-store';
+import { snapshotMatchesContext } from '@/engine/agent/harness/session-snapshot';
 import { findModelCapability } from '@/shared/model-capabilities';
 import {
     activeAtToken,
@@ -45,7 +54,6 @@ import {
     extractMentionPaths,
     filterVaultPaths,
     formatFileMention,
-    stripMentionMarkers,
     type MentionToken,
 } from '@/shared/file-mention';
 import { isImeComposing } from '@/shared/keyboard';
@@ -102,6 +110,10 @@ export class AgentWorkbenchView extends ItemView {
     private chipsEl: HTMLElement | null = null;
     /** 输入框（textarea：支持 Shift+Enter 换行与 @ 引用） */
     private inputEl: HTMLTextAreaElement | null = null;
+    /** 待发送图片（只存元数据；发送时拼路径引用） */
+    private pendingAttachments: AgentAttachment[] = [];
+    private attachmentStripEl: HTMLElement | null = null;
+    private attachmentInputEl: HTMLInputElement | null = null;
     /** 引用条（「引用」某条回复后显示在输入框上方） */
     private quoteBarEl: HTMLElement | null = null;
     private quote: { text: string } | null = null;
@@ -437,10 +449,13 @@ export class AgentWorkbenchView extends ItemView {
     /** 当前聚焦项目（供故事结构等直达按钮） */
     private resolveActiveProject(): string {
         const fromMemory = this.harnessEngine?.getSlots()?.pickedProject;
-        return this.activeProject
+        const candidate = this.activeProject
             || (typeof fromMemory === 'string' ? fromMemory : '')
             || this.plugin.getActiveProject()
             || '';
+        // 已删除项目不能继续作为会话作用域（否则会话会写进一个不存在的项目档）
+        if (candidate && this.agentCtx && !this.agentCtx.projects.includes(candidate)) return '';
+        return candidate;
     }
 
     private openStorySettingsForActive(): void {
@@ -558,19 +573,20 @@ export class AgentWorkbenchView extends ItemView {
     }
 
     private setActiveProject(project: string): void {
-        this.activeProject = project;
         const projects = listProjectIds(this.app);
+        const next = project && projects.includes(project) ? project : '';
+        this.activeProject = next;
         if (this.agentCtx) {
             this.agentCtx.projects = projects;
-            this.agentCtx.activeProject = project || null;
+            this.agentCtx.activeProject = next || null;
         }
         this.harnessEngine?.updateContext({
             projects,
-            activeProject: project,
+            activeProject: next,
         });
         // 切项目必须清掉旧预览：右栏会继续显示上一个项目的文件内容，
         // 而文件树/路径标签已经指向新项目，用户会误把 A 的内容当成 B 的。
-        if (this.previewedPath && !this.previewedPath.startsWith(`${project}/`)) {
+        if (this.previewedPath && !this.previewedPath.startsWith(`${next}/`)) {
             this.previewedPath = '';
             this.previewSeq++;
             this.previewEl?.empty();
@@ -606,20 +622,48 @@ export class AgentWorkbenchView extends ItemView {
         this.refreshProjectChip();
         this.refreshModelBadge();
 
-        // 引用条 + @ 候选弹层 + 多行输入框（Enter 发送 / Shift+Enter 换行 / 输入法不误发）
+        // 引用条 + @ 候选弹层 + 图片附件 + 多行输入框（Enter 发送 / Shift+Enter 换行 / 输入法不误发）
         this.quoteBarEl = container.createDiv({ cls: 'nw-awb-quote-bar nw-awb-quote-bar-hidden' });
         this.mentionEl = container.createDiv({ cls: 'nw-awb-mention-pop nw-awb-mention-pop-hidden' });
+        this.attachmentStripEl = container.createDiv({ cls: 'nw-awb-attachments nw-u-d-none' });
         const inputRow = container.createDiv({ cls: 'nw-awb-input-row' });
+
+        const attachBtn = inputRow.createEl('button', {
+            text: '🖼',
+            cls: 'nw-awb-attach',
+            attr: { type: 'button', title: '添加图片（PNG/JPEG/WebP/GIF）' },
+        });
+        this.attachmentInputEl = inputRow.createEl('input', {
+            type: 'file',
+            cls: 'nw-awb-attach-input nw-u-d-none',
+            attr: {
+                accept: 'image/png,image/jpeg,image/webp,image/gif',
+                multiple: 'true',
+            },
+        });
+        attachBtn.addEventListener('click', () => this.attachmentInputEl?.click());
+        this.attachmentInputEl.addEventListener('change', () => {
+            const files = Array.from(this.attachmentInputEl?.files || []);
+            if (this.attachmentInputEl) this.attachmentInputEl.value = '';
+            void this.addAttachmentFiles(files);
+        });
+
         this.inputEl = inputRow.createEl('textarea', {
             cls: 'nw-awb-input',
             attr: {
-                rows: '1',
+                rows: '2',
                 placeholder: '对 Agent 说点什么…（@ 引用文件，Enter 发送，Shift+Enter 换行）',
             },
         });
         this.inputEl.addEventListener('input', () => {
             this.autoGrowInput();
             this.updateMentionPopup();
+        });
+        this.inputEl.addEventListener('paste', (ev: ClipboardEvent) => {
+            const files = Array.from(ev.clipboardData?.files || []).filter(isSupportedImage);
+            if (files.length === 0) return;
+            ev.preventDefault();
+            void this.addAttachmentFiles(files);
         });
         this.inputEl.addEventListener('keydown', (ev: KeyboardEvent) => {
             if (this.onComposerKeydown(ev)) return;
@@ -628,15 +672,84 @@ export class AgentWorkbenchView extends ItemView {
             // 延迟关闭：点击候选时 blur 先于 click，立即关会吞掉选择
             window.setTimeout(() => this.closeMentionPopup(), 120);
         });
+        inputRow.addEventListener('dragover', (ev: DragEvent) => {
+            if (!ev.dataTransfer?.types.includes('Files')) return;
+            ev.preventDefault();
+            inputRow.addClass('nw-is-dragover');
+        });
+        inputRow.addEventListener('dragleave', () => inputRow.removeClass('nw-is-dragover'));
+        inputRow.addEventListener('drop', (ev: DragEvent) => {
+            inputRow.removeClass('nw-is-dragover');
+            const files = Array.from(ev.dataTransfer?.files || []).filter(isSupportedImage);
+            if (files.length === 0) return;
+            ev.preventDefault();
+            void this.addAttachmentFiles(files);
+        });
         const sendBtn = inputRow.createEl('button', { text: '↑', cls: 'nw-awb-send', attr: { title: '发送' } });
         sendBtn.addEventListener('click', () => void this.submit(this.inputEl?.value || ''));
+        // 首次渲染也要按内容给足高度，不能停在 rows=2 的默认值
+        this.autoGrowInput();
+    }
+
+    /** 保存并追加待发送图片（粘贴/拖拽/选择共用） */
+    private async addAttachmentFiles(files: File[]): Promise<void> {
+        if (files.length === 0) return;
+        const accepted: AgentAttachment[] = [];
+        for (const file of files) {
+            if (!isSupportedImage(file)) {
+                new Notice('只支持 10MB 以内的 PNG/JPEG/WebP/GIF 图片', 3500);
+                continue;
+            }
+            try {
+                accepted.push(await saveAgentAttachment(this.app, this.resolveActiveProject(), file));
+            } catch (e) {
+                new Notice(e instanceof Error ? e.message : '图片保存失败', 3500);
+            }
+        }
+        if (accepted.length === 0) return;
+        this.pendingAttachments.push(...accepted);
+        this.renderAttachmentStrip();
+    }
+
+    /** 待发送图片缩略图条 */
+    private renderAttachmentStrip(): void {
+        if (!this.attachmentStripEl) return;
+        this.attachmentStripEl.empty();
+        this.attachmentStripEl.toggleClass('nw-u-d-none', this.pendingAttachments.length === 0);
+        for (const item of this.pendingAttachments) {
+            const chip = this.attachmentStripEl.createDiv({ cls: 'nw-awb-attachment-chip' });
+            const img = chip.createEl('img', { cls: 'nw-awb-attachment-thumb' });
+            try {
+                img.src = this.app.vault.adapter.getResourcePath(item.path);
+            } catch {
+                // 非桌面端/未索引时缩略图失败不影响发送（路径仍有效）
+            }
+            img.alt = item.name;
+            chip.createSpan({ cls: 'nw-awb-attachment-name', text: item.name });
+            const remove = chip.createEl('button', {
+                text: '✕',
+                cls: 'nw-awb-attachment-remove',
+                attr: { type: 'button', title: '移除图片' },
+            });
+            remove.addEventListener('click', () => {
+                this.pendingAttachments = this.pendingAttachments.filter(entry => entry.path !== item.path);
+                void deleteAgentAttachment(this.app, item.path);
+                this.renderAttachmentStrip();
+            });
+        }
+    }
+
+    /** 清空待发送图片（发送后保留落盘文件，供会话历史引用） */
+    private clearPendingAttachments(): void {
+        this.pendingAttachments = [];
+        this.renderAttachmentStrip();
     }
 
     /** textarea 自适应高度（1–6 行），空值时复位 */
     private autoGrowInput(): void {
         if (!this.inputEl) return;
         this.inputEl.addClass('nw-h-auto');
-        this.inputEl.style.height = `${Math.min(132, this.inputEl.scrollHeight)}px`;
+        this.inputEl.style.height = `${Math.max(40, Math.min(132, this.inputEl.scrollHeight))}px`;
     }
 
     /**
@@ -1088,7 +1201,11 @@ export class AgentWorkbenchView extends ItemView {
                 // 有存档就先恢复历史，不再重放开场白（dsh session restore）
                 const snapshot = await this.sessionStore?.load();
                 if (session !== this.sessionSeq) return;
-                if (snapshot && snapshot.events.length > 0) {
+                if (snapshot && snapshot.events.length > 0
+                    && snapshotMatchesContext(snapshot, {
+                        projects: ctx.projects,
+                        activeProject: ctx.activeProject ?? null,
+                    })) {
                     harness.restore(snapshot);
                     const history = harness.getHistory();
                     if (history.length > 0) {
@@ -1373,12 +1490,14 @@ export class AgentWorkbenchView extends ItemView {
         if (this.busy) {
             // 回合进行中：补充消息进入收件箱（吸收 dsh steering），
             // 模型下一步就能看到，不必等整轮结束，也不打断当前工具链。
-            // 补充消息同样带上 @ 引用清单，否则模型看不到用户刚引用的文件。
+            // 补充消息同样带上 @ 引用清单与图片路径，否则模型看不到用户刚引用的内容。
             const steerBlock = buildMentionBlock(extractMentionPaths(text));
-            const accepted = this.harnessEngine?.steer(steerBlock ? `${text}\n\n${steerBlock}` : text) ?? false;
+            const attachmentBlock = buildAttachmentBlock(this.pendingAttachments);
+            const payload = [text, steerBlock, attachmentBlock].filter(Boolean).join('\n\n');
+            const accepted = this.harnessEngine?.steer(payload) ?? false;
             if (accepted) {
                 if (source === 'input' && this.inputEl) this.resetComposer();
-                this.pushUser(stripMentionMarkers(text));
+                this.pushUser(payload);
                 this.appendSystemNote('已插入当前回合，模型下一步会看到');
             } else {
                 new Notice('当前回合仍在执行，请稍后再发', 2500);
@@ -1386,11 +1505,12 @@ export class AgentWorkbenchView extends ItemView {
             return;
         }
 
+        const attachmentBlock = buildAttachmentBlock(this.pendingAttachments);
         if (source === 'input' && this.inputEl) this.resetComposer();
-        // @ 引用：气泡只显示用户输入，引擎收到「输入 + 引用文件清单」（内容仍按需 read_file）
+        // @ 引用：气泡只显示用户输入，引擎收到「输入 + 引用文件清单 + 图片路径」
         const mentionBlock = buildMentionBlock(extractMentionPaths(text));
-        const payload = mentionBlock ? `${text}\n\n${mentionBlock}` : text;
-        this.pushUser(stripMentionMarkers(text));
+        const payload = [text, mentionBlock, attachmentBlock].filter(Boolean).join('\n\n');
+        this.pushUser(payload);
         this.lastUserText = payload;
         await this.runTurn(payload);
     }
@@ -1401,6 +1521,7 @@ export class AgentWorkbenchView extends ItemView {
         this.inputEl.value = '';
         this.closeMentionPopup();
         this.autoGrowInput();
+        this.clearPendingAttachments();
     }
 
     /** 「重试」：重放上一条用户消息，不重复渲染用户气泡 */
@@ -1528,7 +1649,8 @@ export class AgentWorkbenchView extends ItemView {
         // Agent 新建项目后会把 pickedProject 写进记忆：视图必须跟着切过去，
         // 否则项目 chip/文件树/高亮仍停在旧项目（旧实现只在用户手点项目卡时同步）。
         const picked = this.harnessEngine?.getSlots()?.pickedProject;
-        if (typeof picked === 'string' && picked && picked !== this.activeProject) {
+        if (typeof picked === 'string' && picked && picked !== this.activeProject
+            && (this.agentCtx?.projects.includes(picked) ?? false)) {
             this.setActiveProject(picked);
         }
         this.refreshProjectList();
@@ -1611,11 +1733,25 @@ export class AgentWorkbenchView extends ItemView {
         this.scrollToEnd();
     }
 
-    /** 用户气泡（新消息与恢复历史共用） */
+    /** 用户气泡（新消息与恢复历史共用；附件块只显示缩略图，不把路径原文抛给用户） */
     private renderUserBubble(text: string): void {
         if (!this.messagesEl) return;
+        const { displayText, attachments } = splitAttachmentBlock(text);
         const row = this.messagesEl.createDiv({ cls: 'nw-awb-row nw-awb-row-user' });
-        row.createDiv({ cls: 'nw-awb-bubble', text });
+        const bubble = row.createDiv({ cls: 'nw-awb-bubble' });
+        if (displayText.trim()) bubble.createDiv({ text: displayText });
+        if (attachments.length > 0) {
+            const strip = bubble.createDiv({ cls: 'nw-awb-bubble-attachments' });
+            for (const item of attachments) {
+                const img = strip.createEl('img', { cls: 'nw-awb-attachment-thumb' });
+                try {
+                    img.src = this.app.vault.adapter.getResourcePath(item.path);
+                } catch {
+                    // 缩略图失败不影响历史文本
+                }
+                img.alt = item.name;
+            }
+        }
     }
 
     private renderChips(chips: AgentChip[]): void {

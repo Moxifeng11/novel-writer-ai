@@ -60,7 +60,12 @@ export class MiniSettingsModal extends Modal {
     private renderTabs(): void {
         if (!this.tabBar) return;
         this.tabBar.empty();
+        const showAdvanced = this.plugin.settings.settingsUiShowAdvanced === true;
+        if (!showAdvanced && SETTINGS_TAB_DEFINITIONS.find(tab => tab.id === this.activeTab)?.group === 'advanced') {
+            this.activeTab = 'api';
+        }
         for (const tab of SETTINGS_TAB_DEFINITIONS) {
+            if (tab.group === 'advanced' && !showAdvanced) continue;
             const btn = this.tabBar.createEl('button', {
                 text: tab.label,
                 cls: `nw-mini-settings-tab${tab.id === this.activeTab ? ' is-active' : ''}`,
@@ -72,6 +77,20 @@ export class MiniSettingsModal extends Modal {
                 this.renderActive();
             });
         }
+        const toggle = this.tabBar.createEl('button', {
+            text: showAdvanced ? '⚙ 收起高级' : '⚙ 高级设置',
+            cls: 'nw-mini-settings-tab nw-mini-settings-tab-advanced-toggle',
+        });
+        toggle.addEventListener('click', () => {
+            this.plugin.settings.settingsUiShowAdvanced = !showAdvanced;
+            void this.plugin.saveSettings();
+            if (showAdvanced
+                && SETTINGS_TAB_DEFINITIONS.find(tab => tab.id === this.activeTab)?.group === 'advanced') {
+                this.activeTab = 'api';
+            }
+            this.renderTabs();
+            this.renderActive();
+        });
     }
 
     private renderActive(): void {

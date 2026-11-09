@@ -1176,8 +1176,8 @@
 .nw-awb-input {
     resize: none;
     line-height: 1.5;
-    min-height: 34px;
-    max-height: 132px;
+    min-height: 40px;
+    max-height: min(132px, 30vh);
     overflow-y: auto;
     font-family: inherit;
 }
@@ -1386,6 +1386,7 @@
         display: flex;
         flex: 0 0 auto;
         width: auto;
+        max-width: none;
         max-height: 30vh;
         border-right: none;
         border-bottom: 1px solid var(--background-modifier-border);
@@ -1401,6 +1402,7 @@
         display: flex;
         flex: 0 0 auto;
         width: auto;
+        max-width: none;
         max-height: 45vh;
         border-left: none;
         border-top: 1px solid var(--background-modifier-border);

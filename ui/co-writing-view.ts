@@ -101,17 +101,6 @@ import { AssociationSuggestion } from '@/shared/co-writer-types';
 import { ProgressEmitter, type ProgressState } from '@/shared/progress-emitter';
 import { StepListComponent } from './components/progress/step-list';
 import { TimeEstimator } from '@/shared/time-estimator';
-import { RealtimeMonitor } from '@/engine/quality/realtime-monitor';
-import { QualityScoreEngine, type CharacterContextInfo } from '@/engine/quality/quality-score-engine';
-import { toCharacterContextInfos } from '@/engine/character-context';
-import { toForeshadowTrackings, applyPlannedRevealChapters } from '@/engine/foreshadow-context';
-import { createPlotDivergenceEngine, createWritingQualityEngine } from '@/engine/quality/quality-engine-factory';
-
-import { CharacterConsistencyChecker } from '@/engine/character-consistency-checker';
-import {
-    DeviationDetector,
-    type ForeshadowTracking,
-} from '@/engine/quality/deviation-detector';
 import { createLogger } from '@/shared/logger';
 import { calculateHumanRate, renderHumanRate, type HumanRateScores } from '@/ui/co-writing/human-rate';
 import { getAssetStatus, getCompletenessIcon, renderAssetStatusBar } from '@/ui/co-writing/asset-status';
@@ -181,11 +170,10 @@ import {
     renderMarkdownToolbar,
     type MarkdownStatusHandles,
 } from './co-writing/layout-assembly';
-import { DEVIATION_CHARACTER_INFO_TTL_MS, GHOST_ASSOCIATION_MIN_INTERVAL_MS } from '@/shared/thresholds';
+import { GHOST_ASSOCIATION_MIN_INTERVAL_MS } from '@/shared/thresholds';
 import { resolveCursorPosition } from '@/shared/cursor-position';
 import { describePrerequisiteGaps, PREREQ_MIN_BODY_CHARS, type PrerequisiteCheck } from '@/shared/prereq-check';
 import { buildQualityChapterKey } from '@/shared/quality-history';
-import { RealtimeQualityController } from './cowrite/realtime-quality-controller';
 import { isImeComposing } from '@/shared/keyboard';
 import {
   renderControlPanelAssembly,
@@ -316,13 +304,6 @@ export class CoWritingView extends ItemView {
   private modelSwitcher: ModelQuickSwitcherHandle | null = null;
   private humanRateDashboard: HTMLElement | null = null;
   private assetStatusBar: HTMLElement | null = null;
-  // D2: 实时质量评估管线（评估编排 / 偏离上下文 / 顶栏 / 落盘节流）
-  private realtimeQuality: RealtimeQualityController;
-  private qualityMonitorBtn: HTMLButtonElement | null = null;
-  /** 偏离检测用的人物设定缓存（按项目 + 60s TTL，避免每次评估都全量读人物文件） */
-  private characterInfoCache: { project: string; at: number; list: CharacterContextInfo[] } | null = null;
-  /** 偏离检测用的伏笔追踪缓存（按项目 + 60s TTL，与人物档案同为项目级静态数据） */
-  private foreshadowCache: { project: string; at: number; list: ForeshadowTracking[] } | null = null;
 
   // v7.3: 进度增强相关
   private suggestProgressEmitter: ProgressEmitter | null = null;
@@ -403,38 +384,6 @@ export class CoWritingView extends ItemView {
         showWarningNotice("项目已被删除，已清空章节绑定；未保存内容不会重建项目", { timeout: 8000 });
         void this.clearChapterBinding({ skipFlush: true });
       },
-    });
-    // D2：评估管线收敛到 controller；视图只提供数据与 DOM 句柄
-    this.realtimeQuality = new RealtimeQualityController({
-      app: this.app,
-      getText: () => this.rightEditor?.value ?? "",
-      getProject: () => this.project,
-      getVolume: () => this.volume,
-      getChapterNum: () => this.chapterNum,
-      getChapterName: () => this.chapterName,
-      getBodyPath: () => this.getBodyPath(),
-      getChapterBrief: () => this.facade.getChapterBrief(),
-      getChapPlan: () => this.facade.engine?.getSnapshot?.()?.chapPlan,
-      loadCharacterInfos: () => this.loadCharacterInfosForDeviation(),
-      loadForeshadows: () => this.loadForeshadowsForDeviation(),
-      createMonitor: () => this.createRealtimeQualityMonitor(),
-    });
-  }
-
-  /**
-   * 装配实时质量监控内核（composition root 留在视图，controller 只管生命周期）。
-   * 质量分与协同顶栏共用同一个 WQE 内核，避免同一文本两套分。
-   */
-  private createRealtimeQualityMonitor(): RealtimeMonitor {
-    const kernel = createWritingQualityEngine();
-    return new RealtimeMonitor({
-      scoreEngine: new QualityScoreEngine({ v1Engine: kernel }),
-      // 与 quality-worker / heavy-task 对齐：两者都是纯计算引擎，注入后协同实时
-      // 偏离才走 V1 人物一致性检测，而不是简化版关键词回退。
-      deviationDetector: new DeviationDetector({
-        plotDivergenceEngine: createPlotDivergenceEngine(),
-        characterChecker: new CharacterConsistencyChecker(),
-      }),
     });
   }
   /**
@@ -524,7 +473,6 @@ export class CoWritingView extends ItemView {
       this.timeEstimator = null;
     }
     this.ghostDebounceManager.dispose();
-    this.realtimeQuality.dispose();
     if (this.liveAnalysis && typeof this.liveAnalysis.clearTimers === 'function') {
       this.liveAnalysis.clearTimers();
     }
@@ -583,7 +531,6 @@ export class CoWritingView extends ItemView {
     this.chapterNum = 1;
     this.tractionEngine = null;
     this.historyLoaded = false;
-    this.resetQualityMonitorForChapterSwitch();
     this.resetPlotMetricsForChapterSwitch();
     this.liveAnalysis.resetForChapterSwitch();
     this.warningContainer?.empty();
@@ -641,9 +588,6 @@ export class CoWritingView extends ItemView {
     this.chapterName = chapterName2;
     this.volume = volume2;
     this.chapterNum = chapterNum;
-    // 顶栏的质量/偏离属于上一章：切章先清空，避免新章加载期间（或新章正文过短、
-    // 不会触发评估时）长期显示上一章的分数。
-    this.resetQualityMonitorForChapterSwitch();
     // 完成度评估同理：在途的旧章结果不能写进新章，状态机也不能停在 evaluating
     this.resetPlotMetricsForChapterSwitch();
     // 设定守卫同理：旧章在途的 OOC/实体结果不得写进新章，跨章长度基准也要清零
@@ -683,7 +627,6 @@ export class CoWritingView extends ItemView {
     void this.resolveEditorContract().then(() => this.updateMarkdownStatus());
     // initEngine 之前 facade 仍是上一章的会话：用旧 metrics 会先渲染一遍旧章完成度
     this.renderMetrics(emptyMetrics());
-    if (this.realtimeQuality.isEnabled()) this.scheduleQualityMonitor();
     await this.historyStore.loadSuggestionHistory();
     if (seq !== this.openChapterSeq) return;
     await this.refreshPreview(true);
@@ -811,18 +754,14 @@ export class CoWritingView extends ItemView {
           new Notice("⚠️ 请先打开一个项目章节", 3000);
         }
       },
-      toggleMonitor: () => { this.toggleFloatingPanel(); },
       togglePrecisionMode: () => { this.togglePrecisionMode(); },
       renderAssetStatus: () => { void this.renderAssetStatusBar(); },
-      attachRealtimeQuality: (el) => this.realtimeQuality.attachStatus(el),
-      toggleQualityMonitor: () => this.toggleQualityMonitor(),
       renderModelSwitcher: (el) => renderModelQuickSwitcher(el, this.plugin),
     });
     this.statusBar = headerHandles.statusBar;
     this.modelSwitcher = headerHandles.modelSwitcher;
     this.precisionModeBtn = headerHandles.precisionModeBtn;
     this.assetStatusBar = headerHandles.assetStatusBar;
-    this.qualityMonitorBtn = headerHandles.qualityMonitorBtn;
 
     const mainArea = this.mainContainer.createDiv({ cls: "nw-cowrite-main" });
 
@@ -1038,7 +977,6 @@ export class CoWritingView extends ItemView {
       this.updateControlState("编辑中");
       void this.refreshPreview(false);
       this.liveAnalysis.scheduleRefresh("input");
-      this.scheduleQualityMonitor();
       this.scheduleGhostAssociationRefresh();
       this.updatePlotCompletion();
       this.updateStartButtonState();
@@ -1057,25 +995,6 @@ export class CoWritingView extends ItemView {
     this.hintInput.addEventListener("input", () => this.refreshHintState());
   }
 
-  /** P0-2: 开启/关闭实时质量评估（状态与评估在 controller，视图只同步按钮样式） */
-  private toggleQualityMonitor(): void {
-    const enabled = this.realtimeQuality.toggle();
-    this.qualityMonitorBtn?.toggleClass("is-active", enabled);
-  }
-
-  /** P0-2: 输入后延迟触发实时质量评估 */
-  private scheduleQualityMonitor(): void {
-    this.realtimeQuality.schedule();
-  }
-
-  /**
-   * 切章时清空实时质量顶栏并中止在途评估。
-   * 行为与文档见 `RealtimeQualityController#resetForChapterSwitch`。
-   */
-  private resetQualityMonitorForChapterSwitch(): void {
-    this.realtimeQuality.resetForChapterSwitch();
-  }
-
   /**
    * 切章时中止在途的剧情完成度评估并复位状态机。
    * `refreshMetrics` 的返回只校验 `signal.aborted`，切章若不 abort，
@@ -1088,65 +1007,6 @@ export class CoWritingView extends ItemView {
       this.metricsAbortController = null;
     }
     this.metricsStatus = 'idle';
-  }
-
-  /**
-   * 读取人物设定供 OOC / 设定矛盾检测使用。
-   * 此前协同实时监控不传 characterInfos，导致这两类检测恒返回空。
-   * 人物档案不随打字变化，按项目缓存 60s，避免每次评估都全量读盘。
-   */
-  private async loadCharacterInfosForDeviation(): Promise<CharacterContextInfo[]> {
-    if (!this.project) return [];
-    const now = Date.now();
-    const cached = this.characterInfoCache;
-    if (cached && cached.project === this.project && now - cached.at < DEVIATION_CHARACTER_INFO_TTL_MS) {
-      return cached.list;
-    }
-
-    let list: CharacterContextInfo[] = [];
-    try {
-      const data = await this.plugin.ctxManager.gatherCharacterState(this.project);
-      list = toCharacterContextInfos((data.character_state || []) as Array<Record<string, unknown>>);
-    } catch (e) {
-      log.warn("[CoWritingView] 读取人物设定失败:", e);
-    }
-
-    this.characterInfoCache = { project: this.project, at: now, list };
-    return list;
-  }
-
-  /**
-   * 读取伏笔追踪供「伏笔遗忘」检测使用。
-   * 此前协同实时监控不传 foreshadows，且上一章上下文没有 frontmatter，
-   * 检测器两条数据来源都为空，该类偏离恒返回空。
-   * 伏笔档案不随打字变化，按项目缓存 60s。
-   */
-  private async loadForeshadowsForDeviation(): Promise<ForeshadowTracking[]> {
-    if (!this.project) return [];
-    const now = Date.now();
-    const cached = this.foreshadowCache;
-    if (cached && cached.project === this.project && now - cached.at < DEVIATION_CHARACTER_INFO_TTL_MS) {
-      return cached.list;
-    }
-
-    let list: ForeshadowTracking[] = [];
-    try {
-      const tracker = await this.plugin.foreshadowManager.loadTracker(this.project);
-      list = toForeshadowTrackings(tracker.items);
-      // 追踪器只有埋设章号；计划回收章在伏笔库表格里。补齐后偏离检测才能按
-      // 「计划第 N 章回收」分层，而不是所有伏笔都等全局阈值。
-      try {
-        const { items } = await this.plugin.foreshadowManager.getUnrevealedForeshadows(this.project);
-        list = applyPlannedRevealChapters(list, items);
-      } catch (e) {
-        log.warn("[CoWritingView] 读取伏笔库计划回收章失败:", e);
-      }
-    } catch (e) {
-      log.warn("[CoWritingView] 读取伏笔追踪失败:", e);
-    }
-
-    this.foreshadowCache = { project: this.project, at: now, list };
-    return list;
   }
 
   /**

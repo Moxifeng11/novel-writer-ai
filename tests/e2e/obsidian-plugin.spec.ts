@@ -225,6 +225,32 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         await composer.fill('');
         await composer.press('Escape');
         await expect(workbench.locator('.nw-awb-mention-pop-hidden')).toHaveCount(1);
+
+        // 4.81.1：输入区宽度/高度与图片附件（粘贴/选择共用落盘链路）
+        const geometry = await page.evaluate(() => {
+            const row = document.querySelector<HTMLElement>('.nw-awb-input-row');
+            const input = document.querySelector<HTMLTextAreaElement>('.nw-awb-input');
+            const center = document.querySelector<HTMLElement>('.nw-awb-center');
+            return {
+                rowWidth: row?.getBoundingClientRect().width ?? 0,
+                inputWidth: input?.getBoundingClientRect().width ?? 0,
+                height: input?.getBoundingClientRect().height ?? 0,
+                centerWidth: center?.getBoundingClientRect().width ?? 0,
+            };
+        });
+        expect(geometry.rowWidth).toBeGreaterThanOrEqual(geometry.centerWidth * 0.95);
+        expect(geometry.inputWidth).toBeGreaterThanOrEqual(geometry.centerWidth * 0.6);
+        expect(geometry.height).toBeGreaterThanOrEqual(40);
+
+        await workbench.locator('input.nw-awb-attach-input').setInputFiles({
+            name: 'e2e-agent.png',
+            mimeType: 'image/png',
+            buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+        });
+        await expect(workbench.locator('.nw-awb-attachment-chip')).toHaveCount(1);
+        expect(await workbench.locator('.nw-awb-attachment-thumb').getAttribute('src')).toBeTruthy();
+        await workbench.locator('.nw-awb-attachment-remove').click();
+        await expect(workbench.locator('.nw-awb-attachment-chip')).toHaveCount(0);
     });
 
     test('模型设置是两栏布局，长 URL 完整可见', async () => {
@@ -250,6 +276,8 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
             const detail = root.querySelector<HTMLElement>('.nw-api-detail');
             const urlInput = root.querySelector<HTMLInputElement>('.nw-api-text-input');
             const select = root.querySelector<HTMLSelectElement>('.nw-api-select');
+            const testRow = root.querySelector<HTMLElement>('.nw-api-test-row');
+            const modelList = root.querySelector<HTMLElement>('.nw-api-model-list');
             return {
                 sidebarW: sidebar ? Math.round(sidebar.getBoundingClientRect().width) : 0,
                 detailW: detail ? Math.round(detail.getBoundingClientRect().width) : 0,
@@ -260,6 +288,11 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
                 switches: root.querySelectorAll('.nw-api-switch').length,
                 hasFetchButton: Array.from(root.querySelectorAll('button'))
                     .some(button => (button.textContent || '').includes('从 URL 获取')),
+                // 4.81.1：连通性测试上移到模型列表之前
+                testBeforeModels: Boolean(testRow && modelList
+                    && (testRow.compareDocumentPosition(modelList) & Node.DOCUMENT_POSITION_FOLLOWING)),
+                modelListMaxH: modelList ? getComputedStyle(modelList).maxHeight : '',
+                detailMaxH: detail ? getComputedStyle(detail).maxHeight : '',
             };
         });
 
@@ -282,6 +315,11 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         expect(metrics.sidebarRows).toBeGreaterThan(0);
         expect(metrics.switches).toBeGreaterThan(0);
         expect(metrics.hasFetchButton).toBe(true);
+
+        // 4.81.1：测试连通性紧邻密钥、在模型列表之前；列表限高，详情区内部滚动
+        expect(metrics.testBeforeModels).toBe(true);
+        expect(metrics.modelListMaxH).toBe('240px');
+        expect(parseFloat(metrics.detailMaxH)).toBeGreaterThan(300);
 
         // 设置页在独立窗口渲染：按「哪个页面里有 .nw-api-layout」挑页面截图
         let settingsPage = page;
@@ -371,10 +409,18 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
             };
             const root = host.app?.setting?.activeTab?.containerEl;
             if (!root) return false;
-            const tab = Array.from(root.querySelectorAll('.nw-settings-tab'))
-                .find(el => ((el as HTMLElement).textContent || '').includes(name));
+            const find = (): HTMLElement | undefined => Array.from(root.querySelectorAll<HTMLElement>('.nw-settings-tab'))
+                .find(el => (el.textContent || '').includes(name));
+            let tab = find();
+            if (!tab) {
+                // 4.81.1：创作模式等高级页签默认折叠，先展开再点
+                const toggle = Array.from(root.querySelectorAll<HTMLElement>('.nw-settings-tab'))
+                    .find(el => (el.textContent || '').includes('高级设置'));
+                toggle?.click();
+                tab = find();
+            }
             if (!tab) return false;
-            (tab as HTMLElement).click();
+            tab.click();
             return true;
         }, label);
 
@@ -1489,6 +1535,14 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         expect(consoleUi.hintInSuggestion).toBe(false);
         expect(consoleUi.dashboardParentTab).toBe('overview');
 
+        // 4.81.1：剧情 / 实时质量 顶栏入口已移除（浮窗仍由「质检」复用）
+        const headerButtons = await page.evaluate(() =>
+            Array.from(document.querySelectorAll('.nw-cowrite-header-right button'))
+                .map(btn => (btn.textContent || '').trim()),
+        );
+        expect(headerButtons.some(text => text.includes('剧情'))).toBe(false);
+        expect(headerButtons.some(text => text.includes('实时质量'))).toBe(false);
+
         const hintInput = page.locator('.nw-hint-input');
         await hintInput.fill('第一行');
         await hintInput.press('Shift+Enter');
@@ -2096,8 +2150,9 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
                     // 负数 = 内容盒装不下行高 → 文字被垂直裁切
                     slack: Math.round((contentBox - lineHeight) * 100) / 100,
                     text: el.selectedOptions[0]?.text ?? '',
+                    visible: rect.height > 0,
                 };
-            });
+            }).filter(item => item.visible);
         });
 
         const settingsSelects = await measure();
@@ -2162,8 +2217,9 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
                         cls: el.className,
                         slack: Math.round((contentBox - lineHeight) * 100) / 100,
                         text: el.selectedOptions[0]?.text ?? '',
+                        visible: rect.height > 0,
                     };
-                });
+                }).filter(item => item.visible);
             });
             console.log('SELECT_FIT_FULLWRITER ' + JSON.stringify(fwSelects));
             all.push(...fwSelects);

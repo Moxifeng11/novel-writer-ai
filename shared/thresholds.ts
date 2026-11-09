@@ -466,14 +466,9 @@ export const PLOT_COMPLETION_MIN_EVALUABLE_CHARS = 50;
 export const DEVIATION_MIN_EVALUABLE_CHARS = 100;
 
 /**
- * 协同写作实时质量落盘节流：正文达到该字数才记一条，且同一章至少间隔该时长。
- * 实时评估每 2.5s 触发一次，若不节流会变成「边打字边写盘」，且历史被同一章刷屏。
+ * 质量历史落盘最小字数：正文达到该字数才记一条，避免短文本刷屏历史。
  */
 export const QUALITY_LIVE_PERSIST_MIN_CHARS = 300;
-/**
- * 质量评分与偏离预警（唯一阈值来源，禁止在各引擎/UI 内另写）：QUALITY_LIVE_PERSIST_INTERVAL_MS = 10 * 60 * 1000。
- */
-export const QUALITY_LIVE_PERSIST_INTERVAL_MS = 10 * 60 * 1000;
 
 /**
  * 输入触发的设定守卫（OOC / 实体状态变更）节流。

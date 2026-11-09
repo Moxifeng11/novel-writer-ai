@@ -134,6 +134,79 @@ describe('UpdateChecker — GitHub 源', () => {
         expect(result.errorKind).toBe('parse');
         expect(result.error).toContain('缺少版本号');
     });
+
+    it('请求带上 User-Agent 与 GitHub JSON Accept', async () => {
+        setResponse({ tag_name: '4.12.0' });
+        const checker = new UpdateChecker('4.11.0', cache);
+        await checker.checkForUpdates(true);
+        const init = requestUrlMock.mock.calls[0]?.[0] as { headers?: Record<string, string> };
+        expect(init.headers?.['User-Agent']).toContain('NovelWriterAI/');
+        expect(init.headers?.Accept).toBe('application/vnd.github+json');
+    });
+
+    it('API 403 限流时回退 releases.atom', async () => {
+        requestUrlMock.mockImplementation((args: { url: string }) => {
+            if (args.url.includes('api.github.com')) {
+                return Promise.resolve({
+                    status: 403,
+                    headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': '4102444800' },
+                    json: { message: 'API rate limit exceeded' },
+                });
+            }
+            if (args.url.endsWith('releases.atom')) {
+                return Promise.resolve({
+                    status: 200,
+                    text: '<feed><entry><title>v4.99.0</title><updated>2026-11-09T00:00:00Z</updated><link href="https://github.com/x/y/releases/tag/v4.99.0"/></entry></feed>',
+                });
+            }
+            return Promise.resolve({ status: 404 });
+        });
+        const checker = new UpdateChecker('4.11.0', cache);
+        const result = await checker.checkForUpdates(true);
+        expect(result.error).toBeUndefined();
+        expect(result.latestVersion).toBe('4.99.0');
+        expect(result.hasUpdate).toBe(true);
+    });
+
+    it('401 会明确提示 Token 无效', async () => {
+        setResponse({ message: 'Bad credentials' }, 401);
+        const checker = new UpdateChecker('4.11.0', cache);
+        const result = await checker.checkForUpdates(true);
+        expect(result.error).toContain('Token 无效');
+    });
+
+    it('429 会按限流处理并尝试备用源', async () => {
+        requestUrlMock.mockImplementation((args: { url: string }) => {
+            if (args.url.includes('api.github.com')) {
+                return Promise.resolve({ status: 429, headers: { 'retry-after': '30' }, json: {} });
+            }
+            return Promise.resolve({ status: 404 });
+        });
+        const checker = new UpdateChecker('4.11.0', cache);
+        const result = await checker.checkForUpdates(true);
+        expect(result.error).toContain('限流');
+        expect(result.error).toContain('30s');
+    });
+
+    it('本次失败保留上次成功版本并标记 stale', async () => {
+        setResponse({ tag_name: '4.12.0', html_url: 'https://example.com/release' });
+        const first = new UpdateChecker('4.11.0', cache);
+        const success = await first.checkForUpdates(true);
+        expect(success.latestVersion).toBe('4.12.0');
+
+        requestUrlMock.mockImplementation((args: { url: string }) => {
+            if (args.url.includes('api.github.com')) {
+                return Promise.resolve({ status: 403, headers: {}, json: { message: 'forbidden' } });
+            }
+            return Promise.resolve({ status: 404 });
+        });
+        const second = new UpdateChecker('4.11.0', cache);
+        const failed = await second.checkForUpdates(true);
+        expect(failed.error).toBeTruthy();
+        expect(failed.stale).toBe(true);
+        expect(failed.latestVersion).toBe('4.12.0');
+        expect(failed.hasUpdate).toBe(true);
+    });
 });
 
 describe('UpdateChecker — 自定义源', () => {

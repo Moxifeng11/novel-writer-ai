@@ -16,6 +16,7 @@ import { PasswordModal } from '@/ui/password-modal';
 import { describeKeyEncryptionStatus, describeSecretForInput, isStoredCiphertext } from '@/shared/secret-display';
 import { lookupModelCapability } from '@/shared/model-capabilities';
 import { testProviderConnectivity } from '@/services/api-connectivity-service';
+import { renderCollapsibleSection } from '@/ui/settings-utils';
 import {
     resolveTaskModelConfig,
     THINKING_LEVELS,
@@ -370,6 +371,9 @@ export class ApiSection extends SettingsSection {
             };
         });
 
+        // ── 连通性测试（紧跟密钥，避免用户滚到模型列表底部才能测） ──
+        this.renderConnectivityTest(container, raw, format);
+
         // ── 模型列表 ──
         const modelsBlock = container.createDiv({ cls: 'nw-api-field' });
         const modelsHead = modelsBlock.createDiv({ cls: 'nw-api-models-head' });
@@ -421,7 +425,7 @@ export class ApiSection extends SettingsSection {
         addModelBtn.setText('＋ 添加模型');
         addModelBtn.onclick = () => this.openModelEditor(raw.id, '');
 
-        const list = modelsBlock.createDiv({ cls: 'nw-api-model-list' });
+        const list = modelsBlock.createDiv({ cls: 'nw-api-model-list nw-u-maxh-240px nw-u-ovy-auto-2' });
         const disabled = new Set(raw.disabledModels || []);
         if (raw.models.length === 0) {
             list.createDiv({ cls: 'nw-api-model-empty', text: '还没有模型。点「从 URL 获取」自动导入，或手动添加。' });
@@ -477,8 +481,13 @@ export class ApiSection extends SettingsSection {
                 rerender();
             };
         }
+    }
 
-        // ── 连通性测试 ──
+    /**
+     * 连通性测试行：发送一次最小请求，验证端点、密钥与模型。
+     * 放在 API Key 之后，长错误信息可换行，不把右栏继续拉长。
+     */
+    private renderConnectivityTest(container: HTMLElement, raw: CustomProvider, format: ApiFormat): void {
         const testRow = container.createDiv({ cls: 'nw-api-test-row' });
         const testBtn = testRow.createEl('button', {
             cls: 'nw-api-ghost-btn',
@@ -493,6 +502,7 @@ export class ApiSection extends SettingsSection {
             statusEl.setText('正在检测…');
             statusEl.className = 'nw-api-test-status';
             try {
+                const disabled = new Set(this.getRawProvider(raw.id)?.disabledModels || []);
                 const enabledModels = raw.models.filter(model => !disabled.has(model));
                 const model = (raw.id === this.plugin.getCurrentProviderId() ? this.plugin.settings.defaultModel : '')
                     || enabledModels[0]
@@ -503,12 +513,17 @@ export class ApiSection extends SettingsSection {
                     endpoint: raw.endpoint,
                     model,
                     apiKey: this.plugin.settings.providerKeys?.[raw.id] || '',
-                    sourceType: provider.sourceType === 'local' ? 'local' : 'cloud',
+                    sourceType: raw.sourceType === 'local' ? 'local' : 'cloud',
                     apiFormat: format,
                 });
                 const icon = result.level === 'ok' ? '✅' : result.level === 'warn' ? '⚠️' : '❌';
                 statusEl.setText(`${icon} ${result.message}`);
-                statusEl.className = `nw-api-test-status nw-api-test-status-${result.level}`;
+                statusEl.classList.remove(
+                    'nw-api-test-status-ok',
+                    'nw-api-test-status-warn',
+                    'nw-api-test-status-error',
+                );
+                statusEl.classList.add(`nw-api-test-status-${result.level}`);
             } finally {
                 testBtn.disabled = false;
                 testBtn.setText('🔌 测试连通性');
@@ -824,34 +839,14 @@ export class ApiSection extends SettingsSection {
                     this.plugin.setCurrentModelOverride('maxOutput', Number.isFinite(parsed) && parsed > 0 ? parsed : defaults.maxOutput);
                 }));
 
-        this.renderTaskBudgetRows(wrap);
-        this.renderCanonResearchRows(wrap);
+        renderCollapsibleSection(wrap, '任务级模型参数', false, inner => this.renderTaskBudgetRows(inner));
+        renderCollapsibleSection(wrap, '同人考据来源', false, inner => this.renderCanonResearchRows(inner));
 
         // ── 加密口令状态与恢复 ────────────────────────────────
         // 历史 bug：重启后保存任意密钥都会让用户「设定新口令」，新口令覆盖
         // 会话口令 → 旧密文永久解不开（表现为 API Key 失效）。修复后不再
         // 重设；这里再给已经踩坑的用户一条恢复路径。
-        this.renderKeyEncryptionRows(wrap);
-        const footer = wrap.createDiv({ cls: 'nw-api-footer' });
-        const saveBtn = footer.createEl('button', {
-            cls: 'nw-api-primary-btn',
-            text: '💾 保存设置',
-            attr: { type: 'button' },
-        });
-        saveBtn.onclick = async () => {
-            if (currentId) {
-                settings.providerKeys[currentId] = settings.apiKey;
-            }
-            await this.plugin.saveSettings();
-            this.plugin.updateStatusBarText();
-            showSuccessNotice('API 设置已保存');
-            this.refresh();
-        };
-        footer.createEl('button', {
-            cls: 'nw-api-ghost-btn',
-            text: '🔄 重置',
-            attr: { type: 'button' },
-        }).onclick = () => this.refresh();
+        renderCollapsibleSection(wrap, '密钥加密', false, inner => this.renderKeyEncryptionRows(inner));
     }
 
     /** 添加供应商弹窗（名称/Base URL/格式/密钥，模型可稍后拉取） */

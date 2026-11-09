@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-09T08:40:04.445Z",
-  "note": "v4.81.1 协同写作优化：控制台输入改 textarea（多行/可换行），人工率仪表盘从 AI 建议面板移入概览 Tab 并补 .nw-hr-* 紧凑卡片样式；+10 类/+1500B，纯 UI 结构调整，无新增重复选择器",
-  "bytes": 546228,
+  "generatedAt": "2026-11-09T09:49:01.558Z",
+  "note": "v4.81.1 协同/Agent/设置 UI：Agent 输入区自适应+图片附件缩略图、协同人工率卡片、设置常用/高级页签开关；+8 类/+2163B，均为本轮功能承载，无重复选择器",
+  "bytes": 548391,
   "important": 24,
   "hardcodedHex": 161,
   "rgbHsl": 188,
-  "uniqueClasses": 2996,
+  "uniqueClasses": 3004,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

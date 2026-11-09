@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 305 | 132975 | 1611 | 1350 | 84% |
-| `services/` | 32 | 12726 | 187 | 148 | 79% |
-| `shared/` | 179 | 40784 | 1607 | 1322 | 82% |
-| `core/` | 7 | 2821 | 29 | 14 | 48% |
+| `engine/` | 305 | 133050 | 1613 | 1352 | 84% |
+| `services/` | 32 | 12920 | 187 | 148 | 79% |
+| `shared/` | 179 | 40803 | 1608 | 1323 | 82% |
+| `core/` | 7 | 2822 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 99495 | 736 | 641 | 87% |
+| `ui/` | 239 | 99234 | 744 | 646 | 87% |
 
 ## 文件清单
 
@@ -22,7 +22,7 @@
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 550 | 4 | 2 |
-| `core/settings-service.ts` | 539 | 4 | 3 |
+| `core/settings-service.ts` | 540 | 4 | 3 |
 | `core/theme-manager.ts` | 313 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
@@ -45,12 +45,12 @@
 | `engine/agent/harness/agent-loop.ts` | 619 | 6 | 6 |
 | `engine/agent/harness/context-fit.ts` | 137 | 6 | 6 |
 | `engine/agent/harness/creation-plan.ts` | 73 | 6 | 6 |
-| `engine/agent/harness/harness-engine.ts` | 593 | 7 | 4 |
+| `engine/agent/harness/harness-engine.ts` | 599 | 7 | 4 |
 | `engine/agent/harness/harness-types.ts` | 213 | 14 | 12 |
 | `engine/agent/harness/host-tools.ts` | 998 | 6 | 6 |
 | `engine/agent/harness/prompt-sections.ts` | 149 | 2 | 2 |
 | `engine/agent/harness/session-log.ts` | 269 | 1 | 1 |
-| `engine/agent/harness/session-snapshot.ts` | 163 | 8 | 8 |
+| `engine/agent/harness/session-snapshot.ts` | 232 | 10 | 10 |
 | `engine/agent/harness/spill-store.ts` | 112 | 6 | 6 |
 | `engine/agent/harness/tool-registry.ts` | 295 | 5 | 2 |
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
@@ -364,7 +364,7 @@
 | `services/rules-registry.ts` | 146 | 7 | 5 |
 | `services/rules-service.ts` | 270 | 3 | 2 |
 | `services/synopsis-store.ts` | 332 | 5 | 5 |
-| `services/update-checker.ts` | 394 | 9 | 2 |
+| `services/update-checker.ts` | 588 | 9 | 2 |
 | `services/usage-ledger.ts` | 395 | 13 | 5 |
 | `services/vector-rebuild-service.ts` | 141 | 8 | 8 |
 | `services/worker-manager.ts` | 569 | 1 | 1 |
@@ -436,7 +436,7 @@
 | `shared/frontmatter-schema.ts` | 308 | 13 | 9 |
 | `shared/frontmatter.ts` | 178 | 6 | 5 |
 | `shared/ghost-trigger.ts` | 26 | 1 | 1 |
-| `shared/github-repo.ts` | 57 | 9 | 9 |
+| `shared/github-repo.ts` | 81 | 11 | 11 |
 | `shared/http-request.ts` | 124 | 7 | 3 |
 | `shared/human-feature-rubric.ts` | 180 | 7 | 6 |
 | `shared/human-similarity.ts` | 333 | 11 | 11 |
@@ -528,7 +528,7 @@
 | `shared/text-utils.ts` | 64 | 5 | 5 |
 | `shared/theme-colors.ts` | 450 | 25 | 18 |
 | `shared/theme-gallery.ts` | 205 | 12 | 11 |
-| `shared/thresholds.ts` | 912 | 124 | 97 |
+| `shared/thresholds.ts` | 907 | 123 | 96 |
 | `shared/time-context.ts` | 44 | 3 | 3 |
 | `shared/time-estimator.ts` | 468 | 6 | 2 |
 | `shared/token-estimator.ts` | 187 | 8 | 8 |
@@ -552,7 +552,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 526 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1762 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1898 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |
@@ -571,7 +571,7 @@
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1024 | 2 | 2 |
-| `ui/co-writing-view.ts` | 3392 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3252 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 224 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
@@ -585,7 +585,7 @@
 | `ui/co-writing/kb-panel.ts` | 386 | 12 | 11 |
 | `ui/co-writing/kb-reference-card.ts` | 173 | 2 | 2 |
 | `ui/co-writing/kb-reference-config.ts` | 205 | 10 | 7 |
-| `ui/co-writing/layout-assembly.ts` | 498 | 22 | 13 |
+| `ui/co-writing/layout-assembly.ts` | 478 | 22 | 13 |
 | `ui/co-writing/markdown-shortcut.ts` | 99 | 2 | 1 |
 | `ui/co-writing/markdown-toolbar.ts` | 97 | 2 | 1 |
 | `ui/co-writing/metrics-panel.ts` | 228 | 5 | 3 |
@@ -628,7 +628,6 @@
 | `ui/cowrite/iterate-instruction-modal.ts` | 54 | 1 | 1 |
 | `ui/cowrite/live-analysis-controller.ts` | 279 | 2 | 1 |
 | `ui/cowrite/memory-manager-modal.ts` | 155 | 1 | 1 |
-| `ui/cowrite/realtime-quality-controller.ts` | 456 | 2 | 1 |
 | `ui/cowrite/suggestion-edit-modal.ts` | 160 | 1 | 1 |
 | `ui/cowrite/suggestion-history-store.ts` | 111 | 1 | 1 |
 | `ui/create-project-modal.ts` | 490 | 2 | 2 |
@@ -701,7 +700,7 @@
 | `ui/knowledge-rebuild-action.ts` | 48 | 1 | 1 |
 | `ui/manage-providers-modal.ts` | 634 | 1 | 1 |
 | `ui/memory-preview.ts` | 158 | 2 | 1 |
-| `ui/mini-settings-modal.ts` | 88 | 1 | 0 |
+| `ui/mini-settings-modal.ts` | 107 | 1 | 0 |
 | `ui/mode-document-modal.ts` | 201 | 2 | 2 |
 | `ui/model-picker-modal.ts` | 196 | 2 | 2 |
 | `ui/model-picker-popover.ts` | 298 | 4 | 3 |
@@ -733,6 +732,7 @@
 | `ui/review-chapter-modal.ts` | 67 | 1 | 1 |
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
+| `ui/services/agent-attachment-store.ts` | 171 | 10 | 6 |
 | `ui/services/agent-port.ts` | 654 | 2 | 2 |
 | `ui/services/agent-session-store.ts` | 211 | 5 | 5 |
 | `ui/services/agent-spill-store.ts` | 115 | 4 | 3 |
@@ -740,18 +740,18 @@
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 433 | 6 | 5 |
-| `ui/settings-tab.ts` | 232 | 1 | 1 |
+| `ui/settings-tab.ts` | 255 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 151 | 1 | 1 |
-| `ui/settings/api-section.ts` | 1278 | 1 | 1 |
+| `ui/settings/api-section.ts` | 1273 | 1 | 1 |
 | `ui/settings/deconstruction-section.ts` | 332 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 289 | 1 | 1 |
-| `ui/settings/general-sections.ts` | 1193 | 6 | 6 |
+| `ui/settings/general-sections.ts` | 1202 | 6 | 6 |
 | `ui/settings/knowledge-section.ts` | 795 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
-| `ui/settings/section-factory.ts` | 73 | 3 | 1 |
+| `ui/settings/section-factory.ts` | 75 | 3 | 1 |
 | `ui/settings/writing-sections.ts` | 800 | 6 | 6 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 402 | 1 | 1 |

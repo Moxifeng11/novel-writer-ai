@@ -117,16 +117,10 @@ export interface HeaderAssemblyOptions {
     openFingerprintLibrary: () => void;
     /** 打开统一实体管理 */
     openEntityManager: () => void;
-    /** 切换剧情监控浮窗 */
-    toggleMonitor: () => void;
     /** 切换精准模式 */
     togglePrecisionMode: () => void;
     /** 刷新资源状态栏 */
     renderAssetStatus: () => void;
-    /** 把实时质量状态挂到顶栏 */
-    attachRealtimeQuality: (el: HTMLElement) => void;
-    /** 切换实时质量评估 */
-    toggleQualityMonitor: () => void;
     /** 装配模型快速切换器 */
     renderModelSwitcher: (el: HTMLElement) => ModelQuickSwitcherHandle;
 }
@@ -141,8 +135,6 @@ export interface HeaderHandles {
     precisionModeBtn: HTMLButtonElement;
     /** 资源状态栏 */
     assetStatusBar: HTMLElement;
-    /** 实时质量按钮 */
-    qualityMonitorBtn: HTMLButtonElement;
 }
 
 /** 渲染布局后的状态。 */
@@ -301,18 +293,12 @@ export function renderHeader(header: HTMLElement, options: HeaderAssemblyOptions
     entityBtn.setAttribute('title', '统一实体管理（人物/地点/势力/物品）');
     entityBtn.addEventListener('click', () => options.openEntityManager());
 
-    // 右区：视图模式（剧情监控 → 精准模式）· 资源状态
+    // 右区：视图模式（精准模式）· 资源状态
     // v8.4: 取消原「⋯ 更多」下拉（与右侧「⚙ 更多工具」功能重复，且其全局 click 监听未随视图卸载）
     //       将「监控 / 分析」并入右侧工具面板，顶栏只保留导航、资源与模式三类入口
     const headerRight = header.createDiv({ cls: 'nw-cowrite-header-right' });
     // 2026-10-28: 原右下角状态栏浮窗移除后，模型快速切换装配到协同顶栏（四个主界面之一）。
     const modelSwitcher = options.renderModelSwitcher(headerRight);
-    const monBtn = headerRight.createEl('button', {
-        text: '\u{1F4C8} 剧情',
-        cls: 'nw-float-monitor-toggle nw-btn-monitor',
-    });
-    monBtn.setAttribute('title', '打开/关闭剧情监控浮窗');
-    monBtn.addEventListener('click', () => options.toggleMonitor());
     const precisionBtn = headerRight.createEl('button', {
         text: '\uD83C\uDFAF 精准模式',
         cls: 'nw-precision-mode-btn nw-float-monitor-toggle',
@@ -323,13 +309,7 @@ export function renderHeader(header: HTMLElement, options: HeaderAssemblyOptions
     const assetStatusBar = headerRight.createDiv({ cls: 'nw-asset-status-bar' });
     options.renderAssetStatus();
 
-    const qualityStatus = headerRight.createDiv({ cls: 'nw-cowrite-status nw-quality-live' });
-    options.attachRealtimeQuality(qualityStatus);
-    const qualityBtn = headerRight.createEl('button', { text: '📊 实时质量', cls: 'nw-float-monitor-toggle' });
-    qualityBtn.setAttribute('title', '开启/关闭实时质量评估');
-    qualityBtn.addEventListener('click', () => options.toggleQualityMonitor());
-
-    return { statusBar, modelSwitcher, precisionModeBtn: precisionBtn, assetStatusBar, qualityMonitorBtn: qualityBtn };
+    return { statusBar, modelSwitcher, precisionModeBtn: precisionBtn, assetStatusBar };
 }
 
 /**

@@ -34,29 +34,31 @@ import { ModeSection } from './mode-section';
 export interface SettingsTabDefinition {
     id: string;
     label: string;
+    /** primary = 常用；advanced = 高级（默认折叠） */
+    group: 'primary' | 'advanced';
     create: (host: SettingsSectionHost) => SettingsSection;
 }
 
 /** 唯一设置页签表（顺序即界面顺序） */
 export const SETTINGS_TAB_DEFINITIONS: ReadonlyArray<SettingsTabDefinition> = [
-    { id: 'api', label: '🔌 API 配置', create: host => new ApiSection(host) },
-    { id: 'cowrite', label: '🖥 协同写作', create: host => new CoWriteSection(host) },
-    { id: 'writing', label: '✍️ 写作配置', create: host => new WritingSection(host) },
-    { id: 'modes', label: '📚 创作模式', create: host => new ModeSection(host) },
-    { id: 'recognition', label: '🎭 角色识别', create: host => new RecognitionSection(host) },
-    { id: 'suggestions', label: '💡 建议设置', create: host => new SuggestionsSection(host) },
-    { id: 'template', label: '📋 模板管理', create: host => new TemplateSection(host) },
-    { id: 'fingerprint', label: '🔍 写作指纹库', create: host => new FingerprintSection(host) },
-    { id: 'knowledge', label: '📚 写作知识库', create: host => new KnowledgeSection(host) },
-    { id: 'deconstruction', label: '🧬 拆解引擎', create: host => new DeconstructionSection(host) },
-    { id: 'foreshadow', label: '🔮 伏笔管理', create: host => new ForeshadowSection(host) },
-    { id: 'rules', label: '📜 写作规则', create: host => new RulesSection(host) },
-    { id: 'appearance', label: '🎨 外观设置', create: host => new AppearanceSection(host) },
-    { id: 'layout', label: '🧩 工作台布局', create: host => new LayoutSection(host) },
-    { id: 'projects', label: '🗂 项目库迁移', create: host => new ProjectLibrarySection(host) },
-    { id: 'performance', label: '📈 性能监控', create: host => new PerformanceSection(host) },
-    { id: 'agent', label: '🤖 Agent 后端', create: host => new AgentBackendSection(host) },
-    { id: 'about', label: 'ℹ️ 关于', create: host => new AboutSection(host) },
+    { id: 'api', label: '🔌 API 配置', group: 'primary', create: host => new ApiSection(host) },
+    { id: 'cowrite', label: '🖥 协同写作', group: 'primary', create: host => new CoWriteSection(host) },
+    { id: 'writing', label: '✍️ 写作配置', group: 'primary', create: host => new WritingSection(host) },
+    { id: 'modes', label: '📚 创作模式', group: 'advanced', create: host => new ModeSection(host) },
+    { id: 'recognition', label: '🎭 角色识别', group: 'advanced', create: host => new RecognitionSection(host) },
+    { id: 'suggestions', label: '💡 建议设置', group: 'advanced', create: host => new SuggestionsSection(host) },
+    { id: 'template', label: '📋 模板管理', group: 'advanced', create: host => new TemplateSection(host) },
+    { id: 'fingerprint', label: '🔍 写作指纹库', group: 'advanced', create: host => new FingerprintSection(host) },
+    { id: 'knowledge', label: '📚 写作知识库', group: 'primary', create: host => new KnowledgeSection(host) },
+    { id: 'deconstruction', label: '🧬 拆解引擎', group: 'advanced', create: host => new DeconstructionSection(host) },
+    { id: 'foreshadow', label: '🔮 伏笔管理', group: 'advanced', create: host => new ForeshadowSection(host) },
+    { id: 'rules', label: '📜 写作规则', group: 'primary', create: host => new RulesSection(host) },
+    { id: 'appearance', label: '🎨 外观设置', group: 'primary', create: host => new AppearanceSection(host) },
+    { id: 'layout', label: '🧩 工作台布局', group: 'advanced', create: host => new LayoutSection(host) },
+    { id: 'projects', label: '🗂 项目库迁移', group: 'advanced', create: host => new ProjectLibrarySection(host) },
+    { id: 'performance', label: '📈 性能监控', group: 'advanced', create: host => new PerformanceSection(host) },
+    { id: 'agent', label: '🤖 Agent 后端', group: 'advanced', create: host => new AgentBackendSection(host) },
+    { id: 'about', label: 'ℹ️ 关于', group: 'primary', create: host => new AboutSection(host) },
 ];
 
 /**

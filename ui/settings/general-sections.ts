@@ -595,6 +595,10 @@ export class AboutSection extends SettingsSection {
                 const lastResult = cacheManager.getUpdateLastResult() as UpdateCheckResult | null;
                 if (lastResult?.latestVersion) {
                     latestVersionInfo = `v${lastResult.latestVersion}` + (lastResult.hasUpdate ? ' (有更新)' : ' (已是最新)');
+                    if (lastResult.error) {
+                        const at = lastResult.lastSuccessAt || lastResult.checkedAt;
+                        latestVersionInfo += `（上次成功${at ? ` ${new Date(at).toLocaleString('zh-CN')}` : ''}）`;
+                    }
                 } else if (lastResult?.error) {
                     latestVersionInfo = `检查失败：${lastResult.error}`;
                 }
@@ -629,8 +633,13 @@ export class AboutSection extends SettingsSection {
                     const result = await updateChecker.checkForUpdates(true);
                     if (result.hasUpdate) {
                         new Notice(`🎉 发现新版本 v${result.latestVersion}`, 4000);
+                    } else if (result.error && result.latestVersion) {
+                        showWarningNotice(
+                            `本次检查失败，沿用上次结果 v${result.latestVersion}：${result.error}`,
+                            { title: '检查更新失败', timeout: 6000 },
+                        );
                     } else if (result.error) {
-                        showErrorNotice(`检查失败: ${result.error}`, { title: '检查更新失败', timeout: 3000 });
+                        showErrorNotice(`检查失败: ${result.error}`, { title: '检查更新失败', timeout: 5000 });
                     } else {
                         showSuccessNotice('已是最新版本', { timeout: 2000 });
                     }

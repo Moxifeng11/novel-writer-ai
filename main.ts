@@ -301,6 +301,8 @@ export interface NovelWriterSettings {
     agentWorkbenchLeftCollapsed?: boolean;
     /** 2026-10-28: Agent 工作台右栏折叠状态 */
     agentWorkbenchRightCollapsed?: boolean;
+    /** 设置页是否展开「高级设置」页签组 */
+    settingsUiShowAdvanced?: boolean;
     /**
      * Agent 对话后端（D）：native = 内置 Harness（默认）；dsh = 外部 DeepSeek Harness。
      * dsh 仅桌面端、需用户自行安装 @deepseek-ai/dsh。

@@ -31,7 +31,6 @@ type Ctx = {
     abortActiveSuggestion: ReturnType<typeof vi.fn>;
     clearStaleSuggestions: ReturnType<typeof vi.fn>;
     renderEmptySuggestions: ReturnType<typeof vi.fn>;
-    resetQualityMonitorForChapterSwitch: ReturnType<typeof vi.fn>;
     resetPlotMetricsForChapterSwitch: ReturnType<typeof vi.fn>;
     renderMetrics: ReturnType<typeof vi.fn>;
     flushPendingBodySaveBeforeChapterSwitch: ReturnType<typeof vi.fn>;
@@ -57,7 +56,6 @@ function makeCtx(): Ctx {
         abortActiveSuggestion: vi.fn(),
         clearStaleSuggestions: vi.fn(),
         renderEmptySuggestions: vi.fn(),
-        resetQualityMonitorForChapterSwitch: vi.fn(),
         resetPlotMetricsForChapterSwitch: vi.fn(),
         renderMetrics: vi.fn(),
         flushPendingBodySaveBeforeChapterSwitch: vi.fn(async () => true),
@@ -81,7 +79,6 @@ describe('D6 CoWritingView — 无上下文回到空态', () => {
         expect(ctx.historyLoaded).toBe(false);
         expect(ctx.statusBar.setText).toHaveBeenCalledWith('未绑定章节');
         expect(ctx.liveAnalysis.resetForChapterSwitch).toHaveBeenCalledTimes(1);
-        expect(ctx.resetQualityMonitorForChapterSwitch).toHaveBeenCalledTimes(1);
         expect(ctx.resetPlotMetricsForChapterSwitch).toHaveBeenCalledTimes(1);
         expect(ctx.renderMetrics).toHaveBeenCalledTimes(1);
         expect(ctx.renderEmptySuggestions).toHaveBeenCalledWith(

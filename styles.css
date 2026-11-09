@@ -4267,6 +4267,14 @@ select.nw-select {
     color: var(--nw-text-primary, var(--text-normal));
     border-bottom-color: var(--nw-accent, var(--interactive-accent));
 }
+.nw-settings-tab-advanced-toggle {
+    margin-left: auto;
+    border-style: dashed;
+    color: var(--text-muted);
+}
+.nw-settings-tab-advanced-toggle:hover {
+    color: var(--text-normal);
+}
 
 .nw-settings-tab-content {
     flex: 1;
@@ -4853,6 +4861,7 @@ select.nw-select {
 .nw-mini-settings-tab { padding: 5px 10px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--nw-text-secondary, var(--text-muted)); font-size: 12px; cursor: pointer; }
 .nw-mini-settings-tab:hover { background: var(--background-modifier-hover); color: var(--nw-text-primary, var(--text-normal)); }
 .nw-mini-settings-tab.is-active { background: var(--nw-accent-muted, rgba(124,58,237,0.12)); color: var(--nw-accent, var(--interactive-accent)); border-color: var(--nw-accent, var(--interactive-accent)); font-weight: 600; }
+.nw-mini-settings-tab-advanced-toggle { margin-left: auto; border-style: dashed; }
 .nw-mini-settings-content { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 2px 12px; }
 /* ========== v6.0: 协同写作缺失类补全（Task 2） ========== */
 
@@ -8270,12 +8279,6 @@ button.nw-btn-icon {
 .nw-qd-issue-clickable:hover {
     border-color: var(--interactive-accent);
     background: var(--background-modifier-hover);
-}
-
-.nw-quality-live {
-    min-width: 96px;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
 }
 
 .nw-rewrite-preview {
@@ -12692,12 +12695,7 @@ button.nw-btn-icon {
 
 /* 消息区内滚：界面高度固定，不随对话变长 */
 
-/* 输入区：按栏宽比例内缩（窄栏 12px → 宽栏 40px），不再固定 18px */
-
-.nw-awb-input-toolbar {
-    padding-left: clamp(12px, 2.4vw, 44px);
-    padding-right: clamp(12px, 2.4vw, 44px);
-}
+/* 输入区：按栏宽比例内缩（窄栏 12px → 宽栏 44px），不再固定 18px */
 
 .nw-awb-send:hover {
     filter: brightness(1.08);
@@ -12914,7 +12912,7 @@ button.nw-btn-icon {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    padding: 8px 18px;
+    padding: 8px clamp(12px, 2.4vw, 44px);
     border-top: 1px solid var(--background-modifier-border);
     flex-shrink: 0;
     max-height: 34vh;
@@ -12933,24 +12931,114 @@ button.nw-btn-icon {
 .nw-awb-input-row {
     display: flex;
     gap: 8px;
-    padding: 10px 18px 12px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px clamp(12px, 2.4vw, 44px) 12px;
     border-top: 1px solid var(--background-modifier-border);
     flex-shrink: 0;
 }
 
 .nw-awb-input {
-    flex: 1;
-    padding: 8px 12px;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    min-height: 40px;
+    padding: 10px 14px;
     border: 1px solid var(--background-modifier-border);
     border-radius: 10px;
     background: var(--background-primary);
     color: var(--text-normal);
-    font-size: 13px;
+    font-size: 13.5px;
 }
 
 .nw-awb-input:focus {
     border-color: var(--interactive-accent);
     outline: none;
+}
+
+.nw-awb-attach {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 10px;
+    background: var(--background-secondary);
+    color: var(--text-muted);
+    font-size: 17px;
+    cursor: pointer;
+}
+
+.nw-awb-attach:hover {
+    border-color: var(--interactive-accent);
+    color: var(--text-normal);
+}
+
+.nw-awb-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-height: 120px;
+    padding: 8px clamp(12px, 2.4vw, 44px) 0;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.nw-awb-attachment-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 220px;
+    padding: 4px 8px 4px 4px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background: var(--background-secondary);
+    font-size: 11px;
+}
+
+.nw-awb-attachment-thumb {
+    width: 28px;
+    height: 28px;
+    object-fit: cover;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.nw-awb-attachment-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nw-awb-attachment-remove {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.nw-awb-attachment-remove:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.nw-awb-bubble-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.nw-awb-input-row.nw-is-dragover {
+    outline: 2px dashed var(--interactive-accent);
+    outline-offset: -4px;
 }
 
 .nw-awb-send {
@@ -13067,7 +13155,7 @@ button.nw-btn-icon {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 18px 0;
+    padding: 8px clamp(12px, 2.4vw, 44px) 0;
     flex-shrink: 0;
 }
 
@@ -13576,11 +13664,13 @@ body.nw-panel-resizing .nw-awb-center iframe {
    fallback 仅用于首次渲染、resizer 尚未挂上的那一瞬。 */
 .nw-awb-left {
     width: var(--nw-panel-size, 230px);
+    max-width: 22%;
     flex-shrink: 0;
 }
 
 .nw-awb-right {
     width: var(--nw-panel-size, 430px);
+    max-width: 34%;
     flex-shrink: 0;
 }
 
@@ -14078,8 +14168,8 @@ body.nw-panel-resizing .nw-awb-center iframe {
    此处不再重复声明，避免 flex-shrink:1 把拖拽结果又压回去。 */
 
 .nw-awb-center {
-    flex: 1 1 380px;
-    min-width: 280px;
+    flex: 1 1 560px;
+    min-width: min(420px, 100%);
 }
 
 /* 同上：右栏宽度交给 --nw-panel-size。 */
@@ -14375,6 +14465,8 @@ body.nw-panel-resizing .nw-awb-center iframe {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    max-height: 70vh;
+    overflow-y: auto;
     padding: 16px 18px;
     border: 1px solid var(--background-modifier-border);
     border-radius: 12px;
@@ -14701,8 +14793,11 @@ body.nw-panel-resizing .nw-awb-center iframe {
 }
 
 .nw-api-test-status {
+    flex: 1;
+    min-width: 0;
     color: var(--text-muted);
     font-size: 12px;
+    overflow-wrap: anywhere;
 }
 
 .nw-api-test-status-ok { color: var(--text-success); }
@@ -15949,8 +16044,8 @@ body.nw-panel-resizing .nw-awb-center iframe {
 .nw-awb-input {
     resize: none;
     line-height: 1.5;
-    min-height: 34px;
-    max-height: 132px;
+    min-height: 40px;
+    max-height: min(132px, 30vh);
     overflow-y: auto;
     font-family: inherit;
 }
@@ -16159,6 +16254,7 @@ body.nw-panel-resizing .nw-awb-center iframe {
         display: flex;
         flex: 0 0 auto;
         width: auto;
+        max-width: none;
         max-height: 30vh;
         border-right: none;
         border-bottom: 1px solid var(--background-modifier-border);
@@ -16174,6 +16270,7 @@ body.nw-panel-resizing .nw-awb-center iframe {
         display: flex;
         flex: 0 0 auto;
         width: auto;
+        max-width: none;
         max-height: 45vh;
         border-left: none;
         border-top: 1px solid var(--background-modifier-border);

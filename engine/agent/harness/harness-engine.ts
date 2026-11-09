@@ -403,6 +403,10 @@ export class AgentHarnessEngine {
             callSeq: this.log.callCounter,
             memory: this.memory.slots,
             plan: this.plan.steps,
+            context: {
+                projects: this.options.ctx.projects,
+                activeProject: this.options.ctx.activeProject ?? null,
+            },
         });
     }
 
@@ -453,6 +457,8 @@ export class AgentHarnessEngine {
             .filter((turn: DerivedTurn) => turn.role === 'user' || turn.role === 'assistant')
             // 时间上下文与压缩摘要都是系统注入，不是用户说过的话
             .filter((turn: DerivedTurn) => !turn.text.startsWith('【当前时间】') && !turn.text.startsWith('【历史摘要】'))
+            // 「（会话开始…）」只是启动占位，不应作为历史气泡回放
+            .filter((turn: DerivedTurn) => !turn.text.startsWith('（会话开始'))
             .map((turn: DerivedTurn) => ({
                 role: turn.role === 'user' ? 'user' as const : 'agent' as const,
                 text: turn.role === 'user' ? turn.text.replace(/^【当前时间】.*?\n?/, '') : turn.text,

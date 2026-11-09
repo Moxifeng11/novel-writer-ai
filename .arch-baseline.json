@@ -7,7 +7,7 @@
     "SuggestionManager": 2,
     "DeconstructionWorkerManager": 1,
     "WorkerManager": 2,
-    "QualityScoreEngine": 4,
+    "QualityScoreEngine": 3,
     "AnalysisSessionManager": 1,
     "StyleIntensityEngine": 1,
     "RewriteSuggestionEngine": 1,
