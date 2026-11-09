@@ -172,6 +172,7 @@ import { listProjectIds } from '@/shared/project-catalog';
 import { createLogger } from './shared/logger';
 import { pruneSessions, SESSION_RETENTION_DEFAULTS } from './shared/session-retention';
 import type { PruneResult, RetentionTarget } from './shared/session-retention';
+import { cancelScheduledGraphValidations } from './engine/graph/graph-validation-trigger';
 import { listAnalysisSessionFiles } from './engine/analysis-session-manager';
 import { listAgentSessionFiles, agentSessionPathFor } from './ui/services/agent-session-store';
 
@@ -2044,6 +2045,15 @@ export default class NovelWriterPlugin extends Plugin {
      * 超时或失败只告警不抛出，卸载流程永不失败。
      */
     async onunload() {
+        // F-2（2026-11-10 生命周期审计）：abort 全部在途实体重检——unload 后
+        // detectStateChanges 的写盘路径（applyStateChanges）必须被 signal 拦截
+        for (const controller of this._entityRecheckAbort.values()) {
+            controller.abort();
+        }
+        this._entityRecheckAbort.clear();
+        // F-1（同审计）：清掉结算后防抖的图谱校验定时器，避免 unload 后
+        // runGraphValidation 仍读全库并写诊断文件
+        cancelScheduledGraphValidations();
         // 清理拆解调度器资源（定时器、看门狗、事件监听器）
         this._writingPet?.destroy();
         this._writingPet = null;

@@ -14,6 +14,19 @@ const log = createLogger('GraphValidation');
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
 
 /**
+ * 清空全部待执行的图谱校验定时器（插件 onunload 调用）。
+ *
+ * 不清理的话，结算后 5 秒内禁用/热重载插件，pending 回调仍会读全库并写
+ * 诊断文件——「插件已卸载却凭空出现报告」。
+ */
+export function cancelScheduledGraphValidations(): void {
+    for (const timer of timers.values()) {
+        clearTimeout(timer);
+    }
+    timers.clear();
+}
+
+/**
  * 立即执行校验并写报告。
  *
  * @param app - Obsidian 应用

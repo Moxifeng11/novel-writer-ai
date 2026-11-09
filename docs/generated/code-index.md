@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137305 | 1724 | 1415 | 82% |
+| `engine/` | 319 | 137318 | 1725 | 1416 | 82% |
 | `services/` | 32 | 12920 | 187 | 148 | 79% |
 | `shared/` | 185 | 42039 | 1652 | 1354 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
@@ -169,7 +169,7 @@
 | `engine/genre/genre-detector.ts` | 299 | 1 | 1 |
 | `engine/genre/index.ts` | 12 | 2 | 1 |
 | `engine/genre/types.ts` | 66 | 5 | 5 |
-| `engine/graph/graph-validation-trigger.ts` | 49 | 2 | 2 |
+| `engine/graph/graph-validation-trigger.ts` | 62 | 3 | 3 |
 | `engine/graph/graph-validator.ts` | 328 | 7 | 3 |
 | `engine/harness/ai-assisted-premise-service.ts` | 225 | 3 | 3 |
 | `engine/harness/call-ledger.ts` | 120 | 3 | 3 |
