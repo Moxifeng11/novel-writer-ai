@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 305 | 133050 | 1613 | 1352 | 84% |
+| `engine/` | 305 | 133064 | 1613 | 1352 | 84% |
 | `services/` | 32 | 12920 | 187 | 148 | 79% |
 | `shared/` | 179 | 40820 | 1608 | 1323 | 82% |
 | `core/` | 7 | 2822 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 99248 | 744 | 646 | 87% |
+| `ui/` | 242 | 99541 | 753 | 649 | 86% |
 
 ## 文件清单
 
@@ -188,7 +188,7 @@
 | `engine/knowledge-vector-store.ts` | 727 | 5 | 4 |
 | `engine/llm-enhancer.ts` | 633 | 7 | 3 |
 | `engine/llm-prompts.ts` | 364 | 7 | 3 |
-| `engine/local-vector-store.ts` | 324 | 3 | 2 |
+| `engine/local-vector-store.ts` | 338 | 3 | 2 |
 | `engine/logic-consistency-checker.ts` | 140 | 4 | 4 |
 | `engine/long-term-memory.ts` | 154 | 6 | 3 |
 | `engine/memory-trigger.ts` | 408 | 13 | 9 |
@@ -770,15 +770,18 @@
 | `ui/utils/worldview-utils.ts` | 103 | 1 | 1 |
 | `ui/vector-rebuild-action.ts` | 148 | 1 | 1 |
 | `ui/views/book-detail-renderer.ts` | 2448 | 2 | 2 |
+| `ui/views/capability-banner.ts` | 68 | 4 | 1 |
+| `ui/views/fingerprint-capability.ts` | 105 | 3 | 1 |
 | `ui/views/fingerprint-v2-detail.ts` | 126 | 4 | 2 |
 | `ui/views/kb-book-card.ts` | 163 | 2 | 2 |
 | `ui/views/kb-config-panel.ts` | 222 | 3 | 3 |
 | `ui/views/kb-detail-actions.ts` | 199 | 2 | 2 |
 | `ui/views/kb-stats-panel.ts` | 197 | 2 | 2 |
 | `ui/views/knowledge-base-modals.ts` | 1364 | 4 | 4 |
-| `ui/views/knowledge-base-view.ts` | 3241 | 10 | 10 |
+| `ui/views/knowledge-base-view.ts` | 3250 | 10 | 10 |
+| `ui/views/knowledge-capability.ts` | 81 | 2 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
-| `ui/views/writing-fingerprint-view.ts` | 2003 | 3 | 3 |
+| `ui/views/writing-fingerprint-view.ts` | 2033 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 562 | 2 | 1 |

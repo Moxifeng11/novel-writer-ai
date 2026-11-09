@@ -253,6 +253,21 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         await expect(workbench.locator('.nw-awb-attachment-chip')).toHaveCount(0);
     });
 
+    test('知识库与写作指纹库显示能力边界说明', async () => {
+        const { page } = session;
+
+        expect(await executeCommand(page, toObsidianCommandId('novel-writer-open-knowledge-base'))).toBe(true);
+        const kb = page.locator('.workspace-leaf-content[data-type="novel-writer-knowledge-base"]');
+        await expect(kb).toBeVisible({ timeout: 15_000 });
+        await expect(kb.locator('.nw-capability-banner')).toContainText('知识库能力边界', { timeout: 10_000 });
+
+        expect(await executeCommand(page, toObsidianCommandId('novel-writer-fingerprint-library'))).toBe(true);
+        const fp = page.locator('.workspace-leaf-content[data-type="novel-writer-writing-fingerprint"]');
+        await expect(fp).toBeVisible({ timeout: 15_000 });
+        await expect(fp.locator('.nw-capability-banner')).toContainText('写作指纹能力边界', { timeout: 10_000 });
+        await expect(fp.locator('.nw-capability-notes')).toContainText('知识库 style 向量', { timeout: 5_000 });
+    });
+
     test('模型设置是两栏布局，长 URL 完整可见', async () => {
         const { page } = session;
         expect(await executeCommand(page, SETTINGS_COMMAND)).toBe(true);

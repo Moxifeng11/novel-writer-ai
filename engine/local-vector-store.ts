@@ -18,6 +18,22 @@ import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('LocalVectorStore');
+
+/**
+ * 向量范数缓存：检索会对同一条参考向量反复计算余弦，
+ * 范数在向量生命周期内不变，按数组对象缓存避免每次查询重复 O(dim) 平方和。
+ */
+const vectorNormCache = new WeakMap<number[], number>();
+
+function vectorNorm(vector: number[]): number {
+    const cached = vectorNormCache.get(vector);
+    if (cached !== undefined) return cached;
+    let sum = 0;
+    for (let i = 0; i < vector.length; i++) sum += vector[i] * vector[i];
+    vectorNormCache.set(vector, sum);
+    return sum;
+}
+
 /**
  * cosineSimilarity 函数。
  * @param a - 参与比较的值
@@ -29,18 +45,16 @@ export function cosineSimilarity(a: number[], b: number[]): number {
         throw new Error(`Vector dimension mismatch: ${a.length} vs ${b.length}`);
     }
 
-    let dotProduct = 0;
-    let normA = 0;
-    let normB = 0;
-
-    for (let i = 0; i < a.length; i++) {
-        dotProduct += a[i] * b[i];
-        normA += a[i] * a[i];
-        normB += b[i] * b[i];
-    }
-
+    // 范数走缓存，循环只算点积；同一批样本多次检索不再重复平方和。
+    const normA = vectorNorm(a);
+    const normB = vectorNorm(b);
     if (normA === 0 || normB === 0) {
         return 0;
+    }
+
+    let dotProduct = 0;
+    for (let i = 0; i < a.length; i++) {
+        dotProduct += a[i] * b[i];
     }
 
     return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));

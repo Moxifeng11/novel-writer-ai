@@ -22,6 +22,8 @@ import { buildKbBookCard } from './kb-book-card';
 import { buildKbStatsPanel } from './kb-stats-panel';
 import { buildKbDetailActionButtons } from './kb-detail-actions';
 import { buildKbConfigPanel } from './kb-config-panel';
+import { renderCapabilityBanner } from './capability-banner';
+import { computeKnowledgeCapability } from './knowledge-capability';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
 import { yieldToUI } from '@/shared/yield';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
@@ -887,6 +889,13 @@ export class KnowledgeBaseView extends ItemView {
         const booksPanel = content.createDiv({
             cls: "nw-kb-books-panel nw-u-flex-1 nw-u-d-flex nw-u-fd-column nw-u-minw-0",
             attr: {}
+        });
+
+        // 能力边界：拆解完成 ≠ 检索可用；把当前阶段直接放在列表顶部
+        const capability = computeKnowledgeCapability(this.allBooks);
+        renderCapabilityBanner(booksPanel, {
+            title: '知识库能力边界',
+            ...capability,
         });
 
         this.renderBooksToolbar(booksPanel);

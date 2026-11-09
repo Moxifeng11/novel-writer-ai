@@ -25,6 +25,8 @@ import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/mo
 import { formatDetailCount, formatDetailNumber, formatDetailPercent } from '@/ui/knowledge-detail-format';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 import { renderV2FeaturesSection, V2_FEATURE_LABELS } from './fingerprint-v2-detail';
+import { renderCapabilityBanner } from './capability-banner';
+import { computeFingerprintCapability } from './fingerprint-capability';
 import type { V2Fingerprint, StyleFingerprintFeaturesV2 } from '@/engine/style/style-dimensions-v2';
 
 
@@ -89,6 +91,7 @@ export class WritingFingerprintView extends ItemView {
     private searchInput!: HTMLInputElement;
     private tagFilter!: HTMLElement;
     private toolbar!: HTMLElement;
+    private capabilityEl!: HTMLElement;
     private detailPanel!: HTMLElement;
     private countEl: HTMLElement | null = null;
     /** 侧栏模型快速切换器（原右下角状态栏浮窗的替代入口） */
@@ -137,6 +140,8 @@ export class WritingFingerprintView extends ItemView {
         await this.loadAllFingerprints();
         this.renderScopeTabs();
         this.renderToolbar();
+        this.capabilityEl = this.leftSidebar.createDiv({ cls: 'nw-fingerprint-capability-host' });
+        this.renderCapabilityBanner();
         this.renderSearchAndFilter();
         this.renderFingerprintList();
         this.renderDetailPanel();
@@ -312,8 +317,7 @@ export class WritingFingerprintView extends ItemView {
         return Array.from(tagSet).sort();
     }
 
-    private renderLayout(): void {
-        const { containerEl } = this;
+    private renderLayout(): void {        const { containerEl } = this;
         containerEl.empty();
         containerEl.addClass('nw-fingerprint-view');
 
@@ -343,6 +347,31 @@ export class WritingFingerprintView extends ItemView {
         this.rightPanel = mainLayout.createDiv({
             cls: "nw-fingerprint-right-panel nw-u-flex-1-2 nw-u-ovy-auto-2 nw-u-p-16px-2",
             attr: {}
+        });
+    }
+
+    /** 能力边界说明：注入是否生效、样本/向量是否就绪 */
+    private renderCapabilityBanner(): void {
+        if (!this.capabilityEl) return;
+        this.capabilityEl.empty();
+        const all = [
+            ...this.templateFingerprints,
+            ...this.globalFingerprints,
+            ...this.projectFingerprints,
+        ];
+        const capability = computeFingerprintCapability({
+            templateCount: this.templateFingerprints.length,
+            globalCount: this.globalFingerprints.length,
+            projectCount: this.projectFingerprints.length,
+            enabledCount: all.filter(fp => this.isEffectivelyEnabled(fp)).length,
+            totalSamples: all.reduce((sum, fp) => sum + (fp.samples?.length || 0), 0),
+            v2Count: all.filter(fp => Boolean(this.fingerprintLibrary?.getV2Fingerprint(fp.id))).length,
+            vectorReady: Boolean(this.vectorStore),
+            embeddingReady: Boolean(this.extractionProvider),
+        });
+        renderCapabilityBanner(this.capabilityEl, {
+            title: '写作指纹能力边界',
+            ...capability,
         });
     }
 
@@ -487,6 +516,7 @@ export class WritingFingerprintView extends ItemView {
     }
 
     private renderFingerprintList(): void {
+        this.renderCapabilityBanner();
         if (this.fingerprintList) {
             this.fingerprintList.remove();
         }

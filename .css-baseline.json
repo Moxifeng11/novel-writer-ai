@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-09T09:49:01.558Z",
-  "note": "v4.81.1 协同/Agent/设置 UI：Agent 输入区自适应+图片附件缩略图、协同人工率卡片、设置常用/高级页签开关；+8 类/+2163B，均为本轮功能承载，无重复选择器",
-  "bytes": 548391,
+  "generatedAt": "2026-11-09T12:07:44.813Z",
+  "note": "知识库/指纹库能力边界说明条（16 类）+ 知识库窄屏题材栏响应式 + 弹窗 lg/xl 视口限宽/限高与内容滚动；+17 类/+2532B，均为本轮 UI/边界修复",
+  "bytes": 550923,
   "important": 24,
   "hardcodedHex": 161,
   "rgbHsl": 188,
-  "uniqueClasses": 3004,
+  "uniqueClasses": 3021,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

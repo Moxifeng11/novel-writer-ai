@@ -64,6 +64,7 @@ test.describe('4.81.0 审核修复 · 真实 Obsidian', () => {
         page: import('playwright').Page,
         title: string,
         open: () => Promise<void>,
+        inspect?: (modalPage: import('playwright').Page) => Promise<void>,
     ): Promise<void> {
         await open();
         await expect.poll(async () => (await pagesWithText(page, title)).length, { timeout: 10_000 })
@@ -73,11 +74,82 @@ test.describe('4.81.0 审核修复 · 真实 Obsidian', () => {
         expect(modalPage).toBeTruthy();
         modalPage!.on('pageerror', (error) => pageErrors.push(error.message));
         await modalPage!.waitForTimeout(400);
+        if (inspect) await inspect(modalPage!);
 
         await closeTopModal(modalPage!);
         await modalPage!.waitForTimeout(800);
         await expect.poll(async () => (await pagesWithText(page, title)).length, { timeout: 10_000 })
             .toBe(0);
+    }
+
+    /** 极端视口下弹窗必须完整落在窗口内，内容可滚动 */
+    async function assertModalBounds(modalPage: import('playwright').Page): Promise<void> {
+        const sizes = [
+            { width: 1280, height: 720 },
+            { width: 900, height: 600 },
+            { width: 700, height: 500 },
+            { width: 390, height: 844 },
+        ];
+        for (const size of sizes) {
+            await modalPage.setViewportSize(size);
+            await modalPage.waitForTimeout(200);
+            const rect = await modalPage.evaluate(() => {
+                const modal = document.querySelector<HTMLElement>('.modal');
+                const content = document.querySelector<HTMLElement>('.modal-content');
+                if (!modal) return null;
+                const r = modal.getBoundingClientRect();
+                return {
+                    left: r.left,
+                    top: r.top,
+                    right: r.right,
+                    bottom: r.bottom,
+                    width: r.width,
+                    height: r.height,
+                    viewportWidth: window.innerWidth,
+                    viewportHeight: window.innerHeight,
+                    contentOverflow: content ? getComputedStyle(content).overflowY : '',
+                };
+            });
+            expect(rect, `viewport ${size.width}x${size.height}`).not.toBeNull();
+            expect(rect!.left, `left @ ${size.width}x${size.height}`).toBeGreaterThanOrEqual(-1);
+            expect(rect!.top, `top @ ${size.width}x${size.height}`).toBeGreaterThanOrEqual(-1);
+            expect(rect!.right, `right @ ${size.width}x${size.height}`).toBeLessThanOrEqual(rect!.viewportWidth + 1);
+            expect(rect!.bottom, `bottom @ ${size.width}x${size.height}`).toBeLessThanOrEqual(rect!.viewportHeight + 1);
+            expect(rect!.width, `width @ ${size.width}x${size.height}`).toBeGreaterThan(0);
+        }
+
+        // 超长内容：注入 3000px 占位后，弹窗仍不得越界，内部滚动容器必须可滚动
+        await modalPage.evaluate(() => {
+            const host = document.querySelector<HTMLElement>('.nw-uem-detail')
+                || document.querySelector<HTMLElement>('.modal-content');
+            if (!host) return;
+            const filler = document.createElement('div');
+            filler.style.height = '3000px';
+            filler.textContent = '长内容边界测试';
+            host.appendChild(filler);
+        });
+        await modalPage.setViewportSize({ width: 700, height: 500 });
+        await modalPage.waitForTimeout(200);
+        const longContent = await modalPage.evaluate(() => {
+            const modal = document.querySelector<HTMLElement>('.modal');
+            const host = document.querySelector<HTMLElement>('.nw-uem-detail')
+                || document.querySelector<HTMLElement>('.modal-content');
+            if (!modal || !host) return null;
+            const rect = modal.getBoundingClientRect();
+            return {
+                bottom: rect.bottom,
+                top: rect.top,
+                viewportHeight: window.innerHeight,
+                scrollHeight: host.scrollHeight,
+                clientHeight: host.clientHeight,
+                overflowY: getComputedStyle(host).overflowY,
+            };
+        });
+        expect(longContent).not.toBeNull();
+        expect(longContent!.top).toBeGreaterThanOrEqual(-1);
+        expect(longContent!.bottom).toBeLessThanOrEqual(longContent!.viewportHeight + 1);
+        expect(longContent!.scrollHeight).toBeGreaterThan(longContent!.clientHeight);
+        expect(['auto', 'scroll']).toContain(longContent!.overflowY);
     }
 
     test('右栏折叠后打开项目速览，侧栏展开且 leaf 可见', async () => {
@@ -145,7 +217,7 @@ test.describe('4.81.0 审核修复 · 真实 Obsidian', () => {
                     };
                     host.app.plugins.plugins['novel-writer-ai']?.openEntityManagerModal?.('E2E空项目');
                 });
-            });
+            }, assertModalBounds);
         }
 
         expect(pageErrors).toEqual([]);

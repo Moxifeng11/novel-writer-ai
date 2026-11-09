@@ -5,10 +5,10 @@
   "baseline": {
     "version": "4.81.1",
     "tests": {
-      "files": 608,
-      "cases": 6701
+      "files": 610,
+      "cases": 6711
     },
-    "e2e": 42,
+    "e2e": 43,
     "e2eNote": "E2E 通过总数 42（2026-11-09 实测）：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 26 + review-fixes 3（右栏折叠展开 + 两个 Modal 连续开关）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑",
     "gates": [
       "typecheck",
@@ -19,7 +19,7 @@
       "check:write-entry"
     ],
     "localCommitsAhead": 0,
-    "localCommitsAheadNote": "2026-11-09 v4.81.1 后修复：人工率空正文/不足 2 句时归 0，随正文动态计算；608 文件 / 6,701 用例，E2E 42 条，preflight EXIT=0；已 push master，未打新 tag"
+    "localCommitsAheadNote": "2026-11-09 知识库/指纹库能力边界与链路优化：能力说明条、检索范数缓存、弹窗边界/长内容修复、知识库窄屏布局；610 文件 / 6,711 用例，E2E 43 条，preflight EXIT=0；未发新 tag"
   },
   "groups": [
     {

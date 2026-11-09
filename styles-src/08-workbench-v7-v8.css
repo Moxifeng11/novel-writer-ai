@@ -635,12 +635,20 @@ button.nw-btn-icon {
 
 .modal.nw-scope.nw-modal-lg {
     width: var(--nw-modal-lg, min(900px, 92vw));
-    max-width: 900px;
+    max-width: min(900px, 96vw);
+    max-height: min(var(--nw-modal-max-h, 90vh), 90dvh);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .modal.nw-scope.nw-modal-xl {
-    width: var(--nw-modal-xl, clamp(900px, 92vw, 2000px));
-    max-width: 1300px;
+    width: min(var(--nw-modal-xl, 1300px), 96vw);
+    max-width: min(1300px, 96vw);
+    max-height: min(var(--nw-modal-max-h, 90vh), 90dvh);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 /* 内容区与尺寸类配套（对应 .nw-scope .nw-modal .modal-content）
@@ -651,7 +659,8 @@ button.nw-btn-icon {
 .modal.nw-scope.nw-modal-lg .modal-content,
 .modal.nw-scope.nw-modal-xl .modal-content {
     padding: 0;
-    overflow: visible;
+    overflow-x: hidden;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     max-height: var(--nw-modal-max-h, 90vh);

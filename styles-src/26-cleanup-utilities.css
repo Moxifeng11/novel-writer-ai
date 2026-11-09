@@ -134,7 +134,72 @@
     visibility: hidden;
 }
 
-/* 指纹强度预览（fingerprint-intensity-modal；原为内联样式） */
+/* 知识库 / 指纹库能力边界说明条 */
+.nw-capability-banner {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 8px 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-left-width: 3px;
+    border-radius: 8px;
+    background: var(--background-secondary);
+    font-size: 12px;
+}
+.nw-capability-banner.nw-is-empty { border-left-color: var(--text-muted); }
+.nw-capability-banner.nw-is-accumulating { border-left-color: var(--text-warning); }
+.nw-capability-banner.nw-is-ready { border-left-color: var(--text-success); }
+.nw-capability-banner.nw-is-degraded { border-left-color: var(--text-error); }
+.nw-capability-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.nw-capability-title { font-weight: 600; color: var(--text-normal); }
+.nw-capability-stage {
+    flex-shrink: 0;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--background-modifier-border);
+    color: var(--text-muted);
+    font-size: 10px;
+}
+.nw-is-ready .nw-capability-stage { background: var(--background-modifier-success); color: var(--text-success); }
+.nw-is-degraded .nw-capability-stage { background: var(--background-modifier-error); color: var(--text-error); }
+.nw-is-accumulating .nw-capability-stage { background: var(--background-modifier-warning); color: var(--text-warning); }
+.nw-capability-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+}
+.nw-capability-metric {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+}
+.nw-capability-metric-value { font-weight: 600; color: var(--text-normal); }
+.nw-capability-metric-label { color: var(--text-muted); font-size: 11px; }
+.nw-capability-notes { color: var(--text-muted); line-height: 1.45; }
+.nw-capability-note { white-space: normal; }
+
+/* 知识库书籍页：窄屏把题材栏收成顶部横条，避免 220px + 书籍列表互相挤压 */
+@media (max-width: 900px) {
+    .nw-kb-books-tab {
+        flex-direction: column;
+    }
+    .nw-kb-genre-panel {
+        width: auto;
+        min-width: 0;
+        max-height: 170px;
+        border-right: none;
+        border-bottom: 1px solid var(--background-modifier-border);
+    }
+    .nw-kb-genre-list {
+        max-height: 110px;
+    }
+}
 .nw-intensity-preview {
     margin-bottom: 16px;
     padding: 12px;
