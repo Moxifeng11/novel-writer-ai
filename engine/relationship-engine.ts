@@ -11,7 +11,8 @@ import { App, TFile } from 'obsidian';
 import { SUBDIR_WORLD_ARCH } from '@/shared/paths';
 import type { Notifier } from '@/shared/types';
 import { NOOP_NOTIFIER } from '@/shared/types';
-import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
+import { ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
+import { qualitativeDeltas } from './relationship-change-queue';
 
 /** 关系维度 */
 export interface RelationshipState {
@@ -21,7 +22,9 @@ export interface RelationshipState {
     resentment: number;  // 怨恨度 0-100
     dependence: number;  // 依赖性 0-100
     status: string;      // 文字描述
-    history: string;     // 变更历史
+    history: string;     // 变更历史（人读，可截断）
+    /** 幂等键（机器读，不随 history 截断；旧文件缺失时从 history 推导） */
+    historyKeys?: string[];
 }
 
 /** 角色对关系 */
@@ -68,7 +71,7 @@ export async function loadRelationshipStates(app: App, project: string): Promise
  * @param content - 内容
  * @returns 结果数组
  */
-function parseRelationshipFile(content: string): CharacterPairRelation[] {
+export function parseRelationshipFile(content: string): CharacterPairRelation[] {
     const relations: CharacterPairRelation[] = [];
     const sections = content.split(/^## /gm);
 
@@ -90,7 +93,11 @@ function parseRelationshipFile(content: string): CharacterPairRelation[] {
             dependence: extractNumber(section, 'dependence'),
             status: extractString(section, 'status'),
             history: extractMultiline(section, 'history'),
+            historyKeys: extractMultiline(section, 'history_keys').split('\n').map((line) => line.trim()).filter(Boolean),
         };
+        if (!state.historyKeys || state.historyKeys.length === 0) {
+            state.historyKeys = state.history.split('\n').map((line) => line.trim()).filter(Boolean);
+        }
 
         const chapterMatch = section.match(/last_updated_chapter:\s*(.+)/);
         relations.push({
@@ -100,7 +107,44 @@ function parseRelationshipFile(content: string): CharacterPairRelation[] {
         });
     }
 
-    return relations;
+    return mergeDuplicatePairSections(relations);
+}
+
+/**
+ * 同一对角色出现多个 `## A ↔ B` 段时合并，避免 getOrCreateRelation 只命中第一条。
+ *
+ * @param relations - 解析结果
+ * @returns 合并后的列表
+ */
+function mergeDuplicatePairSections(relations: CharacterPairRelation[]): CharacterPairRelation[] {
+    const merged = new Map<string, CharacterPairRelation>();
+    for (const relation of relations) {
+        const key = [relation.charA.trim(), relation.charB.trim()].map((name) => name.toLowerCase()).sort().join('|');
+        const existing = merged.get(key);
+        if (!existing) {
+            merged.set(key, relation);
+            continue;
+        }
+        // 以信息量更大、且更接近当前章的一条为基准，把另一条的 history/keys 并进来
+        const chapterOf = (value: string): number => Number.parseInt(value.match(/\d+/)?.[0] ?? '0', 10) || 0;
+        const existingKeys = existing.state.historyKeys ?? [];
+        const relationKeys = relation.state.historyKeys ?? [];
+        const preferExisting = existingKeys.length > relationKeys.length
+            || (existingKeys.length === relationKeys.length && chapterOf(existing.lastUpdatedChapter) >= chapterOf(relation.lastUpdatedChapter));
+        const base = preferExisting ? existing : relation;
+        const other = base === existing ? relation : existing;
+        const historyLines = new Set(base.state.history.split('\n').map((line) => line.trim()).filter(Boolean));
+        for (const line of other.state.history.split('\n').map((item) => item.trim()).filter(Boolean)) historyLines.add(line);
+        const keys = new Set([...(base.state.historyKeys ?? []), ...(other.state.historyKeys ?? [])]);
+        base.state.history = [...historyLines].join('\n');
+        base.state.historyKeys = [...keys];
+        if ((other.lastUpdatedChapter.match(/\d+/) ? Number(other.lastUpdatedChapter.match(/\d+/)![0]) : 0)
+            > (base.lastUpdatedChapter.match(/\d+/) ? Number(base.lastUpdatedChapter.match(/\d+/)![0]) : 0)) {
+            base.lastUpdatedChapter = other.lastUpdatedChapter;
+        }
+        merged.set(key, base);
+    }
+    return [...merged.values()];
 }
 
 function extractNumber(text: string, key: string): number {
@@ -164,49 +208,109 @@ function applyDelta(value: number, delta: number): number {
     return Math.max(0, Math.min(100, value + delta));
 }
 
+/** 关系维度白名单 */
+export const RELATION_DIMENSIONS = ['trust', 'attraction', 'fear', 'resentment', 'dependence'] as const;
+export type RelationDimension = typeof RELATION_DIMENSIONS[number];
+
+/** 一条关系变更 */
+export interface RelationshipChange {
+    charA: string;
+    charB: string;
+    /** 维度名；apply 时只接受 RELATION_DIMENSIONS 内的值 */
+    dimension: string;
+    delta: number;
+    reason: string;
+    /** 变更所属章（待确认队列按记录章应用；报告解析默认用结算章） */
+    chapter?: string;
+    source?: 'explicit' | 'qualitative';
+}
+
 /**
  * 从分析报告中提取关系变化并应用
  * 匹配格式:
+ *   RELATION_5D: 林砚|苏晴|trust+5,attraction+2|并肩作战
  *   RELATION: 林砚|苏晴|信任|+5
- *   EMOTION: [[林砚]] | 当前情绪 | 对苏晴 fear +10
  *   RELATION: 墨渊|守御者联盟|敌对|resentment +5
+ * 旧格式没有显式 ±N 时，按定性描述映射小增量（source='qualitative'）。
+ *
  * @param reportContent - 报告内容
- * @returns 结果数组
+ * @returns 变更列表
  */
-export function extractRelationshipChanges(reportContent: string): Array<{
-    charA: string; charB: string; dimension: string; delta: number; reason: string;
-}> {
-    const changes: Array<{
-        charA: string; charB: string; dimension: string; delta: number; reason: string;
-    }> = [];
+export function extractRelationshipChanges(reportContent: string): RelationshipChange[] {
+    const changes: RelationshipChange[] = [];
+    const push = (change: RelationshipChange): void => {
+        const key = `${change.charA}|${change.charB}|${change.dimension}|${change.delta}|${change.reason}`;
+        if (changes.some((item) => `${item.charA}|${item.charB}|${item.dimension}|${item.delta}|${item.reason}` === key)) return;
+        changes.push(change);
+    };
 
-    // RELATION: 实体A|实体B|关系类型|关系描述
-    const relRegex = /^RELATION:\s*(.+?)\|(.+?)\|(.+?)\|(.+)$/gm;
-    for (const m of reportContent.matchAll(relRegex)) {
-        const [_, charA, charB, relType, desc] = m;
-        const deltaMatch = desc.match(/(trust|attraction|fear|resentment|dependence)\s*([+-]\d+)/i);
-        if (deltaMatch) {
-            changes.push({
-                charA: charA.trim(), charB: charB.trim(),
-                dimension: deltaMatch[1].toLowerCase(),
-                delta: parseInt(deltaMatch[2]),
-                reason: `${relType.trim()}: ${desc.trim()}`,
+    // 新格式：RELATION_5D: A|B|trust+5,attraction+2|原因
+    const fiveDimRegex = /^RELATION_5D:\s*([^|]+)\|([^|]+)\|([^|]+)(?:\|(.*))?$/gm;
+    for (const match of reportContent.matchAll(fiveDimRegex)) {
+        const [, charA, charB, deltas, reason] = match;
+        const reasonText = (reason || '关系变化').trim();
+        for (const deltaMatch of deltas.matchAll(/(trust|attraction|fear|resentment|dependence)\s*([+-]\d+)/gi)) {
+            const dimension = deltaMatch[1].toLowerCase() as RelationDimension;
+            const delta = Number.parseInt(deltaMatch[2], 10);
+            if (!RELATION_DIMENSIONS.includes(dimension) || !Number.isFinite(delta)) continue;
+            push({
+                charA: charA.trim(),
+                charB: charB.trim(),
+                dimension,
+                delta,
+                reason: reasonText,
+                source: 'explicit',
             });
+        }
+    }
+
+    // 旧格式：RELATION: 实体A|实体B|关系类型|关系描述
+    const relRegex = /^RELATION:\s*(.+?)\|(.+?)\|(.+?)\|(.+)$/gm;
+    for (const match of reportContent.matchAll(relRegex)) {
+        const [, charA, charB, relType, desc] = match;
+        const text = `${relType} ${desc}`;
+        let explicit = 0;
+        for (const deltaMatch of desc.matchAll(/(trust|attraction|fear|resentment|dependence)\s*([+-]\d+)/gi)) {
+            const dimension = deltaMatch[1].toLowerCase() as RelationDimension;
+            const delta = Number.parseInt(deltaMatch[2], 10);
+            if (!RELATION_DIMENSIONS.includes(dimension) || !Number.isFinite(delta)) continue;
+            explicit++;
+            push({
+                charA: charA.trim(),
+                charB: charB.trim(),
+                dimension,
+                delta,
+                reason: `${relType.trim()}: ${desc.trim()}`,
+                source: 'explicit',
+            });
+        }
+        if (explicit === 0) {
+            for (const item of qualitativeDeltas(text)) {
+                push({
+                    charA: charA.trim(),
+                    charB: charB.trim(),
+                    dimension: item.dimension as RelationDimension,
+                    delta: item.delta,
+                    reason: `${relType.trim()}: ${desc.trim()}`,
+                    source: 'qualitative',
+                });
+            }
         }
     }
 
     // EMOTION: 中也可能含关系变化
     const emoRegex = /^EMOTION:\s*\[\[(.+?)\]\]\s*\|\s*.+?\|\s*(.+)$/gm;
-    for (const m of reportContent.matchAll(emoRegex)) {
-        const [_, char, desc] = m;
-        // 检查是否包含关系变化描述
+    for (const match of reportContent.matchAll(emoRegex)) {
+        const [, char, desc] = match;
         const relChange = desc.match(/对(.+?)\s*(trust|attraction|fear|resentment|dependence)\s*([+-]\d+)/i);
         if (relChange) {
-            changes.push({
-                charA: char.trim(), charB: relChange[1].trim(),
-                dimension: relChange[2].toLowerCase(),
-                delta: parseInt(relChange[3]),
+            push({
+                charA: char.trim(),
+                charB: relChange[1].trim(),
+                dimension: relChange[2].toLowerCase() as RelationDimension,
+                delta: Number.parseInt(relChange[3], 10),
                 reason: desc.trim(),
+                source: 'explicit',
             });
         }
     }
@@ -226,15 +330,20 @@ export function extractRelationshipChanges(reportContent: string): Array<{
  */
 export function applyRelationshipChanges(
     relations: CharacterPairRelation[],
-    changes: Array<{ charA: string; charB: string; dimension: string; delta: number; reason: string }>,
+    changes: RelationshipChange[],
     chapterName: string,
 ): { relations: CharacterPairRelation[]; applied: number; skipped: number } {
     let applied = 0;
     let skipped = 0;
     for (const change of changes) {
+        const chapter = change.chapter || chapterName;
         const rel = getOrCreateRelation(relations, change.charA, change.charB);
-        const marker = `${chapterName}: ${change.reason}`;
-        if (rel.state.history.includes(marker)) {
+        const deltaText = change.delta >= 0 ? `+${change.delta}` : String(change.delta);
+        const marker = `${chapter}: ${change.dimension}${deltaText} | ${change.reason}`;
+        const legacyMarker = `${chapter}: ${change.reason}`;
+        const keys = rel.state.historyKeys ?? (rel.state.historyKeys = rel.state.history.split('\n').map((line) => line.trim()).filter(Boolean));
+        // 幂等：独立键不随 history 截断丢失；legacyMarker 兼容旧文件
+        if (keys.includes(marker) || rel.state.history.includes(legacyMarker)) {
             skipped++;
             continue;
         }
@@ -248,8 +357,10 @@ export function applyRelationshipChanges(
         }
 
         applied++;
-        rel.lastUpdatedChapter = chapterName;
+        rel.lastUpdatedChapter = chapter;
         rel.state.history += `\n${marker}`;
+        keys.push(marker);
+        if (keys.length > 200) keys.splice(0, keys.length - 200);
         if (rel.state.history.length > 2000) {
             rel.state.history = rel.state.history.slice(-1500); // 截断旧历史
         }
@@ -288,7 +399,10 @@ export function formatRelationshipFile(
     chapterName: string,
 ): string {
     const frontmatter = `---
-tags: [关系状态]
+tags: [关系状态, nw/设定/关系状态]
+关系对数: ${relations.length}
+最后更新章节: ${chapterName}
+最后更新: ${new Date().toISOString()}
 last_updated_chapter: ${chapterName}
 ---
 
@@ -298,6 +412,7 @@ last_updated_chapter: ${chapterName}
     const sections = relations.map(rel => {
         const s = rel.state;
         const header = `## ${rel.charA} ↔ ${rel.charB}`;
+        const keys = (s.historyKeys ?? s.history.split('\n').map(line => line.trim()).filter(Boolean)).slice(-200);
         const body = [
             `trust: ${s.trust}`,
             `attraction: ${s.attraction}`,
@@ -308,6 +423,8 @@ last_updated_chapter: ${chapterName}
             `last_updated_chapter: ${rel.lastUpdatedChapter}`,
             `history: |`,
             ...s.history.split('\n').filter(Boolean).map(h => `  ${h}`),
+            `history_keys: |`,
+            ...keys.map(key => `  ${key}`),
         ].join('\n');
         return `${header}\n${body}`;
     });

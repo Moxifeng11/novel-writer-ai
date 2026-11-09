@@ -17,6 +17,8 @@ import { CHARACTER_DISPLAY_KEYS } from '@/shared/format-constants';
 import { withWriteLock } from '@/shared/write-lock';
 import type { SettlementJournal } from './settlement/settlement-journal';
 import { loadRelationshipStates, extractRelationshipChanges, applyRelationshipChanges, saveRelationshipStates, getRelationshipFilePath } from './relationship-engine';
+import { consumePendingRelationshipChanges, loadPendingRelationshipChanges } from './relationship-change-queue';
+import { writeChapterDigestFromProject } from './memory/chapter-digest';
 import { pjBodyDir, pjBodyFile, pjCharFile, pjLocFile, pjFactionFile, pjItemFile, pjForeshadowDB, pjTimelineBoard, pjTimelineDir, pjOutlineDir, pjInfoDebtBoard, pjPromiseLedger, pjCharacterArcTable } from '@/shared/paths';
 import { DEFAULT_PROMISE_LEDGER, applyPromiseInstruction, formatPromiseLedger, parsePromiseLedger } from './promise-ledger';
 import { applyArcInstruction, buildArcRowsFromCharacters, formatCharacterArcTable, parseCharacterArcTable } from './character-arc';
@@ -621,6 +623,15 @@ export class SettlementEngine {
         await this.settleStep_updateV2Relations(ctx);
         await this.settleStep_updatePromiseLedger(ctx);
         await this.settleStep_updateCharacterArcs(ctx);
+
+        // ─── 19: 剧情记忆摘要（派生数据；失败不影响结算）───
+        if (!ctx.hasPartialFailure && !ctx.rollbackFailed) {
+            try {
+                await writeChapterDigestFromProject(this.app, this.getFS(), ctx.project, ctx.chapName, ctx.bodyText);
+            } catch (e) {
+                log.warn('[SettlementEngine] 章节摘要生成失败（不影响结算）:', e);
+            }
+        }
 
         ctx.result.mode = 'full';
         return ctx.result;
@@ -1498,7 +1509,20 @@ ${ni.description || '暂无描述'}
     private async settleStep_updateV2Relations(ctx: SettleContext): Promise<void> {
         let v2RelationCount = 0;
         try {
-            const changes = extractRelationshipChanges(ctx.report);
+            const reportChanges = extractRelationshipChanges(ctx.report);
+            const pending = await loadPendingRelationshipChanges(this.app, ctx.project);
+            const changes = [
+                ...reportChanges,
+                ...pending.map((change) => ({
+                    charA: change.charA,
+                    charB: change.charB,
+                    dimension: change.dimension,
+                    delta: change.delta,
+                    reason: change.reason,
+                    chapter: change.chapter,
+                    source: 'explicit' as const,
+                })),
+            ];
             if (changes.length > 0) {
                 // P1-3 遗留：关系状态.md 是整表覆盖写，load→apply→save 必须同锁，
                 // 否则并发结算会用旧快照覆盖对方刚写入的关系条目。
@@ -1513,6 +1537,10 @@ ${ni.description || '暂无描述'}
                         log.info(`[SettlementEngine] V2 关系幂等跳过 ${outcome.skipped} 条（同章同原因，重跑结算不二次累加）`);
                     }
                 });
+                // 队列已成功写入权威文件后清空；保存失败会走 catch，队列保留可重试
+                if (pending.length > 0) {
+                    await consumePendingRelationshipChanges(this.app, ctx.project);
+                }
                 log.info(`[SettlementEngine] V2 关系更新: ${v2RelationCount}/${changes.length} 条变更已写入关系状态.md`);
             }
         } catch (e) {

@@ -23,6 +23,7 @@ import { listProjectIds } from '@/shared/project-catalog';
 import { buildStoryLinkage, type StoryLinkage } from './story-linkage';
 import { stripAutoBlocks } from './ledger/ledger-model';
 import { loadStoryLedger, toForeshadowData, toTimelineEvents } from './ledger/ledger-io';
+import { loadRecentChapterDigests } from './memory/chapter-digest';
 import { buildLedgerIndex } from './ledger/ledger-index';
 import { buildLedgerLinks, renderLinkageIndex } from './ledger/ledger-link';
 import { EntityIndex } from '@/shared/entity-index';
@@ -678,6 +679,7 @@ export class ContextManager {
 
         if (currentChapter) {
             gatherTasks.push({ name: '前章摘要', task: this.gatherPreviousChapter(project, currentChapter) });
+            gatherTasks.push({ name: '剧情记忆', task: this.gatherChapterDigests(project, currentChapter) });
             gatherTasks.push({ name: '大纲', task: this.gatherOutline(project, currentChapter) });
             gatherTasks.push({ name: '情绪规划', task: this.gatherEmotionPlan(project, currentChapter) });
             gatherTasks.push({ name: 'Scene展开', task: this.gatherSceneExpansion(project, currentChapter) });
@@ -878,6 +880,8 @@ export class ContextManager {
                 return currentChapter
                     ? this.gatherPreviousChapter(project, currentChapter)
                     : {};
+            case 'chapter_digests':
+                return this.gatherChapterDigests(project, currentChapter);
             case 'outline':
                 return currentChapter
                     ? this.gatherOutline(project, currentChapter)
@@ -1457,6 +1461,30 @@ export class ContextManager {
             const ffContent = await this.app.vault.cachedRead(ffFile);
             return loadFanficRules(ffContent);
         } catch (e) { log.warn('loadFanficRules failed:', e); return { mustFollow: [], adaptScope: '', redlines: [] }; }
+    }
+
+    /**
+     * 装配最近 N 章剧情摘要（来自 04-项目总控/剧情记忆/）。
+     *
+     * @param project - 项目（路径或对象）
+     * @param currentChapter - 当前章节
+     * @returns 上下文数据
+     */
+    async gatherChapterDigests(project: string, currentChapter?: string): Promise<ContextData> {
+        try {
+            const num = currentChapter ? Number.parseInt(currentChapter.match(/第?(\d+)/)?.[1] ?? '', 10) : null;
+            const digests = await loadRecentChapterDigests(
+                this.app,
+                this.getFS(),
+                project,
+                Number.isFinite(num) ? num : null,
+                3,
+            );
+            return { chapter_digests: digests };
+        } catch (e) {
+            log.warn('Failed to gather chapter digests:', e);
+            return { chapter_digests: [] };
+        }
     }
 
     /**

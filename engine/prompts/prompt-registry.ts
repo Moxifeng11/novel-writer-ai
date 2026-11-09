@@ -100,7 +100,7 @@ const STEP_VARIANTS: Record<string, PromptVariantMeta & { system: string; user: 
         hash: hashContent(OUTLINE_PROMPTS.systemPrompt + OUTLINE_PROMPTS.userPrompt),
     },
     analysisReport: {
-        id: 'analysisReport.v1', version: '1.5.0',
+        id: 'analysisReport.v1', version: '1.6.0',
         system: ANALYSIS_REPORT_PROMPTS.systemPrompt, user: ANALYSIS_REPORT_PROMPTS.userPrompt,
         hash: hashContent(ANALYSIS_REPORT_PROMPTS.systemPrompt + ANALYSIS_REPORT_PROMPTS.userPrompt),
     },

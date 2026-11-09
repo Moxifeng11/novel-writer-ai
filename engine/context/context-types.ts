@@ -16,6 +16,7 @@ import type { CompressedContext } from '@/engine/context-compressor';
 import type { CharacterSoul } from '@/engine/character-soul';
 import type { MemoryShard, TriggeredMemory } from '@/engine/memory-trigger';
 import type { StoryLinkage } from '@/engine/story-linkage';
+import type { ChapterDigest } from '@/engine/memory/chapter-digest';
 import type {
     CharacterRepository,
     ChapterRepository,
@@ -141,6 +142,8 @@ export interface ContextData {
     emotion_plan?: MarkdownContent | null;
     scene_expansion?: MarkdownContent | null;
     compressed?: CompressedContext;
+    /** 剧情记忆：最近 N 章摘要（升序） */
+    chapter_digests?: ChapterDigest[];
     fanfic_canon_timeline?: TimelineRow[];
     fanfic_fan_timeline?: TimelineRow[];
     fanfic_rules?: FanficRules;

@@ -16,6 +16,7 @@ import { parseInfoPlanFields, formatInfoPlanPromptBlock } from '@/shared/info-pl
 import { buildEntityRelationsBlock } from '@/engine/entity-graph';
 import { buildInjectionLedger } from '@/shared/injection-ledger';
 import { auditContextBlocks, resolveStyleConflicts } from '@/shared/context-hygiene';
+import { renderChapterDigestBlock } from '@/engine/memory/chapter-digest';
 import { buildTimeContextMessage } from '@/shared/time-context';
 import { extractWorldviewMeta } from '@/ui/utils/worldview-utils';
 import { chapterOutlineSection, volumeSectionSlice } from '@/shared/format-constants';
@@ -767,6 +768,11 @@ export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<
     deps.project,
     { beforeVolume },
   );
+  // 剧情记忆：最近 3 章摘要并入长期记忆（数据来自结算后生成的剧情记忆文件）
+  const digestBlock = renderChapterDigestBlock(deps.context?.data.chapter_digests ?? []);
+  if (digestBlock) {
+    vars["longTermMemory"] = [vars["longTermMemory"], `【剧情记忆】\n${digestBlock}`].filter(Boolean).join("\n\n");
+  }
   // 整章正文模板允许输出标题行；格式契约仍由项目写作规则推导，避免 prompt 内外两套说法
   vars["bodyFormat"] = describeBodyFormat({ ...deriveBodyFormat(writingRules), allowTitle: true });
   vars["chapNum"] = String(deps.chapterNum || parseInt(deps.chapterName.match(/\d+/)?.[0] || "0", 10));

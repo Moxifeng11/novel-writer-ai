@@ -54,6 +54,7 @@ import {
 import type { GatheredContext } from './context/context-types';
 import type { SceneCardFields } from '@/shared/scene-card';
 import { entityStateChangesToFacts } from './co-writer-state-sync';
+import { appendRelationshipChanges, entityChangesToRelationshipChanges } from './relationship-change-queue';
 import { CharacterPairRelation, loadRelationshipStates } from './relationship-engine';
 import { buildEntityRelationsBlock } from './entity-graph';
 import { formatInjectionLedger } from '@/shared/injection-ledger';
@@ -2995,6 +2996,12 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
             }
             const manager = await registry.getFactIndexManager(this.session.project);
             await manager.enqueue(facts);
+            // 关系变化额外进待确认队列：确认后由下一次结算写入 V2 权威文件
+            const relationshipChanges = entityChangesToRelationshipChanges(this.pendingStateChanges, this.session.chapterName)
+                .map(({ chapter: _chapter, source: _source, ...change }) => change);
+            if (relationshipChanges.length > 0) {
+                await appendRelationshipChanges(this.app, this.session.project, this.session.chapterName, relationshipChanges);
+            }
             this.pendingStateChanges = [];
             log.info('[CoWriterEngine] D1: 状态变化已进入待确认队列:', facts.length);
             return facts.length;
