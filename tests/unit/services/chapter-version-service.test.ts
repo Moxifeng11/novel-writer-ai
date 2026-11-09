@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { App, Vault, TFile } from '../../__mocks__/obsidian';
 import { ChapterVersionService } from '../../../services/chapter-version-service';
 import { countWords } from '../../../shared/diff-utils';
+import { pjVersionIndexFile } from '../../../shared/paths';
 
 describe('ChapterVersionService — 构造', () => {
   let app: App;
@@ -117,6 +118,39 @@ describe('ChapterVersionService — 版本列表查询', () => {
   it('不存在的内容返回空数组', async () => {
     const versions = await service.getVersions(TEST_PROJECT, 'chapter', '不存在的章节', '不存在的路径.md');
     expect(versions).toEqual([]);
+  });
+
+  it('索引中的越界路径被丢弃，回滚直接拒绝（安全审计 P1）', async () => {
+    const indexPath = pjVersionIndexFile(TEST_PROJECT, 'chapter', TEST_CHAPTER);
+    const evil = {
+      id: 'evil-1',
+      version: 9,
+      createdAt: new Date().toISOString(),
+      type: 'manual',
+      contentType: 'chapter',
+      wordCount: 1,
+      wordCountDelta: 1,
+      lineCount: 1,
+      tags: [],
+      note: 'forged',
+      project: TEST_PROJECT,
+      contentKey: TEST_CHAPTER,
+      sourcePath: '../.obsidian/plugins/novel-writer-ai/main.js',
+      versionPath: '.obsidian/plugins/novel-writer-ai/data.json',
+    };
+    vault._seedFile(indexPath, JSON.stringify({
+      contentType: 'chapter',
+      project: TEST_PROJECT,
+      contentKey: TEST_CHAPTER,
+      sourcePath: TEST_PATH,
+      latestVersion: 9,
+      versions: [evil],
+    }));
+
+    const index = await service.getVersionIndex(TEST_PROJECT, 'chapter', TEST_CHAPTER, TEST_PATH);
+    expect(index.versions).toEqual([]);
+    expect(index.latestVersion).toBe(0);
+    await expect(service.rollbackToVersion(evil as never, 'current')).rejects.toThrow('版本索引路径非法');
   });
 
   it('getVersionIndex 返回完整索引', async () => {

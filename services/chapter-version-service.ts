@@ -128,6 +128,29 @@ export class ChapterVersionService {
     // ============================================================
 
     /**
+     * 校验索引条目：版本路径必须落在本内容的 _versions 目录，源路径必须是本项目内相对路径。
+     * v4.80.0 安全审计：versions.json 可随 vault 同步/共享，不能信任其中的路径字段，
+     * 否则回滚可读写/删除 vault 内任意文件（含插件 main.js/data.json）。
+     */
+    private isSafeVersionMeta(
+        meta: VersionMeta,
+        project: string,
+        contentType: ContentType,
+        contentKey: string,
+    ): boolean {
+        if (!meta || typeof meta !== 'object') return false;
+        if (meta.project !== project || meta.contentType !== contentType || meta.contentKey !== contentKey) return false;
+        const expectedDir = pjContentVersionsDir(project, contentType, contentKey);
+        const versionPath = String(meta.versionPath || '').replace(/\\/g, '/');
+        if (!versionPath.startsWith(`${expectedDir}/`) || versionPath.includes('..')) return false;
+        const sourcePath = String(meta.sourcePath || '').replace(/\\/g, '/');
+        if (!sourcePath.startsWith(`${project}/`) || sourcePath.includes('..') || sourcePath.startsWith('/') || /^[A-Za-z]:/.test(sourcePath)) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * 获取版本索引
      * @param project - 项目（路径或对象）
      * @param contentType - 内容类型
@@ -157,8 +180,18 @@ export class ChapterVersionService {
 
         try {
             const content = await this.readFile(indexPath);
-            const index = JSON.parse(content) as VersionIndex;
-            return index;
+            const parsed = JSON.parse(content) as VersionIndex;
+            const versions = Array.isArray(parsed.versions)
+                ? parsed.versions.filter(v => this.isSafeVersionMeta(v, project, contentType, contentKey))
+                : [];
+            return {
+                contentType,
+                project,
+                contentKey,
+                sourcePath,
+                latestVersion: versions.reduce((max, v) => Math.max(max, v.version), 0),
+                versions,
+            };
         } catch {
             return {
                 contentType,
@@ -195,6 +228,9 @@ export class ChapterVersionService {
      * @returns 文本结果
      */
     async getVersionContent(version: VersionMeta): Promise<string> {
+        if (!this.isSafeVersionMeta(version, version.project, version.contentType, version.contentKey)) {
+            throw new Error('版本索引路径非法，已拒绝读取');
+        }
         return await this.readFile(version.versionPath);
     }
 
@@ -282,6 +318,9 @@ export class ChapterVersionService {
         autoSavedVersion: VersionMeta | null;
     }> {
         const { project, contentType, contentKey, sourcePath } = targetVersion;
+        if (!this.isSafeVersionMeta(targetVersion, project, contentType, contentKey)) {
+            throw new Error('版本索引路径非法，已拒绝回滚');
+        }
 
         let autoSavedVersion: VersionMeta | null = null;
 
@@ -343,6 +382,9 @@ export class ChapterVersionService {
         autoSavedVersion: VersionMeta | null;
     }> {
         const { project, contentType, contentKey, sourcePath } = targetVersion;
+        if (!this.isSafeVersionMeta(targetVersion, project, contentType, contentKey)) {
+            throw new Error('版本索引路径非法，已拒绝回滚');
+        }
 
         const autoSavedVersion = await this.saveVersion(
             project,
@@ -522,6 +564,7 @@ export class ChapterVersionService {
         if (versionIdx === -1) return false;
 
         const version = index.versions[versionIdx];
+        if (!this.isSafeVersionMeta(version, project, contentType, contentKey)) return false;
 
         try {
             await this.deleteFile(version.versionPath);
