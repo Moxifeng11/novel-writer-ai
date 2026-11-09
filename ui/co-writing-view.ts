@@ -7,6 +7,7 @@
 
 import { ItemView, WorkspaceLeaf, Notice, MarkdownRenderer, TFile } from 'obsidian';
 import { SUBDIR_STEP_ROOT, pjBodyFile } from '@/shared/paths';
+import { revealLeafCompat } from '@/shared/workspace-reveal';
 import { volumeNumber } from '@/shared/chapter-target';
 import { CHAPTER_FILE_TYPES, findBodyFileV4 } from '@/engine/chapter-utils';
 
@@ -3012,12 +3013,12 @@ ${text}`;
     const workspace = this.app.workspace;
     const existingLeaves = workspace.getLeavesOfType('novel-writer-knowledge-base');
     if (existingLeaves.length > 0) {
-      workspace.revealLeaf(existingLeaves[0]);
+      revealLeafCompat(workspace, existingLeaves[0]);
       return;
     }
     const leaf = workspace.getLeaf('tab');
     if (leaf) {
-      leaf.setViewState({ type: 'novel-writer-knowledge-base', active: true });
+      void leaf.setViewState({ type: 'novel-writer-knowledge-base', active: true });
     }
   }
 

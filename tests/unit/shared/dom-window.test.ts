@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { onNodeDoc, resolveNodeDoc } from '../../../shared/dom-window';
+import { onNodeDoc, resolveNodeDoc, resolveNodeWindow } from '../../../shared/dom-window';
 
 /**
  * 跨窗口（popout）安全的 document 监听（v4.77.0）。
@@ -33,6 +33,26 @@ describe('resolveNodeDoc', () => {
         expect(resolveNodeDoc({})).toBeNull();
         expect(resolveNodeDoc(null)).toBeNull();
         expect(resolveNodeDoc(undefined)).toBeNull();
+    });
+});
+
+describe('resolveNodeWindow', () => {
+    it('优先取节点自身的 win（1.6+ 多窗口）', () => {
+        const win = { setTimeout: vi.fn() } as unknown as Window;
+        const other = { setTimeout: vi.fn() } as unknown as Window;
+        expect(resolveNodeWindow({ win, ownerDocument: { defaultView: other } as unknown as Document })).toBe(win);
+    });
+
+    it('1.4.4 无 win 时回退 doc.defaultView', () => {
+        const view = { setTimeout: vi.fn() } as unknown as Window;
+        expect(resolveNodeWindow({ doc: { defaultView: view } as unknown as Document })).toBe(view);
+    });
+
+    it('都取不到时回退全局 window', () => {
+        const fallback = (typeof window === 'undefined' ? globalThis : window) as unknown as Window;
+        expect(resolveNodeWindow({})).toBe(fallback);
+        expect(resolveNodeWindow(null)).toBe(fallback);
+        expect(resolveNodeWindow(undefined)).toBe(fallback);
     });
 });
 

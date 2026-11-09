@@ -11,7 +11,7 @@
  * 并提供「回写关联索引」，把结果写入 伏笔库.md / 时间线看板.md 的标记块。
  */
 import { App, Modal, Notice } from 'obsidian';
-import { onNodeDoc } from '@/shared/dom-window';
+import { onNodeDoc, resolveNodeWindow } from '@/shared/dom-window';
 import NovelWriterPlugin from '@/main';
 import type { StoryLinkage } from '@/engine/story-linkage';
 import type { LinkageForeshadow, LinkageTimelineEvent } from '@/engine/story-linkage';
@@ -86,7 +86,7 @@ export class StoryLinkageModal extends Modal {
      * onClose 方法。
      */
     onClose(): void {
-        if (this.writeBackTimer !== null) this.modalEl.win.clearTimeout(this.writeBackTimer);
+        if (this.writeBackTimer !== null) resolveNodeWindow(this.modalEl).clearTimeout(this.writeBackTimer);
         this.closeChapterPanel();
         this.contentEl.empty();
     }
@@ -121,13 +121,13 @@ export class StoryLinkageModal extends Modal {
             if (!this.writeBackArmed) {
                 this.writeBackArmed = true;
                 writeBtn.setText('确认回写？');
-                this.writeBackTimer = this.modalEl.win.setTimeout(() => {
+                this.writeBackTimer = resolveNodeWindow(this.modalEl).setTimeout(() => {
                     this.writeBackArmed = false;
                     writeBtn.setText('✍️ 回写关联索引');
                 }, 3000);
                 return;
             }
-            if (this.writeBackTimer !== null) this.modalEl.win.clearTimeout(this.writeBackTimer);
+            if (this.writeBackTimer !== null) resolveNodeWindow(this.modalEl).clearTimeout(this.writeBackTimer);
             this.writeBackArmed = false;
             writeBtn.setText('回写中…');
             try {

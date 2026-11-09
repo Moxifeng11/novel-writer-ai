@@ -1,5 +1,5 @@
 import { SuggestionManager } from '@/engine/suggestion-manager';
-import { onNodeDoc } from '@/shared/dom-window';
+import { onNodeDoc, resolveNodeWindow } from '@/shared/dom-window';
 import type { AnalysisSuggestion, SuggestionType } from '@/engine/types/analysis-suggestion';
 
 /**
@@ -320,7 +320,7 @@ export class CategorizationReviewPanel {
             popup.remove();
         };
 
-        this.container.win.setTimeout(() => {
+        resolveNodeWindow(this.container).setTimeout(() => {
             const closeHandler = (e: MouseEvent) => {
                 const target = e.target as Node;
                 if (!popup.contains(target)) {

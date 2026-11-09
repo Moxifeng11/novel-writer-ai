@@ -57,6 +57,7 @@ import { KnowledgeBaseView, VIEW_TYPE_KNOWLEDGE_BASE } from './ui/views/knowledg
 import { AgentWorkbenchView } from './ui/agent-workbench-view';
 import { VIEW_TYPE_AGENT_WORKBENCH } from './shared/view-types';
 import { detachPluginLeaves } from './shared/plugin-leaves';
+import { revealLeafCompat } from './shared/workspace-reveal';
 import { WritingFingerprintView, VIEW_TYPE_WRITING_FINGERPRINT } from './ui/views/writing-fingerprint-view';
 import { ProjectSidePanelView, VIEW_TYPE_PROJECT_SIDE_PANEL } from './ui/project-side-panel-view';
 import { openModelSwitcherMenu, refreshAllModelSwitchers } from './ui/model-quick-switcher';
@@ -1143,7 +1144,7 @@ export default class NovelWriterPlugin extends Plugin {
             type: FULL_WRITER_VIEW_TYPE,
             active: true
         });
-        workspace.revealLeaf(leaf);
+        revealLeafCompat(workspace, leaf);
         // 复用已有视图时 Obsidian 不会重新触发 onOpen：主动从磁盘恢复步骤状态，
         // 确保从协同写作返回后正文步骤/质量控制状态是最新的。
         if (existing.length > 0) {
@@ -1168,12 +1169,12 @@ export default class NovelWriterPlugin extends Plugin {
     public async openHomeView(): Promise<void> {
         const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE_HOME);
         if (existing.length > 0) {
-            await this.app.workspace.revealLeaf(existing[0]);
+            revealLeafCompat(this.app.workspace, existing[0]);
             return;
         }
         const leaf = this.app.workspace.getLeaf('tab');
         await leaf.setViewState({ type: VIEW_TYPE_HOME, active: true });
-        await this.app.workspace.revealLeaf(leaf);
+        revealLeafCompat(this.app.workspace, leaf);
     }
 
     /** 打开任务中心。 */
@@ -1242,7 +1243,7 @@ export default class NovelWriterPlugin extends Plugin {
             for (let i = 1; i < existing.length; i++) {
                 existing[i].detach();
             }
-            workspace.revealLeaf(existing[0]);
+            revealLeafCompat(workspace, existing[0], { side: 'right' });
             return;
         }
 
@@ -1258,7 +1259,7 @@ export default class NovelWriterPlugin extends Plugin {
         } catch {
             // 某些布局没有 rightSplit.expand，忽略
         }
-        workspace.revealLeaf(leaf);
+        revealLeafCompat(workspace, leaf, { side: 'right' });
     }
 
     /**
@@ -1296,7 +1297,7 @@ export default class NovelWriterPlugin extends Plugin {
             await leaf.setViewState({ type: VIEW_TYPE_CO_WRITE, active: true });
         }
 
-        workspace.revealLeaf(leaf);
+        revealLeafCompat(workspace, leaf);
 
         if (project || chapterName) {
             const view = leaf.view as CoWritingView;
@@ -1354,7 +1355,7 @@ export default class NovelWriterPlugin extends Plugin {
             type: VIEW_TYPE_KNOWLEDGE_BASE,
             active: true
         });
-        workspace.revealLeaf(leaf);
+        revealLeafCompat(workspace, leaf);
         new Notice('📚 已打开知识库管理界面');
     }
 
@@ -1369,7 +1370,7 @@ export default class NovelWriterPlugin extends Plugin {
             for (let i = 1; i < existing.length; i++) {
                 existing[i].detach();
             }
-            workspace.revealLeaf(existing[0]);
+            revealLeafCompat(workspace, existing[0]);
             // 复用视图不会重新触发 onOpen：重启会话，保证每次入口都是全新引导
             const view = existing[0].view;
             if (view instanceof AgentWorkbenchView) {
@@ -1382,7 +1383,7 @@ export default class NovelWriterPlugin extends Plugin {
             type: VIEW_TYPE_AGENT_WORKBENCH,
             active: true
         });
-        workspace.revealLeaf(leaf);
+        revealLeafCompat(workspace, leaf);
     }
 
     async commandPopulateSettingLib() {
@@ -1395,7 +1396,7 @@ export default class NovelWriterPlugin extends Plugin {
             type: FULL_WRITER_VIEW_TYPE,
             active: true
         });
-        workspace.revealLeaf(leaf);
+        revealLeafCompat(workspace, leaf);
         const view = leaf.view as FullWriterView;
         if (view) await view.populateSettingLib();
     }
@@ -1888,7 +1889,7 @@ export default class NovelWriterPlugin extends Plugin {
             new Notice('⚠️ 工作台面板创建失败', 5000);
             return;
         }
-        workspace.revealLeaf(leaf);
+        revealLeafCompat(workspace, leaf);
         
         if (chapterPath && leaf?.view) {
             const view = leaf.view;

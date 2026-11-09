@@ -371,8 +371,14 @@ export class App {
 }
 
 export class Workspace {
-    getLeaf(_mode?: string | boolean): any { return {}; }
+    leftSplit = { expand: (): void => {} };
+    rightSplit = { expand: (): void => {} };
+    activeLeaf: WorkspaceLeaf | null = null;
+    getLeaf(_mode?: string | boolean): any { return new WorkspaceLeaf(); }
+    getLeftLeaf(_newLeaf?: boolean): WorkspaceLeaf { return new WorkspaceLeaf(); }
+    getRightLeaf(_newLeaf?: boolean): WorkspaceLeaf { return new WorkspaceLeaf(); }
     getLeavesOfType(_type: string): any[] { return []; }
+    setActiveLeaf(leaf: WorkspaceLeaf, _params?: { focus?: boolean }): void { this.activeLeaf = leaf; }
     revealLeaf(_leaf: any): void {}
     on(_event: string, _callback: (...args: any[]) => any): any { return { off: () => {} }; }
     trigger(_event: string, _data?: any): void {}
@@ -399,6 +405,8 @@ export class Modal {
 
 export class WorkspaceLeaf {
     view: ItemView = new ItemView();
+    getRoot(): unknown { return null; }
+    setViewState(_state: unknown): Promise<void> { return Promise.resolve(); }
 }
 
 export class MarkdownRenderer {

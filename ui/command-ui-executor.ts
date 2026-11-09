@@ -17,6 +17,7 @@ import { resolveProjectMode } from '@/shared/project-mode';
 import type { CommandUiPayload, CommandUiPort, VersionFileContext } from '@/shared/command-ui-port';
 import { createLogger } from '@/shared/logger';
 import { getExecutionLedger } from '@/services/execution-ledger';
+import { revealLeafCompat } from '@/shared/workspace-reveal';
 import type { ChapterVersionService } from '@/services/chapter-version-service';
 import { ChapterVersionModal } from './chapter-version-modal';
 import { RenameProjectModal } from './rename-project-modal';
@@ -588,7 +589,7 @@ export class CommandUiExecutor implements CommandUiPort {
             leaf = workspace.getLeaf('tab');
         }
         await leaf.setViewState({ type: VIEW_TYPE_WRITING_FINGERPRINT, active: true });
-        workspace.revealLeaf(leaf);
+        revealLeafCompat(workspace, leaf);
         showSuccessNotice('已打开写作指纹库');
     }
 
@@ -603,7 +604,7 @@ export class CommandUiExecutor implements CommandUiPort {
             leaf = workspace.getLeaf('tab');
         }
         await leaf.setViewState({ type: VIEW_TYPE_KNOWLEDGE_BASE, active: true });
-        workspace.revealLeaf(leaf);
+        revealLeafCompat(workspace, leaf);
     }
 
     /** 取命令面板透传的 editor；缺省时回落到当前 Markdown 视图 */

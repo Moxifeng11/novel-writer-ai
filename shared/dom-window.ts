@@ -16,6 +16,8 @@ export interface DocAnchor {
     doc?: Document;
     /** 标准 DOM：节点所属 document（未插入文档时为 null） */
     ownerDocument?: Document | null;
+    /** Obsidian 1.6+：节点当前所属窗口；1.4.4 不存在，需回退 doc.defaultView */
+    win?: Window;
 }
 
 /**
@@ -27,6 +29,19 @@ export interface DocAnchor {
 export function resolveNodeDoc(anchor: DocAnchor | null | undefined): Document | null {
     if (!anchor) return null;
     return anchor.doc ?? anchor.ownerDocument ?? null;
+}
+
+/**
+ * resolveNodeWindow：解析宿主元素当前所属窗口（兼容 1.4.4 无 el.win）。
+ *
+ * @param anchor - 宿主元素
+ * @returns 所属窗口；取不到时回退全局 window
+ */
+export function resolveNodeWindow(anchor: DocAnchor | null | undefined): Window {
+    const candidate = anchor as (DocAnchor & { win?: Window }) | null | undefined;
+    // 浏览器/Electron 里 globalThis 就是 window；Node 测试环境没有 window，退到 globalThis
+    const fallback = typeof window !== 'undefined' ? window : (globalThis as unknown as Window);
+    return candidate?.win ?? resolveNodeDoc(anchor)?.defaultView ?? fallback;
 }
 
 /**

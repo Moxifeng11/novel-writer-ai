@@ -4,7 +4,7 @@
  */
 import { ItemView, WorkspaceLeaf } from "obsidian";
 import { applyNwScope } from '@/utils/helpers';
-import { onNodeDoc } from '@/shared/dom-window';
+import { onNodeDoc, resolveNodeWindow } from '@/shared/dom-window';
 import type NovelWriterPlugin from "@/main";
 
 /**
@@ -124,11 +124,17 @@ export class DraggablePanel extends ItemView {
       this.onDragStart(e)
     );
     this.bindDocListeners();
-    this.unbindWindowMigrated = this.containerEl.onWindowMigrated(() => {
-      // 视图被拖到另一窗口：DOM 被收养，旧 doc 的监听收不到事件；onOpen 不会重跑，必须手动重绑
-      this.unbindDocListeners();
-      this.bindDocListeners();
-    });
+    // onWindowMigrated 是 1.6+ 多窗口 API；1.4.4 没有该方法，缺失时跳过重绑即可
+    const migrateHost = this.containerEl as HTMLElement & {
+      onWindowMigrated?: (cb: () => void) => () => void;
+    };
+    this.unbindWindowMigrated = typeof migrateHost.onWindowMigrated === 'function'
+      ? migrateHost.onWindowMigrated(() => {
+        // 视图被拖到另一窗口：DOM 被收养，旧 doc 的监听收不到事件；onOpen 不会重跑，必须手动重绑
+        this.unbindDocListeners();
+        this.bindDocListeners();
+      })
+      : null;
 
     // 绑定折叠
     this.collapseBtn.addEventListener("click", () => this.toggleCollapse());
@@ -275,7 +281,7 @@ export class DraggablePanel extends ItemView {
   }
 
   private createDefaultLayoutEntry(): PanelLayoutConfig {
-    const win = this.containerEl.win;
+    const win = resolveNodeWindow(this.containerEl);
     const viewportWidth = Math.max(win.innerWidth || 1280, 960);
     const viewportHeight = Math.max(win.innerHeight || 800, 640);
     const presets: Record<string, { x: number; y: number; width: number; height: number }> = {
@@ -295,7 +301,7 @@ export class DraggablePanel extends ItemView {
 
   private applyLayoutEntry(entry: PanelLayoutConfig): void {
     if (!this.panelContainer) return;
-    const win = this.containerEl.win;
+    const win = resolveNodeWindow(this.containerEl);
     const maxLeft = Math.max(8, (win.innerWidth || 1280) - 120);
     const maxTop = Math.max(48, (win.innerHeight || 800) - 80);
     this.panelContainer.addClass("nw-float-layout-fixed");
