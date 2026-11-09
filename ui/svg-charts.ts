@@ -86,6 +86,24 @@ function escapeHtml(text: string): string {
 		.replace(/'/g, '&#39;');
 }
 
+/**
+ * 数值型属性/文本统一转义：frontmatter JSON 里的 value 可能是任意字符串，
+ * 直接插进 data-* 会跳出属性形成 DOM XSS（安全审计 SEC-2）。
+ */
+function safeNum(value: unknown): string {
+	const n = Number(value);
+	return Number.isFinite(n) ? String(n) : '0';
+}
+
+/** 颜色只允许 hex / rgb(a) / hsl(a) / var(--token)，其余回退 */
+function safeColor(value: unknown, fallback: string): string {
+	const text = String(value ?? '').trim();
+	if (/^#[0-9a-f]{3,8}$/i.test(text)) return text;
+	if (/^(?:rgb|hsl)a?\([\d\s.,%]+\)$/i.test(text)) return text;
+	if (/^var\(--[\w-]+(?:,\s*[^)]+)?\)$/.test(text)) return text;
+	return fallback;
+}
+
 function truncateText(text: string, maxLen: number): string {
 	if (text.length <= maxLen) return text;
 	return text.slice(0, maxLen) + '…';
@@ -210,7 +228,7 @@ export function createChartContainer(options: ChartContainerOptions = {}): Chart
 			const y = padding.top + (i / tickCount) * chartHeight;
 			const yValue = yDomain[1] - (i / tickCount) * yRange;
 			gridSvg += `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="var(--background-modifier-border)" stroke-width="1" stroke-dasharray="3,3"/>`;
-			gridSvg += `<text x="${padding.left - 5}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="var(--text-muted)" font-size="11">${typeof yValue === 'number' ? +yValue.toFixed(2) : yValue}</text>`;
+			gridSvg += `<text x="${padding.left - 5}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="var(--text-muted)" font-size="11">${escapeHtml(String(typeof yValue === 'number' ? +yValue.toFixed(2) : yValue))}</text>`;
 
 			const x = padding.left + (i / tickCount) * chartWidth;
 			let xLabel = '';
@@ -221,7 +239,7 @@ export function createChartContainer(options: ChartContainerOptions = {}): Chart
 				xLabel = String(+xValue.toFixed(2));
 			}
 			gridSvg += `<line x1="${x}" y1="${padding.top}" x2="${x}" y2="${height - padding.bottom}" stroke="var(--background-modifier-border)" stroke-width="1" stroke-dasharray="3,3"/>`;
-			gridSvg += `<text x="${x}" y="${height - padding.bottom + 15}" text-anchor="middle" fill="var(--text-muted)" font-size="11">${xLabel}</text>`;
+			gridSvg += `<text x="${x}" y="${height - padding.bottom + 15}" text-anchor="middle" fill="var(--text-muted)" font-size="11">${escapeHtml(String(xLabel))}</text>`;
 		}
 	}
 
@@ -437,7 +455,7 @@ export function radarChart(data: RadarDataItem[], options: RadarOptions = {}): s
 		const points = [];
 		for (let i = 0; i < n; i++) {
 			const p = getPoint(level, i);
-			points.push(`${p.x},${p.y}`);
+			points.push(`${safeNum(p.x)},${safeNum(p.y)}`);
 		}
 		gridPolygons.push(
 			`<polygon points="${points.join(' ')}" fill="none" stroke="var(--background-modifier-border)" stroke-width="1"/>`
@@ -448,7 +466,7 @@ export function radarChart(data: RadarDataItem[], options: RadarOptions = {}): s
 	for (let i = 0; i < n; i++) {
 		const p = getPoint(levels, i);
 		axisLines.push(
-			`<line x1="${centerX}" y1="${centerY}" x2="${p.x}" y2="${p.y}" stroke="var(--background-modifier-border)" stroke-width="1"/>`
+			`<line x1="${centerX}" y1="${centerY}" x2="${safeNum(p.x)}" y2="${safeNum(p.y)}" stroke="var(--background-modifier-border)" stroke-width="1"/>`
 		);
 	}
 
@@ -465,10 +483,10 @@ export function radarChart(data: RadarDataItem[], options: RadarOptions = {}): s
 		};
 	});
 
-	const dataPolygonPoints = dataPoints.map(p => `${p.x},${p.y}`).join(' ');
+	const dataPolygonPoints = dataPoints.map(p => `${safeNum(p.x)},${safeNum(p.y)}`).join(' ');
 
 	const dataDots = dataPoints.map(p =>
-		`<circle class="nw-chart-rad-point" data-label="${escapeHtml(p.label)}" data-value="${p.value}" cx="${p.x}" cy="${p.y}" r="4" fill="var(--interactive-accent)" stroke="var(--background-primary)" stroke-width="2"/>`
+		`<circle class="nw-chart-rad-point" data-label="${escapeHtml(p.label)}" data-value="${safeNum(p.value)}" cx="${safeNum(p.x)}" cy="${safeNum(p.y)}" r="4" fill="var(--interactive-accent)" stroke="var(--background-primary)" stroke-width="2"/>`
 	).join('');
 
 	const labels = data.map((item, i) => {
@@ -541,7 +559,7 @@ export function barChart(data: BarDataItem[], options: BarOptions = {}): string 
 			const x = padding.left + (i / tickCount) * chartWidth;
 			const value = Math.round((i / tickCount) * maxValue);
 			gridLines.push(`<line x1="${x}" y1="${padding.top}" x2="${x}" y2="${height - padding.bottom}" stroke="var(--background-modifier-border)" stroke-width="1" stroke-dasharray="3,3"/>`);
-			gridLines.push(`<text x="${x}" y="${height - padding.bottom + 15}" text-anchor="middle" fill="var(--text-muted)" font-size="11">${value}</text>`);
+			gridLines.push(`<text x="${x}" y="${height - padding.bottom + 15}" text-anchor="middle" fill="var(--text-muted)" font-size="11">${escapeHtml(String(value))}</text>`);
 		}
 
 		const bars = data.map((d, i) => {
@@ -549,8 +567,8 @@ export function barChart(data: BarDataItem[], options: BarOptions = {}): string 
 			const barWidth = (d.value / maxValue) * chartWidth;
 			const displayLabel = truncateText(d.label, 10);
 			return `
-				<rect class="nw-chart-bar-rect" data-label="${escapeHtml(d.label)}" data-value="${d.value}" data-series="bar-${i}" x="${padding.left}" y="${y}" width="${barWidth}" height="${barHeight}" fill="var(--interactive-accent)" rx="3"/>
-				<text x="${padding.left + barWidth + 5}" y="${y + barHeight / 2}" dominant-baseline="middle" fill="var(--text-normal)" font-size="11">${d.value}</text>
+				<rect class="nw-chart-bar-rect" data-label="${escapeHtml(d.label)}" data-value="${safeNum(d.value)}" data-series="bar-${i}" x="${padding.left}" y="${y}" width="${barWidth}" height="${barHeight}" fill="var(--interactive-accent)" rx="3"/>
+				<text x="${padding.left + barWidth + 5}" y="${y + barHeight / 2}" dominant-baseline="middle" fill="var(--text-normal)" font-size="11">${safeNum(d.value)}</text>
 				<text x="${padding.left - 8}" y="${y + barHeight / 2}" text-anchor="end" dominant-baseline="middle" fill="var(--text-normal)" font-size="11">${escapeHtml(displayLabel)}</text>
 			`;
 		}).join('');
@@ -583,7 +601,7 @@ export function barChart(data: BarDataItem[], options: BarOptions = {}): string 
 			const y = height - padding.bottom - (i / tickCount) * chartHeight;
 			const value = Math.round((i / tickCount) * maxValue);
 			gridLines.push(`<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="var(--background-modifier-border)" stroke-width="1" stroke-dasharray="3,3"/>`);
-			gridLines.push(`<text x="${padding.left - 5}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="var(--text-muted)" font-size="11">${value}</text>`);
+			gridLines.push(`<text x="${padding.left - 5}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="var(--text-muted)" font-size="11">${escapeHtml(String(value))}</text>`);
 		}
 
 		const bars = data.map((d, i) => {
@@ -598,8 +616,8 @@ export function barChart(data: BarDataItem[], options: BarOptions = {}): string 
 				: '';
 			const labelAnchor = needRotate ? 'end' : 'middle';
 			return `
-				<rect class="nw-chart-bar-rect" data-label="${escapeHtml(d.label)}" data-value="${d.value}" data-series="bar-${i}" x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="var(--interactive-accent)" rx="3"/>
-				<text x="${x + barWidth / 2}" y="${y - 5}" text-anchor="middle" fill="var(--text-normal)" font-size="11">${d.value}</text>
+				<rect class="nw-chart-bar-rect" data-label="${escapeHtml(d.label)}" data-value="${safeNum(d.value)}" data-series="bar-${i}" x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="var(--interactive-accent)" rx="3"/>
+				<text x="${x + barWidth / 2}" y="${y - 5}" text-anchor="middle" fill="var(--text-normal)" font-size="11">${safeNum(d.value)}</text>
 				<text x="${labelX}" y="${labelY}" text-anchor="${labelAnchor}" fill="var(--text-normal)" font-size="11" ${labelTransform}>${escapeHtml(displayLabel)}</text>
 			`;
 		}).join('');
@@ -645,7 +663,7 @@ export function donutChart(data: DonutDataItem[], options: DonutOptions = {}): s
 		return `<div class="nw-chart-container" style="width:100%;color:var(--text-muted);">数据总和为0</div>`;
 	}
 
-	const colors = data.map((d, i) => d.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length]);
+	const colors = data.map((d, i) => safeColor(d.color, DEFAULT_COLORS[i % DEFAULT_COLORS.length]));
 
 	let startAngle = -Math.PI / 2;
 	const arcs: string[] = [];
@@ -674,7 +692,7 @@ export function donutChart(data: DonutDataItem[], options: DonutOptions = {}): s
 			Z
 		`;
 
-		arcs.push(`<path class="nw-chart-donut-slice" data-label="${escapeHtml(d.label)}" data-value="${d.value}" data-percent="${percent}%" data-series="${escapeHtml(d.label)}" d="${path.trim()}" fill="${colors[i]}" stroke="var(--background-primary)" stroke-width="2"/>`);
+		arcs.push(`<path class="nw-chart-donut-slice" data-label="${escapeHtml(d.label)}" data-value="${safeNum(d.value)}" data-percent="${safeNum(percent)}%" data-series="${escapeHtml(d.label)}" d="${path.trim()}" fill="${colors[i]}" stroke="var(--background-primary)" stroke-width="2"/>`);
 
 		startAngle = endAngle;
 	});
@@ -685,7 +703,7 @@ export function donutChart(data: DonutDataItem[], options: DonutOptions = {}): s
 			<div class="nw-chart-legend-item" data-series="${escapeHtml(d.label)}" style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-normal);cursor:pointer;">
 				<span style="width:10px;height:10px;border-radius:2px;background:${colors[i]};flex-shrink:0;"></span>
 				<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(d.label)}</span>
-				<span style="color:var(--text-muted);">${percent}%</span>
+				<span style="color:var(--text-muted);">${safeNum(percent)}%</span>
 			</div>
 		`;
 	}).join('');
@@ -696,7 +714,7 @@ export function donutChart(data: DonutDataItem[], options: DonutOptions = {}): s
 		<svg class="nw-chart-svg" width="100%" height="100%" viewBox="0 0 ${size} ${size}" preserveAspectRatio="xMidYMid meet" style="flex-shrink:0;max-width:${size * 0.6}px;">
 			${titleSvg}
 			${arcs.join('')}
-			<text x="${centerX}" y="${centerY - 5}" text-anchor="middle" fill="var(--text-normal)" font-size="20" font-weight="600">${total}</text>
+			<text x="${centerX}" y="${centerY - 5}" text-anchor="middle" fill="var(--text-normal)" font-size="20" font-weight="600">${safeNum(total)}</text>
 			<text x="${centerX}" y="${centerY + 15}" text-anchor="middle" fill="var(--text-muted)" font-size="11">总计</text>
 		</svg>
 		<div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:0;">
@@ -826,7 +844,7 @@ export function wordCloud(words: WordCloudItem[], options: WordCloudOptions = {}
 
 	const textEls = laidOut.map(w => {
 		const color = levelColors[w.level] || 'var(--text-muted)';
-		return `<text class="nw-chart-word-item" data-text="${escapeHtml(w.text)}" data-weight="${w.weight}" data-label="${escapeHtml(w.text)}" data-value="${w.weight}" x="${centerX + w.x}" y="${centerY + w.y}" text-anchor="middle" dominant-baseline="middle" fill="${color}" font-size="${w.fontSize}" style="cursor:pointer;">${escapeHtml(w.text)}</text>`;
+		return `<text class="nw-chart-word-item" data-text="${escapeHtml(w.text)}" data-weight="${safeNum(w.weight)}" data-label="${escapeHtml(w.text)}" data-value="${safeNum(w.weight)}" x="${centerX + w.x}" y="${centerY + w.y}" text-anchor="middle" dominant-baseline="middle" fill="${color}" font-size="${w.fontSize}" style="cursor:pointer;">${escapeHtml(w.text)}</text>`;
 	}).join('');
 
 	return `<div class="nw-chart-container" style="width:100%;position:relative;">
@@ -1010,7 +1028,7 @@ export function lineChart(series: LineChartSeries[], options: LineChartOptions =
 			const y = padding.top + (i / tickCount) * chartHeight;
 			const value = Math.round(maxValue - (i / tickCount) * valueRange);
 			gridLines += `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="var(--background-modifier-border)" stroke-width="1" stroke-dasharray="3,3"/>`;
-			gridLines += `<text x="${padding.left - 5}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="var(--text-muted)" font-size="11">${value}</text>`;
+			gridLines += `<text x="${padding.left - 5}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="var(--text-muted)" font-size="11">${escapeHtml(String(value))}</text>`;
 		}
 	}
 
@@ -1057,7 +1075,7 @@ export function lineChart(series: LineChartSeries[], options: LineChartOptions =
 
 	function generateLinePath(points: { x: number; y: number }[]): string {
 		if (points.length < 2) return '';
-		return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+		return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${safeNum(p.x)} ${safeNum(p.y)}`).join(' ');
 	}
 
 	const seriesColors = series.map((s, i) => s.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length]);
@@ -1078,8 +1096,8 @@ export function lineChart(series: LineChartSeries[], options: LineChartOptions =
 			s.data.forEach((d, i) => {
 				const x = getX(i);
 				const y = getY(d.value);
-				const pointColor = d.color || color;
-				dataPoints += `<circle class="nw-chart-line-point" data-label="${escapeHtml(d.label || s.name)}" data-x="${i}" data-y="${d.value}" data-series="${escapeHtml(s.name)}" data-value="${d.value}" cx="${x}" cy="${y}" r="4" fill="${pointColor}" stroke="var(--background-primary)" stroke-width="2"/>`;
+				const pointColor = safeColor(d.color, color);
+				dataPoints += `<circle class="nw-chart-line-point" data-label="${escapeHtml(d.label || s.name)}" data-x="${i}" data-y="${safeNum(d.value)}" data-series="${escapeHtml(s.name)}" data-value="${safeNum(d.value)}" cx="${x}" cy="${y}" r="4" fill="${pointColor}" stroke="var(--background-primary)" stroke-width="2"/>`;
 
 				if (d.annotation) {
 					annotations += `
@@ -1186,13 +1204,13 @@ export function scatterChart(points: ScatterDataPoint[], options: ScatterChartOp
 			const y = padding.top + (i / tickCount) * chartHeight;
 			const value = +(yMax - (i / tickCount) * yRange).toFixed(2);
 			gridLines += `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="var(--background-modifier-border)" stroke-width="1" stroke-dasharray="3,3"/>`;
-			gridLines += `<text x="${padding.left - 5}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="var(--text-muted)" font-size="11">${value}</text>`;
+			gridLines += `<text x="${padding.left - 5}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="var(--text-muted)" font-size="11">${escapeHtml(String(value))}</text>`;
 		}
 		for (let i = 0; i <= tickCount; i++) {
 			const x = padding.left + (i / tickCount) * chartWidth;
 			const value = +(xMin + (i / tickCount) * xRange).toFixed(2);
 			gridLines += `<line x1="${x}" y1="${padding.top}" x2="${x}" y2="${height - padding.bottom}" stroke="var(--background-modifier-border)" stroke-width="1" stroke-dasharray="3,3"/>`;
-			gridLines += `<text x="${x}" y="${height - padding.bottom + 15}" text-anchor="middle" fill="var(--text-muted)" font-size="11">${value}</text>`;
+			gridLines += `<text x="${x}" y="${height - padding.bottom + 15}" text-anchor="middle" fill="var(--text-muted)" font-size="11">${escapeHtml(String(value))}</text>`;
 		}
 	}
 
@@ -1222,7 +1240,7 @@ export function scatterChart(points: ScatterDataPoint[], options: ScatterChartOp
 		const size = p.size || 6;
 		const color = p.category ? categoryColorMap[p.category] : 'var(--interactive-accent)';
 		const label = p.label || '';
-		dots += `<circle class="nw-chart-scatter-dot" data-label="${escapeHtml(label)}" data-x="${p.x}" data-y="${p.y}" data-category="${escapeHtml(p.category || '')}" data-value="${p.y}" cx="${x}" cy="${y}" r="${size}" fill="${color}" fill-opacity="0.6" stroke="var(--background-primary)" stroke-width="1.5"/>`;
+		dots += `<circle class="nw-chart-scatter-dot" data-label="${escapeHtml(label)}" data-x="${safeNum(p.x)}" data-y="${safeNum(p.y)}" data-category="${escapeHtml(p.category || '')}" data-value="${safeNum(p.y)}" cx="${x}" cy="${y}" r="${size}" fill="${color}" fill-opacity="0.6" stroke="var(--background-primary)" stroke-width="1.5"/>`;
 	});
 
 	let legend = '';
@@ -1452,7 +1470,7 @@ export function timelineChart(events: TimelineEvent[], options: TimelineChartOpt
 		const { event, x, color, displayLabel, autoLevel, side } = item;
 
 		eventDots += `
-			<circle class="nw-chart-timeline-node" data-label="${escapeHtml(event.label)}" data-type="${escapeHtml(event.type || '')}" data-date="${escapeHtml(event.date || '')}" data-value="${event.position}" cx="${x}" cy="${lineY}" r="6" fill="${color}" stroke="var(--background-primary)" stroke-width="2"/>
+			<circle class="nw-chart-timeline-node" data-label="${escapeHtml(event.label)}" data-type="${escapeHtml(event.type || '')}" data-date="${escapeHtml(event.date || '')}" data-value="${safeNum(event.position)}" cx="${x}" cy="${lineY}" r="6" fill="${color}" stroke="var(--background-primary)" stroke-width="2"/>
 		`;
 
 		if (showLabels) {
@@ -1562,7 +1580,7 @@ export function heatmap(data: HeatmapCell[], options: HeatmapOptions = {}): stri
 		if (rowIdx < 0 || colIdx < 0) return;
 		const x = padding.left + colIdx * cellWidth;
 		const y = padding.top + rowIdx * cellHeight;
-		cells += `<rect class="nw-chart-heatmap-cell" data-label="${escapeHtml(d.row)} / ${escapeHtml(d.col)}" data-value="${d.value}" data-row="${escapeHtml(d.row)}" data-col="${escapeHtml(d.col)}" x="${x + 1}" y="${y + 1}" width="${Math.max(0, cellWidth - 2)}" height="${Math.max(0, cellHeight - 2)}" fill="${getColor(d.value)}" rx="2"/>`;
+		cells += `<rect class="nw-chart-heatmap-cell" data-label="${escapeHtml(d.row)} / ${escapeHtml(d.col)}" data-value="${safeNum(d.value)}" data-row="${escapeHtml(d.row)}" data-col="${escapeHtml(d.col)}" x="${x + 1}" y="${y + 1}" width="${Math.max(0, cellWidth - 2)}" height="${Math.max(0, cellHeight - 2)}" fill="${getColor(d.value)}" rx="2"/>`;
 	});
 
 	let rowLabels = '';
@@ -1737,7 +1755,7 @@ export function treeChart(root: TreeNode, options: TreeOptions = {}): string {
 		const fill = hasChildren ? 'var(--interactive-accent)' : 'var(--text-muted)';
 		const cls = hasChildren ? 'nw-chart-tree-node nw-chart-tree-branch' : 'nw-chart-tree-node nw-chart-tree-leaf';
 		const collapsedAttr = hasChildren ? 'data-collapsed="false"' : '';
-		nodes += `<circle class="${cls}" data-label="${escapeHtml(ln.node.name)}" data-value="${ln.node.value ?? ''}" ${collapsedAttr} cx="${ln.x}" cy="${ln.y}" r="${r}" fill="${fill}" stroke="var(--background-primary)" stroke-width="2" style="cursor:${hasChildren ? 'pointer' : 'default'};"/>`;
+		nodes += `<circle class="${cls}" data-label="${escapeHtml(ln.node.name)}" data-value="${safeNum(ln.node.value)}" ${collapsedAttr} cx="${ln.x}" cy="${ln.y}" r="${r}" fill="${fill}" stroke="var(--background-primary)" stroke-width="2" style="cursor:${hasChildren ? 'pointer' : 'default'};"/>`;
 
 		// 文本
 		const labelOffsetX = orientation === 'vertical' ? 0 : (hasChildren ? -10 : 10);
@@ -1826,13 +1844,13 @@ export function areaChart(series: AreaSeries[], options: AreaOptions = {}): stri
 			const y = padding.top + (i / tickCount) * chartHeight;
 			const value = +(yMax - (i / tickCount) * yRange).toFixed(2);
 			gridLines += `<line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="var(--background-modifier-border)" stroke-width="1" stroke-dasharray="3,3"/>`;
-			gridLines += `<text x="${padding.left - 5}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="var(--text-muted)" font-size="11">${value}</text>`;
+			gridLines += `<text x="${padding.left - 5}" y="${y}" text-anchor="end" dominant-baseline="middle" fill="var(--text-muted)" font-size="11">${escapeHtml(String(value))}</text>`;
 		}
 		for (let i = 0; i <= tickCount; i++) {
 			const x = padding.left + (i / tickCount) * chartWidth;
 			const value = +(xMin + (i / tickCount) * xRange).toFixed(2);
 			gridLines += `<line x1="${x}" y1="${padding.top}" x2="${x}" y2="${height - padding.bottom}" stroke="var(--background-modifier-border)" stroke-width="1" stroke-dasharray="3,3"/>`;
-			gridLines += `<text x="${x}" y="${height - padding.bottom + 15}" text-anchor="middle" fill="var(--text-muted)" font-size="11">${value}</text>`;
+			gridLines += `<text x="${x}" y="${height - padding.bottom + 15}" text-anchor="middle" fill="var(--text-muted)" font-size="11">${escapeHtml(String(value))}</text>`;
 		}
 	}
 
@@ -1866,7 +1884,7 @@ export function areaChart(series: AreaSeries[], options: AreaOptions = {}): stri
 	}
 	function generateLinePath(points: { x: number; y: number }[]): string {
 		if (points.length < 2) return '';
-		return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+		return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${safeNum(p.x)} ${safeNum(p.y)}`).join(' ');
 	}
 
 	const seriesColors = series.map((s, i) => s.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length]);
@@ -1902,7 +1920,7 @@ export function areaChart(series: AreaSeries[], options: AreaOptions = {}): stri
 		s.points.forEach((p, i) => {
 			const x = getX(p.x);
 			const y = getY(p.y);
-			dataPoints += `<circle class="nw-chart-area-point" data-label="${escapeHtml(s.label)}" data-x="${p.x}" data-y="${p.y}" data-series="${escapeHtml(s.label)}" data-value="${p.y}" cx="${x}" cy="${y}" r="3" fill="${color}" stroke="var(--background-primary)" stroke-width="1.5"/>`;
+			dataPoints += `<circle class="nw-chart-area-point" data-label="${escapeHtml(s.label)}" data-x="${safeNum(p.x)}" data-y="${safeNum(p.y)}" data-series="${escapeHtml(s.label)}" data-value="${safeNum(p.y)}" cx="${x}" cy="${y}" r="3" fill="${color}" stroke="var(--background-primary)" stroke-width="1.5"/>`;
 		});
 	});
 	defs += '</defs>';
@@ -2157,7 +2175,7 @@ export function horizontalBarChart(data: HorizontalBarItem[], options: Horizonta
 		const x = padding.left + (i / tickCount) * chartWidth;
 		const value = Math.round((i / tickCount) * maxValue * 100) / 100;
 		gridLines += `<line x1="${x}" y1="${padding.top}" x2="${x}" y2="${height - padding.bottom}" stroke="var(--background-modifier-border)" stroke-width="1" stroke-dasharray="3,3"/>`;
-		gridLines += `<text x="${x}" y="${height - padding.bottom + 15}" text-anchor="middle" fill="var(--text-muted)" font-size="11">${value}</text>`;
+		gridLines += `<text x="${x}" y="${height - padding.bottom + 15}" text-anchor="middle" fill="var(--text-muted)" font-size="11">${escapeHtml(String(value))}</text>`;
 	}
 
 	const yAxis = `<line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${height - padding.bottom}" stroke="var(--background-modifier-border)" stroke-width="1"/>`;
@@ -2165,11 +2183,11 @@ export function horizontalBarChart(data: HorizontalBarItem[], options: Horizonta
 	const bars = sortedData.map((d, i) => {
 		const y = padding.top + barGap + i * (barHeight + barGap);
 		const barWidth = (d.value / maxValue) * chartWidth;
-		const color = d.color || 'var(--interactive-accent)';
+		const color = safeColor(d.color, 'var(--interactive-accent)');
 		const displayLabel = truncateText(d.label, 12);
 		return `
-			<rect class="nw-chart-hbar-rect" data-label="${escapeHtml(d.label)}" data-value="${d.value}" data-series="${escapeHtml(d.label)}" x="${padding.left}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${color}" rx="3"/>
-			<text x="${padding.left + barWidth + 5}" y="${y + barHeight / 2}" dominant-baseline="middle" fill="var(--text-normal)" font-size="11">${d.value}</text>
+			<rect class="nw-chart-hbar-rect" data-label="${escapeHtml(d.label)}" data-value="${safeNum(d.value)}" data-series="${escapeHtml(d.label)}" x="${padding.left}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${color}" rx="3"/>
+			<text x="${padding.left + barWidth + 5}" y="${y + barHeight / 2}" dominant-baseline="middle" fill="var(--text-normal)" font-size="11">${safeNum(d.value)}</text>
 			<text x="${padding.left - 8}" y="${y + barHeight / 2}" text-anchor="end" dominant-baseline="middle" fill="var(--text-normal)" font-size="11">${escapeHtml(displayLabel)}</text>
 		`;
 	}).join('');
@@ -2252,7 +2270,7 @@ export function violinChart(data: ViolinDataItem[], options: ViolinChartOptions 
 
 	data.forEach((d, i) => {
 		const cx = padding.left + i * groupWidth + groupWidth / 2;
-		const color = d.color || DEFAULT_COLORS[i % DEFAULT_COLORS.length];
+		const color = safeColor(d.color, DEFAULT_COLORS[i % DEFAULT_COLORS.length]);
 		const values = d.values;
 		const displayLabel = truncateText(d.label, 8);
 

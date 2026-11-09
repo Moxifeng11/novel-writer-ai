@@ -1353,6 +1353,17 @@ describe('svg-charts（ui/svg-charts.ts）', () => {
         expect(rotated).toContain('rotate(-45');
     });
 
+    it('数值/颜色插值：伪造 frontmatter 字符串不跳出属性（SEC-2）', () => {
+        const evilValue = '1" onmouseover="alert(1)' as unknown as number;
+        const bar = barChart([{ label: 'x', value: evilValue }]);
+        expect(bar).not.toContain('onmouseover="alert');
+        expect(bar).toContain('data-value="0"');
+
+        const donut = donutChart([{ label: 'x', value: evilValue, color: 'url(http://evil.test)' }]);
+        expect(donut).not.toContain('url(http://evil.test)');
+        expect(donut).not.toContain('onmouseover="alert');
+    });
+
     it('donutChart：空数据提示；扇区携带自定义颜色', () => {
         expect(donutChart([])).toContain('暂无数据');
 

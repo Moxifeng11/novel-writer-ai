@@ -11,7 +11,7 @@
 | `shared/` | 178 | 40679 | 1601 | 1320 | 82% |
 | `core/` | 7 | 2821 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 238 | 99341 | 733 | 638 | 87% |
+| `ui/` | 238 | 99359 | 733 | 638 | 87% |
 
 ## 文件清单
 
@@ -759,7 +759,7 @@
 | `ui/story-settings-modal.ts` | 115 | 1 | 1 |
 | `ui/style-distiller-modal.ts` | 486 | 1 | 1 |
 | `ui/support-author-modal.ts` | 43 | 1 | 0 |
-| `ui/svg-charts.ts` | 2337 | 49 | 49 |
+| `ui/svg-charts.ts` | 2355 | 49 | 49 |
 | `ui/template-manager.ts` | 710 | 5 | 2 |
 | `ui/tomato-rank-modal.ts` | 132 | 1 | 1 |
 | `ui/unified-entity-generate-modal.ts` | 865 | 1 | 1 |

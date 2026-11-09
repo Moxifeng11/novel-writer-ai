@@ -18,7 +18,7 @@
 
 | ID | 严重度 | 位置 | 问题 | 建议 |
 |---|---|---|---|---|
-| SEC-2（S-6） | P2 | `ui/svg-charts.ts:471/552-603/677/699/1082/1225/1455/1565/1740`；入口 `knowledge-base-view.ts:1686-1696`、`knowledge-detail-modal.ts:245` | SVG `data-*`/`<text>` 直接拼未经校验的 frontmatter 数值；存储型 DOM XSS | 数值入口 `Number()` + `Number.isFinite`，文本 `escapeHtml`，颜色白名单（约 15 行） |
+| SEC-2（S-6，已修） | P2 | `ui/svg-charts.ts:471/552-603/677/699/1082/1225/1455/1565/1740`；入口 `knowledge-base-view.ts:1686-1696`、`knowledge-detail-modal.ts:245` | SVG `data-*`/`<text>` 直接拼未经校验的 frontmatter 数值；存储型 DOM XSS | 已加 `safeNum()`/`safeColor()`：所有 data-value/data-x/data-y/data-weight/data-percent/坐标/总量走数值校验，轴文本 `escapeHtml`，颜色只允许 hex/rgb/hsl/var；新增伪造数值/颜色单测 |
 | SEC-3（新，已修） | P2 | `services/knowledge-base-manager.ts:302-305/547-577`；`engine/knowledge-vector-store.ts:147/425-453` | 知识库索引 `book.id` 未校验，向量/删除路径可 `../` 穿越 | 已加 `isSafeBookId()`：加载索引时丢弃含 `/`、`\`、`..`、隐藏前缀、控制字符的 id；`deleteBook`/`removeVectorArtifacts`/`renameVectorArtifacts` 入口再拒绝；新增越界索引单测 |
 | SEC-4（S-8） | P2 | `ui/agent-workbench-view.ts:1138-1193`；`engine/agent/dsh/dsh-launch.ts:55-89`；`ui/settings/agent-section.ts:118-126` | dsh workspace=整个 vault，未排除 `.obsidian`；Key 常驻子进程 env 且可能注入非 DeepSeek 提供的 Key | workspace 收窄到当前项目；排除 `.obsidian`/`.trash`/`_versions`；Key 仅 deepseek 且请求时注入（约 10 行） |
 | SEC-5（S-9） | P2 | `engine/agent/harness/host-tools.ts:952` | 危险命令正则漏 `targeted-revision`/`generate-bases`/`complete-properties`/`migrate-*`；虽仍逐次审批，但缺少额外危险提示 | 改只读白名单，其余 run_command 一律确认/强提示（约 15 行） |

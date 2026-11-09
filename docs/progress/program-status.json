@@ -6,7 +6,7 @@
     "version": "4.80.0",
     "tests": {
       "files": 604,
-      "cases": 6669
+      "cases": 6670
     },
     "e2e": 40,
     "e2eNote": "E2E 通过总数：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 27 = 40（2026-11-07 全量实测）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑（rewrite-chapters 已随「九霄逆脉行」项目删除而下线）",
@@ -19,7 +19,7 @@
       "check:write-entry"
     ],
     "localCommitsAhead": 0,
-    "localCommitsAheadNote": "2026-11-09 v4.80.0 后 SEC-3：知识库 book.id 路径校验（防向量文件穿越）；604 文件 / 6,669 用例，preflight:release EXIT=0，覆盖率 44.44/44.14/45.25/44.79"
+    "localCommitsAheadNote": "2026-11-09 v4.80.0 后 SEC-2：SVG 数值/颜色插值转义（存储型 XSS）；604 文件 / 6,670 用例，preflight:release EXIT=0，覆盖率 44.44/44.13/45.25/44.79"
   },
   "groups": [
     {
