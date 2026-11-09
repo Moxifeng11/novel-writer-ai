@@ -148,6 +148,7 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     { id: CommandIds.GOLDEN_OPENING, name: '🌟 黄金开篇工坊', group: CommandGroup.Tools, description: '黄金开篇设计工作坊' },
     { id: CommandIds.STEP_RESULT_VIEWER, name: '📋 步骤结果查看', group: CommandGroup.Tools, description: '查看步骤执行结果' },
     { id: CommandIds.STORY_LINKAGE_BOARD, name: '🔗 关联索引看板', group: CommandGroup.Tools, description: '时间线/伏笔 ↔ 设定库/全书规划 的关联视图与回写' },
+    { id: CommandIds.VALIDATE_STORY_GRAPH, name: '🧭 校验故事一致性', group: CommandGroup.Tools, description: '只读检查断链、孤立实体、关系缺卡、双链字段类型冲突，输出诊断报告' },
     { id: CommandIds.BATCH_DECONSTRUCT, name: '📚 批量拆解', group: CommandGroup.Tools, description: '打开知识库：批量导入书籍并按维度拆解，结果持久化到拆解库' },
     { id: CommandIds.EXPORT_MANUSCRIPT, name: '📦 成稿导出', group: CommandGroup.Tools, description: '编译全书为 Markdown / TXT / HTML 稿件' },
     { id: CommandIds.PRUNE_SESSIONS, name: '🧹 清理旧会话', group: CommandGroup.Tools, description: '手动清理超出保留上限的旧分析会话与 Agent 会话（最近各 30 个以内不动）' },
@@ -359,6 +360,7 @@ export class CommandRegistry {
             CommandIds.GOLDEN_OPENING,
             CommandIds.STEP_RESULT_VIEWER,
             CommandIds.STORY_LINKAGE_BOARD,
+            CommandIds.VALIDATE_STORY_GRAPH,
             CommandIds.EXPORT_MANUSCRIPT,
             CommandIds.FULL_WRITER,
             CommandIds.CO_WRITING,
@@ -510,6 +512,7 @@ export class CommandRegistry {
         addCommand({ id: CommandIds.GOLDEN_OPENING, name: '🌟 黄金开篇工坊', callback: exec(CommandIds.GOLDEN_OPENING) });
         addCommand({ id: CommandIds.STEP_RESULT_VIEWER, name: '📋 步骤结果查看', checkCallback: execGuarded(CommandIds.STEP_RESULT_VIEWER, LONG_ONLY) });
         addCommand({ id: CommandIds.STORY_LINKAGE_BOARD, name: '🔗 关联索引看板', checkCallback: execGuarded(CommandIds.STORY_LINKAGE_BOARD, LONG_ONLY) });
+        addCommand({ id: CommandIds.VALIDATE_STORY_GRAPH, name: '🧭 校验故事一致性', checkCallback: execGuarded(CommandIds.VALIDATE_STORY_GRAPH, LONG_ONLY) });
         addCommand({ id: CommandIds.BATCH_DECONSTRUCT, name: '📚 批量拆解', checkCallback: execGuarded(CommandIds.BATCH_DECONSTRUCT, LONG_ONLY) });
         addCommand({ id: CommandIds.CHARACTER_RECOGNITION, name: '👤 角色识别审核', callback: exec(CommandIds.CHARACTER_RECOGNITION) });
         addCommand({ id: CommandIds.EXPORT_MANUSCRIPT, name: '📦 成稿导出', callback: exec(CommandIds.EXPORT_MANUSCRIPT) });

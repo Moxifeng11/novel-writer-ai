@@ -26,6 +26,7 @@ import { PreResearchModal } from './pre-research-modal';
 import { ModeDocumentModal } from './mode-document-modal';
 import { OperationConfirmModal } from './components/progress';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
+import { runGraphValidation } from '@/engine/graph/graph-validation-trigger';
 import { PlanBookModal } from './plan-book-modal';
 import { WriteChapterModal } from './write-chapter-modal';
 import { ReviewChapterModal } from './review-chapter-modal';
@@ -477,6 +478,24 @@ export class CommandUiExecutor implements CommandUiPort {
             case CommandIds.STORY_LINKAGE_BOARD:
                 new StoryLinkageModal(app, plugin).open();
                 return true;
+            case CommandIds.VALIDATE_STORY_GRAPH: {
+                const project = resolveProject();
+                if (!project) {
+                    showWarningNotice('请先打开一个项目', { title: '校验故事一致性' });
+                    return true;
+                }
+                const report = await runGraphValidation(app, project);
+                if (report.skipped) {
+                    showWarningNotice(`校验跳过：${report.skipped}`, { title: '校验故事一致性' });
+                } else if (report.issues.length === 0) {
+                    showSuccessNotice('未发现断链、孤立实体或类型冲突', { title: '校验故事一致性' });
+                } else {
+                    showWarningNotice(`发现 ${report.issues.length} 个问题，已写入 04-项目总控/诊断/故事一致性报告.md`, {
+                        title: '校验故事一致性', timeout: 6000,
+                    });
+                }
+                return true;
+            }
             case CommandIds.EXPORT_MANUSCRIPT:
                 new ExportManuscriptModal(app, plugin, resolveProject() ?? '').open();
                 return true;

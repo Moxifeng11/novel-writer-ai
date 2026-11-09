@@ -36,7 +36,10 @@ function projectMarkdownFiles(app: App, project: string, excludeFolders: string[
         const clean = folder.replace(/^\/+|\/+$/g, '');
         return clean ? `${prefix}${clean}/` : '';
     }).filter(Boolean);
-    return app.vault.getMarkdownFiles()
+    const allFiles = typeof app.vault.getMarkdownFiles === 'function'
+        ? app.vault.getMarkdownFiles()
+        : app.vault.getFiles().filter((file) => file.extension === 'md');
+    return allFiles
         .filter((file) => file.path.startsWith(prefix))
         .filter((file) => !excluded.some((folder) => file.path.startsWith(folder)))
         .sort((a, b) => a.path.localeCompare(b.path));

@@ -19,6 +19,7 @@ import type { SettlementJournal } from './settlement/settlement-journal';
 import { loadRelationshipStates, extractRelationshipChanges, applyRelationshipChanges, saveRelationshipStates, getRelationshipFilePath } from './relationship-engine';
 import { consumePendingRelationshipChanges, loadPendingRelationshipChanges } from './relationship-change-queue';
 import { writeChapterDigestFromProject } from './memory/chapter-digest';
+import { scheduleGraphValidation } from './graph/graph-validation-trigger';
 import { pjBodyDir, pjBodyFile, pjCharFile, pjLocFile, pjFactionFile, pjItemFile, pjForeshadowDB, pjTimelineBoard, pjTimelineDir, pjOutlineDir, pjInfoDebtBoard, pjPromiseLedger, pjCharacterArcTable } from '@/shared/paths';
 import { DEFAULT_PROMISE_LEDGER, applyPromiseInstruction, formatPromiseLedger, parsePromiseLedger } from './promise-ledger';
 import { applyArcInstruction, buildArcRowsFromCharacters, formatCharacterArcTable, parseCharacterArcTable } from './character-arc';
@@ -630,6 +631,12 @@ export class SettlementEngine {
                 await writeChapterDigestFromProject(this.app, this.getFS(), ctx.project, ctx.chapName, ctx.bodyText);
             } catch (e) {
                 log.warn('[SettlementEngine] 章节摘要生成失败（不影响结算）:', e);
+            }
+            // 图谱兜底：只读校验，5 秒防抖；报告只写诊断文件
+            try {
+                scheduleGraphValidation(this.app, ctx.project);
+            } catch (e) {
+                log.warn('[SettlementEngine] 图谱校验调度失败（不影响结算）:', e);
             }
         }
 

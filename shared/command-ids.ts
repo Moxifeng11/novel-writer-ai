@@ -74,6 +74,8 @@ export const CommandIds = {
     BATCH_DECONSTRUCT: 'novel-writer-batch-deconstruct',
     EXPORT_MANUSCRIPT: 'novel-writer-export-manuscript',
     STORY_LINKAGE_BOARD: 'novel-writer-story-linkage',
+    /** 只读校验：断链/孤立实体/关系缺卡/类型冲突，输出故事一致性报告 */
+    VALIDATE_STORY_GRAPH: 'novel-writer-validate-story-graph',
     /** v4.34.0：手动触发会话保留清理（与设置开关「启动时清理旧会话」配套） */
     PRUNE_SESSIONS: 'novel-writer-prune-sessions',
 
