@@ -19,7 +19,7 @@
       "check:write-entry"
     ],
     "localCommitsAhead": 0,
-    "localCommitsAheadNote": "2026-11-09 v4.81.1：协同去重/Agent 真实初始化+图片附件+输入区自适应/更新检查 403 修复/API 页缩短与设置高级分组；608 文件 / 6,699 用例，E2E 42 条通过，preflight:release EXIT=0；待打 tag/Release"
+    "localCommitsAheadNote": "2026-11-09 v4.81.1 已发布：tag/Release 4.81.1（run 42600475586 success），社区 Review 4.81.1(bb878b3)=Completed，0 Error；608 文件 / 6,699 用例，E2E 42 条，preflight:release EXIT=0"
   },
   "groups": [
     {
