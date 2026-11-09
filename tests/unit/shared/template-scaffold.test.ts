@@ -64,6 +64,29 @@ function makeApp(adapter: FakeAdapter) {
 }
 
 describe('ensureTemplateScaffold（P0 模板自举）', () => {
+    it('并发探测模板文件：启动 I/O 不串行等待', async () => {
+        class SlowAdapter extends FakeAdapter {
+            active = 0;
+            maxActive = 0;
+            override async exists(path: string): Promise<boolean> {
+                this.active++;
+                this.maxActive = Math.max(this.maxActive, this.active);
+                try {
+                    await new Promise<void>(resolve => setTimeout(resolve, 1));
+                    return await super.exists(path);
+                } finally {
+                    this.active--;
+                }
+            }
+        }
+        const adapter = new SlowAdapter();
+        const result = await ensureTemplateScaffold(makeApp(adapter));
+
+        expect(result).toEqual({ created: TOTAL, skipped: 0, failed: 0 });
+        // 串行实现 maxActive 恒为 1；并发探测应同时有多个在途
+        expect(adapter.maxActive).toBeGreaterThan(1);
+    });
+
     it('空 vault 首次自举：生成全部模板且关键文件非空', async () => {
         const adapter = new FakeAdapter();
         const result = await ensureTemplateScaffold(makeApp(adapter));

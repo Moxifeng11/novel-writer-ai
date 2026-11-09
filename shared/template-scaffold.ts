@@ -77,17 +77,21 @@ export async function ensureTemplateScaffold(app: App): Promise<TemplateScaffold
     const relativePaths = Object.keys(TEMPLATE_SCAFFOLD_FILES).map(p => `${TEMPLATE_ROOT}/${p}`);
     const missing: string[] = [];
 
-    for (const fullPath of relativePaths) {
+    // v4.80.0 审计 W-3：56 个模板文件逐个 await exists 会把启动 I/O 串成 56 个往返；
+    // 并发探测后按原顺序收集缺失项（写入仍按原顺序，保证目录/结果稳定）。
+    const checked = await Promise.all(relativePaths.map(async (fullPath) => {
         try {
-            if (await adapter.exists(fullPath)) {
-                result.skipped++;
-            } else {
-                missing.push(fullPath);
-            }
+            if (await adapter.exists(fullPath)) return { fullPath, missing: false, skipped: true };
+            return { fullPath, missing: true, skipped: false };
         } catch (e) {
             result.failed++;
             log.warn(`[TemplateScaffold] 检查文件失败: ${fullPath}`, e);
+            return { fullPath, missing: false, skipped: false };
         }
+    }));
+    for (const item of checked) {
+        if (item.missing) missing.push(item.fullPath);
+        else if (item.skipped) result.skipped++;
     }
 
     if (missing.length === 0) {

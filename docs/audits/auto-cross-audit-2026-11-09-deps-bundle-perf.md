@@ -11,8 +11,9 @@
 | ID | 位置 | 问题 | 触发条件 | 影响 | 修法 |
 |---|---|---|---|---|---|
 | W-1 | `services/worker-manager.ts:243-283` | 握手期只监听 `message`；三文件安装（社区目录/BRAT）没有 `workers/`，`new Worker(url)` 不抛错、只异步 `error`，旧实现必须等 5s 超时才降级 | 社区目录安装后首次拆解/质量任务 | 首个任务固定多等 5 秒，期间主线程无反馈；用户以为卡死 | 握手期同时监听 `error`，立即 `terminate` 并 reject「Worker 脚本加载失败」；握手完成/超时统一清理监听与定时器；新增单测证明 error 后**不推进 5s 定时器**即失败 |
+| W-1b | `shared/template-scaffold.ts:78-95` | 启动时 56 个模板文件逐个 `await adapter.exists`，把 I/O 串成 56 个往返 | 每次冷启动（模板已存在时仍逐个探测） | onload 关键路径多出数十次串行等待（W-3 的一部分） | 改为 `Promise.all` 并发探测、按原顺序收集缺失项；新增单测以 `maxActive > 1` 锁住非串行行为 |
 
-测试：`tests/unit/services/worker-manager.test.ts` +1（`Worker 握手期 error：立即失败，不等待 5 秒超时`），12/12 通过。
+测试：`tests/unit/services/worker-manager.test.ts` +1（`Worker 握手期 error：立即失败，不等待 5 秒超时`），12/12 通过；`tests/unit/shared/template-scaffold.test.ts` +1（并发探测），6/6 通过。
 
 ## 二、Fix queue（未修）
 

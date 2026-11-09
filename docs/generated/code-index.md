@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 305 | 132884 | 1609 | 1348 | 84% |
 | `services/` | 32 | 12663 | 187 | 148 | 79% |
-| `shared/` | 178 | 40675 | 1601 | 1320 | 82% |
+| `shared/` | 178 | 40679 | 1601 | 1320 | 82% |
 | `core/` | 7 | 2821 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 238 | 99302 | 733 | 638 | 87% |
@@ -523,7 +523,7 @@
 | `shared/tag-taxonomy.ts` | 151 | 8 | 6 |
 | `shared/task-budget-engine.ts` | 292 | 13 | 11 |
 | `shared/task-model.ts` | 381 | 19 | 18 |
-| `shared/template-scaffold.ts` | 122 | 3 | 3 |
+| `shared/template-scaffold.ts` | 126 | 3 | 3 |
 | `shared/template-validator.ts` | 967 | 26 | 23 |
 | `shared/text-utils.ts` | 64 | 5 | 5 |
 | `shared/theme-colors.ts` | 450 | 25 | 18 |
