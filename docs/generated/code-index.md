@@ -11,7 +11,7 @@
 | `shared/` | 179 | 40820 | 1608 | 1323 | 82% |
 | `core/` | 7 | 2822 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 239 | 99234 | 744 | 646 | 87% |
+| `ui/` | 239 | 99248 | 744 | 646 | 87% |
 
 ## 文件清单
 
@@ -581,7 +581,7 @@
 | `ui/co-writing/editor-shortcuts.ts` | 87 | 4 | 2 |
 | `ui/co-writing/friendly-error.ts` | 46 | 1 | 1 |
 | `ui/co-writing/ghost-association.ts` | 92 | 4 | 2 |
-| `ui/co-writing/human-rate.ts` | 111 | 3 | 2 |
+| `ui/co-writing/human-rate.ts` | 125 | 3 | 2 |
 | `ui/co-writing/kb-panel.ts` | 386 | 12 | 11 |
 | `ui/co-writing/kb-reference-card.ts` | 173 | 2 | 2 |
 | `ui/co-writing/kb-reference-config.ts` | 205 | 10 | 7 |

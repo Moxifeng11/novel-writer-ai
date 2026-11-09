@@ -6,7 +6,7 @@
     "version": "4.81.1",
     "tests": {
       "files": 608,
-      "cases": 6699
+      "cases": 6701
     },
     "e2e": 42,
     "e2eNote": "E2E 通过总数 42（2026-11-09 实测）：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 26 + review-fixes 3（右栏折叠展开 + 两个 Modal 连续开关）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑",
@@ -19,7 +19,7 @@
       "check:write-entry"
     ],
     "localCommitsAhead": 0,
-    "localCommitsAheadNote": "2026-11-09 v4.81.1 已发布：tag/Release 4.81.1（run 42600475586 success），社区 Review 4.81.1(bb878b3)=Completed，0 Error；608 文件 / 6,699 用例，E2E 42 条，preflight:release EXIT=0"
+    "localCommitsAheadNote": "2026-11-09 v4.81.1 后修复：人工率空正文/不足 2 句时归 0，随正文动态计算；608 文件 / 6,701 用例，E2E 42 条，preflight EXIT=0；已 push master，未打新 tag"
   },
   "groups": [
     {

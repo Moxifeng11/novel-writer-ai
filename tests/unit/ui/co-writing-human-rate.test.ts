@@ -2,11 +2,26 @@ import { describe, expect, it } from 'vitest';
 import { calculateHumanRate } from '@/ui/co-writing/human-rate';
 
 describe('calculateHumanRate', () => {
-    it('空文本返回满分基线，风格记为未评估', () => {
+    it('空文本基础分为 0，风格记为未评估', () => {
         const scores = calculateHumanRate('');
         expect(scores.style).toBe(-1);
-        expect(scores.sentenceLength).toBe(100);
+        expect(scores.sentenceLength).toBe(0);
+        expect(scores.opening).toBe(0);
+        expect(scores.punctuation).toBe(0);
+        expect(scores.aiWords).toBe(0);
+        expect(scores.overall).toBe(0);
+    });
+
+    it('只有一句时不提前给分，随正文增长再计算', () => {
+        const scores = calculateHumanRate('他推门走进屋子。');
+        expect(scores.overall).toBe(0);
+        expect(scores.sentenceLength).toBe(0);
+    });
+
+    it('有足够样本后按句长/开头/标点/AI 词动态计算', () => {
+        const scores = calculateHumanRate('他走了。风停了。门开了。');
         expect(scores.overall).toBeGreaterThan(0);
+        expect(scores.sentenceLength).toBeGreaterThan(0);
     });
 
     it('句长波动大时句长分下降', () => {

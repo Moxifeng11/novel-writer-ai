@@ -29,12 +29,21 @@ const AI_HIGH_FREQ_WORDS = [
  * @returns 各维度评分
  */
 export function calculateHumanRate(text: string): HumanRateScores {
-    const sentences = text.split(/[。！？；.!?;]/).filter(s => s.trim().length > 0);
+    const trimmed = String(text || '').trim();
+    if (!trimmed) {
+        // 空正文没有任何可评估证据：基础分必须是 0，而不是各维度默认 100。
+        return { overall: 0, style: -1, sentenceLength: 0, opening: 0, punctuation: 0, aiWords: 0 };
+    }
+
+    const sentences = trimmed.split(/[。！？；.!?;]/).filter(s => s.trim().length > 0);
     const recent3 = sentences.slice(-3);
     const recent5 = sentences.slice(-5);
+    // 少于 2 句无法判断句长波动/开头重复/标点多样性：先保持 0，随正文增长再计算。
+    const hasSample = recent3.length >= 2;
 
-    let sentenceLength = 100;
-    if (recent3.length >= 2) {
+    let sentenceLength = 0;
+    if (hasSample) {
+        sentenceLength = 100;
         const lengths = recent3.map(s => s.length);
         const mean = lengths.reduce((a, b) => a + b, 0) / lengths.length;
         const variance = lengths.reduce((sum, l) => sum + (l - mean) ** 2, 0) / lengths.length;
@@ -43,16 +52,18 @@ export function calculateHumanRate(text: string): HumanRateScores {
         sentenceLength = Math.max(0, Math.min(100, Math.round(100 - cv * 100)));
     }
 
-    let opening = 100;
-    if (recent3.length >= 2) {
+    let opening = 0;
+    if (hasSample) {
+        opening = 100;
         const openings = recent3.map(s => s.trim().slice(0, 2)).filter(o => o.length >= 1);
         const unique = new Set(openings);
         const diversity = openings.length > 0 ? unique.size / openings.length : 1;
         opening = Math.round(diversity * 100);
     }
 
-    let punctuation = 100;
-    if (recent5.length >= 2) {
+    let punctuation = 0;
+    if (hasSample) {
+        punctuation = 100;
         const punctTypes = new Set<string>();
         let totalPunct = 0;
         for (const s of recent5) {
@@ -66,19 +77,22 @@ export function calculateHumanRate(text: string): HumanRateScores {
         punctuation = Math.max(30, Math.min(100, Math.round(variety * 100)));
     }
 
-    let aiWordCount = 0;
-    const recentText = recent5.join('');
-    for (const word of AI_HIGH_FREQ_WORDS) {
-        if (recentText.includes(word)) aiWordCount++;
+    let aiWords = 0;
+    if (hasSample) {
+        let aiWordCount = 0;
+        const recentText = recent5.join('');
+        for (const word of AI_HIGH_FREQ_WORDS) {
+            if (recentText.includes(word)) aiWordCount++;
+        }
+        aiWords = Math.max(40, Math.min(100, Math.round(100 - aiWordCount * 12)));
     }
-    const aiWords = Math.max(40, Math.min(100, Math.round(100 - aiWordCount * 12)));
 
     // 风格分只能由指纹比对/AI 评估得出，输入时同步计算会阻塞编辑，
     // 因此这里返回 -1 表示「未评估」，并从总分权重中剔除，避免用常数 75 冒充真实分。
     const style = -1;
 
     const measured = sentenceLength * 0.20 + opening * 0.15 + punctuation * 0.15 + aiWords * 0.10;
-    const overall = Math.round(measured / 0.60);
+    const overall = hasSample ? Math.round(measured / 0.60) : 0;
 
     return { overall, style, sentenceLength, opening, punctuation, aiWords };
 }

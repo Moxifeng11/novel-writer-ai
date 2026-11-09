@@ -1543,6 +1543,22 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         expect(headerButtons.some(text => text.includes('剧情'))).toBe(false);
         expect(headerButtons.some(text => text.includes('实时质量'))).toBe(false);
 
+        // 空正文人工率必须是 0%（此前各维度默认 100% 导致空文本显示满分）
+        const precisionBtn = page.locator('.nw-precision-mode-btn');
+        await precisionBtn.click();
+        await expect(page.locator('.nw-hr-score')).toHaveText('0%', { timeout: 5_000 });
+        const humanRate = await page.evaluate(() => {
+            const score = document.querySelector<HTMLElement>('.nw-hr-score');
+            const fill = document.querySelector<HTMLElement>('.nw-hr-bar-fill');
+            return {
+                score: (score?.textContent || '').trim(),
+                fillWidth: fill?.style.width || '',
+            };
+        });
+        expect(humanRate.score).toBe('0%');
+        expect(parseFloat(humanRate.fillWidth) || 0).toBe(0);
+        await precisionBtn.click();
+
         const hintInput = page.locator('.nw-hint-input');
         await hintInput.fill('第一行');
         await hintInput.press('Shift+Enter');
