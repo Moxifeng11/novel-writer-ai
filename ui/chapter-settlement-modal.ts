@@ -2,7 +2,8 @@ import { App, Modal, TFile, TFolder } from 'obsidian';
 import { isChapterSettledText } from '@/shared/chapter-status';
 import { buildSettlementTable } from '@/engine/settlement/settlement-artifacts';
 import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjNarrativeOverview } from '@/shared/paths';
-import { ObsidianFrontmatter, writeVaultText } from '@/shared/file-system-port';
+import { ObsidianFrontmatter, writeVaultText, ObsidianFileSystem } from '@/shared/file-system-port';
+import { writeSettlementTableFile } from '@/engine/settlement/settlement-table-writer';
 import { settlementArtifactNotice, writeSettlementArtifacts } from '@/engine/settlement/settlement-coordinator';
 
 import NovelWriterPlugin from '@/main';
@@ -346,13 +347,15 @@ export class ChapterSettlementModal extends Modal {
     }
 
     private async writeSettlementFile(target: SettlementTargetChapter, content: string): Promise<void> {
-        const settlePath = `${target.chapDir}/${getChapterFileName(target.chapName, CHAPTER_FILE_TYPES.settlement)}`;
-        const settleFile = this.app.vault.getAbstractFileByPath(settlePath);
-        if (settleFile instanceof TFile) {
-            await this.app.vault.modify(settleFile, content);
-        } else {
-            await this.app.vault.create(settlePath, content);
-        }
+        // 统一走共享写入器：锁内覆盖写，替代此前的 vault.modify/create 无锁直写
+        const settlePath = await writeSettlementTableFile(new ObsidianFileSystem(this.app), {
+            project: target.project,
+            volume: target.chapDir.match(/第(\d+)卷/)?.[0] || '',
+            chapterNum: parseInt(target.chapName.match(/第(\d+)章/)?.[1] || '0', 10),
+            chapterName: target.chapName,
+            content,
+            chapDir: target.chapDir,
+        });
 
         await this.markBodySettled(target, settlePath);
 

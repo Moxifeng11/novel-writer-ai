@@ -18,7 +18,8 @@ import { buildSettlementTable } from '@/engine/settlement/settlement-artifacts';
 import { settlementArtifactNotice, writeSettlementArtifacts } from '@/engine/settlement/settlement-coordinator';
 import { writeChapterStateSnapshot } from '@/engine/chapter-state-snapshot-service';
 import { pjNarrativeOverview } from '@/shared/paths';
-import { writeVaultText } from '@/shared/file-system-port';
+import { writeVaultText, ObsidianFileSystem } from '@/shared/file-system-port';
+import { writeSettlementTableFile } from '@/engine/settlement/settlement-table-writer';
 import { splitTableCells } from '@/shared/chapter-table';
 import NovelWriterPlugin from '@/main';
 import { AIEngine, ChapterContext } from '@/engine/ai-engine';
@@ -747,10 +748,15 @@ ${reportResult.content}
                 tableText: settleSummary,
             }, {
                 writeSettlementTable: async text => {
-                    const sp = `${chapDir}/${getChapterFileName(chapName, '结算表')}`;
-                    const existingSettleFile = app.vault.getAbstractFileByPath(sp);
-                    if (existingSettleFile) await app.vault.delete(existingSettleFile);
-                    await app.vault.create(sp, text);
+                    // 统一共享写入器：锁内覆盖写，替代 delete+create（失败不再丢旧表）
+                    await writeSettlementTableFile(new ObsidianFileSystem(app), {
+                        project,
+                        volume: volName,
+                        chapterNum: parseInt(chapName.match(/第(\d+)章/)?.[1] || '0', 10),
+                        chapterName: chapName,
+                        content: text,
+                        chapDir,
+                    });
                 },
                 writeSnapshot: async () => {
                     // 正文 frontmatter 已在上方更新；快照读取最终正文，避免 status 仍是旧值

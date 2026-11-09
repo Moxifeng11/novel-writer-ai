@@ -81,4 +81,20 @@ describe('StepResultSaver — 版本归因 frontmatter（v4.23）', () => {
         expect(fm['step_voice_mode']).toBe('exemplar');
         expect(fm['step_experiment_group']).toBe('R1-G2');
     });
+
+    it('contextBudget 写入 context_budget frontmatter（B8 预算恢复可观测）', async () => {
+        const { fs, frontmatter, saver } = setup();
+        const chapDir = '书甲/03-大纲与章节/步骤结果/第1卷/第1章';
+        const target = `${chapDir}/第1章_质量控制.md`;
+
+        await saver.saveStepResult('qualityControl', ANALYSIS, chapDir, '第1章', '第1卷', {
+            model: 'flash-real',
+            contextBudget: '压缩 2 段 · 已定向补检 · 输入 ~3200/120000 token',
+        });
+
+        const fm = frontmatter.states.get(target) || {};
+        expect(fm['context_budget']).toBe('压缩 2 段 · 已定向补检 · 输入 ~3200/120000 token');
+        // 不进正文，只进 frontmatter
+        expect(await fs.read(target)).not.toContain('context_budget');
+    });
 });

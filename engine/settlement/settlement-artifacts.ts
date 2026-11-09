@@ -84,7 +84,18 @@ export function buildSettlementTable(input: SettlementTableInput): string {
         model: input.model,
         partial: input.result.settlementPartial === true,
     });
-    const r = input.result;
+    // 计数字段缺省按 0 处理：调用方（含测试桩）只传部分字段时不产出 undefined 行
+    const n = (value: number | undefined): number => (typeof value === 'number' && Number.isFinite(value) ? value : 0);
+    const r = {
+        updatedChars: n(input.result.updatedChars),
+        updatedForeshadows: n(input.result.updatedForeshadows),
+        createdChars: n(input.result.createdChars),
+        createdLocs: n(input.result.createdLocs),
+        createdFactions: n(input.result.createdFactions),
+        createdItems: n(input.result.createdItems),
+        createdForeshadows: n(input.result.createdForeshadows),
+        createdTimelines: n(input.result.createdTimelines),
+    };
     return `${fm}# ${input.chapterName} 结算表
 
 ## 更新状态

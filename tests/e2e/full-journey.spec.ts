@@ -109,6 +109,35 @@ test.describe('Novel Writer AI · 完整用户旅程（mock AI）', () => {
             expect(readTextIfExists(stepFile).trim().length, `步骤文件为空：${stepName}`).toBeGreaterThan(0);
         }
 
+        // 3.5) 步骤结算产物：结算表 / 时间线列宽 / 一致性报告（B 轮收口断言）
+        const settlementTablePath = path.join(seeded.stepAbs, '第1章_结算表.md');
+        expect(fs.existsSync(settlementTablePath), '步骤结算应落 第1章_结算表.md').toBe(true);
+        expect(readTextIfExists(settlementTablePath)).toContain('# 第1章 结算表');
+
+        const timelineBoardPath = path.join(projectRoot, '02-时间线与伏笔', '时间线看板.md');
+        const timelineBoard = readTextIfExists(timelineBoardPath);
+        if (timelineBoard.trim().length > 0) {
+            const boardLines = timelineBoard.split('\n');
+            const isSeparator = (line: string): boolean => /^\|[\s:|-]+\|$/.test(line.trim());
+            const headerIdx = boardLines.findIndex((line) => line.trim().startsWith('|') && !isSeparator(line));
+            if (headerIdx >= 0) {
+                const headerCols = boardLines[headerIdx].trim().split('|').length - 2;
+                const badRow = boardLines
+                    .slice(headerIdx + 2)
+                    .find((line) => line.trim().startsWith('|') && !isSeparator(line)
+                        && (line.trim().split('|').length - 2) !== headerCols);
+                expect(badRow, `时间线看板存在列数不齐的行：${badRow ?? ''}`).toBeUndefined();
+            }
+        }
+
+        const characterDir = path.join(projectRoot, '01-世界架构', '人物');
+        const hasCharacterCard = fs.existsSync(characterDir)
+            && fs.readdirSync(characterDir).some((file) => file.endsWith('.md') && !file.includes('模板'));
+        if (hasCharacterCard) {
+            const consistencyPath = path.join(seeded.stepAbs, '第1章_一致性检查.md');
+            expect(fs.existsSync(consistencyPath), '存在人物卡时应生成 第1章_一致性检查.md').toBe(true);
+        }
+
         // 4) 正文断言：有标题、达到 3000 字、frontmatter 已结算
         const body = readTextIfExists(seeded.bodyAbs);
         expect(body).toMatch(/^#\s*第1章\s+\S+/m);

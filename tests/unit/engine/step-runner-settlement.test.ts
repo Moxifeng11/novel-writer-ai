@@ -59,6 +59,7 @@ function makeHarness(): Harness {
     const fs = {
         read: vi.fn(async () => 'UPDATE_CHAR: 林舟'),
         write: vi.fn(async () => undefined),
+        mkdir: vi.fn(async () => undefined),
     };
     const vaultMeta = { getAbstractFileByPath: vi.fn(() => null) };
     const whitebox = runner as unknown as {
@@ -188,8 +189,26 @@ describe('StepRunner.executeSettlement — 结算与总览', () => {
             '书甲/04-项目总控/叙事总览.md',
             '# 叙事总览'
         );
+        // B 轮修复：步骤结算也要落结算表（此前只有结算弹窗写，两入口产物不一致）
+        const tablePath = '书甲/03-大纲与章节/步骤结果/第1卷/第2章/第2章_结算表.md';
+        expect(h.fs.write).toHaveBeenCalledWith(tablePath, expect.stringContaining('# 第2章 结算表'));
+        expect(h.fs.write).toHaveBeenCalledWith(tablePath, expect.stringContaining('## 更新状态'));
         expect(h.trigger).toHaveBeenCalledWith('novel-writer:refresh-context-panel', {});
         expect(render).toHaveBeenCalled();
+    });
+
+    it('重复结算：结算表覆盖写同一路径，内容非空', async () => {
+        const h = makeHarness();
+        const tablePath = '书甲/03-大纲与章节/步骤结果/第1卷/第2章/第2章_结算表.md';
+
+        await runSettlement(h);
+        await runSettlement(h);
+
+        const tableWrites = h.fs.write.mock.calls.filter((call: unknown[]) => call[0] === tablePath);
+        expect(tableWrites.length).toBeGreaterThanOrEqual(2);
+        for (const call of tableWrites) {
+            expect(String(call[1])).toContain('# 第2章 结算表');
+        }
     });
 
     it('无新增无更新时给出专门的完成提示', async () => {

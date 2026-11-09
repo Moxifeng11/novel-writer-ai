@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 318 | 137152 | 1721 | 1413 | 82% |
+| `engine/` | 319 | 137249 | 1724 | 1415 | 82% |
 | `services/` | 32 | 12920 | 187 | 148 | 79% |
 | `shared/` | 184 | 41957 | 1651 | 1353 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99616 | 753 | 649 | 86% |
+| `ui/` | 242 | 99625 | 753 | 649 | 86% |
 
 ## 文件清单
 
@@ -304,9 +304,10 @@
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 138 | 2 | 2 |
-| `engine/settlement/settlement-artifacts.ts` | 117 | 5 | 5 |
+| `engine/settlement/settlement-artifacts.ts` | 128 | 5 | 5 |
 | `engine/settlement/settlement-coordinator.ts` | 130 | 6 | 6 |
 | `engine/settlement/settlement-journal.ts` | 197 | 6 | 6 |
+| `engine/settlement/settlement-table-writer.ts` | 74 | 3 | 2 |
 | `engine/settlement/settlement-types.ts` | 46 | 2 | 1 |
 | `engine/step-definitions.ts` | 266 | 13 | 11 |
 | `engine/step-modal-controller.ts` | 648 | 2 | 2 |
@@ -314,7 +315,7 @@
 | `engine/step-result-saver.ts` | 562 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 223 | 6 | 5 |
-| `engine/step-runner.ts` | 2169 | 2 | 1 |
+| `engine/step-runner.ts` | 2181 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 216 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |
@@ -585,7 +586,7 @@
 | `ui/button-busy.ts` | 37 | 1 | 1 |
 | `ui/changelog-modal.ts` | 191 | 1 | 1 |
 | `ui/chapter-outline-tree-modal.ts` | 1283 | 1 | 1 |
-| `ui/chapter-settlement-modal.ts` | 418 | 1 | 1 |
+| `ui/chapter-settlement-modal.ts` | 421 | 1 | 1 |
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1024 | 2 | 2 |
@@ -804,7 +805,7 @@
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 562 | 2 | 1 |
 | `ui/workspace-manager.ts` | 144 | 2 | 2 |
-| `ui/write-chapter-modal.ts` | 897 | 1 | 1 |
+| `ui/write-chapter-modal.ts` | 903 | 1 | 1 |
 | `ui/writing-pet.ts` | 290 | 2 | 2 |
 | `ui/writing-stats-modal.ts` | 245 | 1 | 1 |
 | `ui/writing-stats-settings.ts` | 70 | 1 | 1 |

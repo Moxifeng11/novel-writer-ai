@@ -23,6 +23,7 @@ import { selectBodyStyleSamples, formatStyleSamplesForPrompt } from './style/sty
 import { parseContrastLibrary, selectContrastPair, formatContrastPairForPrompt } from '@/shared/contrast-library';
 import { writeChapterStateSnapshot } from './chapter-state-snapshot-service';
 import { writeSettlementArtifacts } from './settlement/settlement-coordinator';
+import { writeSettlementTableFile } from './settlement/settlement-table-writer';
 import { pjNarrativeOverview } from '@/shared/paths';
 import { parseQualityControlReport } from './revision/quality-issue-parser';
 import { runTargetedRevision } from './revision/targeted-revision';
@@ -1818,6 +1819,17 @@ ${userPrompt}`),
                 mode: 'full',
                 result,
             }, {
+                // B 轮修复：步骤结算此前不写结算表（只有结算弹窗写），同一章两个入口产物不一致
+                writeSettlementTable: async (text) => {
+                    await writeSettlementTableFile(this.getFS(), {
+                        project,
+                        volume: (chapDir.match(/第(\d+)卷/)?.[0]) || '',
+                        chapterNum,
+                        chapterName,
+                        content: text,
+                        chapDir,
+                    });
+                },
                 writeSnapshot: async () => {
                     await writeChapterStateSnapshot(this.app, {
                         project,
