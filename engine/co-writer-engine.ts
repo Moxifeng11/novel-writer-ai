@@ -55,6 +55,7 @@ import type { GatheredContext } from './context/context-types';
 import type { SceneCardFields } from '@/shared/scene-card';
 import { entityStateChangesToFacts } from './co-writer-state-sync';
 import { appendRelationshipChanges, entityChangesToRelationshipChanges } from './relationship-change-queue';
+import { resolveAssociations } from './context/association-resolver';
 import { CharacterPairRelation, loadRelationshipStates } from './relationship-engine';
 import { buildEntityRelationsBlock } from './entity-graph';
 import { formatInjectionLedger } from '@/shared/injection-ledger';
@@ -960,6 +961,25 @@ export class CoWriterEngine {
             log.warn('[CoWriterEngine] E6: 知识注入失败，跳过:', e);
         }
 
+        // 关联查询：只取光标前 1200 字里的在场实体，补人物/关系/到期伏笔/近期事件
+        let associationText = '';
+        try {
+            if (this.session) {
+                const chapterMatch = this.session.chapterName.match(/第(\d+)章/);
+                const bundle = await resolveAssociations({
+                    app: this.app,
+                    project: this.session.project,
+                    task: 'suggestion',
+                    text: precedingText.slice(-1200),
+                    chapter: chapterMatch ? Number.parseInt(chapterMatch[1], 10) : null,
+                    budgetTokens: 600,
+                });
+                associationText = bundle.text;
+            }
+        } catch (e) {
+            log.warn('[CoWriterEngine] 关联查询失败，跳过:', e);
+        }
+
         const recentSentences = this.precisionMode
             ? this.extractRecentSentences(precedingText)
             : [];
@@ -974,6 +994,7 @@ export class CoWriterEngine {
             fingerprintParts,
             knowledgeInjection,
             kbDeepInjection,
+            associationText,
             recentSentences,
             signal,
             settings,
@@ -1046,6 +1067,7 @@ export class CoWriterEngine {
             fingerprintParts: string[];
             knowledgeInjection: string;
             kbDeepInjection: string;
+            associationText: string;
             recentSentences: string[];
             signal?: AbortSignal;
             settings?: { coWriteTemperature?: number; coWriteMaxTokens?: number };
@@ -1077,7 +1099,7 @@ export class CoWriterEngine {
             shared.cursorHint,
             shared.fingerprintParts,
             knowledgeParts,
-            [shared.knowledgeInjection, shared.kbDeepInjection].filter(Boolean).join('\n\n'),
+            [shared.knowledgeInjection, shared.kbDeepInjection, shared.associationText].filter(Boolean).join('\n\n'),
         );
         const directionLabels = directions.map((d, i) => `${i + 1}. ${d}`).join('\n');
         const prompt = {
@@ -1253,6 +1275,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
             fingerprintParts: string[];
             knowledgeInjection: string;
             kbDeepInjection: string;
+            associationText: string;
             recentSentences: string[];
             signal?: AbortSignal;
             settings?: { coWriteTemperature?: number };
@@ -1271,7 +1294,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         const kpCount = knowledgeParts.filter(p => p && p.trim().length > 0).length;
         this.directionKnowledgeCounts[direction] = kpCount;
 
-        const combinedInjection = [shared.knowledgeInjection, shared.kbDeepInjection].filter(Boolean).join('\n\n');
+        const combinedInjection = [shared.knowledgeInjection, shared.kbDeepInjection, shared.associationText].filter(Boolean).join('\n\n');
         const prompt = this.buildDirectionalPrompt(shared.precedingText, direction, shared.cursorHint, shared.fingerprintParts, knowledgeParts, combinedInjection);
         this.recordKnowledgeInjection(kpCount, `${prompt.system}\n${prompt.user}`, knowledgeParts);
 
@@ -3000,7 +3023,12 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
             const relationshipChanges = entityChangesToRelationshipChanges(this.pendingStateChanges, this.session.chapterName)
                 .map(({ chapter: _chapter, source: _source, ...change }) => change);
             if (relationshipChanges.length > 0) {
-                await appendRelationshipChanges(this.app, this.session.project, this.session.chapterName, relationshipChanges);
+                try {
+                    await appendRelationshipChanges(this.app, this.session.project, this.session.chapterName, relationshipChanges);
+                } catch (e) {
+                    // 关系队列写入失败不应阻断事实入队；保留待处理项可重试
+                    log.warn('[CoWriterEngine] 关系变更队列写入失败（不阻断事实入队）:', e);
+                }
             }
             this.pendingStateChanges = [];
             log.info('[CoWriterEngine] D1: 状态变化已进入待确认队列:', facts.length);

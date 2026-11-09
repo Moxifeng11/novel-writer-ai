@@ -24,6 +24,7 @@ import { settleModeUnit } from '@/engine/mode-unit-settlement';
 import { evaluateRevision } from '@/engine/revision/revision-guard';
 import { modeRevisionOptions } from '@/shared/quality-profile';
 import { namesFromEntitySummary } from '@/engine/mode-runtime';
+import { resolveAssociations } from '@/engine/context/association-resolver';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 import { StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
 import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
@@ -487,6 +488,19 @@ export class UnitWriterController {
         const ctx = this.ctx;
         const originalBody = this.getBody();
         const selection = this.pendingRewrite;
+        try {
+            const bundle = await resolveAssociations({
+                app: this.deps.app,
+                project: ctx.project,
+                task: 'unit',
+                text: (selection?.originalText || originalBody).slice(-1600),
+                chapter: ctx.unitNumber,
+                budgetTokens: 800,
+            });
+            ctx.associationText = bundle.text;
+        } catch {
+            ctx.associationText = '';
+        }
 
         this.running = true;
         this.abortController = new AbortController();

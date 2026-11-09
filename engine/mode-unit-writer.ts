@@ -61,6 +61,8 @@ export interface UnitWriterContext {
     modeGuide: string;
     targetWords: number;
     existingBody: string;
+    /** 关联查询结果（人物/关系/到期伏笔/近期事件；可空） */
+    associationText?: string;
 }
 
 /**
@@ -240,6 +242,7 @@ export function buildUnitPrompt(
         ctx.fingerprints ? `【文笔指纹】\n${ctx.fingerprints}` : '',
         ctx.characters ? `【人物】\n${ctx.characters}` : '',
         ctx.previousTail ? `【上一${ctx.mode === 'script' ? '集' : '节'}结尾】\n${ctx.previousTail}` : '',
+        ctx.associationText ? `【关联信息】\n${ctx.associationText}` : '',
     ].filter(Boolean).join('\n\n');
 
     if (action === 'rewrite') {

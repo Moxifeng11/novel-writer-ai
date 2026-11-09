@@ -34,6 +34,14 @@ export interface StepPromptAssemblyHost {
     /** 正文步骤的硬约束尾部（样章/对照），不允许被 extraTail 预算裁剪 */
     loadBodyKnowledgeParts?(ctx: StepRunCtx): Promise<{ extra: string; system: string }>;
     /**
+     * 调用时关联查询（只补缺口；返回空文本表示无需注入）
+     *
+     * @param ctx - 上下文
+     * @param stepKey - 当前步骤
+     * @returns 关联文本与成本
+     */
+    loadAssociationContext?(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; tokens: number; skipped?: string }>;
+    /**
      * 本步实际模型的窗口/输出上限（budget 由任务层给出时优先采用其 maxInput）
      *
      * @param model - 模型标识
@@ -80,6 +88,10 @@ export interface StepPromptAssemblyResult {
     maxInputTokens: number;
     /** 关键段缩完仍超预算 */
     overBudget: boolean;
+    /** 关联查询注入的文本与 token（写入注入账本；空串表示未注入） */
+    associationText?: string;
+    associationTokens?: number;
+    associationSkipped?: string;
 }
 
 /**
@@ -108,6 +120,9 @@ export async function assembleStepPrompt(
     return withActiveInputBudget(stepLimits.maxInputTokens, async () => {
         let extraTail = '';
         let systemTail = '';
+        let associationText = '';
+        let associationTokens = 0;
+        let associationSkipped: string | undefined;
         if (stepKey === 'outline') {
             extraTail = await host.loadOutlineKnowledge(ctx);
         } else if (stepKey === 'bodyGeneration') {
@@ -117,6 +132,15 @@ export async function assembleStepPrompt(
                 systemTail = parts.system;
             } else {
                 extraTail = await host.loadBodyKnowledge(ctx);
+            }
+        }
+        if (host.loadAssociationContext && ['bodyGeneration', 'qualityControl', 'analysisReport'].includes(stepKey)) {
+            const association = await host.loadAssociationContext(ctx, stepKey);
+            associationText = association.text;
+            associationTokens = association.tokens;
+            associationSkipped = association.skipped;
+            if (associationText) {
+                extraTail = [extraTail, associationText].filter(Boolean).join('\n\n');
             }
         }
         const effectiveSystemPrompt = systemTail
@@ -160,6 +184,9 @@ export async function assembleStepPrompt(
             trimmedSections: fit.trimmedSections,
             maxInputTokens: fit.maxInputTokens,
             overBudget: fit.overBudget,
+            associationText,
+            associationTokens,
+            associationSkipped,
         };
     });
 }

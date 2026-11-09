@@ -38,6 +38,7 @@ import { resolveStepPrompt } from './prompt-resolver';
 import { RulesService } from '@/services/rules-service';
 import { hashContent } from '@/shared/versioned-registry';
 import { assembleStepPrompt, type StepPromptAssemblyHost } from './step-prompt-assembly';
+import { resolveAssociations } from './context/association-resolver';
 import type { NovelWriterPluginAPI } from '@/plugin-api';
 
 // ============================================================
@@ -229,8 +230,45 @@ export class StepRunner {
             loadOutlineKnowledge: (ctx: StepRunCtx) => this.loadOutlineKnowledge(ctx),
             loadBodyKnowledge: (ctx: StepRunCtx) => this.loadBodyKnowledge(ctx),
             loadBodyKnowledgeParts: (ctx: StepRunCtx) => this.loadBodyKnowledgeParts(ctx),
+            loadAssociationContext: (ctx: StepRunCtx, stepKey: string) => this.loadAssociationContext(ctx, stepKey),
             resolveStepBudgetLimits: (model: string) => this.resolveStepBudgetLimits(model),
         };
+    }
+
+    /**
+     * 关联查询：按当前场景/在场实体补人物、关系、到期伏笔、时间线与章节记忆。
+     *
+     * @param ctx - 上下文
+     * @param stepKey - 当前步骤
+     * @returns 注入文本与成本
+     */
+    private async loadAssociationContext(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; tokens: number; skipped?: string }> {
+        try {
+            const task = stepKey === 'analysisReport' ? 'analysis' : stepKey === 'qualityControl' ? 'quality' : 'body';
+            const text = [
+                ctx.stepResults['infoPlan'] || '',
+                ctx.stepResults['sceneExpand'] || '',
+                ctx.stepResults['outline'] || '',
+                (ctx.stepResults['bodyGeneration'] || '').slice(-1600),
+                ctx.vars['chapPlan'] || '',
+            ].filter(Boolean).join('\n').slice(0, 6000);
+            const alreadyInjected = [
+                'worldView', 'settingLib', 'allChars', 'unrevealedForeshadow', 'timelineEvents',
+                'longTermMemory', 'prevChaptersSummary', 'entityRelations', 'sceneCardDigest',
+            ].map((key) => ctx.vars[key] || '').filter(Boolean);
+            const bundle = await resolveAssociations({
+                app: this.app,
+                project: ctx.project,
+                task,
+                text,
+                chapter: ctx.chapterNum,
+                alreadyInjected,
+            });
+            return { text: bundle.text, tokens: bundle.tokens, skipped: bundle.skipped };
+        } catch (e) {
+            log.warn('[StepRunner] 关联查询失败，已跳过:', e);
+            return { text: '', tokens: 0, skipped: 'error' };
+        }
     }
 
     /**
@@ -1082,6 +1120,16 @@ ${userPrompt}`),
                         truncated: promptAssembly.droppedExtra || Boolean(rag && rag.dropped > 0)
                             || promptAssembly.droppedSections.length > 0 || promptAssembly.trimmedSections.length > 0,
                         strength: [meta.strength !== undefined ? `强度 ${meta.strength}` : '', ragText].filter(Boolean).join('；') || undefined,
+                        placement: 'user',
+                    });
+                }
+                if (promptAssembly.associationText) {
+                    extras.push({
+                        key: 'association', label: '关联查询（人物/关系/伏笔/时间线/记忆）', category: '实体',
+                        influence: '事实记忆', source: 'StoryLedger + EntityIndex',
+                        chars: promptAssembly.associationText.length,
+                        estTokens: promptAssembly.associationTokens ?? Math.ceil(promptAssembly.associationText.length / 1.5),
+                        truncated: false,
                         placement: 'user',
                     });
                 }
