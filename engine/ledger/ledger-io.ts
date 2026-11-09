@@ -2,14 +2,16 @@
  * ledger-io.ts — 台账文件读取、缓存与旧结构适配
  *
  * ContextManager 与后续 association/digest 共用这一层：
- *  - 只读时间线看板与伏笔库，解析后缓存（按 mtime+size 签名失效）；
+ *  - 只读时间线看板、伏笔库与承诺账本，解析后缓存（按 mtime+size 签名失效，
+ *    F-3 修复：承诺账本纳入签名，否则结算写承诺后摘要读到空/陈旧承诺）；
  *  - 提供旧版 `ForeshadowData` / `TimelineEvent` 映射，避免一次性改所有下游。
  */
 import { App, TFile } from 'obsidian';
-import { pjForeshadowDB, pjTimelineBoard } from '@/shared/paths';
+import { pjForeshadowDB, pjPromiseLedger, pjTimelineBoard } from '@/shared/paths';
 import type { ForeshadowData, ForeshadowItem, TimelineEvent } from '@/engine/context/context-types';
+import { parsePromiseLedger } from '../promise-ledger';
 import { buildLedgerIndex, timelineWindow, type StoryLedger } from './ledger-index';
-import type { ForeshadowRecord } from './ledger-model';
+import type { ForeshadowRecord, PromiseRecord } from './ledger-model';
 
 interface CacheEntry {
     signature: string;
@@ -39,7 +41,37 @@ async function readIfExists(app: App, path: string): Promise<{ content: string; 
 }
 
 /**
- * 加载项目台账（带缓存）。
+ * PromiseItem → 台账 PromiseRecord（字段口径统一映射）
+ *
+ * @param promise - 承诺账本条目
+ * @returns PromiseRecord
+ */
+function toPromiseRecord(promise: {
+    id: number;
+    name: string;
+    type: string;
+    openedChapter: string;
+    openedBy: string;
+    expectedChapter: string;
+    status: string;
+    lastAdvancedChapter: string;
+    note: string;
+}): PromiseRecord {
+    return {
+        id: String(promise.id),
+        name: promise.name,
+        type: promise.type,
+        raisedChapter: promise.openedChapter,
+        raisedBy: promise.openedBy,
+        expectedChapter: promise.expectedChapter,
+        status: promise.status,
+        lastAdvancedChapter: promise.lastAdvancedChapter,
+        note: promise.note,
+    };
+}
+
+/**
+ * 加载项目台账（带缓存；签名含承诺账本文件）。
  *
  * @param app - Obsidian 应用
  * @param project - 项目路径
@@ -48,19 +80,31 @@ async function readIfExists(app: App, path: string): Promise<{ content: string; 
 export async function loadStoryLedger(app: App, project: string): Promise<StoryLedger> {
     const timelinePath = pjTimelineBoard(project);
     const foreshadowPath = pjForeshadowDB(project);
-    const [timeline, foreshadow] = await Promise.all([
+    const promisePath = pjPromiseLedger(project);
+    const [timeline, foreshadow, promise] = await Promise.all([
         readIfExists(app, timelinePath),
         readIfExists(app, foreshadowPath),
+        readIfExists(app, promisePath),
     ]);
-    const signature = `${timeline.signature}|${foreshadow.signature}`;
+    const signature = `${timeline.signature}|${foreshadow.signature}|${promise.signature}`;
     const cached = cache.get(project);
     if (cached && cached.signature === signature) return cached.ledger;
+
+    let promises: PromiseRecord[] = [];
+    if (promise.content.trim()) {
+        try {
+            promises = parsePromiseLedger(promise.content).map(toPromiseRecord);
+        } catch {
+            promises = [];
+        }
+    }
 
     const ledger = buildLedgerIndex({
         timelineContent: timeline.content,
         foreshadowContent: foreshadow.content,
         timelinePath,
         foreshadowPath,
+        promises,
     });
     cache.set(project, { signature, ledger });
     return ledger;

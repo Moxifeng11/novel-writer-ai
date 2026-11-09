@@ -212,6 +212,9 @@ export class SettlementEngine {
                 await this.recordWholeFileBefore(ctx, path, existed ? content : null);
                 await fs.write(path, formatPromiseLedger(items));
             });
+            // F-3 修复：承诺账本已纳入台账缓存签名（ledger-io），写后显式失效，
+            // 否则同轮结算的章节摘要 openPromises 读到空/陈旧承诺
+            invalidateStoryLedger(ctx.project);
             log.info(`[SettlementEngine] 承诺账本更新 ${ctx.instr.promise.length} 条`);
         } catch (e) {
             log.warn('[SettlementEngine] 承诺账本更新失败（不影响结算）:', e);

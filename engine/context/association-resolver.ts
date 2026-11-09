@@ -21,8 +21,6 @@ import { loadRelationshipStates } from '@/engine/relationship-engine';
 import { loadStoryLedger } from '@/engine/ledger/ledger-io';
 import { dueForeshadows, openPromises, timelineWindow } from '@/engine/ledger/ledger-index';
 import { loadRecentChapterDigests, renderChapterDigestBlock } from '@/engine/memory/chapter-digest';
-import { parsePromiseLedger } from '@/engine/promise-ledger';
-import { pjPromiseLedger } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
 
 const log = createLogger('AssociationResolver');
@@ -183,26 +181,9 @@ export async function resolveAssociations(query: AssociationQuery): Promise<Asso
         }
 
         const ledger = await loadStoryLedger(query.app, query.project);
-        // 承诺账本按需读入索引（ledger-io 只负责时间线/伏笔）
-        try {
-            const fs = query.fs ?? new ObsidianFileSystem(query.app);
-            const file = query.app.vault.getAbstractFileByPath(pjPromiseLedger(query.project));
-            if (file) {
-                ledger.promises = parsePromiseLedger(await fs.read(pjPromiseLedger(query.project))).map((promise) => ({
-                    id: String(promise.id),
-                    name: promise.name,
-                    type: promise.type,
-                    raisedChapter: promise.openedChapter,
-                    raisedBy: promise.openedBy,
-                    expectedChapter: promise.expectedChapter,
-                    status: promise.status,
-                    lastAdvancedChapter: promise.lastAdvancedChapter,
-                    note: promise.note,
-                }));
-            }
-        } catch {
-            // 承诺读取失败不影响其他关联信息
-        }
+        // F-3 修复：承诺账本已由 ledger-io 纳入缓存与失效签名，这里不再就地改写
+        // 共享缓存对象（旧实现会污染 context-manager/graph-validator/chapter-digest
+        // 拿到的同一份 StoryLedger）。
 
         const injected = (query.alreadyInjected ?? []).join('\n');
         const candidates: AssociationItem[] = [];

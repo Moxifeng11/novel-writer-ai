@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137318 | 1725 | 1416 | 82% |
+| `engine/` | 319 | 137346 | 1725 | 1416 | 82% |
 | `services/` | 32 | 12920 | 187 | 148 | 79% |
 | `shared/` | 185 | 42039 | 1652 | 1354 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
@@ -110,7 +110,7 @@
 | `engine/context-compressor.ts` | 342 | 2 | 2 |
 | `engine/context-manager.ts` | 2654 | 3 | 3 |
 | `engine/context-readiness.ts` | 243 | 3 | 3 |
-| `engine/context/association-resolver.ts` | 302 | 6 | 2 |
+| `engine/context/association-resolver.ts` | 283 | 6 | 2 |
 | `engine/context/context-diff-detector.ts` | 403 | 5 | 4 |
 | `engine/context/context-types.ts` | 284 | 16 | 15 |
 | `engine/context/incremental-updater.ts` | 302 | 6 | 1 |
@@ -192,7 +192,7 @@
 | `engine/knowledge-usage.ts` | 80 | 3 | 3 |
 | `engine/knowledge-vector-store.ts` | 752 | 5 | 4 |
 | `engine/ledger/ledger-index.ts` | 163 | 10 | 8 |
-| `engine/ledger/ledger-io.ts` | 145 | 4 | 4 |
+| `engine/ledger/ledger-io.ts` | 189 | 4 | 4 |
 | `engine/ledger/ledger-link.ts` | 224 | 4 | 2 |
 | `engine/ledger/ledger-model.ts` | 323 | 28 | 11 |
 | `engine/ledger/ledger-parse.ts` | 452 | 4 | 2 |
@@ -300,7 +300,7 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 1991 | 3 | 3 |
+| `engine/settlement-engine.ts` | 1994 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 138 | 2 | 2 |
