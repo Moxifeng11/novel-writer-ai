@@ -11,7 +11,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { TFile, TFolder } from '../../__mocks__/obsidian';
 import { SettlementEngine } from '../../../engine/settlement-engine';
 import { getRelationshipFilePath } from '../../../engine/relationship-engine';
-import { pjCharFile, pjForeshadowDB, pjTimelineBoard, pjBodyFile, pjPromiseLedger } from '../../../shared/paths';
+import { pjCharFile, pjForeshadowDB, pjTimelineBoard, pjBodyFile, pjPromiseLedger, pjCharacterArcTable } from '../../../shared/paths';
 import type { FileSystemPort, FrontmatterPort, VaultMetaPort } from '../../../shared/file-system-port';
 import { withWriteLock } from '../../../shared/write-lock';
 import { createSettleContext } from '../../../engine/settlement/settle-context';
@@ -434,6 +434,22 @@ PROMISE_OPEN: 三年之约 | 角色承诺 | 第6章 | 破案线`;
         expect(relation).toContain('甲 ↔ 乙');
         expect(relation).toContain('trust: 56');
         expect(relation).toContain('history_keys');
+    });
+
+    it('回滚后不写角色弧线（ARC 指令让该路径可观测）', async () => {
+        // 旧 D-3 用例只有 RELATION/PROMISE，弧线步骤在空表上是 no-op；补 ARC 后才能
+        // 证明「回滚后三步全部跳过」不是靠某一个端口碰巧没数据。
+        const h = makeHarness({ ...seedAll(), [RELATION_PATH]: RELATION_SEED }, /伏笔库\.md$/);
+        const report = `${REPORT}
+RELATION_5D: 甲|乙|trust+6|并肩作战
+PROMISE_OPEN: 三年之约 | 角色承诺 | 第6章 | 破案线
+ARC: 甲 | 起点 | 转折 | 码头遇袭 | 是`;
+        const result = await h.engine.settle(PROJECT, CHAP_DIR, CHAP_NAME, report, BODY_SEED);
+
+        expect(result.rollback).toBeDefined();
+        expect(h.files.get(pjCharacterArcTable(PROJECT))).toBeUndefined();
+        expect(h.files.get(RELATION_PATH)).toBe(RELATION_SEED);
+        expect(h.files.get(pjPromiseLedger(PROJECT))).toBeUndefined();
     });
 });
 

@@ -100,6 +100,8 @@ export class WritingStatsService {
     private scanning = false;
     private persistTimer: ReturnType<typeof setTimeout> | null = null;
     private dirty = false;
+    /** 每次排程 +1：写盘期间又有新变更时，不能把 dirty 清掉（否则新数据永远不落盘） */
+    private persistVersion = 0;
     private readonly now: () => number;
 
     constructor(deps: WritingStatsServiceDeps) {
@@ -304,6 +306,7 @@ export class WritingStatsService {
 
     private schedulePersist(): void {
         this.dirty = true;
+        this.persistVersion++;
         if (this.persistTimer) return;
         this.persistTimer = setTimeout(() => {
             this.persistTimer = null;
@@ -312,7 +315,7 @@ export class WritingStatsService {
     }
 
     private async persistNow(): Promise<void> {
-        this.dirty = false;
+        const version = this.persistVersion;
         try {
             const dir = this.deps.ledgerPath.slice(0, this.deps.ledgerPath.lastIndexOf('/'));
             if (dir && !(await this.deps.app.vault.adapter.exists(dir))) {
@@ -320,7 +323,11 @@ export class WritingStatsService {
             }
             // write-entry-allow: 字数台账是 JSON，位于插件数据目录。
             await this.deps.app.vault.adapter.write(this.deps.ledgerPath, JSON.stringify(this.data));
+            // 写成功后只清掉本次版本；写盘期间的新变更保持 dirty，等下一轮
+            if (this.persistVersion === version) this.dirty = false;
         } catch (e) {
+            // 写失败必须保留 dirty：否则本次统计永久丢失、且 dispose 也不会再重试
+            this.dirty = true;
             log.warn('[WritingStats] 台账写入失败:', e);
         }
     }

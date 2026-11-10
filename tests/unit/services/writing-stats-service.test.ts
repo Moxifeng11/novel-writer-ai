@@ -175,6 +175,26 @@ describe('WritingStatsService', () => {
         await expect(service.load()).resolves.toBeUndefined();
         expect(service.getReport().global.total).toBe(0);
     });
+
+    it('写盘失败保留 dirty：下一次 dispose 仍会重试落盘（安全审计 F5）', async () => {
+        const { app, disk } = makeApp([
+            { path: 'p/第1章_正文.md', stat: { mtime: NOW }, wordCount: 1200 },
+        ]);
+        const service = makeService(app);
+        await service.scan();
+
+        const write = app.vault.adapter.write;
+        app.vault.adapter.write = async () => { throw new Error('disk full'); };
+        service.dispose();
+        await new Promise(resolve => setTimeout(resolve, 0));
+        expect(disk.get('data/writing-stats.json')).toBeUndefined();
+
+        // 旧实现在第一次失败前就把 dirty 置 false：第二次 dispose 直接跳过 → 统计永久丢失
+        app.vault.adapter.write = write;
+        service.dispose();
+        await new Promise(resolve => setTimeout(resolve, 0));
+        expect(JSON.parse(disk.get('data/writing-stats.json')!).days[dayNow]).toBe(1200);
+    });
 });
 
 describe('辅助函数', () => {

@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137453 | 1725 | 1416 | 82% |
-| `services/` | 32 | 13004 | 190 | 150 | 79% |
+| `services/` | 32 | 13011 | 190 | 150 | 79% |
 | `shared/` | 187 | 42495 | 1668 | 1363 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
@@ -385,7 +385,7 @@
 | `services/worker-protocol.ts` | 121 | 12 | 12 |
 | `services/worker-runtime.ts` | 278 | 8 | 8 |
 | `services/worldview-cache-service.ts` | 627 | 4 | 4 |
-| `services/writing-stats-service.ts` | 336 | 6 | 6 |
+| `services/writing-stats-service.ts` | 343 | 6 | 6 |
 | `shared/adaptive-debounce-manager.ts` | 315 | 2 | 2 |
 | `shared/ai-credentials.ts` | 55 | 2 | 2 |
 | `shared/api-format.ts` | 418 | 16 | 15 |
