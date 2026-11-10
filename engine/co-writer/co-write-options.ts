@@ -35,6 +35,8 @@ export interface CoWriteCallOptions {
     numCtx?: number;
     /** 本地路由失败原因；非空时调用方应直接返回错误而不是发起请求 */
     localRouteError?: string;
+    /** 本地模式未选本地模型，已自动切换到云端（调用方可提示用户） */
+    autoSwitchedToCloud?: boolean;
 }
 
 /**
@@ -127,11 +129,33 @@ export function resolveCoWriteModel(
     settings?: CoWriteOptionsSettings,
 ): string | undefined {
     if (!settings) return undefined;
-    const mode = settings.coWriteModelMode || 'local';
+    const mode = resolveEffectiveCoWriteMode(settings);
     if (mode === 'cloud') {
         return settings.coWriteCloudModel || settings.defaultModel || undefined;
     }
     return resolveCoWriteLocalModel(settings);
+}
+
+/**
+ * 解析协同写作的实际生效模式。
+ *
+ * M-2（2026-11-10 用户拍板）：本地模式未选择任何本地模型时**自动切换云端**，
+ * 而不是把请求打到 localhost 后失败。只有显式选中的本地模型才留在本地模式。
+ *
+ * @param settings - 插件 settings 快照
+ * @returns 'local' | 'cloud'
+ *
+ * @example
+ * resolveEffectiveCoWriteMode({ coWriteModelMode: 'local', customProviders: [ollama] }) // 'cloud'
+ * resolveEffectiveCoWriteMode({ coWriteModelMode: 'local', coWriteModel: 'qwen2.5:7b' }) // 'local'
+ */
+export function resolveEffectiveCoWriteMode(
+    settings?: CoWriteOptionsSettings,
+): 'local' | 'cloud' {
+    if (!settings) return 'local';
+    const mode = settings.coWriteModelMode || 'local';
+    if (mode === 'local' && !resolveCoWriteLocalModel(settings)) return 'cloud';
+    return mode;
 }
 
 /**
@@ -222,9 +246,10 @@ export function buildCoWriteOptions(
     const settings = input.settings;
     if (!settings) return opts;
 
-    const mode = settings.coWriteModelMode || 'local';
-
+    const mode = resolveEffectiveCoWriteMode(settings);
     if (mode === 'cloud') {
+        // M-2：本地模式没有可用本地模型时自动走这里；显式云端模式行为不变
+        const autoSwitched = (settings.coWriteModelMode || 'local') === 'local';
         // 云端模式：根据供应商查找端点和 API Key
         const providerId = settings.coWriteCloudProvider || '';
         if (providerId) {
@@ -241,6 +266,7 @@ export function buildCoWriteOptions(
         }
         // 云端模式允许 fallback
         opts.disableFallback = false;
+        if (autoSwitched) opts.autoSwitchedToCloud = true;
     } else {
         // 本地模式：按模型所属本地 provider 解析端点；找不到就阻断，绝不回退云端
         const model = resolveCoWriteModel(settings);

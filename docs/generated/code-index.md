@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137473 | 1725 | 1416 | 82% |
+| `engine/` | 319 | 137499 | 1726 | 1417 | 82% |
 | `services/` | 32 | 13051 | 191 | 151 | 79% |
 | `shared/` | 189 | 42692 | 1674 | 1366 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99681 | 754 | 649 | 86% |
+| `ui/` | 242 | 99682 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -93,7 +93,7 @@
 | `engine/co-writer-engine.ts` | 3295 | 3 | 1 |
 | `engine/co-writer-state-sync.ts` | 53 | 1 | 1 |
 | `engine/co-writer/ai-response-parse.ts` | 186 | 4 | 4 |
-| `engine/co-writer/co-write-options.ts` | 265 | 9 | 9 |
+| `engine/co-writer/co-write-options.ts` | 291 | 10 | 10 |
 | `engine/co-writer/co-writer-types.ts` | 106 | 6 | 6 |
 | `engine/co-writer/create-session-store.ts` | 249 | 4 | 4 |
 | `engine/co-writer/directional-prompt.ts` | 137 | 2 | 1 |
@@ -595,7 +595,7 @@
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1024 | 2 | 2 |
-| `ui/co-writing-view.ts` | 3260 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3261 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 224 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |

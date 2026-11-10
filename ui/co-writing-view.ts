@@ -429,7 +429,8 @@ export class CoWritingView extends ItemView {
     }
     const mode = this.facade.settings.coWriteModelMode || 'local';
     if (mode === 'local' && !resolveCoWriteLocalModel(this.facade.settings)) {
-      showWarningNotice('协同写作未配置本地模型，请在设置中配置', { timeout: 8000 });
+      // M-2（用户拍板）：本地模式未选本地模型时自动切云端，不再把请求打到 localhost
+      showWarningNotice('本地模式未选择本地模型，已自动切换到云端模型；可在设置中固定云端模式', { timeout: 8000 });
     } else if (mode === 'cloud') {
       const providerId = this.facade.settings.coWriteCloudProvider || '';
       if (!providerId) {
