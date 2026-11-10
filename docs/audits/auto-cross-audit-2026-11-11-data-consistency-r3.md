@@ -9,7 +9,7 @@
 |---|---|---|---|---|---|
 | D3-1 | P1 | `ui/chapter-settlement-modal.ts:368-383` | 结算表写完后用 `processFrontmatter` 无锁回写正文 `status=settled`（整文件 RMW）；引擎侧同一字段本就在 `withWriteLock` 内写（`settlement-engine.ts:490/1410`） | 与协同自动保存并发时覆盖最后一段正文 | **本轮已修**：回写包进 `withWriteLock(target.bodyPath)`；契约测试钉住唯一写点 |
 | D3-2 | P1 | `engine/entity-state-manager.ts:258-283` | `updateInvolvedEntities` 先读正文 → await 提取人物 → 用旧快照整文件写回，无锁 | 提取期间的自动保存被旧正文覆盖（丢字） | **本轮已修**：提取移到锁外；锁内重读正文再合并写；3 条行为测试 + 契约 |
-| D3-3 | P1 | `ui/rebuild-chapters-modal.ts:137-167` | 重建章节对伏笔库/时间线看板做无锁 read→filter→modify | 重建期间结算新追加的伏笔/事件被旧快照覆盖，无 journal 不可撤销 | 未修 → **下一代码批次首项** |
+| D3-3 | P1 | `ui/rebuild-chapters-modal.ts:137-167` | 重建章节对伏笔库/时间线看板做无锁 read→filter→modify | 重建期间结算新追加的伏笔/事件被旧快照覆盖，无 journal 不可撤销 | **已修（第59轮）**：抽出 `removeChapterRows`，锁内重读→过滤→写回；3 条行为测试 + 契约 |
 | D3-4 | P2 | `ui/context-injector-modal.ts:71/193` | 注入上下文先读正文，随后多次 IO，最后整文件覆盖写，无锁 | 多秒窗口内自动保存被覆盖 | 未修 → fix queue |
 | D3-5 | P2 | `services/chapter-version-service.ts:557-596/537-542/239-262` | 版本标签/备注/回滚历史 RMW 无锁；`versions.json` 解析失败返回空索引，下次保存把旧元数据永久覆盖（无 `.corrupt` 归档） | 版本条目被静默清空/孤儿 blob | 未修 → fix queue |
 | D3-6 | P2 | `services/chapter-version-service.ts:193-209/370-405`、`services/project-rename-service.ts:54-59` | 项目改名/移动后 `versions.json` 里的 `project`/`sourcePath` 不迁移：历史被过滤丢弃；正文改名后回滚写回旧路径生成重复文件 | 版本历史丢失；回滚“成功”但改的是旧文件 | 未修 → fix queue |
@@ -29,7 +29,7 @@
 ## 二、r2 遗留项复核（HEAD 69cfcf8）
 
 - **D2-2 摘要/索引：已修**（`chapter-digest.ts:220-247` 锁内 RMW、同章去重、仅干净结算后生成）。残留：重复摘要文件不删盘，但不再进提示词。
-- D2-3 → D3-3、D2-4 → D3-17、D2-7 → D3-13、D2-8 → D3-9、D2-9 → D3-10、D2-10 → D3-5/D3-12、D2-12 → D3-11、D2-13 → D3-12：**仍在**。
+- D2-3 → D3-3（已修）、D2-4 → D3-17、D2-7 → D3-13、D2-8 → D3-9、D2-9 → D3-10、D2-10 → D3-5/D3-12、D2-12 → D3-11、D2-13 → D3-12：**仍在**。
 - 已修项无回归：C-2 partialRollback 锁、C-4 实体创建锁内查重、C-5 项目级结算锁、D-3 删除 journal、D-6 关系队列、F-3 承诺台账签名、v4.79 删除日志、D2-1 目录拒绝。
 
 ## 三、已排除项（交叉确认）
@@ -45,8 +45,11 @@
 
 ## 五、fix queue
 
-1. D3-3 重建章节锁 + 重读（P1）
-2. D3-5 版本索引锁与损坏归档、D3-6 改名迁移 sourcePath（P2）
+1. D3-5 版本索引锁与损坏归档、D3-6 改名迁移 sourcePath（P2）
 3. D3-7 partialFailure 暴露、D3-9 台账内容 hash/no-table（P2）
 4. D3-10 关联索引纯函数化、D3-11 统计原子写、D3-12 迁移完成标记、D3-13 屏障顺序（P2）
 5. D3-4/D3-14 其余无锁写点、D3-15~D3-18（P2/P3）
+
+## 六、后续修复记录
+
+- 第59轮（D3-3）：`ui/rebuild-chapters-modal.ts` 抽出 `removeChapterRows`，伏笔库/时间线看板改为 `withWriteLock(path)` 内重读→过滤→写回；新增 3 条行为测试（只删目标章节行 / 无匹配不写 / 文件缺失安全返回）+ 1 条接线契约。

@@ -13,6 +13,7 @@ import { showSuccessNotice, showWarningNotice } from './components/notice-helper
 
 
 import { ObsidianFrontmatter } from '@/shared/file-system-port';
+import { withWriteLock } from '@/shared/write-lock';
 const log = createLogger('RebuildChaptersModal');
 /**
  * RebuildChaptersModal 类。
@@ -115,6 +116,31 @@ export class RebuildChaptersModal extends Modal {
         }
     }
 
+    /**
+     * 在路径锁内删除表格中匹配指定章节的数据行（D3-3）。
+     *
+     * 锁内重新读取文件，避免用重建开始时的旧快照覆盖并发结算/分析追加的行；
+     * 表头与分隔行不参与匹配（章节列不会等于表头文字）。
+     *
+     * @param path - 台账文件路径（伏笔库 / 时间线看板）
+     * @param shouldRemove - 按切分后的单元格判断是否删除该行
+     */
+    private async removeChapterRows(path: string, shouldRemove: (cols: string[]) => boolean): Promise<void> {
+        const file = this.app.vault.getAbstractFileByPath(path);
+        if (!(file instanceof TFile)) return;
+        await withWriteLock(path, async () => {
+            const current = await this.app.vault.read(file);
+            const next = current.split('\n').filter(line => {
+                if (!line.match(/^\|.*\|/)) return true;
+                const cols = line.split('|').map(s => s.trim());
+                if (cols.length < 2) return true;
+                if (cols[0] === '#' || cols[0].includes('---')) return true;
+                return !shouldRemove(cols);
+            }).join('\n');
+            if (next !== current) await this.app.vault.modify(file, next);
+        });
+    }
+
     private async rebuild(project: string, volume: string, startNum: number, endNum: number): Promise<void> {
         // v4.0：合并读取 分卷大纲/第N卷_分卷大纲.md（兼容旧单文件）
         const plan = await readMergedVolumeOutline(this.app, project);
@@ -134,37 +160,16 @@ export class RebuildChaptersModal extends Modal {
 
         try {
             const chapNames = Array.from({ length: total }, (_, i) => `第${startNum + i}章`);
-            const fp = `${pjForeshadowDB(project)}`;
-            const ff = this.app.vault.getAbstractFileByPath(fp);
-            if (ff instanceof TFile) {
-                let fc = await this.app.vault.read(ff);
-                const before = fc;
-                fc = fc.split('\n').filter(l => {
-                    if (!l.match(/^\|.*\|/)) return true;
-                    const cols = l.split('|').map(s => s.trim());
-                    if (cols.length < 2) return true;
-                    if (cols[0] === '#' || cols[0].includes('---') || cols[0] === '伏笔') return true;
-                    if (cols.length >= 4 && chapNames.includes(cols[3].trim())) return false;
-                    return true;
-                }).join('\n');
-                if (fc !== before) await this.app.vault.modify(ff, fc);
-            }
-
-            const tp = `${pjTimelineBoard(project)}`;
-            const tf = this.app.vault.getAbstractFileByPath(tp);
-            if (tf instanceof TFile) {
-                let tc = await this.app.vault.read(tf);
-                const before = tc;
-                tc = tc.split('\n').filter(l => {
-                    if (!l.match(/^\|.*\|/)) return true;
-                    const cols = l.split('|').map(s => s.trim());
-                    if (cols.length < 2) return true;
-                    if (cols[0] === '#' || cols[0].includes('---') || cols[0] === '时间') return true;
-                    if (cols.length >= 2 && chapNames.includes(cols[1].trim())) return false;
-                    return true;
-                }).join('\n');
-                if (tc !== before) await this.app.vault.modify(tf, tc);
-            }
+            // D3-3（维度② r3）：伏笔库/时间线看板与结算、分析报告是同一写域，
+            // 必须在同一路径锁内「重读 → 过滤 → 写回」，否则重建期间的并发追加会被旧快照覆盖。
+            await this.removeChapterRows(
+                pjForeshadowDB(project),
+                (cols) => cols.length >= 4 && chapNames.includes(cols[3].trim()),
+            );
+            await this.removeChapterRows(
+                pjTimelineBoard(project),
+                (cols) => cols.length >= 2 && chapNames.includes(cols[1].trim()),
+            );
         } catch (e) { log.warn('清理伏笔/时间线失败:', e); }
 
         const templateService = this.plugin.engineRegistry.get(ENGINE_NAMES.TEMPLATE_SERVICE);

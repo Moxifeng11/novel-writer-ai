@@ -11,7 +11,7 @@
 | `shared/` | 193 | 42883 | 1683 | 1374 | 82% |
 | `core/` | 7 | 2840 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99913 | 754 | 649 | 86% |
+| `ui/` | 242 | 99918 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -752,7 +752,7 @@
 | `ui/prompt-manager-settings.ts` | 1144 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 87 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 504 | 2 | 2 |
-| `ui/rebuild-chapters-modal.ts` | 322 | 1 | 1 |
+| `ui/rebuild-chapters-modal.ts` | 327 | 1 | 1 |
 | `ui/refill-modal.ts` | 713 | 1 | 1 |
 | `ui/rename-project-modal.ts` | 105 | 1 | 1 |
 | `ui/rendering/context-panel.ts` | 961 | 1 | 1 |
