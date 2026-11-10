@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137506 | 1726 | 1417 | 82% |
-| `services/` | 32 | 13051 | 191 | 151 | 79% |
+| `services/` | 32 | 13167 | 193 | 153 | 79% |
 | `shared/` | 190 | 42731 | 1675 | 1367 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
@@ -372,7 +372,7 @@
 | `services/performance-monitor.ts` | 819 | 9 | 9 |
 | `services/project-health-service.ts` | 223 | 5 | 2 |
 | `services/project-rename-service.ts` | 121 | 2 | 2 |
-| `services/prompt-manager.ts` | 667 | 3 | 3 |
+| `services/prompt-manager.ts` | 783 | 5 | 5 |
 | `services/prompt-templates-default.ts` | 644 | 1 | 1 |
 | `services/quality-history-store.ts` | 128 | 4 | 4 |
 | `services/rules-registry.ts` | 146 | 7 | 5 |

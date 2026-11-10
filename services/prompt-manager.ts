@@ -4,16 +4,125 @@ import type {
     PromptCategory,
     ABTest,
     ABTestStatus,
-    ABTestVariant,
     PromptUsageRecord,
     PromptManagerConfig,
 } from '@/shared/prompt-manager-types';
-import { DEFAULT_PROMPT_MANAGER_CONFIG } from '@/shared/prompt-manager-types';
 import { DEFAULT_PROMPT_TEMPLATES } from './prompt-templates-default';
 
 import { createLogger } from '@/shared/logger';
 
 const log = createLogger('PromptManager');
+
+const PROMPT_CATEGORIES = new Set<PromptCategory>([
+    'character', 'chapter', 'outline', 'expand', 'deconstruct',
+    'polish', 'cowrite', 'worldview', 'entity', 'other',
+]);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isNonEmptyString(value: unknown): value is string {
+    return typeof value === 'string' && value.trim().length > 0;
+}
+
+function isTemplateLike(value: unknown): boolean {
+    if (!isRecord(value)) return false;
+    if (!isNonEmptyString(value['id']) || !isNonEmptyString(value['name'])) return false;
+    if (!PROMPT_CATEGORIES.has(String(value['category']) as PromptCategory)) return false;
+    if (!Array.isArray(value['versions']) || !Array.isArray(value['variables'])) return false;
+    return (value['versions'] as unknown[]).every((version) =>
+        isRecord(version)
+        && isNonEmptyString(version['version'])
+        && typeof version['systemPrompt'] === 'string'
+        && typeof version['userPrompt'] === 'string');
+}
+
+function isAbTestLike(value: unknown): boolean {
+    if (!isRecord(value)) return false;
+    if (!isNonEmptyString(value['id']) || !isNonEmptyString(value['templateId'])) return false;
+    if (!isRecord(value['variantA']) || !isRecord(value['variantB'])) return false;
+    if (!isRecord(value['trafficSplit'])) return false;
+    return ['draft', 'running', 'paused', 'completed'].includes(String(value['status']));
+}
+
+function isUsageLike(value: unknown): boolean {
+    return isRecord(value)
+        && isNonEmptyString(value['id'])
+        && isNonEmptyString(value['templateId'])
+        && isNonEmptyString(value['version'])
+        && typeof value['timestamp'] === 'number';
+}
+
+/**
+ * 宽松归一化磁盘上的提示词配置（数据可能被手工/同步改坏）。
+ *
+ * 顶层类型不对回退默认；数组逐项过滤，坏条目丢弃而不是让整个配置崩掉。
+ *
+ * @param input - 磁盘/内存配置
+ * @returns 可安全使用的配置
+ */
+export function normalizePromptManagerConfig(input: unknown): PromptManagerConfig {
+    const src = isRecord(input) ? input : {};
+    return {
+        customTemplates: Array.isArray(src['customTemplates'])
+            ? (src['customTemplates'] as unknown[]).filter(isTemplateLike) as PromptTemplate[]
+            : [],
+        abTests: Array.isArray(src['abTests'])
+            ? (src['abTests'] as unknown[]).filter(isAbTestLike) as ABTest[]
+            : [],
+        usageHistory: Array.isArray(src['usageHistory'])
+            ? (src['usageHistory'] as unknown[]).filter(isUsageLike) as PromptUsageRecord[]
+            : [],
+        abTestingEnabled: typeof src['abTestingEnabled'] === 'boolean' ? src['abTestingEnabled'] : false,
+    };
+}
+
+/**
+ * 严格校验导入的 JSON 配置：形状不对整份拒绝，不写盘。
+ *
+ * 与 normalize 的区别：导入是用户显式动作，静默丢字段会让用户以为导入成功；
+ * 因此未知顶层字段、错误数组形状、错误布尔类型都直接拒绝。
+ *
+ * @param data - JSON.parse 结果
+ * @returns 校验结果
+ *
+ * @example
+ * validatePromptManagerImport({ customTemplates: [], abTests: [], usageHistory: [], abTestingEnabled: false })
+ * // { ok: true, config: {...} }
+ */
+export function validatePromptManagerImport(
+    data: unknown,
+): { ok: true; config: PromptManagerConfig } | { ok: false; error: string } {
+    if (!isRecord(data)) return { ok: false, error: '配置必须是 JSON 对象' };
+    const allowed = new Set(['customTemplates', 'abTests', 'usageHistory', 'abTestingEnabled']);
+    const unknownKey = Object.keys(data).find((key) => !allowed.has(key));
+    if (unknownKey) return { ok: false, error: `未知配置字段：${unknownKey}` };
+    if (!Array.isArray(data['customTemplates'])) return { ok: false, error: 'customTemplates 必须是数组' };
+    if (!Array.isArray(data['abTests'])) return { ok: false, error: 'abTests 必须是数组' };
+    if (!Array.isArray(data['usageHistory'])) return { ok: false, error: 'usageHistory 必须是数组' };
+    if (typeof data['abTestingEnabled'] !== 'boolean') {
+        return { ok: false, error: 'abTestingEnabled 必须是布尔值' };
+    }
+    if (!(data['customTemplates'] as unknown[]).every(isTemplateLike)) {
+        return { ok: false, error: 'customTemplates 存在结构不合法的条目' };
+    }
+    if (!(data['abTests'] as unknown[]).every(isAbTestLike)) {
+        return { ok: false, error: 'abTests 存在结构不合法的条目' };
+    }
+    if (!(data['usageHistory'] as unknown[]).every(isUsageLike)) {
+        return { ok: false, error: 'usageHistory 存在结构不合法的条目' };
+    }
+    return {
+        ok: true,
+        config: {
+            customTemplates: data['customTemplates'] as PromptTemplate[],
+            abTests: data['abTests'] as ABTest[],
+            usageHistory: data['usageHistory'] as PromptUsageRecord[],
+            abTestingEnabled: data['abTestingEnabled'],
+        },
+    };
+}
 
 /**
  * 提示词管理器依赖列表结构定义。
@@ -34,7 +143,8 @@ export class PromptManager {
     constructor(deps: PromptManagerDeps) {
         this.deps = deps;
         this.defaultTemplates = JSON.parse(JSON.stringify(DEFAULT_PROMPT_TEMPLATES));
-        this.config = { ...DEFAULT_PROMPT_MANAGER_CONFIG, ...deps.getConfig() };
+        // 磁盘配置可能是手工/同步改坏的：逐项过滤坏条目，不让整类崩掉
+        this.config = normalizePromptManagerConfig(deps.getConfig());
     }
 
     /**
@@ -42,7 +152,7 @@ export class PromptManager {
      * @returns 无
      */
     reloadConfig(): void {
-        this.config = { ...DEFAULT_PROMPT_MANAGER_CONFIG, ...this.deps.getConfig() };
+        this.config = normalizePromptManagerConfig(this.deps.getConfig());
     }
 
     private async saveConfig(): Promise<void> {
@@ -639,8 +749,14 @@ export class PromptManager {
      */
     importConfig(jsonStr: string): boolean {
         try {
-            const data = JSON.parse(jsonStr);
-            this.config = { ...DEFAULT_PROMPT_MANAGER_CONFIG, ...data };
+            const parsed: unknown = JSON.parse(jsonStr);
+            const validation = validatePromptManagerImport(parsed);
+            if (!validation.ok) {
+                // 形状不对整份拒绝：不修改内存、不写盘、不报“导入成功”
+                log.warn('[PromptManager] 导入配置被拒绝:', validation.error);
+                return false;
+            }
+            this.config = validation.config;
             this.flushConfig();
             return true;
         } catch {
