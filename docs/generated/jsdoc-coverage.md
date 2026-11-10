@@ -6,9 +6,9 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 24 | 24 | 100% | 50 | 50 | 100% | 0 |
 | `domains/` | 11 | 28 | 28 | 100% | 1 | 1 | 100% | 0 |
-| `engine/` | 302 | 1703 | 1702 | 100% | 1241 | 1241 | 100% | 0 |
+| `engine/` | 302 | 1704 | 1703 | 100% | 1241 | 1241 | 100% | 0 |
 | `services/` | 32 | 194 | 194 | 100% | 222 | 222 | 100% | 0 |
-| `shared/` | 194 | 1691 | 1691 | 100% | 158 | 158 | 100% | 0 |
+| `shared/` | 194 | 1692 | 1692 | 100% | 158 | 158 | 100% | 0 |
 | `ui/` | 240 | 745 | 745 | 100% | 643 | 643 | 100% | 0 |
 
 ## 缺口最大的文件（按未注释导出数）
@@ -18,7 +18,7 @@
 | `engine/co-writer/local-model-utils.ts` | 9 | 1 | 0 | 0 |
 | `engine/agent/agent-types.ts` | 23 | 0 | 0 | 0 |
 | `engine/agent/conversation-engine.ts` | 1 | 0 | 5 | 0 |
-| `engine/agent/dsh/dsh-launch.ts` | 8 | 0 | 0 | 0 |
+| `engine/agent/dsh/dsh-launch.ts` | 9 | 0 | 0 | 0 |
 | `engine/agent/dsh/dsh-process.ts` | 7 | 0 | 0 | 0 |
 | `engine/agent/dsh/dsh-protocol.ts` | 4 | 0 | 4 | 0 |
 | `engine/agent/dsh/dsh-session.ts` | 7 | 0 | 5 | 0 |

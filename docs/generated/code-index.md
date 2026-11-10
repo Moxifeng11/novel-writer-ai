@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137680 | 1727 | 1418 | 82% |
+| `engine/` | 319 | 137690 | 1728 | 1418 | 82% |
 | `services/` | 32 | 13427 | 194 | 154 | 79% |
-| `shared/` | 195 | 42963 | 1686 | 1377 | 82% |
+| `shared/` | 195 | 42993 | 1687 | 1378 | 82% |
 | `core/` | 7 | 2840 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99957 | 754 | 649 | 86% |
+| `ui/` | 242 | 99962 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -37,7 +37,7 @@
 | `domains/short/tool-catalog.ts` | 42 | 1 | 0 |
 | `engine/agent/agent-types.ts` | 370 | 23 | 17 |
 | `engine/agent/conversation-engine.ts` | 1267 | 1 | 1 |
-| `engine/agent/dsh/dsh-launch.ts` | 122 | 8 | 7 |
+| `engine/agent/dsh/dsh-launch.ts` | 130 | 9 | 7 |
 | `engine/agent/dsh/dsh-process.ts` | 271 | 7 | 7 |
 | `engine/agent/dsh/dsh-protocol.ts` | 159 | 4 | 4 |
 | `engine/agent/dsh/dsh-session.ts` | 283 | 7 | 7 |
@@ -52,7 +52,7 @@
 | `engine/agent/harness/session-log.ts` | 269 | 1 | 1 |
 | `engine/agent/harness/session-snapshot.ts` | 232 | 10 | 10 |
 | `engine/agent/harness/spill-store.ts` | 112 | 6 | 6 |
-| `engine/agent/harness/tool-registry.ts` | 295 | 5 | 2 |
+| `engine/agent/harness/tool-registry.ts` | 297 | 5 | 2 |
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
 | `engine/ai-api-client-shared.ts` | 86 | 6 | 5 |
 | `engine/ai-api-client.ts` | 961 | 1 | 1 |
@@ -448,7 +448,7 @@
 | `shared/fanfic-rules.ts` | 738 | 25 | 20 |
 | `shared/file-cache.ts` | 492 | 3 | 3 |
 | `shared/file-mention.ts` | 165 | 9 | 9 |
-| `shared/file-path-guard.ts` | 206 | 11 | 11 |
+| `shared/file-path-guard.ts` | 236 | 12 | 12 |
 | `shared/file-system-port.ts` | 790 | 8 | 8 |
 | `shared/foreshadow-config.ts` | 112 | 4 | 4 |
 | `shared/foreshadow-loop.ts` | 157 | 3 | 3 |
@@ -763,7 +763,7 @@
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
 | `ui/services/agent-attachment-store.ts` | 171 | 10 | 6 |
-| `ui/services/agent-port.ts` | 684 | 2 | 2 |
+| `ui/services/agent-port.ts` | 689 | 2 | 2 |
 | `ui/services/agent-session-store.ts` | 211 | 5 | 5 |
 | `ui/services/agent-spill-store.ts` | 115 | 4 | 3 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |

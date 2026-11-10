@@ -273,8 +273,10 @@ export function validateArgs(tool: HarnessTool, args: Record<string, unknown>): 
             const num = typeof value === 'number' ? value : Number(value);
             if (!Number.isFinite(num)) return `参数 ${name} 必须是数字`;
         } else if (schema.type === 'boolean') {
-            if (typeof value !== 'boolean' && value !== 'true' && value !== 'false') {
-                return `参数 ${name} 必须是布尔值`;
+            // S3-6（安全 r3）：不再接受字符串 "true"/"false"——旧实现放过字符串，
+            // 但工具侧按 === true 判断，append:"true" 会静默退化成覆盖写。
+            if (typeof value !== 'boolean') {
+                return `参数 ${name} 必须是布尔值（不要传字符串 "true"/"false"）`;
             }
         } else if (schema.type === 'object') {
             if (typeof value !== 'object' || Array.isArray(value)) {

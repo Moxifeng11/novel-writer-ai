@@ -190,6 +190,8 @@ export async function shouldAutoApproveNewFile(
     exists: (path: string) => Promise<boolean>,
     allowedPrefix?: string,
 ): Promise<boolean> {
+    // S3-6：信任配置类路径不允许自动放行（见 isSensitiveAutoApprovePath）
+    if (isSensitiveAutoApprovePath(raw)) return false;
     const guard = sanitizeVaultPath(raw);
     if (!guard.ok || !guard.path) return false;
     if (allowedPrefix !== undefined) {
@@ -202,4 +204,32 @@ export async function shouldAutoApproveNewFile(
     } catch {
         return false;
     }
+}
+
+
+/** 这些目录/文件承载「来源信任链」或项目身份，不允许 Agent 自动新建（S3-6） */
+const SENSITIVE_AUTO_APPROVE_PATTERNS: ReadonlyArray<RegExp> = [
+    /(^|\/)00-系统模板(\/|$)/,
+    /(^|\/)04-项目总控(\/|$)/,
+    /(^|\/)05-同人设定库\/_资料(\/|$)/,
+    /(^|\/)02-时间线与伏笔(\/|$)/,
+    /sources\.json$/i,
+    /(^|\/)\.project$/,
+    /(^|\/)03-大纲与章节\//,
+];
+
+/**
+ * 判断目标是否属于「不能自动放行新建」的敏感路径（S3-6 安全 r3）。
+ *
+ * 这些位置要么承载信任链（考据 sources.json、同人资料），要么承载项目身份/结构
+ * （.project、系统模板、总控、时间线、正文目录）。命中时 `write_file` 必须走
+ * 显式确认，不能因「文件不存在」被静默放行。
+ *
+ * @param raw - 工具参数里的目标路径（未净化）
+ * @returns 是否敏感
+ */
+export function isSensitiveAutoApprovePath(raw: string): boolean {
+    const normalized = String(raw || '').trim().replace(/\\/g, '/').toLowerCase();
+    if (!normalized) return false;
+    return SENSITIVE_AUTO_APPROVE_PATTERNS.some((pattern) => pattern.test(normalized));
 }

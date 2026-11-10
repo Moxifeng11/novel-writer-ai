@@ -13,6 +13,9 @@ export type DshSandboxMode = 'read-only' | 'workspace-write';
 /** 默认 dsh 版本：固定版本，避免 npx 运行时拉取最新包 */
 export const DSH_PACKAGE_VERSION = '0.2.1-rc.5';
 
+/** 凭据类环境变量：buildDshLaunchPlan 会从 options.env 里剔除（S3-5） */
+export const CREDENTIAL_ENV_KEYS = /(_API_KEY|_TOKEN|_SECRET|_PASSWORD|AUTHORIZATION)$/i;
+
 /**
  * dsh 启动参数。
  */
@@ -114,6 +117,11 @@ export function buildDshLaunchPlan(options: DshLaunchOptions): DshLaunchPlan {
     // 只透传最小环境：PATH 等由调用方补充；不把整个 process.env 带进子进程
     for (const [key, value] of Object.entries(options.env || {})) {
         if (typeof value === 'string') env[key] = value;
+    }
+    // S3-5（安全 r3）：凭据类环境变量一律剔除——凭据只能来自显式 apiKey 注入，
+    // 调用方不能再经 options.env 夹带（避免把其它提供商的 Key 带进 dsh 进程树）。
+    for (const key of Object.keys(env)) {
+        if (CREDENTIAL_ENV_KEYS.test(key)) delete env[key];
     }
     env.DSH_HOME = options.home;
     if (options.apiKey) env.DEEPSEEK_API_KEY = options.apiKey;

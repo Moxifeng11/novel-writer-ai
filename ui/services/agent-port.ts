@@ -589,9 +589,14 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
             }
             let next = content;
             // D3-14（维度② r3）：追加是读—改—写，必须与结算/分析/自动保存共用路径锁；
-            // 锁内重新读取，避免用审批前的旧内容覆盖并发写入。
+            // S3-6（安全 r3）：锁内重查存在性——审批探测与写入之间若出现新文件，
+            // 旧实现按「新文件」自动放行并覆盖，这里直接要求重新确认。
             await withWriteLock(guard.path, async () => {
-                if (options?.append && existed) {
+                const existsNow = await app.vault.adapter.exists(guard.path);
+                if (!existed && existsNow) {
+                    throw new Error('文件在审批后出现，请重新确认是否覆盖');
+                }
+                if (options?.append && existsNow) {
                     next = `${await app.vault.adapter.read(guard.path)}${content}`;
                 }
                 await writeVaultText(app, guard.path, next);
