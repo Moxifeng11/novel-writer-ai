@@ -382,6 +382,8 @@ export class Workspace {
     revealLeaf(_leaf: any): void {}
     on(_event: string, _callback: (...args: any[]) => any): any { return { off: () => {} }; }
     trigger(_event: string, _data?: any): void {}
+    /** PF-1：向量库预热挂在布局就绪后；测试里同步执行，保持「初始化会完成」的语义 */
+    onLayoutReady(callback: () => void): void { callback(); }
 }
 
 export class ItemView extends Component {

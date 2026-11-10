@@ -50,7 +50,13 @@ export class ContextLoaderController {
      */
     async loadContext(): Promise<void> {
         if (!this.deps.state.project) {
-            await this.deps.activateTab('project-selector');
+            // PF-2（2026-11-10 首屏审计）：onOpen 默认已把 activeTabId 设为
+            // project-selector，随后还会直接 renderProjectSelectorInTab()。
+            // 这里再 activateTab('project-selector') 会把同一页全量渲染第二遍
+            // （长篇库每次含多次全库扫描），并误弹「已刷新当前页面」。
+            if (this.deps.state.activeTabId !== 'project-selector') {
+                await this.deps.activateTab('project-selector');
+            }
             return;
         }
 

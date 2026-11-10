@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137401 | 1725 | 1416 | 82% |
+| `engine/` | 319 | 137409 | 1725 | 1416 | 82% |
 | `services/` | 32 | 13004 | 190 | 150 | 79% |
 | `shared/` | 187 | 42433 | 1665 | 1360 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99640 | 753 | 649 | 86% |
+| `ui/` | 242 | 99646 | 753 | 649 | 86% |
 
 ## 文件清单
 
@@ -146,7 +146,7 @@
 | `engine/emotion-curve-analyzer.ts` | 220 | 1 | 1 |
 | `engine/emotion-planner.ts` | 212 | 7 | 4 |
 | `engine/ending-traction-engine.ts` | 418 | 1 | 1 |
-| `engine/engine-registry.ts` | 1507 | 13 | 3 |
+| `engine/engine-registry.ts` | 1515 | 13 | 3 |
 | `engine/entity-context-engine.ts` | 1098 | 10 | 2 |
 | `engine/entity-graph.ts` | 198 | 6 | 6 |
 | `engine/entity-link-migrator.ts` | 168 | 5 | 5 |
@@ -673,7 +673,7 @@
 | `ui/full-writer/batch-step-retry.ts` | 26 | 2 | 1 |
 | `ui/full-writer/batch-targets.ts` | 68 | 4 | 4 |
 | `ui/full-writer/chapter-orchestrator.ts` | 503 | 10 | 9 |
-| `ui/full-writer/context-loader-controller.ts` | 256 | 2 | 2 |
+| `ui/full-writer/context-loader-controller.ts` | 262 | 2 | 2 |
 | `ui/full-writer/cover-picker-controller.ts` | 146 | 1 | 1 |
 | `ui/full-writer/creation-flow-state.ts` | 253 | 4 | 4 |
 | `ui/full-writer/entity-state-controller.ts` | 136 | 2 | 2 |

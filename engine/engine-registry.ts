@@ -1391,7 +1391,15 @@ export class EngineRegistry {
 
         await knowledgeTagManager.init();
         await knowledgeBaseManager.init();
-        await knowledgeVectorStore.init();
+        // PF-1（2026-11-10 包体/首屏审计）：向量库查询路径自带 ensureLoaded()，
+        // init() 只是预热。实测知识库向量目录可达数 MB（8 文件 / 6.3MB），
+        // 串行 read+JSON.parse 会卡在 onload 关键路径上，推迟命令/Ribbon/视图注册。
+        // 改到布局就绪后后台预热：失败也不影响首次查询（查询会自行懒加载）。
+        plugin.app.workspace.onLayoutReady(() => {
+            void knowledgeVectorStore.init().catch((e: unknown) => {
+                log.warn('[EngineRegistry] 向量库后台预热失败（首次查询将懒加载）:', e);
+            });
+        });
         await batchImportManager.init();
         log.info('[小说工坊] 写作知识库初始化完成');
 

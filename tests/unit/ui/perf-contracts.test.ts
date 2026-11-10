@@ -71,3 +71,15 @@ describe('G6-10 拆解监控局部更新', () => {
         expect(body).toContain('patchProgressWidth');
     });
 });
+
+describe('PF-1 知识向量库预热不阻塞 onload', () => {
+    const src = read('engine/engine-registry.ts');
+
+    it('onload 关键路径不再 await 向量库 init', () => {
+        // init() 只是预热，查询路径自带 ensureLoaded()；串行读数 MB JSON
+        // 会推迟命令/Ribbon/视图注册。
+        expect(src).not.toContain('await knowledgeVectorStore.init()');
+        expect(src).toContain('workspace.onLayoutReady');
+        expect(src).toContain('void knowledgeVectorStore.init()');
+    });
+});
