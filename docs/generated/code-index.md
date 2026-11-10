@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137456 | 1725 | 1416 | 82% |
+| `engine/` | 319 | 137470 | 1725 | 1416 | 82% |
 | `services/` | 32 | 13018 | 190 | 150 | 79% |
 | `shared/` | 189 | 42685 | 1674 | 1366 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
@@ -203,7 +203,7 @@
 | `engine/logic-consistency-checker.ts` | 140 | 4 | 4 |
 | `engine/long-term-memory.ts` | 154 | 6 | 3 |
 | `engine/memory-trigger.ts` | 408 | 13 | 9 |
-| `engine/memory/chapter-digest.ts` | 340 | 9 | 7 |
+| `engine/memory/chapter-digest.ts` | 354 | 9 | 7 |
 | `engine/memory/memory-shard-writer.ts` | 141 | 5 | 5 |
 | `engine/mode-document-writer.ts` | 177 | 5 | 2 |
 | `engine/mode-injection.ts` | 117 | 3 | 1 |

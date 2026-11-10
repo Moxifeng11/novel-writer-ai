@@ -220,27 +220,30 @@ export async function writeChapterDigest(
 async function updateDigestIndex(app: App, fs: FileSystemPort, project: string, digest: ChapterDigest): Promise<void> {
     const dir = pjChapterDigestDir(project);
     const indexPath = `${dir}/index.json`;
-    let entries: Array<Record<string, unknown>> = [];
-    try {
-        const file = app.vault.getAbstractFileByPath(indexPath);
-        if (file) {
-            const raw = await fs.read(indexPath);
-            const parsed: unknown = JSON.parse(raw);
-            if (Array.isArray(parsed)) entries = parsed as Array<Record<string, unknown>>;
+    // D2-2：读—改—写必须持锁；并发结算/外部入口同时写会丢索引条目
+    await withWriteLock(indexPath, async () => {
+        let entries: Array<Record<string, unknown>> = [];
+        try {
+            const file = app.vault.getAbstractFileByPath(indexPath);
+            if (file) {
+                const raw = await fs.read(indexPath);
+                const parsed: unknown = JSON.parse(raw);
+                if (Array.isArray(parsed)) entries = parsed as Array<Record<string, unknown>>;
+            }
+        } catch {
+            entries = [];
         }
-    } catch {
-        entries = [];
-    }
-    entries = entries.filter((entry) => String(entry['章'] ?? '') !== digest.chapterKey);
-    entries.push({
-        章: digest.chapterKey,
-        标题: digest.title,
-        关键事件: digest.events,
-        未回收线索: digest.unresolved,
-        生成时间: digest.generatedAt,
+        entries = entries.filter((entry) => String(entry['章'] ?? '') !== digest.chapterKey);
+        entries.push({
+            章: digest.chapterKey,
+            标题: digest.title,
+            关键事件: digest.events,
+            未回收线索: digest.unresolved,
+            生成时间: digest.generatedAt,
+        });
+        entries.sort((a, b) => (chapterNumOf(a['章']) ?? 0) - (chapterNumOf(b['章']) ?? 0));
+        await fs.write(indexPath, JSON.stringify(entries, null, 2));
     });
-    entries.sort((a, b) => (chapterNumOf(a['章']) ?? 0) - (chapterNumOf(b['章']) ?? 0));
-    await fs.write(indexPath, JSON.stringify(entries, null, 2));
 }
 
 /**
@@ -276,7 +279,18 @@ export async function loadRecentChapterDigests(
             // 单文件损坏不影响其他摘要
         }
     }
-    return digests
+    // D2-2：同一章可能因改名/重结算留下多份摘要文件（第1章 / 第1章 初入宗门）。
+    // 按章号去重并保留最新 generatedAt，避免同一章两份摘要同时进入 prompt。
+    const byChapter = new Map<number, ChapterDigest>();
+    for (const digest of digests) {
+        const num = digest.chapterNum ?? chapterNumOf(digest.chapterKey);
+        if (num === null) continue;
+        const previous = byChapter.get(num);
+        if (!previous || String(digest.generatedAt) > String(previous.generatedAt)) {
+            byChapter.set(num, digest);
+        }
+    }
+    return [...byChapter.values()]
         .sort((a, b) => (a.chapterNum ?? 0) - (b.chapterNum ?? 0))
         .slice(-Math.max(1, count));
 }

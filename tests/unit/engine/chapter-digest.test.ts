@@ -9,6 +9,10 @@ import {
     writeChapterDigest,
 } from '../../../engine/memory/chapter-digest';
 import { ObsidianFileSystem } from '../../../shared/file-system-port';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const fsRead = (rel: string): string => fs.readFileSync(path.resolve(__dirname, '../../..', rel), 'utf8');
 
 const PROJECT = '长篇小说/测试书';
 
@@ -68,5 +72,35 @@ describe('chapter-digest — 文件与 3 章窗口', () => {
 
         const limited = await loadRecentChapterDigests(app, fs, PROJECT, 4, 2);
         expect(limited.map((item) => item.chapterKey)).toEqual(['第2章', '第3章']);
+    });
+
+    it('同章多份摘要（改名/重结算）按章号去重，保留最新 generatedAt（D2-2）', async () => {
+        const app = new App();
+        const fs = new ObsidianFileSystem(app);
+        const older = buildChapterDigest({
+            chapterKey: '第1章',
+            bodyText: '正文结尾：旧的悬念。',
+            events: ['旧事件'],
+            generatedAt: '2026-11-09T00:00:00.000Z',
+        });
+        const newer = buildChapterDigest({
+            chapterKey: '第1章 初入宗门',
+            bodyText: '正文结尾：新的悬念。',
+            events: ['新事件'],
+            generatedAt: '2026-11-10T00:00:00.000Z',
+        });
+        await writeChapterDigest(app, fs, PROJECT, older);
+        await writeChapterDigest(app, fs, PROJECT, newer);
+
+        const recent = await loadRecentChapterDigests(app, fs, PROJECT, 2, 3);
+
+        expect(recent).toHaveLength(1);
+        expect(recent[0].chapterKey).toBe('第1章 初入宗门');
+        expect(recent[0].events).toEqual(['新事件']);
+    });
+
+    it('摘要索引读改写持锁（并发写入不丢条目）', () => {
+        const src = fsRead('engine/memory/chapter-digest.ts');
+        expect(src).toContain('await withWriteLock(indexPath, async () => {');
     });
 });
