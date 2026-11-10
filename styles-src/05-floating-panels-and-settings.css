@@ -32,6 +32,8 @@
     background: color-mix(in srgb, var(--nw-panel-bg, var(--background-secondary)) 88%, var(--nw-accent, var(--interactive-accent)) 12%);
     cursor: grab;
     user-select: none;
+    /* M3-6：触屏拖动必须阻止浏览器把 pointermove 当成滚动 */
+    touch-action: none;
 }
 
 .nw-float-header-icon {

@@ -18,7 +18,7 @@
 | M3-3 | P2 | `ui/chapter-outline-tree-modal.ts:613-752`、`ui/plot-canvas-modal.ts:201-245` | M2-2 + 新发现：移动端排序仍只有 HTML5 drag；场景向下拖有 off-by-one | 触屏不可排序；桌面场景下移顺序错误 | **已修（第56轮）**：新增 `shared/array-move`（最终位置 / 移除前插入坐标两种语义）；场景 drop 与同卷章节 drop 统一走 helper（修 off-by-one）；章节树与情节画布各加 ▲▼ 点按按钮（触屏入口） |
 | M3-4 | P2 | `ui/knowledge-detail-modal.ts:279/1680`、`ui/monitor-panel-b.ts:189` | M2-3：`app.plugins` 私有 API 仍在；monitor 绕过命令 registry | 审核风险；结构变化时重拆/参考书静默失效 | **已修（第53轮）**：Modal 构造注入 `plugin`（`getPlugin()` 不再回退 `app.plugins`，缺失时 Notice）；两处调用点传 `plugin: this.plugin`；结算按钮改 `this.plugin.executeCommand('novel-writer-chapter-settlement')` |
 | M3-5 | P2 | `scripts/check-obsidian-api.mjs:54/57/71-73` | M2-4：门禁仍漏 `this.setTitle`、解构 isMobile、`app.plugins`、body/window 监听；整文件 allowlist 过宽 | 1.4.4 运行时才炸；私有 API 零门禁 | **已修（第53轮）**：新增 `private-api` 规则（`app.plugins`/`getPlugin('novel-writer-ai')`，不误伤内部 `this.getPlugin()`）；deprecated-api 补 `this.setTitle(`/非可选 `isMobile` 解构；body/window 监听纳入；夹具增 4 类绕过断言 |
-| M3-6 | P2 | `ui/draggable-panel.ts:124-153/284-312`、`styles-src/05/26` | M2-5：浮窗无 touch-action/pointercancel，390px 屏越界；知识卡操作 hover-only | 手机拖动被滚动接管/浮窗大半在屏外/按钮不可见 | 未修 → fix queue |
+| M3-6 | P2 | `ui/draggable-panel.ts:124-153/284-312`、`styles-src/05/26` | M2-5：浮窗无 touch-action/pointercancel，390px 屏越界；知识卡操作 hover-only | 手机拖动被滚动接管/浮窗大半在屏外/按钮不可见 | **已修（第57轮）**：header 加 `touch-action:none`、监听 `pointercancel`；默认/恢复/保存三处按视口夹取宽高与坐标；知识卡操作在 `@media (hover:none)` 与 `:focus-within` 下常显 |
 
 ## 二、已排除项（交叉确认）
 
@@ -41,6 +41,7 @@
 - 第54轮（L3-1）：新增 `shared/view-open-guard.ts`（begin/isCurrent/invalidate）；full-writer 与 KB 视图接入，KB 复位 `viewClosed`；新增守卫行为测试 3 条 + 接线契约测试 2 条；全量 662 文件 / 6996 通过 / 3 跳过，语句 45.8%；bundle 基线 +546B 已注记。
 - 第55轮（M3-2）：新增 `shared/document-scopes.ts`；main.ts window-open/close 登记 + 补齐主题/布局/字体；ThemeManager 与 font-manager 改为写全部已登记文档；panel-resizer body 类按宿主 Document；新增跨窗口主题 2 条、字体 2 条、接线契约 3 条、拖拽契约 1 条；全量 664 文件 / 7004 通过 / 3 跳过，语句 45.82%；bundle 基线 +760B 已注记。
 - 第56轮（M3-3）：新增 `shared/array-move.ts`（最终位置 / 移除前插入坐标）；章节树场景 drop 与同卷章节 drop 统一走 helper（修「向下放到上半区差一位」）；章节树与情节画布各加 ▲▼ 点按按钮；新增 helper 7 条 + 视图行为/接线 5 条；全量 666 文件 / 7016 通过 / 3 跳过，语句 45.84%；bundle 基线 +2116B 已注记。
+- 第57轮（M3-6）：`draggable-panel` 加 `pointercancel` 监听与 `clampPanelToViewport`，默认/恢复/保存三处按视口夹取；`styles-src/05` header 加 `touch-action:none`；`styles-src/26` 知识卡操作 `@media (hover:none)`/`:focus-within` 常显；新增布局夹取 2 条 + 触屏契约 2 条；全量 667 文件 / 7020 通过 / 3 跳过，语句 45.85%；bundle 基线 main.js +887B / styles.css +365B 已注记。维度① 三轮 fix queue 清零。
 
 ## 四、待用户拍板
 
@@ -48,6 +49,5 @@
 
 ## 五、fix queue
 
-1. M3-6 触屏 CSS（P2）
-2. L3-2 Agent restart 收尾、L3-3 迁移 deadline（P2）
-3. L3-4 scaffold abort/owner token、L3-5 registry 清理（P3）
+1. L3-2 Agent restart 收尾、L3-3 迁移 deadline（P2）
+2. L3-4 scaffold abort/owner token、L3-5 registry 清理（P3）

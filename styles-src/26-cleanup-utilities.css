@@ -356,6 +356,15 @@
 .nw-kb-book-card:hover .nw-kb-card-actions {
     opacity: 1;
 }
+/* M3-6：触屏没有 hover，知识卡操作按钮必须常显；键盘聚焦时同样可见 */
+@media (hover: none) {
+    .nw-kb-book-card .nw-kb-card-actions {
+        opacity: 1;
+    }
+}
+.nw-kb-book-card:focus-within .nw-kb-card-actions {
+    opacity: 1;
+}
 .nw-kb-book-card:hover {
     border-color: var(--interactive-accent);
     box-shadow: var(--nw-card-shadow);

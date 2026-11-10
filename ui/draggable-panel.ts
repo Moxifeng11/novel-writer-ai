@@ -149,6 +149,9 @@ export class DraggablePanel extends ItemView {
     this.docDisposers = [
       onNodeDoc(this.containerEl, "pointermove", this.boundDragMove),
       onNodeDoc(this.containerEl, "pointerup", this.boundDragEnd),
+      // M3-6：触摸被系统手势打断时只发 pointercancel（没有 pointerup），
+      // 不处理会让 isDragging 永远为 true、面板粘在指针上。
+      onNodeDoc(this.containerEl, "pointercancel", this.boundDragEnd),
     ];
   }
 
@@ -226,7 +229,30 @@ export class DraggablePanel extends ItemView {
     if (!this.isDragging || !this.panelContainer) return;
     this.isDragging = false;
     this.panelContainer.removeClass("nw-float-dragging");
+    // M3-6：拖到窗外（或窄屏）时先夹回可视区，避免保存出「半个面板在屏外」的布局
+    this.clampPanelToViewport();
     this.saveLayout();
+  }
+
+  /**
+   * 把面板位置与宽度夹回当前窗口可视区（M3-6）。
+   *
+   * 390px 手机上旧逻辑只夹左/上边界，宽度 330 + x 360 会让面板大半在屏外。
+   */
+  private clampPanelToViewport(): void {
+    if (!this.panelContainer) return;
+    const win = resolveNodeWindow(this.containerEl);
+    const rect = this.panelContainer.getBoundingClientRect();
+    const viewportWidth = win.innerWidth || 1280;
+    const viewportHeight = win.innerHeight || 800;
+    const width = Math.min(Math.max(280, rect.width || 320), Math.max(280, viewportWidth - 16));
+    const maxLeft = Math.max(8, viewportWidth - width - 8);
+    const maxTop = Math.max(48, viewportHeight - 80);
+    const left = Math.min(Math.max(8, rect.left), maxLeft);
+    const top = Math.min(Math.max(48, rect.top), maxTop);
+    this.panelContainer.style.setProperty("left", `${left}px`, "important");
+    this.panelContainer.style.setProperty("top", `${top}px`, "important");
+    this.panelContainer.style.setProperty("width", `${width}px`, "important");
   }
 
   private toggleCollapse(): void {
@@ -241,12 +267,19 @@ export class DraggablePanel extends ItemView {
     if (!this.panelContainer) return;
     const rect = this.panelContainer.getBoundingClientRect();
     if (rect.width < 80 || rect.height < 80) return;
+    const win = resolveNodeWindow(this.containerEl);
+    const viewportWidth = win.innerWidth || 1280;
+    const viewportHeight = win.innerHeight || 800;
+    // M3-6：持久化的位置/尺寸同样夹进视口，换到小屏恢复时不会整块跑到屏外
+    const width = Math.min(Math.max(280, rect.width), Math.max(280, viewportWidth - 16));
+    const height = Math.min(Math.max(200, rect.height), Math.max(200, viewportHeight - 48));
+    const maxLeft = Math.max(8, viewportWidth - width - 8);
     const layout = this.getLayout();
     const idx = layout.findIndex((p) => p.id === this.panelId);
     const entry: PanelLayoutConfig = {
       id: this.panelId,
-      position: { x: Math.max(8, rect.left), y: Math.max(48, rect.top) },
-      size: { width: Math.max(280, rect.width), height: Math.max(200, rect.height) },
+      position: { x: Math.min(Math.max(8, rect.left), maxLeft), y: Math.max(48, rect.top) },
+      size: { width, height },
       collapsed: this.isCollapsed,
     };
     if (idx >= 0) {
@@ -283,8 +316,9 @@ export class DraggablePanel extends ItemView {
 
   private createDefaultLayoutEntry(): PanelLayoutConfig {
     const win = resolveNodeWindow(this.containerEl);
-    const viewportWidth = Math.max(win.innerWidth || 1280, 960);
-    const viewportHeight = Math.max(win.innerHeight || 800, 640);
+    // M3-6：不再强制 960 宽下限——390px 手机上会把默认面板推到屏外
+    const viewportWidth = win.innerWidth || 1280;
+    const viewportHeight = win.innerHeight || 800;
     const presets: Record<string, { x: number; y: number; width: number; height: number }> = {
       writing: { x: 24, y: 88, width: Math.min(760, viewportWidth - 360), height: Math.min(680, viewportHeight - 140) },
       "monitor-a": { x: Math.max(360, viewportWidth - 360), y: 88, width: 330, height: Math.min(420, viewportHeight - 140) },
@@ -292,10 +326,12 @@ export class DraggablePanel extends ItemView {
       knowledge: { x: 24, y: 88, width: 360, height: Math.min(560, viewportHeight - 140) },
     };
     const p = presets[this.panelId] || { x: 80, y: 120, width: 520, height: 420 };
+    const width = Math.min(Math.max(280, p.width), Math.max(280, viewportWidth - 16));
+    const maxLeft = Math.max(8, viewportWidth - width - 8);
     return {
       id: this.panelId,
-      position: { x: Math.max(8, p.x), y: Math.max(48, p.y) },
-      size: { width: Math.max(280, p.width), height: Math.max(200, p.height) },
+      position: { x: Math.min(Math.max(8, p.x), maxLeft), y: Math.max(48, p.y) },
+      size: { width, height: Math.max(200, p.height) },
       collapsed: false,
     };
   }
@@ -303,13 +339,18 @@ export class DraggablePanel extends ItemView {
   private applyLayoutEntry(entry: PanelLayoutConfig): void {
     if (!this.panelContainer) return;
     const win = resolveNodeWindow(this.containerEl);
-    const maxLeft = Math.max(8, (win.innerWidth || 1280) - 120);
-    const maxTop = Math.max(48, (win.innerHeight || 800) - 80);
+    const viewportWidth = win.innerWidth || 1280;
+    const viewportHeight = win.innerHeight || 800;
+    // M3-6：宽度/位置都夹进当前窗口，窄屏恢复旧布局不会留半个面板在屏外
+    const width = Math.min(Math.max(280, entry.size.width), Math.max(280, viewportWidth - 16));
+    const height = Math.min(Math.max(200, entry.size.height), Math.max(200, viewportHeight - 48));
+    const maxLeft = Math.max(8, viewportWidth - width - 8);
+    const maxTop = Math.max(48, viewportHeight - 80);
     this.panelContainer.addClass("nw-float-layout-fixed");
     this.panelContainer.style.setProperty("left", `${Math.min(Math.max(8, entry.position.x), maxLeft)}px`, "important");
     this.panelContainer.style.setProperty("top", `${Math.min(Math.max(48, entry.position.y), maxTop)}px`, "important");
-    this.panelContainer.style.setProperty("width", `${Math.max(280, entry.size.width)}px`, "important");
-    this.panelContainer.style.setProperty("height", `${Math.max(200, entry.size.height)}px`, "important");
+    this.panelContainer.style.setProperty("width", `${width}px`, "important");
+    this.panelContainer.style.setProperty("height", `${height}px`, "important");
 
 
     if (entry.collapsed && this.bodyContainer) {

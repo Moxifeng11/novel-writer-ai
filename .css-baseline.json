@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-09T12:07:44.813Z",
-  "note": "知识库/指纹库能力边界说明条（16 类）+ 知识库窄屏题材栏响应式 + 弹窗 lg/xl 视口限宽/限高与内容滚动；+17 类/+2532B，均为本轮 UI/边界修复",
-  "bytes": 550923,
+  "generatedAt": "2026-11-10T16:31:01.318Z",
+  "note": "第57轮 M3-6：浮窗 header 加 touch-action:none；知识卡操作 hover:none/focus-within 常显（+365B）",
+  "bytes": 551288,
   "important": 24,
   "hardcodedHex": 161,
   "rgbHsl": 188,

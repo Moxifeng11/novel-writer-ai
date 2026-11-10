@@ -11,7 +11,7 @@
 | `shared/` | 193 | 42883 | 1683 | 1374 | 82% |
 | `core/` | 7 | 2840 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99867 | 754 | 649 | 86% |
+| `ui/` | 242 | 99908 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -661,7 +661,7 @@
 | `ui/create-project-modal.ts` | 490 | 2 | 2 |
 | `ui/cross-volume-state-modal.ts` | 231 | 1 | 1 |
 | `ui/diagnose-writer-modal.ts` | 363 | 1 | 1 |
-| `ui/draggable-panel.ts` | 338 | 2 | 2 |
+| `ui/draggable-panel.ts` | 379 | 2 | 2 |
 | `ui/existing-entity-manager.ts` | 555 | 1 | 1 |
 | `ui/expand-text-modal.ts` | 226 | 1 | 1 |
 | `ui/export-manuscript-modal.ts` | 665 | 4 | 4 |
