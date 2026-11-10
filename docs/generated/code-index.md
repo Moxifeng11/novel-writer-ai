@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137537 | 1727 | 1418 | 82% |
-| `services/` | 32 | 13196 | 194 | 154 | 79% |
+| `services/` | 32 | 13296 | 194 | 154 | 79% |
 | `shared/` | 193 | 42883 | 1683 | 1374 | 82% |
 | `core/` | 7 | 2840 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
@@ -358,7 +358,7 @@
 | `services/backup-center-service.ts` | 180 | 4 | 1 |
 | `services/canon-research-service.ts` | 497 | 8 | 8 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
-| `services/chapter-version-service.ts` | 703 | 4 | 4 |
+| `services/chapter-version-service.ts` | 739 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
 | `services/execution-ledger.ts` | 325 | 10 | 7 |
 | `services/font-manager.ts` | 248 | 15 | 13 |
@@ -371,7 +371,7 @@
 | `services/model-discovery.ts` | 274 | 5 | 5 |
 | `services/performance-monitor.ts` | 819 | 9 | 9 |
 | `services/project-health-service.ts` | 223 | 5 | 2 |
-| `services/project-rename-service.ts` | 121 | 2 | 2 |
+| `services/project-rename-service.ts` | 185 | 2 | 2 |
 | `services/prompt-manager.ts` | 783 | 5 | 5 |
 | `services/prompt-templates-default.ts` | 644 | 1 | 1 |
 | `services/quality-history-store.ts` | 128 | 4 | 4 |

@@ -8,11 +8,13 @@ import { App, TFolder } from 'obsidian';
 import {
     pjProjectMeta,
     pjWorldview,
+    pjVersionsDir,
     pluginPreferenceFile,
     pluginStylePatternsFile,
 } from '@/shared/paths';
 import { projectDisplayName } from '@/domains/kernel/project-locator';
 import { writeVaultText } from '@/shared/file-system-port';
+import { withWriteLock } from '@/shared/write-lock';
 
 /**
  * ProjectRenameResult 类型定义。
@@ -56,6 +58,7 @@ export class ProjectRenameService {
         await this.safeStep(warnings, '更新 .project 标题', () => this.syncProjectMeta(newProject, newName));
         await this.safeStep(warnings, '更新世界观项目名称', () => this.syncWorldview(newProject, newName));
         await this.safeStep(warnings, '更新写作配置项目名', () => this.syncWritingProfile(newProject, newName));
+        await this.safeStep(warnings, '迁移版本索引路径', () => this.migrateVersionIndexes(oldProject, newProject));
                 await this.safeStep(warnings, '迁移插件偏好文件', () => this.migratePluginData(oldProject, displayName, newProject, newName));
 
         return { success: true, oldProject, newProject, warnings };
@@ -102,6 +105,67 @@ export class ProjectRenameService {
             ? content.replace(/^projectName:\s*.*$/m, `projectName: ${name}`)
             : content.replace(/^---\s*$/m, `---\nprojectName: ${name}`);
         if (updated !== content) await writeVaultText(this.app, path, updated);
+    }
+
+    /**
+     * 迁移项目内全部版本索引里的项目/路径字段（D3-6）。
+     *
+     * 目录 rename 后 `versions.json` 跟着移动，但条目里的 `project`/`sourcePath`/
+     * `versionPath` 仍是旧项目路径；读取侧会按新项目过滤掉这些条目，历史看起来「消失」，
+     * 回滚还会写回旧路径生成重复正文。这里逐个索引重写路径前缀。
+     *
+     * @param oldProject - 旧项目路径
+     * @param newProject - 新项目路径
+     */
+    private async migrateVersionIndexes(oldProject: string, newProject: string): Promise<void> {
+        const adapter = this.app.vault.adapter;
+        const root = pjVersionsDir(newProject);
+        if (!(await adapter.exists(root))) return;
+
+        const indexFiles: string[] = [];
+        const walk = async (dir: string): Promise<void> => {
+            const listing = await adapter.list(dir);
+            for (const file of listing.files) {
+                if (file.endsWith('/versions.json')) indexFiles.push(file);
+            }
+            for (const sub of listing.folders) await walk(sub);
+        };
+        await walk(root);
+
+        for (const path of indexFiles) {
+            try {
+                const raw = await adapter.read(path);
+                const parsed = JSON.parse(raw) as { project?: string; versions?: Array<Record<string, unknown>> };
+                if (!Array.isArray(parsed.versions)) continue;
+
+                let changed = false;
+                if (typeof parsed.project === 'string' && parsed.project !== newProject) {
+                    parsed.project = newProject;
+                    changed = true;
+                }
+                for (const entry of parsed.versions) {
+                    if (typeof entry.project === 'string' && entry.project !== newProject) {
+                        entry.project = newProject;
+                        changed = true;
+                    }
+                    for (const key of ['sourcePath', 'versionPath'] as const) {
+                        const value = entry[key];
+                        if (typeof value === 'string' && value.startsWith(`${oldProject}/`)) {
+                            entry[key] = `${newProject}/${value.slice(oldProject.length + 1)}`;
+                            changed = true;
+                        }
+                    }
+                }
+                if (!changed) continue;
+
+                await withWriteLock(path, async () => {
+                    // write-entry-allow: 版本索引 JSON，位于项目 _versions 目录
+                    await adapter.write(path, JSON.stringify(parsed, null, 2));
+                });
+            } catch {
+                // 单个索引损坏跳过；读取侧会把它归档为 .corrupt-*.bak
+            }
+        }
     }
 
     private async migratePluginData(oldProject: string, oldDisplayName: string, newProject: string, newDisplayName: string): Promise<void> {

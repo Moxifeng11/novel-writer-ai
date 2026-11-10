@@ -251,6 +251,9 @@ export class ChapterVersionService {
                 versions,
             };
         } catch {
+            // D3-5（维度② r3）：索引损坏时先留档再返回空索引；否则下一次 saveVersion
+            // 会用空索引覆盖原文件，全部版本元数据永久丢失。
+            await this.archiveCorruptFile(indexPath);
             return {
                 contentType,
                 project,
@@ -526,6 +529,8 @@ export class ChapterVersionService {
             const history = JSON.parse(content) as RollbackRecord[];
             return history;
         } catch {
+            // D3-5：损坏的回滚历史同样留档，避免下一次写入把旧记录永久覆盖
+            await this.archiveCorruptFile(historyPath);
             return [];
         }
     }
@@ -535,10 +540,14 @@ export class ChapterVersionService {
      * @param record - 记录
      */
     async addRollbackRecord(record: RollbackRecord): Promise<void> {
-        const history = await this.getRollbackHistory(record.project);
-        history.unshift(record);
-        await this.ensureDir(pjVersionsDir(record.project));
-        await this.writeFile(pjRollbackHistoryFile(record.project), JSON.stringify(history, null, 2));
+        const historyPath = pjRollbackHistoryFile(record.project);
+        // D3-5：历史是读—改—写，与回滚并发时按同一路径锁串行，避免丢记录
+        await withWriteLock(historyPath, async () => {
+            const history = await this.getRollbackHistory(record.project);
+            history.unshift(record);
+            await this.ensureDir(pjVersionsDir(record.project));
+            await this.writeFile(historyPath, JSON.stringify(history, null, 2));
+        });
     }
 
     // ============================================================
@@ -561,13 +570,17 @@ export class ChapterVersionService {
         versionId: string,
         tags: string[],
     ): Promise<boolean> {
-        const index = await this.getVersionIndex(project, contentType, contentKey, '');
-        const version = index.versions.find(v => v.id === versionId);
-        if (!version) return false;
+        const indexPath = pjVersionIndexFile(project, contentType, contentKey);
+        // D3-5：标签/备注是索引的读—改—写，与保存/删除共用同一把索引锁
+        return withWriteLock(indexPath, async () => {
+            const index = await this.getVersionIndex(project, contentType, contentKey, '');
+            const version = index.versions.find(v => v.id === versionId);
+            if (!version) return false;
 
-        version.tags = tags;
-        await this.saveVersionIndex(project, contentType, contentKey, index);
-        return true;
+            version.tags = tags;
+            await this.saveVersionIndex(project, contentType, contentKey, index);
+            return true;
+        });
     }
 
     /**
@@ -586,13 +599,17 @@ export class ChapterVersionService {
         versionId: string,
         note: string,
     ): Promise<boolean> {
-        const index = await this.getVersionIndex(project, contentType, contentKey, '');
-        const version = index.versions.find(v => v.id === versionId);
-        if (!version) return false;
+        const indexPath = pjVersionIndexFile(project, contentType, contentKey);
+        // D3-5：备注写入同样与保存/删除串行
+        return withWriteLock(indexPath, async () => {
+            const index = await this.getVersionIndex(project, contentType, contentKey, '');
+            const version = index.versions.find(v => v.id === versionId);
+            if (!version) return false;
 
-        version.note = note;
-        await this.saveVersionIndex(project, contentType, contentKey, index);
-        return true;
+            version.note = note;
+            await this.saveVersionIndex(project, contentType, contentKey, index);
+            return true;
+        });
     }
 
     /**
@@ -655,6 +672,25 @@ export class ChapterVersionService {
         const indexPath = pjVersionIndexFile(project, contentType, contentKey);
         await this.ensureDir(pjContentVersionsDir(project, contentType, contentKey));
         await this.writeFile(indexPath, JSON.stringify(index, null, 2));
+    }
+
+    /**
+     * 把损坏的索引/历史文件改名为 `.corrupt-<时间戳>.bak` 留档（D3-5）。
+     *
+     * 与 knowledge-tags / preference-memory 的损坏留档口径一致；归档失败不阻断读取，
+     * 由后续写入继续（至少不会静默删除原文）。
+     *
+     * @param path - 损坏文件路径
+     */
+    private async archiveCorruptFile(path: string): Promise<void> {
+        try {
+            const adapter = this.app.vault.adapter;
+            if (typeof adapter.rename !== 'function') return;
+            if (!(await adapter.exists(path))) return;
+            await adapter.rename(path, `${path}.corrupt-${Date.now()}.bak`);
+        } catch {
+            // 归档失败时保持原文件不动，调用方返回空索引
+        }
     }
 
     private async fileExists(path: string): Promise<boolean> {

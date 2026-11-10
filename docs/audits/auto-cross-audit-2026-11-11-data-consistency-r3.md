@@ -11,8 +11,8 @@
 | D3-2 | P1 | `engine/entity-state-manager.ts:258-283` | `updateInvolvedEntities` 先读正文 → await 提取人物 → 用旧快照整文件写回，无锁 | 提取期间的自动保存被旧正文覆盖（丢字） | **本轮已修**：提取移到锁外；锁内重读正文再合并写；3 条行为测试 + 契约 |
 | D3-3 | P1 | `ui/rebuild-chapters-modal.ts:137-167` | 重建章节对伏笔库/时间线看板做无锁 read→filter→modify | 重建期间结算新追加的伏笔/事件被旧快照覆盖，无 journal 不可撤销 | **已修（第59轮）**：抽出 `removeChapterRows`，锁内重读→过滤→写回；3 条行为测试 + 契约 |
 | D3-4 | P2 | `ui/context-injector-modal.ts:71/193` | 注入上下文先读正文，随后多次 IO，最后整文件覆盖写，无锁 | 多秒窗口内自动保存被覆盖 | 未修 → fix queue |
-| D3-5 | P2 | `services/chapter-version-service.ts:557-596/537-542/239-262` | 版本标签/备注/回滚历史 RMW 无锁；`versions.json` 解析失败返回空索引，下次保存把旧元数据永久覆盖（无 `.corrupt` 归档） | 版本条目被静默清空/孤儿 blob | 未修 → fix queue |
-| D3-6 | P2 | `services/chapter-version-service.ts:193-209/370-405`、`services/project-rename-service.ts:54-59` | 项目改名/移动后 `versions.json` 里的 `project`/`sourcePath` 不迁移：历史被过滤丢弃；正文改名后回滚写回旧路径生成重复文件 | 版本历史丢失；回滚“成功”但改的是旧文件 | 未修 → fix queue |
+| D3-5 | P2 | `services/chapter-version-service.ts:557-596/537-542/239-262` | 版本标签/备注/回滚历史 RMW 无锁；`versions.json` 解析失败返回空索引，下次保存把旧元数据永久覆盖（无 `.corrupt` 归档） | 版本条目被静默清空/孤儿 blob | **已修（第60轮）**：标签/备注/回滚历史改 `withWriteLock(indexPath/historyPath)`；索引与历史损坏先归档 `.corrupt-<ts>.bak`；5 条测试 |
+| D3-6 | P2 | `services/chapter-version-service.ts:193-209/370-405`、`services/project-rename-service.ts:54-59` | 项目改名/移动后 `versions.json` 里的 `project`/`sourcePath` 不迁移：历史被过滤丢弃；正文改名后回滚写回旧路径生成重复文件 | 版本历史丢失；回滚“成功”但改的是旧文件 | **已修（第60轮，项目改名侧）**：rename 后遍历 `_versions/**/versions.json` 重写 project/sourcePath/versionPath；正文单文件改名（vault rename 事件）仍待办 |
 | D3-7 | P2 | `engine/settlement-engine.ts:630-638/1549-1592`、`settlement-coordinator.ts:79-89` | 回滚终态之后的关系/承诺/人物弧更新失败只设内部 `hasPartialFailure`，`SettlementResult` 无该字段，结算表仍写「已完成」 | 账本半写却显示已结算，且 journal 已清无法恢复 | 未修 → fix queue（暴露 partialFailure，约 15 行） |
 | D3-8 | P2 | `engine/settlement/settlement-journal.ts:72-77`、`settlement-engine.ts:1471-1505` | journal 仅在内存：进程被杀（移动端后台回收/断电）无法回滚；删除实体后崩溃即永久丢失 | 最坏情况实体文件永久删除 | 未修 → fix queue（`settlement.inprogress.json` WAL） |
 | D3-9 | P2 | `engine/ledger/ledger-io.ts:30-41/89-110`、`settlement-engine.ts:1213-1258` | 台账签名仍 mtime+size；读失败把空账本写进缓存；`no-table` 被当「已存在」成功；揭示/删除路径不 invalidate | 新事件静默丢失；整会话拿到空/旧账本 | 未修 → fix queue（内容 hash + 失败不缓存 + no-table 置 partial） |
@@ -45,11 +45,13 @@
 
 ## 五、fix queue
 
-1. D3-5 版本索引锁与损坏归档、D3-6 改名迁移 sourcePath（P2）
-3. D3-7 partialFailure 暴露、D3-9 台账内容 hash/no-table（P2）
-4. D3-10 关联索引纯函数化、D3-11 统计原子写、D3-12 迁移完成标记、D3-13 屏障顺序（P2）
-5. D3-4/D3-14 其余无锁写点、D3-15~D3-18（P2/P3）
+1. D3-6 正文单文件改名迁移 sourcePath（P2，vault rename 事件）
+2. D3-7 partialFailure 暴露、D3-9 台账内容 hash/no-table（P2）
+3. D3-10 关联索引纯函数化、D3-11 统计原子写、D3-12 迁移完成标记、D3-13 屏障顺序（P2）
+4. D3-4/D3-14 其余无锁写点、D3-15~D3-18（P2/P3）
 
 ## 六、后续修复记录
 
 - 第59轮（D3-3）：`ui/rebuild-chapters-modal.ts` 抽出 `removeChapterRows`，伏笔库/时间线看板改为 `withWriteLock(path)` 内重读→过滤→写回；新增 3 条行为测试（只删目标章节行 / 无匹配不写 / 文件缺失安全返回）+ 1 条接线契约。
+
+- 第60轮（D3-5/D3-6）：`chapter-version-service` 标签/备注/回滚历史加索引锁，索引与历史损坏归档 `.corrupt-<ts>.bak`；`project-rename-service` 新增 `migrateVersionIndexes` 重写 `_versions/**/versions.json` 的项目与路径字段；新增 5 条测试。
