@@ -462,11 +462,13 @@ export class BatchPipelineRunner {
         }
 
         // 部分失败已回滚：本章按失败处理，不能写快照/总览或让批量续跑跳过。
-        if (result.rollback || result.settlementPartial) {
+        if (result.rollback || result.settlementPartial || result.partialFailure?.length) {
             const detail = result.rollback
                 ? `恢复 ${result.rollback.reverted} 项${result.rollback.failed > 0 ? `，回滚失败 ${result.rollback.failed} 项` : ''}`
-                : '回滚不完整';
-            throw new Error(`结算失败并已回滚（${detail}），本章未完成`);
+                : result.settlementPartial
+                    ? '回滚不完整'
+                    : `附加步骤失败：${result.partialFailure!.join('、')}`;
+            throw new Error(`结算失败${result.rollback ? '并已回滚' : ''}（${detail}），本章未完成`);
         }
 
         const artifactReport = await writeSettlementArtifacts({

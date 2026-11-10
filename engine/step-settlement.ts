@@ -181,12 +181,14 @@ export async function executeSettlement(
         }
 
         // 部分失败已回滚：不得标完成，否则后续步骤/批量会基于未结算章节继续。
-        if (result.rollback || result.settlementPartial) {
+        if (result.rollback || result.settlementPartial || result.partialFailure?.length) {
             host.hideProgress();
             const detail = result.rollback
                 ? `恢复 ${result.rollback.reverted} 项${result.rollback.failed > 0 ? `，回滚失败 ${result.rollback.failed} 项` : ''}`
-                : '回滚不完整';
-            host.showError(`章节结算失败，已回滚（${detail}）；本章未标记完成，请修正分析报告后重试`);
+                : result.settlementPartial
+                    ? '回滚不完整'
+                    : `附加步骤失败：${result.partialFailure!.join('、')}`;
+            host.showError(`章节结算失败${result.rollback ? '，已回滚' : ''}（${detail}）；本章未标记完成，请修正分析报告后重试`);
             await renderInContainer(tabContent);
             return result;
         }

@@ -21,6 +21,8 @@ export interface SettlementTableResult {
     rollback?: { reverted: number; failed: number };
     /** 回滚不完整时写入，后续步骤/用户可见 */
     settlementPartial?: boolean;
+    /** 回滚终态之后的附加写入失败（关系/承诺/角色弧线）；存在即不得写「已完成」产物 */
+    partialFailure?: string[];
 }
 
 /**

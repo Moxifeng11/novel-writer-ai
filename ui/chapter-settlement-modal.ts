@@ -201,15 +201,17 @@ export class ChapterSettlementModal extends Modal {
             return;
         }
         // 部分失败已回滚：不写结算表/快照/总览，也不把正文标 settled。
-        if (result.rollback || result.settlementPartial) {
+        if (result.rollback || result.settlementPartial || result.partialFailure?.length) {
             const detail = result.rollback
                 ? `恢复 ${result.rollback.reverted} 项${result.rollback.failed > 0 ? `，回滚失败 ${result.rollback.failed} 项` : ''}`
-                : '回滚不完整';
+                : result.settlementPartial
+                    ? '回滚不完整'
+                    : `附加步骤失败：${result.partialFailure!.join('、')}`;
             ledger.finish(runId, {
                 status: 'failed',
-                failure: `${target.chapName} 结算已回滚（${detail}）`,
+                failure: `${target.chapName} 结算失败${result.rollback ? '并已回滚' : ''}（${detail}）`,
             });
-            showWarningNotice(`本次结算失败并已回滚（${detail}）；未写结算表、未标记正文 settled，请修正报告后重试`, { title: '结算未完成', timeout: 10000 });
+            showWarningNotice(`本次结算失败${result.rollback ? '并已回滚' : ''}（${detail}）；未写结算表、未标记正文 settled，请修正报告后重试`, { title: '结算未完成', timeout: 10000 });
             return;
         }
         // 执行登记表：Agent 通过 get_execution_status 读取本次结算回写量

@@ -87,6 +87,13 @@ export async function writeSettlementArtifacts(
         report.warnings.push('结算回滚不完整（settlement_partial），本次未写结算表/快照/总览');
         return report;
     }
+    // D3-7：回滚终态之后的关系/承诺/角色弧线失败无法回滚，但也不能把本章显示成「已完成」
+    if (input.result.partialFailure?.length) {
+        report.warnings.push(
+            `结算附加步骤失败（${input.result.partialFailure.join('、')}），本次未写结算表/快照/总览；重跑结算可补齐`,
+        );
+        return report;
+    }
 
     const run = async (
         name: 'table' | 'snapshot' | 'overview',

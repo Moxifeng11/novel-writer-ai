@@ -1804,11 +1804,13 @@ ${userPrompt}`),
             });
             throw e;
         }
-        if (result && (result.rollback || result.settlementPartial)) {
+        if (result && (result.rollback || result.settlementPartial || result.partialFailure?.length)) {
             const detail = result.rollback
                 ? `恢复 ${result.rollback.reverted} 项${result.rollback.failed > 0 ? `，回滚失败 ${result.rollback.failed} 项` : ''}`
-                : '回滚不完整';
-            const failure = `${chapterName} 结算失败并已回滚（${detail}），本章未完成`;
+                : result.settlementPartial
+                    ? '回滚不完整'
+                    : `附加步骤失败：${result.partialFailure!.join('、')}`;
+            const failure = `${chapterName} 结算失败${result.rollback ? '并已回滚' : ''}（${detail}），本章未完成`;
             ledger.finish(runId, { status: 'failed', failure });
             throw new Error(failure);
         }

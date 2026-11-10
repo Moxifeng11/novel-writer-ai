@@ -81,6 +81,13 @@ export interface SettlementResult {
     /** 回滚不完整标记：产物需标 settlement_partial，提示用户手动检查 */
     settlementPartial?: boolean;
     /**
+     * 回滚终态之后的附加写入失败（V2 关系 / 承诺账本 / 角色弧线）。
+     *
+     * 这些步骤在 journal 清空后执行，失败无法回滚；必须让调用方按「未完成」处理，
+     * 否则会写出「已完成」结算表并让后续步骤/批量误以为本章已结算（D3-7）。
+     */
+    partialFailure?: string[];
+    /**
      * 轻结算失败聚合（仅 mode=light 且发生失败时出现）。
      * 轻结算语义为 best-effort 出场确认，不做整次事务；每次写入幂等，
      * 失败后**直接重跑 settleLight 即可修复**。
@@ -190,6 +197,22 @@ export class SettlementEngine {
         return this.vaultMeta;
     }
 
+    /**
+     * 标记「回滚终态之后的附加步骤」失败（D3-7）。
+     *
+     * 这些步骤跑在 journal 清空之后，失败无法回滚；把标签写进 result，
+     * 让产物/步骤/批量按未完成处理（重跑结算幂等可补齐）。
+     *
+     * @param ctx - 结算上下文
+     * @param label - 失败步骤名（用于提示与产物警告）
+     */
+    private markPostStepFailure(ctx: SettleContext, label: string): void {
+        ctx.hasPartialFailure = true;
+        const labels = ctx.result.partialFailure ?? [];
+        if (!labels.includes(label)) labels.push(label);
+        ctx.result.partialFailure = labels;
+    }
+
     /** 更新承诺账本：PROMISE_* 指令 -> 固定表。 */
     private async settleStep_updatePromiseLedger(ctx: SettleContext): Promise<void> {
         if (!ctx.instr.promise?.length) return;
@@ -218,7 +241,7 @@ export class SettlementEngine {
             log.info(`[SettlementEngine] 承诺账本更新 ${ctx.instr.promise.length} 条`);
         } catch (e) {
             log.warn('[SettlementEngine] 承诺账本更新失败（不影响结算）:', e);
-            ctx.hasPartialFailure = true;
+            this.markPostStepFailure(ctx, '承诺账本');
         }
     }
 
@@ -250,7 +273,7 @@ export class SettlementEngine {
             }
         } catch (e) {
             log.warn('[SettlementEngine] 角色弧线更新失败（不影响结算）:', e);
-            ctx.hasPartialFailure = true;
+            this.markPostStepFailure(ctx, '角色弧线');
         }
     }
 
@@ -1585,7 +1608,7 @@ ${ni.description || '暂无描述'}
             }
         } catch (e) {
             log.warn('[SettlementEngine] V2 关系状态更新失败（已跳过）:', e);
-            ctx.hasPartialFailure = true;
+            this.markPostStepFailure(ctx, '关系状态');
             this.notifier.showNotice('⚠️ 关系状态更新失败，但不影响其他结算步骤。', NOTICE_ERROR);
         }
         // 合计（V1+V2 避免重复——V2 解析器可能捕获与 V1 相同的 RELATION 行）
