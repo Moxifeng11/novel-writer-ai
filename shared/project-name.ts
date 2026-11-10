@@ -80,6 +80,32 @@ export function validateProjectName(raw: string, existing: string[] = []): Proje
 }
 
 /**
+ * 判断一个名称能否安全地作为「项目文件夹名」用于 rename。
+ *
+ * 与 validateProjectName 的区别：这里不做「至少 2 字/只允许中文」等产品约束，
+ * 只回答安全边界——拒绝路径分隔、穿越段、控制字符、隐藏目录与系统保留名。
+ * 用于 AI/外部 frontmatter 提供的名称在进入 `fileManager.renameFile` 前的最后一道闸门。
+ *
+ * @param raw - 原始名称
+ * @returns 是否安全
+ *
+ * @example
+ * isSafeProjectFolderName('长夜行-2') // true
+ * isSafeProjectFolderName('../../evil') // false
+ */
+export function isSafeProjectFolderName(raw: string): boolean {
+    const value = String(raw || '').normalize('NFKC').trim();
+    if (!value || value.length > 40) return false;
+    if (/[\u0000-\u001f\u007f]/.test(value)) return false;
+    if (/[\\/:*?"<>|]/.test(value)) return false;
+    if (value.startsWith('.')) return false;
+    if (/^[A-Za-z]:/.test(value)) return false;
+    if (RESERVED_NAMES.has(value)) return false;
+    if (WINDOWS_RESERVED.test(value)) return false;
+    return true;
+}
+
+/**
  * AI 构思结果可能带书名号/标点；先净化，再交给用户确认。
  *
  * @param raw - 原始

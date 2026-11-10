@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137453 | 1725 | 1416 | 82% |
 | `services/` | 32 | 13004 | 190 | 150 | 79% |
-| `shared/` | 187 | 42469 | 1667 | 1362 | 82% |
+| `shared/` | 187 | 42495 | 1668 | 1363 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99631 | 753 | 649 | 86% |
+| `ui/` | 242 | 99644 | 753 | 649 | 86% |
 
 ## 文件清单
 
@@ -496,7 +496,7 @@
 | `shared/progress-emitter.ts` | 551 | 5 | 1 |
 | `shared/project-catalog.ts` | 183 | 7 | 7 |
 | `shared/project-mode.ts` | 86 | 5 | 5 |
-| `shared/project-name.ts` | 93 | 5 | 5 |
+| `shared/project-name.ts` | 119 | 6 | 6 |
 | `shared/project-root.ts` | 48 | 2 | 2 |
 | `shared/prompt-budget.ts` | 575 | 19 | 17 |
 | `shared/prompt-manager-types.ts` | 139 | 11 | 11 |
@@ -806,7 +806,7 @@
 | `ui/views/writing-fingerprint-view.ts` | 2033 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
-| `ui/wizard-checker.ts` | 562 | 2 | 1 |
+| `ui/wizard-checker.ts` | 575 | 2 | 1 |
 | `ui/workspace-manager.ts` | 144 | 2 | 2 |
 | `ui/write-chapter-modal.ts` | 849 | 1 | 1 |
 | `ui/writing-pet.ts` | 290 | 2 | 2 |

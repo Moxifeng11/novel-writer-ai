@@ -28,6 +28,7 @@ import {
 } from '@/shared/thresholds';
 import { WV_SECTIONS } from '@/shared/format-constants';
 import { entityDir } from '@/shared/entity-reader';
+import { isSafeProjectFolderName } from '@/shared/project-name';
 
 // WizardTab/WizardStep 接口由 full-writer/wizard-types 统一定义，避免重复（v6.0 去重）
 import { WizardTab, WizardStep } from './full-writer/wizard-types';
@@ -265,6 +266,12 @@ export class WizardChecker {
         if (!isValid(projName)) {
             projName = folderName;
         }
+        // S-8（安全审计）：项目名称来自 AI/外部 frontmatter，绝不能带路径段进 rename。
+        // 非法时保留原文件夹名（也避免把 ../../evil 写回 frontmatter 再级联改名）。
+        if (!isSafeProjectFolderName(projName)) {
+            log.warn('[小说工坊] 项目名称不是安全目录名，保留原文件夹名:', projName);
+            projName = folderName;
+        }
 
         const writes: string[] = [];
         if (!isValid(extractFieldVal('世界名称'))) {
@@ -301,6 +308,12 @@ export class WizardChecker {
      * @param newName - 新名称
      */
     async renameProjectFolder(oldPath: string, newName: string): Promise<void> {
+        // 最后一道闸门：任何调用方（含未来新增）都不能把项目移出 vault
+        if (!isSafeProjectFolderName(newName)) {
+            log.warn('[小说工坊] 拒绝不安全的项目改名目标:', newName);
+            new Notice('⚠️ 项目名包含非法字符或路径段，已取消重命名', NOTICE_ERROR);
+            return;
+        }
         try {
             const parent = oldPath.replace(/\/[^/]+$/, '');
             const newPath = parent ? `${parent}/${newName}` : newName;

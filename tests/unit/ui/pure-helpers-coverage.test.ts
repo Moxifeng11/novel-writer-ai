@@ -1003,6 +1003,14 @@ describe('WizardChecker（ui/wizard-checker.ts）', () => {
         expect(noticeCalls.some(c => typeof c.message === 'string' && c.message.includes('项目文件夹已重命名'))).toBe(true);
     });
 
+    it('renameProjectFolder：穿越/非法目标名直接拒绝，绝不调用 renameFile（S-8）', async () => {
+        for (const bad of ['../../evil', 'a/b', 'a\\b', '.obsidian', 'C:\\x', '..']) {
+            const harness = makeChecker({}, { folders: [`${PROJECT}/旧名`] });
+            await harness.checker.renameProjectFolder(`${PROJECT}/旧名`, bad);
+            expect(harness.renameFile, bad).not.toHaveBeenCalled();
+        }
+    });
+
     it('checkSettingLibComplete：缺文件/缺关键词/缺模块/占位提示 → false，齐全 → true', async () => {
         const wsPath = `${PROJECT}/01-世界架构/设定库.md`;
         const missing = makeChecker();
