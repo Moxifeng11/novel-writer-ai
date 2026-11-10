@@ -32,6 +32,7 @@ import { ensureUnitTab, unitTabId } from './full-writer/unit-tab';
 import { markFlowExported } from './full-writer/creation-flow-state';
 import { resolveProjectMode, rememberProjectMode } from '@/shared/project-mode';
 import { isChapterBodyPath } from '@/shared/body-path';
+import { createViewOpenGuard } from '@/shared/view-open-guard';
 import { PreResearchModal } from './pre-research-modal';
 import { ModeDocumentModal } from './mode-document-modal';
 import { ExportManuscriptModal } from './export-manuscript-modal';
@@ -169,6 +170,8 @@ export class FullWriterView extends ItemView {
     private failureRenderTimer: ReturnType<typeof setTimeout> | null = null;
     /** 项目创建后的延迟刷新：视图在 150ms 内关闭时必须取消，否则会往已销毁容器渲染 */
     private projectRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+    /** L3-1：onOpen 代次；onClose 作废，await 续体不再注册监听/渲染 */
+    private readonly openGuard = createViewOpenGuard();
 
     private mainContainer: HTMLElement | null = null;
     private workspace: HTMLElement | null = null;
@@ -915,6 +918,7 @@ export class FullWriterView extends ItemView {
      * 视图打开：渲染壳层与恢复状态。
      */
     async onOpen(): Promise<void> {
+        const openToken = this.openGuard.begin();
         const { contentEl } = this;
         contentEl.empty();
         applyNwScope(this);
@@ -992,9 +996,12 @@ export class FullWriterView extends ItemView {
                 // 先恢复磁盘状态再加载上下文：自动提取角色灵魂依赖 stepCompleted，
                 // 旧顺序（loadContext → restore）会让提取结果被磁盘上的模板骨架覆盖回 ○/◐。
                 await this.chapterStateManager.restoreChapterState(this.chapDir);
+                if (!this.openGuard.isCurrent(openToken)) return;
                 await this.loadContext();
+                if (!this.openGuard.isCurrent(openToken)) return;
                 await this.renderTabContent();
             } catch (e: unknown) {
+                if (!this.openGuard.isCurrent(openToken)) return;
                 const errMsg = e instanceof Error ? e.message : String(e);
                 log.error('[FullWriter] onOpen error:', errMsg);
                 // 回到项目页必须说明原因，否则用户只看到「闪一下又回去了」
@@ -1006,13 +1013,18 @@ export class FullWriterView extends ItemView {
             this.renderTabBar();
             try {
                 await this.loadContext();
+                if (!this.openGuard.isCurrent(openToken)) return;
                 await this.renderProjectSelectorInTab();
             } catch (e: unknown) {
+                if (!this.openGuard.isCurrent(openToken)) return;
                 const errMsg = e instanceof Error ? e.message : String(e);
                 log.error('[FullWriter] onOpen 加载失败:', errMsg);
                 showErrorNotice('项目加载失败，请检查项目文件是否完整', { title: '加载失败', timeout: 5000 });
             }
         }
+
+        // L3-1：await 期间视图已被关闭（或插件已卸载）→ 不再往已 unload 的 Component 注册监听
+        if (!this.openGuard.isCurrent(openToken)) return;
 
         this.registerEvent(this.app.workspace.on('file-open', (file) => {
             // P1-13（v4.27）：打开任意笔记（设定/大纲/旁注）也会触发 file-open，
@@ -1111,6 +1123,8 @@ export class FullWriterView extends ItemView {
      * 视图关闭：释放资源。
      */
     async onClose(): Promise<void> {
+        // L3-1：作废本轮 onOpen 代次，await 续体不再注册监听/渲染
+        this.openGuard.invalidate();
         // 一键任务不随视图关闭而停止：不取消会继续调 AI 并往已销毁的容器里渲染
         if (this.chapterOrchestrator?.isRunning) {
             this.chapterOrchestrator.cancel();

@@ -8,7 +8,7 @@
 | # | 级别 | 位置 | 问题 | 影响 | 状态 |
 |---|---|---|---|---|---|
 | M3-1 | P1 | `engine/co-writer-engine.ts:381-389`、`:302/366/1005/1553/1672/2936`、`engine/context/story-context-service.ts:60`、`ui/co-writing/suggestion-flow.ts:179` | M-2 自动切云端只改了 options 构建；`hasCoWriteModel` 与 6 处 raw `coWriteModelMode` 判断仍按本地模式检查，直接返回空/降级 | 用户看到“已自动切换到云端模型”，但建议/续写/改写/守卫全部无反应；本地槽位信号量/Ollama 探测/local 上下文预算也被错误套用 | **本轮已修**：新增 `canCoWrite`；`hasCoWriteModel` 委托；6 处分支与故事上下文档位/ETA 判断改用 `resolveEffectiveCoWriteMode`；旧测试预期同步 |
-| L3-1 | P2 | `ui/full-writer-view.ts:917-1092`、`ui/views/knowledge-base-view.ts:535-649` | L2-2 仍在：onOpen 在多个 await 后才 registerEvent/订阅；无 openSeq；KB 的 `viewClosed` onOpen 不复位 | 已 unload 的 Component 继续持有事件；KB 关闭后重新订阅，实例复用后刷新永久失效 | 未修 → fix queue |
+| L3-1 | P2 | `ui/full-writer-view.ts:917-1092`、`ui/views/knowledge-base-view.ts:535-649` | L2-2 仍在：onOpen 在多个 await 后才 registerEvent/订阅；无 openSeq；KB 的 `viewClosed` onOpen 不复位 | 已 unload 的 Component 继续持有事件；KB 关闭后重新订阅，实例复用后刷新永久失效 | **已修（第54轮）**：新增 `shared/view-open-guard`；full-writer onOpen 起手 begin、每处 await 后及注册监听前核对、onClose invalidate；KB onOpen 首行复位 `viewClosed` 并 begin、await 后核对、onClose invalidate；守卫行为 3 条 + 接线契约 2 条测试 |
 | L3-2 | P2 | `ui/agent-workbench-view.ts:314-327`、`ui/services/agent-session-store.ts:129-170` | L2-3 仍在：restart 不 flush 旧 store、不 destroy 旧 resizer | 旧项目最后一条快照可能写进新项目；拖拽中重启残留 body 类 | 未修 → fix queue（先 flush/destroy，冻结 scope） |
 | L3-3 | P2 | `main.ts:765-788`、`shared/plugin-data-migration.ts:34-97` | 迁移仍在 onload 无超时 await（首启数秒无入口）；无 `_isUnloaded` 检查 | 慢盘/移动端首启卡住；禁用后仍继续 initialize | 未修 → fix queue（withUnloadDeadline 1.5–2s） |
 | L3-4 | P3 | `main.ts:1036-1079`、`shared/template-scaffold.ts:74-84` | 启动维护未进 UnloadBarrier；`runEnsureTemplateScaffold` 写循环无 abort 检查；模块级 in-flight 跨实例无法去重 | 禁用后仍写剩余模板；新旧实例并发 create 时后来者计 failed 并误报“初始化不完整” | 未修 → fix queue（signal + owner token） |
@@ -38,6 +38,7 @@
 - `http-transport.ts`：`requestViaUrl` 在 signal 已 abort 时直接拒绝，不发请求。
 - 测试：`canCoWrite` 表驱动 1 条、引擎闸门旧用例改为“自动切云端会调用 AI”、故事档位用例更新、http-transport 新增 1 条；相关 16+18 条通过；`npx tsc --noEmit` = 0。
 - 第53轮（M3-4/M3-5）：`knowledge-detail-modal.ts` 构造注入 `plugin`、去掉两处 `app.plugins`；`knowledge-section.ts` 两处调用点补注入；`monitor-panel-b.ts` 改走 `executeCommand`；`check-obsidian-api.mjs` 新增 `private-api` 规则并补 `this.setTitle`/`isMobile` 解构/body/window 监听；`obsidian-api-policy.test.ts` 增干净夹具与 4 类绕过断言（10 条通过）。门禁全仓 0 违规；`preflight:release` 全绿（660 文件 / 6991 通过 / 3 跳过，语句 45.8%）；bundle 基线 +52B 已注记。 
+- 第54轮（L3-1）：新增 `shared/view-open-guard.ts`（begin/isCurrent/invalidate）；full-writer 与 KB 视图接入，KB 复位 `viewClosed`；新增守卫行为测试 3 条 + 接线契约测试 2 条；全量 662 文件 / 6996 通过 / 3 跳过，语句 45.8%；bundle 基线 +546B 已注记。
 
 ## 四、待用户拍板
 
@@ -45,7 +46,6 @@
 
 ## 五、fix queue
 
-1. L3-1 onOpen openSeq/KB viewClosed 复位（P2）
-2. M3-2 popout DocumentScope、M3-3 移动端排序、M3-6 触屏 CSS（P2）
-3. L3-2 Agent restart 收尾、L3-3 迁移 deadline（P2）
-4. L3-4 scaffold abort/owner token、L3-5 registry 清理（P3）
+1. M3-2 popout DocumentScope、M3-3 移动端排序、M3-6 触屏 CSS（P2）
+2. L3-2 Agent restart 收尾、L3-3 迁移 deadline（P2）
+3. L3-4 scaffold abort/owner token、L3-5 registry 清理（P3）

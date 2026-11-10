@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137533 | 1727 | 1418 | 82% |
 | `services/` | 32 | 13167 | 193 | 153 | 79% |
-| `shared/` | 190 | 42747 | 1675 | 1367 | 82% |
+| `shared/` | 191 | 42784 | 1677 | 1368 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99731 | 754 | 649 | 86% |
+| `ui/` | 242 | 99756 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -563,6 +563,7 @@
 | `shared/vault-tree.ts` | 131 | 6 | 6 |
 | `shared/version-types.ts` | 125 | 10 | 0 |
 | `shared/versioned-registry.ts` | 269 | 11 | 11 |
+| `shared/view-open-guard.ts` | 37 | 2 | 1 |
 | `shared/view-types.ts` | 7 | 1 | 0 |
 | `shared/volume-conflict-detector.ts` | 248 | 7 | 2 |
 | `shared/volume-plan.ts` | 307 | 6 | 6 |
@@ -671,7 +672,7 @@
 | `ui/fingerprint-library-modal.ts` | 306 | 1 | 1 |
 | `ui/fingerprint-utils.ts` | 209 | 11 | 11 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |
-| `ui/full-writer-view.ts` | 2737 | 2 | 2 |
+| `ui/full-writer-view.ts` | 2751 | 2 | 2 |
 | `ui/full-writer/batch-pipeline-runner.ts` | 500 | 5 | 4 |
 | `ui/full-writer/batch-step-retry.ts` | 26 | 2 | 1 |
 | `ui/full-writer/batch-targets.ts` | 68 | 4 | 4 |
@@ -803,7 +804,7 @@
 | `ui/views/kb-detail-actions.ts` | 199 | 2 | 2 |
 | `ui/views/kb-stats-panel.ts` | 197 | 2 | 2 |
 | `ui/views/knowledge-base-modals.ts` | 1369 | 4 | 4 |
-| `ui/views/knowledge-base-view.ts` | 3250 | 10 | 10 |
+| `ui/views/knowledge-base-view.ts` | 3261 | 10 | 10 |
 | `ui/views/knowledge-capability.ts` | 81 | 2 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/writing-fingerprint-view.ts` | 2033 | 3 | 3 |

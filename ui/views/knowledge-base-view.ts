@@ -11,6 +11,7 @@ import { BatchImportModal } from '@/ui/batch-import-modal';
 import { MiniSettingsModal } from '@/ui/mini-settings-modal';
 import { OperationConfirmModal, TaskCardComponent } from '@/ui/components/progress';
 import { createEmptyState } from '@/ui/components/empty-state';
+import { createViewOpenGuard } from '@/shared/view-open-guard';
 import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
 import { createLogger } from '@/shared/logger';
 import { classifyBook, mergeClassificationTags, type ClassificationResult } from '@/shared/content-classifier';
@@ -490,6 +491,8 @@ export class KnowledgeBaseView extends ItemView {
     /** 详情数据加载序号：切换书籍时让旧的异步加载作废 */
     private detailLoadSeq = 0;
     private viewClosed = false;
+    /** L3-1：onOpen 代次；onClose 作废，await 续体不再渲染 */
+    private readonly openGuard = createViewOpenGuard();
     private booksLoadError: string | null = null;
     private detailLoadError: string | null = null;
 
@@ -533,6 +536,10 @@ export class KnowledgeBaseView extends ItemView {
      * 打开视图并渲染。
      */
     async onOpen() {
+        // L3-1：同一 View 实例可能被重新 attach（重开标签/跨窗口移动），
+        // onClose 置位的 viewClosed 必须复位，否则调度器订阅回调永久静默。
+        this.viewClosed = false;
+        const openToken = this.openGuard.begin();
         applyNwScope(this);
         this.kbManager = this.plugin.knowledgeBaseManager ?? null;
         this.kb = this.kbManager?.getKnowledgeBase() ?? null;
@@ -573,10 +580,12 @@ export class KnowledgeBaseView extends ItemView {
             const baseDir = this.kbManager.getBaseDir();
             this.configManager = new KnowledgeBaseConfigManager(this.app, baseDir);
             await this.loadCustomGenres();
+            if (!this.openGuard.isCurrent(openToken)) return;
         }
 
         this.renderLayout();
         await this.loadBooks();
+        if (!this.openGuard.isCurrent(openToken)) return;
         this.renderLeftSidebar();
         this.renderRightPanel();
 
@@ -588,6 +597,8 @@ export class KnowledgeBaseView extends ItemView {
      */
     async onClose() {
         this.viewClosed = true;
+        // L3-1：作废代次，onOpen 的 await 续体不再渲染
+        this.openGuard.invalidate();
         this.modelSwitcher?.destroy();
         this.modelSwitcher = null;
         if (this.progressUnsubscribe) {
