@@ -112,31 +112,36 @@ test.describe('Novel Writer AI · 完整用户旅程（mock AI）', () => {
         // 3.5) 步骤结算产物：结算表 / 时间线列宽 / 一致性报告（B 轮收口断言）
         const settlementTablePath = path.join(seeded.stepAbs, '第1章_结算表.md');
         expect(fs.existsSync(settlementTablePath), '步骤结算应落 第1章_结算表.md').toBe(true);
-        expect(readTextIfExists(settlementTablePath)).toContain('# 第1章 结算表');
+        const settlementTable = readTextIfExists(settlementTablePath);
+        expect(settlementTable).toContain('# 第1章 结算表');
+        // 表体不能退化为只有标题：结算模式与至少一条统计行必须在
+        expect(settlementTable).toContain('settlement_mode: full');
+        expect(settlementTable).toMatch(/^- 新建时间线事件：\d+ 个$/m);
 
+        // mock 结算固定产 NEW_TIMELINE，看板必然存在；缺失即回归，不再条件跳过
         const timelineBoardPath = path.join(projectRoot, '02-时间线与伏笔', '时间线看板.md');
-        const timelineBoard = readTextIfExists(timelineBoardPath);
-        if (timelineBoard.trim().length > 0) {
-            const boardLines = timelineBoard.split('\n');
-            const isSeparator = (line: string): boolean => /^\|[\s:|-]+\|$/.test(line.trim());
-            const headerIdx = boardLines.findIndex((line) => line.trim().startsWith('|') && !isSeparator(line));
-            if (headerIdx >= 0) {
-                const headerCols = boardLines[headerIdx].trim().split('|').length - 2;
-                const badRow = boardLines
-                    .slice(headerIdx + 2)
-                    .find((line) => line.trim().startsWith('|') && !isSeparator(line)
-                        && (line.trim().split('|').length - 2) !== headerCols);
-                expect(badRow, `时间线看板存在列数不齐的行：${badRow ?? ''}`).toBeUndefined();
-            }
-        }
+        expect(fs.existsSync(timelineBoardPath), '结算应落 时间线看板.md').toBe(true);
+        const boardLines = readTextIfExists(timelineBoardPath).split('\n');
+        const isSeparator = (line: string): boolean => /^\|[\s:|-]+\|$/.test(line.trim());
+        const headerIdx = boardLines.findIndex((line) => line.trim().startsWith('|') && !isSeparator(line));
+        expect(headerIdx, '时间线看板缺少表头').toBeGreaterThanOrEqual(0);
+        const headerCols = boardLines[headerIdx].trim().split('|').length - 2;
+        const dataRows = boardLines
+            .slice(headerIdx + 2)
+            .filter((line) => line.trim().startsWith('|') && !isSeparator(line));
+        expect(dataRows.length, '时间线看板应有至少 1 行数据').toBeGreaterThan(0);
+        expect(dataRows.join('\n'), '结算事件应写入时间线看板').toContain('外门考核');
+        const badRow = dataRows.find((line) => (line.trim().split('|').length - 2) !== headerCols);
+        expect(badRow, `时间线看板存在列数不齐的行：${badRow ?? ''}`).toBeUndefined();
 
+        // seedCharacterViaVault 是无条件播种的，人物卡必然存在；缺失即回归
         const characterDir = path.join(projectRoot, '01-世界架构', '人物');
-        const hasCharacterCard = fs.existsSync(characterDir)
-            && fs.readdirSync(characterDir).some((file) => file.endsWith('.md') && !file.includes('模板'));
-        if (hasCharacterCard) {
-            const consistencyPath = path.join(seeded.stepAbs, '第1章_一致性检查.md');
-            expect(fs.existsSync(consistencyPath), '存在人物卡时应生成 第1章_一致性检查.md').toBe(true);
-        }
+        expect(fs.existsSync(characterDir), '人物目录应存在').toBe(true);
+        const hasCharacterCard = fs.readdirSync(characterDir)
+            .some((file) => file.endsWith('.md') && !file.includes('模板'));
+        expect(hasCharacterCard, '人物卡应存在').toBe(true);
+        const consistencyPath = path.join(seeded.stepAbs, '第1章_一致性检查.md');
+        expect(fs.existsSync(consistencyPath), '存在人物卡时应生成 第1章_一致性检查.md').toBe(true);
 
         // 4) 正文断言：有标题、达到 3000 字、frontmatter 已结算
         const body = readTextIfExists(seeded.bodyAbs);
