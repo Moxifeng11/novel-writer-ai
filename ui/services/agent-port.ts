@@ -40,7 +40,7 @@ import { isChapterWritten, summarizeChapterProgress } from '@/shared/chapter-pro
 import { listModeUnits, modeUnitLabel, type ModeUnitInfo } from '@/shared/mode-content';
 import { readProjectMeta } from '@/shared/paths';
 import { CoWritingView } from '@/ui/co-writing-view';
-import { listProjectIds, removeProjectDirectory } from '@/shared/project-catalog';
+import { listProjectIds, removeProjectDirectory, PROJECT_IDENTITY_MARKERS } from '@/shared/project-catalog';
 import { MODE_LIBRARY_ROOT_LIST } from '@/shared/creation-mode';
 import { writeVaultText } from '@/shared/file-system-port';
 import { BodyWriter } from '@/engine/body-writer';
@@ -411,7 +411,9 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
                 return await OperationConfirmModal.confirm(app, {
                     title: request.title,
                     description: request.detail,
-                    warning: '该操作会在后台写入文件或消耗较多 API 额度',
+                    warning: /删除|delete/i.test(`${request.title} ${request.detail}`)
+                        ? '该操作会永久删除文件/项目，且不可恢复'
+                        : '该操作会在后台写入文件或消耗较多 API 额度',
                     confirmText: '允许执行',
                     cancelText: '拒绝',
                 });
@@ -647,6 +649,17 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
                 && MODE_LIBRARY_ROOT_LIST.includes(segments[0]);
             if (!known && !underLibrary) {
                 return { project: target, deleted: false, reason: '不是可识别的项目目录' };
+            }
+            if (!known) {
+                // D3-19（安全 r3）：ghost 分支必须证明「这确实是一个项目目录」。
+                // 旧实现只要「库/目录」两段就递归删除，提示注入可清掉 长篇小说/素材 等任意目录。
+                const adapter = app.vault.adapter;
+                const hasMarker = (await Promise.all(
+                    PROJECT_IDENTITY_MARKERS.map(marker => adapter.exists(`${target}/${marker}`)),
+                )).some(Boolean);
+                if (!hasMarker) {
+                    return { project: target, deleted: false, reason: '目录缺少项目身份标志，拒绝递归删除' };
+                }
             }
             await removeProjectDirectory(app, target);
             return { project: target, deleted: true };

@@ -257,6 +257,16 @@ describe('全权限工具：写文件 / 删文件 / 移动 / 删项目', () => {
         expect(h.ctx.activeProject).toBeNull();
     });
 
+    it('delete_project 必须显式给出目标（D3-19 安全 r3）', async () => {
+        const deleteProject = vi.fn(async () => ({ project: 'x', deleted: true }));
+        const h = makeHarness({ projects: ['长篇小说/书A'], port: { deleteProject } as never });
+
+        const empty = await h.call('delete_project', {});
+        expect(empty.ok).toBe(false);
+        expect(empty.content).toContain('必须明确指定');
+        expect(deleteProject).not.toHaveBeenCalled();
+    });
+
     it('删除已从快照消失的残留项目时可用完整路径', async () => {
         const deleteProject = vi.fn(async () => ({ project: '长篇小说/已删项目', deleted: true }));
         const h = makeHarness({ projects: [], port: { deleteProject } as never });

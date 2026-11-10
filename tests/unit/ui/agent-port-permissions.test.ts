@@ -71,6 +71,14 @@ describe('Agent 文件端口权限', () => {
         expect(deep?.reason).toContain('不是可识别的项目目录');
     });
 
+    it('delete_project 的 ghost 分支要求项目身份标志（D3-19 安全 r3）', async () => {
+        const { port } = makePort({ adapterExists: false });
+
+        const ghost = await port.deleteProject?.('长篇小说/素材');
+        expect(ghost?.deleted).toBe(false);
+        expect(ghost?.reason).toContain('身份标志');
+    });
+
     it('新文件只能写入当前项目或本会话 spill（S2-8）', async () => {
         const { port } = makePort({ adapterExists: false });
 

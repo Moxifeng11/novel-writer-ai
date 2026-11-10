@@ -317,7 +317,8 @@ function summarizeToolArgs(name: string, args: Record<string, unknown>): string 
     }
     if (name === 'delete_project') {
         const project = text(args.project);
-        if (project) return clip(`删除项目 ${project}`);
+        // D3-19：目标缺失时明确提示，绝不回退到「执行完成」
+        return clip(project ? `删除项目 ${project}` : '未指定项目（将拒绝执行）');
     }
 
     // 单个短字符串参数直接展示值（如 echo 的消息、open 的目标）

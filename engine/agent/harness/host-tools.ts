@@ -771,14 +771,19 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
         name: 'delete_project',
         description: '彻底删除一个项目及其全部文件（正文、大纲、设定、版本、会话存档不在删除范围内）。删除前必须向用户说明项目名并获得确认；这是不可恢复操作。',
         parameters: {
-            project: { type: 'string', description: '项目 ID 或名称，可留空用当前项目' },
+            project: { type: 'string', description: '项目 ID（库/项目名）或完整名称；必须显式指定，不接受留空' },
         },
-        required: [],
+        // D3-19（安全 r3）：删除项目必须显式给出目标——旧实现 required:[] 允许空参，
+        // 审批摘要退化成「执行完成」，用户看不到将删除哪个项目。
+        required: ['project'],
         sideEffect: 'dangerous', timeoutMs: 60_000,
         execute: async (args, toolCtx) => {
             if (!port.deleteProject) return { ok: false, content: '当前环境不支持删除项目' };
             const mem = toolCtx.memory as unknown as HarnessMemoryState;
             const requested = typeof args.project === 'string' ? args.project.trim() : '';
+            if (!requested) {
+                return { ok: false, content: '必须明确指定要删除的项目（如 长篇小说/旧项目），不支持留空' };
+            }
             // 已从项目列表消失、但目录仍残留的项目（ghost）允许用完整路径直接删除；
             // 只给显示名时仍走会话快照，避免误删同名目录。
             const project = resolveProject(args, mem, ctx) || (requested.includes('/') ? requested : '');

@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137643 | 1727 | 1418 | 82% |
+| `engine/` | 319 | 137649 | 1727 | 1418 | 82% |
 | `services/` | 32 | 13395 | 194 | 154 | 79% |
 | `shared/` | 194 | 42929 | 1684 | 1375 | 82% |
 | `core/` | 7 | 2840 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99944 | 754 | 649 | 86% |
+| `ui/` | 242 | 99957 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -42,12 +42,12 @@
 | `engine/agent/dsh/dsh-protocol.ts` | 159 | 4 | 4 |
 | `engine/agent/dsh/dsh-session.ts` | 283 | 7 | 7 |
 | `engine/agent/harness/agent-adapter.ts` | 83 | 2 | 1 |
-| `engine/agent/harness/agent-loop.ts` | 619 | 6 | 6 |
+| `engine/agent/harness/agent-loop.ts` | 620 | 6 | 6 |
 | `engine/agent/harness/context-fit.ts` | 137 | 6 | 6 |
 | `engine/agent/harness/creation-plan.ts` | 73 | 6 | 6 |
 | `engine/agent/harness/harness-engine.ts` | 599 | 7 | 4 |
 | `engine/agent/harness/harness-types.ts` | 213 | 14 | 12 |
-| `engine/agent/harness/host-tools.ts` | 1000 | 6 | 6 |
+| `engine/agent/harness/host-tools.ts` | 1005 | 6 | 6 |
 | `engine/agent/harness/prompt-sections.ts` | 149 | 2 | 2 |
 | `engine/agent/harness/session-log.ts` | 269 | 1 | 1 |
 | `engine/agent/harness/session-snapshot.ts` | 232 | 10 | 10 |
@@ -762,7 +762,7 @@
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
 | `ui/services/agent-attachment-store.ts` | 171 | 10 | 6 |
-| `ui/services/agent-port.ts` | 671 | 2 | 2 |
+| `ui/services/agent-port.ts` | 684 | 2 | 2 |
 | `ui/services/agent-session-store.ts` | 211 | 5 | 5 |
 | `ui/services/agent-spill-store.ts` | 115 | 4 | 3 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |
