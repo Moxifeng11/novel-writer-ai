@@ -93,6 +93,26 @@ describe('Task 2 — 全文覆盖验证', () => {
             expect(secondChar!.name).toBe(secondHalfUnique);
         }, 30_000);
 
+        it('全文覆盖：尾部独有角色也能检出（防只分析前缀）', async () => {
+            const { text, secondHalfUnique } = generate150kSplitText();
+            const tailUnique = '端木青锋';
+            const fullText = text
+                + `\n\n${tailUnique}道："末将听令。"`
+                + `\n\n${tailUnique}抱拳领命。`
+                + `\n\n${tailUnique}转身离去。`;
+
+            const full = await new CharacterDeconstructor().analyze(fullText);
+            const names = full.characters.map(c => c.name);
+            // 中段实体与 16 万字符处的尾部实体必须同时存在
+            expect(names).toContain(secondHalfUnique);
+            expect(names).toContain(tailUnique);
+
+            // 负向对照：截掉尾部后不得凭空检出尾部实体
+            const beforeTail = fullText.slice(0, fullText.indexOf(tailUnique));
+            const prefix = await new CharacterDeconstructor().analyze(beforeTail);
+            expect(prefix.characters.map(c => c.name)).not.toContain(tailUnique);
+        }, 30_000);
+
         it('foreshadow-deconstructor 能检测到后半部独有伏笔实体', async () => {
             const { text, secondHalfUnique } = generate150kSplitText();
             expect(text.length).toBeGreaterThan(145_000);
