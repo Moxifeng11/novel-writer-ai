@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137533 | 1727 | 1418 | 82% |
+| `engine/` | 319 | 137537 | 1727 | 1418 | 82% |
 | `services/` | 32 | 13196 | 194 | 154 | 79% |
 | `shared/` | 193 | 42883 | 1683 | 1374 | 82% |
 | `core/` | 7 | 2840 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99908 | 754 | 649 | 86% |
+| `ui/` | 242 | 99913 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -151,7 +151,7 @@
 | `engine/entity-graph.ts` | 198 | 6 | 6 |
 | `engine/entity-link-migrator.ts` | 168 | 5 | 5 |
 | `engine/entity-scorer.ts` | 182 | 6 | 5 |
-| `engine/entity-state-manager.ts` | 525 | 4 | 3 |
+| `engine/entity-state-manager.ts` | 529 | 4 | 3 |
 | `engine/export/docx-builder.ts` | 231 | 1 | 1 |
 | `engine/export/epub-builder.ts` | 413 | 7 | 7 |
 | `engine/export/manuscript-compiler.ts` | 288 | 12 | 12 |
@@ -595,7 +595,7 @@
 | `ui/button-busy.ts` | 37 | 1 | 1 |
 | `ui/changelog-modal.ts` | 191 | 1 | 1 |
 | `ui/chapter-outline-tree-modal.ts` | 1338 | 1 | 1 |
-| `ui/chapter-settlement-modal.ts` | 421 | 1 | 1 |
+| `ui/chapter-settlement-modal.ts` | 426 | 1 | 1 |
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1024 | 2 | 2 |

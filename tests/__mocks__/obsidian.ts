@@ -429,6 +429,14 @@ export function getIcon(_iconId: string): HTMLElement { return document.createEl
 export function setIcon(_el: HTMLElement, _iconId: string): void {}
 export function normalizePath(_path: string): string { return _path; }
 
+/** Obsidian 公开 API：把 frontmatter 字段读成字符串数组（数组或单值） */
+export function parseFrontMatterStringArray(frontmatter: any, key: string): string[] | null {
+    const value = frontmatter?.[key];
+    if (value === undefined || value === null) return null;
+    if (Array.isArray(value)) return value.map((item) => String(item));
+    return [String(value)];
+}
+
 export function parseYaml(yaml: string): any {
     try {
         const result: Record<string, any> = {};

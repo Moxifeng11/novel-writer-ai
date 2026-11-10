@@ -263,22 +263,26 @@ export class EntityStateManager {
         const bodyFile = this.getVaultMeta().getAbstractFileByPath(chapterBodyPath);
         if (!bodyFile || !(bodyFile instanceof TFile)) return;
 
-        const content = await this.getFS().read(chapterBodyPath);
-        const existing = getInvolvedEntities(this.app, bodyFile);
-
-        // 从正文中提取人物名（基于 [[]] 链接 + 出现频率）
+        // 从正文中提取人物名（可能走角色仓库 IO）放在锁外，避免持锁等 IO
         const mentionedNames = await this.extractMentionedNames(bodyContent, project);
-        const mergedChars = [...new Set([...existing.chars, ...mentionedNames])];
+        if (mentionedNames.length === 0) return;
 
-        // 只在确实有新增时才写入
-        if (mergedChars.length > existing.chars.length) {
+        // D2-14（r3）：正文是整文件读改写，与 BodyWriter/协同自动保存共用同一路径锁；
+        // 锁内重新读正文，避免覆盖并发自动保存写入的内容。
+        await withWriteLock(chapterBodyPath, async () => {
+            const content = await this.getFS().read(chapterBodyPath);
+            const existing = getInvolvedEntities(this.app, bodyFile);
+            const mergedChars = [...new Set([...existing.chars, ...mentionedNames])];
+
+            // 只在确实有新增时才写入
+            if (mergedChars.length <= existing.chars.length) return;
             const updated = this.updateFrontmatterArray(
                 content,
                 '涉及人物',
                 mergedChars.map(n => `  - ${n}`)
             );
             await this.getFS().write(chapterBodyPath, updated);
-        }
+        });
     }
 
     // ============================================================

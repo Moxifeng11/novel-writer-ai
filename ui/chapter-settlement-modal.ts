@@ -3,6 +3,7 @@ import { isChapterSettledText } from '@/shared/chapter-status';
 import { buildSettlementTable } from '@/engine/settlement/settlement-artifacts';
 import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjNarrativeOverview } from '@/shared/paths';
 import { ObsidianFrontmatter, writeVaultText, ObsidianFileSystem } from '@/shared/file-system-port';
+import { withWriteLock } from '@/shared/write-lock';
 import { writeSettlementTableFile } from '@/engine/settlement/settlement-table-writer';
 import { settlementArtifactNotice, writeSettlementArtifacts } from '@/engine/settlement/settlement-coordinator';
 
@@ -373,8 +374,12 @@ export class ChapterSettlementModal extends Modal {
         }
 
         try {
-            await new ObsidianFrontmatter(this.app).processFrontmatter(bodyFile, (fm) => {
-                fm['status'] = 'settled';
+            // D2-14（r3）：processFrontmatter 是整文件读改写，必须与协同自动保存/
+            // BodyWriter 共用同一路径锁，否则会把并发写入的正文覆盖回旧快照。
+            await withWriteLock(target.bodyPath, async () => {
+                await new ObsidianFrontmatter(this.app).processFrontmatter(bodyFile, (fm) => {
+                    fm['status'] = 'settled';
+                });
             });
         } catch (e) {
             log.warn('[ChapterSettlementModal] 回写正文 settled 状态失败:', e);
