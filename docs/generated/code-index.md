@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137409 | 1725 | 1416 | 82% |
+| `engine/` | 319 | 137443 | 1725 | 1416 | 82% |
 | `services/` | 32 | 13004 | 190 | 150 | 79% |
 | `shared/` | 187 | 42433 | 1665 | 1360 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
@@ -74,7 +74,7 @@
 | `engine/anti-ai-detector.ts` | 454 | 6 | 6 |
 | `engine/asset-registry.ts` | 238 | 6 | 1 |
 | `engine/bases-generator.ts` | 325 | 9 | 7 |
-| `engine/batch-import-manager.ts` | 863 | 9 | 9 |
+| `engine/batch-import-manager.ts` | 897 | 9 | 9 |
 | `engine/beat-verifier.ts` | 70 | 3 | 1 |
 | `engine/body-writer.ts` | 525 | 8 | 8 |
 | `engine/cache/index.ts` | 24 | 3 | 0 |

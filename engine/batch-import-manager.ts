@@ -162,6 +162,12 @@ export class BatchImportManager {
     private taskCallbacks = new Set<(task: ImportTask) => void>();
 
     private abortControllers = new Map<string, AbortController>();
+    /**
+     * 已卸载：拒绝再启动新任务，并让在途任务在每个 await 后退出。
+     * L-3（维度①审计）：旧 dispose 只 flush 写队列，processing 中的任务会继续
+     * addBook/saveSourceText/addTask；目标调度器已被 destroy，形成「有书无拆解」半成品。
+     */
+    private disposed = false;
 
     constructor(
         app: App,
@@ -403,6 +409,7 @@ export class BatchImportManager {
     }
 
     private scheduleNext(): void {
+        if (this.disposed) return;
         const concurrency = this.settings.concurrency || 2;
         while (this.activeCount < concurrency && this.queue.length > 0) {
             const taskId = this.queue.shift();
@@ -444,6 +451,7 @@ export class BatchImportManager {
             // 旧实现无条件 addBook，失败发生在建书之后（写源文件/建拆解任务失败）时，
             // 每重试一次就多出一本「书名 (2)」「书名 (3)」，用户完全看不出原因。
             let book = task.bookId ? await this.kbManager.getBook(task.bookId) : undefined;
+            this.throwIfCancelled(controller);
             if (!book) {
                 book = await this.kbManager.addBook({
                     name: bookName,
@@ -460,11 +468,14 @@ export class BatchImportManager {
             task.progress = 50;
             this.emitTask(task);
 
+            // 卸载/取消后不再写源文、不再排拆解任务：addTask 的目标调度器可能已销毁
+            this.throwIfCancelled(controller);
             await this.saveSourceText(book.name, preview.content);
 
             task.progress = 80;
             this.emitTask(task);
 
+            this.throwIfCancelled(controller);
             if (task.autoStartDeconstruction && task.dimensions.length > 0) {
                 await this.deconstructionScheduler.addTask(book.id, preview.content, task.dimensions);
             }
@@ -476,7 +487,13 @@ export class BatchImportManager {
             this.updateHistoryBook(task, 'success');
 
         } catch (error) {
-            if (task.retryCount < task.maxRetries && !controller.signal.aborted) {
+            // cancelTask/dispose 都会 abort 当前 controller；catch 不能把它改回
+            // failed 或重新排队（否则取消后还会重试写盘）
+            if (controller.signal.aborted) {
+                task.status = 'cancelled';
+                task.error = '导入已取消';
+                task.completedAt = Date.now();
+            } else if (task.retryCount < task.maxRetries) {
                 task.retryCount++;
                 task.status = 'queued';
                 task.progress = 0;
@@ -833,9 +850,26 @@ export class BatchImportManager {
     /**
      * 把待写状态刷盘。
      */
-    /** EngineRegistry 卸载契约：冲刷串行写队列 */
+    /** EngineRegistry 卸载契约：取消在途任务 → 标记 queued/processing 为 cancelled → 冲刷写队列 */
     async dispose(): Promise<void> {
+        this.disposed = true;
+        for (const controller of this.abortControllers.values()) {
+            controller.abort();
+        }
+        this.queue = [];
+        for (const task of this.tasks.values()) {
+            if (task.status === 'pending' || task.status === 'queued' || task.status === 'processing') {
+                task.status = 'cancelled';
+                task.error = '插件卸载，导入已取消';
+                task.completedAt = Date.now();
+            }
+        }
         await this.flush();
+    }
+
+    /** 卸载/取消后中断当前任务（在每个可写盘 await 之后调用） */
+    private throwIfCancelled(controller: AbortController): void {
+        if (this.disposed || controller.signal.aborted) throw new Error('导入已取消');
     }
 
     /**
