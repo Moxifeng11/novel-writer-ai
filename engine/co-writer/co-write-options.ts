@@ -159,6 +159,28 @@ export function resolveEffectiveCoWriteMode(
 }
 
 /**
+ * 当前设置是否具备可用的协同写作模型（生效模式口径）。
+ *
+ * 与裸 `coWriteModelMode` 判断的区别：本地模式没有本地模型时会自动切云端，
+ * 此时只要存在云端模型就应放行；否则引擎闸门会把“已自动切云端”的建议/续写
+ * 全部短路。
+ *
+ * @param settings - 插件 settings 快照
+ * @returns 是否有可用于协同写作的模型
+ *
+ * @example
+ * canCoWrite({ coWriteModelMode: 'local', defaultModel: 'deepseek-chat', customProviders: [ollama] }) // true
+ */
+export function canCoWrite(settings?: CoWriteOptionsSettings): boolean {
+    if (!settings) return false;
+    const mode = resolveEffectiveCoWriteMode(settings);
+    if (mode === 'cloud') {
+        return !!(settings.coWriteCloudModel || settings.defaultModel);
+    }
+    return !!resolveCoWriteLocalModel(settings);
+}
+
+/**
  * 解析协同写作本地模型所属的 provider。
  *
  * 旧实现只认 id === 'ollama'：用户重命名/新增本地 provider 后 opts.endpoint 为空，

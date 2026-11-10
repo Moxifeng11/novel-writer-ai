@@ -9,6 +9,7 @@ import { createLogger } from '@/shared/logger';
 import { resolveCursorPosition } from '@/shared/cursor-position';
 import { ProgressEmitter } from '@/shared/progress-emitter';
 import type { TimeEstimator } from '@/shared/time-estimator';
+import { resolveEffectiveCoWriteMode } from '@/engine/co-writer/co-write-options';
 import type { SentenceEditRecord, SuggestionRecord } from '@/shared/types';
 import type { CoWriteFacade } from '@/ui/services/co-write-facade';
 import { getFriendlyErrorMessage } from '@/ui/co-writing/friendly-error';
@@ -176,7 +177,8 @@ export async function runTabSuggest(host: SuggestionFlowHost, force: boolean): P
     const startTime = Date.now();
     const wordCount = precedingText.length;
     // 本地模型（Ollama）耗时高度不确定，统计 ETA 会给出「预估剩余 1 秒」这类误导信息，直接跳过
-    const isLocalModelMode = (host.facade.settings?.coWriteModelMode || 'local') !== 'cloud';
+    // M-2：按生效模式判断——本地未选模型自动切云端后不应再展示「本地模型等待」文案
+    const isLocalModelMode = resolveEffectiveCoWriteMode(host.facade.settings) === 'local';
     // 串行生成时展示「第 N/M 条」，避免单条耗时较长被误认为卡死
     let suggestProgressTimer: number | null = null;
     if (isLocalModelMode && host.suggestEtaDisplay) {

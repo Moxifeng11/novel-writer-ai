@@ -117,6 +117,16 @@ describe('requestJson — 桌面端 fetch / 移动端 requestUrl', () => {
 
         await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
     });
+
+    it('signal 已 abort 时不发出 requestUrl（L2-6）', async () => {
+        platformMock.isMobile = true;
+        const controller = new AbortController();
+        controller.abort();
+
+        await expect(requestJson('https://api.test/v1', { body: '{}', signal: controller.signal }))
+            .rejects.toMatchObject({ name: 'AbortError' });
+        expect(requestUrlMock).not.toHaveBeenCalled();
+    });
 });
 
 describe('openStreamResponse — 移动端缓冲 SSE 兼容', () => {

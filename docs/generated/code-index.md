@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137506 | 1726 | 1417 | 82% |
+| `engine/` | 319 | 137533 | 1727 | 1418 | 82% |
 | `services/` | 32 | 13167 | 193 | 153 | 79% |
-| `shared/` | 190 | 42745 | 1675 | 1367 | 82% |
+| `shared/` | 190 | 42747 | 1675 | 1367 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99718 | 754 | 649 | 86% |
+| `ui/` | 242 | 99720 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -90,10 +90,10 @@
 | `engine/character-context.ts` | 46 | 1 | 1 |
 | `engine/character-recognition-pipeline.ts` | 452 | 1 | 1 |
 | `engine/character-soul.ts` | 268 | 10 | 7 |
-| `engine/co-writer-engine.ts` | 3295 | 3 | 1 |
+| `engine/co-writer-engine.ts` | 3293 | 3 | 1 |
 | `engine/co-writer-state-sync.ts` | 53 | 1 | 1 |
 | `engine/co-writer/ai-response-parse.ts` | 186 | 4 | 4 |
-| `engine/co-writer/co-write-options.ts` | 291 | 10 | 10 |
+| `engine/co-writer/co-write-options.ts` | 313 | 11 | 11 |
 | `engine/co-writer/co-writer-types.ts` | 106 | 6 | 6 |
 | `engine/co-writer/create-session-store.ts` | 249 | 4 | 4 |
 | `engine/co-writer/directional-prompt.ts` | 137 | 2 | 1 |
@@ -116,7 +116,7 @@
 | `engine/context/incremental-updater.ts` | 302 | 6 | 1 |
 | `engine/context/overflow-recovery.ts` | 322 | 7 | 2 |
 | `engine/context/story-context-graph.ts` | 1573 | 7 | 7 |
-| `engine/context/story-context-service.ts` | 218 | 8 | 8 |
+| `engine/context/story-context-service.ts` | 225 | 8 | 8 |
 | `engine/context/story-context-types.ts` | 207 | 13 | 13 |
 | `engine/craft-constraints.ts` | 84 | 5 | 5 |
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
@@ -457,7 +457,7 @@
 | `shared/ghost-trigger.ts` | 26 | 1 | 1 |
 | `shared/github-repo.ts` | 81 | 11 | 11 |
 | `shared/http-request.ts` | 124 | 7 | 3 |
-| `shared/http-transport.ts` | 233 | 6 | 2 |
+| `shared/http-transport.ts` | 235 | 6 | 2 |
 | `shared/human-feature-rubric.ts` | 180 | 7 | 6 |
 | `shared/human-similarity.ts` | 333 | 11 | 11 |
 | `shared/info-debt.ts` | 70 | 3 | 3 |
@@ -624,7 +624,7 @@
 | `ui/co-writing/settlement-actions.ts` | 189 | 6 | 5 |
 | `ui/co-writing/suggest-feedback.ts` | 185 | 9 | 7 |
 | `ui/co-writing/suggestion-cards.ts` | 352 | 12 | 11 |
-| `ui/co-writing/suggestion-flow.ts` | 473 | 3 | 2 |
+| `ui/co-writing/suggestion-flow.ts` | 475 | 3 | 2 |
 | `ui/co-writing/suggestion-loading.ts` | 130 | 4 | 2 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
 | `ui/command-ui-executor.ts` | 679 | 2 | 2 |

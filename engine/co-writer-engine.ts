@@ -138,8 +138,10 @@ import type {
 import { buildSnapshot as buildSnapshotFromContext } from './co-writer/snapshot-builder';
 import {
     buildCoWriteOptions,
+    canCoWrite,
     resolveCoWriteLocalProvider,
     resolveCoWriteModel,
+    resolveEffectiveCoWriteMode,
 } from './co-writer/co-write-options';
 import type { CoWriteCallOptions, LocalProviderRoute } from './co-writer/co-write-options';
 
@@ -299,7 +301,7 @@ export class CoWriterEngine {
             CO_WRITE_MAX_TOKENS_CAP,
         );
         // 首次本地调用前探测真实窗口，避免 num_ctx 先被 8192 兜底钉死
-        const isLocal = (settings?.coWriteModelMode || 'local') !== 'cloud';
+        const isLocal = resolveEffectiveCoWriteMode(settings) === 'local';
         const model = isLocal ? this.getCoWriteModel() : undefined;
         const local = isLocal ? this.resolveLocalProvider(model) : null;
         // 本地单槽串行：并发建议/幽灵/守卫同时进来时排队，而不是互相超时。
@@ -363,7 +365,7 @@ export class CoWriterEngine {
      */
     private getCoWriteInputBudget(): { maxInputTokens: number; modelId: string } {
         const settings = this.aiEngine.getPlugin()?.settings;
-        const mode: 'local' | 'cloud' = (settings?.coWriteModelMode || 'local') === 'cloud' ? 'cloud' : 'local';
+        const mode = resolveEffectiveCoWriteMode(settings);
         const modelId = this.getCoWriteModel() || 'default';
         let contextWindow: number;
         if (mode === 'local') {
@@ -380,12 +382,8 @@ export class CoWriterEngine {
 
     private hasCoWriteModel(): boolean {
         const settings = this.aiEngine.getPlugin()?.settings;
-        if (!settings) return false;
-        const mode = settings.coWriteModelMode || 'local';
-        if (mode === 'cloud') {
-            return !!(settings.coWriteCloudModel || settings.defaultModel);
-        }
-        return !!resolveCoWriteLocalModel(settings);
+        // M-2：按生效模式判断——本地模式没有本地模型会自动切云端，不能再被旧闸门短路
+        return canCoWrite(settings);
     }
 
     /** 获取 FileSystemPort 实例（懒加载） */
@@ -1002,7 +1000,7 @@ export class CoWriterEngine {
         };
         // 本地模型（Ollama 单机单槽）并行只会让 3 条候选互相排队直至超时，
         // 因此本地模式默认串行；云端仍保持并行。显式 candidateParallel=false 时也串行。
-        const localMode = (settings?.coWriteModelMode || 'local') !== 'cloud';
+        const localMode = resolveEffectiveCoWriteMode(settings) === 'local';
 
         // 本地模式优先把 3 个方向合并成 1 次调用；解析失败自动回退到原有逐方向路径。
         // 精准模式保留逐方向验证，避免批量输出绕过风格评分。
@@ -1550,7 +1548,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         const temperature = (settings?.coWriteTemperature ?? 0.7) + tempDelta;
         const maxTokens = Math.min(settings?.coWriteMaxTokens ?? 600, CO_WRITE_MAX_TOKENS_CAP);
         const model = this.getCoWriteModel();
-        const isLocal = (settings?.coWriteModelMode || 'local') !== 'cloud';
+        const isLocal = resolveEffectiveCoWriteMode(settings) === 'local';
         const local = isLocal ? this.resolveLocalProvider(model) : null;
         const release = isLocal && local ? await acquireLocalAiSlot(signal) : null;
         try {
@@ -1669,7 +1667,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
 
         // 本地模型默认一次返回 3 个方向的改写，避免串行 3 次往返。
         // 解析失败/候选不足时返回 null，继续走原有逐方向路径。
-        const localMode = (settings?.coWriteModelMode || 'local') !== 'cloud';
+        const localMode = resolveEffectiveCoWriteMode(settings) === 'local';
         if (localMode
             && !this.precisionMode
             && (settings as { coWriteCandidateBatching?: boolean } | undefined)?.coWriteCandidateBatching !== false
@@ -2933,7 +2931,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
     ): Promise<{ content: string; error?: string }> {
         const settings = this.aiEngine.getPlugin()?.settings;
         const model = this.getCoWriteModel();
-        const isLocal = (settings?.coWriteModelMode || 'local') !== 'cloud';
+        const isLocal = resolveEffectiveCoWriteMode(settings) === 'local';
         const local = isLocal ? this.resolveLocalProvider(model) : null;
         const release = isLocal && local ? await acquireLocalAiSlot() : null;
         try {

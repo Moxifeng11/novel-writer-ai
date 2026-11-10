@@ -119,6 +119,8 @@ function toTransportResponse(response: RequestUrlResponse): TransportResponse {
 }
 
 async function requestViaUrl(url: string, options: HttpTransportOptions): Promise<TransportResponse> {
+    // L2-6：signal 已 abort 时不要先把请求发出去——requestUrl 不可中断，会白耗一次计费调用
+    if (options.signal?.aborted) throw abortError();
     const params: RequestUrlParam = {
         url,
         method: options.method ?? 'POST',

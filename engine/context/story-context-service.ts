@@ -8,6 +8,7 @@
  */
 import type { SceneCardFields } from '@/shared/scene-card';
 import { createLogger } from '@/shared/logger';
+import { resolveEffectiveCoWriteMode, type CoWriteOptionsSettings } from '@/engine/co-writer/co-write-options';
 import type { StoryLinkage } from '@/engine/story-linkage';
 import type { GatheredContext } from './context-types';
 import {
@@ -33,6 +34,11 @@ export interface StoryContextTierSettings {
     defaultModel?: string;
     apiEndpoint?: string;
     customProviderName?: string;
+    /** 生效模式判定所需（本地模式未选本地模型时会自动切云端） */
+    coWriteModel?: string;
+    proModel?: string;
+    flashModel?: string;
+    customProviders?: CoWriteOptionsSettings['customProviders'];
 }
 
 const LOCAL_MODEL_HINTS = [
@@ -57,7 +63,8 @@ export function resolveStoryContextTier(
         return settings.storyContextTier;
     }
     if (mode === 'co-write') {
-        return settings?.coWriteModelMode === 'cloud' ? 'cloud' : 'local';
+        // M-2：按生效模式算预算；本地未选模型自动切云端后不能继续用 local 档位
+        return resolveEffectiveCoWriteMode(settings as CoWriteOptionsSettings | undefined) === 'cloud' ? 'cloud' : 'local';
     }
     const endpoint = String(settings?.apiEndpoint || '').toLowerCase();
     if (endpoint.includes('localhost') || endpoint.includes('127.0.0.1') || endpoint.includes('ollama')) {

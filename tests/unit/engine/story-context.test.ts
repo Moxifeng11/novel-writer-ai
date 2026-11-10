@@ -412,7 +412,15 @@ describe('story-context service adapters', () => {
         expect(resolveStoryContextTier({ apiEndpoint: 'http://localhost:11434/v1' }, 'one-click')).toBe('local');
         expect(resolveStoryContextTier({ defaultModel: 'qwen2.5:7b' }, 'one-click')).toBe('local');
         expect(resolveStoryContextTier({ defaultModel: 'deepseek-flash' }, 'one-click')).toBe('cloud');
-        expect(resolveStoryContextTier({ coWriteModelMode: 'local' }, 'co-write')).toBe('local');
+        // M-2：本地模式未选本地模型时生效模式为 cloud（自动切换），不再按 raw mode 给 local 档
+        expect(resolveStoryContextTier({ coWriteModelMode: 'local' }, 'co-write')).toBe('cloud');
+        expect(resolveStoryContextTier({
+            coWriteModelMode: 'local',
+            coWriteModel: 'qwen2.5:7b',
+            customProviders: [{
+                id: 'ollama', endpoint: 'http://localhost:11434/v1', sourceType: 'local', models: ['qwen2.5:7b'],
+            }],
+        }, 'co-write')).toBe('local');
         expect(resolveStoryContextTier({ coWriteModelMode: 'cloud' }, 'co-write')).toBe('cloud');
         expect(resolveStoryContextTier({ storyContextTier: 'local', defaultModel: 'deepseek-flash' }, 'one-click')).toBe('local');
     });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     buildCoWriteOptions,
+    canCoWrite,
     resolveCoWriteModel,
     resolveEffectiveCoWriteMode,
 } from '../../../engine/co-writer/co-write-options';
@@ -71,5 +72,11 @@ describe('协同写作模式 — 本地未选模型自动切云端（M-2）', ()
         expect(opts.autoSwitchedToCloud).toBeUndefined();
         expect(opts.endpoint).toBe(CLOUD.endpoint);
         expect(opts.apiKey).toBe('sk-demo');
+    });
+
+    it('canCoWrite 按生效模式判断：自动切云端有云端模型即放行', () => {
+        expect(canCoWrite(settings())).toBe(true);
+        expect(canCoWrite(settings({ defaultModel: '', availableModels: [] }))).toBe(false);
+        expect(canCoWrite(settings({ coWriteModel: 'qwen2.5:7b' }))).toBe(true);
     });
 });

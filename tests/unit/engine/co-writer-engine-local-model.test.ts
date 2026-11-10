@@ -50,7 +50,7 @@ function makeEngine(settings: Record<string, unknown>) {
 }
 
 describe('CoWriterEngine 协同写作本地模型约束', () => {
-    it('未配置 coWriteModel 时不调用 AI，避免回退远程模型', async () => {
+    it('未配置本地模型时自动切云端并调用 AI（M-2）', async () => {
         const { engine, aiEngine } = makeEngine({
             coWriteModel: '',
             defaultModel: 'deepseek-chat',
@@ -61,8 +61,9 @@ describe('CoWriterEngine 协同写作本地模型约束', () => {
 
         const suggestions = await engine.suggestNext('前文', '', 'continue', 1);
 
-        expect(suggestions).toEqual([]);
-        expect(aiEngine.callAI).not.toHaveBeenCalled();
+        // M-2：本地模式无本地模型 → 生效模式为 cloud，闸门必须放行
+        expect(aiEngine.callAI).toHaveBeenCalled();
+        expect(Array.isArray(suggestions)).toBe(true);
     });
 
     it('显式 coWriteModel 属于云端 provider 时，本地模式返回 undefined', () => {
