@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137573 | 1727 | 1418 | 82% |
+| `engine/` | 319 | 137610 | 1727 | 1418 | 82% |
 | `services/` | 32 | 13296 | 194 | 154 | 79% |
 | `shared/` | 193 | 42883 | 1683 | 1374 | 82% |
 | `core/` | 7 | 2840 | 29 | 14 | 48% |
@@ -192,7 +192,7 @@
 | `engine/knowledge-usage.ts` | 80 | 3 | 3 |
 | `engine/knowledge-vector-store.ts` | 752 | 5 | 4 |
 | `engine/ledger/ledger-index.ts` | 175 | 10 | 8 |
-| `engine/ledger/ledger-io.ts` | 189 | 4 | 4 |
+| `engine/ledger/ledger-io.ts` | 212 | 4 | 4 |
 | `engine/ledger/ledger-link.ts` | 224 | 4 | 2 |
 | `engine/ledger/ledger-model.ts` | 323 | 28 | 11 |
 | `engine/ledger/ledger-parse.ts` | 452 | 4 | 2 |
@@ -300,7 +300,7 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 2038 | 3 | 3 |
+| `engine/settlement-engine.ts` | 2052 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 137 | 2 | 2 |

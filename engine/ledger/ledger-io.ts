@@ -21,22 +21,41 @@ interface CacheEntry {
 const cache = new Map<string, CacheEntry>();
 
 /**
+ * 内容指纹（FNV-1a 32 位，仅用于缓存失效，不用于安全场景）。
+ *
+ * mtime+size 在粗粒度文件系统/同长度改写时不变，会把旧台账一直喂给摘要与上下文。
+ *
+ * @param content - 文件内容
+ * @returns 36 进制指纹
+ */
+function hashContent(content: string): string {
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < content.length; i++) {
+        hash ^= content.charCodeAt(i);
+        hash = Math.imul(hash, 0x01000193);
+    }
+    return (hash >>> 0).toString(36);
+}
+
+/**
  * 读取文件内容（不存在返回空串，不抛错）
  *
  * @param app - Obsidian 应用
  * @param path - 路径
- * @returns 文本与签名
+ * @returns 文本、签名与读取是否成功
  */
-async function readIfExists(app: App, path: string): Promise<{ content: string; signature: string }> {
+async function readIfExists(app: App, path: string): Promise<{ content: string; signature: string; ok: boolean }> {
     try {
         const file = app.vault.getAbstractFileByPath(path);
-        if (!(file instanceof TFile)) return { content: '', signature: '0:0' };
+        if (!(file instanceof TFile)) return { content: '', signature: 'absent', ok: true };
         const content = await app.vault.cachedRead(file);
         const mtime = file.stat?.mtime ?? 0;
         const size = file.stat?.size ?? content.length;
-        return { content, signature: `${mtime}:${size}` };
+        // D3-9：内容指纹参与签名，同 mtime/size 的改写也能失效缓存
+        return { content, signature: `${mtime}:${size}:${hashContent(content)}`, ok: true };
     } catch {
-        return { content: '', signature: '0:0' };
+        // 读失败（权限/临时 IO）：签名标记 error，调用方不得把空账本写进缓存
+        return { content: '', signature: 'error', ok: false };
     }
 }
 
@@ -106,7 +125,11 @@ export async function loadStoryLedger(app: App, project: string): Promise<StoryL
         foreshadowPath,
         promises,
     });
-    cache.set(project, { signature, ledger });
+    // D3-9：任一文件读失败时返回的 ledger 可能是「空账本」，绝不能写进缓存，
+    // 否则整会话都会拿到空/残缺台账（下次成功读取也会被签名命中挡住）。
+    if (timeline.ok && foreshadow.ok && promise.ok) {
+        cache.set(project, { signature, ledger });
+    }
     return ledger;
 }
 

@@ -949,6 +949,8 @@ export class SettlementEngine {
                 }
             });
         } catch (e) { log.warn('[SettlementEngine] 更新伏笔库失败:', e); ctx.hasPartialFailure = true; }
+        // D3-9：回收/揭示会改写伏笔库，显式失效台账缓存（内容 hash 之外的双保险）
+        invalidateStoryLedger(ctx.project);
     }
 
     // ================================================================
@@ -1241,6 +1243,12 @@ ${ni.description || '暂无描述'}
                         mainline: nf.relatedPlotline || '',
                     });
                     if (!written.changed) {
+                        if (written.reason === 'no-table') {
+                            // D3-9：缺少「未回收伏笔」表格时新伏笔会被静默丢弃，必须可见
+                            log.warn('[SettlementEngine] 伏笔库缺少未回收表格，新增伏笔未写入:', nf.name);
+                            this.markPostStepFailure(ctx, '伏笔库结构');
+                            return;
+                        }
                         log.info('[SettlementEngine] 伏笔已存在，跳过:', nf.name);
                         return;
                     }
@@ -1276,6 +1284,12 @@ ${ni.description || '暂无描述'}
                     source: 'settlement',
                 });
                 if (!written.changed) {
+                    if (written.reason === 'no-table') {
+                        // D3-9：缺少时间线表格时新事件会被静默丢弃，必须可见
+                        log.warn('[SettlementEngine] 时间线看板缺少表格，新增事件未写入:', nt.desc, nt.event);
+                        this.markPostStepFailure(ctx, '时间线看板结构');
+                        return false;
+                    }
                     log.info('[SettlementEngine] 时间线事件已存在，跳过:', nt.desc, nt.event);
                     return false;
                 }
