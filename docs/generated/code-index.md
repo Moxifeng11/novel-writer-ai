@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137452 | 1725 | 1416 | 82% |
+| `engine/` | 319 | 137453 | 1725 | 1416 | 82% |
 | `services/` | 32 | 13004 | 190 | 150 | 79% |
-| `shared/` | 187 | 42433 | 1665 | 1360 | 82% |
+| `shared/` | 187 | 42469 | 1667 | 1362 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99628 | 753 | 649 | 86% |
+| `ui/` | 242 | 99631 | 753 | 649 | 86% |
 
 ## 文件清单
 
@@ -146,7 +146,7 @@
 | `engine/emotion-curve-analyzer.ts` | 220 | 1 | 1 |
 | `engine/emotion-planner.ts` | 212 | 7 | 4 |
 | `engine/ending-traction-engine.ts` | 418 | 1 | 1 |
-| `engine/engine-registry.ts` | 1515 | 13 | 3 |
+| `engine/engine-registry.ts` | 1516 | 13 | 3 |
 | `engine/entity-context-engine.ts` | 1098 | 10 | 2 |
 | `engine/entity-graph.ts` | 198 | 6 | 6 |
 | `engine/entity-link-migrator.ts` | 168 | 5 | 5 |
@@ -481,7 +481,7 @@
 | `shared/novel-format.ts` | 348 | 12 | 12 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1509 | 199 | 193 |
+| `shared/paths.ts` | 1545 | 201 | 195 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
 | `shared/plugin-cache.ts` | 405 | 6 | 4 |
@@ -808,7 +808,7 @@
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 562 | 2 | 1 |
 | `ui/workspace-manager.ts` | 144 | 2 | 2 |
-| `ui/write-chapter-modal.ts` | 846 | 1 | 1 |
+| `ui/write-chapter-modal.ts` | 849 | 1 | 1 |
 | `ui/writing-pet.ts` | 290 | 2 | 2 |
 | `ui/writing-stats-modal.ts` | 245 | 1 | 1 |
 | `ui/writing-stats-settings.ts` | 70 | 1 | 1 |

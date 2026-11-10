@@ -48,6 +48,12 @@ describe('sanitizeFileSegment', () => {
         expect(sanitizeFileSegment('A:B*C?D"E<F>G|H\\I')).toBe('A B C D E F G H I');
     });
 
+    it('路径穿越标题不保留任何分隔符（AI 标题进文件名的前置校验）', () => {
+        expect(sanitizeFileSegment('../evil')).not.toContain('/');
+        expect(sanitizeFileSegment('..\\evil')).not.toContain('\\');
+        expect(sanitizeFileSegment('..')).not.toContain('/');
+    });
+
     it('压缩空白并去首尾空格', () => {
         expect(sanitizeFileSegment('  棋手   落子  ')).toBe('棋手 落子');
     });

@@ -35,7 +35,7 @@ describe('collectBackupCenter — 版本与备份中心', () => {
         seedVersion(vault, '第2章', 1);
         vault._seedFile(`${P}/03-大纲与章节/步骤结果/第1卷/第1章/第1章_结算表.md`, '# 结算');
         vault._seedFile(`${P}/03-大纲与章节/步骤结果/第1卷/第1章/第1章_质量控制.md`, '# 质控');
-        vault._seedFile('.obsidian/plugins/novel-writer-ai/data/data.json.bak', '{}');
+        vault._seedFile('.obsidian/plugins/novel-writer-ai/data.json.bak', '{}');
 
         const report = await collectBackupCenter({ vault } as never, P);
 
@@ -58,17 +58,19 @@ describe('collectBackupCenter — 版本与备份中心', () => {
 
     it('SEC-11：配置备份文案按密钥形态说真话（明文必须警告）', async () => {
         const plainVault = new Vault();
-        plainVault._seedFile('.obsidian/plugins/novel-writer-ai/data/data.json.bak', JSON.stringify({
+        plainVault._seedFile('.obsidian/plugins/novel-writer-ai/data.json.bak', JSON.stringify({
             apiKey: 'sk-plain-demo',
         }));
         const plain = await collectBackupCenter({ vault: plainVault } as never, P);
         const plainEntry = plain.entries.find(entry => entry.kind === 'settings-backup');
+        // 路径必须与写入方（插件根目录）一致，否则备份中心永远看不到 .bak
+        expect(plainEntry?.path).toBe('.obsidian/plugins/novel-writer-ai/data.json.bak');
         expect(plainEntry?.label).toContain('明文密钥');
         expect(plainEntry?.detail).toContain('含明文 API Key');
         expect(plainEntry?.detail).not.toContain('密钥为密文');
 
         const encryptedVault = new Vault();
-        encryptedVault._seedFile('.obsidian/plugins/novel-writer-ai/data/data.json.bak', JSON.stringify({
+        encryptedVault._seedFile('.obsidian/plugins/novel-writer-ai/data.json.bak', JSON.stringify({
             apiKey: 'aes256v2:iv:cipher',
         }));
         const encrypted = await collectBackupCenter({ vault: encryptedVault } as never, P);

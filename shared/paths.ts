@@ -974,8 +974,34 @@ let pluginRootDir = DEFAULT_PLUGIN_ROOT_DIR;
  * @param dir - vault 相对的插件根目录，如 `.obsidian/plugins/novel-writer-ai`
  */
 export function setPluginRootDir(dir: string): void {
-    const cleaned = dir.trim().replace(/[\\/]+$/, '');
+    const cleaned = dir.trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
     if (cleaned) pluginRootDir = cleaned;
+}
+
+/**
+ * 由 configDir 与 manifest.dir 计算插件根目录。
+ *
+ * SEC/审计（2026-11-10）：`manifest.dir` 是**vault 相对路径**，通常已含 `.obsidian/`；
+ * 旧实现无条件 `${configDir}/${manifest.dir}`，在真实 vault 里得到
+ * `.obsidian/.obsidian/plugins/...`，导致 usage-ledger/writing-stats 等写入错误目录。
+ * 这里对「已含 configDir」的情况幂等返回，兼容只给 `plugins/x` 的旧形态。
+ *
+ * @param configDir - `vault.configDir`（如 `.obsidian`）
+ * @param manifestDir - `manifest.dir`（vault 相对，可能已含 configDir）
+ * @returns 规范化后的插件根目录
+ *
+ * @example
+ * resolvePluginRootDir('.obsidian', '.obsidian/plugins/novel-writer-ai')
+ * // => '.obsidian/plugins/novel-writer-ai'
+ * resolvePluginRootDir('.obsidian', 'plugins/novel-writer-ai')
+ * // => '.obsidian/plugins/novel-writer-ai'
+ */
+export function resolvePluginRootDir(configDir: string, manifestDir: string): string {
+    const config = String(configDir || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+    const dir = String(manifestDir || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+    if (!dir) return pluginRootDir;
+    if (!config || dir === config || dir.startsWith(`${config}/`)) return dir;
+    return `${config}/${dir}`;
 }
 
 /**
@@ -984,6 +1010,16 @@ export function setPluginRootDir(dir: string): void {
  * @returns vault/插件相对路径
  */
 export function pluginRootDirPath(): string { return pluginRootDir; }
+
+/**
+ * pluginSettingsBackupFile：`data.json.bak` 的唯一路径（插件根目录，不是 data/ 子目录）。
+ *
+ * SEC-11 后续审计：写入方在插件根目录，读取方此前拼成 `data/data.json.bak`，
+ * 导致备份中心永远看不到明文副本、告警文案成为死代码。
+ *
+ * @returns 插件根目录下的 data.json.bak 路径
+ */
+export function pluginSettingsBackupFile(): string { return `${pluginRootDir}/data.json.bak`; }
 
 /**
  * pluginDataDir：返回插件数据目录 `${pluginRootDir}/data`。

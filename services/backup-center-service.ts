@@ -7,7 +7,7 @@
  */
 import { App, TFile } from 'obsidian';
 import { listFolderFiles } from '@/shared/vault-tree';
-import { pjVersionsDir, pluginDataFile } from '@/shared/paths';
+import { pjVersionsDir, pluginSettingsBackupFile } from '@/shared/paths';
 import type { VersionMeta } from '@/shared/version-types';
 import { detectSecretStorageModeFromJson, type SecretStorageMode } from '@/shared/secret-redaction';
 import { isSafeVersionEntry } from './chapter-version-service';
@@ -36,9 +36,9 @@ export interface BackupCenterReport {
 }
 
 const CONTENT_TYPES: Array<VersionMeta['contentType']> = ['chapter', 'outline', 'worldview', 'character', 'setting'];
-/** 插件配置备份路径：走共享插件数据目录（兼容自定义 configDir 与插件文件夹名） */
+/** 插件配置备份路径：与写入方共用插件根目录单源（不是 data/ 子目录） */
 function pluginBackupPath(): string {
-    return pluginDataFile('data.json.bak');
+    return pluginSettingsBackupFile();
 }
 
 function emptySummary(): Record<BackupEntryKind, number> {

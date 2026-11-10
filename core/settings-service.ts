@@ -272,37 +272,37 @@ export class SettingsService {
      * 规则（按优先级）：
      * 1. 空值 → 空；
      * 2. 已是密文 → 原样保留（避免二次加密）；
-     * 3. 有会话口令 → 加密；
-     * 4. 无会话口令，但磁盘上该字段原本是密文 → 尝试用**已有口令**加密
-     *    （`encryptStrict` 会问口令并校验）；拿不到口令就**保留旧密文**。
-     *    绝不写明文——那等于把加密过的密钥降级，还会造成混合状态；
-     * 5. 从未用过口令（磁盘上没有任何该字段密文）→ 沿用「明文保存」的旧行为。
+     * 3. 有会话口令 / 本字段原本是密文 / **磁盘上任何字段已有密文** → 必须加密；
+     *    拿不到口令时保留旧值（无旧值则拒绝写入），绝不新增明文。
+     *    混合态（部分密文 + 部分历史明文）也必须按此执行，否则新 Key 会静默明文落盘；
+     * 4. 从未用过口令（磁盘上没有任何密文）→ 沿用「明文保存」的旧行为。
      */
     private async resolveSecret(field: string, value: string): Promise<string> {
         if (!value) return '';
         if (value.startsWith(V2_PREFIX_LOCAL) || value.startsWith('aes256:')) return value;
-        if (this.deps.crypto.hasSessionPassword()) {
-            const encrypted = await this.deps.crypto.encryptStrict(value);
-            return encrypted ?? this.previousCipherOf(field, value);
-        }
         const previous = this.rawSecrets[field];
-        if (typeof previous === 'string' && (previous.startsWith(V2_PREFIX_LOCAL) || previous.startsWith('aes256:'))) {
-            // 磁盘上原本有密文（v2 或 v1）：必须加密后才能落盘。
-            // v1 → v2 的升级也走这里；拿不到口令时保留旧密文，绝不降级明文。
+        const previousIsCipher = typeof previous === 'string'
+            && (previous.startsWith(V2_PREFIX_LOCAL) || previous.startsWith('aes256:'));
+        if (this.deps.crypto.hasSessionPassword() || previousIsCipher || this.hasAnyCiphertext()) {
             const encrypted = await this.deps.crypto.encryptStrict(value);
             if (encrypted) return encrypted;
-            log.warn(`[小说工坊] 未能解锁口令，${field} 保留原密文不写明文`);
-            return previous;
+            if (typeof previous === 'string' && previous) {
+                log.warn(`[小说工坊] 未能解锁口令，${field} 保留原值不写明文`);
+                return previous;
+            }
+            // 没有旧值可保留：拒绝把新密钥明文落盘（调用方会读到空值）
+            log.warn(`[小说工坊] 未能解锁口令，${field} 未写入（拒绝明文落盘）`);
+            return '';
         }
         return value;
     }
 
-    /** 拿不到口令时的兜底：有旧密文就用旧密文，否则返回空串（不泄露明文） */
-    private previousCipherOf(field: string, plaintext: string): string {
-        const previous = this.rawSecrets[field];
-        if (typeof previous === 'string'
-            && (previous.startsWith(V2_PREFIX_LOCAL) || previous.startsWith('aes256:'))) return previous;
-        return plaintext;
+    /** 磁盘上是否存在任意密文（v1 或 v2）；混合态据此拒绝新增明文 */
+    private hasAnyCiphertext(): boolean {
+        return Object.values(this.rawSecrets).some(
+            v => typeof v === 'string'
+                && (v.startsWith(V2_PREFIX_LOCAL) || v.startsWith('aes256:')),
+        );
     }
 
     /** 保存设置：加密 → 版本号包装 → 持久化 */

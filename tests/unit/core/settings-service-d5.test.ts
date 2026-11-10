@@ -158,8 +158,36 @@ describe('SettingsService — 密钥不降级（2026-10-29 修复 API Key 失效
         expect((written.providerKeys as Record<string, string>).volc).toBe(CIPHER);
     });
 
-    it('磁盘上原本是明文（从没用过口令）→ 仍按明文保存（兼容旧行为）', async () => {
+    it('混合态：已有密文时新增密钥不得明文落盘（2026-11-10 安全审计 F1）', async () => {
         const { service, saved, current } = harness(
+            // 一个字段是 v2 密文、另一个是历史明文：混合态
+            { schemaVersion: CURRENT_SCHEMA_VERSION, apiKey: CIPHER, providerKeys: { volc: 'sk-old-plain' } },
+            {
+                decryptWithoutPrompt: async (v: string) => v,
+                hasSessionPassword: () => false,
+                // 未解锁且用户取消口令
+                encryptStrict: async () => null,
+                encrypt: async (v: string) => v,
+            },
+        );
+
+        await service.loadSettings();
+        (current() as Record<string, unknown>).providerKeys = {
+            volc: 'sk-old-plain',
+            newProvider: 'sk-demo-new',
+        };
+        await service.saveSettings();
+
+        const written = saved[saved.length - 1];
+        const keys = written.providerKeys as Record<string, string>;
+        // 新密钥没有旧值可保留 → 拒绝写入，而不是明文落盘
+        expect(keys.newProvider).toBe('');
+        expect(JSON.stringify(written)).not.toContain('sk-demo-new');
+        // 历史明文保持原样，不因本次保存丢失
+        expect(keys.volc).toBe('sk-old-plain');
+    });
+
+    it('磁盘上原本是明文（从没用过口令）→ 仍按明文保存（兼容旧行为）', async () => {        const { service, saved, current } = harness(
             { schemaVersion: CURRENT_SCHEMA_VERSION, apiKey: 'sk-plain' },
             {
                 decryptWithoutPrompt: async (v: string) => v,

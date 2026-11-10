@@ -14,6 +14,9 @@ import {
     pjFanficFile,
     kbBookDir,
     kbBookSourceFile,
+    resolvePluginRootDir,
+    setPluginRootDir,
+    pluginSettingsBackupFile,
 } from '../../../shared/paths';
 
 
@@ -108,5 +111,26 @@ describe('kbBookSourceFile — 源文本文件名净化（v4.79.0 安全审计�
         const path = kbBookSourceFile('a\\b:c');
         expect(path).not.toContain('\\');
         expect(path).toContain('a_b_c');
+    });
+});
+
+describe('插件根目录单源（2026-11-10 安全审计 F3）', () => {
+    it('manifest.dir 已含 configDir 时不再重复拼接（旧实现得到 .obsidian/.obsidian）', () => {
+        expect(resolvePluginRootDir('.obsidian', '.obsidian/plugins/novel-writer-ai'))
+            .toBe('.obsidian/plugins/novel-writer-ai');
+        expect(resolvePluginRootDir('.config/obsidian', '.config/obsidian/plugins/novel-writer-ai'))
+            .toBe('.config/obsidian/plugins/novel-writer-ai');
+    });
+
+    it('manifest.dir 只给 plugins/x 时补上 configDir（兼容旧形态）', () => {
+        expect(resolvePluginRootDir('.obsidian', 'plugins/novel-writer-ai'))
+            .toBe('.obsidian/plugins/novel-writer-ai');
+        expect(resolvePluginRootDir('.obsidian', '/plugins/novel-writer-ai/'))
+            .toBe('.obsidian/plugins/novel-writer-ai');
+    });
+
+    it('data.json.bak 在插件根目录，不在 data/ 子目录（写入/读取同源）', () => {
+        setPluginRootDir('.obsidian/plugins/novel-writer-ai');
+        expect(pluginSettingsBackupFile()).toBe('.obsidian/plugins/novel-writer-ai/data.json.bak');
     });
 });

@@ -162,6 +162,7 @@ import { TemplateService } from './template-service';
 import { ChapterVersionService } from '@/services/chapter-version-service';
 import { createLogger } from '@/shared/logger';
 import { detectSecretStorageModeFromJson } from '@/shared/secret-redaction';
+import { pluginSettingsBackupFile } from '@/shared/paths';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 
 const log = createLogger('EngineRegistry');
@@ -1193,7 +1194,7 @@ export class EngineRegistry {
                 if (!(await adapter.exists(source))) return;
                 try {
                     const raw = await adapter.read(source);
-                    await adapter.write(`${dir}/data.json.bak`, raw);
+                    await adapter.write(pluginSettingsBackupFile(), raw); // write-entry-allow: 插件配置 .bak 备份，非 Markdown
                     // SEC-11：.bak 是逐字节副本，加密状态与 data.json 完全一致。
                     // 未启用会话口令时这里就是一份明文 API Key 副本，必须留痕，
                     // 避免用户把 .bak 当「密文备份」分享/同步出去。

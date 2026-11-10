@@ -25,4 +25,9 @@ describe('一键成文 — 结算后不再二次改写正文', () => {
         // 结算失败/回滚分支仍然提前返回，不登记完成
         expect(src).toContain('settleResult.rollback || settleResult.settlementPartial');
     });
+
+    it('AI 标题进入 rename 前先净化（安全审计 S-4）', () => {
+        expect(src).toContain('sanitizeFileSegment(writeResult.title)');
+        expect(src).not.toContain('writeResult.title.slice(0, 15)');
+    });
 });

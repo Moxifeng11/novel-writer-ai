@@ -51,7 +51,7 @@ import { WritingStatsModal } from './ui/writing-stats-modal';
 import { WritingPet } from './ui/writing-pet';
 import { formatWords } from './shared/writing-stats';
 import { redactSecrets } from './shared/secret-redaction';
-import { projectIdFromPath, pluginRootDirPath, setPluginRootDir } from './shared/paths';
+import { projectIdFromPath, pluginRootDirPath, resolvePluginRootDir, setPluginRootDir } from './shared/paths';
 import { CoWritingView, VIEW_TYPE_CO_WRITE } from './ui/co-writing-view';
 import { KnowledgeBaseView, VIEW_TYPE_KNOWLEDGE_BASE } from './ui/views/knowledge-base-view';
 import { AgentWorkbenchView } from './ui/agent-workbench-view';
@@ -757,7 +757,9 @@ export default class NovelWriterPlugin extends Plugin {
         // 用户可改 vault.configDir（如 .config/obsidian），BRAT 安装的文件夹名也可能不同，
         // 业务代码不得再硬编码 `.obsidian/plugins/novel-writer-ai`。
         if (this.manifest.dir) {
-            setPluginRootDir(`${this.app.vault.configDir}/${this.manifest.dir}`);
+            // manifest.dir 已是 vault 相对路径（通常含 configDir）；幂等计算避免
+            // 旧实现的 `.obsidian/.obsidian/plugins/...` 双前缀。
+            setPluginRootDir(resolvePluginRootDir(this.app.vault.configDir, this.manifest.dir));
         }
         this.engineRegistry = new EngineRegistry();
         // 本地真人样文（仅本机 data 目录）：失败静默，提示词自动退化为弱约束模式

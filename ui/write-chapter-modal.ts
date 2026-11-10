@@ -30,7 +30,7 @@ import { scoreAndFilterEntities, ScoredEntity } from '@/engine/entity-scorer';
 import { stripFrontmatter, showProgress, hideProgress, showSuccess, showError, showWarning } from '@/utils/helpers';
 import { extractWorldviewMeta } from './utils/worldview-utils';
 import { showWarningNotice } from './components/notice-helpers';
-import { getChapterFileName, findChapterFile, CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
+import { getChapterFileName, findChapterFile, sanitizeFileSegment, CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
 import { ActiveChapterTarget } from '@/shared/chapter-target';
 import { isInfoPlanComplete, isOutlineComplete } from '@/shared/info-debt';
 import { filterForeshadowsByChapter, getInvolvedEntities, getEntityStatusLine } from '@/engine/chapter-context-builder';
@@ -666,7 +666,10 @@ ${reportResult.content}
             if (writeResult.title) {
                 try {
                     const baseName = getChapterFileName(chapName, '正文');
-                    const newName = baseName.replace(`_${CHAPTER_FILE_TYPES.body}.md`, `_${writeResult.title.slice(0, 15)}_${CHAPTER_FILE_TYPES.body}.md`);
+                    // S-4（安全审计）：标题来自 AI，必须先净化再进文件名——
+                    // 未净化时 `..`/`/` 会让 rename 把正文移出章节目录。
+                    const safeTitle = sanitizeFileSegment(writeResult.title).slice(0, 15);
+                    const newName = baseName.replace(`_${CHAPTER_FILE_TYPES.body}.md`, `_${safeTitle}_${CHAPTER_FILE_TYPES.body}.md`);
                     const oldPath = bodyFile.path;
                     const newPath = oldPath.replace(/\/[^/]+$/, '/' + newName);
                     if (oldPath !== newPath && !app.vault.getAbstractFileByPath(newPath)) {
