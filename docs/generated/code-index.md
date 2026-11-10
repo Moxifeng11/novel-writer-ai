@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137453 | 1725 | 1416 | 82% |
 | `services/` | 32 | 13013 | 190 | 150 | 79% |
-| `shared/` | 187 | 42495 | 1668 | 1363 | 82% |
+| `shared/` | 188 | 42595 | 1671 | 1364 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 242 | 99644 | 753 | 649 | 86% |
@@ -486,6 +486,7 @@
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
 | `shared/plugin-cache.ts` | 405 | 6 | 4 |
 | `shared/plugin-capabilities.ts` | 98 | 4 | 1 |
+| `shared/plugin-data-migration.ts` | 100 | 3 | 1 |
 | `shared/plugin-leaves.ts` | 34 | 2 | 1 |
 | `shared/plugin-worker-url.ts` | 89 | 3 | 2 |
 | `shared/pre-research.ts` | 464 | 17 | 17 |

@@ -170,6 +170,7 @@ import { hasUsableAiCredentials } from './shared/ai-credentials';
 import { projectFromFilePath } from './domains/kernel/project-locator';
 import { listProjectIds } from '@/shared/project-catalog';
 import { consumePendingReloadState } from '@/shared/reload-state';
+import { migrateLegacyPluginData } from '@/shared/plugin-data-migration';
 import { createLogger } from './shared/logger';
 import { pruneSessions, SESSION_RETENTION_DEFAULTS } from './shared/session-retention';
 import type { PruneResult, RetentionTarget } from './shared/session-retention';
@@ -760,6 +761,25 @@ export default class NovelWriterPlugin extends Plugin {
             // manifest.dir 已是 vault 相对路径（通常含 configDir）；幂等计算避免
             // 旧实现的 `.obsidian/.obsidian/plugins/...` 双前缀。
             setPluginRootDir(resolvePluginRootDir(this.app.vault.configDir, this.manifest.dir));
+            // 旧版双拼路径下可能已有 usage-ledger/writing-stats/knowledge-vectors：
+            // 首次升级时搬回正确目录，否则统计/用量丢失、向量检索突然为空。
+            try {
+                const legacyRoot = `${this.app.vault.configDir}/${this.manifest.dir}`
+                    .replace(/\\/g, '/')
+                    .replace(/\/+$/, '');
+                if (legacyRoot !== pluginRootDirPath()) {
+                    const migrated = await migrateLegacyPluginData(
+                        this.app.vault.adapter as never,
+                        legacyRoot,
+                        pluginRootDirPath(),
+                    );
+                    if (migrated.migrated > 0) {
+                        log.info(`[小说工坊] 已迁移旧插件数据目录（${migrated.migrated}${migrated.renamed ? ' 个目录' : ' 个文件'}）`);
+                    }
+                }
+            } catch (e) {
+                log.warn('[小说工坊] 旧插件数据目录迁移失败（下次启动重试）:', e);
+            }
         }
         this.engineRegistry = new EngineRegistry();
         // 本地真人样文（仅本机 data 目录）：失败静默，提示词自动退化为弱约束模式
