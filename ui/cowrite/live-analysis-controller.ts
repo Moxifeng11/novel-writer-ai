@@ -4,7 +4,8 @@
  * 从 CoWritingView 抽出的「实时监控」职责块：输入/插入/保存后节流刷新
  * 情节牵引面板、推送 MonitorPanelA，以及设定守卫（OOC + 实体状态变更）。
  * 控制器持有 view 引用，自己管理实时分析定时器；ghost 联想定时器仍由
- * 主视图管理。onClose 时由主视图调用 clearTimers() 清理。
+ * 主视图管理。onClose 必须调 markClosed()（置位 + 清理），而不是只清定时器：
+ * 关闭时 saveBody 成功后的 onSaved 还会再排一次，只清理会被立刻重新武装。
  */
 
 import { Notice } from 'obsidian';
@@ -41,6 +42,13 @@ export class LiveAnalysisController {
   private lastGuardCheck: { length: number; at: number } | null = null;
   /** 最近一次守卫结果（监控卡数据源）。旧实现读 `liveAnalysis.issues`，该字段从不存在。 */
   private lastGuardSummary: GuardSummary | null = null;
+  /**
+   * 视图已关闭：拒绝一切新的实时分析排程。
+   * onClose 先 markClosed() 再 await saveBody()，而 saveBody 成功后的
+   * onSaved 回调还会调 scheduleRefresh('save')——没有这个闸门时，防抖器
+   * 会在 dispose 后重新建定时器，关闭后的视图继续发 AI 请求并写旧章面板。
+   */
+  private closed = false;
 
   /**
    * 最近一次守卫结果（null = 本章还没检查过）
@@ -65,6 +73,22 @@ export class LiveAnalysisController {
   }
 
   /**
+   * 视图关闭：置位「已关闭」并清理定时器；可重复调用。
+   *
+   * 之后 `scheduleRefresh` 一律直接返回，避免 onClose 内的 saveBody→onSaved
+   * 把刚清掉的实时分析重新排起来。
+   */
+  markClosed() {
+    this.closed = true;
+    this.clearTimers();
+  }
+
+  /** 视图打开/重建：恢复排程（ItemView 实例可能被复用） */
+  markOpened() {
+    this.closed = false;
+  }
+
+  /**
    * 切章时调用：作废在途检查与牵引结果，并清空长度基准。
    * 不清基准时，新章比上一章短会被 `grew` 判定为「没写够」而长期跳过输入检查；
    * 不作废代次时，旧章结果会晚到并写进新章的警告容器、面板 A 与牵引区。
@@ -85,6 +109,8 @@ export class LiveAnalysisController {
    * @param trigger - 触发器
    */
   scheduleRefresh(trigger: RefreshTrigger) {
+    // 关闭后不再排程：saveBody 的 onSaved 会在 onClose 之后回调
+    if (this.closed) return;
     const view = this.view;
     if (!view.rightEditor?.value?.trim())
       return;

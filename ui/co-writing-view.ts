@@ -417,6 +417,8 @@ export class CoWritingView extends ItemView {
     this.renderLayout();
     this.applyLayoutFromSettings();
     this.bindEvents();
+    // 视图实例可能被复用：重建时解除 onClose 设下的「不再排程」闸门
+    this.liveAnalysis.markOpened();
     // 字体只在下拉 change 时应用过：重开视图后下拉显示已选字体，正文仍是默认字体
     this.applyEditorFont(this.facade.settings.coWriteEditorFont || '');
     this.renderEmptySuggestions();
@@ -473,8 +475,10 @@ export class CoWritingView extends ItemView {
       this.timeEstimator = null;
     }
     this.ghostDebounceManager.dispose();
-    if (this.liveAnalysis && typeof this.liveAnalysis.clearTimers === 'function') {
-      this.liveAnalysis.clearTimers();
+    // F1（维度①审计）：必须先置位再 await saveBody——保存成功后的 onSaved
+    // 会调 scheduleRefresh('save')，只 clearTimers 会被立刻重新排起来。
+    if (this.liveAnalysis && typeof this.liveAnalysis.markClosed === 'function') {
+      this.liveAnalysis.markClosed();
     }
     // v4.79.0（交叉审计 B-3）：浮窗与建议抽屉挂在 body 上，视图关闭必须一并收走
     if (this.qualityReportPopup) {

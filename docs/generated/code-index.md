@@ -11,7 +11,7 @@
 | `shared/` | 187 | 42433 | 1665 | 1360 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99655 | 753 | 649 | 86% |
+| `ui/` | 242 | 99685 | 753 | 649 | 86% |
 
 ## 文件清单
 
@@ -593,7 +593,7 @@
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1024 | 2 | 2 |
-| `ui/co-writing-view.ts` | 3252 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3256 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 224 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
@@ -648,7 +648,7 @@
 | `ui/cowrite/history-modal.ts` | 55 | 1 | 1 |
 | `ui/cowrite/insert-range.ts` | 86 | 4 | 4 |
 | `ui/cowrite/iterate-instruction-modal.ts` | 54 | 1 | 1 |
-| `ui/cowrite/live-analysis-controller.ts` | 279 | 2 | 1 |
+| `ui/cowrite/live-analysis-controller.ts` | 305 | 2 | 1 |
 | `ui/cowrite/memory-manager-modal.ts` | 155 | 1 | 1 |
 | `ui/cowrite/suggestion-edit-modal.ts` | 160 | 1 | 1 |
 | `ui/cowrite/suggestion-history-store.ts` | 111 | 1 | 1 |
