@@ -153,6 +153,32 @@ describe('ChapterVersionService — 版本列表查询', () => {
     await expect(service.rollbackToVersion(evil as never, 'current')).rejects.toThrow('版本索引路径非法');
   });
 
+  it('partialRollback 只回滚选中行、走锁写回正文并生成 rollback 版本（C-2）', async () => {
+    const original = '第一行\n第二行\n第三行';
+    const v1 = await service.saveVersion(
+      TEST_PROJECT, 'chapter', TEST_CHAPTER, TEST_PATH, original, { type: 'manual' },
+    );
+    const current = '第一行\n改过的第二行\n第三行';
+
+    const result = await service.partialRollback(v1, current, [1]);
+
+    expect(result.success).toBe(true);
+    expect(result.newContent).toBe(original);
+    expect(await vault.adapter.read(TEST_PATH)).toBe(original);
+    expect(result.autoSavedVersion?.type).toBe('rollback');
+    // 自动保存的是回滚前的当前内容，不是目标版本
+    const autoContent = await service.getVersionContent(result.autoSavedVersion!);
+    expect(autoContent).toBe(current);
+  });
+
+  it('partialRollback 拒绝非法版本索引（contentKey 穿越）', async () => {
+    const v1 = await service.saveVersion(
+      TEST_PROJECT, 'chapter', TEST_CHAPTER, TEST_PATH, '内容', { type: 'manual' },
+    );
+    await expect(service.partialRollback({ ...v1, contentKey: '../evil' }, '内容', [0]))
+      .rejects.toThrow('版本索引路径非法');
+  });
+
   it('getVersionIndex 返回完整索引', async () => {
     await service.saveVersion(TEST_PROJECT, 'chapter', TEST_CHAPTER, TEST_PATH, '测试', { type: 'manual' });
     const index = await service.getVersionIndex(TEST_PROJECT, 'chapter', TEST_CHAPTER, TEST_PATH);

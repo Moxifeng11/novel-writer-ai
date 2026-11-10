@@ -488,7 +488,9 @@ export class ChapterVersionService {
         }
 
         const newContent = newLines.join('\n');
-        await this.writeFile(sourcePath, newContent);
+        // C-2（覆盖率审计）：与 rollbackToVersion 保持一致，正文写入必须持文件锁；
+        // 否则与协同自动保存/流水线并发时互相覆盖，且部分回滚无任何回归测试。
+        await withWriteLock(sourcePath, () => this.writeFile(sourcePath, newContent));
 
         return {
             success: true,

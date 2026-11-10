@@ -4,6 +4,29 @@ import { join } from 'path';
 import { CommercialDeconstructor } from '../../../engine/deconstructors/commercial-deconstructor';
 
 /**
+ * 真实样本只在开发者本机存在；缺失时必须显示 skipped，而不是 console.warn + return
+ * 伪装成通过（覆盖率/契约审计 T-1）。
+ */
+function loadZiChuanSample(): string | null {
+    const candidates = [
+        join(process.cwd(), '../../../写作知识库/紫川/紫川.txt'),
+        join(process.cwd(), '../../../../写作知识库/紫川/紫川.txt'),
+        join(__dirname, '../../../../../../写作知识库/紫川/紫川.txt'),
+    ];
+    for (const candidate of candidates) {
+        try {
+            const buffer = readFileSync(candidate);
+            return buffer.toString('utf-8', 0, Math.min(buffer.length, 60000));
+        } catch {
+            // 继续尝试下一个路径
+        }
+    }
+    return null;
+}
+
+const ZI_CHUAN_SAMPLE = loadZiChuanSample();
+
+/**
  * P1 章节分割修复测试
  *
  * 背景：拆解《紫川》时 firstChapter.wordCount=3（实际应 14000+）
@@ -130,32 +153,8 @@ ${body3}`;
     });
 
     describe('集成测试：紫川真实样本', () => {
-        it('紫川前 20000 字样本：第一章 wordCount > 5000（实际 14000+）', () => {
-            // 从工作目录定位紫川.txt
-            // process.cwd() 在 vitest 运行时为 novel-writer-ai 目录
-            // 紫川.txt 在 工作目录/写作知识库/紫川/紫川.txt
-            const candidates = [
-                join(process.cwd(), '../../../写作知识库/紫川/紫川.txt'),
-                join(process.cwd(), '../../../../写作知识库/紫川/紫川.txt'),
-                join(__dirname, '../../../../../../写作知识库/紫川/紫川.txt'),
-            ];
-
-            let text: string | null = null;
-            for (const p of candidates) {
-                try {
-                    const buffer = readFileSync(p);
-                    // 读取前 60000 字节（约 20000 中文字）
-                    text = buffer.toString('utf-8', 0, Math.min(buffer.length, 60000));
-                    break;
-                } catch {
-                    // 继续尝试下一个路径
-                }
-            }
-
-            if (text === null) {
-                console.warn('紫川.txt 未找到，跳过真实样本测试');
-                return;
-            }
+        it.skipIf(ZI_CHUAN_SAMPLE === null)('紫川前 20000 字样本：第一章 wordCount > 5000（实际 14000+）', () => {
+            const text = ZI_CHUAN_SAMPLE!;
 
             const deconstructor = new CommercialDeconstructor();
             const result = deconstructor.validateGoldenThreeChapters(text);
@@ -165,28 +164,8 @@ ${body3}`;
             expect(result.details.firstChapter.wordCount).toBeGreaterThan(5000);
         });
 
-        it('紫川前 20000 字样本：总章节数合理（至少 2 章）', () => {
-            const candidates = [
-                join(process.cwd(), '../../../写作知识库/紫川/紫川.txt'),
-                join(process.cwd(), '../../../../写作知识库/紫川/紫川.txt'),
-                join(__dirname, '../../../../../../写作知识库/紫川/紫川.txt'),
-            ];
-
-            let text: string | null = null;
-            for (const p of candidates) {
-                try {
-                    const buffer = readFileSync(p);
-                    text = buffer.toString('utf-8', 0, Math.min(buffer.length, 60000));
-                    break;
-                } catch {
-                    // 继续尝试下一个路径
-                }
-            }
-
-            if (text === null) {
-                console.warn('紫川.txt 未找到，跳过真实样本测试');
-                return;
-            }
+        it.skipIf(ZI_CHUAN_SAMPLE === null)('紫川前 20000 字样本：总章节数合理（至少 2 章）', () => {
+            const text = ZI_CHUAN_SAMPLE!;
 
             const deconstructor = new CommercialDeconstructor();
             const result = deconstructor.validateGoldenThreeChapters(text);
@@ -382,28 +361,8 @@ ${ch4}`;
     });
 
     describe('SubTask 13.4: 紫川商业价值集成验证', () => {
-        it('紫川前 20000 字：firstChapter.wordCount > 5000, openingConflict > 0, overallScore > 60（C 级或以上）', async () => {
-            const candidates = [
-                join(process.cwd(), '../../../写作知识库/紫川/紫川.txt'),
-                join(process.cwd(), '../../../../写作知识库/紫川/紫川.txt'),
-                join(__dirname, '../../../../../../写作知识库/紫川/紫川.txt'),
-            ];
-
-            let text: string | null = null;
-            for (const p of candidates) {
-                try {
-                    const buffer = readFileSync(p);
-                    text = buffer.toString('utf-8', 0, Math.min(buffer.length, 60000));
-                    break;
-                } catch {
-                    // continue
-                }
-            }
-
-            if (text === null) {
-                console.warn('紫川.txt 未找到，跳过真实样本测试');
-                return;
-            }
+        it.skipIf(ZI_CHUAN_SAMPLE === null)('紫川前 20000 字：firstChapter.wordCount > 5000, openingConflict > 0, overallScore > 60（C 级或以上）', async () => {
+            const text = ZI_CHUAN_SAMPLE!;
 
             const deconstructor = new CommercialDeconstructor();
             const result = await deconstructor.analyze(text);

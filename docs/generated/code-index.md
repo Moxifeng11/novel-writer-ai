@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137453 | 1725 | 1416 | 82% |
-| `services/` | 32 | 13011 | 190 | 150 | 79% |
+| `services/` | 32 | 13013 | 190 | 150 | 79% |
 | `shared/` | 187 | 42495 | 1668 | 1363 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
@@ -358,7 +358,7 @@
 | `services/backup-center-service.ts` | 180 | 4 | 1 |
 | `services/canon-research-service.ts` | 464 | 7 | 7 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
-| `services/chapter-version-service.ts` | 696 | 4 | 4 |
+| `services/chapter-version-service.ts` | 698 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
 | `services/execution-ledger.ts` | 325 | 10 | 7 |
 | `services/font-manager.ts` | 219 | 14 | 12 |
