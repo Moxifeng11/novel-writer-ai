@@ -494,7 +494,11 @@ export class CoWritingView extends ItemView {
     }
     // NBI-04: 视图卸载后不残留「指令已应用」状态
     this.appliedHint = null;
-    await this.saveBody(false);
+    // L2-1：卸载流程会 detach 叶子但不 await onClose；把保存登记进卸载屏障，
+    // 由插件 onunload 在 disposeAll 前有界等待，避免旧快照覆盖新实例正文。
+    const savePromise = this.saveBody(false);
+    this.plugin?._unloadBarrier?.track(savePromise);
+    await savePromise;
     this.autoSaveDebouncer.dispose();
   }
   /**

@@ -171,6 +171,7 @@ import { projectFromFilePath } from './domains/kernel/project-locator';
 import { listProjectIds } from '@/shared/project-catalog';
 import { consumePendingReloadState } from '@/shared/reload-state';
 import { migrateLegacyPluginData } from '@/shared/plugin-data-migration';
+import { UnloadBarrier } from '@/shared/unload-barrier';
 import { createLogger } from './shared/logger';
 import { pruneSessions, SESSION_RETENTION_DEFAULTS } from './shared/session-retention';
 import type { PruneResult, RetentionTarget } from './shared/session-retention';
@@ -615,6 +616,10 @@ export default class NovelWriterPlugin extends Plugin {
     private _settingsService!: SettingsService;
     /** 热重载恢复状态 */
     public _pendingReloadState: { project: string; chapterFileName: string; volume?: string; chapDir?: string } | null = null;
+    /** L2-1：卸载期有界等待视图保存（协同正文/Agent 会话） */
+    public _unloadBarrier = new UnloadBarrier();
+    /** 卸载后阻止启动期 setTimeout/onLayoutReady 回调继续执行 */
+    private _isUnloaded = false;
     /** 实体生成弹窗的预选项目（跨 modal 临时传递） */
     public _pendingEntityProject: string | null = null;
     /** 实体生成弹窗的上下文标记（跨 modal 临时传递） */
@@ -1002,9 +1007,11 @@ export default class NovelWriterPlugin extends Plugin {
                 this._pendingReloadState = restoredReloadState;
             }
             if (this._pendingReloadState?.project) {
-                setTimeout(() => {
+                const reopenTimer = window.setTimeout(() => {
+                    if (this._isUnloaded) return;
                     this.openFullWriterView();
                 }, 300);
+                this.register(() => window.clearTimeout(reopenTimer));
             }
 
             this.injectThemeVariables();
@@ -1040,7 +1047,9 @@ export default class NovelWriterPlugin extends Plugin {
      */
     private _scheduleSessionRetentionPrune(): void {
         this.app.workspace.onLayoutReady(() => {
-            window.setTimeout(() => {
+            if (this._isUnloaded) return;
+            const pruneTimer = window.setTimeout(() => {
+                if (this._isUnloaded) return;
                 // v4.34.0：开关关闭时自动路径直接短路，不发起任何列举/删除
                 if (this.settings.sessionRetentionEnabled === false) {
                     log.info('[小说工坊] 启动会话自动清理已关闭，跳过本次修剪');
@@ -1048,6 +1057,7 @@ export default class NovelWriterPlugin extends Plugin {
                 }
                 void this._pruneSessionsOnce();
             }, 0);
+            this.register(() => window.clearTimeout(pruneTimer));
         });
     }
 
@@ -1977,9 +1987,11 @@ export default class NovelWriterPlugin extends Plugin {
 
         // 首次安装：显示欢迎模态框
         if (isFirstInstall) {
-            setTimeout(() => {
+            const welcomeTimer = window.setTimeout(() => {
+                if (this._isUnloaded) return;
                 this.showWelcomeModal(true);
             }, 1000);
+            this.register(() => window.clearTimeout(welcomeTimer));
             return;
         }
 
@@ -1987,17 +1999,21 @@ export default class NovelWriterPlugin extends Plugin {
         if (lastVersion && compareVersions(currentVersion, lastVersion) > 0) {
             const isMajor = isMajorUpdate(lastVersion, currentVersion);
             if (isMajor) {
-                setTimeout(() => {
+                const majorTimer = window.setTimeout(() => {
+                    if (this._isUnloaded) return;
                     this.showWelcomeModal(false);
                 }, 1000);
+                this.register(() => window.clearTimeout(majorTimer));
             }
         }
 
         // 静默检查更新（后台执行，不阻塞）
         if (this.settings.autoCheckUpdates) {
-            setTimeout(() => {
+            const updateTimer = window.setTimeout(() => {
+                if (this._isUnloaded) return;
                 this.silentCheckForUpdates();
             }, 3000);
+            this.register(() => window.clearTimeout(updateTimer));
         }
     }
 
@@ -2073,6 +2089,10 @@ export default class NovelWriterPlugin extends Plugin {
      * 超时或失败只告警不抛出，卸载流程永不失败。
      */
     async onunload() {
+        // L2-1：先进入卸载态，启动期 timer/onLayoutReady 回调据此短路；
+        // onClose 内继续登记的保存仍允许 track，由下方 drain 有界等待。
+        this._isUnloaded = true;
+        this._unloadBarrier.close();
         // F-2（2026-11-10 生命周期审计）：abort 全部在途实体重检——unload 后
         // detectStateChanges 的写盘路径（applyStateChanges）必须被 signal 拦截
         for (const controller of this._entityRecheckAbort.values()) {
@@ -2128,6 +2148,16 @@ export default class NovelWriterPlugin extends Plugin {
             VIEW_TYPE_WRITING_FINGERPRINT,
             VIEW_TYPE_PROJECT_SIDE_PANEL,
         ]);
+        // L2-1：detach 只触发 onClose，不 await 其 Promise；在 disposeAll 之前
+        // 有界等待协同正文保存/Agent 会话 flush，避免旧快照在新实例启动后覆盖。
+        try {
+            const drained = await this._unloadBarrier.drain(2500);
+            if (!drained) {
+                log.warn('[小说工坊] 卸载时有视图保存超过 2.5s，已放弃等待（旧实例写入可能迟到）');
+            }
+        } catch (e) {
+            log.warn('[小说工坊] 卸载等待视图保存失败:', e);
+        }
         // 2026-10-28: 状态栏浮窗已移除，其点击监听清理随之删除；快速切换器由各视图自行销毁。
         // 注销降级事件 sink
         if (this._degradationSinkUnregister) {

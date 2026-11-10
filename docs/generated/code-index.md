@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137452 | 1725 | 1416 | 82% |
 | `services/` | 32 | 13013 | 190 | 150 | 79% |
-| `shared/` | 188 | 42613 | 1673 | 1366 | 82% |
+| `shared/` | 189 | 42685 | 1674 | 1366 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99665 | 754 | 649 | 86% |
+| `ui/` | 242 | 99672 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -557,6 +557,7 @@
 | `shared/token-estimator.ts` | 187 | 8 | 8 |
 | `shared/true-random.ts` | 134 | 3 | 3 |
 | `shared/types.ts` | 729 | 48 | 11 |
+| `shared/unload-barrier.ts` | 72 | 1 | 0 |
 | `shared/validators/normalizers-entity.ts` | 232 | 5 | 5 |
 | `shared/vault-tree.ts` | 131 | 6 | 6 |
 | `shared/version-types.ts` | 125 | 10 | 0 |
@@ -575,7 +576,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 526 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1898 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1901 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |
@@ -594,7 +595,7 @@
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1024 | 2 | 2 |
-| `ui/co-writing-view.ts` | 3256 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3260 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 224 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |

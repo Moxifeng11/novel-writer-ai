@@ -302,7 +302,10 @@ export class AgentWorkbenchView extends ItemView {
         this.dshTurnCollector = null;
         this.busy = false;
         // 关视图前把节流中的快照写完（最多 1s 未落盘）
-        void this.sessionStore?.flush();
+        // L2-1：登记进卸载屏障，onunload 在 disposeAll 前有界等待
+        const flushPromise = this.sessionStore?.flush();
+        if (flushPromise) this.plugin?._unloadBarrier?.track(flushPromise);
+        void flushPromise;
         this.sessionStore = null;
         this.contentEl.empty();
     }
