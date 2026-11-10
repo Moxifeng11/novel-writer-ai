@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ThemeManager, parseCssVars } from '../../../core/theme-manager';
+import {
+    clearDocumentScopes,
+    registerDocumentScope,
+    unregisterDocumentScope,
+} from '../../../shared/document-scopes';
 
 /**
  * 主题变量写入回归（v4.80.0 批量 A）。
@@ -18,7 +23,7 @@ interface FakeDoc {
     querySelectorAll: () => Element[];
 }
 
-function makeDoc({ withSetCssProps = false }: { withSetCssProps?: boolean } = {}) {
+function createFakeDoc({ withSetCssProps = false }: { withSetCssProps?: boolean } = {}) {
     const props = new Map<string, string>();
     const root = {
         style: {
@@ -43,12 +48,18 @@ function makeDoc({ withSetCssProps = false }: { withSetCssProps?: boolean } = {}
         getElementById: () => null,
         querySelectorAll: () => [],
     };
-    vi.stubGlobal('document', doc);
     return { doc, props, root };
+}
+
+function makeDoc(options: { withSetCssProps?: boolean } = {}) {
+    const created = createFakeDoc(options);
+    vi.stubGlobal('document', created.doc);
+    return created;
 }
 
 afterEach(() => {
     vi.unstubAllGlobals();
+    clearDocumentScopes();
 });
 
 describe('parseCssVars', () => {
@@ -109,5 +120,45 @@ describe('ThemeManager 变量注入', () => {
 
         manager.dispose();
         expect(props.size).toBe(0);
+    });
+});
+
+describe('ThemeManager 跨窗口（popout，M3-2）', () => {
+    const settings = {
+        theme: 'dark' as const,
+        themeColors: undefined,
+        themePresets: [],
+    };
+
+    it('主题与布局变量同时写入已登记的 popout 文档，dispose 一并移除', () => {
+        makeDoc();
+        const popup = createFakeDoc();
+        registerDocumentScope(popup.doc as unknown as Document);
+
+        const manager = new ThemeManager(
+            () => settings,
+            () => ({ fwStepNav: 180 }),
+        );
+        manager.injectThemeVariables();
+        manager.injectLayoutVariables();
+
+        // popout 有自己的 documentElement，变量不会跨窗口继承
+        expect(popup.props.get('--nw-app-bg')).toBe('#1c1a1e');
+        expect(popup.props.get('--nw-panel-nav')).toBe('180px');
+
+        manager.dispose();
+        expect(popup.props.size).toBe(0);
+    });
+
+    it('窗口关闭注销后不再写入该文档', () => {
+        makeDoc();
+        const popup = createFakeDoc();
+        registerDocumentScope(popup.doc as unknown as Document);
+        unregisterDocumentScope(popup.doc as unknown as Document);
+
+        const manager = new ThemeManager(() => settings);
+        manager.injectThemeVariables();
+
+        expect(popup.props.size).toBe(0);
     });
 });

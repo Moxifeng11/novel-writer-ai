@@ -12,7 +12,11 @@
  *   - 双击复位默认值；
  *   - 只负责「算出新尺寸并回调」，持久化交给调用方（不同面板存不同字段）。
  */
+import { resolveNodeDoc } from '@/shared/dom-window';
 
+/**
+ * 分隔条配置项。
+ */
 export interface PanelResizerOptions {
     /** 分隔条挂载到哪个容器（element 未提供时用于创建节点） */
     container: HTMLElement;
@@ -74,6 +78,19 @@ export interface PanelResizerHandle {
 
 /** 拖动期间禁用文本选择与光标跳变的 body 类 */
 export const RESIZING_BODY_CLASS = 'nw-panel-resizing';
+
+/**
+ * 解析分隔条元素当前所在的 body。
+ *
+ * M3-2：popout 第二窗口里的分隔条拖拽必须把类加在**该窗口**的 body 上；
+ * 加在主窗口 body 上时 popout 内仍可选择文本、光标不变。
+ *
+ * @param el - 分隔条元素
+ * @returns 元素所属文档的 body；游离节点回退主窗口 document.body
+ */
+function resolveResizeBody(el: HTMLElement): HTMLElement | null {
+    return resolveNodeDoc(el)?.body ?? (typeof document !== 'undefined' ? document.body : null);
+}
 
 function clamp(value: number, min: number, max: number): number {
     return Math.max(min, Math.min(max, value));
@@ -147,6 +164,8 @@ export function createPanelResizer(options: PanelResizerOptions): PanelResizerHa
     let activePointer: number | null = null;
     let startPos = 0;
     let startSize = 0;
+    /** 拖动期间持有 body 类的那个文档的 body（拖动中元素被移动也按原文档移除） */
+    let dragBody: HTMLElement | null = null;
 
     const onPointerDown = (event: PointerEvent): void => {
         if (event.button !== 0) return;
@@ -158,7 +177,8 @@ export function createPanelResizer(options: PanelResizerOptions): PanelResizerHa
             ? current
             : target.getBoundingClientRect()[isHorizontal ? 'width' : 'height'];
         el.addClass('is-dragging');
-        document.body.addClass(RESIZING_BODY_CLASS);
+        dragBody = resolveResizeBody(el);
+        dragBody?.addClass(RESIZING_BODY_CLASS);
     };
 
     const onPointerMove = (event: PointerEvent): void => {
@@ -188,7 +208,8 @@ export function createPanelResizer(options: PanelResizerOptions): PanelResizerHa
             // capture 已被浏览器释放，忽略
         }
         el.removeClass('is-dragging');
-        document.body.removeClass(RESIZING_BODY_CLASS);
+        dragBody?.removeClass(RESIZING_BODY_CLASS);
+        dragBody = null;
         commit();
     };
 
@@ -230,7 +251,8 @@ export function createPanelResizer(options: PanelResizerOptions): PanelResizerHa
             el.removeEventListener('pointercancel', endDrag);
             el.removeEventListener('keydown', onKeyDown);
             el.removeEventListener('dblclick', onDoubleClick);
-            document.body.removeClass(RESIZING_BODY_CLASS);
+            dragBody?.removeClass(RESIZING_BODY_CLASS);
+            dragBody = null;
             el.remove();
         },
     };

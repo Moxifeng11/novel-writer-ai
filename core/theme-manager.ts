@@ -7,6 +7,7 @@
 
 import type { NovelWriterSettings } from '@/main';
 import { derivePalette, paletteToCssVars, resolveActivePresetInput } from '@/shared/theme-colors';
+import { listDocumentScopes } from '@/shared/document-scopes';
 
 /** ThemeManager 所需的最小设置接口 */
 export interface ThemeSettings {
@@ -74,16 +75,22 @@ export class ThemeManager {
      * 社区目录禁止动态创建 <style>，主题色又必须随用户设置变化，因此直接写
      * documentElement 的自定义属性：优先 setCssProps（Obsidian 1.5+，按自定义
      * 属性写入），1.4.x 退回 style.setProperty（值来自变量，不是静态字面量）。
+     *
+     * M3-2：popout 第二窗口有自己的 documentElement，变量不会跨窗口继承，
+     * 因此写入 listDocumentScopes() 的全部文档（主窗口 + 已登记的 popout）。
      */
     private applyCssVars(vars: Record<string, string>): void {
-        const root = document.documentElement as HTMLElement & {
-            setCssProps?: (props: Record<string, string>) => void;
-        };
-        if (typeof root.setCssProps === 'function') {
-            root.setCssProps(vars);
-        } else {
-            for (const [name, value] of Object.entries(vars)) {
-                root.style.setProperty(name, value);
+        for (const doc of listDocumentScopes()) {
+            const root = doc.documentElement as (HTMLElement & {
+                setCssProps?: (props: Record<string, string>) => void;
+            }) | null;
+            if (!root) continue;
+            if (typeof root.setCssProps === 'function') {
+                root.setCssProps(vars);
+            } else {
+                for (const [name, value] of Object.entries(vars)) {
+                    root.style.setProperty(name, value);
+                }
             }
         }
         for (const name of Object.keys(vars)) this.appliedThemeVars.add(name);
@@ -91,8 +98,11 @@ export class ThemeManager {
 
     /** 注入主题 CSS 变量（暗色/亮色 + 用户自定义覆盖） */
     injectThemeVariables(): void {
+        const documents = listDocumentScopes();
         // 旧版本通过 <style id="novel-writer-theme-vars"> 注入；升级后清掉残留
-        document.getElementById('novel-writer-theme-vars')?.remove();
+        for (const doc of documents) {
+            doc.getElementById?.('novel-writer-theme-vars')?.remove();
+        }
 
         const settings = this.getSettings();
         const isDark = settings.theme === 'dark' ||
@@ -126,7 +136,6 @@ export class ThemeManager {
 
     /** 注入布局 CSS 变量（全插件生命周期可用） */
     injectLayoutVariables(): void {
-        const root = document.documentElement;
         // 工作台三栏：左右宽度来自设置（可在「工作台布局」页调），中栏自适应。
         // 旧实现这里与 full-writer-view 各注入一套不同值（140/220 vs 160/240），
         // 谁后执行谁生效，导致宽度「看起来随机」。
@@ -152,20 +161,23 @@ export class ThemeManager {
             '--nw-card-pad': '12px',
         };
         for (const name of THEME_LAYOUT_VARS) {
-            root.style.setProperty(name, values[name]);
+            for (const doc of listDocumentScopes()) {
+                doc.documentElement?.style.setProperty(name, values[name]);
+            }
         }
     }
 
     /** 清理主题变量与旧版本遗留的运行时 style 标签 */
     cleanup(): void {
-        const root = document.documentElement;
-        for (const name of this.appliedThemeVars) {
-            root.style.removeProperty(name);
+        for (const doc of listDocumentScopes()) {
+            const root = doc.documentElement;
+            for (const name of this.appliedThemeVars) {
+                root?.style.removeProperty(name);
+            }
+            // 兼容旧版本动态注入的样式标签（升级后到下一次重载之间可能仍在 DOM）
+            doc.querySelectorAll?.('style[id^="novel-writer-"]').forEach(el => el.remove());
         }
         this.appliedThemeVars.clear();
-        // 兼容旧版本动态注入的样式标签（升级后到下一次重载之间可能仍在 DOM）
-        const allStyles = document.querySelectorAll('style[id^="novel-writer-"]');
-        allStyles.forEach(el => el.remove());
     }
 
     /**
@@ -181,9 +193,11 @@ export class ThemeManager {
      */
     dispose(): void {
         this.cleanup();
-        const root = document.documentElement;
-        for (const name of THEME_LAYOUT_VARS) {
-            root.style.removeProperty(name);
+        for (const doc of listDocumentScopes()) {
+            const root = doc.documentElement;
+            for (const name of THEME_LAYOUT_VARS) {
+                root?.style.removeProperty(name);
+            }
         }
     }
 }

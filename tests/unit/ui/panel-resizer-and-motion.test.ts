@@ -41,6 +41,14 @@ describe('统一拖拽原语', () => {
         expect(src).toContain('defaultValue');
     });
 
+    it('popout 内拖拽把 body 类加到宿主窗口（M3-2）', () => {
+        const src = read('ui/panel-resizer.ts');
+        // 按元素所属 document 解析 body；主窗口 document.body 不再直接使用
+        expect(src).toContain('resolveNodeDoc(el)');
+        expect(src).not.toContain('document.body.addClass');
+        expect(src).not.toContain('document.body.removeClass');
+    });
+
     it('Agent 工作台改用统一原语并在关闭时释放监听', () => {
         const src = read('ui/agent-workbench-view.ts');
         expect(src).toContain('createPanelResizer');

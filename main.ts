@@ -61,7 +61,8 @@ import { revealLeafCompat } from './shared/workspace-reveal';
 import { WritingFingerprintView, VIEW_TYPE_WRITING_FINGERPRINT } from './ui/views/writing-fingerprint-view';
 import { ProjectSidePanelView, VIEW_TYPE_PROJECT_SIDE_PANEL } from './ui/project-side-panel-view';
 import { openModelSwitcherMenu, refreshAllModelSwitchers } from './ui/model-quick-switcher';
-import { registerAllCustomFonts, unregisterAllCustomFonts } from './services/font-manager';
+import { registerAllCustomFonts, unregisterAllCustomFonts, addRegisteredFontsTo } from './services/font-manager';
+import { registerDocumentScope, unregisterDocumentScope, clearDocumentScopes } from './shared/document-scopes';
 import { WelcomeModal } from './ui/welcome-modal';
 import { HomeView, VIEW_TYPE_HOME } from './ui/home-view';
 import { JobCenterModal } from './ui/job-center-modal';
@@ -1004,6 +1005,19 @@ export default class NovelWriterPlugin extends Plugin {
 
             this.injectThemeVariables();
             this.injectLayoutVariables();  // v3.4.8: 布局变量全插件可用，不再依赖 full-writer-view 打开
+
+            // M3-2：popout 第二窗口有独立的 documentElement 与 FontFaceSet，
+            // 主窗口注入的 --nw-* 变量与自定义字体不会跨窗口生效。
+            // 窗口打开时登记并按当前设置补齐，关闭时注销。
+            this.registerEvent(this.app.workspace.on('window-open', (_workspaceWindow, win) => {
+                registerDocumentScope(win.document);
+                this.injectThemeVariables();
+                this.injectLayoutVariables();
+                addRegisteredFontsTo(win.document);
+            }));
+            this.registerEvent(this.app.workspace.on('window-close', (_workspaceWindow, win) => {
+                unregisterDocumentScope(win.document);
+            }));
 
             // v7.8: 版本管理 - 静默检查更新 + 欢迎引导 + 数据迁移验证
             this.handleVersionManagement();
@@ -2203,6 +2217,8 @@ export default class NovelWriterPlugin extends Plugin {
         // P1-4：注销全部自定义 FontFace（同步清理），避免热重载后 document.fonts 残留重复字体；
         // settings.customFonts 清单保留，下次启动 registerAllCustomFonts 可恢复。
         unregisterAllCustomFonts();
+        // M3-2：popout 文档登记表是模块单例，卸载时清空，避免热重载后残留旧窗口引用
+        clearDocumentScopes();
         // M1（技术审计）：释放 EngineRegistry 全部实例（含 HeavyTaskWorkerManager 的 Worker 池、
         // ThemeManager 注入的样式标签与 --nw-* 布局变量等）。
         // 此前 disposeAll 生产代码零调用，插件卸载/禁用后 Worker 与重资源残留。

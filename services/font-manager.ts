@@ -8,8 +8,8 @@
  *   fonttools（pyftsubset）做子集化后再转 WOFF2。
  * - 载入方法：CSS @font-face 适合静态打包；运行时动态载入用 **FontFace API**——
  *   `vault.readBinary` 拿 ArrayBuffer → `new FontFace(family, buffer)` → `load()` →
- *   `document.fonts.add()`，随后任意元素 `font-family: "<family>"` 即可生效；
- *   卸载用 `document.fonts.delete(font)`。
+ *   `FontFaceSet.add()`，随后任意元素 `font-family: "<family>"` 即可生效；
+ *   卸载用 `FontFaceSet.delete(font)`。
  * - 存放位置：vault 内 `元文件/字体/`（用户可直接放入字体文件，随同步保留），
  *   插件启动与手动刷新时扫描注册，清单持久化在 settings.customFonts。
  * - 系统字体无法在浏览器环境枚举：提供（a）Obsidian 主题字体 CSS 变量、
@@ -18,6 +18,7 @@
 import { Notice, TFile } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import { createLogger } from '@/shared/logger';
+import { listDocumentScopes } from '@/shared/document-scopes';
 
 const log = createLogger('FontManager');
 
@@ -130,7 +131,9 @@ export async function registerFont(plugin: NovelWriterPlugin, file: TFile): Prom
         const buffer = await plugin.app.vault.readBinary(file);
         const font = new FontFace(family, buffer);
         await font.load();
-        document.fonts.add(font);
+        for (const doc of listDocumentScopes()) {
+            doc.fonts?.add(font);
+        }
         registeredFonts.set(family, font);
         const list = plugin.settings.customFonts || [];
         if (!list.some(entry => entry.path === file.path)) {
@@ -163,7 +166,28 @@ export async function registerAllCustomFonts(plugin: NovelWriterPlugin): Promise
 }
 
 /**
- * 注销单个 family（从 document.fonts 移除并清出 settings）
+ * 把已注册的字体补进指定 document 的 FontFaceSet。
+ *
+ * M3-2：popout 第二窗口有独立的 document.fonts，主窗口注册过的 FontFace
+ * 不会自动出现在新窗口里，表现为 popout 内自定义字体回落默认字体。
+ * 由 main.ts 在 workspace 的 window-open 事件里调用。
+ *
+ * @param doc - 目标 document（popout 的 win.document）
+ * @returns 本次补进的字体数量；目标没有 FontFaceSet 时返回 0
+ */
+export function addRegisteredFontsTo(doc: Document | null | undefined): number {
+    const fonts = doc?.fonts;
+    if (!fonts) return 0;
+    let added = 0;
+    for (const font of registeredFonts.values()) {
+        fonts.add(font);
+        added += 1;
+    }
+    return added;
+}
+
+/**
+ * 注销单个 family（从各窗口 document.fonts 移除并清出 settings）
  *
  * @param plugin - 插件实例
  * @param family - 家族
@@ -171,7 +195,9 @@ export async function registerAllCustomFonts(plugin: NovelWriterPlugin): Promise
 export async function unregisterFont(plugin: NovelWriterPlugin, family: string): Promise<void> {
     const font = registeredFonts.get(family);
     if (font) {
-        document.fonts.delete(font);
+        for (const doc of listDocumentScopes()) {
+            doc.fonts?.delete(font);
+        }
         registeredFonts.delete(family);
     }
     plugin.settings.customFonts = (plugin.settings.customFonts || []).filter(entry => entry.family !== family);
@@ -181,7 +207,7 @@ export async function unregisterFont(plugin: NovelWriterPlugin, family: string):
 /**
  * 注销全部已注册的自定义字体（插件卸载时调用）
  *
- * 遍历模块级 registeredFonts 注册表，逐个从 document.fonts 移除 FontFace，
+ * 遍历模块级 registeredFonts 注册表，逐个从各窗口 document.fonts 移除 FontFace，
  * 最后清空注册表。与 unregisterFont 的区别：本函数只释放运行时资源，
  * 不动 settings.customFonts——卸载仅移除 FontFace，清单保留供下次启动
  * 由 registerAllCustomFonts 恢复。
@@ -195,8 +221,11 @@ export async function unregisterFont(plugin: NovelWriterPlugin, family: string):
 export function unregisterAllCustomFonts(): void {
     const count = registeredFonts.size;
     if (count === 0) return;
+    const documents = listDocumentScopes();
     for (const font of registeredFonts.values()) {
-        document.fonts.delete(font);
+        for (const doc of documents) {
+            doc.fonts?.delete(font);
+        }
     }
     registeredFonts.clear();
     log.info(`[FontManager] 卸载清理：已注销 ${count} 个自定义字体 FontFace`);

@@ -7,11 +7,11 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137533 | 1727 | 1418 | 82% |
-| `services/` | 32 | 13167 | 193 | 153 | 79% |
-| `shared/` | 191 | 42784 | 1677 | 1368 | 82% |
-| `core/` | 7 | 2826 | 29 | 14 | 48% |
+| `services/` | 32 | 13196 | 194 | 154 | 79% |
+| `shared/` | 192 | 42835 | 1681 | 1372 | 82% |
+| `core/` | 7 | 2840 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99756 | 754 | 649 | 86% |
+| `ui/` | 242 | 99778 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -23,7 +23,7 @@
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 550 | 4 | 2 |
 | `core/settings-service.ts` | 541 | 4 | 3 |
-| `core/theme-manager.ts` | 313 | 4 | 3 |
+| `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
 | `domains/kernel/project-locator.ts` | 106 | 7 | 7 |
@@ -361,7 +361,7 @@
 | `services/chapter-version-service.ts` | 703 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
 | `services/execution-ledger.ts` | 325 | 10 | 7 |
-| `services/font-manager.ts` | 219 | 14 | 12 |
+| `services/font-manager.ts` | 248 | 15 | 13 |
 | `services/genre-classifier.ts` | 858 | 2 | 2 |
 | `services/genre-preference-memory.ts` | 377 | 3 | 3 |
 | `services/job-service.ts` | 364 | 9 | 1 |
@@ -423,6 +423,7 @@
 | `shared/desktop-shell.ts` | 79 | 3 | 2 |
 | `shared/diff-utils.ts` | 322 | 8 | 8 |
 | `shared/divergence-trend.ts` | 44 | 2 | 2 |
+| `shared/document-scopes.ts` | 51 | 4 | 4 |
 | `shared/dom-window.ts` | 77 | 4 | 3 |
 | `shared/embedding-provider.ts` | 43 | 4 | 4 |
 | `shared/engine-names.ts` | 57 | 1 | 1 |
@@ -737,7 +738,7 @@
 | `ui/novel-tags-modal.ts` | 335 | 1 | 1 |
 | `ui/onboarding-modal.ts` | 300 | 1 | 1 |
 | `ui/outline-expand-modal.ts` | 880 | 2 | 1 |
-| `ui/panel-resizer.ts` | 238 | 4 | 3 |
+| `ui/panel-resizer.ts` | 260 | 4 | 3 |
 | `ui/password-modal.ts` | 145 | 1 | 1 |
 | `ui/plan-book-modal.ts` | 558 | 1 | 1 |
 | `ui/plot-canvas-modal.ts` | 331 | 2 | 2 |
