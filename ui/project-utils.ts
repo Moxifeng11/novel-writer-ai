@@ -291,9 +291,10 @@ export function getChaptersForProject(app: App, project: string): ChapterListEnt
  * 仅影响"遍历轮次"，章节口径与 getChaptersForProject 逐项一致。
  * @param app - Obsidian 应用实例
  * @param projects - 项目列表
+ * @param files - 可选的仓库文件快照（选择页复用，避免再次全库 getFiles）
  * @returns 映射结果
  */
-export function scanProjectChapters(app: App, projects: string[]): Map<string, ChapterListEntry[]> {
+export function scanProjectChapters(app: App, projects: string[], files?: TFile[]): Map<string, ChapterListEntry[]> {
     const result = new Map<string, ChapterListEntry[]>();
     if (projects.length === 0) return result;
 
@@ -306,7 +307,7 @@ export function scanProjectChapters(app: App, projects: string[]): Map<string, C
         return hit ? buckets.get(hit[1]) : undefined;
     };
 
-    for (const file of app.vault.getFiles()) {
+    for (const file of files ?? app.vault.getFiles()) {
         bucketOf(file.path)?.files.push(file);
     }
     for (const entry of app.vault.getAllLoadedFiles()) {

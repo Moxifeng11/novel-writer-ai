@@ -100,4 +100,9 @@ describe('PF-5 项目选择页单次文件快照', () => {
         expect(src).toContain('renderFlowSummary(panel, project, mode, unitsCache?.get(project))');
         expect(src).toContain("longChapters: mode === 'long' ? chapters : undefined");
     });
+
+    it('初始渲染把 files 快照透传给长篇扫描与短篇/剧本单元（P2-3）', () => {
+        expect(src).toContain('scanProjectChapters(this.app, longProjects, files)');
+        expect(src).toContain('listModeUnits(this.app, project, mode, files)');
+    });
 });

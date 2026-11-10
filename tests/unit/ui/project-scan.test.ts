@@ -92,6 +92,21 @@ describe('scanProjectChapters — 多项目一次扫描', () => {
         expect(scanned.get('项目2')).toBeUndefined();
     });
 
+    it('传入 files 快照：批量扫描不再自己取全库文件（P2-3）', async () => {
+        const app = new App();
+        await seedLargeVault(app);
+        const snapshot = app.vault.getFiles();
+        const spy = vi.spyOn(app.vault, 'getFiles');
+        spy.mockClear();
+
+        const scanned = scanProjectChapters(app, PROJECTS, snapshot);
+
+        // mock getAllLoadedFiles 内部会调一次 getFiles，除此之外不应再有全库取文件
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(scanned.get('项目1')).toHaveLength(50);
+        spy.mockRestore();
+    });
+
     it('空项目列表 → 空 Map，且不触发全库遍历', () => {
         const app = new App();
         const spy = vi.spyOn(app.vault, 'getFiles');

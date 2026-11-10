@@ -9,7 +9,7 @@
 |---|---|---|---|---|---|
 | P2-1 | P1 | `main.ts:839-853`、`shared/template-scaffold.ts:82-91`、`services/rules-service.ts:224-259` | 每次启动都在命令/Ribbon/视图注册前 `await ensureTemplateScaffold`（56 次 exists）与 `_checkRulesVersion`（全库 getFiles + 串行 delete） | 入口可用被推迟；移动端/网络盘数百毫秒；纯重复劳动 | **本轮已修**：移到 `onLayoutReady + 1500ms` 后台执行，加 `_isUnloaded` 守卫；模板自举加并发 in-flight 去重；新增 3 条顺序契约 + 1 条并发测试 |
 | P2-2 | P2 | `engine/engine-registry.ts:1392-1403`、`main.ts:829-835` | 知识库 tag/base/batchImport 三个 init 串行；`recoverInterruptedBooks` 也在注册前 | 约 10 次串行 IPC；tag init 的 exists 抛错会冒泡导致整次启动不注册命令/视图 | 未修 → fix queue（Promise.all + 移出注册前 + try 包裹） |
-| P2-3 | P2 | `ui/full-writer/project-selector-controller.ts:268/281-285`、`shared/mode-content.ts:370` | 初始渲染长篇固定 3 次全库遍历；短篇/剧本每个卡片各 1 次（`unitsCache` 只预填长篇） | 高频入口卡顿，短篇/剧本库更明显 | 未修 → fix queue（files 快照透传 scan/list + 按模式预填 unitsCache） |
+| P2-3 | P2 | `ui/full-writer/project-selector-controller.ts:268/281-285`、`shared/mode-content.ts:370` | 初始渲染长篇固定 3 次全库遍历；短篇/剧本每个卡片各 1 次（`unitsCache` 只预填长篇） | 高频入口卡顿，短篇/剧本库更明显 | **已修（第50轮）**：`scanProjectChapters`/`listModeUnits` 接受 files 快照；按当前分类扫描长篇并预填短篇/剧本 unitsCache；新增 2 条测试 + 契约 |
 | P2-4 | P2 | `ui/full-writer/flow-panel-controller.ts:50/147-164`、`ui/services/agent-port.ts:355-378` | `longChapters` 复用未覆盖流程面板/agent-port；流程面板 400ms 全量重扫 | 自动保存期间每 ~2.4s 两次全库遍历 | 未修 → fix queue（agent-port 传 chapters、流程面板接共享快照） |
 | P2-5 | P2 | `engine/engine-registry.ts:1398-1402`、`main.ts:1580-1582/1049-1061` | 布局就绪后向量预热/统计 scan/会话修剪同 tick；预热回调无卸载守卫 | 首屏抖动；热重载新旧实例各读一遍 6.3MB | 未修 → fix queue（错峰 + barrier.isClosed + 模块级 latch） |
 | P2-6 | P3 | `ui/writing-pet.ts:158/213`、`main.ts:1571-1573`、`ui/settings-tab.ts:109-111` | 宠物折叠仍重建 card；统计 modify 无防抖整章读；设置 refresh 清空全部 tab 缓存 | 自动保存期间周期性读盘/无谓 DOM | 未修 → fix queue |
@@ -44,7 +44,7 @@
 ## 五、fix queue
 
 1. B2-1 包体组成预算 + 5MB 硬上限（P2）
-2. P2-3 选择页初始渲染快照、P2-4 流程面板/agent-port longChapters（P2）
+2. ~~P2-3 选择页初始渲染快照~~（第50轮已修）；P2-4 流程面板/agent-port longChapters（P2）
 3. P2-2 知识库 init 并行化、P2-5 布局任务错峰 + 卸载令牌、B2-6 向量分片（P2）
 4. B2-2 nightly perf、B2-3 正则缓存/转义（P2）
 5. P2-6 常驻成本、B2-5 svg O(n²)（P3）

@@ -365,15 +365,16 @@ function unitInfo(app: App, file: TFile, mode: CreationMode, legacy: boolean): M
  * @param app - Obsidian 应用实例
  * @param project - 项目（路径或对象）
  * @param mode - 模式
+ * @param files - 可选的仓库文件快照（选择页复用，避免逐项目全库扫描）
  * @returns 结果数组
  */
-export function listModeUnits(app: App, project: string, mode: CreationMode): ModeUnitInfo[] {
+export function listModeUnits(app: App, project: string, mode: CreationMode, files?: TFile[]): ModeUnitInfo[] {
     if (mode === 'long') return [];
     const dir = modeBodyDir(project, mode);
     const pattern = mode === 'short' ? /第\d{1,3}节\.md$/ : /第\d{1,3}集\.md$/;
     // own 与 legacy 共用同一次全库扫描：own 命中时不跑 legacy，命中语义不变
-    const files = app.vault.getFiles();
-    const own = files
+    const allFiles = files ?? app.vault.getFiles();
+    const own = allFiles
         .filter(file => file.path.startsWith(`${dir}/`) && pattern.test(file.name))
         .map(file => unitInfo(app, file, mode, false))
         .filter((item): item is ModeUnitInfo => !!item);
@@ -382,7 +383,7 @@ export function listModeUnits(app: App, project: string, mode: CreationMode): Mo
 
     // 兼容旧短篇/剧本项目：此前写入 03-大纲与章节/正文/第N卷/第N章_正文.md
     const legacyPrefix = `${project}/03-大纲与章节/正文/`;
-    const legacy = files
+    const legacy = allFiles
         .filter(file => file.path.startsWith(legacyPrefix) && /第\d+章_正文\.md$/.test(file.name))
         .map(file => {
             const numMatch = file.name.match(/第(\d+)章/);

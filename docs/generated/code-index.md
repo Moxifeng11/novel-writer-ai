@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137506 | 1726 | 1417 | 82% |
 | `services/` | 32 | 13167 | 193 | 153 | 79% |
-| `shared/` | 190 | 42744 | 1675 | 1367 | 82% |
+| `shared/` | 190 | 42745 | 1675 | 1367 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99682 | 754 | 649 | 86% |
+| `ui/` | 242 | 99698 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -472,7 +472,7 @@
 | `shared/logger.ts` | 101 | 5 | 5 |
 | `shared/lru-cache.ts` | 221 | 2 | 2 |
 | `shared/memory-rank.ts` | 104 | 4 | 4 |
-| `shared/mode-content.ts` | 447 | 19 | 19 |
+| `shared/mode-content.ts` | 448 | 19 | 19 |
 | `shared/mode-unit-outline.ts` | 87 | 2 | 2 |
 | `shared/model-capabilities.ts` | 168 | 11 | 9 |
 | `shared/model-pricing.ts` | 86 | 3 | 2 |
@@ -688,7 +688,7 @@
 | `ui/full-writer/full-writer-store.ts` | 401 | 5 | 5 |
 | `ui/full-writer/full-writer-utils.ts` | 115 | 6 | 6 |
 | `ui/full-writer/intervention-controller.ts` | 412 | 3 | 3 |
-| `ui/full-writer/project-selector-controller.ts` | 973 | 3 | 3 |
+| `ui/full-writer/project-selector-controller.ts` | 988 | 3 | 3 |
 | `ui/full-writer/quick-tools-panel.ts` | 150 | 3 | 3 |
 | `ui/full-writer/scene-outline-controller.ts` | 1150 | 2 | 1 |
 | `ui/full-writer/setting-lib-controller.ts` | 63 | 1 | 1 |
@@ -745,7 +745,7 @@
 | `ui/pre-research-modal.ts` | 710 | 2 | 2 |
 | `ui/project-health-modal.ts` | 134 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 406 | 5 | 5 |
-| `ui/project-utils.ts` | 365 | 11 | 10 |
+| `ui/project-utils.ts` | 366 | 11 | 10 |
 | `ui/prompt-manager-settings.ts` | 1144 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 87 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 504 | 2 | 2 |

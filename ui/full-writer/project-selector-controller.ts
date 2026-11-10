@@ -277,11 +277,26 @@ export class ProjectSelectorController {
         for (const project of allProjects) {
             modeOf.set(project, metaOf.get(project)?.creationMode || 'long');
         }
-        // 长篇章节一次扫描产出全部项目（旧实现每项目各遍历一次全库）
+        // 长篇章节一次扫描产出全部项目（旧实现每项目各遍历一次全库）；
+        // P2-3：复用整页 files 快照，且只在当前分类为长篇时扫描。
         const longProjects = allProjects.filter(project => (modeOf.get(project) || 'long') === 'long');
-        const chapterScan = scanProjectChapters(this.app, longProjects);
+        const chapterScan = this.selectedMode === 'long'
+            ? scanProjectChapters(this.app, longProjects, files)
+            : new Map<string, ChapterItem[]>();
         for (const project of longProjects) {
             unitsCache.set(project, chapterScan.get(project) || []);
+        }
+        // P2-3：短篇/剧本也预填单元缓存（同一份 files 快照，避免每张卡片再 getFiles）。
+        for (const project of allProjects) {
+            const mode = modeOf.get(project) || 'long';
+            if (mode === 'long') continue;
+            unitsCache.set(project, listModeUnits(this.app, project, mode, files).map(unit => ({
+                chapter: unit.unitName,
+                volume: '',
+                title: unit.title,
+                status: unit.status,
+                file: unit.file,
+            })));
         }
 
         // 从外部高亮某个项目时，自动切到它所属的分类
