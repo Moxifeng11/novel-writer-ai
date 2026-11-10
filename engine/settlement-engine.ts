@@ -820,7 +820,7 @@ export class SettlementEngine {
                         // 重复结算时同章同值不再追加（此前会写两遍「（第N章）」）
                         if (!prev.includes(addition)) {
                             fm[field] = prev ? `${prev}；${addition}` : addition;
-                            ctx.journal.recordAppend(file.path, addition);
+                            ctx.journal.recordAppend(file.path, addition, field);
                         }
                     } else {
                         fm[field] = value;
@@ -1336,11 +1336,12 @@ ${ni.description || '暂无描述'}
                     } else {
                         content += `\n## 变更记录\n${growthEntry}`;
                     }
+                    // D3-15：先登记 marker 再写盘；写一半失败也能按标记回滚
+                    ctx.journal.recordAppend(fp, growthEntry.trim());
                     await this.getFS().write(fp, content);
                     return true;
                 });
                 if (appended) {
-                    ctx.journal.recordAppend(fp, growthEntry.trim());
                     ctx.result.updatedGrowth++;
                 }
             } catch (e) { log.warn('[SettlementEngine] 更新成长失败:', g.name, e); ctx.hasPartialFailure = true; }
@@ -1714,8 +1715,9 @@ ${ni.description || '暂无描述'}
                 const afterHeader = content.indexOf('\n', idx);
                 content = content.slice(0, afterHeader + 1) + entry + '\n' + content.slice(afterHeader + 1);
             }
-            await this.getFS().write(file.path, content);
+            // D3-15：先登记再写，写一半失败也能回滚
             journal?.recordAppend(file.path, entry.trim());
+            await this.getFS().write(file.path, content);
             });
         } catch (e) { log.warn('[SettlementEngine] 追加互信息失败:', file.path, e); }
     }

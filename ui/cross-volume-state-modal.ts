@@ -6,6 +6,7 @@ import { CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
 import { listFolderFiles } from '@/shared/vault-tree';
 import { pjBodyDir, pjControlDir, SUBDIR_WORLD_ARCH, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjForeshadowDB, pjTimelineBoard } from '@/shared/paths';
 import { mkdirp } from '@/utils/helpers';
+import { withWriteLock } from '@/shared/write-lock';
 import { createLogger } from '@/shared/logger';
 
 
@@ -196,12 +197,15 @@ ${timeline || '（无时间线事件）'}
 
         let writeFailed = false;
         try {
-            const existingSnapshot = this.app.vault.getAbstractFileByPath(snapshotPath);
-            if (existingSnapshot instanceof TFile) {
-                await this.app.vault.modify(existingSnapshot, snapshotContent);
-            } else {
-                await this.app.vault.create(snapshotPath, snapshotContent);
-            }
+            // D3-16：与 cross-volume-integration 的快照写共用路径锁
+            await withWriteLock(snapshotPath, async () => {
+                const existingSnapshot = this.app.vault.getAbstractFileByPath(snapshotPath);
+                if (existingSnapshot instanceof TFile) {
+                    await this.app.vault.modify(existingSnapshot, snapshotContent);
+                } else {
+                    await this.app.vault.create(snapshotPath, snapshotContent);
+                }
+            });
         } catch (e) {
             writeFailed = true;
             log.warn('[小说工坊] 状态快照写入失败:', e);

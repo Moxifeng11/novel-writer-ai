@@ -8,6 +8,7 @@ import type { Notifier } from '@/shared/types';
 import { NOOP_NOTIFIER } from '@/shared/types';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
 import { createLogger } from '@/shared/logger';
+import { withWriteLock } from '@/shared/write-lock';
 
 
 const log = createLogger('CrossVolumeIntegration');
@@ -506,11 +507,10 @@ tags: [状态快照, nw/设定/状态快照]
             }
         }
 
-        const existing = this.getVaultMeta().getAbstractFileByPath(filePath);
-        if (existing instanceof TFile) {
-            await this.getFS().delete(filePath);
-        }
-
-        await this.getFS().write(filePath, content);
+        // D3-16：不再「先删后写」——删除与写入之间失败会永久丢旧快照；
+        // write 本身是覆盖语义，失败时旧文件仍在。同时与状态弹窗共用路径锁。
+        await withWriteLock(filePath, async () => {
+            await this.getFS().write(filePath, content);
+        });
     }
 }

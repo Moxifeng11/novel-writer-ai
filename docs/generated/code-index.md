@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137614 | 1727 | 1418 | 82% |
+| `engine/` | 319 | 137646 | 1727 | 1418 | 82% |
 | `services/` | 32 | 13385 | 194 | 154 | 79% |
 | `shared/` | 193 | 42903 | 1683 | 1374 | 82% |
 | `core/` | 7 | 2840 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99936 | 754 | 649 | 86% |
+| `ui/` | 242 | 99940 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -300,13 +300,13 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 2052 | 3 | 3 |
+| `engine/settlement-engine.ts` | 2054 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 137 | 2 | 2 |
 | `engine/settlement/settlement-artifacts.ts` | 130 | 5 | 5 |
 | `engine/settlement/settlement-coordinator.ts` | 137 | 6 | 6 |
-| `engine/settlement/settlement-journal.ts` | 198 | 6 | 6 |
+| `engine/settlement/settlement-journal.ts` | 228 | 6 | 6 |
 | `engine/settlement/settlement-table-writer.ts` | 79 | 3 | 2 |
 | `engine/settlement/settlement-types.ts` | 46 | 2 | 1 |
 | `engine/step-definitions.ts` | 266 | 13 | 11 |
@@ -659,7 +659,7 @@
 | `ui/cowrite/suggestion-edit-modal.ts` | 160 | 1 | 1 |
 | `ui/cowrite/suggestion-history-store.ts` | 111 | 1 | 1 |
 | `ui/create-project-modal.ts` | 490 | 2 | 2 |
-| `ui/cross-volume-state-modal.ts` | 231 | 1 | 1 |
+| `ui/cross-volume-state-modal.ts` | 235 | 1 | 1 |
 | `ui/diagnose-writer-modal.ts` | 363 | 1 | 1 |
 | `ui/draggable-panel.ts` | 379 | 2 | 2 |
 | `ui/existing-entity-manager.ts` | 555 | 1 | 1 |

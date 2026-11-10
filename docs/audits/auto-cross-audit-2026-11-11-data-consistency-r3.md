@@ -21,8 +21,8 @@
 | D3-12 | P2 | `shared/plugin-data-migration.ts:34-56/78-94` | 复制模式成功后旧目录保留且无完成标记，每次 onload 重跑 | 新目录删掉的文件被旧目录复活（D2-13 仍在） | **已修（第64轮）**：成功后写 `.legacy-migrated.json` 标记（rename/复制两条路径都写），标记存在即短路；3 条测试 |
 | D3-13 | P2 | `ui/co-writing-view.ts:474-502`、`shared/unload-barrier.ts:51-64` | onClose 先 await 保存历史再 track 正文保存；drain 见空即返回；无实例代次 | 旧实例保存落到新实例启动后，覆盖正文（D2-7 仍在） | **已修（第64轮，屏障顺序）**：onClose 同步 `track(performClose())`，早于任何 await；实例代次仍留 D3-13 残余 |
 | D3-14 | P2 | `ui/services/agent-port.ts:584-591`、`services/project-rename-service.ts:72-105` | Agent append 与改名同步（`.project`/世界观/写作画像）均无锁 read→write | 并发结算/结构切换被旧快照覆盖 | **已修（第65轮）**：append 与三个改名同步写点全部 `withWriteLock(path)` 内重读；2 条契约测试 |
-| D3-15 | P3 | `engine/settlement-engine.ts:1302-1306/1680-1681`、`settlement-journal.ts:119-126/179-197` | append-marker 在目标写之后登记；去重键不含字段，`removeMarkerOnce` 只删首处 | 写一半失败无法回滚；同值两字段只记一条 | 未修 → fix queue（登记移到写前） |
-| D3-16 | P3 | `engine/cross-volume-integration.ts:494-516`、`ui/cross-volume-state-modal.ts:199-203` | 快照先删后写、无 tmp/rename、无锁 | 失败窗口丢旧快照；并发 last-wins | 未修 → fix queue |
+| D3-15 | P3 | `engine/settlement-engine.ts:1302-1306/1680-1681`、`settlement-journal.ts:119-126/179-197` | append-marker 在目标写之后登记；去重键不含字段，`removeMarkerOnce` 只删首处 | 写一半失败无法回滚；同值两字段只记一条 | **已修（第66轮）**：成长/互信息改为写前登记；`recordAppend` 与 `removeMarkerOnce` 支持 field（只删对应字段）；2 条测试 |
+| D3-16 | P3 | `engine/cross-volume-integration.ts:494-516`、`ui/cross-volume-state-modal.ts:199-203` | 快照先删后写、无 tmp/rename、无锁 | 失败窗口丢旧快照；并发 last-wins | **已修（第66轮）**：去掉先删后写（write 覆盖语义），两处写点共用 `withWriteLock`；2 条契约测试 |
 | D3-17 | P3 | `ui/batch-chapters-modal.ts:238-320`、`settlement-engine.ts:1866-1867`、`foreshadow-manager.ts:196-201` | 信息债看板三个写点只有一处持锁 | 看板回退/删窗 | 未修 → fix queue |
 | D3-18 | P3 | `services/rules-service.ts:220-243` | 启动时版本不一致直接覆盖用户改过的 `写作规则.md`，无备份 | 用户规则改动丢失（注释称有意，仍属数据丢失面） | 未修 → fix queue（覆盖前 `.bak`） |
 
@@ -47,7 +47,7 @@
 
 1. D3-6 正文单文件改名迁移 sourcePath（P2，vault rename 事件）
 2. D3-13 残余：协同实例代次（旧实例保存丢弃）
-4. D3-15~D3-18（P3）
+4. D3-17/D3-18（P3）
 
 ## 六、后续修复记录
 
@@ -64,3 +64,5 @@
 - 第64轮（D3-12/D3-13）：`plugin-data-migration` 成功后写 `.legacy-migrated.json` 完成标记（rename/复制均写，存在即短路）；`co-writing-view.onClose` 改为同步登记整个 `performClose()` 进卸载屏障（早于 saveHistory 等 await），内部不再单独 track 保存。新增 5 条测试并更新 1 条旧接线断言。
 
 - 第65轮（D3-4/D3-14）：`context-injector` 锁内重读再注入；`agent-port` append 与 `project-rename` 三处同步写点全部加路径锁并在锁内重读。新增 3 条契约测试。
+
+- 第66轮（D3-15/D3-16）：append-marker 支持 field（去重/回滚都按字段），成长与互信息改为写前登记；跨卷快照去掉先删后写并加路径锁。新增 4 条测试。

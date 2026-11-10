@@ -24,7 +24,7 @@ export type JournalEntry =
     // before 保留原类型：list 字段（涉及人物/持有物品）回滚成字符串会让 YAML 类型漂移
     | { kind: 'frontmatter-field'; path: string; field: string; before: unknown }
     | { kind: 'whole-file-before'; path: string; before: string }
-    | { kind: 'append-marker'; path: string; marker: string };
+    | { kind: 'append-marker'; path: string; marker: string; field?: string };
 
 /**
  * 文件读写端口。
@@ -113,16 +113,21 @@ export class SettlementJournal {
     /**
      * 记录追加变更。
      *
+     * D3-15：同一段文本可能被追加到同一文件的**不同 frontmatter 字段**
+     * （如「已知信息」与「持有物品」都写「铜牌（第1章）」）。去重键与回滚都必须
+     * 带字段，否则只登记一条、回滚也只删第一处。
+     *
      * @param path - 路径
      * @param marker - 标记
+     * @param field - frontmatter 字段名（连续性账本追加时传）
      */
-    recordAppend(path: string, marker: string): void {
+    recordAppend(path: string, marker: string, field?: string): void {
         const normalized = marker.trim();
         if (!normalized) return;
-        const key = `${path}\u0000${normalized}`;
+        const key = `${path}\u0000${field ?? ''}\u0000${normalized}`;
         if (this.markerSeen.has(key)) return;
         this.markerSeen.add(key);
-        this.entries.push({ kind: 'append-marker', path, marker: normalized });
+        this.entries.push({ kind: 'append-marker', path, marker: normalized, field });
     }
 
     /**
@@ -147,7 +152,7 @@ export class SettlementJournal {
                         continue;
                     }
                     const current = await fs.read(entry.path);
-                    const next = removeMarkerOnce(current, entry.marker);
+                    const next = removeMarkerOnce(current, entry.marker, entry.field);
                     if (next !== current) await fs.write(entry.path, next);
                 }
                 report.reverted++;
@@ -174,9 +179,31 @@ export class SettlementJournal {
  * - 行内片段（连续性账本「；值（第N章）」）：删掉 marker 文本，并清理残留分隔符
  * @param content - 内容
  * @param marker - 标记
+ * @param field - 指定 frontmatter 字段时只在该字段值内移除（D3-15）
  * @returns 文本结果
  */
-export function removeMarkerOnce(content: string, marker: string): string {
+export function removeMarkerOnce(content: string, marker: string, field?: string): string {
+    // D3-15：同一段文本可能出现在同文件的不同字段；带字段时只改该字段，
+    // 否则回滚可能删到另一个字段的合法内容。
+    if (field) {
+        const fm = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+        if (fm) {
+            const fmBody = fm[1];
+            const lines = fmBody.split('\n');
+            const idx = lines.findIndex((line) => line.startsWith(`${field}:`));
+            if (idx >= 0) {
+                const prefix = `${field}:`;
+                const valuePart = lines[idx].slice(prefix.length);
+                const cleaned = removeMarkerOnce(valuePart, marker);
+                if (cleaned !== valuePart) {
+                    lines[idx] = `${prefix}${cleaned.trim() === '' ? '' : cleaned}`;
+                    const start = fm[0].indexOf(fmBody);
+                    return content.slice(0, start) + lines.join('\n') + content.slice(start + fmBody.length);
+                }
+            }
+            return content;
+        }
+    }
     const lines = content.split('\n');
     const exactLineIdx = lines.findIndex(line => line.trim() === marker);
     if (exactLineIdx >= 0) {
@@ -192,6 +219,9 @@ export function removeMarkerOnce(content: string, marker: string): string {
         after = after.slice(1);
     } else if (before.endsWith('；') && !after.trim()) {
         before = before.slice(0, -1);
+    } else if (!before.trim() && after.startsWith('；')) {
+        // 字段值首项被删：'已知信息: ；密道' → '已知信息: 密道'
+        after = after.slice(1);
     }
     return `${before}${after}`;
 }
