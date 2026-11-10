@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137678 | 1727 | 1418 | 82% |
-| `services/` | 32 | 13395 | 194 | 154 | 79% |
-| `shared/` | 194 | 42932 | 1684 | 1375 | 82% |
+| `engine/` | 319 | 137680 | 1727 | 1418 | 82% |
+| `services/` | 32 | 13427 | 194 | 154 | 79% |
+| `shared/` | 195 | 42963 | 1686 | 1377 | 82% |
 | `core/` | 7 | 2840 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 242 | 99957 | 754 | 649 | 86% |
@@ -140,7 +140,7 @@
 | `engine/embedding/index.ts` | 12 | 6 | 0 |
 | `engine/embedding/ollama-provider.ts` | 219 | 2 | 2 |
 | `engine/embedding/openai-provider.ts` | 241 | 2 | 2 |
-| `engine/embedding/provider-factory.ts` | 209 | 4 | 4 |
+| `engine/embedding/provider-factory.ts` | 211 | 4 | 4 |
 | `engine/embedding/qwen-provider.ts` | 51 | 2 | 2 |
 | `engine/emotion-auditor.ts` | 280 | 3 | 3 |
 | `engine/emotion-curve-analyzer.ts` | 220 | 1 | 1 |
@@ -356,7 +356,7 @@
 | `engine/writing-quality-engine.ts` | 1376 | 14 | 13 |
 | `services/api-connectivity-service.ts` | 317 | 8 | 8 |
 | `services/backup-center-service.ts` | 180 | 4 | 1 |
-| `services/canon-research-service.ts` | 497 | 8 | 8 |
+| `services/canon-research-service.ts` | 521 | 8 | 8 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
 | `services/chapter-version-service.ts` | 739 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
@@ -368,7 +368,7 @@
 | `services/knowledge-base-manager.ts` | 1582 | 6 | 4 |
 | `services/knowledge-original-chunker.ts` | 119 | 3 | 3 |
 | `services/local-model-probe.ts` | 185 | 6 | 5 |
-| `services/model-discovery.ts` | 274 | 5 | 5 |
+| `services/model-discovery.ts` | 279 | 5 | 5 |
 | `services/performance-monitor.ts` | 819 | 9 | 9 |
 | `services/project-health-service.ts` | 223 | 5 | 2 |
 | `services/project-rename-service.ts` | 192 | 2 | 2 |
@@ -378,7 +378,7 @@
 | `services/rules-registry.ts` | 146 | 7 | 5 |
 | `services/rules-service.ts` | 280 | 3 | 2 |
 | `services/synopsis-store.ts` | 332 | 5 | 5 |
-| `services/update-checker.ts` | 588 | 9 | 2 |
+| `services/update-checker.ts` | 591 | 9 | 2 |
 | `services/usage-ledger.ts` | 395 | 13 | 5 |
 | `services/vector-rebuild-service.ts` | 141 | 8 | 8 |
 | `services/worker-manager.ts` | 569 | 1 | 1 |
@@ -528,6 +528,7 @@
 | `shared/scene-card.ts` | 241 | 9 | 8 |
 | `shared/secret-display.ts` | 126 | 7 | 4 |
 | `shared/secret-redaction.ts` | 151 | 6 | 5 |
+| `shared/secret-value.ts` | 31 | 2 | 2 |
 | `shared/serialized-writer.ts` | 199 | 3 | 3 |
 | `shared/session-retention.ts` | 186 | 6 | 6 |
 | `shared/settings-migrator.ts` | 303 | 7 | 7 |

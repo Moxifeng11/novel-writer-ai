@@ -4,6 +4,7 @@ import { OpenAIEmbeddingProvider } from './openai-provider';
 import { DoubaoEmbeddingProvider } from './doubao-provider';
 import { QwenEmbeddingProvider } from './qwen-provider';
 import { createLogger } from '@/shared/logger';
+import { usableSecret } from '@/shared/secret-value';
 
 
 const log = createLogger('ProviderFactory');
@@ -110,21 +111,22 @@ export class EmbeddingProviderFactory {
     }
 
     private static createOpenAIProvider(config: ProviderFactoryConfig): OpenAIEmbeddingProvider {
-        const apiKey = config.vectorOpenaiApiKey || '';
+        // S3-4：锁定态密文不得当凭据发送（视为未配置）
+        const apiKey = usableSecret(config.vectorOpenaiApiKey);
         const baseUrl = config.vectorOpenaiBaseUrl || 'https://api.openai.com/v1';
         const model = config.vectorOpenaiModel || 'text-embedding-3-small';
         return new OpenAIEmbeddingProvider({ apiKey, baseUrl, model });
     }
 
     private static createDoubaoProvider(config: ProviderFactoryConfig): DoubaoEmbeddingProvider {
-        const apiKey = config.vectorDoubaoApiKey || config.vectorOpenaiApiKey || '';
+        const apiKey = usableSecret(config.vectorDoubaoApiKey || config.vectorOpenaiApiKey);
         const baseUrl = config.vectorDoubaoBaseUrl || 'https://ark.cn-beijing.volces.com/api/v3';
         const model = config.vectorDoubaoModel || 'doubao-embedding-text-240915';
         return new DoubaoEmbeddingProvider({ apiKey, baseUrl, model });
     }
 
     private static createQwenProvider(config: ProviderFactoryConfig): QwenEmbeddingProvider {
-        const apiKey = config.vectorQwenApiKey || '';
+        const apiKey = usableSecret(config.vectorQwenApiKey);
         const baseUrl = config.vectorQwenBaseUrl || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
         const model = config.vectorQwenModel || 'text-embedding-v3';
         return new QwenEmbeddingProvider({ apiKey, baseUrl, model });

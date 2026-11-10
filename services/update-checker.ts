@@ -21,6 +21,7 @@ import {
     normalizeGitHubRepo,
 } from '@/shared/github-repo';
 import { requestWithPolicy } from '@/shared/http-request';
+import { usableSecret } from '@/shared/secret-value';
 
 /** 更新检查源类型 */
 export type UpdateSourceType = 'github' | 'custom';
@@ -349,8 +350,10 @@ export class UpdateChecker {
             // GitHub REST 对无合法 User-Agent 的请求直接 403；显式声明也便于排障
             'User-Agent': `NovelWriterAI/${typeof PLUGIN_VERSION !== 'undefined' ? PLUGIN_VERSION : this.currentVersion || 'unknown'} (+${GITHUB_REPO_URL})`,
         };
-        if (this.config.githubToken?.trim()) {
-            headers.Authorization = `Bearer ${this.config.githubToken.trim()}`;
+        // S3-4：锁定态密文不得当 Bearer 发送
+        const githubToken = usableSecret(this.config.githubToken);
+        if (githubToken) {
+            headers.Authorization = `Bearer ${githubToken}`;
         }
 
         try {

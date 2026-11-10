@@ -10,6 +10,7 @@ import { App, requestUrl } from 'obsidian';
 import {
     CanonSource,
     CanonSourceInput,
+    classifyCanonSource,
     computeCanonSourceHash,
     createCanonSource,
     hashText,
@@ -20,6 +21,7 @@ import { pjFanficResearchDir } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
 import { GITHUB_REPO_URL } from '@/shared/github-repo';
 import { requestWithPolicy, SEARCH_REQUEST_POLICY } from '@/shared/http-request';
+import { isStoredCiphertext } from '@/shared/secret-value';
 
 const log = createLogger('CanonResearch');
 
@@ -113,8 +115,11 @@ export class CanonResearchService {
         const inputs: CanonSourceInput[] = [...(options.manualSources || [])];
 
         if (inputs.length === 0 && config.provider !== 'manual') {
-            if (!config.apiKey?.trim()) {
-                warnings.push('未配置搜索 API Key，已退回手动官方来源模式');
+            if (!config.apiKey?.trim() || isStoredCiphertext(config.apiKey)) {
+                // S3-4：锁定态密文不能当凭据外发
+                warnings.push(config.apiKey?.trim()
+                    ? '搜索 API Key 处于加密锁定状态，请先在设置中解锁口令；已退回手动官方来源模式'
+                    : '未配置搜索 API Key，已退回手动官方来源模式');
             } else {
                 try {
                     const searched = await this.search(workName, options, config);
@@ -210,7 +215,26 @@ export class CanonResearchService {
             if (!(await adapter.exists(path))) return null;
             const parsed = JSON.parse(await adapter.read(path)) as CachedResearch;
             if (!Array.isArray(parsed.sources)) return null;
-            return parsed;
+            // S3-3（安全 r3）：缓存可被同步/本地篡改；不信任文件里的 tier/excerptHash。
+            // URL 只接受 http(s)，标题/摘录限长，tier 按域名重新分级，哈希重算。
+            const sources = parsed.sources
+                .filter((source): source is CanonSource => Boolean(source) && typeof source === 'object')
+                .map((source) => {
+                    const url = normalizeSourceUrl(String(source.url || ''));
+                    if (!url) return null;
+                    const title = String(source.title || '').slice(0, 200);
+                    const excerpt = String(source.excerpt || '').slice(0, 20_000);
+                    return {
+                        ...source,
+                        url,
+                        title,
+                        excerpt,
+                        tier: classifyCanonSource({ url, title }),
+                        excerptHash: hashText(excerpt),
+                    };
+                })
+                .filter((source): source is CanonSource => source !== null);
+            return { ...parsed, sources };
         } catch (error) {
             log.warn('[CanonResearch] 读取来源缓存失败:', error);
             return null;

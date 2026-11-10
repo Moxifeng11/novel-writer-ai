@@ -16,6 +16,7 @@ import { requestUrl } from 'obsidian';
 import { createLogger } from '@/shared/logger';
 import type { ApiFormat } from '@/shared/api-format';
 import { buildAuthHeaders, resolveModelsUrl } from '@/shared/api-format';
+import { isStoredCiphertext } from '@/shared/secret-value';
 
 const log = createLogger('ModelDiscovery');
 
@@ -213,6 +214,10 @@ export async function discoverModels(
     apiKey: string,
     request: DiscoverRequestUrlFn = requestUrl as unknown as DiscoverRequestUrlFn,
 ): Promise<DiscoveryResult> {
+    // S3-4（安全 r3）：锁定态密文不得当凭据发送
+    if (isStoredCiphertext(apiKey)) {
+        return { kind: 'error', message: 'API Key 处于加密锁定状态，请先在设置中解锁口令', url: resolveModelsUrl(endpoint, format) || '' };
+    }
     const url = resolveModelsUrl(endpoint, format);
     if (!url) return { kind: 'error', message: '请先填写 Base URL', url: '' };
     try {

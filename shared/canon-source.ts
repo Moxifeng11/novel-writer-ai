@@ -58,7 +58,6 @@ export const AUTHORITATIVE_TIERS: ReadonlySet<CanonSourceTier> = new Set(['offic
 const DERIVATIVE_RE = /(同人|fan\s*fiction|fanfic|ao3|lofter|衍生|改编|动画|电视剧|影视|电影|游戏|漫画|续写|外传|二次创作|同人文|同人小说|fandom)/i;
 const OFFICIAL_HOST_RE = /(^|\.)(qidian\.com|fanqienovel\.com|zongheng\.com|jjwxc\.net|17k\.com|ciweimao\.com|sfacg\.com|chineseall\.com)$/i;
 const REFERENCE_HOST_RE = /(^|\.)(wikipedia\.org|baike\.baidu\.com|zhihu\.com)$/i;
-const OFFICIAL_HINT_RE = /(官方|原著|作者|出版社|设定集|official|author|publisher)/i;
 const OFFICIAL_WIKI_RE = /(官方\s*wiki|official\s*wiki|官方资料站)/i;
 
 /**
@@ -107,9 +106,10 @@ export function classifyCanonSource(input: Pick<CanonSourceInput, 'url' | 'title
     const haystack = `${url}\n${title}`;
 
     if (DERIVATIVE_RE.test(haystack)) return 'derivative';
-    if (input.tier && input.tier !== 'unknown') return input.tier;
+    // S3-3（安全 r3）：标题里的「官方/原著/official」不能授予权威等级——
+    // 任意域名都可以在标题里写这些词；official 只认发行人域名白名单。
     if (OFFICIAL_WIKI_RE.test(haystack)) return 'official-wiki';
-    if (OFFICIAL_HOST_RE.test(domain) || OFFICIAL_HINT_RE.test(title)) return 'official';
+    if (OFFICIAL_HOST_RE.test(domain)) return 'official';
     if (REFERENCE_HOST_RE.test(domain)) return 'reference';
     return 'unknown';
 }
