@@ -17,6 +17,8 @@ import {
     resolvePluginRootDir,
     setPluginRootDir,
     pluginSettingsBackupFile,
+    pluginSettingsFile,
+    pluginSessionsDir,
 } from '../../../shared/paths';
 
 
@@ -132,5 +134,7 @@ describe('插件根目录单源（2026-11-10 安全审计 F3）', () => {
     it('data.json.bak 在插件根目录，不在 data/ 子目录（写入/读取同源）', () => {
         setPluginRootDir('.obsidian/plugins/novel-writer-ai');
         expect(pluginSettingsBackupFile()).toBe('.obsidian/plugins/novel-writer-ai/data.json.bak');
+        expect(pluginSettingsFile()).toBe('.obsidian/plugins/novel-writer-ai/data.json');
+        expect(pluginSessionsDir()).toBe('.obsidian/plugins/novel-writer-ai/.sessions');
     });
 });

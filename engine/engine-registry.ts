@@ -162,7 +162,7 @@ import { TemplateService } from './template-service';
 import { ChapterVersionService } from '@/services/chapter-version-service';
 import { createLogger } from '@/shared/logger';
 import { detectSecretStorageModeFromJson } from '@/shared/secret-redaction';
-import { pluginSettingsBackupFile } from '@/shared/paths';
+import { pluginSettingsBackupFile, pluginSettingsFile } from '@/shared/paths';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 
 const log = createLogger('EngineRegistry');
@@ -1187,9 +1187,8 @@ export class EngineRegistry {
             saveData: (d) => plugin.saveData(d),
             // 迁移/回写前保留一份 data.json.bak（仅插件目录内，不含任何用户正文）
             backupSettings: async (reason) => {
-                const dir = plugin.manifest.dir;
-                if (!dir) return;
-                const source = `${dir}/data.json`;
+                // 路径单源：不得直接拼 manifest.dir（自定义 configDir/BRAT 改名会读错）
+                const source = pluginSettingsFile();
                 const adapter = plugin.app.vault.adapter;
                 if (!(await adapter.exists(source))) return;
                 try {

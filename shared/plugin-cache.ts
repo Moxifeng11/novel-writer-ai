@@ -70,7 +70,10 @@ export interface EntityCacheEntry {
     entityType: string;
 }
 
-const CACHE_FILE = `${pluginDataDir()}/cache.json`;
+/** 缓存文件路径惰性求值：模块导入早于 onload 的 setPluginRootDir，不能冻结 */
+function cacheFilePath(): string {
+    return `${pluginDataDir()}/cache.json`;
+}
 
 /**
  * PluginCacheManager 类。
@@ -92,8 +95,9 @@ export class PluginCacheManager {
         if (this.loaded) return;
         try {
             const adapter = this.app.vault.adapter;
-            if (await adapter.exists(CACHE_FILE)) {
-                const raw = await adapter.read(CACHE_FILE);
+            const cacheFile = cacheFilePath();
+            if (await adapter.exists(cacheFile)) {
+                const raw = await adapter.read(cacheFile);
                 this.data = JSON.parse(raw) as PluginCacheData;
             }
         } catch (e) {
@@ -118,7 +122,7 @@ export class PluginCacheManager {
         this.writer.enqueueAutoClean(async () => {
             await this.ensureDataDir();
             // write-entry-allow: 插件缓存 JSON，位于插件数据目录。
-            await this.app.vault.adapter.write(CACHE_FILE, JSON.stringify(this.data, null, 2));
+            await this.app.vault.adapter.write(cacheFilePath(), JSON.stringify(this.data, null, 2));
         });
     }
 

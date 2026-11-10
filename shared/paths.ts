@@ -1022,6 +1022,22 @@ export function pluginRootDirPath(): string { return pluginRootDir; }
 export function pluginSettingsBackupFile(): string { return `${pluginRootDir}/data.json.bak`; }
 
 /**
+ * pluginSettingsFile：Obsidian 设置文件 `data.json` 的插件根目录路径。
+ *
+ * 供备份/迁移读取源文件；业务代码不得再直接拼 `manifest.dir`。
+ *
+ * @returns 插件根目录下的 data.json 路径
+ */
+export function pluginSettingsFile(): string { return `${pluginRootDir}/data.json`; }
+
+/**
+ * pluginSessionsDir：插件目录下的 `.sessions`（分析会话存档）。
+ *
+ * @returns 插件根目录下的 .sessions 路径
+ */
+export function pluginSessionsDir(): string { return `${pluginRootDir}/.sessions`; }
+
+/**
  * pluginDataDir：返回插件数据目录 `${pluginRootDir}/data`。
  *
  * @returns 拼接后的 vault/插件相对路径

@@ -9,9 +9,7 @@
  */
 
 import { getDegradationNotifier } from './degradation-notifier';
-
-/** 插件 id（与 manifest.id 一致） */
-const PLUGIN_ID = 'novel-writer-ai';
+import { pluginRootDirPath } from './paths';
 
 interface WorkerUrlHost {
     vault: {
@@ -33,8 +31,8 @@ interface WorkerUrlHost {
 export function resolvePluginWorkerUrl(app: WorkerUrlHost, workerFile: string): string | null {
     const vault = app?.vault;
     if (!vault) return null;
-    const configDir = vault.configDir || '.obsidian';
-    const pluginRelativePath = `${configDir}/plugins/${PLUGIN_ID}/workers/${workerFile}`;
+    // 路径单源：BRAT 改名/自定义 configDir 下不能再用 configDir+PLUGIN_ID 硬拼
+    const pluginRelativePath = `${pluginRootDirPath()}/workers/${workerFile}`;
     const adapter = vault.adapter;
     if (!adapter) return null;
 
