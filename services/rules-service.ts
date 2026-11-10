@@ -5,6 +5,7 @@ import { composeWritingRules } from '@/shared/writing-rules-mode-addons';
 import { resolveProjectMode } from '@/shared/project-mode';
 import type { CreationMode } from '@/shared/creation-mode';
 import { createLogger } from '@/shared/logger';
+import { withWriteLock } from '@/shared/write-lock';
 
 const log = createLogger('RulesService');
 
@@ -227,9 +228,18 @@ export class RulesService {
             const versionMatch = content.match(/^version:\s*"?([^"\n]+)"?/m);
             const version = (versionMatch?.[1] || '').trim();
             if (version !== WRITING_RULES_BUILTIN_VERSION) {
-                await this.app.vault.modify(existing, WRITING_RULES);
+                // D3-18：覆写前把用户当前规则留一份 .bak，误覆盖可恢复
+                await withWriteLock(VAULT_RULES_PATH, async () => {
+                    try {
+                        // write-entry-allow: 写作规则覆写前备份（Markdown 副本，位于元文件目录）
+                        await this.app.vault.adapter.write(`${VAULT_RULES_PATH}.bak`, content);
+                    } catch (e) {
+                        log.warn('[RulesService] 规则备份失败，继续覆写:', e);
+                    }
+                    await this.app.vault.modify(existing, WRITING_RULES);
+                });
                 result.overwrote = true;
-                log.info(`[RulesService] 元文件写作规则已覆写为 v${WRITING_RULES_BUILTIN_VERSION}（原 version=${version || '未知'}）`);
+                log.info(`[RulesService] 元文件写作规则已覆写为 v${WRITING_RULES_BUILTIN_VERSION}（原 version=${version || '未知'}，旧版已备份为 .bak）`);
             }
         } else {
             const dir = VAULT_RULES_PATH.slice(0, VAULT_RULES_PATH.lastIndexOf('/'));

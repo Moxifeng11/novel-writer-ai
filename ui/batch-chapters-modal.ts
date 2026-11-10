@@ -22,6 +22,7 @@ import {
 } from '@/shared/paths';
 import { WriteChapterModal } from './write-chapter-modal';
 import { createLogger } from '@/shared/logger';
+import { writeInfoDebtBoard } from '@/shared/info-debt-board';
 
 
 const log = createLogger('BatchChaptersModal');
@@ -311,12 +312,15 @@ ${charMiss > 0 ? `- ⚠️ ${charMiss}个人物未填写当前状态` : ''}
         try {
             const dir = pjControlDir(project);
             if (!this.app.vault.getAbstractFileByPath(dir)) await this.app.vault.createFolder(dir);
-            const existingDebtBoard = this.app.vault.getAbstractFileByPath(debtP);
-            if (existingDebtBoard instanceof TFile) {
-                await this.app.vault.modify(existingDebtBoard, debtContent);
-            } else {
-                await this.app.vault.create(debtP, debtContent);
-            }
+            // D3-17：与结算/伏笔管理器共用同一路径锁（vault 索引写入）
+            await writeInfoDebtBoard(debtP, debtContent, async (path, content) => {
+                const existingDebtBoard = this.app.vault.getAbstractFileByPath(path);
+                if (existingDebtBoard instanceof TFile) {
+                    await this.app.vault.modify(existingDebtBoard, content);
+                } else {
+                    await this.app.vault.create(path, content);
+                }
+            });
         } catch (e) {
             log.warn('[小说工坊] 信息债看板写入失败:', e);
             new Notice('⚠️ 信息债看板更新失败（不影响已生成的章节）', 6000);

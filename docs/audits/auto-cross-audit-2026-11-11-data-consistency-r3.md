@@ -23,8 +23,8 @@
 | D3-14 | P2 | `ui/services/agent-port.ts:584-591`、`services/project-rename-service.ts:72-105` | Agent append 与改名同步（`.project`/世界观/写作画像）均无锁 read→write | 并发结算/结构切换被旧快照覆盖 | **已修（第65轮）**：append 与三个改名同步写点全部 `withWriteLock(path)` 内重读；2 条契约测试 |
 | D3-15 | P3 | `engine/settlement-engine.ts:1302-1306/1680-1681`、`settlement-journal.ts:119-126/179-197` | append-marker 在目标写之后登记；去重键不含字段，`removeMarkerOnce` 只删首处 | 写一半失败无法回滚；同值两字段只记一条 | **已修（第66轮）**：成长/互信息改为写前登记；`recordAppend` 与 `removeMarkerOnce` 支持 field（只删对应字段）；2 条测试 |
 | D3-16 | P3 | `engine/cross-volume-integration.ts:494-516`、`ui/cross-volume-state-modal.ts:199-203` | 快照先删后写、无 tmp/rename、无锁 | 失败窗口丢旧快照；并发 last-wins | **已修（第66轮）**：去掉先删后写（write 覆盖语义），两处写点共用 `withWriteLock`；2 条契约测试 |
-| D3-17 | P3 | `ui/batch-chapters-modal.ts:238-320`、`settlement-engine.ts:1866-1867`、`foreshadow-manager.ts:196-201` | 信息债看板三个写点只有一处持锁 | 看板回退/删窗 | 未修 → fix queue |
-| D3-18 | P3 | `services/rules-service.ts:220-243` | 启动时版本不一致直接覆盖用户改过的 `写作规则.md`，无备份 | 用户规则改动丢失（注释称有意，仍属数据丢失面） | 未修 → fix queue（覆盖前 `.bak`） |
+| D3-17 | P3 | `ui/batch-chapters-modal.ts:238-320`、`settlement-engine.ts:1866-1867`、`foreshadow-manager.ts:196-201` | 信息债看板三个写点只有一处持锁 | 看板回退/删窗 | **已修（第67轮）**：新增 `shared/info-debt-board` 唯一写入器（路径锁内覆盖写，不再 delete+write），三处统一接入；2 条测试 |
+| D3-18 | P3 | `services/rules-service.ts:220-243` | 启动时版本不一致直接覆盖用户改过的 `写作规则.md`，无备份 | 用户规则改动丢失（注释称有意，仍属数据丢失面） | **已修（第67轮）**：覆写前先写 `写作规则.md.bak` 并持路径锁；2 条测试 |
 
 ## 二、r2 遗留项复核（HEAD 69cfcf8）
 
@@ -45,9 +45,10 @@
 
 ## 五、fix queue
 
-1. D3-6 正文单文件改名迁移 sourcePath（P2，vault rename 事件）
+1. D3-6 残余：正文单文件改名迁移 sourcePath（P2，vault rename 事件）
 2. D3-13 残余：协同实例代次（旧实例保存丢弃）
-4. D3-17/D3-18（P3）
+
+P1/P2 主体与全部 P3 已修；维度② r3 收尾，转维度③ 安全复审。
 
 ## 六、后续修复记录
 
@@ -66,3 +67,5 @@
 - 第65轮（D3-4/D3-14）：`context-injector` 锁内重读再注入；`agent-port` append 与 `project-rename` 三处同步写点全部加路径锁并在锁内重读。新增 3 条契约测试。
 
 - 第66轮（D3-15/D3-16）：append-marker 支持 field（去重/回滚都按字段），成长与互信息改为写前登记；跨卷快照去掉先删后写并加路径锁。新增 4 条测试。
+
+- 第67轮（D3-17/D3-18）：新增 `shared/info-debt-board` 唯一写入器，结算/批量/伏笔管理器三处统一为路径锁内覆盖写（去掉 delete+write）；写作规则覆写前先写 `.bak` 并持锁。新增 4 条测试。维度② r3 fix queue 清零。

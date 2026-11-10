@@ -15,6 +15,7 @@ import { parseForeshadowRevealState } from '@/shared/foreshadow-status';
 import { getChapterFileName, findChapterFile, getChapterFile , findBodyFileByChapterNum } from './chapter-utils';
 import { CHARACTER_DISPLAY_KEYS } from '@/shared/format-constants';
 import { withWriteLock } from '@/shared/write-lock';
+import { writeInfoDebtBoard } from '@/shared/info-debt-board';
 import type { SettlementJournal } from './settlement/settlement-journal';
 import { loadRelationshipStates, extractRelationshipChanges, applyRelationshipChanges, saveRelationshipStates, getRelationshipFilePath } from './relationship-engine';
 import { consumePendingRelationshipChanges, loadPendingRelationshipChanges } from './relationship-change-queue';
@@ -1903,7 +1904,8 @@ tags: [看板]
 `;
 
             const fp = pjInfoDebtBoard(project);
-            await this.getFS().write(fp, content);
+            // D3-17：与批量/伏笔管理器共用同一路径锁
+            await writeInfoDebtBoard(fp, content, (path, text) => this.getFS().write(path, text));
         } catch (e) { log.warn('[SettlementEngine] 刷新信息债看板失败:', e); }
     }
 

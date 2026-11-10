@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137646 | 1727 | 1418 | 82% |
-| `services/` | 32 | 13385 | 194 | 154 | 79% |
-| `shared/` | 193 | 42903 | 1683 | 1374 | 82% |
+| `engine/` | 319 | 137643 | 1727 | 1418 | 82% |
+| `services/` | 32 | 13395 | 194 | 154 | 79% |
+| `shared/` | 194 | 42929 | 1684 | 1375 | 82% |
 | `core/` | 7 | 2840 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99940 | 754 | 649 | 86% |
+| `ui/` | 242 | 99944 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -162,7 +162,7 @@
 | `engine/fingerprint-stats.ts` | 127 | 4 | 4 |
 | `engine/foreshadow-config-manager.ts` | 310 | 2 | 1 |
 | `engine/foreshadow-context.ts` | 154 | 6 | 4 |
-| `engine/foreshadow-manager.ts` | 1354 | 8 | 8 |
+| `engine/foreshadow-manager.ts` | 1349 | 8 | 8 |
 | `engine/generation-checkpoint-vault.ts` | 100 | 1 | 1 |
 | `engine/generation-checkpoint.ts` | 158 | 6 | 3 |
 | `engine/genre/genre-config-registry.ts` | 154 | 2 | 2 |
@@ -300,7 +300,7 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 2054 | 3 | 3 |
+| `engine/settlement-engine.ts` | 2056 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 137 | 2 | 2 |
@@ -376,7 +376,7 @@
 | `services/prompt-templates-default.ts` | 644 | 1 | 1 |
 | `services/quality-history-store.ts` | 128 | 4 | 4 |
 | `services/rules-registry.ts` | 146 | 7 | 5 |
-| `services/rules-service.ts` | 270 | 3 | 2 |
+| `services/rules-service.ts` | 280 | 3 | 2 |
 | `services/synopsis-store.ts` | 332 | 5 | 5 |
 | `services/update-checker.ts` | 588 | 9 | 2 |
 | `services/usage-ledger.ts` | 395 | 13 | 5 |
@@ -462,6 +462,7 @@
 | `shared/http-transport.ts` | 235 | 6 | 2 |
 | `shared/human-feature-rubric.ts` | 180 | 7 | 6 |
 | `shared/human-similarity.ts` | 333 | 11 | 11 |
+| `shared/info-debt-board.ts` | 26 | 1 | 1 |
 | `shared/info-debt.ts` | 70 | 3 | 3 |
 | `shared/info-plan-fields.ts` | 167 | 3 | 3 |
 | `shared/injection-ledger.ts` | 341 | 12 | 9 |
@@ -588,7 +589,7 @@
 | `ui/auto-writer-modal.ts` | 236 | 1 | 1 |
 | `ui/backup-center-modal.ts` | 244 | 1 | 1 |
 | `ui/backup-yuan-modal.ts` | 125 | 1 | 1 |
-| `ui/batch-chapters-modal.ts` | 336 | 1 | 1 |
+| `ui/batch-chapters-modal.ts` | 340 | 1 | 1 |
 | `ui/batch-create-modal.ts` | 521 | 1 | 1 |
 | `ui/batch-import-modal.ts` | 1870 | 1 | 1 |
 | `ui/batch-novels-modal.ts` | 236 | 1 | 1 |

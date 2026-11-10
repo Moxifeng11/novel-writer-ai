@@ -10,6 +10,7 @@ import { getInfoDebtMax, FORCED_REVEAL_OVER_20, FORCED_REVEAL_OVER_15, FORCED_RE
 import { pjForeshadowDB, pjForeshadowTracker, pjTimelineDir, pjInfoDebtBoard, pjControlDir, isInCharsDir } from '@/shared/paths';
 import type { Notifier } from '@/shared/types';
 import { withWriteLock } from '@/shared/write-lock';
+import { writeInfoDebtBoard } from '@/shared/info-debt-board';
 import { NOOP_NOTIFIER } from '@/shared/types';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
 import { VectorEnhancer } from './vector-enhancer';
@@ -192,14 +193,8 @@ ${charStateMissing > 0 ? `- ⚠️ ${charStateMissing}个人物未填写当前�
                 await this.getFS().mkdir(dir);
             }
             
-            // v4.39：看板是 delete+write 两步，加锁避免并发刷新时读到「已删除但未写入」的空窗。
-            await withWriteLock(debtPath, async () => {
-                const existingDebt = this.getVaultMeta().getAbstractFileByPath(debtPath);
-                if (existingDebt) {
-                    await this.getFS().delete(debtPath);
-                }
-                await this.getFS().write(debtPath, debtContent);
-            });
+            // D3-17：统一走共享写入器（路径锁内覆盖写，不再 delete+write）
+            await writeInfoDebtBoard(debtPath, debtContent, (path, content) => this.getFS().write(path, content));
         } catch (e) {
             log.warn('Failed to write info debt board:', e);
             this.notifier.showNotice('⚠️ 信息债看板更新失败', NOTICE_ERROR);
