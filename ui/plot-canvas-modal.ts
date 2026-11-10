@@ -15,6 +15,7 @@ import type NovelWriterPlugin from '@/main';
 import { pjVolumeOutlineDir, pjStepDir } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
 import { writeVaultText } from '@/shared/file-system-port';
+import { moveArrayItem, moveArrayItemToInsert } from '@/shared/array-move';
 import { parseVolumeOutline, type VolumeNode, type ChapterNode } from './plot-canvas-parser';
 
 const log = createLogger('PlotCanvasModal');
@@ -211,6 +212,21 @@ export class PlotCanvasModal extends Modal {
                 card.setAttr('data-chap', String(ci));
                 this.bindDrag(card, vi, ci);
 
+                // 上移/下移（M3-3：触屏没有 HTML5 drag，移动端必须有点按入口）
+                const moveBar = card.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-4px-2' });
+                const upBtn = moveBar.createSpan({
+                    text: '▲',
+                    cls: 'nw-u-cur-pointer-2 nw-u-op-0-6 nw-u-fs-11px',
+                    attr: { title: '上移', 'aria-label': '上移章节' },
+                });
+                upBtn.addEventListener('click', (e) => { e.stopPropagation(); this.moveChapter(vi, ci, -1); });
+                const downBtn = moveBar.createSpan({
+                    text: '▼',
+                    cls: 'nw-u-cur-pointer-2 nw-u-op-0-6 nw-u-fs-11px',
+                    attr: { title: '下移', 'aria-label': '下移章节' },
+                });
+                downBtn.addEventListener('click', (e) => { e.stopPropagation(); this.moveChapter(vi, ci, 1); });
+
                 // 章节之间连线箭头
                 if (ci < vol.chapters.length - 1) {
                     flow.createDiv({ cls: 'nw-plot-arrow', text: '→' });
@@ -250,14 +266,32 @@ export class PlotCanvasModal extends Modal {
         if (volIndex === targetVol && chapIndex === targetChap) return;
 
         const srcVol = this.volumes[volIndex];
-        const [moved] = srcVol.chapters.splice(chapIndex, 1);
-        if (!moved) return;
+        if (!srcVol) return;
 
-        // 计算目标插入索引（跨卷时原数组已减一）
-        let insertIdx = targetChap;
-        if (volIndex === targetVol && chapIndex < targetChap) insertIdx = targetChap - 1;
+        if (volIndex === targetVol) {
+            // 同卷：插入坐标是移除前坐标，统一走 shared/array-move（M3-3）
+            if (!moveArrayItemToInsert(srcVol.chapters, chapIndex, targetChap)) return;
+        } else {
+            const [moved] = srcVol.chapters.splice(chapIndex, 1);
+            if (!moved) return;
+            this.volumes[targetVol].chapters.splice(targetChap, 0, moved);
+        }
 
-        this.volumes[targetVol].chapters.splice(insertIdx, 0, moved);
+        void this.saveAll();
+        this.refresh();
+    }
+
+    /**
+     * 上移/下移章节卡片（触屏入口；同卷内移动，保存后重排章号）。
+     *
+     * @param volIndex - 卷下标
+     * @param chapIndex - 当前章节下标
+     * @param delta - -1 上移 / 1 下移
+     */
+    private moveChapter(volIndex: number, chapIndex: number, delta: -1 | 1): void {
+        const vol = this.volumes[volIndex];
+        if (!vol) return;
+        if (!moveArrayItem(vol.chapters, chapIndex, chapIndex + delta)) return;
         void this.saveAll();
         this.refresh();
     }

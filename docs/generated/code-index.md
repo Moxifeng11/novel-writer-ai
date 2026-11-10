@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137533 | 1727 | 1418 | 82% |
 | `services/` | 32 | 13196 | 194 | 154 | 79% |
-| `shared/` | 192 | 42835 | 1681 | 1372 | 82% |
+| `shared/` | 193 | 42883 | 1683 | 1374 | 82% |
 | `core/` | 7 | 2840 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99778 | 754 | 649 | 86% |
+| `ui/` | 242 | 99867 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -391,6 +391,7 @@
 | `shared/api-format.ts` | 418 | 16 | 15 |
 | `shared/api-response-utils.ts` | 253 | 10 | 10 |
 | `shared/api-types.ts` | 18 | 1 | 1 |
+| `shared/array-move.ts` | 48 | 2 | 2 |
 | `shared/auto-context-block.ts` | 87 | 5 | 5 |
 | `shared/behavior-log.ts` | 132 | 7 | 7 |
 | `shared/body-format.ts` | 224 | 9 | 6 |
@@ -593,7 +594,7 @@
 | `ui/batch-novels-modal.ts` | 236 | 1 | 1 |
 | `ui/button-busy.ts` | 37 | 1 | 1 |
 | `ui/changelog-modal.ts` | 191 | 1 | 1 |
-| `ui/chapter-outline-tree-modal.ts` | 1283 | 1 | 1 |
+| `ui/chapter-outline-tree-modal.ts` | 1338 | 1 | 1 |
 | `ui/chapter-settlement-modal.ts` | 421 | 1 | 1 |
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
@@ -741,7 +742,7 @@
 | `ui/panel-resizer.ts` | 260 | 4 | 3 |
 | `ui/password-modal.ts` | 145 | 1 | 1 |
 | `ui/plan-book-modal.ts` | 558 | 1 | 1 |
-| `ui/plot-canvas-modal.ts` | 331 | 2 | 2 |
+| `ui/plot-canvas-modal.ts` | 365 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
 | `ui/polish-editor.ts` | 834 | 5 | 5 |
 | `ui/pre-research-modal.ts` | 710 | 2 | 2 |

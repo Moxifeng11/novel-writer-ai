@@ -4,6 +4,7 @@ import { pjVolumeOutlineDir, pjStepDir } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
 import { writeVaultText } from '@/shared/file-system-port';
 import { isImeComposing } from '@/shared/keyboard';
+import { moveArrayItem, moveArrayItemToInsert } from '@/shared/array-move';
 import { projectIdFromPath } from '@/shared/paths';
 import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
 
@@ -654,6 +655,20 @@ export class ChapterOutlineTreeModal extends Modal {
                 });
                 editBtn.addEventListener('click', (e) => { e.stopPropagation(); this.startEdit(chapRow, conflictSpan, chap); });
 
+                // 上移/下移（M3-3：触屏没有 HTML5 drag，移动端必须有点按入口）
+                const upBtn = chapRow.createSpan({
+                    text: '▲',
+                    cls: 'nw-u-cur-pointer-2 nw-u-op-0-6 nw-u-fs-11px nw-u-marginleft-4px-2',
+                    attr: { title: '上移', 'aria-label': '上移章节' },
+                });
+                upBtn.addEventListener('click', (e) => { e.stopPropagation(); this.moveChapter(vi, ci, -1); });
+                const downBtn = chapRow.createSpan({
+                    text: '▼',
+                    cls: 'nw-u-cur-pointer-2 nw-u-op-0-6 nw-u-fs-11px nw-u-marginleft-4px-2',
+                    attr: { title: '下移', 'aria-label': '下移章节' },
+                });
+                downBtn.addEventListener('click', (e) => { e.stopPropagation(); this.moveChapter(vi, ci, 1); });
+
                 // +场景按钮
                 if (chap.scenes.length > 0 || chap.sceneSourcePath) {
                     const addSceneBtn = chapRow.createSpan({
@@ -743,6 +758,20 @@ export class ChapterOutlineTreeModal extends Modal {
                         cls: 'nw-u-cur-pointer-2 nw-u-op-0-4 nw-u-fs-0-7em nw-u-marginleft-6px'
                     });
                     delSceneBtn.addEventListener('click', (e) => { e.stopPropagation(); this.deleteScene(chap, si); });
+
+                    // 上移/下移（触屏没有 HTML5 drag）
+                    const sceneUpBtn = sceneRow.createSpan({
+                        text: '▲',
+                        cls: 'nw-u-cur-pointer-2 nw-u-op-0-6 nw-u-fs-10px nw-u-marginleft-4px-2',
+                        attr: { title: '上移', 'aria-label': '上移场景' },
+                    });
+                    sceneUpBtn.addEventListener('click', (e) => { e.stopPropagation(); this.moveScene(chap, si, -1); });
+                    const sceneDownBtn = sceneRow.createSpan({
+                        text: '▼',
+                        cls: 'nw-u-cur-pointer-2 nw-u-op-0-6 nw-u-fs-10px nw-u-marginleft-4px-2',
+                        attr: { title: '下移', 'aria-label': '下移场景' },
+                    });
+                    sceneDownBtn.addEventListener('click', (e) => { e.stopPropagation(); this.moveScene(chap, si, 1); });
 
                     // 场景拖拽事件
                     sceneRow.addEventListener('dragstart', (e) => this.handleSceneDragStart(e, vi, ci, si));
@@ -901,6 +930,36 @@ export class ChapterOutlineTreeModal extends Modal {
         });
     }
 
+    /**
+     * 上移/下移场景（触屏入口；等价于同章内拖拽）。
+     *
+     * @param chap - 章节节点
+     * @param sceneIndex - 当前场景下标
+     * @param delta - -1 上移 / 1 下移
+     */
+    private moveScene(chap: ChapterNode, sceneIndex: number, delta: -1 | 1): void {
+        if (!moveArrayItem(chap.scenes, sceneIndex, sceneIndex + delta)) return;
+        this.reindexScenes(chap);
+        showSuccessNotice('场景顺序已调整（点击"保存所有修改"写入文件）', { timeout: 2000 });
+        this.render();
+    }
+
+    /**
+     * 上移/下移章节（触屏入口；同卷内移动，章号随顺序重排）。
+     *
+     * @param volIndex - 卷下标
+     * @param chapIndex - 当前章节下标
+     * @param delta - -1 上移 / 1 下移
+     */
+    private moveChapter(volIndex: number, chapIndex: number, delta: -1 | 1): void {
+        const vol = this.volumes[volIndex];
+        if (!vol) return;
+        if (!moveArrayItem(vol.chapters, chapIndex, chapIndex + delta)) return;
+        this.updateAllChapterNumbers();
+        showSuccessNotice('章节顺序已调整（点击"保存所有修改"写入文件）', { timeout: 2000 });
+        this.render();
+    }
+
     /** 场景拖拽状态 */
     private sceneDragState: {
         isDragging: boolean;
@@ -988,10 +1047,9 @@ export class ChapterOutlineTreeModal extends Modal {
         }
 
         const chap = this.volumes[draggedVolIndex].chapters[draggedChapIndex];
-        const scene = chap.scenes[draggedSceneIndex];
-
-        chap.scenes.splice(draggedSceneIndex, 1);
-        chap.scenes.splice(newIndex, 0, scene);
+        // M3-3：newIndex 是「移除前」的插入坐标，向下拖放到目标上半区时必须减一
+        // （旧实现直接 splice 会多走一位），统一走 shared/array-move 单一实现。
+        if (!moveArrayItemToInsert(chap.scenes, draggedSceneIndex, newIndex)) return;
 
         this.reindexScenes(chap);
         showSuccessNotice(`场景已重新排序（点击"保存所有修改"写入文件）`, { timeout: 2000 });
@@ -1071,12 +1129,9 @@ export class ChapterOutlineTreeModal extends Modal {
             const vol = this.volumes[draggedVolIndex];
             if (!vol) return;
 
-            if (draggedChapIndex < newIndex) {
-                newIndex--;
-            }
-
-            vol.chapters.splice(draggedChapIndex, 1);
-            vol.chapters.splice(newIndex, 0, draggedChap);
+            if (!moveArrayItemToInsert(vol.chapters, draggedChapIndex, newIndex)) return;
+            // 同卷移动后按实际落点提示（helper 内部会处理「向下拖减一」）
+            newIndex = vol.chapters.indexOf(draggedChap);
         } else {
             const sourceVol = this.volumes[draggedVolIndex];
             const targetVol = this.volumes[targetVolIndex];
