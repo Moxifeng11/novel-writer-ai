@@ -9,6 +9,7 @@ import { App, TFile } from 'obsidian';
 import { listFolderFiles } from '@/shared/vault-tree';
 import { pjVersionsDir, pluginDataFile } from '@/shared/paths';
 import type { VersionMeta } from '@/shared/version-types';
+import { detectSecretStorageModeFromJson, type SecretStorageMode } from '@/shared/secret-redaction';
 import { isSafeVersionEntry } from './chapter-version-service';
 
 /** 备份条目类型。 */
@@ -99,17 +100,38 @@ async function collectStepArtifacts(app: App, project: string): Promise<BackupCe
     return entries.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0)).slice(0, 80);
 }
 
+/**
+ * 备份条目的密钥形态说明。
+ *
+ * SEC-11：旧文案固定写「含密文」，但未启用会话口令时 data.json 本身就是明文，
+ * .bak 逐字节复制后同样是明文密钥副本。文案必须说真话，并提示分享风险。
+ */
+function settingsBackupDetail(mode: SecretStorageMode): string {
+    switch (mode) {
+        case 'encrypted':
+            return '设置迁移/回写前的插件配置备份（密钥为密文，不进 vault 索引）';
+        case 'plaintext':
+            return '设置迁移/回写前的插件配置备份（⚠ 含明文 API Key：未启用会话口令，请勿分享或同步此文件）';
+        case 'empty':
+            return '设置迁移/回写前的插件配置备份（当前无密钥字段，不进 vault 索引）';
+        default:
+            return '设置迁移/回写前的插件配置备份（无法判定密钥存储方式，不进 vault 索引）';
+    }
+}
+
 async function collectSettingsBackup(app: App): Promise<BackupCenterEntry[]> {
     try {
         const adapter = app.vault.adapter;
         const backupPath = pluginBackupPath();
         if (!(await adapter.exists(backupPath))) return [];
         const stat = await adapter.stat(backupPath).catch(() => null);
+        // 只读取用于判定「密文/明文」，内容不落日志、不进 UI
+        const mode = detectSecretStorageModeFromJson(await adapter.read(backupPath).catch(() => ''));
         return [{
             kind: 'settings-backup',
             path: backupPath,
-            label: 'data.json.bak',
-            detail: '设置迁移/回写前的插件配置备份（含密文，不进 vault 索引）',
+            label: mode === 'plaintext' ? 'data.json.bak（含明文密钥）' : 'data.json.bak',
+            detail: settingsBackupDetail(mode),
             updatedAt: stat?.mtime,
             size: stat?.size,
         }];

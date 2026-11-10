@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137381 | 1725 | 1416 | 82% |
-| `services/` | 32 | 12982 | 190 | 150 | 79% |
-| `shared/` | 185 | 42039 | 1652 | 1354 | 82% |
+| `engine/` | 319 | 137401 | 1725 | 1416 | 82% |
+| `services/` | 32 | 13004 | 190 | 150 | 79% |
+| `shared/` | 187 | 42433 | 1665 | 1360 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99635 | 753 | 649 | 86% |
+| `ui/` | 242 | 99640 | 753 | 649 | 86% |
 
 ## 文件清单
 
@@ -56,7 +56,7 @@
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
 | `engine/ai-api-client-shared.ts` | 86 | 6 | 5 |
 | `engine/ai-api-client.ts` | 961 | 1 | 1 |
-| `engine/ai-api-stream.ts` | 921 | 3 | 2 |
+| `engine/ai-api-stream.ts` | 923 | 3 | 2 |
 | `engine/ai-batch-entity-generator.ts` | 578 | 1 | 1 |
 | `engine/ai-chapter-helpers.ts` | 339 | 1 | 1 |
 | `engine/ai-character-generator.ts` | 426 | 1 | 1 |
@@ -99,7 +99,7 @@
 | `engine/co-writer/directional-prompt.ts` | 137 | 2 | 1 |
 | `engine/co-writer/evaluation-prompt.ts` | 102 | 2 | 1 |
 | `engine/co-writer/index.ts` | 69 | 3 | 1 |
-| `engine/co-writer/local-model-utils.ts` | 193 | 9 | 7 |
+| `engine/co-writer/local-model-utils.ts` | 194 | 9 | 7 |
 | `engine/co-writer/plot-nodes.ts` | 141 | 2 | 2 |
 | `engine/co-writer/plot-progress.ts` | 105 | 2 | 2 |
 | `engine/co-writer/session-state.ts` | 677 | 34 | 27 |
@@ -138,15 +138,15 @@
 | `engine/embedding/embedding-provider.ts` | 13 | 1 | 1 |
 | `engine/embedding/embedding-service.ts` | 53 | 4 | 4 |
 | `engine/embedding/index.ts` | 12 | 6 | 0 |
-| `engine/embedding/ollama-provider.ts` | 218 | 2 | 2 |
-| `engine/embedding/openai-provider.ts` | 233 | 2 | 2 |
+| `engine/embedding/ollama-provider.ts` | 219 | 2 | 2 |
+| `engine/embedding/openai-provider.ts` | 241 | 2 | 2 |
 | `engine/embedding/provider-factory.ts` | 209 | 4 | 4 |
 | `engine/embedding/qwen-provider.ts` | 51 | 2 | 2 |
 | `engine/emotion-auditor.ts` | 280 | 3 | 3 |
 | `engine/emotion-curve-analyzer.ts` | 220 | 1 | 1 |
 | `engine/emotion-planner.ts` | 212 | 7 | 4 |
 | `engine/ending-traction-engine.ts` | 418 | 1 | 1 |
-| `engine/engine-registry.ts` | 1499 | 13 | 3 |
+| `engine/engine-registry.ts` | 1507 | 13 | 3 |
 | `engine/entity-context-engine.ts` | 1098 | 10 | 2 |
 | `engine/entity-graph.ts` | 198 | 6 | 6 |
 | `engine/entity-link-migrator.ts` | 168 | 5 | 5 |
@@ -355,7 +355,7 @@
 | `engine/writing-profile.ts` | 566 | 8 | 8 |
 | `engine/writing-quality-engine.ts` | 1376 | 14 | 13 |
 | `services/api-connectivity-service.ts` | 317 | 8 | 8 |
-| `services/backup-center-service.ts` | 158 | 4 | 1 |
+| `services/backup-center-service.ts` | 180 | 4 | 1 |
 | `services/canon-research-service.ts` | 464 | 7 | 7 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
 | `services/chapter-version-service.ts` | 696 | 4 | 4 |
@@ -457,6 +457,7 @@
 | `shared/ghost-trigger.ts` | 26 | 1 | 1 |
 | `shared/github-repo.ts` | 81 | 11 | 11 |
 | `shared/http-request.ts` | 124 | 7 | 3 |
+| `shared/http-transport.ts` | 233 | 6 | 2 |
 | `shared/human-feature-rubric.ts` | 180 | 7 | 6 |
 | `shared/human-similarity.ts` | 333 | 11 | 11 |
 | `shared/info-debt.ts` | 70 | 3 | 3 |
@@ -516,12 +517,13 @@
 | `shared/rag/eval-score.ts` | 177 | 9 | 9 |
 | `shared/rag/neighbors.ts` | 110 | 3 | 3 |
 | `shared/rag/query-plan.ts` | 95 | 5 | 5 |
+| `shared/reload-state.ts` | 97 | 4 | 2 |
 | `shared/retrieval-filter.ts` | 109 | 6 | 5 |
 | `shared/rhythm-intent.ts` | 48 | 2 | 2 |
 | `shared/scene-body-merge.ts` | 24 | 2 | 2 |
 | `shared/scene-card.ts` | 241 | 9 | 8 |
 | `shared/secret-display.ts` | 126 | 7 | 4 |
-| `shared/secret-redaction.ts` | 87 | 3 | 3 |
+| `shared/secret-redaction.ts` | 151 | 6 | 5 |
 | `shared/serialized-writer.ts` | 199 | 3 | 3 |
 | `shared/session-retention.ts` | 186 | 6 | 6 |
 | `shared/settings-migrator.ts` | 303 | 7 | 7 |
@@ -760,7 +762,7 @@
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 433 | 6 | 5 |
-| `ui/settings-tab.ts` | 255 | 1 | 1 |
+| `ui/settings-tab.ts` | 260 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 151 | 1 | 1 |
 | `ui/settings/api-section.ts` | 1273 | 1 | 1 |

@@ -6,6 +6,7 @@
  * 让预算计算/num_ctx 不再依赖「未登记即 8192」的猜测。
  */
 import { createLogger } from '@/shared/logger';
+import { requestJson } from '@/shared/http-transport';
 import {
     getDetectedModelCapability,
     lookupModelCapability,
@@ -125,8 +126,7 @@ export async function probeOllamaModelCapability(
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), options?.timeoutMs ?? LOCAL_PROBE_TIMEOUT_MS);
         try {
-            const response = await fetch(`${base}/api/show`, {
-                method: 'POST',
+            const response = await requestJson(`${base}/api/show`, {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ model: modelId }),
                 signal: controller.signal,

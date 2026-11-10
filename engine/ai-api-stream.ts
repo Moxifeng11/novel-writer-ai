@@ -20,6 +20,7 @@ import { recordBudgetSnapshot } from '@/shared/budget-telemetry';
 import { buildAuthHeaders, parseSseFrame, usesDoneSentinel, type ApiFormat } from '@/shared/api-format';
 import { performanceMonitor } from '@/services/performance-monitor';
 import { createLogger } from '@/shared/logger';
+import { openStreamResponse } from '@/shared/http-transport';
 import { AIAuthError, errorMessage, isAuthErrorMessage } from './ai-api-client-shared';
 
 const log = createLogger('AiApiStream');
@@ -245,15 +246,16 @@ export async function callAIStream(
                             model: currentModel,
                             endpoint: endpoint.substring(0, 50),
                         });
-                        const response = await fetch(requestEndpoint, {
-                            method: 'POST',
+                        // O-1：移动端由 http-transport 缓冲 SSE 后合成 reader，
+                        // 桌面端仍是原生 fetch（ReadableStream + 取消语义不变）。
+                        const response = await openStreamResponse(requestEndpoint, {
                             headers: {
                                 'Content-Type': 'application/json',
                                 ...buildAuthHeaders(apiFormat, apiKey),
                                 'Accept': 'text/event-stream',
                             },
                             body: JSON.stringify(streamRequestBody),
-                            signal: ac.signal
+                            signal: ac.signal,
                         });
                         performanceMonitor.end(perfStreamFetchId, { status: response.status });
 
@@ -687,15 +689,15 @@ async function* nativeStreamIterator(
                         apiFormat,
                     );
 
-                    const response = await fetch(requestEndpoint, {
-                        method: 'POST',
+                    // O-1：移动端走 requestUrl 缓冲（无 CORS 限制），桌面端保持原生流式
+                    const response = await openStreamResponse(requestEndpoint, {
                         headers: {
                             'Content-Type': 'application/json',
                             ...buildAuthHeaders(apiFormat, apiKey),
                             'Accept': 'text/event-stream',
                         },
                         body: JSON.stringify(streamRequestBody),
-                        signal: ac.signal
+                        signal: ac.signal,
                     });
 
                     // 响应头到达后不清除计时器，改为「空闲超时」看门狗：

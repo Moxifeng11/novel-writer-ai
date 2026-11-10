@@ -56,6 +56,28 @@ describe('collectBackupCenter — 版本与备份中心', () => {
         expect(report.rollbackCount).toBe(0);
     });
 
+    it('SEC-11：配置备份文案按密钥形态说真话（明文必须警告）', async () => {
+        const plainVault = new Vault();
+        plainVault._seedFile('.obsidian/plugins/novel-writer-ai/data/data.json.bak', JSON.stringify({
+            apiKey: 'sk-plain-demo',
+        }));
+        const plain = await collectBackupCenter({ vault: plainVault } as never, P);
+        const plainEntry = plain.entries.find(entry => entry.kind === 'settings-backup');
+        expect(plainEntry?.label).toContain('明文密钥');
+        expect(plainEntry?.detail).toContain('含明文 API Key');
+        expect(plainEntry?.detail).not.toContain('密钥为密文');
+
+        const encryptedVault = new Vault();
+        encryptedVault._seedFile('.obsidian/plugins/novel-writer-ai/data/data.json.bak', JSON.stringify({
+            apiKey: 'aes256v2:iv:cipher',
+        }));
+        const encrypted = await collectBackupCenter({ vault: encryptedVault } as never, P);
+        const encryptedEntry = encrypted.entries.find(entry => entry.kind === 'settings-backup');
+        expect(encryptedEntry?.label).toBe('data.json.bak');
+        expect(encryptedEntry?.detail).toContain('密钥为密文');
+        expect(encryptedEntry?.detail).not.toContain('明文');
+    });
+
     it('SEC-1 残留：伪造索引条目（越界 sourcePath / contentKey 穿越）被过滤', async () => {
         const vault = new Vault();
         seedVersion(vault, '第1章', 1);

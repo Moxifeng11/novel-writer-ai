@@ -6,6 +6,7 @@
  */
 import { resolveProviderSourceType } from '@/shared/model-source';
 import { createLogger } from '@/shared/logger';
+import { requestJson } from '@/shared/http-transport';
 
 const log = createLogger('CoWriterEngine');
 
@@ -139,7 +140,7 @@ export async function fetchOllamaModels(): Promise<string[] | null> {
         const controller = new AbortController();
         const timeoutId = window.setTimeout(() => controller.abort(), 3000);
 
-        const response = await fetch(`${OLLAMA_ENDPOINT}/api/tags`, {
+        const response = await requestJson(`${OLLAMA_ENDPOINT}/api/tags`, {
             method: 'GET',
             signal: controller.signal,
         });

@@ -169,6 +169,7 @@ export type { AiTask, TaskBudgetOverride, ThinkingMode, ThinkingLevel } from './
 import { hasUsableAiCredentials } from './shared/ai-credentials';
 import { projectFromFilePath } from './domains/kernel/project-locator';
 import { listProjectIds } from '@/shared/project-catalog';
+import { consumePendingReloadState } from '@/shared/reload-state';
 import { createLogger } from './shared/logger';
 import { pruneSessions, SESSION_RETENTION_DEFAULTS } from './shared/session-retention';
 import type { PruneResult, RetentionTarget } from './shared/session-retention';
@@ -965,15 +966,20 @@ export default class NovelWriterPlugin extends Plugin {
                 })
             );
 
-            // P0-14/16: 热重载恢复（完全基于内存态 _pendingReloadState，不依赖 localStorage）
-            // — Obsidian 启动加载插件：_pendingReloadState 为 null → 不主动打开工作台
-            // — 用户点 🔄 热重载按钮：_pendingReloadState 已由按钮 handler 在 disable 前同步设置 → 调用 openFullWriterView 恢复
-            // — 用户点 ribbon 图标：_pendingReloadState 为 null → 打开工作台至「项目与章节」
+            // P0-14/16 + O-3: 热重载恢复
+            // — Obsidian 启动加载插件：没有交接状态 → 不主动打开工作台
+            // — 用户点 🔄 热重载按钮：旧实例在 disable 前把工作台位置写进
+            //   sessionStorage（10 分钟 TTL、读取即删），新实例 onload 在这里取回
+            // — 用户点 ribbon 图标：没有交接状态 → 打开工作台至「项目与章节」
             //
-            // 彻底清理所有可能的 localStorage 残留（旧实现遗留），防止跨会话污染
+            // 彻底清理旧实现遗留的 localStorage 键（跨会话污染），
+            // 一次性交接只走 sessionStorage。
             for (const key of LEGACY_STORAGE_KEYS) localStorage.removeItem(key);
+            const restoredReloadState = consumePendingReloadState();
+            if (restoredReloadState) {
+                this._pendingReloadState = restoredReloadState;
+            }
             if (this._pendingReloadState?.project) {
-                const saved = this._pendingReloadState;
                 setTimeout(() => {
                     this.openFullWriterView();
                 }, 300);
@@ -2082,9 +2088,10 @@ export default class NovelWriterPlugin extends Plugin {
         // 内存响应缓存与规则单例持有 App/整章文本，卸载时不能留给下一次热重载
         getPromptCache().clear();
         RulesService.resetInstance();
-        // P0-14/16: 不再向 localStorage 保存恢复状态。
-        // 热重载恢复完全通过内存态 _pendingReloadState 传递（按钮 handler 在 disable 前设置）。
-        // 这样 Obsidian 正常关闭→启动时不会有任何残留，工作台默认不打开。
+        // P0-14/16 + O-3: 不向 localStorage 保存恢复状态。
+        // 热重载交接由按钮 handler 写入 sessionStorage（10 分钟 TTL、读取即删），
+        // 新实例 onload 消费一次；Obsidian 正常关闭→启动时 sessionStorage 已随窗口清空，
+        // 因此不会有跨会话残留，工作台默认不打开。
         for (const key of LEGACY_STORAGE_KEYS) localStorage.removeItem(key);
         // v5.5: 卸载时关闭分离式浮窗（监控面板A/B + 协同写作视图叶子），避免残留空叶子。
         this.workspaceManager?.closeAll();

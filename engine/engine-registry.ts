@@ -161,6 +161,7 @@ import { resolvePluginWorkerUrl } from '@/shared/plugin-worker-url';
 import { TemplateService } from './template-service';
 import { ChapterVersionService } from '@/services/chapter-version-service';
 import { createLogger } from '@/shared/logger';
+import { detectSecretStorageModeFromJson } from '@/shared/secret-redaction';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 
 const log = createLogger('EngineRegistry');
@@ -1191,7 +1192,14 @@ export class EngineRegistry {
                 const adapter = plugin.app.vault.adapter;
                 if (!(await adapter.exists(source))) return;
                 try {
-                    await adapter.write(`${dir}/data.json.bak`, await adapter.read(source));
+                    const raw = await adapter.read(source);
+                    await adapter.write(`${dir}/data.json.bak`, raw);
+                    // SEC-11：.bak 是逐字节副本，加密状态与 data.json 完全一致。
+                    // 未启用会话口令时这里就是一份明文 API Key 副本，必须留痕，
+                    // 避免用户把 .bak 当「密文备份」分享/同步出去。
+                    if (detectSecretStorageModeFromJson(raw) === 'plaintext') {
+                        log.warn(`[EngineRegistry] 设置备份包含明文 API Key（未启用会话口令）：${reason}。请勿分享或同步 data.json.bak`);
+                    }
                     log.info(`[EngineRegistry] 已备份设置：${reason}`);
                 } catch (e) {
                     log.warn('[EngineRegistry] 设置备份失败（继续迁移）:', e);

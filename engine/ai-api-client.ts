@@ -36,6 +36,7 @@ import {
     type ApiFormat,
 } from '@/shared/api-format';
 import { createLogger } from '@/shared/logger';
+import { requestJson } from '@/shared/http-transport';
 import {
     AIAuthError,
     errorMessage,
@@ -634,14 +635,13 @@ export class AIApiClient {
                         model: currentModel,
                         endpoint: endpoint.substring(0, 50),
                     });
-                    const response = await fetch(requestEndpoint, {
-                        method: 'POST',
+                    const response = await requestJson(requestEndpoint, {
                         headers: {
                             'Content-Type': 'application/json',
                             ...buildAuthHeaders(apiFormat, apiKey),
                         },
                         body: JSON.stringify(requestBody),
-                        signal: ac.signal
+                        signal: ac.signal,
                     });
                     performanceMonitor.end(perfFetchId, { status: response.status });
 

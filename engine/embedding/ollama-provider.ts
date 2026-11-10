@@ -1,5 +1,6 @@
 import type { EmbeddingProvider, EmbeddingAvailability, ProviderInfo, EmbeddingOptions } from './embedding-provider';
 import { createLogger } from '@/shared/logger';
+import { requestJson } from '@/shared/http-transport';
 
 
 const log = createLogger('OllamaProvider');
@@ -60,8 +61,8 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
         }
 
         try {
-            const response = await fetch(endpoint, {
-                method: 'POST',
+            // O-1：移动端 fetch 无 CORS 豁免，交由 http-transport 走 requestUrl
+            const response = await requestJson(endpoint, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -77,7 +78,7 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
                 throw new Error(`Ollama embedding API error (HTTP ${response.status}): ${errorText}`);
             }
 
-            const data = await response.json();
+            const data = await response.json<{ embedding?: number[] }>();
             const embedding = data.embedding;
 
             if (!embedding || !Array.isArray(embedding)) {

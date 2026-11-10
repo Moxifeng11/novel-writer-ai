@@ -39,6 +39,7 @@ import {
 import { AgentBackendSection } from './settings/agent-section';
 import { ModeSection } from './settings/mode-section';
 import { SETTINGS_TAB_DEFINITIONS } from './settings/section-factory';
+import { savePendingReloadState } from '@/shared/reload-state';
 
 const SETTINGS_TABS: ReadonlyArray<{ id: string; label: string; group: 'primary' | 'advanced' }> =
     SETTINGS_TAB_DEFINITIONS.map(({ id, label, group }) => ({ id, label, group }));
@@ -180,12 +181,16 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             const leaves = this.app.workspace.getLeavesOfType('novel-writer-full-writer');
             if (leaves.length > 0) {
                 const view = leaves[0].view as unknown as { project?: string; chapterName?: string; volume?: string; chapDir?: string };
-                this.plugin._pendingReloadState = {
+                const pending = {
                     project: view.project || '',
                     chapterFileName: view.chapterName || '',
                     volume: view.volume || '',
                     chapDir: view.chapDir || ''
                 };
+                this.plugin._pendingReloadState = pending;
+                // O-3：新实例拿不到旧实例的内存字段，必须落到同一窗口的
+                // sessionStorage（10 分钟 TTL、读取即删），否则「自动恢复」是空话。
+                if (pending.project) savePendingReloadState(pending);
             }
             // Obsidian 开发者政策禁止插件自行 disable/enable 自身（会被判为
             // 「静默执行新下载代码」而拒绝上架）。改为提示用户手动切换；

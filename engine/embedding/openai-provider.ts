@@ -1,5 +1,7 @@
 import type { EmbeddingProvider, EmbeddingAvailability, ProviderInfo, EmbeddingOptions } from './embedding-provider';
 import { createLogger } from '@/shared/logger';
+import { HttpRequestTimeoutError } from '@/shared/http-request';
+import { requestJson, type TransportResponse } from '@/shared/http-transport';
 
 
 const log = createLogger('OpenaiProvider');
@@ -16,18 +18,24 @@ export interface OpenAIProviderOptions {
 /** 嵌入请求超时：服务端挂起时不能让批量向量化永久等待 */
 const EMBED_TIMEOUT_MS = 60_000;
 
-async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), EMBED_TIMEOUT_MS);
+/**
+ * 发送嵌入请求。
+ *
+ * O-1：移动端 fetch 无 CORS 豁免，统一交给 http-transport 走 requestUrl；
+ * 桌面端仍是原生 fetch（保留取消/流式语义）。
+ */
+async function postEmbedding(
+    url: string,
+    headers: Record<string, string>,
+    body: string,
+): Promise<TransportResponse> {
     try {
-        return await fetch(url, { ...init, signal: controller.signal });
+        return await requestJson(url, { headers, body, timeoutMs: EMBED_TIMEOUT_MS });
     } catch (e) {
-        if (controller.signal.aborted) {
+        if (e instanceof HttpRequestTimeoutError) {
             throw new Error(`嵌入请求超时（${EMBED_TIMEOUT_MS / 1000}s）：请检查网络或端点响应`);
         }
         throw e;
-    } finally {
-        clearTimeout(timer);
     }
 }
 
@@ -68,24 +76,24 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
     async embed(text: string, _options?: EmbeddingOptions): Promise<number[]> {
         const endpoint = `${this.baseUrl}/embeddings`;
 
-        const response = await fetchWithTimeout(endpoint, {
-            method: 'POST',
-            headers: {
+        const response = await postEmbedding(
+            endpoint,
+            {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${this.apiKey}`,
             },
-            body: JSON.stringify({
+            JSON.stringify({
                 model: this.model,
                 input: text,
             }),
-        });
+        );
 
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`OpenAI embedding API error (HTTP ${response.status}): ${errorText}`);
         }
 
-        const data = await response.json();
+        const data = await response.json<{ data?: Array<{ embedding?: number[] }> }>();
         const embedding = data.data?.[0]?.embedding;
 
         if (!embedding || !Array.isArray(embedding)) {
@@ -109,24 +117,24 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
     async embedBatch(texts: string[], _options?: EmbeddingOptions): Promise<number[][]> {
         const endpoint = `${this.baseUrl}/embeddings`;
 
-        const response = await fetchWithTimeout(endpoint, {
-            method: 'POST',
-            headers: {
+        const response = await postEmbedding(
+            endpoint,
+            {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${this.apiKey}`,
             },
-            body: JSON.stringify({
+            JSON.stringify({
                 model: this.model,
                 input: texts,
             }),
-        });
+        );
 
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`OpenAI embedding API error (HTTP ${response.status}): ${errorText}`);
         }
 
-        const data = await response.json();
+        const data = await response.json<{ data?: Array<{ index: number; embedding: number[] }> }>();
         const embeddings = data.data;
 
         if (!Array.isArray(embeddings) || embeddings.length === 0) {

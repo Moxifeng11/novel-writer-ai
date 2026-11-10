@@ -84,3 +84,67 @@ export function containsPlaintextSecret(input: unknown): boolean {
     };
     return walk(input);
 }
+
+/** 密钥在磁盘上的存储形态（用于备份文案/告警，不参与解密） */
+export type SecretStorageMode = 'encrypted' | 'plaintext' | 'empty' | 'unknown';
+
+/** 与 core/settings-service 的密文前缀保持一致（v2 会话口令 / v1 旧格式） */
+const CIPHER_PREFIX_PATTERN = /^(?:aes256v2:|aes256:)/;
+
+/** 取出顶层已知密钥字段的值（含 providerKeys 映射与 canonResearch.apiKey） */
+function collectSecretValues(input: Record<string, unknown>): string[] {
+    const values: string[] = [];
+    for (const [key, value] of Object.entries(input)) {
+        if (typeof value === 'string' && SECRET_KEY_PATTERN.test(key)) {
+            values.push(value);
+            continue;
+        }
+        if (SECRET_MAP_PATTERN.test(key) && isPlainObject(value)) {
+            for (const inner of Object.values(value)) {
+                if (typeof inner === 'string') values.push(inner);
+            }
+        }
+    }
+    if (isPlainObject(input.canonResearch) && typeof input.canonResearch.apiKey === 'string') {
+        values.push(input.canonResearch.apiKey);
+    }
+    return values.filter((value) => value.length > 0 && value !== REDACTED_VALUE);
+}
+
+/**
+ * 判定一份设置对象里的密钥是密文还是明文。
+ *
+ * 只要有一个非空密钥不是密文前缀，就按「明文」报告——备份文案不能把
+ * 混合/未知状态说成「含密文」；宁可多警告，也不能给用户虚假的安全感。
+ *
+ * @param input - 已 parse 的 data.json 内容
+ * @returns 存储形态；非对象输入返回 `unknown`
+ *
+ * @example
+ * detectSecretStorageMode({ apiKey: 'sk-xxx' }) // 'plaintext'
+ * detectSecretStorageMode({ apiKey: 'aes256v2:...' }) // 'encrypted'
+ * detectSecretStorageMode({}) // 'empty'
+ */
+export function detectSecretStorageMode(input: unknown): SecretStorageMode {
+    if (!isPlainObject(input)) return 'unknown';
+    const values = collectSecretValues(input);
+    if (values.length === 0) return 'empty';
+    return values.every((value) => CIPHER_PREFIX_PATTERN.test(value)) ? 'encrypted' : 'plaintext';
+}
+
+/**
+ * 从 data.json / data.json.bak 的原始文本判定密钥存储形态。
+ *
+ * @param raw - 文件文本
+ * @returns 存储形态；JSON 解析失败返回 `unknown`
+ *
+ * @example
+ * detectSecretStorageModeFromJson('{"apiKey":"aes256v2:abc"}') // 'encrypted'
+ */
+export function detectSecretStorageModeFromJson(raw: string): SecretStorageMode {
+    try {
+        return detectSecretStorageMode(JSON.parse(raw) as unknown);
+    } catch {
+        return 'unknown';
+    }
+}

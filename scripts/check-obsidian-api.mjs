@@ -58,15 +58,12 @@ const RULES = [
     },
     {
         id: 'direct-fetch',
-        description: '非流式 HTTP 必须 requestUrl（移动端 fetch 无 CORS 豁免）；流式 SSE 才允许 fetch',
+        description: 'HTTP 必须经 shared/http-transport（移动端 requestUrl）；禁止直接 fetch',
         pattern: /await fetch\(/,
-        allow: [
-            'engine/ai-api-stream.ts',
-            'engine/ai-api-client.ts',
-            'engine/embedding/',
-            'engine/co-writer/local-model-utils.ts',
-            'services/local-model-probe.ts',
-        ],
+        // O-1（2026-11-10）：生成/向量化/本地探测全部收口到 http-transport，
+        // 移动端走 requestUrl、桌面端走 fetch。白名单只留传输层本身（唯一出口），
+        // 业务代码新增任何直连 fetch 都会在 CI 失败。
+        allow: ['shared/http-transport.ts'],
     },
     {
         id: 'global-document-listener',
