@@ -31,7 +31,11 @@ export type EntityResolver = (name: string) => EntityLookup | EntityLookup[] | n
 /**
  * 解析台账里的实体引用并生成关联边。
  *
- * @param ledger - 台账（会就地补全 EntityRef）
+ * 纯函数（D3-10）：不修改传入的 ledger（refs/links/issues 都不动）。台账是
+ * 会话级缓存，就地写 `ref.resolved=true` 会让「已删除实体」在下次渲染时仍按
+ * 旧解析结果连边，向 ledger.issues 追加还会让问题数每次调用翻倍。
+ *
+ * @param ledger - 台账（只读）
  * @param resolver - 实体解析器
  * @returns 关联边与问题
  */
@@ -40,7 +44,7 @@ export function buildLedgerLinks(ledger: LedgerLike, resolver: EntityResolver): 
     const issues: LedgerIssue[] = [];
     let counter = 0;
 
-    const resolveRef = (ref: { id: string; name: string; kind: string; path?: string; resolved: boolean }, sourcePath: string, lineNo: number, recordId: string): void => {
+    const resolveRef = (ref: { name: string }, sourcePath: string, lineNo: number, recordId: string): EntityLookup | null => {
         const found = resolver(ref.name);
         if (!found) {
             issues.push({
@@ -51,7 +55,7 @@ export function buildLedgerLinks(ledger: LedgerLike, resolver: EntityResolver): 
                 recordId,
                 severity: 'medium',
             });
-            return;
+            return null;
         }
         const list = Array.isArray(found) ? found : [found];
         if (list.length > 1) {
@@ -63,22 +67,19 @@ export function buildLedgerLinks(ledger: LedgerLike, resolver: EntityResolver): 
                 recordId,
                 severity: 'medium',
             });
-            return;
+            return null;
         }
-        ref.id = list[0].id;
-        ref.kind = list[0].kind;
-        ref.path = list[0].path;
-        ref.resolved = true;
+        return list[0];
     };
 
     for (const event of ledger.events) {
         for (const ref of event.entityRefs) {
-            resolveRef(ref, event.sourcePath, event.lineNo, event.id);
-            if (!ref.resolved) continue;
+            const target = resolveRef(ref, event.sourcePath, event.lineNo, event.id);
+            if (!target) continue;
             links.push({
                 id: `LNK-${++counter}`,
                 from: event.id,
-                to: ref.id,
+                to: target.id,
                 kind: 'mention',
                 weight: 3,
                 chapterNum: event.chapterNum,
@@ -113,12 +114,12 @@ export function buildLedgerLinks(ledger: LedgerLike, resolver: EntityResolver): 
 
     for (const foreshadow of ledger.foreshadows) {
         for (const ref of foreshadow.relatedRefs) {
-            resolveRef(ref, foreshadow.sourcePath, foreshadow.lineNo, foreshadow.id);
-            if (!ref.resolved) continue;
+            const target = resolveRef(ref, foreshadow.sourcePath, foreshadow.lineNo, foreshadow.id);
+            if (!target) continue;
             links.push({
                 id: `LNK-${++counter}`,
                 from: foreshadow.id,
-                to: ref.id,
+                to: target.id,
                 kind: 'related',
                 weight: 3,
                 chapterNum: null,
@@ -153,7 +154,6 @@ export function buildLedgerLinks(ledger: LedgerLike, resolver: EntityResolver): 
             unique.set(key, link);
         }
     }
-    ledger.issues.push(...issues);
     return { links: [...unique.values()], issues };
 }
 

@@ -41,6 +41,9 @@ export interface WritingStatsAppLike {
             read(path: string): Promise<string>;
             write(path: string, data: string): Promise<void>;
             mkdir(path: string): Promise<void>;
+            /** 原子写与损坏留档用；旧版 Obsidian/测试替身可缺省 */
+            rename?(oldPath: string, newPath: string): Promise<void>;
+            remove?(path: string): Promise<void>;
         };
     };
     metadataCache: {
@@ -119,6 +122,8 @@ export class WritingStatsService {
             }
         } catch (e) {
             log.warn('[WritingStats] 台账读取失败，按空台账继续:', e);
+            // D3-11：损坏台账先留档再重置，否则下一次 persist 会把历史日产出永久覆盖
+            await this.archiveCorruptLedger();
             this.data = createEmptyWritingStats();
         }
         this.loaded = true;
@@ -223,6 +228,54 @@ export class WritingStatsService {
     }
 
     /**
+     * 项目改名/移动后迁移台账键（D3-11）。
+     *
+     * 旧实现改名后旧项目快照被 prune、新路径按首次出现整书重计，
+     * 导致「统计虚高 + 归属错误」。这里把 projects 键合并、files 路径前缀改写。
+     *
+     * @param oldProject - 旧项目路径（两级，如 长篇小说/书A）
+     * @param newProject - 新项目路径
+     * @returns 是否发生了迁移
+     */
+    async migrateProjectPath(oldProject: string, newProject: string): Promise<boolean> {
+        if (!oldProject || !newProject || oldProject === newProject) return false;
+        await this.load();
+
+        let changed = false;
+        const oldDays = this.data.projects[oldProject];
+        if (oldDays) {
+            const merged: Record<string, number> = { ...(this.data.projects[newProject] ?? {}) };
+            for (const [date, words] of Object.entries(oldDays)) {
+                merged[date] = (merged[date] ?? 0) + words;
+            }
+            this.data.projects[newProject] = merged;
+            delete this.data.projects[oldProject];
+            changed = true;
+        }
+
+        for (const [path, snapshot] of Object.entries(this.data.files)) {
+            const inProject = path.startsWith(`${oldProject}/`);
+            if (!inProject && snapshot.project !== oldProject) continue;
+            if (inProject) {
+                const nextPath = `${newProject}/${path.slice(oldProject.length + 1)}`;
+                this.data.files[nextPath] = { ...snapshot, project: newProject };
+                delete this.data.files[path];
+            } else {
+                this.data.files[path] = { ...snapshot, project: newProject };
+            }
+            changed = true;
+        }
+
+        if (changed) {
+            this.dirty = true;
+            this.persistVersion++;
+            await this.persistNow();
+            this.emit();
+        }
+        return changed;
+    }
+
+    /**
      * 获取报告。
       * @returns StatsReport 实例
      */
@@ -314,15 +367,44 @@ export class WritingStatsService {
         }, 1500);
     }
 
+    /**
+     * 把损坏台账改名为 `.corrupt-<ts>.bak` 留档（D3-11）。
+     */
+    private async archiveCorruptLedger(): Promise<void> {
+        const adapter = this.deps.app.vault.adapter;
+        try {
+            if (typeof adapter.rename !== 'function') return;
+            if (!(await adapter.exists(this.deps.ledgerPath))) return;
+            await adapter.rename(this.deps.ledgerPath, `${this.deps.ledgerPath}.corrupt-${Date.now()}.bak`);
+        } catch {
+            // 归档失败不阻断启动；至少不会静默删除原文件
+        }
+    }
+
     private async persistNow(): Promise<void> {
         const version = this.persistVersion;
+        const adapter = this.deps.app.vault.adapter;
         try {
             const dir = this.deps.ledgerPath.slice(0, this.deps.ledgerPath.lastIndexOf('/'));
-            if (dir && !(await this.deps.app.vault.adapter.exists(dir))) {
-                await this.deps.app.vault.adapter.mkdir(dir);
+            if (dir && !(await adapter.exists(dir))) {
+                await adapter.mkdir(dir);
             }
-            // write-entry-allow: 字数台账是 JSON，位于插件数据目录。
-            await this.deps.app.vault.adapter.write(this.deps.ledgerPath, JSON.stringify(this.data));
+            const json = JSON.stringify(this.data);
+            if (typeof adapter.rename === 'function') {
+                // D3-11：tmp + rename，崩溃/断电不会留下半写 JSON
+                const tmpPath = `${this.deps.ledgerPath}.tmp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+                try {
+                    // write-entry-allow: 字数台账是 JSON，位于插件数据目录。
+                    await adapter.write(tmpPath, json);
+                    await adapter.rename(tmpPath, this.deps.ledgerPath);
+                } catch (e) {
+                    try { await adapter.remove?.(tmpPath); } catch { /* 临时文件不存在时忽略 */ }
+                    throw e;
+                }
+            } else {
+                // write-entry-allow: 字数台账是 JSON，位于插件数据目录。
+                await adapter.write(this.deps.ledgerPath, json);
+            }
             // 写成功后只清掉本次版本；写盘期间的新变更保持 dirty，等下一轮
             if (this.persistVersion === version) this.dirty = false;
         } catch (e) {

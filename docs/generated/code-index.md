@@ -6,8 +6,8 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137610 | 1727 | 1418 | 82% |
-| `services/` | 32 | 13296 | 194 | 154 | 79% |
+| `engine/` | 319 | 137614 | 1727 | 1418 | 82% |
+| `services/` | 32 | 13378 | 194 | 154 | 79% |
 | `shared/` | 193 | 42883 | 1683 | 1374 | 82% |
 | `core/` | 7 | 2840 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
@@ -108,7 +108,7 @@
 | `engine/conflict-detector.ts` | 247 | 4 | 1 |
 | `engine/content-safety-checker.ts` | 123 | 5 | 5 |
 | `engine/context-compressor.ts` | 342 | 2 | 2 |
-| `engine/context-manager.ts` | 2654 | 3 | 3 |
+| `engine/context-manager.ts` | 2658 | 3 | 3 |
 | `engine/context-readiness.ts` | 243 | 3 | 3 |
 | `engine/context/association-resolver.ts` | 283 | 6 | 2 |
 | `engine/context/context-diff-detector.ts` | 403 | 5 | 4 |
@@ -385,7 +385,7 @@
 | `services/worker-protocol.ts` | 121 | 12 | 12 |
 | `services/worker-runtime.ts` | 278 | 8 | 8 |
 | `services/worldview-cache-service.ts` | 627 | 4 | 4 |
-| `services/writing-stats-service.ts` | 343 | 6 | 6 |
+| `services/writing-stats-service.ts` | 425 | 6 | 6 |
 | `shared/adaptive-debounce-manager.ts` | 315 | 2 | 2 |
 | `shared/ai-credentials.ts` | 55 | 2 | 2 |
 | `shared/api-format.ts` | 418 | 16 | 15 |

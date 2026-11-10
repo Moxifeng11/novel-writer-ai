@@ -2481,7 +2481,7 @@ ${usable}`;
         try {
             const ledger = await loadStoryLedger(this.app, project);
             const entityIndex = EntityIndex.build(this.app, project);
-            const { links } = buildLedgerLinks(ledger, (name) => {
+            const { links, issues } = buildLedgerLinks(ledger, (name) => {
                 const resolution = entityIndex.resolve(name);
                 if (resolution.unresolved) return null;
                 return resolution.matches.map((match) => ({
@@ -2491,8 +2491,12 @@ ${usable}`;
                     path: match.path,
                 }));
             });
-            ledger.links = links;
-            const content = renderLinkageIndex(ledger, this.formatTimestamp());
+            // D3-10：台账是会话级缓存，渲染用副本，不把 links/issues 写回缓存对象
+            const content = renderLinkageIndex({
+                ...ledger,
+                links,
+                issues: [...ledger.issues, ...issues],
+            }, this.formatTimestamp());
             const indexPath = pjStoryLedgerIndex(project);
             await withWriteLock(indexPath, async () => {
                 await this.getFS().mkdir(pjStoryLedgerDir(project)).catch(() => {});

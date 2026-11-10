@@ -868,6 +868,10 @@ export default class NovelWriterPlugin extends Plugin {
                 this.app.vault.on('rename', (file, oldPath) => {
                     if (file instanceof TFolder) {
                         new Notice(`📁 项目已重命名: ${oldPath} → ${file.path}`, 4000);
+                        // D3-11：项目级目录改名时迁移字数台账键（两级路径才算项目）
+                        if (oldPath.split('/').length === 2) {
+                            void this._writingStats?.migrateProjectPath(oldPath, file.path);
+                        }
                     }
                 })
             );

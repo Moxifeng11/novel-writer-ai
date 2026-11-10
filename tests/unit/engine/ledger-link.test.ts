@@ -47,7 +47,8 @@ describe('buildLedgerLinks — resolver 三态', () => {
         expect(links).toHaveLength(0);
         expect(issues).toHaveLength(1);
         expect(issues[0]).toMatchObject({ type: 'unresolved-entity', severity: 'medium', recordId: 'EV-1' });
-        expect(ledger.issues).toEqual(issues);
+        // D3-10：纯函数不把 issues 写回缓存台账
+        expect(ledger.issues).toHaveLength(0);
     });
 
     it('同名多实体：记 ambiguous-entity issue，不静默选第一个', () => {
@@ -61,7 +62,7 @@ describe('buildLedgerLinks — resolver 三态', () => {
         expect(issues[0].message).toContain('甲.md、乙.md');
     });
 
-    it('命中实体：ref 就地补全，事件产 mention 边（weight 3）', () => {
+    it('命中实体：产 mention 边（weight 3），不改写缓存 ref', () => {
         const ledger = mkLedger(
             [mkEvent({ id: 'EV-1', name: '入门', chapterNum: 2, chapterKey: '第2章', entityRefs: [{ id: '', name: '林玄', kind: 'unknown', resolved: false }] })],
             [],
@@ -69,7 +70,8 @@ describe('buildLedgerLinks — resolver 三态', () => {
         const { links } = buildLedgerLinks(ledger, ENTITY_RESOLVER);
         expect(links).toHaveLength(1);
         expect(links[0]).toMatchObject({ from: 'EV-1', to: 'ENT-林玄', kind: 'mention', weight: 3, chapterNum: 2, source: 'explicit' });
-        expect(ledger.events[0].entityRefs[0]).toMatchObject({ id: 'ENT-林玄', resolved: true, path: '林玄.md' });
+        // D3-10：refs 保持原样（缓存台账不被就地改写）
+        expect(ledger.events[0].entityRefs[0]).toMatchObject({ id: '', resolved: false });
     });
 });
 
