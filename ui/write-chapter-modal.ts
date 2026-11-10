@@ -659,67 +659,10 @@ ${reportResult.content}
             });
 
 
-            try {
-                let currentBody = await app.vault.read(bodyFile);
-                let newFm = currentBody.match(/^---\n[\s\S]*?\n---\n/)?.[0] || '';
-                if (newFm) {
-                    newFm = newFm.includes('status:')
-                        ? newFm.replace(/status:.*/, 'status: written')
-                        : newFm.replace(/^---\n/, '---\nstatus: written\n');
-
-                    const reportChars = reportResult.content;
-                    const charLinks = reportChars.match(/\[\[(.*?)\]\]/g) || [];
-                    const charNames = [...new Set(charLinks.map(l => l.replace(/[\[\]]/g, '').trim()))];
-                    if (charNames.length > 0) {
-                        const yamlList = charNames.map(n => `  - "[[${n}]]"`).join('\n');
-                        if (newFm.includes('涉及人物:')) {
-                            const listRegex = /涉及人物:\n(?:  .*\n?)*/;
-                            newFm = newFm.replace(listRegex, `涉及人物:\n${yamlList}\n`);
-                        } else {
-                            newFm = newFm.replace(/^---\n/, `---\n涉及人物:\n${yamlList}\n`);
-                        }
-                    }
-
-                    const locNames: string[] = [];
-                    for (const line of reportResult.content.split('\n')) {
-                        const m = line.match(/NEW_LOCATION:\s*(.*?)\s*\|/);
-                        if (m) locNames.push(m[1].trim());
-                    }
-                    if (locNames.length > 0) {
-                        const yamlList = locNames.map(n => `  - "[[${n}]]"`).join('\n');
-                        if (newFm.includes('涉及地点:')) {
-                            const listRegex = /涉及地点:\n(?:  .*\n?)*/;
-                            newFm = newFm.replace(listRegex, `涉及地点:\n${yamlList}\n`);
-                        } else {
-                            newFm = newFm.replace(/^---\n/, `---\n涉及地点:\n${yamlList}\n`);
-                        }
-                    }
-
-                    const facNames: string[] = [];
-                    for (const line of reportResult.content.split('\n')) {
-                        const m = line.match(/NEW_FACTION:\s*(.*?)\s*\|/);
-                        if (m) facNames.push(m[1].trim());
-                    }
-                    if (facNames.length > 0) {
-                        const yl = facNames.map(n => `  - "[[${n}]]"`).join('\n');
-                        newFm = newFm.includes('涉及势力:') ? newFm.replace(/涉及势力:\n(?:  .*\n?)*/, `涉及势力:\n${yl}\n`) : newFm.replace(/^---\n/, `---\n涉及势力:\n${yl}\n`);
-                    }
-
-                    const itemNames: string[] = [];
-                    for (const line of reportResult.content.split('\n')) {
-                        const m = line.match(/NEW_ITEM:\s*(.*?)\s*\|\s*(.*)/);
-                        if (m) itemNames.push(m[1].trim());
-                    }
-                    if (itemNames.length > 0) {
-                        const yl = itemNames.map(n => `  - "[[${n}]]"`).join('\n');
-                        newFm = newFm.includes('涉及物品功法:') ? newFm.replace(/涉及物品功法:\n(?:  .*\n?)*/, `涉及物品功法:\n${yl}\n`) : newFm.replace(/^---\n/, `---\n涉及物品功法:\n${yl}\n`);
-                    }
-
-                    const updatedBody = newFm + currentBody.replace(/^---\n[\s\S]*?\n---\n/, '');
-                    await app.vault.modify(bodyFile, updatedBody);
-                }
-            } catch (e) { log.warn('frontmatter更新失败:', e); }
-
+            // D-1（2026-11-10 数据一致性审计）：结算成功后不再二次改写正文 frontmatter。
+            // settleStep_updateBodyFrontmatter 已在正文锁内写入 status: settled 与涉及* 名单；
+            // 旧实现在这里无锁整篇改写并把 status 改回 written，违反「settled 不降级」，
+            // 还会与自动保存/协同写入互相覆盖。报告里的 NEW_* 名单已由结算指令消费。
             if (writeResult.title) {
                 try {
                     const baseName = getChapterFileName(chapName, '正文');

@@ -11,7 +11,7 @@
 | `shared/` | 187 | 42433 | 1665 | 1360 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99685 | 753 | 649 | 86% |
+| `ui/` | 242 | 99628 | 753 | 649 | 86% |
 
 ## 文件清单
 
@@ -808,7 +808,7 @@
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 562 | 2 | 1 |
 | `ui/workspace-manager.ts` | 144 | 2 | 2 |
-| `ui/write-chapter-modal.ts` | 903 | 1 | 1 |
+| `ui/write-chapter-modal.ts` | 846 | 1 | 1 |
 | `ui/writing-pet.ts` | 290 | 2 | 2 |
 | `ui/writing-stats-modal.ts` | 245 | 1 | 1 |
 | `ui/writing-stats-settings.ts` | 70 | 1 | 1 |

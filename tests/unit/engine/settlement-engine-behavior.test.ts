@@ -260,6 +260,8 @@ describe('SettlementEngine — 成功结算', () => {
 
         const body = h.files.get(BODY_PATH)!;
         expect(body).toContain('status: settled');
+        // D-1：涉及* 名单由结算在锁内写入，一键成文无需再二次改写正文
+        expect(parseFm(body).fm['涉及人物']).toEqual(['甲']);
     });
 
     it('item6-a：EMOTION 指令写 entity_last_changed_at 为 ISO、章名入 entity_last_changed_chapter', async () => {
