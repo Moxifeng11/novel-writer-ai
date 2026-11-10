@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137381 | 1725 | 1416 | 82% |
-| `services/` | 32 | 12924 | 188 | 148 | 79% |
+| `services/` | 32 | 12982 | 190 | 150 | 79% |
 | `shared/` | 185 | 42039 | 1652 | 1354 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
@@ -355,10 +355,10 @@
 | `engine/writing-profile.ts` | 566 | 8 | 8 |
 | `engine/writing-quality-engine.ts` | 1376 | 14 | 13 |
 | `services/api-connectivity-service.ts` | 317 | 8 | 8 |
-| `services/backup-center-service.ts` | 153 | 4 | 1 |
+| `services/backup-center-service.ts` | 158 | 4 | 1 |
 | `services/canon-research-service.ts` | 464 | 7 | 7 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
-| `services/chapter-version-service.ts` | 643 | 2 | 2 |
+| `services/chapter-version-service.ts` | 696 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
 | `services/execution-ledger.ts` | 325 | 10 | 7 |
 | `services/font-manager.ts` | 219 | 14 | 12 |

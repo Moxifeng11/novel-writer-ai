@@ -163,6 +163,20 @@ describe('ChapterVersionService — 版本列表查询', () => {
     expect(index.latestVersion).toBe(1);
     expect(index.versions.length).toBe(1);
   });
+
+  it('SEC-1 残留：contentKey 含穿越/分隔符时 saveVersion 直接拒绝', async () => {
+    for (const badKey of ['../evil', 'a/b', 'a\\b', '..', '']) {
+      await expect(service.saveVersion(TEST_PROJECT, 'chapter', badKey, TEST_PATH, 'x', { type: 'manual' }))
+        .rejects.toThrow('版本键非法');
+    }
+  });
+
+  it('SEC-1 残留：sourcePath 越界时 saveVersion 直接拒绝', async () => {
+    for (const badSource of ['../main.js', '.obsidian/plugins/x/data.json', '/abs/path.md', 'C:/x.md']) {
+      await expect(service.saveVersion(TEST_PROJECT, 'chapter', TEST_CHAPTER, badSource, 'x', { type: 'manual' }))
+        .rejects.toThrow('源路径非法');
+    }
+  });
 });
 
 describe('ChapterVersionService — 获取版本内容', () => {

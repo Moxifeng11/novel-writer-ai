@@ -55,4 +55,28 @@ describe('collectBackupCenter — 版本与备份中心', () => {
         expect(report.entries).toEqual([]);
         expect(report.rollbackCount).toBe(0);
     });
+
+    it('SEC-1 残留：伪造索引条目（越界 sourcePath / contentKey 穿越）被过滤', async () => {
+        const vault = new Vault();
+        seedVersion(vault, '第1章', 1);
+        // 伪造：sourcePath 指向插件数据（读取泄漏），versionPath 越界
+        const evilDir = `${P}/_versions/chapter/evil`;
+        vault._seedFile(`${evilDir}/versions.json`, JSON.stringify({
+            latestVersion: 1,
+            versions: [{
+                id: 'v_evil', version: 1, createdAt: '2026-11-05T10:00:00.000Z',
+                type: 'manual', contentType: 'chapter', wordCount: 1, wordCountDelta: 0,
+                lineCount: 1, tags: [], note: '', project: P,
+                contentKey: '../../.obsidian/plugins/novel-writer-ai/data',
+                sourcePath: '.obsidian/plugins/novel-writer-ai/data/data.json',
+                versionPath: '../../../main.js',
+            }],
+        }, null, 2));
+
+        const report = await collectBackupCenter({ vault } as never, P);
+        expect(report.summary.version).toBe(1);
+        const labels = report.entries.filter(entry => entry.kind === 'version').map(entry => entry.label);
+        expect(labels.some(label => label.includes('evil'))).toBe(false);
+        expect(labels.some(label => label.includes('第1章'))).toBe(true);
+    });
 });

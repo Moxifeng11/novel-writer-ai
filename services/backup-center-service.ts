@@ -9,6 +9,7 @@ import { App, TFile } from 'obsidian';
 import { listFolderFiles } from '@/shared/vault-tree';
 import { pjVersionsDir, pluginDataFile } from '@/shared/paths';
 import type { VersionMeta } from '@/shared/version-types';
+import { isSafeVersionEntry } from './chapter-version-service';
 
 /** 备份条目类型。 */
 export type BackupEntryKind = 'version' | 'step-result' | 'settings-backup';
@@ -55,6 +56,10 @@ async function collectVersions(app: App, project: string): Promise<BackupCenterE
                 const parsed = JSON.parse(raw) as { versions?: VersionMeta[] };
                 const versions = [...(parsed.versions ?? [])].reverse();
                 for (const version of versions.slice(0, 50)) {
+                    // SEC-1 残留：过滤伪造索引条目——未过滤的话 modal 会拿 sourcePath
+                    // 直接 adapter.read（vault 内任意文件内容进入对比 UI，读取泄漏），
+                    // onSaveVersion 还会把 contentKey 透传进 _versions 写路径。
+                    if (!isSafeVersionEntry(project, version)) continue;
                     entries.push({
                         kind: 'version',
                         path: version.versionPath,

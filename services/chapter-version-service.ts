@@ -20,6 +20,7 @@ import {
     pjVersionContentFile,
     pjRollbackHistoryFile,
     pjVersionsDir,
+    sanitizeName,
 } from '@/shared/paths';
 import {
     lineDiff,
@@ -40,6 +41,47 @@ export interface SaveVersionOptions {
     tags?: string[];
     /** 版本备注（可选） */
     note?: string;
+}
+
+/**
+ * contentKey 安全校验：单段、无 `..`、无控制字符，且经 sanitizeName 后保持原样。
+ * contentKey 会拼进 _versions 目录路径（pjContentVersionsDir），必须严于一般文件名。
+ *
+ * @param contentKey - 内容键
+ * @returns 是否安全
+ */
+export function isSafeContentKey(contentKey: string): boolean {
+    const key = String(contentKey || '');
+    if (!key || key.includes('/') || key.includes('\\') || key.includes('..')) return false;
+    // eslint-disable-next-line no-control-regex
+    if (/[\u0000-\u001f]/.test(key)) return false;
+    return sanitizeName(key) === key;
+}
+
+/**
+ * SEC-1 残留（2026-11-10 审计）：备份中心聚合 versions.json 时过滤伪造条目。
+ * 未过滤的话，伪造索引可让 vault 内任意文件经 sourcePath 进入备份对比 UI（读取泄漏），
+ * 并经 onSaveVersion 把 contentKey 透传进 _versions 写路径（穿越写）。
+ *
+ * @param project - 项目
+ * @param meta - 版本元数据
+ * @returns 条目是否安全
+ */
+export function isSafeVersionEntry(project: string, meta: VersionMeta): boolean {
+    if (!meta || typeof meta !== 'object') return false;
+    const contentType = String(meta.contentType || '');
+    const contentKey = String(meta.contentKey || '');
+    if (!contentType || contentType.includes('/') || contentType.includes('..')) return false;
+    if (!isSafeContentKey(contentKey)) return false;
+    const expectedDir = pjContentVersionsDir(project, contentType, contentKey).replace(/\\/g, '/');
+    const versionPath = String(meta.versionPath || '').replace(/\\/g, '/');
+    if (!versionPath.startsWith(`${expectedDir}/`) || versionPath.includes('..')) return false;
+    const sourcePath = String(meta.sourcePath || '').replace(/\\/g, '/');
+    if (!sourcePath.startsWith(`${project}/`) || sourcePath.includes('..')
+        || sourcePath.startsWith('/') || /^[A-Za-z]:/.test(sourcePath)) {
+        return false;
+    }
+    return true;
 }
 
 /**
@@ -70,6 +112,17 @@ export class ChapterVersionService {
         content: string,
         options: SaveVersionOptions,
     ): Promise<VersionMeta> {
+        // SEC-1 残留（2026-11-10 审计）：contentKey 直通 pjContentVersionsDir，
+        // 伪造索引/伪造调用可写穿越目录（备份中心 onSaveVersion 会透传旧索引里的键）。
+        // 入口即拒；sourcePath 同步校验（同样来自可能被伪造的上游）。
+        if (!isSafeContentKey(contentKey)) {
+            throw new Error('版本键非法（不允许路径分隔符、.. 或特殊字符）');
+        }
+        const normalizedSource = String(sourcePath || '').replace(/\\/g, '/');
+        if (!normalizedSource.startsWith(`${project}/`) || normalizedSource.includes('..')
+            || normalizedSource.startsWith('/') || /^[A-Za-z]:/.test(normalizedSource)) {
+            throw new Error('源路径非法（必须位于本项目内）');
+        }
         // 索引是「读—改—写」：并发保存会各自读到 latestVersion=N 都写 N+1，丢版本条目。
         // 锁键用索引文件路径，保证同一 contentKey 的保存/删除串行。
         const indexPath = pjVersionIndexFile(project, contentType, contentKey);
