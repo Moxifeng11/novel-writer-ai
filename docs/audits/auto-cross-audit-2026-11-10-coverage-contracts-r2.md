@@ -7,7 +7,7 @@
 
 | # | 级别 | 位置 | 问题 | 影响 | 状态 |
 |---|---|---|---|---|---|
-| C2-1 | P1 | `engine/note-properties-service.ts:198-275` | L11.95% / B20%；`applyTagMigration`、`applyPropertyCompletion`、`writeProjectBases`、`processFrontmatter` 零覆盖，只有纯计划函数有测试 | 三个用户可见命令直接改用户笔记，逐文件失败被 catch 吞、写锁/空值保护无回归 | 未修 → **下一代码批次首项**（补行为测试 + 失败计数契约） |
+| C2-1 | P1 | `engine/note-properties-service.ts:198-275` | L11.95% / B20%；`applyTagMigration`、`applyPropertyCompletion`、`writeProjectBases`、`processFrontmatter` 零覆盖，只有纯计划函数有测试 | 三个用户可见命令直接改用户笔记，逐文件失败被 catch 吞、写锁/空值保护无回归 | **已修（第47轮）**：4 条行为测试（只补缺失键/计数真实/失败不计数/Bases 幂等），并修正 `filled`/`added` 虚报 |
 | C2-2 | P1 | `tests/unit/engine/deconstructor-full-coverage.test.ts:86-138` | T-2 仍未修：唯一有效断言位于文本 50%，截断到 10 万字仍绿；foreshadow 的 `secondHalfUnique` 解构未用；structure/technique/rhythm 只验字段存在 | 拆解器改为只分析前缀/返回空数组时，“全文覆盖”回归全绿 | **本轮已修**：新增尾部独有实体用例（正检 + 截断负向对照），断言全文末尾实体必须检出 |
 | C2-3 | P2 | `engine/agent/harness/host-tools.ts:663/701` | S2-8 围栏可被内容自带的 `【资料结束】` 提前闭合；`search_vault` 围栏未测 | 提示注入可逃出资料围栏 | **本轮已修**：`wrapUntrustedContent` 一次性 nonce + 转义内容标记；两处统一使用，3 条负向测试 |
 | C2-4 | P2 | `services/prompt-manager.ts:640-647` | C-3 仍整类零覆盖；`importConfig` 无形状/版本校验，浅合并后异步落盘且提前返回 true | 坏配置可被持久化，模板/AB 实验加载抛错 | 未修 → fix queue |
@@ -38,7 +38,7 @@
 
 ## 五、fix queue
 
-1. C2-1 note-properties 写路径行为测试（P1）
+1. ~~C2-1 note-properties 写路径行为测试（P1）~~（第47轮已修）
 2. C2-4 PromptManager 校验、C2-5 project-migration 失败分支、C2-6 PluginCache 原子写（P2）
 3. C2-7 write_file 接线抽纯函数 + 测试、C2-8 架构门禁收口、C2-9 E2E 条件跳过（P2）
 4. C2-10 三条源码契约改行为断言（P3）

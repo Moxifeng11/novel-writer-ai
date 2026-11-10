@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137499 | 1726 | 1417 | 82% |
+| `engine/` | 319 | 137506 | 1726 | 1417 | 82% |
 | `services/` | 32 | 13051 | 191 | 151 | 79% |
 | `shared/` | 190 | 42731 | 1675 | 1367 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
@@ -211,7 +211,7 @@
 | `engine/mode-unit-quality.ts` | 242 | 5 | 2 |
 | `engine/mode-unit-settlement.ts` | 105 | 2 | 1 |
 | `engine/mode-unit-writer.ts` | 543 | 16 | 16 |
-| `engine/note-properties-service.ts` | 286 | 12 | 12 |
+| `engine/note-properties-service.ts` | 293 | 12 | 12 |
 | `engine/novel-analyzer.ts` | 427 | 2 | 2 |
 | `engine/outline-contract.ts` | 737 | 21 | 20 |
 | `engine/outline-to-text-expander.ts` | 672 | 8 | 8 |

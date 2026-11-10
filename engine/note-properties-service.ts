@@ -202,13 +202,18 @@ export async function applyTagMigration(app: App, changes: TagMigrationChange[])
         const file = app.vault.getAbstractFileByPath(change.path);
         if (!(file instanceof TFile)) continue;
         try {
+            let actualAdded = 0;
             await withWriteLock(change.path, () =>
                 processFrontmatter(app, file, (fm) => {
-                    fm['tags'] = withNamespaceTags(fm['tags'], change.add);
+                    const before = readTagList(fm['tags']).length;
+                    const next = withNamespaceTags(fm['tags'], change.add);
+                    fm['tags'] = next;
+                    // 只统计真正新增的标签：请求里已存在的标签不能虚报
+                    actualAdded = Math.max(0, readTagList(next).length - before);
                 }),
             );
             written++;
-            added += change.add.length;
+            added += actualAdded;
         } catch (e) {
             log.warn('[NoteProperties] 标签迁移失败:', change.path, e);
         }
@@ -230,18 +235,20 @@ export async function applyPropertyCompletion(app: App, changes: PropertyComplet
         const file = app.vault.getAbstractFileByPath(change.path);
         if (!(file instanceof TFile)) continue;
         try {
+            let actualFilled = 0;
             await withWriteLock(change.path, () =>
                 processFrontmatter(app, file, (fm) => {
                     for (const item of change.fill) {
                         const current = fm[item.key];
                         if (current === undefined || current === null || (typeof current === 'string' && current.trim() === '')) {
                             fm[item.key] = item.value;
+                            actualFilled++;
                         }
                     }
                 }),
             );
             written++;
-            filled += change.fill.length;
+            filled += actualFilled;
         } catch (e) {
             log.warn('[NoteProperties] 属性补齐失败:', change.path, e);
         }
