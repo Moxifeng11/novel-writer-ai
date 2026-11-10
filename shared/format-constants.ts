@@ -46,8 +46,8 @@ export const FIELD_VOLUME_COUNT = '分卷数';
 /** 每章字数 */
 export const FIELD_WORDS_PER_CHAPTER = '每章字数';
 
-/** 卷范围解析（用于项目总览，不提取数字） */
-export const RE_VOLUME_RANGE = /章节范围[：:]\s*(.+?)(?:\n\|$)/;
+/** 卷范围解析（用于项目总览，不提取数字）；兼容模板的 `- **章节范围**：第X章 - 第Y章` 与纯文本格式 */
+export const RE_VOLUME_RANGE = /-?\s*\*{0,2}章节范围\*{0,2}[：:]\s*(.+?)\s*(?:\n|$)/;
 
 /** 大纲中按章号查找段落 */
 export const chapterOutlineSection = (chapterNum: number) =>

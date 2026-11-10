@@ -261,9 +261,12 @@ export class ProjectSelectorController {
         /** 本次渲染的项目元信息与单元列表缓存：卡片/详情/快捷工具共用，避免重复读文件与重复全库扫描 */
         const metaOf = new Map<string, ProjectMeta>();
         const unitsCache = new Map<string, ChapterItem[]>();
+        // PF-5：项目元信息要读分卷大纲，旧实现每个项目都全库 getFiles() 一次。
+        // 整页渲染只取一份快照，所有项目/右侧面板复用（vault 在渲染期间不会变）。
+        const files = this.app.vault.getFiles();
         await Promise.all(allProjects.map(async (project) => {
             try {
-                metaOf.set(project, await getProjectMeta(this.app, project));
+                metaOf.set(project, await getProjectMeta(this.app, project, files));
             } catch {
                 // 元信息读不到的项目按长篇默认归类；卡片渲染处会再取一次（与旧行为一致）
             }
@@ -298,7 +301,7 @@ export class ProjectSelectorController {
             this.selectedProject = preferred && projects.includes(preferred) ? preferred : projects[0];
         }
         this.deps.onProjectSelected?.(this.selectedProject);
-        await this.renderRightPanel(unitsCache);
+        await this.renderRightPanel(unitsCache, metaOf, files);
 
         const modeLabel = this.selectedMode === 'long' ? '长篇小说' : this.selectedMode === 'short' ? '短篇小说' : '剧本';
         const toolbar = projectArea.createDiv({ cls: 'novel-writer-fw-project-toolbar' });
@@ -398,7 +401,7 @@ export class ProjectSelectorController {
 
             const metaRow = info.createDiv({ cls: 'novel-writer-fw-card-meta' });
             let meta = metaOf.get(project);
-            if (!meta) meta = await getProjectMeta(this.app, project);
+            if (!meta) meta = await getProjectMeta(this.app, project, files);
             const modeText = meta.creationMode === 'long' ? '' : `${meta.creationModeLabel} · `;
             const categoryText = meta.shortCategory || meta.scriptGenre;
             metaRow.createSpan({ text: `${modeText}${categoryText || meta.genre}`.trim(), cls: 'novel-writer-fw-card-genre g0' });
@@ -507,7 +510,11 @@ export class ProjectSelectorController {
     }
 
     /** 右侧面板 = 选中项目概览 + 按项目类型切换的快捷工具 */
-    private async renderRightPanel(unitsCache?: Map<string, ChapterItem[]>): Promise<void> {
+    private async renderRightPanel(
+        unitsCache?: Map<string, ChapterItem[]>,
+        metaOf?: Map<string, ProjectMeta>,
+        files?: TFile[],
+    ): Promise<void> {
         const panel = this.rightPanel;
         if (!panel) return;
         panel.empty();
@@ -516,7 +523,8 @@ export class ProjectSelectorController {
         let mode: CreationMode = this.selectedMode;
         let meta: Awaited<ReturnType<typeof getProjectMeta>> | undefined;
         if (project) {
-            meta = await getProjectMeta(this.app, project);
+            // PF-5：复用 render() 已算好的元信息与文件快照，不再为选中项目重扫一遍
+            meta = metaOf?.get(project) ?? await getProjectMeta(this.app, project, files);
             mode = meta.creationMode;
             this.selectedMode = mode;
             await this.renderProjectDetail(panel, project, meta, unitsCache);

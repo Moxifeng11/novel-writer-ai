@@ -326,9 +326,10 @@ export function scanProjectChapters(app: App, projects: string[]): Map<string, C
  *
  * @param app - Obsidian 应用实例
  * @param project - 项目（路径或对象）
+ * @param files - 可选的仓库文件快照（批量渲染时复用，避免逐项目全库扫描）
   * @returns string }> 结果
  */
-export async function getProjectMeta(app: App, project: string): Promise<{ genre: string; description: string; volumes: Array<{ name: string; range: string }>; totalWordsTarget: string; totalChapters: number; creationMode: CreationMode; creationModeLabel: string; shortCategory: string; scriptGenre: string; modeTargetWords: number; modeTargetUnits: number; unitLabel: string; storyStructure: string; storyStructureName: string }> {
+export async function getProjectMeta(app: App, project: string, files?: TFile[]): Promise<{ genre: string; description: string; volumes: Array<{ name: string; range: string }>; totalWordsTarget: string; totalChapters: number; creationMode: CreationMode; creationModeLabel: string; shortCategory: string; scriptGenre: string; modeTargetWords: number; modeTargetUnits: number; unitLabel: string; storyStructure: string; storyStructureName: string }> {
     const result: { genre: string; description: string; volumes: Array<{ name: string; range: string }>; totalWordsTarget: string; totalChapters: number; creationMode: CreationMode; creationModeLabel: string; shortCategory: string; scriptGenre: string; modeTargetWords: number; modeTargetUnits: number; unitLabel: string; storyStructure: string; storyStructureName: string } = { genre: '', description: '', volumes: [], totalWordsTarget: '', totalChapters: 0, creationMode: 'long', creationModeLabel: '长篇小说', shortCategory: '', scriptGenre: '', modeTargetWords: CREATION_MODE_SPECS.long.targetWords.default, modeTargetUnits: CREATION_MODE_SPECS.long.targetUnits.default, unitLabel: '章', storyStructure: '', storyStructureName: '' };
     const dotContent = await readProjectMeta(app, project);
     if (dotContent) {
@@ -347,7 +348,7 @@ export async function getProjectMeta(app: App, project: string): Promise<{ genre
         result.storyStructure = mode.storyStructure || '';
         result.storyStructureName = mode.storySettings ? getStoryStructure(mode.storySettings.structureId).name : '';
     }
-    const content = await readMergedVolumeOutline(app, project);
+    const content = await readMergedVolumeOutline(app, project, undefined, undefined, files);
     if (content) {
         const wordsMatch = content.match(new RegExp(FIELD_TOTAL_WORDS + '[：:]\\s*(.+)'));
         if (wordsMatch) result.totalWordsTarget = wordsMatch[1].trim();

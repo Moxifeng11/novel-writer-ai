@@ -318,17 +318,19 @@ export async function writeVolumeOutlines(app: App, project: string, outlineBody
  * @param project - 项目（路径或对象）
  * @param fs - 文件系统端口
  * @param vaultMeta - 仓库元数据
+ * @param files - 可选的仓库文件快照；批量调用方传同一份，避免逐项目全库 getFiles()
  * @returns 合并后的大纲文本；若两者皆缺失返回空串
  */
-export async function readMergedVolumeOutline(app: App, project: string, fs?: FileSystemPort, vaultMeta?: VaultMetaPort): Promise<string> {
+export async function readMergedVolumeOutline(app: App, project: string, fs?: FileSystemPort, vaultMeta?: VaultMetaPort, files?: TFile[]): Promise<string> {
     const fileSystem = fs || new ObsidianFileSystem(app);
     const meta = vaultMeta || new ObsidianVaultMeta(app);
+    const allFiles = files ?? meta.getFiles();
     const parts: string[] = [];
 
     // v4.0 按卷归档（优先）：同一项目若同时残留旧版单文件，
     // 合并两者会产生重复卷号，批量建章的一致性校验会直接阻断。
     const dir = pjVolumeOutlineDir(project);
-    const volFiles = meta.getFiles()
+    const volFiles = allFiles
         .filter(f => f.path.startsWith(`${dir}/`) && f.name.endsWith('_分卷大纲.md'))
         .sort((a, b) => {
             const na = parseInt(a.name.match(/第(\d+)卷/)?.[1] || '0');

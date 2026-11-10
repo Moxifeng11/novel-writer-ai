@@ -83,3 +83,14 @@ describe('PF-1 知识向量库预热不阻塞 onload', () => {
         expect(src).toContain('void knowledgeVectorStore.init()');
     });
 });
+
+describe('PF-5 项目选择页单次文件快照', () => {
+    const src = read('ui/full-writer/project-selector-controller.ts');
+
+    it('整页渲染只取一次 vault.getFiles()，并把快照透传给元信息读取', () => {
+        expect(src.match(/this\.app\.vault\.getFiles\(\)/g)).toHaveLength(1);
+        expect(src).toContain('getProjectMeta(this.app, project, files)');
+        expect(src).toContain('await this.renderRightPanel(unitsCache, metaOf, files)');
+        expect(src).toContain('metaOf?.get(project) ?? await getProjectMeta(this.app, project, files)');
+    });
+});

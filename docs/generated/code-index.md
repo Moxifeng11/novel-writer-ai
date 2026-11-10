@@ -11,7 +11,7 @@
 | `shared/` | 187 | 42433 | 1665 | 1360 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99646 | 753 | 649 | 86% |
+| `ui/` | 242 | 99655 | 753 | 649 | 86% |
 
 ## 文件清单
 
@@ -685,7 +685,7 @@
 | `ui/full-writer/full-writer-store.ts` | 401 | 5 | 5 |
 | `ui/full-writer/full-writer-utils.ts` | 115 | 6 | 6 |
 | `ui/full-writer/intervention-controller.ts` | 412 | 3 | 3 |
-| `ui/full-writer/project-selector-controller.ts` | 953 | 3 | 3 |
+| `ui/full-writer/project-selector-controller.ts` | 961 | 3 | 3 |
 | `ui/full-writer/quick-tools-panel.ts` | 150 | 3 | 3 |
 | `ui/full-writer/scene-outline-controller.ts` | 1150 | 2 | 1 |
 | `ui/full-writer/setting-lib-controller.ts` | 63 | 1 | 1 |
@@ -742,7 +742,7 @@
 | `ui/pre-research-modal.ts` | 710 | 2 | 2 |
 | `ui/project-health-modal.ts` | 134 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 406 | 5 | 5 |
-| `ui/project-utils.ts` | 364 | 11 | 10 |
+| `ui/project-utils.ts` | 365 | 11 | 10 |
 | `ui/prompt-manager-settings.ts` | 1144 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 87 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 504 | 2 | 2 |
