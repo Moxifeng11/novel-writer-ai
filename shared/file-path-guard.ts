@@ -182,14 +182,21 @@ export function summarizeHitLine(line: string, maxChars = 120): string {
  *
  * @param raw - 模型传入的原始路径
  * @param exists - 存在性探测（通常是 `vault.adapter.exists`）
- * @returns true = 可自动放行（净化成功且文件不存在）
+ * @param allowedPrefix - 可选：新文件必须落在该项目目录下；不传时保持旧行为
+ * @returns true = 可自动放行（净化成功、文件不存在且在允许前缀内）
  */
 export async function shouldAutoApproveNewFile(
     raw: string,
     exists: (path: string) => Promise<boolean>,
+    allowedPrefix?: string,
 ): Promise<boolean> {
     const guard = sanitizeVaultPath(raw);
     if (!guard.ok || !guard.path) return false;
+    if (allowedPrefix !== undefined) {
+        const prefix = String(allowedPrefix || '').replace(/\\/g, '/').replace(/\/+$/, '');
+        if (!prefix) return false;
+        if (guard.path !== prefix && !guard.path.startsWith(`${prefix}/`)) return false;
+    }
     try {
         return !(await exists(guard.path));
     } catch {

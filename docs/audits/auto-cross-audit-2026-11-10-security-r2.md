@@ -14,7 +14,7 @@
 | S2-5 | P3 | `ui/settings/api-section.ts:344-349`、`general-sections.ts:735-751` 等 6 处 | 密钥框无 `autocomplete/1p-ignore`；解锁后明文进 DOM；GitHub Token 逐键保存 | 自动填充/屏幕共享泄露；PBKDF2 写放大 | 未修 → fix queue |
 | S2-6 | P3 | `ui/settings/general-sections.ts:738-751`、`services/update-checker.ts:352-353`、`main.ts:1512-1541` | 密文被当值：Token 输入框显示密文；UpdateChecker 可能把密文当 Bearer；重置口令漏 `canonResearch.apiKey` | 私有仓库检查静默 401；考据 Key 永久解不开 | 未修 → fix queue（字段单源表驱动） |
 | S2-7 | P2 | `services/canon-research-service.ts:394-407` | `isPrivateHost` 只处理 `::1` 与点分 IPv4：`::ffff:127.0.0.1`、`fc00::/7`、`fe80::/10`、`localhost.` 均可绕过；3xx 仍自动跟随 | 盲 SSRF，内网/Ollama 响应写入 vault 并进入模型上下文 | **部分已修**：新增 IPv4-mapped/唯一本地/链路本地/尾点识别；重定向逐跳校验仍受 requestUrl 限制（fix queue） |
-| S2-8 | P2 | `engine/agent/harness/host-tools.ts:634-727`、`ui/services/agent-port.ts:549-581` | 外部书籍原文无“资料≠指令”围栏；`write_file` 新文件自动放行且不限 activeProject | 提示注入可在 vault 任意非隐藏位置持久化伪造笔记 | 未修 → fix queue（围栏 + 新文件项目前缀） |
+| S2-8 | P2 | `engine/agent/harness/host-tools.ts:634-727`、`ui/services/agent-port.ts:549-581` | 外部书籍原文无“资料≠指令”围栏；`write_file` 新文件自动放行且不限 activeProject | 提示注入可在 vault 任意非隐藏位置持久化伪造笔记 | **已修（第44轮）**：read_file/search_vault 加资料围栏；shouldAutoApproveNewFile 要求项目前缀；agent-port 新文件兜底只允许当前项目/会话 spill |
 | S2-9 | P3 | `engine/memory/memory-shard-writer.ts:99-105` | 角色名未净化就拼记忆碎片文件名 | `../` 可写出记忆碎片目录 | **本轮已修**：`sanitizeName(name)` + 回归测试 |
 | S2-10 | P3 | `shared/paths.ts:1439-1454`、`services/chapter-version-service.ts:557-606` | `pjContentVersionsDir` 对 `contentKey='..'` 原样保留；contentType 无运行时白名单 | 当前 UI 不可达，防御纵深缺口 | 未修 → fix queue |
 | S2-11 | P3 | `shared/paths.ts:976-1005`、`shared/plugin-data-migration.ts:34-93` | 插件根目录/迁移路径不拒绝 `..`/绝对路径；`adapter.rename` 可把 data 移出插件目录 | manifest.dir 被污染时单点越界（正常安装不可控） | 未修 → fix queue（assertPluginRelativePath） |
@@ -42,7 +42,7 @@
 
 ## 五、fix queue
 
-1. S2-8 外部资料围栏 + write_file 项目前缀（P2）
+1. ~~S2-8 外部资料围栏 + write_file 项目前缀（P2）~~（第44轮已修）
 2. S2-4 保存结果可观测 + 设置备份轮转（P2）
 3. S2-7 重定向逐跳校验（P2，待拍板方案）
 4. S2-1 v1 混淆文案、S2-2 dsh 凭据、S2-3 check:secrets 补模式（P2）

@@ -1171,12 +1171,13 @@ export class AgentWorkbenchView extends ItemView {
                 // write_file 新建文件自动放行，覆盖/追加已有文件才确认。
                 requestApproval: async (request) => {
                     if (request.sideEffect === 'write' && request.tool === 'write_file') {
-                        // v4.79.0（安全审计 ③）：必须先净化再判断存在性——带引号路径
-                        // 会让 exists=false 而自动放行，随后净化后的路径可能覆盖已有正文。
+                        // S2-8：新文件还必须落在当前项目内——否则外部书籍里的提示注入
+                        // 可以让 Agent 在库根/其它项目持久化伪造笔记。
                         const target = String(request.args.path || '').trim();
                         if (target && await shouldAutoApproveNewFile(
                             target,
                             (p) => this.app.vault.adapter.exists(p),
+                            this.resolveActiveProject(),
                         )) return true;
                     }
                     const confirm = this.port.confirmDangerousAction;

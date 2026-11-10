@@ -572,6 +572,14 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
                 return { path: guard.path, created: false, bytes: new TextEncoder().encode(content).length };
             }
             const existed = await app.vault.adapter.exists(guard.path);
+            // S2-8：端口层兜底——新文件只能落在当前项目或本会话 spill；
+            // 即使上层审批被提示注入绕过，也不能在库根/其它项目新建文件。
+            if (!existed && !guard.path.startsWith(sessionSpillPrefix())) {
+                const activeProject = plugin.getActiveProject?.() || '';
+                if (!activeProject || !(guard.path === activeProject || guard.path.startsWith(`${activeProject}/`))) {
+                    throw new Error('新文件只能写入当前项目目录；跨项目/库根新建请手动操作');
+                }
+            }
             let next = content;
             if (options?.append && existed) {
                 next = `${await app.vault.adapter.read(guard.path)}${content}`;

@@ -124,4 +124,12 @@ describe('shouldAutoApproveNewFile — 覆盖确认不可被引号路径绕过�
         await expect(shouldAutoApproveNewFile('../../etc/passwd', async () => false)).resolves.toBe(false);
         await expect(shouldAutoApproveNewFile('项目/x.md', async () => { throw new Error('io'); })).resolves.toBe(false);
     });
+
+    it('allowedPrefix：新文件只在当前项目内自动放行（S2-8）', async () => {
+        const exists = async () => false;
+        await expect(shouldAutoApproveNewFile('长篇小说/书A/设定.md', exists, '长篇小说/书A')).resolves.toBe(true);
+        await expect(shouldAutoApproveNewFile('长篇小说/书B/x.md', exists, '长篇小说/书A')).resolves.toBe(false);
+        await expect(shouldAutoApproveNewFile('长篇小说/书A/../书B/x.md', exists, '长篇小说/书A')).resolves.toBe(false);
+        await expect(shouldAutoApproveNewFile('库根.md', exists, '')).resolves.toBe(false);
+    });
 });

@@ -20,6 +20,8 @@ function makePort(options: {
         vault: {
             adapter: {
                 exists: vi.fn(async () => options.adapterExists === true),
+                read: vi.fn(async () => ''),
+                write: vi.fn(async () => undefined),
                 remove,
                 rename,
                 mkdir: vi.fn(async () => undefined),
@@ -67,6 +69,15 @@ describe('Agent 文件端口权限', () => {
         const deep = await port.deleteProject?.('长篇小说/书A/03-大纲与章节');
         expect(deep?.deleted).toBe(false);
         expect(deep?.reason).toContain('不是可识别的项目目录');
+    });
+
+    it('新文件只能写入当前项目或本会话 spill（S2-8）', async () => {
+        const { port } = makePort({ adapterExists: false });
+
+        await expect(port.writeFile?.('别人的项目/x.md', 'x'))
+            .rejects.toThrow('新文件只能写入当前项目目录');
+        await expect(port.writeFile?.('长篇小说/书A/设定.md', 'x'))
+            .resolves.toMatchObject({ created: true });
     });
 
     it('.sessions 只允许当前项目 spill；会话存档 JSONL 不可读', async () => {
