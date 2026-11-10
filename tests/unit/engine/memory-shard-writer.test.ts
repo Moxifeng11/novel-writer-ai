@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+    ensureProtagonistMemoryShards,
     formatMemoryShardFile,
     parseMemoryShardsFromModel,
 } from '../../../engine/memory/memory-shard-writer';
+import { pjMemoryShardsDir } from '../../../shared/paths';
 
 const modelOutput = [
     '好的，以下是为角色生成的记忆碎片：',
@@ -45,5 +47,37 @@ describe('memory-shard-writer — 记忆碎片自动生成', () => {
         expect(content).toContain('## m001 檀香与灰烬');
         expect(content).toContain('trigger_smells: 檀香, 灰烬');
         expect(content).toContain('## m002 断掉的玉簪');
+    });
+
+    it('角色名含穿越段时净化文件名，不写出记忆碎片目录（S-11）', async () => {
+        const project = '长篇小说/测试书';
+        const created: string[] = [];
+        const app = {
+            vault: {
+                getAbstractFileByPath: () => null,
+                createFolder: async () => undefined,
+                create: async (path: string) => {
+                    created.push(path);
+                    return {};
+                },
+            },
+        };
+        const result = await ensureProtagonistMemoryShards(app as never, {
+            project,
+            characterName: '../../evil',
+            soulDetail: '欲望：复仇',
+            callAI: async () => [
+                '## m001 火中的家祠',
+                'importance: 9',
+                'trigger_smells: 檀香',
+                '七岁那年冬天，家祠走了水，父亲把我从火里拖出来。',
+            ].join('\n'),
+        });
+
+        const dir = pjMemoryShardsDir(project);
+        expect(result).toBeTruthy();
+        expect(result!.startsWith(`${dir}/`)).toBe(true);
+        expect(result).not.toContain('../');
+        expect(created).toEqual([result]);
     });
 });

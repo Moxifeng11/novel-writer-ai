@@ -6,8 +6,8 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137470 | 1725 | 1416 | 82% |
-| `services/` | 32 | 13018 | 190 | 150 | 79% |
+| `engine/` | 319 | 137471 | 1725 | 1416 | 82% |
+| `services/` | 32 | 13051 | 191 | 151 | 79% |
 | `shared/` | 189 | 42685 | 1674 | 1366 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
@@ -204,7 +204,7 @@
 | `engine/long-term-memory.ts` | 154 | 6 | 3 |
 | `engine/memory-trigger.ts` | 408 | 13 | 9 |
 | `engine/memory/chapter-digest.ts` | 354 | 9 | 7 |
-| `engine/memory/memory-shard-writer.ts` | 141 | 5 | 5 |
+| `engine/memory/memory-shard-writer.ts` | 142 | 5 | 5 |
 | `engine/mode-document-writer.ts` | 177 | 5 | 2 |
 | `engine/mode-injection.ts` | 117 | 3 | 1 |
 | `engine/mode-runtime.ts` | 189 | 6 | 5 |
@@ -356,7 +356,7 @@
 | `engine/writing-quality-engine.ts` | 1376 | 14 | 13 |
 | `services/api-connectivity-service.ts` | 317 | 8 | 8 |
 | `services/backup-center-service.ts` | 180 | 4 | 1 |
-| `services/canon-research-service.ts` | 464 | 7 | 7 |
+| `services/canon-research-service.ts` | 497 | 8 | 8 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
 | `services/chapter-version-service.ts` | 703 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |

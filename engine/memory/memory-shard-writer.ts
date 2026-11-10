@@ -11,7 +11,7 @@
 import type { App } from 'obsidian';
 import { MEMORY_GENERATION_PROMPTS } from '@/engine/prompts/memory-prompts';
 import { fillTemplate } from '@/engine/prompts/template-utils';
-import { pjMemoryShardsDir } from '@/shared/paths';
+import { pjMemoryShardsDir, sanitizeName } from '@/shared/paths';
 import { mkdirp } from '@/utils/helpers';
 import { createLogger } from '@/shared/logger';
 
@@ -101,7 +101,8 @@ export async function ensureProtagonistMemoryShards(
     if (!name || !soul) return null;
 
     const dir = pjMemoryShardsDir(options.project);
-    const path = `${dir}/${name}_记忆碎片.md`;
+    // S-11：角色名来自 AI/步骤变量，必须净化后再进文件名，否则 ../ 可写出记忆碎片目录
+    const path = `${dir}/${sanitizeName(name)}_记忆碎片.md`;
     if (options.skipIfExists !== false && app.vault.getAbstractFileByPath(path)) return null;
 
     const vars: Record<string, string> = {
