@@ -11,7 +11,7 @@
 | `shared/` | 188 | 42595 | 1671 | 1364 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99644 | 753 | 649 | 86% |
+| `ui/` | 242 | 99665 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -676,7 +676,7 @@
 | `ui/full-writer/chapter-orchestrator.ts` | 503 | 10 | 9 |
 | `ui/full-writer/context-loader-controller.ts` | 262 | 2 | 2 |
 | `ui/full-writer/cover-picker-controller.ts` | 146 | 1 | 1 |
-| `ui/full-writer/creation-flow-state.ts` | 253 | 4 | 4 |
+| `ui/full-writer/creation-flow-state.ts` | 262 | 5 | 4 |
 | `ui/full-writer/entity-state-controller.ts` | 136 | 2 | 2 |
 | `ui/full-writer/execution-panels.ts` | 383 | 4 | 4 |
 | `ui/full-writer/execution-run-store.ts` | 280 | 5 | 5 |
@@ -686,7 +686,7 @@
 | `ui/full-writer/full-writer-store.ts` | 401 | 5 | 5 |
 | `ui/full-writer/full-writer-utils.ts` | 115 | 6 | 6 |
 | `ui/full-writer/intervention-controller.ts` | 412 | 3 | 3 |
-| `ui/full-writer/project-selector-controller.ts` | 961 | 3 | 3 |
+| `ui/full-writer/project-selector-controller.ts` | 973 | 3 | 3 |
 | `ui/full-writer/quick-tools-panel.ts` | 150 | 3 | 3 |
 | `ui/full-writer/scene-outline-controller.ts` | 1150 | 2 | 1 |
 | `ui/full-writer/setting-lib-controller.ts` | 63 | 1 | 1 |

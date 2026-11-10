@@ -85,6 +85,21 @@ describe('collectCreationFlowState — 整库遍历预算', () => {
         expect(scans()).toBe(1);
         expect(state.facts.unitTotal).toBe(1);
     });
+
+    it('选择页传入 longChapters 时零整库遍历（P-3 卡片点击复用快照）', async () => {
+        const app = await makeApp();
+        app.vault._seedFile(LONG_META_PATH, LONG_META);
+
+        const scans = trackVaultScans(app);
+        const state = await collectCreationFlowState(app as never, '长篇小说/示例', {
+            mode: 'long',
+            longChapters: [{ chapter: '第1章', status: 'written', written: true }],
+        });
+
+        expect(scans()).toBe(0);
+        expect(state.facts.unitTotal).toBe(1);
+        expect(state.facts.unitWritten).toBe(1);
+    });
 });
 
 describe('collectCreationFlowState — 导出判定语义', () => {

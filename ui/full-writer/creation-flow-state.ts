@@ -31,9 +31,16 @@ import {
 import { isChapterWritten } from '@/shared/chapter-progress';
 import { EXPORT_FALLBACK_DIR } from '@/shared/export-file';
 import { listFolderFiles } from '@/shared/vault-tree';
-import { getChaptersForProject, sortChaptersByNumber, type ChapterListEntry } from '@/ui/project-utils';
+import { getChaptersForProject, sortChaptersByNumber } from '@/ui/project-utils';
 import { rememberProjectMode, resolveProjectMode } from '@/shared/project-mode';
 import { STORAGE_KEY_PREFIXES, projectScopedKey } from '@/shared/storage-keys';
+
+/** 流程摘要只需要这三项；选择页可把已扫描的章节直接传进来，省一次全库扫描 */
+export interface FlowLongChapterLike {
+    chapter: string;
+    status: string;
+    written?: boolean;
+}
 
 /**
  * CreationFlowStateOptions 类型定义。
@@ -43,6 +50,8 @@ export interface CreationFlowStateOptions {
     wizardResults?: Record<string, string>;
     /** 传入项目模式可省一次解析 */
     mode?: CreationMode;
+    /** 调用方已扫描好的长篇章节（选择页复用快照）；不传时内部 getChaptersForProject */
+    longChapters?: FlowLongChapterLike[];
 }
 
 /**
@@ -171,16 +180,16 @@ function summarizeUnits(units: ModeUnitInfo[]): UnitTotals {
     return { total: units.length, written, settled, nextNumber };
 }
 
-function summarizeLongChapters(chapters: ChapterListEntry[]): UnitTotals {
+function summarizeLongChapters(chapters: FlowLongChapterLike[]): UnitTotals {
     const sorted = sortChaptersByNumber([...chapters]);
-    const written = sorted.filter(chapter => chapter.written).length;
+    const written = sorted.filter(chapter => chapter.written === true).length;
     const settled = sorted.filter(chapter => (chapter.status || '').trim().toLowerCase() === 'settled').length;
 
     const byNumber = new Map<number, boolean>();
     for (const chapter of sorted) {
         const matched = chapter.chapter.match(/第\s*(\d+)\s*[章节集回幕]/);
         const number = matched ? parseInt(matched[1], 10) : 0;
-        if (number > 0) byNumber.set(number, chapter.written);
+        if (number > 0) byNumber.set(number, chapter.written === true);
     }
     const maxNumber = [...byNumber.keys()].reduce((max, number) => Math.max(max, number), 0);
     let nextNumber: number | null = null;
@@ -226,7 +235,7 @@ export async function collectCreationFlowState(
 
     let units: UnitTotals;
     if (mode === 'long') {
-        units = summarizeLongChapters(getChaptersForProject(app, project));
+        units = summarizeLongChapters(options.longChapters ?? getChaptersForProject(app, project));
     } else {
         units = summarizeUnits(listModeUnits(app, project, mode));
     }

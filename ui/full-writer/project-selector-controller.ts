@@ -49,6 +49,8 @@ export type ChapterItem = {
     status: string;
     /** 正文文件；仅有骨架时为空 */
     file: TFile | null;
+    /** 长篇章节来自 scanProjectChapters 时携带；流程摘要复用 */
+    written?: boolean;
 };
 
 /**
@@ -504,7 +506,8 @@ export class ProjectSelectorController {
                     this.selectedProject = project;
                 }
                 this.deps.onProjectSelected?.(this.selectedProject);
-                void this.renderRightPanel();
+                // P-3：卡片点击复用整页快照，不再为一个项目重扫全库
+                void this.renderRightPanel(unitsCache, metaOf, files);
             };
         }
     }
@@ -528,7 +531,7 @@ export class ProjectSelectorController {
             mode = meta.creationMode;
             this.selectedMode = mode;
             await this.renderProjectDetail(panel, project, meta, unitsCache);
-            await this.renderFlowSummary(panel, project, mode);
+            await this.renderFlowSummary(panel, project, mode, unitsCache?.get(project));
         } else {
             const hint = panel.createDiv({ cls: 'nw-qt-empty-hint' });
             hint.createDiv({ text: '👈 点击左侧项目卡片', cls: 'nw-qt-empty-title' });
@@ -561,10 +564,19 @@ export class ProjectSelectorController {
      * 右侧流程摘要：让用户不用先点开页签就知道「进行到哪、下一步做什么」。
      * 详情仍以「创作流程」页签为准，这里只做摘要与入口。
      */
-    private async renderFlowSummary(panel: HTMLElement, project: string, mode: CreationMode): Promise<void> {
+    private async renderFlowSummary(
+        panel: HTMLElement,
+        project: string,
+        mode: CreationMode,
+        chapters?: ChapterItem[],
+    ): Promise<void> {
         let snapshot;
         try {
-            snapshot = (await collectCreationFlowState(this.app, project, { mode })).snapshot;
+            // P-3：长篇复用已扫描章节，避免再跑两次全库遍历
+            snapshot = (await collectCreationFlowState(this.app, project, {
+                mode,
+                longChapters: mode === 'long' ? chapters : undefined,
+            })).snapshot;
         } catch {
             return;
         }

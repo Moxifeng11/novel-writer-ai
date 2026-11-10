@@ -93,4 +93,11 @@ describe('PF-5 项目选择页单次文件快照', () => {
         expect(src).toContain('await this.renderRightPanel(unitsCache, metaOf, files)');
         expect(src).toContain('metaOf?.get(project) ?? await getProjectMeta(this.app, project, files)');
     });
+
+    it('卡片点击与流程摘要复用整页快照（P-3）', () => {
+        // 点击卡片不再无参重扫；流程摘要把已扫描章节传给 collectCreationFlowState
+        expect(src).toContain('void this.renderRightPanel(unitsCache, metaOf, files)');
+        expect(src).toContain('renderFlowSummary(panel, project, mode, unitsCache?.get(project))');
+        expect(src).toContain("longChapters: mode === 'long' ? chapters : undefined");
+    });
 });
