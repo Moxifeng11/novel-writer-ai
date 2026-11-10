@@ -4,7 +4,7 @@
  * 提供版本保存、查询、对比、回滚等核心功能
  * 版本存储在项目目录下的 _versions/ 文件夹中
  */
-import { App, TFile, Notice } from 'obsidian';
+import { App, TFile, TFolder, Notice } from 'obsidian';
 import { writeVaultText } from '@/shared/file-system-port';
 import type {
     VersionMeta,
@@ -122,6 +122,11 @@ export class ChapterVersionService {
         if (!normalizedSource.startsWith(`${project}/`) || normalizedSource.includes('..')
             || normalizedSource.startsWith('/') || /^[A-Za-z]:/.test(normalizedSource)) {
             throw new Error('源路径非法（必须位于本项目内）');
+        }
+        // D-4：sourcePath 必须是文件。旧调用方把 chapDir（步骤目录）传进来，
+        // 备份中心/回滚随后对目录 read/write 必然失败——这类记录不可回滚。
+        if (this.app.vault.getAbstractFileByPath(normalizedSource) instanceof TFolder) {
+            throw new Error('源路径必须是正文文件，不能是目录');
         }
         // 索引是「读—改—写」：并发保存会各自读到 latestVersion=N 都写 N+1，丢版本条目。
         // 锁键用索引文件路径，保证同一 contentKey 的保存/删除串行。

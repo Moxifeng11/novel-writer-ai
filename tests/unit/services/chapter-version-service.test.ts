@@ -179,6 +179,13 @@ describe('ChapterVersionService — 版本列表查询', () => {
       .rejects.toThrow('版本索引路径非法');
   });
 
+  it('saveVersion 拒绝目录 sourcePath（D-4：定向修订备份不可回滚）', async () => {
+    const dir = `${TEST_PROJECT}/03-大纲与章节/步骤结果/第1卷/第1章`;
+    await vault.createFolder(dir);
+    await expect(service.saveVersion(TEST_PROJECT, 'chapter', TEST_CHAPTER, dir, '内容', { type: 'manual' }))
+      .rejects.toThrow('源路径必须是正文文件');
+  });
+
   it('getVersionIndex 返回完整索引', async () => {
     await service.saveVersion(TEST_PROJECT, 'chapter', TEST_CHAPTER, TEST_PATH, '测试', { type: 'manual' });
     const index = await service.getVersionIndex(TEST_PROJECT, 'chapter', TEST_CHAPTER, TEST_PATH);

@@ -6,8 +6,8 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137452 | 1725 | 1416 | 82% |
-| `services/` | 32 | 13013 | 190 | 150 | 79% |
+| `engine/` | 319 | 137456 | 1725 | 1416 | 82% |
+| `services/` | 32 | 13018 | 190 | 150 | 79% |
 | `shared/` | 189 | 42685 | 1674 | 1366 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
@@ -315,7 +315,7 @@
 | `engine/step-result-saver.ts` | 562 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 223 | 6 | 5 |
-| `engine/step-runner.ts` | 2181 | 2 | 1 |
+| `engine/step-runner.ts` | 2185 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 216 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |
@@ -358,7 +358,7 @@
 | `services/backup-center-service.ts` | 180 | 4 | 1 |
 | `services/canon-research-service.ts` | 464 | 7 | 7 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
-| `services/chapter-version-service.ts` | 698 | 4 | 4 |
+| `services/chapter-version-service.ts` | 703 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
 | `services/execution-ledger.ts` | 325 | 10 | 7 |
 | `services/font-manager.ts` | 219 | 14 | 12 |

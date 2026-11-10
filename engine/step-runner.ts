@@ -2,7 +2,7 @@ import { App, TFile } from 'obsidian';
 import { isChapterSettledText } from '@/shared/chapter-status';
 import { AIEngine, APIResponse } from './ai-engine';
 import { DEAI_CHECK_SYSTEM_PROMPT, DEAI_CHECK_USER_TEMPLATE, DEAI_REWRITE_SYSTEM_PROMPT, DEAI_REWRITE_USER_TEMPLATE, SELF_CHECK_PROMPTS } from './prompt-templates';
-import { findChapterFile, findBodyFileByChapterNum } from './chapter-utils';
+import { findChapterFile, findBodyFileByChapterNum, getChapterFileName, CHAPTER_FILE_TYPES } from './chapter-utils';
 import { mkdirp, stripFrontmatter } from '@/utils/helpers';
 import { SettlementEngine } from './settlement-engine';
 import { ENGINE_NAMES } from '@/shared/engine-names';
@@ -837,12 +837,16 @@ export class StepRunner {
             return;
         }
 
-        // 采纳前备份原稿，保证可回滚
+        // 采纳前备份原稿，保证可回滚。
+        // D-4（数据一致性二轮）：sourcePath 必须是真实正文文件——旧实现传 chapDir（目录），
+        // 备份中心/rollbackToVersion 读到目录直接失败，这份「唯一备份」实际不可回滚。
         const project = chapDir ? projectIdFromPath(chapDir) : '';
         if (project) {
+            const backupSource = this.resolveDiskBodyPath(project, chapDir, chapterName)
+                ?? `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.body)}`;
             try {
                 await new ChapterVersionService(this.plugin.app).saveVersion(
-                    project, 'chapter', chapterName, chapDir, body,
+                    project, 'chapter', chapterName, backupSource, body,
                     { type: 'manual', note: '定向修订前自动备份' },
                 );
             } catch (e) {
@@ -1853,29 +1857,29 @@ ${userPrompt}`),
         }
     }
 
+    /** 解析磁盘上真实的正文路径（优先带章名的现有文件；找不到返回 undefined） */
+    private resolveDiskBodyPath(project: string, chapDir: string, chapterName: string): string | undefined {
+        const v4 = chapDir.match(/\/03-大纲与章节\/步骤结果\/第(\d+)卷\/第(\d+)章$/);
+        const chapterNum = v4 ? parseInt(v4[2], 10) : parseInt(chapterName.match(/第(\d+)章/)?.[1] || '0', 10) || undefined;
+        if (!chapterNum) return undefined;
+        if (v4) {
+            const volN = parseInt(v4[1], 10);
+            const existing = findBodyFileByChapterNum(
+                this.getVaultMeta().getFiles(),
+                `${pjBodyDir(project, volN)}/`,
+                chapterNum,
+                chapterName,
+            );
+            return existing?.path ?? pjBodyFile(project, volN, chapterNum);
+        }
+        return findChapterFile(this.getVaultMeta().getFiles(), chapDir, '正文', this.app)?.path;
+    }
+
     /** 磁盘正文是否已标记 settled（读失败按「未结算」处理，交给后续流程重试） */
     private async isChapterSettledOnDisk(project: string, chapDir: string, chapterName: string): Promise<boolean> {
         try {
-            const v4 = chapDir.match(/\/03-大纲与章节\/步骤结果\/第(\d+)卷\/第(\d+)章$/);
-            const chapterNum = v4 ? parseInt(v4[2], 10) : parseInt(chapterName.match(/第(\d+)章/)?.[1] || '0', 10) || undefined;
-            if (!chapterNum) return false;
-            let bodyPath: string;
-            if (v4) {
-                // v4.25：与落盘一致——优先命中「带章名」的现有章文件。
-                // 旧遗留的无章名文件 status 若为 settled，会让幂等守卫误判整章已结算。
-                const volN = parseInt(v4[1], 10);
-                const existing = findBodyFileByChapterNum(
-                    this.getVaultMeta().getFiles(),
-                    `${pjBodyDir(project, volN)}/`,
-                    chapterNum,
-                    chapterName,
-                );
-                bodyPath = existing?.path ?? pjBodyFile(project, volN, chapterNum);
-            } else {
-                const found = findChapterFile(this.getVaultMeta().getFiles(), chapDir, '正文', this.app);
-                if (!found) return false;
-                bodyPath = found.path;
-            }
+            const bodyPath = this.resolveDiskBodyPath(project, chapDir, chapterName);
+            if (!bodyPath) return false;
             const raw = await this.getFS().read(bodyPath);
             return isChapterSettledText(raw);
         } catch {
