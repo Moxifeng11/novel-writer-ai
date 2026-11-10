@@ -4,6 +4,8 @@
  * 目标：同人设定只能依据原著/官方资料，不参考同人、改编、外传等衍生作品。
  * 这里不发起网络请求，只负责把 URL/标题/手工标注变成可审计的来源层级。
  */
+import { wrapUntrustedContent } from './untrusted-content';
+
 
 /**
  * 考据来源等级。
@@ -235,7 +237,8 @@ export function formatCanonSourcesForPrompt(sources: CanonSource[], maxChars = 1
         const budget = Math.max(0, Math.min(excerpt.length, maxChars - used));
         if (budget <= 0) break;
         const text = excerpt.slice(0, budget);
-        lines.push(`[${source.id}] ${source.title}\n来源：${source.url}\n摘录：${text}`);
+        // S3-2（安全 r3）：原著摘录属外部内容，必须围栏后才可进 system prompt
+        lines.push(`[${source.id}] ${source.title}\n来源：${source.url}\n摘录：${wrapUntrustedContent(text, '原著摘录')}`);
         used += text.length;
     }
     return lines.join('\n\n');

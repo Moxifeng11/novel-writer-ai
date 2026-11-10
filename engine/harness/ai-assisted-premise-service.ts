@@ -17,6 +17,7 @@ import {
     type TrendResearchResult,
 } from './trend-research-service';
 import type { CreationMode } from '@/shared/creation-mode';
+import { wrapUntrustedContent } from '@/shared/untrusted-content';
 
 /**
  * AiPremiseInput 类型定义。
@@ -134,8 +135,9 @@ export class AiAssistedPremiseService {
         sources: Array<{ title: string; url: string; snippet: string }>;
         suggestions: AiPremiseResult['suggestions'];
     }> {
+        // S3-2（安全 r3）：联网检索片段属外部内容，围栏后再进 prompt
         const sourceBlock = sources.length > 0
-            ? sources.map((source, index) => `[T${index + 1}] ${source.title || '无标题'}\n${source.snippet.slice(0, 220)}`).join('\n')
+            ? wrapUntrustedContent(sources.map((source, index) => `[T${index + 1}] ${source.title || '无标题'}\n${source.snippet.slice(0, 220)}`).join('\n'), '网络检索结果')
             : '（无联网来源；以下为模型调研草稿，必须标注“未经实时核实”）';
 
         const systemPrompt = `你是${modeLabel}领域的资深编辑与市场分析师。

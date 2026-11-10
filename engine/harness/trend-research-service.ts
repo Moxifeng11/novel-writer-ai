@@ -8,6 +8,7 @@
 import { requestUrl } from 'obsidian';
 import { createLogger } from '@/shared/logger';
 import { requestWithPolicy, SEARCH_REQUEST_POLICY } from '@/shared/http-request';
+import { wrapUntrustedContent } from '@/shared/untrusted-content';
 
 const log = createLogger('TrendResearch');
 
@@ -195,7 +196,7 @@ export class TrendResearchService {
      */
     formatSources(sources: TrendSource[]): string {
         return sources.map((source, index) =>
-            `[T${index + 1}] ${source.title || '无标题'}\nURL: ${source.url || '（无）'}\n摘要: ${source.snippet.slice(0, 300)}`
+            `[T${index + 1}] ${source.title || '无标题'}\nURL: ${source.url || '（无）'}\n摘要: ${wrapUntrustedContent(source.snippet.slice(0, 300), '网络检索结果')}`
         ).join('\n\n');
     }
 }

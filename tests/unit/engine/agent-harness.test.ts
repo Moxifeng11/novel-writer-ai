@@ -664,10 +664,26 @@ describe('AgentHarnessEngine', () => {
         for (let round = 0; round < 8; round++) await engine.handle('第' + round + '轮');
 
         expect(summaryCalls).toBeGreaterThan(0);
+        // S3-2：压缩输入里的工具结果必须带围栏，不能把注入文本「洗白」成可信摘要
+        expect(transcripts.some(t => t.includes('【工具结果#'))).toBe(true);
         // 摘要节点进入对话转写（而非系统提示词）
         expect(transcripts.some(t => t.includes('历史摘要'))).toBe(true);
         expect(transcripts.some(t => t.includes('玄幻长篇'))).toBe(true);
     });
+    it('restore 丢弃不在活跃项目列表的 pickedProject（S3-2）', () => {
+        const adapter: HarnessAdapter = { async complete() { return { reply: '' }; } };
+        const engine = new AgentHarnessEngine({ ctx: makeContext(), adapter, portDeps: { port: makePort(), ctx: makeContext() } });
+        engine.restore({
+            events: [],
+            callSeq: 1,
+            memory: { pickedProject: '长篇小说/不存在', projectName: '书A' },
+            plan: [],
+        } as never);
+
+        expect(engine.getSlots().pickedProject).toBeUndefined();
+        expect(engine.getSlots().projectName).toBe('书A');
+    });
+
     it('updateContext 后新项目列表对工具可见', async () => {
         let captured = '';
         const script: Array<Partial<HarnessAssistantTurn>> = [

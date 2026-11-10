@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137649 | 1727 | 1418 | 82% |
+| `engine/` | 319 | 137678 | 1727 | 1418 | 82% |
 | `services/` | 32 | 13395 | 194 | 154 | 79% |
-| `shared/` | 194 | 42929 | 1684 | 1375 | 82% |
+| `shared/` | 194 | 42932 | 1684 | 1375 | 82% |
 | `core/` | 7 | 2840 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 242 | 99957 | 754 | 649 | 86% |
@@ -45,10 +45,10 @@
 | `engine/agent/harness/agent-loop.ts` | 620 | 6 | 6 |
 | `engine/agent/harness/context-fit.ts` | 137 | 6 | 6 |
 | `engine/agent/harness/creation-plan.ts` | 73 | 6 | 6 |
-| `engine/agent/harness/harness-engine.ts` | 599 | 7 | 4 |
+| `engine/agent/harness/harness-engine.ts` | 612 | 7 | 4 |
 | `engine/agent/harness/harness-types.ts` | 213 | 14 | 12 |
-| `engine/agent/harness/host-tools.ts` | 1005 | 6 | 6 |
-| `engine/agent/harness/prompt-sections.ts` | 149 | 2 | 2 |
+| `engine/agent/harness/host-tools.ts` | 1015 | 6 | 6 |
+| `engine/agent/harness/prompt-sections.ts` | 152 | 2 | 2 |
 | `engine/agent/harness/session-log.ts` | 269 | 1 | 1 |
 | `engine/agent/harness/session-snapshot.ts` | 232 | 10 | 10 |
 | `engine/agent/harness/spill-store.ts` | 112 | 6 | 6 |
@@ -171,7 +171,7 @@
 | `engine/genre/types.ts` | 66 | 5 | 5 |
 | `engine/graph/graph-validation-trigger.ts` | 62 | 3 | 3 |
 | `engine/graph/graph-validator.ts` | 328 | 7 | 3 |
-| `engine/harness/ai-assisted-premise-service.ts` | 225 | 3 | 3 |
+| `engine/harness/ai-assisted-premise-service.ts` | 227 | 3 | 3 |
 | `engine/harness/call-ledger.ts` | 120 | 3 | 3 |
 | `engine/harness/creative-frameworks.ts` | 201 | 6 | 6 |
 | `engine/harness/creative-randomizer.ts` | 170 | 4 | 4 |
@@ -181,7 +181,7 @@
 | `engine/harness/single-call-runner.ts` | 222 | 7 | 7 |
 | `engine/harness/structured-output.ts` | 118 | 6 | 6 |
 | `engine/harness/tool-registry.ts` | 153 | 6 | 6 |
-| `engine/harness/trend-research-service.ts` | 202 | 8 | 8 |
+| `engine/harness/trend-research-service.ts` | 203 | 8 | 8 |
 | `engine/harness/true-random.ts` | 8 | 0 | 0 |
 | `engine/heavy-task-worker-manager.ts` | 312 | 2 | 2 |
 | `engine/incremental-result-aggregator.ts` | 1707 | 3 | 3 |
@@ -397,7 +397,7 @@
 | `shared/body-format.ts` | 224 | 9 | 6 |
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
-| `shared/canon-source.ts` | 271 | 18 | 17 |
+| `shared/canon-source.ts` | 274 | 18 | 17 |
 | `shared/changelog-data.ts` | 2321 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-ref.ts` | 205 | 7 | 5 |

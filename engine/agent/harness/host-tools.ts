@@ -149,13 +149,18 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
         parameters: {},
         required: [],
         sideEffect: 'none', timeoutMs: 10_000,
-        execute: async () => ({
-            ok: true,
-            content: ctx.projects.length > 0
-                ? `共 ${ctx.projects.length} 个项目：${ctx.projects.join('、')}${ctx.activeProject ? `；当前打开：${ctx.activeProject}` : ''}`
-                : '用户还没有项目',
-            data: { projects: ctx.projects, activeProject: ctx.activeProject },
-        }),
+        execute: async () => {
+            // S3-2（安全 r3）：项目名来自库目录名，属库内数据
+            const roster = wrapUntrustedContent(
+                `${ctx.projects.join('、')}${ctx.activeProject ? `；当前打开：${ctx.activeProject}` : ''}`,
+                '库内数据',
+            );
+            return {
+                ok: true,
+                content: ctx.projects.length > 0 ? `共 ${ctx.projects.length} 个项目：${roster}` : '用户还没有项目',
+                data: { projects: ctx.projects, activeProject: ctx.activeProject },
+            };
+        },
     });
 
     // ─── 随机设定 ───
@@ -558,12 +563,16 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
                     : '待写骨架，未完成';
                 return `- ${chapter.chapter}${chapter.title ? `「${chapter.title}」` : ''}（${tag}）`;
             });
+            // S3-2（安全 r3）：章节标题/项目名来自库内文件，围栏后才进上下文
+            const roster = wrapUntrustedContent(
+                `「${project}」共 ${chapters.length} 个章节条目，其中已写 ${written.length} 章（最后一章已写：${latestWritten}）。\n${lines.join('\n')}${chapters.length > 30 ? `\n…等共 ${chapters.length} 个` : ''}`,
+                '库内数据',
+            );
             return {
                 ok: true,
                 content: [
-                    `「${project}」共 ${chapters.length} 个章节条目，其中已写 ${written.length} 章（最后一章已写：${latestWritten}）。`,
+                    roster,
                     '注意：标为「待写骨架」的章节只是批量建章生成的空文件，不算完成，也不能当作续写起点。',
-                    lines.join('\n') + (chapters.length > 30 ? `\n…等共 ${chapters.length} 个` : ''),
                 ].join('\n'),
                 data: { chapters: chapters.slice(0, 30), writtenCount: written.length, latestWritten },
             };
@@ -625,7 +634,8 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
             lines.push(`（状态明细：${statusText}。注意：status=pending 的是批量建${unitLabel}生成的空骨架，不算已完成。）`);
             return {
                 ok: true,
-                content: lines.join('\n'),
+                // S3-2：状态数据来自库内文件/目录名，围栏后进上下文
+                content: wrapUntrustedContent(lines.join('\n'), '库内数据'),
                 data: status as unknown as Record<string, unknown>,
             };
         },
@@ -853,7 +863,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
             });
             return {
                 ok: true,
-                content: `最近 ${records.length} 条长流程记录：\n${lines.join('\n')}`,
+                content: `最近 ${records.length} 条长流程记录：\n${wrapUntrustedContent(lines.join('\n'), '库内数据')}`,
                 data: { count: records.length },
             };
         },
