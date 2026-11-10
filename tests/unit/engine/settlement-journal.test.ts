@@ -20,9 +20,9 @@ function makeDisk(initial: Record<string, string> = {}) {
         write: async (path, content) => { files.set(path, content); },
         exists: async (path) => files.has(path),
     };
-    const fields = new Map<string, string>();
+    const fields = new Map<string, unknown>();
     const fm: JournalFrontmatterPort = {
-        readField: async (path, field) => fields.get(`${path}#${field}`) ?? '',
+        readField: async (path, field) => String(fields.get(`${path}#${field}`) ?? ''),
         restoreField: async (path, field, value) => { fields.set(`${path}#${field}`, value); },
     };
     return { files, fields, fs, fm };

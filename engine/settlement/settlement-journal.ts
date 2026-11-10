@@ -21,7 +21,8 @@ const log = createLogger('SettlementJournal');
  * 结算日志条目。
  */
 export type JournalEntry =
-    | { kind: 'frontmatter-field'; path: string; field: string; before: string }
+    // before 保留原类型：list 字段（涉及人物/持有物品）回滚成字符串会让 YAML 类型漂移
+    | { kind: 'frontmatter-field'; path: string; field: string; before: unknown }
     | { kind: 'whole-file-before'; path: string; before: string }
     | { kind: 'append-marker'; path: string; marker: string };
 
@@ -53,7 +54,7 @@ export interface JournalFrontmatterPort {
      * @param field - 字段
      * @param value - 值
      */
-    restoreField(path: string, field: string, value: string): Promise<void>;
+    restoreField(path: string, field: string, value: unknown): Promise<void>;
 }
 
 /**
@@ -90,7 +91,7 @@ export class SettlementJournal {
      * @param field - 字段名
      * @param before - 变更前内容
      */
-    recordField(path: string, field: string, before: string): void {
+    recordField(path: string, field: string, before: unknown): void {
         const key = `${path}\u0000${field}`;
         if (this.fieldSeen.has(key)) return;
         this.fieldSeen.add(key);

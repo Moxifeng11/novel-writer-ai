@@ -42,11 +42,10 @@ export interface SettleContext {
     // ── 跨步骤共享状态 ──
 
     /**
-     * 回滚快照表：filePath -> (fieldName -> 原始值字符串)。
-     * 每个 UPDATE step 在写入前调用 snapshotField 填充；
-     * 汇总阶段若 hasPartialFailure 则遍历恢复。
+     * 回滚快照表：filePath -> (fieldName -> 原始值)。值保留 frontmatter 原类型，
+     * 否则 list 字段回滚会退化成字符串（F2）。
      */
-    snapshots: Map<string, Map<string, string>>;
+    snapshots: Map<string, Map<string, unknown>>;
 
     /**
      * NEW 操作创建的文件路径列表。
@@ -127,7 +126,7 @@ export function createSettleContext(
             missingEntities: [],
             linkFieldWrites: 0,
         },
-        snapshots: new Map<string, Map<string, string>>(),
+        snapshots: new Map<string, Map<string, unknown>>(),
         createdFiles: [],
         hasPartialFailure: false,
         rollbackFailed: false,

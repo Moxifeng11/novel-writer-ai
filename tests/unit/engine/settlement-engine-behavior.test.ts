@@ -339,6 +339,66 @@ describe('SettlementEngine — 部分失败回滚', () => {
         const body = h.files.get(BODY_PATH)!;
         expect(body).toContain('status: written');
     });
+
+    it('F2：数组型 frontmatter 回滚保持 list 类型（不降级成字符串）', async () => {
+        const bodyWithList = `---
+status: written
+涉及人物: [乙]
+---
+这是正文。
+`;
+        const h = makeHarness({ ...seedAll(), [BODY_PATH]: bodyWithList });
+        const instr = parseReport(REPORT);
+        const ctx = createSettleContext(PROJECT, CHAP_DIR, CHAP_NAME, BODY_SEED, REPORT, instr);
+        const steps = SettlementEngine.prototype as unknown as {
+            settleStep_updateBodyFrontmatter: (this: SettlementEngine, c: typeof ctx) => Promise<void>;
+            settleStep_finalizeRollback: (this: SettlementEngine, c: typeof ctx) => Promise<void>;
+        };
+
+        await steps.settleStep_updateBodyFrontmatter.call(h.engine, ctx);
+        // 写入后是本次结算的实体列表
+        expect(parseFm(h.files.get(BODY_PATH)!).fm['涉及人物']).toEqual(['甲']);
+
+        ctx.hasPartialFailure = true;
+        await steps.settleStep_finalizeRollback.call(h.engine, ctx);
+
+        // 旧实现用 String() 快照，回滚后这里会变成 '乙'（类型漂移）
+        const restored = parseFm(h.files.get(BODY_PATH)!).fm['涉及人物'];
+        expect(Array.isArray(restored)).toBe(true);
+        expect(restored).toEqual(['乙']);
+    });
+
+    it('F3：正文 frontmatter 写失败触发 partial 回滚（不再报成功）', async () => {
+        const h = makeHarness(seedAll(), undefined, {
+            onProcessFrontmatter: async (file) => {
+                if (file.path === BODY_PATH) throw new Error('body fm fail');
+            },
+        });
+        const result = await h.engine.settle(PROJECT, CHAP_DIR, CHAP_NAME, REPORT, BODY_SEED);
+
+        expect(result.rollback).toBeDefined();
+        expect(result.updated).toBe(0);
+        expect(h.files.get(CHAR_PATH)).toContain('当前状态: 健康');
+    });
+
+    it('F3：回滚恢复 entity_last_changed_at/chapter 溯源字段', async () => {
+        const charWithTrace = `---
+当前状态: 健康
+entity_last_changed_at: 2020-01-01T00:00:00.000Z
+entity_last_changed_chapter: 第0章
+---
+# 甲
+
+## 变更记录
+`;
+        const h = makeHarness({ ...seedAll(), [CHAR_PATH]: charWithTrace }, /伏笔库\.md$/);
+        const result = await h.engine.settle(PROJECT, CHAP_DIR, CHAP_NAME, REPORT, BODY_SEED);
+
+        expect(result.rollback).toBeDefined();
+        const restored = parseFm(h.files.get(CHAR_PATH)!).fm;
+        expect(restored['entity_last_changed_at']).toBe('2020-01-01T00:00:00.000Z');
+        expect(restored['entity_last_changed_chapter']).toBe('第0章');
+    });
 });
 
 describe('SettlementEngine — 回滚后不写 V2/承诺/弧线（D-3，2026-11-10 审计）', () => {

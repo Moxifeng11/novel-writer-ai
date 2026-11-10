@@ -705,9 +705,11 @@ export class SettlementEngine {
     private async snapshotField(ctx: SettleContext, file: TFile, field: string): Promise<void> {
         if (!ctx.snapshots.has(file.path)) ctx.snapshots.set(file.path, new Map());
         if (ctx.snapshots.get(file.path)!.has(field)) return;
-        let origVal = '';
+        let origVal: unknown = '';
         try {
-            await this.getFrontmatter().processFrontmatter(file, (fm: FrontMatter) => { origVal = String(fm[field] ?? ''); });
+            // 不做 String()：list 型字段（涉及人物/持有物品）回滚时要恢复成 list，
+            // 否则 YAML 类型会从数组退化为字符串（F2）
+            await this.getFrontmatter().processFrontmatter(file, (fm: FrontMatter) => { origVal = fm[field] ?? ''; });
             // 统一进 journal：失败回滚时与追加类条目一起按逆序恢复
             ctx.journal.recordField(file.path, field, origVal);
         } catch (e) {
@@ -724,7 +726,7 @@ export class SettlementEngine {
             try {
                 await withWriteLock(filePath, () => this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
                     for (const [field, value] of fields) {
-                        fm[field] = value;
+                        fm[field] = value as FrontMatter[string];
                     }
                 }));
             } catch (e) {
@@ -782,6 +784,10 @@ export class SettlementEngine {
             // 若在锁外先读旧值，锁内写入前原值可能已被其他写入者改掉，回滚会写回过期值。
             await withWriteLock(fp, async () => {
                 await this.snapshotField(ctx, file as TFile, field);
+                // F3：写字段时总会顺带改这两个溯源字段；不快照的话回滚后
+                // 「最后变更章/时间」会指向一个已被回滚的章节。
+                await this.snapshotField(ctx, file as TFile, 'entity_last_changed_at');
+                await this.snapshotField(ctx, file as TFile, 'entity_last_changed_chapter');
                 await this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
                     if (CONTINUITY_APPEND_FIELDS.has(field)) {
                         // v4.25 连续性账本：已知信息/伤势/持有物品 追加语义 + 来源章，
@@ -1430,6 +1436,9 @@ ${ni.description || '暂无描述'}
                 });
             });
         } catch (e) {
+            // F3：正文 frontmatter 是结算核心产物，写失败必须进入 partial 并触发回滚；
+            // 旧实现只提示，实体更新保留而正文停在 written，协调器仍写「已完成」结算表。
+            ctx.hasPartialFailure = true;
             log.warn('[SettlementEngine] body frontmatter回写失败:', e);
             this.notifier.showNotice('⚠️ 章节 frontmatter 回写失败：涉及人物/地点/势力/物品字段可能未更新', NOTICE_ERROR);
         }
@@ -1480,11 +1489,11 @@ ${ni.description || '暂无描述'}
                         });
                         return value;
                     }),
-                    restoreField: async (path: string, field: string, value: string): Promise<void> => withWriteLock(path, async () => {
+                    restoreField: async (path: string, field: string, value: unknown): Promise<void> => withWriteLock(path, async () => {
                         const file = this.getVaultMeta().getAbstractFileByPath(path);
                         if (!(file instanceof TFile)) return;
                         await this.getFrontmatter().processFrontmatter(file, (fm: FrontMatter) => {
-                            fm[field] = value;
+                            fm[field] = value as FrontMatter[string];
                         });
                     }),
                 };
