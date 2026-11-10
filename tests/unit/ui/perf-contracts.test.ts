@@ -106,3 +106,17 @@ describe('PF-5 项目选择页单次文件快照', () => {
         expect(src).toContain('listModeUnits(this.app, project, mode, files)');
     });
 });
+
+describe('P2-4 流程面板/agent-port 复用章节', () => {
+    it('agent-port 把已算好的 longChapters 传给流程采集', () => {
+        const src = read('ui/services/agent-port.ts');
+        expect(src).toContain('longChapters: mode === \'long\' ? chapters : undefined');
+    });
+
+    it('流程面板有短 TTL 章节缓存并传入 longChapters', () => {
+        const src = read('ui/full-writer/flow-panel-controller.ts');
+        expect(src).toContain('now - cached.at < 2000');
+        expect(src).toContain('longChapters,');
+        expect(src).toContain('this.chapterCache = null');
+    });
+});

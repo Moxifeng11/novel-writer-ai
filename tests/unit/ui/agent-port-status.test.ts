@@ -119,6 +119,12 @@ describe('AgentPort.getProjectStatus — 阶段投影 flow 降级契约', () => 
         expect(typed.flow).toEqual(FLOW_SNAPSHOT);
         expect(typed.totalChapters).toBe(2);
         expect(typed.writtenChapters).toBe(1);
+        // P2-4：刚算好的章节要传给流程采集，避免内部再跑全库遍历
+        expect(mocks.collectCreationFlowState).toHaveBeenCalledWith(
+            expect.anything(),
+            '长篇小说/示例',
+            expect.objectContaining({ mode: 'long', longChapters: expect.any(Array) }),
+        );
     });
 
     it('采集抛错时省略 flow，但章节统计仍可用（不阻断旧行为）', async () => {

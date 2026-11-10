@@ -375,7 +375,11 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
                 })), { unitLabel: modeUnitLabel(mode) });
                 let flow: CreationFlowSnapshot | undefined;
                 try {
-                    flow = (await collectCreationFlowState(app, project, { mode })).snapshot;
+                    // P2-4：刚算完的章节直接传给流程采集，避免内部再跑两次全库遍历
+                    flow = (await collectCreationFlowState(app, project, {
+                        mode,
+                        longChapters: mode === 'long' ? chapters : undefined,
+                    })).snapshot;
                 } catch (e) {
                     // 阶段采集失败不影响基础进度：老项目/异常项目仍能看到章节统计
                     log.warn('[AgentPort] 采集创作阶段失败:', e);

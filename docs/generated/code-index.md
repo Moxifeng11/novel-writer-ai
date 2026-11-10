@@ -11,7 +11,7 @@
 | `shared/` | 190 | 42745 | 1675 | 1367 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99698 | 754 | 649 | 86% |
+| `ui/` | 242 | 99718 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -683,7 +683,7 @@
 | `ui/full-writer/execution-panels.ts` | 383 | 4 | 4 |
 | `ui/full-writer/execution-run-store.ts` | 280 | 5 | 5 |
 | `ui/full-writer/fanfic-settings-utils.ts` | 299 | 13 | 13 |
-| `ui/full-writer/flow-panel-controller.ts` | 335 | 3 | 3 |
+| `ui/full-writer/flow-panel-controller.ts` | 351 | 3 | 3 |
 | `ui/full-writer/flow-tab.ts` | 59 | 3 | 3 |
 | `ui/full-writer/full-writer-store.ts` | 401 | 5 | 5 |
 | `ui/full-writer/full-writer-utils.ts` | 115 | 6 | 6 |
@@ -758,7 +758,7 @@
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
 | `ui/services/agent-attachment-store.ts` | 171 | 10 | 6 |
-| `ui/services/agent-port.ts` | 662 | 2 | 2 |
+| `ui/services/agent-port.ts` | 666 | 2 | 2 |
 | `ui/services/agent-session-store.ts` | 211 | 5 | 5 |
 | `ui/services/agent-spill-store.ts` | 115 | 4 | 3 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |

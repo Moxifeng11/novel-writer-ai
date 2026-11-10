@@ -12,6 +12,7 @@ import type { CreationFlowStageStatus, CreationFlowSnapshot } from '@/shared/cre
 import { createLogger } from '@/shared/logger';
 import { projectShortName } from './flow-tab';
 import { collectCreationFlowState, type CreationFlowState } from './creation-flow-state';
+import { getChaptersForProject, type ChapterListEntry } from '@/ui/project-utils';
 
 const log = createLogger('CreationFlowPanel');
 
@@ -65,6 +66,8 @@ export class FlowPanelController {
     private state: CreationFlowState | null = null;
     private refreshTimer: number | null = null;
     private renderSeq = 0;
+    /** P2-4：章节扫描短 TTL 缓存，避免自动保存期间每 400ms 重跑两次全库遍历 */
+    private chapterCache: { project: string; at: number; chapters: ChapterListEntry[] } | null = null;
     private vaultRefs: EventRef[] = [];
     private unsubscribeStore: (() => void) | null = null;
     private destroyed = false;
@@ -142,6 +145,7 @@ export class FlowPanelController {
             window.clearTimeout(this.refreshTimer);
             this.refreshTimer = null;
         }
+        this.chapterCache = null;
     }
 
     private scheduleRefresh(): void {
@@ -158,9 +162,21 @@ export class FlowPanelController {
         if (!this.container.isConnected) return;
         const seq = ++this.renderSeq;
         try {
+            let longChapters: ChapterListEntry[] | undefined;
+            if (this.mode === 'long') {
+                const now = Date.now();
+                const cached = this.chapterCache;
+                if (cached && cached.project === this.project && now - cached.at < 2000) {
+                    longChapters = cached.chapters;
+                } else {
+                    longChapters = getChaptersForProject(this.deps.app, this.project);
+                    this.chapterCache = { project: this.project, at: now, chapters: longChapters };
+                }
+            }
             const state = await collectCreationFlowState(this.deps.app, this.project, {
                 mode: this.mode,
                 wizardResults: this.deps.getWizardResults(this.project),
+                longChapters,
             });
             if (seq !== this.renderSeq || this.destroyed || !this.container) return;
             this.state = state;
