@@ -447,8 +447,19 @@ export class CoWritingView extends ItemView {
   }
   /**
    * 视图关闭：释放编辑器/监听器/定时器。
+   *
+   * D3-13：整个关闭流程必须**同步**登记进卸载屏障。旧实现先 `await saveHistory()`，
+   * 之后才 track(saveBody)，而插件卸载流程 detach 叶子不 await onClose，
+   * drain 看到空集合直接返回 → 旧实例保存可能在新实例启动后落盘覆盖正文。
    */
   async onClose() {
+    const closing = this.performClose();
+    this.plugin?._unloadBarrier?.track(closing);
+    await closing;
+  }
+
+  /** onClose 的实际清理与保存（由 onClose 同步登记进卸载屏障） */
+  private async performClose(): Promise<void> {
     this.modelSwitcher?.destroy();
     this.modelSwitcher = null;
     this.clearPreviewTimer();
@@ -495,11 +506,9 @@ export class CoWritingView extends ItemView {
     }
     // NBI-04: 视图卸载后不残留「指令已应用」状态
     this.appliedHint = null;
-    // L2-1：卸载流程会 detach 叶子但不 await onClose；把保存登记进卸载屏障，
-    // 由插件 onunload 在 disposeAll 前有界等待，避免旧快照覆盖新实例正文。
-    const savePromise = this.saveBody(false);
-    this.plugin?._unloadBarrier?.track(savePromise);
-    await savePromise;
+    // L2-1/D3-13：整个 performClose 已由 onClose 同步登记进卸载屏障，
+    // 这里只 await 保存本身（不再单独 track，避免重复登记与顺序歧义）。
+    await this.saveBody(false);
     this.autoSaveDebouncer.dispose();
   }
   /**

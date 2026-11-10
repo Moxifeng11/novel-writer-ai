@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137614 | 1727 | 1418 | 82% |
 | `services/` | 32 | 13378 | 194 | 154 | 79% |
-| `shared/` | 193 | 42883 | 1683 | 1374 | 82% |
+| `shared/` | 193 | 42903 | 1683 | 1374 | 82% |
 | `core/` | 7 | 2840 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99924 | 754 | 649 | 86% |
+| `ui/` | 242 | 99933 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -488,7 +488,7 @@
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
 | `shared/plugin-cache.ts` | 409 | 6 | 4 |
 | `shared/plugin-capabilities.ts` | 98 | 4 | 1 |
-| `shared/plugin-data-migration.ts` | 100 | 3 | 1 |
+| `shared/plugin-data-migration.ts` | 120 | 3 | 1 |
 | `shared/plugin-leaves.ts` | 34 | 2 | 1 |
 | `shared/plugin-worker-url.ts` | 87 | 3 | 2 |
 | `shared/pre-research.ts` | 464 | 17 | 17 |
@@ -599,7 +599,7 @@
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1024 | 2 | 2 |
-| `ui/co-writing-view.ts` | 3261 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3270 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 224 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |

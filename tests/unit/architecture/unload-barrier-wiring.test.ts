@@ -27,7 +27,8 @@ describe('UnloadBarrier 接线', () => {
     });
 
     it('协同保存与 Agent 会话 flush 登记进屏障', () => {
-        expect(read('ui/co-writing-view.ts')).toContain('_unloadBarrier?.track(savePromise)');
+        // D3-13：协同改成「整个 onClose 同步登记」，早于 saveHistory 等任何 await
+        expect(read('ui/co-writing-view.ts')).toContain('_unloadBarrier?.track(closing)');
         expect(read('ui/agent-workbench-view.ts')).toContain('_unloadBarrier?.track(flushPromise)');
     });
 });

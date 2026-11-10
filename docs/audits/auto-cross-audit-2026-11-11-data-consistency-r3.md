@@ -18,8 +18,8 @@
 | D3-9 | P2 | `engine/ledger/ledger-io.ts:30-41/89-110`、`settlement-engine.ts:1213-1258` | 台账签名仍 mtime+size；读失败把空账本写进缓存；`no-table` 被当「已存在」成功；揭示/删除路径不 invalidate | 新事件静默丢失；整会话拿到空/旧账本 | **已修（第61→62轮）**：签名加内容指纹（FNV-1a）、读失败不写缓存、`no-table` 走 partialFailure（伏笔库/时间线结构）、揭示后显式 invalidate；4 条测试 |
 | D3-10 | P2 | `engine/ledger/ledger-link.ts:43-72/156`、`context-manager.ts:2482-2495` | `buildLedgerLinks` 就地改缓存台账 refs/issues；已删实体保持 `resolved=true` | 关联索引问题数每次翻倍；已删实体仍连边 | **已修（第63轮）**：改为纯函数（不写 refs/不 push issues），调用方用渲染副本；4 条测试 |
 | D3-11 | P2 | `services/writing-stats-service.ts:113-125/317-333`、`main.ts:866-873` | 台账损坏静默清零并覆盖（非原子写）；项目改名不迁移，旧快照被 prune 后整书重复计数 | 历史日产出永久丢失；统计虚高 | **已修（第63轮）**：损坏先归档 `.corrupt-<ts>.bak`；persist 改 tmp+rename；新增 `migrateProjectPath` 并在项目级目录 rename 时调用；6 条测试 |
-| D3-12 | P2 | `shared/plugin-data-migration.ts:34-56/78-94` | 复制模式成功后旧目录保留且无完成标记，每次 onload 重跑 | 新目录删掉的文件被旧目录复活（D2-13 仍在） | 未修 → fix queue（完成标记/旧目录改名） |
-| D3-13 | P2 | `ui/co-writing-view.ts:474-502`、`shared/unload-barrier.ts:51-64` | onClose 先 await 保存历史再 track 正文保存；drain 见空即返回；无实例代次 | 旧实例保存落到新实例启动后，覆盖正文（D2-7 仍在） | 未修 → fix queue |
+| D3-12 | P2 | `shared/plugin-data-migration.ts:34-56/78-94` | 复制模式成功后旧目录保留且无完成标记，每次 onload 重跑 | 新目录删掉的文件被旧目录复活（D2-13 仍在） | **已修（第64轮）**：成功后写 `.legacy-migrated.json` 标记（rename/复制两条路径都写），标记存在即短路；3 条测试 |
+| D3-13 | P2 | `ui/co-writing-view.ts:474-502`、`shared/unload-barrier.ts:51-64` | onClose 先 await 保存历史再 track 正文保存；drain 见空即返回；无实例代次 | 旧实例保存落到新实例启动后，覆盖正文（D2-7 仍在） | **已修（第64轮，屏障顺序）**：onClose 同步 `track(performClose())`，早于任何 await；实例代次仍留 D3-13 残余 |
 | D3-14 | P2 | `ui/services/agent-port.ts:584-591`、`services/project-rename-service.ts:72-105` | Agent append 与改名同步（`.project`/世界观/写作画像）均无锁 read→write | 并发结算/结构切换被旧快照覆盖 | 未修 → fix queue |
 | D3-15 | P3 | `engine/settlement-engine.ts:1302-1306/1680-1681`、`settlement-journal.ts:119-126/179-197` | append-marker 在目标写之后登记；去重键不含字段，`removeMarkerOnce` 只删首处 | 写一半失败无法回滚；同值两字段只记一条 | 未修 → fix queue（登记移到写前） |
 | D3-16 | P3 | `engine/cross-volume-integration.ts:494-516`、`ui/cross-volume-state-modal.ts:199-203` | 快照先删后写、无 tmp/rename、无锁 | 失败窗口丢旧快照；并发 last-wins | 未修 → fix queue |
@@ -46,7 +46,7 @@
 ## 五、fix queue
 
 1. D3-6 正文单文件改名迁移 sourcePath（P2，vault rename 事件）
-2. D3-12 迁移完成标记、D3-13 屏障顺序（P2）
+2. D3-13 残余：协同实例代次（旧实例保存丢弃）
 4. D3-4/D3-14 其余无锁写点、D3-15~D3-18（P2/P3）
 
 ## 六、后续修复记录
@@ -60,3 +60,5 @@
 - 第62轮（D3-9）：`ledger-io` 签名加内容指纹、读失败（ok=false）不写缓存；`settlement-engine` 追加伏笔/时间线遇 `no-table` 记 partialFailure（伏笔库结构/时间线看板结构），揭示路径补 `invalidateStoryLedger`。4 条测试。
 
 - 第63轮（D3-10/D3-11）：`buildLedgerLinks` 纯函数化（不写缓存 refs/issues），`context-manager` 用渲染副本；`writing-stats-service` 损坏归档、tmp+rename 原子写、新增 `migrateProjectPath`，main.ts 项目级 rename 时调用。新增 4+6 条测试，更新 2 条旧断言。
+
+- 第64轮（D3-12/D3-13）：`plugin-data-migration` 成功后写 `.legacy-migrated.json` 完成标记（rename/复制均写，存在即短路）；`co-writing-view.onClose` 改为同步登记整个 `performClose()` 进卸载屏障（早于 saveHistory 等 await），内部不再单独 track 保存。新增 5 条测试并更新 1 条旧接线断言。

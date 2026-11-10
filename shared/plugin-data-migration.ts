@@ -10,7 +10,9 @@
  * - 只迁移插件自己的 `data/`（JSON/向量缓存），不碰用户 vault；
  * - 目标已存在时不覆盖（幂等）；
  * - 优先整目录 rename（同盘 O(1)），失败再逐文件复制；
- * - 旧目录保留作备份，不删除。
+ * - 旧目录保留作备份，不删除；
+ * - 成功后写完成标记（D3-12）：否则每次 onload 都会重新复制，用户在新目录
+ *   删掉的文件（损坏台账/重建过的向量索引）会被旧目录复活。
  */
 
 /** 迁移所需的最小适配器能力（Obsidian DataAdapter 的子集） */
@@ -77,13 +79,30 @@ export async function migrateLegacyPluginData(
 
     const legacyData = `${legacy}/data`;
     const currentData = `${current}/data`;
+    const marker = `${currentData}/.legacy-migrated.json`;
     try {
         if (!(await adapter.exists(legacyData))) return { migrated: 0, renamed: false };
+        // D3-12：已完成过一次迁移就不再重放，避免「新目录删掉的文件被旧目录复活」
+        if (await adapter.exists(marker)) return { migrated: 0, renamed: false };
+        const writeMarker = async (renamed: boolean): Promise<void> => {
+            try {
+                // write-entry-allow: 插件 data/ 内的迁移完成标记
+                await adapter.write(marker, JSON.stringify({
+                    from: legacyData,
+                    to: currentData,
+                    renamed,
+                    at: new Date().toISOString(),
+                }));
+            } catch {
+                // 标记写失败不阻断迁移；下次启动会重试（幂等，目标已存在不覆盖）
+            }
+        };
         if (!(await adapter.exists(currentData))) {
             await adapter.mkdir(current).catch(() => undefined);
             if (typeof adapter.rename === 'function') {
                 try {
                     await adapter.rename(legacyData, currentData);
+                    await writeMarker(true);
                     return { migrated: 1, renamed: true };
                 } catch {
                     // 跨盘/移动端不支持目录 rename → 回退逐文件复制
@@ -91,6 +110,7 @@ export async function migrateLegacyPluginData(
             }
         }
         const copied = await copyDirectory(adapter, legacyData, currentData);
+        await writeMarker(false);
         return { migrated: copied, renamed: false };
     } catch {
         // 迁移失败不能阻断启动：旧目录仍在，下次 onload 会重试
