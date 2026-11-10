@@ -10,7 +10,7 @@
 | D3-1 | P1 | `ui/chapter-settlement-modal.ts:368-383` | 结算表写完后用 `processFrontmatter` 无锁回写正文 `status=settled`（整文件 RMW）；引擎侧同一字段本就在 `withWriteLock` 内写（`settlement-engine.ts:490/1410`） | 与协同自动保存并发时覆盖最后一段正文 | **本轮已修**：回写包进 `withWriteLock(target.bodyPath)`；契约测试钉住唯一写点 |
 | D3-2 | P1 | `engine/entity-state-manager.ts:258-283` | `updateInvolvedEntities` 先读正文 → await 提取人物 → 用旧快照整文件写回，无锁 | 提取期间的自动保存被旧正文覆盖（丢字） | **本轮已修**：提取移到锁外；锁内重读正文再合并写；3 条行为测试 + 契约 |
 | D3-3 | P1 | `ui/rebuild-chapters-modal.ts:137-167` | 重建章节对伏笔库/时间线看板做无锁 read→filter→modify | 重建期间结算新追加的伏笔/事件被旧快照覆盖，无 journal 不可撤销 | **已修（第59轮）**：抽出 `removeChapterRows`，锁内重读→过滤→写回；3 条行为测试 + 契约 |
-| D3-4 | P2 | `ui/context-injector-modal.ts:71/193` | 注入上下文先读正文，随后多次 IO，最后整文件覆盖写，无锁 | 多秒窗口内自动保存被覆盖 | 未修 → fix queue |
+| D3-4 | P2 | `ui/context-injector-modal.ts:71/193` | 注入上下文先读正文，随后多次 IO，最后整文件覆盖写，无锁 | 多秒窗口内自动保存被覆盖 | **已修（第65轮）**：锁内重读正文再 upsert/写入；1 条契约测试 |
 | D3-5 | P2 | `services/chapter-version-service.ts:557-596/537-542/239-262` | 版本标签/备注/回滚历史 RMW 无锁；`versions.json` 解析失败返回空索引，下次保存把旧元数据永久覆盖（无 `.corrupt` 归档） | 版本条目被静默清空/孤儿 blob | **已修（第60轮）**：标签/备注/回滚历史改 `withWriteLock(indexPath/historyPath)`；索引与历史损坏先归档 `.corrupt-<ts>.bak`；5 条测试 |
 | D3-6 | P2 | `services/chapter-version-service.ts:193-209/370-405`、`services/project-rename-service.ts:54-59` | 项目改名/移动后 `versions.json` 里的 `project`/`sourcePath` 不迁移：历史被过滤丢弃；正文改名后回滚写回旧路径生成重复文件 | 版本历史丢失；回滚“成功”但改的是旧文件 | **已修（第60轮，项目改名侧）**：rename 后遍历 `_versions/**/versions.json` 重写 project/sourcePath/versionPath；正文单文件改名（vault rename 事件）仍待办 |
 | D3-7 | P2 | `engine/settlement-engine.ts:630-638/1549-1592`、`settlement-coordinator.ts:79-89` | 回滚终态之后的关系/承诺/人物弧更新失败只设内部 `hasPartialFailure`，`SettlementResult` 无该字段，结算表仍写「已完成」 | 账本半写却显示已结算，且 journal 已清无法恢复 | **已修（第61轮）**：`SettlementResult.partialFailure` + `markPostStepFailure`；coordinator 跳过产物并警告；步骤/批量/弹窗 5 个调用方按失败处理；4 条测试 |
@@ -20,7 +20,7 @@
 | D3-11 | P2 | `services/writing-stats-service.ts:113-125/317-333`、`main.ts:866-873` | 台账损坏静默清零并覆盖（非原子写）；项目改名不迁移，旧快照被 prune 后整书重复计数 | 历史日产出永久丢失；统计虚高 | **已修（第63轮）**：损坏先归档 `.corrupt-<ts>.bak`；persist 改 tmp+rename；新增 `migrateProjectPath` 并在项目级目录 rename 时调用；6 条测试 |
 | D3-12 | P2 | `shared/plugin-data-migration.ts:34-56/78-94` | 复制模式成功后旧目录保留且无完成标记，每次 onload 重跑 | 新目录删掉的文件被旧目录复活（D2-13 仍在） | **已修（第64轮）**：成功后写 `.legacy-migrated.json` 标记（rename/复制两条路径都写），标记存在即短路；3 条测试 |
 | D3-13 | P2 | `ui/co-writing-view.ts:474-502`、`shared/unload-barrier.ts:51-64` | onClose 先 await 保存历史再 track 正文保存；drain 见空即返回；无实例代次 | 旧实例保存落到新实例启动后，覆盖正文（D2-7 仍在） | **已修（第64轮，屏障顺序）**：onClose 同步 `track(performClose())`，早于任何 await；实例代次仍留 D3-13 残余 |
-| D3-14 | P2 | `ui/services/agent-port.ts:584-591`、`services/project-rename-service.ts:72-105` | Agent append 与改名同步（`.project`/世界观/写作画像）均无锁 read→write | 并发结算/结构切换被旧快照覆盖 | 未修 → fix queue |
+| D3-14 | P2 | `ui/services/agent-port.ts:584-591`、`services/project-rename-service.ts:72-105` | Agent append 与改名同步（`.project`/世界观/写作画像）均无锁 read→write | 并发结算/结构切换被旧快照覆盖 | **已修（第65轮）**：append 与三个改名同步写点全部 `withWriteLock(path)` 内重读；2 条契约测试 |
 | D3-15 | P3 | `engine/settlement-engine.ts:1302-1306/1680-1681`、`settlement-journal.ts:119-126/179-197` | append-marker 在目标写之后登记；去重键不含字段，`removeMarkerOnce` 只删首处 | 写一半失败无法回滚；同值两字段只记一条 | 未修 → fix queue（登记移到写前） |
 | D3-16 | P3 | `engine/cross-volume-integration.ts:494-516`、`ui/cross-volume-state-modal.ts:199-203` | 快照先删后写、无 tmp/rename、无锁 | 失败窗口丢旧快照；并发 last-wins | 未修 → fix queue |
 | D3-17 | P3 | `ui/batch-chapters-modal.ts:238-320`、`settlement-engine.ts:1866-1867`、`foreshadow-manager.ts:196-201` | 信息债看板三个写点只有一处持锁 | 看板回退/删窗 | 未修 → fix queue |
@@ -47,7 +47,7 @@
 
 1. D3-6 正文单文件改名迁移 sourcePath（P2，vault rename 事件）
 2. D3-13 残余：协同实例代次（旧实例保存丢弃）
-4. D3-4/D3-14 其余无锁写点、D3-15~D3-18（P2/P3）
+4. D3-15~D3-18（P3）
 
 ## 六、后续修复记录
 
@@ -62,3 +62,5 @@
 - 第63轮（D3-10/D3-11）：`buildLedgerLinks` 纯函数化（不写缓存 refs/issues），`context-manager` 用渲染副本；`writing-stats-service` 损坏归档、tmp+rename 原子写、新增 `migrateProjectPath`，main.ts 项目级 rename 时调用。新增 4+6 条测试，更新 2 条旧断言。
 
 - 第64轮（D3-12/D3-13）：`plugin-data-migration` 成功后写 `.legacy-migrated.json` 完成标记（rename/复制均写，存在即短路）；`co-writing-view.onClose` 改为同步登记整个 `performClose()` 进卸载屏障（早于 saveHistory 等 await），内部不再单独 track 保存。新增 5 条测试并更新 1 条旧接线断言。
+
+- 第65轮（D3-4/D3-14）：`context-injector` 锁内重读再注入；`agent-port` append 与 `project-rename` 三处同步写点全部加路径锁并在锁内重读。新增 3 条契约测试。

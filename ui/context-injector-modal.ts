@@ -8,6 +8,7 @@ import { createLogger } from '@/shared/logger';
 
 
 import { writeVaultText } from '@/shared/file-system-port';
+import { withWriteLock } from '@/shared/write-lock';
 const log = createLogger('ContextInjectorModal');
 /**
  * 上下文注入器弹窗。
@@ -65,14 +66,6 @@ export class ContextInjectorModal extends Modal {
         const itemDir = entityDir(projectRoot, 'items');
 
         new Notice(`🔍 在 ${projectRoot} 下检索关联...`);
-
-        let content: string;
-        try {
-            content = await adapter.read(filePath);
-        } catch (e) {
-            new Notice('❌ 读取文件失败');
-            return;
-        }
 
         const { chars: charLinks, locs: locLinks, factions: factionLinks, items: itemLinks } =
             await getInvolvedEntities(this.app, bodyFile);
@@ -185,12 +178,17 @@ export class ContextInjectorModal extends Modal {
 
         // 幂等写入：重复注入只替换旧块，不再向正文追加第二段
         const marker = '<!-- 正文从这里开始 -->';
-        const newContent = upsertAutoContext(content, body, marker);
 
         try {
-            // 走 vault 索引写入，让 metadataCache 立即重解析；旧 adapter.write + .touch_
-            // 临时文件是在索引外改正文，属性/字数/链接都会短时间陈旧。
-            await writeVaultText(this.app, filePath, newContent);
+            // D3-4（维度② r3）：检索可能持续数秒，必须在路径锁内重新读取正文再注入，
+            // 否则期间协同自动保存写入的正文会被注入前的旧快照覆盖。
+            await withWriteLock(filePath, async () => {
+                const fresh = await adapter.read(filePath);
+                const newContent = upsertAutoContext(fresh, body, marker);
+                // 走 vault 索引写入，让 metadataCache 立即重解析；旧 adapter.write + .touch_
+                // 临时文件是在索引外改正文，属性/字数/链接都会短时间陈旧。
+                await writeVaultText(this.app, filePath, newContent);
+            });
         } catch (e) {
             new Notice(`❌ 写入失败: ${(e as Error).message || e}`);
             return;

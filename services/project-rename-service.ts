@@ -76,35 +76,42 @@ export class ProjectRenameService {
         const path = pjProjectMeta(project);
         const adapter = this.app.vault.adapter;
         if (!(await adapter.exists(path))) return;
-        const content = await adapter.read(path);
-        // 用函数替换，避免书名里的 $&/$' 被当成替换模式
-        const updated = content.replace(/^#\s+.+$/m, () => `# ${name}`);
-        // P1-5（v4.27）：项目内 .md 走 vault 索引写入，adapter.write 不触发 modify 事件，
-        // metadataCache 仍是旧 frontmatter，后续 processFrontmatter 会用旧值覆盖改名结果。
-        if (updated !== content) await writeVaultText(this.app, path, updated);
+        // D3-14：读—替换—写与结构切换/世界观生成共用同一路径锁
+        await withWriteLock(path, async () => {
+            const content = await adapter.read(path);
+            // 用函数替换，避免书名里的 $&/$' 被当成替换模式
+            const updated = content.replace(/^#\s+.+$/m, () => `# ${name}`);
+            // P1-5（v4.27）：项目内 .md 走 vault 索引写入，adapter.write 不触发 modify 事件，
+            // metadataCache 仍是旧 frontmatter，后续 processFrontmatter 会用旧值覆盖改名结果。
+            if (updated !== content) await writeVaultText(this.app, path, updated);
+        });
     }
 
     private async syncWorldview(project: string, name: string): Promise<void> {
         const path = pjWorldview(project);
         const adapter = this.app.vault.adapter;
         if (!(await adapter.exists(path))) return;
-        const content = await adapter.read(path);
-        const line = `项目名称: ${name}`;
-        const updated = /^项目名称:\s*.*$/m.test(content)
-            ? content.replace(/^项目名称:\s*.*$/m, line)
-            : content.replace(/^---\s*$/m, `---\n${line}`);
-        if (updated !== content) await writeVaultText(this.app, path, updated);
+        await withWriteLock(path, async () => {
+            const content = await adapter.read(path);
+            const line = `项目名称: ${name}`;
+            const updated = /^项目名称:\s*.*$/m.test(content)
+                ? content.replace(/^项目名称:\s*.*$/m, line)
+                : content.replace(/^---\s*$/m, `---\n${line}`);
+            if (updated !== content) await writeVaultText(this.app, path, updated);
+        });
     }
 
     private async syncWritingProfile(project: string, name: string): Promise<void> {
         const path = `${project}/写作配置.md`;
         const adapter = this.app.vault.adapter;
         if (!(await adapter.exists(path))) return;
-        const content = await adapter.read(path);
-        const updated = /^projectName:\s*.*$/m.test(content)
-            ? content.replace(/^projectName:\s*.*$/m, `projectName: ${name}`)
-            : content.replace(/^---\s*$/m, `---\nprojectName: ${name}`);
-        if (updated !== content) await writeVaultText(this.app, path, updated);
+        await withWriteLock(path, async () => {
+            const content = await adapter.read(path);
+            const updated = /^projectName:\s*.*$/m.test(content)
+                ? content.replace(/^projectName:\s*.*$/m, `projectName: ${name}`)
+                : content.replace(/^---\s*$/m, `---\nprojectName: ${name}`);
+            if (updated !== content) await writeVaultText(this.app, path, updated);
+        });
     }
 
     /**

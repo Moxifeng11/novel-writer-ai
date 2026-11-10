@@ -7,11 +7,11 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137614 | 1727 | 1418 | 82% |
-| `services/` | 32 | 13378 | 194 | 154 | 79% |
+| `services/` | 32 | 13385 | 194 | 154 | 79% |
 | `shared/` | 193 | 42903 | 1683 | 1374 | 82% |
 | `core/` | 7 | 2840 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99933 | 754 | 649 | 86% |
+| `ui/` | 242 | 99936 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -371,7 +371,7 @@
 | `services/model-discovery.ts` | 274 | 5 | 5 |
 | `services/performance-monitor.ts` | 819 | 9 | 9 |
 | `services/project-health-service.ts` | 223 | 5 | 2 |
-| `services/project-rename-service.ts` | 185 | 2 | 2 |
+| `services/project-rename-service.ts` | 192 | 2 | 2 |
 | `services/prompt-manager.ts` | 783 | 5 | 5 |
 | `services/prompt-templates-default.ts` | 644 | 1 | 1 |
 | `services/quality-history-store.ts` | 128 | 4 | 4 |
@@ -647,7 +647,7 @@
 | `ui/components/progress/step-list.ts` | 223 | 1 | 1 |
 | `ui/components/progress/task-card.ts` | 273 | 2 | 2 |
 | `ui/components/smart-chart.ts` | 520 | 1 | 1 |
-| `ui/context-injector-modal.ts` | 212 | 1 | 1 |
+| `ui/context-injector-modal.ts` | 210 | 1 | 1 |
 | `ui/continue-chapters-modal.ts` | 567 | 1 | 1 |
 | `ui/cowrite/body-save-controller.ts` | 282 | 3 | 2 |
 | `ui/cowrite/cowrite-mappers.ts` | 111 | 6 | 6 |
@@ -761,7 +761,7 @@
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
 | `ui/services/agent-attachment-store.ts` | 171 | 10 | 6 |
-| `ui/services/agent-port.ts` | 666 | 2 | 2 |
+| `ui/services/agent-port.ts` | 671 | 2 | 2 |
 | `ui/services/agent-session-store.ts` | 211 | 5 | 5 |
 | `ui/services/agent-spill-store.ts` | 115 | 4 | 3 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |

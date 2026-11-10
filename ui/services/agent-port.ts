@@ -18,6 +18,7 @@ import type {
     GuideAgentPort,
 } from '@/engine/agent/agent-types';
 import { extractLineWindow, sanitizeVaultPath, summarizeHitLine } from '@/shared/file-path-guard';
+import { withWriteLock } from '@/shared/write-lock';
 import { getExecutionLedger } from '@/services/execution-ledger';
 import { createLongNovelProject } from './project-create-service';
 import { StorySettingsModal } from '@/ui/story-settings-modal';
@@ -585,10 +586,14 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
                 }
             }
             let next = content;
-            if (options?.append && existed) {
-                next = `${await app.vault.adapter.read(guard.path)}${content}`;
-            }
-            await writeVaultText(app, guard.path, next);
+            // D3-14（维度② r3）：追加是读—改—写，必须与结算/分析/自动保存共用路径锁；
+            // 锁内重新读取，避免用审批前的旧内容覆盖并发写入。
+            await withWriteLock(guard.path, async () => {
+                if (options?.append && existed) {
+                    next = `${await app.vault.adapter.read(guard.path)}${content}`;
+                }
+                await writeVaultText(app, guard.path, next);
+            });
             return { path: guard.path, created: !existed, bytes: new TextEncoder().encode(next).length };
         },
         deleteFile: async (path, options) => {
