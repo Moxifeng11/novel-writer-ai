@@ -27,7 +27,14 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BASELINE_PATH = path.join(ROOT, '.bundle-baseline.json');
 const BASELINE_NAME = path.basename(BASELINE_PATH);
-const FILES = ['main.js', 'styles.css'];
+const FILES = [
+    'main.js',
+    'styles.css',
+    // PF-3（2026-11-10 包体审计）：Worker 是独立 Blob，99.4% 字节与 main 重复编译，
+    // 但此前完全在体积棘轮之外。纳入同一基线，任何一侧腐化都必须显式 --note。
+    'workers/deconstruction-worker.js',
+    'workers/quality-worker.js',
+];
 
 /** 按 LF 口径计字节数：每个 CRLF 按 1 字节计（等价于 \r\n → \n 后再计） */
 function lfBytes(buf) {

@@ -76,6 +76,14 @@ jobs:
       - name: 构建
         run: npm run build
 
+      # PF-4：tag 推送不触发 ci.yml（分支过滤器），发布路径必须自己复核
+      # 体积棘轮与安全/API 门禁，否则 tag 可指向未经 CI 的提交。
+      - name: 发布路径复核（体积/密钥/API）
+        run: |
+          npm run check:bundle
+          npm run check:secrets
+          npm run check:obsidian-api
+
       - name: 发布资产校验（含 tag 版本一致性）
         run: npm run check:release -- --tag "$GITHUB_REF_NAME"
 

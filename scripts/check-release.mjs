@@ -16,6 +16,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { checkWorkerSyntax } from './worker-syntax.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
@@ -142,7 +143,15 @@ const workerFiles = [
 ];
 for (const rel of workerFiles) {
     const info = requireFile(rel, 1_000);
-    if (info) notes.push(`${rel}: ${info.size} bytes`);
+    if (info) {
+        // PF-3：产物损坏但体积正常时，旧门禁只报「存在」；这里补语法解析
+        const syntax = checkWorkerSyntax(path.join(rootDir, rel));
+        if (!syntax.ok) {
+            errors.push(`Worker 语法校验失败: ${rel}\n${syntax.error ?? ''}`);
+        } else {
+            notes.push(`${rel}: ${info.size} bytes（语法校验通过）`);
+        }
+    }
 }
 
 // 4.1 发布工作流资产必须与本地产物一致（v4.27：曾出现 release.yml 仍列已删的 style-worker，
