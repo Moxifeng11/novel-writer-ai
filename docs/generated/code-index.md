@@ -11,7 +11,7 @@
 | `shared/` | 190 | 42747 | 1675 | 1367 | 82% |
 | `core/` | 7 | 2826 | 29 | 14 | 48% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99720 | 754 | 649 | 86% |
+| `ui/` | 242 | 99731 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -719,7 +719,7 @@
 | `ui/ideation-modal.ts` | 814 | 1 | 1 |
 | `ui/job-center-modal.ts` | 124 | 1 | 1 |
 | `ui/knowledge-detail-format.ts` | 46 | 4 | 4 |
-| `ui/knowledge-detail-modal.ts` | 1699 | 1 | 1 |
+| `ui/knowledge-detail-modal.ts` | 1707 | 1 | 1 |
 | `ui/knowledge-folder-navigation.ts` | 15 | 1 | 1 |
 | `ui/knowledge-monitor-modal.ts` | 500 | 1 | 1 |
 | `ui/knowledge-rebuild-action.ts` | 48 | 1 | 1 |
@@ -731,7 +731,7 @@
 | `ui/model-picker-popover.ts` | 298 | 4 | 3 |
 | `ui/model-quick-switcher.ts` | 319 | 13 | 12 |
 | `ui/monitor-panel-a.ts` | 200 | 2 | 2 |
-| `ui/monitor-panel-b.ts` | 1909 | 2 | 2 |
+| `ui/monitor-panel-b.ts` | 1910 | 2 | 2 |
 | `ui/novel-analysis-modal.ts` | 267 | 1 | 1 |
 | `ui/novel-tags-modal.ts` | 335 | 1 | 1 |
 | `ui/onboarding-modal.ts` | 300 | 1 | 1 |
@@ -773,7 +773,7 @@
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 289 | 1 | 1 |
 | `ui/settings/general-sections.ts` | 1202 | 6 | 6 |
-| `ui/settings/knowledge-section.ts` | 795 | 1 | 1 |
+| `ui/settings/knowledge-section.ts` | 797 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
 | `ui/settings/section-factory.ts` | 75 | 3 | 1 |

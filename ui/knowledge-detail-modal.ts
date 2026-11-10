@@ -161,6 +161,8 @@ export class KnowledgeDetailModal extends Modal {
     private knowledgeManager: KnowledgeBaseManager;
     private deconstructionScheduler?: DeconstructionScheduler;
     private baseDir?: string;
+    /** M3-4：构造注入的插件实例（替代私有 app.plugins） */
+    private plugin?: NovelWriterPlugin;
     private bookInfo: BookBasicInfo | null = null;
     private activeTab: TabKey = 'overview';
     private expandedItems: Record<string, boolean> = {};
@@ -178,13 +180,19 @@ export class KnowledgeDetailModal extends Modal {
         app: App,
         bookId: string,
         knowledgeManager: KnowledgeBaseManager,
-        options?: { baseDir?: string; deconstructionScheduler?: DeconstructionScheduler }
+        options?: {
+            baseDir?: string;
+            deconstructionScheduler?: DeconstructionScheduler;
+            /** M3-4：由调用方注入插件实例，禁止再走私有 app.plugins */
+            plugin?: NovelWriterPlugin;
+        }
     ) {
         super(app);
         this.bookId = bookId;
         this.knowledgeManager = knowledgeManager;
         this.deconstructionScheduler = options?.deconstructionScheduler;
         this.baseDir = options?.baseDir;
+        this.plugin = options?.plugin;
     }
 
     /**
@@ -275,12 +283,8 @@ export class KnowledgeDetailModal extends Modal {
     }
 
     private getPlugin(): NovelWriterPlugin | null {
-        try {
-            const plugin = this.app.plugins?.getPlugin('novel-writer-ai');
-            if (plugin) return plugin as NovelWriterPlugin;
-        } catch {
-        }
-        return null;
+        // M3-4：app.plugins 是私有 API，审核风险；只使用构造注入的实例
+        return this.plugin ?? null;
     }
 
     private isReferenceBook(): boolean {
@@ -1677,8 +1681,12 @@ export class KnowledgeDetailModal extends Modal {
     private ensureScheduler(): DeconstructionScheduler | null {
         if (this.deconstructionScheduler) return this.deconstructionScheduler;
         try {
-            const plugin = this.app.plugins.getPlugin('novel-writer-ai') as NovelWriterPlugin;
-            const embeddingProvider = EmbeddingProviderFactory.fromSettings(plugin?.settings);
+            const plugin = this.plugin;
+            if (!plugin) {
+                new Notice('无法获取拆解调度器，请在设置中先加载知识库');
+                return null;
+            }
+            const embeddingProvider = EmbeddingProviderFactory.fromSettings(plugin.settings);
             const vectorEnhancer = new VectorEnhancer(embeddingProvider);
             this.deconstructionScheduler = new DeconstructionScheduler(
                 this.app,
@@ -1686,7 +1694,7 @@ export class KnowledgeDetailModal extends Modal {
                 undefined,
                 undefined,
                 vectorEnhancer,
-                () => plugin?.settings || {}
+                () => plugin.settings || {}
             );
             return this.deconstructionScheduler;
         } catch (e) {

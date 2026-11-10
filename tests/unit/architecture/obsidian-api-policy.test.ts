@@ -63,8 +63,10 @@ describe('check:obsidian-api 门禁', () => {
             'ui/clean.ts': [
                 '// 历史实现用 fetch 与 MarkdownRenderer.renderMarkdown，已迁移',
                 "import { requestUrl } from 'obsidian';",
+                'declare const menu: { setTitle(value: string): void };',
                 'export async function load(url: string) {',
                 '    // 说明：不得硬编码 .obsidian/plugins/novel-writer-ai 路径',
+                '    menu.setTitle(\'ok\'); // MenuItem.setTitle 不受限（只拦 this.setTitle）',
                 '    return requestUrl({ url, throw: false });',
                 '}',
             ].join('\n'),
@@ -136,13 +138,19 @@ describe('check:obsidian-api 门禁', () => {
         expect(result.stderr).toContain('console-direct');
     });
 
-    it('绕过写法也必须报错（registerDomEvent(document) / 强转 isMobile）', () => {
+    it('绕过写法也必须报错（Modal.setTitle / app.plugins / body 监听 / 解构 isMobile）', () => {
         const root = fixture({
             'ui/bypass.ts': [
                 "import type { App } from 'obsidian';",
                 'export function bind(host: { registerDomEvent(el: unknown, type: string, cb: () => void): void }, app: App) {',
                 "    host.registerDomEvent(document, 'click', () => {});",
-                '    return (app as unknown as { isMobile?: boolean }).isMobile === true;',
+                "    document.body.addEventListener('click', () => {});",
+                "    window.addEventListener('resize', () => {});",
+                '    this.setTitle(\'x\');',
+                "    const plugin = app.plugins.getPlugin('novel-writer-ai');",
+                '    const { isMobile } = app as unknown as { isMobile: boolean };',
+                '    const cast = (app as unknown as { isMobile: boolean }).isMobile;',
+                '    return [plugin, isMobile, cast];',
                 '}',
             ].join('\n'),
         });
@@ -150,6 +158,7 @@ describe('check:obsidian-api 门禁', () => {
         expect(result.code).toBe(1);
         expect(result.stderr).toContain('global-document-listener');
         expect(result.stderr).toContain('deprecated-api');
+        expect(result.stderr).toContain('private-api');
     });
 
     it('动态 <style> 与字面量内联样式必须报错，动态值不误报', () => {

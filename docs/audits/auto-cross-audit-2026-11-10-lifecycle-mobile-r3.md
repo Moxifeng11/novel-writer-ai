@@ -16,8 +16,8 @@
 | L3-6 | P3 | `shared/http-transport.ts:121-131` | L2-6：signal 已 abort 仍先发 requestUrl | 移动端白耗一次计费调用 | **本轮已修**：requestViaUrl 先判 aborted；新增 1 条测试 |
 | M3-2 | P2 | `core/theme-manager.ts:79-184`、`services/font-manager.ts:133-199`、`ui/panel-resizer.ts:161-233` | M2-1：popout 主题/字体/拖拽 body 类仍只写主 document | popout 回落默认配色/字体；拖拽光标类落错窗口 | 未修 → fix queue（按 Document 注入） |
 | M3-3 | P2 | `ui/chapter-outline-tree-modal.ts:613-752`、`ui/plot-canvas-modal.ts:201-245` | M2-2 + 新发现：移动端排序仍只有 HTML5 drag；场景向下拖有 off-by-one | 触屏不可排序；桌面场景下移顺序错误 | 未修 → fix queue（`moveWithinArray` + 上下按钮 + 索引回退） |
-| M3-4 | P2 | `ui/knowledge-detail-modal.ts:279/1680`、`ui/monitor-panel-b.ts:189` | M2-3：`app.plugins` 私有 API 仍在；monitor 绕过命令 registry | 审核风险；结构变化时重拆/参考书静默失效 | 未修 → fix queue（构造注入 plugin） |
-| M3-5 | P2 | `scripts/check-obsidian-api.mjs:54/57/71-73` | M2-4：门禁仍漏 `this.setTitle`、解构 isMobile、`app.plugins`、body/window 监听；整文件 allowlist 过宽 | 1.4.4 运行时才炸；私有 API 零门禁 | 未修 → fix queue（补 pattern + 夹具） |
+| M3-4 | P2 | `ui/knowledge-detail-modal.ts:279/1680`、`ui/monitor-panel-b.ts:189` | M2-3：`app.plugins` 私有 API 仍在；monitor 绕过命令 registry | 审核风险；结构变化时重拆/参考书静默失效 | **已修（第53轮）**：Modal 构造注入 `plugin`（`getPlugin()` 不再回退 `app.plugins`，缺失时 Notice）；两处调用点传 `plugin: this.plugin`；结算按钮改 `this.plugin.executeCommand('novel-writer-chapter-settlement')` |
+| M3-5 | P2 | `scripts/check-obsidian-api.mjs:54/57/71-73` | M2-4：门禁仍漏 `this.setTitle`、解构 isMobile、`app.plugins`、body/window 监听；整文件 allowlist 过宽 | 1.4.4 运行时才炸；私有 API 零门禁 | **已修（第53轮）**：新增 `private-api` 规则（`app.plugins`/`getPlugin('novel-writer-ai')`，不误伤内部 `this.getPlugin()`）；deprecated-api 补 `this.setTitle(`/非可选 `isMobile` 解构；body/window 监听纳入；夹具增 4 类绕过断言 |
 | M3-6 | P2 | `ui/draggable-panel.ts:124-153/284-312`、`styles-src/05/26` | M2-5：浮窗无 touch-action/pointercancel，390px 屏越界；知识卡操作 hover-only | 手机拖动被滚动接管/浮窗大半在屏外/按钮不可见 | 未修 → fix queue |
 
 ## 二、已排除项（交叉确认）
@@ -37,6 +37,7 @@
 - `suggestion-flow.ts`：本地 ETA 文案按生效模式。
 - `http-transport.ts`：`requestViaUrl` 在 signal 已 abort 时直接拒绝，不发请求。
 - 测试：`canCoWrite` 表驱动 1 条、引擎闸门旧用例改为“自动切云端会调用 AI”、故事档位用例更新、http-transport 新增 1 条；相关 16+18 条通过；`npx tsc --noEmit` = 0。
+- 第53轮（M3-4/M3-5）：`knowledge-detail-modal.ts` 构造注入 `plugin`、去掉两处 `app.plugins`；`knowledge-section.ts` 两处调用点补注入；`monitor-panel-b.ts` 改走 `executeCommand`；`check-obsidian-api.mjs` 新增 `private-api` 规则并补 `this.setTitle`/`isMobile` 解构/body/window 监听；`obsidian-api-policy.test.ts` 增干净夹具与 4 类绕过断言（10 条通过）。门禁全仓 0 违规；`preflight:release` 全绿（660 文件 / 6991 通过 / 3 跳过，语句 45.8%）；bundle 基线 +52B 已注记。 
 
 ## 四、待用户拍板
 
@@ -45,7 +46,6 @@
 ## 五、fix queue
 
 1. L3-1 onOpen openSeq/KB viewClosed 复位（P2）
-2. M3-4 去 app.plugins + M3-5 门禁补强（P2，审核风险）
-3. M3-2 popout DocumentScope、M3-3 移动端排序、M3-6 触屏 CSS（P2）
-4. L3-2 Agent restart 收尾、L3-3 迁移 deadline（P2）
-5. L3-4 scaffold abort/owner token、L3-5 registry 清理（P3）
+2. M3-2 popout DocumentScope、M3-3 移动端排序、M3-6 触屏 CSS（P2）
+3. L3-2 Agent restart 收尾、L3-3 迁移 deadline（P2）
+4. L3-4 scaffold abort/owner token、L3-5 registry 清理（P3）

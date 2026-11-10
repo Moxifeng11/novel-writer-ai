@@ -186,7 +186,8 @@ export class MonitorPanelB extends DraggablePanel {
       text: "📊 执行结算",
     });
     settleBtn.addEventListener("click", () => {
-      this.app.commands.executeCommandById('novel-writer-chapter-settlement');
+      // M3-4：走插件命令入口（registry 优先），不再裸调 app.commands 私有派发
+      this.plugin.executeCommand('novel-writer-chapter-settlement');
     });
 
     try {

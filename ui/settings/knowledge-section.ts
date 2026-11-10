@@ -266,7 +266,8 @@ export class KnowledgeSection extends SettingsSection {
         card.addEventListener('click', () => {
             if (!this.knowledgeBaseManager) return;
             new KnowledgeDetailModal(this.app, book.id, this.knowledgeBaseManager, {
-                deconstructionScheduler: this.deconstructionScheduler ?? undefined
+                deconstructionScheduler: this.deconstructionScheduler ?? undefined,
+                plugin: this.plugin,
             }).open();
         });
 
@@ -425,6 +426,7 @@ export class KnowledgeSection extends SettingsSection {
                 if (book) {
                     new KnowledgeDetailModal(this.app, book.id, this.knowledgeBaseManager!, {
                         deconstructionScheduler: this.deconstructionScheduler!,
+                        plugin: this.plugin,
                     }).open();
                 }
             }

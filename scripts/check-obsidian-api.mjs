@@ -51,7 +51,7 @@ const RULES = [
         description: '晚于 minAppVersion 1.4.4 的 API 或已弃用 API',
         // v4.79.0：补「强转绕过」形态——(app as unknown as { isMobile?: boolean }).isMobile
         // 1.4.4 下限内新增：revealLeaf（1.7.2）/ ensureSideLeaf（1.5+）/ getFileByPath（1.5.4）
-        pattern: /MarkdownRenderer\.renderMarkdown|Vault\.getAllFolders|getAllFolders\(|setCssProps|app\.isMobile|\{\s*isMobile\?\s*:|\brevealLeaf\(|\bensureSideLeaf\(|\bgetFileByPath\(/,
+        pattern: /MarkdownRenderer\.renderMarkdown|Vault\.getAllFolders|getAllFolders\(|setCssProps|app\.isMobile|\{\s*isMobile\s*:|\{\s*isMobile\?\s*:|\bthis\.setTitle\(|\brevealLeaf\(|\bensureSideLeaf\(|\bgetFileByPath\(/,
         // theme-manager：setCssProps 为 1.5+ API，代码做了 typeof 运行时探测，
         // 1.4.x 退回 style.setProperty；这是社区目录推荐的动态变量写法。
         allow: ['shared/file-system-port.ts', 'shared/changelog-data.ts', 'core/theme-manager.ts'],
@@ -66,10 +66,20 @@ const RULES = [
         allow: ['shared/http-transport.ts'],
     },
     {
+        id: 'private-api',
+        description: '不得使用 app.plugins 等 Obsidian 私有 API（社区审核风险）',
+        // M3-4/M3-5（2026-11-10 生命周期三轮）：getPlugin 依赖内部结构，
+        // 结构变化时静默返回 null；需要插件实例时由构造/host 注入。
+        // 只拦 Obsidian 私有入口；`this.getPlugin()` 是本仓内部访问器，不在此列
+        pattern: /app\.plugins|getPlugin\(\s*['"]novel-writer-ai['"]/,
+        allow: [],
+    },
+    {
         id: 'global-document-listener',
         description: 'document 级监听需在 onClose/destroy 成对移除；popout 窗口下应使用 ownerDocument',
         // v4.79.0：registerDomEvent(document|window, ...) 与 addEventListener 等价，此前漏检
-        pattern: /document\.addEventListener\(|registerDomEvent\(\s*(document|window)\s*,/,
+        // 2026-11-10：补 document.body.addEventListener / window.addEventListener 两种绕过
+        pattern: /document\.addEventListener\(|document\.body\.addEventListener\(|window\.addEventListener\(|registerDomEvent\(\s*(document|window)\s*,/,
         allow: [],
     },
     {
