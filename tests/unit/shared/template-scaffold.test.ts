@@ -64,6 +64,19 @@ function makeApp(adapter: FakeAdapter) {
 }
 
 describe('ensureTemplateScaffold（P0 模板自举）', () => {
+    it('并发调用共享同一 in-flight 任务：每个模板只写一次（F1）', async () => {
+        const adapter = new FakeAdapter();
+        const app = makeApp(adapter);
+
+        const [first, second] = await Promise.all([
+            ensureTemplateScaffold(app),
+            ensureTemplateScaffold(app),
+        ]);
+
+        expect(first).toEqual(second);
+        expect(adapter.files.size).toBe(TOTAL);
+    });
+
     it('并发探测模板文件：启动 I/O 不串行等待', async () => {
         class SlowAdapter extends FakeAdapter {
             active = 0;

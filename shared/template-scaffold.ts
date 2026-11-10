@@ -66,11 +66,24 @@ async function ensureParentDirs(adapter: ScaffoldAdapter, paths: string[]): Prom
 
 /**
  * 确保「元文件」模板树存在；返回本次落盘统计。
- * 幂等：重复调用只补齐缺失文件。
+ * 幂等：重复调用只补齐缺失文件；并发调用共享同一个 in-flight 任务，
+ * 避免启动维护与建项目同时自举写出重复文件（维度⑤二轮 F1）。
  * @param app - Obsidian 应用实例
-  * @returns TemplateScaffoldResult 实例
+ * @returns TemplateScaffoldResult 实例
  */
-export async function ensureTemplateScaffold(app: App): Promise<TemplateScaffoldResult> {
+export function ensureTemplateScaffold(app: App): Promise<TemplateScaffoldResult> {
+    if (!scaffoldInFlight) {
+        scaffoldInFlight = runEnsureTemplateScaffold(app).finally(() => {
+            scaffoldInFlight = null;
+        });
+    }
+    return scaffoldInFlight;
+}
+
+/** 并发自举去重：同一时刻只允许一个模板树落盘任务 */
+let scaffoldInFlight: Promise<TemplateScaffoldResult> | null = null;
+
+async function runEnsureTemplateScaffold(app: App): Promise<TemplateScaffoldResult> {
     const adapter = app.vault.adapter as unknown as ScaffoldAdapter;
     const result: TemplateScaffoldResult = { created: 0, skipped: 0, failed: 0 };
 

@@ -90,9 +90,10 @@
 21. npm run check:any
 22. npm run check:changelog
 23. npm run check:docs
-24. npm run build
-25. npm run check:bundle
-26. npm run check:release
+24. npm run check:support-qr
+25. npm run build
+26. npm run check:bundle
+27. npm run check:release
 ```
 
 ## 说明

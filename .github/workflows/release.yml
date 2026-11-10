@@ -66,6 +66,7 @@ jobs:
           npm run check:any
           npm run check:changelog
           npm run check:docs
+          npm run check:support-qr
 
       - name: Typecheck
         run: npm run typecheck
@@ -88,7 +89,7 @@ jobs:
         run: npm run check:release -- --tag "$GITHUB_REF_NAME"
 
       - name: 校验构建未产生版本/生成物漂移
-        run: git diff --exit-code -- manifest.json versions.json shared/template-scaffold-assets.generated.ts styles.css docs/generated
+        run: git diff --exit-code -- manifest.json versions.json shared/template-scaffold-assets.generated.ts shared/support-qr.generated.ts styles.css docs/generated
 
       - name: 打包发布 zip（含 Worker 产物）
         run: |

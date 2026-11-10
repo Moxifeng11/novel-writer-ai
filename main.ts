@@ -836,21 +836,9 @@ export default class NovelWriterPlugin extends Plugin {
 
             window.novelAI = this.registry;
 
-            // P0 分发自举：全新安装（仅 3 个发布文件）时初始化「元文件」模板树
-            try {
-                const scaffold = await ensureTemplateScaffold(this.app);
-                if (scaffold.created > 0) {
-                    new Notice(`📁 已初始化模板目录「元文件」（${scaffold.created} 个文件）`, 5000);
-                    log.info('[小说工坊] 模板目录已初始化:', scaffold);
-                } else if (scaffold.failed > 0) {
-                    new Notice(`⚠️ 模板目录初始化不完整（${scaffold.failed} 个文件失败），详见控制台`, 8000);
-                }
-            } catch (e) {
-                log.error('[小说工坊] 模板目录初始化失败:', e);
-                new Notice('⚠️ 模板目录初始化失败，新建项目时仍会重试，详见控制台', 8000);
-            }
-
-            await this._checkRulesVersion();
+            // F1（维度⑤二轮）：模板自举（56 次 exists）与规则副本清理不再挡在
+            // 命令/Ribbon/视图注册之前；统一延后到布局就绪 + 1.5s 后台执行。
+            this._scheduleStartupMaintenance();
 
             // 初始化提示词管理器
             this.promptManager = new PromptManager({
@@ -1045,6 +1033,51 @@ export default class NovelWriterPlugin extends Plugin {
      * 之后执行，不阻塞启动；不在 onunload 调用（卸载窗口宝贵）。
      * 任何异常 log.warn 吞掉，绝不影响主流程。
      */
+    /** 启动维护（模板自举/规则副本清理）只调度一次 */
+    private _startupMaintenanceScheduled = false;
+
+    /**
+     * 延后执行启动维护：UI 注册完成后再补模板与规则副本，避免拖慢入口可用。
+     */
+    private _scheduleStartupMaintenance(): void {
+        if (this._startupMaintenanceScheduled) return;
+        this._startupMaintenanceScheduled = true;
+        this.app.workspace.onLayoutReady(() => {
+            if (this._isUnloaded) return;
+            const timer = window.setTimeout(() => {
+                if (this._isUnloaded) return;
+                void this._runStartupMaintenance();
+            }, 1500);
+            this.register(() => window.clearTimeout(timer));
+        });
+    }
+
+    /** 启动维护实际执行（不阻塞 UI 注册） */
+    private async _runStartupMaintenance(): Promise<void> {
+        // P0 分发自举：全新安装（仅 3 个发布文件）时初始化「元文件」模板树
+        try {
+            const scaffold = await ensureTemplateScaffold(this.app);
+            if (this._isUnloaded) return;
+            if (scaffold.created > 0) {
+                new Notice(`📁 已初始化模板目录「元文件」（${scaffold.created} 个文件）`, 5000);
+                log.info('[小说工坊] 模板目录已初始化:', scaffold);
+            } else if (scaffold.failed > 0) {
+                new Notice(`⚠️ 模板目录初始化不完整（${scaffold.failed} 个文件失败），详见控制台`, 8000);
+            }
+        } catch (e) {
+            log.error('[小说工坊] 模板目录初始化失败:', e);
+            if (!this._isUnloaded) {
+                new Notice('⚠️ 模板目录初始化失败，新建项目时仍会重试，详见控制台', 8000);
+            }
+        }
+        if (this._isUnloaded) return;
+        try {
+            await this._checkRulesVersion();
+        } catch (e) {
+            log.warn('[小说工坊] 规则副本清理失败（不影响启动）:', e);
+        }
+    }
+
     private _scheduleSessionRetentionPrune(): void {
         this.app.workspace.onLayoutReady(() => {
             if (this._isUnloaded) return;
