@@ -26,6 +26,8 @@ import {
 } from '@/shared/canon-source';
 import { applyFanficReviewMeta, auditFanficSettings } from '@/shared/fanfic-audit';
 import { FanficReviewModal } from './fanfic-review-modal';
+import { computeConstraintFlowStatus, renderLinkStatus } from './views/link-status';
+import { formatFanficRulesForPrompt, readFanficRules } from '@/shared/fanfic-rules';
 import { retrieve } from '@/engine/rag/retrieval-service';
 import {
     buildKnowledgeDraftPrompt,
@@ -55,6 +57,8 @@ export class AddFanficSettingModal extends Modal {
     private sources: CanonSource[] = [];
     private sourceListEl: HTMLElement | null = null;
     private sourceStatusEl: HTMLElement | null = null;
+    /** 约束流链路状态容器（阶段 A4） */
+    private linkStatusEl: HTMLElement | null = null;
 
     constructor(app: App, plugin: NovelWriterPlugin, project?: string) {
         super(app);
@@ -79,6 +83,11 @@ export class AddFanficSettingModal extends Modal {
         contentEl.addClass('nw-form-stack');
         contentEl.empty();
         contentEl.createEl('h2', { text: '📚 添加同人设定', attr: { style: 'margin:0; font-size:18px;' } });
+
+        // 阶段 A4：约束流链路状态（考据 → 设定 → 审核 → 绑定 → 注入）。
+        // 先占位，异步探测后填入——用户一进来就能看到「这条链路现在断在哪」。
+        this.linkStatusEl = contentEl.createDiv({ cls: 'nw-u-marginbottom-12px' });
+        void this.refreshLinkStatus();
 
         if (!this.project) {
             contentEl.createEl('p', {
@@ -266,6 +275,8 @@ export class AddFanficSettingModal extends Modal {
     }
 
     private renderSourceList(): void {
+        // 来源数变化会影响约束流「考据」环节，顺手刷新链路状态
+        void this.refreshLinkStatus();
         if (!this.sourceListEl || !this.sourceStatusEl) return;
         this.sourceListEl.empty();
         const authoritative = selectAuthoritativeSources(this.sources);
@@ -444,6 +455,45 @@ export class AddFanficSettingModal extends Modal {
             }
             this.close();
         };
+    }
+
+    /**
+     * 刷新约束流链路状态（阶段 A4）。
+     *
+     * 探测失败一律按「未就绪」处理：链路状态区块本身不能因为探测异常而消失，
+     * 否则用户看到的是一片空白，比显示「断」更糟。
+     */
+    private async refreshLinkStatus(): Promise<void> {
+        if (!this.linkStatusEl) return;
+        this.linkStatusEl.empty();
+
+        let settingExists = false;
+        let reviewStatus: 'approved' | 'pending' | 'rejected' | 'legacy' | 'none' = 'none';
+        let bound = false;
+        let rulesHasContent = false;
+
+        if (this.project) {
+            try {
+                const rules = await readFanficRules(this.app, this.project);
+                bound = Boolean(rules.path);
+                if (rules.path) {
+                    // missing-file 说明 meta 里记着路径但文件没了，属于「设定不存在」
+                    settingExists = rules.loadError !== 'missing-file';
+                    reviewStatus = rules.reviewStatus ?? 'none';
+                    rulesHasContent = formatFanficRulesForPrompt(rules).length > 0;
+                }
+            } catch (e) {
+                log.warn('[AddFanficSettingModal] 链路状态探测失败:', e);
+            }
+        }
+
+        renderLinkStatus(this.linkStatusEl, computeConstraintFlowStatus({
+            sourceCount: this.sources.length,
+            settingExists,
+            reviewStatus,
+            bound,
+            rulesHasContent,
+        }));
     }
 
     /**

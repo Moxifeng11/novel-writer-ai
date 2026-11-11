@@ -25,6 +25,7 @@ import { buildKbDetailActionButtons } from './kb-detail-actions';
 import { buildKbConfigPanel } from './kb-config-panel';
 import { renderCapabilityBanner, type CapabilityAction } from './capability-banner';
 import { computeKnowledgeCapability, type EmbeddingAvailabilitySnapshot } from './knowledge-capability';
+import { computeKnowledgeFlowStatus, renderLinkStatus } from './link-status';
 import { getSharedEmbeddingProvider } from '@/engine/embedding/embedding-service';
 import { rebuildAllVectorsWithConfirm } from '@/ui/vector-rebuild-action';
 import { AddFanficSettingModal } from '@/ui/add-fanfic-setting-modal';
@@ -1034,6 +1035,19 @@ export class KnowledgeBaseView extends ItemView {
             ...capability,
             actions: bannerActions,
         });
+
+        // 阶段 A4：链路状态——能力横幅回答「处于什么阶段」，这里回答「断在哪一环」
+        const vectorStore = this.plugin.knowledgeVectorStore;
+        renderLinkStatus(booksPanel, computeKnowledgeFlowStatus({
+            bookTotal: this.allBooks.length,
+            breakdownCompleted: this.allBooks.filter(b => b.breakdownStatus === 'completed').length,
+            vectorDone: this.allBooks.filter(b => b.vectorStatus === 'done').length,
+            vectorFailed: this.allBooks.filter(b => b.vectorStatus === 'failed').length,
+            embeddingReady: this.embeddingSnapshot?.available === true,
+            storeLoadedBooks: vectorStore && typeof vectorStore.getLoadedBookIds === 'function'
+                ? vectorStore.getLoadedBookIds().length
+                : 0,
+        }));
 
         this.renderBooksToolbar(booksPanel);
         this.renderBooksListContent(booksPanel);

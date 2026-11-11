@@ -27,6 +27,7 @@ import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/comp
 import { renderV2FeaturesSection, V2_FEATURE_LABELS } from './fingerprint-v2-detail';
 import { renderCapabilityBanner } from './capability-banner';
 import { computeFingerprintCapability } from './fingerprint-capability';
+import { computeStyleFlowStatus, renderLinkStatus } from './link-status';
 import type { V2Fingerprint, StyleFingerprintFeaturesV2 } from '@/engine/style/style-dimensions-v2';
 
 
@@ -373,6 +374,22 @@ export class WritingFingerprintView extends ItemView {
             title: '写作指纹能力边界',
             ...capability,
         });
+
+        // 阶段 A4：链路状态——回答「断在哪一环」（能力横幅回答「处于什么阶段」）
+        const enabledFingerprints = all.filter(fp => this.isEffectivelyEnabled(fp));
+        const intensityDisabledCount = enabledFingerprints.filter(fp => {
+            // 强度配置未加载时 getIntensityConfig 返回默认 1.0，不会误报为 0
+            const config = this.fingerprintLibrary?.getIntensityConfig(fp.id);
+            return config ? config.globalIntensity <= 0 : false;
+        }).length;
+        renderLinkStatus(this.capabilityEl, computeStyleFlowStatus({
+            templateCount: this.templateFingerprints.length,
+            globalCount: this.globalFingerprints.length,
+            projectCount: this.projectFingerprints.length,
+            enabledCount: enabledFingerprints.length,
+            intensityDisabledCount,
+            embeddingReady: Boolean(this.extractionProvider),
+        }));
     }
 
     private renderScopeTabs(): void {

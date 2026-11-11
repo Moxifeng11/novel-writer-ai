@@ -11,7 +11,7 @@
 | `shared/` | 196 | 41282 | 1694 | 1385 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 248 | 101933 | 864 | 723 | 84% |
+| `ui/` | 249 | 102357 | 875 | 728 | 83% |
 
 ## 文件清单
 
@@ -584,7 +584,7 @@
 | `shared/writing-rules.ts` | 105 | 2 | 1 |
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
-| `ui/add-fanfic-setting-modal.ts` | 715 | 1 | 1 |
+| `ui/add-fanfic-setting-modal.ts` | 765 | 1 | 1 |
 | `ui/agent-workbench-view.ts` | 1905 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
@@ -817,10 +817,11 @@
 | `ui/views/kb-stats-panel.ts` | 155 | 2 | 2 |
 | `ui/views/kb-task-panel.ts` | 293 | 24 | 19 |
 | `ui/views/knowledge-base-modals.ts` | 1369 | 4 | 4 |
-| `ui/views/knowledge-base-view.ts` | 3276 | 10 | 10 |
+| `ui/views/knowledge-base-view.ts` | 3290 | 10 | 10 |
 | `ui/views/knowledge-capability.ts` | 113 | 3 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
-| `ui/views/writing-fingerprint-view.ts` | 2033 | 3 | 3 |
+| `ui/views/link-status.ts` | 343 | 11 | 5 |
+| `ui/views/writing-fingerprint-view.ts` | 2050 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |
