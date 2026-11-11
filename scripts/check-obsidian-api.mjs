@@ -23,6 +23,10 @@
  *   node scripts/check-obsidian-api.mjs --update-baseline --note "…"
  *   node scripts/check-obsidian-api.mjs --json              # 机器可读
  *   node scripts/check-obsidian-api.mjs --root <dir> --baseline <file>   # 测试夹具
+ *   node scripts/check-obsidian-api.mjs --allow-empty                     # 显式豁免空扫描
+ *
+ * DSH-20261112-05：扫描到 0 个文件时默认 exit 1（空扫描会让门禁假通过）。
+ * 只有明确的空目录场景（如分仓/生成期）才允许 --allow-empty 显式豁免。
  */
 
 import fs from 'node:fs';
@@ -141,11 +145,12 @@ function hasStaticStyleViolation(line) {
 }
 
 function parseArgs(argv) {
-    const args = { update: false, json: false, note: '', root: DEFAULT_ROOT, baseline: null };
+    const args = { update: false, json: false, allowEmpty: false, note: '', root: DEFAULT_ROOT, baseline: null };
     for (let i = 0; i < argv.length; i++) {
         const item = argv[i];
         if (item === '--update-baseline') args.update = true;
         else if (item === '--json') args.json = true;
+        else if (item === '--allow-empty') args.allowEmpty = true;
         else if (item === '--note') args.note = argv[++i] || '';
         else if (item === '--root') args.root = path.resolve(argv[++i] || DEFAULT_ROOT);
         else if (item === '--baseline') args.baseline = path.resolve(argv[++i]);
@@ -235,6 +240,17 @@ function main() {
     const args = parseArgs(process.argv.slice(2));
     const { files, report } = collectViolations(args.root);
     const baseline = loadBaseline(args.baseline);
+
+    // DSH-20261112-05：空扫描必须失败。旧实现扫到 0 个文件时所有规则计数都是 0，
+    // 与基线（0）比较恒通过 → 目录写错/构建产物缺失时门禁静默空转。
+    if (files === 0 && !args.allowEmpty) {
+        console.error(`❌ 扫描到 0 个文件（root=${args.root}）：空扫描会让门禁假通过。`
+            + '请确认 --root 指向真实仓库；确属空目录场景请显式加 --allow-empty。');
+        return 1;
+    }
+    if (files === 0) {
+        console.log('ℹ 已显式允许空扫描（--allow-empty）：本次未检查任何文件');
+    }
 
     if (args.json) {
         console.log(JSON.stringify({ scanned: files, rules: report }, null, 2));
