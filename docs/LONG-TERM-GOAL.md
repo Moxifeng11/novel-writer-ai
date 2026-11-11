@@ -217,12 +217,12 @@ G5 交互一致性 · G6 性能与存储 · G7 质量基建
 
 | 交付物 | 验收 |
 |---|---|
-| B1 降级事件统一出口 ⏳ | ✅ 可统计（`summarizeDegradations` + `getSummary`）✅ 链路状态展示运行时降级；⏳ 指纹库/同人设定两界面接线 |
+| B1 降级事件统一出口 ✅ | 可统计（`summarizeDegradations`/`getSummary`）+ 三界面链路状态展示运行时降级 |
 | B2 状态标记一致性审计 | 每个 `*Status` 字段都有"标记与真实数据一致"的测试 |
 | B3 刷新契约收口 | 所有"读共享内存"的 getter 要么自愈，要么有显式 `reload` 前置断言 |
-| B4 闸门审计 | 所有写正式目录的路径都过审核闸门，并有契约测试 |
+| B4 闸门审计 ✅ | 4 条写正式目录路径全部有闸门并固化为契约（`fanfic-gate-audit` 7 条，含防回归断言） |
 
-**退出条件**：`check:silent-failures` 覆盖到"设计性静默"；零已知静默失效。
+**退出条件**：`check:silent-failures` 覆盖到"设计性静默" ✅；零已知静默失效 ✅ —— **阶段 B 已收口**。
 
 ### 阶段 C｜Harness 自主
 
@@ -314,6 +314,7 @@ git push origin master     # 已放行；tag/Release 需用户确认
 
 | 日期 | 版本 | 变更 |
 |---|---|---|
+| 2026-11-11 | v1.5 | **阶段 B 收口**：B1 降级可统计 + 三界面可见；B2 状态一致性（修检索环节判定过宽，新增 `isLoaded`/`storeReady` 三态）；B3 刷新契约（同步 getter 加 `isIntensityLoaded`，修复 A4 引入的强度检测恒 0）；B4 闸门审计（4 条路径全部有闸门 + 7 条契约测试）。本阶段新增测试 28 条 |
 | 2026-11-11 | v1.4 | **阶段 B1 核心**：降级事件可统计（`summarizeDegradations` / `filterDegradationsBySource` / `DegradationNotifier#getSummary`），链路状态支持运行时降级（有降级无断点 → 整体 warn，有断点仍以断点为准），知识库界面接线。11 条测试。体积 4,904,459 → 4,905,265（+806 B） |
 | 2026-11-11 | v1.3 | **阶段 A 收口**：A4 三界面链路状态区块落地（`ui/views/link-status.ts`，21 条测试）。三个设计决策：断点取第一个 broken（修链路要从头修）、unknown 不拉低整体（归因是运行时数据，不能掩盖真实状态）、template 不进风格流环节（来源库不参与注入）。渲染复用现有 CSS，`styles.css` 逐字节不变。体积 4,897,414 → 4,904,459（+7,045 B，阶段预算 50 KB 内） |
 | 2026-11-11 | v1.2 | **阶段 A 的三条链路端到端测试齐备（18 个用例）**：A1 知识流 5 条、A2 风格流 7 条、A3 约束流 6 条，全部不 mock 中间层。A1 首跑即抓到上一轮修复不完整（injector 内 10 个子方法仍各自 `bookIds.length === 0 → return ''`）。A3 顺带确认 `attachFanficPathToProject` 自身已有审核闸门。阶段 A 剩余 A4（界面链路状态区块） |
