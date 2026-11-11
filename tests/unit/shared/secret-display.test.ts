@@ -75,6 +75,14 @@ describe('describeKeyEncryptionStatus — S-4 决策 B（明文但标注风险�
         expect(status.text).not.toContain('明文');
     });
 
+    it('只有 v1 旧密文：不称「已加密」，如实说明是混淆（S3-10）', () => {
+        const status = describeKeyEncryptionStatus({ locked: 0, encrypted: true, legacy: 2 });
+        expect(status.plaintext).toBe(false);
+        expect(status.text).toContain('旧版混淆');
+        expect(status.text).toContain('不等于真正加密');
+        expect(status.text).not.toContain('密钥已加密');
+    });
+
     it('有锁定条目：提示输入口令；legacy 追加升级说明', () => {
         const status = describeKeyEncryptionStatus({ locked: 3, encrypted: true, legacy: 2 });
         expect(status.plaintext).toBe(false);

@@ -111,8 +111,13 @@ export function describeKeyEncryptionStatus(input: KeyEncryptionStatusInput): Ke
         };
     }
     if (input.encrypted) {
+        // S3-10：只有 v1 旧密文时不能称「已加密」——v1 的 seed 是公开常量，
+        // 知道库路径即可解密，等同混淆；有口令时保存会自动升级为 v2。
+        const v1Only = input.locked === 0 && input.legacy > 0;
         return {
-            text: `密钥已加密（本次会话已解锁）。重启或更新后需要输入口令才能读取。${legacyHint}`,
+            text: v1Only
+                ? '⚠ 磁盘上的密钥是旧版混淆格式（aes256:，知道库路径即可解密，不等于真正加密）。设定口令后保存一次即可升级为 v2。'
+                : `密钥已加密（本次会话已解锁）。重启或更新后需要输入口令才能读取。${legacyHint}`,
             plaintext: false,
         };
     }

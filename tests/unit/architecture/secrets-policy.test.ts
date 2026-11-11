@@ -56,6 +56,44 @@ describe('check:secrets 门禁', () => {
         expect(result.stdout).toContain('门禁通过');
     });
 
+    it('新增第三方密钥形态（GitHub/AWS/Tavily/Slack/x-api-key）必须报错（S3-9）', () => {
+        const cases = [
+            ['ghp_', 'A'.repeat(36)],
+            ['github_pat_', 'B'.repeat(60)],
+            ['AKIA', 'C'.repeat(16)],
+            ['tvly-', 'D'.repeat(24)],
+            ['xoxb-', 'E'.repeat(16)],
+        ];
+        for (const [prefix, body] of cases) {
+            const secret = `${prefix}${body}`;
+            const root = makeRepo({ 'src/leak.txt': `token=${secret}
+` });
+            const result = run(root);
+            expect(result.code).toBe(1);
+            expect(result.stderr).toContain('src/leak.txt');
+            expect(result.stderr).not.toContain(secret);
+        }
+    });
+
+    it('UTF-16 编码的密钥文件也要被扫到（S3-9）', () => {
+        const secret = ['sk', 'ZYXWVUTSRQPONMLKJIHGFEDCBA987654'].join('-');
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nw-secrets-u16-'));
+        fixtures.push(dir);
+        spawnSync('git', ['init', '-q'], { cwd: dir });
+        const abs = path.join(dir, 'src/u16.txt');
+        fs.mkdirSync(path.dirname(abs), { recursive: true });
+        // 无 BOM 的 UTF-16LE（ASCII 内容 → 奇位 NUL）
+        const body = Buffer.from(`token=${secret}
+`, 'utf16le');
+        fs.writeFileSync(abs, body);
+        spawnSync('git', ['add', '-A'], { cwd: dir });
+
+        const result = run(dir);
+        expect(result.code).toBe(1);
+        expect(result.stderr).toContain('u16.txt');
+        expect(result.stderr).not.toContain(secret);
+    });
+
     it('被跟踪文件出现真实密钥形态必须失败，且输出脱敏', () => {
         // 运行时拼接，避免门禁扫到测试文件自身（否则自测夹具会被 check:secrets 命中）
         const secret = ['sk', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ012345'].join('-');

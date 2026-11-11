@@ -15,10 +15,15 @@ describe('detectSecretStorageMode', () => {
         expect(detectSecretStorageMode({ apiKey: '', providerKeys: {} })).toBe('empty');
     });
 
-    it('aes256v2 / aes256 前缀 → encrypted', () => {
+    it('aes256v2 → encrypted；仅有 aes256 旧格式 → obfuscated（S3-10）', () => {
         expect(detectSecretStorageMode({ apiKey: 'aes256v2:abc:def' })).toBe('encrypted');
-        expect(detectSecretStorageMode({ providerKeys: { openai: 'aes256:legacy' } })).toBe('encrypted');
         expect(detectSecretStorageMode({ canonResearch: { apiKey: 'aes256v2:x' } })).toBe('encrypted');
+        // v1 seed 是公开常量，不能与口令派生密文同样称「已加密」
+        expect(detectSecretStorageMode({ providerKeys: { openai: 'aes256:legacy' } })).toBe('obfuscated');
+        expect(detectSecretStorageMode({
+            apiKey: 'aes256v2:a:b',
+            providerKeys: { openai: 'aes256:legacy' },
+        })).toBe('obfuscated');
     });
 
     it('明文/混合状态 → plaintext（不能把混合说成密文）', () => {

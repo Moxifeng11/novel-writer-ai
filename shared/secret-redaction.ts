@@ -86,10 +86,12 @@ export function containsPlaintextSecret(input: unknown): boolean {
 }
 
 /** 密钥在磁盘上的存储形态（用于备份文案/告警，不参与解密） */
-export type SecretStorageMode = 'encrypted' | 'plaintext' | 'empty' | 'unknown';
+export type SecretStorageMode = 'encrypted' | 'obfuscated' | 'plaintext' | 'empty' | 'unknown';
 
 /** 与 core/settings-service 的密文前缀保持一致（v2 会话口令 / v1 旧格式） */
 const CIPHER_PREFIX_PATTERN = /^(?:aes256v2:|aes256:)/;
+/** 只有 v2 是会话口令派生的真正加密；v1 seed 是公开常量，等同混淆 */
+const V2_PREFIX_PATTERN = /^aes256v2:/;
 
 /** 取出顶层已知密钥字段的值（含 providerKeys 映射与 canonResearch.apiKey） */
 function collectSecretValues(input: Record<string, unknown>): string[] {
@@ -129,7 +131,10 @@ export function detectSecretStorageMode(input: unknown): SecretStorageMode {
     if (!isPlainObject(input)) return 'unknown';
     const values = collectSecretValues(input);
     if (values.length === 0) return 'empty';
-    return values.every((value) => CIPHER_PREFIX_PATTERN.test(value)) ? 'encrypted' : 'plaintext';
+    if (!values.every((value) => CIPHER_PREFIX_PATTERN.test(value))) return 'plaintext';
+    // S3-10（安全 r3）：v1 密文的 seed 是公开常量，知道库路径即可解密，
+    // 不能与 v2（口令派生）一起笼统报「已加密」。
+    return values.every((value) => V2_PREFIX_PATTERN.test(value)) ? 'encrypted' : 'obfuscated';
 }
 
 /**

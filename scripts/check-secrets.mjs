@@ -30,6 +30,13 @@ const DEFAULT_ROOT = path.resolve(SCRIPT_DIR, '..');
 const SECRET_PATTERNS = [
     { id: 'openai-key', pattern: /sk-[A-Za-z0-9_-]{20,}/g },
     { id: 'volc-key', pattern: /oc_sk_[A-Za-z0-9]{8,}/g },
+    // S3-9（安全 r3）：补常见第三方形态
+    { id: 'github-token', pattern: /gh[pousr]_[A-Za-z0-9]{36,}/g },
+    { id: 'github-pat', pattern: /github_pat_[A-Za-z0-9_]{60,}/g },
+    { id: 'aws-key', pattern: /AKIA[0-9A-Z]{16}/g },
+    { id: 'tavily-key', pattern: /tvly-[A-Za-z0-9]{20,}/g },
+    { id: 'slack-token', pattern: /xox[baprs]-[A-Za-z0-9-]{10,}/g },
+    { id: 'x-api-key', pattern: /["']?x-api-key["']?\s*[:=]\s*["'][A-Za-z0-9_-]{16,}["']/gi },
     { id: 'ciphertext-v2', pattern: /aes256v2:\d+:[^\s:]+:[^\s:]+:[A-Za-z0-9+/=]{32,}/g },
     { id: 'ciphertext-v1', pattern: /aes256:[^\s:]+:[A-Za-z0-9+/=]{32,}/g },
     { id: 'bearer-token', pattern: /Bearer [A-Za-z0-9._-]{30,}/g },
@@ -66,9 +73,55 @@ function listTrackedFiles(root) {
     return result.stdout.split('\0').filter(Boolean);
 }
 
-function isBinary(buf) {
+/**
+ * 把文件字节解码为可扫描文本（S3-9）。
+ *
+ * UTF-16 文本天然含 NUL 字节，旧实现的 isBinary 会直接跳过——UTF-16 编码的
+ * 密钥文件因此绕过门禁。这里识别 BOM 与奇偶位 NUL 分布，分别按 utf16le/be 解码；
+ * 其余含 NUL 的内容仍视为二进制跳过。
+ *
+ * @param buf - 文件字节
+ * @returns 文本；二进制返回 null
+ */
+function decodeText(buf) {
     const sample = buf.subarray(0, 8192);
-    return sample.includes(0);
+    if (sample.length >= 2 && sample[0] === 0xff && sample[1] === 0xfe) {
+        return buf.subarray(2).toString('utf16le');
+    }
+    if (sample.length >= 2 && sample[0] === 0xfe && sample[1] === 0xff) {
+        const body = buf.subarray(2);
+        const swapped = Buffer.from(body);
+        for (let i = 0; i + 1 < swapped.length; i += 2) {
+            const tmp = swapped[i];
+            swapped[i] = swapped[i + 1];
+            swapped[i + 1] = tmp;
+        }
+        return swapped.toString('utf16le');
+    }
+    if (sample.includes(0)) {
+        // 无 BOM 的 UTF-16：按奇偶位 NUL 占比判断字节序
+        let evenNul = 0;
+        let oddNul = 0;
+        for (let i = 0; i < sample.length; i++) {
+            if (sample[i] !== 0) continue;
+            if (i % 2 === 0) evenNul++; else oddNul++;
+        }
+        const total = sample.length / 2;
+        if (evenNul > total * 0.4 && oddNul < total * 0.05) {
+            const swapped = Buffer.from(buf);
+            for (let i = 0; i + 1 < swapped.length; i += 2) {
+                const tmp = swapped[i];
+                swapped[i] = swapped[i + 1];
+                swapped[i + 1] = tmp;
+            }
+            return swapped.toString('utf16le');
+        }
+        if (oddNul > total * 0.4 && evenNul < total * 0.05) {
+            return buf.toString('utf16le');
+        }
+        return null;
+    }
+    return buf.toString('utf8');
 }
 
 function scan(root) {
@@ -89,8 +142,8 @@ function scan(root) {
         } catch {
             continue;
         }
-        if (isBinary(buf)) continue;
-        const text = buf.toString('utf8');
+        const text = decodeText(buf);
+        if (text === null) continue;
         const lines = text.split('\n');
         for (const { id, pattern } of SECRET_PATTERNS) {
             pattern.lastIndex = 0;

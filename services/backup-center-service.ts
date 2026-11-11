@@ -110,6 +110,8 @@ function settingsBackupDetail(mode: SecretStorageMode): string {
     switch (mode) {
         case 'encrypted':
             return '设置迁移/回写前的插件配置备份（密钥为密文，不进 vault 索引）';
+        case 'obfuscated':
+            return '设置迁移/回写前的插件配置备份（⚠ 密钥为旧版混淆格式 aes256:：知道库路径即可解密，请勿分享或同步）';
         case 'plaintext':
             return '设置迁移/回写前的插件配置备份（⚠ 含明文 API Key：未启用会话口令，请勿分享或同步此文件）';
         case 'empty':

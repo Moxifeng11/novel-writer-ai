@@ -7,8 +7,8 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137699 | 1728 | 1418 | 82% |
-| `services/` | 32 | 13427 | 194 | 154 | 79% |
-| `shared/` | 195 | 42993 | 1687 | 1378 | 82% |
+| `services/` | 32 | 13429 | 194 | 154 | 79% |
+| `shared/` | 195 | 43003 | 1687 | 1378 | 82% |
 | `core/` | 7 | 2868 | 30 | 15 | 50% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 242 | 99974 | 754 | 649 | 86% |
@@ -355,7 +355,7 @@
 | `engine/writing-profile.ts` | 566 | 8 | 8 |
 | `engine/writing-quality-engine.ts` | 1376 | 14 | 13 |
 | `services/api-connectivity-service.ts` | 317 | 8 | 8 |
-| `services/backup-center-service.ts` | 180 | 4 | 1 |
+| `services/backup-center-service.ts` | 182 | 4 | 1 |
 | `services/canon-research-service.ts` | 521 | 8 | 8 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
 | `services/chapter-version-service.ts` | 739 | 4 | 4 |
@@ -526,8 +526,8 @@
 | `shared/rhythm-intent.ts` | 48 | 2 | 2 |
 | `shared/scene-body-merge.ts` | 24 | 2 | 2 |
 | `shared/scene-card.ts` | 241 | 9 | 8 |
-| `shared/secret-display.ts` | 126 | 7 | 4 |
-| `shared/secret-redaction.ts` | 151 | 6 | 5 |
+| `shared/secret-display.ts` | 131 | 7 | 4 |
+| `shared/secret-redaction.ts` | 156 | 6 | 5 |
 | `shared/secret-value.ts` | 31 | 2 | 2 |
 | `shared/serialized-writer.ts` | 199 | 3 | 3 |
 | `shared/session-retention.ts` | 186 | 6 | 6 |
