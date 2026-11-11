@@ -47,9 +47,13 @@ node .obsidian/plugins/novel-writer-ai/scripts/board.mjs add \
   --title "新增覆盖率门禁" \
   --scope "scripts/check-coverage.mjs,scripts/lib/coverage-lib.mjs,package.json,vitest.config.ts,tests/unit/scripts/check-coverage.test.ts" \
   --accept "check:coverage exit 0；基线改 99 则 exit 1；preflight 仍 28 步" \
+  --assignee zcode \
   --note "细节见 docs/audits/xxx.md" \
   --by dsh
 ```
+
+**`--assignee`（定向指派）**：指定后只有该 agent 能领；省略则任何 agent 可领。
+用途：某个 agent 暂时不可用（如 Trae 积分耗尽）时，把任务明确交给另一个人，避免任务空等。
 
 **派发铁律（不变）**：
 

@@ -11,6 +11,8 @@ export interface BoardTask {
     title?: string;
     scope?: string;
     accept?: string;
+    /** 定向指派：只有该 agent 能领；空/缺省表示任何人可领 */
+    assignee?: string;
     note?: string;
     by?: string;
     status?: string;

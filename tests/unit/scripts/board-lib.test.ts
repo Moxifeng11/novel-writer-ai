@@ -240,3 +240,30 @@ describe('任务板-6：状态摘要', () => {
         expect(text).not.toContain('活跃写范围锁');
     });
 });
+
+describe('任务板-7：定向指派（assignee）', () => {
+    it('指派给 zcode 的任务，trae 领不到', () => {
+        const tasks = [{ id: 'T1', title: 'A', scope: 'a.mjs', assignee: 'zcode', createdAt: 1 }];
+        expect(pickClaimableTasks(tasks, [], [], 'trae', NOW)).toEqual([]);
+        expect(pickClaimableTasks(tasks, [], [], 'zcode', NOW).map((t) => t.id)).toEqual(['T1']);
+    });
+
+    it('未指派的任务任何人可领', () => {
+        const tasks = [{ id: 'T1', title: 'A', scope: 'a.mjs', createdAt: 1 }];
+        expect(pickClaimableTasks(tasks, [], [], 'trae', NOW).map((t) => t.id)).toEqual(['T1']);
+        expect(pickClaimableTasks(tasks, [], [], 'zcode', NOW).map((t) => t.id)).toEqual(['T1']);
+    });
+
+    it('空串指派视为未指派', () => {
+        const tasks = [{ id: 'T1', title: 'A', scope: 'a.mjs', assignee: '', createdAt: 1 }];
+        expect(pickClaimableTasks(tasks, [], [], 'trae', NOW).map((t) => t.id)).toEqual(['T1']);
+    });
+
+    it('状态摘要显示指派对象', () => {
+        const text = formatBoardStatus(
+            [{ id: 'T1', title: 'A', status: 'open', assignee: 'zcode' }],
+            [], [], NOW,
+        );
+        expect(text).toContain('待领取 → 指派 zcode');
+    });
+});

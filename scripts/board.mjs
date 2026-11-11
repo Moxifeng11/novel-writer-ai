@@ -220,6 +220,8 @@ function cmdAdd() {
         title,
         scope: arg('scope', ''),
         accept: arg('accept', ''),
+        /** 定向指派：只有该 agent 能领；空串表示任何 agent 可领 */
+        assignee: arg('assignee', ''),
         note: arg('note', ''),
         by: arg('by', 'dsh'),
         status: 'open',

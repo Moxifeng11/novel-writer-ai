@@ -116,8 +116,9 @@ export function foldTasks(records) {
  *
  * 条件：
  * 1. 状态不是 done / failed
- * 2. 没有有效领取（无 claim，或 claim 租约已过期）
- * 3. 写范围与**他人持有的锁**不重叠（本人已持有的锁不算冲突）
+ * 2. 若任务指定了 `assignee`，只允许该 agent 领取（定向指派）
+ * 3. 没有有效领取（无 claim，或 claim 租约已过期）
+ * 4. 写范围与**他人持有的锁**不重叠（本人已持有的锁不算冲突）
  *
  * @param tasks - 任务记录数组（append-only）
  * @param claims - 领取记录数组 `{ taskId, agent, leaseUntil }`
@@ -143,6 +144,9 @@ export function pickClaimableTasks(tasks, claims, locks, me, now) {
     const result = [];
     for (const task of folded.values()) {
         if (task.status === 'done' || task.status === 'failed') continue;
+        // 定向指派：指定了 assignee 的任务只给那个人（空/缺省表示任何人可领）
+        const assignee = String(task.assignee ?? '').trim();
+        if (assignee && assignee !== me) continue;
         const claim = activeClaims.get(String(task.id));
         if (claim && claim.agent !== me) continue;
         const scopes = parseScopeList(task.scope);
@@ -169,10 +173,12 @@ export function formatBoardStatus(tasks, claims, locks, now) {
     const lines = [`任务总数 ${folded.size}`];
     for (const task of folded.values()) {
         const claim = (claims || []).find((c) => c && String(c.taskId) === String(task.id) && !isLeaseExpired(c, now));
+        const assignee = String(task.assignee ?? '').trim();
         const state = task.status === 'done' ? '✅ done'
             : task.status === 'failed' ? '❌ failed'
                 : claim ? `🔒 ${claim.agent}（剩 ${Math.max(0, Math.round((Number(claim.leaseUntil) - now) / 60000))} 分钟）`
-                    : '🟢 待领取';
+                    : assignee ? `🟢 待领取 → 指派 ${assignee}`
+                        : '🟢 待领取';
         lines.push(`  ${task.id} | ${state} | ${task.title || ''}`);
     }
     const activeLocks = (locks || []).filter((l) => l && !isLeaseExpired(l, now));
