@@ -22,9 +22,38 @@ export class FakeEl {
     attr: Record<string, string> = {};
     children: FakeEl[] = [];
     listeners = new Map<string, Array<(e: unknown) => void>>();
+    /** 内联样式（真实运行时是 CSSStyleDeclaration；测试只做赋值/读取） */
+    style: Record<string, string> = {};
 
     constructor(tag = 'div') {
         this.tagName = tag;
+    }
+
+    get classList(): {
+        add: (...cls: string[]) => void;
+        remove: (...cls: string[]) => void;
+        contains: (cls: string) => boolean;
+        toggle: (cls: string, force?: boolean) => void;
+    } {
+        const self = this;
+        return {
+            add: (...cls: string[]) => {
+                const set = new Set(self.className.split(' ').filter(Boolean));
+                cls.forEach(c => set.add(c));
+                self.className = [...set].join(' ');
+            },
+            remove: (...cls: string[]) => {
+                const set = new Set(self.className.split(' ').filter(Boolean));
+                cls.forEach(c => set.delete(c));
+                self.className = [...set].join(' ');
+            },
+            contains: (cls: string) => self.className.split(' ').includes(cls),
+            toggle: (cls: string, force?: boolean) => {
+                const shouldAdd = force === undefined ? !self.classList.contains(cls) : force;
+                if (shouldAdd) self.classList.add(cls);
+                else self.classList.remove(cls);
+            },
+        };
     }
 
     /** 兼容 sanitizeHTMLToDom 替身返回的 { html } 片段：按字符串拼接 */
