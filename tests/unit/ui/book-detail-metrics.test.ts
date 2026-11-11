@@ -29,6 +29,10 @@ import {
     joinRoleParts,
     buildForeshadowStatItems,
     buildTechniqueQualityItems,
+    resolveScoreTone,
+    resolveQualityLevelMeta,
+    resolveUsedLevelLabel,
+    buildQualityScoreItems,
 } from '../../../ui/views/book-detail-metrics';
 
 /** 构造只含所需字段的风格数据（类型上其余字段可选） */
@@ -257,5 +261,56 @@ describe('评分项组装 — 伏笔统计 / 技巧质量', () => {
             { label: '覆盖度', value: 60 },
         ]);
         expect(buildTechniqueQualityItems(undefined)).toEqual([]);
+    });
+});
+
+describe('质量评分色调（阶段 D1：阈值边界）', () => {
+    it('80 是绿/橙分界（>=80 绿）', () => {
+        expect(resolveScoreTone(80)).toBe('green');
+        expect(resolveScoreTone(79)).toBe('orange');
+    });
+
+    it('50 是橙/红分界（>=50 橙）', () => {
+        expect(resolveScoreTone(50)).toBe('orange');
+        expect(resolveScoreTone(49)).toBe('red');
+    });
+
+    it('极端值不抛错', () => {
+        expect(resolveScoreTone(0)).toBe('red');
+        expect(resolveScoreTone(100)).toBe('green');
+        expect(resolveScoreTone(undefined)).toBe('red');
+        expect(resolveScoreTone(NaN)).toBe('red');
+    });
+
+    it('等级映射：high/medium/其它', () => {
+        expect(resolveQualityLevelMeta('high')).toEqual({ label: '优秀', tone: 'green' });
+        expect(resolveQualityLevelMeta('medium')).toEqual({ label: '一般', tone: 'orange' });
+        expect(resolveQualityLevelMeta('low')).toEqual({ label: '较差', tone: 'red' });
+        expect(resolveQualityLevelMeta(undefined)).toEqual({ label: '较差', tone: 'red' });
+    });
+
+    it('分析档位映射：fast/standard/其它', () => {
+        expect(resolveUsedLevelLabel('fast')).toBe('快速');
+        expect(resolveUsedLevelLabel('standard')).toBe('标准');
+        expect(resolveUsedLevelLabel('deep')).toBe('深度');
+        expect(resolveUsedLevelLabel(undefined)).toBe('深度');
+    });
+
+    it('三个分项带各自色调', () => {
+        const items = buildQualityScoreItems({ completeness: 90, consistency: 60, confidence: 30 });
+        expect(items).toHaveLength(3);
+        expect(items[0]).toEqual({ label: '完整性', value: 90, tone: 'green' });
+        expect(items[1]).toEqual({ label: '一致性', value: 60, tone: 'orange' });
+        expect(items[2]).toEqual({ label: '置信度', value: 30, tone: 'red' });
+    });
+
+    it('缺字段按 0 处理（不产生 NaN 显示）', () => {
+        const items = buildQualityScoreItems({ completeness: 80 });
+        expect(items[1].value).toBe(0);
+        expect(items[2].tone).toBe('red');
+    });
+
+    it('null 返回空数组', () => {
+        expect(buildQualityScoreItems(null)).toEqual([]);
     });
 });

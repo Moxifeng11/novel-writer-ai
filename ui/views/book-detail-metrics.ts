@@ -325,3 +325,67 @@ export function buildTechniqueQualityItems(qualityScore: TechniqueData['qualityS
         { label: '覆盖度', value: qualityScore.coverageScore },
     ];
 }
+
+/**
+ * 质量评分的色调（阶段 D1：从 `renderQualityScoreCard` 抽出）。
+ *
+ * 阈值口径：`>=80` 绿、`>=50` 橙、其余红。
+ * 抽出来是为了让 80/50 这两个边界能被测试锁住——内联在渲染里改错了没人发现。
+ */
+export type QualityTone = 'green' | 'orange' | 'red';
+
+/**
+ * 分数 → 色调。
+ *
+ * @param score - 0–100 的分数（undefined/NaN 按最低档处理）
+ * @returns 色调
+ */
+export function resolveScoreTone(score: number | undefined): QualityTone {
+    const value = Number(score);
+    if (!Number.isFinite(value)) return 'red';
+    if (value >= 80) return 'green';
+    if (value >= 50) return 'orange';
+    return 'red';
+}
+
+/**
+ * 质量等级 → 标签与色调。
+ *
+ * @param level - `high` / `medium` / 其它
+ * @returns 中文标签与色调
+ */
+export function resolveQualityLevelMeta(level: string | undefined): { label: string; tone: QualityTone } {
+    if (level === 'high') return { label: '优秀', tone: 'green' };
+    if (level === 'medium') return { label: '一般', tone: 'orange' };
+    return { label: '较差', tone: 'red' };
+}
+
+/**
+ * 分析档位 → 中文标签。
+ *
+ * @param usedLevel - `fast` / `standard` / 其它
+ * @returns 中文标签
+ */
+export function resolveUsedLevelLabel(usedLevel: string | undefined): string {
+    if (usedLevel === 'fast') return '快速';
+    if (usedLevel === 'standard') return '标准';
+    return '深度';
+}
+
+/**
+ * 质量评分的三个分项（完整性/一致性/置信度）及各自色调。
+ *
+ * @param qualityScore - 质量评分对象
+ * @returns 分项数组；缺少必要字段时返回空数组
+ */
+export function buildQualityScoreItems(
+    qualityScore: { completeness?: number; consistency?: number; confidence?: number } | null | undefined,
+): Array<{ label: string; value: number; tone: QualityTone }> {
+    if (!qualityScore) return [];
+    const pick = (value: number | undefined): number => (Number.isFinite(Number(value)) ? Number(value) : 0);
+    return [
+        { label: '完整性', value: pick(qualityScore.completeness), tone: resolveScoreTone(qualityScore.completeness) },
+        { label: '一致性', value: pick(qualityScore.consistency), tone: resolveScoreTone(qualityScore.consistency) },
+        { label: '置信度', value: pick(qualityScore.confidence), tone: resolveScoreTone(qualityScore.confidence) },
+    ];
+}

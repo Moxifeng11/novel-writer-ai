@@ -11,7 +11,7 @@
 | `shared/` | 197 | 41680 | 1709 | 1393 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 251 | 102463 | 874 | 731 | 84% |
+| `ui/` | 251 | 102530 | 879 | 736 | 84% |
 
 ## 文件清单
 
@@ -805,8 +805,8 @@
 | `ui/usage-ledger-modal.ts` | 182 | 1 | 1 |
 | `ui/utils/worldview-utils.ts` | 103 | 1 | 1 |
 | `ui/vector-rebuild-action.ts` | 148 | 1 | 1 |
-| `ui/views/book-detail-metrics.ts` | 328 | 24 | 16 |
-| `ui/views/book-detail-renderer.ts` | 2399 | 2 | 2 |
+| `ui/views/book-detail-metrics.ts` | 392 | 29 | 21 |
+| `ui/views/book-detail-renderer.ts` | 2402 | 2 | 2 |
 | `ui/views/capability-banner.ts` | 88 | 5 | 1 |
 | `ui/views/fingerprint-capability.ts` | 105 | 3 | 1 |
 | `ui/views/fingerprint-v2-detail.ts` | 126 | 4 | 2 |

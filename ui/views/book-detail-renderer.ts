@@ -32,6 +32,9 @@ import {
     joinRoleParts,
     normalizeSentenceLength,
     normalizeParagraphLength,
+    resolveQualityLevelMeta,
+    resolveUsedLevelLabel,
+    buildQualityScoreItems,
 } from './book-detail-metrics';
 
 const log = createLogger('BookDetailRenderer');
@@ -2347,9 +2350,15 @@ export class BookDetailRenderer {
         const qs = data._qualityScore as DimensionQualityScore | undefined;
         if (!qs || typeof qs.overall !== 'number') return;
 
-        const levelColor = qs.level === 'high' ? 'var(--color-green)' : qs.level === 'medium' ? 'var(--color-orange)' : 'var(--color-red)';
-        const levelLabel = qs.level === 'high' ? '优秀' : qs.level === 'medium' ? '一般' : '较差';
-        const usedLevelLabel = qs.usedLevel === 'fast' ? '快速' : qs.usedLevel === 'standard' ? '标准' : '深度';
+        const levelMeta = resolveQualityLevelMeta(qs.level);
+        const TONE_COLOR: Record<string, string> = {
+            green: 'var(--color-green)',
+            orange: 'var(--color-orange)',
+            red: 'var(--color-red)',
+        };
+        const levelColor = TONE_COLOR[levelMeta.tone];
+        const levelLabel = levelMeta.label;
+        const usedLevelLabel = resolveUsedLevelLabel(qs.usedLevel);
 
         const card = container.createDiv({
             cls: 'nw-u-marginbottom-16px nw-u-p-12px-16px nw-u-bg-background-secondary nw-u-brd-8px nw-u-blt-4px-solid-interactive-'
@@ -2379,20 +2388,14 @@ export class BookDetailRenderer {
         const valueStyle = 'font-size:16px;font-weight:600;';
         const labelStyle = 'font-size:10px;color:var(--text-muted);margin-top:2px;';
 
-        const completenessColor = qs.completeness >= 80 ? 'var(--color-green)' : qs.completeness >= 50 ? 'var(--color-orange)' : 'var(--color-red)';
-        const consistencyColor = qs.consistency >= 80 ? 'var(--color-green)' : qs.consistency >= 50 ? 'var(--color-orange)' : 'var(--color-red)';
-        const confidenceColor = qs.confidence >= 80 ? 'var(--color-green)' : qs.confidence >= 50 ? 'var(--color-orange)' : 'var(--color-red)';
-
-        const m1 = metrics.createDiv({ attr: { style: metricStyle } });
-        m1.createSpan({ text: `${qs.completeness}`, attr: { style: `${valueStyle}color:${completenessColor};` } });
-        m1.createSpan({ text: '完整性', attr: { style: labelStyle } });
-
-        const m2 = metrics.createDiv({ attr: { style: metricStyle } });
-        m2.createSpan({ text: `${qs.consistency}`, attr: { style: `${valueStyle}color:${consistencyColor};` } });
-        m2.createSpan({ text: '一致性', attr: { style: labelStyle } });
-
-        const m3 = metrics.createDiv({ attr: { style: metricStyle } });
-        m3.createSpan({ text: `${qs.confidence}`, attr: { style: `${valueStyle}color:${confidenceColor};` } });
-        m3.createSpan({ text: '置信度', attr: { style: labelStyle } });
+        const scoreItems = buildQualityScoreItems(qs);
+        for (const item of scoreItems) {
+            const metric = metrics.createDiv({ attr: { style: metricStyle } });
+            metric.createSpan({
+                text: `${item.value}`,
+                attr: { style: `${valueStyle}color:${TONE_COLOR[item.tone]};` },
+            });
+            metric.createSpan({ text: item.label, attr: { style: labelStyle } });
+        }
     }
 }
