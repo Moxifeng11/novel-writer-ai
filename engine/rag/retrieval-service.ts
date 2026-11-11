@@ -49,6 +49,8 @@ export interface RetrievalTelemetry {
     hits: number;
     deduped: number;
     neighborMerged: number;
+    /** RAG-2：有命中但没有任何参考书可查，邻块扩展被跳过（不再静默） */
+    neighborSkipped?: boolean;
     afterMmr: number;
     dropped: number;
     chars: number;
@@ -187,32 +189,55 @@ export async function retrieve(
 
         // 邻块扩展：把被 400/40 分块切开的同一段场景拼回来
         let neighborMerged = 0;
+        let neighborSkipped = false;
         let working = merged.hits;
         if (options.expandNeighbors !== false) {
-            const positions = working.map((hit) => hit.position).filter((value): value is number => typeof value === 'number');
-            if (positions.length > 0 && working.length > 0 && typeof store.getNeighbors === 'function') {
-                const neighbors = await store.getNeighbors(options.bookIds || [], working[0].dimension, positions, 1);
-                // 把邻块补成命中（分数取命中组最低分，保证不抢主命中）
+            // RAG-1（v4.83.1 修复）：`getNeighbors` 内部按**单一维度**过滤，
+            // 而命中的 position 来自多个维度。旧实现只传 working[0].dimension，
+            // 导致非首维度邻块永远取不到，且同 position 跨维度时会把别的维度样本
+            // 当作邻块塞进来（张冠李戴）。这里按维度分组分别查再合并。
+            const positionsByDimension = new Map<string, Set<number>>();
+            for (const hit of working) {
+                if (typeof hit.position !== 'number') continue;
+                const bucket = positionsByDimension.get(hit.dimension) || new Set<number>();
+                bucket.add(hit.position);
+                positionsByDimension.set(hit.dimension, bucket);
+            }
+            // RAG-2（v4.83.1 修复）：旧实现传 `options.bookIds || []`，
+            // 未指定参考书的调用方（如 mode-injection）会拿到空数组，
+            // `getNeighbors` 里 `for (const bookId of [])` 一次都不循环 →
+            // 邻块扩展静默失效且无任何告警。这里在缺省时退化为「已加载的全部书」。
+            const neighborBookIds = options.bookIds && options.bookIds.length > 0
+                ? options.bookIds
+                : (typeof store.getLoadedBookIds === 'function' ? store.getLoadedBookIds() : []);
+            if (positionsByDimension.size > 0 && neighborBookIds.length > 0 && typeof store.getNeighbors === 'function') {
                 const known = new Set(working.map((hit) => `${hit.bookId}|${hit.dimension}|${hit.position}`));
                 const lowestScore = Math.min(...working.map((hit) => hit.score));
-                for (const neighbor of neighbors) {
-                    const key = `${neighbor.bookId}|${neighbor.dimension}|${neighbor.position}`;
-                    if (known.has(key)) continue;
-                    known.add(key);
-                    working.push({
-                        sample: neighbor.sample,
-                        bookId: neighbor.bookId,
-                        bookName: neighbor.bookName,
-                        dimension: neighbor.dimension,
-                        score: Math.max(0.3, lowestScore * 0.95),
-                        position: neighbor.position,
-                        category: neighbor.category,
-                        labels: ['邻块'],
-                    });
+                for (const [dimension, positions] of positionsByDimension) {
+                    const neighbors = await store.getNeighbors(neighborBookIds, dimension, [...positions], 1);
+                    for (const neighbor of neighbors) {
+                        const key = `${neighbor.bookId}|${neighbor.dimension}|${neighbor.position}`;
+                        if (known.has(key)) continue;
+                        known.add(key);
+                        working.push({
+                            sample: neighbor.sample,
+                            bookId: neighbor.bookId,
+                            bookName: neighbor.bookName,
+                            dimension: neighbor.dimension,
+                            score: Math.max(0.3, lowestScore * 0.95),
+                            position: neighbor.position,
+                            category: neighbor.category,
+                            labels: ['邻块'],
+                        });
+                    }
                 }
                 const neighborResult = mergeNeighborHits(working, 1);
                 working = neighborResult.hits;
                 neighborMerged = neighborResult.mergedGroups;
+            } else if (positionsByDimension.size > 0) {
+                // 有命中但没有任何书可查（向量库未加载/无参考书）——如实上报，不再静默
+                neighborSkipped = true;
+                log.warn('[RagRetrieval] 邻块扩展已跳过：无可用参考书');
             }
         }
 
@@ -227,6 +252,7 @@ export async function retrieve(
                 hits: merged.hits.length,
                 deduped: merged.deduped,
                 neighborMerged,
+                ...(neighborSkipped ? { neighborSkipped: true } : {}),
                 afterMmr: afterMmr.length,
                 dropped: packed.dropped + (relevant.length - afterMmr.length),
                 chars: packed.chars,

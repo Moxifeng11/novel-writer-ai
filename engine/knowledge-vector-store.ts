@@ -240,6 +240,18 @@ export class KnowledgeVectorStore {
     }
 
     /**
+     * 已加载书籍的 ID 列表。
+     *
+     * RAG-2（v4.83.1）：邻块扩展在调用方未指定参考书时需要「全部已加载书」作为
+     * 退化范围，否则 `getNeighbors` 收到空数组会静默返回空、扩展失效。
+     *
+     * @returns 书籍 ID 数组
+     */
+    getLoadedBookIds(): string[] {
+        return [...this.samples.keys()];
+    }
+
+    /**
      * 取同书同维度的邻块（v4.20 邻块扩展）：直接读内存 samples，零 I/O。
      * 返回按 position 升序的样本，用于把被 400/40 分块切开的场景拼回完整上下文。
      * @param bookIds - 书籍 ID 列表

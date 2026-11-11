@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137742 | 1731 | 1419 | 82% |
+| `engine/` | 319 | 137780 | 1731 | 1419 | 82% |
 | `services/` | 32 | 13411 | 193 | 153 | 79% |
-| `shared/` | 196 | 41180 | 1689 | 1380 | 82% |
+| `shared/` | 196 | 41264 | 1692 | 1383 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 248 | 101437 | 862 | 723 | 84% |
@@ -190,7 +190,7 @@
 | `engine/knowledge-tags.ts` | 629 | 2 | 2 |
 | `engine/knowledge-to-fingerprint-converter.ts` | 345 | 1 | 1 |
 | `engine/knowledge-usage.ts` | 80 | 3 | 3 |
-| `engine/knowledge-vector-store.ts` | 752 | 5 | 4 |
+| `engine/knowledge-vector-store.ts` | 764 | 5 | 4 |
 | `engine/ledger/ledger-index.ts` | 175 | 10 | 8 |
 | `engine/ledger/ledger-io.ts` | 212 | 4 | 4 |
 | `engine/ledger/ledger-link.ts` | 224 | 4 | 2 |
@@ -255,7 +255,7 @@
 | `engine/quality/rewrite-prompts.ts` | 258 | 6 | 6 |
 | `engine/quality/rewrite-suggestion-engine.ts` | 611 | 2 | 2 |
 | `engine/quality/rewrite-types.ts` | 235 | 13 | 13 |
-| `engine/rag/retrieval-service.ts` | 267 | 6 | 6 |
+| `engine/rag/retrieval-service.ts` | 293 | 6 | 6 |
 | `engine/relationship-change-queue.ts` | 234 | 7 | 6 |
 | `engine/relationship-engine.ts` | 469 | 12 | 7 |
 | `engine/repository/base-markdown-repository.ts` | 461 | 1 | 1 |
@@ -397,7 +397,7 @@
 | `shared/body-format.ts` | 224 | 9 | 6 |
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
-| `shared/canon-source.ts` | 284 | 18 | 17 |
+| `shared/canon-source.ts` | 368 | 21 | 20 |
 | `shared/changelog-data.ts` | 323 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-ref.ts` | 205 | 7 | 5 |
