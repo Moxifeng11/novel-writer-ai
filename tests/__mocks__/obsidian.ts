@@ -530,6 +530,7 @@ export class Setting {
             setTooltip() { return component; },
             setIcon() { return component; },
             setWarning() { return component; },
+            setAttr() { return component; },
             setCta() { return component; },
             onClick() { return component; },
             ...extra,

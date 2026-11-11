@@ -94,6 +94,18 @@ export class FakeEl {
         return this;
     }
 
+    toggleClass(cls: string, force?: boolean): this {
+        const shouldAdd = force === undefined ? !this.className.split(' ').includes(cls) : force;
+        if (shouldAdd) {
+            const set = new Set(this.className.split(' ').filter(Boolean));
+            set.add(cls);
+            this.className = [...set].join(' ');
+        } else {
+            this.className = this.className.split(' ').filter(c => c !== cls).join(' ');
+        }
+        return this;
+    }
+
     /** 支持 `.class` / `tag` / 逗号分隔组合（attachChartInteractions 的选择器形态） */
     querySelectorAll<T = FakeEl>(selector: string): T[] {
         const hits: FakeEl[] = [];
@@ -124,6 +136,12 @@ export class FakeEl {
     setAttribute(name: string, value: string): void {
         if (name === 'class') this.className = value;
         else this.attr[name] = value;
+    }
+
+    /** Obsidian HTMLElement 扩展：setAttr 是 setAttribute 的别名 */
+    setAttr(name: string, value: string): this {
+        this.setAttribute(name, value);
+        return this;
     }
 
     getAttribute(name: string): string | null {
