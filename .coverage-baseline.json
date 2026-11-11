@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-11-11T17:28:13.254Z",
-  "gitHead": "27020940148195729def9bcd7e673ba32ac86d9a",
+  "generatedAt": "2026-11-11T17:41:33.341Z",
+  "gitHead": "c116ba3a7936bb04b5b9994af057799ab40cebfd",
   "nodeVersion": "v24.16.0",
-  "note": "DSH-20261112-07：四个纯逻辑模块 + 五个 DOM 构建器单测后 ui/views 8.14%→12.95%、ui 14.71%→15.22%（仅上调）",
+  "note": "DSH-20261112-07：ui/views 12.95%、ui 15.22% 已在上一基线锚定；此处仅刷新 gitHead（其后提交只动了注释/文档，可执行行数未变）",
   "dirs": {
     "ui": {
       "files": 259,
