@@ -27,6 +27,7 @@ import { renderCapabilityBanner, type CapabilityAction } from './capability-bann
 import { computeKnowledgeCapability, type EmbeddingAvailabilitySnapshot } from './knowledge-capability';
 import { getSharedEmbeddingProvider } from '@/engine/embedding/embedding-service';
 import { rebuildAllVectorsWithConfirm } from '@/ui/vector-rebuild-action';
+import { AddFanficSettingModal } from '@/ui/add-fanfic-setting-modal';
 import {
     formatBreakdownStatusLabel,
     formatTaskStatusLabel,
@@ -894,6 +895,23 @@ export class KnowledgeBaseView extends ItemView {
                 this.renderLeftSidebar();
                 this.renderRightPanel();
             });
+        });
+
+        // v4.83.1：知识库界面直达「添加同人设定」。
+        // 此前该入口只在命令面板、工具目录与项目选择器里，知识库里没有——
+        // 而「同人设定」和「参考书籍」是同一件事的两面（一个用来源、一个用拆解素材）。
+        const fanficSection = this.leftSidebar.createDiv({
+            cls: 'nw-u-p-8px-0 nw-u-bt-1px-solid-background-m',
+        });
+        const fanficEntry = fanficSection.createEl('button', {
+            text: '📚 添加同人设定',
+            cls: 'nw-btn nw-btn-secondary nw-u-w-100 nw-u-fs-13px',
+            attr: {
+                title: '检索官方资料，或用知识库已拆解的内容生成同人设定草稿（生成后会联网验证并存入待审核）',
+            },
+        });
+        fanficEntry.addEventListener('click', () => {
+            new AddFanficSettingModal(this.app, this.plugin, this.plugin.getActiveProject() || undefined).open();
         });
 
         const footer = this.leftSidebar.createDiv({
