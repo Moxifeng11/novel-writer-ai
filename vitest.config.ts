@@ -11,7 +11,8 @@ export default defineConfig({
         setupFiles: ['tests/setup.ts'],
         coverage: {
             provider: 'v8',
-            reporter: ['text', 'text-summary', 'html'],
+            // DSH-20261112-01：json-summary 供 scripts/check-coverage.mjs 读取（计数加权聚合）
+            reporter: ['text', 'text-summary', 'html', 'json-summary'],
             reportsDirectory: './coverage',
             // 覆盖率口径覆盖核心域（FR-E-05），排除类型声明、测试与 Worker 入口。
             // 注意：include 匹配是「子串包含」语义（picomatch contains:true），

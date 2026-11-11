@@ -1,0 +1,54 @@
+{
+  "generatedAt": "2026-11-11T15:41:55.356Z",
+  "gitHead": "b85a983f6839add6fa2783e0e44740c4839e96ee",
+  "nodeVersion": "v24.16.0",
+  "note": "DSH-20261112-01 首期基线：ui 与 ui/views lines 计数加权",
+  "dirs": {
+    "ui": {
+      "files": 255,
+      "lines": {
+        "total": 41516,
+        "covered": 6108,
+        "pct": 14.71
+      },
+      "statements": {
+        "total": 45316,
+        "covered": 6724,
+        "pct": 14.84
+      },
+      "branches": {
+        "total": 22108,
+        "covered": 3907,
+        "pct": 17.67
+      },
+      "functions": {
+        "total": 7059,
+        "covered": 995,
+        "pct": 14.1
+      }
+    },
+    "ui/views": {
+      "files": 22,
+      "lines": {
+        "total": 4326,
+        "covered": 352,
+        "pct": 8.14
+      },
+      "statements": {
+        "total": 4660,
+        "covered": 432,
+        "pct": 9.27
+      },
+      "branches": {
+        "total": 2334,
+        "covered": 340,
+        "pct": 14.57
+      },
+      "functions": {
+        "total": 835,
+        "covered": 142,
+        "pct": 17.01
+      }
+    }
+  }
+}

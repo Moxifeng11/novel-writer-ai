@@ -18,6 +18,7 @@
 | `npm run check:automation` | — |
 | `npm run check:bundle` | — |
 | `npm run check:changelog` | — |
+| `npm run check:coverage` | — |
 | `npm run check:css` | CSS 预算与命名棘轮 |
 | `npm run check:deps` | 分层依赖与循环依赖（棘轮） |
 | `npm run check:docs` | 文档索引/链接/版本/编码检查 |
