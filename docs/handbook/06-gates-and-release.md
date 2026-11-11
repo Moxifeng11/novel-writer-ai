@@ -28,7 +28,11 @@
 6. 样式写法类：`check:obsidian-api` 的 `style-element` / `static-style-assignment` → 按 §3 的写法约束改代码；存量按批次下降棘轮基线，**不得**为了过门禁上调。
 7. 密钥类：`check:secrets` → 把密钥移出仓库（data.json 走 .gitignore）或改用短占位符；**禁止**为了让门禁过而放宽阈值。
 8. 文档类：`check:docs` / `check:jsdoc` → 修链接/版本戳/注释，不要用 `--update-baseline` 掩盖回退。
-9. 测试类：先复现单文件，再跑全量；不要跳过失败用例。
+9. 视图测试下限类：`check:view-tests` → 超 200 行的 `ui/` 文件必须被某个测试 import。
+   优先把判定/格式化逻辑抽成纯函数并补单测（先例：`kb-format.ts` / `kb-book-filter.ts` / `kb-task-panel.ts`）；
+   纯展示无逻辑才用 `--update-baseline --note "原因"` 登记。基线**只允许清单变短**，
+   补了测试后应主动 `--update-baseline` 收紧。
+10. 测试类：先复现单文件，再跑全量；不要跳过失败用例。
 
 ## 3. 样式写法约束（社区目录审核）
 
