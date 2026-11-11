@@ -397,8 +397,18 @@ export class ItemView extends Component {
 
 export class Modal {
     app: App = new App();
+    modalEl: HTMLElement = document.createElement('div');
     contentEl: HTMLElement = document.createElement('div');
     titleEl: HTMLElement = document.createElement('div');
+    constructor() {
+        // 真实 Modal 的层级是 modalEl ⊃ titleEl/contentEl；测试里挂上父子链，
+        // 否则 onOpen 里 contentEl.parentElement 为 undefined。
+        // 旧测试可能用平面对象替 document.createElement：无 appendChild 时跳过挂链
+        if (typeof (this.modalEl as { appendChild?: unknown }).appendChild === 'function') {
+            this.modalEl.appendChild(this.titleEl);
+            this.modalEl.appendChild(this.contentEl);
+        }
+    }
     open(): void {}
     close(): void {}
     onOpen(): void {}
