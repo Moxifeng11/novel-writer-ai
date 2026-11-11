@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 320 | 138128 | 1739 | 1424 | 82% |
 | `services/` | 33 | 13799 | 205 | 161 | 79% |
-| `shared/` | 196 | 41282 | 1694 | 1385 | 82% |
+| `shared/` | 196 | 41351 | 1697 | 1388 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 249 | 102357 | 875 | 728 | 83% |
+| `ui/` | 249 | 102392 | 875 | 728 | 83% |
 
 ## 文件清单
 
@@ -422,7 +422,7 @@
 | `shared/creation-mode.ts` | 441 | 22 | 18 |
 | `shared/cursor-position.ts` | 31 | 2 | 2 |
 | `shared/deconstruction-settings.ts` | 78 | 6 | 6 |
-| `shared/degradation-notifier.ts` | 188 | 7 | 2 |
+| `shared/degradation-notifier.ts` | 257 | 10 | 5 |
 | `shared/desktop-shell.ts` | 79 | 3 | 2 |
 | `shared/diff-utils.ts` | 322 | 8 | 8 |
 | `shared/divergence-trend.ts` | 44 | 2 | 2 |
@@ -817,10 +817,10 @@
 | `ui/views/kb-stats-panel.ts` | 155 | 2 | 2 |
 | `ui/views/kb-task-panel.ts` | 293 | 24 | 19 |
 | `ui/views/knowledge-base-modals.ts` | 1369 | 4 | 4 |
-| `ui/views/knowledge-base-view.ts` | 3290 | 10 | 10 |
+| `ui/views/knowledge-base-view.ts` | 3297 | 10 | 10 |
 | `ui/views/knowledge-capability.ts` | 113 | 3 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
-| `ui/views/link-status.ts` | 343 | 11 | 5 |
+| `ui/views/link-status.ts` | 371 | 11 | 5 |
 | `ui/views/writing-fingerprint-view.ts` | 2050 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |

@@ -53,6 +53,66 @@ export interface DegradationEventInput {
     recoverable?: boolean;
 }
 
+/**
+ * 降级事件摘要（v4.83.1，阶段 B1「可统计」）。
+ *
+ * 事件数组本身只能回答「发生过什么」，摘要回答「**哪类降级最多、最近一条是什么**」——
+ * 这才是界面和排查需要的信息。
+ */
+export interface DegradationSummary {
+    /** 事件总数 */
+    total: number;
+    /** 按来源计数 */
+    bySource: Record<DegradationSource, number>;
+    /** 按严重程度计数 */
+    bySeverity: Record<DegradationSeverity, number>;
+    /** 可恢复事件数（用户可重试修复的） */
+    recoverable: number;
+    /** 最近一条事件（无事件时 undefined） */
+    latest?: DegradationEvent;
+}
+
+/**
+ * 汇总降级事件。
+ *
+ * 纯函数，不依赖单例——便于界面/测试对任意事件快照求摘要。
+ *
+ * @param events - 降级事件列表
+ * @returns 摘要
+ */
+export function summarizeDegradations(events: readonly DegradationEvent[]): DegradationSummary {
+    const bySource: Record<DegradationSource, number> = {
+        vector: 0, llm: 0, quality: 0, injection: 0, worker: 0,
+    };
+    const bySeverity: Record<DegradationSeverity, number> = {
+        info: 0, warning: 0, critical: 0,
+    };
+    let recoverable = 0;
+    let latest: DegradationEvent | undefined;
+    for (const event of events) {
+        bySource[event.source] = (bySource[event.source] ?? 0) + 1;
+        bySeverity[event.severity] = (bySeverity[event.severity] ?? 0) + 1;
+        if (event.recoverable) recoverable++;
+        if (!latest || event.timestamp >= latest.timestamp) latest = event;
+    }
+    return { total: events.length, bySource, bySeverity, recoverable, latest };
+}
+
+/**
+ * 取指定来源的降级事件（界面按链路过滤用）。
+ *
+ * @param events - 全部事件
+ * @param sources - 关心的来源
+ * @returns 过滤后的事件
+ */
+export function filterDegradationsBySource(
+    events: readonly DegradationEvent[],
+    sources: readonly DegradationSource[],
+): DegradationEvent[] {
+    if (sources.length === 0) return [];
+    return events.filter(event => sources.includes(event.source));
+}
+
 /** 降级事件消费者 */
 export type DegradationSink = (event: DegradationEvent) => void;
 
@@ -134,6 +194,15 @@ export class DegradationNotifier {
      */
     hasDegradation(dimension: string): boolean {
         return this.events.some((e) => e.dimension === dimension);
+    }
+
+    /**
+     * 当前事件的聚合摘要（阶段 B1：降级要「可统计」）。
+     *
+     * @returns 摘要
+     */
+    getSummary(): DegradationSummary {
+        return summarizeDegradations(this.events);
     }
 
     /** 清空已收集的事件（如开始新一轮拆解前） */

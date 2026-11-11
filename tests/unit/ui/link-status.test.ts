@@ -199,6 +199,49 @@ describe('风格流：指纹库 → 启用 → 强度 → 注入', () => {
     });
 });
 
+describe('运行时降级影响整体状态（阶段 B1）', () => {
+    it('环节全 ok 但有运行时降级 → 整体 warn（静态检查看不到「配了但运行中回退」）', () => {
+        const status = computeStyleFlowStatus({
+            templateCount: 0,
+            globalCount: 0,
+            projectCount: 1,
+            enabledCount: 1,
+            intensityDisabledCount: 0,
+            embeddingReady: true,
+            degradations: ['V2 检索异常，回退全量注入'],
+        });
+        expect(status.overall).toBe('warn');
+        expect(status.breakpoint).toBeNull();
+        expect(status.degradations).toHaveLength(1);
+    });
+
+    it('有断点时仍以断点为准（降级只是附加信息）', () => {
+        const status = computeConstraintFlowStatus({
+            sourceCount: 1,
+            settingExists: true,
+            reviewStatus: 'pending',
+            bound: false,
+            rulesHasContent: true,
+            degradations: ['考据来源抓取失败'],
+        });
+        expect(status.overall).toBe('broken');
+        expect(status.breakpoint).toBe('审核');
+    });
+
+    it('无降级时不改变原有判定', () => {
+        const status = computeStyleFlowStatus({
+            templateCount: 0,
+            globalCount: 0,
+            projectCount: 1,
+            enabledCount: 1,
+            intensityDisabledCount: 0,
+            embeddingReady: true,
+        });
+        expect(status.overall).toBe('ok');
+        expect(status.degradations).toBeUndefined();
+    });
+});
+
 describe('约束流：考据 → 设定 → 审核 → 绑定 → 注入', () => {
     it('待审核设定 → 断在审核（不能绑定）', () => {
         const status = computeConstraintFlowStatus({

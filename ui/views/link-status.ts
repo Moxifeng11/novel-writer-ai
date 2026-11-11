@@ -34,6 +34,13 @@ export interface LinkStatus {
     overall: LinkStageStatus;
     /** 第一处断点环节名；无断点为 null */
     breakpoint: string | null;
+    /**
+     * 该链路相关的运行时降级原因（阶段 B1：配置检查 + 实际发生过的降级）。
+     *
+     * 静态检查只能看「配了没有」，看不到「配了但在运行中降级了」——
+     * 例如向量检索回退关键词、指纹筛选回退全量。这些必须一起呈现。
+     */
+    degradations?: string[];
 }
 
 const STATUS_ICON: Record<LinkStageStatus, string> = {
@@ -65,15 +72,21 @@ const STATUS_TEXT: Record<LinkStageStatus, string> = {
  *
  * @param title - 链路名
  * @param stages - 环节列表
+ * @param degradations - 该链路的运行时降级原因（可选）
  * @returns 带整体结论的链路状态
  */
-export function summarizeLink(title: string, stages: LinkStage[]): LinkStatus {
+export function summarizeLink(
+    title: string,
+    stages: LinkStage[],
+    degradations?: string[],
+): LinkStatus {
     const firstBroken = stages.find(stage => stage.status === 'broken');
     const hasWarn = stages.some(stage => stage.status === 'warn');
     const decidable = stages.filter(stage => stage.status !== 'unknown');
+    const hasDegradation = Boolean(degradations && degradations.length > 0);
     const overall: LinkStageStatus = firstBroken
         ? 'broken'
-        : hasWarn
+        : hasWarn || hasDegradation
             ? 'warn'
             : decidable.length === 0
                 ? 'unknown'
@@ -83,6 +96,7 @@ export function summarizeLink(title: string, stages: LinkStage[]): LinkStatus {
         stages,
         overall,
         breakpoint: firstBroken ? firstBroken.name : null,
+        degradations,
     };
 }
 
@@ -100,6 +114,8 @@ export interface KnowledgeFlowInput {
     embeddingReady: boolean;
     /** 向量库当前加载的书数 */
     storeLoadedBooks: number;
+    /** 该链路相关的运行时降级原因（可选，阶段 B1） */
+    degradations?: string[];
 }
 
 /**
@@ -154,7 +170,7 @@ export function computeKnowledgeFlowStatus(input: KnowledgeFlowInput): LinkStatu
         detail: '写作后可在统计页核对 rag_sources',
     };
 
-    return summarizeLink('知识流', [breakdown, vectorize, embeddingStage, retrieve, attribute]);
+    return summarizeLink('知识流', [breakdown, vectorize, embeddingStage, retrieve, attribute], input.degradations);
 }
 
 /** 风格流输入 */
@@ -168,6 +184,8 @@ export interface StyleFlowInput {
     intensityDisabledCount: number;
     /** 嵌入是否可用（影响 V2 相似度选择，不影响纯文本特征注入） */
     embeddingReady: boolean;
+    /** 该链路相关的运行时降级原因（可选，阶段 B1） */
+    degradations?: string[];
 }
 
 /**
@@ -224,7 +242,7 @@ export function computeStyleFlowStatus(input: StyleFlowInput): LinkStatus {
             }
             : { name: '注入', status: 'broken', detail: '所有启用指纹强度都是 0，注入被禁用' };
 
-    return summarizeLink('风格流', [library, enabled, intensity, inject]);
+    return summarizeLink('风格流', [library, enabled, intensity, inject], input.degradations);
 }
 
 /** 约束流输入 */
@@ -239,6 +257,8 @@ export interface ConstraintFlowInput {
     bound: boolean;
     /** 解析出的规则是否有实质内容（占位不算） */
     rulesHasContent: boolean;
+    /** 该链路相关的运行时降级原因（可选，阶段 B1） */
+    degradations?: string[];
 }
 
 /**
@@ -278,7 +298,7 @@ export function computeConstraintFlowStatus(input: ConstraintFlowInput): LinkSta
             ? { name: '注入', status: 'ok', detail: '约束会进入 prompt' }
             : { name: '注入', status: 'broken', detail: '绑定的设定没有实质内容（全是占位）' };
 
-    return summarizeLink('约束流', [research, setting, review, bind, inject]);
+    return summarizeLink('约束流', [research, setting, review, bind, inject], input.degradations);
 }
 
 /**
@@ -336,6 +356,14 @@ export function renderLinkStatus(container: HTMLElement, status: LinkStatus): HT
         notes.createDiv({
             cls: 'nw-capability-note',
             text: '链路尚未产生可判定数据（多为运行时信息，如 rag_sources 归因需写作后核对）。',
+        });
+    }
+    // 运行时降级：静态检查看不到「配了但在运行中回退」，必须单独列出
+    if (status.degradations && status.degradations.length > 0) {
+        notes.createDiv({
+            cls: 'nw-capability-note',
+            text: `最近降级 ${status.degradations.length} 次：${status.degradations.slice(0, 3).join('；')}`
+                + (status.degradations.length > 3 ? ' …' : ''),
         });
     }
     return banner;

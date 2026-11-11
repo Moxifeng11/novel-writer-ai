@@ -26,6 +26,7 @@ import { buildKbConfigPanel } from './kb-config-panel';
 import { renderCapabilityBanner, type CapabilityAction } from './capability-banner';
 import { computeKnowledgeCapability, type EmbeddingAvailabilitySnapshot } from './knowledge-capability';
 import { computeKnowledgeFlowStatus, renderLinkStatus } from './link-status';
+import { filterDegradationsBySource, getDegradationNotifier } from '@/shared/degradation-notifier';
 import { getSharedEmbeddingProvider } from '@/engine/embedding/embedding-service';
 import { rebuildAllVectorsWithConfirm } from '@/ui/vector-rebuild-action';
 import { AddFanficSettingModal } from '@/ui/add-fanfic-setting-modal';
@@ -1037,7 +1038,12 @@ export class KnowledgeBaseView extends ItemView {
         });
 
         // 阶段 A4：链路状态——能力横幅回答「处于什么阶段」，这里回答「断在哪一环」
+        // 阶段 B1：同时带上运行时降级（静态检查看不到「配了但在运行中回退」）
         const vectorStore = this.plugin.knowledgeVectorStore;
+        const recentDegradations = filterDegradationsBySource(
+            getDegradationNotifier().getEvents(),
+            ['vector', 'injection'],
+        ).map(event => event.reason);
         renderLinkStatus(booksPanel, computeKnowledgeFlowStatus({
             bookTotal: this.allBooks.length,
             breakdownCompleted: this.allBooks.filter(b => b.breakdownStatus === 'completed').length,
@@ -1047,6 +1053,7 @@ export class KnowledgeBaseView extends ItemView {
             storeLoadedBooks: vectorStore && typeof vectorStore.getLoadedBookIds === 'function'
                 ? vectorStore.getLoadedBookIds().length
                 : 0,
+            degradations: recentDegradations,
         }));
 
         this.renderBooksToolbar(booksPanel);
