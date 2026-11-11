@@ -2,6 +2,38 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.83.1（2026-11-12）
+
+> 版本性质：阶段 A/B/C 收口与门禁加固，无破坏性变更；tag / GitHub Release 待用户确认后另行发布。
+
+### 🧭 动因
+- 长期目标「可验证」进入阶段 D：先把「用户以为生效」的三条链路（知识/风格/约束）变成可自证的端到端事实，再补门禁防回退。
+- 期间审计确认 5 个**静默失效**缺陷（代码执行成功、用户以为生效的没生效），本版一并修复。
+
+### ✅ 三条链路自证（阶段 A）
+- 新增三条数据流端到端测试（知识 5 / 风格 7 / 约束 6）与三界面链路状态区块（24 例），链路断点可见。
+- `diagnose_flow` 自诊断工具：agent 能回答「我配了/拆解了，为什么写作时没用上」，与界面共用 `shared/link-status-compute` 同一判定口径。
+
+### 🛠 静默失效修复
+- 拆解向量进不了 RAG：injector 要求参考书非空 + `bookIds:[]` 被当成「一个都不要」，改为空=不限制范围。
+- 向量化静默成功：samples 为空时只 log 后 return，调用方却标记 done；改为抛错如实标 failed。
+- 嵌入不可用时检索整体失败：默认本地 Ollama 未装即抛错，新增关键词兜底检索。
+- 指纹消费链路首跑恒空：`StyleFingerprintLibrary` 读取前自愈 `reloadIfChanged`。
+- 同人设定审核闸门被向导绕过：未审核设定不再直接写入正式目录/绑定。
+
+### 🚦 门禁
+- 新增 `check:coverage` 覆盖率棘轮（count-weighted、ui 14.71% / ui/views 8.14% 首期基线、gitHead provenance、下调双确认），接入 `preflight:release`。
+- `check:view-tests` 假阳性修复（断言字符串曾被当成 import）。
+- `check:obsidian-api` 空扫描假通过修复：扫描 0 个文件默认失败，`--allow-empty` 显式豁免。
+- `check:program` 改为校验真实基线与版本一致性。
+
+### 🤝 协作机制
+- 信箱升级三元身份（zcode/trae/dsh）；新增文件系统任务板（原子领取 + 写范围租约 + 租约超时），替代 30 分钟轮询的延迟与抢单。
+
+### ✅ 验证
+- `preflight` 28 步 EXIT=0；`preflight:release` EXIT=0（含覆盖率棘轮）。
+- 729 测试文件 / 7,711 用例通过 / 3 skipped；全仓语句覆盖 46.5%。
+
 ## v4.83.0（2026-11-11）
 
 > 发布说明：`docs/releases/v4.83.0.md` · 上一版本 v4.82.0

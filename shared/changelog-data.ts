@@ -21,6 +21,39 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.83.1',
+        date: '2026-11-12',
+        title: '可验证版本：三条链路自证 + 静默失效修复 + 门禁加固',
+        sections: [
+            {
+                type: 'added',
+                label: '✅ 链路自证',
+                items: [
+                    '三条数据流端到端测试（知识 / 风格 / 约束）与三界面链路状态区块，断点与降级可见',
+                    'diagnose_flow 自诊断工具与界面共用同一份判定逻辑，agent 能回答「为什么没生效」',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '🛠 静默失效',
+                items: [
+                    'RAG 空 bookIds 被当成「一个都不要」，改为空 = 不限制范围',
+                    '向量化 samples 为空时如实标记 failed，不再假成功',
+                    '嵌入不可用时关键词兜底；指纹首跑自愈；同人审核闸门不再被向导绕过',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🚦 门禁与协作',
+                items: [
+                    '新增覆盖率棘轮 check:coverage（ui 14.71% / ui/views 8.14% 首期基线）',
+                    'check:obsidian-api 空扫描假通过与 check:view-tests 假阳性修复',
+                    '信箱三元身份 + 文件系统任务板（原子领取 / 写范围租约）',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.83.0',
         date: '2026-11-11',
         title: '治理版本：包体积回血 + UI 可测性 + 安全 r3 收尾',
@@ -284,22 +317,7 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
             },
         ],
     },
-    {
-        version: '4.75.0',
-        date: '2026-11-08',
-        title: '移除从未可用的批量拆解模态',
-        sections: [
-            {
-                type: 'improved',
-                label: '🧹 优化',
-                items: [
-                    '删除批量拆解模态（依赖不存在的 workerManager，选文件必崩、结果不落盘）',
-                    '「批量拆解」命令改指知识库：批量导入 → 勾选维度 → 结果持久化到拆解库',
-                    'any 106/48，main.js −7,419B；内联样式/JSDoc/代码索引基线同步',
-                ],
-            },
-        ],
-    }
+
 ];
 
 /**
