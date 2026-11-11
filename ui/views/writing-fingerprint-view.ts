@@ -23,6 +23,7 @@ import type { BookBasicInfo } from '@/services/knowledge-base-manager';
 import { createLogger } from '@/shared/logger';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
 import { formatDetailCount, formatDetailNumber, formatDetailPercent } from '@/ui/knowledge-detail-format';
+import * as scopeLogic from './fingerprint-scope-logic';
 import {
     buildFeatureRows,
     buildStatItems,
@@ -57,17 +58,7 @@ interface FilterState {
     activeScope: FingerprintScope;
 }
 
-const SCOPE_LABELS: Record<FingerprintScope, string> = {
-    template: '📋 模板层',
-    global: '🌐 全局层',
-    project: '📁 项目层',
-};
-
-const SCOPE_ICONS: Record<FingerprintScope, string> = {
-    template: '📋',
-    global: '🌐',
-    project: '📁',
-};
+const { SCOPE_LABELS, SCOPE_ICONS } = scopeLogic;
 
 /**
  * 写作指纹视图。
@@ -424,15 +415,14 @@ export class WritingFingerprintView extends ItemView {
                 cls: 'nw-fingerprint-scope-tab',
                 text: SCOPE_LABELS[scope],
                 attr: {
-                    style: `flex:1;padding:10px 8px;text-align:center;cursor:pointer;font-size:12px;border-bottom:2px solid ${
-                        this.filter.activeScope === scope ? 'var(--interactive-accent)' : 'transparent'
-                    };color:${this.filter.activeScope === scope ? 'var(--interactive-accent)' : 'var(--text-muted)'};font-weight:${this.filter.activeScope === scope ? '600' : '400'};`
+                    style: scopeLogic.buildScopeTabStyle(this.filter.activeScope, scope)
                 }
             });
             tab.addEventListener('click', () => {
-                this.filter.activeScope = scope;
-                this.selectedFingerprintId = null;
-                this.selectedFingerprintScope = null;
+                const next = scopeLogic.resetScopeSelection(scope);
+                this.filter.activeScope = next.activeScope;
+                this.selectedFingerprintId = next.selectedFingerprintId;
+                this.selectedFingerprintScope = next.selectedFingerprintScope;
                 this.renderScopeTabs();
                 this.renderFingerprintList();
                 this.renderDetailPanel();
@@ -522,7 +512,7 @@ export class WritingFingerprintView extends ItemView {
             });
             this.tagFilter.appendChild(allTag);
 
-            allTags.slice(0, 10).forEach(tag => {
+            scopeLogic.visibleTagChips(allTags).forEach(tag => {
                 const tagEl = this.createTagChip(tag, this.filter.selectedTag === tag);
                 tagEl.addEventListener('click', () => {
                     this.filter.selectedTag = this.filter.selectedTag === tag ? null : tag;
@@ -577,11 +567,11 @@ export class WritingFingerprintView extends ItemView {
         if (fingerprints.length === 0) {
             this.updateCountLabel(0);
             // NBI-01: 当前层为空时给出可执行引导，优先指向已有数据的其它层
-            const otherScopes = (['template', 'global', 'project'] as FingerprintScope[])
-                .filter(scope => scope !== this.filter.activeScope && this.getScopeFingerprints(scope).length > 0);
-            const description = otherScopes.length > 0
-                ? `当前层暂无指纹，可切换到${otherScopes.map(scope => SCOPE_LABELS[scope]).join(' / ')}查看`
-                : '从章节文本提取写作指纹，用于风格对齐与参考';
+            const description = scopeLogic.buildEmptyScopeGuidance(this.filter.activeScope, {
+                template: this.getScopeFingerprints('template').length,
+                global: this.getScopeFingerprints('global').length,
+                project: this.getScopeFingerprints('project').length,
+            });
             const emptyState = createEmptyState({
                 icon: 'default',
                 title: '暂无指纹',
