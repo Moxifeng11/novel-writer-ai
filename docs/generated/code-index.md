@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 321 | 138291 | 1742 | 1425 | 82% |
+| `engine/` | 322 | 138538 | 1749 | 1427 | 82% |
 | `services/` | 33 | 13799 | 205 | 161 | 79% |
 | `shared/` | 197 | 41698 | 1709 | 1393 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
@@ -46,10 +46,11 @@
 | `engine/agent/harness/context-fit.ts` | 137 | 6 | 6 |
 | `engine/agent/harness/creation-plan.ts` | 73 | 6 | 6 |
 | `engine/agent/harness/diagnose-tools.ts` | 118 | 3 | 1 |
-| `engine/agent/harness/harness-engine.ts` | 627 | 7 | 4 |
+| `engine/agent/harness/harness-engine.ts` | 646 | 7 | 4 |
 | `engine/agent/harness/harness-types.ts` | 243 | 17 | 14 |
 | `engine/agent/harness/host-tools.ts` | 1013 | 5 | 5 |
 | `engine/agent/harness/prompt-sections.ts` | 152 | 2 | 2 |
+| `engine/agent/harness/repair-tools.ts` | 228 | 7 | 2 |
 | `engine/agent/harness/session-log.ts` | 269 | 1 | 1 |
 | `engine/agent/harness/session-snapshot.ts` | 249 | 11 | 10 |
 | `engine/agent/harness/spill-store.ts` | 112 | 6 | 6 |

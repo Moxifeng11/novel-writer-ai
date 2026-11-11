@@ -11,6 +11,7 @@ import { HarnessToolRegistry } from './tool-registry';
 import { runHarnessTurn } from './agent-loop';
 import { createHostTools, type HostToolDeps } from './host-tools';
 import { createDiagnoseTools } from './diagnose-tools';
+import { createRepairTools, type FlowRepairDeps } from './repair-tools';
 import type {
     HarnessAdapter,
     HarnessChip,
@@ -87,6 +88,14 @@ export interface AgentHarnessEngineOptions {
      * 采集器由宿主注入——engine 层不直接持有知识库/指纹库实例。
      */
     flowDiagnosis?: import('./diagnose-tools').FlowDiagnosisDeps;
+    /**
+     * 链路自愈能力（阶段 E）。
+     *
+     * 与  同时提供时，agent 多一个 `repair_flow` 工具（sideEffect: write）。
+     * 审批回调由引擎统一注入（`options.requestApproval` 优先，其次宿主 port 的
+     * confirmDangerousAction）；两者都没有时工具 fail-closed 拒绝执行。
+     */
+    flowRepair?: Omit<FlowRepairDeps, 'requestApproval' | 'diagnose'>;
 }
 
 /**
@@ -163,6 +172,16 @@ export class AgentHarnessEngine {
         // 阶段 C1：链路自诊断工具（宿主提供采集器时才注册）
         if (options.flowDiagnosis) {
             for (const tool of createDiagnoseTools(options.flowDiagnosis)) {
+                this.registry.register(tool);
+            }
+        }
+        // 阶段 E：链路自愈（修复动作必须走审批；没有审批能力时工具自身 fail-closed）
+        if (options.flowDiagnosis && options.flowRepair) {
+            for (const tool of createRepairTools({
+                ...options.flowRepair,
+                diagnose: options.flowDiagnosis,
+                requestApproval: options.requestApproval ?? this.defaultApprovalHandler(),
+            })) {
                 this.registry.register(tool);
             }
         }
