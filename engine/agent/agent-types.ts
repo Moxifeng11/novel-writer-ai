@@ -317,7 +317,7 @@ export interface GuideAgentPort {
     /** 项目状态摘要（模式/结构/章节统计/最新章） */
     getProjectStatus?(project: string): Promise<AgentProjectStatus | null>;
     /** 执行任意插件命令（命令面板全集）；长流程命令可返回 Promise（Agent 可等待派发结果） */
-    runCommand?(commandId: string): boolean | Promise<boolean>;
+    runCommand?(commandId: string, project?: string): boolean | Promise<boolean>;
     /**
      * 高成本/破坏性命令的用户确认（吸收 dsh user-approval）。
      * 未提供时，这类命令会被直接拒绝，而不是静默执行。

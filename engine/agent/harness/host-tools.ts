@@ -896,6 +896,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
         parameters: {
             commandId: { type: 'string', description: '命令 ID（来自 list_commands）', required: true },
             reason: { type: 'string', description: '一句话说明为什么要执行该命令' },
+            project: { type: 'string', description: '目标项目（库/项目名）；留空用当前项目。执行前会核对项目确实存在' },
         },
         required: ['commandId'],
         sideEffect: 'dangerous', timeoutMs: 30_000,
@@ -911,12 +912,19 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
                     content: `拒绝执行 ${commandId}：只能执行本插件命令（novel-writer-*）。请用 list_commands 获取可用 ID。`,
                 };
             }
+            // S3-7（安全 r3）：显式指定的项目必须真实存在，不能把模型给的字符串
+            // 直接当命令目标（否则确认框显示 A、命令实际作用在界面上的 B）。
+            const mem = toolCtx.memory as unknown as HarnessMemoryState;
+            const requestedProject = typeof args.project === 'string' ? args.project.trim() : '';
+            const targetProject = resolveProject(args, mem, ctx);
+            if (requestedProject && !targetProject) {
+                return { ok: false, content: `未找到项目「${requestedProject}」；请用 list_projects 确认完整项目路径` };
+            }
             // 模式守卫：长篇命令在短篇/剧本项目下会写错目录，直接拒绝并给出替代路径。
             // 命令面板已用 checkCallback 隐藏，但 Agent 走 registry，必须在这里再拦一次。
             const allowedModes = commandAllowedModes(commandId);
             if (allowedModes && port.getProjectStatus) {
-                const mem = toolCtx.memory as unknown as HarnessMemoryState;
-                const project = resolveProject({}, mem, ctx);
+                const project = targetProject;
                 if (project) {
                     const status = await port.getProjectStatus(project);
                     if (status && !allowedModes.includes(status.mode)) {
@@ -939,7 +947,8 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
                 }
                 const approved = await port.confirmDangerousAction({
                     title: 'Agent 请求执行高成本命令',
-                    detail: `${commandId}${args.reason ? `\n原因：${String(args.reason)}` : ''}`,
+                    // S3-7：确认框必须显示真实目标项目
+                    detail: `${commandId}${targetProject ? ` → ${targetProject}` : ' → 当前界面项目'}${args.reason ? `\n原因：${String(args.reason)}` : ''}`,
                 });
                 if (!approved) {
                     return {
@@ -948,11 +957,11 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
                     };
                 }
             }
-            const ok = await Promise.resolve(port.runCommand(commandId));
+            const ok = await Promise.resolve(port.runCommand(commandId, targetProject || undefined));
             return {
                 ok,
                 content: ok
-                    ? `已执行命令 ${commandId}${args.reason ? `（${String(args.reason)}）` : ''}；长流程（成文/结算/导出）的真实结果稍后用 get_execution_status 查询，不要只说「请去界面看」。`
+                    ? `已执行命令 ${commandId}${targetProject ? `（目标：${targetProject}）` : ''}${args.reason ? `（${String(args.reason)}）` : ''}；长流程（成文/结算/导出）的真实结果稍后用 get_execution_status 查询，不要只说「请去界面看」。`
                     : `命令 ${commandId} 执行失败；请用 list_commands 确认 ID 后重试`,
             };
         },

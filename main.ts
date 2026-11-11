@@ -114,7 +114,7 @@ import { CryptoService } from './core/crypto-service';
 import { ThemeManager } from './core/theme-manager';
 import { ProviderManager } from './core/provider-manager';
 import { CommandRegistry, parseChapterFromPath } from './core/command-registry';
-import { SettingsService, getDefaultSettings } from './core/settings-service';
+import { SettingsService, getDefaultSettings, type SaveSettingsOutcome } from './core/settings-service';
 import { CommandUiExecutor } from './ui/command-ui-executor';
 import { PasswordModal } from './ui/password-modal';
 import { TemplateManager } from './ui/template-manager';
@@ -1599,8 +1599,17 @@ export default class NovelWriterPlugin extends Plugin {
         this.referenceBookIds = [...(this.settings.referenceBookIds ?? [])];
     }
 
-    async saveSettings() {
+    async saveSettings(): Promise<void> {
         await this._settingsService.saveSettings();
+    }
+
+    /**
+     * 保存设置并返回结果（S3-8）。设置页保存密钥时用它判断是否需要提示「未保存」。
+     *
+     * @returns 保存结果（含因口令未解锁而未写入的密钥字段）
+     */
+    async saveSettingsWithOutcome(): Promise<SaveSettingsOutcome> {
+        return this._settingsService.saveSettings();
     }
 
     /**
@@ -1844,18 +1853,29 @@ export default class NovelWriterPlugin extends Plugin {
      * @param commandId - 命令ID
      * @returns 是否成功
      */
-    async executeCommandAsync(commandId: string): Promise<boolean> {
-        if (this.registry.has(commandId)) {
-            try {
-                await this.registry.execute(commandId);
-                return true;
-            } catch (err) {
-                log.error('[小说工坊] Registry 执行失败:', err);
-                return false;
-            }
+    async executeCommandAsync(commandId: string, project?: string): Promise<boolean> {
+        // S3-7（安全 r3）：Agent 显式指定目标项目时，执行期间把它作为工作台上下文，
+        // 避免命令层回退到「活动文件/界面当前项目」而作用到另一个项目。
+        const target = String(project || '').trim();
+        const previous = this._workbenchContext;
+        if (target) {
+            this._workbenchContext = { ...(previous || {}) as WorkbenchChapterContext, project: target };
         }
-        log.warn('[小说工坊] 命令 ' + commandId + ' 未在 Registry 注册，fallback 到 Obsidian 路由');
-        return this.app.commands.executeCommandById(commandId) === true;
+        try {
+            if (this.registry.has(commandId)) {
+                try {
+                    await this.registry.execute(commandId);
+                    return true;
+                } catch (err) {
+                    log.error('[小说工坊] Registry 执行失败:', err);
+                    return false;
+                }
+            }
+            log.warn('[小说工坊] 命令 ' + commandId + ' 未在 Registry 注册，fallback 到 Obsidian 路由');
+            return this.app.commands.executeCommandById(commandId) === true;
+        } finally {
+            if (target) this._workbenchContext = previous;
+        }
     }
 
 

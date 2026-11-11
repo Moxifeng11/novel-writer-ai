@@ -422,9 +422,9 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
                 return false;
             }
         },
-        runCommand: async (commandId) => {
+        runCommand: async (commandId, targetProject) => {
             const ledger = getExecutionLedger();
-            const project = plugin.getActiveProject() || '';
+            const project = String(targetProject || '').trim() || plugin.getActiveProject() || '';
             try {
                 // 只走插件自己的注册表：plugin.executeCommand 在未命中时会回退到
                 // Obsidian 命令系统，等于允许 Agent 执行任意第三方命令。
@@ -438,7 +438,8 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
                 }
                 // 可等待版本：长流程命令的真实完成点会自己登记结果，
                 // 这里只捕获「派发即抛错」的情况。
-                const ok = await plugin.executeCommandAsync(commandId);
+                // S3-7：把 Agent 显式目标项目传给命令层，执行期间作为工作台上下文
+                const ok = await plugin.executeCommandAsync(commandId, project || undefined);
                 if (!ok) {
                     ledger.recordFailed({
                         commandId, project, source: 'agent', label: 'Agent 派发',

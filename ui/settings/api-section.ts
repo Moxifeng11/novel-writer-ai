@@ -357,8 +357,13 @@ export class ApiSection extends SettingsSection {
                 if (raw.id === this.plugin.getCurrentProviderId()) {
                     this.plugin.settings.apiKey = typed;
                 }
-                await this.plugin.saveSettings();
-                showSuccessNotice('密钥已保存');
+                const outcome = await this.plugin.saveSettingsWithOutcome();
+                // S3-8：口令未解锁时新密钥并未写入，不能提示「已保存」
+                if (outcome.droppedSecrets.length > 0) {
+                    showWarningNotice('密钥未保存：当前口令未解锁，请先解锁后再保存');
+                } else {
+                    showSuccessNotice('密钥已保存');
+                }
             });
             const eye = row.createEl('button', {
                 cls: 'nw-api-icon-btn',

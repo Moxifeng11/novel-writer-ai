@@ -61,6 +61,19 @@ export interface SettingsServiceDeps {
 }
 
 /**
+ * 保存设置的结果（S3-8）。
+ *
+ * `droppedSecrets`：因口令未解锁而未能写入的新密钥字段；调用方必须据此提示
+ * 「未保存/未更新」，不能无条件弹「已保存」。
+ */
+export interface SaveSettingsOutcome {
+    /** 设置是否已落盘（写盘失败会抛错，不会以 saved=false 返回） */
+    saved: boolean;
+    /** 未能写入的密钥字段名（点路径，如 apiKey / providerKeys.xxx） */
+    droppedSecrets: string[];
+}
+
+/**
  * 设置服务：读写、迁移与默认值合并的唯一入口。
  */
 export class SettingsService {
@@ -277,6 +290,9 @@ export class SettingsService {
      *    混合态（部分密文 + 部分历史明文）也必须按此执行，否则新 Key 会静默明文落盘；
      * 4. 从未用过口令（磁盘上没有任何密文）→ 沿用「明文保存」的旧行为。
      */
+    /** 本次保存中因锁/加密失败而未能持久化的密钥字段（S3-8） */
+    private droppedSecrets: Set<string> | null = null;
+
     private async resolveSecret(field: string, value: string): Promise<string> {
         if (!value) return '';
         if (value.startsWith(V2_PREFIX_LOCAL) || value.startsWith('aes256:')) return value;
@@ -288,10 +304,12 @@ export class SettingsService {
             if (encrypted) return encrypted;
             if (typeof previous === 'string' && previous) {
                 log.warn(`[小说工坊] 未能解锁口令，${field} 保留原值不写明文`);
+                this.droppedSecrets?.add(field);
                 return previous;
             }
             // 没有旧值可保留：拒绝把新密钥明文落盘（调用方会读到空值）
             log.warn(`[小说工坊] 未能解锁口令，${field} 未写入（拒绝明文落盘）`);
+            this.droppedSecrets?.add(field);
             return '';
         }
         return value;
@@ -305,8 +323,16 @@ export class SettingsService {
         );
     }
 
-    /** 保存设置：加密 → 版本号包装 → 持久化 */
-    async saveSettings(): Promise<void> {
+    /**
+     * 保存设置：加密 → 版本号包装 → 持久化。
+     *
+     * @returns 保存结果；`droppedSecrets` 列出因口令未解锁而未能写入的密钥字段
+     */
+    async saveSettings(): Promise<SaveSettingsOutcome> {
+        // S3-8（安全 r3）：记录因口令未解锁而未能写入的新密钥，调用方据此提示
+        // 「未保存」而不是无条件弹「已保存」。
+        const droppedSecrets = new Set<string>();
+        this.droppedSecrets = droppedSecrets;
         const settings = this.deps.getSettings();
         const encryptedApiKey = await this.resolveSecret('apiKey', settings.apiKey);
         const keysToSave: Record<string, string> = {};
@@ -343,7 +369,7 @@ export class SettingsService {
         if (this.deps.cacheManager && settings.panelLayout) {
             this.deps.cacheManager.setPanelLayout(settings.panelLayout);
         }
-        return this.deps.settingsWriter.enqueueAutoClean(async () => {
+        await this.deps.settingsWriter.enqueueAutoClean(async () => {
             await this.deps.saveData(dataToSave);
             // 写盘成功后刷新快照：v1 → v2 升级后 legacySecretCount 归零，
             // 后续保存也不会再拿旧密文当兜底。
@@ -352,6 +378,8 @@ export class SettingsService {
                 v => typeof v === 'string' && v.startsWith('aes256:'),
             ).length;
         });
+        this.droppedSecrets = null;
+        return { saved: true, droppedSecrets: [...droppedSecrets] };
     }
 }
 

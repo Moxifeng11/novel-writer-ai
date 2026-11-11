@@ -5,7 +5,7 @@ import { discoverModels } from '@/services/model-discovery';
 import { ModelPickerModal } from './model-picker-modal';
 import { describeSecretForInput, isStoredCiphertext } from '@/shared/secret-display';
 import { lookupModelCapability } from '@/shared/model-capabilities';
-import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 import type { CustomProvider, NovelWriterSettings } from '@/main';
 
 /** 供应商列表的最小投影（对应 core/provider-manager.getAllProviders 返回结构的只读子集） */
@@ -33,6 +33,8 @@ interface ManageProvidersPlugin {
     restoreDefaultProviders(): void;
     updateProvider(id: string, updates: Partial<CustomProvider>): boolean;
     saveSettings(): Promise<void>;
+    /** 保存并返回未写入的密钥字段（S3-8） */
+    saveSettingsWithOutcome?(): Promise<{ saved: boolean; droppedSecrets: string[] }>;
     updateStatusBarText(): void;
 }
 
@@ -323,8 +325,12 @@ export class ManageProvidersModal extends Modal {
                 if (raw.id === this.plugin.getCurrentProviderId()) {
                     this.plugin.settings.apiKey = typed;
                 }
-                await this.plugin.saveSettings();
-                showSuccessNotice('密钥已保存');
+                const outcome = await (this.plugin.saveSettingsWithOutcome?.() ?? this.plugin.saveSettings().then(() => ({ saved: true, droppedSecrets: [] })));
+                if (outcome.droppedSecrets.length > 0) {
+                    showWarningNotice('密钥未保存：当前口令未解锁，请先解锁后再保存');
+                } else {
+                    showSuccessNotice('密钥已保存');
+                }
             });
             const eye = row.createEl('button', {
                 cls: 'nw-api-icon-btn',

@@ -223,7 +223,8 @@ describe('AgentPort.runCommand — 命令 id 校验与失败登记', () => {
         const ok = await makePort(runPlugin()).runCommand!('novel-writer:write-next');
 
         expect(ok).toBe(true);
-        expect(mocks.executeCommandAsync).toHaveBeenCalledWith('novel-writer:write-next');
+        // S3-7：第二个参数是目标项目（活动项目）
+        expect(mocks.executeCommandAsync).toHaveBeenCalledWith('novel-writer:write-next', '短篇小说/示例');
         expect(mocks.recordFailed).not.toHaveBeenCalled();
     });
 

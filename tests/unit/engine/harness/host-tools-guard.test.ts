@@ -81,7 +81,8 @@ describe('命令白名单与危险确认', () => {
         const h = makeHarness({ port: { confirmDangerousAction: vi.fn(async () => true) } as never });
         const result = await h.call('run_command', { commandId: 'novel-writer-batch-chapters' });
         expect(result.ok).toBe(true);
-        expect(h.port.runCommand).toHaveBeenCalledWith('novel-writer-batch-chapters');
+        // S3-7：第二个参数是显式目标项目（未指定时为 undefined）
+        expect(h.port.runCommand).toHaveBeenCalledWith('novel-writer-batch-chapters', undefined);
     });
 
     it('普通命令不需要确认', async () => {
@@ -90,6 +91,26 @@ describe('命令白名单与危险确认', () => {
         await h.call('run_command', { commandId: 'novel-writer-open-settings' });
         expect(confirm).not.toHaveBeenCalled();
         expect(h.port.runCommand).toHaveBeenCalledOnce();
+    });
+
+    it('run_command 显式目标项目：不存在时拒绝，存在时透传并写进确认详情（S3-7）', async () => {
+        const confirm = vi.fn(async () => true);
+        const h = makeHarness({
+            projects: ['长篇/书A', '长篇/书B'],
+            pickedProject: '长篇/书A',
+            port: { confirmDangerousAction: confirm } as never,
+        });
+
+        const missing = await h.call('run_command', { commandId: 'novel-writer-batch-chapters', project: '长篇/不存在' });
+        expect(missing.ok).toBe(false);
+        expect(missing.content).toContain('未找到项目');
+        expect(h.port.runCommand).not.toHaveBeenCalled();
+
+        const ok = await h.call('run_command', { commandId: 'novel-writer-batch-chapters', project: '长篇/书B' });
+        expect(ok.ok).toBe(true);
+        expect(h.port.runCommand).toHaveBeenCalledWith('novel-writer-batch-chapters', '长篇/书B');
+        const firstCall = (confirm.mock.calls[0] as unknown[])[0] as { detail: string };
+        expect(firstCall.detail).toContain('→ 长篇/书B');
     });
 
     it('isDangerousCommand 覆盖批量/结算/导出等写盘命令', () => {
