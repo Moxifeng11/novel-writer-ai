@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 320 | 138136 | 1739 | 1424 | 82% |
+| `engine/` | 320 | 138128 | 1739 | 1424 | 82% |
 | `services/` | 33 | 13799 | 205 | 161 | 79% |
 | `shared/` | 196 | 41282 | 1694 | 1385 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
@@ -187,7 +187,7 @@
 | `engine/heavy-task-worker-manager.ts` | 312 | 2 | 2 |
 | `engine/incremental-result-aggregator.ts` | 1707 | 3 | 3 |
 | `engine/knowledge-base-config.ts` | 509 | 5 | 5 |
-| `engine/knowledge-injector.ts` | 2158 | 13 | 7 |
+| `engine/knowledge-injector.ts` | 2150 | 13 | 7 |
 | `engine/knowledge-tags.ts` | 629 | 2 | 2 |
 | `engine/knowledge-to-fingerprint-converter.ts` | 345 | 1 | 1 |
 | `engine/knowledge-usage.ts` | 80 | 3 | 3 |

@@ -645,8 +645,7 @@ export class KnowledgeInjector {
 
     private async buildKbSceneInjection(context: InjectionContext, strength: number): Promise<string> {
         if (!this.knowledgeVectorStore || strength < 0.2) return '';
-        const bookIds = this.getReferenceBookIds();
-        if (bookIds.length === 0) return '';
+        // v4.83.1：bookIds 为空 = 不限制范围（检索全部已拆解书 + 考据库），交给 retrieveKb 处理
 
         const sceneCategory = context.sceneType 
             ? this.detectSceneCategory(context.sceneType)
@@ -773,8 +772,7 @@ export class KnowledgeInjector {
 
     private async buildSceneCharacterInjection(context: InjectionContext, strength: number): Promise<string> {
         if (!this.knowledgeVectorStore || strength < 0.2) return '';
-        const bookIds = this.getReferenceBookIds();
-        if (bookIds.length === 0) return '';
+        // v4.83.1：bookIds 为空 = 不限制范围（检索全部已拆解书 + 考据库），交给 retrieveKb 处理
 
         try {
             const results = (await this.retrieveKb(context, ['character'], Math.max(3, Math.round(strength * 5)), this.budgetChars(1.0))).hits;
@@ -798,8 +796,7 @@ export class KnowledgeInjector {
 
     private async buildSceneWorldviewInjection(context: InjectionContext, strength: number): Promise<string> {
         if (!this.knowledgeVectorStore || strength < 0.2) return '';
-        const bookIds = this.getReferenceBookIds();
-        if (bookIds.length === 0) return '';
+        // v4.83.1：bookIds 为空 = 不限制范围（检索全部已拆解书 + 考据库），交给 retrieveKb 处理
 
         try {
             // 知识库拆解没有 worldview 维度（只有 style/rhythm/technique/structure/
@@ -826,8 +823,7 @@ export class KnowledgeInjector {
 
     private async buildSceneTechniqueInjection(context: InjectionContext, strength: number, sceneCategory: SceneCategory): Promise<string> {
         if (!this.knowledgeVectorStore || strength < 0.2) return '';
-        const bookIds = this.getReferenceBookIds();
-        if (bookIds.length === 0) return '';
+        // v4.83.1：bookIds 为空 = 不限制范围（检索全部已拆解书 + 考据库），交给 retrieveKb 处理
 
         try {
             const results = (await this.retrieveKb(context, ['technique'], Math.max(3, Math.round(strength * 4)), this.budgetChars(0.9))).hits;
@@ -865,8 +861,7 @@ export class KnowledgeInjector {
 
     private async buildSceneRhythmInjection(context: InjectionContext, strength: number, sceneCategory: SceneCategory): Promise<string> {
         if (!this.knowledgeVectorStore || strength < 0.2) return '';
-        const bookIds = this.getReferenceBookIds();
-        if (bookIds.length === 0) return '';
+        // v4.83.1：bookIds 为空 = 不限制范围（检索全部已拆解书 + 考据库），交给 retrieveKb 处理
 
         try {
             const lines: string[] = [];
@@ -1766,8 +1761,7 @@ export class KnowledgeInjector {
     private async buildKbCharacterInjection(context: InjectionContext, strength: number): Promise<string> {
         if (!this.knowledgeVectorStore || strength < 0.2) return '';
 
-        const bookIds = this.getReferenceBookIds();
-        if (bookIds.length === 0) return '';
+        // v4.83.1：bookIds 为空 = 不限制范围（检索全部已拆解书 + 考据库），交给 retrieveKb 处理
 
         try {
             const results = (await this.retrieveKb(context, ['character'], Math.max(2, Math.round(strength * 5)), this.budgetChars(1.0))).hits;
@@ -1815,8 +1809,7 @@ export class KnowledgeInjector {
     private async buildKbWorldviewInjection(context: InjectionContext, strength: number): Promise<string> {
         if (!this.knowledgeVectorStore || strength < 0.2) return '';
 
-        const bookIds = this.getReferenceBookIds();
-        if (bookIds.length === 0) return '';
+        // v4.83.1：bookIds 为空 = 不限制范围（检索全部已拆解书 + 考据库），交给 retrieveKb 处理
 
         try {
             const results = (await this.retrieveKb(context, ['structure'], Math.max(2, Math.round(strength * 4)), 700)).hits;
@@ -1853,8 +1846,7 @@ export class KnowledgeInjector {
     private async buildKbTechniqueInjection(context: InjectionContext, strength: number): Promise<string> {
         if (!this.knowledgeVectorStore || strength < 0.2) return '';
 
-        const bookIds = this.getReferenceBookIds();
-        if (bookIds.length === 0) return '';
+        // v4.83.1：bookIds 为空 = 不限制范围（检索全部已拆解书 + 考据库），交给 retrieveKb 处理
 
         try {
             // structure 由「设定」段单独注入：混在这里会以「起/承/转/合」占满
@@ -1905,8 +1897,9 @@ export class KnowledgeInjector {
     private async buildKbStyleInjection(context: InjectionContext, strength: number): Promise<string> {
         if (!this.knowledgeVectorStore || strength < 0.2) return '';
 
-        const bookIds = this.getReferenceBookIds();
-        if (bookIds.length === 0) return '';
+        // v4.83.1：bookIds 为空表示「不限制参考书范围」（检索全部已拆解书 + 考据库），
+        // 由 resolveSearchBookIds 统一给 undefined，不再当成「没有参考书 → 不注入」。
+        const bookIds = this.resolveSearchBookIds(context);
 
         const queryText = context.currentText || context.outline || '';
         if (!queryText) return '';
@@ -2005,8 +1998,7 @@ export class KnowledgeInjector {
     private async buildKbRhythmInjection(context: InjectionContext, strength: number): Promise<string> {
         if (!this.knowledgeVectorStore || strength < 0.2) return '';
 
-        const bookIds = this.getReferenceBookIds();
-        if (bookIds.length === 0) return '';
+        // v4.83.1：bookIds 为空 = 不限制范围（检索全部已拆解书 + 考据库），交给 retrieveKb 处理
 
         try {
             const results = (await this.retrieveKb(context, ['rhythm'], Math.max(2, Math.round(strength * 4)), this.budgetChars(0.7))).hits;
