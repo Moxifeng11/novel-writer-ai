@@ -217,7 +217,7 @@ G5 交互一致性 · G6 性能与存储 · G7 质量基建
 
 | 交付物 | 验收 |
 |---|---|
-| B1 降级事件统一出口 | 所有 fallback 走同一个 notifier，可统计 |
+| B1 降级事件统一出口 ⏳ | ✅ 可统计（`summarizeDegradations` + `getSummary`）✅ 链路状态展示运行时降级；⏳ 指纹库/同人设定两界面接线 |
 | B2 状态标记一致性审计 | 每个 `*Status` 字段都有"标记与真实数据一致"的测试 |
 | B3 刷新契约收口 | 所有"读共享内存"的 getter 要么自愈，要么有显式 `reload` 前置断言 |
 | B4 闸门审计 | 所有写正式目录的路径都过审核闸门，并有契约测试 |
@@ -314,6 +314,7 @@ git push origin master     # 已放行；tag/Release 需用户确认
 
 | 日期 | 版本 | 变更 |
 |---|---|---|
+| 2026-11-11 | v1.4 | **阶段 B1 核心**：降级事件可统计（`summarizeDegradations` / `filterDegradationsBySource` / `DegradationNotifier#getSummary`），链路状态支持运行时降级（有降级无断点 → 整体 warn，有断点仍以断点为准），知识库界面接线。11 条测试。体积 4,904,459 → 4,905,265（+806 B） |
 | 2026-11-11 | v1.3 | **阶段 A 收口**：A4 三界面链路状态区块落地（`ui/views/link-status.ts`，21 条测试）。三个设计决策：断点取第一个 broken（修链路要从头修）、unknown 不拉低整体（归因是运行时数据，不能掩盖真实状态）、template 不进风格流环节（来源库不参与注入）。渲染复用现有 CSS，`styles.css` 逐字节不变。体积 4,897,414 → 4,904,459（+7,045 B，阶段预算 50 KB 内） |
 | 2026-11-11 | v1.2 | **阶段 A 的三条链路端到端测试齐备（18 个用例）**：A1 知识流 5 条、A2 风格流 7 条、A3 约束流 6 条，全部不 mock 中间层。A1 首跑即抓到上一轮修复不完整（injector 内 10 个子方法仍各自 `bookIds.length === 0 → return ''`）。A3 顺带确认 `attachFanficPathToProject` 自身已有审核闸门。阶段 A 剩余 A4（界面链路状态区块） |
 | 2026-11-11 | v1.1 | 阶段 A1 完成：知识流端到端测试落地（`tests/integration/knowledge-flow-e2e.test.ts`，5 条，真实向量库/检索/注入不 mock 中间层）。**该测试首跑即抓到上一轮修复不完整**——`injectKnowledgeBase` 主守卫已放开，但内部 10 个 `buildKb*` 子方法仍各自 `bookIds.length === 0 → return ''`，导致「没勾参考书」时整条注入链依旧静默为空；已删除 9 处无效守卫 + 1 处改用 `resolveSearchBookIds`。体积 4,897,792 → 4,897,414（−378 B，基线同步收紧） |
