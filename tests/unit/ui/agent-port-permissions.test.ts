@@ -56,11 +56,29 @@ describe('Agent 文件端口权限', () => {
 
     it('move_file 拒绝目录，避免整体搬走章节目录/项目目录', async () => {
         const folder = new TFolder();
-        folder.path = '长篇小说/书A';
+        folder.path = '长篇小说/书A/素材';
         const { port, rename } = makePort({ indexed: folder });
 
-        await expect(port.moveFile?.('长篇小说/书A', '长篇小说/书B')).rejects.toThrow('只支持文件');
+        // 同项目内的目录移动：先过项目范围检查，再被「只支持文件」拒绝
+        await expect(port.moveFile?.('长篇小说/书A/素材', '长篇小说/书A/素材2')).rejects.toThrow('只支持文件');
         expect(rename).not.toHaveBeenCalled();
+    });
+
+    // S3-17（安全 r3）：源与目标必须在同一项目作用域
+    it('move_file 拒绝跨项目移动（防项目身份文件被搬走导致项目消失）', async () => {
+        const { port, rename } = makePort({ adapterExists: true });
+
+        await expect(port.moveFile?.('长篇小说/书A/作品信息.md', '长篇小说/书B/作品信息.md'))
+            .rejects.toThrow('不允许跨项目移动');
+        expect(rename).not.toHaveBeenCalled();
+    });
+
+    it('move_file 允许同项目内移动', async () => {
+        const { port, rename } = makePort({ adapterExists: true });
+
+        await expect(port.moveFile?.('长篇小说/书A/素材/旧.md', '长篇小说/书A/素材/新.md'))
+            .resolves.toMatchObject({ from: '长篇小说/书A/素材/旧.md', to: '长篇小说/书A/素材/新.md' });
+        expect(rename).toHaveBeenCalledWith('长篇小说/书A/素材/旧.md', '长篇小说/书A/素材/新.md');
     });
 
     it('delete_project 拒绝更深层目录，只允许「库/项目」两段', async () => {
@@ -95,5 +113,28 @@ describe('Agent 文件端口权限', () => {
         await expect(port.readFile?.(allowed)).resolves.toBeNull();
         await expect(port.readFile?.('.sessions/agent/书A.jsonl')).rejects.toThrow();
         await expect(port.readFile?.('.sessions/spill/agent/别的项目/x.md')).rejects.toThrow();
+    });
+});
+
+// S3-18（安全 r3）：spill 目录必须由 scope 唯一决定
+describe('spill 目录唯一性', () => {
+    it('不同项目即使 slug 后同名也落不同目录', () => {
+        // slug 会把 `/` 与 `-` 归一到同一个字符：这两者净化后都是「长篇小说-书A」
+        expect(spillFolderFor('长篇小说/书A')).not.toBe(spillFolderFor('长篇小说-书A'));
+    });
+
+    it('同一 scope 稳定得到同一目录（会话内多次 spill 不漂移）', () => {
+        expect(spillFolderFor('长篇小说/书A')).toBe(spillFolderFor('长篇小说/书A'));
+    });
+
+    it('空 scope 回落 default 且仍带哈希', () => {
+        const path = spillFolderFor('');
+        expect(path).toContain('/default-');
+    });
+
+    it('目录路径始终在 SPILL_ROOT 下', () => {
+        for (const scope of ['长篇小说/书A', '长篇小说-书A', '书B', '']) {
+            expect(spillFolderFor(scope).startsWith('.sessions/spill/agent/')).toBe(true);
+        }
     });
 });

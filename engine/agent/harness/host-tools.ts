@@ -7,7 +7,8 @@
  */
 import type { GuideAgentPort } from '@/engine/agent/agent-types';
 import type { AgentContext } from '@/engine/agent/agent-types';
-import type { HarnessMemoryState, HarnessTool } from './harness-types';
+import type { HarnessMemoryState, HarnessTool, MemorySlotKey } from './harness-types';
+import { MEMORY_SLOT_KEYS, isMemorySlotKey } from './harness-types';
 import { parsePlanSteps, summarizePlanUpdate, type PlanStep } from './creation-plan';
 import {
     createDefaultStorySettings,
@@ -20,29 +21,17 @@ import { commandAllowedModes } from '@/shared/command-mode-rules';
 import { DEFAULT_READ_LINES } from '@/shared/file-path-guard';
 import { wrapUntrustedContent } from '@/shared/untrusted-content';
 
-/** 记忆槽位白名单：update_memory 只能写这些键 */
-const MEMORY_KEYS = [
-    'creationType', 'executionMode', 'projectName', 'genre', 'projectType',
-    'longVariant', 'channel', 'sourceWork', 'fanficType', 'canonScope',
-    'structureId', 'tone', 'goldenFinger', 'shortCategory', 'premise',
-    'coreConflict', 'emotionalPromise', 'reversals', 'endingPayoff',
-    'characterCore', 'scriptGenre', 'logline', 'hook3s', 'payoff',
-    'characters', 'scenes', 'targetEpisodes', 'paywallEpisode', 'pickedProject',
-] as const;
+/** 记忆槽位白名单（与恢复路径共用 harness-types 的单源清单） */
+const MEMORY_KEYS = MEMORY_SLOT_KEYS;
 
 /**
- * Harness 记忆槽键。
- */
-export type MemorySlotKey = typeof MEMORY_KEYS[number];
-
-/**
- * 记忆键类型守卫。
+ * 记忆键类型守卫（保留旧名，转发到 harness-types 的单一实现）。
  *
  * @param key - 键
  * @returns 布尔值
  */
 export function isMemoryKey(key: string): key is MemorySlotKey {
-    return (MEMORY_KEYS as readonly string[]).includes(key);
+    return isMemorySlotKey(key);
 }
 
 /**

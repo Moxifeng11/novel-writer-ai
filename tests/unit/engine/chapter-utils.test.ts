@@ -16,6 +16,33 @@ describe('getChapterFileName', () => {
         expect(getChapterFileName('第1章', '正文')).toBe('第1章_正文.md');
         expect(getChapterFileName('第10章', '大纲摘要')).toBe('第10章_大纲摘要.md');
     });
+
+    // S3-21（安全 r3）：helper 自身净化参数，不依赖调用方先 sanitize
+    it('标题含路径穿越时被净化（不产生路径分隔符）', () => {
+        const name = getChapterFileName('../../etc/passwd', '正文');
+        // 安全目标是不出现路径分隔符（`..` 留在单个文件名内不构成穿越）
+        expect(name).not.toContain('/');
+        expect(name).not.toContain('\\');
+        expect(name).not.toContain(':');
+        expect(name.endsWith('_正文.md')).toBe(true);
+    });
+
+    it('标题含 Windows 非法字符时被替换为空格', () => {
+        const name = getChapterFileName('第1章:棋手*落子?', '正文');
+        expect(name).not.toMatch(/[:*?"<>|\\/]/);
+        expect(name).toContain('正文');
+    });
+
+    it('纯非法字符输入有兜底片段（不生成 _正文.md）', () => {
+        expect(getChapterFileName('///', '正文')).toBe('未命名章_正文.md');
+        expect(getChapterFileName('', '正文')).toBe('未命名章_正文.md');
+    });
+
+    it('类型参数同样净化（不产生路径分隔符）', () => {
+        const name = getChapterFileName('第1章', '../../正文');
+        expect(name).not.toContain('/');
+        expect(name).not.toContain('\\');
+    });
 });
 
 describe('isStandardChapterFileName', () => {

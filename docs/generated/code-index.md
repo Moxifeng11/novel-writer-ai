@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137699 | 1728 | 1418 | 82% |
-| `services/` | 32 | 13402 | 193 | 153 | 79% |
+| `engine/` | 319 | 137742 | 1731 | 1419 | 82% |
+| `services/` | 32 | 13411 | 193 | 153 | 79% |
 | `shared/` | 196 | 41151 | 1689 | 1380 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 248 | 101377 | 861 | 722 | 84% |
+| `ui/` | 248 | 101437 | 862 | 723 | 84% |
 
 ## 文件清单
 
@@ -46,11 +46,11 @@
 | `engine/agent/harness/context-fit.ts` | 137 | 6 | 6 |
 | `engine/agent/harness/creation-plan.ts` | 73 | 6 | 6 |
 | `engine/agent/harness/harness-engine.ts` | 612 | 7 | 4 |
-| `engine/agent/harness/harness-types.ts` | 213 | 14 | 12 |
-| `engine/agent/harness/host-tools.ts` | 1024 | 6 | 6 |
+| `engine/agent/harness/harness-types.ts` | 243 | 17 | 14 |
+| `engine/agent/harness/host-tools.ts` | 1013 | 5 | 5 |
 | `engine/agent/harness/prompt-sections.ts` | 152 | 2 | 2 |
 | `engine/agent/harness/session-log.ts` | 269 | 1 | 1 |
-| `engine/agent/harness/session-snapshot.ts` | 232 | 10 | 10 |
+| `engine/agent/harness/session-snapshot.ts` | 249 | 11 | 10 |
 | `engine/agent/harness/spill-store.ts` | 112 | 6 | 6 |
 | `engine/agent/harness/tool-registry.ts` | 297 | 5 | 2 |
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
@@ -83,7 +83,7 @@
 | `engine/chapter-context-builder.ts` | 142 | 3 | 3 |
 | `engine/chapter-snapshot-builder.ts` | 142 | 2 | 1 |
 | `engine/chapter-state-snapshot-service.ts` | 182 | 2 | 2 |
-| `engine/chapter-utils.ts` | 482 | 21 | 19 |
+| `engine/chapter-utils.ts` | 489 | 21 | 19 |
 | `engine/character-arc.ts` | 141 | 9 | 9 |
 | `engine/character-consistency-checker.ts` | 520 | 3 | 3 |
 | `engine/character-consistency-service.ts` | 138 | 6 | 4 |
@@ -356,7 +356,7 @@
 | `engine/writing-quality-engine.ts` | 1376 | 14 | 13 |
 | `services/api-connectivity-service.ts` | 317 | 8 | 8 |
 | `services/backup-center-service.ts` | 182 | 4 | 1 |
-| `services/canon-research-service.ts` | 475 | 7 | 7 |
+| `services/canon-research-service.ts` | 484 | 7 | 7 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
 | `services/chapter-version-service.ts` | 739 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
@@ -583,7 +583,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 526 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1902 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1905 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |
@@ -764,9 +764,9 @@
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
 | `ui/services/agent-attachment-store.ts` | 171 | 10 | 6 |
-| `ui/services/agent-port.ts` | 690 | 2 | 2 |
+| `ui/services/agent-port.ts` | 720 | 3 | 3 |
 | `ui/services/agent-session-store.ts` | 211 | 5 | 5 |
-| `ui/services/agent-spill-store.ts` | 115 | 4 | 3 |
+| `ui/services/agent-spill-store.ts` | 142 | 4 | 3 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |

@@ -174,6 +174,36 @@ export interface HarnessAdapter {
 // ============================================================
 
 /**
+ * Harness 记忆槽位白名单。
+ *
+ * 两个用途必须共用同一份清单，否则会分叉：
+ * 1. `update_memory` 工具只允许写这些键；
+ * 2. 会话恢复时只接受这些键（安全 r3 · S3-19）——存档可能被同步/本地篡改，
+ *    未知键一旦原样恢复就等于把攻击者数据预置进模型上下文。
+ */
+export const MEMORY_SLOT_KEYS = [
+    'creationType', 'executionMode', 'projectName', 'genre', 'projectType',
+    'longVariant', 'channel', 'sourceWork', 'fanficType', 'canonScope',
+    'structureId', 'tone', 'goldenFinger', 'shortCategory', 'premise',
+    'coreConflict', 'emotionalPromise', 'reversals', 'endingPayoff',
+    'characterCore', 'scriptGenre', 'logline', 'hook3s', 'payoff',
+    'characters', 'scenes', 'targetEpisodes', 'paywallEpisode', 'pickedProject',
+] as const;
+
+/** Harness 记忆槽键。 */
+export type MemorySlotKey = typeof MEMORY_SLOT_KEYS[number];
+
+/**
+ * 判断是否为允许的记忆槽键。
+ *
+ * @param key - 待判定的键名
+ * @returns 是否在白名单内
+ */
+export function isMemorySlotKey(key: string): key is MemorySlotKey {
+    return (MEMORY_SLOT_KEYS as readonly string[]).includes(key);
+}
+
+/**
  * Harness 记忆状态。
  */
 export interface HarnessMemoryState {

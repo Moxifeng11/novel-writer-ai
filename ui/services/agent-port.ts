@@ -46,7 +46,6 @@ import { writeVaultText } from '@/shared/file-system-port';
 import { BodyWriter } from '@/engine/body-writer';
 import { isChapterBodyPath } from '@/shared/body-path';
 import { projectIdFromPath } from '@/shared/paths';
-
 const log = createLogger('AgentPort');
 
 /**
@@ -84,16 +83,36 @@ function toChapterSummary(entry: ChapterListEntry): AgentChapterSummary {
 }
 
 /**
+ * Agent 文件端口可选配置。
+ */
+export interface AgentPortOptions {
+    /**
+     * spill 作用域解析器（S3-18）。
+     *
+     * 必须与 spill 写入方（`createVaultSpillSink` 的 scope）用同一个解析函数，
+     * 否则会话写进 A 项目的 spill、端口却按 B 项目放行，模型读不回自己落盘的原文。
+     */
+    spillScope?: () => string;
+}
+
+/**
  * createAgentPort 函数。
  * @param app - Obsidian 应用实例
  * @param plugin - 插件实例
+ * @param options - 可选配置（spill 作用域 resolver）
   * @returns GuideAgentPort 实例
  */
-export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgentPort {
+export function createAgentPort(app: App, plugin: NovelWriterPlugin, options?: AgentPortOptions): GuideAgentPort {
     // 只允许访问当前项目自己的 spill 溢出目录；会话存档 `.sessions/agent/*.jsonl`
     // 与其它项目 spill 一律不可读写删移（安全审计 SEC-8）。
+    //
+    // S3-18（安全 r3）：spill 的**写入**（agent-spill-store 的 sink）用工作台的
+    // `resolveActiveProject()`，而这里原本只用 `plugin.getActiveProject()`。
+    // 用户在工作台内切换项目后两者会分叉：spill 写进 A 的目录，端口却只认 B，
+    // 于是模型读不回自己落盘的原文，残留清理也会删错项目。统一走同一个 resolver。
     const sessionSpillPrefix = (): string => {
-        const project = plugin.getActiveProject?.() || '';
+        const scoped = options?.spillScope?.();
+        const project = (typeof scoped === 'string' ? scoped : '') || plugin.getActiveProject?.() || '';
         return `${spillFolderFor(project || 'default')}/`;
     };
 
@@ -628,6 +647,17 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin): GuideAgent
             const target = sanitizeVaultPath(to, { allowHiddenPrefixes: [sessionSpillPrefix()] });
             if (!source.ok) throw new Error(source.reason);
             if (!target.ok) throw new Error(target.reason);
+            // S3-17（安全 r3）：源与目标必须落在同一项目作用域。此前只做写级路径净化，
+            // allow 模式下可把一个项目的身份文件（作品信息/模板/总控）搬到另一个项目，
+            // 导致原项目「凭空消失」且目标项目被污染。spill 树内的移动不受此限。
+            const sourceProject = projectIdFromPath(source.path);
+            const targetProject = projectIdFromPath(target.path);
+            if (sourceProject !== targetProject) {
+                throw new Error(
+                    `move_file 不允许跨项目移动：「${source.path}」属于「${sourceProject || '库根'}」，`
+                    + `目标是「${targetProject || '库根'}」。跨项目整理请手动操作`,
+                );
+            }
             const file = app.vault.getAbstractFileByPath(source.path);
             if (file instanceof TFolder) {
                 throw new Error('move_file 只支持文件，不支持目录；整理目录请用命令或手动操作');

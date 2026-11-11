@@ -149,7 +149,10 @@ export class AgentWorkbenchView extends ItemView {
     constructor(leaf: WorkspaceLeaf, plugin: NovelWriterPlugin) {
         super(leaf);
         this.plugin = plugin;
-        this.port = createAgentPort(this.app, plugin);
+        this.port = createAgentPort(this.app, plugin, {
+            // S3-18：端口与 spill 写入共用同一个作用域解析（见 agent-port.ts 注释）
+            spillScope: () => this.resolveActiveProject(),
+        });
         this.activeProject = plugin.getActiveProject() || '';
     }
 

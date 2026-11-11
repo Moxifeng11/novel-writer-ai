@@ -8,8 +8,12 @@
  * 这里只做「快照 ↔ JSON 文本」的纯转换；写盘节流与文件管理在宿主侧。
  */
 import type { AgentSessionEvent } from './harness-types';
+import { MEMORY_SLOT_KEYS } from './harness-types';
 import type { PlanStep, PlanStepStatus } from './creation-plan';
 import { PLAN_STEP_STATUSES } from './creation-plan';
+
+/** 恢复时接受的最大事件条数（防篡改存档塞入超长历史撑爆上下文） */
+export const MAX_RESTORED_EVENTS = 2000;
 
 /**
  * 会话快照格式版本。
@@ -155,7 +159,10 @@ export function parseSessionSnapshot(text: string): HarnessSessionSnapshot | nul
         if (!data || typeof data !== 'object') return null;
         const version = Number(data.version);
         if (!Number.isFinite(version) || version > SESSION_SNAPSHOT_VERSION) return null;
-        const events = Array.isArray(data.events) ? data.events.filter(isEvent) : [];
+        // S3-19：条数上限（保留**最近**的若干条，因为恢复价值集中在尾部上下文）
+        const events: AgentSessionEvent[] = Array.isArray(data.events)
+            ? data.events.filter(isEvent).slice(-MAX_RESTORED_EVENTS)
+            : [];
         const plan: PlanStep[] = Array.isArray(data.plan)
             ? data.plan
                 .filter((step): step is Record<string, unknown> => !!step && typeof step === 'object')
@@ -168,16 +175,26 @@ export function parseSessionSnapshot(text: string): HarnessSessionSnapshot | nul
                 })
                 .filter(step => step.step.length > 0)
             : [];
-        const memory = data.memory && typeof data.memory === 'object' && !Array.isArray(data.memory)
+        const memoryRaw = data.memory && typeof data.memory === 'object' && !Array.isArray(data.memory)
             ? { ...(data.memory as Record<string, unknown>) }
             : {};
+        // S3-19（安全 r3）：存档可能被同步盘/本机篡改。只接受白名单槽位键——
+        // 未知键原样恢复等于把攻击者数据预置进模型上下文。
+        const memory: Record<string, unknown> = {};
+        for (const key of MEMORY_SLOT_KEYS) {
+            if (Object.prototype.hasOwnProperty.call(memoryRaw, key)) {
+                memory[key] = memoryRaw[key];
+            }
+        }
         const contextRaw = data.context && typeof data.context === 'object'
             ? data.context as Record<string, unknown>
             : null;
         const context = contextRaw
             ? {
+                // S3-19：只接受非空字符串。旧实现 `String(item)` 会把 null/undefined
+                // 变成 "null"/"undefined" 字符串混进项目列表，让「已删除项目」继续可解析。
                 projects: Array.isArray(contextRaw.projects)
-                    ? contextRaw.projects.map(item => String(item)).filter(Boolean)
+                    ? contextRaw.projects.filter((item): item is string => typeof item === 'string' && item.length > 0)
                     : [],
                 activeProject: typeof contextRaw.activeProject === 'string' && contextRaw.activeProject
                     ? contextRaw.activeProject

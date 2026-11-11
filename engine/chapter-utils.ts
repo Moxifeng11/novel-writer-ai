@@ -30,12 +30,19 @@ export const CHAPTER_FILE_TYPES = {
 /**
  * 构造标准章节文件名（写/创建操作）
  * 格式: 第X章_类型.md 或 第X章_标题_类型.md
+ *
+ * 安全 r3（S3-21）：helper 自身净化参数。此前依赖调用方先调用 `sanitizeFileSegment`，
+ * 任一新调用方漏掉就能用 `../` 或系统非法字符做出路径穿越/落盘失败。
+ *
  * @param chapterName - 章节名
  * @param type - 类型
  * @returns 文本结果
  */
 export function getChapterFileName(chapterName: string, type: string): string {
-    return `${chapterName}_${type}.md`;
+    const safeName = sanitizeFileSegment(chapterName);
+    const safeType = sanitizeFileSegment(type);
+    // 净化后可能为空（纯非法字符输入）：给兜底片段，避免生成 `_正文.md` 这类无名文件
+    return `${safeName || '未命名章'}_${safeType || '正文'}.md`;
 }
 
 /** 文件系统非法字符（Windows 最严）与路径分隔符统一替换 */

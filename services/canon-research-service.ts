@@ -380,6 +380,11 @@ export class CanonResearchService {
         if (isPrivateHost(parsed.hostname)) {
             throw new Error('不允许抓取本机/内网地址');
         }
+        // S3-20（安全 r3）残余说明：Obsidian `requestUrl` 由 Electron net 实现，
+        // **强制跟随重定向且不暴露最终 URL/关闭开关**，因此在插件层无法对 3xx 的
+        // 目标主机复核，也无法做 DNS 解析校验（renderer 无 dns API）。可做的加固是
+        // 拒绝非 2xx 响应，避免把 30x/404 中间页当正文交给模型；重定向与 DNS
+        // 重绑定仍需上游 API 支持（见 docs/audits/auto-cross-audit-2026-11-11-security-r3.md）。
         const response = await requestWithPolicy(requestUrl, {
             url,
             method: 'GET',
@@ -388,6 +393,10 @@ export class CanonResearchService {
                 'Accept': 'text/html,application/xhtml+xml,text/plain',
             },
         }, FETCH_REQUEST_POLICY);
+        const status = Number(response.status) || 0;
+        if (status && (status < 200 || status >= 300)) {
+            throw new Error(`抓取失败：HTTP ${status}（${parsed.hostname}）`);
+        }
         const text = String(response.text || '');
         const title = text.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() || '';
         return {

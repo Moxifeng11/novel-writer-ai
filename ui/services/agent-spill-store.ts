@@ -26,13 +26,40 @@ function slug(text: string): string {
 }
 
 /**
+ * 稳定短哈希（FNV-1a 32 位，base36 定长）。
+ *
+ * 用于消解 slug 碰撞：不同 scope 必须落到不同目录。同一 scope 每次结果一致，
+ * 所以会话内多次 spill 仍写同一目录。
+ *
+ * @param text - 原始文本
+ * @returns 7 位 base36 片段
+ */
+function stableScopeHash(text: string): string {
+    let hash = 0x811c9dc5;
+    const raw = String(text || '');
+    for (let i = 0; i < raw.length; i += 1) {
+        hash ^= raw.charCodeAt(i);
+        hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+    return hash.toString(36).padStart(7, '0').slice(0, 7);
+}
+
+/**
  * 当前项目 spill 目录；Agent 文件端口只允许访问自己的 spill，不碰会话存档。
+ *
+ * S3-18（安全 r3）：`slug` 会把 `/` 与 `-` 归一成同一个字符，导致
+ * `长篇小说/书A` 与 `长篇小说-书A` 两个**不同项目**映射到同一 spill 目录（跨项目
+ * 互相读取/删除/清理错位）。这里附加原始 scope 的稳定短哈希，保证不同 scope 不同目录。
  *
  * @param scope - 项目作用域（项目 ID/名称）
  * @returns spill 目录路径
+ *
+ * @example
+ * spillFolderFor('长篇小说/书A') !== spillFolderFor('长篇小说-书A') // => true
  */
 export function spillFolderFor(scope: string): string {
-    return `${SPILL_ROOT}/${slug(scope) || 'default'}`;
+    const base = slug(scope) || 'default';
+    return `${SPILL_ROOT}/${base}-${stableScopeHash(scope)}`;
 }
 
 async function ensureFolder(app: App, folder: string): Promise<void> {
