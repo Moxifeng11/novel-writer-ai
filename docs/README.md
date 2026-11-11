@@ -27,6 +27,7 @@
 | 商业化落地指南 | [guides/COMMERCIAL-GUIDE.md](guides/COMMERCIAL-GUIDE.md) |
 | 产品定位与用户 | [PRODUCT.md](PRODUCT.md) |
 | **长期目标（先读这个）** | [LONG-TERM-GOAL.md](LONG-TERM-GOAL.md) |
+| **三方自动化协作协议** | [COLLABORATION-AUTOMATION.md](COLLABORATION-AUTOMATION.md) |
 | 下一阶段排期 | [roadmap/ROADMAP.md](roadmap/ROADMAP.md) |
 | 当前架构审计与问题清单 | [audits/v4.27.0-architecture-and-roadmap.md](audits/v4.27.0-architecture-and-roadmap.md) |
 | 查术语 | [glossary.md](glossary.md) |
