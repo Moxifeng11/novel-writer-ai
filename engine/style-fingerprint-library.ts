@@ -1450,11 +1450,26 @@ export class StyleFingerprintLibrary {
     /**
      * 读取启用的指纹。
      *
-     * @param project - 参数
+     * v4.83.1 修复：此前直接读内存表，而构造函数**不加载任何数据**，
+     * 只有协同写作会在每轮前调 `reloadIfChanged`。于是 11 步执行、模式注入、
+     * 资产注册、润色等 5 条消费路径**首次运行时指纹恒为空**——风格约束静默消失，
+     * 用户看不到任何报错（与 KnowledgeVectorStore.search 的 ensureLoaded 自愈不一致）。
+     *
+     * 现在读取前先按文件签名做一次变更检查（未变化时是快速返回），
+     * 让所有消费方都能拿到最新指纹，不必各自记得先 reload。
+     *
+     * @param project - 项目（缺省用实例绑定的项目）
      * @returns 指纹数组
      */
     async getEnabledFingerprints(project?: string): Promise<StyleFingerprint[]> {
         const targetProject = project ?? this.project;
+        try {
+            await this.reloadIfChanged(targetProject);
+        } catch (e) {
+            // 加载失败不能连带让「读指纹」抛错：退回内存现有数据，
+            // 由调用方的降级上报负责可见性（与既有 readSlot 等宽容读取一致）
+            log.warn('[StyleFingerprintLibrary] 读取前刷新失败，使用内存现有数据:', e);
+        }
 
         const projectEnabled = Array.from(this.projectFingerprints.values())
             .filter(fp => fp.enabled);
