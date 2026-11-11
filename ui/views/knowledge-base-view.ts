@@ -77,6 +77,12 @@ const TASK_STATUS_TONE_STYLES: Record<ReturnType<typeof resolveTaskStatusTone>, 
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
 import { yieldToUI } from '@/shared/yield';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
+import {
+    buildKnowledgeFlowInput,
+    countUncategorizedBooks,
+    removeTagAt,
+    summarizeTaskCounts,
+} from './kb-view-logic';
 
 const log = createLogger('KnowledgeBaseView');
 import {
@@ -1044,11 +1050,7 @@ export class KnowledgeBaseView extends ItemView {
             getDegradationNotifier().getEvents(),
             ['vector', 'injection'],
         ).map(event => event.reason);
-        renderLinkStatus(booksPanel, computeKnowledgeFlowStatus({
-            bookTotal: this.allBooks.length,
-            breakdownCompleted: this.allBooks.filter(b => b.breakdownStatus === 'completed').length,
-            vectorDone: this.allBooks.filter(b => b.vectorStatus === 'done').length,
-            vectorFailed: this.allBooks.filter(b => b.vectorStatus === 'failed').length,
+        renderLinkStatus(booksPanel, computeKnowledgeFlowStatus(buildKnowledgeFlowInput(this.allBooks, {
             embeddingReady: this.embeddingSnapshot?.available === true,
             storeLoadedBooks: vectorStore && typeof vectorStore.getLoadedBookIds === 'function'
                 ? vectorStore.getLoadedBookIds().length
@@ -1058,7 +1060,7 @@ export class KnowledgeBaseView extends ItemView {
                 ? vectorStore.isLoaded()
                 : false,
             degradations: recentDegradations,
-        }));
+        })));
 
         this.renderBooksToolbar(booksPanel);
         this.renderBooksListContent(booksPanel);
@@ -1079,10 +1081,7 @@ export class KnowledgeBaseView extends ItemView {
         });
         container.appendChild(allItem);
 
-        const uncategorizedCount = this.allBooks.filter(b =>
-            (this.filter.channel === 'all' || b.genreChannel === this.filter.channel) &&
-            !b.primaryGenre
-        ).length;
+        const uncategorizedCount = countUncategorizedBooks(this.allBooks, this.filter.channel);
 
         const uncategorizedItem = this.createGenreNavItem({
             id: 'uncategorized',
@@ -2821,10 +2820,10 @@ export class KnowledgeBaseView extends ItemView {
         const confirmed = await OperationConfirmModal.confirm(this.app, {
             title: '一键全部取消',
             description: `确定要取消所有 ${tasks.length} 个正在进行和等待中的任务吗？`,
-            steps: [
-                `运行中任务：${tasks.filter(t => t.status === 'running').length} 个`,
-                `等待中任务：${tasks.filter(t => t.status === 'pending').length} 个`,
-            ],
+            steps: (() => {
+                const counts = summarizeTaskCounts(tasks);
+                return [`运行中任务：${counts.running} 个`, `等待中任务：${counts.pending} 个`];
+            })(),
             warning: '此操作将停止所有正在进行的拆解任务',
             confirmText: '全部取消',
             cancelText: '返回',
@@ -3147,7 +3146,7 @@ export class KnowledgeBaseView extends ItemView {
     private async handleDeleteCustomTag(book: BookBasicInfo, index: number): Promise<void> {
         if (!this.kbManager) return;
         try {
-            const newTags = book.customTags.filter((_, i) => i !== index);
+            const newTags = removeTagAt(book.customTags, index);
             await this.kbManager.updateBook(book.id, { customTags: newTags });
             await this.loadBooks();
             await this.loadBookDetailData(book.id);
