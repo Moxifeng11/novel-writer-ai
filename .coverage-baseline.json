@@ -1,30 +1,30 @@
 {
-  "generatedAt": "2026-11-11T19:25:47.595Z",
-  "gitHead": "33e0a9e10d5d5c23022227e427e7334d6e22b060",
+  "generatedAt": "2026-11-11T20:34:16.610Z",
+  "gitHead": "539ef14004e74f65d5735e8dc9437f50ff3d9683",
   "nodeVersion": "v24.16.0",
-  "note": "DSH-20261112-11 中途锚定：5 个纯逻辑模块 + 渲染器 8 个页签假 DOM 单测后 ui/views 12.95%→27.17%、ui 15.22%→16.73%（仅上调）；ui 20% 目标未达，缺口约 1360 行，待下轮继续覆盖大视图类",
+  "note": "DSH-20261112-13 达标锚定：settings 三块分区 + golden-opening + ai-builder + prompt-manager + context-panel 共 7 个测试文件（约 56 例）假 DOM 渲染回归；ui 16.73%→20.08%（≥20% 达标）、ui/views 27.17% 持平；co-writing-view 未重切未测（红线遵守），全部走 dep 桩 + 假 DOM",
   "dirs": {
     "ui": {
       "files": 264,
       "lines": {
         "total": 41577,
-        "covered": 6957,
-        "pct": 16.73
+        "covered": 8348,
+        "pct": 20.08
       },
       "statements": {
         "total": 45402,
-        "covered": 7632,
-        "pct": 16.81
+        "covered": 9056,
+        "pct": 19.95
       },
       "branches": {
         "total": 22181,
-        "covered": 4416,
-        "pct": 19.91
+        "covered": 4876,
+        "pct": 21.98
       },
       "functions": {
         "total": 7102,
-        "covered": 1141,
-        "pct": 16.07
+        "covered": 1342,
+        "pct": 18.9
       }
     },
     "ui/views": {
