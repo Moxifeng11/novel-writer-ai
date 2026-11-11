@@ -23,6 +23,7 @@ import {
     templateFingerprintLibraryDir,
     projectGlobalFingerprintStateFile,
     projectFingerprintIntensityFile,
+    globalFingerprintIntensityFile,
 } from '@/shared/paths';
 import { SerializedWriter } from '@/shared/serialized-writer';
 import { StyleVectorStore, type StyleSimilarityResult, type StyleBlendOptions, type StyleInterpolationOptions, type StyleDimension, STYLE_DIMENSIONS } from './style-vector-store';
@@ -199,6 +200,8 @@ export class StyleFingerprintLibrary {
     private intensityConfigs: Map<string, Record<string, StyleIntensityConfig>> = new Map();
     /** 强度配置读取失败的项目：禁止以空配置为基线整体保存 */
     private intensityLoadFailures = new Set<string>();
+    /** 全局默认强度（v4.83.1：全局指纹跨项目通用，项目覆盖优先于它） */
+    private globalIntensityConfigs: Record<string, StyleIntensityConfig> = {};
     /** 强度配置序列化写入器 */
     private intensityConfigWriter = new SerializedWriter({ debug: false });
     /**
@@ -1109,6 +1112,9 @@ export class StyleFingerprintLibrary {
     async loadIntensityConfigs(project?: string): Promise<Record<string, StyleIntensityConfig>> {
         const targetProject = project ?? this.project;
         if (!targetProject) return {};
+        // 全局默认层与项目覆盖层总是一起参与 getIntensityConfig 的判定，
+        // 这里顺带加载，避免调用方只加载项目层后拿不到全局指纹的强度。
+        await this.loadGlobalIntensityConfigs();
         const fs = this.getFS();
         const path = projectFingerprintIntensityFile(targetProject);
         // 文件不存在 = 该项目还没配置过强度，是合法状态。
@@ -1150,20 +1156,115 @@ export class StyleFingerprintLibrary {
     }
 
     /**
-     * 获取指定指纹的强度配置
-     * - 未配置时返回默认配置（globalIntensity = 1.0，完全启用）
+     * 读取指纹强度配置（两层：项目覆盖 → 全局默认 → 引擎默认）。
+     *
+     * v4.83.1：全局指纹跨项目通用，其强度此前只能按项目存，切项目就回退默认。
+     * 现在改为「全局默认 + 项目覆盖」：
+     * 1. 项目覆盖存在 → 用它（用户在本项目里微调过）
+     * 2. 否则用全局默认（全局指纹的通用强度）
+     * 3. 都没有 → 引擎默认（完全启用）
+     *
      * @param fpId - 指纹 ID
      * @param project - 项目（路径或对象）
-      * @returns StyleIntensityConfig 实例
+     * @returns StyleIntensityConfig 实例
      */
     getIntensityConfig(fpId: string, project?: string): StyleIntensityConfig {
         const targetProject = project ?? this.project;
-        if (!targetProject) return DEFAULT_INTENSITY_CONFIG;
-        const configs = this.intensityConfigs.get(targetProject);
-        if (configs && fpId in configs) {
-            return configs[fpId];
+        // 1) 项目覆盖优先
+        if (targetProject) {
+            const configs = this.intensityConfigs.get(targetProject);
+            if (configs && fpId in configs) {
+                return configs[fpId];
+            }
         }
+        // 2) 全局默认
+        if (fpId in this.globalIntensityConfigs) {
+            return this.globalIntensityConfigs[fpId];
+        }
+        // 3) 引擎默认
         return DEFAULT_INTENSITY_CONFIG;
+    }
+
+    /**
+     * 当前指纹强度是否来自项目覆盖（而非全局默认/引擎默认）。
+     *
+     * UI 用它区分「本项目自定义」与「跟随全局」，并提供「恢复跟随全局」入口。
+     *
+     * @param fpId - 指纹 ID
+     * @param project - 项目（路径或对象）
+     * @returns 是否有项目级覆盖
+     */
+    hasIntensityOverride(fpId: string, project?: string): boolean {
+        const targetProject = project ?? this.project;
+        if (!targetProject) return false;
+        const configs = this.intensityConfigs.get(targetProject);
+        return Boolean(configs && fpId in configs);
+    }
+
+    /**
+     * 读取全局默认强度配置（磁盘 → 内存）。
+     *
+     * 坏文件按「没有全局默认」处理并 warn：不能因为一个损坏的强度文件
+     * 让所有指纹都拿不到强度配置。
+     *
+     * @returns fpId → 配置
+     */
+    async loadGlobalIntensityConfigs(): Promise<Record<string, StyleIntensityConfig>> {
+        const fs = this.getFS();
+        const path = globalFingerprintIntensityFile();
+        try {
+            if (!(await fs.exists(path))) {
+                this.globalIntensityConfigs = {};
+                return this.globalIntensityConfigs;
+            }
+            const data = await fs.read(path);
+            const parsed = JSON.parse(data) as unknown;
+            if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+                throw new Error('全局强度配置不是对象');
+            }
+            this.globalIntensityConfigs = parsed as Record<string, StyleIntensityConfig>;
+            return this.globalIntensityConfigs;
+        } catch (e) {
+            log.warn('[StyleFingerprintLibrary] 全局强度配置读取失败，按无全局默认处理:', e);
+            this.globalIntensityConfigs = {};
+            return this.globalIntensityConfigs;
+        }
+    }
+
+    /**
+     * 写入全局默认强度（影响所有项目，除非该项目有覆盖）。
+     *
+     * @param fpId - 指纹 ID
+     * @param config - 配置
+     */
+    async setGlobalIntensityConfig(fpId: string, config: StyleIntensityConfig): Promise<void> {
+        // 先合并磁盘已有：避免只写一条时把其他全局指纹的强度整份覆盖
+        await this.loadGlobalIntensityConfigs();
+        this.globalIntensityConfigs[fpId] = config;
+        await this.saveGlobalIntensityConfigs();
+    }
+
+    /**
+     * 移除全局默认强度（该指纹回落到引擎默认）。
+     *
+     * @param fpId - 指纹 ID
+     */
+    async removeGlobalIntensityConfig(fpId: string): Promise<void> {
+        await this.loadGlobalIntensityConfigs();
+        if (!(fpId in this.globalIntensityConfigs)) return;
+        delete this.globalIntensityConfigs[fpId];
+        await this.saveGlobalIntensityConfigs();
+    }
+
+    /** 持久化全局默认强度 */
+    private async saveGlobalIntensityConfigs(): Promise<void> {
+        await this.intensityConfigWriter.enqueueAutoClean(async () => {
+            const fs = this.getFS();
+            await fs.write(
+                globalFingerprintIntensityFile(),
+                JSON.stringify(this.globalIntensityConfigs, null, 2),
+            );
+        });
     }
 
     /**

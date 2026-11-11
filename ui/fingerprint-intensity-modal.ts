@@ -60,15 +60,26 @@ export class FingerprintIntensityModal extends Modal {
     private currentConfig: StyleIntensityConfig;
     /** 高级模式开关 */
     private advancedMode = false;
+    /**
+     * 全局指纹的强度作用范围（v4.83.1）。
+     *
+     * `false`（默认）→ 写全局默认，所有项目生效；
+     * `true` → 只写本项目覆盖，其他项目仍用全局默认。
+     * 项目层指纹始终写项目文件，本开关不参与。
+     */
+    private useProjectOverride = false;
 
     constructor(app: App, options: FingerprintIntensityModalOptions) {
         super(app);
         this.options = options;
-        // 读取现有配置作为初始值
+        // 读取现有配置作为初始值（两层：项目覆盖 → 全局默认 → 引擎默认）
         this.currentConfig = {
             ...DEFAULT_INTENSITY_CONFIG,
             ...options.library.getIntensityConfig(options.fingerprint.id, options.project),
         };
+        // 全局指纹的作用范围：已存在项目覆盖时默认「仅本项目」，否则默认「全局」
+        this.useProjectOverride = options.fingerprint.scope === 'global'
+            && options.library.hasIntensityOverride(options.fingerprint.id, options.project);
     }
 
     /**
@@ -102,6 +113,7 @@ export class FingerprintIntensityModal extends Modal {
             attr: { style: 'color:var(--text-muted);font-size:12px;margin-bottom:16px;' }
         });
 
+        this.renderIntensityScope(contentEl);
         this.renderGlobalIntensity(contentEl);
         this.renderPresets(contentEl);
         this.renderPreview(contentEl);
@@ -110,6 +122,83 @@ export class FingerprintIntensityModal extends Modal {
             this.renderAdvancedDimensions(contentEl);
         }
         this.renderActions(contentEl);
+    }
+
+    /**
+     * 强度作用范围选择（v4.83.1）。
+     *
+     * 只对**全局指纹**显示：全局指纹跨项目通用，其强度有两层——
+     * 全局默认（所有项目生效）与项目覆盖（只在本项目生效）。
+     * 项目层指纹没有这个概念，直接不渲染。
+     *
+     * @param container - 容器
+     */
+    private renderIntensityScope(container: HTMLElement): void {
+        const fp = this.options.fingerprint;
+        if (fp.scope !== 'global') return;
+
+        const section = container.createDiv({
+            attr: {
+                style: 'margin-bottom:16px;padding:12px;background:var(--background-secondary);border-radius:6px;'
+            }
+        });
+        section.createEl('div', {
+            text: '作用范围',
+            attr: { style: 'font-weight:600;font-size:13px;margin-bottom:8px;' }
+        });
+
+        const makeOption = (value: boolean, label: string, hint: string): void => {
+            const row = section.createDiv({
+                attr: { style: 'display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;cursor:pointer;' }
+            });
+            const input = row.createEl('input', {
+                attr: { type: 'radio', name: 'nw-intensity-scope', style: 'margin-top:2px;cursor:pointer;' }
+            });
+            input.checked = this.useProjectOverride === value;
+            input.addEventListener('change', () => {
+                if (!input.checked) return;
+                this.useProjectOverride = value;
+                this.render();
+            });
+            const textWrap = row.createDiv({ attr: { style: 'flex:1;min-width:0;' } });
+            textWrap.createEl('div', {
+                text: label,
+                attr: { style: 'font-size:12px;font-weight:500;' }
+            });
+            textWrap.createEl('div', {
+                text: hint,
+                attr: { style: 'font-size:11px;color:var(--text-muted);line-height:1.4;' }
+            });
+        };
+
+        makeOption(false, '全局默认（所有项目生效）', '保存后，其他项目里这个全局指纹也用这套强度。');
+        makeOption(true, '仅本项目（覆盖全局默认）', '其他项目继续使用全局默认强度，本项目的调整不影响它们。');
+
+        // 已有项目覆盖时提供「恢复跟随全局」的快捷入口
+        if (this.options.project && this.options.library.hasIntensityOverride(fp.id, this.options.project)) {
+            const resetBtn = section.createEl('button', {
+                text: '恢复跟随全局默认',
+                attr: {
+                    type: 'button',
+                    style: 'margin-top:4px;padding:4px 10px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:11px;background:transparent;color:var(--text-muted);'
+                }
+            });
+            resetBtn.addEventListener('click', async () => {
+                try {
+                    await this.options.library.removeIntensityConfig(fp.id, this.options.project);
+                    new Notice('已移除本项目的强度覆盖，改为跟随全局默认');
+                    this.useProjectOverride = false;
+                    this.currentConfig = {
+                        ...DEFAULT_INTENSITY_CONFIG,
+                        ...this.options.library.getIntensityConfig(fp.id, this.options.project),
+                    };
+                    this.render();
+                } catch (e) {
+                    log.warn('[FingerprintIntensityModal] 移除项目覆盖失败:', e);
+                    new Notice('移除项目覆盖失败，请查看控制台');
+                }
+            });
+        }
     }
 
     /** 全局强度滑动条 */
@@ -376,12 +465,22 @@ export class FingerprintIntensityModal extends Modal {
                 return;
             }
             try {
-                await this.options.library.setIntensityConfig(
-                    this.options.fingerprint.id,
-                    this.currentConfig,
-                    this.options.project
-                );
-                new Notice(`已保存指纹「${this.options.fingerprint.name}」的强度配置`);
+                const fp = this.options.fingerprint;
+                // v4.83.1 两层语义：全局指纹默认写全局默认（跨项目生效），
+                // 勾选「仅本项目」才写项目覆盖；项目层指纹始终写项目文件。
+                if (fp.scope === 'global' && !this.useProjectOverride) {
+                    await this.options.library.setGlobalIntensityConfig(fp.id, this.currentConfig);
+                    // 之前若在本项目有覆盖，清掉它，否则项目覆盖会继续压住刚写的全局默认
+                    await this.options.library.removeIntensityConfig(fp.id, this.options.project);
+                    new Notice(`已保存指纹「${fp.name}」的全局默认强度（所有项目生效）`);
+                } else {
+                    await this.options.library.setIntensityConfig(
+                        fp.id,
+                        this.currentConfig,
+                        this.options.project
+                    );
+                    new Notice(`已保存指纹「${fp.name}」的强度配置${fp.scope === 'global' ? '（仅本项目生效）' : ''}`);
+                }
                 this.options.onSaved?.(this.currentConfig);
                 this.close();
             } catch (e) {

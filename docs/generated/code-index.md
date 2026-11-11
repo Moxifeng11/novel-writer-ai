@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 320 | 138035 | 1739 | 1424 | 82% |
+| `engine/` | 320 | 138136 | 1739 | 1424 | 82% |
 | `services/` | 33 | 13799 | 205 | 161 | 79% |
-| `shared/` | 196 | 41264 | 1692 | 1383 | 82% |
+| `shared/` | 196 | 41282 | 1694 | 1385 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 248 | 101834 | 864 | 723 | 84% |
+| `ui/` | 248 | 101933 | 864 | 723 | 84% |
 
 ## 文件清单
 
@@ -328,7 +328,7 @@
 | `engine/stream-text-reader.ts` | 320 | 3 | 3 |
 | `engine/streaming/simulated-stream.ts` | 183 | 2 | 2 |
 | `engine/streaming/stream-parser.ts` | 366 | 8 | 8 |
-| `engine/style-fingerprint-library.ts` | 2559 | 7 | 7 |
+| `engine/style-fingerprint-library.ts` | 2660 | 7 | 7 |
 | `engine/style-learner.ts` | 319 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 193 | 2 | 2 |
 | `engine/style-vector-store.ts` | 705 | 11 | 10 |
@@ -486,7 +486,7 @@
 | `shared/novel-format.ts` | 348 | 12 | 12 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1622 | 203 | 197 |
+| `shared/paths.ts` | 1640 | 205 | 199 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
 | `shared/plugin-cache.ts` | 439 | 6 | 4 |
@@ -675,7 +675,7 @@
 | `ui/fingerprint-blend-modal.ts` | 620 | 2 | 2 |
 | `ui/fingerprint-detail-modal.ts` | 601 | 1 | 1 |
 | `ui/fingerprint-embedding.ts` | 32 | 1 | 1 |
-| `ui/fingerprint-intensity-modal.ts` | 403 | 2 | 2 |
+| `ui/fingerprint-intensity-modal.ts` | 502 | 2 | 2 |
 | `ui/fingerprint-library-modal.ts` | 306 | 1 | 1 |
 | `ui/fingerprint-utils.ts` | 209 | 11 | 11 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |

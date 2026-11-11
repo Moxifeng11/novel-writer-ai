@@ -1225,6 +1225,24 @@ export function projectGlobalFingerprintStateFile(project: string): string { ret
  */
 export function projectFingerprintIntensityFile(project: string): string { return `${pjControlDir(project)}/${PROJECT_FINGERPRINT_LIBRARY_DIR}/${FINGERPRINT_INTENSITY_CONFIG_FILE}`; }
 
+/**
+ * 路径常量 GLOBAL_FINGERPRINT_INTENSITY_FILE：`'global-fingerprint-intensity.json'`。
+ *
+ * 全局指纹的**默认强度**（v4.83.1）。与项目级覆盖文件构成两层：
+ * 读取时项目覆盖优先，否则回落到这里，都没有才用引擎默认。
+ */
+export const GLOBAL_FINGERPRINT_INTENSITY_FILE = 'global-fingerprint-intensity.json';
+
+/**
+ * globalFingerprintIntensityFile：返回路径 ``${pluginDataDir()}/${GLOBAL_FINGERPRINT_INTENSITY_FILE}``。
+ *
+ * 全局指纹强度的默认层；项目级覆盖在
+ * `projectFingerprintIntensityFile(project)`。
+ *
+ * @returns 拼接后的 vault/插件相对路径
+ */
+export function globalFingerprintIntensityFile(): string { return `${pluginDataDir()}/${GLOBAL_FINGERPRINT_INTENSITY_FILE}`; }
+
 // ============================================================
 // 16. 写作知识库
 // ============================================================
