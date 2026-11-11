@@ -11,7 +11,7 @@
 | `shared/` | 197 | 41680 | 1709 | 1393 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 254 | 102791 | 895 | 747 | 83% |
+| `ui/` | 255 | 102880 | 901 | 751 | 83% |
 
 ## 文件清单
 
@@ -605,7 +605,8 @@
 | `ui/chapter-settlement-modal.ts` | 428 | 1 | 1 |
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
-| `ui/co-write-floating-panel.ts` | 1024 | 2 | 2 |
+| `ui/co-write-floating-panel.ts` | 1021 | 2 | 2 |
+| `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |
 | `ui/co-writing-view.ts` | 3270 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 224 | 9 | 8 |

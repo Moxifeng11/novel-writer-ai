@@ -14,6 +14,11 @@ import { SuggestionRecord, SentenceEditRecord } from "@/shared/types";
 import { AssociationSuggestion } from "@/shared/co-writer-types";
 import { associationToSuggestion, getDirectionLabel, getStyleLabel } from "./cowrite/cowrite-mappers";
 import { CharacterConsistencyChecker, ConsistencyCheckResult } from "@/engine/character-consistency-checker";
+import {
+    resolveLogicScoreColor,
+    resolveLogicTypeLabel,
+    resolveSeverityMeta,
+} from "./co-write/logic-check-format";
 import { toCharacterContextInfos } from "@/engine/character-context";
 import { ProgressEmitter, type ProgressState } from "@/shared/progress-emitter";
 import { StepListComponent } from "./components/progress/step-list";
@@ -928,8 +933,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
       // 人物名 + 得分
       const charHead = charCard.createDiv({ cls: "nw-logic-check-char-head" });
       charHead.createSpan({ text: name, attr: { style: "font-weight: 600; font-size: 0.85em;" } });
-      const charScoreColor =
-        charResult.score >= 80 ? "#10b981" : charResult.score >= 60 ? "#f59e0b" : "#ef4444";
+      const charScoreColor = resolveLogicScoreColor(charResult.score);
       charHead.createSpan({
         text: `${charResult.score} \u5206`,
         attr: { style: `color: ${charScoreColor}; font-weight: 600; margin-left: 6px; font-size: 0.82em;` },
@@ -945,17 +949,10 @@ export class CoWriteFloatingPanel extends DraggablePanel {
 
       // 不一致项列表
       for (const item of charResult.inconsistencies) {
-        const sevColor =
-          item.severity === "high" ? "#ef4444" : item.severity === "medium" ? "#f59e0b" : "#3b82f6";
-        const sevLabel =
-          item.severity === "high" ? "\uD83D\uDD34" : item.severity === "medium" ? "\uD83D\uDFE1" : "\uD83D\uDFE2";
-        const typeLabels: Record<string, string> = {
-          personality: "\u6027\u683C\u8BED\u6C14",
-          behavior: "\u884C\u4E3A\u903B\u8F91",
-          ability: "\u80FD\u529B\u8FB9\u754C",
-          appearance: "\u5916\u8C8C\u63CF\u8FF0",
-        };
-        const typeLabel = typeLabels[item.type] || item.type;
+        const severityMeta = resolveSeverityMeta(item.severity);
+        const sevColor = severityMeta.color;
+        const sevLabel = severityMeta.icon;
+        const typeLabel = resolveLogicTypeLabel(item.type);
 
         const itemEl = charCard.createDiv({ cls: "nw-logic-check-item" });
         itemEl.setCssStyles({ padding: "3px 0", borderLeft: `3px solid ${sevColor}`, paddingLeft: "6px", margin: "3px 0" });
