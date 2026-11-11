@@ -52,6 +52,9 @@ export const CANON_TIER_LABEL: Record<CanonSourceTier, string> = {
     unknown: '未确认来源',
 };
 
+/** 查询串里常见的敏感键：值一律脱敏，避免 token 进入 prompt/缓存/审核记录（S3-11） */
+const SENSITIVE_QUERY_KEY = /^(token|access_?token|api_?key|key|secret|password|sig|signature|auth)$/i;
+
 /** 只允许这些层级作为设定事实依据 */
 export const AUTHORITATIVE_TIERS: ReadonlySet<CanonSourceTier> = new Set(['official', 'official-wiki']);
 
@@ -72,6 +75,13 @@ export function normalizeSourceUrl(raw: string): string | null {
     try {
         const url = new URL(value);
         if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+        // S3-11（安全 r3）：URL 内嵌凭据/签名参数会被写进 system prompt、来源缓存
+        // 与审核记录；这里直接剥离 userinfo，并把敏感 query 值脱敏。
+        url.username = '';
+        url.password = '';
+        for (const key of [...url.searchParams.keys()]) {
+            if (SENSITIVE_QUERY_KEY.test(key)) url.searchParams.set(key, 'REDACTED');
+        }
         url.hash = '';
         return url.toString();
     } catch {

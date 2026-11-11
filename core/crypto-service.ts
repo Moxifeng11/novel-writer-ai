@@ -24,6 +24,32 @@ const log = createLogger('CryptoService');
 
 /** v2 PBKDF2 迭代次数（OWASP 2023 对 PBKDF2-SHA256 的推荐下限区间，兼顾启动延迟） */
 const PBKDF2_ITERATIONS = 210_000;
+/**
+ * 可接受的 v2 PBKDF2 迭代数范围（S3-12 安全 r3）。
+ *
+ * 上限防「篡改/同步的 data.json 写 20 亿次迭代」让解锁卡死（DoS）；
+ * 下限防伪造的弱参数密文被当作正常口令加密。本插件历史只写 210000。
+ */
+/**
+ * v2 密文可接受的最小 PBKDF2 迭代数（S3-12）。
+ */
+export const PBKDF2_MIN_ITERATIONS = 100_000;
+/**
+ * v2 密文可接受的最大 PBKDF2 迭代数（防恶意超大值卡死解锁，S3-12）。
+ */
+export const PBKDF2_MAX_ITERATIONS = 1_000_000;
+
+/**
+ * 校验 v2 密文里的迭代数是否在允许范围。
+ *
+ * @param raw - 解析出的迭代数
+ * @returns 合法时返回原值，越界/非数返回 null
+ */
+function normalizeV2Iterations(raw: number): number | null {
+    if (!Number.isFinite(raw)) return null;
+    if (raw < PBKDF2_MIN_ITERATIONS || raw > PBKDF2_MAX_ITERATIONS) return null;
+    return raw;
+}
 /** v2 格式前缀（v1 为 `aes256:`，无版本前缀视为明文） */
 const V2_PREFIX = 'aes256v2:';
 
@@ -196,7 +222,11 @@ export class CryptoService {
      */
     private async verifyPasswordAgainst(password: string, stored: string): Promise<boolean> {
         const parsed = this.parseV2(stored);
-        if (!parsed) return true;
+        if (!parsed) {
+            // S3-12：v2 前缀但参数非法（如迭代数越界）不能当作「无需验证」，
+            // 否则界面会误报口令正确；直接判失败并提示重新填写密钥。
+            return !stored.startsWith(V2_PREFIX);
+        }
         try {
             const passwordKey = await crypto.subtle.importKey(
                 'raw', new TextEncoder().encode(password),
@@ -229,8 +259,8 @@ export class CryptoService {
         if (!stored.startsWith(V2_PREFIX)) return null;
         const parts = stored.slice(V2_PREFIX.length).split(':');
         if (parts.length !== 4) return null;
-        const iterations = parseInt(parts[0]);
-        if (!Number.isFinite(iterations) || iterations <= 0) return null;
+        const iterations = normalizeV2Iterations(parseInt(parts[0], 10));
+        if (iterations === null) return null;
         return { iterations, saltB64: parts[1], ivB64: parts[2], cipherB64: parts[3] };
     }
 
@@ -348,9 +378,13 @@ export class CryptoService {
     private async decryptV2(stored: string): Promise<string> {
         const parts = stored.slice(V2_PREFIX.length).split(':');
         if (parts.length !== 4) return stored;
-        const iterations = parseInt(parts[0]);
+        const iterations = normalizeV2Iterations(parseInt(parts[0], 10));
         const saltB64 = parts[1];
-        if (!Number.isFinite(iterations) || iterations <= 0) return stored;
+        if (iterations === null) {
+            // S3-12：越界迭代数视为损坏/恶意密文，不进入解锁流程（避免 CPU 卡死）
+            log.warn('[小说工坊] v2 密文迭代数越界，已拒绝解密');
+            return stored;
+        }
 
         for (let attempt = 0; attempt < 2; attempt++) {
             const password = await this.ensurePassword(false);

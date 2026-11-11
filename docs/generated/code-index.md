@@ -8,8 +8,8 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137699 | 1728 | 1418 | 82% |
 | `services/` | 32 | 13429 | 194 | 154 | 79% |
-| `shared/` | 195 | 43003 | 1687 | 1378 | 82% |
-| `core/` | 7 | 2868 | 30 | 15 | 50% |
+| `shared/` | 195 | 43013 | 1687 | 1378 | 82% |
+| `core/` | 7 | 2902 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 242 | 99974 | 754 | 649 | 86% |
 
@@ -18,7 +18,7 @@
 | 文件 | 行数 | 导出 | 有 JSDoc |
 |---|---:|---:|---:|
 | `core/command-registry.ts` | 707 | 6 | 2 |
-| `core/crypto-service.ts` | 379 | 3 | 1 |
+| `core/crypto-service.ts` | 413 | 5 | 3 |
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 550 | 4 | 2 |
@@ -397,7 +397,7 @@
 | `shared/body-format.ts` | 224 | 9 | 6 |
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
-| `shared/canon-source.ts` | 274 | 18 | 17 |
+| `shared/canon-source.ts` | 284 | 18 | 17 |
 | `shared/changelog-data.ts` | 2321 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-ref.ts` | 205 | 7 | 5 |

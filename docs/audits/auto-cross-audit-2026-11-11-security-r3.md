@@ -17,8 +17,8 @@
 | S3-8 | P2 | `core/settings-service.ts:280-298/309-355`、`ui/settings/api-section.ts:350-362`、`ui/manage-providers-modal.ts:318-328` | 加密失败仍返回旧密文/空串，`saveSettings()` 返回 void，UI 无条件提示「已保存」；`.bak` 单份覆盖不轮转 | 泄露的旧 Key 实际未替换，用户误以为已轮换 | **已修（第72轮，保存结果）**：`saveSettings()` 返回 `SaveSettingsOutcome.droppedSecrets`，`saveSettingsWithOutcome()` 供 UI 用；两个设置页在未解锁时提示「密钥未保存」。残余：`.bak` 轮转仍开 |
 | S3-9 | P2 | `scripts/check-secrets.mjs:30-36/69-72` | 仍漏 GitHub PAT/AWS/Tavily/Slack/`x-api-key` 与 UTF-16；无 pre-push | 密钥可进入公开历史，CI 在 push 后才发现 | **已修（第73轮，模式与编码）**：补 GitHub PAT/AWS/Tavily/Slack/x-api-key 模式；UTF-16LE/BE（BOM + 奇偶 NUL 启发）解码后扫描；仍无 pre-push（残余） |
 | S3-10 | P2 | `shared/secret-display.ts:14-15/105-125`、`shared/secret-redaction.ts:92/128-133`、`services/backup-center-service.ts:109-119`、`core/settings-service.ts:130-144` | v1 密文（公开 seed 派生）仍被文案称作「加密」；混合态（明文+密文）被报成「已加密」 | 用户误以为 data.json/.bak 安全 | **已修（第73轮）**：新增 `obfuscated` 存储态（仅有 v1 或 v1+v2 混合时不再称「已加密」）；备份中心与设置页文案如实说明「知道库路径即可解密」；混合明文仍报 plaintext；4 条测试 |
-| S3-11 | P3 | `shared/canon-source.ts:68-79/132-146/238`、`ui/fanfic-review-modal.ts:404` | 手工来源 URL 保留 userinfo 与 `?token=`，并写入 system prompt/审核记录/sources.json | 内嵌凭据泄露给模型供应商并明文落库 | 未修 → fix queue（拒绝 userinfo、脱敏敏感 query） |
-| S3-12 | P3 | `core/crypto-service.ts:228-234/348-363` | `aes256v2:` 的 PBKDF2 迭代数无上限（仅 >0） | 篡改/同步的 data.json 可让解锁卡死（DoS） | 未修 → fix queue（夹到 100k–1M） |
+| S3-11 | P3 | `shared/canon-source.ts:68-79/132-146/238`、`ui/fanfic-review-modal.ts:404` | 手工来源 URL 保留 userinfo 与 `?token=`，并写入 system prompt/审核记录/sources.json | 内嵌凭据泄露给模型供应商并明文落库 | **已修（第74轮）**：`normalizeSourceUrl` 剥离 userinfo，token/access_token/api_key/key/secret/password/sig/signature/auth 值脱敏为 REDACTED；3 条测试 |
+| S3-12 | P3 | `core/crypto-service.ts:228-234/348-363` | `aes256v2:` 的 PBKDF2 迭代数无上限（仅 >0） | 篡改/同步的 data.json 可让解锁卡死（DoS） | **已修（第74轮）**：迭代数夹到 100k–1M，越界在 parseV2/decryptV2 拒绝（不弹口令），v2 前缀非法参数的口令校验判失败；4 条测试 |
 | S3-13 | P3 | `services/update-checker.ts:494-535`、`ui/settings/general-sections.ts:753-768` | 自定义更新 URL 无 scheme/私网校验，启动后自动请求 | 盲 SSRF 打 localhost/LAN | 未修（S2-7 旁路） → fix queue（复用 isPrivateHost、非手动要求 https） |
 | S3-14 | P3 | `ui/settings/api-section.ts:344-349`、`ui/manage-providers-modal.ts:307-317`、`ui/password-modal.ts:77-81` 等 | 密钥框无 `autocomplete=new-password`/`1p-ignore`；解锁后明文进 DOM；Token 逐键保存 | 自动填充/屏幕共享泄露 | 未修（S2-5 仍开） → fix queue |
 | S3-15 | P3 | `ui/settings/general-sections.ts:741-747`、`services/update-checker.ts:352-354`、`main.ts:1581-1591` | 密文被当输入值显示；UpdateChecker 把密文当 Bearer；重置口令漏 `canonResearch.apiKey` | 私有仓库检查 401；考据 Key 永久解不开 | 未修（S2-6 仍开） → fix queue |
@@ -67,3 +67,5 @@
 - 第72轮（S3-7/S3-8）：`run_command` 增加显式 project 参数（未知即拒绝），审批摘要显示目标项目，`executeCommandAsync(id, project)` 执行期临时注入工作台上下文；`SettingsService.saveSettings` 返回 `SaveSettingsOutcome`（droppedSecrets），两个密钥输入框按结果提示「未保存」。新增 3+4 条测试。
 
 - 第73轮（S3-9/S3-10）：`check-secrets` 补 5 类第三方密钥形态与 UTF-16 解码（BOM/奇偶 NUL）；`SecretStorageMode` 新增 `obfuscated`，`detectSecretStorageMode` 只有全 v2 才算 encrypted，备份中心与设置页对 v1 混淆格式给出真实风险文案。新增 4 条测试并更新 2 条旧断言；真实仓 1958 文件门禁通过。
+
+- 第74轮（S3-11/S3-12）：`normalizeSourceUrl` 剥离 userinfo 并脱敏敏感 query；`crypto-service` 新增 `PBKDF2_MIN/MAX_ITERATIONS` 与 `normalizeV2Iterations`，parseV2/decryptV2 越界拒绝，verifyPasswordAgainst 对 v2 非法参数判失败。新增 7 条测试。
