@@ -79,6 +79,22 @@ export function createFlowDiagnosisDeps(host: CollectorHost): FlowDiagnosisDeps 
             } catch (e) {
                 log.warn('[FlowDiagnosis] 读取向量库状态失败:', e);
             }
+            // DSH-20261112-14：对账结果作为降级提示——「已加载 N 本」必须能反映
+            // 「其中 M 本是孤儿」，否则诊断与界面都停在假绿。
+            let orphanNote: string | null = null;
+            try {
+                const kbIds = books.map(b => (b as unknown as { id: string }).id);
+                const reconcile = await (store as unknown as { reconcileWithIndex?: (ids: string[]) => Promise<{ orphans: string[] }> })?.reconcileWithIndex?.(kbIds);
+                if (reconcile && reconcile.orphans.length > 0) {
+                    orphanNote = `向量库 ${reconcile.orphans.length} 本不在知识库索引（孤儿向量，建议清理）`;
+                }
+            } catch (e) {
+                log.warn('[FlowDiagnosis] 向量对账失败:', e);
+            }
+            const baseDegradations = filterDegradationsBySource(
+                getDegradationNotifier().getEvents(),
+                ['vector', 'injection'],
+            ).map(e => e.reason);
             return {
                 bookTotal: books.length,
                 breakdownCompleted: books.filter(b => b.breakdownStatus === 'completed').length,
@@ -87,10 +103,7 @@ export function createFlowDiagnosisDeps(host: CollectorHost): FlowDiagnosisDeps 
                 embeddingReady: await embeddingReady(),
                 storeLoadedBooks,
                 storeReady,
-                degradations: filterDegradationsBySource(
-                    getDegradationNotifier().getEvents(),
-                    ['vector', 'injection'],
-                ).map(e => e.reason),
+                degradations: orphanNote ? [...baseDegradations, orphanNote] : baseDegradations,
             };
         },
 

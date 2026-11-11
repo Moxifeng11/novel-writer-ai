@@ -12,7 +12,7 @@ import { MiniSettingsModal } from '@/ui/mini-settings-modal';
 import { OperationConfirmModal, TaskCardComponent } from '@/ui/components/progress';
 import { createEmptyState } from '@/ui/components/empty-state';
 import { createViewOpenGuard } from '@/shared/view-open-guard';
-import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
+import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 import { createLogger } from '@/shared/logger';
 import { classifyBook, mergeClassificationTags, type ClassificationResult } from '@/shared/content-classifier';
 import { exportTextFile } from '@/shared/export-file';
@@ -780,6 +780,7 @@ export class KnowledgeBaseView extends ItemView {
         try {
             this.allBooks = await this.kbManager.getAllBooks();
             this.booksLoadError = null;
+            await this.refreshVectorReconcile();
         } catch (e) {
             this.allBooks = [];
             this.booksLoadError = e instanceof Error ? e.message : String(e);
@@ -1055,6 +1056,12 @@ export class KnowledgeBaseView extends ItemView {
             getDegradationNotifier().getEvents(),
             ['vector', 'injection'],
         ).map(event => event.reason);
+        // DSH-20261112-14：对账结果作为降级提示注入——「已加载 N 本」旁边必须能看到
+        // 「其中 M 本是孤儿」，否则就是 -08 指出的假绿。对账在 loadBooks 异步预取。
+        const vectorReconcile = this.vectorReconcile;
+        const orphanNote = vectorReconcile && vectorReconcile.orphans.length > 0
+            ? `向量库 ${vectorReconcile.orphans.length} 本不在知识库索引（孤儿向量，点「🔗 向量对账」可清理）`
+            : null;
         renderLinkStatus(booksPanel, computeKnowledgeFlowStatus(buildKnowledgeFlowInput(this.allBooks, {
             embeddingReady: this.embeddingSnapshot?.available === true,
             storeLoadedBooks: vectorStore && typeof vectorStore.getLoadedBookIds === 'function'
@@ -1064,7 +1071,7 @@ export class KnowledgeBaseView extends ItemView {
             storeReady: vectorStore && typeof vectorStore.isLoaded === 'function'
                 ? vectorStore.isLoaded()
                 : false,
-            degradations: recentDegradations,
+            degradations: orphanNote ? [...recentDegradations, orphanNote] : recentDegradations,
         })));
 
         this.renderBooksToolbar(booksPanel);
@@ -1305,6 +1312,13 @@ export class KnowledgeBaseView extends ItemView {
         });
         classifyBtn.addEventListener('click', () => void this.handleBatchClassify());
 
+        const reconcileBtn = topRow.createEl('button', {
+            text: '🔗 向量对账',
+            cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-flex-shrink-0',
+            attr: { title: '索引 ↔ 向量库对账：列出孤儿向量（向量库有、索引没有）与缺失向量；孤儿默认只报告，清理需在此确认' }
+        });
+        reconcileBtn.addEventListener('click', () => void this.handleVectorReconcile());
+
         const filterRow = toolbar.createDiv({
             cls: 'nw-u-d-flex nw-u-gap-12px nw-u-ai-center nw-u-fwr-wrap'
         });
@@ -1488,6 +1502,66 @@ export class KnowledgeBaseView extends ItemView {
             openBookDetail: b => this.openBookDetail(b),
             onRetryVectorize: b => { void this.retryVectorizeBook(b); },
         });
+    }
+
+    /** 对账缓存（loadBooks 异步预取；render 同步读，避免渲染里 await） */
+    private vectorReconcile: { orphans: string[]; missing: string[]; healthy: string[] } | null = null;
+
+    private async refreshVectorReconcile(): Promise<void> {
+        const store = this.plugin.knowledgeVectorStore;
+        if (!store || typeof store.reconcileWithIndex !== 'function') {
+            this.vectorReconcile = null;
+            return;
+        }
+        try {
+            this.vectorReconcile = await store.reconcileWithIndex(this.allBooks.map(b => b.id));
+        } catch (e) {
+            log.warn('[KnowledgeBaseView] 向量对账失败:', e);
+            this.vectorReconcile = null;
+        }
+    }
+
+    /**
+     * 索引 ↔ 向量库对账 + 显式清理入口（DSH-20261112-14）。
+     *
+     * 默认只报告（Notice 摘要）；孤儿存在时弹确认框，用户明确确认才删除，
+     * 删除走 store.removeOrphanVectors（fail-closed，未确认一个都不删）。
+     */
+    private async handleVectorReconcile(): Promise<void> {
+        const store = this.plugin.knowledgeVectorStore;
+        if (!store || typeof store.reconcileWithIndex !== 'function') {
+            showErrorNotice('向量库未初始化，无法对账');
+            return;
+        }
+        const report = await store.reconcileWithIndex(this.allBooks.map(b => b.id));
+        const healthyNote = `正常 ${report.healthy.length} 本`;
+        const missingNote = report.missing.length > 0 ? `缺失 ${report.missing.length} 本` : '';
+        if (report.orphans.length === 0) {
+            showSuccessNotice(`对账完成：${healthyNote}${missingNote ? '，' + missingNote : ''}，没有孤儿向量`, { title: '向量对账' });
+            return;
+        }
+        new Notice(`对账：${healthyNote}${missingNote ? '，' + missingNote : ''}；孤儿 ${report.orphans.length} 本`, 6000);
+        const confirmed = await OperationConfirmModal.confirm(this.app, {
+            title: '清理孤儿向量',
+            description: `向量库里有 ${report.orphans.length} 本书不在知识库索引（${report.orphans.join('、')}）。
+
+可能是你临时移走了书目录；清理后如需检索请重新导入并拆解。确定删除这 ${report.orphans.length} 本的向量吗？`,
+            confirmText: '确认清理',
+            cancelText: '只报告，不清理',
+        });
+        if (!confirmed) {
+            showSuccessNotice('已保留孤儿向量（仅报告，未删除）', { title: '向量对账' });
+            return;
+        }
+        const result = await store.removeOrphanVectors(report.orphans, { confirmed: true });
+        if (result.removed.length > 0) {
+            showSuccessNotice(`已清理 ${result.removed.length} 本孤儿向量`, { title: '向量对账' });
+        }
+        if (result.skipped.length > 0) {
+            showWarningNotice(`${result.skipped.length} 本未清理（已不在向量库中）`, { title: '向量对账' });
+        }
+        await this.loadBooks();
+        this.renderRightPanel();
     }
 
     /**

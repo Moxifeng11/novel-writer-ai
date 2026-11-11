@@ -14,6 +14,7 @@ import { performanceMonitor } from '@/services/performance-monitor';
 import { filterRetrievalResults, filterRetrievalResultsByScope, type RetrievalFilterScope } from '@/shared/retrieval-filter';
 import { createLogger } from '@/shared/logger';
 import { withWriteLock, KNOWLEDGE_VECTOR_STATE_LOCK } from '@/shared/write-lock';
+import { reconcileVectorBooks, summarizeVectorReconcile, type VectorReconcileReport } from './knowledge-vector-reconcile';
 import { extractKeywordTokens, keywordOverlapRatio } from '@/shared/keyword-tokens';
 import {
     KNOWLEDGE_SEMANTIC_CANDIDATE_FACTOR,
@@ -263,6 +264,54 @@ export class KnowledgeVectorStore {
      */
     isLoaded(): boolean {
         return this.loaded;
+    }
+
+    /**
+     * 索引 ↔ 向量库对账（DSH-20261112-14）。
+     *
+     * 把「已加载书」与知识库索引对齐，列出孤儿向量 / 缺失向量 / 正常三类。
+     * 默认只报告；清理走 removeOrphanVectors 的显式确认。
+     *
+     * @param kbBookIds - 知识库索引里的书籍 id
+     * @returns 对账报告
+     */
+    async reconcileWithIndex(kbBookIds: readonly string[]): Promise<VectorReconcileReport> {
+        // 惰性加载：getLoadedBookIds 读内存 samples，未 ensureLoaded 时恒空会误报「全孤儿」
+        await this.ensureLoaded();
+        const report = reconcileVectorBooks(kbBookIds, this.getLoadedBookIds());
+        const summary = summarizeVectorReconcile(report);
+        if (summary) {
+            log.warn('[KnowledgeVectorStore] 索引↔向量库对账发现不一致：' + summary);
+        }
+        return report;
+    }
+
+    /**
+     * 显式清理孤儿向量（fail-closed）。
+     *
+     * - `options.confirmed !== true` 时**一个都不删**，全部计入 skipped（防「顺手删」）；
+     * - 只删「当前确实已加载」的指定 id，未加载的 id 计入 skipped；
+     * - 每个删除都走 removeBook（带写锁 + 落盘）。
+     *
+     * @param bookIds - 要清理的书籍 id（调用方应只传对账报告里的 orphans）
+     * @param options - confirmed: 用户已明确确认
+     * @returns removed/skipped 两个列表
+     */
+    async removeOrphanVectors(bookIds: readonly string[], options?: { confirmed?: boolean }): Promise<{ removed: string[]; skipped: string[] }> {
+        if (options?.confirmed !== true) {
+            return { removed: [], skipped: [...bookIds] };
+        }
+        await this.ensureLoaded();
+        const loaded = new Set(this.getLoadedBookIds());
+        const removed: string[] = [];
+        const skipped: string[] = [];
+        for (const id of bookIds) {
+            if (!loaded.has(id)) { skipped.push(id); continue; }
+            await this.removeBook(id);
+            removed.push(id);
+        }
+        log.warn('[KnowledgeVectorStore] 孤儿向量清理完成：removed=' + removed.join(',') + ' skipped=' + skipped.join(','));
+        return { removed, skipped };
     }
 
     /**
