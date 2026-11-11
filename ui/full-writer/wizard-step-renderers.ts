@@ -9,6 +9,12 @@
 import { App, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { WizardTab, WizardStep } from './wizard-types';
+import {
+    countVolumeHeadings,
+    resolveCountStatus,
+    resolveExistsStatus,
+    resolveSetupStatusIcon,
+} from './wizard-step-logic';
 import { getWorldviewPath, getSettingLibPath, getWritingStylePath, pjProjectMeta, pjFanficDir, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS, SUBDIR_BODY_ROOT } from '@/shared/paths';
 import { findWritingStyleFile } from '@/ui/writing-style-paths';
 import { ChapterOutlineTreeModal } from '@/ui/chapter-outline-tree-modal';
@@ -621,7 +627,7 @@ export class WizardStepRenderers {
         
         // 世界观
         const worldviewExists = await adapter.exists(getWorldviewPath(tab.project));
-        stats.push({ label: '世界观', status: worldviewExists ? '✅' : '❌', detail: worldviewExists ? '已生成' : '未生成' });
+        stats.push({ label: '世界观', status: resolveSetupStatusIcon(resolveExistsStatus(worldviewExists)), detail: worldviewExists ? '已生成' : '未生成' });
         
         // 实体统计
         const countFiles = async (subDir: string): Promise<number> => {
@@ -636,19 +642,15 @@ export class WizardStepRenderers {
         const factionCount = await countFiles(SUBDIR_FACTIONS);
         const itemCount = await countFiles(SUBDIR_ITEMS);
         
-        stats.push({ label: '人物', status: charCount > 0 ? '✅' : '⚠️', detail: `${charCount} 个` });
-        stats.push({ label: '地点', status: locCount > 0 ? '✅' : '⚠️', detail: `${locCount} 个` });
-        stats.push({ label: '势力', status: factionCount > 0 ? '✅' : '⚠️', detail: `${factionCount} 个` });
-        stats.push({ label: '物品功法', status: itemCount > 0 ? '✅' : '⚠️', detail: `${itemCount} 个` });
+        stats.push({ label: '人物', status: resolveSetupStatusIcon(resolveCountStatus(charCount)), detail: `${charCount} 个` });
+        stats.push({ label: '地点', status: resolveSetupStatusIcon(resolveCountStatus(locCount)), detail: `${locCount} 个` });
+        stats.push({ label: '势力', status: resolveSetupStatusIcon(resolveCountStatus(factionCount)), detail: `${factionCount} 个` });
+        stats.push({ label: '物品功法', status: resolveSetupStatusIcon(resolveCountStatus(itemCount)), detail: `${itemCount} 个` });
         
         // 分卷大纲（v4.0：按卷归档，合并读取后统计卷数）
         const outlineContent = await readMergedVolumeOutline(this.app, tab.project);
         const outlineExists = outlineContent.trim().length > 0;
-        let volumeCount = 0;
-        if (outlineExists) {
-            const volMatches = outlineContent.match(/###\s+第\d+卷/g);
-            volumeCount = volMatches ? volMatches.length : 0;
-        }
+        const volumeCount = outlineExists ? countVolumeHeadings(outlineContent) : 0;
         stats.push({ label: '分卷大纲', status: outlineExists ? '✅' : '❌', detail: outlineExists ? `${volumeCount} 卷` : '未生成' });
         
         const baseDir = `${tab.project}/${SUBDIR_BODY_ROOT}`;
