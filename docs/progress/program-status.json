@@ -1,12 +1,12 @@
 {
   "program": "全系统业务板块优化专项",
   "rev": "v5-plan-1",
-  "updatedAt": "2026-11-09",
+  "updatedAt": "2026-11-11T11:50+08:00",
   "baseline": {
-    "version": "4.81.1",
+    "version": "4.82.0",
     "tests": {
-      "files": 613,
-      "cases": 6730
+      "files": 686,
+      "cases": 7123
     },
     "e2e": 43,
     "e2eNote": "E2E 通过总数 42（2026-11-09 实测）：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 26 + review-fixes 3（右栏折叠展开 + 两个 Modal 连续开关）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑",

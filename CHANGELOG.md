@@ -2,6 +2,30 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.82.0（2026-11-11）
+
+> 发布说明：`docs/releases/v4.82.0.md` · 上一版本 v4.81.1
+
+### 🧭 动因
+- v4.81.1 之后积累了 175 个提交（安全审计 r3 八轮、上下文/记忆/一致性三链、多窗口与移动端修复），但没有任何版本节点，Release 仍是 11-09 的 4.81.1：本地构建产物比已发布的多约 98 KB，属于「同版本号、两份不同代码」，用户装到的代码与仓库不一致。
+- tag 命名也与发布规范脱节：`release.yml` 要求 Release tag 与 `manifest.version` 完全一致（无 `v` 前缀），但本地积压了一批 `v` 前缀 tag 从未推送。
+
+### ✨ 改动
+- **上下文与记忆**：新增上下文预算计划与抽取式压缩（超限显式报错，不再静默截断）；故事台账单源化（章节引用/实体索引/属性标签底座 + 关系 5 维增量 + 待确认队列 + 章节摘要）；调用时关联查询接入步骤/协同/单元。
+- **质量与一致性**：只读故事一致性校验并在结算后触发；人物一致性统一规则接入门禁与看板；同章摘要按章去重 + 索引 RMW 加锁。
+- **安全加固 r3（S3-1~S3-16）**：外部/库内文本统一围栏（含压缩与恢复降级）；`official` 来源去标题化，只认发行人域名；锁定态密文禁止出网（嵌入/模型发现/考据/更新检查四边界）；dsh 子进程 env 剔除凭据；工具布尔参数严格化 + 锁内重查存在性（TOCTOU）；`delete_project` 显式目标与 ghost 分支身份标志；`run_command` 显式目标项目；保存结果可观测（`droppedSecrets`）；check-secrets 补 GitHub/AWS/Tavily/Slack/x-api-key 与 UTF-16；加密文案如实（v1/混合态报 `obfuscated`）；canon URL 凭据剥离 + PBKDF2 迭代数夹取；更新 URL 私网校验；密钥框禁自动填充；设置页不回填密文 + 重置口令补考据 Key；路径 helper 拒绝绝对路径/穿越、`contentType` 白名单、深合并拒绝原型键、缓存动态键 own-property。
+- **数据一致性（D3-4~D3-18）**：上下文注入锁内重读、结算 settled 回写加锁、版本索引损坏归档与索引锁、信息债看板统一写入器、写作规则覆写前备份、迁移完成标记、追加标记字段化/写前登记、跨卷快照加锁。
+- **多窗口与触屏（M3-2/M3-3/M3-6/L2-1/L3-1）**：主题/字体/拖拽按宿主 Document 注入；浮窗触屏拖动与窄视口夹取；触屏上下排序与场景 drop off-by-one；卸载有界等待视图保存；`onOpen` 代次守卫。
+- **平台与体验**：移动端 requestUrl 兜底传输；热重载状态交接；去 `app.plugins` 私有 API；协同本地模式未选本地模型自动切云端；知识库/指纹库能力边界说明、检索范数缓存、弹窗边界收口。
+- **协作基础设施**：`novel-mailbox` 升级为 zcode/trae/dsh 三元身份（服务端 v1.1.0）；`handoff.mjs` 新增 `--from dsh` / `--next-dsh` 与「下一步（DSH）」快照字段。
+- **发布纪律**：`push` 放行（tag/Release 仍需用户确认），同步 6 处现行规范；清理本地 `v` 前缀 tag 积压。
+
+### ✅ 验证
+- `typecheck` / `lint` / `preflight`（含 build、check:bundle、check:release）全绿；构建版本 4.82.0。
+- `npm test`：**686 个测试文件 / 7123 个用例通过 / 3 跳过**。
+- 构建产物体积：main.js 4,962,909B、styles.css 551,288B（含版本节点数据 +约 1.2KB，已按规范更新基线并写 note）。
+- 本次不做真实 Obsidian GUI 点击验收（E2E 需退出 Obsidian 并设 `OBSIDIAN_PATH`）。
+
 ## v4.81.1（2026-11-09）
 
 ### ✨ 协同/Agent/更新检查与设置体验收口
