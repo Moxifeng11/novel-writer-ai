@@ -222,6 +222,10 @@ export class WritingFingerprintView extends ItemView {
             // 项目里改过覆盖时视图显示错、点开关也改不到当前项目在用的状态。
             const projectForState = activeProject;
             await this.fingerprintLibrary.loadGlobalState(projectForState);
+            // 阶段 B3：强度配置必须在这里加载。
+            // `getIntensityConfig` 是同步 getter，未加载时恒返回默认 1.0，
+            // 会让「强度为 0 等于禁用」的检测永远查不出来（能力横幅/链路状态都失效）。
+            await this.fingerprintLibrary.loadIntensityConfigs(projectForState);
             this.effectiveGlobalEnabled.clear();
             for (const fp of this.globalFingerprints) {
                 this.effectiveGlobalEnabled.set(
@@ -378,11 +382,16 @@ export class WritingFingerprintView extends ItemView {
 
         // 阶段 A4：链路状态——回答「断在哪一环」（能力横幅回答「处于什么阶段」）
         const enabledFingerprints = all.filter(fp => this.isEffectivelyEnabled(fp));
-        const intensityDisabledCount = enabledFingerprints.filter(fp => {
-            // 强度配置未加载时 getIntensityConfig 返回默认 1.0，不会误报为 0
-            const config = this.fingerprintLibrary?.getIntensityConfig(fp.id);
-            return config ? config.globalIntensity <= 0 : false;
-        }).length;
+        // 阶段 B3：同步 getter 未加载时返回默认 1.0，会把「强度 0」误判成「正常」。
+        // `loadAllFingerprints` 已加载强度配置，这里再做一次断言：未加载时按 0 计
+        // （偏保守——不把「不知道」误报成「强度被禁用」）。
+        const intensityLoaded = this.fingerprintLibrary?.isIntensityLoaded() === true;
+        const intensityDisabledCount = intensityLoaded
+            ? enabledFingerprints.filter(fp => {
+                const config = this.fingerprintLibrary?.getIntensityConfig(fp.id);
+                return config ? config.globalIntensity <= 0 : false;
+            }).length
+            : 0;
         renderLinkStatus(this.capabilityEl, computeStyleFlowStatus({
             templateCount: this.templateFingerprints.length,
             globalCount: this.globalFingerprints.length,

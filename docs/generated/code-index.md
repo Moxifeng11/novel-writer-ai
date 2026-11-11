@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 320 | 138142 | 1739 | 1424 | 82% |
+| `engine/` | 320 | 138158 | 1739 | 1424 | 82% |
 | `services/` | 33 | 13799 | 205 | 161 | 79% |
 | `shared/` | 196 | 41351 | 1697 | 1388 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 249 | 102424 | 875 | 728 | 83% |
+| `ui/` | 249 | 102433 | 875 | 728 | 83% |
 
 ## 文件清单
 
@@ -328,7 +328,7 @@
 | `engine/stream-text-reader.ts` | 320 | 3 | 3 |
 | `engine/streaming/simulated-stream.ts` | 183 | 2 | 2 |
 | `engine/streaming/stream-parser.ts` | 366 | 8 | 8 |
-| `engine/style-fingerprint-library.ts` | 2660 | 7 | 7 |
+| `engine/style-fingerprint-library.ts` | 2676 | 7 | 7 |
 | `engine/style-learner.ts` | 319 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 193 | 2 | 2 |
 | `engine/style-vector-store.ts` | 705 | 11 | 10 |
@@ -821,7 +821,7 @@
 | `ui/views/knowledge-capability.ts` | 113 | 3 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/link-status.ts` | 387 | 11 | 5 |
-| `ui/views/writing-fingerprint-view.ts` | 2056 | 3 | 3 |
+| `ui/views/writing-fingerprint-view.ts` | 2065 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |

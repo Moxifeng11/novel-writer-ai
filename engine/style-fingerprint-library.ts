@@ -1186,6 +1186,22 @@ export class StyleFingerprintLibrary {
     }
 
     /**
+     * 强度配置是否已加载（阶段 B3「刷新契约」）。
+     *
+     * `getIntensityConfig` 是**同步** getter：没先 `loadIntensityConfigs` 时它返回
+     * 引擎默认（1.0），调用方很容易把「未加载」误当成「用户没改过强度」。
+     * 需要判定「强度是否为 0」这类真实配置的调用方，应先用本方法断言。
+     *
+     * @param project - 项目（缺省用实例绑定的项目）
+     * @returns 是否已加载过该项目
+     */
+    isIntensityLoaded(project?: string): boolean {
+        const target = project ?? this.project;
+        if (!target) return false;
+        return this.intensityConfigs.has(target);
+    }
+
+    /**
      * 当前指纹强度是否来自项目覆盖（而非全局默认/引擎默认）。
      *
      * UI 用它区分「本项目自定义」与「跟随全局」，并提供「恢复跟随全局」入口。
