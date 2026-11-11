@@ -10,6 +10,7 @@ import { AgentSessionLog } from './session-log';
 import { HarnessToolRegistry } from './tool-registry';
 import { runHarnessTurn } from './agent-loop';
 import { createHostTools, type HostToolDeps } from './host-tools';
+import { createDiagnoseTools } from './diagnose-tools';
 import type {
     HarnessAdapter,
     HarnessChip,
@@ -78,6 +79,14 @@ export interface AgentHarnessEngineOptions {
     onSessionChange?: (snapshot: HarnessSessionSnapshot) => void;
     /** 注入当前时间用的时钟（测试可注入固定时间） */
     now?: () => Date;
+    /**
+     * 链路诊断采集器（阶段 C1）。
+     *
+     * 提供后 agent 会多一个 `diagnose_flow` 工具，能回答
+     * 「我的设定为什么没进正文」并定位到具体环节。
+     * 采集器由宿主注入——engine 层不直接持有知识库/指纹库实例。
+     */
+    flowDiagnosis?: import('./diagnose-tools').FlowDiagnosisDeps;
 }
 
 /**
@@ -150,6 +159,12 @@ export class AgentHarnessEngine {
         this.ctx = options.ctx;
         for (const tool of createHostTools({ port: options.portDeps.port, ctx: this.ctx, memory: this.memory, plan: this.plan })) {
             this.registry.register(tool);
+        }
+        // 阶段 C1：链路自诊断工具（宿主提供采集器时才注册）
+        if (options.flowDiagnosis) {
+            for (const tool of createDiagnoseTools(options.flowDiagnosis)) {
+                this.registry.register(tool);
+            }
         }
     }
 

@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 320 | 138158 | 1739 | 1424 | 82% |
+| `engine/` | 321 | 138291 | 1742 | 1425 | 82% |
 | `services/` | 33 | 13799 | 205 | 161 | 79% |
-| `shared/` | 196 | 41351 | 1697 | 1388 | 82% |
+| `shared/` | 197 | 41680 | 1709 | 1393 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 249 | 102433 | 875 | 728 | 83% |
+| `ui/` | 250 | 102353 | 867 | 725 | 84% |
 
 ## 文件清单
 
@@ -45,7 +45,8 @@
 | `engine/agent/harness/agent-loop.ts` | 620 | 6 | 6 |
 | `engine/agent/harness/context-fit.ts` | 137 | 6 | 6 |
 | `engine/agent/harness/creation-plan.ts` | 73 | 6 | 6 |
-| `engine/agent/harness/harness-engine.ts` | 612 | 7 | 4 |
+| `engine/agent/harness/diagnose-tools.ts` | 118 | 3 | 1 |
+| `engine/agent/harness/harness-engine.ts` | 627 | 7 | 4 |
 | `engine/agent/harness/harness-types.ts` | 243 | 17 | 14 |
 | `engine/agent/harness/host-tools.ts` | 1013 | 5 | 5 |
 | `engine/agent/harness/prompt-sections.ts` | 152 | 2 | 2 |
@@ -473,6 +474,7 @@
 | `shared/keyboard.ts` | 29 | 1 | 1 |
 | `shared/keyword-tokens.ts` | 33 | 2 | 2 |
 | `shared/knowledge-position.ts` | 51 | 3 | 2 |
+| `shared/link-status-compute.ts` | 329 | 12 | 5 |
 | `shared/local-ai-queue.ts` | 89 | 2 | 1 |
 | `shared/logger.ts` | 101 | 5 | 5 |
 | `shared/lru-cache.ts` | 221 | 2 | 2 |
@@ -585,7 +587,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 771 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1905 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1908 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |
@@ -770,6 +772,7 @@
 | `ui/services/agent-session-store.ts` | 211 | 5 | 5 |
 | `ui/services/agent-spill-store.ts` | 142 | 4 | 3 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |
+| `ui/services/flow-diagnosis-collectors.ts` | 189 | 1 | 1 |
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 433 | 6 | 5 |
@@ -820,7 +823,7 @@
 | `ui/views/knowledge-base-view.ts` | 3301 | 10 | 10 |
 | `ui/views/knowledge-capability.ts` | 113 | 3 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
-| `ui/views/link-status.ts` | 387 | 11 | 5 |
+| `ui/views/link-status.ts` | 115 | 2 | 1 |
 | `ui/views/writing-fingerprint-view.ts` | 2065 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |

@@ -6,10 +6,10 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 27 | 27 | 100% | 50 | 50 | 100% | 0 |
 | `domains/` | 11 | 28 | 28 | 100% | 1 | 1 | 100% | 0 |
-| `engine/` | 303 | 1715 | 1714 | 100% | 1248 | 1248 | 100% | 0 |
+| `engine/` | 304 | 1718 | 1717 | 100% | 1248 | 1248 | 100% | 0 |
 | `services/` | 33 | 205 | 205 | 100% | 222 | 222 | 100% | 0 |
-| `shared/` | 195 | 1702 | 1702 | 100% | 159 | 159 | 100% | 0 |
-| `ui/` | 247 | 866 | 866 | 100% | 643 | 643 | 100% | 0 |
+| `shared/` | 196 | 1714 | 1714 | 100% | 159 | 159 | 100% | 0 |
+| `ui/` | 248 | 857 | 857 | 100% | 643 | 643 | 100% | 0 |
 
 ## 缺口最大的文件（按未注释导出数）
 
@@ -26,6 +26,7 @@
 | `engine/agent/harness/agent-loop.ts` | 6 | 0 | 0 | 0 |
 | `engine/agent/harness/context-fit.ts` | 6 | 0 | 0 | 0 |
 | `engine/agent/harness/creation-plan.ts` | 6 | 0 | 0 | 0 |
+| `engine/agent/harness/diagnose-tools.ts` | 3 | 0 | 0 | 0 |
 | `engine/agent/harness/harness-engine.ts` | 5 | 0 | 14 | 0 |
 | `engine/agent/harness/harness-types.ts` | 17 | 0 | 0 | 0 |
 | `engine/agent/harness/host-tools.ts` | 5 | 0 | 0 | 0 |
@@ -44,7 +45,6 @@
 | `engine/ai-engine.ts` | 2 | 0 | 33 | 0 |
 | `engine/ai-entity-generator.ts` | 1 | 0 | 3 | 0 |
 | `engine/ai-lexicon.ts` | 3 | 0 | 0 | 0 |
-| `engine/ai-outline-generator.ts` | 1 | 0 | 3 | 0 |
 
 ## @example 覆盖（公共入口）
 
