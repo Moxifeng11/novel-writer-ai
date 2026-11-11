@@ -1,53 +1,53 @@
 {
-  "generatedAt": "2026-11-11T15:41:55.356Z",
-  "gitHead": "b85a983f6839add6fa2783e0e44740c4839e96ee",
+  "generatedAt": "2026-11-11T17:28:13.254Z",
+  "gitHead": "27020940148195729def9bcd7e673ba32ac86d9a",
   "nodeVersion": "v24.16.0",
-  "note": "DSH-20261112-01 首期基线：ui 与 ui/views lines 计数加权",
+  "note": "DSH-20261112-07：四个纯逻辑模块 + 五个 DOM 构建器单测后 ui/views 8.14%→12.95%、ui 14.71%→15.22%（仅上调）",
   "dirs": {
     "ui": {
-      "files": 255,
+      "files": 259,
       "lines": {
-        "total": 41516,
-        "covered": 6108,
-        "pct": 14.71
+        "total": 41536,
+        "covered": 6321,
+        "pct": 15.22
       },
       "statements": {
-        "total": 45316,
-        "covered": 6724,
-        "pct": 14.84
+        "total": 45346,
+        "covered": 6960,
+        "pct": 15.35
       },
       "branches": {
-        "total": 22108,
-        "covered": 3907,
-        "pct": 17.67
+        "total": 22130,
+        "covered": 4032,
+        "pct": 18.22
       },
       "functions": {
-        "total": 7059,
-        "covered": 995,
-        "pct": 14.1
+        "total": 7075,
+        "covered": 1046,
+        "pct": 14.78
       }
     },
     "ui/views": {
-      "files": 22,
+      "files": 26,
       "lines": {
-        "total": 4326,
-        "covered": 352,
-        "pct": 8.14
+        "total": 4346,
+        "covered": 563,
+        "pct": 12.95
       },
       "statements": {
-        "total": 4660,
-        "covered": 432,
-        "pct": 9.27
+        "total": 4690,
+        "covered": 665,
+        "pct": 14.18
       },
       "branches": {
-        "total": 2334,
-        "covered": 340,
-        "pct": 14.57
+        "total": 2356,
+        "covered": 459,
+        "pct": 19.48
       },
       "functions": {
-        "total": 835,
-        "covered": 142,
-        "pct": 17.01
+        "total": 851,
+        "covered": 192,
+        "pct": 22.56
       }
     }
   }
