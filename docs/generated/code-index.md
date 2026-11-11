@@ -7,11 +7,11 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137780 | 1731 | 1419 | 82% |
-| `services/` | 32 | 13411 | 193 | 153 | 79% |
+| `services/` | 32 | 13538 | 194 | 154 | 79% |
 | `shared/` | 196 | 41264 | 1692 | 1383 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 248 | 101437 | 862 | 723 | 84% |
+| `ui/` | 248 | 101440 | 862 | 723 | 84% |
 
 ## 文件清单
 
@@ -356,7 +356,7 @@
 | `engine/writing-quality-engine.ts` | 1376 | 14 | 13 |
 | `services/api-connectivity-service.ts` | 317 | 8 | 8 |
 | `services/backup-center-service.ts` | 182 | 4 | 1 |
-| `services/canon-research-service.ts` | 484 | 7 | 7 |
+| `services/canon-research-service.ts` | 611 | 8 | 8 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
 | `services/chapter-version-service.ts` | 739 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
@@ -774,7 +774,7 @@
 | `ui/settings-tab.ts` | 260 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 151 | 1 | 1 |
-| `ui/settings/api-section.ts` | 1278 | 1 | 1 |
+| `ui/settings/api-section.ts` | 1281 | 1 | 1 |
 | `ui/settings/deconstruction-section.ts` | 332 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 289 | 1 | 1 |

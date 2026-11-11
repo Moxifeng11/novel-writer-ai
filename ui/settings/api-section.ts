@@ -940,7 +940,8 @@ export class ApiSection extends SettingsSection {
         const card = section.createDiv({ cls: 'nw-u-margintop-20px-2' });
         card.createEl('h4', { text: '📚 同人考据来源', cls: 'nw-u-m-0-0-6px-0-2 nw-u-fs-14px-2' });
         card.createEl('div', {
-            text: '同人设定只允许参考原著/官方资料，不参考同人、改编、外传等衍生作品。未配置搜索 API 时只能手动添加官方 URL/摘录。',
+            text: '同人设定以原著/官方资料为优先依据；没有官方来源时可用百科/wiki 二手资料补充（会标注等级），'
+                + '同人、改编、外传等衍生作品不作为设定来源。维基百科与 Bangumi 为免 Key 通道，开箱可用。',
             cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginbottom-8px-2',
         });
         const cfg = this.plugin.settings.canonResearch || {
@@ -955,13 +956,15 @@ export class ApiSection extends SettingsSection {
 
         new Setting(card)
             .setName('检索方式')
-            .setDesc('manual=只手动导入；其他选项需要对应搜索 API Key')
+            .setDesc('手动=只导入自己提供的来源；维基百科/Bangumi 免 key；其余需要对应搜索 API key')
             .addDropdown(dropdown => {
                 dropdown.addOption('manual', '手动官方来源（默认）');
-                dropdown.addOption('bing', 'Bing Web Search');
-                dropdown.addOption('brave', 'Brave Search');
-                dropdown.addOption('serper', 'Serper.dev');
-                dropdown.addOption('tavily', 'Tavily');
+                dropdown.addOption('wikipedia', '维基百科（免 key）');
+                dropdown.addOption('bangumi', 'Bangumi 番组计划（免 key）');
+                dropdown.addOption('bing', 'Bing web search（需 key）');
+                dropdown.addOption('brave', 'Brave search（需 key）');
+                dropdown.addOption('serper', 'Serper.dev（需 key）');
+                dropdown.addOption('tavily', 'Tavily（需 key）');
                 dropdown.setValue(cfg.provider || 'manual');
                 dropdown.onChange(async (value) => {
                     cfg.provider = value as typeof cfg.provider;
@@ -970,7 +973,7 @@ export class ApiSection extends SettingsSection {
             });
 
         new Setting(card)
-            .setName('搜索 API Key')
+            .setName('搜索 API key')
             .setDesc('仅用于同人考据检索；与其它密钥同一套加密保存')
             .addText(text => {
                 text.inputEl.type = 'password';

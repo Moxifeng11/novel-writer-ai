@@ -30,10 +30,33 @@ const log = createLogger('CanonResearch');
 /** 网页抓取统一策略：15s 超时，不重试（避免对目标站点加压） */
 const FETCH_REQUEST_POLICY = { timeoutMs: 15000 };
 
+/** 维基百科 API 要求的 UA（Wikimedia 会拒绝无标识 UA） */
+const WIKI_USER_AGENT = `NovelWriterAI/4.83.1 (+${GITHUB_REPO_URL})`;
+
+/** Bangumi API 要求的 UA（需带联系方式/仓库地址） */
+const BANGUMI_USER_AGENT = `NovelWriterAI/4.83.1 (${GITHUB_REPO_URL})`;
+
+/**
+ * 该 provider 是否需要 API Key。
+ *
+ * FAN-1（v4.83.1）：`wikipedia` / `bangumi` 走公开 API，免 Key 即可用；
+ * `manual` 本就不联网。其余第三方搜索需要 Key。
+ *
+ * @param provider - 提供方
+ * @returns 是否需要 Key
+ */
+export function providerNeedsApiKey(provider: CanonSearchProvider): boolean {
+    return provider !== 'manual' && provider !== 'wikipedia' && provider !== 'bangumi';
+}
+
 /**
  * 考据搜索提供方。
+ *
+ * `wikipedia` / `bangumi` 为**免 Key** 通道（FAN-1，v4.83.1）：此前 provider 全部需要
+ * 第三方搜索 Key，默认 `manual` 等于开箱没有联网检索能力。两者都走公开 API，
+ * 结果按 `reference`（二手资料）分级，由 prompt 显式标注等级。
  */
-export type CanonSearchProvider = 'manual' | 'bing' | 'brave' | 'serper' | 'tavily';
+export type CanonSearchProvider = 'manual' | 'bing' | 'brave' | 'serper' | 'tavily' | 'wikipedia' | 'bangumi';
 
 /**
  * 考据配置。
@@ -117,11 +140,13 @@ export class CanonResearchService {
         const inputs: CanonSourceInput[] = [...(options.manualSources || [])];
 
         if (inputs.length === 0 && config.provider !== 'manual') {
-            if (!config.apiKey?.trim() || isStoredCiphertext(config.apiKey)) {
+            if (providerNeedsApiKey(config.provider)
+                && (!config.apiKey?.trim() || isStoredCiphertext(config.apiKey))) {
                 // S3-4：锁定态密文不能当凭据外发
                 warnings.push(config.apiKey?.trim()
                     ? '搜索 API Key 处于加密锁定状态，请先在设置中解锁口令；已退回手动官方来源模式'
-                    : '未配置搜索 API Key，已退回手动官方来源模式');
+                    : `未配置搜索 API Key，无法使用「${config.provider}」检索；已退回手动官方来源模式。`
+                        + '可在设置里改用免 Key 的「维基百科」或「Bangumi」通道');
             } else {
                 try {
                     const searched = await this.search(workName, options, config);
@@ -288,9 +313,111 @@ export class CanonResearchService {
                 return this.searchSerper(query, config);
             case 'tavily':
                 return this.searchTavily(query, config);
+            case 'wikipedia':
+                return this.searchWikipedia(workName);
+            case 'bangumi':
+                return this.searchBangumi(workName);
             default:
                 return [];
         }
+    }
+
+    /**
+     * 维基百科检索（免 Key）。
+     *
+     * 两步：先 `list=search` 拿条目 id，再 `prop=extracts&explaintext` 拿纯文本正文。
+     * 只取前若干条，正文截断到 `excerptChars`。来源域名 `*.wikipedia.org` 会被
+     * `classifyCanonSource` 归为 `reference`（二手资料），由 prompt 标注等级。
+     *
+     * @param workName - 作品名
+     * @returns 来源输入
+     */
+    private async searchWikipedia(workName: string): Promise<CanonSourceInput[]> {
+        const searchUrl = 'https://zh.wikipedia.org/w/api.php'
+            + `?action=query&list=search&srsearch=${encodeURIComponent(workName)}&format=json&srlimit=3`;
+        const searchRes = await requestWithPolicy(requestUrl, {
+            url: searchUrl,
+            method: 'GET',
+            headers: { 'User-Agent': WIKI_USER_AGENT, 'Accept': 'application/json' },
+        }, SEARCH_REQUEST_POLICY);
+        const searchData = searchRes.json as {
+            query?: { search?: Array<{ title?: string; pageid?: number; snippet?: string }> };
+        };
+        const hits = (searchData.query?.search || []).filter(item => item.pageid && item.title);
+        if (hits.length === 0) return [];
+
+        const pageIds = hits.map(item => String(item.pageid)).join('|');
+        const extractUrl = 'https://zh.wikipedia.org/w/api.php'
+            + `?action=query&prop=extracts&explaintext=1&format=json&pageids=${pageIds}`;
+        const extractRes = await requestWithPolicy(requestUrl, {
+            url: extractUrl,
+            method: 'GET',
+            headers: { 'User-Agent': WIKI_USER_AGENT, 'Accept': 'application/json' },
+        }, SEARCH_REQUEST_POLICY);
+        const extractData = extractRes.json as {
+            query?: { pages?: Record<string, { title?: string; extract?: string }> };
+        };
+        const pages = extractData.query?.pages || {};
+        const results: CanonSourceInput[] = [];
+        for (const hit of hits) {
+            const page = pages[String(hit.pageid)];
+            const excerpt = (page?.extract || '').trim();
+            if (!excerpt) continue;
+            results.push({
+                title: page?.title || hit.title || '',
+                url: `https://zh.wikipedia.org/wiki/${encodeURIComponent(hit.title || '')}`,
+                excerpt: excerpt.slice(0, 2000),
+            });
+        }
+        return results;
+    }
+
+    /**
+     * Bangumi 检索（免 Key，番剧/轻小说/动画 IP 覆盖较好）。
+     *
+     * 搜索接口的 `summary` 常为空，因此再按条目 id 取一次详情补摘要。
+     * 来源域名 `bgm.tv` 会被 `classifyCanonSource` 归为 `reference`。
+     *
+     * @param workName - 作品名
+     * @returns 来源输入
+     */
+    private async searchBangumi(workName: string): Promise<CanonSourceInput[]> {
+        const searchUrl = 'https://api.bgm.tv/search/subject/'
+            + `${encodeURIComponent(workName)}?type=2&responseGroup=small&max_results=3`;
+        const searchRes = await requestWithPolicy(requestUrl, {
+            url: searchUrl,
+            method: 'GET',
+            headers: { 'User-Agent': BANGUMI_USER_AGENT, 'Accept': 'application/json' },
+        }, SEARCH_REQUEST_POLICY);
+        const searchData = searchRes.json as {
+            list?: Array<{ id?: number; name?: string; name_cn?: string; summary?: string; url?: string }>;
+        };
+        const items = (searchData.list || []).filter(item => item.id);
+        const results: CanonSourceInput[] = [];
+        for (const item of items) {
+            let summary = (item.summary || '').trim();
+            if (!summary) {
+                try {
+                    const detailRes = await requestWithPolicy(requestUrl, {
+                        url: `https://api.bgm.tv/v0/subjects/${item.id}`,
+                        method: 'GET',
+                        headers: { 'User-Agent': BANGUMI_USER_AGENT, 'Accept': 'application/json' },
+                    }, SEARCH_REQUEST_POLICY);
+                    const detail = detailRes.json as { summary?: string };
+                    summary = (detail.summary || '').trim();
+                } catch (error) {
+                    // 详情失败不影响搜索命中：保留标题与条目 URL 即可
+                    log.warn('[CanonResearch] Bangumi 详情获取失败:', item.id, error);
+                }
+            }
+            const title = item.name_cn || item.name || '';
+            results.push({
+                title,
+                url: item.url || `https://bgm.tv/subject/${item.id}`,
+                excerpt: summary ? summary.slice(0, 2000) : title,
+            });
+        }
+        return results;
     }
 
     private buildQuery(workName: string, options: CanonResearchOptions): string {
