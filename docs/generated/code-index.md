@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 323 | 138685 | 1752 | 1429 | 82% |
+| `engine/` | 323 | 138706 | 1752 | 1429 | 82% |
 | `services/` | 33 | 13799 | 205 | 161 | 79% |
 | `shared/` | 197 | 41698 | 1709 | 1393 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 265 | 103914 | 983 | 797 | 81% |
+| `ui/` | 265 | 103945 | 983 | 797 | 81% |
 
 ## 文件清单
 
@@ -193,8 +193,8 @@
 | `engine/knowledge-tags.ts` | 629 | 2 | 2 |
 | `engine/knowledge-to-fingerprint-converter.ts` | 345 | 1 | 1 |
 | `engine/knowledge-usage.ts` | 80 | 3 | 3 |
-| `engine/knowledge-vector-reconcile.ts` | 98 | 3 | 2 |
-| `engine/knowledge-vector-store.ts` | 892 | 5 | 4 |
+| `engine/knowledge-vector-reconcile.ts` | 100 | 3 | 2 |
+| `engine/knowledge-vector-store.ts` | 911 | 5 | 4 |
 | `engine/ledger/ledger-index.ts` | 175 | 10 | 8 |
 | `engine/ledger/ledger-io.ts` | 212 | 4 | 4 |
 | `engine/ledger/ledger-link.ts` | 224 | 4 | 2 |
@@ -778,7 +778,7 @@
 | `ui/services/agent-session-store.ts` | 211 | 5 | 5 |
 | `ui/services/agent-spill-store.ts` | 142 | 4 | 3 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |
-| `ui/services/flow-diagnosis-collectors.ts` | 202 | 1 | 1 |
+| `ui/services/flow-diagnosis-collectors.ts` | 206 | 1 | 1 |
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 433 | 6 | 5 |
@@ -837,7 +837,7 @@
 | `ui/views/kb-task-panel.ts` | 293 | 24 | 19 |
 | `ui/views/kb-view-logic.ts` | 112 | 7 | 4 |
 | `ui/views/knowledge-base-modals.ts` | 1379 | 4 | 4 |
-| `ui/views/knowledge-base-view.ts` | 3345 | 10 | 10 |
+| `ui/views/knowledge-base-view.ts` | 3372 | 10 | 10 |
 | `ui/views/knowledge-capability.ts` | 113 | 3 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/link-status.ts` | 115 | 2 | 1 |

@@ -74,9 +74,11 @@ export function reconcileVectorBooks(
 }
 
 /**
- * 把对账结果转成面向用户的一句话摘要（UI 提示与 agent 诊断共用口径）。
+ * 把对账结果转成面向用户的一句话摘要（UI 提示与 agent 诊断共用口径，
+ * 审计 #B9：三处手写文案收敛到这一个出口）。
  *
  * @param report - 对账报告
+ * @param hint - 追加在孤儿段末尾的操作指引（如「点「🔗 向量对账」可清理」）
  * @returns 空报告返回 null（调用方不提示）；否则返回摘要
  *
  * @example
@@ -84,10 +86,10 @@ export function reconcileVectorBooks(
  * summarizeVectorReconcile(report) // '向量库 1 本不在知识库索引（孤儿向量，建议清理）'
  * ```
  */
-export function summarizeVectorReconcile(report: VectorReconcileReport): string | null {
+export function summarizeVectorReconcile(report: VectorReconcileReport, hint?: string): string | null {
     const parts: string[] = [];
     if (report.orphans.length > 0) {
-        parts.push(`向量库 ${report.orphans.length} 本不在知识库索引（孤儿向量，建议清理）`);
+        parts.push(`向量库 ${report.orphans.length} 本不在知识库索引（孤儿向量，建议清理${hint ? '，' + hint : ''}）`);
     }
     if (report.missing.length > 0) {
         parts.push(`索引 ${report.missing.length} 本没有向量（缺失向量，建议重向量化）`);

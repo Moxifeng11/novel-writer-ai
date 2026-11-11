@@ -291,24 +291,34 @@ export class KnowledgeVectorStore {
      *
      * - `options.confirmed !== true` 时**一个都不删**，全部计入 skipped（防「顺手删」）；
      * - 只删「当前确实已加载」的指定 id，未加载的 id 计入 skipped；
+     * - 传入 `options.kbBookIds` 时**复核孤儿身份**：已在知识库索引里的 id 一律不删
+     *   （审计 #A2/#A3——确认后无差别删会在调用方缓存陈旧时误删刚入库书的向量）；
+     * - 删除结果如实上报：saveBook 失败的 id 计入 skipped 而非 removed（审计 #A5）；
      * - 每个删除都走 removeBook（带写锁 + 落盘）。
      *
      * @param bookIds - 要清理的书籍 id（调用方应只传对账报告里的 orphans）
-     * @param options - confirmed: 用户已明确确认
+     * @param options - confirmed: 用户已明确确认；kbBookIds: 知识库索引 id（传入则复核孤儿身份）
      * @returns removed/skipped 两个列表
      */
-    async removeOrphanVectors(bookIds: readonly string[], options?: { confirmed?: boolean }): Promise<{ removed: string[]; skipped: string[] }> {
+    async removeOrphanVectors(bookIds: readonly string[], options?: { confirmed?: boolean; kbBookIds?: readonly string[] }): Promise<{ removed: string[]; skipped: string[] }> {
         if (options?.confirmed !== true) {
             return { removed: [], skipped: [...bookIds] };
         }
         await this.ensureLoaded();
         const loaded = new Set(this.getLoadedBookIds());
+        const kbIds = options.kbBookIds ? new Set(options.kbBookIds) : null;
         const removed: string[] = [];
         const skipped: string[] = [];
         for (const id of bookIds) {
+            if (kbIds?.has(id)) {
+                log.warn('[KnowledgeVectorStore] 清理复核：' + id + ' 已在知识库索引，拒绝删除');
+                skipped.push(id);
+                continue;
+            }
             if (!loaded.has(id)) { skipped.push(id); continue; }
-            await this.removeBook(id);
-            removed.push(id);
+            const saved = await this.removeBook(id);
+            if (saved) removed.push(id);
+            else skipped.push(id);
         }
         log.warn('[KnowledgeVectorStore] 孤儿向量清理完成：removed=' + removed.join(',') + ' skipped=' + skipped.join(','));
         return { removed, skipped };
@@ -501,7 +511,7 @@ export class KnowledgeVectorStore {
         }
     }
 
-    private async saveBook(bookId: string): Promise<void> {
+    private async saveBook(bookId: string): Promise<boolean> {
         const fs = this.getFS();
         const dir = this.getVectorsDir();
         const filePath = this.getBookFilePath(bookId);
@@ -510,10 +520,15 @@ export class KnowledgeVectorStore {
         if (!samples || samples.length === 0) {
             try {
                 await fs.delete(filePath);
-            } catch {
-                // 文件不存在时忽略
+                return true;
+            } catch (e) {
+                // DSH-20261112-14 审计 #A5：删除失败必须让调用方知道（否则清理谎报成功，
+                // 重启后幽灵向量回归）。文件不存在按成功处理。
+                const msg = e instanceof Error ? e.message : String(e);
+                log.warn(`[KnowledgeVectorStore] 删除向量文件失败: ${filePath}`, e);
+                const exists = await (async () => { try { return await fs.exists(filePath); } catch { return true; } })();
+                return !exists;
             }
-            return;
         }
 
         const bookName = samples[0].bookName;
@@ -532,8 +547,10 @@ export class KnowledgeVectorStore {
             await fs.write(filePath, JSON.stringify(data, null, 2));
             // 重建后该书已按当前模型写入，不再算作不一致
             this.modelMismatches = this.modelMismatches.filter(m => m.bookId !== bookId);
+            return true;
         } catch (e) {
             log.warn(`[KnowledgeVectorStore] 保存向量文件失败: ${filePath}`, e);
+            return false;
         }
     }
 
@@ -612,14 +629,16 @@ export class KnowledgeVectorStore {
      * 移除书籍样本。
      *
      * @param bookId - 书籍 ID
+     * @returns 落盘是否成功（内存删除总是发生；落盘失败时调用方应把该 id 计入 skipped）
      */
-    async removeBook(bookId: string): Promise<void> {
-        await withWriteLock(KnowledgeVectorStore.STATE_LOCK, async () => {
+    async removeBook(bookId: string): Promise<boolean> {
+        return await withWriteLock(KnowledgeVectorStore.STATE_LOCK, async () => {
             await this.reloadIfChanged();
 
             this.samples.delete(bookId);
-            await this.saveBook(bookId);
+            const saved = await this.saveBook(bookId);
             await this.saveIndex();
+            return saved;
         });
     }
 

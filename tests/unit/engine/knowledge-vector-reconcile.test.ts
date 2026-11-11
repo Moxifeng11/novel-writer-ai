@@ -91,6 +91,53 @@ describe('reconcileVectorBooks 纯函数', () => {
     });
 });
 
+
+describe('审计修复回归（对抗审计 #A2/#A5/#B9）', () => {
+    let vault: Vault;
+
+    beforeEach(async () => {
+        vault = new Vault();
+        await vault.createFolder('写作知识库');
+        const writer = new KnowledgeVectorStore({ vault } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
+        await writer.init();
+        await writer.replaceBookSamples('kb_live', '存活书', [
+            { dimension: 'original', category: '原文片段', sample: '晨星在雾里升起来', position: 0 },
+        ]);
+        await writer.replaceBookSamples('kb_ghost', '孤儿书', [
+            { dimension: 'original', category: '原文片段', sample: '孤儿向量样本', position: 0 },
+        ]);
+    });
+
+    it('审计 #A2：confirmed:true 但候选里混入已在索引的 id → store 拒绝删除（计入 skipped）', async () => {
+        const store = new KnowledgeVectorStore({ vault } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
+        await store.init();
+        const result = await store.removeOrphanVectors(['kb_ghost', 'kb_live'], {
+            confirmed: true,
+            kbBookIds: ['kb_live'], // kb_live 已在索引（调用方缓存陈旧混入）→ 必须拒删
+        });
+        expect(result.removed).toEqual(['kb_ghost']);
+        expect(result.skipped).toEqual(['kb_live']);
+        expect(store.getLoadedBookIds()).toContain('kb_live');
+    });
+
+    it('审计 #A2：不传 kbBookIds 保持旧行为（向后兼容），候选里的正常书也会被删', async () => {
+        const store = new KnowledgeVectorStore({ vault } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
+        await store.init();
+        const result = await store.removeOrphanVectors(['kb_live'], { confirmed: true });
+        expect(result.removed).toEqual(['kb_live']);
+        expect(store.getLoadedBookIds()).toEqual(['kb_ghost']);
+    });
+
+    it('审计 #B9：summarize 的 hint 追加在孤儿段末尾，缺失段不受影响', () => {
+        const text = summarizeVectorReconcile(
+            { orphans: ['g'], missing: ['m'], healthy: [] },
+            '点「🔗 向量对账」可清理',
+        );
+        expect(text).toContain('孤儿向量，建议清理，点「🔗 向量对账」可清理');
+        expect(text).toContain('缺失向量，建议重向量化）'); // hint 不影响缺失段
+    });
+});
+
 describe('KnowledgeVectorStore 对账与显式清理', () => {
     let vault: Vault;
 

@@ -18,6 +18,7 @@ import { getStyleIntensityEngine } from '@/engine/style/style-intensity-engine';
 import { CanonResearchService } from '@/services/canon-research-service';
 import { formatFanficRulesForPrompt, readFanficRules } from '@/shared/fanfic-rules';
 import { filterDegradationsBySource, getDegradationNotifier } from '@/shared/degradation-notifier';
+import { summarizeVectorReconcile } from '@/engine/knowledge-vector-reconcile';
 import { createLogger } from '@/shared/logger';
 
 const log = createLogger('FlowDiagnosis');
@@ -81,12 +82,15 @@ export function createFlowDiagnosisDeps(host: CollectorHost): FlowDiagnosisDeps 
             }
             // DSH-20261112-14：对账结果作为降级提示——「已加载 N 本」必须能反映
             // 「其中 M 本是孤儿」，否则诊断与界面都停在假绿。
+            // 审计 #A8：先触发 reconcile（内部 ensureLoaded）再读 loaded 状态，
+            // 避免首次诊断同时报「已加载 0 本/未就绪」+「1 本孤儿」的自相矛盾快照。
             let orphanNote: string | null = null;
+            const kbIds = books.map(b => (b as unknown as { id: string }).id);
             try {
-                const kbIds = books.map(b => (b as unknown as { id: string }).id);
-                const reconcile = await (store as unknown as { reconcileWithIndex?: (ids: string[]) => Promise<{ orphans: string[] }> })?.reconcileWithIndex?.(kbIds);
-                if (reconcile && reconcile.orphans.length > 0) {
-                    orphanNote = `向量库 ${reconcile.orphans.length} 本不在知识库索引（孤儿向量，建议清理）`;
+                const reconcile = await (store as unknown as { reconcileWithIndex?: (ids: string[]) => Promise<{ orphans: string[]; missing: string[]; healthy: string[] }> })?.reconcileWithIndex?.(kbIds);
+                if (reconcile) {
+                    orphanNote = summarizeVectorReconcile(reconcile);
+                    storeLoadedBooks = (store as unknown as { getLoadedBookIds?: () => string[] })?.getLoadedBookIds?.().length ?? storeLoadedBooks;
                 }
             } catch (e) {
                 log.warn('[FlowDiagnosis] 向量对账失败:', e);
@@ -103,7 +107,7 @@ export function createFlowDiagnosisDeps(host: CollectorHost): FlowDiagnosisDeps 
                 embeddingReady: await embeddingReady(),
                 storeLoadedBooks,
                 storeReady,
-                degradations: orphanNote ? [...baseDegradations, orphanNote] : baseDegradations,
+                degradations: orphanNote ? [orphanNote, ...baseDegradations] : baseDegradations,
             };
         },
 

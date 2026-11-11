@@ -9,6 +9,7 @@ import { attachChartInteractions } from '@/ui/svg-charts';
 import { DeconstructionScheduler, ALL_BREAKDOWN_DIMENSIONS, type BreakdownProgress, type BreakdownTask, type BreakdownDimension } from '@/engine/deconstruction-scheduler';
 import { BatchImportModal } from '@/ui/batch-import-modal';
 import { MiniSettingsModal } from '@/ui/mini-settings-modal';
+import { summarizeVectorReconcile } from '@/engine/knowledge-vector-reconcile';
 import { OperationConfirmModal, TaskCardComponent } from '@/ui/components/progress';
 import { createEmptyState } from '@/ui/components/empty-state';
 import { createViewOpenGuard } from '@/shared/view-open-guard';
@@ -775,6 +776,7 @@ export class KnowledgeBaseView extends ItemView {
         if (!this.kbManager) {
             this.allBooks = [];
             this.booksLoadError = null;
+            this.vectorReconcile = null;
             return;
         }
         try {
@@ -784,6 +786,7 @@ export class KnowledgeBaseView extends ItemView {
         } catch (e) {
             this.allBooks = [];
             this.booksLoadError = e instanceof Error ? e.message : String(e);
+            this.vectorReconcile = null;
             log.error('[KnowledgeBaseView] 加载书籍列表失败:', e);
         }
         await this.detectEmbeddingAvailability();
@@ -1059,8 +1062,9 @@ export class KnowledgeBaseView extends ItemView {
         // DSH-20261112-14：对账结果作为降级提示注入——「已加载 N 本」旁边必须能看到
         // 「其中 M 本是孤儿」，否则就是 -08 指出的假绿。对账在 loadBooks 异步预取。
         const vectorReconcile = this.vectorReconcile;
-        const orphanNote = vectorReconcile && vectorReconcile.orphans.length > 0
-            ? `向量库 ${vectorReconcile.orphans.length} 本不在知识库索引（孤儿向量，点「🔗 向量对账」可清理）`
+        // 审计 #B9：文案单源化——与 agent 诊断共用 summarizeVectorReconcile
+        const orphanNote = vectorReconcile
+            ? summarizeVectorReconcile(vectorReconcile, '点「🔗 向量对账」可清理')
             : null;
         renderLinkStatus(booksPanel, computeKnowledgeFlowStatus(buildKnowledgeFlowInput(this.allBooks, {
             embeddingReady: this.embeddingSnapshot?.available === true,
@@ -1071,7 +1075,8 @@ export class KnowledgeBaseView extends ItemView {
             storeReady: vectorStore && typeof vectorStore.isLoaded === 'function'
                 ? vectorStore.isLoaded()
                 : false,
-            degradations: orphanNote ? [...recentDegradations, orphanNote] : recentDegradations,
+            // 审计 #B1：孤儿提示放队首——link-status 只渲染前 3 条降级，追加会被挤掉
+            degradations: orphanNote ? [orphanNote, ...recentDegradations] : recentDegradations,
         })));
 
         this.renderBooksToolbar(booksPanel);
@@ -1527,41 +1532,63 @@ export class KnowledgeBaseView extends ItemView {
      * 默认只报告（Notice 摘要）；孤儿存在时弹确认框，用户明确确认才删除，
      * 删除走 store.removeOrphanVectors（fail-closed，未确认一个都不删）。
      */
+    /** 重入守卫（审计 #B4）：对账/清理进行中再点按钮直接忽略 */
+    private reconcileInFlight = false;
+
     private async handleVectorReconcile(): Promise<void> {
-        const store = this.plugin.knowledgeVectorStore;
-        if (!store || typeof store.reconcileWithIndex !== 'function') {
-            showErrorNotice('向量库未初始化，无法对账');
-            return;
-        }
-        const report = await store.reconcileWithIndex(this.allBooks.map(b => b.id));
-        const healthyNote = `正常 ${report.healthy.length} 本`;
-        const missingNote = report.missing.length > 0 ? `缺失 ${report.missing.length} 本` : '';
-        if (report.orphans.length === 0) {
-            showSuccessNotice(`对账完成：${healthyNote}${missingNote ? '，' + missingNote : ''}，没有孤儿向量`, { title: '向量对账' });
-            return;
-        }
-        new Notice(`对账：${healthyNote}${missingNote ? '，' + missingNote : ''}；孤儿 ${report.orphans.length} 本`, 6000);
-        const confirmed = await OperationConfirmModal.confirm(this.app, {
-            title: '清理孤儿向量',
-            description: `向量库里有 ${report.orphans.length} 本书不在知识库索引（${report.orphans.join('、')}）。
+        if (this.reconcileInFlight) return;
+        this.reconcileInFlight = true;
+        try {
+            const store = this.plugin.knowledgeVectorStore;
+            if (!store || typeof store.reconcileWithIndex !== 'function') {
+                showErrorNotice('向量库未初始化，无法对账');
+                return;
+            }
+            // 审计 #A3：出报告前先刷新 allBooks——视图打开期间可能有新书入库，
+            // 用陈旧列表判孤儿会误删刚入库书的向量。
+            await this.loadBooks();
+            const report = await store.reconcileWithIndex(this.allBooks.map(b => b.id));
+            const healthyNote = `正常 ${report.healthy.length} 本`;
+            const missingNote = report.missing.length > 0 ? `缺失 ${report.missing.length} 本` : '';
+            if (report.orphans.length === 0) {
+                showSuccessNotice(`对账完成：${healthyNote}${missingNote ? '，' + missingNote : ''}，没有孤儿向量`, { title: '向量对账' });
+                return;
+            }
+            new Notice(`对账：${healthyNote}${missingNote ? '，' + missingNote : ''}；孤儿 ${report.orphans.length} 本`, 6000);
+            // 审计 #B7：id 列表截断展示，防止撑爆确认弹窗
+            const shownIds = report.orphans.slice(0, 5).join('、') + (report.orphans.length > 5 ? ` 等 ${report.orphans.length} 本` : '');
+            const confirmed = await OperationConfirmModal.confirm(this.app, {
+                title: '清理孤儿向量',
+                description: `向量库里有 ${report.orphans.length} 本书不在知识库索引（${shownIds}）。
 
 可能是你临时移走了书目录；清理后如需检索请重新导入并拆解。确定删除这 ${report.orphans.length} 本的向量吗？`,
-            confirmText: '确认清理',
-            cancelText: '只报告，不清理',
-        });
-        if (!confirmed) {
-            showSuccessNotice('已保留孤儿向量（仅报告，未删除）', { title: '向量对账' });
-            return;
+                confirmText: '确认清理',
+                cancelText: '只报告，不清理',
+            });
+            if (!confirmed) {
+                showSuccessNotice('已保留孤儿向量（仅报告，未删除）', { title: '向量对账' });
+                return;
+            }
+            // 审计 #A2：把当前索引 id 一并传给 store，锁外复核孤儿身份——
+            // 弹窗期间入库的书即便残留在报告里也会被 store 拒绝删除。
+            const result = await store.removeOrphanVectors(report.orphans, {
+                confirmed: true,
+                kbBookIds: this.allBooks.map(b => b.id),
+            });
+            if (result.removed.length > 0) {
+                showSuccessNotice(`已清理 ${result.removed.length} 本孤儿向量`, { title: '向量对账' });
+            }
+            if (result.skipped.length > 0) {
+                showWarningNotice(`${result.skipped.length} 本未清理（不在向量库、已在索引或落盘失败）`, { title: '向量对账' });
+            }
+            await this.loadBooks();
+            this.renderRightPanel();
+        } catch (e) {
+            // 审计 #B4：void 点击处理器不能留 unhandled rejection
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '向量对账失败' });
+        } finally {
+            this.reconcileInFlight = false;
         }
-        const result = await store.removeOrphanVectors(report.orphans, { confirmed: true });
-        if (result.removed.length > 0) {
-            showSuccessNotice(`已清理 ${result.removed.length} 本孤儿向量`, { title: '向量对账' });
-        }
-        if (result.skipped.length > 0) {
-            showWarningNotice(`${result.skipped.length} 本未清理（已不在向量库中）`, { title: '向量对账' });
-        }
-        await this.loadBooks();
-        this.renderRightPanel();
     }
 
     /**

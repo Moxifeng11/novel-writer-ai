@@ -63,10 +63,13 @@ describe('collectKnowledge 孤儿对账注入', () => {
     });
 
     it('store 缺 reconcileWithIndex（旧宿主）：按「无孤儿」处理不抛错', async () => {
-        const { deps } = makeHost({ books: [] });
-        const input = await deps.collectKnowledge();
+        const host = makeHost({ books: [] });
+        // 真正构造旧宿主形态：删掉方法，让 ?.reconcileWithIndex?. 分支命中
+        delete (host.plugin.knowledgeVectorStore as unknown as Record<string, unknown>).reconcileWithIndex;
+        const input = await host.deps.collectKnowledge();
         expect(input).toBeTruthy();
         expect(input.storeReady).toBe(true);
+        expect(input.degradations?.some(d => d.includes('孤儿向量'))).toBe(false);
     });
 });
 
