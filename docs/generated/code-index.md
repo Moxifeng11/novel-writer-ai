@@ -7,11 +7,11 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 320 | 138020 | 1739 | 1424 | 82% |
-| `services/` | 32 | 13573 | 195 | 154 | 79% |
+| `services/` | 33 | 13799 | 205 | 161 | 79% |
 | `shared/` | 196 | 41264 | 1692 | 1383 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 248 | 101604 | 864 | 723 | 84% |
+| `ui/` | 248 | 101793 | 864 | 723 | 84% |
 
 ## 文件清单
 
@@ -362,6 +362,7 @@
 | `services/chapter-version-service.ts` | 739 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
 | `services/execution-ledger.ts` | 325 | 10 | 7 |
+| `services/fanfic-knowledge-draft.ts` | 226 | 10 | 7 |
 | `services/font-manager.ts` | 248 | 15 | 13 |
 | `services/genre-classifier.ts` | 858 | 2 | 2 |
 | `services/genre-preference-memory.ts` | 377 | 3 | 3 |
@@ -583,7 +584,7 @@
 | `shared/writing-rules.ts` | 105 | 2 | 1 |
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
-| `ui/add-fanfic-setting-modal.ts` | 526 | 1 | 1 |
+| `ui/add-fanfic-setting-modal.ts` | 715 | 1 | 1 |
 | `ui/agent-workbench-view.ts` | 1905 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |

@@ -26,6 +26,16 @@ import {
 } from '@/shared/canon-source';
 import { applyFanficReviewMeta, auditFanficSettings } from '@/shared/fanfic-audit';
 import { FanficReviewModal } from './fanfic-review-modal';
+import { retrieve } from '@/engine/rag/retrieval-service';
+import {
+    buildKnowledgeDraftPrompt,
+    buildVerificationPrompt,
+    parseVerificationReport,
+    verdictOf,
+    applyVerificationMeta,
+    verificationVerdictLabel,
+    type KnowledgeMaterial,
+} from '@/services/fanfic-knowledge-draft';
 
 import { createLogger } from '@/shared/logger';
 
@@ -109,6 +119,26 @@ export class AddFanficSettingModal extends Modal {
                 return;
             }
             await this.generateFanficSetting(workName, workType, author);
+        };
+
+        // v4.83.1 新流程：知识库拆解素材 → 生成草稿 → 联网验证 → 写入 _待审核
+        const knowledgeButton = contentEl.createEl('button', {
+            text: '🧠 从知识库生成并联网验证',
+            cls: 'nw-btn nw-btn-secondary',
+            attr: {
+                title: '用知识库里已拆解的参考书内容生成设定草稿，再用联网检索来源逐条核对；'
+                    + '结论会写进草稿的审核 meta，之后仍要在审核页人工通过',
+            },
+        });
+        knowledgeButton.onclick = async () => {
+            const workName = nameInput.value.trim();
+            const workType = typeInput.value.trim();
+            const author = authorInput.value.trim();
+            if (!workName) {
+                new Notice('❌ 请输入作品名称', 5000);
+                return;
+            }
+            await this.generateFromKnowledgeAndVerify(workName, workType, author);
         };
 
         if (this.project) {
@@ -416,6 +446,165 @@ export class AddFanficSettingModal extends Modal {
         };
     }
 
+    /**
+     * 从知识库拆解素材生成草稿，再用联网检索来源验证（v4.83.1）。
+     *
+     * 流程：检索知识库 → 生成草稿 → 联网检索来源 → 逐条核对 → 写入 _待审核。
+     * 验证结论只写进 meta，**不自动通过审核**——人工审核仍是唯一放行口。
+     *
+     * @param workName - 原作名
+     * @param workType - 作品类型
+     * @param author - 作者
+     */
+    private async generateFromKnowledgeAndVerify(workName: string, workType: string, author: string): Promise<void> {
+        if (!this.project) {
+            new Notice('请先打开一个项目；生成草稿必须进入项目待审核目录', 6000);
+            return;
+        }
+        if (!this.plugin.hasAiCredentials) {
+            new Notice('❌ 请先配置 API 密钥或本地模型端点', 5000);
+            return;
+        }
+        const store = this.plugin.knowledgeVectorStore;
+        if (!store) {
+            new Notice('❌ 知识库未初始化：请先在知识库拆解至少一本书，再回来生成', 8000);
+            return;
+        }
+
+        const notice = new Notice('⏳ 正在检索知识库素材…', 0);
+        try {
+            // 1) 检索知识库：用原作名做查询，覆盖全部已拆解书（不限定参考书范围）
+            const retrieval = await retrieve(store, {
+                queryText: `${workName} ${workType} ${author} 世界观 力量体系 人物 设定`.trim(),
+                topN: 12,
+                maxChars: 9000,
+            });
+            const materials: KnowledgeMaterial[] = retrieval.hits.map(hit => ({
+                bookName: hit.bookName,
+                dimension: hit.dimension,
+                sample: hit.sample,
+                score: hit.score,
+            }));
+            if (materials.length === 0) {
+                notice.hide();
+                showWarningNotice(
+                    '知识库里没有检索到可用素材。请先在知识库拆解与这部作品相关的参考书'
+                    + (retrieval.error ? `（检索错误：${retrieval.error}）` : ''),
+                    { timeout: 10000 },
+                );
+                return;
+            }
+
+            // 2) 用素材生成草稿
+            notice.setMessage(`⏳ 已取到 ${materials.length} 条素材，正在生成草稿…`);
+            const skeleton = buildFanficSettingsContent({
+                workName,
+                workType: workType || '（待补充）',
+                author: author || '未知',
+                worldviewType: '（待核实：知识库素材未覆盖）',
+                powerSystem: '（待核实：知识库素材未覆盖）',
+                coreRules: '（待核实：知识库素材未覆盖）',
+                mustFollow: '（待核实：知识库素材未覆盖）',
+                adaptScope: '（待核实：知识库素材未覆盖）',
+                redlines: '（待核实：知识库素材未覆盖）',
+            });
+            const draftPrompt = buildKnowledgeDraftPrompt(workName, skeleton, materials);
+            const draftResult = await this.aiEngine.callAI(draftPrompt.system, draftPrompt.user, undefined, 0.3, 8192);
+            if (draftResult.error) {
+                notice.hide();
+                showErrorNotice(draftResult.error, { title: '生成失败', timeout: 12000 });
+                return;
+            }
+            if (!draftResult.content.trim()) {
+                notice.hide();
+                showErrorNotice('模型没有返回内容，未保存', { timeout: 8000 });
+                return;
+            }
+
+            // 3) 联网检索来源用于验证（失败不阻断：只跳过验证环节）
+            notice.setMessage('⏳ 草稿已生成，正在联网检索来源做验证…');
+            let sources = this.sources;
+            let sourceError = '';
+            try {
+                const researched = await this.sourceService.research(workName, {
+                    project: this.project,
+                    author,
+                    workType,
+                });
+                if (researched.sources.length > 0) {
+                    sources = this.mergeSources(this.sources, researched.sources);
+                    this.sources = sources;
+                    this.renderSourceList();
+                }
+            } catch (error) {
+                sourceError = error instanceof Error ? error.message : String(error);
+            }
+
+            // 4) 逐条核对
+            notice.setMessage('⏳ 正在用来源逐条核对草稿…');
+            const canonBlock = formatCanonSourcesForPrompt(sources);
+            const verifyPrompt = buildVerificationPrompt(draftResult.content, canonBlock);
+            const verifyResult = await this.aiEngine.callAI(verifyPrompt.system, verifyPrompt.user, undefined, 0.1, 4096);
+            const report = parseVerificationReport(verifyResult.error ? '' : verifyResult.content);
+            const verdict = verdictOf(report);
+
+            // 5) 写 meta 并落盘到 _待审核
+            const withMeta = applyVerificationMeta(draftResult.content, report, sources.length);
+            const pendingContent = applyFanficReviewMeta(withMeta, {
+                '审核状态': 'pending',
+                '来源数量': String(selectAuthoritativeSources(sources).length),
+                '来源哈希': computeCanonSourceHash(sources),
+                '生成时间': new Date().toISOString(),
+            });
+            const targetDir = pjFanficPendingDir(this.project);
+            await mkdirp(this.app, targetDir);
+            const filePath = `${targetDir}/${fanficSettingsFileName(workName)}`;
+            const existing = this.app.vault.getAbstractFileByPath(filePath);
+            if (existing) {
+                const overwrite = window.confirm(`「${filePath}」已存在，覆盖待审核草稿？`);
+                if (!overwrite) {
+                    notice.hide();
+                    return;
+                }
+            }
+            await saveFanficSettingFile(this.app, filePath, pendingContent);
+            notice.hide();
+
+            const lines = [
+                verificationVerdictLabel(verdict),
+                `素材 ${materials.length} 条（来自知识库拆解）`,
+                `验证来源 ${sources.length} 条`,
+            ];
+            if (report.contradicted.length > 0) {
+                lines.push(`矛盾：${report.contradicted.slice(0, 3).join('；')}`);
+            }
+            if (report.unverified.length > 0) {
+                lines.push(`存疑：${report.unverified.slice(0, 3).join('；')}`);
+            }
+            if (sourceError) lines.push(`联网检索失败：${sourceError}（本次未做验证）`);
+            lines.push('草稿已存入「_待审核」，请到审核页人工确认后通过。');
+
+            if (verdict === 'fail') {
+                showWarningNotice(lines.join('\n'), { timeout: 15000 });
+            } else {
+                showSuccessNotice(lines.join('\n'), { timeout: 12000 });
+            }
+        } catch (error) {
+            notice.hide();
+            showErrorNotice(error instanceof Error ? error.message : String(error), {
+                title: '从知识库生成失败',
+                timeout: 12000,
+            });
+        }
+    }
+
+    /**
+     * 依据联网检索到的官方来源生成同人设定草稿（原有流程，v4.83.1 前既有）。
+     *
+     * @param workName - 原作名
+     * @param workType - 作品类型
+     * @param author - 作者
+     */
     private async generateFanficSetting(workName: string, workType: string, author: string): Promise<void> {
         if (!this.project) {
             new Notice('请先打开一个项目；生成草稿必须进入项目待审核目录', 6000);
