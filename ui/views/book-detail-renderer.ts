@@ -15,6 +15,14 @@ import {
     sortTensionPoints,
     topCentralityBars,
 } from './book-detail-logic';
+import {
+    buildFiveSensesRadarData,
+    resolveSenseLabel,
+    buildSentenceTypeDonutData,
+    buildSentenceLengthBarData,
+    buildParagraphLengthBarData,
+    buildStyleScoreLines,
+} from './book-style-logic';
 import type { DeconstructionScheduler, BreakdownDimension, DimensionQualityScore } from '@/engine/deconstruction-scheduler';
 import type {
     StyleData,
@@ -195,9 +203,9 @@ export class BookDetailRenderer {
                 });
                 scoresCard.createEl('div', { text: '文风评分', cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-8px' });
                 const scoreList = scoresCard.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-4px' });
-                Object.entries(overallStyle.styleScores).slice(0, 5).forEach(([style, score]) => {
+                buildStyleScoreLines(overallStyle.styleScores, score => formatDetailPercent(score)).forEach(line => {
                     scoreList.createEl('div', {
-                        text: `${style}: ${formatDetailPercent(score)}`,
+                        text: line,
                         cls: 'nw-u-fs-12px'
                     });
                 });
@@ -226,15 +234,9 @@ export class BookDetailRenderer {
 
         if (data.fiveSenses) {
             const fs = data.fiveSenses;
-            if (fs.distribution && Object.keys(fs.distribution).length >= 3) {
-                const senseNameMap: Record<string, string> = {
-                    visual: '视觉', auditory: '听觉', olfactory: '嗅觉', gustatory: '味觉', tactile: '触觉'
-                };
+            const radarData = buildFiveSensesRadarData(fs);
+            if (radarData.length > 0) {
                 const section = this.createDetailSection(container, '五感描写分布');
-                const radarData = Object.entries(fs.distribution).map(([k, v]) => ({
-                    label: senseNameMap[k] || k,
-                    value: Math.min(100, v * 100)
-                }));
                 const radarDiv = section.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
                 this.renderChart(radarDiv, radarChart(radarData, { size: 300, title: '五感雷达图' }));
 
@@ -243,19 +245,13 @@ export class BookDetailRenderer {
                 });
                 this.addInfoItem(statsRow, '平衡度', formatDetailNumber(fs.balanceScore, 1, '分'));
                 this.addInfoItem(statsRow, '级别', fs.level);
-                this.addInfoItem(statsRow, '主导感', senseNameMap[fs.dominantSense] || fs.dominantSense);
+                this.addInfoItem(statsRow, '主导感', resolveSenseLabel(fs.dominantSense));
             }
         }
 
         if (data.sentenceRhythm?.sentenceTypeDistribution) {
             const std = data.sentenceRhythm.sentenceTypeDistribution;
-            const typeNameMap: Record<string, string> = {
-                declarative: '陈述句', interrogative: '疑问句', exclamatory: '感叹句', elliptical: '省略句'
-            };
-            const donutData = Object.entries(std).map(([k, v]) => ({
-                label: typeNameMap[k] || k,
-                value: v
-            }));
+            const donutData = buildSentenceTypeDonutData(std);
             const section = this.createDetailSection(container, '句式类型分布');
             const chartDiv = section.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
             this.renderChart(chartDiv, donutChart(donutData, { size: 260, title: '句式类型' }));
@@ -263,8 +259,7 @@ export class BookDetailRenderer {
 
         if (data.sentenceRhythm?.lengthDistribution) {
             const sld = data.sentenceRhythm.lengthDistribution;
-            const sdNameMap: Record<string, string> = { short: '短句', medium: '中句', long: '长句' };
-            const barData = Object.entries(sld).map(([k, v]) => ({ label: sdNameMap[k] || k, value: v }));
+            const barData = buildSentenceLengthBarData(sld);
             const section = this.createDetailSection(container, '句长分布');
             const chartDiv = section.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
             this.renderChart(chartDiv, barChart(barData, { width: 400, height: 180, title: '句长分布' }));
@@ -272,8 +267,7 @@ export class BookDetailRenderer {
 
         if (data.paragraphStructure?.lengthDistribution) {
             const pld = data.paragraphStructure.lengthDistribution;
-            const pdNameMap: Record<string, string> = { short: '短段', medium: '中段', long: '长段', veryLong: '超长段' };
-            const barData = Object.entries(pld).map(([k, v]) => ({ label: pdNameMap[k] || k, value: v }));
+            const barData = buildParagraphLengthBarData(pld);
             const section = this.createDetailSection(container, '段落长度分布');
             const chartDiv = section.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
             this.renderChart(chartDiv, barChart(barData, { width: 400, height: 180, title: '段落长度' }));
