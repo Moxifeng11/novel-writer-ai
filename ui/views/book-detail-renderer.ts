@@ -6,6 +6,15 @@ import { SmartChart } from '@/ui/components/smart-chart';
 import { createEmptyState } from '@/ui/components/empty-state';
 import { createLogger } from '@/shared/logger';
 import { formatDetailCount, formatDetailNumber, formatDetailPercent } from '@/ui/knowledge-detail-format';
+import {
+    buildQualityRadarData,
+    buildQualityScoreRows,
+    buildScoreBars,
+    sortCharactersByImportance,
+    sortSuggestionsBySeverity,
+    sortTensionPoints,
+    topCentralityBars,
+} from './book-detail-logic';
 import type { DeconstructionScheduler, BreakdownDimension, DimensionQualityScore } from '@/engine/deconstruction-scheduler';
 import type {
     StyleData,
@@ -508,14 +517,7 @@ export class BookDetailRenderer {
             this.addInfoItem(statsRow, '波形分', formatDetailNumber(tc.waveformScore, 1));
 
             if (tc.peaks && tc.valleys) {
-                const linePoints = [
-                    ...tc.peaks.map(p => ({ label: `C${p.chapterIndex}`, value: p.intensity })),
-                    ...tc.valleys.map(v => ({ label: `C${v.chapterIndex}`, value: v.intensity }))
-                ].sort((a, b) => {
-                    const aNum = parseInt(a.label.replace('C', ''), 10);
-                    const bNum = parseInt(b.label.replace('C', ''), 10);
-                    return aNum - bNum;
-                });
+                const linePoints = sortTensionPoints(tc.peaks, tc.valleys);
                 const lineDiv = section.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
                 this.renderChart(lineDiv, lineChart([{ name: '张力', data: linePoints, showPoints: true }], { width: 600, height: 200, title: '张力峰谷' }));
             }
@@ -1013,17 +1015,7 @@ export class BookDetailRenderer {
         const radarCard = wrap.createDiv({
             cls: 'nw-u-flex-1 nw-u-minw-320px nw-u-d-flex nw-u-jc-center'
         });
-        const radarData = [
-            { label: '人设', value: qs.character },
-            { label: '伏笔', value: qs.foreshadow },
-            { label: '技巧', value: qs.technique },
-            { label: '风格', value: qs.style },
-            { label: '节奏', value: qs.rhythm },
-            { label: '结构', value: qs.structure },
-            { label: '商业', value: qs.commercial ?? 0 },
-            { label: '可读', value: qs.readability ?? 0 },
-        ];
-        this.renderChart(radarCard, radarChart(radarData, { size: 300, title: '质量雷达图 (8维)' }));
+        this.renderChart(radarCard, radarChart(buildQualityRadarData(qs), { size: 300, title: '质量雷达图 (8维)' }));
 
         const scoresCard = wrap.createDiv({
             cls: 'nw-u-flex-1 nw-u-minw-200px'
@@ -1038,17 +1030,7 @@ export class BookDetailRenderer {
         });
         overall.createDiv({ text: '综合评分', cls: 'nw-u-fs-13px nw-u-c-text-muted nw-u-margintop-4px' });
 
-        const scores = [
-            { name: '人设', value: qs.character },
-            { name: '伏笔', value: qs.foreshadow },
-            { name: '技巧', value: qs.technique },
-            { name: '风格', value: qs.style },
-            { name: '节奏', value: qs.rhythm },
-            { name: '结构', value: qs.structure },
-            { name: '商业', value: qs.commercial, optional: true },
-            { name: '可读', value: qs.readability, optional: true },
-        ];
-        scores.forEach(s => {
+        buildQualityScoreRows(qs).forEach(s => {
             const item = scoresCard.createDiv({ cls: 'nw-u-marginbottom-10px' });
             const top = item.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-marginbottom-4px' });
             top.createSpan({ text: s.name, cls: 'nw-u-fs-12px nw-u-c-text-normal' });
@@ -1082,9 +1064,7 @@ export class BookDetailRenderer {
 
         this.renderQualityScoreCard(container, data as unknown as Record<string, unknown>);
 
-        const sortedChars = [...data.characters].sort((a, b) =>
-            (b.importance?.totalScore ?? 0) - (a.importance?.totalScore ?? 0)
-        );
+        const sortedChars = sortCharactersByImportance(data.characters);
 
         const book = this.deps.getCurrentBook();
         if (book) {
@@ -1526,13 +1506,8 @@ export class BookDetailRenderer {
         }
 
         if (data.networkCentrality?.centrality && data.networkCentrality.centrality.length > 0) {
-            const centralityList = [...data.networkCentrality.centrality]
-                .sort((a, b) => b.pagerank - a.pagerank);
             const section = this.createDetailSection(container, '角色中心度排名 (PageRank)');
-            const barData = centralityList.slice(0, 10).map(c => ({
-                label: c.characterName,
-                value: c.pagerank
-            }));
+            const barData = topCentralityBars(data.networkCentrality.centrality);
             const chartDiv = section.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
             this.renderChart(chartDiv, barChart(barData, { width: 500, height: 220, horizontal: true, title: 'PageRank 中心度' }));
         }
@@ -1809,12 +1784,7 @@ export class BookDetailRenderer {
                         goldenFinger: '金手指',
                         chapterHooks: '章节钩子'
                     };
-                    const barData = Object.entries(gtc.subScores)
-                        .filter(([, v]) => v !== undefined)
-                        .map(([k, v]) => ({
-                            label: subLabels[k] || k,
-                            value: (v as number) * 100
-                        }));
+                    const barData = buildScoreBars(gtc.subScores, subLabels);
                     if (barData.length > 0) {
                         const barDiv = section.createDiv({
                             cls: 'nw-u-d-flex nw-u-jc-center'
@@ -1826,10 +1796,7 @@ export class BookDetailRenderer {
 
             if (gtc.improvementSuggestions && gtc.improvementSuggestions.length > 0) {
                 const suggSection = this.createDetailSection(container, '改进建议');
-                const severityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
-                const sortedSuggestions = [...gtc.improvementSuggestions].sort((a, b) =>
-                    (severityOrder[a.severity] ?? 99) - (severityOrder[b.severity] ?? 99)
-                );
+                const sortedSuggestions = sortSuggestionsBySeverity(gtc.improvementSuggestions);
                 const list = suggSection.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-8px' });
                 const severityColors: Record<string, string> = {
                     high: 'var(--color-red)',
@@ -2014,10 +1981,7 @@ export class BookDetailRenderer {
 
             if (st.suggestions && st.suggestions.length > 0) {
                 const suggSection = this.createDetailSection(container, '改进建议');
-                const severityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
-                const sortedSuggestions = [...st.suggestions].sort((a, b) =>
-                    (severityOrder[a.severity] ?? 99) - (severityOrder[b.severity] ?? 99)
-                );
+                const sortedSuggestions = sortSuggestionsBySeverity(st.suggestions);
                 const list = suggSection.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-8px' });
                 const severityColors: Record<string, string> = {
                     high: 'var(--color-red)',
