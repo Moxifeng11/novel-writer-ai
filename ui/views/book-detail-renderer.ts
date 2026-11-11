@@ -23,6 +23,15 @@ import {
     buildParagraphLengthBarData,
     buildStyleScoreLines,
 } from './book-style-logic';
+import {
+    buildForeshadowDonutData,
+    buildForeshadowQualityItems,
+    buildForeshadowStatItems,
+    FORESHADOW_FILTER_OPTIONS,
+    foreshadowImportanceTier,
+    FORESHADOW_IMPORTANCE_STYLES,
+    resolveForeshadowTypeLabel,
+} from './book-foreshadow-logic';
 import type { DeconstructionScheduler, BreakdownDimension, DimensionQualityScore } from '@/engine/deconstruction-scheduler';
 import type {
     StyleData,
@@ -1550,13 +1559,7 @@ export class BookDetailRenderer {
             const scoreGrid = scoreSection.createDiv({
                 cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-4 nw-u-gap-10px'
             });
-            const scoreItems = [
-                { label: '综合评分', value: `${qualityScore.totalScore}分`, color: 'var(--interactive-accent)' },
-                { label: '类型多样性', value: `${qualityScore.diversityScore}%`, color: '#2ecc71' },
-                { label: '回收率', value: `${qualityScore.resolutionRate}%`, color: '#f59e0b' },
-                { label: '信噪比', value: `${qualityScore.signalNoiseRatio}%`, color: '#9b59b6' },
-                { label: '覆盖度', value: `${qualityScore.coverageScore}%`, color: '#3b82f6' },
-            ];
+            const scoreItems = buildForeshadowQualityItems(qualityScore);
             scoreItems.forEach(item => {
                 const card = scoreGrid.createDiv({
                     cls: 'nw-u-p-12px nw-u-ta-center nw-u-bg-background-secondary nw-u-brd-6px'
@@ -1573,10 +1576,7 @@ export class BookDetailRenderer {
         const statsSection = this.createDetailSection(container, '伏笔统计');
         
         if (stats) {
-            const donutData = [
-                { label: '已回收', value: stats.resolvedCount, color: '#2ecc71' },
-                { label: '未回收', value: stats.unresolvedCount, color: '#f59e0b' },
-            ];
+            const donutData = buildForeshadowDonutData(stats);
             const donutDiv = statsSection.createDiv({
                 cls: 'nw-u-d-flex nw-u-jc-center nw-u-marginbottom-16px'
             });
@@ -1585,12 +1585,7 @@ export class BookDetailRenderer {
             const statsGrid = statsSection.createDiv({
                 cls: 'nw-u-d-grid nw-u-gtc-repeat-4-1fr nw-u-gap-12px'
             });
-            const statItems = [
-                { label: '总伏笔数', value: stats.totalForeshadows, color: 'var(--interactive-accent)' },
-                { label: '已回收', value: stats.resolvedCount, color: '#2ecc71' },
-                { label: '未回收', value: stats.unresolvedCount, color: '#f59e0b' },
-                { label: '平均重要度', value: formatDetailPercent(stats.avgImportance), color: '#9b59b6' },
-            ];
+            const statItems = buildForeshadowStatItems(stats, v => formatDetailPercent(v));
             statItems.forEach(item => {
                 const card = statsGrid.createDiv({
                     cls: 'nw-u-p-14px nw-u-ta-center nw-u-bg-background-secondary nw-u-brd-8px'
@@ -1609,18 +1604,11 @@ export class BookDetailRenderer {
             const typeGrid = typeSection.createDiv({
                 cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-5 nw-u-gap-8px'
             });
-            const typeLabels: Record<string, string> = {
-                'item': '物品伏笔',
-                'skill': '功法伏笔',
-                'character': '人物伏笔',
-                'setting': '设定伏笔',
-                'event': '事件伏笔',
-            };
             Object.entries(typeDistribution).forEach(([type, count]) => {
                 typeGrid.createDiv({
                     cls: 'nw-u-p-10px nw-u-ta-center nw-u-bg-background-secondary nw-u-brd-6px'
                 }).createDiv({
-                    text: `${typeLabels[type] || type}：${count}`,
+                    text: `${resolveForeshadowTypeLabel(type)}：${count}`,
                     cls: 'nw-u-fs-12px'
                 });
             });
@@ -1632,11 +1620,7 @@ export class BookDetailRenderer {
         const filterRow = listSection.createDiv({
             cls: 'nw-u-d-flex nw-u-gap-8px nw-u-marginbottom-12px nw-u-fwr-wrap'
         });
-        const filterOptions: { value: string; label: string }[] = [
-            { value: 'all', label: '全部' },
-            { value: 'resolved', label: '已回收' },
-            { value: 'unresolved', label: '未回收' },
-        ];
+        const filterOptions = FORESHADOW_FILTER_OPTIONS;
         const currentFilter = this.deps.getForeshadowFilter() || 'all';
 
         filterOptions.forEach(opt => {
@@ -1682,15 +1666,8 @@ export class BookDetailRenderer {
             content.createDiv({ text: item.name, cls: 'nw-u-fs-13px nw-u-fwt-500 nw-u-marginbottom-4px' });
             const meta = content.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-ai-center nw-u-fwr-wrap' });
             
-            const typeLabels: Record<string, string> = {
-                'item': '物品伏笔',
-                'skill': '功法伏笔',
-                'character': '人物伏笔',
-                'setting': '设定伏笔',
-                'event': '事件伏笔',
-            };
             meta.createSpan({
-                text: typeLabels[item.type] || item.type,
+                text: resolveForeshadowTypeLabel(item.type),
                 cls: 'nw-u-p-2px-8px nw-u-fs-11px nw-u-bg-background-secondary nw-u-brd-10px nw-u-c-text-muted'
             });
 
