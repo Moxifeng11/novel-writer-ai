@@ -969,13 +969,57 @@ const DEFAULT_PLUGIN_ROOT_DIR = '.obsidian/plugins/novel-writer-ai';
 let pluginRootDir = DEFAULT_PLUGIN_ROOT_DIR;
 
 /**
+ * 判断原始输入是不是绝对路径/盘符/带协议（S3-16）。
+ *
+ * 必须在「去前导斜杠」之前判定：`/etc` 清洗后会变成相对路径 `etc`，
+ * 先清洗再判定就会把绝对路径静默当成 vault 内相对目录。
+ *
+ * @param raw - 用户/清单提供的原始目录串
+ * @returns 是否为绝对形态（应直接拒绝）
+ */
+function isAbsoluteDirInput(raw: string): boolean {
+    const text = String(raw || '').trim().replace(/\\/g, '/');
+    if (!text) return false;
+    if (text.startsWith('/')) return true; // 含 `//server/share` UNC
+    if (/^[a-zA-Z]:/.test(text)) return true;
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(text)) return true;
+    return false;
+}
+
+/**
+ * 判断是否可安全拼接的 vault 相对目录（S3-16）。
+ *
+ * 拒绝：盘符（`C:`）、绝对路径（`/`、`\\`、`//`）、带协议（`file://`）、
+ * 控制字符、空段与 `.` / `..` 段。`manifest.dir` 来自插件清单，可能被同步数据或
+ * 篡改的安装包污染，单点越界会写穿到 vault 之外。
+ *
+ * @param dir - 待判定的目录（已做斜杠归一与首尾去斜杠）
+ * @returns 是否可安全使用
+ */
+function isSafeVaultRelativeDir(dir: string): boolean {
+    if (!dir) return false;
+    if (/^[a-zA-Z]:/.test(dir)) return false;
+    if (dir.startsWith('/')) return false;
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(dir)) return false;
+    if (/[\u0000-\u001f\u007f]/.test(dir)) return false;
+    for (const segment of dir.split('/')) {
+        if (!segment || segment === '.' || segment === '..') return false;
+    }
+    return true;
+}
+
+/**
  * setPluginRootDir：注入插件实际根目录（`configDir` + `manifest.dir`），onload 时调用一次。
+ *
+ * S3-16：非法目录（盘符/绝对路径/`..` 段）直接忽略，保留上一次的合法值，
+ * 避免被污染的 `manifest.dir` 把插件写盘根目录带到 vault 之外。
  *
  * @param dir - vault 相对的插件根目录，如 `.obsidian/plugins/novel-writer-ai`
  */
 export function setPluginRootDir(dir: string): void {
+    if (isAbsoluteDirInput(dir)) return;
     const cleaned = dir.trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
-    if (cleaned) pluginRootDir = cleaned;
+    if (isSafeVaultRelativeDir(cleaned)) pluginRootDir = cleaned;
 }
 
 /**
@@ -997,11 +1041,17 @@ export function setPluginRootDir(dir: string): void {
  * // => '.obsidian/plugins/novel-writer-ai'
  */
 export function resolvePluginRootDir(configDir: string, manifestDir: string): string {
+    // S3-16：绝对形态必须在清洗前拒绝，否则 `/etc` 会被剥成相对路径 `etc`
+    if (isAbsoluteDirInput(configDir) || isAbsoluteDirInput(manifestDir)) return pluginRootDir;
     const config = String(configDir || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
     const dir = String(manifestDir || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
     if (!dir) return pluginRootDir;
-    if (!config || dir === config || dir.startsWith(`${config}/`)) return dir;
-    return `${config}/${dir}`;
+    // S3-16：被污染的 manifest.dir（`..`/绝对路径/盘符）不得成为写盘根目录
+    if (!isSafeVaultRelativeDir(config)) return pluginRootDir;
+    if (!isSafeVaultRelativeDir(dir)) return pluginRootDir;
+    if (dir === config || dir.startsWith(`${config}/`)) return dir;
+    const joined = `${config}/${dir}`;
+    return isSafeVaultRelativeDir(joined) ? joined : pluginRootDir;
 }
 
 /**
@@ -1430,14 +1480,25 @@ export const ROLLBACK_HISTORY_FILE = 'rollback-history.json';
 export function pjVersionsDir(project: string): string { return `${project}/${PROJECT_VERSIONS_DIR}`; }
 
 /**
+ * 允许进入版本目录的内容类型白名单（S3-16）。
+ *
+ * `contentType` 会直接拼进写盘路径；旧实现不校验，传 `../../evil` 即可越界。
+ * 与 `shared/version-types.ts` 的 `ContentType` 联合类型保持一致。
+ */
+const SAFE_CONTENT_TYPES = new Set(['chapter', 'outline', 'worldview', 'character', 'setting']);
+
+/**
  * 某内容类型的版本目录
+ *
+ * S3-16：非白名单值回退 `chapter`，保证返回值始终落在版本目录内。
  *
  * @param project - 项目（路径或对象）
  * @param contentType - 内容类型
  * @returns 文本结果
  */
 export function pjContentTypeVersionsDir(project: string, contentType: string): string {
-    return `${pjVersionsDir(project)}/${contentType}`;
+    const safeType = SAFE_CONTENT_TYPES.has(contentType) ? contentType : 'chapter';
+    return `${pjVersionsDir(project)}/${safeType}`;
 }
 
 /**

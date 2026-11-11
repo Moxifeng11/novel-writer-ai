@@ -76,6 +76,24 @@ function cacheFilePath(): string {
 }
 
 /**
+ * 缓存动态键的黑名单（S3-16）。
+ *
+ * `obj['__proto__'] = value` 是「设置原型」而非创建自有属性，即便读取侧用了
+ * hasOwnProperty，写入侧仍会改写原型链。`constructor` / `prototype` 同理。
+ */
+const UNSAFE_CACHE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/**
+ * 动态键是否可安全作为缓存的普通属性写入。
+ *
+ * @param key - 项目名或文件路径
+ * @returns 是否为安全键
+ */
+function isSafeCacheKey(key: string): boolean {
+    return typeof key === 'string' && key.length > 0 && !UNSAFE_CACHE_KEYS.has(key);
+}
+
+/**
  * PluginCacheManager 类。
  */
 export class PluginCacheManager {
@@ -176,9 +194,12 @@ export class PluginCacheManager {
       * @returns ProjectEntityCache 或 undefined
      */
     getEntityCache(project: string): ProjectEntityCache | undefined {
-        return this.data.entityMetadata?.[project];
+        const map = this.data.entityMetadata;
+        // S3-16：动态键必须走 own property，否则 project="__proto__"/"constructor"
+        // 会读到 Object.prototype 上的成员并当成缓存条目返回。
+        if (!map || !Object.prototype.hasOwnProperty.call(map, project)) return undefined;
+        return map[project];
     }
-
     /**
      * 获取单个实体的缓存条目
      *
@@ -187,7 +208,9 @@ export class PluginCacheManager {
       * @returns EntityCacheEntry 或 undefined
      */
     getEntityEntry(project: string, filePath: string): EntityCacheEntry | undefined {
-        return this.data.entityMetadata?.[project]?.entities[filePath];
+        const cache = this.getEntityCache(project);
+        if (!cache || !cache.entities || !Object.prototype.hasOwnProperty.call(cache.entities, filePath)) return undefined;
+        return cache.entities[filePath];
     }
 
     /**
@@ -206,22 +229,25 @@ export class PluginCacheManager {
         frontmatter: Record<string, unknown>,
         entityType: string,
     ): void {
+        if (!isSafeCacheKey(project) || !isSafeCacheKey(filePath)) return;
         if (!this.data.entityMetadata) {
             this.data.entityMetadata = {};
         }
-        if (!this.data.entityMetadata[project]) {
+        // S3-16：`__proto__` 等键不能作为普通 own property 写入
+        if (!Object.prototype.hasOwnProperty.call(this.data.entityMetadata, project)) {
             this.data.entityMetadata[project] = {
                 updatedAt: new Date().toISOString(),
                 entities: {},
             };
         }
-        this.data.entityMetadata[project].entities[filePath] = {
+        const projectCache = this.data.entityMetadata[project];
+        projectCache.entities[filePath] = {
             path: filePath,
             mtime,
             frontmatter,
             entityType,
         };
-        this.data.entityMetadata[project].updatedAt = new Date().toISOString();
+        projectCache.updatedAt = new Date().toISOString();
         this.save();
     }
 
@@ -235,24 +261,27 @@ export class PluginCacheManager {
         project: string,
         entries: Array<{ path: string; mtime: number; frontmatter: Record<string, unknown>; entityType: string }>,
     ): void {
+        if (!isSafeCacheKey(project)) return;
         if (!this.data.entityMetadata) {
             this.data.entityMetadata = {};
         }
-        if (!this.data.entityMetadata[project]) {
+        if (!Object.prototype.hasOwnProperty.call(this.data.entityMetadata, project)) {
             this.data.entityMetadata[project] = {
                 updatedAt: new Date().toISOString(),
                 entities: {},
             };
         }
+        const projectCache = this.data.entityMetadata[project];
         for (const entry of entries) {
-            this.data.entityMetadata[project].entities[entry.path] = {
+            if (!isSafeCacheKey(entry.path)) continue;
+            projectCache.entities[entry.path] = {
                 path: entry.path,
                 mtime: entry.mtime,
                 frontmatter: entry.frontmatter,
                 entityType: entry.entityType,
             };
         }
-        this.data.entityMetadata[project].updatedAt = new Date().toISOString();
+        projectCache.updatedAt = new Date().toISOString();
         this.save();
     }
 
@@ -263,7 +292,7 @@ export class PluginCacheManager {
      * @param existingPaths - 已有路径
      */
     cleanupEntityCache(project: string, existingPaths: Set<string>): void {
-        const projCache = this.data.entityMetadata?.[project];
+        const projCache = this.getEntityCache(project);
         if (!projCache) return;
         let changed = false;
         for (const path of Object.keys(projCache.entities)) {
@@ -284,8 +313,9 @@ export class PluginCacheManager {
      * @param project - 项目（路径或对象）
      */
     clearEntityCache(project: string): void {
-        if (this.data.entityMetadata?.[project]) {
-            delete this.data.entityMetadata[project];
+        const map = this.data.entityMetadata;
+        if (map && Object.prototype.hasOwnProperty.call(map, project)) {
+            delete map[project];
             this.save();
         }
     }

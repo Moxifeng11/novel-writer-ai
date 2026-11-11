@@ -7,11 +7,11 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137699 | 1728 | 1418 | 82% |
-| `services/` | 32 | 13429 | 194 | 154 | 79% |
-| `shared/` | 195 | 43013 | 1687 | 1378 | 82% |
-| `core/` | 7 | 2902 | 32 | 17 | 53% |
+| `services/` | 32 | 13402 | 193 | 153 | 79% |
+| `shared/` | 196 | 43178 | 1689 | 1380 | 82% |
+| `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99974 | 754 | 649 | 86% |
+| `ui/` | 242 | 99995 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -22,7 +22,7 @@
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 550 | 4 | 2 |
-| `core/settings-service.ts` | 569 | 5 | 4 |
+| `core/settings-service.ts` | 580 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
@@ -356,7 +356,7 @@
 | `engine/writing-quality-engine.ts` | 1376 | 14 | 13 |
 | `services/api-connectivity-service.ts` | 317 | 8 | 8 |
 | `services/backup-center-service.ts` | 182 | 4 | 1 |
-| `services/canon-research-service.ts` | 521 | 8 | 8 |
+| `services/canon-research-service.ts` | 475 | 7 | 7 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
 | `services/chapter-version-service.ts` | 739 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
@@ -378,7 +378,7 @@
 | `services/rules-registry.ts` | 146 | 7 | 5 |
 | `services/rules-service.ts` | 280 | 3 | 2 |
 | `services/synopsis-store.ts` | 332 | 5 | 5 |
-| `services/update-checker.ts` | 591 | 9 | 2 |
+| `services/update-checker.ts` | 610 | 9 | 2 |
 | `services/usage-ledger.ts` | 395 | 13 | 5 |
 | `services/vector-rebuild-service.ts` | 141 | 8 | 8 |
 | `services/worker-manager.ts` | 569 | 1 | 1 |
@@ -484,10 +484,10 @@
 | `shared/novel-format.ts` | 348 | 12 | 12 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1561 | 203 | 197 |
+| `shared/paths.ts` | 1622 | 203 | 197 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
-| `shared/plugin-cache.ts` | 409 | 6 | 4 |
+| `shared/plugin-cache.ts` | 439 | 6 | 4 |
 | `shared/plugin-capabilities.ts` | 98 | 4 | 1 |
 | `shared/plugin-data-migration.ts` | 120 | 3 | 1 |
 | `shared/plugin-leaves.ts` | 34 | 2 | 1 |
@@ -497,6 +497,7 @@
 | `shared/preview-kind.ts` | 37 | 2 | 2 |
 | `shared/preview-scroll.ts` | 59 | 4 | 3 |
 | `shared/previous-chapter-window.ts` | 140 | 11 | 9 |
+| `shared/private-host.ts` | 61 | 1 | 1 |
 | `shared/progress-emitter.ts` | 551 | 5 | 1 |
 | `shared/project-catalog.ts` | 183 | 7 | 7 |
 | `shared/project-mode.ts` | 86 | 5 | 5 |
@@ -526,7 +527,7 @@
 | `shared/rhythm-intent.ts` | 48 | 2 | 2 |
 | `shared/scene-body-merge.ts` | 24 | 2 | 2 |
 | `shared/scene-card.ts` | 241 | 9 | 8 |
-| `shared/secret-display.ts` | 131 | 7 | 4 |
+| `shared/secret-display.ts` | 144 | 8 | 5 |
 | `shared/secret-redaction.ts` | 156 | 6 | 5 |
 | `shared/secret-value.ts` | 31 | 2 | 2 |
 | `shared/serialized-writer.ts` | 199 | 3 | 3 |
@@ -742,7 +743,7 @@
 | `ui/onboarding-modal.ts` | 300 | 1 | 1 |
 | `ui/outline-expand-modal.ts` | 880 | 2 | 1 |
 | `ui/panel-resizer.ts` | 260 | 4 | 3 |
-| `ui/password-modal.ts` | 145 | 1 | 1 |
+| `ui/password-modal.ts` | 152 | 1 | 1 |
 | `ui/plan-book-modal.ts` | 558 | 1 | 1 |
 | `ui/plot-canvas-modal.ts` | 365 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
@@ -777,7 +778,7 @@
 | `ui/settings/deconstruction-section.ts` | 332 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 289 | 1 | 1 |
-| `ui/settings/general-sections.ts` | 1202 | 6 | 6 |
+| `ui/settings/general-sections.ts` | 1216 | 6 | 6 |
 | `ui/settings/knowledge-section.ts` | 797 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |

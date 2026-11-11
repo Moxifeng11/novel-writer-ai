@@ -1587,6 +1587,10 @@ export default class NovelWriterPlugin extends Plugin {
         settings.vectorDoubaoApiKey = await handle('向量-豆包', settings.vectorDoubaoApiKey || '');
         settings.vectorQwenApiKey = await handle('向量-千问', settings.vectorQwenApiKey || '');
         settings.updateGithubToken = await handle('更新令牌', settings.updateGithubToken || '');
+        // S3-15：考据检索密钥此前漏在重置清单外——口令重置后它仍是旧口令密文，
+        // 导致「考据 Key 永久解不开」。补进统一处理，解不开即清空并提示。
+        settings.canonResearch = settings.canonResearch || { provider: 'manual' };
+        settings.canonResearch.apiKey = await handle('同人考据密钥', settings.canonResearch.apiKey || '');
 
         await this.saveSettings();
         return { reencrypted, cleared };

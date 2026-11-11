@@ -388,6 +388,14 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 }
 
 /**
+ * 深合并时必须拒绝的键（S3-16）。
+ *
+ * `JSON.parse('{"__proto__":{"x":1}}')` 会产生自有属性 `__proto__`，随后
+ * `result["__proto__"] = value` 会替换原型链，造成原型污染与后续越权读取。
+ */
+const PROTO_POLLUTION_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/**
  * D5：设置深合并。
  * - 嵌套对象递归合并，旧配置缺失的字段回落默认值
  * - 数组整体替换（模型列表、自定义提供商等不能按索引合并）
@@ -404,6 +412,9 @@ export function deepMergeSettings<T>(base: T, override: unknown): T {
     }
     const result: Record<string, unknown> = { ...base };
     for (const [key, value] of Object.entries(override)) {
+        // S3-16：JSON.parse 得到的 `"__proto__": {...}` 是自有属性，直接赋值会替换
+        // result 的原型（原型污染）。constructor/prototype 同类风险，一并拒绝。
+        if (PROTO_POLLUTION_KEYS.has(key)) continue;
         if (value === undefined) continue;
         if (value === null && isPlainObject(result[key])) continue;
         result[key] = isPlainObject(result[key]) && isPlainObject(value)

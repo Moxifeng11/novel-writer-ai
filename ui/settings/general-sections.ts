@@ -17,6 +17,7 @@ import { SupportAuthorModal } from '@/ui/support-author-modal';
 import { PromptManagerSettings } from '@/ui/prompt-manager-settings';
 import { RulesService } from '@/services/rules-service';
 import { GITHUB_BRANCH, GITHUB_REPO_SLUG } from '@/shared/github-repo';
+import { isStoredCiphertext } from '@/shared/secret-value';
 import { exportTextFile } from '@/shared/export-file';
 import { OperationConfirmModal } from '@/ui/components/progress';
 import { SettingsSection } from './section-base';
@@ -741,14 +742,23 @@ export class AboutSection extends SettingsSection {
                     text.inputEl.setAttribute('autocomplete', 'new-password');
                     text.inputEl.setAttribute('data-1p-ignore', 'true');
                     text.inputEl.setAttribute('data-lpignore', 'true');
-                    text.setPlaceholder('github_pat_... 或 ghp_...')
-                        .setValue(this.plugin.settings.updateGithubToken || '')
+                    // S3-15：口令未解锁时设置里是 `aes256v2:...` 密文，不能回填成输入值
+                    // （既不安全，也会让用户把密文当令牌再存一次）。此时留空并说明状态。
+                    const storedToken = this.plugin.settings.updateGithubToken || '';
+                    const tokenLocked = isStoredCiphertext(storedToken);
+                    text.setPlaceholder(tokenLocked
+                        ? '已保存（口令未解锁，不显示；输入新值可替换）'
+                        : 'github_pat_... 或 ghp_...')
+                        .setValue(tokenLocked ? '' : storedToken)
                         .onChange(async (value) => {
-                            this.plugin.settings.updateGithubToken = value.trim();
+                            const next = value.trim();
+                            // 空输入且原先已保存密文：视为「未改动」，保留原密文
+                            if (!next && tokenLocked) return;
+                            this.plugin.settings.updateGithubToken = next;
                             await this.plugin.saveSettings();
                             const updateChecker = this.plugin.engineRegistry.getOrNull(ENGINE_NAMES.UPDATE_CHECKER);
                             if (updateChecker) {
-                                updateChecker.updateConfig({ githubToken: value.trim() });
+                                updateChecker.updateConfig({ githubToken: next });
                                 updateChecker.clearCache?.();
                             }
                         });
