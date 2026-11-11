@@ -409,6 +409,27 @@ export class KnowledgeInjector {
         return this.referenceBooks.map(b => b.bookId);
     }
 
+    /**
+     * 本次检索应覆盖的书籍范围。
+     *
+     * **关键语义（v4.83.1）**：`referenceBooks` 为空表示「未手动收窄」，
+     * 此时返回 `undefined`（= 不限制），让检索覆盖**全部已拆解书 + 本项目的考据库**。
+     *
+     * 旧实现把「没勾参考书」当成「不用知识库」，导致用户拆解了一堆书、
+     * 向量明明在库里却完全不被检索——这是「拆解功能没用起来」的直接原因。
+     *
+     * @param context - 注入上下文（提供 projectPath 以定位考据虚拟书）
+     * @returns 书籍 id 列表；undefined 表示不限制
+     */
+    private resolveSearchBookIds(context: InjectionContext): string[] | undefined {
+        const referenceIds = this.getReferenceBookIds();
+        const canonBookId = context.projectPath ? canonBookIdFor(context.projectPath) : '';
+        if (referenceIds.length === 0) return undefined;
+        const ids = [...referenceIds];
+        if (canonBookId && !ids.includes(canonBookId)) ids.push(canonBookId);
+        return ids;
+    }
+
     private detectSceneCategory(text: string): SceneCategory {
         if (!text || text.trim().length === 0) return 'unknown';
         const lowerText = text.toLowerCase();
@@ -604,7 +625,9 @@ export class KnowledgeInjector {
 
         let kbSceneInjection = '';
         try {
-            if (this.knowledgeVectorStore && this.referenceBooks.length > 0) {
+            // v4.83.1：不再要求 referenceBooks 非空——未勾参考书表示「不限制范围」，
+            // 检索全部已拆解书（旧实现直接跳过，等于拆解功能白做）。
+            if (this.knowledgeVectorStore) {
                 const kbStrength = strength * 0.7;
                 kbSceneInjection = await this.buildKbSceneInjection(context, kbStrength);
             }
@@ -698,11 +721,9 @@ export class KnowledgeInjector {
         maxChars: number,
     ): Promise<{ hits: Array<{ sample: string; bookId: string; bookName: string; dimension: string; category?: string; score: number; position?: number }>; error?: string }> {
         // P2：同人考据来源以「canon:<项目>」虚拟书存在向量库里。
-        // 显式传 bookIds 的路径（协同写作/步骤执行）必须把它一起纳入，
-        // 否则考据资料永远进不了正文生成——这正是「设定补充不了」的最后一环。
-        const bookIds = [...this.getReferenceBookIds()];
-        const canonBookId = context.projectPath ? canonBookIdFor(context.projectPath) : '';
-        if (canonBookId && !bookIds.includes(canonBookId)) bookIds.push(canonBookId);
+        // v4.83.1：referenceBooks 为空时不再禁用知识库，而是检索全部已拆解书
+        //（见 resolveSearchBookIds 注释）——否则拆解产物永远进不了正文生成。
+        const bookIds = this.resolveSearchBookIds(context);
         // store.search 对 dimensions 是严格过滤：不把 canon 维度加进来，
         // 考据样本即使写进了向量库也会被过滤掉。
         const searchDimensions = dimensions.includes(CANON_DIMENSION)
@@ -1658,7 +1679,9 @@ export class KnowledgeInjector {
      */
     async injectKnowledgeBase(context: InjectionContext, baseStrength: number = 0.7): Promise<string> {
         if (!this.enabled) return '';
-        if (!this.knowledgeVectorStore || this.referenceBooks.length === 0) return '';
+        // v4.83.1：referenceBooks 为空表示「不限制参考书范围」，不是「禁用知识库」。
+        // 旧实现在这里直接返回空串，用户拆解的书永远用不上。
+        if (!this.knowledgeVectorStore) return '';
 
         const sections: Array<{ title: string; content: string }> = [];
         const sceneCategory = context.sceneType 

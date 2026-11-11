@@ -154,6 +154,11 @@ export async function retrieve(
     const topN = options.topN ?? DEFAULT_TOP_N;
     const maxChars = options.maxChars ?? DEFAULT_MAX_CHARS;
     const minScore = options.minScore ?? DEFAULT_MIN_SCORE;
+    // v4.83.1：`bookIds: []` 语义陷阱——store.search 用
+    // `if (options.bookIds && !options.bookIds.includes(bookId)) continue` 判断，
+    // 空数组是 truthy，于是「一个都不要」，检索结果恒为空。
+    // 这里统一规范化为 undefined（= 不限制，检索全部已加载书）。
+    const bookIds = options.bookIds && options.bookIds.length > 0 ? options.bookIds : undefined;
 
     try {
         // 向量库可能是宿主注入的轻量实现（测试/旧版本只提供 search）：
@@ -169,7 +174,7 @@ export async function retrieve(
             weight: query.weight,
             results: await store.search(query.text, {
                 topN: Math.max(topN, 3),
-                bookIds: options.bookIds,
+                bookIds,
                 dimensions: options.dimensions,
                 filterScope: 'perDimension',
             }),
@@ -207,8 +212,8 @@ export async function retrieve(
             // 未指定参考书的调用方（如 mode-injection）会拿到空数组，
             // `getNeighbors` 里 `for (const bookId of [])` 一次都不循环 →
             // 邻块扩展静默失效且无任何告警。这里在缺省时退化为「已加载的全部书」。
-            const neighborBookIds = options.bookIds && options.bookIds.length > 0
-                ? options.bookIds
+            const neighborBookIds = bookIds && bookIds.length > 0
+                ? bookIds
                 : (typeof store.getLoadedBookIds === 'function' ? store.getLoadedBookIds() : []);
             if (positionsByDimension.size > 0 && neighborBookIds.length > 0 && typeof store.getNeighbors === 'function') {
                 const known = new Set(working.map((hit) => `${hit.bookId}|${hit.dimension}|${hit.position}`));

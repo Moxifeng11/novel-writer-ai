@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 320 | 137924 | 1739 | 1424 | 82% |
+| `engine/` | 320 | 137952 | 1739 | 1424 | 82% |
 | `services/` | 32 | 13573 | 195 | 154 | 79% |
 | `shared/` | 196 | 41264 | 1692 | 1383 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
@@ -187,7 +187,7 @@
 | `engine/heavy-task-worker-manager.ts` | 312 | 2 | 2 |
 | `engine/incremental-result-aggregator.ts` | 1707 | 3 | 3 |
 | `engine/knowledge-base-config.ts` | 509 | 5 | 5 |
-| `engine/knowledge-injector.ts` | 2135 | 13 | 7 |
+| `engine/knowledge-injector.ts` | 2158 | 13 | 7 |
 | `engine/knowledge-tags.ts` | 629 | 2 | 2 |
 | `engine/knowledge-to-fingerprint-converter.ts` | 345 | 1 | 1 |
 | `engine/knowledge-usage.ts` | 80 | 3 | 3 |
@@ -256,7 +256,7 @@
 | `engine/quality/rewrite-prompts.ts` | 258 | 6 | 6 |
 | `engine/quality/rewrite-suggestion-engine.ts` | 611 | 2 | 2 |
 | `engine/quality/rewrite-types.ts` | 235 | 13 | 13 |
-| `engine/rag/retrieval-service.ts` | 293 | 6 | 6 |
+| `engine/rag/retrieval-service.ts` | 298 | 6 | 6 |
 | `engine/relationship-change-queue.ts` | 234 | 7 | 6 |
 | `engine/relationship-engine.ts` | 469 | 12 | 7 |
 | `engine/repository/base-markdown-repository.ts` | 461 | 1 | 1 |
