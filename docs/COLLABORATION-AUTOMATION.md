@@ -72,11 +72,42 @@ TASK-ID: DSH-YYYYMMDD-NN
 
 ## 三、轮询流程（ZCode / Trae 每次触发）
 
+### 3.1 用脚本（推荐，不依赖 MCP 会话）
+
+```bash
+# 看「派给我但我还没回执」的任务（自动配对，已回执的不会再出现）
+node .obsidian/plugins/novel-writer-ai/scripts/mailbox-watch.mjs --me zcode --tasks
+
+# 看未读消息（含进度同步等非任务消息）
+node .obsidian/plugins/novel-writer-ai/scripts/mailbox-watch.mjs --me zcode --once
+
+# 常驻轮询（默认 15s 一次）
+node .obsidian/plugins/novel-writer-ai/scripts/mailbox-watch.mjs --me zcode --interval 30000
+```
+
+脚本特性：
+
+- **根目录自动向上搜索**：找到含 `.trae/mailbox/messages.jsonl` 的目录，插件目录层级变化不会失配
+- **找不到信箱会报错退出（exit 2）**，不会静默返回空
+- `--tasks` 会做任务/回执配对：已回执的任务不再出现，避免重复做
+
+> 2026-11-11 修复了两个真实缺陷（都属于「静默失效」）：
+> ①根目录少上溯一层，指向不存在的 `.obsidian/.trae/mailbox`，
+> 脚本永远报「没有未读」——ZCode/Trae 的轮询此前形同虚设；
+> ②任务 ID 只认 subject 前缀，派发方把 ID 写在正文时任务会静默消失。
+> 两者均已修复并有回归测试（`tests/unit/scripts/mailbox-lib.test.ts`，14 条）。
+
+### 3.2 用 MCP（有 MCP 会话时）
+
 1. `read_messages({ unread_only: true, mark_read: true })`
 2. 筛出 `subject` 以 `[TASK-` 开头、且本地没有对应 `[RECEIPT]` 记录的任务
 3. 执行任务（严格遵守 `范围`）
 4. `send_message({ to: "dsh", subject: "[RECEIPT] <TASK-ID>", body: ... })`
 5. 无任务 → 直接结束本次触发，**不要**发「本轮无任务」的空消息
+
+### 3.3 确认清空
+
+做完后重跑 `--tasks`，输出应为「没有待回执的任务」。
 
 ---
 
