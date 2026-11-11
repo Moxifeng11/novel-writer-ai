@@ -9,8 +9,18 @@
  *    回调宿主（KnowledgeBaseView），保证与抽取前行为完全一致
  */
 
-import type { BookBasicInfo, QualityScores } from '@/services/knowledge-base-manager';
+import type { BookBasicInfo } from '@/services/knowledge-base-manager';
 import { radarChart, barChart, donutChart } from '@/ui/svg-charts';
+import {
+    KB_QUALITY_DIMENSIONS,
+    selectCompletedBooks,
+    buildStatsOverviewCards,
+    computeDimensionAverages,
+    buildGenreBarData,
+    computeStatusCounts,
+    buildStatusDonutData,
+    buildStatusLegendData,
+} from './kb-panels-logic';
 
 /**
  * 质量统计页签构建所需的宿主能力集合。
@@ -45,24 +55,12 @@ export function buildKbStatsPanel(rightContentEl: HTMLElement, host: KbStatsPane
 
     content.createEl('h2', { text: '质量统计', cls: 'nw-u-m-0-0-20px-0 nw-u-fs-18px' });
 
-    const completedBooks = host.allBooks.filter(b => b.breakdownStatus === 'completed' && b.qualityScores);
+    const completedBooks = selectCompletedBooks(host.allBooks);
 
     const overviewGrid = content.createDiv({
         cls: 'nw-u-d-grid nw-u-gtc-repeat-4-1fr nw-u-gap-12px nw-u-marginbottom-24px'
     });
-    const overviewItems = [
-        { label: '书籍总数', value: host.allBooks.length, icon: '📚', color: 'var(--interactive-accent)' },
-        { label: '已拆解', value: completedBooks.length, icon: '✅', color: '#2ecc71' },
-        { label: '拆解中', value: host.allBooks.filter(b => b.breakdownStatus === 'processing').length, icon: '⏳', color: '#3b82f6' },
-        {
-            label: '平均质量分',
-            value: completedBooks.length > 0
-                ? (completedBooks.reduce((sum, b) => sum + (b.qualityScores?.overall ?? 0), 0) / completedBooks.length).toFixed(1)
-                : '-',
-            icon: '⭐',
-            color: '#f59e0b'
-        },
-    ];
+    const overviewItems = buildStatsOverviewCards(host.allBooks);
     overviewItems.forEach(item => {
         const card = overviewGrid.createDiv({
             cls: 'nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-8px nw-u-ta-center'
@@ -78,29 +76,20 @@ export function buildKbStatsPanel(rightContentEl: HTMLElement, host: KbStatsPane
         });
         qualitySection.createEl('h3', { text: '各维度质量分布', cls: 'nw-u-m-0-0-16px-0 nw-u-fs-15px' });
 
-        const dimensions: { key: Exclude<keyof QualityScores, 'overall' | 'vectorEnabled'>; label: string }[] = [
-            { key: 'character', label: '人设' },
-            { key: 'foreshadow', label: '伏笔' },
-            { key: 'technique', label: '技巧' },
-            { key: 'style', label: '风格' },
-            { key: 'rhythm', label: '节奏' },
-            { key: 'structure', label: '结构' },
-        ];
+        const dimensions = KB_QUALITY_DIMENSIONS;
 
         const chartWrap = qualitySection.createDiv({
             cls: 'nw-u-d-flex nw-u-gap-24px nw-u-fwr-wrap nw-u-ai-center nw-u-jc-center'
         });
 
-        const radarData = dimensions.map(d => ({
-            label: d.label,
-            value: completedBooks.reduce((sum, b) => sum + (b.qualityScores?.[d.key] as number ?? 0), 0) / completedBooks.length
-        }));
+        const dimensionAverages = computeDimensionAverages(completedBooks);
+        const radarData = dimensionAverages.map(d => ({ label: d.label, value: d.avg }));
         const radarCard = chartWrap.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-280px nw-u-d-flex nw-u-jc-center' });
         host.renderChart(radarCard, radarChart(radarData, { size: 280, title: '平均质量雷达图' }));
 
         const avgCard = chartWrap.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-200px' });
-        dimensions.forEach(d => {
-            const avg = completedBooks.reduce((sum, b) => sum + (b.qualityScores?.[d.key] as number ?? 0), 0) / completedBooks.length;
+        dimensionAverages.forEach(d => {
+            const avg = d.avg;
             const item = avgCard.createDiv({ cls: 'nw-u-marginbottom-14px' });
             const top = item.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-marginbottom-6px' });
             top.createSpan({ text: d.label, cls: 'nw-u-fs-13px nw-u-c-text-normal' });
@@ -119,20 +108,7 @@ export function buildKbStatsPanel(rightContentEl: HTMLElement, host: KbStatsPane
     });
     genreSection.createEl('h3', { text: '题材分布', cls: 'nw-u-m-0-0-16px-0 nw-u-fs-15px' });
 
-    const genreCounts: Record<string, number> = {};
-    host.allBooks.forEach(book => {
-        if (book.primaryGenre) {
-            genreCounts[book.primaryGenre] = (genreCounts[book.primaryGenre] || 0) + 1;
-        }
-    });
-
-    const genreData = Object.entries(genreCounts)
-        .map(([id, count]) => ({
-            label: host.getGenreName(id),
-            value: count
-        }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 10);
+    const genreData = buildGenreBarData(host.allBooks, id => host.getGenreName(id));
 
     if (genreData.length > 0) {
         const chartCard = genreSection.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
@@ -149,21 +125,9 @@ export function buildKbStatsPanel(rightContentEl: HTMLElement, host: KbStatsPane
     });
     statusSection.createEl('h3', { text: '拆解状态分布', cls: 'nw-u-m-0-0-16px-0 nw-u-fs-15px' });
 
-    const statusCounts = {
-        pending: host.allBooks.filter(b => b.breakdownStatus === 'pending').length,
-        processing: host.allBooks.filter(b => b.breakdownStatus === 'processing').length,
-        completed: host.allBooks.filter(b => b.breakdownStatus === 'completed').length,
-        failed: host.allBooks.filter(b => b.breakdownStatus === 'failed').length,
-        interrupted: host.allBooks.filter(b => b.breakdownStatus === 'interrupted').length,
-    };
+    const statusCounts = computeStatusCounts(host.allBooks);
 
-    const donutData = [
-        { label: '待拆解', value: statusCounts.pending, color: '#f59e0b' },
-        { label: '拆解中', value: statusCounts.processing, color: '#3b82f6' },
-        { label: '已完成', value: statusCounts.completed, color: '#2ecc71' },
-        { label: '失败', value: statusCounts.failed, color: '#e74c3c' },
-        { label: '拆解中断', value: statusCounts.interrupted, color: '#f97316' },
-    ].filter(d => d.value > 0);
+    const donutData = buildStatusDonutData(statusCounts);
 
     const statusWrap = statusSection.createDiv({
         cls: 'nw-u-d-flex nw-u-gap-24px nw-u-fwr-wrap nw-u-ai-center nw-u-jc-center'
@@ -175,13 +139,7 @@ export function buildKbStatsPanel(rightContentEl: HTMLElement, host: KbStatsPane
     }
 
     const statusList = statusWrap.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-200px' });
-    const statusItems = [
-        { label: '待拆解', value: statusCounts.pending, color: '#f59e0b' },
-        { label: '拆解中', value: statusCounts.processing, color: '#3b82f6' },
-        { label: '已完成', value: statusCounts.completed, color: '#2ecc71' },
-        { label: '失败', value: statusCounts.failed, color: '#e74c3c' },
-        { label: '拆解中断', value: statusCounts.interrupted, color: '#f97316' },
-    ];
+    const statusItems = buildStatusLegendData(statusCounts);
     statusItems.forEach(item => {
         const row = statusList.createDiv({
             attr: { style: 'display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--background-modifier-border);&:last-child{border-bottom:none;}' }

@@ -14,6 +14,7 @@ import type { BookBasicInfo, KnowledgeBaseManager } from '@/services/knowledge-b
 import type { DeconstructionScheduler } from '@/engine/deconstruction-scheduler';
 import { OperationConfirmModal } from '@/ui/components/progress';
 import { createLogger } from '@/shared/logger';
+import { resolveDetailActionButtons } from './kb-panels-logic';
 
 const log = createLogger('KbDetailActions');
 
@@ -55,144 +56,124 @@ export interface KbDetailActionHost {
 export function buildKbDetailActionButtons(book: BookBasicInfo, actionsEl: HTMLElement, host: KbDetailActionHost): void {
     actionsEl.empty();
 
-    if (book.breakdownStatus === 'pending') {
-        const startBtn = actionsEl.createEl('button', {
-            text: host.isStartingDeconstruction ? '⏳ 准备中...' : '🚀 开始拆解',
-            cls: 'nw-btn nw-btn-primary nw-btn-sm',
-            attr: { 'data-action': 'start-deconstruction', title: '拆解本书：分段 + 统计 + 向量增强，提取多维度写作特征' }
-        });
-        startBtn.disabled = host.isStartingDeconstruction;
-        startBtn.style.opacity = host.isStartingDeconstruction ? '0.7' : '1';
-        startBtn.style.cursor = host.isStartingDeconstruction ? 'not-allowed' : 'pointer';
-        startBtn.addEventListener('click', () => {
-            host.startDeconstruction(book).catch(err => {
-                log.error('开始拆解失败:', err);
-            });
-        });
-    } else if (book.breakdownStatus === 'failed') {
-        const retryBtn = actionsEl.createEl('button', {
-            text: host.isStartingDeconstruction ? '⏳ 准备中...' : '🔄 重新拆解',
-            cls: 'nw-btn nw-btn-primary nw-btn-sm',
-            attr: { 'data-action': 'restart-deconstruction', title: '上次拆解失败，重新开始拆解' }
-        });
-        retryBtn.disabled = host.isStartingDeconstruction;
-        retryBtn.style.opacity = host.isStartingDeconstruction ? '0.7' : '1';
-        retryBtn.style.cursor = host.isStartingDeconstruction ? 'not-allowed' : 'pointer';
-        retryBtn.addEventListener('click', () => {
-            host.restartDeconstruction(book).catch(err => {
-                log.error('重新拆解失败:', err);
-            });
-        });
-    } else if (book.breakdownStatus === 'completed') {
-        const reBtn = actionsEl.createEl('button', {
-            text: host.isStartingDeconstruction ? '⏳ 准备中...' : '🔄 重新拆解',
-            cls: 'nw-btn nw-btn-secondary nw-btn-sm',
-            attr: { 'data-action': 'restart-deconstruction', title: '清除已有拆解结果，重新拆解' }
-        });
-        reBtn.disabled = host.isStartingDeconstruction;
-        reBtn.style.opacity = host.isStartingDeconstruction ? '0.7' : '1';
-        reBtn.style.cursor = host.isStartingDeconstruction ? 'not-allowed' : 'pointer';
-        reBtn.addEventListener('click', () => {
-            host.restartDeconstruction(book).catch(err => {
-                log.error('重新拆解失败:', err);
-            });
-        });
-    } else if (book.breakdownStatus === 'processing') {
-        const processingBtn = actionsEl.createEl('button', {
-            text: '⏳ 拆解中...',
-            cls: 'nw-btn nw-btn-secondary nw-btn-sm'
-        });
-        processingBtn.disabled = true;
-        processingBtn.addClass('nw-disabled-look-soft');
+    // 状态 → 按钮配置的规则在 kb-panels-logic（纯函数，有单测）；此处只做渲染与 handler 绑定
+    const buttons = resolveDetailActionButtons(book.breakdownStatus, host.isStartingDeconstruction);
 
-        const forceCancelBtn = actionsEl.createEl('button', {
-            text: '⚠️ 强制取消',
-            cls: 'nw-btn nw-btn-sm',
-            attr: { style: 'margin-left: 8px; font-size: 12px; color: var(--nw-danger-soft);', title: '中断当前拆解任务（已完成维度保留）' }
+    for (const config of buttons) {
+        const isPrimaryAction = config.key === 'start-deconstruction' || config.key === 'restart-deconstruction';
+        const attr: Record<string, string> = {};
+        if (isPrimaryAction) attr['data-action'] = config.key;
+        if (config.title) attr.title = config.title;
+
+        if (config.key === 'force-cancel') {
+            attr.style = 'margin-left: 8px; font-size: 12px; color: var(--nw-danger-soft);';
+        }
+
+        const btn = actionsEl.createEl('button', {
+            text: config.text,
+            cls: config.cls,
+            attr,
         });
-        forceCancelBtn.onclick = async () => {
-            try {
-                const confirmed = await OperationConfirmModal.confirm(host.app, {
-                    title: '强制取消拆解',
-                    description: '强制取消将中断当前拆解任务。已完成的维度会保留，但未完成的维度需要重新拆解。\n\n确定要强制取消吗？',
-                    confirmText: '强制取消',
-                    cancelText: '不取消',
-                    rememberKey: 'force-cancel-deconstruction'
-                });
-                if (confirmed) {
-                    if (!host.kbManager) return;
-                    const activeTasks = host.deconstructionScheduler?.getActiveTasks() || [];
-                    const bookTask = activeTasks.find(t => t.bookId === book.id);
-                    if (bookTask) {
-                        await host.deconstructionScheduler?.cancelTask(bookTask.id);
+
+        if (config.key === 'processing-indicator') {
+            btn.disabled = true;
+            btn.addClass('nw-disabled-look-soft');
+            continue;
+        }
+
+        if (config.key === 'force-cancel') {
+            btn.onclick = async () => {
+                try {
+                    const confirmed = await OperationConfirmModal.confirm(host.app, {
+                        title: '强制取消拆解',
+                        description: '强制取消将中断当前拆解任务。已完成的维度会保留，但未完成的维度需要重新拆解。\n\n确定要强制取消吗？',
+                        confirmText: '强制取消',
+                        cancelText: '不取消',
+                        rememberKey: 'force-cancel-deconstruction'
+                    });
+                    if (confirmed) {
+                        if (!host.kbManager) return;
+                        const activeTasks = host.deconstructionScheduler?.getActiveTasks() || [];
+                        const bookTask = activeTasks.find(t => t.bookId === book.id);
+                        if (bookTask) {
+                            await host.deconstructionScheduler?.cancelTask(bookTask.id);
+                        }
+                        await host.kbManager.setBreakdownStatus(book.id, 'interrupted', book.breakdownProgress);
+                        host.refreshDetailIfSelected(book);
                     }
-                    await host.kbManager.setBreakdownStatus(book.id, 'interrupted', book.breakdownProgress);
-                    host.refreshDetailIfSelected(book);
+                } catch (e) {
+                    log.error('强制取消拆解失败:', e);
+                    new Notice(`强制取消失败: ${e instanceof Error ? e.message : String(e)}`);
                 }
-            } catch (e) {
-                log.error('强制取消拆解失败:', e);
-                new Notice(`强制取消失败: ${e instanceof Error ? e.message : String(e)}`);
-            }
-        };
-    } else if (book.breakdownStatus === 'interrupted') {
-        const resumeBtn = actionsEl.createEl('button', {
-            text: '🔄 恢复拆解',
-            cls: 'nw-btn nw-btn-warning nw-btn-sm',
-            attr: { title: '从上次中断处继续拆解（已完成的段不再重跑）' }
-        });
-        resumeBtn.onclick = async () => {
-            try {
-                if (!host.kbManager) return;
-                await host.kbManager.setBreakdownStatus(book.id, 'pending');
-                await host.startDeconstruction(book);
-            } catch (e) {
-                log.error('恢复拆解失败:', e);
-                new Notice(`恢复拆解失败: ${e instanceof Error ? e.message : String(e)}`);
-            }
-        };
+            };
+            continue;
+        }
 
-        const clearBtn = actionsEl.createEl('button', {
-            text: '🗑️ 清除状态',
-            cls: 'nw-btn nw-btn-secondary nw-btn-sm',
-            attr: { title: '清除拆解状态与进度（不删除书籍）' }
+        if (config.key === 'resume-deconstruction') {
+            btn.onclick = async () => {
+                try {
+                    if (!host.kbManager) return;
+                    await host.kbManager.setBreakdownStatus(book.id, 'pending');
+                    await host.startDeconstruction(book);
+                } catch (e) {
+                    log.error('恢复拆解失败:', e);
+                    new Notice(`恢复拆解失败: ${e instanceof Error ? e.message : String(e)}`);
+                }
+            };
+            continue;
+        }
+
+        if (config.key === 'clear-status') {
+            btn.onclick = async () => {
+                try {
+                    if (!host.kbManager) return;
+                    await host.kbManager.setBreakdownStatus(book.id, 'pending', undefined, undefined);
+                    book.breakdownProgress = undefined;
+                    book.breakdownError = undefined;
+                    host.refreshDetailIfSelected(book);
+                } catch (e) {
+                    log.error('清除状态失败:', e);
+                    new Notice(`清除状态失败: ${e instanceof Error ? e.message : String(e)}`);
+                }
+            };
+            continue;
+        }
+
+        if (isPrimaryAction) {
+            // 开始/重新拆解：在途时禁用并降透明度（原行为，含 disabled=true 时的 not-allowed 光标）
+            btn.disabled = config.disabled;
+            btn.style.opacity = config.disabled ? '0.7' : '1';
+            btn.style.cursor = config.disabled ? 'not-allowed' : 'pointer';
+            btn.addEventListener('click', () => {
+                if (config.key === 'start-deconstruction') {
+                    host.startDeconstruction(book).catch(err => {
+                        log.error('开始拆解失败:', err);
+                    });
+                } else {
+                    host.restartDeconstruction(book).catch(err => {
+                        log.error('重新拆解失败:', err);
+                    });
+                }
+            });
+            continue;
+        }
+
+        if (config.key === 'dimension-tags') {
+            btn.addEventListener('click', () => {
+                void host.applyDimensionTags(book);
+            });
+            continue;
+        }
+
+        if (config.key === 'edit') {
+            btn.addEventListener('click', () => host.openEditModal(book));
+            continue;
+        }
+
+        btn.addEventListener('click', () => {
+            host.deleteBook(book).catch(err => { // silent-ok: handleDeleteBook 内部已有失败 Notice
+                log.error('删除书籍失败:', err);
+            });
         });
-        clearBtn.onclick = async () => {
-            try {
-                if (!host.kbManager) return;
-                await host.kbManager.setBreakdownStatus(book.id, 'pending', undefined, undefined);
-                book.breakdownProgress = undefined;
-                book.breakdownError = undefined;
-                host.refreshDetailIfSelected(book);
-            } catch (e) {
-                log.error('清除状态失败:', e);
-                new Notice(`清除状态失败: ${e instanceof Error ? e.message : String(e)}`);
-            }
-        };
     }
-
-    const editBtn = actionsEl.createEl('button', {
-        text: '🏷️ 维度归类',
-        cls: 'nw-btn nw-btn-secondary nw-btn-sm',
-        attr: { title: '按本地规则生成题材/节奏/情绪等维度标签并写入自定义标签' }
-    });
-    editBtn.addEventListener('click', () => {
-        void host.applyDimensionTags(book);
-    });
-
-    const editInfoBtn = actionsEl.createEl('button', {
-        text: '✏️ 编辑',
-        cls: 'nw-btn nw-btn-secondary nw-btn-sm',
-        attr: { title: '编辑书籍信息' }
-    });
-    editInfoBtn.addEventListener('click', () => host.openEditModal(book));
-    const deleteBtn = actionsEl.createEl('button', {
-        text: '🗑️ 删除',
-        cls: 'nw-btn nw-btn-danger nw-btn-sm',
-        attr: { title: '删除该书籍及其拆解数据' }
-    });
-    deleteBtn.addEventListener('click', () => {
-        host.deleteBook(book).catch(err => { // silent-ok: handleDeleteBook 内部已有失败 Notice
-            log.error('删除书籍失败:', err);
-        });
-    });
 }
