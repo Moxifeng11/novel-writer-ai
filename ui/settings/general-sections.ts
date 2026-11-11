@@ -14,6 +14,12 @@ import { performanceMonitor } from '@/services/performance-monitor';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 import { ChangelogModal } from '@/ui/changelog-modal';
 import { SupportAuthorModal } from '@/ui/support-author-modal';
+import {
+    aggregateOperationStats,
+    formatByteSize,
+    formatHitRate,
+    formatPerfDuration,
+} from '@/ui/metrics-format';
 import { PromptManagerSettings } from '@/ui/prompt-manager-settings';
 import { RulesService } from '@/services/rules-service';
 import { GITHUB_BRANCH, GITHUB_REPO_SLUG } from '@/shared/github-repo';
@@ -94,12 +100,11 @@ export class PerformanceSection extends SettingsSection {
             cls: 'nw-u-d-grid-2 nw-u-gtc-repeat-auto-fit-minmax-6 nw-u-gap-12px-2 nw-u-marginbottom-20px-2'
         });
 
-        const totalOps = Object.values(categoryStats).reduce((sum, c) => sum + c.count, 0);
-        const totalDuration = Object.values(categoryStats).reduce((sum, c) => sum + c.totalDuration, 0);
+        const totals = aggregateOperationStats(categoryStats);
 
-        this.addStatCard(statsGrid, '总操作数', totalOps.toString());
-        this.addStatCard(statsGrid, '总耗时', this.formatDuration(totalDuration));
-        this.addStatCard(statsGrid, '平均耗时', totalOps > 0 ? this.formatDuration(totalDuration / totalOps) : 'N/A');
+        this.addStatCard(statsGrid, '总操作数', totals.totalOps.toString());
+        this.addStatCard(statsGrid, '总耗时', this.formatDuration(totals.totalDuration));
+        this.addStatCard(statsGrid, '平均耗时', totals.totalOps > 0 ? this.formatDuration(totals.avgDuration) : 'N/A');
         this.addStatCard(statsGrid, '慢操作', slowOps.length.toString());
 
         if (memoryInfo.current || memoryInfo.peak) {
@@ -108,7 +113,7 @@ export class PerformanceSection extends SettingsSection {
         }
 
         if (cacheStats) {
-            this.addStatCard(statsGrid, '缓存命中率', (cacheStats.hitRate * 100).toFixed(1) + '%');
+            this.addStatCard(statsGrid, '缓存命中率', formatHitRate(cacheStats.hitRate));
             this.addStatCard(statsGrid, '缓存条目', cacheStats.totalEntries.toString());
         }
 
@@ -128,7 +133,7 @@ export class PerformanceSection extends SettingsSection {
         for (const [cat, stats] of Object.entries(categoryStats)) {
             if (stats.count === 0) continue;
             const row = tbody.createEl('tr');
-            const percent = totalDuration > 0 ? ((stats.totalDuration / totalDuration) * 100).toFixed(1) + '%' : '0%';
+            const percent = totals.totalDuration > 0 ? ((stats.totalDuration / totals.totalDuration) * 100).toFixed(1) + '%' : '0%';
             [cat, stats.count.toString(), this.formatDuration(stats.totalDuration), this.formatDuration(stats.avgDuration), percent].forEach((v, i) => {
                 const td = row.createEl('td');
                 td.textContent = v;
@@ -314,17 +319,11 @@ export class PerformanceSection extends SettingsSection {
     }
 
     private formatDuration(ms: number): string {
-        if (ms < 1) return `${(ms * 1000).toFixed(2)}μs`;
-        if (ms < 1000) return `${ms.toFixed(2)}ms`;
-        if (ms < 60000) return `${(ms / 1000).toFixed(2)}s`;
-        return `${(ms / 60000).toFixed(2)}min`;
+        return formatPerfDuration(ms);
     }
 
     private formatBytes(bytes: number): string {
-        if (bytes < 1024) return `${bytes} B`;
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
-        if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-        return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+        return formatByteSize(bytes);
     }
 
     /**

@@ -11,7 +11,7 @@
 | `shared/` | 197 | 41680 | 1709 | 1393 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 252 | 102609 | 883 | 738 | 84% |
+| `ui/` | 253 | 102711 | 889 | 742 | 83% |
 
 ## 文件清单
 
@@ -735,6 +735,7 @@
 | `ui/knowledge-rebuild-action.ts` | 48 | 1 | 1 |
 | `ui/manage-providers-modal.ts` | 640 | 1 | 1 |
 | `ui/memory-preview.ts` | 158 | 2 | 1 |
+| `ui/metrics-format.ts` | 103 | 6 | 4 |
 | `ui/mini-settings-modal.ts` | 107 | 1 | 0 |
 | `ui/mode-document-modal.ts` | 201 | 2 | 2 |
 | `ui/model-picker-modal.ts` | 196 | 2 | 2 |
@@ -783,7 +784,7 @@
 | `ui/settings/deconstruction-section.ts` | 332 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 289 | 1 | 1 |
-| `ui/settings/general-sections.ts` | 1216 | 6 | 6 |
+| `ui/settings/general-sections.ts` | 1215 | 6 | 6 |
 | `ui/settings/knowledge-section.ts` | 797 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
