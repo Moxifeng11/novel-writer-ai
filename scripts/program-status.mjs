@@ -8,6 +8,7 @@
  * 用法：
  *   node scripts/program-status.mjs            # 渲染并写回 MD
  *   node scripts/program-status.mjs --check    # 只校验 MD 与 JSON 是否同步（CI 用）
+ *   node scripts/program-status.mjs --root <dir>  # 指定仓库根（门禁自测用）
  */
 
 import fs from 'node:fs';
@@ -15,9 +16,19 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(__dirname, '..');
+const ROOT_ARG_INDEX = process.argv.indexOf('--root');
+if (ROOT_ARG_INDEX !== -1 && !process.argv[ROOT_ARG_INDEX + 1]) {
+    console.error('[program-status] ❌ --root 缺少目录参数');
+    process.exit(2);
+}
+const root = ROOT_ARG_INDEX !== -1
+    ? path.resolve(process.argv[ROOT_ARG_INDEX + 1])
+    : path.resolve(__dirname, '..');
 const jsonPath = path.join(root, 'docs/progress/program-status.json');
 const mdPath = path.join(root, 'docs/progress/PROGRAM-STATUS.md');
+
+/** baseline.tests.files 与实测数量的允许偏差（测试数每批都在变，精确匹配会天天红）。 */
+const TEST_DEVIATION_LIMIT = 10;
 
 const STATUS_ICON = {
     done: '✅',
@@ -164,12 +175,78 @@ function sanitizeControlChars(text) {
     return String(text).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
 }
 
+/**
+ * 递归统计 tests 目录下的 *.test.ts 数量（与 vitest include 口径一致）。
+ */
+function countTestFiles(dir) {
+    if (!fs.existsSync(dir)) return 0;
+    let count = 0;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) count += countTestFiles(full);
+        else if (entry.isFile() && entry.name.endsWith('.test.ts')) count += 1;
+    }
+    return count;
+}
+
+/**
+ * 校验台账基线是否与仓库真实状态一致。
+ *
+ * 只证明「MD 等于 JSON」不够：JSON 自身漂移时，渲染链会稳定地复制错误数字。
+ * 因此这里直接对照 package.json 版本与实测测试文件数。
+ */
+function validateBaseline(data) {
+    const baseline = data.baseline ?? {};
+    const failures = [];
+    const packageJsonPath = path.join(root, 'package.json');
+
+    let packageVersion = null;
+    if (!fs.existsSync(packageJsonPath)) {
+        failures.push(`缺少 ${path.relative(root, packageJsonPath)}，无法校验 baseline.version`);
+    } else {
+        try {
+            packageVersion = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')).version ?? null;
+        } catch (error) {
+            failures.push(`package.json 解析失败：${error.message}`);
+        }
+    }
+
+    if (packageVersion && baseline.version !== packageVersion) {
+        failures.push(
+            `baseline.version (${baseline.version ?? '缺失'}) 与 package.json version (${packageVersion}) 不一致，请改 JSON 后重跑 program:render`
+        );
+    }
+
+    const actualFiles = countTestFiles(path.join(root, 'tests'));
+    if (actualFiles === 0) {
+        failures.push('实测 tests/**/*.test.ts 为 0，无法校验 baseline.tests');
+    } else {
+        const baselineFiles = Number(baseline.tests?.files);
+        if (!Number.isFinite(baselineFiles)) {
+            failures.push('baseline.tests.files 缺失或非数字');
+        } else {
+            const deviation = (Math.abs(baselineFiles - actualFiles) / actualFiles) * 100;
+            if (deviation > TEST_DEVIATION_LIMIT) {
+                failures.push(
+                    `baseline.tests.files (${baselineFiles}) 与实测测试文件数 (${actualFiles}) 偏差 ${deviation.toFixed(1)}%，超过允许的 ±${TEST_DEVIATION_LIMIT}%`
+                );
+            }
+        }
+    }
+
+    if (failures.length > 0) {
+        for (const failure of failures) console.error(`[program-status] ❌ ${failure}`);
+        process.exit(1);
+    }
+}
+
 function main() {
     if (!fs.existsSync(jsonPath)) {
         console.error(`[program-status] 缺少台账文件：${path.relative(root, jsonPath)}`);
         process.exit(1);
     }
     const data = readProgram();
+    validateBaseline(data);
     const rendered = render(data);
     const checkOnly = process.argv.includes('--check');
 
