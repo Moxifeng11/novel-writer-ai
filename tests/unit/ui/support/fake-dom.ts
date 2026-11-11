@@ -67,6 +67,33 @@ export class FakeEl {
         return child;
     }
 
+    /** Obsidian mock 的 Setting 走 settingEl.append(...)（DOM ParentNode.append 语义） */
+    append(...nodes: Array<unknown>): void {
+        for (const node of nodes) {
+            if (typeof node === 'string') this.textContent += node;
+            else this.appendChild(node);
+        }
+    }
+
+    /** 链式文案/按钮/图标方法（Obsidian HTMLElement 扩展，mock 的 Setting 会调） */
+    setText(text: string): this {
+        this.textContent = text;
+        return this;
+    }
+
+    setButtonText(text: string): this {
+        this.textContent = text;
+        return this;
+    }
+
+    setTooltip(_text: string): this {
+        return this;
+    }
+
+    setIcon(_icon: string): this {
+        return this;
+    }
+
     /** 支持 `.class` / `tag` / 逗号分隔组合（attachChartInteractions 的选择器形态） */
     querySelectorAll<T = FakeEl>(selector: string): T[] {
         const hits: FakeEl[] = [];
