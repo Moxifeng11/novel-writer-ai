@@ -4,7 +4,7 @@
 
 ## v4.83.1（2026-11-12）
 
-> 版本性质：阶段 A/B/C 收口与门禁加固，无破坏性变更；tag / GitHub Release 待用户确认后另行发布。
+> 发布说明：`docs/releases/v4.83.1.md` · 上一版本 v4.83.0 · 版本性质：阶段 A/B/C/D 收口与门禁加固，无破坏性变更
 
 ### 🧭 动因
 - 长期目标「可验证」进入阶段 D：先把「用户以为生效」的三条链路（知识/风格/约束）变成可自证的端到端事实，再补门禁防回退。
@@ -30,6 +30,11 @@
 ### 🤝 协作机制
 - 信箱升级三元身份（zcode/trae/dsh）；新增文件系统任务板（原子领取 + 写范围租约 + 租约超时），替代 30 分钟轮询的延迟与抢单。
 
+### 🚀 发版前追加（同一 tag 内，2026-11-12）
+
+- **agent 自愈第一步**：新增 `repair_flow` 工具（单本重向量化 / 指纹库重载）；`sideEffect: write` + 审批 fail-closed（无审批回调一律拒绝）+ 失败如实 `ok:false` + 成功后同源复诊；24 条测试。
+- **UI 可测性**：`ui/views` 行覆盖 **8.14% → 12.95%**——抽出 book-detail-logic / kb-view-logic / fingerprint-detail-logic / kb-config-import-logic 四个纯逻辑模块，另补 5 个 DOM 构建器假 DOM 单测（夹具不引 jsdom），新增 76 例。
+- **运行层验证**：`scripts/verify-three-flows.mjs` 读真实 vault 数据并探测本机 Ollama（退出码 0/1/2）；报告 `docs/audits/three-flows-runtime-verification.md`——三条链路在当前 vault 均无法验证（无数据），唯一证实 Ollama+bge-m3 可用；发现孤儿向量 1 本（索引 0 本 vs 向量库 1 本）待治理。
 ### ✅ 验证
 - `preflight` 28 步 EXIT=0；`preflight:release` EXIT=0（含覆盖率棘轮）。
 - 729 测试文件 / 7,711 用例通过 / 3 skipped；全仓语句覆盖 46.5%。
