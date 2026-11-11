@@ -214,6 +214,16 @@ UI Layer → Facade Layer → Engine Layer → Repository Layer → Infrastructu
 1. **UI 通过 Facade 查询**: UI → Facade → Engine
 2. **Engine 通过 Repository 查询数据**: Engine → Repository → FileSystemPort
 3. **EngineRegistry 跨层管理**: 注册所有 Repository 实例，供 Facade/Engine 获取
+4. **纯逻辑下沉 `shared/`**（2026-11-11 阶段 C1 起的标准做法）:
+   当同一份判定逻辑既要在界面展示、又要在 Engine 侧（如 agent 工具）使用时，
+   **把纯逻辑抽到 `shared/`**，两侧各自 import；不要为了让 Engine 复用它而反向依赖 `ui/`。
+
+   范例：`shared/link-status-compute.ts` —— 三条创作链路的「通/断/断点」判定。
+   - `ui/views/link-status.ts` 只保留 DOM 渲染并 re-export 判定函数
+   - `engine/agent/harness/diagnose-tools.ts` 直接 import 同一份判定
+
+   收益：**界面看到的断点**与 **agent 诊断出的断点**必然一致，
+   不会出现「界面报断、agent 说正常」的口径分裂（`tests/unit/engine/agent-diagnose-flow.test.ts` 有专项断言）。
 
 ### 违反规则的标志
 
@@ -735,6 +745,10 @@ processing (恢复)
 - `scripts/scan-engine-instances.mjs` — 实例化扫描与合规检查（`--check` 模式可集成 CI）
 - `ui/services/co-write-facade.ts` — UI 数据查询门面
 - `shared/file-system-port.ts` — 文件系统抽象（`IFileSystemPort` / `ObsidianFileSystem` / `MockFileSystem`）
+- `shared/link-status-compute.ts` — 三条创作链路的环节级「通/断/断点」判定（纯逻辑，UI 与 agent 共用）
+- `ui/views/link-status.ts` — 链路状态渲染（复用 `nw-capability-*` 类，零新增 CSS）
+- `engine/agent/harness/diagnose-tools.ts` — agent 自诊断工具 `diagnose_flow`
+- `shared/degradation-notifier.ts` — 统一降级事件（含 `summarizeDegradations` 聚合统计）
 
 ### Repository 层
 - `engine/repository/interfaces.ts` — `IRepository` / `IBulkRepository` 接口

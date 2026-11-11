@@ -1654,7 +1654,88 @@ import { collectCreationFlowState, markFlowExported } from '../ui/full-writer/cr
 
 ---
 
-## 十一、相关文档
+## 十一、Agent Harness 工具（v4.83.1）
+
+Agent 工作台的 Harness 引擎（`engine/agent/harness/`）向模型暴露一组工具。
+工具定义见 `host-tools.ts`（宿主能力）与 `diagnose-tools.ts`（自诊断）。
+
+### 11.1 工具契约
+
+```ts
+interface HarnessTool {
+  name: string;
+  description: string;
+  parameters: Record<string, { type: ...; description: string; enum?: string[] }>;
+  required: string[];
+  /** none=只读可重入；write=修改宿主数据；dangerous=高成本需确认 */
+  sideEffect?: 'none' | 'write' | 'dangerous';
+  execute(args, ctx): Promise<{ ok: boolean; content: string; data?: Record<string, unknown> }>;
+}
+```
+
+### 11.2 `diagnose_flow`（阶段 C1）
+
+回答「我配了/拆解了，为什么写作时没生效」，并定位到具体环节。
+
+| 参数 | 取值 | 说明 |
+|---|---|---|
+| `flow` | `knowledge` / `style` / `constraint` / `all` | 要诊断的链路 |
+
+三条链路与环节：
+
+| 链路 | 环节 |
+|---|---|
+| `knowledge` | 拆解 → 向量化 → 嵌入模型 → 检索 → 归因 |
+| `style` | 指纹库 → 启用 → 强度 → 注入 |
+| `constraint` | 考据 → 设定 → 审核 → 绑定 → 注入 |
+
+**判定口径与界面同源**：都走 `shared/link-status-compute.ts`，
+因此 agent 报出的断点与用户界面上看到的一致。
+
+```ts
+import { createDiagnoseTools } from '@/engine/agent/harness/diagnose-tools';
+
+const tools = createDiagnoseTools({
+  collectKnowledge: async () => ({ /* 书籍/向量/嵌入状态 */ }),
+  collectStyle: async () => ({ /* 三层指纹/启用/强度 */ }),
+  collectConstraint: async () => ({ /* 来源/设定/审核/绑定 */ }),
+});
+```
+
+采集器由宿主注入（`AgentHarnessEngineOptions.flowDiagnosis`），
+engine 层不直接持有知识库/指纹库实例。
+
+### 11.3 链路判定（供 UI 与工具复用）
+
+```ts
+import {
+  computeKnowledgeFlowStatus,
+  computeStyleFlowStatus,
+  computeConstraintFlowStatus,
+  summarizeLink,
+  formatLinkStatusForAgent,
+} from '@/shared/link-status-compute';
+```
+
+判定语义要点：
+
+- **断点取第一个 `broken`** —— 修链路要从头修，后面的环节在断点修复前都无意义
+- **`unknown` 不拉低整体** —— 只要存在可判定环节就按它们判定，全部 `unknown` 才报 unknown
+  （归因依赖运行时数据，界面永远无法静态判定，不能让它掩盖真实状态）
+- **运行时降级会降为 `warn`** —— 静态检查说通、运行时却在回退，正是最需要暴露的状态
+
+### 11.4 降级事件统计
+
+```ts
+import { getDegradationNotifier, summarizeDegradations } from '@/shared/degradation-notifier';
+
+const summary = summarizeDegradations(getDegradationNotifier().getEvents());
+// { total, bySource, bySeverity, recoverable, latest }
+```
+
+---
+
+## 十二、相关文档
 
 - [架构视图](./ARCHITECTURE.md) — 分层架构与设计决策
 - [开发指南](./DEVELOPMENT.md) — 如何新增功能
