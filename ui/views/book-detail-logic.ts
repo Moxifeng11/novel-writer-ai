@@ -104,14 +104,15 @@ export function topCentralityBars(
         .map(item => ({ label: item.characterName, value: item.pagerank }));
 }
 
+/** 严重度权重（未列出的值排最后） */
+const SEVERITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
+
 /**
  * 按严重度排序改进建议（high → medium → low → 未知）。
  *
  * @param suggestions - 建议列表
  * @returns 新数组
  */
-const SEVERITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
-
 export function sortSuggestionsBySeverity<T extends { severity: string }>(
     suggestions: readonly T[],
 ): T[] {
