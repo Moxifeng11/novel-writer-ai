@@ -59,6 +59,17 @@ describe('resolveBookNameFromFile', () => {
     });
 });
 
+describe('边界补充', () => {
+    it('filterBookFiles 忽略缺 name 的条目而不是抛错', () => {
+        expect(filterBookFiles([{ path: 'a' } as never], '')).toHaveLength(1);
+        expect(filterBookFiles([{ path: 'a' } as never], 'x')).toHaveLength(0);
+    });
+
+    it('resolveBookNameFromFile 对空串原样返回', () => {
+        expect(resolveBookNameFromFile('')).toBe('');
+    });
+});
+
 describe('isBlankBookName', () => {
     it('空串/纯空白/undefined 都算空', () => {
         expect(isBlankBookName('')).toBe(true);
