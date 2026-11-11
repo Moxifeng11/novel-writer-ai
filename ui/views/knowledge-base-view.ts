@@ -40,6 +40,35 @@ import {
     countBooksByGenre,
     countBooksBySubGenre,
 } from './kb-book-filter';
+import {
+    TASK_FILTER_OPTIONS,
+    filterAndSortTasks,
+    computeTaskStats,
+    selectSelectedCancellable,
+    selectSelectedDeletable,
+    selectActiveTasks,
+    isAllFilteredSelected,
+    formatSelectionLabel,
+    resolveTaskRowActions,
+    resolveTaskStatusTone,
+    shouldShowTaskProgress,
+    shouldShowTaskMessage,
+    shouldShowTaskTiming,
+    shouldShowTaskError,
+    formatTaskDimensions,
+    formatTaskProgressPercent,
+    disabledOpacity,
+    disabledCursor,
+} from './kb-task-panel';
+
+/** 任务状态档位 → 徽标配色（样式留在视图，档位判定在 kb-task-panel） */
+const TASK_STATUS_TONE_STYLES: Record<ReturnType<typeof resolveTaskStatusTone>, string> = {
+    success: 'background:rgba(46,204,113,0.15);color:#2ecc71;',
+    info: 'background:rgba(59,130,246,0.15);color:#3b82f6;',
+    danger: 'background:rgba(231,76,60,0.15);color:#e74c3c;',
+    warning: 'background:rgba(245,158,11,0.15);color:#f59e0b;',
+    muted: 'background:var(--background-secondary);color:var(--text-muted);',
+};
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
 import { yieldToUI } from '@/shared/yield';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
@@ -2201,14 +2230,7 @@ export class KnowledgeBaseView extends ItemView {
             attr: {}
         });
         type TaskFilterType = 'all' | 'running' | 'pending' | 'completed' | 'failed' | 'cancelled';
-        const filterOptions: { value: TaskFilterType; label: string }[] = [
-            { value: 'all', label: '全部' },
-            { value: 'running', label: '运行中' },
-            { value: 'pending', label: '等待中' },
-            { value: 'completed', label: '已完成' },
-            { value: 'failed', label: '失败' },
-            { value: 'cancelled', label: '已取消' },
-        ];
+        const filterOptions = TASK_FILTER_OPTIONS;
         filterOptions.forEach(opt => {
             const option = statusSelect.createEl('option', { value: opt.value, text: opt.label });
             if (this.taskFilter === opt.value) option.selected = true;
@@ -2220,27 +2242,8 @@ export class KnowledgeBaseView extends ItemView {
         });
 
         const tasks = this.deconstructionScheduler?.getAllTasks() || [];
-        let filteredTasks = tasks;
-
-        switch (this.taskFilter) {
-            case 'running':
-                filteredTasks = tasks.filter(t => t.status === 'running');
-                break;
-            case 'pending':
-                filteredTasks = tasks.filter(t => t.status === 'pending');
-                break;
-            case 'completed':
-                filteredTasks = tasks.filter(t => t.status === 'completed');
-                break;
-            case 'failed':
-                filteredTasks = tasks.filter(t => t.status === 'failed');
-                break;
-            case 'cancelled':
-                filteredTasks = tasks.filter(t => t.status === 'cancelled');
-                break;
-        }
-
-        filteredTasks.sort((a, b) => b.createdAt - a.createdAt);
+        // 筛选 + 按创建时间降序（规则在 kb-task-panel，有单测）
+        const filteredTasks = filterAndSortTasks(tasks, this.taskFilter);
 
         if (filteredTasks.length === 0) {
             const emptyState = createEmptyState({
@@ -2256,14 +2259,7 @@ export class KnowledgeBaseView extends ItemView {
             cls: 'nw-u-d-grid nw-u-gtc-repeat-6-1fr nw-u-gap-8px nw-u-marginbottom-16px'
         });
         const allTasks = tasks;
-        const statItems = [
-            { label: '总任务数', value: allTasks.length, color: 'var(--interactive-accent)' },
-            { label: '运行中', value: allTasks.filter(t => t.status === 'running').length, color: '#3b82f6' },
-            { label: '等待中', value: allTasks.filter(t => t.status === 'pending').length, color: '#f59e0b' },
-            { label: '已完成', value: allTasks.filter(t => t.status === 'completed').length, color: '#2ecc71' },
-            { label: '失败', value: allTasks.filter(t => t.status === 'failed').length, color: '#e74c3c' },
-            { label: '已取消', value: allTasks.filter(t => t.status === 'cancelled').length, color: '#9ca3af' },
-        ];
+        const statItems = computeTaskStats(allTasks);
         statItems.forEach(item => {
             const card = statsRow.createDiv({
                 cls: 'nw-u-p-12px-8px nw-u-bg-background-secondary nw-u-brd-6px nw-u-ta-center'
@@ -2284,7 +2280,7 @@ export class KnowledgeBaseView extends ItemView {
             attr: { title: '全选 / 取消全选当前任务' }
         });
         selectAllBtn.addEventListener('click', () => {
-            if (this.selectedTaskIds.size === filteredTasks.length) {
+            if (isAllFilteredSelected(this.selectedTaskIds.size, filteredTasks.length)) {
                 this.selectedTaskIds.clear();
             } else {
                 filteredTasks.forEach(t => this.selectedTaskIds.add(t.id));
@@ -2309,7 +2305,7 @@ export class KnowledgeBaseView extends ItemView {
         });
 
         const selectedCount = leftTools.createSpan({
-            text: `已选 ${this.selectedTaskIds.size} / ${filteredTasks.length} 项`,
+            text: formatSelectionLabel(this.selectedTaskIds.size, filteredTasks.length),
             cls: "nw-text-sm-muted nw-u-marginleft-4px",
             attr: {}
         });
@@ -2317,49 +2313,47 @@ export class KnowledgeBaseView extends ItemView {
 
         const rightTools = toolbar.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-fwr-wrap' });
 
-        const cancellableSelected = filteredTasks.filter(t =>
-            this.selectedTaskIds.has(t.id) && (t.status === 'running' || t.status === 'pending')
-        );
+        // 批量取消：只针对 running | pending（不同于批量删除，见 kb-task-panel 文件头）
+        const cancellableSelected = selectSelectedCancellable(filteredTasks, this.selectedTaskIds);
         const batchCancelBtn = rightTools.createEl('button', {
             text: '✕ 批量取消',
             cls: 'nw-btn nw-btn-danger nw-btn-sm',
             attr: { title: '取消选中的进行中 / 待执行任务' }
         });
         batchCancelBtn.disabled = cancellableSelected.length === 0;
-        batchCancelBtn.style.opacity = cancellableSelected.length === 0 ? '0.5' : '1';
-        batchCancelBtn.style.cursor = cancellableSelected.length === 0 ? 'not-allowed' : 'pointer';
+        batchCancelBtn.style.opacity = disabledOpacity(cancellableSelected.length > 0);
+        batchCancelBtn.style.cursor = disabledCursor(cancellableSelected.length > 0);
         batchCancelBtn.addEventListener('click', () => {
             this.handleBatchCancel(cancellableSelected).catch(err => {
                 log.error('批量取消任务失败:', err);
             });
         });
 
-        const deletableSelected = filteredTasks.filter(t =>
-            this.selectedTaskIds.has(t.id) && (t.status === 'completed' || t.status === 'failed' || t.status === 'cancelled')
-        );
+        // 批量删除：只针对已终结任务（completed | failed | cancelled）
+        const deletableSelected = selectSelectedDeletable(filteredTasks, this.selectedTaskIds);
         const batchDeleteBtn = rightTools.createEl('button', {
             text: '🗑️ 批量删除',
             cls: 'nw-btn nw-btn-secondary nw-btn-sm',
             attr: { title: '删除选中的已完成 / 失败 / 已取消任务' }
         });
         batchDeleteBtn.disabled = deletableSelected.length === 0;
-        batchDeleteBtn.style.opacity = deletableSelected.length === 0 ? '0.5' : '1';
-        batchDeleteBtn.style.cursor = deletableSelected.length === 0 ? 'not-allowed' : 'pointer';
+        batchDeleteBtn.style.opacity = disabledOpacity(deletableSelected.length > 0);
+        batchDeleteBtn.style.cursor = disabledCursor(deletableSelected.length > 0);
         batchDeleteBtn.addEventListener('click', () => {
             this.handleBatchDelete(deletableSelected).catch(err => { // silent-ok: handleBatchDelete 内部已汇总提示
                 log.error('批量删除任务失败:', err);
             });
         });
 
-        const activeTasks = allTasks.filter(t => t.status === 'running' || t.status === 'pending');
+        const activeTasks = selectActiveTasks(allTasks);
         const cancelAllBtn = rightTools.createEl('button', {
             text: '⚠️ 一键全部取消',
             cls: 'nw-btn nw-btn-danger nw-btn-sm',
             attr: { title: '取消全部进行中 / 待执行任务' }
         });
         cancelAllBtn.disabled = activeTasks.length === 0;
-        cancelAllBtn.style.opacity = activeTasks.length === 0 ? '0.5' : '1';
-        cancelAllBtn.style.cursor = activeTasks.length === 0 ? 'not-allowed' : 'pointer';
+        cancelAllBtn.style.opacity = disabledOpacity(activeTasks.length > 0);
+        cancelAllBtn.style.cursor = disabledCursor(activeTasks.length > 0);
         cancelAllBtn.addEventListener('click', () => {
             this.handleCancelAll(activeTasks).catch(err => {
                 log.error('一键取消任务失败:', err);
@@ -2411,16 +2405,11 @@ export class KnowledgeBaseView extends ItemView {
                 cls: 'nw-u-fs-15px nw-u-fwt-600 nw-u-ov-hidden nw-u-textoverflow-ellipsis nw-u-ws-nowrap'
             });
 
+            const statusTone = resolveTaskStatusTone(task.status);
             const statusBadge = headerRow.createSpan({
                 text: this.getTaskStatusLabel(task.status),
                 attr: {
-                    style: `padding:4px 12px;font-size:12px;border-radius:12px;${
-                        task.status === 'completed' ? 'background:rgba(46,204,113,0.15);color:#2ecc71;' :
-                        task.status === 'running' ? 'background:rgba(59,130,246,0.15);color:#3b82f6;' :
-                        task.status === 'failed' ? 'background:rgba(231,76,60,0.15);color:#e74c3c;' :
-                        task.status === 'pending' ? 'background:rgba(245,158,11,0.15);color:#f59e0b;' :
-                        'background:var(--background-secondary);color:var(--text-muted);'
-                    }`
+                    style: `padding:4px 12px;font-size:12px;border-radius:12px;${TASK_STATUS_TONE_STYLES[statusTone]}`
                 }
             });
             void statusBadge;
@@ -2435,13 +2424,13 @@ export class KnowledgeBaseView extends ItemView {
             if (task.completedAt) {
                 infoRow.createSpan({ text: `完成时间：${this.formatDateTime(task.completedAt)}` });
             }
-            infoRow.createSpan({ text: `维度：${task.dimensions.map(d => DIMENSION_LABELS[d]).join('、')}` });
+            infoRow.createSpan({ text: `维度：${formatTaskDimensions(task.dimensions, DIMENSION_LABELS)}` });
 
             const taskProgress = this.deconstructionScheduler?.getAllTasks().find(t => t.id === task.id);
             const emitter = task.id ? this.deconstructionScheduler?.getTaskEmitter(task.id) : undefined;
             const emitterState = emitter?.getState();
 
-            if ((task.status === 'running' || task.status === 'pending') && emitterState) {
+            if (shouldShowTaskProgress(task.status, Boolean(emitterState)) && emitterState) {
                 const progressWrap = card.createDiv({ cls: 'nw-u-marginbottom-12px' });
                 const bar = progressWrap.createDiv({
                     cls: 'nw-u-h-8px nw-u-bg-background-secondary nw-u-brd-4px nw-u-ov-hidden nw-u-marginbottom-6px'
@@ -2453,7 +2442,7 @@ export class KnowledgeBaseView extends ItemView {
                     cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center'
                 });
                 progressInfo.createSpan({
-                    text: `${Math.round(emitterState.progress)}%`,
+                    text: formatTaskProgressPercent(emitterState.progress),
                     cls: 'nw-text-sm-muted'
                 });
                 if (emitterState.currentStep) {
@@ -2464,7 +2453,7 @@ export class KnowledgeBaseView extends ItemView {
                 }
             }
 
-            if (emitterState?.message && (task.status === 'running' || task.status === 'pending')) {
+            if (shouldShowTaskMessage(task.status, emitterState?.message) && emitterState) {
                 const messageEl = card.createDiv({
                     cls: 'nw-u-p-8px-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-marginbottom-12px nw-u-fs-12px nw-u-c-text-muted'
                 });
@@ -2472,7 +2461,7 @@ export class KnowledgeBaseView extends ItemView {
                 messageEl.createSpan({ text: emitterState.message });
             }
 
-            if ((task.status === 'running') && emitterState) {
+            if (shouldShowTaskTiming(task.status, Boolean(emitterState)) && emitterState) {
                 const timeRow = card.createDiv({
                     cls: 'nw-u-d-flex nw-u-gap-20px nw-u-marginbottom-12px nw-u-fs-12px nw-u-c-text-muted nw-u-fwr-wrap'
                 });
@@ -2496,7 +2485,7 @@ export class KnowledgeBaseView extends ItemView {
                 }
             }
 
-            if (task.status === 'failed' && task.error) {
+            if (shouldShowTaskError(task.status, task.error) && task.error) {
                 const errorMsg = card.createDiv({
                     cls: 'nw-u-p-10px-12px nw-u-bg-rgba-231-76-60-0-1 nw-u-brd-6px nw-u-marginbottom-12px nw-u-fs-12px nw-u-c-e74c3c'
                 });
@@ -2508,59 +2497,65 @@ export class KnowledgeBaseView extends ItemView {
                 cls: 'nw-u-d-flex nw-u-gap-8px nw-u-jc-flex-end nw-u-fwr-wrap'
             });
 
-            if (task.status === 'failed') {
-                const retryBtn = actions.createEl('button', {
-                    text: '🔄 重试',
-                    cls: 'nw-btn nw-btn-primary nw-btn-sm',
-                    attr: { title: '重新执行该失败任务' }
-                });
-                retryBtn.addEventListener('click', () => {
-                    this.handleRetryTask(task).catch(err => {
-                        log.error('重试任务失败:', err);
+            // 每个状态该出现哪些按钮由 kb-task-panel.resolveTaskRowActions 决定（有单测）
+            for (const actionKey of resolveTaskRowActions(task.status)) {
+                if (actionKey === 'retry') {
+                    const retryBtn = actions.createEl('button', {
+                        text: '🔄 重试',
+                        cls: 'nw-btn nw-btn-primary nw-btn-sm',
+                        attr: { title: '重新执行该失败任务' }
                     });
-                });
-            }
-
-            if (task.status === 'running' || task.status === 'pending') {
-                const cancelBtn = actions.createEl('button', {
-                    text: '✕ 取消',
-                    cls: 'nw-btn nw-btn-danger nw-btn-sm',
-                    attr: { title: '取消该任务' }
-                });
-                cancelBtn.addEventListener('click', () => {
-                    this.handleCancelTask(task).catch(err => {
-                        log.error('取消任务失败:', err);
+                    retryBtn.addEventListener('click', () => {
+                        this.handleRetryTask(task).catch(err => {
+                            log.error('重试任务失败:', err);
+                        });
                     });
-                });
-            }
-
-            if (task.status === 'completed' || task.status === 'failed' || task.status === 'cancelled') {
-                const deleteBtn = actions.createEl('button', {
-                    text: '🗑️ 删除',
-                    cls: 'nw-btn nw-btn-secondary nw-btn-sm',
-                    attr: { title: '删除该任务记录' }
-                });
-                deleteBtn.addEventListener('click', () => {
-                    this.handleDeleteTask(task).catch(err => { // silent-ok: handleDeleteTask 内部已有失败 Notice
-                        log.error('删除任务失败:', err);
-                    });
-                });
-            }
-
-            const viewBtn = actions.createEl('button', {
-                text: '📖 查看书籍',
-                cls: 'nw-btn nw-btn-secondary nw-btn-sm',
-                attr: { title: '查看该任务对应的书籍' }
-            });
-            viewBtn.addEventListener('click', () => {
-                const book = this.allBooks.find(b => b.id === task.bookId);
-                if (book) {
-                    this.activeMainTab = 'books';
-                    this.renderLeftSidebar();
-                    this.renderRightPanel();
-                    this.openBookDetail(book);
+                    continue;
                 }
-            });
+
+                if (actionKey === 'cancel') {
+                    const cancelBtn = actions.createEl('button', {
+                        text: '✕ 取消',
+                        cls: 'nw-btn nw-btn-danger nw-btn-sm',
+                        attr: { title: '取消该任务' }
+                    });
+                    cancelBtn.addEventListener('click', () => {
+                        this.handleCancelTask(task).catch(err => {
+                            log.error('取消任务失败:', err);
+                        });
+                    });
+                    continue;
+                }
+
+                if (actionKey === 'delete') {
+                    const deleteBtn = actions.createEl('button', {
+                        text: '🗑️ 删除',
+                        cls: 'nw-btn nw-btn-secondary nw-btn-sm',
+                        attr: { title: '删除该任务记录' }
+                    });
+                    deleteBtn.addEventListener('click', () => {
+                        this.handleDeleteTask(task).catch(err => { // silent-ok: handleDeleteTask 内部已有失败 Notice
+                            log.error('删除任务失败:', err);
+                        });
+                    });
+                    continue;
+                }
+
+                const viewBtn = actions.createEl('button', {
+                    text: '📖 查看书籍',
+                    cls: 'nw-btn nw-btn-secondary nw-btn-sm',
+                    attr: { title: '查看该任务对应的书籍' }
+                });
+                viewBtn.addEventListener('click', () => {
+                    const book = this.allBooks.find(b => b.id === task.bookId);
+                    if (book) {
+                        this.activeMainTab = 'books';
+                        this.renderLeftSidebar();
+                        this.renderRightPanel();
+                        this.openBookDetail(book);
+                    }
+                });
+            }
         });
     }
 

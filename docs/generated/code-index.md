@@ -11,7 +11,7 @@
 | `shared/` | 196 | 41151 | 1689 | 1380 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 247 | 101089 | 837 | 703 | 84% |
+| `ui/` | 248 | 101377 | 861 | 722 | 84% |
 
 ## 文件清单
 
@@ -813,8 +813,9 @@
 | `ui/views/kb-format.ts` | 168 | 10 | 7 |
 | `ui/views/kb-panels-logic.ts` | 342 | 18 | 10 |
 | `ui/views/kb-stats-panel.ts` | 155 | 2 | 2 |
+| `ui/views/kb-task-panel.ts` | 293 | 24 | 19 |
 | `ui/views/knowledge-base-modals.ts` | 1369 | 4 | 4 |
-| `ui/views/knowledge-base-view.ts` | 3171 | 10 | 10 |
+| `ui/views/knowledge-base-view.ts` | 3166 | 10 | 10 |
 | `ui/views/knowledge-capability.ts` | 81 | 2 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/writing-fingerprint-view.ts` | 2033 | 3 | 3 |
