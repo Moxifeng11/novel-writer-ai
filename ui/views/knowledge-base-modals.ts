@@ -1,5 +1,6 @@
 import { Modal, App, Notice, Setting, TFile } from 'obsidian';
 import { KnowledgeBaseManager, MAX_SOURCE_FILE_SIZE, type BookBasicInfo } from '@/services/knowledge-base-manager';
+import { filterBookFiles, formatSourceFileSizeMb, isBlankBookName, isSourceFileTooLarge, resolveBookNameFromFile } from './kb-import-file-logic';
 import { WebnovelKnowledgeBase, type GenreConfig, type SubGenreConfig, type TechniqueDef } from '@/shared/webnovel-knowledge-base';
 import { kbBookDir, kbBookSourceFile } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
@@ -127,9 +128,7 @@ export class ImportBookModal extends Modal {
 
                     const renderList = (filter: string) => {
                         list.empty();
-                        const filtered = this.files.filter(f =>
-                            f.name.toLowerCase().includes(filter.toLowerCase())
-                        );
+                        const filtered = filterBookFiles(this.files, filter);
                         filtered.forEach(file => {
                             const item = list.createDiv({
                                 attr: { style: 'padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--background-modifier-border);&:last-child{border-bottom:none;}' }
@@ -164,14 +163,14 @@ export class ImportBookModal extends Modal {
         input.addEventListener('change', async (e) => {
             const file = (e.target as HTMLInputElement).files?.[0];
             if (!file) return;
-            if (file.size > MAX_SOURCE_FILE_SIZE) {
+            if (isSourceFileTooLarge(file.size, MAX_SOURCE_FILE_SIZE)) {
                 // SEC-7：读前硬限（file.text() 是全量读，兜底截断为时已晚）
-                showErrorNotice(`文件过大: ${file.name}（${Math.round(file.size / 1024 / 1024)}MB，上限 10MB）`);
+                showErrorNotice(`文件过大: ${file.name}（${formatSourceFileSizeMb(file.size)}MB，上限 10MB）`);
                 return;
             }
             try {
                 const text = await file.text();
-                const name = file.name.replace(/\.(txt|md)$/i, '');
+                const name = resolveBookNameFromFile(file.name);
                 await this.importBook(name, '', file.name, text);
             } catch (err) {
                 showErrorNotice('读取文件失败');
