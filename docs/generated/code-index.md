@@ -11,7 +11,7 @@
 | `shared/` | 197 | 41698 | 1709 | 1393 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 256 | 102938 | 905 | 754 | 83% |
+| `ui/` | 260 | 103333 | 935 | 773 | 83% |
 
 ## 文件清单
 
@@ -809,15 +809,18 @@
 | `ui/usage-ledger-modal.ts` | 182 | 1 | 1 |
 | `ui/utils/worldview-utils.ts` | 103 | 1 | 1 |
 | `ui/vector-rebuild-action.ts` | 148 | 1 | 1 |
+| `ui/views/book-detail-logic.ts` | 161 | 10 | 7 |
 | `ui/views/book-detail-metrics.ts` | 392 | 29 | 21 |
-| `ui/views/book-detail-renderer.ts` | 2402 | 2 | 2 |
+| `ui/views/book-detail-renderer.ts` | 2366 | 2 | 2 |
 | `ui/views/capability-banner.ts` | 88 | 5 | 1 |
 | `ui/views/fingerprint-capability.ts` | 105 | 3 | 1 |
+| `ui/views/fingerprint-detail-logic.ts` | 95 | 8 | 4 |
 | `ui/views/fingerprint-v2-detail.ts` | 126 | 4 | 2 |
 | `ui/views/fingerprint-view-logic.ts` | 121 | 7 | 6 |
 | `ui/views/kb-book-card.ts` | 200 | 2 | 2 |
 | `ui/views/kb-book-filter.ts` | 190 | 11 | 7 |
 | `ui/views/kb-card-logic.ts` | 233 | 20 | 14 |
+| `ui/views/kb-config-import-logic.ts` | 98 | 5 | 4 |
 | `ui/views/kb-config-panel.ts` | 222 | 3 | 3 |
 | `ui/views/kb-detail-actions.ts` | 180 | 2 | 2 |
 | `ui/views/kb-format.ts` | 168 | 10 | 7 |
@@ -825,12 +828,13 @@
 | `ui/views/kb-panels-logic.ts` | 342 | 18 | 10 |
 | `ui/views/kb-stats-panel.ts` | 155 | 2 | 2 |
 | `ui/views/kb-task-panel.ts` | 293 | 24 | 19 |
+| `ui/views/kb-view-logic.ts` | 112 | 7 | 4 |
 | `ui/views/knowledge-base-modals.ts` | 1380 | 4 | 4 |
-| `ui/views/knowledge-base-view.ts` | 3301 | 10 | 10 |
+| `ui/views/knowledge-base-view.ts` | 3271 | 10 | 10 |
 | `ui/views/knowledge-capability.ts` | 113 | 3 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/link-status.ts` | 115 | 2 | 1 |
-| `ui/views/writing-fingerprint-view.ts` | 2054 | 3 | 3 |
+| `ui/views/writing-fingerprint-view.ts` | 2049 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |
