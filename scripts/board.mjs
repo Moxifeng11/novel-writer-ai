@@ -41,20 +41,24 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/** 向上搜索 vault 根（含 .trae 目录），找不到则退回插件仓 */
+/**
+ * 解析任务板根目录。
+ *
+ * **必须确定性**：曾用「向上找第一个含 `.trae` 的目录」，
+ * 结果从插件仓运行时命中 `<plugin>/.trae`，从 vault 根运行时命中 `<vault>/.trae`——
+ * **同一批 agent 会因为 cwd 不同而看到两块不同的任务板**（分裂）。
+ *
+ * 现在锚定到**脚本所在仓库根**（`<plugin>/.trae/board`）：
+ * 脚本路径是固定的，谁调用都解析到同一块板，与 cwd 无关。
+ *
+ * 环境变量 `BOARD_ROOT` 可覆盖（测试用）。
+ *
+ * @returns 任务板根目录
+ */
 function resolveBoardRoot() {
     if (process.env.BOARD_ROOT) return process.env.BOARD_ROOT;
-    let current = __dirname;
-    for (let depth = 0; depth < 8; depth++) {
-        const candidate = path.join(current, '.trae');
-        if (fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
-            return path.join(candidate, 'board');
-        }
-        const parent = path.dirname(current);
-        if (parent === current) break;
-        current = parent;
-    }
-    return path.join(path.resolve(__dirname, '..'), '.trae', 'board');
+    const repoRoot = path.resolve(__dirname, '..');
+    return path.join(repoRoot, '.trae', 'board');
 }
 
 const BOARD_ROOT = resolveBoardRoot();
