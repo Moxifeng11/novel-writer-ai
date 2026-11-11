@@ -10,6 +10,13 @@
  */
 
 import type { GenreConfig, WebnovelKnowledgeBase } from '@/shared/webnovel-knowledge-base';
+import {
+    KB_CONFIG_CATEGORIES,
+    isCustomGenre as isCustomGenreUi,
+    buildGenreStatItems,
+    selectSubGenrePreview,
+    formatSubGenreSectionTitle,
+} from './kb-card-logic';
 
 /**
  * 频道分类 key（与视图本地类型 ConfigCategoryKey、GenreConfig['category'] 同构）。
@@ -73,11 +80,7 @@ export function buildKbConfigPanel(rightContentEl: HTMLElement, host: KbConfigPa
     });
     categoryHeader.createEl('h3', { text: '频道分类', cls: 'nw-u-m-0 nw-u-fs-14px' });
 
-    const categories: { key: KbConfigCategoryKey; label: string; icon: string }[] = [
-        { key: 'male', label: '男频', icon: '♂️' },
-        { key: 'female', label: '女频', icon: '♀️' },
-        { key: 'neutral', label: '中性', icon: '⚧️' },
-    ];
+    const categories = KB_CONFIG_CATEGORIES;
 
     categories.forEach(cat => {
         const item = categoryPanel.createDiv({
@@ -145,7 +148,7 @@ export function buildKbConfigPanel(rightContentEl: HTMLElement, host: KbConfigPa
     });
 
     genres.forEach(genre => {
-        const isCustom = genre.isCustom || host.kb?.isCustomGenre(genre.id);
+        const isCustom = isCustomGenreUi(genre, host.kb ? id => host.kb!.isCustomGenre(id) : undefined);
         const card = grid.createDiv({
             attr: {
                 style: `border:1px solid var(--background-modifier-border);border-radius:8px;padding:16px;cursor:pointer;background:var(--background-primary);transition:all 0.15s;position:relative;${
@@ -185,11 +188,7 @@ export function buildKbConfigPanel(rightContentEl: HTMLElement, host: KbConfigPa
         });
 
         const stats = card.createDiv({ cls: 'nw-u-d-grid nw-u-gtc-repeat-3-1fr nw-u-gap-8px' });
-        const statItems = [
-            { label: '性格标签', value: genre.personalityTags.length },
-            { label: '能力类型', value: genre.abilityTypes.length },
-            { label: '写作技巧', value: genre.techniques.length },
-        ];
+        const statItems = buildGenreStatItems(genre);
         statItems.forEach(s => {
             const statItem = stats.createDiv({
                 cls: 'nw-u-ta-center nw-u-p-8px nw-u-bg-background-secondary nw-u-brd-6px'
@@ -198,19 +197,20 @@ export function buildKbConfigPanel(rightContentEl: HTMLElement, host: KbConfigPa
             statItem.createDiv({ text: s.label, cls: 'nw-u-fs-10px nw-u-c-text-muted nw-u-margintop-2px' });
         });
 
-        if (genre.subGenres && genre.subGenres.length > 0) {
+        const subGenrePreview = selectSubGenrePreview(genre.subGenres);
+        if (subGenrePreview.shown.length > 0) {
             const subSection = card.createDiv({ cls: 'nw-u-margintop-12px nw-u-paddingtop-12px nw-u-bt-1px-solid-background-m' });
-            subSection.createDiv({ text: `细分题材 (${genre.subGenres.length})`, cls: "nw-text-sm-muted nw-u-marginbottom-6px", attr: {} });
+            subSection.createDiv({ text: formatSubGenreSectionTitle(genre.subGenres!.length), cls: "nw-text-sm-muted nw-u-marginbottom-6px", attr: {} });
             const subTags = subSection.createDiv({ cls: 'nw-flex-wrap-sm' });
-            genre.subGenres.slice(0, 5).forEach(sub => {
+            subGenrePreview.shown.forEach(sub => {
                 subTags.createSpan({
                     text: sub.name,
                     cls: 'nw-u-p-2px-8px nw-u-fs-11px nw-u-bg-background-secondary nw-u-brd-10px nw-u-c-text-muted'
                 });
             });
-            if (genre.subGenres.length > 5) {
+            if (subGenrePreview.overflow > 0) {
                 subTags.createSpan({
-                    text: `+${genre.subGenres.length - 5}`,
+                    text: `+${subGenrePreview.overflow}`,
                     cls: "nw-text-muted-11 nw-u-p-2px-8px", attr: {}
                 });
             }

@@ -9,6 +9,27 @@
 
 import type { BookBasicInfo } from '@/services/knowledge-base-manager';
 import { isClassificationTag, type ClassificationResult } from '@/shared/content-classifier';
+import {
+    resolveBookStatusTone,
+    shouldShowVectorWarning,
+    resolveVectorWarningTitle,
+    shouldShowBreakdownProgress,
+    formatBreakdownProgressLabel,
+    selectClassificationPreview,
+    formatClassificationTagTitle,
+    selectCustomTagPreview,
+    formatQualityBadge,
+    formatAuthorName,
+} from './kb-card-logic';
+
+/** 拆解状态档位 → 徽标背景/前景色（样式留在视图层，判定在 kb-card-logic） */
+const STATUS_TONE_STYLES: Record<ReturnType<typeof resolveBookStatusTone>, string> = {
+    success: 'background:rgba(46,204,113,0.15);color:#2ecc71;',
+    info: 'background:rgba(59,130,246,0.15);color:#3b82f6;',
+    danger: 'background:rgba(231,76,60,0.15);color:#e74c3c;',
+    warning: 'background:rgba(245,158,11,0.15);color:#f59e0b;',
+    muted: 'background:var(--background-secondary);color:var(--text-muted);',
+};
 
 /**
  * 书籍卡片构建所需的宿主能力集合。
@@ -58,37 +79,32 @@ export function buildKbBookCard(book: BookBasicInfo, host: KbBookCardHost): HTML
     });
     void title;
 
+    const statusTone = resolveBookStatusTone(book.breakdownStatus);
     const statusBadge = header.createSpan({
         text: host.getStatusLabel(book.breakdownStatus),
         cls: 'nw-flex-shrink-0',
         attr: {
-            style: `padding:2px 8px;font-size:11px;border-radius:10px;${
-                book.breakdownStatus === 'completed' ? 'background:rgba(46,204,113,0.15);color:#2ecc71;' :
-                book.breakdownStatus === 'processing' ? 'background:rgba(59,130,246,0.15);color:#3b82f6;' :
-                book.breakdownStatus === 'failed' ? 'background:rgba(231,76,60,0.15);color:#e74c3c;' :
-                book.breakdownStatus === 'interrupted' ? 'background:rgba(245,158,11,0.15);color:#f59e0b;' :
-                'background:var(--background-secondary);color:var(--text-muted);'
-            }`
+            style: `padding:2px 8px;font-size:11px;border-radius:10px;${STATUS_TONE_STYLES[statusTone]}`
         }
     });
     void statusBadge;
 
     // A5: 拆解完成但向量化失败时，检索实际不可用，列表必须能看出来
-    if (book.vectorStatus === 'failed') {
+    if (shouldShowVectorWarning(book)) {
         header.createSpan({
             text: '⚠️ 向量化失败',
             attr: {
-                title: book.vectorError || '检索不可用，请到详情页重试向量化',
+                title: resolveVectorWarningTitle(book),
                 style: 'padding:2px 8px;font-size:11px;border-radius:10px;background:var(--nw-danger-soft-bg);color:var(--nw-danger-soft);flex-shrink:0;margin-left:4px;'
             }
         });
     }
 
     const meta = card.createDiv({ cls: "nw-text-sm-muted nw-u-marginbottom-8px", attr: {} });
-    meta.createSpan({ text: book.author || '未知作者' });
+    meta.createSpan({ text: formatAuthorName(book.author) });
     meta.createSpan({ text: ' · ' + host.formatWordCount(book.wordCount) });
 
-    if (book.breakdownStatus === 'processing' && book.breakdownProgress !== undefined) {
+    if (shouldShowBreakdownProgress(book)) {
         const progressWrap = card.createDiv({ cls: 'nw-u-marginbottom-8px' });
         const bar = progressWrap.createDiv({
             cls: 'nw-u-h-4px nw-u-bg-background-secondary nw-u-brd-2px nw-u-ov-hidden'
@@ -97,25 +113,26 @@ export function buildKbBookCard(book: BookBasicInfo, host: KbBookCardHost): HTML
             attr: { style: `height:100%;width:${book.breakdownProgress}%;background:var(--interactive-accent);transition:width 0.3s;` }
         });
         progressWrap.createSpan({
-            text: `拆解中 ${book.breakdownProgress}%`,
+            text: formatBreakdownProgressLabel(book),
             cls: 'nw-text-muted-11'
         });
     }
 
     const tags = card.createDiv({ cls: "nw-flex-wrap-sm nw-u-marginbottom-8px", attr: {} });
     const classification = host.classifyBookInfo(book);
-    if (classification.tags.length > 0) {
+    const classificationPreview = selectClassificationPreview(classification);
+    if (classificationPreview.length > 0) {
         const classRow = card.createDiv({ cls: 'nw-kb-class-row' });
         classRow.createSpan({
             text: `🏷️ ${classification.primary}`,
             cls: 'nw-kb-class-primary',
             attr: { title: classification.summary }
         });
-        classification.tags.slice(0, 3).forEach(tag => {
+        classificationPreview.forEach(tag => {
             classRow.createSpan({
                 text: tag.label,
                 cls: 'nw-kb-class-tag',
-                attr: { title: `${tag.dimension} · ${tag.reason}（置信度 ${(tag.confidence * 100).toFixed(0)}%）` }
+                attr: { title: formatClassificationTagTitle(tag) }
             });
         });
     }
@@ -128,7 +145,7 @@ export function buildKbBookCard(book: BookBasicInfo, host: KbBookCardHost): HTML
             });
         }
     }
-    book.customTags.filter(tag => !isClassificationTag(tag)).slice(0, 2).forEach(tag => {
+    selectCustomTagPreview(book.customTags, isClassificationTag).forEach(tag => {
         tags.createSpan({
             text: tag,
             cls: 'nw-u-p-2px-6px nw-u-fs-10px nw-u-bg-background-secondary nw-u-c-text-muted nw-u-brd-8px'
@@ -139,12 +156,12 @@ export function buildKbBookCard(book: BookBasicInfo, host: KbBookCardHost): HTML
         cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-paddingtop-8px nw-u-bt-1px-solid-background-m'
     });
 
-    if (book.qualityScores) {
-        const quality = footer.createSpan({
-            text: `⭐ ${book.qualityScores.overall.toFixed(0)}分`,
+    const qualityText = formatQualityBadge(book.qualityScores);
+    if (qualityText) {
+        footer.createSpan({
+            text: qualityText,
             cls: 'nw-u-fs-12px nw-u-c-f59e0b nw-u-fwt-500'
         });
-        void quality;
     } else {
         footer.createSpan();
     }

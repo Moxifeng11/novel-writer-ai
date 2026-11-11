@@ -11,7 +11,7 @@
 | `shared/` | 196 | 41151 | 1689 | 1380 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 244 | 100582 | 797 | 676 | 85% |
+| `ui/` | 245 | 100832 | 817 | 690 | 84% |
 
 ## 文件清单
 
@@ -805,7 +805,8 @@
 | `ui/views/capability-banner.ts` | 68 | 4 | 1 |
 | `ui/views/fingerprint-capability.ts` | 105 | 3 | 1 |
 | `ui/views/fingerprint-v2-detail.ts` | 126 | 4 | 2 |
-| `ui/views/kb-book-card.ts` | 163 | 2 | 2 |
+| `ui/views/kb-book-card.ts` | 180 | 2 | 2 |
+| `ui/views/kb-card-logic.ts` | 233 | 20 | 14 |
 | `ui/views/kb-config-panel.ts` | 222 | 3 | 3 |
 | `ui/views/kb-detail-actions.ts` | 180 | 2 | 2 |
 | `ui/views/kb-panels-logic.ts` | 342 | 18 | 10 |
