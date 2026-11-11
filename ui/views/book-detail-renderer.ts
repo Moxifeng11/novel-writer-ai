@@ -19,6 +19,20 @@ import type {
 } from './knowledge-base-view';
 import { isImeComposing } from '@/shared/keyboard';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
+import {
+    buildStyleRadarItems,
+    buildRhetoricBarData,
+    buildWordCloudItems,
+    buildTimelineEvents,
+    filterForeshadows,
+    rankTechniquesTop,
+    resolveTierLabel,
+    resolveArcTypeLabel,
+    resolveTimelineIcon,
+    joinRoleParts,
+    normalizeSentenceLength,
+    normalizeParagraphLength,
+} from './book-detail-metrics';
 
 const log = createLogger('BookDetailRenderer');
 
@@ -91,27 +105,7 @@ export class BookDetailRenderer {
         }
 
         // 风格特征雷达图
-        const radarItems: Array<{ label: string; value: number }> = [];
-        if (sentenceRhythm?.avgSentenceLength !== undefined) {
-            const normalizedLength = Math.min(100, (sentenceRhythm.avgSentenceLength / 50) * 100);
-            radarItems.push({ label: '平均句长', value: normalizedLength });
-        }
-        if (paragraphStructure?.avgParagraphLength !== undefined) {
-            const normalizedPara = Math.min(100, (paragraphStructure.avgParagraphLength / 200) * 100);
-            radarItems.push({ label: '平均段长', value: normalizedPara });
-        }
-        if (narrativeStyle?.dialogueRatio !== undefined) {
-            radarItems.push({ label: '对白占比', value: narrativeStyle.dialogueRatio * 100 });
-        }
-        if (narrativeStyle?.descriptionRatio?.total !== undefined) {
-            radarItems.push({ label: '描写占比', value: narrativeStyle.descriptionRatio.total * 100 });
-        }
-        if (wordPreference?.colloquialismLevel !== undefined) {
-            radarItems.push({ label: '口语化程度', value: wordPreference.colloquialismLevel * 100 });
-        }
-        if (wordPreference?.idiomDensity !== undefined) {
-            radarItems.push({ label: '成语密度', value: Math.min(100, wordPreference.idiomDensity / 100 * 100) });
-        }
+        const radarItems = buildStyleRadarItems(data);
 
         if (radarItems.length >= 3) {
             const radarSection = this.createDetailSection(container, '风格雷达图');
@@ -150,10 +144,7 @@ export class BookDetailRenderer {
         // 风格特征词云（使用高频词）
         if (wordPreference?.topWords && wordPreference.topWords.length > 0) {
             const section = this.createDetailSection(container, '高频词词云');
-            const wordItems = wordPreference.topWords.slice(0, 30).map(item => ({
-                text: item.word,
-                weight: item.count
-            }));
+            const wordItems = buildWordCloudItems(wordPreference.topWords);
             const wordCloudDiv = section.createDiv({
                 cls: 'nw-u-d-flex nw-u-jc-center'
             });
@@ -163,14 +154,7 @@ export class BookDetailRenderer {
         // 修辞手法柱状图
         if (rhetoric) {
             const section = this.createDetailSection(container, '修辞手法');
-            const barData = [
-                { label: '比喻', value: rhetoric.metaphor },
-                { label: '拟人', value: rhetoric.personification },
-                { label: '排比', value: rhetoric.parallelism },
-                { label: '反问', value: rhetoric.rhetoricalQuestion },
-                { label: '夸张', value: rhetoric.hyperbole },
-                { label: '对偶', value: rhetoric.antithesis },
-            ];
+            const barData = buildRhetoricBarData(rhetoric);
             const barDiv = section.createDiv({
                 cls: 'nw-u-d-flex nw-u-jc-center'
             });
@@ -642,13 +626,7 @@ export class BookDetailRenderer {
                 '合': '#8b5cf6',
             };
             
-            const timelineEvents = qcchSegments.map((seg, i) => ({
-                position: seg.startPosition,
-                label: seg.type,
-                description: seg.type,
-                type: seg.type,
-                level: 0
-            }));
+            const timelineEvents = buildTimelineEvents(qcchSegments);
             const timelineDiv = section.createDiv({
                 cls: 'nw-u-d-flex nw-u-jc-center'
             });
@@ -1213,7 +1191,7 @@ export class BookDetailRenderer {
             info.createDiv({ text: char.name, cls: 'nw-u-fs-14px nw-u-fwt-500 nw-u-marginbottom-2px' });
             const roleInfo = [char.role || '未知角色', char.gender || ''];
             if (char.importance?.tier) roleInfo.push(this.getTierLabel(char.importance.tier));
-            info.createDiv({ text: roleInfo.filter(Boolean).join(' · '), cls: 'nw-text-sm-muted' });
+            info.createDiv({ text: joinRoleParts(roleInfo), cls: 'nw-text-sm-muted' });
 
             const toggle = header.createSpan({
                 text: isExpanded ? '▼' : '▶',
@@ -1481,7 +1459,7 @@ export class BookDetailRenderer {
                 item.createSpan({ text: char.name, cls: 'nw-u-fs-13px nw-u-fwt-500 nw-u-flex-1' });
                 const roleParts = [char.role || ''];
                 if (char.tier) roleParts.push(this.getTierLabel(char.tier));
-                item.createSpan({ text: roleParts.filter(Boolean).join(' · '), cls: 'nw-text-sm-muted nw-flex-shrink-0' });
+                item.createSpan({ text: joinRoleParts(roleParts), cls: 'nw-text-sm-muted nw-flex-shrink-0' });
                 if (char.tags && char.tags.length > 0) {
                     const tagsWrap = item.createDiv({ cls: "nw-flex-shrink-0 nw-u-d-flex nw-u-gap-4px", attr: {} });
                     char.tags.slice(0, 2).forEach(tag => {
@@ -1558,37 +1536,15 @@ export class BookDetailRenderer {
     }
 
     private getTierLabel(tier?: string): string {
-        const labels: Record<string, string> = {
-            protagonist: '主角',
-            core_supporting: '核心配角',
-            important_supporting: '重要配角',
-            minor_supporting: '次要配角',
-            extra: '路人角色'
-        };
-        return labels[tier || 'extra'] || tier || '';
+        return resolveTierLabel(tier);
     }
 
     private getArcTypeLabel(type: string): string {
-        const labels: Record<string, string> = {
-            growth: '成长型',
-            fall: '堕落型',
-            awakening: '觉醒型',
-            darkening: '黑化型',
-            return: '回归型',
-            stable: '稳定型'
-        };
-        return labels[type] || type;
+        return resolveArcTypeLabel(type);
     }
 
     private getTimelineIcon(type: string): string {
-        const icons: Record<string, string> = {
-            appearance: '👤',
-            growth: '📈',
-            relationship: '💞',
-            plot: '📌',
-            turning_point: '⚡'
-        };
-        return icons[type] || '•';
+        return resolveTimelineIcon(type);
     }
 
     // ---- 伏笔 Tab ----
@@ -1722,11 +1678,7 @@ export class BookDetailRenderer {
             });
         });
 
-        const filteredItems = foreshadows.filter(item => {
-            if (currentFilter === 'all') return true;
-            if (currentFilter === 'resolved') return item.hasResolution;
-            return !item.hasResolution;
-        });
+        const filteredItems = filterForeshadows(foreshadows, currentFilter);
 
         const list = listSection.createDiv({
             cls: 'nw-u-maxh-400px nw-u-ovy-auto nw-u-b-1px-solid-background-m nw-u-brd-8px'
@@ -2223,10 +2175,9 @@ export class BookDetailRenderer {
             this.renderChart(donutDiv, donutChart(donutData, { size: 300, title: '技巧分类占比' }));
         }
 
-        // Top技巧排名柱状图（按 count 排序）
-        const sortedTechniques = [...techniques].sort((a, b) => b.count - a.count);
-        const top10 = sortedTechniques.slice(0, 10);
-        
+        // Top 技巧排名（按 count 降序，纯函数在 book-detail-metrics 内并有单测）
+        const top10 = rankTechniquesTop(techniques);
+
         const chartSection = this.createDetailSection(container, 'Top 10 写作技巧排名');
         const barData = top10.map(t => ({ label: t.name, value: t.count }));
         const barDiv = chartSection.createDiv({
