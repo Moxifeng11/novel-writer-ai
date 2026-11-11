@@ -28,6 +28,11 @@ import { renderV2FeaturesSection, V2_FEATURE_LABELS } from './fingerprint-v2-det
 import { renderCapabilityBanner } from './capability-banner';
 import { computeFingerprintCapability } from './fingerprint-capability';
 import { computeStyleFlowStatus, renderLinkStatus } from './link-status';
+import {
+    collectFingerprintTags,
+    filterFingerprints,
+    resolveEffectiveEnabled,
+} from './fingerprint-view-logic';
 import { filterDegradationsBySource, getDegradationNotifier } from '@/shared/degradation-notifier';
 import type { V2Fingerprint, StyleFingerprintFeaturesV2 } from '@/engine/style/style-dimensions-v2';
 
@@ -275,8 +280,7 @@ export class WritingFingerprintView extends ItemView {
 
     /** 该指纹在当前项目下是否真的生效（全局层看项目覆盖，其它层看自身） */
     private isEffectivelyEnabled(fp: StyleFingerprint): boolean {
-        if (fp.scope !== 'global') return fp.enabled;
-        return this.effectiveGlobalEnabled.get(fp.id) ?? fp.enabled;
+        return resolveEffectiveEnabled(fp, this.effectiveGlobalEnabled);
     }
 
     /** 渲染用投影：把项目级覆盖写进 enabled，不改动库内对象 */
@@ -294,33 +298,18 @@ export class WritingFingerprintView extends ItemView {
     }
 
     private getCurrentFingerprints(): StyleFingerprint[] {
-        let filtered = this.getScopeFingerprints(this.filter.activeScope);
-
-        if (this.filter.searchQuery) {
-            const q = this.filter.searchQuery.toLowerCase();
-            filtered = filtered.filter(fp =>
-                fp.name.toLowerCase().includes(q) ||
-                fp.source.toLowerCase().includes(q) ||
-                fp.tags.some(t => t.toLowerCase().includes(q))
-            );
-        }
-
-        if (this.filter.selectedTag) {
-            filtered = filtered.filter(fp => fp.tags.includes(this.filter.selectedTag!));
-        }
-
-        return filtered;
+        return filterFingerprints(this.getScopeFingerprints(this.filter.activeScope), {
+            searchQuery: this.filter.searchQuery,
+            selectedTag: this.filter.selectedTag,
+        });
     }
 
     private getAllTags(): string[] {
-        const all = [
+        return collectFingerprintTags([
             ...this.templateFingerprints,
             ...this.globalFingerprints,
             ...this.projectFingerprints,
-        ];
-        const tagSet = new Set<string>();
-        all.forEach(fp => fp.tags.forEach(t => tagSet.add(t)));
-        return Array.from(tagSet).sort();
+        ]);
     }
 
     private renderLayout(): void {        const { containerEl } = this;

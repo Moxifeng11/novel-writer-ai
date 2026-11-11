@@ -11,7 +11,7 @@
 | `shared/` | 197 | 41680 | 1709 | 1393 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 250 | 102353 | 867 | 725 | 84% |
+| `ui/` | 251 | 102463 | 874 | 731 | 84% |
 
 ## 文件清单
 
@@ -810,6 +810,7 @@
 | `ui/views/capability-banner.ts` | 88 | 5 | 1 |
 | `ui/views/fingerprint-capability.ts` | 105 | 3 | 1 |
 | `ui/views/fingerprint-v2-detail.ts` | 126 | 4 | 2 |
+| `ui/views/fingerprint-view-logic.ts` | 121 | 7 | 6 |
 | `ui/views/kb-book-card.ts` | 200 | 2 | 2 |
 | `ui/views/kb-book-filter.ts` | 190 | 11 | 7 |
 | `ui/views/kb-card-logic.ts` | 233 | 20 | 14 |
@@ -824,7 +825,7 @@
 | `ui/views/knowledge-capability.ts` | 113 | 3 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/link-status.ts` | 115 | 2 | 1 |
-| `ui/views/writing-fingerprint-view.ts` | 2065 | 3 | 3 |
+| `ui/views/writing-fingerprint-view.ts` | 2054 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |
