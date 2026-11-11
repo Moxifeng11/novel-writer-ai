@@ -32,6 +32,12 @@ import {
     FORESHADOW_IMPORTANCE_STYLES,
     resolveForeshadowTypeLabel,
 } from './book-foreshadow-logic';
+import {
+    buildNrcEmotionRadarData,
+    resolveEmotionArcLabel,
+    resolveSeverityColor,
+    resolveSeverityLabel,
+} from './book-emotion-logic';
 import type { DeconstructionScheduler, BreakdownDimension, DimensionQualityScore } from '@/engine/deconstruction-scheduler';
 import type {
     StyleData,
@@ -528,41 +534,22 @@ export class BookDetailRenderer {
 
         if (data.nrcEmotion) {
             const ne = data.nrcEmotion;
-            if (ne.overallDistribution) {
-                const nameMap: Record<string, string> = {
-                    anger: '愤怒', anticipation: '期待', disgust: '厌恶', fear: '恐惧',
-                    joy: '喜悦', sadness: '悲伤', surprise: '惊讶', trust: '信任'
-                };
+            const radarData = buildNrcEmotionRadarData(ne);
+            if (radarData.length >= 3) {
                 const section = this.createDetailSection(container, 'NRC 情绪分布');
-                const radarData = Object.entries(ne.overallDistribution).map(([k, v]) => ({
-                    label: nameMap[k] || k,
-                    value: Math.min(100, v * 100)
-                }));
-                if (radarData.length >= 3) {
-                    const radarDiv = section.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
-                    this.renderChart(radarDiv, radarChart(radarData, { size: 320, title: 'NRC 八维情绪雷达' }));
-                }
+                const radarDiv = section.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
+                this.renderChart(radarDiv, radarChart(radarData, { size: 320, title: 'NRC 八维情绪雷达' }));
             }
         }
 
         if (data.emotionArc) {
             const ea = data.emotionArc;
             const section = this.createDetailSection(container, '情绪弧线');
-            const arcTypeMap: Record<string, string> = {
-                rags_to_riches: '逆袭上升 (Rags to Riches)',
-                riches_to_rags: '盛极而衰 (Riches to Rags)',
-                man_in_hole: '跌入谷底回升 (Man in Hole)',
-                icarus: '伊卡洛斯 (Icarus)',
-                cinderella: '灰姑娘 (Cinderella)',
-                oedipus: '俄狄浦斯 (Oedipus)',
-                steady: '平稳型 (Steady)',
-                complex: '复杂型 (Complex)'
-            };
             const card = section.createDiv({
                 cls: 'nw-u-p-16px nw-u-bg-background-secondary nw-u-brd-8px'
             });
             card.createDiv({
-                text: `弧线类型: ${arcTypeMap[ea.arcType] || ea.arcType}`,
+                text: `弧线类型: ${resolveEmotionArcLabel(ea.arcType)}`,
                 cls: 'nw-u-fs-16px nw-u-fwt-600 nw-u-c-interactive-accent nw-u-marginbottom-8px'
             });
             card.createDiv({
@@ -1769,25 +1756,16 @@ export class BookDetailRenderer {
                 const suggSection = this.createDetailSection(container, '改进建议');
                 const sortedSuggestions = sortSuggestionsBySeverity(gtc.improvementSuggestions);
                 const list = suggSection.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-8px' });
-                const severityColors: Record<string, string> = {
-                    high: 'var(--color-red)',
-                    medium: 'var(--color-orange)',
-                    low: 'var(--color-green)'
-                };
-                const severityLabels: Record<string, string> = {
-                    high: '高',
-                    medium: '中',
-                    low: '低'
-                };
+
                 sortedSuggestions.forEach(s => {
                     const item = list.createDiv({
                         cls: 'nw-u-p-10px-14px nw-u-bg-background-secondary nw-u-brd-6px'
                     });
                     const header = item.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-marginbottom-4px' });
                     header.createSpan({
-                        text: severityLabels[s.severity] || s.severity,
+                        text: resolveSeverityLabel(s.severity),
                         attr: {
-                            style: `padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;color:white;background:${severityColors[s.severity] || 'var(--text-muted)'};`
+                            style: `padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;color:white;background:${resolveSeverityColor(s.severity)};`
                         }
                     });
                     header.createSpan({ text: s.category, cls: 'nw-u-fs-12px nw-u-fwt-500' });
@@ -1954,25 +1932,16 @@ export class BookDetailRenderer {
                 const suggSection = this.createDetailSection(container, '改进建议');
                 const sortedSuggestions = sortSuggestionsBySeverity(st.suggestions);
                 const list = suggSection.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-8px' });
-                const severityColors: Record<string, string> = {
-                    high: 'var(--color-red)',
-                    medium: 'var(--color-orange)',
-                    low: 'var(--color-green)'
-                };
-                const severityLabels: Record<string, string> = {
-                    high: '高',
-                    medium: '中',
-                    low: '低'
-                };
+
                 sortedSuggestions.forEach(s => {
                     const item = list.createDiv({
                         cls: 'nw-u-p-10px-14px nw-u-bg-background-secondary nw-u-brd-6px'
                     });
                     const header = item.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-marginbottom-4px' });
                     header.createSpan({
-                        text: severityLabels[s.severity] || s.severity,
+                        text: resolveSeverityLabel(s.severity),
                         attr: {
-                            style: `padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;color:white;background:${severityColors[s.severity] || 'var(--text-muted)'};`
+                            style: `padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;color:white;background:${resolveSeverityColor(s.severity)};`
                         }
                     });
                     header.createSpan({ text: s.type, cls: 'nw-u-fs-12px nw-u-fwt-500' });
