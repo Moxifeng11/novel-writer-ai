@@ -11,7 +11,7 @@
 | `shared/` | 197 | 41698 | 1709 | 1393 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 260 | 103333 | 935 | 773 | 83% |
+| `ui/` | 265 | 103827 | 983 | 797 | 81% |
 
 ## 文件清单
 
@@ -812,10 +812,14 @@
 | `ui/vector-rebuild-action.ts` | 148 | 1 | 1 |
 | `ui/views/book-detail-logic.ts` | 161 | 10 | 7 |
 | `ui/views/book-detail-metrics.ts` | 392 | 29 | 21 |
-| `ui/views/book-detail-renderer.ts` | 2366 | 2 | 2 |
+| `ui/views/book-detail-renderer.ts` | 2306 | 2 | 2 |
+| `ui/views/book-emotion-logic.ts` | 107 | 9 | 4 |
+| `ui/views/book-foreshadow-logic.ts` | 142 | 13 | 5 |
+| `ui/views/book-style-logic.ts` | 145 | 11 | 6 |
 | `ui/views/capability-banner.ts` | 88 | 5 | 1 |
 | `ui/views/fingerprint-capability.ts` | 105 | 3 | 1 |
 | `ui/views/fingerprint-detail-logic.ts` | 95 | 8 | 4 |
+| `ui/views/fingerprint-scope-logic.ts` | 98 | 9 | 4 |
 | `ui/views/fingerprint-v2-detail.ts` | 126 | 4 | 2 |
 | `ui/views/fingerprint-view-logic.ts` | 121 | 7 | 6 |
 | `ui/views/kb-book-card.ts` | 200 | 2 | 2 |
@@ -825,17 +829,18 @@
 | `ui/views/kb-config-panel.ts` | 222 | 3 | 3 |
 | `ui/views/kb-detail-actions.ts` | 180 | 2 | 2 |
 | `ui/views/kb-format.ts` | 168 | 10 | 7 |
+| `ui/views/kb-import-file-logic.ts` | 73 | 6 | 5 |
 | `ui/views/kb-modals-logic.ts` | 68 | 4 | 2 |
 | `ui/views/kb-panels-logic.ts` | 342 | 18 | 10 |
 | `ui/views/kb-stats-panel.ts` | 155 | 2 | 2 |
 | `ui/views/kb-task-panel.ts` | 293 | 24 | 19 |
 | `ui/views/kb-view-logic.ts` | 112 | 7 | 4 |
-| `ui/views/knowledge-base-modals.ts` | 1380 | 4 | 4 |
+| `ui/views/knowledge-base-modals.ts` | 1379 | 4 | 4 |
 | `ui/views/knowledge-base-view.ts` | 3271 | 10 | 10 |
 | `ui/views/knowledge-capability.ts` | 113 | 3 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/link-status.ts` | 115 | 2 | 1 |
-| `ui/views/writing-fingerprint-view.ts` | 2049 | 3 | 3 |
+| `ui/views/writing-fingerprint-view.ts` | 2039 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |
