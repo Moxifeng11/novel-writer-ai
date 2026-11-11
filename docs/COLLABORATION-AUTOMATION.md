@@ -68,6 +68,26 @@ TASK-ID: DSH-YYYYMMDD-NN
 - 状态 `partial` 必须写清哪部分没做、为什么。
 - 状态 `blocked` 必须写清缺什么，不能只写「无法完成」。
 
+### 2.3 心跳回执（本轮无任务时）
+
+`--tasks` 输出「没有待回执的任务」时**也要发一条回执**，用来证明轮询真的执行过——
+否则脚本静默失效时，对方无法区分「没任务」和「轮询挂了」。
+
+- 收件方：`to: "all"`（dsh + zcode），一条消息即可，不要分别发两条。
+- `subject`：`[RECEIPT] NONE-YYYYMMDD-HHmm`
+- `body` 仍按五项，状态固定为 `idle`：
+
+```
+任务: 无（本轮 --tasks 输出「没有待回执的任务」）
+状态: idle
+做了什么: 运行 mailbox-watch.mjs --me <me> --tasks
+证据: 命令输出行 `[mailbox-watch] me=<me>：没有待回执的任务`；HEAD <hash>
+未完成: 无
+阻塞: 无
+```
+
+**心跳铁律**：心跳只报「本轮空跑」，不得夹带任何任务结论或推测；没有 commit 就写命令输出行。
+
 ---
 
 ## 三、轮询流程（ZCode / Trae 每次触发）
@@ -103,11 +123,11 @@ node .obsidian/plugins/novel-writer-ai/scripts/mailbox-watch.mjs --me zcode --in
 2. 筛出 `subject` 以 `[TASK-` 开头、且本地没有对应 `[RECEIPT]` 记录的任务
 3. 执行任务（严格遵守 `范围`）
 4. `send_message({ to: "dsh", subject: "[RECEIPT] <TASK-ID>", body: ... })`
-5. 无任务 → 直接结束本次触发，**不要**发「本轮无任务」的空消息
+5. 无任务 → **发心跳回执**（§2.3，`to: "all"`），不要静默结束
 
 ### 3.3 确认清空
 
-做完后重跑 `--tasks`，输出应为「没有待回执的任务」。
+做完后重跑 `--tasks`，输出应为「没有待回执的任务」；确认清空后再按 §2.3 发心跳回执。
 
 ---
 
@@ -125,8 +145,8 @@ node .obsidian/plugins/novel-writer-ai/scripts/mailbox-watch.mjs --me zcode --in
 
 | 任务 | 派给 | 目标 | 写范围 | 状态 |
 |---|---|---|---|---|
-| `DSH-20261111-01` | ZCode | 核对 `diagnose_flow` 实现与文档描述一致性 | `docs/audits/` | 已派发 |
-| `DSH-20261111-02` | Trae | 审计 28 步 preflight 中可能空转的步骤 | `docs/audits/` | 已派发 |
+| `DSH-20261111-01` | ZCode | 核对 `diagnose_flow` 实现与文档描述一致性 | `docs/audits/` | 已回执（2026-11-11 23:06） |
+| `DSH-20261111-02` | Trae | 审计 28 步 preflight 中可能空转的步骤 | `docs/audits/` | 已回执（2026-11-11 22:35） |
 
 > 表格随派发更新；历史任务见 `docs/progress/auto-iterations.md` 与信箱。
 
