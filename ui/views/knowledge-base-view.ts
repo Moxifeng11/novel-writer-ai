@@ -83,6 +83,11 @@ import {
     removeTagAt,
     summarizeTaskCounts,
 } from './kb-view-logic';
+import {
+    buildGenreImportPlan,
+    parseGenreImportPayload,
+    splitGenreConflicts,
+} from './kb-config-import-logic';
 
 const log = createLogger('KnowledgeBaseView');
 import {
@@ -2128,17 +2133,7 @@ export class KnowledgeBaseView extends ItemView {
             if (!file) return;
             try {
                 const text = await file.text();
-                const data = JSON.parse(text);
-                let genres: GenreConfig[] = [];
-
-                if (Array.isArray(data)) {
-                    genres = data;
-                } else if (data.customGenres && Array.isArray(data.customGenres)) {
-                    genres = data.customGenres;
-                } else {
-                    throw new Error('文件格式不正确');
-                }
-
+                const genres = parseGenreImportPayload(JSON.parse(text));
                 if (genres.length === 0) {
                     new Notice('文件中没有可导入的题材');
                     return;
@@ -2158,39 +2153,15 @@ export class KnowledgeBaseView extends ItemView {
         if (!this.configManager || !this.kb) return;
 
         const existingIds = new Set(this.kb.getCustomGenres().map(g => g.id));
-        const conflicts: GenreConfig[] = [];
-        const newGenres: GenreConfig[] = [];
+        const { conflicts, newGenres } = splitGenreConflicts(importGenres, existingIds);
 
-        importGenres.forEach(genre => {
-            if (existingIds.has(genre.id)) {
-                conflicts.push(genre);
-            } else {
-                newGenres.push(genre);
-            }
-        });
-
-        if (conflicts.length > 0) {
-            const action = await this.showImportConflictDialog(conflicts.length);
-            if (action === 'cancel') return;
-
-            if (action === 'skip') {
-                await this.importGenres(newGenres);
-            } else if (action === 'overwrite') {
-                const allGenres = [...newGenres, ...conflicts];
-                await this.importGenres(allGenres);
-            } else if (action === 'rename') {
-                const renamedGenres = conflicts.map(g => ({
-                    ...g,
-                    id: `${g.id}_${Date.now()}`,
-                    name: `${g.name} (导入)`,
-                    isCustom: true,
-                }));
-                const allGenres = [...newGenres, ...renamedGenres];
-                await this.importGenres(allGenres);
-            }
-        } else {
+        if (conflicts.length === 0) {
             await this.importGenres(newGenres);
+            return;
         }
+        const action = await this.showImportConflictDialog(conflicts.length);
+        if (action === 'cancel') return;
+        await this.importGenres(buildGenreImportPlan(action, newGenres, conflicts));
     }
 
     private showImportConflictDialog(conflictCount: number): Promise<'skip' | 'overwrite' | 'rename' | 'cancel'> {
