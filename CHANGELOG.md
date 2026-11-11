@@ -2,6 +2,47 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.83.0（2026-11-11）
+
+> 发布说明：`docs/releases/v4.83.0.md` · 上一版本 v4.82.0
+
+### 🧭 动因
+- v4.82.0 审计定出三条主线：包体积（`main.js` 距 5 MB 上限仅剩 0.7%）、UI 可测性（37% 源码覆盖率仅 9.7%）、安全 r3 剩余 5 项 P3。本版把三条主线全部落地，**不含新功能**。
+- 审计同时明确了不做的边界：不追 UI 整体覆盖率数字、不按行数继续切片 `co-writing-view.ts`（切片对 bundle 是净增）、不在余量 0.7% 时加功能。
+
+### 📦 包体积治理
+- 内置更新日志 94 个版本 → 最近 12 个（**−56,196 B**）；完整历史仍在 `CHANGELOG.md` 与 GitHub Releases，弹窗 footer 新增外链。
+- 补 2 条防回归守卫（条数 ≤12、总字节 ≤12,000）：发版必须同步裁掉最旧一条。
+- 收款码 39 KB JPEG → 12 KB 自适应调色板 PNG（**−26,780 B**）。实测 2 色会破坏黑白对比导致不可扫、4 色近乎无损、8 色等同原图，故取 4 色。
+- 结果：`main.js` **4,964,531 → 4,876,932 B（−87,599 B）**，距 5 MB 余量 **0.7% → 2.5%**。
+
+### 🧪 UI 可测性（6 个纯逻辑模块 / +163 用例）
+- 新增 `book-detail-metrics`（31 用例 / 覆盖率 98.55%）、`kb-panels-logic`（22 / 100%）、`kb-card-logic`（24）、`kb-format`（27 / 95.65%）、`kb-book-filter`（24 / 100%）、`kb-task-panel`（33 / 100%）。
+- 来源文件含 `book-detail-renderer.ts`（原 2,247 行 / 覆盖率 **0.1%** / 零测试）。
+- 筛选规则抽取时用 **300 组随机数据 × 7 维筛选组合**做新旧实现差分验证，逐条相同后删脚本。
+- 锁住易改坏的规则：批量取消（`running|pending`）与批量删除（`completed|failed|cancelled`）**集合不同**，测试断言无交集；任务 6 档状态与书籍 5 档状态**不可复用同一映射**。
+- 附结构勘察报告 `docs/audits/knowledge-base-view-structure-survey.md`（记录 5 处抽样风险点）。
+
+### 🔒 安全 r3 收尾（S3-17 ~ S3-21）
+- **S3-17**：Agent「移动文件」源与目标必须同项目，跨项目拒绝（防项目身份文件被搬走导致项目消失）。
+- **S3-18**：统一 spill 写入与端口白名单的作用域 resolver（原为工作台 resolver vs `plugin.getActiveProject()` 两处，切项目后分叉导致模型读不回自己落盘原文）；目录名附加 scope 稳定短哈希消解 `长篇小说/书A` 与 `长篇小说-书A` 的 slug 碰撞。
+- **S3-19**：会话恢复只接受白名单记忆键 + 2000 条事件上限；顺带修掉 `context.projects` 把 `null` 变 `"null"` 假项目的既有 bug。
+- **S3-20**：考据抓取拒绝非 2xx（**部分修复**）。`requestUrl` 由 Electron net 强制跟随重定向且不暴露最终 URL，renderer 无 dns API，插件层无法复核 —— 已如实记录为上游残余。
+- **S3-21**：章节文件名 helper 内部净化标题与类型，纯非法字符给「未命名章」兜底。
+- 安全 r3：**21 项中 20 项已修**，仅 S3-5 / S3-20 保留上游依赖。
+
+### 🚦 门禁
+- 新增 `check:view-tests`（26 道 preflight 门禁）：`ui/` 下超 200 行文件必须被测试 import；棘轮基线登记 94 个存量文件，只允许清单变短；豁免 `.d.ts` / `*-types.ts` / `*.generated.ts`。
+
+### 🧹 其他
+- 删除此前自己埋下的错误死代码 `resolveChannelLabel`（映射写成 `other→综合`，与真实 `neutral→中性` 不符且零生产调用方），并把正确映射收进 `kb-format`。
+
+### ✅ 验证
+- `tsc --noEmit` EXIT=0；`eslint` 0 error；`preflight` EXIT=0（26 道门禁）。
+- 测试 **693 文件 / 7,297 通过 / 3 跳过**（本版 +163）。
+- 覆盖率 46.06% → **46.63%**。
+- 未做真实 GUI 点击验收（E2E 需退出 Obsidian 并设 `OBSIDIAN_PATH`）。
+
 ## v4.82.0（2026-11-11）
 
 > 发布说明：`docs/releases/v4.82.0.md` · 上一版本 v4.81.1
