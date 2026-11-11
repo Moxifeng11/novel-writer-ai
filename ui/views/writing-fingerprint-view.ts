@@ -23,6 +23,12 @@ import type { BookBasicInfo } from '@/services/knowledge-base-manager';
 import { createLogger } from '@/shared/logger';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
 import { formatDetailCount, formatDetailNumber, formatDetailPercent } from '@/ui/knowledge-detail-format';
+import {
+    buildFeatureRows,
+    buildStatItems,
+    resolveInjectionBudget,
+    visibleSamples,
+} from './fingerprint-detail-logic';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 import { renderV2FeaturesSection, V2_FEATURE_LABELS } from './fingerprint-v2-detail';
 import { renderCapabilityBanner } from './capability-banner';
@@ -760,8 +766,7 @@ export class WritingFingerprintView extends ItemView {
      */
     /** 注入预算与真实生成链路同源（设置 fingerprintInjectionBudget，缺省 2000） */
     private injectionBudget(): number {
-        const raw = Number(this.plugin.settings?.fingerprintInjectionBudget);
-        return Number.isFinite(raw) && raw > 0 ? raw : 2000;
+        return resolveInjectionBudget(this.plugin.settings?.fingerprintInjectionBudget);
     }
 
     private renderInjectionCard(fp: StyleFingerprint): void {        const card = this.rightPanel.createDiv({ cls: 'nw-fingerprint-inject-card nw-mb-lg' });
@@ -853,14 +858,7 @@ export class WritingFingerprintView extends ItemView {
             cls: 'nw-u-d-grid-2 nw-u-gtc-repeat-auto-fit-minmax-6 nw-u-gap-8px-2'
         });
 
-        const statsItems = [
-            { label: '平均句长', value: formatDetailNumber(fp.stats?.avgSentenceLength, 1, ' 字') },
-            { label: '平均段长', value: formatDetailNumber(fp.stats?.avgParagraphLength, 0, ' 字') },
-            { label: '对话占比', value: formatDetailPercent(fp.stats?.dialogueRatio, 1) },
-            { label: '描写占比', value: formatDetailPercent(fp.stats?.descriptionRatio, 1) },
-        ];
-
-        statsItems.forEach(item => {
+        buildStatItems(fp.stats).forEach(item => {
             const card = statsGrid.createDiv({
                 cls: 'nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2 nw-u-ta-center-2'
             });
@@ -885,7 +883,7 @@ export class WritingFingerprintView extends ItemView {
             cls: 'nw-fp-section-h4'
         });
 
-        const features = [
+        const featureLabels = [
             { key: 'sentenceRhythm', label: '句式节奏' },
             { key: 'wordPreference', label: '用词偏好' },
             { key: 'narrativeStyle', label: '叙事风格' },
@@ -895,10 +893,7 @@ export class WritingFingerprintView extends ItemView {
             { key: 'overallTone', label: '整体基调' },
         ];
 
-        features.forEach(f => {
-            const value = (fp.features as unknown as Record<string, string>)[f.key];
-            if (!value) return;
-
+        buildFeatureRows(fp.features as unknown as Record<string, unknown>, featureLabels).forEach(f => {
             const row = section.createDiv({
                 cls: 'nw-u-marginbottom-10px-2'
             });
@@ -907,7 +902,7 @@ export class WritingFingerprintView extends ItemView {
                 cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginbottom-4px-2'
             });
             row.createEl('div', {
-                text: value,
+                text: f.value,
                 cls: 'nw-u-fs-13px-2 nw-u-lh-1-5-2 nw-u-p-8px-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-4px-2'
             });
         });
@@ -931,7 +926,7 @@ export class WritingFingerprintView extends ItemView {
             return;
         }
 
-        fp.samples.slice(0, 3).forEach((sample, index) => {
+        visibleSamples(fp.samples).forEach((sample, index) => {
             const sampleEl = section.createDiv({
                 cls: 'nw-u-marginbottom-10px-2 nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-4px-2 nw-u-fs-12px-2 nw-u-lh-1-6-2 nw-u-blt-3px-solid-interactive-'
             });
