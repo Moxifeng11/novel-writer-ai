@@ -1,53 +1,53 @@
 {
-  "generatedAt": "2026-11-11T18:13:55.482Z",
-  "gitHead": "8c4dfedd7931bcb95903ed40701fe5911198f19e",
+  "generatedAt": "2026-11-11T19:25:47.595Z",
+  "gitHead": "33e0a9e10d5d5c23022227e427e7334d6e22b060",
   "nodeVersion": "v24.16.0",
-  "note": "DSH-20261112-09：新增 repair_flow（engine 层，24 条测试）；ui 15.22%、ui/views 12.95% 均与上一基线一致，此处仅重锚 gitHead（新代码全在 engine/，不影响 ui 口径）",
+  "note": "DSH-20261112-11 中途锚定：5 个纯逻辑模块 + 渲染器 8 个页签假 DOM 单测后 ui/views 12.95%→27.17%、ui 15.22%→16.73%（仅上调）；ui 20% 目标未达，缺口约 1360 行，待下轮继续覆盖大视图类",
   "dirs": {
     "ui": {
-      "files": 259,
+      "files": 264,
       "lines": {
-        "total": 41536,
-        "covered": 6321,
-        "pct": 15.22
+        "total": 41577,
+        "covered": 6957,
+        "pct": 16.73
       },
       "statements": {
-        "total": 45346,
-        "covered": 6960,
-        "pct": 15.35
+        "total": 45402,
+        "covered": 7632,
+        "pct": 16.81
       },
       "branches": {
-        "total": 22130,
-        "covered": 4032,
-        "pct": 18.22
+        "total": 22181,
+        "covered": 4416,
+        "pct": 19.91
       },
       "functions": {
-        "total": 7075,
-        "covered": 1046,
-        "pct": 14.78
+        "total": 7102,
+        "covered": 1141,
+        "pct": 16.07
       }
     },
     "ui/views": {
-      "files": 26,
+      "files": 31,
       "lines": {
-        "total": 4346,
-        "covered": 563,
-        "pct": 12.95
+        "total": 4387,
+        "covered": 1192,
+        "pct": 27.17
       },
       "statements": {
-        "total": 4690,
-        "covered": 665,
-        "pct": 14.18
+        "total": 4746,
+        "covered": 1327,
+        "pct": 27.96
       },
       "branches": {
-        "total": 2356,
-        "covered": 459,
-        "pct": 19.48
+        "total": 2407,
+        "covered": 822,
+        "pct": 34.15
       },
       "functions": {
-        "total": 851,
-        "covered": 192,
-        "pct": 22.56
+        "total": 878,
+        "covered": 284,
+        "pct": 32.35
       }
     }
   }
