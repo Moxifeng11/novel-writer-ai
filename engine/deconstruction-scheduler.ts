@@ -2585,8 +2585,11 @@ export class DeconstructionScheduler {
         }
 
         if (samples.length === 0) {
-            log.info(`[DeconstructionScheduler] 《${bookName}》无可向量化的示例片段`);
-            return;
+            // v4.83.1：这里曾经只是 log 后 return——调用方随后仍会
+            // `recordVectorOutcome(task)` 把状态标成 'done'，于是「向量库实际为空、
+            // 界面显示向量化成功、RAG 检索永远召回不到」三者并存。
+            // 拆解完成不等于检索可用（A5），没有样本必须如实报失败。
+            throw new Error('没有可向量化的内容：原文与拆解报告均未产出片段，检索不可用');
         }
 
         // 重新拆解时替换整本书向量，避免新旧样本叠加导致索引膨胀

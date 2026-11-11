@@ -625,7 +625,24 @@ export class KnowledgeVectorStore {
         await this.ensureLoaded();
 
         const topN = options?.topN ?? 10;
-        const queryVector = await this.embedQuery(query);
+        // v4.83.1：嵌入不可用时退化为关键词检索，而不是让整个知识库检索失败。
+        //
+        // 默认 embedding provider 是**本地 Ollama**（provider-factory 的兜底选择）。
+        // 用户没装/没启动 Ollama 时向量化本来就失败，此时若检索也直接抛错，
+        // 拆解报告（就躺在向量库里）会变得完全不可用——「拆解功能白做」。
+        // 关键词兜底让没有嵌入模型的环境也能把拆解产物用起来。
+        let queryVector: number[];
+        try {
+            queryVector = await this.embedQuery(query);
+        } catch (embedError) {
+            log.warn(
+                '[KnowledgeVectorStore] 嵌入不可用，退化为关键词检索（配置本地 Ollama 或云端嵌入模型可恢复语义检索）:',
+                embedError instanceof Error ? embedError.message : String(embedError),
+            );
+            const fallback = this.searchByKeywords(query, options, topN);
+            performanceMonitor.end(perfId, { resultCount: fallback.length, degraded: 'keyword' });
+            return fallback;
+        }
         const candidateLimit = Math.max(
             KNOWLEDGE_SEMANTIC_CANDIDATE_MIN,
             topN * KNOWLEDGE_SEMANTIC_CANDIDATE_FACTOR,
@@ -708,6 +725,54 @@ export class KnowledgeVectorStore {
             performanceMonitor.end(perfId, { error: String(e) });
             throw e;
         }
+    }
+
+    /**
+     * 关键词兜底检索（嵌入不可用时使用）。
+     *
+     * 只做词面匹配，不做语义理解——但足以把拆解报告里与当前场景共享专有名词
+     * （人名、地名、功法、道具）的片段捞出来，比「整个知识库不可用」好得多。
+     *
+     * @param query - 查询串
+     * @param options - 检索参数（只用到 bookIds / dimensions / category）
+     * @param topN - 返回条数
+     * @returns 按关键词重合度排序的结果
+     */
+    private searchByKeywords(
+        query: string,
+        options: { bookIds?: string[]; dimensions?: string[]; category?: string } | undefined,
+        topN: number,
+    ): KnowledgeSearchResult[] {
+        const queryTokens = extractKeywordTokens(query, 120);
+        if (queryTokens.length === 0) return [];
+
+        const results: KnowledgeSearchResult[] = [];
+        for (const [bookId, samples] of this.samples) {
+            if (options?.bookIds && !options.bookIds.includes(bookId)) continue;
+            for (const item of samples) {
+                if (options?.dimensions && !options.dimensions.includes(item.dimension)) continue;
+                if (options?.category && item.category !== options.category) continue;
+                const score = keywordOverlapRatio(queryTokens, item.sample);
+                if (score <= 0) continue;
+                results.push({
+                    sample: item.sample,
+                    bookId: item.bookId,
+                    bookName: item.bookName,
+                    dimension: item.dimension,
+                    category: item.category,
+                    score,
+                    position: item.position,
+                });
+            }
+        }
+
+        const deduped = new Map<string, KnowledgeSearchResult>();
+        for (const result of results) {
+            const key = `${result.bookId}|${result.dimension}|${result.sample.slice(0, 80)}`;
+            const existing = deduped.get(key);
+            if (!existing || result.score > existing.score) deduped.set(key, result);
+        }
+        return [...deduped.values()].sort((a, b) => b.score - a.score).slice(0, topN);
     }
 
     /**

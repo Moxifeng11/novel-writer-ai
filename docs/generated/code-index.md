@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 320 | 137952 | 1739 | 1424 | 82% |
+| `engine/` | 320 | 138020 | 1739 | 1424 | 82% |
 | `services/` | 32 | 13573 | 195 | 154 | 79% |
 | `shared/` | 196 | 41264 | 1692 | 1383 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
@@ -122,7 +122,7 @@
 | `engine/craft-constraints.ts` | 84 | 5 | 5 |
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
 | `engine/cross-volume-outline-validator.ts` | 673 | 16 | 14 |
-| `engine/deconstruction-scheduler.ts` | 2846 | 9 | 8 |
+| `engine/deconstruction-scheduler.ts` | 2849 | 9 | 8 |
 | `engine/deconstruction-worker-manager.ts` | 688 | 3 | 3 |
 | `engine/deconstructors/character-deconstructor.ts` | 4063 | 14 | 14 |
 | `engine/deconstructors/commercial-deconstructor.ts` | 2052 | 6 | 6 |
@@ -191,7 +191,7 @@
 | `engine/knowledge-tags.ts` | 629 | 2 | 2 |
 | `engine/knowledge-to-fingerprint-converter.ts` | 345 | 1 | 1 |
 | `engine/knowledge-usage.ts` | 80 | 3 | 3 |
-| `engine/knowledge-vector-store.ts` | 764 | 5 | 4 |
+| `engine/knowledge-vector-store.ts` | 829 | 5 | 4 |
 | `engine/ledger/ledger-index.ts` | 175 | 10 | 8 |
 | `engine/ledger/ledger-io.ts` | 212 | 4 | 4 |
 | `engine/ledger/ledger-link.ts` | 224 | 4 | 2 |
