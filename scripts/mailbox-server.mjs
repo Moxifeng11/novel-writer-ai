@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * mailbox-server.mjs — ZCode ↔ Trae 本地 MCP 信箱
+ * mailbox-server.mjs — ZCode ↔ Trae ↔ DSH 本地 MCP 信箱
  *
  * 传输：MCP stdio（JSON-RPC 2.0，换行分隔；兼容 Content-Length 帧）。
  * 存储：`.trae/mailbox/messages.jsonl`（只增）+ `reads.jsonl`（已读日志）。
- * 身份：启动时由 `MAILBOX_ME=zcode|trae` 指定；工具参数 `from` 可覆盖（仅测试用）。
+ * 身份：启动时由 `MAILBOX_ME=zcode|trae|dsh` 指定；工具参数 `from` 可覆盖（仅测试用）。
  *
  * 工具：
  *  - send_message   发消息（to: zcode | trae | all）
@@ -27,9 +27,9 @@ const ROOT = process.env.MAILBOX_ROOT || path.join(vaultRoot, '.trae', 'mailbox'
 const MESSAGES = path.join(ROOT, 'messages.jsonl');
 const READS = path.join(ROOT, 'reads.jsonl');
 const LOCK = path.join(ROOT, '.lock');
-const SERVER_VERSION = '1.0.0';
+const SERVER_VERSION = '1.1.0';
 const DEFAULT_ME = (process.env.MAILBOX_ME || '').trim().toLowerCase();
-const PEERS = new Set(['zcode', 'trae']);
+const PEERS = new Set(['zcode', 'trae', 'dsh']);
 const MAX_BODY = 8000;
 
 function log(...args) {
@@ -94,15 +94,15 @@ function resolveMe(args) {
         if (!PEERS.has(from)) throw new Error(`from 必须是 zcode 或 trae（收到 ${from}）`);
         return from;
     }
-    if (!DEFAULT_ME) throw new Error('未设置 MAILBOX_ME（zcode 或 trae）');
-    if (!PEERS.has(DEFAULT_ME)) throw new Error(`MAILBOX_ME 必须是 zcode 或 trae（收到 ${DEFAULT_ME}）`);
+    if (!DEFAULT_ME) throw new Error('未设置 MAILBOX_ME（zcode / trae / dsh）');
+    if (!PEERS.has(DEFAULT_ME)) throw new Error(`MAILBOX_ME 必须是 zcode / trae / dsh（收到 ${DEFAULT_ME}）`);
     return DEFAULT_ME;
 }
 
 function normalizeTarget(to) {
     const value = String(to || '').trim().toLowerCase();
     if (!value) throw new Error('to 不能为空');
-    if (value !== 'all' && !PEERS.has(value)) throw new Error('to 必须是 zcode、trae 或 all');
+    if (value !== 'all' && !PEERS.has(value)) throw new Error('to 必须是 zcode、trae、dsh 或 all');
     return value;
 }
 
@@ -265,11 +265,11 @@ const TOOLS = [
             type: 'object',
             additionalProperties: false,
             properties: {
-                to: { type: 'string', enum: ['zcode', 'trae', 'all'], description: '收件方' },
+                to: { type: 'string', enum: ['zcode', 'trae', 'dsh', 'all'], description: '收件方' },
                 body: { type: 'string', description: '消息正文（≤8000 字）' },
                 subject: { type: 'string', description: '可选主题' },
                 reply_to: { type: 'string', description: '可选，回复的消息 id' },
-                from: { type: 'string', enum: ['zcode', 'trae'], description: '仅测试用，默认取 MAILBOX_ME' },
+                from: { type: 'string', enum: ['zcode', 'trae', 'dsh'], description: '仅测试用，默认取 MAILBOX_ME' },
             },
             required: ['to', 'body'],
         },
@@ -281,13 +281,13 @@ const TOOLS = [
             type: 'object',
             additionalProperties: false,
             properties: {
-                peer: { type: 'string', enum: ['zcode', 'trae'], description: '只看与某方的往来' },
+                peer: { type: 'string', enum: ['zcode', 'trae', 'dsh'], description: '只看与某方的往来' },
                 unread_only: { type: 'boolean', description: '只看未读' },
                 include_sent: { type: 'boolean', description: '包含自己发出的' },
                 since: { type: 'string', description: 'ISO 时间或毫秒时间戳' },
                 limit: { type: 'integer', minimum: 1, maximum: 100, description: '最多返回条数（默认 20）' },
                 mark_read: { type: 'boolean', description: '默认 true' },
-                from: { type: 'string', enum: ['zcode', 'trae'], description: '仅测试用' },
+                from: { type: 'string', enum: ['zcode', 'trae', 'dsh'], description: '仅测试用' },
             },
         },
     },
@@ -299,10 +299,10 @@ const TOOLS = [
             additionalProperties: false,
             properties: {
                 timeout_ms: { type: 'integer', minimum: 1000, maximum: 30000, description: '默认 20000' },
-                peer: { type: 'string', enum: ['zcode', 'trae'] },
+                peer: { type: 'string', enum: ['zcode', 'trae', 'dsh'] },
                 since: { type: 'string', description: '默认从现在开始等' },
                 mark_read: { type: 'boolean', description: '默认 true' },
-                from: { type: 'string', enum: ['zcode', 'trae'], description: '仅测试用' },
+                from: { type: 'string', enum: ['zcode', 'trae', 'dsh'], description: '仅测试用' },
             },
         },
     },
@@ -314,7 +314,7 @@ const TOOLS = [
             additionalProperties: false,
             properties: {
                 ids: { type: 'array', items: { type: 'string' } },
-                from: { type: 'string', enum: ['zcode', 'trae'], description: '仅测试用' },
+                from: { type: 'string', enum: ['zcode', 'trae', 'dsh'], description: '仅测试用' },
             },
             required: ['ids'],
         },
@@ -326,7 +326,7 @@ const TOOLS = [
             type: 'object',
             additionalProperties: false,
             properties: {
-                from: { type: 'string', enum: ['zcode', 'trae'], description: '仅测试用' },
+                from: { type: 'string', enum: ['zcode', 'trae', 'dsh'], description: '仅测试用' },
             },
         },
     },

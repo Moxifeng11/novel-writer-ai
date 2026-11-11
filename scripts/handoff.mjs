@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 /**
- * handoff.mjs — ZCode ↔ Trae 单快照交接
+ * handoff.mjs — ZCode ↔ Trae ↔ DSH 单快照交接
  *
  * 只维护 Vault 根 `PROJECT-RULES.md` 中 `<!-- HANDOFF:START --> … <!-- HANDOFF:END -->`
- * 之间的 10 行快照；不重写正文、不扫描对方目录。
+ * 之间的快照；不重写正文、不扫描对方目录。
  *
  * 用法：
- *   node scripts/handoff.mjs --from zcode --doing "..." --next-trae "..."
+ *   node scripts/handoff.mjs --from zcode --doing "..." --next-trae "..." --next-dsh "..."
  *   node scripts/handoff.mjs --from trae --stage "加固阶段" --delivered "..."
+ *   node scripts/handoff.mjs --from dsh --stage "..." --doing "..."
  *   node scripts/handoff.mjs --check
  *   node scripts/handoff.mjs --print
  *
@@ -33,11 +34,12 @@ const FIELD_ORDER = [
     '正在进行',
     '下一步（ZCode）',
     '下一步（Trae）',
+    '下一步（DSH）',
     '待确认',
     '详情',
 ];
 
-const REQUIRED_FIELDS = ['版本 / 提交', '当前阶段', '下一步（ZCode）', '下一步（Trae）'];
+const REQUIRED_FIELDS = ['版本 / 提交', '当前阶段', '下一步（ZCode）', '下一步（Trae）', '下一步（DSH）'];
 
 function parseArgs(argv) {
     const out = { from: null, file: defaultRulesPath, log: true, check: false, print: false };
@@ -57,6 +59,7 @@ function parseArgs(argv) {
             case '--doing': out.doing = value(); break;
             case '--next-zcode': out.nextZcode = value(); break;
             case '--next-trae': out.nextTrae = value(); break;
+            case '--next-dsh': out.nextDsh = value(); break;
             case '--ask': out.ask = value(); break;
             case '--details': out.details = value(); break;
             case '--no-log': out.log = false; break;
@@ -64,7 +67,7 @@ function parseArgs(argv) {
             case '--print': out.print = true; break;
             case '--help':
             case '-h':
-                console.log('用法: node scripts/handoff.mjs --from zcode|trae [--stage ...] [--delivered ...] [--doing ...] [--next-zcode ...] [--next-trae ...] [--ask ...] [--details ...] [--no-log] [--check] [--print]');
+                console.log('用法: node scripts/handoff.mjs --from zcode|trae|dsh [--stage ...] [--delivered ...] [--doing ...] [--next-zcode ...] [--next-trae ...] [--next-dsh ...] [--ask ...] [--details ...] [--no-log] [--check] [--print]');
                 process.exit(0);
                 break;
             default:
@@ -134,6 +137,7 @@ function appendLog(from, fields, versionLine) {
         fields['当前阶段'] ? `阶段=${fields['当前阶段']}` : '',
         fields['正在进行'] ? `进行=${fields['正在进行']}` : '',
         fields['下一步（Trae）'] ? `Trae=${fields['下一步（Trae）']}` : '',
+        fields['下一步（DSH）'] ? `DSH=${fields['下一步（DSH）']}` : '',
         fields['待确认'] ? `待确认=${fields['待确认']}` : '',
     ].filter(Boolean).join('；');
     const line = `- ${fields['更新时间']} [${from}] ${summary} | ${versionLine}\n`;
@@ -161,7 +165,7 @@ function main() {
         return;
     }
     if (!parsed) throw new Error('HANDOFF 标记缺失，先在本文件中加入 START/END 标记');
-    if (!args.from) throw new Error('缺少 --from zcode|trae');
+    if (!args.from) throw new Error('缺少 --from zcode|trae|dsh');
 
     const versionLine = autoVersionLine();
     const fields = { ...parsed.fields };
@@ -172,6 +176,7 @@ function main() {
     if (args.doing != null) fields['正在进行'] = args.doing;
     if (args.nextZcode != null) fields['下一步（ZCode）'] = args.nextZcode;
     if (args.nextTrae != null) fields['下一步（Trae）'] = args.nextTrae;
+    if (args.nextDsh != null) fields['下一步（DSH）'] = args.nextDsh;
     if (args.ask != null) fields['待确认'] = args.ask;
     if (args.details != null) fields['详情'] = args.details;
 

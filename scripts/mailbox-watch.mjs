@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * mailbox-watch.mjs — 信箱终端监视器（给 Trae / 人工用）
+ * mailbox-watch.mjs — 信箱终端监视器（给 Trae / DSH / 人工用）
  *
  * 轮询 `.trae/mailbox/messages.jsonl`，把发给 `--me` 的未读消息打印到 stdout。
  * Trae 侧若不方便常驻 MCP 会话，可在终端跑本脚本实现自动轮询：
@@ -30,7 +30,7 @@ const intervalMs = Math.max(Number(getArg('--interval')) || 15000, 3000);
 const once = args.includes('--once');
 
 if (!['zcode', 'trae'].includes(me)) {
-    console.error('用法: mailbox-watch.mjs --me zcode|trae [--interval 毫秒] [--once]');
+    console.error('用法: mailbox-watch.mjs --me zcode|trae|dsh [--interval 毫秒] [--once]');
     process.exit(1);
 }
 
