@@ -6,6 +6,7 @@ import { createLogger } from '@/shared/logger';
 import { OperationConfirmModal } from '@/ui/components/progress';
 import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
 import { isImeComposing } from '@/shared/keyboard';
+import { detectGenreChanges, isValidBookName } from './kb-modals-logic';
 
 const log = createLogger('KnowledgeBaseModals');
 
@@ -497,14 +498,24 @@ export class EditBookModal extends Modal {
     }
 
     private save(): void {
-        if (!this.kbManager || !this.nameValue.trim()) {
+        if (!this.kbManager || !isValidBookName(this.nameValue)) {
             new Notice('请填写书名');
             return;
         }
 
-        const channelChanged = this.channelValue !== (this.book.genreChannel || '');
-        const genreChanged = (this.genreValue || '') !== (this.book.primaryGenre || '');
-        const subGenreChanged = (this.subGenreValue || '') !== (this.book.primarySubGenre || '');
+        // 分类变更检测抽到 kb-modals-logic（undefined 与 '' 的等价性易错）
+        const changes = detectGenreChanges(
+            {
+                genreChannel: this.book.genreChannel,
+                primaryGenre: this.book.primaryGenre,
+                primarySubGenre: this.book.primarySubGenre,
+            },
+            {
+                genreChannel: this.channelValue,
+                primaryGenre: this.genreValue,
+                primarySubGenre: this.subGenreValue,
+            },
+        );
 
         this.kbManager.updateBook(this.book.id, {
             name: this.nameValue.trim(),
@@ -515,7 +526,7 @@ export class EditBookModal extends Modal {
             primarySubGenre: this.subGenreValue || undefined,
             customTags: this.customTagsList,
         }).then(async () => {
-            if (channelChanged || genreChanged || subGenreChanged) {
+            if (changes.anyChanged) {
                 try {
                     await this.kbManager!.recordGenreCorrection(this.book.id, {
                         channel: this.channelValue || undefined,
