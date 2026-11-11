@@ -153,6 +153,125 @@ describe('ContextPanel.render（有人物数据）', () => {
     });
 });
 
+
+describe('ContextPanel.render（实体与伏笔数据）', () => {
+    it('地点/势力/物品卡：中文字段优先渲染，无数据给占位', () => {
+        const { root } = renderPanel({
+            context: {
+                data: {
+                    locations: [{ 名称: '雾港', 类型: '港口城市', 重要程度: '高' }],
+                    factions: [{ 名称: '守塔人公会', 类型: '行会', 领袖: '老塔长', '地位/排名': '唯一' }],
+                    items: [{ 名称: '铜钉灯芯', 类型: '法器', '品阶/等级': '三阶' }],
+                },
+            },
+        });
+        const text = root.allText();
+        // allText 在兄弟节点间补空格，span 前缀含空格——逐段断言
+        expect(text).toContain('雾港');
+        expect(text).toContain('港口城市');
+        expect(text).toContain('重要程度：高');
+        expect(text).toContain('守塔人公会');
+        expect(text).toContain('领袖：老塔长');
+        expect(text).toContain('地位：唯一');
+        expect(text).toContain('铜钉灯芯');
+        expect(text).toContain('等级：三阶');
+        expect(text).not.toContain('无地点数据');
+        expect(text).not.toContain('无势力数据');
+        expect(text).not.toContain('无物品功法数据');
+    });
+
+    it('地点/势力/物品为空：三个占位文案齐全', () => {
+        const { root } = renderPanel({ context: { data: {} } });
+        const text = root.allText();
+        expect(text).toContain('无地点数据');
+        expect(text).toContain('无势力数据');
+        expect(text).toContain('无物品功法数据');
+    });
+
+    it('伏笔库：未揭示伏笔按重要度渲染，含埋设章与计划回收', () => {
+        const { root } = renderPanel({
+            context: {
+                data: {
+                    foreshadows: {
+                        unrevealed: [
+                            { name: '断剑重铸', importance: '高', buryChapter: 3, plannedReveal: 18 },
+                            { name: '预言残句', importance: '低' },
+                            { name: '无名信', importance: '中' },
+                        ],
+                    },
+                },
+            },
+        });
+        const text = root.allText();
+        expect(text).toContain('[高]');
+        expect(text).toContain('断剑重铸');
+        expect(text).toContain('埋于：3 | 计划回收：18');
+        expect(text).toContain('[低]');
+        expect(text).toContain('预言残句');
+        expect(text).toContain('[中]');
+        expect(text).toContain('无名信');
+        expect(text).not.toContain('无未揭示伏笔');
+    });
+
+    it('伏笔库为空：占位文案', () => {
+        const { root } = renderPanel({ context: { data: { foreshadows: { unrevealed: [] } } } });
+        expect(root.allText()).toContain('无未揭示伏笔');
+    });
+});
+
+
+describe('ContextPanel.render（时间线与压缩警告）', () => {
+    it('时间线：按与当前章节接近度排序取最近 15 条，表头三列', () => {
+        const { root } = renderPanel({
+            context: {
+                data: {
+                    timeline: [
+                        { time: '第一夜', chapter: '第2章', event: '抵达雾港' },
+                        { time: '第三夜', chapter: '第4章', event: '断剑出水' },
+                        { time: '第二夜', chapter: '第3章', event: '结识老塔长' },
+                    ],
+                },
+            },
+        });
+        const text = root.allText();
+        expect(text).toContain('时间');
+        expect(text).toContain('章节');
+        expect(text).toContain('事件');
+        expect(text).toContain('断剑出水');
+        expect(text).not.toContain('无时间线事件');
+    });
+
+    it('时间线为空：占位文案', () => {
+        const { root } = renderPanel({ context: { data: {} } });
+        expect(root.allText()).toContain('无时间线事件');
+    });
+
+    it('压缩警告：truncationApplied 时给「已智能压缩」与四行压缩明细', () => {
+        const { root } = renderPanel({
+            context: {
+                data: {
+                    compressed: {
+                        truncationApplied: true,
+                        worldView: '压缩后的世界观',
+                        settingLib: '压缩后的设定库',
+                        foreshadows: '伏笔一行\n第二行',
+                        timeline: '时间线一行',
+                    },
+                    world_view: { raw: '原始世界观'.repeat(10) },
+                    setting_lib: { raw: '原始设定库'.repeat(10) },
+                    foreshadows: { unrevealed: [{ name: 'x', importance: '中' }], revealed: [], abandoned: [] },
+                    timeline: [{ time: 't', chapter: '第1章', event: 'e' }],
+                },
+            },
+        });
+        const text = root.allText();
+        expect(text).toContain('⚠️ 上下文过长，已智能压缩（点击查看详情）');
+        expect(text).toContain('🌍 世界观');
+        expect(text).toContain('🔮 伏笔');
+        expect(text).toContain('⏱️ 时间线');
+    });
+});
+
 /** 收集子树里每个元素的 style 对象（cssText 直接赋值场景） */
 function collectStyles(el: FakeEl): Array<{ cssText?: string }> {
     const out: Array<{ cssText?: string }> = [el.style];
