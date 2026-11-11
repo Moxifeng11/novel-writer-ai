@@ -27,6 +27,7 @@ import {
 import { applyFanficReviewMeta, auditFanficSettings } from '@/shared/fanfic-audit';
 import { FanficReviewModal } from './fanfic-review-modal';
 import { computeConstraintFlowStatus, renderLinkStatus } from './views/link-status';
+import { filterDegradationsBySource, getDegradationNotifier } from '@/shared/degradation-notifier';
 import { formatFanficRulesForPrompt, readFanficRules } from '@/shared/fanfic-rules';
 import { retrieve } from '@/engine/rag/retrieval-service';
 import {
@@ -493,6 +494,11 @@ export class AddFanficSettingModal extends Modal {
             reviewStatus,
             bound,
             rulesHasContent,
+            // 阶段 B1：约束流相关降级（考据抓取失败、注入回退等）
+            degradations: filterDegradationsBySource(
+                getDegradationNotifier().getEvents(),
+                ['llm', 'injection'],
+            ).map(event => event.reason),
         }));
     }
 

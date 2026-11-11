@@ -1053,6 +1053,10 @@ export class KnowledgeBaseView extends ItemView {
             storeLoadedBooks: vectorStore && typeof vectorStore.getLoadedBookIds === 'function'
                 ? vectorStore.getLoadedBookIds().length
                 : 0,
+            // 区分「尚未加载」与「加载了但没书」——前者是未知，后者才是真断
+            storeReady: vectorStore && typeof vectorStore.isLoaded === 'function'
+                ? vectorStore.isLoaded()
+                : false,
             degradations: recentDegradations,
         }));
 

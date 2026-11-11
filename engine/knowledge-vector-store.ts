@@ -252,6 +252,20 @@ export class KnowledgeVectorStore {
     }
 
     /**
+     * 向量库是否已完成首次加载（阶段 B2）。
+     *
+     * 界面判断「检索能不能用」必须区分两种「库里没书」：
+     * - 尚未加载（`false`）：无法判定，应显示未知而不是报断；
+     * - 已加载但为空（`true` 且 `getLoadedBookIds()` 为空）：状态说就绪却没有数据，
+     *   这才是真正的不一致，检索确实不可用。
+     *
+     * @returns 是否已加载
+     */
+    isLoaded(): boolean {
+        return this.loaded;
+    }
+
+    /**
      * 取同书同维度的邻块（v4.20 邻块扩展）：直接读内存 samples，零 I/O。
      * 返回按 position 升序的样本，用于把被 400/40 分块切开的场景拼回完整上下文。
      * @param bookIds - 书籍 ID 列表

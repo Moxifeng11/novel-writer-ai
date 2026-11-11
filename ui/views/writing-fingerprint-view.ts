@@ -28,6 +28,7 @@ import { renderV2FeaturesSection, V2_FEATURE_LABELS } from './fingerprint-v2-det
 import { renderCapabilityBanner } from './capability-banner';
 import { computeFingerprintCapability } from './fingerprint-capability';
 import { computeStyleFlowStatus, renderLinkStatus } from './link-status';
+import { filterDegradationsBySource, getDegradationNotifier } from '@/shared/degradation-notifier';
 import type { V2Fingerprint, StyleFingerprintFeaturesV2 } from '@/engine/style/style-dimensions-v2';
 
 
@@ -389,6 +390,11 @@ export class WritingFingerprintView extends ItemView {
             enabledCount: enabledFingerprints.length,
             intensityDisabledCount,
             embeddingReady: Boolean(this.extractionProvider),
+            // 阶段 B1：风格流相关降级（V2 检索回退全量等）
+            degradations: filterDegradationsBySource(
+                getDegradationNotifier().getEvents(),
+                ['vector'],
+            ).map(event => event.reason),
         }));
     }
 

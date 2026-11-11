@@ -114,6 +114,13 @@ export interface KnowledgeFlowInput {
     embeddingReady: boolean;
     /** 向量库当前加载的书数 */
     storeLoadedBooks: number;
+    /**
+     * 向量库是否已完成首次加载（阶段 B2）。
+     *
+     * 缺省按 `true` 处理（调用方没提供时视为「已知状态」）——
+     * 但视图应尽量传真实值，否则「尚未加载」会被误报成「库里没书」。
+     */
+    storeReady?: boolean;
     /** 该链路相关的运行时降级原因（可选，阶段 B1） */
     degradations?: string[];
 }
@@ -157,11 +164,20 @@ export function computeKnowledgeFlowStatus(input: KnowledgeFlowInput): LinkStatu
             detail: '不可用（检索会退化为关键词匹配）',
         };
 
-    const retrieve: LinkStage = input.storeLoadedBooks > 0
-        ? { name: '检索', status: 'ok', detail: `向量库已加载 ${input.storeLoadedBooks} 本` }
-        : input.vectorDone > 0
-            ? { name: '检索', status: 'warn', detail: '有向量就绪但向量库未加载' }
-            : { name: '检索', status: 'broken', detail: '向量库为空，检索无结果' };
+    // 三态：尚未加载 → 无法判定；已加载有书 → 通；已加载无书 → 断
+    // （「状态说向量就绪但库里没书」正是 B2 要暴露的不一致）
+    const storeReady = input.storeReady !== false;
+    const retrieve: LinkStage = !storeReady
+        ? { name: '检索', status: 'unknown', detail: '向量库尚未加载，暂时无法判定' }
+        : input.storeLoadedBooks > 0
+            ? { name: '检索', status: 'ok', detail: `向量库已加载 ${input.storeLoadedBooks} 本` }
+            : input.vectorDone > 0
+                ? {
+                    name: '检索',
+                    status: 'broken',
+                    detail: '状态显示向量就绪，但向量库里没有数据（可能文件丢失，建议重向量化）',
+                }
+                : { name: '检索', status: 'broken', detail: '向量库为空，检索无结果' };
 
     // 归因依赖运行时（写作后写 rag_sources），界面无法静态判定
     const attribute: LinkStage = {

@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 320 | 138128 | 1739 | 1424 | 82% |
+| `engine/` | 320 | 138142 | 1739 | 1424 | 82% |
 | `services/` | 33 | 13799 | 205 | 161 | 79% |
 | `shared/` | 196 | 41351 | 1697 | 1388 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 249 | 102392 | 875 | 728 | 83% |
+| `ui/` | 249 | 102424 | 875 | 728 | 83% |
 
 ## 文件清单
 
@@ -191,7 +191,7 @@
 | `engine/knowledge-tags.ts` | 629 | 2 | 2 |
 | `engine/knowledge-to-fingerprint-converter.ts` | 345 | 1 | 1 |
 | `engine/knowledge-usage.ts` | 80 | 3 | 3 |
-| `engine/knowledge-vector-store.ts` | 829 | 5 | 4 |
+| `engine/knowledge-vector-store.ts` | 843 | 5 | 4 |
 | `engine/ledger/ledger-index.ts` | 175 | 10 | 8 |
 | `engine/ledger/ledger-io.ts` | 212 | 4 | 4 |
 | `engine/ledger/ledger-link.ts` | 224 | 4 | 2 |
@@ -584,7 +584,7 @@
 | `shared/writing-rules.ts` | 105 | 2 | 1 |
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
-| `ui/add-fanfic-setting-modal.ts` | 765 | 1 | 1 |
+| `ui/add-fanfic-setting-modal.ts` | 771 | 1 | 1 |
 | `ui/agent-workbench-view.ts` | 1905 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
@@ -817,11 +817,11 @@
 | `ui/views/kb-stats-panel.ts` | 155 | 2 | 2 |
 | `ui/views/kb-task-panel.ts` | 293 | 24 | 19 |
 | `ui/views/knowledge-base-modals.ts` | 1369 | 4 | 4 |
-| `ui/views/knowledge-base-view.ts` | 3297 | 10 | 10 |
+| `ui/views/knowledge-base-view.ts` | 3301 | 10 | 10 |
 | `ui/views/knowledge-capability.ts` | 113 | 3 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
-| `ui/views/link-status.ts` | 371 | 11 | 5 |
-| `ui/views/writing-fingerprint-view.ts` | 2050 | 3 | 3 |
+| `ui/views/link-status.ts` | 387 | 11 | 5 |
+| `ui/views/writing-fingerprint-view.ts` | 2056 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |
