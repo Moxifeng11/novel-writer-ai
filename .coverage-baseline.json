@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-11-11T17:41:33.341Z",
-  "gitHead": "c116ba3a7936bb04b5b9994af057799ab40cebfd",
+  "generatedAt": "2026-11-11T18:13:55.482Z",
+  "gitHead": "8c4dfedd7931bcb95903ed40701fe5911198f19e",
   "nodeVersion": "v24.16.0",
-  "note": "DSH-20261112-07：ui/views 12.95%、ui 15.22% 已在上一基线锚定；此处仅刷新 gitHead（其后提交只动了注释/文档，可执行行数未变）",
+  "note": "DSH-20261112-09：新增 repair_flow（engine 层，24 条测试）；ui 15.22%、ui/views 12.95% 均与上一基线一致，此处仅重锚 gitHead（新代码全在 engine/，不影响 ui 口径）",
   "dirs": {
     "ui": {
       "files": 259,
