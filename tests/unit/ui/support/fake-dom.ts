@@ -18,12 +18,51 @@ export class FakeEl {
     tagName: string;
     className = '';
     textContent = '';
+    innerHTML = '';
     attr: Record<string, string> = {};
     children: FakeEl[] = [];
     listeners = new Map<string, Array<(e: unknown) => void>>();
 
     constructor(tag = 'div') {
         this.tagName = tag;
+    }
+
+    /** 兼容 sanitizeHTMLToDom 替身返回的 { html } 片段：按字符串拼接 */
+    appendChild<T>(child: T): T {
+        const fragment = child as unknown as { html?: unknown };
+        if (!(child instanceof FakeEl) && typeof fragment?.html === 'string') {
+            this.innerHTML += fragment.html;
+            return child;
+        }
+        this.children.push(child as unknown as FakeEl);
+        return child;
+    }
+
+    /** 支持 `.class` / `tag` / 逗号分隔组合（attachChartInteractions 的选择器形态） */
+    querySelectorAll<T = FakeEl>(selector: string): T[] {
+        const hits: FakeEl[] = [];
+        const parts = selector.split(',').map(s => s.trim()).filter(Boolean);
+        const match = (el: FakeEl): boolean => parts.some(part => {
+            if (part.startsWith('.')) return el.className.split(' ').includes(part.slice(1));
+            if (part.startsWith('#')) return el.getAttribute('id') === part.slice(1);
+            return el.tagName === part;
+        });
+        const walk = (el: FakeEl): void => {
+            for (const c of el.children) {
+                if (match(c)) hits.push(c);
+                walk(c);
+            }
+        };
+        walk(this);
+        return hits as unknown as T[];
+    }
+
+    querySelector<T = FakeEl>(selector: string): T | null {
+        return this.querySelectorAll<T>(selector)[0] ?? null;
+    }
+
+    getBoundingClientRect(): { left: number; top: number; width: number; height: number } {
+        return { left: 0, top: 0, width: 400, height: 300 };
     }
 
     setAttribute(name: string, value: string): void {
@@ -106,6 +145,18 @@ export class FakeEl {
 export function stubCreateDiv(): void {
     (globalThis as unknown as Record<string, unknown>).createDiv =
         (o?: { cls?: string; text?: string; attr?: Record<string, string> }) => new FakeEl('div').createDiv(o);
+}
+
+/**
+ * 把最小 `document` 补到 globalThis（只需要 createElement）。
+ *
+ * 图表交互（svg-charts.createTooltip）等运行时路径会裸调 `document.createElement`；
+ * 返回 FakeEl 使其落入假元素树，可被 querySelector 找到。
+ */
+export function stubDocument(): void {
+    (globalThis as unknown as Record<string, unknown>).document = {
+        createElement: (tag: string) => new FakeEl(tag),
+    };
 }
 
 /** 把容器断言用的根节点（FakeEl 与 HTMLElement 互转） */
