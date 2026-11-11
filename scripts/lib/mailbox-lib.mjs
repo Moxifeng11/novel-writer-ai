@@ -66,7 +66,26 @@ export function parseReceiptTaskId(message) {
 }
 
 /**
- * 配对任务与回执，返回「派给我但还没回执」的任务。
+ * 从一条消息里解析作废的任务 ID。
+ *
+ * 任务生命周期需要「取消」——派发后发现规格有问题、或被更精确的新任务替代时，
+ * 旧任务不能永远挂在待办列表里（否则 30 分钟轮询会一直重复领到它）。
+ *
+ * @param message - 消息对象
+ * @returns 任务 ID 或 null
+ */
+export function parseVoidTaskId(message) {
+    const match = /^\[VOID\]\s*(\S+)/i.exec(String(message?.subject || ''));
+    return match ? match[1].trim() : null;
+}
+
+/**
+ * 配对任务与回执，返回「派给我但还没回执、也没被作废」的任务。
+ *
+ * 三条规则：
+ * 1. 派给我（to === me 或 to === 'all'）
+ * 2. 我没发过 `[RECEIPT] <id>`（避免重复做）
+ * 3. 没人发过 `[VOID] <id>`（避免做已作废的任务）
  *
  * @param messages - 全部消息
  * @param me - 我的身份（zcode / trae / dsh）
@@ -75,17 +94,19 @@ export function parseReceiptTaskId(message) {
 export function pairTasks(messages, me) {
     const all = (messages || []).filter((m) => m && m.id);
     const replied = new Set();
+    const voided = new Set();
     for (const m of all) {
-        if (m.from !== me) continue;
-        const taskId = parseReceiptTaskId(m);
-        if (taskId) replied.add(taskId);
+        const receiptId = parseReceiptTaskId(m);
+        if (receiptId && m.from === me) replied.add(receiptId);
+        const voidId = parseVoidTaskId(m);
+        if (voidId) voided.add(voidId);
     }
     const pending = [];
     for (const m of all) {
         if (m.to !== me && m.to !== 'all') continue;
         const taskId = parseTaskId(m);
         if (!taskId) continue;
-        if (replied.has(taskId)) continue;
+        if (replied.has(taskId) || voided.has(taskId)) continue;
         pending.push({ taskId, id: m.id, ts: m.ts, from: m.from, subject: m.subject, body: m.body });
     }
     return pending;

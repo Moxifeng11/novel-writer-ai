@@ -21,6 +21,7 @@ import {
     pairTasks,
     parseReceiptTaskId,
     parseTaskId,
+    parseVoidTaskId,
     resolveMailboxRoot,
 } from '../../../scripts/lib/mailbox-lib.mjs';
 import type { MailboxMessage } from '../../../scripts/lib/mailbox-lib.mjs';
@@ -147,5 +148,29 @@ describe('协作-3：任务/回执配对', () => {
     it('空输入不抛错', () => {
         expect(pairTasks([], 'zcode')).toEqual([]);
         expect(pairTasks(null, 'zcode')).toEqual([]);
+    });
+});
+
+describe('协作-4：任务作废（派发后规格被替代时不能永远挂待办）', () => {
+    it('[VOID] 后任务不再出现在待办', () => {
+        const pending = pairTasks([
+            msg({ id: 'm1', subject: '[TASK-T-9] 旧任务' }),
+            msg({ id: 'm2', subject: '[VOID] T-9' }),
+        ], 'zcode');
+        expect(pending).toEqual([]);
+    });
+
+    it('作废只影响目标任务，不影响其他', () => {
+        const pending = pairTasks([
+            msg({ id: 'm1', subject: '[TASK-T-9] 旧任务' }),
+            msg({ id: 'm2', subject: '[TASK-T-10] 新任务' }),
+            msg({ id: 'm3', subject: '[VOID] T-9' }),
+        ], 'zcode');
+        expect(pending.map(t => t.taskId)).toEqual(['T-10']);
+    });
+
+    it('parseVoidTaskId 解析与空值', () => {
+        expect(parseVoidTaskId(msg({ id: 'm1', subject: '[VOID] T-9' }))).toBe('T-9');
+        expect(parseVoidTaskId(msg({ id: 'm2', subject: '普通消息' }))).toBeNull();
     });
 });

@@ -23,6 +23,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { collectImportedSpecifiers } from './lib/view-tests-lib.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
@@ -97,14 +98,13 @@ function resolveSpecifier(spec, fromFile) {
 
 const testFiles = walk(TEST_DIR, '.test.ts');
 const covered = new Set();
-const IMPORT_RE = /(?:from\s+|import\s*)['"]([^'"]+)['"]/g;
 
 for (const testFile of testFiles) {
     const text = fs.readFileSync(testFile, 'utf8');
-    IMPORT_RE.lastIndex = 0;
-    let match;
-    while ((match = IMPORT_RE.exec(text)) !== null) {
-        const resolved = resolveSpecifier(match[1], testFile);
+    // 只认行首 import/export 语句（原全文正则会把断言字符串里的 import 文案当真 import，
+    // 导致零测试文件被判为「有测试」——见 scripts/lib/view-tests-lib.mjs 注释）
+    for (const spec of collectImportedSpecifiers(text)) {
+        const resolved = resolveSpecifier(spec, testFile);
         if (resolved) covered.add(relOf(resolved));
     }
 }
