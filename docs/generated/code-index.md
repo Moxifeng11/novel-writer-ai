@@ -11,7 +11,7 @@
 | `shared/` | 197 | 41698 | 1709 | 1393 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 265 | 103945 | 983 | 797 | 81% |
+| `ui/` | 266 | 104046 | 987 | 798 | 81% |
 
 ## 文件清单
 
@@ -589,7 +589,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 771 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1908 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1912 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |
@@ -779,6 +779,7 @@
 | `ui/services/agent-spill-store.ts` | 142 | 4 | 3 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |
 | `ui/services/flow-diagnosis-collectors.ts` | 206 | 1 | 1 |
+| `ui/services/flow-repair-host.ts` | 97 | 4 | 1 |
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 433 | 6 | 5 |

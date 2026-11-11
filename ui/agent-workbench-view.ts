@@ -23,6 +23,7 @@ import { OperationConfirmModal } from './components/progress';
 import { showErrorNotice, showWarningNotice } from './components/notice-helpers';
 import { GuideAgentEngine } from '@/engine/agent/conversation-engine';
 import { createFlowDiagnosisDeps } from './services/flow-diagnosis-collectors';
+import { createFlowRepairHost } from './services/flow-repair-host';
 import { AgentHarnessEngine, type HarnessTelemetry } from '@/engine/agent/harness/harness-engine';
 import { createCallAIAdapter } from '@/engine/agent/harness/agent-adapter';
 import type { AgentChip, AgentContext, AgentIntent, AgentMessage, AgentTurnResult, GuideAgentPort } from '@/engine/agent/agent-types';
@@ -1171,6 +1172,9 @@ export class AgentWorkbenchView extends ItemView {
                 portDeps: { port: this.port, ctx },
                 // 阶段 C1：链路自诊断——agent 能回答「我配了/拆解了，为什么没生效」
                 flowDiagnosis: createFlowDiagnosisDeps({ app: this.app, plugin: this.plugin }),
+                // 阶段 E 接线（DSH-20261112-16）：agent 多一个 repair_flow 工具；
+                // 审批沿用下方 requestApproval/writeApproval 通道，工具自身 fail-closed。
+                flowRepair: createFlowRepairHost({ app: this.app, plugin: this.plugin }),
                 // 默认 ask：覆盖已有文件前确认；显式 allow 才自动放行（用户可在设置中改）
                 writeApproval: this.plugin.settings.agentWriteApproval === 'allow' ? 'allow' : 'ask',
                 // 工具审批：危险工具一律询问（没有确认端口 = 拒绝）；
