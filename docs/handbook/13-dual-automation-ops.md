@@ -7,8 +7,8 @@
 
 | 体系 | 职责 | 可写范围 | 禁区 |
 |---|---|---|---|
-| Trae | 功能实现、测试、文档、导出规范、UI 切片 | `ui/**`、`shared/**`、`services/**`、`tests/**`、`docs/**`、`scripts/**`、`core/**`（经确认）、`main.ts`（经派工确认）、`.trae/automation/**`（仅本轮状态台账） | `engine/**`、`ui/views/writing-fingerprint-view.ts`、`ui/views/fingerprint-v2-detail.ts`；不 commit/push/tag/Release |
-| ZCode | engine 侧实现、统一 preflight、分批提交、版本节点、远端发布授权后执行 | `engine/**`、全仓库提交 | 不单方面改 Trae 的循环条件；不 push/tag/Release（需用户授权） |
+| Trae | 功能实现、测试、文档、导出规范、UI 切片 | `ui/**`、`shared/**`、`services/**`、`tests/**`、`docs/**`、`scripts/**`、`core/**`（经确认）、`main.ts`（经派工确认）、`.trae/automation/**`（仅本轮状态台账） | `engine/**`、`ui/views/writing-fingerprint-view.ts`、`ui/views/fingerprint-v2-detail.ts`；不 commit、可 push（2026-11-11 放行）、不 tag/Release |
+| ZCode | engine 侧实现、统一 preflight、分批提交、版本节点、远端发布授权后执行 | `engine/**`、全仓库提交 | 不单方面改 Trae 的循环条件；可 push（2026-11-11 放行）、tag/Release 需用户授权 |
 
 跨目录引用一律 `@/` 别名；新文件内联样式基线 0；导出函数 JSDoc 带 `@example`；改 `docs/progress/program-status.json` 必须 `npm run program:render`。
 
@@ -34,7 +34,7 @@
 1. 任一方要改循环条件/评分参数/红线，先往对方信箱发消息（subject：`自动化变更`）。
 2. 对方回信确认后生效；未确认前按旧规则执行。
 3. 变更落地后同步 handoff 快照与本手册。
-4. 用户拍板事项（push/tag/Release、产品语义、数据迁移）不走互调，必须信箱留言并告知用户。
+4. 用户拍板事项（`tag`/`Release`、产品语义、数据迁移）不走互调，必须信箱留言并告知用户（`push` 已于 2026-11-11 放行，不需拍板）。
 
 ## 5. 故障处理
 

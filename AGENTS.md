@@ -9,5 +9,5 @@
    - 更新快照：`node scripts/handoff.mjs --from zcode|trae|dsh --stage "..." --delivered "..." --doing "..." --next-zcode "..." --next-trae "..." --next-dsh "..." --ask "..."`
    - 给其他两方发摘要（`to` 按需选 `trae` / `zcode` / `dsh`，三方都要知道时用 `all`）：`send_message({ to: "trae", subject: "交接摘要", body: "改了什么 / 下一步 / 需要你做什么" })`
 5. 代码与 git 是唯一真相源；质量数字以 `docs/progress/program-status.json` 为准。
-6. 不自行 push / tag / Release；`E2E_REWRITE=1` 需用户明确确认（**当前无脚本消费该变量**——`rewrite-chapters` spec 已随「九霄逆脉行」下线，保留本条仅作破坏性 E2E 的通用红线）。
+6. **可自行 `git push`**（2026-11-11 用户放行）；**`tag` / `Release` 仍需用户明确确认**；`E2E_REWRITE=1` 仍需用户明确确认（**当前无脚本消费该变量**——`rewrite-chapters` spec 已随「九霄逆脉行」下线，保留本条仅作破坏性 E2E 的通用红线）。
 7. 完整协作规范见 Vault 根 `PROJECT-RULES.md`；结构路线见 `docs/PLAN.md`。

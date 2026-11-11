@@ -132,7 +132,7 @@ git push origin master && git push origin v4.24.0
 - `package.json.version` 是唯一真相源；`manifest.json`、`versions.json` 由 `sync-version` 同步。
 - `docs/releases/vX.Y.Z.md` 必须存在，内容包含：为什么发、改了什么、怎么验证、影响与遗留。
 - CHANGELOG 顶部必须是当前版本节点；不要新增散落的 `## Unreleased` 段。
-- 只有版本节点提交；不自行 push/tag（需用户明确授权）。
+- 只有版本节点提交；**可自行 push**（2026-11-11 放行）；**`tag` / `Release` 仍需用户明确授权**。
 - 构建产物（`main.js`、`workers/`、`.hotreload`）不入库。
 
 ## 6. 回滚

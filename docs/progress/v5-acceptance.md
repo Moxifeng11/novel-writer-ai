@@ -98,7 +98,7 @@
 
 ---
 
-## 六、需用户授权（2026-11-08 清单纠偏后：仅剩 push/tag/Release）
+## 六、需用户授权（2026-11-11 更新：`push` 已放行，仅剩 tag/Release）
 
 > 纠偏说明（2026-11-08）：`E2E_REWRITE=1` 已**失效**（`tests/e2e/rewrite-chapters.spec.ts` 与 playwright project 随「九霄逆脉行」删除而下线，全仓无脚本消费该变量，仅 `AGENTS.md` 保留红线语义）；`settleLight`「事务语义」已于 v4.48.0 拍板为**决策 3**（best-effort + `lightFailures` 聚合 + `settlement_partial`，见 `docs/design/g1-authority-decisions.md` §2）并已实施。两项均不再列为待拍板。
 
@@ -106,7 +106,7 @@
 |---|---|---|
 | B5 三模式验收 | **已闭环（2026-11-07）**：full-journey（长篇）+ mode-journey（短篇六维→番茄包 / 剧本可拍→红果包）mock AI 旅程 **3/3 通过**；`rewrite-chapters` 真实重写脚本已随「九霄逆脉行」项目下线（`308e1fe`），`E2E_REWRITE` 无消费者 | 无需手工走查；如需回退脚本须用户明确确认 |
 | E2E 全量 | 基线 **40 passed**（37 + mode-journey 3，2026-11-07 实测：`aa2b4c9` 37/37 + 三模式 3/3） | 变更后重跑 `npm run test:e2e`（五个 project） |
-| push / tag / Release | **已发布 v4.78.0（2026-11-08）**：master=5c543ad 已推送、tag v4.78.0 已推，Release 发布成功（release.yml 4m55s，资产 main.js/manifest/styles/versions/两个 worker/zip/SHA256SUMS）；本地 ahead 0。v4.24.0–v4.77.0 共 18 个节点随本 Release 一并公开 | 后续版本仍按「版本节点 → tag → Release」流程，需用户明确指令 |
+| push / tag / Release | **已发布 v4.78.0（2026-11-08）**：master=5c543ad 已推送、tag v4.78.0 已推，Release 发布成功（release.yml 4m55s，资产 main.js/manifest/styles/versions/两个 worker/zip/SHA256SUMS）；本地 ahead 0。v4.24.0–v4.77.0 共 18 个节点随本 Release 一并公开。**2026-11-11 用户放行 `push`**：后续提交可自行推送，`tag` / `Release` 仍需用户明确指令 | `tag` / `Release` 按「版本节点 → tag → Release」流程，需用户明确指令 |
 | 剧本 `storyboard` 必填语义 | 已落地并被收单：`shared/creation-flow.ts` 的 `CreationFlowStage.hardDependsOn`（代码 `e1c3820`、文档 `3e5b9d4`），分镜未完成时「分集写作」显示 blocked；`storyboard` 自身不再按「既有正文」跳过 | 已闭环；如需回退须用户明确确认 |
 
 ---
