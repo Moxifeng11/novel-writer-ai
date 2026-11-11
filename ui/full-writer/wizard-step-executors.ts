@@ -21,10 +21,10 @@ import { readMergedVolumeOutline } from '@/utils/helpers';
 import { WritingStyleModal } from '@/ui/writing-style-modal';
 import { PlanBookModal } from '@/ui/plan-book-modal';
 import { BatchCreateModal } from '@/ui/batch-create-modal';
-import { attachFanficPathToProject, getFanficSettingsPath, isFanficSettingsContentValidEnough } from './fanfic-settings-utils';
-import { parseProjectMeta } from '@/shared/fanfic-rules';
+import { attachFanficPathToProject, fanficSettingsFileName, getFanficSettingsPath, isFanficApproved, isFanficSettingsContentValidEnough } from './fanfic-settings-utils';
+import { parseFanficReviewStatus, parseProjectMeta } from '@/shared/fanfic-rules';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
-import { readProjectMeta, pjFanficDir, SUBDIR_BODY_ROOT } from '@/shared/paths';
+import { readProjectMeta, pjFanficDir, pjFanficPendingDir, SUBDIR_BODY_ROOT } from '@/shared/paths';
 import { StorySettingsModal } from '@/ui/story-settings-modal';
 import { createLogger } from '@/shared/logger';
 import { nextFrame } from '@/shared/yield';
@@ -157,13 +157,36 @@ export class WizardStepExecutors {
             return;
         }
 
+        // v4.83.1 审核闸门修复：向导没有审核步骤，此前这里把内容**直接写入正式目录并绑定**，
+        // 于是「AI 生成 → 向导保存」绕过了「生成 → _待审核 → 人工审核 → 正式目录」这条闸门，
+        // 未核实设定会被后续步骤当作原作约束消费。
+        // 现在：`isFanficApproved` 为真（approved，或 legacy 旧文件无审核记录）才进正式目录；
+        // pending / rejected 一律进 _待审核，且**不绑定**，避免未审核内容流入写作。
+        if (!isFanficApproved(content)) {
+            const reviewStatus = parseFanficReviewStatus(content);
+            const workName = content.match(/^作品名称:\s*(.+)$/m)?.[1]?.trim() || tab.project;
+            const pendingPath = `${pjFanficPendingDir(tab.project)}/${fanficSettingsFileName(workName)}`;
+            await writeVaultText(this.app, pendingPath, content);
+            step.status = 'pending';
+            showWarningNotice(
+                `同人设定尚未通过审核（当前：${reviewStatus === 'rejected' ? '已驳回' : '待审核'}），`
+                + `已存入「_待审核」且不会参与写作。请到同人设定库审核通过后重新执行此步骤。\n${pendingPath}`,
+                { timeout: 12000 },
+            );
+            return;
+        }
+
         const filePath = getFanficSettingsPath(tab.project, content, tab.project);
         await writeVaultText(this.app, filePath, content);
         await attachFanficPathToProject(this.app, tab.project, filePath);
         this.wizardStepResults[fanficResultKey] = content;
 
         step.status = 'done';
-        showSuccessNotice('同人设定已保存并通过校验', { timeout: 3000 });
+        if (parseFanficReviewStatus(content) === 'legacy') {
+            showSuccessNotice('同人设定已保存并通过校验（旧文件无审核记录，建议在同人设定库重新审核）', { timeout: 6000 });
+        } else {
+            showSuccessNotice('同人设定已保存并通过校验', { timeout: 3000 });
+        }
         // v3.5: 移除弹窗——内容通过步骤内联展示
     }
 

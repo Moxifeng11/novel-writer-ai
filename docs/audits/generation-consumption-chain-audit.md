@@ -50,6 +50,48 @@ globalEnabled  = globalFingerprints.filter(fp => isGlobalEnabledForProject(fp.id
 **测试**：新增 5 条（新建实例直接读能拿到项目/全局指纹、另一实例禁用后自动同步、
 重复读取幂等、坏文件不阻断）。旧实现在第 1 条即失败。
 
+### F2（已修）｜同人设定的审核闸门被向导路径绕过
+
+**症状**：11 步向导的「原作设定导入」步骤（`executeFanficStep`）此前**只校验字段完整性**，
+就把内容**直接写入正式目录并绑定** `.project`：
+
+```ts
+const filePath = getFanficSettingsPath(tab.project, content, tab.project);
+await writeVaultText(this.app, filePath, content);        // 直接写 05-同人设定库/
+await attachFanficPathToProject(this.app, tab.project, filePath);  // 直接绑定
+```
+
+而 `buildWizardSteps('fanfic')` 的步骤链是
+`原作设定导入 → 故事结构 → 实体生成 → 世界观设定 → 设定库 → 文笔风格 → 全书规划 → 批量建章 → 完成`
+——**没有任何审核步骤**。
+
+于是存在两条互斥的保存路径：
+
+| 路径 | 流程 | 是否过审核 |
+|---|---|---|
+| 弹窗（`add-fanfic-setting-modal`） | 生成 → `_待审核/` → 人工审核 → 正式目录 | ✅ |
+| **向导（`executeFanficStep`）** | 内容 → **直接正式目录 + 绑定** | ❌ |
+
+**后果**：AI 生成但未核实的设定（可能含凭空推断的原作规则）会被后续步骤
+当作原作约束消费，审核机制形同虚设。
+
+**修复**（复用既有 `isFanficApproved`，避免再造一套判定）：
+- `approved` → 正式目录（正常放行）
+- `legacy`（旧文件无审核记录）→ 正式目录，但提示「建议重新审核」（不阻塞历史项目）
+- `pending` / `rejected` → 写入 `_待审核/`，**不绑定项目**，步骤置回 `pending` 并明确提示
+
+**为什么 legacy 要放行**：项目里存在大量早期无审核记录的设定文件，
+强制拦截会让老项目无法继续走向导；`formatFanficReviewWarning` 也采用「提示而非阻断」口径。
+
+**顺带确认（不是缺陷）**：
+- `listFanficSettingCandidates` 明确排除 `_` 开头目录（`_待审核` / `_资料` / `_审核`），
+  所以**待审核草稿在 UI 上无法被绑定**——闸门在绑定入口是安全的，漏的只是向导保存入口
+- `fanfic-review-modal` 审核通过后才写正式目录 ✅
+
+**测试**：新增 8 条（`isFanficApproved` 四种状态口径、`parseFanficReviewStatus` 解析、
+源码契约锁定「闸门必须在写正式目录之前」且「拦截分支不得调用绑定」）。
+
+
 ---
 
 ## 三、核查后确认「不是缺陷」的设计（避免误判）
