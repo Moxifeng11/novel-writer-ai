@@ -34,6 +34,12 @@ import {
     formatDateTime as formatDateTimeText,
     formatDuration as formatDurationText,
 } from './kb-format';
+import {
+    filterAndSortBooks,
+    countBooksInChannel,
+    countBooksByGenre,
+    countBooksBySubGenre,
+} from './kb-book-filter';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
 import { yieldToUI } from '@/shared/yield';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
@@ -1093,23 +1099,16 @@ export class KnowledgeBaseView extends ItemView {
     }
 
     private getGenreBookCount(genreId: string): number {
-        return this.allBooks.filter(b => {
-            if (this.filter.channel !== 'all' && b.genreChannel !== this.filter.channel) return false;
-            return b.primaryGenre === genreId || b.secondaryGenres?.includes(genreId);
-        }).length;
+        return countBooksByGenre(this.allBooks, genreId, this.filter.channel);
     }
 
     private getSubGenreBookCount(genreId: string, subGenreId: string): number {
-        return this.allBooks.filter(b => {
-            if (this.filter.channel !== 'all' && b.genreChannel !== this.filter.channel) return false;
-            return b.primaryGenre === genreId && b.primarySubGenre === subGenreId;
-        }).length;
+        return countBooksBySubGenre(this.allBooks, genreId, subGenreId, this.filter.channel);
     }
 
     private getFilteredBooksCount(scope: 'all'): number {
-        return this.allBooks.filter(b =>
-            this.filter.channel === 'all' || b.genreChannel === this.filter.channel
-        ).length;
+        void scope;
+        return countBooksInChannel(this.allBooks, this.filter.channel);
     }
 
     private renderBooksToolbar(container: HTMLElement): void {
@@ -1326,59 +1325,7 @@ export class KnowledgeBaseView extends ItemView {
     }
 
     private getFilteredBooks(): BookBasicInfo[] {
-        let result = [...this.allBooks];
-
-        if (this.filter.channel !== 'all') {
-            result = result.filter(b => b.genreChannel === this.filter.channel);
-        }
-
-        if (this.filter.primaryGenre === 'uncategorized') {
-            result = result.filter(b => !b.primaryGenre);
-        } else if (this.filter.primaryGenre !== 'all') {
-            result = result.filter(b =>
-                b.primaryGenre === this.filter.primaryGenre ||
-                b.secondaryGenres?.includes(this.filter.primaryGenre)
-            );
-            if (this.filter.subGenre !== 'all') {
-                result = result.filter(b => b.primarySubGenre === this.filter.subGenre);
-            }
-        }
-
-        if (this.filter.status !== 'all') {
-            result = result.filter(b => b.breakdownStatus === this.filter.status);
-        }
-
-        if (this.filter.keyword) {
-            const kw = this.filter.keyword.toLowerCase();
-            result = result.filter(b =>
-                b.name.toLowerCase().includes(kw) ||
-                (b.author?.toLowerCase().includes(kw)) ||
-                b.themeTags.some(t => t.toLowerCase().includes(kw)) ||
-                b.customTags.some(t => t.toLowerCase().includes(kw))
-            );
-        }
-
-        const { sortBy, sortOrder } = this.filter;
-        result.sort((a, b) => {
-            let cmp = 0;
-            switch (sortBy) {
-                case 'createdAt':
-                    cmp = a.createdAt - b.createdAt;
-                    break;
-                case 'updatedAt':
-                    cmp = a.updatedAt - b.updatedAt;
-                    break;
-                case 'wordCount':
-                    cmp = (a.wordCount ?? 0) - (b.wordCount ?? 0);
-                    break;
-                case 'quality':
-                    cmp = (a.qualityScores?.overall ?? 0) - (b.qualityScores?.overall ?? 0);
-                    break;
-            }
-            return sortOrder === 'asc' ? cmp : -cmp;
-        });
-
-        return result;
+        return filterAndSortBooks(this.allBooks, this.filter);
     }
 
     /**
