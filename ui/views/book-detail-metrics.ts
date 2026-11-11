@@ -296,17 +296,6 @@ export function joinRoleParts(parts: Array<string | undefined | null | false>): 
 }
 
 /**
- * 频道标识 → 中文标签。
- *
- * @param channel - 频道标识（male/female/other）
- * @returns 中文标签；未知值原样返回
- */
-export function resolveChannelLabel(channel?: string): string {
-    const labels: Record<string, string> = { male: '男频', female: '女频', other: '综合' };
-    return labels[channel || ''] || channel || '';
-}
-
-/**
  * 伏笔统计摘要（供统计卡片展示）。
  *
  * @param stats - 伏笔统计

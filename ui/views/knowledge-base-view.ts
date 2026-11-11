@@ -25,6 +25,15 @@ import { buildKbDetailActionButtons } from './kb-detail-actions';
 import { buildKbConfigPanel } from './kb-config-panel';
 import { renderCapabilityBanner } from './capability-banner';
 import { computeKnowledgeCapability } from './knowledge-capability';
+import {
+    formatBreakdownStatusLabel,
+    formatTaskStatusLabel,
+    formatChannelLabel,
+    formatWordCount as formatWordCountText,
+    formatDate as formatDateText,
+    formatDateTime as formatDateTimeText,
+    formatDuration as formatDurationText,
+} from './kb-format';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
 import { yieldToUI } from '@/shared/yield';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
@@ -2609,15 +2618,7 @@ export class KnowledgeBaseView extends ItemView {
     }
 
     private getTaskStatusLabel(status: string): string {
-        const map: Record<string, string> = {
-            pending: '等待中',
-            running: '运行中',
-            paused: '已暂停',
-            completed: '已完成',
-            failed: '失败',
-            cancelled: '已取消',
-        };
-        return map[status] || status;
+        return formatTaskStatusLabel(status);
     }
 
     private async handleRetryTask(task: BreakdownTask): Promise<void> {
@@ -3082,65 +3083,27 @@ export class KnowledgeBaseView extends ItemView {
 
     // ============== 工具方法 ==============
     private getStatusLabel(status: BreakdownStatus): string {
-        const map: Record<BreakdownStatus, string> = {
-            pending: '待拆解',
-            processing: '拆解中',
-            completed: '已完成',
-            failed: '失败',
-            interrupted: '拆解中断',
-        };
-        return map[status] || status;
+        return formatBreakdownStatusLabel(status);
     }
 
     private getChannelLabel(channel: string): string {
-        const map: Record<string, string> = {
-            male: '男频',
-            female: '女频',
-            neutral: '中性',
-        };
-        return map[channel] || channel;
+        return formatChannelLabel(channel);
     }
 
     private formatWordCount(count?: number): string {
-        if (!count) return '未知';
-        if (count >= 10000) {
-            return `${(count / 10000).toFixed(1)} 万字`;
-        }
-        return `${count} 字`;
+        return formatWordCountText(count);
     }
 
     private formatDate(timestamp: number): string {
-        const date = new Date(timestamp);
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        const d = String(date.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
+        return formatDateText(timestamp);
     }
 
     private formatDateTime(timestamp: number): string {
-        const date = new Date(timestamp);
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        const d = String(date.getDate()).padStart(2, '0');
-        const h = String(date.getHours()).padStart(2, '0');
-        const min = String(date.getMinutes()).padStart(2, '0');
-        return `${y}-${m}-${d} ${h}:${min}`;
+        return formatDateTimeText(timestamp);
     }
 
     private formatDuration(ms: number): string {
-        if (ms <= 0) return '0秒';
-        const seconds = Math.floor(ms / 1000);
-        const minutes = Math.floor(seconds / 60);
-        const hours = Math.floor(minutes / 60);
-        if (hours > 0) {
-            const remainingMinutes = minutes % 60;
-            return `${hours}小时${remainingMinutes}分`;
-        } else if (minutes > 0) {
-            const remainingSeconds = seconds % 60;
-            return `${minutes}分${remainingSeconds}秒`;
-        } else {
-            return `${seconds}秒`;
-        }
+        return formatDurationText(ms);
     }
 
     private renderMonitorBar(): void {

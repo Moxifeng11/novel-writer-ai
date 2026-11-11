@@ -11,7 +11,7 @@
 | `shared/` | 196 | 41151 | 1689 | 1380 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 245 | 100832 | 817 | 690 | 84% |
+| `ui/` | 246 | 100952 | 826 | 696 | 84% |
 
 ## 文件清单
 
@@ -800,7 +800,7 @@
 | `ui/usage-ledger-modal.ts` | 182 | 1 | 1 |
 | `ui/utils/worldview-utils.ts` | 103 | 1 | 1 |
 | `ui/vector-rebuild-action.ts` | 148 | 1 | 1 |
-| `ui/views/book-detail-metrics.ts` | 339 | 25 | 17 |
+| `ui/views/book-detail-metrics.ts` | 328 | 24 | 16 |
 | `ui/views/book-detail-renderer.ts` | 2399 | 2 | 2 |
 | `ui/views/capability-banner.ts` | 68 | 4 | 1 |
 | `ui/views/fingerprint-capability.ts` | 105 | 3 | 1 |
@@ -809,10 +809,11 @@
 | `ui/views/kb-card-logic.ts` | 233 | 20 | 14 |
 | `ui/views/kb-config-panel.ts` | 222 | 3 | 3 |
 | `ui/views/kb-detail-actions.ts` | 180 | 2 | 2 |
+| `ui/views/kb-format.ts` | 168 | 10 | 7 |
 | `ui/views/kb-panels-logic.ts` | 342 | 18 | 10 |
 | `ui/views/kb-stats-panel.ts` | 155 | 2 | 2 |
 | `ui/views/knowledge-base-modals.ts` | 1369 | 4 | 4 |
-| `ui/views/knowledge-base-view.ts` | 3261 | 10 | 10 |
+| `ui/views/knowledge-base-view.ts` | 3224 | 10 | 10 |
 | `ui/views/knowledge-capability.ts` | 81 | 2 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/writing-fingerprint-view.ts` | 2033 | 3 | 3 |

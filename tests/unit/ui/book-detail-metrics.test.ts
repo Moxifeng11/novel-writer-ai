@@ -27,7 +27,6 @@ import {
     resolveArcTypeLabel,
     resolveTimelineIcon,
     joinRoleParts,
-    resolveChannelLabel,
     buildForeshadowStatItems,
     buildTechniqueQualityItems,
 } from '../../../ui/views/book-detail-metrics';
@@ -221,14 +220,6 @@ describe('查表映射 — 角色层级 / 弧线 / 时间线 / 频道', () => {
         expect(resolveTimelineIcon('appearance')).toBe('👤');
         expect(resolveTimelineIcon('turning_point')).toBe('⚡');
         expect(resolveTimelineIcon('unknown')).toBe('•');
-    });
-
-    it('频道标签与未知回落', () => {
-        expect(resolveChannelLabel('male')).toBe('男频');
-        expect(resolveChannelLabel('female')).toBe('女频');
-        expect(resolveChannelLabel('other')).toBe('综合');
-        expect(resolveChannelLabel('x')).toBe('x');
-        expect(resolveChannelLabel(undefined)).toBe('');
     });
 });
 
