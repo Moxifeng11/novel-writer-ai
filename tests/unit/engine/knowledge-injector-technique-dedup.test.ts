@@ -85,6 +85,8 @@ describe('KnowledgeInjector — 技巧注入去重', () => {
             ([, options]: [string, { dimensions?: string[] } | undefined]) =>
                 options?.dimensions?.includes('technique'),
         );
-        expect(techniqueCall?.[1].dimensions).toEqual(['technique']);
+        // P2：canon 维度会一并检索（同人考据资料需跨维度召回）；这里只断言不混入其他**拆解**维度
+        expect(techniqueCall?.[1].dimensions).toContain('technique');
+        expect(techniqueCall?.[1].dimensions).not.toContain('structure');
     });
 });

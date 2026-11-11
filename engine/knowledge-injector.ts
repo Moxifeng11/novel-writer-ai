@@ -19,6 +19,7 @@ import { getDegradationNotifier } from '@/shared/degradation-notifier';
 import { createLogger } from '@/shared/logger';
 import type { RagSource } from '@/shared/rag-sources';
 import { retrieve, type RetrievalTelemetry } from './rag/retrieval-service';
+import { canonBookIdFor, CANON_DIMENSION } from './canon-vector-indexer';
 import { activeContextQuotas } from '@/shared/context-budget-policy';
 
 /** 强度映射是纯函数，模块级共享一个实例即可 */
@@ -696,9 +697,20 @@ export class KnowledgeInjector {
         topN: number,
         maxChars: number,
     ): Promise<{ hits: Array<{ sample: string; bookId: string; bookName: string; dimension: string; category?: string; score: number; position?: number }>; error?: string }> {
+        // P2：同人考据来源以「canon:<项目>」虚拟书存在向量库里。
+        // 显式传 bookIds 的路径（协同写作/步骤执行）必须把它一起纳入，
+        // 否则考据资料永远进不了正文生成——这正是「设定补充不了」的最后一环。
+        const bookIds = [...this.getReferenceBookIds()];
+        const canonBookId = context.projectPath ? canonBookIdFor(context.projectPath) : '';
+        if (canonBookId && !bookIds.includes(canonBookId)) bookIds.push(canonBookId);
+        // store.search 对 dimensions 是严格过滤：不把 canon 维度加进来，
+        // 考据样本即使写进了向量库也会被过滤掉。
+        const searchDimensions = dimensions.includes(CANON_DIMENSION)
+            ? dimensions
+            : [...dimensions, CANON_DIMENSION];
         const outcome = await retrieve(this.knowledgeVectorStore, {
-            dimensions,
-            bookIds: this.getReferenceBookIds(),
+            dimensions: searchDimensions,
+            bookIds,
             topN,
             maxChars,
             source: {

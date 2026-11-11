@@ -70,10 +70,31 @@ export interface CanonResearchConfig {
     excerptChars?: number;
 }
 
+/** 考据来源写入检索库的结果（结构由 engine 侧实现返回） */
+export interface CanonIndexOutcome {
+    indexed: number;
+    skipped: number;
+    reason?: string;
+}
+
 interface CanonResearchHost {
     settings?: {
         canonResearch?: CanonResearchConfig;
     };
+    /**
+     * 把考据来源写入 RAG 检索库（P2）。
+     *
+     * **依赖注入而非直接 import**：`services/` 不允许依赖 `engine/`（架构门禁
+     * check:deps 会拦）。实现由 `NovelWriterPlugin` 注入（见 main.ts），
+     * 它内部调用 `engine/canon-vector-indexer`。
+     *
+     * 缺省时不索引：考据本身仍可用（来源缓存 + prompt 注入），只是不参与检索。
+     */
+    indexCanonSources?: (
+        project: string,
+        workName: string,
+        sources: CanonSource[],
+    ) => Promise<CanonIndexOutcome>;
 }
 
 /**
@@ -224,6 +245,20 @@ export class CanonResearchService {
                 await this.saveCache(options.project, result);
             } catch (error) {
                 warnings.push(`来源缓存写入失败：${error instanceof Error ? error.message : String(error)}`);
+            }
+            // P2：把来源写入 RAG 向量库，让创作时的检索能召回原著设定。
+            // 向量化失败不影响考据本身（来源已缓存、prompt 仍可注入），只记警告。
+            if (this.host.indexCanonSources) {
+                try {
+                    const indexed = await this.host.indexCanonSources(options.project, workName, sources);
+                    if (indexed.indexed > 0) {
+                        log.info(`[CanonResearch] 已索引 ${indexed.indexed} 条考据来源到 RAG 向量库`);
+                    } else if (indexed.reason) {
+                        warnings.push(`考据来源未进入检索库：${indexed.reason}`);
+                    }
+                } catch (error) {
+                    warnings.push(`考据来源写入检索库失败：${error instanceof Error ? error.message : String(error)}`);
+                }
             }
         }
         return result;

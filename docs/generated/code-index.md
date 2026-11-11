@@ -6,8 +6,8 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 319 | 137780 | 1731 | 1419 | 82% |
-| `services/` | 32 | 13538 | 194 | 154 | 79% |
+| `engine/` | 320 | 137924 | 1739 | 1424 | 82% |
+| `services/` | 32 | 13573 | 195 | 154 | 79% |
 | `shared/` | 196 | 41264 | 1692 | 1383 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
@@ -79,6 +79,7 @@
 | `engine/body-writer.ts` | 525 | 8 | 8 |
 | `engine/cache/index.ts` | 24 | 3 | 0 |
 | `engine/cache/preload-manager.ts` | 670 | 6 | 6 |
+| `engine/canon-vector-indexer.ts` | 132 | 8 | 5 |
 | `engine/chapter-brief.ts` | 343 | 9 | 6 |
 | `engine/chapter-context-builder.ts` | 142 | 3 | 3 |
 | `engine/chapter-snapshot-builder.ts` | 142 | 2 | 1 |
@@ -186,7 +187,7 @@
 | `engine/heavy-task-worker-manager.ts` | 312 | 2 | 2 |
 | `engine/incremental-result-aggregator.ts` | 1707 | 3 | 3 |
 | `engine/knowledge-base-config.ts` | 509 | 5 | 5 |
-| `engine/knowledge-injector.ts` | 2123 | 13 | 7 |
+| `engine/knowledge-injector.ts` | 2135 | 13 | 7 |
 | `engine/knowledge-tags.ts` | 629 | 2 | 2 |
 | `engine/knowledge-to-fingerprint-converter.ts` | 345 | 1 | 1 |
 | `engine/knowledge-usage.ts` | 80 | 3 | 3 |
@@ -356,7 +357,7 @@
 | `engine/writing-quality-engine.ts` | 1376 | 14 | 13 |
 | `services/api-connectivity-service.ts` | 317 | 8 | 8 |
 | `services/backup-center-service.ts` | 182 | 4 | 1 |
-| `services/canon-research-service.ts` | 611 | 8 | 8 |
+| `services/canon-research-service.ts` | 646 | 9 | 8 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
 | `services/chapter-version-service.ts` | 739 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |

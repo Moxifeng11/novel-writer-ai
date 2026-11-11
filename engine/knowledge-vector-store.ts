@@ -30,7 +30,7 @@ export interface KnowledgeVectorSample {
     id: string;
     bookId: string;
     bookName: string;
-    dimension: 'style' | 'rhythm' | 'technique' | 'structure' | 'character' | 'foreshadow' | 'original';
+    dimension: 'style' | 'rhythm' | 'technique' | 'structure' | 'character' | 'foreshadow' | 'original' | 'canon';
     category?: string;
     sample: string;
     vector: number[];

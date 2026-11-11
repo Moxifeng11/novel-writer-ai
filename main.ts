@@ -12,6 +12,7 @@
 import { InternalRegistry } from './shared/internal-registry';
 import { App, Plugin, PluginSettingTab, Setting, Notice, Platform, TFile, TFolder, WorkspaceLeaf } from 'obsidian';
 import { AIEngine } from './engine/ai-engine';
+import { indexCanonSources as indexCanonSourcesImpl } from './engine/canon-vector-indexer';
 import { CoWriterEngine } from './engine/co-writer-engine';
 import { ContextManager } from './engine/context-manager';
 import { ForeshadowManager } from './engine/foreshadow-manager';
@@ -697,6 +698,26 @@ export default class NovelWriterPlugin extends Plugin {
      */
     get hasAiCredentials(): boolean {
         return hasUsableAiCredentials(this.settings);
+    }
+
+    /**
+     * 把同人考据来源写入 RAG 向量库（P2）。
+     *
+     * `services/canon-research-service.ts` 不允许直接依赖 `engine/`（架构门禁），
+     * 因此由入口层注入实现：考据服务只声明回调，这里落到
+     * `engine/canon-vector-indexer`。向量库未就绪时返回原因而不抛错。
+     *
+     * @param project - 项目路径
+     * @param workName - 原作名
+     * @param sources - 考据来源
+     * @returns 索引结果
+     */
+    async indexCanonSources(
+        project: string,
+        workName: string,
+        sources: Parameters<typeof indexCanonSourcesImpl>[3],
+    ): ReturnType<typeof indexCanonSourcesImpl> {
+        return indexCanonSourcesImpl(this.knowledgeVectorStore ?? null, project, workName, sources);
     }
 
     /**

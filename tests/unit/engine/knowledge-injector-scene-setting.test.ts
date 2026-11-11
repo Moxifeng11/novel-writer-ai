@@ -50,7 +50,8 @@ describe('KnowledgeInjector — 设定注入的数据源维度', () => {
         );
 
         expect(store.calls).toHaveLength(1);
-        expect(store.calls[0].dimensions).toEqual(['structure']);
+        expect(store.calls[0].dimensions).toContain('structure');
+        expect(store.calls[0].dimensions).not.toContain('worldview');
         expect(text).toContain('起：主角被逐出宗门');
     });
 
@@ -63,7 +64,8 @@ describe('KnowledgeInjector — 设定注入的数据源维度', () => {
             0.6,
         );
 
-        expect(store.calls[0].dimensions).toEqual(['structure']);
+        expect(store.calls[0].dimensions).toContain('structure');
+        expect(store.calls[0].dimensions).not.toContain('worldview');
         expect(text).toContain('设定参考（结构拆解）');
         expect(text).toContain('起：主角被逐出宗门');
     });
@@ -87,7 +89,7 @@ describe('KnowledgeInjector — 设定注入的数据源维度', () => {
         );
 
         expect(store.calls).toHaveLength(1);
-        expect(store.calls[0].dimensions).toEqual(['rhythm']);
+        expect(store.calls[0].dimensions).toContain('rhythm');
         expect(text).toContain('场景节奏参考模式');
         expect(text).toContain('参考节奏片段');
         expect(text).toContain('短句推进，交锋密集');
