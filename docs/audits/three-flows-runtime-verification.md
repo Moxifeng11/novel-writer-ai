@@ -67,11 +67,17 @@ vault: D:/小说工坊/小说工坊
 | --- | --- | --- |
 | 书籍总数 / 拆解 / 向量状态 | `写作知识库/知识库索引.md`（frontmatter JSON） | `books: []` |
 | 向量库书目 | `.obsidian/plugins/novel-writer-ai/data/knowledge-vectors/index.json` | `books: [{ bookId: kb_mrgel8mq_niign00x, bookName: 将夜, sampleCount: 26 }]` |
-| 三层指纹 | `元文件/04-项目总控/fingerprint-library/template-fingerprints.json`、`data/fingerprint-library/global-fingerprints.json`、`<项目>/元文件/04-项目总控/fingerprint-library/project-fingerprints.json` | 三个文件均不存在 |
-| 强度配置 | `<项目>/元文件/04-项目总控/fingerprint-library/fingerprint-intensity-config.json` | 无项目 → 不存在 |
+| 三层指纹 | `元文件/04-项目总控/写作指纹库/template-fingerprints.json`、`data/fingerprint-library/global-fingerprints.json`、`<项目>/元文件/04-项目总控/写作指纹库/project-fingerprints.json`（见下方勘误 2026-11-12） | 三个文件均不存在 |
+| 强度配置 | `<项目>/元文件/04-项目总控/写作指纹库/fingerprint-intensity-config.json`（同勘误） | 无项目 → 不存在 |
 | 项目清单 | 递归找 `.project`（深度 ≤6，跳过 node_modules/.trash/.rollback-backup 等） | 0 个 |
 | 插件设置（非敏感） | `.obsidian/plugins/novel-writer-ai/data.json` | ollama / bge-m3 / 主 API 未配置 |
 | 嵌入探测 | `GET http://localhost:11434/api/tags`（2.5s 超时） | 200，模型列表含 `bge-m3:latest` |
+
+> **勘误（2026-11-12，DSH-20261112-12）**：上表模板/项目层指纹路径初版误写为
+> `fingerprint-library/`，真实常量是 `PROJECT_FINGERPRINT_LIBRARY_DIR = '写作指纹库'`
+> （`shared/paths.ts`，只有全局层用 `fingerprint-library`）。脚本已修正；对本报告结论无影响——
+> 真实 vault 两个路径下均无指纹文件，「风格流无法验证」不变。种子验证见
+> `docs/audits/demo-seed-verification.md`。
 
 ## 五、发现的问题（按影响排序）
 

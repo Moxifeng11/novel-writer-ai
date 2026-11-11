@@ -472,16 +472,18 @@ async function main() {
     });
 
     // ---- 风格流 ----
-    const template = readFingerprintFile(vaultRoot, `${PJ_CONTROL_DIR}/fingerprint-library/template-fingerprints.json`);
+    // @paths 勘误（DSH-20261112-12）：模板/项目层指纹目录是 PROJECT_FINGERPRINT_LIBRARY_DIR
+    // = '写作指纹库'，只有全局层用 FINGERPRINT_LIBRARY_DIR='fingerprint-library'。
+    const template = readFingerprintFile(vaultRoot, `${PJ_CONTROL_DIR}/写作指纹库/template-fingerprints.json`);
     const global = readFingerprintFile(vaultRoot, `.obsidian/plugins/${PLUGIN_ID}/data/fingerprint-library/global-fingerprints.json`);
     const projectFpRel = project
-        ? `${project.id}/${PJ_CONTROL_DIR}/fingerprint-library/project-fingerprints.json`
+        ? `${project.id}/${PJ_CONTROL_DIR}/写作指纹库/project-fingerprints.json`
         : '';
     const projectFp = projectFpRel
         ? readFingerprintFile(vaultRoot, projectFpRel)
         : { relPath: '', exists: false, items: [] };
     const intensityRel = project
-        ? `${project.id}/${PJ_CONTROL_DIR}/fingerprint-library/fingerprint-intensity-config.json`
+        ? `${project.id}/${PJ_CONTROL_DIR}/写作指纹库/fingerprint-intensity-config.json`
         : '';
     const intensity = intensityRel ? readJson(path.join(vaultRoot, intensityRel)) : null;
 
