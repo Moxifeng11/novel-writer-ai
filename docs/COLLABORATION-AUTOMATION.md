@@ -1,10 +1,17 @@
 # 自动化协作协议（DSH ⇄ ZCode ⇄ Trae）
 
-**版本**：v1（2026-11-11）
-**用途**：让三个 harness 在**不需要人工切换**的情况下持续协作——DSH 派发任务，ZCode/Trae 每 30 分钟自动领取并回执。
+**版本**：v2（2026-11-12）——**任务板取代轮询**
+**用途**：让三个 harness 在不冲突的前提下协作——DSH 派任务，ZCode/Trae **在会话开始时领一次**，不轮询。
 
-> 背景：三方共享同一个 vault 与同一个插件仓。此前靠人工在三个窗口间切换同步进度，
-> 效率低且容易漏。本协议把「派发 → 领取 → 执行 → 回执」固化为信箱上的约定。
+> **v2 变更摘要**
+>
+> v1 用「30 分钟信箱轮询 + 回执 + 心跳」，实践后有三个硬伤：
+> ①延迟 30 分钟不实时；②没有原子领取，两个 agent 可能领到同一任务；
+> ③没有写范围互斥，两个 agent 可能同时改同一批文件。
+>
+> v2 改用**文件系统任务板**（`scripts/board.mjs`），用文件系统原语做协调：
+> 原子领取（`wx` 独占创建）、写范围租约、租约超时、秒级响应。
+> **不再轮询**——取消定时任务，改为会话开始时领一次（0 开销）。
 
 ---
 
@@ -12,153 +19,130 @@
 
 | 角色 | 职责 |
 |---|---|
-| **DSH** | 主对话方（用户主要与 DSH 对话）；派发任务、验收回执、合并成果 |
-| **ZCode** | 每 30 分钟轮询信箱，领取 `[TASK-...]` 任务并执行，回 `[RECEIPT] ...` |
+| **DSH** | 主对话方；派发任务、验收、合并成果。**唯一派发方** |
+| **ZCode** | 会话开始时 `board.mjs next --me zcode` 领任务；做完 `board.mjs done` |
 | **Trae** | 同 ZCode |
 
-DSH 不创建 30 分钟轮询任务（它是主对话方，由用户驱动）。
-ZCode / Trae 各自维护一个每 30 分钟触发的循环任务。
+**不轮询**：三方都不再设置定时任务。任务板是拉取式的——谁来谁领，没任务就立刻返回。
 
 ---
 
-## 二、消息格式
+## 二、任务板（主渠道）
 
-### 2.1 派发（DSH → 对方）
-
-`subject` 必须以 `[TASK-` 开头，便于自动筛选：
+### 2.1 位置与结构
 
 ```
-[TASK-DSH-YYYYMMDD-NN] 简短标题
+<vault>/.trae/board/
+  tasks.jsonl          任务（append-only，便于审计与恢复）
+  results.jsonl        结果与证据（append-only）
+  claims/<taskId>.json 领取（原子创建 + 20 分钟租约）
+  locks/<scope>.json   写范围锁（原子创建 + 租约）
 ```
 
-`body` 必须包含：
-
-```
-TASK-ID: DSH-YYYYMMDD-NN
-目标: 一句话说清要达成什么
-范围: 允许改动的文件/目录（必须写，避免与 DSH 写冲突）
-验收: 可客观判定的标准（文件存在 / 测试通过 / 命令输出）
-期限: 可选
-```
-
-**派发铁律**：
-
-1. **写范围必须互斥**。DSH 正在改 `ui/` 时，派给对方的任务写范围不能落在 `ui/`。
-2. **验收必须可判定**。不接受「检查一下是否合理」，必须是「文件 X 存在且包含 Y 结论」。
-3. **任务可独立完成**。对方不需要 DSH 的未提交工作就能做。
-
-### 2.2 回执（对方 → DSH）
-
-`subject`：`[RECEIPT] DSH-YYYYMMDD-NN`
-
-`body` 必须包含五项，**缺一项视为无效回执**：
-
-```
-任务: DSH-YYYYMMDD-NN
-状态: done | partial | blocked
-做了什么: 具体动作（改了哪些文件 / 跑了什么命令）
-证据: commit <hash> 或 测试 N 条通过 或 命令输出关键行
-未完成: 具体剩余项（done 时写"无"）
-阻塞: 需要 DSH 或用户提供什么（无则写"无"）
-```
-
-**回执铁律**：
-
-- 「已完成」三个字不是回执。
-- 状态 `partial` 必须写清哪部分没做、为什么。
-- 状态 `blocked` 必须写清缺什么，不能只写「无法完成」。
-
-### 2.3 心跳回执（本轮无任务时）
-
-`--tasks` 输出「没有待回执的任务」时**也要发一条回执**，用来证明轮询真的执行过——
-否则脚本静默失效时，对方无法区分「没任务」和「轮询挂了」。
-
-- 收件方：`to: "all"`（dsh + zcode），一条消息即可，不要分别发两条。
-- `subject`：`[RECEIPT] NONE-YYYYMMDD-HHmm`
-- `body` 仍按五项，状态固定为 `idle`：
-
-```
-任务: 无（本轮 --tasks 输出「没有待回执的任务」）
-状态: idle
-做了什么: 运行 mailbox-watch.mjs --me <me> --tasks
-证据: 命令输出行 `[mailbox-watch] me=<me>：没有待回执的任务`；HEAD <hash>
-未完成: 无
-阻塞: 无
-```
-
-**心跳铁律**：心跳只报「本轮空跑」，不得夹带任何任务结论或推测；没有 commit 就写命令输出行。
-
----
-
-## 三、轮询流程（ZCode / Trae 每次触发）
-
-### 3.1 用脚本（推荐，不依赖 MCP 会话）
+### 2.2 DSH 派任务
 
 ```bash
-# 看「派给我但我还没回执」的任务（自动配对，已回执的不会再出现）
-node .obsidian/plugins/novel-writer-ai/scripts/mailbox-watch.mjs --me zcode --tasks
-
-# 看未读消息（含进度同步等非任务消息）
-node .obsidian/plugins/novel-writer-ai/scripts/mailbox-watch.mjs --me zcode --once
-
-# 常驻轮询（默认 15s 一次）
-node .obsidian/plugins/novel-writer-ai/scripts/mailbox-watch.mjs --me zcode --interval 30000
+node .obsidian/plugins/novel-writer-ai/scripts/board.mjs add \
+  --id DSH-20261112-01 \
+  --title "新增覆盖率门禁" \
+  --scope "scripts/check-coverage.mjs,scripts/lib/coverage-lib.mjs,package.json,vitest.config.ts,tests/unit/scripts/check-coverage.test.ts" \
+  --accept "check:coverage exit 0；基线改 99 则 exit 1；preflight 仍 28 步" \
+  --note "细节见 docs/audits/xxx.md" \
+  --by dsh
 ```
 
-脚本特性：
+**派发铁律（不变）**：
 
-- **根目录自动向上搜索**：找到含 `.trae/mailbox/messages.jsonl` 的目录，插件目录层级变化不会失配
-- **找不到信箱会报错退出（exit 2）**，不会静默返回空
-- `--tasks` 会做任务/回执配对：已回执的任务不再出现，避免重复做
+1. **写范围必须互斥**——两个任务的 `--scope` 不得重叠（任务板会强制检查）
+2. **验收必须可判定**——不接受「检查一下是否合理」
+3. **任务可独立完成**——不需要别人的未提交工作
 
-> 2026-11-11 修复了两个真实缺陷（都属于「静默失效」）：
-> ①根目录少上溯一层，指向不存在的 `.obsidian/.trae/mailbox`，
-> 脚本永远报「没有未读」——ZCode/Trae 的轮询此前形同虚设；
-> ②任务 ID 只认 subject 前缀，派发方把 ID 写在正文时任务会静默消失。
-> 两者均已修复并有回归测试（`tests/unit/scripts/mailbox-lib.test.ts`，14 条）。
+### 2.3 ZCode / Trae 领任务（会话开始时，一次）
 
-### 3.2 用 MCP（有 MCP 会话时）
+```bash
+# 领任务（原子：两个 agent 同时跑也不会领到同一个）
+node .obsidian/plugins/novel-writer-ai/scripts/board.mjs next --me zcode
+```
 
-1. `read_messages({ unread_only: true, mark_read: true })`
-2. 筛出 `subject` 以 `[TASK-` 开头、且本地没有对应 `[RECEIPT]` 记录的任务
-3. 执行任务（严格遵守 `范围`）
-4. `send_message({ to: "dsh", subject: "[RECEIPT] <TASK-ID>", body: ... })`
-5. 无任务 → **发心跳回执**（§2.3，`to: "all"`），不要静默结束
+- 有任务 → 输出任务 JSON（含 id / title / scope / accept / note），**此时已持有写范围锁**
+- 无任务 → 输出「（当前没有可领取的任务）」并退出 0
+- 若写范围被他人持有 → 输出冲突提示，不会领到
 
-### 3.3 确认清空
+**领到任务后**：按 `accept` 逐条实现，只改 `scope` 里的文件。
 
-做完后重跑 `--tasks`，输出应为「没有待回执的任务」；确认清空后再按 §2.3 发心跳回执。
+### 2.4 完成 / 失败 / 放弃
+
+```bash
+# 完成（自动释放写范围锁，证据写进 results.jsonl）
+node .obsidian/plugins/novel-writer-ai/scripts/board.mjs done <taskId> --me zcode \
+  --evidence "commit abc1234; check:coverage exit 0; 21 tests passed"
+
+# 失败（释放锁，写原因）
+node .obsidian/plugins/novel-writer-ai/scripts/board.mjs fail <taskId> --me zcode \
+  --reason "缺上游依赖 xxx"
+
+# 临时放弃（保留任务，释放锁，让别人可领）
+node .obsidian/plugins/novel-writer-ai/scripts/board.mjs release <taskId> --me zcode
+```
+
+### 2.5 看板
+
+```bash
+node .obsidian/plugins/novel-writer-ai/scripts/board.mjs status
+```
+
+输出示例：
+
+```
+任务总数 3
+  T1 | ✅ done |
+  T2 | 🔒 trae（剩 20 分钟） | 改 B
+  T3 | 🟢 待领取 | 改 C
+活跃写范围锁 2：
+  scripts/a.mjs ← trae
+```
 
 ---
 
-## 四、冲突与一致性
+## 三、为什么这样更快、更安全
 
-- **代码与 git 是唯一真相源**。回执里的「证据」优先用 commit hash 或测试输出，不用口头描述。
-- **写范围重叠时的让行规则**：DSH 优先（它在做主线）；对方遇到重叠应回执 `blocked` 并说明重叠文件，不要硬改。
-- **推送**：三方均可自行 `git push`（2026-11-11 用户放行）；`tag` / `Release` 仍需用户明确确认。
-- **失败要暴露**：任务做不完就回 `partial`/`blocked`，不要静默跳过——这与项目核心命题一致：
+| 维度 | v1 信箱轮询 | v2 任务板 |
+|---|---|---|
+| 领取延迟 | 最长 30 分钟 | **实测 248ms**（原子创建，任务一出现即可领） |
+| 重复领取 | 可能（无原子性） | **不可能**（`writeFileSync(..., {flag:'wx'})` 独占创建） |
+| 并发写同一文件 | 可能 | **不可能**（写范围锁，冲突即领不到） |
+| agent 崩溃 | 任务永久卡住 | **20 分钟租约自动释放**，可被他人抢占 |
+| token 成本 | 每次轮询一次 LLM 回合 | **0**（会话开始时一次 shell 调用） |
+| 证据留存 | 信箱消息（会被刷走） | `results.jsonl`（append-only，可审计） |
+
+---
+
+## 四、信箱的定位（降级为人类可读同步）
+
+任务派发**不再走信箱**。信箱只用于：
+
+1. **进度同步**：阶段性结论、需要对方知道但不构成任务的信息
+2. **讨论**：技术方案分歧、需要人看的说明
+3. **异常上报**：任务板本身坏了（比如文件权限问题）
+
+**信箱不再需要心跳回执**——任务板的 `status` 就是状态，`claims/` 目录的存在就是「谁在做什么」。
+
+---
+
+## 五、冲突与一致性
+
+- **代码与 git 是唯一真相源**。证据优先用 commit hash 或命令输出，不用口头描述。
+- **写范围重叠时**：任务板会直接让你领不到，不需要人工让行。
+- **推送**：三方均可自行 `git push`；`tag` / `Release` 仍需用户明确确认。
+- **失败要暴露**：做不完就 `fail` 或 `release`，不要静默跳过——这与项目核心命题一致：
   **每一条「以为完成了」的协作，都必须真的完成，并且能被证明完成**。
 
 ---
 
-## 五、当前派发中的任务
+## 六、历史（v1 → v2 迁移记录）
 
-| 任务 | 派给 | 目标 | 写范围 | 状态 |
-|---|---|---|---|---|
-| `DSH-20261111-01` | ZCode | 核对 `diagnose_flow` 实现与文档描述一致性 | `docs/audits/` | 已回执（2026-11-11 23:06） |
-| `DSH-20261111-02` | Trae | 审计 28 步 preflight 中可能空转的步骤 | `docs/audits/` | 已回执（2026-11-11 22:35） |
-
-> 表格随派发更新；历史任务见 `docs/progress/auto-iterations.md` 与信箱。
-
----
-
-## 六、为什么不用更复杂的机制
-
-考虑过文件队列（`.trae/tasks/`）与独立数据库，最终选信箱：
-
-- 信箱是三方**已接通**的唯一实时通道（MCP `novel-mailbox`）
-- 消息自带时间戳与已读标记，天然支持「领取一次」
-- 无需新增基础设施与权限
-
-代价：信箱不保存「任务状态机」。因此本协议用 **subject 前缀 + 回执配对** 来替代状态机，
-足够支撑当前频率（30 分钟一次、任务数 <10）。
+| 日期 | 变更 |
+|---|---|
+| 2026-11-11 | v1 建立：30 分钟信箱轮询 + `[TASK-]` / `[RECEIPT]` / `[VOID]` 约定 |
+| 2026-11-11 | 修复 `mailbox-watch.mjs` 两个静默失效（根目录少上溯一层 → 永远无未读；任务 ID 只认 subject） |
+| 2026-11-12 | **v2：任务板取代轮询**。用户明确「有任务板就不要轮询，浪费 token」，并已关闭 ZCode/Trae 的定时轮询 |
