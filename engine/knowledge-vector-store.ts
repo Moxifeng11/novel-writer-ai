@@ -279,12 +279,35 @@ export class KnowledgeVectorStore {
         // 惰性加载：getLoadedBookIds 读内存 samples，未 ensureLoaded 时恒空会误报「全孤儿」
         await this.ensureLoaded();
         const report = reconcileVectorBooks(kbBookIds, this.getLoadedBookIds());
+        // 审计 #A9 盲区补齐：磁盘上有、但本次加载被跳过（孤儿/模型不匹配/读取失败）的文件。
+        // 它们既不出现在「已加载 N 本」里，也无法经检索触达——必须可见才可能被显式清理。
+        const loaded = new Set(report.healthy.concat(report.orphans));
+        const diskIds = await this.listDiskVectorIds();
+        report.diskUnloaded = diskIds.filter(id => !loaded.has(id));
         const summary = summarizeVectorReconcile(report);
         if (summary) {
             log.warn('[KnowledgeVectorStore] 索引↔向量库对账发现不一致：' + summary);
         }
         return report;
     }
+
+    /**
+     * 列出磁盘上全部向量文件对应的 bookId（文件名 = bookId.json，不含 index.json）。
+     *
+     * @returns bookId 列表；目录不可读返回空数组
+     */
+    private async listDiskVectorIds(): Promise<string[]> {
+        try {
+            const files = await this.getFS().listFiles(this.getVectorsDir());
+            return files
+                .map(f => f.name)
+                .filter(name => name.endsWith('.json') && name !== 'index.json')
+                .map(name => name.slice(0, -'.json'.length));
+        } catch {
+            return [];
+        }
+    }
+
 
     /**
      * 显式清理孤儿向量（fail-closed）。
@@ -304,24 +327,65 @@ export class KnowledgeVectorStore {
         if (options?.confirmed !== true) {
             return { removed: [], skipped: [...bookIds] };
         }
-        await this.ensureLoaded();
-        const loaded = new Set(this.getLoadedBookIds());
-        const kbIds = options.kbBookIds ? new Set(options.kbBookIds) : null;
-        const removed: string[] = [];
-        const skipped: string[] = [];
-        for (const id of bookIds) {
-            if (kbIds?.has(id)) {
-                log.warn('[KnowledgeVectorStore] 清理复核：' + id + ' 已在知识库索引，拒绝删除');
-                skipped.push(id);
-                continue;
+        return await withWriteLock(KnowledgeVectorStore.STATE_LOCK, async () => {
+            // 单锁化（审计 #A4）：整个循环共用一把锁——并发 replaceBookSamples
+            // 无法插进两次删除之间；saveIndex 也从 N 次合并为 1 次。
+            await this.reloadIfChanged();
+            const loaded = new Set(this.getLoadedBookIds());
+            const kbIds = options.kbBookIds ? new Set(options.kbBookIds) : null;
+            const removed: string[] = [];
+            const skipped: string[] = [];
+            for (const id of bookIds) {
+                if (kbIds?.has(id)) {
+                    log.warn('[KnowledgeVectorStore] 清理复核：' + id + ' 已在知识库索引，拒绝删除');
+                    skipped.push(id);
+                    continue;
+                }
+                if (!loaded.has(id)) { skipped.push(id); continue; }
+                const saved = await this.removeBookLocked(id);
+                if (saved) removed.push(id);
+                else skipped.push(id);
             }
-            if (!loaded.has(id)) { skipped.push(id); continue; }
-            const saved = await this.removeBook(id);
-            if (saved) removed.push(id);
-            else skipped.push(id);
+            await this.saveIndex();
+            log.warn('[KnowledgeVectorStore] 孤儿向量清理完成：removed=' + removed.join(',') + ' skipped=' + skipped.join(','));
+            return { removed, skipped };
+        });
+    }
+
+    /**
+     * 显式删除「未加载的磁盘向量文件」（审计 #A9 盲区的清理入口，fail-closed）。
+     *
+     * 这些文件不在内存 samples 里，removeBook 触达不了；直接按文件名删除，
+     * `confirmed !== true` 时一个不删；删除后重建索引保持一致。
+     *
+     * @param bookIds - 磁盘向量 bookId（调用方应只传对账报告里的 diskUnloaded）
+     * @param options - confirmed: 用户已明确确认
+     * @returns removed/skipped 两个列表
+     */
+    async removeDiskVectors(bookIds: readonly string[], options?: { confirmed?: boolean }): Promise<{ removed: string[]; skipped: string[] }> {
+        if (options?.confirmed !== true) {
+            return { removed: [], skipped: [...bookIds] };
         }
-        log.warn('[KnowledgeVectorStore] 孤儿向量清理完成：removed=' + removed.join(',') + ' skipped=' + skipped.join(','));
-        return { removed, skipped };
+        return await withWriteLock(KnowledgeVectorStore.STATE_LOCK, async () => {
+            await this.reloadIfChanged();
+            const disk = new Set(await this.listDiskVectorIds());
+            const loaded = new Set(this.getLoadedBookIds());
+            const removed: string[] = [];
+            const skipped: string[] = [];
+            for (const id of bookIds) {
+                if (!disk.has(id) || loaded.has(id)) { skipped.push(id); continue; }
+                try {
+                    await this.getFS().delete(this.getBookFilePath(id));
+                    removed.push(id);
+                } catch (e) {
+                    log.warn('[KnowledgeVectorStore] 删除磁盘向量文件失败: ' + id, e);
+                    skipped.push(id);
+                }
+            }
+            await this.saveIndex();
+            log.warn('[KnowledgeVectorStore] 磁盘向量清理完成：removed=' + removed.join(',') + ' skipped=' + skipped.join(','));
+            return { removed, skipped };
+        });
     }
 
     /**
@@ -634,12 +698,23 @@ export class KnowledgeVectorStore {
     async removeBook(bookId: string): Promise<boolean> {
         return await withWriteLock(KnowledgeVectorStore.STATE_LOCK, async () => {
             await this.reloadIfChanged();
-
-            this.samples.delete(bookId);
-            const saved = await this.saveBook(bookId);
-            await this.saveIndex();
-            return saved;
+            return await this.removeBookLocked(bookId);
         });
+    }
+
+    /**
+     * 无锁版移除（调用方必须已持有 STATE_LOCK）。
+     *
+     * 单锁化（DSH-20261112-15 审计 #A4）：清理循环共用一把锁后，并发
+     * replaceBookSamples 不可能插进两次删除之间，消除「孤儿复活」TOCTOU。
+     *
+     * @param bookId - 书籍 ID
+     * @returns 落盘是否成功
+     */
+    private async removeBookLocked(bookId: string): Promise<boolean> {
+        this.samples.delete(bookId);
+        const saved = await this.saveBook(bookId);
+        return saved;
     }
 
     /**

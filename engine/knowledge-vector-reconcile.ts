@@ -22,6 +22,13 @@ export interface VectorReconcileReport {
     missing: string[];
     /** 正常：两边都有 */
     healthy: string[];
+    /**
+     * 未加载的磁盘向量文件（DSH-20261112-15）：loadIndex 因 alive=false /
+     * orphanByDir / 模型不匹配而跳过的文件，以及磁盘上根本没有被载入的文件。
+     * 这些文件既不出现在「已加载 N 本」里，也无法经检索触达——审计 #A9 的盲区。
+     * store 层产出；纯函数层面不填（无文件系统能力）。
+     */
+    diskUnloaded?: string[];
 }
 
 /** 稳定去重保序 */
@@ -93,6 +100,9 @@ export function summarizeVectorReconcile(report: VectorReconcileReport, hint?: s
     }
     if (report.missing.length > 0) {
         parts.push(`索引 ${report.missing.length} 本没有向量（缺失向量，建议重向量化）`);
+    }
+    if (report.diskUnloaded && report.diskUnloaded.length > 0) {
+        parts.push(`另有 ${report.diskUnloaded.length} 个向量文件未加载（模型不匹配或书目录缺失，可显式清理）`);
     }
     if (parts.length === 0) return null;
     return parts.join('；');

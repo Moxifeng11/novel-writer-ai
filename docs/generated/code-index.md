@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 323 | 138706 | 1752 | 1429 | 82% |
+| `engine/` | 323 | 138791 | 1752 | 1429 | 82% |
 | `services/` | 33 | 13799 | 205 | 161 | 79% |
 | `shared/` | 197 | 41698 | 1709 | 1393 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
@@ -193,8 +193,8 @@
 | `engine/knowledge-tags.ts` | 629 | 2 | 2 |
 | `engine/knowledge-to-fingerprint-converter.ts` | 345 | 1 | 1 |
 | `engine/knowledge-usage.ts` | 80 | 3 | 3 |
-| `engine/knowledge-vector-reconcile.ts` | 100 | 3 | 2 |
-| `engine/knowledge-vector-store.ts` | 911 | 5 | 4 |
+| `engine/knowledge-vector-reconcile.ts` | 110 | 3 | 2 |
+| `engine/knowledge-vector-store.ts` | 986 | 5 | 4 |
 | `engine/ledger/ledger-index.ts` | 175 | 10 | 8 |
 | `engine/ledger/ledger-io.ts` | 212 | 4 | 4 |
 | `engine/ledger/ledger-link.ts` | 224 | 4 | 2 |

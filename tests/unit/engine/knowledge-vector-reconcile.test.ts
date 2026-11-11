@@ -5,7 +5,7 @@
  * 本文件锁对账纯函数三类结论与 store 层清理的 fail-closed 语义：
  * 孤儿识别 / 缺失识别 / 正常不计 / 清理只删指定 bookId / 无确认时一个不删。
  */
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { Vault } from 'obsidian';
 import {
     reconcileVectorBooks,
@@ -91,6 +91,119 @@ describe('reconcileVectorBooks 纯函数', () => {
     });
 });
 
+
+
+describe('DSH-20261112-15：单锁化与磁盘孤儿', () => {
+    let vault: Vault;
+
+    beforeEach(async () => {
+        vault = new Vault();
+        await vault.createFolder('写作知识库');
+        const writer = new KnowledgeVectorStore({ vault } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
+        await writer.init();
+        await writer.replaceBookSamples('kb_live', '存活书', [
+            { dimension: 'original', category: '原文片段', sample: '晨星在雾里升起来', position: 0 },
+        ]);
+        await writer.replaceBookSamples('kb_ghost', '孤儿书', [
+            { dimension: 'original', category: '原文片段', sample: '孤儿向量样本', position: 0 },
+        ]);
+        await writer.replaceBookSamples('kb_ghost2', '孤儿书二', [
+            { dimension: 'original', category: '原文片段', sample: '第二个孤儿', position: 0 },
+        ]);
+    });
+
+    function makeReader(): KnowledgeVectorStore {
+        return new KnowledgeVectorStore({ vault } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
+    }
+
+    it('审计 #A4：两本书的清理只写一次索引（N 次 saveIndex 合并为 1 次）', async () => {
+        const store = makeReader();
+        await store.init();
+        const saveIndexSpy = vi.spyOn(store as unknown as { saveIndex: () => Promise<void> }, 'saveIndex');
+        const result = await store.removeOrphanVectors(['kb_ghost', 'kb_ghost2'], {
+            confirmed: true,
+            kbBookIds: ['kb_live'],
+        });
+        expect(result.removed).toEqual(['kb_ghost', 'kb_ghost2']);
+        expect(saveIndexSpy).toHaveBeenCalledTimes(1);
+        saveIndexSpy.mockRestore();
+    });
+
+    it('审计 #A4 回归：清理与并发 replaceBookSamples 交错不崩溃、最终状态一致', async () => {
+        const store = makeReader();
+        await store.init();
+        // 单锁化后两个操作串行执行：结果要么是「孤儿被删、新书写入」，要么顺序相反
+        const results = await Promise.allSettled([
+            store.removeOrphanVectors(['kb_ghost'], { confirmed: true, kbBookIds: ['kb_live'] }),
+            store.replaceBookSamples('kb_ghost', '复活书', [
+                { dimension: 'original', category: '原文片段', sample: '并发写入', position: 0 },
+            ]),
+        ]);
+        expect(results.every(r => r.status === 'fulfilled')).toBe(true);
+        const ids = store.getLoadedBookIds();
+        // 一致性断言：kb_ghost 要么不在（先删后写失败/未执行到写），要么在且带新样本——不存在「半删半写」
+        if (ids.includes('kb_ghost')) {
+            const neighbors = await store.getNeighbors(['kb_ghost'], 'original', [0], 0);
+            expect(neighbors[0]?.sample).toBe('并发写入');
+        }
+    });
+
+    it('磁盘孤儿识别：磁盘上有、未加载的文件进 diskUnloaded', async () => {
+        const diskJson = JSON.stringify({
+            bookId: 'kb_diskonly',
+            bookName: '磁盘孤儿',
+            samples: [{ id: 's1', bookId: 'kb_diskonly', bookName: '磁盘孤儿', dimension: 'original', category: '原文片段', sample: 'x', position: 0, vector: [1, 0] }],
+        });
+        // _seedFile 会登记祖先目录与文件索引（raw adapter.write 不进 vault 索引，listFiles 看不见）
+        (vault as unknown as { _seedFile: (p: string, c: string) => unknown })._seedFile(
+            '.obsidian/plugins/novel-writer-ai/data/knowledge-vectors/kb_diskonly.json',
+            diskJson,
+        );
+
+        // isBookAlive 对 kb_diskonly 返回 false → loadIndex 跳过该文件（不进 samples）
+        const reader = new KnowledgeVectorStore({ vault } as never, new MockEmbeddingProvider(), undefined, {
+            isBookAlive: id => id !== 'kb_diskonly',
+        });
+        await reader.init();
+        const report = await reader.reconcileWithIndex(['kb_live']);
+        expect(report.diskUnloaded).toContain('kb_diskonly');
+        // 已加载文件不进 diskUnloaded
+        expect(report.diskUnloaded).not.toContain('kb_live');
+        expect(report.diskUnloaded).not.toContain('kb_ghost');
+        // summarize 覆盖
+        expect(summarizeVectorReconcile(report)).toContain('个向量文件未加载');
+    });
+
+    it('removeDiskVectors 未确认：一个不删（fail-closed）', async () => {
+        const diskJson = JSON.stringify({
+            bookId: 'kb_diskonly',
+            bookName: '磁盘孤儿',
+            samples: [],
+        });
+        const path = '.obsidian/plugins/novel-writer-ai/data/knowledge-vectors/kb_diskonly.json';
+        (vault as unknown as { _seedFile: (p: string, c: string) => unknown })._seedFile(path, diskJson);
+        const store = makeReader();
+        await store.init();
+        const result = await store.removeDiskVectors(['kb_diskonly']);
+        expect(result.removed).toEqual([]);
+        expect(result.skipped).toEqual(['kb_diskonly']);
+        expect(await vault.adapter.exists(path)).toBe(true);
+    });
+
+    it('removeDiskVectors confirmed:true：文件删除、已加载文件进 skipped 不误删', async () => {
+        const diskJson = JSON.stringify({ bookId: 'kb_diskonly', bookName: '磁盘孤儿', samples: [] });
+        const path = '.obsidian/plugins/novel-writer-ai/data/knowledge-vectors/kb_diskonly.json';
+        (vault as unknown as { _seedFile: (p: string, c: string) => unknown })._seedFile(path, diskJson);
+        const store = new KnowledgeVectorStore({ vault } as never, new MockEmbeddingProvider(), undefined, {
+            isBookAlive: id => id !== 'kb_diskonly',
+        });
+        await store.init();
+        const result = await store.removeDiskVectors(['kb_diskonly', 'kb_live'], { confirmed: true });
+        expect(result.removed).toEqual(['kb_diskonly']);
+        expect(result.skipped).toEqual(['kb_live']);
+        expect(await vault.adapter.exists(path)).toBe(false);
+    });
+});
 
 describe('审计修复回归（对抗审计 #A2/#A5/#B9）', () => {
     let vault: Vault;
