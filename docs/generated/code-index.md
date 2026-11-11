@@ -11,7 +11,7 @@
 | `shared/` | 197 | 41680 | 1709 | 1393 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 255 | 102880 | 901 | 751 | 83% |
+| `ui/` | 256 | 102938 | 905 | 754 | 83% |
 
 ## 文件清单
 
@@ -759,7 +759,8 @@
 | `ui/project-health-modal.ts` | 134 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 406 | 5 | 5 |
 | `ui/project-utils.ts` | 366 | 11 | 10 |
-| `ui/prompt-manager-settings.ts` | 1144 | 1 | 1 |
+| `ui/prompt-manager-logic.ts` | 76 | 4 | 3 |
+| `ui/prompt-manager-settings.ts` | 1126 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 87 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 504 | 2 | 2 |
 | `ui/rebuild-chapters-modal.ts` | 327 | 1 | 1 |

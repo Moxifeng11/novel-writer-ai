@@ -11,6 +11,7 @@ import type {
 import { OperationConfirmModal } from './components/progress';
 import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
 import { exportTextFile } from '@/shared/export-file';
+import { buildVariantStatRows } from './prompt-manager-logic';
 
 /**
  * 提示词管理器设置列表。
@@ -540,32 +541,13 @@ export class PromptManagerSettings {
             text: `${label} (v${variant.version})`,
             cls: 'nw-u-fwt-600-2 nw-u-fs-13px-2 nw-u-marginbottom-8px-2'
         });
-        card.createDiv({
-            text: `调用次数: ${variant.metrics.totalCalls}`,
-            cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2'
-        });
-        if (variant.metrics.ratingCount > 0) {
+        // 指标行构造抽到 prompt-manager-logic：0 样本时不能显示 NaN/10
+        for (const row of buildVariantStatRows(variant.metrics, traffic)) {
             card.createDiv({
-                text: `平均评分: ${variant.metrics.avgRating.toFixed(1)}/10`,
+                text: `${row.label}: ${row.value}`,
                 cls: 'nw-stat-muted-mt'
             });
         }
-        if (variant.metrics.qualityCount > 0) {
-            card.createDiv({
-                text: `平均质量: ${variant.metrics.avgQuality.toFixed(1)}/10`,
-                cls: 'nw-stat-muted-mt'
-            });
-        }
-        if (variant.metrics.modificationCount > 0) {
-            card.createDiv({
-                text: `修改率: ${(variant.metrics.modificationRate * 100).toFixed(1)}%`,
-                cls: 'nw-stat-muted-mt'
-            });
-        }
-        card.createDiv({
-            text: `流量占比: ${traffic}%`,
-            cls: 'nw-stat-muted-mt'
-        });
     }
 
     private renderUsageTab(container: HTMLElement): void {
