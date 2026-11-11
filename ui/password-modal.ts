@@ -77,12 +77,19 @@ export class PasswordModal extends Modal {
         const inputEl = contentEl.createEl('input', { type: 'password' });
         inputEl.placeholder = '请输入口令';
         inputEl.addClass('nw-password-input');
+        // S3-14：口令框禁止自动填充/密码管理器接管
+        inputEl.setAttribute('autocomplete', 'new-password');
+        inputEl.setAttribute('data-1p-ignore', 'true');
+        inputEl.setAttribute('data-lpignore', 'true');
         const confirmEl = this.mode === 'set'
             ? contentEl.createEl('input', { type: 'password' })
             : null;
         if (confirmEl) {
             confirmEl.placeholder = '再次输入以确认';
             confirmEl.addClass('nw-password-input');
+            confirmEl.setAttribute('autocomplete', 'new-password');
+            confirmEl.setAttribute('data-1p-ignore', 'true');
+            confirmEl.setAttribute('data-lpignore', 'true');
         }
 
         const errorEl = contentEl.createEl('div', { cls: 'nw-password-error' });

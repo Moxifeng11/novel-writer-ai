@@ -13,7 +13,7 @@ import { API_FORMAT_OPTIONS, normalizeApiFormat, type ApiFormat } from '@/shared
 import { discoverModels } from '@/services/model-discovery';
 import { ModelPickerModal } from '@/ui/model-picker-modal';
 import { PasswordModal } from '@/ui/password-modal';
-import { describeKeyEncryptionStatus, describeSecretForInput, isStoredCiphertext } from '@/shared/secret-display';
+import { describeKeyEncryptionStatus, describeSecretForInput, isStoredCiphertext, SECRET_INPUT_ATTRS } from '@/shared/secret-display';
 import { lookupModelCapability } from '@/shared/model-capabilities';
 import { testProviderConnectivity } from '@/services/api-connectivity-service';
 import { renderCollapsibleSection } from '@/ui/settings-utils';
@@ -345,7 +345,7 @@ export class ApiSection extends SettingsSection {
                 cls: 'nw-api-text-input',
                 type: 'password',
                 value: display.value,
-                attr: { placeholder: display.placeholder, spellcheck: 'false', title: display.title },
+                attr: { ...SECRET_INPUT_ATTRS, placeholder: display.placeholder, title: display.title },
             });
             input.addEventListener('change', async () => {
                 const typed = input.value.trim();

@@ -3,7 +3,7 @@ import { OperationConfirmModal } from './components/progress';
 import { API_FORMAT_OPTIONS, normalizeApiFormat, type ApiFormat } from '@/shared/api-format';
 import { discoverModels } from '@/services/model-discovery';
 import { ModelPickerModal } from './model-picker-modal';
-import { describeSecretForInput, isStoredCiphertext } from '@/shared/secret-display';
+import { describeSecretForInput, isStoredCiphertext, SECRET_INPUT_ATTRS } from '@/shared/secret-display';
 import { lookupModelCapability } from '@/shared/model-capabilities';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 import type { CustomProvider, NovelWriterSettings } from '@/main';
@@ -312,8 +312,8 @@ export class ManageProvidersModal extends Modal {
                 // 未解锁时内存里是密文，不能直接显示（会露出乱码，误编辑还会存回密文）
                 value: describeSecretForInput(storedKey).value,
                 attr: {
+                    ...SECRET_INPUT_ATTRS,
                     placeholder: describeSecretForInput(storedKey).placeholder,
-                    spellcheck: 'false',
                     title: describeSecretForInput(storedKey).title,
                 },
             });

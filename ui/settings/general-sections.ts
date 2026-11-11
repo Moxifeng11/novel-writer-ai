@@ -737,6 +737,10 @@ export class AboutSection extends SettingsSection {
                 .setDesc('公开仓库留空；私有仓库需要 repo 读取权限。Token 只保存在本地设置中。')
                 .addText(text => {
                     text.inputEl.type = 'password';
+                    // S3-14：Token 框禁止自动填充/密码管理器接管
+                    text.inputEl.setAttribute('autocomplete', 'new-password');
+                    text.inputEl.setAttribute('data-1p-ignore', 'true');
+                    text.inputEl.setAttribute('data-lpignore', 'true');
                     text.setPlaceholder('github_pat_... 或 ghp_...')
                         .setValue(this.plugin.settings.updateGithubToken || '')
                         .onChange(async (value) => {

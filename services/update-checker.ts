@@ -22,6 +22,7 @@ import {
 } from '@/shared/github-repo';
 import { requestWithPolicy } from '@/shared/http-request';
 import { usableSecret } from '@/shared/secret-value';
+import { isPrivateHost } from '@/shared/private-host';
 
 /** 更新检查源类型 */
 export type UpdateSourceType = 'github' | 'custom';
@@ -496,6 +497,24 @@ export class UpdateChecker {
 
     /** 从自定义服务器检查更新 */
     private async checkCustomSource(url: string): Promise<VersionInfo> {
+        // S3-13（安全 r3）：自定义更新地址是第二个网络入口，必须与考据抓取同口径校验：
+        // 只允许 https、禁止 URL 内嵌凭据、禁止本机/内网（盲 SSRF）。
+        let parsed: URL;
+        try {
+            parsed = new URL(url);
+        } catch {
+            throw new UpdateCheckError('config', '自定义更新地址不是合法 URL');
+        }
+        if (parsed.username || parsed.password) {
+            throw new UpdateCheckError('config', '自定义更新地址不能包含账号密码');
+        }
+        if (parsed.protocol !== 'https:') {
+            throw new UpdateCheckError('config', '自定义更新地址必须是 https');
+        }
+        if (isPrivateHost(parsed.hostname)) {
+            throw new UpdateCheckError('config', '自定义更新地址不能指向本机/内网');
+        }
+
         let response: RequestUrlResponse;
         try {
             // v4.76.0：同 checkGitHub——移动端必须走 requestUrl

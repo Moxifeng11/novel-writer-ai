@@ -29,6 +29,19 @@ export function isStoredCiphertext(value: unknown): boolean {
 export const SECRET_LOCKED_PLACEHOLDER = '已加密 · 输入口令解锁后可修改';
 
 /**
+ * 密钥输入框的通用属性（S3-14 安全 r3）。
+ *
+ * 关闭浏览器/密码管理器的自动填充与保存提示，避免：自动填充把旧值写回、
+ * 屏幕共享时被 1Password 等浮层展示、以及把密钥存进第三方密码库。
+ */
+export const SECRET_INPUT_ATTRS = {
+    autocomplete: 'new-password',
+    'data-1p-ignore': 'true',
+    'data-lpignore': 'true',
+    spellcheck: 'false',
+} as const;
+
+/**
  * 决定密钥输入框该如何显示：
  * - 密文 → 输入框留空（不泄露密文），给出提示与说明
  * - 明文 → 直接显示
