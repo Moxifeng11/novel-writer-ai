@@ -1,5 +1,6 @@
 import { App, Modal } from 'obsidian';
 import { BUILTIN_CHANGELOG, ChangelogEntry } from '@/shared/changelog-data';
+import { GITHUB_REPO_URL } from '@/shared/github-repo';
 
 interface ChangelogModalOptions {
     highlightVersion?: string;
@@ -75,9 +76,24 @@ export class ChangelogModal extends Modal {
             attr: { style: 'display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:16px;border-top:1px solid var(--background-modifier-border);' }
         });
 
-        footer.createEl('span', {
-            text: `共 ${BUILTIN_CHANGELOG.length} 个版本记录`,
-            attr: { style: 'font-size:12px;color:var(--text-muted);' }
+        // 内置数据只保留最近若干版本（控制包体积），完整历史在仓库 CHANGELOG 与 Releases
+        const footerLeft = footer.createDiv({
+            cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-12px'
+        });
+        footerLeft.createEl('span', {
+            text: `显示最近 ${BUILTIN_CHANGELOG.length} 个版本`,
+            cls: 'nw-u-fs-12px nw-u-c-text-muted'
+        });
+        // 完整历史在仓库 CHANGELOG 与 Releases；用纯 href 交给 Obsidian/Electron 处理，
+        // 不接管点击（避免 window 全局在多窗口下指向错误宿主），也不新增网络请求
+        footerLeft.createEl('a', {
+            text: '查看完整更新日志 →',
+            cls: 'nw-u-fs-12px nw-u-c-text-accent nw-u-cur-pointer-2',
+            attr: {
+                href: `${GITHUB_REPO_URL}/releases`,
+                target: '_blank',
+                rel: 'noopener noreferrer'
+            }
         });
 
         const closeBtn = footer.createEl('button', {

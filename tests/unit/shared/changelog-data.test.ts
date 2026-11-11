@@ -50,4 +50,15 @@ describe('BUILTIN_CHANGELOG — 插件内更新日志', () => {
         expect(summary.length).toBeGreaterThan(0);
         expect(summary.length).toBeLessThanOrEqual(3);
     });
+
+    // 包体积治理（v4.83.0）：内置条目随版本线性膨胀曾是 main.js 逼近 5MB 上限的主因之一。
+    // 这两条是防回归闸门——新增版本时必须同时裁剪最旧条目，否则测试失败。
+    it('内置条目数不超过 12 条（包体积上限）', () => {
+        expect(BUILTIN_CHANGELOG.length).toBeLessThanOrEqual(12);
+    });
+
+    it('内置条目总字节不超过 12000（单批文案膨胀防线）', () => {
+        const totalBytes = Buffer.byteLength(JSON.stringify(BUILTIN_CHANGELOG), 'utf8');
+        expect(totalBytes).toBeLessThanOrEqual(12000);
+    });
 });

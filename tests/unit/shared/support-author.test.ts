@@ -9,8 +9,9 @@ import { ALIPAY_SUPPORT_QR_DATA_URI } from '../../../shared/support-qr.generated
  * 不做真实支付——纯客户端插件不能内嵌商户私钥（见 support-author.ts 注释）。
  */
 describe('describeAlipaySupport（收钱码）', () => {
-    it('收钱码以 data URI 内嵌且是 JPEG 图片', () => {
-        expect(ALIPAY_SUPPORT_QR_DATA_URI.startsWith('data:image/jpeg;base64,')).toBe(true);
+    it('收钱码以 data URI 内嵌且是有效图像', () => {
+        // 格式不锁死：v4.83.0 把 39KB JPEG 换成 12KB 4 色 PNG（黑白模块更锐利、体积约 1/3）
+        expect(ALIPAY_SUPPORT_QR_DATA_URI).toMatch(/^data:image\/(png|jpeg|webp);base64,/);
         // 生成物应包含实际图像数据（不是空占位）
         expect(ALIPAY_SUPPORT_QR_DATA_URI.length).toBeGreaterThan(10_000);
     });

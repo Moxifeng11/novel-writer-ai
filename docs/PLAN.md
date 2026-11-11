@@ -640,6 +640,7 @@ Agent（harness）
 
 - 只在**版本节点**提交：工作树累积 → 合并 CHANGELOG Unreleased 为单一版本节点 → 写 `docs/releases/vX.Y.Z.md` → 升版本 → 门禁全绿 → 本地提交。
 - **可自行 push**（2026-11-11 用户放行）；**`tag` / `Release` 仍需用户明确确认**（`release.yml` 已有资产一致性校验）。
+- **包体积纪律（v4.83.0 起）**：`shared/changelog-data.ts` 内置更新日志**只保留最近 12 个版本**（完整历史在 `CHANGELOG.md` 与 GitHub Releases，弹窗 footer 给出外链）；发版新增条目时必须同步裁掉最旧一条，由 `tests/unit/shared/changelog-data.test.ts` 的条数与字节上限守卫强制。
 - 每个提交必须可构建：按「运行时代码 → 测试/脚本 → 文档/版本」顺序分组。
 
 ## 六、文档真相源

@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 319 | 137699 | 1728 | 1418 | 82% |
 | `services/` | 32 | 13402 | 193 | 153 | 79% |
-| `shared/` | 196 | 43215 | 1689 | 1380 | 82% |
+| `shared/` | 196 | 41151 | 1689 | 1380 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 242 | 99995 | 754 | 649 | 86% |
+| `ui/` | 242 | 100011 | 754 | 649 | 86% |
 
 ## 文件清单
 
@@ -398,7 +398,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 284 | 18 | 17 |
-| `shared/changelog-data.ts` | 2358 | 3 | 3 |
+| `shared/changelog-data.ts` | 294 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-ref.ts` | 205 | 7 | 5 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
@@ -596,7 +596,7 @@
 | `ui/batch-import-modal.ts` | 1870 | 1 | 1 |
 | `ui/batch-novels-modal.ts` | 236 | 1 | 1 |
 | `ui/button-busy.ts` | 37 | 1 | 1 |
-| `ui/changelog-modal.ts` | 191 | 1 | 1 |
+| `ui/changelog-modal.ts` | 207 | 1 | 1 |
 | `ui/chapter-outline-tree-modal.ts` | 1338 | 1 | 1 |
 | `ui/chapter-settlement-modal.ts` | 428 | 1 | 1 |
 | `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
