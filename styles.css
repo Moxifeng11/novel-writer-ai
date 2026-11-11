@@ -19846,6 +19846,13 @@ body.nw-panel-resizing .nw-awb-center iframe {
 .nw-capability-metric-label { color: var(--text-muted); font-size: 11px; }
 .nw-capability-notes { color: var(--text-muted); line-height: 1.45; }
 .nw-capability-note { white-space: normal; }
+/* 能力横幅的动作区（如「配置嵌入模型」「重向量化」） */
+.nw-capability-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 2px;
+}
 
 /* 知识库书籍页：窄屏把题材栏收成顶部横条，避免 220px + 书籍列表互相挤压 */
 @media (max-width: 900px) {

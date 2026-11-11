@@ -14,12 +14,22 @@ export interface CapabilityMetric {
     value: string | number;
 }
 
+/** 说明条上的动作按钮 */
+export interface CapabilityAction {
+    label: string;
+    onClick: () => void;
+    /** 主按钮（用于「去配置」这类引导动作） */
+    primary?: boolean;
+}
+
 /** 说明条配置 */
 export interface CapabilityBannerOptions {
     title: string;
     stage: CapabilityStage;
     metrics: CapabilityMetric[];
     notes: string[];
+    /** 可选动作按钮（如「配置嵌入模型」「重向量化」） */
+    actions?: CapabilityAction[];
 }
 
 const STAGE_LABELS: Record<CapabilityStage, string> = {
@@ -61,6 +71,16 @@ export function renderCapabilityBanner(
         const notes = banner.createDiv({ cls: 'nw-capability-notes' });
         for (const note of options.notes) {
             notes.createDiv({ cls: 'nw-capability-note', text: note });
+        }
+    }
+    if (options.actions && options.actions.length > 0) {
+        const actions = banner.createDiv({ cls: 'nw-capability-actions' });
+        for (const action of options.actions) {
+            const button = actions.createEl('button', {
+                text: action.label,
+                cls: action.primary ? 'nw-btn nw-btn-primary nw-btn-sm' : 'nw-btn nw-btn-secondary nw-btn-sm',
+            });
+            button.addEventListener('click', () => action.onClick());
         }
     }
     return banner;

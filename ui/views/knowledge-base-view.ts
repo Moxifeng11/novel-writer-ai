@@ -23,8 +23,10 @@ import { buildKbBookCard } from './kb-book-card';
 import { buildKbStatsPanel } from './kb-stats-panel';
 import { buildKbDetailActionButtons } from './kb-detail-actions';
 import { buildKbConfigPanel } from './kb-config-panel';
-import { renderCapabilityBanner } from './capability-banner';
-import { computeKnowledgeCapability } from './knowledge-capability';
+import { renderCapabilityBanner, type CapabilityAction } from './capability-banner';
+import { computeKnowledgeCapability, type EmbeddingAvailabilitySnapshot } from './knowledge-capability';
+import { getSharedEmbeddingProvider } from '@/engine/embedding/embedding-service';
+import { rebuildAllVectorsWithConfirm } from '@/ui/vector-rebuild-action';
 import {
     formatBreakdownStatusLabel,
     formatTaskStatusLabel,
@@ -493,6 +495,8 @@ export class KnowledgeBaseView extends ItemView {
     private monitorBarEl!: HTMLElement;
 
     private allBooks: BookBasicInfo[] = [];
+    /** 嵌入模型可用性快照（异步探测，供能力横幅提示「去配置」） */
+    private embeddingSnapshot?: EmbeddingAvailabilitySnapshot;
     private filter: FilterState = {
         channel: 'all',
         primaryGenre: 'all',
@@ -767,6 +771,45 @@ export class KnowledgeBaseView extends ItemView {
             this.booksLoadError = e instanceof Error ? e.message : String(e);
             log.error('[KnowledgeBaseView] 加载书籍列表失败:', e);
         }
+        await this.detectEmbeddingAvailability();
+    }
+
+    /**
+     * 探测嵌入模型可用性（v4.83.1）。
+     *
+     * 默认 embedding provider 是本地 Ollama；没装/没启动时向量化必然失败，
+     * 而旧界面只显示「待处理/失败 N」，用户不知道要去配什么。
+     * 探测失败本身也要如实记录（不能因为探测抛错就当作「可用」）。
+     */
+    private async detectEmbeddingAvailability(): Promise<void> {
+        const provider = getSharedEmbeddingProvider();
+        if (!provider) {
+            this.embeddingSnapshot = { available: false, reason: '嵌入 provider 未初始化' };
+            return;
+        }
+        let providerLabel: string | undefined;
+        try {
+            const info = provider.getProviderInfo();
+            const type = this.plugin.settings.vectorProviderType || 'ollama';
+            const model = info?.model || '';
+            providerLabel = model ? `${type} · ${model}` : type;
+        } catch {
+            // provider 信息拿不到不影响可用性判定
+        }
+        try {
+            const availability = await provider.isAvailable();
+            this.embeddingSnapshot = {
+                available: availability.available === true,
+                reason: availability.available === true ? undefined : availability.reason,
+                providerLabel,
+            };
+        } catch (e) {
+            this.embeddingSnapshot = {
+                available: false,
+                reason: e instanceof Error ? e.message : String(e),
+                providerLabel,
+            };
+        }
     }
 
     private renderLayout(): void {
@@ -947,10 +990,31 @@ export class KnowledgeBaseView extends ItemView {
         });
 
         // 能力边界：拆解完成 ≠ 检索可用；把当前阶段直接放在列表顶部
-        const capability = computeKnowledgeCapability(this.allBooks);
+        const capability = computeKnowledgeCapability(this.allBooks, this.embeddingSnapshot);
+        const bannerActions: CapabilityAction[] = [];
+        // 嵌入模型不可用时给「去配置」直达入口（此前用户只能看到「待处理/失败 N」这个数字，
+        // 不知道问题出在没配 embedding）
+        if (this.embeddingSnapshot && !this.embeddingSnapshot.available) {
+            bannerActions.push({
+                label: '⚙️ 配置嵌入模型',
+                primary: true,
+                onClick: () => {
+                    if (!this.plugin.openPluginSettings()) {
+                        new Notice('请到「设置 → 第三方插件 → 小说工坊 AI → 向量化」配置嵌入模型', 7000);
+                    }
+                },
+            });
+        }
+        bannerActions.push({
+            label: '🔄 重向量化',
+            onClick: () => {
+                void rebuildAllVectorsWithConfirm(this.app, this.plugin);
+            },
+        });
         renderCapabilityBanner(booksPanel, {
             title: '知识库能力边界',
             ...capability,
+            actions: bannerActions,
         });
 
         this.renderBooksToolbar(booksPanel);
@@ -1375,7 +1439,35 @@ export class KnowledgeBaseView extends ItemView {
             getGenreName: id => this.kb?.getGenre(id)?.name ?? '',
             formatDate: ts => this.formatDate(ts),
             openBookDetail: b => this.openBookDetail(b),
+            onRetryVectorize: b => { void this.retryVectorizeBook(b); },
         });
+    }
+
+    /**
+     * 单本书重试向量化（v4.83.1）。
+     *
+     * 只重算向量，不重新拆解、不调用 AI；成功后刷新列表与能力横幅。
+     *
+     * @param book - 目标书籍
+     */
+    private async retryVectorizeBook(book: BookBasicInfo): Promise<void> {
+        const scheduler = this.deconstructionScheduler;
+        if (!scheduler || typeof scheduler.revectorizeBook !== 'function') {
+            new Notice('拆解调度器未初始化，无法重向量化', 6000);
+            return;
+        }
+        new Notice(`⏳ 正在重算《${book.name}》的向量…`, 4000);
+        try {
+            await scheduler.revectorizeBook(book.id, book.name);
+            new Notice(`✅ 《${book.name}》向量已重算，可参与检索`, 5000);
+        } catch (e) {
+            const message = e instanceof Error ? e.message : String(e);
+            showErrorNotice(message, { title: `《${book.name}》重向量化失败`, timeout: 10000 });
+        } finally {
+            // 无论成功失败都刷新：状态徽标与能力横幅需要反映最新结果
+            await this.loadBooks();
+            this.renderRightPanel();
+        }
     }
 
     private classifyBookInfo(book: BookBasicInfo): ClassificationResult {

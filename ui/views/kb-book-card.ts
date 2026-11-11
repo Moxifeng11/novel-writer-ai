@@ -51,6 +51,13 @@ export interface KbBookCardHost {
     formatDate(ts: number): string;
     /** 打开书籍详情页（fire-and-forget，异步返回值由宿主自行处理）。 */
     openBookDetail(book: BookBasicInfo): void | Promise<void>;
+    /**
+     * 对单本书重试向量化（v4.83.1）。
+     *
+     * 缺失时卡片不显示重试按钮——向量化失败的书此前只能到设置页做「全部重向量化」，
+     * 粒度太粗。
+     */
+    onRetryVectorize?(book: BookBasicInfo): void;
 }
 
 /**
@@ -91,13 +98,26 @@ export function buildKbBookCard(book: BookBasicInfo, host: KbBookCardHost): HTML
 
     // A5: 拆解完成但向量化失败时，检索实际不可用，列表必须能看出来
     if (shouldShowVectorWarning(book)) {
-        header.createSpan({
+        const warning = header.createSpan({
             text: '⚠️ 向量化失败',
             attr: {
                 title: resolveVectorWarningTitle(book),
                 style: 'padding:2px 8px;font-size:11px;border-radius:10px;background:var(--nw-danger-soft-bg);color:var(--nw-danger-soft);flex-shrink:0;margin-left:4px;'
             }
         });
+        // v4.83.1：单本重试入口。此前失败的书只能到设置页做「全部重向量化」，粒度太粗。
+        if (host.onRetryVectorize) {
+            const retry = warning.createEl('button', {
+                text: '重试',
+                cls: 'nw-btn nw-btn-secondary nw-btn-sm',
+                attr: { title: '按当前嵌入模型重新计算这本书的向量（不重新拆解、不调用 AI）' },
+            });
+            retry.addEventListener('click', (event) => {
+                // 卡片本身有「打开详情」点击；重试不能顺带把详情页也打开
+                event.stopPropagation();
+                host.onRetryVectorize?.(book);
+            });
+        }
     }
 
     const meta = card.createDiv({ cls: "nw-text-sm-muted nw-u-marginbottom-8px", attr: {} });

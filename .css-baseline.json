@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-10T16:31:01.318Z",
-  "note": "第57轮 M3-6：浮窗 header 加 touch-action:none；知识卡操作 hover:none/focus-within 常显（+365B）",
-  "bytes": 551288,
+  "generatedAt": "2026-11-11T10:00:35.423Z",
+  "note": "v4.83.1 知识库能力横幅新增动作区样式 nw-capability-actions（配置嵌入模型/重向量化按钮），+184B/+1 类",
+  "bytes": 551472,
   "important": 24,
   "hardcodedHex": 161,
   "rgbHsl": 188,
-  "uniqueClasses": 3021,
+  "uniqueClasses": 3022,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }
