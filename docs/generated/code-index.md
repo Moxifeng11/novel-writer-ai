@@ -6,18 +6,18 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 331 | 141191 | 1826 | 1465 | 80% |
+| `engine/` | 333 | 141708 | 1837 | 1469 | 80% |
 | `services/` | 33 | 13890 | 206 | 162 | 79% |
-| `shared/` | 198 | 42131 | 1723 | 1405 | 82% |
-| `core/` | 7 | 2913 | 32 | 17 | 53% |
+| `shared/` | 198 | 42133 | 1723 | 1405 | 82% |
+| `core/` | 7 | 2917 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 266 | 104281 | 991 | 798 | 81% |
+| `ui/` | 266 | 104328 | 991 | 798 | 81% |
 
 ## 文件清单
 
 | 文件 | 行数 | 导出 | 有 JSDoc |
 |---|---:|---:|---:|
-| `core/command-registry.ts` | 707 | 6 | 2 |
+| `core/command-registry.ts` | 711 | 6 | 2 |
 | `core/crypto-service.ts` | 413 | 5 | 3 |
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
@@ -114,6 +114,8 @@
 | `engine/consistency/assertion-model.ts` | 247 | 13 | 8 |
 | `engine/consistency/assertion-store.ts` | 171 | 8 | 4 |
 | `engine/consistency/audit-pipeline.ts` | 212 | 11 | 6 |
+| `engine/consistency/consistency-audit-wiring.ts` | 302 | 3 | 2 |
+| `engine/consistency/consistency-service.ts` | 215 | 8 | 2 |
 | `engine/consistency/evidence-locate.ts` | 109 | 3 | 2 |
 | `engine/consistency/pairing-llm.ts` | 208 | 11 | 4 |
 | `engine/consistency/pairing-rules.ts` | 360 | 7 | 3 |
@@ -421,7 +423,7 @@
 | `shared/chapter-version-port.ts` | 23 | 1 | 1 |
 | `shared/character-rules.ts` | 180 | 10 | 6 |
 | `shared/co-writer-types.ts` | 113 | 0 | 0 |
-| `shared/command-ids.ts` | 120 | 2 | 2 |
+| `shared/command-ids.ts` | 122 | 2 | 2 |
 | `shared/command-mode-rules.ts` | 143 | 8 | 5 |
 | `shared/command-ui-port.ts` | 48 | 4 | 2 |
 | `shared/content-classifier.ts` | 248 | 11 | 11 |
@@ -649,7 +651,7 @@
 | `ui/co-writing/suggestion-flow.ts` | 475 | 3 | 2 |
 | `ui/co-writing/suggestion-loading.ts` | 130 | 4 | 2 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
-| `ui/command-ui-executor.ts` | 679 | 2 | 2 |
+| `ui/command-ui-executor.ts` | 726 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 105 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
 | `ui/components/categorization-review-panel.ts` | 449 | 2 | 2 |

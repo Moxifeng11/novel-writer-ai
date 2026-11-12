@@ -110,6 +110,8 @@ const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.USAGE_LEDGER,
     CommandIds.BACKUP_CENTER,
     CommandIds.OPEN_ONBOARDING,
+    // 一致性审核（S1 断言层 + S2 配对器合成入口）
+    CommandIds.CONSISTENCY_AUDIT,
 ];
 
 interface Harness {

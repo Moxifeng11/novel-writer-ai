@@ -26,6 +26,8 @@ import { PreResearchModal } from './pre-research-modal';
 import { ModeDocumentModal } from './mode-document-modal';
 import { OperationConfirmModal } from './components/progress';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
+import { runAuditForProject } from '@/engine/consistency/consistency-audit-wiring';
+import { formatReportSummary } from '@/engine/consistency/audit-pipeline';
 import { runGraphValidation } from '@/engine/graph/graph-validation-trigger';
 import { PlanBookModal } from './plan-book-modal';
 import { WriteChapterModal } from './write-chapter-modal';
@@ -346,6 +348,9 @@ export class CommandUiExecutor implements CommandUiPort {
                 return true;
             case CommandIds.DIAGNOSE:
                 new DiagnoseWriterModal(app, plugin).open();
+                return true;
+            case CommandIds.CONSISTENCY_AUDIT:
+                void this.runConsistencyAudit();
                 return true;
             case CommandIds.TOMATO_RANK:
                 new TomatoRankModal(app, plugin).open();
@@ -674,5 +679,47 @@ export class CommandUiExecutor implements CommandUiPort {
         if (this.legacyCommandWarned.has(name)) return;
         this.legacyCommandWarned.add(name);
         showWarningNotice(`「${name}」属于旧版正文链路，计划于 v5.0.0 移除；请改用协同写作工作台`, { title: '旧版命令弃用', timeout: 6000 });
+    }
+
+    /**
+     * 跨章一致性审核（S1 断言层 + S2 配对器）。
+     *
+     * 结果以 Notice 摘要 + 报告文件呈现；详细证据链写到
+     * `<项目>/04-项目总控/一致性审核/矛盾.json`，供后续 UI 使用。
+     */
+    private async runConsistencyAudit(): Promise<void> {
+        const project = this.deps.plugin.getActiveProject();
+        if (!project) {
+            showWarningNotice('请先打开一个项目再运行一致性审核', { title: '一致性审核' });
+            return;
+        }
+        const notice = new Notice('正在做跨章一致性审核…', 0);
+        try {
+            const result = await runAuditForProject(this.deps.app, this.deps.plugin, project);
+            notice.hide();
+            const lines = formatReportSummary(result.report);
+            if (!result.assertionsSaved) {
+                lines.push(`⚠️ 断言库未写入：${result.assertionsError ?? '未知原因'}`);
+            }
+            if (!result.reportSaved) {
+                lines.push(`⚠️ 报告未写入：${result.reportError ?? '未知原因'}`);
+            }
+            // 数据源读失败必须让用户看见：否则以为「没有问题」，实际是「没检查全」
+            for (const warning of result.warnings) {
+                lines.push(`⚠️ ${warning}`);
+            }
+            showSuccessNotice(lines.join('\n'), {
+                title: result.report.contradictions.length > 0
+                    ? `发现 ${result.report.contradictions.length} 处矛盾`
+                    : '一致性审核完成',
+                timeout: 12000,
+            });
+        } catch (error) {
+            notice.hide();
+            log.error('[小说工坊] 一致性审核失败:', error);
+            showWarningNotice(`一致性审核失败：${error instanceof Error ? error.message : String(error)}`, {
+                title: '一致性审核',
+            });
+        }
     }
 }
