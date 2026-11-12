@@ -23,7 +23,7 @@
 |---|---|---|
 | **产品层** | 作者不需要理解插件内部结构，就能拿到可发布的稿子 | 新用户 30 分钟内跑通「建项目 → 拆解参考书 → 写一章 → 结算」 |
 | **Harness 层** | 插件的 agent 执行层能自主规划、调用工具、管理上下文、从失败中恢复 | agent 在无人干预下完成一个完整创作阶段，失败时能自我诊断 |
-| **工程层** | 代码库在 40 万行量级上仍能高速安全演进 | 新增功能不增加「静默失效」；28 步门禁始终绿灯；bundle 不失控 |
+| **工程层** | 代码库在 40 万行量级上仍能高速安全演进 | 新增功能不增加「静默失效」；29 步门禁始终绿灯；bundle 不失控 |
 
 三层的关系：**产品层是目的，Harness 层是手段，工程层是刹车**。工程层永远不能让前两层停下来，但可以让它们不翻车。
 
@@ -45,7 +45,7 @@
 | `tests/` | 105,676 行 |
 | 构建产物 | `main.js` 4,897,414 B（预算 5 MB，余量 ≈ 2.1%） |
 
-### 2.2 质量门禁（28 步 preflight，全绿）
+### 2.2 质量门禁（29 步 preflight，全绿）
 
 ```
 typecheck · lint · test · check:templates · check:styles · check:css
@@ -53,7 +53,7 @@ check:inline-styles · check:obsidian-api · check:secrets · check:deps
 check-engines · check:program · check:relationship-authority
 check:silent-failures · check:hotpaths · check:write-entry
 check:linked-scenarios · check:automation · check:dsh-isolation
-check:jsdoc · check:any · check:view-tests · check:changelog
+check:jsdoc · check:any · check:view-tests · check:test-standard · check:changelog
 check:docs · check:support-qr · build · check:bundle · check:release
 ```
 

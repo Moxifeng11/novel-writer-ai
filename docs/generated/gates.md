@@ -36,6 +36,7 @@
 | `npm run check:styles` | 校验 styles.css 与 styles-src 一致 |
 | `npm run check:support-qr` | — |
 | `npm run check:templates` | 校验模板生成物与 assets 一致 |
+| `npm run check:test-standard` | — |
 | `npm run check:view-tests` | — |
 | `npm run check:write-entry` | — |
 | `npm run css:baseline` | 更新 CSS 基线 |
@@ -91,12 +92,13 @@
 20. npm run check:jsdoc
 21. npm run check:any
 22. npm run check:view-tests
-23. npm run check:changelog
-24. npm run check:docs
-25. npm run check:support-qr
-26. npm run build
-27. npm run check:bundle
-28. npm run check:release
+23. npm run check:test-standard
+24. npm run check:changelog
+25. npm run check:docs
+26. npm run check:support-qr
+27. npm run build
+28. npm run check:bundle
+29. npm run check:release
 ```
 
 ## 说明
