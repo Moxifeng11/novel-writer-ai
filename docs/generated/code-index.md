@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 327 | 140302 | 1794 | 1450 | 81% |
+| `engine/` | 331 | 141191 | 1826 | 1465 | 80% |
 | `services/` | 33 | 13890 | 206 | 162 | 79% |
 | `shared/` | 198 | 42131 | 1723 | 1405 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
@@ -113,6 +113,10 @@
 | `engine/consistency/assertion-extract.ts` | 297 | 3 | 2 |
 | `engine/consistency/assertion-model.ts` | 247 | 13 | 8 |
 | `engine/consistency/assertion-store.ts` | 171 | 8 | 4 |
+| `engine/consistency/audit-pipeline.ts` | 212 | 11 | 6 |
+| `engine/consistency/evidence-locate.ts` | 109 | 3 | 2 |
+| `engine/consistency/pairing-llm.ts` | 208 | 11 | 4 |
+| `engine/consistency/pairing-rules.ts` | 360 | 7 | 3 |
 | `engine/content-safety-checker.ts` | 123 | 5 | 5 |
 | `engine/context-compressor.ts` | 342 | 2 | 2 |
 | `engine/context-manager.ts` | 2658 | 3 | 3 |
