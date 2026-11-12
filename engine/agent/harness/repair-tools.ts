@@ -25,10 +25,15 @@ import type { FlowDiagnosisDeps } from './diagnose-tools';
 export const REPAIR_FLOW_TOOL = 'repair_flow';
 
 /** 支持的修复动作 */
-export type RepairAction = 'revectorize_book' | 'reload_fingerprints';
+export type RepairAction = 'revectorize_book' | 'reload_fingerprints' | 'cleanup_orphan_vectors' | 'fix_zero_intensity';
 
 /** 修复动作清单（非法动作的报错文案与参数校验共用一份） */
-export const REPAIR_ACTIONS: readonly RepairAction[] = ['revectorize_book', 'reload_fingerprints'];
+export const REPAIR_ACTIONS: readonly RepairAction[] = [
+    'revectorize_book',
+    'reload_fingerprints',
+    'cleanup_orphan_vectors',
+    'fix_zero_intensity',
+];
 
 /** 重向量化结果（宿主返回；失败必须带原因） */
 export interface RevectorizeBookResult {
@@ -44,6 +49,24 @@ export interface ReloadFingerprintsResult {
     project: number;
 }
 
+/** 孤儿清理结果（宿主先对账再删，removed/skipped 如实上报） */
+export interface CleanupOrphansResult {
+    /** 对账发现的孤儿数（0 = 没有孤儿，不算失败） */
+    orphanCount: number;
+    /** 实际删除的 bookId */
+    removed: string[];
+    /** 未删除（落盘失败/已在索引/未加载等） */
+    skipped: string[];
+}
+
+/** 强度为 0 指纹修复结果（按指纹 id 上报） */
+export interface FixZeroIntensityResult {
+    /** 成功恢复强度的指纹 id */
+    fixed: string[];
+    /** 写入失败的指纹 id */
+    failed: string[];
+}
+
 /**
  * 修复能力依赖（全部由宿主注入）。
  */
@@ -56,6 +79,17 @@ export interface FlowRepairDeps {
     revectorizeBook?: (bookId: string) => Promise<RevectorizeBookResult>;
     /** 指纹库重载；宿主通常桥到 StyleFingerprintLibrary 的 reload */
     reloadFingerprints?: () => Promise<ReloadFingerprintsResult>;
+    /**
+     * 孤儿向量清理（DSH-20261112-14/15 能力的 agent 入口）。
+     * 宿主先对账（索引 ↔ 向量库）再删——本工具不传具体 id，孤儿判定在宿主侧，
+     * 审批由本工具的 requestApproval 承载（confirmed 语义由桥内固化）。
+     */
+    cleanupOrphanVectors?: () => Promise<CleanupOrphansResult>;
+    /**
+     * 修复强度为 0 的启用指纹（阶段 E 深化）：把 globalIntensity=0 恢复为默认 1.0。
+     * 宿主桥到 StyleFingerprintLibrary.setIntensityConfig。
+     */
+    fixZeroIntensity?: () => Promise<FixZeroIntensityResult>;
     /** 修复后复诊用的采集器（与 diagnose_flow 同一套，保证口径一致） */
     diagnose: FlowDiagnosisDeps;
 }
@@ -109,7 +143,8 @@ function describeTarget(action: RepairAction, args: Record<string, unknown>): st
 
 /** 复诊：修完再采集一次，返回格式化文本 */
 async function recheck(action: RepairAction, deps: FlowRepairDeps): Promise<{ status: LinkStatus; text: string }> {
-    const status = action === 'revectorize_book'
+    // cleanup_orphan_vectors 与 revectorize_book 同属知识流；其余走风格流
+    const status = action === 'revectorize_book' || action === 'cleanup_orphan_vectors'
         ? computeKnowledgeFlowStatus(await deps.diagnose.collectKnowledge())
         : computeStyleFlowStatus(await deps.diagnose.collectStyle());
     return { status, text: formatLinkStatusForAgent(status) };
@@ -126,7 +161,10 @@ export function createRepairTools(deps: FlowRepairDeps): HarnessTool[] {
         name: REPAIR_FLOW_TOOL,
         description: '修复创作链路中的单个环节（写操作，需用户批准）。action 可选：'
             + 'revectorize_book（对单本书重新计算向量，不重新拆解、不调用生成模型；'
-            + '需要参数 bookId）、reload_fingerprints（按磁盘重载指纹库三层，用于「刚改过指纹但没生效」）。'
+            + '需要参数 bookId）、reload_fingerprints（按磁盘重载指纹库三层，用于「刚改过指纹但没生效」）、'
+            + 'cleanup_orphan_vectors（对账索引↔向量库并清理孤儿向量——先对账，存在孤儿才删，'
+            + '已在索引或落盘失败的不动）、fix_zero_intensity（把强度为 0 的启用指纹恢复为默认 1.0，'
+            + '修复「注入被禁用」）。'
             + '修复后会重新诊断并把修复后的链路状态一并返回；修复失败会如实说明原因。',
         parameters: {
             action: {
@@ -197,6 +235,64 @@ export function createRepairTools(deps: FlowRepairDeps): HarnessTool[] {
                         ok: true,
                         content: `已重新计算书籍 ${bookId} 的向量${result.detail ? `（${result.detail}）` : ''}。\n\n修复后链路状态：\n${recheckResult.text}`,
                         data: { action, bookId, status: recheckResult.status },
+                    };
+                }
+
+                if (action === 'cleanup_orphan_vectors') {
+                    if (!deps.cleanupOrphanVectors) {
+                        return { ok: false, content: '宿主未提供孤儿清理能力（cleanupOrphanVectors），无法执行。' };
+                    }
+                    const result = await deps.cleanupOrphanVectors();
+                    if (!result || !Array.isArray(result.removed) || !Array.isArray(result.skipped)) {
+                        return { ok: false, content: '孤儿清理失败：宿主未返回合法的 removed/skipped 列表，无法确认结果。', data: { action } };
+                    }
+                    if (result.orphanCount === 0) {
+                        // 没有孤儿不是失败——如实报告即可（复诊确认检索健康）
+                        const recheckResult = await recheck(action, deps);
+                        return {
+                            ok: true,
+                            content: `对账完成：没有孤儿向量，无需清理。\n\n修复后链路状态：\n${recheckResult.text}`,
+                            data: { action, orphanCount: 0, removed: [], status: recheckResult.status },
+                        };
+                    }
+                    const failed = result.skipped.length;
+                    const recheckResult = await recheck(action, deps);
+                    return {
+                        ok: true,
+                        content: `已清理 ${result.removed.length} 本孤儿向量（对账发现 ${result.orphanCount} 本）${failed > 0 ? `；${failed} 本未删除（已在索引或落盘失败）` : ''}。\n\n修复后链路状态：\n${recheckResult.text}`,
+                        data: { action, orphanCount: result.orphanCount, removed: result.removed, skipped: result.skipped, status: recheckResult.status },
+                    };
+                }
+
+                if (action === 'fix_zero_intensity') {
+                    if (!deps.fixZeroIntensity) {
+                        return { ok: false, content: '宿主未提供强度修复能力（fixZeroIntensity），无法执行。' };
+                    }
+                    const result = await deps.fixZeroIntensity();
+                    if (!result || !Array.isArray(result.fixed) || !Array.isArray(result.failed)) {
+                        return { ok: false, content: '强度修复失败：宿主未返回合法的 fixed/failed 列表，无法确认结果。', data: { action } };
+                    }
+                    if (result.fixed.length === 0 && result.failed.length > 0) {
+                        return {
+                            ok: false,
+                            content: `强度修复失败：${result.failed.length} 枚指纹写入出错。请到指纹库详情页手动调整强度。`,
+                            data: { action, fixed: [], failed: result.failed },
+                        };
+                    }
+                    if (result.fixed.length === 0) {
+                        const recheckResult = await recheck(action, deps);
+                        return {
+                            ok: true,
+                            content: `检查完成：没有强度为 0 的启用指纹，无需修复。\n\n修复后链路状态：\n${recheckResult.text}`,
+                            data: { action, fixed: [], failed: [], status: recheckResult.status },
+                        };
+                    }
+                    const failedNote = result.failed.length > 0 ? `；${result.failed.length} 枚写入失败` : '';
+                    const recheckResult = await recheck(action, deps);
+                    return {
+                        ok: true,
+                        content: `已恢复 ${result.fixed.length} 枚指纹的强度（0 → 默认 1.0）${failedNote}。\n\n修复后链路状态：\n${recheckResult.text}`,
+                        data: { action, fixed: result.fixed, failed: result.failed, status: recheckResult.status },
                     };
                 }
 

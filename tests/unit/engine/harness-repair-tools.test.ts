@@ -59,6 +59,8 @@ function makeDeps(overrides: Partial<FlowRepairDeps> = {}): FlowRepairDeps {
         requestApproval: vi.fn(async () => true),
         revectorizeBook: vi.fn(async () => ({ ok: true, detail: '32 段已重建' })),
         reloadFingerprints: vi.fn(async () => ({ template: 1, global: 2, project: 3 })),
+        cleanupOrphanVectors: vi.fn(async () => ({ orphanCount: 1, removed: ['kb_ghost'], skipped: [] })),
+        fixZeroIntensity: vi.fn(async () => ({ fixed: ['fp_zero'], failed: [] })),
         diagnose: makeDiagnose(),
         ...overrides,
     };
@@ -200,6 +202,77 @@ describe('修复：成功路径与可观测性', () => {
         expect(result.content).toContain('模板 1 / 全局 2 / 项目 3');
         expect(result.data).toMatchObject({ action: 'reload_fingerprints', counts: { template: 1, global: 2, project: 3 } });
         expect((result.data?.status as { title: string }).title).toBe('风格流');
+    });
+});
+
+
+describe('阶段 E 深化：cleanup_orphan_vectors', () => {
+    it('宿主未提供能力 → ok:false 并说明', async () => {
+        const deps = makeDeps({ cleanupOrphanVectors: undefined });
+        const result = await run(deps, { action: 'cleanup_orphan_vectors' });
+        expect(result.ok).toBe(false);
+        expect(result.content).toContain('未提供孤儿清理能力');
+        expect(deps.diagnose.collectKnowledge).not.toHaveBeenCalled();
+    });
+
+    it('有孤儿：审批通过后执行，removed/skipped 如实上报并复诊知识流', async () => {
+        const cleanup = vi.fn(async () => ({ orphanCount: 2, removed: ['g1'], skipped: ['g2'] }));
+        const deps = makeDeps({ cleanupOrphanVectors: cleanup });
+        const result = await run(deps, { action: 'cleanup_orphan_vectors' });
+        expect(result.ok).toBe(true);
+        expect(result.content).toContain('已清理 1 本孤儿向量');
+        expect(result.content).toContain('1 本未删除');
+        expect(deps.diagnose.collectKnowledge).toHaveBeenCalledTimes(1);
+        expect(result.data).toMatchObject({ action: 'cleanup_orphan_vectors', orphanCount: 2, removed: ['g1'], skipped: ['g2'] });
+    });
+
+    it('对账无孤儿：ok:true「无需清理」（不是失败），复诊确认检索健康', async () => {
+        const deps = makeDeps({ cleanupOrphanVectors: vi.fn(async () => ({ orphanCount: 0, removed: [], skipped: [] })) });
+        const result = await run(deps, { action: 'cleanup_orphan_vectors' });
+        expect(result.ok).toBe(true);
+        expect(result.content).toContain('没有孤儿向量');
+        expect(deps.diagnose.collectKnowledge).toHaveBeenCalledTimes(1);
+    });
+
+    it('宿主返回非法结构（removed 非数组）→ ok:false（不把「不知道」当成功）', async () => {
+        const deps = makeDeps({ cleanupOrphanVectors: vi.fn(async () => ({ orphanCount: 1 } as never)) });
+        const result = await run(deps, { action: 'cleanup_orphan_vectors' });
+        expect(result.ok).toBe(false);
+        expect(result.content).toContain('无法确认结果');
+    });
+});
+
+describe('阶段 E 深化：fix_zero_intensity', () => {
+    it('宿主未提供能力 → ok:false 并说明', async () => {
+        const deps = makeDeps({ fixZeroIntensity: undefined });
+        const result = await run(deps, { action: 'fix_zero_intensity' });
+        expect(result.ok).toBe(false);
+        expect(result.content).toContain('未提供强度修复能力');
+        expect(deps.diagnose.collectStyle).not.toHaveBeenCalled();
+    });
+
+    it('全部写入失败 → ok:false（不谎报修复成功）', async () => {
+        const deps = makeDeps({ fixZeroIntensity: vi.fn(async () => ({ fixed: [], failed: ['fp1', 'fp2'] })) });
+        const result = await run(deps, { action: 'fix_zero_intensity' });
+        expect(result.ok).toBe(false);
+        expect(result.content).toContain('2 枚指纹写入出错');
+        expect(deps.diagnose.collectStyle).not.toHaveBeenCalled();
+    });
+
+    it('部分成功 → ok:true 如实带失败数，复诊风格流', async () => {
+        const deps = makeDeps({ fixZeroIntensity: vi.fn(async () => ({ fixed: ['fp1'], failed: ['fp2'] })) });
+        const result = await run(deps, { action: 'fix_zero_intensity' });
+        expect(result.ok).toBe(true);
+        expect(result.content).toContain('已恢复 1 枚指纹的强度');
+        expect(result.content).toContain('1 枚写入失败');
+        expect(deps.diagnose.collectStyle).toHaveBeenCalledTimes(1);
+    });
+
+    it('没有强度为 0 的指纹：ok:true「无需修复」', async () => {
+        const deps = makeDeps({ fixZeroIntensity: vi.fn(async () => ({ fixed: [], failed: [] })) });
+        const result = await run(deps, { action: 'fix_zero_intensity' });
+        expect(result.ok).toBe(true);
+        expect(result.content).toContain('没有强度为 0 的启用指纹');
     });
 });
 

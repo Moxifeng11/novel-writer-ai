@@ -34,10 +34,25 @@ export interface BridgeReloadResult {
     project: number;
 }
 
+/** 孤儿清理的返回契约（removed/skipped 如实上报） */
+export interface BridgeCleanupResult {
+    orphanCount: number;
+    removed: string[];
+    skipped: string[];
+}
+
+/** 强度修复的返回契约（按指纹 id 上报） */
+export interface BridgeFixZeroResult {
+    fixed: string[];
+    failed: string[];
+}
+
 /** 桥接宿主 */
 export interface FlowRepairBridge {
     revectorizeBook(bookId: string): Promise<BridgeRevectorizeResult>;
     reloadFingerprints(): Promise<BridgeReloadResult>;
+    cleanupOrphanVectors(): Promise<BridgeCleanupResult>;
+    fixZeroIntensity(): Promise<BridgeFixZeroResult>;
 }
 
 /**
@@ -91,6 +106,67 @@ export function createFlowRepairHost(host: { app: App; plugin: NovelWriterPlugin
                 global: global.length,
                 project: projectList.length,
             };
+        },
+
+        /**
+         * 孤儿向量清理（DSH-20261112-14/15 能力的 agent 入口）：
+         * 先对账（知识库索引 ↔ 向量库已加载），存在孤儿才调 removeOrphanVectors
+         * （confirmed 固化在桥内——审批已由 repair_flow 工具的 requestApproval 承载，
+         * 桥不再二次弹窗，但 fail-closed 语义保持：removed/skipped 如实上报）。
+         */
+        async cleanupOrphanVectors(): Promise<BridgeCleanupResult> {
+            const store = plugin.knowledgeVectorStore;
+            const manager = plugin.knowledgeBaseManager;
+            if (!store || typeof store.reconcileWithIndex !== 'function' || typeof store.removeOrphanVectors !== 'function') {
+                return { orphanCount: 0, removed: [], skipped: ['向量库未初始化'] };
+            }
+            const books = manager ? await manager.getAllBooks() : [];
+            const kbIds = books.map(b => b.id);
+            const report = await store.reconcileWithIndex(kbIds);
+            if (report.orphans.length === 0) {
+                return { orphanCount: 0, removed: [], skipped: [] };
+            }
+            return await store.removeOrphanVectors(report.orphans, {
+                confirmed: true,
+                kbBookIds: kbIds,
+            }) as BridgeCleanupResult;
+        },
+
+        /**
+         * 强度为 0 的启用指纹恢复默认强度（阶段 E 深化）。
+         * 只动项目层已启用的指纹；写入走 setIntensityConfig（先合并磁盘已有配置）。
+         */
+        async fixZeroIntensity(): Promise<BridgeFixZeroResult> {
+            let activeProject = '';
+            try {
+                activeProject = plugin.getActiveProject() || '';
+            } catch {
+                // silent-ok: getActiveProject 失败等价于「无活动项目」，下方分支会以
+                // failed['未激活项目'] 如实上报给 agent（用户可见），此处无需 Notice。
+                activeProject = '';
+            }
+            if (!activeProject) {
+                return { fixed: [], failed: ['未激活项目——强度修复只支持项目层指纹'] };
+            }
+            const { getStyleIntensityEngine } = await import('@/engine/style/style-intensity-engine');
+            const intensityEngine = getStyleIntensityEngine();
+            const library = StyleFingerprintLibrary.get(app, activeProject);
+            const enabled = await library.getEnabledFingerprints(activeProject);
+            await library.loadIntensityConfigs(activeProject);
+            const fixed: string[] = [];
+            const failed: string[] = [];
+            for (const fp of enabled) {
+                const config = library.getIntensityConfig(fp.id, activeProject);
+                if (!intensityEngine.previewIntensity(config).disabled) continue;
+                try {
+                    await library.setIntensityConfig(fp.id, { ...config, globalIntensity: 1.0 }, activeProject);
+                    fixed.push(fp.id);
+                } catch (e) {
+                    log.warn('[FlowRepairHost] 强度恢复失败:', fp.id, e);
+                    failed.push(fp.id);
+                }
+            }
+            return { fixed, failed };
         },
     };
 }

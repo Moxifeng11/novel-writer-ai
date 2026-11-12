@@ -135,6 +135,96 @@ describe('宿主桥：revectorizeBook', () => {
     });
 });
 
+
+describe('宿主桥：cleanupOrphanVectors', () => {
+    it('对账有孤儿：removeOrphanVectors 以 confirmed:true + kbBookIds 调用（fail-closed 语义固化在桥内）', async () => {
+        const removeOrphanVectors = vi.fn(async () => ({ orphanCount: 1, removed: ['kb_ghost'], skipped: [] }));
+        const plugin = {
+            knowledgeVectorStore: {
+                reconcileWithIndex: vi.fn(async () => ({ orphans: ['kb_ghost'], missing: [], healthy: [] })),
+                removeOrphanVectors,
+            },
+            knowledgeBaseManager: { getAllBooks: vi.fn(async () => [{ id: 'kb_live' }]) },
+            getActiveProject: () => '长篇小说/晨星外传',
+            settings: {},
+        };
+        const bridge = createFlowRepairHost({ app: {} as never, plugin: plugin as never });
+        const result = await bridge.cleanupOrphanVectors();
+        expect(removeOrphanVectors).toHaveBeenCalledWith(['kb_ghost'], {
+            confirmed: true,
+            kbBookIds: ['kb_live'],
+        });
+        expect(result).toMatchObject({ orphanCount: 1, removed: ['kb_ghost'] });
+    });
+
+    it('对账无孤儿：不触碰 removeOrphanVectors', async () => {
+        const removeOrphanVectors = vi.fn(async () => ({ orphanCount: 0, removed: [], skipped: [] }));
+        const plugin = {
+            knowledgeVectorStore: {
+                reconcileWithIndex: vi.fn(async () => ({ orphans: [], missing: [], healthy: ['kb_live'] })),
+                removeOrphanVectors,
+            },
+            knowledgeBaseManager: { getAllBooks: vi.fn(async () => [{ id: 'kb_live' }]) },
+            getActiveProject: () => '',
+            settings: {},
+        };
+        const bridge = createFlowRepairHost({ app: {} as never, plugin: plugin as never });
+        const result = await bridge.cleanupOrphanVectors();
+        expect(result.orphanCount).toBe(0);
+        expect(removeOrphanVectors).not.toHaveBeenCalled();
+    });
+
+    it('向量库未初始化：skipped 带原因，不抛错', async () => {
+        const bridge = createFlowRepairHost({ app: {} as never, plugin: {} as never });
+        const result = await bridge.cleanupOrphanVectors();
+        expect(result.removed).toEqual([]);
+        expect(result.skipped[0]).toContain('向量库未初始化');
+    });
+});
+
+describe('宿主桥：fixZeroIntensity', () => {
+    it('强度为 0 的启用指纹恢复 1.0（setIntensityConfig 合并原配置）', async () => {
+        stubLibrary({ template: 0, global: 0, project: 0 });
+        const setIntensityConfig = vi.fn(async () => {});
+        const fpZero = { id: 'fp_zero', enabled: true };
+        const fpOk = { id: 'fp_ok', enabled: true };
+        const plugin = {
+            knowledgeVectorStore: {},
+            knowledgeBaseManager: { getAllBooks: vi.fn(async () => []) },
+            getActiveProject: () => '长篇小说/晨星外传',
+            settings: {},
+        };
+        const bridge = createFlowRepairHost({ app: {} as never, plugin: plugin as never });
+        // 直接替换桥内的 library 行为：通过 StyleFingerprintLibrary.get 的 spy 返回桩
+        const { StyleFingerprintLibrary } = await import('../../../engine/style-fingerprint-library');
+        const libStub = {
+            getEnabledFingerprints: vi.fn(async () => [fpZero, fpOk]),
+            loadIntensityConfigs: vi.fn(async () => ({})),
+            getIntensityConfig: vi.fn((id: string) => (id === 'fp_zero' ? { globalIntensity: 0 } : { globalIntensity: 0.6 })),
+            setIntensityConfig,
+        };
+        vi.spyOn(StyleFingerprintLibrary, 'get').mockReturnValue(libStub as never);
+        const { getStyleIntensityEngine } = await import('../../../engine/style/style-intensity-engine');
+        vi.spyOn(await import('../../../engine/style/style-intensity-engine'), 'getStyleIntensityEngine').mockReturnValue({
+            previewIntensity: (config: { globalIntensity: number }) => ({ disabled: config.globalIntensity === 0, effectiveIntensity: config.globalIntensity, dimensionEffects: {} }),
+        } as never);
+        const result = await bridge.fixZeroIntensity();
+        expect(result.fixed).toEqual(['fp_zero']);
+        expect(result.failed).toEqual([]);
+        expect(setIntensityConfig).toHaveBeenCalledWith('fp_zero', { globalIntensity: 1.0 }, '长篇小说/晨星外传');
+    });
+
+    it('未激活项目：failed 带原因（强度修复只支持项目层）', async () => {
+        const bridge = createFlowRepairHost({
+            app: {} as never,
+            plugin: makePluginStub({ activeProject: '' }) as never,
+        });
+        const result = await bridge.fixZeroIntensity();
+        expect(result.fixed).toEqual([]);
+        expect(result.failed[0]).toContain('未激活项目');
+    });
+});
+
 describe('宿主桥：reloadFingerprints', () => {
     it('三层条数返回（有项目时 loadProject 参与）', async () => {
         await stubLibrary({ template: 2, global: 3, project: 1 });
