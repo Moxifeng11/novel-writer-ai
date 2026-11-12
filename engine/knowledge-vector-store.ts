@@ -275,8 +275,9 @@ export class KnowledgeVectorStore {
      * @param kbBookIds - 知识库索引里的书籍 id
      * @returns 对账报告
      */
-    async reconcileWithIndex(kbBookIds: readonly string[]): Promise<VectorReconcileReport> {
-        // 惰性加载：getLoadedBookIds 读内存 samples，未 ensureLoaded 时恒空会误报「全孤儿」
+    async reconcileWithIndex(kbBookIds: readonly string[] = []): Promise<VectorReconcileReport> {
+        // 参数给默认值：生产调用方都传，但调试/外部调用漏传时会抛压缩后的
+        // `o is not iterable`（无法定位）。默认空数组 = 「知识库索引为空」，语义正确。
         await this.ensureLoaded();
         const report = reconcileVectorBooks(kbBookIds, this.getLoadedBookIds());
         // 审计 #A9 盲区补齐：磁盘上有、但本次加载被跳过（孤儿/模型不匹配/读取失败）的文件。
