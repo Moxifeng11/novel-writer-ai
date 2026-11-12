@@ -639,7 +639,11 @@ export class KnowledgeVectorStore {
             const allSamples = [...existingSamples, ...newSamples];
             this.samples.set(bookId, allSamples);
 
-            await this.saveBook(bookId);
+            // 落盘失败必须抛给调用方：saveBook 返回 false 时若静默吞掉，
+            // 界面会显示「向量化完成 ✅」，但重启后向量消失、RAG 恒召回为空。
+            if (!(await this.saveBook(bookId))) {
+                throw new Error(`[KnowledgeVectorStore] 向量文件落盘失败：${bookId}`);
+            }
             await this.saveIndex();
         });
     }
@@ -662,7 +666,11 @@ export class KnowledgeVectorStore {
             const nextSamples = await this.materializeSamples(bookId, bookName, samples);
             this.samples.set(bookId, nextSamples);
 
-            await this.saveBook(bookId);
+            // 落盘失败必须抛给调用方：saveBook 返回 false 时若静默吞掉，
+            // 界面会显示「向量化完成 ✅」，但重启后向量消失、RAG 恒召回为空。
+            if (!(await this.saveBook(bookId))) {
+                throw new Error(`[KnowledgeVectorStore] 向量文件落盘失败：${bookId}`);
+            }
             await this.saveIndex();
         });
     }
@@ -728,7 +736,11 @@ export class KnowledgeVectorStore {
             await this.reloadIfChanged();
 
             this.samples.set(bookId, samples);
-            await this.saveBook(bookId);
+            // 落盘失败必须抛给调用方：saveBook 返回 false 时若静默吞掉，
+            // 界面会显示「向量化完成 ✅」，但重启后向量消失、RAG 恒召回为空。
+            if (!(await this.saveBook(bookId))) {
+                throw new Error(`[KnowledgeVectorStore] 向量文件落盘失败：${bookId}`);
+            }
             await this.saveIndex();
         });
     }
@@ -743,10 +755,15 @@ export class KnowledgeVectorStore {
             const bookIds = Array.from(this.samples.keys());
             this.samples.clear();
 
+            // 清理失败必须让调用方知道：否则「清空」谎报成功，重启后幽灵向量回归。
+            const failed: string[] = [];
             for (const bookId of bookIds) {
-                await this.saveBook(bookId);
+                if (!(await this.saveBook(bookId))) failed.push(bookId);
             }
             await this.saveIndex();
+            if (failed.length > 0) {
+                throw new Error(`[KnowledgeVectorStore] 清空时 ${failed.length} 个向量文件删除失败：${failed.join(', ')}`);
+            }
         });
     }
 
