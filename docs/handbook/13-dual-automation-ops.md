@@ -27,7 +27,7 @@
 | 交接快照 | Vault 根 `PROJECT-RULES.md` 的 `<!-- HANDOFF:START -->` | ≤10 行，含 `当前阶段`/`最近交付`/`正在进行`/`下一步（ZCode）`/`下一步（Trae）`/`待确认` |
 | 信箱 | Vault 根 `.trae/mailbox/` | `novel-mailbox` 消息通道；不是状态真相源 |
 
-`npm run check:automation` 校验：状态 schema、round 单调且顶层 round / `lastRound.round` / `rounds` 末条一致、`updatedAt` 带时区、类型权重（含 `v5-product`）、红线字段、旧副本 tombstone（`stale: true` 且 `supersededBy` 指向插件仓同路径）、HANDOFF 字段与行数（`当前阶段`/`最近交付`/`正在进行`/`下一步（ZCode）`/`下一步（Trae）`/`待确认`，≤10 行）、版本四文件一致；信箱可解析仅告警、不阻断。该命令已挂在 `npm run preflight`。
+`npm run check:automation` 校验：状态 schema、round 单调且顶层 round / `lastRound.round` / `rounds` 末条一致、`updatedAt` 带时区、**台账时效**（未退役且超 72h 未更新即失败、超 24h 告警；`retired: true` 的台账跳过时效但仍校验格式）、类型权重（含 `v5-product`）、红线字段、旧副本 tombstone（`stale: true` 且 `supersededBy` 指向插件仓同路径）、HANDOFF 字段与行数（`当前阶段`/`最近交付`/`正在进行`/`下一步（ZCode）`/`下一步（Trae）`/`待确认`，≤10 行）、版本四文件一致；信箱可解析仅告警、不阻断。该命令已挂在 `npm run preflight`。
 
 ## 4. 互调流程
 

@@ -9,11 +9,27 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+    DEFAULT_MAX_AGE_HOURS,
+    DEFAULT_WARN_AGE_HOURS,
+    evaluateLedgerFreshness,
+} from './lib/automation-lib.mjs';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(scriptDir, '..');
 const vaultRoot = resolve(repoRoot, '../../..');
 const isVaultWorkspace = existsSync(resolve(vaultRoot, 'PROJECT-RULES.md'));
+
+/** CLI 参数：`--max-age-hours 72` / `--warn-age-hours 24`（测试与临时放宽用） */
+const argv = process.argv.slice(2);
+function numberArg(name, fallback) {
+    const index = argv.indexOf(name);
+    if (index < 0) return fallback;
+    const value = Number(argv[index + 1]);
+    return Number.isFinite(value) && value >= 0 ? value : fallback;
+}
+const maxAgeHours = numberArg('--max-age-hours', DEFAULT_MAX_AGE_HOURS);
+const warnAgeHours = numberArg('--warn-age-hours', DEFAULT_WARN_AGE_HOURS);
 
 const failures = [];
 const warnings = [];
@@ -94,6 +110,23 @@ if (!existsSync(canonicalPath)) {
         const lastHistory = Array.isArray(state.rounds) ? state.rounds[state.rounds.length - 1] : null;
         if (Number.isInteger(lastHistory?.round) && lastHistory.round !== state.round) {
             fail(`状态台账 rounds 末条 round(${lastHistory.round}) 与 round(${state.round}) 不一致`);
+        }
+        // 时效校验（Trae preflight 审计 P1）：原实现只验格式，台账停摆 3 天仍绿。
+        // 退役台账（轮询已被任务板取代）跳过时效，但仍校验上面的格式，防止退役台账被写坏。
+        const freshness = evaluateLedgerFreshness({
+            updatedAt: state.updatedAt,
+            retired: state.retired === true,
+            retiredReason: state.retiredReason,
+            now: Date.now(),
+            maxAgeHours,
+            warnAgeHours,
+        });
+        if (freshness.status === 'stale' || freshness.status === 'invalid') {
+            fail(freshness.message);
+        } else if (freshness.status === 'warn') {
+            warn(freshness.message);
+        } else {
+            info(freshness.message);
         }
         info(`活跃状态台账：round ${state.round}，${state.updatedAt}`);
     }

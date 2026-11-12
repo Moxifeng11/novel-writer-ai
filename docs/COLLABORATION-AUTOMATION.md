@@ -163,3 +163,12 @@ node .obsidian/plugins/novel-writer-ai/scripts/board.mjs status
 | 2026-11-11 | v1 建立：30 分钟信箱轮询 + `[TASK-]` / `[RECEIPT]` / `[VOID]` 约定 |
 | 2026-11-11 | 修复 `mailbox-watch.mjs` 两个静默失效（根目录少上溯一层 → 永远无未读；任务 ID 只认 subject） |
 | 2026-11-12 | **v2：任务板取代轮询**。用户明确「有任务板就不要轮询，浪费 token」，并已关闭 ZCode/Trae 的定时轮询 |
+| 2026-11-12 | `check:automation` 补台账**时效校验**（Trae 审计 P1：原实现只验格式，台账停摆 3 天仍绿）；旧轮询台账标记 `retired: true` 退役，跳过时效但仍校验格式 |
+
+### 退役台账说明
+
+`.trae/automation/trae-loop-state.json` 是 v1 轮询时代的状态台账，v2 后**已退役**：
+
+- 台账里加 `retired: true` + `retiredReason`
+- `check:automation` 对退役台账跳过时效校验（不再要求它保持新鲜），但仍校验 schema / round 单调 / 三处一致等格式
+- 若将来重新启用轮询：删掉 `retired` 字段即可恢复时效校验（未退役且超 72h 未更新 → 门禁失败）
