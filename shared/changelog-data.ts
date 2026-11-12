@@ -21,6 +21,29 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.86.0',
+        date: '2026-11-13',
+        title: '静默失败门禁 + 生产环境测试闭环',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🔴 AI 调用',
+                items: [
+                    'AI 调用全线失败修复（high）：密钥在 providerKeys 而 apiKey 为空时，所有调用返回「API密钥未配置」；统一回退取值（非流式/流式/迭代器）',
+                    '项目创建关键写入失败不再谎报成功：.project 写入 / 覆盖删除 / 同人设定复制失败改为中止创建',
+                ],
+            },
+            {
+                type: 'added',
+                label: '🛡️ 门禁与测试',
+                items: [
+                    '新增门禁 check:silent-failures：识别「读失败当没有 / 写失败当成功」，基线 191 处只降不升（检测先剥注释与字符串，消除 121 处假阳性）',
+                    '新增 npm run check:prod：真实 Obsidian + 真实 AI 一键冒烟（6 步，含版本一致性与流式调用）',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.85.0',
         date: '2026-11-13',
         title: '静默失效大扫除：27 处真 bug + 测试标准',
@@ -323,23 +346,6 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
                     'check:secrets 推送前密钥门禁（只扫跟踪文件，命中输出脱敏）',
                     '设置-关于页支持作者入口：支付宝收钱码内嵌 + 放大按钮/卡片排版',
                     '密钥明文风险明确标注（未设口令时提示随同步/备份扩散）',
-                ],
-            },
-        ],
-    },
-
-    {
-        version: '4.78.0',
-        date: '2026-11-08',
-        title: 'engine any 第三/四批收口与首次推送',
-        sections: [
-            {
-                type: 'improved',
-                label: '🧹 优化',
-                items: [
-                    'engine any 24 处清零（ai-outline-generator / commercial-deconstructor / entity-state-manager / incremental-result-aggregator）',
-                    'any 108/49 → 74/42，纯类型擦除零运行时；待拍板清单收敛为仅 tag/Release',
-                    '首次 push：250 提交公开，CI 两轮 success（未打 tag/发版）',
                 ],
             },
         ],

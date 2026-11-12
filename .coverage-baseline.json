@@ -1,30 +1,30 @@
 {
-  "generatedAt": "2026-11-12T20:49:51.008Z",
-  "gitHead": "4fa7389b94b77faeaecf2838db04cb130e0a31f3",
+  "generatedAt": "2026-11-12T21:36:38.022Z",
+  "gitHead": "5ec493e9270d96dd80a08b6ce3afdc25caec0a48",
   "nodeVersion": "v24.16.0",
-  "note": "-25/-26 触及 ui/batch-import-modal 与 ui/writing-stats-modal（失败提示与未统计标记），覆盖率持平重锚",
+  "note": "DSH-20261113-27 触及 ui/services/project-create-service.ts（项目创建关键写入失败改为中止 + warnings），覆盖率持平重锚",
   "dirs": {
     "ui": {
       "files": 265,
       "lines": {
-        "total": 41733,
-        "covered": 8521,
-        "pct": 20.42
+        "total": 41745,
+        "covered": 8619,
+        "pct": 20.65
       },
       "statements": {
-        "total": 45567,
-        "covered": 9241,
-        "pct": 20.28
+        "total": 45577,
+        "covered": 9349,
+        "pct": 20.51
       },
       "branches": {
-        "total": 22293,
-        "covered": 4954,
-        "pct": 22.22
+        "total": 22309,
+        "covered": 5005,
+        "pct": 22.43
       },
       "functions": {
         "total": 7118,
-        "covered": 1373,
-        "pct": 19.29
+        "covered": 1377,
+        "pct": 19.35
       }
     },
     "ui/views": {

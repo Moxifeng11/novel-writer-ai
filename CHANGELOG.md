@@ -2,6 +2,15 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## 4.86.0（2026-11-13）
+
+- **AI 调用全线失败修复**（high）：密钥在 providerKeys 而 apiKey 为空时，所有 AI 调用返回「API密钥未配置」；新增 resolveProviderApiKey 统一三处取值（非流式/流式/迭代器）。
+- **新增门禁 check:silent-failures**：扫 engine/services/shared/ui，识别「读失败当没有 / 写失败当成功」，基线 191 处只降不升；检测先剥注释与字符串（消除 121 处假阳性）。
+- **项目创建关键写入失败不再谎报成功**：.project 写入、覆盖删除、同人设定复制失败改为中止创建；模板复制失败汇总进提示。
+- **新增 npm run check:prod**：真实 Obsidian + 真实 AI 一键冒烟（6 步，含版本一致性与流式调用）。
+- 章节摘要读失败不覆盖、知识归因回退、导入重试返回 missing、流式 usage 标记 usageUnavailable。
+- 向量库 reconcileWithIndex 参数默认值。
+
 ## v4.85.0（2026-11-13）
 
 > 发布说明：`docs/releases/v4.85.0.md` · 上一版本 v4.84.0 · 版本性质：静默失效大扫除，无破坏性变更
