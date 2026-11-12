@@ -69,6 +69,7 @@ export async function readFrontmatterFallback(
         if (!match) return {};
         return JSON.parse(match[1]) as Record<string, unknown>;
     } catch {
+        // silent-ok: 回退解析失败即「无法判定」，调用方按缺失跳过、不写盘，不会用空值覆盖
         return null;
     }
 }
