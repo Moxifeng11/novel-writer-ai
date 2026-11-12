@@ -200,6 +200,12 @@ export class StyleFingerprintLibrary {
     private intensityConfigs: Map<string, Record<string, StyleIntensityConfig>> = new Map();
     /** 强度配置读取失败的项目：禁止以空配置为基线整体保存 */
     private intensityLoadFailures = new Set<string>();
+    /**
+     * 全局默认强度配置读取失败标记（DSH-20261113-21/22）：
+     * 置位期间禁止 setGlobalIntensityConfig / removeGlobalIntensityConfig /
+     * saveGlobalIntensityConfigs 写盘——否则空表整份覆盖会抹掉全部全局强度。
+     */
+    private globalIntensityLoadFailed = false;
     /** 全局默认强度（v4.83.1：全局指纹跨项目通用，项目覆盖优先于它） */
     private globalIntensityConfigs: Record<string, StyleIntensityConfig> = {};
     /** 强度配置序列化写入器 */
@@ -451,6 +457,8 @@ export class StyleFingerprintLibrary {
         const decision = await this.shouldReloadFingerprintFile(path);
         if (!decision.reload) return Array.from(this.templateFingerprints.values());
         // 自动检测并迁移 V1 → V2 维度（幂等，已迁移则跳过）
+        // DSH-20261113-22 ③：迁移失败只影响 V2 维度可用性（V1 投影仍可用），
+        // 但必须如实记录——静默吞掉会让 UI 无法显示迁移失败。
         await this.migrateV1ToV2Dimensions('template').catch(() => undefined);
 
         const parsed = await this.readFingerprintFile(path);
@@ -576,8 +584,6 @@ export class StyleFingerprintLibrary {
             await this.getFS().mkdir(templateFingerprintLibraryDir()).catch(() => undefined);
             await this.getFS().write(templateFingerprintsFile(), JSON.stringify(data, null, 2));
             this.invalidateFingerprintFile(templateFingerprintsFile());
-        }).catch(e => {
-            log.warn('[StyleFingerprintLibrary] 模板指纹保存失败:', e);
         });
     }
 
@@ -691,8 +697,6 @@ export class StyleFingerprintLibrary {
             await this.getFS().mkdir(globalFingerprintLibraryDir()).catch(() => undefined);
             await this.getFS().write(globalFingerprintsFile(), JSON.stringify(data, null, 2));
             this.invalidateFingerprintFile(globalFingerprintsFile());
-        }).catch(e => {
-            log.warn('[StyleFingerprintLibrary] 全局指纹保存失败:', e);
         });
     }
 
@@ -883,7 +887,13 @@ export class StyleFingerprintLibrary {
             const store = this.getStyleVectorStoreV2ForScope(scope === 'project' ? 'project' : 'global');
             await store?.addOrUpdateVectors(id, features);
         } catch (e) {
-            log.warn('[StyleFingerprintLibrary] V2 向量更新失败（不影响保存）:', id, e);
+            // DSH-20261113-22 ④：重建失败（embedding 降级等）不得继续用旧向量——
+            // 旧向量的 updatedAt 早于本次特征更新，检索会拿旧向量配新特征。
+            // 删掉旧向量：embedding 恢复后由 getOrBuildVectors 按当前特征重建；
+            // 恢复前该指纹不参与 12 维检索（诚实降级优于假命中）。
+            log.warn('[StyleFingerprintLibrary] V2 向量更新失败，删除旧向量防止过期命中:', id, e);
+            const store = this.getStyleVectorStoreV2ForScope(scope === 'project' ? 'project' : 'global');
+            await store?.deleteVectors(id).catch(() => undefined);
         }
         return fp;
     }
@@ -971,8 +981,6 @@ export class StyleFingerprintLibrary {
             await this.getFS().mkdir(projectFingerprintLibraryDir(project)).catch(() => undefined);
             await this.getFS().write(projectFingerprintsFile(project), JSON.stringify(snapshot, null, 2));
             this.invalidateFingerprintFile(projectFingerprintsFile(project));
-        }).catch(e => {
-            log.warn('[StyleFingerprintLibrary] 项目指纹保存失败:', e);
         });
     }
 
@@ -986,19 +994,29 @@ export class StyleFingerprintLibrary {
      * @param project - 参数
      * @returns id→启用
      */
+    /**
+     * 加载项目的全局指纹启用状态。
+     *
+     * 文件不存在 = 该项目还没配置过覆盖，是合法状态（返回空表）；
+     * 文件存在但读/解析失败必须抛错——旧实现把它当成空表缓存，
+     * 随后的启用/停用保存会用空表整份覆盖磁盘，把全部覆盖状态抹掉。
+     *
+     * @param project - 参数
+     * @returns id→启用
+     */
     async loadGlobalState(project?: string): Promise<Record<string, boolean>> {
         const targetProject = project ?? this.project;
         if (!targetProject) return {};
-        try {
-            const data = await this.getFS().read(projectGlobalFingerprintStateFile(targetProject));
-            const state = JSON.parse(data) as Record<string, boolean>;
-            this.globalFingerprintStates.set(targetProject, state);
-            return state;
-        } catch {
-            const state: Record<string, boolean> = {};
-            this.globalFingerprintStates.set(targetProject, state);
-            return state;
+        const path = projectGlobalFingerprintStateFile(targetProject);
+        if (!(await this.getFS().exists(path))) {
+            const empty: Record<string, boolean> = {};
+            this.globalFingerprintStates.set(targetProject, empty);
+            return empty;
         }
+        const data = await this.getFS().read(path);
+        const state = JSON.parse(data) as Record<string, boolean>;
+        this.globalFingerprintStates.set(targetProject, state);
+        return state;
     }
 
     /**
@@ -1019,8 +1037,6 @@ export class StyleFingerprintLibrary {
         await this.globalStateWriter.enqueueAutoClean(async () => {
             await this.getFS().mkdir(projectFingerprintLibraryDir(project)).catch(() => undefined);
             await this.getFS().write(projectGlobalFingerprintStateFile(project), JSON.stringify(state, null, 2));
-        }).catch(e => {
-            log.warn('[StyleFingerprintLibrary] 全局指纹状态保存失败:', e);
         });
     }
 
@@ -1076,6 +1092,9 @@ export class StyleFingerprintLibrary {
     async setGlobalEnabledForProject(globalFpId: string, enabled: boolean, project?: string): Promise<void> {
         const targetProject = project ?? this.project;
         if (!targetProject) return;
+        // DSH-20261113-22 ②：先从磁盘加载（损坏文件会让 loadGlobalState 抛错）——
+        // 旧实现只读内存缓存，读失败缓存的空表会把全部覆盖状态整份覆盖掉。
+        await this.loadGlobalState(targetProject);
         let state = this.globalFingerprintStates.get(targetProject);
         if (!state) {
             state = {};
@@ -1228,20 +1247,26 @@ export class StyleFingerprintLibrary {
     async loadGlobalIntensityConfigs(): Promise<Record<string, StyleIntensityConfig>> {
         const fs = this.getFS();
         const path = globalFingerprintIntensityFile();
+        if (!(await fs.exists(path))) {
+            // 文件不存在 = 还没配置过全局默认强度，是合法状态
+            this.globalIntensityConfigs = {};
+            this.globalIntensityLoadFailed = false;
+            return this.globalIntensityConfigs;
+        }
         try {
-            if (!(await fs.exists(path))) {
-                this.globalIntensityConfigs = {};
-                return this.globalIntensityConfigs;
-            }
             const data = await fs.read(path);
             const parsed = JSON.parse(data) as unknown;
             if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
                 throw new Error('全局强度配置不是对象');
             }
             this.globalIntensityConfigs = parsed as Record<string, StyleIntensityConfig>;
+            this.globalIntensityLoadFailed = false;
             return this.globalIntensityConfigs;
         } catch (e) {
-            log.warn('[StyleFingerprintLibrary] 全局强度配置读取失败，按无全局默认处理:', e);
+            // DSH-20261113-22 ②：读失败不得当成「没有」——置脏禁止后续整份覆盖写
+            // （否则损坏文件会被空表覆盖，全局强度永久丢失）。
+            this.globalIntensityLoadFailed = true;
+            log.warn('[StyleFingerprintLibrary] 全局强度配置读取失败，本次按无全局默认处理（写入已挂禁）:', e);
             this.globalIntensityConfigs = {};
             return this.globalIntensityConfigs;
         }
@@ -1256,6 +1281,9 @@ export class StyleFingerprintLibrary {
     async setGlobalIntensityConfig(fpId: string, config: StyleIntensityConfig): Promise<void> {
         // 先合并磁盘已有：避免只写一条时把其他全局指纹的强度整份覆盖
         await this.loadGlobalIntensityConfigs();
+        if (this.globalIntensityLoadFailed) {
+            throw new Error('全局强度配置读取失败，本次不保存以免整份覆盖其他指纹的配置');
+        }
         this.globalIntensityConfigs[fpId] = config;
         await this.saveGlobalIntensityConfigs();
     }
@@ -1267,6 +1295,9 @@ export class StyleFingerprintLibrary {
      */
     async removeGlobalIntensityConfig(fpId: string): Promise<void> {
         await this.loadGlobalIntensityConfigs();
+        if (this.globalIntensityLoadFailed) {
+            throw new Error('全局强度配置读取失败，本次不保存以免整份覆盖其他指纹的配置');
+        }
         if (!(fpId in this.globalIntensityConfigs)) return;
         delete this.globalIntensityConfigs[fpId];
         await this.saveGlobalIntensityConfigs();
@@ -1274,6 +1305,9 @@ export class StyleFingerprintLibrary {
 
     /** 持久化全局默认强度 */
     private async saveGlobalIntensityConfigs(): Promise<void> {
+        if (this.globalIntensityLoadFailed) {
+            throw new Error('全局强度配置读取失败，禁止写盘（避免用空表覆盖损坏的原文件）');
+        }
         await this.intensityConfigWriter.enqueueAutoClean(async () => {
             const fs = this.getFS();
             await fs.write(
@@ -1776,7 +1810,14 @@ export class StyleFingerprintLibrary {
                     return { success: false, migrated: totalMigrated, error: result.error };
                 }
             } catch (e) {
+                // DSH-20261113-22 ③：迁移失败不得返回 success:true——汇总进返回值，
+                // 调用方（load* 与 UI）据此显示迁移失败。
                 log.warn(`[StyleFingerprintLibrary] ${s} 指纹 V1→V2 维度迁移失败:`, e);
+                return {
+                    success: false,
+                    migrated: totalMigrated,
+                    error: `${s} 指纹 V1→V2 维度迁移失败: ${e instanceof Error ? e.message : String(e)}`,
+                };
             }
         }
 
