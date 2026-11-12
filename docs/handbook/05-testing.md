@@ -201,7 +201,6 @@ OBSIDIAN_PATH=... npx playwright test --project=view-lifecycle
 - `check:test-standard` 要求所有 skip 写明理由，就是为了让「跳过」这件事在评审时可见。
 
 ### 6.6 发版前手工验收清单（真实 Obsidian）
-
 按「用户以为生效的链路」逐条确认，每条都要**看到磁盘/界面真的变了**：
 
 | # | 链路 | 验收动作 | 通过判据 |
@@ -219,6 +218,40 @@ OBSIDIAN_PATH=... npx playwright test --project=view-lifecycle
 
 ---
 
+### 6.7 用 Obsidian 官方 CLI 做生产测试（推荐，2026-11-13 起）
+
+Obsidian 自带 `obsidian` 命令（`Obsidian.com`），可直接驱动真实实例，**不必手点 UI**。
+
+```bash
+# 1) 版本与健康（注意：运行实例可能加载的是旧构建）
+obsidian plugin id=novel-writer-ai      # 看 version 是否等于 package.json
+obsidian plugin:reload id=novel-writer-ai   # 发版后必须重载，否则测的是旧代码
+obsidian dev:errors                     # 必须为空
+
+# 2) 命令冒烟：真实命令处理器
+obsidian commands | grep novel-writer   # 列出插件命令
+obsidian command id=novel-writer-ai:novel-writer-open-home
+obsidian dev:errors                     # 冒烟后仍必须为空
+
+# 3) 真实状态：eval 在 Obsidian 上下文执行，可直连插件服务
+obsidian eval code="app.plugins.plugins['novel-writer-ai'].manifest.version"
+obsidian eval code="(async()=>{const p=app.plugins.plugins['novel-writer-ai'];const b=await p.knowledgeBaseManager.listBooks();return JSON.stringify(b.length)})()"
+
+# 4) 视图渲染：不靠截图也能断言内容
+obsidian eval code="app.workspace.getLeavesOfType('novel-writer-knowledge-base')[0].view.containerEl.innerText.slice(0,200)"
+
+# 5) 截图（视觉复核）
+obsidian dev:screenshot path=".screenshots/x.png"
+```
+
+**必须遵守**：
+
+- **测前先 `plugin:reload`**，否则测的是内存里的旧构建（真实踩过：磁盘 4.85.0、运行中 4.81.1）。
+- 写入型测试只在**临时目录**（如 `_生产测试临时/`）做，结束用 `adapter.rmdir` 清理并复核 `exists=false`。
+- `dev:errors` 非空即失败——这是「运行时炸了」的唯一硬信号。
+- `eval` 里调用插件方法时注意签名（无参调用会抛压缩后的错误，难定位）。
+
+产出记录：`docs/audits/production-test-<日期>.md`（模板见 `production-test-20261113.md`）。
 ## 7. 流程：一次改动怎么走完测试
 
 ### 7.1 通用提交前检查
