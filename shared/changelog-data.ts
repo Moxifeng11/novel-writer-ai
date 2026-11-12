@@ -21,6 +21,48 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.85.0',
+        date: '2026-11-13',
+        title: '静默失效大扫除：27 处真 bug + 测试标准',
+        sections: [
+            {
+                type: 'fixed',
+                label: '🎯 同人约束',
+                items: [
+                    '修 5 处「用 vault 索引 API 读 .project」——点文件不入索引，同人约束此前全线静默失效且不报警',
+                    '向导的「故事结构」「同人」步骤不再永远判为未完成',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '💾 数据安全',
+                items: [
+                    '修 5 处「读失败→空→覆盖写」：自定义题材/标签、质量历史、简介版本、风格偏好、整章正文不再被静默抹掉',
+                    '损坏文件先留档为 .corrupt-<时间戳>，可人工抢救',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '🌊 流式 / 拆解 / 指纹 / 导出结算',
+                items: [
+                    '流被截断不再当成功、重试不再导致正文两轮拼接、协议错误帧不再被当成正常结束',
+                    '拆解维度失败不再算完成、不再弹「拆解完成 100%」',
+                    '指纹保存/删除/启停/强度/迁移不再「提示成功但重启回滚」',
+                    'EPUB 投稿简介与平台标签不再丢失；结算静默漏写路径全部可见化',
+                    '向量落盘失败不再谎报「向量化完成」',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '🧪 工程',
+                items: [
+                    '新增测试标准：7 条硬规则 + 生产环境测试三层矩阵 + 发版前 10 条手工验收清单',
+                    '新增门禁 check:test-standard（禁止 .only / 无理由 .skip / 空断言 / 替身不忠实）',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.84.0',
         date: '2026-11-12',
         title: '自愈版本：agent 能修了 + 孤儿向量对账 + 假绿修复',
@@ -302,32 +344,6 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
             },
         ],
     },
-
-    {
-        version: '4.77.0',
-        date: '2026-11-08',
-        title: '跨窗口监听修复 + 门禁存量清零',
-        sections: [
-            {
-                type: 'fixed',
-                label: '🐛 修复',
-                items: [
-                    '9 处 document 监听改按宿主窗口绑定（popout 里拖拽/点外部不再失效），窗口迁移自动重绑',
-                    '修复分类审核面板关闭后监听泄漏（destroy 未摘监听、模态 onClose 未调 destroy）',
-                    '19 处 console.* 统一改 shared/logger；analysis-session 系 any 10→0',
-                ],
-            },
-            {
-                type: 'improved',
-                label: '🛡️ 门禁',
-                items: [
-                    'check:obsidian-api 五条规则全部归零（仅 logger 基础设施白名单）',
-                    '新增 dom-window 6 例 + 面板生命周期 3 例；全量 598 文件 / 6,590 用例',
-                ],
-            },
-        ],
-    },
-
 ];
 
 /**
