@@ -293,3 +293,29 @@ describe('API 格式：SSE 帧解析', () => {
         expect(usesDoneSentinel('openai-responses')).toBe(false);
     });
 });
+
+describe('responses 协议失败事件映射（DSH-20261113-20）', () => {
+    it('error 事件 → 带协议错误消息的结束帧（不再是正常 stop）', () => {
+        const update = parseSseFrame('openai-responses', { type: 'error', message: 'rate limited' });
+        expect(update?.done).toBe(true);
+        expect(update?.error).toBe('rate limited');
+    });
+
+    it('response.failed 事件 → 提取 response.error.message', () => {
+        const update = parseSseFrame('openai-responses', {
+            type: 'response.failed',
+            response: { error: { code: 'content_policy', message: 'content policy violation' } },
+        });
+        expect(update?.error).toBe('content policy violation');
+        expect(update?.done).toBe(true);
+    });
+
+    it('无结构化消息 → 回落到事件类型名（不返回空串）', () => {
+        expect(parseSseFrame('openai-responses', { type: 'error' })?.error).toContain('error');
+        expect(parseSseFrame('openai-responses', { type: 'response.failed' })?.error).toContain('response.failed');
+    });
+
+    it('正常事件不受影响（response.completed 仍是 stop）', () => {
+        expect(parseSseFrame('openai-responses', { type: 'response.completed' })).toEqual({ done: true, finishReason: 'stop' });
+    });
+});

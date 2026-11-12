@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 324 | 139190 | 1766 | 1433 | 81% |
+| `engine/` | 324 | 139283 | 1766 | 1433 | 81% |
 | `services/` | 33 | 13885 | 206 | 162 | 79% |
-| `shared/` | 197 | 41779 | 1711 | 1395 | 82% |
+| `shared/` | 197 | 41822 | 1711 | 1395 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 266 | 104232 | 991 | 798 | 81% |
@@ -59,11 +59,11 @@
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
 | `engine/ai-api-client-shared.ts` | 86 | 6 | 5 |
 | `engine/ai-api-client.ts` | 961 | 1 | 1 |
-| `engine/ai-api-stream.ts` | 923 | 3 | 2 |
+| `engine/ai-api-stream.ts` | 1013 | 3 | 2 |
 | `engine/ai-batch-entity-generator.ts` | 578 | 1 | 1 |
 | `engine/ai-chapter-helpers.ts` | 339 | 1 | 1 |
 | `engine/ai-character-generator.ts` | 426 | 1 | 1 |
-| `engine/ai-engine.ts` | 831 | 4 | 2 |
+| `engine/ai-engine.ts` | 834 | 4 | 2 |
 | `engine/ai-entity-generator.ts` | 227 | 1 | 1 |
 | `engine/ai-lexicon.ts` | 97 | 3 | 3 |
 | `engine/ai-outline-generator.ts` | 1414 | 1 | 1 |
@@ -394,7 +394,7 @@
 | `services/writing-stats-service.ts` | 425 | 6 | 6 |
 | `shared/adaptive-debounce-manager.ts` | 315 | 2 | 2 |
 | `shared/ai-credentials.ts` | 55 | 2 | 2 |
-| `shared/api-format.ts` | 418 | 16 | 15 |
+| `shared/api-format.ts` | 461 | 16 | 15 |
 | `shared/api-response-utils.ts` | 253 | 10 | 10 |
 | `shared/api-types.ts` | 18 | 1 | 1 |
 | `shared/array-move.ts` | 48 | 2 | 2 |

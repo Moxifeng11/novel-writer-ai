@@ -297,6 +297,9 @@ export async function callAIStream(
                         let accumulatedReasoning = '';
                         let isStreamDone = false;
                         let streamFinishReason: 'stop' | 'length' | undefined;
+                        // DSH-20261113-20 缺陷③：responses 协议的 error/failed 事件在此落地，
+                        // 抛给 attempt 级 catch 走重试/回退（限流/审核/服务端错误不是正常结束）。
+                        let protocolError: string | null = null;
 
                         while (!isStreamDone) {
                             const { done, value } = await reader.read();
@@ -349,6 +352,14 @@ export async function callAIStream(
                                     const update = parseSseFrame(apiFormat, parsed);
                                     if (update === null) continue;
 
+                                    if (update.error) {
+                                        // 协议层失败（限流/审核/服务端错误）：跳出循环抛给
+                                        // attempt 级 catch，走重试/回退——不是正常结束。
+                                        protocolError = update.error;
+                                        isStreamDone = true;
+                                        break;
+                                    }
+
                                     if (update.delta) {
                                         accumulatedContent += update.delta;
                                         onChunk?.(accumulatedContent, false);
@@ -365,6 +376,23 @@ export async function callAIStream(
                                     log.warn('[小说工坊] SSE 解析警告: 无法解析行:', jsonStr.slice(0, 100));
                                 }
                             }
+                        }
+
+                        if (protocolError) {
+                            throw new Error(`流式响应错误：${protocolError}`);
+                        }
+
+                        // DSH-20261113-20 缺陷①：流在结束标记前被对端干净关闭（网关空闲
+                        // 超时关流、Ollama 进程被 kill、兼容层不发 [DONE]）时，不得把半截
+                        // 内容当「成功完整响应」返回——必须走报错路径。
+                        if (!isStreamDone && accumulatedContent) {
+                            fullContent = accumulatedContent;
+                            onChunk?.(fullContent, true);
+                            log.warn('[小说工坊] 流式连接在结束标记前中断，内容可能不完整');
+                            return {
+                                content: fullContent,
+                                error: '流式连接中断（未收到正常结束标记），内容可能被截断',
+                            };
                         }
 
                         fullContent = accumulatedContent;
@@ -515,14 +543,26 @@ export async function* callAIAsyncIterator(
 
         let fallbackStage: 'native' | 'simulated' | 'full' | 'done' = options?.forceSimulated ? 'simulated' : 'native';
         let lastError: string | undefined;
+        // DSH-20261113-20 缺陷②：跨阶段 yield 追踪——任一阶段已向消费者产出分片后，
+        // 该阶段失败时不得降级到后续阶段（后续阶段从零重发全文，消费者累加后
+        // 出现重复正文），必须如实报错让消费方走 catch（回退一次性调用/报错路径）。
+        let nativeHasYielded = false;
+        let simulatedHasYielded = false;
 
         while (fallbackStage !== ('done' as string)) {
             try {
                 if (fallbackStage === 'native') {
                     log.debug('[小说工坊] 流式降级: 尝试原生 SSE 流式');
-                    const result = yield* nativeStreamIterator(
+                    const nativeInner = nativeStreamIterator(
                         host, systemPrompt, userPrompt, effectiveModel, temperature, finalMaxTokens, options
                     );
+                    let nativeStep = await nativeInner.next();
+                    while (!nativeStep.done) {
+                        nativeHasYielded = true;
+                        yield nativeStep.value;
+                        nativeStep = await nativeInner.next();
+                    }
+                    const result = nativeStep.value;
                     if (!result.error || result.content) {
                         return result;
                     }
@@ -541,9 +581,16 @@ export async function* callAIAsyncIterator(
                     fallbackStage = 'simulated';
                 } else if (fallbackStage === 'simulated') {
                     log.debug('[小说工坊] 流式降级: 尝试模拟流式');
-                    const result = yield* simulatedStreamIterator(
+                    const simulatedInner = simulatedStreamIterator(
                         host, systemPrompt, userPrompt, effectiveModel, temperature, finalMaxTokens, options
                     );
+                    let simulatedStep = await simulatedInner.next();
+                    while (!simulatedStep.done) {
+                        simulatedHasYielded = true;
+                        yield simulatedStep.value;
+                        simulatedStep = await simulatedInner.next();
+                    }
+                    const result = simulatedStep.value;
                     if (!result.error || result.content) {
                         return result;
                     }
@@ -576,6 +623,15 @@ export async function* callAIAsyncIterator(
                 log.warn(`[小说工坊] 流式降级: ${fallbackStage} 阶段异常 -`, errMsg);
 
                 if (error instanceof AIAuthError || isAuthErrorMessage(errMsg)) {
+                    return { content: '', error: errMsg };
+                }
+
+                // DSH-20261113-20 缺陷②：该阶段已向消费者产出过分片——降级到下一阶段
+                // 会从零重发全文，消费者累加后出现重复正文。如实报错收场。
+                const yielded = fallbackStage === 'native' ? nativeHasYielded
+                    : fallbackStage === 'simulated' ? simulatedHasYielded
+                        : false;
+                if (yielded) {
                     return { content: '', error: errMsg };
                 }
 
@@ -659,6 +715,10 @@ async function* nativeStreamIterator(
             triedModels.push(currentModel);
 
             const maxRetries = host.resolveMaxRetries(endpoint);
+            // 审计缺陷②守卫：只要本生成器曾向消费者 yield 过正文分片，
+            // 后续任何失败都不能再走内部重试——重试会从零重发，消费者
+            // 累加后出现重复正文。hasYielded 跨 attempt 存续，永不复位。
+            let hasYielded = false;
             for (let attempt = 0; attempt < maxRetries; attempt++) {
                 let ac: AbortController | null = null;
                 let timer: ReturnType<typeof setTimeout> | null = null;
@@ -741,6 +801,7 @@ async function* nativeStreamIterator(
                     let accumulatedReasoning = '';
                     let isStreamDone = false;
                     let streamFinishReason: 'stop' | 'length' | undefined;
+                    let protocolError: string | null = null;
 
                     while (!isStreamDone) {
                         const { done, value } = await reader.read();
@@ -768,6 +829,7 @@ async function* nativeStreamIterator(
                                     const delta = parsed?.response;
                                     if (delta) {
                                         accumulatedContent += delta;
+                                        hasYielded = true;
                                         yield delta;
                                     }
                                     if (parsed?.done === true) {
@@ -795,8 +857,15 @@ async function* nativeStreamIterator(
                                 const update = parseSseFrame(apiFormat, parsed);
                                 if (update === null) continue;
 
+                                if (update.error) {
+                                    protocolError = update.error;
+                                    isStreamDone = true;
+                                    break;
+                                }
+
                                 if (update.delta) {
                                     accumulatedContent += update.delta;
+                                    hasYielded = true;
                                     yield update.delta;
                                 }
                                 // 思考型模型（deepseek-flash / -pro / reasoner）的思考增量，
@@ -812,6 +881,19 @@ async function* nativeStreamIterator(
                             } catch {
                             }
                         }
+                    }
+
+                    // DSH-20261113-20 缺陷③：协议层失败抛给 attempt 级 catch——
+                    // 有 hasYielded 守卫在，消费者已收到的分片不会被重试轮污染。
+                    if (protocolError) {
+                        throw new Error(`流式响应错误：${protocolError}`);
+                    }
+
+                    // DSH-20261113-20 缺陷①（生成器侧）：流在结束标记前被对端干净关闭
+                    // 且已产出部分正文时，不得以 {content, finishReason} 成功收尾——
+                    // 抛错让消费方走 catch（单元写作回退一次性调用 / 报错路径）。
+                    if (!isStreamDone && accumulatedContent) {
+                        throw new Error('流式连接中断（未收到正常结束标记），内容可能被截断');
                     }
 
                     // 正文为空且被截断 → 在模型上限内扩容重试一次（与 callAI 非流式行为一致）：
@@ -844,6 +926,14 @@ async function* nativeStreamIterator(
                     if (externalSignal?.aborted) {
                         if (timer) { clearTimeout(timer); timer = null; }
                         return { content: '', error: 'aborted' };
+                    }
+
+                    // DSH-20261113-20 缺陷②守卫：消费者已经累加了本生成器此前 yield
+                    // 的分片——任何内部重试都会从零重发，消费者累加后出现重复正文。
+                    // 必须把错误如实抛给消费方（单元写作回退一次性调用 / 报错路径）。
+                    if (hasYielded) {
+                        if (timer) { clearTimeout(timer); timer = null; }
+                        throw error;
                     }
 
                     // 认证失败不进入重试（重试只会重复 401）

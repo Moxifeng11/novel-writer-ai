@@ -331,6 +331,38 @@ export interface SseUpdate {
     done?: boolean;
     /** 结束原因，仅结束帧可能带 */
     finishReason?: 'stop' | 'length';
+    /**
+     * 协议层错误（DSH-20261113-20）：responses 协议的 error / response.failed
+     * 事件不再是「正常结束」——消费方见到此字段必须抛错走重试/回退路径。
+     */
+    error?: string;
+}
+
+/**
+ * 从 responses 协议的 error / response.failed 事件中提取人类可读的错误消息。
+ *
+ * 事件形态有两类：
+ *   - `{ type: 'error', code, message }`（顶层 message）
+ *   - `{ type: 'response.failed', response: { error: { code, message } } }`
+ *
+ * 提取不到结构化消息时回落到事件类型本身，绝不返回空串。
+ *
+ * @param data - 已解析的事件对象
+ * @returns 错误消息
+ */
+function extractResponsesErrorMessage(data: {
+    type?: unknown;
+    message?: unknown;
+    error?: { message?: unknown } | null;
+    response?: { error?: { message?: unknown } | null } | null;
+}): string {
+    const topMessage = typeof data?.message === 'string' && data.message ? data.message : undefined;
+    const nestedMessage = typeof data?.response?.error?.message === 'string' && data.response.error.message
+        ? data.response.error.message
+        : undefined;
+    const message = topMessage ?? nestedMessage;
+    const type = typeof data?.type === 'string' ? data.type : 'error';
+    return message || `${type} 事件（服务端未提供错误详情）`;
 }
 
 /**
@@ -368,8 +400,14 @@ export function parseSseFrame(format: ApiFormat, payload: unknown): SseUpdate | 
     if (format === 'openai-responses') {
         const data = payload as {
             type?: unknown;
+            message?: unknown;
             delta?: unknown;
-            response?: { status?: unknown; incomplete_details?: { reason?: unknown } | null };
+            error?: { message?: unknown } | null;
+            response?: {
+                status?: unknown;
+                incomplete_details?: { reason?: unknown } | null;
+                error?: { message?: unknown } | null;
+            } | null;
         } | null;
         const type = typeof data?.type === 'string' ? data.type : '';
         if (type === 'response.output_text.delta') {
@@ -381,7 +419,12 @@ export function parseSseFrame(format: ApiFormat, payload: unknown): SseUpdate | 
             const truncated = data?.response?.incomplete_details?.reason === 'max_output_tokens';
             return { done: true, finishReason: truncated ? 'length' : 'stop' };
         }
-        if (type === 'error') return { done: true, finishReason: 'stop' };
+        // DSH-20261113-20：error / response.failed 是协议层失败，不是「正常结束」——
+        // 限流/内容审核/服务端错误映射为带 error 的结束帧，消费方必须抛错走重试/回退。
+        if (type === 'error' || type === 'response.failed') {
+            const message = extractResponsesErrorMessage(data ?? {});
+            return { done: true, finishReason: 'stop', error: message };
+        }
         return null;
     }
 
