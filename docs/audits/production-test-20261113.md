@@ -137,3 +137,55 @@ UI 守卫 `hasUsableAiCredentials` 看 `providerKeys` 能过，但 AI 调用只�
 生产环境测试**当场抓到 1 个 high 级缺陷**（AI 全线不可用），
 而该缺陷在 8130 条单元/集成测试下全绿——因为测试里 mock 的 settings 总是
 `apiKey` 有值。**这是「测试替身不忠实」的又一例**（标准 1）。
+
+---
+
+## 九、完整旅程测试：真实 AI 生成世界观（2026-11-13 03:55）
+
+### 方法
+
+用 `obsidian eval` 直接调用插件引擎，不点 UI：
+
+```js
+// 1) 建最小合法项目（8 个目录 + .project）
+// 2) aiEngine.generateWorldviewForProject(app, project, '都市异能', onProgress)
+// 3) 校验落盘文件与 frontmatter
+// 4) 递归清理
+```
+
+**踩到的坑（已验证并写进文档）**：`listProjectIds` 会跳过 `_` / `.` 开头的目录
+（`shared/project-catalog.ts`），所以测试项目必须用普通名字（`生产测试临时项目`），
+否则 `detectProjects()` 恒返回 0。
+
+### 结果：全链路通过
+
+| 环节 | 结果 |
+|---|---|
+| 项目识别 | ✅ `detectProjects()` → `["生产测试临时项目"]` |
+| **真实 AI 生成** | ✅ 143356 ms，10 个阶段（骨架 + 9 模块），无 error |
+| **落盘** | ✅ `01-世界架构/世界观总览.md` 生成 |
+| 内容质量 | ✅ 8974 字符 / 9 个小节（与 9 模块一致） |
+| **frontmatter** | ✅ `世界名称` / `项目名称` / `tags: [世界观, nw/设定/世界观]` / `世界类型` / `创作阶段: 世界观设定` |
+| 运行期错误 | ✅ No errors captured |
+| 清理 | ✅ 递归删除，`projectsAfterCleanup: []` |
+
+### 意义
+
+这是**「用户以为生效的链路真的生效」**在生产环境第一次被完整证明：
+
+```
+真实 DeepSeek API → 插件请求构造 → 流式解析 → 结果合并 → Markdown 组装
+→ frontmatter 注入 → vault 落盘 → 文件内容可读且结构正确
+```
+
+此前只有单元测试（mock AI）与示例种子（假数据）能覆盖到「写文件」这一步，
+**真实 API 参与的全链路这次才第一次跑通**。
+
+### 复现
+
+```bash
+# 建项目 → 生成 → 校验 → 清理（全部通过 eval，不点 UI）
+obsidian eval code="<见本报告 §九 方法>"
+obsidian dev:errors
+npm run check:prod
+```
