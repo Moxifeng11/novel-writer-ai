@@ -143,7 +143,8 @@ export function pickClaimableTasks(tasks, claims, locks, me, now) {
 
     const result = [];
     for (const task of folded.values()) {
-        if (task.status === 'done' || task.status === 'failed') continue;
+        // cancelled = 派发方主动作废（与 failed「尝试过但没做成」区分），同样不可领取
+        if (task.status === 'done' || task.status === 'failed' || task.status === 'cancelled') continue;
         // 定向指派：指定了 assignee 的任务只给那个人（空/缺省表示任何人可领）
         const assignee = String(task.assignee ?? '').trim();
         if (assignee && assignee !== me) continue;
@@ -180,9 +181,10 @@ export function formatBoardStatus(tasks, claims, locks, now) {
             : '';
         const state = task.status === 'done' ? '✅ done'
             : task.status === 'failed' ? '❌ failed'
-                : claim ? `🔒 ${claim.agent}（剩 ${Math.max(0, Math.round((Number(claim.leaseUntil) - now) / 60000))} 分钟）`
-                    : assignee ? `🟢 待领取 → 指派 ${assignee}`
-                        : '🟢 待领取';
+                : task.status === 'cancelled' ? `🚫 cancelled（${task.reason || ''}）`
+                    : claim ? `🔒 ${claim.agent}（剩 ${Math.max(0, Math.round((Number(claim.leaseUntil) - now) / 60000))} 分钟）`
+                        : assignee ? `🟢 待领取 → 指派 ${assignee}`
+                            : '🟢 待领取';
         lines.push(`  ${task.id} | ${state} | ${task.title || ''}${creatorNote}`);
     }
     const activeLocks = (locks || []).filter((l) => l && !isLeaseExpired(l, now));

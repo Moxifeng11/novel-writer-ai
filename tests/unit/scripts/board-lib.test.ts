@@ -267,3 +267,27 @@ describe('任务板-7：定向指派（assignee）', () => {
         expect(text).toContain('待领取 → 指派 zcode');
     });
 });
+
+describe('作废状态（cancel）', () => {
+    const now = Date.now();
+    const base = {
+        id: 'T1', title: '低收益任务', scope: 'a/', status: 'open', createdAt: now - 1000,
+    };
+
+    it('作废任务不可被领取（与 done/failed 同等）', () => {
+        const tasks = [{ ...base, status: 'cancelled', reason: '低收益' }];
+        expect(pickClaimableTasks(tasks, [], [], 'zcode', now)).toHaveLength(0);
+    });
+
+    it('状态显示带作废原因', () => {
+        const out = formatBoardStatus(
+            [{ ...base, status: 'cancelled', reason: '低收益' }], [], [], now,
+        );
+        expect(out).toContain('cancelled');
+        expect(out).toContain('低收益');
+    });
+
+    it('未作废的任务仍可领取（守卫不误伤）', () => {
+        expect(pickClaimableTasks([base], [], [], 'zcode', now)).toHaveLength(1);
+    });
+});

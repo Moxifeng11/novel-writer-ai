@@ -310,6 +310,27 @@ function cmdFail() {
     console.log(`❌ 任务 ${id} 已标记失败并释放锁`);
 }
 
+/**
+ * 作废任务（cancel）：派发方判定「不值得做 / 方向变了」，与 fail 区分。
+ *
+ * - fail = 尝试过但没做成（保留原因供复盘）
+ * - cancel = 决定不做（低收益、被替代、需求取消）
+ *
+ * 两者都不再可领取，但台账语义不同，复盘时能看出「哪些活是被主动砍掉的」。
+ */
+function cmdCancel() {
+    const id = argv[1];
+    const me = arg('me', 'dsh');
+    const reason = arg('reason', '');
+    if (!id) { console.error('用法: board.mjs cancel <id> [--me <agent>] --reason "..."'); process.exit(1); }
+    if (!reason.trim()) { console.error('❌ cancel 必须提供 --reason 说明为什么作废'); process.exit(1); }
+    ensureDirs();
+    appendJsonl(TASKS, { id, status: 'cancelled', cancelledAt: Date.now(), by: me, reason });
+    appendJsonl(RESULTS, { taskId: id, status: 'cancelled', agent: me, reason, at: Date.now() });
+    releaseTask(id, me);
+    console.log(`🚫 任务 ${id} 已作废（${reason}）`);
+}
+
 function cmdRelease() {
     const id = argv[1];
     const me = arg('me');
@@ -337,6 +358,7 @@ switch (command) {
     case 'wait': await cmdWait(); break;
     case 'done': cmdDone(); break;
     case 'fail': cmdFail(); break;
+    case 'cancel': cmdCancel(); break;
     case 'release': cmdRelease(); break;
     case 'ls': cmdLs(); break;
     case 'status': cmdStatus(); break;

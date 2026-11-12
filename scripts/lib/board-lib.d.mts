@@ -21,6 +21,10 @@ export interface BoardTask {
     createdAt?: number;
     doneAt?: number;
     failedAt?: number;
+    /** 作废时间（status=cancelled 时） */
+    cancelledAt?: number;
+    /** 作废原因（status=cancelled 时必填，用于台账区分「主动砍掉」与「做不成」） */
+    reason?: string;
 }
 
 /** 领取记录 */
