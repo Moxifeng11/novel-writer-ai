@@ -63,37 +63,52 @@ export interface CreateLongProjectResult {
     projectId: string;
     fileCount: number;
     reason?: string;
+    /**
+     * 「不影响成败但必须告知用户」的降级项（如某份模板/指南复制失败）。
+     *
+     * DSH-20261113-27：这些原本只 log.warn，用户看到「✅ 创建完成（N 个文件）」
+     * 却不知道少了几份文件。现在汇总进结果，由调用方展示。
+     */
+    warnings?: string[];
 }
 
 /**
- * writeCreationModeGuideFile 函数。
+ * 写入「创作模式指南」文件。
  * @param app - Obsidian 应用实例
  * @param project - 项目（路径或对象）
  * @param meta - 元数据
+ * @returns 是否写入成功（false 时调用方应汇总成用户可见警告）
  */
-export async function writeCreationModeGuideFile(app: App, project: string, meta: CreationModeMeta): Promise<void> {
+export async function writeCreationModeGuideFile(app: App, project: string, meta: CreationModeMeta): Promise<boolean> {
     const path = `${project}/00-系统模板/创作模式指南.md`;
     const { buildCreationModeGuide } = await import('@/shared/creation-mode');
     try {
         await writeVaultText(app, path, buildCreationModeGuide(meta));
+        return true;
     } catch (e) {
+        // 返回 false 让调用方汇总成用户可见警告（DSH-20261113-27）
         log.warn('[ProjectCreate] 写创作模式指南失败:', e);
+        return false;
     }
 }
 
 /**
- * writeStoryStructureGuideFile 函数。
+ * 写入「故事结构指南」文件。
  * @param app - Obsidian 应用实例
  * @param project - 项目（路径或对象）
  * @param settings - 设置
+ * @returns 是否写入成功（false 时调用方应汇总成用户可见警告）
  */
-export async function writeStoryStructureGuideFile(app: App, project: string, settings: LongStorySettings): Promise<void> {
+export async function writeStoryStructureGuideFile(app: App, project: string, settings: LongStorySettings): Promise<boolean> {
     const path = `${project}/00-系统模板/故事结构指南.md`;
     const { buildStoryStructureGuide } = await import('@/shared/story-structure');
     try {
         await writeVaultText(app, path, buildStoryStructureGuide(settings));
+        return true;
     } catch (e) {
+        // 返回 false 让调用方汇总成用户可见警告（DSH-20261113-27）
         log.warn('[ProjectCreate] 写故事结构指南失败:', e);
+        return false;
     }
 }
 
@@ -147,13 +162,19 @@ export async function createLongNovelProject(
             return { created: false, projectId, fileCount: 0, reason: '用户取消覆盖已有项目' };
         }
 
-        try { await removeProjectDirectory(app, projectId); } catch (e) { log.warn('[ProjectCreate] 覆盖前删除旧目录失败:', e); }
+        // 覆盖前必须真的删干净：删不掉就中止，否则「新」项目里混着旧内容，
+        // 后续写作/统计/结算都作用在残留数据上（DSH-20261113-27 A 档）。
+        await removeProjectDirectory(app, projectId);
         await new Promise(r => setTimeout(r, 300));
     }
 
     const notice = new Notice(`正在创建项目「${projectName}」...`, 0);
     const projectRootId = projectId;
     let count = 0;
+    /** 复制失败的文件（不影响成败，但必须告知用户少了什么） */
+    const failedCopies: string[] = [];
+    /** 其他非致命降级（如装饰性指南写入失败） */
+    const warnings: string[] = [];
 
     try {
         const shouldCopyTemplatePath = (path: string): boolean => {
@@ -213,7 +234,7 @@ export async function createLongNovelProject(
                 if (!(await adapter.exists(dir))) {
                     await adapter.mkdir(dir);
                 }
-            } catch (e) {
+            } catch (e) { // silent-ok: 目录建不出来的真实后果会在后续文件写入时体现并计入 failedCopies
                 log.warn('创建目录失败:', dir, e);
             }
         }
@@ -224,7 +245,8 @@ export async function createLongNovelProject(
                 const content = await adapter.read(srcPath);
                 await writeVaultText(app, destPath, content);
                 count++;
-            } catch (fileErr) {
+            } catch (fileErr) { // silent-ok: 汇总到 failedCopies，由「创建完成」提示统一展示
+                failedCopies.push(destPath);
                 log.warn(`复制失败: ${srcPath}`, fileErr);
             }
         }
@@ -278,7 +300,10 @@ export async function createLongNovelProject(
                 }
                 await writeVaultText(app, dst, srcContent);
                 count++;
-            } catch (e) { log.warn('复制根级文件失败:', dst, e); }
+            } catch (e) { // silent-ok: 汇总到 failedCopies，由「创建完成」提示统一展示
+                failedCopies.push(dst);
+                log.warn('复制根级文件失败:', dst, e);
+            }
         }
 
         try {
@@ -316,7 +341,7 @@ export async function createLongNovelProject(
                     count += enabledFps.length;
                 }
             }
-        } catch (e) {
+        } catch (e) { // silent-ok: 指纹是增强项，失败不阻断项目结构；调用方可在指纹库查看空态
             log.warn('[ProjectCreate] 模板指纹复制失败:', e);
         }
 
@@ -348,7 +373,11 @@ ${description ? `## 描述\n${description}\n\n` : ''}${buildCreationModeMetaSect
             } else {
                 await app.vault.create(projectFile, projectContent);
             }
-        } catch (e) { log.warn('[ProjectCreate] 操作失败:', e); }
+        } catch (e) {
+            // DSH-20261113-27 A 档：.project 写不出来 = 项目对插件根本不存在，
+            // 必须让创建失败，不能提示「创建完成」然后留一个空壳目录。
+            throw new Error(`写入 .project 失败，项目未创建：` + (e instanceof Error ? e.message : String(e)));
+        }
 
         if (projectType === 'fanfic' && fanficSettingPath) {
             const dstPath = `${pjFanficDir(projectRootId)}/${fanficTargetFileName}`;
@@ -357,13 +386,17 @@ ${description ? `## 描述\n${description}\n\n` : ''}${buildCreationModeMetaSect
                 await writeVaultText(app, dstPath, content);
                 count++;
             } catch (e) {
-                log.warn('Failed to copy fanfic settings:', e);
+                // A 档：同人项目没把设定复制过去 = 同人约束全部失效，而 .project 已声称绑定该路径
+                throw new Error('复制同人设定失败，项目未创建：' + (e instanceof Error ? e.message : String(e)));
             }
         }
 
-        await writeCreationModeGuideFile(app, projectRootId, creationMeta);
-        if (creationMeta.storySettings) {
-            await writeStoryStructureGuideFile(app, projectRootId, creationMeta.storySettings);
+        if (!(await writeCreationModeGuideFile(app, projectRootId, creationMeta))) {
+            warnings.push('创作模式指南写入失败（不影响项目结构）');
+        }
+        if (creationMeta.storySettings
+            && !(await writeStoryStructureGuideFile(app, projectRootId, creationMeta.storySettings))) {
+            warnings.push('故事结构指南写入失败（不影响项目结构）');
         }
 
         try {
@@ -390,7 +423,7 @@ ${description ? `## 描述\n${description}\n\n` : ''}${buildCreationModeMetaSect
                     }
                     log.info('[ProjectCreate] 从模板继承写作配置');
                 }
-            } catch (e) {
+            } catch (e) { // silent-ok: 明确有兜底（下方 if (!writingProfile) 生成默认配置），不是静默降级
                 log.warn('[ProjectCreate] 从模板继承写作配置失败，生成默认配置:', e);
             }
             if (!writingProfile) {
@@ -403,12 +436,19 @@ ${description ? `## 描述\n${description}\n\n` : ''}${buildCreationModeMetaSect
                 log.info('[ProjectCreate] 生成默认写作配置');
             }
             await profileManager.save(projectRootId, writingProfile);
-        } catch (e) {
+        } catch (e) { // silent-ok: 写作配置是可选增强，项目结构与 .project 已落盘，创建成功成立
             log.warn('[ProjectCreate] 初始化写作配置失败（不影响项目创建）:', e);
         }
 
         notice.hide();
-        new Notice(`✅ 项目「${projectName}」创建完成（${count} 个文件）`, 5000);
+        // DSH-20261113-27：部分失败不再静默——提示里写清少了什么
+        if (failedCopies.length > 0) {
+            warnings.push(`复制失败 ${failedCopies.length} 个文件：${failedCopies.slice(0, 5).join('、')}`);
+        }
+        const warnText = failedCopies.length > 0
+            ? `；警告：${failedCopies.length} 个文件复制失败（${failedCopies.slice(0, 3).join('、')}` + (failedCopies.length > 3 ? '…' : '') + ')'
+            : '';
+        new Notice(`✅ 项目「${projectName}」创建完成（${count} 个文件）${warnText}`, failedCopies.length > 0 ? 12000 : 5000);
 
         try {
             if (typeof plugin.openFullWriterView === 'function') {
@@ -423,7 +463,7 @@ ${description ? `## 描述\n${description}\n\n` : ''}${buildCreationModeMetaSect
             projectType,
         });
 
-        return { created: true, projectId: projectRootId, fileCount: count };
+        return { created: true, projectId: projectRootId, fileCount: count, warnings };
     } catch (e) {
         notice.hide();
         log.error('[ProjectCreate] 创建项目失败:', e);

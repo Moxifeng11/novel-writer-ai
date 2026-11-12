@@ -13,8 +13,20 @@
  * 豁免：catch 同行或上一行写 `// silent-ok: 理由`（理由不能为空）。
  */
 
-/** 写动词（英文 + 中文）。命中任意一个即视为写上下文。 */
-const WRITE_VERBS = /(save|write|delete|create|persist|overwrite|remove|rename|落盘|保存|删除|写入|覆盖|重命名)/i;
+/**
+ * 写操作调用（英文 + 中文）：**函数调用形态**才算写上下文。
+ *
+ * 2026-11-13 修正：原实现用 `/(save|write|delete|...)/i` 匹配邻近任意文本，
+ * 于是标识符里的 Write 也会命中——最典型的是 `[CoWriterEngine]` / `BodyWriter`，
+ * 导致 `co-writer-engine.ts` 的 40 处全部误报（那些其实是「降级但继续生成」）。
+ * 改为要求「动词开头的函数调用」，如 `.write(` / `saveIndex(` / `writeVaultText(` /
+ * `deleteBook(`；`CoWriterEngine`（动词不在开头）不再命中。
+ *
+ * 中文动词只可能出现在注释/字符串里，因此匹配前会剥离这两类内容；
+ * 中文写操作保留一份「代码中出现的写法」（如 `落盘(`）以防万一。
+ */
+const WRITE_CALL = /\b(?:c?write|save|delete|create|persist|overwrite|remove|rename|mkdir|rmdir|modify|append|unlink)[A-Za-z0-9_]*\s*\(/i;
+const WRITE_CALL_CJK = /(落盘|保存|写入|覆盖|删除|重命名)\s*\(/;
 
 /** 模式 A：catch 体内返回空值 */
 const RETURN_EMPTY = /\breturn\s*(null|undefined|\[\]|\{\})\s*;/;
@@ -59,6 +71,28 @@ function catchBody(lines, catchLine) {
 }
 
 /**
+ * 剥掉字符串字面量与注释，只保留可执行代码。
+ *
+ * 为什么必须剥：写上下文判定若在原始文本上做，`log.warn('[CoWriterEngine] …')`
+ * 这类**日志字符串**里的词会被当成写操作。先剥再匹配才是「代码里真的在写」。
+ *
+ * @param {string} text - 原始片段
+ * @returns {string} 仅含代码的片段
+ */
+export function stripStringsAndComments(text) {
+    return String(text || '')
+        // 行注释
+        .replace(/\/\/[^\n]*/g, ' ')
+        // 块注释
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        // 模板字符串（含 ${} 内部一律清空：内部若真有写调用，外层通常也在同窗口）
+        .replace(/`(?:\\[\s\S]|[^`\\])*`/g, '""')
+        // 单/双引号字符串
+        .replace(/'(?:\\.|[^'\\])*'/g, "''")
+        .replace(/"(?:\\.|[^"\\])*"/g, '""');
+}
+
+/**
  * 邻近行是否处于写上下文。
  *
  * @param {string[]} lines - 文件行
@@ -68,7 +102,8 @@ function catchBody(lines, catchLine) {
 export function isInWriteContext(lines, line) {
     const from = Math.max(0, line - CONTEXT_BEFORE);
     const to = Math.min(lines.length - 1, line + 12);
-    return WRITE_VERBS.test(lines.slice(from, to + 1).join('\n'));
+    const code = stripStringsAndComments(lines.slice(from, to + 1).join('\n'));
+    return WRITE_CALL.test(code) || WRITE_CALL_CJK.test(code);
 }
 
 /**

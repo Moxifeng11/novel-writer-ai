@@ -49,9 +49,15 @@ describe('classifyCatchBody：模式判定', () => {
 });
 
 describe('isInWriteContext：写上下文门槛', () => {
-    it('邻近行含写动词 → true', () => {
+    it('邻近行含真实写调用 → true', () => {
         expect(isInWriteContext(['await this.getFS().write(path, content);', '} catch (e) {'], 1)).toBe(true);
-        expect(isInWriteContext(['// 保存失败', '} catch (e) {'], 1)).toBe(true);
+    });
+
+    it('注释里的写动词不算写上下文（2026-11-13 修正）', () => {
+        // 原实现直接对原文正则匹配，`// 保存失败` 这种注释也会命中，
+        // 加上标识符里的 Write（CoWriterEngine）共造成 121 处假阳性（324→203）。
+        // 现在先剥注释与字符串再匹配，注释不再构成写上下文。
+        expect(isInWriteContext(['// 保存失败', '} catch (e) {'], 1)).toBe(false);
     });
 
     it('纯读上下文 → false（读路径降级合法）', () => {
@@ -146,5 +152,49 @@ describe('evaluateSilentFailures：基线棘轮', () => {
     it('空输入 → total=0（由门禁的空扫描自检兜底）', () => {
         expect(evaluateSilentFailures({ files: {}, baseline: { total: 0, files: {} } }))
             .toMatchObject({ total: 0, added: [], exempted: 0 });
+    });
+});
+
+describe('写上下文判定 — 精度（2026-11-13 修正：标识符误报）', () => {
+    it('日志字符串里的 CoWriterEngine 不再被判为写上下文', () => {
+        const lines = [
+            'try {',
+            '    souls = await gatherAllCharacterCores(mdFiles, this.app.vault);',
+            '} catch (e) {',
+            "    log.warn('[CoWriterEngine] A1: 灵魂层采集失败，继续无灵魂模式:', e);",
+            '}',
+        ];
+        // catch 在 index 2
+        expect(isInWriteContext(lines, 2)).toBe(false);
+    });
+
+    it('BodyWriter 这类标识符同样不误报', () => {
+        const lines = ['class BodyWriter { }', 'try { doStuff(); } catch (e) {', "  log.warn('x', e);", '}'];
+        expect(isInWriteContext(lines, 1)).toBe(false);
+    });
+
+    it('真实的 .write( 调用 → 写上下文', () => {
+        const lines = ['try {', '  await adapter.write(path, data);', '} catch (e) {', "  log.warn('x', e);", '}'];
+        expect(isInWriteContext(lines, 2)).toBe(true);
+    });
+
+    it('writeVaultText( / saveIndex( 这类「动词开头的函数调用」→ 写上下文', () => {
+        expect(isInWriteContext(['try {', '  await writeVaultText(app, p, c);', '} catch (e) {'], 2)).toBe(true);
+        expect(isInWriteContext(['try {', '  await saveIndex();', '} catch (e) {'], 2)).toBe(true);
+    });
+
+    it('modify( / mkdir( 这些真实写 API 也算（旧逻辑漏检）', () => {
+        expect(isInWriteContext(['try {', '  await vault.modify(file, c);', '} catch (e) {'], 2)).toBe(true);
+        expect(isInWriteContext(['try {', '  await fs.mkdir(dir);', '} catch (e) {'], 2)).toBe(true);
+    });
+
+    it('字符串里的 write( 不算（剥字符串后无代码）', () => {
+        const lines = ['try {', "  log.info('call write(path) here');", '} catch (e) {', "  log.warn('x', e);", '}'];
+        expect(isInWriteContext(lines, 2)).toBe(false);
+    });
+
+    it('注释里的 write( 不算', () => {
+        const lines = ['try {', '  // 这里应该 write(path, data)', '} catch (e) {', "  log.warn('x', e);", '}'];
+        expect(isInWriteContext(lines, 2)).toBe(false);
     });
 });

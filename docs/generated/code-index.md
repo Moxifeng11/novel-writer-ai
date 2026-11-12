@@ -11,7 +11,7 @@
 | `shared/` | 197 | 41863 | 1712 | 1396 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 266 | 104241 | 991 | 798 | 81% |
+| `ui/` | 266 | 104281 | 991 | 798 | 81% |
 
 ## 文件清单
 
@@ -783,7 +783,7 @@
 | `ui/services/flow-repair-host.ts` | 246 | 8 | 1 |
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
-| `ui/services/project-create-service.ts` | 433 | 6 | 5 |
+| `ui/services/project-create-service.ts` | 473 | 6 | 5 |
 | `ui/settings-tab.ts` | 260 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 151 | 1 | 1 |
