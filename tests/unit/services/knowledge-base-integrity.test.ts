@@ -20,8 +20,15 @@ class FakeFileSystem {
     renames: Array<{ from: string; to: string }> = [];
     /** 前 N 次写 .txt 抛错（模拟磁盘占用/同步冲突） */
     failSourceWrite = 0;
+    /** 前 N 次读指定路径抛错（模拟文件被占用/权限/同步冲突） */
+    failReadPaths = new Map<string, number>();
 
     async read(path: string): Promise<string> {
+        const remaining = this.failReadPaths.get(path) ?? 0;
+        if (remaining > 0) {
+            this.failReadPaths.set(path, remaining - 1);
+            throw new Error(`EBUSY: ${path}`);
+        }
         const value = this.files.get(path);
         if (value === undefined) throw new Error(`ENOENT: ${path}`);
         return value;
@@ -220,6 +227,27 @@ describe('KnowledgeBaseConfigManager — 读失败不得覆盖磁盘', () => {
         await manager.load();
 
         expect(fs.files.has(kbConfigFile())).toBe(true);
+    });
+
+    it('配置文件存在但读取抛错时，不得用默认配置覆盖磁盘（用户自定义分类会丢）', async () => {
+        const fs = new FakeFileSystem();
+        const manager = makeConfigManager(fs);
+        const { kbConfigFile } = await import('../../../shared/paths');
+
+        const userConfig = JSON.stringify({
+            customGenres: [{ id: 'g-user', name: '我的自定义题材', category: 'male', isCustom: true }],
+            customPersonalityTags: ['我的标签'],
+        });
+        fs.files.set(kbConfigFile(), userConfig);
+        // 文件存在，但这次读取抛错（占用/权限/同步冲突）
+        fs.failReadPaths.set(kbConfigFile(), 1);
+
+        const config = await manager.load();
+
+        // 内存用默认值
+        expect(config).toBeTruthy();
+        // 磁盘必须原样保留——这正是原实现的缺陷：读失败被当成「不存在」→ 立刻 save() 覆盖
+        expect(fs.files.get(kbConfigFile())).toBe(userConfig);
     });
 });
 

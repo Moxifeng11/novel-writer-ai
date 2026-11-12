@@ -90,7 +90,24 @@ export function parseQualityHistoryRecord(input: unknown): QualityHistoryRecord 
  * @returns 结果数组
  */
 export function parseQualityHistoryFile(raw: string): QualityHistoryRecord[] {
-    if (!raw || !raw.trim()) return [];
+    return parseQualityHistoryFileDetailed(raw).records;
+}
+
+/**
+ * 带解析状态的版本：区分「本来就没有记录」与「解析失败」。
+ *
+ * 原 `parseQualityHistoryFile` 把坏 JSON 也返回 `[]`，调用方（质量历史落盘）
+ * 拿空数组去合并再整份覆盖写，一次同步冲突就能把最多 200 条历史洗成 1 条，
+ * 且损坏原文被覆盖、无法抢救。写入口必须能看到 `parseFailed`。
+ *
+ * @param raw - 原始
+ * @returns 记录与解析状态
+ */
+export function parseQualityHistoryFileDetailed(raw: string): {
+    records: QualityHistoryRecord[];
+    parseFailed: boolean;
+} {
+    if (!raw || !raw.trim()) return { records: [], parseFailed: false };
     try {
         const data = JSON.parse(raw) as unknown;
         const list = Array.isArray(data)
@@ -98,12 +115,13 @@ export function parseQualityHistoryFile(raw: string): QualityHistoryRecord[] {
             : (data && typeof data === 'object' && Array.isArray((data as QualityHistoryFile).entries)
                 ? (data as QualityHistoryFile).entries
                 : []);
-        return list
+        const records = list
             .map(parseQualityHistoryRecord)
             .filter((item): item is QualityHistoryRecord => item !== null)
             .sort((a, b) => a.timestamp - b.timestamp);
+        return { records, parseFailed: false };
     } catch {
-        return [];
+        return { records: [], parseFailed: true };
     }
 }
 

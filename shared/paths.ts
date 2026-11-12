@@ -81,6 +81,7 @@ export async function writeProjectMeta(
     content: string,
 ): Promise<boolean> {
     try {
+        // write-entry-allow: .project 是点文件，不在 vault 索引内，vault.create/modify 都不可用，只能走 adapter
         await app.vault.adapter.write(pjProjectMeta(project), content);
         return true;
     } catch {

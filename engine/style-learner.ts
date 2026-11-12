@@ -73,6 +73,13 @@ const log = createLogger('StyleLearner');
     private plugin: NovelWriterPluginAPI;
     private project: string;
     private patterns: Map<string, StylePattern> = new Map();
+    /**
+     * 上次加载是否失败（读/解析异常）。
+     *
+     * 为 true 时禁止 savePatterns 覆盖磁盘：否则内存里的空 Map 会把用户
+     * 已学习的作者风格偏好整份写没（原实现正是如此，且只留一条「无已保存的风格模式」日志）。
+     */
+    private patternsLoadFailed = false;
     private dataPath: string;
     private fs: FileSystemPort | null = null;
 
@@ -268,14 +275,29 @@ const log = createLogger('StyleLearner');
       * 加载已保存的模式
       */
      async loadPatterns(): Promise<void> {
+         const fs = this.getFS();
+         // 必须区分「文件不存在」与「文件存在但读不出来/解析失败」：
+         // 原实现把两者都当成空状态，随后 savePatterns 用空 Map 整份覆盖写回，
+         // 一次同步冲突就能把用户已学习的作者风格偏好永久清零。
+         if (!(await fs.exists(this.dataPath))) {
+             log.info('[StyleLearner] E1: 无已保存的风格模式');
+             return;
+         }
          try {
-             const data = await this.getFS().read(this.dataPath);
+             const data = await fs.read(this.dataPath);
              const parsed = JSON.parse(data);
              this.patterns = new Map(Object.entries(parsed));
              log.info('[StyleLearner] E1: 加载了', this.patterns.size, '个风格模式');
          } catch (e) {
-             // 文件不存在，使用空状态
-             log.info('[StyleLearner] E1: 无已保存的风格模式');
+             // 存在但读/解析失败：留档 + 禁止本次会话覆盖磁盘（否则空 Map 会抹掉真实数据）
+             log.warn('[StyleLearner] E1: 风格模式读取/解析失败，本次会话不覆盖磁盘:', e);
+             try {
+                 const raw = await fs.read(this.dataPath);
+                 await fs.write(this.dataPath.replace(/\.json$/i, `.corrupt-${Date.now()}.json`), raw);
+             } catch {
+                 // 连读都读不出来，无从留档
+             }
+             this.patternsLoadFailed = true;
          }
      }
      
@@ -283,6 +305,11 @@ const log = createLogger('StyleLearner');
      * 保存模式（通过串行写入器，保证原子性）
      */
     private async savePatterns(): Promise<void> {
+        // 加载失败时磁盘上是用户真实数据（只是这次没读到），绝不能用内存空 Map 覆盖
+        if (this.patternsLoadFailed) {
+            log.warn('[StyleLearner] E1: 本次会话未成功加载风格模式，跳过保存以免覆盖磁盘数据');
+            return;
+        }
         // 使用 enqueueAutoClean，自动在成功后清除脏标记
         await this.writer.enqueueAutoClean(async () => {
             const data = Object.fromEntries(this.patterns);

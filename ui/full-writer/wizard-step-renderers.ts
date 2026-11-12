@@ -81,7 +81,7 @@ export class WizardStepRenderers {
             if (meta !== null) {
                 settings = parseStorySettingsFromProjectMeta(meta);
             }
-        } catch { /* 读取失败时按未配置处理 */ }
+        } catch { /* silent-ok: 渲染路径只读展示，解析异常按未配置展示；写盘与校验路径另有错误提示，且校验侧会拦下未配置 */ }
 
         const card = container.createDiv({ cls: 'nw-wizard-story-structure' });
         if (!settings) {

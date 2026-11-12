@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 324 | 139122 | 1766 | 1433 | 81% |
-| `services/` | 33 | 13799 | 205 | 161 | 79% |
-| `shared/` | 197 | 41724 | 1709 | 1393 | 82% |
+| `engine/` | 324 | 139173 | 1766 | 1433 | 81% |
+| `services/` | 33 | 13885 | 206 | 162 | 79% |
+| `shared/` | 197 | 41779 | 1711 | 1395 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 266 | 104219 | 991 | 798 | 81% |
+| `ui/` | 266 | 104232 | 991 | 798 | 81% |
 
 ## 文件清单
 
@@ -189,7 +189,7 @@
 | `engine/harness/true-random.ts` | 8 | 0 | 0 |
 | `engine/heavy-task-worker-manager.ts` | 312 | 2 | 2 |
 | `engine/incremental-result-aggregator.ts` | 1707 | 3 | 3 |
-| `engine/knowledge-base-config.ts` | 509 | 5 | 5 |
+| `engine/knowledge-base-config.ts` | 522 | 5 | 5 |
 | `engine/knowledge-injector.ts` | 2150 | 13 | 7 |
 | `engine/knowledge-tags.ts` | 629 | 2 | 2 |
 | `engine/knowledge-to-fingerprint-converter.ts` | 345 | 1 | 1 |
@@ -317,7 +317,7 @@
 | `engine/step-definitions.ts` | 266 | 13 | 11 |
 | `engine/step-modal-controller.ts` | 648 | 2 | 2 |
 | `engine/step-prompt-assembly.ts` | 260 | 5 | 4 |
-| `engine/step-result-saver.ts` | 562 | 5 | 4 |
+| `engine/step-result-saver.ts` | 573 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 223 | 6 | 5 |
 | `engine/step-runner.ts` | 2187 | 2 | 1 |
@@ -333,7 +333,7 @@
 | `engine/streaming/simulated-stream.ts` | 183 | 2 | 2 |
 | `engine/streaming/stream-parser.ts` | 366 | 8 | 8 |
 | `engine/style-fingerprint-library.ts` | 2676 | 7 | 7 |
-| `engine/style-learner.ts` | 319 | 0 | 0 |
+| `engine/style-learner.ts` | 346 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 193 | 2 | 2 |
 | `engine/style-vector-store.ts` | 705 | 11 | 10 |
 | `engine/style/dynamic-injection-engine.ts` | 786 | 10 | 5 |
@@ -380,10 +380,10 @@
 | `services/project-rename-service.ts` | 192 | 2 | 2 |
 | `services/prompt-manager.ts` | 783 | 5 | 5 |
 | `services/prompt-templates-default.ts` | 644 | 1 | 1 |
-| `services/quality-history-store.ts` | 128 | 4 | 4 |
+| `services/quality-history-store.ts` | 182 | 5 | 5 |
 | `services/rules-registry.ts` | 146 | 7 | 5 |
 | `services/rules-service.ts` | 280 | 3 | 2 |
-| `services/synopsis-store.ts` | 332 | 5 | 5 |
+| `services/synopsis-store.ts` | 364 | 5 | 5 |
 | `services/update-checker.ts` | 610 | 9 | 2 |
 | `services/usage-ledger.ts` | 395 | 13 | 5 |
 | `services/vector-rebuild-service.ts` | 141 | 8 | 8 |
@@ -451,7 +451,7 @@
 | `shared/export-precheck.ts` | 64 | 2 | 2 |
 | `shared/fanfic-audit.ts` | 398 | 11 | 11 |
 | `shared/fanfic-binding.ts` | 67 | 2 | 2 |
-| `shared/fanfic-rules.ts` | 738 | 25 | 20 |
+| `shared/fanfic-rules.ts` | 749 | 25 | 20 |
 | `shared/file-cache.ts` | 492 | 3 | 3 |
 | `shared/file-mention.ts` | 165 | 9 | 9 |
 | `shared/file-path-guard.ts` | 236 | 12 | 12 |
@@ -491,7 +491,7 @@
 | `shared/novel-format.ts` | 348 | 12 | 12 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1640 | 205 | 199 |
+| `shared/paths.ts` | 1666 | 206 | 200 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
 | `shared/plugin-cache.ts` | 439 | 6 | 4 |
@@ -521,7 +521,7 @@
 | `shared/quality-baseline.ts` | 184 | 10 | 10 |
 | `shared/quality-benchmark.ts` | 112 | 6 | 6 |
 | `shared/quality-grade.ts` | 117 | 9 | 9 |
-| `shared/quality-history.ts` | 307 | 14 | 13 |
+| `shared/quality-history.ts` | 325 | 15 | 14 |
 | `shared/quality-profile.ts` | 98 | 5 | 2 |
 | `shared/rag-sources.ts` | 182 | 10 | 10 |
 | `shared/rag/budget-pack.ts` | 86 | 4 | 3 |
@@ -696,7 +696,7 @@
 | `ui/full-writer/entity-state-controller.ts` | 136 | 2 | 2 |
 | `ui/full-writer/execution-panels.ts` | 383 | 4 | 4 |
 | `ui/full-writer/execution-run-store.ts` | 280 | 5 | 5 |
-| `ui/full-writer/fanfic-settings-utils.ts` | 299 | 13 | 13 |
+| `ui/full-writer/fanfic-settings-utils.ts` | 305 | 13 | 13 |
 | `ui/full-writer/flow-panel-controller.ts` | 351 | 3 | 3 |
 | `ui/full-writer/flow-tab.ts` | 59 | 3 | 3 |
 | `ui/full-writer/full-writer-store.ts` | 401 | 5 | 5 |
@@ -719,8 +719,8 @@
 | `ui/full-writer/wizard-results-store.ts` | 81 | 1 | 1 |
 | `ui/full-writer/wizard-step-executors.ts` | 374 | 1 | 1 |
 | `ui/full-writer/wizard-step-logic.ts` | 78 | 6 | 5 |
-| `ui/full-writer/wizard-step-renderers.ts` | 942 | 1 | 1 |
-| `ui/full-writer/wizard-step-validators.ts` | 148 | 2 | 2 |
+| `ui/full-writer/wizard-step-renderers.ts` | 946 | 1 | 1 |
+| `ui/full-writer/wizard-step-validators.ts` | 151 | 2 | 2 |
 | `ui/full-writer/wizard-types.ts` | 77 | 5 | 3 |
 | `ui/full-writer/wizard-view-access.ts` | 45 | 2 | 2 |
 | `ui/generate-character-modal.ts` | 628 | 1 | 1 |

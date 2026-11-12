@@ -249,21 +249,32 @@ export class StepResultSaver {
                 // 截断保护：本次若是半章，而磁盘上已有完整正文，绝不能覆盖完整稿。
                 // 把本次内容落为独立草稿，正文保持原样，由用户决定是否续写/覆盖。
                 if (truncated && await fs.exists(actualTargetPath)) {
+                    let existing: string | null = null;
                     try {
-                        const existing = await fs.read(actualTargetPath);
-                        if (validateStepResult('bodyGeneration', existing).level === 'complete') {
-                            const draftPath = actualTargetPath.replace(/\.md$/i, '_截断草稿.md');
-                            await fs.write(draftPath, content);
-                            log.warn(`[StepResultSaver] 正文截断，已保留完整正文并写入草稿 → ${draftPath}`);
-                            this.deps.showNotice?.(
-                                `⚠️ 本次正文输出被截断，已保留原完整正文；截断内容保存为 ${draftPath}`,
-                                8000,
-                            );
-                            return true;
-                        }
+                        existing = await fs.read(actualTargetPath);
                     } catch (e) {
-                        // 读取失败时按「没有完整旧稿」处理，继续走正常落盘，避免阻断主流程
-                        log.warn('[StepResultSaver] 截断保护读取旧正文失败，按正常覆盖处理:', e);
+                        // 读旧正文失败 ≠ 没有旧正文。原实现按「没有完整旧稿」继续走覆盖路径，
+                        // 于是「读失败」直接导致完整章节被半章整篇替换（BodyWriter 的覆盖前
+                        // 备份也依赖同一次 read，双保险同时失效）。
+                        // 安全侧：不确定旧稿状态时不覆盖，本次内容另存为截断草稿。
+                        log.warn('[StepResultSaver] 截断保护读取旧正文失败，拒绝覆盖原稿:', e);
+                        const draftPath = actualTargetPath.replace(/\.md$/i, '_截断草稿.md');
+                        await fs.write(draftPath, content);
+                        this.deps.showNotice?.(
+                            `⚠️ 无法读取原正文，为避免覆盖已保存内容，本次截断结果另存为 ${draftPath}`,
+                            8000,
+                        );
+                        return true;
+                    }
+                    if (existing !== null && validateStepResult('bodyGeneration', existing).level === 'complete') {
+                        const draftPath = actualTargetPath.replace(/\.md$/i, '_截断草稿.md');
+                        await fs.write(draftPath, content);
+                        log.warn(`[StepResultSaver] 正文截断，已保留完整正文并写入草稿 → ${draftPath}`);
+                        this.deps.showNotice?.(
+                            `⚠️ 本次正文输出被截断，已保留原完整正文；截断内容保存为 ${draftPath}`,
+                            8000,
+                        );
+                        return true;
                     }
                 }
 

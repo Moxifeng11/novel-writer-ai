@@ -149,3 +149,34 @@ describe('quality-history-store', () => {
         expect(loaded.map(r => r.timestamp)).toEqual([1000, 2000]);
     });
 });
+
+describe('quality-history-store — 损坏文件不得被覆盖（数据丢失防护）', () => {
+    it('文件是坏 JSON 时，追加前先留档，不静默抹掉历史', async () => {
+        const { app, vault } = await makeApp();
+        const path = qualityHistoryPath(PROJECT);
+        await vault.write(path, '{ 这是坏 JSON');
+
+        const merged = await appendQualityHistory(app, PROJECT, record(1000));
+        expect(merged).toHaveLength(1);
+
+        // 原坏文件被留档成 .corrupt-<ts>.json，可人工抢救
+        const store = (vault as unknown as { _store: Map<string, string> })._store;
+        const corrupt = [...store.keys()].filter(k => k.includes('.corrupt-') && k.endsWith('.json'));
+        expect(corrupt.length).toBeGreaterThan(0);
+        expect(store.get(corrupt[0])).toBe('{ 这是坏 JSON');
+    });
+
+    it('坏 JSON 不会被「空数组 + 覆盖写」直接抹掉（回归锁定）', async () => {
+        const { app, vault } = await makeApp();
+        const path = qualityHistoryPath(PROJECT);
+        await vault.write(path, 'not json at all');
+        await appendQualityHistory(app, PROJECT, record(2000));
+
+        const store = (vault as unknown as { _store: Map<string, string> })._store;
+        // 原文件内容仍能在留档里找到
+        const corruptValues = [...store.entries()]
+            .filter(([k]) => k.includes('.corrupt-'))
+            .map(([, v]) => v);
+        expect(corruptValues).toContain('not json at all');
+    });
+});

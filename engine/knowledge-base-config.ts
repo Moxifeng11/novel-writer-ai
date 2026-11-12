@@ -132,17 +132,30 @@ export class KnowledgeBaseConfigManager {
         const fs = this.getFS();
         const configPath = kbConfigFile(this.baseDir);
 
+        // 必须区分「文件不存在」与「文件存在但读不出来」：
+        // 原实现把 read 抛错也当成 null，于是读失败时立刻 save() 写回默认配置，
+        // 把用户的 customGenres / customPersonalityTags / customAbilityTypes /
+        // customTechniques 永久抹掉（同步客户端占用、权限、索引陈旧都可能触发）。
+        // 这与下面「解析失败绝不覆盖磁盘」是同一条不变量。
+        const fileExists = await fs.exists(configPath);
+
         let content: string | null = null;
-        try {
-            content = await fs.read(configPath);
-        } catch {
-            content = null;
+        if (fileExists) {
+            try {
+                content = await fs.read(configPath);
+            } catch (e) {
+                log.warn('[KnowledgeBaseConfig] 配置读取失败，本次会话使用默认值，磁盘文件保留原样:', e);
+                content = null;
+            }
         }
 
-        if (content === null) {
+        if (!fileExists) {
             // 文件确实不存在：写一份默认配置作为起点
             this.config = { ...DEFAULT_CONFIG };
             await this.save();
+        } else if (content === null) {
+            // 存在但读失败：只在内存用默认值，绝不覆盖磁盘
+            this.config = { ...DEFAULT_CONFIG };
         } else {
             try {
                 const parsed = JSON.parse(content) as Partial<KnowledgeBaseConfig>;

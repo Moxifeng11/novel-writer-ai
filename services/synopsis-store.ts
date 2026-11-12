@@ -244,16 +244,48 @@ ${text.trim()}
     }
 
     private async readIndex(project: string): Promise<SynopsisIndex> {
+        const adapter = this.adapter();
+        const path = pjSynopsisIndexFile(project);
         try {
-            const adapter = this.adapter();
-            const path = pjSynopsisIndexFile(project);
             if (!(await adapter.exists(path))) return { version: 1, activeId: '', items: [] };
-            const parsed = JSON.parse(await adapter.read(path)) as SynopsisIndex;
-            if (!Array.isArray(parsed.items)) return { version: 1, activeId: '', items: [] };
+            const raw = await adapter.read(path);
+            const parsed = JSON.parse(raw) as SynopsisIndex;
+            if (!Array.isArray(parsed.items)) {
+                // 结构损坏：先留档再重建，否则后续 writeIndex 会把原文件永久覆盖
+                await this.archiveCorruptIndex(project, path, raw);
+                return { version: 1, activeId: '', items: [] };
+            }
             return { version: 1, activeId: parsed.activeId || '', items: parsed.items };
         } catch (error) {
             log.warn('[SynopsisStore] 读取索引失败，按空索引处理:', error);
+            // 解析失败时留档：所有写入口都是「readIndex → 改 → writeIndex 覆盖」，
+            // 不留档就等于把用户的版本元数据（id/风格/字数/采用版本）永久抹掉。
+            await this.archiveCorruptIndex(project, path);
             return { version: 1, activeId: '', items: [] };
+        }
+    }
+
+    /**
+     * 把损坏的简介索引改名留档（`index.corrupt-<ts>.json`）。
+     *
+     * 与 chapter-version-service / writing-stats-service 的口径一致：
+     * 坏数据先留档再重建，用户仍可从留档里人工抢救。
+     *
+     * @param project - 项目
+     * @param path - 索引路径
+     * @param raw - 已读到的原文（读失败时省略，此时再尝试读一次）
+     */
+    private async archiveCorruptIndex(project: string, path: string, raw?: string): Promise<void> {
+        try {
+            const adapter = this.adapter();
+            const content = raw ?? ((await adapter.exists(path)) ? await adapter.read(path) : null);
+            if (content === null) return;
+            const backup = path.replace(/index\.json$/i, `index.corrupt-${Date.now()}.json`);
+            // write-entry-allow: 备份是 index.corrupt-<ts>.json 索引外文件，只能走 adapter
+            await adapter.write(backup, content);
+            log.warn('[SynopsisStore] 简介索引损坏，已留档:', backup);
+        } catch (e) {
+            log.warn('[SynopsisStore] 简介索引留档失败（继续重建，原文件可能被覆盖）:', e);
         }
     }
 
