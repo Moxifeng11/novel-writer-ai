@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 324 | 139587 | 1770 | 1436 | 81% |
+| `engine/` | 327 | 140302 | 1794 | 1450 | 81% |
 | `services/` | 33 | 13890 | 206 | 162 | 79% |
-| `shared/` | 197 | 41869 | 1712 | 1396 | 82% |
+| `shared/` | 198 | 42131 | 1723 | 1405 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 266 | 104281 | 991 | 798 | 81% |
@@ -110,6 +110,9 @@
 | `engine/co-writer/snapshot-builder.ts` | 133 | 1 | 1 |
 | `engine/coherence-checker.ts` | 108 | 3 | 3 |
 | `engine/conflict-detector.ts` | 247 | 4 | 1 |
+| `engine/consistency/assertion-extract.ts` | 297 | 3 | 2 |
+| `engine/consistency/assertion-model.ts` | 247 | 13 | 8 |
+| `engine/consistency/assertion-store.ts` | 171 | 8 | 4 |
 | `engine/content-safety-checker.ts` | 123 | 5 | 5 |
 | `engine/context-compressor.ts` | 342 | 2 | 2 |
 | `engine/context-manager.ts` | 2658 | 3 | 3 |
@@ -488,10 +491,11 @@
 | `shared/model-pricing.ts` | 86 | 3 | 2 |
 | `shared/model-source.ts` | 43 | 3 | 1 |
 | `shared/multi-layer-cache.ts` | 556 | 6 | 6 |
+| `shared/narrative-number.ts` | 235 | 8 | 6 |
 | `shared/novel-format.ts` | 348 | 12 | 12 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1666 | 206 | 200 |
+| `shared/paths.ts` | 1693 | 209 | 203 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
 | `shared/plugin-cache.ts` | 439 | 6 | 4 |

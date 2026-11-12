@@ -443,6 +443,33 @@ export function pjChapterDigestDir(project: string) { return `${project}/04-项�
 export function pjChapterDigestFile(project: string, chapterKey: string) { return `${pjChapterDigestDir(project)}/${sanitizeName(chapterKey)}_摘要.md`; }
 
 /**
+ * 一致性审核数据目录。
+ *
+ * 放在「04-项目总控」下与剧情记忆并列：这些是**审核产物**（断言/矛盾），
+ * 用户应当能看见并排查，因此不用隐藏目录。
+ *
+ * @param project - 项目路径
+ * @returns 目录路径
+ */
+export function pjConsistencyDir(project: string) { return `${project}/04-项目总控/一致性审核`; }
+
+/**
+ * 断言库文件（跨章累积的可比较事实）。
+ *
+ * @param project - 项目路径
+ * @returns 文件路径
+ */
+export function pjAssertionsFile(project: string) { return `${pjConsistencyDir(project)}/断言.json`; }
+
+/**
+ * 矛盾报告文件（含证据链）。
+ *
+ * @param project - 项目路径
+ * @returns 文件路径
+ */
+export function pjContradictionsFile(project: string) { return `${pjConsistencyDir(project)}/矛盾.json`; }
+
+/**
  * 关系变更待确认队列
  *
  * @param project - 项目路径
