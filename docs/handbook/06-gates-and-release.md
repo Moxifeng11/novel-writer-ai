@@ -117,13 +117,41 @@ npm run build
 
 # 4) 门禁
 npm run preflight:release
-npm run check:release -- --tag v4.24.0
+npm run check:release -- --tag 4.24.0
+
+# 4.5) 生产环境冒烟（真实 Obsidian + 真实 AI，约几十 token）
+#      必须在打 tag 前跑：它拦的是「单元测试全绿但真实环境不可用」那类缺陷
+npm run check:prod
 
 # 5) 提交与发布（需用户授权）
 git add -A && git commit -m "feat(v4.24.0): …"
-git tag -a v4.24.0 -m "v4.24.0"
-git push origin master && git push origin v4.24.0
+git tag 4.24.0 -m "4.24.0"
+git push origin master && git push origin 4.24.0
 ```
+
+### 4.1 为什么发版前必须跑 `check:prod`
+
+2026-11-13 真实事故：用户已配置 DeepSeek 密钥，但 `settings.apiKey` 为空
+（密钥只在 `providerKeys` 里）→ **所有 AI 调用返回「API密钥未配置」**，
+界面守卫却显示可用。当时 8130 条单元/集成测试**全绿**，因为测试里 mock 的
+`apiKey` 总是有值。
+
+`check:prod` 用 Obsidian 官方 CLI 在真实实例上验证：
+
+| 步骤 | 拦什么 |
+|---|---|
+| 版本一致性 | 运行中插件 ≠ 磁盘版本（发版后忘 reload，测的是旧代码） |
+| `dev:errors` | 加载期/运行期崩溃 |
+| **真实 AI 非流式调用** | 密钥配置、端点、请求体、解析全链路 |
+| **真实 AI 流式调用** | 写章/共写主路径（与非流式是两套代码） |
+
+```bash
+npm run check:prod              # 完整（消耗几十 token）
+npm run check:prod -- --no-ai   # 零 token：只查版本与错误
+```
+
+退出码：`0` 全通过 / `1` 有失败 / `2` 环境不满足（**skip 不算通过**）。
+该命令**不在 preflight 里**（依赖运行中的 Obsidian 且消耗额度）。
 
 发布工作流会自动：
 

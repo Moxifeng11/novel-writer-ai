@@ -252,6 +252,23 @@ obsidian dev:screenshot path=".screenshots/x.png"
 - `eval` 里调用插件方法时注意签名（无参调用会抛压缩后的错误，难定位）。
 
 产出记录：`docs/audits/production-test-<日期>.md`（模板见 `production-test-20261113.md`）。
+
+### 6.8 一键生产冒烟：`npm run check:prod`
+
+把上面这套「版本一致性 + 错误捕获 + 真实 AI 调用」固化成命令，**发版前必跑**：
+
+```bash
+npm run check:prod              # 完整：真实调一次非流式 + 一次流式（约几十 token）
+npm run check:prod -- --no-ai   # 零 token：只查版本一致性与 dev:errors
+npm run check:prod -- --json    # 机器可读
+```
+
+它拦的是「单元测试全绿但真实环境不可用」这类缺陷。2026-11-13 实测抓到过一次：
+密钥在 `providerKeys`、`apiKey` 为空 → AI 全线返回「API密钥未配置」，
+而 8130 条测试全绿（mock 里 apiKey 总是有值）。
+
+退出码：`0` 全通过 / `1` 有失败 / `2` 环境不满足。**skip 不算通过**。
+不在 preflight 里（依赖运行中的 Obsidian 且消耗额度）。
 ## 7. 流程：一次改动怎么走完测试
 
 ### 7.1 通用提交前检查

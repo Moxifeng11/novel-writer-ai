@@ -28,6 +28,7 @@
 | `npm run check:jsdoc` | 注释覆盖率（棘轮） |
 | `npm run check:linked-scenarios` | 联动场景文档锚点检查 |
 | `npm run check:obsidian-api` | — |
+| `npm run check:prod` | — |
 | `npm run check:program` | 校验进度报告与台账一致 |
 | `npm run check:relationship-authority` | 关系数据权威源契约检查 |
 | `npm run check:release` | 发布资产/版本/tag/worker/模板嵌入一致性校验 |

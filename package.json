@@ -63,7 +63,8 @@
     "check:secrets": "node scripts/check-secrets.mjs",
     "gen:support-qr": "node scripts/gen-support-qr.mjs",
     "check:support-qr": "node scripts/gen-support-qr.mjs --check",
-    "check:test-standard": "node scripts/check-test-standard.mjs"
+    "check:test-standard": "node scripts/check-test-standard.mjs",
+    "check:prod": "node scripts/prod-smoke.mjs"
   },
   "engines": {
     "node": ">=20",
