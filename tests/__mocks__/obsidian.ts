@@ -105,6 +105,14 @@ export class Vault {
 
     /** 模拟根据路径获取文件或文件夹 */
     getAbstractFileByPath(path: string): TAbstractFile | null {
+        // 忠实模拟 Obsidian：**点文件（.project 等）不进入 vault 索引**，
+        // getAbstractFileByPath 对它们恒为 null（见 shared/paths.ts v31 注释）。
+        // 此前 mock 对任意 _store 命中都返回 TFile，导致
+        // `readFanficRules` 用 getAbstractFileByPath 读 `.project` 的缺陷
+        // 在生产里永远失效、在测试里却全绿——测试替身掩盖了真实行为差异。
+        // 需要读点文件的代码必须走 adapter（mock 的 DataAdapter 支持）。
+        const baseName = path.split('/').pop() || '';
+        if (baseName.startsWith('.')) return null;
         if (this._store.has(path)) {
             const f = new TFile();
             f.path = path;

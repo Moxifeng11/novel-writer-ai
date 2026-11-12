@@ -108,8 +108,9 @@ describe('阶段 A3：约束流端到端', () => {
 
         // 模拟文件被删：新 vault 里只有 .project，没有设定文件
         const emptyVault = new Vault();
-        const metaFile = (app.vault as Vault).getAbstractFileByPath(pjProjectMeta(PROJECT)) as TFile;
-        const meta = await (app.vault as Vault).read(metaFile);
+        // `.project` 是点文件，vault 索引里没有它（getAbstractFileByPath 恒为 null），
+        // 测试也必须走 adapter —— 否则测的是「真实 Obsidian 做不到的事」。
+        const meta = await (app.vault as Vault).adapter.read(pjProjectMeta(PROJECT));
         await emptyVault.create(pjProjectMeta(PROJECT), meta);
         const appWithoutFile = { vault: emptyVault } as unknown as App;
 

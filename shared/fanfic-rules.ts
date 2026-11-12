@@ -385,14 +385,20 @@ export function parseFanficRules(content: string, path: string): FanficRules {
  */
 export async function readFanficRules(app: App, project: string): Promise<FanficRules> {
     if (!project) return EMPTY_RULES;
-    const metaFile = app.vault.getAbstractFileByPath(pjProjectMeta(project));
-    if (!(metaFile instanceof TFile)) return EMPTY_RULES;
-
-    let metaContent = '';
+    // `.project` 是点文件，Obsidian 不把它纳入 vault 索引，`getAbstractFileByPath`
+    // 对**任何**真实项目都恒为 null（见 shared/paths.ts v31 注释）。
+    // 原实现用的正是这个 API，导致本函数永远返回 EMPTY_RULES——
+    // 同人约束在生成人物/势力/地点/物品、11 步流水线、diagnose_flow 里全部静默失效，
+    // 且因为 isFanfic=false 连「加载失败」警告都不会弹。必须走 adapter。
+    const metaPath = pjProjectMeta(project);
+    const adapter = app.vault.adapter;
+    let metaContent: string;
     try {
-        metaContent = await app.vault.read(metaFile);
+        if (!(await adapter.exists(metaPath))) return EMPTY_RULES;
+        metaContent = await adapter.read(metaPath);
     } catch {
-        return EMPTY_RULES;
+        // 存在但读不出来：不能当成「非同人项目」，否则用户永远不知道约束没生效
+        return { ...EMPTY_RULES, loadError: 'read-failed' };
     }
     const { isFanfic, fanficPath } = parseProjectMeta(metaContent);
     if (!isFanfic) return EMPTY_RULES;
@@ -710,6 +716,11 @@ export function formatFanficReviewWarning(rules: FanficRules): string | null {
   * @returns 文本结果 或 null
  */
 export function formatFanficRulesLoadWarning(rules: FanficRules): string | null {
+    // 元数据（.project）本身读失败时 isFanfic 未知（拿不到 projectMeta 就不知道是不是同人项目），
+    // 这种情况也必须提示：否则同人约束静默失效而用户以为一切正常。
+    if (!rules.isFanfic && rules.loadError === 'read-failed') {
+        return '⚠️ 项目元数据（.project）读取失败：无法判断是否为同人项目，协同写作不会带原作约束。请检查文件权限或同步冲突后重试。';
+    }
     if (!rules.isFanfic) return null;
     const target = rules.path ? `「${rules.path}」` : '同人设定路径';
     if (!rules.loadError) {

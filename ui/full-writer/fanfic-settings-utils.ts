@@ -3,7 +3,7 @@ import { isFanficValueFilled, validateFanficSettings } from '@/shared/template-v
 import { parseFanficReviewStatus } from '@/shared/fanfic-rules';
 import { applyFanficReviewMeta } from '@/shared/fanfic-audit';
 import { ensureTemplateScaffold } from '@/shared/template-scaffold';
-import { pjFanficDir, pjProjectMeta } from '@/shared/paths';
+import { pjFanficDir, pjProjectMeta, readProjectMeta, writeProjectMeta } from '@/shared/paths';
 
 /**
  * FanficSettingsValues 类型定义。
@@ -244,16 +244,22 @@ export async function attachFanficPathToProject(app: App, project: string, fileP
   }
   const dotPath = pjProjectMeta(project);
   const section = `## 同人设定路径\n${filePath}`;
-  const file = app.vault.getAbstractFileByPath(dotPath);
-  if (file instanceof TFile) {
-    const raw = await app.vault.read(file);
+  // `.project` 是点文件，getAbstractFileByPath 恒为 null（见 shared/paths.ts v31），
+  // 原实现因此永远走 vault.create：对已有项目要么抛「文件已存在」，
+  // 要么把整份 .project（类型/故事结构/同人路径）覆盖成最小模板。
+  const raw = await readProjectMeta(app, project);
+  if (raw !== null) {
     const next = /^##\s*同人设定路径\s*$/m.test(raw)
       ? raw.replace(/^##\s*同人设定路径\s*\r?\n[^\n]*/m, section)
       : `${raw.trimEnd()}\n\n${section}\n`;
-    if (next !== raw) await app.vault.modify(file, next);
+    if (next !== raw) {
+      const ok = await writeProjectMeta(app, project, next);
+      if (!ok) throw new Error(`写入 .project 失败，同人设定路径未保存：${dotPath}`);
+    }
     return;
   }
-  await app.vault.create(dotPath, `# ${project}\n\n## 类型\nfanfic\n\n${section}\n`);
+  const created = await writeProjectMeta(app, project, `# ${project}\n\n## 类型\nfanfic\n\n${section}\n`);
+  if (!created) throw new Error(`创建 .project 失败，同人设定路径未保存：${dotPath}`);
 }
 
 /**

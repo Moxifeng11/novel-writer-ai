@@ -64,6 +64,31 @@ export async function readProjectMeta(
 }
 
 /**
+ * 写入 `.project` 原始内容（点文件必须走 adapter，不能用 vault.modify/create）。
+ *
+ * `vault.create` 对已存在的点文件会抛错（或按未索引判断而覆盖），
+ * `vault.modify` 需要先拿到 TFile——而点文件永远拿不到。
+ * 所以「改 `.project`」只有 adapter 一条正路。
+ *
+ * @param app - Obsidian 应用实例
+ * @param project - 项目（路径或对象）
+ * @param content - 新内容
+ * @returns 是否写入成功
+ */
+export async function writeProjectMeta(
+    app: { vault: { adapter: { write(p: string, data: string): Promise<void> } } },
+    project: string,
+    content: string,
+): Promise<boolean> {
+    try {
+        await app.vault.adapter.write(pjProjectMeta(project), content);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
  * 同步判断「目录存在」——注意它不校验项目身份。
  *
  * @deprecated 项目发现/身份判断请用 `shared/project-catalog.ts#isProjectDirectory`；

@@ -15,7 +15,7 @@ import {
     resolveExistsStatus,
     resolveSetupStatusIcon,
 } from './wizard-step-logic';
-import { getWorldviewPath, getSettingLibPath, getWritingStylePath, pjProjectMeta, pjFanficDir, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS, SUBDIR_BODY_ROOT } from '@/shared/paths';
+import { getWorldviewPath, getSettingLibPath, getWritingStylePath, pjProjectMeta, pjFanficDir, readProjectMeta, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS, SUBDIR_BODY_ROOT } from '@/shared/paths';
 import { findWritingStyleFile } from '@/ui/writing-style-paths';
 import { ChapterOutlineTreeModal } from '@/ui/chapter-outline-tree-modal';
 import { openPlotCanvas } from '@/ui/plot-canvas-modal';
@@ -75,9 +75,11 @@ export class WizardStepRenderers {
         container.empty();
         let settings = null;
         try {
-            const metaFile = this.app.vault.getAbstractFileByPath(pjProjectMeta(tab.project));
-            if (metaFile instanceof TFile) {
-                settings = parseStorySettingsFromProjectMeta(await this.app.vault.read(metaFile));
+            // `.project` 是点文件，getAbstractFileByPath 恒为 null（见 shared/paths.ts v31），
+            // 原实现导致「故事结构」卡片永远显示「先确定故事结构」，已保存的结构不显示。
+            const meta = await readProjectMeta(this.app, tab.project);
+            if (meta !== null) {
+                settings = parseStorySettingsFromProjectMeta(meta);
             }
         } catch { /* 读取失败时按未配置处理 */ }
 
@@ -144,10 +146,10 @@ export class WizardStepRenderers {
         let saved = this.wizardStepResults[fanficResultKey] || '';
         // 通过「同人设定库」工具生成后，内存里没有暂存，改从 .project 记录路径回读
         if (!saved.trim()) {
-            const metaFile = this.app.vault.getAbstractFileByPath(pjProjectMeta(tab.project));
-            if (metaFile instanceof TFile) {
+            // `.project` 是点文件，必须走 adapter（getAbstractFileByPath 恒为 null）
+            const meta = await readProjectMeta(this.app, tab.project);
+            if (meta !== null) {
                 try {
-                    const meta = await this.app.vault.read(metaFile);
                     const path = parseProjectMeta(meta).fanficPath;
                     const fanficFile = path ? this.app.vault.getAbstractFileByPath(path) : null;
                     if (fanficFile instanceof TFile) {
@@ -284,10 +286,12 @@ export class WizardStepRenderers {
     /** 本项目同人设定库 + 全局同人设定库下的 Markdown 候选（排除当前已绑定文件） */
     private async listFanficCandidates(project: string): Promise<{ path: string; name: string }[]> {
         let currentPath = '';
-        const metaFile = this.app.vault.getAbstractFileByPath(pjProjectMeta(project));
-        if (metaFile instanceof TFile) {
+        // `.project` 是点文件，必须走 adapter；否则 currentPath 恒为空，
+        // 已绑定的同人设定会再次出现在候选列表里。
+        const meta = await readProjectMeta(this.app, project);
+        if (meta !== null) {
             try {
-                currentPath = parseProjectMeta(await this.app.vault.read(metaFile)).fanficPath;
+                currentPath = parseProjectMeta(meta).fanficPath;
             } catch { /* 元信息读取失败时按「未绑定」处理 */ }
         }
         return listFanficSettingCandidates(

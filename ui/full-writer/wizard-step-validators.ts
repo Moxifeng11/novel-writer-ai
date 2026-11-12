@@ -36,10 +36,13 @@ export interface WizardStepValidation {
 const OK: WizardStepValidation = { valid: true, missingFields: [] };
 
 async function readFileIfExists(app: App, path: string): Promise<string> {
-    const file = app.vault.getAbstractFileByPath(path);
-    if (!(file instanceof TFile)) return '';
+    // 不能用 getAbstractFileByPath：`.project` 是点文件，Obsidian 不把它纳入索引，
+    // 对任何真实项目都返回 null。向导的「故事结构」「同人」步骤正是读 `.project`，
+    // 原实现导致这两个步骤永远判为未完成（用户无法通过向导）。
+    // adapter 对普通文件与点文件都能读，统一走它。
     try {
-        return await app.vault.read(file);
+        if (!(await app.vault.adapter.exists(path))) return '';
+        return await app.vault.adapter.read(path);
     } catch {
         return '';
     }
