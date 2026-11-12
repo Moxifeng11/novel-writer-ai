@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 324 | 139472 | 1768 | 1434 | 81% |
+| `engine/` | 324 | 139482 | 1768 | 1434 | 81% |
 | `services/` | 33 | 13885 | 206 | 162 | 79% |
-| `shared/` | 197 | 41838 | 1711 | 1395 | 82% |
+| `shared/` | 197 | 41863 | 1712 | 1396 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 266 | 104232 | 991 | 798 | 81% |
@@ -58,8 +58,8 @@
 | `engine/agent/harness/tool-registry.ts` | 297 | 5 | 2 |
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
 | `engine/ai-api-client-shared.ts` | 86 | 6 | 5 |
-| `engine/ai-api-client.ts` | 961 | 1 | 1 |
-| `engine/ai-api-stream.ts` | 1013 | 3 | 2 |
+| `engine/ai-api-client.ts` | 968 | 1 | 1 |
+| `engine/ai-api-stream.ts` | 1016 | 3 | 2 |
 | `engine/ai-batch-entity-generator.ts` | 578 | 1 | 1 |
 | `engine/ai-chapter-helpers.ts` | 339 | 1 | 1 |
 | `engine/ai-character-generator.ts` | 426 | 1 | 1 |
@@ -393,7 +393,7 @@
 | `services/worldview-cache-service.ts` | 627 | 4 | 4 |
 | `services/writing-stats-service.ts` | 425 | 6 | 6 |
 | `shared/adaptive-debounce-manager.ts` | 315 | 2 | 2 |
-| `shared/ai-credentials.ts` | 55 | 2 | 2 |
+| `shared/ai-credentials.ts` | 80 | 3 | 3 |
 | `shared/api-format.ts` | 461 | 16 | 15 |
 | `shared/api-response-utils.ts` | 253 | 10 | 10 |
 | `shared/api-types.ts` | 18 | 1 | 1 |

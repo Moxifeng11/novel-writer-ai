@@ -20,6 +20,7 @@ import { recordBudgetSnapshot } from '@/shared/budget-telemetry';
 import { buildAuthHeaders, parseSseFrame, usesDoneSentinel, type ApiFormat } from '@/shared/api-format';
 import { performanceMonitor } from '@/services/performance-monitor';
 import { createLogger } from '@/shared/logger';
+import { resolveProviderApiKey } from '@/shared/ai-credentials';
 import { openStreamResponse } from '@/shared/http-transport';
 import { AIAuthError, errorMessage, isAuthErrorMessage } from './ai-api-client-shared';
 
@@ -127,7 +128,8 @@ export async function callAIStream(
         const releaseSemaphore = await host.acquireStreamSlot(effectiveModel, externalSignal);
 
         try {
-            const apiKey = options?.apiKey || host.plugin.settings.apiKey;
+            const apiKey = options?.apiKey || host.plugin.settings.apiKey
+                || resolveProviderApiKey(host.plugin.settings, endpoint);
             const apiFormat = host.resolveApiFormat(endpoint);
             const requestEndpoint = host.resolveRequestEndpoint(endpoint, apiFormat);
 
@@ -526,7 +528,8 @@ export async function* callAIAsyncIterator(
         // 本地 Ollama 无需密钥，直接跳过，避免误报解密失败。
         const keylessEndpoint = !!endpoint && host.isKeylessLocalEndpoint(endpoint);
         if (!keylessEndpoint) {
-            const rawKey = options?.apiKey || host.plugin.settings.apiKey;
+            const rawKey = options?.apiKey || host.plugin.settings.apiKey
+            || resolveProviderApiKey(host.plugin.settings, endpoint);
             const resolvedKey = await host.resolveApiKey(rawKey, options?.allowKeyPrompt !== false);
             if (resolvedKey.error) {
                 host.notifier.showNotice(`🔒 ${resolvedKey.error}`, NOTICE_ERROR);

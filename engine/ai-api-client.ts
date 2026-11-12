@@ -36,6 +36,7 @@ import {
     type ApiFormat,
 } from '@/shared/api-format';
 import { createLogger } from '@/shared/logger';
+import { resolveProviderApiKey } from '@/shared/ai-credentials';
 import { requestJson } from '@/shared/http-transport';
 import {
     AIAuthError,
@@ -473,8 +474,14 @@ export class AIApiClient {
         options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; bypassCache?: boolean; allowKeyPrompt?: boolean; numCtx?: number; thinkingMode?: ThinkingMode; thinkingBudget?: number }
     ): Promise<APIResponse> {
         const effectiveModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
-        let apiKey = options?.apiKey || this.plugin.settings.apiKey;
         const endpoint = options?.endpoint || this.plugin.settings.apiEndpoint;
+        // 密钥解析顺序：显式传入 > settings.apiKey > **当前端点所属供应商的 providerKeys**。
+        // 最后一项是必需的兜底：apiKey 只在「切换供应商」时由 ProviderManager 从
+        // providerKeys 同步过来，插件重载 / 设置迁移 / 只配置了供应商密钥而没切过供应商时
+        // settings.apiKey 会是空串——此时 UI 守卫 hasUsableAiCredentials 能过（它看 providerKeys），
+        // 但这里只读 apiKey 就会误报「API密钥未配置」，表现为「明明配了密钥却无法生成」。
+        let apiKey = options?.apiKey || this.plugin.settings.apiKey
+            || resolveProviderApiKey(this.plugin.settings, endpoint);
         // 协议格式决定请求路径/头/解析；Ollama 原生端点由 normalizeOllamaEndpoint 单独改写
         const apiFormat = this.resolveApiFormat(endpoint);
         // 本地 Ollama 的 /v1 兼容层不接收 num_ctx，请求前统一改写为原生端点
