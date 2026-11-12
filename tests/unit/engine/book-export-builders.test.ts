@@ -136,6 +136,44 @@ describe('buildEpub', () => {
         expect(built.volumeCount).toBe(2);
     });
 
+
+describe('buildEpub — metadata 三字段（DSH-20261113-23）', () => {
+    it('description/subject/identifier 写进 content.opf（dc:description/dc:subject）', () => {
+        const built = buildEpub(chapters, {
+            includeVolumeHeadings: true,
+            includeChapterTitles: true,
+            unitLabel: '章',
+            metadata: {
+                title: '测试书',
+                author: '作者甲',
+                date: FIXED_DATE,
+                description: '投稿简介：末法时代的守灯人。',
+                subject: ['都市', '悬疑'],
+                identifier: 'urn:isbn:1234567890',
+            },
+            zipDate: FIXED_DATE,
+        });
+        const entries = readZip(built.data);
+        const opf = text(entries, 'OEBPS/content.opf');
+        expect(opf).toContain('<dc:description>投稿简介：末法时代的守灯人。</dc:description>');
+        expect(opf).toContain('<dc:subject>都市</dc:subject>');
+        expect(opf).toContain('<dc:subject>悬疑</dc:subject>');
+        expect(opf).toContain('<dc:identifier id="bookid">urn:isbn:1234567890</dc:identifier>');
+    });
+
+    it('description 为空白时不渲染 dc:description（不写空节点）', () => {
+        const built = buildEpub(chapters, {
+            includeVolumeHeadings: true,
+            includeChapterTitles: true,
+            unitLabel: '章',
+            metadata: { title: '测试书', author: '作者甲', date: FIXED_DATE, description: '   ' },
+            zipDate: FIXED_DATE,
+        });
+        const opf2 = text(readZip(built.data), 'OEBPS/content.opf');
+        expect(opf2).not.toContain('<dc:description>');
+    });
+});
+
     it('章节页包含卷/章标题、正文与 XML 转义，不泄漏 frontmatter', () => {
         const built = buildEpub(chapters, {
             includeVolumeHeadings: true,
