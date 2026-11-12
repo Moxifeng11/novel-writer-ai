@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 323 | 138887 | 1754 | 1429 | 81% |
+| `engine/` | 323 | 138972 | 1756 | 1429 | 81% |
 | `services/` | 33 | 13799 | 205 | 161 | 79% |
 | `shared/` | 197 | 41714 | 1709 | 1393 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 266 | 104134 | 989 | 798 | 81% |
+| `ui/` | 266 | 104207 | 991 | 798 | 81% |
 
 ## 文件清单
 
@@ -50,7 +50,7 @@
 | `engine/agent/harness/harness-types.ts` | 243 | 17 | 14 |
 | `engine/agent/harness/host-tools.ts` | 1013 | 5 | 5 |
 | `engine/agent/harness/prompt-sections.ts` | 152 | 2 | 2 |
-| `engine/agent/harness/repair-tools.ts` | 324 | 9 | 2 |
+| `engine/agent/harness/repair-tools.ts` | 409 | 11 | 2 |
 | `engine/agent/harness/session-log.ts` | 269 | 1 | 1 |
 | `engine/agent/harness/session-snapshot.ts` | 249 | 11 | 10 |
 | `engine/agent/harness/spill-store.ts` | 112 | 6 | 6 |
@@ -779,7 +779,7 @@
 | `ui/services/agent-spill-store.ts` | 142 | 4 | 3 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |
 | `ui/services/flow-diagnosis-collectors.ts` | 209 | 1 | 1 |
-| `ui/services/flow-repair-host.ts` | 173 | 6 | 1 |
+| `ui/services/flow-repair-host.ts` | 246 | 8 | 1 |
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 433 | 6 | 5 |

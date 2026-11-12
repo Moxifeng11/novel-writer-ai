@@ -6,6 +6,10 @@
  * 如实 ok:false（repair_tools 的 fail-closed 契约不变）。
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Vault } from 'obsidian';
+// 静态 import（check:view-tests 只认行首 import/export 语句；动态 import 不算）——
+// vi.mock 由 vitest 提升到文件顶部，静态 import 同样吃得到 mock。
+import { createFlowRepairHost } from '../../../ui/services/flow-repair-host';
 
 vi.mock('@/main', () => ({ default: class NovelWriterPlugin {} }));
 
@@ -13,7 +17,6 @@ const HarnessEngineModule = await import('../../../engine/agent/harness/harness-
 const { AgentHarnessEngine } = HarnessEngineModule;
 type EngineInstance = InstanceType<typeof AgentHarnessEngine>;
 const { REPAIR_FLOW_TOOL } = await import('../../../engine/agent/harness/repair-tools');
-const { createFlowRepairHost } = await import('../../../ui/services/flow-repair-host');
 
 function makePluginStub(options: {
     scheduler?: { revectorizeBook: (id: string, name: string) => Promise<void> };
@@ -222,6 +225,117 @@ describe('宿主桥：fixZeroIntensity', () => {
         const result = await bridge.fixZeroIntensity();
         expect(result.fixed).toEqual([]);
         expect(result.failed[0]).toContain('未激活项目');
+    });
+});
+
+
+describe('宿主桥：cleanupDiskVectors', () => {
+    it('对账有 diskUnloaded：removeDiskVectors 以 confirmed:true 调用', async () => {
+        const removeDiskVectors = vi.fn(async () => ({ removed: ['kb_diskonly'], skipped: [] }));
+        const plugin = {
+            knowledgeVectorStore: {
+                reconcileWithIndex: vi.fn(async () => ({ orphans: [], missing: [], healthy: ['kb_live'], diskUnloaded: ['kb_diskonly'] })),
+                removeDiskVectors,
+            },
+            knowledgeBaseManager: { getAllBooks: vi.fn(async () => [{ id: 'kb_live' }]) },
+            getActiveProject: () => '',
+            settings: {},
+        };
+        const bridge = createFlowRepairHost({ app: {} as never, plugin: plugin as never });
+        const result = await bridge.cleanupDiskVectors();
+        expect(removeDiskVectors).toHaveBeenCalledWith(['kb_diskonly'], { confirmed: true });
+        expect(result).toEqual({ removed: ['kb_diskonly'], skipped: [] });
+    });
+
+    it('对账无 diskUnloaded：不触碰 removeDiskVectors', async () => {
+        const removeDiskVectors = vi.fn(async () => ({ removed: [], skipped: [] }));
+        const plugin = {
+            knowledgeVectorStore: {
+                reconcileWithIndex: vi.fn(async () => ({ orphans: [], missing: [], healthy: ['kb_live'] })),
+                removeDiskVectors,
+            },
+            knowledgeBaseManager: { getAllBooks: vi.fn(async () => [{ id: 'kb_live' }]) },
+            getActiveProject: () => '',
+            settings: {},
+        };
+        const bridge = createFlowRepairHost({ app: {} as never, plugin: plugin as never });
+        const result = await bridge.cleanupDiskVectors();
+        expect(result).toEqual({ removed: [], skipped: [] });
+        expect(removeDiskVectors).not.toHaveBeenCalled();
+    });
+
+    it('向量库未初始化：skipped 带原因，不抛错', async () => {
+        const bridge = createFlowRepairHost({ app: {} as never, plugin: {} as never });
+        const result = await bridge.cleanupDiskVectors();
+        expect(result.removed).toEqual([]);
+        expect(result.skipped[0]).toContain('向量库未初始化');
+    });
+});
+
+describe('宿主桥：rerunCanonResearch', () => {
+    function seedFanficVault(vault: Vault): void {
+        // _seedFile 是 mock Vault 的测试辅助（真实 obsidian 类型里没有），
+        // 且读 this._store —— 必须带 this 调用。
+        const helper = vault as unknown as { _seedFile: (p: string, c: string) => unknown };
+        helper._seedFile('长篇小说/晨星外传/.project', '## 类型\nfanfic\n\n## 同人设定路径\n长篇小说/晨星外传/05-同人设定库/晨星设定.md\n');
+        helper._seedFile('长篇小说/晨星外传/05-同人设定库/晨星设定.md', '---\n审核状态: approved\n---\n\n# 晨星志 同人设定\n\n作品名称: 晨星志\n\n- **核心规则**：晨星之夜离港。\n');
+    }
+
+    it('前置校验：未激活项目 → ok:false', async () => {
+        const plugin = { getActiveProject: () => '', vault: new Vault() };
+        const bridge = createFlowRepairHost({ app: { vault: plugin.vault } as never, plugin: plugin as never });
+        const result = await bridge.rerunCanonResearch();
+        expect(result.ok).toBe(false);
+        expect(result.detail).toContain('未激活项目');
+    });
+
+    it('前置校验：项目无绑定设定 → ok:false', async () => {
+        const vault = new Vault();
+        const plugin = { getActiveProject: () => '长篇小说/无设定', vault, knowledgeVectorStore: {} };
+        const bridge = createFlowRepairHost({ app: { vault } as never, plugin: plugin as never });
+        const result = await bridge.rerunCanonResearch();
+        expect(result.ok).toBe(false);
+        expect(result.detail).toContain('没有绑定的同人设定文件');
+    });
+
+    it('成功路径：research 产出来源 → ok:true + 计数（service 被正确构造）', async () => {
+        const vault = new Vault();
+        seedFanficVault(vault);
+        const { CanonResearchService } = await import('../../../services/canon-research-service');
+        const researchSpy = vi.spyOn(CanonResearchService.prototype, 'research').mockResolvedValue({
+            workName: '晨星志',
+            provider: 'wikipedia',
+            sources: [{ url: 'https://example.com/1' }, { url: 'https://example.com/2' }, { url: 'https://example.com/3' }],
+            sourceHash: 'hash',
+            warnings: [],
+            updatedAt: 1,
+        } as never);
+        const plugin = { getActiveProject: () => '长篇小说/晨星外传', vault };
+        const bridge = createFlowRepairHost({ app: { vault } as never, plugin: plugin as never });
+        const result = await bridge.rerunCanonResearch();
+        expect(researchSpy).toHaveBeenCalledWith('晨星志', { project: '长篇小说/晨星外传' });
+        expect(result).toMatchObject({ ok: true, sourceCount: 3, workName: '晨星志' });
+        researchSpy.mockRestore();
+    });
+
+    it('零产出：ok:false（跑了但没产出，如实失败）', async () => {
+        const vault = new Vault();
+        seedFanficVault(vault);
+        const { CanonResearchService } = await import('../../../services/canon-research-service');
+        const researchSpy = vi.spyOn(CanonResearchService.prototype, 'research').mockResolvedValue({
+            workName: '晨星志',
+            provider: 'manual',
+            sources: [],
+            sourceHash: '',
+            warnings: ['没有导入任何原作来源'],
+            updatedAt: 1,
+        } as never);
+        const plugin = { getActiveProject: () => '长篇小说/晨星外传', vault };
+        const bridge = createFlowRepairHost({ app: { vault } as never, plugin: plugin as never });
+        const result = await bridge.rerunCanonResearch();
+        expect(result.ok).toBe(false);
+        expect(result.sourceCount).toBe(0);
+        researchSpy.mockRestore();
     });
 });
 

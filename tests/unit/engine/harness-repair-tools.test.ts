@@ -61,6 +61,8 @@ function makeDeps(overrides: Partial<FlowRepairDeps> = {}): FlowRepairDeps {
         reloadFingerprints: vi.fn(async () => ({ template: 1, global: 2, project: 3 })),
         cleanupOrphanVectors: vi.fn(async () => ({ orphanCount: 1, removed: ['kb_ghost'], skipped: [] })),
         fixZeroIntensity: vi.fn(async () => ({ fixed: ['fp_zero'], failed: [] })),
+        cleanupDiskVectors: vi.fn(async () => ({ removed: ['kb_diskonly'], skipped: [] })),
+        rerunCanonResearch: vi.fn(async () => ({ ok: true, sourceCount: 3, workName: '晨星志' })),
         diagnose: makeDiagnose(),
         ...overrides,
     };
@@ -273,6 +275,78 @@ describe('阶段 E 深化：fix_zero_intensity', () => {
         const result = await run(deps, { action: 'fix_zero_intensity' });
         expect(result.ok).toBe(true);
         expect(result.content).toContain('没有强度为 0 的启用指纹');
+    });
+});
+
+
+describe('阶段 E 深化②：cleanup_disk_vectors', () => {
+    it('宿主未提供能力 → ok:false 并说明', async () => {
+        const deps = makeDeps({ cleanupDiskVectors: undefined });
+        const result = await run(deps, { action: 'cleanup_disk_vectors' });
+        expect(result.ok).toBe(false);
+        expect(result.content).toContain('未提供磁盘向量清理能力');
+        expect(deps.diagnose.collectKnowledge).not.toHaveBeenCalled();
+    });
+
+    it('有可清理文件：删除并复诊知识流', async () => {
+        const cleanup = vi.fn(async () => ({ removed: ['kb_diskonly'], skipped: [] }));
+        const deps = makeDeps({ cleanupDiskVectors: cleanup });
+        const result = await run(deps, { action: 'cleanup_disk_vectors' });
+        expect(result.ok).toBe(true);
+        expect(result.content).toContain('已清理 1 个未加载的磁盘向量文件');
+        expect(deps.diagnose.collectKnowledge).toHaveBeenCalledTimes(1);
+        expect(result.data).toMatchObject({ action: 'cleanup_disk_vectors', removed: ['kb_diskonly'] });
+    });
+
+    it('无可清理文件：ok:true「没有可清理的」（复诊仍执行）', async () => {
+        const deps = makeDeps({ cleanupDiskVectors: vi.fn(async () => ({ removed: [], skipped: ['stale'] })) });
+        const result = await run(deps, { action: 'cleanup_disk_vectors' });
+        expect(result.ok).toBe(true);
+        expect(result.content).toContain('没有可清理的未加载磁盘向量文件');
+        expect(deps.diagnose.collectKnowledge).toHaveBeenCalledTimes(1);
+    });
+
+    it('宿主返回非法结构 → ok:false（不把「不知道」当成功）', async () => {
+        const deps = makeDeps({ cleanupDiskVectors: vi.fn(async () => ({ removed: 'oops' } as never)) });
+        const result = await run(deps, { action: 'cleanup_disk_vectors' });
+        expect(result.ok).toBe(false);
+        expect(result.content).toContain('无法确认结果');
+    });
+});
+
+describe('阶段 E 深化②：rerun_canon_research', () => {
+    it('宿主未提供能力 → ok:false 并说明', async () => {
+        const deps = makeDeps({ rerunCanonResearch: undefined });
+        const result = await run(deps, { action: 'rerun_canon_research' });
+        expect(result.ok).toBe(false);
+        expect(result.content).toContain('未提供考据重跑能力');
+        expect(deps.diagnose.collectConstraint).not.toHaveBeenCalled();
+    });
+
+    it('零产出（ok:false）→ 如实报失败并给出免 Key 指引，不复诊', async () => {
+        const deps = makeDeps({ rerunCanonResearch: vi.fn(async () => ({ ok: false, sourceCount: 0, detail: '联网检索失败' })) });
+        const result = await run(deps, { action: 'rerun_canon_research' });
+        expect(result.ok).toBe(false);
+        expect(result.content).toContain('联网检索失败');
+        expect(result.content).toContain('维基');
+        expect(deps.diagnose.collectConstraint).not.toHaveBeenCalled();
+    });
+
+    it('产出来源：复诊约束流并回传作品名与计数', async () => {
+        const deps = makeDeps({ rerunCanonResearch: vi.fn(async () => ({ ok: true, sourceCount: 3, workName: '晨星志' })) });
+        const result = await run(deps, { action: 'rerun_canon_research' });
+        expect(result.ok).toBe(true);
+        expect(result.content).toContain('新增 3 条来源');
+        expect(result.content).toContain('晨星志');
+        expect(deps.diagnose.collectConstraint).toHaveBeenCalledTimes(1);
+        expect(result.data).toMatchObject({ action: 'rerun_canon_research', sourceCount: 3, workName: '晨星志' });
+    });
+
+    it('产出带警告：ok:true 且警告拼接进结果（不吞掉降级信息）', async () => {
+        const deps = makeDeps({ rerunCanonResearch: vi.fn(async () => ({ ok: true, sourceCount: 1, workName: '晨星志', detail: '已跳过本机/内网来源' })) });
+        const result = await run(deps, { action: 'rerun_canon_research' });
+        expect(result.ok).toBe(true);
+        expect(result.content).toContain('已跳过本机/内网来源');
     });
 });
 

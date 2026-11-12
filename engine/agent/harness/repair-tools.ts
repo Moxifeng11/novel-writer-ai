@@ -18,14 +18,14 @@
  */
 
 import type { HarnessApprovalRequest, HarnessTool, HarnessToolContext, HarnessToolResult } from './harness-types';
-import { computeKnowledgeFlowStatus, computeStyleFlowStatus, formatLinkStatusForAgent, type LinkStatus } from '@/shared/link-status-compute';
+import { computeKnowledgeFlowStatus, computeStyleFlowStatus, computeConstraintFlowStatus, formatLinkStatusForAgent, type LinkStatus } from '@/shared/link-status-compute';
 import type { FlowDiagnosisDeps } from './diagnose-tools';
 
 /** 工具名 */
 export const REPAIR_FLOW_TOOL = 'repair_flow';
 
 /** 支持的修复动作 */
-export type RepairAction = 'revectorize_book' | 'reload_fingerprints' | 'cleanup_orphan_vectors' | 'fix_zero_intensity';
+export type RepairAction = 'revectorize_book' | 'reload_fingerprints' | 'cleanup_orphan_vectors' | 'fix_zero_intensity' | 'cleanup_disk_vectors' | 'rerun_canon_research';
 
 /** 修复动作清单（非法动作的报错文案与参数校验共用一份） */
 export const REPAIR_ACTIONS: readonly RepairAction[] = [
@@ -33,6 +33,8 @@ export const REPAIR_ACTIONS: readonly RepairAction[] = [
     'reload_fingerprints',
     'cleanup_orphan_vectors',
     'fix_zero_intensity',
+    'cleanup_disk_vectors',
+    'rerun_canon_research',
 ];
 
 /** 重向量化结果（宿主返回；失败必须带原因） */
@@ -67,6 +69,22 @@ export interface FixZeroIntensityResult {
     failed: string[];
 }
 
+/** 磁盘向量清理结果（removed/skipped 如实上报） */
+export interface DiskCleanupResult {
+    removed: string[];
+    skipped: string[];
+}
+
+/** 考据重跑结果（联网检索，无 AI token 消耗；失败边界在 service 内建） */
+export interface RerunResearchResult {
+    ok: boolean;
+    sourceCount: number;
+    /** 作品名（成功时回传，便于 agent 复述） */
+    workName?: string;
+    /** 失败原因或检索警告（最多 3 条拼接） */
+    detail?: string;
+}
+
 /**
  * 修复能力依赖（全部由宿主注入）。
  */
@@ -90,6 +108,16 @@ export interface FlowRepairDeps {
      * 宿主桥到 StyleFingerprintLibrary.setIntensityConfig。
      */
     fixZeroIntensity?: () => Promise<FixZeroIntensityResult>;
+    /**
+     * 未加载磁盘向量清理（DSH-20261112-15 的 removeDiskVectors agent 入口）。
+     * 宿主桥先对账取 diskUnloaded 再显式删除；审计 #A9 盲区的收尾。
+     */
+    cleanupDiskVectors?: () => Promise<DiskCleanupResult>;
+    /**
+     * 考据重跑（约束流）：桥到 CanonResearchService.research（联网检索 + 缓存落盘）。
+     * 无 AI token 消耗；service 内建降级语义（无 Key 退回维基/手动、私网/非 http 跳过）。
+     */
+    rerunCanonResearch?: () => Promise<RerunResearchResult>;
     /** 修复后复诊用的采集器（与 diagnose_flow 同一套，保证口径一致） */
     diagnose: FlowDiagnosisDeps;
 }
@@ -143,10 +171,13 @@ function describeTarget(action: RepairAction, args: Record<string, unknown>): st
 
 /** 复诊：修完再采集一次，返回格式化文本 */
 async function recheck(action: RepairAction, deps: FlowRepairDeps): Promise<{ status: LinkStatus; text: string }> {
-    // cleanup_orphan_vectors 与 revectorize_book 同属知识流；其余走风格流
-    const status = action === 'revectorize_book' || action === 'cleanup_orphan_vectors'
+    // 复诊按链路分流：知识流（revectorize/cleanup_orphan/cleanup_disk）、
+    // 约束流（rerun_canon_research）、风格流（fix_zero/reload）
+    const status = action === 'revectorize_book' || action === 'cleanup_orphan_vectors' || action === 'cleanup_disk_vectors'
         ? computeKnowledgeFlowStatus(await deps.diagnose.collectKnowledge())
-        : computeStyleFlowStatus(await deps.diagnose.collectStyle());
+        : action === 'rerun_canon_research'
+            ? computeConstraintFlowStatus(await deps.diagnose.collectConstraint())
+            : computeStyleFlowStatus(await deps.diagnose.collectStyle());
     return { status, text: formatLinkStatusForAgent(status) };
 }
 
@@ -164,7 +195,9 @@ export function createRepairTools(deps: FlowRepairDeps): HarnessTool[] {
             + '需要参数 bookId）、reload_fingerprints（按磁盘重载指纹库三层，用于「刚改过指纹但没生效」）、'
             + 'cleanup_orphan_vectors（对账索引↔向量库并清理孤儿向量——先对账，存在孤儿才删，'
             + '已在索引或落盘失败的不动）、fix_zero_intensity（把强度为 0 的启用指纹恢复为默认 1.0，'
-            + '修复「注入被禁用」）。'
+            + '修复「注入被禁用」）、cleanup_disk_vectors（清理未被加载的磁盘向量文件——换模型/书目录'
+            + '缺失留下的残留）、rerun_canon_research（重跑同人考据：联网检索并缓存到项目，无 AI token '
+            + '消耗；需要已绑定的同人设定且设定含「作品名称」）。'
             + '修复后会重新诊断并把修复后的链路状态一并返回；修复失败会如实说明原因。',
         parameters: {
             action: {
@@ -293,6 +326,58 @@ export function createRepairTools(deps: FlowRepairDeps): HarnessTool[] {
                         ok: true,
                         content: `已恢复 ${result.fixed.length} 枚指纹的强度（0 → 默认 1.0）${failedNote}。\n\n修复后链路状态：\n${recheckResult.text}`,
                         data: { action, fixed: result.fixed, failed: result.failed, status: recheckResult.status },
+                    };
+                }
+
+                if (action === 'cleanup_disk_vectors') {
+                    if (!deps.cleanupDiskVectors) {
+                        return { ok: false, content: '宿主未提供磁盘向量清理能力（cleanupDiskVectors），无法执行。' };
+                    }
+                    const result = await deps.cleanupDiskVectors();
+                    if (!result || !Array.isArray(result.removed) || !Array.isArray(result.skipped)) {
+                        return { ok: false, content: '磁盘向量清理失败：宿主未返回合法的 removed/skipped 列表，无法确认结果。', data: { action } };
+                    }
+                    const recheckResult = await recheck(action, deps);
+                    if (result.removed.length === 0) {
+                        return {
+                            ok: true,
+                            content: `检查完成：没有可清理的未加载磁盘向量文件（skipped ${result.skipped.length} 项）。
+
+修复后链路状态：
+${recheckResult.text}`,
+                            data: { action, removed: [], skipped: result.skipped, status: recheckResult.status },
+                        };
+                    }
+                    return {
+                        ok: true,
+                        content: `已清理 ${result.removed.length} 个未加载的磁盘向量文件${result.skipped.length > 0 ? `；${result.skipped.length} 项未删除` : ''}。
+
+修复后链路状态：
+${recheckResult.text}`,
+                        data: { action, removed: result.removed, skipped: result.skipped, status: recheckResult.status },
+                    };
+                }
+
+                if (action === 'rerun_canon_research') {
+                    if (!deps.rerunCanonResearch) {
+                        return { ok: false, content: '宿主未提供考据重跑能力（rerunCanonResearch），无法执行。' };
+                    }
+                    const result = await deps.rerunCanonResearch();
+                    if (!result || result.ok !== true) {
+                        return {
+                            ok: false,
+                            content: `考据重跑未产出来源：${result?.detail || '宿主未返回成功结果'}。考据需要联网检索（可在设置里改用免 Key 的维基通道）。`,
+                            data: { action },
+                        };
+                    }
+                    const recheckResult = await recheck(action, deps);
+                    return {
+                        ok: true,
+                        content: `考据完成：《${result.workName ?? '当前作品'}》新增 ${result.sourceCount} 条来源（已缓存到项目同人设定库）${result.detail ? `；警告：${result.detail}` : ''}。
+
+修复后链路状态：
+${recheckResult.text}`,
+                        data: { action, sourceCount: result.sourceCount, workName: result.workName, status: recheckResult.status },
                     };
                 }
 

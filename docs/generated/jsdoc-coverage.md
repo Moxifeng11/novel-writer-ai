@@ -6,10 +6,10 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 27 | 27 | 100% | 50 | 50 | 100% | 0 |
 | `domains/` | 11 | 28 | 28 | 100% | 1 | 1 | 100% | 0 |
-| `engine/` | 306 | 1730 | 1729 | 100% | 1251 | 1251 | 100% | 0 |
+| `engine/` | 306 | 1732 | 1731 | 100% | 1251 | 1251 | 100% | 0 |
 | `services/` | 33 | 205 | 205 | 100% | 222 | 222 | 100% | 0 |
 | `shared/` | 196 | 1714 | 1714 | 100% | 159 | 159 | 100% | 0 |
-| `ui/` | 264 | 979 | 979 | 100% | 643 | 643 | 100% | 0 |
+| `ui/` | 264 | 981 | 981 | 100% | 643 | 643 | 100% | 0 |
 
 ## 缺口最大的文件（按未注释导出数）
 
@@ -31,7 +31,7 @@
 | `engine/agent/harness/harness-types.ts` | 17 | 0 | 0 | 0 |
 | `engine/agent/harness/host-tools.ts` | 5 | 0 | 0 | 0 |
 | `engine/agent/harness/prompt-sections.ts` | 2 | 0 | 0 | 0 |
-| `engine/agent/harness/repair-tools.ts` | 9 | 0 | 0 | 0 |
+| `engine/agent/harness/repair-tools.ts` | 11 | 0 | 0 | 0 |
 | `engine/agent/harness/session-log.ts` | 1 | 0 | 10 | 0 |
 | `engine/agent/harness/session-snapshot.ts` | 11 | 0 | 0 | 0 |
 | `engine/agent/harness/spill-store.ts` | 6 | 0 | 0 | 0 |

@@ -17,6 +17,8 @@
 import type { App } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import { StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
+import { readFanficRules } from '@/shared/fanfic-rules';
+import { CanonResearchService } from '@/services/canon-research-service';
 import { createLogger } from '@/shared/logger';
 
 const log = createLogger('FlowRepairHost');
@@ -47,12 +49,28 @@ export interface BridgeFixZeroResult {
     failed: string[];
 }
 
+/** 磁盘向量清理的返回契约 */
+export interface BridgeDiskCleanupResult {
+    removed: string[];
+    skipped: string[];
+}
+
+/** 考据重跑的返回契约 */
+export interface BridgeRerunResearchResult {
+    ok: boolean;
+    sourceCount: number;
+    workName?: string;
+    detail?: string;
+}
+
 /** 桥接宿主 */
 export interface FlowRepairBridge {
     revectorizeBook(bookId: string): Promise<BridgeRevectorizeResult>;
     reloadFingerprints(): Promise<BridgeReloadResult>;
     cleanupOrphanVectors(): Promise<BridgeCleanupResult>;
     fixZeroIntensity(): Promise<BridgeFixZeroResult>;
+    cleanupDiskVectors(): Promise<BridgeDiskCleanupResult>;
+    rerunCanonResearch(): Promise<BridgeRerunResearchResult>;
 }
 
 /**
@@ -167,6 +185,61 @@ export function createFlowRepairHost(host: { app: App; plugin: NovelWriterPlugin
                 }
             }
             return { fixed, failed };
+        },
+
+        /**
+         * 未加载磁盘向量清理（DSH-20261112-15 removeDiskVectors 的 agent 入口）：
+         * 先对账取 diskUnloaded，非空才显式删除（confirmed 固化在桥内）。
+         */
+        async cleanupDiskVectors(): Promise<BridgeDiskCleanupResult> {
+            const store = plugin.knowledgeVectorStore;
+            const manager = plugin.knowledgeBaseManager;
+            if (!store || typeof store.reconcileWithIndex !== 'function' || typeof store.removeDiskVectors !== 'function') {
+                return { removed: [], skipped: ['向量库未初始化'] };
+            }
+            const books = manager ? await manager.getAllBooks() : [];
+            const report = await store.reconcileWithIndex(books.map(b => b.id));
+            if (!report.diskUnloaded || report.diskUnloaded.length === 0) {
+                return { removed: [], skipped: [] };
+            }
+            return await store.removeDiskVectors(report.diskUnloaded, { confirmed: true });
+        },
+
+        /**
+         * 考据重跑（约束流）：桥到 CanonResearchService.research——联网检索 + 缓存
+         * 落盘到项目同人设定库；无 AI token 消耗。前置校验：激活项目 / 绑定设定 /
+         * 设定含「作品名称」——三者缺一都会如实失败（不静默）。
+         */
+        async rerunCanonResearch(): Promise<BridgeRerunResearchResult> {
+            let activeProject = '';
+            try {
+                activeProject = plugin.getActiveProject() || '';
+            } catch {
+                activeProject = '';
+            }
+            if (!activeProject) {
+                return { ok: false, sourceCount: 0, detail: '未激活项目——考据需要缓存到项目同人设定库' };
+            }
+            let rules;
+            try {
+                rules = await readFanficRules(app, activeProject);
+            } catch (e) {
+                return { ok: false, sourceCount: 0, detail: `读取同人设定失败：${e instanceof Error ? e.message : String(e)}` };
+            }
+            if (!rules.path) {
+                return { ok: false, sourceCount: 0, detail: '当前项目没有绑定的同人设定文件' };
+            }
+            if (!rules.workName) {
+                return { ok: false, sourceCount: 0, detail: '设定文件缺「作品名称」，无法定位考据目标' };
+            }
+            const service = new CanonResearchService(app, plugin);
+            const result = await service.research(rules.workName, { project: activeProject });
+            return {
+                ok: result.sources.length > 0,
+                sourceCount: result.sources.length,
+                workName: result.workName,
+                detail: result.warnings.length > 0 ? result.warnings.slice(0, 3).join('；') : undefined,
+            };
         },
     };
 }
