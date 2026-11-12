@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 324 | 139426 | 1768 | 1434 | 81% |
+| `engine/` | 324 | 139471 | 1768 | 1434 | 81% |
 | `services/` | 33 | 13885 | 206 | 162 | 79% |
 | `shared/` | 197 | 41822 | 1711 | 1395 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
@@ -157,7 +157,7 @@
 | `engine/entity-scorer.ts` | 182 | 6 | 5 |
 | `engine/entity-state-manager.ts` | 529 | 4 | 3 |
 | `engine/export/docx-builder.ts` | 231 | 1 | 1 |
-| `engine/export/epub-builder.ts` | 413 | 7 | 7 |
+| `engine/export/epub-builder.ts` | 419 | 7 | 7 |
 | `engine/export/manuscript-compiler.ts` | 288 | 12 | 12 |
 | `engine/export/zip-writer.ts` | 157 | 4 | 4 |
 | `engine/fact-index-manager.ts` | 217 | 9 | 2 |
@@ -305,7 +305,7 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 2056 | 3 | 3 |
+| `engine/settlement-engine.ts` | 2095 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 137 | 2 | 2 |

@@ -349,6 +349,12 @@ export function buildEpub(chapters: ManuscriptChapter[], options: BookBuildOptio
         language: options.metadata.language || 'zh-CN',
         date: options.metadata.date,
         cover: options.metadata.cover,
+        // DSH-20261113-23 ①：description/subject/identifier 是设计要用的字段
+        // （dc:description / dc:subject / unique-identifier），此前被白名单重建丢掉——
+        // 平台投稿包的简介与标签静默消失。
+        description: options.metadata.description,
+        subject: options.metadata.subject,
+        identifier: options.metadata.identifier,
     };
     const date = metadata.date ?? new Date();
     const modified = isoModified(date);

@@ -737,6 +737,9 @@ export class SettlementEngine {
             // 统一进 journal：失败回滚时与追加类条目一起按逆序恢复
             ctx.journal.recordField(file.path, field, origVal);
         } catch (e) {
+            // DSH-20261113-23 ④：快照读取失败必须置 snapshotIncomplete——
+            // finalizeRollback 据此标 settlement_partial，提示用户手动检查。
+            ctx.snapshotIncomplete = true;
             log.warn('[SettlementEngine] 快照失败:', e);
             this.notifier.showNotice('SettlementEngine：数据读取异常，部分功能可能受限');
         }
@@ -917,7 +920,15 @@ export class SettlementEngine {
 
         const fp = pjForeshadowDB(ctx.project);
         const ff = this.getVaultMeta().getAbstractFileByPath(fp);
-        if (!(ff instanceof TFile)) return;
+        if (!(ff instanceof TFile)) {
+            // DSH-20261113-23 ③：伏笔库不存在不是静默事项——强制揭示/更新指令
+            // 全部落空，必须让调用方看见（partialFailure）。
+            if (forceRevealSet.size > 0 || ctx.instr.uf.length > 0) {
+                this.markPostStepFailure(ctx, '伏笔库');
+                log.warn('[SettlementEngine] 伏笔库不存在，UPDATE_FORESHADOW/强制揭示全部落空:', fp);
+            }
+            return;
+        }
 
         try {
             // v3.4.6 跨模块写入保护：伏笔库也加锁
@@ -935,6 +946,10 @@ export class SettlementEngine {
                         content = newContent;
                         changed = true;
                         ctx.result.updatedForeshadows++;
+                    } else {
+                        // DSH-20261113-23 ③：强制揭示的名字未命中——用户显式请求落空，
+                        // 必须进 missingEntities（结算提示统一呈现）。
+                        ctx.result.missingEntities.push({ category: '伏笔', name, field: '揭示' });
                     }
                 }
 
@@ -1310,7 +1325,9 @@ ${ni.description || '暂无描述'}
     private async settleStep_updateRelations(ctx: SettleContext): Promise<void> {
         for (const r of ctx.instr.rel) {
             try {
-                await this.updateRelation(ctx.project, r.entityA, r.entityB, r.relType, r.desc, ctx.chapName, ctx.journal);
+                await this.updateRelation(ctx.project, r.entityA, r.entityB, r.relType, r.desc, ctx.chapName, ctx.journal, (name) =>
+                // DSH-20261113-23 ③：关系两侧实体卡缺失落空——可见。
+                ctx.result.missingEntities.push({ category: '实体', name, field: '关系互信息' }));
                 ctx.result.updatedRelations++;
             } catch (e) { log.warn('[SettlementEngine] 更新关系失败:', r.entityA, r.entityB, e); ctx.hasPartialFailure = true; }
         }
@@ -1322,7 +1339,11 @@ ${ni.description || '暂无描述'}
             try {
                 const fp = pjCharFile(ctx.project, g.name);
                 const file = this.getVaultMeta().getAbstractFileByPath(fp);
-                if (!(file instanceof TFile)) continue;
+                if (!(file instanceof TFile)) {
+                    // DSH-20261113-23 ③：用户显式的成长更新因人物卡缺失落空——可见。
+                    ctx.result.missingEntities.push({ category: '人物', name: g.name, field: '成长记录' });
+                    continue;
+                }
                 const growthEntry = `- ${ctx.chapName} | ${g.type} | ${g.value} | ${g.desc}\n`;
                 // 重复结算会重复 append 成长行：按「章 + 类型 + 新值」去重，且整段读改写加锁
                 const dedupeKey = `- ${ctx.chapName} | ${g.type} | ${g.value} |`;
@@ -1355,7 +1376,11 @@ ${ni.description || '暂无描述'}
             try {
                 const fp = pjCharFile(ctx.project, e.name);
                 const file = this.getVaultMeta().getAbstractFileByPath(fp);
-                if (!file) continue;
+                if (!file) {
+                    // DSH-20261113-23 ③：情绪更新因人物卡缺失落空——可见。
+                    ctx.result.missingEntities.push({ category: '人物', name: e.name, field: '当前情绪' });
+                    continue;
+                }
                 // D-6（2026-11-10 审计）：情绪四字段此前不进 journal——部分失败回滚
                 // 时人物卡停在半失败态。与正文步骤同模式：快照读与写入同锁。
                 // item6-a（同日审计）：entity_last_changed_at 统一 ISO 语义，
@@ -1663,7 +1688,8 @@ ${ni.description || '暂无描述'}
         relType: string,
         desc: string,
         chapName: string,
-        journal?: SettlementJournal
+        journal?: SettlementJournal,
+        onMissing?: (name: string) => void
     ): Promise<void> {
         const entry = `- [[${entityB}]] | ${relType} | ${desc} | ${chapName}`;
         const entryB = `- [[${entityA}]] | ${relType} | ${desc} | ${chapName}`;
@@ -1671,12 +1697,17 @@ ${ni.description || '暂无描述'}
         // 更新实体A
         const candidatesA = this.findEntityFiles(project, entityA);
         if (candidatesA.length > 0) {
-            await this.appendToMutualSection(candidatesA[0], entry, journal);
+            await this.appendToMutualSection(candidatesA[0], entry, journal, onMissing);
+        } else {
+            // DSH-20261113-23 ③：关系两侧实体卡缺失落空——可见。
+            onMissing?.(entityA);
         }
         // 更新实体B
         const candidatesB = this.findEntityFiles(project, entityB);
         if (candidatesB.length > 0) {
-            await this.appendToMutualSection(candidatesB[0], entryB, journal);
+            await this.appendToMutualSection(candidatesB[0], entryB, journal, onMissing);
+        } else {
+            onMissing?.(entityB);
         }
     }
 
@@ -1696,8 +1727,13 @@ ${ni.description || '暂无描述'}
         return results;
     }
 
-    /** 在实体文件的「互信息」区块追加条目 */
-    private async appendToMutualSection(file: TFile, entry: string, journal?: SettlementJournal): Promise<void> {
+    /** 在实体文件的「互信息」区块追加条目；区块缺失时经 onSectionMissing 可见（DSH-20261113-23 ③） */
+    private async appendToMutualSection(
+        file: TFile,
+        entry: string,
+        journal?: SettlementJournal,
+        onSectionMissing?: (entityName: string) => void
+    ): Promise<void> {
         try {
             // 实体卡被结算/分析报告/实体管理多处读改写：整段加锁并在锁内重读
             await withWriteLock(file.path, async () => {
@@ -1715,6 +1751,9 @@ ${ni.description || '暂无描述'}
                 const idx = content.lastIndexOf('## 与其他角色的互信息');
                 const afterHeader = content.indexOf('\n', idx);
                 content = content.slice(0, afterHeader + 1) + entry + '\n' + content.slice(afterHeader + 1);
+            } else {
+                // DSH-20261113-23 ③：互信息区块缺失——追加静默落空，必须可见。
+                onSectionMissing?.(file.basename || file.path);
             }
             // D3-15：先登记再写，写一半失败也能回滚
             journal?.recordAppend(file.path, entry.trim());
