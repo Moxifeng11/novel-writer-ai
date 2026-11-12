@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 324 | 139482 | 1768 | 1434 | 81% |
-| `services/` | 33 | 13885 | 206 | 162 | 79% |
+| `engine/` | 324 | 139586 | 1770 | 1436 | 81% |
+| `services/` | 33 | 13890 | 206 | 162 | 79% |
 | `shared/` | 197 | 41863 | 1712 | 1396 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 266 | 104232 | 991 | 798 | 81% |
+| `ui/` | 266 | 104241 | 991 | 798 | 81% |
 
 ## 文件清单
 
@@ -58,7 +58,7 @@
 | `engine/agent/harness/tool-registry.ts` | 297 | 5 | 2 |
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
 | `engine/ai-api-client-shared.ts` | 86 | 6 | 5 |
-| `engine/ai-api-client.ts` | 968 | 1 | 1 |
+| `engine/ai-api-client.ts` | 990 | 2 | 2 |
 | `engine/ai-api-stream.ts` | 1016 | 3 | 2 |
 | `engine/ai-batch-entity-generator.ts` | 578 | 1 | 1 |
 | `engine/ai-chapter-helpers.ts` | 339 | 1 | 1 |
@@ -77,7 +77,7 @@
 | `engine/anti-ai-detector.ts` | 454 | 6 | 6 |
 | `engine/asset-registry.ts` | 238 | 6 | 1 |
 | `engine/bases-generator.ts` | 325 | 9 | 7 |
-| `engine/batch-import-manager.ts` | 897 | 9 | 9 |
+| `engine/batch-import-manager.ts` | 907 | 9 | 9 |
 | `engine/beat-verifier.ts` | 70 | 3 | 1 |
 | `engine/body-writer.ts` | 525 | 8 | 8 |
 | `engine/cache/index.ts` | 24 | 3 | 0 |
@@ -193,7 +193,7 @@
 | `engine/knowledge-injector.ts` | 2150 | 13 | 7 |
 | `engine/knowledge-tags.ts` | 629 | 2 | 2 |
 | `engine/knowledge-to-fingerprint-converter.ts` | 345 | 1 | 1 |
-| `engine/knowledge-usage.ts` | 80 | 3 | 3 |
+| `engine/knowledge-usage.ts` | 131 | 4 | 4 |
 | `engine/knowledge-vector-reconcile.ts` | 110 | 3 | 2 |
 | `engine/knowledge-vector-store.ts` | 1004 | 5 | 4 |
 | `engine/ledger/ledger-index.ts` | 175 | 10 | 8 |
@@ -208,7 +208,7 @@
 | `engine/logic-consistency-checker.ts` | 140 | 4 | 4 |
 | `engine/long-term-memory.ts` | 154 | 6 | 3 |
 | `engine/memory-trigger.ts` | 408 | 13 | 9 |
-| `engine/memory/chapter-digest.ts` | 354 | 9 | 7 |
+| `engine/memory/chapter-digest.ts` | 375 | 9 | 7 |
 | `engine/memory/memory-shard-writer.ts` | 142 | 5 | 5 |
 | `engine/mode-document-writer.ts` | 177 | 5 | 2 |
 | `engine/mode-injection.ts` | 117 | 3 | 1 |
@@ -385,7 +385,7 @@
 | `services/rules-service.ts` | 280 | 3 | 2 |
 | `services/synopsis-store.ts` | 364 | 5 | 5 |
 | `services/update-checker.ts` | 610 | 9 | 2 |
-| `services/usage-ledger.ts` | 395 | 13 | 5 |
+| `services/usage-ledger.ts` | 400 | 13 | 5 |
 | `services/vector-rebuild-service.ts` | 141 | 8 | 8 |
 | `services/worker-manager.ts` | 569 | 1 | 1 |
 | `services/worker-protocol.ts` | 121 | 12 | 12 |
@@ -600,7 +600,7 @@
 | `ui/backup-yuan-modal.ts` | 125 | 1 | 1 |
 | `ui/batch-chapters-modal.ts` | 340 | 1 | 1 |
 | `ui/batch-create-modal.ts` | 521 | 1 | 1 |
-| `ui/batch-import-modal.ts` | 1870 | 1 | 1 |
+| `ui/batch-import-modal.ts` | 1879 | 1 | 1 |
 | `ui/batch-novels-modal.ts` | 236 | 1 | 1 |
 | `ui/button-busy.ts` | 37 | 1 | 1 |
 | `ui/changelog-modal.ts` | 207 | 1 | 1 |

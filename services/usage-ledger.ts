@@ -29,6 +29,11 @@ export interface UsageRecord {
     error?: string;
     /** 估算费用（元）；模型未配置单价时缺省（不计费） */
     costYuan?: number;
+    /**
+     * 流式响应未返回 usage 帧时置 true（DSH-20261113-25 ④）：
+     * 0 token 是「未统计」而非「真实消耗为 0」，汇总/展示方据此区分。
+     */
+    usageUnavailable?: boolean;
     /** 可选上下文（项目 / 步骤） */
     project?: string;
     stepKey?: string;

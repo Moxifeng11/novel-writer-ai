@@ -1297,7 +1297,16 @@ export class BatchImportModal extends Modal {
                     });
                     retryBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        this.batchManager.retryFailedFromHistory(item.id);
+                        // DSH-20261113-25 ③：tasks 只存本会话任务——重启/换批后对应
+                        // 任务已不存在，不得静默空转让用户白等。
+                        const { retried, missing } = this.batchManager.retryFailedFromHistory(item.id);
+                        if (retried === 0 && missing.length > 0) {
+                            showWarningNotice('任务记录已过期，请重新添加文件导入', { timeout: 5000 });
+                            return;
+                        }
+                        if (missing.length > 0) {
+                            showWarningNotice(`已重试 ${retried} 项；${missing.length} 项任务记录已过期`, { timeout: 5000 });
+                        }
                         this.currentStep = 4;
                         this.render();
                     });

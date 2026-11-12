@@ -6,7 +6,7 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 27 | 27 | 100% | 50 | 50 | 100% | 0 |
 | `domains/` | 11 | 28 | 28 | 100% | 1 | 1 | 100% | 0 |
-| `engine/` | 307 | 1744 | 1743 | 100% | 1251 | 1251 | 100% | 0 |
+| `engine/` | 307 | 1746 | 1745 | 100% | 1251 | 1251 | 100% | 0 |
 | `services/` | 33 | 206 | 206 | 100% | 222 | 222 | 100% | 0 |
 | `shared/` | 196 | 1717 | 1717 | 100% | 159 | 159 | 100% | 0 |
 | `ui/` | 264 | 981 | 981 | 100% | 643 | 643 | 100% | 0 |
@@ -39,7 +39,7 @@
 | `engine/agent/harness/tool-registry.ts` | 5 | 0 | 6 | 0 |
 | `engine/agent/harness/tool-result-pruner.ts` | 5 | 0 | 0 | 0 |
 | `engine/ai-api-client-shared.ts` | 6 | 0 | 0 | 0 |
-| `engine/ai-api-client.ts` | 1 | 0 | 5 | 0 |
+| `engine/ai-api-client.ts` | 2 | 0 | 5 | 0 |
 | `engine/ai-api-stream.ts` | 4 | 0 | 0 | 0 |
 | `engine/ai-batch-entity-generator.ts` | 1 | 0 | 4 | 0 |
 | `engine/ai-chapter-helpers.ts` | 1 | 0 | 7 | 0 |
@@ -50,7 +50,7 @@
 
 | 文件 | 目标 | 有示例 | 覆盖 | 缺失符号 |
 |---|---:|---:|---:|---|
-| `engine/ai-api-client.ts` | 1 | 1 | 100% | — |
+| `engine/ai-api-client.ts` | 2 | 2 | 100% | — |
 | `engine/ai-engine.ts` | 1 | 1 | 100% | — |
 | `engine/body-writer.ts` | 4 | 4 | 100% | — |
 | `engine/co-writer/create-session-store.ts` | 2 | 2 | 100% | — |

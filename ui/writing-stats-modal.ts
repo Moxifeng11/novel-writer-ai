@@ -95,7 +95,7 @@ export class WritingStatsModal extends Modal {
                 : summary.monthly;
         this.renderChart(chartWrap, points, this.tab);
         this.renderBreakdown(contentEl, points, this.tab);
-        this.renderKnowledgeUsage(contentEl);
+        void this.renderKnowledgeUsage(contentEl);
         this.renderProjectTable(contentEl);
     }
 
@@ -187,12 +187,12 @@ export class WritingStatsModal extends Modal {
     }
 
     /** G2-3b：知识引用命中率与常用书目（按当前项目，按需扫描 metadataCache） */
-    private renderKnowledgeUsage(container: HTMLElement): void {
+    private async renderKnowledgeUsage(container: HTMLElement): Promise<void> {
         const project = this.plugin.getActiveProject?.() || '';
         if (!project) return;
         let usage;
         try {
-            usage = collectKnowledgeUsage(this.app as never, project, { recentLimit: 5 });
+            usage = await collectKnowledgeUsage(this.app as never, project, { recentLimit: 5 });
         } catch {
             return;
         }

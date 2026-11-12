@@ -7,13 +7,16 @@
  *  - 摘要文件是派生数据，可从台账重建。
  */
 import { App } from 'obsidian';
-import { pjChapterDigestDir, pjChapterDigestFile } from '@/shared/paths';
+import { pjChapterDigestDir, pjChapterDigestFile, pjTimelineBoard, pjForeshadowDB, pjPromiseLedger } from '@/shared/paths';
 import { listFolderFiles } from '@/shared/vault-tree';
 import { withWriteLock } from '@/shared/write-lock';
 import type { FileSystemPort } from '@/shared/file-system-port';
 import { chapterNumOf, normalizeLedgerName } from '@/engine/ledger/ledger-model';
 import { loadStoryLedger } from '@/engine/ledger/ledger-io';
 import { openPromises } from '@/engine/ledger/ledger-index';
+import { createLogger } from '@/shared/logger';
+
+const log = createLogger('ChapterDigest');
 
 /** 章节摘要 */
 export interface ChapterDigest {
@@ -329,6 +332,19 @@ export async function writeChapterDigestFromProject(
     bodyText: string,
     involved: string[] = [],
 ): Promise<ChapterDigest> {
+    // DSH-20261113-25 ①：先独立探测三个台账文件的可读性——loadStoryLedger 在
+    // 任一文件读失败时返回空账本且无法区分「本来就空」与「这次没读到」。
+    // 探测到读失败时跳过摘要写盘（避免空摘要覆盖上一轮正确内容）并留痕。
+    const ledgerPaths = [pjTimelineBoard(project), pjForeshadowDB(project), pjPromiseLedger(project)];
+    const ledgerReadFailures: string[] = [];
+    for (const ledgerPath of ledgerPaths) {
+        try {
+            if (await fs.exists(ledgerPath)) await fs.read(ledgerPath);
+        } catch (e) {
+            ledgerReadFailures.push(ledgerPath);
+            log.warn('[ChapterDigest] 台账文件读取失败，本章摘要不写盘:', ledgerPath, e);
+        }
+    }
     const ledger = await loadStoryLedger(app, project);
     const chapterNum = chapterNumOf(chapterKey);
     const chapterEvents = ledger.events.filter((event) => event.chapterNum !== null && event.chapterNum === chapterNum);
@@ -348,6 +364,11 @@ export async function writeChapterDigestFromProject(
         promises: promiseNames,
         timeSpan: times.length > 1 ? `${times[0]} → ${times[times.length - 1]}` : (times[0] || ''),
     });
+    if (ledgerReadFailures.length > 0) {
+        // 留痕：摘要只作为返回值，不覆盖磁盘上已有的正确摘要（空账本不得覆盖）
+        log.warn(`[ChapterDigest] ${chapterKey} 摘要未写盘（台账读取失败：${ledgerReadFailures.join(', ')}）`);
+        return digest;
+    }
     await writeChapterDigest(app, fs, project, digest);
     return digest;
 }

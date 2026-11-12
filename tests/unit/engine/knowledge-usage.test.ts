@@ -67,7 +67,7 @@ describe('labelOfStepFile', () => {
 });
 
 describe('collectKnowledgeUsage', () => {
-    it('只统计本项目、步骤结果与正文目录，并汇总命中率', () => {
+    it('只统计本项目、步骤结果与正文目录，并汇总命中率', async () => {
         const app = makeApp([
             {
                 path: `${P}/03-大纲与章节/步骤结果/第1卷/第1章/第1章_大纲摘要.md`,
@@ -105,7 +105,7 @@ describe('collectKnowledgeUsage', () => {
             },
         ]);
 
-        const usage = collectKnowledgeUsage(app, P);
+        const usage = await collectKnowledgeUsage(app, P);
         expect(usage.stepsTotal).toBe(3);
         expect(usage.stepsWithRag).toBe(2);
         expect(usage.totalSources).toBe(3);
@@ -114,12 +114,12 @@ describe('collectKnowledgeUsage', () => {
         expect(usage.recent.map(item => item.label)).toEqual(['正文', '大纲摘要']);
     });
 
-    it('空项目 / 全无 frontmatter 时返回零值', () => {
-        expect(collectKnowledgeUsage(makeApp([]), '').stepsTotal).toBe(0);
+    it('空项目 / 全无 frontmatter 时返回零值', async () => {
+        expect((await collectKnowledgeUsage(makeApp([]), '')).stepsTotal).toBe(0);
         const app = makeApp([
             { path: `${P}/03-大纲与章节/步骤结果/第1卷/第1章/第1章_大纲摘要.md`, name: '第1章_大纲摘要.md' },
         ]);
-        const usage = collectKnowledgeUsage(app, P);
+        const usage = await collectKnowledgeUsage(app, P);
         expect(usage.stepsTotal).toBe(0);
         expect(usage.hitRate).toBe(0);
     });

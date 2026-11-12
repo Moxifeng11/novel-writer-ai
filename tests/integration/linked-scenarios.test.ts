@@ -152,7 +152,7 @@ describe('联动链 2：知识库命中 → 注入上报 → 步骤落盘 → �
             },
         };
 
-        const usage = collectKnowledgeUsage(app, PROJECT, { recentLimit: 5 });
+        const usage = await collectKnowledgeUsage(app, PROJECT, { recentLimit: 5 });
         expect(usage.stepsTotal).toBe(1);
         expect(usage.stepsWithRag).toBe(1);
         expect(usage.hitRate).toBe(1);

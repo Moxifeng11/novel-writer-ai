@@ -762,21 +762,31 @@ export class BatchImportManager {
     }
 
     /**
-     * 从历史重试失败项。
+     * 从历史重试失败项（DSH-20261113-25 ③：返回值让 UI 能提示「任务记录已过期」）。
+     *
+     * tasks 只存本次会话任务，history 可跨会话加载——重启后或开过下一批导入时
+     * 对应任务已不存在，不得静默空转。
      *
      * @param historyId - 历史记录 ID
+     * @returns retried: 实际重试数；missing: 找不到对应任务的失败书名
      */
-    retryFailedFromHistory(historyId: string): void {
+    retryFailedFromHistory(historyId: string): { retried: number; missing: string[] } {
         const historyItem = this.history.find(h => h.id === historyId);
-        if (!historyItem) return;
+        if (!historyItem) return { retried: 0, missing: [] };
 
         const failedBooks = historyItem.books.filter(b => b.status === 'failed');
+        const missing: string[] = [];
+        let retried = 0;
         for (const book of failedBooks) {
             const task = Array.from(this.tasks.values()).find(t => t.bookName === book.bookName);
             if (task) {
                 this.retryTask(task.id);
+                retried++;
+            } else {
+                missing.push(book.bookName);
             }
         }
+        return { retried, missing };
     }
 
     /**

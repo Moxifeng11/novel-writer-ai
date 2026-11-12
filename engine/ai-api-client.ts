@@ -54,6 +54,26 @@ import {
 
 
 const log = createLogger('AiApiClient');
+
+/**
+ * 判断流式结果是否缺失 usage（DSH-20261113-25 ④）。
+ *
+ * 流式主路径（写章/共写/单元写作）的响应不携带 usage 帧，记账若照常
+ * status:'ok' + 0 token 会把「未统计」伪装成正常用量。导出为纯函数便于单测。
+ *
+ * @param result - 模型响应
+ * @returns true = 成功但缺 usage（应标记 usageUnavailable）
+ *
+ * @example
+ * ```ts
+ * usageUnavailableFor({ content: '正文' }); // => true（流式响应无 usage 帧）
+ * usageUnavailableFor({ content: '正文', usage: { prompt: 1, completion: 2, total: 3 } }); // => false
+ * ```
+ */
+export function usageUnavailableFor(result: { usage?: { prompt?: number; completion?: number; total?: number }; error?: string; content?: string }): boolean {
+    return !result.usage && !result.error;
+}
+
 /**
  * AI API 客户端：并发控制、重试、token 统计与流式/非流式调用。
  *
@@ -912,6 +932,7 @@ export class AIApiClient {
             durationMs: Date.now() - startedAt,
             status: result.error ? (result.error === 'aborted' ? 'aborted' : 'error') : 'ok',
             error: result.error,
+            usageUnavailable: usageUnavailableFor(result),
             costYuan: costYuan ?? undefined,
         });
         return result;
@@ -955,6 +976,7 @@ export class AIApiClient {
             durationMs: Date.now() - startedAt,
             status: result.error ? (result.error === 'aborted' ? 'aborted' : 'error') : 'ok',
             error: result.error,
+            usageUnavailable: usageUnavailableFor(result),
             costYuan: costYuan ?? undefined,
         });
         return result;
