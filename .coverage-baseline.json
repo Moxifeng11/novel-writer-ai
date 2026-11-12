@@ -1,25 +1,25 @@
 {
-  "generatedAt": "2026-11-12T18:27:56.769Z",
-  "gitHead": "3d7b7e7c7026208fa3c90e1218343553fe1f4b64",
+  "generatedAt": "2026-11-12T20:49:51.008Z",
+  "gitHead": "4fa7389b94b77faeaecf2838db04cb130e0a31f3",
   "nodeVersion": "v24.16.0",
-  "note": "第四批修复后重锚（-20~-23 改 engine/shared/tests；ui -0.01pp 属 v8 抖动，在 0.05pp 容差内）",
+  "note": "-25/-26 触及 ui/batch-import-modal 与 ui/writing-stats-modal（失败提示与未统计标记），覆盖率持平重锚",
   "dirs": {
     "ui": {
       "files": 265,
       "lines": {
-        "total": 41728,
+        "total": 41733,
         "covered": 8521,
         "pct": 20.42
       },
       "statements": {
-        "total": 45562,
+        "total": 45567,
         "covered": 9241,
         "pct": 20.28
       },
       "branches": {
-        "total": 22287,
+        "total": 22293,
         "covered": 4954,
-        "pct": 22.23
+        "pct": 22.22
       },
       "functions": {
         "total": 7118,
