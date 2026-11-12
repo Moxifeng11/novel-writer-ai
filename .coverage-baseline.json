@@ -1,53 +1,53 @@
 {
-  "generatedAt": "2026-11-12T13:34:21.625Z",
-  "gitHead": "5b76251b4a2198c4aaf136f545c9bc5731bd8ff0",
+  "generatedAt": "2026-11-12T13:54:16.398Z",
+  "gitHead": "06aec924ef44d07efa7961544f0e29b6ad8e1150",
   "nodeVersion": "v24.16.0",
-  "note": "v4.84.0 开发中重锚：-16/-17 改 ui/（repair_flow UI 接线 + 链路状态语义 slice(-3)/orphanCount）。ui 20.08%→20.28%（+0.20pp）；ui/views 27.17%→26.88%（-0.29pp，因 ui/views/link-status.ts 新增渲染行未被 renderLinkStatus 假DOM测试覆盖，已挂任务补测）",
+  "note": "DSH-20261112-19：补 kb-config-panel（0%→覆盖）与 link-status 渲染假 DOM 测试，ui/views 26.88%→28.26%、ui 20.28%→20.43%",
   "dirs": {
     "ui": {
       "files": 265,
       "lines": {
         "total": 41728,
-        "covered": 8464,
-        "pct": 20.28
+        "covered": 8526,
+        "pct": 20.43
       },
       "statements": {
         "total": 45561,
-        "covered": 9178,
-        "pct": 20.14
+        "covered": 9247,
+        "pct": 20.3
       },
       "branches": {
         "total": 22283,
-        "covered": 4934,
-        "pct": 22.14
+        "covered": 4955,
+        "pct": 22.24
       },
       "functions": {
         "total": 7118,
-        "covered": 1360,
-        "pct": 19.11
+        "covered": 1373,
+        "pct": 19.29
       }
     },
     "ui/views": {
       "files": 31,
       "lines": {
         "total": 4434,
-        "covered": 1192,
-        "pct": 26.88
+        "covered": 1253,
+        "pct": 28.26
       },
       "statements": {
         "total": 4797,
-        "covered": 1327,
-        "pct": 27.66
+        "covered": 1395,
+        "pct": 29.08
       },
       "branches": {
         "total": 2441,
-        "covered": 822,
-        "pct": 33.67
+        "covered": 843,
+        "pct": 34.54
       },
       "functions": {
         "total": 884,
-        "covered": 284,
-        "pct": 32.13
+        "covered": 297,
+        "pct": 33.6
       }
     }
   }
