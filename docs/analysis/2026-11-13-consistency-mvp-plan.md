@@ -236,3 +236,51 @@ ledger-io / ledger-model ◄─────────────────�
 | token 成本失控 | S3 定位 + 规则层全量免费；LLM 调用次数在测试里断言上限 |
 | 中文数量词/时间词复杂 | 建有限词表（万/亿/丈/里/岁/载/时辰/更），覆盖常见网文写法，超纲不抽 |
 | 与现有 `logic-consistency-checker` 重复 | 保留旧检查器（单章启发式仍有价值）；新模块专注**跨章语义**，职责不重叠 |
+
+---
+
+## 七、执行进度（2026-11-13）
+
+### ✅ 第 1 批（S1 + S2）已完成并生产验证
+
+| 步骤 | 状态 | 提交 | 新增 |
+|---|---|---|---|
+| S1 断言层 | ✅ 完成 | `db29b52` | `shared/narrative-number.ts`、`engine/consistency/assertion-model.ts`、`assertion-extract.ts`、`assertion-store.ts` |
+| S2 配对器 | ✅ 完成 | `49f9136` | `pairing-rules.ts`、`evidence-locate.ts`、`pairing-llm.ts`、`audit-pipeline.ts` |
+| S2 接线+命令 | ✅ 完成 | `81164cb` | `consistency-service.ts`、`consistency-audit-wiring.ts`、命令「一致性审核」 |
+
+**测试**：一致性相关 103 条（narrative-number 23 / extract 20 / store 14 / rules 22 / llm 16 / locate 10 / pipeline 11 / service 10）+ 4 条架构锁（断言层不得 import AI）。
+
+**生产实测**（真实 vault，构造矛盾项目）：
+
+```
+断言库：6 条断言（摘要 4 + 人物档案 2）
+报告：1 处矛盾 · 数量不符
+  第1章「张三」20 岁，到第40章反而变成 18 岁——年龄不可能倒退
+  evidenceA: 张三今年二十岁 @第1章 #11
+  evidenceB: 张三今年十八岁 @第40章 #12
+llmCalls = 0（规则层已判定，未产生模型费用）
+```
+
+### 实施中修正的三处设计（原计划与现实的偏差）
+
+| 原计划 | 现实 | 调整 |
+|---|---|---|
+| 断言层要「新建事实抽取」 | `ChapterDigest.facts[]` / `CharacterFrontmatter` / `ledger.EventRecord` **已有原料** | 改为规则化归一，**零 AI 调用**（架构锁保证） |
+| 主语正则排除数词更安全 | 中文人名**常含数词**（张三/李四），排除后最常见名字全废 | 改为「有连接词则信任；无连接词且含数词则丢弃」（宁少不脏） |
+| 抽取阶段记录字符偏移 | `ChapterDigest` 不存偏移，改 prompt 会动既有行为 | 改为**判出矛盾后用引文反查**（`evidence-locate`，逐级缩短前缀） |
+
+### 新增踩坑记录
+
+**UI 命令必须在 `core/command-registry.ts` 的显式列表里注册执行体**，
+否则 `exec(id)` 找不到执行体**静默失效**（命令显示 Executed 但什么也没发生）。
+该文件注释已警告此坑，本次原样踩中——建议后续加门禁：每个 `exec()` 用到的
+CommandIds 都必须有 `r.register` 或 executor 分支。
+
+### 下一步（第 2 / 3 批）
+
+- S3 风险定位（中段 + 熵近似 + 类型共现）
+- S4 审核视图（并入质量看板 Tab，点击跳正文位置）
+- S5 CED 指标
+- 补齐 2 个子类：无因之果 / 因果违规
+- **建议先做的门禁**：命令执行体缺失检测（见上）
