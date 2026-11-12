@@ -27,6 +27,12 @@ import path from 'node:path';
 import process from 'node:process';
 import ts from 'typescript';
 import { fileURLToPath } from 'node:url';
+import {
+    describeVanishedFiles,
+    evaluateMeasurement,
+    evaluateScanScope,
+    findVanishedBaselineFiles,
+} from './lib/gate-sanity-lib.mjs';
 
 const DEFAULT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ROOT_ARG = process.argv.indexOf('--root');
@@ -380,6 +386,40 @@ function main() {
     }
     const layers = summarize(files);
 
+    // ── 量具自检（Trae preflight 审计 P3 · 第 20 步） ─────────────────
+    // 原实现：层目录改名 → rels 空 → files 空 → layers 空 → totalExports=0
+    // → pct 兜底成 100% → 打印「✅ 导出覆盖 100%」。这是最坏的一种假绿：
+    // 什么都没扫到，却报满分。
+    const sanityErrors = [
+        ...evaluateScanScope({ count: rels.length, label: '[jsdoc] 源文件扫描' }),
+        ...evaluateScanScope({ count: Object.keys(files).length, label: '[jsdoc] 可统计文件（含导出/方法）' }),
+        ...evaluateMeasurement({
+            total: Object.values(files).reduce((sum, s) => sum + s.exports, 0),
+            baselineTotal: (loadBaseline()?.files
+                ? Object.values(loadBaseline().files).reduce((sum, s) => sum + (s.exports ?? 0), 0)
+                : 0),
+            label: '[jsdoc] 导出总数',
+        }),
+    ];
+    const baselineForVanished = loadBaseline();
+    if (baselineForVanished?.files) {
+        const { vanished, truncated } = findVanishedBaselineFiles({
+            baselineFiles: Object.keys(baselineForVanished.files),
+            exists: (rel) => fs.existsSync(path.join(ROOT, rel)),
+        });
+        sanityErrors.push(...describeVanishedFiles({
+            vanished,
+            truncated,
+            label: '[jsdoc]',
+        }));
+    }
+    if (sanityErrors.length > 0 && !UPDATE) {
+        console.error('❌ JSDoc 门禁自检失败（不是「都注释好了」，是「没量到」）：');
+        for (const item of sanityErrors) console.error(`  - ${item}`);
+        console.error('  若确属合法变更（文件搬家/目录调整），运行 npm run check:jsdoc -- --update-baseline 同步基线。');
+        process.exit(1);
+    }
+
     if (LIST_MISSING) {
         for (const [rel, stats] of Object.entries(files).sort((a, b) => a[0].localeCompare(b[0], 'en'))) {
             if (stats.missingExports.length === 0 && stats.missingMethods.length === 0
@@ -469,7 +509,8 @@ function main() {
 
     const totalExports = Object.values(layers).reduce((sum, e) => sum + e.exports, 0);
     const totalDocumented = Object.values(layers).reduce((sum, e) => sum + e.documented, 0);
-    const pct = totalExports ? Math.round((totalDocumented / totalExports) * 100) : 100;
+    // 不做 0 分母兜底成 100%——「没扫到」不能显示成满分（Trae 审计 P3 假绿）
+    const pct = totalExports > 0 ? Math.round((totalDocumented / totalExports) * 100) : 0;
     const totalExampleTargets = Object.values(files).reduce((sum, s) => sum + s.exampleTargets, 0);
     const totalExamples = Object.values(files).reduce((sum, s) => sum + s.examplesDocumented, 0);
     const exampleSummary = totalExampleTargets > 0 ? `，@example ${totalExamples}/${totalExampleTargets}` : '';

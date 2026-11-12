@@ -20,6 +20,12 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import {
+    describeVanishedFiles,
+    evaluateMeasurement,
+    evaluateScanScope,
+    findVanishedBaselineFiles,
+} from './lib/gate-sanity-lib.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BASELINE_PATH = path.join(ROOT, '.any-baseline.json');
@@ -101,6 +107,29 @@ const baselineFiles = baseline.files ?? {};
 const violations = [];
 let removed = 0;
 let added = 0;
+
+// ── 量具自检（Trae preflight 审计 P3 · 第 21 步） ─────────────────────
+// 原实现：目录缺失 → collectFiles 跳过 → total 变小 → 「没超预算」→ 绿。
+// 只检查「有没有变差」，从不检查「我要量的东西还在不在」。
+const sanityErrors = [
+    ...evaluateScanScope({ count: files.length, label: '[check:any] 源文件扫描' }),
+    ...evaluateMeasurement({ total, baselineTotal: baseline.total, label: '[check:any] any 总数' }),
+];
+const { vanished, truncated } = findVanishedBaselineFiles({
+    baselineFiles: Object.keys(baselineFiles),
+    exists: (rel) => fs.existsSync(path.join(ROOT, rel)),
+});
+sanityErrors.push(...describeVanishedFiles({
+    vanished,
+    truncated,
+    label: '[check:any]',
+}));
+if (sanityErrors.length > 0) {
+    console.error('\n❌ any 门禁自检失败（不是「变好了」，是「没量到」）：');
+    for (const item of sanityErrors) console.error(`  - ${item}`);
+    console.error('\n若确属合法变更（文件搬家/目录调整），运行 `npm run check:any -- --update-baseline` 同步基线。');
+    process.exit(1);
+}
 
 if (total > baseline.total) {
     violations.push(`总数超预算：${total} > ${baseline.total}（+${total - baseline.total}）`);
