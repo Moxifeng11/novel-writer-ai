@@ -12,6 +12,7 @@ import { runHarnessTurn } from './agent-loop';
 import { createHostTools, type HostToolDeps } from './host-tools';
 import { createDiagnoseTools } from './diagnose-tools';
 import { createRepairTools, type FlowRepairDeps } from './repair-tools';
+import { recordRepairFromToolCall, type RepairTelemetryEntry } from './repair-telemetry';
 import type {
     HarnessAdapter,
     HarnessChip,
@@ -121,6 +122,11 @@ export interface HarnessTelemetry {
     toolFail: number;
     byTool: Record<string, { total: number; ok: number }>;
     lastToolCalls: Array<{ tool: string; ok: boolean; summary: string; at: number }>;
+    /**
+     * 修复动作遥测（阶段 E 深化③）：repair_flow 修过什么、成没成。
+     * 只记 repair_flow 且 data.action 非空的调用——诊断读操作不污染。
+     */
+    repairs: RepairTelemetryEntry[];
     /** 投影时为省上下文裁掉的字符数（dsh tool-result-pruner） */
     prunedChars: number;
     /** 被裁剪的工具结果条数 */
@@ -151,7 +157,7 @@ export class AgentHarnessEngine {
     private done = false;
     private ctx: AgentContext;
     private telemetry: HarnessTelemetry = {
-        turns: 0, modelCalls: 0, toolCalls: 0, toolOk: 0, toolFail: 0, byTool: {}, lastToolCalls: [],
+        turns: 0, modelCalls: 0, toolCalls: 0, toolOk: 0, toolFail: 0, byTool: {}, lastToolCalls: [], repairs: [],
         prunedChars: 0, prunedResults: 0, compactions: 0, compactedEvents: 0, steers: 0,
         contextTokens: 0, windowUsage: 0, spilledResults: 0, spilledChars: 0,
         modelSteps: 0, toolMs: 0, trimmedTurns: 0, compactionCalls: 0, promptTokens: 0, completionTokens: 0,
@@ -569,6 +575,8 @@ export class AgentHarnessEngine {
             if (call.ok) byTool.ok++;
             this.telemetry.byTool[call.tool] = byTool;
             this.telemetry.lastToolCalls.unshift({ tool: call.tool, ok: call.ok, summary: call.summary, at: Date.now() });
+            // 阶段 E 深化③：修复动作单独入遥测（agent/用户可回答「本会话修过什么」）
+            recordRepairFromToolCall(this.telemetry.repairs, call);
         }
         this.telemetry.lastToolCalls = this.telemetry.lastToolCalls.slice(0, 12);
 

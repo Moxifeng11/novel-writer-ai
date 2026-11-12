@@ -24,6 +24,7 @@ import { showErrorNotice, showWarningNotice } from './components/notice-helpers'
 import { GuideAgentEngine } from '@/engine/agent/conversation-engine';
 import { createFlowDiagnosisDeps } from './services/flow-diagnosis-collectors';
 import { createFlowRepairHost } from './services/flow-repair-host';
+import { summarizeRepairs } from '@/engine/agent/harness/repair-telemetry';
 import { AgentHarnessEngine, type HarnessTelemetry } from '@/engine/agent/harness/harness-engine';
 import { createCallAIAdapter } from '@/engine/agent/harness/agent-adapter';
 import type { AgentChip, AgentContext, AgentIntent, AgentMessage, AgentTurnResult, GuideAgentPort } from '@/engine/agent/agent-types';
@@ -1831,7 +1832,7 @@ export class AgentWorkbenchView extends ItemView {
     private renderTelemetry(): void {
         if (!this.telemetryEl || !this.memoryEl || !this.toolLogEl) return;
         const telemetry: HarnessTelemetry = this.harnessEngine?.getTelemetry() || {
-            turns: 0, modelCalls: 0, toolCalls: 0, toolOk: 0, toolFail: 0, byTool: {}, lastToolCalls: [],
+            turns: 0, modelCalls: 0, toolCalls: 0, toolOk: 0, toolFail: 0, byTool: {}, lastToolCalls: [], repairs: [],
             prunedChars: 0, prunedResults: 0, compactions: 0, compactedEvents: 0, steers: 0,
             contextTokens: 0, windowUsage: 0, spilledResults: 0, spilledChars: 0,
             modelSteps: 0, toolMs: 0, trimmedTurns: 0, compactionCalls: 0, promptTokens: 0, completionTokens: 0,
@@ -1894,6 +1895,17 @@ export class AgentWorkbenchView extends ItemView {
                 row.createSpan({ cls: 'nw-awb-toollog-name', text: call.tool });
                 row.createSpan({ cls: 'nw-awb-toollog-summary', text: call.summary.slice(0, 24) });
             }
+        }
+
+        // 阶段 E 深化③：修复记录（agent 可自证修过什么）——只在有记录时出现
+        const repairSummary = summarizeRepairs(telemetry.repairs ?? []);
+        if (repairSummary.attempts > 0) {
+            const title = this.toolLogEl.createDiv({ cls: 'nw-awb-toollog-title', text: '修复记录' });
+            void title;
+            const head = this.toolLogEl.createDiv({ cls: 'nw-awb-toollog-row' });
+            head.createSpan({ cls: 'nw-awb-toollog-icon', text: repairSummary.failed > 0 ? '!' : '✓' });
+            head.createSpan({ cls: 'nw-awb-toollog-name', text: `${repairSummary.ok}/${repairSummary.attempts} 成功` });
+            head.createSpan({ cls: 'nw-awb-toollog-summary', text: repairSummary.latest ?? '' });
         }
     }
 

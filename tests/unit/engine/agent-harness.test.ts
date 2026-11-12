@@ -236,7 +236,8 @@ describe('runHarnessTurn', () => {
         expect(result.usedAi).toBe(true);
         expect(result.failed).toBe(false);
         expect(result.toolCalls).toHaveLength(1);
-        expect(result.toolCalls[0]).toEqual({ tool: 'echo_tool', ok: true, summary: '你好' });
+        // resultSummary（阶段 E 深化③）：工具结果首行，供修复遥测记「改成了什么」
+        expect(result.toolCalls[0]).toEqual({ tool: 'echo_tool', ok: true, summary: '你好', resultSummary: '回声：你好' });
         expect(result.reply).toBe('记好了，接下来选类型。');
         expect(result.chips[0].label).toBe('长篇');
         // 工具结果已写回日志

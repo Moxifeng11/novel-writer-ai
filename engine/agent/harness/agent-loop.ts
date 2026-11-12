@@ -85,7 +85,7 @@ export interface HarnessLoopTurnResult {
     reply: string;
     chips: HarnessChip[];
     /** 本回合执行过的工具调用（data 为工具产出的结构化结果） */
-    toolCalls: Array<{ tool: string; ok: boolean; summary: string; data?: Record<string, unknown> }>;
+    toolCalls: Array<{ tool: string; ok: boolean; summary: string; resultSummary?: string; data?: Record<string, unknown> }>;
     /** 是否至少成功调用过一次模型 */
     usedAi: boolean;
     /** 模型/网络层失败（宿主应考虑降级） */
@@ -594,6 +594,8 @@ async function runHarnessTurnInner(options: HarnessLoopOptions): Promise<Harness
             tool: tool.name,
             ok: finalToolResult.ok,
             summary: summarizeToolArgs(tool.name, tool.args),
+            // 结果首行（阶段 E 深化③）：修复遥测要记「改成了什么」，不是「参数是什么」
+            resultSummary: String(finalToolResult.content || '').split('\n')[0].trim(),
             data: finalToolResult.data,
         });
 

@@ -6,7 +6,7 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 27 | 27 | 100% | 50 | 50 | 100% | 0 |
 | `domains/` | 11 | 28 | 28 | 100% | 1 | 1 | 100% | 0 |
-| `engine/` | 306 | 1732 | 1731 | 100% | 1251 | 1251 | 100% | 0 |
+| `engine/` | 307 | 1742 | 1741 | 100% | 1251 | 1251 | 100% | 0 |
 | `services/` | 33 | 205 | 205 | 100% | 222 | 222 | 100% | 0 |
 | `shared/` | 196 | 1714 | 1714 | 100% | 159 | 159 | 100% | 0 |
 | `ui/` | 264 | 981 | 981 | 100% | 643 | 643 | 100% | 0 |
@@ -31,6 +31,7 @@
 | `engine/agent/harness/harness-types.ts` | 17 | 0 | 0 | 0 |
 | `engine/agent/harness/host-tools.ts` | 5 | 0 | 0 | 0 |
 | `engine/agent/harness/prompt-sections.ts` | 2 | 0 | 0 | 0 |
+| `engine/agent/harness/repair-telemetry.ts` | 10 | 0 | 0 | 0 |
 | `engine/agent/harness/repair-tools.ts` | 11 | 0 | 0 | 0 |
 | `engine/agent/harness/session-log.ts` | 1 | 0 | 10 | 0 |
 | `engine/agent/harness/session-snapshot.ts` | 11 | 0 | 0 | 0 |
@@ -44,7 +45,6 @@
 | `engine/ai-chapter-helpers.ts` | 1 | 0 | 7 | 0 |
 | `engine/ai-character-generator.ts` | 1 | 0 | 2 | 0 |
 | `engine/ai-engine.ts` | 2 | 0 | 33 | 0 |
-| `engine/ai-entity-generator.ts` | 1 | 0 | 3 | 0 |
 
 ## @example 覆盖（公共入口）
 

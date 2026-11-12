@@ -93,6 +93,65 @@ function registeredTool(engine: AgentHarnessEngine, name: string): HarnessTool {
     return tool;
 }
 
+
+describe('修复遥测（阶段 E 深化③）：回合结束后 repairs 有记录', () => {
+    function scripted(turns: Array<{ tool?: { name: string; args: Record<string, unknown> }; reply?: string }>) {
+        let index = 0;
+        return {
+            complete: async () => {
+                const turn = turns[Math.min(index, turns.length - 1)];
+                index += 1;
+                return turn;
+            },
+        } as never;
+    }
+
+    it('agent 调用 repair_flow 成功 → telemetry.repairs 记录 action/ok，诊断调用不污染', async () => {
+        const ctx = makeContext();
+        const engine = new AgentHarnessEngine({
+            ctx,
+            adapter: scripted([
+                { tool: { name: 'repair_flow', args: { action: 'reload_fingerprints' } } },
+                { reply: '修好了' },
+            ]),
+            portDeps: { port: makePort(async () => true) as never, ctx },
+            flowDiagnosis: makeDiagnose(),
+            flowRepair: {
+                revectorizeBook: async () => ({ ok: true }),
+                reloadFingerprints: async () => ({ template: 1, global: 1, project: 1 }),
+            },
+            maxSteps: 4,
+        });
+        await engine.handle('帮我修一下指纹库');
+        const telemetry = engine.getTelemetry();
+        expect(telemetry.repairs).toHaveLength(1);
+        expect(telemetry.repairs[0]).toMatchObject({ action: 'reload_fingerprints', ok: true });
+        expect(telemetry.repairs[0].summary).toContain('已重载指纹库');
+    });
+
+    it('失败修复也记入遥测（ok:false），不谎报成功', async () => {
+        const ctx = makeContext();
+        const engine = new AgentHarnessEngine({
+            ctx,
+            adapter: scripted([
+                { tool: { name: 'repair_flow', args: { action: 'revectorize_book', bookId: 'kb_missing' } } },
+                { reply: '没修成' },
+            ]),
+            portDeps: { port: makePort(async () => true) as never, ctx },
+            flowDiagnosis: makeDiagnose(),
+            flowRepair: {
+                revectorizeBook: async () => ({ ok: false, detail: '书不存在' }),
+                reloadFingerprints: async () => ({ template: 0, global: 0, project: 0 }),
+            },
+            maxSteps: 4,
+        });
+        await engine.handle('修一下这本书');
+        const telemetry = engine.getTelemetry();
+        expect(telemetry.repairs).toHaveLength(1);
+        expect(telemetry.repairs[0]).toMatchObject({ action: 'revectorize_book', ok: false });
+    });
+});
+
 describe('E 接线：repair_flow 注册与审批兜底', () => {
     it('只提供诊断采集器时不注册修复工具', () => {
         const engine = makeEngine({ withRepair: false });
