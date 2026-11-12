@@ -21,6 +21,40 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.84.0',
+        date: '2026-11-12',
+        title: '自愈版本：agent 能修了 + 孤儿向量对账 + 假绿修复',
+        sections: [
+            {
+                type: 'added',
+                label: '🔧 agent 自愈',
+                items: [
+                    'repair_flow 从 2 个动作扩到 6 个：重向量化 / 指纹重载 / 孤儿清理 / 强度修复 / 磁盘向量清理 / 考据重跑',
+                    '修复动作全部走审批且 fail-closed（无审批回调一律拒绝），失败如实报错不静默成功',
+                    '修复结果进会话遥测：agent 事后能自证「修过什么、修成了没有」',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '🧹 假绿修复',
+                items: [
+                    '孤儿向量对账：知识库索引为空但向量库有数据时，界面不再显示「已加载 1 本」而装作正常',
+                    '清理不静默：未确认一个不删，整轮清理放在单次写锁内',
+                    '降级提示改为只显示最近 3 条（原来取的是最旧三条，与「最近」语义相反）',
+                ],
+            },
+            {
+                type: 'improved',
+                label: '📈 其他',
+                items: [
+                    'repair_flow 接入工作台：诊断出的断点可以一键修复',
+                    '示例项目种子脚本：可在临时目录生成最小真实数据集，让三条链路可被真实验证',
+                    '覆盖率：ui 15.22% → 20.43%，ui/views 12.95% → 28.26%',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.83.1',
         date: '2026-11-12',
         title: '可验证版本：三条链路自证 + 静默失效修复 + 门禁加固',
@@ -289,30 +323,6 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
                 items: [
                     'check:obsidian-api 五条规则全部归零（仅 logger 基础设施白名单）',
                     '新增 dom-window 6 例 + 面板生命周期 3 例；全量 598 文件 / 6,590 用例',
-                ],
-            },
-        ],
-    },
-    {
-        version: '4.76.0',
-        date: '2026-11-08',
-        title: '插件数据目录单源 + Obsidian API 门禁',
-        sections: [
-            {
-                type: 'fixed',
-                label: '🐛 修复',
-                items: [
-                    '数据目录不再硬编码 .obsidian：按 configDir + manifest.dir 注入，改配置目录/换文件夹名不再丢状态',
-                    '续写检测结果改 Markdown 渲染（此前 innerHTML 注入面 + ## 原样显示）',
-                    'update-checker 改 requestUrl（移动端 fetch 无 CORS 豁免）；弃用 renderMarkdown 已替换',
-                ],
-            },
-            {
-                type: 'added',
-                label: '🛡️ 门禁',
-                items: [
-                    '新增 check:obsidian-api 棘轮门禁：硬编码路径 / 弃用 API / 非流式 fetch / document 监听 / console',
-                    '首版清零前三类，存量 9 + 24 登记只降不升；+6 条违规样例自测，preflight 与 CI 同步接入',
                 ],
             },
         ],

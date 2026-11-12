@@ -2,6 +2,30 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## v4.84.0（2026-11-12）
+
+> 发布说明：`docs/releases/v4.84.0.md` · 上一版本 v4.83.1 · 版本性质：agent 自愈深化与「假绿」修复，无破坏性变更
+
+### 🧭 动因
+- v4.83.1 让 agent **能诊断**链路断点；本版让它**能修复**，并把修复结果变成可审计的遥测。
+- 修掉 v4.83.1 遗留的两个「假绿」：知识库索引空但向量库有孤儿（界面显示「已加载 1 本」）、降级提示只显示最旧三条。
+
+### 🔧 agent 自愈：2 动作 → 6 动作
+- `repair_flow` 新增：`cleanup_orphan_vectors` / `fix_zero_intensity` / `cleanup_disk_vectors` / `rerun_canon_research`。
+- 全部 `sideEffect: 'write'` + 审批 fail-closed（无回调即拒绝，`approvalGranted=true` 也不放行）；失败如实 `ok:false`。
+- 新增 `repair-telemetry.ts`：修复动作累积进会话遥测，agent 可自证修过什么。
+
+### 🧹 孤儿向量对账
+- `engine/knowledge-vector-reconcile.ts`：孤儿/缺失/正常三类对账 + 摘要。
+- 清理 fail-closed（未确认一个不删）、整轮单次写锁（闭合 TOCTOU）、`saveIndex` N 次合并为 1 次。
+- 磁盘孤儿单独可见（`diskUnloaded`）；UI 链路状态注入「向量库 M 本不在知识库索引」+「🔗 向量对账」按钮。
+
+### 🔗 其他
+- `ui/services/flow-repair-host.ts`：repair_flow 接入工作台（桥到调度器与指纹库）。
+- 链路状态：降级改为只取**最近** 3 条（原 `slice(0,3)` 取最旧，语义相反）；`orphanCount>0` 时「检索」降 warn 并附注。
+- `scripts/seed-demo-vault.mjs`：示例项目种子，`verify-three-flows` 在种子 vault 上**三链路全部已验证（exit 0）**——核心命题首次在真实数据上跑通。
+- 覆盖率：`ui` 15.22% → 20.43%，`ui/views` 12.95% → 28.26%。
+
 ## v4.83.1（2026-11-12）
 
 > 发布说明：`docs/releases/v4.83.1.md` · 上一版本 v4.83.0 · 版本性质：阶段 A/B/C/D 收口与门禁加固，无破坏性变更

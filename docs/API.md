@@ -1,6 +1,6 @@
 # API 文档
 
-> **版本**: v4.83.1
+> **版本**: v4.84.0
 > **最后更新**: 2026-11-02
 > **状态**: 活跃可信 · 签名参考（契约规则见 [handbook/04-interface-contracts.md](handbook/04-interface-contracts.md)）
 > **说明**: 本文是签名索引，不定义兼容承诺；公开/内部边界与废弃策略以 handbook 04 为准。
@@ -1726,8 +1726,47 @@ import {
 - **降级优先于「全 unknown」** —— 即使所有环节都 `unknown`，只要存在运行时降级就报 `warn`
   而不是 `unknown`（降级是更确定的信息，不该被「无法判定」盖掉）
 
-### 11.4 降级事件统计
+### 11.4 `repair_flow`（v4.84.0 · 阶段 E）
 
+回答「**断了我能修吗**」并真的执行修复。
+
+| 动作 | 修什么 |
+|---|---|
+| `revectorize_book` | 单本知识库重算向量（不重拆解、不调生成模型） |
+| `reload_fingerprints` | 按磁盘重载三层指纹 |
+| `cleanup_orphan_vectors` | 清理不在知识库索引里的孤儿向量 |
+| `fix_zero_intensity` | 修复强度为 0（等于禁用）的指纹 |
+| `cleanup_disk_vectors` | 清理磁盘上未加载的孤儿向量文件 |
+| `rerun_canon_research` | 重跑官方考据 |
+
+**安全契约（fail-closed，不可绕过）**：
+
+```ts
+// 1) sideEffect 为 write —— 必须进审批通道
+// 2) 没有 requestApproval 一律拒绝（哪怕回合层 approvalGranted=true 也不放行）
+// 3) 审批回调抛错 / 返回非 true → 拒绝
+// 4) 修复失败 / 抛异常 / 结果不可解析 → ok:false 并带原因（不静默成功）
+```
+
+```ts
+import { createRepairTools, REPAIR_ACTIONS } from '@/engine/agent/harness/repair-tools';
+
+const tools = createRepairTools({
+  requestApproval: (req) => host.confirmDangerousAction(req),   // 缺省即拒绝
+  diagnose: diagnosisDeps,        // 修复后用同一套采集器复诊
+  revectorizeBook: (bookId, name) => scheduler.revectorizeBook(bookId, name),
+  reloadFingerprints: () => library.reloadAll(),
+  // …其余动作按需注入
+});
+```
+
+**修复后复诊**：成功时用 `diagnose_flow` 的同一套采集器重新判定链路状态，
+返回修复后的 `LinkStatus`——避免拿修复前快照冒充结果（有测试锁定 repair→diagnose 顺序）。
+
+**遥测**：引擎在回合结束时把修复动作累积进 `telemetry.repairs`
+（`engine/agent/harness/repair-telemetry.ts`），agent 事后可自证修过什么。
+
+### 11.5 降级事件统计
 ```ts
 import { getDegradationNotifier, summarizeDegradations } from '@/shared/degradation-notifier';
 

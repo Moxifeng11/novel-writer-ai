@@ -1,6 +1,6 @@
 # 小说工坊 AI 插件架构文档
 
-> **版本**: v4.83.1
+> **版本**: v4.84.0
 > **最后更新**: 2026-11-02
 > **状态**: 活跃可信 · 与代码同步
 > **唯一可执行分层口径**: `scripts/check-dependencies.mjs`（目标边界与差异见 [handbook/02-architecture.md](handbook/02-architecture.md)）
@@ -748,6 +748,12 @@ processing (恢复)
 - `shared/link-status-compute.ts` — 三条创作链路的环节级「通/断/断点」判定（纯逻辑，UI 与 agent 共用）
 - `ui/views/link-status.ts` — 链路状态渲染（复用 `nw-capability-*` 类，零新增 CSS）
 - `engine/agent/harness/diagnose-tools.ts` — agent 自诊断工具 `diagnose_flow`
+- `engine/agent/harness/repair-tools.ts` — agent 自愈工具 `repair_flow`（6 动作，写操作 + 审批 fail-closed）
+- `engine/agent/harness/repair-telemetry.ts` — 修复动作进会话遥测（agent 可自证修过什么）
+- `engine/knowledge-vector-reconcile.ts` — 知识库索引 ↔ 向量库对账（孤儿/缺失/正常三类）
+- `ui/services/flow-repair-host.ts` — 修复动作的宿主桥（调度器/指纹库）
+- `scripts/seed-demo-vault.mjs` — 示例项目种子（让三条链路可在真实数据上验证）
+- `scripts/verify-three-flows.mjs` — 三条链路运行层验证 CLI（退出码 0/1/2）
 - `shared/degradation-notifier.ts` — 统一降级事件（含 `summarizeDegradations` 聚合统计）
 
 ### Repository 层
