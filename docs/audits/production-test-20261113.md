@@ -93,3 +93,47 @@ obsidian eval code="app.plugins.plugins['novel-writer-ai'].manifest.version"
 # 截图
 obsidian dev:screenshot path=".screenshots/x.png"
 ```
+
+---
+
+## 八、补充：DeepSeek 官网真实 AI 调用测试（2026-11-13 03:40）
+
+配置：`settings.providerKeys.deepseek` 有值（35 字符），`settings.apiKey` 为空，
+`defaultModel=deepseek-flash`，`apiEndpoint` 指向 DeepSeek 官网。
+
+### 发现（high）：密钥存在但 AI 调用全线失败
+
+```
+aiEngine.callAI(...)       → { error: 'API密钥未配置' }
+aiEngine.callAIStream(...) → { error: 'API密钥未配置' }
+```
+
+根因：`settings.apiKey` 只在 `ProviderManager.switchProvider()` 时从
+`providerKeys[id]` 同步；插件重载/重启/只填过供应商管理没点过切换时 `apiKey` 为空。
+UI 守卫 `hasUsableAiCredentials` 看 `providerKeys` 能过，但 AI 调用只读 `apiKey`
+→ **界面说能用，实际一个请求都发不出去**。
+
+影响三处：`callAIInternal`（非流式）、`callAIStream`（**写章/共写主路径**）、`callAIAsyncIterator`。
+
+### 修复与验证
+
+新增 `shared/ai-credentials.ts#resolveProviderApiKey(settings, endpoint)`，
+三处密钥解析改为 `options.apiKey || settings.apiKey || resolveProviderApiKey(...)`。
+
+`plugin:reload` 后实测：
+
+| 调用 | 修复前 | 修复后 |
+|---|---|---|
+| `callAI` | `error: API密钥未配置` | ✅ `content: "OK"` / `finishReason: stop` / `usage: {prompt:41, completion:13, total:54}` / 1503ms |
+| `callAIStream` | `error: API密钥未配置` | ✅ `content: "流式成功"` / `finishReason: stop` / 1163ms |
+
+### 附带确认（对应任务 -25）
+
+流式返回 `usage: undefined` —— **生产确认**「流式 usage 记 0」缺陷：
+用量台账里写章/共写永远显示 0 token。已在任务板排队（DSH-20261113-25）。
+
+### 结论
+
+生产环境测试**当场抓到 1 个 high 级缺陷**（AI 全线不可用），
+而该缺陷在 8130 条单元/集成测试下全绿——因为测试里 mock 的 settings 总是
+`apiKey` 有值。**这是「测试替身不忠实」的又一例**（标准 1）。
