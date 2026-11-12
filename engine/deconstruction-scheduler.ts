@@ -129,6 +129,11 @@ export interface BreakdownTask {
     vectorStatus?: VectorStatus;
     /** 向量化失败原因 */
     vectorError?: string;
+    /**
+     * 失败的维度清单（DSH-20261113-21）：拆解抛错或写入失败的维度与原因。
+     * 存在失败时任务状态不得为 completed、进度不得按全部完成计 100%。
+     */
+    failedDimensions?: Array<{ dimension: BreakdownDimension; error: string }>;
     preprocessedText?: { cleaned: string; segments: string[]; wordCount: number; paragraphCount: number };
 }
 
@@ -148,6 +153,60 @@ export function buildBreakdownFinishNotice(
         return `《${bookName}》拆解完成，但向量化失败${reason}，可在知识库详情重试向量化。`;
     }
     return `《${bookName}》拆解完成。可在知识库详情页点击"转为写作指纹"将结果导入指纹库。`;
+}
+
+/** 维度任务结局（DSH-20261113-21，纯函数输出） */
+export interface DimensionTaskOutcome {
+    status: 'completed' | 'failed';
+    progress: number;
+    allFailed: boolean;
+    message: string;
+    errorSummary: string;
+}
+
+/**
+ * 维度任务结局判定（DSH-20261113-21，纯函数）。
+ *
+ * 语义（与 processTask 内联逻辑一致）：
+ *   - 无失败维度 → completed / 100%
+ *   - 有失败维度 → failed / 进度按成功维度计数（失败场景不得停在 100%）
+ *   - 全部失败 → allFailed=true，提示指路重试；部分失败 → 列出失败维度名
+ *
+ * 选『failed』而不是新增 partial 档位：知识库卡片状态机（BreakdownStatus）
+ * 没有 partial，新增会让 UI 与持久化双向膨胀；failed + error 摘要已能如实呈现。
+ *
+ * @param totalDimensions - 任务维度总数
+ * @param failedDimensions - 失败维度与原因
+ * @returns 状态/进度/提示消息
+ */
+export function resolveDimensionTaskOutcome(
+    totalDimensions: number,
+    failedDimensions: ReadonlyArray<{ dimension: BreakdownDimension; error: string }>,
+): DimensionTaskOutcome {
+    if (failedDimensions.length === 0) {
+        return {
+            status: 'completed',
+            progress: 100,
+            allFailed: false,
+            message: '拆解完成',
+            errorSummary: '',
+        };
+    }
+    const allFailed = failedDimensions.length >= totalDimensions;
+    const summary = failedDimensions
+        .map(f => `${DIMENSION_LABELS[f.dimension]}: ${f.error}`)
+        .join('；');
+    const failedNames = failedDimensions.map(f => DIMENSION_LABELS[f.dimension]).join('、');
+    const progress = Math.round(((totalDimensions - failedDimensions.length) / totalDimensions) * 100);
+    return {
+        status: 'failed',
+        progress,
+        allFailed,
+        message: allFailed
+            ? `拆解失败：${totalDimensions} 个维度全部失败，可在知识库详情重试`
+            : `拆解部分完成（成功 ${totalDimensions - failedDimensions.length}/${totalDimensions}；失败维度：${failedNames}），可重试任务补齐`,
+        errorSummary: `${allFailed ? '全部' : ''}维度拆解失败（${failedDimensions.length}/${totalDimensions}）：${summary}`,
+    };
 }
 
 /**
@@ -942,6 +1001,9 @@ export class DeconstructionScheduler {
         const vectorDimensions: BreakdownDimension[] = [];
         const degradedDimensions: BreakdownDimension[] = [];
         const degradationReasons: Array<{ dimension: string; reason: string }> = [];
+        // DSH-20261113-21：失败维度收集（拆解抛错或写入失败）——存在失败时任务
+        // 不得以 completed/100% 收尾，也不得弹「拆解完成」。
+        const failedDimensions: Array<{ dimension: BreakdownDimension; error: string }> = [];
         const dimensionQualityScores = new Map<BreakdownDimension, DimensionQualityScore>();
         const dimensionDurations = new Map<BreakdownDimension, number>();
         const dimensionResults = new Map<BreakdownDimension, unknown>();
@@ -1146,8 +1208,17 @@ export class DeconstructionScheduler {
                         aborted = true;
                         return;
                     }
+                    const dimErrorMessage = dimError instanceof Error ? dimError.message : String(dimError);
                     log.warn(`[DeconstructionScheduler] 维度 ${dimension} 拆解失败:`, dimError);
-                    await this.appendBreakdownLog(task.bookName, `### ${DIMENSION_LABELS[dimension]} - 失败\n\n错误: ${dimError instanceof Error ? dimError.message : String(dimError)}\n\n`, task.bookId);
+                    // DSH-20261113-21 ①②：失败维度不得进 completedSet（否则循环结束
+                    // 无条件 completed/100% 弹「拆解完成」），必须进 failedDimensions
+                    // 供任务状态与 UI 提示使用；进度只按成功维度计数。
+                    if (!task.failedDimensions) task.failedDimensions = [];
+                    task.failedDimensions.push({ dimension, error: dimErrorMessage });
+                    failedDimensions.push({ dimension, error: dimErrorMessage });
+                    await this.appendBreakdownLog(task.bookName, `### ${DIMENSION_LABELS[dimension]} - 失败\n\n错误: ${dimErrorMessage}\n\n`, task.bookId);
+                    task.progress = Math.round((completedSet.size / totalDimensions) * 100);
+                    return;
                 }
 
                 completedSet.add(dimension);
@@ -1160,8 +1231,32 @@ export class DeconstructionScheduler {
                 throw new Error('任务已取消');
             }
 
+            // 先落批量写（成功维度的质量分 frontmatter），再判定失败——
+            // 失败早退不能把成功维度已产出的数据留在 pending 里丢掉。
             await this.flushBatchWrites();
             await yieldToUI();
+
+            // DSH-20261113-21 ②：存在失败维度时不得以 completed/100% 收尾，也不得弹
+            // 「拆解完成」。结局由 resolveDimensionTaskOutcome 统一判定（failed 档位，
+            // 进度按成功维度计数）。
+            const outcome = resolveDimensionTaskOutcome(totalDimensions, failedDimensions);
+            if (outcome.status === 'failed') {
+                task.status = outcome.status;
+                task.completedAt = Date.now();
+                task.progress = outcome.progress;
+                task.error = outcome.errorSummary;
+                emitter?.setProgress(outcome.progress, `《${task.bookName}》${outcome.message}`);
+                this.emitProgress(task, {
+                    totalProgress: outcome.progress,
+                    phase: '拆解失败',
+                    message: `《${task.bookName}》${outcome.message}`,
+                });
+                this.flushProgressPersist(task.bookId);
+                await this.knowledgeBaseManager.setBreakdownStatus(task.bookId, 'failed', outcome.progress, outcome.errorSummary);
+                log.warn(`[DeconstructionScheduler] 《${task.bookName}》${outcome.message}`);
+                return;
+            }
+
             const crossValidationResults = this.qualityScorer.crossValidate(dimensionResults as unknown as Partial<Record<BreakdownDimension, unknown>>);
 
             task.status = 'completed';
@@ -1451,7 +1546,12 @@ export class DeconstructionScheduler {
                     break;
             }
         } catch (e) {
+            // DSH-20261113-21 ④：写入失败必须让任务可见（向上抛给 processDimension
+            // 汇总进 failedDimensions），不得只 log.warn 后当作已保存。
             log.warn(`[DeconstructionScheduler] 保存${DIMENSION_LABELS[dimension]}全文分块结果失败:`, e);
+            throw new Error(
+                `保存${DIMENSION_LABELS[dimension]}结果失败: ${e instanceof Error ? e.message : String(e)}`
+            );
         }
     }
 
@@ -2277,7 +2377,9 @@ export class DeconstructionScheduler {
     ): Promise<void> {
         const executing = new Set<Promise<void>>();
         for (const item of items) {
-            const p = fn(item).catch(() => {}).then(() => { executing.delete(p); });
+            // DSH-20261113-21 ③：去掉对任务函数返回 Promise 的二次吞异常——
+            // 逃逸异常必须向上传播交给任务级失败处理，不能静默吞掉。
+            const p = fn(item).then(() => { executing.delete(p); });
             executing.add(p);
             if (executing.size >= concurrency) {
                 await Promise.race(executing);
