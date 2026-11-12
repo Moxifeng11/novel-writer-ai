@@ -61,3 +61,54 @@ export function collectImportedSpecifiers(text) {
     }
     return specs;
 }
+
+/**
+ * 扫描健全性校验（Trae preflight 审计 P2 · 第 22 步）。
+ *
+ * 原实现：`walk()` 在目录不存在时返回空数组，于是「ui/ 改名或缺失」→ 0 个文件 →
+ * 0 个未达标 → 无新增 → 门禁绿。扫描范围整个消失而门禁照过，是典型空转。
+ *
+ * @param input - 输入
+ * @param input.uiFiles - 扫到的 ui 源文件数
+ * @param input.testFiles - 扫到的测试文件数
+ * @returns 错误列表（空表示健康）
+ */
+export function evaluateScanSanity({ uiFiles, testFiles }) {
+    const errors = [];
+    if (!Number.isInteger(uiFiles) || uiFiles <= 0) {
+        errors.push('ui/ 下扫描到 0 个源文件：目录改名/缺失会导致本门禁空转，请确认扫描根');
+    }
+    if (!Number.isInteger(testFiles) || testFiles <= 0) {
+        errors.push('tests/ 下扫描到 0 个测试文件：无法判定「有测试」，请确认扫描根');
+    }
+    return errors;
+}
+
+/**
+ * 视图测试基线棘轮判定。
+ *
+ * 原实现：`fixed`（基线里有、当前已补测试的文件）只打印「可运行 --update-baseline 收紧」，
+ * 属**可选提示**——基线永远不会自动收紧，登记簿退化成永久名单。
+ *
+ * 修正后：基线必须跟着现实**立即**收紧（`--update-baseline --note`），
+ * 否则 `fixed` 非空即失败。这样「补了测试」必须落成基线变短，棘轮才真的只降不升。
+ *
+ * @param input - 输入
+ * @param input.baseline - 基线登记的文件列表
+ * @param input.current - 当前仍未达标的文件列表
+ * @returns 判定结果
+ */
+export function evaluateViewTestsRatchet({ baseline, current }) {
+    const baseSet = new Set((baseline || []).map(String));
+    const curSet = new Set((current || []).map(String));
+    const added = [...curSet].filter((file) => !baseSet.has(file)).sort();
+    const fixed = [...baseSet].filter((file) => !curSet.has(file)).sort();
+    return {
+        added,
+        fixed,
+        /** 需要失败：新增未达标文件（放宽）或已有测试却未收紧基线 */
+        needsWiden: added.length > 0,
+        needsTighten: fixed.length > 0,
+        ok: added.length === 0 && fixed.length === 0,
+    };
+}

@@ -9,3 +9,21 @@
  * @returns 模块说明符数组
  */
 export function collectImportedSpecifiers(text: string | null | undefined): string[];
+
+/** 扫描健全性校验 */
+export function evaluateScanSanity(input: {
+    uiFiles: number;
+    testFiles: number;
+}): string[];
+
+/** 视图测试基线棘轮判定 */
+export function evaluateViewTestsRatchet(input: {
+    baseline: string[];
+    current: string[];
+}): {
+    added: string[];
+    fixed: string[];
+    needsWiden: boolean;
+    needsTighten: boolean;
+    ok: boolean;
+};

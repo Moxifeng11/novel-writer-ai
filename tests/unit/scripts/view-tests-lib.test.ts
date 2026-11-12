@@ -14,7 +14,11 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { collectImportedSpecifiers } from '../../../scripts/lib/view-tests-lib.mjs';
+import {
+    collectImportedSpecifiers,
+    evaluateScanSanity,
+    evaluateViewTestsRatchet,
+} from '../../../scripts/lib/view-tests-lib.mjs';
 
 describe('门禁-1：行首 import 正常提取', () => {
     it('单行 import', () => {
@@ -104,5 +108,75 @@ describe('门禁-3：健壮性', () => {
             "import c from './c';",
         ].join('\n');
         expect(collectImportedSpecifiers(src)).toEqual(['./a', './b', './c']);
+    });
+});
+
+describe('扫描健全性（Trae 审计 P2 · ui/ 缺失即绿）', () => {
+    it('正常扫描无错误', () => {
+        expect(evaluateScanSanity({ uiFiles: 300, testFiles: 700 })).toEqual([]);
+    });
+
+    it('ui/ 扫到 0 个文件 → 报错（目录改名/缺失会让门禁空转）', () => {
+        const errors = evaluateScanSanity({ uiFiles: 0, testFiles: 700 });
+        expect(errors.some(e => e.includes('ui/'))).toBe(true);
+    });
+
+    it('tests/ 扫到 0 个文件 → 报错（无法判定有无测试）', () => {
+        const errors = evaluateScanSanity({ uiFiles: 300, testFiles: 0 });
+        expect(errors.some(e => e.includes('tests/'))).toBe(true);
+    });
+
+    it('两个都为空 → 两条错误', () => {
+        expect(evaluateScanSanity({ uiFiles: 0, testFiles: 0 })).toHaveLength(2);
+    });
+
+    it('非整数/负数也报错（不静默放过）', () => {
+        expect(evaluateScanSanity({ uiFiles: -1, testFiles: 700 }).length).toBe(1);
+        expect(evaluateScanSanity({ uiFiles: Number.NaN, testFiles: 700 }).length).toBe(1);
+    });
+});
+
+describe('基线棘轮（Trae 审计 P2 · 登记簿不是棘轮）', () => {
+    it('基线 = 当前 → ok', () => {
+        const r = evaluateViewTestsRatchet({ baseline: ['a', 'b'], current: ['a', 'b'] });
+        expect(r.ok).toBe(true);
+        expect(r.added).toEqual([]);
+        expect(r.fixed).toEqual([]);
+    });
+
+    it('新增未达标文件 → needsWiden', () => {
+        const r = evaluateViewTestsRatchet({ baseline: ['a'], current: ['a', 'b'] });
+        expect(r.needsWiden).toBe(true);
+        expect(r.added).toEqual(['b']);
+        expect(r.ok).toBe(false);
+    });
+
+    it('已补测试但基线未收紧 → needsTighten（原实现只提示、不失败）', () => {
+        const r = evaluateViewTestsRatchet({ baseline: ['a', 'b'], current: ['a'] });
+        expect(r.needsTighten).toBe(true);
+        expect(r.fixed).toEqual(['b']);
+        expect(r.ok).toBe(false);
+    });
+
+    it('同时新增与收紧 → 两者都报', () => {
+        const r = evaluateViewTestsRatchet({ baseline: ['a'], current: ['c'] });
+        expect(r.added).toEqual(['c']);
+        expect(r.fixed).toEqual(['a']);
+        expect(r.needsWiden).toBe(true);
+        expect(r.needsTighten).toBe(true);
+    });
+
+    it('基线为空 + 当前为空 → ok', () => {
+        expect(evaluateViewTestsRatchet({ baseline: [], current: [] }).ok).toBe(true);
+    });
+
+    it('null 安全（基线文件缺失时按空处理）', () => {
+        const r = evaluateViewTestsRatchet({ baseline: null as never, current: ['a'] });
+        expect(r.needsWiden).toBe(true);
+    });
+
+    it('输出排序稳定（便于人读与 diff）', () => {
+        const r = evaluateViewTestsRatchet({ baseline: ['z', 'a'], current: [] });
+        expect(r.fixed).toEqual(['a', 'z']);
     });
 });

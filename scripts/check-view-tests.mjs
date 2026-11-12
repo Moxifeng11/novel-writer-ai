@@ -23,7 +23,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { collectImportedSpecifiers } from './lib/view-tests-lib.mjs';
+import { collectImportedSpecifiers, evaluateScanSanity, evaluateViewTestsRatchet } from './lib/view-tests-lib.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
@@ -145,10 +145,16 @@ const baseline = readBaseline();
 const baselineSet = new Set(baseline.files);
 const currentSet = new Set(uncovered.map(item => item.file));
 
-/** 当前新增的未达标文件（基线里没有） */
-const added = [...currentSet].filter(file => !baselineSet.has(file));
-/** 已修复但基线还留着的（提示可收紧） */
-const fixed = [...baselineSet].filter(file => !currentSet.has(file));
+// 扫描健全性（Trae 审计 P2）：ui/ 缺失或 tests/ 空会让本门禁整体空转
+const sanityErrors = evaluateScanSanity({ uiFiles: uiFiles.length, testFiles: testFiles.length });
+if (sanityErrors.length > 0 && !UPDATE_BASELINE) {
+    console.error('[check:view-tests] ❌ 扫描范围不健康：');
+    for (const item of sanityErrors) console.error(`  - ${item}`);
+    process.exit(1);
+}
+
+const ratchet = evaluateViewTestsRatchet({ baseline: baseline.files, current: [...currentSet] });
+const { added, fixed } = ratchet;
 
 if (UPDATE_BASELINE) {
     // 棘轮纪律：只允许收紧。放宽必须人工改文件并在 note 里给理由。
@@ -187,9 +193,14 @@ if (added.length > 0) {
 }
 
 const summary = `当前未达标 ${currentSet.size} 个（阈值 ${LINE_THRESHOLD} 行），基线 ${baselineSet.size} 个`;
+// 棘轮强制收紧（Trae 审计 P2）：补了测试必须立即落成基线变短，
+// 否则「登记簿」永远不会收紧，门禁只在拦新增、不推动存量下降。
 if (fixed.length > 0) {
-    console.log(`[check:view-tests] ✅ ${summary}`);
-    console.log(`  💡 有 ${fixed.length} 个文件已补测试，可运行 --update-baseline 收紧基线（只降不升）`);
-} else {
-    console.log(`[check:view-tests] ✅ ${summary}，无新增`);
+    console.error(`[check:view-tests] ❌ ${fixed.length} 个基线文件已补测试，但基线未收紧：`);
+    for (const file of fixed) console.error(`  - ${file}`);
+    console.error('');
+    console.error('棘轮只降不升：请立即收紧基线');
+    console.error('  node scripts/check-view-tests.mjs --update-baseline --note "已补测试，收紧基线"');
+    process.exit(1);
 }
+console.log(`[check:view-tests] ✅ ${summary}，无新增`);

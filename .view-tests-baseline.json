@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-12T01:08:13.932Z",
+  "updatedAt": "2026-11-12T14:36:27.563Z",
   "threshold": 200,
-  "note": "v4.84.0 自愈深化：flow-repair-host / flow-diagnosis-collectors 等 4 文件已补测试，基线从 94 收紧到 90（只降不升）",
+  "note": "DSH-20261112-19 补 kb-config-panel 假 DOM 测试后收紧基线（90→89）",
   "files": [
     "ui/add-fanfic-setting-modal.ts",
     "ui/agent-workbench-view.ts",
@@ -85,7 +85,6 @@
     "ui/template-manager.ts",
     "ui/unified-entity-generate-modal.ts",
     "ui/unified-entity-manager-modal.ts",
-    "ui/views/kb-config-panel.ts",
     "ui/views/knowledge-base-modals.ts",
     "ui/views/writing-fingerprint-view.ts",
     "ui/volume-intro-modal.ts",
@@ -97,7 +96,7 @@
   ],
   "lineCounts": {
     "ui/add-fanfic-setting-modal.ts": 771,
-    "ui/agent-workbench-view.ts": 1912,
+    "ui/agent-workbench-view.ts": 1924,
     "ui/ai-builder-modal.ts": 1133,
     "ui/appearance-settings.ts": 574,
     "ui/auto-writer-modal.ts": 236,
@@ -177,7 +176,6 @@
     "ui/template-manager.ts": 710,
     "ui/unified-entity-generate-modal.ts": 865,
     "ui/unified-entity-manager-modal.ts": 754,
-    "ui/views/kb-config-panel.ts": 222,
     "ui/views/knowledge-base-modals.ts": 1379,
     "ui/views/writing-fingerprint-view.ts": 2039,
     "ui/volume-intro-modal.ts": 505,
