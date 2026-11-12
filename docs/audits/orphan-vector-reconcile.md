@@ -78,3 +78,11 @@ cd .obsidian/plugins/novel-writer-ai
 npx vitest run tests/unit/engine/knowledge-vector-reconcile.test.ts   # 13 例
 node scripts/verify-three-flows.mjs                                   # 真实 vault 一致性行
 ```
+
+## 勘误二（DSH-20261112-17）
+
+- 孤儿呈现升级：除整体 warn 条外，「检索」环节 detail 现在直接带「其中 M 本不在知识库索引」
+  且环节级降为 warn（`shared/link-status-compute.ts` 新增 `orphanCount`；view/collectors/verify
+  三处同口径）。-08 的假绿从此在环节图标层可见。
+- `verify-three-flows.mjs` 技术债闭合：考据缓存路径补 sanitizeName 镜像（作品名含 `/` 等
+  字符时不再与真实路径分叉）。

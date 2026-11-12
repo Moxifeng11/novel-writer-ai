@@ -85,11 +85,13 @@ export function createFlowDiagnosisDeps(host: CollectorHost): FlowDiagnosisDeps 
             // 审计 #A8：先触发 reconcile（内部 ensureLoaded）再读 loaded 状态，
             // 避免首次诊断同时报「已加载 0 本/未就绪」+「1 本孤儿」的自相矛盾快照。
             let orphanNote: string | null = null;
+            let orphanCount = 0;
             const kbIds = books.map(b => (b as unknown as { id: string }).id);
             try {
                 const reconcile = await (store as unknown as { reconcileWithIndex?: (ids: string[]) => Promise<{ orphans: string[]; missing: string[]; healthy: string[] }> })?.reconcileWithIndex?.(kbIds);
                 if (reconcile) {
                     orphanNote = summarizeVectorReconcile(reconcile);
+                    orphanCount = reconcile.orphans.length;
                     storeLoadedBooks = (store as unknown as { getLoadedBookIds?: () => string[] })?.getLoadedBookIds?.().length ?? storeLoadedBooks;
                 }
             } catch (e) {
@@ -107,6 +109,7 @@ export function createFlowDiagnosisDeps(host: CollectorHost): FlowDiagnosisDeps 
                 embeddingReady: await embeddingReady(),
                 storeLoadedBooks,
                 storeReady,
+                orphanCount,
                 degradations: orphanNote ? [orphanNote, ...baseDegradations] : baseDegradations,
             };
         },

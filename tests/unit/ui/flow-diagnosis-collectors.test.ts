@@ -46,6 +46,8 @@ describe('collectKnowledge 孤儿对账注入', () => {
         expect(input.vectorDone).toBe(1);
         expect(input.degradations?.some(d => d.includes('孤儿向量'))).toBe(true);
         expect(input.degradations?.some(d => d.includes('1 本不在知识库索引'))).toBe(true);
+        // DSH-20261112-17：环节级呈现——orphanCount 随输入透传给判定函数
+        expect(input.orphanCount).toBe(1);
     });
 
     it('无孤儿：不追加孤儿降级（原有降级列表保持）', async () => {

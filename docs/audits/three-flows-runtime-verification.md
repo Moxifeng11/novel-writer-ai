@@ -115,3 +115,23 @@ node scripts/verify-three-flows.mjs --json          # 机器可读
 node scripts/verify-three-flows.mjs --no-probe      # 不探测（嵌入环节记 unknown）
 node scripts/verify-three-flows.mjs --vault <path> --project <id>
 ```
+
+## 勘误二（DSH-20261112-17：检索环节级呈现 + 降级取末 3 条）
+
+`shared/link-status-compute.ts` 新增 `orphanCount` 语义：`>0` 时「检索」环节级降为 warn、
+detail 附注「其中 M 本不在知识库索引」；镜像同步进 verify 脚本；「最近降级」拼接改取末 3 条
+（事件按 push 序保留，slice(0,3) 取的是最旧的）。脚本真实输出（真实 vault）：
+
+```text
+【知识流】无法验证（缺数据/缺模型）
+  ⚠️ 检索：向量库已加载 1 本（其中 1 本不在知识库索引，建议对账清理）
+⚠️ 一致性问题：向量库有 1 本不在知识库索引里（kb_mrgel8mq_niign00x）
+退出码: 2（0=三条全通 / 1=有断点或降级 / 2=无法判定）
+```
+
+种子 vault（干净对照）：
+
+```text
+【知识流】已验证通过
+  ✅ 检索：向量库已加载 1 本
+```

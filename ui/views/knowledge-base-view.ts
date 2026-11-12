@@ -1067,6 +1067,8 @@ export class KnowledgeBaseView extends ItemView {
             ? summarizeVectorReconcile(vectorReconcile, '点「🔗 向量对账」可清理')
             : null;
         renderLinkStatus(booksPanel, computeKnowledgeFlowStatus(buildKnowledgeFlowInput(this.allBooks, {
+            // DSH-20261112-17：环节级呈现——「检索」的 detail 直接带孤儿数并降为 warn
+            orphanCount: vectorReconcile?.orphans.length ?? 0,
             embeddingReady: this.embeddingSnapshot?.available === true,
             storeLoadedBooks: vectorStore && typeof vectorStore.getLoadedBookIds === 'function'
                 ? vectorStore.getLoadedBookIds().length

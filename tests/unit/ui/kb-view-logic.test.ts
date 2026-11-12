@@ -25,6 +25,7 @@ describe('buildKnowledgeFlowInput', () => {
             embeddingReady: true,
             storeLoadedBooks: 2,
             storeReady: false,
+            orphanCount: 1,
             degradations: ['向量检索回退关键词'],
         });
 
@@ -36,6 +37,7 @@ describe('buildKnowledgeFlowInput', () => {
             embeddingReady: true,
             storeLoadedBooks: 2,
             storeReady: false,
+            orphanCount: 1,
             degradations: ['向量检索回退关键词'],
         });
     });

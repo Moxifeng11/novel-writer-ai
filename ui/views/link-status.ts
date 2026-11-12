@@ -106,7 +106,9 @@ export function renderLinkStatus(container: HTMLElement, status: LinkStatus): HT
     if (status.degradations && status.degradations.length > 0) {
         notes.createDiv({
             cls: 'nw-capability-note',
-            text: `最近降级 ${status.degradations.length} 次：${status.degradations.slice(0, 3).join('；')}`
+            // DSH-20261112-17：取末 3 条——事件按 push 序保留，slice(0,3) 取的是最旧的，
+            // 与「最近」语义相反，还会把新出现的孤儿/降级提示挤掉。
+            text: `最近降级 ${status.degradations.length} 次：${status.degradations.slice(-3).join('；')}`
                 + (status.degradations.length > 3 ? ' …' : ''),
         });
     }

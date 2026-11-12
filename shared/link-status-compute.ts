@@ -98,6 +98,14 @@ export interface KnowledgeFlowInput {
     /** 向量库当前加载的书数 */
     storeLoadedBooks: number;
     /**
+     * 已加载书里不在知识库索引的数量（孤儿向量，DSH-20261112-17）。
+     *
+     * >0 时「检索」环节降为 warn 且 detail 附注孤儿数——这是 -08 假绿的
+     * 环节级呈现：用户扫环节图标就能看出「检索有问题」，而不是只在整体
+     * warn 条里找被 slice 挤掉的降级文案。
+     */
+    orphanCount?: number;
+    /**
      * 向量库是否已完成首次加载（阶段 B2）。
      *
      * 缺省按 `true` 处理（调用方没提供时视为「已知状态」）——
@@ -153,7 +161,13 @@ export function computeKnowledgeFlowStatus(input: KnowledgeFlowInput): LinkStatu
     const retrieve: LinkStage = !storeReady
         ? { name: '检索', status: 'unknown', detail: '向量库尚未加载，暂时无法判定' }
         : input.storeLoadedBooks > 0
-            ? { name: '检索', status: 'ok', detail: `向量库已加载 ${input.storeLoadedBooks} 本` }
+            ? {
+                name: '检索',
+                // DSH-20261112-17：orphanCount>0 时环节级降为 warn——-08 假绿的本源
+                // 就是这句 detail 只报「已加载 N 本」，环节图标看着是通的。
+                status: input.orphanCount ? 'warn' : 'ok',
+                detail: `向量库已加载 ${input.storeLoadedBooks} 本${input.orphanCount ? `（其中 ${input.orphanCount} 本不在知识库索引，建议对账清理）` : ''}`,
+            }
             : input.vectorDone > 0
                 ? {
                     name: '检索',
@@ -322,7 +336,9 @@ export function formatLinkStatusForAgent(status: LinkStatus): string {
         lines.push(`结论：链路断在「${status.breakpoint}」——${stage?.detail ?? ''}。修好这一环，后面的环节才有意义。`);
     }
     if (status.degradations && status.degradations.length > 0) {
-        lines.push(`运行时降级（${status.degradations.length}）：${status.degradations.slice(0, 3).join('；')}`);
+        // DSH-20261112-17：取末 3 条——事件按 push 序保留，slice(0,3) 取的是最旧的，
+        // 与「最近」语义相反，还会把新出现的孤儿/降级提示挤掉。
+        lines.push(`运行时降级（${status.degradations.length}）：${status.degradations.slice(-3).join('；')}`);
     }
     return lines.join('\n');
 }

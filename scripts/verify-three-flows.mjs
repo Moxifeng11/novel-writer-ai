@@ -60,6 +60,22 @@ function resolveVaultRoot(arg) {
     return path.resolve(REPO_ROOT, '..', '..', '..');
 }
 
+/**
+ * @mirror shared/paths.ts#sanitizeName（技术债闭合，DSH-20261112-17）
+ *
+ * 真实实现的净化链逐行镜像：控制字符删除 → 文件系统保留字替换下划线 →
+ * trim → 去首尾点 → 空回落「未命名」。
+ */
+function mirrorSanitizeName(name) {
+    const cleaned = String(name ?? '')
+        .replace(/[\u0000-\u001f\u007f]/g, '')
+        .replace(/[\\/:*?"<>|]/g, '_')
+        .trim()
+        .replace(/^\.+/, '')
+        .replace(/\.+$/, '');
+    return cleaned || '未命名';
+}
+
 const readJson = (p) => {
     try {
         return JSON.parse(fs.readFileSync(p, 'utf8'));
@@ -106,7 +122,10 @@ function summarizeLink(title, stages, degradations) {
     };
 }
 
-/** @mirror shared/link-status-compute.ts#computeKnowledgeFlowStatus */
+/**
+ * @mirror shared/link-status-compute.ts#computeKnowledgeFlowStatus
+ * DSH-20261112-17：orphanCount>0 时「检索」环节降为 warn 并在 detail 附注孤儿数（环节级呈现）。
+ */
 function computeKnowledgeFlowStatus(input) {
     const breakdown = input.breakdownCompleted > 0
         ? { name: '拆解', status: 'ok', detail: `${input.breakdownCompleted} 本已拆解` }
@@ -144,7 +163,11 @@ function computeKnowledgeFlowStatus(input) {
     const retrieve = !storeReady
         ? { name: '检索', status: 'unknown', detail: '向量库尚未加载，暂时无法判定' }
         : input.storeLoadedBooks > 0
-            ? { name: '检索', status: 'ok', detail: `向量库已加载 ${input.storeLoadedBooks} 本` }
+            ? {
+                name: '检索',
+                status: input.orphanCount ? 'warn' : 'ok',
+                detail: `向量库已加载 ${input.storeLoadedBooks} 本${input.orphanCount ? `（其中 ${input.orphanCount} 本不在知识库索引，建议对账清理）` : ''}`,
+            }
             : input.vectorDone > 0
                 ? {
                     name: '检索',
@@ -454,6 +477,7 @@ async function main() {
         embeddingDetail: embedding.detail,
         storeLoadedBooks,
         storeReady: true,
+        orphanCount: orphanVectorIds.length,
     };
     const knowledgeStatus = computeKnowledgeFlowStatus(knowledgeInput);
     if (!embedding.ok) {
@@ -533,7 +557,11 @@ async function main() {
             const rule = readFanficSetting(vaultRoot, meta.fanficPath);
             // 作品名缺失时用设定文件名兜底（_资料/<作品名>/ 与设定文件同名是生成器的既有约定）
             const workName = rule.workName || path.basename(meta.fanficPath).replace(/.md$/i, '');
-            const cachePath = path.join(vaultRoot, `${project.id}/05-同人设定库/_资料/${workName}/sources.json`);
+            // 技术债闭合（DSH-20261112-17）：真实实现 pjFanficResearchDir 对 workName 过
+            // sanitizeName（shared/paths.ts:194）——镜像同一净化链，作品名含 `/` 等
+            // 字符时不再与真实路径分叉。
+            const safeWorkName = mirrorSanitizeName(workName);
+            const cachePath = path.join(vaultRoot, `${project.id}/05-同人设定库/_资料/${safeWorkName}/sources.json`);
             const cached = workName ? readJson(cachePath) : null;
             constraintInput = {
                 sourceCount: Array.isArray(cached?.sources) ? cached.sources.length : 0,

@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 323 | 138791 | 1752 | 1429 | 82% |
 | `services/` | 33 | 13799 | 205 | 161 | 79% |
-| `shared/` | 197 | 41698 | 1709 | 1393 | 82% |
+| `shared/` | 197 | 41714 | 1709 | 1393 | 82% |
 | `core/` | 7 | 2913 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 266 | 104046 | 987 | 798 | 81% |
+| `ui/` | 266 | 104058 | 987 | 798 | 81% |
 
 ## 文件清单
 
@@ -476,7 +476,7 @@
 | `shared/keyboard.ts` | 29 | 1 | 1 |
 | `shared/keyword-tokens.ts` | 33 | 2 | 2 |
 | `shared/knowledge-position.ts` | 51 | 3 | 2 |
-| `shared/link-status-compute.ts` | 329 | 12 | 5 |
+| `shared/link-status-compute.ts` | 345 | 12 | 5 |
 | `shared/local-ai-queue.ts` | 89 | 2 | 1 |
 | `shared/logger.ts` | 101 | 5 | 5 |
 | `shared/lru-cache.ts` | 221 | 2 | 2 |
@@ -778,7 +778,7 @@
 | `ui/services/agent-session-store.ts` | 211 | 5 | 5 |
 | `ui/services/agent-spill-store.ts` | 142 | 4 | 3 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |
-| `ui/services/flow-diagnosis-collectors.ts` | 206 | 1 | 1 |
+| `ui/services/flow-diagnosis-collectors.ts` | 209 | 1 | 1 |
 | `ui/services/flow-repair-host.ts` | 97 | 4 | 1 |
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
@@ -836,12 +836,12 @@
 | `ui/views/kb-panels-logic.ts` | 342 | 18 | 10 |
 | `ui/views/kb-stats-panel.ts` | 155 | 2 | 2 |
 | `ui/views/kb-task-panel.ts` | 293 | 24 | 19 |
-| `ui/views/kb-view-logic.ts` | 112 | 7 | 4 |
+| `ui/views/kb-view-logic.ts` | 117 | 7 | 4 |
 | `ui/views/knowledge-base-modals.ts` | 1379 | 4 | 4 |
-| `ui/views/knowledge-base-view.ts` | 3372 | 10 | 10 |
+| `ui/views/knowledge-base-view.ts` | 3374 | 10 | 10 |
 | `ui/views/knowledge-capability.ts` | 113 | 3 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
-| `ui/views/link-status.ts` | 115 | 2 | 1 |
+| `ui/views/link-status.ts` | 117 | 2 | 1 |
 | `ui/views/writing-fingerprint-view.ts` | 2039 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |

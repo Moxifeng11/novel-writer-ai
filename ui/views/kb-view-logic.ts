@@ -25,6 +25,8 @@ export interface KnowledgeFlowInputLike {
     embeddingReady: boolean;
     storeLoadedBooks: number;
     storeReady: boolean;
+    /** 已加载书里不在知识库索引的数量（孤儿向量，DSH-20261112-17 环节级呈现） */
+    orphanCount?: number;
     degradations?: string[];
 }
 
@@ -33,6 +35,8 @@ export interface KnowledgeFlowCollectOptions {
     embeddingReady: boolean;
     storeLoadedBooks: number;
     storeReady: boolean;
+    /** 已加载书里不在知识库索引的数量（孤儿向量，来自索引↔向量库对账） */
+    orphanCount?: number;
     degradations?: string[];
 }
 
@@ -58,6 +62,7 @@ export function buildKnowledgeFlowInput(
         embeddingReady: options.embeddingReady,
         storeLoadedBooks: options.storeLoadedBooks,
         storeReady: options.storeReady,
+        orphanCount: options.orphanCount,
         degradations: options.degradations,
     };
 }
