@@ -1,53 +1,53 @@
 {
-  "generatedAt": "2026-11-11T20:34:16.610Z",
-  "gitHead": "539ef14004e74f65d5735e8dc9437f50ff3d9683",
+  "generatedAt": "2026-11-12T13:34:21.625Z",
+  "gitHead": "5b76251b4a2198c4aaf136f545c9bc5731bd8ff0",
   "nodeVersion": "v24.16.0",
-  "note": "DSH-20261112-13 达标锚定：settings 三块分区 + golden-opening + ai-builder + prompt-manager + context-panel 共 7 个测试文件（约 56 例）假 DOM 渲染回归；ui 16.73%→20.08%（≥20% 达标）、ui/views 27.17% 持平；co-writing-view 未重切未测（红线遵守），全部走 dep 桩 + 假 DOM",
+  "note": "v4.84.0 开发中重锚：-16/-17 改 ui/（repair_flow UI 接线 + 链路状态语义 slice(-3)/orphanCount）。ui 20.08%→20.28%（+0.20pp）；ui/views 27.17%→26.88%（-0.29pp，因 ui/views/link-status.ts 新增渲染行未被 renderLinkStatus 假DOM测试覆盖，已挂任务补测）",
   "dirs": {
     "ui": {
-      "files": 264,
+      "files": 265,
       "lines": {
-        "total": 41577,
-        "covered": 8348,
-        "pct": 20.08
+        "total": 41728,
+        "covered": 8464,
+        "pct": 20.28
       },
       "statements": {
-        "total": 45402,
-        "covered": 9056,
-        "pct": 19.95
+        "total": 45561,
+        "covered": 9178,
+        "pct": 20.14
       },
       "branches": {
-        "total": 22181,
-        "covered": 4876,
-        "pct": 21.98
+        "total": 22283,
+        "covered": 4934,
+        "pct": 22.14
       },
       "functions": {
-        "total": 7102,
-        "covered": 1342,
-        "pct": 18.9
+        "total": 7118,
+        "covered": 1360,
+        "pct": 19.11
       }
     },
     "ui/views": {
       "files": 31,
       "lines": {
-        "total": 4387,
+        "total": 4434,
         "covered": 1192,
-        "pct": 27.17
+        "pct": 26.88
       },
       "statements": {
-        "total": 4746,
+        "total": 4797,
         "covered": 1327,
-        "pct": 27.96
+        "pct": 27.66
       },
       "branches": {
-        "total": 2407,
+        "total": 2441,
         "covered": 822,
-        "pct": 34.15
+        "pct": 33.67
       },
       "functions": {
-        "total": 878,
+        "total": 884,
         "covered": 284,
-        "pct": 32.35
+        "pct": 32.13
       }
     }
   }

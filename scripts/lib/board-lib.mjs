@@ -174,12 +174,16 @@ export function formatBoardStatus(tasks, claims, locks, now) {
     for (const task of folded.values()) {
         const claim = (claims || []).find((c) => c && String(c.taskId) === String(task.id) && !isLeaseExpired(c, now));
         const assignee = String(task.assignee ?? '').trim();
+        // 归因提示：任务被「非派发方」写入时标出来，避免冒用 dsh 身份自派
+        const creatorNote = task.createdBy && task.by && task.createdBy !== task.by
+            ? ` （${task.createdBy} 代 ${task.by} 建）`
+            : '';
         const state = task.status === 'done' ? '✅ done'
             : task.status === 'failed' ? '❌ failed'
                 : claim ? `🔒 ${claim.agent}（剩 ${Math.max(0, Math.round((Number(claim.leaseUntil) - now) / 60000))} 分钟）`
                     : assignee ? `🟢 待领取 → 指派 ${assignee}`
                         : '🟢 待领取';
-        lines.push(`  ${task.id} | ${state} | ${task.title || ''}`);
+        lines.push(`  ${task.id} | ${state} | ${task.title || ''}${creatorNote}`);
     }
     const activeLocks = (locks || []).filter((l) => l && !isLeaseExpired(l, now));
     if (activeLocks.length > 0) {

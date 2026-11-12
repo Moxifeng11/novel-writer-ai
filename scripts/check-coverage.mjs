@@ -68,17 +68,21 @@ function isAncestor(ancestor, head) {
 /**
  * 两次提交之间「被统计的源码目录」是否有变化。
  *
- * 只检查覆盖率真正度量的目录；package.json / vitest.config.ts / 门禁脚本 / 文档
- * 的变更不影响覆盖率数字，也不应让基线失效（基线随门禁提交的自引用场景）。
+ * 只检查覆盖率真正度量的目录（`TRACKED_DIRS`）；package.json / vitest.config.ts /
+ * 门禁脚本 / 文档的变更不影响覆盖率数字，也不应让基线失效。
+ *
+ * **2026-11-12 修正**：原实现把 `engine/shared/services/core/domains` 也算进「源码变化」，
+ * 导致只改 engine 的提交（如 repair_flow 深化）也会让 ui 覆盖率基线失效、
+ * 门禁以 exit 2 拒绝比较。基线只统计 `ui`/`ui/views`，别的目录变了与它无关。
  *
  * @param {string} from - 基线 gitHead
  * @param {string} to - 当前 HEAD
- * @returns {boolean} 源码是否变化
+ * @returns {boolean} 被统计目录是否变化
  */
 function sourcesChanged(from, to) {
     const result = spawnSync(
         'git',
-        ['diff', '--quiet', from, to, '--', 'ui', 'engine', 'shared', 'services', 'core', 'domains'],
+        ['diff', '--quiet', from, to, '--', ...TRACKED_DIRS],
         { cwd: ROOT },
     );
     // 0 = 无差异；1 = 有差异；其它（如对象缺失）按「有变化」保守处理

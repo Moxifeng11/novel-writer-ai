@@ -13,6 +13,8 @@ export interface BoardTask {
     accept?: string;
     /** 定向指派：只有该 agent 能领；空/缺省表示任何人可领 */
     assignee?: string;
+    /** 实际写入方（BOARD_ME 环境变量），用于识别冒用 --by 的自派 */
+    createdBy?: string;
     note?: string;
     by?: string;
     status?: string;

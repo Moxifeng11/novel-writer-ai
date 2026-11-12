@@ -227,13 +227,26 @@ function cmdAdd() {
         /** 定向指派：只有该 agent 能领；空串表示任何 agent 可领 */
         assignee: arg('assignee', ''),
         note: arg('note', ''),
+        /** 请求方（谁希望这件事被做） */
         by: arg('by', 'dsh'),
+        /**
+         * 实际写入方（从 BOARD_ME 环境变量取）。
+         *
+         * 2026-11-12 新增：此前 zcode 用 `--by dsh` 自建任务，
+         * 台账上看起来像 dsh 派的活，实际不是——派发权归 dsh，冒用会造成归因失真。
+         * createdBy 记录真实写入者，`--by` 与它不一致时会在 status 里标出来。
+         */
+        createdBy: String(process.env.BOARD_ME || '').trim(),
         status: 'open',
         createdAt: Date.now(),
     };
     appendJsonl(TASKS, task);
     console.log(`✅ 已加入任务板：${id} | ${title}`);
     if (task.scope) console.log(`   写范围：${task.scope}`);
+    if (task.createdBy && task.createdBy !== task.by) {
+        console.warn(`   ⚠ 归因提示：--by=${task.by}，但实际写入方是 ${task.createdBy}。`);
+        console.warn('     派发权归 dsh；其他 agent 自建任务请用 --by <自己>，不要冒用 dsh。');
+    }
 }
 
 function cmdNext() {
