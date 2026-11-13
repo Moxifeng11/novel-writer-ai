@@ -1,0 +1,47 @@
+{
+  "chapters": 30,
+  "realFacts": 456,
+  "baselineFalsePositives": 0,
+  "injectedContradictions": 10,
+  "detected": [
+    {
+      "id": "c|quantitative|桑桑|年龄|第36章|第5章",
+      "kind": "quantitative",
+      "category": "factual",
+      "subject": "桑桑",
+      "predicate": "年龄",
+      "reasoning": "第5章「桑桑」11 岁，到第36章反而变成 0 岁——年龄不可能倒退。",
+      "evidenceA": {
+        "quote": "不像是个出身凄苦将将十一二岁的小侍女",
+        "chapterKey": "第5章"
+      },
+      "evidenceB": {
+        "quote": "注入冲突：那里有一个十一二岁的女童正在地搬动水桶",
+        "chapterKey": "第36章"
+      },
+      "decidedBy": "rule",
+      "confidence": 0.92
+    },
+    {
+      "id": "c|quantitative|桑桑|年龄|第37章|第5章",
+      "kind": "quantitative",
+      "category": "factual",
+      "subject": "桑桑",
+      "predicate": "年龄",
+      "reasoning": "第5章「桑桑」11 岁，到第37章反而变成 0 岁——年龄不可能倒退。",
+      "evidenceA": {
+        "quote": "不像是个出身凄苦将将十一二岁的小侍女",
+        "chapterKey": "第5章"
+      },
+      "evidenceB": {
+        "quote": "注入冲突：可你难道不觉得她的年龄还太小，不应该承担这么重这么辛苦的劳作吗？",
+        "chapterKey": "第37章"
+      },
+      "decidedBy": "rule",
+      "confidence": 0.92
+    }
+  ],
+  "recall": 0.2,
+  "legalChanges": 10,
+  "legalFalsePositives": 0
+}
