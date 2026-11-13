@@ -21,6 +21,30 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.88.0',
+        date: '2026-11-13',
+        title: '一致性审核闭环：19 子类全覆盖 + 结算自动兜底',
+        sections: [
+            {
+                type: 'added',
+                label: '🔍 一致性审核',
+                items: [
+                    '19/19 子类全覆盖：新增记忆矛盾、核心规则违规、视角混乱等 10 类',
+                    '结算后自动跑规则层（零 token），有疑似项才启 AI 识别（封顶 3 对）',
+                    '发现跨章矛盾主动提示，不必再去点命令',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '🛠️ 修复',
+                items: [
+                    'rename 覆盖类问题全仓排查（4 处），含知识库索引第二次起写不进去',
+                    '修正 3 处「测试锁住错误行为」的旧断言',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.87.0',
         date: '2026-11-13',
         title: '跨章一致性审核：从"写得好不好"到"前后对不对"',
@@ -334,22 +358,6 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
         ],
     },
 
-    {
-        version: '4.79.1',
-        date: '2026-11-09',
-        title: '社区目录自动审核修复',
-        sections: [
-            {
-                type: 'fixed',
-                label: '🐛 修复',
-                items: [
-                    '移除插件自禁用/自启用（审核 Error）：热重载改为提示手动切换',
-                    '修复 CSS 漏分号（审核 Error，.nw-u-fwr-gap-4px）',
-                    'authorUrl 改为个人主页；README 首段改为英文（审核 Warning）',
-                ],
-            },
-        ],
-    },
 
 ];
 
