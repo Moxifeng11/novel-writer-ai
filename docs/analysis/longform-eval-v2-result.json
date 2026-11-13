@@ -1,38 +1,38 @@
 {
-  "chapters": 199,
-  "realFacts": 3354,
-  "baselineFalsePositives": 2,
+  "chapters": 200,
+  "realFacts": 3258,
+  "baselineFalsePositives": 0,
   "injectedContradictions": 10,
   "detected": 10,
   "recall": 1,
   "detectedSubjects": [
-    "宁缺",
+    "桑桑",
     "李渔",
     "简大家",
+    "宁缺",
+    "退役校尉",
     "王颖",
     "谢承运",
-    "礼科教习先生",
+    "礼科副教授",
     "陈子贤",
-    "陈皮皮",
-    "颜肃卿",
-    "二师兄"
+    "陈皮皮"
   ],
   "legalChanges": 10,
   "legalFalsePositives": 0,
   "scale": [
     {
       "span": 30,
-      "facts": 469,
+      "facts": 463,
       "falsePositives": 0
     },
     {
       "span": 60,
-      "facts": 916,
+      "facts": 894,
       "falsePositives": 0
     },
     {
       "span": 100,
-      "facts": 1603,
+      "facts": 1557,
       "falsePositives": 0
     }
   ]
