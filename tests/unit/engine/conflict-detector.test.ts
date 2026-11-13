@@ -173,3 +173,53 @@ describe('ConflictDetector — 人物状态剧变无依据（checklist 待补）
     expect(conflicts.some((c) => c.type === 'character' && c.message.includes('剧变'))).toBe(true);
   });
 });
+
+describe('ConflictDetector — P2 第二意见（事实库）', () => {
+    /** 造带时间线的快照 */
+    function timelineSnapshot(time: string) {
+        return { timeline: { time }, characterStates: [], locations: [], items: [], foreshadows: [] } as never;
+    }
+    const BODY = '正文足够长的一段文字。'.repeat(20);
+
+    it('**事实库说一致 → 抑制时间线冲突**', () => {
+        const d = new ConflictDetector();
+        const baseline = d.detect(timelineSnapshot('第三日'), BODY, { previousTimeValue: 8000 });
+        const suppressed = d.detect(timelineSnapshot('第三日'), BODY, {
+            previousTimeValue: 8000,
+            adviseTimeline: () => ({ status: 'consistent', reason: '与第 12 章记录一致' }),
+        });
+        const before = baseline.filter(c => c.type === 'timeline').length;
+        const after = suppressed.filter(c => c.type === 'timeline').length;
+        expect(after).toBeLessThanOrEqual(before);
+        expect(after).toBe(0);
+    });
+
+    it('**事实库未知 → 与无第二意见时完全一致**（不能因没数据就放过）', () => {
+        const d = new ConflictDetector();
+        const baseline = d.detect(timelineSnapshot('第三日'), BODY, { previousTimeValue: 8000 });
+        const unknown = d.detect(timelineSnapshot('第三日'), BODY, {
+            previousTimeValue: 8000,
+            adviseTimeline: () => ({ status: 'unknown', reason: '无记录' }),
+        });
+        expect(unknown.filter(c => c.type === 'timeline').length)
+            .toBe(baseline.filter(c => c.type === 'timeline').length);
+    });
+
+    it('事实库说冲突 → 与无第二意见时一致（仍然报）', () => {
+        const d = new ConflictDetector();
+        const baseline = d.detect(timelineSnapshot('第三日'), BODY, { previousTimeValue: 8000 });
+        const conflict = d.detect(timelineSnapshot('第三日'), BODY, {
+            previousTimeValue: 8000,
+            adviseTimeline: () => ({ status: 'conflict', reason: '第 20 章记录为第五日' }),
+        });
+        expect(conflict.filter(c => c.type === 'timeline').length)
+            .toBe(baseline.filter(c => c.type === 'timeline').length);
+    });
+
+    it('不提供第二意见时行为不变（零回归）', () => {
+        const d = new ConflictDetector();
+        const a = d.detect(timelineSnapshot('第三日'), BODY, { previousTimeValue: 8000 });
+        const b = d.detect(timelineSnapshot('第三日'), BODY, { previousTimeValue: 8000 });
+        expect(a.length).toBe(b.length);
+    });
+});

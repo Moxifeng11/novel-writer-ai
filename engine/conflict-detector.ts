@@ -17,6 +17,14 @@ export interface ConflictDetectorOptions {
     /** 已知地点库（程序规则层地点冲突检测用） */
     knownLocations?: string[];
     previousTimeValue?: number;
+    /**
+     * P2 第二意见（可选）：正则给出时间声称值时，由事实库判断是否与已记录事实一致。
+     * `consistent` 抑制该冲突；`unknown` 不抑制（不能因为没数据就放过）。
+     */
+    adviseTimeline?: (claim: { value: string; chapterNum: number }) => {
+        status: 'consistent' | 'conflict' | 'unknown';
+        reason: string;
+    };
 }
 
 /** 弱提示规则的正文长度门槛（低于此长度的文本不触发未提及类弱冲突，避免误报） */
