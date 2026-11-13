@@ -64,6 +64,8 @@ export interface FactMetadata {
     chapter: number;
     /** 是否被人工忽略（保留但排除出第二意见） */
     ignored?: boolean;
+    /** 是否描述当前状态（false = 回溯/回忆；缺省视为 true） */
+    isCurrentState?: boolean;
 }
 
 /**

@@ -9,6 +9,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    CANONICAL_PREDICATES,
     DECOMPOSE_TYPES,
     buildDecomposePrompt,
     clamp01,
@@ -152,5 +153,61 @@ describe('validRangesConflict · 合法变化不报', () => {
         const a = entry({ value: 'A', validFrom: 1, validTo: 50 });
         const b = entry({ value: 'B', validFrom: 30, validTo: null });
         expect(validRangesConflict(a, b)).toBe(true);
+    });
+});
+
+describe('规范谓词枚举（根治关键词匹配）', () => {
+    it('每类都有唯一规范谓词', () => {
+        for (const type of DECOMPOSE_TYPES) {
+            expect(CANONICAL_PREDICATES[type]).toBeTruthy();
+        }
+    });
+
+    it('规范谓词互不重复', () => {
+        const values = Object.values(CANONICAL_PREDICATES);
+        expect(new Set(values).size).toBe(values.length);
+    });
+
+    it('prompt 要求规范谓词与 isCurrentState', () => {
+        const prompt = buildDecomposePrompt(3, '正文');
+        expect(prompt).toContain('规范谓词');
+        expect(prompt).toContain('isCurrentState');
+        expect(prompt).toContain('age=年龄');
+    });
+
+    it('**模型给自由谓词时归一化为规范值**（不再进规则层当自由文本）', () => {
+        const raw = JSON.stringify({ entries: [{
+            type: 'age', subject: '宁缺', predicate: '年龄约', value: '十七',
+            validFrom: 1, validTo: null, confidence: 0.9, quote: '宁缺今年十七',
+        }] });
+        const parsed = parseDecomposeResponse(raw, '宁缺今年十七');
+        expect(parsed!.entries[0].predicate).toBe('年龄');
+    });
+
+    it('isCurrentState=false 被保留（供规则层排除回溯）', () => {
+        const raw = JSON.stringify({ entries: [{
+            type: 'age', subject: '宁缺', predicate: '年龄', value: '四',
+            validFrom: 1, validTo: null, confidence: 0.9,
+            quote: '我那年才四岁', isCurrentState: false,
+        }] });
+        const parsed = parseDecomposeResponse(raw, '我那年才四岁');
+        expect(parsed!.entries[0].isCurrentState).toBe(false);
+    });
+
+    it('缺省 isCurrentState 视为 true（兼容旧输出）', () => {
+        const raw = JSON.stringify({ entries: [{
+            type: 'age', subject: '宁缺', predicate: '年龄', value: '十七',
+            validFrom: 1, validTo: null, confidence: 0.9, quote: '宁缺今年十七',
+        }] });
+        expect(parseDecomposeResponse(raw, '宁缺今年十七')!.entries[0].isCurrentState).toBe(true);
+    });
+
+    it('条目转断言时带 isCurrentState', () => {
+        const entry: DecomposeEntry = {
+            type: 'age', subject: '宁缺', predicate: '年龄', value: '四',
+            validFrom: 1, validTo: null, confidence: 0.9, quote: '我那年才四岁', isCurrentState: false,
+        };
+        const [assertion] = entriesToAssertions([entry], '第1章', 1);
+        expect(assertion.isCurrentState).toBe(false);
     });
 });

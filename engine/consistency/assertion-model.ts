@@ -112,6 +112,8 @@ export interface FactAssertion {
     chapterNum: number | null;
     /** 原文引文（用于展示与定位） */
     quote: string;
+    /** 是否描述当前状态（false = 回溯；缺省视为 true，兼容旧数据） */
+    isCurrentState?: boolean;
     /** 正文中的字符偏移；定位前为 undefined */
     offset?: number;
     /** 来源 */

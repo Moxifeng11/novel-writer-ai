@@ -28,6 +28,25 @@ export const DECOMPOSE_TYPES = [
     'memory',
 ] as const;
 
+/**
+ * 每类事实的**规范谓词**（唯一允许值）。
+ *
+ * 根治方案（2026-11-13）：此前 predicate 是自由文本，规则层只能靠关键词猜
+ * （严格等值漏变体、包含匹配吞回溯）。现在由拆解侧直接产出规范谓词，
+ * 规则层按枚举比对即可，不再猜。
+ */
+export const CANONICAL_PREDICATES: Record<DecomposeType, string> = {
+    age: '年龄',
+    location: '位置',
+    possession: '持有',
+    ability: '能力',
+    relationship: '关系',
+    timeline: '时间',
+    'world-rule': '规则',
+    knowledge: '认知',
+    memory: '记忆',
+};
+
 /** 拆解条目类型 */
 export type DecomposeType = typeof DECOMPOSE_TYPES[number];
 
@@ -53,6 +72,11 @@ export interface DecomposeEntry {
     confidence: number;
     /** 原文引文（必须有） */
     quote: string;
+    /**
+     * 是否描述**当前状态**（false = 回溯/回忆/历史）。
+     * 缺省视为 true（兼容旧数据）；规则层据此排除回溯事实，不再靠引文关键词猜。
+     */
+    isCurrentState?: boolean;
 }
 
 /** 拆解结果 */
@@ -90,6 +114,10 @@ export function buildDecomposePrompt(chapterNum: number, body: string): string {
         '1. 只抽正文中**明确写出**的事实，不要推测、不要补全。',
         '2. 每条必须给出原文引文 quote（必须是正文里的原句片段）。',
         '3. type 只能是以下之一：' + DECOMPOSE_TYPES.join(' / '),
+        '3.1 predicate 必须使用该 type 的**规范谓词**：'
+            + DECOMPOSE_TYPES.map(type => `${type}=${CANONICAL_PREDICATES[type]}`).join('、'),
+        '3.2 增加 isCurrentState 字段：本条描述的是**当前状态**填 true；'
+            + '若是回溯/回忆/历史（如「我那年才四岁」「他七年前……」）填 false。',
         '4. 表示「从此章起生效」用 validFrom=' + chapterNum + '；若正文明确说某状态在此章结束，填 validTo。',
         '5. confidence 0–1，正文明确写出为 0.9 以上，需要推断的不超过 0.6。',
         '',
@@ -161,14 +189,16 @@ function normalizeEntry(item: unknown, normalizedBody: string): DecomposeEntry |
     if (!subject || !value || !quote) return null;
     // quote 必须真实出现在正文里（防模型编造证据）
     if (normalizedBody && !normalizedBody.includes(quote.replace(/\s+/g, ''))) return null;
-    const predicate = String(raw.predicate ?? '').trim() || '值';
+    // 谓词强制规范值：模型给自由文本也归一化到枚举，保证规则层可确定比对
+    const predicate = CANONICAL_PREDICATES[type] ?? '值';
     const confidence = clamp01(Number(raw.confidence ?? 0.5));
     const validFrom = Number.isFinite(Number(raw.validFrom)) ? Math.trunc(Number(raw.validFrom)) : 0;
     const validToRaw = raw.validTo;
     const validTo = validToRaw === null || validToRaw === undefined || validToRaw === ''
         ? null
         : (Number.isFinite(Number(validToRaw)) ? Math.trunc(Number(validToRaw)) : null);
-    const entry: DecomposeEntry = { type, subject, predicate, value, validFrom, validTo, confidence, quote };
+    const isCurrentState = raw.isCurrentState === false ? false : true;
+    const entry: DecomposeEntry = { type, subject, predicate, value, validFrom, validTo, confidence, quote, isCurrentState };
     if (Number.isFinite(Number(raw.numeric))) entry.numeric = Number(raw.numeric);
     if (typeof raw.unit === 'string' && raw.unit.trim()) entry.unit = raw.unit.trim();
     return entry;
@@ -213,6 +243,7 @@ export function entriesToAssertions(
             quote: entry.quote,
             source: 'llm-decompose',
             extractedAt: now,
+            isCurrentState: entry.isCurrentState !== false,
         };
         if (entry.numeric !== undefined) {
             assertion.numericValue = entry.numeric;

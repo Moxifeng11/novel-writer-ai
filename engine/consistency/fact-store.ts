@@ -90,6 +90,7 @@ export function mergeFactStore(
             confidence: entry.confidence,
             quote: entry.quote,
             chapter,
+            isCurrentState: entry.isCurrentState !== false,
         };
         const key = factKeyOf(fact);
         const at = index.get(key);

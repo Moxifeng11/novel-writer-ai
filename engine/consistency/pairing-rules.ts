@@ -102,8 +102,9 @@ export function pairContradictions(input: PairingInput): PairingOutput {
         && typeof a.numericValue === 'number'
         // 0 岁这类值几乎必然是抽取噪声（「十五六岁」被解析成 0）
         && a.numericValue > 0
-        // 引文是回溯叙述（「我那年才四岁」）时不参与当前年龄比对
-        && !isRetrospectiveQuote(a.quote)
+        // 回溯排除：新数据用拆解侧给的 isCurrentState 标记（权威）；
+        // 旧数据没有该字段时回退到引文启发式（兼容既有事实库）
+        && isCurrentStateAssertion(a)
         && a.chapterNum !== null);
     for (const pair of groupBy(ages, a => a.subject).values()) {
         const ordered = pair.slice().sort((a, b) => (a.chapterNum ?? 0) - (b.chapterNum ?? 0));
@@ -388,3 +389,18 @@ export const RULE_COVERED_PREDICATES: readonly string[] = [
     '地点',
     '当前位置',
 ];
+
+
+/**
+ * 判断断言是否描述「当前状态」。
+ *
+ * 优先级：拆解侧标记（权威）> 引文启发式（旧数据兼容）。
+ *
+ * @param assertion - 断言
+ * @returns 是否当前状态
+ */
+function isCurrentStateAssertion(assertion: { isCurrentState?: boolean; quote: string }): boolean {
+    if (assertion.isCurrentState === true) return true;
+    if (assertion.isCurrentState === false) return false;
+    return !isRetrospectiveQuote(assertion.quote);
+}
