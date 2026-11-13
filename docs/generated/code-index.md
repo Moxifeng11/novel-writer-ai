@@ -11,7 +11,7 @@
 | `shared/` | 200 | 42294 | 1736 | 1409 | 81% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 271 | 105393 | 1020 | 824 | 81% |
+| `ui/` | 271 | 105446 | 1021 | 825 | 81% |
 
 ## 文件清单
 
@@ -815,7 +815,7 @@
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 473 | 6 | 5 |
-| `ui/settings-tab.ts` | 353 | 1 | 1 |
+| `ui/settings-tab.ts` | 390 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 151 | 1 | 1 |
 | `ui/settings/api-section.ts` | 1281 | 1 | 1 |
@@ -826,7 +826,7 @@
 | `ui/settings/knowledge-section.ts` | 797 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
-| `ui/settings/section-factory.ts` | 75 | 3 | 1 |
+| `ui/settings/section-factory.ts` | 91 | 4 | 2 |
 | `ui/settings/writing-sections.ts` | 812 | 6 | 6 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 402 | 1 | 1 |

@@ -39,12 +39,28 @@ export interface SettingsTabDefinition {
     create: (host: SettingsSectionHost) => SettingsSection;
 }
 
+/**
+ * 设置的一级分组（v4.96）：18 个 tab 收敛为 6 个功能域。
+ *
+ * 为什么：18 个平铺 tab 扫视成本高，且顺序无语义分组
+ * （「Agent 后端」在最末、「模板管理」夹在建议设置与指纹库之间）。
+ * 一级只留 6 个功能域，二级才是具体 tab。
+ */
+export const SETTINGS_GROUPS: ReadonlyArray<{ id: string; label: string; tabs: readonly string[] }> = [
+    { id: 'connect', label: '🔌 连接与模型', tabs: ['api', 'agent'] },
+    { id: 'writing', label: '✍️ 写作与协同', tabs: ['cowrite', 'writing', 'modes', 'suggestions'] },
+    { id: 'rules', label: '📜 规则与一致性', tabs: ['rules', 'recognition', 'foreshadow'] },
+    { id: 'knowledge', label: '📚 知识与拆解', tabs: ['knowledge', 'deconstruction', 'template', 'fingerprint'] },
+    { id: 'ui', label: '🎨 界面与工作台', tabs: ['appearance', 'layout'] },
+    { id: 'ops', label: '🗂 项目与运维', tabs: ['projects', 'performance', 'about'] },
+];
+
 /** 唯一设置页签表（顺序即界面顺序） */
 export const SETTINGS_TAB_DEFINITIONS: ReadonlyArray<SettingsTabDefinition> = [
     { id: 'api', label: '🔌 API 配置', group: 'primary', create: host => new ApiSection(host) },
     { id: 'cowrite', label: '🖥 协同写作', group: 'primary', create: host => new CoWriteSection(host) },
     { id: 'writing', label: '✍️ 写作配置', group: 'primary', create: host => new WritingSection(host) },
-    { id: 'modes', label: '📚 创作模式', group: 'advanced', create: host => new ModeSection(host) },
+    { id: 'modes', label: '🎯 创作模式', group: 'advanced', create: host => new ModeSection(host) },
     { id: 'recognition', label: '🎭 角色识别', group: 'advanced', create: host => new RecognitionSection(host) },
     { id: 'suggestions', label: '💡 建议设置', group: 'advanced', create: host => new SuggestionsSection(host) },
     { id: 'template', label: '📋 模板管理', group: 'advanced', create: host => new TemplateSection(host) },

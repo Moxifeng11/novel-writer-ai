@@ -38,7 +38,7 @@ import {
 } from './settings/general-sections';
 import { AgentBackendSection } from './settings/agent-section';
 import { ModeSection } from './settings/mode-section';
-import { SETTINGS_TAB_DEFINITIONS } from './settings/section-factory';
+import { SETTINGS_GROUPS, SETTINGS_TAB_DEFINITIONS } from './settings/section-factory';
 import { savePendingReloadState } from '@/shared/reload-state';
 
 const SETTINGS_TABS: ReadonlyArray<{ id: string; label: string; group: 'primary' | 'advanced' }> =
@@ -53,6 +53,10 @@ export class NovelWriterSettingTab extends PluginSettingTab {
     private activeTab: string = 'api';
     private tabContent!: HTMLElement;
     private tabBar!: HTMLElement;
+    /** 一级分组栏（v4.96：6 个功能域） */
+    private groupBar!: HTMLElement;
+    /** 当前一级分组 id */
+    private activeGroup: string = 'connect';
     /** 已渲染 tab 的 DOM 缓存，键为 tab id；`refresh()` 时整体清空 */
     private panelCache = new Map<string, HTMLElement>();
 
@@ -212,17 +216,49 @@ export class NovelWriterSettingTab extends PluginSettingTab {
 
         this.performance.renderBanner(containerEl);
 
-        this.tabBar = containerEl.createDiv({ cls: 'nw-settings-tabbar' });
         const showAdvanced = this.plugin.settings.settingsUiShowAdvanced === true;
-        if (!showAdvanced && SETTINGS_TABS.find(tab => tab.id === this.activeTab)?.group === 'advanced') {
-            this.activeTab = 'api';
-        }
-        const renderTabBar = (): void => {
-            if (!this.tabBar) return;
-            this.tabBar.empty();
+        const groupOfTab = (tabId: string): string =>
+            SETTINGS_GROUPS.find(group => group.tabs.includes(tabId))?.id ?? SETTINGS_GROUPS[0].id;
+        const visibleTabsOfGroup = (groupId: string): Array<(typeof SETTINGS_TABS)[number]> => {
+            const group = SETTINGS_GROUPS.find(item => item.id === groupId) ?? SETTINGS_GROUPS[0];
             const advancedOpen = this.plugin.settings.settingsUiShowAdvanced === true;
-            const visible = SETTINGS_TABS.filter(tab => tab.group === 'primary' || advancedOpen);
-            for (const tab of visible) {
+            const tabs: Array<(typeof SETTINGS_TABS)[number]> = [];
+            for (const id of group.tabs) {
+                const tab = SETTINGS_TABS.find(item => item.id === id);
+                if (!tab) continue;
+                if (!advancedOpen && tab.group === 'advanced') continue;
+                tabs.push(tab);
+            }
+            return tabs;
+        };
+        this.activeGroup = groupOfTab(this.activeTab);
+        if (!visibleTabsOfGroup(this.activeGroup).some(tab => tab.id === this.activeTab)) {
+            this.activeTab = visibleTabsOfGroup(this.activeGroup)[0]?.id ?? 'api';
+        }
+
+        this.groupBar = containerEl.createDiv({ cls: 'nw-settings-groupbar' });
+        this.tabBar = containerEl.createDiv({ cls: 'nw-settings-tabbar' });
+
+        const renderBars = (): void => {
+            if (!this.groupBar || !this.tabBar) return;
+            this.groupBar.empty();
+            for (const group of SETTINGS_GROUPS) {
+                const groupEl = this.groupBar.createDiv({
+                    cls: 'nw-settings-group',
+                    text: group.label,
+                    attr: { 'data-group-id': group.id },
+                });
+                if (group.id === this.activeGroup) groupEl.addClass('active');
+                groupEl.addEventListener('click', () => {
+                    if (this.activeGroup === group.id) return;
+                    this.activeGroup = group.id;
+                    this.activeTab = visibleTabsOfGroup(group.id)[0]?.id ?? 'api';
+                    renderBars();
+                    this.renderActiveTab(false);
+                });
+            }
+            this.tabBar.empty();
+            for (const tab of visibleTabsOfGroup(this.activeGroup)) {
                 const tabEl = this.tabBar.createDiv({
                     cls: 'nw-settings-tab',
                     text: tab.label,
@@ -230,12 +266,12 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                 });
                 if (tab.id === this.activeTab) tabEl.addClass('active');
                 tabEl.addEventListener('click', () => {
-                    // 重复点击当前 tab 不做任何事，避免无谓重建
                     if (this.activeTab === tab.id) return;
                     this.activeTab = tab.id;
                     this.renderActiveTab(false);
                 });
             }
+            const advancedOpen = this.plugin.settings.settingsUiShowAdvanced === true;
             const toggle = this.tabBar.createDiv({
                 cls: 'nw-settings-tab nw-settings-tab-advanced-toggle',
                 text: advancedOpen ? '⚙ 收起高级' : '⚙ 高级设置',
@@ -243,15 +279,13 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             toggle.addEventListener('click', () => {
                 this.plugin.settings.settingsUiShowAdvanced = !advancedOpen;
                 void this.plugin.saveSettings();
-                if (advancedOpen
-                    && SETTINGS_TABS.find(tab => tab.id === this.activeTab)?.group === 'advanced') {
-                    this.activeTab = 'api';
-                    this.renderActiveTab(false);
+                if (!visibleTabsOfGroup(this.activeGroup).some(tab => tab.id === this.activeTab)) {
+                    this.activeTab = visibleTabsOfGroup(this.activeGroup)[0]?.id ?? 'api';
                 }
-                renderTabBar();
+                renderBars();
+                this.renderActiveTab(false);
             });
         };
-        renderTabBar();
 
         this.tabContent = containerEl.createDiv({ cls: 'nw-settings-tab-content' });
         this.panelCache.clear();
@@ -295,6 +329,9 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         if (rebuild) this.panelCache.clear();
 
         this.tabContent.empty();
+        this.groupBar?.querySelectorAll('.nw-settings-group').forEach(el => {
+            el.toggleClass('active', el.getAttribute('data-group-id') === this.activeGroup);
+        });
         this.tabBar.querySelectorAll('.nw-settings-tab').forEach(el => {
             el.toggleClass('active', el.getAttribute('data-tab-id') === this.activeTab);
         });
