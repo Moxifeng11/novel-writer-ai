@@ -679,7 +679,7 @@ export class SettlementEngine {
             // 只跑规则层（useLlm=false）——零 token、毫秒级；疑似项留给用户手动点
             // 「一致性审核」时再交模型复核，避免结算流程变慢或产生意外费用。
             // 用可选调用：部分测试以精简替身构造引擎，缺少该方法时不得让结算失败。
-            this.scheduleConsistencyAudit?.(ctx.project);
+            this.scheduleFactAndAudit?.(ctx.project, ctx.chapName, ctx.bodyText);
         }
 
         ctx.result.mode = 'full';
@@ -699,7 +699,7 @@ export class SettlementEngine {
      *
      * @param project - 项目路径
      */
-    private scheduleConsistencyAudit(project: string): void {
+    private scheduleFactAndAudit(project: string, chapName: string, bodyText: string): void {
         const CONSISTENCY_SETTLEMENT_MAX_PAIRS = 3;
         const plugin = (this.app as unknown as {
             plugins?: { plugins?: Record<string, unknown> };
@@ -707,8 +707,21 @@ export class SettlementEngine {
         if (!plugin) return;
         void (async () => {
             try {
-                const { runAuditForProject } = await import('./consistency/consistency-audit-wiring');
+                const { runAuditForProject, maintainFactsForProject } = await import('./consistency/consistency-audit-wiring');
                 const pluginRef = plugin as Parameters<typeof runAuditForProject>[1];
+                // ① 先维护事实库（本章增量拆解）；失败不影响后续审核
+                const chapterNum = Number(/(\d+)/.exec(chapName ?? '')?.[1] ?? 0);
+                if (chapterNum > 0 && bodyText) {
+                    try {
+                        const maintained = await maintainFactsForProject(this.app, pluginRef, project, chapterNum, bodyText);
+                        if (maintained.status === 'ok' && maintained.added > 0) {
+                            log.info(`[SettlementEngine] 事实库已更新：第${chapterNum}章 +${maintained.added}条`);
+                        }
+                    } catch (e) {
+                        // silent-ok: 事实库维护失败不影响结算与审核
+                        log.warn('[SettlementEngine] 事实库维护失败（不影响结算）:', e);
+                    }
+                }
                 // ① 规则层：零 token、全量跑
                 const ruleOnly = await runAuditForProject(this.app, pluginRef, project, { useLlm: false });
                 let contradictions = ruleOnly.report.contradictions;

@@ -25,6 +25,14 @@ export interface ConflictDetectorOptions {
         status: 'consistent' | 'conflict' | 'unknown';
         reason: string;
     };
+    /**
+     * P2 第二意见（扩面：地点/实体状态）：由事实库回答某主体属性是否一致。
+     * 与 adviseTimeline 同一状态语义（consistent 抑制 / unknown 不干预）。
+     */
+    adviseState?: (claim: { subject: string; predicate?: string; chapter: number; value: string }) => {
+        status: 'consistent' | 'conflict' | 'unknown';
+        reason: string;
+    };
 }
 
 /** 弱提示规则的正文长度门槛（低于此长度的文本不触发未提及类弱冲突，避免误报） */
@@ -150,10 +158,20 @@ export class ConflictDetector {
             const target = (loc || '').trim();
             if (!target || target === setting) continue;
             if (body.includes(target) && !mentionsSetting) {
+                // P2 第二意见（扩面）：事实库若显示该地点在第本节点确为有效场景，
+                // 说明是原文合理的换场/回忆，不应判为「场景地点不符」。
+                const advice = options.adviseState?.({
+                    subject: '场景',
+                    predicate: '地点',
+                    chapter: 0,
+                    value: target,
+                });
+                if (advice?.status === 'consistent') return;
                 conflicts.push({
                     type: 'location',
                     message: '场景地点与本章设定不符',
-                    detail: `正文出现地点「${target}」，但本章设定地点为「${setting}」`,
+                    detail: `正文出现地点「${target}」，但本章设定地点为「${setting}」`
+                        + (advice?.status === 'conflict' ? `；事实库：${advice.reason}` : ''),
                 });
                 return;
             }

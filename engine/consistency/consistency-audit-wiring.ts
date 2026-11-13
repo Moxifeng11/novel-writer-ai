@@ -16,6 +16,7 @@
 import { App } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import { loadFactStore } from './fact-store';
+import { maintainChapterFacts, type FactMaintenanceResult } from './fact-maintenance';
 import { ObsidianFileSystem } from '@/shared/file-system-port';
 import { pjChapterDigestDir, pjFactStoreFile, pjOutlineDir } from '@/shared/paths';
 import { parseChapterDigest, type ChapterDigest } from '@/engine/memory/chapter-digest';
@@ -382,3 +383,32 @@ const FACT_TYPE_TO_ASSERTION_KIND: Record<string, AssertionKind> = {
     knowledge: 'knowledge',
     memory: 'memory',
 };
+/**
+ * 事实库自动维护入口（结算后调用）：本章增量拆解并入事实库。
+ *
+ * 与审核解耦：维护失败不影响审核（反之亦然）；调用方无需关心细节。
+ *
+ * @param app - Obsidian 应用
+ * @param plugin - 插件实例
+ * @param project - 项目路径
+ * @param chapterNum - 章节号
+ * @param body - 本章正文
+ * @param options - 选项（force 重拆）
+ * @returns 维护结果
+ */
+export async function maintainFactsForProject(
+    app: App,
+    plugin: NovelWriterPlugin,
+    project: string,
+    chapterNum: number,
+    body: string,
+    options: { force?: boolean } = {},
+): Promise<FactMaintenanceResult> {
+    const fs = new ObsidianFileSystem(app);
+    return maintainChapterFacts(
+        { fs, caller: buildLlmCaller(plugin) },
+        project,
+        { num: chapterNum, body },
+        { force: options.force },
+    );
+}

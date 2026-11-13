@@ -67,6 +67,8 @@ export const CommandIds = {
     DIAGNOSE: 'novel-writer-diagnose',
     /** 跨章一致性审核（S1+S2 合成入口：抽断言 → 配对 → 出证据链） */
     CONSISTENCY_AUDIT: 'novel-writer-consistency-audit',
+    /** 知识库事实库浏览（v4.90） */
+    FACT_STORE: 'novel-writer-fact-store',
     TOMATO_RANK: 'novel-writer-tomato-rank',
     REFRESH_INFO_DEBT: 'novel-writer-refresh-info-debt',
     SWITCH_PROVIDER: 'switch-provider',

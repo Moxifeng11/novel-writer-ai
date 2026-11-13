@@ -141,6 +141,7 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
 
     // ─── 工具类 ───
     { id: CommandIds.DIAGNOSE, name: '流程诊断', group: CommandGroup.Tools, description: '诊断写作流程问题' },
+    { id: CommandIds.FACT_STORE, name: '知识库事实库', group: CommandGroup.Tools, description: '浏览结构化事实（可人工修正 JSON）' },
     { id: CommandIds.CONSISTENCY_AUDIT, name: '一致性审核', group: CommandGroup.Tools, description: '跨章检查数量/时间线/命名矛盾（带原文证据）' },
     { id: CommandIds.TOMATO_RANK, name: '番茄榜单分析', group: CommandGroup.Tools, description: '番茄小说榜单分析' },
     { id: CommandIds.REFRESH_INFO_DEBT, name: '刷新信息债看板', group: CommandGroup.Tools, description: '刷新信息债看板' },
@@ -394,6 +395,7 @@ export class CommandRegistry {
             CommandIds.OPEN_ONBOARDING,
             // 一致性审核走 command-ui-executor 分支（S1/S2 合成入口）
             CommandIds.CONSISTENCY_AUDIT,
+            CommandIds.FACT_STORE,
         ]) {
             r.register(id, async () => { await this.ui.executeCommand(id); });
         }
@@ -488,7 +490,8 @@ export class CommandRegistry {
         addCommand({ id: CommandIds.VOLUME_INTRO, name: '全书简介', checkCallback: execGuarded(CommandIds.VOLUME_INTRO, LONG_ONLY) });
         addCommand({ id: CommandIds.CONTINUE_CHAPTERS, name: '续写规划', checkCallback: execGuarded(CommandIds.CONTINUE_CHAPTERS, LONG_ONLY) });
         addCommand({ id: CommandIds.DIAGNOSE, name: '流程诊断', callback: exec(CommandIds.DIAGNOSE) });
-        addCommand({ id: CommandIds.CONSISTENCY_AUDIT, name: '一致性审核', callback: exec(CommandIds.CONSISTENCY_AUDIT) });
+        addCommand({ id: CommandIds.FACT_STORE, name: '知识库事实库', callback: exec(CommandIds.FACT_STORE) });
+    addCommand({ id: CommandIds.CONSISTENCY_AUDIT, name: '一致性审核', callback: exec(CommandIds.CONSISTENCY_AUDIT) });
         addCommand({ id: CommandIds.TOMATO_RANK, name: '番茄榜单分析', callback: exec(CommandIds.TOMATO_RANK) });
         addCommand({ id: CommandIds.REBUILD_CHAPTERS, name: '重建章节', checkCallback: execGuarded(CommandIds.REBUILD_CHAPTERS, LONG_ONLY) });
         addCommand({ id: CommandIds.BACKUP_META, name: '备份元文件', callback: exec(CommandIds.BACKUP_META) });

@@ -223,3 +223,48 @@ describe('ConflictDetector — P2 第二意见（事实库）', () => {
         expect(a.length).toBe(b.length);
     });
 });
+
+describe('ConflictDetector — P2 第二意见扩面（地点）', () => {
+    /** 造地点冲突场景：设定地点为A，正文只出现B */
+    function snapshotAt(location: string) {
+        return { timeline: { time: '第三日', location }, characterStates: [], locations: [], items: [], foreshadows: [] } as never;
+    }
+    const BODY = ('他们在青云城外的山道上走。').repeat(12);
+
+    it('无第二意见时按原逻辑判地点不符', () => {
+        const d = new ConflictDetector();
+        const conflicts = d.detect(snapshotAt('皇城'), BODY, { knownLocations: ['青云城'] });
+        expect(conflicts.some(c => c.type === 'location')).toBe(true);
+    });
+
+    it('**事实库说一致 → 抑制地点冲突**（合理换场/回忆）', () => {
+        const d = new ConflictDetector();
+        const conflicts = d.detect(snapshotAt('皇城'), BODY, {
+            knownLocations: ['青云城'],
+            adviseState: () => ({ status: 'consistent', reason: '事实库记录该章确在青云城' }),
+        });
+        expect(conflicts.some(c => c.type === 'location')).toBe(false);
+    });
+
+    it('**事实库未知 → 不抑制**（与无第二意见一致）', () => {
+        const d = new ConflictDetector();
+        const baseline = d.detect(snapshotAt('皇城'), BODY, { knownLocations: ['青云城'] });
+        const unknown = d.detect(snapshotAt('皇城'), BODY, {
+            knownLocations: ['青云城'],
+            adviseState: () => ({ status: 'unknown', reason: '无记录' }),
+        });
+        expect(unknown.filter(c => c.type === 'location').length)
+            .toBe(baseline.filter(c => c.type === 'location').length);
+    });
+
+    it('事实库说冲突 → 仍报且详情带事实库理由', () => {
+        const d = new ConflictDetector();
+        const conflicts = d.detect(snapshotAt('皇城'), BODY, {
+            knownLocations: ['青云城'],
+            adviseState: () => ({ status: 'conflict', reason: '第5章记录为青云城' }),
+        });
+        const hit = conflicts.find(c => c.type === 'location');
+        expect(hit).toBeDefined();
+        expect(hit!.detail).toContain('事实库');
+    });
+});

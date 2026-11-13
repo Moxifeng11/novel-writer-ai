@@ -63,6 +63,8 @@ export interface QualityGateOptions {
      * 提供后冲突检测会在报时间线冲突前先问一次（consistent 抑制 / unknown 不抑制）。
      */
     adviseTimeline?: ConflictDetectorOptions['adviseTimeline'];
+    /** P2 第二意见（扩面：地点/实体状态），由事实库提供 */
+    adviseState?: ConflictDetectorOptions['adviseState'];
     /** 跳过指定层（逐层独立跳过） */
     skipLayers?: QualityGateLayer[];
     /** 第三层模型评审注入；未提供时模型层为 null */
@@ -107,6 +109,7 @@ export class QualityGate {
         if (!skip.has('rule')) {
             conflicts = this.detector.detect(snapshot, body, {
             adviseTimeline: options?.adviseTimeline,
+            adviseState: options?.adviseState,
         });
             aiWords = this.antiAI.detectAIWords(body);
             aiDetection = this.antiAI.detect(body);

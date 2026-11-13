@@ -27,6 +27,7 @@ import { ModeDocumentModal } from './mode-document-modal';
 import { OperationConfirmModal } from './components/progress';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 import { ConsistencyAuditModal } from './consistency-audit-modal';
+import { FactStoreModal } from './fact-store-modal';
 
 import { runGraphValidation } from '@/engine/graph/graph-validation-trigger';
 import { PlanBookModal } from './plan-book-modal';
@@ -351,6 +352,9 @@ export class CommandUiExecutor implements CommandUiPort {
                 return true;
             case CommandIds.CONSISTENCY_AUDIT:
                 void this.runConsistencyAudit();
+                return true;
+            case CommandIds.FACT_STORE:
+                new FactStoreModal(app, plugin).open();
                 return true;
             case CommandIds.TOMATO_RANK:
                 new TomatoRankModal(app, plugin).open();

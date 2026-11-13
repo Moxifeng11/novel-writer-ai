@@ -6,18 +6,18 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 344 | 144279 | 1912 | 1521 | 80% |
+| `engine/` | 345 | 144506 | 1919 | 1524 | 79% |
 | `services/` | 33 | 13896 | 206 | 162 | 79% |
-| `shared/` | 198 | 42168 | 1724 | 1406 | 82% |
-| `core/` | 7 | 2917 | 32 | 17 | 53% |
+| `shared/` | 198 | 42170 | 1724 | 1406 | 82% |
+| `core/` | 7 | 2920 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 268 | 104697 | 1002 | 808 | 81% |
+| `ui/` | 270 | 104954 | 1011 | 816 | 81% |
 
 ## 文件清单
 
 | 文件 | 行数 | 导出 | 有 JSDoc |
 |---|---:|---:|---:|
-| `core/command-registry.ts` | 711 | 6 | 2 |
+| `core/command-registry.ts` | 714 | 6 | 2 |
 | `core/crypto-service.ts` | 413 | 5 | 3 |
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
@@ -109,18 +109,19 @@
 | `engine/co-writer/session-state.ts` | 677 | 34 | 27 |
 | `engine/co-writer/snapshot-builder.ts` | 133 | 1 | 1 |
 | `engine/coherence-checker.ts` | 108 | 3 | 3 |
-| `engine/conflict-detector.ts` | 255 | 4 | 1 |
+| `engine/conflict-detector.ts` | 273 | 4 | 1 |
 | `engine/consistency/assertion-extract.ts` | 309 | 3 | 2 |
 | `engine/consistency/assertion-model.ts` | 294 | 13 | 8 |
 | `engine/consistency/assertion-store.ts` | 196 | 9 | 5 |
 | `engine/consistency/audit-pipeline.ts` | 341 | 13 | 8 |
 | `engine/consistency/candidate-judge.ts` | 240 | 9 | 6 |
 | `engine/consistency/causal-rules.ts` | 164 | 3 | 2 |
-| `engine/consistency/consistency-audit-wiring.ts` | 384 | 3 | 2 |
+| `engine/consistency/consistency-audit-wiring.ts` | 414 | 4 | 3 |
 | `engine/consistency/consistency-metrics.ts` | 108 | 6 | 4 |
 | `engine/consistency/consistency-service.ts` | 253 | 8 | 2 |
 | `engine/consistency/evidence-locate.ts` | 109 | 3 | 2 |
 | `engine/consistency/extended-rules.ts` | 317 | 5 | 3 |
+| `engine/consistency/fact-maintenance.ts` | 163 | 6 | 2 |
 | `engine/consistency/fact-store.ts` | 212 | 9 | 7 |
 | `engine/consistency/knowledge-decompose.ts` | 246 | 9 | 5 |
 | `engine/consistency/pairing-llm.ts` | 208 | 11 | 4 |
@@ -269,7 +270,7 @@
 | `engine/prompts/template-utils.ts` | 176 | 4 | 4 |
 | `engine/prompts/writing-rules-format.ts` | 48 | 3 | 3 |
 | `engine/prompts/writing-rules.ts` | 9 | 0 | 0 |
-| `engine/quality-gate.ts` | 200 | 5 | 4 |
+| `engine/quality-gate.ts` | 203 | 5 | 4 |
 | `engine/quality-scorer.ts` | 384 | 5 | 3 |
 | `engine/quality/deviation-detector.ts` | 2056 | 26 | 22 |
 | `engine/quality/gate-snapshot.ts` | 131 | 3 | 3 |
@@ -325,7 +326,7 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 2161 | 3 | 3 |
+| `engine/settlement-engine.ts` | 2174 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 137 | 2 | 2 |
@@ -434,7 +435,7 @@
 | `shared/chapter-version-port.ts` | 23 | 1 | 1 |
 | `shared/character-rules.ts` | 180 | 10 | 6 |
 | `shared/co-writer-types.ts` | 113 | 0 | 0 |
-| `shared/command-ids.ts` | 122 | 2 | 2 |
+| `shared/command-ids.ts` | 124 | 2 | 2 |
 | `shared/command-mode-rules.ts` | 143 | 8 | 5 |
 | `shared/command-ui-port.ts` | 48 | 4 | 2 |
 | `shared/content-classifier.ts` | 248 | 11 | 11 |
@@ -662,7 +663,7 @@
 | `ui/co-writing/suggestion-flow.ts` | 475 | 3 | 2 |
 | `ui/co-writing/suggestion-loading.ts` | 130 | 4 | 2 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
-| `ui/command-ui-executor.ts` | 698 | 2 | 2 |
+| `ui/command-ui-executor.ts` | 702 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 105 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
 | `ui/components/categorization-review-panel.ts` | 449 | 2 | 2 |
@@ -699,6 +700,8 @@
 | `ui/existing-entity-manager.ts` | 555 | 1 | 1 |
 | `ui/expand-text-modal.ts` | 226 | 1 | 1 |
 | `ui/export-manuscript-modal.ts` | 665 | 4 | 4 |
+| `ui/fact-store-format.ts` | 121 | 8 | 7 |
+| `ui/fact-store-modal.ts` | 132 | 1 | 1 |
 | `ui/fanfic-prompt-notice.ts` | 20 | 1 | 1 |
 | `ui/fanfic-review-modal.ts` | 419 | 1 | 1 |
 | `ui/fingerprint-blend-modal.ts` | 620 | 2 | 2 |
