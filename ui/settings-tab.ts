@@ -130,15 +130,19 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         const overrides = this.plugin.settings.semanticKeywordOverrides ?? {};
         const section = containerEl.createDiv({ cls: 'nw-settings-section' });
         new Setting(section)
-            .setName('🧩 语义关键词（追加）')
-            .setDesc('内置词表没覆盖的说法可在此补充，逗号分隔。仅影响「词表兜底」层，不改变结构化判定。')
+            .setName('🧩 关键词兜底（追加）')
+            .setDesc('内置词表没覆盖的说法可在此补充（逗号分隔）。只影响「词表兜底」层与统计口径，不改变结构化判定。')
             .setHeading();
-        const fields: Array<{ key: keyof NonNullable<typeof overrides>; name: string }> = [
-            { key: 'injury', name: '伤情词' },
-            { key: 'action', name: '行动词' },
-            { key: 'modern', name: '现代词（时代错位）' },
-            { key: 'location', name: '地点词' },
-            { key: 'drastic', name: '剧变词（死亡/重伤/能力变化）' },
+        const fields: Array<{
+            key: keyof NonNullable<typeof overrides>;
+            name: string;
+            hint: string;
+        }> = [
+            { key: 'injury', name: '伤情词', hint: '逗号分隔，如：气若游丝, 命悬一线' },
+            { key: 'action', name: '行动词', hint: '逗号分隔，如：疾掠, 腾挪' },
+            { key: 'modern', name: '现代词（时代错位）', hint: '逗号分隔，如：平板, 智能机' },
+            { key: 'location', name: '地点词', hint: '逗号分隔，如：坊市, 渡口' },
+            { key: 'drastic', name: '剧变词（死亡/重伤/能力变化）', hint: '逗号分隔，如：形神俱灭, 灰飞烟灭' },
         ];
         new Setting(section)
             .setName('AI 高频词（统计）')
@@ -173,7 +177,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             new Setting(section)
                 .setName(field.name)
                 .addTextArea(text => text
-                    .setPlaceholder('逗号分隔，如：断魂, 气若游丝')
+                    .setPlaceholder(field.hint)
                     .setValue((overrides[field.key] ?? []).join(', '))
                     .onChange(async value => {
                         const words = value.split(/[,，\s]+/).map(w => w.trim()).filter(Boolean);
@@ -193,7 +197,6 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         new Setting(containerEl).setName('📖 设置').setHeading();
 
         this.performance.renderBanner(containerEl);
-        this.renderSemanticKeywords(containerEl);
 
         this.tabBar = containerEl.createDiv({ cls: 'nw-settings-tabbar' });
         const showAdvanced = this.plugin.settings.settingsUiShowAdvanced === true;
@@ -305,7 +308,11 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             case 'deconstruction': this.deconstruction.render(container); break;
             case 'foreshadow': this.foreshadow.render(container); break;
             case 'template': void this.template.render(container); break;
-            case 'rules': void this.rules.render(container); break;
+            case 'rules':
+                void this.rules.render(container);
+                // 语义关键词属于规则层兜底配置，收进「规则」tab（不再堆在设置页顶部）
+                this.renderSemanticKeywords(container);
+                break;
             case 'appearance': this.appearance.render(container); break;
             case 'layout': this.layout.render(container); break;
             case 'projects': this.projectLibrary.render(container); break;
