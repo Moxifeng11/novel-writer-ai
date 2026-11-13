@@ -62,6 +62,8 @@ export interface FactMetadata {
     quote: string;
     /** 来源章节 */
     chapter: number;
+    /** 是否被人工忽略（保留但排除出第二意见） */
+    ignored?: boolean;
 }
 
 /**

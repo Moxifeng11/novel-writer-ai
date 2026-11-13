@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 345 | 144506 | 1919 | 1524 | 79% |
+| `engine/` | 345 | 144508 | 1919 | 1524 | 79% |
 | `services/` | 34 | 13952 | 210 | 162 | 77% |
 | `shared/` | 199 | 42205 | 1725 | 1406 | 82% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 270 | 104954 | 1011 | 816 | 81% |
+| `ui/` | 271 | 105229 | 1020 | 824 | 81% |
 
 ## 文件清单
 
@@ -136,7 +136,7 @@
 | `engine/context/context-types.ts` | 284 | 16 | 15 |
 | `engine/context/fact-view.ts` | 116 | 3 | 3 |
 | `engine/context/incremental-updater.ts` | 302 | 6 | 1 |
-| `engine/context/knowledge-fact-nodes.ts` | 242 | 10 | 8 |
+| `engine/context/knowledge-fact-nodes.ts` | 244 | 10 | 8 |
 | `engine/context/overflow-recovery.ts` | 322 | 7 | 2 |
 | `engine/context/state-advice-wiring.ts` | 116 | 3 | 1 |
 | `engine/context/state-advice.ts` | 139 | 6 | 4 |
@@ -702,8 +702,9 @@
 | `ui/existing-entity-manager.ts` | 555 | 1 | 1 |
 | `ui/expand-text-modal.ts` | 226 | 1 | 1 |
 | `ui/export-manuscript-modal.ts` | 665 | 4 | 4 |
+| `ui/fact-store-edit.ts` | 153 | 9 | 8 |
 | `ui/fact-store-format.ts` | 121 | 8 | 7 |
-| `ui/fact-store-modal.ts` | 132 | 1 | 1 |
+| `ui/fact-store-modal.ts` | 254 | 1 | 1 |
 | `ui/fanfic-prompt-notice.ts` | 20 | 1 | 1 |
 | `ui/fanfic-review-modal.ts` | 419 | 1 | 1 |
 | `ui/fingerprint-blend-modal.ts` | 620 | 2 | 2 |
