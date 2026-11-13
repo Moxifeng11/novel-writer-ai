@@ -17,6 +17,9 @@ function makeAdapter(disk: Map<string, string>) {
         write: async (p: string, data: string) => { disk.set(p, data); },
         mkdir: async () => undefined,
         rename: async (from: string, to: string) => {
+            // 忠实化 Obsidian 语义：目标已存在时抛错（否则「目标存在仍 rename」的
+            // 写法在测试里永远绿、生产必炸——本项目已踩过两次）
+            if (disk.has(to)) throw new Error('Destination file already exists!');
             const value = disk.get(from);
             if (value === undefined) throw new Error(`missing ${from}`);
             disk.delete(from);
@@ -68,17 +71,46 @@ describe('WritingStatsService — 损坏留档', () => {
 });
 
 describe('WritingStatsService — 原子写', () => {
-    it('经 tmp + rename 落盘，不直接覆盖台账', async () => {
+    it('**目标已存在时直接覆盖写**（rename 覆盖会抛 Destination file already exists）', async () => {
         const disk = new Map<string, string>([['data/writing-stats.json', LEDGER]]);
         const { service, renames } = makeService(disk);
 
         await service.migrateProjectPath('长篇小说/书A', '长篇小说/书B');
 
-        // 至少一次 rename：tmp → 正式文件
-        expect(renames.some(r => r.to === 'data/writing-stats.json')).toBe(true);
+        // 目标已存在 → 不能再走 rename（否则抛错、统计永久丢失）
+        expect(renames).toHaveLength(0);
         expect(disk.has('data/writing-stats.json')).toBe(true);
         // 没有遗留 tmp
         expect([...disk.keys()].some(k => k.includes('.tmp-'))).toBe(false);
+        // 内容确实更新了
+        const saved = JSON.parse(disk.get('data/writing-stats.json') as string);
+        expect(saved.projects['长篇小说/书B']).toBeDefined();
+    });
+
+    it('目标不存在时仍走 tmp + rename（保留崩溃安全）', async () => {
+        const disk = new Map<string, string>();
+        const { service, renames } = makeService(disk);
+
+        await service.migrateProjectPath('长篇小说/书A', '长篇小说/书B');
+
+        // 空台账 + 无变化通常不写盘；只要写了就必须是 rename 路径且无 tmp 残留
+        expect([...disk.keys()].some(k => k.includes('.tmp-'))).toBe(false);
+        expect(renames.every(r => r.to === 'data/writing-stats.json')).toBe(true);
+    });
+
+    it('**连续两次落盘都成功**（回归锁：曾因 rename 覆盖导致第二次起全部丢失）', async () => {
+        const disk = new Map<string, string>([['data/writing-stats.json', LEDGER]]);
+        const { service } = makeService(disk);
+
+        await service.migrateProjectPath('长篇小说/书A', '长篇小说/书B');
+        const afterFirst = JSON.parse(disk.get('data/writing-stats.json') as string);
+
+        await service.migrateProjectPath('长篇小说/书B', '长篇小说/书C');
+        const afterSecond = JSON.parse(disk.get('data/writing-stats.json') as string);
+
+        expect(afterFirst.projects['长篇小说/书B']).toBeDefined();
+        expect(afterSecond.projects['长篇小说/书C']).toBeDefined();
+        expect(afterSecond.projects['长篇小说/书B']).toBeUndefined();
     });
 });
 

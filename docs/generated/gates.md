@@ -18,6 +18,7 @@
 | `npm run check:automation` | — |
 | `npm run check:bundle` | — |
 | `npm run check:changelog` | — |
+| `npm run check:command-handlers` | — |
 | `npm run check:coverage` | — |
 | `npm run check:css` | CSS 预算与命名棘轮 |
 | `npm run check:deps` | 分层依赖与循环依赖（棘轮） |
@@ -92,14 +93,15 @@
 19. npm run check:dsh-isolation
 20. npm run check:jsdoc
 21. npm run check:any
-22. npm run check:view-tests
-23. npm run check:test-standard
-24. npm run check:changelog
-25. npm run check:docs
-26. npm run check:support-qr
-27. npm run build
-28. npm run check:bundle
-29. npm run check:release
+22. npm run check:command-handlers
+23. npm run check:view-tests
+24. npm run check:test-standard
+25. npm run check:changelog
+26. npm run check:docs
+27. npm run check:support-qr
+28. npm run build
+29. npm run check:bundle
+30. npm run check:release
 ```
 
 ## 说明

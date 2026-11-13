@@ -7,11 +7,11 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 335 | 142077 | 1853 | 1480 | 80% |
-| `services/` | 33 | 13890 | 206 | 162 | 79% |
+| `services/` | 33 | 13894 | 206 | 162 | 79% |
 | `shared/` | 198 | 42140 | 1723 | 1405 | 82% |
 | `core/` | 7 | 2917 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 268 | 104698 | 1002 | 808 | 81% |
+| `ui/` | 268 | 104697 | 1002 | 808 | 81% |
 
 ## 文件清单
 
@@ -402,7 +402,7 @@
 | `services/worker-protocol.ts` | 121 | 12 | 12 |
 | `services/worker-runtime.ts` | 278 | 8 | 8 |
 | `services/worldview-cache-service.ts` | 627 | 4 | 4 |
-| `services/writing-stats-service.ts` | 425 | 6 | 6 |
+| `services/writing-stats-service.ts` | 429 | 6 | 6 |
 | `shared/adaptive-debounce-manager.ts` | 315 | 2 | 2 |
 | `shared/ai-credentials.ts` | 80 | 3 | 3 |
 | `shared/api-format.ts` | 461 | 16 | 15 |
@@ -653,7 +653,7 @@
 | `ui/co-writing/suggestion-flow.ts` | 475 | 3 | 2 |
 | `ui/co-writing/suggestion-loading.ts` | 130 | 4 | 2 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
-| `ui/command-ui-executor.ts` | 699 | 2 | 2 |
+| `ui/command-ui-executor.ts` | 698 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 105 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
 | `ui/components/categorization-review-panel.ts` | 449 | 2 | 2 |

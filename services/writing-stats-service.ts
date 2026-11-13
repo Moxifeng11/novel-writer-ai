@@ -390,8 +390,12 @@ export class WritingStatsService {
                 await adapter.mkdir(dir);
             }
             const json = JSON.stringify(this.data);
-            if (typeof adapter.rename === 'function') {
-                // D3-11：tmp + rename，崩溃/断电不会留下半写 JSON
+            // 目标已存在时不能走 rename：Obsidian 的 adapter.rename 在**目标存在**时抛
+            // `Destination file already exists!`，导致「第一次写成功、此后每次统计都丢」
+            // （生产日志实测：RunningStats 台账连续报该错，只打 warn 就再也存不进去）。
+            const targetExists = await adapter.exists(this.deps.ledgerPath);
+            if (typeof adapter.rename === 'function' && !targetExists) {
+                // D3-11：目标不存在时用 tmp + rename，崩溃/断电不会留下半写 JSON
                 const tmpPath = `${this.deps.ledgerPath}.tmp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
                 try {
                     // write-entry-allow: 字数台账是 JSON，位于插件数据目录。

@@ -688,11 +688,10 @@ export class CommandUiExecutor implements CommandUiPort {
      * `<项目>/04-项目总控/一致性审核/矛盾.json`，便于外部排查。
      */
     private runConsistencyAudit(): void {
-        const project = this.deps.plugin.getActiveProject();
-        if (!project) {
-            showWarningNotice('请先打开一个项目再运行一致性审核', { title: '一致性审核' });
-            return;
-        }
+        // 项目解析交给视图（含「唯一项目」兜底）。
+        // 这里**不能**提前判断 getActiveProject()：当已有 Modal 打开（如任务中心）时，
+        // Obsidian 的 getActiveFile() 会为 null，提前 return 会让命令「执行了但没反应」
+        // ——2026-11-13 实测踩过，排查耗时很久。
         new ConsistencyAuditModal(this.deps.app, this.deps.plugin).open();
     }
 }
