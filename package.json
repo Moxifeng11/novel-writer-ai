@@ -65,7 +65,8 @@
     "check:support-qr": "node scripts/gen-support-qr.mjs --check",
     "check:test-standard": "node scripts/check-test-standard.mjs",
     "check:prod": "node scripts/prod-smoke.mjs",
-    "check:command-handlers": "node scripts/check-command-handlers.mjs"
+    "check:command-handlers": "node scripts/check-command-handlers.mjs",
+    "check:project-standard": "node scripts/check-project-standard.mjs"
   },
   "engines": {
     "node": ">=20",

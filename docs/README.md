@@ -16,6 +16,7 @@
 | 改公开 API / 命令 / 设置 | [handbook/04-interface-contracts.md](handbook/04-interface-contracts.md) |
 | 写测试 | [handbook/05-testing.md](handbook/05-testing.md) |
 | 跑门禁、发版、回滚 | [handbook/06-gates-and-release.md](handbook/06-gates-and-release.md) |
+| 项目结构与标准 | [handbook/07-project-standard.md](handbook/07-project-standard.md) |
 | 线上/本机出故障 | [handbook/07-runbook.md](handbook/07-runbook.md) |
 | 提 PR 前自查 | [handbook/08-code-review.md](handbook/08-code-review.md) |
 | 写注释/JSDoc | [handbook/09-comment-standard.md](handbook/09-comment-standard.md) |

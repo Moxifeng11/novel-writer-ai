@@ -31,6 +31,7 @@
 | `npm run check:obsidian-api` | — |
 | `npm run check:prod` | — |
 | `npm run check:program` | 校验进度报告与台账一致 |
+| `npm run check:project-standard` | — |
 | `npm run check:relationship-authority` | 关系数据权威源契约检查 |
 | `npm run check:release` | 发布资产/版本/tag/worker/模板嵌入一致性校验 |
 | `npm run check:secrets` | — |
