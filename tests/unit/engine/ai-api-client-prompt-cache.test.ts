@@ -48,7 +48,7 @@ describe('AIApiClient.callAI — P0-3 prompt 缓存', () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
         expect(r1.content).toBe('第一次生成的内容');
         expect(r2.content).toBe('第一次生成的内容');
-        expect(r1).toEqual(r2); // 同一缓存对象
+        expect(r1).toEqual(r2); // 同一缓存对象（含 actualModel——DSH-20261114-08②）
     });
 
     it('TR-3.2: model 变化 → miss 重新发起调用', async () => {

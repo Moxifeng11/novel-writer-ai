@@ -524,7 +524,9 @@ export class AIApiClient {
             const cached = promptCache.get(cacheKey);
             if (cached) {
                 log.debug('[小说工坊] prompt 缓存命中，跳过 AI 调用');
-                return cached;
+                // DSH-20261114-08②：缓存键五元组含 model——缓存命中的内容就是
+                // 该模型生成的，actualModel 如实补齐（与直调路径形状一致）
+                return { ...cached, actualModel: cached.actualModel ?? effectiveModel };
             }
         }
 
