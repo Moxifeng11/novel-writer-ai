@@ -223,3 +223,43 @@ describe('名称相似度工具', () => {
         expect(isNearIdentical('张三', '张三丰真人')).toBe(false);
     });
 });
+
+describe('R1 谓词变体（2026-11-13 长篇评测修复）', () => {
+    /** 造年龄断言 */
+    function age(predicate: string, chapter: number, numeric: number): FactAssertion {
+        return {
+            id: `age|${predicate}|${chapter}`,
+            kind: 'quantitative',
+            subject: '桑桑',
+            predicate,
+            value: String(numeric),
+            numericValue: numeric,
+            unit: '岁',
+            chapterKey: `第${chapter}章`,
+            chapterNum: chapter,
+            quote: `桑桑${numeric}岁`,
+            source: 'fact-store',
+            extractedAt: 0,
+        };
+    }
+
+    it('谓词「年龄约」也能检出倒退（旧实现要求 === 年龄 会整类漏报）', () => {
+        const result = pairContradictions({ assertions: [age('年龄约', 5, 11), age('年龄约', 20, 8)] });
+        expect(result.contradictions.some(c => c.kind === 'quantitative')).toBe(true);
+    });
+
+    it('谓词「年纪」也能检出', () => {
+        const result = pairContradictions({ assertions: [age('年纪', 5, 16), age('年纪', 20, 13)] });
+        expect(result.contradictions.some(c => c.kind === 'quantitative')).toBe(true);
+    });
+
+    it('谓词无关时不误报（负例）', () => {
+        const result = pairContradictions({ assertions: [age('身高', 5, 160), age('身高', 20, 150)] });
+        expect(result.contradictions.some(c => c.kind === 'quantitative')).toBe(false);
+    });
+
+    it('增长不报（负例：合法长大）', () => {
+        const result = pairContradictions({ assertions: [age('年龄', 5, 11), age('年龄', 20, 14)] });
+        expect(result.contradictions.some(c => c.kind === 'quantitative')).toBe(false);
+    });
+});

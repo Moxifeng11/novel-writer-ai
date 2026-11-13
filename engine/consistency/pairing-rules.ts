@@ -89,8 +89,10 @@ export function pairContradictions(input: PairingInput): PairingOutput {
     };
 
     // ── R1 年龄倒退 ───────────────────────────────────────
+    // 谓词用**包含**匹配：LLM 常给出「年龄约」「年纪」等变体，
+    // 严格要求 === '年龄' 会整类漏掉（2026-11-13 长篇评测发现：四公主/柳白漏报）。
     const ages = assertions.filter(a => a.kind === 'quantitative'
-        && a.predicate === AGE_PREDICATE
+        && (a.predicate.includes(AGE_PREDICATE) || a.predicate.includes('年纪'))
         && typeof a.numericValue === 'number'
         && a.chapterNum !== null);
     for (const pair of groupBy(ages, a => a.subject).values()) {

@@ -68,8 +68,10 @@ for (const c of baseline.slice(0, 6)) console.log(`  [${c.kind}] ${c.reasoning.s
 
 // ── ① 注入 10 处矛盾（按主体去重）──
 const ageEntries = batch.entries.filter(e => e.type === 'age' && Number.isFinite(e.numeric));
+// 自检：只保留原值 > 3 的主体，确保注入后确实是「倒退」而不是「增长」
+const usableAge = ageEntries.filter(e => Number(e.numeric) > 3);
 const bySubject = new Map();
-for (const entry of ageEntries) {
+for (const entry of usableAge) {
     if (!bySubject.has(entry.subject)) bySubject.set(entry.subject, []);
     bySubject.get(entry.subject).push(entry);
 }
@@ -84,6 +86,7 @@ injectTargets.forEach((target, index) => {
     const old = target.earliest;
     const later = maxChapter + 5 + index;
     const regressed = Math.max(1, Number(old.numeric) - 3);
+    if (!(regressed < Number(old.numeric))) throw new Error(`注入自检失败：${target.subject} ${old.numeric}→${regressed} 不是倒退`);
     injectedPairs.push({ subject: target.subject, later, expected: regressed, original: old.numeric });
     injectedAssertions.push(toAssertion({
         ...old,
