@@ -18,8 +18,9 @@ import { pjConsistencyDir, pjContradictionsFile } from '@/shared/paths';
 import { withWriteLock } from '@/shared/write-lock';
 import type { ChapterDigest } from '@/engine/memory/chapter-digest';
 import {
-    mergeAndSaveAssertions,
     loadAssertions,
+    mergeAndSaveAssertions,
+    writeTextAtomic,
 } from './assertion-store';
 import { extractAssertions } from './assertion-extract';
 import type { FactAssertion } from './assertion-model';

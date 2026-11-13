@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 333 | 141708 | 1837 | 1469 | 80% |
+| `engine/` | 333 | 141734 | 1838 | 1470 | 80% |
 | `services/` | 33 | 13890 | 206 | 162 | 79% |
-| `shared/` | 198 | 42133 | 1723 | 1405 | 82% |
+| `shared/` | 198 | 42140 | 1723 | 1405 | 82% |
 | `core/` | 7 | 2917 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 266 | 104328 | 991 | 798 | 81% |
+| `ui/` | 268 | 104698 | 1002 | 808 | 81% |
 
 ## 文件清单
 
@@ -112,10 +112,10 @@
 | `engine/conflict-detector.ts` | 247 | 4 | 1 |
 | `engine/consistency/assertion-extract.ts` | 297 | 3 | 2 |
 | `engine/consistency/assertion-model.ts` | 247 | 13 | 8 |
-| `engine/consistency/assertion-store.ts` | 171 | 8 | 4 |
+| `engine/consistency/assertion-store.ts` | 196 | 9 | 5 |
 | `engine/consistency/audit-pipeline.ts` | 212 | 11 | 6 |
 | `engine/consistency/consistency-audit-wiring.ts` | 302 | 3 | 2 |
-| `engine/consistency/consistency-service.ts` | 215 | 8 | 2 |
+| `engine/consistency/consistency-service.ts` | 216 | 8 | 2 |
 | `engine/consistency/evidence-locate.ts` | 109 | 3 | 2 |
 | `engine/consistency/pairing-llm.ts` | 208 | 11 | 4 |
 | `engine/consistency/pairing-rules.ts` | 360 | 7 | 3 |
@@ -464,7 +464,7 @@
 | `shared/file-cache.ts` | 492 | 3 | 3 |
 | `shared/file-mention.ts` | 165 | 9 | 9 |
 | `shared/file-path-guard.ts` | 236 | 12 | 12 |
-| `shared/file-system-port.ts` | 790 | 8 | 8 |
+| `shared/file-system-port.ts` | 797 | 8 | 8 |
 | `shared/foreshadow-config.ts` | 112 | 4 | 4 |
 | `shared/foreshadow-loop.ts` | 157 | 3 | 3 |
 | `shared/foreshadow-status.ts` | 61 | 3 | 2 |
@@ -651,7 +651,7 @@
 | `ui/co-writing/suggestion-flow.ts` | 475 | 3 | 2 |
 | `ui/co-writing/suggestion-loading.ts` | 130 | 4 | 2 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
-| `ui/command-ui-executor.ts` | 726 | 2 | 2 |
+| `ui/command-ui-executor.ts` | 699 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 105 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
 | `ui/components/categorization-review-panel.ts` | 449 | 2 | 2 |
@@ -668,6 +668,8 @@
 | `ui/components/progress/step-list.ts` | 223 | 1 | 1 |
 | `ui/components/progress/task-card.ts` | 273 | 2 | 2 |
 | `ui/components/smart-chart.ts` | 520 | 1 | 1 |
+| `ui/consistency-audit-format.ts` | 115 | 9 | 9 |
+| `ui/consistency-audit-modal.ts` | 282 | 2 | 1 |
 | `ui/context-injector-modal.ts` | 210 | 1 | 1 |
 | `ui/continue-chapters-modal.ts` | 567 | 1 | 1 |
 | `ui/cowrite/body-save-controller.ts` | 282 | 3 | 2 |

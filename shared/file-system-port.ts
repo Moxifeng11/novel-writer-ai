@@ -719,6 +719,13 @@ export class MockFileSystem implements FileSystemPort, VaultMetaPort {
      * @param newPath - 新路径
      */
     async rename(oldPath: string, newPath: string): Promise<void> {
+        // 忠实化 Obsidian 语义：adapter.rename 在**目标已存在**时抛
+        // `Destination file already exists!`（实测：一致性审核第二次运行就崩在这）。
+        // 旧替身允许静默覆盖，导致「先 tmp 再 rename」的写法在测试里永远绿、
+        // 上线必炸——这正是测试标准 1「替身必须忠实」要防的。
+        if (this.files.has(newPath) || this.folders.has(newPath)) {
+            throw new Error('Destination file already exists!');
+        }
         if (this.files.has(oldPath)) {
             const content = this.files.get(oldPath)!;
             this.files.delete(oldPath);

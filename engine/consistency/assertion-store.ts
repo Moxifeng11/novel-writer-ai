@@ -34,6 +34,32 @@ export type AssertionLoadOutcome =
     | { status: 'read-failed'; reason: string };
 
 /**
+ * 原子写入文本：目标已存在时直接覆盖，否则临时文件 + rename。
+ *
+ * 为什么不能一律 rename：Obsidian 的 `adapter.rename` 在**目标已存在**时抛
+ * `Destination file already exists!`——实测第二次运行一致性审核就崩在这。
+ * 因此存在即走 write（Obsidian 的 modify 本身是覆盖语义），不存在才用 tmp+rename
+ * 拿到「中途崩溃不留半截文件」的原子性。
+ *
+ * @param fs - 文件系统端口
+ * @param path - 目标路径
+ * @param content - 内容
+ */
+export async function writeTextAtomic(
+    fs: FileSystemPort,
+    path: string,
+    content: string,
+): Promise<void> {
+    if (await fs.exists(path)) {
+        await fs.write(path, content);
+        return;
+    }
+    const tmpPath = `${path}.tmp`;
+    await fs.write(tmpPath, content);
+    await fs.rename(tmpPath, path);
+}
+
+/**
  * 读取断言库。
  *
  * @param fs - 文件系统端口
@@ -93,10 +119,9 @@ export async function saveAssertions(
             updatedAt: now().toISOString(),
             assertions: [...assertions],
         };
-        const content = JSON.stringify(payload, null, 2);
-        const tmpPath = `${path}.tmp`;
-        await fs.write(tmpPath, content);
-        await fs.rename(tmpPath, path);
+        // 复用统一原子写：目标已存在时必须覆盖（直接 rename 会抛
+        // `Destination file already exists!`，实测第二次运行就崩在这）
+        await writeTextAtomic(fs, path, JSON.stringify(payload, null, 2));
     });
 }
 

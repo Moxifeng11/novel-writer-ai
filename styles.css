@@ -28,6 +28,7 @@
  *   - styles-src/24-unified-entity.css
  *   - styles-src/25-outline-expand.css
  *   - styles-src/26-cleanup-utilities.css
+ *   - styles-src/27-consistency-audit.css
  *
  * 修改样式请编辑 styles-src/ 下对应源文件，然后运行 npm run build:styles
  * （npm run build 与 preflight 均已包含该步骤 / 一致性校验）。
@@ -20229,4 +20230,180 @@ body.nw-panel-resizing .nw-awb-center iframe {
     margin-bottom: 6px;
     color: var(--text-faint);
     font-size: 11px;
+}
+/**
+ * 27-consistency-audit.css — 跨章一致性审核视图（S4）
+ *
+ * 只放静态样式；动态值（置信度、偏移等）由 JS 以文本呈现，不写内联样式。
+ */
+
+/* 弹窗容器 */
+.nw-consistency-modal {
+    max-width: 880px;
+}
+
+.nw-consistency-subtitle {
+    margin: 0 0 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* 工具栏 */
+.nw-consistency-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.nw-consistency-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+/* 汇总 */
+.nw-consistency-summary {
+    border-left: 3px solid var(--interactive-accent);
+    padding: 6px 10px;
+    margin-bottom: 10px;
+    background: var(--background-secondary);
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.nw-consistency-warning {
+    color: var(--text-warning);
+}
+
+.nw-consistency-status {
+    font-size: 12px;
+    color: var(--text-muted);
+    min-height: 16px;
+}
+
+/* 列表 */
+.nw-consistency-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.nw-consistency-empty {
+    padding: 16px;
+    border: 1px dashed var(--background-modifier-border);
+    border-radius: 6px;
+    line-height: 1.8;
+}
+
+.nw-consistency-hint {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* 卡片 */
+.nw-consistency-card {
+    border: 1px solid var(--background-modifier-border);
+    border-left-width: 3px;
+    border-radius: 6px;
+    padding: 10px 12px;
+    background: var(--background-primary);
+}
+
+.nw-consistency-card.nw-consistency-high {
+    border-left-color: var(--text-error);
+}
+
+.nw-consistency-card.nw-consistency-medium {
+    border-left-color: var(--text-warning);
+}
+
+.nw-consistency-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+
+.nw-consistency-badge {
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    background: var(--background-modifier-border);
+    color: var(--text-normal);
+}
+
+.nw-consistency-badge-high {
+    background: var(--text-error);
+    color: var(--text-on-accent);
+}
+
+.nw-consistency-badge-medium {
+    background: var(--text-warning);
+    color: var(--text-on-accent);
+}
+
+.nw-consistency-subject {
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.nw-consistency-meta {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text-faint);
+}
+
+.nw-consistency-reason {
+    font-size: 13px;
+    line-height: 1.7;
+    margin-bottom: 8px;
+}
+
+/* 证据 */
+.nw-consistency-evidence {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.nw-consistency-evidence-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 12px;
+    padding: 4px 6px;
+    background: var(--background-secondary);
+    border-radius: 4px;
+    flex-wrap: wrap;
+}
+
+.nw-consistency-side {
+    font-weight: 700;
+    color: var(--interactive-accent);
+}
+
+.nw-consistency-chapter {
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.nw-consistency-quote {
+    flex: 1;
+    min-width: 220px;
+    color: var(--text-normal);
+}
+
+.nw-consistency-jump {
+    font-size: 11px;
+    padding: 0 6px;
+    height: 20px;
 }

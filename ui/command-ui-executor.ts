@@ -26,8 +26,8 @@ import { PreResearchModal } from './pre-research-modal';
 import { ModeDocumentModal } from './mode-document-modal';
 import { OperationConfirmModal } from './components/progress';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
-import { runAuditForProject } from '@/engine/consistency/consistency-audit-wiring';
-import { formatReportSummary } from '@/engine/consistency/audit-pipeline';
+import { ConsistencyAuditModal } from './consistency-audit-modal';
+
 import { runGraphValidation } from '@/engine/graph/graph-validation-trigger';
 import { PlanBookModal } from './plan-book-modal';
 import { WriteChapterModal } from './write-chapter-modal';
@@ -682,44 +682,17 @@ export class CommandUiExecutor implements CommandUiPort {
     }
 
     /**
-     * 跨章一致性审核（S1 断言层 + S2 配对器）。
+     * 跨章一致性审核（S1 断言层 + S2 配对器 + S4 证据链视图）。
      *
-     * 结果以 Notice 摘要 + 报告文件呈现；详细证据链写到
-     * `<项目>/04-项目总控/一致性审核/矛盾.json`，供后续 UI 使用。
+     * 视图负责「重跑 / 开关模型复核 / 证据跳转」；报告同时落盘到
+     * `<项目>/04-项目总控/一致性审核/矛盾.json`，便于外部排查。
      */
-    private async runConsistencyAudit(): Promise<void> {
+    private runConsistencyAudit(): void {
         const project = this.deps.plugin.getActiveProject();
         if (!project) {
             showWarningNotice('请先打开一个项目再运行一致性审核', { title: '一致性审核' });
             return;
         }
-        const notice = new Notice('正在做跨章一致性审核…', 0);
-        try {
-            const result = await runAuditForProject(this.deps.app, this.deps.plugin, project);
-            notice.hide();
-            const lines = formatReportSummary(result.report);
-            if (!result.assertionsSaved) {
-                lines.push(`⚠️ 断言库未写入：${result.assertionsError ?? '未知原因'}`);
-            }
-            if (!result.reportSaved) {
-                lines.push(`⚠️ 报告未写入：${result.reportError ?? '未知原因'}`);
-            }
-            // 数据源读失败必须让用户看见：否则以为「没有问题」，实际是「没检查全」
-            for (const warning of result.warnings) {
-                lines.push(`⚠️ ${warning}`);
-            }
-            showSuccessNotice(lines.join('\n'), {
-                title: result.report.contradictions.length > 0
-                    ? `发现 ${result.report.contradictions.length} 处矛盾`
-                    : '一致性审核完成',
-                timeout: 12000,
-            });
-        } catch (error) {
-            notice.hide();
-            log.error('[小说工坊] 一致性审核失败:', error);
-            showWarningNotice(`一致性审核失败：${error instanceof Error ? error.message : String(error)}`, {
-                title: '一致性审核',
-            });
-        }
+        new ConsistencyAuditModal(this.deps.app, this.deps.plugin).open();
     }
 }

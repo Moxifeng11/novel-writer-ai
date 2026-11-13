@@ -174,3 +174,29 @@ describe('isPersistedAssertion · 运行时校验', () => {
         expect(isPersistedAssertion(42)).toBe(false);
     });
 });
+
+describe('重复写入（回归锁 · 生产环境实测到的 bug）', () => {
+    it('**同一路径写第二次必须成功覆盖**（rename 覆盖会抛 Destination file already exists）', async () => {
+        const fs = new MockFileSystem();
+        await saveAssertions(fs, PROJECT, [makeAssertion()]);
+        // 第二次写入新的断言集：若实现用 rename 覆盖已存在文件，这里会抛
+        await expect(saveAssertions(fs, PROJECT, [
+            makeAssertion(),
+            makeAssertion({ id: 'q2', chapterKey: '第2章', subject: '李四' }),
+        ])).resolves.toBeUndefined();
+
+        const loaded = await loadAssertions(fs, PROJECT);
+        expect(loaded.status).toBe('ok');
+        if (loaded.status === 'ok') expect(loaded.assertions).toHaveLength(2);
+    });
+
+    it('连续合并两次（第二次读到的已存在文件）不抛错', async () => {
+        const fs = new MockFileSystem();
+        await mergeAndSaveAssertions(fs, PROJECT, [makeAssertion()]);
+        const second = await mergeAndSaveAssertions(fs, PROJECT, [
+            makeAssertion({ id: 'q3', chapterKey: '第3章', subject: '王五' }),
+        ]);
+        expect(second.saved).toBe(true);
+        expect(second.total).toBe(2);
+    });
+});
