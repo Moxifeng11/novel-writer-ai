@@ -6,16 +6,17 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 27 | 27 | 100% | 50 | 50 | 100% | 0 |
 | `domains/` | 11 | 28 | 28 | 100% | 1 | 1 | 100% | 0 |
-| `engine/` | 329 | 1912 | 1911 | 100% | 1252 | 1252 | 100% | 0 |
+| `engine/` | 329 | 1911 | 1910 | 100% | 1251 | 1251 | 100% | 0 |
 | `services/` | 34 | 208 | 208 | 100% | 222 | 222 | 100% | 0 |
-| `shared/` | 198 | 1740 | 1740 | 100% | 159 | 159 | 100% | 0 |
-| `ui/` | 269 | 1011 | 1011 | 100% | 647 | 646 | 100% | 0 |
+| `shared/` | 198 | 1741 | 1740 | 100% | 159 | 159 | 100% | 0 |
+| `ui/` | 269 | 1010 | 1010 | 100% | 646 | 645 | 100% | 0 |
 
 ## 缺口最大的文件（按未注释导出数）
 
 | 文件 | 导出 | 未注释 | 公开方法 | 未注释 |
 |---|---:|---:|---:|---:|
 | `engine/co-writer/local-model-utils.ts` | 9 | 1 | 0 | 0 |
+| `shared/degradation-notifier.ts` | 11 | 1 | 7 | 0 |
 | `ui/settings-tab.ts` | 1 | 0 | 4 | 1 |
 | `engine/agent/agent-types.ts` | 23 | 0 | 0 | 0 |
 | `engine/agent/conversation-engine.ts` | 1 | 0 | 5 | 0 |
@@ -44,7 +45,6 @@
 | `engine/ai-api-stream.ts` | 4 | 0 | 0 | 0 |
 | `engine/ai-batch-entity-generator.ts` | 1 | 0 | 4 | 0 |
 | `engine/ai-chapter-helpers.ts` | 1 | 0 | 7 | 0 |
-| `engine/ai-character-generator.ts` | 1 | 0 | 2 | 0 |
 
 ## @example 覆盖（公共入口）
 

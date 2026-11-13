@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-13T14:03:18.533Z",
-  "note": "设置界面新增语义关键词区块（renderSemanticKeywords 带 JSDoc），公开方法口径重锚",
+  "generatedAt": "2026-11-13T23:06:11.383Z",
+  "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
       "files": 329,
-      "exports": 1909,
-      "documented": 1908,
+      "exports": 1911,
+      "documented": 1910,
       "methods": 1251,
       "methodsDocumented": 1251,
       "incomplete": 0
@@ -20,7 +20,7 @@
     },
     "shared": {
       "files": 198,
-      "exports": 1740,
+      "exports": 1741,
       "documented": 1740,
       "methods": 159,
       "methodsDocumented": 159,
@@ -46,8 +46,8 @@
       "files": 269,
       "exports": 1010,
       "documented": 1010,
-      "methods": 647,
-      "methodsDocumented": 646,
+      "methods": 646,
+      "methodsDocumented": 645,
       "incomplete": 0
     }
   },
@@ -253,8 +253,8 @@
     "engine/ai-engine.ts": {
       "exports": 2,
       "documented": 2,
-      "methods": 33,
-      "methodsDocumented": 33,
+      "methods": 32,
+      "methodsDocumented": 32,
       "incomplete": 0,
       "exampleTargets": 1,
       "examplesDocumented": 1
@@ -740,8 +740,8 @@
       "incomplete": 0
     },
     "engine/context/knowledge-fact-nodes.ts": {
-      "exports": 10,
-      "documented": 10,
+      "exports": 11,
+      "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -798,8 +798,8 @@
     "engine/context-manager.ts": {
       "exports": 2,
       "documented": 2,
-      "methods": 44,
-      "methodsDocumented": 44,
+      "methods": 45,
+      "methodsDocumented": 45,
       "incomplete": 0
     },
     "engine/context-readiness.ts": {
@@ -2151,8 +2151,8 @@
       "incomplete": 0
     },
     "engine/story-state-types.ts": {
-      "exports": 3,
-      "documented": 3,
+      "exports": 5,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2347,8 +2347,8 @@
       "incomplete": 0
     },
     "engine/world-state-snapshot.ts": {
-      "exports": 7,
-      "documented": 7,
+      "exports": 6,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2848,7 +2848,7 @@
       "incomplete": 0
     },
     "shared/degradation-notifier.ts": {
-      "exports": 10,
+      "exports": 11,
       "documented": 10,
       "methods": 7,
       "methodsDocumented": 7,
@@ -5584,10 +5584,10 @@
       "incomplete": 0
     },
     "ui/settings/general-sections.ts": {
-      "exports": 6,
-      "documented": 6,
-      "methods": 7,
-      "methodsDocumented": 7,
+      "exports": 5,
+      "documented": 5,
+      "methods": 6,
+      "methodsDocumented": 6,
       "incomplete": 0
     },
     "ui/settings/knowledge-section.ts": {
@@ -5612,8 +5612,8 @@
       "incomplete": 0
     },
     "ui/settings/section-factory.ts": {
-      "exports": 3,
-      "documented": 3,
+      "exports": 4,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
