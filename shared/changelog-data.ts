@@ -21,6 +21,29 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.90.0',
+        date: '2026-11-13',
+        title: '事实库自动化：自动维护 + 可视化 + 扩面',
+        sections: [
+            {
+                type: 'added',
+                label: '📚 知识库事实库',
+                items: [
+                    '结算后自动增量拆解入库（已拆章的跳过）',
+                    '新增「知识库事实库」命令：按主体浏览事实与引文',
+                    '地点冲突接入第二意见（合理换场不再误报）',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '🛠️ 可靠性',
+                items: [
+                    '损坏时拒绝写入；失败不影响结算；不可用时降级',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.89.0',
         date: '2026-11-13',
         title: '知识库事实层：让正则功能有"第二意见"',
@@ -345,22 +368,6 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
                 items: [
                     'ESLint 接入官方审核规则（类型感知）：no-unsupported-api / no-plugin-as-component / no-static-styles-assignment / no-forbidden-elements / no-unsanitized',
                     'check:obsidian-api 补 revealLeaf/ensureSideLeaf/getFileByPath 检测；handbook 新增 API/HTML/Modal 约束',
-                ],
-            },
-        ],
-    },
-    {
-        version: '4.80.0',
-        date: '2026-11-09',
-        title: '社区目录样式合规重构',
-        sections: [
-            {
-                type: 'improved',
-                label: '🎨 优化',
-                items: [
-                    '动态 <style> 注入 11 处 → 0：全部迁入 styles-src，主题变量改用 setCssProps',
-                    '字面量内联样式 558 → 0：进度组件/实体向导/生成弹窗/55 个文件改用语义类与 nw-is-* 状态',
-                    'check:obsidian-api 新增 style-element / static-style-assignment 两条棘轮门禁 + 自测',
                 ],
             },
         ],

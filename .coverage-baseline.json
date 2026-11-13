@@ -1,30 +1,30 @@
 {
-  "generatedAt": "2026-11-13T00:54:18.770Z",
-  "gitHead": "2656e7ce4c723347c715851ddcca546b4f3563ce",
+  "generatedAt": "2026-11-13T09:54:06.503Z",
+  "gitHead": "32fb704e0ab64cda8bd2a0496ec1b6d7c150a3a3",
   "nodeVersion": "v24.16.0",
-  "note": "v4.87.0：一致性审核 8 个新模块 + WritingStats/原子写修复合入，覆盖率重锚",
+  "note": "v4.90.0：事实库自动维护/浏览视图/第二意见扩面合入，覆盖率重锚",
   "dirs": {
     "ui": {
-      "files": 267,
+      "files": 269,
       "lines": {
-        "total": 41866,
-        "covered": 8676,
-        "pct": 20.72
+        "total": 41955,
+        "covered": 8708,
+        "pct": 20.76
       },
       "statements": {
-        "total": 45711,
-        "covered": 9408,
-        "pct": 20.58
+        "total": 45811,
+        "covered": 9449,
+        "pct": 20.63
       },
       "branches": {
-        "total": 22360,
-        "covered": 5026,
-        "pct": 22.48
+        "total": 22419,
+        "covered": 5058,
+        "pct": 22.56
       },
       "functions": {
-        "total": 7143,
-        "covered": 1390,
-        "pct": 19.46
+        "total": 7159,
+        "covered": 1401,
+        "pct": 19.57
       }
     },
     "ui/views": {
