@@ -10,6 +10,7 @@ import { truncateTextToTokens } from '@/shared/prompt-budget';
 import { parseSceneCardFields, parseSceneField, type SceneCardFields } from '@/shared/scene-card';
 import type { StoryLinkage } from '@/engine/story-linkage';
 import type { GatheredContext } from './context-types';
+import { linkFactsToEntities } from './knowledge-fact-nodes';
 import { activeContextQuotas } from '@/shared/context-budget-policy';
 import type {
     StoryContextBundle,
@@ -1062,6 +1063,9 @@ export function buildStoryContextGraph(source: StoryContextSource): StoryContext
     addForeshadowNodes(source, nodes, byKind, warnings);
     addSceneNodes(source, nodes, byKind);
     addEmotionNodes(source, nodes, byKind);
+    // 事实节点（v4.89 P0）：与既有节点同住一张图；缺省时零影响
+    const factNodes = source.factNodes ?? [];
+    for (const node of factNodes) pushNode(nodes, byKind, node);
 
     const graph: StoryContextGraph = {
         project: source.project,
@@ -1075,6 +1079,13 @@ export function buildStoryContextGraph(source: StoryContextSource): StoryContext
         warnings,
     };
     linkGraph(graph);
+    // 事实节点连到同名实体（复用既有 links；linkGraph 只按 title 建 nameIndex，
+    // 事实节点 title 是「主体·谓词」，需显式按 subject 连边）
+    if (factNodes.length > 0) {
+        const inGraph = factNodes.filter(node => graph.nodes.has(node.id));
+        const entities = [...graph.nodes.values()].filter(node => !node.id.startsWith('fact:'));
+        linkFactsToEntities(inGraph, entities);
+    }
     return graph;
 }
 

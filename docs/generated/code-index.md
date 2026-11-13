@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 341 | 143602 | 1892 | 1507 | 80% |
+| `engine/` | 341 | 143619 | 1892 | 1507 | 80% |
 | `services/` | 33 | 13896 | 206 | 162 | 79% |
 | `shared/` | 198 | 42149 | 1723 | 1405 | 82% |
 | `core/` | 7 | 2917 | 32 | 17 | 53% |
@@ -136,9 +136,9 @@
 | `engine/context/incremental-updater.ts` | 302 | 6 | 1 |
 | `engine/context/knowledge-fact-nodes.ts` | 242 | 10 | 8 |
 | `engine/context/overflow-recovery.ts` | 322 | 7 | 2 |
-| `engine/context/story-context-graph.ts` | 1573 | 7 | 7 |
+| `engine/context/story-context-graph.ts` | 1584 | 7 | 7 |
 | `engine/context/story-context-service.ts` | 225 | 8 | 8 |
-| `engine/context/story-context-types.ts` | 207 | 13 | 13 |
+| `engine/context/story-context-types.ts` | 213 | 13 | 13 |
 | `engine/craft-constraints.ts` | 84 | 5 | 5 |
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
 | `engine/cross-volume-outline-validator.ts` | 673 | 16 | 14 |

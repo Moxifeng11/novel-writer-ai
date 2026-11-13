@@ -183,6 +183,12 @@ export interface StoryContextSource {
     chapterNum: number;
     volume?: string;
     context: GatheredContext;
+  /**
+   * 预先构造好的事实节点（来自知识库拆解，v4.89 P0）。
+   *
+   * 由 knowledge-fact-nodes.toContextNodes() 生成；缺省时图的行为与原来完全一致。
+   */
+  factNodes?: readonly StoryContextNode[];
     sceneExpansionText?: string;
     emotionPlanText?: string;
     storyLinkage?: StoryLinkage | null;
