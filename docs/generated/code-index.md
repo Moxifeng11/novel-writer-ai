@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 345 | 144508 | 1919 | 1524 | 79% |
+| `engine/` | 345 | 144642 | 1922 | 1527 | 79% |
 | `services/` | 34 | 13952 | 210 | 162 | 77% |
 | `shared/` | 199 | 42205 | 1725 | 1406 | 82% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
@@ -109,7 +109,7 @@
 | `engine/co-writer/session-state.ts` | 677 | 34 | 27 |
 | `engine/co-writer/snapshot-builder.ts` | 133 | 1 | 1 |
 | `engine/coherence-checker.ts` | 108 | 3 | 3 |
-| `engine/conflict-detector.ts` | 273 | 4 | 1 |
+| `engine/conflict-detector.ts` | 285 | 4 | 1 |
 | `engine/consistency/assertion-extract.ts` | 309 | 3 | 2 |
 | `engine/consistency/assertion-model.ts` | 294 | 13 | 8 |
 | `engine/consistency/assertion-store.ts` | 196 | 9 | 5 |
@@ -138,8 +138,8 @@
 | `engine/context/incremental-updater.ts` | 302 | 6 | 1 |
 | `engine/context/knowledge-fact-nodes.ts` | 244 | 10 | 8 |
 | `engine/context/overflow-recovery.ts` | 322 | 7 | 2 |
-| `engine/context/state-advice-wiring.ts` | 116 | 3 | 1 |
-| `engine/context/state-advice.ts` | 139 | 6 | 4 |
+| `engine/context/state-advice-wiring.ts` | 124 | 3 | 1 |
+| `engine/context/state-advice.ts` | 249 | 9 | 7 |
 | `engine/context/story-context-graph.ts` | 1584 | 7 | 7 |
 | `engine/context/story-context-service.ts` | 225 | 8 | 8 |
 | `engine/context/story-context-types.ts` | 213 | 13 | 13 |
@@ -270,7 +270,7 @@
 | `engine/prompts/template-utils.ts` | 176 | 4 | 4 |
 | `engine/prompts/writing-rules-format.ts` | 48 | 3 | 3 |
 | `engine/prompts/writing-rules.ts` | 9 | 0 | 0 |
-| `engine/quality-gate.ts` | 203 | 5 | 4 |
+| `engine/quality-gate.ts` | 206 | 5 | 4 |
 | `engine/quality-scorer.ts` | 384 | 5 | 3 |
 | `engine/quality/deviation-detector.ts` | 2056 | 26 | 22 |
 | `engine/quality/gate-snapshot.ts` | 131 | 3 | 3 |
@@ -341,7 +341,7 @@
 | `engine/step-result-saver.ts` | 573 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 223 | 6 | 5 |
-| `engine/step-runner.ts` | 2187 | 2 | 1 |
+| `engine/step-runner.ts` | 2188 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 218 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |

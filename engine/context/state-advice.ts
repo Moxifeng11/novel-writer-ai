@@ -136,3 +136,114 @@ export function findConflicts(
     });
     return out;
 }
+
+/**
+ * 修为/能力等级阶梯（低 → 高）。
+ *
+ * 为什么需要：能力变化**天然是合法的**（练气三层 → 筑基一层是进阶）。
+ * 若不引入等级序，任何"值不相等"都会判成矛盾——这正是最容易误报的一类。
+ *
+ * 阶梯按修真小说通用境界排列；无法识别的词返回 null（走 unknown，不猜）。
+ */
+export const CULTIVATION_LADDER: ReadonlyArray<{ name: string; rank: number }> = [
+    { name: '炼气', rank: 10 },
+    { name: '练气', rank: 10 },
+    { name: '筑基', rank: 20 },
+    { name: '金丹', rank: 30 },
+    { name: '元婴', rank: 40 },
+    { name: '化神', rank: 50 },
+    { name: '炼虚', rank: 60 },
+    { name: '合体', rank: 70 },
+    { name: '大乘', rank: 80 },
+    { name: '渡劫', rank: 90 },
+];
+
+/** 层/阶的中文数字（一~九 + 十） */
+const LAYER_NUMERALS: Record<string, number> = {
+    一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10,
+};
+
+/**
+ * 解析等级值的序数（境界 rank × 100 + 层数）。
+ *
+ * 例：「筑基一层」→ 2001、「练气三层」→ 1003、「金丹」→ 3000。
+ *
+ * @param value - 等级文本
+ * @returns 序数；无法识别返回 null
+ */
+export function parseLevelRank(value: string): number | null {
+    const text = (value ?? '').trim();
+    if (!text) return null;
+    let base: number | null = null;
+    let matched = '';
+    for (const item of CULTIVATION_LADDER) {
+        if (text.includes(item.name) && item.name.length > matched.length) {
+            base = item.rank;
+            matched = item.name;
+        }
+    }
+    if (base === null) return null;
+    const layerMatch = /([一二两三四五六七八九十]|\d+)\s*(?:层|重|阶|品)/.exec(text);
+    let layer = 0;
+    if (layerMatch) {
+        const raw = layerMatch[1];
+        layer = /^\d+$/.test(raw) ? Number(raw) : (LAYER_NUMERALS[raw] ?? 0);
+    }
+    return base * 100 + layer;
+}
+
+/**
+ * 能力/修为变化的第二意见。
+ *
+ * 判定逻辑（按序数比较，而不是字符串比较）：
+ *  - 新值序数 > 旧值 → `consistent`（进阶是合法的，**不报**）
+ *  - 新值序数 = 旧值 → `consistent`
+ *  - 新值序数 < 旧值 → `conflict`（降级需要理由，报出来给用户判断）
+ *  - 任一无法解析 / 无历史 → `unknown`（不猜）
+ *
+ * @param facts - 事实列表
+ * @param claim - 声称：主体 / 章节 / 等级值
+ * @returns 建议
+ */
+export function adviseAbility(
+    facts: readonly FactMetadata[],
+    claim: { subject: string; chapter: number; value: string },
+): StateAdvice {
+    const subject = (claim.subject ?? '').trim();
+    const claimRank = parseLevelRank(claim.value);
+    if (!subject || claimRank === null) {
+        return { status: 'unknown', reason: '主体为空或等级无法识别，未做比对' };
+    }
+    const history = facts
+        .filter(fact => fact.subject === subject
+            && fact.chapter <= claim.chapter
+            && (fact.type === 'ability' || /修为|境界|等级|层/.test(fact.predicate)))
+        .sort((a, b) => a.chapter - b.chapter);
+    const previous = history[history.length - 1];
+    if (!previous) {
+        return { status: 'unknown', reason: `第 ${claim.chapter} 章前没有「${subject}」的能力记录` };
+    }
+    const previousRank = parseLevelRank(previous.value);
+    if (previousRank === null) {
+        return {
+            status: 'unknown',
+            reason: `历史记录「${previous.value}」无法解析等级，未做比对`,
+            authoritative: previous,
+        };
+    }
+    if (claimRank >= previousRank) {
+        return {
+            status: 'consistent',
+            authoritative: previous,
+            reason: claimRank > previousRank
+                ? `第 ${previous.chapter} 章为「${previous.value}」，本章提升（合法进阶）`
+                : `第 ${previous.chapter} 章同为「${previous.value}」`,
+        };
+    }
+    return {
+        status: 'conflict',
+        authoritative: previous,
+        reason: `第 ${claim.chapter} 章写「${claim.value}」，但第 ${previous.chapter} 章已到`
+            + `「${previous.value}」——能力/修为倒退需要理由`,
+    };
+}

@@ -33,6 +33,13 @@ export interface ConflictDetectorOptions {
         status: 'consistent' | 'conflict' | 'unknown';
         reason: string;
     };
+    /**
+     * P2 第二意见（能力/修为）：按等级序判断，进阶合法不报、倒退才报。
+     */
+    adviseAbility?: (claim: { subject: string; chapter: number; value: string }) => {
+        status: 'consistent' | 'conflict' | 'unknown';
+        reason: string;
+    };
 }
 
 /** 弱提示规则的正文长度门槛（低于此长度的文本不触发未提及类弱冲突，避免误报） */
@@ -240,6 +247,11 @@ export class ConflictDetector {
                 if (!mentioned) continue;
                 // 有铺垫迹象（emotion/injury 非空即视为人物已有状态描述）则不报
                 if ((state.emotion || '').trim() !== '' || (state.injury || '').trim() !== '') continue;
+                // P2 第二意见：能力变化若与事实库等级序一致（合法进阶），不报
+                if (group === '能力变化' && options.adviseAbility) {
+                    const advice = options.adviseAbility({ subject: name, chapter: 0, value: mentioned });
+                    if (advice.status === 'consistent') continue;
+                }
                 conflicts.push({
                     type: 'character',
                     message: '人物状态剧变缺乏前置铺垫，请核实依据',

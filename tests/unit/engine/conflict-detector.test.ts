@@ -268,3 +268,43 @@ describe('ConflictDetector — P2 第二意见扩面（地点）', () => {
         expect(hit!.detail).toContain('事实库');
     });
 });
+
+describe('ConflictDetector — P2 能力第二意见（剧变检测）', () => {
+    /** 造含能力变化关键词的快照 */
+    function abilitySnapshot(name: string) {
+        return {
+            timeline: { time: '第三日', location: '渭城' },
+            characterStates: [{ name, emotion: '', injury: '', goal: '', secret: '', relationships: '' }],
+            locations: [], items: [], foreshadows: [],
+        } as never;
+    }
+    const BODY = ('宁缺突破至筑基一层，气息暴涨。').repeat(20);
+
+    it('无第二意见时按原逻辑报「剧变缺乏铺垫」', () => {
+        const d = new ConflictDetector();
+        const conflicts = d.detect(abilitySnapshot('宁缺'), BODY, { appearingCharacters: ['宁缺'], knownCharacters: ['宁缺'] });
+        expect(conflicts.some(c => c.type === 'character')).toBe(true);
+    });
+
+    it('**事实库确认是合法进阶 → 抑制**', () => {
+        const d = new ConflictDetector();
+        const conflicts = d.detect(abilitySnapshot('宁缺'), BODY, {
+            appearingCharacters: ['宁缺'],
+            knownCharacters: ['宁缺'],
+            adviseAbility: () => ({ status: 'consistent', reason: '第1章为练气三层，本章提升（合法进阶）' }),
+        });
+        expect(conflicts.some(c => c.message.includes('剧变'))).toBe(false);
+    });
+
+    it('事实库未知 → 与无第二意见一致（不放过）', () => {
+        const d = new ConflictDetector();
+        const baseline = d.detect(abilitySnapshot('宁缺'), BODY, { appearingCharacters: ['宁缺'], knownCharacters: ['宁缺'] });
+        const unknown = d.detect(abilitySnapshot('宁缺'), BODY, {
+            appearingCharacters: ['宁缺'],
+            knownCharacters: ['宁缺'],
+            adviseAbility: () => ({ status: 'unknown', reason: '无记录' }),
+        });
+        expect(unknown.filter(c => c.message.includes('剧变')).length)
+            .toBe(baseline.filter(c => c.message.includes('剧变')).length);
+    });
+});

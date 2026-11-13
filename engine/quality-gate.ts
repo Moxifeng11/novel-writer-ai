@@ -65,6 +65,8 @@ export interface QualityGateOptions {
     adviseTimeline?: ConflictDetectorOptions['adviseTimeline'];
     /** P2 第二意见（扩面：地点/实体状态），由事实库提供 */
     adviseState?: ConflictDetectorOptions['adviseState'];
+    /** P2 第二意见（能力/修为，按等级序） */
+    adviseAbility?: ConflictDetectorOptions['adviseAbility'];
     /** 跳过指定层（逐层独立跳过） */
     skipLayers?: QualityGateLayer[];
     /** 第三层模型评审注入；未提供时模型层为 null */
@@ -110,6 +112,7 @@ export class QualityGate {
             conflicts = this.detector.detect(snapshot, body, {
             adviseTimeline: options?.adviseTimeline,
             adviseState: options?.adviseState,
+            adviseAbility: options?.adviseAbility,
         });
             aiWords = this.antiAI.detectAIWords(body);
             aiDetection = this.antiAI.detect(body);

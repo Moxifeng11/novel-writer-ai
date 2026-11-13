@@ -16,7 +16,7 @@ import { ObsidianFileSystem } from '@/shared/file-system-port';
 import { pjFactStoreFile } from '@/shared/paths';
 import { loadFactStore } from '@/engine/consistency/fact-store';
 import type { FactMetadata } from './knowledge-fact-nodes';
-import { adviseState, type StateAdvice } from './state-advice';
+import { adviseAbility, adviseState, type StateAdvice } from './state-advice';
 
 /** 伏笔第二意见结果 */
 export interface ForeshadowAdvice {
@@ -32,6 +32,8 @@ export interface ForeshadowAdvice {
 export interface StateAdvisor {
     /** 某主体某章的状态建议 */
     advise(claim: { subject: string; predicate?: string; chapter: number; value: string }): StateAdvice;
+    /** 能力/修为变化的建议（按等级序，进阶不报、倒退才报） */
+    adviseAbility(claim: { subject: string; chapter: number; value: string }): StateAdvice;
     /** 时间线专用的简化入口（供 ConflictDetector 使用） */
     adviseTimeline(claim: { value: string; chapterNum: number }): { status: StateAdvice['status']; reason: string };
     /**
@@ -78,6 +80,12 @@ export async function createStateAdvisor(app: App, project: string): Promise<Sta
                 return { status: 'unknown', reason: '事实库为空，未做比对' };
             }
             return adviseState(facts, claim);
+        },
+        adviseAbility(claim) {
+            if (facts.length === 0) {
+                return { status: 'unknown', reason: '事实库为空，未做比对' };
+            }
+            return adviseAbility(facts, claim);
         },
         adviseTimeline(claim) {
             if (facts.length === 0) return { status: 'unknown', reason: '事实库为空，未做比对' };

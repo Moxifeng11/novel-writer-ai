@@ -67,6 +67,7 @@ import { createLogger } from '@/shared/logger';
 import { getExecutionLedger, summarizeSettlement } from '@/services/execution-ledger';
 import { pushUsageScope } from '@/services/usage-ledger';
 import { QualityGate } from './quality-gate';
+import { createStateAdvisor } from './context/state-advice-wiring';
 import { buildGateBeatsFromVars, buildGateSnapshotFromVars } from './quality/gate-snapshot';
 import { runProjectCharacterConsistency, writeConsistencyReport } from './character-consistency-service';
 import { createStepFailure, type StepFailureKind } from '@/shared/execution-events';
