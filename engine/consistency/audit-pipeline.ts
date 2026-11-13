@@ -14,6 +14,8 @@ import { ASSERTION_KIND_META } from './assertion-model';
 import { locateQuote } from './evidence-locate';
 import { judgeSuspectedPairs, type LlmCaller } from './pairing-llm';
 import { pairContradictions, type SuspectedPair } from './pairing-rules';
+import { summarizeConsistencyMetrics, formatMetricsLine, type ConsistencyMetrics } from './consistency-metrics';
+import { selectRiskSegments, type RiskSegment } from './risk-targeting';
 import type { FactAssertion } from './assertion-model';
 
 /** 章节正文（用于把引文定位回字符偏移） */
@@ -57,6 +59,10 @@ export interface AuditReport {
     llmCalls: number;
     /** 是否只跑了规则层 */
     ruleOnly: boolean;
+    /** 一致性指标（CED 每万字符错误数，S5） */
+    metrics: ConsistencyMetrics;
+    /** 高风险段落（S3：优先复核/呈现） */
+    riskSegments: RiskSegment[];
     /** 生成时间（ISO） */
     generatedAt: string;
 }
@@ -96,9 +102,12 @@ export async function runAudit(
     const located = locateAll(merged, input.chapters ?? []);
     const sorted = sortContradictions(located);
 
+    const charCount = (input.chapters ?? []).reduce((acc, c) => acc + (c.body?.length ?? 0), 0);
     return {
         contradictions: sorted,
         byKind: summarizeByKind(sorted),
+        metrics: summarizeConsistencyMetrics(sorted, charCount),
+        riskSegments: selectRiskSegments({ chapters: input.chapters ?? [], limit: 20 }),
         suspectedCount,
         llmCalls,
         ruleOnly: !input.llm,
@@ -199,6 +208,10 @@ export function formatReportSummary(report: AuditReport): string[] {
         for (const stat of report.byKind) {
             lines.push(`· ${stat.label}：${stat.count} 处`);
         }
+    }
+    lines.push(formatMetricsLine(report.metrics));
+    if (report.riskSegments.length > 0) {
+        lines.push(`已定位 ${report.riskSegments.length} 个高风险段（中段/高熵优先复核）`);
     }
     if (report.ruleOnly) {
         lines.push('（仅规则层检测，未启用模型复核）');
