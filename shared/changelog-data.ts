@@ -21,6 +21,30 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.89.0',
+        date: '2026-11-13',
+        title: '知识库事实层：让正则功能有"第二意见"',
+        sections: [
+            {
+                type: 'added',
+                label: '📚 知识库事实层',
+                items: [
+                    'LLM 拆解正文为结构化事实（主体·谓词·值·有效区间·原文引文），落盘可人工修正',
+                    '时间线/实体状态/伏笔三类功能改为「正则找候选 → 查事实库定结论」',
+                    '低置信矛盾交 LLM 语义判定，判定失败保留规则结果不丢矛盾',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '🛠️ 修复',
+                items: [
+                    '无章节摘要的项目此前 0 产出，现按正文目录枚举并显式告警',
+                    '新增 check:command-handlers 门禁，拦「命令执行但无反应」',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.88.0',
         date: '2026-11-13',
         title: '一致性审核闭环：19 子类全覆盖 + 结算自动兜底',
@@ -342,21 +366,6 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
         ],
     },
 
-    {
-        version: '4.79.2',
-        date: '2026-11-09',
-        title: '社区目录建议项清理',
-        sections: [
-            {
-                type: 'improved',
-                label: '🧹 优化',
-                items: [
-                    'CSS：!important 183→0、:has 改状态类、滚动条改标准属性、删除重复声明',
-                    'Release：worker 仅入 zip；main.js/styles.css 增加构建来源证明',
-                ],
-            },
-        ],
-    },
 
 
 ];
