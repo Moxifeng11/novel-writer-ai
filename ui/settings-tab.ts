@@ -119,19 +119,18 @@ export class NovelWriterSettingTab extends PluginSettingTab {
      * display 方法。
      */
     /**
-     * 渲染「语义关键词」设置（C 类词表可配置化）。
+     * 渲染「关键词兜底」设置（规则层用）。
      *
-     * 内置词表没覆盖某个说法时，用户在这里追加即可，无需改代码。
-     * 判定顺序仍是「结构化字段 → 词表兜底」，追加词只影响兜底层。
+     * 内置词表没覆盖某个说法时用户可追加；只影响「词表兜底」层，不改变结构化判定。
      *
      * @param containerEl - 容器
      */
-    private renderSemanticKeywords(containerEl: HTMLElement): void {
+    private renderRuleKeywords(containerEl: HTMLElement): void {
         const overrides = this.plugin.settings.semanticKeywordOverrides ?? {};
         const section = containerEl.createDiv({ cls: 'nw-settings-section' });
         new Setting(section)
             .setName('🧩 关键词兜底（追加）')
-            .setDesc('内置词表没覆盖的说法可在此补充（逗号分隔）。只影响「词表兜底」层与统计口径，不改变结构化判定。')
+            .setDesc('内置词表没覆盖的说法可在此补充（逗号分隔）。只影响「词表兜底」层，不改变结构化判定。')
             .setHeading();
         const fields: Array<{
             key: keyof NonNullable<typeof overrides>;
@@ -144,35 +143,6 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             { key: 'location', name: '地点词', hint: '逗号分隔，如：坊市, 渡口' },
             { key: 'drastic', name: '剧变词（死亡/重伤/能力变化）', hint: '逗号分隔，如：形神俱灭, 灰飞烟灭' },
         ];
-        new Setting(section)
-            .setName('AI 高频词（统计）')
-            .setDesc('用于「AI 味」统计，逗号分隔。仅影响统计口径，不改变正文。')
-            .addTextArea(text => text
-                .setPlaceholder('逗号分隔，如：不禁, 仿佛')
-                .setValue((this.plugin.settings.extraAiHighFreqWords ?? []).join(', '))
-                .onChange(async value => {
-                    this.plugin.settings.extraAiHighFreqWords = value
-                        .split(/[,，\s]+/).map(w => w.trim()).filter(Boolean);
-                    await this.plugin.saveSettings();
-                }));
-        const styleFields: Array<{ key: 'positiveEmotion' | 'negativeEmotion' | 'highIntensity'; name: string }> = [
-            { key: 'positiveEmotion', name: '正面情绪词' },
-            { key: 'negativeEmotion', name: '负面情绪词' },
-            { key: 'highIntensity', name: '高强度情绪词' },
-        ];
-        for (const field of styleFields) {
-            new Setting(section)
-                .setName(`${field.name}（风格统计词表）`)
-                .setDesc('逗号分隔；只影响风格统计口径，不改变正文。')
-                .addTextArea(text => text
-                    .setValue(((this.plugin.settings.styleKeywordOverrides ?? {})[field.key] ?? []).join(', '))
-                    .onChange(async value => {
-                        const next = { ...(this.plugin.settings.styleKeywordOverrides ?? {}) };
-                        next[field.key] = value.split(/[,，\s]+/).map(w => w.trim()).filter(Boolean);
-                        this.plugin.settings.styleKeywordOverrides = next;
-                        await this.plugin.saveSettings();
-                    }));
-        }
         for (const field of fields) {
             new Setting(section)
                 .setName(field.name)
@@ -184,6 +154,50 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                         const next = { ...(this.plugin.settings.semanticKeywordOverrides ?? {}) };
                         next[field.key] = words;
                         this.plugin.settings.semanticKeywordOverrides = next;
+                        await this.plugin.saveSettings();
+                    }));
+        }
+    }
+
+    /**
+     * 渲染「统计词表」设置（风格统计口径用）。
+     *
+     * 与规则兜底分开：这些词只影响统计数字（AI 味、情绪分布），不参与正文正确性判定。
+     *
+     * @param containerEl - 容器
+     */
+    private renderStatKeywords(containerEl: HTMLElement): void {
+        const section = containerEl.createDiv({ cls: 'nw-settings-section' });
+        new Setting(section)
+            .setName('📊 统计词表（追加）')
+            .setDesc('只影响风格与 AI 味统计口径，不改变正文判定。')
+            .setHeading();
+        new Setting(section)
+            .setName('AI 高频词')
+            .setDesc('用于「AI 味」统计，逗号分隔。')
+            .addTextArea(text => text
+                .setPlaceholder('逗号分隔，如：不禁, 仿佛')
+                .setValue((this.plugin.settings.extraAiHighFreqWords ?? []).join(', '))
+                .onChange(async value => {
+                    this.plugin.settings.extraAiHighFreqWords = value
+                        .split(/[,，\s]+/).map(w => w.trim()).filter(Boolean);
+                    await this.plugin.saveSettings();
+                }));
+        const styleFields: Array<{ key: 'positiveEmotion' | 'negativeEmotion' | 'highIntensity'; name: string; hint: string }> = [
+            { key: 'positiveEmotion', name: '正面情绪词', hint: '逗号分隔，如：欣悦, 释然' },
+            { key: 'negativeEmotion', name: '负面情绪词', hint: '逗号分隔，如：郁结, 惶然' },
+            { key: 'highIntensity', name: '高强度情绪词', hint: '逗号分隔，如：暴怒, 狂喜' },
+        ];
+        for (const field of styleFields) {
+            new Setting(section)
+                .setName(field.name)
+                .addTextArea(text => text
+                    .setPlaceholder(field.hint)
+                    .setValue(((this.plugin.settings.styleKeywordOverrides ?? {})[field.key] ?? []).join(', '))
+                    .onChange(async value => {
+                        const next = { ...(this.plugin.settings.styleKeywordOverrides ?? {}) };
+                        next[field.key] = value.split(/[,，\s]+/).map(w => w.trim()).filter(Boolean);
+                        this.plugin.settings.styleKeywordOverrides = next;
                         await this.plugin.saveSettings();
                     }));
         }
@@ -303,7 +317,11 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             case 'modes': this.modes.render(container); break;
             case 'recognition': this.recognition.render(container); break;
             case 'suggestions': this.suggestions.render(container); break;
-            case 'fingerprint': void this.fingerprint.render(container); break;
+            case 'fingerprint':
+                void this.fingerprint.render(container);
+                // 统计口径词表与风格指纹同处一个 tab
+                this.renderStatKeywords(container);
+                break;
             case 'knowledge': void this.knowledge.render(container); break;
             case 'deconstruction': this.deconstruction.render(container); break;
             case 'foreshadow': this.foreshadow.render(container); break;
@@ -311,7 +329,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             case 'rules':
                 void this.rules.render(container);
                 // 语义关键词属于规则层兜底配置，收进「规则」tab（不再堆在设置页顶部）
-                this.renderSemanticKeywords(container);
+                this.renderRuleKeywords(container);
                 break;
             case 'appearance': this.appearance.render(container); break;
             case 'layout': this.layout.render(container); break;
