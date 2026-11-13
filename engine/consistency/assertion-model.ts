@@ -76,6 +76,8 @@ export type AssertionSource =
     | 'digest-fact'
     /** 章节摘要的 timeSpan */
     | 'digest-time'
+    /** LLM 知识库拆解（带引文校验与有效区间） */
+    | 'llm-decompose'
     /** 结构化台账 EventRecord（含行号） */
     | 'ledger-event'
     /** 事实索引里已人工确认的事实（命名基准） */
