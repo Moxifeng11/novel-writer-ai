@@ -15,6 +15,12 @@ import { locateQuote } from './evidence-locate';
 import { judgeSuspectedPairs, type LlmCaller } from './pairing-llm';
 import { pairContradictions, type SuspectedPair } from './pairing-rules';
 import { summarizeConsistencyMetrics, formatMetricsLine, type ConsistencyMetrics } from './consistency-metrics';
+import {
+    buildJudgePrompt,
+    parseJudgeVerdicts,
+    valuesLookEquivalent,
+    type ConflictCandidate,
+} from './candidate-judge';
 import { selectRiskSegments, type RiskSegment } from './risk-targeting';
 import type { FactAssertion } from './assertion-model';
 
@@ -103,7 +109,11 @@ export async function runAudit(
     }
 
     const merged = dedupe([...paired.contradictions, ...llmContradictions]);
-    const located = locateAll(merged, input.chapters ?? []);
+    // P1 判定层：低置信矛盾再过一道语义关（归一化压同义 + LLM 判真伪）
+    const verified = await verifyLowConfidence(merged, input);
+    llmCalls += verified.calls;
+    const mergedFinal = verified.contradictions;
+    const located = locateAll(mergedFinal, input.chapters ?? []);
     const sorted = sortContradictions(located);
 
     const charCount = (input.chapters ?? []).reduce((acc, c) => acc + (c.body?.length ?? 0), 0);
@@ -226,3 +236,106 @@ export function formatReportSummary(report: AuditReport): string[] {
 }
 
 export type { SuspectedPair };
+
+/** 低于该置信度的矛盾要过语义判定关 */
+const VERIFY_CONFIDENCE_THRESHOLD = 0.85;
+
+/**
+ * P1 判定层：对低置信矛盾做「归一化 + 语义判定」。
+ *
+ * 为什么只处理低置信：
+ *  - 高置信矛盾（如年龄倒退 0.92）规则已经足够可靠，不该再花钱；
+ *  - 低置信常见于「同主体同谓词但语义不互斥」（治理实测：165 候选大多同义表述）。
+ *
+ * 归一化判为同义的直接剔除（免费）；剩余才交 LLM（付费），
+ * 模型判非矛盾则剔除，判矛盾则保留并把 decidedBy 标为 llm。
+ *
+ * @param contradictions - 规则层矛盾
+ * @param input - 审核输入
+ * @returns 过滤后的矛盾与 LLM 调用次数
+ */
+export async function verifyLowConfidence(
+    contradictions: readonly ConsistencyContradiction[],
+    input: AuditInput,
+): Promise<{ contradictions: ConsistencyContradiction[]; calls: number }> {
+    const low = contradictions.filter(c => c.confidence < VERIFY_CONFIDENCE_THRESHOLD);
+    const high = contradictions.filter(c => c.confidence >= VERIFY_CONFIDENCE_THRESHOLD);
+    if (low.length === 0) return { contradictions: [...contradictions], calls: 0 };
+
+    const candidates: ConflictCandidate[] = low.map(c => ({
+        subject: c.subject,
+        predicate: c.predicate,
+        type: c.kind,
+        valueA: c.evidenceA.quote,
+        chapterA: chapterNumFromKey(c.evidenceA.chapterKey),
+        quoteA: c.evidenceA.quote,
+        valueB: c.evidenceB.quote,
+        chapterB: chapterNumFromKey(c.evidenceB.chapterKey),
+        quoteB: c.evidenceB.quote,
+    }));
+
+    // ① 归一化：同义表述（「约摸十五六岁」≡「十五六岁」）直接剔除，零成本
+    const keptIndexes: number[] = [];
+    const keptCandidates: ConflictCandidate[] = [];
+    candidates.forEach((candidate, index) => {
+        if (valuesLookEquivalent(candidate.valueA, candidate.valueB)) return;
+        keptIndexes.push(index);
+        keptCandidates.push(candidate);
+    });
+
+    // ② 无可判层：保留归一化结果（宁可少报也不丢光）
+    const caller = input.llm?.caller;
+    if (!caller || keptCandidates.length === 0) {
+        return {
+            contradictions: [...high, ...keptIndexes.map(i => low[i])],
+            calls: 0,
+        };
+    }
+
+    // ③ LLM 判定（分批，成本封顶）
+    const BATCH = 12;
+    const maxCandidates = Math.max(1, input.llm?.maxPairs ?? 20) * BATCH;
+    const verdictReal = new Map<number, { real: boolean; confidence: number; reason: string }>();
+    let calls = 0;
+    for (let i = 0; i < keptCandidates.length && i < maxCandidates; i += BATCH) {
+        const batch = keptCandidates.slice(i, i + BATCH);
+        try {
+            const response = await caller({
+                systemPrompt: '你是小说设定一致性审核员，只输出严格 JSON。',
+                userPrompt: buildJudgePrompt(batch),
+            });
+            calls += 1;
+            if (response.error) continue;
+            const verdicts = parseJudgeVerdicts(response.content, batch.length);
+            if (!verdicts) continue;
+            for (const verdict of verdicts) {
+                verdictReal.set(i + verdict.index, verdict);
+            }
+        } catch {
+            // silent-ok: 判定失败时保留规则层结果（宁可少过滤，也不因模型问题丢矛盾）
+            continue;
+        }
+    }
+
+    const out: ConsistencyContradiction[] = [...high];
+    keptIndexes.forEach((lowIndex, keptIndex) => {
+        const verdict = verdictReal.get(keptIndex);
+        if (verdict && !verdict.real) return; // 模型判非矛盾 → 剔除
+        const original = low[lowIndex];
+        out.push(verdict
+            ? { ...original, decidedBy: 'llm', confidence: Math.min(original.confidence, verdict.confidence || original.confidence) }
+            : original);
+    });
+    return { contradictions: out, calls };
+}
+
+/**
+ * 从章节 key 里取章号（「第12章」→ 12）。
+ *
+ * @param chapterKey - 章节 key
+ * @returns 章号；取不到返回 0
+ */
+export function chapterNumFromKey(chapterKey: string): number {
+    const match = /(\d+)/.exec(chapterKey ?? '');
+    return match ? Number(match[1]) : 0;
+}

@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 342 | 143897 | 1901 | 1514 | 80% |
+| `engine/` | 343 | 144148 | 1909 | 1520 | 80% |
 | `services/` | 33 | 13896 | 206 | 162 | 79% |
 | `shared/` | 198 | 42159 | 1724 | 1406 | 82% |
 | `core/` | 7 | 2917 | 32 | 17 | 53% |
@@ -113,7 +113,7 @@
 | `engine/consistency/assertion-extract.ts` | 309 | 3 | 2 |
 | `engine/consistency/assertion-model.ts` | 294 | 13 | 8 |
 | `engine/consistency/assertion-store.ts` | 196 | 9 | 5 |
-| `engine/consistency/audit-pipeline.ts` | 229 | 11 | 6 |
+| `engine/consistency/audit-pipeline.ts` | 341 | 13 | 8 |
 | `engine/consistency/candidate-judge.ts` | 240 | 9 | 6 |
 | `engine/consistency/causal-rules.ts` | 164 | 3 | 2 |
 | `engine/consistency/consistency-audit-wiring.ts` | 384 | 3 | 2 |
@@ -137,6 +137,7 @@
 | `engine/context/incremental-updater.ts` | 302 | 6 | 1 |
 | `engine/context/knowledge-fact-nodes.ts` | 242 | 10 | 8 |
 | `engine/context/overflow-recovery.ts` | 322 | 7 | 2 |
+| `engine/context/state-advice.ts` | 139 | 6 | 4 |
 | `engine/context/story-context-graph.ts` | 1584 | 7 | 7 |
 | `engine/context/story-context-service.ts` | 225 | 8 | 8 |
 | `engine/context/story-context-types.ts` | 213 | 13 | 13 |
