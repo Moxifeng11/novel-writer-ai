@@ -15,6 +15,7 @@
 
 import { parseDuration, parseQuantity } from '@/shared/narrative-number';
 import { extractCausalAssertions } from './causal-rules';
+import { extractExtendedAssertions } from './extended-rules';
 import {
     makeAssertionId,
     type AssertionKind,
@@ -266,6 +267,9 @@ export function extractAssertions(input: AssertionExtractInput): FactAssertion[]
     for (const fact of input.digest?.facts ?? []) {
         out.push(...extractCausalAssertions(fact, input.chapterKey, input.chapterNum, undefined, now));
     }
+
+    // ── 4.6 扩展 10 子类原料（记忆/核心规则）──
+    out.push(...extractExtendedAssertions(input.digest?.facts ?? [], input.chapterKey, input.chapterNum, now));
 
     // ── 5. 已确认事实索引（建立权威命名基准）──────────────────
     for (const fact of input.confirmedFacts ?? []) {

@@ -81,6 +81,7 @@ export async function runAudit(
     const paired = pairContradictions({
         assertions: input.assertions,
         abandonedPlots: input.abandonedPlots,
+        chapters: input.chapters,
     });
 
     let llmContradictions: ConsistencyContradiction[] = [];

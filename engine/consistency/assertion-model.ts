@@ -40,7 +40,30 @@ export type AssertionKind =
     /** 因果逻辑违规：因果链方向或条件冲突 */
     | 'causal-violation'
     /** 废弃情节元素：伏笔被标记废弃/长期未回收 */
-    | 'abandoned-plot';
+    | 'abandoned-plot'
+    // —— Characterization（人物刻画）——
+    /** 记忆矛盾：同一角色对同一事既记得又忘了 */
+    | 'memory'
+    /** 知识矛盾：角色使用了尚未获得的知情 */
+    | 'knowledge'
+    /** 能力波动：能力/修为前后跃迁缺少过程 */
+    | 'skill-fluctuation'
+    /** 遗忘能力：曾展示的能力后文消失 */
+    | 'forgotten-ability'
+    // —— World-building & Setting（世界观设定）——
+    /** 核心规则违规：设定中「不能/无法」的事被做成 */
+    | 'core-rule'
+    /** 社会规范违规：礼法/身份秩序被违背且无解释 */
+    | 'social-norm'
+    /** 地理矛盾：距离/方位与已建立地理不符 */
+    | 'geographical'
+    // —— Narrative & Style（叙事与文风）——
+    /** 视角混乱：同章人称视角混用 */
+    | 'perspective'
+    /** 语气不一致：叙述语气突变 */
+    | 'tone'
+    /** 文风漂移：相邻章文风显著跳变 */
+    | 'style-shift';
 
 /** 断言所属的五大类（对应论文顶层分类） */
 export type AssertionCategory = 'factual' | 'timeline';
@@ -153,6 +176,16 @@ export const ASSERTION_KIND_META: Record<
     'causeless-effect': { category: 'timeline', label: '无因之果', severity: 'medium' },
     'causal-violation': { category: 'timeline', label: '因果逻辑违规', severity: 'medium' },
     'abandoned-plot': { category: 'timeline', label: '废弃情节元素', severity: 'medium' },
+    memory: { category: 'factual', label: '记忆矛盾', severity: 'high' },
+    knowledge: { category: 'factual', label: '知识矛盾', severity: 'high' },
+    'skill-fluctuation': { category: 'factual', label: '能力波动', severity: 'medium' },
+    'forgotten-ability': { category: 'factual', label: '遗忘能力', severity: 'medium' },
+    'core-rule': { category: 'factual', label: '核心规则违规', severity: 'high' },
+    'social-norm': { category: 'factual', label: '社会规范违规', severity: 'medium' },
+    geographical: { category: 'factual', label: '地理矛盾', severity: 'medium' },
+    perspective: { category: 'timeline', label: '视角混乱', severity: 'medium' },
+    tone: { category: 'timeline', label: '语气不一致', severity: 'medium' },
+    'style-shift': { category: 'timeline', label: '文风漂移', severity: 'medium' },
 };
 
 /** 本批实现的全部断言种类（顺序稳定，用于遍历与测试） */
@@ -166,6 +199,16 @@ export const ASSERTION_KINDS: AssertionKind[] = [
     'causeless-effect',
     'causal-violation',
     'abandoned-plot',
+    'memory',
+    'knowledge',
+    'skill-fluctuation',
+    'forgotten-ability',
+    'core-rule',
+    'social-norm',
+    'geographical',
+    'perspective',
+    'tone',
+    'style-shift',
 ];
 
 /**

@@ -21,6 +21,7 @@
 
 import { durationsAreCompatible, numbersAreCompatible } from '@/shared/narrative-number';
 import { pairCausal } from './causal-rules';
+import { pairExtended } from './extended-rules';
 import {
     ASSERTION_KIND_META,
     hasCompleteEvidence,
@@ -34,6 +35,8 @@ import {
 export interface PairingInput {
     /** 断言集合（跨章累积） */
     assertions: readonly FactAssertion[];
+    /** 章节正文（扩展规则用于视角检测等） */
+    chapters?: ReadonlyArray<{ chapterKey: string; body: string }>;
     /** 已标记废弃的伏笔（来自台账 ForeshadowRecord） */
     abandonedPlots?: ReadonlyArray<{
         name: string;
@@ -254,6 +257,13 @@ export function pairContradictions(input: PairingInput): PairingOutput {
     for (const causal of pairCausal(assertions)) {
         if (hasCompleteEvidence(causal)) emit(causal);
     }
+
+    // ── 扩展 10 子类（记忆/知识/能力/世界观/叙事）──
+    const extended = pairExtended(assertions, input.chapters ?? []);
+    for (const c of extended.contradictions) {
+        if (hasCompleteEvidence(c)) emit(c);
+    }
+    suspected.push(...extended.suspected);
 
     return { contradictions, suspected };
 }
