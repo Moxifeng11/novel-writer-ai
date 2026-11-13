@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 346 | 144928 | 1934 | 1536 | 79% |
+| `engine/` | 346 | 144969 | 1936 | 1537 | 79% |
 | `services/` | 34 | 13964 | 209 | 163 | 78% |
 | `shared/` | 200 | 42333 | 1736 | 1409 | 81% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
@@ -109,7 +109,7 @@
 | `engine/co-writer/session-state.ts` | 677 | 34 | 27 |
 | `engine/co-writer/snapshot-builder.ts` | 133 | 1 | 1 |
 | `engine/coherence-checker.ts` | 108 | 3 | 3 |
-| `engine/conflict-detector.ts` | 291 | 4 | 1 |
+| `engine/conflict-detector.ts` | 315 | 4 | 1 |
 | `engine/consistency/assertion-extract.ts` | 310 | 3 | 2 |
 | `engine/consistency/assertion-model.ts` | 300 | 13 | 8 |
 | `engine/consistency/assertion-store.ts` | 196 | 9 | 5 |
@@ -350,7 +350,7 @@
 | `engine/story-beat-extractor.ts` | 73 | 1 | 1 |
 | `engine/story-linkage-writer.ts` | 161 | 5 | 5 |
 | `engine/story-linkage.ts` | 416 | 14 | 12 |
-| `engine/story-state-types.ts` | 44 | 3 | 0 |
+| `engine/story-state-types.ts` | 61 | 5 | 1 |
 | `engine/stream-text-reader.ts` | 320 | 3 | 3 |
 | `engine/streaming/simulated-stream.ts` | 183 | 2 | 2 |
 | `engine/streaming/stream-parser.ts` | 366 | 8 | 8 |

@@ -251,7 +251,9 @@ export class ConflictDetector {
                     paragraphs.some((p) => p.includes(name) && p.includes(w))
                 );
                 if (!mentioned) continue;
-                // 有铺垫迹象（emotion/injury 非空即视为人物已有状态描述）则不报
+                // ① 结构化优先：快照已声明该维度时，以结构化字段为准（不靠词表猜）
+                if (this.structuredStateCovers(group, state)) continue;
+                // ② 有铺垫迹象（emotion/injury 非空即视为人物已有状态描述）则不报
                 if ((state.emotion || '').trim() !== '' || (state.injury || '').trim() !== '') continue;
                 // P2 第二意见：能力变化若与事实库等级序一致（合法进阶），不报
                 if (group === '能力变化' && options.adviseAbility) {
@@ -266,6 +268,28 @@ export class ConflictDetector {
                 break;
             }
         }
+    }
+
+    /**
+     * 快照的结构化字段是否已覆盖该组剧变（覆盖则不再靠词表告警）。
+     *
+     * 例：快照 lifeState='dead' 时，「死了/身亡」这类词命中属预期，不必报；
+     * 快照 injuryLevel='severe' 时，「重伤/断臂」同理。
+     *
+     * @param group - 剧变分组名
+     * @param state - 人物状态摘要
+     * @returns 是否已被结构化字段覆盖
+     */
+    private structuredStateCovers(
+        group: string,
+        state: { lifeState?: string; injuryLevel?: string },
+    ): boolean {
+        if (group === '死亡') return state.lifeState === 'dead';
+        if (group === '重伤') {
+            return state.injuryLevel === 'severe' || state.injuryLevel === 'critical';
+        }
+        // 能力变化已由事实库等级序判定（adviseAbility），此处不靠结构化字段
+        return false;
     }
 
     private isMentioned(body: string, phrase: string): boolean {

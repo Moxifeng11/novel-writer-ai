@@ -308,3 +308,51 @@ describe('ConflictDetector — P2 能力第二意见（剧变检测）', () => {
             .toBe(baseline.filter(c => c.message.includes('剧变')).length);
     });
 });
+
+describe('结构化状态优先（v4.94）', () => {
+    /** 造快照 */
+    function snapshot(state: Record<string, unknown>) {
+        return {
+            timeline: { time: '第三日', location: '渭城' },
+            characterStates: [{
+                name: '宁缺', emotion: '', injury: '', goal: '', secret: '', relationships: '',
+                ...state,
+            }],
+            locations: [], items: [], foreshadows: [],
+        } as never;
+    }
+    const DEATH_BODY = ('宁缺死了，众人悲恸。').repeat(20);
+    const INJURY_BODY = ('宁缺重伤昏迷，血流不止。').repeat(20);
+
+    it('**lifeState=dead 时不靠词表报「死亡剧变无铺垫」**', () => {
+        const d = new ConflictDetector();
+        const conflicts = d.detect(snapshot({ lifeState: 'dead' }), DEATH_BODY, {
+            appearingCharacters: ['宁缺'], knownCharacters: ['宁缺'],
+        });
+        expect(conflicts.some(c => c.message.includes('剧变'))).toBe(false);
+    });
+
+    it('**injuryLevel=severe 时不报「重伤剧变无铺垫」**', () => {
+        const d = new ConflictDetector();
+        const conflicts = d.detect(snapshot({ injuryLevel: 'severe' }), INJURY_BODY, {
+            appearingCharacters: ['宁缺'], knownCharacters: ['宁缺'],
+        });
+        expect(conflicts.some(c => c.message.includes('剧变'))).toBe(false);
+    });
+
+    it('lifeState=unknown 时仍靠词表兜底（不放过）', () => {
+        const d = new ConflictDetector();
+        const conflicts = d.detect(snapshot({ lifeState: 'unknown' }), DEATH_BODY, {
+            appearingCharacters: ['宁缺'], knownCharacters: ['宁缺'],
+        });
+        expect(conflicts.some(c => c.message.includes('剧变'))).toBe(true);
+    });
+
+    it('lifeState=alive 时词表命中仍报（确实异常）', () => {
+        const d = new ConflictDetector();
+        const conflicts = d.detect(snapshot({ lifeState: 'alive' }), DEATH_BODY, {
+            appearingCharacters: ['宁缺'], knownCharacters: ['宁缺'],
+        });
+        expect(conflicts.some(c => c.message.includes('剧变'))).toBe(true);
+    });
+});
