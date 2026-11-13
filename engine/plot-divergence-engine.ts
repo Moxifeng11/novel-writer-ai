@@ -49,6 +49,13 @@ export interface DivergenceResult {
  * 引擎选项。
  */
 export interface PlotDivergenceEngineOptions {
+    /**
+     * 结构化设定矛盾（来自事实库/审核层）。
+     *
+     * 为什么：SETTING_CONTRADICTION_PATTERNS 是词表模式匹配，
+     * 换个说法就漏。上游能给出结构化矛盾时优先用它，词表只做兜底。
+     */
+    structuredContradictions?: readonly string[];
   chapterOutline?: string;
   mainlineKeywords?: string[];
   characterNames?: string[];
@@ -119,6 +126,8 @@ export class PlotDivergenceEngine {
   private characterNames: string[];
   private characterTraits: Record<string, string[]>;
   private settingKeywords: string[];
+  /** 结构化设定矛盾（来自事实库/审核层；优先于词表模式） */
+  private structuredContradictions: readonly string[];
   private expectedRhythm: 'fast' | 'medium' | 'slow';
   private foreshadowToRecover: string[];
   private activeForeshadows: string[];
@@ -137,6 +146,7 @@ export class PlotDivergenceEngine {
     this.characterNames = options.characterNames || [];
     this.characterTraits = options.characterTraits || {};
     this.settingKeywords = options.settingKeywords || [];
+    this.structuredContradictions = options.structuredContradictions || [];
     this.expectedRhythm = options.expectedRhythm || 'medium';
     this.foreshadowToRecover = options.foreshadowToRecover || [];
     this.activeForeshadows = options.activeForeshadows || [];
@@ -636,10 +646,11 @@ export class PlotDivergenceEngine {
       };
     }
 
-    const detectedSettings: string[] = [];
-    for (const { pattern, setting } of SETTING_CONTRADICTION_PATTERNS) {
-      if (pattern.test(text)) {
-        detectedSettings.push(setting);
+    // 结构化优先：上游给出结构化矛盾时直接采用，词表模式只做兜底
+    const detectedSettings: string[] = [...(this.structuredContradictions ?? [])];
+    if (detectedSettings.length === 0) {
+      for (const { pattern, setting } of SETTING_CONTRADICTION_PATTERNS) {
+        if (pattern.test(text)) detectedSettings.push(setting);
       }
     }
 

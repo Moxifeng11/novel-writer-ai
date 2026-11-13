@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 346 | 144999 | 1936 | 1537 | 79% |
+| `engine/` | 346 | 145010 | 1936 | 1537 | 79% |
 | `services/` | 34 | 13964 | 209 | 163 | 78% |
 | `shared/` | 200 | 42310 | 1736 | 1409 | 81% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 271 | 105339 | 1020 | 824 | 81% |
+| `ui/` | 271 | 105350 | 1020 | 824 | 81% |
 
 ## 文件清单
 
@@ -245,7 +245,7 @@
 | `engine/planning-combined.ts` | 242 | 9 | 7 |
 | `engine/planning-step-advance.ts` | 57 | 5 | 2 |
 | `engine/plot-completion-engine.ts` | 806 | 6 | 6 |
-| `engine/plot-divergence-engine.ts` | 943 | 8 | 8 |
+| `engine/plot-divergence-engine.ts` | 954 | 8 | 8 |
 | `engine/plot-redundancy-checker.ts` | 128 | 4 | 4 |
 | `engine/preference-memory.ts` | 291 | 0 | 0 |
 | `engine/project-migration-service.ts` | 227 | 5 | 5 |
@@ -815,7 +815,7 @@
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 473 | 6 | 5 |
-| `ui/settings-tab.ts` | 299 | 1 | 1 |
+| `ui/settings-tab.ts` | 310 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 151 | 1 | 1 |
 | `ui/settings/api-section.ts` | 1281 | 1 | 1 |

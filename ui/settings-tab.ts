@@ -140,6 +140,17 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             { key: 'location', name: '地点词' },
             { key: 'drastic', name: '剧变词（死亡/重伤/能力变化）' },
         ];
+        new Setting(section)
+            .setName('AI 高频词（统计）')
+            .setDesc('用于「AI 味」统计，逗号分隔。仅影响统计口径，不改变正文。')
+            .addTextArea(text => text
+                .setPlaceholder('逗号分隔，如：不禁, 仿佛')
+                .setValue((this.plugin.settings.extraAiHighFreqWords ?? []).join(', '))
+                .onChange(async value => {
+                    this.plugin.settings.extraAiHighFreqWords = value
+                        .split(/[,，\s]+/).map(w => w.trim()).filter(Boolean);
+                    await this.plugin.saveSettings();
+                }));
         for (const field of fields) {
             new Setting(section)
                 .setName(field.name)
