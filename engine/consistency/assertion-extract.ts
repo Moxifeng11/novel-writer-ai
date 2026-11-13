@@ -15,6 +15,7 @@
 
 import { parseDuration, parseQuantity } from '@/shared/narrative-number';
 import { extractCausalAssertions } from './causal-rules';
+import { matchesPredicateLoose } from './predicate-match';
 import { extractExtendedAssertions } from './extended-rules';
 import {
     makeAssertionId,
@@ -159,7 +160,7 @@ export function extractAssertions(input: AssertionExtractInput): FactAssertion[]
             if (!value) continue;
             let numericValue: number | undefined;
             let unit: string | undefined;
-            if (spec.predicate === '年龄') {
+            if (matchesPredicateLoose(spec.predicate, 'age')) {
                 const q = parseQuantity(value);
                 if (q && q.unit === '岁') {
                     numericValue = q.value;

@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 346 | 144763 | 1929 | 1533 | 79% |
-| `services/` | 34 | 13952 | 210 | 162 | 77% |
+| `engine/` | 346 | 144791 | 1931 | 1534 | 79% |
+| `services/` | 34 | 13964 | 209 | 163 | 78% |
 | `shared/` | 199 | 42210 | 1725 | 1406 | 82% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 271 | 105229 | 1020 | 824 | 81% |
+| `ui/` | 271 | 105300 | 1020 | 824 | 81% |
 
 ## 文件清单
 
@@ -110,7 +110,7 @@
 | `engine/co-writer/snapshot-builder.ts` | 133 | 1 | 1 |
 | `engine/coherence-checker.ts` | 108 | 3 | 3 |
 | `engine/conflict-detector.ts` | 285 | 4 | 1 |
-| `engine/consistency/assertion-extract.ts` | 309 | 3 | 2 |
+| `engine/consistency/assertion-extract.ts` | 310 | 3 | 2 |
 | `engine/consistency/assertion-model.ts` | 294 | 13 | 8 |
 | `engine/consistency/assertion-store.ts` | 196 | 9 | 5 |
 | `engine/consistency/audit-pipeline.ts` | 341 | 13 | 8 |
@@ -125,8 +125,8 @@
 | `engine/consistency/fact-store.ts` | 212 | 9 | 7 |
 | `engine/consistency/knowledge-decompose.ts` | 246 | 9 | 5 |
 | `engine/consistency/pairing-llm.ts` | 208 | 11 | 4 |
-| `engine/consistency/pairing-rules.ts` | 387 | 7 | 3 |
-| `engine/consistency/predicate-match.ts` | 112 | 7 | 6 |
+| `engine/consistency/pairing-rules.ts` | 391 | 7 | 3 |
+| `engine/consistency/predicate-match.ts` | 134 | 9 | 7 |
 | `engine/consistency/risk-targeting.ts` | 222 | 9 | 6 |
 | `engine/content-safety-checker.ts` | 123 | 5 | 5 |
 | `engine/context-compressor.ts` | 342 | 2 | 2 |
@@ -139,7 +139,7 @@
 | `engine/context/incremental-updater.ts` | 302 | 6 | 1 |
 | `engine/context/knowledge-fact-nodes.ts` | 244 | 10 | 8 |
 | `engine/context/overflow-recovery.ts` | 322 | 7 | 2 |
-| `engine/context/state-advice-wiring.ts` | 124 | 3 | 1 |
+| `engine/context/state-advice-wiring.ts` | 125 | 3 | 1 |
 | `engine/context/state-advice.ts` | 249 | 9 | 7 |
 | `engine/context/story-context-graph.ts` | 1584 | 7 | 7 |
 | `engine/context/story-context-service.ts` | 225 | 8 | 8 |
@@ -400,7 +400,7 @@
 | `services/performance-monitor.ts` | 819 | 9 | 9 |
 | `services/project-health-service.ts` | 223 | 5 | 2 |
 | `services/project-rename-service.ts` | 192 | 2 | 2 |
-| `services/project-standard-service.ts` | 56 | 4 | 0 |
+| `services/project-standard-service.ts` | 68 | 3 | 1 |
 | `services/prompt-manager.ts` | 783 | 5 | 5 |
 | `services/prompt-templates-default.ts` | 644 | 1 | 1 |
 | `services/quality-history-store.ts` | 182 | 5 | 5 |
@@ -789,7 +789,7 @@
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
 | `ui/polish-editor.ts` | 834 | 5 | 5 |
 | `ui/pre-research-modal.ts` | 710 | 2 | 2 |
-| `ui/project-health-modal.ts` | 134 | 1 | 1 |
+| `ui/project-health-modal.ts` | 205 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 406 | 5 | 5 |
 | `ui/project-utils.ts` | 366 | 11 | 10 |
 | `ui/prompt-manager-logic.ts` | 76 | 4 | 3 |

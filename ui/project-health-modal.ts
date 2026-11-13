@@ -9,7 +9,29 @@ import type NovelWriterPlugin from '@/main';
 import { listProjectIds } from '@/shared/project-catalog';
 import { projectDisplayName } from '@/domains/kernel/project-locator';
 import { analyzeProjectHealth, type ProjectHealthIssue, type ProjectHealthReport } from '@/services/project-health-service';
+import {
+    createStandardFs,
+    validateProjectStandard,
+    type StandardIssue,
+    type StandardIssueKind,
+    type StandardReport,
+} from '@/services/project-standard-service';
 import { createErrorState } from './components/error-state';
+
+const STANDARD_LABEL: Record<StandardIssueKind, string> = {
+    'missing-dir': '缺目录',
+    'missing-file': '缺文件',
+    'bad-naming': '命名不符',
+    'digest-missing': '缺摘要',
+    'fact-store-invalid': '事实库损坏',
+    'fact-store-version': '事实库版本',
+    'standard-outdated': '标准落后',
+    // 章节层类型（体检已覆盖，标准校验不会产出，占位保证类型完整）
+    'duplicate-body': '重复正文',
+    unsettled: '未结算',
+    'bad-frontmatter': 'frontmatter 异常',
+    'orphan-body': '孤儿文件',
+};
 
 const KIND_LABEL: Record<ProjectHealthIssue['kind'], string> = {
     'duplicate-body': '重复正文',
@@ -68,9 +90,13 @@ export class ProjectHealthModal extends Modal {
 
         const loading = this.bodyEl.createDiv({ cls: 'nw-unit-loading', text: '正在扫描项目…' });
         try {
-            const report = await analyzeProjectHealth(this.app, this.project);
+            const [report, standard] = await Promise.all([
+                analyzeProjectHealth(this.app, this.project),
+                validateProjectStandard(createStandardFs(this.app), this.project).catch(() => null),
+            ]);
             loading.remove();
             this.renderReport(report);
+            if (standard) this.renderStandard(standard);
         } catch (error) {
             loading.remove();
             createErrorState(this.bodyEl, {
@@ -110,6 +136,51 @@ export class ProjectHealthModal extends Modal {
 
         const list = this.bodyEl.createDiv({ cls: 'nw-project-health-list' });
         for (const issue of report.issues) this.renderIssue(list, issue);
+    }
+
+    /**
+     * 渲染项目标准区块（结构层问题，与章节层体检并列）。
+     *
+     * @param report - 标准校验报告
+     */
+    private renderStandard(report: StandardReport): void {
+        if (!this.bodyEl) return;
+        const head = this.bodyEl.createDiv({ cls: 'nw-project-health-head' });
+        head.createEl('h3', { text: '📐 项目标准' });
+        head.createSpan({
+            cls: 'nw-project-health-meta',
+            text: `标准版本 ${report.declaredVersion ?? '未声明'} / 当前 ${report.currentVersion} · 目录 ${report.checkedDirs} 个`,
+        });
+        if (report.issues.length === 0) {
+            const ok = this.bodyEl.createDiv({ cls: 'nw-empty-state' });
+            ok.createDiv({ cls: 'nw-empty-state-icon', text: '✅' });
+            ok.createDiv({ cls: 'nw-empty-state-title', text: '项目结构符合标准' });
+            ok.createDiv({ cls: 'nw-empty-state-description', text: '必备目录、文件、命名与派生数据均正常。' });
+            return;
+        }
+        const summary = this.bodyEl.createDiv({ cls: 'nw-project-health-summary' });
+        for (const [kind, count] of Object.entries(report.summary)) {
+            const chip = summary.createDiv({ cls: 'nw-project-health-chip nw-is-warning' });
+            chip.createSpan({ text: STANDARD_LABEL[kind as StandardIssueKind] ?? kind });
+            chip.createEl('strong', { text: String(count) });
+        }
+        const list = this.bodyEl.createDiv({ cls: 'nw-project-health-list' });
+        for (const issue of report.issues) this.renderStandardIssue(list, issue);
+    }
+
+    /**
+     * 渲染单条标准问题。
+     *
+     * @param host - 容器
+     * @param issue - 问题
+     */
+    private renderStandardIssue(host: HTMLElement, issue: StandardIssue): void {
+        const row = host.createDiv({ cls: `nw-project-health-row nw-is-${issue.severity}` });
+        const main = row.createDiv({ cls: 'nw-project-health-row-main' });
+        main.createSpan({ cls: 'nw-project-health-kind', text: STANDARD_LABEL[issue.kind as StandardIssueKind] ?? issue.kind });
+        main.createSpan({ cls: 'nw-project-health-label', text: issue.label });
+        row.createDiv({ cls: 'nw-project-health-detail', text: issue.detail });
+        row.createDiv({ cls: 'nw-project-health-path', text: issue.path });
     }
 
     private renderIssue(host: HTMLElement, issue: ProjectHealthIssue): void {

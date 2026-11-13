@@ -109,3 +109,25 @@ export function filterByConcept<T extends { predicate: string }>(
 ): T[] {
     return assertions.filter(item => matchesPredicate(item.predicate, concept));
 }
+
+/** 引文中的回溯/回忆标记（谓词可能中性，但句子说的是过去） */
+export const RETROSPECTIVE_QUOTE_MARKERS: readonly string[] = [
+    '那年', '那年才', '那年刚刚', '小时候', '幼年', '童年', '少时', '儿时',
+    '多年前', '七年前', '几年前', '当年', '那时', '当时', '此前', '从前', '曾经',
+];
+
+/**
+ * 判断引文是否描述过去（回溯/回忆）。
+ *
+ * 为什么需要：谓词可能写成「年龄」（看起来是当前状态），但句子是
+ * 「我**那年才**四岁」——纯粹的回溯叙述。只看谓词会产生假矛盾
+ * （《将夜》第 92 章实例，已核对原文）。
+ *
+ * @param quote - 原文引文
+ * @returns 是否回溯
+ */
+export function isRetrospectiveQuote(quote: string): boolean {
+    const text = (quote ?? '').trim();
+    if (!text) return false;
+    return RETROSPECTIVE_QUOTE_MARKERS.some(marker => text.includes(marker));
+}

@@ -17,6 +17,7 @@ import { pjFactStoreFile } from '@/shared/paths';
 import { loadFactStore } from '@/engine/consistency/fact-store';
 import type { FactMetadata } from './knowledge-fact-nodes';
 import { adviseAbility, adviseState, type StateAdvice } from './state-advice';
+import { matchesPredicate } from '@/engine/consistency/predicate-match';
 
 /** 伏笔第二意见结果 */
 export interface ForeshadowAdvice {
@@ -91,7 +92,7 @@ export async function createStateAdvisor(app: App, project: string): Promise<Sta
             if (facts.length === 0) return { status: 'unknown', reason: '事实库为空，未做比对' };
             // 时间线断言在事实库里通常是「故事·时间」或「某事件·时间」，
             // 这里不绑定具体主体：任一谓词含「时间」或类型为 timeline 的事实即可作为参照。
-            const timelineFacts = facts.filter(f => f.predicate.includes('时间') || f.type === 'timeline');
+            const timelineFacts = facts.filter(f => matchesPredicate(f.predicate, 'time') || f.type === 'timeline');
             if (timelineFacts.length === 0) return { status: 'unknown', reason: '事实库无时间线记录' };
             return {
                 status: 'unknown',

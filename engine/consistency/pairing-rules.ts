@@ -20,7 +20,7 @@
  */
 
 import { durationsAreCompatible, numbersAreCompatible } from '@/shared/narrative-number';
-import { matchesPredicate, matchesPredicateLoose } from './predicate-match';
+import { isRetrospectiveQuote, matchesPredicate, matchesPredicateLoose } from './predicate-match';
 import { pairCausal } from './causal-rules';
 import { pairExtended } from './extended-rules';
 import {
@@ -100,6 +100,10 @@ export function pairContradictions(input: PairingInput): PairingOutput {
     const ages = assertions.filter(a => a.kind === 'quantitative'
         && matchesPredicate(a.predicate, 'age')
         && typeof a.numericValue === 'number'
+        // 0 岁这类值几乎必然是抽取噪声（「十五六岁」被解析成 0）
+        && a.numericValue > 0
+        // 引文是回溯叙述（「我那年才四岁」）时不参与当前年龄比对
+        && !isRetrospectiveQuote(a.quote)
         && a.chapterNum !== null);
     for (const pair of groupBy(ages, a => a.subject).values()) {
         const ordered = pair.slice().sort((a, b) => (a.chapterNum ?? 0) - (b.chapterNum ?? 0));

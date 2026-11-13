@@ -19,7 +19,13 @@ export {
     PROJECT_META_REL_PATH,
 } from '@/scripts/lib/project-standard-lib.mjs';
 
-export type { StandardFs, DirListing } from '@/scripts/lib/project-standard-lib.mjs';
+export type {
+    StandardFs,
+    DirListing,
+    StandardIssue,
+    StandardReport,
+} from '@/scripts/lib/project-standard-lib.mjs';
+import type { StandardFs } from '@/scripts/lib/project-standard-lib.mjs';
 
 /** 标准校验的问题类型（在体检类型基础上扩展的项目结构层问题） */
 export type StandardIssueKind =
@@ -32,24 +38,30 @@ export type StandardIssueKind =
     | 'fact-store-version'
     | 'standard-outdated';
 
-/** 单条标准问题 */
-export interface StandardIssue {
-    /** 问题类型 */
-    kind: StandardIssueKind;
-    /** 严重度 */
-    severity: 'warning' | 'error';
-    /** 相关路径 */
-    path: string;
-    /** 简短标签 */
-    label: string;
-    /** 详细说明（含"怎么修"） */
-    detail: string;
-}
 
-/** 标准校验报告（与 lib 形状一致，类型更严格） */
-export interface StandardReport extends Omit<LibStandardReport, 'issues' | 'summary'> {
-    /** 问题列表 */
-    issues: StandardIssue[];
-    /** 按类型汇总 */
-    summary: Record<string, number>;
+/**
+ * 从 Obsidian App 构造标准校验所需的文件端口。
+ *
+ * 用 vault.adapter 而非 vault 索引：结构校验要检查**目录是否存在**，
+ * 而 vault 索引只覆盖文件。
+ *
+ * @param app - Obsidian 应用
+ * @returns 文件端口
+ */
+export function createStandardFs(app: import('obsidian').App): StandardFs {
+    const adapter = app.vault.adapter;
+    return {
+        exists: async (path: string) => {
+            try {
+                return await adapter.exists(path);
+            } catch { // silent-ok: 读取异常按「不存在」处理，缺失目录会被 missing-dir 报告
+                return false;
+            }
+        },
+        read: async (path: string) => adapter.read(path),
+        list: async (path: string) => {
+            const listing = await adapter.list(path);
+            return { files: listing.files ?? [], folders: listing.folders ?? [] };
+        },
+    };
 }

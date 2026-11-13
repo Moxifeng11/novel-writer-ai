@@ -14,7 +14,10 @@ import {
     matchesPredicateLoose,
     PREDICATE_ALIASES,
     RETROSPECTIVE_MARKERS,
+    isRetrospectiveQuote,
 } from '../../../../engine/consistency/predicate-match';
+import { pairContradictions } from '../../../../engine/consistency/pairing-rules';
+import type { FactAssertion } from '../../../../engine/consistency/assertion-model';
 
 describe('别名表完整性', () => {
     it('8 个概念都有别名', () => {
@@ -127,5 +130,67 @@ describe('matchesPredicateLoose / filterByConcept', () => {
         const hits = filterByConcept(assertions, 'age');
         expect(hits).toHaveLength(2);
         expect(hits.map(h => h.value)).toEqual(['11', '12']);
+    });
+});
+
+describe('引文回溯判定（长篇 100 章评测修复）', () => {
+    it('「我那年才四岁」是回溯', () => {
+        expect(isRetrospectiveQuote('我那年才四岁')).toBe(true);
+    });
+
+    it('「他七年前才六岁」是回溯', () => {
+        expect(isRetrospectiveQuote('他七年前才六岁')).toBe(true);
+    });
+
+    it('当前状态引文不是回溯（负例）', () => {
+        expect(isRetrospectiveQuote('你不过十五六岁，难不成杀过的人比我还多？')).toBe(false);
+    });
+
+    it('空引文不判回溯', () => {
+        expect(isRetrospectiveQuote('')).toBe(false);
+    });
+});
+
+describe('R1 排除回溯引文与 0 岁噪声', () => {
+    /** 造断言 */
+    function ageFact(chapter: number, numeric: number, quote: string, predicate = '年龄'): FactAssertion {
+        return {
+            id: `f|${chapter}|${numeric}`,
+            kind: 'quantitative',
+            subject: '宁缺',
+            predicate,
+            value: String(numeric),
+            numericValue: numeric,
+            unit: '岁',
+            chapterKey: `第${chapter}章`,
+            chapterNum: chapter,
+            quote,
+            source: 'fact-store',
+            extractedAt: 0,
+        };
+    }
+
+    it('**回溯引文不参与**（第92章「我那年才四岁」不算当前年龄）', () => {
+        const result = pairContradictions({ assertions: [
+            ageFact(68, 16, '你不过十五六岁'),
+            ageFact(92, 4, '我那年才四岁'),
+        ] });
+        expect(result.contradictions.some(c => c.kind === 'quantitative')).toBe(false);
+    });
+
+    it('**0 岁视为抽取噪声被忽略**', () => {
+        const result = pairContradictions({ assertions: [
+            ageFact(40, 15, '你不过十五六岁'),
+            ageFact(50, 0, '十五六岁年龄便杀过很多人'),
+        ] });
+        expect(result.contradictions.some(c => c.kind === 'quantitative')).toBe(false);
+    });
+
+    it('正常当前年龄倒退仍检出（负例对照）', () => {
+        const result = pairContradictions({ assertions: [
+            ageFact(68, 16, '你今年十六岁'),
+            ageFact(92, 8, '你今年八岁'),
+        ] });
+        expect(result.contradictions.some(c => c.kind === 'quantitative')).toBe(true);
     });
 });
