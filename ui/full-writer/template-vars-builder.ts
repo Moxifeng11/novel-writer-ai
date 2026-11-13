@@ -745,6 +745,12 @@ export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<
     vars["scriptGenre"] = modeMeta.scriptGenre;
     vars["modeTargetWords"] = String(modeMeta.targetWords);
     vars["modeTargetUnits"] = String(modeMeta.targetUnits);
+    // DSH-20261114-07（audit §四-5 勘误）：结构阶段/硬规则**已经**进正文 prompt——
+    // creationModePrompt = getCreationModePromptBlock → buildLongStoryPromptBlock
+    // 自带「结构阶段 + 硬约束」段，template-utils 把它追加到每个步骤 system prompt。
+    // 下面三个 narrativeStructure* 变量定位是 **UI 展示**（状态栏/标题栏），
+    // 不是 prompt 注入口——不要因为它们没被模板引用而误判结构约束断链。
+    // 链路有测试锁定：tests/unit/shared/story-structure-prompt.test.ts
     vars["creationModePrompt"] = getCreationModePromptBlock(modeMeta.mode, modeMeta);
     const narrative = modeMeta.storySettings ? getStoryStructure(modeMeta.storySettings.structureId) : getStoryStructure('qichengzhuanhe');
     vars["narrativeStructure"] = narrative.id;
