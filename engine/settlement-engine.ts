@@ -674,10 +674,53 @@ export class SettlementEngine {
             } catch (e) {
                 log.warn('[SettlementEngine] 图谱校验调度失败（不影响结算）:', e);
             }
+            // 一致性审核（v4.87.0）：结算后**不阻塞**地跑规则层检测。
+            // 只跑规则层（useLlm=false）——零 token、毫秒级；疑似项留给用户手动点
+            // 「一致性审核」时再交模型复核，避免结算流程变慢或产生意外费用。
+            // 用可选调用：部分测试以精简替身构造引擎，缺少该方法时不得让结算失败。
+            this.scheduleConsistencyAudit?.(ctx.project);
         }
 
         ctx.result.mode = 'full';
         return ctx.result;
+    }
+
+    /**
+     * 结算后异步跑一次「规则层」一致性审核（v4.87.0）。
+     *
+     * 为什么是规则层 + 不阻塞：
+     *  - 规则层零 token、毫秒级，适合每次结算都跑；疑似项交模型复核会拖慢结算并产生费用，
+     *    留给用户手动运行「一致性审核」命令；
+     *  - **不 await**：审核失败绝不影响结算（结算是数据写入，比派生检查重要得多）。
+     *
+     * 插件实例从 app 上取（SettlementEngine 只持有 app，不引 plugin，避免循环依赖）；
+     * 取不到就静默跳过——单元测试环境正是这种情况。
+     *
+     * @param project - 项目路径
+     */
+    private scheduleConsistencyAudit(project: string): void {
+        const plugin = (this.app as unknown as {
+            plugins?: { plugins?: Record<string, unknown> };
+        }).plugins?.plugins?.['novel-writer-ai'] as unknown;
+        if (!plugin) return;
+        void (async () => {
+            try {
+                const { runAuditForProject } = await import('./consistency/consistency-audit-wiring');
+                const result = await runAuditForProject(
+                    this.app,
+                    plugin as Parameters<typeof runAuditForProject>[1],
+                    project,
+                    { useLlm: false },
+                );
+                const count = result.report.contradictions.length;
+                if (count > 0) {
+                    log.info(`[SettlementEngine] 一致性审核发现 ${count} 处跨章矛盾（详见 04-项目总控/一致性审核/矛盾.json）`);
+                }
+            } catch (e) {
+                // silent-ok: 派生检查失败不得影响结算结果；报告文件缺失即视为未运行
+                log.warn('[SettlementEngine] 一致性审核失败（不影响结算）:', e);
+            }
+        })();
     }
 
     // ================================================================
