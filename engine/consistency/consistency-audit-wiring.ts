@@ -369,6 +369,7 @@ async function loadFactStoreAssertions(
         source: 'fact-store' as const,
         extractedAt: now,
         isCurrentState: fact.isCurrentState !== false,
+        event: fact.event,
     }));
 }
 

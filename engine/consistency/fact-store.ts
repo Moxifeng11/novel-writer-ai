@@ -91,6 +91,7 @@ export function mergeFactStore(
             quote: entry.quote,
             chapter,
             isCurrentState: entry.isCurrentState !== false,
+            event: entry.event,
         };
         const key = factKeyOf(fact);
         const at = index.get(key);

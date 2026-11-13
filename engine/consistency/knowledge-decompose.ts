@@ -70,6 +70,15 @@ export interface DecomposeEntry {
     validTo: number | null;
     /** 置信度 0–1 */
     confidence: number;
+    /**
+     * **事件锚**（v4.92）：这条事实属于哪个事件/状态。
+     *
+     * 为什么需要：规范谓词把同类事实压成同一个值（如时间类全是「时间」），
+     * 规则层按 (主体,谓词) 分组时会把**同一主体的不同事件**混在一起比
+     * （《将夜》实例：「宁缺入楼十七日」vs「宁缺苦求十余年」被判时长矛盾）。
+     * 有了事件锚，规则按 event 分组即可精确到"同一事件"。
+     */
+    event?: string;
     /** 原文引文（必须有） */
     quote: string;
     /**
@@ -116,6 +125,8 @@ export function buildDecomposePrompt(chapterNum: number, body: string): string {
         '3. type 只能是以下之一：' + DECOMPOSE_TYPES.join(' / '),
         '3.1 predicate 必须使用该 type 的**规范谓词**：'
             + DECOMPOSE_TYPES.map(type => `${type}=${CANONICAL_PREDICATES[type]}`).join('、'),
+        '3.3 增加 event 字段：这条事实属于哪个**事件/状态**（简短名词短语，如「青云试炼」「宁缺入楼」）。'
+            + '同一事件的多条事实必须用**完全相同**的 event 值。',
         '3.2 增加 isCurrentState 字段：本条描述的是**当前状态**填 true；'
             + '若是回溯/回忆/历史（如「我那年才四岁」「他七年前……」）填 false。',
         '4. 表示「从此章起生效」用 validFrom=' + chapterNum + '；若正文明确说某状态在此章结束，填 validTo。',
@@ -198,7 +209,9 @@ function normalizeEntry(item: unknown, normalizedBody: string): DecomposeEntry |
         ? null
         : (Number.isFinite(Number(validToRaw)) ? Math.trunc(Number(validToRaw)) : null);
     const isCurrentState = raw.isCurrentState === false ? false : true;
-    const entry: DecomposeEntry = { type, subject, predicate, value, validFrom, validTo, confidence, quote, isCurrentState };
+    // 事件锚：缺省用「主体·谓词」兜底，保证旧输出也能按事件分组
+    const event = String(raw.event ?? '').trim() || `${subject}·${predicate}`;
+    const entry: DecomposeEntry = { type, subject, predicate, value, validFrom, validTo, confidence, quote, isCurrentState, event };
     if (Number.isFinite(Number(raw.numeric))) entry.numeric = Number(raw.numeric);
     if (typeof raw.unit === 'string' && raw.unit.trim()) entry.unit = raw.unit.trim();
     return entry;
@@ -244,6 +257,7 @@ export function entriesToAssertions(
             source: 'llm-decompose',
             extractedAt: now,
             isCurrentState: entry.isCurrentState !== false,
+            event: entry.event,
         };
         if (entry.numeric !== undefined) {
             assertion.numericValue = entry.numeric;

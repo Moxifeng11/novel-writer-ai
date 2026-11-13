@@ -193,7 +193,9 @@ export function pairContradictions(input: PairingInput): PairingOutput {
         && a.numericValue > 0
         // 有单位时必须是时长单位；无单位时接受（旧数据用分钟数，无单位）
         && (a.unit === undefined || DURATION_UNITS.has(a.unit)));
-    for (const group of groupBy(eventTimes, a => a.subject).values()) {
+    // 按**事件锚**分组：同一主体的不同事件不应互相比时长
+    // （缺 event 的旧数据回退到主体，行为与之前一致）
+    for (const group of groupBy(eventTimes, a => a.event ?? a.subject).values()) {
         for (let i = 0; i < group.length - 1; i++) {
             for (let j = i + 1; j < group.length; j++) {
                 const a = group[i];

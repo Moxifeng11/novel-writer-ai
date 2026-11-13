@@ -18,6 +18,8 @@ import {
     validRangesConflict,
     type DecomposeEntry,
 } from '../../../../engine/consistency/knowledge-decompose';
+import { pairContradictions } from '../../../../engine/consistency/pairing-rules';
+import type { FactAssertion } from '../../../../engine/consistency/assertion-model';
 
 const BODY = '宁缺今年十七岁。他出身渭城，如今在长安。他记得那场大雪。';
 
@@ -209,5 +211,75 @@ describe('规范谓词枚举（根治关键词匹配）', () => {
         };
         const [assertion] = entriesToAssertions([entry], '第1章', 1);
         expect(assertion.isCurrentState).toBe(false);
+    });
+});
+
+describe('event 事件锚（v4.92 修复）', () => {
+    it('prompt 要求 event 字段且强调同事件必须一致', () => {
+        const prompt = buildDecomposePrompt(3, '正文');
+        expect(prompt).toContain('event');
+        expect(prompt).toContain('同一事件');
+    });
+
+    it('解析保留模型给的 event', () => {
+        const raw = JSON.stringify({ entries: [{
+            type: 'timeline', subject: '青云试炼', predicate: '时间', value: '三日',
+            validFrom: 1, validTo: null, confidence: 0.9, quote: '试炼持续三日',
+            event: '青云试炼', isCurrentState: true,
+        }] });
+        expect(parseDecomposeResponse(raw, '试炼持续三日')!.entries[0].event).toBe('青云试炼');
+    });
+
+    it('缺省 event 用「主体·谓词」兜底（兼容旧输出）', () => {
+        const raw = JSON.stringify({ entries: [{
+            type: 'age', subject: '宁缺', predicate: '年龄', value: '十七',
+            validFrom: 1, validTo: null, confidence: 0.9, quote: '宁缺今年十七',
+        }] });
+        expect(parseDecomposeResponse(raw, '宁缺今年十七')!.entries[0].event).toBe('宁缺·年龄');
+    });
+});
+
+describe('R5 按事件锚分组（不再按主体）', () => {
+    /** 造时长断言 */
+    function durationFact(chapter: number, numeric: number, event: string | undefined, quote: string): FactAssertion {
+        return {
+            id: `d|${chapter}|${numeric}|${event ?? ''}`,
+            kind: 'absolute-time',
+            subject: '宁缺',
+            predicate: '时间',
+            value: String(numeric),
+            numericValue: numeric,
+            unit: '日',
+            chapterKey: `第${chapter}章`,
+            chapterNum: chapter,
+            quote,
+            source: 'fact-store',
+            extractedAt: 0,
+            event,
+        };
+    }
+
+    it('**同一主体不同事件不互相比时长**（宁缺入楼 vs 苦求）', () => {
+        const result = pairContradictions({ assertions: [
+            durationFact(88, 17, '宁缺入楼', '入楼十七日'),
+            durationFact(98, 3650, '宁缺苦求', '苦求十余年'),
+        ] });
+        expect(result.contradictions.some(c => c.kind === 'duration')).toBe(false);
+    });
+
+    it('同一事件时长不相容仍检出（负例对照）', () => {
+        const result = pairContradictions({ assertions: [
+            durationFact(10, 3, '青云试炼', '试炼持续三日'),
+            durationFact(50, 60, '青云试炼', '试炼历时两个月'),
+        ] });
+        expect(result.contradictions.some(c => c.kind === 'duration')).toBe(true);
+    });
+
+    it('缺 event 的旧数据回退按主体分组（行为不变）', () => {
+        const result = pairContradictions({ assertions: [
+            durationFact(10, 3, undefined, '试炼持续三日'),
+            durationFact(50, 60, undefined, '试炼历时两个月'),
+        ] });
+        expect(result.contradictions.some(c => c.kind === 'duration')).toBe(true);
     });
 });

@@ -66,6 +66,8 @@ export interface FactMetadata {
     ignored?: boolean;
     /** 是否描述当前状态（false = 回溯/回忆；缺省视为 true） */
     isCurrentState?: boolean;
+    /** 事件锚：该事实属于哪个事件/状态 */
+    event?: string;
 }
 
 /**

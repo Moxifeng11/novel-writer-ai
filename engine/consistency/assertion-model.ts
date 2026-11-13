@@ -114,6 +114,8 @@ export interface FactAssertion {
     quote: string;
     /** 是否描述当前状态（false = 回溯；缺省视为 true，兼容旧数据） */
     isCurrentState?: boolean;
+    /** 事件锚：该事实属于哪个事件/状态（缺省时规则按主体兜底） */
+    event?: string;
     /** 正文中的字符偏移；定位前为 undefined */
     offset?: number;
     /** 来源 */

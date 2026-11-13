@@ -42,6 +42,8 @@ function toAssertion(entry, chapter) {
         quote: entry.quote,
         source: 'fact-store',
         extractedAt: 0,
+        isCurrentState: entry.isCurrentState !== false,
+        event: entry.event,
     };
 }
 
