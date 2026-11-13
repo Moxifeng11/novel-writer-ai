@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 346 | 144969 | 1936 | 1537 | 79% |
+| `engine/` | 346 | 144996 | 1936 | 1537 | 79% |
 | `services/` | 34 | 13964 | 209 | 163 | 78% |
 | `shared/` | 200 | 42333 | 1736 | 1409 | 81% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
@@ -227,7 +227,7 @@
 | `engine/llm-enhancer.ts` | 633 | 7 | 3 |
 | `engine/llm-prompts.ts` | 364 | 7 | 3 |
 | `engine/local-vector-store.ts` | 338 | 3 | 2 |
-| `engine/logic-consistency-checker.ts` | 138 | 4 | 4 |
+| `engine/logic-consistency-checker.ts` | 165 | 4 | 4 |
 | `engine/long-term-memory.ts` | 154 | 6 | 3 |
 | `engine/memory-trigger.ts` | 408 | 13 | 9 |
 | `engine/memory/chapter-digest.ts` | 375 | 9 | 7 |

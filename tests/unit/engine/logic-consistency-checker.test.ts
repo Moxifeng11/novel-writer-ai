@@ -132,3 +132,31 @@ describe('analyzeLogicConsistency — 边界情况与结构', () => {
         }
     });
 });
+
+describe('结构化伤情优先（v4.94 推广）', () => {
+    const BODY = '宁缺纵身跃起，挥剑冲向黑衣人。';
+
+    it('**结构化已知重伤时，不靠伤情词也报**（词表没提"重伤"）', () => {
+        const report = analyzeLogicConsistency(BODY, { injuryLevels: { 宁缺: 'severe' } });
+        expect(report.issues.some(i => i.type === 'injury_action_conflict')).toBe(true);
+    });
+
+    it('结构化未受伤时，词表命中仍报（行为不变）', () => {
+        const report = analyzeLogicConsistency('宁缺重伤昏迷，却纵身跃起挥剑。', {
+            injuryLevels: { 宁缺: 'none' },
+        });
+        expect(report.issues.some(i => i.type === 'injury_action_conflict')).toBe(true);
+    });
+
+    it('无结构化信息时按词表判定（负例：没有伤情词不报）', () => {
+        const report = analyzeLogicConsistency(BODY);
+        expect(report.issues.some(i => i.type === 'injury_action_conflict')).toBe(false);
+    });
+
+    it('用户追加伤情词生效', () => {
+        const report = analyzeLogicConsistency('宁缺气若游丝，却纵身跃起挥剑。', {
+            keywords: { injury: ['气若游丝'] },
+        });
+        expect(report.issues.some(i => i.type === 'injury_action_conflict')).toBe(true);
+    });
+});

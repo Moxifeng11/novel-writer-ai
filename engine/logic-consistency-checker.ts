@@ -67,9 +67,33 @@ function pushIssue(issues: LogicConsistencyIssue[], issue: LogicConsistencyIssue
  * @param body - 正文
   * @returns LogicConsistencyReport 实例
  */
-export function analyzeLogicConsistency(body: string): LogicConsistencyReport {
+/**
+ * 结构化人物状态（可选）：伤情等级已知时优先读它，而不是靠词表猜。
+ *
+ * @param options - 可选输入
+ * @returns 报告
+ */
+export function analyzeLogicConsistency(
+    body: string,
+    options?: {
+        /** 人物名 → 伤势等级（来自人物状态快照） */
+        injuryLevels?: Readonly<Record<string, string>>;
+        /** 用户追加的词表 */
+        keywords?: { injury?: readonly string[]; action?: readonly string[] };
+    },
+): LogicConsistencyReport {
     const paragraphs = splitParagraphs(body);
     const issues: LogicConsistencyIssue[] = [];
+    // 结构化优先：已知伤情等级的人物，不再依赖词表判断"是否受伤"
+    const structuredInjured = Object.entries(options?.injuryLevels ?? {})
+        .filter(([, level]) => level === 'severe' || level === 'critical')
+        .map(([name]) => name);
+    const injuryWords = options?.keywords?.injury
+        ? [...INJURY_WORDS, ...options.keywords.injury]
+        : INJURY_WORDS;
+    const actionWords = options?.keywords?.action
+        ? [...ACTION_WORDS, ...options.keywords.action]
+        : ACTION_WORDS;
 
     paragraphs.forEach((paragraph, index) => {
         const label = `第${index + 1}段`;
@@ -86,8 +110,11 @@ export function analyzeLogicConsistency(body: string): LogicConsistencyReport {
             });
         }
 
-        const injuries = hasAny(paragraph, INJURY_WORDS);
-        const actions = hasAny(paragraph, ACTION_WORDS);
+        const keywordInjuries = hasAny(paragraph, injuryWords);
+        // 结构化已知受伤的人物在本段出现 → 等同于"伤势命中"（不靠词表）
+        const structuredHit = structuredInjured.filter(name => paragraph.includes(name));
+        const injuries = keywordInjuries.length > 0 ? keywordInjuries : structuredHit;
+        const actions = hasAny(paragraph, actionWords);
         if (injuries.length > 0 && actions.length > 0) {
             pushIssue(issues, {
                 type: 'injury_action_conflict',
