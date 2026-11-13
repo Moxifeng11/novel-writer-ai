@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-12T23:43:37.326Z",
-  "note": "S4 一致性审核视图新增 27-consistency-audit.css（+3362B / +26 类）",
-  "bytes": 554834,
+  "generatedAt": "2026-11-13T15:54:06.435Z",
+  "note": "设置一级分组栏样式（新增 nw-settings-groupbar / nw-settings-group）",
+  "bytes": 555655,
   "important": 24,
   "hardcodedHex": 161,
   "rgbHsl": 188,
-  "uniqueClasses": 3048,
+  "uniqueClasses": 3050,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }
