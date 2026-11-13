@@ -1,30 +1,30 @@
 {
-  "generatedAt": "2026-11-12T21:36:38.022Z",
-  "gitHead": "5ec493e9270d96dd80a08b6ce3afdc25caec0a48",
+  "generatedAt": "2026-11-13T00:54:18.770Z",
+  "gitHead": "2656e7ce4c723347c715851ddcca546b4f3563ce",
   "nodeVersion": "v24.16.0",
-  "note": "DSH-20261113-27 触及 ui/services/project-create-service.ts（项目创建关键写入失败改为中止 + warnings），覆盖率持平重锚",
+  "note": "v4.87.0：一致性审核 8 个新模块 + WritingStats/原子写修复合入，覆盖率重锚",
   "dirs": {
     "ui": {
-      "files": 265,
+      "files": 267,
       "lines": {
-        "total": 41745,
-        "covered": 8619,
-        "pct": 20.65
+        "total": 41866,
+        "covered": 8676,
+        "pct": 20.72
       },
       "statements": {
-        "total": 45577,
-        "covered": 9349,
-        "pct": 20.51
+        "total": 45711,
+        "covered": 9408,
+        "pct": 20.58
       },
       "branches": {
-        "total": 22309,
-        "covered": 5005,
-        "pct": 22.43
+        "total": 22360,
+        "covered": 5026,
+        "pct": 22.48
       },
       "functions": {
-        "total": 7118,
-        "covered": 1377,
-        "pct": 19.35
+        "total": 7143,
+        "covered": 1390,
+        "pct": 19.46
       }
     },
     "ui/views": {

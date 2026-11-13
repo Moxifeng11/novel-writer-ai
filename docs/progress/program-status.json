@@ -3,7 +3,7 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-11T11:50+08:00",
   "baseline": {
-    "version": "4.86.0",
+    "version": "4.87.0",
     "tests": {
       "files": 776,
       "cases": 8239
