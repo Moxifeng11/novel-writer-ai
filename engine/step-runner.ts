@@ -1420,6 +1420,8 @@ ${userPrompt}`),
             const truncated = result.finishReason === 'length';
             const stepMeta: StepRunMeta = {
                 model: stepModel,
+                // DSH-20261114-08②：跨模型回退后实际落笔模型（保存时写 frontmatter step_actual_model）
+                actualModel: result.actualModel,
                 finishReason: result.finishReason,
                 truncated,
                 usage: result.usage,
@@ -2158,6 +2160,7 @@ ${userPrompt}`),
 
             const combinedMeta: StepRunMeta = {
                 model: flashModel,
+                actualModel: result.actualModel,
                 finishReason: result.finishReason,
                 truncated: result.finishReason === 'length',
                 usage: result.usage,

@@ -208,6 +208,8 @@ export function migrateStepIndex(oldIndex: number): number {
 /** 单步执行的落盘元数据（模型/截断/token），用于状态机与诊断。 */
 export interface StepRunMeta {
     model?: string;
+    /** DSH-20261114-08②：跨模型回退后实际落笔模型（写入 frontmatter step_actual_model） */
+    actualModel?: string;
     providerId?: string;
     finishReason?: string;
     truncated?: boolean;

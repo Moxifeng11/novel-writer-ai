@@ -14,4 +14,10 @@ export interface APIResponse {
         total: number;
     };
     finishReason?: 'stop' | 'length' | 'error' | 'aborted';
+    /**
+     * 实际落笔模型（DSH-20261114-08②）：跨模型回退后请求模型 ≠ 实际模型，
+     * 成稿需要可追溯。流式与非流式成功路径都回带；调用方（StepRunMeta/
+     * frontmatter）消费，错误/中止路径缺省。
+     */
+    actualModel?: string;
 }

@@ -265,3 +265,24 @@ describe('loadStoryLinkageTail — memo/截断/缺失上报（DSH-20261114-06）
         expect(linkageEvents[0].severity).toBe('info'); // info 不弹 Notice
     });
 });
+
+describe('callAIStreamWithRetry — actualModel 透传（DSH-20261114-08②）', () => {
+    it('回退后实际落笔模型透传进结果', async () => {
+        const { callAIStreamWithRetry } = await import('../../../engine/step-runner-retry');
+        const host = {
+            aiEngine: {
+                callAIStream: vi.fn(async () => ({
+                    content: '正文内容',
+                    finishReason: 'stop',
+                    actualModel: 'deepseek-reasoner', // 回退后的实际模型（请求的是 flash）
+                })),
+            },
+            showNotice: vi.fn(),
+        };
+        const result = await callAIStreamWithRetry(
+            host as never, '系统', '用户', 'deepseek-flash', 0.7, 4096, '正文生成',
+            () => {},
+        );
+        expect(result.actualModel).toBe('deepseek-reasoner');
+    });
+});

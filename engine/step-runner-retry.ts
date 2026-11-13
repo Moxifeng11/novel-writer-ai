@@ -138,6 +138,8 @@ export async function callAIStreamWithRetry(
     let fullContent = '';
     let totalUsage = { prompt: 0, completion: 0, total: 0 };
     let finalFinishReason: 'stop' | 'length' | 'error' | 'aborted' | undefined;
+    // DSH-20261114-08②：跨模型回退后实际落笔模型（成稿可追溯）
+    let actualModel: string | undefined;
 
     let currentUserPrompt = userPrompt;
     let previousChunkContent = '';
@@ -174,6 +176,7 @@ export async function callAIStreamWithRetry(
         const chunkContent = result.content || '';
         fullContent += chunkContent;
         finalFinishReason = (result as any).finishReason || 'stop';
+        if (result.actualModel) actualModel = result.actualModel;
 
         if (result.usage) {
             totalUsage.prompt += result.usage.prompt;
@@ -199,6 +202,7 @@ export async function callAIStreamWithRetry(
         content: fullContent,
         finishReason: finalFinishReason,
         usage: totalUsage,
+        actualModel,
     };
 }
 

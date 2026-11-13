@@ -99,3 +99,19 @@ describe('KnowledgeInjector 注入失败可见化（DSH-20261114-03）', () => {
         expect(injector.lastInjectionMeta?.failed).toBe(false);
     });
 });
+
+describe('notifyMaxTokensClamp — 夹紧可见化（DSH-20261114-08③）', () => {
+    it('夹紧时发 source=llm info 事件（60s 去重，不弹 Notice）', async () => {
+        const { notifyMaxTokensClamp } = await import('../../../shared/degradation-notifier');
+        getDegradationNotifier().clear();
+        notifyMaxTokensClamp(32768, 8192, 'deepseek-flash');
+        notifyMaxTokensClamp(32768, 8192, 'deepseek-flash'); // 60s 内去重
+
+        const events = getDegradationNotifier().getEvents().filter(e => e.source === 'llm');
+        expect(events).toHaveLength(1);
+        expect(events[0].severity).toBe('info');
+        expect(events[0].from).toBe('maxTokens:32768');
+        expect(events[0].to).toBe('clamped:8192');
+        expect(events[0].reason).toContain('产出可能偏短');
+    });
+});

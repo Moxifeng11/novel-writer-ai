@@ -21,6 +21,7 @@ import type { APIResponse } from './ai-engine';
 import type { Notifier } from '@/shared/types';
 import { NOOP_NOTIFIER } from '@/shared/types';
 import { performanceMonitor } from '@/services/performance-monitor';
+import { notifyMaxTokensClamp } from '@/shared/degradation-notifier';
 import { ensureLocalModelCapability } from '@/services/local-model-probe';
 import { recordBudgetSnapshot } from '@/shared/budget-telemetry';
 import { currentUsageScope, getUsageLedger } from '@/services/usage-ledger';
@@ -578,6 +579,8 @@ export class AIApiClient {
             const currentSafeMaxTokens = Math.min(maxTokens, currentMaxOutput);
             if (maxTokens > currentMaxOutput) {
                 log.debug(`[小说工坊] fallback ${currentModel}: maxTokens ${maxTokens} > 上限 ${currentMaxOutput}，截断为 ${currentSafeMaxTokens}`);
+                // DSH-20261114-08③：夹紧可见化（60s 去重）
+                notifyMaxTokensClamp(maxTokens, currentSafeMaxTokens, currentModel);
             }
             const finalMaxTokens = currentSafeMaxTokens;
             // finish_reason=length 时在模型上限内自动扩容重试一次，避免 4096 静态预算白丢一次生成
@@ -827,7 +830,8 @@ export class AIApiClient {
                         promptCache.set(cacheKey, { content, usage, finishReason: isLengthTruncated ? 'length' : 'stop' }, currentModel);
                     }
 
-                    return { content, usage, finishReason: isLengthTruncated ? 'length' : 'stop' };
+                    // DSH-20261114-08②：实际落笔模型随响应带回（跨模型回退后成稿可追溯）
+                    return { content, usage, finishReason: isLengthTruncated ? 'length' : 'stop', actualModel: currentModel };
                 } catch (error: unknown) {
                     // v6.3: 外部取消优先于断联判定——AbortError 在 isDisconnectionError 中同属
                     // 「断联」特征，若先走回退分支，用户取消会被误判为断联并切换到其他模型继续生成。

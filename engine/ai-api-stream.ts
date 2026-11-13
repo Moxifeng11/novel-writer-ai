@@ -20,6 +20,7 @@ import { recordBudgetSnapshot } from '@/shared/budget-telemetry';
 import { buildAuthHeaders, parseSseFrame, usesDoneSentinel, type ApiFormat } from '@/shared/api-format';
 import { performanceMonitor } from '@/services/performance-monitor';
 import { createLogger } from '@/shared/logger';
+import { notifyMaxTokensClamp } from '@/shared/degradation-notifier';
 import { resolveProviderApiKey } from '@/shared/ai-credentials';
 import { openStreamResponse } from '@/shared/http-transport';
 import { AIAuthError, errorMessage, isAuthErrorMessage } from './ai-api-client-shared';
@@ -122,6 +123,9 @@ export async function callAIStream(
         const safeMaxTokens = Math.min(maxTokens, modelMaxOutput);
         if (maxTokens > modelMaxOutput) {
             log.debug(`[小说工坊] callAIStream: maxTokens ${maxTokens} > ${effectiveModel} 上限 ${modelMaxOutput}，自动截断为 ${safeMaxTokens}`);
+            // DSH-20261114-08③：夹紧可见化——log.debug 用户看不见，降为 info 级降级
+            // 事件（60s 去重：长流程 11 步逐步夹紧不刷屏；事件池/诊断可查，不弹 Notice）
+            notifyMaxTokensClamp(maxTokens, safeMaxTokens, effectiveModel);
         }
         const finalMaxTokens = safeMaxTokens;
 
@@ -441,7 +445,9 @@ export async function callAIStream(
                             };
                         }
 
-                        const data = { content: fullContent, finishReason: streamFinishReason };
+                        // DSH-20261114-08②：实际落笔模型随响应带回——跨模型回退后
+                        // 「成稿不记录实际落笔模型」的缺口在此闭合（StepRunMeta/frontmatter 消费）
+                        const data = { content: fullContent, finishReason: streamFinishReason, actualModel: currentModel };
 
                         if (isSwitch) {
                             log.info(`[小说工坊] ✅ 模型切换成功(流式): ${currentModel}`);

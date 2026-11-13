@@ -248,6 +248,35 @@ let notifierInstance: DegradationNotifier | null = null;
  *
   * @returns DegradationNotifier 实例
  */
+/** maxTokens 夹紧上报去重窗口（DSH-20261114-08③：长流程 11 步逐步夹紧不刷屏） */
+let lastClampNotifyAt = 0;
+
+/**
+ * maxTokens 夹紧可见化（DSH-20261114-08③，audit §三-5）。
+ *
+ * 请求的 maxTokens 超出模型上限被静默夹紧时，产出会比用户预期偏短——
+ * 此前只有 log.debug。现在降为 info 级降级事件（60s 去重；info 不弹
+ * Notice，事件池/诊断弹窗可查）。
+ *
+ * @param requested - 请求的 maxTokens
+ * @param clamped - 实际使用的 maxTokens
+ * @param model - 模型标识
+ */
+export function notifyMaxTokensClamp(requested: number, clamped: number, model: string): void {
+    const now = Date.now();
+    if (now - lastClampNotifyAt < 60_000) return;
+    lastClampNotifyAt = now;
+    getDegradationNotifier().notify({
+        source: 'llm',
+        dimension: 'max-tokens',
+        from: `maxTokens:${requested}`,
+        to: `clamped:${clamped}`,
+        reason: `maxTokens ${requested} 超出 ${model} 上限，已自动夹紧为 ${clamped}（本轮产出可能偏短）`,
+        severity: 'info',
+        recoverable: true,
+    });
+}
+
 export function getDegradationNotifier(): DegradationNotifier {
     if (!notifierInstance) {
         notifierInstance = new DegradationNotifier();

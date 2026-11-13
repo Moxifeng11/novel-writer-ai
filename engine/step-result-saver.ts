@@ -47,6 +47,8 @@ export interface StepResultSaverDeps {
 /** 步骤落盘元数据：让文件能回答「哪个模型生成的、是否截断、用了多少 token」。 */
 export interface StepSaveMeta {
     model?: string;
+    /** DSH-20261114-08②：跨模型回退后实际落笔模型（写入 frontmatter step_actual_model） */
+    actualModel?: string;
     providerId?: string;
     finishReason?: string;
     truncated?: boolean;
@@ -284,6 +286,7 @@ export class StepResultSaver {
                     step_finish_reason: meta?.finishReason || '',
                     step_truncated: truncated,
                 };
+                if (meta?.actualModel) patch['step_actual_model'] = meta.actualModel;
                 if (meta?.usage) patch['step_usage'] = meta.usage;
                 if (meta?.maxTokens) patch['step_max_tokens'] = meta.maxTokens;
                 if (meta?.contextBudget) patch['context_budget'] = meta.contextBudget;
@@ -353,6 +356,7 @@ export class StepResultSaver {
                             fm['step_model'] = meta?.model || plugin?.settings?.defaultModel || '';
                             fm['step_finish_reason'] = meta?.finishReason || '';
                             fm['step_truncated'] = truncated;
+                            if (meta?.actualModel) fm['step_actual_model'] = meta.actualModel; else if ('step_actual_model' in fm) delete fm['step_actual_model'];
                             if (meta?.usage) fm['step_usage'] = meta.usage;
                             else delete fm['step_usage'];
                             if (meta?.maxTokens) fm['step_max_tokens'] = meta.maxTokens;
