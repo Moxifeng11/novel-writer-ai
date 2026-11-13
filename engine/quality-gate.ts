@@ -15,7 +15,7 @@
 import { BeatVerifier } from './beat-verifier';
 import type { BeatVerifyResult } from './beat-verifier';
 import { ConflictDetector } from './conflict-detector';
-import type { Conflict } from './conflict-detector';
+import type { Conflict, ConflictDetectorOptions } from './conflict-detector';
 import { AntiAIDetector } from './anti-ai-detector';
 import type { AIDetectionResult } from './anti-ai-detector';
 import type { ChapterStateSnapshot, StoryBeat } from './story-state-types';
@@ -58,6 +58,11 @@ export interface QualityGateReport {
  */
 export interface QualityGateOptions {
     beats?: StoryBeat[];
+    /**
+     * P2 第二意见：由事实库回答「这个时间声称值是否与已记录事实一致」。
+     * 提供后冲突检测会在报时间线冲突前先问一次（consistent 抑制 / unknown 不抑制）。
+     */
+    adviseTimeline?: ConflictDetectorOptions['adviseTimeline'];
     /** 跳过指定层（逐层独立跳过） */
     skipLayers?: QualityGateLayer[];
     /** 第三层模型评审注入；未提供时模型层为 null */
@@ -100,7 +105,9 @@ export class QualityGate {
         let aiWords: string[] = [];
         let aiDetection: AIDetectionResult = { score: 0, hits: [], features: [], suggestions: [] };
         if (!skip.has('rule')) {
-            conflicts = this.detector.detect(snapshot, body);
+            conflicts = this.detector.detect(snapshot, body, {
+            adviseTimeline: options?.adviseTimeline,
+        });
             aiWords = this.antiAI.detectAIWords(body);
             aiDetection = this.antiAI.detect(body);
         }
