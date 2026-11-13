@@ -222,6 +222,32 @@ OBSIDIAN_PATH=... npx playwright test --project=view-lifecycle
 
 Obsidian 自带 `obsidian` 命令（`Obsidian.com`），可直接驱动真实实例，**不必手点 UI**。
 
+#### 6.7.1 坑：`obsidian reload` 之后 `eval` 可能看不到已加载插件
+
+**症状**：`npm run check:prod` 的 AI 两步失败，报
+`Cannot read properties of undefined (reading 'aiEngine')`；
+但同一时刻：
+
+- `obsidian plugin id=...` 显示 `enabled=true`、版本正确
+- `obsidian command id=novel-writer-ai:...` 返回 `Executed`，且 `dev:errors` 无报错
+- 插件自己的日志（如 `[HeavyTaskWorkerManager]`）正常输出
+
+**原因**：执行过 `obsidian reload`（重载 vault）后，CLI `eval` 使用的 `app`
+可能与宿主 app 实例失联——`app.plugins.plugins` 是空对象，
+而 `app.plugins.manifests` / `enabledPlugins` 里仍有该插件。
+即**插件确实加载了，只是 eval 看不到它**。
+
+**判定方法**（30 秒）：
+
+```bash
+obsidian eval code="(() => JSON.stringify({ n: Object.keys(app.plugins.plugins).length }))()"
+# 若 n=0 但 obsidian command 能成功执行 → 是 eval 失联，不是插件坏了
+```
+
+**处理**：重启 Obsidian（`plugin:disable/enable`、`plugin:reload` 都不够），
+再跑 `npm run check:prod`。**不要把这种情况当成代码回归**——
+先确认 `obsidian command` 是否正常，能正常执行就说明插件本身没问题。
+
 ```bash
 # 1) 版本与健康（注意：运行实例可能加载的是旧构建）
 obsidian plugin id=novel-writer-ai      # 看 version 是否等于 package.json
