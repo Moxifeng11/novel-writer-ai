@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 345 | 144649 | 1922 | 1527 | 79% |
 | `services/` | 34 | 13952 | 210 | 162 | 77% |
-| `shared/` | 199 | 42205 | 1725 | 1406 | 82% |
+| `shared/` | 199 | 42210 | 1725 | 1406 | 82% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 271 | 105229 | 1020 | 824 | 81% |
@@ -426,7 +426,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 368 | 21 | 20 |
-| `shared/changelog-data.ts` | 398 | 3 | 3 |
+| `shared/changelog-data.ts` | 403 | 3 | 3 |
 | `shared/chapter-progress.ts` | 144 | 7 | 6 |
 | `shared/chapter-ref.ts` | 205 | 7 | 5 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |

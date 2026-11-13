@@ -21,6 +21,36 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.91.0',
+        date: '2026-11-13',
+        title: '项目标准约束 + 事实库可编辑 + 长篇评测',
+        sections: [
+            {
+                type: 'added',
+                label: '📐 项目标准',
+                items: [
+                    '12 个必备目录/文件/命名规范与标准版本声明',
+                    '7 类结构校验 + check:project-standard 门禁与手册',
+                ],
+            },
+            {
+                type: 'added',
+                label: '📚 事实库',
+                items: [
+                    '视图内可改值/改区间/忽略/删除，写前整批校验',
+                    '能力按等级序判定：进阶不报、倒退才报',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '🛠️ 修复',
+                items: [
+                    'R1 年龄谓词改前缀锚定：补变体漏报，排除回溯限定谓词假矛盾',
+                ],
+            },
+        ],
+    },
+    {
         version: '4.90.0',
         date: '2026-11-13',
         title: '事实库自动化：自动维护 + 可视化 + 扩面',
@@ -343,31 +373,6 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
                     'Agent 会话按当前真实项目恢复，不再回放已删除项目的欢迎语；输入区加宽并支持图片选择/粘贴/拖拽与路径引用',
                     '检查更新补 User-Agent/超时/限流诊断/atom 备用源，失败不再覆盖上次成功结果',
                     'API 测试连通性上移、模型列表限高、高级块折叠；设置页签分常用/高级并记忆展开',
-                ],
-            },
-        ],
-    },
-    {
-        version: '4.81.0',
-        date: '2026-11-09',
-        title: '社区目录审核阻断项清零',
-        sections: [
-            {
-                type: 'fixed',
-                label: '🛡️ 修复',
-                items: [
-                    'API 越界：revealLeaf（1.7.2）15 处改走 revealLeafCompat；1.6+ 多窗口 API 补守卫；minAppVersion 提至 1.4.4',
-                    'HTML 注入：50 处 innerHTML 赋值迁入 sanitizeHTMLToDom 封装；润色实体标记改 DOM 构建',
-                    'Modal 生命周期：两个弹窗改用自管 Component 渲染宿主，不再把 plugin 当组件',
-                    '残余静态样式：指纹强度预览改用 .nw-intensity-preview* 类',
-                ],
-            },
-            {
-                type: 'improved',
-                label: '🔧 优化',
-                items: [
-                    'ESLint 接入官方审核规则（类型感知）：no-unsupported-api / no-plugin-as-component / no-static-styles-assignment / no-forbidden-elements / no-unsanitized',
-                    'check:obsidian-api 补 revealLeaf/ensureSideLeaf/getFileByPath 检测；handbook 新增 API/HTML/Modal 约束',
                 ],
             },
         ],
