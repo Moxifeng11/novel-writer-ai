@@ -1,30 +1,30 @@
 {
-  "generatedAt": "2026-11-13T11:05:28.548Z",
-  "gitHead": "b4b6911a210994799c4bca0c30f097e7da81f042",
+  "generatedAt": "2026-11-13T12:40:19.733Z",
+  "gitHead": "3f49890f960c73cb95018cfe80584604d0f559c9",
   "nodeVersion": "v24.16.0",
-  "note": "v4.91.0：项目标准约束/事实库编辑/能力等级序/R1 谓词修复合入，覆盖率重锚",
+  "note": "v4.92.0：拆解结构化（规范谓词/isCurrentState/event）+ 规则统一匹配 + 体检视图合入，覆盖率重锚",
   "dirs": {
     "ui": {
       "files": 270,
       "lines": {
-        "total": 42041,
-        "covered": 8775,
-        "pct": 20.87
+        "total": 42067,
+        "covered": 8836,
+        "pct": 21
       },
       "statements": {
-        "total": 45912,
-        "covered": 9527,
-        "pct": 20.75
+        "total": 45941,
+        "covered": 9589,
+        "pct": 20.87
       },
       "branches": {
-        "total": 22488,
-        "covered": 5108,
-        "pct": 22.71
+        "total": 22500,
+        "covered": 5126,
+        "pct": 22.78
       },
       "functions": {
-        "total": 7182,
-        "covered": 1420,
-        "pct": 19.77
+        "total": 7185,
+        "covered": 1426,
+        "pct": 19.85
       }
     },
     "ui/views": {

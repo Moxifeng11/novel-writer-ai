@@ -21,6 +21,34 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.92.0',
+        date: '2026-11-13',
+        title: '拆解结构化 + 规则统一匹配',
+        sections: [
+            {
+                type: 'added',
+                label: '🧩 拆解结构化',
+                items: [
+                    '谓词改为规范枚举，新增 isCurrentState 回溯标记与 event 事件锚',
+                    '规则层统一谓词匹配器（前缀锚定 + 别名表）',
+                ],
+            },
+            {
+                type: 'fixed',
+                label: '🛠️ 修复',
+                items: [
+                    'R5 按事件锚分组，修复同一主体不同事件被判时长矛盾',
+                    '引文回溯与 0 值噪声不再参与比对',
+                ],
+            },
+            {
+                type: 'added',
+                label: '📐 体检',
+                items: ['项目标准校验接入体检视图'],
+            },
+        ],
+    },
+    {
         version: '4.91.0',
         date: '2026-11-13',
         title: '项目标准约束 + 事实库可编辑 + 长篇评测',
@@ -356,23 +384,6 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
                     '一致性（D3-4~D3-18）：上下文注入锁内重读、结算回写加锁、版本索引损坏归档、信息债看板统一写入器',
                     '稳定性（L2-1/L3-1/M3-x）：卸载有界等待视图保存、onOpen 代次守卫、移除 Obsidian 私有插件表访问',
                     '项目改名禁止移出 vault；一键成文不再把 settled 改回 written；迁移旧版双拼插件数据目录',
-                ],
-            },
-        ],
-    },
-    {
-        version: '4.81.1',
-        date: '2026-11-09',
-        title: '协同/Agent/更新检查与设置体验收口',
-        sections: [
-            {
-                type: 'improved',
-                label: '✨ 优化',
-                items: [
-                    '协同写作顶栏移除「剧情」「实时质量」重复入口；实时质量链路下线，质量能力由 MonitorPanelB/质量仪表盘保留',
-                    'Agent 会话按当前真实项目恢复，不再回放已删除项目的欢迎语；输入区加宽并支持图片选择/粘贴/拖拽与路径引用',
-                    '检查更新补 User-Agent/超时/限流诊断/atom 备用源，失败不再覆盖上次成功结果',
-                    'API 测试连通性上移、模型列表限高、高级块折叠；设置页签分常用/高级并记忆展开',
                 ],
             },
         ],
