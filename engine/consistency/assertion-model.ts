@@ -116,6 +116,8 @@ export interface FactAssertion {
     isCurrentState?: boolean;
     /** 事件锚：该事实属于哪个事件/状态（缺省时规则按主体兜底） */
     event?: string;
+    /** 子维度：同一主体的不同侧面（缺省时按谓词兜底） */
+    slot?: string;
     /** 正文中的字符偏移；定位前为 undefined */
     offset?: number;
     /** 来源 */

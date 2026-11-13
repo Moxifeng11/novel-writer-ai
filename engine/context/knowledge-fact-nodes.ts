@@ -68,6 +68,8 @@ export interface FactMetadata {
     isCurrentState?: boolean;
     /** 事件锚：该事实属于哪个事件/状态 */
     event?: string;
+    /** 子维度：同一主体的不同侧面 */
+    slot?: string;
 }
 
 /**

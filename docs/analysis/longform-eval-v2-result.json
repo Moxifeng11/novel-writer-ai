@@ -3,11 +3,19 @@
   "realFacts": 3354,
   "baselineFalsePositives": 2,
   "injectedContradictions": 10,
-  "detected": 2,
-  "recall": 0.2,
+  "detected": 10,
+  "recall": 1,
   "detectedSubjects": [
+    "宁缺",
     "李渔",
-    "简大家"
+    "简大家",
+    "王颖",
+    "谢承运",
+    "礼科教习先生",
+    "陈子贤",
+    "陈皮皮",
+    "颜肃卿",
+    "二师兄"
   ],
   "legalChanges": 10,
   "legalFalsePositives": 0,

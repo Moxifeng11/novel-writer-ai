@@ -44,6 +44,7 @@ function toAssertion(entry, chapter) {
         extractedAt: 0,
         isCurrentState: entry.isCurrentState !== false,
         event: entry.event,
+        slot: entry.slot,
     };
 }
 
@@ -71,7 +72,10 @@ for (const c of baseline.slice(0, 6)) console.log(`  [${c.kind}] ${c.reasoning.s
 // ── ① 注入 10 处矛盾（按主体去重）──
 const ageEntries = batch.entries.filter(e => e.type === 'age' && Number.isFinite(e.numeric));
 // 自检：只保留原值 > 3 的主体，确保注入后确实是「倒退」而不是「增长」
-const usableAge = ageEntries.filter(e => Number(e.numeric) > 3);
+const INEXACT = ['未满', '不到', '不足', '将近', '接近', '约', '左右', '上下', '余', '多'];
+const isExact = e => !INEXACT.some(m => String(e.value).includes(m));
+// 只取精确值 + 当前状态的事实作为注入源（边界值与回溯值不参与比较）
+const usableAge = ageEntries.filter(e => Number(e.numeric) > 3 && isExact(e) && e.isCurrentState !== false);
 const bySubject = new Map();
 for (const entry of usableAge) {
     if (!bySubject.has(entry.subject)) bySubject.set(entry.subject, []);

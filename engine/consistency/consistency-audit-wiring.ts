@@ -370,6 +370,7 @@ async function loadFactStoreAssertions(
         extractedAt: now,
         isCurrentState: fact.isCurrentState !== false,
         event: fact.event,
+        slot: fact.slot,
     }));
 }
 

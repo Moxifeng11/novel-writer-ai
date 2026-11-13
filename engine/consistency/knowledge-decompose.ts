@@ -79,6 +79,13 @@ export interface DecomposeEntry {
      * 有了事件锚，规则按 event 分组即可精确到"同一事件"。
      */
     event?: string;
+    /**
+     * **子维度（slot）**：同一主体的不同侧面。
+     *
+     * 例：宁缺的「当前年龄」/「开悟年龄」/「入境界年龄」是三个不同 slot，
+     * 不能互相比较（200 章评测：「十三岁开悟」vs「三十岁才进不惑」被误判不相容）。
+     */
+    slot?: string;
     /** 原文引文（必须有） */
     quote: string;
     /**
@@ -125,6 +132,11 @@ export function buildDecomposePrompt(chapterNum: number, body: string): string {
         '3. type 只能是以下之一：' + DECOMPOSE_TYPES.join(' / '),
         '3.1 predicate 必须使用该 type 的**规范谓词**：'
             + DECOMPOSE_TYPES.map(type => `${type}=${CANONICAL_PREDICATES[type]}`).join('、'),
+        '3.4 增加 slot 字段：这条事实是该主体哪个**侧面**（如「当前年龄」「开悟年龄」「入境界年龄」）。'
+            + '同一主体的不同侧面必须用不同 slot；不同侧面之间不可比较。',
+        '3.5 **归属约束**：只抽取关于 subject **本人**的事实。'
+            + '若原文是①对别人说的话（「你虽然才不惑」是对六师兄说的）、②成语/比喻式表达、'
+            + '③他人的情况，不要抽成 subject 的事实。',
         '3.3 增加 event 字段：这条事实属于哪个**事件/状态**（简短名词短语，如「青云试炼」「宁缺入楼」）。'
             + '同一事件的多条事实必须用**完全相同**的 event 值。',
         '3.2 增加 isCurrentState 字段：本条描述的是**当前状态**填 true；'
@@ -211,7 +223,9 @@ function normalizeEntry(item: unknown, normalizedBody: string): DecomposeEntry |
     const isCurrentState = raw.isCurrentState === false ? false : true;
     // 事件锚：缺省用「主体·谓词」兜底，保证旧输出也能按事件分组
     const event = String(raw.event ?? '').trim() || `${subject}·${predicate}`;
-    const entry: DecomposeEntry = { type, subject, predicate, value, validFrom, validTo, confidence, quote, isCurrentState, event };
+    // 子维度：缺省用谓词兜底（旧输出等价于"每类只有一个侧面"）
+    const slot = String(raw.slot ?? '').trim() || predicate;
+    const entry: DecomposeEntry = { type, subject, predicate, value, validFrom, validTo, confidence, quote, isCurrentState, event, slot };
     if (Number.isFinite(Number(raw.numeric))) entry.numeric = Number(raw.numeric);
     if (typeof raw.unit === 'string' && raw.unit.trim()) entry.unit = raw.unit.trim();
     return entry;
@@ -258,6 +272,7 @@ export function entriesToAssertions(
             extractedAt: now,
             isCurrentState: entry.isCurrentState !== false,
             event: entry.event,
+            slot: entry.slot,
         };
         if (entry.numeric !== undefined) {
             assertion.numericValue = entry.numeric;

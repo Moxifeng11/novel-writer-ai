@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 346 | 144902 | 1934 | 1536 | 79% |
+| `engine/` | 346 | 144924 | 1934 | 1536 | 79% |
 | `services/` | 34 | 13964 | 209 | 163 | 78% |
 | `shared/` | 199 | 42221 | 1725 | 1406 | 82% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
@@ -111,21 +111,21 @@
 | `engine/coherence-checker.ts` | 108 | 3 | 3 |
 | `engine/conflict-detector.ts` | 285 | 4 | 1 |
 | `engine/consistency/assertion-extract.ts` | 310 | 3 | 2 |
-| `engine/consistency/assertion-model.ts` | 298 | 13 | 8 |
+| `engine/consistency/assertion-model.ts` | 300 | 13 | 8 |
 | `engine/consistency/assertion-store.ts` | 196 | 9 | 5 |
 | `engine/consistency/audit-pipeline.ts` | 341 | 13 | 8 |
 | `engine/consistency/candidate-judge.ts` | 240 | 9 | 6 |
 | `engine/consistency/causal-rules.ts` | 164 | 3 | 2 |
-| `engine/consistency/consistency-audit-wiring.ts` | 416 | 4 | 3 |
+| `engine/consistency/consistency-audit-wiring.ts` | 417 | 4 | 3 |
 | `engine/consistency/consistency-metrics.ts` | 108 | 6 | 4 |
 | `engine/consistency/consistency-service.ts` | 253 | 8 | 2 |
 | `engine/consistency/evidence-locate.ts` | 109 | 3 | 2 |
 | `engine/consistency/extended-rules.ts` | 317 | 5 | 3 |
 | `engine/consistency/fact-maintenance.ts` | 163 | 6 | 2 |
-| `engine/consistency/fact-store.ts` | 214 | 9 | 7 |
-| `engine/consistency/knowledge-decompose.ts` | 291 | 10 | 6 |
+| `engine/consistency/fact-store.ts` | 215 | 9 | 7 |
+| `engine/consistency/knowledge-decompose.ts` | 306 | 10 | 6 |
 | `engine/consistency/pairing-llm.ts` | 208 | 11 | 4 |
-| `engine/consistency/pairing-rules.ts` | 423 | 7 | 3 |
+| `engine/consistency/pairing-rules.ts` | 424 | 7 | 3 |
 | `engine/consistency/predicate-match.ts` | 156 | 11 | 8 |
 | `engine/consistency/risk-targeting.ts` | 222 | 9 | 6 |
 | `engine/content-safety-checker.ts` | 123 | 5 | 5 |
@@ -137,7 +137,7 @@
 | `engine/context/context-types.ts` | 284 | 16 | 15 |
 | `engine/context/fact-view.ts` | 116 | 3 | 3 |
 | `engine/context/incremental-updater.ts` | 302 | 6 | 1 |
-| `engine/context/knowledge-fact-nodes.ts` | 248 | 10 | 8 |
+| `engine/context/knowledge-fact-nodes.ts` | 250 | 10 | 8 |
 | `engine/context/overflow-recovery.ts` | 322 | 7 | 2 |
 | `engine/context/state-advice-wiring.ts` | 125 | 3 | 1 |
 | `engine/context/state-advice.ts` | 249 | 9 | 7 |

@@ -111,7 +111,8 @@ export function pairContradictions(input: PairingInput): PairingOutput {
         // 边界值（未满二十/将近三十）不能与精确值比大小
         && isExactNumericValue(a.value)
         && a.chapterNum !== null);
-    for (const pair of groupBy(ages, a => a.subject).values()) {
+    // 按 (主体, 子维度) 分组：同一主体的不同侧面（当前年龄/开悟年龄）不可比
+    for (const pair of groupBy(ages, a => `${a.subject}|${a.slot ?? a.predicate}`).values()) {
         const ordered = pair.slice().sort((a, b) => (a.chapterNum ?? 0) - (b.chapterNum ?? 0));
         for (let i = 0; i < ordered.length - 1; i++) {
             for (let j = i + 1; j < ordered.length; j++) {
@@ -141,7 +142,7 @@ export function pairContradictions(input: PairingInput): PairingOutput {
         // 边界值与精确值不可比（「未满二十」vs「十八」是相容的）
         && isExactNumericValue(a.value)
         && a.chapterNum !== null);
-    for (const group of groupBy(numeric, a => `${a.subject}|${a.predicate}|${a.chapterKey}`).values()) {
+    for (const group of groupBy(numeric, a => `${a.subject}|${a.slot ?? a.predicate}|${a.chapterKey}`).values()) {
         for (let i = 0; i < group.length - 1; i++) {
             for (let j = i + 1; j < group.length; j++) {
                 const a = group[i];

@@ -283,3 +283,65 @@ describe('R5 按事件锚分组（不再按主体）', () => {
         expect(result.contradictions.some(c => c.kind === 'duration')).toBe(true);
     });
 });
+
+describe('slot 子维度（200 章评测修复）', () => {
+    it('prompt 要求 slot 与归属约束', () => {
+        const prompt = buildDecomposePrompt(3, '正文');
+        expect(prompt).toContain('slot');
+        expect(prompt).toContain('归属约束');
+    });
+
+    it('解析保留模型给的 slot', () => {
+        const raw = JSON.stringify({ entries: [{
+            type: 'age', subject: '大师兄', predicate: '年龄', value: '十三',
+            validFrom: 1, validTo: null, confidence: 0.9, quote: '师兄当年十三岁开悟',
+            slot: '开悟年龄', event: '大师兄修行往事',
+        }] });
+        expect(parseDecomposeResponse(raw, '师兄当年十三岁开悟')!.entries[0].slot).toBe('开悟年龄');
+    });
+
+    it('缺省 slot 用谓词兜底（兼容旧输出）', () => {
+        const raw = JSON.stringify({ entries: [{
+            type: 'age', subject: '宁缺', predicate: '年龄', value: '十七',
+            validFrom: 1, validTo: null, confidence: 0.9, quote: '宁缺今年十七',
+        }] });
+        expect(parseDecomposeResponse(raw, '宁缺今年十七')!.entries[0].slot).toBe('年龄');
+    });
+});
+
+describe('R1/R2 按 slot 分组（不同侧面不可比）', () => {
+    /** 造断言 */
+    function ageFact(chapter: number, numeric: number, slot: string, quote: string): FactAssertion {
+        return {
+            id: `f|${chapter}|${numeric}|${slot}`,
+            kind: 'quantitative',
+            subject: '大师兄',
+            predicate: '年龄',
+            value: String(numeric),
+            numericValue: numeric,
+            unit: '岁',
+            chapterKey: `第${chapter}章`,
+            chapterNum: chapter,
+            quote,
+            source: 'fact-store',
+            extractedAt: 0,
+            slot,
+        };
+    }
+
+    it('**不同 slot 的数值不互相比较**（开悟年龄 vs 入境界年龄）', () => {
+        const result = pairContradictions({ assertions: [
+            ageFact(128, 13, '开悟年龄', '师兄当年十三岁开悟'),
+            ageFact(128, 30, '入境界年龄', '三十岁才进不惑'),
+        ] });
+        expect(result.contradictions.some(c => c.kind === 'quantitative')).toBe(false);
+    });
+
+    it('同一 slot 的倒退仍检出（负例对照）', () => {
+        const result = pairContradictions({ assertions: [
+            ageFact(10, 16, '当前年龄', '他今年十六'),
+            ageFact(40, 12, '当前年龄', '他今年十二'),
+        ] });
+        expect(result.contradictions.some(c => c.kind === 'quantitative')).toBe(true);
+    });
+});
