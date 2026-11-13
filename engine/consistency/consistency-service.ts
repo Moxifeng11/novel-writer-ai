@@ -61,6 +61,10 @@ export interface ConsistencyAuditDeps {
     listConfirmedFacts(): Promise<ConfirmedFactInput[]>;
     /** 读章节正文（用于把引文定位成偏移；失败返回空串即可） */
     loadChapterBody(chapterKey: string): Promise<string>;
+    /** 按正文目录枚举全部章节正文（无摘要项目也能做正文级检查） */
+    listBodies?(): Promise<Array<{ chapterKey: string; body: string }>>;
+    /** 收集「数据源缺失」类告警（不允许静默当作没数据） */
+    warn?(message: string): void;
     /** 文件系统端口（断言库/报告落盘） */
     fs: FileSystemPort;
     /** 可选的 LLM 复核器 */
@@ -151,11 +155,28 @@ export async function runProjectConsistencyAudit(
     const loaded = await loadAssertions(deps.fs, project);
     const allAssertions = loaded.status === 'ok' ? loaded.assertions : incoming;
 
-    // 4) 取章节正文用于定位
+    // 4) 取章节正文用于定位与正文级检查
+    //
+    // 修（2026-11-13 真实原著验证）：旧实现只在 digest 列表上迭代取正文，
+    // 于是一个**没有章节摘要**的项目（例如刚导入的原著）会得到 0 条正文——
+    // 连不依赖摘要的「视角混乱」也跑不了，且报告显示 0 矛盾，用户会误以为没问题。
+    // 现在：优先用 deps.listBodies()（按正文目录枚举），退化为按 digest 逐个读。
     const bodies: ChapterBody[] = [];
-    for (const digest of digests) {
-        const body = await deps.loadChapterBody(digest.chapterKey).catch(() => '');
-        if (body) bodies.push({ chapterKey: digest.chapterKey, body });
+    if (deps.listBodies) {
+        const listed = await deps.listBodies().catch(() => [] as ChapterBody[]);
+        for (const item of listed) {
+            if (item && item.chapterKey && item.body) bodies.push(item);
+        }
+    }
+    if (bodies.length === 0) {
+        for (const digest of digests) {
+            const body = await deps.loadChapterBody(digest.chapterKey).catch(() => '');
+            if (body) bodies.push({ chapterKey: digest.chapterKey, body });
+        }
+    }
+    // 无摘要时显式告警：否则「0 矛盾」会被误解成「没问题」
+    if (digests.length === 0) {
+        deps.warn?.('未找到章节摘要（04-项目总控/剧情记忆），本次未做事实比对，仅做正文级检查（视角等）。');
     }
 
     // 5) 跑审核

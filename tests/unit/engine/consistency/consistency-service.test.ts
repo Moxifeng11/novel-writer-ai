@@ -162,3 +162,31 @@ describe('runProjectConsistencyAudit · 全链路', () => {
         await expect(runProjectConsistencyAudit(PROJECT, deps, {}, NOW)).rejects.toThrow('摘要目录不可读');
     });
 });
+
+describe('无摘要项目（真实原著场景，2026-11-13 修复）', () => {
+    it('没有章节摘要时仍能按正文目录跑正文级检查（旧实现 0 正文 → 0 产出）', async () => {
+        const bodies = [
+            { chapterKey: '第1章', body: '我推门而入。我看见他在灯下。我心中一沉。他抬起头。他冷笑一声。他缓缓起身。' },
+        ];
+        const deps = makeDeps({
+            listDigests: async () => [],
+            listBodies: async () => bodies,
+        });
+        const result = await runProjectConsistencyAudit('项目A', deps, { useLlm: false }, () => new Date(0));
+        // 正文确实参与了统计（字符数不为 0）
+        expect(result.report.metrics.charCount).toBeGreaterThan(0);
+        // 视角混乱应被检出（不依赖摘要）
+        expect(result.report.contradictions.some(c => c.kind === 'perspective')).toBe(true);
+    });
+
+    it('没有章节摘要时显式告警，不得静默当作「没问题」', async () => {
+        const messages: string[] = [];
+        const deps = makeDeps({
+            listDigests: async () => [],
+            listBodies: async () => [],
+            warn: (m: string) => messages.push(m),
+        });
+        await runProjectConsistencyAudit('项目A', deps, { useLlm: false }, () => new Date(0));
+        expect(messages.some(m => m.includes('未找到章节摘要'))).toBe(true);
+    });
+});

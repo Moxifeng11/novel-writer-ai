@@ -87,6 +87,8 @@ async function buildDeps(
     return {
         fs,
         listDigests: () => loadDigests(app, fs, project, warnings),
+        listBodies: () => loadAllBodies(app, project),
+        warn: (message: string) => warnings.push(message),
         listCharacters: () => loadCharacters(plugin, project, warnings),
         listLedgerEvents: () => loadLedgerEvents(app, project, warnings),
         listConfirmedFacts: () => loadConfirmedFacts(plugin, project, warnings),
@@ -298,4 +300,29 @@ function buildLlmCaller(plugin: NovelWriterPlugin): LlmCaller | undefined {
         const response = await callAI(systemPrompt, userPrompt, undefined, 0.1, JUDGE_MAX_TOKENS);
         return { content: response?.content ?? '', error: response?.error };
     };
+}
+
+/**
+ * 按正文目录枚举全部章节正文（不依赖章节摘要）。
+ *
+ * 真实原著验证（2026-11-13）发现：旧实现只在 digest 上迭代取正文，
+ * 无摘要项目会得到 0 条正文，连视角检测都跑不了。
+ *
+ * @param app - Obsidian 应用
+ * @param project - 项目路径
+ * @returns 章节正文列表（读失败的章节跳过）
+ */
+async function loadAllBodies(app: App, project: string): Promise<Array<{ chapterKey: string; body: string }>> {
+    const fs = new ObsidianFileSystem(app);
+    const index = await buildChapterBodyIndex(app, project);
+    const out: Array<{ chapterKey: string; body: string }> = [];
+    for (const [num, path] of index) {
+        try {
+            const body = await fs.read(path);
+            if (body) out.push({ chapterKey: `第${num}章`, body });
+        } catch {
+            // 单章读失败不影响其余章节
+        }
+    }
+    return out.sort((a, b) => (Number(/(\d+)/.exec(a.chapterKey)?.[1] ?? 0)) - (Number(/(\d+)/.exec(b.chapterKey)?.[1] ?? 0)));
 }
