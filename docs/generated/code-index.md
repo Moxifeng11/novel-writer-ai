@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 339 | 143244 | 1879 | 1496 | 80% |
+| `engine/` | 340 | 143457 | 1888 | 1503 | 80% |
 | `services/` | 33 | 13896 | 206 | 162 | 79% |
 | `shared/` | 198 | 42149 | 1723 | 1405 | 82% |
 | `core/` | 7 | 2917 | 32 | 17 | 53% |
@@ -121,6 +121,7 @@
 | `engine/consistency/consistency-service.ts` | 245 | 8 | 2 |
 | `engine/consistency/evidence-locate.ts` | 109 | 3 | 2 |
 | `engine/consistency/extended-rules.ts` | 317 | 5 | 3 |
+| `engine/consistency/knowledge-base.ts` | 213 | 9 | 7 |
 | `engine/consistency/knowledge-decompose.ts` | 246 | 9 | 5 |
 | `engine/consistency/pairing-llm.ts` | 208 | 11 | 4 |
 | `engine/consistency/pairing-rules.ts` | 378 | 7 | 3 |
