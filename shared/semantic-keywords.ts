@@ -75,3 +75,49 @@ export function findKeywordHits(text: string, words: readonly string[]): string[
     if (!text) return [];
     return words.filter(word => word && text.includes(word));
 }
+
+/** 用户在设置里追加的词（按类别） */
+export interface SemanticKeywordOverrides {
+    /** 追加的伤情词 */
+    injury?: readonly string[];
+    /** 追加的行动词 */
+    action?: readonly string[];
+    /** 追加的现代词 */
+    modern?: readonly string[];
+    /** 追加的地点词 */
+    location?: readonly string[];
+    /** 追加的剧变词（不分组的兜底追加） */
+    drastic?: readonly string[];
+}
+
+/** 解析后的词表（内置 + 用户追加） */
+export interface ResolvedSemanticKeywords {
+    injury: string[];
+    action: string[];
+    modern: string[];
+    location: string[];
+    drasticGroups: Array<{ group: string; words: string[] }>;
+}
+
+/**
+ * 把用户追加词并入内置词表。
+ *
+ * 这是 C 类「统计/风格词表可配置化」与 A 类「词表兜底」的共同入口：
+ * 用户发现某个说法没被识别时，不必改代码，在设置里加词即可。
+ *
+ * @param overrides - 用户追加词（可空）
+ * @returns 合并后的词表
+ */
+export function resolveSemanticKeywords(overrides?: SemanticKeywordOverrides): ResolvedSemanticKeywords {
+    const extra = overrides?.drastic;
+    return {
+        injury: mergeKeywordOverrides(INJURY_WORDS, overrides?.injury),
+        action: mergeKeywordOverrides(ACTION_WORDS, overrides?.action),
+        modern: mergeKeywordOverrides(MODERN_WORDS, overrides?.modern),
+        location: mergeKeywordOverrides(LOCATION_WORDS, overrides?.location),
+        drasticGroups: DRASTIC_CHANGE_GROUPS.map(group => ({
+            group: group.group,
+            words: mergeKeywordOverrides(group.words, extra),
+        })),
+    };
+}

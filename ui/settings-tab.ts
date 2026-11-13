@@ -118,6 +118,44 @@ export class NovelWriterSettingTab extends PluginSettingTab {
     /**
      * display 方法。
      */
+    /**
+     * 渲染「语义关键词」设置（C 类词表可配置化）。
+     *
+     * 内置词表没覆盖某个说法时，用户在这里追加即可，无需改代码。
+     * 判定顺序仍是「结构化字段 → 词表兜底」，追加词只影响兜底层。
+     *
+     * @param containerEl - 容器
+     */
+    private renderSemanticKeywords(containerEl: HTMLElement): void {
+        const overrides = this.plugin.settings.semanticKeywordOverrides ?? {};
+        const section = containerEl.createDiv({ cls: 'nw-settings-section' });
+        new Setting(section)
+            .setName('🧩 语义关键词（追加）')
+            .setDesc('内置词表没覆盖的说法可在此补充，逗号分隔。仅影响「词表兜底」层，不改变结构化判定。')
+            .setHeading();
+        const fields: Array<{ key: keyof NonNullable<typeof overrides>; name: string }> = [
+            { key: 'injury', name: '伤情词' },
+            { key: 'action', name: '行动词' },
+            { key: 'modern', name: '现代词（时代错位）' },
+            { key: 'location', name: '地点词' },
+            { key: 'drastic', name: '剧变词（死亡/重伤/能力变化）' },
+        ];
+        for (const field of fields) {
+            new Setting(section)
+                .setName(field.name)
+                .addTextArea(text => text
+                    .setPlaceholder('逗号分隔，如：断魂, 气若游丝')
+                    .setValue((overrides[field.key] ?? []).join(', '))
+                    .onChange(async value => {
+                        const words = value.split(/[,，\s]+/).map(w => w.trim()).filter(Boolean);
+                        const next = { ...(this.plugin.settings.semanticKeywordOverrides ?? {}) };
+                        next[field.key] = words;
+                        this.plugin.settings.semanticKeywordOverrides = next;
+                        await this.plugin.saveSettings();
+                    }));
+        }
+    }
+
     display(): void {
         const { containerEl } = this;
 
@@ -126,6 +164,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         new Setting(containerEl).setName('📖 设置').setHeading();
 
         this.performance.renderBanner(containerEl);
+        this.renderSemanticKeywords(containerEl);
 
         this.tabBar = containerEl.createDiv({ cls: 'nw-settings-tabbar' });
         const showAdvanced = this.plugin.settings.settingsUiShowAdvanced === true;

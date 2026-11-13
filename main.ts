@@ -209,6 +209,18 @@ export interface CanonResearchSettings {
 }
 
 export interface NovelWriterSettings {
+    /**
+     * 用户追加的语义关键词（按类别；设置界面逗号分隔录入）。
+     * 用途：内置词表没覆盖某个说法时，用户无需改代码即可补充。
+     * 仅影响「词表兜底」层，不改变结构化判定。
+     */
+    semanticKeywordOverrides?: {
+        injury?: string[];
+        action?: string[];
+        modern?: string[];
+        location?: string[];
+        drastic?: string[];
+    };
     apiKey: string;
     apiEndpoint: string;
     defaultModel: string;

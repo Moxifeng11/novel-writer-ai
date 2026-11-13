@@ -17,6 +17,7 @@ import {
     MODERN_WORDS,
     findKeywordHits,
     mergeKeywordOverrides,
+    resolveSemanticKeywords,
 } from '@/shared/semantic-keywords';
 
 describe('词表注册表', () => {
@@ -73,5 +74,32 @@ describe('findKeywordHits · 命中词', () => {
 
     it('空文本返回空数组', () => {
         expect(findKeywordHits('', INJURY_WORDS)).toEqual([]);
+    });
+});
+
+describe('resolveSemanticKeywords · 用户追加词', () => {
+    it('无追加时等于内置词表', () => {
+        const r = resolveSemanticKeywords();
+        expect(r.injury).toEqual([...INJURY_WORDS]);
+        expect(r.drasticGroups.map(g => g.group)).toEqual(DRASTIC_CHANGE_GROUPS.map(g => g.group));
+    });
+
+    it('追加伤情词进入 injury', () => {
+        expect(resolveSemanticKeywords({ injury: ['断魂'] }).injury).toContain('断魂');
+    });
+
+    it('追加剧变词进入每一组', () => {
+        const r = resolveSemanticKeywords({ drastic: ['灰飞烟灭'] });
+        for (const group of r.drasticGroups) expect(group.words).toContain('灰飞烟灭');
+    });
+
+    it('追加词去重（与内置重复不重复添加）', () => {
+        const r = resolveSemanticKeywords({ injury: ['重伤'] });
+        expect(r.injury.filter(w => w === '重伤')).toHaveLength(1);
+    });
+
+    it('空追加不改变词表', () => {
+        const r = resolveSemanticKeywords({ modern: [] });
+        expect(r.modern).toEqual([...MODERN_WORDS]);
     });
 });

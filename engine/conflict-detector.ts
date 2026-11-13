@@ -36,6 +36,11 @@ export interface ConflictDetectorOptions {
     /**
      * P2 第二意见（能力/修为）：按等级序判断，进阶合法不报、倒退才报。
      */
+    /**
+     * 剧变关键词分组（内置 + 用户追加）。
+     * 不传时用内置词表；设置界面追加的词由此进入。
+     */
+    drasticChangeGroups?: ReadonlyArray<{ group: string; words: readonly string[] }>;
     adviseAbility?: (claim: { subject: string; chapter: number; value: string }) => {
         status: 'consistent' | 'conflict' | 'unknown';
         reason: string;
@@ -240,7 +245,8 @@ export class ConflictDetector {
             // 未知人物已由「人物不在设定库」规则覆盖，此处只查已知人物
             if (!state) continue;
 
-            for (const { group, words } of DRASTIC_CHANGE_KEYWORDS) {
+            const groups = options.drasticChangeGroups ?? DRASTIC_CHANGE_KEYWORDS;
+            for (const { group, words } of groups) {
                 const mentioned = words.find((w) =>
                     paragraphs.some((p) => p.includes(name) && p.includes(w))
                 );

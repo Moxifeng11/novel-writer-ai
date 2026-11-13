@@ -1,29 +1,29 @@
 {
-  "generatedAt": "2026-11-11T06:03:30.255Z",
-  "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
+  "generatedAt": "2026-11-13T14:03:18.533Z",
+  "note": "设置界面新增语义关键词区块（renderSemanticKeywords 带 JSDoc），公开方法口径重锚",
   "layers": {
     "engine": {
-      "files": 302,
-      "exports": 1707,
-      "documented": 1706,
-      "methods": 1241,
-      "methodsDocumented": 1241,
+      "files": 329,
+      "exports": 1909,
+      "documented": 1908,
+      "methods": 1251,
+      "methodsDocumented": 1251,
       "incomplete": 0
     },
     "services": {
-      "files": 32,
-      "exports": 193,
-      "documented": 193,
+      "files": 34,
+      "exports": 208,
+      "documented": 208,
       "methods": 222,
       "methodsDocumented": 222,
       "incomplete": 0
     },
     "shared": {
-      "files": 195,
-      "exports": 1694,
-      "documented": 1694,
-      "methods": 158,
-      "methodsDocumented": 158,
+      "files": 198,
+      "exports": 1740,
+      "documented": 1740,
+      "methods": 159,
+      "methodsDocumented": 159,
       "incomplete": 0
     },
     "core": {
@@ -43,11 +43,11 @@
       "incomplete": 0
     },
     "ui": {
-      "files": 246,
-      "exports": 853,
-      "documented": 853,
-      "methods": 643,
-      "methodsDocumented": 643,
+      "files": 269,
+      "exports": 1010,
+      "documented": 1010,
+      "methods": 647,
+      "methodsDocumented": 646,
       "incomplete": 0
     }
   },
@@ -122,6 +122,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "engine/agent/harness/diagnose-tools.ts": {
+      "exports": 3,
+      "documented": 3,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "engine/agent/harness/harness-engine.ts": {
       "exports": 5,
       "documented": 5,
@@ -146,6 +153,20 @@
     "engine/agent/harness/prompt-sections.ts": {
       "exports": 2,
       "documented": 2,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/agent/harness/repair-telemetry.ts": {
+      "exports": 10,
+      "documented": 10,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/agent/harness/repair-tools.ts": {
+      "exports": 11,
+      "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -193,13 +214,13 @@
       "incomplete": 0
     },
     "engine/ai-api-client.ts": {
-      "exports": 1,
-      "documented": 1,
+      "exports": 2,
+      "documented": 2,
       "methods": 5,
       "methodsDocumented": 5,
       "incomplete": 0,
-      "exampleTargets": 1,
-      "examplesDocumented": 1
+      "exampleTargets": 2,
+      "examplesDocumented": 2
     },
     "engine/ai-api-stream.ts": {
       "exports": 4,
@@ -357,6 +378,13 @@
       "documented": 6,
       "methods": 25,
       "methodsDocumented": 25,
+      "incomplete": 0
+    },
+    "engine/canon-vector-indexer.ts": {
+      "exports": 8,
+      "documented": 8,
+      "methods": 0,
+      "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/chapter-brief.ts": {
@@ -543,6 +571,132 @@
       "methodsDocumented": 1,
       "incomplete": 0
     },
+    "engine/consistency/assertion-extract.ts": {
+      "exports": 3,
+      "documented": 3,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/consistency/assertion-model.ts": {
+      "exports": 13,
+      "documented": 13,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/consistency/assertion-store.ts": {
+      "exports": 9,
+      "documented": 9,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/consistency/audit-pipeline.ts": {
+      "exports": 12,
+      "documented": 12,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/consistency/candidate-judge.ts": {
+      "exports": 9,
+      "documented": 9,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/consistency/causal-rules.ts": {
+      "exports": 3,
+      "documented": 3,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/consistency/consistency-audit-wiring.ts": {
+      "exports": 4,
+      "documented": 4,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/consistency/consistency-metrics.ts": {
+      "exports": 6,
+      "documented": 6,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/consistency/consistency-service.ts": {
+      "exports": 8,
+      "documented": 8,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/consistency/evidence-locate.ts": {
+      "exports": 3,
+      "documented": 3,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/consistency/extended-rules.ts": {
+      "exports": 5,
+      "documented": 5,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/consistency/fact-maintenance.ts": {
+      "exports": 6,
+      "documented": 6,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/consistency/fact-store.ts": {
+      "exports": 9,
+      "documented": 9,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/consistency/knowledge-decompose.ts": {
+      "exports": 10,
+      "documented": 10,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/consistency/pairing-llm.ts": {
+      "exports": 11,
+      "documented": 11,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/consistency/pairing-rules.ts": {
+      "exports": 7,
+      "documented": 7,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/consistency/predicate-match.ts": {
+      "exports": 11,
+      "documented": 11,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/consistency/risk-targeting.ts": {
+      "exports": 9,
+      "documented": 9,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "engine/content-safety-checker.ts": {
       "exports": 5,
       "documented": 5,
@@ -571,6 +725,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "engine/context/fact-view.ts": {
+      "exports": 3,
+      "documented": 3,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "engine/context/incremental-updater.ts": {
       "exports": 6,
       "documented": 6,
@@ -578,9 +739,30 @@
       "methodsDocumented": 9,
       "incomplete": 0
     },
+    "engine/context/knowledge-fact-nodes.ts": {
+      "exports": 10,
+      "documented": 10,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "engine/context/overflow-recovery.ts": {
       "exports": 7,
       "documented": 7,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/context/state-advice-wiring.ts": {
+      "exports": 3,
+      "documented": 3,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/context/state-advice.ts": {
+      "exports": 9,
+      "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -649,8 +831,8 @@
       "incomplete": 0
     },
     "engine/deconstruction-scheduler.ts": {
-      "exports": 8,
-      "documented": 8,
+      "exports": 10,
+      "documented": 10,
       "methods": 34,
       "methodsDocumented": 34,
       "incomplete": 0
@@ -1092,6 +1274,13 @@
       "incomplete": 0
     },
     "engine/knowledge-usage.ts": {
+      "exports": 4,
+      "documented": 4,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/knowledge-vector-reconcile.ts": {
       "exports": 3,
       "documented": 3,
       "methods": 0,
@@ -1101,8 +1290,8 @@
     "engine/knowledge-vector-store.ts": {
       "exports": 5,
       "documented": 5,
-      "methods": 13,
-      "methodsDocumented": 13,
+      "methods": 18,
+      "methodsDocumented": 18,
       "incomplete": 0
     },
     "engine/ledger/ledger-index.ts": {
@@ -2069,8 +2258,8 @@
     "engine/style-fingerprint-library.ts": {
       "exports": 7,
       "documented": 7,
-      "methods": 70,
-      "methodsDocumented": 70,
+      "methods": 75,
+      "methodsDocumented": 75,
       "incomplete": 0
     },
     "engine/style-learner.ts": {
@@ -2193,8 +2382,8 @@
       "incomplete": 0
     },
     "services/canon-research-service.ts": {
-      "exports": 7,
-      "documented": 7,
+      "exports": 9,
+      "documented": 9,
       "methods": 4,
       "methodsDocumented": 4,
       "incomplete": 0
@@ -2225,6 +2414,13 @@
       "documented": 10,
       "methods": 8,
       "methodsDocumented": 8,
+      "incomplete": 0
+    },
+    "services/fanfic-knowledge-draft.ts": {
+      "exports": 10,
+      "documented": 10,
+      "methods": 0,
+      "methodsDocumented": 0,
       "incomplete": 0
     },
     "services/font-manager.ts": {
@@ -2304,6 +2500,13 @@
       "methodsDocumented": 1,
       "incomplete": 0
     },
+    "services/project-standard-service.ts": {
+      "exports": 2,
+      "documented": 2,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "services/prompt-manager.ts": {
       "exports": 5,
       "documented": 5,
@@ -2319,8 +2522,8 @@
       "incomplete": 0
     },
     "services/quality-history-store.ts": {
-      "exports": 4,
-      "documented": 4,
+      "exports": 5,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2414,8 +2617,8 @@
       "incomplete": 0
     },
     "shared/ai-credentials.ts": {
-      "exports": 2,
-      "documented": 2,
+      "exports": 3,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2484,8 +2687,8 @@
       "incomplete": 0
     },
     "shared/canon-source.ts": {
-      "exports": 18,
-      "documented": 18,
+      "exports": 21,
+      "documented": 21,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2645,10 +2848,10 @@
       "incomplete": 0
     },
     "shared/degradation-notifier.ts": {
-      "exports": 7,
-      "documented": 7,
-      "methods": 6,
-      "methodsDocumented": 6,
+      "exports": 10,
+      "documented": 10,
+      "methods": 7,
+      "methodsDocumented": 7,
       "incomplete": 0
     },
     "shared/desktop-shell.ts": {
@@ -3003,6 +3206,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "shared/link-status-compute.ts": {
+      "exports": 12,
+      "documented": 12,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "shared/local-ai-queue.ts": {
       "exports": 2,
       "documented": 2,
@@ -3075,6 +3285,13 @@
       "exampleTargets": 1,
       "examplesDocumented": 1
     },
+    "shared/narrative-number.ts": {
+      "exports": 8,
+      "documented": 8,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "shared/novel-format.ts": {
       "exports": 12,
       "documented": 12,
@@ -3097,8 +3314,8 @@
       "incomplete": 0
     },
     "shared/paths.ts": {
-      "exports": 203,
-      "documented": 203,
+      "exports": 210,
+      "documented": 210,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3309,8 +3526,8 @@
       "incomplete": 0
     },
     "shared/quality-history.ts": {
-      "exports": 14,
-      "documented": 14,
+      "exports": 15,
+      "documented": 15,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3416,6 +3633,13 @@
     "shared/secret-value.ts": {
       "exports": 2,
       "documented": 2,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "shared/semantic-keywords.ts": {
+      "exports": 11,
+      "documented": 11,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -4039,6 +4263,13 @@
       "methodsDocumented": 2,
       "incomplete": 0
     },
+    "ui/co-write/logic-check-format.ts": {
+      "exports": 6,
+      "documented": 6,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "ui/co-write-floating-panel.ts": {
       "exports": 2,
       "documented": 2,
@@ -4405,6 +4636,20 @@
       "exampleTargets": 1,
       "examplesDocumented": 1
     },
+    "ui/consistency-audit-format.ts": {
+      "exports": 9,
+      "documented": 9,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "ui/consistency-audit-modal.ts": {
+      "exports": 2,
+      "documented": 2,
+      "methods": 2,
+      "methodsDocumented": 2,
+      "incomplete": 0
+    },
     "ui/context-injector-modal.ts": {
       "exports": 1,
       "documented": 1,
@@ -4527,6 +4772,27 @@
     "ui/export-manuscript-modal.ts": {
       "exports": 4,
       "documented": 4,
+      "methods": 2,
+      "methodsDocumented": 2,
+      "incomplete": 0
+    },
+    "ui/fact-store-edit.ts": {
+      "exports": 9,
+      "documented": 9,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "ui/fact-store-format.ts": {
+      "exports": 8,
+      "documented": 8,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "ui/fact-store-modal.ts": {
+      "exports": 1,
+      "documented": 1,
       "methods": 2,
       "methodsDocumented": 2,
       "incomplete": 0
@@ -4811,6 +5077,13 @@
       "methodsDocumented": 1,
       "incomplete": 0
     },
+    "ui/full-writer/wizard-step-logic.ts": {
+      "exports": 6,
+      "documented": 6,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "ui/full-writer/wizard-step-renderers.ts": {
       "exports": 1,
       "documented": 1,
@@ -4965,6 +5238,13 @@
       "methodsDocumented": 1,
       "incomplete": 0
     },
+    "ui/metrics-format.ts": {
+      "exports": 6,
+      "documented": 6,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "ui/mini-settings-modal.ts": {
       "exports": 1,
       "documented": 1,
@@ -5112,6 +5392,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "ui/prompt-manager-logic.ts": {
+      "exports": 4,
+      "documented": 4,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "ui/prompt-manager-settings.ts": {
       "exports": 1,
       "documented": 1,
@@ -5226,6 +5513,20 @@
       "exampleTargets": 1,
       "examplesDocumented": 1
     },
+    "ui/services/flow-diagnosis-collectors.ts": {
+      "exports": 1,
+      "documented": 1,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "ui/services/flow-repair-host.ts": {
+      "exports": 8,
+      "documented": 8,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "ui/services/human-sample-loader.ts": {
       "exports": 2,
       "documented": 2,
@@ -5328,7 +5629,7 @@
       "exports": 1,
       "documented": 1,
       "methods": 4,
-      "methodsDocumented": 4,
+      "methodsDocumented": 3,
       "incomplete": 0
     },
     "ui/settings-utils.ts": {
@@ -5450,9 +5751,16 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "ui/views/book-detail-logic.ts": {
+      "exports": 10,
+      "documented": 10,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "ui/views/book-detail-metrics.ts": {
-      "exports": 24,
-      "documented": 24,
+      "exports": 29,
+      "documented": 29,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -5464,9 +5772,30 @@
       "methodsDocumented": 10,
       "incomplete": 0
     },
+    "ui/views/book-emotion-logic.ts": {
+      "exports": 9,
+      "documented": 9,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "ui/views/book-foreshadow-logic.ts": {
+      "exports": 13,
+      "documented": 13,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "ui/views/book-style-logic.ts": {
+      "exports": 11,
+      "documented": 11,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "ui/views/capability-banner.ts": {
-      "exports": 4,
-      "documented": 4,
+      "exports": 5,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -5478,9 +5807,30 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "ui/views/fingerprint-detail-logic.ts": {
+      "exports": 8,
+      "documented": 8,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "ui/views/fingerprint-scope-logic.ts": {
+      "exports": 9,
+      "documented": 9,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "ui/views/fingerprint-v2-detail.ts": {
       "exports": 4,
       "documented": 4,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "ui/views/fingerprint-view-logic.ts": {
+      "exports": 7,
+      "documented": 7,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -5506,6 +5856,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "ui/views/kb-config-import-logic.ts": {
+      "exports": 5,
+      "documented": 5,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "ui/views/kb-config-panel.ts": {
       "exports": 3,
       "documented": 3,
@@ -5523,6 +5880,20 @@
     "ui/views/kb-format.ts": {
       "exports": 10,
       "documented": 10,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "ui/views/kb-import-file-logic.ts": {
+      "exports": 6,
+      "documented": 6,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "ui/views/kb-modals-logic.ts": {
+      "exports": 4,
+      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -5548,6 +5919,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "ui/views/kb-view-logic.ts": {
+      "exports": 7,
+      "documented": 7,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "ui/views/knowledge-base-modals.ts": {
       "exports": 4,
       "documented": 4,
@@ -5563,8 +5941,8 @@
       "incomplete": 0
     },
     "ui/views/knowledge-capability.ts": {
-      "exports": 2,
-      "documented": 2,
+      "exports": 3,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -5572,6 +5950,13 @@
     "ui/views/knowledge-detail-state.ts": {
       "exports": 6,
       "documented": 6,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "ui/views/link-status.ts": {
+      "exports": 1,
+      "documented": 1,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0

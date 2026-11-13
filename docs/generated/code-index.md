@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 346 | 144922 | 1934 | 1536 | 79% |
+| `engine/` | 346 | 144928 | 1934 | 1536 | 79% |
 | `services/` | 34 | 13964 | 209 | 163 | 78% |
-| `shared/` | 200 | 42287 | 1733 | 1408 | 81% |
+| `shared/` | 200 | 42333 | 1736 | 1409 | 81% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 271 | 105300 | 1020 | 824 | 81% |
+| `ui/` | 271 | 105339 | 1020 | 824 | 81% |
 
 ## 文件清单
 
@@ -109,7 +109,7 @@
 | `engine/co-writer/session-state.ts` | 677 | 34 | 27 |
 | `engine/co-writer/snapshot-builder.ts` | 133 | 1 | 1 |
 | `engine/coherence-checker.ts` | 108 | 3 | 3 |
-| `engine/conflict-detector.ts` | 285 | 4 | 1 |
+| `engine/conflict-detector.ts` | 291 | 4 | 1 |
 | `engine/consistency/assertion-extract.ts` | 310 | 3 | 2 |
 | `engine/consistency/assertion-model.ts` | 300 | 13 | 8 |
 | `engine/consistency/assertion-store.ts` | 196 | 9 | 5 |
@@ -562,7 +562,7 @@
 | `shared/secret-display.ts` | 144 | 8 | 5 |
 | `shared/secret-redaction.ts` | 156 | 6 | 5 |
 | `shared/secret-value.ts` | 31 | 2 | 2 |
-| `shared/semantic-keywords.ts` | 78 | 8 | 2 |
+| `shared/semantic-keywords.ts` | 124 | 11 | 3 |
 | `shared/serialized-writer.ts` | 199 | 3 | 3 |
 | `shared/session-retention.ts` | 186 | 6 | 6 |
 | `shared/settings-migrator.ts` | 303 | 7 | 7 |
@@ -815,7 +815,7 @@
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 473 | 6 | 5 |
-| `ui/settings-tab.ts` | 260 | 1 | 1 |
+| `ui/settings-tab.ts` | 299 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 151 | 1 | 1 |
 | `ui/settings/api-section.ts` | 1281 | 1 | 1 |
