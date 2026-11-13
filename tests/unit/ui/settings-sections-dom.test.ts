@@ -11,7 +11,6 @@ import { FakeEl, stubCreateDiv, stubDocument } from './support/fake-dom';
 import {
     AboutSection,
     PerformanceSection,
-    PromptsSection,
     RecognitionSection,
     SuggestionsSection,
 } from '../../../ui/settings/general-sections';
@@ -121,13 +120,7 @@ describe('PerformanceSection（性能页）', () => {
     });
 });
 
-describe('PromptsSection / SuggestionsSection', () => {
-    it('PromptsSection 挂载提示词管理器并渲染内容', () => {
-        const host = makeHost();
-        const root = render(new PromptsSection(host), host);
-        expect(root).toBeTruthy();
-    });
-
+describe('SuggestionsSection', () => {
     it('SuggestionsSection 渲染反馈建议区', () => {
         const host = makeHost();
         const root = render(new SuggestionsSection(host), host);

@@ -81,7 +81,7 @@ graph TD
 - `section-base.ts` — `SettingsSectionHost` / `SettingsSection`，分区经它访问 `app` / `plugin` / `refresh` / `reopen`
 - `api-section.ts` / `knowledge-section.ts` / `fingerprint-section.ts` / `deconstruction-section.ts` / `foreshadow-section.ts` / `mode-section.ts`（创作模式）/ `agent-section.ts`（Agent 后端）— 单 tab 分区
 - `writing-sections.ts` — 协同写作 / 写作配置 / 模板 / 外观 / 项目库 / 工作台布局 6 个分区
-- `general-sections.ts` — 性能监控 / 写作规则 / 关于 / 角色识别 / 建议 5 个分区在装配表挂载（文件内另有 `PromptsSection`，当前无 tab 挂载，属遗留导出）
+- `general-sections.ts` — 性能监控 / 写作规则 / 关于 / 角色识别 / 建议 5 个分区（遗留的 `PromptsSection` 已随死代码清理删除）
 
 供应商相关弹窗在 `ui/manage-providers-modal.ts` / `ui/model-picker-popover.ts` / `ui/model-quick-switcher.ts`（旧 `provider-modals.ts` 已删除）。
 

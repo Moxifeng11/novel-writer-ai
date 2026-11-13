@@ -20,7 +20,6 @@ import {
     formatHitRate,
     formatPerfDuration,
 } from '@/ui/metrics-format';
-import { PromptManagerSettings } from '@/ui/prompt-manager-settings';
 import { RulesService } from '@/services/rules-service';
 import { GITHUB_BRANCH, GITHUB_REPO_SLUG } from '@/shared/github-repo';
 import { isStoredCiphertext } from '@/shared/secret-value';
@@ -393,26 +392,6 @@ export class PerformanceSection extends SettingsSection {
             });
         } catch {
         }
-    }
-}
-
-/**
- * 提示词设置分区。
- */
-export class PromptsSection extends SettingsSection {
-    /**
-     * 渲染该设置分区。
-     *
-     * @param container - 容器元素
-     */
-    render(container: HTMLElement): void {
-        const section = container.createEl('section');
-        if (!this.plugin.promptManager) {
-            section.createDiv({ text: '提示词管理器未初始化', cls: 'nw-text-error' });
-            return;
-        }
-        const manager = new PromptManagerSettings(this.app, this.plugin, section);
-        manager.render();
     }
 }
 

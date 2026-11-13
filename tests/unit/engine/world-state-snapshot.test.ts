@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
     buildChapterWorldStateSnapshot,
     formatChapterStateSnapshot,
-    formatSnapshotForPrompt,
 } from '../../../engine/world-state-snapshot';
 import type { SceneTask } from '../../../engine/scene-generation-loop';
 
@@ -93,18 +92,4 @@ describe('world-state-snapshot — 构建与格式化', () => {
         expect(md).toContain('## 未回收伏笔');
     });
 
-    it('prompt 摘要包含硬约束句与人物状态', () => {
-        const snap = buildChapterWorldStateSnapshot({
-            chapterNum: 3,
-            chapterName: '第3章',
-            scenes: [scene()],
-            entityStates: [
-                { name: '林晚', status: '受伤', emotion: '恐惧', location: '书房内', goal: '救父', knows: ['密信'], injuries: '', items: '' },
-            ],
-        });
-        const text = formatSnapshotForPrompt(snap);
-        expect(text).toContain('【上一章结束状态（硬约束）】');
-        expect(text).toContain('林晚');
-        expect(text).toContain('本章开头必须与此状态一致');
-    });
 });

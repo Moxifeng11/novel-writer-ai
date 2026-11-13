@@ -21,7 +21,6 @@ import {
 } from './writing-sections';
 import {
     PerformanceSection,
-    PromptsSection,
     RulesSection,
     AboutSection,
     RecognitionSection,

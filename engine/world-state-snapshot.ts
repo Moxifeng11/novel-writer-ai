@@ -196,30 +196,3 @@ export function formatChapterStateSnapshot(snapshot: ChapterWorldStateSnapshot):
     return lines.join('\n');
 }
 
-/**
- * 供下一章 prompt 使用的紧凑摘要（≤1800 字）。
- *
- * @param snapshot - 快照
- * @param maxChars - 最大字符数
- * @returns 文本结果
- */
-export function formatSnapshotForPrompt(snapshot: ChapterWorldStateSnapshot, maxChars = 1800): string {
-    const lines: string[] = [];
-    lines.push(`【上一章结束状态（硬约束）】`);
-    lines.push(`时间：${snapshot.time || '未记录'}；视角：${snapshot.pov || '未记录'}；地点：${snapshot.locations.join('、') || '未记录'}`);
-    for (const c of snapshot.characters.slice(0, 10)) {
-        const knows = c.knows.length > 0 ? `；已知：${c.knows.join('、')}` : '';
-        lines.push(`- ${c.name}：${c.status || '状态未记录'}；${c.location || '位置未记录'}；${c.emotion || '情绪未记录'}${knows}`);
-    }
-    if (snapshot.relationships.length > 0) {
-        const rel = snapshot.relationships.slice(0, 6).map(r =>
-            `${r.a}↔${r.b}(${r.status || '关系未记录'}，信任${r.trust}/恐惧${r.fear}/怨恨${r.resentment})`,
-        );
-        lines.push(`关系：${rel.join('；')}`);
-    }
-    if (snapshot.openPromises.length > 0) lines.push(`未兑现承诺：${snapshot.openPromises.join('；')}`);
-    if (snapshot.unresolvedForeshadows.length > 0) lines.push(`未回收伏笔：${snapshot.unresolvedForeshadows.slice(0, 8).join('；')}`);
-    lines.push('本章开头必须与此状态一致；如要改变，正文必须写出过渡。');
-    const text = lines.join('\n');
-    return text.length > maxChars ? `${text.slice(0, maxChars)}…` : text;
-}
