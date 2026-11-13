@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 346 | 144924 | 1934 | 1536 | 79% |
+| `engine/` | 346 | 144922 | 1934 | 1536 | 79% |
 | `services/` | 34 | 13964 | 209 | 163 | 78% |
-| `shared/` | 199 | 42221 | 1725 | 1406 | 82% |
+| `shared/` | 200 | 42299 | 1733 | 1408 | 81% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 271 | 105300 | 1020 | 824 | 81% |
@@ -227,7 +227,7 @@
 | `engine/llm-enhancer.ts` | 633 | 7 | 3 |
 | `engine/llm-prompts.ts` | 364 | 7 | 3 |
 | `engine/local-vector-store.ts` | 338 | 3 | 2 |
-| `engine/logic-consistency-checker.ts` | 140 | 4 | 4 |
+| `engine/logic-consistency-checker.ts` | 138 | 4 | 4 |
 | `engine/long-term-memory.ts` | 154 | 6 | 3 |
 | `engine/memory-trigger.ts` | 408 | 13 | 9 |
 | `engine/memory/chapter-digest.ts` | 375 | 9 | 7 |
@@ -562,6 +562,7 @@
 | `shared/secret-display.ts` | 144 | 8 | 5 |
 | `shared/secret-redaction.ts` | 156 | 6 | 5 |
 | `shared/secret-value.ts` | 31 | 2 | 2 |
+| `shared/semantic-keywords.ts` | 78 | 8 | 2 |
 | `shared/serialized-writer.ts` | 199 | 3 | 3 |
 | `shared/session-retention.ts` | 186 | 6 | 6 |
 | `shared/settings-migrator.ts` | 303 | 7 | 7 |

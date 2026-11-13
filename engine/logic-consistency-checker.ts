@@ -36,10 +36,8 @@ const TIME_GROUPS = [
     { name: '夜晚/深夜', words: ['夜里', '夜晚', '深夜', '子时', '月光', '天黑', '黄昏'] }
 ];
 
-const INJURY_WORDS = ['重伤', '昏迷', '断骨', '吐血', '濒死', '气绝', '动弹不得'];
-const ACTION_WORDS = ['飞奔', '狂奔', '纵身', '挥剑', '厮杀', '追上', '跃起', '冲出'];
-const MODERN_WORDS = ['手机', '电脑', '网络', '电梯', '汽车', '飞机', '微信', '短信', '摄像头'];
-const LOCATION_WORDS = ['京城', '山门', '客栈', '皇宫', '战场', '密室', '山洞', '街道', '城门', '院子', '大殿'];
+// 词表统一放在 shared/semantic-keywords（A 类语义判定，属兜底手段）
+import { ACTION_WORDS, INJURY_WORDS, LOCATION_WORDS, MODERN_WORDS } from '@/shared/semantic-keywords';
 const IDENTITY_PAIRS = [
     ['从未见过', '认出'],
     ['不知道', '早已知道'],
@@ -55,7 +53,7 @@ function splitParagraphs(body: string): string[] {
         .slice(-18);
 }
 
-function hasAny(text: string, words: string[]): string[] {
+function hasAny(text: string, words: readonly string[]): string[] {
     return words.filter(word => text.includes(word));
 }
 
