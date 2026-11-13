@@ -14,6 +14,7 @@
  */
 
 import { parseDuration, parseQuantity } from '@/shared/narrative-number';
+import { extractCausalAssertions } from './causal-rules';
 import {
     makeAssertionId,
     type AssertionKind,
@@ -259,6 +260,11 @@ export function extractAssertions(input: AssertionExtractInput): FactAssertion[]
                 chapterNum,
             });
         }
+    }
+
+    // ── 4.5 因果对（causal-violation / causeless-effect 的原料）──
+    for (const fact of input.digest?.facts ?? []) {
+        out.push(...extractCausalAssertions(fact, input.chapterKey, input.chapterNum, undefined, now));
     }
 
     // ── 5. 已确认事实索引（建立权威命名基准）──────────────────

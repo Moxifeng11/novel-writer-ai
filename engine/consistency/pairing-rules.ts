@@ -20,6 +20,7 @@
  */
 
 import { durationsAreCompatible, numbersAreCompatible } from '@/shared/narrative-number';
+import { pairCausal } from './causal-rules';
 import {
     ASSERTION_KIND_META,
     hasCompleteEvidence,
@@ -247,6 +248,11 @@ export function pairContradictions(input: PairingInput): PairingOutput {
             },
             b: mention,
         });
+    }
+
+    // ── R8/R9 因果类（causal-violation / causeless-effect）──
+    for (const causal of pairCausal(assertions)) {
+        if (hasCompleteEvidence(causal)) emit(causal);
     }
 
     return { contradictions, suspected };
