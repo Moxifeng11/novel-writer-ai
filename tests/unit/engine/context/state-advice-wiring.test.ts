@@ -87,3 +87,35 @@ describe('createStateAdvisor · 降级（关键）', () => {
         expect(advisor.advise({ subject: '宁缺', chapter: 1, value: '十七' }).status).toBe('unknown');
     });
 });
+
+describe('createStateAdvisor · adviseForeshadow（伏笔第二意见）', () => {
+    it('事实库有后续痕迹 → conflict（台账说未兑现，实际已兑现）', async () => {
+        const fs = new MockFileSystem();
+        const store = createFactStore();
+        mergeFactStore(store, 1, [{ type: 'knowledge', subject: '桑桑', predicate: '身份', value: '并不是侍女', validFrom: 1, validTo: null, confidence: 0.9, quote: '桑桑并不是侍女' }]);
+        await fs.write(pjFactStoreFile(PROJECT), serializeFactStore(store));
+        const advisor = await createStateAdvisor(makeApp(fs), PROJECT);
+        const advice = advisor.adviseForeshadow('侍女', 0);
+        expect(advice.status).toBe('conflict');
+        expect(advice.evidence?.quote).toContain('桑桑');
+    });
+
+    it('第 1 章之后无痕迹 → consistent（与未兑现一致）', async () => {
+        const fs = new MockFileSystem();
+        await seedFacts(fs);
+        const advisor = await createStateAdvisor(makeApp(fs), PROJECT);
+        expect(advisor.adviseForeshadow('青铜钥匙', 1).status).toBe('consistent');
+    });
+
+    it('事实库为空 → unknown（不干预）', async () => {
+        const advisor = await createStateAdvisor(makeApp(new MockFileSystem()), PROJECT);
+        expect(advisor.adviseForeshadow('任何', 1).status).toBe('unknown');
+    });
+
+    it('关键词为空 → unknown（不猜）', async () => {
+        const fs = new MockFileSystem();
+        await seedFacts(fs);
+        const advisor = await createStateAdvisor(makeApp(fs), PROJECT);
+        expect(advisor.adviseForeshadow('', 1).status).toBe('unknown');
+    });
+});

@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 344 | 144243 | 1911 | 1521 | 80% |
+| `engine/` | 344 | 144279 | 1912 | 1521 | 80% |
 | `services/` | 33 | 13896 | 206 | 162 | 79% |
 | `shared/` | 198 | 42159 | 1724 | 1406 | 82% |
 | `core/` | 7 | 2917 | 32 | 17 | 53% |
@@ -137,7 +137,7 @@
 | `engine/context/incremental-updater.ts` | 302 | 6 | 1 |
 | `engine/context/knowledge-fact-nodes.ts` | 242 | 10 | 8 |
 | `engine/context/overflow-recovery.ts` | 322 | 7 | 2 |
-| `engine/context/state-advice-wiring.ts` | 80 | 2 | 1 |
+| `engine/context/state-advice-wiring.ts` | 116 | 3 | 1 |
 | `engine/context/state-advice.ts` | 139 | 6 | 4 |
 | `engine/context/story-context-graph.ts` | 1584 | 7 | 7 |
 | `engine/context/story-context-service.ts` | 225 | 8 | 8 |
