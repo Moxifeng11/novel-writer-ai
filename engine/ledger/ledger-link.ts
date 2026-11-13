@@ -35,16 +35,23 @@ export type EntityResolver = (name: string) => EntityLookup | EntityLookup[] | n
  * 会话级缓存，就地写 `ref.resolved=true` 会让「已删除实体」在下次渲染时仍按
  * 旧解析结果连边，向 ledger.issues 追加还会让问题数每次调用翻倍。
  *
+ * DSH-20261114-04：resolver 改为可选——ledger-io 在 gather 期构建「事件↔伏笔」
+ * 稳定边时没有 vault 实体解析器。不传 resolver 时**跳过实体边且不记
+ * unresolved/ambiguous issue**（「没提供解析器」≠「实体不存在」，记了会污染
+ * 看板问题数）；事件↔伏笔边（按 FS 稳定 ID）与同章派生边照常产出。
+ * 关联索引文件的**写入**仍唯一走 story-linkage-writer（D3-17 锁语义不受影响）。
+ *
  * @param ledger - 台账（只读）
- * @param resolver - 实体解析器
+ * @param resolver - 实体解析器（可选；缺省只产出不依赖 vault 的边）
  * @returns 关联边与问题
  */
-export function buildLedgerLinks(ledger: LedgerLike, resolver: EntityResolver): { links: LinkRecord[]; issues: LedgerIssue[] } {
+export function buildLedgerLinks(ledger: LedgerLike, resolver?: EntityResolver): { links: LinkRecord[]; issues: LedgerIssue[] } {
     const links: LinkRecord[] = [];
     const issues: LedgerIssue[] = [];
     let counter = 0;
 
     const resolveRef = (ref: { name: string }, sourcePath: string, lineNo: number, recordId: string): EntityLookup | null => {
+        if (!resolver) return null;
         const found = resolver(ref.name);
         if (!found) {
             issues.push({
@@ -73,7 +80,9 @@ export function buildLedgerLinks(ledger: LedgerLike, resolver: EntityResolver): 
     };
 
     for (const event of ledger.events) {
-        for (const ref of event.entityRefs) {
+        // 无解析器：跳过实体边（不记 issue），事件↔伏笔边在下方照常处理
+        const entityRefs = resolver ? event.entityRefs : [];
+        for (const ref of entityRefs) {
             const target = resolveRef(ref, event.sourcePath, event.lineNo, event.id);
             if (!target) continue;
             links.push({
@@ -113,6 +122,7 @@ export function buildLedgerLinks(ledger: LedgerLike, resolver: EntityResolver): 
     }
 
     for (const foreshadow of ledger.foreshadows) {
+        if (!resolver) continue; // 无解析器：同上，跳过实体边
         for (const ref of foreshadow.relatedRefs) {
             const target = resolveRef(ref, foreshadow.sourcePath, foreshadow.lineNo, foreshadow.id);
             if (!target) continue;

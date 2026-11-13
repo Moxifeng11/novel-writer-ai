@@ -157,3 +157,31 @@ describe('renderLinkageIndex — 渲染契约', () => {
         expect(text).toContain('- [medium] 无法解析实体「幽灵甲」（时间线看板.md:7）');
     });
 });
+
+describe('buildLedgerLinks — 无 resolver 档（DSH-20261114-04）', () => {
+    it('跳过实体边且不记 unresolved/ambiguous issue；事件↔伏笔与派生边照常产出', () => {
+        const ledger = mkLedger(
+            [mkEvent({
+                id: 'EV-1', name: '遇袭',
+                entityRefs: [{ id: '', name: '幽灵甲', kind: 'unknown', resolved: false }], // 有 resolver 时会记 issue
+                foreshadowRefs: ['FS-9'], // 显式伏笔引用（无 resolver 也要解析）
+                chapterNum: 2, chapterKey: '第2章',
+            })],
+            [
+                mkForeshadow({ id: 'FS-9', name: '令牌的来历', buryChapter: '第2章' }),
+                // 同章派生边来源（与事件同 buryChapter）
+                mkForeshadow({ id: 'FS-8', name: '玉佩缺口', buryChapter: '第2章' }),
+            ],
+        );
+        const { links, issues } = buildLedgerLinks(ledger, undefined);
+
+        // 实体边跳过：无 mention 边
+        expect(links.some(l => l.kind === 'mention')).toBe(false);
+        // 「没提供解析器」≠「实体不存在」：不记 unresolved issue（否则污染看板问题数）
+        expect(issues).toHaveLength(0);
+        // 显式伏笔引用边照常（按 FS 稳定 ID / 名称在台账内解析）
+        expect(links.some(l => l.from === 'FS-9' && l.to === 'EV-1' && l.source === 'explicit')).toBe(true);
+        // 同章派生边照常
+        expect(links.some(l => l.from === 'FS-8' && l.to === 'EV-1' && l.kind === 'sets-up' && l.source === 'derived')).toBe(true);
+    });
+});

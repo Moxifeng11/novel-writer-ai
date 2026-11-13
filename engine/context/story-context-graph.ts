@@ -573,6 +573,8 @@ function addTimelineNodes(
                 legacyVar: 'timelineEvents',
                 legacyLine: `- ${time || '—'} | ${chapter || '—'} | ${eventName || '—'} | ${impact || '—'}`,
                 chapter, eventNum, state, time, eventName, impact, involved,
+                // DSH-20261114-04：台账稳定 ID（EV-…），供稳定边映射
+                stableId: String((event as { id?: string }).id || ''),
             },
         }));
     });
@@ -673,6 +675,8 @@ function addForeshadowNodes(
                 legacyVar: 'unrevealedForeshadow',
                 legacyLine: `[${item.id || index}] ${compact}`,
                 foreshadowId: String(item.id || index),
+                // DSH-20261114-04：台账稳定 ID（FS-…），供稳定边映射；旧数据缺省为空
+                stableId: String(item.id || ''),
                 state,
                 importance,
                 plannedReveal: String(item.plannedReveal || ''),
@@ -1071,6 +1075,28 @@ export function buildStoryContextGraph(source: StoryContextSource): StoryContext
     // 事实节点（v4.89 P0）：与既有节点同住一张图；缺省时零影响
     const factNodes = source.factNodes ?? [];
     for (const node of factNodes) pushNode(nodes, byKind, node);
+
+    // 台账稳定 ID 关联边（DSH-20261114-04，audit §四-3）：gather 期
+    // buildLedgerLinks（无 resolver 档）产出的事件↔伏笔稳定边与同章派生边，
+    // 按节点 metadata.stableId（EV-/FS- 稳定 ID）映射连边。名称子串匹配
+    // （linkText/relatedChars）保留为回退；缺省 ledgerLinks 时行为与原来一致。
+    // 反向边由下方 linkGraph 统一补齐。
+    const ledgerLinks = source.ledgerLinks ?? [];
+    if (ledgerLinks.length > 0) {
+        const byStable = new Map<string, StoryContextNode>();
+        for (const node of nodes.values()) {
+            const stableId = node.metadata?.stableId;
+            if (typeof stableId === 'string' && stableId) byStable.set(stableId, node);
+        }
+        if (byStable.size > 0) {
+            for (const link of ledgerLinks) {
+                const from = byStable.get(link.from);
+                const to = byStable.get(link.to);
+                if (!from || !to || from.id === to.id) continue;
+                addLink(from, to.id, 'ledger-stable', Math.max(1, link.weight));
+            }
+        }
+    }
 
     const graph: StoryContextGraph = {
         project: source.project,
@@ -1500,7 +1526,9 @@ export function formatStoryContextPack(
         if (sceneLines.length) parts.push('■ 场景→人物/地点', ...sceneLines);
 
         const foreshadowLines = bundle.byKind.foreshadow.map(node => {
-            const chars = titlesOf(node, ['character']);
+            // DSH-20261114-04：timeline 类目标（事件）由台账稳定 ID 连边——
+            // 人物名零重叠时「伏笔↔埋设事件」仍可见（名称匹配只做回退）
+            const chars = titlesOf(node, ['character', 'timeline']);
             const related = (node.metadata.relatedChars as string[] | undefined) || [];
             const names = [...new Set([...chars, ...related])];
             const mainline = String(node.metadata.relatedMainline || '').trim();

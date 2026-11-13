@@ -23,6 +23,7 @@ import type {
     StoryContextNode,
     StoryContextTier,
 } from './story-context-types';
+import type { LinkRecord } from '@/engine/ledger/ledger-model';
 
 const log = createLogger('StoryContext');
 
@@ -100,6 +101,11 @@ export interface BuildStoryContextOptions {
      * 两处都没有 → 图里零事实节点，行为与修复前完全一致。
      */
     factNodes?: readonly StoryContextNode[];
+    /**
+     * 台账稳定 ID 关联边（DSH-20261114-04）：显式注入口，优先于
+     * `context.data.ledger_links`；缺省时图的行为与原来完全一致。
+     */
+    ledgerLinks?: readonly LinkRecord[];
 }
 
 /**
@@ -130,6 +136,8 @@ export function buildStoryContext(options: BuildStoryContextOptions): StoryConte
         // 一键（template-vars-builder）与协同（co-writer-engine.refreshStoryContextPack）
         // 都传 GatheredContext，因此两链路零改动自动带上事实。
         factNodes: options.factNodes ?? options.context.data.fact_nodes,
+        // 台账稳定 ID 关联边（audit §四-3）：同上自动透传
+        ledgerLinks: options.ledgerLinks ?? options.context.data.ledger_links,
     });
     const bundle = assembleStoryContextBundle(graph, {
         mode: options.mode,

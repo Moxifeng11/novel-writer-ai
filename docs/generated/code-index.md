@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 346 | 145225 | 1937 | 1538 | 79% |
+| `engine/` | 346 | 145340 | 1937 | 1538 | 79% |
 | `services/` | 34 | 13964 | 209 | 163 | 78% |
 | `shared/` | 200 | 42298 | 1736 | 1409 | 81% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
@@ -130,20 +130,20 @@
 | `engine/consistency/risk-targeting.ts` | 222 | 9 | 6 |
 | `engine/content-safety-checker.ts` | 123 | 5 | 5 |
 | `engine/context-compressor.ts` | 342 | 2 | 2 |
-| `engine/context-manager.ts` | 2692 | 3 | 3 |
+| `engine/context-manager.ts` | 2695 | 3 | 3 |
 | `engine/context-readiness.ts` | 243 | 3 | 3 |
 | `engine/context/association-resolver.ts` | 286 | 6 | 2 |
 | `engine/context/context-diff-detector.ts` | 403 | 5 | 4 |
-| `engine/context/context-types.ts` | 293 | 16 | 15 |
+| `engine/context/context-types.ts` | 302 | 16 | 15 |
 | `engine/context/fact-view.ts` | 116 | 3 | 3 |
 | `engine/context/incremental-updater.ts` | 302 | 6 | 1 |
 | `engine/context/knowledge-fact-nodes.ts` | 293 | 11 | 9 |
 | `engine/context/overflow-recovery.ts` | 322 | 7 | 2 |
 | `engine/context/state-advice-wiring.ts` | 125 | 3 | 1 |
 | `engine/context/state-advice.ts` | 249 | 9 | 7 |
-| `engine/context/story-context-graph.ts` | 1601 | 7 | 7 |
-| `engine/context/story-context-service.ts` | 236 | 8 | 8 |
-| `engine/context/story-context-types.ts` | 213 | 13 | 13 |
+| `engine/context/story-context-graph.ts` | 1629 | 7 | 7 |
+| `engine/context/story-context-service.ts` | 244 | 8 | 8 |
+| `engine/context/story-context-types.ts` | 223 | 13 | 13 |
 | `engine/craft-constraints.ts` | 84 | 5 | 5 |
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
 | `engine/cross-volume-outline-validator.ts` | 673 | 16 | 14 |
@@ -219,8 +219,8 @@
 | `engine/knowledge-vector-reconcile.ts` | 110 | 3 | 2 |
 | `engine/knowledge-vector-store.ts` | 1004 | 5 | 4 |
 | `engine/ledger/ledger-index.ts` | 175 | 10 | 8 |
-| `engine/ledger/ledger-io.ts` | 212 | 4 | 4 |
-| `engine/ledger/ledger-link.ts` | 224 | 4 | 2 |
+| `engine/ledger/ledger-io.ts` | 259 | 4 | 4 |
+| `engine/ledger/ledger-link.ts` | 234 | 4 | 2 |
 | `engine/ledger/ledger-model.ts` | 323 | 28 | 11 |
 | `engine/ledger/ledger-parse.ts` | 452 | 4 | 2 |
 | `engine/ledger/ledger-write.ts` | 421 | 8 | 5 |

@@ -89,7 +89,8 @@ describe('D3-9 接线契约', () => {
         const src = read('engine/ledger/ledger-io.ts');
         expect(src).toContain('function hashContent');
         expect(src).toContain('${mtime}:${size}:${hashContent(content)}');
-        expect(src).toContain('if (timeline.ok && foreshadow.ok && promise.ok)');
+        // DSH-20261114-04：关系状态.md 纳入读取与签名，读失败同样不写缓存
+        expect(src).toContain('if (timeline.ok && foreshadow.ok && promise.ok && relation.ok)');
     });
 
     it('结算 no-table 走 partialFailure，揭示后失效台账缓存', () => {

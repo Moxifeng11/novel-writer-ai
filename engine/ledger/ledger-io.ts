@@ -10,8 +10,10 @@ import { App, TFile } from 'obsidian';
 import { pjForeshadowDB, pjPromiseLedger, pjTimelineBoard } from '@/shared/paths';
 import type { ForeshadowData, ForeshadowItem, TimelineEvent } from '@/engine/context/context-types';
 import { parsePromiseLedger } from '@/engine/promise-ledger';
+import { getRelationshipFilePath, parseRelationshipFile } from '@/engine/relationship-engine';
 import { buildLedgerIndex, timelineWindow, type StoryLedger } from './ledger-index';
-import type { ForeshadowRecord, PromiseRecord } from './ledger-model';
+import { buildLedgerLinks } from './ledger-link';
+import type { EntityRef, ForeshadowRecord, PromiseRecord, RelationRecord } from './ledger-model';
 
 interface CacheEntry {
     signature: string;
@@ -100,12 +102,14 @@ export async function loadStoryLedger(app: App, project: string): Promise<StoryL
     const timelinePath = pjTimelineBoard(project);
     const foreshadowPath = pjForeshadowDB(project);
     const promisePath = pjPromiseLedger(project);
-    const [timeline, foreshadow, promise] = await Promise.all([
+    const relationPath = getRelationshipFilePath(project);
+    const [timeline, foreshadow, promise, relation] = await Promise.all([
         readIfExists(app, timelinePath),
         readIfExists(app, foreshadowPath),
         readIfExists(app, promisePath),
+        readIfExists(app, relationPath),
     ]);
-    const signature = `${timeline.signature}|${foreshadow.signature}|${promise.signature}`;
+    const signature = `${timeline.signature}|${foreshadow.signature}|${promise.signature}|${relation.signature}`;
     const cached = cache.get(project);
     if (cached && cached.signature === signature) return cached.ledger;
 
@@ -118,19 +122,61 @@ export async function loadStoryLedger(app: App, project: string): Promise<StoryL
         }
     }
 
+    // DSH-20261114-04（audit §四-3）：relations/links 此前恒空——「表单间联系」的
+    // 核心结构只服务结算与一致性检查，生成侧退化为名称子串匹配。现在：
+    //  - relations：关系状态.md 解析进台账（名称对，resolved=false——生成侧仍用名称，审核侧自带解析）；
+    //  - links：buildLedgerLinks 无 resolver 档产出「事件↔伏笔」稳定边 + 同章派生边
+    //   （不碰实体边、不产 unresolved issue——vault 实体解析仍只在关联索引看板回写处做，
+    //    关联索引文件的写入唯一走 story-linkage-writer，D3-17 锁语义不受影响）。
+    let relations: RelationRecord[] = [];
+    if (relation.content.trim()) {
+        try {
+            relations = parseRelationshipFile(relation.content).map((pair) => ({
+                id: `REL:${pair.charA}|${pair.charB}`,
+                a: nameRef(pair.charA),
+                b: nameRef(pair.charB),
+                trust: pair.state.trust,
+                attraction: pair.state.attraction,
+                fear: pair.state.fear,
+                resentment: pair.state.resentment,
+                dependence: pair.state.dependence,
+                status: pair.state.status,
+                historyKeys: pair.state.historyKeys ?? [],
+                lastUpdatedChapter: pair.lastUpdatedChapter,
+            }));
+        } catch {
+            relations = [];
+        }
+    }
+
     const ledger = buildLedgerIndex({
         timelineContent: timeline.content,
         foreshadowContent: foreshadow.content,
         timelinePath,
         foreshadowPath,
         promises,
+        relations,
     });
+    ledger.links = buildLedgerLinks(
+        { events: ledger.events, foreshadows: ledger.foreshadows, links: [], issues: [] },
+        undefined,
+    ).links;
     // D3-9：任一文件读失败时返回的 ledger 可能是「空账本」，绝不能写进缓存，
     // 否则整会话都会拿到空/残缺台账（下次成功读取也会被签名命中挡住）。
-    if (timeline.ok && foreshadow.ok && promise.ok) {
+    if (timeline.ok && foreshadow.ok && promise.ok && relation.ok) {
         cache.set(project, { signature, ledger });
     }
     return ledger;
+}
+
+/**
+ * 人物名 → 台账 EntityRef（名称档：未解析到笔记 ID，生成侧按名称消费）。
+ *
+ * @param name - 人物名
+ * @returns EntityRef
+ */
+function nameRef(name: string): EntityRef {
+    return { id: `name:${name}`, name, kind: 'character', path: undefined, resolved: false };
 }
 
 /**
@@ -197,6 +243,7 @@ export function toTimelineEvents(ledger: StoryLedger, currentChapter?: string | 
     // 没有当前章时不排序、不截断：旧行为是返回文件顺序全部事件（测试与关联索引依赖它）
     const records = current === null ? ledger.events : timelineWindow(ledger, current, limit ?? (ledger.events.length || 1));
     return records.map((record) => ({
+        id: record.id,
         time: record.time,
         chapter: record.chapterKey,
         event: record.name,

@@ -646,3 +646,65 @@ describe('人物卡连续性三字段（DSH-20261114-02，audit §四-2）', () 
         expect(formatStoryContextLegacyVars(injured).allChars).toContain('伤势：左肋骨裂');
     });
 });
+
+describe('台账稳定 ID 关联边（DSH-20261114-04，audit §四-3）', () => {
+    it('稳定边连出的事件出现在伏笔交叉摘要行（人物名零重叠也可见）', () => {
+        const ctx = makeContext();
+        ctx.data.timeline = [{
+            id: 'EV-test1',
+            time: '清晨',
+            chapter: '第1章',
+            event: '外门考核',
+            impact: '暴露体质',
+            involvedEntities: ['路人甲'], // 与伏笔 relatedChars（苏婉）零重叠
+        }] as unknown as GatheredContext['data']['timeline'];
+        ctx.data.foreshadows = {
+            unrevealed: [{
+                id: 'FS-test1',
+                name: '令牌的来历',
+                importance: '高',
+                buryChapter: '第1章',
+                plannedReveal: '第3章',
+                relatedChars: '苏婉',
+                status: '未揭示',
+            }],
+            revealed: [],
+            abandoned: [],
+        } as GatheredContext['data']['foreshadows'];
+        ctx.data.ledger_links = [{
+            id: 'LNK-1', from: 'FS-test1', to: 'EV-test1', kind: 'sets-up', weight: 2, chapterNum: 1, source: 'derived',
+        }];
+
+        // 走 service（同时覆盖 data.ledger_links → source.ledgerLinks 透传与连边）
+        const { graph, bundle } = buildStoryContext({
+            context: ctx,
+            chapterName: '第1章',
+            chapterNum: 1,
+            volume: '第1卷',
+            mode: 'one-click',
+            tier: 'cloud',
+            maxInputTokens: 100000,
+        });
+
+        // 图上确有稳定边（伏笔节点 → 时间线节点，reason=ledger-stable）
+        const fsNode = [...graph.nodes.values()].find(n => n.metadata?.stableId === 'FS-test1');
+        expect(fsNode?.links.some(l => l.reason === 'ledger-stable' && l.targetId.startsWith('timeline:'))).toBe(true);
+        // 交叉摘要：伏笔行含事件标题（名称子串匹配连不出来——苏婉不在事件 involved 里）
+        expect(bundle.formattedCrossLink).toContain('外门考核');
+    });
+
+    it('无 ledger_links 时行为与原来一致（零回归）', () => {
+        const graph = buildGraph();
+        const bundle = assembleStoryContextBundle(graph, {
+            mode: 'one-click',
+            tier: 'cloud',
+            chapterNum: 1,
+            maxInputTokens: 100000,
+        });
+        // 既有图不崩、摘要照常产出（ledgerLinks 缺省 = 空）
+        expect(bundle.formattedCrossLink.length).toBeGreaterThan(0);
+        expect([...graph.nodes.values()].every(n =>
+            !(n.links.some(l => l.reason === 'ledger-stable')),
+        )).toBe(true);
+    });
+});

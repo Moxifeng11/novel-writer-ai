@@ -13,6 +13,7 @@
 
 import type { SceneCardFields } from '@/shared/scene-card';
 import type { StoryLinkage } from '@/engine/story-linkage';
+import type { LinkRecord } from '@/engine/ledger/ledger-model';
 import type { GatheredContext } from './context-types';
 
 /**
@@ -51,6 +52,7 @@ export type StoryContextLinkReason =
     | 'setting-mention'
     | 'emotion-scene'
     | 'story-linkage'
+    | 'ledger-stable'
     | 'alias';
 
 /**
@@ -189,6 +191,14 @@ export interface StoryContextSource {
    * 由 knowledge-fact-nodes.toContextNodes() 生成；缺省时图的行为与原来完全一致。
    */
   factNodes?: readonly StoryContextNode[];
+  /**
+   * 台账稳定 ID 关联边（DSH-20261114-04，audit §四-3）。
+   *
+   * 来自 loadStoryLedger → buildLedgerLinks（无 resolver 档：事件↔伏笔 + 同章派生边），
+   * 经 gather 进 context.data.ledger_links。生成侧用稳定 ID 连边，
+   * 名称子串匹配保留为回退；缺省时图的行为与原来完全一致。
+   */
+  ledgerLinks?: readonly LinkRecord[];
     sceneExpansionText?: string;
     emotionPlanText?: string;
     storyLinkage?: StoryLinkage | null;

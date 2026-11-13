@@ -83,3 +83,31 @@ describe('ledger-io — 承诺账本纳入缓存签名（F-3）', () => {
         expect(ledger.promises).toHaveLength(0);
     });
 });
+
+describe('ledger-io — links/relations 进台账（DSH-20261114-04，audit §四-3）', () => {
+    const RELATION = `## 林玄 ↔ 苏婉
+
+trust: 62
+attraction: 55
+fear: 50
+resentment: 50
+dependence: 50
+status: 初识
+`;
+
+    it('关系状态解析进 ledger.relations（名称档）；同章派生边产出 FS↔EV 稳定边', async () => {
+        const app = makeApp();
+        seedFile(app, `${PROJECT}/01-世界架构/关系状态.md`, RELATION);
+
+        const ledger = await loadStoryLedger(app, PROJECT);
+        expect(ledger.relations).toHaveLength(1);
+        expect(ledger.relations[0]).toMatchObject({ trust: 62, status: '初识' });
+        expect(ledger.relations[0].a).toMatchObject({ name: '林玄', resolved: false });
+
+        // 事件（第1章 外门考核）与伏笔（埋设第1章 令牌的来历）同章 → 派生 sets-up 边
+        const link = ledger.links.find(l => l.kind === 'sets-up' && l.source === 'derived');
+        expect(link).toBeDefined();
+        expect(link!.from.startsWith('FS-')).toBe(true);
+        expect(link!.to.startsWith('EV-')).toBe(true);
+    });
+});

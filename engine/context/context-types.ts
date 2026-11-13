@@ -18,6 +18,7 @@ import type { MemoryShard, TriggeredMemory } from '@/engine/memory-trigger';
 import type { StoryLinkage } from '@/engine/story-linkage';
 import type { ChapterDigest } from '@/engine/memory/chapter-digest';
 import type { StoryContextNode } from '@/engine/context/story-context-types';
+import type { LinkRecord } from '@/engine/ledger/ledger-model';
 import type {
     CharacterRepository,
     ChapterRepository,
@@ -166,6 +167,12 @@ export interface ContextData {
      * 预转换成图节点，buildStoryContext 自动透传（一键与协同共用）。
      */
     fact_nodes?: StoryContextNode[];
+    /**
+     * 台账稳定 ID 关联边（DSH-20261114-04，audit §四-3）：loadStoryLedger →
+     * buildLedgerLinks（无 resolver 档：事件↔伏笔 + 同章派生边）。
+     * 生成侧用稳定 ID 连边，名称子串匹配保留为回退。
+     */
+    ledger_links?: LinkRecord[];
     /** v1.6.0: 加载失败的上下文模块名（面板提示用） */
     _failedModules?: string[];
 }
@@ -224,6 +231,8 @@ export interface ForeshadowItem {
  * 时间线事件。
  */
 export interface TimelineEvent {
+    /** 台账稳定 ID（EV-…，DSH-20261114-04 起 toTimelineEvents 保留；旧数据缺省） */
+    id?: string;
     time: string;
     chapter: string;
     event: string;

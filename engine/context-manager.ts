@@ -1362,7 +1362,9 @@ export class ContextManager {
     async gatherForeshadows(project: string): Promise<ContextData> {
         try {
             const ledger = await loadStoryLedger(this.app, project);
-            return { foreshadows: toForeshadowData(ledger) };
+            // DSH-20261114-04：台账稳定 ID 关联边随 gather 进 data——生成侧用
+            // 稳定 ID 连边，名称子串匹配保留为回退（audit §四-3）
+            return { foreshadows: toForeshadowData(ledger), ledger_links: ledger.links };
         } catch (e) {
             log.warn('Failed to gather foreshadows:', e);
         }
@@ -1381,6 +1383,7 @@ export class ContextManager {
         try {
             const ledger = await loadStoryLedger(this.app, project);
             ctx.timeline = toTimelineEvents(ledger, currentChapter, TIMELINE_SLICE);
+            ctx.ledger_links = ledger.links;
             if (ledger.eras.length > 0) {
                 ctx.timeline_eras = ledger.eras;
             }
