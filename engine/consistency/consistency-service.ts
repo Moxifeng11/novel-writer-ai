@@ -65,6 +65,8 @@ export interface ConsistencyAuditDeps {
     listBodies?(): Promise<Array<{ chapterKey: string; body: string }>>;
     /** 收集「数据源缺失」类告警（不允许静默当作没数据） */
     warn?(message: string): void;
+    /** 事实库断言（P0-4：结构化事实的唯一持久源） */
+    listFactStoreAssertions?(): Promise<import('./assertion-model').FactAssertion[]>;
     /** 文件系统端口（断言库/报告落盘） */
     fs: FileSystemPort;
     /** 可选的 LLM 复核器 */
@@ -149,6 +151,12 @@ export async function runProjectConsistencyAudit(
     }
 
     // 2) 合并落盘（读失败则保留历史并报告）
+    // 事实库断言（P0-4）：结构化事实的唯一持久源，与摘要/档案断言并列参与配对
+    if (deps.listFactStoreAssertions) {
+        const factAssertions = await deps.listFactStoreAssertions().catch(() => [] as FactAssertion[]);
+        incoming.push(...factAssertions);
+    }
+
     const mergeResult = await mergeAndSaveAssertions(deps.fs, project, incoming);
 
     // 3) 用「落盘后的全量断言」做配对（不只用本次新增，否则跨批次矛盾抓不到）

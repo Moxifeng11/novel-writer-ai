@@ -15,8 +15,9 @@
 
 import { App } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
+import { loadFactStore } from './fact-store';
 import { ObsidianFileSystem } from '@/shared/file-system-port';
-import { pjChapterDigestDir, pjOutlineDir } from '@/shared/paths';
+import { pjChapterDigestDir, pjFactStoreFile, pjOutlineDir } from '@/shared/paths';
 import { parseChapterDigest, type ChapterDigest } from '@/engine/memory/chapter-digest';
 import { loadStoryLedger } from '@/engine/ledger/ledger-io';
 import {
@@ -28,6 +29,7 @@ import {
     type LedgerEventInput,
 } from './consistency-service';
 import type { LlmCaller } from './pairing-llm';
+import type { AssertionKind, FactAssertion } from './assertion-model';
 
 /** 审核选项（对外） */
 export interface RunAuditForProjectOptions {
@@ -92,6 +94,7 @@ async function buildDeps(
         listCharacters: () => loadCharacters(plugin, project, warnings),
         listLedgerEvents: () => loadLedgerEvents(app, project, warnings),
         listConfirmedFacts: () => loadConfirmedFacts(plugin, project, warnings),
+        listFactStoreAssertions: () => loadFactStoreAssertions(app, fs, project, warnings),
         loadChapterBody: async (chapterKey: string) => {
             const path = chapterBodyIndex.get(chapterNumOf(chapterKey) ?? -1);
             if (!path) return '';
@@ -326,3 +329,56 @@ async function loadAllBodies(app: App, project: string): Promise<Array<{ chapter
     }
     return out.sort((a, b) => (Number(/(\d+)/.exec(a.chapterKey)?.[1] ?? 0)) - (Number(/(\d+)/.exec(b.chapterKey)?.[1] ?? 0)));
 }
+/**
+ * 读事实库并把事实转成断言（P0-4：审核与写作共用同一份事实）。
+ *
+ * 事实库是结构化事实的唯一持久源（权威序：正文 > 事实库 > 章节摘要），
+ * 审核读它才能跨章比对历史状态；读失败只告警不阻断。
+ *
+ * @param app - Obsidian 应用
+ * @param fs - 文件端口
+ * @param project - 项目路径
+ * @param warnings - 告警收集
+ * @returns 断言列表
+ */
+async function loadFactStoreAssertions(
+    app: App,
+    fs: ObsidianFileSystem,
+    project: string,
+    warnings: string[],
+): Promise<FactAssertion[]> {
+    const loaded = await loadFactStore(fs, pjFactStoreFile(project));
+    if (loaded.status === 'missing') return [];
+    if (loaded.status === 'read-failed') {
+        warnings.push(`事实库不可读，已跳过硬事实断言（${loaded.error ?? '未知错误'}）`);
+        return [];
+    }
+    const now = Date.now();
+    return loaded.store.facts.map((fact, index) => ({
+        id: `fact-store|${fact.chapter}|${fact.subject}|${fact.predicate}|${index}`,
+        kind: (FACT_TYPE_TO_ASSERTION_KIND[fact.type] ?? 'quantitative'),
+        subject: fact.subject,
+        predicate: fact.predicate,
+        value: fact.value,
+        numericValue: fact.numeric,
+        unit: fact.unit,
+        chapterKey: `第${fact.chapter}章`,
+        chapterNum: fact.chapter,
+        quote: fact.quote,
+        source: 'fact-store' as const,
+        extractedAt: now,
+    }));
+}
+
+/** 拆解类型 → 断言 kind（事实库断言用） */
+const FACT_TYPE_TO_ASSERTION_KIND: Record<string, AssertionKind> = {
+    age: 'quantitative',
+    location: 'geographical',
+    possession: 'appearance',
+    ability: 'skill-fluctuation',
+    relationship: 'social-norm',
+    timeline: 'absolute-time',
+    'world-rule': 'core-rule',
+    knowledge: 'knowledge',
+    memory: 'memory',
+};

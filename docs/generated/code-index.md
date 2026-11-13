@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 342 | 143831 | 1901 | 1514 | 80% |
+| `engine/` | 342 | 143897 | 1901 | 1514 | 80% |
 | `services/` | 33 | 13896 | 206 | 162 | 79% |
-| `shared/` | 198 | 42149 | 1723 | 1405 | 82% |
+| `shared/` | 198 | 42159 | 1724 | 1406 | 82% |
 | `core/` | 7 | 2917 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 268 | 104697 | 1002 | 808 | 81% |
@@ -111,14 +111,14 @@
 | `engine/coherence-checker.ts` | 108 | 3 | 3 |
 | `engine/conflict-detector.ts` | 247 | 4 | 1 |
 | `engine/consistency/assertion-extract.ts` | 309 | 3 | 2 |
-| `engine/consistency/assertion-model.ts` | 292 | 13 | 8 |
+| `engine/consistency/assertion-model.ts` | 294 | 13 | 8 |
 | `engine/consistency/assertion-store.ts` | 196 | 9 | 5 |
 | `engine/consistency/audit-pipeline.ts` | 229 | 11 | 6 |
 | `engine/consistency/candidate-judge.ts` | 240 | 9 | 6 |
 | `engine/consistency/causal-rules.ts` | 164 | 3 | 2 |
-| `engine/consistency/consistency-audit-wiring.ts` | 328 | 3 | 2 |
+| `engine/consistency/consistency-audit-wiring.ts` | 384 | 3 | 2 |
 | `engine/consistency/consistency-metrics.ts` | 108 | 6 | 4 |
-| `engine/consistency/consistency-service.ts` | 245 | 8 | 2 |
+| `engine/consistency/consistency-service.ts` | 253 | 8 | 2 |
 | `engine/consistency/evidence-locate.ts` | 109 | 3 | 2 |
 | `engine/consistency/extended-rules.ts` | 317 | 5 | 3 |
 | `engine/consistency/fact-store.ts` | 212 | 9 | 7 |
@@ -510,7 +510,7 @@
 | `shared/novel-format.ts` | 348 | 12 | 12 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1693 | 209 | 203 |
+| `shared/paths.ts` | 1703 | 210 | 204 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
 | `shared/plugin-cache.ts` | 439 | 6 | 4 |

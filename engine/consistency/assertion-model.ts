@@ -78,6 +78,8 @@ export type AssertionSource =
     | 'digest-time'
     /** LLM 知识库拆解（带引文校验与有效区间） */
     | 'llm-decompose'
+    /** 事实库（结构化事实的唯一持久源，可人工修正） */
+    | 'fact-store'
     /** 结构化台账 EventRecord（含行号） */
     | 'ledger-event'
     /** 事实索引里已人工确认的事实（命名基准） */

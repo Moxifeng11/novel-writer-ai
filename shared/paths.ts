@@ -470,6 +470,16 @@ export function pjAssertionsFile(project: string) { return `${pjConsistencyDir(p
 export function pjContradictionsFile(project: string) { return `${pjConsistencyDir(project)}/矛盾.json`; }
 
 /**
+ * 事实库文件（结构化事实的唯一持久源，v4.89 P0）。
+ *
+ * 权威序：正文 > 事实库 > 章节摘要。可人工修正，重跑审核即生效。
+ *
+ * @param project - 项目路径
+ * @returns 文件路径
+ */
+export function pjFactStoreFile(project: string) { return `${pjConsistencyDir(project)}/事实库.json`; }
+
+/**
  * 关系变更待确认队列
  *
  * @param project - 项目路径
