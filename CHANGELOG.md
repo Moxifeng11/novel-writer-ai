@@ -2,6 +2,12 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## 4.94.0（2026-11-13）
+
+- **人物状态快照结构化**：新增 `lifeState`（alive/dead）与 `injuryLevel`（none/light/severe/critical），由快照构建器真实解析填值。
+- **检测器结构化优先**：`conflict-detector` 与 `logic-consistency-checker` 先读结构化字段，词表只做兜底——换个说法不再漏报。
+- **语义关键词可配置化**：设置界面新增「🧩 语义关键词（追加）」5 类词表，用户无需改代码即可补充说法。
+
 ## 4.93.0（2026-11-13）
 
 - **拆解产物补维度**：新增 `slot`（子维度：当前年龄/开悟年龄/职务身份…）与归属约束（只抽关于本人事实），修复同事件不同里程碑与抽取归属错误。

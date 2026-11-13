@@ -21,6 +21,26 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.94.0',
+        date: '2026-11-13',
+        title: '快照结构化 + 词表可配置',
+        sections: [
+            {
+                type: 'added',
+                label: '🧬 结构化状态',
+                items: [
+                    '快照新增 lifeState / injuryLevel，由构建器真实填值',
+                    '检测器先读结构化字段，词表只做兜底',
+                ],
+            },
+            {
+                type: 'added',
+                label: '🧩 词表可配置',
+                items: ['设置界面可追加 5 类语义关键词'],
+            },
+        ],
+    },
+    {
         version: '4.93.0',
         date: '2026-11-13',
         title: '拆解补维度 + 语义词表注册表',
@@ -329,49 +349,6 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
                     '新增覆盖率棘轮 check:coverage（ui 14.71% / ui/views 8.14% 首期基线）',
                     'check:obsidian-api 空扫描假通过与 check:view-tests 假阳性修复',
                     '信箱三元身份 + 文件系统任务板（原子领取 / 写范围租约）',
-                ],
-            },
-        ],
-    },
-    {
-        version: '4.83.0',
-        date: '2026-11-11',
-        title: '治理版本：包体积回血 + UI 可测性 + 安全 r3 收尾',
-        sections: [
-            {
-                type: 'improved',
-                label: '📦 包体积治理',
-                items: [
-                    '内置更新日志从 94 个版本裁到最近 12 个，完整历史仍可经弹窗 footer 外链查看（-56KB）',
-                    '支付宝收款码由 39KB JPEG 换为 12KB 自适应调色板 PNG，扫码对比度不变（-27KB）',
-                    'main.js 4,964,531 → 4,875,600 B，距 5 MB 上限余量由 0.7% 提升到 2.5%',
-                ],
-            },
-            {
-                type: 'improved',
-                label: '🧪 可测性',
-                items: [
-                    '从知识库与书籍详情视图抽出 6 个纯逻辑模块（格式化/筛选排序/状态映射/统计聚合/任务面板/卡片判定）',
-                    '新增 163 条单测；抽出模块覆盖率 95.65%–100%，其中 3 个达 100%',
-                    '筛选规则抽取时用 300 组随机数据做过新旧实现差分验证',
-                ],
-            },
-            {
-                type: 'fixed',
-                label: '🔒 安全 r3 收尾（S3-17 ~ S3-21）',
-                items: [
-                    'Agent「移动文件」不再允许跨项目搬运，避免项目身份文件被搬走后项目凭空消失',
-                    '会话大结果溢出目录与会话作用域统一，修复切换项目后模型读不回自己落盘原文的问题',
-                    '会话恢复只接受白名单记忆项并限制事件条数，防篡改存档预置上下文',
-                    '章节文件名 helper 内部净化标题，不再依赖调用方',
-                    '考据抓取拒绝把 3xx/4xx 中间页当正文（重定向复核需上游支持，如实记录为残余）',
-                ],
-            },
-            {
-                type: 'added',
-                label: '🚦 门禁',
-                items: [
-                    '新增视图测试下限门禁：超过 200 行的 UI 文件必须被测试引用，存量登记为棘轮基线',
                 ],
             },
         ],
