@@ -2,6 +2,11 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## 4.95.0（2026-11-13）
+
+- **plot-divergence 结构化优先**：设定一致性判定先读结构化矛盾，词表模式只做兜底。
+- **C 类统计词表可配置**：AI 高频词、正面/负面/高强度情绪词均可在设置里追加，只影响统计口径。
+
 ## 4.94.0（2026-11-13）
 
 - **人物状态快照结构化**：新增 `lifeState`（alive/dead）与 `injuryLevel`（none/light/severe/critical），由快照构建器真实解析填值。

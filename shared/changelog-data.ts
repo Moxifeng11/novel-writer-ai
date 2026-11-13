@@ -21,6 +21,23 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.95.0',
+        date: '2026-11-13',
+        title: '词表治理收尾',
+        sections: [
+            {
+                type: 'added',
+                label: '🧩 结构化优先',
+                items: ['plot-divergence 设定一致性先读结构化矛盾'],
+            },
+            {
+                type: 'added',
+                label: '⚙️ 词表可配置',
+                items: ['AI 高频词与情绪词表可在设置里追加'],
+            },
+        ],
+    },
+    {
         version: '4.94.0',
         date: '2026-11-13',
         title: '快照结构化 + 词表可配置',
@@ -316,39 +333,6 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
                     'repair_flow 接入工作台：诊断出的断点可以一键修复',
                     '示例项目种子脚本：可在临时目录生成最小真实数据集，让三条链路可被真实验证',
                     '覆盖率：ui 15.22% → 20.43%，ui/views 12.95% → 28.26%',
-                ],
-            },
-        ],
-    },
-    {
-        version: '4.83.1',
-        date: '2026-11-12',
-        title: '可验证版本：三条链路自证 + 静默失效修复 + 门禁加固',
-        sections: [
-            {
-                type: 'added',
-                label: '✅ 链路自证',
-                items: [
-                    '三条数据流端到端测试（知识 / 风格 / 约束）与三界面链路状态区块，断点与降级可见',
-                    'diagnose_flow 自诊断工具与界面共用同一份判定逻辑，agent 能回答「为什么没生效」',
-                ],
-            },
-            {
-                type: 'fixed',
-                label: '🛠 静默失效',
-                items: [
-                    'RAG 空 bookIds 被当成「一个都不要」，改为空 = 不限制范围',
-                    '向量化 samples 为空时如实标记 failed，不再假成功',
-                    '嵌入不可用时关键词兜底；指纹首跑自愈；同人审核闸门不再被向导绕过',
-                ],
-            },
-            {
-                type: 'improved',
-                label: '🚦 门禁与协作',
-                items: [
-                    '新增覆盖率棘轮 check:coverage（ui 14.71% / ui/views 8.14% 首期基线）',
-                    'check:obsidian-api 空扫描假通过与 check:view-tests 假阳性修复',
-                    '信箱三元身份 + 文件系统任务板（原子领取 / 写范围租约）',
                 ],
             },
         ],
