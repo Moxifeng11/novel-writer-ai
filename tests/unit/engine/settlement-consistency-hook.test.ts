@@ -27,16 +27,31 @@ describe('结算流程 · 一致性审核接入', () => {
         expect(auditIndex).toBeGreaterThan(digestIndex);
     });
 
-    it('以 useLlm=false 调用（只跑规则层，零 token）', () => {
+    it('先跑规则层（useLlm=false，零 token）', () => {
         const source = fs.readFileSync(SOURCE_PATH, 'utf8');
         expect(source).toContain('useLlm: false');
+    });
+
+    it('有疑似项时才启 AI 识别，且成本封顶（maxPairs）', () => {
+        const source = fs.readFileSync(SOURCE_PATH, 'utf8');
+        expect(source).toContain('useLlm: true');
+        expect(source).toContain('CONSISTENCY_SETTLEMENT_MAX_PAIRS');
+        expect(source).toMatch(/suspectedCount > 0/);
+    });
+
+    it('矛盾主动提示：结算后弹 Notice（不让用户去猜）', () => {
+        const source = fs.readFileSync(SOURCE_PATH, 'utf8');
+        const start = source.indexOf('private scheduleConsistencyAudit');
+        const body = source.slice(start, start + 3200);
+        expect(body).toContain('this.notifier.showNotice');
+        expect(body).toContain('跨章矛盾');
     });
 
     it('该方法是 fire-and-forget（void 包裹，不 await）', () => {
         const source = fs.readFileSync(SOURCE_PATH, 'utf8');
         const start = source.indexOf('private scheduleConsistencyAudit');
         expect(start).toBeGreaterThan(-1);
-        const body = source.slice(start, start + 1600);
+        const body = source.slice(start, start + 3200);
         expect(body).toContain('void (async () =>');
         expect(body).not.toMatch(/await this\.scheduleConsistencyAudit/);
     });
@@ -44,7 +59,7 @@ describe('结算流程 · 一致性审核接入', () => {
     it('失败路径有显式豁免（silent-ok）——派生检查不得影响结算', () => {
         const source = fs.readFileSync(SOURCE_PATH, 'utf8');
         const start = source.indexOf('private scheduleConsistencyAudit');
-        const body = source.slice(start, start + 1600);
+        const body = source.slice(start, start + 3200);
         expect(body).toContain('silent-ok');
         expect(body).toContain('不影响结算');
     });

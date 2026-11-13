@@ -6,8 +6,8 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 336 | 142296 | 1856 | 1482 | 80% |
-| `services/` | 33 | 13894 | 206 | 162 | 79% |
+| `engine/` | 336 | 142318 | 1856 | 1482 | 80% |
+| `services/` | 33 | 13896 | 206 | 162 | 79% |
 | `shared/` | 198 | 42141 | 1723 | 1405 | 82% |
 | `core/` | 7 | 2917 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
@@ -117,7 +117,7 @@
 | `engine/consistency/causal-rules.ts` | 164 | 3 | 2 |
 | `engine/consistency/consistency-audit-wiring.ts` | 302 | 3 | 2 |
 | `engine/consistency/consistency-metrics.ts` | 108 | 6 | 4 |
-| `engine/consistency/consistency-service.ts` | 216 | 8 | 2 |
+| `engine/consistency/consistency-service.ts` | 215 | 8 | 2 |
 | `engine/consistency/evidence-locate.ts` | 109 | 3 | 2 |
 | `engine/consistency/pairing-llm.ts` | 208 | 11 | 4 |
 | `engine/consistency/pairing-rules.ts` | 366 | 7 | 3 |
@@ -317,7 +317,7 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 2138 | 3 | 3 |
+| `engine/settlement-engine.ts` | 2161 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 137 | 2 | 2 |
@@ -383,7 +383,7 @@
 | `services/genre-classifier.ts` | 858 | 2 | 2 |
 | `services/genre-preference-memory.ts` | 377 | 3 | 3 |
 | `services/job-service.ts` | 364 | 9 | 1 |
-| `services/knowledge-base-manager.ts` | 1582 | 6 | 4 |
+| `services/knowledge-base-manager.ts` | 1584 | 6 | 4 |
 | `services/knowledge-original-chunker.ts` | 119 | 3 | 3 |
 | `services/local-model-probe.ts` | 185 | 6 | 5 |
 | `services/model-discovery.ts` | 279 | 5 | 5 |

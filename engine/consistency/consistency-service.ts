@@ -204,9 +204,8 @@ export async function saveReport(
         await withWriteLock(path, async () => {
             // silent-ok: 目录已存在是正常情况；真的建不出来会在 write 抛错时暴露
             await fs.mkdir(pjConsistencyDir(project)).catch(() => undefined);
-            const tmp = `${path}.tmp`;
-            await fs.write(tmp, JSON.stringify(report, null, 2));
-            await fs.rename(tmp, path);
+            // 目标已存在时必须覆盖（直接 rename 会抛 Destination file already exists）
+            await writeTextAtomic(fs, path, JSON.stringify(report, null, 2));
         });
         return { saved: true };
     } catch (error) {

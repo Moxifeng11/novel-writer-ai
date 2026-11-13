@@ -111,7 +111,7 @@ describe('KnowledgeBaseManager.updateBook — 改名同步向量书名', () => {
         expect((manager as any).books.get('book-1').name).toBe('新书名');
     });
 
-    it('P3：先写临时文件再 rename，最终不残留 tmp', async () => {
+    it('P3：目标已存在时直接覆盖写（rename 目标存在会抛 Destination file already exists）', async () => {
         const dir = kbVectorsDir();
         fs.files.set(`${dir}/book-1.json`, JSON.stringify({
             bookId: 'book-1',
@@ -121,11 +121,15 @@ describe('KnowledgeBaseManager.updateBook — 改名同步向量书名', () => {
 
         await manager.updateBook('book-1', { name: '新书名' });
 
-        const vectorWrites = fs.log.filter(e => e.startsWith(`write:${dir}/book-1.json.tmp-`));
-        expect(vectorWrites).toHaveLength(1);
-        expect(fs.log.some(e => e.startsWith('rename:') && e.includes('.tmp-') && e.endsWith(`->${dir}/book-1.json`))).toBe(true);
+        // 目标已存在 → 不得再走 rename（否则抛错、索引永远写不进去）
+        expect(fs.log.some(e => e.startsWith('rename:') && e.endsWith(`->${dir}/book-1.json`))).toBe(false);
+        // 内容确实更新了
+        const saved = JSON.parse(fs.files.get(`${dir}/book-1.json`) as string) as { bookName: string };
+        expect(saved.bookName).toBe('新书名');
+        // 不残留 tmp
         expect([...fs.files.keys()].filter(k => k.startsWith(`${dir}/`) && k.includes('.tmp-'))).toEqual([]);
     });
+
 
     it('P3：改名写入与向量状态锁串行，不会插进持锁任务中间', async () => {
         const dir = kbVectorsDir();

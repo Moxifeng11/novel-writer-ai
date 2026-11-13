@@ -29,6 +29,7 @@ import { NOOP_NOTIFIER } from '@/shared/types';
 import { FileSystemPort, FrontmatterPort, VaultMetaPort, ObsidianFileSystem, ObsidianFrontmatter, ObsidianVaultMeta } from '@/shared/file-system-port';
 import { listFolderFiles } from '@/shared/vault-tree';
 import { entityDir, listEntityFiles } from '@/shared/entity-reader';
+import { ASSERTION_KIND_META } from './consistency/assertion-model';
 import { NOTICE_ERROR, NOTICE_WARNING, NOTICE_CRITICAL } from '@/shared/thresholds';
 import type { Instructions, FrontMatter } from './settlement/settlement-types';
 import { parseReport, parseFrontmatterFromText, parseFmList, resolveForceRevealNames } from './settlement/report-parser';
@@ -699,6 +700,7 @@ export class SettlementEngine {
      * @param project - 项目路径
      */
     private scheduleConsistencyAudit(project: string): void {
+        const CONSISTENCY_SETTLEMENT_MAX_PAIRS = 3;
         const plugin = (this.app as unknown as {
             plugins?: { plugins?: Record<string, unknown> };
         }).plugins?.plugins?.['novel-writer-ai'] as unknown;
@@ -706,16 +708,37 @@ export class SettlementEngine {
         void (async () => {
             try {
                 const { runAuditForProject } = await import('./consistency/consistency-audit-wiring');
-                const result = await runAuditForProject(
-                    this.app,
-                    plugin as Parameters<typeof runAuditForProject>[1],
-                    project,
-                    { useLlm: false },
-                );
-                const count = result.report.contradictions.length;
-                if (count > 0) {
-                    log.info(`[SettlementEngine] 一致性审核发现 ${count} 处跨章矛盾（详见 04-项目总控/一致性审核/矛盾.json）`);
+                const pluginRef = plugin as Parameters<typeof runAuditForProject>[1];
+                // ① 规则层：零 token、全量跑
+                const ruleOnly = await runAuditForProject(this.app, pluginRef, project, { useLlm: false });
+                let contradictions = ruleOnly.report.contradictions;
+                // ② 有疑似矛盾时才启 AI 识别（成本封顶 3 对）：
+                //    「只有真的可能有问题才花钱」是本项目的既定取舍。
+                if (ruleOnly.report.suspectedCount > 0) {
+                    try {
+                        const withLlm = await runAuditForProject(this.app, pluginRef, project, {
+                            useLlm: true,
+                            maxPairs: CONSISTENCY_SETTLEMENT_MAX_PAIRS,
+                        });
+                        contradictions = withLlm.report.contradictions;
+                    } catch (e) {
+                        // silent-ok: AI 识别失败退化为规则层结果，不阻断结算
+                        log.warn('[SettlementEngine] 一致性 AI 识别失败，仅保留规则层结果:', e);
+                    }
                 }
+                if (contradictions.length === 0) return;
+                const kinds = contradictions
+                    .slice(0, 3)
+                    .map(c => `${ASSERTION_KIND_META[c.kind].label}（${c.subject}）`)
+                    .join('、');
+                log.info(`[SettlementEngine] 一致性审核发现 ${contradictions.length} 处跨章矛盾：${kinds}`);
+                // ③ 主动提示（结算后立刻让用户看到，而不是等人去点命令）
+                // Notifier.showNotice 只有 (message, duration) 两个参数，级别靠前缀表情表达
+                this.notifier.showNotice(
+                    `⚠️ 结算完成，但发现 ${contradictions.length} 处跨章矛盾：${kinds}。`
+                    + '详情见「一致性审核」命令。',
+                    9000,
+                );
             } catch (e) {
                 // silent-ok: 派生检查失败不得影响结算结果；报告文件缺失即视为未运行
                 log.warn('[SettlementEngine] 一致性审核失败（不影响结算）:', e);

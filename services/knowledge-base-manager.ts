@@ -646,16 +646,18 @@ export class KnowledgeBaseManager {
     /** 先写临时文件再 rename，失败时清理临时文件，避免留下半写 JSON。 */
     private async writeJsonAtomic(path: string, data: unknown): Promise<void> {
         const fs = this.getFS();
-        const tmpPath = `${path}.tmp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        // 目标已存在时不能走 rename：Obsidian 的 adapter.rename 在目标存在时抛
+        // `Destination file already exists!`（本仓已在断言库/字数台账各踩一次）。
         try {
+            const exists = await fs.exists(path);
+            if (exists) {
+                await fs.write(path, JSON.stringify(data, null, 2));
+                return;
+            }
+            const tmpPath = `${path}.tmp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
             await fs.write(tmpPath, JSON.stringify(data, null, 2));
             await fs.rename(tmpPath, path);
         } catch (e) {
-            try {
-                await fs.delete(tmpPath);
-            } catch {
-                // 临时文件不存在时忽略
-            }
             throw e;
         }
     }
