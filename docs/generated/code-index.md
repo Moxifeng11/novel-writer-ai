@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 346 | 145153 | 1937 | 1538 | 79% |
+| `engine/` | 346 | 145225 | 1937 | 1538 | 79% |
 | `services/` | 34 | 13964 | 209 | 163 | 78% |
-| `shared/` | 200 | 42294 | 1736 | 1409 | 81% |
+| `shared/` | 200 | 42298 | 1736 | 1409 | 81% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 271 | 105461 | 1021 | 825 | 81% |
+| `ui/` | 271 | 105468 | 1021 | 825 | 81% |
 
 ## 文件清单
 
@@ -212,7 +212,7 @@
 | `engine/heavy-task-worker-manager.ts` | 312 | 2 | 2 |
 | `engine/incremental-result-aggregator.ts` | 1707 | 3 | 3 |
 | `engine/knowledge-base-config.ts` | 522 | 5 | 5 |
-| `engine/knowledge-injector.ts` | 2150 | 13 | 7 |
+| `engine/knowledge-injector.ts` | 2213 | 13 | 7 |
 | `engine/knowledge-tags.ts` | 629 | 2 | 2 |
 | `engine/knowledge-to-fingerprint-converter.ts` | 345 | 1 | 1 |
 | `engine/knowledge-usage.ts` | 132 | 4 | 4 |
@@ -342,7 +342,7 @@
 | `engine/step-result-saver.ts` | 573 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 223 | 6 | 5 |
-| `engine/step-runner.ts` | 2188 | 2 | 1 |
+| `engine/step-runner.ts` | 2197 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 218 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |
@@ -494,7 +494,7 @@
 | `shared/info-debt-board.ts` | 26 | 1 | 1 |
 | `shared/info-debt.ts` | 70 | 3 | 3 |
 | `shared/info-plan-fields.ts` | 167 | 3 | 3 |
-| `shared/injection-ledger.ts` | 341 | 12 | 9 |
+| `shared/injection-ledger.ts` | 345 | 12 | 9 |
 | `shared/internal-registry.ts` | 44 | 1 | 1 |
 | `shared/iterative-refine.ts` | 165 | 6 | 6 |
 | `shared/keyboard.ts` | 29 | 1 | 1 |
@@ -725,7 +725,7 @@
 | `ui/full-writer/cover-picker-controller.ts` | 146 | 1 | 1 |
 | `ui/full-writer/creation-flow-state.ts` | 262 | 5 | 4 |
 | `ui/full-writer/entity-state-controller.ts` | 136 | 2 | 2 |
-| `ui/full-writer/execution-panels.ts` | 383 | 4 | 4 |
+| `ui/full-writer/execution-panels.ts` | 390 | 4 | 4 |
 | `ui/full-writer/execution-run-store.ts` | 280 | 5 | 5 |
 | `ui/full-writer/fanfic-settings-utils.ts` | 305 | 13 | 13 |
 | `ui/full-writer/flow-panel-controller.ts` | 351 | 3 | 3 |

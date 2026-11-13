@@ -60,6 +60,10 @@ export interface InjectionLedgerEntry extends InjectionSegmentSpec {
     truncated?: boolean;
     /** 指纹/知识等引擎给出的强度或命中说明 */
     strength?: string;
+    /** DSH-20261114-03：检索/段异常导致归零（时间线显示「0（检索失败）」而非吞行） */
+    failed?: boolean;
+    /** DSH-20261114-03：本来就没有可用内容（无书/未启用/零命中） */
+    empty?: boolean;
 }
 
 /**

@@ -28,6 +28,9 @@ const intensityEngine = getStyleIntensityEngine();
 /** 指纹特征单字段字符上限（多个指纹合并后尤其容易膨胀） */
 const FINGERPRINT_FIELD_CHAR_LIMIT = 200;
 
+/** 注入失败上报去重窗口：一轮注入 6 维同因失败只报首条（DSH-20261114-03） */
+const FAILURE_NOTIFY_DEDUPE_MS = 60_000;
+
 
 const log = createLogger('KnowledgeInjector');
 /**
@@ -266,6 +269,10 @@ export class KnowledgeInjector {
             calls: number; queries: number; hits: number; deduped: number; neighborMerged: number;
             dropped: number; chars: number; cacheHits: number; cacheMisses: number; errors: number;
         };
+        /** DSH-20261114-03：检索或段异常导致本次注入失败归零（区别于正常产出） */
+        failed?: boolean;
+        /** DSH-20261114-03：本来就没有可用内容（无书/未启用/零命中）——与失败分开呈现 */
+        empty?: boolean;
     };
     private foreshadowManager?: ForeshadowManager;
     private enabled: boolean;
@@ -275,6 +282,10 @@ export class KnowledgeInjector {
     private referenceBooks: ReferenceBookConfig[] = [];
     private dimensionWeights: KnowledgeDimensionWeights = { ...DEFAULT_DIMENSION_WEIGHTS };
     private maxReferenceBooks = 3;
+    /** 注入失败上报去重窗口（DSH-20261114-03） */
+    private lastFailureNotifyAt = 0;
+    /** 本轮 buildKb* 异常计数（formatInjection 归零）——与检索 errors 一起构成 meta.failed */
+    private sectionFailures = 0;
 
     constructor(
         app: App,
@@ -766,8 +777,39 @@ export class KnowledgeInjector {
         if (outcome.error) {
             this.retrievalTelemetry.errors++;
             log.warn('[KnowledgeInjector] 知识检索降级:', outcome.error);
+            // DSH-20261114-03（audit §三-1）：检索失败此前只 log——风格/节奏/考据指引
+            // 悄悄归零、模型照写、界面一切正常（假绿）。现在走统一降级事件：
+            // 知识库链路状态（kb-view 订阅 injection 源）与执行时间线都能看到。
+            // 空库/无命中不产生 error，不会走到这里——「失败归零」与「本来没有」两种
+            // 语义就此分开（后者由 lastInjectionMeta.empty 承载，同样上账本）。
+            this.notifyInjectionFailure('rag_retrieval', '检索失败，本段指引将空注入继续', String(outcome.error));
         }
         return { hits: outcome.hits, error: outcome.error };
+    }
+
+    /**
+     * 统一的注入失败上报（60s 去重窗口）。
+     *
+     * 为什么去重：一轮注入最多 6 个维度各调一次 retrieveKb，向量库坏掉时
+     * 会连发 6 条同因事件——Notice 与事件池都会被刷屏。60s 内同因只报首条。
+     *
+     * @param from - 降级前能力（rag_retrieval / kb_section:<维度>）
+     * @param summary - 人读摘要
+     * @param detail - 错误详情
+     */
+    private notifyInjectionFailure(from: string, summary: string, detail: string): void {
+        const now = Date.now();
+        if (now - this.lastFailureNotifyAt < FAILURE_NOTIFY_DEDUPE_MS) return;
+        this.lastFailureNotifyAt = now;
+        getDegradationNotifier().notify({
+            source: 'injection',
+            dimension: 'knowledge',
+            from,
+            to: 'empty_injection',
+            reason: `${summary}：${detail}`.slice(0, 300),
+            severity: 'warning',
+            recoverable: true,
+        });
     }
 
     private async buildSceneCharacterInjection(context: InjectionContext, strength: number): Promise<string> {
@@ -1673,10 +1715,12 @@ export class KnowledgeInjector {
      * @returns 注入文本
      */
     async injectKnowledgeBase(context: InjectionContext, baseStrength: number = 0.7): Promise<string> {
-        if (!this.enabled) return '';
+        // DSH-20261114-03：三个出口都走 formatInjection 留痕——否则失败/空置时
+        // lastInjectionMeta 残留上一轮数字，账本会拿旧值冒充本轮（audit §三-1）。
+        if (!this.enabled) return this.formatInjection([], baseStrength);
         // v4.83.1：referenceBooks 为空表示「不限制参考书范围」，不是「禁用知识库」。
         // 旧实现在这里直接返回空串，用户拆解的书永远用不上。
-        if (!this.knowledgeVectorStore) return '';
+        if (!this.knowledgeVectorStore) return this.formatInjection([], baseStrength);
 
         const sections: Array<{ title: string; content: string }> = [];
         const sceneCategory = context.sceneType 
@@ -1698,6 +1742,9 @@ export class KnowledgeInjector {
                 if (content) sections.push({ title: '参考人设', content });
             }
         } catch (e) {
+            // DSH-20261114-03：段级异常同样可见化（此前只 log）
+            this.sectionFailures++;
+            this.notifyInjectionFailure('kb_section:人设', '参考人设段注入失败，本段跳过', String((e as Error)?.message ?? e));
             log.warn('[KnowledgeInjector] 知识库人设注入失败:', e);
         }
 
@@ -1707,6 +1754,8 @@ export class KnowledgeInjector {
                 if (content) sections.push({ title: '参考设定（结构拆解）', content });
             }
         } catch (e) {
+            this.sectionFailures++;
+            this.notifyInjectionFailure('kb_section:世界观', '参考设定段注入失败，本段跳过', String((e as Error)?.message ?? e));
             log.warn('[KnowledgeInjector] 知识库世界观注入失败:', e);
         }
 
@@ -1716,6 +1765,8 @@ export class KnowledgeInjector {
                 if (content) sections.push({ title: '参考写作技巧', content });
             }
         } catch (e) {
+            this.sectionFailures++;
+            this.notifyInjectionFailure('kb_section:技巧', '参考技巧段注入失败，本段跳过', String((e as Error)?.message ?? e));
             log.warn('[KnowledgeInjector] 知识库技巧注入失败:', e);
         }
 
@@ -1725,6 +1776,8 @@ export class KnowledgeInjector {
                 if (content) sections.push({ title: '参考文风风格', content });
             }
         } catch (e) {
+            this.sectionFailures++;
+            this.notifyInjectionFailure('kb_section:风格', '参考风格段注入失败，本段跳过', String((e as Error)?.message ?? e));
             log.warn('[KnowledgeInjector] 知识库风格注入失败:', e);
         }
 
@@ -1734,10 +1787,13 @@ export class KnowledgeInjector {
                 if (content) sections.push({ title: '参考节奏模式', content });
             }
         } catch (e) {
+            this.sectionFailures++;
+            this.notifyInjectionFailure('kb_section:节奏', '参考节奏段注入失败，本段跳过', String((e as Error)?.message ?? e));
             log.warn('[KnowledgeInjector] 知识库节奏注入失败:', e);
         }
 
-        if (sections.length === 0) return '';
+        // 空段也留痕（failed/empty 双语义上账本），不再拿上一轮 meta 冒充本轮
+        if (sections.length === 0) return this.formatInjection([], baseStrength);
 
         const bookNames = this.referenceBooks.map(b => `《${b.bookName}》${b.isPrimary ? '（主参考）' : ''}`).join('、');
         const header = `参考书籍：${bookNames}\n当前场景类型：${sceneCategory === 'unknown' ? '自动检测中' : this.getSceneCategoryLabel(sceneCategory)}`;
@@ -2123,6 +2179,10 @@ export class KnowledgeInjector {
     }
 
     private formatInjection(sections: Array<{ title: string; content: string }>, strength?: number): string {
+        // DSH-20261114-03：失败/空置双语义——failed（检索或段异常导致归零）与
+        // empty（本来就没有可用内容：无书/未启用/零命中）在账本里分开呈现，
+        // 「AI 拿缺料 prompt 还不吭声」的最后一块补上（audit §三-1）。
+        const failed = this.retrievalTelemetry.errors > 0 || this.sectionFailures > 0;
         // v4.20 注入溯源：即使为空也记录（空 = 该指引线本次未生效）
         this.lastInjectionMeta = {
             sections: sections.map((section) => ({ title: section.title, chars: section.content.trim().length })),
@@ -2130,9 +2190,12 @@ export class KnowledgeInjector {
             strength,
             // v4.20 RAG 遥测：随注入账本展示「知识注入」段到底检索到什么
             retrieval: { ...this.retrievalTelemetry },
+            failed,
+            empty: sections.length === 0 && !failed,
         };
         // 每次注入完成后清零，下一次注入拿到的是本轮自己的数字
         this.retrievalTelemetry = { calls: 0, queries: 0, hits: 0, deduped: 0, neighborMerged: 0, dropped: 0, chars: 0, cacheHits: 0, cacheMisses: 0, errors: 0 };
+        this.sectionFailures = 0;
         if (sections.length === 0) return '';
 
         const parts: string[] = ['## 写作指引', ''];

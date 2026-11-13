@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-13T16:44:26.259Z",
+  "updatedAt": "2026-11-13T19:35:37.479Z",
   "threshold": 200,
-  "note": "settings-tab-regroup-fix：settings-tab 外壳补假 DOM 回归（7 例）+ E2E 一例，未覆盖数 88→87",
+  "note": "DSH-20261114-03：knowledge-injector 注入失败可见化（7 例）+ execution-panels 0 字符行（3 例），未覆盖数 87→86",
   "files": [
     "ui/add-fanfic-setting-modal.ts",
     "ui/agent-workbench-view.ts",
@@ -34,7 +34,6 @@
     "ui/fingerprint-intensity-modal.ts",
     "ui/fingerprint-library-modal.ts",
     "ui/full-writer-view.ts",
-    "ui/full-writer/execution-panels.ts",
     "ui/full-writer/flow-panel-controller.ts",
     "ui/full-writer/intervention-controller.ts",
     "ui/full-writer/project-selector-controller.ts",
@@ -123,7 +122,6 @@
     "ui/fingerprint-intensity-modal.ts": 502,
     "ui/fingerprint-library-modal.ts": 306,
     "ui/full-writer-view.ts": 2751,
-    "ui/full-writer/execution-panels.ts": 383,
     "ui/full-writer/flow-panel-controller.ts": 351,
     "ui/full-writer/intervention-controller.ts": 412,
     "ui/full-writer/project-selector-controller.ts": 988,

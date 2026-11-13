@@ -1155,13 +1155,22 @@ ${userPrompt}`),
                     const ragText = rag && rag.calls > 0
                         ? `RAG ${rag.queries} 查询 · 命中 ${rag.hits} · 邻块 ${rag.neighborMerged} · 去重 ${rag.deduped} · 丢 ${rag.dropped} · 缓存 ${rag.cacheHits}/${rag.cacheHits + rag.cacheMisses}`
                         : '';
+                    // DSH-20261114-03：失败/空置不吞行——chars=0 的注入行也要上账本，
+                    // 「检索失败」与「本来没有」分开呈现（audit §三-1）
+                    const failureNote = rag && rag.errors > 0 ? `；检索失败 ${rag.errors} 次` : '';
                     extras.push({
                         key: 'knowledgeTail', label: '知识注入（风格/节奏/技巧/伏笔）', category: '知识注入',
                         influence: '风格指引', source: 'KnowledgeInjector + RAG（多查询/邻块/MMR/预算）',
                         chars: meta.totalChars, estTokens: Math.ceil(meta.totalChars / 1.5),
                         truncated: promptAssembly.droppedExtra || Boolean(rag && rag.dropped > 0)
                             || promptAssembly.droppedSections.length > 0 || promptAssembly.trimmedSections.length > 0,
-                        strength: [meta.strength !== undefined ? `强度 ${meta.strength}` : '', ragText].filter(Boolean).join('；') || undefined,
+                        failed: Boolean(meta.failed),
+                        empty: Boolean(meta.empty),
+                        strength: [
+                            meta.strength !== undefined ? `强度 ${meta.strength}` : '',
+                            ragText,
+                            failureNote,
+                        ].filter(Boolean).join('；') || undefined,
                         placement: 'user',
                     });
                 }

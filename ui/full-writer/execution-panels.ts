@@ -116,19 +116,21 @@ export class ExecutionTimelinePanel {
 
     /** 注入溯源账本表格：解析事件 debug.ledgerEntries，无解析结果时退回纯文本 */
     private renderLedgerDetails(row: HTMLElement, event: ExecutionEvent): void {
-        let entries: Array<{ label: string; influence: string; chars: number; estTokens: number; source?: string; truncated?: boolean }> = [];
+        let entries: Array<{ label: string; influence: string; chars: number; estTokens: number; source?: string; truncated?: boolean; failed?: boolean; empty?: boolean }> = [];
         try {
             const parsed = event.debug?.ledgerEntries;
             if (typeof parsed === 'string') entries = JSON.parse(parsed);
         } catch {
             entries = [];
         }
-        const nonEmpty = entries.filter((entry) => entry.chars > 0);
-        if (nonEmpty.length === 0) return;
+        // DSH-20261114-03：failed/empty 的 0 字符行不再被过滤吞掉——
+        // 「检索失败归零」与「本来没有」必须在时间线可见（audit §三-1）
+        const visible = entries.filter((entry) => entry.chars > 0 || entry.failed || entry.empty);
+        if (visible.length === 0) return;
 
         const details = row.createEl('details', { cls: 'nw-exec-ledger' });
         details.createEl('summary', {
-            text: `注入溯源 · ${nonEmpty.length} 段 / ${event.debug?.totalChars ?? 0} 字符 / ~${event.debug?.totalEstTokens ?? 0} token`,
+            text: `注入溯源 · ${visible.length} 段 / ${event.debug?.totalChars ?? 0} 字符 / ~${event.debug?.totalEstTokens ?? 0} token`,
             cls: 'nw-exec-ledger-summary',
         });
 
@@ -139,12 +141,17 @@ export class ExecutionTimelinePanel {
             headRow.createEl('th', { text: label });
         }
         const body = table.createEl('tbody');
-        for (const entry of nonEmpty) {
+        for (const entry of visible) {
             const tr = body.createEl('tr');
-            if (entry.truncated) tr.addClass('nw-exec-ledger-truncated');
-            tr.createEl('td', { text: `${entry.label}${entry.truncated ? ' ⚠' : ''}` });
+            const degraded = Boolean(entry.truncated || entry.failed);
+            if (degraded) tr.addClass('nw-exec-ledger-truncated');
+            tr.createEl('td', { text: `${entry.label}${degraded ? ' ⚠' : ''}` });
             tr.createEl('td', { text: entry.influence });
-            tr.createEl('td', { text: String(entry.chars) });
+            tr.createEl('td', {
+                text: entry.chars > 0
+                    ? String(entry.chars)
+                    : entry.failed ? '0（检索失败）' : '0（未启用/无参考书）',
+            });
             tr.createEl('td', { text: String(entry.estTokens) });
             tr.createEl('td', { text: entry.source || '' });
         }
