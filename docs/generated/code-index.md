@@ -7,8 +7,8 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 345 | 144506 | 1919 | 1524 | 79% |
-| `services/` | 33 | 13896 | 206 | 162 | 79% |
-| `shared/` | 198 | 42177 | 1724 | 1406 | 82% |
+| `services/` | 34 | 14209 | 215 | 164 | 76% |
+| `shared/` | 199 | 42296 | 1733 | 1410 | 81% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 270 | 104954 | 1011 | 816 | 81% |
@@ -399,6 +399,7 @@
 | `services/performance-monitor.ts` | 819 | 9 | 9 |
 | `services/project-health-service.ts` | 223 | 5 | 2 |
 | `services/project-rename-service.ts` | 192 | 2 | 2 |
+| `services/project-standard-service.ts` | 313 | 9 | 2 |
 | `services/prompt-manager.ts` | 783 | 5 | 5 |
 | `services/prompt-templates-default.ts` | 644 | 1 | 1 |
 | `services/quality-history-store.ts` | 182 | 5 | 5 |
@@ -532,6 +533,7 @@
 | `shared/project-mode.ts` | 86 | 5 | 5 |
 | `shared/project-name.ts` | 119 | 6 | 6 |
 | `shared/project-root.ts` | 48 | 2 | 2 |
+| `shared/project-standard.ts` | 119 | 9 | 4 |
 | `shared/prompt-budget.ts` | 575 | 19 | 17 |
 | `shared/prompt-manager-types.ts` | 139 | 11 | 11 |
 | `shared/prompt-template-catalog.ts` | 50 | 3 | 0 |
