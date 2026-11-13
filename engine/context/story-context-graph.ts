@@ -417,6 +417,14 @@ function addEntityNodes(
     for (const record of characters) {
         const name = entityName(record, '');
         if (!name) continue;
+        // DSH-20261114-05（audit §四-8）：entity_status 此前只存 metadata 无消费端——
+        // 死者/隐匿实体照常进实体注入。新链口径与旧打分链（entity-scorer）一致：
+        //   - dead：直接跳过（死者不该出现在正文注入与交叉摘要里）；
+        //   - hidden：「刻意不登场」——保留节点但大幅降权（×0.3），正文提及命中
+        //     仍可进预算竞争，只是排最后；若后续需要彻底隐藏再收紧；
+        //   - 无 entity_status 的存量实体卡不受影响（缺省按 active）。
+        const statusText = String(record.entity_status || '').trim().toLowerCase();
+        if (statusText === 'dead') continue;
         const full = formatCharacter(record, false);
         const compact = formatCharacter(record, true);
         const info = characterPriority(record);
@@ -426,8 +434,8 @@ function addEntityNodes(
             title: name,
             text: full.text,
             compactText: compact.text,
-            priority: info.priority,
-            required: info.required,
+            priority: Math.max(1, Math.round(info.priority * (statusText === 'hidden' ? 0.3 : 1))),
+            required: info.required && statusText !== 'hidden',
             sourcePath: `人物/${name}`,
             metadata: {
                 legacyVar: 'allChars',

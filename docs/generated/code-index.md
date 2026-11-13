@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 346 | 145340 | 1937 | 1538 | 79% |
+| `engine/` | 346 | 145363 | 1937 | 1538 | 79% |
 | `services/` | 34 | 13964 | 209 | 163 | 78% |
 | `shared/` | 200 | 42298 | 1736 | 1409 | 81% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 271 | 105468 | 1021 | 825 | 81% |
+| `ui/` | 271 | 105473 | 1021 | 825 | 81% |
 
 ## 文件清单
 
@@ -141,7 +141,7 @@
 | `engine/context/overflow-recovery.ts` | 322 | 7 | 2 |
 | `engine/context/state-advice-wiring.ts` | 125 | 3 | 1 |
 | `engine/context/state-advice.ts` | 249 | 9 | 7 |
-| `engine/context/story-context-graph.ts` | 1629 | 7 | 7 |
+| `engine/context/story-context-graph.ts` | 1637 | 7 | 7 |
 | `engine/context/story-context-service.ts` | 244 | 8 | 8 |
 | `engine/context/story-context-types.ts` | 223 | 13 | 13 |
 | `engine/craft-constraints.ts` | 84 | 5 | 5 |
@@ -176,7 +176,7 @@
 | `engine/entity-context-engine.ts` | 1098 | 10 | 2 |
 | `engine/entity-graph.ts` | 198 | 6 | 6 |
 | `engine/entity-link-migrator.ts` | 168 | 5 | 5 |
-| `engine/entity-scorer.ts` | 182 | 6 | 5 |
+| `engine/entity-scorer.ts` | 197 | 6 | 5 |
 | `engine/entity-state-manager.ts` | 529 | 4 | 3 |
 | `engine/export/docx-builder.ts` | 231 | 1 | 1 |
 | `engine/export/epub-builder.ts` | 419 | 7 | 7 |
@@ -741,7 +741,7 @@
 | `ui/full-writer/step-render-controller.ts` | 683 | 2 | 2 |
 | `ui/full-writer/streamlined-nav-presenter.ts` | 272 | 12 | 12 |
 | `ui/full-writer/tab-controller.ts` | 380 | 2 | 2 |
-| `ui/full-writer/template-vars-builder.ts` | 1172 | 7 | 7 |
+| `ui/full-writer/template-vars-builder.ts` | 1177 | 7 | 7 |
 | `ui/full-writer/title-bar-controller.ts` | 192 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |

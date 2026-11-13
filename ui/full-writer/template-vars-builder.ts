@@ -311,9 +311,14 @@ export async function buildEntityVars(deps: TemplateVarsDeps, vars: Record<strin
   // 四类实体各自独立预算：人物 12 个名额，避免被势力/地点/物品挤掉
   const filtered = scoreAndFilterEntitiesByType(allEntities, contextText);
   const characterResults = filtered.filter((e) => e.type === "character");
-  // 主角必须始终在人物列表里：上下文为空时关键词打分可能把它漏掉
+  // 主角必须始终在人物列表里：上下文为空时关键词打分可能把它漏掉。
+  // DSH-20261114-05：死者例外——主角死亡后仍强制注入会造成「活死人」
+  //（scoreAndFilterEntities 已把 dead 剔除，这里不再捞回来）。
   const protagonistEntity = allEntities.find(
-    (e) => e.type === "character" && /主角|主人公/.test(e.fields["角色定位"] || ""),
+    (e) =>
+      e.type === "character" &&
+      /主角|主人公/.test(e.fields["角色定位"] || "") &&
+      String(e.fields["entity_status"] || "").trim().toLowerCase() !== "dead",
   );
   if (protagonistEntity && !characterResults.some((e) => e.name === protagonistEntity.name)) {
     characterResults.unshift({

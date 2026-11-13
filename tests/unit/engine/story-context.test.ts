@@ -708,3 +708,45 @@ describe('台账稳定 ID 关联边（DSH-20261114-04，audit §四-3）', () =>
         )).toBe(true);
     });
 });
+
+describe('entity_status dead/hidden 过滤（DSH-20261114-05，audit §四-8）', () => {
+    function ctxWithStatus(status: string | undefined): GatheredContext {
+        const ctx = makeContext();
+        ctx.data.character_state = [
+            { name: '沈砚', 角色定位: '主角', 身份: '砂民少年', ...(status ? { entity_status: status } : {}) },
+            { name: '前任', 角色定位: '配角', 身份: '旧人' },
+        ] as GatheredContext['data']['character_state'];
+        return ctx;
+    }
+
+    it('死者不进图（对照：无状态时不剔）', () => {
+        const alive = buildStoryContextGraph({ project: '九霄逆脉行', chapterName: '第1章', chapterNum: 1, volume: '第1卷', context: ctxWithStatus(undefined) });
+        expect(alive.nodes.has('character:沈砚')).toBe(true);
+
+        const dead = buildStoryContextGraph({
+            project: '九霄逆脉行', chapterName: '第1章', chapterNum: 1, volume: '第1卷',
+            context: ctxWithStatus('dead'),
+        });
+        expect(dead.nodes.has('character:沈砚')).toBe(false);
+        // 非死者的普通角色不受影响
+        expect(dead.nodes.has('character:前任')).toBe(true);
+    });
+
+    it('hidden 保留但降权且不再 required；无状态角色 required 口径不变', () => {
+        const hidden = buildStoryContextGraph({
+            project: '九霄逆脉行', chapterName: '第1章', chapterNum: 1, volume: '第1卷',
+            context: ctxWithStatus('hidden'),
+        });
+        const hiddenNode = hidden.nodes.get('character:沈砚');
+        expect(hiddenNode).toBeDefined();
+        expect(hiddenNode?.required).toBe(false);
+
+        const active = buildStoryContextGraph({
+            project: '九霄逆脉行', chapterName: '第1章', chapterNum: 1, volume: '第1卷',
+            context: ctxWithStatus(undefined),
+        });
+        const activeNode = active.nodes.get('character:沈砚');
+        expect(activeNode?.required).toBe(true);
+        expect((activeNode?.priority ?? 0)).toBeGreaterThan((hiddenNode?.priority ?? 0));
+    });
+});

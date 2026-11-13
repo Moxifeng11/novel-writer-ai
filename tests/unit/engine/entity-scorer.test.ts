@@ -209,3 +209,37 @@ describe('scoreAndFilterEntities — 实体数据隔离（防污染）', () => {
         expect(second.map(x => x.name)).toEqual(first.map(x => x.name));
     });
 });
+
+describe('scoreAndFilterEntities — entity_status 消费（DSH-20261114-05，audit §四-8）', () => {
+    it('dead 实体被剔除，即使正文命中它', () => {
+        const entities = [
+            makeEntity('阵亡者', { entity_status: 'dead', 角色定位: '配角' }),
+            makeEntity('活人', { 角色定位: '配角' }),
+        ];
+        const result = scoreAndFilterEntities(entities, '阵亡者 活人 都在场', 8);
+        expect(result.some((e) => e.name === '活人')).toBe(true);
+        expect(result.some((e) => e.name === '阵亡者')).toBe(false);
+    });
+
+    it('hidden 实体保留但降权：同一实体 hidden 分数低于 active', () => {
+        const contextText = '影中人 潜伏在暗处';
+        const active = scoreAndFilterEntities(
+            [makeEntity('影中人', { 角色定位: '配角' })],
+            contextText,
+            8,
+        );
+        const hidden = scoreAndFilterEntities(
+            [makeEntity('影中人', { 角色定位: '配角', entity_status: 'hidden' })],
+            contextText,
+            8,
+        );
+        expect(active).toHaveLength(1);
+        expect(hidden).toHaveLength(1); // 降权不剔除——正文提及命中仍可见
+        expect(hidden[0].score).toBeLessThan(active[0].score);
+    });
+
+    it('无 entity_status 字段的存量实体卡不受影响（缺省按 active）', () => {
+        const result = scoreAndFilterEntities([makeEntity('普通人', { 角色定位: '配角' })], '普通人', 8);
+        expect(result).toHaveLength(1);
+    });
+});

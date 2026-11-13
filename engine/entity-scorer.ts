@@ -118,7 +118,19 @@ export function scoreAndFilterEntities(
     const keywords = extractKeywords(contextText);
     const contextLower = contextText.toLowerCase();
 
-    const scored: EntityResult[] = entities.map(e => {
+    // DSH-20261114-05（audit §四-8）：entity_status 此前零消费——死者/隐匿实体
+    // 照常进实体注入。这里统一处理旧打分链：
+    //   - dead：直接剔除（正文再提死者不合理，与涉及度无关）；
+    //   - hidden：降权不剔除——「刻意不登场」，正文提及命中仍可能有效，但不该占预算；
+    //   - 无 entity_status 字段的存量实体卡不受影响（缺省按 active）。
+    const isActive = (e: ScoredEntity): boolean =>
+        String(e.fields['entity_status'] || '').trim().toLowerCase() !== 'dead';
+    const statusFactor = (e: ScoredEntity): number =>
+        String(e.fields['entity_status'] || '').trim().toLowerCase() === 'hidden' ? 0.3 : 1;
+
+    const scored: EntityResult[] = entities
+        .filter(isActive)
+        .map(e => {
         const fieldText = Object.values(e.fields).filter(v => v).join(' ');
         const combinedText = e.name + ' ' + fieldText;
         let score = 0;
@@ -165,6 +177,9 @@ export function scoreAndFilterEntities(
         }
 
         score += relationBoost + statusBoost;
+
+        // hidden 降权（在关键词/涉及度打分之后统一乘系数）
+        score = Math.round(score * statusFactor(e));
 
         return { text: e.formatText, score, name: e.name, type: e.type };
     });

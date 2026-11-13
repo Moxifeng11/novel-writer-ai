@@ -1014,3 +1014,33 @@ describe('buildEntityVars — 连续性三字段（DSH-20261114-02）', () => {
         expect(vars.allChars).not.toContain('已知：');
     });
 });
+
+describe('buildEntityVars — 死者不进 allChars（DSH-20261114-05，audit §四-8）', () => {
+    beforeEach(() => {
+        mockFindBodyFileV4.mockReturnValue(undefined);
+        mockGetInvolvedEntities.mockReturnValue({ chars: [], locs: [], factions: [], items: [] });
+    });
+
+    it('死者被剔除；主角死亡时不再被「强制保留」捞回（对照：存活主角恒在）', async () => {
+        const deps = makeDeps(makeContext());
+        const vars: Record<string, string> = {};
+        await buildEntityVars(deps, vars, {
+            character_state: [
+                { name: '亡者', 角色定位: '主角', entity_status: 'dead' },
+                { name: '活人', 角色定位: '配角' },
+            ],
+        } as unknown as GatheredContext['data']);
+
+        expect(vars.allChars).not.toContain('亡者');
+        expect(vars.allChars).toContain('活人');
+
+        // 对照：同样阵容但主角存活 → 强制保留生效（上下文为空也不漏）
+        const varsAlive: Record<string, string> = {};
+        await buildEntityVars(deps, varsAlive, {
+            character_state: [
+                { name: '主角本人', 角色定位: '主角' },
+            ],
+        } as unknown as GatheredContext['data']);
+        expect(varsAlive.allChars).toContain('主角本人');
+    });
+});
