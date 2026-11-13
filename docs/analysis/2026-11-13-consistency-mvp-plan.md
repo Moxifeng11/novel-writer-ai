@@ -284,3 +284,43 @@ CommandIds 都必须有 `r.register` 或 executor 分支。
 - S5 CED 指标
 - 补齐 2 个子类：无因之果 / 因果违规
 - **建议先做的门禁**：命令执行体缺失检测（见上）
+
+---
+
+## 八、S3 / S5 完成（2026-11-13）
+
+| 步骤 | 状态 | 提交 | 新增 |
+|---|---|---|---|
+| S3 风险定位 | ✅ 完成 | `e3f6803` | `engine/consistency/risk-targeting.ts` |
+| S5 CED 指标 | ✅ 完成 | `e3f6803` | `engine/consistency/consistency-metrics.ts` |
+
+**S3 实现**（零 API 成本，本地统计）：
+中段加权 0.4（位置 30–70%，论文实证）· 字符分布熵 ×0.35 · 罕见字密度 ×0.25 ·
+句长方差 >3000 追加 0.1；按覆盖率（默认 40%）截断，每段带 `reasons` 可解释。
+另含类型共现提示与 `isHighRiskOffset`。
+
+**S5 实现**（ConStory-Bench 口径）：`CED = 错误数 / (字符数/10000)`，含除零保护、
+按类型分组、一行摘要、两版趋势比较（旧值为 0 返回 null 而非 Infinity）。
+
+**测试**：新增 34 条（risk-targeting 21 / metrics 13），一致性相关累计 **139 条**。
+`AuditReport` 新增 `metrics` 与 `riskSegments` 字段，摘要输出 CED 行。
+
+### 一致性 MVP 五步完成度
+
+| 步骤 | 状态 |
+|---|---|
+| S1 断言层 | ✅ |
+| S2 配对器（规则 + LLM 复核 + 证据链） | ✅ |
+| S3 风险定位 | ✅ |
+| S4 证据链视图 | ⚠️ 代码/测试/门禁绿，**Modal 未在 DOM 显现待确认** |
+| S5 CED 指标 | ✅ |
+
+### 遗留
+
+1. **S4 视图未显现**（最高优先级）：命令执行无异常、无日志，但 `.nw-consistency-modal`
+   未出现在 document 中；引擎层已确认可用（报告落盘、6 断言、1 矛盾带双侧偏移）。
+2. **WritingStats 台账 rename 失败**：生产日志出现同款
+   `Destination file already exists!`，属「写失败当成功」，需按 S4 的修法处理。
+3. **命令执行体门禁**：每个 `exec()` 用到的 CommandId 必须有 `r.register` 或
+   executor 分支（本次踩过静默失效）。
+4. 2 个子类未实现：无因之果 / 因果违规。
