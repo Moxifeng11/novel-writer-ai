@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 338 | 143004 | 1870 | 1490 | 80% |
+| `engine/` | 339 | 143244 | 1879 | 1496 | 80% |
 | `services/` | 33 | 13896 | 206 | 162 | 79% |
 | `shared/` | 198 | 42149 | 1723 | 1405 | 82% |
 | `core/` | 7 | 2917 | 32 | 17 | 53% |
@@ -114,6 +114,7 @@
 | `engine/consistency/assertion-model.ts` | 292 | 13 | 8 |
 | `engine/consistency/assertion-store.ts` | 196 | 9 | 5 |
 | `engine/consistency/audit-pipeline.ts` | 229 | 11 | 6 |
+| `engine/consistency/candidate-judge.ts` | 240 | 9 | 6 |
 | `engine/consistency/causal-rules.ts` | 164 | 3 | 2 |
 | `engine/consistency/consistency-audit-wiring.ts` | 328 | 3 | 2 |
 | `engine/consistency/consistency-metrics.ts` | 108 | 6 | 4 |

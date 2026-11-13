@@ -1,0 +1,12 @@
+{
+ "rawCandidates": 165,
+ "afterNormalize": 144,
+ "judged": 144,
+ "confirmed": 0,
+ "tokens": {
+  "in": 10846,
+  "out": 4631
+ },
+ "cost30": 0.042,
+ "confirmedList": []
+}
