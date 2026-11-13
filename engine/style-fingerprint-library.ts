@@ -761,7 +761,7 @@ export class StyleFingerprintLibrary {
      *
      * @example
      * ```ts
-     * const analysis = await new StyleFeaturesAnalyzerV2().analyze(sampleText);
+     * const analysis = await new StyleFeaturesAnalyzerV2(undefined, settings?.styleKeywordOverrides).analyze(sampleText);
      * const fp = await library.addV2Fingerprint({
      *     scope: 'project', name: '样本指纹', source: '蒸馏样本', analysis,
      * });

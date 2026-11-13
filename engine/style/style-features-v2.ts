@@ -320,13 +320,29 @@ export class StyleFeaturesAnalyzerV2 {
     private _singleCharToSets: Map<string, Set<string>[]> = new Map();
     private _precomputedCounts: Map<Set<string>, number> | null = null;
 
-    constructor(vectorEnhancer?: VectorEnhancer) {
+    /**
+     * @param vectorEnhancer - 可选向量增强器
+     * @param keywordOverrides - 用户追加的风格词表（来自设置，C 类统计词表可配置化）
+     */
+    constructor(
+        vectorEnhancer?: VectorEnhancer,
+        keywordOverrides?: {
+            positiveEmotion?: readonly string[];
+            negativeEmotion?: readonly string[];
+            highIntensity?: readonly string[];
+            suspense?: readonly string[];
+            conflict?: readonly string[];
+        },
+    ) {
         this.v1Deconstructor = new StyleDeconstructor(vectorEnhancer);
         this.vectorEnhancer = vectorEnhancer;
 
-        this.positiveEmotionSet = new Set(POSITIVE_EMOTION_WORDS);
-        this.negativeEmotionSet = new Set(NEGATIVE_EMOTION_WORDS);
-        this.highIntensitySet = new Set(HIGH_INTENSITY_EMOTION_WORDS);
+        // 用户追加词与内置词表合并（统计口径可调，不影响正文）
+        const extra = (base: readonly string[], add?: readonly string[]): Set<string> =>
+            new Set([...base, ...(add ?? []).map(w => w.trim()).filter(Boolean)]);
+        this.positiveEmotionSet = extra(POSITIVE_EMOTION_WORDS, keywordOverrides?.positiveEmotion);
+        this.negativeEmotionSet = extra(NEGATIVE_EMOTION_WORDS, keywordOverrides?.negativeEmotion);
+        this.highIntensitySet = extra(HIGH_INTENSITY_EMOTION_WORDS, keywordOverrides?.highIntensity);
         this.mediumIntensitySet = new Set(MEDIUM_INTENSITY_EMOTION_WORDS);
         this.suspenseSet = new Set(SUSPENSE_WORDS);
         this.conflictSet = new Set(CONFLICT_WORDS);
@@ -2050,7 +2066,7 @@ const FEATURE_LABELS: ReadonlyArray<{ key: StyleDimensionKeyV2; label: string }>
  *
  * @example
  * ```ts
- * const features = await new StyleFeaturesAnalyzerV2().analyze(sample);
+ * const features = await new StyleFeaturesAnalyzerV2(undefined, settings?.styleKeywordOverrides).analyze(sample);
  * content += '
 
 ' + formatFeaturesV2Section(features);

@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 346 | 145010 | 1936 | 1537 | 79% |
+| `engine/` | 346 | 145026 | 1936 | 1537 | 79% |
 | `services/` | 34 | 13964 | 209 | 163 | 78% |
 | `shared/` | 200 | 42310 | 1736 | 1409 | 81% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 271 | 105350 | 1020 | 824 | 81% |
+| `ui/` | 271 | 105368 | 1020 | 824 | 81% |
 
 ## 文件清单
 
@@ -364,7 +364,7 @@
 | `engine/style/fingerprint-selection.ts` | 101 | 5 | 5 |
 | `engine/style/style-dimensions-v2.ts` | 574 | 26 | 12 |
 | `engine/style/style-distill-service.ts` | 146 | 6 | 6 |
-| `engine/style/style-features-v2.ts` | 2074 | 3 | 3 |
+| `engine/style/style-features-v2.ts` | 2090 | 3 | 3 |
 | `engine/style/style-intensity-engine.ts` | 364 | 9 | 3 |
 | `engine/style/style-sample-service.ts` | 227 | 8 | 7 |
 | `engine/style/style-vector-store-v2.ts` | 1085 | 6 | 1 |
@@ -815,7 +815,7 @@
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 473 | 6 | 5 |
-| `ui/settings-tab.ts` | 310 | 1 | 1 |
+| `ui/settings-tab.ts` | 328 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 151 | 1 | 1 |
 | `ui/settings/api-section.ts` | 1281 | 1 | 1 |

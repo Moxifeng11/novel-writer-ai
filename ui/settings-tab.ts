@@ -151,6 +151,24 @@ export class NovelWriterSettingTab extends PluginSettingTab {
                         .split(/[,，\s]+/).map(w => w.trim()).filter(Boolean);
                     await this.plugin.saveSettings();
                 }));
+        const styleFields: Array<{ key: 'positiveEmotion' | 'negativeEmotion' | 'highIntensity'; name: string }> = [
+            { key: 'positiveEmotion', name: '正面情绪词' },
+            { key: 'negativeEmotion', name: '负面情绪词' },
+            { key: 'highIntensity', name: '高强度情绪词' },
+        ];
+        for (const field of styleFields) {
+            new Setting(section)
+                .setName(`${field.name}（风格统计词表）`)
+                .setDesc('逗号分隔；只影响风格统计口径，不改变正文。')
+                .addTextArea(text => text
+                    .setValue(((this.plugin.settings.styleKeywordOverrides ?? {})[field.key] ?? []).join(', '))
+                    .onChange(async value => {
+                        const next = { ...(this.plugin.settings.styleKeywordOverrides ?? {}) };
+                        next[field.key] = value.split(/[,，\s]+/).map(w => w.trim()).filter(Boolean);
+                        this.plugin.settings.styleKeywordOverrides = next;
+                        await this.plugin.saveSettings();
+                    }));
+        }
         for (const field of fields) {
             new Setting(section)
                 .setName(field.name)

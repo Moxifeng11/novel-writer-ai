@@ -214,6 +214,12 @@ export interface NovelWriterSettings {
      * 用途：内置词表没覆盖某个说法时，用户无需改代码即可补充。
      * 仅影响「词表兜底」层，不改变结构化判定。
      */
+    /** 追加的风格统计词表（C 类可配置化；只影响统计口径） */
+    styleKeywordOverrides?: {
+        positiveEmotion?: string[];
+        negativeEmotion?: string[];
+        highIntensity?: string[];
+    };
     /** 追加的 AI 高频词（C 类统计词表可配置化） */
     extraAiHighFreqWords?: string[];
     semanticKeywordOverrides?: {

@@ -133,7 +133,7 @@ export async function analyzeStyleFromSource(
     const sample = (input.sampleText || '').trim();
     if (input.mode !== 'name' && sample.length > 0) {
         try {
-            const featuresV2 = await new StyleFeaturesAnalyzerV2().analyze(sample);
+            const featuresV2 = await new StyleFeaturesAnalyzerV2(undefined, (deps.settings as unknown as { styleKeywordOverrides?: ConstructorParameters<typeof StyleFeaturesAnalyzerV2>[1] } | undefined)?.styleKeywordOverrides).analyze(sample);
             content = `${content}
 
 ${formatFeaturesV2Section(featuresV2.features)}`;
