@@ -14,6 +14,7 @@ import {
     matchesPredicateLoose,
     PREDICATE_ALIASES,
     RETROSPECTIVE_MARKERS,
+    isExactNumericValue,
     isRetrospectiveQuote,
 } from '../../../../engine/consistency/predicate-match';
 import { pairContradictions } from '../../../../engine/consistency/pairing-rules';
@@ -190,6 +191,60 @@ describe('R1 排除回溯引文与 0 岁噪声', () => {
         const result = pairContradictions({ assertions: [
             ageFact(68, 16, '你今年十六岁'),
             ageFact(92, 8, '你今年八岁'),
+        ] });
+        expect(result.contradictions.some(c => c.kind === 'quantitative')).toBe(true);
+    });
+});
+
+describe('精确值守卫（200 章评测修复）', () => {
+    it('边界值不是精确值', () => {
+        for (const v of ['未满二十', '不到六岁', '将近三十', '约二十', '二十左右']) {
+            expect(isExactNumericValue(v), v).toBe(false);
+        }
+    });
+
+    it('精确值是精确值', () => {
+        for (const v of ['十八', '16', '四十岁']) {
+            expect(isExactNumericValue(v), v).toBe(true);
+        }
+    });
+
+    it('空值不是精确值', () => {
+        expect(isExactNumericValue('')).toBe(false);
+    });
+});
+
+describe('R1/R2 边界值不参与比较', () => {
+    /** 造断言 */
+    function ageFact(chapter: number, numeric: number, value: string, quote: string): FactAssertion {
+        return {
+            id: `f|${chapter}|${numeric}`,
+            kind: 'quantitative',
+            subject: '宁缺',
+            predicate: '年龄',
+            value,
+            numericValue: numeric,
+            unit: '岁',
+            chapterKey: `第${chapter}章`,
+            chapterNum: chapter,
+            quote,
+            source: 'fact-store',
+            extractedAt: 0,
+        };
+    }
+
+    it('**「未满二十」与「十八」相容**（200 章评测真实案例）', () => {
+        const result = pairContradictions({ assertions: [
+            ageFact(170, 20, '未满二十', '未满二十不惑'),
+            ageFact(184, 18, '十八', '我已经十八了'),
+        ] });
+        expect(result.contradictions.some(c => c.kind === 'quantitative')).toBe(false);
+    });
+
+    it('两个精确值仍正常检出倒退（负例对照）', () => {
+        const result = pairContradictions({ assertions: [
+            ageFact(170, 20, '二十', '你今年二十'),
+            ageFact(184, 18, '十八', '我已经十八了'),
         ] });
         expect(result.contradictions.some(c => c.kind === 'quantitative')).toBe(true);
     });

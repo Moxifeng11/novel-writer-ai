@@ -1,36 +1,30 @@
 {
-  "chapters": 99,
-  "realFacts": 1622,
-  "baselineFalsePositives": 0,
+  "chapters": 199,
+  "realFacts": 3354,
+  "baselineFalsePositives": 2,
   "injectedContradictions": 10,
-  "detected": 8,
-  "recall": 0.8,
+  "detected": 2,
+  "recall": 0.2,
   "detectedSubjects": [
-    "桑桑",
-    "宁缺",
     "李渔",
-    "简大家",
-    "精壮汉子领头人",
-    "顶层房间男子",
-    "上官扬羽",
-    "大唐皇后"
+    "简大家"
   ],
   "legalChanges": 10,
   "legalFalsePositives": 0,
   "scale": [
     {
       "span": 30,
-      "facts": 459,
+      "facts": 469,
       "falsePositives": 0
     },
     {
       "span": 60,
-      "facts": 935,
+      "facts": 916,
       "falsePositives": 0
     },
     {
       "span": 100,
-      "facts": 1622,
+      "facts": 1603,
       "falsePositives": 0
     }
   ]

@@ -20,7 +20,7 @@
  */
 
 import { durationsAreCompatible, numbersAreCompatible } from '@/shared/narrative-number';
-import { isRetrospectiveQuote, matchesPredicate, matchesPredicateLoose } from './predicate-match';
+import { isExactNumericValue, isRetrospectiveQuote, matchesPredicate, matchesPredicateLoose } from './predicate-match';
 import { pairCausal } from './causal-rules';
 import { pairExtended } from './extended-rules';
 import {
@@ -108,6 +108,8 @@ export function pairContradictions(input: PairingInput): PairingOutput {
         // 回溯排除：新数据用拆解侧给的 isCurrentState 标记（权威）；
         // 旧数据没有该字段时回退到引文启发式（兼容既有事实库）
         && isCurrentStateAssertion(a)
+        // 边界值（未满二十/将近三十）不能与精确值比大小
+        && isExactNumericValue(a.value)
         && a.chapterNum !== null);
     for (const pair of groupBy(ages, a => a.subject).values()) {
         const ordered = pair.slice().sort((a, b) => (a.chapterNum ?? 0) - (b.chapterNum ?? 0));
@@ -136,6 +138,8 @@ export function pairContradictions(input: PairingInput): PairingOutput {
     // ── R2 同章同谓语互不相容的数值 ───────────────────────
     const numeric = assertions.filter(a => a.kind === 'quantitative'
         && typeof a.numericValue === 'number'
+        // 边界值与精确值不可比（「未满二十」vs「十八」是相容的）
+        && isExactNumericValue(a.value)
         && a.chapterNum !== null);
     for (const group of groupBy(numeric, a => `${a.subject}|${a.predicate}|${a.chapterKey}`).values()) {
         for (let i = 0; i < group.length - 1; i++) {

@@ -131,3 +131,25 @@ export function isRetrospectiveQuote(quote: string): boolean {
     if (!text) return false;
     return RETROSPECTIVE_QUOTE_MARKERS.some(marker => text.includes(marker));
 }
+
+/** 模糊/边界限定词：带这些词的数值不是精确值，不能参与"倒退/不相容"比较 */
+export const INEXACT_VALUE_MARKERS: readonly string[] = [
+    '未满', '不到', '不足', '将近', '接近', '约', '左右', '上下', '余', '多',
+    '将近于', '差不多', '至少', '至多', '最多', '最少', '超过', '不到于',
+];
+
+/**
+ * 判断数值文本是否为**精确值**。
+ *
+ * 为什么需要：「未满二十」与「十八」是相容的（一个是上界、一个是精确值），
+ * 但 R1/R2 只看 numericValue 会判成「20 岁 → 18 岁 倒退」。
+ * 2026-11-13 200 章评测真实踩到（宁缺「未满二十」vs「我已经十八了」）。
+ *
+ * @param value - 值文本
+ * @returns 是否精确值
+ */
+export function isExactNumericValue(value: string): boolean {
+    const text = (value ?? '').trim();
+    if (!text) return false;
+    return !INEXACT_VALUE_MARKERS.some(marker => text.includes(marker));
+}
