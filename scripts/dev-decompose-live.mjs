@@ -8,7 +8,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { buildDecomposePrompt, parseDecomposeResponse } from '../engine/consistency/knowledge-decompose.ts';
 
-const KEY = fs.readFileSync(path.join(process.env.TEMP, 'nwkey.txt'), 'utf8').trim();
+const settings = JSON.parse(fs.readFileSync(path.join('D:/小说工坊/小说工坊/.obsidian/plugins/novel-writer-ai', 'data.json'), 'utf8'));
+const KEY = settings?.providerKeys?.deepseek || settings?.apiKey;
 
 // 取《将夜》第 1 章正文（GBK）
 const src = 'D:/小说工坊/小说工坊/小说原著下载/将夜.txt';
@@ -17,10 +18,11 @@ const raw = new TextDecoder('gbk').decode(buf);
 const lines = raw.split(/\r?\n/);
 const marks = [];
 for (let i = 0; i < lines.length; i++) if (/^\s*第[零〇一二三四五六七八九十百千0-9]+章/.test(lines[i])) marks.push(i);
-const body = lines.slice(marks[0], marks[1]).join('\n').slice(0, 4000);
-console.log(`章节字数: ${body.length}`);
+const chapterIndex = Number(process.argv[2] ?? 0); // 0-based：0=第1章
+const body = lines.slice(marks[chapterIndex], marks[chapterIndex + 1]).join('\n').slice(0, 4000);
+console.log(`第${chapterIndex + 1}章 字数: ${body.length}`);
 
-const prompt = buildDecomposePrompt(1, body);
+const prompt = buildDecomposePrompt(chapterIndex + 1, body);
 const t0 = Date.now();
 const resp = await fetch('https://api.deepseek.com/chat/completions', {
     method: 'POST',
@@ -49,5 +51,5 @@ for (const e of parsed.entries) byType[e.type] = (byType[e.type] ?? 0) + 1;
 console.log('类型分布:', JSON.stringify(byType));
 console.log('样例:');
 for (const e of parsed.entries.slice(0, 6)) {
-    console.log(`  [${e.type}] ${e.subject}·${e.predicate}=${e.value} conf=${e.confidence} quote=「${e.quote.slice(0, 24)}」`);
+    console.log(`  [${e.type}] ${e.subject}·${e.predicate}=${e.value} current=${e.isCurrentState} quote=「${e.quote.slice(0, 24)}」`);
 }
