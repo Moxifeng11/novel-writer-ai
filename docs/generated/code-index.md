@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 346 | 145454 | 1937 | 1538 | 79% |
+| `engine/` | 346 | 145402 | 1936 | 1537 | 79% |
 | `services/` | 34 | 13964 | 209 | 163 | 78% |
-| `shared/` | 200 | 42298 | 1736 | 1409 | 81% |
+| `shared/` | 200 | 42333 | 1737 | 1409 | 81% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 271 | 105479 | 1021 | 825 | 81% |
+| `ui/` | 271 | 105457 | 1020 | 824 | 81% |
 
 ## 文件清单
 
@@ -58,12 +58,12 @@
 | `engine/agent/harness/tool-registry.ts` | 297 | 5 | 2 |
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
 | `engine/ai-api-client-shared.ts` | 86 | 6 | 5 |
-| `engine/ai-api-client.ts` | 990 | 2 | 2 |
-| `engine/ai-api-stream.ts` | 1016 | 3 | 2 |
+| `engine/ai-api-client.ts` | 996 | 2 | 2 |
+| `engine/ai-api-stream.ts` | 1022 | 3 | 2 |
 | `engine/ai-batch-entity-generator.ts` | 578 | 1 | 1 |
 | `engine/ai-chapter-helpers.ts` | 339 | 1 | 1 |
 | `engine/ai-character-generator.ts` | 426 | 1 | 1 |
-| `engine/ai-engine.ts` | 834 | 4 | 2 |
+| `engine/ai-engine.ts` | 764 | 4 | 2 |
 | `engine/ai-entity-generator.ts` | 227 | 1 | 1 |
 | `engine/ai-lexicon.ts` | 97 | 3 | 3 |
 | `engine/ai-outline-generator.ts` | 1414 | 1 | 1 |
@@ -257,7 +257,7 @@
 | `engine/prompt-templates.ts` | 10 | 0 | 0 |
 | `engine/prompts/body-v2-prompts.ts` | 138 | 3 | 3 |
 | `engine/prompts/body-v3-prompts.ts` | 99 | 3 | 3 |
-| `engine/prompts/body-v4-prompts.ts` | 68 | 3 | 3 |
+| `engine/prompts/body-v4-prompts.ts` | 88 | 3 | 3 |
 | `engine/prompts/chapter-pipeline-prompts.ts` | 641 | 11 | 11 |
 | `engine/prompts/co-write-prompts.ts` | 103 | 4 | 4 |
 | `engine/prompts/deai-prompts.ts` | 100 | 4 | 4 |
@@ -336,13 +336,13 @@
 | `engine/settlement/settlement-journal.ts` | 228 | 6 | 6 |
 | `engine/settlement/settlement-table-writer.ts` | 79 | 3 | 2 |
 | `engine/settlement/settlement-types.ts` | 46 | 2 | 1 |
-| `engine/step-definitions.ts` | 266 | 13 | 11 |
+| `engine/step-definitions.ts` | 268 | 13 | 11 |
 | `engine/step-modal-controller.ts` | 648 | 2 | 2 |
 | `engine/step-prompt-assembly.ts` | 290 | 5 | 4 |
-| `engine/step-result-saver.ts` | 573 | 5 | 4 |
+| `engine/step-result-saver.ts` | 577 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
-| `engine/step-runner-retry.ts` | 223 | 6 | 5 |
-| `engine/step-runner.ts` | 2258 | 2 | 1 |
+| `engine/step-runner-retry.ts` | 227 | 6 | 5 |
+| `engine/step-runner.ts` | 2261 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 218 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |
@@ -378,7 +378,7 @@
 | `engine/types/chart-config.ts` | 84 | 6 | 6 |
 | `engine/vector-enhancer.ts` | 901 | 5 | 5 |
 | `engine/volume-outline-summarizer.ts` | 197 | 2 | 2 |
-| `engine/world-state-snapshot.ts` | 226 | 7 | 7 |
+| `engine/world-state-snapshot.ts` | 199 | 6 | 6 |
 | `engine/writing-profile.ts` | 566 | 8 | 8 |
 | `engine/writing-quality-engine.ts` | 1376 | 14 | 13 |
 | `services/api-connectivity-service.ts` | 317 | 8 | 8 |
@@ -419,7 +419,7 @@
 | `shared/ai-credentials.ts` | 80 | 3 | 3 |
 | `shared/api-format.ts` | 461 | 16 | 15 |
 | `shared/api-response-utils.ts` | 253 | 10 | 10 |
-| `shared/api-types.ts` | 18 | 1 | 1 |
+| `shared/api-types.ts` | 24 | 1 | 1 |
 | `shared/array-move.ts` | 48 | 2 | 2 |
 | `shared/auto-context-block.ts` | 87 | 5 | 5 |
 | `shared/behavior-log.ts` | 132 | 7 | 7 |
@@ -449,7 +449,7 @@
 | `shared/creation-mode.ts` | 441 | 22 | 18 |
 | `shared/cursor-position.ts` | 31 | 2 | 2 |
 | `shared/deconstruction-settings.ts` | 78 | 6 | 6 |
-| `shared/degradation-notifier.ts` | 257 | 10 | 5 |
+| `shared/degradation-notifier.ts` | 286 | 11 | 5 |
 | `shared/desktop-shell.ts` | 79 | 3 | 2 |
 | `shared/diff-utils.ts` | 322 | 8 | 8 |
 | `shared/divergence-trend.ts` | 44 | 2 | 2 |
@@ -822,11 +822,11 @@
 | `ui/settings/deconstruction-section.ts` | 332 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 289 | 1 | 1 |
-| `ui/settings/general-sections.ts` | 1215 | 6 | 6 |
+| `ui/settings/general-sections.ts` | 1194 | 5 | 5 |
 | `ui/settings/knowledge-section.ts` | 797 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
-| `ui/settings/section-factory.ts` | 91 | 4 | 2 |
+| `ui/settings/section-factory.ts` | 90 | 4 | 2 |
 | `ui/settings/writing-sections.ts` | 812 | 6 | 6 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 402 | 1 | 1 |
