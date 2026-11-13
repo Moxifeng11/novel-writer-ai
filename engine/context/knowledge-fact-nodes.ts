@@ -214,6 +214,49 @@ export function readAllFacts(nodes: Iterable<StoryContextNode>): FactMetadata[] 
 }
 
 /**
+ * 事实库 → 生成注入用图节点（DSH-20261114-01）。
+ *
+ * 与 `toContextNodes` 的区别：`toContextNodes` 服务「拆解当时」（单章条目），
+ * 本函数服务「写作时注入」——事实库里躺着**全书历史**的事实，因此：
+ *   1. 过滤 `ignored`（人工忽略的不进生成）；
+ *   2. 过滤已失效事实（`validTo !== null && validTo < chapterNum`——
+ *      「宁缺十七岁」在第 30 章过期后不应继续指导正文）；
+ *   3. **按事实自身的章节分组**再调 `toContextNodes`——节点的稳定 id 与
+ *      「第 N 章起」范围文本必须用事实来源章，不能用当前章。
+ *
+ * @param facts - 事实库条目（FactMetadata 与 DecomposeEntry 结构兼容）
+ * @param chapterNum - 当前章号（过期判定基准；0 = 全局 gather，不判过期）
+ * @param options - 可选：项目名（仅 traceability）
+ * @returns 图节点列表（空事实库 → 空数组）
+ */
+export function factNodesForInjection(
+    facts: readonly FactMetadata[],
+    chapterNum: number,
+    options: { projectName?: string } = {},
+): StoryContextNode[] {
+    const valid = facts.filter(fact => {
+        if (fact.ignored) return false;
+        if (chapterNum > 0 && fact.validTo !== null && fact.validTo < chapterNum) return false;
+        return true;
+    });
+    const byChapter = new Map<number, FactMetadata[]>();
+    for (const fact of valid) {
+        const chapter = Number(fact.chapter) || 0;
+        const list = byChapter.get(chapter);
+        if (list) list.push(fact);
+        else byChapter.set(chapter, [fact]);
+    }
+    const nodes: StoryContextNode[] = [];
+    for (const [chapter, group] of byChapter) {
+        const chapterName = options.projectName ? `${options.projectName}·第${chapter}章` : `第${chapter}章`;
+        // FactMetadata 是 DecomposeEntry 的超集（type/subject/predicate/value/validFrom/
+        // validTo/confidence/quote 全有），结构类型直接兼容
+        nodes.push(...toContextNodes(group, chapter, chapterName));
+    }
+    return nodes;
+}
+
+/**
  * 为事实节点建立与同名实体节点的链接（复用图的 links 机制）。
  *
  * 规则：主体名命中图节点 title/nameIndex，且不是自己 → 连一条 `same-entity` 边。

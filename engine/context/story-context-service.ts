@@ -20,6 +20,7 @@ import type {
     StoryContextBundle,
     StoryContextGraph,
     StoryContextMode,
+    StoryContextNode,
     StoryContextTier,
 } from './story-context-types';
 
@@ -93,6 +94,12 @@ export interface BuildStoryContextOptions {
     sceneExpansionText?: string;
     emotionPlanText?: string;
     storyLinkage?: StoryLinkage | null;
+    /**
+     * 事实节点（DSH-20261114-01）：显式注入口，优先于 `context.data.fact_nodes`。
+     * 缺省时自动读 gather 预转换的事实节点（audit §四-1 断链修复）；
+     * 两处都没有 → 图里零事实节点，行为与修复前完全一致。
+     */
+    factNodes?: readonly StoryContextNode[];
 }
 
 /**
@@ -119,6 +126,10 @@ export function buildStoryContext(options: BuildStoryContextOptions): StoryConte
         emotionPlanText: options.emotionPlanText,
         storyLinkage: options.storyLinkage ?? options.context.data.story_linkage ?? null,
         precedingText: options.precedingText,
+        // 事实节点（audit §四-1 断链修复）：显式参数优先，缺省读 gather 预转换结果；
+        // 一键（template-vars-builder）与协同（co-writer-engine.refreshStoryContextPack）
+        // 都传 GatheredContext，因此两链路零改动自动带上事实。
+        factNodes: options.factNodes ?? options.context.data.fact_nodes,
     });
     const bundle = assembleStoryContextBundle(graph, {
         mode: options.mode,

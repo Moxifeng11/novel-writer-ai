@@ -17,6 +17,7 @@ import type { CharacterSoul } from '@/engine/character-soul';
 import type { MemoryShard, TriggeredMemory } from '@/engine/memory-trigger';
 import type { StoryLinkage } from '@/engine/story-linkage';
 import type { ChapterDigest } from '@/engine/memory/chapter-digest';
+import type { StoryContextNode } from '@/engine/context/story-context-types';
 import type {
     CharacterRepository,
     ChapterRepository,
@@ -157,6 +158,14 @@ export interface ContextData {
     triggered_memories_prompt?: string;
     /** Rev 186：本章关联索引（伏笔/时间线 ↔ 设定库/世界观 ↔ 全书规划） */
     story_linkage?: StoryLinkage | null;
+    /**
+     * 事实库节点（DSH-20261114-01）：拆解事实 → 图节点，与实体/伏笔/时间线同住一张图。
+     *
+     * 断链修复背景（docs/audits/ai-coverage-and-linkage-audit.md §四-1）：事实此前只被
+     * 一致性审核消费，写作 prompt 从未拿到「主体·谓词=值」硬事实。现在 gather 阶段
+     * 预转换成图节点，buildStoryContext 自动透传（一键与协同共用）。
+     */
+    fact_nodes?: StoryContextNode[];
     /** v1.6.0: 加载失败的上下文模块名（面板提示用） */
     _failedModules?: string[];
 }

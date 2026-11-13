@@ -14,6 +14,7 @@ import { getWorldviewPath, getSettingLibPath, getWritingStylePath, getLegacyWrit
     pjFanficFile, pjBodyFile, pjStepDir, pjStepFile, pjWritingRules, pjWritingRulesTemplate,
     pjChapterStateSnapshot,
     pjChapterStateSnapshotDir,
+    pjFactStoreFile,
     isInOutlineDir, matchProjectFromPath, SUBDIR_WORLD_ARCH, SUBDIR_OUTLINE_ROOT, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjBodyDir } from '@/shared/paths';
 import { CONTEXT_LOAD_TIMEOUT_MS, TIMELINE_SLICE, CONTEXT_LONG_SLICE, NOTICE_CRITICAL } from '@/shared/thresholds';
 import { CharacterSoul, buildCharacterSoulSummary, extractCharacterCoreFromContent } from './character-soul';
@@ -26,6 +27,8 @@ import { loadStoryLedger, toForeshadowData, toTimelineEvents } from './ledger/le
 import { loadRecentChapterDigests } from './memory/chapter-digest';
 import { buildLedgerIndex } from './ledger/ledger-index';
 import { buildLedgerLinks, renderLinkageIndex } from './ledger/ledger-link';
+import { loadFactStore } from './consistency/fact-store';
+import { factNodesForInjection } from './context/knowledge-fact-nodes';
 import { EntityIndex } from '@/shared/entity-index';
 import { pjStoryLedgerDir, pjStoryLedgerIndex } from '@/shared/paths';
 import { PluginCapabilities } from '@/shared/plugin-capabilities';
@@ -610,6 +613,34 @@ export class ContextManager {
     }
 
     /**
+     * gather 事实库 → 生成注入用图节点（DSH-20261114-01）。
+     *
+     * audit §四-1 断链修复：事实此前只被一致性审核消费（audit 自己 loadFactStore），
+     * 写作 prompt 从未拿到「主体·谓词=值」硬事实。现在 gather 阶段预转换成图节点，
+     * buildStoryContext 自动透传——一键与协同共用，两个调用点零改动。
+     *
+     * 三态语义与审核侧一致：missing（还没拆解过）是常态，静默返回空数组；
+     * read-failed（文件损坏）不是「没有」，按既有 partialFailures 机制上报
+     * （gatherAll 会弹「上下文加载不完整」），绝不用空数据冒充。
+     *
+     * @param project - 项目（路径或对象）
+     * @param chapterNum - 当前章号（过期事实判定基准；0 = 不判过期）
+     * @returns 含 fact_nodes 的 ContextData 分片
+     */
+    async gatherFactNodes(project: string, chapterNum: number): Promise<ContextData> {
+        if (!this.fs) return { fact_nodes: [] };
+        const loaded = await loadFactStore(this.fs, pjFactStoreFile(project));
+        if (loaded.status === 'missing') return { fact_nodes: [] };
+        if (loaded.status === 'read-failed') {
+            // 读失败不静默：与「记忆碎片损坏」「同人设定损坏」同口径进 partialFailures
+            log.warn('[ContextManager] 事实库读取失败，生成注入将缺少硬事实:', loaded.error);
+            this._partialFailures.push('事实库（文件损坏）');
+            return { fact_nodes: [] };
+        }
+        return { fact_nodes: factNodesForInjection(loaded.store.facts, chapterNum) };
+    }
+
+    /**
      * 装配项目全量上下文（可含进度回调）。
      *
      * @param project - 项目（路径或对象）
@@ -675,6 +706,9 @@ export class ContextManager {
             { name: '时间线', task: this.gatherTimeline(project, currentChapter) },
             { name: '写作规则', task: this.gatherWritingRules(project) },
             { name: '世界观', task: this.gatherWorldView(project) },
+            // DSH-20261114-01：事实库 → 生成用图节点（audit §四-1 断链修复）。
+            // 事实过期判定需要章号，这里与下方压缩段的解析口径保持一致。
+            { name: '事实库', task: this.gatherFactNodes(project, currentChapter ? (parseInt(currentChapter.match(/第(\d+)章/)?.[1] || '0') || 0) : 0) },
         ];
 
         if (currentChapter) {

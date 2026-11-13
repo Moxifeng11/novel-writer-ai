@@ -1514,6 +1514,18 @@ export function formatStoryContextPack(
         const emotionLines = bundle.byKind.emotion.map(node => `- ${node.compactText}`);
         if (emotionLines.length) parts.push('■ 情绪弧', ...emotionLines);
 
+        // 硬事实（DSH-20261114-01）：拆解事实的 character/location/item/setting 节点
+        // 不属于上面任何交叉段，不补这里就进不了 cross-link 摘要——一键 prompt 的
+        // storyContextPack 正是这个摘要，事实接线会在最后一公里再次断掉。
+        // timeline 类事实已在「时间线→实体」段（compactText 同形），此处排除防重复。
+        const factLines = bundle.items
+            .filter(node => node.id.startsWith('fact:') && node.kind !== 'timeline')
+            .map(node => {
+                const linked = titlesOf(node, ['character', 'location', 'faction', 'item', 'setting']);
+                return `- ${node.compactText}${linked.length ? ` → ${linked.join('、')}` : ''}`;
+            });
+        if (factLines.length) parts.push('■ 硬事实→关联实体', ...factLines);
+
         return parts.join('\n');
     }
 

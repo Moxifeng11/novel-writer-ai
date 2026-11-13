@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 346 | 145032 | 1936 | 1537 | 79% |
+| `engine/` | 346 | 145141 | 1937 | 1538 | 79% |
 | `services/` | 34 | 13964 | 209 | 163 | 78% |
 | `shared/` | 200 | 42294 | 1736 | 1409 | 81% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
@@ -130,19 +130,19 @@
 | `engine/consistency/risk-targeting.ts` | 222 | 9 | 6 |
 | `engine/content-safety-checker.ts` | 123 | 5 | 5 |
 | `engine/context-compressor.ts` | 342 | 2 | 2 |
-| `engine/context-manager.ts` | 2658 | 3 | 3 |
+| `engine/context-manager.ts` | 2692 | 3 | 3 |
 | `engine/context-readiness.ts` | 243 | 3 | 3 |
 | `engine/context/association-resolver.ts` | 283 | 6 | 2 |
 | `engine/context/context-diff-detector.ts` | 403 | 5 | 4 |
-| `engine/context/context-types.ts` | 284 | 16 | 15 |
+| `engine/context/context-types.ts` | 293 | 16 | 15 |
 | `engine/context/fact-view.ts` | 116 | 3 | 3 |
 | `engine/context/incremental-updater.ts` | 302 | 6 | 1 |
-| `engine/context/knowledge-fact-nodes.ts` | 250 | 10 | 8 |
+| `engine/context/knowledge-fact-nodes.ts` | 293 | 11 | 9 |
 | `engine/context/overflow-recovery.ts` | 322 | 7 | 2 |
 | `engine/context/state-advice-wiring.ts` | 125 | 3 | 1 |
 | `engine/context/state-advice.ts` | 249 | 9 | 7 |
-| `engine/context/story-context-graph.ts` | 1584 | 7 | 7 |
-| `engine/context/story-context-service.ts` | 225 | 8 | 8 |
+| `engine/context/story-context-graph.ts` | 1596 | 7 | 7 |
+| `engine/context/story-context-service.ts` | 236 | 8 | 8 |
 | `engine/context/story-context-types.ts` | 213 | 13 | 13 |
 | `engine/craft-constraints.ts` | 84 | 5 | 5 |
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
