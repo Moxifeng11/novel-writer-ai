@@ -1,8 +1,8 @@
 # 小说工坊 AI 插件架构文档
 
 > **版本**: v4.95.0
-> **最后更新**: 2026-11-02
-> **状态**: 活跃可信 · 与代码同步
+> **最后更新**: 2026-11-14
+> **状态**: 活跃可信 · 与代码同步（本轮以源码实测复核了子目录清单 / 引擎注册表 / 边界数字）
 > **唯一可执行分层口径**: `scripts/check-dependencies.mjs`（目标边界与差异见 [handbook/02-architecture.md](handbook/02-architecture.md)）
 
 本文档描述 Novel Writer AI Obsidian 插件的分层架构、依赖关系、数据流和关键设计决策，帮助开发者快速理解整体结构。
@@ -15,7 +15,8 @@
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                           UI Layer (ui/)                                    │
 │   视图、模态框、面板、用户交互                                                │
-│   - views/  components/  full-writer/  cowrite/  services/                  │
+│   - views/  full-writer/  co-writing/  agent-workbench/  settings/          │
+│   - components/  cowrite/  services/  rendering/  states/  utils/ 等        │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                           Facade Layer (ui/services/)                       │
 │   统一数据查询门面，隐藏底层实现细节                                           │
@@ -23,7 +24,8 @@
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                          Engine Layer (engine/)                             │
 │   业务逻辑、核心服务、流程生成、缓存、质量监控                                  │
-│   - co-writer/  streaming/  cache/  performance/  quality/                  │
+│   - agent/ co-writer/ context/ consistency/ settlement/ ledger/             │
+│   - rag/ style/ embedding/ deconstructors/ prompts/ quality/ streaming/     │
 │   - repository/domain/ (聚合根、值对象、序列化器)                              │
 │   - ai-engine.ts  co-writer-engine.ts  engine-registry.ts                   │
 ├─────────────────────────────────────────────────────────────────────────────┤
@@ -62,7 +64,7 @@ graph TD
 **职责**: 渲染界面、响应用户操作、调用 Facade 获取数据。
 
 - **目标边界**：不直接访问 `plugin.engine.*` 或 `app.vault`，数据查询统一走 `CoWriteFacade`
-- **现状（2026-10-31 批次 13 口径）**：**写入侧已收口**——vault 内 `.md` 一律走 `shared/file-system-port.ts#writeVaultText`（9 个 UI / 共享模块 13 处改写，模板自举 56 文件同步进入索引）；只有 `.project` 隐藏文件、`plugin-cache` JSON、agent 会话数据等**索引外路径**，与 engine 层 `写作知识库/` 批量后台写入保留 `vault.adapter`（理由见 `docs/DEVELOPMENT.md`「写 vault 内 `.md` 必须走 `writeVaultText`」）。**读取侧未收口**：`ui/` 内仍直接读 `app.vault`（`getAbstractFileByPath` / `read` / `getFiles` 等，全库 `vault.adapter.*` 实测 141 调用点 / 136 行）；引擎实例通过 `plugin.engine.` 直取 1 处。C2 只闭环了写入子集，读取侧收敛未做，不要按「已经全部走 Facade」理解代码
+- **现状（2026-11-14 实测复核）**：**写入侧已收口**——vault 内 `.md` 一律走 `shared/file-system-port.ts#writeVaultText`（34 个模块在用）；只有 `.project` 隐藏文件、`plugin-cache` JSON、agent 会话数据等**索引外路径**，与 engine 层 `写作知识库/` 批量后台写入保留 `vault.adapter`（理由见 `docs/DEVELOPMENT.md`「写 vault 内 `.md` 必须走 `writeVaultText`」）。**读取侧未收口**：`ui/` 内仍直接读 `app.vault`（`getAbstractFileByPath` / `read` / `getFiles` 等，全仓 `vault.adapter.*` 实测 113 调用点 / 31 文件）；引擎实例通过 `plugin.engine.` 直取的情况仍在。C2 只闭环了写入子集，读取侧收敛未做，不要按「已经全部走 Facade」理解代码
 - 通过 `CoWriteFacade` 获取数据
 - 包含视图（Views）、模态框（Modals）、面板（Panels）、完整写作器（Full Writer）
 
@@ -73,13 +75,20 @@ graph TD
 - `ui/views/knowledge-base-modals.ts` — 知识库 Modal（导入/编辑书籍、题材编辑、批量操作）
 - `ui/views/writing-fingerprint-view.ts` — 写作指纹库视图
 
-**`ui/settings/` 子目录** — 设置页分区（`settings-tab.ts` 只保留 tab 栏、分区调度与 DOM 缓存）：
+**`ui/settings/` 子目录** — 设置页分区（`settings-tab.ts` 只保留分组栏、tab 栏、分区调度与 DOM 缓存）：
 
+- `section-factory.ts` — **唯一装配表**：`SETTINGS_TAB_DEFINITIONS`（18 个 tab 的 id/label/primary-advanced）与 `SETTINGS_GROUPS`（6 个一级功能域：🔌 连接与模型 / ✍️ 写作与协同 / 📜 规则与一致性 / 📚 知识与拆解 / 🎨 界面与工作台 / 🗂 项目与运维）。v4.96 起 18 个平铺 tab 收敛为「一级分组 → 二级 tab」两级结构，`settings-tab.ts` 与 `mini-settings-modal.ts` 都从这里取装配
 - `section-base.ts` — `SettingsSectionHost` / `SettingsSection`，分区经它访问 `app` / `plugin` / `refresh` / `reopen`
-- `api-section.ts` / `knowledge-section.ts` / `fingerprint-section.ts` / `deconstruction-section.ts` / `foreshadow-section.ts` — 单 tab 分区
+- `api-section.ts` / `knowledge-section.ts` / `fingerprint-section.ts` / `deconstruction-section.ts` / `foreshadow-section.ts` / `mode-section.ts`（创作模式）/ `agent-section.ts`（Agent 后端）— 单 tab 分区
 - `writing-sections.ts` — 协同写作 / 写作配置 / 模板 / 外观 / 项目库 / 工作台布局 6 个分区
-- `general-sections.ts` — 性能监控 / 提示词 / 写作规则 / 关于 / 角色识别 / 建议 6 个分区
-- `provider-modals.ts` — 供应商编辑 / 管理 / 新增弹窗（当前无调用点）
+- `general-sections.ts` — 性能监控 / 写作规则 / 关于 / 角色识别 / 建议 5 个分区在装配表挂载（文件内另有 `PromptsSection`，当前无 tab 挂载，属遗留导出）
+
+供应商相关弹窗在 `ui/manage-providers-modal.ts` / `ui/model-picker-popover.ts` / `ui/model-quick-switcher.ts`（旧 `provider-modals.ts` 已删除）。
+
+**协同相关三个目录的区分**（名字相近，勿混）：
+- `ui/co-writing/`（30 文件）— `co-writing-view.ts` 的切片模块（控制面板 / 布局装配 / markdown 工具栏 / 指标面板 / KB 面板等）
+- `ui/cowrite/`（9 文件）— 协同写作的弹窗与控制器（正文保存控制器 / 历史弹窗 / 建议编辑与历史 / 实时分析控制器等）
+- `ui/co-write/`（1 文件）— `logic-check-format.ts`（人物逻辑检查的展示映射，自 `co-write-floating-panel` 抽出）
 
 **`ui/full-writer/` 子目录** — 工作台控制器集合：
 | 文件 | 功能 |
@@ -121,13 +130,17 @@ graph TD
 - `repository/domain/` — 聚合根（Character/Chapter/Project/Faction/Location/Item）、值对象、序列化器
 
 **关键文件**:
-- `engine/engine-registry.ts` — 引擎注册表（9 阶段初始化，作用域/依赖验证/dispose/元数据）
+- `engine/engine-registry.ts` — 引擎注册表（10 阶段初始化，作用域/依赖验证/dispose/元数据）
 - `engine/co-writer/session-state.ts` — 会话状态接口（5 个切片）
 - `engine/co-writer/create-session-store.ts` — Store 工厂
 - `engine/streaming/stream-parser.ts` — 流式解析器
 - `shared/multi-layer-cache.ts` — 多层缓存（批次 5 从 `engine/cache/` 下沉，engine 侧仅保留 `cache/preload-manager.ts`）
 - `engine/quality/quality-score-engine.ts` — 核心质量评分引擎
 - `engine/quality/deviation-detector.ts` — 偏离检测引擎
+
+**两个「harness」目录的区分**（命名相近，勿混）：
+- `engine/agent/harness/`（16 文件）— **Agent 会话运行时**：对话引擎、工具循环、遥测、dsh 外部后端（词汇表里的「Harness」指这里）
+- `engine/harness/`（12 文件）— **单次调用 Runner 库**：规则引擎、长篇单调用任务（`step-runner`/`step-modal-controller` 消费 `long-novel-tasks`）、创意随机与前提服务（`ui/pre-research-modal` 消费）
 
 ### 4. Repository Layer (`engine/repository/`)
 
@@ -257,13 +270,13 @@ UI Layer → Facade Layer → Engine Layer → Repository Layer → Infrastructu
 为什么放在 shared 层：`core`（命令注册）、`engine`（AIEngine / CoWriterEngine / StepRunner）、`ui`（20+ 弹窗）都要按 key 取引擎实例。若常量定义在 `engine-registry.ts`，每个消费方都会被拉出一条指向注册表的运行时依赖；而注册表本身又要 `new AIEngine / new CoWriterEngine / new CommandRegistry`，于是闭合成循环（批次 3 实测 3 条）。常量本身零 import，下沉后既消除循环，也让 `core → engine`、`ui → engine` 这类仅因常量产生的依赖消失。
 
 ```typescript
-// shared/engine-names.ts（42 个 key，完整清单以源文件为准）
+// shared/engine-names.ts（44 个 key，完整清单以源文件为准）
 import { ENGINE_NAMES } from '../shared/engine-names';  // core / ui / engine 一律从这里取
 ```
 
 ### 类型化取用（批次 6）
 
-`get` / `getOrNull` / `register` / `registerLazy` 对 `EngineServiceMap` 内登记的 35 个 token 直接推导实例类型，调用点不再手写泛型：
+`get` / `getOrNull` / `register` / `registerLazy` 对 `EngineServiceMap` 内登记的 37 个 token 直接推导实例类型，调用点不再手写泛型：
 
 ```typescript
 const aiEngine = registry.get(ENGINE_NAMES.AI_ENGINE);        // AIEngine
@@ -272,25 +285,26 @@ const cache = registry.getOrNull(ENGINE_NAMES.CACHE_MANAGER);  // PluginCacheMan
 
 未登记的 token（组合根注入的 `TEMPLATE_MANAGER`、UI 层注入的 `CO_WRITING_SESSION_STORE`）继续使用 `get<T>(name: string)` 宽泛重载，保持向后兼容。
 
-### 9 阶段初始化顺序
+### 10 阶段初始化顺序
 
-引擎按以下顺序初始化，确保依赖关系正确：
+引擎按以下顺序初始化，确保依赖关系正确（与 `engine/engine-registry.ts` 实际代码一致）：
 
 | 阶段 | 引擎 | 职责 |
 |------|------|------|
 | Phase 1 | PluginCacheManager | 缓存管理器 |
-| Phase 2 | InternalRegistry, CryptoService, ProviderManager, ThemeManager, SettingsService | Core 服务 |
+| Phase 2 | InternalRegistry, CryptoService, ProviderManager, ThemeManager, SettingsService, JobService | Core 服务 |
 | Phase 3 | ProjectRepository, ContextManager, ForeshadowManager, ReviewAgent, WorldviewCacheService, TemplateService, ChapterVersionService, TemplateManager | 基础引擎 |
 | Phase 4 | CommandRegistry | 命令注册表 |
 | Phase 5 | SettingsService.loadSettings() | 设置加载 |
 | Phase 6 | KnowledgeTagManager, KnowledgeBaseManager, KnowledgeVectorStore, VectorEnhancer, DeconstructionScheduler, HeavyTaskWorkerManager, BatchImportManager | 知识库系统 |
 | Phase 7 | WritingProfileManager, KnowledgeInjector, CharacterConsistencyChecker | 写作配置与知识注入 |
-| Phase 8 | AIEngine, CoWriterEngine, AnalysisReportEngine, SettlementEngine, CharacterGenerator | 懒加载引擎注册 |
+| Phase 8 | AIEngine, CoWriterEngine, AnalysisReportEngine, SettlementEngine, ChapterSnapshotBuilder, SceneGenerationLoop, QualityGate, GenerationCheckpointStore, PromptCache, CharacterGenerator（全部 `registerLazy`） | 懒加载引擎注册 |
 | Phase 9 | UpdateChecker | 更新检查器 |
+| Phase 10 | WritingStatsService | 写作统计台账（桌面宠物 / 状态栏 / 统计弹窗共用） |
 
 ### 懒加载引擎
 
-以下引擎采用懒加载模式，首次调用 `get()` 时才创建实例：
+Phase 8 的 10 个引擎全部采用懒加载模式（`registerLazy`），首次 `get()` 时才创建实例：
 
 | 引擎 | 创建条件 |
 |------|---------|
@@ -298,6 +312,11 @@ const cache = registry.getOrNull(ENGINE_NAMES.CACHE_MANAGER);  // PluginCacheMan
 | CoWriterEngine | 首次调用 `plugin.coWriterEngine` |
 | AnalysisReportEngine | 首次调用 `plugin.analysisReportEngine` |
 | SettlementEngine | 首次获取结算引擎 |
+| ChapterSnapshotBuilder | 首次获取章节快照构建器 |
+| SceneGenerationLoop | 首次获取场景生成循环 |
+| QualityGate | 首次获取质量闸门 |
+| GenerationCheckpointStore | 首次获取生成检查点存储 |
+| PromptCache | 首次获取 prompt 缓存 |
 | CharacterGenerator | 首次获取角色生成器 |
 
 ---
@@ -625,13 +644,15 @@ export interface FileSystemPort {
 - **性能优化**：进度 debounce、写放大优化、Map 定期清理、监听器幂等
 - **用户体验**：按钮状态反馈、统一确认弹窗、友好错误提示、搜索框焦点修复
 
-**拆解维度**（6 维度）:
+**拆解维度**（`shared/deconstruction-settings.ts` 定义 8 维，默认启用前 6 维）:
 1. 风格（style）— 文笔风格指纹
 2. 节奏（rhythm）— 叙事节奏分析
 3. 技巧（technique）— 写作技巧提取
 4. 结构（structure）— 情节结构拆解
 5. 人设（character）— 人物形象提取
 6. 伏笔（foreshadow）— 伏笔库构建
+7. 商业性（commercial）— 商业潜力评估（可选启用）
+8. 可读性（readability）— 可读性评估（可选启用）
 
 **状态机**:
 ```

@@ -1,9 +1,12 @@
 /**
- * settings-tab.ts — 设置页宿主（tab 栏 + 分区调度 + DOM 缓存）
+ * settings-tab.ts — 设置页宿主（一级分组栏 + tab 栏 + 分区调度 + DOM 缓存）
  *
  * 原文件 5,112 行、57 个方法，已按 tab 分区拆到 `ui/settings/` 下：
  *   api-section / knowledge-section / fingerprint-section / deconstruction-section /
- *   foreshadow-section / writing-sections / general-sections / provider-modals
+ *   foreshadow-section / mode-section / agent-section / writing-sections / general-sections
+ * 装配关系唯一来源是 `ui/settings/section-factory.ts`：
+ *   - SETTINGS_TAB_DEFINITIONS：18 个 tab 的 id/label/primary-advanced
+ *   - SETTINGS_GROUPS：6 个一级功能域（v4.96 起「一级分组 → 二级 tab」两级结构）
  * 各分区只通过 `SettingsSectionHost`（app / plugin / refresh / reopen）与宿主交互。
  *
  * tab 缓存策略（C3 性能）：

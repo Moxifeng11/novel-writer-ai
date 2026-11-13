@@ -45,7 +45,7 @@
 
 - [ ] 设置键名使用既有命名风格（camelCase；分组前缀如 `dsh*`、`pet*`）。
 - [ ] 涉及密钥的字段必须走加密/脱敏（`core/crypto-service.ts`、`shared/secret-display.ts`）。
-- [ ] 在设置页加入控件，并在 `ui/settings/` 对应 section 注册。
+- [ ] 在设置页加入控件：分区类放 `ui/settings/` 对应 section，并到 `ui/settings/section-factory.ts` 的 `SETTINGS_TAB_DEFINITIONS`（18 个 tab 唯一装配表）登记；一级分组归属由 `SETTINGS_GROUPS`（6 个功能域）决定，两处都要对得上。
 
 ## 4. 命令与入口
 

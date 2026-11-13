@@ -252,15 +252,21 @@ export interface PasswordPort {
 /**
  * 引擎注册表 — 集中管理所有引擎实例（单例）
  *
- * 8 阶段初始化顺序：
+ * 10 阶段初始化顺序（与 initialize() 实际代码一致，详见 docs/ARCHITECTURE.md §四）：
  * Phase 1: 缓存管理器 (PluginCacheManager)
- * Phase 2: Core 服务 (InternalRegistry, CryptoService, ProviderManager, ThemeManager, SettingsService)
- * Phase 3: 基础引擎 (ContextManager, ForeshadowManager, ReviewAgent)
+ * Phase 2: Core 服务 (InternalRegistry, CryptoService, ProviderManager, ThemeManager, SettingsService, JobService)
+ * Phase 3: 基础引擎 (ProjectRepository, ContextManager, ForeshadowManager, ReviewAgent,
+ *          WorldviewCacheService, TemplateService, ChapterVersionService, TemplateManager)
  * Phase 4: 命令注册表 (CommandRegistry)
  * Phase 5: 设置加载 (SettingsService.loadSettings)
- * Phase 6: 知识库系统 (KnowledgeTag/Base/Vector, VectorEnhancer, DeconstructionScheduler)
+ * Phase 6: 知识库系统 (KnowledgeTag/Base/Vector, VectorEnhancer, DeconstructionScheduler,
+ *          HeavyTaskWorkerManager, BatchImportManager)
  * Phase 7: 写作配置与注入 (WritingProfileManager, KnowledgeInjector, CharacterConsistencyChecker)
- * Phase 8: 懒加载引擎注册 (AIEngine, CoWriterEngine, AnalysisReportEngine)
+ * Phase 8: 懒加载引擎注册 (AIEngine, CoWriterEngine, AnalysisReportEngine, SettlementEngine,
+ *          ChapterSnapshotBuilder, SceneGenerationLoop, QualityGate, GenerationCheckpointStore,
+ *          PromptCache, CharacterGenerator — 全部 registerLazy)
+ * Phase 9: 更新检查器 (UpdateChecker)
+ * Phase 10: 写作统计台账 (WritingStatsService)
  *
  * @example
  * ```ts
