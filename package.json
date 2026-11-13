@@ -1,6 +1,6 @@
 {
   "name": "novel-writer-ai",
-  "version": "4.92.0",
+  "version": "4.93.0",
   "description": "Obsidian plugin for AI-powered novel writing",
   "main": "main.js",
   "scripts": {

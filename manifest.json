@@ -1,7 +1,7 @@
 {
     "id": "novel-writer-ai",
     "name": "Novel Writer AI",
-    "version": "4.92.0",
+    "version": "4.93.0",
     "minAppVersion": "1.4.4",
     "description": "End-to-end AI writing workspace for Chinese web novels, short stories and scripts: planning, drafting, co-writing, quality checks and knowledge-base deconstruction.",
     "author": "南柯一梦",
