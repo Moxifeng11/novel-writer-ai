@@ -66,6 +66,9 @@ export interface PairingOutput {
 
 /** 年龄断言的谓语名 */
 const AGE_PREDICATE = '年龄';
+
+/** 视为「当前年龄」的谓词前缀（顺序无关；限定词在前的不算，如「被提亲起始年龄」） */
+const AGE_PREDICATE_PREFIXES = ['年龄', '年纪', '岁数'];
 /** 化名断言的谓语名 */
 const ALIAS_PREDICATE = '又名';
 /** 章节时长断言的谓语名（每章一条，自身不参与跨章比较） */
@@ -89,10 +92,12 @@ export function pairContradictions(input: PairingInput): PairingOutput {
     };
 
     // ── R1 年龄倒退 ───────────────────────────────────────
-    // 谓词用**包含**匹配：LLM 常给出「年龄约」「年纪」等变体，
-    // 严格要求 === '年龄' 会整类漏掉（2026-11-13 长篇评测发现：四公主/柳白漏报）。
+    // 谓词匹配规则（2026-11-13 长篇评测两轮修正）：
+    //  - 用**前缀**匹配：LLM 常给出「年龄约」「年纪」等变体（严格 === 会整类漏报）；
+    //  - 但必须锚定在开头：被提亲起始年龄=八岁 这类**回溯叙述**不能被当成当前年龄，
+    //    否则会报「11 岁 → 8 岁」的假矛盾（《将夜》第6章实例，已核对原文确认是噪声）。
     const ages = assertions.filter(a => a.kind === 'quantitative'
-        && (a.predicate.includes(AGE_PREDICATE) || a.predicate.includes('年纪'))
+        && AGE_PREDICATE_PREFIXES.some(prefix => a.predicate.startsWith(prefix))
         && typeof a.numericValue === 'number'
         && a.chapterNum !== null);
     for (const pair of groupBy(ages, a => a.subject).values()) {

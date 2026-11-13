@@ -1,15 +1,13 @@
 {
   "chapters": 30,
   "realFacts": 456,
-  "baselineFalsePositives": 1,
+  "baselineFalsePositives": 0,
   "injectedContradictions": 4,
-  "detected": 4,
-  "recall": 1,
+  "detected": 2,
+  "recall": 0.5,
   "detectedSubjects": [
-    "四公主",
     "桑桑",
-    "李渔",
-    "柳白"
+    "李渔"
   ],
   "legalChanges": 10,
   "legalFalsePositives": 0,
@@ -17,17 +15,17 @@
     {
       "span": 30,
       "facts": 456,
-      "falsePositives": 1
+      "falsePositives": 0
     },
     {
       "span": 60,
       "facts": 912,
-      "falsePositives": 7
+      "falsePositives": 2
     },
     {
       "span": 100,
       "facts": 1521,
-      "falsePositives": 34
+      "falsePositives": 12
     }
   ]
 }

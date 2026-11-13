@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 345 | 144644 | 1922 | 1527 | 79% |
+| `engine/` | 345 | 144649 | 1922 | 1527 | 79% |
 | `services/` | 34 | 13952 | 210 | 162 | 77% |
 | `shared/` | 199 | 42205 | 1725 | 1406 | 82% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
@@ -125,7 +125,7 @@
 | `engine/consistency/fact-store.ts` | 212 | 9 | 7 |
 | `engine/consistency/knowledge-decompose.ts` | 246 | 9 | 5 |
 | `engine/consistency/pairing-llm.ts` | 208 | 11 | 4 |
-| `engine/consistency/pairing-rules.ts` | 380 | 7 | 3 |
+| `engine/consistency/pairing-rules.ts` | 385 | 7 | 3 |
 | `engine/consistency/risk-targeting.ts` | 222 | 9 | 6 |
 | `engine/content-safety-checker.ts` | 123 | 5 | 5 |
 | `engine/context-compressor.ts` | 342 | 2 | 2 |

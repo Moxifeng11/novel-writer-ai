@@ -263,3 +263,45 @@ describe('R1 谓词变体（2026-11-13 长篇评测修复）', () => {
         expect(result.contradictions.some(c => c.kind === 'quantitative')).toBe(false);
     });
 });
+
+describe('R1 谓词锚定（2026-11-13 数据核对后修正）', () => {
+    /** 造断言 */
+    function fact(predicate: string, chapter: number, numeric: number): FactAssertion {
+        return {
+            id: `f|${predicate}|${chapter}`,
+            kind: 'quantitative',
+            subject: '桑桑',
+            predicate,
+            value: String(numeric),
+            numericValue: numeric,
+            unit: '岁',
+            chapterKey: `第${chapter}章`,
+            chapterNum: chapter,
+            quote: `桑桑${numeric}岁`,
+            source: 'fact-store',
+            extractedAt: 0,
+        };
+    }
+
+    it('**回溯限定谓词不参与当前年龄比对**（「被提亲起始年龄=八岁」不是当前年龄）', () => {
+        const result = pairContradictions({ assertions: [fact('年龄', 5, 11), fact('被提亲起始年龄', 6, 8)] });
+        expect(result.contradictions.some(c => c.kind === 'quantitative')).toBe(false);
+    });
+
+    it('「请求远嫁时年龄」同理不参与', () => {
+        const result = pairContradictions({ assertions: [fact('年龄', 5, 16), fact('请求远嫁时年龄', 20, 13)] });
+        expect(result.contradictions.some(c => c.kind === 'quantitative')).toBe(false);
+    });
+
+    it('「入初境年龄」同理不参与', () => {
+        const result = pairContradictions({ assertions: [fact('年龄', 24, 6), fact('入初境年龄', 40, 3)] });
+        expect(result.contradictions.some(c => c.kind === 'quantitative')).toBe(false);
+    });
+
+    it('当前年龄前缀（年龄/年纪/岁数）仍正常检出倒退', () => {
+        for (const predicate of ['年龄', '年龄约', '年纪', '岁数']) {
+            const result = pairContradictions({ assertions: [fact(predicate, 5, 16), fact(predicate, 20, 13)] });
+            expect(result.contradictions.some(c => c.kind === 'quantitative'), predicate).toBe(true);
+        }
+    });
+});
