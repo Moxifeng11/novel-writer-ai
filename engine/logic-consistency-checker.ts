@@ -68,10 +68,13 @@ function pushIssue(issues: LogicConsistencyIssue[], issue: LogicConsistencyIssue
   * @returns LogicConsistencyReport 实例
  */
 /**
- * 结构化人物状态（可选）：伤情等级已知时优先读它，而不是靠词表猜。
+ * 分析正文的逻辑一致性（伤势/行动、时代错位、地点跳跃、身份矛盾）。
  *
- * @param options - 可选输入
- * @returns 报告
+ * 判定顺序：结构化字段（伤情等级）→ 词表兜底 → 不报。
+ *
+ * @param body - 正文
+ * @param options - 可选：结构化伤情等级、用户追加词表
+ * @returns 一致性报告
  */
 export function analyzeLogicConsistency(
     body: string,
