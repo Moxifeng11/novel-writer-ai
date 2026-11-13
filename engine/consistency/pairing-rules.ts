@@ -20,6 +20,7 @@
  */
 
 import { durationsAreCompatible, numbersAreCompatible } from '@/shared/narrative-number';
+import { matchesPredicate, matchesPredicateLoose } from './predicate-match';
 import { pairCausal } from './causal-rules';
 import { pairExtended } from './extended-rules';
 import {
@@ -97,7 +98,7 @@ export function pairContradictions(input: PairingInput): PairingOutput {
     //  - 但必须锚定在开头：被提亲起始年龄=八岁 这类**回溯叙述**不能被当成当前年龄，
     //    否则会报「11 岁 → 8 岁」的假矛盾（《将夜》第6章实例，已核对原文确认是噪声）。
     const ages = assertions.filter(a => a.kind === 'quantitative'
-        && AGE_PREDICATE_PREFIXES.some(prefix => a.predicate.startsWith(prefix))
+        && matchesPredicate(a.predicate, 'age')
         && typeof a.numericValue === 'number'
         && a.chapterNum !== null);
     for (const pair of groupBy(ages, a => a.subject).values()) {
@@ -151,7 +152,7 @@ export function pairContradictions(input: PairingInput): PairingOutput {
     }
 
     // ── R3 化名冲突 ──────────────────────────────────────
-    const aliases = assertions.filter(a => a.kind === 'nomenclature' && a.predicate === ALIAS_PREDICATE);
+    const aliases = assertions.filter(a => a.kind === 'nomenclature' && matchesPredicateLoose(a.predicate, 'alias'));
     for (const group of groupBy(aliases, a => a.subject).values()) {
         for (let i = 0; i < group.length - 1; i++) {
             for (let j = i + 1; j < group.length; j++) {
@@ -175,7 +176,7 @@ export function pairContradictions(input: PairingInput): PairingOutput {
 
     // ── R5 同一事件时长不相容 ─────────────────────────────
     const eventTimes = assertions.filter(a => a.kind === 'absolute-time'
-        && a.predicate === '时间'
+        && matchesPredicate(a.predicate, 'time')
         && typeof a.numericValue === 'number');
     for (const group of groupBy(eventTimes, a => a.subject).values()) {
         for (let i = 0; i < group.length - 1; i++) {
@@ -201,8 +202,9 @@ export function pairContradictions(input: PairingInput): PairingOutput {
     }
 
     // ── R7 同章内两个地点 ────────────────────────────────
-    const locations = assertions.filter(a => a.kind === 'simultaneity' && a.predicate !== '地点')
-        .concat(assertions.filter(a => a.kind === 'simultaneity' && a.predicate === '地点'));
+    const locations = assertions.filter(a => a.kind === 'simultaneity'
+        && (!matchesPredicate(a.predicate, 'location')))
+        .concat(assertions.filter(a => a.kind === 'simultaneity' && matchesPredicate(a.predicate, 'location')));
     for (const group of groupBy(locations, a => `${a.subject}|${a.chapterKey}`).values()) {
         for (let i = 0; i < group.length - 1; i++) {
             for (let j = i + 1; j < group.length; j++) {
