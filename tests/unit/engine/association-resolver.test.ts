@@ -37,6 +37,7 @@ describe('association-resolver — 关联信息补检', () => {
         const app = new App();
         seedEntity(app, '人物', '林惊鸿', {
             姓名: '林惊鸿', 身份: '主角', 当前状态: '受伤', 当前情绪: '警惕', 性格标签: '冷静、护短',
+            伤势: '左臂贯通伤', 持有物品: '断裂的玉佩', 已知信息: '知晓山门暗道',
         });
         seedEntity(app, '人物', '苏雪', { 姓名: '苏雪', 身份: '配角', 当前状态: '良好' });
 
@@ -80,6 +81,11 @@ history: |
 
         expect(bundle.skipped).toBe('');
         expect(bundle.items.some((item) => item.kind === 'character' && item.text.includes('林惊鸿'))).toBe(true);
+        // DSH-20261114-02：连续性三字段在 association 摘要可见（伤势/已知原有，持有为本次补齐）
+        const charItem = bundle.items.find((item) => item.kind === 'character')!;
+        expect(charItem.text).toContain('伤势：左臂贯通伤');
+        expect(charItem.text).toContain('持有：断裂的玉佩');
+        expect(charItem.text).toContain('已知：知晓山门暗道');
         expect(bundle.items.some((item) => item.kind === 'relationship' && item.text.includes('信任62'))).toBe(true);
         expect(bundle.items.some((item) => item.kind === 'foreshadow' && item.text.includes('断裂的玉佩'))).toBe(true);
         expect(bundle.items.some((item) => item.kind === 'timeline' && item.text.includes('山门试炼'))).toBe(true);

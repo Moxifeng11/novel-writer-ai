@@ -586,3 +586,63 @@ describe('故事上下文包 — 去重口径（G2-4）', () => {
         expect(bundle.telemetry.dedupeRate).toBe(0);
     });
 });
+
+describe('人物卡连续性三字段（DSH-20261114-02，audit §四-2）', () => {
+    function contextWithContinuity(fields: Record<string, string>): GatheredContext {
+        const ctx = makeContext();
+        ctx.data.character_state = [
+            { name: '沈砚', 角色定位: '主角', 身份: '砂民少年', 当前状态: '养伤中', ...fields },
+        ] as GatheredContext['data']['character_state'];
+        return ctx;
+    }
+
+    it('伤势/持有/已知 非空时进 allChars（用户手工更新人物卡后一键可见）', () => {
+        const graph = buildStoryContextGraph({
+            project: '九霄逆脉行',
+            chapterName: '第2章',
+            chapterNum: 2,
+            volume: '第1卷',
+            context: contextWithContinuity({ 伤势: '左肋骨裂', 持有物品: '月牙匕', 已知信息: '知晓天阙密令' }),
+        });
+        const bundle = assembleStoryContextBundle(graph, {
+            mode: 'one-click',
+            tier: 'cloud',
+            chapterNum: 2,
+            maxInputTokens: 100000,
+        });
+        const legacy = formatStoryContextLegacyVars(bundle);
+        expect(legacy.allChars).toContain('伤势：左肋骨裂');
+        expect(legacy.allChars).toContain('持有：月牙匕');
+        expect(legacy.allChars).toContain('已知：知晓天阙密令');
+    });
+
+    it('三字段缺省不出空标签；compact（local 档）伤势仍保留', () => {
+        const empty = assembleStoryContextBundle(
+            buildStoryContextGraph({
+                project: '九霄逆脉行',
+                chapterName: '第2章',
+                chapterNum: 2,
+                volume: '第1卷',
+                context: contextWithContinuity({}),
+            }),
+            { mode: 'one-click', tier: 'local', chapterNum: 2, maxInputTokens: 4000 },
+        );
+        const emptyLegacy = formatStoryContextLegacyVars(empty);
+        expect(emptyLegacy.allChars).not.toContain('伤势：');
+        expect(emptyLegacy.allChars).not.toContain('持有：');
+        expect(emptyLegacy.allChars).not.toContain('已知：');
+
+        const injured = assembleStoryContextBundle(
+            buildStoryContextGraph({
+                project: '九霄逆脉行',
+                chapterName: '第2章',
+                chapterNum: 2,
+                volume: '第1卷',
+                context: contextWithContinuity({ 伤势: '左肋骨裂' }),
+            }),
+            { mode: 'one-click', tier: 'local', chapterNum: 2, maxInputTokens: 4000 },
+        );
+        // 伤势是状态连续性核心，compact 档（主角 required）也保留
+        expect(formatStoryContextLegacyVars(injured).allChars).toContain('伤势：左肋骨裂');
+    });
+});

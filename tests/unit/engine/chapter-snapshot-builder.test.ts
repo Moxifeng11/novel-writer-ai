@@ -37,7 +37,10 @@ describe('ChapterSnapshotBuilder — 数据映射', () => {
         {
           姓名: '林惊鸿',
           当前情绪: '愤怒',
-          当前状态: '左臂受伤',
+          // DSH-20261114-02：injury 改读「伤势」字段（audit §四-2 错位修复）——
+          // 旧实现拿「当前状态」冒充伤势，knowledge-injector 以「伤势:」展示
+          伤势: '左臂贯通伤',
+          当前状态: '闭关疗伤',
           当前目标: '复仇',
           核心驱动力_软肋: '妹妹的死',
           所属势力: '天剑门',
@@ -49,10 +52,19 @@ describe('ChapterSnapshotBuilder — 数据映射', () => {
     const c = snap.characterStates[0];
     expect(c.name).toBe('林惊鸿');
     expect(c.emotion).toBe('愤怒');
-    expect(c.injury).toBe('左臂受伤');
+    expect(c.injury).toBe('左臂贯通伤');
     expect(c.goal).toBe('复仇');
     expect(c.secret).toBe('妹妹的死');
     expect(c.relationships).toBe('天剑门');
+  });
+
+  it('伤势缺省时 injury 为空串，不拿「当前状态」冒充（audit §四-2）', () => {
+    const builder = new ChapterSnapshotBuilder();
+    const ctx = emptyContext({
+      character_state: [{ 姓名: '林惊鸿', 当前状态: '闭关疗伤' } as any],
+    });
+    const snap = builder.buildFromContext(1, ctx);
+    expect(snap.characterStates[0].injury).toBe('');
   });
 
   it('姓名缺失时回退到 name 字段', () => {

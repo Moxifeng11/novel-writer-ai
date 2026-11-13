@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 346 | 145141 | 1937 | 1538 | 79% |
+| `engine/` | 346 | 145153 | 1937 | 1538 | 79% |
 | `services/` | 34 | 13964 | 209 | 163 | 78% |
 | `shared/` | 200 | 42294 | 1736 | 1409 | 81% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 271 | 105453 | 1021 | 825 | 81% |
+| `ui/` | 271 | 105461 | 1021 | 825 | 81% |
 
 ## 文件清单
 
@@ -85,7 +85,7 @@
 | `engine/canon-vector-indexer.ts` | 132 | 8 | 5 |
 | `engine/chapter-brief.ts` | 343 | 9 | 6 |
 | `engine/chapter-context-builder.ts` | 142 | 3 | 3 |
-| `engine/chapter-snapshot-builder.ts` | 142 | 2 | 1 |
+| `engine/chapter-snapshot-builder.ts` | 146 | 2 | 1 |
 | `engine/chapter-state-snapshot-service.ts` | 182 | 2 | 2 |
 | `engine/chapter-utils.ts` | 489 | 21 | 19 |
 | `engine/character-arc.ts` | 141 | 9 | 9 |
@@ -132,7 +132,7 @@
 | `engine/context-compressor.ts` | 342 | 2 | 2 |
 | `engine/context-manager.ts` | 2692 | 3 | 3 |
 | `engine/context-readiness.ts` | 243 | 3 | 3 |
-| `engine/context/association-resolver.ts` | 283 | 6 | 2 |
+| `engine/context/association-resolver.ts` | 286 | 6 | 2 |
 | `engine/context/context-diff-detector.ts` | 403 | 5 | 4 |
 | `engine/context/context-types.ts` | 293 | 16 | 15 |
 | `engine/context/fact-view.ts` | 116 | 3 | 3 |
@@ -141,7 +141,7 @@
 | `engine/context/overflow-recovery.ts` | 322 | 7 | 2 |
 | `engine/context/state-advice-wiring.ts` | 125 | 3 | 1 |
 | `engine/context/state-advice.ts` | 249 | 9 | 7 |
-| `engine/context/story-context-graph.ts` | 1596 | 7 | 7 |
+| `engine/context/story-context-graph.ts` | 1601 | 7 | 7 |
 | `engine/context/story-context-service.ts` | 236 | 8 | 8 |
 | `engine/context/story-context-types.ts` | 213 | 13 | 13 |
 | `engine/craft-constraints.ts` | 84 | 5 | 5 |
@@ -741,7 +741,7 @@
 | `ui/full-writer/step-render-controller.ts` | 683 | 2 | 2 |
 | `ui/full-writer/streamlined-nav-presenter.ts` | 272 | 12 | 12 |
 | `ui/full-writer/tab-controller.ts` | 380 | 2 | 2 |
-| `ui/full-writer/template-vars-builder.ts` | 1164 | 7 | 7 |
+| `ui/full-writer/template-vars-builder.ts` | 1172 | 7 | 7 |
 | `ui/full-writer/title-bar-controller.ts` | 192 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |

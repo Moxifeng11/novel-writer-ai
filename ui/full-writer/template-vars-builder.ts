@@ -168,6 +168,12 @@ export async function buildEntityVars(deps: TemplateVarsDeps, vars: Record<strin
       parts.push(`身份：${c.身份}`);
     if (c.当前状态)
       parts.push(`状态：${c.当前状态}`);
+    // 连续性三字段（DSH-20261114-02，audit §四-2）：此前 only 上一章快照与
+    // association 尾巴覆盖，用户手工更新人物卡对 ${allChars} 无影响。
+    if (c.伤势)
+      parts.push(`伤势：${c.伤势}`);
+    if (c["持有物品"])
+      parts.push(`持有：${c["持有物品"]}`);
     if (c.核心动机)
       parts.push(`动机：${c.核心动机}`);
     if (c["性格标签"])
@@ -192,6 +198,8 @@ export async function buildEntityVars(deps: TemplateVarsDeps, vars: Record<strin
       parts.push(`情绪：${c.当前情绪}`);
     if (c["功法/技能树"])
       parts.push(`功法：${c["功法/技能树"]}`);
+    if (c["已知信息"])
+      parts.push(`已知：${c["已知信息"]}`);
     allEntities.push({ name, fields, type: "character", formatText: `- ${name}：${parts.join("，")}` });
   }
   const factions = d.factions || [];

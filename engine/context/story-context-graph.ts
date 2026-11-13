@@ -318,6 +318,9 @@ function formatCharacter(record: Record<string, unknown>, compact: boolean): { t
     push('角色定位', record.角色定位);
     push('身份', record.身份);
     push('当前状态', record.当前状态);
+    // 连续性三字段（DSH-20261114-02，audit §四-2）：上一章重伤本章满血 = 断裂，
+    // 伤势是状态连续性核心，compact 也保留；已知信息/持有物品较长，仅完整模式。
+    push('伤势', record.伤势);
     push('核心动机', record.核心动机);
     if (!compact) {
         push('性格', record.性格标签);
@@ -331,6 +334,8 @@ function formatCharacter(record: Record<string, unknown>, compact: boolean): { t
         push('习惯', record.习惯性小动作);
         push('当前情绪', record.当前情绪);
         push('功法', record['功法/技能树']);
+        push('持有', record['持有物品']);
+        push('已知', record['已知信息']);
     } else {
         push('所属势力', record.所属势力);
         push('当前位置', record.当前位置);

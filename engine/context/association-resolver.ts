@@ -141,6 +141,9 @@ function formatCharacter(record: EntityRecord): string {
             ? `能力：${value('功法/技能树') || value('金手指/特殊能力')}`
             : '',
         value('伤势') ? `伤势：${value('伤势')}` : '',
+        // DSH-20261114-02（audit §四-2）：连续性三字段补齐持有物品——
+        // 「上一章递出的信物本章凭空消失」类断裂靠这里防
+        value('持有物品') ? `持有：${value('持有物品')}` : '',
         value('已知信息') ? `已知：${value('已知信息')}` : '',
     ].filter(Boolean);
     return fields.length > 0 ? `${record.name}（${fields.join('；')}）` : record.name;

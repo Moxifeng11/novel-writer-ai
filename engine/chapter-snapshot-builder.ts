@@ -87,7 +87,11 @@ export class ChapterSnapshotBuilder {
         return chars.map((c) => ({
             name: (c.姓名 ?? c.name ?? '').toString(),
             emotion: (c.当前情绪 ?? '').toString(),
-            injury: (c.当前状态 ?? '').toString(),
+            // DSH-20261114-02（audit §四-2）：此前错位映射为「当前状态」——
+            // knowledge-injector:1236 以「伤势:」标签展示该值，用户看到的是状态文本
+            // 而非真实伤势；gate-snapshot parseCharacterStates 也按「伤势」标签回读。
+            // 伤势为空就留空（诚实），不得拿状态文本冒充。
+            injury: (c.伤势 ?? '').toString(),
             goal: (c.当前目标 ?? '').toString(),
             secret: (c.核心驱动力_软肋 ?? '').toString(),
             relationships: (c.所属势力 ?? '').toString(),

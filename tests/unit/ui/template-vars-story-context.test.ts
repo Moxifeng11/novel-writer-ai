@@ -979,3 +979,38 @@ describe('buildEntityVars — compact 涉及实体口径', () => {
         expect(vars.allItems).toContain('描述：测脉用。');
     });
 });
+
+describe('buildEntityVars — 连续性三字段（DSH-20261114-02）', () => {
+    beforeEach(() => {
+        mockFindBodyFileV4.mockReturnValue(undefined);
+        mockGetInvolvedEntities.mockReturnValue({ chars: [], locs: [], factions: [], items: [] });
+    });
+
+    it('人物卡更新 已知信息/伤势/持有物品 后 allChars 同步可见（audit §四-2 断点④）', async () => {
+        const ctx = makeContext();
+        const lead = ctx.data.character_state![0] as Record<string, unknown>;
+        lead['伤势'] = '左肋骨裂';
+        lead['持有物品'] = '月牙匕';
+        lead['已知信息'] = '知晓天阙密令';
+        const deps = makeDeps(ctx);
+        const vars: Record<string, string> = {};
+        await buildEntityVars(deps, vars, ctx.data);
+
+        expect(vars.allChars).toContain('伤势：左肋骨裂');
+        expect(vars.allChars).toContain('持有：月牙匕');
+        expect(vars.allChars).toContain('已知：知晓天阙密令');
+    });
+
+    it('三字段缺省时不出空标签（非空才输出）', async () => {
+        const deps = makeDeps(makeContext());
+        const vars: Record<string, string> = {};
+        await buildEntityVars(deps, vars, {
+            character_state: [{ name: '沈砚', 角色定位: '主角', 当前状态: '复测前' }],
+        } as unknown as GatheredContext['data']);
+
+        expect(vars.allChars).toContain('状态：复测前');
+        expect(vars.allChars).not.toContain('伤势：');
+        expect(vars.allChars).not.toContain('持有：');
+        expect(vars.allChars).not.toContain('已知：');
+    });
+});
