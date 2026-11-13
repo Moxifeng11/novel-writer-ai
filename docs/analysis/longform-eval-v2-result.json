@@ -1,0 +1,31 @@
+{
+  "chapters": 30,
+  "realFacts": 456,
+  "baselineFalsePositives": 0,
+  "injectedContradictions": 7,
+  "detected": 2,
+  "recall": 0.2857142857142857,
+  "detectedSubjects": [
+    "桑桑",
+    "李渔"
+  ],
+  "legalChanges": 10,
+  "legalFalsePositives": 0,
+  "scale": [
+    {
+      "span": 30,
+      "facts": 456,
+      "falsePositives": 0
+    },
+    {
+      "span": 60,
+      "facts": 912,
+      "falsePositives": 2
+    },
+    {
+      "span": 100,
+      "facts": 1521,
+      "falsePositives": 12
+    }
+  ]
+}
