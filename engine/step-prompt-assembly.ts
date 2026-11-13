@@ -63,6 +63,17 @@ export interface StepPromptAssemblyHost {
      * @returns 关联文本与成本
      */
     loadAssociationContext?(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; tokens: number; skipped?: string }>;
+    /**
+     * 本章关联索引尾部（DSH-20261114-06，audit §四-4）：story_linkage.promptText
+     * （≤1800 字，formatStoryLinkageForPrompt 既有截断）。旧单章弹窗一直注入，
+     * 一键链路此前只拿 linkage 定伏笔到期——文本本体从不进 prompt。
+     * 返回空文本表示缺失/失败（宿主决定是否上报），装配层静默跳过不阻断。
+     *
+     * @param ctx - 上下文
+     * @param stepKey - 当前步骤
+     * @returns 尾部文本与缺失标记
+     */
+    loadStoryLinkageTail?(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; missing?: boolean }>;
     /** 上下文压缩模式（默认 extractive） */
     compressionMode?: ContextCompressionMode;
     /** 溢出时的定向补检（只补缺口；返回空串表示无补充） */
@@ -118,6 +129,10 @@ export interface StepPromptAssemblyResult {
     associationText?: string;
     associationTokens?: number;
     associationSkipped?: string;
+    /** 本章关联索引尾部（DSH-20261114-06；写入注入账本；空串表示未注入） */
+    storyLinkageText?: string;
+    /** 关联索引缺失/为空（账本可区分「没注入」的原因） */
+    storyLinkageMissing?: boolean;
     /** 预算恢复报告（压缩/补检/token），用于注入账本与面板 */
     contextBudgetReport?: string;
 }
@@ -151,6 +166,8 @@ export async function assembleStepPrompt(
         let associationText = '';
         let associationTokens = 0;
         let associationSkipped: string | undefined;
+        let linkageText = '';
+        let linkageMissing: boolean | undefined;
         if (stepKey === 'outline') {
             extraTail = await host.loadOutlineKnowledge(ctx);
         } else if (stepKey === 'bodyGeneration') {
@@ -169,6 +186,17 @@ export async function assembleStepPrompt(
             associationSkipped = association.skipped;
             if (associationText) {
                 extraTail = [extraTail, associationText].filter(Boolean).join('\n\n');
+            }
+        }
+        // 本章关联索引尾部（DSH-20261114-06）：与关联查询同三步、同「可丢弃增强尾部」
+        // 预算语义——缺了不阻断，有则提升伏笔到期/时间线/设定命中的可见性
+        //（audit §四-4：旧单章弹窗一直注入，一键链路此前从不注入）。
+        if (host.loadStoryLinkageTail && ['bodyGeneration', 'qualityControl', 'analysisReport'].includes(stepKey)) {
+            const linkage = await host.loadStoryLinkageTail(ctx, stepKey);
+            linkageText = linkage.text;
+            linkageMissing = linkage.missing;
+            if (linkageText) {
+                extraTail = [extraTail, linkageText].filter(Boolean).join('\n\n');
             }
         }
         const effectiveSystemPrompt = systemTail
@@ -253,6 +281,8 @@ export async function assembleStepPrompt(
             associationText,
             associationTokens,
             associationSkipped,
+            storyLinkageText: linkageText,
+            storyLinkageMissing: linkageMissing,
             contextBudgetReport,
         };
     });

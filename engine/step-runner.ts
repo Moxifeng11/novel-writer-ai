@@ -6,6 +6,8 @@ import { findChapterFile, findBodyFileByChapterNum, getChapterFileName, CHAPTER_
 import { mkdirp, stripFrontmatter } from '@/utils/helpers';
 import { SettlementEngine } from './settlement-engine';
 import { ENGINE_NAMES } from '@/shared/engine-names';
+import { getDegradationNotifier } from '@/shared/degradation-notifier';
+import { LINKAGE_PROMPT_LIMIT } from './story-linkage';
 import { NOTICE_WARNING, NOTICE_CRITICAL, getBusinessThreshold } from '@/shared/thresholds';
 import { fitPromptToContext } from '@/shared/prompt-budget';
 import { resolveTaskForStep, resolveTaskModelConfig, type ThinkingMode } from '@/shared/task-model';
@@ -234,6 +236,7 @@ export class StepRunner {
             loadBodyKnowledge: (ctx: StepRunCtx) => this.loadBodyKnowledge(ctx),
             loadBodyKnowledgeParts: (ctx: StepRunCtx) => this.loadBodyKnowledgeParts(ctx),
             loadAssociationContext: (ctx: StepRunCtx, stepKey: string) => this.loadAssociationContext(ctx, stepKey),
+            loadStoryLinkageTail: (ctx: StepRunCtx, stepKey: string) => this.loadStoryLinkageTail(ctx, stepKey),
             compressionMode: this.plugin.settings.contextCompressionMode ?? 'extractive',
             retrieveOverflowContext: (ctx: StepRunCtx, deficit: number, focusTerms: string[]) =>
                 this.retrieveOverflowContext(ctx, deficit, focusTerms),
@@ -280,6 +283,54 @@ export class StepRunner {
      * @param stepKey - 当前步骤
      * @returns 注入文本与成本
      */
+    /** 本章关联索引 memo（项目+章内一次构建；DSH-20261114-06） */
+    private linkageMemo: { project: string; chapter: string; text: string } | null = null;
+    /** 关联索引缺失已上报的项目（accept ③：每项目一次 info，不刷屏） */
+    private linkageMissingNotified = new Set<string>();
+
+    /**
+     * 本章关联索引尾部（DSH-20261114-06，audit §四-4）。
+     *
+     * 旧单章弹窗一直把 linkage.promptText 注入正文 prompt，一键链路此前只拿
+     * linkage 定伏笔到期——文本本体从不进 prompt。本项目/章内 memo 一次构建
+     *（buildStoryLinkage 自带 ≤1800 截断，这里 slice 双保险）；缺失每项目只报
+     * 一次 info（不弹 Notice，仅进降级事件池）——新项目没有关联索引是常态。
+     *
+     * @param ctx - 上下文
+     * @param stepKey - 当前步骤
+     * @returns 尾部文本与缺失标记
+     */
+    private async loadStoryLinkageTail(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; missing?: boolean }> {
+        void stepKey;
+        try {
+            if (this.linkageMemo && this.linkageMemo.project === ctx.project && this.linkageMemo.chapter === ctx.chapterName) {
+                return { text: this.linkageMemo.text, missing: !this.linkageMemo.text };
+            }
+            const contextManager = this.plugin.engineRegistry.get(ENGINE_NAMES.CONTEXT_MANAGER);
+            const linkage = await contextManager?.buildStoryLinkage(ctx.project, ctx.chapterName);
+            // buildStoryLinkage 自带 LINKAGE_PROMPT_LIMIT（≤1800）截断；slice 双保险，
+            // 防 linkage 来源改成旧版对象时超限
+            const text = String(linkage?.promptText || '').slice(0, LINKAGE_PROMPT_LIMIT);
+            this.linkageMemo = { project: ctx.project, chapter: ctx.chapterName, text };
+            if (!text && !this.linkageMissingNotified.has(ctx.project)) {
+                this.linkageMissingNotified.add(ctx.project);
+                getDegradationNotifier().notify({
+                    source: 'injection',
+                    dimension: 'story-linkage',
+                    from: 'story_linkage',
+                    to: 'not_injected',
+                    reason: '一键链路未注入本章关联索引（缺失或为空；新项目属常态）',
+                    severity: 'info',
+                    recoverable: true,
+                });
+            }
+            return { text, missing: !text };
+        } catch (e) {
+            log.warn('[StepRunner] 关联索引构建失败，已跳过:', e);
+            return { text: '', missing: true };
+        }
+    }
+
     private async loadAssociationContext(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; tokens: number; skipped?: string }> {
         try {
             const task = stepKey === 'analysisReport' ? 'analysis' : stepKey === 'qualityControl' ? 'quality' : 'body';
@@ -1180,6 +1231,16 @@ ${userPrompt}`),
                         influence: '事实记忆', source: 'StoryLedger + EntityIndex',
                         chars: promptAssembly.associationText.length,
                         estTokens: promptAssembly.associationTokens ?? Math.ceil(promptAssembly.associationText.length / 1.5),
+                        truncated: false,
+                        placement: 'user',
+                    });
+                }
+                if (promptAssembly.storyLinkageText) {
+                    extras.push({
+                        key: 'storyLinkage', label: '本章关联索引（伏笔到期/时间线/设定命中）', category: '流程',
+                        influence: '事实记忆', source: 'story-linkage',
+                        chars: promptAssembly.storyLinkageText.length,
+                        estTokens: Math.ceil(promptAssembly.storyLinkageText.length / 1.5),
                         truncated: false,
                         placement: 'user',
                     });

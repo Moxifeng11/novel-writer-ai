@@ -146,3 +146,36 @@ describe('assembleStepPrompt', () => {
         expect(logs.some((line) => line.includes('中间资料截断'))).toBe(true);
     });
 });
+
+describe('assembleStepPrompt — 本章关联索引尾部（DSH-20261114-06）', () => {
+    const LINKAGE = '【本章关联索引】\n- 伏笔「令牌的来历」（高；计划 第3章） → 第1章 · 外门考核';
+
+    it('body/quality/analysis 三步注入 linkage 尾部并写入结果（audit §四-4）', async () => {
+        for (const stepKey of ['bodyGeneration', 'qualityControl', 'analysisReport'] as const) {
+            const tail = vi.fn(async () => ({ text: LINKAGE, missing: false }));
+            const host = makeHost({ loadStoryLinkageTail: tail });
+            const result = await assembleStepPrompt(host, makeCtx(), stepKey, '系统', '用户任务', 'flash-model');
+            expect(tail).toHaveBeenCalledWith(expect.anything(), stepKey);
+            expect(result.effectiveUserPrompt).toContain('本章关联索引');
+            expect(result.effectiveUserPrompt).toContain('外门考核');
+            expect(result.storyLinkageText).toBe(LINKAGE);
+            expect(result.storyLinkageMissing).toBe(false);
+        }
+    });
+
+    it('其他步骤不调用 linkage 钩子', async () => {
+        const tail = vi.fn(async () => ({ text: LINKAGE, missing: false }));
+        const host = makeHost({ loadStoryLinkageTail: tail });
+        await assembleStepPrompt(host, makeCtx(), 'infoPlan', '系统', '用户任务', 'flash-model');
+        expect(tail).not.toHaveBeenCalled();
+    });
+
+    it('缺失（missing）时静默跳过不阻断，结果如实标记', async () => {
+        const tail = vi.fn(async () => ({ text: '', missing: true }));
+        const host = makeHost({ loadStoryLinkageTail: tail });
+        const result = await assembleStepPrompt(host, makeCtx(), 'bodyGeneration', '系统', '用户任务', 'flash-model');
+        expect(result.effectiveUserPrompt).toBe('用户任务');
+        expect(result.storyLinkageText).toBe('');
+        expect(result.storyLinkageMissing).toBe(true);
+    });
+});

@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 346 | 145363 | 1937 | 1538 | 79% |
+| `engine/` | 346 | 145454 | 1937 | 1538 | 79% |
 | `services/` | 34 | 13964 | 209 | 163 | 78% |
 | `shared/` | 200 | 42298 | 1736 | 1409 | 81% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
@@ -338,11 +338,11 @@
 | `engine/settlement/settlement-types.ts` | 46 | 2 | 1 |
 | `engine/step-definitions.ts` | 266 | 13 | 11 |
 | `engine/step-modal-controller.ts` | 648 | 2 | 2 |
-| `engine/step-prompt-assembly.ts` | 260 | 5 | 4 |
+| `engine/step-prompt-assembly.ts` | 290 | 5 | 4 |
 | `engine/step-result-saver.ts` | 573 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 223 | 6 | 5 |
-| `engine/step-runner.ts` | 2197 | 2 | 1 |
+| `engine/step-runner.ts` | 2258 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 218 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |

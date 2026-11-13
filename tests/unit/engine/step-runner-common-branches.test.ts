@@ -222,3 +222,46 @@ describe('executeCurrentStep — 截断提示', () => {
         expect(ctx.stepCompleted.has('outline')).toBe(false);
     });
 });
+
+describe('loadStoryLinkageTail — memo/截断/缺失上报（DSH-20261114-06）', () => {
+    it('promptText 截到 LINKAGE_PROMPT_LIMIT；同项目+章 memo 一次构建', async () => {
+        const { runner } = makeRunner();
+        const buildStoryLinkage = vi.fn(async () => ({
+            promptText: '关'.repeat(2500),
+        }));
+        (runner as unknown as { plugin: { engineRegistry: { get: (n: string) => unknown } } }).plugin.engineRegistry.get = (name: string) => {
+            if (name === ENGINE_NAMES.CONTEXT_MANAGER) return { buildStoryLinkage };
+            return undefined;
+        };
+        const ctx = { project: '长篇小说/书A', chapterName: '第3章', chapterNum: 3 } as never;
+
+        const first = await (runner as unknown as { loadStoryLinkageTail: (c: never, s: string) => Promise<{ text: string; missing?: boolean }> })
+            .loadStoryLinkageTail(ctx, 'bodyGeneration');
+        expect(first.text).toHaveLength(1800); // buildStoryLinkage 自带截断，此处 slice 双保险
+        expect(first.missing).toBe(false);
+
+        await (runner as unknown as { loadStoryLinkageTail: (c: never, s: string) => Promise<{ text: string; missing?: boolean }> })
+            .loadStoryLinkageTail(ctx, 'qualityControl');
+        expect(buildStoryLinkage).toHaveBeenCalledTimes(1); // memo
+    });
+
+    it('缺失每项目只报一次 info（accept ③），不阻断', async () => {
+        const { getDegradationNotifier } = await import('../../../shared/degradation-notifier');
+        getDegradationNotifier().clear();
+        const { runner } = makeRunner();
+        (runner as unknown as { plugin: { engineRegistry: { get: (n: string) => unknown } } }).plugin.engineRegistry.get = (name: string) => {
+            if (name === ENGINE_NAMES.CONTEXT_MANAGER) return { buildStoryLinkage: vi.fn(async () => null) };
+            return undefined;
+        };
+        const tail = (runner as unknown as { loadStoryLinkageTail: (c: never, s: string) => Promise<{ text: string; missing?: boolean }> });
+        const ctx = { project: '长篇小说/书B', chapterName: '第1章', chapterNum: 1 } as never;
+
+        const first = await tail.loadStoryLinkageTail(ctx, 'bodyGeneration');
+        const second = await tail.loadStoryLinkageTail(ctx, 'bodyGeneration');
+        expect(first.missing).toBe(true);
+        expect(second.missing).toBe(true);
+        const linkageEvents = getDegradationNotifier().getEvents().filter(e => e.dimension === 'story-linkage');
+        expect(linkageEvents).toHaveLength(1); // 一次 per 项目
+        expect(linkageEvents[0].severity).toBe('info'); // info 不弹 Notice
+    });
+});
