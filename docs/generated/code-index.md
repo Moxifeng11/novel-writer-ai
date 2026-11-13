@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 337 | 142646 | 1861 | 1485 | 80% |
+| `engine/` | 337 | 142709 | 1861 | 1485 | 80% |
 | `services/` | 33 | 13896 | 206 | 162 | 79% |
 | `shared/` | 198 | 42149 | 1723 | 1405 | 82% |
 | `core/` | 7 | 2917 | 32 | 17 | 53% |
@@ -110,18 +110,18 @@
 | `engine/co-writer/snapshot-builder.ts` | 133 | 1 | 1 |
 | `engine/coherence-checker.ts` | 108 | 3 | 3 |
 | `engine/conflict-detector.ts` | 247 | 4 | 1 |
-| `engine/consistency/assertion-extract.ts` | 307 | 3 | 2 |
+| `engine/consistency/assertion-extract.ts` | 309 | 3 | 2 |
 | `engine/consistency/assertion-model.ts` | 290 | 13 | 8 |
 | `engine/consistency/assertion-store.ts` | 196 | 9 | 5 |
-| `engine/consistency/audit-pipeline.ts` | 226 | 11 | 6 |
+| `engine/consistency/audit-pipeline.ts` | 229 | 11 | 6 |
 | `engine/consistency/causal-rules.ts` | 164 | 3 | 2 |
 | `engine/consistency/consistency-audit-wiring.ts` | 302 | 3 | 2 |
 | `engine/consistency/consistency-metrics.ts` | 108 | 6 | 4 |
-| `engine/consistency/consistency-service.ts` | 215 | 8 | 2 |
+| `engine/consistency/consistency-service.ts` | 224 | 8 | 2 |
 | `engine/consistency/evidence-locate.ts` | 109 | 3 | 2 |
-| `engine/consistency/extended-rules.ts` | 270 | 5 | 3 |
+| `engine/consistency/extended-rules.ts` | 317 | 5 | 3 |
 | `engine/consistency/pairing-llm.ts` | 208 | 11 | 4 |
-| `engine/consistency/pairing-rules.ts` | 376 | 7 | 3 |
+| `engine/consistency/pairing-rules.ts` | 378 | 7 | 3 |
 | `engine/consistency/risk-targeting.ts` | 222 | 9 | 6 |
 | `engine/content-safety-checker.ts` | 123 | 5 | 5 |
 | `engine/context-compressor.ts` | 342 | 2 | 2 |

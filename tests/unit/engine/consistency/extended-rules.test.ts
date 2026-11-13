@@ -142,3 +142,43 @@ describe('commonValue', () => {
         expect(commonValue('甲', '甲')).toBe('');
     });
 });
+
+describe('生产验证漏报修复（2026-11-13）', () => {
+    it('化名无系词也能抽（「林轩化名林三」——旧正则要求是/叫/为导致 100% 漏报）', () => {
+        const out = extractExtendedAssertions(['林轩化名林三'], '第12章', 12);
+        // 化名走 assertion-extract 的 ALIAS 规则，这里验证 extended 不误抽
+        expect(out).toHaveLength(0);
+    });
+
+    it('facts 中的「事件 + 持续时长」抽成 absolute-time 断言（旧实现埋没在自由文本）', () => {
+        const out = extractExtendedAssertions(['青云试炼持续三日'], '第12章', 12);
+        const dur = out.find(a => a.kind === 'absolute-time');
+        expect(dur).toBeDefined();
+        expect(dur!.subject).toBe('青云试炼');
+        expect(dur!.numericValue).toBe(3 * 24 * 60);
+    });
+
+    it('核心规则违规：违规句**没有成为断言**也能抓到（扫原始 facts）', () => {
+        const rule = extractExtendedAssertions(['修炼者不能御空飞行'], '第1章', 1);
+        const out = pairExtended([...rule], [], [
+            { chapterKey: '第8章', chapterNum: 8, text: '林轩御空飞行，掠过山巅', quote: '林轩御空飞行，掠过山巅' },
+        ]);
+        expect(out.contradictions.some(c => c.kind === 'core-rule')).toBe(true);
+    });
+
+    it('核心规则：违规事实带否定前缀时不误报', () => {
+        const rule = extractExtendedAssertions(['修炼者不能御空飞行'], '第1章', 1);
+        const out = pairExtended([...rule], [], [
+            { chapterKey: '第8章', chapterNum: 8, text: '他依然不能御空飞行', quote: '他依然不能御空飞行' },
+        ]);
+        expect(out.contradictions.some(c => c.kind === 'core-rule')).toBe(false);
+    });
+
+    it('核心规则：违规出现在规则之前时不误报（顺序敏感）', () => {
+        const rule = extractExtendedAssertions(['修炼者不能御空飞行'], '第20章', 20);
+        const out = pairExtended([...rule], [], [
+            { chapterKey: '第2章', chapterNum: 2, text: '林轩御空飞行', quote: '林轩御空飞行' },
+        ]);
+        expect(out.contradictions.some(c => c.kind === 'core-rule')).toBe(false);
+    });
+});

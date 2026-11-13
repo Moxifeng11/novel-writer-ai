@@ -13,6 +13,7 @@
  *    **绝不**用「值不等即矛盾」这种粗暴规则（那会把合法成长全判成 bug）。
  */
 
+import { parseDuration } from '@/shared/narrative-number';
 import {
     ASSERTION_KIND_META,
     makeContradictionId,
@@ -41,6 +42,13 @@ const MEMORY_REMEMBER = /([\u4e00-\u9fa5]{1,6})(?:记得|想起|忆起)([\u4e00-
 const MEMORY_FORGET = /([\u4e00-\u9fa5]{1,6})(?:忘了|不记得|已忘却|记不得)([\u4e00-\u9fa5]{1,16})/;
 /** 核心规则：设定中的否定式禁则 */
 const RULE_FORBID = /(?:不能|无法|不可|禁止|绝不能)([\u4e00-\u9fa5]{2,12})/;
+/**
+ * 事实里的「事件 + 时长」：「青云试炼持续三日」「试炼历时两个月」。
+ *
+ * 生产验证发现：这类信息埋在 facts 自由文本里，既不在 timeSpan 也不在台账事件中，
+ * 导致时长矛盾 100% 漏报。这里补抽取，产出 absolute-time 断言供 R5 规则使用。
+ */
+const FACT_DURATION = /([\u4e00-\u9fa5]{2,10}?)(?:持续|历时|耗时|为期)([\u4e00-\u9fa5\d两三四五六七八九十百千万]{1,6})/;
 /** 视角标记 */
 const FIRST_PERSON = /(?:^|[。！？\n])\s*我[\u4e00-\u9fa5]/g;
 const THIRD_PERSON = /(?:^|[。！？\n])\s*(?:他|她)[\u4e00-\u9fa5]/g;
@@ -76,6 +84,17 @@ export function extractExtendedAssertions(
         const forbid = text.match(RULE_FORBID);
         if (forbid) {
             out.push(make('core-rule', '世界规则', '禁止', forbid[1], text, chapterKey, chapterNum, now));
+        }
+        // 事件时长：产出 absolute-time 断言，交给 R5「时长不相容」规则配对
+        const dur = text.match(FACT_DURATION);
+        if (dur) {
+            const parsed = parseDuration(dur[2]);
+            const assertion = make('absolute-time', dur[1], '时间', dur[2], text, chapterKey, chapterNum, now);
+            if (parsed) {
+                assertion.numericValue = parsed.minutes;
+                assertion.unit = '分钟';
+            }
+            out.push(assertion);
         }
     }
     return out;
@@ -128,12 +147,15 @@ function make(
  * 其余一律进 suspected。
  *
  * @param assertions - 全部断言
+ * @param assertions - 全部断言
  * @param bodies - 章节正文（用于视角检测）
+ * @param factTexts - 原始事实文本（用于「违规句未成断言」的场景）
  * @returns 扩展结果
  */
 export function pairExtended(
     assertions: readonly FactAssertion[],
     bodies: ReadonlyArray<{ chapterKey: string; body: string }> = [],
+    factTexts: ReadonlyArray<{ chapterKey: string; chapterNum: number | null; text: string; quote: string }> = [],
 ): ExtendedResult {
     const contradictions: ConsistencyContradiction[] = [];
     const suspected: ExtendedSuspected[] = [];
@@ -160,6 +182,31 @@ export function pairExtended(
     // ── core-rule：禁止 X，但 X 被做了 ───────────────────────
     const rules = assertions.filter(a => a.kind === 'core-rule' && a.predicate === '禁止');
     for (const rule of rules) {
+        // 先扫原始 facts 文本（生产验证发现：违规句往往不构成断言，只看断言会漏报）
+        const factHit = factTexts.find(fact => fact.chapterKey !== rule.chapterKey
+            && fact.chapterNum !== null && rule.chapterNum !== null
+            && (fact.chapterNum as number) > (rule.chapterNum as number)
+            && fact.text.includes(rule.value)
+            && !fact.text.includes(`不能${rule.value}`)
+            && !fact.text.includes(`无法${rule.value}`));
+        if (factHit) {
+            const factAssertion: FactAssertion = {
+                id: `core-rule|fact|${factHit.chapterKey}`,
+                kind: 'core-rule',
+                subject: '世界规则',
+                predicate: '违反',
+                value: rule.value,
+                chapterKey: factHit.chapterKey,
+                chapterNum: factHit.chapterNum,
+                quote: factHit.quote,
+                source: 'digest-fact',
+                extractedAt: 0,
+            };
+            emit(build('core-rule', '世界规则', `设定禁止「${rule.value}」`,
+                `第 ${rule.chapterNum} 章确立「不能${rule.value}」，第 ${factHit.chapterNum} 章却出现了该行为。`,
+                rule, factAssertion, 0.78));
+            continue;
+        }
         const violated = assertions.find(other => other.chapterKey !== rule.chapterKey
             && other.chapterNum !== null && rule.chapterNum !== null
             && (other.chapterNum as number) > (rule.chapterNum as number)

@@ -28,6 +28,8 @@ export interface ChapterBody {
 export interface AuditInput {
     /** 跨章累积的断言 */
     assertions: readonly FactAssertion[];
+    /** 原始事实文本（扩展规则用：违规句可能不成断言） */
+    factTexts?: ReadonlyArray<{ chapterKey: string; chapterNum: number | null; text: string; quote: string }>;
     /** 章节正文（可缺；缺了只是没有 offset，不影响产出） */
     chapters?: readonly ChapterBody[];
     /** 已废弃伏笔 */
@@ -82,6 +84,7 @@ export async function runAudit(
         assertions: input.assertions,
         abandonedPlots: input.abandonedPlots,
         chapters: input.chapters,
+        factTexts: input.factTexts,
     });
 
     let llmContradictions: ConsistencyContradiction[] = [];

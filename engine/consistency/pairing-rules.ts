@@ -37,6 +37,8 @@ export interface PairingInput {
     assertions: readonly FactAssertion[];
     /** 章节正文（扩展规则用于视角检测等） */
     chapters?: ReadonlyArray<{ chapterKey: string; body: string }>;
+    /** 原始事实文本（扩展规则用于「违规句未成断言」的场景） */
+    factTexts?: ReadonlyArray<{ chapterKey: string; chapterNum: number | null; text: string; quote: string }>;
     /** 已标记废弃的伏笔（来自台账 ForeshadowRecord） */
     abandonedPlots?: ReadonlyArray<{
         name: string;
@@ -259,7 +261,7 @@ export function pairContradictions(input: PairingInput): PairingOutput {
     }
 
     // ── 扩展 10 子类（记忆/知识/能力/世界观/叙事）──
-    const extended = pairExtended(assertions, input.chapters ?? []);
+    const extended = pairExtended(assertions, input.chapters ?? [], input.factTexts ?? []);
     for (const c of extended.contradictions) {
         if (hasCompleteEvidence(c)) emit(c);
     }

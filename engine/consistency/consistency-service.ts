@@ -159,9 +159,18 @@ export async function runProjectConsistencyAudit(
     }
 
     // 5) 跑审核
+    // 原始事实文本：供扩展规则扫「违规句/化名等未成断言」的场景
+    const factTexts = digests.flatMap(d => (d.facts ?? []).map(fact => ({
+        chapterKey: d.chapterKey,
+        chapterNum: d.chapterNum,
+        text: fact,
+        quote: fact,
+    })));
+
     const report = await runAudit({
         assertions: allAssertions,
         chapters: bodies,
+        factTexts,
         abandonedPlots: options.abandonedPlots,
         llm: options.useLlm && deps.callLLM
             ? {
