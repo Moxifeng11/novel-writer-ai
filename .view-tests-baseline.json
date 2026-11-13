@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-12T21:16:38.034Z",
+  "updatedAt": "2026-11-13T16:44:26.259Z",
   "threshold": 200,
-  "note": "DSH-20261113-27 补 project-create-service 回归锁测试后收紧",
+  "note": "settings-tab-regroup-fix：settings-tab 外壳补假 DOM 回归（7 例）+ E2E 一例，未覆盖数 88→87",
   "files": [
     "ui/add-fanfic-setting-modal.ts",
     "ui/agent-workbench-view.ts",
@@ -72,7 +72,6 @@
     "ui/scene-confirm-modal.ts",
     "ui/services/agent-session-store.ts",
     "ui/services/co-write-facade.ts",
-    "ui/settings-tab.ts",
     "ui/settings/deconstruction-section.ts",
     "ui/settings/fingerprint-section.ts",
     "ui/settings/foreshadow-section.ts",
@@ -162,7 +161,6 @@
     "ui/scene-confirm-modal.ts": 467,
     "ui/services/agent-session-store.ts": 211,
     "ui/services/co-write-facade.ts": 907,
-    "ui/settings-tab.ts": 260,
     "ui/settings/deconstruction-section.ts": 332,
     "ui/settings/fingerprint-section.ts": 391,
     "ui/settings/foreshadow-section.ts": 289,

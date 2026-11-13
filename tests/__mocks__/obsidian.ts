@@ -423,6 +423,23 @@ export class Modal {
     onClose(): void {}
 }
 
+/**
+ * PluginSettingTab 测试替身：复现真实 Obsidian 语义——containerEl 在构造时创建，
+ * display() 由宿主（设置页外壳）在打开时调用。
+ */
+export class PluginSettingTab extends Component {
+    app: App;
+    containerEl: HTMLElement;
+    constructor(app: App, plugin: unknown) {
+        super();
+        this.app = app;
+        this.containerEl = document.createElement('div') as HTMLElement;
+        void plugin;
+    }
+    display(): void {}
+    hide(): void {}
+}
+
 export class WorkspaceLeaf {
     view: ItemView = new ItemView();
     getRoot(): unknown { return null; }

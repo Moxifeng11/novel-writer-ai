@@ -238,7 +238,9 @@ export class NovelWriterSettingTab extends PluginSettingTab {
 
         this.groupBar = containerEl.createDiv({ cls: 'nw-settings-groupbar' });
         this.tabBar = containerEl.createDiv({ cls: 'nw-settings-tabbar' });
-
+        // settings-tab-regroup-fix 修复：renderBars 此前只在分组/tab 的 click 回调里调用，
+        // 初次 display() 时 groupBar/tabBar 是空 div——6 个一级分组 pill 与二级 tab
+        // 在 Obsidian 里全部不显示。必须在首屏主动渲染一次。
         const renderBars = (): void => {
             if (!this.groupBar || !this.tabBar) return;
             this.groupBar.empty();
@@ -289,6 +291,8 @@ export class NovelWriterSettingTab extends PluginSettingTab {
 
         this.tabContent = containerEl.createDiv({ cls: 'nw-settings-tab-content' });
         this.panelCache.clear();
+        // 首屏渲染一级分组栏与二级 tab 栏（修复：此前只有点击后才渲染，初屏为空）
+        renderBars();
         this.renderActiveTab(true);
 
         const reloadBtn = containerEl.createEl('button', {

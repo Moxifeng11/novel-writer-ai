@@ -87,6 +87,12 @@ export default defineConfig({
       timeout: 180_000,
     },
 
+    {
+      name: 'settings-regroup',
+      testMatch: /settings-regroup\.spec\.ts/,
+      timeout: 180_000,
+    },
+
     /* 真实 AI 链路：打开真实 vault、消耗 API 额度，默认跳过（需 E2E_REAL_AI=1） */
     {
       name: 'real-ai',
