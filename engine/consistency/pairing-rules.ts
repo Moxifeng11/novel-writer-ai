@@ -66,6 +66,9 @@ export interface PairingOutput {
 }
 
 /** 年龄断言的谓语名 */
+/** 时长单位白名单（只有这些单位才参与「时长不相容」比较） */
+const DURATION_UNITS = new Set(['分钟', '小时', '日', '天', '月', '年', '刻']);
+
 const AGE_PREDICATE = '年龄';
 
 /** 视为「当前年龄」的谓词前缀（顺序无关；限定词在前的不算，如「被提亲起始年龄」） */
@@ -180,9 +183,16 @@ export function pairContradictions(input: PairingInput): PairingOutput {
     }
 
     // ── R5 同一事件时长不相容 ─────────────────────────────
+    // 时长类断言必须有**正的数值 + 明确的时长单位**：
+    // 拆解侧对「时间点」类事实常给 numeric=0、unit 为空（如「今天清晨冒雨冲入渭城」），
+    // 若只判 typeof === 'number'，会把无关时间点两两比较，产生大量假矛盾
+    // （2026-11-13 新 prompt 对照评测：427 条误报全部来自此处）。
     const eventTimes = assertions.filter(a => a.kind === 'absolute-time'
         && matchesPredicate(a.predicate, 'time')
-        && typeof a.numericValue === 'number');
+        && typeof a.numericValue === 'number'
+        && a.numericValue > 0
+        // 有单位时必须是时长单位；无单位时接受（旧数据用分钟数，无单位）
+        && (a.unit === undefined || DURATION_UNITS.has(a.unit)));
     for (const group of groupBy(eventTimes, a => a.subject).values()) {
         for (let i = 0; i < group.length - 1; i++) {
             for (let j = i + 1; j < group.length; j++) {

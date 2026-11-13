@@ -305,3 +305,47 @@ describe('R1 谓词锚定（2026-11-13 数据核对后修正）', () => {
         }
     });
 });
+
+describe('R5 时长守卫（新 prompt 对照评测修复）', () => {
+    /** 造时长断言 */
+    function durationFact(chapter: number, numeric: number, unit: string | undefined, quote: string): FactAssertion {
+        return {
+            id: `d|${chapter}|${numeric}`,
+            kind: 'absolute-time',
+            subject: '宁缺',
+            predicate: '时间',
+            value: String(numeric),
+            numericValue: numeric,
+            unit,
+            chapterKey: `第${chapter}章`,
+            chapterNum: chapter,
+            quote,
+            source: 'fact-store',
+            extractedAt: 0,
+        };
+    }
+
+    it('**numeric=0 不参与时长比较**（时间点类事实的默认值）', () => {
+        const result = pairContradictions({ assertions: [
+            durationFact(1, 0, undefined, '今天清晨冒雨冲入渭城'),
+            durationFact(22, 0, undefined, '第二日继续南下向都城长安进发'),
+        ] });
+        expect(result.contradictions.some(c => c.kind === 'duration')).toBe(false);
+    });
+
+    it('**非法单位不参与时长比较**（如"里"是距离不是时长）', () => {
+        const result = pairContradictions({ assertions: [
+            durationFact(1, 3, '里', '走了三里'),
+            durationFact(20, 60, '里', '走了六十里'),
+        ] });
+        expect(result.contradictions.some(c => c.kind === 'duration')).toBe(false);
+    });
+
+    it('正数值 + 合法单位仍正常检出（负例对照）', () => {
+        const result = pairContradictions({ assertions: [
+            durationFact(10, 3, '日', '试炼持续三日'),
+            durationFact(50, 60, '日', '试炼历时两个月'),
+        ] });
+        expect(result.contradictions.some(c => c.kind === 'duration')).toBe(true);
+    });
+});
