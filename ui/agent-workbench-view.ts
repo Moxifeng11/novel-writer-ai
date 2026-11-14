@@ -127,6 +127,9 @@ export class AgentWorkbenchView extends ItemView {
     private mentionToken: MentionToken | null = null;
     /** 库内路径缓存（@ 候选；随文件树刷新重建） */
     private vaultPathCache: string[] = [];
+    /** 当前项目的文件路径缓存（来自项目索引，随项目切换失效） */
+    private projectPathCache: string[] = [];
+    private projectPathCacheProject = '';
     /** 会话存档（.sessions/agent/<项目>.jsonl） */
     private sessionStore: AgentSessionStore | null = null;
     private sessionTitleEl: HTMLElement | null = null;
@@ -666,7 +669,7 @@ export class AgentWorkbenchView extends ItemView {
         });
         this.inputEl.addEventListener('input', () => {
             this.autoGrowInput();
-            this.updateMentionPopup();
+        void this.updateMentionPopup();
         });
         this.inputEl.addEventListener('paste', (ev: ClipboardEvent) => {
             const files = Array.from(ev.clipboardData?.files || []).filter(isSupportedImage);
@@ -803,17 +806,26 @@ export class AgentWorkbenchView extends ItemView {
     }
 
     /** 重新计算 @ 候选（光标前处于 `@` 引用中时打开弹层） */
-    private updateMentionPopup(): void {
+    private async updateMentionPopup(): Promise<void> {
         if (!this.inputEl) return;
         const token = activeAtToken(this.inputEl.value, this.inputEl.selectionStart ?? 0);
         if (!token) {
             this.closeMentionPopup();
             return;
         }
-        if (this.vaultPathCache.length === 0) {
+        // 索引与全文分离：有当前项目时只列项目内文件（更小、更准），否则回退全库
+        const project = this.plugin.getActiveProject() || this.activeProject;
+        if (project && project.length > 0) {
+            if (this.projectPathCacheProject !== project || this.projectPathCache.length === 0) {
+                const index = await this.plugin.getProjectIndex(project);
+                this.projectPathCache = index.entries.map(entry => entry.path);
+                this.projectPathCacheProject = project;
+            }
+        } else if (this.vaultPathCache.length === 0) {
             this.vaultPathCache = this.app.vault.getMarkdownFiles().map(file => file.path);
         }
-        const items = filterVaultPaths(this.vaultPathCache, token.query, 20);
+        const source = project && project.length > 0 ? this.projectPathCache : this.vaultPathCache;
+        const items = filterVaultPaths(source, token.query, 20);
         if (items.length === 0) {
             this.closeMentionPopup();
             return;

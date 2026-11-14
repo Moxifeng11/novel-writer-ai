@@ -477,6 +477,20 @@ export function pjContradictionsFile(project: string) { return `${pjConsistencyD
  * @param project - 项目路径
  * @returns 文件路径
  */
+/**
+ * 项目索引文件路径（索引与全文分离：列表/候选只读它）。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
+export function pjIndexFile(project: string) { return `${project}/04-项目总控/索引.json`; }
+
+/**
+ * 事实库文件路径（一致性审核的「主体·谓词=值」结构化事实）。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
 export function pjFactStoreFile(project: string) { return `${pjConsistencyDir(project)}/事实库.json`; }
 
 /**

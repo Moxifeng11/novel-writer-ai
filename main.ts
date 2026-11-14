@@ -71,6 +71,7 @@ import { OnboardingModal } from './ui/onboarding-modal';
 import { ProjectHealthModal } from './ui/project-health-modal';
 import { AssetRegistryModal } from './ui/asset-registry-modal';
 import { UsageLedgerModal } from './ui/usage-ledger-modal';
+import { ProjectIndexService } from './services/project-index-service';
 import { BackupCenterModal } from './ui/backup-center-modal';
 import { ChangelogModal } from './ui/changelog-modal';
 import { compareVersions, isMajorUpdate } from './services/update-checker';
@@ -910,6 +911,8 @@ export default class NovelWriterPlugin extends Plugin {
             log.info('[小说工坊] 命令注册完成，已注册:', registeredCmds.length, '个命令');
             log.info('[小说工坊] 命令列表:', registeredCmds.map((c: { id: string }) => c.id));
 
+            this.initProjectIndex();
+
             // vault rename 事件监听（从 registerCommands 迁移）
             this.registerEvent(
                 this.app.vault.on('rename', (file, oldPath) => {
@@ -1344,6 +1347,36 @@ export default class NovelWriterPlugin extends Plugin {
     }
 
     /** 打开 AI 用量账本。 */
+    /** 项目索引服务（索引与全文分离；懒建 + vault 事件失效） */
+    private _projectIndex?: ProjectIndexService;
+
+    /**
+     * 取项目索引（列表/候选只读摘要，正文按需单读）。
+     *
+     * @param project - 项目路径
+     * @returns 项目索引
+     */
+    public async getProjectIndex(project: string) {
+        this._projectIndex ??= new ProjectIndexService(this.app);
+        return this._projectIndex.ensure(project);
+    }
+
+    /** 初始化项目索引的 vault 事件失效（create/modify/delete/rename） */
+    private initProjectIndex(): void {
+        this._projectIndex ??= new ProjectIndexService(this.app);
+        const invalidate = (path: string): void => {
+            const project = this._projectIndex?.projectOfPath(path);
+            if (project) this._projectIndex?.invalidate(project);
+        };
+        this.registerEvent(this.app.vault.on('create', file => invalidate(file.path)));
+        this.registerEvent(this.app.vault.on('modify', file => invalidate(file.path)));
+        this.registerEvent(this.app.vault.on('delete', file => invalidate(file.path)));
+        this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
+            invalidate(file.path);
+            invalidate(oldPath);
+        }));
+    }
+
     public openUsageLedger(): void {
         new UsageLedgerModal(this.app, this).open();
     }

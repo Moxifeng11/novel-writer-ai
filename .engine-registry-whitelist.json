@@ -194,6 +194,12 @@
       "reason": "无状态模板读取器：仅持有 App 引用，每次按需构造，不缓存/不持有资源；registry 单例与 resolver 按调用构造并存",
       "category": "stateless-service",
       "allowedInstances": -1
+    },
+    {
+      "className": "ProjectIndexService",
+      "reason": "每个插件实例持有自己的索引缓存与脏标记，走 plugin._projectIndex 单例字段；new 出现在 main.ts 的懒初始化与字段类型声明中",
+      "category": "context-isolated",
+      "allowedInstances": 2
     }
   ],
   "notes": {

@@ -7,11 +7,11 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 346 | 145449 | 1937 | 1538 | 79% |
-| `services/` | 34 | 14016 | 211 | 164 | 78% |
-| `shared/` | 204 | 42735 | 1761 | 1423 | 81% |
+| `services/` | 35 | 14176 | 212 | 165 | 78% |
+| `shared/` | 205 | 42940 | 1773 | 1430 | 81% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 271 | 105796 | 1029 | 828 | 80% |
+| `ui/` | 271 | 105808 | 1029 | 828 | 80% |
 
 ## 文件清单
 
@@ -399,6 +399,7 @@
 | `services/model-discovery.ts` | 279 | 5 | 5 |
 | `services/performance-monitor.ts` | 819 | 9 | 9 |
 | `services/project-health-service.ts` | 223 | 5 | 2 |
+| `services/project-index-service.ts` | 160 | 1 | 1 |
 | `services/project-rename-service.ts` | 192 | 2 | 2 |
 | `services/project-standard-service.ts` | 68 | 3 | 1 |
 | `services/prompt-manager.ts` | 783 | 5 | 5 |
@@ -516,7 +517,7 @@
 | `shared/novel-format.ts` | 348 | 12 | 12 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1703 | 210 | 204 |
+| `shared/paths.ts` | 1717 | 211 | 205 |
 | `shared/pet-geometry.ts` | 118 | 9 | 3 |
 | `shared/pet-pose-sheet.generated.ts` | 16 | 2 | 0 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
@@ -534,6 +535,7 @@
 | `shared/private-host.ts` | 61 | 1 | 1 |
 | `shared/progress-emitter.ts` | 551 | 5 | 1 |
 | `shared/project-catalog.ts` | 183 | 7 | 7 |
+| `shared/project-index-model.ts` | 191 | 11 | 6 |
 | `shared/project-mode.ts` | 86 | 5 | 5 |
 | `shared/project-name.ts` | 119 | 6 | 6 |
 | `shared/project-root.ts` | 48 | 2 | 2 |
@@ -620,7 +622,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 771 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1924 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1936 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |
