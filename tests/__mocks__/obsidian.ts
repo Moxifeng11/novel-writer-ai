@@ -94,6 +94,15 @@ export class Vault {
     }
 
     /** 模拟文件夹创建 */
+    /** 测试桩：二进制写入按 base64 存入 store */
+    async createBinary(path: string, data: ArrayBuffer): Promise<TFile> {
+        const bytes = new Uint8Array(data);
+        let binary = '';
+        for (const byte of bytes) binary += String.fromCharCode(byte);
+        this._store.set(path, Buffer.from(binary, 'binary').toString('base64'));
+        return this._seedFile(path, this._store.get(path) ?? '');
+    }
+
     async createFolder(path: string): Promise<TFolder> {
         this._folders.add(path);
         const f = new TFolder();

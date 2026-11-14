@@ -535,6 +535,20 @@ export function pjPlanDir(project: string) { return `${project}/04-项目总控/
  * @param project - 项目路径
  * @returns vault 相对路径
  */
+/**
+ * 附件目录。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
+export function pjAttachmentDir(project: string) { return `${project}/04-项目总控/附件`; }
+
+/**
+ * pjSpecDir 对应的 vault 相对路径。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
 export function pjSpecDir(project: string) { return `${project}/04-项目总控/spec`; }
 
 /**

@@ -7,8 +7,8 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 350 | 145587 | 1931 | 1528 | 79% |
-| `services/` | 41 | 15003 | 223 | 173 | 78% |
-| `shared/` | 212 | 44075 | 1850 | 1483 | 80% |
+| `services/` | 42 | 15105 | 225 | 174 | 77% |
+| `shared/` | 212 | 44089 | 1851 | 1484 | 80% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106812 | 1034 | 835 | 81% |
@@ -390,6 +390,7 @@
 | `engine/writing-profile.ts` | 566 | 8 | 8 |
 | `engine/writing-quality-engine.ts` | 1376 | 14 | 13 |
 | `services/api-connectivity-service.ts` | 317 | 8 | 8 |
+| `services/attachment-service.ts` | 102 | 2 | 1 |
 | `services/backup-center-service.ts` | 182 | 4 | 1 |
 | `services/canon-research-service.ts` | 646 | 9 | 8 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
@@ -534,7 +535,7 @@
 | `shared/novel-format.ts` | 348 | 12 | 12 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1809 | 218 | 212 |
+| `shared/paths.ts` | 1823 | 219 | 213 |
 | `shared/pet-geometry.ts` | 118 | 9 | 3 |
 | `shared/pet-image-model.ts` | 123 | 10 | 6 |
 | `shared/plan-spec-model.ts` | 137 | 10 | 5 |
