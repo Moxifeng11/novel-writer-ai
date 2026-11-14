@@ -15,7 +15,7 @@ import type NovelWriterPlugin from '@/main';
 import { formatWords, type StatsSummary } from '@/shared/writing-stats';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 import { PET_POSE_SHEET_BIGFISH, PET_POSE_SHEET_CUIGENGJI } from '@/shared/pet-pose-sheet.generated';
-import { clampPetPoint, petViewportOf, snapPetPoint, type PetViewport } from '@/shared/pet-geometry';
+import { clampPetPoint, PET_DEFAULT_SNAP_EDGES, petViewportOf, snapPetPoint, type PetViewport, type PetSnapEdges } from '@/shared/pet-geometry';
 import { onNodeDoc } from '@/shared/dom-window';
 
 /**
@@ -191,6 +191,8 @@ export class WritingPet {
     private dragStart = { x: 0, y: 0 };
     private origin = { x: 0, y: 0 };
     private pulseTimer: ReturnType<typeof setTimeout> | null = null;
+    /** 快捷摘要自动刷新定时器（60s；文档隐藏时跳过） */
+    private refreshTimer: number | null = null;
     private boundMove = (e: PointerEvent) => this.onPointerMove(e);
     private boundUp = () => this.onPointerUp();
     /** 拖拽期间 document 级监听的解绑器（绑在宠物所属窗口） */
@@ -321,6 +323,14 @@ export class WritingPet {
         this.card = root.createDiv({ cls: 'nw-pet-card' });
         this.card.addClass('nw-u-d-none');
         this.update();
+
+        // 快捷摘要自动刷新：写作中数字实时变化（60s；隐藏标签页跳过，避免无谓计算）
+        if (!this.refreshTimer) {
+            this.refreshTimer = window.setInterval(() => {
+                if (document.hidden) return;
+                this.update();
+            }, 60_000);
+        }
     }
 
     /** 每分钟/每次台账变化时刷新文案与心情 */
@@ -384,6 +394,10 @@ export class WritingPet {
 
     /** 释放拖拽期间的 document 级监听（同一文档解绑，避免重复绑定/泄漏） */
     private disposeDragListeners(): void {
+        if (this.refreshTimer) {
+            window.clearInterval(this.refreshTimer);
+            this.refreshTimer = null;
+        }
         for (const dispose of this.dragDisposers) dispose();
         this.dragDisposers = [];
     }
@@ -405,6 +419,25 @@ export class WritingPet {
     private openRoleMenu(anchor: HTMLElement): void {
         this.root?.querySelector('.nw-pet-role-menu')?.remove();
         const menu = anchor.createDiv({ cls: 'nw-pet-role-menu' });
+        menu.createDiv({ cls: 'nw-pet-role-menu-title', text: '吸附边' });
+        const snapRow = menu.createDiv({ cls: 'nw-pet-role-snap' });
+        const currentSnap = (this.deps.plugin.settings as { petSnapEdges?: { left: boolean; right: boolean; bottom: boolean; threshold?: number } }).petSnapEdges
+            ?? { left: true, right: true, bottom: true };
+        for (const [edge, label] of [['left', '左'], ['right', '右'], ['bottom', '底']] as const) {
+            const chip = snapRow.createEl('button', {
+                cls: `nw-pet-snap-chip${currentSnap[edge] ? ' nw-is-active' : ''}`,
+                text: label,
+                attr: { type: 'button' },
+            });
+            chip.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const next = { ...currentSnap, [edge]: !currentSnap[edge] };
+                (this.deps.plugin.settings as { petSnapEdges?: typeof next }).petSnapEdges = next;
+                void this.deps.plugin.saveSettings();
+                chip.toggleClass('nw-is-active', next[edge]);
+            });
+        }
+
         menu.createDiv({ cls: 'nw-pet-role-menu-title', text: '桌宠形象' });
         // 用 onNodeDoc 绑定到宠物所在窗口，popout 窗口也能正确关闭
         let disposeOutside: (() => void) | null = null;

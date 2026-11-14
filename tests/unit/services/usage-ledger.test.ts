@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Vault } from '../../__mocks__/obsidian';
 import {
+    dailyTrend,
     currentUsageScope,
     getUsageLedger,
     pushUsageScope,
@@ -158,5 +159,40 @@ describe('usage-ledger — AI 用量账本', () => {
 
         exitOuter();
         expect(currentUsageScope()).toEqual({});
+    });
+});
+
+describe('dailyTrend 按日趋势', () => {
+    const now = new Date('2026-11-14T12:00:00').getTime();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const record = (at: number, tokens: number, costYuan?: number) => ({
+        id: String(at), at, source: 'ai' as const, model: 'm', promptTokens: tokens,
+        completionTokens: 0, totalTokens: tokens, durationMs: 1, status: 'ok' as const, costYuan,
+    });
+
+    it('返回连续 N 天（缺数据补 0）', () => {
+        const points = dailyTrend([], 7, now);
+        expect(points).toHaveLength(7);
+        expect(points.every(point => point.tokens === 0)).toBe(true);
+        expect(points[6].date).toBe('2026-11-14');
+        expect(points[0].date).toBe('2026-11-08');
+    });
+
+    it('按日累计 token / 费用 / 次数', () => {
+        const points = dailyTrend([record(now, 100, 0.01), record(now - 1000, 50, 0.02), record(now - dayMs, 200, 0.03)], 3, now);
+        expect(points[2]).toEqual({ date: '2026-11-14', tokens: 150, costYuan: 0.03, calls: 2 });
+        expect(points[1]).toEqual({ date: '2026-11-13', tokens: 200, costYuan: 0.03, calls: 1 });
+        expect(points[0].tokens).toBe(0);
+    });
+
+    it('区间外的记录被忽略', () => {
+        const points = dailyTrend([record(now - 30 * dayMs, 999)], 7, now);
+        expect(points.reduce((sum, point) => sum + point.tokens, 0)).toBe(0);
+    });
+
+    it('费用缺省按 0 计（不产生 NaN）', () => {
+        const points = dailyTrend([record(now, 10)], 1, now);
+        expect(points[0].costYuan).toBe(0);
+        expect(Number.isFinite(points[0].costYuan)).toBe(true);
     });
 });

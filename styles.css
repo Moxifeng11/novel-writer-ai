@@ -16884,6 +16884,75 @@ body.nw-panel-resizing .nw-awb-center iframe {
   flex: 1;
   margin-top: 0;
 }
+
+/* 用量账本 · 最近 14 天趋势图（纯 CSS 柱状图，无图表依赖） */
+.nw-usage-trend-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 96px;
+  padding: 8px 4px 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-usage-trend-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  cursor: default;
+}
+
+.nw-usage-trend-bar {
+  width: 100%;
+  max-width: 22px;
+  border-radius: 3px 3px 0 0;
+  background: var(--interactive-accent);
+  transition: opacity 120ms ease;
+}
+
+.nw-usage-trend-bar.nw-is-empty {
+  background: var(--background-modifier-border);
+}
+
+.nw-usage-trend-col:hover .nw-usage-trend-bar {
+  opacity: 0.75;
+}
+
+.nw-usage-trend-label {
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+/* 桌宠吸附边选择 */
+.nw-pet-role-snap {
+  display: flex;
+  gap: 6px;
+  padding: 2px 6px 6px;
+}
+
+.nw-pet-snap-chip {
+  flex: 1;
+  padding: 4px 0;
+  margin: 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.nw-pet-snap-chip.nw-is-active {
+  border-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  background: var(--interactive-accent);
+}
 /* ==========================================================================
  * 17-home-jobs-health.css — 创作主页 / 任务中心 / 首启向导 / 项目体检
  * 只使用主题变量；不引入新的全局选择器，全部挂在各自主容器下。

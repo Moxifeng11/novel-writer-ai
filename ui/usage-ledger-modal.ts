@@ -6,7 +6,7 @@
  */
 import { App, Modal } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
-import { getUsageLedger, type UsageRecord } from '@/services/usage-ledger';
+import { dailyTrend, getUsageLedger, type UsageRecord } from '@/services/usage-ledger';
 
 function formatTokens(value: number): string {
     if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(2)}M`;
@@ -91,6 +91,22 @@ export class UsageLedgerModal extends Modal {
             const card = summaryEl.createDiv({ cls: 'nw-usage-card' });
             card.createDiv({ cls: 'nw-usage-card-label', text: label });
             card.createDiv({ cls: 'nw-usage-card-value', text: value });
+        }
+
+        // 最近 14 天趋势（token 柱高 + 费用标注），缺数据日期补 0 保持连续
+        const trend = dailyTrend(records, 14);
+        const trendEl = this.bodyEl.createDiv({ cls: 'nw-usage-trend' });
+        trendEl.createEl('h4', { text: '最近 14 天' });
+        const chart = trendEl.createDiv({ cls: 'nw-usage-trend-chart' });
+        const maxTokens = Math.max(1, ...trend.map(point => point.tokens));
+        for (const point of trend) {
+            const column = chart.createDiv({ cls: 'nw-usage-trend-col' });
+            const height = Math.max(2, Math.round((point.tokens / maxTokens) * 100));
+            const bar = column.createDiv({ cls: 'nw-usage-trend-bar' });
+            bar.style.height = `${height}%`;
+            if (point.tokens === 0) bar.addClass('nw-is-empty');
+            column.setAttribute('title', `${point.date} · ${formatTokens(point.tokens)} token · ${point.calls} 次 · ${formatCostYuan(point.costYuan)} 元`);
+            column.createDiv({ cls: 'nw-usage-trend-label', text: point.date.slice(5) });
         }
 
         if (summary.byModel.length > 0) {

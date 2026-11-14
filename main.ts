@@ -220,6 +220,8 @@ export interface NovelWriterSettings {
         negativeEmotion?: string[];
         highIntensity?: string[];
     };
+    /** 桌面宠物吸附边（默认三条都开；threshold 为吸附判定距离，0 表示不吸附） */
+    petSnapEdges?: { left: boolean; right: boolean; bottom: boolean; threshold?: number };
     /** 桌面宠物形象（'cuigengji' 催更姬 / 'bigfish' 大肥鱼） */
     petRole?: 'cuigengji' | 'bigfish';
     /** 追加的 AI 高频词（C 类统计词表可配置化） */

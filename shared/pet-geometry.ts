@@ -26,6 +26,16 @@ export interface PetViewport {
 /** 桌宠与边缘的最小留白 */
 export const PET_EDGE_MARGIN = 8;
 
+/** 吸附边配置：哪些边允许吸附（默认三条都开） */
+export interface PetSnapEdges {
+    left: boolean;
+    right: boolean;
+    bottom: boolean;
+}
+
+/** 默认吸附边 */
+export const PET_DEFAULT_SNAP_EDGES: PetSnapEdges = { left: true, right: true, bottom: true };
+
 /** 拖拽松手后的吸附判定距离 */
 export const PET_SNAP_THRESHOLD = 28;
 
@@ -57,6 +67,7 @@ export function clampPetPoint(point: PetPoint, view: PetViewport, size: number):
  * @param view - 可视区域
  * @param size - 桌宠尺寸
  * @param threshold - 吸附判定距离（默认 PET_SNAP_THRESHOLD）
+ * @param edges - 允许吸附的边（默认三条都开；可关闭左右或底部）
  * @returns 吸附后的坐标
  */
 export function snapPetPoint(
@@ -64,15 +75,17 @@ export function snapPetPoint(
     view: PetViewport,
     size: number,
     threshold: number = PET_SNAP_THRESHOLD,
+    edges: PetSnapEdges = PET_DEFAULT_SNAP_EDGES,
 ): PetPoint {
     const clamped = clampPetPoint(point, view, size);
     const leftEdge = view.left + PET_EDGE_MARGIN;
     const rightEdge = view.right - size - PET_EDGE_MARGIN;
     const bottomEdge = view.bottom - size - PET_EDGE_MARGIN;
     let { x, y } = clamped;
-    if (Math.abs(x - leftEdge) <= threshold) x = leftEdge;
-    else if (Math.abs(x - rightEdge) <= threshold) x = rightEdge;
-    if (Math.abs(y - bottomEdge) <= threshold) y = bottomEdge;
+    const limit = Math.max(0, threshold);
+    if (edges.left && Math.abs(x - leftEdge) <= limit) x = leftEdge;
+    else if (edges.right && Math.abs(x - rightEdge) <= limit) x = rightEdge;
+    if (edges.bottom && Math.abs(y - bottomEdge) <= limit) y = bottomEdge;
     return { x, y };
 }
 

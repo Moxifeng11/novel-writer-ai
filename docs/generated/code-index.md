@@ -7,11 +7,11 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 346 | 145449 | 1937 | 1538 | 79% |
-| `services/` | 34 | 13964 | 209 | 163 | 78% |
-| `shared/` | 203 | 42526 | 1750 | 1415 | 81% |
+| `services/` | 34 | 14016 | 211 | 164 | 78% |
+| `shared/` | 203 | 42539 | 1752 | 1415 | 81% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 271 | 105733 | 1029 | 828 | 80% |
+| `ui/` | 271 | 105782 | 1029 | 828 | 80% |
 
 ## 文件清单
 
@@ -408,7 +408,7 @@
 | `services/rules-service.ts` | 280 | 3 | 2 |
 | `services/synopsis-store.ts` | 364 | 5 | 5 |
 | `services/update-checker.ts` | 610 | 9 | 2 |
-| `services/usage-ledger.ts` | 400 | 13 | 5 |
+| `services/usage-ledger.ts` | 452 | 15 | 6 |
 | `services/vector-rebuild-service.ts` | 141 | 8 | 8 |
 | `services/worker-manager.ts` | 569 | 1 | 1 |
 | `services/worker-protocol.ts` | 121 | 12 | 12 |
@@ -516,7 +516,7 @@
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
 | `shared/paths.ts` | 1703 | 210 | 204 |
-| `shared/pet-geometry.ts` | 105 | 7 | 3 |
+| `shared/pet-geometry.ts` | 118 | 9 | 3 |
 | `shared/pet-pose-sheet.generated.ts` | 16 | 2 | 0 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
@@ -844,7 +844,7 @@
 | `ui/tomato-rank-modal.ts` | 132 | 1 | 1 |
 | `ui/unified-entity-generate-modal.ts` | 865 | 1 | 1 |
 | `ui/unified-entity-manager-modal.ts` | 754 | 1 | 1 |
-| `ui/usage-ledger-modal.ts` | 184 | 1 | 1 |
+| `ui/usage-ledger-modal.ts` | 200 | 1 | 1 |
 | `ui/utils/worldview-utils.ts` | 103 | 1 | 1 |
 | `ui/vector-rebuild-action.ts` | 148 | 1 | 1 |
 | `ui/views/book-detail-logic.ts` | 161 | 10 | 7 |
@@ -883,7 +883,7 @@
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |
 | `ui/workspace-manager.ts` | 144 | 2 | 2 |
 | `ui/write-chapter-modal.ts` | 851 | 1 | 1 |
-| `ui/writing-pet.ts` | 524 | 11 | 6 |
+| `ui/writing-pet.ts` | 557 | 11 | 6 |
 | `ui/writing-stats-modal.ts` | 245 | 1 | 1 |
 | `ui/writing-stats-settings.ts` | 70 | 1 | 1 |
 | `ui/writing-style-modal.ts` | 589 | 1 | 1 |

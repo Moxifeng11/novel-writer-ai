@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     clampPetPoint,
+    PET_DEFAULT_SNAP_EDGES,
     petViewportOf,
     PET_EDGE_MARGIN,
     PET_SNAP_THRESHOLD,
@@ -67,6 +68,35 @@ describe('snapPetPoint 边缘吸附', () => {
         const edge = 1200 - SIZE - PET_EDGE_MARGIN;
         expect(snapPetPoint({ x: edge - PET_SNAP_THRESHOLD + 1, y: 300 }, view, SIZE).x).toBe(edge);
         expect(snapPetPoint({ x: edge - PET_SNAP_THRESHOLD - 1, y: 300 }, view, SIZE).x).toBe(edge - PET_SNAP_THRESHOLD - 1);
+    });
+});
+
+describe('吸附边可自定义', () => {
+    const rightEdge = 1200 - SIZE - PET_EDGE_MARGIN;
+    const leftEdge = PET_EDGE_MARGIN;
+
+    it('关闭右边吸附后，靠近右边缘不贴边', () => {
+        const result = snapPetPoint({ x: rightEdge - 5, y: 300 }, view, SIZE, 28, { left: true, right: false, bottom: true });
+        expect(result.x).toBe(rightEdge - 5);
+    });
+
+    it('只开底部吸附时，左右都不吸', () => {
+        const result = snapPetPoint({ x: leftEdge + 5, y: 300 }, view, SIZE, 28, { left: false, right: false, bottom: true });
+        expect(result.x).toBe(leftEdge + 5);
+    });
+
+    it('三条边全关等于只做钳制', () => {
+        const result = snapPetPoint({ x: -100, y: 5000 }, view, SIZE, 28, { left: false, right: false, bottom: false });
+        expect(result).toEqual(clampPetPoint({ x: -100, y: 5000 }, view, SIZE));
+    });
+
+    it('阈值 0 表示不吸附', () => {
+        const result = snapPetPoint({ x: leftEdge + 1, y: 300 }, view, SIZE, 0);
+        expect(result.x).toBe(leftEdge + 1);
+    });
+
+    it('默认边配置三条都开', () => {
+        expect(PET_DEFAULT_SNAP_EDGES).toEqual({ left: true, right: true, bottom: true });
     });
 });
 

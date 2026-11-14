@@ -207,6 +207,58 @@ function emptySourceSummary(source: UsageSource): UsageSourceSummary {
  * console.log(summary.bySource.map((s) => `${s.source}:${s.calls}`).join(','));
  * ```
  */
+/** 单日趋势点 */
+export interface UsageTrendPoint {
+    /** 日期键 YYYY-MM-DD */
+    date: string;
+    /** 当日 token 总量 */
+    tokens: number;
+    /** 当日估算费用（元） */
+    costYuan: number;
+    /** 当日调用次数 */
+    calls: number;
+}
+
+/**
+ * 按日聚合最近 N 天的趋势（缺数据的日期补 0，保证柱状图连续）。
+ *
+ * @param records - 用量记录
+ * @param days - 天数（含今天，默认 14）
+ * @param now - 当前时间戳（默认 Date.now）
+ * @returns 按日期升序的趋势点
+ */
+export function dailyTrend(
+    records: readonly UsageRecord[],
+    days = 14,
+    now: number = Date.now(),
+): UsageTrendPoint[] {
+    const span = Math.max(1, Math.floor(days));
+    const buckets = new Map<string, UsageTrendPoint>();
+    const dayKey = (at: number): string => {
+        const date = new Date(at);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    };
+    for (let offset = span - 1; offset >= 0; offset -= 1) {
+        const key = dayKey(now - offset * 24 * 60 * 60 * 1000);
+        buckets.set(key, { date: key, tokens: 0, costYuan: 0, calls: 0 });
+    }
+    for (const record of records) {
+        const key = dayKey(record.at);
+        const bucket = buckets.get(key);
+        if (!bucket) continue;
+        bucket.tokens += record.totalTokens;
+        bucket.costYuan += record.costYuan ?? 0;
+        bucket.calls += 1;
+    }
+    return [...buckets.values()];
+}
+
+/**
+ * 汇总用量记录（按模型 / 项目 / 来源）。
+ *
+ * @param records - 用量记录
+ * @returns 汇总结果
+ */
 export function summarizeUsage(records: readonly UsageRecord[]): UsageSummary {
     const byModel = new Map<string, UsageModelSummary>();
     const byProject = new Map<string, UsageProjectSummary>();
