@@ -20,6 +20,7 @@ import { SCRIPT_GENRES, SHORT_STORY_CATEGORIES, getCreationModeLabel } from '@/s
 import { commandAllowedModes } from '@/shared/command-mode-rules';
 import { DEFAULT_READ_LINES } from '@/shared/file-path-guard';
 import { wrapUntrustedContent } from '@/shared/untrusted-content';
+import { createP2Tools } from './p2-tools';
 
 /** 记忆槽位白名单（与恢复路径共用 harness-types 的单源清单） */
 const MEMORY_KEYS = MEMORY_SLOT_KEYS;
@@ -981,6 +982,8 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
         },
     });
 
+    // P2 新增工具（文件 patch / 章节 / 设定 / 统一打开视图）
+    tools.push(...createP2Tools({ port }));
     return tools;
 }
 

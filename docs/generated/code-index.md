@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 342 | 144666 | 1910 | 1513 | 79% |
+| `engine/` | 343 | 144857 | 1912 | 1514 | 79% |
 | `services/` | 39 | 14782 | 219 | 170 | 78% |
-| `shared/` | 207 | 43530 | 1813 | 1460 | 81% |
+| `shared/` | 208 | 43592 | 1816 | 1462 | 81% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
-| `domains/` | 15 | 1540 | 85 | 55 | 65% |
-| `ui/` | 274 | 106575 | 1033 | 834 | 81% |
+| `domains/` | 15 | 1512 | 85 | 55 | 65% |
+| `ui/` | 274 | 106642 | 1033 | 834 | 81% |
 
 ## 文件清单
 
@@ -33,13 +33,13 @@
 | `domains/long/tool-catalog.ts` | 115 | 4 | 3 |
 | `domains/memory/history.ts` | 128 | 9 | 6 |
 | `domains/memory/model.ts` | 247 | 19 | 11 |
-| `domains/memory/patch.ts` | 62 | 3 | 2 |
+| `domains/memory/patch.ts` | 34 | 3 | 2 |
 | `domains/planning/model.ts` | 363 | 26 | 16 |
 | `domains/script/harness-profile.ts` | 39 | 1 | 1 |
 | `domains/script/tool-catalog.ts` | 43 | 1 | 0 |
 | `domains/short/harness-profile.ts` | 42 | 1 | 1 |
 | `domains/short/tool-catalog.ts` | 42 | 1 | 0 |
-| `engine/agent/agent-types.ts` | 370 | 23 | 17 |
+| `engine/agent/agent-types.ts` | 382 | 23 | 17 |
 | `engine/agent/conversation-engine.ts` | 1267 | 1 | 1 |
 | `engine/agent/harness/agent-adapter.ts` | 83 | 2 | 1 |
 | `engine/agent/harness/agent-loop.ts` | 622 | 6 | 6 |
@@ -48,7 +48,8 @@
 | `engine/agent/harness/diagnose-tools.ts` | 118 | 3 | 1 |
 | `engine/agent/harness/harness-engine.ts` | 664 | 7 | 4 |
 | `engine/agent/harness/harness-types.ts` | 249 | 17 | 14 |
-| `engine/agent/harness/host-tools.ts` | 1038 | 5 | 5 |
+| `engine/agent/harness/host-tools.ts` | 1041 | 5 | 5 |
+| `engine/agent/harness/p2-tools.ts` | 176 | 2 | 1 |
 | `engine/agent/harness/prompt-sections.ts` | 152 | 2 | 2 |
 | `engine/agent/harness/repair-telemetry.ts` | 140 | 10 | 4 |
 | `engine/agent/harness/repair-tools.ts` | 409 | 11 | 2 |
@@ -597,6 +598,7 @@
 | `shared/task-model.ts` | 381 | 19 | 18 |
 | `shared/template-scaffold.ts` | 139 | 3 | 3 |
 | `shared/template-validator.ts` | 967 | 26 | 23 |
+| `shared/text-patch.ts` | 62 | 3 | 2 |
 | `shared/text-utils.ts` | 64 | 5 | 5 |
 | `shared/theme-colors.ts` | 450 | 25 | 18 |
 | `shared/theme-gallery.ts` | 205 | 12 | 11 |
@@ -819,7 +821,7 @@
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
 | `ui/services/agent-attachment-store.ts` | 171 | 10 | 6 |
-| `ui/services/agent-port.ts` | 720 | 3 | 3 |
+| `ui/services/agent-port.ts` | 787 | 3 | 3 |
 | `ui/services/agent-session-store.ts` | 211 | 5 | 5 |
 | `ui/services/agent-spill-store.ts` | 142 | 4 | 3 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |

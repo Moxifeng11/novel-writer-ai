@@ -338,6 +338,18 @@ export interface GuideAgentPort {
     deleteFile?(path: string, options?: { permanent?: boolean }): Promise<AgentFileDeleteResult>;
     /** 移动/重命名库内文件 */
     moveFile?(from: string, to: string): Promise<{ from: string; to: string }>;
+    /** 局部替换文件内容（唯一匹配；newText 为空即删除该段） */
+    patchFile?(path: string, oldText: string, newText: string): Promise<{ changed: boolean; error?: string }>;
+    /** 读取章节正文全文 */
+    readChapter?(project: string, chapterName: string): Promise<{ path: string; content: string } | null>;
+    /** 写入章节正文（保留既有版本历史机制） */
+    writeChapter?(project: string, chapterName: string, content: string): Promise<{ path: string; ok: boolean; error?: string }>;
+    /** 检索设定卡（人物/地点/势力/物品/设定） */
+    memorySearch?(project: string, query: string, limit?: number): Promise<Array<{ path: string; name: string; type: string; summary: string }>>;
+    /** 局部替换设定卡内容 */
+    memoryPatch?(path: string, oldText: string, newText: string): Promise<{ changed: boolean; error?: string }>;
+    /** 统一打开视图（viewId：planning/memory/wizard/flow/full-writer/story-settings/pre-research/co-writing） */
+    openView?(viewId: string, project?: string): Promise<boolean>;
     /** 彻底删除项目目录（含点文件）；调用方必须已确认 */
     deleteProject?(project: string): Promise<AgentProjectDeleteResult>;
     // ─── 长流程执行登记表（v4.21）───

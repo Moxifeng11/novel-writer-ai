@@ -6,9 +6,9 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 27 | 27 | 100% | 50 | 50 | 100% | 0 |
 | `domains/` | 15 | 85 | 85 | 100% | 1 | 1 | 100% | 0 |
-| `engine/` | 325 | 1885 | 1884 | 100% | 1242 | 1242 | 100% | 0 |
+| `engine/` | 326 | 1887 | 1886 | 100% | 1242 | 1242 | 100% | 0 |
 | `services/` | 39 | 218 | 218 | 100% | 239 | 239 | 100% | 0 |
-| `shared/` | 205 | 1817 | 1816 | 100% | 159 | 159 | 100% | 0 |
+| `shared/` | 206 | 1820 | 1819 | 100% | 159 | 159 | 100% | 0 |
 | `ui/` | 272 | 1023 | 1023 | 100% | 659 | 658 | 100% | 0 |
 
 ## 缺口最大的文件（按未注释导出数）
@@ -28,6 +28,7 @@
 | `engine/agent/harness/harness-engine.ts` | 5 | 0 | 14 | 0 |
 | `engine/agent/harness/harness-types.ts` | 17 | 0 | 0 | 0 |
 | `engine/agent/harness/host-tools.ts` | 5 | 0 | 0 | 0 |
+| `engine/agent/harness/p2-tools.ts` | 2 | 0 | 0 | 0 |
 | `engine/agent/harness/prompt-sections.ts` | 2 | 0 | 0 | 0 |
 | `engine/agent/harness/repair-telemetry.ts` | 10 | 0 | 0 | 0 |
 | `engine/agent/harness/repair-tools.ts` | 11 | 0 | 0 | 0 |
@@ -44,7 +45,6 @@
 | `engine/ai-character-generator.ts` | 1 | 0 | 2 | 0 |
 | `engine/ai-engine.ts` | 2 | 0 | 32 | 0 |
 | `engine/ai-entity-generator.ts` | 1 | 0 | 3 | 0 |
-| `engine/ai-lexicon.ts` | 3 | 0 | 0 | 0 |
 
 ## @example 覆盖（公共入口）
 

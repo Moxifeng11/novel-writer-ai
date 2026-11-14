@@ -46,6 +46,10 @@ import { writeVaultText } from '@/shared/file-system-port';
 import { BodyWriter } from '@/engine/body-writer';
 import { isChapterBodyPath } from '@/shared/body-path';
 import { projectIdFromPath } from '@/shared/paths';
+import { applyTextPatch } from '@/shared/text-patch';
+import { MemoryGraphService } from '@/services/memory-graph-service';
+import { ProjectIndexService } from '@/services/project-index-service';
+import { FileTxService } from '@/services/file-tx';
 const log = createLogger('AgentPort');
 
 /**
@@ -673,6 +677,69 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin, options?: A
             }
             return { from: source.path, to: target.path };
         },
+
+        patchFile: async (path, oldText, newText) => {
+            const guard = sanitizeVaultPath(path);
+            if (!guard.ok) return { changed: false, error: guard.reason };
+            const file = app.vault.getAbstractFileByPath(guard.path);
+            if (!(file instanceof TFile)) return { changed: false, error: '文件不存在' };
+            const current = await app.vault.read(file);
+            const result = applyTextPatch(current, oldText, newText);
+            if (!result.changed) return { changed: false, error: result.error };
+            await writeVaultText(app, guard.path, result.content);
+            return { changed: true };
+        },
+
+        readChapter: async (project, chapterName) => {
+            const chapters = getChaptersForProject(app, project);
+            const target = chapters.find(entry => entry.chapter === chapterName || entry.title === chapterName);
+            if (!target?.file) return null;
+            return { path: target.file.path, content: await app.vault.read(target.file) };
+        },
+
+        writeChapter: async (project, chapterName, content) => {
+            const chapters = getChaptersForProject(app, project);
+            const target = chapters.find(entry => entry.chapter === chapterName || entry.title === chapterName);
+            if (!target?.file) return { path: '', ok: false, error: '找不到该章节' };
+            await writeVaultText(app, target.file.path, content);
+            return { path: target.file.path, ok: true };
+        },
+
+        memorySearch: async (project, query, limit = 20) => {
+            const service = new MemoryGraphService(app, new ProjectIndexService(app), new FileTxService(app));
+            const { cards } = await service.load(project);
+            const needle = String(query || '').trim().toLowerCase();
+            const matched = needle
+                ? cards.filter(card => `${card.name} ${card.summary}`.toLowerCase().includes(needle))
+                : cards;
+            return matched.slice(0, Math.max(1, limit)).map(card => ({
+                path: card.path,
+                name: card.name,
+                type: card.type,
+                summary: card.summary,
+            }));
+        },
+
+        memoryPatch: async (path, oldText, newText) => {
+            const service = new MemoryGraphService(app, new ProjectIndexService(app), new FileTxService(app));
+            return service.patchCard(path, { oldText, newText });
+        },
+
+        openView: async (viewId, project) => {
+            const active = project || plugin.getActiveProject() || '';
+            switch (String(viewId || '').trim()) {
+                case 'planning': await plugin.openPlanningCanvas(); return true;
+                case 'memory': await plugin.openMemoryGraph(); return true;
+                case 'wizard': await plugin.openFullWriterView(); return true;
+                case 'flow': await plugin.openCreationFlow(active); return true;
+                case 'full-writer': await plugin.openFullWriterHome(); return true;
+                case 'story-settings': await plugin.openCreationFlow(active); return true;
+                case 'pre-research': await plugin.openCreationFlow(active); return true;
+                case 'co-writing': await plugin.openCoWritingFromActiveContext(); return true;
+                default: return false;
+            }
+        },
+
         deleteProject: async (project) => {
             const guard = sanitizeVaultPath(project);
             if (!guard.ok) return { project, deleted: false, reason: guard.reason };
