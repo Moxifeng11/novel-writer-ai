@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-14T15:32:38.852Z",
-  "note": "设定实体图样式",
-  "bytes": 565792,
+  "generatedAt": "2026-11-14T16:53:27.199Z",
+  "note": "桌宠自定义形象预览样式",
+  "bytes": 566235,
   "important": 24,
   "hardcodedHex": 161,
   "rgbHsl": 191,
-  "uniqueClasses": 3102,
+  "uniqueClasses": 3104,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

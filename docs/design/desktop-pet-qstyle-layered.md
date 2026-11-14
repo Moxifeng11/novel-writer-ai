@@ -542,3 +542,32 @@ sleep ⇄ idle ⇄ writing
 - 手绘/像素美术：需外部美术资源，代码侧只提供接入位
 - 分层造型的 Q 版人类重绘（当前 body/detail 仍是墨色猫形态）
 - 设置界面暴露图层开关（API 已就绪，UI 待接）
+
+## 10. 形象来源与版权（v1.3 · 2026-11-15）
+
+### 原则
+
+**插件不内置任何第三方美术资源。** 曾有版本把外部插件（催更姬）的姿势图缩放后
+base64 内嵌进 `main.js`，该素材不具备商用授权，已全部移除。
+
+### 当前形象来源
+
+| 来源 | 说明 |
+|---|---|
+| 内置（默认） | 代码绘制的分层 SVG（`ui/writing-pet.ts` 的 `PET_SVG`），无版权风险 |
+| 用户自定义 | 设置 → 写作统计与桌面宠物 → 🎨 桌宠形象：选 vault 内图片 + 网格列/行 |
+
+### 自定义图片约定
+
+- 支持 PNG / JPG / WebP / GIF
+- 按 `cols × rows` 网格切帧
+- 状态顺序固定：`idle / writing / thinking / happy / sleep / error`
+  （帧数少于 6 时部分状态共用同一格）
+- 配置存 `settings.petImage = { path, cols, rows }`，图片本体留在用户 vault 里
+  （插件不复制、不再内嵌）
+
+### 相关代码
+
+- `shared/pet-image-model.ts`：配置校验 + 切帧换算（纯函数，有单测）
+- `ui/pet-image-settings.ts`：设置页（路径输入 / 文件选择器 / 网格 / 预览）
+- `ui/writing-pet.ts`：有配置走切帧，否则走内置 SVG

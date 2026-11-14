@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 346 | 145455 | 1937 | 1538 | 79% |
 | `services/` | 39 | 14666 | 219 | 170 | 78% |
-| `shared/` | 207 | 43304 | 1799 | 1448 | 80% |
+| `shared/` | 207 | 43387 | 1806 | 1453 | 80% |
 | `core/` | 7 | 2946 | 32 | 17 | 53% |
 | `domains/` | 13 | 1243 | 66 | 40 | 61% |
-| `ui/` | 273 | 106508 | 1038 | 835 | 80% |
+| `ui/` | 274 | 106622 | 1033 | 834 | 81% |
 
 ## 文件清单
 
@@ -526,7 +526,7 @@
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
 | `shared/paths.ts` | 1773 | 215 | 209 |
 | `shared/pet-geometry.ts` | 118 | 9 | 3 |
-| `shared/pet-pose-sheet.generated.ts` | 16 | 2 | 0 |
+| `shared/pet-image-model.ts` | 99 | 9 | 5 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
 | `shared/plugin-cache.ts` | 439 | 6 | 4 |
@@ -799,6 +799,7 @@
 | `ui/outline-expand-modal.ts` | 880 | 2 | 1 |
 | `ui/panel-resizer.ts` | 260 | 4 | 3 |
 | `ui/password-modal.ts` | 152 | 1 | 1 |
+| `ui/pet-image-settings.ts` | 175 | 1 | 1 |
 | `ui/plan-book-modal.ts` | 558 | 1 | 1 |
 | `ui/plot-canvas-modal.ts` | 365 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
@@ -896,9 +897,9 @@
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |
 | `ui/workspace-manager.ts` | 144 | 2 | 2 |
 | `ui/write-chapter-modal.ts` | 851 | 1 | 1 |
-| `ui/writing-pet.ts` | 620 | 13 | 8 |
+| `ui/writing-pet.ts` | 556 | 7 | 6 |
 | `ui/writing-stats-modal.ts` | 245 | 1 | 1 |
-| `ui/writing-stats-settings.ts` | 70 | 1 | 1 |
+| `ui/writing-stats-settings.ts` | 73 | 1 | 1 |
 | `ui/writing-style-modal.ts` | 589 | 1 | 1 |
 | `ui/writing-style-paths.ts` | 89 | 6 | 6 |
 | `ui/writing-style-presets.ts` | 248 | 8 | 7 |

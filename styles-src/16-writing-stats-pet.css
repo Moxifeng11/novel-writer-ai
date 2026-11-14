@@ -870,3 +870,24 @@
   font-size: 12px;
   color: var(--text-muted);
 }
+
+/* 桌宠自定义形象预览（设置页） */
+.nw-pet-image-preview {
+  position: relative;
+  width: 118px;
+  height: 118px;
+  margin: 8px 0 16px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+}
+
+.nw-pet-image-preview-hint {
+  position: absolute;
+  left: 0;
+  bottom: -18px;
+  font-size: 11px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}

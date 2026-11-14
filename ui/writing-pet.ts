@@ -11,10 +11,15 @@
  * - 写完一章：main 调用 notifyDelta()，宠物做一个短暂的「开心」动作
  */
 
+import { Notice } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import { formatWords, type StatsSummary } from '@/shared/writing-stats';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
-import { PET_POSE_SHEET_BIGFISH, PET_POSE_SHEET_CUIGENGJI } from '@/shared/pet-pose-sheet.generated';
+import {
+    normalizePetImageConfig,
+    poseFrameFor,
+    type PetImageConfig,
+} from '@/shared/pet-image-model';
 import { getDegradationNotifier } from '@/shared/degradation-notifier';
 import { clampPetPoint, PET_DEFAULT_SNAP_EDGES, petViewportOf, snapPetPoint, type PetViewport, type PetSnapEdges } from '@/shared/pet-geometry';
 import { onNodeDoc } from '@/shared/dom-window';
@@ -58,81 +63,6 @@ export type PetMood = 'idle' | 'happy' | 'sleep' | 'writing' | 'thinking' | 'err
 
 /**
 
-/** 宠物角色（对齐催更姬 PetRole） */
-export type PetRole = 'cuigengji' | 'bigfish';
-
-/** 角色显示名 */
-export const PET_ROLE_LABELS: Record<PetRole, string> = {
-    cuigengji: '催更姬',
-    bigfish: '大肥鱼',
-};
-
-/**
- * 角色雪碧图配置（催更姬同款切帧）。
- *
- * - cuigengji：2×2，idle 左上 / writing·sleep 右上 / happy 左下 / thinking·error 右下
- * - bigfish：3×2，idle 左上 / thinking 中上 / writing 右上 / happy 左下 / sleep 中下 / error 右下
- */
-export const PET_ROLE_SHEETS: Record<PetRole, {
-    dataUrl: string;
-    cols: number;
-    rows: number;
-    frames: Record<PetMood, { col: number; row: number }>;
-}> = {
-    cuigengji: {
-        dataUrl: PET_POSE_SHEET_CUIGENGJI,
-        cols: 2,
-        rows: 2,
-        frames: {
-            idle: { col: 0, row: 0 },
-            writing: { col: 1, row: 0 },
-            sleep: { col: 1, row: 0 },
-            happy: { col: 0, row: 1 },
-            thinking: { col: 1, row: 1 },
-            error: { col: 1, row: 1 },
-        },
-    },
-    bigfish: {
-        dataUrl: PET_POSE_SHEET_BIGFISH,
-        cols: 3,
-        rows: 2,
-        frames: {
-            idle: { col: 0, row: 0 },
-            thinking: { col: 1, row: 0 },
-            writing: { col: 2, row: 0 },
-            happy: { col: 0, row: 1 },
-            sleep: { col: 1, row: 1 },
-            error: { col: 2, row: 1 },
-        },
-    },
-};
-
-/** 当前角色雪碧图（默认催更姬） */
-export const PET_POSE_SHEET = { cols: PET_ROLE_SHEETS.cuigengji.cols, rows: PET_ROLE_SHEETS.cuigengji.rows } as const;
-
-/** 状态 → 雪碧图帧（默认角色；换角色后以 PET_ROLE_SHEETS[role].frames 为准） */
-export const PET_POSE_FRAMES: Record<PetMood, { col: number; row: number }> = PET_ROLE_SHEETS.cuigengji.frames;
-
-/**
- * 计算某状态在雪碧图中的帧坐标（百分比，供 background-position）。
- *
- * @param mood - 宠物状态
- * @param role - 宠物角色（决定用哪张雪碧图与帧排布；默认催更姬）
- * @returns 0–100 的 x/y 百分比
- */
-export function poseFrameFor(
-    mood: PetMood,
-    role: PetRole = 'cuigengji',
-): { xPercent: number; yPercent: number } {
-    const sheet = PET_ROLE_SHEETS[role] ?? PET_ROLE_SHEETS.cuigengji;
-    const frame = sheet.frames[mood] ?? sheet.frames.idle;
-    const cols = Math.max(1, sheet.cols);
-    const rows = Math.max(1, sheet.rows);
-    return {
-        xPercent: cols > 1 ? (frame.col / (cols - 1)) * 100 : 0,
-        yPercent: rows > 1 ? (frame.row / (rows - 1)) * 100 : 0,
-    };
-}
 
 /** 分层 SVG：5 层，外层 <g class="nw-pet-layer"> 定位、内层 .nw-pet-anim 动画 */
 const PET_SVG = `
@@ -217,8 +147,8 @@ export class WritingPet {
     private lastToday: number | null = null;
     /** 降级事件订阅的取消函数 */
     private disposeDegradationSink: (() => void) | null = null;
-    /** 当前宠物角色（持久化在 plugin.settings.petRole） */
-    private role: PetRole = 'cuigengji';
+    /** 用户自定义形象（settings.petImage；null = 内置分层 SVG） */
+    private imageConfig: PetImageConfig | null = null;
     private expanded = false;
     private dragging = false;
     private moved = false;
@@ -234,28 +164,23 @@ export class WritingPet {
 
     constructor(deps: WritingPetDeps) {
         this.deps = deps;
-        const savedRole = (deps.plugin.settings as { petRole?: PetRole }).petRole;
-        this.role = savedRole === 'bigfish' ? 'bigfish' : 'cuigengji';
+        this.imageConfig = normalizePetImageConfig((deps.plugin.settings as { petImage?: unknown }).petImage);
     }
 
     /**
-     * 切换宠物角色（催更姬 / 大肥鱼），并持久化到插件设置。
+     * 设置自定义形象（null = 回到内置分层 SVG）。
      *
-     * @param role - 目标角色
+     * @param config - 图片配置或 null
      */
-    async setRole(role: PetRole): Promise<void> {
-        if (this.role === role) return;
-        this.role = role;
-        (this.deps.plugin.settings as { petRole?: PetRole }).petRole = role;
+    async setImage(config: PetImageConfig | null): Promise<void> {
+        this.imageConfig = config;
+        (this.deps.plugin.settings as { petImage?: PetImageConfig }).petImage = config ?? undefined;
         await this.deps.plugin.saveSettings();
         if (!this.root) return;
-        const sheet = PET_ROLE_SHEETS[role] ?? PET_ROLE_SHEETS.cuigengji;
-        const pose = this.root.querySelector('.nw-pet-pose') as HTMLElement | null;
-        if (pose) {
-            pose.style.backgroundImage = `url(${sheet.dataUrl})`;
-            pose.style.backgroundSize = `${sheet.cols * 100}% ${sheet.rows * 100}%`;
-        }
-        this.applyFrame();
+        // 重建宠物主体（切 SVG ↔ 图片是结构变化，直接重挂最稳）
+        this.destroy();
+        this.mount();
+        this.update();
     }
 
     /**
@@ -279,7 +204,8 @@ export class WritingPet {
     /** 把当前状态对应的帧坐标写入 CSS 变量 */
     private applyFrame(): void {
         if (!this.root) return;
-        const frame = poseFrameFor(this.mood, this.role);
+        if (!this.imageConfig) return;
+        const frame = poseFrameFor(this.mood, this.imageConfig);
         this.root.style.setProperty('--nw-pet-frame-x', `${frame.xPercent}%`);
         this.root.style.setProperty('--nw-pet-frame-y', `${frame.yPercent}%`);
     }
@@ -328,11 +254,16 @@ export class WritingPet {
         });
         // 浮动动画放在内层 HTML 容器：外层是点击/拖拽目标，必须保持几何稳定。
         const floatWrap = petBody.createDiv({ cls: 'nw-pet-float' });
-        // 催更姬同款切帧：单图 + background-position（帧坐标由 applyFrame 写入 --nw-pet-frame-*）
-        const sheet = PET_ROLE_SHEETS[this.role] ?? PET_ROLE_SHEETS.cuigengji;
-        const pose = floatWrap.createDiv({ cls: 'nw-pet-pose', attr: { 'aria-hidden': 'true' } });
-        pose.style.backgroundImage = `url(${sheet.dataUrl})`;
-        pose.style.backgroundSize = `${sheet.cols * 100}% ${sheet.rows * 100}%`;
+        if (this.imageConfig) {
+            // 用户自定义形象：单图切帧（帧坐标由 applyFrame 写入 --nw-pet-frame-*）
+            const resource = this.deps.plugin.app.vault.adapter.getResourcePath(this.imageConfig.path);
+            const pose = floatWrap.createDiv({ cls: 'nw-pet-pose', attr: { 'aria-hidden': 'true' } });
+            pose.style.backgroundImage = `url(${resource})`;
+            pose.style.backgroundSize = `${this.imageConfig.cols * 100}% ${this.imageConfig.rows * 100}%`;
+        } else {
+            // 内置形象：代码绘制的分层 SVG（无第三方美术资源）
+            setSanitizedHtml(floatWrap, PET_SVG);
+        }
         // 窗口/可视区尺寸变化后重新钳制，避免宠物被留在屏幕外
         const handleViewportChange = (): void => {
             if (!this.root || this.dragging) return;
@@ -509,15 +440,20 @@ export class WritingPet {
             disposeOutside?.();
             disposeOutside = null;
         };
-        for (const role of Object.keys(PET_ROLE_LABELS) as PetRole[]) {
+        const current = this.imageConfig ? 'custom' : 'builtin';
+        for (const [value, label] of [['builtin', '内置绘制'], ['custom', '自定义图片']] as const) {
             const item = menu.createEl('button', {
-                cls: `nw-pet-role-item${role === this.role ? ' nw-is-active' : ''}`,
-                text: PET_ROLE_LABELS[role],
+                cls: `nw-pet-role-item${value === current ? ' nw-is-active' : ''}`,
+                text: label,
                 attr: { type: 'button' },
             });
             item.addEventListener('click', (event) => {
                 event.stopPropagation();
-                void this.setRole(role);
+                if (value === 'builtin') {
+                    void this.setImage(null);
+                } else if (!this.imageConfig) {
+                    new Notice('请先在「设置 → 写作统计与桌面宠物」里选择桌宠图片');
+                }
                 closeMenu();
             });
         }

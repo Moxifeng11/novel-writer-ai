@@ -8,7 +8,8 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { PET_LAYERS, PET_ROLE_LABELS, PET_ROLE_SHEETS, poseFrameFor, type PetLayerId } from '@/ui/writing-pet';
+import { PET_LAYERS, type PetLayerId } from '@/ui/writing-pet';
+import { poseFrameFor } from '@/shared/pet-image-model';
 
 describe('PET_LAYERS 图层信息', () => {
     it('5 层，顺序即 z 序（shadow → aura → body → detail → fx）', () => {
@@ -41,58 +42,36 @@ describe('PET_LAYERS 图层信息', () => {
     });
 });
 
-describe('poseFrameFor 雪碧图帧换算（双角色）', () => {
-    it('催更姬 2×2：idle 左上（0%,0%）', () => {
-        expect(poseFrameFor('idle', 'cuigengji')).toEqual({ xPercent: 0, yPercent: 0 });
+describe('poseFrameFor 自定义图片切帧', () => {
+    const sheet = { path: '素材/桌宠.png', cols: 2, rows: 2 };
+
+    it('idle 在左上（0%,0%）', () => {
+        expect(poseFrameFor('idle', sheet)).toEqual({ xPercent: 0, yPercent: 0 });
     });
 
-    it('催更姬 2×2：writing 右上（100%,0%）', () => {
-        expect(poseFrameFor('writing', 'cuigengji')).toEqual({ xPercent: 100, yPercent: 0 });
+    it('writing 在右上（100%,0%）', () => {
+        expect(poseFrameFor('writing', sheet)).toEqual({ xPercent: 100, yPercent: 0 });
     });
 
-    it('催更姬 2×2：happy 左下（0%,100%）', () => {
-        expect(poseFrameFor('happy', 'cuigengji')).toEqual({ xPercent: 0, yPercent: 100 });
+    it('thinking 在左下（0%,100%）', () => {
+        expect(poseFrameFor('thinking', sheet)).toEqual({ xPercent: 0, yPercent: 100 });
     });
 
-    it('催更姬 2×2：thinking / error 右下（100%,100%）', () => {
-        expect(poseFrameFor('thinking', 'cuigengji')).toEqual({ xPercent: 100, yPercent: 100 });
-        expect(poseFrameFor('error', 'cuigengji')).toEqual({ xPercent: 100, yPercent: 100 });
+    it('happy 在右下（100%,100%）', () => {
+        expect(poseFrameFor('happy', sheet)).toEqual({ xPercent: 100, yPercent: 100 });
     });
 
-    it('大肥鱼 3×2：idle 左上 / thinking 中上 / writing 右上', () => {
-        expect(poseFrameFor('idle', 'bigfish')).toEqual({ xPercent: 0, yPercent: 0 });
-        expect(poseFrameFor('thinking', 'bigfish')).toEqual({ xPercent: 50, yPercent: 0 });
-        expect(poseFrameFor('writing', 'bigfish')).toEqual({ xPercent: 100, yPercent: 0 });
+    it('3×2 图：sleep（第 5 帧）在中下（50%,100%）', () => {
+        expect(poseFrameFor('sleep', { path: 'a.png', cols: 3, rows: 2 })).toEqual({ xPercent: 50, yPercent: 100 });
     });
 
-    it('大肥鱼 3×2：happy 左下 / sleep 中下 / error 右下', () => {
-        expect(poseFrameFor('happy', 'bigfish')).toEqual({ xPercent: 0, yPercent: 100 });
-        expect(poseFrameFor('sleep', 'bigfish')).toEqual({ xPercent: 50, yPercent: 100 });
-        expect(poseFrameFor('error', 'bigfish')).toEqual({ xPercent: 100, yPercent: 100 });
+    it('单格图恒为 (0,0)', () => {
+        expect(poseFrameFor('happy', { path: 'a.png', cols: 1, rows: 1 })).toEqual({ xPercent: 0, yPercent: 0 });
     });
 
-    it('默认角色为催更姬', () => {
-        expect(poseFrameFor('idle')).toEqual(poseFrameFor('idle', 'cuigengji'));
-    });
-
-    it('帧映射覆盖全部 6 档状态（两角色都要）', () => {
-        for (const role of ['cuigengji', 'bigfish'] as const) {
-            for (const mood of ['idle', 'happy', 'sleep', 'writing', 'thinking', 'error'] as const) {
-                expect(PET_ROLE_SHEETS[role].frames[mood], role + '/' + mood).toBeTruthy();
-            }
-        }
-    });
-
-    it('两角色都有雪碧图数据与网格', () => {
-        for (const role of ['cuigengji', 'bigfish'] as const) {
-            expect(PET_ROLE_SHEETS[role].dataUrl.startsWith('data:image/png;base64,')).toBe(true);
-            expect(PET_ROLE_SHEETS[role].cols).toBeGreaterThan(1);
-            expect(PET_ROLE_SHEETS[role].rows).toBeGreaterThan(0);
-        }
-    });
-
-    it('角色显示名齐全', () => {
-        expect(PET_ROLE_LABELS.cuigengji).toBeTruthy();
-        expect(PET_ROLE_LABELS.bigfish).toBeTruthy();
+    it('超出网格的状态回落到第一帧（不产生 NaN）', () => {
+        const frame = poseFrameFor('unknown-mood', { path: 'a.png', cols: 2, rows: 2 });
+        expect(Number.isFinite(frame.xPercent)).toBe(true);
+        expect(frame).toEqual({ xPercent: 0, yPercent: 0 });
     });
 });

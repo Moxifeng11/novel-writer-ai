@@ -356,6 +356,25 @@ export class Menu {
     }
 }
 
+/** 模糊建议弹窗（测试用最小实现：可子类化，不实际渲染） */
+export class FuzzySuggestModal<T> {
+    public app: unknown;
+    public inputEl: HTMLInputElement;
+    constructor(app: unknown) {
+        this.app = app;
+        this.inputEl = document.createElement('input');
+    }
+    setPlaceholder(): void { /* 测试桩 */ }
+    getItems(): T[] { return []; }
+    getItemText(_item: T): string { return ''; }
+    onChooseItem(_item: T): void { /* 测试桩 */ }
+    open(): void { /* 测试桩 */ }
+    close(): void { /* 测试桩 */ }
+}
+
+/** 建议弹窗基类（测试用最小实现） */
+export class SuggestModal<T> extends FuzzySuggestModal<T> {}
+
 export class Notice {
     message: string | DocumentFragment;
     timeout?: number;

@@ -7,6 +7,7 @@
 
 import { Setting } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
+import { renderPetImageSettings } from '@/ui/pet-image-settings';
 
 /**
  * renderWritingStatsAndPetSettings 函数。
@@ -35,6 +36,8 @@ export function renderWritingStatsAndPetSettings(
                 await plugin.saveSettings();
                 rerender();
             }));
+
+    renderPetImageSettings(container, plugin, rerender);
 
     new Setting(container)
         .setName('每日目标字数')

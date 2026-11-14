@@ -230,8 +230,8 @@ export interface NovelWriterSettings {
     /** 只读模式：开启后拒绝一切写动作（动作契约判定，见 shared/action-contract） */
     readOnlyMode?: boolean;
     petSnapEdges?: { left: boolean; right: boolean; bottom: boolean; threshold?: number };
-    /** 桌面宠物形象（'cuigengji' 催更姬 / 'bigfish' 大肥鱼） */
-    petRole?: 'cuigengji' | 'bigfish';
+    /** 桌面宠物自定义形象（用户自己的图片；未设置则用内置分层 SVG） */
+    petImage?: { path: string; cols: number; rows: number };
     /** 追加的 AI 高频词（C 类统计词表可配置化） */
     extraAiHighFreqWords?: string[];
     semanticKeywordOverrides?: {
@@ -1860,6 +1860,16 @@ export default class NovelWriterPlugin extends Plugin {
      *
      * @param enabled - 是否启用
      */
+    /**
+     * 重新挂载桌面宠物（形象/配置变更后调用）。
+     */
+    public refreshWritingPet(): void {
+        if (!this._writingPet) return;
+        this._writingPet.destroy();
+        this._writingPet = null;
+        this.setWritingPetEnabled(this.settings.petEnabled !== false);
+    }
+
     public setWritingPetEnabled(enabled: boolean): void {
         this.settings.petEnabled = enabled;
         if (!enabled || Platform.isMobile) {
