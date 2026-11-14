@@ -891,3 +891,62 @@
   color: var(--text-faint);
   white-space: nowrap;
 }
+
+/* 两个新视图的宽屏布局优化（前端评审：原来检查器占满整行，宽屏浪费空间） */
+.nw-planning-canvas {
+  /* 宽屏：画布在左、检查器在右（grid 两列）；窄屏回落单列 */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 10px;
+  height: 100%;
+}
+
+.nw-planning-toolbar,
+.nw-planning-stats {
+  grid-column: 1 / -1;
+}
+
+.nw-planning-surface {
+  grid-column: 1;
+  grid-row: 3;
+  min-height: 320px;
+}
+
+.nw-planning-inspector {
+  grid-column: 2;
+  grid-row: 3;
+  align-self: start;
+  max-height: 100%;
+  overflow: auto;
+}
+
+@media (max-width: 900px) {
+  .nw-planning-canvas {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .nw-planning-inspector {
+    align-self: stretch;
+  }
+}
+
+/* 设定实体图：窄屏时列表变上方横条，避免左右挤压 */
+@media (max-width: 760px) {
+  .nw-memory-body {
+    flex-direction: column;
+  }
+
+  .nw-memory-cards {
+    width: auto;
+    max-height: 180px;
+  }
+}
+
+/* 首页快捷按钮过多时分组换行更整齐（8 个按钮的呼吸感） */
+.nw-home-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
