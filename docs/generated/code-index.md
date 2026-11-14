@@ -7,11 +7,11 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 346 | 145458 | 1937 | 1538 | 79% |
-| `services/` | 39 | 14781 | 219 | 170 | 78% |
+| `services/` | 39 | 14782 | 219 | 170 | 78% |
 | `shared/` | 207 | 43425 | 1808 | 1455 | 80% |
 | `core/` | 7 | 2946 | 32 | 17 | 53% |
-| `domains/` | 15 | 1433 | 78 | 48 | 62% |
-| `ui/` | 274 | 106786 | 1033 | 834 | 81% |
+| `domains/` | 15 | 1540 | 85 | 55 | 65% |
+| `ui/` | 274 | 106881 | 1033 | 834 | 81% |
 
 ## 文件清单
 
@@ -34,7 +34,7 @@
 | `domains/memory/history.ts` | 128 | 9 | 6 |
 | `domains/memory/model.ts` | 247 | 19 | 11 |
 | `domains/memory/patch.ts` | 62 | 3 | 2 |
-| `domains/planning/model.ts` | 256 | 19 | 9 |
+| `domains/planning/model.ts` | 363 | 26 | 16 |
 | `domains/script/harness-profile.ts` | 39 | 1 | 1 |
 | `domains/script/tool-catalog.ts` | 43 | 1 | 0 |
 | `domains/short/harness-profile.ts` | 42 | 1 | 1 |
@@ -404,7 +404,7 @@
 | `services/memory-graph-service.ts` | 224 | 1 | 1 |
 | `services/model-discovery.ts` | 279 | 5 | 5 |
 | `services/performance-monitor.ts` | 819 | 9 | 9 |
-| `services/planning-store.ts` | 75 | 1 | 1 |
+| `services/planning-store.ts` | 76 | 1 | 1 |
 | `services/project-health-service.ts` | 223 | 5 | 2 |
 | `services/project-index-service.ts` | 160 | 1 | 1 |
 | `services/project-rename-service.ts` | 192 | 2 | 2 |
@@ -892,7 +892,7 @@
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/link-status.ts` | 117 | 2 | 1 |
 | `ui/views/memory-graph-view.ts` | 289 | 3 | 2 |
-| `ui/views/planning-canvas-view.ts` | 382 | 4 | 3 |
+| `ui/views/planning-canvas-view.ts` | 477 | 4 | 3 |
 | `ui/views/writing-fingerprint-view.ts` | 2039 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |

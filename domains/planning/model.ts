@@ -51,6 +51,21 @@ export interface PlanningEdge {
 }
 
 /** 规划画布 */
+/** 画布便签（记台词、未决问题、灵感；不参与因果，只是贴纸） */
+export interface PlanningNote {
+    /** 便签 id */
+    id: string;
+    /** 文本 */
+    text: string;
+    /** 画布坐标 */
+    position: { x: number; y: number };
+    /** 配色（默认黄） */
+    color?: 'yellow' | 'blue' | 'pink' | 'green';
+}
+
+/**
+ * 规划画布数据（事件节点 + 因果连线 + 便签）。
+ */
 export interface PlanningCanvas {
     version: 1;
     /** 更新时间 */
@@ -59,6 +74,8 @@ export interface PlanningCanvas {
     nodes: PlanningNode[];
     /** 连线 */
     edges: PlanningEdge[];
+    /** 便签（旧数据可能没有） */
+    notes: PlanningNote[];
 }
 
 /** 规划画布格式版本 */
@@ -86,7 +103,7 @@ export const PLANNING_KIND_LABELS: Record<PlanningNodeKind, string> = {
  * @returns 空画布
  */
 export function emptyCanvas(now: number = Date.now()): PlanningCanvas {
-    return { version: PLANNING_CANVAS_VERSION, updatedAt: now, nodes: [], edges: [] };
+    return { version: PLANNING_CANVAS_VERSION, updatedAt: now, nodes: [], edges: [], notes: [] };
 }
 
 /**
@@ -252,4 +269,94 @@ export function canvasStats(canvas: PlanningCanvas): Record<PlanningNodeStatus, 
     const stats: Record<PlanningNodeStatus, number> = { idea: 0, selected: 0, written: 0, dropped: 0 };
     for (const node of canvas.nodes) stats[node.status] += 1;
     return stats;
+}
+
+/**
+ * 生成便签 id。
+ *
+ * @param now - 时间戳
+ * @param random - 随机数
+ * @returns id
+ */
+export function planningNoteId(now: number = Date.now(), random: number = Math.random()): string {
+    return `note-${now.toString(36)}-${Math.floor(random * 1e6).toString(36)}`;
+}
+
+/**
+ * 归一化画布：补齐旧数据缺失的 notes 字段。
+ *
+ * @param canvas - 原始画布
+ * @returns 补全后的画布
+ */
+export function normalizeCanvas(canvas: PlanningCanvas): PlanningCanvas {
+    return { ...canvas, notes: Array.isArray(canvas.notes) ? canvas.notes : [] };
+}
+
+/**
+ * 新增便签。
+ *
+ * @param canvas - 画布
+ * @param text - 文本
+ * @param position - 坐标
+ * @param color - 配色
+ * @returns 新画布（不修改入参）
+ */
+export function addNote(
+    canvas: PlanningCanvas,
+    text: string,
+    position: { x: number; y: number },
+    color: PlanningNote['color'] = 'yellow',
+): PlanningCanvas {
+    const note: PlanningNote = {
+        id: planningNoteId(),
+        text: String(text ?? '').slice(0, 2000),
+        position: { x: Math.round(position.x), y: Math.round(position.y) },
+        color,
+    };
+    return { ...canvas, updatedAt: Date.now(), notes: [...(canvas.notes ?? []), note] };
+}
+
+/**
+ * 修改便签文本/坐标。
+ *
+ * @param canvas - 画布
+ * @param noteId - 便签 id
+ * @param patch - 要修改的字段
+ * @returns 新画布；找不到便签时原样返回
+ */
+export function updateNote(
+    canvas: PlanningCanvas,
+    noteId: string,
+    patch: Partial<Pick<PlanningNote, 'text' | 'position' | 'color'>>,
+): PlanningCanvas {
+    const notes = canvas.notes ?? [];
+    if (!notes.some(note => note.id === noteId)) return canvas;
+    return {
+        ...canvas,
+        updatedAt: Date.now(),
+        notes: notes.map(note => (note.id === noteId ? { ...note, ...patch } : note)),
+    };
+}
+
+/**
+ * 删除便签。
+ *
+ * @param canvas - 画布
+ * @param noteId - 便签 id
+ * @returns 新画布
+ */
+export function removeNote(canvas: PlanningCanvas, noteId: string): PlanningCanvas {
+    const notes = canvas.notes ?? [];
+    if (!notes.some(note => note.id === noteId)) return canvas;
+    return { ...canvas, updatedAt: Date.now(), notes: notes.filter(note => note.id !== noteId) };
+}
+
+/**
+ * 画布统计（含便签数）。
+ *
+ * @param canvas - 画布
+ * @returns 统计
+ */
+export function noteCount(canvas: PlanningCanvas): number {
+    return (canvas.notes ?? []).length;
 }

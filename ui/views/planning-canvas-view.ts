@@ -12,7 +12,12 @@ import { ItemView, Notice, type WorkspaceLeaf } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import {
     addEdge,
+    addNote,
     autoLayout,
+    normalizeCanvas,
+    removeNote,
+    updateNote,
+    type PlanningNote,
     canvasStats,
     emptyCanvas,
     hasContainmentCycle,
@@ -80,6 +85,10 @@ export class PlanningCanvasView extends ItemView {
     private canvas: PlanningCanvas = emptyCanvas();
     private project = '';
     private selectedId: string | null = null;
+    /** 撤销栈（画布 JSON 快照） */
+    private undoStack: string[] = [];
+    /** 重做栈 */
+    private redoStack: string[] = [];
     /** 连线模式：等待选择目标节点 */
     private pendingEdge: PlanningEdgeType | null = null;
     /** 归入阶段模式 */
@@ -148,6 +157,12 @@ export class PlanningCanvasView extends ItemView {
         toolbar.createSpan({ cls: 'nw-planning-hint', text: '双击空白新建事件 · 拖动移动 · 选中后可连线/归入阶段' });
         const addButton = toolbar.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: '＋ 新事件' });
         addButton.addEventListener('click', () => void this.createNode({ x: 120, y: 120 }));
+        const noteButton = toolbar.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: '＋ 便签' });
+        noteButton.addEventListener('click', () => void this.createNote());
+        const undoButton = toolbar.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: '↶ 撤销' });
+        undoButton.addEventListener('click', () => void this.undo());
+        const redoButton = toolbar.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: '↷ 重做' });
+        redoButton.addEventListener('click', () => void this.redo());
         const layoutButton = toolbar.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: '自动布局' });
         layoutButton.addEventListener('click', () => void this.applyAutoLayout());
 
@@ -170,8 +185,88 @@ export class PlanningCanvasView extends ItemView {
         canvasEl.appendChild(svg);
         this.edgeLayer = svg;
         this.renderEdges();
+        for (const note of this.canvas.notes ?? []) this.renderNote(canvasEl, note);
         for (const node of this.canvas.nodes) this.renderNode(canvasEl, node);
         this.renderInspector(container);
+    }
+
+    /** 渲染便签（双击编辑，拖动移动） */
+    private renderNote(canvasEl: HTMLElement, note: PlanningNote): void {
+        const el = canvasEl.createDiv({ cls: `nw-planning-note nw-planning-note-${note.color ?? 'yellow'}` });
+        el.style.left = `${note.position.x}px`;
+        el.style.top = `${note.position.y}px`;
+        el.setText(note.text || '双击编辑');
+        el.addEventListener('dblclick', (event) => {
+            event.stopPropagation();
+            const next = window.prompt('便签内容（留空删除）', note.text);
+            if (next === null) return;
+            void this.mutate(canvas => (next.trim() ? updateNote(canvas, note.id, { text: next }) : removeNote(canvas, note.id)));
+        });
+        let startX = 0;
+        let startY = 0;
+        let originX = 0;
+        let originY = 0;
+        el.addEventListener('pointerdown', (event) => {
+            event.stopPropagation();
+            startX = event.clientX;
+            startY = event.clientY;
+            originX = note.position.x;
+            originY = note.position.y;
+            el.setPointerCapture(event.pointerId);
+        });
+        el.addEventListener('pointermove', (event) => {
+            if (!el.hasPointerCapture(event.pointerId)) return;
+            const x = Math.max(0, originX + event.clientX - startX);
+            const y = Math.max(0, originY + event.clientY - startY);
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+        });
+        el.addEventListener('pointerup', (event) => {
+            if (!el.hasPointerCapture(event.pointerId)) return;
+            el.releasePointerCapture(event.pointerId);
+            const x = Math.max(0, originX + event.clientX - startX);
+            const y = Math.max(0, originY + event.clientY - startY);
+            if (x === note.position.x && y === note.position.y) return;
+            void this.mutate(canvas => updateNote(canvas, note.id, { position: { x, y } }));
+        });
+    }
+
+    /** 新建便签 */
+    private async createNote(): Promise<void> {
+        const position = { x: 160, y: 160 };
+        await this.mutate(canvas => addNote(canvas, '双击编辑便签', position));
+    }
+
+    /**
+     * 统一变更入口：先压撤销栈，再改画布并落盘。
+     *
+     * @param updater - 画布变更函数
+     */
+    private async mutate(updater: (canvas: PlanningCanvas) => PlanningCanvas): Promise<void> {
+        if (!this.store || !this.project) return;
+        this.undoStack.push(JSON.stringify(this.canvas));
+        if (this.undoStack.length > 50) this.undoStack.shift();
+        this.redoStack = [];
+        this.canvas = await this.store.save(this.project, updater(this.canvas));
+        this.render();
+    }
+
+    /** 撤销上一步 */
+    private async undo(): Promise<void> {
+        if (!this.store || !this.project || this.undoStack.length === 0) return;
+        const previous = this.undoStack.pop() as string;
+        this.redoStack.push(JSON.stringify(this.canvas));
+        this.canvas = await this.store.save(this.project, normalizeCanvas(JSON.parse(previous) as PlanningCanvas));
+        this.render();
+    }
+
+    /** 重做 */
+    private async redo(): Promise<void> {
+        if (!this.store || !this.project || this.redoStack.length === 0) return;
+        const next = this.redoStack.pop() as string;
+        this.undoStack.push(JSON.stringify(this.canvas));
+        this.canvas = await this.store.save(this.project, normalizeCanvas(JSON.parse(next) as PlanningCanvas));
+        this.render();
     }
 
     /** 渲染连线层 */

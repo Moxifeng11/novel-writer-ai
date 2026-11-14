@@ -5,10 +5,16 @@
 import { describe, expect, it } from 'vitest';
 import {
     addEdge,
+    addNote,
     autoLayout,
     buildContainmentTree,
     canvasStats,
     emptyCanvas,
+    normalizeCanvas,
+    noteCount,
+    planningNoteId,
+    removeNote,
+    updateNote,
     hasContainmentCycle,
     planningId,
     PLANNING_CANVAS_VERSION,
@@ -159,5 +165,60 @@ describe('canvasStats 统计', () => {
             node('c', { status: 'written', chapterRefs: [{ chapterId: 'c', revision: 2 }] }),
         ));
         expect(stats).toEqual({ idea: 1, selected: 0, written: 2, dropped: 0 });
+    });
+});
+
+describe('画布便签', () => {
+    const canvas = emptyCanvas(1);
+
+    it('新增便签带 id/坐标/配色', () => {
+        const next = addNote(canvas, '这里埋个伏笔', { x: 10, y: 20 });
+        expect(next.notes).toHaveLength(1);
+        expect(next.notes[0].text).toBe('这里埋个伏笔');
+        expect(next.notes[0].position).toEqual({ x: 10, y: 20 });
+        expect(next.notes[0].color).toBe('yellow');
+    });
+
+    it('不修改原画布（不可变更新）', () => {
+        const next = addNote(canvas, 'x', { x: 0, y: 0 });
+        expect(canvas.notes).toHaveLength(0);
+        expect(next).not.toBe(canvas);
+    });
+
+    it('修改文本与坐标', () => {
+        const withNote = addNote(canvas, '旧', { x: 0, y: 0 });
+        const id = withNote.notes[0].id;
+        const updated = updateNote(withNote, id, { text: '新', position: { x: 50, y: 60 } });
+        expect(updated.notes[0].text).toBe('新');
+        expect(updated.notes[0].position).toEqual({ x: 50, y: 60 });
+    });
+
+    it('修改不存在的便签原样返回', () => {
+        const next = updateNote(canvas, 'missing', { text: 'x' });
+        expect(next).toBe(canvas);
+    });
+
+    it('删除便签', () => {
+        const withNote = addNote(canvas, 'x', { x: 0, y: 0 });
+        const id = withNote.notes[0].id;
+        expect(removeNote(withNote, id).notes).toHaveLength(0);
+    });
+
+    it('删除不存在的便签原样返回', () => {
+        expect(removeNote(canvas, 'missing')).toBe(canvas);
+    });
+
+    it('便签 id 唯一', () => {
+        expect(planningNoteId(1, 0.1)).not.toBe(planningNoteId(1, 0.9));
+    });
+
+    it('旧画布缺 notes 字段时归一化补空数组', () => {
+        const legacy = { version: 1, updatedAt: 1, nodes: [], edges: [] } as never;
+        expect(normalizeCanvas(legacy).notes).toEqual([]);
+    });
+
+    it('noteCount 统计便签数', () => {
+        const two = addNote(addNote(canvas, 'a', { x: 0, y: 0 }), 'b', { x: 1, y: 1 });
+        expect(noteCount(two)).toBe(2);
     });
 });

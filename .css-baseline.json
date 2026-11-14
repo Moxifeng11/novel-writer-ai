@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-14T18:36:20.016Z",
-  "note": "设定图历史面板样式",
-  "bytes": 567902,
+  "generatedAt": "2026-11-14T19:22:04.740Z",
+  "note": "规划画布便签样式",
+  "bytes": 568447,
   "important": 24,
-  "hardcodedHex": 161,
-  "rgbHsl": 191,
-  "uniqueClasses": 3106,
+  "hardcodedHex": 169,
+  "rgbHsl": 192,
+  "uniqueClasses": 3111,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

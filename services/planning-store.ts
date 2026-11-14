@@ -48,6 +48,7 @@ export class PlanningStore {
                 updatedAt: typeof parsed.updatedAt === 'number' ? parsed.updatedAt : Date.now(),
                 nodes: parsed.nodes,
                 edges: Array.isArray(parsed.edges) ? parsed.edges : [],
+                notes: Array.isArray(parsed.notes) ? parsed.notes : [],
             };
         } catch (error) {
             // silent-ok: 画布损坏等价于空画布，用户可重新编辑，不阻断写作

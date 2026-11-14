@@ -17299,6 +17299,26 @@ body.nw-panel-resizing .nw-awb-center iframe {
   font-size: 12px;
   color: var(--text-muted);
 }
+
+/* 规划画布 · 便签 */
+.nw-planning-note {
+  position: absolute;
+  width: 150px;
+  min-height: 60px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  cursor: grab;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  color: #3b3320;
+}
+
+.nw-planning-note-yellow { background: #ffe9a8; }
+.nw-planning-note-blue   { background: #cfe6ff; color: #1f3350; }
+.nw-planning-note-pink   { background: #ffd6e3; color: #4d2233; }
+.nw-planning-note-green  { background: #d6f5d0; color: #23401f; }
 /* ==========================================================================
  * 17-home-jobs-health.css — 创作主页 / 任务中心 / 首启向导 / 项目体检
  * 只使用主题变量；不引入新的全局选择器，全部挂在各自主容器下。
