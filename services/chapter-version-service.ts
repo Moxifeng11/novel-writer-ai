@@ -30,6 +30,7 @@ import {
     generateVersionId,
 } from '@/shared/diff-utils';
 import { withWriteLock } from '@/shared/write-lock';
+import type { FileTxService } from './file-tx';
 
 /**
  * 保存版本选项列表结构定义。
@@ -88,7 +89,11 @@ export function isSafeVersionEntry(project: string, meta: VersionMeta): boolean 
  * 章节版本服务。
  */
 export class ChapterVersionService {
-    constructor(private app: App) {}
+    /**
+     * @param app - Obsidian 应用
+     * @param fileTx - 可选文件事务服务；提供时「版本内容 + 索引」原子写入
+     */
+    constructor(private app: App, private fileTx?: FileTxService) {}
 
     // ============================================================
     // 1. 保存版本

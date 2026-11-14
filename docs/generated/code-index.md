@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 346 | 145455 | 1937 | 1538 | 79% |
-| `services/` | 39 | 14753 | 219 | 170 | 78% |
+| `engine/` | 346 | 145458 | 1937 | 1538 | 79% |
+| `services/` | 39 | 14781 | 219 | 170 | 78% |
 | `shared/` | 207 | 43425 | 1808 | 1455 | 80% |
 | `core/` | 7 | 2946 | 32 | 17 | 53% |
 | `domains/` | 15 | 1433 | 78 | 48 | 62% |
-| `ui/` | 274 | 106785 | 1033 | 834 | 81% |
+| `ui/` | 274 | 106786 | 1033 | 834 | 81% |
 
 ## 文件清单
 
@@ -83,7 +83,7 @@
 | `engine/bases-generator.ts` | 325 | 9 | 7 |
 | `engine/batch-import-manager.ts` | 907 | 9 | 9 |
 | `engine/beat-verifier.ts` | 70 | 3 | 1 |
-| `engine/body-writer.ts` | 525 | 8 | 8 |
+| `engine/body-writer.ts` | 526 | 8 | 8 |
 | `engine/cache/index.ts` | 24 | 3 | 0 |
 | `engine/cache/preload-manager.ts` | 670 | 6 | 6 |
 | `engine/canon-vector-indexer.ts` | 132 | 8 | 5 |
@@ -176,7 +176,7 @@
 | `engine/emotion-curve-analyzer.ts` | 220 | 1 | 1 |
 | `engine/emotion-planner.ts` | 212 | 7 | 4 |
 | `engine/ending-traction-engine.ts` | 418 | 1 | 1 |
-| `engine/engine-registry.ts` | 1521 | 13 | 3 |
+| `engine/engine-registry.ts` | 1522 | 13 | 3 |
 | `engine/entity-context-engine.ts` | 1098 | 10 | 2 |
 | `engine/entity-graph.ts` | 198 | 6 | 6 |
 | `engine/entity-link-migrator.ts` | 168 | 5 | 5 |
@@ -346,7 +346,7 @@
 | `engine/step-result-saver.ts` | 577 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 227 | 6 | 5 |
-| `engine/step-runner.ts` | 2261 | 2 | 1 |
+| `engine/step-runner.ts` | 2262 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 218 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |
@@ -389,11 +389,11 @@
 | `services/backup-center-service.ts` | 182 | 4 | 1 |
 | `services/canon-research-service.ts` | 646 | 9 | 8 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
-| `services/chapter-version-service.ts` | 739 | 4 | 4 |
+| `services/chapter-version-service.ts` | 744 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
 | `services/execution-ledger.ts` | 325 | 10 | 7 |
 | `services/fanfic-knowledge-draft.ts` | 226 | 10 | 7 |
-| `services/file-tx.ts` | 160 | 2 | 1 |
+| `services/file-tx.ts` | 183 | 2 | 1 |
 | `services/font-manager.ts` | 248 | 15 | 13 |
 | `services/genre-classifier.ts` | 858 | 2 | 2 |
 | `services/genre-preference-memory.ts` | 377 | 3 | 3 |
@@ -648,7 +648,7 @@
 | `ui/changelog-modal.ts` | 207 | 1 | 1 |
 | `ui/chapter-outline-tree-modal.ts` | 1338 | 1 | 1 |
 | `ui/chapter-settlement-modal.ts` | 428 | 1 | 1 |
-| `ui/chapter-version-modal.ts` | 657 | 2 | 2 |
+| `ui/chapter-version-modal.ts` | 658 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1021 | 2 | 2 |
 | `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |

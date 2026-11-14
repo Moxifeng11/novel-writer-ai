@@ -96,15 +96,29 @@ export class FileTxService {
         return recovered;
     }
 
-    /** 读取文件原内容（不存在返回 null） */
+    /** 读取文件原内容（不存在返回 null）。非 .md 走 adapter，与既有写入口径一致。 */
     private async readBefore(path: string): Promise<string | null> {
+        if (!path.endsWith('.md')) {
+            const adapter = this.app.vault.adapter;
+            if (!(await adapter.exists(path))) return null;
+            return adapter.read(path);
+        }
         const file = this.app.vault.getAbstractFileByPath(path);
         if (!(file instanceof TFile)) return null;
         return this.app.vault.read(file);
     }
 
-    /** 写单个文件（不存在则创建） */
+    /** 写单个文件（不存在则创建）。非 .md 走 adapter，避免版本 JSON 进入 vault 索引。 */
     private async writeFile(path: string, content: string): Promise<void> {
+        if (!path.endsWith('.md')) {
+            const adapter = this.app.vault.adapter;
+            const parent = path.split('/').slice(0, -1).join('/');
+            if (parent && !(await adapter.exists(parent))) {
+                await this.app.vault.createFolder(parent).catch(() => undefined);
+            }
+            await adapter.write(path, content); // write-entry-allow: 事务日志/版本 JSON 属索引外文件，与既有写入口径一致
+            return;
+        }
         const existing = this.app.vault.getAbstractFileByPath(path);
         if (existing instanceof TFile) {
             await this.app.vault.modify(existing, content);
@@ -130,6 +144,15 @@ export class FileTxService {
     /** 按日志回滚 */
     private async rollback(journal: FileTxJournal): Promise<void> {
         for (const step of rollbackPlan(journal)) {
+            if (!step.path.endsWith('.md')) {
+                const adapter = this.app.vault.adapter;
+                if (step.content === null) {
+                    if (await adapter.exists(step.path)) await adapter.remove(step.path);
+                } else {
+                    await adapter.write(step.path, step.content); // write-entry-allow: 事务日志/版本 JSON 属索引外文件，与既有写入口径一致
+                }
+                continue;
+            }
             const file = this.app.vault.getAbstractFileByPath(step.path);
             if (step.content === null) {
                 if (file instanceof TFile) await this.app.vault.delete(file);

@@ -1,3 +1,4 @@
+import { FileTxService } from '@/services/file-tx';
 import { App, TFile } from 'obsidian';
 import { isChapterSettledText } from '@/shared/chapter-status';
 import { AIEngine, APIResponse } from './ai-engine';
@@ -897,7 +898,7 @@ export class StepRunner {
             const backupSource = this.resolveDiskBodyPath(project, chapDir, chapterName)
                 ?? `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.body)}`;
             try {
-                await new ChapterVersionService(this.plugin.app).saveVersion(
+                await new ChapterVersionService(this.plugin.app, new FileTxService(this.plugin.app)).saveVersion(
                     project, 'chapter', chapterName, backupSource, body,
                     { type: 'manual', note: '定向修订前自动备份' },
                 );

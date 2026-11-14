@@ -8,6 +8,7 @@
  * - 显示统计信息
  * - 回滚到指定版本
  */
+import { FileTxService } from '@/services/file-tx';
 import { Modal, Setting, Notice, ButtonComponent } from 'obsidian';
 import type { App } from 'obsidian';
 import { ChapterVersionService } from '@/services/chapter-version-service';
@@ -63,7 +64,7 @@ export class ChapterVersionModal extends Modal {
         super(app);
         this.options = options;
         this.service = engineRegistry?.get(ENGINE_NAMES.CHAPTER_VERSION_SERVICE)
-            ?? new ChapterVersionService(app);
+            ?? new ChapterVersionService(app, new FileTxService(app));
     }
 
     /**

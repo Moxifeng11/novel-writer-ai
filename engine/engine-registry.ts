@@ -23,6 +23,7 @@
  * - 旧调用方式（不带 options）默认 Singleton 作用域
  * - 旧的 repositoryInstances / styleLearnerInstances 保留，行为不变
  */
+import { FileTxService } from '@/services/file-tx';
 import { Notice } from 'obsidian';
 import type { SerializedWriter } from '@/shared/serialized-writer';
 import type NovelWriterPlugin from '@/main';
@@ -1245,7 +1246,7 @@ export class EngineRegistry {
         this.register(ENGINE_NAMES.TEMPLATE_SERVICE, templateService);
 
         // ChapterVersionService: 章节版本服务（无状态，可单例共享）
-        const chapterVersionService = new ChapterVersionService(plugin.app);
+        const chapterVersionService = new ChapterVersionService(plugin.app, new FileTxService(plugin.app));
         this.register(ENGINE_NAMES.CHAPTER_VERSION_SERVICE, chapterVersionService);
 
         // TemplateManager: 模板管理器（纯 UI 服务，无状态，可单例共享；实例由组合根创建）

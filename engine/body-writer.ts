@@ -16,6 +16,7 @@
  *   3. 正文按项目「写作规则.md」推导的契约规整（见 shared/body-format.ts）
  *   4. `status` 不降级：已 settled 的章节不会被写回 written / draft
  */
+import { FileTxService } from '@/services/file-tx';
 import { App, TFile } from 'obsidian';
 import { parseFrontmatter } from '@/shared/frontmatter';
 import {
@@ -444,7 +445,7 @@ ${fmRaw}
         if (!project || !chapterName) return;
         backupStamp.set(req.path, Date.now());
         try {
-            const service = new ChapterVersionService(this.app);
+            const service = new ChapterVersionService(this.app, new FileTxService(this.app));
             await service.saveVersion(project, 'chapter', chapterName, req.path, await this.getFS().read(req.path), {
                 type: 'manual',
                 note: `覆盖前自动备份（${req.writingMode}）`,

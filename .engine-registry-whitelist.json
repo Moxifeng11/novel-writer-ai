@@ -205,7 +205,7 @@
       "className": "FileTxService",
       "reason": "文件事务服务无状态，按调用创建（main 懒初始化、各 store/视图内创建）",
       "category": "context-isolated",
-      "allowedInstances": 7
+      "allowedInstances": 10
     },
     {
       "className": "PlanningStore",
