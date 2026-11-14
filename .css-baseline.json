@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-14T14:41:19.300Z",
-  "note": "规划事件画布样式",
-  "bytes": 563836,
+  "generatedAt": "2026-11-14T15:32:38.852Z",
+  "note": "设定实体图样式",
+  "bytes": 565792,
   "important": 24,
   "hardcodedHex": 161,
   "rgbHsl": 191,
-  "uniqueClasses": 3089,
+  "uniqueClasses": 3102,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

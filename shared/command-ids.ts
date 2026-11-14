@@ -101,6 +101,8 @@ export const CommandIds = {
 
     // ─── 版本管理类 ───
     /** 规划画布（事件节点 + 连线） */
+    /** 设定实体图（实体卡 + 关系边） */
+    MEMORY_GRAPH: 'novel-writer-memory-graph',
     PLANNING_CANVAS: 'novel-writer-planning-canvas',
     VERSION_HISTORY: 'novel-writer-version-history',
     SAVE_VERSION: 'novel-writer-save-version',

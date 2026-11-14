@@ -495,6 +495,20 @@ export function pjContradictionsFile(project: string) { return `${pjConsistencyD
  * @param project - 项目路径
  * @returns vault 相对路径
  */
+/**
+ * 设定实体图文件路径（关系边；卡片正文仍在 Markdown）。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
+export function pjMemoryGraphFile(project: string) { return `${project}/04-项目总控/设定图/关系.json`; }
+
+/**
+ * 规划画布文件路径（事件节点 + 连线）。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
 export function pjPlanningCanvasFile(project: string) { return `${project}/04-项目总控/规划/画布.json`; }
 
 /**

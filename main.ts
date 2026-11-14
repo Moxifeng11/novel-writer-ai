@@ -74,6 +74,7 @@ import { UsageLedgerModal } from './ui/usage-ledger-modal';
 import { ProjectIndexService } from './services/project-index-service';
 import { FileTxService } from './services/file-tx';
 import { PlanningCanvasView, PLANNING_CANVAS_VIEW_TYPE } from './ui/views/planning-canvas-view';
+import { MemoryGraphView, MEMORY_GRAPH_VIEW_TYPE } from './ui/views/memory-graph-view';
 import { BackupCenterModal } from './ui/backup-center-modal';
 import { ChangelogModal } from './ui/changelog-modal';
 import { compareVersions, isMajorUpdate } from './services/update-checker';
@@ -971,6 +972,7 @@ export default class NovelWriterPlugin extends Plugin {
             });
 
             log.info('[小说工坊] 注册视图...');
+        this.registerView(MEMORY_GRAPH_VIEW_TYPE, leaf => new MemoryGraphView(leaf, this));
         this.registerView(PLANNING_CANVAS_VIEW_TYPE, leaf => new PlanningCanvasView(leaf, this));
 
             this.registerView(
@@ -1395,6 +1397,20 @@ export default class NovelWriterPlugin extends Plugin {
     /**
      * 打开规划画布（事件节点 + 连线，节点不是章节）。
      */
+    /**
+     * 打开设定实体图（实体卡 + 关系边）。
+     */
+    public async openMemoryGraph(): Promise<void> {
+        const existing = this.app.workspace.getLeavesOfType(MEMORY_GRAPH_VIEW_TYPE)[0];
+        if (existing) {
+            this.app.workspace.setActiveLeaf(existing, { focus: true });
+            return;
+        }
+        const leaf = this.app.workspace.getLeaf('tab');
+        await leaf.setViewState({ type: MEMORY_GRAPH_VIEW_TYPE, active: true });
+        this.app.workspace.setActiveLeaf(leaf, { focus: true });
+    }
+
     public async openPlanningCanvas(): Promise<void> {
         const existing = this.app.workspace.getLeavesOfType(PLANNING_CANVAS_VIEW_TYPE)[0];
         if (existing) {
