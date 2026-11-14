@@ -14,6 +14,7 @@
 import type NovelWriterPlugin from '@/main';
 import { formatWords, type StatsSummary } from '@/shared/writing-stats';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
+import { PET_POSE_SHEET_DATA_URL } from '@/shared/pet-pose-sheet.generated';
 import { onNodeDoc } from '@/shared/dom-window';
 
 /**
@@ -59,7 +60,17 @@ export type PetMood = 'idle' | 'happy' | 'sleep' | 'writing' | 'thinking' | 'err
  *  - cols/rows：网格切分；帧序号 = rows 内按 mood 映射
  * 未配置时使用分层 SVG。
  */
-export const PET_POSE_SHEET: { url: string; cols: number; rows: number } | undefined = undefined;
+export const PET_POSE_SHEET = { cols: 2, rows: 2 } as const;
+
+/** 状态 → 雪碧图帧（col/row；沿用催更姬排布：idle 左上 / writing·sleep 右上 / happy 左下 / thinking·error 右下） */
+export const PET_POSE_FRAMES: Record<PetMood, { col: number; row: number }> = {
+    idle: { col: 0, row: 0 },
+    writing: { col: 1, row: 0 },
+    sleep: { col: 1, row: 0 },
+    happy: { col: 0, row: 1 },
+    thinking: { col: 1, row: 1 },
+    error: { col: 1, row: 1 },
+};
 
 /**
  * 计算某状态在雪碧图中的帧坐标（百分比，供 background-position）。
@@ -70,17 +81,14 @@ export const PET_POSE_SHEET: { url: string; cols: number; rows: number } | undef
  */
 export function poseFrameFor(
     mood: PetMood,
-    sheet: { cols: number; rows: number },
+    sheet: { cols: number; rows: number } = PET_POSE_SHEET,
 ): { xPercent: number; yPercent: number } {
-    const order: PetMood[] = ['idle', 'writing', 'thinking', 'celebrate' as PetMood, 'sleep', 'error'];
-    const index = Math.max(0, order.indexOf(mood));
+    const frame = PET_POSE_FRAMES[mood] ?? PET_POSE_FRAMES.idle;
     const cols = Math.max(1, sheet.cols);
     const rows = Math.max(1, sheet.rows);
-    const col = index % cols;
-    const row = Math.floor(index / cols) % rows;
     return {
-        xPercent: cols > 1 ? (col / (cols - 1)) * 100 : 0,
-        yPercent: rows > 1 ? (row / (rows - 1)) * 100 : 0,
+        xPercent: cols > 1 ? (frame.col / (cols - 1)) * 100 : 0,
+        yPercent: rows > 1 ? (frame.row / (rows - 1)) * 100 : 0,
     };
 }
 
@@ -193,10 +201,10 @@ export class WritingPet {
         });
         // 浮动动画放在内层 HTML 容器：外层是点击/拖拽目标，必须保持几何稳定。
         const floatWrap = petBody.createDiv({ cls: 'nw-pet-float' });
-        if (PET_POSE_SHEET) {
+        if (PET_POSE_SHEET_DATA_URL) {
             // 有姿势雪碧图时走「单图切帧」（催更姬同款），帧由 --nw-pet-frame-* 控制
             const pose = floatWrap.createDiv({ cls: 'nw-pet-pose', attr: { 'aria-hidden': 'true' } });
-            pose.style.backgroundImage = `url(${PET_POSE_SHEET.url})`;
+            pose.style.backgroundImage = `url(${PET_POSE_SHEET_DATA_URL})`;
             pose.style.backgroundSize = `${PET_POSE_SHEET.cols * 100}% ${PET_POSE_SHEET.rows * 100}%`;
         } else {
             setSanitizedHtml(floatWrap, PET_SVG);
@@ -301,7 +309,7 @@ export class WritingPet {
         this.root.removeClass('nw-is-idle', 'nw-is-happy', 'nw-is-sleep', 'nw-is-writing', 'nw-is-thinking', 'nw-is-error');
         this.root.setAttribute('data-pet-state', mood);
         this.root.addClass(`nw-is-${mood}`);
-        if (PET_POSE_SHEET) {
+        if (PET_POSE_SHEET_DATA_URL) {
             const frame = poseFrameFor(mood, PET_POSE_SHEET);
             this.root.style.setProperty('--nw-pet-frame-x', `${frame.xPercent}%`);
             this.root.style.setProperty('--nw-pet-frame-y', `${frame.yPercent}%`);

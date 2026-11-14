@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 346 | 145449 | 1937 | 1538 | 79% |
 | `services/` | 34 | 13964 | 209 | 163 | 78% |
-| `shared/` | 201 | 42368 | 1739 | 1411 | 81% |
+| `shared/` | 202 | 42378 | 1740 | 1412 | 81% |
 | `core/` | 7 | 2920 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 271 | 105602 | 1025 | 828 | 81% |
+| `ui/` | 271 | 105610 | 1026 | 828 | 81% |
 
 ## 文件清单
 
@@ -516,6 +516,7 @@
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
 | `shared/paths.ts` | 1703 | 210 | 204 |
+| `shared/pet-pose-sheet.generated.ts` | 10 | 1 | 1 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
 | `shared/plugin-cache.ts` | 439 | 6 | 4 |
@@ -881,7 +882,7 @@
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |
 | `ui/workspace-manager.ts` | 144 | 2 | 2 |
 | `ui/write-chapter-modal.ts` | 851 | 1 | 1 |
-| `ui/writing-pet.ts` | 395 | 7 | 6 |
+| `ui/writing-pet.ts` | 403 | 8 | 6 |
 | `ui/writing-stats-modal.ts` | 245 | 1 | 1 |
 | `ui/writing-stats-settings.ts` | 70 | 1 | 1 |
 | `ui/writing-style-modal.ts` | 589 | 1 | 1 |
