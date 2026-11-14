@@ -1820,3 +1820,11 @@ export function pjRollbackHistoryFile(project: string): string {
  */
 export function pluginVersionsDir(): string { return `${pluginDataDir()}/versions`; }
 
+
+/**
+ * 目标（goal）目录。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
+export function pjGoalDir(project: string) { return `${project}/04-项目总控/goal`; }

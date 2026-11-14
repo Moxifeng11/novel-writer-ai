@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 351 | 145637 | 1932 | 1529 | 79% |
-| `services/` | 42 | 15105 | 225 | 174 | 77% |
-| `shared/` | 213 | 44266 | 1863 | 1491 | 80% |
+| `engine/` | 352 | 145731 | 1934 | 1531 | 79% |
+| `services/` | 43 | 15178 | 226 | 175 | 77% |
+| `shared/` | 213 | 44274 | 1864 | 1492 | 80% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 275 | 106815 | 1034 | 835 | 81% |
+| `ui/` | 275 | 106821 | 1034 | 835 | 81% |
 
 ## 文件清单
 
@@ -47,6 +47,7 @@
 | `engine/agent/harness/context-fit.ts` | 137 | 6 | 6 |
 | `engine/agent/harness/creation-plan.ts` | 73 | 6 | 6 |
 | `engine/agent/harness/diagnose-tools.ts` | 118 | 3 | 1 |
+| `engine/agent/harness/goal-tools.ts` | 94 | 2 | 2 |
 | `engine/agent/harness/harness-engine.ts` | 681 | 7 | 4 |
 | `engine/agent/harness/harness-types.ts` | 249 | 17 | 14 |
 | `engine/agent/harness/host-tools.ts` | 1041 | 5 | 5 |
@@ -403,6 +404,7 @@
 | `services/font-manager.ts` | 248 | 15 | 13 |
 | `services/genre-classifier.ts` | 858 | 2 | 2 |
 | `services/genre-preference-memory.ts` | 377 | 3 | 3 |
+| `services/goal-service.ts` | 73 | 1 | 1 |
 | `services/job-service.ts` | 364 | 9 | 1 |
 | `services/knowledge-base-manager.ts` | 1584 | 6 | 4 |
 | `services/knowledge-original-chunker.ts` | 119 | 3 | 3 |
@@ -537,7 +539,7 @@
 | `shared/novel-format.ts` | 348 | 12 | 12 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1823 | 219 | 213 |
+| `shared/paths.ts` | 1831 | 220 | 214 |
 | `shared/pet-geometry.ts` | 118 | 9 | 3 |
 | `shared/pet-image-model.ts` | 123 | 10 | 6 |
 | `shared/plan-spec-model.ts` | 137 | 10 | 5 |
@@ -646,7 +648,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 771 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1797 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1803 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |
