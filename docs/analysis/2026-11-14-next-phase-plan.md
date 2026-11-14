@@ -103,3 +103,31 @@ vault 内 **0 个真实项目**。此前所有质量验证都基于《将夜》�
 - 不追 ui 覆盖率数字（红线：不为了数字重构视图）
 - 不重写 158 个词表（A/C 两类已完成治理）
 - 不新增 AI 能力模块，先把已接的链路验证清楚
+
+## 六、执行进展
+
+### 阶段 3 · 剩余断链收尾 —— ✅ 已完成（381f50d2）
+
+| 项 | 结果 |
+|---|---|
+| §四-6 时间线列 | ✅ 新增 `shared/timeline-events-format.ts`：涉及人物/地点/类型随事件注入；10 条测试 |
+| §三-2 contextTruncated 死标志 | ✅ 压缩时上报 `injection` 降级事件（Notice + 诊断包可见） |
+| §三-3 模板变量静默置空 | ✅ 11 处 catch 收敛到 `warnVarsDegraded`（同标签去重 → degradation-notifier） |
+| §三-4 LLM 降级不可见 | ✅ 三个降级路径上报 `source='llm'`（同维度去重）；4 条测试 |
+| §四-9 结算表零读者 | ✅ **勘误：该项失效**（引用文件已不存在；结算表是用户可读产物，非生成输入），从待办移除 |
+
+**架构锁修正**：`shared/timeline-events-format.ts` 最初 import 了 engine 的 `TimelineEvent`，
+被 `ui-internal-boundaries` 测试拦下（shared ↛ engine），改为本地 `TimelineEventLike` 结构接口。
+
+验证：`tests/unit/{engine/llm-enhancer,shared/timeline-events-format,architecture/ui-internal-boundaries}`
+共 53 条通过。
+
+### 阶段 4 · 工程常态化 —— 🔄 已派 ZCode（任务板 `e2e-infra-and-keypaths`）
+
+- OBSIDIAN_PATH 默认路径（本机：`C:\Users\admin\AppData\Local\Programs\Obsidian\Obsidian.exe`）
+- 3 个关键路径 spec：一键生成冒烟 / 事实库视图 / 一致性审核弹窗
+- 当前状态：ZCode WIP（其 spec 缺 `import type { Page }`，tsc 暂红；已信箱告知）
+
+### 阶段 1 / 2 状态
+
+按用户要求**暂缓**，等阶段 3、4 完成后再说。
