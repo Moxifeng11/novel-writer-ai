@@ -11,6 +11,7 @@ import { FullWriterStore } from './full-writer-store';
 import { ChapterStateManager } from '@/ui/states/chapter-state-manager';
 import { EntityStateController } from './entity-state-controller';
 import { createLogger } from '@/shared/logger';
+import { getDegradationNotifier } from '@/shared/degradation-notifier';
 
 
 const log = createLogger('ContextLoaderController');
@@ -146,6 +147,17 @@ export class ContextLoaderController {
 
             if (context?.data?.compressed?.truncationApplied) {
                 this.deps.state.vars['contextTruncated'] = 'true';
+                // audit §三-2：硬截断此前只有 log.warn，contextTruncated 标志全仓零读者——
+                // 用户看不到「上下文被压缩，关键信息可能被裁掉」，这里上报降级使其可见。
+                getDegradationNotifier().notify({
+                    source: 'injection',
+                    dimension: 'context',
+                    from: '完整上下文',
+                    to: '压缩上下文',
+                    reason: '上下文超出预算，已压缩（关键信息可能被裁剪）',
+                    severity: 'warning',
+                    recoverable: false,
+                });
             } else {
                 this.deps.state.vars['contextTruncated'] = 'false';
             }

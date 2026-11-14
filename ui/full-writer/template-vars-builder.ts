@@ -28,6 +28,7 @@ import { ObsidianFileSystem } from '@/shared/file-system-port';
 import { loadLongTermMemory } from '@/engine/long-term-memory';
 import { findWritingStyleFile } from '@/ui/writing-style-paths';
 import { createLogger } from '@/shared/logger';
+import { getDegradationNotifier } from '@/shared/degradation-notifier';
 import { parseSceneBlocks } from '@/engine/scene-generation-loop';
 import { formatDialogueSkeleton, formatSceneCardDigest } from '@/shared/scene-card';
 import { pjPromiseLedger, pjCharacterArcTable, readProjectMeta } from '@/shared/paths';
@@ -45,6 +46,30 @@ import {
   resolveStoryContextTier,
 } from '@/engine/context/story-context-service';
 
+/** 已上报降级的标签（同一标签只弹一次 Notice，避免刷屏） */
+const degradedVarsLabels = new Set<string>();
+
+/**
+ * 上报模板变量降级（audit §三-3：此前十余处 catch 只有 log.warn，用户无感知）。
+ *
+ * @param label - 降级标签（注入段落名）
+ * @param error - 原始错误
+ */
+function warnVarsDegraded(label: string, error: unknown): void {
+    log.warn(`[TemplateVarsBuilder] ${label} 降级：`, error);
+    if (degradedVarsLabels.has(label)) return;
+    degradedVarsLabels.add(label);
+    getDegradationNotifier().notify({
+        source: 'injection',
+        dimension: label,
+        from: '注入变量',
+        to: '空/旧值',
+        reason: '模板变量构建失败，该段注入降级',
+        severity: 'warning',
+        recoverable: true,
+    });
+}
+
 const log = createLogger('TemplateVarsBuilder');
 import { setActiveInputBudget } from '@/shared/context-budget-policy';
 import {
@@ -59,6 +84,7 @@ import {
     FORCED_REVEAL_WINDOW_FORWARD,
     FORCED_REVEAL_WINDOW_BACKWARD,
 } from '@/shared/thresholds';
+import { formatTimelineEvents } from '@/shared/timeline-events-format';
 
 /** buildTemplateVars 所需依赖（由 full-writer-view 注入）。 */
 /**
@@ -523,12 +549,14 @@ ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.planned
         }
       }
     } catch (e) {
-      log.warn('[小说工坊] 伏笔计划解析失败:', e);
+      warnVarsDegraded('伏笔计划', e);
     }
   }
   const tl = d.timeline || [];
   const compressedTimeline = compressed?.timeline?.trim() ? compressed.timeline : "";
-  vars["timelineEvents"] = compressedTimeline || tl.map((t) => `- ${t.time} | ${t.chapter} | ${t.event} | ${t.impact}`).join("\n");
+  // audit §四-6：时间线事件的结构化字段（涉及人物/地点/类型）随事件一起注入，
+  // 格式化逻辑抽到 shared/timeline-events-format（可单测）。
+  vars["timelineEvents"] = formatTimelineEvents(tl, compressedTimeline);
   const prev = d.previous_chapter;
   if (prev) {
     const parts = [];
@@ -653,7 +681,7 @@ export async function applyStoryContextBus(
     applyStoryContextToVars(vars, result.bundle, { ...vars });
     logStoryContextSummary(result, `one-click ${deps.chapterName}`);
   } catch (e) {
-    log.warn('[TemplateVarsBuilder] 故事上下文总线失败，保留旧变量:', e);
+    warnVarsDegraded('故事上下文总线', e);
   }
 }
 
@@ -757,7 +785,7 @@ export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<
     vars["narrativeStructureName"] = narrative.name;
     vars["narrativeStructureStages"] = getStructureStageSummary(narrative.id);
   } catch (e) {
-    log.warn('[TemplateVarsBuilder] 读取创作模式失败，按长篇处理:', e);
+    warnVarsDegraded('创作模式', e);
     vars["creationMode"] = 'long';
     vars["creationModePrompt"] = '';
     vars["narrativeStructure"] = '';
@@ -863,7 +891,7 @@ export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<
       .filter(Boolean);
     vars["entityRelations"] = (await buildEntityRelationsBlock(deps.app, deps.project, charNames, { maxChars: 8 })).trim();
   } catch (e) {
-    log.warn("实体状态速览生成失败:", e);
+    warnVarsDegraded('实体状态速览', e);
     vars["entityRelations"] = "";
   }
   if (deps.stepResults["plotDistill"]) {
@@ -955,7 +983,7 @@ ${vars["allItems"]}`);
       vars["openPromises"] = "";
     }
   } catch (e) {
-    log.warn('[小说工坊] 读取承诺账本失败，跳过:', e);
+    warnVarsDegraded('承诺账本', e);
     vars["openPromises"] = "";
   }
   try {
@@ -972,7 +1000,7 @@ ${vars["allItems"]}`);
       vars["characterArcs"] = "";
     }
   } catch (e) {
-    log.warn('[小说工坊] 读取角色弧线表失败，跳过:', e);
+    warnVarsDegraded('角色弧线表', e);
     vars["characterArcs"] = "";
   }
   vars["prevReview"] = vars["prevReview"] || "";
@@ -1024,7 +1052,7 @@ ${vars["allItems"]}`);
     vars["dialogueSkeleton"] = formatDialogueSkeleton(cards)
       || "（本章没有台词骨架：请按场景卡与信息规划自然生成对话，信息由角色说出来，不要用叙述转述；每场至少 4 个来回）";
   } catch (e) {
-    log.warn('[小说工坊] 场景卡解析失败，跳过镜头/骨架摘要:', e);
+    warnVarsDegraded('场景卡', e);
     vars["sceneCardDigest"] = '';
     vars["lensDeclaration"] = buildLensDeclaration(undefined);
     vars["dialogueSkeleton"] = "（本章没有台词骨架：请按场景卡与信息规划自然生成对话，信息由角色说出来，不要用叙述转述；每场至少 4 个来回）";
@@ -1086,7 +1114,7 @@ ${vars["allItems"]}`);
       ? JSON.stringify({ issues: hygiene.issues, dropped: autoFix ? hygiene.dropKeys : [] })
       : "";
   } catch (e) {
-    log.warn("[小说工坊] 上下文体检失败（不影响生成）:", e);
+    warnVarsDegraded('上下文体检', e);
     vars["_contextHygiene"] = "";
   }
   // v4.20 注入溯源账本：对全部模板段统计字符/token/影响面，供步骤日志与成本评估。
@@ -1094,7 +1122,7 @@ ${vars["allItems"]}`);
   try {
     vars["_injectionLedger"] = JSON.stringify(buildInjectionLedger(vars));
   } catch (e) {
-    log.warn("[小说工坊] 注入溯源账本生成失败:", e);
+    warnVarsDegraded('注入溯源账本', e);
     vars["_injectionLedger"] = "";
   }
   // v4.26：管理界面对步骤模板的自定义覆盖（PromptManager customTemplates）。
@@ -1124,7 +1152,7 @@ ${vars["allItems"]}`);
       vars['_stepOverrides'] = JSON.stringify(overrides);
     }
   } catch (e) {
-    log.warn('[小说工坊] 组装步骤模板覆盖失败，忽略自定义模板:', e);
+    warnVarsDegraded('步骤模板覆盖', e);
   }
   return vars;
 }
@@ -1176,7 +1204,7 @@ export async function buildSceneStyleHint(deps: TemplateVarsDeps, vars: Record<s
     vars["suggestedRhythm"] = rhythmMap[sceneType] || rhythmMap.dialogue;
     vars["_sceneType"] = vars["_sceneType"] || sceneType;
   } catch (e) {
-    log.warn('[小说工坊] 场景风格提取失败:', e);
+    warnVarsDegraded('场景风格', e);
   }
 }
 

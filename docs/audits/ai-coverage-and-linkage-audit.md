@@ -95,3 +95,25 @@
 - 【智能体取证】条目在实施时需先复核现场（行号以取证时点为准）。
 - 本审计不含 token 成本/延迟层面的评估，不含具体 prompt 文案设计。
 - 报告不改动任何运行时代码；§六 8 项均为独立可发任务，实施时按仓库门禁（preflight + 回归锁）验收。
+
+## 八、勘误与阶段3收口（2026-11-14）
+
+### §四-9「结算表零生成侧读者」——**勘误：该项失效**
+
+原文引用 `batch-pipeline-runner.ts:410` 载入 `stepResults['settlement']` 后零消费。
+复核结论：
+- 该文件**已不存在**（历史重构后移除），全仓已无 `stepResults['settlement']` 的读写
+- 结算表是**用户可读产物**（写入 `结算表` 文件、带 `nw/步骤/结算表` 标签，`chapter-utils` 按类型识别），
+  不是生成侧输入——"零生成侧读者"是**设计如此**，不是断链
+- 结算结果的**状态面**已有读者：`step-runner` 把 `summarizeSettlement(result)` 写进执行台账，
+  失败/回滚会抛错并标 `settlement_partial`
+
+结论：**不接线、不删除**，该项从待办移除。
+
+### 阶段3 已修（本轮）
+| 项 | 修法 |
+|---|---|
+| §四-6 时间线列 | 新增 `shared/timeline-events-format.ts`：涉及人物/地点/类型随事件注入（10 条测试） |
+| §三-2 contextTruncated 死标志 | 截断时上报 `injection` 降级事件（Notice + 诊断包可见） |
+| §三-3 模板变量静默置空 | 11 处 catch 收敛到 `warnVarsDegraded`（同标签去重，走 degradation-notifier） |
+| §三-4 LLM 降级不可见 | `llm-enhancer` 三个降级路径上报 `source='llm'` 事件（同维度去重，4 条测试） |

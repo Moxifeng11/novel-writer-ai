@@ -26,6 +26,7 @@ import {
 } from './llm-prompts';
 import type { CharacterCandidate, AnalysisSuggestion } from './types/analysis-suggestion';
 import { createLogger } from '@/shared/logger';
+import { getDegradationNotifier } from '@/shared/degradation-notifier';
 
 
 const log = createLogger('LlmEnhancer');
@@ -117,6 +118,32 @@ interface CacheEntry<T> {
  * LLMEnhancer 类。
  */
 export class LLMEnhancer {
+    /** 已上报过降级的维度（避免同一维度反复弹 Notice） */
+    /**
+     * 上报 LLM 增强降级（同一维度只报一次，避免 Notice 刷屏）。
+     *
+     * audit §三-4：此前只有 log.warn，用户开了 llmEnabled 但模型坏掉时，
+     * 拆解会悄悄退化成纯统计，界面无任何提示。
+     *
+     * @param dimension - 降级维度
+     * @param reason - 降级原因
+     */
+    private notifyDegraded(dimension: string, reason: string): void {
+        if (this.notifiedDegradations.has(dimension)) return;
+        this.notifiedDegradations.add(dimension);
+        getDegradationNotifier().notify({
+            source: 'llm',
+            dimension,
+            from: 'LLM 增强',
+            to: '纯统计结果',
+            reason,
+            severity: 'warning',
+            recoverable: true,
+        });
+    }
+
+    private readonly notifiedDegradations = new Set<string>();
+
     private caller: LLMCaller;
     private options: LLMEnhancerOptions;
     private verifyCache: Map<string, CacheEntry<CharacterVerifyResult[]>>;
@@ -174,6 +201,7 @@ export class LLMEnhancer {
 
             if (response.error) {
                 log.warn(`[LLMEnhancer] ${dimension} LLM 调用返回错误: ${response.error}，降级到纯统计结果`);
+                this.notifyDegraded(dimension, `LLM 调用返回错误：${response.error}`);
                 return {
                     dimension,
                     success: false,
@@ -186,6 +214,7 @@ export class LLMEnhancer {
             const data = this.parseJSONResponse<T>(response.content);
             if (data === null) {
                 log.warn(`[LLMEnhancer] ${dimension} LLM 返回内容无法解析为 JSON，降级到纯统计结果`);
+                this.notifyDegraded(dimension, 'LLM 返回内容无法解析为 JSON');
                 return {
                     dimension,
                     success: false,
@@ -204,6 +233,7 @@ export class LLMEnhancer {
         } catch (e) {
             const errMsg = e instanceof Error ? e.message : String(e);
             log.warn(`[LLMEnhancer] ${dimension} LLM 增强异常，降级到纯统计结果:`, errMsg);
+            this.notifyDegraded(dimension, `LLM 增强异常：${errMsg}`);
             return {
                 dimension,
                 success: false,
