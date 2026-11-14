@@ -221,6 +221,8 @@ export interface NovelWriterSettings {
         highIntensity?: string[];
     };
     /** 桌面宠物吸附边（默认三条都开；threshold 为吸附判定距离，0 表示不吸附） */
+    /** 只读模式：开启后拒绝一切写动作（动作契约判定，见 shared/action-contract） */
+    readOnlyMode?: boolean;
     petSnapEdges?: { left: boolean; right: boolean; bottom: boolean; threshold?: number };
     /** 桌面宠物形象（'cuigengji' 催更姬 / 'bigfish' 大肥鱼） */
     petRole?: 'cuigengji' | 'bigfish';

@@ -39,6 +39,20 @@ export class PerformanceSection extends SettingsSection {
     render(container: HTMLElement): void {
         const section = container.createEl('section');
 
+        section.createEl('h3', { text: '🔒 只读模式' });
+        section.createEl('p', { text: '开启后，所有会修改作品的命令（写正文 / 改设定 / 改规划）都会被拒绝，只保留查看、统计、导出。适合审阅或多人协作时防止误改。', cls: 'nw-u-c-text-muted-2 nw-u-fs-13px-2 nw-u-marginbottom-16px-2' });
+        new Setting(section)
+            .setName('启用只读模式')
+            .setDesc('由动作契约判定（shared/action-contract）：读动作不受影响，写动作会被阻止并提示')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.readOnlyMode === true)
+                .onChange(async (value) => {
+                    this.plugin.settings.readOnlyMode = value;
+                    await this.plugin.saveSettings();
+                    this.refresh();
+                })
+            );
+
         section.createEl('h3', { text: '📊 性能监控' });
         section.createEl('p', { text: '监控插件关键操作的性能，识别性能瓶颈并优化。', cls: 'nw-u-c-text-muted-2 nw-u-fs-13px-2 nw-u-marginbottom-16px-2' });
 

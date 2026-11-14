@@ -16,6 +16,7 @@ import { NOOP_COMMAND_UI_PORT, type CommandUiPort } from '@/shared/command-ui-po
 import type { CreationMode } from '@/shared/creation-mode';
 import { getProjectModeSync } from '@/shared/project-mode';
 import { LONG_ONLY, SCRIPT_ONLY, SHORT_ONLY } from '@/shared/command-mode-rules';
+import { actionKind, changesProse, type ActionKind } from '@/shared/action-contract';
 
 
 const log = createLogger('CommandRegistry');
@@ -77,6 +78,8 @@ export interface CommandDefinition {
     description?: string;
     internalOnly?: boolean;
     hasEditorCallback?: boolean;
+    /** 动作语义（读 / 写正文 / 写设定 / 管理），由 action-contract 判定 */
+    kind?: ActionKind;
 }
 
 /** 所有命令的定义列表 */
@@ -446,6 +449,25 @@ export class CommandRegistry {
     }
 
     /**
+     * 执行命令（动作契约守卫统一入口）。
+     *
+     * 只读模式下拒绝写动作；写正文动作打日志便于后续接字数统计/结算。
+     *
+     * @param id - 命令 id
+     */
+    private guardExecute(id: string): void {
+        const kind = actionKind(id);
+        if (kind !== 'read' && (this.deps.plugin.settings as { readOnlyMode?: boolean }).readOnlyMode) {
+            new Notice('🔒 只读模式已开启：该命令会修改作品，已阻止。可在设置中关闭只读模式。', 5000);
+            return;
+        }
+        if (changesProse(id)) {
+            log.info("[小说工坊] 写正文动作:", id);
+        }
+        this.deps.registry.execute(id).catch(err => log.error('[小说工坊]', err));
+    }
+
+    /**
      * 注册 Obsidian 命令面板命令
      *
      * @param addCommand - 注册命令函数
@@ -457,9 +479,7 @@ export class CommandRegistry {
         checkCallback?: (checking: boolean) => boolean | void;
         editorCallback?: (editor: Editor, ctx: MarkdownView | MarkdownFileInfo) => void;
     }) => void): void {
-        const exec = (id: string) => () => {
-            this.deps.registry.execute(id).catch(err => log.error('[小说工坊]', err));
-        };
+        const exec = (id: string) => () => this.guardExecute(id);
         /**
          * 模式守卫版命令：当前项目模式不匹配时直接从命令面板隐藏。
          * 同步判断（路径前缀 + 缓存）避免 checkCallback 里做异步读盘。
@@ -469,7 +489,7 @@ export class CommandRegistry {
             const mode = getProjectModeSync(project);
             if (project && !allowed.includes(mode)) return false;
             if (!checking) {
-                this.deps.registry.execute(id).catch(err => log.error('[小说工坊]', err));
+                this.guardExecute(id);
             }
             return true;
         };

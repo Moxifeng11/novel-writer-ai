@@ -8,16 +8,16 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 346 | 145449 | 1937 | 1538 | 79% |
 | `services/` | 34 | 14016 | 211 | 164 | 78% |
-| `shared/` | 203 | 42539 | 1752 | 1415 | 81% |
-| `core/` | 7 | 2920 | 32 | 17 | 53% |
+| `shared/` | 204 | 42735 | 1761 | 1423 | 81% |
+| `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 271 | 105782 | 1029 | 828 | 80% |
+| `ui/` | 271 | 105796 | 1029 | 828 | 80% |
 
 ## 文件清单
 
 | 文件 | 行数 | 导出 | 有 JSDoc |
 |---|---:|---:|---:|
-| `core/command-registry.ts` | 714 | 6 | 2 |
+| `core/command-registry.ts` | 734 | 6 | 2 |
 | `core/crypto-service.ts` | 413 | 5 | 3 |
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
@@ -415,6 +415,7 @@
 | `services/worker-runtime.ts` | 278 | 8 | 8 |
 | `services/worldview-cache-service.ts` | 627 | 4 | 4 |
 | `services/writing-stats-service.ts` | 429 | 6 | 6 |
+| `shared/action-contract.ts` | 196 | 9 | 8 |
 | `shared/adaptive-debounce-manager.ts` | 315 | 2 | 2 |
 | `shared/ai-credentials.ts` | 80 | 3 | 3 |
 | `shared/api-format.ts` | 461 | 16 | 15 |
@@ -825,7 +826,7 @@
 | `ui/settings/deconstruction-section.ts` | 332 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 289 | 1 | 1 |
-| `ui/settings/general-sections.ts` | 1194 | 5 | 5 |
+| `ui/settings/general-sections.ts` | 1208 | 5 | 5 |
 | `ui/settings/knowledge-section.ts` | 797 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
