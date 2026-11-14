@@ -73,6 +73,7 @@ import { AssetRegistryModal } from './ui/asset-registry-modal';
 import { UsageLedgerModal } from './ui/usage-ledger-modal';
 import { ProjectIndexService } from './services/project-index-service';
 import { FileTxService } from './services/file-tx';
+import { PlanningCanvasView, PLANNING_CANVAS_VIEW_TYPE } from './ui/views/planning-canvas-view';
 import { BackupCenterModal } from './ui/backup-center-modal';
 import { ChangelogModal } from './ui/changelog-modal';
 import { compareVersions, isMajorUpdate } from './services/update-checker';
@@ -970,6 +971,8 @@ export default class NovelWriterPlugin extends Plugin {
             });
 
             log.info('[小说工坊] 注册视图...');
+        this.registerView(PLANNING_CANVAS_VIEW_TYPE, leaf => new PlanningCanvasView(leaf, this));
+
             this.registerView(
                 VIEW_TYPE_HOME,
                 (leaf) => new HomeView(leaf, this)
@@ -1387,6 +1390,20 @@ export default class NovelWriterPlugin extends Plugin {
                 log.warn("[小说工坊] 事务恢复失败:", child.path, error);
             }
         }
+    }
+
+    /**
+     * 打开规划画布（事件节点 + 连线，节点不是章节）。
+     */
+    public async openPlanningCanvas(): Promise<void> {
+        const existing = this.app.workspace.getLeavesOfType(PLANNING_CANVAS_VIEW_TYPE)[0];
+        if (existing) {
+            this.app.workspace.setActiveLeaf(existing, { focus: true });
+            return;
+        }
+        const leaf = this.app.workspace.getLeaf('tab');
+        await leaf.setViewState({ type: PLANNING_CANVAS_VIEW_TYPE, active: true });
+        this.app.workspace.setActiveLeaf(leaf, { focus: true });
     }
 
     public async getProjectIndex(project: string) {

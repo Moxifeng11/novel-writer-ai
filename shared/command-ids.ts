@@ -100,6 +100,8 @@ export const CommandIds = {
     CO_WRITING: 'novel-writer-co-writing',
 
     // ─── 版本管理类 ───
+    /** 规划画布（事件节点 + 连线） */
+    PLANNING_CANVAS: 'novel-writer-planning-canvas',
     VERSION_HISTORY: 'novel-writer-version-history',
     SAVE_VERSION: 'novel-writer-save-version',
 

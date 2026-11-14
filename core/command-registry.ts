@@ -159,6 +159,7 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     { id: CommandIds.PRUNE_SESSIONS, name: '🧹 清理旧会话', group: CommandGroup.Tools, description: '手动清理超出保留上限的旧分析会话与 Agent 会话（最近各 30 个以内不动）' },
 
     // ─── 视图类 ───
+    { id: CommandIds.PLANNING_CANVAS, name: '🗺 规划画布（事件节点）', group: CommandGroup.Views, description: '用事件节点与连线推演剧情结构（节点不是章节；阶段包含子情节，因果用连线）' },
     { id: CommandIds.OPEN_HOME, name: '🏠 创作主页', group: CommandGroup.Views, description: '三个创作模式、最近项目、下一步建议与任务入口' },
     { id: CommandIds.JOB_CENTER, name: '🧵 任务中心', group: CommandGroup.Tools, description: '查看进行中/已完成任务，取消或重试长任务' },
     { id: CommandIds.PROJECT_HEALTH, name: '🩺 项目体检', group: CommandGroup.Tools, description: '检查重复正文、未结算、frontmatter 异常与正文目录孤儿文件' },
@@ -445,6 +446,7 @@ export class CommandRegistry {
             }
         });
         r.register(CommandIds.VERSION_HISTORY, async () => { await this.openVersionHistory(); });
+        r.register(CommandIds.PLANNING_CANVAS, async () => { await this.deps.plugin.openPlanningCanvas(); });
         r.register(CommandIds.SAVE_VERSION, async () => { await this.saveCurrentVersion(); });
     }
 
@@ -601,6 +603,7 @@ export class CommandRegistry {
         // 叙事总览（直接执行，不走 registry）
         addCommand({ id: CommandIds.NARRATIVE_OVERVIEW, name: '叙事总览', checkCallback: execGuarded(CommandIds.NARRATIVE_OVERVIEW, LONG_ONLY) });
 
+        addCommand({ id: CommandIds.PLANNING_CANVAS, name: '🗺 规划画布（事件节点）', callback: exec(CommandIds.PLANNING_CANVAS) });
         addCommand({ id: CommandIds.VERSION_HISTORY, name: '📜 版本历史与回滚', callback: exec(CommandIds.VERSION_HISTORY) });
         addCommand({ id: CommandIds.SAVE_VERSION, name: '💾 保存当前版本', callback: exec(CommandIds.SAVE_VERSION) });
     }

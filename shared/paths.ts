@@ -489,6 +489,20 @@ export function pjContradictionsFile(project: string) { return `${pjConsistencyD
  * @param project - 项目路径
  * @returns vault 相对路径
  */
+/**
+ * 规划画布文件路径（事件节点 + 连线，节点不是章节）。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
+export function pjPlanningCanvasFile(project: string) { return `${project}/04-项目总控/规划/画布.json`; }
+
+/**
+ * 文件事务日志目录（暂存/提交/回滚）。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
 export function pjTxDir(project: string) { return `${project}/04-项目总控/事务`; }
 
 /**

@@ -83,6 +83,7 @@ const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.OPEN_KNOWLEDGE_BASE,
     CommandIds.CLEAR_WORLDVIEW_CACHE,
     CommandIds.WORLDVIEW_CACHE_STATS,
+    CommandIds.PLANNING_CANVAS,
     CommandIds.VERSION_HISTORY,
     CommandIds.SAVE_VERSION,
     // Rev 180：叙事总览补进 registry，快捷工具点击不再 fallback 到 Obsidian 命令面板

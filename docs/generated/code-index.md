@@ -7,17 +7,17 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 346 | 145449 | 1937 | 1538 | 79% |
-| `services/` | 36 | 14336 | 214 | 166 | 78% |
-| `shared/` | 206 | 43092 | 1786 | 1438 | 81% |
-| `core/` | 7 | 2940 | 32 | 17 | 53% |
-| `domains/` | 11 | 740 | 28 | 20 | 71% |
-| `ui/` | 271 | 105808 | 1029 | 828 | 80% |
+| `services/` | 37 | 14411 | 215 | 167 | 78% |
+| `shared/` | 206 | 43108 | 1787 | 1439 | 81% |
+| `core/` | 7 | 2943 | 32 | 17 | 53% |
+| `domains/` | 12 | 996 | 47 | 29 | 62% |
+| `ui/` | 272 | 106190 | 1033 | 831 | 80% |
 
 ## 文件清单
 
 | 文件 | 行数 | 导出 | 有 JSDoc |
 |---|---:|---:|---:|
-| `core/command-registry.ts` | 734 | 6 | 2 |
+| `core/command-registry.ts` | 737 | 6 | 2 |
 | `core/crypto-service.ts` | 413 | 5 | 3 |
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
@@ -31,6 +31,7 @@
 | `domains/kernel/tool-catalog-types.ts` | 15 | 2 | 0 |
 | `domains/long/harness-profile.ts` | 44 | 1 | 1 |
 | `domains/long/tool-catalog.ts` | 115 | 4 | 3 |
+| `domains/planning/model.ts` | 256 | 19 | 9 |
 | `domains/script/harness-profile.ts` | 39 | 1 | 1 |
 | `domains/script/tool-catalog.ts` | 43 | 1 | 0 |
 | `domains/short/harness-profile.ts` | 42 | 1 | 1 |
@@ -399,6 +400,7 @@
 | `services/local-model-probe.ts` | 185 | 6 | 5 |
 | `services/model-discovery.ts` | 279 | 5 | 5 |
 | `services/performance-monitor.ts` | 819 | 9 | 9 |
+| `services/planning-store.ts` | 75 | 1 | 1 |
 | `services/project-health-service.ts` | 223 | 5 | 2 |
 | `services/project-index-service.ts` | 160 | 1 | 1 |
 | `services/project-rename-service.ts` | 192 | 2 | 2 |
@@ -440,7 +442,7 @@
 | `shared/chapter-version-port.ts` | 23 | 1 | 1 |
 | `shared/character-rules.ts` | 180 | 10 | 6 |
 | `shared/co-writer-types.ts` | 113 | 0 | 0 |
-| `shared/command-ids.ts` | 124 | 2 | 2 |
+| `shared/command-ids.ts` | 126 | 2 | 2 |
 | `shared/command-mode-rules.ts` | 143 | 8 | 5 |
 | `shared/command-ui-port.ts` | 48 | 4 | 2 |
 | `shared/content-classifier.ts` | 248 | 11 | 11 |
@@ -519,7 +521,7 @@
 | `shared/novel-format.ts` | 348 | 12 | 12 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1731 | 212 | 206 |
+| `shared/paths.ts` | 1745 | 213 | 207 |
 | `shared/pet-geometry.ts` | 118 | 9 | 3 |
 | `shared/pet-pose-sheet.generated.ts` | 16 | 2 | 0 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
@@ -882,6 +884,7 @@
 | `ui/views/knowledge-capability.ts` | 113 | 3 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/link-status.ts` | 117 | 2 | 1 |
+| `ui/views/planning-canvas-view.ts` | 382 | 4 | 3 |
 | `ui/views/writing-fingerprint-view.ts` | 2039 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |

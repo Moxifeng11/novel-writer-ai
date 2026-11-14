@@ -16953,6 +16953,138 @@ body.nw-panel-resizing .nw-awb-center iframe {
   color: var(--text-on-accent);
   background: var(--interactive-accent);
 }
+
+/* 规划事件画布（机制③）：节点是事件/阶段/选择，不是章节 */
+.nw-planning-canvas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+}
+
+.nw-planning-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.nw-planning-toolbar h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.nw-planning-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.nw-planning-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.nw-planning-surface {
+  position: relative;
+  flex: 1;
+  min-height: 420px;
+  overflow: auto;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle, var(--background-modifier-border) 1px, transparent 1px) 0 0 / 24px 24px,
+    var(--background-primary);
+}
+
+.nw-planning-edges {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.nw-planning-edge {
+  stroke: var(--text-faint);
+  stroke-width: 1.6;
+}
+
+.nw-planning-edge-requires {
+  stroke: var(--text-error);
+  stroke-dasharray: 4 3;
+}
+
+.nw-planning-edge-alternative {
+  stroke: var(--text-accent);
+  stroke-dasharray: 2 4;
+}
+
+.nw-planning-node {
+  position: absolute;
+  width: 180px;
+  min-height: 76px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  cursor: grab;
+  user-select: none;
+}
+
+.nw-planning-node.nw-is-selected {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 2px var(--interactive-accent-hover);
+}
+
+.nw-planning-node.nw-is-written {
+  border-left: 4px solid var(--color-green);
+}
+
+.nw-planning-node.nw-is-dropped {
+  opacity: 0.55;
+}
+
+.nw-planning-node-kind {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.nw-planning-node-title {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.nw-planning-node-summary {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.nw-planning-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  background: var(--background-secondary);
+}
+
+.nw-planning-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
 /* ==========================================================================
  * 17-home-jobs-health.css — 创作主页 / 任务中心 / 首启向导 / 项目体检
  * 只使用主题变量；不引入新的全局选择器，全部挂在各自主容器下。

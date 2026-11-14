@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-14T13:07:12.413Z",
-  "note": "吸附边选择 chip 样式",
-  "bytes": 561349,
+  "generatedAt": "2026-11-14T14:41:19.300Z",
+  "note": "规划事件画布样式",
+  "bytes": 563836,
   "important": 24,
   "hardcodedHex": 161,
-  "rgbHsl": 190,
-  "uniqueClasses": 3073,
+  "rgbHsl": 191,
+  "uniqueClasses": 3089,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }
