@@ -230,6 +230,12 @@
       "reason": "自定义技能扫描：工作台装配会话时创建，负责读取 技能/*.md 并缓存",
       "category": "service",
       "allowedInstances": 1
+    },
+    {
+      "className": "PlanSpecService",
+      "reason": "计划/规格落盘：Agent 工具按需创建，走 FileTx 原子写",
+      "category": "service",
+      "allowedInstances": 1
     }
   ],
   "notes": {

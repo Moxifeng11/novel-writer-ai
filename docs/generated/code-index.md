@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 349 | 145486 | 1930 | 1527 | 79% |
-| `services/` | 40 | 14856 | 220 | 171 | 78% |
-| `shared/` | 210 | 43835 | 1831 | 1471 | 80% |
+| `engine/` | 350 | 145587 | 1931 | 1528 | 79% |
+| `services/` | 41 | 15003 | 223 | 173 | 78% |
+| `shared/` | 211 | 43994 | 1843 | 1478 | 80% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 275 | 106802 | 1034 | 835 | 81% |
+| `ui/` | 275 | 106812 | 1034 | 835 | 81% |
 
 ## 文件清单
 
@@ -55,6 +55,7 @@
 | `engine/agent/harness/mcp-stdio-transport.ts` | 135 | 2 | 2 |
 | `engine/agent/harness/mcp-tools.ts` | 81 | 3 | 3 |
 | `engine/agent/harness/p2-tools.ts` | 176 | 2 | 1 |
+| `engine/agent/harness/plan-spec-tools.ts` | 101 | 1 | 1 |
 | `engine/agent/harness/prompt-sections.ts` | 161 | 2 | 2 |
 | `engine/agent/harness/repair-telemetry.ts` | 140 | 10 | 4 |
 | `engine/agent/harness/repair-tools.ts` | 409 | 11 | 2 |
@@ -407,6 +408,7 @@
 | `services/memory-graph-service.ts` | 224 | 1 | 1 |
 | `services/model-discovery.ts` | 279 | 5 | 5 |
 | `services/performance-monitor.ts` | 819 | 9 | 9 |
+| `services/plan-spec-service.ts` | 147 | 3 | 2 |
 | `services/planning-store.ts` | 76 | 1 | 1 |
 | `services/project-health-service.ts` | 223 | 5 | 2 |
 | `services/project-index-service.ts` | 160 | 1 | 1 |
@@ -531,9 +533,10 @@
 | `shared/novel-format.ts` | 348 | 12 | 12 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1787 | 216 | 210 |
+| `shared/paths.ts` | 1809 | 218 | 212 |
 | `shared/pet-geometry.ts` | 118 | 9 | 3 |
 | `shared/pet-image-model.ts` | 123 | 10 | 6 |
+| `shared/plan-spec-model.ts` | 137 | 10 | 5 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
 | `shared/plugin-cache.ts` | 439 | 6 | 4 |
@@ -639,7 +642,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 771 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1784 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1794 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |

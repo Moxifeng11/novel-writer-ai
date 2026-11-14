@@ -26,6 +26,9 @@ import { summarizeRepairs } from '@/engine/agent/harness/repair-telemetry';
 import { AgentHarnessEngine, type HarnessTelemetry } from '@/engine/agent/harness/harness-engine';
 import { connectMcpServers, closeMcpClients } from '@/engine/agent/harness/mcp-manager';
 import { createSkillTools } from '@/engine/agent/harness/skill-tools';
+import { createPlanSpecTools } from '@/engine/agent/harness/plan-spec-tools';
+import { PlanSpecService } from '@/services/plan-spec-service';
+import { FileTxService } from '@/services/file-tx';
 import { SkillService } from '@/services/skill-service';
 import { matchSkills, type SkillDefinition } from '@/shared/skill-model';
 import type { HarnessTool } from '@/engine/agent/harness/harness-types';
@@ -1195,7 +1198,14 @@ export class AgentWorkbenchView extends ItemView {
                 // 审批沿用下方 requestApproval/writeApproval 通道，工具自身 fail-closed。
                 flowRepair: createFlowRepairHost({ app: this.app, plugin: this.plugin }),
                 // MCP + 自定义技能工具
-                extraTools: () => [...this.mcpToolsCache, ...createSkillTools(() => this.skillService.list())],
+                extraTools: () => [
+                    ...this.mcpToolsCache,
+                    ...createSkillTools(() => this.skillService.list()),
+                    ...createPlanSpecTools(
+                        () => new PlanSpecService(this.app, new FileTxService(this.app)),
+                        () => this.resolveActiveProject() || '',
+                    ),
+                ],
                 // 自定义技能：命中用户输入时注入提示词
                 skills: (userText) => matchSkills(this.skillCache, userText),
                 // 动作契约（只读模式）：Agent 工具与命令同一口径拦截写操作

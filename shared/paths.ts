@@ -521,6 +521,28 @@ export function pjSessionPresetDir(project: string) { return `${project}/04-项�
  * @param project - 项目路径
  * @returns vault 相对路径
  */
+/**
+ * 计划文档目录。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
+export function pjPlanDir(project: string) { return `${project}/04-项目总控/plan`; }
+
+/**
+ * 规格文档目录。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
+export function pjSpecDir(project: string) { return `${project}/04-项目总控/spec`; }
+
+/**
+ * 设定图历史快照目录。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
 export function pjMemoryHistoryDir(project: string) { return `${project}/04-项目总控/设定图/历史`; }
 
 /**

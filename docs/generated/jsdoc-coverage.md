@@ -6,9 +6,9 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 27 | 27 | 100% | 50 | 50 | 100% | 0 |
 | `domains/` | 15 | 85 | 85 | 100% | 1 | 1 | 100% | 0 |
-| `engine/` | 332 | 1904 | 1903 | 100% | 1247 | 1247 | 100% | 0 |
-| `services/` | 40 | 219 | 219 | 100% | 242 | 242 | 100% | 0 |
-| `shared/` | 208 | 1835 | 1834 | 100% | 159 | 159 | 100% | 0 |
+| `engine/` | 333 | 1905 | 1904 | 100% | 1247 | 1247 | 100% | 0 |
+| `services/` | 41 | 222 | 222 | 100% | 247 | 247 | 100% | 0 |
+| `shared/` | 209 | 1847 | 1846 | 100% | 159 | 159 | 100% | 0 |
 | `ui/` | 273 | 1024 | 1024 | 100% | 660 | 659 | 100% | 0 |
 
 ## 缺口最大的文件（按未注释导出数）
@@ -34,6 +34,7 @@
 | `engine/agent/harness/mcp-stdio-transport.ts` | 2 | 0 | 0 | 0 |
 | `engine/agent/harness/mcp-tools.ts` | 3 | 0 | 0 | 0 |
 | `engine/agent/harness/p2-tools.ts` | 2 | 0 | 0 | 0 |
+| `engine/agent/harness/plan-spec-tools.ts` | 1 | 0 | 0 | 0 |
 | `engine/agent/harness/prompt-sections.ts` | 2 | 0 | 0 | 0 |
 | `engine/agent/harness/repair-telemetry.ts` | 10 | 0 | 0 | 0 |
 | `engine/agent/harness/repair-tools.ts` | 11 | 0 | 0 | 0 |
@@ -44,7 +45,6 @@
 | `engine/agent/harness/tool-registry.ts` | 5 | 0 | 6 | 0 |
 | `engine/agent/harness/tool-result-pruner.ts` | 5 | 0 | 0 | 0 |
 | `engine/ai-api-client-shared.ts` | 6 | 0 | 0 | 0 |
-| `engine/ai-api-client.ts` | 2 | 0 | 5 | 0 |
 
 ## @example 覆盖（公共入口）
 
