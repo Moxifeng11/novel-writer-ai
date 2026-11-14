@@ -97,6 +97,12 @@ export interface AgentHarnessEngineOptions {
      */
     skills?: (userText: string) => Array<{ name: string; description: string; prompt: string }>;
     /**
+     * 当前目标文本（goal 模式）。
+     *
+     * @returns 目标摘要
+     */
+    goalText?: () => string;
+    /**
      * 会话变化回调（dsh session-persistence-jsonl）：
      * 每次回合结束后把快照交给宿主落盘；宿主负责节流与文件管理。
      */
@@ -424,6 +430,7 @@ export class AgentHarnessEngine {
                 memory: this.memory,
                 plan: this.plan,
             skills: this.options.skills,
+            goalText: this.options.goalText,
                 projects: this.ctx.projects,
                 activeProject: this.ctx.activeProject,
                 maxSteps: this.options.maxSteps,

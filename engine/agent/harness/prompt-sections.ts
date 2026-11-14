@@ -20,6 +20,8 @@ export interface HarnessPromptContext {
     registry: HarnessToolCatalog;
     /** 创作计划（update_plan 工具维护；为空时不渲染该段） */
     planSteps?: Array<{ step: string; status: string }>;
+    /** 当前目标（goal 模式；为空时不渲染该段） */
+    goalText?: string;
     /** 命中的自定义技能（为空时不渲染该段） */
     skills?: Array<{ name: string; description: string; prompt: string }>;
 }
@@ -28,6 +30,7 @@ export interface HarnessPromptContext {
 const SECTION_BUILDERS: Array<{ order: number; name: string; build: (ctx: HarnessPromptContext) => string }> = [
     { order: 10, name: 'identity', build: buildIdentity },
     { order: 15, name: 'plan', build: buildPlan },
+    { order: 18, name: 'goal', build: buildGoal },
     { order: 20, name: 'context', build: buildContext },
     { order: 30, name: 'memory', build: buildMemory },
     { order: 35, name: 'skills', build: buildSkills },
@@ -64,6 +67,12 @@ function buildPlan(ctx: HarnessPromptContext): string {
     const marks: Record<string, string> = { done: '[已完成]', in_progress: '[进行中]', pending: '[ ]' };
     const lines = ctx.planSteps.map((step, index) => `${index + 1}. ${marks[step.status] || '[ ]'} ${step.step}`);
     return `【创作计划（用 update_plan 工具维护，每完成一步就更新状态）】\n${lines.join('\n')}`;
+}
+
+function buildGoal(ctx: HarnessPromptContext): string {
+    const text = String(ctx.goalText ?? '').trim();
+    if (!text) return '';
+    return `【当前目标（goal 模式：跨回合推进，完成必须提供证据）】\n${text}`;
 }
 
 function buildContext(ctx: HarnessPromptContext): string {

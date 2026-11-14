@@ -53,6 +53,12 @@ export interface HarnessLoopOptions {
      * @returns 技能数组
      */
     skills?: (userText: string) => Array<{ name: string; description: string; prompt: string }>;
+    /**
+     * 当前目标文本（goal 模式注入系统提示）。
+     *
+     * @returns 目标摘要
+     */
+    goalText?: () => string;
     projects: string[];
     activeProject: string | null;
     /** 单个用户回合内最多模型调用次数（含工具后续步骤） */
@@ -425,6 +431,7 @@ async function runHarnessTurnInner(options: HarnessLoopOptions): Promise<Harness
             registry: toolset,
             planSteps: plan?.steps,
             skills: options.skills?.(userText),
+            goalText: options.goalText?.(),
         });
         systemChars = system.length;
         const derived: DerivedTurn[] = log.derive();

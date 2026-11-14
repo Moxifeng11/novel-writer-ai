@@ -245,7 +245,7 @@
     },
     {
       "className": "GoalService",
-      "allowedInstances": 1,
+      "allowedInstances": 3,
       "reason": "目标读写：Agent goal 工具按需创建",
       "category": "service"
     }

@@ -30,6 +30,7 @@ import { createPlanSpecTools } from '@/engine/agent/harness/plan-spec-tools';
 import { createAttachmentTools } from '@/engine/agent/harness/attachment-tools';
 import { createGoalTools } from '@/engine/agent/harness/goal-tools';
 import { GoalService } from '@/services/goal-service';
+import { renderGoal } from '@/shared/goal-model';
 import { AttachmentService } from '@/services/attachment-service';
 import { PlanSpecService } from '@/services/plan-spec-service';
 import { FileTxService } from '@/services/file-tx';
@@ -96,6 +97,8 @@ export class AgentWorkbenchView extends ItemView {
     private readonly skillService = new SkillService(this.app);
     /** 技能缓存（装配会话时加载） */
     private skillCache: SkillDefinition[] = [];
+    /** 当前目标摘要（装配会话时读取） */
+    private goalTextCache = '';
     private harnessEngine: AgentHarnessEngine | null = null;
     private ruleEngine: GuideAgentEngine | null = null;
     private port: GuideAgentPort;
@@ -1174,6 +1177,14 @@ export class AgentWorkbenchView extends ItemView {
             const abort = new AbortController();
             this.turnAbort = abort;
             this.skillCache = await this.skillService.list(true);
+            try {
+                const goal = await new GoalService(this.app, new FileTxService(this.app)).readLatest(this.resolveActiveProject() || '');
+                this.goalTextCache = goal ? renderGoal(goal) : '';
+            } catch (error) {
+                // silent-ok: 目标读取失败不阻断会话装配
+                log.warn('目标读取失败:', error);
+                this.goalTextCache = '';
+            }
             const mcp = await connectMcpServers(this.plugin.settings.mcpServers);
             closeMcpClients(this.mcpClients);
             this.mcpClients = mcp.clients;
@@ -1215,6 +1226,8 @@ export class AgentWorkbenchView extends ItemView {
                         () => this.resolveActiveProject() || '',
                     ),
                 ],
+                // goal 模式：当前目标注入系统提示
+                goalText: () => this.goalTextCache,
                 // 自定义技能：命中用户输入时注入提示词
                 skills: (userText) => matchSkills(this.skillCache, userText),
                 // 动作契约（只读模式）：Agent 工具与命令同一口径拦截写操作
