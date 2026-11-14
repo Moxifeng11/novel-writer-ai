@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { LLMEnhancer, type LLMCaller } from '../../../engine/llm-enhancer';
+import { LLMEnhancer, resetDegradationNoticeStateForTest, type LLMCaller } from '../../../engine/llm-enhancer';
 import { getDimensionPrompt, type LLMEnhanceDimension } from '../../../engine/llm-prompts';
 import { getDegradationNotifier } from '@/shared/degradation-notifier';
 import { GenreDetector } from '../../../engine/genre/genre-detector';
@@ -420,6 +420,8 @@ describe('LLM 增强层 - 纯统计流程零侵入验证', () => {
 });
 
 describe('降级上报（audit §三-4：LLM 增强降级可见化）', () => {
+    beforeEach(() => resetDegradationNoticeStateForTest());
+
     /** 取 notifier 最近事件 */
     function recentEvents() {
         return getDegradationNotifier().getEvents();
@@ -428,26 +430,29 @@ describe('降级上报（audit §三-4：LLM 增强降级可见化）', () => {
     it('**LLM 调用返回错误 → 上报 source=llm 降级事件**', async () => {
         const before = recentEvents().length;
         const enhancer = new LLMEnhancer(createMockCaller({ content: '', error: 'api 500' }));
-        const result = await enhancer.enhanceWithLLM({ dimension: 'personality', text: SAMPLE_TEXT, existingResult: { existing: true } });
+        const result = await enhancer.enhanceWithLLM({ dimension: 'abilities', text: SAMPLE_TEXT, existingResult: { existing: true } });
         expect(result.fallbackUsed).toBe(true);
         const added = recentEvents().slice(before);
-        expect(added.some(e => e.source === 'llm')).toBe(true);
+        expect(added.some(e => e.source === 'llm' && e.dimension === 'abilities')).toBe(true);
     });
 
     it('**LLM 抛异常 → 上报降级事件**', async () => {
         const before = recentEvents().length;
         const enhancer = new LLMEnhancer(createThrowingCaller('network down'));
-        await enhancer.enhanceWithLLM({ dimension: 'rhythm', text: SAMPLE_TEXT, existingResult: { existing: true } });
+        await enhancer.enhanceWithLLM({ dimension: 'goals', text: SAMPLE_TEXT, existingResult: { existing: true } });
         const added = recentEvents().slice(before);
-        expect(added.some(e => e.source === 'llm')).toBe(true);
+        expect(added.some(e => e.source === 'llm' && e.dimension === 'goals')).toBe(true);
     });
 
-    it('**同一维度只上报一次**（避免 Notice 刷屏）', async () => {
+    it('**同一维度只上报一次**（模块级去重，避免每章重复弹 Notice）', async () => {
         const enhancer = new LLMEnhancer(createThrowingCaller('boom'));
-        await enhancer.enhanceWithLLM({ dimension: 'personality', text: SAMPLE_TEXT, existingResult: { existing: true } });
-        const first = recentEvents().filter(e => e.source === 'llm' && e.dimension === 'personality').length;
-        await enhancer.enhanceWithLLM({ dimension: 'personality', text: SAMPLE_TEXT, existingResult: { existing: true } });
-        const second = recentEvents().filter(e => e.source === 'llm' && e.dimension === 'personality').length;
+        await enhancer.enhanceWithLLM({ dimension: 'foreshadow', text: SAMPLE_TEXT, existingResult: { existing: true } });
+        const first = recentEvents().filter(e => e.source === 'llm' && e.dimension === 'foreshadow').length;
+        // 新建实例（模拟每章新建 enhancer）后再降级同一维度，不应再次上报
+        const another = new LLMEnhancer(createThrowingCaller('boom'));
+        await another.enhanceWithLLM({ dimension: 'foreshadow', text: SAMPLE_TEXT, existingResult: { existing: true } });
+        const second = recentEvents().filter(e => e.source === 'llm' && e.dimension === 'foreshadow').length;
+        expect(first).toBeGreaterThan(0);
         expect(second).toBe(first);
     });
 

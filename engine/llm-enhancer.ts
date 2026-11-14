@@ -34,6 +34,23 @@ const log = createLogger('LlmEnhancer');
 export const LLM_DEGRADED = Symbol('llm_degraded');
 
 /**
+ * 已上报过降级的维度。
+ *
+ * 放在模块级而非实例级：增强器可能每章新建实例，
+ * 实例级去重会让同一维度每章弹一次 Notice（用户会以为反复出问题）。
+ */
+const notifiedDegradations = new Set<string>();
+
+/**
+ * 重置降级上报去重状态。
+ *
+ * 仅用于测试：模块级去重会跨用例累积，测试需要独立起点。
+ */
+export function resetDegradationNoticeStateForTest(): void {
+    notifiedDegradations.clear();
+}
+
+/**
  * LLMCallOptions 类型定义。
  */
 export interface LLMCallOptions {
@@ -129,8 +146,8 @@ export class LLMEnhancer {
      * @param reason - 降级原因
      */
     private notifyDegraded(dimension: string, reason: string): void {
-        if (this.notifiedDegradations.has(dimension)) return;
-        this.notifiedDegradations.add(dimension);
+        if (notifiedDegradations.has(dimension)) return;
+        notifiedDegradations.add(dimension);
         getDegradationNotifier().notify({
             source: 'llm',
             dimension,
