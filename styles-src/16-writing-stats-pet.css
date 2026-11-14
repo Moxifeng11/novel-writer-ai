@@ -544,3 +544,15 @@
   color: var(--text-muted);
   line-height: 1.5;
 }
+
+/* 快捷摘要：操作按钮组 */
+.nw-pet-card-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.nw-pet-card-actions .nw-pet-card-open {
+  flex: 1;
+  margin-top: 0;
+}
