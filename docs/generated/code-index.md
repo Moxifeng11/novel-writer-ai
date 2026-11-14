@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 351 | 145637 | 1932 | 1529 | 79% |
 | `services/` | 42 | 15105 | 225 | 174 | 77% |
-| `shared/` | 212 | 44089 | 1851 | 1484 | 80% |
+| `shared/` | 213 | 44266 | 1863 | 1491 | 80% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106815 | 1034 | 835 | 81% |
@@ -507,6 +507,7 @@
 | `shared/frontmatter.ts` | 178 | 6 | 5 |
 | `shared/ghost-trigger.ts` | 26 | 1 | 1 |
 | `shared/github-repo.ts` | 81 | 11 | 11 |
+| `shared/goal-model.ts` | 177 | 12 | 7 |
 | `shared/http-request.ts` | 124 | 7 | 3 |
 | `shared/http-transport.ts` | 235 | 6 | 2 |
 | `shared/human-feature-rubric.ts` | 180 | 7 | 6 |
