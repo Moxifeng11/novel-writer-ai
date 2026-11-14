@@ -15,6 +15,7 @@ import type NovelWriterPlugin from '@/main';
 import { formatWords, type StatsSummary } from '@/shared/writing-stats';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 import { PET_POSE_SHEET_BIGFISH, PET_POSE_SHEET_CUIGENGJI } from '@/shared/pet-pose-sheet.generated';
+import { clampPetPoint, petViewportOf, snapPetPoint, type PetViewport } from '@/shared/pet-geometry';
 import { onNodeDoc } from '@/shared/dom-window';
 
 /**
@@ -276,6 +277,17 @@ export class WritingPet {
         const pose = floatWrap.createDiv({ cls: 'nw-pet-pose', attr: { 'aria-hidden': 'true' } });
         pose.style.backgroundImage = `url(${sheet.dataUrl})`;
         pose.style.backgroundSize = `${sheet.cols * 100}% ${sheet.rows * 100}%`;
+        // 窗口/可视区尺寸变化后重新钳制，避免宠物被留在屏幕外
+        const handleViewportChange = (): void => {
+            if (!this.root || this.dragging) return;
+            const rect = this.root.getBoundingClientRect();
+            this.placeAt(rect.left, rect.top);
+        };
+        const disposer = onNodeDoc(root, 'resize', handleViewportChange);
+        this.dragDisposers.push(disposer);
+        window.visualViewport?.addEventListener('resize', handleViewportChange);
+        this.dragDisposers.push(() => window.visualViewport?.removeEventListener('resize', handleViewportChange));
+
         petBody.addEventListener('pointerdown', (e) => this.onPointerDown(e));
         petBody.addEventListener('click', () => {
             if (this.moved) return;
