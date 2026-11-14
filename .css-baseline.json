@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-14T17:34:48.064Z",
-  "note": "规划画布/实体图宽屏布局 + 首页按钮换行",
-  "bytes": 567415,
+  "generatedAt": "2026-11-14T18:36:20.016Z",
+  "note": "设定图历史面板样式",
+  "bytes": 567902,
   "important": 24,
   "hardcodedHex": 161,
   "rgbHsl": 191,
-  "uniqueClasses": 3104,
+  "uniqueClasses": 3106,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

@@ -950,3 +950,24 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+
+/* 设定实体图 · 历史快照面板 */
+.nw-memory-history {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--background-secondary);
+  max-height: 200px;
+  overflow: auto;
+}
+
+.nw-memory-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--background-modifier-border);
+  font-size: 12px;
+  color: var(--text-muted);
+}

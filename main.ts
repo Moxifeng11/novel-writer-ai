@@ -74,6 +74,7 @@ import { UsageLedgerModal } from './ui/usage-ledger-modal';
 import { ProjectIndexService } from './services/project-index-service';
 import { FileTxService } from './services/file-tx';
 import { SessionPresetService } from './services/session-preset-service';
+import { MemoryGraphService } from './services/memory-graph-service';
 import type { SessionPresetPayload } from '@/shared/session-preset-model';
 import { PlanningCanvasView, PLANNING_CANVAS_VIEW_TYPE } from './ui/views/planning-canvas-view';
 import { MemoryGraphView, MEMORY_GRAPH_VIEW_TYPE } from './ui/views/memory-graph-view';
@@ -1440,6 +1441,25 @@ export default class NovelWriterPlugin extends Plugin {
 
     /** 会话预设快照服务 */
     private _sessionPreset?: SessionPresetService;
+
+    /**
+     * 局部替换设定卡内容（patch 语义：唯一匹配；newText 为空即删除该段）。
+     *
+     * @param cardPath - 设定卡 vault 路径
+     * @param patch - { oldText, newText }
+     * @returns 结果
+     */
+    public async patchMemoryCard(cardPath: string, patch: { oldText: string; newText: string }) {
+        this._memoryGraph ??= new MemoryGraphService(
+            this.app,
+            new ProjectIndexService(this.app),
+            this._fileTx ?? new FileTxService(this.app),
+        );
+        return this._memoryGraph.patchCard(cardPath, patch);
+    }
+
+    /** 设定实体图服务（懒初始化） */
+    private _memoryGraph?: MemoryGraphService;
 
     public async getProjectIndex(project: string) {
         this._projectIndex ??= new ProjectIndexService(this.app);

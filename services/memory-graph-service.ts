@@ -8,7 +8,7 @@
 
 import { App, TFile } from 'obsidian';
 import { createLogger } from '@/shared/logger';
-import { pjMemoryGraphFile } from '@/shared/paths';
+import { pjMemoryGraphFile, pjMemoryHistoryDir } from '@/shared/paths';
 import {
     buildCard,
     emptyGraph,
@@ -22,6 +22,14 @@ import {
 import type { ProjectIndexEntry } from '@/shared/project-index-model';
 import type { ProjectIndexService } from './project-index-service';
 import type { FileTxService } from './file-tx';
+import {
+    createHistorySnapshot,
+    expiredSnapshotIds,
+    parseHistorySnapshot,
+    snapshotToGraph,
+    type MemoryHistorySnapshot,
+} from '@/domains/memory/history';
+import { applyMemoryPatch, validateMemoryPatch } from '@/domains/memory/patch';
 
 const log = createLogger('MemoryGraph');
 
@@ -73,15 +81,94 @@ export class MemoryGraphService {
      *
      * @param project - 项目路径
      * @param graph - 设定图
+     * @param reason - 变更原因（写入历史快照，便于追溯）
      * @returns 保存后的图
      */
-    async save(project: string, graph: MemoryGraph): Promise<MemoryGraph> {
+    async save(project: string, graph: MemoryGraph, reason = '保存设定图'): Promise<MemoryGraph> {
         const next: MemoryGraph = { ...graph, version: MEMORY_GRAPH_VERSION, updatedAt: Date.now() };
+        // 先留历史快照（当前磁盘上的旧状态），再写新状态
+        const current = await this.readGraph(project);
+        const snapshot = createHistorySnapshot(current, reason);
+        await this.writeHistory(project, snapshot);
         await this.fileTx.run(project, [{
             path: pjMemoryGraphFile(project),
             content: JSON.stringify(next, null, 2) + '\n',
         }]);
         return next;
+    }
+
+    /**
+     * 列出历史快照（按时间倒序）。
+     *
+     * @param project - 项目路径
+     * @param limit - 最多返回条数（默认 20）
+     * @returns 快照
+     */
+    async listHistory(project: string, limit = 20): Promise<MemoryHistorySnapshot[]> {
+        const folder = this.app.vault.getAbstractFileByPath(pjMemoryHistoryDir(project));
+        if (!folder || !('children' in folder)) return [];
+        const snapshots: MemoryHistorySnapshot[] = [];
+        for (const child of [...(folder as { children: Array<{ path: string }> }).children]) {
+            const file = this.app.vault.getAbstractFileByPath(child.path);
+            if (!file || !('stat' in file)) continue;
+            try {
+                const snapshot = parseHistorySnapshot(await this.app.vault.read(file as never));
+                if (snapshot) snapshots.push(snapshot);
+            } catch (error) {
+                // silent-ok: 单个历史文件损坏跳过，不影响其它快照与当前设定图
+                log.warn('历史快照读取失败:', child.path, error);
+            }
+        }
+        return snapshots.sort((a, b) => b.createdAt - a.createdAt).slice(0, Math.max(1, limit));
+    }
+
+    /**
+     * 恢复某个历史快照为当前关系（恢复本身也留一条历史）。
+     *
+     * @param project - 项目路径
+     * @param snapshotId - 快照 id
+     * @returns 恢复后的图
+     */
+    async restoreHistory(project: string, snapshotId: string): Promise<MemoryGraph | null> {
+        const snapshots = await this.listHistory(project, 200);
+        const target = snapshots.find(snapshot => snapshot.id === snapshotId);
+        if (!target) return null;
+        return this.save(project, snapshotToGraph(target), `恢复到 ${new Date(target.createdAt).toLocaleString()} 的快照`);
+    }
+
+    /**
+     * 局部替换设定卡内容（patch 语义：唯一匹配；newText 为空即删除该段）。
+     *
+     * @param cardPath - 卡片 vault 路径
+     * @param patch - { oldText, newText }
+     * @returns 结果
+     */
+    async patchCard(cardPath: string, patch: unknown): Promise<{ changed: boolean; error?: string }> {
+        const invalid = validateMemoryPatch(patch);
+        if (invalid) return { changed: false, error: invalid };
+        const { oldText, newText } = patch as { oldText: string; newText: string };
+        const file = this.app.vault.getAbstractFileByPath(cardPath);
+        if (!file || !('stat' in file)) return { changed: false, error: '设定卡不存在' };
+        const current = await this.app.vault.read(file as never);
+        const result = applyMemoryPatch(current, oldText, newText);
+        if (!result.changed) return { changed: false, error: result.error };
+        await this.app.vault.modify(file as never, result.content);
+        log.info('设定卡已局部替换:', cardPath);
+        return { changed: true };
+    }
+
+    /** 写历史快照并清理超限旧快照 */
+    private async writeHistory(project: string, snapshot: MemoryHistorySnapshot): Promise<void> {
+        await this.fileTx.run(project, [{
+            path: `${pjMemoryHistoryDir(project)}/${snapshot.id}.json`,
+            content: JSON.stringify(snapshot, null, 2) + '\n',
+        }]);
+        const all = await this.listHistory(project, 500);
+        const expired = expiredSnapshotIds(all);
+        for (const id of expired) {
+            const file = this.app.vault.getAbstractFileByPath(`${pjMemoryHistoryDir(project)}/${id}.json`);
+            if (file && 'stat' in file) await this.app.vault.delete(file as never);
+        }
     }
 
     /**

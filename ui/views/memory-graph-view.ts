@@ -26,6 +26,7 @@ import {
     type MemoryGraph,
 } from '@/domains/memory/model';
 import { MemoryGraphService } from '@/services/memory-graph-service';
+import { describeSnapshot, type MemoryHistorySnapshot } from '@/domains/memory/history';
 import { FileTxService } from '@/services/file-tx';
 import { ProjectIndexService } from '@/services/project-index-service';
 import { createLogger } from '@/shared/logger';
@@ -67,6 +68,10 @@ export class MemoryGraphView extends ItemView {
     private selectedId: string | null = null;
     private query = '';
     private service: MemoryGraphService | null = null;
+    /** 是否展开历史快照面板 */
+    private showHistory = false;
+    /** 历史快照（按需加载） */
+    private history: MemoryHistorySnapshot[] = [];
 
     constructor(leaf: WorkspaceLeaf, plugin: NovelWriterPlugin) {
         super(leaf);
@@ -134,10 +139,21 @@ export class MemoryGraphView extends ItemView {
             this.query = search.value;
             this.render();
         });
+        const historyButton = toolbar.createEl('button', {
+            cls: 'nw-btn nw-btn-secondary',
+            text: this.showHistory ? '收起历史' : '历史',
+        });
+        historyButton.addEventListener('click', () => {
+            this.showHistory = !this.showHistory;
+            if (this.showHistory) void this.loadHistory();
+            else this.render();
+        });
         const rescan = toolbar.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: '重新扫描' });
         rescan.addEventListener('click', () => {
             void this.reload().then(() => new Notice('✅ 已重新扫描设定卡片'));
         });
+
+        if (this.showHistory) this.renderHistoryPanel(container);
 
         const body = container.createDiv({ cls: 'nw-memory-body' });
         this.renderCardList(body.createDiv({ cls: 'nw-memory-cards' }));
@@ -201,6 +217,43 @@ export class MemoryGraphView extends ItemView {
         add.addEventListener('click', () => void this.createEdge(card.id, target.value, typeSelect.value as MemoryEdgeType));
     }
 
+    /** 加载历史快照并重渲染 */
+    private async loadHistory(): Promise<void> {
+        if (!this.service) return;
+        this.history = await this.service.listHistory(this.project, 20);
+        this.render();
+    }
+
+    /** 渲染历史快照面板（可恢复到某个快照） */
+    private renderHistoryPanel(container: HTMLElement): void {
+        const panel = container.createDiv({ cls: 'nw-memory-history' });
+        panel.createDiv({ cls: 'nw-memory-group-title', text: `历史快照（${this.history.length}）` });
+        if (this.history.length === 0) {
+            panel.createEl('p', { cls: 'nw-memory-hint', text: '还没有历史快照。每次保存关系时会自动留档。' });
+            return;
+        }
+        for (const snapshot of this.history) {
+            const row = panel.createDiv({ cls: 'nw-memory-history-row' });
+            row.createSpan({ text: describeSnapshot(snapshot) });
+            const restore = row.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: '恢复' });
+            restore.addEventListener('click', () => void this.restoreSnapshot(snapshot.id));
+        }
+    }
+
+    /** 恢复历史快照 */
+    private async restoreSnapshot(snapshotId: string): Promise<void> {
+        if (!this.service) return;
+        const restored = await this.service.restoreHistory(this.project, snapshotId);
+        if (!restored) {
+            new Notice('❌ 找不到该快照');
+            return;
+        }
+        this.graph = restored;
+        this.history = await this.service.listHistory(this.project, 20);
+        this.render();
+        new Notice('✅ 已恢复到该快照（当前状态也留了历史）');
+    }
+
     /** 新建关系 */
     private async createEdge(from: string, to: string, type: MemoryEdgeType): Promise<void> {
         if (!this.graph || !this.service) return;
@@ -225,7 +278,7 @@ export class MemoryGraphView extends ItemView {
     private async persist(next: MemoryGraph): Promise<void> {
         if (!this.service) return;
         try {
-            this.graph = await this.service.save(this.project, next);
+            this.graph = await this.service.save(this.project, next, '编辑关系');
             this.render();
         } catch (error) {
             new Notice('❌ 关系保存失败，请重试');

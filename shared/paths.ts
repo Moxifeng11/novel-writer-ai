@@ -515,6 +515,20 @@ export function pjSessionPresetDir(project: string) { return `${project}/04-项�
  * @param project - 项目路径
  * @returns vault 相对路径
  */
+/**
+ * 设定图历史快照目录。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
+export function pjMemoryHistoryDir(project: string) { return `${project}/04-项目总控/设定图/历史`; }
+
+/**
+ * 设定图关系文件路径（关系边；卡片正文仍在 Markdown）。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
 export function pjMemoryGraphFile(project: string) { return `${project}/04-项目总控/设定图/关系.json`; }
 
 /**

@@ -199,13 +199,13 @@
       "className": "ProjectIndexService",
       "reason": "项目索引服务按插件/视图持有自己的缓存与脏标记（main.ts 懒初始化、实体图视图内创建）",
       "category": "context-isolated",
-      "allowedInstances": 3
+      "allowedInstances": 5
     },
     {
       "className": "FileTxService",
       "reason": "文件事务服务无状态，按调用创建（main 懒初始化、各 store/视图内创建）",
       "category": "context-isolated",
-      "allowedInstances": 5
+      "allowedInstances": 7
     },
     {
       "className": "PlanningStore",

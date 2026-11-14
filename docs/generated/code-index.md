@@ -7,11 +7,11 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 346 | 145455 | 1937 | 1538 | 79% |
-| `services/` | 39 | 14666 | 219 | 170 | 78% |
-| `shared/` | 207 | 43411 | 1807 | 1454 | 80% |
+| `services/` | 39 | 14753 | 219 | 170 | 78% |
+| `shared/` | 207 | 43425 | 1808 | 1455 | 80% |
 | `core/` | 7 | 2946 | 32 | 17 | 53% |
-| `domains/` | 13 | 1243 | 66 | 40 | 61% |
-| `ui/` | 274 | 106732 | 1033 | 834 | 81% |
+| `domains/` | 15 | 1433 | 78 | 48 | 62% |
+| `ui/` | 274 | 106785 | 1033 | 834 | 81% |
 
 ## 文件清单
 
@@ -31,7 +31,9 @@
 | `domains/kernel/tool-catalog-types.ts` | 15 | 2 | 0 |
 | `domains/long/harness-profile.ts` | 44 | 1 | 1 |
 | `domains/long/tool-catalog.ts` | 115 | 4 | 3 |
+| `domains/memory/history.ts` | 128 | 9 | 6 |
 | `domains/memory/model.ts` | 247 | 19 | 11 |
+| `domains/memory/patch.ts` | 62 | 3 | 2 |
 | `domains/planning/model.ts` | 256 | 19 | 9 |
 | `domains/script/harness-profile.ts` | 39 | 1 | 1 |
 | `domains/script/tool-catalog.ts` | 43 | 1 | 0 |
@@ -399,7 +401,7 @@
 | `services/knowledge-base-manager.ts` | 1584 | 6 | 4 |
 | `services/knowledge-original-chunker.ts` | 119 | 3 | 3 |
 | `services/local-model-probe.ts` | 185 | 6 | 5 |
-| `services/memory-graph-service.ts` | 137 | 1 | 1 |
+| `services/memory-graph-service.ts` | 224 | 1 | 1 |
 | `services/model-discovery.ts` | 279 | 5 | 5 |
 | `services/performance-monitor.ts` | 819 | 9 | 9 |
 | `services/planning-store.ts` | 75 | 1 | 1 |
@@ -524,7 +526,7 @@
 | `shared/novel-format.ts` | 348 | 12 | 12 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1773 | 215 | 209 |
+| `shared/paths.ts` | 1787 | 216 | 210 |
 | `shared/pet-geometry.ts` | 118 | 9 | 3 |
 | `shared/pet-image-model.ts` | 123 | 10 | 6 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
@@ -889,7 +891,7 @@
 | `ui/views/knowledge-capability.ts` | 113 | 3 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/link-status.ts` | 117 | 2 | 1 |
-| `ui/views/memory-graph-view.ts` | 236 | 3 | 2 |
+| `ui/views/memory-graph-view.ts` | 289 | 3 | 2 |
 | `ui/views/planning-canvas-view.ts` | 382 | 4 | 3 |
 | `ui/views/writing-fingerprint-view.ts` | 2039 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
