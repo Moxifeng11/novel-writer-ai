@@ -25,6 +25,9 @@ import { createFlowRepairHost } from './services/flow-repair-host';
 import { summarizeRepairs } from '@/engine/agent/harness/repair-telemetry';
 import { AgentHarnessEngine, type HarnessTelemetry } from '@/engine/agent/harness/harness-engine';
 import { connectMcpServers, closeMcpClients } from '@/engine/agent/harness/mcp-manager';
+import { createSkillTools } from '@/engine/agent/harness/skill-tools';
+import { SkillService } from '@/services/skill-service';
+import { matchSkills, type SkillDefinition } from '@/shared/skill-model';
 import type { HarnessTool } from '@/engine/agent/harness/harness-types';
 import { createCallAIAdapter } from '@/engine/agent/harness/agent-adapter';
 import type { AgentChip, AgentContext, AgentIntent, AgentMessage, AgentTurnResult, GuideAgentPort } from '@/engine/agent/agent-types';
@@ -82,6 +85,10 @@ export class AgentWorkbenchView extends ItemView {
     /** 本会话可用的 MCP 工具 */
     private mcpToolsCache: HarnessTool[] = [];
     private mcpClients: import('@/engine/agent/harness/mcp-client').McpClient[] = [];
+    /** 自定义技能服务（扫描 vault 技能/ 目录） */
+    private readonly skillService = new SkillService(this.app);
+    /** 技能缓存（装配会话时加载） */
+    private skillCache: SkillDefinition[] = [];
     private harnessEngine: AgentHarnessEngine | null = null;
     private ruleEngine: GuideAgentEngine | null = null;
     private port: GuideAgentPort;
@@ -1159,6 +1166,7 @@ export class AgentWorkbenchView extends ItemView {
             // 每次装配一个新会话就换一个中止器：关闭/重启时能真正停掉在途回合与工具
             const abort = new AbortController();
             this.turnAbort = abort;
+            this.skillCache = await this.skillService.list(true);
             const mcp = await connectMcpServers(this.plugin.settings.mcpServers);
             closeMcpClients(this.mcpClients);
             this.mcpClients = mcp.clients;
@@ -1186,8 +1194,10 @@ export class AgentWorkbenchView extends ItemView {
                 // 阶段 E 接线（DSH-20261112-16）：agent 多一个 repair_flow 工具；
                 // 审批沿用下方 requestApproval/writeApproval 通道，工具自身 fail-closed。
                 flowRepair: createFlowRepairHost({ app: this.app, plugin: this.plugin }),
-                // MCP：连接启用的服务并把工具桥接进本会话
-                extraTools: () => this.mcpToolsCache,
+                // MCP + 自定义技能工具
+                extraTools: () => [...this.mcpToolsCache, ...createSkillTools(() => this.skillService.list())],
+                // 自定义技能：命中用户输入时注入提示词
+                skills: (userText) => matchSkills(this.skillCache, userText),
                 // 动作契约（只读模式）：Agent 工具与命令同一口径拦截写操作
                 guardTool: (tool, args) => {
                     if (this.plugin.settings.readOnlyMode !== true) return null;

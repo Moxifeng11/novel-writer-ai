@@ -46,6 +46,13 @@ export interface HarnessLoopOptions {
     memory: HarnessMemoryState;
     /** 创作计划状态（update_plan 工具读写） */
     plan?: { steps: import('./creation-plan').PlanStep[] };
+    /**
+     * 当前回合命中的自定义技能（注入系统提示）。
+     *
+     * @param userText - 本轮用户输入
+     * @returns 技能数组
+     */
+    skills?: (userText: string) => Array<{ name: string; description: string; prompt: string }>;
     projects: string[];
     activeProject: string | null;
     /** 单个用户回合内最多模型调用次数（含工具后续步骤） */
@@ -374,6 +381,9 @@ async function runHarnessTurnInner(options: HarnessLoopOptions): Promise<Harness
         modelSteps: 0, toolMs: 0, trimmedTurns: 0,
         usage: { prompt: 0, completion: 0, total: 0 },
     };
+    const userEvents = log.snapshot().filter(event => event.type === 'user_message');
+    const lastUserEvent = userEvents[userEvents.length - 1];
+    const userText = lastUserEvent && 'text' in lastUserEvent ? lastUserEvent.text : '';
     const budgetTokens = resolveContextBudget(options.contextWindowTokens, maxTokens, options.contextHeadroomTokens);
     let systemChars = 0;
     const spillPolicy = options.spillPolicy || DEFAULT_SPILL_POLICY;
@@ -414,6 +424,7 @@ async function runHarnessTurnInner(options: HarnessLoopOptions): Promise<Harness
             memory,
             registry: toolset,
             planSteps: plan?.steps,
+            skills: options.skills?.(userText),
         });
         systemChars = system.length;
         const derived: DerivedTurn[] = log.derive();

@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 348 | 145394 | 1929 | 1526 | 79% |
-| `services/` | 39 | 14782 | 219 | 170 | 78% |
-| `shared/` | 209 | 43717 | 1825 | 1467 | 80% |
+| `engine/` | 349 | 145486 | 1930 | 1527 | 79% |
+| `services/` | 40 | 14856 | 220 | 171 | 78% |
+| `shared/` | 210 | 43835 | 1831 | 1471 | 80% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 275 | 106792 | 1034 | 835 | 81% |
+| `ui/` | 275 | 106802 | 1034 | 835 | 81% |
 
 ## 文件清单
 
@@ -42,11 +42,11 @@
 | `engine/agent/agent-types.ts` | 382 | 23 | 17 |
 | `engine/agent/conversation-engine.ts` | 1267 | 1 | 1 |
 | `engine/agent/harness/agent-adapter.ts` | 83 | 2 | 1 |
-| `engine/agent/harness/agent-loop.ts` | 622 | 6 | 6 |
+| `engine/agent/harness/agent-loop.ts` | 633 | 6 | 6 |
 | `engine/agent/harness/context-fit.ts` | 137 | 6 | 6 |
 | `engine/agent/harness/creation-plan.ts` | 73 | 6 | 6 |
 | `engine/agent/harness/diagnose-tools.ts` | 118 | 3 | 1 |
-| `engine/agent/harness/harness-engine.ts` | 673 | 7 | 4 |
+| `engine/agent/harness/harness-engine.ts` | 681 | 7 | 4 |
 | `engine/agent/harness/harness-types.ts` | 249 | 17 | 14 |
 | `engine/agent/harness/host-tools.ts` | 1041 | 5 | 5 |
 | `engine/agent/harness/mcp-client.ts` | 164 | 6 | 3 |
@@ -55,11 +55,12 @@
 | `engine/agent/harness/mcp-stdio-transport.ts` | 135 | 2 | 2 |
 | `engine/agent/harness/mcp-tools.ts` | 81 | 3 | 3 |
 | `engine/agent/harness/p2-tools.ts` | 176 | 2 | 1 |
-| `engine/agent/harness/prompt-sections.ts` | 152 | 2 | 2 |
+| `engine/agent/harness/prompt-sections.ts` | 161 | 2 | 2 |
 | `engine/agent/harness/repair-telemetry.ts` | 140 | 10 | 4 |
 | `engine/agent/harness/repair-tools.ts` | 409 | 11 | 2 |
 | `engine/agent/harness/session-log.ts` | 269 | 1 | 1 |
 | `engine/agent/harness/session-snapshot.ts` | 249 | 11 | 10 |
+| `engine/agent/harness/skill-tools.ts` | 64 | 1 | 1 |
 | `engine/agent/harness/spill-store.ts` | 112 | 6 | 6 |
 | `engine/agent/harness/tool-registry.ts` | 307 | 5 | 2 |
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
@@ -417,6 +418,7 @@
 | `services/rules-registry.ts` | 146 | 7 | 5 |
 | `services/rules-service.ts` | 280 | 3 | 2 |
 | `services/session-preset-service.ts` | 94 | 2 | 1 |
+| `services/skill-service.ts` | 74 | 1 | 1 |
 | `services/synopsis-store.ts` | 364 | 5 | 5 |
 | `services/update-checker.ts` | 610 | 9 | 2 |
 | `services/usage-ledger.ts` | 476 | 16 | 7 |
@@ -584,6 +586,7 @@
 | `shared/session-preset-model.ts` | 144 | 9 | 6 |
 | `shared/session-retention.ts` | 186 | 6 | 6 |
 | `shared/settings-migrator.ts` | 303 | 7 | 7 |
+| `shared/skill-model.ts` | 118 | 6 | 4 |
 | `shared/step-frontmatter.ts` | 154 | 5 | 4 |
 | `shared/storage-keys.ts` | 50 | 5 | 2 |
 | `shared/store/compose.ts` | 64 | 2 | 2 |
@@ -636,7 +639,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 771 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1774 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1784 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |

@@ -20,6 +20,8 @@ export interface HarnessPromptContext {
     registry: HarnessToolCatalog;
     /** 创作计划（update_plan 工具维护；为空时不渲染该段） */
     planSteps?: Array<{ step: string; status: string }>;
+    /** 命中的自定义技能（为空时不渲染该段） */
+    skills?: Array<{ name: string; description: string; prompt: string }>;
 }
 
 /** 分段定义：order 越小越靠前 */
@@ -28,6 +30,7 @@ const SECTION_BUILDERS: Array<{ order: number; name: string; build: (ctx: Harnes
     { order: 15, name: 'plan', build: buildPlan },
     { order: 20, name: 'context', build: buildContext },
     { order: 30, name: 'memory', build: buildMemory },
+    { order: 35, name: 'skills', build: buildSkills },
     { order: 40, name: 'tools', build: buildTools },
     { order: 50, name: 'policy', build: buildPolicy },
     { order: 60, name: 'protocol', build: buildProtocol },
@@ -86,6 +89,12 @@ function buildMemory(ctx: HarnessPromptContext): string {
         lines.push(`- ${key}: ${JSON.stringify(slots[key])}`);
     }
     return lines.join('\n');
+}
+
+function buildSkills(ctx: HarnessPromptContext): string {
+    if (!ctx.skills || ctx.skills.length === 0) return '';
+    const blocks = ctx.skills.map(skill => `### 技能：${skill.name}\n${skill.description ? `${skill.description}\n` : ''}${skill.prompt}`);
+    return `【已命中的自定义技能（按用户当前需求自动注入）】\n${blocks.join('\n\n')}`;
 }
 
 function buildTools(ctx: HarnessPromptContext): string {

@@ -224,6 +224,12 @@
       "reason": "会话预设快照服务无状态，main.ts 懒初始化持有",
       "category": "context-isolated",
       "allowedInstances": 2
+    },
+    {
+      "className": "SkillService",
+      "reason": "自定义技能扫描：工作台装配会话时创建，负责读取 技能/*.md 并缓存",
+      "category": "service",
+      "allowedInstances": 1
     }
   ],
   "notes": {

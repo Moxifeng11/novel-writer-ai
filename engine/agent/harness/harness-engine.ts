@@ -90,6 +90,13 @@ export interface AgentHarnessEngineOptions {
      */
     extraTools?: () => HarnessTool[];
     /**
+     * 当前回合命中的自定义技能（注入系统提示）。
+     *
+     * @param userText - 用户输入
+     * @returns 技能数组
+     */
+    skills?: (userText: string) => Array<{ name: string; description: string; prompt: string }>;
+    /**
      * 会话变化回调（dsh session-persistence-jsonl）：
      * 每次回合结束后把快照交给宿主落盘；宿主负责节流与文件管理。
      */
@@ -416,6 +423,7 @@ export class AgentHarnessEngine {
                 log: this.log,
                 memory: this.memory,
                 plan: this.plan,
+            skills: this.options.skills,
                 projects: this.ctx.projects,
                 activeProject: this.ctx.activeProject,
                 maxSteps: this.options.maxSteps,

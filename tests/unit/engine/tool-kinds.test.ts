@@ -18,7 +18,7 @@ const makeTools = () => createHostTools({
 describe('Agent 工具动作分类', () => {
     it('全部工具都声明了 kind', () => {
         const tools = makeTools();
-        expect(tools.length).toBeGreaterThanOrEqual(31);
+        expect(tools.length).toBeGreaterThanOrEqual(31); // host 工具；技能/MCP 工具另行注册
         for (const tool of tools) {
             expect(tool.kind, tool.name).toBeTruthy();
         }
