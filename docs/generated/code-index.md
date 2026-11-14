@@ -7,8 +7,8 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 346 | 145449 | 1937 | 1538 | 79% |
-| `services/` | 35 | 14176 | 212 | 165 | 78% |
-| `shared/` | 205 | 42940 | 1773 | 1430 | 81% |
+| `services/` | 36 | 14336 | 214 | 166 | 78% |
+| `shared/` | 206 | 43092 | 1786 | 1438 | 81% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 11 | 740 | 28 | 20 | 71% |
 | `ui/` | 271 | 105808 | 1029 | 828 | 80% |
@@ -389,6 +389,7 @@
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
 | `services/execution-ledger.ts` | 325 | 10 | 7 |
 | `services/fanfic-knowledge-draft.ts` | 226 | 10 | 7 |
+| `services/file-tx.ts` | 160 | 2 | 1 |
 | `services/font-manager.ts` | 248 | 15 | 13 |
 | `services/genre-classifier.ts` | 858 | 2 | 2 |
 | `services/genre-preference-memory.ts` | 377 | 3 | 3 |
@@ -481,6 +482,7 @@
 | `shared/file-mention.ts` | 165 | 9 | 9 |
 | `shared/file-path-guard.ts` | 236 | 12 | 12 |
 | `shared/file-system-port.ts` | 797 | 8 | 8 |
+| `shared/file-tx-model.ts` | 138 | 12 | 7 |
 | `shared/foreshadow-config.ts` | 112 | 4 | 4 |
 | `shared/foreshadow-loop.ts` | 157 | 3 | 3 |
 | `shared/foreshadow-status.ts` | 61 | 3 | 2 |
@@ -517,7 +519,7 @@
 | `shared/novel-format.ts` | 348 | 12 | 12 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1717 | 211 | 205 |
+| `shared/paths.ts` | 1731 | 212 | 206 |
 | `shared/pet-geometry.ts` | 118 | 9 | 3 |
 | `shared/pet-pose-sheet.generated.ts` | 16 | 2 | 0 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |

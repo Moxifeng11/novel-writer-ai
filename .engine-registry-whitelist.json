@@ -200,6 +200,12 @@
       "reason": "每个插件实例持有自己的索引缓存与脏标记，走 plugin._projectIndex 单例字段；new 出现在 main.ts 的懒初始化与字段类型声明中",
       "category": "context-isolated",
       "allowedInstances": 2
+    },
+    {
+      "className": "FileTxService",
+      "reason": "文件事务服务无状态，按调用即时创建（main.ts 懒初始化 + 方法内兜底），不需要跨调用单例",
+      "category": "context-isolated",
+      "allowedInstances": 2
     }
   ],
   "notes": {

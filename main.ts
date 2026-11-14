@@ -72,6 +72,7 @@ import { ProjectHealthModal } from './ui/project-health-modal';
 import { AssetRegistryModal } from './ui/asset-registry-modal';
 import { UsageLedgerModal } from './ui/usage-ledger-modal';
 import { ProjectIndexService } from './services/project-index-service';
+import { FileTxService } from './services/file-tx';
 import { BackupCenterModal } from './ui/backup-center-modal';
 import { ChangelogModal } from './ui/changelog-modal';
 import { compareVersions, isMajorUpdate } from './services/update-checker';
@@ -912,6 +913,7 @@ export default class NovelWriterPlugin extends Plugin {
             log.info('[小说工坊] 命令列表:', registeredCmds.map((c: { id: string }) => c.id));
 
             this.initProjectIndex();
+            void this.recoverFileTransactions();
 
             // vault rename 事件监听（从 registerCommands 迁移）
             this.registerEvent(
@@ -1356,6 +1358,37 @@ export default class NovelWriterPlugin extends Plugin {
      * @param project - 项目路径
      * @returns 项目索引
      */
+    /** 文件事务服务（多文件写入的暂存/提交/回滚） */
+    private _fileTx?: FileTxService;
+
+    /**
+     * 原子写入多个文件（失败自动回滚，中断由启动恢复处理）。
+     *
+     * @param project - 项目路径
+     * @param writes - 目标文件与内容
+     * @returns 已提交的事务日志
+     */
+    public async runFileTx(project: string, writes: readonly { path: string; content: string }[]) {
+        this._fileTx ??= new FileTxService(this.app);
+        return this._fileTx.run(project, writes);
+    }
+
+    /** 启动恢复：回滚上次中断的文件事务（每个已知项目） */
+    private async recoverFileTransactions(): Promise<void> {
+        this._fileTx ??= new FileTxService(this.app);
+        const root = this.app.vault.getAbstractFileByPath("长篇小说");
+        if (!root || !("children" in root)) return;
+        for (const child of [...(root as { children: Array<{ path: string; children?: unknown }> }).children]) {
+            if (!child.children) continue;
+            try {
+                const recovered = await this._fileTx.recover(child.path);
+                if (recovered > 0) log.info(`[小说工坊] 已回滚 ${recovered} 个中断的文件事务:`, child.path);
+            } catch (error) {
+                log.warn("[小说工坊] 事务恢复失败:", child.path, error);
+            }
+        }
+    }
+
     public async getProjectIndex(project: string) {
         this._projectIndex ??= new ProjectIndexService(this.app);
         return this._projectIndex.ensure(project);

@@ -483,6 +483,20 @@ export function pjContradictionsFile(project: string) { return `${pjConsistencyD
  * @param project - 项目路径
  * @returns vault 相对路径
  */
+/**
+ * 文件事务日志目录（暂存/提交/回滚用）。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
+export function pjTxDir(project: string) { return `${project}/04-项目总控/事务`; }
+
+/**
+ * 项目索引文件路径（列表/候选只读它，正文按需单读）。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
 export function pjIndexFile(project: string) { return `${project}/04-项目总控/索引.json`; }
 
 /**
