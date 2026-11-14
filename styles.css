@@ -16492,7 +16492,8 @@ body.nw-panel-resizing .nw-awb-center iframe {
     font-size: 12px;
 }
 
-.nw-pet.nw-is-pulse .nw-pet-svg {
+.nw-pet.nw-is-pulse .nw-pet-svg,
+.nw-pet.nw-is-pulse .nw-pet-pose {
     animation: nw-pet-pulse 600ms ease;
 }
 
@@ -16763,11 +16764,14 @@ body.nw-panel-resizing .nw-awb-center iframe {
 
 /* 姿势雪碧图（PET_POSE_SHEET 配置后启用；帧坐标由 --nw-pet-frame-* 提供） */
 .nw-pet-pose {
-  width: 100%;
-  height: 100%;
+  /* 必须给显式尺寸：父容器高度由子元素撑开，用 100% 会得到 0 高（曾导致宠物空白） */
+  width: 118px;
+  height: 118px;
+  display: block;
   background-repeat: no-repeat;
   background-position: var(--nw-pet-frame-x, 0%) var(--nw-pet-frame-y, 0%);
   animation: nw-pet-breathe 4s ease-in-out infinite;
+  filter: drop-shadow(0 4px 5px rgba(18, 35, 67, 0.18));
 }
 
 @keyframes nw-pet-aura-breathe {

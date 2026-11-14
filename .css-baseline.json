@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-11-14T10:51:59.423Z",
-  "note": "宠物分层/状态动效/雪碧图样式",
-  "bytes": 558534,
+  "generatedAt": "2026-11-14T11:21:33.592Z",
+  "note": "宠物雪碧图显式尺寸（118x118）+ pulse 覆盖",
+  "bytes": 558765,
   "important": 24,
   "hardcodedHex": 161,
-  "rgbHsl": 188,
+  "rgbHsl": 189,
   "uniqueClasses": 3062,
   "otherClasses": 92,
   "maxSelectorDepth": 4
