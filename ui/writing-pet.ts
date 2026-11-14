@@ -113,7 +113,7 @@ export const PET_POSE_FRAMES: Record<PetMood, { col: number; row: number }> = PE
  * 计算某状态在雪碧图中的帧坐标（百分比，供 background-position）。
  *
  * @param mood - 宠物状态
- * @param sheet - 雪碧图网格
+ * @param role - 宠物角色（决定用哪张雪碧图与帧排布；默认催更姬）
  * @returns 0–100 的 x/y 百分比
  */
 export function poseFrameFor(

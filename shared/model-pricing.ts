@@ -6,9 +6,40 @@
  * AI 调用记账（engine/ai-api-client.ts）时用 `estimateCostYuan` 估算每笔费用，
  * 用量账本（services/usage-ledger.ts）按模型/项目/来源聚合展示。
  *
- * 设计取舍：不做内置价格表——各家定价随版本与渠道频繁变动，硬编码极易过时
- * 并给出看似精确的错值；查不到用户配置的单价时一律返回 null（未计费）。
+ * 设计取舍：默认**不**内置价格表——各家定价随版本与渠道频繁变动，硬编码极易过时
+ * 并给出看似精确的错值；用户未配置单价时默认返回 null（未计费）。
+ *
+ * 但「费用永远是 —」等于没有成本可见性，因此提供**默认参考价**兜底：
+ * 调用方可显式传 `{ allowDefaults: true }` 启用，界面需标注「参考价」；
+ * 用户配置的单价永远优先于默认值。
  */
+
+/**
+ * 默认参考单价（元/百万 tokens）。
+ *
+ * 仅作兜底展示，来源为各家官方公示价（2026-11 口径），可能随官方调价过时；
+ * 用户配置的单价永远优先。键为小写模型 id 的**精确匹配**。
+ */
+export const DEFAULT_MODEL_PRICING: Record<string, ModelPricing> = {
+    // DeepSeek 官方（缓存未命中价）
+    'deepseek-chat': { inputPerM: 2, outputPerM: 8 },
+    'deepseek-reasoner': { inputPerM: 4, outputPerM: 16 },
+    'deepseek-flash': { inputPerM: 0.5, outputPerM: 2 },
+    'deepseek-v3': { inputPerM: 2, outputPerM: 8 },
+    'deepseek-v3.1': { inputPerM: 2, outputPerM: 8 },
+    'deepseek-v4-flash': { inputPerM: 0.5, outputPerM: 2 },
+    // 其他常见云模型（参考价）
+    'gpt-4o-mini': { inputPerM: 1.1, outputPerM: 4.4 },
+    'gpt-4o': { inputPerM: 18, outputPerM: 72 },
+    'claude-3-5-haiku': { inputPerM: 5.8, outputPerM: 29 },
+    'claude-3-5-sonnet': { inputPerM: 21.6, outputPerM: 108 },
+    // 本地模型：无 API 费用
+    'qwen2.5:7b': { inputPerM: 0, outputPerM: 0 },
+    'ollama': { inputPerM: 0, outputPerM: 0 },
+};
+
+/** 单价来源：用户配置 / 默认参考价 */
+export type PricingSource = 'user' | 'default';
 
 /** 模型单价（元/百万 tokens）。 */
 export interface ModelPricing {
@@ -27,6 +58,7 @@ export interface ModelPricing {
  *
  * @param model - 模型 ID（与请求时的 model 字段口径一致）
  * @param settings - 插件设置（只需 customProviders 形状，传入 plugin.settings 即可）
+ * @param options - 可选；`allowDefaults: true` 时未配置单价回退到内置参考价
  * @returns 命中的单价；未配置返回 null
  *
  * @example
@@ -40,6 +72,7 @@ export interface ModelPricing {
 export function lookupModelPricing(
     model: string,
     settings?: { customProviders?: Array<{ modelMeta?: Record<string, { inputPricePerM?: number; outputPricePerM?: number }> }> },
+    options?: { allowDefaults?: boolean },
 ): ModelPricing | null {
     const key = (model || '').trim();
     if (!key) return null;
@@ -54,6 +87,10 @@ export function lookupModelPricing(
             inputPerM: hasInput ? meta.inputPricePerM as number : 0,
             outputPerM: hasOutput ? meta.outputPricePerM as number : 0,
         };
+    }
+    if (options?.allowDefaults) {
+        const fallback = DEFAULT_MODEL_PRICING[key.toLowerCase()];
+        if (fallback) return { ...fallback };
     }
     return null;
 }

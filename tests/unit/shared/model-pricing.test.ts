@@ -44,3 +44,39 @@ describe('model-pricing — 模型单价与费用估算', () => {
         expect(estimateCostYuan({ inputPerM: 2, outputPerM: 6 }, 0, 0)).toBe(0);
     });
 });
+
+describe('默认参考价兜底（成本看板可见性）', () => {
+    it('未配置单价 + allowDefaults → 命中 DeepSeek 参考价', () => {
+        expect(lookupModelPricing('deepseek-flash', undefined, { allowDefaults: true }))
+            .toEqual({ inputPerM: 0.5, outputPerM: 2 });
+    });
+
+    it('未配置单价 + 未开 allowDefaults → 仍返回 null（默认行为不变）', () => {
+        expect(lookupModelPricing('deepseek-flash')).toBeNull();
+    });
+
+    it('用户配置优先于默认参考价', () => {
+        const settings = { customProviders: [{ modelMeta: { 'deepseek-flash': { inputPricePerM: 9, outputPricePerM: 99 } } }] };
+        expect(lookupModelPricing('deepseek-flash', settings, { allowDefaults: true }))
+            .toEqual({ inputPerM: 9, outputPerM: 99 });
+    });
+
+    it('大小写不敏感命中默认价', () => {
+        expect(lookupModelPricing('DeepSeek-Flash', undefined, { allowDefaults: true }))
+            .toEqual({ inputPerM: 0.5, outputPerM: 2 });
+    });
+
+    it('本地模型默认价为 0（无 API 费用）', () => {
+        expect(lookupModelPricing('qwen2.5:7b', undefined, { allowDefaults: true }))
+            .toEqual({ inputPerM: 0, outputPerM: 0 });
+    });
+
+    it('未知模型 + allowDefaults → 仍是 null（不乱猜）', () => {
+        expect(lookupModelPricing('some-unknown-model', undefined, { allowDefaults: true })).toBeNull();
+    });
+
+    it('默认价可用于费用估算', () => {
+        const pricing = lookupModelPricing('deepseek-chat', undefined, { allowDefaults: true });
+        expect(estimateCostYuan(pricing, 1_000_000, 500_000)).toBe(6);
+    });
+});

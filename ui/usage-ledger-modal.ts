@@ -95,6 +95,8 @@ export class UsageLedgerModal extends Modal {
 
         if (summary.byModel.length > 0) {
             const models = this.bodyEl.createDiv({ cls: 'nw-usage-models' });
+            const pricingNote = models.createEl('p', { cls: 'nw-usage-note' });
+            pricingNote.setText('费用为估算值：优先用「设置 → API → 编辑模型」里填写的单价；未填写的模型按内置参考价估算，可随时覆盖。');
             models.createEl('h4', { text: '按模型' });
             const table = models.createEl('table', { cls: 'nw-usage-table' });
             const headRow = table.createEl('tr');

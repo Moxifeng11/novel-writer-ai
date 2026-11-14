@@ -537,3 +537,10 @@
   color: var(--text-on-accent);
   background: var(--interactive-accent);
 }
+
+.nw-usage-note {
+  margin: 4px 0 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}

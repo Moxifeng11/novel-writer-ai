@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-14T11:52:22.127Z",
-  "note": "桌宠角色切换菜单样式",
-  "bytes": 559679,
+  "generatedAt": "2026-11-14T12:13:42.003Z",
+  "note": "用量账本参考价说明样式",
+  "bytes": 559788,
   "important": 24,
   "hardcodedHex": 161,
   "rgbHsl": 190,
-  "uniqueClasses": 3065,
+  "uniqueClasses": 3066,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }
