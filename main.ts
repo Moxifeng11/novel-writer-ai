@@ -73,6 +73,8 @@ import { AssetRegistryModal } from './ui/asset-registry-modal';
 import { UsageLedgerModal } from './ui/usage-ledger-modal';
 import { ProjectIndexService } from './services/project-index-service';
 import { FileTxService } from './services/file-tx';
+import { SessionPresetService } from './services/session-preset-service';
+import type { SessionPresetPayload } from '@/shared/session-preset-model';
 import { PlanningCanvasView, PLANNING_CANVAS_VIEW_TYPE } from './ui/views/planning-canvas-view';
 import { MemoryGraphView, MEMORY_GRAPH_VIEW_TYPE } from './ui/views/memory-graph-view';
 import { BackupCenterModal } from './ui/backup-center-modal';
@@ -1421,6 +1423,23 @@ export default class NovelWriterPlugin extends Plugin {
         await leaf.setViewState({ type: PLANNING_CANVAS_VIEW_TYPE, active: true });
         this.app.workspace.setActiveLeaf(leaf, { focus: true });
     }
+
+    /**
+     * 取本会话的预设快照（首次调用创建并固化，之后不跟随设置变化）。
+     *
+     * @param project - 项目路径
+     * @param sessionId - 会话 id
+     * @param current - 当前预设
+     * @returns 快照与变更字段
+     */
+    public async ensureSessionPreset(project: string, sessionId: string, current: SessionPresetPayload) {
+        this._fileTx ??= new FileTxService(this.app);
+        this._sessionPreset ??= new SessionPresetService(this.app, this._fileTx);
+        return this._sessionPreset.ensure(project, sessionId, current);
+    }
+
+    /** 会话预设快照服务 */
+    private _sessionPreset?: SessionPresetService;
 
     public async getProjectIndex(project: string) {
         this._projectIndex ??= new ProjectIndexService(this.app);

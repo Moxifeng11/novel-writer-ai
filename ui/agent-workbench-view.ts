@@ -127,6 +127,8 @@ export class AgentWorkbenchView extends ItemView {
     private mentionToken: MentionToken | null = null;
     /** 库内路径缓存（@ 候选；随文件树刷新重建） */
     private vaultPathCache: string[] = [];
+    /** dsh 会话稳定键：视图打开时生成一次，续聊复用同一 sessionId（预设快照按它固化） */
+    private dshSessionKey = `${Date.now().toString(36)}`;
     /** 当前项目的文件路径缓存（来自项目索引，随项目切换失效） */
     private projectPathCache: string[] = [];
     private projectPathCacheProject = '';
@@ -1358,7 +1360,7 @@ export class AgentWorkbenchView extends ItemView {
                     Path: (globalThis as unknown as { process?: { env?: Record<string, string> } }).process?.env?.Path || '',
                 },
             });
-            const sessionId = `nw-${ctx.activeProject || 'default'}-${Date.now()}`;
+            const sessionId = `nw-${ctx.activeProject || 'default'}-${this.dshSessionKey}`;
             const dsh = new DshSession({
                 transport,
                 sessionId,
@@ -1372,10 +1374,25 @@ export class AgentWorkbenchView extends ItemView {
                     onStderr: line => log.warn('[dsh]', line),
                 },
             });
+            // 会话预设快照：首次采用当前设置并固化，之后同一会话不跟随设置变化
+            const presetResult = await this.plugin.ensureSessionPreset(
+                ctx.activeProject || 'default',
+                sessionId,
+                {
+                    provider: this.plugin.settings.dshProvider || 'deepseek-official',
+                    model: this.plugin.settings.dshModel || this.plugin.settings.defaultModel || 'deepseek-chat',
+                    wordTarget: Number(this.plugin.settings.dailyWordTarget) || 0,
+                    mode: 'long',
+                    writingStyleId: '',
+                },
+            );
+            if (!presetResult.created && presetResult.changed.length > 0) {
+                new Notice(`本会话沿用开始时的预设（${presetResult.changed.join('、')} 已变更，新会话生效）`, 6000);
+            }
             await dsh.initialize({
                 cwd: workspace,
-                provider: this.plugin.settings.dshProvider || 'deepseek-official',
-                model: this.plugin.settings.dshModel || this.plugin.settings.defaultModel || 'deepseek-chat',
+                provider: presetResult.snapshot.payload.provider,
+                model: presetResult.snapshot.payload.model,
                 maxTokens: 4000,
             });
             this.dshSession = dsh;

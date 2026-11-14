@@ -501,6 +501,20 @@ export function pjContradictionsFile(project: string) { return `${pjConsistencyD
  * @param project - 项目路径
  * @returns vault 相对路径
  */
+/**
+ * 会话预设快照目录（每个会话一份，首次采用后固化）。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
+export function pjSessionPresetDir(project: string) { return `${project}/04-项目总控/会话预设`; }
+
+/**
+ * pjMemoryGraphFile 对应的 vault 相对路径。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
 export function pjMemoryGraphFile(project: string) { return `${project}/04-项目总控/设定图/关系.json`; }
 
 /**

@@ -7,11 +7,11 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 346 | 145449 | 1937 | 1538 | 79% |
-| `services/` | 38 | 14548 | 216 | 168 | 78% |
-| `shared/` | 206 | 43124 | 1788 | 1440 | 81% |
+| `services/` | 39 | 14642 | 218 | 169 | 78% |
+| `shared/` | 207 | 43282 | 1798 | 1447 | 80% |
 | `core/` | 7 | 2946 | 32 | 17 | 53% |
 | `domains/` | 13 | 1243 | 66 | 40 | 61% |
-| `ui/` | 273 | 106426 | 1036 | 833 | 80% |
+| `ui/` | 273 | 106443 | 1036 | 833 | 80% |
 
 ## 文件清单
 
@@ -412,6 +412,7 @@
 | `services/quality-history-store.ts` | 182 | 5 | 5 |
 | `services/rules-registry.ts` | 146 | 7 | 5 |
 | `services/rules-service.ts` | 280 | 3 | 2 |
+| `services/session-preset-service.ts` | 94 | 2 | 1 |
 | `services/synopsis-store.ts` | 364 | 5 | 5 |
 | `services/update-checker.ts` | 610 | 9 | 2 |
 | `services/usage-ledger.ts` | 452 | 15 | 6 |
@@ -523,7 +524,7 @@
 | `shared/novel-format.ts` | 348 | 12 | 12 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1759 | 214 | 208 |
+| `shared/paths.ts` | 1773 | 215 | 209 |
 | `shared/pet-geometry.ts` | 118 | 9 | 3 |
 | `shared/pet-pose-sheet.generated.ts` | 16 | 2 | 0 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
@@ -575,6 +576,7 @@
 | `shared/secret-value.ts` | 31 | 2 | 2 |
 | `shared/semantic-keywords.ts` | 124 | 11 | 3 |
 | `shared/serialized-writer.ts` | 199 | 3 | 3 |
+| `shared/session-preset-model.ts` | 144 | 9 | 6 |
 | `shared/session-retention.ts` | 186 | 6 | 6 |
 | `shared/settings-migrator.ts` | 303 | 7 | 7 |
 | `shared/step-frontmatter.ts` | 154 | 5 | 4 |
@@ -628,7 +630,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 771 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1936 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1953 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |

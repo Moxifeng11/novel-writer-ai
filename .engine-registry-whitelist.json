@@ -203,9 +203,9 @@
     },
     {
       "className": "FileTxService",
-      "reason": "文件事务服务无状态，按调用即时创建（main.ts 懒初始化、PlanningStore 内创建、方法内兜底）",
+      "reason": "文件事务服务无状态，按调用创建（main 懒初始化、各 store/视图内创建）",
       "category": "context-isolated",
-      "allowedInstances": 4
+      "allowedInstances": 5
     },
     {
       "className": "PlanningStore",
@@ -216,6 +216,12 @@
     {
       "className": "MemoryGraphService",
       "reason": "实体图服务无状态，按视图/调用创建（持有 app + 索引服务 + 事务服务）",
+      "category": "context-isolated",
+      "allowedInstances": 2
+    },
+    {
+      "className": "SessionPresetService",
+      "reason": "会话预设快照服务无状态，main.ts 懒初始化持有",
       "category": "context-isolated",
       "allowedInstances": 2
     }
