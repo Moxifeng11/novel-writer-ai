@@ -16821,6 +16821,50 @@ body.nw-panel-resizing .nw-awb-center iframe {
     animation: none;
   }
 }
+
+/* 桌宠形象切换菜单（右键触发） */
+.nw-pet-role-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  min-width: 116px;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--nw-card-bg, var(--background-primary));
+  border: 1px solid var(--background-modifier-border);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  z-index: 2;
+}
+
+.nw-pet-role-menu-title {
+  padding: 2px 6px 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.nw-pet-role-item {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  margin: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+  font-size: 13px;
+  color: var(--text-normal);
+  cursor: pointer;
+}
+
+.nw-pet-role-item:hover {
+  background: var(--background-modifier-hover);
+}
+
+.nw-pet-role-item.nw-is-active {
+  color: var(--text-on-accent);
+  background: var(--interactive-accent);
+}
 /* ==========================================================================
  * 17-home-jobs-health.css — 创作主页 / 任务中心 / 首启向导 / 项目体检
  * 只使用主题变量；不引入新的全局选择器，全部挂在各自主容器下。

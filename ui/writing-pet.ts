@@ -14,7 +14,7 @@
 import type NovelWriterPlugin from '@/main';
 import { formatWords, type StatsSummary } from '@/shared/writing-stats';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
-import { PET_POSE_SHEET_DATA_URL } from '@/shared/pet-pose-sheet.generated';
+import { PET_POSE_SHEET_BIGFISH, PET_POSE_SHEET_CUIGENGJI } from '@/shared/pet-pose-sheet.generated';
 import { onNodeDoc } from '@/shared/dom-window';
 
 /**
@@ -53,24 +53,61 @@ export type PetLayerId = (typeof PET_LAYERS)[number]['id'];
 export type PetMood = 'idle' | 'happy' | 'sleep' | 'writing' | 'thinking' | 'error';
 
 /**
- * 姿势雪碧图配置（可选）。
- *
- * 有美术姿势图时填这里即可切到「单图切帧」（催更姬同款做法）：
- *  - url：图片路径（相对插件目录，如 'assets/pet-poses.png'）
- *  - cols/rows：网格切分；帧序号 = rows 内按 mood 映射
- * 未配置时使用分层 SVG。
- */
-export const PET_POSE_SHEET = { cols: 2, rows: 2 } as const;
 
-/** 状态 → 雪碧图帧（col/row；沿用催更姬排布：idle 左上 / writing·sleep 右上 / happy 左下 / thinking·error 右下） */
-export const PET_POSE_FRAMES: Record<PetMood, { col: number; row: number }> = {
-    idle: { col: 0, row: 0 },
-    writing: { col: 1, row: 0 },
-    sleep: { col: 1, row: 0 },
-    happy: { col: 0, row: 1 },
-    thinking: { col: 1, row: 1 },
-    error: { col: 1, row: 1 },
+/** 宠物角色（对齐催更姬 PetRole） */
+export type PetRole = 'cuigengji' | 'bigfish';
+
+/** 角色显示名 */
+export const PET_ROLE_LABELS: Record<PetRole, string> = {
+    cuigengji: '催更姬',
+    bigfish: '大肥鱼',
 };
+
+/**
+ * 角色雪碧图配置（催更姬同款切帧）。
+ *
+ * - cuigengji：2×2，idle 左上 / writing·sleep 右上 / happy 左下 / thinking·error 右下
+ * - bigfish：3×2，idle 左上 / thinking 中上 / writing 右上 / happy 左下 / sleep 中下 / error 右下
+ */
+export const PET_ROLE_SHEETS: Record<PetRole, {
+    dataUrl: string;
+    cols: number;
+    rows: number;
+    frames: Record<PetMood, { col: number; row: number }>;
+}> = {
+    cuigengji: {
+        dataUrl: PET_POSE_SHEET_CUIGENGJI,
+        cols: 2,
+        rows: 2,
+        frames: {
+            idle: { col: 0, row: 0 },
+            writing: { col: 1, row: 0 },
+            sleep: { col: 1, row: 0 },
+            happy: { col: 0, row: 1 },
+            thinking: { col: 1, row: 1 },
+            error: { col: 1, row: 1 },
+        },
+    },
+    bigfish: {
+        dataUrl: PET_POSE_SHEET_BIGFISH,
+        cols: 3,
+        rows: 2,
+        frames: {
+            idle: { col: 0, row: 0 },
+            thinking: { col: 1, row: 0 },
+            writing: { col: 2, row: 0 },
+            happy: { col: 0, row: 1 },
+            sleep: { col: 1, row: 1 },
+            error: { col: 2, row: 1 },
+        },
+    },
+};
+
+/** 当前角色雪碧图（默认催更姬） */
+export const PET_POSE_SHEET = { cols: PET_ROLE_SHEETS.cuigengji.cols, rows: PET_ROLE_SHEETS.cuigengji.rows } as const;
+
+/** 状态 → 雪碧图帧（默认角色；换角色后以 PET_ROLE_SHEETS[role].frames 为准） */
+export const PET_POSE_FRAMES: Record<PetMood, { col: number; row: number }> = PET_ROLE_SHEETS.cuigengji.frames;
 
 /**
  * 计算某状态在雪碧图中的帧坐标（百分比，供 background-position）。
@@ -81,9 +118,10 @@ export const PET_POSE_FRAMES: Record<PetMood, { col: number; row: number }> = {
  */
 export function poseFrameFor(
     mood: PetMood,
-    sheet: { cols: number; rows: number } = PET_POSE_SHEET,
+    role: PetRole = 'cuigengji',
 ): { xPercent: number; yPercent: number } {
-    const frame = PET_POSE_FRAMES[mood] ?? PET_POSE_FRAMES.idle;
+    const sheet = PET_ROLE_SHEETS[role] ?? PET_ROLE_SHEETS.cuigengji;
+    const frame = sheet.frames[mood] ?? sheet.frames.idle;
     const cols = Math.max(1, sheet.cols);
     const rows = Math.max(1, sheet.rows);
     return {
@@ -142,6 +180,8 @@ export class WritingPet {
     private bubbleSub: HTMLElement | null = null;
     private card: HTMLElement | null = null;
     private mood: PetMood = 'idle';
+    /** 当前宠物角色（持久化在 plugin.settings.petRole） */
+    private role: PetRole = 'cuigengji';
     private expanded = false;
     private dragging = false;
     private moved = false;
@@ -155,6 +195,36 @@ export class WritingPet {
 
     constructor(deps: WritingPetDeps) {
         this.deps = deps;
+        const savedRole = (deps.plugin.settings as { petRole?: PetRole }).petRole;
+        this.role = savedRole === 'bigfish' ? 'bigfish' : 'cuigengji';
+    }
+
+    /**
+     * 切换宠物角色（催更姬 / 大肥鱼），并持久化到插件设置。
+     *
+     * @param role - 目标角色
+     */
+    async setRole(role: PetRole): Promise<void> {
+        if (this.role === role) return;
+        this.role = role;
+        (this.deps.plugin.settings as { petRole?: PetRole }).petRole = role;
+        await this.deps.plugin.saveSettings();
+        if (!this.root) return;
+        const sheet = PET_ROLE_SHEETS[role] ?? PET_ROLE_SHEETS.cuigengji;
+        const pose = this.root.querySelector('.nw-pet-pose') as HTMLElement | null;
+        if (pose) {
+            pose.style.backgroundImage = `url(${sheet.dataUrl})`;
+            pose.style.backgroundSize = `${sheet.cols * 100}% ${sheet.rows * 100}%`;
+        }
+        this.applyFrame();
+    }
+
+    /** 把当前状态对应的帧坐标写入 CSS 变量 */
+    private applyFrame(): void {
+        if (!this.root) return;
+        const frame = poseFrameFor(this.mood, this.role);
+        this.root.style.setProperty('--nw-pet-frame-x', `${frame.xPercent}%`);
+        this.root.style.setProperty('--nw-pet-frame-y', `${frame.yPercent}%`);
     }
 
     /**
@@ -201,20 +271,21 @@ export class WritingPet {
         });
         // 浮动动画放在内层 HTML 容器：外层是点击/拖拽目标，必须保持几何稳定。
         const floatWrap = petBody.createDiv({ cls: 'nw-pet-float' });
-        if (PET_POSE_SHEET_DATA_URL) {
-            // 有姿势雪碧图时走「单图切帧」（催更姬同款），帧由 --nw-pet-frame-* 控制
-            const pose = floatWrap.createDiv({ cls: 'nw-pet-pose', attr: { 'aria-hidden': 'true' } });
-            pose.style.backgroundImage = `url(${PET_POSE_SHEET_DATA_URL})`;
-            pose.style.backgroundSize = `${PET_POSE_SHEET.cols * 100}% ${PET_POSE_SHEET.rows * 100}%`;
-        } else {
-            setSanitizedHtml(floatWrap, PET_SVG);
-        }
+        // 催更姬同款切帧：单图 + background-position（帧坐标由 applyFrame 写入 --nw-pet-frame-*）
+        const sheet = PET_ROLE_SHEETS[this.role] ?? PET_ROLE_SHEETS.cuigengji;
+        const pose = floatWrap.createDiv({ cls: 'nw-pet-pose', attr: { 'aria-hidden': 'true' } });
+        pose.style.backgroundImage = `url(${sheet.dataUrl})`;
+        pose.style.backgroundSize = `${sheet.cols * 100}% ${sheet.rows * 100}%`;
         petBody.addEventListener('pointerdown', (e) => this.onPointerDown(e));
         petBody.addEventListener('click', () => {
             if (this.moved) return;
             this.toggleCard();
         });
         petBody.addEventListener('dblclick', () => this.deps.openStats());
+        petBody.addEventListener('contextmenu', (event) => {
+            event.preventDefault();
+            this.openRoleMenu(petBody);
+        });
         petBody.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -309,11 +380,41 @@ export class WritingPet {
         this.root.removeClass('nw-is-idle', 'nw-is-happy', 'nw-is-sleep', 'nw-is-writing', 'nw-is-thinking', 'nw-is-error');
         this.root.setAttribute('data-pet-state', mood);
         this.root.addClass(`nw-is-${mood}`);
-        if (PET_POSE_SHEET_DATA_URL) {
-            const frame = poseFrameFor(mood, PET_POSE_SHEET);
-            this.root.style.setProperty('--nw-pet-frame-x', `${frame.xPercent}%`);
-            this.root.style.setProperty('--nw-pet-frame-y', `${frame.yPercent}%`);
+        this.applyFrame();
+    }
+
+    /**
+     * 打开角色切换菜单（右键触发，对齐催更姬的右键操作）。
+     *
+     * @param anchor - 锚点元素
+     */
+    private openRoleMenu(anchor: HTMLElement): void {
+        this.root?.querySelector('.nw-pet-role-menu')?.remove();
+        const menu = anchor.createDiv({ cls: 'nw-pet-role-menu' });
+        menu.createDiv({ cls: 'nw-pet-role-menu-title', text: '桌宠形象' });
+        // 用 onNodeDoc 绑定到宠物所在窗口，popout 窗口也能正确关闭
+        let disposeOutside: (() => void) | null = null;
+        const closeMenu = (): void => {
+            menu.remove();
+            disposeOutside?.();
+            disposeOutside = null;
+        };
+        for (const role of Object.keys(PET_ROLE_LABELS) as PetRole[]) {
+            const item = menu.createEl('button', {
+                cls: `nw-pet-role-item${role === this.role ? ' nw-is-active' : ''}`,
+                text: PET_ROLE_LABELS[role],
+                attr: { type: 'button' },
+            });
+            item.addEventListener('click', (event) => {
+                event.stopPropagation();
+                void this.setRole(role);
+                closeMenu();
+            });
         }
+        disposeOutside = onNodeDoc(menu, 'pointerdown', (event) => {
+            if (menu.contains(event.target as Node)) return;
+            closeMenu();
+        }, true);
     }
 
     private toggleCard(): void {

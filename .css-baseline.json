@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-14T11:21:33.592Z",
-  "note": "宠物雪碧图显式尺寸（118x118）+ pulse 覆盖",
-  "bytes": 558765,
+  "generatedAt": "2026-11-14T11:52:22.127Z",
+  "note": "桌宠角色切换菜单样式",
+  "bytes": 559679,
   "important": 24,
   "hardcodedHex": 161,
-  "rgbHsl": 189,
-  "uniqueClasses": 3062,
+  "rgbHsl": 190,
+  "uniqueClasses": 3065,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }
