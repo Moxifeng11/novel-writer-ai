@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 350 | 145587 | 1931 | 1528 | 79% |
+| `engine/` | 351 | 145637 | 1932 | 1529 | 79% |
 | `services/` | 42 | 15105 | 225 | 174 | 77% |
 | `shared/` | 212 | 44089 | 1851 | 1484 | 80% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 275 | 106812 | 1034 | 835 | 81% |
+| `ui/` | 275 | 106815 | 1034 | 835 | 81% |
 
 ## 文件清单
 
@@ -43,6 +43,7 @@
 | `engine/agent/conversation-engine.ts` | 1267 | 1 | 1 |
 | `engine/agent/harness/agent-adapter.ts` | 83 | 2 | 1 |
 | `engine/agent/harness/agent-loop.ts` | 633 | 6 | 6 |
+| `engine/agent/harness/attachment-tools.ts` | 50 | 1 | 1 |
 | `engine/agent/harness/context-fit.ts` | 137 | 6 | 6 |
 | `engine/agent/harness/creation-plan.ts` | 73 | 6 | 6 |
 | `engine/agent/harness/diagnose-tools.ts` | 118 | 3 | 1 |
@@ -644,7 +645,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 771 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1794 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1797 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |

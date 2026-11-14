@@ -6,7 +6,7 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 27 | 27 | 100% | 50 | 50 | 100% | 0 |
 | `domains/` | 15 | 85 | 85 | 100% | 1 | 1 | 100% | 0 |
-| `engine/` | 333 | 1905 | 1904 | 100% | 1247 | 1247 | 100% | 0 |
+| `engine/` | 334 | 1906 | 1905 | 100% | 1247 | 1247 | 100% | 0 |
 | `services/` | 42 | 224 | 224 | 100% | 250 | 250 | 100% | 0 |
 | `shared/` | 210 | 1855 | 1854 | 100% | 159 | 159 | 100% | 0 |
 | `ui/` | 273 | 1024 | 1024 | 100% | 660 | 659 | 100% | 0 |
@@ -22,6 +22,7 @@
 | `engine/agent/conversation-engine.ts` | 1 | 0 | 5 | 0 |
 | `engine/agent/harness/agent-adapter.ts` | 2 | 0 | 0 | 0 |
 | `engine/agent/harness/agent-loop.ts` | 6 | 0 | 0 | 0 |
+| `engine/agent/harness/attachment-tools.ts` | 1 | 0 | 0 | 0 |
 | `engine/agent/harness/context-fit.ts` | 6 | 0 | 0 | 0 |
 | `engine/agent/harness/creation-plan.ts` | 6 | 0 | 0 | 0 |
 | `engine/agent/harness/diagnose-tools.ts` | 3 | 0 | 0 | 0 |
@@ -44,7 +45,6 @@
 | `engine/agent/harness/spill-store.ts` | 6 | 0 | 0 | 0 |
 | `engine/agent/harness/tool-registry.ts` | 5 | 0 | 6 | 0 |
 | `engine/agent/harness/tool-result-pruner.ts` | 5 | 0 | 0 | 0 |
-| `engine/ai-api-client-shared.ts` | 6 | 0 | 0 | 0 |
 
 ## @example 覆盖（公共入口）
 

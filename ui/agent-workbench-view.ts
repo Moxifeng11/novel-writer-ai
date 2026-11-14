@@ -27,6 +27,8 @@ import { AgentHarnessEngine, type HarnessTelemetry } from '@/engine/agent/harnes
 import { connectMcpServers, closeMcpClients } from '@/engine/agent/harness/mcp-manager';
 import { createSkillTools } from '@/engine/agent/harness/skill-tools';
 import { createPlanSpecTools } from '@/engine/agent/harness/plan-spec-tools';
+import { createAttachmentTools } from '@/engine/agent/harness/attachment-tools';
+import { AttachmentService } from '@/services/attachment-service';
 import { PlanSpecService } from '@/services/plan-spec-service';
 import { FileTxService } from '@/services/file-tx';
 import { SkillService } from '@/services/skill-service';
@@ -1201,6 +1203,7 @@ export class AgentWorkbenchView extends ItemView {
                 extraTools: () => [
                     ...this.mcpToolsCache,
                     ...createSkillTools(() => this.skillService.list()),
+                    ...createAttachmentTools(() => new AttachmentService(this.app)),
                     ...createPlanSpecTools(
                         () => new PlanSpecService(this.app, new FileTxService(this.app)),
                         () => this.resolveActiveProject() || '',

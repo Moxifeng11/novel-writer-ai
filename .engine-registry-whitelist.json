@@ -236,6 +236,12 @@
       "reason": "计划/规格落盘：Agent 工具按需创建，走 FileTx 原子写",
       "category": "service",
       "allowedInstances": 1
+    },
+    {
+      "className": "AttachmentService",
+      "reason": "附件读写：Agent 工具按需创建，落盘项目 04-项目总控/附件",
+      "category": "service",
+      "allowedInstances": 1
     }
   ],
   "notes": {
