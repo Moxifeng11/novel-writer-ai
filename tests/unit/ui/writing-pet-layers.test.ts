@@ -43,7 +43,7 @@ describe('PET_LAYERS 图层信息', () => {
 });
 
 describe('poseFrameFor 自定义图片切帧', () => {
-    const sheet = { path: '素材/桌宠.png', cols: 2, rows: 2 };
+    const sheet = { source: 'vault' as const, path: '素材/桌宠.png', cols: 2, rows: 2 };
 
     it('idle 在左上（0%,0%）', () => {
         expect(poseFrameFor('idle', sheet)).toEqual({ xPercent: 0, yPercent: 0 });
@@ -62,15 +62,15 @@ describe('poseFrameFor 自定义图片切帧', () => {
     });
 
     it('3×2 图：sleep（第 5 帧）在中下（50%,100%）', () => {
-        expect(poseFrameFor('sleep', { path: 'a.png', cols: 3, rows: 2 })).toEqual({ xPercent: 50, yPercent: 100 });
+        expect(poseFrameFor('sleep', { source: 'vault' as const, path: 'a.png', cols: 3, rows: 2 })).toEqual({ xPercent: 50, yPercent: 100 });
     });
 
     it('单格图恒为 (0,0)', () => {
-        expect(poseFrameFor('happy', { path: 'a.png', cols: 1, rows: 1 })).toEqual({ xPercent: 0, yPercent: 0 });
+        expect(poseFrameFor('happy', { source: 'vault' as const, path: 'a.png', cols: 1, rows: 1 })).toEqual({ xPercent: 0, yPercent: 0 });
     });
 
     it('超出网格的状态回落到第一帧（不产生 NaN）', () => {
-        const frame = poseFrameFor('unknown-mood', { path: 'a.png', cols: 2, rows: 2 });
+        const frame = poseFrameFor('unknown-mood', { source: 'vault' as const, path: 'a.png', cols: 2, rows: 2 });
         expect(Number.isFinite(frame.xPercent)).toBe(true);
         expect(frame).toEqual({ xPercent: 0, yPercent: 0 });
     });

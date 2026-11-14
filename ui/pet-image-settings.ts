@@ -74,7 +74,7 @@ export function renderPetImageSettings(
 
     container.createEl('h4', { text: '🎨 桌宠形象' });
     container.createEl('p', {
-        text: '默认使用插件内置的代码绘制形象（无第三方素材）。也可以选择 vault 里的图片作为桌宠：按 2×2 或 3×2 网格切帧，'
+        text: '默认使用插件内置的代码绘制形象（无第三方素材）。可以选**电脑上任意位置**的图片（自动压缩后存在插件数据里，不进仓库），也可以选 vault 里的图片；按 2×2 或 3×2 网格切帧，'
             + `状态顺序固定为 ${PET_IMAGE_MOOD_ORDER.join(' / ')}。`,
         cls: 'setting-item-description',
     });
@@ -84,7 +84,7 @@ export function renderPetImageSettings(
         .setDesc(current ? `当前：${describePetImageConfig(current)}` : '未设置时使用内置绘制形象')
         .addText(text => {
             text.setPlaceholder('例如 素材/桌宠.png');
-            text.setValue(current?.path ?? '');
+            text.setValue(current?.source === 'vault' ? (current.path ?? '') : '');
             text.inputEl.addEventListener('change', () => {
                 const path = text.inputEl.value.trim();
                 if (!path) {
@@ -104,10 +104,29 @@ export function renderPetImageSettings(
             });
         })
         .addButton(button => button
-            .setButtonText('选择图片')
+            .setButtonText('选择电脑图片')
+            .setCta()
+            .onClick(() => {
+                pickLocalImage(async (dataUrl) => {
+                    const config = normalizePetImageConfig({
+                        source: 'file',
+                        dataUrl,
+                        cols: current?.cols ?? PET_IMAGE_DEFAULT_COLS,
+                        rows: current?.rows ?? PET_IMAGE_DEFAULT_ROWS,
+                    });
+                    if (!config) {
+                        new Notice('❌ 无法读取该图片，请换一张试试');
+                        return;
+                    }
+                    await applyPetImage(plugin, config, rerender);
+                });
+            }))
+        .addButton(button => button
+            .setButtonText('选择仓库图片')
             .onClick(() => {
                 new PetImagePickerModal(plugin.app, (file) => {
                     const config = normalizePetImageConfig({
+                        source: 'vault',
                         path: file.path,
                         cols: current?.cols ?? PET_IMAGE_DEFAULT_COLS,
                         rows: current?.rows ?? PET_IMAGE_DEFAULT_ROWS,
@@ -148,11 +167,72 @@ export function renderPetImageSettings(
 
     if (current) {
         const preview = container.createDiv({ cls: 'nw-pet-image-preview' });
-        const resource = plugin.app.vault.adapter.getResourcePath(current.path);
+        const resource = current.source === 'file'
+            ? (current.dataUrl ?? '')
+            : plugin.app.vault.adapter.getResourcePath(current.path ?? '');
         preview.style.backgroundImage = `url(${resource})`;
         preview.style.backgroundSize = `${current.cols * 100}% ${current.rows * 100}%`;
         preview.createSpan({ cls: 'nw-pet-image-preview-hint', text: '预览（第一帧）' });
     }
+}
+
+/**
+ * 打开系统文件选择器并读取图片（压缩到最长边 512px 后转 data URL）。
+ *
+ * 说明：用 <input type="file"> 而不是 fs，跨平台且不需要 Node 权限；
+ * 图片只存在用户自己的插件数据里，不进仓库。
+ *
+ * @param onPicked - 读取完成回调（data URL）
+ */
+function pickLocalImage(onPicked: (dataUrl: string) => void): void {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/png,image/jpeg,image/webp,image/gif';
+    input.addEventListener('change', () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const raw = String(reader.result ?? '');
+            if (!raw) {
+                new Notice('❌ 读取图片失败');
+                return;
+            }
+            const image = new Image();
+            image.onload = () => {
+                try {
+                    onPicked(downscaleToDataUrl(image));
+                } catch (error) {
+                    new Notice('❌ 图片处理失败：' + (error instanceof Error ? error.message : String(error)));
+                }
+            };
+            image.onerror = () => new Notice('❌ 无法解析该图片');
+            image.src = raw;
+        };
+        reader.onerror = () => new Notice('❌ 读取图片失败');
+        reader.readAsDataURL(file);
+    });
+    input.click();
+}
+
+/**
+ * 把图片等比缩到最长边 512px 并转 PNG data URL（控制插件数据体积）。
+ *
+ * @param image - 已加载的图片
+ * @returns data URL
+ */
+function downscaleToDataUrl(image: HTMLImageElement): string {
+    const maxEdge = 512;
+    const scale = Math.min(1, maxEdge / Math.max(image.width, image.height));
+    const width = Math.max(1, Math.round(image.width * scale));
+    const height = Math.max(1, Math.round(image.height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('无法创建画布');
+    context.drawImage(image, 0, 0, width, height);
+    return canvas.toDataURL('image/png');
 }
 
 /**

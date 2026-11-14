@@ -256,7 +256,9 @@ export class WritingPet {
         const floatWrap = petBody.createDiv({ cls: 'nw-pet-float' });
         if (this.imageConfig) {
             // 用户自定义形象：单图切帧（帧坐标由 applyFrame 写入 --nw-pet-frame-*）
-            const resource = this.deps.plugin.app.vault.adapter.getResourcePath(this.imageConfig.path);
+            const resource = this.imageConfig.source === 'file'
+                ? (this.imageConfig.dataUrl ?? '')
+                : this.deps.plugin.app.vault.adapter.getResourcePath(this.imageConfig.path ?? '');
             const pose = floatWrap.createDiv({ cls: 'nw-pet-pose', attr: { 'aria-hidden': 'true' } });
             pose.style.backgroundImage = `url(${resource})`;
             pose.style.backgroundSize = `${this.imageConfig.cols * 100}% ${this.imageConfig.rows * 100}%`;

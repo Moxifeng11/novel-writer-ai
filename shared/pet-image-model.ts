@@ -10,8 +10,16 @@
 
 /** 桌宠图片配置 */
 export interface PetImageConfig {
-    /** vault 相对路径（如 素材/桌宠.png） */
-    path: string;
+    /**
+     * 图片来源：
+     * - `vault`：vault 内相对路径（`path`）
+     * - `file`：从本机任意位置选择的图片，已压缩为 data URL（`dataUrl`）
+     */
+    source: 'vault' | 'file';
+    /** vault 相对路径（source=vault 时必填） */
+    path?: string;
+    /** 本机图片的 data URL（source=file 时必填） */
+    dataUrl?: string;
     /** 网格列数 */
     cols: number;
     /** 网格行数 */
@@ -46,6 +54,16 @@ export function isSupportedImagePath(path: string): boolean {
 }
 
 /**
+ * 是否是合法的图片 data URL。
+ *
+ * @param value - 待检查字符串
+ * @returns 合法返回 true
+ */
+export function isImageDataUrl(value: string): boolean {
+    return /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/i.test(String(value || '').trim());
+}
+
+/**
  * 规范化用户输入的配置；非法返回 null。
  *
  * @param raw - 原始配置（可能来自设置）
@@ -53,16 +71,21 @@ export function isSupportedImagePath(path: string): boolean {
  */
 export function normalizePetImageConfig(raw: unknown): PetImageConfig | null {
     if (!raw || typeof raw !== 'object') return null;
-    const source = raw as Partial<PetImageConfig>;
-    const path = String(source.path ?? '').trim();
-    if (!isSupportedImagePath(path)) return null;
-    const cols = Number(source.cols);
-    const rows = Number(source.rows);
-    return {
-        path,
+    const input = raw as Partial<PetImageConfig>;
+    const cols = Number(input.cols);
+    const rows = Number(input.rows);
+    const grid = {
         cols: Number.isFinite(cols) && cols >= 1 && cols <= 8 ? Math.floor(cols) : PET_IMAGE_DEFAULT_COLS,
         rows: Number.isFinite(rows) && rows >= 1 && rows <= 8 ? Math.floor(rows) : PET_IMAGE_DEFAULT_ROWS,
     };
+    // 本机图片（data URL）优先；否则回落到 vault 路径
+    const dataUrl = String(input.dataUrl ?? '').trim();
+    if (input.source === 'file' || (dataUrl && isImageDataUrl(dataUrl))) {
+        return isImageDataUrl(dataUrl) ? { source: 'file', dataUrl, ...grid } : null;
+    }
+    const path = String(input.path ?? '').trim();
+    if (!isSupportedImagePath(path)) return null;
+    return { source: 'vault', path, ...grid };
 }
 
 /**
@@ -94,5 +117,6 @@ export function poseFrameFor(mood: string, config: PetImageConfig): { xPercent: 
  * @returns 说明文本
  */
 export function describePetImageConfig(config: PetImageConfig): string {
-    return `${config.cols}×${config.rows} 网格 · 状态顺序：${PET_IMAGE_MOOD_ORDER.join(' / ')}`;
+    const from = config.source === 'file' ? '本机图片' : `vault：${config.path ?? ''}`;
+    return `${from} · ${config.cols}×${config.rows} 网格 · 状态顺序：${PET_IMAGE_MOOD_ORDER.join(' / ')}`;
 }
