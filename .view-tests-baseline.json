@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-14T11:02:37.475Z",
+  "updatedAt": "2026-11-14T17:23:14.801Z",
   "threshold": 200,
-  "note": "writing-pet 分层重构补了 11 条图层/帧换算测试，收紧基线",
+  "note": "侧边栏快捷动作补测试，收紧基线",
   "files": [
     "ui/add-fanfic-setting-modal.ts",
     "ui/agent-workbench-view.ts",
@@ -63,7 +63,6 @@
     "ui/panel-resizer.ts",
     "ui/plan-book-modal.ts",
     "ui/pre-research-modal.ts",
-    "ui/project-side-panel-view.ts",
     "ui/prompt-manager-settings.ts",
     "ui/refill-modal.ts",
     "ui/rendering/context-panel.ts",
@@ -92,7 +91,7 @@
   ],
   "lineCounts": {
     "ui/add-fanfic-setting-modal.ts": 771,
-    "ui/agent-workbench-view.ts": 1924,
+    "ui/agent-workbench-view.ts": 1953,
     "ui/ai-builder-modal.ts": 1133,
     "ui/appearance-settings.ts": 574,
     "ui/auto-writer-modal.ts": 236,
@@ -150,7 +149,6 @@
     "ui/panel-resizer.ts": 260,
     "ui/plan-book-modal.ts": 558,
     "ui/pre-research-modal.ts": 710,
-    "ui/project-side-panel-view.ts": 406,
     "ui/prompt-manager-settings.ts": 1126,
     "ui/refill-modal.ts": 713,
     "ui/rendering/context-panel.ts": 961,

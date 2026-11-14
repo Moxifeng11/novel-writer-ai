@@ -61,6 +61,7 @@ export function actionsForKind(kind: NotebookFileKind): PanelActionSpec[] {
                 { id: 'open-cowrite', label: '打开协同写作', icon: 'pen-line' },
                 { id: 'settle', label: '章节结算', icon: 'check-check' },
                 { id: 'open-board', label: '章节进度看板', icon: 'table' },
+                { id: 'open-planning', label: '规划画布', icon: 'git-branch' },
             ];
         case 'character':
         case 'location':
@@ -68,13 +69,18 @@ export function actionsForKind(kind: NotebookFileKind): PanelActionSpec[] {
         case 'item':
             return [
                 { id: 'open-board', label: '打开实体看板', icon: 'table' },
+                { id: 'open-memory-graph', label: '设定实体图', icon: 'share-2' },
                 { id: 'open-backlinks', label: '查看提及位置', icon: 'links-coming-in' },
             ];
         case 'worldview':
         case 'settingLib':
         case 'foreshadow':
         case 'timeline':
-            return [{ id: 'open-board', label: '打开设定看板', icon: 'table' }];
+            return [
+                { id: 'open-board', label: '打开设定看板', icon: 'table' },
+                { id: 'open-memory-graph', label: '设定实体图', icon: 'share-2' },
+                { id: 'open-planning', label: '规划画布', icon: 'git-branch' },
+            ];
         case 'step':
             return [{ id: 'open-chapter', label: '打开所属章节', icon: 'file-text' }];
         default:
@@ -358,6 +364,22 @@ export class ProjectSidePanelView extends ItemView {
                     return;
                 }
                 await this.openBase(project);
+                return;
+            }
+            case 'open-planning': {
+                if (!project) {
+                    new Notice('请先在工作台选择一个项目', 4000);
+                    return;
+                }
+                await this.plugin.openPlanningCanvas();
+                return;
+            }
+            case 'open-memory-graph': {
+                if (!project) {
+                    new Notice('请先在工作台选择一个项目', 4000);
+                    return;
+                }
+                await this.plugin.openMemoryGraph();
                 return;
             }
             case 'generate-bases': {

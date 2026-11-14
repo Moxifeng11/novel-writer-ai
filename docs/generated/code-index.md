@@ -11,7 +11,7 @@
 | `shared/` | 207 | 43387 | 1806 | 1453 | 80% |
 | `core/` | 7 | 2946 | 32 | 17 | 53% |
 | `domains/` | 13 | 1243 | 66 | 40 | 61% |
-| `ui/` | 274 | 106622 | 1033 | 834 | 81% |
+| `ui/` | 274 | 106650 | 1033 | 834 | 81% |
 
 ## 文件清单
 
@@ -774,7 +774,7 @@
 | `ui/generate-location-modal.ts` | 375 | 1 | 1 |
 | `ui/generate-worldview-modal.ts` | 289 | 1 | 1 |
 | `ui/golden-opening-modal.ts` | 1405 | 1 | 1 |
-| `ui/home-view.ts` | 230 | 2 | 1 |
+| `ui/home-view.ts` | 236 | 2 | 1 |
 | `ui/humanize-report-modal.ts` | 217 | 2 | 2 |
 | `ui/ideation-modal.ts` | 814 | 1 | 1 |
 | `ui/job-center-modal.ts` | 124 | 1 | 1 |
@@ -806,7 +806,7 @@
 | `ui/polish-editor.ts` | 834 | 5 | 5 |
 | `ui/pre-research-modal.ts` | 710 | 2 | 2 |
 | `ui/project-health-modal.ts` | 205 | 1 | 1 |
-| `ui/project-side-panel-view.ts` | 406 | 5 | 5 |
+| `ui/project-side-panel-view.ts` | 428 | 5 | 5 |
 | `ui/project-utils.ts` | 366 | 11 | 10 |
 | `ui/prompt-manager-logic.ts` | 76 | 4 | 3 |
 | `ui/prompt-manager-settings.ts` | 1126 | 1 | 1 |
