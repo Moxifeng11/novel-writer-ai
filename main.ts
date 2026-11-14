@@ -231,6 +231,9 @@ export interface NovelWriterSettings {
     /** 只读模式：开启后拒绝一切写动作（动作契约判定，见 shared/action-contract） */
     readOnlyMode?: boolean;
     petSnapEdges?: { left: boolean; right: boolean; bottom: boolean; threshold?: number };
+    /** MCP 服务列表（用户配置；启动会话时连接并桥接工具） */
+    mcpServers?: Array<{ id: string; name: string; transport: 'stdio' | 'http'; command?: string; args?: string[]; env?: Record<string, string>; url?: string; kind?: 'read' | 'write-setting' | 'write-prose' | 'admin'; enabled?: boolean }>;
+
     /** 桌面宠物自定义形象（用户自己的图片；未设置则用内置分层 SVG） */
     petImage?: { path: string; cols: number; rows: number };
     /** 追加的 AI 高频词（C 类统计词表可配置化） */

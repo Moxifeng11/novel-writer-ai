@@ -238,7 +238,7 @@ describe('设置 6 分组一级 tab：初屏渲染与切换（settings-tab-regro
         expect(visibleTabIds(settings).length).toBeGreaterThan(0);
     });
 
-    it('⑦ 全部 18 个 tab 都归入 6 个分组（无遗漏、无重复）', () => {
+    it('⑦ 全部 tab 都归入 6 个分组（无遗漏、无重复）', () => {
         const all = SETTINGS_TAB_DEFINITIONS.map(d => d.id).sort();
         const grouped = SETTINGS_GROUPS.flatMap(g => [...g.tabs]).sort();
         expect(grouped).toEqual(all);

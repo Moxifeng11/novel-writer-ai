@@ -84,6 +84,12 @@ export interface AgentHarnessEngineOptions {
      */
     guardTool?: (tool: HarnessTool, args: Record<string, unknown>) => string | null;
     /**
+     * 额外工具（如 MCP 桥接工具），在宿主工具之后注册。
+     *
+     * @returns 工具数组
+     */
+    extraTools?: () => HarnessTool[];
+    /**
      * 会话变化回调（dsh session-persistence-jsonl）：
      * 每次回合结束后把快照交给宿主落盘；宿主负责节流与文件管理。
      */
@@ -200,6 +206,9 @@ export class AgentHarnessEngine {
             })) {
                 this.registry.register(tool);
             }
+        }
+        for (const tool of options.extraTools?.() ?? []) {
+            if (!this.registry.get(tool.name)) this.registry.register(tool);
         }
     }
 

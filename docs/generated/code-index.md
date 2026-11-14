@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 343 | 144857 | 1912 | 1514 | 79% |
+| `engine/` | 348 | 145394 | 1929 | 1526 | 79% |
 | `services/` | 39 | 14782 | 219 | 170 | 78% |
-| `shared/` | 208 | 43592 | 1816 | 1462 | 81% |
+| `shared/` | 209 | 43717 | 1825 | 1467 | 80% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 274 | 106642 | 1033 | 834 | 81% |
+| `ui/` | 275 | 106792 | 1034 | 835 | 81% |
 
 ## 文件清单
 
@@ -46,9 +46,14 @@
 | `engine/agent/harness/context-fit.ts` | 137 | 6 | 6 |
 | `engine/agent/harness/creation-plan.ts` | 73 | 6 | 6 |
 | `engine/agent/harness/diagnose-tools.ts` | 118 | 3 | 1 |
-| `engine/agent/harness/harness-engine.ts` | 664 | 7 | 4 |
+| `engine/agent/harness/harness-engine.ts` | 673 | 7 | 4 |
 | `engine/agent/harness/harness-types.ts` | 249 | 17 | 14 |
 | `engine/agent/harness/host-tools.ts` | 1041 | 5 | 5 |
+| `engine/agent/harness/mcp-client.ts` | 164 | 6 | 3 |
+| `engine/agent/harness/mcp-http-transport.ts` | 61 | 1 | 1 |
+| `engine/agent/harness/mcp-manager.ts` | 87 | 5 | 3 |
+| `engine/agent/harness/mcp-stdio-transport.ts` | 135 | 2 | 2 |
+| `engine/agent/harness/mcp-tools.ts` | 81 | 3 | 3 |
 | `engine/agent/harness/p2-tools.ts` | 176 | 2 | 1 |
 | `engine/agent/harness/prompt-sections.ts` | 152 | 2 | 2 |
 | `engine/agent/harness/repair-telemetry.ts` | 140 | 10 | 4 |
@@ -512,6 +517,7 @@
 | `shared/local-ai-queue.ts` | 89 | 2 | 1 |
 | `shared/logger.ts` | 101 | 5 | 5 |
 | `shared/lru-cache.ts` | 221 | 2 | 2 |
+| `shared/mcp-config.ts` | 125 | 9 | 5 |
 | `shared/memory-rank.ts` | 104 | 4 | 4 |
 | `shared/mode-content.ts` | 448 | 19 | 19 |
 | `shared/mode-unit-outline.ts` | 87 | 2 | 2 |
@@ -630,7 +636,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 771 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1759 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1774 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |
@@ -839,9 +845,10 @@
 | `ui/settings/foreshadow-section.ts` | 289 | 1 | 1 |
 | `ui/settings/general-sections.ts` | 1208 | 5 | 5 |
 | `ui/settings/knowledge-section.ts` | 797 | 1 | 1 |
+| `ui/settings/mcp-section.ts` | 133 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
-| `ui/settings/section-factory.ts` | 90 | 4 | 2 |
+| `ui/settings/section-factory.ts` | 92 | 4 | 2 |
 | `ui/settings/writing-sections.ts` | 812 | 6 | 6 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 402 | 1 | 1 |

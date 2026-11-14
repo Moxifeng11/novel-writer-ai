@@ -27,6 +27,7 @@ import {
     SuggestionsSection,
 } from './general-sections';
 import { AgentBackendSection } from './agent-section';
+import { McpSection } from './mcp-section';
 import { ModeSection } from './mode-section';
 
 /** 一个设置页签的装配描述 */
@@ -46,7 +47,7 @@ export interface SettingsTabDefinition {
  * 一级只留 6 个功能域，二级才是具体 tab。
  */
 export const SETTINGS_GROUPS: ReadonlyArray<{ id: string; label: string; tabs: readonly string[] }> = [
-    { id: 'connect', label: '🔌 连接与模型', tabs: ['api', 'agent'] },
+    { id: 'connect', label: '🔌 连接与模型', tabs: ['api', 'agent', 'mcp'] },
     { id: 'writing', label: '✍️ 写作与协同', tabs: ['cowrite', 'writing', 'modes', 'suggestions'] },
     { id: 'rules', label: '📜 规则与一致性', tabs: ['rules', 'recognition', 'foreshadow'] },
     { id: 'knowledge', label: '📚 知识与拆解', tabs: ['knowledge', 'deconstruction', 'template', 'fingerprint'] },
@@ -73,6 +74,7 @@ export const SETTINGS_TAB_DEFINITIONS: ReadonlyArray<SettingsTabDefinition> = [
     { id: 'projects', label: '🗂 项目库迁移', group: 'advanced', create: host => new ProjectLibrarySection(host) },
     { id: 'performance', label: '📈 性能监控', group: 'advanced', create: host => new PerformanceSection(host) },
     { id: 'agent', label: '🤖 Agent 对话', group: 'advanced', create: host => new AgentBackendSection(host) },
+    { id: 'mcp', label: '🔌 MCP 服务', group: 'advanced', create: host => new McpSection(host) },
     { id: 'about', label: 'ℹ️ 关于', group: 'primary', create: host => new AboutSection(host) },
 ];
 
