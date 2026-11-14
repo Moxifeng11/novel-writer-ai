@@ -21,6 +21,7 @@ const state = {
     total: 0,
     byKind: Object.create(null),
     lastRequests: [],
+  lastPrompts: [],
 };
 
 const CORS_HEADERS = {
@@ -824,11 +825,19 @@ function buildContent(kind, system, user) {
     }
 }
 
-function recordRequest(kind, stream) {
+function recordRequest(kind, stream, system, user) {
     state.total += 1;
     state.byKind[kind] = (state.byKind[kind] || 0) + 1;
     state.lastRequests.unshift({ kind, stream: Boolean(stream), at: Date.now() });
     if (state.lastRequests.length > 40) state.lastRequests.length = 40;
+    // 阶段2 注入链路验证：保留 prompt 文本（截断，避免内存膨胀），供 /__mock/prompts 读取
+    state.lastPrompts.unshift({
+        kind,
+        system: String(system || '').slice(0, 20_000),
+        user: String(user || '').slice(0, 80_000),
+        at: Date.now(),
+    });
+    if (state.lastPrompts.length > 20) state.lastPrompts.length = 20;
 }
 
 function openAiChunk(model, content, finishReason = null) {
@@ -850,7 +859,7 @@ async function handleChat(req, res, isOllama) {
     const { system, user } = normalizeMessages(body);
     const kind = detectKind(system, user);
     const stream = body?.stream === true;
-    recordRequest(kind, stream);
+    recordRequest(kind, stream, system, user);
 
     if (state.delayMs > 0) {
         await new Promise((resolve) => setTimeout(resolve, state.delayMs));
@@ -934,6 +943,11 @@ const server = http.createServer(async (req, res) => {
                     owned_by: 'novel-writer-ai-e2e',
                 }],
             });
+            return;
+        }
+
+        if (req.method === 'GET' && pathname === '/__mock/prompts') {
+            sendJson(res, { prompts: [...state.lastPrompts] });
             return;
         }
 

@@ -26,6 +26,14 @@ export interface MockAIStats {
     lastRequests: MockAIRequestRecord[];
 }
 
+/** 单次请求的 prompt 记录（阶段2 注入链路验证用） */
+export interface MockPromptRecord {
+    kind: string;
+    system: string;
+    user: string;
+    at: number;
+}
+
 export interface MockAIServer {
     port: number;
     /** 例如 http://127.0.0.1:12345 */
@@ -33,6 +41,8 @@ export interface MockAIServer {
     /** 完整 chat completions 端点 */
     endpoint: string;
     stats: () => Promise<MockAIStats>;
+    /** 读取已记录的 prompt 文本（最多 20 条，按时间倒序） */
+    prompts: () => Promise<MockPromptRecord[]>;
     resetStats: () => Promise<void>;
     setDelay: (delayMs: number) => Promise<void>;
     stop: () => Promise<void>;
@@ -169,6 +179,10 @@ export async function startMockAIServer(): Promise<MockAIServer> {
         baseUrl,
         endpoint: `${baseUrl}/v1/chat/completions`,
         stats: () => control<MockAIStats>(baseUrl, '/__mock/stats'),
+        prompts: async () => {
+            const payload = await control<{ prompts?: MockPromptRecord[] }>(baseUrl, '/__mock/prompts');
+            return payload.prompts ?? [];
+        },
         resetStats: async () => {
             await control<{ ok: boolean }>(baseUrl, '/__mock/reset', { method: 'POST' });
         },

@@ -106,6 +106,13 @@ export default defineConfig({
       timeout: 240_000,
     },
 
+    /* 阶段2 注入链路验证：真实项目 + mock AI，断言事实库/人物卡字段进了 prompt */
+    {
+      name: 'stage2-injection',
+      testMatch: /stage2-injection-validation\.spec\.ts/,
+      timeout: 300_000,
+    },
+
     {
       name: 'settings-regroup',
       testMatch: /settings-regroup\.spec\.ts/,
