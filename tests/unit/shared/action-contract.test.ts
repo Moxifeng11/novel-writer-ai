@@ -8,11 +8,14 @@ import { describe, expect, it } from 'vitest';
 import {
     actionKind,
     ACTION_KIND_OVERRIDES,
+    agentToolDenyReason,
+    agentToolKind,
     changesProse,
     changesSetting,
     isReadAction,
     isWriteAction,
     kindForGroup,
+    looksLikeProsePath,
     normalizeAction,
 } from '@/shared/action-contract';
 
@@ -123,5 +126,61 @@ describe('例外表', () => {
 
     it('例外表优先于命名规则（export 类不被误判为写）', () => {
         expect(actionKind('novel-writer-export-manuscript')).toBe('read');
+    });
+});
+
+describe('Agent 工具动作契约', () => {
+    it('全部 Harness 工具都有明确分类', () => {
+        const tools = [
+            'read_file', 'search_vault', 'list_projects', 'list_chapters', 'list_commands',
+            'get_project_status', 'get_execution_status', 'open_wizard', 'open_flow',
+            'open_full_writer', 'open_story_settings', 'open_pre_research', 'open_co_writing',
+            'open_chapter', 'random_story_settings',
+            'write_file', 'move_file', 'delete_file', 'update_memory',
+            'create_long_project', 'create_short_project', 'create_script_project',
+            'delete_project', 'update_plan', 'run_command',
+        ];
+        for (const name of tools) {
+            expect(['read', 'write-prose', 'write-setting', 'admin'], name).toContain(agentToolKind(name));
+        }
+    });
+
+    it('读取类工具 = read', () => {
+        for (const name of ['read_file', 'search_vault', 'list_chapters', 'get_project_status', 'open_chapter']) {
+            expect(agentToolKind(name), name).toBe('read');
+        }
+    });
+
+    it('write_file 按目标路径细分正文/设定', () => {
+        expect(agentToolKind('write_file', { path: '长篇小说/书A/03-正文/第01章.md' })).toBe('write-prose');
+        expect(agentToolKind('write_file', { path: '长篇小说/书A/01-世界架构/人物/林玄.md' })).toBe('write-setting');
+        expect(agentToolKind('write_file', {})).toBe('write-setting');
+    });
+
+    it('run_command 按被调命令 id 分类', () => {
+        expect(agentToolKind('run_command', { commandId: 'novel-writer-open-usage-ledger' })).toBe('read');
+        expect(agentToolKind('run_command', { commandId: 'novel-writer-save-version' })).toBe('write-prose');
+        expect(agentToolKind('run_command', {})).toBe('admin');
+    });
+
+    it('未登记工具按 admin 处理（安全侧）', () => {
+        expect(agentToolKind('some_unknown_tool')).toBe('admin');
+    });
+
+    it('looksLikeProsePath 识别正文目录', () => {
+        expect(looksLikeProsePath('长篇小说/书A/03-正文/第01章.md')).toBe(true);
+        expect(looksLikeProsePath('长篇小说/书A/chapters/c1.md')).toBe(true);
+        expect(looksLikeProsePath('长篇小说/书A/01-世界架构/人物/林玄.md')).toBe(false);
+    });
+
+    it('只读模式下读工具放行、写工具拒绝', () => {
+        expect(agentToolDenyReason('read_file', { path: 'a.md' }, true)).toBeNull();
+        const denied = agentToolDenyReason('write_file', { path: '长篇小说/书A/03-正文/第01章.md' }, true);
+        expect(denied).toContain('只读模式');
+        expect(denied).toContain('write_file');
+    });
+
+    it('非只读模式下写工具放行', () => {
+        expect(agentToolDenyReason('write_file', { path: 'a.md' }, false)).toBeNull();
     });
 });

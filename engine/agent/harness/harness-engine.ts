@@ -75,6 +75,14 @@ export interface AgentHarnessEngineOptions {
     /** 写工具是否需要询问（Harness 默认 allow；工作台传 ask） */
     writeApproval?: 'allow' | 'ask';
     /**
+     * 工具执行前守卫：返回字符串即拒绝（只读模式拦截 Agent 写操作）。
+     *
+     * @param toolName - 工具名
+     * @param args - 工具参数
+     * @returns 拒绝原因；允许返回 null
+     */
+    guardTool?: (toolName: string, args: Record<string, unknown>) => string | null;
+    /**
      * 会话变化回调（dsh session-persistence-jsonl）：
      * 每次回合结束后把快照交给宿主落盘；宿主负责节流与文件管理。
      */
@@ -150,7 +158,7 @@ export interface HarnessTelemetry {
  */
 export class AgentHarnessEngine {
     private readonly log = new AgentSessionLog();
-    private readonly registry = new HarnessToolRegistry();
+    private readonly registry: HarnessToolRegistry;
     private readonly memory: HarnessMemoryState = { slots: {} };
     /** 创作计划（update_plan 工具维护；工作台左栏渲染） */
     private readonly plan: { steps: PlanStep[] } = { steps: [] };
@@ -171,6 +179,7 @@ export class AgentHarnessEngine {
     private restored = false;
 
     constructor(private readonly options: AgentHarnessEngineOptions) {
+        this.registry = new HarnessToolRegistry(options.guardTool);
         this.ctx = options.ctx;
         for (const tool of createHostTools({ port: options.portDeps.port, ctx: this.ctx, memory: this.memory, plan: this.plan })) {
             this.registry.register(tool);

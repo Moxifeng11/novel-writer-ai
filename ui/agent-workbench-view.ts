@@ -11,6 +11,7 @@
  *
  * 双引擎：有凭据走 AI Harness（模型+工具），无凭据/失败一键降级规则引擎。
  */
+import { agentToolDenyReason } from '@/shared/action-contract';
 import { ItemView, MarkdownRenderer, Menu, Notice, TFile, TFolder, WorkspaceLeaf } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { applyNwScope } from '@/utils/helpers';
@@ -1190,6 +1191,12 @@ export class AgentWorkbenchView extends ItemView {
                 // 阶段 E 接线（DSH-20261112-16）：agent 多一个 repair_flow 工具；
                 // 审批沿用下方 requestApproval/writeApproval 通道，工具自身 fail-closed。
                 flowRepair: createFlowRepairHost({ app: this.app, plugin: this.plugin }),
+                // 动作契约（只读模式）：Agent 工具与命令同一口径拦截写操作
+                guardTool: (toolName, args) => agentToolDenyReason(
+                    toolName,
+                    args,
+                    this.plugin.settings.readOnlyMode === true,
+                ),
                 // 默认 ask：覆盖已有文件前确认；显式 allow 才自动放行（用户可在设置中改）
                 writeApproval: this.plugin.settings.agentWriteApproval === 'allow' ? 'allow' : 'ask',
                 // 工具审批：危险工具一律询问（没有确认端口 = 拒绝）；

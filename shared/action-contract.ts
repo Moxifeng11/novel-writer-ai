@@ -193,3 +193,93 @@ export function changesProse(action: string, group?: string): boolean {
 export function changesSetting(action: string, group?: string): boolean {
     return actionKind(action, group) === 'write-setting';
 }
+
+/**
+ * Agent 工具名的动作分类（显式表，覆盖 Harness 全部工具）。
+ *
+ * 与命令 id 的分类口径一致：读 = 不改作品；写正文/写设定 = 改内容；
+ * 管理 = 项目级结构操作。未登记的工具按「管理」处理（安全侧）。
+ */
+export const AGENT_TOOL_KINDS: Record<string, ActionKind> = {
+    // 只读
+    read_file: 'read',
+    search_vault: 'read',
+    list_projects: 'read',
+    list_chapters: 'read',
+    list_commands: 'read',
+    get_project_status: 'read',
+    get_execution_status: 'read',
+    open_wizard: 'read',
+    open_flow: 'read',
+    open_full_writer: 'read',
+    open_story_settings: 'read',
+    open_pre_research: 'read',
+    open_co_writing: 'read',
+    open_chapter: 'read',
+    random_story_settings: 'read',
+    // 写设定/内容（路径参数决定是正文还是设定，见 agentToolKind）
+    write_file: 'write-setting',
+    move_file: 'write-setting',
+    delete_file: 'write-setting',
+    update_memory: 'write-setting',
+    // 管理
+    create_long_project: 'admin',
+    create_short_project: 'admin',
+    create_script_project: 'admin',
+    delete_project: 'admin',
+    update_plan: 'admin',
+    run_command: 'admin',
+};
+
+/**
+ * 判断 Agent 工具本次调用属于哪类动作。
+ *
+ * 路径类工具按目标路径细分（正文 vs 设定）；run_command 按被调命令 id 细分。
+ *
+ * @param toolName - 工具名
+ * @param args - 工具参数
+ * @returns 动作类型
+ */
+export function agentToolKind(toolName: string, args?: Record<string, unknown>): ActionKind {
+    const name = String(toolName || '').trim();
+    if (!name) return 'admin';
+    if (name === 'run_command') {
+        const commandId = String(args?.commandId ?? args?.id ?? '').trim();
+        return commandId ? actionKind(commandId) : 'admin';
+    }
+    if (name === 'write_file' || name === 'move_file' || name === 'delete_file') {
+        const path = String(args?.path ?? args?.target ?? args?.file ?? '').trim();
+        return path && looksLikeProsePath(path) ? 'write-prose' : 'write-setting';
+    }
+    return AGENT_TOOL_KINDS[name] ?? 'admin';
+}
+
+/**
+ * 路径是否指向正文（章节/正文目录）。
+ *
+ * @param path - vault 相对路径
+ * @returns 是正文返回 true
+ */
+export function looksLikeProsePath(path: string): boolean {
+    const normalized = String(path || '').replace(/\\/g, '/');
+    return /(^|\/)(\d+-)?(正文|章节|chapters?|drafts?)(\/|$)/i.test(normalized);
+}
+
+/**
+ * Agent 工具在只读模式下是否允许。
+ *
+ * @param toolName - 工具名
+ * @param args - 工具参数
+ * @param readOnly - 是否只读模式
+ * @returns 允许返回 null；否则返回拒绝原因
+ */
+export function agentToolDenyReason(
+    toolName: string,
+    args: Record<string, unknown> | undefined,
+    readOnly: boolean,
+): string | null {
+    if (!readOnly) return null;
+    const kind = agentToolKind(toolName, args);
+    if (kind === 'read') return null;
+    return `🔒 只读模式已开启：Agent 工具「${toolName}」会修改作品（${kind}），已阻止。可在设置中关闭只读模式。`;
+}

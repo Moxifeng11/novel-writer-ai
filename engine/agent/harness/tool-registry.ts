@@ -60,6 +60,11 @@ export class HarnessToolRegistry {
     private tools = new Map<string, HarnessTool>();
 
     /**
+     * @param guard - 可选执行前守卫；返回字符串即拒绝（如只读模式拦截）
+     */
+    constructor(private readonly guard?: (toolName: string, args: Record<string, unknown>) => string | null) {}
+
+    /**
      * 注册工具。
      *
      * @param tool - 工具
@@ -156,6 +161,11 @@ export class HarnessToolRegistry {
         const validationError = validateArgs(tool, args);
         if (validationError) {
             return { ok: false, content: `工具「${toolName}」参数校验失败：${validationError}` };
+        }
+
+        const denied = this.guard?.(toolName, args);
+        if (denied) {
+            return { ok: false, content: denied };
         }
 
         try {
