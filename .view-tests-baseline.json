@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-13T19:35:37.479Z",
+  "updatedAt": "2026-11-14T11:02:37.475Z",
   "threshold": 200,
-  "note": "DSH-20261114-03：knowledge-injector 注入失败可见化（7 例）+ execution-panels 0 字符行（3 例），未覆盖数 87→86",
+  "note": "writing-pet 分层重构补了 11 条图层/帧换算测试，收紧基线",
   "files": [
     "ui/add-fanfic-setting-modal.ts",
     "ui/agent-workbench-view.ts",
@@ -87,7 +87,6 @@
     "ui/volume-intro-modal.ts",
     "ui/welcome-modal.ts",
     "ui/write-chapter-modal.ts",
-    "ui/writing-pet.ts",
     "ui/writing-stats-modal.ts",
     "ui/writing-style-modal.ts"
   ],
@@ -175,7 +174,6 @@
     "ui/volume-intro-modal.ts": 505,
     "ui/welcome-modal.ts": 232,
     "ui/write-chapter-modal.ts": 851,
-    "ui/writing-pet.ts": 290,
     "ui/writing-stats-modal.ts": 245,
     "ui/writing-style-modal.ts": 589
   }

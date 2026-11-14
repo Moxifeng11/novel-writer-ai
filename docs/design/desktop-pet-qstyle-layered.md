@@ -514,3 +514,31 @@ sleep ⇄ idle ⇄ writing
 | 主题 | 仅 `--nw-accent` | 12 个宠物令牌 + 深浅覆盖 + 反色光晕 |
 | z-index | 40（会压 popover） | 20（低于 popover 30） |
 | 避让 | 仅视口 clamp | 安全区 + 控件碰撞回避 + 弹窗变暗 |
+
+## 9. 实现落地记录（v1.2 · 2026-11-14）
+
+### 已实现
+
+| 项 | 实现位置 | 说明 |
+|---|---|---|
+| 5 层图层信息 | `ui/writing-pet.ts` 的 `PET_LAYERS` | shadow / aura / body / detail / fx，顺序即 z 序；`required` 与 `defaultVisible` 显式声明 |
+| 分层 SVG | `PET_SVG` | 每层外层 `<g class="nw-pet-layer" data-layer="…">` + 内层 `<g class="nw-pet-anim">`（定位与动画分离） |
+| 6 档状态 | `PetMood` | idle / happy / sleep / **writing / thinking / error**（后三者对齐催更姬 pet-mood） |
+| 状态标记 | 根节点 `data-pet-state` + `nw-is-{mood}` | CSS 据此切换每层动效 |
+| 图层可见性 API | `WritingPet.setLayerVisible(layer, visible)` | 可选层（aura/fx）可关，不影响识别 |
+| 姿势雪碧图接入位 | `PET_POSE_SHEET` + `poseFrameFor()` | 填 `{url, cols, rows}` 即切到单图切帧（催更姬同款）；未配置走分层 SVG |
+| 动效 | `styles-src/16-writing-stats-pet.css` | 只动 transform/opacity；`prefers-reduced-motion` 全停 |
+
+### 与催更姬的差异（有意保留）
+
+| 维度 | 催更姬 | 本插件 |
+|---|---|---|
+| 造型来源 | 手绘像素姿势图（2×2 雪碧图） | 代码绘制分层 SVG（零素材依赖，主题自适应） |
+| 分层 | 单图切帧 | 5 层独立控制（可单层开关/独立动效） |
+| 美术升级路径 | — | 提供 `PET_POSE_SHEET` 接入位，贴图即可升级为姿势帧 |
+
+### 未做
+
+- 手绘/像素美术：需外部美术资源，代码侧只提供接入位
+- 分层造型的 Q 版人类重绘（当前 body/detail 仍是墨色猫形态）
+- 设置界面暴露图层开关（API 已就绪，UI 待接）

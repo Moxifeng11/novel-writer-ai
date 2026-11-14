@@ -27,25 +27,101 @@ export interface WritingPetDeps {
     hide: () => void;
 }
 
-/** 宠物墨色猫 SVG（无外部资源，深浅色主题都能看清） */
+/**
+ * 宠物分层定义（图层信息唯一来源）。
+ *
+ * 设计依据：docs/design/desktop-pet-qstyle-layered.md §1.1。
+ * 每层是独立 <g class="nw-pet-layer">，外层定位、内层动画，互不覆盖 transform。
+ */
+export const PET_LAYERS = [
+    { id: 'shadow', label: '底层投影', required: true, defaultVisible: true },
+    { id: 'aura', label: '氛围光', required: false, defaultVisible: false },
+    { id: 'body', label: '主体形态', required: true, defaultVisible: true },
+    { id: 'detail', label: '细节装饰', required: true, defaultVisible: true },
+    { id: 'fx', label: '状态特效', required: false, defaultVisible: true },
+] as const;
+
+/** 图层 id */
+export type PetLayerId = (typeof PET_LAYERS)[number]['id'];
+
+/**
+ * 宠物状态（6 档，对齐催更姬 pet-mood）。
+ *
+ * idle/happy/sleep 来自写作进度；writing/thinking/error 供生成链路复用。
+ */
+export type PetMood = 'idle' | 'happy' | 'sleep' | 'writing' | 'thinking' | 'error';
+
+/**
+ * 姿势雪碧图配置（可选）。
+ *
+ * 有美术姿势图时填这里即可切到「单图切帧」（催更姬同款做法）：
+ *  - url：图片路径（相对插件目录，如 'assets/pet-poses.png'）
+ *  - cols/rows：网格切分；帧序号 = rows 内按 mood 映射
+ * 未配置时使用分层 SVG。
+ */
+export const PET_POSE_SHEET: { url: string; cols: number; rows: number } | undefined = undefined;
+
+/**
+ * 计算某状态在雪碧图中的帧坐标（百分比，供 background-position）。
+ *
+ * @param mood - 宠物状态
+ * @param sheet - 雪碧图网格
+ * @returns 0–100 的 x/y 百分比
+ */
+export function poseFrameFor(
+    mood: PetMood,
+    sheet: { cols: number; rows: number },
+): { xPercent: number; yPercent: number } {
+    const order: PetMood[] = ['idle', 'writing', 'thinking', 'celebrate' as PetMood, 'sleep', 'error'];
+    const index = Math.max(0, order.indexOf(mood));
+    const cols = Math.max(1, sheet.cols);
+    const rows = Math.max(1, sheet.rows);
+    const col = index % cols;
+    const row = Math.floor(index / cols) % rows;
+    return {
+        xPercent: cols > 1 ? (col / (cols - 1)) * 100 : 0,
+        yPercent: rows > 1 ? (row / (rows - 1)) * 100 : 0,
+    };
+}
+
+/** 分层 SVG：5 层，外层 <g class="nw-pet-layer"> 定位、内层 .nw-pet-anim 动画 */
 const PET_SVG = `
 <svg class="nw-pet-svg" viewBox="0 0 120 110" role="img" aria-hidden="true" focusable="false">
-    <ellipse class="nw-pet-shadow" cx="60" cy="101" rx="34" ry="6"/>
-    <path class="nw-pet-tail" d="M92 84c14 2 20-8 16-17-3-7-12-8-15-2"/>
-    <ellipse class="nw-pet-body" cx="60" cy="78" rx="30" ry="22"/>
-    <ellipse class="nw-pet-paw" cx="44" cy="96" rx="9" ry="5"/>
-    <ellipse class="nw-pet-paw" cx="76" cy="96" rx="9" ry="5"/>
-    <path class="nw-pet-ear" d="M32 30l6-16 15 9z"/>
-    <path class="nw-pet-ear" d="M88 30l-6-16-15 9z"/>
-    <ellipse class="nw-pet-head" cx="60" cy="40" rx="30" ry="26"/>
-    <ellipse class="nw-pet-eye" cx="49" cy="38" rx="3.6" ry="4.6"/>
-    <ellipse class="nw-pet-eye" cx="71" cy="38" rx="3.6" ry="4.6"/>
-    <path class="nw-pet-mouth" d="M55 49c2 3 8 3 10 0"/>
-    <line class="nw-pet-whisker" x1="30" y1="42" x2="42" y2="44"/>
-    <line class="nw-pet-whisker" x1="30" y1="49" x2="42" y2="49"/>
-    <line class="nw-pet-whisker" x1="90" y1="42" x2="78" y2="44"/>
-    <line class="nw-pet-whisker" x1="90" y1="49" x2="78" y2="49"/>
-    <path class="nw-pet-pen" d="M84 60l9-9 5 5-9 9-6 1z"/>
+    <g class="nw-pet-layer nw-pet-layer--shadow nw-is-layer-visible" data-layer="shadow">
+        <g class="nw-pet-anim nw-pet-anim--shadow"><ellipse class="nw-pet-shadow" cx="60" cy="101" rx="34" ry="6"/></g>
+    </g>
+    <g class="nw-pet-layer nw-pet-layer--aura" data-layer="aura">
+        <g class="nw-pet-anim nw-pet-anim--aura"><circle class="nw-pet-aura" cx="60" cy="62" r="44"/></g>
+    </g>
+    <g class="nw-pet-layer nw-pet-layer--body nw-is-layer-visible" data-layer="body">
+        <g class="nw-pet-anim nw-pet-anim--body">
+            <path class="nw-pet-tail" d="M92 84c14 2 20-8 16-17-3-7-12-8-15-2"/>
+            <ellipse class="nw-pet-body" cx="60" cy="78" rx="30" ry="22"/>
+            <ellipse class="nw-pet-paw" cx="44" cy="96" rx="9" ry="5"/>
+            <ellipse class="nw-pet-paw" cx="76" cy="96" rx="9" ry="5"/>
+            <path class="nw-pet-ear" d="M32 30l6-16 15 9z"/>
+            <path class="nw-pet-ear" d="M88 30l-6-16-15 9z"/>
+            <ellipse class="nw-pet-head" cx="60" cy="40" rx="30" ry="26"/>
+        </g>
+    </g>
+    <g class="nw-pet-layer nw-pet-layer--detail nw-is-layer-visible" data-layer="detail">
+        <g class="nw-pet-anim nw-pet-anim--detail">
+            <ellipse class="nw-pet-eye" cx="49" cy="38" rx="3.6" ry="4.6"/>
+            <ellipse class="nw-pet-eye" cx="71" cy="38" rx="3.6" ry="4.6"/>
+            <path class="nw-pet-mouth" d="M55 49c2 3 8 3 10 0"/>
+            <line class="nw-pet-whisker" x1="30" y1="42" x2="42" y2="44"/>
+            <line class="nw-pet-whisker" x1="30" y1="49" x2="42" y2="49"/>
+            <line class="nw-pet-whisker" x1="90" y1="42" x2="78" y2="44"/>
+            <line class="nw-pet-whisker" x1="90" y1="49" x2="78" y2="49"/>
+            <path class="nw-pet-pen" d="M84 60l9-9 5 5-9 9-6 1z"/>
+        </g>
+    </g>
+    <g class="nw-pet-layer nw-pet-layer--fx nw-is-layer-visible" data-layer="fx">
+        <g class="nw-pet-anim nw-pet-anim--fx">
+            <text class="nw-pet-zzz" x="86" y="26">z</text>
+            <text class="nw-pet-spark" x="34" y="24">✦</text>
+        </g>
+    </g>
 </svg>`;
 
 /**
@@ -57,7 +133,7 @@ export class WritingPet {
     private bubbleMain: HTMLElement | null = null;
     private bubbleSub: HTMLElement | null = null;
     private card: HTMLElement | null = null;
-    private mood: 'idle' | 'happy' | 'sleep' = 'idle';
+    private mood: PetMood = 'idle';
     private expanded = false;
     private dragging = false;
     private moved = false;
@@ -71,6 +147,22 @@ export class WritingPet {
 
     constructor(deps: WritingPetDeps) {
         this.deps = deps;
+    }
+
+    /**
+     * 设置某图层可见性。
+     *
+     * 必需层（shadow/body/detail）关掉会破坏形态，但仍允许关闭以便排查；
+     * 可选层（aura/fx）关闭不影响识别。
+     *
+     * @param layer - 图层 id
+     * @param visible - 是否可见
+     */
+    setLayerVisible(layer: PetLayerId, visible: boolean): void {
+        if (!this.root) return;
+        this.root.querySelectorAll(`.nw-pet-layer[data-layer="${layer}"]`).forEach((element) => {
+            element.toggleClass('nw-is-layer-visible', visible);
+        });
     }
 
     get isMounted(): boolean {
@@ -101,7 +193,14 @@ export class WritingPet {
         });
         // 浮动动画放在内层 HTML 容器：外层是点击/拖拽目标，必须保持几何稳定。
         const floatWrap = petBody.createDiv({ cls: 'nw-pet-float' });
-        setSanitizedHtml(floatWrap, PET_SVG);
+        if (PET_POSE_SHEET) {
+            // 有姿势雪碧图时走「单图切帧」（催更姬同款），帧由 --nw-pet-frame-* 控制
+            const pose = floatWrap.createDiv({ cls: 'nw-pet-pose', attr: { 'aria-hidden': 'true' } });
+            pose.style.backgroundImage = `url(${PET_POSE_SHEET.url})`;
+            pose.style.backgroundSize = `${PET_POSE_SHEET.cols * 100}% ${PET_POSE_SHEET.rows * 100}%`;
+        } else {
+            setSanitizedHtml(floatWrap, PET_SVG);
+        }
         petBody.addEventListener('pointerdown', (e) => this.onPointerDown(e));
         petBody.addEventListener('click', () => {
             if (this.moved) return;
@@ -150,7 +249,7 @@ export class WritingPet {
             }
         }
 
-        const nextMood: 'idle' | 'happy' | 'sleep' = today <= 0
+        const nextMood: PetMood = today <= 0
             ? 'sleep'
             : (target > 0 && today >= target ? 'happy' : 'idle');
         this.setMood(nextMood);
@@ -196,11 +295,17 @@ export class WritingPet {
         this.dragDisposers = [];
     }
 
-    private setMood(mood: 'idle' | 'happy' | 'sleep'): void {
+    private setMood(mood: PetMood): void {
         if (this.mood === mood || !this.root) return;
         this.mood = mood;
-        this.root.removeClass('nw-is-idle', 'nw-is-happy', 'nw-is-sleep');
+        this.root.removeClass('nw-is-idle', 'nw-is-happy', 'nw-is-sleep', 'nw-is-writing', 'nw-is-thinking', 'nw-is-error');
+        this.root.setAttribute('data-pet-state', mood);
         this.root.addClass(`nw-is-${mood}`);
+        if (PET_POSE_SHEET) {
+            const frame = poseFrameFor(mood, PET_POSE_SHEET);
+            this.root.style.setProperty('--nw-pet-frame-x', `${frame.xPercent}%`);
+            this.root.style.setProperty('--nw-pet-frame-y', `${frame.yPercent}%`);
+        }
     }
 
     private toggleCard(): void {

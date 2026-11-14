@@ -138,6 +138,14 @@ describe('动效统一（zcode 手感）', () => {
             'nw-pet-tail',
             'nw-pet-blink',
             'nw-pet-happy',
+            // v1.2 分层重构：宠物状态动效（只动 transform/opacity，仅在对应 state 类下生效；
+            // aura/zzz/spark 属可选层且 aura 默认关闭；reduced-motion 已全停）
+            'nw-pet-aura-breathe',
+            'nw-pet-zzz',
+            'nw-pet-spark',
+            'nw-pet-write',
+            'nw-pet-think',
+            'nw-pet-breathe',
         ]);
         for (const name of infinite) {
             expect(allowed.has(name)).toBe(true);
