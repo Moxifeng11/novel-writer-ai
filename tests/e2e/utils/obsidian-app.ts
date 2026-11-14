@@ -27,12 +27,37 @@ export interface ObsidianSession {
     close: () => Promise<void>;
 }
 
-/** 读取并校验 OBSIDIAN_PATH；未配置或路径不存在时返回空 */
+/**
+ * OBSIDIAN_PATH 未设置时的默认候选（DSH-20261114 e2e-infra：E2E 常态化）。
+ *
+ * 优先级：环境变量 > 平台默认安装路径。找到第一个存在的候选即用；
+ * 都不存在才整组 skip（行为与旧版一致，只是不再要求每次手工传路径）。
+ */
+const OBSIDIAN_DEFAULT_CANDIDATES: ReadonlyArray<string> = (() => {
+    switch (process.platform) {
+        case 'win32':
+            return [
+                process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'Programs', 'obsidian', 'Obsidian.exe') : '',
+                'C:\\Program Files\\Obsidian\\Obsidian.exe',
+                'C:\\Program Files (x86)\\Obsidian\\Obsidian.exe',
+            ].filter(Boolean);
+        case 'darwin':
+            return ['/Applications/Obsidian.app/Contents/MacOS/Obsidian'];
+        case 'linux':
+            return ['/usr/bin/obsidian', '/opt/Obsidian/obsidian', '/snap/bin/obsidian'];
+        default:
+            return [];
+    }
+})();
+
+/** 读取并校验 OBSIDIAN_PATH；未配置时尝试平台默认安装路径，都没有返回空 */
 export function getObsidianExecutable(): string | undefined {
-    const executable = process.env.OBSIDIAN_PATH?.trim();
-    if (!executable) return undefined;
-    if (!fs.existsSync(executable)) return undefined;
-    return executable;
+    const candidates = [process.env.OBSIDIAN_PATH?.trim(), ...OBSIDIAN_DEFAULT_CANDIDATES]
+        .filter((candidate): candidate is string => Boolean(candidate));
+    for (const candidate of candidates) {
+        if (fs.existsSync(candidate)) return candidate;
+    }
+    return undefined;
 }
 
 /** E2E 是否具备真实运行条件（仅 OBSIDIAN_PATH 一项） */
@@ -43,10 +68,11 @@ export function isObsidianE2EEnabled(): boolean {
 /** 未启用时给出可操作的跳过原因 */
 export function describeSkipReason(): string {
     const raw = process.env.OBSIDIAN_PATH?.trim();
-    if (!raw) {
-        return '未配置 OBSIDIAN_PATH。设置指向 Obsidian 可执行文件的绝对路径后再运行（见 tests/e2e/README.md）。';
+    if (raw) {
+        return `OBSIDIAN_PATH 指向的文件不存在：${raw}`;
     }
-    return `OBSIDIAN_PATH 指向的文件不存在：${raw}`;
+    const tried = OBSIDIAN_DEFAULT_CANDIDATES.join('、');
+    return `未找到 Obsidian 可执行文件（已尝试默认安装路径：${tried}）。可设置 OBSIDIAN_PATH 指向绝对路径（见 tests/e2e/README.md 与 .env.example）。`;
 }
 
 function pluginRoot(): string {

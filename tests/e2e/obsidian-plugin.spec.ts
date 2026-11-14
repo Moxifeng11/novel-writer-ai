@@ -1,3 +1,4 @@
+import { switchSettingsTab } from './utils/settings-nav';
 import { test, expect } from '@playwright/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -259,13 +260,18 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         expect(await executeCommand(page, toObsidianCommandId('novel-writer-open-knowledge-base'))).toBe(true);
         const kb = page.locator('.workspace-leaf-content[data-type="novel-writer-knowledge-base"]');
         await expect(kb).toBeVisible({ timeout: 15_000 });
-        await expect(kb.locator('.nw-capability-banner')).toContainText('知识库能力边界', { timeout: 10_000 });
+        // 知识库视图有两个能力横幅（能力边界 + 知识流状态），按文案定位避免 strict mode 冲突
+        await expect(kb.locator('.nw-capability-banner', { hasText: '知识库能力边界' }))
+            .toContainText('知识库能力边界', { timeout: 10_000 });
 
         expect(await executeCommand(page, toObsidianCommandId('novel-writer-fingerprint-library'))).toBe(true);
         const fp = page.locator('.workspace-leaf-content[data-type="novel-writer-writing-fingerprint"]');
         await expect(fp).toBeVisible({ timeout: 15_000 });
-        await expect(fp.locator('.nw-capability-banner')).toContainText('写作指纹能力边界', { timeout: 10_000 });
-        await expect(fp.locator('.nw-capability-notes')).toContainText('知识库 style 向量', { timeout: 5_000 });
+        await expect(fp.locator('.nw-capability-banner', { hasText: '写作指纹能力边界' }))
+            .toContainText('写作指纹能力边界', { timeout: 10_000 });
+        // 指纹库同样有两个 .nw-capability-notes（能力边界说明 + 链路状态），按文案定位
+        await expect(fp.locator('.nw-capability-notes', { hasText: '知识库 style 向量' }))
+            .toContainText('知识库 style 向量', { timeout: 5_000 });
     });
 
     test('模型设置是两栏布局，长 URL 完整可见', async () => {
@@ -358,20 +364,32 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         const { page } = session;
         expect(await executeCommand(page, SETTINGS_COMMAND)).toBe(true);
 
+        // v4.96：设置改为「一级分组 + 二级 tab」两级结构，目标 tab 可能不在当前分组里。
+        // 先按文案找二级 tab；找不到则逐个点击一级分组再找（不依赖具体分组映射）。
         const switchTab = async (label: string): Promise<boolean> => {
-            const ok = await page.evaluate((name) => {
+            return page.evaluate(async (name) => {
                 const host = window as unknown as {
                     app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
                 };
                 const root = host.app?.setting?.activeTab?.containerEl;
                 if (!root) return false;
-                const tab = Array.from(root.querySelectorAll('.nw-settings-tab'))
-                    .find(el => ((el as HTMLElement).textContent || '').includes(name));
+                const findTab = (): HTMLElement | undefined =>
+                    Array.from(root.querySelectorAll('.nw-settings-tab'))
+                        .find(el => ((el as HTMLElement).textContent || '').includes(name)) as HTMLElement | undefined;
+                let tab = findTab();
+                if (!tab) {
+                    const groups = Array.from(root.querySelectorAll('.nw-settings-group')) as HTMLElement[];
+                    for (const group of groups) {
+                        group.click();
+                        await new Promise(resolve => setTimeout(resolve, 80));
+                        tab = findTab();
+                        if (tab) break;
+                    }
+                }
                 if (!tab) return false;
-                (tab as HTMLElement).click();
+                tab.click();
                 return true;
             }, label);
-            return ok;
         };
 
         await expect.poll(() => switchTab('写作规则'), { timeout: 15_000 }).toBe(true);
@@ -418,26 +436,7 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         const { page } = session;
         expect(await executeCommand(page, SETTINGS_COMMAND)).toBe(true);
 
-        const switchTab = async (label: string): Promise<boolean> => page.evaluate((name) => {
-            const host = window as unknown as {
-                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
-            };
-            const root = host.app?.setting?.activeTab?.containerEl;
-            if (!root) return false;
-            const find = (): HTMLElement | undefined => Array.from(root.querySelectorAll<HTMLElement>('.nw-settings-tab'))
-                .find(el => (el.textContent || '').includes(name));
-            let tab = find();
-            if (!tab) {
-                // 4.81.1：创作模式等高级页签默认折叠，先展开再点
-                const toggle = Array.from(root.querySelectorAll<HTMLElement>('.nw-settings-tab'))
-                    .find(el => (el.textContent || '').includes('高级设置'));
-                toggle?.click();
-                tab = find();
-            }
-            if (!tab) return false;
-            tab.click();
-            return true;
-        }, label);
+        const switchTab = (label: string): Promise<boolean> => switchSettingsTab(page, label);
 
         await expect.poll(() => switchTab('写作配置'), { timeout: 15_000 }).toBe(true);
         const activeText = () => page.evaluate(() => {
@@ -491,18 +490,7 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         const { page } = session;
         expect(await executeCommand(page, SETTINGS_COMMAND)).toBe(true);
 
-        const switched = await page.evaluate(() => {
-            const host = window as unknown as {
-                app?: { setting?: { activeTab?: { containerEl?: HTMLElement } } };
-            };
-            const root = host.app?.setting?.activeTab?.containerEl;
-            if (!root) return false;
-            const tab = Array.from(root.querySelectorAll('.nw-settings-tab'))
-                .find(el => ((el as HTMLElement).textContent || '').includes('外观'));
-            if (!tab) return false;
-            (tab as HTMLElement).click();
-            return true;
-        });
+        const switched = await switchSettingsTab(page, '外观');
         expect(switched).toBe(true);
 
         await expect.poll(async () => page.evaluate(() => {

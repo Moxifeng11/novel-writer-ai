@@ -1,10 +1,22 @@
 import { defineConfig, devices } from '@playwright/test';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 /**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
+ * 轻量 .env 装载（DSH-20261114 e2e-infra）：读取仓库根目录 .env（KEY=VALUE），
+ * 已设置的 shell 变量优先。不引入 dotenv 依赖；样例见 .env.example。
  */
-// require('dotenv').config();
+(function loadDotEnv(): void {
+    const envPath = path.resolve(__dirname, '.env');
+    if (!fs.existsSync(envPath)) return;
+    for (const line of fs.readFileSync(envPath, 'utf8').split(/\r?\n/)) {
+        const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+        if (!match) continue;
+        const key = match[1];
+        const value = match[2].replace(/^["']|["']$/g, '');
+        if (process.env[key] === undefined) process.env[key] = value;
+    }
+})();
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -85,6 +97,13 @@ export default defineConfig({
       name: 'view-lifecycle',
       testMatch: /view-lifecycle\.spec\.ts/,
       timeout: 180_000,
+    },
+
+    /* 阶段4 关键路径冒烟：一键生成 / 事实库视图 / 一致性审核弹窗（DSH-20261114-08 后常态化） */
+    {
+      name: 'key-paths',
+      testMatch: /key-paths-.*\.spec\.ts/,
+      timeout: 240_000,
     },
 
     {
