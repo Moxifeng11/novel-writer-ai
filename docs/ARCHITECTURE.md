@@ -1,6 +1,6 @@
 # 小说工坊 AI 插件架构文档
 
-> **版本**: v4.95.0
+> **版本**: v4.96.0
 > **最后更新**: 2026-11-14
 > **状态**: 活跃可信 · 与代码同步（本轮以源码实测复核了子目录清单 / 引擎注册表 / 边界数字）
 > **唯一可执行分层口径**: `scripts/check-dependencies.mjs`（目标边界与差异见 [handbook/02-architecture.md](handbook/02-architecture.md)）

@@ -21,6 +21,16 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.96.0',
+        date: '2026-11-14',
+        title: '链路修复 + 设置重构',
+        sections: [
+            { type: 'added', label: '🧭 设置', items: ['18 tab 收敛为 6 一级分组 + 二级 tab'] },
+            { type: 'fixed', label: '🔗 链路', items: ['事实库/人物卡连续性字段进写作 prompt', 'entity_status 过滤、台账关联进生成侧'] },
+            { type: 'added', label: '👁 降级可见', items: ['时间线结构化列、截断、模板变量、LLM 降级均可见'] },
+        ],
+    },
+    {
         version: '4.95.0',
         date: '2026-11-13',
         title: '词表治理收尾',
@@ -299,40 +309,6 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
                 items: [
                     '新增测试标准：7 条硬规则 + 生产环境测试三层矩阵 + 发版前 10 条手工验收清单',
                     '新增门禁 check:test-standard（禁止 .only / 无理由 .skip / 空断言 / 替身不忠实）',
-                ],
-            },
-        ],
-    },
-    {
-        version: '4.84.0',
-        date: '2026-11-12',
-        title: '自愈版本：agent 能修了 + 孤儿向量对账 + 假绿修复',
-        sections: [
-            {
-                type: 'added',
-                label: '🔧 agent 自愈',
-                items: [
-                    'repair_flow 从 2 个动作扩到 6 个：重向量化 / 指纹重载 / 孤儿清理 / 强度修复 / 磁盘向量清理 / 考据重跑',
-                    '修复动作全部走审批且 fail-closed（无审批回调一律拒绝），失败如实报错不静默成功',
-                    '修复结果进会话遥测：agent 事后能自证「修过什么、修成了没有」',
-                ],
-            },
-            {
-                type: 'fixed',
-                label: '🧹 假绿修复',
-                items: [
-                    '孤儿向量对账：知识库索引为空但向量库有数据时，界面不再显示「已加载 1 本」而装作正常',
-                    '清理不静默：未确认一个不删，整轮清理放在单次写锁内',
-                    '降级提示改为只显示最近 3 条（原来取的是最旧三条，与「最近」语义相反）',
-                ],
-            },
-            {
-                type: 'improved',
-                label: '📈 其他',
-                items: [
-                    'repair_flow 接入工作台：诊断出的断点可以一键修复',
-                    '示例项目种子脚本：可在临时目录生成最小真实数据集，让三条链路可被真实验证',
-                    '覆盖率：ui 15.22% → 20.43%，ui/views 12.95% → 28.26%',
                 ],
             },
         ],
