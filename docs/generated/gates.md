@@ -23,7 +23,6 @@
 | `npm run check:css` | CSS 预算与命名棘轮 |
 | `npm run check:deps` | 分层依赖与循环依赖（棘轮） |
 | `npm run check:docs` | 文档索引/链接/版本/编码检查 |
-| `npm run check:dsh-isolation` | dsh 后端隔离检查 |
 | `npm run check:hotpaths` | 热路径全库扫描检查 |
 | `npm run check:inline-styles` | 内联样式基线棘轮 |
 | `npm run check:jsdoc` | 注释覆盖率（棘轮） |
@@ -91,18 +90,17 @@
 16. npm run check:write-entry
 17. npm run check:linked-scenarios
 18. npm run check:automation
-19. npm run check:dsh-isolation
-20. npm run check:jsdoc
-21. npm run check:any
-22. npm run check:command-handlers
-23. npm run check:view-tests
-24. npm run check:test-standard
-25. npm run check:changelog
-26. npm run check:docs
-27. npm run check:support-qr
-28. npm run build
-29. npm run check:bundle
-30. npm run check:release
+19. npm run check:jsdoc
+20. npm run check:any
+21. npm run check:command-handlers
+22. npm run check:view-tests
+23. npm run check:test-standard
+24. npm run check:changelog
+25. npm run check:docs
+26. npm run check:support-qr
+27. npm run build
+28. npm run check:bundle
+29. npm run check:release
 ```
 
 ## 说明

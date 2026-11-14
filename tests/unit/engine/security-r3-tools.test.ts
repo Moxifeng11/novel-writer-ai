@@ -1,9 +1,8 @@
 /**
  * S3-5 / S3-6（安全 r3）回归：
- * 1. dsh 启动计划剔除调用方夹带的凭据环境变量（凭据只能显式注入）；
- * 2. write_file 布尔参数严格化——"true" 字符串被拒绝，不再静默退化成覆盖写；
- * 3. 审批探测与锁内写入之间出现新文件 → 拒绝并要求重新确认（TOCTOU）；
- * 4. 信任配置/项目身份路径不允许自动放行新建。
+ * 1. write_file 布尔参数严格化——"true" 字符串被拒绝，不再静默退化成覆盖写；
+ * 2. 审批探测与锁内写入之间出现新文件 → 拒绝并要求重新确认（TOCTOU）；
+ * 3. 信任配置/项目身份路径不允许自动放行新建。
  */
 
 import { describe, expect, it, vi } from 'vitest';
@@ -11,7 +10,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { validateArgs } from '../../../engine/agent/harness/tool-registry';
 import type { HarnessTool } from '../../../engine/agent/harness/harness-types';
-import { buildDshLaunchPlan, CREDENTIAL_ENV_KEYS } from '../../../engine/agent/dsh/dsh-launch';
 import { isSensitiveAutoApprovePath, shouldAutoApproveNewFile } from '../../../shared/file-path-guard';
 import { createAgentPort } from '../../../ui/services/agent-port';
 
@@ -21,38 +19,6 @@ vi.mock('../../../main', () => ({
 
 const ROOT = path.resolve(__dirname, '../../..');
 const read = (rel: string): string => fs.readFileSync(path.join(ROOT, rel), 'utf8');
-
-describe('S3-5 dsh 凭据环境变量剔除', () => {
-    it('options.env 里的凭据键被剔除，显式 apiKey 仍注入', () => {
-        const plan = buildDshLaunchPlan({
-            home: '/h',
-            workspace: '/v',
-            sandbox: 'read-only',
-            apiKey: 'sk-deepseek',
-            env: {
-                PATH: '/bin',
-                DEEPSEEK_API_KEY: 'sk-evil',
-                OPENAI_API_KEY: 'sk-openai',
-                MY_SERVICE_TOKEN: 'tok',
-                APP_SECRET: 'sec',
-                AUTHORIZATION: 'Bearer x',
-            },
-        });
-
-        expect(plan.env.DEEPSEEK_API_KEY).toBe('sk-deepseek');
-        expect(plan.env.OPENAI_API_KEY).toBeUndefined();
-        expect(plan.env.MY_SERVICE_TOKEN).toBeUndefined();
-        expect(plan.env.APP_SECRET).toBeUndefined();
-        expect(plan.env.AUTHORIZATION).toBeUndefined();
-        expect(plan.env.PATH).toBe('/bin');
-    });
-
-    it('CREDENTIAL_ENV_KEYS 覆盖常见后缀', () => {
-        expect(CREDENTIAL_ENV_KEYS.test('OPENAI_API_KEY')).toBe(true);
-        expect(CREDENTIAL_ENV_KEYS.test('GITHUB_TOKEN')).toBe(true);
-        expect(CREDENTIAL_ENV_KEYS.test('DSH_HOME')).toBe(false);
-    });
-});
 
 describe('S3-6 write_file 布尔严格化', () => {
     const tool: HarnessTool = {

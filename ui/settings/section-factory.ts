@@ -72,7 +72,7 @@ export const SETTINGS_TAB_DEFINITIONS: ReadonlyArray<SettingsTabDefinition> = [
     { id: 'layout', label: '🧩 工作台布局', group: 'advanced', create: host => new LayoutSection(host) },
     { id: 'projects', label: '🗂 项目库迁移', group: 'advanced', create: host => new ProjectLibrarySection(host) },
     { id: 'performance', label: '📈 性能监控', group: 'advanced', create: host => new PerformanceSection(host) },
-    { id: 'agent', label: '🤖 Agent 后端', group: 'advanced', create: host => new AgentBackendSection(host) },
+    { id: 'agent', label: '🤖 Agent 对话', group: 'advanced', create: host => new AgentBackendSection(host) },
     { id: 'about', label: 'ℹ️ 关于', group: 'primary', create: host => new AboutSection(host) },
 ];
 

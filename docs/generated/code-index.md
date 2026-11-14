@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 346 | 145477 | 1937 | 1538 | 79% |
+| `engine/` | 342 | 144634 | 1910 | 1513 | 79% |
 | `services/` | 39 | 14782 | 219 | 170 | 78% |
 | `shared/` | 207 | 43515 | 1812 | 1459 | 81% |
-| `core/` | 7 | 2946 | 32 | 17 | 53% |
+| `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1540 | 85 | 55 | 65% |
-| `ui/` | 274 | 106888 | 1033 | 834 | 81% |
+| `ui/` | 274 | 106574 | 1033 | 834 | 81% |
 
 ## 文件清单
 
@@ -22,7 +22,7 @@
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 550 | 4 | 2 |
-| `core/settings-service.ts` | 580 | 5 | 4 |
+| `core/settings-service.ts` | 574 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
@@ -41,10 +41,6 @@
 | `domains/short/tool-catalog.ts` | 42 | 1 | 0 |
 | `engine/agent/agent-types.ts` | 370 | 23 | 17 |
 | `engine/agent/conversation-engine.ts` | 1267 | 1 | 1 |
-| `engine/agent/dsh/dsh-launch.ts` | 130 | 9 | 7 |
-| `engine/agent/dsh/dsh-process.ts` | 271 | 7 | 7 |
-| `engine/agent/dsh/dsh-protocol.ts` | 159 | 4 | 4 |
-| `engine/agent/dsh/dsh-session.ts` | 283 | 7 | 7 |
 | `engine/agent/harness/agent-adapter.ts` | 83 | 2 | 1 |
 | `engine/agent/harness/agent-loop.ts` | 622 | 6 | 6 |
 | `engine/agent/harness/context-fit.ts` | 137 | 6 | 6 |
@@ -632,7 +628,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 771 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1960 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1758 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |
@@ -834,7 +830,7 @@
 | `ui/services/project-create-service.ts` | 473 | 6 | 5 |
 | `ui/settings-tab.ts` | 397 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
-| `ui/settings/agent-section.ts` | 151 | 1 | 1 |
+| `ui/settings/agent-section.ts` | 39 | 1 | 1 |
 | `ui/settings/api-section.ts` | 1281 | 1 | 1 |
 | `ui/settings/deconstruction-section.ts` | 332 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |

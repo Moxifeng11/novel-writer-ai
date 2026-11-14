@@ -133,5 +133,5 @@ npm run check:jsdoc -- --update-baseline   # 仅在覆盖率上升后执行
 - 文件头 + 接口逐项注释：[../../shared/file-system-port.ts](../../shared/file-system-port.ts)
 - 事故背景 + 纯函数契约：[../../shared/versioned-registry.ts](../../shared/versioned-registry.ts)
 - 唯一入口 + 不变量：[../../engine/body-writer.ts](../../engine/body-writer.ts)
-- 协议事实固化：[../../engine/agent/dsh/dsh-protocol.ts](../../engine/agent/dsh/dsh-protocol.ts)
+- 协议事实固化：`engine/agent/dsh/dsh-protocol.ts`（已随外部 dsh 后端移除）
 - 类级 `@example`：[../../shared/progress-emitter.ts](../../shared/progress-emitter.ts)
