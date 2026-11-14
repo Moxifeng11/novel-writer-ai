@@ -6,7 +6,7 @@
  */
 import { App, Modal } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
-import { dailyTrend, getUsageLedger, type UsageRecord } from '@/services/usage-ledger';
+import { dailyTrend, pricingSourceByModel, getUsageLedger, type UsageRecord } from '@/services/usage-ledger';
 
 function formatTokens(value: number): string {
     if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(2)}M`;
@@ -70,6 +70,7 @@ export class UsageLedgerModal extends Modal {
         const ledger = getUsageLedger(this.plugin.app);
         const records = ledger.list(200);
         const summary = ledger.summary(200);
+        const pricingSources = pricingSourceByModel(records);
 
         const head = this.bodyEl.createDiv({ cls: 'nw-project-health-head' });
         head.createEl('h3', { text: '最近调用' });
@@ -116,7 +117,7 @@ export class UsageLedgerModal extends Modal {
             models.createEl('h4', { text: '按模型' });
             const table = models.createEl('table', { cls: 'nw-usage-table' });
             const headRow = table.createEl('tr');
-            for (const label of ['模型', '调用', 'Token', '耗时', '费用(元)']) headRow.createEl('th', { text: label });
+            for (const label of ['模型', '调用', 'Token', '耗时', '费用(元)', '计价']) headRow.createEl('th', { text: label });
             for (const model of summary.byModel) {
                 const row = table.createEl('tr');
                 row.createEl('td', { text: model.model });
@@ -124,6 +125,7 @@ export class UsageLedgerModal extends Modal {
                 row.createEl('td', { text: formatTokens(model.totalTokens) });
                 row.createEl('td', { text: formatDuration(model.durationMs) });
                 row.createEl('td', { text: formatCostYuan(model.costYuan) });
+            row.createEl('td', { text: pricingSources[model.model] === 'user' ? '自定义' : (pricingSources[model.model] === 'default' ? '参考价' : '—') });
             }
         }
 

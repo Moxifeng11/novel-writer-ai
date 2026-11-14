@@ -30,6 +30,12 @@ export interface UsageRecord {
     /** 估算费用（元）；模型未配置单价时缺省（不计费） */
     costYuan?: number;
     /**
+     * 计价快照（调用当时的单价与来源）。
+     *
+     * 查询/汇总只读这个快照，不按当前设置重新计价——否则用户改单价后历史费用会变。
+     */
+    pricing?: { inputPerM: number; outputPerM: number; source: 'user' | 'default' };
+    /**
      * 流式响应未返回 usage 帧时置 true（DSH-20261113-25 ④）：
      * 0 token 是「未统计」而非「真实消耗为 0」，汇总/展示方据此区分。
      */
@@ -251,6 +257,24 @@ export function dailyTrend(
         bucket.calls += 1;
     }
     return [...buckets.values()];
+}
+
+/**
+ * 各模型最近一次计价来源（用户配置 / 默认参考价）。
+ *
+ * 只读记录里的价格快照，不按当前设置重算。
+ *
+ * @param records - 用量记录
+ * @returns 模型 → 计价来源
+ */
+export function pricingSourceByModel(records: readonly UsageRecord[]): Record<string, 'user' | 'default'> {
+    const sources: Record<string, 'user' | 'default'> = {};
+    for (const record of records) {
+        if (record.pricing?.source && !sources[record.model]) {
+            sources[record.model] = record.pricing.source;
+        }
+    }
+    return sources;
 }
 
 /**

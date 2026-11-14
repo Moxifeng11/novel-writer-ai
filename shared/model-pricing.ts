@@ -120,3 +120,25 @@ export function estimateCostYuan(pricing: ModelPricing | null, promptTokens: num
         + (completionTokens / 1_000_000) * pricing.outputPerM;
     return Number(cost.toFixed(6));
 }
+
+/**
+ * 查找单价并返回来源（价格快照用）。
+ *
+ * 用户配置优先；未配置时按 allowDefaults 决定是否回退默认参考价。
+ *
+ * @param model - 模型 ID
+ * @param settings - 插件设置
+ * @param options - allowDefaults 控制是否回退默认参考价
+ * @returns 单价与来源；都查不到返回 null
+ */
+export function lookupModelPricingWithSource(
+    model: string,
+    settings?: { customProviders?: Array<{ modelMeta?: Record<string, { inputPricePerM?: number; outputPricePerM?: number }> }> },
+    options?: { allowDefaults?: boolean },
+): { pricing: ModelPricing; source: 'user' | 'default' } | null {
+    const userPricing = lookupModelPricing(model, settings);
+    if (userPricing) return { pricing: userPricing, source: 'user' };
+    if (!options?.allowDefaults) return null;
+    const fallback = DEFAULT_MODEL_PRICING[String(model || '').trim().toLowerCase()];
+    return fallback ? { pricing: { ...fallback }, source: 'default' } : null;
+}

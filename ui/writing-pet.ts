@@ -15,6 +15,7 @@ import type NovelWriterPlugin from '@/main';
 import { formatWords, type StatsSummary } from '@/shared/writing-stats';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 import { PET_POSE_SHEET_BIGFISH, PET_POSE_SHEET_CUIGENGJI } from '@/shared/pet-pose-sheet.generated';
+import { getDegradationNotifier } from '@/shared/degradation-notifier';
 import { clampPetPoint, PET_DEFAULT_SNAP_EDGES, petViewportOf, snapPetPoint, type PetViewport, type PetSnapEdges } from '@/shared/pet-geometry';
 import { onNodeDoc } from '@/shared/dom-window';
 
@@ -176,6 +177,33 @@ const PET_SVG = `
 /**
  * WritingPet 类。
  */
+/**
+ * 由今日进度决定基础情绪。
+ *
+ * @param today - 今日字数
+ * @param target - 每日目标（0 表示未设目标）
+ * @returns 基础情绪
+ */
+export function moodForProgress(today: number, target: number): PetMood {
+    if (today <= 0) return 'sleep';
+    if (target > 0 && today >= target) return 'happy';
+    return 'idle';
+}
+
+/**
+ * 今日字数是否比上次观测增加（用于「写完一段就庆祝」）。
+ *
+ * @param previous - 上次观测的今日字数（null 表示首次观测）
+ * @param current - 本次今日字数
+ * @returns 应当庆祝返回 true
+ */
+export function shouldCelebrate(previous: number | null, current: number): boolean {
+    return previous !== null && current > previous;
+}
+
+/**
+ * WritingPet 类（桌面宠物：分层/切帧/拖拽/快捷摘要/情绪联动）。
+ */
 export class WritingPet {
     private deps: WritingPetDeps;
     private root: HTMLElement | null = null;
@@ -183,6 +211,12 @@ export class WritingPet {
     private bubbleSub: HTMLElement | null = null;
     private card: HTMLElement | null = null;
     private mood: PetMood = 'idle';
+    /** 瞬态情绪（写完/降级时短暂覆盖基础情绪） */
+    private transientMood: { mood: PetMood; until: number } | null = null;
+    /** 上次观测的今日字数（用于检测「刚写了字」） */
+    private lastToday: number | null = null;
+    /** 降级事件订阅的取消函数 */
+    private disposeDegradationSink: (() => void) | null = null;
     /** 当前宠物角色（持久化在 plugin.settings.petRole） */
     private role: PetRole = 'cuigengji';
     private expanded = false;
@@ -222,6 +256,24 @@ export class WritingPet {
             pose.style.backgroundSize = `${sheet.cols * 100}% ${sheet.rows * 100}%`;
         }
         this.applyFrame();
+    }
+
+    /**
+     * 短暂切换情绪（如写完一段 → 庆祝；降级 → 出错），到期自动回到基础情绪。
+     *
+     * @param mood - 目标情绪
+     * @param durationMs - 持续毫秒（默认 4s）
+     */
+    flashMood(mood: PetMood, durationMs = 4000): void {
+        if (!this.isMounted) return;
+        this.transientMood = { mood, until: Date.now() + Math.max(500, durationMs) };
+        this.setMood(mood);
+        window.setTimeout(() => {
+            if (!this.transientMood) return;
+            if (Date.now() < this.transientMood.until) return;
+            this.transientMood = null;
+            this.update();
+        }, Math.max(500, durationMs) + 60);
     }
 
     /** 把当前状态对应的帧坐标写入 CSS 变量 */
@@ -324,6 +376,15 @@ export class WritingPet {
         this.card.addClass('nw-u-d-none');
         this.update();
 
+        // 陪伴层用量联动：降级/失败事件 → 宠物短暂「出错」表情
+        if (!this.disposeDegradationSink) {
+            this.disposeDegradationSink = getDegradationNotifier().registerSink((event) => {
+                if (event.severity === 'critical' || event.severity === 'warning') {
+                    this.flashMood('error', 5000);
+                }
+            });
+        }
+
         // 快捷摘要自动刷新：写作中数字实时变化（60s；隐藏标签页跳过，避免无谓计算）
         if (!this.refreshTimer) {
             this.refreshTimer = window.setInterval(() => {
@@ -398,6 +459,8 @@ export class WritingPet {
             window.clearInterval(this.refreshTimer);
             this.refreshTimer = null;
         }
+        this.disposeDegradationSink?.();
+        this.disposeDegradationSink = null;
         for (const dispose of this.dragDisposers) dispose();
         this.dragDisposers = [];
     }

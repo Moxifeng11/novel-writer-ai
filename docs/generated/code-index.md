@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 346 | 145449 | 1937 | 1538 | 79% |
-| `services/` | 39 | 14642 | 218 | 169 | 78% |
-| `shared/` | 207 | 43282 | 1798 | 1447 | 80% |
+| `engine/` | 346 | 145455 | 1937 | 1538 | 79% |
+| `services/` | 39 | 14666 | 219 | 170 | 78% |
+| `shared/` | 207 | 43304 | 1799 | 1448 | 80% |
 | `core/` | 7 | 2946 | 32 | 17 | 53% |
 | `domains/` | 13 | 1243 | 66 | 40 | 61% |
-| `ui/` | 273 | 106443 | 1036 | 833 | 80% |
+| `ui/` | 273 | 106508 | 1038 | 835 | 80% |
 
 ## 文件清单
 
@@ -60,7 +60,7 @@
 | `engine/agent/harness/tool-registry.ts` | 297 | 5 | 2 |
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
 | `engine/ai-api-client-shared.ts` | 86 | 6 | 5 |
-| `engine/ai-api-client.ts` | 996 | 2 | 2 |
+| `engine/ai-api-client.ts` | 1002 | 2 | 2 |
 | `engine/ai-api-stream.ts` | 1022 | 3 | 2 |
 | `engine/ai-batch-entity-generator.ts` | 578 | 1 | 1 |
 | `engine/ai-chapter-helpers.ts` | 339 | 1 | 1 |
@@ -415,7 +415,7 @@
 | `services/session-preset-service.ts` | 94 | 2 | 1 |
 | `services/synopsis-store.ts` | 364 | 5 | 5 |
 | `services/update-checker.ts` | 610 | 9 | 2 |
-| `services/usage-ledger.ts` | 452 | 15 | 6 |
+| `services/usage-ledger.ts` | 476 | 16 | 7 |
 | `services/vector-rebuild-service.ts` | 141 | 8 | 8 |
 | `services/worker-manager.ts` | 569 | 1 | 1 |
 | `services/worker-protocol.ts` | 121 | 12 | 12 |
@@ -517,7 +517,7 @@
 | `shared/mode-content.ts` | 448 | 19 | 19 |
 | `shared/mode-unit-outline.ts` | 87 | 2 | 2 |
 | `shared/model-capabilities.ts` | 168 | 11 | 9 |
-| `shared/model-pricing.ts` | 123 | 5 | 3 |
+| `shared/model-pricing.ts` | 145 | 6 | 4 |
 | `shared/model-source.ts` | 43 | 3 | 1 |
 | `shared/multi-layer-cache.ts` | 556 | 6 | 6 |
 | `shared/narrative-number.ts` | 235 | 8 | 6 |
@@ -855,7 +855,7 @@
 | `ui/tomato-rank-modal.ts` | 132 | 1 | 1 |
 | `ui/unified-entity-generate-modal.ts` | 865 | 1 | 1 |
 | `ui/unified-entity-manager-modal.ts` | 754 | 1 | 1 |
-| `ui/usage-ledger-modal.ts` | 200 | 1 | 1 |
+| `ui/usage-ledger-modal.ts` | 202 | 1 | 1 |
 | `ui/utils/worldview-utils.ts` | 103 | 1 | 1 |
 | `ui/vector-rebuild-action.ts` | 148 | 1 | 1 |
 | `ui/views/book-detail-logic.ts` | 161 | 10 | 7 |
@@ -896,7 +896,7 @@
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |
 | `ui/workspace-manager.ts` | 144 | 2 | 2 |
 | `ui/write-chapter-modal.ts` | 851 | 1 | 1 |
-| `ui/writing-pet.ts` | 557 | 11 | 6 |
+| `ui/writing-pet.ts` | 620 | 13 | 8 |
 | `ui/writing-stats-modal.ts` | 245 | 1 | 1 |
 | `ui/writing-stats-settings.ts` | 70 | 1 | 1 |
 | `ui/writing-style-modal.ts` | 589 | 1 | 1 |

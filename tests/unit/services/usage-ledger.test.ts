@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Vault } from '../../__mocks__/obsidian';
 import {
     dailyTrend,
+    pricingSourceByModel,
     currentUsageScope,
     getUsageLedger,
     pushUsageScope,
@@ -194,5 +195,29 @@ describe('dailyTrend 按日趋势', () => {
         const points = dailyTrend([record(now, 10)], 1, now);
         expect(points[0].costYuan).toBe(0);
         expect(Number.isFinite(points[0].costYuan)).toBe(true);
+    });
+});
+
+describe('价格快照（查询不重算）', () => {
+    it('记录里的 pricing 原样保留，不随当前设置变化', () => {
+        const records = [
+            { id: '1', at: 1, source: 'ai' as const, model: 'm1', promptTokens: 1, completionTokens: 1, totalTokens: 2, durationMs: 1, status: 'ok' as const, costYuan: 0.01, pricing: { inputPerM: 1, outputPerM: 2, source: 'user' as const } },
+        ];
+        expect(records[0].pricing).toEqual({ inputPerM: 1, outputPerM: 2, source: 'user' });
+    });
+
+    it('pricingSourceByModel 取每个模型最近一次的来源', () => {
+        const records = [
+            { id: '1', at: 1, source: 'ai' as const, model: 'm1', promptTokens: 1, completionTokens: 0, totalTokens: 1, durationMs: 1, status: 'ok' as const, pricing: { inputPerM: 1, outputPerM: 2, source: 'default' as const } },
+            { id: '2', at: 2, source: 'ai' as const, model: 'm2', promptTokens: 1, completionTokens: 0, totalTokens: 1, durationMs: 1, status: 'ok' as const, pricing: { inputPerM: 3, outputPerM: 4, source: 'user' as const } },
+        ];
+        expect(pricingSourceByModel(records)).toEqual({ m1: 'default', m2: 'user' });
+    });
+
+    it('无价格快照的模型不出现在结果里', () => {
+        const records = [
+            { id: '1', at: 1, source: 'ai' as const, model: 'm1', promptTokens: 1, completionTokens: 0, totalTokens: 1, durationMs: 1, status: 'ok' as const },
+        ];
+        expect(pricingSourceByModel(records)).toEqual({});
     });
 });

@@ -25,7 +25,7 @@ import { notifyMaxTokensClamp } from '@/shared/degradation-notifier';
 import { ensureLocalModelCapability } from '@/services/local-model-probe';
 import { recordBudgetSnapshot } from '@/shared/budget-telemetry';
 import { currentUsageScope, getUsageLedger } from '@/services/usage-ledger';
-import { estimateCostYuan, lookupModelPricing } from '@/shared/model-pricing';
+import { estimateCostYuan, lookupModelPricingWithSource } from '@/shared/model-pricing';
 import {
     buildAuthHeaders,
     buildChatRequestBody,
@@ -467,7 +467,8 @@ export class AIApiClient {
         const scope = currentUsageScope();
         // 费用估算：按记录口径的 model 查用户配置单价（fallback 后的实际模型暂不区分），未配置则不计费
         const usageModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
-        const pricing = lookupModelPricing(usageModel, this.plugin.settings, { allowDefaults: true });
+        const pricingInfo = lookupModelPricingWithSource(usageModel, this.plugin.settings, { allowDefaults: true });
+        const pricing = pricingInfo?.pricing ?? null;
         const costYuan = estimateCostYuan(pricing, result.usage?.prompt ?? 0, result.usage?.completion ?? 0);
         void getUsageLedger(this.plugin.app).record({
             at: startedAt,
@@ -482,6 +483,7 @@ export class AIApiClient {
             status: result.error ? (result.error === 'aborted' ? 'aborted' : 'error') : 'ok',
             error: result.error,
             costYuan: costYuan ?? undefined,
+            pricing: pricingInfo ? { ...pricingInfo.pricing, source: pricingInfo.source } : undefined,
         });
         return result;
     }
@@ -924,7 +926,8 @@ export class AIApiClient {
         const scope = currentUsageScope();
         // 费用估算：按记录口径的 model 查用户配置单价（fallback 后的实际模型暂不区分），未配置则不计费
         const usageModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
-        const pricing = lookupModelPricing(usageModel, this.plugin.settings, { allowDefaults: true });
+        const pricingInfo = lookupModelPricingWithSource(usageModel, this.plugin.settings, { allowDefaults: true });
+        const pricing = pricingInfo?.pricing ?? null;
         const costYuan = estimateCostYuan(pricing, result.usage?.prompt ?? 0, result.usage?.completion ?? 0);
         void getUsageLedger(this.plugin.app).record({
             at: startedAt,
@@ -940,6 +943,7 @@ export class AIApiClient {
             error: result.error,
             usageUnavailable: usageUnavailableFor(result),
             costYuan: costYuan ?? undefined,
+            pricing: pricingInfo ? { ...pricingInfo.pricing, source: pricingInfo.source } : undefined,
         });
         return result;
     }
@@ -968,7 +972,8 @@ export class AIApiClient {
         const scope = currentUsageScope();
         // 费用估算：按记录口径的 model 查用户配置单价（fallback 后的实际模型暂不区分），未配置则不计费
         const usageModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
-        const pricing = lookupModelPricing(usageModel, this.plugin.settings, { allowDefaults: true });
+        const pricingInfo = lookupModelPricingWithSource(usageModel, this.plugin.settings, { allowDefaults: true });
+        const pricing = pricingInfo?.pricing ?? null;
         const costYuan = estimateCostYuan(pricing, result.usage?.prompt ?? 0, result.usage?.completion ?? 0);
         void getUsageLedger(this.plugin.app).record({
             at: startedAt,
@@ -984,6 +989,7 @@ export class AIApiClient {
             error: result.error,
             usageUnavailable: usageUnavailableFor(result),
             costYuan: costYuan ?? undefined,
+            pricing: pricingInfo ? { ...pricingInfo.pricing, source: pricingInfo.source } : undefined,
         });
         return result;
     }
