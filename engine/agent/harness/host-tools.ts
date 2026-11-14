@@ -70,6 +70,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     // ─── 记忆 ───
     tools.push({
         name: 'update_memory',
+        kind: 'write-setting',
         description: '把用户确认过的信息记入长期记忆（创建项目时以此为准）。每次把 newly 确认的字段合并进来即可，不必重传全部。',
         parameters: {
             slots: {
@@ -108,6 +109,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     // ─── 创作计划（吸收 dsh plan-mode：计划呈现 → 工具维护 → UI 实时渲染）───
     tools.push({
         name: 'update_plan',
+        kind: 'admin',
         description: '维护一份有序的创作计划（最多 8 步）。多步任务（新建→大纲→写章→质检→导出）开始时建立计划；每完成一步就把该步标为 done、下一步标为 in_progress。步骤要具体（如「写第2章正文」而不是「继续」）。',
         parameters: {
             steps: {
@@ -134,6 +136,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     // ─── 项目目录 ───
     tools.push({
         name: 'list_projects',
+        kind: 'read',
         description: '查看用户当前的全部项目与正在打开的项目。',
         parameters: {},
         required: [],
@@ -155,6 +158,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     // ─── 随机设定 ───
     tools.push({
         name: 'random_story_settings',
+        kind: 'read',
         description: '生成一套自洽的长篇故事设定随机组合（结构/主角起点/冲突/力量体系/金手指/原型/性格/基调/感情线/节奏）。用户说「随便/你推荐/随机」时使用。',
         parameters: {
             genre: { type: 'string', description: '题材，可留空' },
@@ -194,6 +198,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     // ─── 长篇创建 ───
     tools.push({
         name: 'create_long_project',
+        kind: 'admin',
         description: '创建长篇小说项目。调用前必须已向用户展示设定摘要并获得确认。参数缺省时从记忆回填。',
         parameters: {
             projectName: { type: 'string', description: '项目名（2-20 字符）', required: true },
@@ -283,6 +288,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     // ─── 短篇创建 ───
     tools.push({
         name: 'create_short_project',
+        kind: 'admin',
         description: '创建短篇小说项目（番茄短篇规格：8 万字 / 20 节由工具默认）。调用前必须已获得用户确认。',
         parameters: {
             projectName: { type: 'string', description: '项目名', required: true },
@@ -357,6 +363,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     // ─── 剧本创建 ───
     tools.push({
         name: 'create_script_project',
+        kind: 'admin',
         description: '创建短剧剧本项目（红果规格）。调用前必须已获得用户确认。',
         parameters: {
             projectName: { type: 'string', description: '项目名', required: true },
@@ -435,6 +442,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     // ─── 界面打开 ───
     tools.push({
         name: 'open_wizard',
+        kind: 'read',
         description: '打开长篇项目的初始化向导。仅适用于长篇；短篇/剧本请用 open_flow。',
         parameters: { project: { type: 'string', description: '项目 ID 或名称，可留空表示用记忆中的当前项目' } },
         required: [],
@@ -459,6 +467,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     });
     tools.push({
         name: 'open_flow',
+        kind: 'read',
         description: '打开项目的「创作流程」页：显示当前阶段、进度与下一步动作。长篇、短篇、剧本都适用。',
         parameters: { project: { type: 'string', description: '项目 ID 或名称，可留空用当前项目' } },
         required: [],
@@ -473,6 +482,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     });
     tools.push({
         name: 'open_full_writer',
+        kind: 'read',
         description: '打开项目与章节工作台。',
         parameters: { project: { type: 'string', description: '项目 ID 或名称，可留空' } },
         required: [],
@@ -488,6 +498,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     });
     tools.push({
         name: 'open_story_settings',
+        kind: 'read',
         description: '打开项目的设定界面：长篇是故事结构与九组设定；短篇打开故事核，剧本打开场景圣经。',
         parameters: { project: { type: 'string', description: '项目 ID 或名称，可留空' } },
         required: [],
@@ -502,6 +513,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     });
     tools.push({
         name: 'open_pre_research',
+        kind: 'read',
         description: '打开短篇/剧本的前期调研界面。',
         parameters: {
             mode: { type: 'string', description: 'short（短篇）或 script（剧本）', enum: ['short', 'script'], required: true },
@@ -519,6 +531,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     });
     tools.push({
         name: 'open_co_writing',
+        kind: 'read',
         description: '打开句级协同写作工作台（需要先有打开的章节）。',
         parameters: {},
         required: [],
@@ -533,6 +546,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     // ─── 章节与项目状态 ───
     tools.push({
         name: 'list_chapters',
+        kind: 'read',
         description: '列出指定项目的章节（或短篇的节/剧本的集）与状态（pending/written/settled）。用于判断创作进度和下一步建议。',
         parameters: { project: { type: 'string', description: '项目 ID 或名称，可留空用当前项目' } },
         required: [],
@@ -569,6 +583,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     });
     tools.push({
         name: 'open_chapter',
+        kind: 'read',
         description: '在工作台打开指定章节（如「第3章」）或短篇/剧本的单元（如「第3节」「第3集」）。打开后用户可继续写作或执行该单元的生成步骤。',
         parameters: {
             chapter: { type: 'string', description: '章节名，如「第3章」', required: true },
@@ -588,6 +603,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     });
     tools.push({
         name: 'get_project_status',
+        kind: 'read',
         description: '读取项目状态摘要：创作模式、故事结构、规划单元数、已写单元数、待写骨架数、最后一个已写单元、建议接下来写的单元，以及统一创作阶段快照（flow：stages / nextStageId / 阻塞原因）。长篇的单位是章，短篇是节，剧本是集。用于判断真实创作进度与下一步，不要用条目总数当已完成数。',
         parameters: { project: { type: 'string', description: '项目 ID 或名称，可留空用当前项目' } },
         required: [],
@@ -633,6 +649,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     // ─── 文件检索（吸收 dsh context/file-reference：按需读，不整库塞上下文）───
     tools.push({
         name: 'read_file',
+        kind: 'read',
         description: '读取库里某个文件的一段内容（按行分页）。用于查看章节正文、大纲、设定、结算表、spill 存档等。只支持文本文件；单次最多 200 行/8192 字符，返回里若提示还有后续，用 offset 继续读。',
         parameters: {
             path: { type: 'string', description: '库内相对路径（如「项目名/03-大纲与章节/正文/第1章.md」）', required: true },
@@ -672,6 +689,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     });
     tools.push({
         name: 'search_vault',
+        kind: 'read',
         description: '在库中按关键词检索文本文件，返回「路径:行号:摘要」（默认最多 20 条）。用于定位人名/物品/伏笔/设定出现的位置，然后再用 read_file 精读那一段。只读，不改动任何文件。',
         parameters: {
             query: { type: 'string', description: '关键词（中文不需要分词，按原文子串匹配；大小写不敏感）', required: true },
@@ -706,6 +724,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     // ─── 文件/项目写操作（Agent 全权限：写文件、删文件、移动、删项目）───
     tools.push({
         name: 'write_file',
+        kind: 'write-setting',
         description: '创建/覆盖/追加库内文本文件（md/txt/json/yaml 等）。用于写设定、大纲、笔记、配置或用户明确要求直接改正文；写正文优先走写作命令以保留 frontmatter/格式契约。路径必须是库内相对路径。',
         parameters: {
             path: { type: 'string', description: '库内相对路径（如「长篇小说/书A/01-世界架构/设定库.md」）', required: true },
@@ -728,6 +747,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     });
     tools.push({
         name: 'delete_file',
+        kind: 'write-setting',
         description: '删除库内单个文件。默认进系统回收站；permanent=true 时永久删除。删除前必须向用户说明路径；目录请用 delete_project 或 run_command。',
         parameters: {
             path: { type: 'string', description: '库内相对路径', required: true },
@@ -750,6 +770,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     });
     tools.push({
         name: 'move_file',
+        kind: 'write-setting',
         description: '移动或重命名库内文件。用于整理章节/设定/导出稿；目标目录会自动创建。',
         parameters: {
             from: { type: 'string', description: '源路径（库内相对路径）', required: true },
@@ -768,6 +789,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     });
     tools.push({
         name: 'delete_project',
+        kind: 'admin',
         description: '彻底删除一个项目及其全部文件（正文、大纲、设定、版本、会话存档不在删除范围内）。删除前必须向用户说明项目名并获得确认；这是不可恢复操作。',
         parameters: {
             project: { type: 'string', description: '项目 ID（库/项目名）或完整名称；必须显式指定，不接受留空' },
@@ -806,6 +828,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     // ─── 长流程执行结果（v4.21：run_command 之后的闭环）───
     tools.push({
         name: 'get_execution_status',
+        kind: 'read',
         description: '查询最近的长流程执行结果（一键成文/章节结算/导出/看板等）：状态、耗时、失败原因、结算回写量（更新/新建/搁置/伏笔闭环）。用 run_command 触发过长流程后必须调用它核对结果，再向用户汇报进展，不要只说「请去界面查看」。',
         parameters: {
             limit: { type: 'number', description: '返回条数（默认 5，最多 20）' },
@@ -861,6 +884,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     // ─── 全功能命令 ───
     tools.push({
         name: 'list_commands',
+        kind: 'read',
         description: '列出本插件全部可用命令（批量建章/一键成文/质检/结算/导出/世界观生成等）。在用 run_command 之前先用它确认命令 ID。',
         parameters: {},
         required: [],
@@ -881,6 +905,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
     });
     tools.push({
         name: 'run_command',
+        kind: 'admin',
         description: '执行插件的任意命令（批量建章、一键成文、章节结算、导出成稿等）。执行前必须向用户说明将要运行的命令并确认。先 list_commands 拿到准确命令 ID。',
         parameters: {
             commandId: { type: 'string', description: '命令 ID（来自 list_commands）', required: true },

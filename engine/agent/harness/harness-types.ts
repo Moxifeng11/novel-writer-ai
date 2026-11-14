@@ -120,6 +120,11 @@ export interface HarnessTool {
      * - dangerous：高成本或难以撤销（批量生成/结算/导出/删除），需用户确认。
      */
     sideEffect?: 'none' | 'write' | 'dangerous';
+  /**
+   * 动作契约分类（读/写正文/写设定/管理）。
+   * 工具自声明优先；未声明时注册表按名字回退推断。
+   */
+  kind?: ActionKind;
     /** 单次执行预算（毫秒）；超时返回结构化失败而不是让回合挂死 */
     timeoutMs?: number;
     execute(args: Record<string, unknown>, ctx: HarnessToolContext): Promise<HarnessToolResult>;
@@ -240,3 +245,4 @@ export interface HarnessTurnOutcome {
     /** 执行过的工具调用摘要（UI 展示） */
     toolCalls: Array<{ tool: string; ok: boolean; summary: string }>;
 }
+import type { ActionKind } from '@/shared/action-contract';

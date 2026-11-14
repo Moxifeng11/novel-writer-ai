@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 342 | 144634 | 1910 | 1513 | 79% |
+| `engine/` | 342 | 144666 | 1910 | 1513 | 79% |
 | `services/` | 39 | 14782 | 219 | 170 | 78% |
-| `shared/` | 207 | 43515 | 1812 | 1459 | 81% |
+| `shared/` | 207 | 43530 | 1813 | 1460 | 81% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1540 | 85 | 55 | 65% |
-| `ui/` | 274 | 106574 | 1033 | 834 | 81% |
+| `ui/` | 274 | 106575 | 1033 | 834 | 81% |
 
 ## 文件清单
 
@@ -46,9 +46,9 @@
 | `engine/agent/harness/context-fit.ts` | 137 | 6 | 6 |
 | `engine/agent/harness/creation-plan.ts` | 73 | 6 | 6 |
 | `engine/agent/harness/diagnose-tools.ts` | 118 | 3 | 1 |
-| `engine/agent/harness/harness-engine.ts` | 663 | 7 | 4 |
-| `engine/agent/harness/harness-types.ts` | 243 | 17 | 14 |
-| `engine/agent/harness/host-tools.ts` | 1013 | 5 | 5 |
+| `engine/agent/harness/harness-engine.ts` | 664 | 7 | 4 |
+| `engine/agent/harness/harness-types.ts` | 249 | 17 | 14 |
+| `engine/agent/harness/host-tools.ts` | 1038 | 5 | 5 |
 | `engine/agent/harness/prompt-sections.ts` | 152 | 2 | 2 |
 | `engine/agent/harness/repair-telemetry.ts` | 140 | 10 | 4 |
 | `engine/agent/harness/repair-tools.ts` | 409 | 11 | 2 |
@@ -420,7 +420,7 @@
 | `services/worker-runtime.ts` | 278 | 8 | 8 |
 | `services/worldview-cache-service.ts` | 627 | 4 | 4 |
 | `services/writing-stats-service.ts` | 429 | 6 | 6 |
-| `shared/action-contract.ts` | 286 | 13 | 12 |
+| `shared/action-contract.ts` | 301 | 14 | 13 |
 | `shared/adaptive-debounce-manager.ts` | 315 | 2 | 2 |
 | `shared/ai-credentials.ts` | 80 | 3 | 3 |
 | `shared/api-format.ts` | 461 | 16 | 15 |
@@ -628,7 +628,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 771 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1758 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1759 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |

@@ -7,6 +7,7 @@
  * 适配器失败时返回带降级 chip 的提示，由宿主切换到规则引擎。
  */
 import { AgentSessionLog } from './session-log';
+import type { HarnessTool } from './harness-types';
 import { HarnessToolRegistry } from './tool-registry';
 import { runHarnessTurn } from './agent-loop';
 import { createHostTools, type HostToolDeps } from './host-tools';
@@ -81,7 +82,7 @@ export interface AgentHarnessEngineOptions {
      * @param args - 工具参数
      * @returns 拒绝原因；允许返回 null
      */
-    guardTool?: (toolName: string, args: Record<string, unknown>) => string | null;
+    guardTool?: (tool: HarnessTool, args: Record<string, unknown>) => string | null;
     /**
      * 会话变化回调（dsh session-persistence-jsonl）：
      * 每次回合结束后把快照交给宿主落盘；宿主负责节流与文件管理。

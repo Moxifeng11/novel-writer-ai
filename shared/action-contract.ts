@@ -283,3 +283,18 @@ export function agentToolDenyReason(
     if (kind === 'read') return null;
     return `🔒 只读模式已开启：Agent 工具「${toolName}」会修改作品（${kind}），已阻止。可在设置中关闭只读模式。`;
 }
+
+/**
+ * 解析工具的动作分类：工具自声明的 kind 优先，未声明时按名字/参数推断。
+ *
+ * @param tool - 带 name 与可选 kind 的工具对象
+ * @param args - 工具参数（动态分类用）
+ * @returns 动作类型
+ */
+export function resolveToolKind(
+    tool: { name: string; kind?: ActionKind },
+    args?: Record<string, unknown>,
+): ActionKind {
+    if (tool.kind) return tool.kind;
+    return agentToolKind(tool.name, args);
+}

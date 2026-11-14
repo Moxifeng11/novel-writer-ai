@@ -49,7 +49,7 @@ describe('HarnessToolRegistry 守卫', () => {
         const registry = new HarnessToolRegistry(guard);
         registry.register(makeTool('write_file'));
         await registry.execute('write_file', { path: '长篇小说/书A/03-正文/第01章.md' }, {} as never);
-        expect(guard).toHaveBeenCalledWith('write_file', { path: '长篇小说/书A/03-正文/第01章.md' });
+        expect(guard).toHaveBeenCalledWith(expect.objectContaining({ name: 'write_file' }), { path: '长篇小说/书A/03-正文/第01章.md' });
     });
 
     it('参数校验失败时守卫不被调用', async () => {
