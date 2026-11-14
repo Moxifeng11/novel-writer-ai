@@ -26,6 +26,8 @@ export interface WritingPetDeps {
     getSummary: () => StatsSummary | null;
     getTarget: () => number;
     openStats: () => void;
+    /** 打开用量与成本账本（快捷摘要里的成本入口） */
+    openUsage?: () => void;
     hide: () => void;
 }
 
@@ -440,6 +442,7 @@ export class WritingPet {
         if (!this.card) return;
         this.card.empty();
         const rows: Array<{ label: string; value: string }> = [
+            { label: '今日', value: `${formatWords(summary?.today ?? 0)}${target > 0 ? ` / ${formatWords(target)}` : ''}` },
             { label: '本周', value: formatWords(summary?.week ?? 0) },
             { label: '本月', value: formatWords(summary?.month ?? 0) },
             { label: '累计', value: formatWords(summary?.total ?? 0) },
@@ -456,15 +459,20 @@ export class WritingPet {
             fill.style.width = `${Math.round(ratio * 100)}%`;
             if (ratio >= 1) fill.addClass('nw-is-done');
         }
-        const open = this.card.createEl('button', {
-            cls: 'nw-pet-card-open',
-            text: '查看完整统计',
-            attr: { type: 'button' },
-        });
-        open.addEventListener('click', (event) => {
-            event.stopPropagation();
-            this.deps.openStats();
-        });
+        const actions = this.card.createDiv({ cls: 'nw-pet-card-actions' });
+        const addAction = (label: string, handler: () => void): void => {
+            const button = actions.createEl('button', {
+                cls: 'nw-pet-card-open',
+                text: label,
+                attr: { type: 'button' },
+            });
+            button.addEventListener('click', (event) => {
+                event.stopPropagation();
+                handler();
+            });
+        };
+        addAction('完整统计', () => this.deps.openStats());
+        if (this.deps.openUsage) addAction('用量与成本', () => this.deps.openUsage?.());
     }
 
     private onPointerDown(event: PointerEvent): void {

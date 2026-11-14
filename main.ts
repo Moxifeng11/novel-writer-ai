@@ -1751,6 +1751,7 @@ export default class NovelWriterPlugin extends Plugin {
                 getSummary: () => this._writingStats?.getReport().global ?? null,
                 getTarget: () => Number(this.settings.dailyWordTarget) || 0,
                 openStats: () => this.openWritingStats(),
+                openUsage: () => this.openUsageLedger(),
                 hide: () => {
                     this.setWritingPetEnabled(false);
                     void this.saveSettings();
