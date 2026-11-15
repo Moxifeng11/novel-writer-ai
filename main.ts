@@ -202,7 +202,7 @@ export { resolveProviderSourceType } from './shared/model-source';
 import { MODEL_CAPABILITIES, findModelCapability } from './shared/model-capabilities';
 import type { AiTask, TaskBudgetOverride, ThinkingMode, ThinkingLevel } from './shared/task-model';
 export type { AiTask, TaskBudgetOverride, ThinkingMode, ThinkingLevel } from './shared/task-model';
-import { hasUsableAiCredentials } from './shared/ai-credentials';
+import { aiCredentialsLocked, hasUsableAiCredentials } from './shared/ai-credentials';
 import { projectFromFilePath } from './domains/kernel/project-locator';
 import { listProjectIds } from '@/shared/project-catalog';
 import { consumePendingReloadState } from '@/shared/reload-state';

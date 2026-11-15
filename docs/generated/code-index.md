@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146377 | 1941 | 1537 | 79% |
 | `services/` | 65 | 18881 | 291 | 200 | 69% |
-| `shared/` | 242 | 48518 | 2047 | 1609 | 79% |
+| `shared/` | 242 | 48534 | 2048 | 1610 | 79% |
 | `core/` | 7 | 3029 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 277 | 107199 | 1036 | 837 | 81% |
@@ -459,7 +459,7 @@
 | `services/writing-stats-service.ts` | 444 | 6 | 6 |
 | `shared/action-contract.ts` | 301 | 14 | 13 |
 | `shared/adaptive-debounce-manager.ts` | 315 | 2 | 2 |
-| `shared/ai-credentials.ts` | 80 | 3 | 3 |
+| `shared/ai-credentials.ts` | 96 | 4 | 4 |
 | `shared/api-format.ts` | 461 | 16 | 15 |
 | `shared/api-response-utils.ts` | 253 | 10 | 10 |
 | `shared/api-types.ts` | 24 | 1 | 1 |

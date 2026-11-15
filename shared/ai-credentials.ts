@@ -10,6 +10,7 @@
  */
 
 import { resolveProviderSourceType } from './model-source';
+import { isStoredCiphertext } from './secret-value';
 
 /**
  * AiCredentialSettingsLike 类型定义。
@@ -55,6 +56,18 @@ export function resolveProviderApiKey(
 }
 
 /**
+ * 密钥是否以密文形式存在且当前未解锁（用于给出「请先解锁口令」而不是「请先配置密钥」）。
+ *
+ * @param settings - 设置
+ * @returns 是否锁定态
+ */
+export function aiCredentialsLocked(settings: AiCredentialSettingsLike | undefined | null): boolean {
+    if (!settings) return false;
+    if (isStoredCiphertext(settings.apiKey)) return true;
+    return Object.values(settings.providerKeys || {}).some(value => isStoredCiphertext(value));
+}
+
+/**
  * 是否具备发起 AI 调用的凭据：有密钥，或端点是本地免密钥推理服务
  *
  * @param settings - 设置
@@ -62,6 +75,9 @@ export function resolveProviderApiKey(
  */
 export function hasUsableAiCredentials(settings: AiCredentialSettingsLike | undefined | null): boolean {
     if (!settings) return false;
+    // 密文也视为「有凭据」：放行后由 AIApiClient.resolveApiKey 弹口令解锁；
+    // 若在这里判 false，用户会看到「请先配置密钥」而被挡在解锁流程之外（实测踩坑）。
+    // 需要区分「未配置 / 已加密未解锁」的入口请用 aiCredentialsLocked()。
     if ((settings.apiKey || '').trim()) return true;
 
     const endpoint = (settings.apiEndpoint || '').trim();
