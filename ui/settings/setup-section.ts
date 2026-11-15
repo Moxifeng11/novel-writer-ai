@@ -65,6 +65,16 @@ export class SetupSection extends SettingsSection {
             .addButton(button => button.setButtonText('立即自检').onClick(() => { void refreshReport(); }));
 
         new Setting(list)
+            .setName('启动时自动生成「元文件」模板')
+            .setDesc('开启：首次启用插件会在库根写入 56 个模板文件（新建项目依赖它们）。关闭：不在启动时写库，改为新建作品时按需落盘。')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.templateScaffoldOnStartup !== false)
+                .onChange(async value => {
+                    this.plugin.settings.templateScaffoldOnStartup = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(list)
             .setName('一键修复')
             .setDesc('补齐模板文件 / 创建示例项目 / 生成使用说明（均不会覆盖已有内容）')
             .addButton(button => button.setButtonText('补齐模板').onClick(async () => {

@@ -335,6 +335,8 @@ export interface NovelWriterSettings {
     /** 上下文体检自动清空重复段（保留权威版本）；默认开，串章只告警不改 */
     contextHygieneAutoFix?: boolean;
     /** 首次启动引导已完成（创建第一个项目后置 true） */
+    /** 启动时是否自动把「元文件」模板树写入库根（关闭后仅新建项目时落盘） */
+    templateScaffoldOnStartup?: boolean;
     firstRunComplete?: boolean;
     /** 质量控制完成后自动跑一次定向修订（消耗 1 次正文调用）；默认开，闸门拒绝则保留原稿 */
     autoRevisionAfterQC?: boolean;
@@ -387,17 +389,17 @@ export interface NovelWriterSettings {
     /**
      * Agent 对话后端（D）：native = 内置 Harness（默认）；dsh = 外部 DeepSeek Harness。
      * dsh 仅桌面端、需用户自行安装 @deepseek-ai/dsh。
-     */
-    /** dsh provider 路由（默认 deepseek-official） */
-    /** dsh 模型名（空 = 跟随 defaultModel） */
-    /** dsh 固定包版本（默认 0.2.1-rc.5；不允许 npx 拉 latest） */
-    /** dsh 单回合最长等待（ms，默认 10 分钟；0 = 沿用旧 180s） */
+     */
+    /** dsh provider 路由（默认 deepseek-official） */
+    /** dsh 模型名（空 = 跟随 defaultModel） */
+    /** dsh 固定包版本（默认 0.2.1-rc.5；不允许 npx 拉 latest） */
+    /** dsh 单回合最长等待（ms，默认 10 分钟；0 = 沿用旧 180s） */
     /** Agent 写工具审批：ask=覆盖/写入前确认（默认）；allow=自动放行 */
     agentWriteApproval?: 'ask' | 'allow';
     /**
      * 是否允许 dsh 本会话写入 vault。
      * SDK 协议没有逐次审批通道：开启等于整会话 workspace-write，启动前会再确认一次。
-     */
+     */
     /**
      * 2026-10-29 第 4 轮：其余面板的可拖拽尺寸（px）。
      * 统一放在 panelSizes 下，避免再加一堆散落字段。
@@ -1165,8 +1167,12 @@ export default class NovelWriterPlugin extends Plugin {
 
     /** 启动维护实际执行（不阻塞 UI 注册） */
     private async _runStartupMaintenance(): Promise<void> {
-        // P0 分发自举：全新安装（仅 3 个发布文件）时初始化「元文件」模板树
-        try {
+        // P0 分发自举：全新安装（仅 3 个发布文件）时初始化「元文件」模板树。
+        // 社区审核视角：未获确认就往库根写 56 个文件不妥 → 设置里可关闭启动自举，
+        // 关闭后只在「新建项目」时按需落盘（project-create-service 会调用）。
+        if (this.settings.templateScaffoldOnStartup === false) {
+            log.info('[小说工坊] 已关闭启动时模板自举（templateScaffoldOnStartup=false），改由新建项目时落盘');
+        } else try {
             const scaffold = await ensureTemplateScaffold(this.app);
             if (this._isUnloaded) return;
             if (scaffold.created > 0) {

@@ -303,18 +303,27 @@ export class WritingStatsService {
         if (this.dirty) void this.persistNow();
     }
 
-    /** 扫描用：正文优先，读不到时退回 frontmatter 的 word_count */
+    /**
+     * 扫描用：优先 frontmatter 的 word_count（插件写正文时自动维护），
+     * 缺失时才读一次全文——大库首次扫描不再把每章正文都读一遍（性能审查 P2）。
+     *
+     * @param file - 语料文件
+     * @returns 字数（无法判断返回 null）
+     */
     private async resolveCountForScan(file: StatsFileLike): Promise<number | null> {
+        const fromFrontmatter = this.readFrontmatterWordCount(file);
+        if (fromFrontmatter !== null) return fromFrontmatter;
         try {
             const content = await this.readFile(file);
             if (content && content.trim()) return countBodyChars(content);
         } catch {
-            // 正文读取失败，走 frontmatter 兜底
+            // 正文读取失败且无 frontmatter：交给 resolveCount 兜底
         }
         return this.resolveCount(file);
     }
 
-    private async resolveCount(file: StatsFileLike): Promise<number | null> {
+    /** 读取 frontmatter 里的 word_count（无/非法返回 null） */
+    private readFrontmatterWordCount(file: StatsFileLike): number | null {
         const cache = this.deps.app.metadataCache.getFileCache(file);
         const raw = cache?.frontmatter?.['word_count'];
         if (typeof raw === 'number' && Number.isFinite(raw) && raw >= 0) return Math.round(raw);
@@ -322,6 +331,12 @@ export class WritingStatsService {
             const parsed = Number(raw);
             if (Number.isFinite(parsed) && parsed >= 0) return Math.round(parsed);
         }
+        return null;
+    }
+
+    private async resolveCount(file: StatsFileLike): Promise<number | null> {
+        const fromFrontmatter = this.readFrontmatterWordCount(file);
+        if (fromFrontmatter !== null) return fromFrontmatter;
         // frontmatter 里没有（旧章/手工文件）：读一次正文兜底
         try {
             const path = file.path;

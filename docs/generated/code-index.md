@@ -7,11 +7,11 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146377 | 1941 | 1537 | 79% |
-| `services/` | 65 | 18713 | 291 | 200 | 69% |
+| `services/` | 65 | 18728 | 291 | 200 | 69% |
 | `shared/` | 242 | 48513 | 2047 | 1609 | 79% |
-| `core/` | 7 | 3011 | 35 | 20 | 57% |
+| `core/` | 7 | 3012 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 277 | 107176 | 1036 | 837 | 81% |
+| `ui/` | 277 | 107186 | 1036 | 837 | 81% |
 
 ## 文件清单
 
@@ -22,7 +22,7 @@
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 551 | 4 | 2 |
-| `core/settings-service.ts` | 579 | 5 | 4 |
+| `core/settings-service.ts` | 580 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
@@ -456,7 +456,7 @@
 | `services/worldview-cache-service.ts` | 627 | 4 | 4 |
 | `services/writeback-audit-service.ts` | 97 | 2 | 1 |
 | `services/writeback-review-service.ts` | 79 | 2 | 1 |
-| `services/writing-stats-service.ts` | 429 | 6 | 6 |
+| `services/writing-stats-service.ts` | 444 | 6 | 6 |
 | `shared/action-contract.ts` | 301 | 14 | 13 |
 | `shared/adaptive-debounce-manager.ts` | 315 | 2 | 2 |
 | `shared/ai-credentials.ts` | 80 | 3 | 3 |
@@ -914,7 +914,7 @@
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
 | `ui/settings/section-factory.ts` | 94 | 4 | 2 |
-| `ui/settings/setup-section.ts` | 105 | 1 | 1 |
+| `ui/settings/setup-section.ts` | 115 | 1 | 1 |
 | `ui/settings/writing-sections.ts` | 848 | 6 | 6 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 402 | 1 | 1 |

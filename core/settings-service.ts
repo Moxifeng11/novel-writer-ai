@@ -431,6 +431,7 @@ export function deepMergeSettings<T>(base: T, override: unknown): T {
  */
 export function getDefaultSettings(): NovelWriterSettings {
     return {
+        templateScaffoldOnStartup: true,
         apiKey: '',
         apiEndpoint: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
         defaultModel: 'deepseek-v3-2-251201',
