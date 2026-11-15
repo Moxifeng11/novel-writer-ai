@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 145961 | 1935 | 1532 | 79% |
 | `services/` | 51 | 16269 | 244 | 185 | 76% |
-| `shared/` | 230 | 47208 | 1989 | 1573 | 79% |
+| `shared/` | 231 | 47282 | 1991 | 1575 | 79% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106856 | 1034 | 835 | 81% |
@@ -490,6 +490,7 @@
 | `shared/document-scopes.ts` | 51 | 4 | 4 |
 | `shared/dom-window.ts` | 77 | 4 | 3 |
 | `shared/embedding-provider.ts` | 43 | 4 | 4 |
+| `shared/emotion-plan-parse.ts` | 74 | 2 | 2 |
 | `shared/engine-names.ts` | 57 | 1 | 1 |
 | `shared/entity-audit.ts` | 96 | 4 | 4 |
 | `shared/entity-field-mappings.ts` | 223 | 10 | 10 |
