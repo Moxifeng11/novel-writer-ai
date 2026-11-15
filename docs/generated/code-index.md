@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 353 | 146089 | 1936 | 1533 | 79% |
+| `engine/` | 353 | 146173 | 1940 | 1536 | 79% |
 | `services/` | 56 | 17106 | 257 | 190 | 74% |
 | `shared/` | 234 | 47802 | 2015 | 1591 | 79% |
 | `core/` | 7 | 3008 | 35 | 20 | 57% |
@@ -127,9 +127,9 @@
 | `engine/consistency/audit-pipeline.ts` | 341 | 13 | 8 |
 | `engine/consistency/candidate-judge.ts` | 240 | 9 | 6 |
 | `engine/consistency/causal-rules.ts` | 164 | 3 | 2 |
-| `engine/consistency/consistency-audit-wiring.ts` | 417 | 4 | 3 |
+| `engine/consistency/consistency-audit-wiring.ts` | 486 | 7 | 5 |
 | `engine/consistency/consistency-metrics.ts` | 108 | 6 | 4 |
-| `engine/consistency/consistency-service.ts` | 253 | 8 | 2 |
+| `engine/consistency/consistency-service.ts` | 268 | 9 | 3 |
 | `engine/consistency/evidence-locate.ts` | 109 | 3 | 2 |
 | `engine/consistency/extended-rules.ts` | 317 | 5 | 3 |
 | `engine/consistency/fact-maintenance.ts` | 163 | 6 | 2 |

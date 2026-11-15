@@ -104,28 +104,18 @@ export interface ConsistencyAuditResult {
 }
 
 /**
- * 跑一次项目级一致性审核。
+ * 从所有数据源抽取断言（事实库为持久权威，摘要/档案/台账/确认事实为来源）。
  *
- * @param project - 项目路径
  * @param deps - 数据访问依赖
- * @param options - 选项
- * @param now - 时间戳（测试可注入）
- * @returns 审核结果
+ * @returns 断言列表
  */
-export async function runProjectConsistencyAudit(
-    project: string,
-    deps: ConsistencyAuditDeps,
-    options: ConsistencyAuditOptions = {},
-    now: () => Date = () => new Date(),
-): Promise<ConsistencyAuditResult> {
+export async function collectIncomingAssertions(deps: ConsistencyAuditDeps): Promise<FactAssertion[]> {
     const [digests, characters, events, confirmed] = await Promise.all([
         deps.listDigests(),
         deps.listCharacters(),
         deps.listLedgerEvents(),
         deps.listConfirmedFacts(),
     ]);
-
-    // 1) 抽断言
     const incoming: FactAssertion[] = [];
     for (const digest of digests) {
         incoming.push(...extractAssertions({
@@ -149,6 +139,31 @@ export async function runProjectConsistencyAudit(
             confirmedFacts: confirmed,
         }));
     }
+    // 事实库断言（P0-4）：结构化事实的唯一持久源，与摘要/档案断言并列参与配对
+    if (deps.listFactStoreAssertions) {
+        const factAssertions = await deps.listFactStoreAssertions().catch(() => [] as FactAssertion[]);
+        incoming.push(...factAssertions);
+    }
+    return incoming;
+}
+
+/**
+ * 跑一次项目级一致性审核。
+ *
+ * @param project - 项目路径
+ * @param deps - 数据访问依赖
+ * @param options - 选项
+ * @param now - 时间戳（测试可注入）
+ * @returns 审核结果
+ */
+export async function runProjectConsistencyAudit(
+    project: string,
+    deps: ConsistencyAuditDeps,
+    options: ConsistencyAuditOptions = {},
+    now: () => Date = () => new Date(),
+): Promise<ConsistencyAuditResult> {
+    const incoming: FactAssertion[] = await collectIncomingAssertions(deps);
+    const digests = await deps.listDigests();
 
     // 2) 合并落盘（读失败则保留历史并报告）
     // 事实库断言（P0-4）：结构化事实的唯一持久源，与摘要/档案断言并列参与配对

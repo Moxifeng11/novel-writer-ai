@@ -120,6 +120,20 @@ export interface NovelWriterEngineAPI {
      * @param model - 模型
      * @returns 基线结果
      */
+    /**
+     * 重建断言索引（C3）。
+     *
+     * @param project - 项目路径
+     * @param dryRun - 是否只预览
+     * @returns 重建结果
+     */
+    rebuildAssertions(project: string, dryRun?: boolean): Promise<{
+        dryRun: boolean;
+        count: number;
+        path: string;
+        backup?: string;
+        warnings?: string[];
+    }>;
     runBaselineProbe(project: string, chapterName: string, model?: string): Promise<{
         model: string;
         full: { chars: number; promptTokens: number; totalTokens: number };

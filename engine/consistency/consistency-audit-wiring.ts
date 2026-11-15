@@ -13,15 +13,17 @@
  *  - AI：`plugin.aiEngine.callAI`（非流式；复核只需短输出）
  */
 
+import { saveAssertions } from './assertion-store';
 import { App } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import { loadFactStore } from './fact-store';
 import { maintainChapterFacts, type FactMaintenanceResult } from './fact-maintenance';
 import { ObsidianFileSystem } from '@/shared/file-system-port';
-import { pjChapterDigestDir, pjFactStoreFile, pjOutlineDir } from '@/shared/paths';
+import { pjAssertionsFile, pjChapterDigestDir, pjFactStoreFile, pjOutlineDir } from '@/shared/paths';
 import { parseChapterDigest, type ChapterDigest } from '@/engine/memory/chapter-digest';
 import { loadStoryLedger } from '@/engine/ledger/ledger-io';
 import {
+    collectIncomingAssertions,
     runProjectConsistencyAudit,
     type CharacterProfileInput,
     type ConfirmedFactInput,
@@ -414,4 +416,70 @@ export async function maintainFactsForProject(
         { num: chapterNum, body },
         { force: options.force },
     );
+}
+/** 断言索引重建结果 */
+export interface RebuildAssertionsResult {
+    /** 是否仅预览 */
+    dryRun: boolean;
+    /** 派生出的断言条数 */
+    count: number;
+    /** 断言文件路径 */
+    path: string;
+    /** 旧文件备份路径（有旧文件时） */
+    backup?: string;
+    /** 数据源读取告警 */
+    warnings?: string[];
+}
+
+/**
+ * 用注入依赖重建断言索引（C3：断言.json 是可重建派生，事实库/摘要/档案是来源）。
+ *
+ * @param project - 项目路径
+ * @param deps - 一致性数据访问依赖
+ * @param options - 选项
+ * @returns 重建结果
+ */
+export async function rebuildAssertionsWithDeps(
+    project: string,
+    deps: ConsistencyAuditDeps,
+    options: { dryRun?: boolean; now?: () => Date } = {},
+): Promise<RebuildAssertionsResult> {
+    const incoming = await collectIncomingAssertions(deps);
+    const path = pjAssertionsFile(project);
+    if (options.dryRun) {
+        return { dryRun: true, count: incoming.length, path };
+    }
+    let backup: string | undefined;
+    const exists = await deps.fs.exists(path).catch(() => false);
+    if (exists) {
+        const existing = await deps.fs.read(path).catch(() => '');
+        if (existing) {
+            const stamp = (options.now?.() ?? new Date()).toISOString().replace(/[:.]/g, '-');
+            backup = `${project}/_versions/migration/${stamp}/断言.json`;
+            await deps.fs.write(backup, existing).catch(() => undefined); // silent-ok: 备份失败不阻断重建
+        }
+    }
+    await saveAssertions(deps.fs, project, incoming, options.now);
+    return { dryRun: false, count: incoming.length, path, backup };
+}
+
+/**
+ * 重建项目断言索引（C3）：事实库/摘要/档案/台账 → 断言.json（派生、可重复执行）。
+ *
+ * @param app - Obsidian 应用
+ * @param plugin - 插件实例
+ * @param project - 项目路径
+ * @param options - 选项
+ * @returns 重建结果
+ */
+export async function rebuildAssertionsForProject(
+    app: App,
+    plugin: NovelWriterPlugin,
+    project: string,
+    options: { dryRun?: boolean } = {},
+): Promise<RebuildAssertionsResult> {
+    const warnings: string[] = [];
+    const deps = await buildDeps(app, plugin, project, {}, warnings);
+    const result = await rebuildAssertionsWithDeps(project, deps, options);
+    return { ...result, warnings };
 }

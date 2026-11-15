@@ -9,6 +9,7 @@
  * 使用方式：Obsidian 加载 `main.js` 后由 `Plugin#onload` 驱动；测试与 E2E 以
  * 「命令是否注册」「视图是否可开」作为加载成功判据。
  */
+import { rebuildAssertionsForProject } from './engine/consistency/consistency-audit-wiring';
 import { InternalRegistry } from './shared/internal-registry';
 import { App, Plugin, PluginSettingTab, Setting, Notice, Platform, TFile, TFolder, WorkspaceLeaf } from 'obsidian';
 import { AIEngine } from './engine/ai-engine';
@@ -1543,6 +1544,17 @@ export default class NovelWriterPlugin extends Plugin {
      * @param model - 模型（默认用插件 flash 模型）
      * @returns 基线结果
      */
+    /**
+     * 重建断言索引（C3）：事实库/摘要/档案/台账 → 断言.json（派生、幂等、可备份）。
+     *
+     * @param project - 项目路径
+     * @param dryRun - 是否只预览（默认 true）
+     * @returns 重建结果
+     */
+    public async rebuildAssertions(project: string, dryRun = true) {
+        return rebuildAssertionsForProject(this.app, this, project, { dryRun });
+    }
+
     public async runBaselineProbe(project: string, chapterName: string, model?: string) {
         const engine = new AIEngine(this);
         return new BaselineProbeService(this.app, this, (system, user, targetModel) =>
