@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 145827 | 1935 | 1532 | 79% |
 | `services/` | 48 | 15883 | 237 | 182 | 77% |
-| `shared/` | 219 | 45630 | 1932 | 1537 | 80% |
+| `shared/` | 220 | 45830 | 1938 | 1539 | 79% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106856 | 1034 | 835 | 81% |
@@ -653,6 +653,7 @@
 | `shared/word-count.ts` | 149 | 7 | 7 |
 | `shared/workspace-reveal.ts` | 65 | 5 | 1 |
 | `shared/write-lock.ts` | 67 | 2 | 2 |
+| `shared/writeback-command-model.ts` | 200 | 6 | 2 |
 | `shared/writing-rules-legacy.ts` | 224 | 2 | 2 |
 | `shared/writing-rules-mode-addons.ts` | 78 | 5 | 2 |
 | `shared/writing-rules-variants.ts` | 193 | 5 | 2 |
