@@ -1828,3 +1828,11 @@ export function pluginVersionsDir(): string { return `${pluginDataDir()}/version
  * @returns vault 相对路径
  */
 export function pjGoalDir(project: string) { return `${project}/04-项目总控/goal`; }
+
+/**
+ * ID 登记表文件路径。
+ *
+ * @param project - 项目路径
+ * @returns vault 相对路径
+ */
+export function pjIdRegistryFile(project: string) { return `${project}/04-项目总控/ID登记表.json`; }
