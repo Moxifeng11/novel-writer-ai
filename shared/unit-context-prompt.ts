@@ -5,7 +5,10 @@
  * 避免整份大纲/圣经/分镜表全量注入。
  */
 
-import type { ScriptEpisodeCard, ScriptSceneCard, ShortUnitCard, ShotCard } from './unit-card-model';
+import {
+    parseScriptEpisodeOutline, parseScriptScenes, parseShortUnitOutline, parseShotList,
+    type ScriptEpisodeCard, type ScriptSceneCard, type ShortUnitCard, type ShotCard,
+} from './unit-card-model';
 
 /**
  * 渲染短篇节上下文（当前节全字段，其余一行）。
@@ -86,4 +89,30 @@ export function renderScriptUnitContext(
  */
 export function unitContextTokens(text: string): number {
     return Math.ceil(String(text ?? '').length / 2);
+}
+
+/**
+ * 由模式运行时上下文构建「精确单元段落」（解析失败返回空串，调用方回退整份注入）。
+ *
+ * @param input - 模式、单元号、大纲/故事文档/分镜文本
+ * @returns 段落；无法解析时为空
+ */
+export function buildUnitPreciseContext(input: {
+    mode: 'short' | 'script';
+    unitNumber: number;
+    outlineText?: string;
+    storyDoc?: string;
+    storyboardText?: string;
+}): string {
+    const outlineText = String(input.outlineText ?? '');
+    if (input.mode === 'short') {
+        const cards = parseShortUnitOutline(outlineText);
+        if (cards.length === 0) return '';
+        return renderShortUnitContext(cards, input.unitNumber);
+    }
+    const episodes = parseScriptEpisodeOutline(outlineText);
+    if (episodes.length === 0) return '';
+    const scenes = parseScriptScenes(String(input.storyDoc ?? ''), input.unitNumber);
+    const shots = parseShotList(String(input.storyboardText ?? ''));
+    return renderScriptUnitContext(episodes, scenes, shots, { episode: input.unitNumber });
 }

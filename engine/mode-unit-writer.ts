@@ -13,6 +13,7 @@ import { TFile } from 'obsidian';
 import type { CreationMode } from '@/shared/creation-mode';
 import { getCreationModeLabel } from '@/shared/creation-mode';
 import { estimateTokens, getModelContextWindow } from '@/shared/token-estimator';
+import { buildUnitPreciseContext } from '@/shared/unit-context-prompt';
 import { recoverOverflow, type ContextCompressionMode } from './context/overflow-recovery';
 import {
     listModeUnits,
@@ -235,10 +236,22 @@ export function buildUnitPrompt(
         options.instruction ? `本次额外要求：${options.instruction}` : '',
     ].filter(Boolean).join('\n');
 
+    // 精确注入优先：当前节/集全字段 + 当前场 + 本场分镜；解析失败回退整份注入
+    const preciseUnitContext = buildUnitPreciseContext({
+        mode: ctx.mode === 'script' ? 'script' : 'short',
+        unitNumber: ctx.unitNumber,
+        outlineText: ctx.outlineSection,
+        storyDoc: ctx.storyDoc,
+        storyboardText: ctx.storyboardDoc,
+    });
     const contextBlock = [
-        ctx.outlineSection ? `【${modeOutlineLabel(ctx.mode)}】\n${ctx.outlineSection}` : '',
-        ctx.storyDoc ? `【${ctx.mode === 'script' ? '场景圣经' : '故事核'}】\n${ctx.storyDoc}` : '',
-        ctx.storyboardDoc ? `【分镜表】\n${ctx.storyboardDoc}` : '',
+        preciseUnitContext
+            ? `【精确单元上下文】\n${preciseUnitContext}`
+            : [
+                ctx.outlineSection ? `【${modeOutlineLabel(ctx.mode)}】\n${ctx.outlineSection}` : '',
+                ctx.storyDoc ? `【${ctx.mode === 'script' ? '场景圣经' : '故事核'}】\n${ctx.storyDoc}` : '',
+                ctx.storyboardDoc ? `【分镜表】\n${ctx.storyboardDoc}` : '',
+            ].filter(Boolean).join('\n\n'),
         ctx.preResearchDigest ? `【前期调研】\n${ctx.preResearchDigest}` : '',
         ctx.entities ? `【实体状态】\n${ctx.entities}` : '',
         ctx.styleGuide ? `【文笔风格】\n${ctx.styleGuide}` : '',

@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 353 | 145827 | 1935 | 1532 | 79% |
+| `engine/` | 353 | 145840 | 1935 | 1532 | 79% |
 | `services/` | 49 | 15962 | 239 | 183 | 77% |
-| `shared/` | 223 | 46307 | 1958 | 1552 | 79% |
+| `shared/` | 223 | 46336 | 1959 | 1553 | 79% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106856 | 1034 | 835 | 81% |
@@ -248,7 +248,7 @@
 | `engine/mode-runtime.ts` | 189 | 6 | 5 |
 | `engine/mode-unit-quality.ts` | 242 | 5 | 2 |
 | `engine/mode-unit-settlement.ts` | 105 | 2 | 1 |
-| `engine/mode-unit-writer.ts` | 543 | 16 | 16 |
+| `engine/mode-unit-writer.ts` | 556 | 16 | 16 |
 | `engine/note-properties-service.ts` | 293 | 12 | 12 |
 | `engine/novel-analyzer.ts` | 427 | 2 | 2 |
 | `engine/outline-contract.ts` | 737 | 21 | 20 |
@@ -641,7 +641,7 @@
 | `shared/true-random.ts` | 134 | 3 | 3 |
 | `shared/types.ts` | 729 | 48 | 11 |
 | `shared/unit-card-model.ts` | 254 | 11 | 7 |
-| `shared/unit-context-prompt.ts` | 90 | 3 | 3 |
+| `shared/unit-context-prompt.ts` | 119 | 4 | 4 |
 | `shared/unload-barrier.ts` | 72 | 1 | 0 |
 | `shared/untrusted-content.ts` | 39 | 1 | 1 |
 | `shared/validators/normalizers-entity.ts` | 232 | 5 | 5 |
