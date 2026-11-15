@@ -36,7 +36,7 @@ export type IndexKind =
     | 'other';
 
 /** 派生视图文件名（由插件生成，不作为要素条目） */
-const DERIVED_VIEW_NAMES = ['时间线看板', '伏笔库', '承诺账本', '叙事总览', '信息债看板', '关系状态', '角色弧线'];
+const DERIVED_VIEW_NAMES = ['时间线看板', '伏笔库', '承诺账本', '叙事总览', '信息债看板', '关系状态', '角色弧线', '世界观总览', '设定库'];
 
 /** 要素类型（来自 frontmatter.type，缺失时由路径推断） */
 export type EntityType =

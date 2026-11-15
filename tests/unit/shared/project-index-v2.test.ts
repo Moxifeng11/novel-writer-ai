@@ -69,6 +69,8 @@ describe('派生视图不参与要素推断', () => {
         expect(extractIndexFields(undefined, 'p/02-时间线与伏笔/时间线看板.md').type).toBe('other');
         expect(extractIndexFields(undefined, 'p/02-时间线与伏笔/伏笔库.md').type).toBe('other');
         expect(extractIndexFields(undefined, 'p/01-世界架构/关系状态.md').type).toBe('other');
+        expect(extractIndexFields(undefined, 'p/01-世界架构/世界观总览.md').type).toBe('other');
+        expect(extractIndexFields(undefined, 'p/01-世界架构/设定库.md').type).toBe('other');
     });
 
     it('正式条目文件仍按路径推断', () => {
