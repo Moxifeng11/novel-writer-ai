@@ -5,10 +5,9 @@
  *  - 默认形象 = 代码绘制的分层 SVG（无版权风险）
  *  - 用户可指定自己的图片（vault 内 PNG/JPG/WebP），按网格切帧
  *
- * 雪碧图约定（v2，支持动画）：
- *  - **行 = 状态**：按 PET_IMAGE_MOOD_ORDER 自上而下（行数不足时后面的状态共用最后一行）
- *  - **列 = 动画帧**：同一状态的连续帧，桌宠会自动循环播放
- *  - 网格可由图片尺寸自动识别（detectPetGrid），也可手动覆盖
+ * 雪碧图约定（v3）：**每格 = 一个状态**（不是动画序列）——按 PET_IMAGE_MOOD_ORDER
+ * 从左到右、从上到下依次占用格子；格子不够时后面的状态共用最后一格。
+ * 网格可由图片尺寸自动识别（detectPetGrid），也可手动覆盖。
  */
 
 /** 桌宠图片配置 */
@@ -92,84 +91,33 @@ export function normalizePetImageConfig(raw: unknown): PetImageConfig | null {
 }
 
 /**
- * 状态对应的行号（行 = 状态；行数不足时后面的状态共用最后一行）。
+ * 计算某状态在雪碧图中的格子坐标（百分比，供 background-position）。
  *
- * @param mood - 宠物状态
- * @param rows - 网格行数
- * @returns 行号（0 起）
- * @example
- * ```ts
- * petMoodRow('writing', 6); // 1
- * petMoodRow('error', 2);   // 1（行数不足钳到最后一行）
- * ```
- */
-export function petMoodRow(mood: string, rows: number): number {
-    const total = Math.max(1, Math.floor(rows));
-    const index = PET_IMAGE_MOOD_ORDER.indexOf(mood);
-    const safeIndex = index >= 0 ? index : 0;
-    return Math.min(safeIndex, total - 1);
-}
-
-/**
- * 计算某状态的某一动画帧坐标（百分比，供 background-position）。
- *
- * 列 = 动画帧，行 = 状态；帧号超出列数时回绕。
- *
- * @param mood - 宠物状态
- * @param frame - 动画帧序号（0 起）
- * @param config - 图片配置
- * @returns 0–100 的 x/y 百分比
- * @example
- * ```ts
- * petFramePosition('idle', 1, { source: 'file', dataUrl, cols: 3, rows: 2 });
- * // { xPercent: 50, yPercent: 0 }
- * ```
- */
-export function petFramePosition(
-    mood: string,
-    frame: number,
-    config: PetImageConfig,
-): { xPercent: number; yPercent: number } {
-    const cols = Math.max(1, Math.floor(config.cols));
-    const rows = Math.max(1, Math.floor(config.rows));
-    const frameIndex = ((Math.floor(Number(frame) || 0) % cols) + cols) % cols;
-    const row = petMoodRow(mood, rows);
-    return {
-        xPercent: cols > 1 ? (frameIndex / (cols - 1)) * 100 : 0,
-        yPercent: rows > 1 ? (row / (rows - 1)) * 100 : 0,
-    };
-}
-
-/**
- * 兼容旧调用：返回该状态第 0 帧的坐标。
+ * 每个格子对应一个状态：按 PET_IMAGE_MOOD_ORDER 从左到右、从上到下排；
+ * 格子数少于状态数时，后面的状态共用最后一格。
  *
  * @param mood - 宠物状态
  * @param config - 图片配置
  * @returns 0–100 的 x/y 百分比
+ * @example
+ * ```ts
+ * poseFrameFor('writing', { source: 'file', dataUrl, cols: 3, rows: 2 });
+ * // { xPercent: 50, yPercent: 0 }（第 2 格）
+ * ```
  */
 export function poseFrameFor(mood: string, config: PetImageConfig): { xPercent: number; yPercent: number } {
-    return petFramePosition(mood, 0, config);
-}
-
-/**
- * 某状态播放动画的帧间隔（毫秒）；不同状态节奏不同。
- *
- * @param mood - 宠物状态
- * @returns 帧间隔（毫秒）
- * @example
- * ```ts
- * window.setInterval(tick, petAnimationIntervalMs('writing')); // 130ms
- * ```
- */
-export function petAnimationIntervalMs(mood: string): number {
-    switch (mood) {
-        case 'writing': return 130;
-        case 'happy': return 110;
-        case 'thinking': return 220;
-        case 'sleep': return 420;
-        case 'error': return 180;
-        default: return 260;
-    }
+    const cols = Math.max(1, Math.floor(config.cols));
+    const rows = Math.max(1, Math.floor(config.rows));
+    const totalCells = cols * rows;
+    const index = PET_IMAGE_MOOD_ORDER.indexOf(mood);
+    const safeIndex = index >= 0 ? index : 0;
+    const cell = Math.min(safeIndex, totalCells - 1);
+    const col = cell % cols;
+    const row = Math.floor(cell / cols);
+    return {
+        xPercent: cols > 1 ? (col / (cols - 1)) * 100 : 0,
+        yPercent: rows > 1 ? (row / (rows - 1)) * 100 : 0,
+    };
 }
 
 /**
@@ -233,5 +181,5 @@ export function detectPetGrid(width: number, height: number): { cols: number; ro
  */
 export function describePetImageConfig(config: PetImageConfig): string {
     const from = config.source === 'file' ? '本机图片' : `vault：${config.path ?? ''}`;
-    return `${from} · ${config.cols} 帧 × ${config.rows} 状态 · 状态自上而下：${PET_IMAGE_MOOD_ORDER.join(' / ')}`;
+    return `${from} · ${config.cols}×${config.rows} 格（共 ${config.cols * config.rows} 个状态格）· 状态顺序：${PET_IMAGE_MOOD_ORDER.join(' / ')}`;
 }

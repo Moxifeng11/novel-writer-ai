@@ -43,6 +43,7 @@ import { appendEventToContent, appendForeshadowToContent, moveForeshadowToReveal
 import { invalidateStoryLedger } from './ledger/ledger-io';
 import { createSettleContext, type SettleContext } from './settlement/settle-context';
 import { SettlementJournalStore } from '@/services/settlement-journal-store';
+import { markPetActivity } from '@/shared/pet-activity';
 import { parseInfoPlanFields } from '@/shared/info-plan-fields';
 import { getValidFrontmatterKeys } from '@/shared/entity-field-mappings';
 import { getLinkPolicy, formatSingleLinkValue, formatListLinkValue, parseLinkValue } from '@/shared/entity-links';
@@ -785,6 +786,8 @@ export class SettlementEngine {
         }
 
         ctx.result.mode = 'full';
+        // 桌宠：一章结算完成 → 短暂「开心」
+        if (!ctx.hasPartialFailure) markPetActivity('happy', 5000);
         if (!ctx.hasPartialFailure || ctx.result.rollback) {
             await journalStore.clear(chapName).catch(() => undefined); // silent-ok: 清理失败不影响结算结果
         }

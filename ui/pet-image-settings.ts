@@ -76,9 +76,10 @@ export function renderPetImageSettings(
     container.createEl('h4', { text: '🎨 桌宠形象' });
     container.createEl('p', {
         text: '默认使用插件内置的代码绘制形象（无第三方素材）。可以选电脑上任意位置的图片（自动压缩后存在插件数据里，不进仓库），也可以选 vault 里的图片。'
-            + '雪碧图约定：**行 = 状态，列 = 动画帧**——同一状态的多列会自动循环播放形成动画；'
-            + `状态顺序固定为 ${PET_IMAGE_MOOD_ORDER.join(' / ')}（行数不足时后面的状态共用最后一行）。`
-            + '选图后会自动识别网格，识别不准可手动改或点「自动识别网格」。',
+            + '雪碧图约定：**每格 = 一个状态**，按从左到右、从上到下依次对应 '
+            + `${PET_IMAGE_MOOD_ORDER.join(' / ')}（格子不够时后面的状态共用最后一格）。`
+            + '桌宠会根据**正在运行的功能**（写作中 / AI 思考 / 刚完成 / 出错 / 待机）切到对应格子，不自动循环播放。'
+            + '选图后会自动识别网格，识别不准可手动改或点「重新识别」。',
         cls: 'setting-item-description',
     });
 
@@ -117,7 +118,7 @@ export function renderPetImageSettings(
                         new Notice('❌ 无法读取该图片，请换一张试试');
                         return;
                     }
-                    new Notice(`✅ 已识别网格 ${grid.cols} 列 × ${grid.rows} 行（列=动画帧，行=状态）`, 5000);
+                    new Notice(`✅ 已识别网格 ${grid.cols} 列 × ${grid.rows} 行，共 ${grid.cols * grid.rows} 格（每格一个状态）`, 5000);
                     await applyPetImage(plugin, config, rerender);
                 });
             }))
@@ -149,13 +150,13 @@ export function renderPetImageSettings(
                 const grid = detectPetGrid(size.width, size.height);
                 const next = normalizePetImageConfig({ ...current, cols: grid.cols, rows: grid.rows });
                 if (!next) return;
-                new Notice(`✅ 已识别网格 ${grid.cols} 列 × ${grid.rows} 行`, 5000);
+                new Notice(`✅ 已识别网格 ${grid.cols} 列 × ${grid.rows} 行，共 ${grid.cols * grid.rows} 格`, 5000);
                 await applyPetImage(plugin, next, rerender);
             }));
 
     new Setting(container)
-        .setName('网格列数（动画帧数）')
-        .setDesc('横向帧数（1–8）：同一状态循环播放的帧数；1 表示该状态不动')
+        .setName('网格列数')
+        .setDesc('横向格子数（1–8）：与行数相乘 = 总状态格数（6 档状态，多出的格子不会用到）')
         .addText(text => {
             text.setValue(String(current?.cols ?? PET_IMAGE_DEFAULT_COLS));
             text.inputEl.addEventListener('change', () => {
@@ -167,8 +168,8 @@ export function renderPetImageSettings(
         });
 
     new Setting(container)
-        .setName('网格行数（状态数）')
-        .setDesc('纵向行数（1–8）：每个状态占一行；不足 6 行时后面的状态共用最后一行')
+        .setName('网格行数')
+        .setDesc('纵向格子数（1–8）：每格一个状态；格子不足 6 个时后面的状态共用最后一格')
         .addText(text => {
             text.setValue(String(current?.rows ?? PET_IMAGE_DEFAULT_ROWS));
             text.inputEl.addEventListener('change', () => {
@@ -186,7 +187,7 @@ export function renderPetImageSettings(
             : plugin.app.vault.adapter.getResourcePath(current.path ?? '');
         preview.style.backgroundImage = `url(${resource})`;
         preview.style.backgroundSize = `${current.cols * 100}% ${current.rows * 100}%`;
-        preview.createSpan({ cls: 'nw-pet-image-preview-hint', text: '预览（第一帧；桌宠上会自动播放动画）' });
+        preview.createSpan({ cls: 'nw-pet-image-preview-hint', text: '预览（第一格；桌宠上按运行状态切换格子）' });
     }
 }
 

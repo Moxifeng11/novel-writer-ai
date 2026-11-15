@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 353 | 146377 | 1941 | 1537 | 79% |
+| `engine/` | 353 | 146389 | 1941 | 1537 | 79% |
 | `services/` | 65 | 18925 | 291 | 200 | 69% |
-| `shared/` | 243 | 48776 | 2058 | 1618 | 79% |
+| `shared/` | 244 | 48860 | 2063 | 1620 | 79% |
 | `core/` | 7 | 3029 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 277 | 107443 | 1038 | 839 | 81% |
+| `ui/` | 277 | 107490 | 1040 | 840 | 81% |
 
 ## 文件清单
 
@@ -69,7 +69,7 @@
 | `engine/agent/harness/tool-registry.ts` | 307 | 5 | 2 |
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
 | `engine/ai-api-client-shared.ts` | 86 | 6 | 5 |
-| `engine/ai-api-client.ts` | 1002 | 2 | 2 |
+| `engine/ai-api-client.ts` | 1011 | 2 | 2 |
 | `engine/ai-api-stream.ts` | 1022 | 3 | 2 |
 | `engine/ai-batch-entity-generator.ts` | 578 | 1 | 1 |
 | `engine/ai-chapter-helpers.ts` | 339 | 1 | 1 |
@@ -338,7 +338,7 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 2279 | 3 | 3 |
+| `engine/settlement-engine.ts` | 2282 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 137 | 2 | 2 |
@@ -577,8 +577,9 @@
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
 | `shared/paths.ts` | 1839 | 221 | 215 |
+| `shared/pet-activity.ts` | 131 | 8 | 5 |
 | `shared/pet-geometry.ts` | 118 | 9 | 3 |
-| `shared/pet-image-model.ts` | 238 | 14 | 10 |
+| `shared/pet-image-model.ts` | 186 | 11 | 7 |
 | `shared/plan-spec-model.ts` | 137 | 10 | 5 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
@@ -677,7 +678,7 @@
 | `shared/unit-context-prompt.ts` | 119 | 4 | 4 |
 | `shared/unload-barrier.ts` | 72 | 1 | 0 |
 | `shared/untrusted-content.ts` | 39 | 1 | 1 |
-| `shared/usage-guide-content.ts` | 96 | 2 | 1 |
+| `shared/usage-guide-content.ts` | 101 | 2 | 1 |
 | `shared/validators/normalizers-entity.ts` | 232 | 5 | 5 |
 | `shared/vault-tree.ts` | 131 | 6 | 6 |
 | `shared/version-types.ts` | 125 | 10 | 0 |
@@ -871,7 +872,7 @@
 | `ui/outline-expand-modal.ts` | 880 | 2 | 1 |
 | `ui/panel-resizer.ts` | 260 | 4 | 3 |
 | `ui/password-modal.ts` | 152 | 1 | 1 |
-| `ui/pet-image-settings.ts` | 463 | 3 | 3 |
+| `ui/pet-image-settings.ts` | 464 | 3 | 3 |
 | `ui/plan-book-modal.ts` | 558 | 1 | 1 |
 | `ui/plot-canvas-modal.ts` | 366 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
@@ -971,7 +972,7 @@
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |
 | `ui/workspace-manager.ts` | 144 | 2 | 2 |
 | `ui/write-chapter-modal.ts` | 851 | 1 | 1 |
-| `ui/writing-pet.ts` | 594 | 7 | 6 |
+| `ui/writing-pet.ts` | 640 | 9 | 7 |
 | `ui/writing-stats-modal.ts` | 245 | 1 | 1 |
 | `ui/writing-stats-settings.ts` | 73 | 1 | 1 |
 | `ui/writing-style-modal.ts` | 589 | 1 | 1 |

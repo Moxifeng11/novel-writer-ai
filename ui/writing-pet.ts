@@ -17,11 +17,16 @@ import { formatWords, type StatsSummary } from '@/shared/writing-stats';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 import {
     normalizePetImageConfig,
-    petAnimationIntervalMs,
-    petFramePosition,
+    poseFrameFor,
     type PetImageConfig,
 } from '@/shared/pet-image-model';
 import { getDegradationNotifier } from '@/shared/degradation-notifier';
+import {
+    getActivePetActivity,
+    markPetActivity,
+    subscribePetActivity,
+    type PetActivityKind,
+} from '@/shared/pet-activity';
 import { clampPetPoint, PET_DEFAULT_SNAP_EDGES, petViewportOf, snapPetPoint, type PetViewport, type PetSnapEdges } from '@/shared/pet-geometry';
 import { onNodeDoc } from '@/shared/dom-window';
 
@@ -61,6 +66,30 @@ export type PetLayerId = (typeof PET_LAYERS)[number]['id'];
  * idle/happy/sleep 来自写作进度；writing/thinking/error 供生成链路复用。
  */
 export type PetMood = 'idle' | 'happy' | 'sleep' | 'writing' | 'thinking' | 'error';
+
+/** 运行时活动 → 宠物状态（纯映射，便于测试与复用） */
+export const PET_ACTIVITY_MOOD: Record<PetActivityKind, PetMood> = {
+    writing: 'writing',
+    thinking: 'thinking',
+    happy: 'happy',
+    error: 'error',
+};
+
+/**
+ * 把运行时活动映射为宠物状态（无活动返回 null，由调用方回落字数状态）。
+ *
+ * @param kind - 活动类型
+ * @returns 宠物状态或 null
+ * @example
+ * ```ts
+ * moodForPetActivity('thinking'); // 'thinking'
+ * moodForPetActivity(null);       // null
+ * ```
+ */
+export function moodForPetActivity(kind: PetActivityKind | null): PetMood | null {
+    if (!kind) return null;
+    return PET_ACTIVITY_MOOD[kind];
+}
 
 /**
 
@@ -158,10 +187,12 @@ export class WritingPet {
     private pulseTimer: ReturnType<typeof setTimeout> | null = null;
     /** 快捷摘要自动刷新定时器（60s；文档隐藏时跳过） */
     private refreshTimer: number | null = null;
-    /** 当前动画帧序号（列 = 动画帧） */
-    private frameIndex = 0;
-    /** 帧动画定时器；生命周期与宠物挂载一致 */
-    private frameTimer: number | null = null;
+    /** 运行时活动订阅（写作/AI 思考/完成/出错 → 切对应帧） */
+    private disposeActivity: (() => void) | null = null;
+    /** 活动轮询定时器（TTL 过期后回到常规状态） */
+    private activityTimer: number | null = null;
+    /** 上次展示的运行时活动（避免重复切帧） */
+    private lastActivity: PetActivityKind | null = null;
     private boundMove = (e: PointerEvent) => this.onPointerMove(e);
     private boundUp = () => this.onPointerUp();
     /** 拖拽期间 document 级监听的解绑器（绑在宠物所属窗口） */
@@ -206,42 +237,55 @@ export class WritingPet {
         }, Math.max(500, durationMs) + 60);
     }
 
-    /** 把当前状态 + 当前动画帧的坐标写入 CSS 变量 */
+    /** 把当前状态对应的格子坐标写入 CSS 变量（每格 = 一个状态） */
     private applyFrame(): void {
         if (!this.root) return;
         if (!this.imageConfig) return;
-        const frame = petFramePosition(this.mood, this.frameIndex, this.imageConfig);
+        const frame = poseFrameFor(this.mood, this.imageConfig);
         this.root.style.setProperty('--nw-pet-frame-x', `${frame.xPercent}%`);
         this.root.style.setProperty('--nw-pet-frame-y', `${frame.yPercent}%`);
     }
 
-    /**
-     * 启动/重启帧动画（列 = 动画帧）。
-     *
-     * 只有一个状态帧（cols≤1）时不做定时器；页面隐藏时跳过 tick，
-     * 避免后台标签页空转。
-     */
-    private restartFrameAnimation(): void {
-        this.stopFrameAnimation();
-        const config = this.imageConfig;
-        if (!this.root || !config || config.cols <= 1) return;
-        const interval = petAnimationIntervalMs(this.mood);
-        this.frameTimer = window.setInterval(() => {
-            if (!this.root) return;
-            if (typeof document !== 'undefined' && document.hidden) return;
-            this.frameIndex = (this.frameIndex + 1) % Math.max(1, Math.floor(config.cols));
-            this.applyFrame();
-        }, interval);
-    }
+    /** 运行时活动 → 宠物状态映射（引用共享纯函数） */
+    private static readonly ACTIVITY_MOOD: Record<PetActivityKind, PetMood> = PET_ACTIVITY_MOOD;
 
-    /** 停止帧动画 */
-    private stopFrameAnimation(): void {
-        if (this.frameTimer) {
-            window.clearInterval(this.frameTimer);
-            this.frameTimer = null;
+    /**
+     * 订阅运行时活动：写作 / AI 思考 / 刚完成 / 出错 → 切对应帧。
+     *
+     * 这是「识别正在运行的功能」的入口：各层只往 shared/pet-activity 打标记，
+     * 宠物据此换帧；标记过期后回落到字数驱动的常规状态。
+     */
+    private subscribeActivities(): void {
+        if (this.disposeActivity) return;
+        this.disposeActivity = subscribePetActivity((kind) => {
+            this.lastActivity = kind;
+            if (!this.isMounted) return;
+            if (kind) this.setMood(WritingPet.ACTIVITY_MOOD[kind]);
+            else this.update();
+        });
+        // TTL 过期没有事件：每秒轮询一次活动，变化时切换（成本可忽略）
+        if (!this.activityTimer) {
+            this.activityTimer = window.setInterval(() => {
+                if (!this.isMounted) return;
+                const kind = getActivePetActivity();
+                if (kind === this.lastActivity) return;
+                this.lastActivity = kind;
+                if (kind) this.setMood(WritingPet.ACTIVITY_MOOD[kind]);
+                else this.update();
+            }, 1000);
         }
     }
 
+    /** 取消活动订阅与轮询 */
+    private disposeActivities(): void {
+        this.disposeActivity?.();
+        this.disposeActivity = null;
+        if (this.activityTimer) {
+            window.clearInterval(this.activityTimer);
+            this.activityTimer = null;
+        }
+        this.lastActivity = null;
+    }
     /**
      * 设置某图层可见性。
      *
@@ -340,12 +384,13 @@ export class WritingPet {
         this.card = root.createDiv({ cls: 'nw-pet-card' });
         this.card.addClass('nw-u-d-none');
         this.update();
-        this.restartFrameAnimation();
+        this.subscribeActivities();
 
         // 陪伴层用量联动：降级/失败事件 → 宠物短暂「出错」表情
         if (!this.disposeDegradationSink) {
             this.disposeDegradationSink = getDegradationNotifier().registerSink((event) => {
                 if (event.severity === 'critical' || event.severity === 'warning') {
+                    markPetActivity('error', 5000);
                     this.flashMood('error', 5000);
                 }
             });
@@ -379,9 +424,11 @@ export class WritingPet {
             }
         }
 
-        const nextMood: PetMood = today <= 0
+        // 正在运行的功能优先于字数状态：写作/AI 思考/完成/出错 时显示对应帧
+        const activityMood = moodForPetActivity(getActivePetActivity());
+        const nextMood: PetMood = activityMood ?? (today <= 0
             ? 'sleep'
-            : (target > 0 && today >= target ? 'happy' : 'idle');
+            : (target > 0 && today >= target ? 'happy' : 'idle'));
         this.setMood(nextMood);
 
         if (this.card) this.renderCard(summary, target, ratio);
@@ -411,6 +458,7 @@ export class WritingPet {
             clearTimeout(this.pulseTimer);
             this.pulseTimer = null;
         }
+        this.disposeActivities();
         this.disposeDragListeners();
         this.root?.remove();
         this.root = null;
@@ -437,9 +485,7 @@ export class WritingPet {
         this.root.removeClass('nw-is-idle', 'nw-is-happy', 'nw-is-sleep', 'nw-is-writing', 'nw-is-thinking', 'nw-is-error');
         this.root.setAttribute('data-pet-state', mood);
         this.root.addClass(`nw-is-${mood}`);
-        this.frameIndex = 0;
         this.applyFrame();
-        this.restartFrameAnimation();
         this.applyFrame();
     }
 

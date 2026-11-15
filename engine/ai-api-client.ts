@@ -38,6 +38,7 @@ import {
 } from '@/shared/api-format';
 import { createLogger } from '@/shared/logger';
 import { resolveProviderApiKey } from '@/shared/ai-credentials';
+import { clearPetActivity, markPetActivity } from '@/shared/pet-activity';
 import { requestJson } from '@/shared/http-transport';
 import {
     AIAuthError,
@@ -463,7 +464,15 @@ export class AIApiClient {
         options?: { isWritingTask?: boolean; signal?: AbortSignal; endpoint?: string; apiKey?: string; disableFallback?: boolean; bypassCache?: boolean; allowKeyPrompt?: boolean; numCtx?: number; thinkingMode?: ThinkingMode; thinkingBudget?: number }
     ): Promise<APIResponse> {
         const startedAt = Date.now();
-        const result = await this.callAIInternal(systemPrompt, userPrompt, model, temperature, maxTokens, options);
+        // 桌宠：识别「正在跑什么功能」——写作任务 vs 分析/思考任务
+        const petKind = options?.isWritingTask ? 'writing' : 'thinking';
+        markPetActivity(petKind, 300000);
+        let result: APIResponse;
+        try {
+            result = await this.callAIInternal(systemPrompt, userPrompt, model, temperature, maxTokens, options);
+        } finally {
+            clearPetActivity(petKind);
+        }
         const scope = currentUsageScope();
         // 费用估算：按记录口径的 model 查用户配置单价（fallback 后的实际模型暂不区分），未配置则不计费
         const usageModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';

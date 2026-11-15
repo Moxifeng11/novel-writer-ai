@@ -61,6 +61,7 @@ import { VIEW_TYPE_AGENT_WORKBENCH } from './shared/view-types';
 import { detachPluginLeaves } from './shared/plugin-leaves';
 import { executeObsidianCommand, listObsidianCommands, openPluginSettingsTab } from './shared/obsidian-internal-bridge';
 import { disposeInlineWorkerUrls, getWorkerRuntimeMode, probePluginWorkers } from './shared/plugin-worker-url';
+import { clearPetActivity, markPetActivity } from './shared/pet-activity';
 import { isProjectDirectory } from './shared/project-catalog';
 import { isStoredCiphertext, usableSecret } from './shared/secret-value';
 import { revealLeafCompat } from './shared/workspace-reveal';
@@ -2522,6 +2523,16 @@ export default class NovelWriterPlugin extends Plugin {
      * @returns 是否成功
      */
     async executeCommandAsync(commandId: string, project?: string): Promise<boolean> {
+        // 桌宠：长命令运行期间显示「思考/执行中」，结束后恢复
+        markPetActivity('thinking', 120000);
+        try {
+            return await this.executeCommandAsyncInner(commandId, project);
+        } finally {
+            clearPetActivity('thinking');
+        }
+    }
+
+    private async executeCommandAsyncInner(commandId: string, project?: string): Promise<boolean> {
         // S3-7（安全 r3）：Agent 显式指定目标项目时，执行期间把它作为工作台上下文，
         // 避免命令层回退到「活动文件/界面当前项目」而作用到另一个项目。
         const target = String(project || '').trim();
@@ -2572,6 +2583,8 @@ export default class NovelWriterPlugin extends Plugin {
 
     private handleBodyFileModify(file: TFile): void {
         const path = file.path;
+        // 桌宠：正文被编辑/自动保存 → 「写作中」状态（8 秒 TTL，随编辑持续续期）
+        markPetActivity('writing', 8000);
         this._debounceManager.debounceFixed(`body-modify:${path}`, () => {
             const previous = this._entityRecheckAbort.get(path);
             previous?.abort();
