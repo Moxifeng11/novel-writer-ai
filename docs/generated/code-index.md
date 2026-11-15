@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 145827 | 1935 | 1532 | 79% |
 | `services/` | 49 | 15962 | 239 | 183 | 77% |
-| `shared/` | 222 | 46217 | 1955 | 1549 | 79% |
+| `shared/` | 223 | 46307 | 1958 | 1552 | 79% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106856 | 1034 | 835 | 81% |
@@ -641,6 +641,7 @@
 | `shared/true-random.ts` | 134 | 3 | 3 |
 | `shared/types.ts` | 729 | 48 | 11 |
 | `shared/unit-card-model.ts` | 254 | 11 | 7 |
+| `shared/unit-context-prompt.ts` | 90 | 3 | 3 |
 | `shared/unload-barrier.ts` | 72 | 1 | 0 |
 | `shared/untrusted-content.ts` | 39 | 1 | 1 |
 | `shared/validators/normalizers-entity.ts` | 232 | 5 | 5 |
