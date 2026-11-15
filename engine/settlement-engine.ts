@@ -10,6 +10,10 @@
  */
 
 import { TFile, TFolder } from 'obsidian';
+import { ProjectIndexService } from '@/services/project-index-service';
+import { WritebackReviewService } from '@/services/writeback-review-service';
+import { WritebackAuditService } from '@/services/writeback-audit-service';
+import { instructionsToWritebackInputs } from '@/shared/report-instructions-adapter';
 import { splitTableCells } from '@/shared/chapter-table';
 import { parseForeshadowRevealState } from '@/shared/foreshadow-status';
 import { getChapterFileName, findChapterFile, getChapterFile , findBodyFileByChapterNum } from './chapter-utils';
@@ -584,6 +588,28 @@ export class SettlementEngine {
             this.settleUnlocked(project, chapDir, chapName, report, bodyText, options));
     }
 
+    /**
+     * 回写审查（M12）：指令 → 名称解析为 ID → 字段/范围校验 → 落盘审查记录。
+     *
+     * 第一阶段只观测，不改变任何写入行为。
+     *
+     * @param project - 项目路径
+     * @param chapName - 章节名
+     * @param instr - 解析出的指令
+     * @returns 完成 Promise
+     */
+    private async reviewWriteback(project: string, chapName: string, instr: Parameters<typeof instructionsToWritebackInputs>[0]): Promise<void> {
+        try {
+            const indexService = new ProjectIndexService(this.app);
+            const reviewer = new WritebackReviewService(indexService);
+            const result = await reviewer.review(project, instructionsToWritebackInputs(instr));
+            await new WritebackAuditService(this.app).record(project, chapName, result);
+            log.info('[SettlementEngine] 回写审查:', result.summary);
+        } catch { // silent-ok: 审查是旁路观测，失败不影响结算
+            // 忽略
+        }
+    }
+
     private async settleUnlocked(
         project: string,
         chapDir: string,
@@ -593,6 +619,8 @@ export class SettlementEngine {
         options?: SettlementOptions
     ): Promise<SettlementResult> {
         const instr = parseReport(report);
+        // M12：回写审查（只观测、不改变写入行为；失败不阻断结算）
+        if (typeof this.reviewWriteback === 'function') void this.reviewWriteback(project, chapName, instr);
         const ctx = createSettleContext(project, chapDir, chapName, bodyText, report, instr, options);
 
         // 空指令集守卫：报告里没有任何 UPDATE_/NEW_/RELATION/GROWTH/EMOTION/DELETE
