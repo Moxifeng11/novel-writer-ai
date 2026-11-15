@@ -39,6 +39,8 @@ export interface SceneLoopBodyResult {
     scenes: number;
     /** 失败场景序号 */
     failedScenes: number[];
+    /** 合并后的正文（未落盘时也返回，供流水线复用） */
+    body: string;
     /** 合并后的正文字符数 */
     chars: number;
     /** 是否全部场景生成成功 */
@@ -78,11 +80,11 @@ export class SceneLoopBodyService {
         const dryRun = options.dryRun !== false;
         const scenePath = await this.deps.findBySuffix(project, `${chapterName}_Scene展开`);
         if (!scenePath) {
-            return { dryRun, scenes: 0, failedScenes: [], chars: 0, completedAll: false, wrote: false, summary: '没有 Scene 展开，无法逐场生成' };
+            return { dryRun, scenes: 0, failedScenes: [], body: '', chars: 0, completedAll: false, wrote: false, summary: '没有 Scene 展开，无法逐场生成' };
         }
         const expansionText = await this.deps.readText(scenePath);
         if (!expansionText.trim()) {
-            return { dryRun, scenes: 0, failedScenes: [], chars: 0, completedAll: false, wrote: false, summary: 'Scene 展开为空' };
+            return { dryRun, scenes: 0, failedScenes: [], body: '', chars: 0, completedAll: false, wrote: false, summary: 'Scene 展开为空' };
         }
 
         const loop = await this.deps.runLoop(expansionText);
@@ -106,6 +108,7 @@ export class SceneLoopBodyService {
             dryRun,
             scenes: loop.scenes.length,
             failedScenes,
+            body,
             chars: body.length,
             completedAll,
             wrote: !dryRun && (completedAll || options.allowPartial === true) && body.trim().length > 0,

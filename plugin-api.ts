@@ -173,6 +173,7 @@ export interface NovelWriterEngineAPI {
     generateChapterBySceneLoop(project: string, chapterName: string, dryRun?: boolean): Promise<{
         dryRun: boolean;
         scenes: number;
+        body: string;
         failedScenes: number[];
         chars: number;
         completedAll: boolean;

@@ -80,6 +80,13 @@ describe('SceneLoopBodyService', () => {
         expect(result.summary).toContain('Scene 展开为空');
     });
 
+    it('返回合并正文（供流水线复用，避免重复读取）', async () => {
+        const { service } = make();
+        const result = await service.generate(PROJECT, '第1章', { dryRun: true });
+        expect(result.body).toContain('场景一正文');
+        expect(result.body).toContain('场景二正文');
+    });
+
     it('合并时跳过相邻重复段', () => {
         const { service } = make();
         expect(service.mergeBodies(['A段', 'A段', 'B段'])).toBe('A段\n\nB段');

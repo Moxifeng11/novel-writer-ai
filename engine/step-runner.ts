@@ -1422,8 +1422,24 @@ ${userPrompt}`),
 
             const abortCtrl = ctx.getAbortController?.() ?? null;
             const aiStartedAt = Date.now();
-            let result: APIResponse;
-            if (stepKey === 'bodyGeneration') {
+            let result: APIResponse | null = null;
+            // A1：正文步逐场场景循环（开关默认关；失败/空结果自动回退整章单次）
+            const useSceneLoop = stepKey === 'bodyGeneration'
+                && this.plugin.settings?.sceneLoopBodyGeneration === true
+                && String(ctx.stepResults['sceneExpand'] ?? '').trim().length > 0
+                && typeof this.plugin.generateChapterBySceneLoop === 'function';
+            if (useSceneLoop) {
+                try {
+                    const outcome = await this.plugin.generateChapterBySceneLoop(ctx.project, ctx.chapterName, false);
+                    if (outcome.body && outcome.body.trim().length > 0) {
+                        result = { content: outcome.body, finishReason: 'stop' };
+                        this.emitDiagnostic('info', 'api', `A1 逐场生成：${outcome.summary}`, stepKey, stepLabel);
+                    }
+                } catch (error) {
+                    log.warn('[StepRunner] A1 逐场生成失败，回退整章单次:', error);
+                }
+            }
+            if (!result && stepKey === 'bodyGeneration') {
                 result = await this.callAIStreamWithRetry(
                     effectiveSystemPrompt,
                     effectiveUserPrompt,
@@ -1437,7 +1453,7 @@ ${userPrompt}`),
                     abortCtrl?.signal ?? undefined,
                     stepThinking,
                 );
-            } else {
+            } else if (!result) {
                 result = await this.callAIWithRetry(
                     effectiveSystemPrompt,
                     effectiveUserPrompt,
@@ -1448,6 +1464,9 @@ ${userPrompt}`),
                     abortCtrl?.signal ?? undefined,
                     stepThinking,
                 );
+            }
+            if (!result) {
+                throw new Error('[StepRunner] AI 未返回结果（场景循环与单次调用均未产出）');
             }
 
             this.emitDiagnostic('info', 'api', `AI 返回：finishReason=${result.finishReason || 'unknown'}，输出 ${(result.content || '').length} 字，耗时 ${Date.now() - aiStartedAt}ms`, stepKey, stepLabel, {

@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 353 | 146216 | 1941 | 1537 | 79% |
-| `services/` | 63 | 18340 | 284 | 198 | 70% |
+| `engine/` | 353 | 146235 | 1941 | 1537 | 79% |
+| `services/` | 63 | 18343 | 284 | 198 | 70% |
 | `shared/` | 238 | 48261 | 2039 | 1602 | 79% |
-| `core/` | 7 | 3009 | 35 | 20 | 57% |
+| `core/` | 7 | 3010 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 276 | 107013 | 1035 | 836 | 81% |
+| `ui/` | 276 | 107022 | 1035 | 836 | 81% |
 
 ## 文件清单
 
@@ -22,7 +22,7 @@
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 550 | 4 | 2 |
-| `core/settings-service.ts` | 578 | 5 | 4 |
+| `core/settings-service.ts` | 579 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
@@ -353,7 +353,7 @@
 | `engine/step-result-saver.ts` | 574 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 227 | 6 | 5 |
-| `engine/step-runner.ts` | 2361 | 2 | 1 |
+| `engine/step-runner.ts` | 2380 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 220 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |
@@ -438,7 +438,7 @@
 | `services/rules-registry.ts` | 146 | 7 | 5 |
 | `services/rules-service.ts` | 280 | 3 | 2 |
 | `services/scene-context-service.ts` | 126 | 2 | 1 |
-| `services/scene-loop-body-service.ts` | 198 | 3 | 1 |
+| `services/scene-loop-body-service.ts` | 201 | 3 | 1 |
 | `services/scene-retrieval-service.ts` | 157 | 4 | 1 |
 | `services/session-preset-service.ts` | 94 | 2 | 1 |
 | `services/skill-service.ts` | 74 | 1 | 1 |
@@ -908,7 +908,7 @@
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
 | `ui/settings/section-factory.ts` | 92 | 4 | 2 |
-| `ui/settings/writing-sections.ts` | 839 | 6 | 6 |
+| `ui/settings/writing-sections.ts` | 848 | 6 | 6 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 402 | 1 | 1 |
 | `ui/step-result-viewer-modal.ts` | 442 | 1 | 1 |

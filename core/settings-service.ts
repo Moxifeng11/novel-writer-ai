@@ -441,6 +441,7 @@ export function getDefaultSettings(): NovelWriterSettings {
     coWriteContextDelta: false,
     coWriteStructuredConstraints: false,
     bodySceneContextStrict: false,
+    sceneLoopBodyGeneration: false,
     settlementStrictWrites: false,
         coWriteMaxTokens: 600,
         coWriteNumCtx: 0,

@@ -455,6 +455,15 @@ export class WritingSection extends SettingsSection {
                     await this.plugin.saveSettings();
                 }));
         new Setting(section)
+            .setName('逐场生成正文（实验）')
+            .setDesc('开启后，正文步按 Scene 展开逐场生成再合并（失败场景不落盘、可回退）；关闭时整章一次性生成')
+            .addToggle((toggle) => toggle
+                .setValue(this.plugin.settings.sceneLoopBodyGeneration === true)
+                .onChange(async (value) => {
+                    this.plugin.settings.sceneLoopBodyGeneration = value;
+                    await this.plugin.saveSettings();
+                }));
+        new Setting(section)
             .setName('结算写入校验（实验）')
             .setDesc('开启后，结算前会剔除字段值为空、缺名称、伏笔状态非法的指令并记录日志；关闭时按解析结果直接写入')
             .addToggle((toggle) => toggle
