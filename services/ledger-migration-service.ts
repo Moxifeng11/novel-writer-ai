@@ -8,7 +8,6 @@
 
 import { App, TFile, TFolder } from 'obsidian';
 import { createLogger } from '@/shared/logger';
-import { pjControlDir } from '@/shared/paths';
 import { assignLedgerIds, planLedgerMigration, type LedgerMigrationPlan } from '@/shared/ledger-migration-model';
 import type { ForeshadowCard, TimelineEventCard } from '@/shared/ledger-card-model';
 
@@ -106,7 +105,7 @@ export class LedgerMigrationService {
             [this.foreshadowPath(project), assigned.derived.foreshadow],
         ] as const) {
             if (!derived) continue;
-            const backup = `${pjControlDir(project)}/../_versions/migration/${stamp}/${original.split('/').pop() ?? 'ledger.md'}`;
+            const backup = `${project}/_versions/migration/${stamp}/${original.split('/').pop() ?? 'ledger.md'}`;
             try {
                 const text = await this.readText(original);
                 if (text) {
