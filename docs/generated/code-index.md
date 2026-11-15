@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 145827 | 1935 | 1532 | 79% |
 | `services/` | 46 | 15679 | 232 | 179 | 77% |
-| `shared/` | 217 | 45392 | 1921 | 1529 | 80% |
+| `shared/` | 218 | 45492 | 1924 | 1531 | 80% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106837 | 1034 | 835 | 81% |
@@ -595,6 +595,7 @@
 | `shared/scene-anchor-model.ts` | 140 | 6 | 5 |
 | `shared/scene-body-merge.ts` | 24 | 2 | 2 |
 | `shared/scene-card.ts` | 241 | 9 | 8 |
+| `shared/scene-context-prompt.ts` | 100 | 3 | 2 |
 | `shared/secret-display.ts` | 144 | 8 | 5 |
 | `shared/secret-redaction.ts` | 156 | 6 | 5 |
 | `shared/secret-value.ts` | 31 | 2 | 2 |
