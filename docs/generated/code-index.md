@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 352 | 145752 | 1934 | 1531 | 79% |
-| `services/` | 43 | 15236 | 226 | 175 | 77% |
+| `services/` | 43 | 15257 | 227 | 176 | 78% |
 | `shared/` | 213 | 44566 | 1874 | 1498 | 80% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
@@ -409,7 +409,7 @@
 | `services/knowledge-base-manager.ts` | 1584 | 6 | 4 |
 | `services/knowledge-original-chunker.ts` | 119 | 3 | 3 |
 | `services/local-model-probe.ts` | 185 | 6 | 5 |
-| `services/memory-graph-service.ts` | 224 | 1 | 1 |
+| `services/memory-graph-service.ts` | 245 | 2 | 2 |
 | `services/model-discovery.ts` | 279 | 5 | 5 |
 | `services/performance-monitor.ts` | 819 | 9 | 9 |
 | `services/plan-spec-service.ts` | 147 | 3 | 2 |

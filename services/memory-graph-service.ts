@@ -33,7 +33,7 @@ import { applyMemoryPatch, validateMemoryPatch } from '@/domains/memory/patch';
 
 const log = createLogger('MemoryGraph');
 
-/** 索引类别 → 实体类型（只映射设定类条目） */
+/** 索引类别 → 实体类型（entry.type 缺失时的兜底） */
 const KIND_TO_TYPE: Partial<Record<ProjectIndexEntry['kind'], MemoryEntityType>> = {
     character: 'character',
     location: 'location',
@@ -41,6 +41,27 @@ const KIND_TO_TYPE: Partial<Record<ProjectIndexEntry['kind'], MemoryEntityType>>
     item: 'item',
     setting: 'setting',
 };
+
+/** 要素类型 → 设定图卡片类型（只收设定类） */
+const ENTITY_TO_CARD: Partial<Record<NonNullable<ProjectIndexEntry['type']>, MemoryEntityType>> = {
+    character: 'character',
+    location: 'location',
+    faction: 'faction',
+    item: 'item',
+    setting: 'setting',
+    worldview: 'setting',
+};
+
+/**
+ * 解析条目应生成的卡片类型（frontmatter.type 优先，路径类别兜底）。
+ *
+ * @param entry - 索引条目
+ * @returns 卡片类型；非设定类返回 null
+ */
+export function cardTypeOf(entry: ProjectIndexEntry): MemoryEntityType | null {
+    if (entry.type) return ENTITY_TO_CARD[entry.type] ?? null;
+    return KIND_TO_TYPE[entry.kind] ?? null;
+}
 
 /**
  * 设定实体图服务。
@@ -66,7 +87,7 @@ export class MemoryGraphService {
         const index = await this.indexService.ensure(project);
         const cards: MemoryCard[] = [];
         for (const entry of index.entries) {
-            const type = KIND_TO_TYPE[entry.kind];
+            const type = cardTypeOf(entry);
             if (!type) continue;
             cards.push(buildCard({ path: entry.path, name: entry.name }, type, await this.readSummary(entry.path)));
         }
