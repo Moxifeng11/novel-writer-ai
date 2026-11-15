@@ -6,18 +6,18 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 353 | 146389 | 1941 | 1537 | 79% |
+| `engine/` | 353 | 146442 | 1943 | 1538 | 79% |
 | `services/` | 65 | 18925 | 291 | 200 | 69% |
-| `shared/` | 244 | 48860 | 2063 | 1620 | 79% |
-| `core/` | 7 | 3029 | 35 | 20 | 57% |
+| `shared/` | 247 | 49341 | 2080 | 1631 | 78% |
+| `core/` | 7 | 3032 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 277 | 107490 | 1040 | 840 | 81% |
+| `ui/` | 280 | 108254 | 1046 | 846 | 81% |
 
 ## 文件清单
 
 | 文件 | 行数 | 导出 | 有 JSDoc |
 |---|---:|---:|---:|
-| `core/command-registry.ts` | 805 | 9 | 5 |
+| `core/command-registry.ts` | 808 | 9 | 5 |
 | `core/crypto-service.ts` | 413 | 5 | 3 |
 | `core/example-project-service.ts` | 331 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
@@ -54,7 +54,7 @@
 | `engine/agent/harness/host-tools.ts` | 1041 | 5 | 5 |
 | `engine/agent/harness/mcp-client.ts` | 164 | 6 | 3 |
 | `engine/agent/harness/mcp-http-transport.ts` | 61 | 1 | 1 |
-| `engine/agent/harness/mcp-manager.ts` | 87 | 5 | 3 |
+| `engine/agent/harness/mcp-manager.ts` | 140 | 7 | 4 |
 | `engine/agent/harness/mcp-stdio-transport.ts` | 135 | 2 | 2 |
 | `engine/agent/harness/mcp-tools.ts` | 81 | 3 | 3 |
 | `engine/agent/harness/p2-tools.ts` | 176 | 2 | 1 |
@@ -484,7 +484,7 @@
 | `shared/character-rules.ts` | 180 | 10 | 6 |
 | `shared/clipboard.ts` | 40 | 1 | 1 |
 | `shared/co-writer-types.ts` | 113 | 0 | 0 |
-| `shared/command-ids.ts` | 131 | 2 | 2 |
+| `shared/command-ids.ts` | 133 | 2 | 2 |
 | `shared/command-mode-rules.ts` | 143 | 8 | 5 |
 | `shared/command-ui-port.ts` | 48 | 4 | 2 |
 | `shared/constraint-block-model.ts` | 109 | 7 | 3 |
@@ -564,6 +564,9 @@
 | `shared/logger.ts` | 101 | 5 | 5 |
 | `shared/lru-cache.ts` | 221 | 2 | 2 |
 | `shared/mcp-config.ts` | 125 | 9 | 5 |
+| `shared/mcp-example-server.ts` | 123 | 2 | 1 |
+| `shared/mcp-file-browse.ts` | 183 | 7 | 5 |
+| `shared/mcp-launch.ts` | 173 | 8 | 5 |
 | `shared/memory-rank.ts` | 104 | 4 | 4 |
 | `shared/mode-content.ts` | 448 | 19 | 19 |
 | `shared/mode-unit-outline.ts` | 87 | 2 | 2 |
@@ -753,7 +756,7 @@
 | `ui/co-writing/suggestion-flow.ts` | 475 | 3 | 2 |
 | `ui/co-writing/suggestion-loading.ts` | 130 | 4 | 2 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
-| `ui/command-ui-executor.ts` | 702 | 2 | 2 |
+| `ui/command-ui-executor.ts` | 708 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 105 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
 | `ui/components/categorization-review-panel.ts` | 449 | 2 | 2 |
@@ -857,6 +860,9 @@
 | `ui/knowledge-monitor-modal.ts` | 500 | 1 | 1 |
 | `ui/knowledge-rebuild-action.ts` | 48 | 1 | 1 |
 | `ui/manage-providers-modal.ts` | 640 | 1 | 1 |
+| `ui/mcp-file-picker-modal.ts` | 174 | 2 | 2 |
+| `ui/mcp-manager-modal.ts` | 315 | 1 | 1 |
+| `ui/mcp-server-form-modal.ts` | 322 | 3 | 3 |
 | `ui/memory-preview.ts` | 158 | 2 | 1 |
 | `ui/metrics-format.ts` | 103 | 6 | 4 |
 | `ui/mini-settings-modal.ts` | 107 | 1 | 0 |
@@ -903,7 +909,7 @@
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 473 | 6 | 5 |
-| `ui/settings-tab.ts` | 401 | 1 | 1 |
+| `ui/settings-tab.ts` | 405 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 39 | 1 | 1 |
 | `ui/settings/api-section.ts` | 1281 | 1 | 1 |
@@ -912,7 +918,7 @@
 | `ui/settings/foreshadow-section.ts` | 290 | 1 | 1 |
 | `ui/settings/general-sections.ts` | 1209 | 5 | 5 |
 | `ui/settings/knowledge-section.ts` | 797 | 1 | 1 |
-| `ui/settings/mcp-section.ts` | 133 | 1 | 1 |
+| `ui/settings/mcp-section.ts` | 76 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
 | `ui/settings/section-factory.ts` | 94 | 4 | 2 |

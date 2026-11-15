@@ -97,6 +97,7 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     { id: CommandIds.SCRIPT_OUTLINE, name: '剧本分集大纲', group: CommandGroup.ProjectManagement, description: '编辑当前剧本的分集大纲' },
     { id: CommandIds.SCRIPT_STORYBOARD, name: '剧本分镜表', group: CommandGroup.ProjectManagement, description: '编辑当前剧本的分镜表' },
     { id: CommandIds.IMPORT_EXAMPLE, name: '导入示例项目', group: CommandGroup.ProjectManagement, description: '一键创建含 1 卷 3 章、人物与伏笔的示例项目' },
+    { id: CommandIds.MCP_MANAGER, name: '🔌 MCP 服务管理', group: CommandGroup.Tools, description: '接入本机 MCP 程序/HTTP 端点，测试连接并查看工具清单' },
     { id: CommandIds.RENAME_PROJECT, name: '重命名当前项目', group: CommandGroup.ProjectManagement, description: '重命名当前活动项目' },
     { id: CommandIds.PLAN_BOOK, name: 'AI全书规划', group: CommandGroup.ProjectManagement, description: '使用 AI 进行全书规划' },
     { id: CommandIds.VOLUME_INTRO, name: '全书简介', group: CommandGroup.ProjectManagement, description: '查看和编辑全书简介' },
@@ -412,6 +413,7 @@ export class CommandRegistry {
         r.register(CommandIds.MIGRATE_LEDGER_CARDS, async () => { await runLedgerMigrationCommand(this.deps); });
         r.register(CommandIds.CONTEXT_METRICS, async () => { await runContextMetricsCommand(this.deps); });
         r.register(CommandIds.REBUILD_UNIT_OUTLINE, async () => { await runRebuildUnitOutlineCommand(this.deps); });
+        r.register(CommandIds.MCP_MANAGER, async () => { await this.ui.executeCommand(CommandIds.MCP_MANAGER); });
         r.register(CommandIds.IMPORT_EXAMPLE, async () => {
             const { created, project } = await importExampleProject(this.deps.app);
             new Notice(
@@ -560,6 +562,7 @@ export class CommandRegistry {
         addCommand({ id: CommandIds.USAGE_LEDGER, name: '💰 AI 用量账本', callback: exec(CommandIds.USAGE_LEDGER) });
         addCommand({ id: CommandIds.BACKUP_CENTER, name: '🗂 版本与备份中心', callback: exec(CommandIds.BACKUP_CENTER) });
         addCommand({ id: CommandIds.OPEN_ONBOARDING, name: '🚀 首启引导（3 分钟）', callback: exec(CommandIds.OPEN_ONBOARDING) });
+        addCommand({ id: CommandIds.MCP_MANAGER, name: '🔌 MCP 服务管理', callback: exec(CommandIds.MCP_MANAGER) });
         addCommand({ id: CommandIds.FULL_WRITER, name: '📖 项目与章节（流程工作台）', callback: exec(CommandIds.FULL_WRITER) });
         addCommand({ id: CommandIds.CREATION_FLOW, name: '🧭 创作流程（当前项目）', callback: exec(CommandIds.CREATION_FLOW) });
         addCommand({ id: CommandIds.MIGRATE_ENTITY_LINKS, name: '🔗 实体链接迁移（存量关系图谱化）', callback: exec(CommandIds.MIGRATE_ENTITY_LINKS) });

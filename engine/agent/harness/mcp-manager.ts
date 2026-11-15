@@ -11,7 +11,7 @@ import { McpClient } from './mcp-client';
 import { createStdioTransport } from './mcp-stdio-transport';
 import { createHttpTransport } from './mcp-http-transport';
 import { bridgeMcpServer } from './mcp-tools';
-import { normalizeMcpServers, type McpServerConfig } from '@/shared/mcp-config';
+import { normalizeMcpServer, normalizeMcpServers, type McpServerConfig } from '@/shared/mcp-config';
 
 const log = createLogger('McpManager');
 
@@ -52,6 +52,59 @@ export async function connectMcpServers(servers: unknown): Promise<McpConnectRes
         }
     }
     return { tools, failures, clients };
+}
+
+/** 探测结果 */
+export interface McpProbeResult {
+    ok: boolean;
+    /** 工具清单（连接成功时） */
+    tools: Array<{ name: string; description: string }>;
+    /** 失败原因（连接失败时） */
+    error?: string;
+    /** 耗时（毫秒） */
+    durationMs: number;
+}
+
+/**
+ * 探测单个 MCP 服务：连接 → 拉工具清单 → 关闭。
+ *
+ * 设置页「测试连接」用；不抛错，失败原因放在返回值里（含子进程报错文本）。
+ *
+ * @param raw - 服务配置（会先规范化）
+ * @returns 探测结果
+ */
+export async function probeMcpServer(raw: unknown): Promise<McpProbeResult> {
+    const startedAt = Date.now();
+    const config = normalizeMcpServer(raw);
+    if (!config) {
+        return { ok: false, tools: [], error: '配置不完整（stdio 需要命令；http 需要 http(s) URL）', durationMs: 0 };
+    }
+    let client: McpClient | null = null;
+    try {
+        const transport = config.transport === 'http'
+            ? createHttpTransport(config)
+            : createStdioTransport(config);
+        client = new McpClient(config, transport);
+        await client.connect();
+        await client.listTools();
+        const tools = client.getTools().map(tool => ({
+            name: tool.name,
+            description: String(tool.description ?? ''),
+        }));
+        return { ok: true, tools, durationMs: Date.now() - startedAt };
+    } catch (error) {
+        return {
+            ok: false,
+            tools: [],
+            error: error instanceof Error ? error.message : String(error),
+            durationMs: Date.now() - startedAt,
+        };
+    } finally {
+        try {
+            client?.close();
+        } catch { // silent-ok: 探测结束关闭失败不影响结果
+        }
+    }
 }
 
 /**

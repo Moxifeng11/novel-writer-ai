@@ -1,132 +1,75 @@
 /**
  * mcp-section.ts — 设置页「MCP 服务」
  *
- * 维护服务列表（id/名称/传输/命令或 URL/动作分类），会话启动时自动连接并桥接工具。
- * 新建服务 = 在下方表单填写并保存；也支持一键生成最小 MCP server 模板说明。
+ * 这里只做概览与入口（列表 + 状态 + 打开管理中心），具体增删改测都在
+ * `ui/mcp-manager-modal.ts`：一个面板管理全部服务，避免设置页越堆越长。
  */
 
-import { Setting } from 'obsidian';
+import { Platform, Setting } from 'obsidian';
 import { SettingsSection } from './section-base';
-import { describeMcpServer, normalizeMcpServer, type McpServerConfig } from '@/shared/mcp-config';
-import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
+import { describeMcpServer, normalizeMcpServers } from '@/shared/mcp-config';
+import { McpManagerModal } from '@/ui/mcp-manager-modal';
+import { showErrorNotice } from '@/ui/components/notice-helpers';
 
 /**
- * McpSection 类。
+ * MCP 服务设置分区。
  */
 export class McpSection extends SettingsSection {
     /**
      * 渲染。
+     *
      * @param container - 容器元素
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
         section.createEl('h3', { text: '🔌 MCP 服务' });
         section.createEl('p', {
-            text: '接入外部 MCP 服务：本地进程（stdio）或 HTTP 端点。会话启动时连接，工具以 mcp__<服务>__<工具> 形式提供给 Agent。',
+            text: '接入外部 MCP 服务：本地程序（stdio 子进程）或 HTTP 端点。连接后工具以 mcp__<服务ID>__<工具> 提供给 Agent 调用。'
+                + '在管理面板里可以选本机程序文件、测试连接、查看工具清单，也可一键生成示例服务验证链路。',
             cls: 'nw-u-c-text-muted-2 nw-u-fs-13px-2 nw-u-marginbottom-16px-2',
         });
 
-        const list = this.plugin.settings.mcpServers ?? [];
+        const list = normalizeMcpServers(this.plugin.settings.mcpServers);
         if (list.length === 0) {
-            section.createEl('p', { text: '还没有配置 MCP 服务。', cls: 'setting-item-description' });
+            section.createEl('p', {
+                text: '还没有配置 MCP 服务。点下面「打开管理中心」→「生成示例服务」即可先跑通一个。',
+                cls: 'setting-item-description',
+            });
         }
         for (const server of list) {
             new Setting(section)
                 .setName(server.name || server.id)
-                .setDesc(describeMcpServer(server))
-                .addToggle(toggle => toggle
-                    .setValue(server.enabled !== false)
-                    .onChange(async (value) => {
-                        const target = (this.plugin.settings.mcpServers ?? []).find(item => item.id === server.id);
-                        if (target) target.enabled = value;
-                        await this.plugin.saveSettings();
-                    }))
+                .setDesc(`${describeMcpServer(server)}${server.enabled === false ? ' · 已停用' : ''}`)
                 .addButton(button => button
-                    .setButtonText('删除')
-                    .setWarning()
-                    .onClick(async () => {
-                        this.plugin.settings.mcpServers = (this.plugin.settings.mcpServers ?? [])
-                            .filter(item => item.id !== server.id);
-                        await this.plugin.saveSettings();
-                        this.refresh();
-                    }));
+                    .setButtonText('管理')
+                    .onClick(() => this.openManager()));
         }
 
-        section.createEl('h4', { text: '新增服务' });
-        const form = { id: '', name: '', transport: 'stdio' as 'stdio' | 'http', command: '', args: '', url: '', kind: 'admin' as 'read' | 'write-setting' | 'write-prose' | 'admin' };
-
         new Setting(section)
-            .setName('服务 ID')
-            .setDesc('工具名前缀，仅字母/数字/下划线/短横线')
-            .addText(text => text.setPlaceholder('my-mcp').onChange(value => { form.id = value.trim(); }));
-
-        new Setting(section)
-            .setName('显示名')
-            .addText(text => text.setPlaceholder('我的 MCP').onChange(value => { form.name = value.trim(); }));
-
-        new Setting(section)
-            .setName('传输')
-            .addDropdown(dropdown => dropdown
-                .addOption('stdio', '本地进程（stdio）')
-                .addOption('http', 'HTTP 端点')
-                .setValue('stdio')
-                .onChange(value => { form.transport = value === 'http' ? 'http' : 'stdio'; }));
-
-        new Setting(section)
-            .setName('命令（stdio）')
-            .setDesc('如 node / npx / python')
-            .addText(text => text.setPlaceholder('node').onChange(value => { form.command = value.trim(); }));
-
-        new Setting(section)
-            .setName('参数（stdio）')
-            .setDesc('空格分隔，如 server.js --port 3000')
-            .addText(text => text.setPlaceholder('server.js').onChange(value => { form.args = value; }));
-
-        new Setting(section)
-            .setName('URL（http）')
-            .addText(text => text.setPlaceholder('http://localhost:3000/mcp').onChange(value => { form.url = value.trim(); }));
-
-        new Setting(section)
-            .setName('动作分类')
-            .setDesc('该服务工具默认归为哪类；影响只读模式是否拦截')
-            .addDropdown(dropdown => dropdown
-                .addOption('admin', '管理（默认）')
-                .addOption('read', '只读')
-                .addOption('write-setting', '写设定')
-                .addOption('write-prose', '写正文')
-                .setValue('admin')
-                .onChange(value => { form.kind = value as typeof form.kind; }));
-
-        new Setting(section)
-            .setName('保存服务')
+            .setName('MCP 管理中心')
+            .setDesc('新增 / 编辑 / 删除服务、选择本机程序、测试连接、查看工具清单、生成示例服务')
             .addButton(button => button
-                .setButtonText('添加')
+                .setButtonText('打开管理中心')
                 .setCta()
-                .onClick(async () => {
-                    const args = form.args.trim() ? form.args.trim().split(/\s+/) : [];
-                    const config: McpServerConfig | null = normalizeMcpServer({
-                        id: form.id,
-                        name: form.name || form.id,
-                        transport: form.transport,
-                        command: form.command,
-                        args,
-                        url: form.url,
-                        kind: form.kind,
-                        enabled: true,
-                    });
-                    if (!config) {
-                        showErrorNotice('配置不完整或 ID 非法（stdio 需要命令；http 需要 http(s) URL）', { timeout: 6000 });
-                        return;
+                .onClick(() => this.openManager()));
+
+        new Setting(section)
+            .setName('移动端说明')
+            .setDesc('stdio 服务依赖本地子进程，仅在桌面端可用；移动端请使用 HTTP 端点服务。')
+            .addButton(button => button
+                .setButtonText('检查当前环境')
+                .onClick(() => {
+                    // 用公开的 Platform.isMobile（不读 app 内部字段，避免依赖私有结构）
+                    if (Platform.isMobile) {
+                        showErrorNotice('当前是移动端：stdio 服务不可用，请改用 HTTP 端点', { timeout: 8000 });
+                    } else {
+                        showErrorNotice('当前是桌面端：可使用 stdio 本地程序服务');
                     }
-                    const current = this.plugin.settings.mcpServers ?? [];
-                    if (current.some(item => item.id === config.id)) {
-                        showErrorNotice(`服务 ID「${config.id}」已存在`, { timeout: 5000 });
-                        return;
-                    }
-                    this.plugin.settings.mcpServers = [...current, config];
-                    await this.plugin.saveSettings();
-                    showSuccessNotice(`已添加 MCP 服务「${config.name}」；重新打开 Agent 工作台生效`, { timeout: 6000 });
-                    this.refresh();
                 }));
+    }
+
+    /** 打开管理中心 */
+    private openManager(): void {
+        new McpManagerModal(this.plugin).open();
     }
 }

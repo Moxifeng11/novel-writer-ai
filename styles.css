@@ -16335,6 +16335,76 @@ body.nw-panel-resizing .nw-awb-center iframe {
     opacity: 0;
     pointer-events: none;
 }
+
+/* ── MCP 服务管理（设置页 / 管理面板 / 文件选择器） ── */
+.nw-mcp-server-card {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.nw-mcp-server-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.nw-mcp-server-name {
+  font-weight: 600;
+}
+.nw-mcp-status-badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--background-modifier-border);
+}
+.nw-mcp-server-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.nw-mcp-tool-list {
+  margin: 6px 0 0 18px;
+}
+.nw-mcp-probe-result,
+.nw-mcp-manager-body {
+  margin-top: 8px;
+}
+.nw-mcp-file-list {
+  margin-top: 8px;
+}
+.nw-mcp-file-jumps {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.nw-mcp-file-rows {
+  max-height: 46vh;
+  overflow: auto;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 6px;
+}
+.nw-mcp-file-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 4px;
+}
+.nw-mcp-file-row-btn {
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: none;
+  padding: 2px 0;
+}
+.nw-mcp-file-row.is-dir .nw-mcp-file-row-btn {
+  font-weight: 600;
+}
 /* ==========================================================================
    16-writing-stats-pet.css — 写作统计弹窗 + 桌面宠物
    令牌全部取自三层配色（--nw-app-bg / --nw-card-bg / --nw-accent / --nw-text-*），

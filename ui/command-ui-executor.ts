@@ -278,6 +278,12 @@ export class CommandUiExecutor implements CommandUiPort {
             case CommandIds.PROJECT_SIDE_PANEL:
                 void plugin.openProjectSidePanel();
                 return true;
+            case CommandIds.MCP_MANAGER: {
+                // 动态 import：管理面板只在用户点开时加载，不占启动路径
+                const { McpManagerModal } = await import('@/ui/mcp-manager-modal');
+                new McpManagerModal(plugin).open();
+                return true;
+            }
             case CommandIds.GENERATE_BASES:
                 void this.runGenerateBases(resolveProject());
                 return true;

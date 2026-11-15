@@ -6,10 +6,10 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 30 | 30 | 100% | 50 | 50 | 100% | 0 |
 | `domains/` | 15 | 85 | 85 | 100% | 1 | 1 | 100% | 0 |
-| `engine/` | 336 | 1915 | 1914 | 100% | 1252 | 1252 | 100% | 0 |
+| `engine/` | 336 | 1917 | 1916 | 100% | 1252 | 1252 | 100% | 0 |
 | `services/` | 65 | 290 | 290 | 100% | 306 | 306 | 100% | 0 |
-| `shared/` | 242 | 2067 | 2066 | 100% | 159 | 159 | 100% | 0 |
-| `ui/` | 275 | 1030 | 1030 | 100% | 663 | 662 | 100% | 0 |
+| `shared/` | 245 | 2084 | 2083 | 100% | 159 | 159 | 100% | 0 |
+| `ui/` | 278 | 1036 | 1036 | 100% | 669 | 668 | 100% | 0 |
 
 ## 缺口最大的文件（按未注释导出数）
 
@@ -33,7 +33,7 @@
 | `engine/agent/harness/host-tools.ts` | 5 | 0 | 0 | 0 |
 | `engine/agent/harness/mcp-client.ts` | 6 | 0 | 5 | 0 |
 | `engine/agent/harness/mcp-http-transport.ts` | 1 | 0 | 0 | 0 |
-| `engine/agent/harness/mcp-manager.ts` | 4 | 0 | 0 | 0 |
+| `engine/agent/harness/mcp-manager.ts` | 6 | 0 | 0 | 0 |
 | `engine/agent/harness/mcp-stdio-transport.ts` | 2 | 0 | 0 | 0 |
 | `engine/agent/harness/mcp-tools.ts` | 3 | 0 | 0 | 0 |
 | `engine/agent/harness/p2-tools.ts` | 2 | 0 | 0 | 0 |

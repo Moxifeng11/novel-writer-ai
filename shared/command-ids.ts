@@ -117,6 +117,8 @@ export const CommandIds = {
     // ─── 设置 / 引导 ───
     OPEN_SETTINGS: 'novel-writer-open-settings',
     OPEN_ONBOARDING: 'novel-writer-onboarding',
+    /** 打开 MCP 服务管理中心 */
+    MCP_MANAGER: 'novel-writer-mcp-manager',
 
     // ─── 内部调试命令（不暴露到 Obsidian 命令面板） ───
     CLEAR_WORLDVIEW_CACHE: 'clear-worldview-cache',

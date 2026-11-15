@@ -21,6 +21,7 @@ import NovelWriterPlugin, { DEFAULT_SETTINGS } from '@/main';
 import type { SettingsSectionHost } from './settings/section-base';
 import { ApiSection } from './settings/api-section';
 import { SetupSection } from './settings/setup-section';
+import { McpSection } from './settings/mcp-section';
 import { KnowledgeSection } from './settings/knowledge-section';
 import { FingerprintSection } from './settings/fingerprint-section';
 import { DeconstructionSection } from './settings/deconstruction-section';
@@ -83,6 +84,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
     private recognition: RecognitionSection;
     private suggestions: SuggestionsSection;
     private agentBackend: AgentBackendSection;
+    private mcp: McpSection;
 
     constructor(app: App, plugin: NovelWriterPlugin) {
         super(app, plugin);
@@ -113,6 +115,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         this.recognition = new RecognitionSection(host);
         this.suggestions = new SuggestionsSection(host);
         this.agentBackend = new AgentBackendSection(host);
+        this.mcp = new McpSection(host);
     }
 
     /** 分区回调：设置项变更后清缓存并重绘当前 tab */
@@ -384,6 +387,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             case 'projects': this.projectLibrary.render(container); break;
             case 'performance': this.performance.render(container); break;
             case 'agent': this.agentBackend.render(container); break;
+            case 'mcp': this.mcp.render(container); break;
             case 'about': this.about.render(container); break;
         }
     }

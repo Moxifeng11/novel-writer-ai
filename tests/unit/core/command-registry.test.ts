@@ -29,6 +29,7 @@ const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.SCRIPT_OUTLINE,
     CommandIds.SCRIPT_STORYBOARD,
     CommandIds.IMPORT_EXAMPLE,
+    CommandIds.MCP_MANAGER,
     CommandIds.PLAN_BOOK,
     CommandIds.VOLUME_INTRO,
     CommandIds.BATCH_CHAPTERS,
