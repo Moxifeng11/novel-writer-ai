@@ -2,6 +2,8 @@ import { FileTxService } from '@/services/file-tx';
 import { App, TFile } from 'obsidian';
 import { buildAssertionConstraintPack, renderAssertionConstraintSection } from '@/services/assertion-context-service';
 import { parseAssertions } from '@/shared/assertion-source-model';
+import { parseEmotionIntensities } from '@/shared/emotion-plan-parse';
+import { detectRhythmDeviations, renderRhythmReport } from '@/shared/rhythm-baseline-model';
 import { renderVoiceSampleSection, selectVoiceSamples } from '@/shared/voice-sample-model';
 import { isChapterSettledText } from '@/shared/chapter-status';
 import { AIEngine, APIResponse } from './ai-engine';
@@ -243,6 +245,7 @@ export class StepRunner {
             loadStoryLinkageTail: (ctx: StepRunCtx, stepKey: string) => this.loadStoryLinkageTail(ctx, stepKey),
             loadSceneContextTail: (ctx: StepRunCtx, stepKey: string) => this.loadSceneContextTail(ctx, stepKey),
             loadAssertionConstraintTail: (ctx: StepRunCtx, stepKey: string) => this.loadAssertionConstraintTail(ctx, stepKey),
+            loadRhythmTail: (ctx: StepRunCtx, stepKey: string) => this.loadRhythmTail(ctx, stepKey),
             compressionMode: this.plugin.settings.contextCompressionMode ?? 'extractive',
             retrieveOverflowContext: (ctx: StepRunCtx, deficit: number, focusTerms: string[]) =>
                 this.retrieveOverflowContext(ctx, deficit, focusTerms),
@@ -320,6 +323,27 @@ export class StepRunner {
      * @param stepKey - 步骤键
      * @returns 段落（空表示无断言，不阻断）
      */
+    /**
+     * 节奏报告尾部（M10）：情绪规划 → 强度曲线 → 基准推导 → 偏离检测。
+     *
+     * @param ctx - 步骤上下文
+     * @param stepKey - 步骤键
+     * @returns 段落（空表示无情绪规划数据，不阻断）
+     */
+    private async loadRhythmTail(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; missing?: boolean }> {
+        void stepKey;
+        const text = String(ctx.stepResults?.['emotionPlan'] ?? '');
+        if (!text.trim()) return { text: '', missing: true };
+        try {
+            const scenes = parseEmotionIntensities(text);
+            if (scenes.length < 2) return { text: '', missing: true };
+            const deviations = detectRhythmDeviations(scenes);
+            return { text: renderRhythmReport(scenes, deviations), missing: false };
+        } catch { // silent-ok: 节奏报告是增强尾部，失败不阻断写作
+            return { text: '', missing: true };
+        }
+    }
+
     private async loadAssertionConstraintTail(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; missing?: boolean }> {
         void stepKey;
         const path = `${ctx.project}/04-项目总控/一致性审核/断言.json`;

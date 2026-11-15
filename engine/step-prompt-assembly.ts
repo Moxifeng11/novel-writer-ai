@@ -78,6 +78,8 @@ export interface StepPromptAssemblyHost {
     loadSceneContextTail?(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; missing?: boolean }>;
     /** 一致性约束尾部（M6：按在场实体筛全部高风险断言、分批注入；缺了不阻断） */
     loadAssertionConstraintTail?(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; missing?: boolean }>;
+    /** 节奏报告尾部（M10：由情绪规划推导基准并检测偏离；缺了不阻断） */
+    loadRhythmTail?(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; missing?: boolean }>;
     /** 上下文压缩模式（默认 extractive） */
     compressionMode?: ContextCompressionMode;
     /** 溢出时的定向补检（只补缺口；返回空串表示无补充） */
@@ -216,6 +218,13 @@ export async function assembleStepPrompt(
             const assertionTail = await host.loadAssertionConstraintTail(ctx, stepKey);
             if (assertionTail.text) {
                 extraTail = [extraTail, assertionTail.text].filter(Boolean).join('\n\n');
+            }
+        }
+        // 节奏报告尾部（M10）：质控/分析步检查平铺/突增/骤降
+        if (host.loadRhythmTail && ['qualityControl', 'analysisReport'].includes(stepKey)) {
+            const rhythmTail = await host.loadRhythmTail(ctx, stepKey);
+            if (rhythmTail.text) {
+                extraTail = [extraTail, rhythmTail.text].filter(Boolean).join('\n\n');
             }
         }
         const effectiveSystemPrompt = systemTail
