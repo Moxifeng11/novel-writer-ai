@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146377 | 1941 | 1537 | 79% |
-| `services/` | 65 | 18902 | 291 | 200 | 69% |
+| `services/` | 65 | 18920 | 291 | 200 | 69% |
 | `shared/` | 242 | 48534 | 2048 | 1610 | 79% |
 | `core/` | 7 | 3029 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
@@ -442,7 +442,7 @@
 | `services/scene-retrieval-service.ts` | 157 | 4 | 1 |
 | `services/session-preset-service.ts` | 94 | 2 | 1 |
 | `services/settlement-journal-store.ts` | 111 | 2 | 1 |
-| `services/setup-readiness-service.ts` | 262 | 5 | 1 |
+| `services/setup-readiness-service.ts` | 280 | 5 | 1 |
 | `services/skill-service.ts` | 74 | 1 | 1 |
 | `services/synopsis-store.ts` | 364 | 5 | 5 |
 | `services/targeted-revision-service.ts` | 189 | 3 | 1 |

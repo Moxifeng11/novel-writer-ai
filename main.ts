@@ -1420,6 +1420,20 @@ export default class NovelWriterPlugin extends Plugin {
                 const index = await indexService.ensure(project);
                 return index.entries.length;
             },
+            workerMode: async () => {
+                const adapter = this.app.vault.adapter;
+                const base = pluginRootDirPath();
+                const exists = async (file: string): Promise<boolean> => {
+                    try {
+                        return await adapter.exists(`${base}/workers/${file}`);
+                    } catch { // silent-ok: 探测失败按无 worker 处理（走降级，不影响功能）
+                        return false;
+                    }
+                };
+                return (await exists('deconstruction-worker.js')) || (await exists('quality-worker.js'))
+                    ? 'worker' as const
+                    : 'main-thread' as const;
+            },
             pendingSettlementCount: async (project: string) => {
                 const engine = this.engineRegistry.get(ENGINE_NAMES.SETTLEMENT_ENGINE);
                 const report = await engine.recoverInterruptedSettlement(project, undefined, true);

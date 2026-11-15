@@ -21,7 +21,7 @@ export type ReadinessStatus = 'ok' | 'warn' | 'missing';
 /** 自检项 */
 export interface ReadinessItem {
     /** 稳定 id（设置页按此挂修复按钮） */
-    id: 'provider' | 'model' | 'templates' | 'projects' | 'folders' | 'index' | 'workspace' | 'settlement';
+    id: 'provider' | 'model' | 'templates' | 'projects' | 'folders' | 'index' | 'workspace' | 'settlement' | 'worker';
     /** 展示名 */
     label: string;
     status: ReadinessStatus;
@@ -57,6 +57,8 @@ export interface ReadinessDeps {
     indexEntryCount(project: string): Promise<number>;
     /** 密钥是否以密文形式存在且当前口令未解锁 */
     secretsLocked?(): boolean;
+    /** 重活运行模式：worker=后台线程；main-thread=目录版未带 workers 时的降级 */
+    workerMode?(): 'worker' | 'main-thread' | Promise<'worker' | 'main-thread'>;
     /** 上次结算遗留的回滚日志章数（无则 0） */
     pendingSettlementCount?(project: string): Promise<number>;
 }
@@ -88,6 +90,7 @@ export class SetupReadinessService {
             this.checkFolders(),
             await this.checkIndex(),
             await this.checkSettlementPending(),
+            await this.checkWorkerMode(),
             this.checkWorkspaceConventions(),
         ];
         const counts: Record<ReadinessStatus, number> = { ok: 0, warn: 0, missing: 0 };
@@ -222,6 +225,21 @@ export class SetupReadinessService {
             status: 'warn',
             detail: `${project}：索引为空（可能刚创建或缺文件）`,
             fix: '点「重建索引」；若仍为 0，检查项目内是否有 作品信息.md / 世界观总览.md',
+        };
+    }
+
+    /** 重活运行模式（社区目录只下发三件套，没有 workers/） */
+    private async checkWorkerMode(): Promise<ReadinessItem> {
+        const mode = (await this.deps.workerMode?.()) ?? 'worker';
+        if (mode === 'worker') {
+            return { id: 'worker', label: '后台线程（Worker）', status: 'ok', detail: '重活（拆解/质检）在后台线程执行', fix: '' };
+        }
+        return {
+            id: 'worker',
+            label: '后台线程（Worker）',
+            status: 'warn',
+            detail: '当前是主线程模式：目录版安装不含 workers/ 目录，重活会占用 UI 线程（功能可用、大文件更吃紧）',
+            fix: '需要后台执行可从仓库/BRAT 安装完整版；主线程模式已自动降级，无需处理',
         };
     }
 
