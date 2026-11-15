@@ -768,6 +768,22 @@ export default class NovelWriterPlugin extends Plugin {
      * UI 的「生成前守卫」必须用它，不能直接看 `settings.apiKey`——本地模型用户本来就无需密钥。
      * @returns 是否成功
      */
+    /**
+     * 启动阶段耗时快照（毫秒）。
+     *
+     * 阶段：beforeInitialize / engineReady / engineFieldsReady / writingStatsReady /
+     * recoverBooksReady / commandsRegistered。用于诊断慢设备「命令面板空白」。
+     *
+     * @returns 各阶段累计耗时
+     * @example
+     * ```ts
+     * plugin.getStartupTimings().commandsRegistered; // 例如 1200
+     * ```
+     */
+    getStartupTimings(): Record<string, number> {
+        return { ...this._startupTimings };
+    }
+
     get hasAiCredentials(): boolean {
         return hasUsableAiCredentials(this.settings);
     }
@@ -853,6 +869,10 @@ export default class NovelWriterPlugin extends Plugin {
      */
     async onload() {
         log.info(`[小说工坊] 开始加载插件 v${PLUGIN_VERSION}...`);
+        const startupBegin = typeof performance !== 'undefined' ? performance.now() : Date.now();
+        const mark = (name: string): void => {
+            this._startupTimings[name] = Math.round((typeof performance !== 'undefined' ? performance.now() : Date.now()) - startupBegin);
+        };
         // v4.76.0：插件数据目录单源。必须先于任何 shared/paths 派生路径调用注入——
         // 用户可改 vault.configDir（如 .config/obsidian），BRAT 安装的文件夹名也可能不同，
         // 业务代码不得再硬编码 `.obsidian/plugins/novel-writer-ai`。
@@ -905,6 +925,7 @@ export default class NovelWriterPlugin extends Plugin {
         }
         try {
             // ─── 引擎注册表初始化（Phase 1-8） ───
+            mark('beforeInitialize');
             await this.engineRegistry.initialize(this, {
                 settingsWriter: this._settingsWriter,
                 // engine 层不 import ui/：口令弹窗与模板管理器由组合根注入
@@ -914,13 +935,16 @@ export default class NovelWriterPlugin extends Plugin {
                 },
                 createTemplateManager: () => new TemplateManager(this.app),
             });
+            mark('engineReady');
             this._assignEngineFields();
             // 参考书籍：设置里的 referenceBookIds → 实例字段镜像。
             // 启动路径只走 SettingsService.loadSettings()，不会调用 plugin.loadSettings()，
             // 不在这里补一次，重启后协同写作的参考书籍与主参考会全部为空。
             this.referenceBookIds = [...(this.settings.referenceBookIds ?? [])];
             // 写作统计 + 桌面宠物 + 状态栏今日字数
+            mark('engineFieldsReady');
             await this._initWritingStats();
+            mark('writingStatsReady');
 
             // R2: 应用用户扩充的 AI 味词表（默认空数组 → 与内置词表行为一致）
             AntiAIDetector.setExtraHighFreqWords(this.settings.antiAiExtraWords ?? []);
@@ -944,6 +968,7 @@ export default class NovelWriterPlugin extends Plugin {
 
             // F1（维度⑤二轮）：模板自举（56 次 exists）与规则副本清理不再挡在
             // 命令/Ribbon/视图注册之前；统一延后到布局就绪 + 1.5s 后台执行。
+            mark('recoverBooksReady');
             this._scheduleStartupMaintenance();
 
             // 初始化提示词管理器
@@ -963,6 +988,7 @@ export default class NovelWriterPlugin extends Plugin {
             const commandRegistry = this.engineRegistry.get(ENGINE_NAMES.COMMAND_REGISTRY);
             commandRegistry.registerObsidianCommands((cmd) => this.addCommand(cmd));
 
+            mark('commandsRegistered');
             log.info('[小说工坊] 注册命令...');
             const registeredCmds = listObsidianCommands(this.app).map(command => command.id).filter((id: string) => id.startsWith('novel-writer'));
             log.info('[小说工坊] 命令注册完成，已注册:', registeredCmds.length, '个命令');
@@ -1167,6 +1193,8 @@ export default class NovelWriterPlugin extends Plugin {
      */
     /** 启动维护（模板自举/规则副本清理）只调度一次 */
     private _startupMaintenanceScheduled = false;
+    /** 启动阶段耗时（毫秒）：用于诊断「命令面板空白」与启动优化成效 */
+    private _startupTimings: Record<string, number> = {};
     /** 启动期状态栏占位（引擎初始化完成即移除；慢设备上避免「插件没加载」的错觉） */
     private _startupStatusEl: HTMLElement | null = null;
 
