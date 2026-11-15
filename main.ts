@@ -89,6 +89,8 @@ import { TargetedRevisionService } from './services/targeted-revision-service';
 import { ConstraintBlockService, createVaultConstraintDeps } from './services/constraint-block-service';
 import { QualityPanelService } from './services/quality-panel-service';
 import { SceneLoopBodyService } from './services/scene-loop-body-service';
+import { SceneRetrievalService } from './services/scene-retrieval-service';
+import type { SceneTask } from './engine/scene-generation-loop';
 import { toQualityRecord } from './shared/quality-panel-model';
 import { getRelationshipFilePath, parseRelationshipFile } from './engine/relationship-engine';
 import { BodyWriter } from './engine/body-writer';
@@ -1610,13 +1612,29 @@ export default class NovelWriterPlugin extends Plugin {
         const engine = new AIEngine(this);
         const model = this.settings.proModel || this.settings.defaultModel;
         const constraints = await this.buildConstraintBlocks(project, chapterName);
-        const generateSceneBody = createSceneBodyGenerator({
+        const index2 = this._projectIndex ??= new ProjectIndexService(this.app);
+        const retrieval = new SceneRetrievalService(this.app, async (name) => {
+            const resolved = await index2.resolve(project, name);
+            const entry = resolved.match;
+            return entry ? (entry.id || entry.path) : null;
+        });
+        let sceneHint = '';
+        const stats: Array<{ scene: number; chars: number; resolvedCount: number; missing: string[]; hinted: boolean }> = [];
+        const baseGenerator = createSceneBodyGenerator({
             projectPath: project,
             model,
-            injectForSceneBody: async () => constraints.section,
-            injectForSceneBodyLayers: async () => ({ system: '', user: constraints.section }),
+            injectForSceneBody: async () => [constraints.section, sceneHint].filter(Boolean).join('\n\n'),
+            injectForSceneBodyLayers: async () => ({ system: '', user: [constraints.section, sceneHint].filter(Boolean).join('\n\n') }),
             callAI: (system, user, targetModel) => engine.callAI(system, user, targetModel, 0.7, undefined, { isWritingTask: true }),
         });
+        const generateSceneBody = async (task: SceneTask, prevEnding: string, directive?: string) => {
+            const info = await retrieval.retrieve(task);
+            sceneHint = info.hint;
+            const response = await baseGenerator(task, prevEnding, directive);
+            stats.push({ scene: info.scene, chars: (response.content || '').length, resolvedCount: info.resolved.length, missing: info.missing, hinted: Boolean(info.hint) });
+            sceneHint = '';
+            return response;
+        };
         const service = SceneLoopBodyService.fromVault(
             this.app,
             (expansionText) => loop.run({
@@ -1631,7 +1649,9 @@ export default class NovelWriterPlugin extends Plugin {
                 await new BodyWriter({ app: this.app }).write({ path: target, raw: body, writingMode: 'pipeline', project: p });
             },
         );
-        return service.generate(project, chapterName, { dryRun });
+        const outcome = await service.generate(project, chapterName, { dryRun });
+        if (stats.length > 0) await retrieval.recordCoverage(project, chapterName, stats);
+        return outcome;
     }
 
     public async runQualityPanel(project: string) {
