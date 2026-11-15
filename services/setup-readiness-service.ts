@@ -55,6 +55,8 @@ export interface ReadinessDeps {
     activeProject(): string;
     /** ProjectIndexService.ensure 读取条目数（失败返回 0） */
     indexEntryCount(project: string): Promise<number>;
+    /** 密钥是否以密文形式存在且当前口令未解锁 */
+    secretsLocked?(): boolean;
     /** 上次结算遗留的回滚日志章数（无则 0） */
     pendingSettlementCount?(project: string): Promise<number>;
 }
@@ -103,12 +105,31 @@ export class SetupReadinessService {
     /** API Key 是否已配置 */
     private checkProvider(): ReadinessItem {
         const ok = this.deps.hasApiKey();
+        if (ok) {
+            return {
+                id: 'provider',
+                label: 'AI 供应商 API Key',
+                status: 'ok',
+                detail: '已配置至少一个供应商的 API Key',
+                fix: '',
+            };
+        }
+        // 密文锁定态：Key 其实存着，但当前会话拿不到明文 → 生成会全部失败
+        if (this.deps.secretsLocked?.()) {
+            return {
+                id: 'provider',
+                label: 'AI 供应商 API Key',
+                status: 'missing',
+                detail: '密钥已加密保存，但当前口令未解锁（此时调用 AI 会全部失败）',
+                fix: '在设置 → API 配置输入口令解锁，或重新填写 API Key',
+            };
+        }
         return {
             id: 'provider',
             label: 'AI 供应商 API Key',
-            status: ok ? 'ok' : 'missing',
-            detail: ok ? '已配置至少一个供应商的 API Key' : '未配置任何 API Key，所有 AI 功能不可用',
-            fix: ok ? '' : '打开「首启引导」或设置 → AI 供应商，填写 Key 并点「连通性测试」',
+            status: 'missing',
+            detail: '未配置任何 API Key，所有 AI 功能不可用',
+            fix: '打开「首启引导」或设置 → API 供应商，填写 Key 并点「连通性测试」',
         };
     }
 

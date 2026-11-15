@@ -60,6 +60,7 @@ import { AgentWorkbenchView } from './ui/agent-workbench-view';
 import { VIEW_TYPE_AGENT_WORKBENCH } from './shared/view-types';
 import { detachPluginLeaves } from './shared/plugin-leaves';
 import { executeObsidianCommand, listObsidianCommands, openPluginSettingsTab } from './shared/obsidian-internal-bridge';
+import { isStoredCiphertext, usableSecret } from './shared/secret-value';
 import { revealLeafCompat } from './shared/workspace-reveal';
 import { WritingFingerprintView, VIEW_TYPE_WRITING_FINGERPRINT } from './ui/views/writing-fingerprint-view';
 import { ProjectSidePanelView, VIEW_TYPE_PROJECT_SIDE_PANEL } from './ui/project-side-panel-view';
