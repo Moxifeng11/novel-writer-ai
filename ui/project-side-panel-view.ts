@@ -16,6 +16,7 @@ import {
     FILE_KIND_LABELS,
     FRONTMATTER_SCHEMAS,
     findMissingProperties,
+    readAliasList,
     readTagList,
     resolveFileKind,
     type NotebookFileKind,
@@ -225,6 +226,7 @@ export class ProjectSidePanelView extends ItemView {
 
         await this.renderProperties(container, file, kind, frontmatter);
         this.renderTags(container, cache?.tags?.map((tag) => tag.tag) || readTagList(frontmatter['tags']));
+        this.renderAliases(container, readAliasList(frontmatter['aliases'], frontmatter['别称'], frontmatter['别名'], frontmatter['曾用名']));
         this.renderActions(this.section(container, 'actions', '快捷动作'), actionsForKind(kind), file);
     }
 
@@ -291,6 +293,32 @@ export class ProjectSidePanelView extends ItemView {
                 }
             });
         }
+    }
+
+    /**
+     * 渲染别名（M2-3）：点击复制检索式，可搜出正文/大纲中提到该别名的位置。
+     *
+     * @param container - 容器
+     * @param aliases - 别名列表
+     */
+    private renderAliases(container: HTMLElement, aliases: string[]): void {
+        if (aliases.length === 0) return;
+        const body = this.section(container, 'aliases', `别名（${aliases.length}）`);
+        const row = body.createDiv({ cls: 'nw-side-panel-tags' });
+        for (const alias of aliases) {
+            const chip = row.createSpan({ cls: 'nw-side-panel-tag', text: alias });
+            chip.addEventListener('click', () => {
+                const query = `"${alias}"`;
+                void navigator.clipboard.writeText(query).then(
+                    () => showSuccessNotice(`已复制检索式：${query}（可搜出提到该别名的位置）`, { timeout: 5000 }),
+                    () => showWarningNotice(`检索式：${query}`, { timeout: 5000 }),
+                );
+            });
+        }
+        body.createDiv({
+            cls: 'nw-side-panel-hint',
+            text: '别名用于索引与 @ 引用（M1/M2）；点击复制检索式可反查正文提及。',
+        });
     }
 
     private renderTags(container: HTMLElement, tags: string[]): void {

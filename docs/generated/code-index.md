@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146016 | 1935 | 1532 | 79% |
 | `services/` | 53 | 16534 | 248 | 187 | 75% |
-| `shared/` | 232 | 47421 | 1997 | 1578 | 79% |
+| `shared/` | 232 | 47444 | 1998 | 1579 | 79% |
 | `core/` | 7 | 2961 | 33 | 18 | 55% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 275 | 106856 | 1034 | 835 | 81% |
+| `ui/` | 275 | 106884 | 1034 | 835 | 81% |
 
 ## 文件清单
 
@@ -522,7 +522,7 @@
 | `shared/foreshadow-loop.ts` | 157 | 3 | 3 |
 | `shared/foreshadow-status.ts` | 61 | 3 | 2 |
 | `shared/format-constants.ts` | 503 | 65 | 13 |
-| `shared/frontmatter-schema.ts` | 445 | 13 | 9 |
+| `shared/frontmatter-schema.ts` | 468 | 14 | 10 |
 | `shared/frontmatter.ts` | 178 | 6 | 5 |
 | `shared/ghost-trigger.ts` | 26 | 1 | 1 |
 | `shared/github-repo.ts` | 81 | 11 | 11 |
@@ -854,7 +854,7 @@
 | `ui/polish-editor.ts` | 834 | 5 | 5 |
 | `ui/pre-research-modal.ts` | 710 | 2 | 2 |
 | `ui/project-health-modal.ts` | 205 | 1 | 1 |
-| `ui/project-side-panel-view.ts` | 428 | 5 | 5 |
+| `ui/project-side-panel-view.ts` | 456 | 5 | 5 |
 | `ui/project-utils.ts` | 366 | 11 | 10 |
 | `ui/prompt-manager-logic.ts` | 76 | 4 | 3 |
 | `ui/prompt-manager-settings.ts` | 1126 | 1 | 1 |

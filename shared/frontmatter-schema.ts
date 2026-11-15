@@ -347,6 +347,29 @@ export function readTagList(tags: unknown): string[] {
 }
 
 /**
+ * 读取别名（兼容 aliases / 别称 / 别名 / 曾用名，数组或分隔串）。
+ *
+ * @param values - frontmatter 中的别名候选值
+ * @returns 去重后的别名数组
+ */
+export function readAliasList(...values: unknown[]): string[] {
+    const result = new Set<string>();
+    const push = (value: unknown): void => {
+        if (Array.isArray(value)) {
+            for (const item of value) push(item);
+            return;
+        }
+        if (typeof value !== 'string') return;
+        for (const item of value.split(/[|｜,，;；、\n]+/)) {
+            const cleaned = item.trim();
+            if (cleaned) result.add(cleaned);
+        }
+    };
+    for (const value of values) push(value);
+    return [...result];
+}
+
+/**
  * `nw/实体/人物` → 人物；`nw/步骤/分析报告` → step
  *
  * @param tag - 标签
