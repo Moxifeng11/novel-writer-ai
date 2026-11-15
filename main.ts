@@ -273,6 +273,8 @@ export interface NovelWriterSettings {
     enabledProviderIds?: string[];
     /** 每个供应商各自记住的全局模型分配（切换渠道时恢复，不再互相覆盖） */
     providerAssignments?: Record<string, { defaultModel: string; flashModel: string; proModel: string }>;
+    /** 每个供应商各自的任务级模型参数覆盖（切换渠道时恢复，避免互相污染） */
+    providerTaskBudgets?: Record<string, Partial<Record<AiTask, TaskBudgetOverride>>>;
     /** 每个供应商各自的思考强度（未设置时用全局 thinkingMode/thinkingBudget） */
     providerThinking?: Record<string, { mode?: ThinkingMode; budget?: number }>;
     /** 桌面宠物自定义形象（用户自己的图片；未设置则用内置分层 SVG） */

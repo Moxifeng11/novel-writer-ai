@@ -252,3 +252,43 @@ export function migrateRemovedPresets<T extends { id: string; isDefault?: boolea
             : provider
     ));
 }
+
+/** 内置请求头适配结果（渠道自动补全，用户自定义值可覆盖） */
+export interface ProviderDefaultHeaders {
+    /** 需要补的请求头 */
+    headers: Record<string, string>;
+    /** 适配说明（设置页展示） */
+    note: string;
+}
+
+/**
+ * 按渠道补内置请求头（OpenRouter 必带 Referer/Title、Anthropic 必带版本号）。
+ * 用户自定义 headers 在调用侧覆盖这里的默认值。
+ *
+ * @param provider - 供应商（端点/协议）
+ * @returns 需要补的请求头与说明
+ * @example
+ * defaultHeadersForProvider({ endpoint: 'https://openrouter.ai/api/v1/chat/completions' }).headers;
+ * // { 'HTTP-Referer': 'https://github.com/...', 'X-Title': 'Novel Writer AI' }
+ */
+export function defaultHeadersForProvider(
+    provider: Pick<ProviderLike, 'endpoint' | 'apiFormat'>,
+): ProviderDefaultHeaders {
+    const endpoint = String(provider.endpoint ?? '').toLowerCase();
+    if (provider.apiFormat === 'anthropic-messages') {
+        return { headers: { 'anthropic-version': '2023-06-01' }, note: 'Anthropic 协议：自动补 anthropic-version' };
+    }
+    if (endpoint.includes('openrouter.ai')) {
+        return {
+            headers: {
+                'HTTP-Referer': 'https://github.com/novel-writer-ai',
+                'X-Title': 'Novel Writer AI',
+            },
+            note: 'OpenRouter：自动补 HTTP-Referer / X-Title（可在自定义请求头覆盖）',
+        };
+    }
+    if (endpoint.includes('opencode.ai')) {
+        return { headers: {}, note: 'OpenCode Zen 无需额外请求头' };
+    }
+    return { headers: {}, note: '该渠道没有必需的内置请求头' };
+}

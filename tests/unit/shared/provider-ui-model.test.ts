@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     clampAssignment,
+    defaultHeadersForProvider,
     defaultAssignmentFor,
     describeThinkingLevel,
     isProviderVisible,
@@ -104,6 +105,24 @@ describe('请求头解析/序列化', () => {
     it('往返序列化', () => {
         const headers = { 'HTTP-Referer': 'https://a.com', 'X-Title': 'nw' };
         expect(parseHeaderLines(serializeHeaderLines(headers))).toEqual(headers);
+    });
+});
+
+describe('内置请求头适配', () => {
+    it('OpenRouter 自动补 Referer / Title', () => {
+        const result = defaultHeadersForProvider({ endpoint: 'https://openrouter.ai/api/v1/chat/completions' });
+        expect(result.headers['HTTP-Referer']).toBeTruthy();
+        expect(result.headers['X-Title']).toBe('Novel Writer AI');
+    });
+
+    it('Anthropic 协议补版本头', () => {
+        const result = defaultHeadersForProvider({ endpoint: 'https://api.anthropic.com/v1/messages', apiFormat: 'anthropic-messages' });
+        expect(result.headers['anthropic-version']).toBe('2023-06-01');
+    });
+
+    it('OpenCode / 普通渠道不补额外头', () => {
+        expect(defaultHeadersForProvider({ endpoint: 'https://opencode.ai/zen/v1/chat/completions' }).headers).toEqual({});
+        expect(defaultHeadersForProvider({ endpoint: 'https://api.deepseek.com/v1/chat/completions' }).headers).toEqual({});
     });
 });
 

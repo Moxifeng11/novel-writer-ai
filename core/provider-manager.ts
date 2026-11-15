@@ -49,6 +49,9 @@ export interface ProviderSettings {
     providerAssignments?: Record<string, { defaultModel: string; flashModel: string; proModel: string }>;
     /** 每渠道的思考强度 */
     providerThinking?: Record<string, { mode?: 'auto' | 'off' | 'on' | 'deep'; budget?: number }>;
+    /** 每渠道的任务级模型参数覆盖 */
+    providerTaskBudgets?: Record<string, Partial<Record<string, unknown>>>;
+    taskBudgets?: Partial<Record<string, unknown>>;
 }
 
 /** ProviderManager 依赖的外部回调 */
@@ -176,6 +179,12 @@ export class ProviderManager {
         s.defaultModel = assignment.defaultModel;
         s.flashModel = assignment.flashModel;
         s.proModel = assignment.proModel;
+        // 任务级参数同样按渠道记忆：切走前存旧渠道，切过来恢复目标渠道
+        s.providerTaskBudgets = s.providerTaskBudgets || {};
+        if (previousId && previousId !== providerId) {
+            s.providerTaskBudgets[previousId] = { ...(s.taskBudgets || {}) };
+        }
+        s.taskBudgets = { ...(s.providerTaskBudgets[providerId] ?? {}) };
         s.apiKey = s.providerKeys[providerId] || '';
         this.updateModelLimits(s.flashModel);
         this.cb.refreshContextPanel();

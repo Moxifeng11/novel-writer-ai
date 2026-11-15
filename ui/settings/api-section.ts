@@ -10,6 +10,7 @@
 import { Setting, Notice, Menu } from 'obsidian';
 import { CustomProvider } from '@/main';
 import {
+    defaultHeadersForProvider,
     describeThinkingLevel,
     parseHeaderLines,
     resolveThinkingCapability,
@@ -184,9 +185,20 @@ export class ApiSection extends SettingsSection {
                 });
                 row.createSpan({ cls: 'nw-api-sidebar-name', text: provider.name });
                 const isCurrent = provider.id === currentId;
+                const assignment = this.plugin.getProviderAssignment(provider.id);
+                if (assignment.defaultModel) {
+                    row.createSpan({
+                        cls: 'nw-api-sidebar-model',
+                        text: assignment.defaultModel,
+                        attr: { title: '默认模型：' + assignment.defaultModel },
+                    });
+                }
+                if (!this.plugin.isProviderEnabled(provider.id)) {
+                    row.createSpan({ cls: 'nw-api-sidebar-muted', text: '已隐藏', attr: { title: '不在其他模块显示' } });
+                }
                 row.createSpan({
                     cls: 'nw-api-sidebar-dot' + (isCurrent ? ' nw-api-sidebar-dot-current' : ''),
-                    attr: { title: isCurrent ? '当前使用中' : '未启用' },
+                    attr: { title: isCurrent ? '当前使用中' : '可用' },
                 });
                 row.onclick = () => {
                     this.apiSelectedProviderId = provider.id;
@@ -659,10 +671,11 @@ export class ApiSection extends SettingsSection {
                 ? `支持：${visionModels.slice(0, 6).join('、')}${visionModels.length > 6 ? ' …' : ''}`
                 : '该渠道暂未标记支持图片输入的模型（可在模型编辑里勾选「支持图片输入」）');
 
+        const headerDefault = defaultHeadersForProvider(raw);
         let headerText = serializeHeaderLines(raw.headers);
         new Setting(container)
             .setName('自定义请求头')
-            .setDesc('每行一个 `Key: Value`；用于 OpenRouter/自建网关等需要 HTTP-Referer、X-Title 的渠道')
+            .setDesc(headerDefault.note + '；每行一个 `Key: Value`，自定义值覆盖内置默认')
             .addTextArea(text => {
                 text.inputEl.rows = 3;
                 text.setPlaceholder('HTTP-Referer: https://example.com\nX-Title: novel-writer')
@@ -988,7 +1001,7 @@ export class ApiSection extends SettingsSection {
                     }));
         });
 
-        renderCollapsibleSection(wrap, '任务级模型参数', false, inner => this.renderTaskBudgetRows(inner));
+        renderCollapsibleSection(wrap, '任务级模型参数（按渠道记忆）', false, inner => this.renderTaskBudgetRows(inner, providerId));
         renderCollapsibleSection(wrap, '同人考据来源', false, inner => this.renderCanonResearchRows(inner));
     }
 
@@ -1121,8 +1134,16 @@ export class ApiSection extends SettingsSection {
      * 模型 / 最大输入 / 最大输出 / 思考模式 / 思考预算。
      * 不填即继承该任务的默认模型与能力值。
      */
-    private renderTaskBudgetRows(section: HTMLElement): void {
+    private renderTaskBudgetRows(section: HTMLElement, providerId?: string): void {
         const card = section.createDiv({ cls: 'nw-u-margintop-20px-2' });
+        const currentId = this.plugin.getCurrentProviderId();
+        const isCurrentProvider = !providerId || providerId === currentId;
+        if (!isCurrentProvider) {
+            card.createEl('div', {
+                cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginbottom-8px-2',
+                text: '任务级参数按渠道各自记忆：这里显示/编辑的是「' + (this.plugin.getAllProviders().find(item => item.id === providerId)?.name || providerId) + '」，切换到该渠道后生效。',
+            });
+        }
         card.createEl('h4', { text: '🧠 任务级模型参数', cls: 'nw-u-m-0-0-6px-0-2 nw-u-fs-14px-2' });
         card.createEl('div', {
             text: '每个任务可单独覆盖模型/输入/输出/思考参数；留空即继承默认值。输出上限不会自动超过模型能力。',

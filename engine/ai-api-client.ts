@@ -15,7 +15,7 @@ import {
 } from '@/shared/thresholds';
 import { calculateTokenBudget, getModelContextWindow, getModelMaxOutput } from '@/shared/token-estimator';
 import { resolveProviderSourceType } from '@/shared/model-source';
-import { resolveThinkingCapability } from '@/shared/provider-ui-model';
+import { defaultHeadersForProvider, resolveThinkingCapability } from '@/shared/provider-ui-model';
 import type { ThinkingMode } from '@/shared/task-model';
 import type { APIResponse } from './ai-engine';
 
@@ -343,7 +343,10 @@ export class AIApiClient {
     /** 该端点的自定义请求头（适配 OpenRouter/自建网关的 HTTP-Referer、X-Title 等） */
     private providerHeaders(endpoint: string | undefined): Record<string, string> {
         const provider = this.plugin.settings.customProviders?.find(p => p.endpoint === endpoint);
-        return provider?.headers && typeof provider.headers === 'object' ? { ...provider.headers } : {};
+        if (!provider) return {};
+        // 内置适配头（OpenRouter Referer/Title、Anthropic 版本）→ 用户自定义头覆盖
+        const merged = defaultHeadersForProvider(provider).headers;
+        return { ...merged, ...(provider.headers && typeof provider.headers === 'object' ? provider.headers : {}) };
     }
 
     /** 该端点所属渠道的思考设置（未设置回落全局） */

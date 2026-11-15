@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 354 | 146626 | 1950 | 1544 | 79% |
+| `engine/` | 354 | 146629 | 1950 | 1544 | 79% |
 | `services/` | 65 | 18925 | 291 | 200 | 69% |
-| `shared/` | 253 | 50260 | 2126 | 1663 | 78% |
-| `core/` | 7 | 3208 | 35 | 20 | 57% |
+| `shared/` | 253 | 50300 | 2128 | 1664 | 78% |
+| `core/` | 7 | 3217 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 283 | 109051 | 1050 | 850 | 81% |
+| `ui/` | 283 | 109072 | 1050 | 850 | 81% |
 
 ## 文件清单
 
@@ -21,7 +21,7 @@
 | `core/crypto-service.ts` | 413 | 5 | 3 |
 | `core/example-project-service.ts` | 331 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
-| `core/provider-manager.ts` | 711 | 4 | 2 |
+| `core/provider-manager.ts` | 720 | 4 | 2 |
 | `core/settings-service.ts` | 587 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
@@ -70,7 +70,7 @@
 | `engine/agent/harness/tool-registry.ts` | 307 | 5 | 2 |
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
 | `engine/ai-api-client-shared.ts` | 86 | 6 | 5 |
-| `engine/ai-api-client.ts` | 1035 | 2 | 2 |
+| `engine/ai-api-client.ts` | 1038 | 2 | 2 |
 | `engine/ai-api-stream.ts` | 1022 | 3 | 2 |
 | `engine/ai-batch-entity-generator.ts` | 578 | 1 | 1 |
 | `engine/ai-chapter-helpers.ts` | 339 | 1 | 1 |
@@ -616,7 +616,7 @@
 | `shared/prose-naturalizer.ts` | 238 | 3 | 3 |
 | `shared/protagonist.ts` | 40 | 2 | 2 |
 | `shared/provider-detection.ts` | 240 | 4 | 4 |
-| `shared/provider-ui-model.ts` | 255 | 15 | 10 |
+| `shared/provider-ui-model.ts` | 295 | 17 | 11 |
 | `shared/publication-profile.ts` | 306 | 15 | 15 |
 | `shared/quality-baseline.ts` | 184 | 10 | 10 |
 | `shared/quality-benchmark.ts` | 112 | 6 | 6 |
@@ -921,7 +921,7 @@
 | `ui/settings-tab.ts` | 405 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 39 | 1 | 1 |
-| `ui/settings/api-section.ts` | 1352 | 1 | 1 |
+| `ui/settings/api-section.ts` | 1373 | 1 | 1 |
 | `ui/settings/deconstruction-section.ts` | 332 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 290 | 1 | 1 |

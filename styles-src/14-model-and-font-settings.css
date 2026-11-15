@@ -1200,3 +1200,28 @@
     padding: 4px 0;
     border: none;
 }
+
+/* ── API 供应商侧栏卡片补充：模型摘要 / 隐藏标记 ── */
+.nw-api-sidebar-model {
+    margin-left: auto;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    color: var(--text-faint);
+}
+
+.nw-api-sidebar-muted {
+    flex: none;
+    padding: 0 6px;
+    border-radius: 999px;
+    font-size: 10px;
+    color: var(--text-faint);
+    background: var(--background-modifier-border);
+}
+
+.nw-api-sidebar-row-selected .nw-api-sidebar-model,
+.nw-api-sidebar-row-selected .nw-api-sidebar-muted {
+    color: var(--text-muted);
+}
