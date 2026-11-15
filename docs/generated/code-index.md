@@ -6,8 +6,8 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 352 | 145752 | 1934 | 1531 | 79% |
-| `services/` | 45 | 15518 | 230 | 178 | 77% |
+| `engine/` | 353 | 145827 | 1935 | 1532 | 79% |
+| `services/` | 46 | 15679 | 232 | 179 | 77% |
 | `shared/` | 216 | 45252 | 1915 | 1524 | 80% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
@@ -45,6 +45,7 @@
 | `engine/agent/harness/agent-loop.ts` | 640 | 6 | 6 |
 | `engine/agent/harness/attachment-tools.ts` | 50 | 1 | 1 |
 | `engine/agent/harness/context-fit.ts` | 137 | 6 | 6 |
+| `engine/agent/harness/context-tools.ts` | 75 | 1 | 1 |
 | `engine/agent/harness/creation-plan.ts` | 73 | 6 | 6 |
 | `engine/agent/harness/diagnose-tools.ts` | 118 | 3 | 1 |
 | `engine/agent/harness/goal-tools.ts` | 94 | 2 | 2 |
@@ -398,6 +399,7 @@
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
 | `services/chapter-version-service.ts` | 744 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
+| `services/context-session-service.ts` | 161 | 2 | 1 |
 | `services/execution-ledger.ts` | 325 | 10 | 7 |
 | `services/fanfic-knowledge-draft.ts` | 226 | 10 | 7 |
 | `services/file-tx.ts` | 183 | 2 | 1 |

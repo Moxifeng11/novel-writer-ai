@@ -6,8 +6,8 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 27 | 27 | 100% | 50 | 50 | 100% | 0 |
 | `domains/` | 15 | 85 | 85 | 100% | 1 | 1 | 100% | 0 |
-| `engine/` | 335 | 1908 | 1907 | 100% | 1247 | 1247 | 100% | 0 |
-| `services/` | 45 | 229 | 229 | 100% | 264 | 264 | 100% | 0 |
+| `engine/` | 336 | 1909 | 1908 | 100% | 1247 | 1247 | 100% | 0 |
+| `services/` | 46 | 231 | 231 | 100% | 268 | 268 | 100% | 0 |
 | `shared/` | 214 | 1919 | 1918 | 100% | 159 | 159 | 100% | 0 |
 | `ui/` | 273 | 1024 | 1024 | 100% | 660 | 659 | 100% | 0 |
 
@@ -24,6 +24,7 @@
 | `engine/agent/harness/agent-loop.ts` | 6 | 0 | 0 | 0 |
 | `engine/agent/harness/attachment-tools.ts` | 1 | 0 | 0 | 0 |
 | `engine/agent/harness/context-fit.ts` | 6 | 0 | 0 | 0 |
+| `engine/agent/harness/context-tools.ts` | 1 | 0 | 0 | 0 |
 | `engine/agent/harness/creation-plan.ts` | 6 | 0 | 0 | 0 |
 | `engine/agent/harness/diagnose-tools.ts` | 3 | 0 | 0 | 0 |
 | `engine/agent/harness/goal-tools.ts` | 2 | 0 | 0 | 0 |
@@ -44,7 +45,6 @@
 | `engine/agent/harness/session-snapshot.ts` | 11 | 0 | 0 | 0 |
 | `engine/agent/harness/skill-tools.ts` | 1 | 0 | 0 | 0 |
 | `engine/agent/harness/spill-store.ts` | 6 | 0 | 0 | 0 |
-| `engine/agent/harness/tool-registry.ts` | 5 | 0 | 6 | 0 |
 
 ## @example 覆盖（公共入口）
 
