@@ -15,6 +15,7 @@ import {
 } from '@/shared/thresholds';
 import { calculateTokenBudget, getModelContextWindow, getModelMaxOutput } from '@/shared/token-estimator';
 import { resolveProviderSourceType } from '@/shared/model-source';
+import { resolveThinkingCapability } from '@/shared/provider-ui-model';
 import type { ThinkingMode } from '@/shared/task-model';
 import type { APIResponse } from './ai-engine';
 
@@ -339,6 +340,19 @@ export class AIApiClient {
      * （此前 callAI / callAIStream 硬性要求 apiKey，导致「本地 Ollama + 空密钥」
      * 这一内置配置下所有非流式 AI 调用都返回「API密钥未配置」，流水线无法运行。）
      */
+    /** 该端点的自定义请求头（适配 OpenRouter/自建网关的 HTTP-Referer、X-Title 等） */
+    private providerHeaders(endpoint: string | undefined): Record<string, string> {
+        const provider = this.plugin.settings.customProviders?.find(p => p.endpoint === endpoint);
+        return provider?.headers && typeof provider.headers === 'object' ? { ...provider.headers } : {};
+    }
+
+    /** 该端点所属渠道的思考设置（未设置回落全局） */
+    private providerThinking(endpoint: string | undefined): { mode?: 'auto' | 'off' | 'on' | 'deep'; budget?: number } {
+        const provider = this.plugin.settings.customProviders?.find(p => p.endpoint === endpoint);
+        if (!provider) return {};
+        return { ...(this.plugin.settings.providerThinking?.[provider.id] ?? {}) };
+    }
+
     private isKeylessLocalEndpoint(endpoint: string): boolean {
         return this.isLocalEndpoint(endpoint);
     }
@@ -603,7 +617,16 @@ export class AIApiClient {
             // 这种请求重试同模型（关闭思考）比直接切模型更可能救回来（真实链路实测）。
             let thinkingRetryUsed = false;
             let thinkingExtraAttempts = 0;
-            let attemptThinkingMode = options?.thinkingMode;
+            // 渠道级思考强度优先于全局；渠道不支持（本地/未识别）时不下发，避免 400。
+            const providerThinking = this.providerThinking(endpoint);
+            let attemptThinkingMode: ThinkingMode | undefined = (providerThinking.mode ?? options?.thinkingMode) as ThinkingMode | undefined;
+            const providerModel = (this.plugin.settings.customProviders || [])
+                .find(provider => provider.endpoint === endpoint);
+            if (attemptThinkingMode === 'on' && providerModel) {
+                const capability = resolveThinkingCapability(providerModel, currentModel);
+                if (!capability.supported) attemptThinkingMode = 'auto';
+            }
+            const attemptThinkingBudget = providerThinking.budget ?? options?.thinkingBudget;
 
             const isSwitch = triedModels.length > 0;
 
@@ -670,7 +693,7 @@ export class AIApiClient {
                         options?.numCtx,
                         endpoint,
                         attemptThinkingMode,
-                        options?.thinkingBudget,
+                        attemptThinkingBudget,
                         apiFormat,
                     );
 
@@ -682,6 +705,7 @@ export class AIApiClient {
                         headers: {
                             'Content-Type': 'application/json',
                             ...buildAuthHeaders(apiFormat, apiKey),
+                            ...this.providerHeaders(endpoint),
                         },
                         body: JSON.stringify(requestBody),
                         signal: ac.signal,

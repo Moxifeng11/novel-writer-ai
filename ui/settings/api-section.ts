@@ -7,8 +7,15 @@
  * 依赖：宿主提供的 app/plugin/refresh/reopen（见 section-base.ts），
  * 以及 api-format、model-discovery、task-model、task-budget-engine 等共享模块。
  */
-import { Setting, Notice, Modal, Menu } from 'obsidian';
+import { Setting, Notice, Menu } from 'obsidian';
 import { CustomProvider } from '@/main';
+import {
+    describeThinkingLevel,
+    parseHeaderLines,
+    resolveThinkingCapability,
+    serializeHeaderLines,
+    thinkingBudgetFromLevel,
+} from '@/shared/provider-ui-model';
 import { API_FORMAT_OPTIONS, normalizeApiFormat, type ApiFormat } from '@/shared/api-format';
 import { discoverModels } from '@/services/model-discovery';
 import { ModelPickerModal } from '@/ui/model-picker-modal';
@@ -57,6 +64,9 @@ export class ApiSection extends SettingsSection {
     /** 当前在 API 设置里选中的供应商（纯 UI 状态，不持久化） */
     private apiSelectedProviderId: string | null = null;
 
+    /** 侧栏「新建供应商」行内表单是否展开（替代弹窗） */
+    private newProviderFormOpen = false;
+
     /** 容量显示：1050000 → 1M，204800 → 205K */
     private formatCapacity(value: number | undefined): string {
         if (!value || value <= 0) return '';
@@ -89,6 +99,8 @@ export class ApiSection extends SettingsSection {
         this.apiSelectedProviderId = selectedId || null;
 
         this.renderApiHeader(section);
+        // 密钥加密状态放最上面：下载/重装/换设备后第一件事往往是「解锁 Key」
+        this.renderKeyUnlockCard(section);
 
         const layout = section.createDiv({ cls: 'nw-api-layout' });
         this.renderProviderSidebar(layout.createDiv({ cls: 'nw-api-sidebar' }), providers, selectedId, currentId);
@@ -99,11 +111,11 @@ export class ApiSection extends SettingsSection {
                 cls: 'nw-api-empty',
                 text: '还没有供应商。点击右上角「＋ 添加供应商」创建第一个。',
             });
-            this.renderApiGlobalSettings(detail);
+            this.renderApiGlobalSettings(detail, '');
             return;
         }
         this.renderProviderDetail(detail, selectedId);
-        this.renderApiGlobalSettings(detail);
+        this.renderApiGlobalSettings(detail, selectedId);
     }
 
     /** 顶部标题与操作 */
@@ -141,7 +153,10 @@ export class ApiSection extends SettingsSection {
             attr: { type: 'button' },
         });
         addBtn.setText('＋ 添加供应商');
-        addBtn.onclick = () => this.openNewProviderModal();
+        addBtn.onclick = () => {
+            this.newProviderFormOpen = true;
+            this.refresh();
+        };
     }
 
     /** 左栏：预设 / 自定义分组列表 */
@@ -179,6 +194,101 @@ export class ApiSection extends SettingsSection {
                 };
             }
         }
+
+        // 行内新建供应商（替代原来的「添加供应商」弹窗）：直接在侧栏填完创建
+        if (this.newProviderFormOpen) {
+            this.renderNewProviderForm(container);
+        } else {
+            const add = container.createEl('button', {
+                cls: 'nw-api-sidebar-add',
+                text: '＋ 新建供应商',
+                attr: { type: 'button' },
+            });
+            add.onclick = () => {
+                this.newProviderFormOpen = true;
+                this.refresh();
+            };
+        }
+    }
+
+    /**
+     * 侧栏行内新建供应商表单（名称 / Base URL / 协议 / Key 一次填完）。
+     *
+     * @param container - 侧栏容器
+     */
+    private renderNewProviderForm(container: HTMLElement): void {
+        const form = container.createDiv({ cls: 'nw-api-new-provider' });
+        form.createDiv({ cls: 'nw-api-sidebar-group', text: '新建供应商' });
+        let nameValue = '';
+        let endpointValue = '';
+        let formatValue: ApiFormat = 'openai-chat';
+        let keyValue = '';
+
+        new Setting(form)
+            .setName('名称')
+            .addText(text => text.setPlaceholder('我的代理').onChange(value => { nameValue = value; }));
+        new Setting(form)
+            .setName('Base URL')
+            .setDesc('可带也可不带 /v1')
+            .addText(text => text.setPlaceholder('https://api.example.com').onChange(value => { endpointValue = value.trim(); }));
+        new Setting(form)
+            .setName('API 格式')
+            .addDropdown(dropdown => {
+                for (const option of API_FORMAT_OPTIONS) dropdown.addOption(option.value, option.label);
+                dropdown.setValue(formatValue);
+                dropdown.onChange(value => { formatValue = normalizeApiFormat(value); });
+            });
+        new Setting(form)
+            .setName('API Key')
+            .addText(text => {
+                text.inputEl.type = 'password';
+                text.setPlaceholder('sk-...').onChange(value => { keyValue = value.trim(); });
+            });
+        new Setting(form)
+            .addButton(button => button.setButtonText('取消').onClick(() => {
+                this.newProviderFormOpen = false;
+                this.refresh();
+            }))
+            .addButton(button => button
+                .setButtonText('创建')
+                .setCta()
+                .onClick(async () => {
+                    if (!nameValue.trim()) { new Notice('请输入名称'); return; }
+                    if (!endpointValue) { new Notice('请输入 Base URL'); return; }
+                    const id = this.plugin.addCustomProvider(
+                        nameValue.trim(),
+                        endpointValue,
+                        ['default-model'],
+                        128000,
+                        32768,
+                        keyValue,
+                        formatValue,
+                    );
+                    if (!id) return;
+                    await this.plugin.saveSettings();
+                    this.plugin.updateStatusBarText();
+                    this.newProviderFormOpen = false;
+                    this.apiSelectedProviderId = id;
+                    showSuccessNotice('已创建供应商，可点「从 URL 获取」导入模型', { timeout: 5000 });
+                    this.refresh();
+                }));
+    }
+
+    /** 密钥加密卡片（放页面顶部，解锁优先） */
+    private renderKeyUnlockCard(section: HTMLElement): void {
+        const service = this.plugin.getSettingsService?.();
+        const locked = service?.lockedSecretCount?.() ?? 0;
+        const card = section.createDiv({
+            cls: 'nw-api-key-card' + (locked > 0 ? ' nw-api-key-card-locked' : ''),
+        });
+        if (locked > 0) {
+            card.createDiv({ cls: 'nw-api-key-card-title', text: '🔒 密钥已加密锁定' });
+            card.createDiv({
+                cls: 'nw-api-key-card-hint',
+                text: `有 ${locked} 项密钥尚未解锁，解锁后各渠道 Key 才能正常使用。`,
+            });
+        }
+        this.renderKeyEncryptionRows(card);
     }
 
     /** 右栏：单个供应商的完整配置 */
@@ -212,25 +322,38 @@ export class ApiSection extends SettingsSection {
             rerender();
         });
 
+        // 「使用中」= 当前渠道（切换它）；「在其他模块显示」= 快切/工作台/协同是否列出该渠道（启用语义）
         const isCurrent = providerId === this.plugin.getCurrentProviderId();
-        const toggleLabel = head.createEl('label', { cls: 'nw-api-switch', attr: { title: '启用该供应商' } });
-        const toggle = toggleLabel.createEl('input', { type: 'checkbox' });
-        toggle.checked = isCurrent;
-        toggleLabel.toggleClass('nw-is-active', toggle.checked);
-        toggle.addEventListener('change', async () => {
-            toggleLabel.toggleClass('nw-is-active', toggle.checked);
-            if (toggle.checked) {
+        if (isCurrent) {
+            head.createSpan({ cls: 'nw-api-current-pill', text: '使用中' });
+        } else {
+            const useBtn = head.createEl('button', {
+                cls: 'nw-api-ghost-btn',
+                text: '设为当前',
+                attr: { type: 'button', title: '把该供应商切换为当前使用渠道' },
+            });
+            useBtn.onclick = async () => {
                 this.plugin.switchProviderByEndpoint(raw.endpoint);
                 await this.plugin.saveSettings();
                 this.plugin.updateStatusBarText();
                 showSuccessNotice(`已切换到「${raw.name}」`);
                 this.apiSelectedProviderId = providerId;
                 rerender();
-                return;
-            }
-            // 关闭当前供应商会让写作任务失去端点，必须明确拒绝
-            toggle.checked = true;
-            new Notice('不能用开关停用当前正在使用的供应商，请改为切换到其他供应商', 5000);
+            };
+        }
+
+        const visible = this.plugin.isProviderEnabled(providerId);
+        const visibleLabel = head.createEl('label', { cls: 'nw-api-switch', attr: { title: '在其他模块显示该渠道' } });
+        const visibleToggle = visibleLabel.createEl('input', { type: 'checkbox' });
+        visibleToggle.checked = visible;
+        visibleLabel.toggleClass('nw-is-active', visible);
+        visibleLabel.createSpan({ cls: 'nw-api-switch-text', text: '在其他模块显示' });
+        visibleToggle.addEventListener('change', async () => {
+            visibleLabel.toggleClass('nw-is-active', visibleToggle.checked);
+            this.plugin.setProviderEnabled(providerId, visibleToggle.checked);
+            await this.plugin.saveSettings();
+            this.plugin.updateStatusBarText();
+            rerender();
         });
 
         const moreBtn = head.createEl('button', {
@@ -379,6 +502,11 @@ export class ApiSection extends SettingsSection {
         // ── 连通性测试（紧跟密钥，避免用户滚到模型列表底部才能测） ──
         this.renderConnectivityTest(container, raw, format);
 
+        // ── 能力与高级项（折叠）：思考强度按渠道自动识别、图片输入、请求头 ──
+        renderCollapsibleSection(container, '渠道能力与高级项', false, inner => {
+            this.renderProviderCapabilityRows(inner, raw);
+        });
+
         // ── 模型列表 ──
         const modelsBlock = container.createDiv({ cls: 'nw-api-field' });
         const modelsHead = modelsBlock.createDiv({ cls: 'nw-api-models-head' });
@@ -428,7 +556,7 @@ export class ApiSection extends SettingsSection {
             attr: { type: 'button' },
         });
         addModelBtn.setText('＋ 添加模型');
-        addModelBtn.onclick = () => this.openModelEditor(raw.id, '');
+        addModelBtn.onclick = () => this.renderInlineModelEditor(modelsBlock, raw, '');
 
         const list = modelsBlock.createDiv({ cls: 'nw-api-model-list nw-u-maxh-240px nw-u-ovy-auto-2' });
         const disabled = new Set(raw.disabledModels || []);
@@ -470,7 +598,7 @@ export class ApiSection extends SettingsSection {
                 attr: { type: 'button', title: '编辑模型' },
             });
             editBtn.setText('✏️');
-            editBtn.onclick = () => this.openModelEditor(raw.id, modelId);
+            editBtn.onclick = () => this.renderInlineModelEditor(row, raw, modelId);
 
             const delBtn = rowActions.createEl('button', {
                 cls: 'nw-api-icon-btn',
@@ -486,6 +614,68 @@ export class ApiSection extends SettingsSection {
                 rerender();
             };
         }
+    }
+
+    /**
+     * 渠道能力与高级项：思考强度（按渠道自动识别）、图片输入、自定义请求头。
+     *
+     * @param container - 容器
+     * @param raw - 供应商原始配置
+     */
+    private renderProviderCapabilityRows(container: HTMLElement, raw: CustomProvider): void {
+        const capability = resolveThinkingCapability(raw, raw.models[0] || '');
+        if (capability.supported) {
+            const thinking = this.plugin.getProviderThinking(raw.id);
+            const mode = thinking.mode === 'off' ? 0 : Math.round((thinking.budget ?? 0) / 128);
+            new Setting(container)
+                .setName('思考强度')
+                .setDesc(`${capability.hint}；当前：${describeThinkingLevel(mode)}`)
+                .addDropdown(dropdown => {
+                    dropdown.addOption('0', '关闭');
+                    dropdown.addOption('30', '低（快速）');
+                    dropdown.addOption('60', '中（平衡）');
+                    dropdown.addOption('85', '高（深入）');
+                    dropdown.setValue(String(mode === 0 ? 0 : mode >= 80 ? 85 : mode >= 50 ? 60 : 30));
+                    dropdown.onChange(async (value) => {
+                        const level = Number(value) || 0;
+                        this.plugin.setProviderThinking(raw.id, {
+                            mode: level > 0 ? 'on' : 'off',
+                            budget: thinkingBudgetFromLevel(level),
+                        });
+                        await this.plugin.saveSettings();
+                        this.refresh();
+                    });
+                });
+        } else {
+            new Setting(container)
+                .setName('思考强度')
+                .setDesc(`${capability.hint}（该渠道不显示强度设置）`);
+        }
+
+        const visionModels = raw.models.filter(model => raw.modelMeta?.[model]?.vision);
+        new Setting(container)
+            .setName('图片输入')
+            .setDesc(visionModels.length > 0
+                ? `支持：${visionModels.slice(0, 6).join('、')}${visionModels.length > 6 ? ' …' : ''}`
+                : '该渠道暂未标记支持图片输入的模型（可在模型编辑里勾选「支持图片输入」）');
+
+        let headerText = serializeHeaderLines(raw.headers);
+        new Setting(container)
+            .setName('自定义请求头')
+            .setDesc('每行一个 `Key: Value`；用于 OpenRouter/自建网关等需要 HTTP-Referer、X-Title 的渠道')
+            .addTextArea(text => {
+                text.inputEl.rows = 3;
+                text.setPlaceholder('HTTP-Referer: https://example.com\nX-Title: novel-writer')
+                    .setValue(headerText)
+                    .onChange(async (value) => {
+                        headerText = value;
+                    });
+                text.inputEl.addEventListener('blur', async () => {
+                    const headers = parseHeaderLines(headerText);
+                    this.plugin.updateProvider(raw.id, { headers });
+                    await this.plugin.saveSettings();
+                });
+            });
     }
 
     /**
@@ -565,147 +755,101 @@ export class ApiSection extends SettingsSection {
         }
     }
 
-    /** 模型编辑弹窗：改 id / 上下文 / 输出 / 是否支持图片 */
-    private openModelEditor(providerId: string, modelId: string): void {
-        const raw = this.getRawProvider(providerId);
-        if (!raw) return;
-        const plugin = this.plugin;
-        const app = this.app;
-        const rerender = () => this.refresh();
-        const sync = (id: string) => this.syncAvailableModels(id);
-        const isNew = modelId === '';
-        const initialMeta = raw.modelMeta?.[modelId] || {};
-        const fallback = lookupModelCapability(modelId);
+    /** 行内模型编辑（替代弹窗）：改 id / 上下文 / 输出 / 单价 / 是否支持图片 */
+    private renderInlineModelEditor(container: HTMLElement, raw: CustomProvider, modelId: string): void {
+        const existing = container.createDiv({ cls: 'nw-api-model-inline-editor' });
+        const meta = raw.modelMeta?.[modelId] ?? {};
+        let idValue = modelId || '';
+        let contextValue = meta.contextWindow ?? 0;
+        let outputValue = meta.maxTokens ?? 0;
+        let inputPrice = meta.inputPricePerM ?? 0;
+        let outputPrice = meta.outputPricePerM ?? 0;
+        let vision = meta.vision === true;
+        existing.createDiv({ cls: 'nw-api-sidebar-group', text: modelId ? '编辑模型' : '新增模型' });
 
-        new (class extends Modal {
-            onOpen(): void {
-                this.modalEl.addClass('nw-scope');
-                const { contentEl } = this;
-                contentEl.createEl('h3', { text: isNew ? '＋ 添加模型' : '✏️ 编辑模型' });
+        new Setting(existing)
+            .setName('模型 ID')
+            .setDesc('请求时使用；保存后会同步到模型列表')
+            .addText(text => text.setValue(idValue).onChange(value => { idValue = value.trim(); }));
+        new Setting(existing)
+            .setName('上下文窗口（tokens）')
+            .setDesc('留空则按内置能力表推断')
+            .addText(text => text.setPlaceholder('1048576')
+                .setValue(contextValue > 0 ? String(contextValue) : '')
+                .onChange(value => { contextValue = parseInt(value, 10) || 0; }));
+        new Setting(existing)
+            .setName('输出上限（tokens）')
+            .setDesc('留空则按内置能力表推断')
+            .addText(text => text.setPlaceholder('65536')
+                .setValue(outputValue > 0 ? String(outputValue) : '')
+                .onChange(value => { outputValue = parseInt(value, 10) || 0; }));
+        new Setting(existing)
+            .setName('输入单价（元/百万 tokens）')
+            .setDesc('用于 AI 用量账本估算，留空不计费')
+            .addText(text => text.setPlaceholder('0')
+                .setValue(inputPrice > 0 ? String(inputPrice) : '')
+                .onChange(value => { inputPrice = parseFloat(value) || 0; }));
+        new Setting(existing)
+            .setName('输出单价（元/百万 tokens）')
+            .setDesc('用于 AI 用量账本估算，留空不计费')
+            .addText(text => text.setPlaceholder('0')
+                .setValue(outputPrice > 0 ? String(outputPrice) : '')
+                .onChange(value => { outputPrice = parseFloat(value) || 0; }));
+        new Setting(existing)
+            .setName('支持图片输入')
+            .setDesc('该模型能否接收图片；开启后模型列表显示「视觉」标记')
+            .addToggle(toggle => toggle.setValue(vision).onChange(value => { vision = value; }));
 
-                let idValue = modelId;
-                let contextValue = String(initialMeta.contextWindow ?? fallback?.maxContext ?? '');
-                let outputValue = String(initialMeta.maxTokens ?? fallback?.maxOutput ?? '');
-                let visionValue = !!initialMeta.vision;
-                let inputPriceValue = initialMeta.inputPricePerM !== undefined ? String(initialMeta.inputPricePerM) : '';
-                let outputPriceValue = initialMeta.outputPricePerM !== undefined ? String(initialMeta.outputPricePerM) : '';
-
-                new Setting(contentEl)
-                    .setName('模型 ID')
-                    .setDesc('请求时使用的模型名，需与端点完全一致')
-                    .addText(text => text
-                        .setValue(idValue)
-                        .setPlaceholder('deepseek-v4.1-flash')
-                        .onChange(value => { idValue = value.trim(); }));
-
-                new Setting(contentEl)
-                    .setName('上下文窗口 (tokens)')
-                    .setDesc('留空则按内置能力表推断')
-                    .addText(text => text
-                        .setValue(contextValue)
-                        .onChange(value => { contextValue = value.trim(); }));
-
-                new Setting(contentEl)
-                    .setName('输出上限 (tokens)')
-                    .setDesc('留空则按内置能力表推断')
-                    .addText(text => text
-                        .setValue(outputValue)
-                        .onChange(value => { outputValue = value.trim(); }));
-
-                new Setting(contentEl)
-                    .setName('输入单价 (元/百万 tokens)')
-                    .setDesc('用于「AI 用量账本」的费用估算')
-                    .addText(text => text
-                        .setValue(inputPriceValue)
-                        .setPlaceholder('元/百万 tokens，留空不计费')
-                        .onChange(value => { inputPriceValue = value.trim(); }));
-
-                new Setting(contentEl)
-                    .setName('输出单价 (元/百万 tokens)')
-                    .setDesc('用于「AI 用量账本」的费用估算')
-                    .addText(text => text
-                        .setValue(outputPriceValue)
-                        .setPlaceholder('元/百万 tokens，留空不计费')
-                        .onChange(value => { outputPriceValue = value.trim(); }));
-
-                new Setting(contentEl)
-                    .setName('支持图片输入')
-                    .addToggle(toggle => toggle
-                        .setValue(visionValue)
-                        .onChange(value => { visionValue = value; }));
-
-                const footer = contentEl.createDiv({ cls: 'nw-api-modal-footer' });
-                footer.createEl('button', { text: '取消', attr: { type: 'button' } }).onclick = () => this.close();
-                const save = footer.createEl('button', {
-                    cls: 'nw-api-primary-btn',
-                    text: isNew ? '添加' : '保存',
-                    attr: { type: 'button' },
-                });
-                save.onclick = async () => {
-                    if (!idValue) { new Notice('模型 ID 不能为空'); return; }
-                    const current = (plugin.settings.customProviders || []).find(p => p.id === providerId);
-                    if (!current) { new Notice('该供应商已不存在'); return; }
-
+        new Setting(existing)
+            .addButton(button => button.setButtonText('取消').onClick(() => {
+                existing.remove();
+            }))
+            .addButton(button => button
+                .setButtonText('保存')
+                .setCta()
+                .onClick(async () => {
+                    const nextId = idValue || modelId;
+                    if (!nextId) { new Notice('请输入模型 ID'); return; }
+                    const current = this.getRawProvider(raw.id);
+                    if (!current) return;
                     const models = [...current.models];
-                    if (isNew) {
-                        if (models.includes(idValue)) { new Notice('该模型已在列表中'); return; }
-                        models.push(idValue);
-                    } else if (idValue !== modelId) {
-                        const at = models.indexOf(modelId);
-                        if (at >= 0) {
-                            if (models.includes(idValue)) { new Notice('该模型已在列表中'); return; }
-                            models[at] = idValue;
-                        }
+                    if (modelId) {
+                        const index = models.indexOf(modelId);
+                        if (index >= 0) models[index] = nextId;
+                        else models.push(nextId);
+                    } else if (!models.includes(nextId)) {
+                        models.push(nextId);
                     }
-
-                    const meta = { ...(current.modelMeta || {}) };
-                    if (!isNew && idValue !== modelId) delete meta[modelId];
-                    const nextMeta: { contextWindow?: number; maxTokens?: number; vision?: boolean; inputPricePerM?: number; outputPricePerM?: number } = {};
-                    const context = parseInt(contextValue, 10);
-                    const output = parseInt(outputValue, 10);
-                    const inputPrice = parseFloat(inputPriceValue);
-                    const outputPrice = parseFloat(outputPriceValue);
-                    if (Number.isFinite(context) && context > 0) nextMeta.contextWindow = context;
-                    if (Number.isFinite(output) && output > 0) nextMeta.maxTokens = output;
-                    // 单价：留空/非法值不写回（不计费），0 视为免费模型也照常记录
-                    if (Number.isFinite(inputPrice) && inputPrice >= 0) nextMeta.inputPricePerM = inputPrice;
-                    if (Number.isFinite(outputPrice) && outputPrice >= 0) nextMeta.outputPricePerM = outputPrice;
-                    if (visionValue) nextMeta.vision = true;
-                    if (Object.keys(nextMeta).length > 0) meta[idValue] = nextMeta;
-                    else delete meta[idValue];
-
-                    // 重命名时同步禁用列表，避免旧名残留在 disabledModels 里
-                    const disabled = (current.disabledModels || []).map(model => (model === modelId ? idValue : model));
-
-                    plugin.updateProvider(providerId, { models, modelMeta: meta, disabledModels: disabled });
-                    sync(providerId);
-                    await plugin.saveSettings();
-                    plugin.updateStatusBarText();
-                    showSuccessNotice(isNew ? `已添加模型 ${idValue}` : `已保存 ${idValue}`);
-                    this.close();
-                    rerender();
-                };
-            }
-            onClose(): void { this.contentEl.empty(); }
-        })(app).open();
+                    const modelMeta = { ...(current.modelMeta || {}) };
+                    if (modelId && modelId !== nextId) delete modelMeta[modelId];
+                    modelMeta[nextId] = {
+                        contextWindow: contextValue > 0 ? contextValue : undefined,
+                        maxTokens: outputValue > 0 ? outputValue : undefined,
+                        inputPricePerM: inputPrice > 0 ? inputPrice : undefined,
+                        outputPricePerM: outputPrice > 0 ? outputPrice : undefined,
+                        vision,
+                    };
+                    this.plugin.updateProvider(raw.id, { models, modelMeta });
+                    this.syncAvailableModels(raw.id);
+                    await this.plugin.saveSettings();
+                    this.plugin.updateStatusBarText();
+                    showSuccessNotice('已保存模型设置', { timeout: 3000 });
+                    this.refresh();
+                }));
     }
 
     /**
-     * 密钥加密状态 + 口令重置（2026-10-29）。
+     * 密钥加密状态 + 口令重置：解锁优先（卡片已放到页面顶部）。
      *
      * 状态：磁盘上还有多少项密钥处于加密状态。
-     * 解锁：输入已有口令（修复后不会再让你「重设」口令）。
-     * 重置：设定新口令后，能读到的明文会重新加密；解不开的旧密文会被清空
-     * 并在 Notice 里列出，提示重新填写——而不是让它们以「看起来配好了但
-     * 其实无效」的状态一直存在。
+     * 解锁：输入已有口令（不会再让你「重设」口令）。
+     * 重置：设定新口令后，能读到的明文会重新加密；解不开的旧密文会被清空并提示重填。
      */
     private renderKeyEncryptionRows(container: HTMLElement): void {
         const service = this.plugin.getSettingsService?.();
         const locked = service?.lockedSecretCount?.() ?? 0;
         const legacy = service?.legacySecretCount?.() ?? 0;
         const encrypted = service?.hasEncryptedSecrets?.() ?? false;
-        // S-4（2026-11-09 用户拍板 B）：未设口令且从未加密过时，密钥以明文落盘。
-        // 文案集中在 describeKeyEncryptionStatus，保证只有一处口径。
         const status = describeKeyEncryptionStatus({ locked, encrypted, legacy });
 
         const row = new Setting(container)
@@ -718,7 +862,6 @@ export class ApiSection extends SettingsSection {
                 if (locked > 0) {
                     const password = await PasswordModal.ask(this.app);
                     if (!password) return;
-                    // 先验证能解开磁盘上的密文，避免「提示解锁成功、实际全是乱码」
                     const ok = await this.plugin.verifySettingsPassword?.(password);
                     if (ok === false) {
                         showErrorNotice('口令不正确，密钥仍未解锁', { timeout: 6000 });
@@ -767,158 +910,86 @@ export class ApiSection extends SettingsSection {
             }));
     }
 
-    /** 全局模型分配与上限：作用于当前使用的供应商 */
-    private renderApiGlobalSettings(container: HTMLElement): void {
-        const settings = this.plugin.settings;
-        const currentId = this.plugin.getCurrentProviderId();
-        const currentName = this.plugin.getAllProviders().find(p => p.id === currentId)?.name || '未选择';
-        const models = this.getCurrentProviderModels();
-
+    /** 全局模型分配与上限：按渠道分别记忆，切换渠道自动恢复（折叠） */
+    private renderApiGlobalSettings(container: HTMLElement, providerId: string): void {
         const wrap = container.createDiv({ cls: 'nw-api-global' });
-        wrap.createEl('h3', { text: '全局模型分配' });
-        wrap.createEl('p', {
-            cls: 'nw-api-global-hint',
-            text: `以下设置作用于当前使用的供应商：${currentName}`,
+        renderCollapsibleSection(wrap, '全局模型分配（按渠道分别记忆）', false, inner => {
+            const provider = this.plugin.getAllProviders().find(item => item.id === providerId);
+            if (!provider) {
+                inner.createEl('p', { cls: 'nw-api-global-hint', text: '先在左侧选择或创建一个供应商。' });
+                return;
+            }
+            const models = provider.models.length > 0 ? provider.models : ['default-model'];
+            const assignment = this.plugin.getProviderAssignment(provider.id);
+            const isCurrent = provider.id === this.plugin.getCurrentProviderId();
+            inner.createEl('p', {
+                cls: 'nw-api-global-hint',
+                text: isCurrent
+                    ? `当前渠道：${provider.name}（改动立即生效）`
+                    : `渠道：${provider.name}（非当前渠道，改动只对该渠道记忆，切换过去后应用）`,
+            });
+            const addModelSelect = (
+                label: string,
+                desc: string,
+                value: string,
+                onChange: (next: string) => void,
+            ): void => {
+                new Setting(inner)
+                    .setName(label)
+                    .setDesc(desc)
+                    .addDropdown(dropdown => {
+                        for (const model of models) dropdown.addOption(model, model);
+                        if (value && !models.includes(value)) dropdown.addOption(value, `${value}（已失效）`);
+                        dropdown.setValue(value);
+                        dropdown.onChange(onChange);
+                    });
+            };
+            addModelSelect('默认模型', '未单独指定的任务使用', assignment.defaultModel, async (value) => {
+                this.plugin.setProviderAssignment(provider.id, { ...assignment, defaultModel: value });
+                await this.plugin.saveSettings();
+                this.plugin.updateStatusBarText();
+                this.refresh();
+            });
+            addModelSelect('Flash 模型（大纲/分析/规划）', '大纲骨架、分析报告、元素提取', assignment.flashModel, async (value) => {
+                this.plugin.setProviderAssignment(provider.id, { ...assignment, flashModel: value });
+                await this.plugin.saveSettings();
+                this.plugin.updateStatusBarText();
+                this.refresh();
+            });
+            addModelSelect('Pro 模型（正文/角色/实体）', '正文创作、角色生成、设定任务', assignment.proModel, async (value) => {
+                this.plugin.setProviderAssignment(provider.id, { ...assignment, proModel: value });
+                await this.plugin.saveSettings();
+                this.plugin.updateStatusBarText();
+                this.refresh();
+            });
+
+            const currentModel = assignment.defaultModel;
+            const override = this.plugin.settings.modelOverrides[provider.endpoint]?.[currentModel];
+            const defaults = this.plugin.resolveModelLimits(currentModel, provider.endpoint);
+            new Setting(inner)
+                .setName('最大上下文')
+                .setDesc(`${currentModel} 默认 ${defaults.maxContext.toLocaleString()} tokens${override?.maxContext !== undefined ? ' · ⚠️ 已设置自定义值' : ''}`)
+                .addText(text => text
+                    .setPlaceholder(String(defaults.maxContext))
+                    .setValue(override?.maxContext !== undefined ? String(override.maxContext) : '')
+                    .onChange(value => {
+                        const parsed = parseInt(value, 10);
+                        this.plugin.setCurrentModelOverride('maxContext', Number.isFinite(parsed) && parsed > 0 ? parsed : defaults.maxContext);
+                    }));
+            new Setting(inner)
+                .setName('最大输出')
+                .setDesc(`${currentModel} 默认 ${defaults.maxOutput.toLocaleString()} tokens${override?.maxOutput !== undefined ? ' · ⚠️ 已设置自定义值' : ''}`)
+                .addText(text => text
+                    .setPlaceholder(String(defaults.maxOutput))
+                    .setValue(override?.maxOutput !== undefined ? String(override.maxOutput) : '')
+                    .onChange(value => {
+                        const parsed = parseInt(value, 10);
+                        this.plugin.setCurrentModelOverride('maxOutput', Number.isFinite(parsed) && parsed > 0 ? parsed : defaults.maxOutput);
+                    }));
         });
-
-        const addModelSelect = (
-            label: string,
-            desc: string,
-            value: string,
-            onChange: (next: string) => void,
-        ): void => {
-            new Setting(wrap)
-                .setName(label)
-                .setDesc(desc)
-                .addDropdown(dropdown => {
-                    for (const model of models) dropdown.addOption(model, model);
-                    if (value && !models.includes(value)) dropdown.addOption(value, `${value}（已失效）`);
-                    dropdown.setValue(value);
-                    dropdown.onChange(onChange);
-                });
-        };
-
-        addModelSelect('默认模型', '未单独指定的任务使用', settings.defaultModel, async (value) => {
-            settings.defaultModel = value;
-            this.plugin.updateModelLimitsFromModel(value);
-            await this.plugin.saveSettings();
-            this.refresh();
-        });
-        addModelSelect('Flash 模型（大纲/分析/规划）', '大纲骨架、分析报告、元素提取', settings.flashModel, async (value) => {
-            settings.flashModel = value;
-            this.plugin.updateModelLimitsFromModel(value);
-            await this.plugin.saveSettings();
-            this.refresh();
-        });
-        addModelSelect('Pro 模型（正文/角色/实体）', '正文创作、角色生成、设定任务', settings.proModel, async (value) => {
-            settings.proModel = value;
-            this.plugin.updateModelLimitsFromModel(value);
-            await this.plugin.saveSettings();
-            this.refresh();
-        });
-
-        const currentModel = settings.defaultModel;
-        const endpoint = settings.apiEndpoint;
-        const override = settings.modelOverrides[endpoint]?.[currentModel];
-        const defaults = this.plugin.resolveModelLimits(currentModel);
-
-        new Setting(wrap)
-            .setName('最大上下文')
-            .setDesc(`${currentModel} 默认 ${defaults.maxContext.toLocaleString()} tokens${override?.maxContext !== undefined ? ' · ⚠️ 已设置自定义值' : ''}`)
-            .addText(text => text
-                .setPlaceholder(String(defaults.maxContext))
-                .setValue(override?.maxContext !== undefined ? String(override.maxContext) : '')
-                .onChange(value => {
-                    const parsed = parseInt(value, 10);
-                    this.plugin.setCurrentModelOverride('maxContext', Number.isFinite(parsed) && parsed > 0 ? parsed : defaults.maxContext);
-                }));
-
-        new Setting(wrap)
-            .setName('最大输出')
-            .setDesc(`${currentModel} 默认 ${defaults.maxOutput.toLocaleString()} tokens${override?.maxOutput !== undefined ? ' · ⚠️ 已设置自定义值' : ''}`)
-            .addText(text => text
-                .setPlaceholder(String(defaults.maxOutput))
-                .setValue(override?.maxOutput !== undefined ? String(override.maxOutput) : '')
-                .onChange(value => {
-                    const parsed = parseInt(value, 10);
-                    this.plugin.setCurrentModelOverride('maxOutput', Number.isFinite(parsed) && parsed > 0 ? parsed : defaults.maxOutput);
-                }));
 
         renderCollapsibleSection(wrap, '任务级模型参数', false, inner => this.renderTaskBudgetRows(inner));
         renderCollapsibleSection(wrap, '同人考据来源', false, inner => this.renderCanonResearchRows(inner));
-
-        // ── 加密口令状态与恢复 ────────────────────────────────
-        // 历史 bug：重启后保存任意密钥都会让用户「设定新口令」，新口令覆盖
-        // 会话口令 → 旧密文永久解不开（表现为 API Key 失效）。修复后不再
-        // 重设；这里再给已经踩坑的用户一条恢复路径。
-        renderCollapsibleSection(wrap, '密钥加密', false, inner => this.renderKeyEncryptionRows(inner));
-    }
-
-    /** 添加供应商弹窗（名称/Base URL/格式/密钥，模型可稍后拉取） */
-    private openNewProviderModal(): void {
-        const plugin = this.plugin;
-        const app = this.app;
-        const rerender = () => this.refresh();
-
-        new (class extends Modal {
-            onOpen(): void {
-                this.modalEl.addClass('nw-scope');
-                const { contentEl } = this;
-                contentEl.createEl('h3', { text: '＋ 添加供应商' });
-
-                let nameValue = '';
-                let endpointValue = '';
-                let formatValue: ApiFormat = 'openai-chat';
-                let keyValue = '';
-
-                new Setting(contentEl).setName('名称').setDesc('用于列表与状态显示')
-                    .addText(text => text.setPlaceholder('我的代理').onChange(value => { nameValue = value; }));
-
-                new Setting(contentEl).setName('Base URL').setDesc('可带也可不带 /v1')
-                    .addText(text => text.setPlaceholder('https://api.example.com').onChange(value => { endpointValue = value.trim(); }));
-
-                new Setting(contentEl).setName('API 格式')
-                    .addDropdown(dropdown => {
-                        for (const option of API_FORMAT_OPTIONS) dropdown.addOption(option.value, option.label);
-                        dropdown.setValue(formatValue);
-                        dropdown.onChange(value => { formatValue = normalizeApiFormat(value); });
-                    });
-
-                new Setting(contentEl).setName('API Key')
-                    .addText(text => {
-                        text.inputEl.type = 'password';
-                        text.setPlaceholder('sk-...').onChange(value => { keyValue = value.trim(); });
-                    });
-
-                const footer = contentEl.createDiv({ cls: 'nw-api-modal-footer' });
-                footer.createEl('button', { text: '取消', attr: { type: 'button' } }).onclick = () => this.close();
-                const save = footer.createEl('button', {
-                    cls: 'nw-api-primary-btn',
-                    text: '添加',
-                    attr: { type: 'button' },
-                });
-                save.onclick = async () => {
-                    if (!nameValue.trim()) { new Notice('请输入名称'); return; }
-                    if (!endpointValue) { new Notice('请输入 Base URL'); return; }
-                    const id = plugin.addCustomProvider(
-                        nameValue.trim(),
-                        endpointValue,
-                        ['default-model'],
-                        128000,
-                        32768,
-                        keyValue,
-                        formatValue,
-                    );
-                    if (!id) return;
-                    await plugin.saveSettings();
-                    plugin.updateStatusBarText();
-                    this.close();
-                    showSuccessNotice('已添加供应商，可点「从 URL 获取」导入模型', { timeout: 5000 });
-                    rerender();
-                };
-            }
-            onClose(): void { this.contentEl.empty(); }
-        })(app).open();
     }
 
     private updateTaskBudget(task: AiTask, patch: TaskBudgetOverride): void {

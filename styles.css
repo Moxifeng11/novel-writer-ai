@@ -14912,6 +14912,90 @@ body.nw-panel-resizing .nw-awb-center iframe {
     }
 }
 
+
+/* ── API 配置：密钥解锁卡片（顶部）/ 渠道状态 / 行内编辑 ── */
+.nw-api-key-card {
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 10px;
+    background: var(--background-secondary);
+}
+
+.nw-api-key-card-locked {
+    border-color: var(--text-warning, var(--color-orange));
+    background: var(--background-modifier-error-hover, var(--background-secondary));
+}
+
+.nw-api-key-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.nw-api-key-card-hint {
+    margin: 2px 0 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.nw-api-current-pill {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-on-accent);
+    background: var(--interactive-accent);
+}
+
+.nw-api-switch-text {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.nw-api-sidebar-add {
+    margin-top: 8px;
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px dashed var(--background-modifier-border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.nw-api-sidebar-add:hover {
+    color: var(--text-normal);
+    border-color: var(--interactive-accent);
+}
+
+.nw-api-new-provider {
+    margin-top: 8px;
+    padding: 6px 8px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background: var(--background-primary);
+}
+
+.nw-api-new-provider .setting-item {
+    padding: 4px 0;
+    border: none;
+}
+
+.nw-api-model-inline-editor {
+    margin: 4px 0 8px;
+    padding: 6px 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-left: 3px solid var(--interactive-accent);
+    border-radius: 8px;
+    background: var(--background-primary);
+}
+
+.nw-api-model-inline-editor .setting-item {
+    padding: 4px 0;
+    border: none;
+}
 /* ==========================================================================
  * 设置行防塌陷（2026-10-29）
  * --------------------------------------------------------------------------

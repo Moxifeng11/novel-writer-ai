@@ -32,6 +32,9 @@ function makeHost(options: {
         availableModels: [],
         modelOverrides: {},
         taskModelConfig: {},
+        providerAssignments: {},
+        providerThinking: {},
+        enabledProviderIds: undefined,
         ...options.settingsExtra,
     };
     const plugin = {
@@ -48,6 +51,19 @@ function makeHost(options: {
             ? { maxContext: 131072, maxOutput: 8192 }
             : { maxContext: 32768, maxOutput: 4096 },
         updateModelLimitsFromModel: vi.fn(),
+        // v4.97 API 配置重构：启用语义 / 按渠道分配 / 思考强度
+        getEnabledProviders: () => options.providers ?? [],
+        isProviderEnabled: () => true,
+        setProviderEnabled: vi.fn(),
+        getProviderAssignment: () => ({ defaultModel: 'deepseek-chat', flashModel: 'deepseek-chat', proModel: 'deepseek-reasoner' }),
+        setProviderAssignment: vi.fn(),
+        getProviderThinking: () => ({}),
+        setProviderThinking: vi.fn(),
+        loadSettings: vi.fn(async () => {}),
+        verifySettingsPassword: vi.fn(async () => true),
+        getSettingsService: undefined,
+        resetKeyPassword: vi.fn(async () => ({ reencrypted: 0, cleared: [] })),
+        setSessionPassword: vi.fn(),
         engineRegistry: { getOrNull: () => null, get: () => null },
     };
     return {
@@ -132,6 +148,18 @@ describe('ApiSection.render', () => {
         const root = renderApi(makeHost({ providers: PROVIDERS, currentId: 'p1' }));
         // 侧栏/详情头都渲染 p2 时会带「设为当前」动作文案；至少头部当前供应商可见
         expect(root.allText()).toContain('DeepSeek 官方');
+    });
+
+    it('API 配置重构：顶部密钥卡片 + 启用语义（其他模块显示）+ 行内新建入口', () => {
+        const root = renderApi(makeHost({ providers: PROVIDERS, currentId: 'p1' }));
+        const text = root.allText();
+        // 密钥解锁卡片放到顶部（不再藏在折叠区）
+        expect(root.findAll('nw-api-key-card').length).toBe(1);
+        // 开关语义是「在其他模块显示」，不再冒充切换当前渠道
+        expect(text).toContain('在其他模块显示');
+        expect(text).toContain('使用中');
+        // 添加供应商改为侧栏行内入口
+        expect(text).toContain('＋ 新建供应商');
     });
 
     it('全局设置区渲染当前供应商名与默认模型', () => {

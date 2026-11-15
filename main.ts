@@ -198,6 +198,8 @@ export interface CustomProvider {
     providerIdHint?: string;
     isDefault?: boolean; // 标记是否为初始默认供应商
     isHidden?: boolean;  // 标记是否被隐藏
+    /** 额外请求头（适配 OpenRouter/自建网关等需要 HTTP-Referer、X-Title 等头的渠道） */
+    headers?: Record<string, string>;
 }
 
 /** 模型源类型与解析（v4.11 架构底座，定义见 shared/model-source.ts） */
@@ -229,11 +231,11 @@ export { MODEL_CAPABILITIES, findModelCapability };
  * 新代码应从 ProviderManager 获取供应商列表
  */
 export const DEFAULT_PROVIDERS: Record<string, CustomProvider> = {
-    volc:     { id: 'volc',     name: '火山引擎豆包', endpoint: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions', models: ['deepseek-v3-2-251201', 'doubao-seed-2-0-pro-260215', 'doubao-seed-1-8-251228', 'doubao-seed-2-0-code-preview-260215', 'glm-4-7-251222'], maxContext: 256000, maxOutput: 131072, sourceType: 'cloud', isDefault: true },
     ollama:   { id: 'ollama',   name: '本地 Ollama',  endpoint: 'http://localhost:11434/v1/chat/completions',            models: ['qwen2.5:7b', 'deepseek-r1:7b'],                                      maxContext: 32768,  maxOutput: 8192,   sourceType: 'local', isDefault: true },
-    catcat:   { id: 'catcat',   name: 'CatCat Gemini', endpoint: 'https://api.catcat.top/v1/chat/completions',              models: ['gemini-3.1-pro-preview', 'gemini-3.1-pro', 'gemini-3.1-pro-preview-search', 'gemini-3.1-pro-search', 'gemini-2.5-pro', 'gemini-2.5-pro-max', 'gemini-3.5-flash', 'gemini-3-flash', 'gemini-3.1-flash-lite', 'gemini-3.1-flash-lite-preview'], maxContext: 1048576, maxOutput: 65536,  sourceType: 'cloud', isDefault: true },
     deepseek: { id: 'deepseek', name: 'DeepSeek 官网', endpoint: 'https://api.deepseek.com/v1/chat/completions',            models: ['deepseek-v4-flash', 'deepseek-v4-pro'],                             maxContext: 1048576, maxOutput: 384000, sourceType: 'cloud', isDefault: true },
     sensenova: { id: 'sensenova', name: '日日新/SenseNova', endpoint: 'https://token.sensenova.cn/v1/chat/completions',        models: ['sensenova-6.7-flash-lite', 'deepseek-v4-flash'],                   maxContext: 262144,  maxOutput: 65536,  sourceType: 'cloud', isDefault: true },
+    // OpenCode Zen：OpenAI 兼容网关（https://opencode.ai/zen/v1）；模型可用「从 URL 获取」刷新
+    opencode: { id: 'opencode', name: 'OpenCode Zen', endpoint: 'https://opencode.ai/zen/v1/chat/completions',             models: ['deepseek-v4-flash', 'deepseek-v4-pro', 'big-pickle'],               maxContext: 1048576, maxOutput: 65536,  sourceType: 'cloud', isDefault: true },
 };
 
 // v3.4.7: 模型能力表已迁移至 shared/model-capabilities.ts，此处 re-export 仅用于向后兼容
@@ -267,6 +269,12 @@ export interface NovelWriterSettings {
     /** MCP 服务列表（用户配置；启动会话时连接并桥接工具） */
     mcpServers?: Array<{ id: string; name: string; transport: 'stdio' | 'http'; command?: string; args?: string[]; env?: Record<string, string>; url?: string; kind?: 'read' | 'write-setting' | 'write-prose' | 'admin'; enabled?: boolean }>;
 
+    /** 允许出现在其他模块（快切/工作台/协同）里的供应商；未设置 = 全部显示 */
+    enabledProviderIds?: string[];
+    /** 每个供应商各自记住的全局模型分配（切换渠道时恢复，不再互相覆盖） */
+    providerAssignments?: Record<string, { defaultModel: string; flashModel: string; proModel: string }>;
+    /** 每个供应商各自的思考强度（未设置时用全局 thinkingMode/thinkingBudget） */
+    providerThinking?: Record<string, { mode?: ThinkingMode; budget?: number }>;
     /** 桌面宠物自定义形象（用户自己的图片；未设置则用内置分层 SVG） */
     petImage?: { source?: 'vault' | 'file'; path?: string; dataUrl?: string; cols: number; rows: number } | null;
     /** 追加的 AI 高频词（C 类统计词表可配置化） */
@@ -945,6 +953,9 @@ export default class NovelWriterPlugin extends Plugin {
             // 桌宠本机图片：图片本体在插件目录，settings 只存元数据；启动时回读到内存，
             // 这样即使 settings 被重置/迁移丢字段，也能认出用户之前选的图片。
             await this.hydratePetImage();
+            // 预设供应商收敛迁移（旧火山/CatCat → 自定义供应商）；引擎初始化时设置可能还没加载，
+            // 这里设置就绪后再补一次，避免老用户升级后预设"消失"。
+            this._providerManager?.migrateLegacyPresets();
             // 参考书籍：设置里的 referenceBookIds → 实例字段镜像。
             // 启动路径只走 SettingsService.loadSettings()，不会调用 plugin.loadSettings()，
             // 不在这里补一次，重启后协同写作的参考书籍与主参考会全部为空。
@@ -2557,6 +2568,25 @@ export default class NovelWriterPlugin extends Plugin {
     }
     public deleteCustomProvider(id: string): boolean { return this._providerManager.deleteCustom(id); }
     public getAllProviders() { return this._providerManager.getAllProviders(); }
+    /** 只返回允许出现在其他模块（快切/工作台/协同）的供应商 */
+    public getEnabledProviders() { return this._providerManager.getEnabledProviders(); }
+    /** 供应商是否允许出现在其他模块（不代表当前使用中） */
+    public isProviderEnabled(id: string): boolean { return this._providerManager.isProviderEnabled(id); }
+    /** 切换供应商在其它模块的显示 */
+    public setProviderEnabled(id: string, enabled: boolean): boolean { return this._providerManager.setProviderEnabled(id, enabled); }
+    /** 读该渠道的全局模型分配 */
+    public getProviderAssignment(id: string) { return this._providerManager.getProviderAssignment(id); }
+    /** 保存该渠道的全局模型分配 */
+    public setProviderAssignment(id: string, assignment: { defaultModel: string; flashModel: string; proModel: string }): void {
+        this._providerManager.setProviderAssignment(id, assignment);
+    }
+    /** 该渠道思考强度的自动识别结果 */
+    public getThinkingCapability(id: string, model?: string) { return this._providerManager.getThinkingCapability(id, model); }
+    /** 读/写该渠道思考强度 */
+    public getProviderThinking(id: string) { return this._providerManager.getProviderThinking(id); }
+    public setProviderThinking(id: string, thinking: { mode?: 'auto' | 'off' | 'on' | 'deep'; budget?: number }): void {
+        this._providerManager.setProviderThinking(id, thinking);
+    }
     public setHidden(id: string, hidden: boolean): boolean { return this._providerManager.setHidden(id, hidden); }
     /**
      * 删除自定义供应商（与「隐藏预设」区分：自定义项真删，预设可恢复）

@@ -1175,6 +1175,8 @@ export class EngineRegistry {
             addOverrideHistory: (entry) => cacheManager.addModelOverrideHistory(entry),
         });
         this.register(ENGINE_NAMES.PROVIDER_MANAGER, providerManager);
+        // 预设收敛为 4 个（Ollama/DeepSeek/SenseNova/OpenCode）：历史预设转成自定义供应商，避免升级后消失
+        providerManager.migrateLegacyPresets();
 
         // 第二个回调提供面板尺寸（工作台三栏宽度等），由「工作台布局」页写入
         const themeManager = new ThemeManager(

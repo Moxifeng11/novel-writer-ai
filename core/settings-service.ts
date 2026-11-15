@@ -491,7 +491,12 @@ export function getDefaultSettings(): NovelWriterSettings {
         storyContextTier: 'auto',
         /** v4.20 写作指纹注入总预算（字符）；0 = 不限制 */
         fingerprintInjectionBudget: 2000,
-        availableModels: DEFAULT_PROVIDERS.volc.models,
+        // 默认模型列表取新预设（DeepSeek）；兼容测试/旧环境里没有该预设时回落到 Ollama
+        availableModels: [
+            ...(DEFAULT_PROVIDERS.deepseek?.models
+                ?? DEFAULT_PROVIDERS.ollama?.models
+                ?? ['deepseek-v4-flash']),
+        ],
         maxContext: 128000,
         maxOutput: 32768,
         modelOverrides: {},

@@ -15,6 +15,16 @@ import {
     type ModelSourceKind,
 } from '@/shared/model-capabilities';
 import { createLogger } from '@/shared/logger';
+import {
+    clampAssignment,
+    defaultAssignmentFor,
+    isProviderVisible,
+    migrateRemovedPresets,
+    PRESET_PROVIDER_IDS,
+    resolveThinkingCapability,
+    toggleProviderVisibility,
+    type ProviderAssignment,
+} from '@/shared/provider-ui-model';
 
 
 const log = createLogger('ProviderManager');
@@ -33,6 +43,12 @@ export interface ProviderSettings {
     providerKeys: Record<string, string>;
     customProviderName: string;
     customProviders: CustomProvider[];
+    /** 允许出现在其他模块的供应商；缺省 = 全部 */
+    enabledProviderIds?: string[];
+    /** 每渠道记住的全局模型分配 */
+    providerAssignments?: Record<string, { defaultModel: string; flashModel: string; proModel: string }>;
+    /** 每渠道的思考强度 */
+    providerThinking?: Record<string, { mode?: 'auto' | 'off' | 'on' | 'deep'; budget?: number }>;
 }
 
 /** ProviderManager 依赖的外部回调 */
@@ -139,11 +155,27 @@ export class ProviderManager {
                 log.warn(`[ProviderManager] 当前端点未登记，切换前无法归档密钥：${s.apiEndpoint}`);
             }
         }
+        // 先记住当前渠道的全局模型分配，切换后再恢复目标渠道的分配；
+        // 旧实现每次都重置成 models[0..1]，用户切回来发现配置全丢。
+        s.providerAssignments = s.providerAssignments || {};
+        const previousId = currentId;
+        if (previousId && previousId !== providerId) {
+            s.providerAssignments[previousId] = {
+                defaultModel: s.defaultModel,
+                flashModel: s.flashModel,
+                proModel: s.proModel,
+            };
+        }
+        const saved = s.providerAssignments[providerId];
+        const assignment: ProviderAssignment = clampAssignment(
+            saved ?? defaultAssignmentFor(provider),
+            provider.models,
+        );
         s.apiEndpoint = provider.endpoint;
         s.availableModels = [...provider.models];
-        s.defaultModel = provider.models[0];
-        s.flashModel = provider.models[0];
-        s.proModel = provider.models[1] || provider.models[0];
+        s.defaultModel = assignment.defaultModel;
+        s.flashModel = assignment.flashModel;
+        s.proModel = assignment.proModel;
         s.apiKey = s.providerKeys[providerId] || '';
         this.updateModelLimits(s.flashModel);
         this.cb.refreshContextPanel();
@@ -373,6 +405,134 @@ export class ProviderManager {
         const s = this.cb.getSettings();
         const provider = (s.customProviders || []).find(c => c.endpoint === s.apiEndpoint);
         return provider ? resolveProviderSourceType(provider) : 'cloud';
+    }
+
+    /**
+     * 该供应商是否允许出现在其他模块（快切/工作台/协同）。
+     *
+     * @param id - 供应商 id
+     * @returns 是否可见
+     */
+    isProviderEnabled(id: string): boolean {
+        return isProviderVisible(id, this.cb.getSettings().enabledProviderIds);
+    }
+
+    /**
+     * 切换供应商在其它模块的显示（不动当前使用中的渠道）。
+     *
+     * @param id - 供应商 id
+     * @param enabled - 是否显示
+     * @returns 是否成功
+     */
+    setProviderEnabled(id: string, enabled: boolean): boolean {
+        const s = this.cb.getSettings();
+        const allIds = (s.customProviders || []).filter(p => !p.isHidden).map(p => p.id);
+        if (!allIds.includes(id)) return false;
+        s.enabledProviderIds = toggleProviderVisibility(s.enabledProviderIds, allIds, id, enabled);
+        this.scheduleSave();
+        return true;
+    }
+
+    /**
+     * 只返回允许出现在其他模块的供应商（快切/工作台用）。
+     *
+     * @returns 供应商列表
+     */
+    getEnabledProviders(): ReturnType<ProviderManager['getAllProviders']> {
+        return this.getAllProviders().filter(p => this.isProviderEnabled(p.id));
+    }
+
+    /**
+     * 读该渠道已保存的全局模型分配（无则按渠道默认值）。
+     *
+     * @param id - 供应商 id
+     * @returns 分配
+     */
+    getProviderAssignment(id: string): ProviderAssignment {
+        const s = this.cb.getSettings();
+        const provider = (s.customProviders || []).find(p => p.id === id);
+        if (!provider) return defaultAssignmentFor({ id, name: id, endpoint: '', models: [] });
+        return clampAssignment(s.providerAssignments?.[id] ?? defaultAssignmentFor(provider), provider.models);
+    }
+
+    /**
+     * 保存该渠道的全局模型分配（只影响该渠道；当前渠道同时同步全局字段）。
+     *
+     * @param id - 供应商 id
+     * @param assignment - 分配
+     */
+    setProviderAssignment(id: string, assignment: ProviderAssignment): void {
+        const s = this.cb.getSettings();
+        const provider = (s.customProviders || []).find(p => p.id === id);
+        if (!provider) return;
+        const next = clampAssignment(assignment, provider.models);
+        s.providerAssignments = s.providerAssignments || {};
+        s.providerAssignments[id] = next;
+        if (this.getCurrentProviderId() === id) {
+            s.defaultModel = next.defaultModel;
+            s.flashModel = next.flashModel;
+            s.proModel = next.proModel;
+        }
+        this.scheduleSave();
+    }
+
+    /**
+     * 该渠道思考强度的自动识别结果（决定界面是否展示与下发哪种字段）。
+     *
+     * @param id - 供应商 id
+     * @param model - 模型名（缺省用该渠道默认模型）
+     * @returns 思考能力
+     */
+    getThinkingCapability(id: string, model?: string): ReturnType<typeof resolveThinkingCapability> {
+        const s = this.cb.getSettings();
+        const provider = (s.customProviders || []).find(p => p.id === id);
+        if (!provider) return resolveThinkingCapability({ endpoint: '' }, '');
+        return resolveThinkingCapability(provider, model || provider.models[0] || '');
+    }
+
+    /**
+     * 读该渠道的思考强度设置（未设置返回空，沿用全局）。
+     *
+     * @param id - 供应商 id
+     * @returns 模式与预算
+     */
+    getProviderThinking(id: string): { mode?: 'auto' | 'off' | 'on' | 'deep'; budget?: number } {
+        const s = this.cb.getSettings();
+        return { ...(s.providerThinking?.[id] ?? {}) };
+    }
+
+    /**
+     * 保存该渠道的思考强度。
+     *
+     * @param id - 供应商 id
+     * @param thinking - 模式/强度
+     */
+    setProviderThinking(id: string, thinking: { mode?: 'auto' | 'off' | 'on' | 'deep'; budget?: number }): void {
+        const s = this.cb.getSettings();
+        s.providerThinking = s.providerThinking || {};
+        s.providerThinking[id] = { ...thinking };
+        this.scheduleSave();
+    }
+
+    /**
+     * 旧预设迁移：历史上火山/CatCat 等预设已收敛，转成普通自定义供应商避免消失。
+     */
+    migrateLegacyPresets(): void {
+        // 引擎初始化阶段设置可能尚未加载：此时静默跳过，主流程在设置就绪后会再调一次。
+        const s = this.cb.getSettings?.() as ProviderSettings | undefined;
+        if (!s || !Array.isArray(s.customProviders)) return;
+        let next = migrateRemovedPresets(s.customProviders, PRESET_PROVIDER_IDS);
+        // 新预设（如 OpenCode Zen）补进列表：老用户升级后也能看到，不用手动「恢复默认」
+        const existingIds = new Set(next.map(provider => provider.id));
+        for (const [id, preset] of Object.entries(DEFAULT_PROVIDERS)) {
+            if (!existingIds.has(id)) next = [...next, { ...preset, isDefault: true, isHidden: false }];
+        }
+        const changed = next.length !== s.customProviders.length
+            || next.some((provider, index) => provider !== s.customProviders[index]);
+        if (!changed) return;
+        s.customProviders = next;
+        log.info('[ProviderManager] 已迁移供应商配置（历史预设转自定义 + 补齐新预设）');
+        this.scheduleSave();
     }
 
     /**

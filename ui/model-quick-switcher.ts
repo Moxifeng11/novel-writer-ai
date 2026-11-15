@@ -58,6 +58,8 @@ export interface ModelSwitcherPluginLike {
     };
     getCurrentProviderId(): string | null;
     getAllProviders(): Array<ModelSwitcherProviderOption & { maxContext?: number; maxOutput?: number; isDefault?: boolean; isHidden?: boolean }>;
+    /** 只返回允许出现在其它模块的渠道（未实现时回落 getAllProviders） */
+    getEnabledProviders?(): Array<ModelSwitcherProviderOption & { maxContext?: number; maxOutput?: number; isDefault?: boolean; isHidden?: boolean }>;
     switchProviderByEndpoint(endpoint: string): boolean;
     updateModelLimitsFromModel(modelName: string): void;
     saveSettings(): Promise<void>;
@@ -226,7 +228,7 @@ function addMenuItem(
 export function openModelSwitcherMenu(plugin: ModelSwitcherPluginLike, evt?: MouseEvent): void {
     const snapshot = resolveModelSwitcherSnapshot(plugin);
     const providers = sortProviderOptions(
-        plugin.getAllProviders().map(p => ({
+        (plugin.getEnabledProviders?.() ?? plugin.getAllProviders()).map(p => ({
             id: p.id,
             name: p.name,
             endpoint: p.endpoint,

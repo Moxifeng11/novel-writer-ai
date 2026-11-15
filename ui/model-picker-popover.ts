@@ -101,7 +101,7 @@ export function openModelPickerPopover(
         root.empty();
         const settings = plugin.settings;
         const currentProviderId = plugin.getCurrentProviderId();
-        const providers: PickerProvider[] = plugin.getAllProviders().map(p => ({
+        const providers: PickerProvider[] = (plugin.getEnabledProviders?.() ?? plugin.getAllProviders()).map(p => ({
             id: p.id,
             name: p.name,
             endpoint: p.endpoint,
