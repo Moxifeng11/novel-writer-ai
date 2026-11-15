@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146016 | 1935 | 1532 | 79% |
 | `services/` | 52 | 16355 | 246 | 186 | 76% |
-| `shared/` | 232 | 47416 | 1997 | 1578 | 79% |
+| `shared/` | 232 | 47421 | 1997 | 1578 | 79% |
 | `core/` | 7 | 2961 | 33 | 18 | 55% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106856 | 1034 | 835 | 81% |
@@ -578,7 +578,7 @@
 | `shared/private-host.ts` | 61 | 1 | 1 |
 | `shared/progress-emitter.ts` | 551 | 5 | 1 |
 | `shared/project-catalog.ts` | 183 | 7 | 7 |
-| `shared/project-index-model.ts` | 483 | 21 | 12 |
+| `shared/project-index-model.ts` | 488 | 21 | 12 |
 | `shared/project-mode.ts` | 86 | 5 | 5 |
 | `shared/project-name.ts` | 119 | 6 | 6 |
 | `shared/project-root.ts` | 48 | 2 | 2 |

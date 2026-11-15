@@ -35,6 +35,9 @@ export type IndexKind =
     /** 其他 */
     | 'other';
 
+/** 派生视图文件名（由插件生成，不作为要素条目） */
+const DERIVED_VIEW_NAMES = ['时间线看板', '伏笔库', '承诺账本', '叙事总览', '信息债看板', '关系状态', '角色弧线'];
+
 /** 要素类型（来自 frontmatter.type，缺失时由路径推断） */
 export type EntityType =
     | 'character'
@@ -214,6 +217,8 @@ export function typeFromDeclared(declared: string): EntityType | null {
  * @returns 类型
  */
 export function typeFromPath(path: string, tags: readonly string[] = []): EntityType {
+    const basename = String(path || '').replace(/\\/g, '/').split('/').pop()?.replace(/\.md$/, '') ?? '';
+    if (DERIVED_VIEW_NAMES.includes(basename)) return 'other';
     for (const tag of tags) {
         if (tag.startsWith('nw/实体/人物')) return 'character';
         if (tag.startsWith('nw/实体/地点')) return 'location';

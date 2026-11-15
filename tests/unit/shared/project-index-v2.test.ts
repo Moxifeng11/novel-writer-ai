@@ -64,6 +64,18 @@ describe('extractIndexFields', () => {
     });
 });
 
+describe('派生视图不参与要素推断', () => {
+    it('时间线看板/伏笔库等派生文件不算要素', () => {
+        expect(extractIndexFields(undefined, 'p/02-时间线与伏笔/时间线看板.md').type).toBe('other');
+        expect(extractIndexFields(undefined, 'p/02-时间线与伏笔/伏笔库.md').type).toBe('other');
+        expect(extractIndexFields(undefined, 'p/01-世界架构/关系状态.md').type).toBe('other');
+    });
+
+    it('正式条目文件仍按路径推断', () => {
+        expect(extractIndexFields(undefined, 'p/02-时间线与伏笔/时间线事件/EVT-0001_x.md').type).toBe('timeline');
+    });
+});
+
 describe('typeFromDeclared / typeFromPath', () => {
     it('声明类型中英文都识别', () => {
         expect(typeFromDeclared('人物')).toBe('character');
