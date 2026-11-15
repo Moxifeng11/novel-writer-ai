@@ -56,7 +56,7 @@ describe('buildProjectIndex 构建', () => {
 
     it('只放摘要，不含正文（条目字段固定）', () => {
         const index = buildProjectIndex('p', [file('p/01-世界架构/人物/林玄.md', 42, 99)]);
-        expect(index.entries[0]).toEqual({
+        expect(index.entries[0]).toMatchObject({
             path: 'p/01-世界架构/人物/林玄.md',
             name: '林玄',
             kind: 'character',

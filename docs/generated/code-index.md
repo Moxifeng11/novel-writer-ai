@@ -7,8 +7,8 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 352 | 145754 | 1934 | 1531 | 79% |
-| `services/` | 43 | 15178 | 226 | 175 | 77% |
-| `shared/` | 213 | 44274 | 1864 | 1492 | 80% |
+| `services/` | 43 | 15236 | 226 | 175 | 77% |
+| `shared/` | 213 | 44566 | 1874 | 1498 | 80% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106834 | 1034 | 835 | 81% |
@@ -415,7 +415,7 @@
 | `services/plan-spec-service.ts` | 147 | 3 | 2 |
 | `services/planning-store.ts` | 76 | 1 | 1 |
 | `services/project-health-service.ts` | 223 | 5 | 2 |
-| `services/project-index-service.ts` | 160 | 1 | 1 |
+| `services/project-index-service.ts` | 218 | 1 | 1 |
 | `services/project-rename-service.ts` | 192 | 2 | 2 |
 | `services/project-standard-service.ts` | 68 | 3 | 1 |
 | `services/prompt-manager.ts` | 783 | 5 | 5 |
@@ -558,7 +558,7 @@
 | `shared/private-host.ts` | 61 | 1 | 1 |
 | `shared/progress-emitter.ts` | 551 | 5 | 1 |
 | `shared/project-catalog.ts` | 183 | 7 | 7 |
-| `shared/project-index-model.ts` | 191 | 11 | 6 |
+| `shared/project-index-model.ts` | 483 | 21 | 12 |
 | `shared/project-mode.ts` | 86 | 5 | 5 |
 | `shared/project-name.ts` | 119 | 6 | 6 |
 | `shared/project-root.ts` | 48 | 2 | 2 |

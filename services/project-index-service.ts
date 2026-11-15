@@ -4,6 +4,9 @@
  * 借鉴催更姬 infrastructure/persistence：列目录/查候选只读索引摘要，
  * 正文按需单读。索引落在 `<项目>/04-项目总控/索引.json`，随项目走。
  *
+ * v2（M1）：扫描时读取 metadataCache 的 frontmatter 与双链，索引条目携带
+ * id/type/tags/aliases/summary/status/storyTime/links，并提供精准查询与名称解析。
+ *
  * 失效策略：vault 事件（创建/修改/删除/改名）把项目标记为脏，下次 ensure 时重建；
  * 未变化时直接命中缓存，不重复扫描。
  */
@@ -13,12 +16,21 @@ import { createLogger } from '@/shared/logger';
 import { pjIndexFile } from '@/shared/paths';
 import {
     buildProjectIndex,
+    extractIndexFields,
     isIndexStale,
     PROJECT_INDEX_VERSION,
+    queryEntries,
+    resolveEntity,
+    type IndexQuery,
     type ProjectIndex,
+    type ProjectIndexEntry,
+    type ResolveEntityResult,
 } from '@/shared/project-index-model';
 
 const log = createLogger('ProjectIndex');
+
+/** 索引扫描排除的目录（派生/历史/缓存，不进索引） */
+const EXCLUDED_DIR_SEGMENTS = ['_versions', '.看板', '事务', '会话预设', '断点', '附件'];
 
 /** 文件摘要（扫描结果，不含正文） */
 interface FileSummary {
@@ -26,6 +38,7 @@ interface FileSummary {
     name: string;
     size: number;
     mtime: number;
+    fields: Pick<ProjectIndexEntry, 'type' | 'id' | 'tags' | 'aliases' | 'summary' | 'status' | 'storyTime' | 'links'>;
 }
 
 /**
@@ -58,6 +71,30 @@ export class ProjectIndexService {
         this.dirty.delete(project);
         await this.save(index);
         return index;
+    }
+
+    /**
+     * 精准查询（ID/类型/标签/别名/标题/前缀；text 仅 UI 搜索用）。
+     *
+     * @param project - 项目路径
+     * @param query - 查询条件
+     * @returns 匹配条目
+     */
+    async query(project: string, query: IndexQuery): Promise<ProjectIndexEntry[]> {
+        const index = await this.ensure(project);
+        return queryEntries(index, query);
+    }
+
+    /**
+     * 名称 → 实体解析（精确，不猜）。
+     *
+     * @param project - 项目路径
+     * @param name - 名称/ID/别名
+     * @returns 解析结果
+     */
+    async resolve(project: string, name: string): Promise<ResolveEntityResult> {
+        const index = await this.ensure(project);
+        return resolveEntity(index, name);
     }
 
     /**
@@ -95,7 +132,7 @@ export class ProjectIndexService {
         this.dirty.clear();
     }
 
-    /** 扫描项目目录，只取 size/mtime，不读正文 */
+    /** 扫描项目目录：只取 size/mtime + metadataCache 派生字段，不读正文 */
     private scan(project: string): FileSummary[] {
         const folder = this.app.vault.getAbstractFileByPath(project);
         if (!(folder instanceof TFolder)) return [];
@@ -104,6 +141,7 @@ export class ProjectIndexService {
         while (stack.length > 0) {
             const current = stack.pop();
             if (!current) continue;
+            if (this.isExcluded(current.path)) continue;
             for (const child of current.children) {
                 if (child instanceof TFolder) {
                     stack.push(child);
@@ -113,11 +151,33 @@ export class ProjectIndexService {
                         name: child.basename,
                         size: child.stat.size,
                         mtime: child.stat.mtime,
+                        fields: this.readFields(child),
                     });
                 }
             }
         }
         return results;
+    }
+
+    /** 路径是否属于排除目录 */
+    private isExcluded(path: string): boolean {
+        const segments = String(path || '').replace(/\\/g, '/').split('/');
+        return segments.some(segment => EXCLUDED_DIR_SEGMENTS.includes(segment));
+    }
+
+    /** 从 metadataCache 读 frontmatter 与双链（零 I/O） */
+    private readFields(file: TFile): FileSummary['fields'] {
+        try {
+            const cache = this.app.metadataCache.getFileCache(file);
+            const fields = extractIndexFields(cache?.frontmatter as Record<string, unknown> | undefined, file.path);
+            const resolved = this.app.metadataCache.resolvedLinks?.[file.path] ?? {};
+            const links = Object.keys(resolved).filter(Boolean);
+            return { ...fields, ...(links.length > 0 ? { links } : {}) };
+        } catch (error) {
+            // silent-ok: 单个文件元数据读取失败按「无属性」处理，不影响其它条目
+            log.warn('读取文件元数据失败:', file.path, error);
+            return { type: undefined, tags: [], aliases: [] };
+        }
     }
 
     /** 落盘索引（失败不阻断，索引可重建） */
@@ -150,9 +210,7 @@ export class ProjectIndexService {
             const parsed = JSON.parse(await this.app.vault.read(file)) as ProjectIndex;
             if (parsed?.version !== PROJECT_INDEX_VERSION) return null;
             return parsed;
-        // silent-ok: 索引文件损坏等价于「无索引」，调用方会重建，不阻断写作
         } catch { // silent-ok: 索引文件损坏等价于「无索引」，调用方会重建，不阻断写作
-            // silent-ok: 索引文件损坏等价于「无索引」，调用方会重建，不阻断写作
             return null;
         }
     }
