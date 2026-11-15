@@ -22,7 +22,7 @@ import { getChapterFileName, findChapterFile, getChapterFile , findBodyFileByCha
 import { CHARACTER_DISPLAY_KEYS } from '@/shared/format-constants';
 import { withWriteLock } from '@/shared/write-lock';
 import { writeInfoDebtBoard } from '@/shared/info-debt-board';
-import type { SettlementJournal } from './settlement/settlement-journal';
+import { SettlementJournal } from './settlement/settlement-journal';
 import { loadRelationshipStates, extractRelationshipChanges, applyRelationshipChanges, saveRelationshipStates, getRelationshipFilePath } from './relationship-engine';
 import { consumePendingRelationshipChanges, loadPendingRelationshipChanges } from './relationship-change-queue';
 import { writeChapterDigestFromProject } from './memory/chapter-digest';
@@ -42,6 +42,7 @@ import { parseReport, parseFrontmatterFromText, parseFmList, resolveForceRevealN
 import { appendEventToContent, appendForeshadowToContent, moveForeshadowToRevealedInContent } from './ledger/ledger-write';
 import { invalidateStoryLedger } from './ledger/ledger-io';
 import { createSettleContext, type SettleContext } from './settlement/settle-context';
+import { SettlementJournalStore } from '@/services/settlement-journal-store';
 import { parseInfoPlanFields } from '@/shared/info-plan-fields';
 import { getValidFrontmatterKeys } from '@/shared/entity-field-mappings';
 import { getLinkPolicy, formatSingleLinkValue, formatListLinkValue, parseLinkValue } from '@/shared/entity-links';
@@ -593,6 +594,62 @@ export class SettlementEngine {
     }
 
     /**
+     * 恢复上次崩溃/退出遗留的结算回滚日志（对抗审查 P1）。
+     *
+     * @param project - 项目路径
+     * @param chapterName - 章节名（省略时恢复全部残留）
+     * @param dryRun - 只预览不执行回滚
+     * @returns 恢复报告
+     */
+    async recoverInterruptedSettlement(
+        project: string,
+        chapterName?: string,
+        dryRun = false,
+    ): Promise<{ chapters: Array<{ chapterName: string; entries: number; reverted: number; failed: number; cleared: boolean }> }> {
+        const store = new SettlementJournalStore(this.app, project);
+        const targets = chapterName ? [chapterName] : await store.listPending();
+        const results: Array<{ chapterName: string; entries: number; reverted: number; failed: number; cleared: boolean }> = [];
+        for (const name of targets) {
+            const entries = await store.load(name);
+            if (!entries) continue;
+            let reverted = 0;
+            let failed = 0;
+            if (!dryRun) {
+                const journal = SettlementJournal.fromSnapshot(entries);
+                const fsPort = {
+                    read: (p: string) => withWriteLock(p, () => this.getFS().read(p)),
+                    write: (p: string, content: string) => withWriteLock(p, () => this.getFS().write(p, content)),
+                    exists: (p: string) => this.getFS().exists(p),
+                };
+                const fmPort = {
+                    readField: async (path: string, field: string): Promise<string> => withWriteLock(path, async () => {
+                        const file = this.getVaultMeta().getAbstractFileByPath(path);
+                        if (!(file instanceof TFile)) return '';
+                        let value = '';
+                        await this.getFrontmatter().processFrontmatter(file, (fm: FrontMatter) => {
+                            value = String(fm[field] ?? '');
+                        });
+                        return value;
+                    }),
+                    restoreField: async (path: string, field: string, value: unknown): Promise<void> => withWriteLock(path, async () => {
+                        const file = this.getVaultMeta().getAbstractFileByPath(path);
+                        if (!(file instanceof TFile)) return;
+                        await this.getFrontmatter().processFrontmatter(file, (fm: FrontMatter) => {
+                            fm[field] = value as FrontMatter[string];
+                        });
+                    }),
+                };
+                const report = await journal.rollback(fsPort, fmPort);
+                reverted = report.reverted;
+                failed = report.failed;
+                if (failed === 0) await store.clear(name).catch(() => undefined); // silent-ok: 清理失败不影响恢复结果
+            }
+            results.push({ chapterName: name, entries: entries.length, reverted, failed, cleared: !dryRun && failed === 0 });
+        }
+        return { chapters: results };
+    }
+
+    /**
      * 回写审查（M12）：指令 → 名称解析为 ID → 字段/范围校验 → 落盘审查记录。
      *
      * 第一阶段只观测，不改变任何写入行为。
@@ -633,6 +690,12 @@ export class SettlementEngine {
         // M12：回写审查（只观测、不改变写入行为；失败不阻断结算）
         if (typeof this.reviewWriteback === 'function') void this.reviewWriteback(project, chapName, instr);
         const ctx = createSettleContext(project, chapDir, chapName, bodyText, report, instr, options);
+
+        // 结算日志实时落盘：中途崩溃后下次启动仍可回滚（成功/已回滚时清理）
+        const journalStore = new SettlementJournalStore(this.app, project);
+        ctx.journal.setChangeSink(entries => {
+            void journalStore.save(chapName, entries).catch(e => log.warn('[SettlementEngine] 结算日志落盘失败:', e));
+        });
 
         // 空指令集守卫：报告里没有任何 UPDATE_/NEW_/RELATION/GROWTH/EMOTION/DELETE
         // 且没有强制揭示时，不得「什么都不写却标记已结算」——交给调用方决定改用轻结算。
@@ -722,6 +785,9 @@ export class SettlementEngine {
         }
 
         ctx.result.mode = 'full';
+        if (!ctx.hasPartialFailure || ctx.result.rollback) {
+            await journalStore.clear(chapName).catch(() => undefined); // silent-ok: 清理失败不影响结算结果
+        }
         return ctx.result;
     }
 

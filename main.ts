@@ -59,6 +59,7 @@ import { KnowledgeBaseView, VIEW_TYPE_KNOWLEDGE_BASE } from './ui/views/knowledg
 import { AgentWorkbenchView } from './ui/agent-workbench-view';
 import { VIEW_TYPE_AGENT_WORKBENCH } from './shared/view-types';
 import { detachPluginLeaves } from './shared/plugin-leaves';
+import { executeObsidianCommand, listObsidianCommands, openPluginSettingsTab } from './shared/obsidian-internal-bridge';
 import { revealLeafCompat } from './shared/workspace-reveal';
 import { WritingFingerprintView, VIEW_TYPE_WRITING_FINGERPRINT } from './ui/views/writing-fingerprint-view';
 import { ProjectSidePanelView, VIEW_TYPE_PROJECT_SIDE_PANEL } from './ui/project-side-panel-view';
@@ -945,9 +946,9 @@ export default class NovelWriterPlugin extends Plugin {
             commandRegistry.registerObsidianCommands((cmd) => this.addCommand(cmd));
 
             log.info('[小说工坊] 注册命令...');
-            const registeredCmds = this.app.commands.listCommands().filter((cmd: { id: string }) => cmd.id.startsWith('novel-writer'));
+            const registeredCmds = listObsidianCommands(this.app).map(command => command.id).filter((id: string) => id.startsWith('novel-writer'));
             log.info('[小说工坊] 命令注册完成，已注册:', registeredCmds.length, '个命令');
-            log.info('[小说工坊] 命令列表:', registeredCmds.map((c: { id: string }) => c.id));
+            log.info('[小说工坊] 命令列表:', registeredCmds);
 
             this.initProjectIndex();
             void this.recoverFileTransactions();
@@ -1387,6 +1388,11 @@ export default class NovelWriterPlugin extends Plugin {
                 const index = await indexService.ensure(project);
                 return index.entries.length;
             },
+            pendingSettlementCount: async (project: string) => {
+                const engine = this.engineRegistry.get(ENGINE_NAMES.SETTLEMENT_ENGINE);
+                const report = await engine.recoverInterruptedSettlement(project, undefined, true);
+                return report.chapters.length;
+            },
         });
         return service.check();
     }
@@ -1397,6 +1403,19 @@ export default class NovelWriterPlugin extends Plugin {
     }
 
     /** 一键创建示例项目（已存在则不覆盖） */
+    /**
+     * 恢复上次中断的结算（按落盘日志回滚）。
+     *
+     * @param project - 项目路径
+     * @param chapterName - 章节名（省略恢复全部残留）
+     * @param dryRun - 只预览（默认 true）
+     * @returns 恢复报告
+     */
+    public async recoverInterruptedSettlement(project: string, chapterName?: string, dryRun = true) {
+        const engine = this.engineRegistry.get(ENGINE_NAMES.SETTLEMENT_ENGINE);
+        return engine.recoverInterruptedSettlement(project, chapterName, dryRun);
+    }
+
     public async createExampleProjectNow() {
         return importExampleProject(this.app);
     }
@@ -2426,7 +2445,7 @@ export default class NovelWriterPlugin extends Plugin {
         }
         // 临时兼容桥：registry 中不存在时 fallback 到 Obsidian 命令系统
         log.warn('[小说工坊] 命令 ' + commandId + ' 未在 Registry 注册，fallback 到 Obsidian 路由');
-        return this.app.commands.executeCommandById(commandId);
+        return executeObsidianCommand(this.app, commandId);
     }
 
     /**
@@ -2467,7 +2486,7 @@ export default class NovelWriterPlugin extends Plugin {
                 }
             }
             log.warn('[小说工坊] 命令 ' + commandId + ' 未在 Registry 注册，fallback 到 Obsidian 路由');
-            return this.app.commands.executeCommandById(commandId) === true;
+            return executeObsidianCommand(this.app, commandId);
         } finally {
             if (target) this._workbenchContext = previous;
         }

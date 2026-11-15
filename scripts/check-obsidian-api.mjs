@@ -75,7 +75,7 @@ const RULES = [
         // M3-4/M3-5（2026-11-10 生命周期三轮）：getPlugin 依赖内部结构，
         // 结构变化时静默返回 null；需要插件实例时由构造/host 注入。
         // 只拦 Obsidian 私有入口；`this.getPlugin()` 是本仓内部访问器，不在此列
-        pattern: /app\.plugins|getPlugin\(\s*['"]novel-writer-ai['"]/,
+        pattern: /(?:app\.plugins|app\.commands|app\.setting)|getPlugin\(\s*['"]novel-writer-ai['"]/,
         allow: [],
     },
     {

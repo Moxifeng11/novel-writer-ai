@@ -21,7 +21,7 @@ export type ReadinessStatus = 'ok' | 'warn' | 'missing';
 /** 自检项 */
 export interface ReadinessItem {
     /** 稳定 id（设置页按此挂修复按钮） */
-    id: 'provider' | 'model' | 'templates' | 'projects' | 'folders' | 'index' | 'workspace';
+    id: 'provider' | 'model' | 'templates' | 'projects' | 'folders' | 'index' | 'workspace' | 'settlement';
     /** 展示名 */
     label: string;
     status: ReadinessStatus;
@@ -55,6 +55,8 @@ export interface ReadinessDeps {
     activeProject(): string;
     /** ProjectIndexService.ensure 读取条目数（失败返回 0） */
     indexEntryCount(project: string): Promise<number>;
+    /** 上次结算遗留的回滚日志章数（无则 0） */
+    pendingSettlementCount?(project: string): Promise<number>;
 }
 
 /**
@@ -83,6 +85,7 @@ export class SetupReadinessService {
             this.checkProjects(),
             this.checkFolders(),
             await this.checkIndex(),
+            await this.checkSettlementPending(),
             this.checkWorkspaceConventions(),
         ];
         const counts: Record<ReadinessStatus, number> = { ok: 0, warn: 0, missing: 0 };
@@ -198,6 +201,25 @@ export class SetupReadinessService {
             status: 'warn',
             detail: `${project}：索引为空（可能刚创建或缺文件）`,
             fix: '点「重建索引」；若仍为 0，检查项目内是否有 作品信息.md / 世界观总览.md',
+        };
+    }
+
+    /** 上次结算中断是否遗留回滚日志 */
+    private async checkSettlementPending(): Promise<ReadinessItem> {
+        const project = this.deps.activeProject();
+        if (!project || !this.deps.pendingSettlementCount) {
+            return { id: 'settlement', label: '结算完整性', status: 'warn', detail: '打开作品后可检查是否有中断的结算', fix: '打开作品后重新自检' };
+        }
+        const pending = await this.deps.pendingSettlementCount(project).catch(() => 0);
+        if (pending === 0) {
+            return { id: 'settlement', label: '结算完整性', status: 'ok', detail: '没有中断的结算残留', fix: '' };
+        }
+        return {
+            id: 'settlement',
+            label: '结算完整性',
+            status: 'missing',
+            detail: `检测到 ${pending} 章有中断的结算回滚日志（上次结算中途退出）`,
+            fix: '点「恢复中断结算」按日志回滚，避免实体已改而正文未结算的半套状态',
         };
     }
 

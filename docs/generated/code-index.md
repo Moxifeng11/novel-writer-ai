@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 353 | 146266 | 1941 | 1537 | 79% |
-| `services/` | 64 | 18580 | 289 | 199 | 69% |
-| `shared/` | 241 | 48427 | 2044 | 1606 | 79% |
+| `engine/` | 353 | 146377 | 1941 | 1537 | 79% |
+| `services/` | 65 | 18713 | 291 | 200 | 69% |
+| `shared/` | 242 | 48513 | 2047 | 1609 | 79% |
 | `core/` | 7 | 3011 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 277 | 107175 | 1036 | 837 | 81% |
+| `ui/` | 277 | 107176 | 1036 | 837 | 81% |
 
 ## 文件清单
 
@@ -338,13 +338,13 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 2213 | 3 | 3 |
+| `engine/settlement-engine.ts` | 2279 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 137 | 2 | 2 |
 | `engine/settlement/settlement-artifacts.ts` | 130 | 5 | 5 |
 | `engine/settlement/settlement-coordinator.ts` | 137 | 6 | 6 |
-| `engine/settlement/settlement-journal.ts` | 228 | 6 | 6 |
+| `engine/settlement/settlement-journal.ts` | 273 | 6 | 6 |
 | `engine/settlement/settlement-table-writer.ts` | 79 | 3 | 2 |
 | `engine/settlement/settlement-types.ts` | 46 | 2 | 1 |
 | `engine/step-definitions.ts` | 268 | 13 | 11 |
@@ -441,7 +441,8 @@
 | `services/scene-loop-body-service.ts` | 201 | 3 | 1 |
 | `services/scene-retrieval-service.ts` | 157 | 4 | 1 |
 | `services/session-preset-service.ts` | 94 | 2 | 1 |
-| `services/setup-readiness-service.ts` | 219 | 5 | 1 |
+| `services/settlement-journal-store.ts` | 111 | 2 | 1 |
+| `services/setup-readiness-service.ts` | 241 | 5 | 1 |
 | `services/skill-service.ts` | 74 | 1 | 1 |
 | `services/synopsis-store.ts` | 364 | 5 | 5 |
 | `services/targeted-revision-service.ts` | 189 | 3 | 1 |
@@ -572,6 +573,7 @@
 | `shared/multi-layer-cache.ts` | 556 | 6 | 6 |
 | `shared/narrative-number.ts` | 235 | 8 | 6 |
 | `shared/novel-format.ts` | 348 | 12 | 12 |
+| `shared/obsidian-internal-bridge.ts` | 86 | 3 | 3 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
 | `shared/paths.ts` | 1839 | 221 | 215 |
@@ -890,7 +892,7 @@
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
 | `ui/services/agent-attachment-store.ts` | 171 | 10 | 6 |
-| `ui/services/agent-port.ts` | 787 | 3 | 3 |
+| `ui/services/agent-port.ts` | 788 | 3 | 3 |
 | `ui/services/agent-session-store.ts` | 211 | 5 | 5 |
 | `ui/services/agent-spill-store.ts` | 142 | 4 | 3 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |

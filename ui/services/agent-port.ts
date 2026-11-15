@@ -6,6 +6,7 @@
  * 让 Agent 能覆盖从新建项目到导出成稿的全部插件功能。
  */
 import { App, Notice, TFile, TFolder } from 'obsidian';
+import { listObsidianCommands } from '@/shared/obsidian-internal-bridge';
 import NovelWriterPlugin from '@/main';
 import type {
     AgentChapterSummary,
@@ -482,7 +483,7 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin, options?: A
         },
         listCommands: () => {
             try {
-                const commands = app.commands.listCommands() as Array<{ id: string; name: string }>;
+                const commands = listObsidianCommands(app);
                 return commands
                     // 只列 run_command 真正可执行的命令：两者都以 registry 为准，
                     // 避免「列表能看到、执行必失败」或反之。

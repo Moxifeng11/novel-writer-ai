@@ -170,6 +170,17 @@ export interface NovelWriterEngineAPI {
      * @param dryRun - 是否只预览
      * @returns 生成结果
      */
+    /**
+     * 恢复上次中断的结算（按落盘日志回滚）。
+     *
+     * @param project - 项目路径
+     * @param chapterName - 章节名
+     * @param dryRun - 只预览
+     * @returns 恢复报告
+     */
+    recoverInterruptedSettlement(project: string, chapterName?: string, dryRun?: boolean): Promise<{
+        chapters: Array<{ chapterName: string; entries: number; reverted: number; failed: number; cleared: boolean }>;
+    }>;
     generateChapterBySceneLoop(project: string, chapterName: string, dryRun?: boolean): Promise<{
         dryRun: boolean;
         scenes: number;

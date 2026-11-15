@@ -374,6 +374,12 @@
       "reason": "首启环境自检（设置页/插件入口）",
       "category": "service",
       "allowedInstances": 1
+    },
+    {
+      "className": "SettlementJournalStore",
+      "reason": "结算回滚日志落盘（按项目构造，非单例）",
+      "category": "service",
+      "allowedInstances": 2
     }
   ],
   "notes": {

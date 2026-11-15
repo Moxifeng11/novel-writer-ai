@@ -71,10 +71,42 @@ export interface RollbackReport {
  */
 export class SettlementJournal {
     private entries: JournalEntry[] = [];
+    /** 日志变化回调（落盘用；异步 fire-and-forget，不阻塞结算） */
+    private changeSink: ((entries: JournalEntry[]) => void) | null = null;
     /** 同一文件只保留第一份前值（后续写入不覆盖回滚点） */
     private wholeFileSeen = new Set<string>();
     private fieldSeen = new Set<string>();
     private markerSeen = new Set<string>();
+
+    /**
+     * 注册日志变化回调（结算过程中实时落盘）。
+     *
+     * @param sink - 回调（收到当前全部条目）
+     */
+    setChangeSink(sink: ((entries: JournalEntry[]) => void) | null): void {
+        this.changeSink = sink;
+    }
+
+    /**
+     * 导出当前条目（供落盘）。
+     *
+     * @returns 条目副本
+     */
+    snapshot(): JournalEntry[] {
+        return [...this.entries];
+    }
+
+    /**
+     * 由落盘条目恢复日志（崩溃恢复用）。
+     *
+     * @param entries - 条目
+     * @returns 结算日志实例
+     */
+    static fromSnapshot(entries: readonly JournalEntry[]): SettlementJournal {
+        const journal = new SettlementJournal();
+        journal.entries = [...entries];
+        return journal;
+    }
 
     get size(): number {
         return this.entries.length;
@@ -96,6 +128,7 @@ export class SettlementJournal {
         if (this.fieldSeen.has(key)) return;
         this.fieldSeen.add(key);
         this.entries.push({ kind: 'frontmatter-field', path, field, before });
+        this.notifyChange();
     }
 
     /**
@@ -108,6 +141,7 @@ export class SettlementJournal {
         if (this.wholeFileSeen.has(path)) return;
         this.wholeFileSeen.add(path);
         this.entries.push({ kind: 'whole-file-before', path, before });
+        this.notifyChange();
     }
 
     /**
@@ -128,6 +162,17 @@ export class SettlementJournal {
         if (this.markerSeen.has(key)) return;
         this.markerSeen.add(key);
         this.entries.push({ kind: 'append-marker', path, marker: normalized, field });
+        this.notifyChange();
+    }
+
+    /** 通知日志变化（回调自身负责容错） */
+    private notifyChange(): void {
+        if (!this.changeSink) return;
+        try {
+            this.changeSink(this.snapshot());
+        } catch { // silent-ok: 落盘回调失败不能影响结算主流程
+            // 忽略
+        }
     }
 
     /**
