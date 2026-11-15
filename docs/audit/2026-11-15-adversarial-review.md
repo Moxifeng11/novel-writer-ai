@@ -77,3 +77,4 @@ writeUsageGuideNow() → 写作知识库/插件使用约定.md
 | 20 | **孤儿向量无限堆积**：用户用文件管理器删书 / 早期异常退出时 `removeVectorArtifacts` 不执行，实测 7 个孤儿共约 5.6MB 常驻 `.obsidian/plugins/.../data/knowledge-vectors` | 实机清点向量目录 vs 索引：索引 1 本、文件 8 个；书目录只剩 `_config` | P2（体积/隐私） | ✅ `b085a76b`（启动维护扫描清理，带"索引为空但书目录仍有书→跳过"护栏、删除前日志留痕，+4 测试） |
 | 21 | **知识库索引非原子写**：`saveIndex` 直接 `fs.write`，中断会留下 **0 字节 index.json**（实机已观察到），下次加载解析失败只能靠目录重建，书籍题材/标签元数据丢失 | 实机检查 `data/knowledge-vectors/../index.md` 为 0 字节 | P1（数据丢失） | ✅ `b085a76b`（临时文件 + rename 原子写，+1 测试） |
 | 22 | **密钥加密锁定态被自检误判**：密文非空 → 判"已配置"，实际调用全部失败 | 实机 `openOnboarding()` 弹出解锁口令 | P1（首启误导） | ✅ `49b03cb6`（密文不算可用 Key，提示解锁，+3 测试） |
+| 23 | **「已加密未解锁」与「未配置」不可区分**：`hasUsableAiCredentials` 只看非空，UI 无法给出"去解锁"指引（若改成判 false 又会把用户挡在解锁流程外） | 实机探针 + 代码复核 | P2（误导文案） | ✅ `1d1cf271`（守卫保持放行以触发口令解锁；新增 `aiCredentialsLocked` 供 UI 区分，+4 测试） |
