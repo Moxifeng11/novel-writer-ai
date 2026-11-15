@@ -2,6 +2,7 @@ import { FileTxService } from '@/services/file-tx';
 import { App, TFile } from 'obsidian';
 import { buildAssertionConstraintPack, renderAssertionConstraintSection } from '@/services/assertion-context-service';
 import { parseAssertions } from '@/shared/assertion-source-model';
+import { renderVoiceSampleSection, selectVoiceSamples } from '@/shared/voice-sample-model';
 import { isChapterSettledText } from '@/shared/chapter-status';
 import { AIEngine, APIResponse } from './ai-engine';
 import { DEAI_CHECK_SYSTEM_PROMPT, DEAI_CHECK_USER_TEMPLATE, DEAI_REWRITE_SYSTEM_PROMPT, DEAI_REWRITE_USER_TEMPLATE, SELF_CHECK_PROMPTS } from './prompt-templates';
@@ -349,7 +350,26 @@ export class StepRunner {
             if (!this.plugin.buildSceneContext) return { text: '', missing: true };
             const pack = await this.plugin.buildSceneContext(ctx.project, sceneText, 1);
             if (!pack.section) return { text: '', missing: true };
-            return { text: pack.section, missing: pack.assembly.coverage.missing.length > 0 };
+            // M11：在场角色口吻样本（只注入在场角色，缺样本不阻断）
+            let voiceSection = '';
+            try {
+                const anchorIds = (pack.session as { anchorIds?: string[] } | null)?.anchorIds ?? [];
+                if (anchorIds.length > 0) {
+                    const index = await this.plugin.getProjectIndex(ctx.project);
+                    const frontmatters: Record<string, Record<string, unknown> | undefined> = {};
+                    for (const entry of index.entries) {
+                        const file = this.plugin.app.vault.getAbstractFileByPath(entry.path);
+                        if (file instanceof TFile) {
+                            frontmatters[entry.path] = this.plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+                        }
+                    }
+                    voiceSection = renderVoiceSampleSection(selectVoiceSamples(index.entries, frontmatters, anchorIds));
+                }
+            } catch { // silent-ok: 口吻样本是增强内容，失败不阻断写作
+                voiceSection = '';
+            }
+            const text = [pack.section, voiceSection].filter(Boolean).join('\n\n');
+            return { text, missing: pack.assembly.coverage.missing.length > 0 };
         } catch { // silent-ok: 场景上下文是增强尾部，失败不阻断写作
             return { text: '', missing: true };
         }

@@ -13,6 +13,7 @@
  */
 
 import type { App, TFile } from 'obsidian';
+import type { ProjectIndex } from '@/shared/project-index-model';
 import type { NovelWriterSettings } from './main';
 import type { AIEngine } from './engine/ai-engine';
 import type { ContextManager } from './engine/context-manager';
@@ -49,6 +50,13 @@ export interface NovelWriterSettingsAPI {
 
 /** ─── 子接口：核心引擎访问 ─── */
 export interface NovelWriterEngineAPI {
+    /**
+     * 取项目索引（M1：含 frontmatter 派生字段）。
+     *
+     * @param project - 项目路径
+     * @returns 项目索引
+     */
+    getProjectIndex(project: string): Promise<ProjectIndex>;
     /**
      * 构建场景上下文包（M5）：场景锚点 → 精确检索 → 迭代装配 → 提示词段落。
      *

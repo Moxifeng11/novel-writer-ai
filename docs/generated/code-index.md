@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 353 | 145913 | 1935 | 1532 | 79% |
+| `engine/` | 353 | 145933 | 1935 | 1532 | 79% |
 | `services/` | 49 | 15962 | 239 | 183 | 77% |
 | `shared/` | 225 | 46550 | 1965 | 1558 | 79% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
@@ -353,7 +353,7 @@
 | `engine/step-result-saver.ts` | 574 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 227 | 6 | 5 |
-| `engine/step-runner.ts` | 2316 | 2 | 1 |
+| `engine/step-runner.ts` | 2336 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 218 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |
