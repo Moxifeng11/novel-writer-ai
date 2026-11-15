@@ -60,7 +60,7 @@ import { AgentWorkbenchView } from './ui/agent-workbench-view';
 import { VIEW_TYPE_AGENT_WORKBENCH } from './shared/view-types';
 import { detachPluginLeaves } from './shared/plugin-leaves';
 import { executeObsidianCommand, listObsidianCommands, openPluginSettingsTab } from './shared/obsidian-internal-bridge';
-import { disposeInlineWorkerUrls, getWorkerRuntimeMode, probePluginWorkers } from './shared/plugin-worker-url';
+import { disposeInlineWorkerUrls, getWorkerRuntimeMode, probePluginWorkers, warmInlineWorkerUrls } from './shared/plugin-worker-url';
 import { clearPetActivity, markPetActivity } from './shared/pet-activity';
 import { isProjectDirectory } from './shared/project-catalog';
 import { isStoredCiphertext, usableSecret } from './shared/secret-value';

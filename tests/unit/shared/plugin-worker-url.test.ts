@@ -5,6 +5,7 @@ import {
     probePluginWorkers,
     resolveInlineWorkerUrl,
     resolvePluginWorkerUrl,
+    warmInlineWorkerUrls,
     notifyWorkerUnavailable,
     resetWorkerDegradationNotified,
     resetWorkerDiskProbe,
@@ -128,6 +129,8 @@ describe('内联 Worker（社区 3 文件安装）', () => {
             });
             await expect(probePluginWorkers(app)).resolves.toBe(false);
             expect(getWorkerRuntimeMode()).toBe('worker-inline');
+            // 内联源码是 gzip+base64：需要先解压缓存 Blob URL（启动时 warmInlineWorkerUrls）
+            await warmInlineWorkerUrls();
             const url = resolvePluginWorkerUrl(app, 'deconstruction-worker.js');
             expect(url).toMatch(/^blob:nw\//);
             if (!url) throw new Error('expected blob url');

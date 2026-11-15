@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146600 | 1950 | 1544 | 79% |
 | `services/` | 65 | 18925 | 291 | 200 | 69% |
-| `shared/` | 250 | 49674 | 2095 | 1644 | 78% |
+| `shared/` | 250 | 49725 | 2097 | 1644 | 78% |
 | `core/` | 7 | 3041 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 283 | 108956 | 1049 | 849 | 81% |
@@ -592,7 +592,7 @@
 | `shared/plugin-capabilities.ts` | 98 | 4 | 1 |
 | `shared/plugin-data-migration.ts` | 120 | 3 | 1 |
 | `shared/plugin-leaves.ts` | 34 | 2 | 1 |
-| `shared/plugin-worker-url.ts` | 194 | 8 | 5 |
+| `shared/plugin-worker-url.ts` | 239 | 9 | 6 |
 | `shared/post-generation-check-model.ts` | 102 | 7 | 3 |
 | `shared/pre-research.ts` | 464 | 17 | 17 |
 | `shared/prereq-check.ts` | 51 | 3 | 2 |
@@ -697,7 +697,7 @@
 | `shared/volume-plan.ts` | 307 | 6 | 6 |
 | `shared/webnovel-knowledge-base.ts` | 2793 | 7 | 7 |
 | `shared/word-count.ts` | 149 | 7 | 7 |
-| `shared/workers-inline.generated.ts` | 13 | 1 | 1 |
+| `shared/workers-inline.generated.ts` | 19 | 2 | 0 |
 | `shared/workspace-reveal.ts` | 65 | 5 | 1 |
 | `shared/write-lock.ts` | 67 | 2 | 2 |
 | `shared/writeback-adapter.ts` | 133 | 6 | 3 |

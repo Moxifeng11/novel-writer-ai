@@ -17,6 +17,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 
@@ -71,6 +72,10 @@ async function bundleWorkers() {
  * @returns {string} 模块文本
  */
 function buildModuleText(sources) {
+    const compressed = {};
+    for (const [file, source] of Object.entries(sources)) {
+        compressed[file] = zlib.gzipSync(Buffer.from(source, 'utf8'), { level: 9 }).toString('base64');
+    }
     const lines = [
         '/**',
         ' * 自动生成文件 —— 请勿手工编辑。',
@@ -79,11 +84,17 @@ function buildModuleText(sources) {
         ' *',
         ' * 用途：社区目录只下发 3 个文件，没有 workers/ 目录；主包用这些字符串创建 Blob Worker，',
         ' * 保证 3 文件安装也能后台执行重活（仓库安装仍优先用磁盘上的 workers/*.js）。',
+        ' *',
+        ' * 体积：内容为 gzip 压缩后再 base64（未压缩时 855KB → 约 409KB）；',
+        ' * 运行时用 DecompressionStream 解压（warmInlineWorkerUrls），不支持时退回主线程。',
         ' */',
-        'export const INLINE_WORKER_SOURCES: Readonly<Record<string, string>> = {',
+        '/** 内联 Worker 源码的压缩方式（固定为 gzip+base64，运行时用 DecompressionStream 解压） */',
+        "export const INLINE_WORKER_COMPRESSION = 'gzip+base64' as const;",
+        '/** worker 文件名 → gzip+base64 源码（运行时解压后创建 Blob Worker） */',
+        'export const INLINE_WORKER_GZIP_SOURCES: Readonly<Record<string, string>> = {',
     ];
-    for (const [file, source] of Object.entries(sources).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
-        lines.push(`    ${JSON.stringify(file)}: ${JSON.stringify(source)},`);
+    for (const [file, base64] of Object.entries(compressed).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
+        lines.push(`    ${JSON.stringify(file)}: ${JSON.stringify(base64)},`);
     }
     lines.push('};', '');
     return lines.join('\n');
