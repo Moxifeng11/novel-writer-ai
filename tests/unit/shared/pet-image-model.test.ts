@@ -5,6 +5,10 @@
 import { describe, expect, it } from 'vitest';
 import {
     describePetImageConfig,
+    detectPetGrid,
+    petAnimationIntervalMs,
+    petFramePosition,
+    petMoodRow,
     isImageDataUrl,
     isSupportedImagePath,
     normalizePetImageConfig,
@@ -62,33 +66,89 @@ describe('PET_IMAGE_MOOD_ORDER 状态顺序', () => {
     });
 });
 
-describe('poseFrameFor 切帧', () => {
-    it('2×2：idle 左上；error（第 6 帧）回绕到第一行第二格', () => {
+describe('poseFrameFor 切帧（行=状态，列=动画帧）', () => {
+    it('2×2：idle 在第 0 行第 0 帧；error 行数不足时共用最后一行', () => {
         const config = { source: 'vault' as const, path: 'a.png', cols: 2, rows: 2 };
         expect(poseFrameFor('idle', config)).toEqual({ xPercent: 0, yPercent: 0 });
-        expect(poseFrameFor('error', config)).toEqual({ xPercent: 100, yPercent: 0 });
+        expect(poseFrameFor('error', config)).toEqual({ xPercent: 0, yPercent: 100 });
     });
 
-    it('2×2：帧数不足时状态会共用格子（网格小于 6 档）', () => {
+    it('2×2：writing 与 error 共用最后一行', () => {
         const config = { source: 'vault' as const, path: 'a.png', cols: 2, rows: 2 };
         expect(poseFrameFor('writing', config)).toEqual(poseFrameFor('error', config));
     });
 
-    it('3×2：按状态顺序换行', () => {
+    it('3×2：状态按行排列（thinking 行数回绕到最后一行）', () => {
         const config = { source: 'vault' as const, path: 'a.png', cols: 3, rows: 2 };
-        expect(poseFrameFor('thinking', config)).toEqual({ xPercent: 100, yPercent: 0 });
-        expect(poseFrameFor('sleep', config)).toEqual({ xPercent: 50, yPercent: 100 });
+        expect(poseFrameFor('idle', config)).toEqual({ xPercent: 0, yPercent: 0 });
+        expect(poseFrameFor('writing', config)).toEqual({ xPercent: 0, yPercent: 100 });
+        expect(poseFrameFor('thinking', config)).toEqual({ xPercent: 0, yPercent: 100 });
     });
 
     it('未知状态按第一帧处理', () => {
         expect(poseFrameFor('nope', { source: 'vault' as const, path: 'a.png', cols: 2, rows: 2 })).toEqual({ xPercent: 0, yPercent: 0 });
     });
+
+    it('petFramePosition：列方向按动画帧推进，行方向按状态', () => {
+        const config = { source: 'vault' as const, path: 'a.png', cols: 3, rows: 3 };
+        expect(petFramePosition('idle', 0, config)).toEqual({ xPercent: 0, yPercent: 0 });
+        expect(petFramePosition('idle', 1, config)).toEqual({ xPercent: 50, yPercent: 0 });
+        expect(petFramePosition('idle', 2, config)).toEqual({ xPercent: 100, yPercent: 0 });
+        // 帧号回绕
+        expect(petFramePosition('idle', 3, config)).toEqual(petFramePosition('idle', 0, config));
+        // sleep 是第 5 档 → 第 3 行（y=100）
+        expect(petFramePosition('sleep', 1, config).yPercent).toBe(100);
+    });
+
+    it('单列不打乱行映射（cols=1 时 x 恒为 0）', () => {
+        const config = { source: 'vault' as const, path: 'a.png', cols: 1, rows: 6 };
+        expect(petFramePosition('writing', 0, config)).toEqual({ xPercent: 0, yPercent: 20 });
+    });
+});
+
+describe('petMoodRow / petAnimationIntervalMs', () => {
+    it('行数不足时钳到最后一行', () => {
+        expect(petMoodRow('idle', 6)).toBe(0);
+        expect(petMoodRow('error', 6)).toBe(5);
+        expect(petMoodRow('error', 2)).toBe(1);
+    });
+
+    it('动起来的帧间隔：写作/开心更快，睡觉更慢', () => {
+        expect(petAnimationIntervalMs('writing')).toBeLessThan(petAnimationIntervalMs('idle'));
+        expect(petAnimationIntervalMs('happy')).toBeLessThan(petAnimationIntervalMs('idle'));
+        expect(petAnimationIntervalMs('sleep')).toBeGreaterThan(petAnimationIntervalMs('idle'));
+    });
+});
+
+describe('detectPetGrid 自动识别网格', () => {
+    it('3×2 雪碧图（1536×1024）识别为 3 列 2 行', () => {
+        expect(detectPetGrid(1536, 1024)).toEqual({ cols: 3, rows: 2 });
+    });
+
+    it('正方形大图（768×768）按 2×2 处理', () => {
+        expect(detectPetGrid(768, 768)).toEqual({ cols: 2, rows: 2 });
+    });
+
+    it('小图不足切分时回落 1×1', () => {
+        expect(detectPetGrid(48, 48)).toEqual({ cols: 1, rows: 1 });
+    });
+
+    it('4:3 图识别出的单帧接近正方形', () => {
+        const grid = detectPetGrid(800, 600);
+        expect(800 / grid.cols).toBe(600 / grid.rows);
+    });
+
+    it('非法尺寸安全回落', () => {
+        expect(detectPetGrid(0, 0)).toEqual({ cols: 1, rows: 1 });
+        expect(detectPetGrid(Number.NaN, 100)).toEqual({ cols: 1, rows: 1 });
+    });
 });
 
 describe('describePetImageConfig 提示文本', () => {
-    it('包含网格与状态顺序', () => {
-        const text = describePetImageConfig({ source: 'vault' as const, path: 'a.png', cols: 2, rows: 2 });
-        expect(text).toContain('2×2');
+    it('包含帧数/状态数与状态顺序', () => {
+        const text = describePetImageConfig({ source: 'vault' as const, path: 'a.png', cols: 3, rows: 2 });
+        expect(text).toContain('3 帧');
+        expect(text).toContain('2 状态');
         expect(text).toContain('idle');
     });
 });

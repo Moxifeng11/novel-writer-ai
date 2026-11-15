@@ -9,6 +9,7 @@ import { FuzzySuggestModal, Notice, Setting, TFile } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import {
     describePetImageConfig,
+    detectPetGrid,
     isSupportedImagePath,
     normalizePetImageConfig,
     PET_IMAGE_DEFAULT_COLS,
@@ -74,8 +75,10 @@ export function renderPetImageSettings(
 
     container.createEl('h4', { text: '🎨 桌宠形象' });
     container.createEl('p', {
-        text: '默认使用插件内置的代码绘制形象（无第三方素材）。可以选**电脑上任意位置**的图片（自动压缩后存在插件数据里，不进仓库），也可以选 vault 里的图片；按 2×2 或 3×2 网格切帧，'
-            + `状态顺序固定为 ${PET_IMAGE_MOOD_ORDER.join(' / ')}。`,
+        text: '默认使用插件内置的代码绘制形象（无第三方素材）。可以选电脑上任意位置的图片（自动压缩后存在插件数据里，不进仓库），也可以选 vault 里的图片。'
+            + '雪碧图约定：**行 = 状态，列 = 动画帧**——同一状态的多列会自动循环播放形成动画；'
+            + `状态顺序固定为 ${PET_IMAGE_MOOD_ORDER.join(' / ')}（行数不足时后面的状态共用最后一行）。`
+            + '选图后会自动识别网格，识别不准可手动改或点「自动识别网格」。',
         cls: 'setting-item-description',
     });
 
@@ -95,29 +98,26 @@ export function renderPetImageSettings(
                     new Notice('❌ 仅支持 PNG / JPG / WebP / GIF 图片');
                     return;
                 }
-                const config = normalizePetImageConfig({
-                    path,
-                    cols: current?.cols ?? PET_IMAGE_DEFAULT_COLS,
-                    rows: current?.rows ?? PET_IMAGE_DEFAULT_ROWS,
-                });
-                void applyPetImage(plugin, config, rerender);
+                void applyVaultImage(plugin, path, current, rerender);
             });
         })
         .addButton(button => button
             .setButtonText('选择电脑图片')
             .setCta()
             .onClick(() => {
-                pickLocalImage({}, async (dataUrl) => {
+                pickLocalImage({}, async (dataUrl, image) => {
+                    const grid = detectPetGrid(image.width, image.height);
                     const config = normalizePetImageConfig({
                         source: 'file',
                         dataUrl,
-                        cols: current?.cols ?? PET_IMAGE_DEFAULT_COLS,
-                        rows: current?.rows ?? PET_IMAGE_DEFAULT_ROWS,
+                        cols: grid.cols,
+                        rows: grid.rows,
                     });
                     if (!config) {
                         new Notice('❌ 无法读取该图片，请换一张试试');
                         return;
                     }
+                    new Notice(`✅ 已识别网格 ${grid.cols} 列 × ${grid.rows} 行（列=动画帧，行=状态）`, 5000);
                     await applyPetImage(plugin, config, rerender);
                 });
             }))
@@ -125,13 +125,7 @@ export function renderPetImageSettings(
             .setButtonText('选择仓库图片')
             .onClick(() => {
                 new PetImagePickerModal(plugin.app, (file) => {
-                    const config = normalizePetImageConfig({
-                        source: 'vault',
-                        path: file.path,
-                        cols: current?.cols ?? PET_IMAGE_DEFAULT_COLS,
-                        rows: current?.rows ?? PET_IMAGE_DEFAULT_ROWS,
-                    });
-                    void applyPetImage(plugin, config, rerender);
+                    void applyVaultImage(plugin, file.path, current, rerender);
                 }).open();
             }))
         .addButton(button => button
@@ -140,8 +134,28 @@ export function renderPetImageSettings(
             .onClick(() => void applyPetImage(plugin, null, rerender)));
 
     new Setting(container)
-        .setName('网格列数')
-        .setDesc('雪碧图横向帧数（1–8）；帧数不足 6 时部分状态会共用同一格')
+        .setName('网格自动识别')
+        .setDesc('按图片尺寸推断列/行；识别不准时可手动改下面的数字')
+        .addButton(button => button
+            .setButtonText('重新识别')
+            .setDisabled(!current)
+            .onClick(async () => {
+                if (!current) return;
+                const size = await readPetImageSize(plugin, current);
+                if (!size) {
+                    new Notice('❌ 无法读取图片尺寸，请重新选择图片');
+                    return;
+                }
+                const grid = detectPetGrid(size.width, size.height);
+                const next = normalizePetImageConfig({ ...current, cols: grid.cols, rows: grid.rows });
+                if (!next) return;
+                new Notice(`✅ 已识别网格 ${grid.cols} 列 × ${grid.rows} 行`, 5000);
+                await applyPetImage(plugin, next, rerender);
+            }));
+
+    new Setting(container)
+        .setName('网格列数（动画帧数）')
+        .setDesc('横向帧数（1–8）：同一状态循环播放的帧数；1 表示该状态不动')
         .addText(text => {
             text.setValue(String(current?.cols ?? PET_IMAGE_DEFAULT_COLS));
             text.inputEl.addEventListener('change', () => {
@@ -153,8 +167,8 @@ export function renderPetImageSettings(
         });
 
     new Setting(container)
-        .setName('网格行数')
-        .setDesc('雪碧图纵向帧数（1–8）')
+        .setName('网格行数（状态数）')
+        .setDesc('纵向行数（1–8）：每个状态占一行；不足 6 行时后面的状态共用最后一行')
         .addText(text => {
             text.setValue(String(current?.rows ?? PET_IMAGE_DEFAULT_ROWS));
             text.inputEl.addEventListener('change', () => {
@@ -172,8 +186,77 @@ export function renderPetImageSettings(
             : plugin.app.vault.adapter.getResourcePath(current.path ?? '');
         preview.style.backgroundImage = `url(${resource})`;
         preview.style.backgroundSize = `${current.cols * 100}% ${current.rows * 100}%`;
-        preview.createSpan({ cls: 'nw-pet-image-preview-hint', text: '预览（第一帧）' });
+        preview.createSpan({ cls: 'nw-pet-image-preview-hint', text: '预览（第一帧；桌宠上会自动播放动画）' });
     }
+}
+
+/**
+ * 载入图片尺寸（用于自动识别网格）。
+ *
+ * @param plugin - 插件实例
+ * @param config - 当前图片配置
+ * @returns 尺寸；读取失败返回 null
+ */
+async function readPetImageSize(
+    plugin: NovelWriterPlugin,
+    config: PetImageConfig,
+): Promise<{ width: number; height: number } | null> {
+    const src = config.source === 'file'
+        ? (config.dataUrl ?? '')
+        : plugin.app.vault.adapter.getResourcePath(config.path ?? '');
+    if (!src) return null;
+    try {
+        return await loadImageSize(src);
+    } catch {
+        // silent-ok: 尺寸读取失败由调用方提示重新选图
+        return null;
+    }
+}
+
+/**
+ * 加载图片并返回自然尺寸。
+ *
+ * @param src - 图片 URL / data URL
+ * @returns 尺寸
+ */
+function loadImageSize(src: string): Promise<{ width: number; height: number }> {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve({ width: image.naturalWidth || image.width, height: image.naturalHeight || image.height });
+        image.onerror = () => reject(new Error('图片加载失败'));
+        image.src = src;
+    });
+}
+
+/**
+ * 应用 vault 内图片，并按尺寸自动识别网格。
+ *
+ * @param plugin - 插件实例
+ * @param path - vault 相对路径
+ * @param current - 当前配置（保留用户手动设置时作为回退）
+ * @param rerender - 重渲染回调
+ */
+async function applyVaultImage(
+    plugin: NovelWriterPlugin,
+    path: string,
+    current: PetImageConfig | null,
+    rerender: () => void,
+): Promise<void> {
+    let grid = { cols: current?.cols ?? PET_IMAGE_DEFAULT_COLS, rows: current?.rows ?? PET_IMAGE_DEFAULT_ROWS };
+    try {
+        const src = plugin.app.vault.adapter.getResourcePath(path);
+        const size = src ? await loadImageSize(src) : null;
+        if (size) grid = detectPetGrid(size.width, size.height);
+    } catch {
+        // silent-ok: 尺寸读取失败时沿用当前/默认网格，不阻塞应用图片
+    }
+    const config = normalizePetImageConfig({ source: 'vault', path, cols: grid.cols, rows: grid.rows });
+    if (!config) {
+        new Notice('❌ 无法识别该图片，请换一张试试');
+        return;
+    }
+    new Notice(`✅ 已识别网格 ${grid.cols} 列 × ${grid.rows} 行（列=动画帧，行=状态）`, 5000);
+    await applyPetImage(plugin, config, rerender);
 }
 
 /**
@@ -201,7 +284,7 @@ export interface LocalImagePickerDeps {
  *  - 读取 / 压缩 / 保存任一环节失败都会弹 Notice，不再静默失败。
  *
  * @param deps - 依赖（`doc` 必须是当前设置所在窗口的 document，Obsidian 1.15 起设置是独立窗口）
- * @param onPicked - 读取完成回调（data URL；可返回 Promise，失败会被捕获并提示）
+ * @param onPicked - 读取完成回调（data URL + 已加载图片；可返回 Promise，失败会被捕获并提示）
  * @example
  * ```ts
  * pickLocalImage({ doc: container.ownerDocument }, async dataUrl => {
@@ -212,7 +295,7 @@ export interface LocalImagePickerDeps {
  */
 export function pickLocalImage(
     deps: LocalImagePickerDeps,
-    onPicked: (dataUrl: string) => void | Promise<void>,
+    onPicked: (dataUrl: string, image: HTMLImageElement) => void | Promise<void>,
 ): void {
     // 文档必须是「用户当前点击所在窗口」：Obsidian 1.15 起设置是独立窗口，
     // 若在主窗口 document 上创建 input 并 showPicker，会因窗口未聚焦被浏览器拦截
@@ -254,7 +337,7 @@ export function pickLocalImage(
                 if (!raw) throw new Error('读取图片失败');
                 const image = deps.loadImage ? await deps.loadImage(raw) : await loadImageElement(raw, doc);
                 const dataUrl = downscaleToDataUrl(image, doc);
-                await onPicked(dataUrl);
+                await onPicked(dataUrl, image);
             } catch (error) {
                 notify('❌ 读取或保存图片失败：' + (error instanceof Error ? error.message : String(error)));
             } finally {

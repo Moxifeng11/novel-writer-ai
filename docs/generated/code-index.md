@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146377 | 1941 | 1537 | 79% |
 | `services/` | 65 | 18925 | 291 | 200 | 69% |
-| `shared/` | 243 | 48654 | 2054 | 1614 | 79% |
+| `shared/` | 243 | 48776 | 2058 | 1618 | 79% |
 | `core/` | 7 | 3029 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 277 | 107324 | 1038 | 839 | 81% |
+| `ui/` | 277 | 107443 | 1038 | 839 | 81% |
 
 ## 文件清单
 
@@ -578,7 +578,7 @@
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
 | `shared/paths.ts` | 1839 | 221 | 215 |
 | `shared/pet-geometry.ts` | 118 | 9 | 3 |
-| `shared/pet-image-model.ts` | 123 | 10 | 6 |
+| `shared/pet-image-model.ts` | 238 | 14 | 10 |
 | `shared/plan-spec-model.ts` | 137 | 10 | 5 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
@@ -677,7 +677,7 @@
 | `shared/unit-context-prompt.ts` | 119 | 4 | 4 |
 | `shared/unload-barrier.ts` | 72 | 1 | 0 |
 | `shared/untrusted-content.ts` | 39 | 1 | 1 |
-| `shared/usage-guide-content.ts` | 89 | 2 | 1 |
+| `shared/usage-guide-content.ts` | 96 | 2 | 1 |
 | `shared/validators/normalizers-entity.ts` | 232 | 5 | 5 |
 | `shared/vault-tree.ts` | 131 | 6 | 6 |
 | `shared/version-types.ts` | 125 | 10 | 0 |
@@ -871,7 +871,7 @@
 | `ui/outline-expand-modal.ts` | 880 | 2 | 1 |
 | `ui/panel-resizer.ts` | 260 | 4 | 3 |
 | `ui/password-modal.ts` | 152 | 1 | 1 |
-| `ui/pet-image-settings.ts` | 380 | 3 | 3 |
+| `ui/pet-image-settings.ts` | 463 | 3 | 3 |
 | `ui/plan-book-modal.ts` | 558 | 1 | 1 |
 | `ui/plot-canvas-modal.ts` | 366 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
@@ -971,7 +971,7 @@
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |
 | `ui/workspace-manager.ts` | 144 | 2 | 2 |
 | `ui/write-chapter-modal.ts` | 851 | 1 | 1 |
-| `ui/writing-pet.ts` | 558 | 7 | 6 |
+| `ui/writing-pet.ts` | 594 | 7 | 6 |
 | `ui/writing-stats-modal.ts` | 245 | 1 | 1 |
 | `ui/writing-stats-settings.ts` | 73 | 1 | 1 |
 | `ui/writing-style-modal.ts` | 589 | 1 | 1 |

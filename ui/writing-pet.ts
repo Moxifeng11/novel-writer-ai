@@ -17,7 +17,8 @@ import { formatWords, type StatsSummary } from '@/shared/writing-stats';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 import {
     normalizePetImageConfig,
-    poseFrameFor,
+    petAnimationIntervalMs,
+    petFramePosition,
     type PetImageConfig,
 } from '@/shared/pet-image-model';
 import { getDegradationNotifier } from '@/shared/degradation-notifier';
@@ -157,6 +158,10 @@ export class WritingPet {
     private pulseTimer: ReturnType<typeof setTimeout> | null = null;
     /** 快捷摘要自动刷新定时器（60s；文档隐藏时跳过） */
     private refreshTimer: number | null = null;
+    /** 当前动画帧序号（列 = 动画帧） */
+    private frameIndex = 0;
+    /** 帧动画定时器；生命周期与宠物挂载一致 */
+    private frameTimer: number | null = null;
     private boundMove = (e: PointerEvent) => this.onPointerMove(e);
     private boundUp = () => this.onPointerUp();
     /** 拖拽期间 document 级监听的解绑器（绑在宠物所属窗口） */
@@ -201,13 +206,40 @@ export class WritingPet {
         }, Math.max(500, durationMs) + 60);
     }
 
-    /** 把当前状态对应的帧坐标写入 CSS 变量 */
+    /** 把当前状态 + 当前动画帧的坐标写入 CSS 变量 */
     private applyFrame(): void {
         if (!this.root) return;
         if (!this.imageConfig) return;
-        const frame = poseFrameFor(this.mood, this.imageConfig);
+        const frame = petFramePosition(this.mood, this.frameIndex, this.imageConfig);
         this.root.style.setProperty('--nw-pet-frame-x', `${frame.xPercent}%`);
         this.root.style.setProperty('--nw-pet-frame-y', `${frame.yPercent}%`);
+    }
+
+    /**
+     * 启动/重启帧动画（列 = 动画帧）。
+     *
+     * 只有一个状态帧（cols≤1）时不做定时器；页面隐藏时跳过 tick，
+     * 避免后台标签页空转。
+     */
+    private restartFrameAnimation(): void {
+        this.stopFrameAnimation();
+        const config = this.imageConfig;
+        if (!this.root || !config || config.cols <= 1) return;
+        const interval = petAnimationIntervalMs(this.mood);
+        this.frameTimer = window.setInterval(() => {
+            if (!this.root) return;
+            if (typeof document !== 'undefined' && document.hidden) return;
+            this.frameIndex = (this.frameIndex + 1) % Math.max(1, Math.floor(config.cols));
+            this.applyFrame();
+        }, interval);
+    }
+
+    /** 停止帧动画 */
+    private stopFrameAnimation(): void {
+        if (this.frameTimer) {
+            window.clearInterval(this.frameTimer);
+            this.frameTimer = null;
+        }
     }
 
     /**
@@ -308,6 +340,7 @@ export class WritingPet {
         this.card = root.createDiv({ cls: 'nw-pet-card' });
         this.card.addClass('nw-u-d-none');
         this.update();
+        this.restartFrameAnimation();
 
         // 陪伴层用量联动：降级/失败事件 → 宠物短暂「出错」表情
         if (!this.disposeDegradationSink) {
@@ -404,6 +437,9 @@ export class WritingPet {
         this.root.removeClass('nw-is-idle', 'nw-is-happy', 'nw-is-sleep', 'nw-is-writing', 'nw-is-thinking', 'nw-is-error');
         this.root.setAttribute('data-pet-state', mood);
         this.root.addClass(`nw-is-${mood}`);
+        this.frameIndex = 0;
+        this.applyFrame();
+        this.restartFrameAnimation();
         this.applyFrame();
     }
 

@@ -49,20 +49,21 @@ describe('poseFrameFor 自定义图片切帧', () => {
         expect(poseFrameFor('idle', sheet)).toEqual({ xPercent: 0, yPercent: 0 });
     });
 
-    it('writing 在右上（100%,0%）', () => {
-        expect(poseFrameFor('writing', sheet)).toEqual({ xPercent: 100, yPercent: 0 });
+    it('writing 在第 2 行首帧（0%,100%）', () => {
+        // 行=状态：writing 是第 2 档，2 行网格里与 error 共用最后一行
+        expect(poseFrameFor('writing', sheet)).toEqual({ xPercent: 0, yPercent: 100 });
     });
 
     it('thinking 在左下（0%,100%）', () => {
         expect(poseFrameFor('thinking', sheet)).toEqual({ xPercent: 0, yPercent: 100 });
     });
 
-    it('happy 在右下（100%,100%）', () => {
-        expect(poseFrameFor('happy', sheet)).toEqual({ xPercent: 100, yPercent: 100 });
+    it('happy 共用最后一行首帧（0%,100%）', () => {
+        expect(poseFrameFor('happy', sheet)).toEqual({ xPercent: 0, yPercent: 100 });
     });
 
-    it('3×2 图：sleep（第 5 帧）在中下（50%,100%）', () => {
-        expect(poseFrameFor('sleep', { source: 'vault' as const, path: 'a.png', cols: 3, rows: 2 })).toEqual({ xPercent: 50, yPercent: 100 });
+    it('3×2 图：sleep（第 5 档）在第 2 行首帧（0%,100%）', () => {
+        expect(poseFrameFor('sleep', { source: 'vault' as const, path: 'a.png', cols: 3, rows: 2 })).toEqual({ xPercent: 0, yPercent: 100 });
     });
 
     it('单格图恒为 (0,0)', () => {
