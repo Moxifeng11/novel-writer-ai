@@ -7,8 +7,8 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146016 | 1935 | 1532 | 79% |
-| `services/` | 54 | 16721 | 251 | 188 | 75% |
-| `shared/` | 233 | 47545 | 2003 | 1583 | 79% |
+| `services/` | 55 | 16880 | 253 | 189 | 75% |
+| `shared/` | 233 | 47597 | 2005 | 1585 | 79% |
 | `core/` | 7 | 2961 | 33 | 18 | 55% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106884 | 1034 | 835 | 81% |
@@ -436,6 +436,7 @@
 | `services/session-preset-service.ts` | 94 | 2 | 1 |
 | `services/skill-service.ts` | 74 | 1 | 1 |
 | `services/synopsis-store.ts` | 364 | 5 | 5 |
+| `services/unit-derived-service.ts` | 159 | 2 | 1 |
 | `services/update-checker.ts` | 610 | 9 | 2 |
 | `services/usage-ledger.ts` | 476 | 16 | 7 |
 | `services/vector-rebuild-service.ts` | 141 | 8 | 8 |
@@ -654,7 +655,7 @@
 | `shared/token-estimator.ts` | 187 | 8 | 8 |
 | `shared/true-random.ts` | 134 | 3 | 3 |
 | `shared/types.ts` | 729 | 48 | 11 |
-| `shared/unit-card-model.ts` | 254 | 11 | 7 |
+| `shared/unit-card-model.ts` | 306 | 13 | 9 |
 | `shared/unit-context-prompt.ts` | 119 | 4 | 4 |
 | `shared/unload-barrier.ts` | 72 | 1 | 0 |
 | `shared/untrusted-content.ts` | 39 | 1 | 1 |

@@ -86,6 +86,23 @@ export interface NovelWriterEngineAPI {
      * @param dryRun - 是否只预览
      * @returns 迁移结果
      */
+    /**
+     * 生成短篇/剧本派生视图（M8/M9）。
+     *
+     * @param project - 项目路径
+     * @param mode - short | script
+     * @param dryRun - 是否只预览
+     * @returns 生成结果
+     */
+    generateUnitDerivedViews(project: string, mode: 'short' | 'script', dryRun?: boolean): Promise<{
+        dryRun: boolean;
+        units: number;
+        scenes: number;
+        derivedPath: string;
+        backups: string[];
+        failures: Array<{ path: string; reason: string }>;
+        summary: string;
+    }>;
     migrateKnowledge(project: string, dryRun?: boolean): Promise<{
         dryRun: boolean;
         worldview: number;

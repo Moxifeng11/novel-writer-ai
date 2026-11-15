@@ -196,6 +196,58 @@ export function parseShotList(text: string): ShotCard[] {
     return cards;
 }
 
+/**
+ * 解析短篇节文件（单元正文）→ 节卡。
+ *
+ * @param text - 节文件全文
+ * @param index - 节号
+ * @returns 节卡
+ */
+export function parseShortUnitBody(text: string, index: number): ShortUnitCard {
+    const source = String(text ?? '');
+    const title = source.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? '';
+    const fields = parseFields(source);
+    const mapped: Record<string, string> = {};
+    const keyMap: Record<string, string> = {
+        核心冲突: '冲突',
+        信息推进: '信息增量',
+        情绪转折: '情绪变化',
+        结尾钩子: '结尾钩子',
+        预计字数: '预计字数',
+    };
+    for (const [key, value] of Object.entries(fields)) {
+        mapped[keyMap[key] ?? key] = value;
+    }
+    return { index, title, fields: mapped };
+}
+
+/**
+ * 解析剧本集文件（单元正文）→ 集卡 + 场卡。
+ *
+ * @param text - 集文件全文
+ * @param index - 集号
+ * @returns 集卡与场卡
+ */
+export function parseScriptEpisodeBody(text: string, index: number): { episode: ScriptEpisodeCard; scenes: ScriptSceneCard[] } {
+    const source = String(text ?? '');
+    const title = source.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? '';
+    const fields = parseFields(source);
+    const mapped: Record<string, string> = {};
+    const keyMap: Record<string, string> = {
+        单集时长: '单集时长',
+        本集核心冲突: '核心冲突',
+        '本集爽点/反转': '爽点反转',
+        结尾钩子: '结尾钩子',
+    };
+    for (const [key, value] of Object.entries(fields)) {
+        mapped[keyMap[key] ?? key] = value;
+    }
+    return {
+        episode: { index, title, fields: mapped },
+        scenes: parseScriptScenes(source, index),
+    };
+}
+
 /** 解析字段行 */
 function parseFields(body: string): Record<string, string> {
     const fields: Record<string, string> = {};
@@ -216,7 +268,7 @@ function parseFields(body: string): Record<string, string> {
  * @returns Markdown
  */
 export function renderShortUnitOutline(cards: readonly ShortUnitCard[]): string {
-    const lines: string[] = ['# 分节大纲', ''];
+    const lines: string[] = ['# 分节大纲', '', '> 本文件由插件根据各节文件生成，请勿手改。', ''];
     for (const card of cards) {
         lines.push(`## 第${card.index}节${card.title ? `：${card.title}` : ''}`, '');
         for (const [key, value] of Object.entries(card.fields)) lines.push(`- ${key}：${value}`);
@@ -236,7 +288,7 @@ export function renderScriptOutline(
     episodes: readonly ScriptEpisodeCard[],
     scenes: readonly ScriptSceneCard[] = [],
 ): string {
-    const lines: string[] = ['# 分集大纲', ''];
+    const lines: string[] = ['# 分集大纲', '', '> 本文件由插件根据各集文件生成，请勿手改。', ''];
     for (const episode of episodes) {
         lines.push(`## 第${episode.index}集${episode.title ? `：${episode.title}` : ''}`, '');
         for (const [key, value] of Object.entries(episode.fields)) lines.push(`- ${key}：${value}`);

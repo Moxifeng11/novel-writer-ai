@@ -78,6 +78,7 @@ import { MemoryGraphService } from './services/memory-graph-service';
 import { SceneContextService } from './services/scene-context-service';
 import { LedgerMigrationService } from './services/ledger-migration-service';
 import { KnowledgeMigrationService } from './services/knowledge-migration-service';
+import { UnitDerivedService } from './services/unit-derived-service';
 import { CowriteSnapshotService } from './services/cowrite-snapshot-service';
 import { ContextMetricsService } from './services/context-metrics-service';
 import { IdRegistryService } from './services/id-registry-service';
@@ -1493,6 +1494,18 @@ export default class NovelWriterPlugin extends Plugin {
      * @param dryRun - 是否只预览（默认 true）
      * @returns 迁移结果
      */
+    /**
+     * 生成短篇/剧本派生视图（M8/M9）：单元文件为真源，大纲文件由插件重建。
+     *
+     * @param project - 项目路径
+     * @param mode - short | script
+     * @param dryRun - 是否只预览
+     * @returns 生成结果
+     */
+    public async generateUnitDerivedViews(project: string, mode: 'short' | 'script', dryRun = true) {
+        return new UnitDerivedService(this.app).generate(project, mode, dryRun);
+    }
+
     public async migrateKnowledge(project: string, dryRun = true) {
         const registry = new IdRegistryService(this.app, new FileTxService(this.app));
         const service = new KnowledgeMigrationService(this.app, async (type, pathFor) => {

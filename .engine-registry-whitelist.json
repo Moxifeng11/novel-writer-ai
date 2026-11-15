@@ -302,6 +302,12 @@
       "reason": "M13 世界观/设定库迁移（插件入口）",
       "category": "service",
       "allowedInstances": 1
+    },
+    {
+      "className": "UnitDerivedService",
+      "reason": "M8/M9 派生视图生成（插件按需创建）",
+      "category": "service",
+      "allowedInstances": 1
     }
   ],
   "notes": {
