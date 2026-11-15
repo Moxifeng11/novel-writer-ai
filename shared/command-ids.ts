@@ -96,6 +96,7 @@ export const CommandIds = {
     PROJECT_SIDE_PANEL: 'novel-writer-project-side-panel',
     GENERATE_BASES: 'novel-writer-generate-bases',
     MIGRATE_NAMESPACE_TAGS: 'novel-writer-migrate-namespace-tags',
+    MIGRATE_LEDGER_CARDS: 'novel-writer-migrate-ledger-cards',
     COMPLETE_PROPERTIES: 'novel-writer-complete-properties',
     CO_WRITING: 'novel-writer-co-writing',
 

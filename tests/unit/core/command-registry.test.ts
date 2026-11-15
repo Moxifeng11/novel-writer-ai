@@ -95,6 +95,7 @@ const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.PROJECT_SIDE_PANEL,
     CommandIds.GENERATE_BASES,
     CommandIds.MIGRATE_NAMESPACE_TAGS,
+    CommandIds.MIGRATE_LEDGER_CARDS,
     CommandIds.COMPLETE_PROPERTIES,
     // 命令面板已注册「创作流程」但不在 UI 委托表 → exec 找不到、点了无反应；补进来
     CommandIds.CREATION_FLOW,

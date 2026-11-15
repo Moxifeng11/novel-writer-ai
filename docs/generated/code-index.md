@@ -8,8 +8,8 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 145994 | 1935 | 1532 | 79% |
 | `services/` | 51 | 16269 | 244 | 185 | 76% |
-| `shared/` | 231 | 47282 | 1991 | 1575 | 79% |
-| `core/` | 7 | 2940 | 32 | 17 | 53% |
+| `shared/` | 231 | 47283 | 1991 | 1575 | 79% |
+| `core/` | 7 | 2960 | 33 | 18 | 55% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106856 | 1034 | 835 | 81% |
 
@@ -17,7 +17,7 @@
 
 | 文件 | 行数 | 导出 | 有 JSDoc |
 |---|---:|---:|---:|
-| `core/command-registry.ts` | 740 | 6 | 2 |
+| `core/command-registry.ts` | 760 | 7 | 3 |
 | `core/crypto-service.ts` | 413 | 5 | 3 |
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
@@ -469,7 +469,7 @@
 | `shared/chapter-version-port.ts` | 23 | 1 | 1 |
 | `shared/character-rules.ts` | 180 | 10 | 6 |
 | `shared/co-writer-types.ts` | 113 | 0 | 0 |
-| `shared/command-ids.ts` | 128 | 2 | 2 |
+| `shared/command-ids.ts` | 129 | 2 | 2 |
 | `shared/command-mode-rules.ts` | 143 | 8 | 5 |
 | `shared/command-ui-port.ts` | 48 | 4 | 2 |
 | `shared/content-classifier.ts` | 248 | 11 | 11 |
