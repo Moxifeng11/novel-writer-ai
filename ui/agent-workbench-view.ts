@@ -70,6 +70,7 @@ import {
     formatFileMention,
     type MentionToken,
 } from '@/shared/file-mention';
+import type { ProjectIndexEntry } from '@/shared/project-index-model';
 import { isImeComposing } from '@/shared/keyboard';
 
 import { createLogger } from '@/shared/logger';
@@ -152,6 +153,8 @@ export class AgentWorkbenchView extends ItemView {
     private sessionKey = `${Date.now().toString(36)}`;
     /** 当前项目的文件路径缓存（来自项目索引，随项目切换失效） */
     private projectPathCache: string[] = [];
+    /** 当前项目索引条目（@ 候选按别名/标签排序） */
+    private projectIndexEntries: ProjectIndexEntry[] = [];
     private projectPathCacheProject = '';
     /** 会话存档（.sessions/agent/<项目>.jsonl） */
     private sessionStore: AgentSessionStore | null = null;

@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 352 | 145752 | 1934 | 1531 | 79% |
 | `services/` | 43 | 15257 | 227 | 176 | 78% |
-| `shared/` | 213 | 44566 | 1874 | 1498 | 80% |
+| `shared/` | 213 | 44612 | 1875 | 1499 | 80% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 275 | 106834 | 1034 | 835 | 81% |
+| `ui/` | 275 | 106837 | 1034 | 835 | 81% |
 
 ## 文件清单
 
@@ -497,7 +497,7 @@
 | `shared/fanfic-binding.ts` | 67 | 2 | 2 |
 | `shared/fanfic-rules.ts` | 749 | 25 | 20 |
 | `shared/file-cache.ts` | 492 | 3 | 3 |
-| `shared/file-mention.ts` | 165 | 9 | 9 |
+| `shared/file-mention.ts` | 211 | 10 | 10 |
 | `shared/file-path-guard.ts` | 236 | 12 | 12 |
 | `shared/file-system-port.ts` | 797 | 8 | 8 |
 | `shared/file-tx-model.ts` | 138 | 12 | 7 |
@@ -648,7 +648,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 771 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1816 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1819 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |

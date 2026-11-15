@@ -163,3 +163,48 @@ export function stripMentionMarkers(text: string): string {
         return `《${path}》`;
     });
 }
+/**
+ * 索引条目 → @ 候选（精确优先：别名/标题 → 标签 → 路径子串）。
+ *
+ * 精确命中排在前面（用户看到的是可预期的结果），路径子串只作兜底；
+ * 返回路径列表，供输入框插入。
+ *
+ * @param entries - 项目索引条目
+ * @param query - 用户已输入内容
+ * @param limit - 最多返回条数（默认 20）
+ * @returns 路径列表
+ */
+export function rankIndexCandidates(
+    entries: ReadonlyArray<{ path: string; name: string; aliases?: string[]; tags?: string[]; id?: string }>,
+    query: string,
+    limit = 20,
+): string[] {
+    const needle = String(query ?? '').trim().toLowerCase();
+    const exact: string[] = [];
+    const byTag: string[] = [];
+    const byPath: string[] = [];
+    for (const entry of entries) {
+        const name = String(entry.name || '').toLowerCase();
+        const id = String(entry.id || '').toLowerCase();
+        const aliases = (entry.aliases ?? []).map(alias => alias.toLowerCase());
+        const tags = (entry.tags ?? []).map(tag => tag.toLowerCase());
+        if (!needle) {
+            byPath.push(entry.path);
+            continue;
+        }
+        if (name.startsWith(needle) || id.startsWith(needle) || aliases.some(alias => alias.startsWith(needle))) {
+            exact.push(entry.path);
+            continue;
+        }
+        if (tags.some(tag => tag.includes(needle))) {
+            byTag.push(entry.path);
+            continue;
+        }
+        if (entry.path.toLowerCase().includes(needle)) byPath.push(entry.path);
+    }
+    const merged: string[] = [];
+    for (const path of [...exact, ...byTag, ...byPath]) {
+        if (!merged.includes(path)) merged.push(path);
+    }
+    return merged.slice(0, Math.max(1, limit));
+}
