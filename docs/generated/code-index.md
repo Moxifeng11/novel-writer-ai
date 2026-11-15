@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 145933 | 1935 | 1532 | 79% |
 | `services/` | 50 | 16059 | 241 | 184 | 76% |
-| `shared/` | 225 | 46550 | 1965 | 1558 | 79% |
+| `shared/` | 226 | 46639 | 1967 | 1559 | 79% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106856 | 1034 | 835 | 81% |
@@ -596,6 +596,7 @@
 | `shared/rag/neighbors.ts` | 110 | 3 | 3 |
 | `shared/rag/query-plan.ts` | 95 | 5 | 5 |
 | `shared/reload-state.ts` | 97 | 4 | 2 |
+| `shared/report-instructions-adapter.ts` | 89 | 2 | 1 |
 | `shared/retrieval-filter.ts` | 109 | 6 | 5 |
 | `shared/rhythm-intent.ts` | 48 | 2 | 2 |
 | `shared/scene-anchor-model.ts` | 140 | 6 | 5 |
