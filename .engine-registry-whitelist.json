@@ -199,7 +199,7 @@
       "className": "ProjectIndexService",
       "reason": "项目索引服务按插件/视图持有自己的缓存与脏标记（main.ts 懒初始化、实体图视图内创建）",
       "category": "context-isolated",
-      "allowedInstances": 7
+      "allowedInstances": 9
     },
     {
       "className": "FileTxService",
@@ -252,6 +252,12 @@
     {
       "className": "ContextSessionService",
       "reason": "场景上下文迭代装配：工作台懒建，按需补充上下文",
+      "category": "service",
+      "allowedInstances": 3
+    },
+    {
+      "className": "SceneContextService",
+      "reason": "场景上下文包编排：插件懒建入口 buildSceneContext",
       "category": "service",
       "allowedInstances": 1
     }

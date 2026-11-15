@@ -75,6 +75,8 @@ import { ProjectIndexService } from './services/project-index-service';
 import { FileTxService } from './services/file-tx';
 import { SessionPresetService } from './services/session-preset-service';
 import { MemoryGraphService } from './services/memory-graph-service';
+import { SceneContextService } from './services/scene-context-service';
+import { ContextSessionService } from './services/context-session-service';
 import type { SessionPresetPayload } from '@/shared/session-preset-model';
 import { PlanningCanvasView, PLANNING_CANVAS_VIEW_TYPE } from './ui/views/planning-canvas-view';
 import { MemoryGraphView, MEMORY_GRAPH_VIEW_TYPE } from './ui/views/memory-graph-view';
@@ -1446,6 +1448,26 @@ export default class NovelWriterPlugin extends Plugin {
      * @param patch - { oldText, newText }
      * @returns 结果
      */
+    /**
+     * 构建场景上下文包（场景锚点 → 精确检索 → 迭代装配 → 提示词段落）。
+     *
+     * @param project - 项目路径
+     * @param sceneExpandText - 「Scene 展开」全文
+     * @param sceneIndex - 目标场景序号（1 起）
+     * @returns 上下文包
+     */
+    public async buildSceneContext(project: string, sceneExpandText: string, sceneIndex = 1) {
+        const indexService = this._projectIndex ??= new ProjectIndexService(this.app);
+        this._sceneContext ??= new SceneContextService(
+            indexService,
+            new ContextSessionService(this.app, indexService),
+        );
+        return this._sceneContext.build(project, sceneExpandText, sceneIndex);
+    }
+
+    /** 场景上下文服务（懒初始化） */
+    private _sceneContext?: SceneContextService;
+
     public async patchMemoryCard(cardPath: string, patch: { oldText: string; newText: string }) {
         this._memoryGraph ??= new MemoryGraphService(
             this.app,
