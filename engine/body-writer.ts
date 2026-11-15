@@ -44,7 +44,7 @@ const backupStamp = new Map<string, number>();
 /**
  * BodyWritingMode 类型定义。
  */
-export type BodyWritingMode = 'co-writer' | 'pipeline' | 'batch' | 'auto' | 'continue' | 'manual' | 'scene';
+export type BodyWritingMode = 'co-writer' | 'pipeline' | 'batch' | 'auto' | 'continue' | 'manual' | 'scene' | 'unit';
 
 /**
  * BodyWriteRequest 类型定义。

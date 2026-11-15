@@ -8,6 +8,7 @@
  * 纯逻辑（提示词、frontmatter 合并、字数统计）与磁盘 I/O 分离，
  * 通过 UnitFilePort 注入，便于在 Node 里直接测。
  */
+import { BodyWriter } from './body-writer';
 import type { App } from 'obsidian';
 import { TFile } from 'obsidian';
 import type { CreationMode } from '@/shared/creation-mode';
@@ -507,6 +508,49 @@ export async function saveUnitBody(
  * 创建基于 Obsidian 的文件端口。
  *
  * @param app - Obsidian 应用实例
+ * @returns 文件端口
+ */
+/**
+ * 创建基于 BodyWriter 的单元文件端口（C1：单元写入与长篇共用一套管道）。
+ *
+ * 复用 BodyWriter 的：格式契约规整、覆盖前版本备份、写锁、不变量（状态不降级）、写入广播。
+ *
+ * @param app - Obsidian 应用
+ * @param options - 项目、模式与可选 writer 注入（测试用）
+ * @returns 文件端口
+ */
+export function createBodyWriterUnitFilePort(
+    app: App,
+    options: { project: string; mode: 'short' | 'script'; writer?: { write(req: import('./body-writer').BodyWriteRequest): Promise<unknown> } },
+): UnitFilePort {
+    const writer = options.writer ?? new BodyWriter({ app });
+    return {
+        read: async (path: string) => {
+            const file = app.vault.getAbstractFileByPath(path);
+            if (!(file instanceof TFile)) return '';
+            return app.vault.read(file);
+        },
+        write: async (path: string, content: string) => {
+            await writer.write({
+                path,
+                raw: content,
+                writingMode: 'unit',
+                project: options.project,
+                naturalize: options.mode === 'short',
+            });
+        },
+        updateFrontmatter: async (path: string, patch: Record<string, unknown>) => {
+            const file = app.vault.getAbstractFileByPath(path);
+            if (!(file instanceof TFile)) return;
+            await new ObsidianFrontmatter(app).processFrontmatter(file, (fm) => { Object.assign(fm, patch); });
+        },
+    };
+}
+
+/**
+ * 创建基于 Obsidian 的单元文件端口（绕过 BodyWriter 的旧路径，仅保留给读取/兼容场景）。
+ *
+ * @param app - Obsidian 应用
  * @returns 文件端口
  */
 export function createObsidianUnitFilePort(app: App): UnitFilePort {

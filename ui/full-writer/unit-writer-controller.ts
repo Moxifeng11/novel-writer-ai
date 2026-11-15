@@ -17,7 +17,7 @@ import {
     modeUnitLabel,
     type ModeUnitInfo,
 } from '@/shared/mode-content';
-import { countUnitWords, createObsidianUnitFilePort, generateUnitText, loadUnitWriterContext, saveUnitBody, type UnitFilePort, type UnitGenerateOptions, type UnitWriteAction, type UnitWriterContext } from '@/engine/mode-unit-writer';
+import { countUnitWords, createBodyWriterUnitFilePort, createObsidianUnitFilePort, generateUnitText, loadUnitWriterContext, saveUnitBody, type UnitFilePort, type UnitGenerateOptions, type UnitWriteAction, type UnitWriterContext } from '@/engine/mode-unit-writer';
 import { HumanizeReportModal } from '@/ui/humanize-report-modal';
 import { evaluateModeUnitQuality, saveUnitQualityReport } from '@/engine/mode-unit-quality';
 import { settleModeUnit } from '@/engine/mode-unit-settlement';
@@ -427,7 +427,10 @@ export class UnitWriterController {
         this.setSaveState('保存中…');
 
         let ok = false;
-        const run = saveUnitBody(this.port, ctx.unitPath, body, saveOptions);
+        const savePort = ctx.project && (ctx.mode === 'short' || ctx.mode === 'script')
+            ? createBodyWriterUnitFilePort(this.deps.app, { project: ctx.project, mode: ctx.mode })
+            : this.port;
+        const run = saveUnitBody(savePort, ctx.unitPath, body, saveOptions);
         this.saving = run.then(() => undefined, () => undefined);
         try {
             const { words } = await run;

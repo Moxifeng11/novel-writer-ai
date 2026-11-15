@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 353 | 146029 | 1935 | 1532 | 79% |
+| `engine/` | 353 | 146073 | 1936 | 1533 | 79% |
 | `services/` | 56 | 17106 | 257 | 190 | 74% |
 | `shared/` | 234 | 47738 | 2010 | 1588 | 79% |
 | `core/` | 7 | 3008 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 276 | 107001 | 1035 | 836 | 81% |
+| `ui/` | 276 | 107004 | 1035 | 836 | 81% |
 
 ## 文件清单
 
@@ -248,7 +248,7 @@
 | `engine/mode-runtime.ts` | 189 | 6 | 5 |
 | `engine/mode-unit-quality.ts` | 242 | 5 | 2 |
 | `engine/mode-unit-settlement.ts` | 105 | 2 | 1 |
-| `engine/mode-unit-writer.ts` | 556 | 16 | 16 |
+| `engine/mode-unit-writer.ts` | 600 | 17 | 17 |
 | `engine/note-properties-service.ts` | 293 | 12 | 12 |
 | `engine/novel-analyzer.ts` | 427 | 2 | 2 |
 | `engine/outline-contract.ts` | 737 | 21 | 20 |
@@ -813,7 +813,7 @@
 | `ui/full-writer/title-bar-controller.ts` | 192 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |
-| `ui/full-writer/unit-writer-controller.ts` | 794 | 2 | 2 |
+| `ui/full-writer/unit-writer-controller.ts` | 797 | 2 | 2 |
 | `ui/full-writer/wizard-controller.ts` | 420 | 1 | 1 |
 | `ui/full-writer/wizard-results-store.ts` | 81 | 1 | 1 |
 | `ui/full-writer/wizard-step-executors.ts` | 374 | 1 | 1 |
