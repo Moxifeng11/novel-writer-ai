@@ -7,8 +7,8 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146173 | 1940 | 1536 | 79% |
-| `services/` | 59 | 17701 | 270 | 193 | 71% |
-| `shared/` | 236 | 48002 | 2026 | 1596 | 79% |
+| `services/` | 60 | 17873 | 275 | 195 | 71% |
+| `shared/` | 237 | 48111 | 2033 | 1599 | 79% |
 | `core/` | 7 | 3008 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 276 | 107004 | 1035 | 836 | 81% |
@@ -401,6 +401,7 @@
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
 | `services/chapter-version-service.ts` | 744 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
+| `services/constraint-block-service.ts` | 172 | 5 | 2 |
 | `services/context-metrics-service.ts` | 179 | 2 | 1 |
 | `services/context-session-service.ts` | 161 | 2 | 1 |
 | `services/cowrite-snapshot-service.ts` | 86 | 2 | 1 |
@@ -480,6 +481,7 @@
 | `shared/command-ids.ts` | 131 | 2 | 2 |
 | `shared/command-mode-rules.ts` | 143 | 8 | 5 |
 | `shared/command-ui-port.ts` | 48 | 4 | 2 |
+| `shared/constraint-block-model.ts` | 109 | 7 | 3 |
 | `shared/content-classifier.ts` | 248 | 11 | 11 |
 | `shared/context-budget-policy.ts` | 148 | 7 | 6 |
 | `shared/context-hygiene.ts` | 282 | 11 | 11 |

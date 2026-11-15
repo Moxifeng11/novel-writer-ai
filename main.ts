@@ -86,6 +86,7 @@ import { BaselineProbeService } from './services/baseline-probe-service';
 import { RelationGraphSyncService } from './services/relation-graph-sync-service';
 import { PostGenerationCheckService } from './services/post-generation-check-service';
 import { TargetedRevisionService } from './services/targeted-revision-service';
+import { ConstraintBlockService, createVaultConstraintDeps } from './services/constraint-block-service';
 import { getRelationshipFilePath, parseRelationshipFile } from './engine/relationship-engine';
 import { BodyWriter } from './engine/body-writer';
 import { IdRegistryService } from './services/id-registry-service';
@@ -1579,6 +1580,38 @@ export default class NovelWriterPlugin extends Plugin {
      * @param options - 最大轮次/任务数
      * @returns 修订结果
      */
+    /**
+     * 组装结构化约束块（B3）：在场人物事实/口吻 + 高重要度伏笔 + 节奏约束。
+     *
+     * @param project - 项目路径
+     * @param chapterName - 章节名
+     * @returns 约束块与渲染结果
+     */
+    public async buildConstraintBlocks(project: string, chapterName: string) {
+        const index = this._projectIndex ??= new ProjectIndexService(this.app);
+        const deps = createVaultConstraintDeps(this.app, async (name) => {
+            const resolved = await index.resolve(project, name);
+            const entry = resolved.match;
+            if (!entry) return null;
+            const file = this.app.vault.getAbstractFileByPath(entry.path);
+            const fm = file && (file instanceof TFile) ? (this.app.metadataCache.getFileCache(file)?.frontmatter ?? {}) : {};
+            const readList = (value: unknown): string[] => (Array.isArray(value) ? value.map(String) : typeof value === 'string' ? value.split(/[|,，、]/).map(s => s.trim()).filter(Boolean) : []);
+            const hardFacts: Record<string, string> = {};
+            for (const field of ['当前境界', '身份', '年龄', '性格']) {
+                const value = fm?.[field];
+                if (typeof value === 'string' && value.trim()) hardFacts[field] = value.trim();
+            }
+            return {
+                id: entry.id || entry.path,
+                name: entry.name,
+                voiceSamples: readList(fm?.['口吻样本']),
+                speechTraits: readList(fm?.['说话特征']),
+                hardFacts,
+            };
+        });
+        return new ConstraintBlockService(deps).assemble(project, chapterName);
+    }
+
     public async autoReviseChapter(project: string, chapterName: string, options: { maxRounds?: number; maxTasks?: number } = {}) {
         const index = this._projectIndex ??= new ProjectIndexService(this.app);
         const checker = new PostGenerationCheckService(this.app, async (name) => {

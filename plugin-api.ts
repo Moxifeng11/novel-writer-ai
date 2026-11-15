@@ -149,6 +149,19 @@ export interface NovelWriterEngineAPI {
      * @param options - 最大轮次/任务数
      * @returns 修订结果
      */
+    /**
+     * 组装结构化约束块（B3）。
+     *
+     * @param project - 项目路径
+     * @param chapterName - 章节名
+     * @returns 约束块与渲染结果
+     */
+    buildConstraintBlocks(project: string, chapterName: string): Promise<{
+        section: string;
+        attribution: Array<{ blockId: string; anchorIds: string[] }>;
+        blocks: Array<{ id: string; kind: string; text: string; anchorIds: string[]; source: string }>;
+        sceneNames: string[];
+    }>;
     autoReviseChapter(project: string, chapterName: string, options?: { maxRounds?: number; maxTasks?: number }): Promise<{
         passed: boolean;
         attempts: number;
