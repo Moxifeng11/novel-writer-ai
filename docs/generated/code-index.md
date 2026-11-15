@@ -8,16 +8,16 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146029 | 1935 | 1532 | 79% |
 | `services/` | 55 | 16880 | 253 | 189 | 75% |
-| `shared/` | 234 | 47736 | 2010 | 1588 | 79% |
-| `core/` | 7 | 2964 | 33 | 18 | 55% |
+| `shared/` | 234 | 47738 | 2010 | 1588 | 79% |
+| `core/` | 7 | 3008 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 275 | 106919 | 1034 | 835 | 81% |
+| `ui/` | 276 | 107001 | 1035 | 836 | 81% |
 
 ## 文件清单
 
 | 文件 | 行数 | 导出 | 有 JSDoc |
 |---|---:|---:|---:|
-| `core/command-registry.ts` | 761 | 7 | 3 |
+| `core/command-registry.ts` | 805 | 9 | 5 |
 | `core/crypto-service.ts` | 413 | 5 | 3 |
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
@@ -473,7 +473,7 @@
 | `shared/chapter-version-port.ts` | 23 | 1 | 1 |
 | `shared/character-rules.ts` | 180 | 10 | 6 |
 | `shared/co-writer-types.ts` | 113 | 0 | 0 |
-| `shared/command-ids.ts` | 129 | 2 | 2 |
+| `shared/command-ids.ts` | 131 | 2 | 2 |
 | `shared/command-mode-rules.ts` | 143 | 8 | 5 |
 | `shared/command-ui-port.ts` | 48 | 4 | 2 |
 | `shared/content-classifier.ts` | 248 | 11 | 11 |
@@ -753,6 +753,7 @@
 | `ui/consistency-audit-format.ts` | 115 | 9 | 9 |
 | `ui/consistency-audit-modal.ts` | 282 | 2 | 1 |
 | `ui/context-injector-modal.ts` | 210 | 1 | 1 |
+| `ui/context-metrics-modal.ts` | 82 | 1 | 1 |
 | `ui/continue-chapters-modal.ts` | 567 | 1 | 1 |
 | `ui/cowrite/body-save-controller.ts` | 282 | 3 | 2 |
 | `ui/cowrite/cowrite-mappers.ts` | 111 | 6 | 6 |

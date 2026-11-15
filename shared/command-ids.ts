@@ -97,6 +97,8 @@ export const CommandIds = {
     GENERATE_BASES: 'novel-writer-generate-bases',
     MIGRATE_NAMESPACE_TAGS: 'novel-writer-migrate-namespace-tags',
     MIGRATE_LEDGER_CARDS: 'novel-writer-migrate-ledger-cards',
+    CONTEXT_METRICS: 'novel-writer-context-metrics',
+    REBUILD_UNIT_OUTLINE: 'novel-writer-rebuild-unit-outline',
     COMPLETE_PROPERTIES: 'novel-writer-complete-properties',
     CO_WRITING: 'novel-writer-co-writing',
 
