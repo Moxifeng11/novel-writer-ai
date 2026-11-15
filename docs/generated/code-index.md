@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 145872 | 1935 | 1532 | 79% |
 | `services/` | 49 | 15962 | 239 | 183 | 77% |
-| `shared/` | 224 | 46437 | 1963 | 1556 | 79% |
+| `shared/` | 225 | 46550 | 1965 | 1558 | 79% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106856 | 1034 | 835 | 81% |
@@ -449,6 +449,7 @@
 | `shared/api-types.ts` | 24 | 1 | 1 |
 | `shared/array-move.ts` | 48 | 2 | 2 |
 | `shared/assertion-batch-model.ts` | 138 | 8 | 6 |
+| `shared/assertion-source-model.ts` | 113 | 2 | 2 |
 | `shared/attachment-model.ts` | 81 | 7 | 5 |
 | `shared/auto-context-block.ts` | 87 | 5 | 5 |
 | `shared/behavior-log.ts` | 132 | 7 | 7 |
