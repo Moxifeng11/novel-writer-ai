@@ -7,8 +7,8 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146377 | 1941 | 1537 | 79% |
-| `services/` | 65 | 18922 | 291 | 200 | 69% |
-| `shared/` | 242 | 48534 | 2048 | 1610 | 79% |
+| `services/` | 65 | 18925 | 291 | 200 | 69% |
+| `shared/` | 243 | 48654 | 2054 | 1614 | 79% |
 | `core/` | 7 | 3029 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 277 | 107199 | 1036 | 837 | 81% |
@@ -442,7 +442,7 @@
 | `services/scene-retrieval-service.ts` | 157 | 4 | 1 |
 | `services/session-preset-service.ts` | 94 | 2 | 1 |
 | `services/settlement-journal-store.ts` | 111 | 2 | 1 |
-| `services/setup-readiness-service.ts` | 282 | 5 | 1 |
+| `services/setup-readiness-service.ts` | 285 | 5 | 1 |
 | `services/skill-service.ts` | 74 | 1 | 1 |
 | `services/synopsis-store.ts` | 364 | 5 | 5 |
 | `services/targeted-revision-service.ts` | 189 | 3 | 1 |
@@ -586,7 +586,7 @@
 | `shared/plugin-capabilities.ts` | 98 | 4 | 1 |
 | `shared/plugin-data-migration.ts` | 120 | 3 | 1 |
 | `shared/plugin-leaves.ts` | 34 | 2 | 1 |
-| `shared/plugin-worker-url.ts` | 87 | 3 | 2 |
+| `shared/plugin-worker-url.ts` | 194 | 8 | 5 |
 | `shared/post-generation-check-model.ts` | 102 | 7 | 3 |
 | `shared/pre-research.ts` | 464 | 17 | 17 |
 | `shared/prereq-check.ts` | 51 | 3 | 2 |
@@ -689,6 +689,7 @@
 | `shared/volume-plan.ts` | 307 | 6 | 6 |
 | `shared/webnovel-knowledge-base.ts` | 2793 | 7 | 7 |
 | `shared/word-count.ts` | 149 | 7 | 7 |
+| `shared/workers-inline.generated.ts` | 13 | 1 | 1 |
 | `shared/workspace-reveal.ts` | 65 | 5 | 1 |
 | `shared/write-lock.ts` | 67 | 2 | 2 |
 | `shared/writeback-adapter.ts` | 133 | 6 | 3 |

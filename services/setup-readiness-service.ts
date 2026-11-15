@@ -59,7 +59,7 @@ export interface ReadinessDeps {
     /** 密钥是否以密文形式存在且当前口令未解锁 */
     secretsLocked?(): boolean;
     /** 重活运行模式：worker=后台线程；main-thread=目录版未带 workers 时的降级 */
-    workerMode?(): 'worker' | 'main-thread' | Promise<'worker' | 'main-thread'>;
+    workerMode?(): 'worker' | 'worker-inline' | 'main-thread' | Promise<'worker' | 'worker-inline' | 'main-thread'>;
     /** 上次结算遗留的回滚日志章数（无则 0） */
     pendingSettlementCount?(project: string): Promise<number>;
 }
@@ -233,7 +233,10 @@ export class SetupReadinessService {
     private async checkWorkerMode(): Promise<ReadinessItem> {
         const mode = (await this.deps.workerMode?.()) ?? 'worker';
         if (mode === 'worker') {
-            return { id: 'worker', label: '后台线程（Worker）', status: 'ok', detail: '重活（拆解/质检）在后台线程执行', fix: '' };
+            return { id: 'worker', label: '后台线程（Worker）', status: 'ok', detail: '重活（拆解/质检）在后台线程执行（磁盘 workers）', fix: '' };
+        }
+        if (mode === 'worker-inline') {
+            return { id: 'worker', label: '后台线程（Worker）', status: 'ok', detail: '重活（拆解/质检）在后台线程执行（3 文件安装用内联 Worker）', fix: '' };
         }
         return {
             id: 'worker',

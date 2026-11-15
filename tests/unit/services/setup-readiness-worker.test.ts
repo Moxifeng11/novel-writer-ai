@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { App, Vault } from 'obsidian';
 import { SetupReadinessService } from '@/services/setup-readiness-service';
 
-const make = (mode: 'worker' | 'main-thread') => {
+const make = (mode: 'worker' | 'worker-inline' | 'main-thread') => {
     const app = new App();
     app.vault = new Vault();
     return new SetupReadinessService(app, {

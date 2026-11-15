@@ -75,8 +75,8 @@ export function buildUsageGuide(pluginVersion: string): string {
 
 ## 五、性能说明（社区市场安装）
 
-- 目录版只下发 main.js / manifest.json / styles.css，不含 workers/ 目录：拆解、质检等重活会**退回主线程执行**（功能可用，但大文件时 UI 更吃紧）。仓库/BRAT 安装包含 workers，可后台线程执行。
-- 主包约 5MB：低配设备首次启用会有一两秒解析；之后启动走缓存。
+- 目录版只下发 main.js / manifest.json / styles.css：插件内置了 Worker 源码，首次用到拆解/质检时用 Blob 创建后台线程执行（无需额外文件）。仓库/BRAT 安装带 workers/ 目录时优先用磁盘文件。
+- 主包约 5.7MB（含内联 Worker 源码）：低配设备首次启用会有一两秒解析；之后启动走缓存。
 
 ## 六、排错
 

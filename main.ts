@@ -60,6 +60,7 @@ import { AgentWorkbenchView } from './ui/agent-workbench-view';
 import { VIEW_TYPE_AGENT_WORKBENCH } from './shared/view-types';
 import { detachPluginLeaves } from './shared/plugin-leaves';
 import { executeObsidianCommand, listObsidianCommands, openPluginSettingsTab } from './shared/obsidian-internal-bridge';
+import { disposeInlineWorkerUrls, getWorkerRuntimeMode, probePluginWorkers } from './shared/plugin-worker-url';
 import { isProjectDirectory } from './shared/project-catalog';
 import { isStoredCiphertext, usableSecret } from './shared/secret-value';
 import { revealLeafCompat } from './shared/workspace-reveal';
@@ -895,6 +896,12 @@ export default class NovelWriterPlugin extends Plugin {
             plugin: this,
             getVersionService: () => this.engineRegistry.get(ENGINE_NAMES.CHAPTER_VERSION_SERVICE),
         });
+        // 探测是否带 workers/（社区 3 文件安装没有 → 走内联 Blob Worker）
+        try {
+            await probePluginWorkers(this.app);
+        } catch (e) {
+            log.warn('[小说工坊] Worker 探测失败（按内联/降级处理）:', e);
+        }
         try {
             // ─── 引擎注册表初始化（Phase 1-8） ───
             await this.engineRegistry.initialize(this, {
@@ -1418,20 +1425,7 @@ export default class NovelWriterPlugin extends Plugin {
                 const index = await indexService.ensure(project);
                 return index.entries.length;
             },
-            workerMode: async () => {
-                const adapter = this.app.vault.adapter;
-                const base = pluginRootDirPath();
-                const exists = async (file: string): Promise<boolean> => {
-                    try {
-                        return await adapter.exists(`${base}/workers/${file}`);
-                    } catch { // silent-ok: 探测失败按无 worker 处理（走降级，不影响功能）
-                        return false;
-                    }
-                };
-                return (await exists('deconstruction-worker.js')) || (await exists('quality-worker.js'))
-                    ? 'worker' as const
-                    : 'main-thread' as const;
-            },
+            workerMode: () => getWorkerRuntimeMode(),
             pendingSettlementCount: async (project: string) => {
                 const engine = this.engineRegistry.get(ENGINE_NAMES.SETTLEMENT_ENGINE);
                 const report = await engine.recoverInterruptedSettlement(project, undefined, true);
@@ -2927,6 +2921,7 @@ export default class NovelWriterPlugin extends Plugin {
         } catch (e) {
             log.warn('[小说工坊] 卸载时释放引擎实例失败:', e);
         }
+        disposeInlineWorkerUrls();
         log.info('Novel Writer AI plugin unloaded');
     }
 

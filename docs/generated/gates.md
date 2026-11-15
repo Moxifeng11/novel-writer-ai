@@ -40,6 +40,7 @@
 | `npm run check:templates` | 校验模板生成物与 assets 一致 |
 | `npm run check:test-standard` | — |
 | `npm run check:view-tests` | — |
+| `npm run check:workers-inline` | — |
 | `npm run check:write-entry` | — |
 | `npm run css:baseline` | 更新 CSS 基线 |
 | `npm run css:cleanup` | CSS 清理审计 |
@@ -53,6 +54,7 @@
 | `npm run gen:docs` | 生成 docs/generated/* |
 | `npm run gen:support-qr` | — |
 | `npm run gen:templates` | 把 assets/template-scaffold 嵌入 shared/template-scaffold-assets.generated.ts |
+| `npm run gen:workers-inline` | — |
 | `npm run handoff` | — |
 | `npm run inline:baseline` | 更新内联样式基线 |
 | `npm run lint` | ESLint（obsidianmd 推荐规则） |
@@ -98,9 +100,10 @@
 24. npm run check:changelog
 25. npm run check:docs
 26. npm run check:support-qr
-27. npm run build
-28. npm run check:bundle
-29. npm run check:release
+27. npm run check:workers-inline
+28. npm run build
+29. npm run check:bundle
+30. npm run check:release
 ```
 
 ## 说明

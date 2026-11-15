@@ -96,9 +96,9 @@ const RULES = [
         id: 'console-direct',
         description: '运行时不得直接 console.*，统一走 shared/logger',
         pattern: /console\.(log|debug|info|warn|error)/,
-        // 白名单是 console 的合法出口：logger sink 本身 + store 中间件（%c 样式化调试，
+        // 白名单是 console 的合法出口：logger sink 本身 + store 中间件（%c 样式化调试，\n        // + 自动生成的 worker 内联源码（worker 自己用 console，不能改）
         // 有 5 条单测断言精确参数；换 logger 会丢样式且默认 warn 级别下静默）
-        allow: ['shared/logger.ts', 'shared/store/middleware/logger.ts'],
+        allow: ['shared/logger.ts', 'shared/store/middleware/logger.ts', 'shared/workers-inline.generated.ts'],
     },
     {
         id: 'style-element',
