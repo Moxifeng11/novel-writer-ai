@@ -77,6 +77,7 @@ import { SessionPresetService } from './services/session-preset-service';
 import { MemoryGraphService } from './services/memory-graph-service';
 import { SceneContextService } from './services/scene-context-service';
 import { LedgerMigrationService } from './services/ledger-migration-service';
+import { CowriteSnapshotService } from './services/cowrite-snapshot-service';
 import { IdRegistryService } from './services/id-registry-service';
 import { ContextSessionService } from './services/context-session-service';
 import type { SessionPresetPayload } from '@/shared/session-preset-model';
@@ -1465,6 +1466,22 @@ export default class NovelWriterPlugin extends Plugin {
      * @param dryRun - 是否只预览（默认 true）
      * @returns 迁移结果
      */
+    /**
+     * 协同写作注入差异（M7）：同一场景内只补新增条目。
+     *
+     * @param sessionKey - 会话键（项目 + 章号）
+     * @param sceneKey - 场景键
+     * @param keys - 本次需要的条目 key（kind:id）
+     * @returns 差异结果（inject=false 表示无需注入）
+     */
+    public cowriteDelta(sessionKey: string, sceneKey: string, keys: string[]) {
+        this._cowriteSnapshots.setSession(sessionKey);
+        return this._cowriteSnapshots.compute(sceneKey, keys);
+    }
+
+    /** 协同注入快照（内存态） */
+    private readonly _cowriteSnapshots = new CowriteSnapshotService();
+
     public async migrateLedger(project: string, dryRun = true) {
         const registry = new IdRegistryService(this.app, new FileTxService(this.app));
         const service = new LedgerMigrationService(this.app, async (type, path) => registry.ensureId(project, type, path));

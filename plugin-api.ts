@@ -64,6 +64,19 @@ export interface NovelWriterEngineAPI {
      * @param dryRun - 是否只预览
      * @returns 迁移结果
      */
+    /**
+     * 协同写作注入差异（M7）。
+     *
+     * @param sessionKey - 会话键
+     * @param sceneKey - 场景键
+     * @param keys - 本次需要的条目 key
+     * @returns 差异结果
+     */
+    cowriteDelta(sessionKey: string, sceneKey: string, keys: string[]): {
+        delta: { sameScene: boolean; added: string[]; removed: string[]; unchanged: string[] };
+        inject: boolean;
+        snapshot: { sceneKey: string; keys: string[]; at: number };
+    };
     migrateLedger(project: string, dryRun?: boolean): Promise<{
         dryRun: boolean;
         summary: string;

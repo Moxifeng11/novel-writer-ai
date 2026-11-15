@@ -284,6 +284,12 @@
       "reason": "M14 时间线/伏笔迁移",
       "category": "service",
       "allowedInstances": 1
+    },
+    {
+      "className": "CowriteSnapshotService",
+      "reason": "M7 协同注入快照（插件内存态单例）",
+      "category": "service",
+      "allowedInstances": 1
     }
   ],
   "notes": {
