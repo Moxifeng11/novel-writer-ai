@@ -871,6 +871,15 @@
   color: var(--text-muted);
 }
 
+/* 本机图片选择用的临时 file input（不可见、不参与布局） */
+.nw-file-input-probe {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* 桌宠自定义形象预览（设置页） */
 .nw-pet-image-preview {
   position: relative;

@@ -107,7 +107,7 @@ export function renderPetImageSettings(
             .setButtonText('选择电脑图片')
             .setCta()
             .onClick(() => {
-                pickLocalImage(async (dataUrl) => {
+                pickLocalImage({}, async (dataUrl) => {
                     const config = normalizePetImageConfig({
                         source: 'file',
                         dataUrl,
@@ -177,42 +177,161 @@ export function renderPetImageSettings(
 }
 
 /**
+ * 本地图片选择器依赖（便于单测注入；默认用真实 DOM / FileReader / Image）。
+ */
+export interface LocalImagePickerDeps {
+    /** 文档对象（默认全局 document） */
+    doc?: Document;
+    /** 把文件读成 data URL（默认 FileReader） */
+    readAsDataUrl?(file: File): Promise<string>;
+    /** 加载图片（默认 new Image + onload） */
+    loadImage?(src: string): Promise<HTMLImageElement>;
+    /** 错误提示（默认 Notice） */
+    onError?(message: string): void;
+}
+
+/**
  * 打开系统文件选择器并读取图片（压缩到最长边 512px 后转 data URL）。
  *
- * 说明：用 <input type="file"> 而不是 fs，跨平台且不需要 Node 权限；
- * 图片只存在用户自己的插件数据里，不进仓库。
+ * 关键点（对抗审查修复）：
+ *  - 文件 input 必须挂到 DOM 上再触发，否则 iOS/macOS 等平台 WebView 会静默忽略 click
+ *    （用户表现就是「点了没反应」）；
+ *  - 优先用 Chromium 的 showPicker()（用户激活更可靠），失败或不支持再退回 click()；
+ *  - 取消（cancel 事件）与异常路径都会清理临时 input，避免 DOM 残留；
+ *  - 读取 / 压缩 / 保存任一环节失败都会弹 Notice，不再静默失败。
  *
- * @param onPicked - 读取完成回调（data URL）
+ * @param deps - 依赖（`doc` 必须是当前设置所在窗口的 document，Obsidian 1.15 起设置是独立窗口）
+ * @param onPicked - 读取完成回调（data URL；可返回 Promise，失败会被捕获并提示）
+ * @example
+ * ```ts
+ * pickLocalImage({ doc: container.ownerDocument }, async dataUrl => {
+ *     const config = normalizePetImageConfig({ source: 'file', dataUrl, cols: 2, rows: 2 });
+ *     if (config) await applyPetImage(plugin, config, rerender);
+ * });
+ * ```
  */
-function pickLocalImage(onPicked: (dataUrl: string) => void): void {
-    const input = document.createElement('input');
+export function pickLocalImage(
+    deps: LocalImagePickerDeps,
+    onPicked: (dataUrl: string) => void | Promise<void>,
+): void {
+    // 文档必须是「用户当前点击所在窗口」：Obsidian 1.15 起设置是独立窗口，
+    // 若在主窗口 document 上创建 input 并 showPicker，会因窗口未聚焦被浏览器拦截
+    // （用户表现：点「选择电脑图片」完全没反应）。
+    const active = typeof activeDocument !== 'undefined' && activeDocument ? activeDocument : null;
+    const doc = deps.doc ?? active ?? (typeof document !== 'undefined' ? document : null);
+    const notify = deps.onError ?? ((message: string) => new Notice(message));
+    if (!doc) {
+        notify('❌ 当前环境无法打开文件选择器');
+        return;
+    }
+    const input = doc.createElement('input');
     input.type = 'file';
     input.accept = 'image/png,image/jpeg,image/webp,image/gif';
+    // 用 CSS 类隐藏（仓库禁止内联 style）；类名见 styles-src/16-writing-stats-pet.css
+    input.className = 'nw-file-input-probe';
+
+    let cleaned = false;
+    const cleanup = (): void => {
+        if (cleaned) return;
+        cleaned = true;
+        try {
+            input.parentNode?.removeChild(input);
+        } catch { // silent-ok: 节点已不在 DOM 时忽略
+        }
+    };
+
     input.addEventListener('change', () => {
         const file = input.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-            const raw = String(reader.result ?? '');
-            if (!raw) {
-                new Notice('❌ 读取图片失败');
-                return;
+        if (!file) {
+            cleanup();
+            return;
+        }
+        void (async () => {
+            try {
+                const raw = deps.readAsDataUrl
+                    ? await deps.readAsDataUrl(file)
+                    : await readFileAsDataUrl(file);
+                if (!raw) throw new Error('读取图片失败');
+                const image = deps.loadImage ? await deps.loadImage(raw) : await loadImageElement(raw, doc);
+                const dataUrl = downscaleToDataUrl(image, doc);
+                await onPicked(dataUrl);
+            } catch (error) {
+                notify('❌ 读取或保存图片失败：' + (error instanceof Error ? error.message : String(error)));
+            } finally {
+                cleanup();
             }
-            const image = new Image();
-            image.onload = () => {
-                try {
-                    onPicked(downscaleToDataUrl(image));
-                } catch (error) {
-                    new Notice('❌ 图片处理失败：' + (error instanceof Error ? error.message : String(error)));
-                }
-            };
-            image.onerror = () => new Notice('❌ 无法解析该图片');
-            image.src = raw;
+        })();
+    });
+    input.addEventListener('cancel', cleanup);
+    // 兜底清理：部分宿主（旧 WebView / 对话框被系统拦截）取消后不触发 cancel，
+    // 但文件框关闭会让设置窗口重新获得焦点；聚焦后延迟清理，避免临时 input 堆积。
+    const view = doc.defaultView;
+    if (view) {
+        const onWindowFocus = (): void => {
+            try {
+                view.setTimeout?.(cleanup, 800);
+            } catch {
+                // silent-ok: 定时器不可用时交给 cancel/change 清理
+                cleanup();
+            }
         };
-        reader.onerror = () => new Notice('❌ 读取图片失败');
+        view.addEventListener('focus', onWindowFocus, { once: true });
+    }
+
+    const parent = doc.body ?? doc.documentElement;
+    if (!parent) {
+        notify('❌ 当前环境无法打开文件选择器');
+        return;
+    }
+    parent.appendChild(input);
+
+    try {
+        const picker = input as HTMLInputElement & { showPicker?(): void };
+        if (typeof picker.showPicker === 'function') {
+            picker.showPicker();
+        } else {
+            input.click();
+        }
+    } catch {
+        // showPicker 被拒绝（无用户激活 / 旧版本）→ 退回 click
+        try {
+            input.click();
+        } catch (error) {
+            cleanup();
+            notify('❌ 无法打开文件选择器：' + (error instanceof Error ? error.message : String(error)));
+        }
+    }
+}
+
+/**
+ * 用 FileReader 把文件读成 data URL。
+ *
+ * @param file - 用户选择的文件
+ * @returns data URL
+ */
+function readFileAsDataUrl(file: File): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result ?? ''));
+        reader.onerror = () => reject(new Error('读取文件失败'));
         reader.readAsDataURL(file);
     });
-    input.click();
+}
+
+/**
+ * 用 Image 加载 data URL。
+ *
+ * @param src - data URL
+ * @returns 已加载的图片
+ */
+function loadImageElement(src: string, doc?: Document): Promise<HTMLImageElement> {
+    return new Promise<HTMLImageElement>((resolve, reject) => {
+        const ImageCtor = (doc?.defaultView as unknown as { Image?: new () => HTMLImageElement } | null)?.Image;
+        const image = ImageCtor ? new ImageCtor() : new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error('无法解析该图片'));
+        image.src = src;
+    });
 }
 
 /**
@@ -221,12 +340,13 @@ function pickLocalImage(onPicked: (dataUrl: string) => void): void {
  * @param image - 已加载的图片
  * @returns data URL
  */
-function downscaleToDataUrl(image: HTMLImageElement): string {
+function downscaleToDataUrl(image: HTMLImageElement, doc?: Document): string {
     const maxEdge = 512;
     const scale = Math.min(1, maxEdge / Math.max(image.width, image.height));
     const width = Math.max(1, Math.round(image.width * scale));
     const height = Math.max(1, Math.round(image.height * scale));
-    const canvas = document.createElement('canvas');
+    const targetDoc = doc ?? document;
+    const canvas = targetDoc.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext('2d');
@@ -248,7 +368,12 @@ async function applyPetImage(
     rerender: () => void,
 ): Promise<void> {
     (plugin.settings as { petImage?: PetImageConfig }).petImage = config ?? undefined;
-    await plugin.saveSettings();
+    try {
+        await plugin.saveSettings();
+    } catch (error) {
+        new Notice('❌ 保存桌宠形象失败：' + (error instanceof Error ? error.message : String(error)), 8000);
+        return;
+    }
     plugin.refreshWritingPet();
     rerender();
 }
