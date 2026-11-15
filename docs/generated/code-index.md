@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146173 | 1940 | 1536 | 79% |
-| `services/` | 57 | 17247 | 263 | 191 | 73% |
+| `services/` | 57 | 17320 | 265 | 191 | 72% |
 | `shared/` | 234 | 47802 | 2015 | 1591 | 79% |
 | `core/` | 7 | 3008 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
@@ -415,9 +415,9 @@
 | `services/id-registry-service.ts` | 138 | 1 | 1 |
 | `services/job-service.ts` | 364 | 9 | 1 |
 | `services/knowledge-base-manager.ts` | 1584 | 6 | 4 |
-| `services/knowledge-migration-service.ts` | 187 | 3 | 1 |
+| `services/knowledge-migration-service.ts` | 222 | 4 | 1 |
 | `services/knowledge-original-chunker.ts` | 119 | 3 | 3 |
-| `services/ledger-migration-service.ts` | 210 | 3 | 1 |
+| `services/ledger-migration-service.ts` | 248 | 4 | 1 |
 | `services/local-model-probe.ts` | 185 | 6 | 5 |
 | `services/memory-graph-service.ts` | 245 | 2 | 2 |
 | `services/model-discovery.ts` | 279 | 5 | 5 |

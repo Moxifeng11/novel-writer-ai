@@ -1516,12 +1516,13 @@ export default class NovelWriterPlugin extends Plugin {
 
     public async migrateKnowledge(project: string, dryRun = true) {
         const registry = new IdRegistryService(this.app, new FileTxService(this.app));
+        const fileTx = this._fileTx ??= new FileTxService(this.app);
         const service = new KnowledgeMigrationService(this.app, async (type, pathFor) => {
             const provisional = pathFor(type === 'worldview' ? 'WLD-0000' : 'SET-0000');
             const id = await registry.ensureId(project, type, provisional);
             await registry.renamePath(project, id, pathFor(id));
             return id;
-        });
+        }, fileTx);
         return service.migrate(project, dryRun);
     }
 

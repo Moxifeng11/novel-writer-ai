@@ -33,6 +33,11 @@ export interface KnowledgeMigrationResult {
     summary: string;
 }
 
+/** 事务写入通道（由插件侧注入 FileTxService） */
+export interface KnowledgeWriteTx {
+    run(project: string, writes: ReadonlyArray<{ path: string; content: string }>): Promise<unknown>;
+}
+
 /** ID 分配器（pathFor 由调用方用最终 ID 生成路径） */
 export type KnowledgeIdAllocator = (
     type: 'worldview' | 'setting',
@@ -50,6 +55,7 @@ export class KnowledgeMigrationService {
     constructor(
         private readonly app: App,
         private readonly allocate: KnowledgeIdAllocator,
+        private readonly tx?: KnowledgeWriteTx,
     ) {}
 
     /**
@@ -85,17 +91,19 @@ export class KnowledgeMigrationService {
         }
 
         const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const pending: Array<{ path: string; content: string }> = [];
+        const cardPaths: string[] = [];
         const writtenWorldview: KnowledgeEntryCard[] = [];
         for (const card of worldview) {
             try {
                 const id = await this.allocate('worldview', (nextId) => this.cardPathWithId(project, 'worldview', nextId, card));
                 const path = this.cardPathWithId(project, 'worldview', id, card);
-                await this.writeFile(path, renderKnowledgeCard({ ...card, id }, {
+                pending.push({ path, content: renderKnowledgeCard({ ...card, id }, {
                     id,
                     type: 'worldview',
                     tags: '[nw/设定/世界观]',
-                }));
-                cards.push(path);
+                }) });
+                cardPaths.push(path);
                 writtenWorldview.push({ ...card, id });
             } catch (error) {
                 failures.push({ path: this.cardPathWithId(project, 'worldview', '?', card), reason: String(error) });
@@ -106,12 +114,12 @@ export class KnowledgeMigrationService {
             try {
                 const id = await this.allocate('setting', (nextId) => this.cardPathWithId(project, 'setting', nextId, card));
                 const path = this.cardPathWithId(project, 'setting', id, card);
-                await this.writeFile(path, renderKnowledgeCard({ ...card, id }, {
+                pending.push({ path, content: renderKnowledgeCard({ ...card, id }, {
                     id,
                     type: 'setting',
                     tags: '[nw/设定/设定库]',
-                }));
-                cards.push(path);
+                }) });
+                cardPaths.push(path);
                 writtenSetting.push({ ...card, id });
             } catch (error) {
                 failures.push({ path: this.cardPathWithId(project, 'worldview', '?', card), reason: String(error) });
@@ -127,12 +135,24 @@ export class KnowledgeMigrationService {
             try {
                 const text = await this.readText(original);
                 if (!text) continue;
-                await this.writeFile(backup, text);
+                pending.push({ path: backup, content: text });
+                pending.push({ path: original, content: derived });
                 backups.push(backup);
-                await this.writeFile(original, derived);
             } catch (error) {
                 failures.push({ path: original, reason: String(error) });
             }
+        }
+
+        // C5：多文件写入走事务（注入 FileTxService 时失败自动回滚）
+        try {
+            await this.ensureDirs(pending.map(write => write.path));
+            if (this.tx) await this.tx.run(project, pending);
+            else for (const write of pending) await this.writeFile(write.path, write.content);
+            cards.push(...cardPaths);
+        } catch (error) {
+            failures.push({ path: '(事务)', reason: String(error) });
+            cards.length = 0;
+            backups.length = 0;
         }
 
         log.info(`世界观/设定迁移完成：卡片 ${cards.length}，备份 ${backups.length}，失败 ${failures.length}`);
@@ -162,6 +182,21 @@ export class KnowledgeMigrationService {
         const dir = kind === 'worldview' ? '世界观' : '设定';
         const safe = (card.title || '未命名').replace(/[\\/:*?"<>|]/g, '_').slice(0, 40);
         return `${project}/01-世界架构/${dir}/${id}_${safe}.md`;
+    }
+
+    /** 事务写入前先建好目标目录（FileTx 只写文件，不建目录） */
+    private async ensureDirs(paths: readonly string[]): Promise<void> {
+        const dirs = new Set<string>();
+        for (const path of paths) {
+            const dir = path.split('/').slice(0, -1).join('/');
+            if (dir) dirs.add(dir);
+        }
+        for (const dir of dirs) {
+            if (!this.app.vault.getAbstractFileByPath(dir)) {
+                // silent-ok: 并发/已存在时创建失败可忽略，真正的写权限问题会在事务写入时暴露
+                await this.app.vault.createFolder(dir).catch(() => undefined);
+            }
+        }
     }
 
     /** 读文本 */

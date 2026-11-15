@@ -31,6 +31,14 @@ export type LedgerIdAllocator = (type: 'timeline' | 'foreshadow', path: string) 
 /**
  * 时间线/伏笔迁移服务。
  */
+/** 事务写入通道（由插件侧注入 FileTxService） */
+export interface LedgerWriteTx {
+    run(project: string, writes: ReadonlyArray<{ path: string; content: string }>): Promise<unknown>;
+}
+
+/**
+ * 时间线/伏笔迁移服务。
+ */
 export class LedgerMigrationService {
     /**
      * @param app - Obsidian 应用
@@ -39,6 +47,7 @@ export class LedgerMigrationService {
     constructor(
         private readonly app: App,
         private readonly allocate: LedgerIdAllocator,
+        private readonly tx?: LedgerWriteTx,
     ) {}
 
     /**
@@ -81,11 +90,13 @@ export class LedgerMigrationService {
         }
 
         const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const pending: Array<{ path: string; content: string }> = [];
+        const cardPaths: string[] = [];
         for (const card of assigned.timelineCards) {
             const path = this.timelineCardPath(project, card);
             try {
-                await this.writeFile(path, this.renderTimelineCard(card));
-                cards.push(path);
+                pending.push({ path, content: this.renderTimelineCard(card) });
+                cardPaths.push(path);
             } catch (error) {
                 failures.push({ path, reason: String(error) });
             }
@@ -93,8 +104,8 @@ export class LedgerMigrationService {
         for (const card of assigned.foreshadowCards) {
             const path = this.foreshadowCardPath(project, card);
             try {
-                await this.writeFile(path, this.renderForeshadowCard(card));
-                cards.push(path);
+                pending.push({ path, content: this.renderForeshadowCard(card) });
+                cardPaths.push(path);
             } catch (error) {
                 failures.push({ path, reason: String(error) });
             }
@@ -109,17 +120,44 @@ export class LedgerMigrationService {
             try {
                 const text = await this.readText(original);
                 if (text) {
-                    await this.writeFile(backup, text);
+                    pending.push({ path: backup, content: text });
                     backups.push(backup);
                 }
-                await this.writeFile(original, derived);
+                pending.push({ path: original, content: derived });
             } catch (error) {
                 failures.push({ path: original, reason: String(error) });
             }
         }
 
+        // C5：多文件写入走事务（注入 FileTxService 时失败自动回滚）
+        try {
+            await this.ensureDirs(pending.map(write => write.path));
+            if (this.tx) await this.tx.run(project, pending);
+            else for (const write of pending) await this.writeFile(write.path, write.content);
+            cards.push(...cardPaths);
+        } catch (error) {
+            failures.push({ path: '(事务)', reason: String(error) });
+            cards.length = 0;
+            backups.length = 0;
+        }
+
         log.info(`时间线/伏笔迁移完成：卡片 ${cards.length}，备份 ${backups.length}，失败 ${failures.length}`);
         return { dryRun: false, summary, cards, backups, failures };
+    }
+
+    /** 事务写入前先建好目标目录（FileTx 只写文件，不建目录） */
+    private async ensureDirs(paths: readonly string[]): Promise<void> {
+        const dirs = new Set<string>();
+        for (const path of paths) {
+            const dir = path.split('/').slice(0, -1).join('/');
+            if (dir) dirs.add(dir);
+        }
+        for (const dir of dirs) {
+            if (!this.app.vault.getAbstractFileByPath(dir)) {
+                // silent-ok: 并发/已存在时创建失败可忽略
+                await this.app.vault.createFolder(dir).catch(() => undefined);
+            }
+        }
     }
 
     /** 读文本 */
