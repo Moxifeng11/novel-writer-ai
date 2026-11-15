@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146377 | 1941 | 1537 | 79% |
 | `services/` | 65 | 18728 | 291 | 200 | 69% |
-| `shared/` | 242 | 48513 | 2047 | 1609 | 79% |
+| `shared/` | 242 | 48518 | 2047 | 1609 | 79% |
 | `core/` | 7 | 3012 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 277 | 107186 | 1036 | 837 | 81% |
@@ -677,7 +677,7 @@
 | `shared/unit-context-prompt.ts` | 119 | 4 | 4 |
 | `shared/unload-barrier.ts` | 72 | 1 | 0 |
 | `shared/untrusted-content.ts` | 39 | 1 | 1 |
-| `shared/usage-guide-content.ts` | 84 | 2 | 1 |
+| `shared/usage-guide-content.ts` | 89 | 2 | 1 |
 | `shared/validators/normalizers-entity.ts` | 232 | 5 | 5 |
 | `shared/vault-tree.ts` | 131 | 6 | 6 |
 | `shared/version-types.ts` | 125 | 10 | 0 |
