@@ -238,6 +238,7 @@ export class StepRunner {
             loadBodyKnowledgeParts: (ctx: StepRunCtx) => this.loadBodyKnowledgeParts(ctx),
             loadAssociationContext: (ctx: StepRunCtx, stepKey: string) => this.loadAssociationContext(ctx, stepKey),
             loadStoryLinkageTail: (ctx: StepRunCtx, stepKey: string) => this.loadStoryLinkageTail(ctx, stepKey),
+            loadSceneContextTail: (ctx: StepRunCtx, stepKey: string) => this.loadSceneContextTail(ctx, stepKey),
             compressionMode: this.plugin.settings.contextCompressionMode ?? 'extractive',
             retrieveOverflowContext: (ctx: StepRunCtx, deficit: number, focusTerms: string[]) =>
                 this.retrieveOverflowContext(ctx, deficit, focusTerms),
@@ -301,6 +302,27 @@ export class StepRunner {
      * @param stepKey - 当前步骤
      * @returns 尾部文本与缺失标记
      */
+    /**
+     * 场景级精确上下文尾部（M5）：从 Scene 展开取当前场景，按在场 ID 装配。
+     *
+     * @param ctx - 步骤上下文
+     * @param stepKey - 步骤键
+     * @returns 段落（空表示无场景数据，不阻断）
+     */
+    private async loadSceneContextTail(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; missing?: boolean }> {
+        void stepKey;
+        const sceneText = String(ctx.stepResults?.['sceneExpand'] ?? '');
+        if (!sceneText.trim()) return { text: '', missing: true };
+        try {
+            if (!this.plugin.buildSceneContext) return { text: '', missing: true };
+            const pack = await this.plugin.buildSceneContext(ctx.project, sceneText, 1);
+            if (!pack.section) return { text: '', missing: true };
+            return { text: pack.section, missing: pack.assembly.coverage.missing.length > 0 };
+        } catch { // silent-ok: 场景上下文是增强尾部，失败不阻断写作
+            return { text: '', missing: true };
+        }
+    }
+
     private async loadStoryLinkageTail(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; missing?: boolean }> {
         void stepKey;
         try {

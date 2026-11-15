@@ -74,6 +74,8 @@ export interface StepPromptAssemblyHost {
      * @returns 尾部文本与缺失标记
      */
     loadStoryLinkageTail?(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; missing?: boolean }>;
+    /** 场景级精确上下文尾部（M5：按当前场景在场 ID 装配；缺了不阻断） */
+    loadSceneContextTail?(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; missing?: boolean }>;
     /** 上下文压缩模式（默认 extractive） */
     compressionMode?: ContextCompressionMode;
     /** 溢出时的定向补检（只补缺口；返回空串表示无补充） */
@@ -197,6 +199,14 @@ export async function assembleStepPrompt(
             linkageMissing = linkage.missing;
             if (linkageText) {
                 extraTail = [extraTail, linkageText].filter(Boolean).join('\n\n');
+            }
+        }
+        // 场景级精确上下文尾部（M5）：与关联查询/关联索引同为「可丢弃增强尾部」，
+        // 有则按当前场景在场 ID 注入精确事实，缺了不阻断
+        if (host.loadSceneContextTail && ['bodyGeneration', 'qualityControl', 'analysisReport'].includes(stepKey)) {
+            const sceneTail = await host.loadSceneContextTail(ctx, stepKey);
+            if (sceneTail.text) {
+                extraTail = [extraTail, sceneTail.text].filter(Boolean).join('\n\n');
             }
         }
         const effectiveSystemPrompt = systemTail

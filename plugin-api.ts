@@ -49,6 +49,23 @@ export interface NovelWriterSettingsAPI {
 
 /** ─── 子接口：核心引擎访问 ─── */
 export interface NovelWriterEngineAPI {
+    /**
+     * 构建场景上下文包（M5）：场景锚点 → 精确检索 → 迭代装配 → 提示词段落。
+     *
+     * @param project - 项目路径
+     * @param sceneExpandText - 「Scene 展开」全文
+     * @param sceneIndex - 目标场景序号（1 起）
+     * @returns 上下文包
+     */
+    buildSceneContext(project: string, sceneExpandText: string, sceneIndex?: number): Promise<{
+        section: string;
+        session: unknown;
+        assembly: { coverage: { required: number; loaded: number; missing: string[] } };
+        unresolved: string[];
+        ambiguous: string[];
+        scene: unknown;
+        sceneCount: number;
+    }>;
     readonly aiEngine: AIEngine;
     readonly ctxManager: ContextManager;
     readonly cacheManager: PluginCacheManager;
