@@ -54,6 +54,7 @@ describe('buildDirectionalPrompt — PromptBuilder 路径', () => {
             'INJ',
             briefParts,
             budget,
+            undefined,
         ]);
     });
 });

@@ -38,6 +38,8 @@ export interface DirectionalPromptInput {
     promptBuilder: PromptBuilder | null;
     /** 输入预算（引擎 getCoWriteInputBudget 结果） */
     inputBudget?: { maxInputTokens: number; modelId?: string };
+    /** M7：跳过与 storyContext 重复的缓存上下文块（默认关） */
+    skipCachedContext?: boolean;
 }
 
 /**
@@ -70,6 +72,7 @@ export function buildDirectionalPrompt(input: DirectionalPromptInput): { system:
         writingRules,
         promptBuilder,
         inputBudget,
+        skipCachedContext,
     } = input;
 
     if (promptBuilder) {
@@ -83,7 +86,8 @@ export function buildDirectionalPrompt(input: DirectionalPromptInput): { system:
             knowledgeParts,
             knowledgeInjection,
             briefParts,
-            inputBudget
+            inputBudget,
+            skipCachedContext ? { skipCachedContext: true } : undefined
         );
     }
 

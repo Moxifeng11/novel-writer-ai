@@ -438,6 +438,7 @@ export function getDefaultSettings(): NovelWriterSettings {
         proModel: 'doubao-seed-2-0-pro-260215',
         coWriteModel: '',
         coWriteTemperature: 0.7,
+    coWriteContextDelta: false,
         coWriteMaxTokens: 600,
         coWriteNumCtx: 0,
         coWriteCandidateBatching: true,

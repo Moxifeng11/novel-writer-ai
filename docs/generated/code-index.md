@@ -6,10 +6,10 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 353 | 145994 | 1935 | 1532 | 79% |
+| `engine/` | 353 | 146016 | 1935 | 1532 | 79% |
 | `services/` | 52 | 16355 | 246 | 186 | 76% |
 | `shared/` | 232 | 47416 | 1997 | 1578 | 79% |
-| `core/` | 7 | 2960 | 33 | 18 | 55% |
+| `core/` | 7 | 2961 | 33 | 18 | 55% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106856 | 1034 | 835 | 81% |
 
@@ -22,7 +22,7 @@
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 550 | 4 | 2 |
-| `core/settings-service.ts` | 574 | 5 | 4 |
+| `core/settings-service.ts` | 575 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
@@ -105,13 +105,13 @@
 | `engine/character-context.ts` | 46 | 1 | 1 |
 | `engine/character-recognition-pipeline.ts` | 452 | 1 | 1 |
 | `engine/character-soul.ts` | 268 | 10 | 7 |
-| `engine/co-writer-engine.ts` | 3293 | 3 | 1 |
+| `engine/co-writer-engine.ts` | 3309 | 3 | 1 |
 | `engine/co-writer-state-sync.ts` | 53 | 1 | 1 |
 | `engine/co-writer/ai-response-parse.ts` | 186 | 4 | 4 |
 | `engine/co-writer/co-write-options.ts` | 313 | 11 | 11 |
 | `engine/co-writer/co-writer-types.ts` | 106 | 6 | 6 |
 | `engine/co-writer/create-session-store.ts` | 249 | 4 | 4 |
-| `engine/co-writer/directional-prompt.ts` | 137 | 2 | 1 |
+| `engine/co-writer/directional-prompt.ts` | 141 | 2 | 1 |
 | `engine/co-writer/evaluation-prompt.ts` | 102 | 2 | 1 |
 | `engine/co-writer/index.ts` | 69 | 3 | 1 |
 | `engine/co-writer/local-model-utils.ts` | 194 | 9 | 7 |
@@ -261,7 +261,7 @@
 | `engine/preference-memory.ts` | 291 | 0 | 0 |
 | `engine/project-migration-service.ts` | 227 | 5 | 5 |
 | `engine/promise-ledger.ts` | 222 | 11 | 11 |
-| `engine/prompt-builder.ts` | 1476 | 2 | 1 |
+| `engine/prompt-builder.ts` | 1478 | 2 | 1 |
 | `engine/prompt-cache.ts` | 81 | 3 | 2 |
 | `engine/prompt-hash.ts` | 51 | 1 | 1 |
 | `engine/prompt-resolver.ts` | 164 | 4 | 2 |

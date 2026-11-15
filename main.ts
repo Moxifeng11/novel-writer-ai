@@ -263,6 +263,8 @@ export interface NovelWriterSettings {
     coWriteMaxTokens: number;
     /** v4.15: 协同写作本地 num_ctx；0=按模型探测窗口自动 */
     coWriteNumCtx?: number;
+    /** M7：协同续写启用「prompt 内去重」（默认关；开启后 storyContext 已含的实体/设定不再重复注入） */
+    coWriteContextDelta?: boolean;
     /** v4.17: 本地协同候选批量化；true=一次调用返回多方向候选 */
     coWriteCandidateBatching?: boolean;
     /** v7.2: 协同写作模型模式：'local'(本地Ollama) | 'cloud'(云端API) */

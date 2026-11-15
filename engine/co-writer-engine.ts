@@ -1293,7 +1293,22 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         this.directionKnowledgeCounts[direction] = kpCount;
 
         const combinedInjection = [shared.knowledgeInjection, shared.kbDeepInjection, shared.associationText].filter(Boolean).join('\n\n');
-        const prompt = this.buildDirectionalPrompt(shared.precedingText, direction, shared.cursorHint, shared.fingerprintParts, knowledgeParts, combinedInjection);
+        // M7：开启 coWriteContextDelta 时，按「场景键」判断本批是否首次注入；
+        // 同批重复方向（同一 sceneKey）只保留一份 storyContext/缓存上下文。
+        let skipCachedContext = false;
+        try {
+            const plugin = this.aiEngine.getPlugin?.();
+            const sessionKey = `${this.session?.project ?? ''}/${this.session?.chapterName ?? ''}`;
+            const sceneKey = this.chapterBrief?.currentScene
+                ? `scene-${this.chapterBrief.currentIndex}`
+                : sessionKey;
+            if (plugin?.settings?.coWriteContextDelta && plugin.cowriteDelta) {
+                skipCachedContext = !plugin.cowriteDelta(sessionKey, sceneKey, [sceneKey]).inject;
+            }
+        } catch { // silent-ok: 去重开关是增强能力，失败回退为完整注入
+            skipCachedContext = false;
+        }
+        const prompt = this.buildDirectionalPrompt(shared.precedingText, direction, shared.cursorHint, shared.fingerprintParts, knowledgeParts, combinedInjection, skipCachedContext);
         this.recordKnowledgeInjection(kpCount, `${prompt.system}\n${prompt.user}`, knowledgeParts);
 
         if (this.precisionMode) {
@@ -2749,7 +2764,8 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         cursorHint: string,
         fingerprintParts?: string[],
         knowledgeParts?: string[],
-        knowledgeInjection?: string
+        knowledgeInjection?: string,
+        skipCachedContext?: boolean
     ): { system: string; user: string } {
         let soulInjection = '';
         if (this.soulData?.protagonist?.hasSoul) {

@@ -893,6 +893,7 @@ export class PromptBuilder {
      * @param knowledgeInjection - 知识注入
      * @param briefParts - 简报片段
      * @param budget - 预算
+     * @param options - 去重选项（M7：跳过与 storyContext 重复的缓存上下文块）
       * @returns string } 结果
      */
     buildSuggestionPrompt(
@@ -905,7 +906,8 @@ export class PromptBuilder {
         knowledgeParts?: string[],
         knowledgeInjection?: string,
         briefParts?: string[],
-        budget?: { maxInputTokens: number; modelId?: string }
+        budget?: { maxInputTokens: number; modelId?: string },
+        options?: { skipCachedContext?: boolean }
     ): { system: string; user: string } {
         const dirPrompt = DIRECTION_PROMPTS[direction] || DIRECTION_PROMPTS.action;
         const snap = this.getSnapshot();
@@ -977,13 +979,13 @@ export class PromptBuilder {
                 key: 'storyContext',
                 priority: 72,
                 shrinkable: true,
-                text: this.getStoryContextPackParts(false).join('\n'),
+                text: options?.skipCachedContext ? '' : this.getStoryContextPackParts(false).join('\n'),
             },
             {
                 key: 'context',
                 priority: 40,
                 shrinkable: true,
-                text: this.getCachedContextParts(snap, {
+                text: options?.skipCachedContext ? '' : this.getCachedContextParts(snap, {
                     skipChapterPlanning: hasBrief,
                     skipCoreInfo: hasStoryContext,
                 }).join('\n'),
