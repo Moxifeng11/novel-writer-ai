@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 353 | 146073 | 1936 | 1533 | 79% |
+| `engine/` | 353 | 146089 | 1936 | 1533 | 79% |
 | `services/` | 56 | 17106 | 257 | 190 | 74% |
-| `shared/` | 234 | 47738 | 2010 | 1588 | 79% |
+| `shared/` | 234 | 47802 | 2015 | 1591 | 79% |
 | `core/` | 7 | 3008 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 276 | 107004 | 1035 | 836 | 81% |
@@ -313,7 +313,7 @@
 | `engine/repository/domain/serializers/index.ts` | 7 | 0 | 0 |
 | `engine/repository/domain/validators/domain-validator.ts` | 288 | 4 | 4 |
 | `engine/repository/domain/validators/index.ts` | 7 | 1 | 0 |
-| `engine/repository/domain/value-objects/chapter-status.ts` | 160 | 2 | 1 |
+| `engine/repository/domain/value-objects/chapter-status.ts` | 175 | 2 | 1 |
 | `engine/repository/domain/value-objects/entity-status.ts` | 133 | 2 | 1 |
 | `engine/repository/domain/value-objects/frontmatter.ts` | 187 | 1 | 1 |
 | `engine/repository/domain/value-objects/index.ts` | 15 | 3 | 0 |
@@ -338,7 +338,7 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 2212 | 3 | 3 |
+| `engine/settlement-engine.ts` | 2213 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 137 | 2 | 2 |
@@ -465,10 +465,10 @@
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 368 | 21 | 20 |
 | `shared/changelog-data.ts` | 339 | 3 | 3 |
-| `shared/chapter-progress.ts` | 144 | 7 | 6 |
+| `shared/chapter-progress.ts` | 142 | 7 | 6 |
 | `shared/chapter-ref.ts` | 205 | 7 | 5 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
-| `shared/chapter-status.ts` | 74 | 6 | 5 |
+| `shared/chapter-status.ts` | 140 | 11 | 8 |
 | `shared/chapter-table.ts` | 115 | 7 | 7 |
 | `shared/chapter-target.ts` | 118 | 5 | 5 |
 | `shared/chapter-version-port.ts` | 23 | 1 | 1 |

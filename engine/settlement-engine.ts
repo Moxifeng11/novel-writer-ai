@@ -9,6 +9,7 @@
  * - 已满足"引擎层零 UI 依赖"约束，无需再引入额外 Callbacks 层（参见 docs/审计报告_v4.5.1_2026-06-30.md §13）
  */
 
+import { isWrittenOrSettledStatus, readFrontmatterStatus } from '@/shared/chapter-status';
 import { TFile, TFolder } from 'obsidian';
 import { ProjectIndexService } from '@/services/project-index-service';
 import { WritebackReviewService } from '@/services/writeback-review-service';
@@ -2094,8 +2095,8 @@ tags: [看板]
         for (const f of chapterFiles) {
             try {
                 const raw = await this.getFS().read(f.path);
-                // v4.0: 章节状态优先匹配新值 settled/written；旧值 '已完稿' 仅保留兼容
-                if (raw.includes('status: settled') || raw.includes('status: written') || raw.includes('status: 已完稿')) completed++;
+                // C2：状态判定统一走 shared/chapter-status（含中文/旧值归一），不再用字符串包含猜
+                if (isWrittenOrSettledStatus(readFrontmatterStatus(raw))) completed++;
                 else drafts++;
             } catch (e) {
                 log.warn('[SettlementEngine] 叙事总览失败:', e);

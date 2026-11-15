@@ -12,8 +12,10 @@
  *   - 「最新章 / 下一章」只看已写章节，不看骨架。
  */
 
+import { isChapterWrittenRecord, SKELETON_BYTE_THRESHOLD as CANONICAL_SKELETON_BYTE_THRESHOLD } from './chapter-status';
+
 /** 骨架文件体量上限（字节）。模板骨架约 287 字节，真实章节普遍 > 2KB */
-export const SKELETON_BYTE_THRESHOLD = 1500;
+export const SKELETON_BYTE_THRESHOLD = CANONICAL_SKELETON_BYTE_THRESHOLD;
 
 const WRITTEN_STATUSES = new Set(['written', 'settled']);
 /** 显式占位状态：明确标记未写，即便文件被撑大也不算完成 */
@@ -60,12 +62,8 @@ export interface ChapterProgressSummary {
  * @returns 是否成功
  */
 export function isChapterWritten(status: string, hasBody: boolean, size: number): boolean {
-    if (!hasBody) return false;
-    const normalized = (status || '').trim().toLowerCase();
-    if (WRITTEN_STATUSES.has(normalized)) return true;
-    if (PLACEHOLDER_STATUSES.has(normalized)) return false;
-    // 未登记状态（旧文件/自定义）：按体量判断，避免把真实章节误判成骨架
-    return size > SKELETON_BYTE_THRESHOLD;
+    // C2：判定口径统一到 shared/chapter-status 的 isChapterWrittenRecord
+    return isChapterWrittenRecord(status, hasBody, size);
 }
 
 /**

@@ -5,6 +5,7 @@
  */
 
 import type { BodyStatus } from '@/shared/types';
+import { isChapterWrittenRecord, normalizeChapterStatus } from '@/shared/chapter-status';
 
 /** 章节状态枚举 */
 export type ChapterStatusValue = 'pending' | 'written' | 'settled';
@@ -34,9 +35,23 @@ export class ChapterStatus {
       * @returns ChapterStatus 实例
      */
     static from(value: string | undefined | null): ChapterStatus {
-        if (value === 'written') return ChapterStatus.WRITTEN;
-        if (value === 'settled') return ChapterStatus.SETTLED;
+        // C2：与 shared/chapter-status 共用同一套别名归一（含中文/旧值）
+        const normalized = normalizeChapterStatus(value);
+        if (normalized === 'written') return ChapterStatus.WRITTEN;
+        if (normalized === 'settled') return ChapterStatus.SETTLED;
         return ChapterStatus.PENDING;
+    }
+
+    /**
+     * 从「章节记录」创建（含旧文件按体量兜底的兼容口径）。
+     *
+     * @param status - 原始状态
+     * @param hasBody - 是否存在正文文件
+     * @param size - 正文文件字节数
+     * @returns ChapterStatus 实例
+     */
+    static fromRecord(status: string | undefined | null, hasBody: boolean, size: number): ChapterStatus {
+        return isChapterWrittenRecord(status, hasBody, size) ? ChapterStatus.WRITTEN : ChapterStatus.PENDING;
     }
 
     /**

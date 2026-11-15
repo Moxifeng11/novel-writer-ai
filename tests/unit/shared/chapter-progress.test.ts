@@ -23,7 +23,8 @@ describe('chapter-progress — 章节完成度判定（BUG 回归）', () => {
     it('没有 status 的旧文件按体量兜底', () => {
         expect(isChapterWritten('', true, SKELETON_BYTE_THRESHOLD + 1)).toBe(true);
         expect(isChapterWritten('', true, SKELETON_BYTE_THRESHOLD)).toBe(false);
-        expect(isChapterWritten('custom-status', true, SKELETON_BYTE_THRESHOLD + 1)).toBe(true);
+        // C2 口径变更：未登记的状态值按 pending 处理（不靠体量猜，避免误判）；仅「没有 status」才按体量兜底
+        expect(isChapterWritten('custom-status', true, SKELETON_BYTE_THRESHOLD + 1)).toBe(false);
     });
 
     it('没有正文文件的骨架目录一律不算已写', () => {
