@@ -282,6 +282,8 @@ export interface NovelWriterSettings {
     coWriteNumCtx?: number;
     /** M7：协同续写启用「prompt 内去重」（默认关；开启后 storyContext 已含的实体/设定不再重复注入） */
     coWriteContextDelta?: boolean;
+    /** A4：协同写作复用正文步的结构化约束块（默认关） */
+    coWriteStructuredConstraints?: boolean;
     /** M5 收口：正文步严格场景注入（默认关）——整库实体/设定交给场景上下文，减少重复注入 */
     bodySceneContextStrict?: boolean;
     /** M12 写入切换：结算前校验并剔除非法指令（默认关，开启后脏值不再落盘） */

@@ -162,6 +162,32 @@ export { formatWritingRulesForPrompt } from './prompts/writing-rules-format';
 /**
  * 协同写作引擎：建议/改写/校验/记忆。
  */
+/**
+ * 合并知识片段（正文步与协同共用同一套顺序与去重规则）。
+ *
+ * @param parts - 各来源文本
+ * @returns 合并后的注入文本
+ */
+export function composeKnowledgeParts(parts: {
+    knowledgeInjection?: string;
+    kbDeepInjection?: string;
+    associationText?: string;
+    structuredConstraints?: string;
+}): string {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const value of [parts.knowledgeInjection, parts.kbDeepInjection, parts.associationText, parts.structuredConstraints]) {
+        const text = String(value ?? '').trim();
+        if (!text || seen.has(text)) continue;
+        seen.add(text);
+        out.push(text);
+    }
+    return out.join('\n\n');
+}
+
+/**
+ * 协同写作引擎：建议/改写/校验/记忆。
+ */
 export class CoWriterEngine {
     private app: App;
     private aiEngine: AIEngine;
@@ -978,6 +1004,23 @@ export class CoWriterEngine {
             log.warn('[CoWriterEngine] 关联查询失败，跳过:', e);
         }
 
+        // A4：协同写作复用与正文步同一套结构化约束（B3），开关默认关
+        let structuredConstraints = '';
+        try {
+            const plugin = this.aiEngine.getPlugin?.() as {
+                settings?: { coWriteStructuredConstraints?: boolean };
+                buildConstraintBlocks?: (project: string, chapterName: string) => Promise<{ section?: string }>;
+            } | undefined;
+            if (plugin?.settings?.coWriteStructuredConstraints === true
+                && this.session
+                && typeof plugin.buildConstraintBlocks === 'function') {
+                const pack = await plugin.buildConstraintBlocks(this.session.project, this.session.chapterName);
+                structuredConstraints = String(pack?.section ?? '');
+            }
+        } catch (e) {
+            log.warn('[CoWriterEngine] A4: 结构化约束组装失败，跳过:', e);
+        }
+
         const recentSentences = this.precisionMode
             ? this.extractRecentSentences(precedingText)
             : [];
@@ -1097,7 +1140,7 @@ export class CoWriterEngine {
             shared.cursorHint,
             shared.fingerprintParts,
             knowledgeParts,
-            [shared.knowledgeInjection, shared.kbDeepInjection, shared.associationText].filter(Boolean).join('\n\n'),
+            composeKnowledgeParts(shared),
         );
         const directionLabels = directions.map((d, i) => `${i + 1}. ${d}`).join('\n');
         const prompt = {

@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 353 | 146173 | 1940 | 1536 | 79% |
+| `engine/` | 353 | 146216 | 1941 | 1537 | 79% |
 | `services/` | 63 | 18324 | 284 | 198 | 70% |
 | `shared/` | 238 | 48260 | 2039 | 1602 | 79% |
-| `core/` | 7 | 3008 | 35 | 20 | 57% |
+| `core/` | 7 | 3009 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 276 | 107004 | 1035 | 836 | 81% |
+| `ui/` | 276 | 107013 | 1035 | 836 | 81% |
 
 ## 文件清单
 
@@ -22,7 +22,7 @@
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 550 | 4 | 2 |
-| `core/settings-service.ts` | 577 | 5 | 4 |
+| `core/settings-service.ts` | 578 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
@@ -105,7 +105,7 @@
 | `engine/character-context.ts` | 46 | 1 | 1 |
 | `engine/character-recognition-pipeline.ts` | 452 | 1 | 1 |
 | `engine/character-soul.ts` | 268 | 10 | 7 |
-| `engine/co-writer-engine.ts` | 3309 | 3 | 1 |
+| `engine/co-writer-engine.ts` | 3352 | 4 | 2 |
 | `engine/co-writer-state-sync.ts` | 53 | 1 | 1 |
 | `engine/co-writer/ai-response-parse.ts` | 186 | 4 | 4 |
 | `engine/co-writer/co-write-options.ts` | 313 | 11 | 11 |
@@ -908,7 +908,7 @@
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
 | `ui/settings/section-factory.ts` | 92 | 4 | 2 |
-| `ui/settings/writing-sections.ts` | 830 | 6 | 6 |
+| `ui/settings/writing-sections.ts` | 839 | 6 | 6 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 402 | 1 | 1 |
 | `ui/step-result-viewer-modal.ts` | 442 | 1 | 1 |

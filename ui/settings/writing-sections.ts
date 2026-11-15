@@ -463,6 +463,15 @@ export class WritingSection extends SettingsSection {
                     this.plugin.settings.settlementStrictWrites = value;
                     await this.plugin.saveSettings();
                 }));
+        new Setting(section)
+            .setName('结构化约束注入（实验）')
+            .setDesc('开启后，协同写作复用正文步的约束块（在场人物事实/口吻、高重要度伏笔、节奏要求）；关闭时沿用原有知识注入')
+            .addToggle((toggle) => toggle
+                .setValue(this.plugin.settings.coWriteStructuredConstraints === true)
+                .onChange(async (value) => {
+                    this.plugin.settings.coWriteStructuredConstraints = value;
+                    await this.plugin.saveSettings();
+                }));
 
         new Setting(section)
             .setName('上下文体检')
