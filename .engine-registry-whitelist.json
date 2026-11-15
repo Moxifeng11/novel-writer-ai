@@ -290,6 +290,12 @@
       "reason": "M7 协同注入快照（插件内存态单例）",
       "category": "service",
       "allowedInstances": 1
+    },
+    {
+      "className": "ContextMetricsService",
+      "reason": "M14 注入量实测（插件按需创建）",
+      "category": "service",
+      "allowedInstances": 1
     }
   ],
   "notes": {

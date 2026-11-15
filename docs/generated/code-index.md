@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146016 | 1935 | 1532 | 79% |
-| `services/` | 52 | 16355 | 246 | 186 | 76% |
+| `services/` | 53 | 16534 | 248 | 187 | 75% |
 | `shared/` | 232 | 47421 | 1997 | 1578 | 79% |
 | `core/` | 7 | 2961 | 33 | 18 | 55% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
@@ -400,6 +400,7 @@
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
 | `services/chapter-version-service.ts` | 744 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
+| `services/context-metrics-service.ts` | 179 | 2 | 1 |
 | `services/context-session-service.ts` | 161 | 2 | 1 |
 | `services/cowrite-snapshot-service.ts` | 86 | 2 | 1 |
 | `services/execution-ledger.ts` | 325 | 10 | 7 |

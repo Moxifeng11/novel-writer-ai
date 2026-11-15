@@ -78,6 +78,7 @@ import { MemoryGraphService } from './services/memory-graph-service';
 import { SceneContextService } from './services/scene-context-service';
 import { LedgerMigrationService } from './services/ledger-migration-service';
 import { CowriteSnapshotService } from './services/cowrite-snapshot-service';
+import { ContextMetricsService } from './services/context-metrics-service';
 import { IdRegistryService } from './services/id-registry-service';
 import { ContextSessionService } from './services/context-session-service';
 import type { SessionPresetPayload } from '@/shared/session-preset-model';
@@ -1488,6 +1489,18 @@ export default class NovelWriterPlugin extends Plugin {
         const registry = new IdRegistryService(this.app, new FileTxService(this.app));
         const service = new LedgerMigrationService(this.app, async (type, path) => registry.ensureId(project, type, path));
         return service.migrate(project, dryRun);
+    }
+
+    /**
+     * 实测注入量对比（M14 ②）：旧策略整份注入 vs 新策略场景精确注入。
+     *
+     * @param project - 项目路径
+     * @param sceneIndex - 场景序号（默认 1）
+     * @returns 实测结果
+     */
+    public async measureContextMetrics(project: string, sceneIndex = 1) {
+        const service = new ContextMetricsService(this.app, (p, text, idx) => this.buildSceneContext(p, text, idx));
+        return service.measure(project, sceneIndex);
     }
 
     public async buildSceneContext(project: string, sceneExpandText: string, sceneIndex = 1) {

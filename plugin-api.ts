@@ -72,6 +72,20 @@ export interface NovelWriterEngineAPI {
      * @param keys - 本次需要的条目 key
      * @returns 差异结果
      */
+    /**
+     * 实测注入量对比（M14）。
+     *
+     * @param project - 项目路径
+     * @param sceneIndex - 场景序号
+     * @returns 实测结果
+     */
+    measureContextMetrics(project: string, sceneIndex?: number): Promise<{
+        beforeChars: number;
+        afterChars: number;
+        report: string;
+        legacyFiles: number;
+        sceneIndex: number;
+    }>;
     cowriteDelta(sessionKey: string, sceneKey: string, keys: string[]): {
         delta: { sameScene: boolean; added: string[]; removed: string[]; unchanged: string[] };
         inject: boolean;
