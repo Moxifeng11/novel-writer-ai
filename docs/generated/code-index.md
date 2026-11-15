@@ -9,7 +9,7 @@
 | `engine/` | 353 | 146016 | 1935 | 1532 | 79% |
 | `services/` | 55 | 16880 | 253 | 189 | 75% |
 | `shared/` | 233 | 47597 | 2005 | 1585 | 79% |
-| `core/` | 7 | 2961 | 33 | 18 | 55% |
+| `core/` | 7 | 2962 | 33 | 18 | 55% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106884 | 1034 | 835 | 81% |
 
@@ -17,7 +17,7 @@
 
 | 文件 | 行数 | 导出 | 有 JSDoc |
 |---|---:|---:|---:|
-| `core/command-registry.ts` | 760 | 7 | 3 |
+| `core/command-registry.ts` | 761 | 7 | 3 |
 | `core/crypto-service.ts` | 413 | 5 | 3 |
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |

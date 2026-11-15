@@ -173,7 +173,7 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     { id: CommandIds.PROJECT_SIDE_PANEL, name: '🧭 项目速览面板（右侧栏）', group: CommandGroup.Views, description: '在右侧栏打开项目速览：当前笔记属性、标签与快捷动作' },
     { id: CommandIds.GENERATE_BASES, name: '📊 生成/刷新项目看板（Bases）', group: CommandGroup.Tools, description: '在项目内生成章节进度/人物状态/物品归属/地点与势力四个 Bases 看板' },
     { id: CommandIds.MIGRATE_NAMESPACE_TAGS, name: '🏷️ 补齐分层标签（先预览）', group: CommandGroup.Tools, description: '给存量笔记追加 nw/ 层级标签（保留原标签，只加不删）' },
-    { id: CommandIds.MIGRATE_LEDGER_CARDS, name: '🧾 迁移时间线与伏笔（预览）', group: CommandGroup.Tools, description: '把时间线看板/伏笔库的单表 md 拆成条目卡，原文件转为派生视图' },
+    { id: CommandIds.MIGRATE_LEDGER_CARDS, name: '🧾 迁移台账与设定（预览）', group: CommandGroup.Tools, description: '把时间线看板/伏笔库/世界观总览/设定库的单表 md 拆成条目卡，原文件转为派生视图' },
     { id: CommandIds.COMPLETE_PROPERTIES, name: '🧩 补齐笔记属性（先预览）', group: CommandGroup.Tools, description: '按插件属性模板补上缺失的必填属性（只补空值，不覆盖已有内容）' },
     { id: CommandIds.CO_WRITING, name: '✍️ 句级协同写作工作台', group: CommandGroup.Views, description: '打开句级协同写作工作台' },
 
@@ -562,7 +562,7 @@ export class CommandRegistry {
         addCommand({ id: CommandIds.PROJECT_SIDE_PANEL, name: '🧭 项目速览面板（右侧栏）', callback: exec(CommandIds.PROJECT_SIDE_PANEL) });
         addCommand({ id: CommandIds.GENERATE_BASES, name: '📊 生成/刷新项目看板（Bases）', callback: exec(CommandIds.GENERATE_BASES) });
         addCommand({ id: CommandIds.MIGRATE_NAMESPACE_TAGS, name: '🏷️ 补齐分层标签（先预览）', callback: exec(CommandIds.MIGRATE_NAMESPACE_TAGS) });
-        addCommand({ id: CommandIds.MIGRATE_LEDGER_CARDS, name: '🧾 迁移时间线与伏笔（预览）', callback: exec(CommandIds.MIGRATE_LEDGER_CARDS) });
+        addCommand({ id: CommandIds.MIGRATE_LEDGER_CARDS, name: '🧾 迁移台账与设定（预览）', callback: exec(CommandIds.MIGRATE_LEDGER_CARDS) });
         addCommand({ id: CommandIds.COMPLETE_PROPERTIES, name: '🧩 补齐笔记属性（先预览）', callback: exec(CommandIds.COMPLETE_PROPERTIES) });
         addCommand({ id: CommandIds.WRITING_STATS, name: '📊 写作统计（日/周/月）', callback: exec(CommandIds.WRITING_STATS) });
         addCommand({ id: CommandIds.TOGGLE_PET, name: '🐾 显示/隐藏桌面宠物', callback: exec(CommandIds.TOGGLE_PET) });
@@ -754,6 +754,7 @@ export async function runLedgerMigrationCommand(deps: CommandRegistryDeps): Prom
         new Notice('请先打开一个项目');
         return;
     }
-    const result = await deps.plugin.migrateLedger(project, true);
-    new Notice('迁移预览：' + result.summary);
+    const ledger = await deps.plugin.migrateLedger(project, true);
+    const knowledge = await deps.plugin.migrateKnowledge(project, true);
+    new Notice('迁移预览：' + ledger.summary + '；' + knowledge.summary);
 }
