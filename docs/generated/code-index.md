@@ -11,7 +11,7 @@
 | `shared/` | 218 | 45492 | 1924 | 1531 | 80% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 275 | 106837 | 1034 | 835 | 81% |
+| `ui/` | 275 | 106856 | 1034 | 835 | 81% |
 
 ## 文件清单
 
@@ -658,7 +658,7 @@
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 771 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1819 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1838 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
 | `ui/appearance-settings.ts` | 574 | 3 | 3 |

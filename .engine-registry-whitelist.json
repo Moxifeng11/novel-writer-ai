@@ -248,6 +248,12 @@
       "allowedInstances": 3,
       "reason": "目标读写：Agent goal 工具按需创建",
       "category": "service"
+    },
+    {
+      "className": "ContextSessionService",
+      "reason": "场景上下文迭代装配：工作台懒建，按需补充上下文",
+      "category": "service",
+      "allowedInstances": 1
     }
   ],
   "notes": {

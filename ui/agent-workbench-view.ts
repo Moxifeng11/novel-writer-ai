@@ -29,6 +29,9 @@ import { createSkillTools } from '@/engine/agent/harness/skill-tools';
 import { createPlanSpecTools } from '@/engine/agent/harness/plan-spec-tools';
 import { createAttachmentTools } from '@/engine/agent/harness/attachment-tools';
 import { createGoalTools } from '@/engine/agent/harness/goal-tools';
+import { createContextTools } from '@/engine/agent/harness/context-tools';
+import { ContextSessionService } from '@/services/context-session-service';
+import { ProjectIndexService } from '@/services/project-index-service';
 import { GoalService } from '@/services/goal-service';
 import { renderGoal } from '@/shared/goal-model';
 import { AttachmentService } from '@/services/attachment-service';
@@ -98,6 +101,17 @@ export class AgentWorkbenchView extends ItemView {
     private readonly skillService = new SkillService(this.app);
     /** 技能缓存（装配会话时加载） */
     private skillCache: SkillDefinition[] = [];
+    /** 当前场景上下文会话（request_context 累积；装配回合时重置） */
+    private activeContextSession: import('@/shared/context-session-model').ContextSession | null = null;
+
+    /** 懒建上下文装配服务 */
+    private contextSessionService(): ContextSessionService {
+        this._contextSessionService ??= new ContextSessionService(this.app, new ProjectIndexService(this.app));
+        return this._contextSessionService;
+    }
+
+    private _contextSessionService: ContextSessionService | null = null;
+
     /** 当前目标摘要（装配会话时读取） */
     private goalTextCache = '';
     private harnessEngine: AgentHarnessEngine | null = null;
@@ -1220,6 +1234,11 @@ export class AgentWorkbenchView extends ItemView {
                     ...this.mcpToolsCache,
                     ...createSkillTools(() => this.skillService.list()),
                     ...createAttachmentTools(() => new AttachmentService(this.app)),
+                    ...createContextTools(
+                        () => this.contextSessionService(),
+                        () => this.resolveActiveProject() || '',
+                        () => this.activeContextSession,
+                    ),
                     ...createGoalTools(
                         () => new GoalService(this.app, new FileTxService(this.app)),
                         () => this.resolveActiveProject() || '',
