@@ -319,7 +319,7 @@
       "className": "AIEngine",
       "reason": "基线采集在 main 层构造一次（插件入口）",
       "category": "service",
-      "allowedInstances": 2
+      "allowedInstances": 3
     },
     {
       "className": "RelationGraphSyncService",
@@ -343,7 +343,7 @@
       "className": "BodyWriter",
       "reason": "B2 定向修订落盘（插件入口）",
       "category": "service",
-      "allowedInstances": 1
+      "allowedInstances": 2
     },
     {
       "className": "ConstraintBlockService",
@@ -356,6 +356,12 @@
       "reason": "B4 质量面板（插件入口）",
       "category": "service",
       "allowedInstances": 3
+    },
+    {
+      "className": "SceneLoopBodyService",
+      "reason": "A1 正文步场景循环（插件入口）",
+      "category": "service",
+      "allowedInstances": 1
     }
   ],
   "notes": {

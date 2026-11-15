@@ -88,9 +88,11 @@ import { PostGenerationCheckService } from './services/post-generation-check-ser
 import { TargetedRevisionService } from './services/targeted-revision-service';
 import { ConstraintBlockService, createVaultConstraintDeps } from './services/constraint-block-service';
 import { QualityPanelService } from './services/quality-panel-service';
+import { SceneLoopBodyService } from './services/scene-loop-body-service';
 import { toQualityRecord } from './shared/quality-panel-model';
 import { getRelationshipFilePath, parseRelationshipFile } from './engine/relationship-engine';
 import { BodyWriter } from './engine/body-writer';
+import { createSceneBodyGenerator } from './engine/scene-body-generator';
 import { IdRegistryService } from './services/id-registry-service';
 import { ContextSessionService } from './services/context-session-service';
 import type { SessionPresetPayload } from '@/shared/session-preset-model';
@@ -1595,6 +1597,43 @@ export default class NovelWriterPlugin extends Plugin {
      * @param project - 项目路径
      * @returns 面板视图
      */
+    /**
+     * 正文步场景循环生成（A1）：逐场生成 → 合并 → 落盘（默认预览）。
+     *
+     * @param project - 项目路径
+     * @param chapterName - 章节名
+     * @param dryRun - 是否只预览（默认 true）
+     * @returns 生成结果
+     */
+    public async generateChapterBySceneLoop(project: string, chapterName: string, dryRun = true) {
+        const loop = this.engineRegistry.get(ENGINE_NAMES.SCENE_GENERATION_LOOP);
+        const engine = new AIEngine(this);
+        const model = this.settings.proModel || this.settings.defaultModel;
+        const constraints = await this.buildConstraintBlocks(project, chapterName);
+        const generateSceneBody = createSceneBodyGenerator({
+            projectPath: project,
+            model,
+            injectForSceneBody: async () => constraints.section,
+            injectForSceneBodyLayers: async () => ({ system: '', user: constraints.section }),
+            callAI: (system, user, targetModel) => engine.callAI(system, user, targetModel, 0.7, undefined, { isWritingTask: true }),
+        });
+        const service = SceneLoopBodyService.fromVault(
+            this.app,
+            (expansionText) => loop.run({
+                expansionText,
+                snapshot: { previousEnding: { mustContinue: '' } } as never,
+                beats: [],
+                generateSceneBody,
+            }),
+            async (p, c, body) => {
+                const target = await this.findChapterBodyPath(p, c);
+                if (!target) throw new Error(`找不到 ${c} 的正文文件`);
+                await new BodyWriter({ app: this.app }).write({ path: target, raw: body, writingMode: 'pipeline', project: p });
+            },
+        );
+        return service.generate(project, chapterName, { dryRun });
+    }
+
     public async runQualityPanel(project: string) {
         return new QualityPanelService(this.app).view(project);
     }

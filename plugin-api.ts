@@ -162,6 +162,23 @@ export interface NovelWriterEngineAPI {
      * @param project - 项目路径
      * @returns 面板视图
      */
+    /**
+     * 正文步场景循环生成（A1）。
+     *
+     * @param project - 项目路径
+     * @param chapterName - 章节名
+     * @param dryRun - 是否只预览
+     * @returns 生成结果
+     */
+    generateChapterBySceneLoop(project: string, chapterName: string, dryRun?: boolean): Promise<{
+        dryRun: boolean;
+        scenes: number;
+        failedScenes: number[];
+        chars: number;
+        completedAll: boolean;
+        wrote: boolean;
+        summary: string;
+    }>;
     runQualityPanel(project: string): Promise<{
         total: number;
         passed: number;

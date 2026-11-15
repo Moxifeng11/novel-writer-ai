@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146173 | 1940 | 1536 | 79% |
-| `services/` | 61 | 17971 | 277 | 196 | 71% |
+| `services/` | 62 | 18169 | 280 | 197 | 70% |
 | `shared/` | 238 | 48260 | 2039 | 1602 | 79% |
 | `core/` | 7 | 3008 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
@@ -438,6 +438,7 @@
 | `services/rules-registry.ts` | 146 | 7 | 5 |
 | `services/rules-service.ts` | 280 | 3 | 2 |
 | `services/scene-context-service.ts` | 126 | 2 | 1 |
+| `services/scene-loop-body-service.ts` | 198 | 3 | 1 |
 | `services/session-preset-service.ts` | 94 | 2 | 1 |
 | `services/skill-service.ts` | 74 | 1 | 1 |
 | `services/synopsis-store.ts` | 364 | 5 | 5 |
