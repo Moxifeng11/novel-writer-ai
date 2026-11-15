@@ -63,7 +63,8 @@ writeUsageGuideNow() → 写作知识库/插件使用约定.md
 | 项 | 决定 | 理由 |
 |---|---|---|
 | worker 内联（目录版无 workers） | 暂不做 | worker 产物 793KB，内联进 main.js 会把主包从 5.2MB 推到 6MB，违反 5MB 预算且移动端解析更差；现状是「功能可用、重活回主线程」的降级，不是功能缺失。已在《插件使用约定》写明。 |
-| 视图动态 import 拆包 | 暂不做 | view 工厂在 onload 同步注册（Obsidian registerView 需要类），改动态 import 需重写注册与加载态，回归面覆盖首屏/移动端，收益（首屏解析）与风险不匹配；保留为后续专项。 |
+| 视图动态 import 拆包 | 确认不可行（非"暂不做"） | 构建是 esbuild `bundle:true, format:'cjs'` 单文件产物，commonjs 下 dynamic import 会被**内联回同一 bundle**，不做 code splitting 就没有体积收益；要拆包必须改 ESM + 多文件产物，而 Obsidian 只加载单个 main.js。 |
+| ~~视图动态 import 拆包~~ | 暂不做 | view 工厂在 onload 同步注册（Obsidian registerView 需要类），改动态 import 需重写注册与加载态，回归面覆盖首屏/移动端，收益（首屏解析）与风险不匹配；保留为后续专项。 |
 | 启动注册顺序前移 | 部分做 | 见 #8：状态栏占位解决「以为没加载」的感知问题；把 registerView 前移会让「初始化中点开视图」命中未就绪引擎，风险高于收益。 |
 | 删除 window.novelAI | 待用户决定 | 可能被 ZCode/Trae 外部脚本依赖，擅自删除会打断现有自动化。 |
 
@@ -77,4 +78,5 @@ writeUsageGuideNow() → 写作知识库/插件使用约定.md
 | 20 | **孤儿向量无限堆积**：用户用文件管理器删书 / 早期异常退出时 `removeVectorArtifacts` 不执行，实测 7 个孤儿共约 5.6MB 常驻 `.obsidian/plugins/.../data/knowledge-vectors` | 实机清点向量目录 vs 索引：索引 1 本、文件 8 个；书目录只剩 `_config` | P2（体积/隐私） | ✅ `b085a76b`（启动维护扫描清理，带"索引为空但书目录仍有书→跳过"护栏、删除前日志留痕，+4 测试） |
 | 21 | **知识库索引非原子写**：`saveIndex` 直接 `fs.write`，中断会留下 **0 字节 index.json**（实机已观察到），下次加载解析失败只能靠目录重建，书籍题材/标签元数据丢失 | 实机检查 `data/knowledge-vectors/../index.md` 为 0 字节 | P1（数据丢失） | ✅ `b085a76b`（临时文件 + rename 原子写，+1 测试） |
 | 22 | **密钥加密锁定态被自检误判**：密文非空 → 判"已配置"，实际调用全部失败 | 实机 `openOnboarding()` 弹出解锁口令 | P1（首启误导） | ✅ `49b03cb6`（密文不算可用 Key，提示解锁，+3 测试） |
+| 24 | **对不存在的项目仍写文件并返回「通过」**：`runQualityPanel('不存在/项目')` 在库根创建 `不存在/项目/04-项目总控/质量面板/校验历史.json`，且报告"通过率 100%"；`runPostGenerationCheck` 对幽灵项目返回 passed:true | 实机探针：三个方法都返回成功/假结论 | P1（用户拼错项目名就产生垃圾目录 + 假绿） | ✅ `42b5cbc2`（质检/约束块/自动修订/校验服务入口校验 `isProjectDirectory`，不写文件；+1 回归测试） |
 | 23 | **「已加密未解锁」与「未配置」不可区分**：`hasUsableAiCredentials` 只看非空，UI 无法给出"去解锁"指引（若改成判 false 又会把用户挡在解锁流程外） | 实机探针 + 代码复核 | P2（误导文案） | ✅ `1d1cf271`（守卫保持放行以触发口令解锁；新增 `aiCredentialsLocked` 供 UI 区分，+4 测试） |
