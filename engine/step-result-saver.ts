@@ -26,6 +26,22 @@ import { projectIdFromPath } from '@/shared/paths';
 
 
 const log = createLogger('StepResultSaver');
+
+/** 步骤 → 标签（幂等追加，不覆盖既有标签） */
+const STEP_TAGS: Record<string, string> = {
+    infoPlan: '信息规划',
+    outline: '大纲摘要',
+    analysisReport: '分析报告',
+    continuityCheck: '审查报告',
+    selfCheck: '自检报告',
+    fix: '修正记录',
+    finalFix: '最终修正',
+    plotDistill: '情节蒸馏',
+    qualityControl: '质量控制',
+};
+
+/** 需要写「章」属性的步骤 */
+const STEP_CHAPTER_KEYS = new Set(['infoPlan', 'outline', 'selfCheck', 'fix', 'finalFix', 'plotDistill', 'qualityControl']);
 /**
  * 实体名称列表结构定义。
  */
@@ -545,32 +561,13 @@ export class StepResultSaver {
     }
 
     private setStepTags(fm: Record<string, unknown>, stepKey: string, chapterName: string): void {
-        if (stepKey === 'infoPlan') {
-            fm['tags'] = ['信息规划'];
-            fm['章'] = chapterName;
-        } else if (stepKey === 'outline') {
-            fm['tags'] = ['大纲摘要'];
-            fm['章'] = chapterName;
-        } else if (stepKey === 'analysisReport') {
-            fm['tags'] = ['分析报告'];
-        } else if (stepKey === 'continuityCheck') {
-            fm['tags'] = ['审查报告'];
-            fm['审查时间'] = new Date().toLocaleString();
-        } else if (stepKey === 'selfCheck') {
-            fm['tags'] = ['自检报告'];
-            fm['章'] = chapterName;
-        } else if (stepKey === 'fix') {
-            fm['tags'] = ['修正记录'];
-            fm['章'] = chapterName;
-        } else if (stepKey === 'finalFix') {
-            fm['tags'] = ['最终修正'];
-            fm['章'] = chapterName;
-        } else if (stepKey === 'plotDistill') {
-            fm['tags'] = ['情节蒸馏'];
-            fm['章'] = chapterName;
-        } else if (stepKey === 'qualityControl') {
-            fm['tags'] = ['质量控制'];
-            fm['章'] = chapterName;
+        // 标签用「幂等追加」：保留 nw/* 命名空间标签与用户标签，只补本步标签
+        const stepTag = STEP_TAGS[stepKey];
+        if (stepTag) {
+            const existing = Array.isArray(fm['tags']) ? fm['tags'].map(String) : [];
+            fm['tags'] = Array.from(new Set([...existing, stepTag]));
         }
+        if (STEP_CHAPTER_KEYS.has(stepKey)) fm['章'] = chapterName;
+        if (stepKey === 'continuityCheck') fm['审查时间'] = new Date().toLocaleString();
     }
 }

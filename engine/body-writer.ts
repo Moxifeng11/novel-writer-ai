@@ -396,9 +396,10 @@ ${fmRaw}
         const prevStatus = typeof fm['status'] === 'string' ? fm['status'] : '';
         const settled = prevStatus === 'settled' || prevStatus === '已结算';
 
+        // legacy「正文」+ 命名空间「nw/正文」双写（索引/查询用 nw/*，兼容旧逻辑用 legacy）
         fm['tags'] = Array.isArray(fm['tags'])
-            ? Array.from(new Set([...(fm['tags'] as string[]), '正文']))
-            : ['正文'];
+            ? Array.from(new Set([...(fm['tags'] as string[]), '正文', 'nw/正文']))
+            : ['正文', 'nw/正文'];
         if (ctx.volume) fm['卷'] = ctx.volume;
         if (ctx.chapterName) fm['章'] = ctx.chapterName;
         if (ctx.title) fm['标题'] = ctx.title;

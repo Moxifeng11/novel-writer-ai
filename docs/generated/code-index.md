@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 352 | 145754 | 1934 | 1531 | 79% |
+| `engine/` | 352 | 145752 | 1934 | 1531 | 79% |
 | `services/` | 43 | 15236 | 226 | 175 | 77% |
 | `shared/` | 213 | 44566 | 1874 | 1498 | 80% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
@@ -89,7 +89,7 @@
 | `engine/bases-generator.ts` | 325 | 9 | 7 |
 | `engine/batch-import-manager.ts` | 907 | 9 | 9 |
 | `engine/beat-verifier.ts` | 70 | 3 | 1 |
-| `engine/body-writer.ts` | 526 | 8 | 8 |
+| `engine/body-writer.ts` | 527 | 8 | 8 |
 | `engine/cache/index.ts` | 24 | 3 | 0 |
 | `engine/cache/preload-manager.ts` | 670 | 6 | 6 |
 | `engine/canon-vector-indexer.ts` | 132 | 8 | 5 |
@@ -349,7 +349,7 @@
 | `engine/step-definitions.ts` | 268 | 13 | 11 |
 | `engine/step-modal-controller.ts` | 648 | 2 | 2 |
 | `engine/step-prompt-assembly.ts` | 290 | 5 | 4 |
-| `engine/step-result-saver.ts` | 577 | 5 | 4 |
+| `engine/step-result-saver.ts` | 574 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 227 | 6 | 5 |
 | `engine/step-runner.ts` | 2262 | 2 | 1 |
