@@ -49,6 +49,7 @@
 | [design/](design/) | 设计包与决策 | 决策索引见 [adr/README.md](adr/README.md) |
 | [design/workbench-system-optimization.md](design/workbench-system-optimization.md) | 工作台 10 项系统优化方案（台账/实体/记忆/一致性/预算） | 方案定稿，实施进度看 `progress/auto-iterations.md` |
 | [audits/](audits/) | 历史审计与取证 | 历史快照，不作为现状 |
+| [planning/2026-11-16-next-focus.md](planning/2026-11-16-next-focus.md) | 遗留问题台账 + 下一步优先级（P0 质量闭环入口 / P1 可发现性 / P2 技术债） | 结论引用 `program-status.json` 与基线文件 |
 | [releases/TEMPLATE.md](releases/TEMPLATE.md) | 发布说明模板 |
 | [releases/](releases/) | 每个版本的发布说明 | 发布流程见手册 06 |
 
