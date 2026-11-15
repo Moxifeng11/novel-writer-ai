@@ -125,7 +125,8 @@ export class ProviderManager {
 
         s.providerKeys = s.providerKeys || {};
         const currentId = this.getCurrentProviderId();
-        if (currentId) {
+        // 首启场景：当前密钥为空时绝不覆盖已存密钥（否则会把手填的 Key 抹成空串）
+        if (currentId && s.apiKey) {
             s.providerKeys[currentId] = s.apiKey;
         } else if (s.apiEndpoint && s.apiKey) {
             // 当前端点未登记为供应商（旧配置 / 手动改过 endpoint）时，

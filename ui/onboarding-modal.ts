@@ -248,9 +248,19 @@ export class OnboardingModal extends Modal {
             new Notice('请先填写 API key');
             throw new Error('missing key');
         }
+        // 先切换供应商，再写入密钥：反序会被 switchByEndpoint 的「归档当前密钥」覆盖成空串
+        const switched = this.plugin.switchProviderByEndpoint(provider.endpoint);
         this.plugin.settings.providerKeys = this.plugin.settings.providerKeys || {};
-        if (this.apiKey) this.plugin.settings.providerKeys[provider.id] = this.apiKey;
-        this.plugin.switchProviderByEndpoint(provider.endpoint);
+        if (this.apiKey) {
+            this.plugin.settings.providerKeys[provider.id] = this.apiKey;
+        }
+        if (!switched) {
+            // 端点不在预设供应商里（用户自定义过）：直接落到全局字段，保证可用
+            this.plugin.settings.apiEndpoint = provider.endpoint;
+            this.plugin.settings.apiKey = this.apiKey;
+        } else if (this.plugin.getCurrentProviderId() === provider.id && this.apiKey) {
+            this.plugin.settings.apiKey = this.apiKey;
+        }
         await this.plugin.saveSettings();
     }
 

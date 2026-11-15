@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 353 | 146235 | 1941 | 1537 | 79% |
-| `services/` | 63 | 18343 | 284 | 198 | 70% |
+| `engine/` | 353 | 146266 | 1941 | 1537 | 79% |
+| `services/` | 64 | 18569 | 289 | 199 | 69% |
 | `shared/` | 238 | 48261 | 2039 | 1602 | 79% |
-| `core/` | 7 | 3010 | 35 | 20 | 57% |
+| `core/` | 7 | 3011 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 276 | 107022 | 1035 | 836 | 81% |
+| `ui/` | 276 | 107032 | 1035 | 836 | 81% |
 
 ## 文件清单
 
@@ -21,7 +21,7 @@
 | `core/crypto-service.ts` | 413 | 5 | 3 |
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
-| `core/provider-manager.ts` | 550 | 4 | 2 |
+| `core/provider-manager.ts` | 551 | 4 | 2 |
 | `core/settings-service.ts` | 579 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
@@ -90,7 +90,7 @@
 | `engine/bases-generator.ts` | 325 | 9 | 7 |
 | `engine/batch-import-manager.ts` | 907 | 9 | 9 |
 | `engine/beat-verifier.ts` | 70 | 3 | 1 |
-| `engine/body-writer.ts` | 527 | 8 | 8 |
+| `engine/body-writer.ts` | 558 | 8 | 8 |
 | `engine/cache/index.ts` | 24 | 3 | 0 |
 | `engine/cache/preload-manager.ts` | 670 | 6 | 6 |
 | `engine/canon-vector-indexer.ts` | 132 | 8 | 5 |
@@ -407,7 +407,7 @@
 | `services/cowrite-snapshot-service.ts` | 86 | 2 | 1 |
 | `services/execution-ledger.ts` | 325 | 10 | 7 |
 | `services/fanfic-knowledge-draft.ts` | 226 | 10 | 7 |
-| `services/file-tx.ts` | 183 | 2 | 1 |
+| `services/file-tx.ts` | 190 | 2 | 1 |
 | `services/font-manager.ts` | 248 | 15 | 13 |
 | `services/genre-classifier.ts` | 858 | 2 | 2 |
 | `services/genre-preference-memory.ts` | 377 | 3 | 3 |
@@ -441,6 +441,7 @@
 | `services/scene-loop-body-service.ts` | 201 | 3 | 1 |
 | `services/scene-retrieval-service.ts` | 157 | 4 | 1 |
 | `services/session-preset-service.ts` | 94 | 2 | 1 |
+| `services/setup-readiness-service.ts` | 219 | 5 | 1 |
 | `services/skill-service.ts` | 74 | 1 | 1 |
 | `services/synopsis-store.ts` | 364 | 5 | 5 |
 | `services/targeted-revision-service.ts` | 189 | 3 | 1 |
@@ -860,7 +861,7 @@
 | `ui/monitor-panel-b.ts` | 1910 | 2 | 2 |
 | `ui/novel-analysis-modal.ts` | 267 | 1 | 1 |
 | `ui/novel-tags-modal.ts` | 335 | 1 | 1 |
-| `ui/onboarding-modal.ts` | 300 | 1 | 1 |
+| `ui/onboarding-modal.ts` | 310 | 1 | 1 |
 | `ui/outline-expand-modal.ts` | 880 | 2 | 1 |
 | `ui/panel-resizer.ts` | 260 | 4 | 3 |
 | `ui/password-modal.ts` | 152 | 1 | 1 |

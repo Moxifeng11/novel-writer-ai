@@ -69,7 +69,9 @@ if (tagIndex !== -1) {
     const tag = process.argv[tagIndex + 1];
     if (!tag) {
         errors.push('--tag 缺少参数值');
-    } else if (tag.replace(/^v/, '') !== pkg.version) {
+    } else if (/^v/i.test(tag)) {
+    errors.push(`tag 不能带 v 前缀（社区目录要求与 manifest.version 完全一致）：${tag} → 请用 ${pkg.version}`);
+} else if (tag !== pkg.version) {
         errors.push(`tag 与 package.json 版本不一致: tag=${tag} version=${pkg.version}`);
     } else {
         // 社区目录要求 tag 不带 v，但仓库发布说明历史文件名带 v；两种都接受

@@ -137,6 +137,9 @@ export function extractChapterTitle(content: string, chapterNum?: number): strin
     return title.replace(/^《|》$/g, '').replace(/[。！？!?]$/, '').slice(0, 30);
 }
 
+/** 备份失败阻断覆盖（不得被「读取旧正文失败」的降级 catch 吞掉） */
+class BackupBlockedError extends Error {}
+
 /**
  * 正文写入器。
  *
@@ -293,8 +296,16 @@ ${fmRaw}
                 // 旧实现只有「定向修订」会存版本，pipeline/batch/auto/cowriter/manual
                 // 全部入口直接整篇覆盖——重新生成一章即永久丢原稿。
                 // 节流：同一路径 5 分钟内只备份一次（协同 2s 自动保存否则会刷爆版本库）。
-                await this.backupBeforeOverwrite(req, oldRaw);
+                const backup = await this.backupBeforeOverwrite(req, oldRaw);
+                if (!backup.ok) {
+                    await this.saveRecoveryDraft(req, oldRaw);
+                    throw new BackupBlockedError(
+                        `覆盖前备份失败，已阻止覆盖原稿（${backup.reason ?? '未知原因'}）；`
+                        + '本次生成内容已另存为旁路草稿，请检查 _versions 写入权限或磁盘空间后重试',
+                    );
+                }
             } catch (e) {
+                if (e instanceof BackupBlockedError) throw e;
                 log.warn('[BodyWriter] 读取旧正文失败，将按新建处理:', e);
             }
         }
@@ -431,29 +442,49 @@ ${fmRaw}
     /**
      * 覆盖前备份正文（P0-3）。只在「Obsidian 模式 + 旧文件非空 + 内容确有变化」时执行，
      * 且同一路径 5 分钟内最多一次（协同写作 2s 自动保存会反复进入这里）。
-     * 备份失败只记录，不阻断正文写入——正文写入本身的可用性优先。
+     * 备份失败**阻断覆盖**：把本次内容另存为旁路草稿并抛错，避免唯一原稿被静默替换。
      */
-    private async backupBeforeOverwrite(req: BodyWriteRequest, oldRaw: string): Promise<void> {
-        if (!this.app) return;
+    private async backupBeforeOverwrite(req: BodyWriteRequest, oldRaw: string): Promise<{ ok: boolean; reason?: string }> {
+        if (!this.app) return { ok: true };
         // 默认 true：只有显式传 false（导入/迁移全量替换）才跳过，否则 null/undefined 会把“默认备份”悄悄关掉
-        if (req.backupBeforeOverwrite === false) return;
+        if (req.backupBeforeOverwrite === false) return { ok: true };
         const oldBody = stripFrontmatterBlock(oldRaw).body.trim();
-        if (!oldBody) return;
+        if (!oldBody) return { ok: true };
         const previous = backupStamp.get(req.path) || 0;
-        if (Date.now() - previous < BACKUP_THROTTLE_MS) return;
+        if (Date.now() - previous < BACKUP_THROTTLE_MS) return { ok: true };
         const project = String(req.project || '').trim();
         const chapterName = req.chapterName || (this.parseChapterNum(req.path) ? `第${this.parseChapterNum(req.path)}章` : '');
-        if (!project || !chapterName) return;
-        backupStamp.set(req.path, Date.now());
+        if (!project || !chapterName) return { ok: true };
         try {
             const service = new ChapterVersionService(this.app, new FileTxService(this.app));
             await service.saveVersion(project, 'chapter', chapterName, req.path, await this.getFS().read(req.path), {
                 type: 'manual',
                 note: `覆盖前自动备份（${req.writingMode}）`,
             });
+            backupStamp.set(req.path, Date.now());
             log.info(`[BodyWriter] 覆盖前已备份正文版本: ${chapterName}`);
+            return { ok: true };
         } catch (e) {
-            log.warn('[BodyWriter] 覆盖前备份失败（继续写入）:', e);
+            // 失败不占节流窗口：下次写入仍会重试备份
+            backupStamp.delete(req.path);
+            log.warn('[BodyWriter] 覆盖前备份失败，已阻止覆盖:', e);
+            return { ok: false, reason: e instanceof Error ? e.message : String(e) };
+        }
+    }
+
+    /**
+     * 备份失败时把「本次要写入的新内容」另存为旁路草稿（不覆盖原稿）。
+     *
+     * @param req - 写入请求
+     * @param oldRaw - 覆盖前原稿（仅用于日志）
+     */
+    private async saveRecoveryDraft(req: BodyWriteRequest, oldRaw: string): Promise<void> {
+        const recoveryPath = `${req.path.replace(/\.md$/, '')}.nw-recovery-${Date.now()}.txt`;
+        try {
+            await this.getFS().write(recoveryPath, req.raw);
+            log.warn(`[BodyWriter] 已另存旁路草稿: ${recoveryPath}（原稿 ${oldRaw.length} 字未改动）`);
+        } catch (e) {
+            log.error('[BodyWriter] 旁路草稿写入也失败，本次内容仅在内存中:', e);
         }
     }
 

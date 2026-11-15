@@ -1410,18 +1410,16 @@ export default class NovelWriterPlugin extends Plugin {
         return this._fileTx.run(project, writes);
     }
 
-    /** 启动恢复：回滚上次中断的文件事务（每个已知项目） */
+    /** 启动恢复：回滚上次中断的文件事务（覆盖长篇小说/短篇小说/剧本三种模式库 + 根目录项目） */
     private async recoverFileTransactions(): Promise<void> {
         this._fileTx ??= new FileTxService(this.app);
-        const root = this.app.vault.getAbstractFileByPath("长篇小说");
-        if (!root || !("children" in root)) return;
-        for (const child of [...(root as { children: Array<{ path: string; children?: unknown }> }).children]) {
-            if (!child.children) continue;
+        const projects = listProjectIds(this.app);
+        for (const project of projects) {
             try {
-                const recovered = await this._fileTx.recover(child.path);
-                if (recovered > 0) log.info(`[小说工坊] 已回滚 ${recovered} 个中断的文件事务:`, child.path);
+                const recovered = await this._fileTx.recover(project);
+                if (recovered > 0) log.info(`[小说工坊] 已回滚 ${recovered} 个中断的文件事务:`, project);
             } catch (error) {
-                log.warn("[小说工坊] 事务恢复失败:", child.path, error);
+                log.warn('[小说工坊] 事务恢复失败:', project, error);
             }
         }
     }

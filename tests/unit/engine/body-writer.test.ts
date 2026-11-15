@@ -479,12 +479,13 @@ describe('BodyWriter — 覆盖前备份（P0-3）', () => {
         expect(spy).not.toHaveBeenCalled();
     });
 
-    it('版本服务抛错只记录日志，正文写入照常完成', async () => {
+    // 数据安全口径（2026-11-15）：备份失败时必须阻断覆盖，否则唯一原稿会被静默替换
+    it('版本服务抛错时阻断覆盖，原稿保留且本次内容另存旁路草稿', async () => {
         await fs.write(P_FAIL, '---\nstatus: written\n---\n\n旧正文。');
         const spy = spySaveVersion();
         spy.mockRejectedValueOnce(new Error('版本库写入失败'));
 
-        const res = await makeWriter().write({
+        await expect(makeWriter().write({
             path: P_FAIL,
             raw: '# 第11章 新稿\n\n新正文。',
             chapterNum: 11,
@@ -492,11 +493,16 @@ describe('BodyWriter — 覆盖前备份（P0-3）', () => {
             project: '项目',
             writingMode: 'pipeline',
             contract: DEFAULT_BODY_FORMAT,
-        });
+        })).rejects.toThrow(/已阻止覆盖原稿/);
 
         expect(spy).toHaveBeenCalledTimes(1);
-        expect(res.created).toBe(false);
-        expect(await fs.read(P_FAIL)).toContain('新正文。');
+        // 原稿没被覆盖
+        expect(await fs.read(P_FAIL)).toContain('旧正文。');
+        // 本次内容另存为旁路草稿
+        const dirFiles = await fs.listFiles(DIR);
+        const recoveryFiles = dirFiles.map(file => file.path).filter(path => path.includes('.nw-recovery-'));
+        expect(recoveryFiles.length).toBe(1);
+        expect(await fs.read(recoveryFiles[0])).toContain('新正文。');
     });
 
     it('同一路径 5 分钟内重复写入只备份第一次（协同 2s 自动保存节流）', async () => {

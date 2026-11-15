@@ -145,6 +145,18 @@ export class Vault {
         return null;
     }
 
+    /** 构造与存储一致的 TFile（getRoot/遍历用） */
+    private _fileOf(path: string): TFile {
+        const f = new TFile();
+        f.path = path;
+        f.name = path.split('/').pop() || 'unknown.md';
+        f.basename = f.name.replace(/\.[^/.]+$/, '');
+        f.extension = f.name.includes('.') ? f.name.split('.').pop() || '' : '';
+        f.vault = this;
+        f.stat.size = (this._store.get(path) || '').length;
+        return f;
+    }
+
     /** 递归构造 TFolder.children（文件 + 子文件夹），供目录遍历逻辑使用 */
     private _makeFolder(folderPath: string): TFolder {
         const canonical = folderPath.replace(/\/+$/, '');
@@ -178,8 +190,28 @@ export class Vault {
         return folder;
     }
 
-    getFiles(): TFile[] {
-        const files: TFile[] = [];
+    /** 模拟 Vault.getRoot：顶层文件与顶层文件夹（供 listProjectIds 等项目遍历使用） */
+    getRoot(): TFolder {
+        const root = new TFolder();
+        root.path = '';
+        root.name = '/';
+        root.vault = this;
+        const fileChildren: TFile[] = [];
+        for (const filePath of this._store.keys()) {
+            if (filePath.includes('/')) continue;
+            fileChildren.push(this._fileOf(filePath));
+        }
+        const folderChildren: TFolder[] = [];
+        for (const folderPath of this._folders) {
+            const normalized = folderPath.replace(/\/+$/, '');
+            if (!normalized || normalized.includes('/')) continue;
+            folderChildren.push(this._makeFolder(normalized));
+        }
+        root.children = [...fileChildren, ...folderChildren];
+        return root;
+    }
+
+    getFiles(): TFile[] {        const files: TFile[] = [];
         for (const path of this._store.keys()) {
             const f = new TFile();
             f.path = path;

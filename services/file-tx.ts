@@ -85,7 +85,14 @@ export class FileTxService {
         for (const child of [...folder.children]) {
             if (!(child instanceof TFile)) continue;
             const journal = parseJournalFile(await this.app.vault.read(child));
-            if (!journal) continue;
+            if (!journal) {
+                // 无法解析的半截日志：改名留档（删除会丢掉唯一回滚线索）
+                const invalidPath = `${child.path}.invalid`;
+                await this.app.vault.adapter.rename(child.path, invalidPath).catch((error) => {
+                    log.warn('损坏事务日志改名失败，保留原文件:', child.path, error);
+                });
+                continue;
+            }
             if (needsRollback(journal)) {
                 log.warn('回滚中断事务:', describeJournal(journal));
                 await this.rollback(journal);
