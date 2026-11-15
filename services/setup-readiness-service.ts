@@ -12,6 +12,7 @@ import { createLogger } from '@/shared/logger';
 import { TEMPLATE_SCAFFOLD_FILES } from '@/shared/template-scaffold-assets.generated';
 import { TEMPLATE_ROOT } from '@/shared/template-scaffold';
 import { listProjectIds } from '@/shared/project-catalog';
+import { USAGE_GUIDE_PATH } from '@/shared/usage-guide-content';
 
 const log = createLogger('SetupReadiness');
 
@@ -264,7 +265,8 @@ export class SetupReadinessService {
 
     /** 标签/笔记属性约定说明（始终 warn 提示一次，用户知道约定即算达标） */
     private checkWorkspaceConventions(): ReadinessItem {
-        const notePath = '写作知识库/使用说明.md';
+        // 路径单源：与「生成使用说明」按钮写入的文件保持一致，否则点完仍显示 warning
+        const notePath = USAGE_GUIDE_PATH;
         const exists = this.app.vault.getAbstractFileByPath(notePath) instanceof TFile;
         return {
             id: 'workspace',
