@@ -7,8 +7,8 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146173 | 1940 | 1536 | 79% |
-| `services/` | 58 | 17512 | 267 | 192 | 72% |
-| `shared/` | 235 | 47908 | 2022 | 1594 | 79% |
+| `services/` | 59 | 17701 | 270 | 193 | 71% |
+| `shared/` | 236 | 48002 | 2026 | 1596 | 79% |
 | `core/` | 7 | 3008 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 276 | 107004 | 1035 | 836 | 81% |
@@ -439,6 +439,7 @@
 | `services/session-preset-service.ts` | 94 | 2 | 1 |
 | `services/skill-service.ts` | 74 | 1 | 1 |
 | `services/synopsis-store.ts` | 364 | 5 | 5 |
+| `services/targeted-revision-service.ts` | 189 | 3 | 1 |
 | `services/unit-derived-service.ts` | 159 | 2 | 1 |
 | `services/update-checker.ts` | 610 | 9 | 2 |
 | `services/usage-ledger.ts` | 476 | 16 | 7 |
@@ -645,6 +646,7 @@
 | `shared/support-qr.generated.ts` | 11 | 1 | 0 |
 | `shared/synopsis-spec.ts` | 275 | 15 | 15 |
 | `shared/tag-taxonomy.ts` | 171 | 8 | 6 |
+| `shared/targeted-revision-model.ts` | 94 | 4 | 2 |
 | `shared/task-budget-engine.ts` | 292 | 13 | 11 |
 | `shared/task-model.ts` | 381 | 19 | 18 |
 | `shared/template-scaffold.ts` | 139 | 3 | 3 |

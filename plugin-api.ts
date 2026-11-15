@@ -141,6 +141,22 @@ export interface NovelWriterEngineAPI {
      * @param chapterName - 章节名
      * @returns 校验报告
      */
+    /**
+     * 定向修订闭环（B2）。
+     *
+     * @param project - 项目路径
+     * @param chapterName - 章节名
+     * @param options - 最大轮次/任务数
+     * @returns 修订结果
+     */
+    autoReviseChapter(project: string, chapterName: string, options?: { maxRounds?: number; maxTasks?: number }): Promise<{
+        passed: boolean;
+        attempts: number;
+        wrote: boolean;
+        rounds: number[];
+        abortedReason?: string;
+        pending: Array<{ kind: string; severity: string; problem: string; instruction: string }>;
+    }>;
     runPostGenerationCheck(project: string, chapterName: string): Promise<{
         project: string;
         chapterName: string;

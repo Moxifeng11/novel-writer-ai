@@ -85,7 +85,9 @@ import { ContextMetricsService } from './services/context-metrics-service';
 import { BaselineProbeService } from './services/baseline-probe-service';
 import { RelationGraphSyncService } from './services/relation-graph-sync-service';
 import { PostGenerationCheckService } from './services/post-generation-check-service';
+import { TargetedRevisionService } from './services/targeted-revision-service';
 import { getRelationshipFilePath, parseRelationshipFile } from './engine/relationship-engine';
+import { BodyWriter } from './engine/body-writer';
 import { IdRegistryService } from './services/id-registry-service';
 import { ContextSessionService } from './services/context-session-service';
 import type { SessionPresetPayload } from '@/shared/session-preset-model';
@@ -1569,6 +1571,58 @@ export default class NovelWriterPlugin extends Plugin {
      * @param chapterName - 章节名
      * @returns 校验报告
      */
+    /**
+     * 定向修订闭环（B2）：生成后校验 → 只改问题处 → 重校验，未通过标记待人工。
+     *
+     * @param project - 项目路径
+     * @param chapterName - 章节名
+     * @param options - 最大轮次/任务数
+     * @returns 修订结果
+     */
+    public async autoReviseChapter(project: string, chapterName: string, options: { maxRounds?: number; maxTasks?: number } = {}) {
+        const index = this._projectIndex ??= new ProjectIndexService(this.app);
+        const checker = new PostGenerationCheckService(this.app, async (name) => {
+            const resolved = await index.resolve(project, name);
+            const entry = resolved.match;
+            return entry ? (entry.id || entry.path) : null;
+        });
+        const engine = new AIEngine(this);
+        const revision = new TargetedRevisionService(this.app, {
+            callAI: async (system, user) => {
+                const response = await engine.callAI(system, user, this.settings.proModel || this.settings.defaultModel, 0.3, undefined, { isWritingTask: true });
+                return response.content || '';
+            },
+            check: (p, c) => checker.check(p, c),
+            writeBody: async (p, c, body) => {
+                const target = await this.findChapterBodyPath(p, c);
+                if (!target) throw new Error(`找不到 ${c} 的正文文件`);
+                await new BodyWriter({ app: this.app }).write({ path: target, raw: body, writingMode: 'manual', project: p });
+            },
+        });
+        return revision.revise(project, chapterName, options);
+    }
+
+    /** 找本章正文路径（章节名 + 正文） */
+    private async findChapterBodyPath(project: string, chapterName: string): Promise<string | null> {
+        const root = this.app.vault.getAbstractFileByPath(project);
+        if (!(root instanceof TFolder)) return null;
+        const stack: TFolder[] = [root];
+        while (stack.length > 0) {
+            const current = stack.pop();
+            if (!current) continue;
+            for (const child of current.children) {
+                if (child instanceof TFolder) stack.push(child);
+                else if (child instanceof TFile && child.extension === 'md'
+                    && child.path.includes('/正文/')
+                    && child.basename.startsWith(chapterName)
+                    && child.basename.includes('正文')) {
+                    return child.path;
+                }
+            }
+        }
+        return null;
+    }
+
     public async runPostGenerationCheck(project: string, chapterName: string) {
         const index = this._projectIndex ??= new ProjectIndexService(this.app);
         const service = new PostGenerationCheckService(this.app, async (name) => {
