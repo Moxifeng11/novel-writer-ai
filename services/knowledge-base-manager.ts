@@ -418,7 +418,11 @@ export class KnowledgeBaseManager {
             const content = `---\n${fmContent}\n---\n\n# 知识库索引\n\n共 ${booksArray.length} 本书籍。\n`;
 
             const indexPath = kbIndexFile(this.baseDir);
-            await fs.write(indexPath, content);
+            // 原子写：先写临时文件再 rename。旧实现直接 fs.write，写到一半崩溃/同步占用
+            // 会留下 0 字节 index（实测出现过），下次加载解析失败只能靠目录重建，书籍元数据全丢。
+            const tmpPath = `${indexPath}.tmp`;
+            await fs.write(tmpPath, content);
+            await fs.rename(tmpPath, indexPath);
         }).catch(e => {
             log.warn('[KnowledgeBaseManager] 索引保存失败:', e);
         });
@@ -562,6 +566,134 @@ export class KnowledgeBaseManager {
     }
 
     /**
+     * 清理孤儿向量文件与失效索引条目（启动维护调用）。
+     *
+     * 背景：向量文件存在插件数据目录，用户用文件管理器删书/早期版本异常退出时
+     * removeVectorArtifacts 不会执行 → 孤儿向量永久堆积（实测单库 7 个约 5.6MB），
+     * 已删书还会继续出现在检索结果里。
+     *
+     * 口径（保守，只删能证明已失效的）：
+     * - 书籍目录仍存在 → 视为有效，向量与其索引都保留；
+     * - 目录不存在但向量存在 → 判定书已被删：删向量 + 移除索引条目；
+     * - 目录与向量都不存在 → 只告警，不动索引（可能是目录被临时移走/改名）。
+     *
+     * 向量是派生数据，删除前只在日志记录文件名与大小。
+     *
+     * @returns 清理统计
+     */
+    async sweepOrphanVectorArtifacts(): Promise<{ removedFiles: number; removedBooks: number; bytes: number }> {
+        const fsPort = this.getFS();
+        const dir = kbVectorsDir();
+        const indexIds = new Set(this.books.keys());
+        // 索引为空有两种情况：
+        // ① 书籍目录也为空 → 书确实都删了，向量是纯垃圾，可清；
+        // ② 书籍目录还有书 → 索引损坏/待重建，此时绝不清文件（否则误删全部向量）。
+        if (indexIds.size === 0) {
+            let bookFolders = 0;
+            try {
+                const folders = await fsPort.listFolders(kbKnowledgeBaseDir());
+                bookFolders = folders.filter(folder => {
+                    const name = String(folder.path || '').replace(/\\/g, '/').split('/').pop() || '';
+                    return name && !name.startsWith('_') && !name.startsWith('.');
+                }).length;
+            } catch (e) {
+                log.warn('[KnowledgeBaseManager] 扫描书籍目录失败，跳过孤儿清理:', e);
+                return { removedFiles: 0, removedBooks: 0, bytes: 0 };
+            }
+            if (bookFolders > 0) return { removedFiles: 0, removedBooks: 0, bytes: 0 };
+            let removed = 0;
+            let freed = 0;
+            try {
+                const files = await fsPort.listFiles(dir);
+                for (const file of files) {
+                    const path = String(file.path || '').replace(/\\/g, '/');
+                    const base = path.split('/').pop() || '';
+                    if (!base.endsWith('.json') || base === 'index.json') continue;
+                    const size = Number((file as unknown as { stat?: { size?: number } }).stat?.size ?? 0);
+                    await fsPort.delete(path);
+                    removed += 1;
+                    freed += Number.isFinite(size) ? size : 0;
+                    log.info(`[KnowledgeBaseManager] 已清理无主向量: ${base}（${size} 字节）`);
+                }
+            } catch (e) {
+                log.warn('[KnowledgeBaseManager] 扫描向量目录失败（可能尚未生成）:', e);
+            }
+            return { removedFiles: removed, removedBooks: 0, bytes: freed };
+        }
+        let folderScanOk = true;
+        const folderBookIds = new Set<string>();
+        try {
+            const folders = await fsPort.listFolders(kbKnowledgeBaseDir());
+            for (const folder of folders) {
+                const name = String(folder.path || '').replace(/\\/g, '/').split('/').pop() || '';
+                if (!name || name.startsWith('_') || name.startsWith('.')) continue;
+                const book = Array.from(this.books.values()).find(item => item.name === name);
+                if (book) folderBookIds.add(book.id);
+            }
+        } catch (e) {
+            folderScanOk = false;
+            log.warn('[KnowledgeBaseManager] 扫描书籍目录失败，本次跳过孤儿清理:', e);
+            return { removedFiles: 0, removedBooks: 0, bytes: 0 };
+        }
+
+        let removedFiles = 0;
+        let bytes = 0;
+        const vectorIds = new Map<string, { path: string; size: number }>();
+        try {
+            const files = await fsPort.listFiles(dir);
+            for (const file of files) {
+                const path = String(file.path || '').replace(/\\/g, '/');
+                const base = path.split('/').pop() || '';
+                if (!base.endsWith('.json') || base === 'index.json') continue;
+                vectorIds.set(base.replace(/\.json$/, ''), {
+                    path,
+                    size: Number((file as unknown as { stat?: { size?: number } }).stat?.size ?? 0),
+                });
+            }
+        } catch (e) {
+            log.warn('[KnowledgeBaseManager] 扫描向量目录失败（可能尚未生成）:', e);
+        }
+
+        const staleIds: string[] = [];
+        for (const id of indexIds) {
+            if (folderBookIds.has(id)) continue;
+            const vector = vectorIds.get(id);
+            if (!vector) {
+                // 目录与向量都不存在：可能只是目录临时移走，保守不动
+                log.warn(`[KnowledgeBaseManager] 书籍索引 ${id} 既无目录也无向量，保留待人工核对`);
+                continue;
+            }
+            try {
+                await fsPort.delete(vector.path);
+                removedFiles += 1;
+                bytes += Number.isFinite(vector.size) ? vector.size : 0;
+                staleIds.push(id);
+                log.info(`[KnowledgeBaseManager] 已清理已删书的向量: ${id}（${vector.size} 字节）`);
+            } catch (e) {
+                log.warn('[KnowledgeBaseManager] 删除已删书向量失败:', vector.path, e);
+            }
+        }
+        // 完全不在索引里的向量文件：历史遗留孤儿
+        for (const [id, vector] of vectorIds) {
+            if (indexIds.has(id) || folderBookIds.has(id)) continue;
+            try {
+                await fsPort.delete(vector.path);
+                removedFiles += 1;
+                bytes += Number.isFinite(vector.size) ? vector.size : 0;
+                log.info(`[KnowledgeBaseManager] 已清理孤儿向量: ${id}（${vector.size} 字节）`);
+            } catch (e) {
+                log.warn('[KnowledgeBaseManager] 删除孤儿向量失败:', vector.path, e);
+            }
+        }
+        if (staleIds.length > 0) {
+            for (const id of staleIds) this.books.delete(id);
+            await this.saveIndex();
+            log.info(`[KnowledgeBaseManager] 已移除 ${staleIds.length} 条失效书籍索引`);
+        }
+        return { removedFiles, removedBooks: staleIds.length, bytes };
+    }
+
+    /**
      * 删除书籍对应的向量文件与索引条目。
      * 向量文件存放在独立的向量目录，递归删除书目录不会带走它们；
      * 不清理会让已删书籍继续出现在检索结果里。
@@ -615,7 +747,7 @@ export class KnowledgeBaseManager {
                     }
                     await this.writeJsonAtomic(bookPath, data);
                 }
-            } catch (e) {
+            } catch (e) { // silent-ok: 改名同步尽力而为，失败也不影响书籍可用
                 log.warn(`[KnowledgeBaseManager] 同步向量文件书名失败: ${bookPath}`, e);
             }
 
@@ -637,7 +769,7 @@ export class KnowledgeBaseManager {
                 if (changed) {
                     await this.writeJsonAtomic(indexPath, data);
                 }
-            } catch (e) {
+            } catch (e) { // silent-ok: 索引书名同步失败不影响检索与书籍列表
                 log.warn(`[KnowledgeBaseManager] 同步向量索引书名失败: ${indexPath}`, e);
             }
         });

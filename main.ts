@@ -1207,6 +1207,17 @@ export default class NovelWriterPlugin extends Plugin {
         } catch (e) {
             log.warn('[小说工坊] 规则副本清理失败（不影响启动）:', e);
         }
+        // 孤儿向量清理：用户用文件管理器删书/早期异常退出时向量会永久堆积（实测 7 个约 5.6MB）
+        if (this.knowledgeBaseManager) {
+            try {
+                const swept = await this.knowledgeBaseManager.sweepOrphanVectorArtifacts();
+                if (swept.removedFiles > 0 || swept.removedBooks > 0) {
+                    log.info(`[小说工坊] 已清理孤儿向量：${swept.removedFiles} 个文件 / ${Math.round(swept.bytes / 1024)}KB，失效索引 ${swept.removedBooks} 条`);
+                }
+            } catch (e) {
+                log.warn('[小说工坊] 孤儿向量清理失败（不影响启动）:', e);
+            }
+        }
     }
 
     private _scheduleSessionRetentionPrune(): void {
