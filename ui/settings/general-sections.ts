@@ -6,6 +6,7 @@
  * 角色识别（L4740-L5019）、建议设置（L5020-L5097）。
  * 来源：原 settings-tab.ts，方法体逐行搬移，无逻辑改动。
  */
+import { copyText } from '@/shared/clipboard';
 import { Setting, Notice, Modal, TFile } from 'obsidian';
 import type { App } from 'obsidian';
 import type { UpdateCheckResult } from '@/services/update-checker';
@@ -314,7 +315,7 @@ export class PerformanceSection extends SettingsSection {
         });
         copyBtn.onclick = async () => {
             try {
-                await navigator.clipboard.writeText(report);
+                await copyText(report);
                 showSuccessNotice('报告已复制到剪贴板', { timeout: 2000 });
             } catch {
                 showErrorNotice('复制失败', { timeout: 2000 });

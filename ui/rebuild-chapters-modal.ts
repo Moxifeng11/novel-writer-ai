@@ -1,3 +1,4 @@
+import { shouldPreserveExisting } from '@/shared/rebuild-guard';
 import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
@@ -125,6 +126,31 @@ export class RebuildChaptersModal extends Modal {
      * @param path - 台账文件路径（伏笔库 / 时间线看板）
      * @param shouldRemove - 按切分后的单元格判断是否删除该行
      */
+    /**
+     * 重建前备份台账文件（伏笔库/时间线看板），避免删行不可恢复。
+     *
+     * @param project - 项目路径
+     * @param chapNames - 将被清理的章节名（仅用于日志）
+     */
+    private async backupLedgersBeforeRebuild(project: string, chapNames: readonly string[]): Promise<void> {
+        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const dir = `${project}/_versions/rebuild/${stamp}`;
+        for (const path of [pjForeshadowDB(project), pjTimelineBoard(project)]) {
+            const file = this.app.vault.getAbstractFileByPath(path);
+            if (!(file instanceof TFile)) continue;
+            try {
+                const content = await this.app.vault.read(file);
+                const target = `${dir}/${path.split('/').pop()}`;
+                if (!this.app.vault.getAbstractFileByPath(dir)) await this.app.vault.createFolder(dir).catch(() => undefined);
+                await this.app.vault.create(target, content);
+                log.info(`[重建] 已备份台账 ${path} → ${target}（清理 ${chapNames.length} 章行）`);
+            } catch (error) {
+                log.warn('[重建] 台账备份失败，跳过删行以免不可恢复:', path, error);
+                throw error;
+            }
+        }
+    }
+
     private async removeChapterRows(path: string, shouldRemove: (cols: string[]) => boolean): Promise<void> {
         const file = this.app.vault.getAbstractFileByPath(path);
         if (!(file instanceof TFile)) return;
@@ -153,7 +179,7 @@ export class RebuildChaptersModal extends Modal {
         const volN = parseInt(volume.match(/\d+/)?.[0] || '0');
         const total = endNum - startNum + 1;
 
-        const confirm = window.confirm(`将重建第${startNum}-${endNum}章（共${total}章）。\n✅ 保留已有正文、分析报告等内容\n🔄 仅重建缺失的信息规划/大纲摘要骨架\n确认？`);
+        const confirm = window.confirm(`将重建第${startNum}-${endNum}章（共${total}章）。\n✅ 保留已有正文、分析报告与已填写的信息规划/大纲\n🔄 只重建空/占位骨架\n🗂 清理台账行前会先备份到 _versions/rebuild\n确认？`);
         if (!confirm) return;
 
         let mainNotice = new Notice(`⏳ 正在重建章节: 0/${total}`, 0);

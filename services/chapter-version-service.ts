@@ -177,11 +177,22 @@ export class ChapterVersionService {
         };
 
         await this.ensureDir(pjContentVersionsDir(project, contentType, contentKey));
-        await this.writeFile(versionPath, content);
 
         index.latestVersion = versionNum;
         index.versions.unshift(meta);
-        await this.saveVersionIndex(project, contentType, contentKey, index);
+
+        // 内容 + 索引同事务：注入 fileTx 时两文件一起成功或一起回滚，
+        // 避免「内容写了、索引没写」产生孤儿版本（此前 fileTx 注入却未被使用）
+        if (this.fileTx) {
+            const indexPath = pjVersionIndexFile(project, contentType, contentKey);
+            await this.fileTx.run(project, [
+                { path: versionPath, content },
+                { path: indexPath, content: JSON.stringify(index, null, 2) },
+            ]);
+        } else {
+            await this.writeFile(versionPath, content);
+            await this.saveVersionIndex(project, contentType, contentKey, index);
+        }
 
         return meta;
     }

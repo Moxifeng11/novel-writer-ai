@@ -16326,6 +16326,15 @@ body.nw-panel-resizing .nw-awb-center iframe {
         display: none;
     }
 }
+
+/* 剪贴板降级探测元素（不可见、不参与布局） */
+.nw-clipboard-probe {
+    position: fixed;
+    left: -9999px;
+    top: 0;
+    opacity: 0;
+    pointer-events: none;
+}
 /* ==========================================================================
    16-writing-stats-pet.css — 写作统计弹窗 + 桌面宠物
    令牌全部取自三层配色（--nw-app-bg / --nw-card-bg / --nw-accent / --nw-text-*），

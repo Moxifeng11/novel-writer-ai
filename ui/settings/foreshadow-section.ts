@@ -5,6 +5,7 @@
  * 删除、新增，以及配置的导入 / 导出 / 重置为默认。
  * 来源：`ui/settings-tab.ts` L3204-3469。
  */
+import { copyText } from '@/shared/clipboard';
 import { Setting, Notice, Modal } from 'obsidian';
 import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
 import { ForeshadowConfigManager, ForeshadowTypeConfig } from '@/engine/foreshadow-config-manager';
@@ -114,7 +115,7 @@ export class ForeshadowSection extends SettingsSection {
         });
         exportBtn.onclick = () => {
             const json = configManager.exportConfig();
-            navigator.clipboard.writeText(json).then(() => {
+            copyText(json).then(() => {
                 showSuccessNotice('配置已复制到剪贴板');
             });
         };

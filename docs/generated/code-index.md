@@ -7,11 +7,11 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146266 | 1941 | 1537 | 79% |
-| `services/` | 64 | 18569 | 289 | 199 | 69% |
-| `shared/` | 239 | 48345 | 2041 | 1603 | 79% |
+| `services/` | 64 | 18580 | 289 | 199 | 69% |
+| `shared/` | 241 | 48427 | 2044 | 1606 | 79% |
 | `core/` | 7 | 3011 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 277 | 107143 | 1036 | 837 | 81% |
+| `ui/` | 277 | 107175 | 1036 | 837 | 81% |
 
 ## 文件清单
 
@@ -399,7 +399,7 @@
 | `services/baseline-probe-service.ts` | 226 | 4 | 1 |
 | `services/canon-research-service.ts` | 646 | 9 | 8 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
-| `services/chapter-version-service.ts` | 744 | 4 | 4 |
+| `services/chapter-version-service.ts` | 755 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
 | `services/constraint-block-service.ts` | 172 | 5 | 2 |
 | `services/context-metrics-service.ts` | 179 | 2 | 1 |
@@ -481,6 +481,7 @@
 | `shared/chapter-target.ts` | 118 | 5 | 5 |
 | `shared/chapter-version-port.ts` | 23 | 1 | 1 |
 | `shared/character-rules.ts` | 180 | 10 | 6 |
+| `shared/clipboard.ts` | 40 | 1 | 1 |
 | `shared/co-writer-types.ts` | 113 | 0 | 0 |
 | `shared/command-ids.ts` | 131 | 2 | 2 |
 | `shared/command-mode-rules.ts` | 143 | 8 | 5 |
@@ -618,6 +619,7 @@
 | `shared/rag/eval-score.ts` | 177 | 9 | 9 |
 | `shared/rag/neighbors.ts` | 110 | 3 | 3 |
 | `shared/rag/query-plan.ts` | 95 | 5 | 5 |
+| `shared/rebuild-guard.ts` | 42 | 2 | 2 |
 | `shared/reload-state.ts` | 97 | 4 | 2 |
 | `shared/report-instructions-adapter.ts` | 89 | 2 | 1 |
 | `shared/retrieval-filter.ts` | 109 | 6 | 5 |
@@ -840,7 +842,7 @@
 | `ui/generate-item-modal.ts` | 375 | 1 | 1 |
 | `ui/generate-location-modal.ts` | 375 | 1 | 1 |
 | `ui/generate-worldview-modal.ts` | 289 | 1 | 1 |
-| `ui/golden-opening-modal.ts` | 1405 | 1 | 1 |
+| `ui/golden-opening-modal.ts` | 1406 | 1 | 1 |
 | `ui/home-view.ts` | 236 | 2 | 1 |
 | `ui/humanize-report-modal.ts` | 217 | 2 | 2 |
 | `ui/ideation-modal.ts` | 814 | 1 | 1 |
@@ -868,18 +870,18 @@
 | `ui/password-modal.ts` | 152 | 1 | 1 |
 | `ui/pet-image-settings.ts` | 255 | 1 | 1 |
 | `ui/plan-book-modal.ts` | 558 | 1 | 1 |
-| `ui/plot-canvas-modal.ts` | 365 | 2 | 2 |
+| `ui/plot-canvas-modal.ts` | 366 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
 | `ui/polish-editor.ts` | 834 | 5 | 5 |
-| `ui/pre-research-modal.ts` | 710 | 2 | 2 |
+| `ui/pre-research-modal.ts` | 711 | 2 | 2 |
 | `ui/project-health-modal.ts` | 205 | 1 | 1 |
-| `ui/project-side-panel-view.ts` | 456 | 5 | 5 |
+| `ui/project-side-panel-view.ts` | 457 | 5 | 5 |
 | `ui/project-utils.ts` | 366 | 11 | 10 |
 | `ui/prompt-manager-logic.ts` | 76 | 4 | 3 |
 | `ui/prompt-manager-settings.ts` | 1126 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 87 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 504 | 2 | 2 |
-| `ui/rebuild-chapters-modal.ts` | 327 | 1 | 1 |
+| `ui/rebuild-chapters-modal.ts` | 353 | 1 | 1 |
 | `ui/refill-modal.ts` | 713 | 1 | 1 |
 | `ui/rename-project-modal.ts` | 105 | 1 | 1 |
 | `ui/rendering/context-panel.ts` | 961 | 1 | 1 |
@@ -903,8 +905,8 @@
 | `ui/settings/api-section.ts` | 1281 | 1 | 1 |
 | `ui/settings/deconstruction-section.ts` | 332 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
-| `ui/settings/foreshadow-section.ts` | 289 | 1 | 1 |
-| `ui/settings/general-sections.ts` | 1208 | 5 | 5 |
+| `ui/settings/foreshadow-section.ts` | 290 | 1 | 1 |
+| `ui/settings/general-sections.ts` | 1209 | 5 | 5 |
 | `ui/settings/knowledge-section.ts` | 797 | 1 | 1 |
 | `ui/settings/mcp-section.ts` | 133 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |

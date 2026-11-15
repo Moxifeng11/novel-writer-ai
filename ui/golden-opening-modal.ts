@@ -1,3 +1,4 @@
+import { copyText } from '@/shared/clipboard';
 import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { AIEngine } from '@/engine/ai-engine';
@@ -284,7 +285,7 @@ export class GoldenOpeningModal extends Modal {
                     cls: 'nw-btn nw-btn-secondary nw-go-copy-btn'
                 });
                 copyBtn.onclick = () => {
-                    navigator.clipboard.writeText(hook);
+                    void copyText(hook);
                     showSuccessNotice('已复制到剪贴板', { timeout: 2000 });
                 };
 

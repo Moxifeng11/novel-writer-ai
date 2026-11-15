@@ -9,6 +9,7 @@
  * 设计取舍：属性面板本身只能看/改，不能触发生成；这里补齐「动作」这一层，
  * 同时沿用 Obsidian 原生属性与标签面板（双标签 + Bases 看板）。
  */
+import { copyText } from '@/shared/clipboard';
 import { ItemView, Notice, TFile, WorkspaceLeaf, setIcon } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import { STORAGE_KEYS } from '@/shared/storage-keys';
@@ -309,7 +310,7 @@ export class ProjectSidePanelView extends ItemView {
             const chip = row.createSpan({ cls: 'nw-side-panel-tag', text: alias });
             chip.addEventListener('click', () => {
                 const query = `"${alias}"`;
-                void navigator.clipboard.writeText(query).then(
+                void copyText(query).then(
                     () => showSuccessNotice(`已复制检索式：${query}（可搜出提到该别名的位置）`, { timeout: 5000 }),
                     () => showWarningNotice(`检索式：${query}`, { timeout: 5000 }),
                 );
@@ -336,7 +337,7 @@ export class ProjectSidePanelView extends ItemView {
             });
             chip.addEventListener('click', () => {
                 const query = `tag:#${normalized}`;
-                void navigator.clipboard.writeText(query).then(
+                void copyText(query).then(
                     () => showSuccessNotice(`已复制检索式：${query}（粘贴到搜索框即可筛出同类笔记）`, { timeout: 5000 }),
                     () => showWarningNotice(`检索式：${query}`, { timeout: 5000 }),
                 );

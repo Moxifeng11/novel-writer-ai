@@ -10,6 +10,7 @@
  * 独立实现，不修改 ChapterOutlineTreeModal，零新依赖。
  */
 
+import { copyText } from '@/shared/clipboard';
 import { App, Modal, Notice, TFile } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import { pjVolumeOutlineDir, pjStepDir } from '@/shared/paths';
@@ -128,7 +129,7 @@ export class PlotCanvasModal extends Modal {
         }
         const md = lines.join('\n').trim();
         try {
-            await navigator.clipboard.writeText(md);
+            await copyText(md);
             new Notice('✅ 大纲已复制到剪贴板');
         } catch {
             new Notice('❌ 复制失败，请手动复制');

@@ -5,6 +5,7 @@
  * 先完成本模块的定位、分类、故事核/商业钩子与目标规格，再创建项目。
  * 调研结果写入项目内独立的 `00-前期调研/`，与长篇 11 步完全分离。
  */
+import { copyText } from '@/shared/clipboard';
 import { App, Modal, Notice } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import {
@@ -334,8 +335,8 @@ export class PreResearchModal extends Modal {
 
     private async copySeed(seed: string, button: HTMLButtonElement): Promise<void> {
         try {
-            if (navigator.clipboard?.writeText) {
-                await navigator.clipboard.writeText(seed);
+            if (true) {
+                await copyText(seed);
             } else {
                 const textarea = document.createElement('textarea');
                 textarea.value = seed;
