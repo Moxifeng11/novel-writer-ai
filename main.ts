@@ -142,6 +142,7 @@ import { resolveActiveChapterTarget, volumeNumber, type ActiveChapterTarget, typ
 import { resolveBodyFilePath } from '@/engine/chapter-utils';
 import { LEGACY_STORAGE_KEYS } from './shared/storage-keys';
 import { ensureTemplateScaffold } from './shared/template-scaffold';
+import { shouldAutoOpenFirstRunGuide } from './shared/first-run-guide';
 import { RulesService } from './services/rules-service';
 import { getPromptCache } from './engine/prompt-cache';
 import { StyleFingerprintLibrary } from './engine/style-fingerprint-library';
@@ -2765,13 +2766,9 @@ export default class NovelWriterPlugin extends Plugin {
             log.warn('[版本管理] 更新缓存版本纠正失败:', e);
         }
 
-        // 首次安装：显示欢迎模态框
+        // 首次安装：直接进入「3 分钟引导」（市场下载后打开即可用，不停在欢迎弹窗）
         if (isFirstInstall) {
-            const welcomeTimer = window.setTimeout(() => {
-                if (this._isUnloaded) return;
-                this.showWelcomeModal(true);
-            }, 1000);
-            this.register(() => window.clearTimeout(welcomeTimer));
+            this.scheduleFirstRunGuide();
             return;
         }
 
@@ -2786,6 +2783,9 @@ export default class NovelWriterPlugin extends Plugin {
                 this.register(() => window.clearTimeout(majorTimer));
             }
         }
+
+        // 升级场景兜底：还没完成引导且一个作品都没有 → 也自动进引导（只弹一次）
+        this.scheduleFirstRunGuide();
 
         // 静默检查更新（后台执行，不阻塞）
         if (this.settings.autoCheckUpdates) {
@@ -2818,6 +2818,47 @@ export default class NovelWriterPlugin extends Plugin {
         } catch (e) {
             log.warn('[版本管理] 静默检查更新异常:', e);
         }
+    }
+
+    /** 调度首启引导：延迟 800ms 弹（避开 Obsidian 启动布局与其它启动弹窗） */
+    private scheduleFirstRunGuide(): void {
+        const timer = window.setTimeout(() => {
+            if (this._isUnloaded) return;
+            void this.openFirstRunGuideIfNeeded();
+        }, 800);
+        this.register(() => window.clearTimeout(timer));
+    }
+
+    /**
+     * 首装即用：补齐模板目录（用户无需手动建文件夹）后直接打开引导页。
+     *
+     * 只在「首次安装 / 从未完成引导且无作品 / 尚未自动弹过」时执行一次；
+     * 弹过后写 cache.welcomed=true，避免每次启动打扰；用户仍可从命令面板重开。
+     */
+    private async openFirstRunGuideIfNeeded(): Promise<void> {
+        const cacheManager = this._cacheManager;
+        if (!cacheManager) return;
+        const should = shouldAutoOpenFirstRunGuide({
+            hasLastRunVersion: Boolean(cacheManager.getLastRunVersion()),
+            firstRunComplete: this.settings.firstRunComplete === true,
+            projectCount: listProjectIds(this.app).length,
+            guideShownBefore: cacheManager.hasWelcomed(),
+        });
+        if (!should) return;
+        // 先自举模板目录：引导第 4 步「导入示例项目」与新项目创建都依赖它，
+        // 用户不需要自己去建「元文件」等文件夹（失败不阻断引导，只记日志）。
+        if (this.settings.templateScaffoldOnStartup !== false) {
+            try {
+                const scaffold = await ensureTemplateScaffold(this.app);
+                if (scaffold.created > 0) {
+                    log.info('[小说工坊] 首启模板目录已自动初始化:', scaffold);
+                }
+            } catch (error) { // silent-ok: 模板自举失败不阻断引导（引导内导入示例项目会再兜底）
+                log.warn('[小说工坊] 首启模板目录初始化失败:', error);
+            }
+        }
+        cacheManager.setWelcomed(true);
+        this.openOnboarding();
     }
 
     /** 显示欢迎/更新模态框 */

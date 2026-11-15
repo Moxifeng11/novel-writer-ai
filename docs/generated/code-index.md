@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146600 | 1950 | 1544 | 79% |
 | `services/` | 65 | 18925 | 291 | 200 | 69% |
-| `shared/` | 250 | 49725 | 2097 | 1644 | 78% |
+| `shared/` | 251 | 49768 | 2099 | 1645 | 78% |
 | `core/` | 7 | 3041 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 283 | 108956 | 1049 | 849 | 81% |
@@ -533,6 +533,7 @@
 | `shared/file-path-guard.ts` | 236 | 12 | 12 |
 | `shared/file-system-port.ts` | 797 | 8 | 8 |
 | `shared/file-tx-model.ts` | 138 | 12 | 7 |
+| `shared/first-run-guide.ts` | 43 | 2 | 1 |
 | `shared/foreshadow-config.ts` | 112 | 4 | 4 |
 | `shared/foreshadow-loop.ts` | 157 | 3 | 3 |
 | `shared/foreshadow-status.ts` | 61 | 3 | 2 |
