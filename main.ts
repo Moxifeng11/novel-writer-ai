@@ -81,6 +81,7 @@ import { KnowledgeMigrationService } from './services/knowledge-migration-servic
 import { UnitDerivedService } from './services/unit-derived-service';
 import { CowriteSnapshotService } from './services/cowrite-snapshot-service';
 import { ContextMetricsService } from './services/context-metrics-service';
+import { BaselineProbeService } from './services/baseline-probe-service';
 import { IdRegistryService } from './services/id-registry-service';
 import { ContextSessionService } from './services/context-session-service';
 import type { SessionPresetPayload } from '@/shared/session-preset-model';
@@ -1534,6 +1535,21 @@ export default class NovelWriterPlugin extends Plugin {
      * @param sceneIndex - 场景序号（默认 1）
      * @returns 实测结果
      */
+    /**
+     * 采集写作效果基线（架构整改 §3.3）：同一项目/模型各跑一次整份注入与场景注入，记录真实 prompt token。
+     *
+     * @param project - 项目路径
+     * @param chapterName - 章节名
+     * @param model - 模型（默认用插件 flash 模型）
+     * @returns 基线结果
+     */
+    public async runBaselineProbe(project: string, chapterName: string, model?: string) {
+        const engine = new AIEngine(this);
+        return new BaselineProbeService(this.app, this, (system, user, targetModel) =>
+            engine.callAI(system, user, targetModel, 0.3, 32, { isWritingTask: false, bypassCache: true }))
+            .probe(project, chapterName, model);
+    }
+
     public async measureContextMetrics(project: string, sceneIndex = 1) {
         const service = new ContextMetricsService(this.app, (p, text, idx) => this.buildSceneContext(p, text, idx));
         return service.measure(project, sceneIndex);

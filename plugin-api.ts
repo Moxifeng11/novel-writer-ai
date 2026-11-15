@@ -112,6 +112,21 @@ export interface NovelWriterEngineAPI {
         failures: Array<{ path: string; reason: string }>;
         summary: string;
     }>;
+    /**
+     * 采集写作效果基线（架构整改 §3.3）。
+     *
+     * @param project - 项目路径
+     * @param chapterName - 章节名
+     * @param model - 模型
+     * @returns 基线结果
+     */
+    runBaselineProbe(project: string, chapterName: string, model?: string): Promise<{
+        model: string;
+        full: { chars: number; promptTokens: number; totalTokens: number };
+        scene: { chars: number; promptTokens: number; totalTokens: number };
+        reductionPercent: number;
+        report: string;
+    }>;
     measureContextMetrics(project: string, sceneIndex?: number): Promise<{
         beforeChars: number;
         afterChars: number;

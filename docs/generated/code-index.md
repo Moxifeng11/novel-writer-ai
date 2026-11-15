@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146029 | 1935 | 1532 | 79% |
-| `services/` | 55 | 16880 | 253 | 189 | 75% |
+| `services/` | 56 | 17106 | 257 | 190 | 74% |
 | `shared/` | 234 | 47738 | 2010 | 1588 | 79% |
 | `core/` | 7 | 3008 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
@@ -396,6 +396,7 @@
 | `services/assertion-context-service.ts` | 78 | 3 | 2 |
 | `services/attachment-service.ts` | 102 | 2 | 1 |
 | `services/backup-center-service.ts` | 182 | 4 | 1 |
+| `services/baseline-probe-service.ts` | 226 | 4 | 1 |
 | `services/canon-research-service.ts` | 646 | 9 | 8 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
 | `services/chapter-version-service.ts` | 744 | 4 | 4 |

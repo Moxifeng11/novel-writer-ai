@@ -308,6 +308,18 @@
       "reason": "M8/M9 派生视图生成（插件按需创建）",
       "category": "service",
       "allowedInstances": 1
+    },
+    {
+      "className": "BaselineProbeService",
+      "reason": "基线采集服务（插件按需创建）",
+      "category": "service",
+      "allowedInstances": 1
+    },
+    {
+      "className": "AIEngine",
+      "reason": "基线采集在 main 层构造一次（插件入口）",
+      "category": "service",
+      "allowedInstances": 1
     }
   ],
   "notes": {
