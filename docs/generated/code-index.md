@@ -9,9 +9,9 @@
 | `engine/` | 353 | 146377 | 1941 | 1537 | 79% |
 | `services/` | 65 | 18749 | 291 | 200 | 69% |
 | `shared/` | 242 | 48518 | 2047 | 1609 | 79% |
-| `core/` | 7 | 3012 | 35 | 20 | 57% |
+| `core/` | 7 | 3029 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 277 | 107186 | 1036 | 837 | 81% |
+| `ui/` | 277 | 107199 | 1036 | 837 | 81% |
 
 ## 文件清单
 
@@ -19,7 +19,7 @@
 |---|---:|---:|---:|
 | `core/command-registry.ts` | 805 | 9 | 5 |
 | `core/crypto-service.ts` | 413 | 5 | 3 |
-| `core/example-project-service.ts` | 314 | 3 | 3 |
+| `core/example-project-service.ts` | 331 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 551 | 4 | 2 |
 | `core/settings-service.ts` | 580 | 5 | 4 |
@@ -866,7 +866,7 @@
 | `ui/monitor-panel-b.ts` | 1910 | 2 | 2 |
 | `ui/novel-analysis-modal.ts` | 267 | 1 | 1 |
 | `ui/novel-tags-modal.ts` | 335 | 1 | 1 |
-| `ui/onboarding-modal.ts` | 310 | 1 | 1 |
+| `ui/onboarding-modal.ts` | 316 | 1 | 1 |
 | `ui/outline-expand-modal.ts` | 880 | 2 | 1 |
 | `ui/panel-resizer.ts` | 260 | 4 | 3 |
 | `ui/password-modal.ts` | 152 | 1 | 1 |
@@ -914,7 +914,7 @@
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
 | `ui/settings/section-factory.ts` | 94 | 4 | 2 |
-| `ui/settings/setup-section.ts` | 115 | 1 | 1 |
+| `ui/settings/setup-section.ts` | 122 | 1 | 1 |
 | `ui/settings/writing-sections.ts` | 848 | 6 | 6 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 402 | 1 | 1 |

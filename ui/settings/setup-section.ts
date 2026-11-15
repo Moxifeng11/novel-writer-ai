@@ -84,7 +84,14 @@ export class SetupSection extends SettingsSection {
             }))
             .addButton(button => button.setButtonText('创建示例项目').onClick(async () => {
                 const result = await this.plugin.createExampleProjectNow();
-                new Notice(result.created ? `已创建示例项目：${result.project}` : `示例项目已存在：${result.project}`, 6000);
+                new Notice(
+                    result.created
+                        ? `已创建示例项目：${result.project}`
+                        : result.repaired > 0
+                            ? `已补齐示例项目缺失文件：${result.project}（${result.repaired} 个）`
+                            : `示例项目已存在且完整：${result.project}`,
+                    6000,
+                );
                 await refreshReport();
             }))
             .addButton(button => button.setButtonText('生成使用说明').onClick(async () => {

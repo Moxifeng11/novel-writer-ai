@@ -272,7 +272,10 @@ async function ensureDir(app: App, dir: string): Promise<void> {
  * 导入示例项目的执行结果。
  */
 export interface ImportExampleResult {
+    /** 是否本次新建（false 且 repaired>0 表示修复了缺失文件） */
     created: boolean;
+    /** 本次补齐的缺失文件数（目录已存在但内容不全时 > 0） */
+    repaired: number;
     project: string;
 }
 
@@ -285,9 +288,23 @@ export interface ImportExampleResult {
 export async function importExampleProject(app: App): Promise<ImportExampleResult> {
     const project = EXAMPLE_PROJECT_NAME;
     const adapter = app.vault.adapter;
+    const folderExists = await adapter.exists(project);
 
-    if (await adapter.exists(project)) {
-        return { created: false, project };
+    // 已存在：不重复创建，但要补齐缺失文件。
+    // 旧实现「目录存在即返回」会让「导入中途崩溃/用户删过文件」永久卡住：
+    // 引导指向一个残缺项目，且再点导入也修不好（数据安全视角 P1）。
+    // 只补缺失文件，已有内容一律不动（避免覆盖用户改过的示例）。
+    if (folderExists) {
+        let repaired = 0;
+        for (const file of EXAMPLE_FILES) {
+            const fullPath = `${project}/${file.path}`;
+            if (await adapter.exists(fullPath)) continue;
+            const parent = fullPath.substring(0, fullPath.lastIndexOf('/'));
+            await ensureDir(app, parent);
+            await writeVaultText(app, fullPath, file.content);
+            repaired += 1;
+        }
+        return { created: false, repaired, project };
     }
 
     // 后续步骤需要元文件模板；失败不影响示例导入
@@ -309,5 +326,5 @@ export async function importExampleProject(app: App): Promise<ImportExampleResul
         await writeVaultText(app, `${project}/${file.path}`, file.content);
     }
 
-    return { created: true, project };
+    return { created: true, repaired: 0, project };
 }

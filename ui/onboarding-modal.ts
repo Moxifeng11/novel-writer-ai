@@ -204,7 +204,13 @@ export class OnboardingModal extends Modal {
             create.addEventListener('click', () => {
                 void importExampleProject(this.app).then(result => {
                     this.exampleReady = true;
-                    new Notice(result.created ? '✅ 示例项目已创建' : '示例项目已存在，直接使用');
+                    new Notice(
+                        result.created
+                            ? '✅ 示例项目已创建'
+                            : result.repaired > 0
+                                ? `🔧 示例项目已补齐 ${result.repaired} 个缺失文件`
+                                : '示例项目已存在，直接使用',
+                    );
                     this.render();
                 }).catch(error => {
                     new Notice(`导入示例失败：${error instanceof Error ? error.message : String(error)}`, 8000);

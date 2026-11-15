@@ -40,7 +40,7 @@ describe('importExampleProject（FR-C-06）', () => {
         const adapter = new FakeAdapter();
         const result = await importExampleProject(makeApp(adapter));
 
-        expect(result).toEqual({ created: true, project: P });
+        expect(result).toEqual({ created: true, repaired: 0, project: P });
 
         const required = [
             `${P}/.project`,
