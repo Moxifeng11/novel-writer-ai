@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 145840 | 1935 | 1532 | 79% |
 | `services/` | 49 | 15962 | 239 | 183 | 77% |
-| `shared/` | 223 | 46336 | 1959 | 1553 | 79% |
+| `shared/` | 224 | 46437 | 1963 | 1556 | 79% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106856 | 1034 | 835 | 81% |
@@ -650,6 +650,7 @@
 | `shared/versioned-registry.ts` | 269 | 11 | 11 |
 | `shared/view-open-guard.ts` | 37 | 2 | 1 |
 | `shared/view-types.ts` | 7 | 1 | 0 |
+| `shared/voice-sample-model.ts` | 101 | 4 | 3 |
 | `shared/volume-conflict-detector.ts` | 248 | 7 | 2 |
 | `shared/volume-plan.ts` | 307 | 6 | 6 |
 | `shared/webnovel-knowledge-base.ts` | 2793 | 7 | 7 |
