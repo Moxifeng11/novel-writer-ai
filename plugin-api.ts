@@ -134,6 +134,21 @@ export interface NovelWriterEngineAPI {
      * @param dryRun - 是否只预览
      * @returns 同步结果
      */
+    /**
+     * 生成后校验（B1）。
+     *
+     * @param project - 项目路径
+     * @param chapterName - 章节名
+     * @returns 校验报告
+     */
+    runPostGenerationCheck(project: string, chapterName: string): Promise<{
+        project: string;
+        chapterName: string;
+        checkedAt: number;
+        passed: boolean;
+        counts: Record<string, number>;
+        items: Array<{ kind: string; severity: string; message: string; suggestion?: string; refs?: string[] }>;
+    }>;
     syncRelationGraph(project: string, dryRun?: boolean): Promise<{
         dryRun: boolean;
         derived: number;

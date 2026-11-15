@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { parseEmotionIntensities, renderEmotionCurve } from '@/shared/emotion-plan-parse';
 
 describe('parseEmotionIntensities', () => {
+    it('分块标题形式（## 场景N + 块内强度）能被解析（回归：\\s* 曾吞掉换行导致块正文为空）', () => {
+        const text = '## 场景1：开头\n- 强度：30\n## 场景2：冲突\n- 强度：70\n## 场景3：收束\n- 强度：85\n';
+        const scenes = parseEmotionIntensities(text);
+        expect(scenes.map(scene => scene.intensity)).toEqual([30, 70, 85]);
+    });
+
     it('分块形式', () => {
         const text = '## 场景1：山门初见\n- 强度：40\n\n## 场景2：夜谈\n- 情绪强度：70\n';
         const scenes = parseEmotionIntensities(text);

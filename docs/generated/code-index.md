@@ -7,8 +7,8 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146173 | 1940 | 1536 | 79% |
-| `services/` | 57 | 17320 | 265 | 191 | 72% |
-| `shared/` | 234 | 47802 | 2015 | 1591 | 79% |
+| `services/` | 58 | 17512 | 267 | 192 | 72% |
+| `shared/` | 235 | 47908 | 2022 | 1594 | 79% |
 | `core/` | 7 | 3008 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 276 | 107004 | 1035 | 836 | 81% |
@@ -424,6 +424,7 @@
 | `services/performance-monitor.ts` | 819 | 9 | 9 |
 | `services/plan-spec-service.ts` | 147 | 3 | 2 |
 | `services/planning-store.ts` | 76 | 1 | 1 |
+| `services/post-generation-check-service.ts` | 192 | 2 | 1 |
 | `services/project-health-service.ts` | 223 | 5 | 2 |
 | `services/project-index-service.ts` | 218 | 1 | 1 |
 | `services/project-rename-service.ts` | 192 | 2 | 2 |
@@ -497,7 +498,7 @@
 | `shared/document-scopes.ts` | 51 | 4 | 4 |
 | `shared/dom-window.ts` | 77 | 4 | 3 |
 | `shared/embedding-provider.ts` | 43 | 4 | 4 |
-| `shared/emotion-plan-parse.ts` | 74 | 2 | 2 |
+| `shared/emotion-plan-parse.ts` | 78 | 2 | 2 |
 | `shared/engine-names.ts` | 57 | 1 | 1 |
 | `shared/entity-audit.ts` | 96 | 4 | 4 |
 | `shared/entity-field-mappings.ts` | 223 | 10 | 10 |
@@ -576,6 +577,7 @@
 | `shared/plugin-data-migration.ts` | 120 | 3 | 1 |
 | `shared/plugin-leaves.ts` | 34 | 2 | 1 |
 | `shared/plugin-worker-url.ts` | 87 | 3 | 2 |
+| `shared/post-generation-check-model.ts` | 102 | 7 | 3 |
 | `shared/pre-research.ts` | 464 | 17 | 17 |
 | `shared/prereq-check.ts` | 51 | 3 | 2 |
 | `shared/preview-kind.ts` | 37 | 2 | 2 |

@@ -199,7 +199,7 @@
       "className": "ProjectIndexService",
       "reason": "项目索引服务按插件/视图持有自己的缓存与脏标记（main.ts 懒初始化、实体图视图内创建）",
       "category": "context-isolated",
-      "allowedInstances": 10
+      "allowedInstances": 11
     },
     {
       "className": "FileTxService",
@@ -324,6 +324,12 @@
     {
       "className": "RelationGraphSyncService",
       "reason": "C4 关系图派生同步（插件入口）",
+      "category": "service",
+      "allowedInstances": 1
+    },
+    {
+      "className": "PostGenerationCheckService",
+      "reason": "B1 生成后校验（插件入口）",
       "category": "service",
       "allowedInstances": 1
     }

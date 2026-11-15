@@ -84,6 +84,7 @@ import { CowriteSnapshotService } from './services/cowrite-snapshot-service';
 import { ContextMetricsService } from './services/context-metrics-service';
 import { BaselineProbeService } from './services/baseline-probe-service';
 import { RelationGraphSyncService } from './services/relation-graph-sync-service';
+import { PostGenerationCheckService } from './services/post-generation-check-service';
 import { getRelationshipFilePath, parseRelationshipFile } from './engine/relationship-engine';
 import { IdRegistryService } from './services/id-registry-service';
 import { ContextSessionService } from './services/context-session-service';
@@ -1561,6 +1562,23 @@ export default class NovelWriterPlugin extends Plugin {
      * @param dryRun - 是否只预览（默认 true）
      * @returns 同步结果
      */
+    /**
+     * 生成后校验（B1）：场景实体覆盖、伏笔逾期、节奏偏离、本章已记录矛盾。
+     *
+     * @param project - 项目路径
+     * @param chapterName - 章节名
+     * @returns 校验报告
+     */
+    public async runPostGenerationCheck(project: string, chapterName: string) {
+        const index = this._projectIndex ??= new ProjectIndexService(this.app);
+        const service = new PostGenerationCheckService(this.app, async (name) => {
+            const resolved = await index.resolve(project, name);
+            const entry = resolved.match;
+            return entry ? (entry.id || entry.path) : null;
+        });
+        return service.check(project, chapterName);
+    }
+
     public async syncRelationGraph(project: string, dryRun = true) {
         const index = this._projectIndex ??= new ProjectIndexService(this.app);
         const graphService = this._memoryGraph ??= new MemoryGraphService(this.app, index, new FileTxService(this.app));

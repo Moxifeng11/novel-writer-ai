@@ -25,11 +25,15 @@ export function parseEmotionIntensities(text: string): SceneIntensity[] {
     const source = String(text ?? '').replace(/\r\n/g, '\n');
     const found = new Map<number, SceneIntensity>();
 
-    // ① 分块形式
-    const blocks = source.split(/^##\s*场景\s*(\d+)\s*[：:]?\s*(.*)$/m);
-    for (let i = 1; i + 2 < blocks.length; i += 3) {
-        const index = Number(blocks[i]);
-        const body = String(blocks[i + 2] ?? '');
+    // ① 分块形式（按标题切块：split 捕获组会丢掉块正文，必须用 matchAll 定位区间）
+    const blockRe = /^##[ \t]*场景[ \t]*(\d+)[ \t]*[：:]?[ \t]*(.*)$/gm;
+    const blockMatches = [...source.matchAll(blockRe)];
+    for (let i = 0; i < blockMatches.length; i++) {
+        const match = blockMatches[i];
+        const index = Number(match[1]);
+        const start = (match.index ?? 0) + match[0].length;
+        const end = i + 1 < blockMatches.length ? (blockMatches[i + 1].index ?? source.length) : source.length;
+        const body = source.slice(start, end);
         const intensity = pickIntensity(body);
         if (index && intensity !== null) found.set(index, { index, intensity });
     }
