@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 145994 | 1935 | 1532 | 79% |
-| `services/` | 51 | 16269 | 244 | 185 | 76% |
+| `services/` | 52 | 16355 | 246 | 186 | 76% |
 | `shared/` | 231 | 47283 | 1991 | 1575 | 79% |
 | `core/` | 7 | 2960 | 33 | 18 | 55% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
@@ -401,6 +401,7 @@
 | `services/chapter-version-service.ts` | 744 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
 | `services/context-session-service.ts` | 161 | 2 | 1 |
+| `services/cowrite-snapshot-service.ts` | 86 | 2 | 1 |
 | `services/execution-ledger.ts` | 325 | 10 | 7 |
 | `services/fanfic-knowledge-draft.ts` | 226 | 10 | 7 |
 | `services/file-tx.ts` | 183 | 2 | 1 |
