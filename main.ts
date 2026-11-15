@@ -76,6 +76,8 @@ import { FileTxService } from './services/file-tx';
 import { SessionPresetService } from './services/session-preset-service';
 import { MemoryGraphService } from './services/memory-graph-service';
 import { SceneContextService } from './services/scene-context-service';
+import { LedgerMigrationService } from './services/ledger-migration-service';
+import { IdRegistryService } from './services/id-registry-service';
 import { ContextSessionService } from './services/context-session-service';
 import type { SessionPresetPayload } from '@/shared/session-preset-model';
 import { PlanningCanvasView, PLANNING_CANVAS_VIEW_TYPE } from './ui/views/planning-canvas-view';
@@ -1456,6 +1458,19 @@ export default class NovelWriterPlugin extends Plugin {
      * @param sceneIndex - 目标场景序号（1 起）
      * @returns 上下文包
      */
+    /**
+     * 迁移时间线/伏笔（M14）：单表 md → 条目卡 + 派生视图。
+     *
+     * @param project - 项目路径
+     * @param dryRun - 是否只预览（默认 true）
+     * @returns 迁移结果
+     */
+    public async migrateLedger(project: string, dryRun = true) {
+        const registry = new IdRegistryService(this.app, new FileTxService(this.app));
+        const service = new LedgerMigrationService(this.app, async (type, path) => registry.ensureId(project, type, path));
+        return service.migrate(project, dryRun);
+    }
+
     public async buildSceneContext(project: string, sceneExpandText: string, sceneIndex = 1) {
         const indexService = this._projectIndex ??= new ProjectIndexService(this.app);
         this._sceneContext ??= new SceneContextService(

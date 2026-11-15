@@ -58,6 +58,20 @@ export interface NovelWriterEngineAPI {
      */
     getProjectIndex(project: string): Promise<ProjectIndex>;
     /**
+     * 迁移时间线/伏笔（M14）。
+     *
+     * @param project - 项目路径
+     * @param dryRun - 是否只预览
+     * @returns 迁移结果
+     */
+    migrateLedger(project: string, dryRun?: boolean): Promise<{
+        dryRun: boolean;
+        summary: string;
+        cards: string[];
+        backups: string[];
+        failures: Array<{ path: string; reason: string }>;
+    }>;
+    /**
      * 构建场景上下文包（M5）：场景锚点 → 精确检索 → 迭代装配 → 提示词段落。
      *
      * @param project - 项目路径
