@@ -5,6 +5,7 @@
  * `<项目>/04-项目总控/质量面板/校验历史.json`，并提供聚合读取。
  */
 
+import { isProjectDirectory } from '@/shared/project-catalog';
 import { App, TFile } from 'obsidian';
 import { createLogger } from '@/shared/logger';
 import {
@@ -44,6 +45,7 @@ export class QualityPanelService {
      * @returns 写入后的总条数
      */
     async record(project: string, record: QualityRecord): Promise<number> {
+        this.assertProject(project);
         const path = this.historyPath(project);
         const records = await this.load(project);
         records.push(record);
@@ -60,9 +62,22 @@ export class QualityPanelService {
      * @returns 面板视图
      */
     async view(project: string): Promise<QualityPanelView> {
+        this.assertProject(project);
         const records = await this.load(project);
         const summary = summarizeQualityPanel(records);
         return { ...summary, report: renderQualityPanel(summary), path: this.historyPath(project) };
+    }
+
+    /**
+     * 校验项目真实存在（防止对不存在/拼错的项目写文件、返回「通过」误导）。
+     *
+     * @param project - 项目路径
+     */
+    private assertProject(project: string): void {
+        const normalized = String(project || '').trim();
+        if (!normalized || !isProjectDirectory(this.app, normalized)) {
+          throw new Error(`项目不存在或不是作品目录：${normalized || '(空)'}`);
+        }
     }
 
     /** 读历史记录 */

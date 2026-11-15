@@ -13,6 +13,8 @@ const make = (files: Record<string, string>, resolvable: string[] = ['林玄', '
     const vault = new Vault() as Vault & { _seedFile(path: string, content: string): unknown };
     const app = new App();
     app.vault = vault;
+    // 真实项目一定有作品信息（project-catalog 身份标志）；服务入口会校验
+    vault._seedFile(`${PROJECT}/作品信息.md`, '# 作品');
     for (const [path, content] of Object.entries(files)) vault._seedFile(path, content);
     const service = new PostGenerationCheckService(app, async (name) => (resolvable.includes(name) ? `CHR-${name}` : null));
     return { service, vault };

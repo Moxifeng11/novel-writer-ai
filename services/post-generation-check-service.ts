@@ -10,6 +10,7 @@
  * LLM 复核（人物口吻/行为）留给 B2 的可选增强。
  */
 
+import { isProjectDirectory } from '@/shared/project-catalog';
 import { App, TFile, TFolder } from 'obsidian';
 import { createLogger } from '@/shared/logger';
 import {
@@ -46,6 +47,11 @@ export class PostGenerationCheckService {
      * @returns 报告
      */
     async check(project: string, chapterName: string): Promise<PostGenerationCheckReport> {
+        // 项目不存在时不能返回「通过」：那会让调用方以为校验过、并把假记录写进质量面板
+        const normalized = String(project || '').trim();
+        if (!normalized || !isProjectDirectory(this.app, normalized)) {
+            throw new Error(`项目不存在或不是作品目录：${normalized || '(空)'}`);
+        }
         const items: CheckItem[] = [];
         const chapterNum = this.chapterNumOf(chapterName);
 

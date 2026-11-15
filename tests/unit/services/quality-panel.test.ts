@@ -14,6 +14,8 @@ const make = () => {
     const vault = new Vault() as Vault & { _seedFile(path: string, content: string): unknown };
     const app = new App();
     app.vault = vault;
+    // 真实项目一定有作品信息（project-catalog 身份标志）；服务入口会校验
+    vault._seedFile(`${PROJECT}/作品信息.md`, '# 作品');
     return { service: new QualityPanelService(app), vault };
 };
 
@@ -73,5 +75,19 @@ describe('QualityPanelService', () => {
         await service.record(PROJECT, recordOf('第1章'));
         const view = await service.view(PROJECT);
         expect(view.total).toBe(1);
+    });
+});
+
+describe('项目存在性校验（对抗审查：防垃圾目录/假通过）', () => {
+    it('不存在的项目：view/record 抛错且不写文件', async () => {
+        const vault = new Vault() as Vault & { _seedFile(path: string, content: string): unknown };
+        const app = new App();
+        app.vault = vault;
+        const service = new QualityPanelService(app);
+        const ghost = '不存在/项目';
+
+        await expect(service.view(ghost)).rejects.toThrow(/项目不存在/);
+        await expect(service.record(ghost, recordOf('第1章'))).rejects.toThrow(/项目不存在/);
+        expect(vault.getAbstractFileByPath(`${ghost}/04-项目总控/质量面板/校验历史.json`)).toBeNull();
     });
 });

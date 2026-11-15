@@ -60,6 +60,7 @@ import { AgentWorkbenchView } from './ui/agent-workbench-view';
 import { VIEW_TYPE_AGENT_WORKBENCH } from './shared/view-types';
 import { detachPluginLeaves } from './shared/plugin-leaves';
 import { executeObsidianCommand, listObsidianCommands, openPluginSettingsTab } from './shared/obsidian-internal-bridge';
+import { isProjectDirectory } from './shared/project-catalog';
 import { isStoredCiphertext, usableSecret } from './shared/secret-value';
 import { revealLeafCompat } from './shared/workspace-reveal';
 import { WritingFingerprintView, VIEW_TYPE_WRITING_FINGERPRINT } from './ui/views/writing-fingerprint-view';
@@ -1754,11 +1755,25 @@ export default class NovelWriterPlugin extends Plugin {
         return outcome;
     }
 
+    /**
+     * 校验项目存在（公共方法入口统一前置，避免对不存在项目写入/返回假结论）。
+     *
+     * @param project - 项目路径
+     */
+    private assertProjectExists(project: string): void {
+        const normalized = String(project || '').trim();
+        if (!normalized || !isProjectDirectory(this.app, normalized)) {
+            throw new Error(`项目不存在或不是作品目录：${normalized || '(空)'}`);
+        }
+    }
+
     public async runQualityPanel(project: string) {
+        this.assertProjectExists(project);
         return new QualityPanelService(this.app).view(project);
     }
 
     public async buildConstraintBlocks(project: string, chapterName: string) {
+        this.assertProjectExists(project);
         const index = this._projectIndex ??= new ProjectIndexService(this.app);
         const deps = createVaultConstraintDeps(this.app, async (name) => {
             const resolved = await index.resolve(project, name);
@@ -1784,6 +1799,7 @@ export default class NovelWriterPlugin extends Plugin {
     }
 
     public async autoReviseChapter(project: string, chapterName: string, options: { maxRounds?: number; maxTasks?: number } = {}) {
+        this.assertProjectExists(project);
         const index = this._projectIndex ??= new ProjectIndexService(this.app);
         const checker = new PostGenerationCheckService(this.app, async (name) => {
             const resolved = await index.resolve(project, name);
@@ -1833,6 +1849,7 @@ export default class NovelWriterPlugin extends Plugin {
     }
 
     public async runPostGenerationCheck(project: string, chapterName: string) {
+        this.assertProjectExists(project);
         const index = this._projectIndex ??= new ProjectIndexService(this.app);
         const service = new PostGenerationCheckService(this.app, async (name) => {
             const resolved = await index.resolve(project, name);

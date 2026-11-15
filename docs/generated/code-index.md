@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146377 | 1941 | 1537 | 79% |
-| `services/` | 65 | 18881 | 291 | 200 | 69% |
+| `services/` | 65 | 18902 | 291 | 200 | 69% |
 | `shared/` | 242 | 48534 | 2048 | 1610 | 79% |
 | `core/` | 7 | 3029 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
@@ -425,7 +425,7 @@
 | `services/performance-monitor.ts` | 819 | 9 | 9 |
 | `services/plan-spec-service.ts` | 147 | 3 | 2 |
 | `services/planning-store.ts` | 76 | 1 | 1 |
-| `services/post-generation-check-service.ts` | 192 | 2 | 1 |
+| `services/post-generation-check-service.ts` | 198 | 2 | 1 |
 | `services/project-health-service.ts` | 223 | 5 | 2 |
 | `services/project-index-service.ts` | 232 | 1 | 1 |
 | `services/project-rename-service.ts` | 192 | 2 | 2 |
@@ -433,7 +433,7 @@
 | `services/prompt-manager.ts` | 783 | 5 | 5 |
 | `services/prompt-templates-default.ts` | 644 | 1 | 1 |
 | `services/quality-history-store.ts` | 182 | 5 | 5 |
-| `services/quality-panel-service.ts` | 98 | 2 | 1 |
+| `services/quality-panel-service.ts` | 113 | 2 | 1 |
 | `services/relation-graph-sync-service.ts` | 141 | 6 | 1 |
 | `services/rules-registry.ts` | 146 | 7 | 5 |
 | `services/rules-service.ts` | 280 | 3 | 2 |
