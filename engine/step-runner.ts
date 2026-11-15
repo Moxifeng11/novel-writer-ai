@@ -1,5 +1,7 @@
 import { FileTxService } from '@/services/file-tx';
 import { App, TFile } from 'obsidian';
+import { buildAssertionConstraintPack, renderAssertionConstraintSection } from '@/services/assertion-context-service';
+import { parseAssertions } from '@/shared/assertion-source-model';
 import { isChapterSettledText } from '@/shared/chapter-status';
 import { AIEngine, APIResponse } from './ai-engine';
 import { DEAI_CHECK_SYSTEM_PROMPT, DEAI_CHECK_USER_TEMPLATE, DEAI_REWRITE_SYSTEM_PROMPT, DEAI_REWRITE_USER_TEMPLATE, SELF_CHECK_PROMPTS } from './prompt-templates';
@@ -239,6 +241,7 @@ export class StepRunner {
             loadAssociationContext: (ctx: StepRunCtx, stepKey: string) => this.loadAssociationContext(ctx, stepKey),
             loadStoryLinkageTail: (ctx: StepRunCtx, stepKey: string) => this.loadStoryLinkageTail(ctx, stepKey),
             loadSceneContextTail: (ctx: StepRunCtx, stepKey: string) => this.loadSceneContextTail(ctx, stepKey),
+            loadAssertionConstraintTail: (ctx: StepRunCtx, stepKey: string) => this.loadAssertionConstraintTail(ctx, stepKey),
             compressionMode: this.plugin.settings.contextCompressionMode ?? 'extractive',
             retrieveOverflowContext: (ctx: StepRunCtx, deficit: number, focusTerms: string[]) =>
                 this.retrieveOverflowContext(ctx, deficit, focusTerms),
@@ -309,6 +312,35 @@ export class StepRunner {
      * @param stepKey - 步骤键
      * @returns 段落（空表示无场景数据，不阻断）
      */
+    /**
+     * 一致性约束尾部（M6）：读断言.json → 按在场实体全量筛选 → 分批渲染。
+     *
+     * @param ctx - 步骤上下文
+     * @param stepKey - 步骤键
+     * @returns 段落（空表示无断言，不阻断）
+     */
+    private async loadAssertionConstraintTail(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; missing?: boolean }> {
+        void stepKey;
+        const path = `${ctx.project}/04-项目总控/一致性审核/断言.json`;
+        const file = this.plugin.app.vault.getAbstractFileByPath(path);
+        if (!(file instanceof TFile)) return { text: '', missing: true };
+        try {
+            const raw = JSON.parse(await this.plugin.app.vault.read(file));
+            const sceneText = String(ctx.stepResults?.['sceneExpand'] ?? '');
+            let anchorIds: string[] = [];
+            if (sceneText.trim() && this.plugin.buildSceneContext) {
+                const pack = await this.plugin.buildSceneContext(ctx.project, sceneText, 1);
+                anchorIds = (pack.session as { anchorIds?: string[] } | null)?.anchorIds ?? [];
+            }
+            if (anchorIds.length === 0) return { text: '', missing: true };
+            const pack = buildAssertionConstraintPack(parseAssertions(raw), anchorIds);
+            const text = renderAssertionConstraintSection(pack);
+            return { text, missing: pack.missing.length > 0 };
+        } catch { // silent-ok: 一致性约束是增强尾部，失败不阻断写作
+            return { text: '', missing: true };
+        }
+    }
+
     private async loadSceneContextTail(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; missing?: boolean }> {
         void stepKey;
         const sceneText = String(ctx.stepResults?.['sceneExpand'] ?? '');

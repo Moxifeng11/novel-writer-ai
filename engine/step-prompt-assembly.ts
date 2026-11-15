@@ -76,6 +76,8 @@ export interface StepPromptAssemblyHost {
     loadStoryLinkageTail?(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; missing?: boolean }>;
     /** 场景级精确上下文尾部（M5：按当前场景在场 ID 装配；缺了不阻断） */
     loadSceneContextTail?(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; missing?: boolean }>;
+    /** 一致性约束尾部（M6：按在场实体筛全部高风险断言、分批注入；缺了不阻断） */
+    loadAssertionConstraintTail?(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; missing?: boolean }>;
     /** 上下文压缩模式（默认 extractive） */
     compressionMode?: ContextCompressionMode;
     /** 溢出时的定向补检（只补缺口；返回空串表示无补充） */
@@ -207,6 +209,13 @@ export async function assembleStepPrompt(
             const sceneTail = await host.loadSceneContextTail(ctx, stepKey);
             if (sceneTail.text) {
                 extraTail = [extraTail, sceneTail.text].filter(Boolean).join('\n\n');
+            }
+        }
+        // 一致性约束尾部（M6）：质控/分析步按在场实体筛断言，全量分批，不设条数
+        if (host.loadAssertionConstraintTail && ['qualityControl', 'analysisReport'].includes(stepKey)) {
+            const assertionTail = await host.loadAssertionConstraintTail(ctx, stepKey);
+            if (assertionTail.text) {
+                extraTail = [extraTail, assertionTail.text].filter(Boolean).join('\n\n');
             }
         }
         const effectiveSystemPrompt = systemTail
