@@ -363,6 +363,16 @@ export async function buildEntityVars(deps: TemplateVarsDeps, vars: Record<strin
   contextCharCount += vars["allFactions"]?.length || 0;
   contextCharCount += vars["allLocs"]?.length || 0;
   contextCharCount += vars["allItems"]?.length || 0;
+  // M5 收口：正文步严格场景注入时，整库实体交给场景上下文
+  const strictSceneContext = deps.plugin?.settings?.bodySceneContextStrict === true
+    && String(deps.stepResults?.["sceneExpand"] ?? "").trim().length > 0;
+  if (strictSceneContext) {
+    vars["allChars"] = "";
+    vars["allFactions"] = "";
+    vars["allLocs"] = "";
+    vars["allItems"] = "";
+    contextCharCount = 0;
+  }
   vars["_contextTokens"] = String(Math.floor(contextCharCount / CHAR_TO_TOKEN_RATIO));
 }
 /**
@@ -404,6 +414,13 @@ export async function buildContextVars(deps: TemplateVarsDeps, vars: Record<stri
     } else {
       vars["settingLib"] = slRaw;
     }
+  }
+  // M5 收口：世界观/设定库交给场景精确上下文
+  const strictSceneContext = deps.plugin?.settings?.bodySceneContextStrict === true
+    && String(deps.stepResults?.["sceneExpand"] ?? "").trim().length > 0;
+  if (strictSceneContext) {
+    vars["worldView"] = "";
+    vars["settingLib"] = "";
   }
   const wr = d.writing_rules;
   const dedupeStyle = deps.plugin.settings.dedupeRulesInStyle !== false;

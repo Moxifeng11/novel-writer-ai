@@ -9,9 +9,9 @@
 | `engine/` | 353 | 146016 | 1935 | 1532 | 79% |
 | `services/` | 55 | 16880 | 253 | 189 | 75% |
 | `shared/` | 233 | 47597 | 2005 | 1585 | 79% |
-| `core/` | 7 | 2962 | 33 | 18 | 55% |
+| `core/` | 7 | 2963 | 33 | 18 | 55% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 275 | 106884 | 1034 | 835 | 81% |
+| `ui/` | 275 | 106910 | 1034 | 835 | 81% |
 
 ## 文件清单
 
@@ -22,7 +22,7 @@
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 550 | 4 | 2 |
-| `core/settings-service.ts` | 575 | 5 | 4 |
+| `core/settings-service.ts` | 576 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
@@ -806,7 +806,7 @@
 | `ui/full-writer/step-render-controller.ts` | 683 | 2 | 2 |
 | `ui/full-writer/streamlined-nav-presenter.ts` | 272 | 12 | 12 |
 | `ui/full-writer/tab-controller.ts` | 380 | 2 | 2 |
-| `ui/full-writer/template-vars-builder.ts` | 1211 | 7 | 7 |
+| `ui/full-writer/template-vars-builder.ts` | 1228 | 7 | 7 |
 | `ui/full-writer/title-bar-controller.ts` | 192 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |
@@ -894,7 +894,7 @@
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
 | `ui/settings/section-factory.ts` | 92 | 4 | 2 |
-| `ui/settings/writing-sections.ts` | 812 | 6 | 6 |
+| `ui/settings/writing-sections.ts` | 821 | 6 | 6 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 402 | 1 | 1 |
 | `ui/step-result-viewer-modal.ts` | 442 | 1 | 1 |

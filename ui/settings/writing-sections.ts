@@ -445,6 +445,15 @@ export class WritingSection extends SettingsSection {
                     this.plugin.settings.autoRevisionAfterQC = value;
                     await this.plugin.saveSettings();
                 }));
+        new Setting(section)
+            .setName('正文步场景精确注入（实验）')
+            .setDesc('开启后，正文步把整库人物/势力/地点/物品与世界观/设定库交给「场景精确上下文」，减少重复注入；关闭时保持原有全量注入')
+            .addToggle((toggle) => toggle
+                .setValue(this.plugin.settings.bodySceneContextStrict === true)
+                .onChange(async (value) => {
+                    this.plugin.settings.bodySceneContextStrict = value;
+                    await this.plugin.saveSettings();
+                }));
 
         new Setting(section)
             .setName('上下文体检')

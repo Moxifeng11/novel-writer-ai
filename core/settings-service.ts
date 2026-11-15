@@ -439,6 +439,7 @@ export function getDefaultSettings(): NovelWriterSettings {
         coWriteModel: '',
         coWriteTemperature: 0.7,
     coWriteContextDelta: false,
+    bodySceneContextStrict: false,
         coWriteMaxTokens: 600,
         coWriteNumCtx: 0,
         coWriteCandidateBatching: true,
