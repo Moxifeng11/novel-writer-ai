@@ -180,10 +180,24 @@ export class ProjectIndexService {
         }
     }
 
+    /** 落盘前确保父目录存在（项目刚建/目录被删时 create 会 ENOENT） */
+    private async ensureParentDir(path: string): Promise<void> {
+        const dir = path.split('/').slice(0, -1).join('/');
+        if (!dir) return;
+        let current = '';
+        for (const segment of dir.split('/')) {
+            current = current ? `${current}/${segment}` : segment;
+            if (!this.app.vault.getAbstractFileByPath(current)) {
+                await this.app.vault.createFolder(current).catch(() => undefined); // silent-ok: 已存在/并发创建失败忽略
+            }
+        }
+    }
+
     /** 落盘索引（失败不阻断，索引可重建） */
     private async save(index: ProjectIndex): Promise<void> {
         const target = pjIndexFile(index.project);
         try {
+            await this.ensureParentDir(target);
             const payload = `${JSON.stringify(index, null, 2)}\n`;
             const existing = this.app.vault.getAbstractFileByPath(target);
             if (existing instanceof TFile) {

@@ -7,8 +7,8 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146216 | 1941 | 1537 | 79% |
-| `services/` | 63 | 18324 | 284 | 198 | 70% |
-| `shared/` | 238 | 48260 | 2039 | 1602 | 79% |
+| `services/` | 63 | 18340 | 284 | 198 | 70% |
+| `shared/` | 238 | 48261 | 2039 | 1602 | 79% |
 | `core/` | 7 | 3009 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 276 | 107013 | 1035 | 836 | 81% |
@@ -427,7 +427,7 @@
 | `services/planning-store.ts` | 76 | 1 | 1 |
 | `services/post-generation-check-service.ts` | 192 | 2 | 1 |
 | `services/project-health-service.ts` | 223 | 5 | 2 |
-| `services/project-index-service.ts` | 218 | 1 | 1 |
+| `services/project-index-service.ts` | 232 | 1 | 1 |
 | `services/project-rename-service.ts` | 192 | 2 | 2 |
 | `services/project-standard-service.ts` | 68 | 3 | 1 |
 | `services/prompt-manager.ts` | 783 | 5 | 5 |
@@ -439,7 +439,7 @@
 | `services/rules-service.ts` | 280 | 3 | 2 |
 | `services/scene-context-service.ts` | 126 | 2 | 1 |
 | `services/scene-loop-body-service.ts` | 198 | 3 | 1 |
-| `services/scene-retrieval-service.ts` | 155 | 4 | 1 |
+| `services/scene-retrieval-service.ts` | 157 | 4 | 1 |
 | `services/session-preset-service.ts` | 94 | 2 | 1 |
 | `services/skill-service.ts` | 74 | 1 | 1 |
 | `services/synopsis-store.ts` | 364 | 5 | 5 |
@@ -624,7 +624,7 @@
 | `shared/rhythm-intent.ts` | 48 | 2 | 2 |
 | `shared/scene-anchor-model.ts` | 140 | 6 | 5 |
 | `shared/scene-body-merge.ts` | 24 | 2 | 2 |
-| `shared/scene-card.ts` | 241 | 9 | 8 |
+| `shared/scene-card.ts` | 242 | 9 | 8 |
 | `shared/scene-context-prompt.ts` | 100 | 3 | 2 |
 | `shared/secret-display.ts` | 144 | 8 | 5 |
 | `shared/secret-redaction.ts` | 156 | 6 | 5 |

@@ -116,9 +116,11 @@ export class SceneRetrievalService {
         return chapterName ? { [chapterName]: ledger[chapterName] } : ledger;
     }
 
-    /** 从场景任务提取角色名（characters 字段优先） */
+    /** 从场景任务提取角色名（characters 字段优先，兼容中文「在场人物：」行） */
     private extractNames(task: SceneTask): string[] {
-        const raw = String(task.characters ?? '').trim();
+        const raw = String(task.characters ?? '').trim()
+            || String(task.rawBlock ?? '').match(/在场人物[：:]\s*(.+)/)?.[1]?.trim()
+            || '';
         if (!raw) return [];
         return [...new Set(raw.split(/[、,，;；\s]+/).map(name => name.trim()).filter(Boolean))];
     }

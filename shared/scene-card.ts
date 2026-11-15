@@ -77,7 +77,8 @@ export type SceneCardFieldKey = keyof typeof SCENE_CARD_FIELD_MAP;
  * @returns 文本结果
  */
 export function parseSceneField(block: string, field: string): string {
-    const m = block.match(new RegExp(`^\\s*\\*?\\*?${field}\\s*[：:]\\s*(.+)$`, 'im'));
+    // 容忍列表前缀（历史场景卡常用 `- characters: ...` 写法）与字段名两侧加粗
+    const m = block.match(new RegExp(`^\\s*(?:[-*•]\\s+)?\\*?\\*?${field}\\*?\\*?\\s*[：:]\\s*(.+)$`, 'im'));
     return m ? m[1].trim() : '';
 }
 

@@ -40,6 +40,13 @@ describe('SceneRetrievalService', () => {
         expect(result.hint).toContain('路人甲');
     });
 
+    it('兼容中文「在场人物：」行（历史场景卡格式）', async () => {
+        const { service } = make();
+        const legacy = { ...task(1, ''), rawBlock: '- 在场人物：林玄、路人甲' };
+        const result = await service.retrieve(legacy as never);
+        expect(result.missing).toEqual(['路人甲']);
+    });
+
     it('记录逐场覆盖到账本并统计缺口场景', async () => {
         const { service } = make();
         await service.recordCoverage(PROJECT, '第1章', [
