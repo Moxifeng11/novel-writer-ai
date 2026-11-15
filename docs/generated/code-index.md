@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146266 | 1941 | 1537 | 79% |
 | `services/` | 64 | 18569 | 289 | 199 | 69% |
-| `shared/` | 238 | 48261 | 2039 | 1602 | 79% |
+| `shared/` | 239 | 48345 | 2041 | 1603 | 79% |
 | `core/` | 7 | 3011 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 276 | 107032 | 1035 | 836 | 81% |
+| `ui/` | 277 | 107143 | 1036 | 837 | 81% |
 
 ## 文件清单
 
@@ -673,6 +673,7 @@
 | `shared/unit-context-prompt.ts` | 119 | 4 | 4 |
 | `shared/unload-barrier.ts` | 72 | 1 | 0 |
 | `shared/untrusted-content.ts` | 39 | 1 | 1 |
+| `shared/usage-guide-content.ts` | 84 | 2 | 1 |
 | `shared/validators/normalizers-entity.ts` | 232 | 5 | 5 |
 | `shared/vault-tree.ts` | 131 | 6 | 6 |
 | `shared/version-types.ts` | 125 | 10 | 0 |
@@ -896,7 +897,7 @@
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 473 | 6 | 5 |
-| `ui/settings-tab.ts` | 397 | 1 | 1 |
+| `ui/settings-tab.ts` | 401 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 39 | 1 | 1 |
 | `ui/settings/api-section.ts` | 1281 | 1 | 1 |
@@ -908,7 +909,8 @@
 | `ui/settings/mcp-section.ts` | 133 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
-| `ui/settings/section-factory.ts` | 92 | 4 | 2 |
+| `ui/settings/section-factory.ts` | 94 | 4 | 2 |
+| `ui/settings/setup-section.ts` | 105 | 1 | 1 |
 | `ui/settings/writing-sections.ts` | 848 | 6 | 6 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 402 | 1 | 1 |

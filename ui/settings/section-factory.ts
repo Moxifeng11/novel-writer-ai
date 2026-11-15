@@ -7,6 +7,7 @@
  */
 import type { SettingsSection, SettingsSectionHost } from './section-base';
 import { ApiSection } from './api-section';
+import { SetupSection } from './setup-section';
 import { KnowledgeSection } from './knowledge-section';
 import { FingerprintSection } from './fingerprint-section';
 import { DeconstructionSection } from './deconstruction-section';
@@ -47,7 +48,7 @@ export interface SettingsTabDefinition {
  * 一级只留 6 个功能域，二级才是具体 tab。
  */
 export const SETTINGS_GROUPS: ReadonlyArray<{ id: string; label: string; tabs: readonly string[] }> = [
-    { id: 'connect', label: '🔌 连接与模型', tabs: ['api', 'agent', 'mcp'] },
+    { id: 'connect', label: '🔌 连接与模型', tabs: ['setup', 'api', 'agent', 'mcp'] },
     { id: 'writing', label: '✍️ 写作与协同', tabs: ['cowrite', 'writing', 'modes', 'suggestions'] },
     { id: 'rules', label: '📜 规则与一致性', tabs: ['rules', 'recognition', 'foreshadow'] },
     { id: 'knowledge', label: '📚 知识与拆解', tabs: ['knowledge', 'deconstruction', 'template', 'fingerprint'] },
@@ -57,6 +58,7 @@ export const SETTINGS_GROUPS: ReadonlyArray<{ id: string; label: string; tabs: r
 
 /** 唯一设置页签表（顺序即界面顺序） */
 export const SETTINGS_TAB_DEFINITIONS: ReadonlyArray<SettingsTabDefinition> = [
+    { id: 'setup', label: '🚀 首启与自检', group: 'primary', create: host => new SetupSection(host) },
     { id: 'api', label: '🔌 API 配置', group: 'primary', create: host => new ApiSection(host) },
     { id: 'cowrite', label: '🖥 协同写作', group: 'primary', create: host => new CoWriteSection(host) },
     { id: 'writing', label: '✍️ 写作配置', group: 'primary', create: host => new WritingSection(host) },

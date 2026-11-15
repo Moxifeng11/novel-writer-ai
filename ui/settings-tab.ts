@@ -20,6 +20,7 @@ import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
 import NovelWriterPlugin, { DEFAULT_SETTINGS } from '@/main';
 import type { SettingsSectionHost } from './settings/section-base';
 import { ApiSection } from './settings/api-section';
+import { SetupSection } from './settings/setup-section';
 import { KnowledgeSection } from './settings/knowledge-section';
 import { FingerprintSection } from './settings/fingerprint-section';
 import { DeconstructionSection } from './settings/deconstruction-section';
@@ -63,6 +64,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
     /** 已渲染 tab 的 DOM 缓存，键为 tab id；`refresh()` 时整体清空 */
     private panelCache = new Map<string, HTMLElement>();
 
+    private setup: SetupSection;
     private api: ApiSection;
     private knowledge: KnowledgeSection;
     private fingerprint: FingerprintSection;
@@ -92,6 +94,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             refresh: () => this.refresh(),
             reopen: () => this.reopen(),
         };
+        this.setup = new SetupSection(host);
         this.api = new ApiSection(host);
         this.knowledge = new KnowledgeSection(host);
         this.fingerprint = new FingerprintSection(host);
@@ -355,6 +358,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
 
     private renderSection(tabId: string, container: HTMLElement): void {
         switch (tabId) {
+            case 'setup': void this.setup.render(container); break;
             case 'api': this.api.render(container); break;
             case 'cowrite': this.coWrite.render(container); break;
             case 'writing': this.writing.render(container); break;

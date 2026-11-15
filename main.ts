@@ -74,6 +74,9 @@ import { AssetRegistryModal } from './ui/asset-registry-modal';
 import { UsageLedgerModal } from './ui/usage-ledger-modal';
 import { ProjectIndexService } from './services/project-index-service';
 import { FileTxService } from './services/file-tx';
+import { buildUsageGuide, USAGE_GUIDE_PATH } from './shared/usage-guide-content';
+import { importExampleProject } from './core/example-project-service';
+import { SetupReadinessService } from './services/setup-readiness-service';
 import { SessionPresetService } from './services/session-preset-service';
 import { MemoryGraphService } from './services/memory-graph-service';
 import { SceneContextService } from './services/scene-context-service';
@@ -1367,6 +1370,51 @@ export default class NovelWriterPlugin extends Plugin {
     }
 
     /** 打开首启向导。 */
+    /**
+     * 首启环境自检（B/社区下载可用性）：返回清单与修复建议。
+     *
+     * @returns 自检报告
+     */
+    public async runSetupReadiness() {
+        const indexService = this._projectIndex ??= new ProjectIndexService(this.app);
+        const active = this.getActiveProject() || '';
+        const service = new SetupReadinessService(this.app, {
+            hasApiKey: () => Boolean(String(this.settings.apiKey || '').trim())
+                || Object.values(this.settings.providerKeys || {}).some(key => String(key || '').trim().length > 0),
+            currentModel: () => String(this.settings.defaultModel || this.settings.flashModel || ''),
+            activeProject: () => active,
+            indexEntryCount: async (project: string) => {
+                const index = await indexService.ensure(project);
+                return index.entries.length;
+            },
+        });
+        return service.check();
+    }
+
+    /** 一键补齐「元文件」模板树 */
+    public async ensureTemplatesNow() {
+        return ensureTemplateScaffold(this.app);
+    }
+
+    /** 一键创建示例项目（已存在则不覆盖） */
+    public async createExampleProjectNow() {
+        return importExampleProject(this.app);
+    }
+
+    /** 生成/覆盖「插件使用约定」速查文档 */
+    public async writeUsageGuideNow() {
+        const path = USAGE_GUIDE_PATH;
+        const content = buildUsageGuide(PLUGIN_VERSION);
+        const dir = path.split('/').slice(0, -1).join('/');
+        if (dir && !this.app.vault.getAbstractFileByPath(dir)) {
+            await this.app.vault.createFolder(dir).catch(() => undefined); // silent-ok: 已存在时忽略
+        }
+        const existing = this.app.vault.getAbstractFileByPath(path);
+        if (existing instanceof TFile) await this.app.vault.modify(existing, content);
+        else await this.app.vault.create(path, content);
+        return { path };
+    }
+
     public openOnboarding(): void {
         new OnboardingModal(this.app, this).open();
     }

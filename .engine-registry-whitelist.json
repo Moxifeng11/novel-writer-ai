@@ -199,7 +199,7 @@
       "className": "ProjectIndexService",
       "reason": "项目索引服务按插件/视图持有自己的缓存与脏标记（main.ts 懒初始化、实体图视图内创建）",
       "category": "context-isolated",
-      "allowedInstances": 14
+      "allowedInstances": 15
     },
     {
       "className": "FileTxService",
@@ -366,6 +366,12 @@
     {
       "className": "SceneRetrievalService",
       "reason": "A2/A3 逐场检索与覆盖记录（插件入口）",
+      "category": "service",
+      "allowedInstances": 1
+    },
+    {
+      "className": "SetupReadinessService",
+      "reason": "首启环境自检（设置页/插件入口）",
       "category": "service",
       "allowedInstances": 1
     }

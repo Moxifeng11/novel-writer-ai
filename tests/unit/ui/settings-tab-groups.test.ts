@@ -130,7 +130,7 @@ function makeSettings(): NovelWriterSettingTab {
     const settings = new NovelWriterSettingTab(app as never, plugin as never);
     // 分区实例替换为桩：本测试只关心外壳（分组栏/tab 栏）DOM，不深入 18 个分区渲染
     for (const key of [
-        'api', 'knowledge', 'fingerprint', 'deconstruction', 'foreshadow', 'coWrite',
+        'setup', 'api', 'knowledge', 'fingerprint', 'deconstruction', 'foreshadow', 'coWrite',
         'writing', 'modes', 'template', 'appearance', 'projectLibrary', 'layout',
         'performance', 'rules', 'about', 'recognition', 'suggestions', 'agentBackend',
     ]) {
@@ -176,7 +176,7 @@ describe('设置 6 分组一级 tab：初屏渲染与切换（settings-tab-regro
     it('② 初屏二级 tab 只渲染 connect 组可见 tab（高级折叠 → 仅 api，agent 不出现）', () => {
         const settings = makeSettings();
         settings.display();
-        expect(visibleTabIds(settings)).toEqual(['api']);
+        expect(visibleTabIds(settings)).toEqual(['setup', 'api']);
     });
 
     it('③ 点击「✍️ 写作与协同」pill：二级 tab 切到 cowrite/writing，active 态随之迁移', () => {
