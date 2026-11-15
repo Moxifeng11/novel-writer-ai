@@ -877,6 +877,14 @@ export default class NovelWriterPlugin extends Plugin {
             }
         }
         this.engineRegistry = new EngineRegistry();
+        // 启动期可见性：命令/视图注册在引擎初始化之后，慢设备上有可感知空窗，
+        // 先用状态栏占位告知「正在初始化」（性能/生命周期审查 P2）。
+        try {
+            this._startupStatusEl = this.addStatusBarItem();
+            this._startupStatusEl.setText('⏳ 小说工坊初始化…');
+        } catch { // silent-ok: 状态栏在部分环境不可用，不影响启动
+            this._startupStatusEl = null;
+        }
         // 本地真人样文（仅本机 data 目录）：失败静默，提示词自动退化为弱约束模式
         void loadHumanSamples(this.app);
         // core 层不依赖 ui：命令的 Modal / 视图执行由本端口注入
@@ -951,6 +959,8 @@ export default class NovelWriterPlugin extends Plugin {
             const registeredCmds = listObsidianCommands(this.app).map(command => command.id).filter((id: string) => id.startsWith('novel-writer'));
             log.info('[小说工坊] 命令注册完成，已注册:', registeredCmds.length, '个命令');
             log.info('[小说工坊] 命令列表:', registeredCmds);
+            this._startupStatusEl?.remove();
+            this._startupStatusEl = null;
 
             this.initProjectIndex();
             void this.recoverFileTransactions();
@@ -1129,6 +1139,7 @@ export default class NovelWriterPlugin extends Plugin {
             // 结构断言（纯类型擦除，零运行时）：不用 instanceof Error —— DOMException 等抛出物不是 Error 子类
             log.error('[小说工坊] 插件加载失败:', (error as { message?: string }).message);
             log.error('[小说工坊] 错误堆栈:', (error as { stack?: string }).stack);
+            this._startupStatusEl?.setText('⚠️ 小说工坊初始化失败');
             new Notice(`❌ 小说工坊插件加载失败: ${(error as { message?: string }).message}`);
         }
     }
@@ -1148,6 +1159,8 @@ export default class NovelWriterPlugin extends Plugin {
      */
     /** 启动维护（模板自举/规则副本清理）只调度一次 */
     private _startupMaintenanceScheduled = false;
+    /** 启动期状态栏占位（引擎初始化完成即移除；慢设备上避免「插件没加载」的错觉） */
+    private _startupStatusEl: HTMLElement | null = null;
 
     /**
      * 延后执行启动维护：UI 注册完成后再补模板与规则副本，避免拖慢入口可用。
