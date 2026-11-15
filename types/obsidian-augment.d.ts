@@ -167,10 +167,3 @@ declare module 'obsidian' {
     }
 }
 
-/** Window 对象增强：添加 novelAI 属性 */
-declare global {
-    interface Window {
-        /** 小说工坊内部注册表（开发调试用） */
-        novelAI?: import('../shared/internal-registry').InternalRegistry;
-    }
-}

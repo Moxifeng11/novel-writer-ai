@@ -934,8 +934,6 @@ export default class NovelWriterPlugin extends Plugin {
                 }
             }
 
-            window.novelAI = this.registry;
-
             // F1（维度⑤二轮）：模板自举（56 次 exists）与规则副本清理不再挡在
             // 命令/Ribbon/视图注册之前；统一延后到布局就绪 + 1.5s 后台执行。
             this._scheduleStartupMaintenance();
@@ -2930,10 +2928,6 @@ export default class NovelWriterPlugin extends Plugin {
             log.warn('[小说工坊] 卸载时释放引擎实例失败:', e);
         }
         log.info('Novel Writer AI plugin unloaded');
-        // 卸载后 window.novelAI 会指向已销毁的 registry，外部脚本调用只会报错
-        if (window.novelAI === this.registry) {
-            delete window.novelAI;
-        }
     }
 
     /**

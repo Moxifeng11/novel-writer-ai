@@ -87,6 +87,12 @@ const RULES = [
         allow: [],
     },
     {
+        id: 'global-namespace',
+        description: '不得往 window/globalThis 挂自定义全局变量（社区审核关注全局污染；2026-11-15 删除 window.novelAI）',
+        pattern: /window\.[A-Za-z_$][\w$]*\s*=[^=]|globalThis\.[A-Za-z_$][\w$]*\s*=[^=]/,
+        allow: [],
+    },
+    {
         id: 'console-direct',
         description: '运行时不得直接 console.*，统一走 shared/logger',
         pattern: /console\.(log|debug|info|warn|error)/,
