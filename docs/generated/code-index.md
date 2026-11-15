@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 145961 | 1935 | 1532 | 79% |
 | `services/` | 51 | 16269 | 244 | 185 | 76% |
-| `shared/` | 229 | 47074 | 1983 | 1570 | 79% |
+| `shared/` | 230 | 47208 | 1989 | 1573 | 79% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106856 | 1034 | 835 | 81% |
@@ -602,6 +602,7 @@
 | `shared/reload-state.ts` | 97 | 4 | 2 |
 | `shared/report-instructions-adapter.ts` | 89 | 2 | 1 |
 | `shared/retrieval-filter.ts` | 109 | 6 | 5 |
+| `shared/rhythm-baseline-model.ts` | 134 | 6 | 3 |
 | `shared/rhythm-intent.ts` | 48 | 2 | 2 |
 | `shared/scene-anchor-model.ts` | 140 | 6 | 5 |
 | `shared/scene-body-merge.ts` | 24 | 2 | 2 |
