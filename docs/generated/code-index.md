@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 145961 | 1935 | 1532 | 79% |
 | `services/` | 50 | 16059 | 241 | 184 | 76% |
-| `shared/` | 228 | 46980 | 1980 | 1568 | 79% |
+| `shared/` | 229 | 47074 | 1983 | 1570 | 79% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106856 | 1034 | 835 | 81% |
@@ -538,6 +538,7 @@
 | `shared/keyword-tokens.ts` | 33 | 2 | 2 |
 | `shared/knowledge-position.ts` | 51 | 3 | 2 |
 | `shared/ledger-card-model.ts` | 230 | 7 | 5 |
+| `shared/ledger-migration-model.ts` | 94 | 3 | 2 |
 | `shared/link-status-compute.ts` | 345 | 12 | 5 |
 | `shared/local-ai-queue.ts` | 89 | 2 | 1 |
 | `shared/logger.ts` | 101 | 5 | 5 |
