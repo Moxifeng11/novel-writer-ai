@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146173 | 1940 | 1536 | 79% |
-| `services/` | 56 | 17106 | 257 | 190 | 74% |
+| `services/` | 57 | 17247 | 263 | 191 | 73% |
 | `shared/` | 234 | 47802 | 2015 | 1591 | 79% |
 | `core/` | 7 | 3008 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
@@ -431,6 +431,7 @@
 | `services/prompt-manager.ts` | 783 | 5 | 5 |
 | `services/prompt-templates-default.ts` | 644 | 1 | 1 |
 | `services/quality-history-store.ts` | 182 | 5 | 5 |
+| `services/relation-graph-sync-service.ts` | 141 | 6 | 1 |
 | `services/rules-registry.ts` | 146 | 7 | 5 |
 | `services/rules-service.ts` | 280 | 3 | 2 |
 | `services/scene-context-service.ts` | 126 | 2 | 1 |

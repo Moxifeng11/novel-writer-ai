@@ -320,6 +320,12 @@
       "reason": "基线采集在 main 层构造一次（插件入口）",
       "category": "service",
       "allowedInstances": 1
+    },
+    {
+      "className": "RelationGraphSyncService",
+      "reason": "C4 关系图派生同步（插件入口）",
+      "category": "service",
+      "allowedInstances": 1
     }
   ],
   "notes": {

@@ -83,6 +83,8 @@ import { UnitDerivedService } from './services/unit-derived-service';
 import { CowriteSnapshotService } from './services/cowrite-snapshot-service';
 import { ContextMetricsService } from './services/context-metrics-service';
 import { BaselineProbeService } from './services/baseline-probe-service';
+import { RelationGraphSyncService } from './services/relation-graph-sync-service';
+import { getRelationshipFilePath, parseRelationshipFile } from './engine/relationship-engine';
 import { IdRegistryService } from './services/id-registry-service';
 import { ContextSessionService } from './services/context-session-service';
 import type { SessionPresetPayload } from '@/shared/session-preset-model';
@@ -1551,6 +1553,35 @@ export default class NovelWriterPlugin extends Plugin {
      * @param dryRun - 是否只预览（默认 true）
      * @returns 重建结果
      */
+    /**
+     * 同步关系设定图（C4）：关系状态.md 为权威，设定图 rel: 边为派生，手工边保留。
+     *
+     * @param project - 项目路径
+     * @param dryRun - 是否只预览（默认 true）
+     * @returns 同步结果
+     */
+    public async syncRelationGraph(project: string, dryRun = true) {
+        const index = this._projectIndex ??= new ProjectIndexService(this.app);
+        const graphService = this._memoryGraph ??= new MemoryGraphService(this.app, index, new FileTxService(this.app));
+        const relPath = getRelationshipFilePath(project);
+        const service = new RelationGraphSyncService(this.app, {
+            readRelationFile: async () => {
+                const file = this.app.vault.getAbstractFileByPath(relPath);
+                if (!file) return '';
+                try { return await this.app.vault.adapter.read(relPath); } catch { return ''; } // silent-ok: 读失败按无关系处理
+            },
+            parseRelations: (content) => parseRelationshipFile(content).map(pair => ({ charA: pair.charA, charB: pair.charB, status: pair.state?.status })),
+            resolve: async (name) => {
+                const resolved = await index.resolve(project, name);
+                const entry = resolved.match;
+                return entry ? { id: `${entry.type ?? entry.kind}:${entry.path}` } : null;
+            },
+            loadGraph: async () => (await graphService.load(project)).graph,
+            saveGraph: async (graph) => graphService.save(project, graph, '关系状态同步'),
+        });
+        return service.sync(project, dryRun);
+    }
+
     public async rebuildAssertions(project: string, dryRun = true) {
         return rebuildAssertionsForProject(this.app, this, project, { dryRun });
     }

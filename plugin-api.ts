@@ -127,6 +127,21 @@ export interface NovelWriterEngineAPI {
      * @param dryRun - 是否只预览
      * @returns 重建结果
      */
+    /**
+     * 同步关系设定图（C4）。
+     *
+     * @param project - 项目路径
+     * @param dryRun - 是否只预览
+     * @returns 同步结果
+     */
+    syncRelationGraph(project: string, dryRun?: boolean): Promise<{
+        dryRun: boolean;
+        derived: number;
+        keptManual: number;
+        skipped: number;
+        removed: number;
+        warnings: string[];
+    }>;
     rebuildAssertions(project: string, dryRun?: boolean): Promise<{
         dryRun: boolean;
         count: number;
