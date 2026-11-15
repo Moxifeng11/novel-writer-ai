@@ -454,6 +454,8 @@ export function getDefaultSettings(): NovelWriterSettings {
         referenceBookWeights: {},
         // 桌面宠物默认开启（移动端不创建）；每日目标 3000 字，可在设置里改
         petEnabled: true,
+        // 桌宠自定义形象元数据（本机图片的实际数据存插件目录 pet-image.png，避免 data.json 膨胀）
+        petImage: null,
         dailyWordTarget: 3000,
         showWordCountInStatusBar: true,
         autoPlotEvaluation: true,

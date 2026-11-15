@@ -142,6 +142,8 @@ import { resolveActiveChapterTarget, volumeNumber, type ActiveChapterTarget, typ
 import { resolveBodyFilePath } from '@/engine/chapter-utils';
 import { LEGACY_STORAGE_KEYS } from './shared/storage-keys';
 import { ensureTemplateScaffold } from './shared/template-scaffold';
+import { normalizePetImageConfig } from './shared/pet-image-model';
+import { clearPetImageFromDisk, loadPetImageFromDisk, savePetImageToDisk } from './shared/pet-image-store';
 import { shouldAutoOpenFirstRunGuide } from './shared/first-run-guide';
 import { RulesService } from './services/rules-service';
 import { getPromptCache } from './engine/prompt-cache';
@@ -266,7 +268,7 @@ export interface NovelWriterSettings {
     mcpServers?: Array<{ id: string; name: string; transport: 'stdio' | 'http'; command?: string; args?: string[]; env?: Record<string, string>; url?: string; kind?: 'read' | 'write-setting' | 'write-prose' | 'admin'; enabled?: boolean }>;
 
     /** 桌面宠物自定义形象（用户自己的图片；未设置则用内置分层 SVG） */
-    petImage?: { path: string; cols: number; rows: number };
+    petImage?: { source?: 'vault' | 'file'; path?: string; dataUrl?: string; cols: number; rows: number } | null;
     /** 追加的 AI 高频词（C 类统计词表可配置化） */
     extraAiHighFreqWords?: string[];
     semanticKeywordOverrides?: {
@@ -726,6 +728,8 @@ export default class NovelWriterPlugin extends Plugin {
     private _writingStats: WritingStatsService | null = null;
     /** 桌面宠物浮窗（body 级，非 workspace leaf） */
     private _writingPet: WritingPet | null = null;
+    /** 本机桌宠图片的运行时 data URL（图片本体存插件目录，settings 只留元数据） */
+    private _petImageDataUrl: string | null = null;
     /** 状态栏「今日字数」元素 */
     private _wordCountStatusEl: HTMLElement | null = null;
 
@@ -938,6 +942,9 @@ export default class NovelWriterPlugin extends Plugin {
             });
             mark('engineReady');
             this._assignEngineFields();
+            // 桌宠本机图片：图片本体在插件目录，settings 只存元数据；启动时回读到内存，
+            // 这样即使 settings 被重置/迁移丢字段，也能认出用户之前选的图片。
+            await this.hydratePetImage();
             // 参考书籍：设置里的 referenceBookIds → 实例字段镜像。
             // 启动路径只走 SettingsService.loadSettings()，不会调用 plugin.loadSettings()，
             // 不在这里补一次，重启后协同写作的参考书籍与主参考会全部为空。
@@ -2378,6 +2385,124 @@ export default class NovelWriterPlugin extends Plugin {
      *
      * @param enabled - 是否启用
      */
+    /**
+     * 桌面宠物本机图片的运行时 data URL（settings 里只存元数据，图片本体在插件目录）。
+     *
+     * @returns data URL 或 null（内置形象/vault 图片时为 null）
+     */
+    public getPetImageRuntimeDataUrl(): string | null {
+        return this._petImageDataUrl;
+    }
+
+    /**
+     * 设置桌宠本机图片的运行时 data URL（不落 settings，避免 data.json 膨胀）。
+     *
+     * @param dataUrl - 图片 data URL 或 null
+     */
+    public setPetImageRuntimeDataUrl(dataUrl: string | null): void {
+        this._petImageDataUrl = dataUrl ? String(dataUrl) : null;
+    }
+
+    /**
+     * 启动时回读桌宠形象：
+     * - settings 有 dataUrl（旧数据）→ 采用并迁移成「文件 + 元数据」，从 settings 去掉大字段；
+     * - settings 只有元数据 → 从插件目录读回图片；
+     * - settings 全丢 → 只要插件目录还有图就恢复。
+     */
+    private async hydratePetImage(): Promise<void> {
+        const stored = normalizePetImageConfig((this.settings as { petImage?: unknown }).petImage);
+        if (stored?.source === 'vault') {
+            this._petImageDataUrl = null;
+            return;
+        }
+        if (stored?.source === 'file') {
+            // 旧数据：图在 settings 里 → 采用并迁移成「文件 + 元数据」
+            if (stored.dataUrl) {
+                this._petImageDataUrl = stored.dataUrl;
+                const persisted = await savePetImageToDisk(this.app, stored.dataUrl, stored);
+                if (persisted) {
+                    (this.settings as { petImage?: unknown }).petImage = {
+                        source: 'file',
+                        cols: stored.cols,
+                        rows: stored.rows,
+                    };
+                    void this.saveSettings();
+                }
+                return;
+            }
+            // 新数据：settings 只有元数据，图片本体从插件目录回读
+            const fromDisk = await loadPetImageFromDisk(this.app);
+            this._petImageDataUrl = fromDisk?.source === 'file' ? (fromDisk.dataUrl ?? null) : null;
+            if (this._petImageDataUrl) {
+                log.info('[小说工坊] 已从插件目录回读桌宠图片');
+            } else {
+                // 元数据还在但图片文件丢了：清掉元数据回到内置形象，避免设置页显示「已有图片」
+                log.warn('[小说工坊] 桌宠图片元数据存在但插件目录图片缺失，恢复到内置形象');
+                (this.settings as { petImage?: unknown }).petImage = null;
+                void this.saveSettings();
+            }
+            return;
+        }
+        // settings 没有有效图片（被重置/丢失）：只要插件目录还有图就恢复
+        const fromDisk = await loadPetImageFromDisk(this.app);
+        if (fromDisk?.source === 'file' && fromDisk.dataUrl) {
+            this._petImageDataUrl = fromDisk.dataUrl;
+            (this.settings as { petImage?: unknown }).petImage = {
+                source: 'file',
+                cols: fromDisk.cols,
+                rows: fromDisk.rows,
+            };
+            void this.saveSettings();
+            log.info('[小说工坊] 已从插件目录恢复桌宠图片（settings 曾丢失）');
+        }
+    }
+
+    /**
+     * 应用桌宠自定义形象（设置页与外部调用共用单一入口）：
+     * - 本机图片：图写插件目录，settings 只存元数据；
+     * - vault 图片：settings 存路径；
+     * - null：恢复内置形象并清磁盘图片。
+     *
+     * @param raw - 原始配置（可以是 settings 里的元数据 / 带 dataUrl 的新选择）
+     * @returns ok=是否已成功应用；configured=生效的配置元数据
+     * @example
+     * ```ts
+     * await plugin.applyPetImageConfig({ source: 'file', dataUrl, cols: 2, rows: 2 });
+     * ```
+     */
+    public async applyPetImageConfig(raw: unknown): Promise<{ ok: boolean; configured: unknown }> {
+        const config = normalizePetImageConfig(raw);
+        const settings = this.settings as { petImage?: unknown };
+        if (config?.source === 'file' && config.dataUrl) {
+            const saved = await savePetImageToDisk(this.app, config.dataUrl, config);
+            this._petImageDataUrl = config.dataUrl;
+            settings.petImage = { source: 'file', cols: config.cols, rows: config.rows };
+            if (!saved) log.warn('[小说工坊] 桌宠图片写入插件目录失败（本次会话仍可用）');
+        } else if (config?.source === 'vault') {
+            this._petImageDataUrl = null;
+            settings.petImage = { source: 'vault', path: config.path, cols: config.cols, rows: config.rows };
+        } else if (!config) {
+            this._petImageDataUrl = null;
+            settings.petImage = null;
+            await clearPetImageFromDisk(this.app);
+        }
+        await this.saveSettings();
+        this.refreshWritingPet();
+        return { ok: Boolean(config), configured: settings.petImage ?? null };
+    }
+
+    /**
+     * 清除桌宠自定义形象（恢复内置形象）：同时清内存、settings 元数据与磁盘图片。
+     */
+    public async clearPetImage(): Promise<void> {
+        this._petImageDataUrl = null;
+        (this.settings as { petImage?: unknown }).petImage = null;
+        await clearPetImageFromDisk(this.app);
+        // 元数据必须一起落盘：只清内存会让下次启动仍认为「有一张图片」而图片已不存在
+        await this.saveSettings();
+        this.refreshWritingPet();
+    }
+
     /**
      * 重新挂载桌面宠物（形象/配置变更后调用）。
      */

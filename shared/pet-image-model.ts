@@ -82,8 +82,14 @@ export function normalizePetImageConfig(raw: unknown): PetImageConfig | null {
     };
     // 本机图片（data URL）优先；否则回落到 vault 路径
     const dataUrl = String(input.dataUrl ?? '').trim();
-    if (input.source === 'file' || (dataUrl && isImageDataUrl(dataUrl))) {
+    if (input.source === 'file') {
+        // 持久化后的本机图片 settings 只存元数据（图片本体在插件目录），
+        // dataUrl 缺省时仍返回配置，由插件启动时回读运行时图片补全。
+        if (!dataUrl) return { source: 'file', ...grid };
         return isImageDataUrl(dataUrl) ? { source: 'file', dataUrl, ...grid } : null;
+    }
+    if (dataUrl && isImageDataUrl(dataUrl)) {
+        return { source: 'file', dataUrl, ...grid };
     }
     const path = String(input.path ?? '').trim();
     if (!isSupportedImagePath(path)) return null;

@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146600 | 1950 | 1544 | 79% |
 | `services/` | 65 | 18925 | 291 | 200 | 69% |
-| `shared/` | 251 | 49768 | 2099 | 1645 | 78% |
-| `core/` | 7 | 3041 | 35 | 20 | 57% |
+| `shared/` | 252 | 50005 | 2111 | 1653 | 78% |
+| `core/` | 7 | 3043 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 283 | 108956 | 1049 | 849 | 81% |
+| `ui/` | 283 | 108978 | 1050 | 850 | 81% |
 
 ## 文件清单
 
@@ -22,7 +22,7 @@
 | `core/example-project-service.ts` | 331 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 551 | 4 | 2 |
-| `core/settings-service.ts` | 580 | 5 | 4 |
+| `core/settings-service.ts` | 582 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
@@ -585,7 +585,8 @@
 | `shared/paths.ts` | 1839 | 221 | 215 |
 | `shared/pet-activity.ts` | 131 | 8 | 5 |
 | `shared/pet-geometry.ts` | 118 | 9 | 3 |
-| `shared/pet-image-model.ts` | 186 | 11 | 7 |
+| `shared/pet-image-model.ts` | 192 | 11 | 7 |
+| `shared/pet-image-store.ts` | 231 | 12 | 8 |
 | `shared/plan-spec-model.ts` | 137 | 10 | 5 |
 | `shared/platform-export.ts` | 173 | 6 | 2 |
 | `shared/plot-eval-throttle.ts` | 105 | 5 | 5 |
@@ -884,7 +885,7 @@
 | `ui/outline-expand-modal.ts` | 880 | 2 | 1 |
 | `ui/panel-resizer.ts` | 260 | 4 | 3 |
 | `ui/password-modal.ts` | 152 | 1 | 1 |
-| `ui/pet-image-settings.ts` | 464 | 3 | 3 |
+| `ui/pet-image-settings.ts` | 465 | 3 | 3 |
 | `ui/plan-book-modal.ts` | 558 | 1 | 1 |
 | `ui/plot-canvas-modal.ts` | 366 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
@@ -986,7 +987,7 @@
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |
 | `ui/workspace-manager.ts` | 144 | 2 | 2 |
 | `ui/write-chapter-modal.ts` | 851 | 1 | 1 |
-| `ui/writing-pet.ts` | 640 | 9 | 7 |
+| `ui/writing-pet.ts` | 661 | 10 | 8 |
 | `ui/writing-stats-modal.ts` | 245 | 1 | 1 |
 | `ui/writing-stats-settings.ts` | 73 | 1 | 1 |
 | `ui/writing-style-modal.ts` | 589 | 1 | 1 |

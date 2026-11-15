@@ -138,3 +138,25 @@
 | 判定可测 | `shared/first-run-guide.ts` 纯函数（已完成/已弹过/首装/升级兜底/已有作品 5 条规则） | 5 条单测 |
 
 说明：该改动用设置里的 `templateScaffoldOnStartup`（默认开）控制模板自举；关闭后模板改为首次新建项目时按需落盘，引导仍可正常打开。
+
+### 2026-11-16 第四轮：桌宠图片重载丢失修复
+
+问题：用户反馈「每次重载插件都要重新设置桌宠图片」。
+
+定位过程：先复现——小图 / 512px 大图、vault 源与 file 源在**当前构建**下都能写入 data.json 并在 reload 后恢复（实测渲染正常），说明写入链路本身没坏；但图片 base64 存在 settings 里，任何把 `petImage` 当陌生字段的路径（重置设置、旧版迁移、data.json 手工修复、其它会话清理）都会让图片「凭空消失」。
+
+修复（改为文件持久化 + 启动自愈）：
+
+- 本机图片（`source:'file'`）图本体写到插件目录 `pet-image.png` + `pet-image.json`（cols/rows），`data.json` 只留 `{source,cols,rows}` 元数据（不再每次保存重写几百 KB base64）
+- 启动 `hydratePetImage()`：settings 有旧 dataUrl → 迁移成文件；只有元数据 → 从插件目录回读；**settings 完全丢失 → 只要插件目录还有图就恢复元数据并渲染**
+- 元数据在但图片文件丢了 → 自动清元数据回内置形象，避免设置页显示「已有图片」
+- 设置页统一走 `plugin.applyPetImageConfig()`（单一入口），清除走 `clearPetImage()`（同时清内存 / 元数据 / 磁盘文件）
+- 新增 `shared/pet-image-store.ts`（6 组单测）、`resolvePetImageConfig` 运行时合成测试（5 条）、模型规范化放宽「仅元数据」配置
+
+实机验证：
+
+1. 应用 640×320 本机图 → `data.json` 无 dataUrl、插件目录出现 png+json、桌宠渲染 data URL
+2. 连续两次 reload → 元数据 + 图片都在，runtime 352KB，桌宠正常渲染
+3. 手动清空 settings.petImage 后 reload → 从插件目录自愈（元数据恢复 + 渲染）
+4. clearPetImage → settings / data.json 均为 null、png/json 已删除
+

@@ -17,6 +17,7 @@ import {
     PET_IMAGE_MOOD_ORDER,
     type PetImageConfig,
 } from '@/shared/pet-image-model';
+import { clearPetImageFromDisk, savePetImageToDisk } from '@/shared/pet-image-store';
 
 /**
  * 图片选择器：列出 vault 内的图片文件。
@@ -183,7 +184,7 @@ export function renderPetImageSettings(
     if (current) {
         const preview = container.createDiv({ cls: 'nw-pet-image-preview' });
         const resource = current.source === 'file'
-            ? (current.dataUrl ?? '')
+            ? (current.dataUrl ?? plugin.getPetImageRuntimeDataUrl() ?? '')
             : plugin.app.vault.adapter.getResourcePath(current.path ?? '');
         preview.style.backgroundImage = `url(${resource})`;
         preview.style.backgroundSize = `${current.cols * 100}% ${current.rows * 100}%`;
@@ -203,7 +204,7 @@ async function readPetImageSize(
     config: PetImageConfig,
 ): Promise<{ width: number; height: number } | null> {
     const src = config.source === 'file'
-        ? (config.dataUrl ?? '')
+        ? (config.dataUrl ?? plugin.getPetImageRuntimeDataUrl() ?? '')
         : plugin.app.vault.adapter.getResourcePath(config.path ?? '');
     if (!src) return null;
     try {
@@ -451,13 +452,13 @@ async function applyPetImage(
     config: PetImageConfig | null,
     rerender: () => void,
 ): Promise<void> {
-    (plugin.settings as { petImage?: PetImageConfig }).petImage = config ?? undefined;
+    // 统一走插件入口：本机图片落插件目录（settings 只存元数据），
+    // 避免 data.json 膨胀与「重载后字段丢失」。
     try {
-        await plugin.saveSettings();
+        await plugin.applyPetImageConfig(config);
     } catch (error) {
         new Notice('❌ 保存桌宠形象失败：' + (error instanceof Error ? error.message : String(error)), 8000);
         return;
     }
-    plugin.refreshWritingPet();
     rerender();
 }

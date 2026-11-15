@@ -76,6 +76,25 @@ export const PET_ACTIVITY_MOOD: Record<PetActivityKind, PetMood> = {
 };
 
 /**
+ * 合成宠物图片配置：settings 里本机图片只存元数据（cols/rows），
+ * 图片本体由插件启动时从插件目录回读到运行时字段。
+ *
+ * @param deps - 宠物依赖（plugin 提供运行时 dataUrl）
+ * @returns 配置或 null
+ * @example
+ * ```ts
+ * const config = resolvePetImageConfig(deps);
+ * // settings.petImage={source:'file',cols:2,rows:2} + 运行时有图 → 返回带 dataUrl 的配置
+ * ```
+ */
+export function resolvePetImageConfig(deps: WritingPetDeps): PetImageConfig | null {
+    const config = normalizePetImageConfig((deps.plugin.settings as { petImage?: unknown }).petImage);
+    if (!config || config.source !== 'file' || config.dataUrl) return config;
+    const runtime = deps.plugin.getPetImageRuntimeDataUrl?.() ?? null;
+    return runtime ? { ...config, dataUrl: runtime } : config;
+}
+
+/**
  * 把运行时活动映射为宠物状态（无活动返回 null，由调用方回落字数状态）。
  *
  * @param kind - 活动类型
@@ -200,7 +219,7 @@ export class WritingPet {
 
     constructor(deps: WritingPetDeps) {
         this.deps = deps;
-        this.imageConfig = normalizePetImageConfig((deps.plugin.settings as { petImage?: unknown }).petImage);
+        this.imageConfig = resolvePetImageConfig(deps);
     }
 
     /**
@@ -333,7 +352,9 @@ export class WritingPet {
         if (this.imageConfig) {
             // 用户自定义形象：单图切帧（帧坐标由 applyFrame 写入 --nw-pet-frame-*）
             const resource = this.imageConfig.source === 'file'
-                ? (this.imageConfig.dataUrl ?? '')
+                ? (this.imageConfig.dataUrl
+                    ?? this.deps.plugin.getPetImageRuntimeDataUrl?.()
+                    ?? '')
                 : this.deps.plugin.app.vault.adapter.getResourcePath(this.imageConfig.path ?? '');
             const pose = floatWrap.createDiv({ cls: 'nw-pet-pose', attr: { 'aria-hidden': 'true' } });
             pose.style.backgroundImage = `url(${resource})`;
