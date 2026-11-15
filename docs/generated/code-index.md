@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 145827 | 1935 | 1532 | 79% |
-| `services/` | 47 | 15805 | 234 | 180 | 77% |
+| `services/` | 48 | 15883 | 237 | 182 | 77% |
 | `shared/` | 219 | 45630 | 1932 | 1537 | 80% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
@@ -393,6 +393,7 @@
 | `engine/writing-profile.ts` | 566 | 8 | 8 |
 | `engine/writing-quality-engine.ts` | 1376 | 14 | 13 |
 | `services/api-connectivity-service.ts` | 317 | 8 | 8 |
+| `services/assertion-context-service.ts` | 78 | 3 | 2 |
 | `services/attachment-service.ts` | 102 | 2 | 1 |
 | `services/backup-center-service.ts` | 182 | 4 | 1 |
 | `services/canon-research-service.ts` | 646 | 9 | 8 |
