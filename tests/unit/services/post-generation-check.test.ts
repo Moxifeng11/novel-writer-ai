@@ -28,6 +28,14 @@ describe('PostGenerationCheckService', () => {
         expect(report.passed).toBe(true);
     });
 
+    it('支持 characters 字段（规范场景卡）', async () => {
+        const { service } = make({
+            [`${PROJECT}/03-大纲与章节/步骤结果/第1卷/第1章/第1章_Scene展开.md`]: '## 场景1\n- characters: 林玄、路人甲\n',
+        });
+        const report = await service.check(PROJECT, '第1章');
+        expect(report.items.filter(i => i.kind === 'coverage')).toHaveLength(1);
+    });
+
     it('场景里出现无法解析的人物报 error', async () => {
         const { service } = make({
             [`${PROJECT}/03-大纲与章节/步骤结果/第1卷/第1章/第1章_Scene展开.md`]: '## 场景1\n- 在场人物：林玄、路人甲\n',

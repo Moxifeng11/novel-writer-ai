@@ -123,7 +123,7 @@ export class ConstraintBlockService {
     private extractSceneNames(sceneText: string): string[] {
         const names = new Set<string>();
         for (const line of sceneText.split('\n')) {
-            const match = line.match(/在场人物[：:]\s*(.+)/);
+            const match = line.match(/(?:在场人物|characters)[：:]\s*(.+)/);
             if (!match) continue;
             for (const name of match[1].split(/[、,，\s]+/)) {
                 if (name.trim()) names.add(name.trim());

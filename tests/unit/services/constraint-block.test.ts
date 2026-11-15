@@ -55,6 +55,16 @@ describe('ConstraintBlockService', () => {
         },
     });
 
+    it('支持 characters 字段（规范场景卡）', async () => {
+        const files = {
+            '长篇小说/甲/03-大纲与章节/步骤结果/第1卷/第1章/第1章_Scene展开.md': '## 场景1\n- characters: 林玄\n',
+        };
+        const service = make(files);
+        const result = await service.assemble('长篇小说/甲', '第1章');
+        expect(result.sceneNames).toEqual(['林玄']);
+        expect(result.blocks.some(b => b.kind === 'fact')).toBe(true);
+    });
+
     it('场景人物生成事实与口吻约束', async () => {
         const files = {
             '长篇小说/甲/03-大纲与章节/步骤结果/第1卷/第1章/第1章_Scene展开.md': '## 场景1\n- 在场人物：林玄\n',
