@@ -156,6 +156,22 @@ export interface NovelWriterEngineAPI {
      * @param chapterName - 章节名
      * @returns 约束块与渲染结果
      */
+    /**
+     * 质量面板（B4）。
+     *
+     * @param project - 项目路径
+     * @returns 面板视图
+     */
+    runQualityPanel(project: string): Promise<{
+        total: number;
+        passed: number;
+        passRate: number;
+        pendingHuman: number;
+        avgRevisionRounds: number;
+        kindRanking: Array<{ kind: string; count: number }>;
+        report: string;
+        path: string;
+    }>;
     buildConstraintBlocks(project: string, chapterName: string): Promise<{
         section: string;
         attribution: Array<{ blockId: string; anchorIds: string[] }>;

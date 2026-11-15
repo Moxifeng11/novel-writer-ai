@@ -350,6 +350,12 @@
       "reason": "B3 结构化约束块（插件入口）",
       "category": "service",
       "allowedInstances": 1
+    },
+    {
+      "className": "QualityPanelService",
+      "reason": "B4 质量面板（插件入口）",
+      "category": "service",
+      "allowedInstances": 3
     }
   ],
   "notes": {

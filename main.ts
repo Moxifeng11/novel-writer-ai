@@ -87,6 +87,8 @@ import { RelationGraphSyncService } from './services/relation-graph-sync-service
 import { PostGenerationCheckService } from './services/post-generation-check-service';
 import { TargetedRevisionService } from './services/targeted-revision-service';
 import { ConstraintBlockService, createVaultConstraintDeps } from './services/constraint-block-service';
+import { QualityPanelService } from './services/quality-panel-service';
+import { toQualityRecord } from './shared/quality-panel-model';
 import { getRelationshipFilePath, parseRelationshipFile } from './engine/relationship-engine';
 import { BodyWriter } from './engine/body-writer';
 import { IdRegistryService } from './services/id-registry-service';
@@ -1587,6 +1589,16 @@ export default class NovelWriterPlugin extends Plugin {
      * @param chapterName - 章节名
      * @returns 约束块与渲染结果
      */
+    /**
+     * 质量面板（B4）：聚合校验/修订历史，输出通过率、问题类型分布、待人工清单。
+     *
+     * @param project - 项目路径
+     * @returns 面板视图
+     */
+    public async runQualityPanel(project: string) {
+        return new QualityPanelService(this.app).view(project);
+    }
+
     public async buildConstraintBlocks(project: string, chapterName: string) {
         const index = this._projectIndex ??= new ProjectIndexService(this.app);
         const deps = createVaultConstraintDeps(this.app, async (name) => {
@@ -1632,7 +1644,12 @@ export default class NovelWriterPlugin extends Plugin {
                 await new BodyWriter({ app: this.app }).write({ path: target, raw: body, writingMode: 'manual', project: p });
             },
         });
-        return revision.revise(project, chapterName, options);
+        const outcome = await revision.revise(project, chapterName, options);
+        await new QualityPanelService(this.app).record(project, toQualityRecord(outcome.report, outcome.attempts, {
+            pendingHuman: !outcome.passed,
+            abortedReason: outcome.abortedReason,
+        }));
+        return outcome;
     }
 
     /** 找本章正文路径（章节名 + 正文） */
@@ -1663,7 +1680,9 @@ export default class NovelWriterPlugin extends Plugin {
             const entry = resolved.match;
             return entry ? (entry.id || entry.path) : null;
         });
-        return service.check(project, chapterName);
+        const report = await service.check(project, chapterName);
+        await new QualityPanelService(this.app).record(project, toQualityRecord(report));
+        return report;
     }
 
     public async syncRelationGraph(project: string, dryRun = true) {

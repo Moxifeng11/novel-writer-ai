@@ -7,8 +7,8 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146173 | 1940 | 1536 | 79% |
-| `services/` | 60 | 17873 | 275 | 195 | 71% |
-| `shared/` | 237 | 48111 | 2033 | 1599 | 79% |
+| `services/` | 61 | 17971 | 277 | 196 | 71% |
+| `shared/` | 238 | 48260 | 2039 | 1602 | 79% |
 | `core/` | 7 | 3008 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 276 | 107004 | 1035 | 836 | 81% |
@@ -433,6 +433,7 @@
 | `services/prompt-manager.ts` | 783 | 5 | 5 |
 | `services/prompt-templates-default.ts` | 644 | 1 | 1 |
 | `services/quality-history-store.ts` | 182 | 5 | 5 |
+| `services/quality-panel-service.ts` | 98 | 2 | 1 |
 | `services/relation-graph-sync-service.ts` | 141 | 6 | 1 |
 | `services/rules-registry.ts` | 146 | 7 | 5 |
 | `services/rules-service.ts` | 280 | 3 | 2 |
@@ -606,6 +607,7 @@
 | `shared/quality-benchmark.ts` | 112 | 6 | 6 |
 | `shared/quality-grade.ts` | 117 | 9 | 9 |
 | `shared/quality-history.ts` | 325 | 15 | 14 |
+| `shared/quality-panel-model.ts` | 149 | 6 | 3 |
 | `shared/quality-profile.ts` | 98 | 5 | 2 |
 | `shared/rag-sources.ts` | 182 | 10 | 10 |
 | `shared/rag/budget-pack.ts` | 86 | 4 | 3 |
