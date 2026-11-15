@@ -40,3 +40,7 @@ data/
 
 # 基准评估生成物
 benchmarks/quality/last-report.json
+
+# 桌宠本机图片（用户运行时资源，不入仓；settings 只存元数据）
+pet-image.png
+pet-image.json
