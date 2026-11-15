@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 352 | 145752 | 1934 | 1531 | 79% |
 | `services/` | 45 | 15518 | 230 | 178 | 77% |
-| `shared/` | 215 | 44987 | 1899 | 1515 | 80% |
+| `shared/` | 216 | 45252 | 1915 | 1524 | 80% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106837 | 1034 | 835 | 81% |
@@ -466,6 +466,7 @@
 | `shared/content-classifier.ts` | 248 | 11 | 11 |
 | `shared/context-budget-policy.ts` | 148 | 7 | 6 |
 | `shared/context-hygiene.ts` | 282 | 11 | 11 |
+| `shared/context-session-model.ts` | 265 | 16 | 9 |
 | `shared/context/budget-plan.ts` | 119 | 6 | 3 |
 | `shared/contrast-library.ts` | 104 | 4 | 4 |
 | `shared/creation-flow.ts` | 587 | 11 | 11 |
