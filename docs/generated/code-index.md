@@ -7,8 +7,8 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 352 | 145752 | 1934 | 1531 | 79% |
-| `services/` | 44 | 15395 | 228 | 177 | 78% |
-| `shared/` | 214 | 44874 | 1893 | 1511 | 80% |
+| `services/` | 45 | 15518 | 230 | 178 | 77% |
+| `shared/` | 215 | 44987 | 1899 | 1515 | 80% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106837 | 1034 | 835 | 81% |
@@ -405,6 +405,7 @@
 | `services/genre-classifier.ts` | 858 | 2 | 2 |
 | `services/genre-preference-memory.ts` | 377 | 3 | 3 |
 | `services/goal-service.ts` | 73 | 1 | 1 |
+| `services/id-migration-service.ts` | 123 | 2 | 1 |
 | `services/id-registry-service.ts` | 138 | 1 | 1 |
 | `services/job-service.ts` | 364 | 9 | 1 |
 | `services/knowledge-base-manager.ts` | 1584 | 6 | 4 |
@@ -515,6 +516,7 @@
 | `shared/http-transport.ts` | 235 | 6 | 2 |
 | `shared/human-feature-rubric.ts` | 180 | 7 | 6 |
 | `shared/human-similarity.ts` | 333 | 11 | 11 |
+| `shared/id-migration-model.ts` | 113 | 6 | 4 |
 | `shared/id-registry-model.ts` | 254 | 17 | 11 |
 | `shared/info-debt-board.ts` | 26 | 1 | 1 |
 | `shared/info-debt.ts` | 70 | 3 | 3 |
