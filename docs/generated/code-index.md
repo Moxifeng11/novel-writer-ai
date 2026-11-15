@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 145827 | 1935 | 1532 | 79% |
-| `services/` | 46 | 15679 | 232 | 179 | 77% |
+| `services/` | 47 | 15805 | 234 | 180 | 77% |
 | `shared/` | 218 | 45492 | 1924 | 1531 | 80% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
@@ -427,6 +427,7 @@
 | `services/quality-history-store.ts` | 182 | 5 | 5 |
 | `services/rules-registry.ts` | 146 | 7 | 5 |
 | `services/rules-service.ts` | 280 | 3 | 2 |
+| `services/scene-context-service.ts` | 126 | 2 | 1 |
 | `services/session-preset-service.ts` | 94 | 2 | 1 |
 | `services/skill-service.ts` | 74 | 1 | 1 |
 | `services/synopsis-store.ts` | 364 | 5 | 5 |
