@@ -7,7 +7,7 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 145933 | 1935 | 1532 | 79% |
-| `services/` | 49 | 15962 | 239 | 183 | 77% |
+| `services/` | 50 | 16059 | 241 | 184 | 76% |
 | `shared/` | 225 | 46550 | 1965 | 1558 | 79% |
 | `core/` | 7 | 2940 | 32 | 17 | 53% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
@@ -439,6 +439,7 @@
 | `services/worker-protocol.ts` | 121 | 12 | 12 |
 | `services/worker-runtime.ts` | 278 | 8 | 8 |
 | `services/worldview-cache-service.ts` | 627 | 4 | 4 |
+| `services/writeback-audit-service.ts` | 97 | 2 | 1 |
 | `services/writeback-review-service.ts` | 79 | 2 | 1 |
 | `services/writing-stats-service.ts` | 429 | 6 | 6 |
 | `shared/action-contract.ts` | 301 | 14 | 13 |
