@@ -8,6 +8,7 @@
 import { Notice, Setting } from 'obsidian';
 import { SettingsSection } from './section-base';
 import type { ReadinessReport, ReadinessStatus } from '@/services/setup-readiness-service';
+import { SettlementRecoveryModal } from '@/ui/settlement-recovery-modal';
 
 /** 状态 → 图标 */
 const STATUS_ICON: Record<ReadinessStatus, string> = { ok: '✅', warn: '⚠️', missing: '❌' };
@@ -98,6 +99,18 @@ export class SetupSection extends SettingsSection {
                 const result = await this.plugin.writeUsageGuideNow();
                 new Notice(`已生成：${result.path}`, 6000);
                 await refreshReport();
+            }));
+
+        new Setting(list)
+            .setName('恢复中断结算')
+            .setDesc('结算中途崩溃/退出会留下回滚日志；这里按日志回滚，避免「实体已改、正文未结算」的半套状态')
+            .addButton(button => button.setButtonText('检查并恢复').onClick(() => {
+                const project = this.plugin.getWorkbenchContext()?.project ?? this.plugin.getActiveProject() ?? '';
+                if (!project) {
+                    new Notice('请先在「项目与章节」里打开一个作品，再恢复结算', 6000);
+                    return;
+                }
+                new SettlementRecoveryModal(this.plugin, project).open();
             }));
 
         new Setting(list)

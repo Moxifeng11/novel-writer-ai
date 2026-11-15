@@ -38,6 +38,10 @@ export const CommandIds = {
     REVIEW_CHAPTER: 'novel-writer-review-chapter',
     TARGETED_REVISION: 'novel-writer-targeted-revision',
     QUALITY_DASHBOARD: 'novel-writer-quality-dashboard',
+    /** 打开质量闭环面板（校验 / 定向修订 / 历史） */
+    QUALITY_LOOP: 'novel-writer-quality-loop',
+    /** 恢复中断结算（按结算回滚日志） */
+    RECOVER_SETTLEMENT: 'novel-writer-recover-settlement',
     CHAPTER_SETTLEMENT: 'novel-writer-chapter-settlement',
     EXPAND_TEXT: 'novel-writer-expand-text',
     OUTLINE_EXPAND: 'novel-writer-outline-expand',

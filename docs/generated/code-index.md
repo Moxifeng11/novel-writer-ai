@@ -8,16 +8,16 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146442 | 1943 | 1538 | 79% |
 | `services/` | 65 | 18925 | 291 | 200 | 69% |
-| `shared/` | 247 | 49341 | 2080 | 1631 | 78% |
-| `core/` | 7 | 3032 | 35 | 20 | 57% |
+| `shared/` | 249 | 49592 | 2093 | 1642 | 78% |
+| `core/` | 7 | 3038 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 280 | 108254 | 1046 | 846 | 81% |
+| `ui/` | 282 | 108712 | 1048 | 848 | 81% |
 
 ## 文件清单
 
 | 文件 | 行数 | 导出 | 有 JSDoc |
 |---|---:|---:|---:|
-| `core/command-registry.ts` | 808 | 9 | 5 |
+| `core/command-registry.ts` | 814 | 9 | 5 |
 | `core/crypto-service.ts` | 413 | 5 | 3 |
 | `core/example-project-service.ts` | 331 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
@@ -484,7 +484,7 @@
 | `shared/character-rules.ts` | 180 | 10 | 6 |
 | `shared/clipboard.ts` | 40 | 1 | 1 |
 | `shared/co-writer-types.ts` | 113 | 0 | 0 |
-| `shared/command-ids.ts` | 133 | 2 | 2 |
+| `shared/command-ids.ts` | 137 | 2 | 2 |
 | `shared/command-mode-rules.ts` | 143 | 8 | 5 |
 | `shared/command-ui-port.ts` | 48 | 4 | 2 |
 | `shared/constraint-block-model.ts` | 109 | 7 | 3 |
@@ -617,6 +617,7 @@
 | `shared/quality-benchmark.ts` | 112 | 6 | 6 |
 | `shared/quality-grade.ts` | 117 | 9 | 9 |
 | `shared/quality-history.ts` | 325 | 15 | 14 |
+| `shared/quality-loop-model.ts` | 155 | 8 | 7 |
 | `shared/quality-panel-model.ts` | 149 | 6 | 3 |
 | `shared/quality-profile.ts` | 98 | 5 | 2 |
 | `shared/rag-sources.ts` | 182 | 10 | 10 |
@@ -644,6 +645,7 @@
 | `shared/session-retention.ts` | 186 | 6 | 6 |
 | `shared/settings-migrator.ts` | 303 | 7 | 7 |
 | `shared/settlement-instruction-guard.ts` | 139 | 5 | 3 |
+| `shared/settlement-recovery-model.ts` | 92 | 5 | 4 |
 | `shared/skill-model.ts` | 118 | 6 | 4 |
 | `shared/step-frontmatter.ts` | 154 | 5 | 4 |
 | `shared/storage-keys.ts` | 50 | 5 | 2 |
@@ -756,7 +758,7 @@
 | `ui/co-writing/suggestion-flow.ts` | 475 | 3 | 2 |
 | `ui/co-writing/suggestion-loading.ts` | 130 | 4 | 2 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
-| `ui/command-ui-executor.ts` | 708 | 2 | 2 |
+| `ui/command-ui-executor.ts` | 718 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 105 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
 | `ui/components/categorization-review-panel.ts` | 449 | 2 | 2 |
@@ -891,6 +893,7 @@
 | `ui/prompt-manager-settings.ts` | 1126 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 87 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 504 | 2 | 2 |
+| `ui/quality-loop-modal.ts` | 294 | 1 | 1 |
 | `ui/rebuild-chapters-modal.ts` | 353 | 1 | 1 |
 | `ui/refill-modal.ts` | 713 | 1 | 1 |
 | `ui/rename-project-modal.ts` | 105 | 1 | 1 |
@@ -922,8 +925,9 @@
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
 | `ui/settings/section-factory.ts` | 94 | 4 | 2 |
-| `ui/settings/setup-section.ts` | 122 | 1 | 1 |
+| `ui/settings/setup-section.ts` | 135 | 1 | 1 |
 | `ui/settings/writing-sections.ts` | 848 | 6 | 6 |
+| `ui/settlement-recovery-modal.ts` | 141 | 1 | 1 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 402 | 1 | 1 |
 | `ui/step-result-viewer-modal.ts` | 442 | 1 | 1 |

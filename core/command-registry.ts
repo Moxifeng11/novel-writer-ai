@@ -147,6 +147,8 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     { id: CommandIds.DIAGNOSE, name: '流程诊断', group: CommandGroup.Tools, description: '诊断写作流程问题' },
     { id: CommandIds.FACT_STORE, name: '知识库事实库', group: CommandGroup.Tools, description: '浏览结构化事实（可人工修正 JSON）' },
     { id: CommandIds.CONSISTENCY_AUDIT, name: '一致性审核', group: CommandGroup.Tools, description: '跨章检查数量/时间线/命名矛盾（带原文证据）' },
+    { id: CommandIds.QUALITY_LOOP, name: '质量闭环', group: CommandGroup.Tools, description: '按章运行生成后校验、定向修订，并查看通过率与历史' },
+    { id: CommandIds.RECOVER_SETTLEMENT, name: '恢复中断结算', group: CommandGroup.Tools, description: '按结算回滚日志回滚崩溃/退出遗留的半套结算写入' },
     { id: CommandIds.TOMATO_RANK, name: '番茄榜单分析', group: CommandGroup.Tools, description: '番茄小说榜单分析' },
     { id: CommandIds.REFRESH_INFO_DEBT, name: '刷新信息债看板', group: CommandGroup.Tools, description: '刷新信息债看板' },
     { id: CommandIds.SWITCH_PROVIDER, name: '快速切换 AI 提供商', group: CommandGroup.Tools, description: '快速切换 AI 提供商' },
@@ -414,6 +416,8 @@ export class CommandRegistry {
         r.register(CommandIds.CONTEXT_METRICS, async () => { await runContextMetricsCommand(this.deps); });
         r.register(CommandIds.REBUILD_UNIT_OUTLINE, async () => { await runRebuildUnitOutlineCommand(this.deps); });
         r.register(CommandIds.MCP_MANAGER, async () => { await this.ui.executeCommand(CommandIds.MCP_MANAGER); });
+        r.register(CommandIds.QUALITY_LOOP, async () => { await this.ui.executeCommand(CommandIds.QUALITY_LOOP); });
+        r.register(CommandIds.RECOVER_SETTLEMENT, async () => { await this.ui.executeCommand(CommandIds.RECOVER_SETTLEMENT); });
         r.register(CommandIds.IMPORT_EXAMPLE, async () => {
             const { created, project } = await importExampleProject(this.deps.app);
             new Notice(
@@ -534,6 +538,8 @@ export class CommandRegistry {
         addCommand({ id: CommandIds.REVIEW_CHAPTER, name: '连贯性审查', checkCallback: execGuarded(CommandIds.REVIEW_CHAPTER, LONG_ONLY) });
         addCommand({ id: CommandIds.TARGETED_REVISION, name: '定向修订（当前章）', checkCallback: execGuarded(CommandIds.TARGETED_REVISION, LONG_ONLY) });
         addCommand({ id: CommandIds.QUALITY_DASHBOARD, name: '📊 质量仪表盘', checkCallback: execGuarded(CommandIds.QUALITY_DASHBOARD, LONG_ONLY) });
+        addCommand({ id: CommandIds.QUALITY_LOOP, name: '🔁 质量闭环（校验/修订/历史）', checkCallback: execGuarded(CommandIds.QUALITY_LOOP, LONG_ONLY) });
+        addCommand({ id: CommandIds.RECOVER_SETTLEMENT, name: '🧯 恢复中断结算', checkCallback: execGuarded(CommandIds.RECOVER_SETTLEMENT, LONG_ONLY) });
         addCommand({ id: CommandIds.BATCH_CREATE, name: '批量建章', checkCallback: execGuarded(CommandIds.BATCH_CREATE, LONG_ONLY) });
         addCommand({ id: CommandIds.WORLDVIEW, name: '生成世界观', checkCallback: execGuarded(CommandIds.WORLDVIEW, LONG_ONLY) });
         addCommand({ id: CommandIds.CHARACTER, name: '生成人物', checkCallback: execGuarded(CommandIds.CHARACTER, LONG_ONLY) });

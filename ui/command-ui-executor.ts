@@ -403,6 +403,16 @@ export class CommandUiExecutor implements CommandUiPort {
                 app.workspace.trigger('novel-writer:run-targeted-revision', {} as Record<string, never>);
                 new Notice('已请求定向修订：请在写作工作台查看进度', 4000);
                 return true;
+            case CommandIds.QUALITY_LOOP: {
+                const { QualityLoopModal } = await import('@/ui/quality-loop-modal');
+                new QualityLoopModal(plugin, resolveProject()).open();
+                return true;
+            }
+            case CommandIds.RECOVER_SETTLEMENT: {
+                const { SettlementRecoveryModal } = await import('@/ui/settlement-recovery-modal');
+                new SettlementRecoveryModal(plugin, resolveProject()).open();
+                return true;
+            }
             case CommandIds.QUALITY_DASHBOARD:
                 new QualityDashboardModal(app, plugin).open();
                 return true;
