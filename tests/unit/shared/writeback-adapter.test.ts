@@ -8,8 +8,8 @@ describe('resolveMarker', () => {
     it('识别常用标记', () => {
         expect(resolveMarker('UPDATE_CHARACTER')).toEqual({ op: 'update_entity' });
         expect(resolveMarker('NEW_FORESHADOW')).toEqual({ op: 'new_entity', type: 'foreshadow' });
-        expect(resolveMarker('RELATION')).toEqual({ op: 'relation' });
-        expect(resolveMarker('GROWTH')).toEqual({ op: 'growth' });
+        expect(resolveMarker('RELATION')).toEqual({ op: 'relation', type: 'relation' });
+        expect(resolveMarker('GROWTH')).toEqual({ op: 'growth', type: 'character' });
     });
 
     it('未识别返回 null', () => {

@@ -47,9 +47,9 @@ const MARKER_TO_OP: Array<{ pattern: RegExp; op: WritebackOp; type?: EntityType 
     { pattern: /^UPDATE_FACTION/i, op: 'update_entity' },
     { pattern: /^UPDATE_LOCATION/i, op: 'update_entity' },
     { pattern: /^UPDATE_ITEM/i, op: 'update_entity' },
-    { pattern: /^RELATION/i, op: 'relation' },
-    { pattern: /^GROWTH/i, op: 'growth' },
-    { pattern: /^EMOTION/i, op: 'emotion' },
+    { pattern: /^RELATION/i, op: 'relation', type: 'relation' },
+    { pattern: /^GROWTH/i, op: 'growth', type: 'character' },
+    { pattern: /^EMOTION/i, op: 'emotion', type: 'character' },
     { pattern: /^UPDATE_FORESHADOW|^FORESHADOW/i, op: 'foreshadow' },
     { pattern: /^UPDATE_TIMELINE|^TIMELINE/i, op: 'timeline' },
 ];
