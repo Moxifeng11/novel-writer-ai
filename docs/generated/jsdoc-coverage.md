@@ -6,10 +6,10 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 30 | 30 | 100% | 50 | 50 | 100% | 0 |
 | `domains/` | 15 | 85 | 85 | 100% | 1 | 1 | 100% | 0 |
-| `engine/` | 336 | 1917 | 1916 | 100% | 1252 | 1252 | 100% | 0 |
+| `engine/` | 337 | 1924 | 1923 | 100% | 1252 | 1252 | 100% | 0 |
 | `services/` | 65 | 290 | 290 | 100% | 306 | 306 | 100% | 0 |
-| `shared/` | 247 | 2097 | 2096 | 100% | 159 | 159 | 100% | 0 |
-| `ui/` | 280 | 1038 | 1038 | 100% | 673 | 672 | 100% | 0 |
+| `shared/` | 248 | 2099 | 2098 | 100% | 159 | 159 | 100% | 0 |
+| `ui/` | 281 | 1039 | 1039 | 100% | 675 | 674 | 100% | 0 |
 
 ## 缺口最大的文件（按未注释导出数）
 
@@ -34,6 +34,7 @@
 | `engine/agent/harness/mcp-client.ts` | 6 | 0 | 5 | 0 |
 | `engine/agent/harness/mcp-http-transport.ts` | 1 | 0 | 0 | 0 |
 | `engine/agent/harness/mcp-manager.ts` | 6 | 0 | 0 | 0 |
+| `engine/agent/harness/mcp-runtime-stats.ts` | 7 | 0 | 0 | 0 |
 | `engine/agent/harness/mcp-stdio-transport.ts` | 2 | 0 | 0 | 0 |
 | `engine/agent/harness/mcp-tools.ts` | 3 | 0 | 0 | 0 |
 | `engine/agent/harness/p2-tools.ts` | 2 | 0 | 0 | 0 |
@@ -44,7 +45,6 @@
 | `engine/agent/harness/session-log.ts` | 1 | 0 | 10 | 0 |
 | `engine/agent/harness/session-snapshot.ts` | 11 | 0 | 0 | 0 |
 | `engine/agent/harness/skill-tools.ts` | 1 | 0 | 0 | 0 |
-| `engine/agent/harness/spill-store.ts` | 6 | 0 | 0 | 0 |
 
 ## @example 覆盖（公共入口）
 

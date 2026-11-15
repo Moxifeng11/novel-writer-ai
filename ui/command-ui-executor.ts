@@ -413,6 +413,11 @@ export class CommandUiExecutor implements CommandUiPort {
                 new SettlementRecoveryModal(plugin, resolveProject()).open();
                 return true;
             }
+            case CommandIds.ADVANCED_MAINTENANCE: {
+                const { AdvancedMaintenanceModal } = await import('@/ui/advanced-maintenance-modal');
+                new AdvancedMaintenanceModal(plugin, resolveProject()).open();
+                return true;
+            }
             case CommandIds.QUALITY_DASHBOARD:
                 new QualityDashboardModal(app, plugin).open();
                 return true;

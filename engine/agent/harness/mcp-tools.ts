@@ -8,6 +8,7 @@
 import type { McpToolInfo, McpClient } from './mcp-client';
 import type { HarnessTool } from './harness-types';
 import { mcpToolFullName, type McpServerConfig } from '@/shared/mcp-config';
+import { mcpCallAttempts, recordMcpCall } from './mcp-runtime-stats';
 
 /**
  * JSON Schema 的 properties → Harness 参数表（尽力而为，未知类型按 string）。
@@ -62,8 +63,24 @@ export function bridgeMcpTool(client: McpClient, config: McpServerConfig, info: 
         sideEffect: 'write',
         timeoutMs: 30_000,
         execute: async (args) => {
-            const result = await client.callTool(info.name, args);
-            return { ok: result.ok, content: result.content };
+            const attempts = mcpCallAttempts(config.kind);
+            let lastError = '';
+            for (let attempt = 1; attempt <= attempts; attempt += 1) {
+                try {
+                    const result = await client.callTool(info.name, args);
+                    if (result.ok) {
+                        recordMcpCall(config.id, true);
+                        return { ok: true, content: result.content };
+                    }
+                    lastError = result.content;
+                } catch (error) {
+                    lastError = error instanceof Error ? error.message : String(error);
+                }
+                // 只读工具失败重试一次；写类不重试，避免重复写入
+                if (attempt < attempts) await new Promise(resolve => setTimeout(resolve, 250));
+            }
+            recordMcpCall(config.id, false, lastError);
+            return { ok: false, content: lastError || '（MCP 工具调用失败）' };
         },
     };
 }

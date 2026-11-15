@@ -51,6 +51,7 @@ const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.QUALITY_DASHBOARD,
     CommandIds.QUALITY_LOOP,
     CommandIds.RECOVER_SETTLEMENT,
+    CommandIds.ADVANCED_MAINTENANCE,
     CommandIds.BATCH_CREATE,
     CommandIds.WORLDVIEW,
     CommandIds.CHARACTER,

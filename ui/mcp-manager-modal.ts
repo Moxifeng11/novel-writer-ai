@@ -9,6 +9,7 @@ import { Modal, Notice, Setting } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import { describeMcpServer, normalizeMcpServer, type McpServerConfig } from '@/shared/mcp-config';
 import { describeMcpResult, probeMcpServer } from '@/engine/agent/harness/mcp-manager';
+import { listMcpServerStats, resetMcpServerStats } from '@/engine/agent/harness/mcp-runtime-stats';
 import { McpServerFormModal } from '@/ui/mcp-server-form-modal';
 import { McpFilePickerModal } from '@/ui/mcp-file-picker-modal';
 import { resolveMcpLaunchFromPath, buildMcpLaunchPreview } from '@/shared/mcp-launch';
@@ -126,6 +127,13 @@ export class McpManagerModal extends Modal {
                 .setButtonText('🧪 生成示例服务')
                 .onClick(() => void this.createExample()))
             .addButton(button => button
+                .setButtonText('清除调用统计')
+                .onClick(() => {
+                    resetMcpServerStats();
+                    this.render();
+                    new Notice('已清除 MCP 会话调用统计');
+                }))
+            .addButton(button => button
                 .setButtonText('全部测试')
                 .setDisabled(list.length === 0)
                 .onClick(() => void this.probeAll()));
@@ -171,6 +179,15 @@ export class McpManagerModal extends Modal {
             text: describeMcpServer(server) + (server.enabled === false ? ' · 已停用' : ''),
             cls: 'setting-item-description',
         });
+        const runtime = listMcpServerStats()[server.id];
+        if (runtime && runtime.calls > 0) {
+            card.createEl('p', {
+                text: `会话内调用 ${runtime.calls} 次 · 失败 ${runtime.failures} 次`
+                    + (runtime.lastError ? ` · 最近错误：${runtime.lastError}` : '')
+                    + (runtime.lastAt ? ` · 最近调用 ${new Date(runtime.lastAt).toLocaleTimeString()}` : ''),
+                cls: 'setting-item-description',
+            });
+        }
         if (server.transport === 'stdio' && server.command) {
             card.createEl('p', {
                 text: `启动命令：${buildMcpLaunchPreview(server.command, server.args ?? [])}`,

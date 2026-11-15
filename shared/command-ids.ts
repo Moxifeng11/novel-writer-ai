@@ -42,6 +42,8 @@ export const CommandIds = {
     QUALITY_LOOP: 'novel-writer-quality-loop',
     /** 恢复中断结算（按结算回滚日志） */
     RECOVER_SETTLEMENT: 'novel-writer-recover-settlement',
+    /** 高级维护面板（关系图同步/断言重建/基线探测/场景循环） */
+    ADVANCED_MAINTENANCE: 'novel-writer-advanced-maintenance',
     CHAPTER_SETTLEMENT: 'novel-writer-chapter-settlement',
     EXPAND_TEXT: 'novel-writer-expand-text',
     OUTLINE_EXPAND: 'novel-writer-outline-expand',

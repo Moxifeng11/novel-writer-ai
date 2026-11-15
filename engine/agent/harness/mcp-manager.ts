@@ -19,8 +19,8 @@ const log = createLogger('McpManager');
 export interface McpConnectResult {
     /** 桥接后的全部工具 */
     tools: HarnessTool[];
-    /** 连接失败的服务（id → 原因） */
-    failures: Array<{ id: string; reason: string }>;
+    /** 连接失败的服务（id → 原因；attempts=已尝试次数） */
+    failures: Array<{ id: string; reason: string; attempts?: number }>;
 }
 
 /**
@@ -32,23 +32,42 @@ export interface McpConnectResult {
 export async function connectMcpServers(servers: unknown): Promise<McpConnectResult & { clients: McpClient[] }> {
     const configs = normalizeMcpServers(servers).filter(config => config.enabled !== false);
     const tools: HarnessTool[] = [];
-    const failures: Array<{ id: string; reason: string }> = [];
+    const failures: Array<{ id: string; reason: string; attempts?: number }> = [];
     const clients: McpClient[] = [];
     for (const config of configs) {
-        try {
-            const transport = config.transport === 'http'
-                ? createHttpTransport(config)
-                : createStdioTransport(config);
-            const client = new McpClient(config, transport);
-            await client.connect();
-            await client.listTools();
-            tools.push(...bridgeMcpServer(client, config));
-            clients.push(client);
-            log.info(`MCP 服务已连接：${config.id}（${client.getTools().length} 个工具）`);
-        } catch (error) {
-            const reason = error instanceof Error ? error.message : String(error);
-            failures.push({ id: config.id, reason });
-            log.warn(`MCP 服务连接失败：${config.id}`, reason);
+        // 连接失败重试一次（进程冷启动/端点刚起来时常见；不重试会误报「服务不可用」）
+        const maxAttempts = 2;
+        let lastReason = '';
+        let connected = false;
+        for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+            let client: McpClient | null = null;
+            try {
+                const transport = config.transport === 'http'
+                    ? createHttpTransport(config)
+                    : createStdioTransport(config);
+                client = new McpClient(config, transport);
+                await client.connect();
+                await client.listTools();
+                tools.push(...bridgeMcpServer(client, config));
+                clients.push(client);
+                log.info(`MCP 服务已连接：${config.id}（${client.getTools().length} 个工具，第 ${attempt} 次尝试）`);
+                connected = true;
+                break;
+            } catch (error) {
+                lastReason = error instanceof Error ? error.message : String(error);
+                try {
+                    client?.close();
+                } catch { // silent-ok: 重试前关闭失败不影响下一次尝试
+                }
+                if (attempt < maxAttempts) {
+                    log.warn(`MCP 服务连接失败，重试中：${config.id}`, lastReason);
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+            }
+        }
+        if (!connected) {
+            failures.push({ id: config.id, reason: lastReason, attempts: maxAttempts });
+            log.warn(`MCP 服务连接失败：${config.id}`, lastReason);
         }
     }
     return { tools, failures, clients };
