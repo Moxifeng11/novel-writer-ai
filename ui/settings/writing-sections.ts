@@ -454,6 +454,15 @@ export class WritingSection extends SettingsSection {
                     this.plugin.settings.bodySceneContextStrict = value;
                     await this.plugin.saveSettings();
                 }));
+        new Setting(section)
+            .setName('结算写入校验（实验）')
+            .setDesc('开启后，结算前会剔除字段值为空、缺名称、伏笔状态非法的指令并记录日志；关闭时按解析结果直接写入')
+            .addToggle((toggle) => toggle
+                .setValue(this.plugin.settings.settlementStrictWrites === true)
+                .onChange(async (value) => {
+                    this.plugin.settings.settlementStrictWrites = value;
+                    await this.plugin.saveSettings();
+                }));
 
         new Setting(section)
             .setName('上下文体检')

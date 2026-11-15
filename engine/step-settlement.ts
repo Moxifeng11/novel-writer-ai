@@ -83,6 +83,8 @@ export interface StepSettlementHost {
     showSuccess(message: string, duration?: number): void;
     showNotice(message: string, duration?: number): void;
     /** 结算后通知统一工作台刷新上下文面板 */
+    /** M12：写入前校验并剔除非法指令（默认关） */
+    strictWrites?: boolean;
     triggerContextRefresh(): void;
 }
 
@@ -168,7 +170,7 @@ export async function executeSettlement(
     try {
         const result = await host.settlementEngine.settle(
             project, chapDir, chapName, reportContent, bodyText,
-            { forceReveal: forceReveal.length > 0 ? forceReveal : undefined }
+            { forceReveal: forceReveal.length > 0 ? forceReveal : undefined, ...(host.strictWrites ? { strictWrites: true } : {}) }
         );
         settlementResult = result;
 

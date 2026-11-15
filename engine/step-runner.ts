@@ -232,6 +232,7 @@ export class StepRunner {
             showNotice: (message: string, duration?: number) =>
                 duration === undefined ? this.callbacks.showNotice(message) : this.callbacks.showNotice(message, duration),
             triggerContextRefresh: () => plugin.app.workspace.trigger('novel-writer:refresh-context-panel', {}),
+            strictWrites: plugin.settings?.settlementStrictWrites === true,
         };
     }
 

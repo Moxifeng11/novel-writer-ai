@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 353 | 146016 | 1935 | 1532 | 79% |
+| `engine/` | 353 | 146029 | 1935 | 1532 | 79% |
 | `services/` | 55 | 16880 | 253 | 189 | 75% |
-| `shared/` | 233 | 47597 | 2005 | 1585 | 79% |
-| `core/` | 7 | 2963 | 33 | 18 | 55% |
+| `shared/` | 234 | 47736 | 2010 | 1588 | 79% |
+| `core/` | 7 | 2964 | 33 | 18 | 55% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 275 | 106910 | 1034 | 835 | 81% |
+| `ui/` | 275 | 106919 | 1034 | 835 | 81% |
 
 ## 文件清单
 
@@ -22,7 +22,7 @@
 | `core/example-project-service.ts` | 314 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 550 | 4 | 2 |
-| `core/settings-service.ts` | 576 | 5 | 4 |
+| `core/settings-service.ts` | 577 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
@@ -338,7 +338,7 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 2202 | 3 | 3 |
+| `engine/settlement-engine.ts` | 2212 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 137 | 2 | 2 |
@@ -353,9 +353,9 @@
 | `engine/step-result-saver.ts` | 574 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 227 | 6 | 5 |
-| `engine/step-runner.ts` | 2360 | 2 | 1 |
+| `engine/step-runner.ts` | 2361 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
-| `engine/step-settlement.ts` | 218 | 3 | 3 |
+| `engine/step-settlement.ts` | 220 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |
 | `engine/step-validator.ts` | 809 | 7 | 7 |
 | `engine/story-beat-extractor.ts` | 73 | 1 | 1 |
@@ -623,6 +623,7 @@
 | `shared/session-preset-model.ts` | 144 | 9 | 6 |
 | `shared/session-retention.ts` | 186 | 6 | 6 |
 | `shared/settings-migrator.ts` | 303 | 7 | 7 |
+| `shared/settlement-instruction-guard.ts` | 139 | 5 | 3 |
 | `shared/skill-model.ts` | 118 | 6 | 4 |
 | `shared/step-frontmatter.ts` | 154 | 5 | 4 |
 | `shared/storage-keys.ts` | 50 | 5 | 2 |
@@ -894,7 +895,7 @@
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 58 | 1 | 1 |
 | `ui/settings/section-factory.ts` | 92 | 4 | 2 |
-| `ui/settings/writing-sections.ts` | 821 | 6 | 6 |
+| `ui/settings/writing-sections.ts` | 830 | 6 | 6 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 402 | 1 | 1 |
 | `ui/step-result-viewer-modal.ts` | 442 | 1 | 1 |

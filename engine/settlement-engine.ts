@@ -13,6 +13,7 @@ import { TFile, TFolder } from 'obsidian';
 import { ProjectIndexService } from '@/services/project-index-service';
 import { WritebackReviewService } from '@/services/writeback-review-service';
 import { WritebackAuditService } from '@/services/writeback-audit-service';
+import { renderDroppedSummary, sanitizeInstructions } from '@/shared/settlement-instruction-guard';
 import { instructionsToWritebackInputs } from '@/shared/report-instructions-adapter';
 import { splitTableCells } from '@/shared/chapter-table';
 import { parseForeshadowRevealState } from '@/shared/foreshadow-status';
@@ -71,6 +72,8 @@ function chapterNameOf(ctx: SettleContext): string {
  * 结算选项列表结构定义。
  */
 export interface SettlementOptions {
+    /** M12：写入前校验并剔除非法指令（默认关） */
+    strictWrites?: boolean;
     forceReveal?: string[];
     involvedChars?: string[];
     involvedLocs?: string[];
@@ -618,7 +621,14 @@ export class SettlementEngine {
         bodyText: string,
         options?: SettlementOptions
     ): Promise<SettlementResult> {
-        const instr = parseReport(report);
+        const parsedInstr = parseReport(report);
+        // M12 写入切换：开启后非法指令不再落盘（整条丢弃并记录）
+        let instr = parsedInstr;
+        if (options?.strictWrites) {
+            const guard = sanitizeInstructions(parsedInstr as unknown as Record<string, unknown>);
+            instr = guard.instructions as unknown as typeof parsedInstr;
+            if (guard.dropped.length > 0) log.warn('[SettlementEngine] ' + renderDroppedSummary(guard.dropped));
+        }
         // M12：回写审查（只观测、不改变写入行为；失败不阻断结算）
         if (typeof this.reviewWriteback === 'function') void this.reviewWriteback(project, chapName, instr);
         const ctx = createSettleContext(project, chapDir, chapName, bodyText, report, instr, options);

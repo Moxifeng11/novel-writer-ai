@@ -270,6 +270,8 @@ export interface NovelWriterSettings {
     coWriteContextDelta?: boolean;
     /** M5 收口：正文步严格场景注入（默认关）——整库实体/设定交给场景上下文，减少重复注入 */
     bodySceneContextStrict?: boolean;
+    /** M12 写入切换：结算前校验并剔除非法指令（默认关，开启后脏值不再落盘） */
+    settlementStrictWrites?: boolean;
     /** v4.17: 本地协同候选批量化；true=一次调用返回多方向候选 */
     coWriteCandidateBatching?: boolean;
     /** v7.2: 协同写作模型模式：'local'(本地Ollama) | 'cloud'(云端API) */
