@@ -7,8 +7,8 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 353 | 146016 | 1935 | 1532 | 79% |
-| `services/` | 53 | 16534 | 248 | 187 | 75% |
-| `shared/` | 232 | 47444 | 1998 | 1579 | 79% |
+| `services/` | 54 | 16721 | 251 | 188 | 75% |
+| `shared/` | 233 | 47545 | 2003 | 1583 | 79% |
 | `core/` | 7 | 2961 | 33 | 18 | 55% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
 | `ui/` | 275 | 106884 | 1034 | 835 | 81% |
@@ -414,6 +414,7 @@
 | `services/id-registry-service.ts` | 138 | 1 | 1 |
 | `services/job-service.ts` | 364 | 9 | 1 |
 | `services/knowledge-base-manager.ts` | 1584 | 6 | 4 |
+| `services/knowledge-migration-service.ts` | 187 | 3 | 1 |
 | `services/knowledge-original-chunker.ts` | 119 | 3 | 3 |
 | `services/ledger-migration-service.ts` | 210 | 3 | 1 |
 | `services/local-model-probe.ts` | 185 | 6 | 5 |
@@ -541,6 +542,7 @@
 | `shared/iterative-refine.ts` | 165 | 6 | 6 |
 | `shared/keyboard.ts` | 29 | 1 | 1 |
 | `shared/keyword-tokens.ts` | 33 | 2 | 2 |
+| `shared/knowledge-card-model.ts` | 101 | 5 | 4 |
 | `shared/knowledge-position.ts` | 51 | 3 | 2 |
 | `shared/ledger-card-model.ts` | 230 | 7 | 5 |
 | `shared/ledger-migration-model.ts` | 94 | 3 | 2 |

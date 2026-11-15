@@ -77,6 +77,7 @@ import { SessionPresetService } from './services/session-preset-service';
 import { MemoryGraphService } from './services/memory-graph-service';
 import { SceneContextService } from './services/scene-context-service';
 import { LedgerMigrationService } from './services/ledger-migration-service';
+import { KnowledgeMigrationService } from './services/knowledge-migration-service';
 import { CowriteSnapshotService } from './services/cowrite-snapshot-service';
 import { ContextMetricsService } from './services/context-metrics-service';
 import { IdRegistryService } from './services/id-registry-service';
@@ -1484,6 +1485,24 @@ export default class NovelWriterPlugin extends Plugin {
 
     /** 协同注入快照（内存态） */
     private readonly _cowriteSnapshots = new CowriteSnapshotService();
+
+    /**
+     * 迁移世界观/设定库（M13）：单份 md → 条目卡 + 派生视图。
+     *
+     * @param project - 项目路径
+     * @param dryRun - 是否只预览（默认 true）
+     * @returns 迁移结果
+     */
+    public async migrateKnowledge(project: string, dryRun = true) {
+        const registry = new IdRegistryService(this.app, new FileTxService(this.app));
+        const service = new KnowledgeMigrationService(this.app, async (type, pathFor) => {
+            const provisional = pathFor(type === 'worldview' ? 'WLD-0000' : 'SET-0000');
+            const id = await registry.ensureId(project, type, provisional);
+            await registry.renamePath(project, id, pathFor(id));
+            return id;
+        });
+        return service.migrate(project, dryRun);
+    }
 
     public async migrateLedger(project: string, dryRun = true) {
         const registry = new IdRegistryService(this.app, new FileTxService(this.app));

@@ -79,6 +79,22 @@ export interface NovelWriterEngineAPI {
      * @param sceneIndex - 场景序号
      * @returns 实测结果
      */
+    /**
+     * 迁移世界观/设定库（M13）。
+     *
+     * @param project - 项目路径
+     * @param dryRun - 是否只预览
+     * @returns 迁移结果
+     */
+    migrateKnowledge(project: string, dryRun?: boolean): Promise<{
+        dryRun: boolean;
+        worldview: number;
+        setting: number;
+        cards: string[];
+        backups: string[];
+        failures: Array<{ path: string; reason: string }>;
+        summary: string;
+    }>;
     measureContextMetrics(project: string, sceneIndex?: number): Promise<{
         beforeChars: number;
         afterChars: number;
