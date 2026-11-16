@@ -1200,22 +1200,14 @@ export class KnowledgeBaseView extends ItemView {
     }
 
     private renderBooksToolbar(container: HTMLElement): void {
-        const toolbar = container.createDiv({
-            cls: "nw-kb-toolbar nw-section-header nw-u-d-flex nw-u-fd-column nw-u-gap-8px",
-            attr: {}
-        });
+        const toolbar = container.createDiv({ cls: 'nw-kb-toolbar nw-section-header' });
 
-        const topRow = toolbar.createDiv({
-            cls: 'nw-u-d-flex nw-u-gap-8px nw-u-ai-center'
-        });
+        const topRow = toolbar.createDiv({ cls: 'nw-kb-toolbar-row' });
 
         const searchInput = topRow.createEl('input', {
             type: 'text',
             cls: 'nw-kb-search-input',
-            attr: {
-                placeholder: '🔍 搜索书名 / 作者 / 标签...',
-                style: 'flex:1;padding:6px 10px;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;background:var(--background-primary);color:var(--text-normal);'
-            }
+            attr: { placeholder: '🔍 搜索书名 / 作者 / 标签...' },
         });
         searchInput.value = this.filter.keyword;
         searchInput.addEventListener('input', () => {
@@ -1227,49 +1219,44 @@ export class KnowledgeBaseView extends ItemView {
 
         const importBtn = topRow.createEl('button', {
             text: '📥 导入书籍',
-            cls: 'nw-btn nw-btn-primary nw-btn-sm nw-flex-shrink-0',
+            cls: 'nw-btn nw-btn-primary nw-btn-sm nw-kb-toolbar-action',
             attr: { title: '导入一本书籍文件（txt / md / epub）' }
         });
         importBtn.addEventListener('click', () => this.handleImportBooks());
 
         const batchImportBtn = topRow.createEl('button', {
             text: '📦 批量导入',
-            cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-flex-shrink-0',
+            cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-kb-toolbar-action',
             attr: { title: '从文件夹批量导入多本书籍' }
         });
         batchImportBtn.addEventListener('click', () => this.handleBatchImport());
 
         const batchBtn = topRow.createEl('button', {
             text: '⚙️ 批量',
-            cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-flex-shrink-0',
+            cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-kb-toolbar-action',
             attr: { title: '批量操作：批量删除 / 重新拆解等' }
         });
         batchBtn.addEventListener('click', () => this.handleBatchOperations());
 
         const classifyBtn = topRow.createEl('button', {
             text: '🏷️ 批量归类',
-            cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-flex-shrink-0',
+            cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-kb-toolbar-action',
             attr: { title: '按本地规则为全部书籍生成维度标签并写入自定义标签（已有标签不重复）' }
         });
         classifyBtn.addEventListener('click', () => void this.handleBatchClassify());
 
         const reconcileBtn = topRow.createEl('button', {
             text: '🔗 向量对账',
-            cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-flex-shrink-0',
+            cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-kb-toolbar-action',
             attr: { title: '索引 ↔ 向量库对账：列出孤儿向量（向量库有、索引没有）与缺失向量；孤儿默认只报告，清理需在此确认' }
         });
         reconcileBtn.addEventListener('click', () => void this.handleVectorReconcile());
 
-        const filterRow = toolbar.createDiv({
-            cls: 'nw-u-d-flex nw-u-gap-12px nw-u-ai-center nw-u-fwr-wrap'
-        });
+        const filterRow = toolbar.createDiv({ cls: 'nw-kb-toolbar-filters' });
 
-        const statusWrap = filterRow.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-4px' });
-        statusWrap.createSpan({ text: '状态：', cls: 'nw-text-sm-muted' });
-        const statusSelect = statusWrap.createEl('select', {
-            cls: "nw-kb-select nw-u-p-4px-8px nw-u-fs-12px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-bg-background-primary nw-u-c-text-normal",
-            attr: {}
-        });
+        const statusWrap = filterRow.createDiv({ cls: 'nw-kb-filter-group' });
+        statusWrap.createSpan({ text: '状态：', cls: 'nw-kb-filter-label' });
+        const statusSelect = statusWrap.createEl('select', { cls: 'nw-kb-select' });
         const statusOptions: { value: BreakdownStatus | 'all'; label: string }[] = [
             { value: 'all', label: '全部' },
             { value: 'pending', label: '待拆解' },
@@ -1287,12 +1274,9 @@ export class KnowledgeBaseView extends ItemView {
             this.renderBookListOnly();
         });
 
-        const sortWrap = filterRow.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-4px' });
-        sortWrap.createSpan({ text: '排序：', cls: 'nw-text-sm-muted' });
-        const sortSelect = sortWrap.createEl('select', {
-            cls: "nw-kb-select nw-u-p-4px-8px nw-u-fs-12px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-bg-background-primary nw-u-c-text-normal",
-            attr: {}
-        });
+        const sortWrap = filterRow.createDiv({ cls: 'nw-kb-filter-group' });
+        sortWrap.createSpan({ text: '排序：', cls: 'nw-kb-filter-label' });
+        const sortSelect = sortWrap.createEl('select', { cls: 'nw-kb-select' });
         const sortOptions: { value: string; label: string }[] = [
             { value: 'createdAt_desc', label: '添加时间 ↓' },
             { value: 'createdAt_asc', label: '添加时间 ↑' },
@@ -1332,19 +1316,14 @@ export class KnowledgeBaseView extends ItemView {
     }
 
     private renderBooksListContent(container: HTMLElement): void {
-        const listContainer = container.createDiv({
-            cls: "nw-kb-book-list-container nw-u-flex-1 nw-u-ovy-auto nw-u-p-12px",
-            attr: {}
-        });
+        const listContainer = container.createDiv({ cls: 'nw-kb-book-list-container' });
 
         const books = this.getFilteredBooks();
 
         if (this.renderBooksLoadError(listContainer)) return;
 
-        const header = listContainer.createDiv({
-            cls: 'nw-u-marginbottom-12px nw-u-d-flex nw-u-ai-center nw-u-jc-space-between'
-        });
-        header.createSpan({ text: `共 ${books.length} 本书籍`, cls: 'nw-text-sm-muted' });
+        const header = listContainer.createDiv({ cls: 'nw-kb-book-list-header' });
+        header.createSpan({ text: `共 ${books.length} 本书籍`, cls: 'nw-kb-book-list-count' });
 
         if (books.length === 0) {
             this.renderBooksEmptyState(listContainer);
@@ -1352,8 +1331,7 @@ export class KnowledgeBaseView extends ItemView {
         }
 
         const grid = listContainer.createDiv({
-            cls: "nw-kb-book-grid nw-u-d-grid nw-u-gtc-repeat-auto-fill-minma-3 nw-u-gap-12px",
-            attr: {}
+            cls: 'nw-kb-book-grid',
         });
 
         books.forEach(book => {
@@ -1397,8 +1375,7 @@ export class KnowledgeBaseView extends ItemView {
         }
 
         const grid = containerEl.createDiv({
-            cls: "nw-kb-book-grid nw-u-d-grid nw-u-gtc-repeat-auto-fill-minma-3 nw-u-gap-12px",
-            attr: {}
+            cls: 'nw-kb-book-grid',
         });
 
         books.forEach(book => {

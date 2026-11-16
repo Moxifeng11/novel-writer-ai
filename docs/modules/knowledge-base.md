@@ -1,6 +1,6 @@
 # 知识库 / 设定（视觉重构）
 
-> 模块页（Module Page）。状态：**doing（视觉重构 Slice A 完成 2026-11-16）**
+> 模块页（Module Page）。状态：**doing（视觉重构 Slice A+B 完成 2026-11-16）**
 > 规范：[视觉重构规范](../design/2026-11-16-visual-refactor-standard.md)
 > 基线：[`docs/quality/visual-baseline/kb-books.json`](../quality/visual-baseline/kb-books.json)
 
@@ -64,11 +64,53 @@
    `button:not(.clickable-icon)` (0,1,1)，样式没生效、按钮退回默认外观。
    → 改为 `button.nw-kb-nav-btn`。
 
+## 3.5 Slice B：工具栏与书籍卡片（2026-11-16 完成）
+
+**改动**
+
+- 工具栏：`nw-kb-toolbar` / `-toolbar-row` / `-toolbar-action` / `-toolbar-filters` /
+  `-filter-group` / `-filter-label` / `nw-kb-select` 全部落地；
+  搜索框去掉内联样式。
+- 列表：`nw-kb-book-list-container` / `-list-header` / `-list-count` / `nw-kb-book-grid` 落地。
+- 卡片（`kb-book-card.ts`）：根：nw-kb-book-card + --selected（替换 is-selected 裸状态类）；头部/标题/状态徽标/警告/元信息/进度/标签/页脚全部语义化；状态色调从内联 STATUS_TONE_STYLES 改为修饰类 --success/--info/--danger/--warning/--muted；进度条宽度改走 CSS 变量 --nw-progress。
+- 该文件工具类 39 → **0**，内联 style 4 → **0**。
+
+**发现并修掉的「死类 / 未定义类」（本次最大价值）**
+
+| 类名 | 状态 | 实际后果 |
+| --- | --- | --- |
+| `nw-kb-book-card` | 从未定义 | 卡片基础样式全靠内联样式 |
+| `nw-kb-book-grid` | 从未定义 | 网格布局其实由工具类 `nw-u-d-grid` 撑着；语义类名是空的 |
+| `nw-kb-toolbar` | 从未定义 | 同上（工具类撑着） |
+| `nw-kb-select` | 从未定义 | 下拉样式由 6 个工具类拼出 |
+| `nw-hover-border` | 从未定义 | 卡片 hover 依赖其它文件里的 `.nw-kb-book-card:hover` 侥幸生效 |
+| `nw-text-muted-11` / `nw-flex-shrink-0` | 从未定义 | 日期/进度标签/按钮防压缩全部静默失效 |
+
+**防倒退验证**
+
+| 判据 | 结果 |
+| --- | --- |
+| R1 结构 | **0 差异**（1218 节点，无增删） |
+| R2/R3 | 20 处几何 + 24 处样式差异，**全部为有意改动**（见下） |
+
+有意改动（已在基线 `acceptedDiffs` 中记录）：
+
+1. 列表容器改 `flex` 列：原先只靠工具类，滚动与高度分配不稳。
+2. 卡片日期/进度标签接上设计意图（11px 弱化色），卡片高度 −5px。
+3. 状态徽标改用项目设计 token（`--nw-success/--nw-info/--nw-danger/--nw-warning`），
+   与全站一致（原为局部硬编码色）。
+
+**过程中被门禁抓到的真回归（已修）**
+
+- 搜索框：`.nw-kb-search-input` 特异性 (0,1,0) 低于 Obsidian 的 `input[type=text]` (0,1,1)，
+  去掉内联样式后外观退回默认输入框 → 改为 `input.nw-kb-search-input` 并复现原取值。
+- 质量分颜色一度被改成 `--nw-warning`（#f59e0b），与原 `--text-warning` 不一致 → 已回退。
+
 ## 4. 后续 slice 清单
 
 | # | Slice | 文件 | 目标 |
 | --- | --- | --- | --- |
-| B | 书籍工具栏与卡片 | `knowledge-base-view.ts`（`renderBooksToolbar` / `createBookCard`） | `nw-kb-toolbar` / `nw-kb-book-card` 归位 |
+| ~~B~~ | ~~书籍工具栏与卡片~~ | ~~已完成 2026-11-16~~ | ~~工具类 39 → 0~~ |
 | C | 详情外壳与概览区 | `book-detail-renderer.ts` 前 1/3 | `nw-kb-detail-*` |
 | D | 详情：角色/文风/情感区 | 同上 | 同上 |
 | E | 详情：伏笔/商业/易读性区 | 同上 | 同上 |

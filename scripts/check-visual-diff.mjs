@@ -117,6 +117,16 @@ if (problems.length === 0) {
 }
 
 for (const problem of problems) console.error(`  - ${problem}`);
+
+// --accept：确认这些差异是有意改动时，覆盖基线并把原因写进快照，便于追溯
+if (has('accept')) {
+    const note = flag('note') ?? '（未填写原因）';
+    const accepted = { ...after, acceptedDiffs: { note, at: new Date().toISOString(), counts: { structure: removed.length + added.length, geometry: rectDrift, style: styleDrift } } };
+    writeFileSync(files[0], JSON.stringify(accepted));
+    console.log(`\n✅ 已接受差异并更新基线: ${files[0]}\n   原因: ${note}`);
+    process.exit(0);
+}
+
 if (verbose) {
     console.error(`\n共 ${problems.length} 条差异；如为有意改动，确认后用 --update 更新基线并写明原因。`);
 }

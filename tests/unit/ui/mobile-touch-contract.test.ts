@@ -96,7 +96,8 @@ describe('触屏接线契约', () => {
     });
 
     it('知识卡操作在无 hover 设备常显，并支持键盘聚焦', () => {
-        const css = read('styles-src/26-cleanup-utilities.css');
+        // 2026-11-16 视觉重构：知识库卡片规则已从 26 号迁到 27 号模块文件
+        const css = read('styles-src/27-knowledge-base.css');
         expect(css).toContain('@media (hover: none)');
         expect(css).toContain('.nw-kb-book-card:focus-within .nw-kb-card-actions');
         const touchBlock = css.slice(css.indexOf('@media (hover: none)'));

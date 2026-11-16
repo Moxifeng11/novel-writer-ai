@@ -274,7 +274,9 @@ describe('ContextPanel.render（时间线与压缩警告）', () => {
 
 /** 收集子树里每个元素的 style 对象（cssText 直接赋值场景） */
 function collectStyles(el: FakeEl): Array<{ cssText?: string }> {
-    const out: Array<{ cssText?: string }> = [el.style];
+    // FakeEl.style 现在带 setProperty/getPropertyValue（贴近真实 CSSStyleDeclaration），
+    // 这里只关心 cssText，用索引签名断言避免多余属性冲突。
+    const out: Array<{ cssText?: string }> = [el.style as { cssText?: string }];
     el.children.forEach(c => out.push(...collectStyles(c)));
     return out;
 }

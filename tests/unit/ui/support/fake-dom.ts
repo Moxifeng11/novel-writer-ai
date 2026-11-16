@@ -22,11 +22,30 @@ export class FakeEl {
     attr: Record<string, string> = {};
     children: FakeEl[] = [];
     listeners = new Map<string, Array<(e: unknown) => void>>();
-    /** 内联样式（真实运行时是 CSSStyleDeclaration；测试只做赋值/读取） */
-    style: Record<string, string> = {};
+    /**
+     * 内联样式（真实运行时是 CSSStyleDeclaration）。
+     *
+     * 支持两种写法：`el.style.color = 'red'` 与 `el.style.setProperty('--x', '1')`
+     * ——后者是自定义属性（CSS 变量）的唯一写法，替身必须同样支持，
+     * 否则组件只能退回 setAttribute('style')，而项目禁止静态内联样式。
+     */
+    style: Record<string, string> & {
+        setProperty: (name: string, value: string) => void;
+        getPropertyValue: (name: string) => string;
+    };
 
     constructor(tag = 'div') {
         this.tagName = tag;
+        const store: Record<string, string> = {};
+        Object.defineProperty(store, 'setProperty', {
+            value: (name: string, value: string) => { store[name] = String(value); },
+            enumerable: false,
+        });
+        Object.defineProperty(store, 'getPropertyValue', {
+            value: (name: string) => store[name] ?? '',
+            enumerable: false,
+        });
+        this.style = store as FakeEl['style'];
     }
 
     get classList(): {

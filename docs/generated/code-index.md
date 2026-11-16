@@ -11,7 +11,7 @@
 | `shared/` | 255 | 50850 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3307 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 300 | 113847 | 1155 | 917 | 79% |
+| `ui/` | 300 | 113791 | 1155 | 917 | 79% |
 
 ## 文件清单
 
@@ -981,7 +981,7 @@
 | `ui/views/fingerprint-scope-logic.ts` | 98 | 9 | 4 |
 | `ui/views/fingerprint-v2-detail.ts` | 126 | 4 | 2 |
 | `ui/views/fingerprint-view-logic.ts` | 121 | 7 | 6 |
-| `ui/views/kb-book-card.ts` | 200 | 2 | 2 |
+| `ui/views/kb-book-card.ts` | 167 | 2 | 2 |
 | `ui/views/kb-book-filter.ts` | 190 | 11 | 7 |
 | `ui/views/kb-card-logic.ts` | 233 | 20 | 14 |
 | `ui/views/kb-config-import-logic.ts` | 98 | 5 | 4 |
@@ -995,7 +995,7 @@
 | `ui/views/kb-task-panel.ts` | 293 | 24 | 19 |
 | `ui/views/kb-view-logic.ts` | 117 | 7 | 4 |
 | `ui/views/knowledge-base-modals.ts` | 1379 | 4 | 4 |
-| `ui/views/knowledge-base-view.ts` | 3308 | 10 | 10 |
+| `ui/views/knowledge-base-view.ts` | 3285 | 10 | 10 |
 | `ui/views/knowledge-capability.ts` | 113 | 3 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/link-status.ts` | 117 | 2 | 1 |

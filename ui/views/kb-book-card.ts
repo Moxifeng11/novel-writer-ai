@@ -22,15 +22,6 @@ import {
     formatAuthorName,
 } from './kb-card-logic';
 
-/** 拆解状态档位 → 徽标背景/前景色（样式留在视图层，判定在 kb-card-logic） */
-const STATUS_TONE_STYLES: Record<ReturnType<typeof resolveBookStatusTone>, string> = {
-    success: 'background:rgba(46,204,113,0.15);color:#2ecc71;',
-    info: 'background:rgba(59,130,246,0.15);color:#3b82f6;',
-    danger: 'background:rgba(231,76,60,0.15);color:#e74c3c;',
-    warning: 'background:rgba(245,158,11,0.15);color:#f59e0b;',
-    muted: 'background:var(--background-secondary);color:var(--text-muted);',
-};
-
 /**
  * 书籍卡片构建所需的宿主能力集合。
  *
@@ -68,31 +59,19 @@ export interface KbBookCardHost {
  * @returns 已绑定 hover 与点击事件的卡片根元素
  */
 export function buildKbBookCard(book: BookBasicInfo, host: KbBookCardHost): HTMLElement {
+    // 2026-11-16 视觉重构：内联样式与死类（nw-hover-border/is-selected）改为语义类 + 修饰类
     const card = createDiv({
-        cls: `nw-kb-book-card${host.isSelectedBook(book.id) ? ' is-selected' : ''}`,
-        attr: {
-            style: `border:1px solid var(--background-modifier-border);border-radius:8px;padding:12px;cursor:pointer;background:var(--background-primary);transition:all 0.15s;${
-                host.isSelectedBook(book.id) ? 'border-color:var(--interactive-accent);box-shadow:0 0 0 2px rgba(var(--interactive-accent-rgb),0.1);' : ''
-            }`
-        }
+        cls: `nw-kb-book-card${host.isSelectedBook(book.id) ? ' nw-kb-book-card--selected' : ''}`,
     });
 
-    card.addClass('nw-hover-border');
-
-    const header = card.createDiv({ cls: 'nw-u-d-flex nw-u-ai-flex-start nw-u-jc-space-between nw-u-marginbottom-8px nw-u-gap-8px' });
-    const title = header.createDiv({
-        text: book.name,
-        cls: 'nw-u-fs-14px nw-u-fwt-500 nw-u-ov-hidden nw-u-textoverflow-ellipsis nw-u-d-webkit-box nw-u-clamp-2-lines nw-u-webkitboxorient-vertical nw-u-lh-1-4 nw-u-flex-1'
-    });
+    const header = card.createDiv({ cls: 'nw-kb-book-card-header' });
+    const title = header.createDiv({ text: book.name, cls: 'nw-kb-book-card-title' });
     void title;
 
     const statusTone = resolveBookStatusTone(book.breakdownStatus);
     const statusBadge = header.createSpan({
         text: host.getStatusLabel(book.breakdownStatus),
-        cls: 'nw-flex-shrink-0',
-        attr: {
-            style: `padding:2px 8px;font-size:11px;border-radius:10px;${STATUS_TONE_STYLES[statusTone]}`
-        }
+        cls: `nw-kb-book-card-status nw-kb-book-card-status--${statusTone}`,
     });
     void statusBadge;
 
@@ -100,10 +79,8 @@ export function buildKbBookCard(book: BookBasicInfo, host: KbBookCardHost): HTML
     if (shouldShowVectorWarning(book)) {
         const warning = header.createSpan({
             text: '⚠️ 向量化失败',
-            attr: {
-                title: resolveVectorWarningTitle(book),
-                style: 'padding:2px 8px;font-size:11px;border-radius:10px;background:var(--nw-danger-soft-bg);color:var(--nw-danger-soft);flex-shrink:0;margin-left:4px;'
-            }
+            cls: 'nw-kb-book-card-warning',
+            attr: { title: resolveVectorWarningTitle(book) },
         });
         // v4.83.1：单本重试入口。此前失败的书只能到设置页做「全部重向量化」，粒度太粗。
         if (host.onRetryVectorize) {
@@ -120,25 +97,23 @@ export function buildKbBookCard(book: BookBasicInfo, host: KbBookCardHost): HTML
         }
     }
 
-    const meta = card.createDiv({ cls: "nw-text-sm-muted nw-u-marginbottom-8px", attr: {} });
+    const meta = card.createDiv({ cls: 'nw-kb-book-card-meta' });
     meta.createSpan({ text: formatAuthorName(book.author) });
     meta.createSpan({ text: ' · ' + host.formatWordCount(book.wordCount) });
 
     if (shouldShowBreakdownProgress(book)) {
-        const progressWrap = card.createDiv({ cls: 'nw-u-marginbottom-8px' });
-        const bar = progressWrap.createDiv({
-            cls: 'nw-u-h-4px nw-u-bg-background-secondary nw-u-brd-2px nw-u-ov-hidden'
-        });
-        bar.createDiv({
-            attr: { style: `height:100%;width:${book.breakdownProgress}%;background:var(--interactive-accent);transition:width 0.3s;` }
-        });
+        const progressWrap = card.createDiv({ cls: 'nw-kb-book-card-progress' });
+        const bar = progressWrap.createDiv({ cls: 'nw-kb-book-card-progress-track' });
+        const fill = bar.createDiv({ cls: 'nw-kb-book-card-progress-fill' });
+        // 进度是动态数值：通过 CSS 变量传给样式表（不写死 width 内联样式）
+        fill.style.setProperty('--nw-progress', `${book.breakdownProgress}%`);
         progressWrap.createSpan({
             text: formatBreakdownProgressLabel(book),
-            cls: 'nw-text-muted-11'
+            cls: 'nw-kb-book-card-progress-label',
         });
     }
 
-    const tags = card.createDiv({ cls: "nw-flex-wrap-sm nw-u-marginbottom-8px", attr: {} });
+    const tags = card.createDiv({ cls: 'nw-kb-book-card-tags' });
     const classification = host.classifyBookInfo(book);
     const classificationPreview = selectClassificationPreview(classification);
     if (classificationPreview.length > 0) {
@@ -161,35 +136,27 @@ export function buildKbBookCard(book: BookBasicInfo, host: KbBookCardHost): HTML
         if (genreName) {
             tags.createSpan({
                 text: genreName,
-                cls: 'nw-u-p-2px-6px nw-u-fs-10px nw-u-bg-background-secondary nw-u-c-text-muted nw-u-brd-8px'
+                cls: 'nw-kb-book-card-tag'
             });
         }
     }
     selectCustomTagPreview(book.customTags, isClassificationTag).forEach(tag => {
         tags.createSpan({
             text: tag,
-            cls: 'nw-u-p-2px-6px nw-u-fs-10px nw-u-bg-background-secondary nw-u-c-text-muted nw-u-brd-8px'
+            cls: 'nw-kb-book-card-tag'
         });
     });
 
-    const footer = card.createDiv({
-        cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-paddingtop-8px nw-u-bt-1px-solid-background-m'
-    });
+    const footer = card.createDiv({ cls: 'nw-kb-book-card-footer' });
 
     const qualityText = formatQualityBadge(book.qualityScores);
     if (qualityText) {
-        footer.createSpan({
-            text: qualityText,
-            cls: 'nw-u-fs-12px nw-u-c-warning nw-u-fwt-500'
-        });
+        footer.createSpan({ text: qualityText, cls: 'nw-kb-book-card-quality' });
     } else {
         footer.createSpan();
     }
 
-    footer.createSpan({
-        text: host.formatDate(book.createdAt),
-        cls: 'nw-text-muted-11'
-    });
+    footer.createSpan({ text: host.formatDate(book.createdAt), cls: 'nw-kb-book-card-date' });
 
     card.addEventListener('click', () => {
         void host.openBookDetail(book);

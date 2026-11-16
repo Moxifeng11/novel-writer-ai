@@ -68,19 +68,17 @@ afterEach(() => {
 });
 
 describe('buildKbBookCard 基本结构', () => {
-    it('未选中：卡片带基础类、含悬停类、无 is-selected', () => {
+    it('未选中：卡片带语义基础类、无选中修饰类', () => {
         const card = buildKbBookCard(book(), host()) as unknown as FakeEl;
         expect(card.className).toContain('nw-kb-book-card');
-        expect(card.className).toContain('nw-hover-border');
-        expect(card.className).not.toContain('is-selected');
-        expect(card.getAttribute('style')).toContain('border:1px solid');
-        expect(card.getAttribute('style')).not.toContain('interactive-accent');
+        expect(card.className).not.toContain('nw-kb-book-card--selected');
+        // 视觉重构后：样式由类 + 样式表承载，不再写内联样式
+        expect(card.getAttribute('style')).toBeFalsy();
     });
 
-    it('选中：is-selected + 强调色边框', () => {
+    it('选中：加 --selected 修饰类（样式在 27-knowledge-base.css）', () => {
         const card = buildKbBookCard(book(), host({ isSelectedBook: () => true })) as unknown as FakeEl;
-        expect(card.className).toContain('is-selected');
-        expect(card.getAttribute('style')).toContain('border-color:var(--interactive-accent)');
+        expect(card.className).toContain('nw-kb-book-card--selected');
     });
 
     it('书名、状态徽标、作者与字数都渲染', () => {
@@ -124,7 +122,8 @@ describe('向量化失败警示与重试', () => {
             host({ onRetryVectorize: retry, openBookDetail: open }),
         ) as unknown as FakeEl;
 
-        const warning = card.findAll('nw-flex-shrink-0')[0];
+        // 视觉重构后：警示徽标用语义类 nw-kb-book-card-warning
+        const warning = card.findAll('nw-kb-book-card-warning')[0];
         expect(card.allText()).toContain('⚠️ 向量化失败');
         const warningSpan = card.children[0].children.find(c => c.textContent.includes('⚠️ 向量化失败'));
         expect(warningSpan?.getAttribute('title')).toBe('模型 404');
@@ -157,15 +156,17 @@ describe('拆解进度条', () => {
             host(),
         ) as unknown as FakeEl;
         expect(card.allText()).toContain('拆解中 42%');
-        const bar = card.children.find(c => c.className.includes('nw-u-marginbottom-8px') && c.children.some(x => x.className.includes('nw-u-h-4px')));
+        // 视觉重构后：进度条用语义类，宽度通过 CSS 变量 --nw-progress 传入
+        const bar = card.children.find(c => c.className.includes('nw-kb-book-card-progress'));
         const inner = bar?.children[0].children[0];
-        expect(inner?.getAttribute('style')).toContain('width:42%');
+        expect(inner?.className).toContain('nw-kb-book-card-progress-fill');
+        expect(inner?.style.getPropertyValue('--nw-progress')).toBe('42%');
     });
 
     it('拆解中但进度未知：不出现进度条', () => {
         const card = buildKbBookCard(book({ breakdownStatus: 'processing' }), host()) as unknown as FakeEl;
         expect(card.allText()).not.toContain('拆解中');
-        expect(card.findAll('nw-u-h-4px')).toHaveLength(0);
+        expect(card.findAll('nw-kb-book-card-progress-track')).toHaveLength(0);
     });
 });
 

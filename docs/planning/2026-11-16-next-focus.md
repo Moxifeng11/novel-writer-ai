@@ -580,4 +580,22 @@ CSS −5.4KB，唯一类 −141；preflight EXIT=0。
 16 组重复 class 链合并（收益低于风险）。
 
 下一轮候选：质量闭环 / 审稿模块（INDEX 下一个 todo）。
+### 2026-11-16 第二十二轮：视觉重构启动（c24fd27b）
+
+用户要求「按模块做视觉重构，命名要规范，不能质量倒退」。
+
+**先建规则与门禁**：
+- 规范 docs/design/2026-11-16-visual-refactor-standard.md：类名
+  nw-<module>-<block>[-<element>][--<modifier>]，模块短名枚举，CSS 一模块一文件；
+  防倒退判据 R1 结构 / R2 几何 / R3 计算样式 / R4 文本 / R5 单测 / R6 门禁 / R7 工具类不增。
+- 工具：scripts/visual-baseline-capture.js（Obsidian 内拍「路径→矩形+计算样式」快照，
+  样式字典化压到 210KB/1177 节点）+ scripts/check-visual-diff.mjs（违规退出码 1）。
+
+**Slice A 知识库书架外壳**：语义类替换工具类链 + 3 处内联样式改修饰类 +
+样式归位到 27-knowledge-base.css + 清死类 nw-text-muted-11；工具类 −72。
+
+**防倒退实测**：before/after 快照比对 R1~R4 全 0 差异；
+首轮抓到 2 处真实倒退（误加 overflow:hidden、按钮选择器特异性不足）并修复——证明门禁有效。
+
+后续 slice 清单见 docs/modules/knowledge-base.md §4（工具栏/卡片、详情三区、配置页、弹窗）。
 

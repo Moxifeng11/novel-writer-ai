@@ -21774,26 +21774,6 @@ body.nw-panel-resizing .nw-awb-center iframe {
 .nw-hover-border:hover {
     border-color: var(--interactive-accent);
 }
-.nw-kb-book-card .nw-kb-card-actions {
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-.nw-kb-book-card:hover .nw-kb-card-actions {
-    opacity: 1;
-}
-/* M3-6：触屏没有 hover，知识卡操作按钮必须常显；键盘聚焦时同样可见 */
-@media (hover: none) {
-    .nw-kb-book-card .nw-kb-card-actions {
-        opacity: 1;
-    }
-}
-.nw-kb-book-card:focus-within .nw-kb-card-actions {
-    opacity: 1;
-}
-.nw-kb-book-card:hover {
-    border-color: var(--interactive-accent);
-    box-shadow: var(--nw-card-shadow);
-}
 .nw-rec-row {
     background: transparent;
 }
@@ -22446,3 +22426,272 @@ button.nw-kb-nav-btn:hover {
         max-height: 110px;
     }
 }
+
+/* ── 书架工具栏（Slice B）── */
+.nw-kb-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nw-kb-toolbar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nw-kb-toolbar-action {
+    flex-shrink: 0;
+}
+
+/* 搜索框：类名的既有定义 (0,1,0) 会被 Obsidian 的 input[type=text] (0,1,1) 压住，
+   所以这里带 input 前缀，并复现原本由内联样式给出的取值（保证外观不变）。 */
+input.nw-kb-search-input {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: var(--text-normal);
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+}
+
+.nw-kb-toolbar-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.nw-kb-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.nw-kb-filter-label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* 下拉：原来靠 6 个工具类拼出来，且 nw-kb-select 从未定义 */
+.nw-kb-select {
+    padding: 4px 8px;
+    font-size: 12px;
+    color: var(--text-normal);
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+}
+
+/* → 书架列表（Slice B）── */
+.nw-kb-book-list-container {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 12px;
+    overflow-y: auto;
+}
+
+.nw-kb-book-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.nw-kb-book-list-count {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* 书籍网格：原 nw-kb-book-grid 类从未定义，书籍其实是纵向堆叠的 */
+.nw-kb-book-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    align-content: start;
+}
+
+/* ── 书籍卡片（Slice B）── */
+.nw-kb-book-card {
+    padding: 12px;
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.nw-kb-book-card:hover {
+    border-color: var(--interactive-accent);
+    box-shadow: var(--nw-card-shadow);
+}
+
+/* 卡片操作区：默认隐藏，hover/聚焦/触屏常显（自 26-cleanup 迁入） */
+.nw-kb-book-card .nw-kb-card-actions {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.nw-kb-book-card:hover .nw-kb-card-actions,
+.nw-kb-book-card:focus-within .nw-kb-card-actions {
+    opacity: 1;
+}
+
+/* M3-6：触屏没有 hover，知识卡操作按钮必须常显 */
+@media (hover: none) {
+    .nw-kb-book-card .nw-kb-card-actions {
+        opacity: 1;
+    }
+}
+
+.nw-kb-book-card--selected {
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.1);
+}
+
+.nw-kb-book-card-header {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.nw-kb-book-card-title {
+    flex: 1;
+    min-width: 0;
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+/* 状态徽标：原来由内联 tone 样式拼装，改为修饰类（颜色统一走主题变量） */
+.nw-kb-book-card-status {
+    flex-shrink: 0;
+    padding: 2px 8px;
+    font-size: 11px;
+    border-radius: 10px;
+}
+
+/* 色调沿用原实现的取色，但收敛成 --nw-* token（未定义时回退原色），
+   这样换主题时能统一覆盖，且当前外观与改造前完全一致。 */
+.nw-kb-book-card-status--success {
+    color: var(--nw-success, #2ecc71);
+    background: color-mix(in srgb, var(--nw-success, #2ecc71) 15%, transparent);
+}
+
+.nw-kb-book-card-status--info {
+    color: var(--nw-info, #3b82f6);
+    background: color-mix(in srgb, var(--nw-info, #3b82f6) 15%, transparent);
+}
+
+.nw-kb-book-card-status--danger {
+    color: var(--nw-danger, #e74c3c);
+    background: color-mix(in srgb, var(--nw-danger, #e74c3c) 15%, transparent);
+}
+
+.nw-kb-book-card-status--warning {
+    color: var(--nw-warning, #f59e0b);
+    background: color-mix(in srgb, var(--nw-warning, #f59e0b) 15%, transparent);
+}
+
+.nw-kb-book-card-status--muted {
+    color: var(--text-muted);
+    background: var(--background-secondary);
+}
+
+.nw-kb-book-card-warning {
+    flex-shrink: 0;
+    margin-left: 4px;
+    padding: 2px 8px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--nw-danger-soft, var(--text-error));
+    background: var(--nw-danger-soft-bg, var(--background-modifier-error));
+    border-radius: 10px;
+}
+
+.nw-kb-book-card-meta {
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.nw-kb-book-card-progress {
+    margin-bottom: 8px;
+}
+
+.nw-kb-book-card-progress-track {
+    height: 4px;
+    overflow: hidden;
+    background: var(--background-secondary);
+    border-radius: 2px;
+}
+
+.nw-kb-book-card-progress-fill {
+    width: var(--nw-progress, 0%);
+    height: 100%;
+    background: var(--interactive-accent);
+    transition: width 0.3s;
+}
+
+.nw-kb-book-card-progress-label {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.nw-kb-book-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.nw-kb-book-card-tag {
+    padding: 2px 6px;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--background-secondary);
+    border-radius: 8px;
+}
+
+.nw-kb-book-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.nw-kb-book-card-quality {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-warning);
+}
+
+.nw-kb-book-card-date {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* ── 窄屏：书籍卡片单列 ── */
+@container (max-width: 720px) {
+    .nw-kb-book-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .nw-kb-toolbar-row {
+        flex-wrap: wrap;
+    }
+}
+
