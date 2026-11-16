@@ -27,6 +27,7 @@ import { isStoredCiphertext } from '@/shared/secret-value';
 import { exportTextFile } from '@/shared/export-file';
 import { OperationConfirmModal } from '@/ui/components/progress';
 import { SettingsSection } from './section-base';
+import { savePendingReloadState } from '@/shared/reload-state';
 
 /**
  * 性能监控设置分区。
@@ -422,6 +423,49 @@ export class RulesSection extends SettingsSection {
     async render(container: HTMLElement): Promise<void> {
         const section = container.createEl('section');
         await this.mountRulesSection(section);
+        // 语义关键词兜底属于规则层配置，随分区渲染（原来由宿主注入 → 弹窗缺失）
+        this.renderRuleKeywords(container);
+    }
+
+    /**
+     * 渲染「关键词兜底」设置（规则层用）。
+     *
+     * 内置词表没覆盖某个说法时用户可追加；只影响「词表兜底」层，不改变结构化判定。
+     *
+     * @param container - 容器元素
+     */
+    private renderRuleKeywords(container: HTMLElement): void {
+        const overrides = this.plugin.settings.semanticKeywordOverrides ?? {};
+        const section = container.createDiv({ cls: 'nw-settings-section' });
+        new Setting(section)
+            .setName('🧩 关键词兜底（追加）')
+            .setDesc('内置词表没覆盖的说法可在此补充（逗号分隔）。只影响「词表兜底」层，不改变结构化判定。')
+            .setHeading();
+        const fields: Array<{
+            key: keyof NonNullable<typeof overrides>;
+            name: string;
+            hint: string;
+        }> = [
+            { key: 'injury', name: '伤情词', hint: '逗号分隔，如：气若游丝, 命悬一线' },
+            { key: 'action', name: '行动词', hint: '逗号分隔，如：疾掠, 腾挪' },
+            { key: 'modern', name: '现代词（时代错位）', hint: '逗号分隔，如：平板, 智能机' },
+            { key: 'location', name: '地点词', hint: '逗号分隔，如：坊市, 渡口' },
+            { key: 'drastic', name: '剧变词（死亡/重伤/能力变化）', hint: '逗号分隔，如：形神俱灭, 灰飞烟灭' },
+        ];
+        for (const field of fields) {
+            new Setting(section)
+                .setName(field.name)
+                .addTextArea(text => text
+                    .setPlaceholder(field.hint)
+                    .setValue((overrides[field.key] ?? []).join(', '))
+                    .onChange(async value => {
+                        const words = value.split(/[,，\s]+/).map(word => word.trim()).filter(Boolean);
+                        const next = { ...(this.plugin.settings.semanticKeywordOverrides ?? {}) };
+                        next[field.key] = words;
+                        this.plugin.settings.semanticKeywordOverrides = next;
+                        await this.plugin.saveSettings();
+                    }));
+        }
     }
 
     /**
@@ -672,6 +716,33 @@ export class AboutSection extends SettingsSection {
             cls: 'nw-btn nw-btn-primary nw-support-author-btn',
         });
         supportBtn.addEventListener('click', () => new SupportAuthorModal(this.app).open());
+
+        // 热重载：Obsidian 政策禁止插件自行 disable/enable 自身，所以按钮只做
+        // 「保存 + 把工作台状态写进 sessionStorage + 提示手动切换」。
+        // 原实现放在设置页最底部（任何 tab 都能看到、且是红色内联样式），位置不合理，移到这里。
+        section.createEl('h4', { text: '🧰 维护', cls: 'nw-u-marginbottom-12px-2' });
+        new Setting(section)
+            .setName('热重载插件')
+            .setDesc('Obsidian 不允许插件自行重启：点击后请到「设置 → 第三方插件」关闭再启用，工作台会自动恢复。')
+            .addButton(button => button
+                .setButtonText('🔄 准备重载')
+                .onClick(async () => {
+                    await this.plugin.saveSettings();
+                    const leaves = this.app.workspace.getLeavesOfType('novel-writer-full-writer');
+                    if (leaves.length > 0) {
+                        const view = leaves[0].view as unknown as { project?: string; chapterName?: string; volume?: string; chapDir?: string };
+                        const pending = {
+                            project: view.project || '',
+                            chapterFileName: view.chapterName || '',
+                            volume: view.volume || '',
+                            chapDir: view.chapDir || '',
+                        };
+                        this.plugin._pendingReloadState = pending;
+                        // 新实例拿不到旧实例的内存字段，必须落到 sessionStorage（读取即删）
+                        if (pending.project) savePendingReloadState(pending);
+                    }
+                    new Notice('请在「设置 → 第三方插件」中关闭再启用「小说工坊 AI」完成重载（工作台状态会自动恢复）', 6000);
+                }));
 
         section.createEl('h4', { text: '⚙️ 更新设置', cls: 'nw-u-marginbottom-12px-2' });
 

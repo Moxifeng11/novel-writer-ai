@@ -20,6 +20,7 @@ import { ForeshadowManager } from './engine/foreshadow-manager';
 import { getExecutionLedger } from './services/execution-ledger';
 import { ReviewAgent } from './engine/review-agent';
 import { NovelWriterSettingTab } from './ui/settings-tab';
+import { SETTINGS_GROUPS, SETTINGS_TAB_DEFINITIONS } from './ui/settings/section-factory';
 import { CreateProjectModal } from './ui/create-project-modal';
 import { PlanBookModal } from './ui/plan-book-modal';
 import { WriteChapterModal } from './ui/write-chapter-modal';
@@ -738,6 +739,8 @@ export default class NovelWriterPlugin extends Plugin {
     /** 命令 UI 执行端口（core 只按 id 委托，不直接依赖 ui） */
     public commandUiPort?: CommandUiPort;
     private _settingsService!: SettingsService;
+    /** 设置页实例（供命令/工作台直达某分区） */
+    private settingsTab: NovelWriterSettingTab | null = null;
     /** 热重载恢复状态 */
     public _pendingReloadState: { project: string; chapterFileName: string; volume?: string; chapDir?: string } | null = null;
     /** L2-1：卸载期有界等待视图保存（协同正文/Agent 会话） */
@@ -1120,7 +1123,10 @@ export default class NovelWriterPlugin extends Plugin {
             });
 
             log.info('[小说工坊] 添加设置面板...');
-            this.addSettingTab(new NovelWriterSettingTab(this.app, this));
+            this.settingsTab = new NovelWriterSettingTab(this.app, this);
+            this.addSettingTab(this.settingsTab);
+            // 设置直达命令（2026-11-16）：命令面板可直接打开任一分区，不必先开设置再翻 tab
+            this.registerSettingsNavigationCommands();
 
             // 2026-10-28: 恢复自定义字体（FontFace API，vault 元文件/字体/）
             void registerAllCustomFonts(this).catch(err => log.warn('[小说工坊] 自定义字体恢复失败:', err));
@@ -2394,6 +2400,45 @@ export default class NovelWriterPlugin extends Plugin {
             prunedEnabledIds: pruned.changed,
         });
         return true;
+    }
+
+    /**
+     * 打开设置页并跳到指定分区。
+     *
+     * @param tabId - 设置页签 id
+     * @param itemName - 可选：跳转后定位并高亮的设置项名
+     * @returns 无
+     * @example
+     * plugin.openSettingsTab('mcp');
+     */
+    openSettingsTab(tabId: string, itemName?: string): void {
+        // app.setting 是 Obsidian 运行时 API，类型声明里没有；显式收窄避免 any 扩散
+        const settingApi = (this.app as unknown as {
+            setting?: { open(): void; openTabById(id: string): void };
+        }).setting;
+        settingApi?.open();
+        settingApi?.openTabById(this.manifest.id);
+        window.setTimeout(() => this.settingsTab?.openTab(tabId, itemName), 120);
+    }
+
+    /**
+     * 注册「设置：打开 <分组> › <页签>」命令族。
+     *
+     * 每个 tab 一条（20 条），命令面板可直接跳转；纯注册，无副作用。
+     */
+    private registerSettingsNavigationCommands(): void {
+        const strip = (text: string): string => text.replace(/^[^\p{L}\p{N}]+/u, '');
+        for (const group of SETTINGS_GROUPS) {
+            for (const tabId of group.tabs) {
+                const tab = SETTINGS_TAB_DEFINITIONS.find(item => item.id === tabId);
+                if (!tab) continue;
+                this.addCommand({
+                    id: `open-settings-${tab.id}`,
+                    name: `设置：打开 ${strip(group.label)} › ${strip(tab.label)}`,
+                    callback: () => this.openSettingsTab(tab.id),
+                });
+            }
+        }
     }
 
     async loadSettings() {

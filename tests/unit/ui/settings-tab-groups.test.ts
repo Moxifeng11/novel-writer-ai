@@ -128,13 +128,15 @@ function makeSettings(): NovelWriterSettingTab {
         _pendingReloadState: undefined,
     };
     const settings = new NovelWriterSettingTab(app as never, plugin as never);
-    // 分区实例替换为桩：本测试只关心外壳（分组栏/tab 栏）DOM，不深入 18 个分区渲染
-    for (const key of [
-        'setup', 'api', 'knowledge', 'fingerprint', 'deconstruction', 'foreshadow', 'coWrite',
-        'writing', 'modes', 'template', 'appearance', 'projectLibrary', 'layout',
-        'performance', 'rules', 'about', 'recognition', 'suggestions', 'agentBackend',
+    // 分区实例替换为桩：本测试只关心外壳（分组栏/tab 栏）DOM，不深入各分区渲染。
+    // 2026-11-16 起分区由 sections Map 缓存（装配统一），桩要按 id 塞进 Map。
+    const sections = (settings as unknown as { sections: Map<string, unknown> }).sections;
+    for (const id of [
+        'setup', 'api', 'knowledge', 'fingerprint', 'deconstruction', 'foreshadow', 'cowrite',
+        'writing', 'modes', 'template', 'appearance', 'projects', 'layout',
+        'performance', 'rules', 'about', 'recognition', 'suggestions', 'agent', 'mcp',
     ]) {
-        (settings as unknown as Record<string, unknown>)[key] = { render: vi.fn(), renderBanner: vi.fn() };
+        sections.set(id, { render: vi.fn(), asyncLoad: false });
     }
     return settings;
 }
@@ -173,10 +175,10 @@ describe('设置 6 分组一级 tab：初屏渲染与切换（settings-tab-regro
         expect(pills[0].classList.contains('active')).toBe(true);
     });
 
-    it('② 初屏二级 tab 只渲染 connect 组可见 tab（高级折叠 → 仅 api，agent 不出现）', () => {
+    it('② 初屏二级 tab 只渲染 connect 组可见 tab（B1 后 agent/mcp 为常用）', () => {
         const settings = makeSettings();
         settings.display();
-        expect(visibleTabIds(settings)).toEqual(['setup', 'api']);
+        expect(visibleTabIds(settings)).toEqual(['setup', 'api', 'agent', 'mcp']);
     });
 
     it('③ 点击「✍️ 写作与协同」pill：二级 tab 切到 cowrite/writing，active 态随之迁移', () => {
@@ -186,8 +188,8 @@ describe('设置 6 分组一级 tab：初屏渲染与切换（settings-tab-regro
         expect(writingPill).toBeDefined();
         writingPill!.fire('click');
 
-        // 高级折叠时 writing 组可见 tab：cowrite（首个可见，自动落入）+ writing
-        expect(visibleTabIds(settings)).toEqual(['cowrite', 'writing']);
+        // 高级折叠时 writing 组可见 tab（B1 后 modes 也是常用）
+        expect(visibleTabIds(settings)).toEqual(['cowrite', 'writing', 'modes']);
         // active 态迁移：writing pill 亮、connect pill 灭
         const pills = groupPills(settings);
         expect(pills.find(p => p.getAttribute('data-group-id') === 'writing')!.classList.contains('active')).toBe(true);
@@ -198,7 +200,7 @@ describe('设置 6 分组一级 tab：初屏渲染与切换（settings-tab-regro
         const settings = makeSettings();
         settings.display();
         groupPills(settings).find(p => p.textContent?.includes('写作与协同'))!.fire('click');
-        expect(visibleTabIds(settings)).toEqual(['cowrite', 'writing']);
+        expect(visibleTabIds(settings)).toEqual(['cowrite', 'writing', 'modes']);
 
         const currentToggle = (): FakeEl => (settings as unknown as { tabBar: FakeEl }).tabBar
             .querySelectorAll('.nw-settings-tab-advanced-toggle')[0];
@@ -210,22 +212,22 @@ describe('设置 6 分组一级 tab：初屏渲染与切换（settings-tab-regro
         expect((settings as unknown as { plugin: { saveSettings: ReturnType<typeof vi.fn> } }).plugin.saveSettings).toHaveBeenCalled();
 
         currentToggle().fire('click');
-        expect(visibleTabIds(settings)).toEqual(['cowrite', 'writing']);
+        expect(visibleTabIds(settings)).toEqual(['cowrite', 'writing', 'modes']);
     });
 
     it('⑤ 展开高级后停在 modes，折叠该 tab 隐藏 → display() 回退到组内首个可见 tab（accept ③）', () => {
         const settings = makeSettings();
         (settings as unknown as { plugin: { settings: { settingsUiShowAdvanced: boolean } } })
             .plugin.settings.settingsUiShowAdvanced = true;
-        (settings as unknown as { activeTab: string }).activeTab = 'modes';
+        (settings as unknown as { activeTab: string }).activeTab = 'suggestions';
         settings.display();
         expect(visibleTabIds(settings)).toEqual(['cowrite', 'writing', 'modes', 'suggestions']);
 
-        // 折叠高级后重开设置页：modes 属 advanced 被隐藏，回退到 cowrite
+        // 折叠高级后重开设置页：suggestions 属 advanced 被隐藏，回退到 cowrite
         (settings as unknown as { plugin: { settings: { settingsUiShowAdvanced: boolean } } })
             .plugin.settings.settingsUiShowAdvanced = false;
         settings.display();
-        expect(visibleTabIds(settings)).toEqual(['cowrite', 'writing']);
+        expect(visibleTabIds(settings)).toEqual(['cowrite', 'writing', 'modes']);
         expect((settings as unknown as { activeTab: string }).activeTab).toBe('cowrite');
     });
 

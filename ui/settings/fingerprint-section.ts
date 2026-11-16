@@ -5,7 +5,7 @@
  * 查看详情、启停与删除，以及模板指纹同步到项目。
  * 来源：`ui/settings-tab.ts` L1821-2165（含 L81-85 的五个指纹相关字段）。
  */
-import { Notice } from 'obsidian';
+import { Notice, Setting } from 'obsidian';
 import { SettingsSection } from './section-base';
 import { StyleFingerprintLibrary, StyleFingerprint } from '@/engine/style-fingerprint-library';
 import { FingerprintExtractor } from '@/engine/fingerprint-extractor';
@@ -23,6 +23,9 @@ const log = createLogger('SettingsTab');
  * 指纹分区。
  */
 export class FingerprintSection extends SettingsSection {
+    /** 指纹库需要异步读盘，切回时可能已是旧数据 → 宿主显示统一刷新条 */
+    readonly asyncLoad = true;
+
     private fingerprintLibrary: StyleFingerprintLibrary | null = null;
     /** 当前库实例绑定的项目：项目切换后需 setProject 重建，否则写进旧项目 */
     private currentLibraryProject: string | null = null;
@@ -36,6 +39,8 @@ export class FingerprintSection extends SettingsSection {
      * @param container - 容器元素
      */
     async render(container: HTMLElement): Promise<void> {
+        this.renderStatKeywords(container);
+
         const section = container.createEl('section');
         section.createEl('h3', { text: '🔍 写作指纹库' });
 
@@ -77,6 +82,51 @@ export class FingerprintSection extends SettingsSection {
 
         const projectSection = section.createDiv();
         this.renderFingerprintGroup(projectSection, '项目指纹库', this.projectFingerprints, 'project', activeProject);
+    }
+
+    /**
+     * 统计词表（追加）：只影响风格与 AI 味统计口径，不改变正文判定。
+     *
+     * 与风格指纹同处一个分区；2026-11-16 从设置页宿主注入改为分区内聚，
+     * 否则设置弹窗走装配表渲染时看不到这一块。
+     *
+     * @param container - 容器元素
+     */
+    private renderStatKeywords(container: HTMLElement): void {
+        const section = container.createDiv({ cls: 'nw-settings-section' });
+        new Setting(section)
+            .setName('📊 统计词表（追加）')
+            .setDesc('只影响风格与 AI 味统计口径，不改变正文判定。')
+            .setHeading();
+        new Setting(section)
+            .setName('AI 高频词')
+            .setDesc('用于「AI 味」统计，逗号分隔。')
+            .addTextArea(text => text
+                .setPlaceholder('逗号分隔，如：不禁, 仿佛')
+                .setValue((this.plugin.settings.extraAiHighFreqWords ?? []).join(', '))
+                .onChange(async value => {
+                    this.plugin.settings.extraAiHighFreqWords = value
+                        .split(/[,，\s]+/).map(word => word.trim()).filter(Boolean);
+                    await this.plugin.saveSettings();
+                }));
+        const styleFields: Array<{ key: 'positiveEmotion' | 'negativeEmotion' | 'highIntensity'; name: string; hint: string }> = [
+            { key: 'positiveEmotion', name: '正面情绪词', hint: '逗号分隔，如：欣悦, 释然' },
+            { key: 'negativeEmotion', name: '负面情绪词', hint: '逗号分隔，如：郁结, 惶然' },
+            { key: 'highIntensity', name: '高强度情绪词', hint: '逗号分隔，如：暴怒, 狂喜' },
+        ];
+        for (const field of styleFields) {
+            new Setting(section)
+                .setName(field.name)
+                .addTextArea(text => text
+                    .setPlaceholder(field.hint)
+                    .setValue(((this.plugin.settings.styleKeywordOverrides ?? {})[field.key] ?? []).join(', '))
+                    .onChange(async value => {
+                        const next = { ...(this.plugin.settings.styleKeywordOverrides ?? {}) };
+                        next[field.key] = value.split(/[,，\s]+/).map(word => word.trim()).filter(Boolean);
+                        this.plugin.settings.styleKeywordOverrides = next;
+                        await this.plugin.saveSettings();
+                    }));
+        }
     }
 
     private renderFingerprintGroup(

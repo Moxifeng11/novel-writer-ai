@@ -19,6 +19,9 @@ import { SettingsSection } from './section-base';
  * DeconstructionSection 类。
  */
 export class DeconstructionSection extends SettingsSection {
+    /** 异步读盘分区：切回时可能已是旧数据 → 宿主显示统一刷新条 */
+    readonly asyncLoad = true;
+
     private getDeconstructionEngineSettings(): DeconstructionEngineSettings {
         const userDe = this.plugin.settings.deconstructionEngine;
         if (!userDe) {

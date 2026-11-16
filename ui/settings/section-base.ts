@@ -29,6 +29,14 @@ export interface SettingsSectionHost {
  * 设置列表分区。
  */
 export abstract class SettingsSection {
+    /**
+     * 是否为「异步加载数据」的分区（知识库 / 指纹库 / 拆解 / 伏笔）。
+     *
+     * 标记为 true 时，宿主会在分区顶部加统一的「数据可能过期 · 刷新」条，
+     * 点击调用 host.refresh() 清缓存重绘（= 重新拉数据）。
+     */
+    readonly asyncLoad: boolean = false;
+
     constructor(protected host: SettingsSectionHost) {}
 
     /**

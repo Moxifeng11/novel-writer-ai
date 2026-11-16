@@ -16,6 +16,9 @@ import { SettingsSection } from './section-base';
  * 伏笔分区。
  */
 export class ForeshadowSection extends SettingsSection {
+    /** 异步读盘分区：切回时可能已是旧数据 → 宿主显示统一刷新条 */
+    readonly asyncLoad = true;
+
     /**
      * 渲染。
      * @param container - 容器元素

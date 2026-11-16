@@ -11,7 +11,7 @@
 | `shared/` | 255 | 50850 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3307 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 284 | 109621 | 1054 | 853 | 81% |
+| `ui/` | 286 | 110143 | 1067 | 861 | 81% |
 
 ## 文件清单
 
@@ -837,12 +837,13 @@
 | `ui/full-writer/quick-tools-panel.ts` | 150 | 3 | 3 |
 | `ui/full-writer/scene-outline-controller.ts` | 1150 | 2 | 1 |
 | `ui/full-writer/setting-lib-controller.ts` | 63 | 1 | 1 |
+| `ui/full-writer/settings-menu.ts` | 85 | 4 | 3 |
 | `ui/full-writer/status-bar-controller.ts` | 90 | 2 | 2 |
 | `ui/full-writer/step-render-controller.ts` | 683 | 2 | 2 |
 | `ui/full-writer/streamlined-nav-presenter.ts` | 272 | 12 | 12 |
 | `ui/full-writer/tab-controller.ts` | 380 | 2 | 2 |
 | `ui/full-writer/template-vars-builder.ts` | 1228 | 7 | 7 |
-| `ui/full-writer/title-bar-controller.ts` | 192 | 2 | 2 |
+| `ui/full-writer/title-bar-controller.ts` | 195 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |
 | `ui/full-writer/unit-writer-controller.ts` | 797 | 2 | 2 |
@@ -875,7 +876,7 @@
 | `ui/mcp-server-form-modal.ts` | 322 | 3 | 3 |
 | `ui/memory-preview.ts` | 158 | 2 | 1 |
 | `ui/metrics-format.ts` | 103 | 6 | 4 |
-| `ui/mini-settings-modal.ts` | 107 | 1 | 0 |
+| `ui/mini-settings-modal.ts` | 185 | 1 | 0 |
 | `ui/mode-document-modal.ts` | 201 | 2 | 2 |
 | `ui/model-editor-modal.ts` | 150 | 2 | 1 |
 | `ui/model-picker-modal.ts` | 290 | 4 | 4 |
@@ -921,19 +922,20 @@
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 473 | 6 | 5 |
-| `ui/settings-tab.ts` | 405 | 1 | 1 |
+| `ui/settings-tab.ts` | 372 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 39 | 1 | 1 |
 | `ui/settings/api-section.ts` | 1663 | 1 | 1 |
-| `ui/settings/deconstruction-section.ts` | 332 | 1 | 1 |
-| `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
-| `ui/settings/foreshadow-section.ts` | 290 | 1 | 1 |
-| `ui/settings/general-sections.ts` | 1209 | 5 | 5 |
-| `ui/settings/knowledge-section.ts` | 797 | 1 | 1 |
+| `ui/settings/deconstruction-section.ts` | 335 | 1 | 1 |
+| `ui/settings/fingerprint-section.ts` | 441 | 1 | 1 |
+| `ui/settings/foreshadow-section.ts` | 293 | 1 | 1 |
+| `ui/settings/general-sections.ts` | 1280 | 5 | 5 |
+| `ui/settings/knowledge-section.ts` | 800 | 1 | 1 |
 | `ui/settings/mcp-section.ts` | 76 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
-| `ui/settings/section-base.ts` | 58 | 1 | 1 |
+| `ui/settings/section-base.ts` | 66 | 1 | 1 |
 | `ui/settings/section-factory.ts` | 94 | 4 | 2 |
+| `ui/settings/settings-search.ts` | 251 | 9 | 5 |
 | `ui/settings/setup-section.ts` | 135 | 1 | 1 |
 | `ui/settings/writing-sections.ts` | 848 | 6 | 6 |
 | `ui/settlement-recovery-modal.ts` | 141 | 1 | 1 |

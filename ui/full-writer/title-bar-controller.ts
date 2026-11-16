@@ -2,7 +2,7 @@ import { App, TFile } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
 import type { ChapterListEntry } from '@/ui/project-utils';
-import { MiniSettingsModal } from '@/ui/mini-settings-modal';
+import { openWorkbenchSettingsMenu } from './settings-menu';
 import { FullWriterStore } from './full-writer-store';
 import { renderQuickToolsPanel } from './quick-tools-panel';
 import type { ChapterRunMode } from '@/shared/chapter-run';
@@ -151,9 +151,12 @@ export class TitleBarController {
         fpBtn.setAttribute('title', '打开写作指纹库');
         fpBtn.onclick = () => this.deps.openFingerprintLibrary();
 
+        // C2（2026-11-16）：工作台「设置」不再是「只打开默认 tab」——
+        // 点开是常用分区菜单，直接进目标分区；最后一项打开完整设置页。
         const settingsBtn = secondaryRow.createEl('button', { text: '⚙️ 设置', cls: 'novel-writer-settings-btn' });
-        settingsBtn.onclick = () => {
-            new MiniSettingsModal(this.deps.app, this.deps.plugin).open();
+        settingsBtn.setAttribute('title', '打开设置（可直接跳常用分区）');
+        settingsBtn.onclick = (event) => {
+            openWorkbenchSettingsMenu(this.deps.app, this.deps.plugin, event);
         };
 
         // 常驻快捷工具条：章节相关高频工具直接可见，不再藏进弹窗

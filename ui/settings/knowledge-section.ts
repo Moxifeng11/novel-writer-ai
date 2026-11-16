@@ -29,6 +29,9 @@ const log = createLogger('SettingsTab');
  * 知识分区。
  */
 export class KnowledgeSection extends SettingsSection {
+    /** 异步读盘分区：切回时可能已是旧数据 → 宿主显示统一刷新条 */
+    readonly asyncLoad = true;
+
     private knowledgeBaseManager: KnowledgeBaseManager | null = null;
     private knowledgeTagManager: KnowledgeTagManager | null = null;
     private deconstructionScheduler: DeconstructionScheduler | null = null;
