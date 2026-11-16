@@ -83,6 +83,7 @@
 | M-38 | P1 | 402（余额不足）被归为「请求失败 HTTP 402」，看不出是钱的问题 | 单独归类「余额/额度不足」，并给充值/换端点建议 | done |
 | M-39 | P1 | 鉴权/404 失败只给错误原文，用户不知道下一步做什么 | 结果区第二行给可执行建议（Go 端点、核对实际请求 URL 等） | done |
 | M-40 | P1 | SenseNova 预设的 API 格式被存成 `openai-responses`，实际请求会打到 `/v1/responses`（SenseNova 是 OpenAI Chat 兼容） | 修正为 `openai-chat` | done |
+| M-41 | P0 | 换端点后「从 URL 获取」仍叠加旧模型（Zen 42 个 → Go 端点导入后仍 42，且 claude-opus 在 Go 端点 400） | 记录 `modelsEndpoint`，端点变化时用新列表替换 | done |
 
 ## 3.5 第二轮 Brief（2026-11-16）
 
@@ -190,3 +191,17 @@
 1. 插件在未解锁时把密文当 Key 发送 → 401，是「两个渠道都失败」的共同原因（已修 M-37）。
 2. OpenCode go 渠道当前指向 Zen 端点；该账号是 Go 订阅，Zen 会 402。正确端点应为 `https://opencode.ai/inference/go/openai/v1`（需在渠道里改，插件不擅自改，因为有第二个 OpenCode 账号）。
 3. SenseNova 协议被存成 Responses，已修正为 Chat Completions（M-40）。
+
+## 12. 第六轮实测结果（2026-11-16，解锁后）
+
+用户口令解锁（`lockedSecretCount` 由 7 → 0，6 把 Key 明文），逐渠道实测：
+
+| 渠道 | 修复前 | 根因 | 修复后 |
+| --- | --- | --- | --- |
+| OpenCode go | 403 Model access is disabled（Zen 端点） | 渠道 Base URL 指向 Zen，但账号是 Go 订阅；Zen 未开该模型权限 | 端点改为 `https://opencode.ai/inference/go/openai/v1`，重新导入 32 个模型 → **✅ deepseek-v4.1-flash 连通正常 1639ms** |
+| 日日新/SenseNova | 429 inference exceeds tpm/rpm limit | 鉴权与地址都正确，只是账号 TPM/RPM 限流 | 稍后重试 → **✅ deepseek-v4-flash 连通正常 1120ms** |
+| 日日新（自定义 custom-2） | — | — | **✅ 连通正常 1347ms** |
+
+**换端点叠旧模型（M-41）**：从 Zen 换到 Go 端点后，旧 42 个 Zen 模型（claude-opus/gpt-5 等）在 Go 端点全部 400，
+但「从 URL 获取」按「保留未列出的已配置模型」规则把它们留了下来。现改为：记录模型列表来源端点
+（`modelsEndpoint`），端点变化时用新列表**替换**而不是叠加。

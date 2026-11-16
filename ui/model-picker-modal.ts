@@ -5,8 +5,8 @@
  *   - 已配置的模型默认勾选，新候选默认勾选（空列表时全选）；
  *   - 支持搜索过滤、全选/全不选（只作用于可见项）；
  *   - 确认时「保留已配置但列表里没有的」+「加入新勾选的」，
- *     并移除用户主动取消勾选的已配置模型；
- *   - 不允许把列表清空（空列表会让上游回退到端点默认行为）。
+ *     并移除用户主动取消勾选的已配置模型；换端点时用新列表替换旧模型；
+ *   - 允许清空（用户取消全部勾选时就是清空模型列表）。
  */
 import { App, Modal, Setting } from 'obsidian';
 import type { DiscoveredModel } from '@/services/model-discovery';
@@ -62,6 +62,7 @@ export function isPickedByDefault(
  * @param candidates - 端点返回的候选模型
  * @param configured - 当前已配置的模型
  * @param isPicked - 勾选判定（由弹窗根据用户翻转状态提供）
+ * @param options - 可选；`replaceMissing` 为真时丢弃未列出的旧模型（换端点场景）
  * @returns 确认结果（允许空列表：用户取消全部勾选时就是清空）
  * @example
  * buildPickerResult([{ id: 'a' }], [], () => true).models; // ['a']
@@ -71,9 +72,16 @@ export function buildPickerResult(
     candidates: DiscoveredModel[],
     configured: string[],
     isPicked: (id: string) => boolean,
+    options?: { replaceMissing?: boolean },
 ): ModelPickerResult {
     const listed = new Set(candidates.map(model => model.id));
-    const kept = configured.filter(id => !listed.has(id) || isPicked(id));
+    // 换端点时（已配置模型与候选完全不重合），旧模型属于上一个端点、必然不可用，
+    // 必须用候选替换而不是叠加保留——否则会出现「模型列表里全是新端点不认的旧模型」。
+    // 换端点（由调用方根据「上次导入端点」判断）或完全不重合 → 用候选替换旧模型；
+    // 同端点内只保留本次未列出的模型（防止端点偶发漏列导致配置丢失）。
+    const replaceAll = options?.replaceMissing === true
+        || (configured.length > 0 && configured.every(configuredId => !listed.has(configuredId)));
+    const kept = replaceAll ? [] : configured.filter(id => !listed.has(id) || isPicked(id));
     const keptSet = new Set(kept);
     const added = candidates
         .filter(model => isPicked(model.id) && !keptSet.has(model.id))
@@ -120,6 +128,7 @@ export class ModelPickerModal extends Modal {
         candidates: DiscoveredModel[],
         configured: string[],
         onConfirm: (result: ModelPickerResult) => void,
+        private readonly replaceMissing = false,
     ) {
         super(app);
         this.candidates = candidates;
@@ -148,6 +157,8 @@ export class ModelPickerModal extends Modal {
      * @returns 默认是否勾选
      */
     private pickedByDefault(id: string): boolean {
+        // 换端点时旧模型不适用，默认全选新候选
+        if (this.replaceMissing) return true;
         return isPickedByDefault(this.candidates, this.configured, id);
     }
 
@@ -182,7 +193,9 @@ export class ModelPickerModal extends Modal {
     }
 
     private confirm(): void {
-        const result = buildPickerResult(this.candidates, this.configured, id => this.isPicked(id));
+        const result = buildPickerResult(this.candidates, this.configured, id => this.isPicked(id), {
+            replaceMissing: this.replaceMissing,
+        });
         // 空结果是合法选择（用户想清空该渠道模型列表），由调用方决定是否提示
         this.onConfirm(result);
         this.close();

@@ -27,9 +27,9 @@ describe('buildPickerResult', () => {
         expect(result?.models).toEqual(['deepseek-v4.1-flash', 'glm-5.3-flash', 'plain-model']);
     });
 
-    it('已配置但端点未列出的模型原样保留', () => {
-        const result = buildPickerResult(CANDIDATES, ['local-only'], id => id === 'glm-5.3-flash');
-        expect(result?.models).toEqual(['local-only', 'glm-5.3-flash']);
+    it('有重合时，未列出的已配置模型原样保留', () => {
+        const result = buildPickerResult(CANDIDATES, ['local-only', 'glm-5.3-flash'], id => id === 'glm-5.3-flash');
+        expect(result.models).toEqual(['local-only', 'glm-5.3-flash']);
     });
 
     it('不回填端点没给出的能力', () => {
@@ -70,9 +70,10 @@ describe('ModelPickerModal 默认勾选规则', () => {
         for (const id of ['deepseek-v4.1-flash', 'glm-5.3-flash', 'plain-model']) {
             expect(isPickedByDefault(CANDIDATES, ['old-channel-model'], id)).toBe(true);
         }
-        // 已配置但未列出的模型仍会保留在结果里
+        // 换端点时旧模型不属于新端点：用候选替换，不叠加保留
+        // （OpenCode Zen 42 个模型换到 Go 端点后，旧模型在 Go 端点全部 400）
         const result = buildPickerResult(CANDIDATES, ['old-channel-model'], () => true);
-        expect(result?.models).toEqual(['old-channel-model', 'deepseek-v4.1-flash', 'glm-5.3-flash', 'plain-model']);
+        expect(result.models).toEqual(['deepseek-v4.1-flash', 'glm-5.3-flash', 'plain-model']);
     });
 
     it('首次导入（无已配置）全选', () => {
@@ -84,6 +85,23 @@ describe('ModelPickerModal 默认勾选规则', () => {
     it('有重合时只勾已配置的', () => {
         const result = buildPickerResult(CANDIDATES, ['glm-5.3-flash'], id => id === 'glm-5.3-flash');
         expect(result?.models).toEqual(['glm-5.3-flash']);
+    });
+});
+
+// 2026-11-16：换端点（Zen → Go）时，旧模型在新端点全部不可用（claude-opus 400），
+// 必须用新列表替换。仅靠「候选完全不重合」判断不够：两个端点可能恰好有几个同名模型。
+describe('换端点替换（replaceMissing）', () => {
+    it('显式标记换端点 → 旧模型全部替换，即使有同名重合', () => {
+        const result = buildPickerResult(CANDIDATES, ['glm-5.3-flash', 'zen-only-model'], () => true, {
+            replaceMissing: true,
+        });
+        expect(result.models).toEqual(['deepseek-v4.1-flash', 'glm-5.3-flash', 'plain-model']);
+    });
+
+    it('同端点（未标记）→ 保留未列出的模型', () => {
+        const result = buildPickerResult(CANDIDATES, ['glm-5.3-flash', 'offline-only'], id => id === 'glm-5.3-flash');
+        // kept 保持已配置顺序（候选里列出的按勾选，未列出的保留）
+        expect(result.models).toEqual(['glm-5.3-flash', 'offline-only']);
     });
 });
 

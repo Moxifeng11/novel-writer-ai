@@ -609,6 +609,8 @@ export class ApiSection extends SettingsSection {
                     showErrorNotice(result.message, { title: '获取模型失败', timeout: 10000 });
                     return;
                 }
+                // 端点变了 → 旧模型在新端点通常不可用，用新列表替换
+                const endpointChanged = (this.getRawProvider(raw.id)?.modelsEndpoint || '') !== listEndpoint;
                 new ModelPickerModal(this.app, result.models, raw.models, async ({ models, capacities }) => {
                     const meta = { ...(this.getRawProvider(raw.id)?.modelMeta || {}) };
                     for (const item of capacities) {
@@ -622,13 +624,13 @@ export class ApiSection extends SettingsSection {
                             ...(item.priceCurrency === undefined ? {} : { priceCurrency: item.priceCurrency }),
                         };
                     }
-                    this.plugin.updateProvider(raw.id, { models, modelMeta: meta });
+                    this.plugin.updateProvider(raw.id, { models, modelMeta: meta, modelsEndpoint: listEndpoint });
                     this.syncAvailableModels(raw.id);
                     await this.plugin.saveSettings();
                     this.plugin.updateStatusBarText();
                     showSuccessNotice(`已更新模型列表（${models.length} 个）`, { timeout: 4000 });
                     rerender();
-                }).open();
+                }, endpointChanged).open();
             } finally {
                 fetchBtn.disabled = false;
                 fetchBtn.setText('🔄 从 URL 获取');

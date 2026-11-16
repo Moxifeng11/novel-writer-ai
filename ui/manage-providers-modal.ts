@@ -361,11 +361,13 @@ export class ManageProvidersModal extends Modal {
             fetchBtn.setText('⏳ 获取中…');
             try {
                 const key = this.plugin.settings.providerKeys?.[raw.id] || '';
-                const result = await discoverModels(raw.endpoint, format, key, undefined, resolveProviderHeaders(raw));
+                const listEndpoint = raw.endpoint;
+                const result = await discoverModels(listEndpoint, format, key, undefined, resolveProviderHeaders(raw));
                 if (result.kind === 'error') {
                     showErrorNotice(result.message, { title: '获取模型失败', timeout: 10000 });
                     return;
                 }
+                const endpointChanged = (this.getRawProvider(raw.id)?.modelsEndpoint || '') !== listEndpoint;
                 new ModelPickerModal(this.app, result.models, raw.models, async ({ models, capacities }) => {
                     const meta = { ...(this.getRawProvider(raw.id)?.modelMeta || {}) };
                     for (const item of capacities) {
@@ -379,14 +381,14 @@ export class ManageProvidersModal extends Modal {
                             ...(item.priceCurrency === undefined ? {} : { priceCurrency: item.priceCurrency }),
                         };
                     }
-                    this.plugin.updateProvider(raw.id, { models, modelMeta: meta });
+                    this.plugin.updateProvider(raw.id, { models, modelMeta: meta, modelsEndpoint: listEndpoint });
                     this.syncAvailable(raw.id);
                     await this.plugin.saveSettings();
                     this.plugin.updateStatusBarText();
                     showSuccessNotice(`已更新模型列表（${models.length} 个）`, { timeout: 4000 });
                     this.onChanged();
                     rerender();
-                }).open();
+                }, endpointChanged).open();
             } finally {
                 fetchBtn.disabled = false;
                 fetchBtn.setText('🔄 从 URL 获取');

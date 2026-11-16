@@ -203,6 +203,13 @@ export interface CustomProvider {
         /** 是否支持可调思考（端点披露）；供设置页展示思考强度开关 */
         reasoning?: boolean;
     }>;
+    /**
+     * 上次「从 URL 获取」模型时使用的端点（Base URL 或实际请求 URL）。
+     *
+     * 端点变了说明模型列表来自别处：旧模型在新端点通常不可用，
+     * 导入时应替换而不是叠加（例如 Zen 的 claude-opus-* 换到 Go 端点全部 400）。
+     */
+    modelsEndpoint?: string;
     /** v4.15: URL 自动识别出的预设供应商 ID；仅用于提示，不覆盖用户设置 */
     providerIdHint?: string;
     isDefault?: boolean; // 标记是否为初始默认供应商

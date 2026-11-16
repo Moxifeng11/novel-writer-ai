@@ -362,3 +362,29 @@
 
 - OpenCode go 渠道端点是否改为 `https://opencode.ai/inference/go/openai/v1`（插件不擅自改，避免改到第二个账号）。
 - SenseNova 解锁后若仍 401/400，需要核对 Key 与模型名（当前模型名是 `deepseek-v4-flash`，SenseNova 自带模型名为 `sensenova-6.7-flash-lite`）。
+### 2026-11-16 第十二轮：解锁后实测两个渠道
+
+用户提供口令 970613 解锁（locked 7 → 0，6 把 Key 明文），重新测试两个渠道。
+
+**实测结果**
+
+1. OpenCode go（当时仍是 Zen 端点）：403 Model access is disabled —— Go 订阅的账号在 Zen 没开模型权限。
+2. 日日新/SenseNova：429 inference exceeds tpm/rpm limit —— 鉴权与地址都正确，只是限流。
+3. 日日新（自定义 custom-2）：✅ 连通正常 1347ms。
+
+**改动**
+
+- 把 OpenCode go 渠道端点改为 `https://opencode.ai/inference/go/openai/v1`（原 Zen 端点已证实不可用），从 URL 获取 32 个 Go 模型。
+- 修 M-41：新增 `CustomProvider.modelsEndpoint` 记录模型列表来源端点；端点变化时「从 URL 获取」用新列表替换旧模型，不再叠加。
+  （旧行为导致 Zen 的 42 个模型换到 Go 端点后仍整套保留，claude-opus 等在 Go 端点必 400）
+- `ModelPickerModal` 支持 `replaceMissing`：换端点时默认全选新候选。
+
+**最终验证**
+
+| 渠道 | 结果 |
+| --- | --- |
+| OpenCode go（Go 端点） | ✅ deepseek-v4.1-flash 连通正常 1639ms |
+| 日日新/SenseNova | ✅ deepseek-v4-flash 连通正常 1120ms |
+| 日日新（自定义） | ✅ 连通正常 1347ms |
+
+**遗留**：OpenCode Zen 余额不足（402）尚未处理，用户若要用 Zen 通道需充值；当前用 Go 订阅通道即可。

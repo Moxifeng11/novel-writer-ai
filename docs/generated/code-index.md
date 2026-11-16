@@ -7,11 +7,11 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146799 | 1951 | 1545 | 79% |
-| `services/` | 65 | 19401 | 295 | 203 | 69% |
+| `services/` | 65 | 19405 | 295 | 203 | 69% |
 | `shared/` | 253 | 50695 | 2144 | 1677 | 78% |
 | `core/` | 7 | 3273 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 284 | 109574 | 1054 | 853 | 81% |
+| `ui/` | 284 | 109591 | 1054 | 853 | 81% |
 
 ## 文件清单
 
@@ -393,7 +393,7 @@
 | `engine/world-state-snapshot.ts` | 199 | 6 | 6 |
 | `engine/writing-profile.ts` | 566 | 8 | 8 |
 | `engine/writing-quality-engine.ts` | 1376 | 14 | 13 |
-| `services/api-connectivity-service.ts` | 405 | 9 | 9 |
+| `services/api-connectivity-service.ts` | 409 | 9 | 9 |
 | `services/assertion-context-service.ts` | 78 | 3 | 2 |
 | `services/attachment-service.ts` | 102 | 2 | 1 |
 | `services/backup-center-service.ts` | 182 | 4 | 1 |
@@ -867,7 +867,7 @@
 | `ui/knowledge-folder-navigation.ts` | 15 | 1 | 1 |
 | `ui/knowledge-monitor-modal.ts` | 500 | 1 | 1 |
 | `ui/knowledge-rebuild-action.ts` | 48 | 1 | 1 |
-| `ui/manage-providers-modal.ts` | 645 | 1 | 1 |
+| `ui/manage-providers-modal.ts` | 647 | 1 | 1 |
 | `ui/mcp-file-picker-modal.ts` | 174 | 2 | 2 |
 | `ui/mcp-manager-modal.ts` | 332 | 1 | 1 |
 | `ui/mcp-server-form-modal.ts` | 322 | 3 | 3 |
@@ -876,7 +876,7 @@
 | `ui/mini-settings-modal.ts` | 107 | 1 | 0 |
 | `ui/mode-document-modal.ts` | 201 | 2 | 2 |
 | `ui/model-editor-modal.ts` | 150 | 2 | 1 |
-| `ui/model-picker-modal.ts` | 277 | 4 | 4 |
+| `ui/model-picker-modal.ts` | 290 | 4 | 4 |
 | `ui/model-picker-popover.ts` | 298 | 4 | 3 |
 | `ui/model-quick-switcher.ts` | 321 | 13 | 12 |
 | `ui/monitor-panel-a.ts` | 200 | 2 | 2 |
@@ -922,7 +922,7 @@
 | `ui/settings-tab.ts` | 405 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 39 | 1 | 1 |
-| `ui/settings/api-section.ts` | 1631 | 1 | 1 |
+| `ui/settings/api-section.ts` | 1633 | 1 | 1 |
 | `ui/settings/deconstruction-section.ts` | 332 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 290 | 1 | 1 |

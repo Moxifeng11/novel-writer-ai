@@ -183,6 +183,10 @@ export function suggestFix(status: ApiConnectivityStatus, endpoint: string): str
         }
         return '请确认 Key 是否有效、是否已过期，以及该 Key 是否属于当前端点对应的账号。';
     }
+    if (status === 'rate_limited') {
+        return '请求被限流（TPM/RPM）：账号额度用满，稍后重试或到控制台提高限额；'
+            + '不是配置错误，也不需要改 Key。';
+    }
     if (status === 'not_found') {
         return '检查 Base URL 与 API 格式是否匹配：可展开「实际请求 URL」核对最终地址，路径不对时改成完整地址即可。';
     }
