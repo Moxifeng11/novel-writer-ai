@@ -81,7 +81,10 @@ describe('S3-4 密文不外发', () => {
     });
 
     it('接线契约：四个出网边界都做了密文判定', () => {
-        expect(read('services/canon-research-service.ts')).toContain('isStoredCiphertext(config.apiKey)');
+        // 语义变更（2026-11-16）：DeepSeek 联网搜索复用模型渠道的 Key，
+        // 判定对象从「单一 config.apiKey」扩展为「配置 Key 或渠道 Key」的最终生效 Key，
+        // 仍必须在出网前判定密文（锁定态密文不得当凭据外发）。
+        expect(read('services/canon-research-service.ts')).toContain('isStoredCiphertext(effectiveKey)');
         expect(read('services/model-discovery.ts')).toContain('isStoredCiphertext(apiKey)');
         expect(read('services/update-checker.ts')).toContain('usableSecret(this.config.githubToken)');
         expect(read('engine/embedding/provider-factory.ts')).toContain('usableSecret(config.vectorOpenaiApiKey)');

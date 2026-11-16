@@ -371,9 +371,12 @@ export class PreResearchModal extends Modal {
         this.aiStatusEl?.setText('正在检索热点/行业素材，并结合固化框架与真随机因子生成候选…');
         try {
             const settings = this.plugin.settings;
+            const canonProvider = settings.canonResearch?.provider || 'manual';
             const service = new AiAssistedPremiseService(this.plugin.aiEngine, {
-                provider: settings.canonResearch?.provider || 'manual',
-                apiKey: settings.canonResearch?.apiKey || '',
+                provider: canonProvider,
+                // DeepSeek 联网搜索复用模型渠道的 Key，不需要用户在考据里再填一次
+                apiKey: settings.canonResearch?.apiKey
+                    || (canonProvider === 'deepseek' ? (settings.providerKeys?.deepseek || '') : ''),
                 maxSources: settings.canonResearch?.maxSources || 6,
             });
             const audience = this.value('audience');

@@ -24,10 +24,11 @@ export const DEFAULT_MODEL_PRICING: Record<string, ModelPricing> = {
     // DeepSeek 官方（缓存未命中价）
     'deepseek-chat': { inputPerM: 2, outputPerM: 8 },
     'deepseek-reasoner': { inputPerM: 4, outputPerM: 16 },
-    'deepseek-flash': { inputPerM: 0.5, outputPerM: 2 },
+    // DeepSeek 官方《模型 & 价格》：deepseek-flash 输入（缓存未命中）高峰 2 元 / 输出高峰 8 元
+    'deepseek-flash': { inputPerM: 2, outputPerM: 8 },
     'deepseek-v3': { inputPerM: 2, outputPerM: 8 },
     'deepseek-v3.1': { inputPerM: 2, outputPerM: 8 },
-    'deepseek-v4-flash': { inputPerM: 0.5, outputPerM: 2 },
+    'deepseek-v4-flash': { inputPerM: 2, outputPerM: 8 },
     // 其他常见云模型（参考价）
     'gpt-4o-mini': { inputPerM: 1.1, outputPerM: 4.4 },
     'gpt-4o': { inputPerM: 18, outputPerM: 72 },
@@ -36,6 +37,32 @@ export const DEFAULT_MODEL_PRICING: Record<string, ModelPricing> = {
     // 本地模型：无 API 费用
     'qwen2.5:7b': { inputPerM: 0, outputPerM: 0 },
     'ollama': { inputPerM: 0, outputPerM: 0 },
+};
+
+/**
+ * 渠道参考价（元/百万 tokens）。
+ *
+ * 有些官方端点（DeepSeek）`/models` 不披露价格，但又确实按 token 计费；
+ * 只靠用户手填会导致费用长期显示「—」。这里按**端点域名**录入官方文档价，
+ * 作为参考价兜底（用户配置与端点披露永远优先）。
+ *
+ * 数据来源：
+ * - DeepSeek《模型 & 价格》官方文档（2026-11 抓取）：
+ *   deepseek-flash 输入（缓存未命中）高峰 2 元 / 输出高峰 8 元；
+ *   deepseek-v4-pro 输入（缓存未命中）高峰 9 元 / 输出高峰 27 元。
+ *   缓存命中价更低（0.04 / 0.30），记账按保守的未命中价估算。
+ *   空闲时段为高峰价一半，这里统一按高峰价（宁可高估，不漏计）。
+ * - OpenCode Go / Zen 由 `/models` 直接披露美元价，不需要本表。
+ */
+export const CHANNEL_PRICING: Record<string, Record<string, ModelPricing>> = {
+    'api.deepseek.com': {
+        // 新模型名 deepseek-flash（V4.1-Flash-1017）
+        'deepseek-flash': { inputPerM: 2, outputPerM: 8 },
+        // 旧模型名仍可调用、按 Flash 计费
+        'deepseek-v4-flash': { inputPerM: 2, outputPerM: 8 },
+        'deepseek-v4-flash-vision-exp': { inputPerM: 2, outputPerM: 8 },
+        'deepseek-v4-pro': { inputPerM: 9, outputPerM: 27 },
+    },
 };
 
 /** 单价来源：用户配置 / 默认参考价 */
@@ -131,10 +158,32 @@ export function lookupModelPricing(
         };
     }
     if (options?.allowDefaults) {
+        // 渠道参考价优先于全局参考价：同名模型在不同官方渠道价格不同
+        const channel = findChannelPricing(options?.endpoint);
+        const channelPrice = channel?.[key.toLowerCase()] ?? channel?.[key];
+        if (channelPrice) return { ...channelPrice };
         const fallback = DEFAULT_MODEL_PRICING[key.toLowerCase()];
         if (fallback) return { ...fallback };
     }
     return null;
+}
+
+/**
+ * 按端点匹配渠道参考价表。
+ *
+ * @param endpoint - 渠道端点
+ * @returns 该渠道的模型参考价表；未收录返回 undefined
+ * @example
+ * findChannelPricing('https://api.deepseek.com/v1')?.['deepseek-flash'];
+ * // { inputPerM: 2, outputPerM: 8 }
+ */
+export function findChannelPricing(endpoint: string | undefined): Record<string, ModelPricing> | undefined {
+    if (!endpoint) return undefined;
+    const lower = String(endpoint).toLowerCase();
+    for (const [domain, table] of Object.entries(CHANNEL_PRICING)) {
+        if (lower.includes(domain)) return table;
+    }
+    return undefined;
 }
 
 /**
@@ -208,6 +257,9 @@ export function lookupModelPricingWithSource(
     const userPricing = lookupModelPricing(model, settings, options);
     if (userPricing) return { pricing: userPricing, source: 'user' };
     if (!options?.allowDefaults) return null;
-    const fallback = DEFAULT_MODEL_PRICING[String(model || '').trim().toLowerCase()];
+    const key = String(model || '').trim();
+    const channelPrice = findChannelPricing(options?.endpoint)?.[key.toLowerCase()];
+    if (channelPrice) return { pricing: { ...channelPrice }, source: 'default' };
+    const fallback = DEFAULT_MODEL_PRICING[key.toLowerCase()];
     return fallback ? { pricing: { ...fallback }, source: 'default' } : null;
 }

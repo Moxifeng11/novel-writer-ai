@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { estimateCostYuan, lookupModelPricing } from '../../../shared/model-pricing';
+import { estimateCostYuan, findChannelPricing, lookupModelPricing } from '../../../shared/model-pricing';
 
 describe('model-pricing — 模型单价与费用估算', () => {
     // 显式标注：异构字面量推断会产生 `?: undefined` 属性，无法直接赋给 Record 索引签名
@@ -48,7 +48,7 @@ describe('model-pricing — 模型单价与费用估算', () => {
 describe('默认参考价兜底（成本看板可见性）', () => {
     it('未配置单价 + allowDefaults → 命中 DeepSeek 参考价', () => {
         expect(lookupModelPricing('deepseek-flash', undefined, { allowDefaults: true }))
-            .toEqual({ inputPerM: 0.5, outputPerM: 2 });
+            .toEqual({ inputPerM: 2, outputPerM: 8 });
     });
 
     it('未配置单价 + 未开 allowDefaults → 仍返回 null（默认行为不变）', () => {
@@ -63,7 +63,7 @@ describe('默认参考价兜底（成本看板可见性）', () => {
 
     it('大小写不敏感命中默认价', () => {
         expect(lookupModelPricing('DeepSeek-Flash', undefined, { allowDefaults: true }))
-            .toEqual({ inputPerM: 0.5, outputPerM: 2 });
+            .toEqual({ inputPerM: 2, outputPerM: 8 });
     });
 
     it('本地模型默认价为 0（无 API 费用）', () => {
@@ -123,5 +123,55 @@ describe('单价按渠道识别与币种折算', () => {
         // 100 万输入 + 100 万输出 = 0.75 美元 → 7.3 汇率 = 5.475 元
         expect(estimateCostYuan(usd, 1_000_000, 1_000_000)).toBe(5.475);
         expect(estimateCostYuan(usd, 1_000_000, 1_000_000, { usdToCny: 7 })).toBe(5.25);
+    });
+});
+
+// 2026-11-16：DeepSeek 官方 /models 不披露价格，官方文档给的是「输入/输出 + 缓存命中/未命中 + 高峰/空闲」。
+// 内置为按渠道作用域的参考价兜底，避免费用长期显示「—」。
+describe('渠道参考价（官方文档价）', () => {
+    it('DeepSeek 官方渠道按文档价兜底（高峰未命中）', () => {
+        const pricing = lookupModelPricing('deepseek-flash', undefined, {
+            allowDefaults: true,
+            endpoint: 'https://api.deepseek.com/v1/chat/completions',
+        });
+        expect(pricing).toEqual({ inputPerM: 2, outputPerM: 8 });
+    });
+
+    it('旧模型名仍按 Flash 计费', () => {
+        const pricing = lookupModelPricing('deepseek-v4-flash', undefined, {
+            allowDefaults: true,
+            endpoint: 'https://api.deepseek.com',
+        });
+        expect(pricing).toEqual({ inputPerM: 2, outputPerM: 8 });
+    });
+
+    it('Pro 渠道价独立', () => {
+        const pricing = lookupModelPricing('deepseek-v4-pro', undefined, {
+            allowDefaults: true,
+            endpoint: 'https://api.deepseek.com',
+        });
+        expect(pricing).toEqual({ inputPerM: 9, outputPerM: 27 });
+    });
+
+    it('渠道表只覆盖已收录的官方渠道', () => {
+        expect(findChannelPricing('https://api.openai.com/v1')).toBeUndefined();
+        // 未收录的模型不会凭空产生价格
+        expect(lookupModelPricing('some-unlisted-model', undefined, {
+            allowDefaults: true,
+            endpoint: 'https://api.deepseek.com',
+        })).toBeNull();
+    });
+
+    it('用户配置永远优先于渠道参考价', () => {
+        const settings = {
+            customProviders: [{
+                endpoint: 'https://api.deepseek.com/v1/chat/completions',
+                modelMeta: { 'deepseek-flash': { inputPricePerM: 0.5, outputPricePerM: 2 } },
+            }],
+        };
+        expect(lookupModelPricing('deepseek-flash', settings, {
+            allowDefaults: true,
+            endpoint: 'https://api.deepseek.com',
+        })).toEqual({ inputPerM: 0.5, outputPerM: 2 });
     });
 });

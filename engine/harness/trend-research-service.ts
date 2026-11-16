@@ -17,7 +17,16 @@ const log = createLogger('TrendResearch');
  */
 // 与 CanonSearchProvider 对齐：设置页已经开放 wikipedia / bangumi 免 Key 通道，
 // 类型不补会导致「设置里能选、调研时类型不允许」的不一致。
-export type TrendSearchProvider = 'manual' | 'bing' | 'brave' | 'serper' | 'tavily' | 'wikipedia' | 'bangumi';
+export type TrendSearchProvider =
+    | 'manual'
+    | 'bing'
+    | 'brave'
+    | 'serper'
+    | 'tavily'
+    | 'wikipedia'
+    | 'bangumi'
+    /** DeepSeek 官方联网搜索（复用已配置的 DeepSeek Key） */
+    | 'deepseek';
 
 /**
  * 趋势研究配置。
@@ -152,6 +161,7 @@ export class TrendResearchService {
                 case 'tavily': return await this.searchTavily(query, config);
                 case 'wikipedia': return await this.searchWikipedia(categoryOrGenre, config);
                 case 'bangumi': return await this.searchBangumi(categoryOrGenre, config);
+                case 'deepseek': return await this.searchDeepSeek(query, config);
                 default: return [];
             }
         } catch (e) {
@@ -193,6 +203,43 @@ export class TrendResearchService {
      * @param config - 配置
      * @returns 趋势来源
      */
+    /**
+     * DeepSeek 官方联网搜索（`POST /v1/tools/search`）。
+     *
+     * 与考据通道同一接口：按次计费、复用 DeepSeek Key；返回结构化结果，
+     * `summary` 适合直接喂模型。
+     *
+     * @param query - 检索词
+     * @param config - 配置（apiKey 为 DeepSeek Key）
+     * @returns 趋势来源
+     */
+    private async searchDeepSeek(query: string, config: TrendResearchConfig): Promise<TrendSource[]> {
+        const response = await requestJson(this.request, {
+            url: 'https://api.deepseek.com/v1/tools/search',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${config.apiKey || ''}`,
+            },
+            body: JSON.stringify({
+                query: query.slice(0, 128),
+                count: Math.max(1, Math.min(10, config.maxSources ?? 6)),
+                need_content: false,
+            }),
+        });
+        const data = response.json as {
+            results?: Array<{ title?: string; url?: string; snippet?: string; summary?: string }>;
+        } | undefined;
+        return (data?.results || [])
+            .filter(item => item.url && item.title)
+            .map(item => ({
+                title: item.title || '',
+                url: item.url || '',
+                snippet: (item.summary || item.snippet || '').slice(0, 600),
+            }))
+            .slice(0, config.maxSources);
+    }
+
     private async searchBangumi(workName: string, config: TrendResearchConfig): Promise<TrendSource[]> {
         const url = `https://api.bgm.tv/search/subject/${encodeURIComponent(workName)}?type=2&responseGroup=small&max_results=${config.maxSources ?? 6}`;
         const response = await requestJson(this.request, {

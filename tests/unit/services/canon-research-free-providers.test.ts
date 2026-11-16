@@ -37,7 +37,11 @@ vi.mock('obsidian', async () => {
     };
 });
 
-import { CanonResearchService, providerNeedsApiKey } from '../../../services/canon-research-service';
+import {
+    CanonResearchService,
+    providerNeedsApiKey,
+    providerUsesModelChannelKey,
+} from '../../../services/canon-research-service';
 
 /**
  * 构造带指定 provider 的服务。
@@ -65,10 +69,15 @@ describe('providerNeedsApiKey — 免 Key 口径', () => {
         expect(providerNeedsApiKey('bangumi')).toBe(false);
     });
 
-    it('第三方搜索需要 Key', () => {
-        for (const provider of ['bing', 'brave', 'serper', 'tavily'] as const) {
+    it('第三方搜索与 DeepSeek 联网搜索需要 Key', () => {
+        for (const provider of ['bing', 'brave', 'serper', 'tavily', 'deepseek'] as const) {
             expect(providerNeedsApiKey(provider)).toBe(true);
         }
+    });
+
+    it('DeepSeek 联网搜索复用模型渠道的 Key', () => {
+        expect(providerUsesModelChannelKey('deepseek')).toBe(true);
+        expect(providerUsesModelChannelKey('bing')).toBe(false);
     });
 });
 
@@ -104,5 +113,34 @@ describe('来源分级仍遵守「官方优先」', () => {
         const result = await makeService('wikipedia').research('凡人修仙传');
         expect(result.sources.every(source => source.tier === 'reference')).toBe(true);
         expect(result.warnings.join(' ')).toContain('不是官方/官方 Wiki');
+    });
+
+    // 2026-11-16：DeepSeek 官方搜索（POST /v1/tools/search）复用已有 DeepSeek Key，
+    // 解决「免 Key 通道被网络限制」时的联网检索。
+    it('DeepSeek 通道直接复用 providerKeys.deepseek，不要求另填搜索 Key', async () => {
+        const requestUrl = (await import('obsidian')).requestUrl as unknown as {
+            mock: { calls: Array<[{ url: string; method?: string; body?: string }]> };
+        };
+        requestUrl.mock.calls.length = 0;
+        const service = new CanonResearchService({ vault: { adapter: { exists: async () => false } } } as never, {
+            settings: {
+                canonResearch: { provider: 'deepseek', apiKey: '', maxSources: 6, excerptChars: 1200 },
+                providerKeys: { deepseek: 'sk-from-model-channel' },
+            },
+        });
+        const result = await service.research('凡人修仙传');
+        expect(result.warnings.join(' ')).not.toContain('未配置搜索 API Key');
+        const call = requestUrl.mock.calls.find(item => String(item[0].url).includes('/v1/tools/search'));
+        expect(call).toBeTruthy();
+        expect(String(call![0].url)).toContain('api.deepseek.com/v1/tools/search');
+        expect(String(call![0].body)).toContain('query');
+    });
+
+    it('DeepSeek 通道缺 Key 时给出明确指引', async () => {
+        const result = await makeService('deepseek').research('凡人修仙传');
+        const text = result.warnings.join(' ');
+        expect(text).toContain('未配置搜索 API Key');
+        expect(text).toContain('DeepSeek');
+        expect(result.sources).toHaveLength(0);
     });
 });

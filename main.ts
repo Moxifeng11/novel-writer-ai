@@ -257,7 +257,7 @@ export interface CanonResearchSettings {
      * `wikipedia` / `bangumi` 是免 Key 的公开 API，但可能受网络环境影响
      * （实测部分网络直接超时）；其余需要第三方搜索 Key。
      */
-    provider: 'manual' | 'bing' | 'brave' | 'serper' | 'tavily' | 'wikipedia' | 'bangumi';
+    provider: 'manual' | 'bing' | 'brave' | 'serper' | 'tavily' | 'wikipedia' | 'bangumi' | 'deepseek';
     apiKey?: string;
     allowedDomains?: string[];
     blockedDomains?: string[];

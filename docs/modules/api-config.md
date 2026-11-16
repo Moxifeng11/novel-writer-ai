@@ -81,6 +81,8 @@
 - 2026-11-16（第二轮）：价格按「渠道 + 模型」作用域查找，未指定渠道时保持旧的全渠道行为（向后兼容）；端点披露的美元价带 `priceCurrency: 'USD'`，记账按 `DEFAULT_USD_TO_CNY` 折算，不把 $ 当 ¥。
 - 2026-11-16（第二轮）：Ollama 原生端点（`/api/generate`、`/api/chat`）视为完整地址，不再拼接；模型列表走 `/api/tags`。
 - 2026-11-16（第二轮）：联网检索的「有没有 Key」不再是总开关，wikipedia/bangumi 免 Key 通道直接可用。
+- 2026-11-16（第二轮 B）：端点不披露价格时用**渠道参考价**兜底。DeepSeek 官方 `/models` 不返回价格，但《模型 & 价格》文档给了完整表：deepseek-flash 输入（缓存未命中）高峰 2 元 / 输出高峰 8 元；deepseek-v4-pro 9 / 27 元（均按百万 tokens）。内置为「端点域名 → 模型 → 单价」的 `CHANNEL_PRICING`，用户配置与端点披露永远优先，记账按高峰价（宁可高估不漏计）。
+- 2026-11-16（第二轮 B）：新增「DeepSeek 联网搜索」检索通道（`POST https://api.deepseek.com/v1/tools/search`）。理由：维基百科/Bangumi 在部分网络下超时（实测本机 PowerShell 直连 20s 超时），而 DeepSeek 搜索与模型请求同一出口、可达；且复用用户已配置的 DeepSeek Key，不用另填。按官方计费 5 元/1000 次。
 
 ## 5. 验收记录
 
@@ -99,6 +101,7 @@
 | 2026-11-16 | 回归：`npm run test` 935 文件 / 9825 通过 / 3 skipped | 通过 | vitest |
 | 2026-11-16 | 直连实测：OpenCode Go 缺 `x-opencode-session` → 400 MissingSessionID；带头 → 200；`reasoning_effort`/`thinking` 均 200 | 确认 | curl |
 | 2026-11-16 | 门禁：`npm run gen:docs && npm run preflight` | 见提交 | preflight |
+| 2026-11-16 | 单测：DeepSeek 联网搜索通道（复用渠道 Key / 缺 Key 指引）、渠道参考价（官方文档价 / 用户优先 / 不误用）、DeepSeek `/models` 元数据（context_window/max_output_tokens/input_modalities/effort） | 全过 | vitest |
 
 ## 6. 测试清单
 
@@ -106,6 +109,7 @@
 - UI/DOM：`tests/unit/ui/api-section-dom.test.ts`
 - 回归：`provider-manager-key-preserve/limits/remove`、`settings-*`、`ai-thinking-params`
 - 实机检查：默认态、渠道切换、关闭显示、解锁卡片、行内新建/编辑、重载后状态
+- 第二轮 B 新增：`canon-research-free-providers.test.ts` DeepSeek 通道 3 条、`model-pricing.test.ts` 渠道参考价 5 条、`model-discovery.test.ts` DeepSeek 元数据 1 条
 - 第二轮新增：`tests/unit/engine/trend-research-service.test.ts`、`api-format.test.ts` 原生端点组、`model-discovery.test.ts` 能力识别组、`model-pricing.test.ts` 渠道作用域组、`provider-manager-limits.test.ts` modelMeta 组
 
 ## 7. 剩余 backlog
@@ -114,8 +118,10 @@
 - [ ] OpenCode 思考档位补 max（端点声明 low/high/max，当前只映射 low/high）（P2）
 - [ ] 更多操作菜单的删除/切换入口（P3）
 - [x] 任务级参数按渠道读写（第二轮完成）
-- [ ] 端点价格识别覆盖更多网关（DeepSeek 官方 /models 不披露价格，仍需手填或内置参考价）（P2）
-- [ ] 联网检索通道的本机可达性提示（Wikipedia/Bangumi 在部分网络下超时，目前只给可读错误）（P2）
+- [x] 端点不披露价格时用渠道参考价兜底（DeepSeek 官方文档价已内置，第二轮 B）
+- [ ] OpenCode 等渠道的缓存命中价/时段价（当前按未命中高峰价保守估算）（P2）
+- [x] 新增 DeepSeek 联网搜索通道（复用 DeepSeek Key，解决免 Key 通道被网络限制）——第二轮 B
+- [ ] 联网检索结果的权威性/时效性排序展示（DeepSeek 返回 authority/date，目前只排序未展示）（P2）
 
 ## 8. 交接备注
 

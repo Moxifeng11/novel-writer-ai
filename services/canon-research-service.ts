@@ -50,17 +50,40 @@ export function providerNeedsApiKey(provider: CanonSearchProvider): boolean {
 }
 
 /**
+ * 免 Key 通道的 Key 来源：DeepSeek 官方搜索复用用户在「模型渠道」里配的 DeepSeek Key，
+ * 不需要再让用户填一次。
+ *
+ * @param provider - 检索通道
+ * @returns 是否复用模型渠道的 DeepSeek Key
+ * @example
+ * providerUsesModelChannelKey('deepseek'); // true
+ */
+export function providerUsesModelChannelKey(provider: CanonSearchProvider): boolean {
+    return provider === 'deepseek';
+}
+
+/**
  * 考据搜索提供方。
  *
  * `wikipedia` / `bangumi` 为**免 Key** 通道（FAN-1，v4.83.1）：此前 provider 全部需要
  * 第三方搜索 Key，默认 `manual` 等于开箱没有联网检索能力。两者都走公开 API，
  * 结果按 `reference`（二手资料）分级，由 prompt 显式标注等级。
  */
-export type CanonSearchProvider = 'manual' | 'bing' | 'brave' | 'serper' | 'tavily' | 'wikipedia' | 'bangumi';
+export type CanonSearchProvider =
+    | 'manual'
+    | 'bing'
+    | 'brave'
+    | 'serper'
+    | 'tavily'
+    | 'wikipedia'
+    | 'bangumi'
+    /** DeepSeek 官方联网搜索（POST /v1/tools/search，按次计费，复用已配置的 DeepSeek Key） */
+    | 'deepseek';
 
 /** 各检索通道的展示名（设置页与错误提示共用） */
 export const PROVIDER_LABELS: Record<CanonSearchProvider, string> = {
     manual: '手动官方来源',
+    deepseek: 'DeepSeek 联网搜索',
     wikipedia: '维基百科',
     bangumi: 'Bangumi 番组计划',
     bing: 'Bing web search',
@@ -91,6 +114,8 @@ export interface CanonIndexOutcome {
 interface CanonResearchHost {
     settings?: {
         canonResearch?: CanonResearchConfig;
+        /** 渠道密钥表：DeepSeek 官方搜索复用这里的 deepseek Key */
+        providerKeys?: Record<string, string>;
     };
     /**
      * 把考据来源写入 RAG 检索库（P2）。
@@ -172,13 +197,20 @@ export class CanonResearchService {
         const inputs: CanonSourceInput[] = [...(options.manualSources || [])];
 
         if (inputs.length === 0 && config.provider !== 'manual') {
+            // DeepSeek 搜索复用模型渠道的 Key，不要求用户再填一遍
+            const channelKey = providerUsesModelChannelKey(config.provider)
+                ? (this.host.settings?.providerKeys?.deepseek || '')
+                : '';
+            const effectiveKey = config.apiKey?.trim() || channelKey.trim();
             if (providerNeedsApiKey(config.provider)
-                && (!config.apiKey?.trim() || isStoredCiphertext(config.apiKey))) {
+                && (!effectiveKey || isStoredCiphertext(effectiveKey))) {
                 // S3-4：锁定态密文不能当凭据外发
-                warnings.push(config.apiKey?.trim()
+                warnings.push(isStoredCiphertext(effectiveKey)
                     ? '搜索 API Key 处于加密锁定状态，请先在设置中解锁口令；已退回手动官方来源模式'
-                    : `未配置搜索 API Key，无法使用「${config.provider}」检索；已退回手动官方来源模式。`
-                        + '可在设置里改用免 Key 的「维基百科」或「Bangumi」通道');
+                    : `未配置搜索 API Key，无法使用「${PROVIDER_LABELS[config.provider]}」检索；已退回手动官方来源模式。`
+                        + (config.provider === 'deepseek'
+                            ? '请先在「模型设置 → DeepSeek 官网」配置密钥。'
+                            : '可在设置里改用免 Key 的「维基百科」「Bangumi」或「DeepSeek 联网搜索」通道'));
             } else {
                 try {
                     const searched = await this.search(workName, options, config);
@@ -370,6 +402,8 @@ export class CanonResearchService {
                 return this.searchWikipedia(workName);
             case 'bangumi':
                 return this.searchBangumi(workName);
+            case 'deepseek':
+                return this.searchDeepSeek(workName, config);
             default:
                 return [];
         }
@@ -471,6 +505,61 @@ export class CanonResearchService {
             });
         }
         return results;
+    }
+
+    /**
+     * DeepSeek 官方联网搜索（`POST /v1/tools/search`）。
+     *
+     * 官方文档（2026-11 抓取）：按 query 返回结构化结果，含 `rerank_score`（≥1.5 优质）、
+     * `title`/`url`/`summary`（600–800 字符，适合给模型读）、`authority`（≥3 极权威）。
+     * 按次计费（5 元/1000 次），复用用户已配置的 DeepSeek Key，无需另填。
+     *
+     * 相比 Wikipedia/Bangumi，它在本机网络下可达（与模型请求同一出口），
+     * 且能搜中文网文/百科，是「免 Key 通道被网络限制」时的替代方案。
+     *
+     * @param workName - 作品名
+     * @param config - 配置
+     * @returns 来源输入
+     */
+    private async searchDeepSeek(workName: string, config: CanonResearchConfig): Promise<CanonSourceInput[]> {
+        const apiKey = (config.apiKey || '').trim() || (this.host.settings?.providerKeys?.deepseek || '').trim();
+        if (!apiKey || isStoredCiphertext(apiKey)) {
+            throw new Error('DeepSeek 联网搜索需要 DeepSeek API Key：请先在「模型设置 → DeepSeek 官网」配置密钥');
+        }
+        const query = `${workName} 原作 官方 设定`;
+        const response = await requestWithPolicy(requestUrl, {
+            url: 'https://api.deepseek.com/v1/tools/search',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+                query: query.slice(0, 128),
+                count: Math.max(1, Math.min(10, config.maxSources ?? 6)),
+                need_content: false,
+            }),
+        }, SEARCH_REQUEST_POLICY);
+        const data = response.json as {
+            results?: Array<{
+                title?: string;
+                url?: string;
+                snippet?: string;
+                summary?: string;
+                rerank_score?: number;
+                authority?: number;
+            }>;
+        };
+        const results = data.results || [];
+        return results
+            .filter(item => item.url && item.title)
+            // 权威性优先：官方/百科（authority ≥ 3）排在前面
+            .sort((a, b) => (b.authority ?? 0) - (a.authority ?? 0))
+            .map(item => ({
+                title: item.title || '',
+                url: item.url || '',
+                excerpt: (item.summary || item.snippet || '').slice(0, 1600),
+            }));
     }
 
     private buildQuery(workName: string, options: CanonResearchOptions): string {

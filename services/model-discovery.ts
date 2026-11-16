@@ -117,6 +117,10 @@ interface ListingEntry {
     } | null;
     /** 部分网关用 input: ['text','image'] 声明模态 */
     input?: unknown;
+    /** DeepSeek 官方 /models：输入模态 */
+    input_modalities?: unknown;
+    /** DeepSeek 官方 /models：思考档位 { supported_levels, default_level } */
+    effort?: { supported_levels?: unknown; default_level?: unknown } | null;
 }
 
 /**
@@ -180,6 +184,11 @@ function toVision(raw: ListingEntry | null): boolean | undefined {
     if (Array.isArray(legacyInput)) {
         return legacyInput.some(item => typeof item === 'string' && item.toLowerCase().startsWith('image'));
     }
+    // DeepSeek 官方 /models：input_modalities: ['text','image']
+    const declInput = raw?.input_modalities;
+    if (Array.isArray(declInput)) {
+        return declInput.some(item => typeof item === 'string' && item.toLowerCase().startsWith('image'));
+    }
     return undefined;
 }
 
@@ -191,13 +200,21 @@ function toVision(raw: ListingEntry | null): boolean | undefined {
  */
 function toReasoningEfforts(raw: ListingEntry | null): string[] | undefined {
     const reasoning = raw?.capabilities?.reasoning;
-    if (!reasoning || reasoning.supported === false) return undefined;
-    const effort = reasoning.effort;
-    if (Array.isArray(effort)) {
-        const levels = effort.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+    if (reasoning && reasoning.supported !== false) {
+        const effort = reasoning.effort;
+        if (Array.isArray(effort)) {
+            const levels = effort.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+            return levels.length > 0 ? levels : [];
+        }
+        if (reasoning.supported === true) return [];
+    }
+    // DeepSeek 官方 /models：effort: { supported_levels: [...] }（顶层，不在 capabilities 里）
+    const deepseekLevels = raw?.effort?.supported_levels;
+    if (Array.isArray(deepseekLevels)) {
+        const levels = deepseekLevels.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
         return levels.length > 0 ? levels : [];
     }
-    return reasoning.supported === true ? [] : undefined;
+    return undefined;
 }
 
 /**

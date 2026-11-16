@@ -209,3 +209,33 @@ describe('端点披露的能力自动识别', () => {
         expect(models[0].reasoningEfforts).toBeUndefined();
     });
 });
+
+// 2026-11-16：DeepSeek 官方 /models 不返回价格，但返回 context_window / max_output_tokens /
+// input_modalities / effort.supported_levels —— 这些必须自动识别，否则用户还得手填。
+describe('DeepSeek /models 元数据', () => {
+    it('解析上下文、输出、视觉与 effort 档位', () => {
+        const models = parseModelListing({
+            object: 'list',
+            data: [{
+                id: 'deepseek-flash',
+                object: 'model',
+                name: 'DeepSeek-V4.1-Flash',
+                context_window: 1048576,
+                max_output_tokens: 384000,
+                input_modalities: ['text', 'image'],
+                output_modalities: ['text'],
+                effort: { supported_levels: ['low', 'high', 'max'], default_level: 'high' },
+            }],
+        });
+        expect(models[0]).toMatchObject({
+            id: 'deepseek-flash',
+            contextWindow: 1048576,
+            maxTokens: 384000,
+            vision: true,
+            reasoningEfforts: ['low', 'high', 'max'],
+        });
+        // 不披露价格时不写 price 字段
+        expect(models[0].pricing).toBeUndefined();
+    });
+});
+

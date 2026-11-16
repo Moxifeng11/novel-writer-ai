@@ -27,6 +27,23 @@ describe('trend-research-service — 检索通道', () => {
         expect(trendProviderNeedsApiKey('manual')).toBe(false);
         expect(trendProviderNeedsApiKey('bing')).toBe(true);
         expect(trendProviderNeedsApiKey('tavily')).toBe(true);
+        expect(trendProviderNeedsApiKey('deepseek')).toBe(true);
+    });
+
+    it('DeepSeek 联网搜索通道走官方 tools/search 并复用 Key', async () => {
+        const request = responder({
+            '/v1/tools/search': {
+                results: [
+                    { title: '玄幻小说', url: 'https://example.com/x', snippet: '短摘要', summary: '长摘要' },
+                ],
+            },
+        });
+        const service = new TrendResearchService({ provider: 'deepseek', apiKey: 'sk-deepseek' }, request);
+        const sources = await service.search('short', '玄幻');
+        expect(sources).toHaveLength(1);
+        expect(sources[0].title).toBe('玄幻小说');
+        // summary 优先于 snippet：更适合给模型读
+        expect(sources[0].snippet).toBe('长摘要');
     });
 
     it('需要 Key 的通道没有 Key 时返回空（不白跑请求）', async () => {

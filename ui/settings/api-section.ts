@@ -1066,6 +1066,15 @@ export class ApiSection extends SettingsSection {
             maxSources: 6,
             excerptChars: 1200,
         };
+        // 旧数据里可能写过超出范围的值（例如 10000000）：打开设置时按运行端口径
+        // 夹取并回写，避免「设置页显示 10000000、实际按 4000 生效」的误导。
+        const clampedExcerpt = Number.isFinite(cfg.excerptChars)
+            ? Math.max(200, Math.min(4000, cfg.excerptChars as number))
+            : 1200;
+        if (cfg.excerptChars !== clampedExcerpt) {
+            cfg.excerptChars = clampedExcerpt;
+            void this.plugin.saveSettings();
+        }
         this.plugin.settings.canonResearch = cfg;
 
         new Setting(card)
@@ -1073,8 +1082,9 @@ export class ApiSection extends SettingsSection {
             .setDesc('手动=只导入自己提供的来源；维基百科/Bangumi 免 key；其余需要对应搜索 API key')
             .addDropdown(dropdown => {
                 dropdown.addOption('manual', '手动官方来源（默认）');
-                dropdown.addOption('wikipedia', '维基百科（免 key）');
-                dropdown.addOption('bangumi', 'Bangumi 番组计划（免 key）');
+                dropdown.addOption('deepseek', 'DeepSeek 联网搜索（复用 DeepSeek Key，按次计费）');
+                dropdown.addOption('wikipedia', '维基百科（免 key，可能受网络限制）');
+                dropdown.addOption('bangumi', 'Bangumi 番组计划（免 key，可能受网络限制）');
                 dropdown.addOption('bing', 'Bing web search（需 key）');
                 dropdown.addOption('brave', 'Brave search（需 key）');
                 dropdown.addOption('serper', 'Serper.dev（需 key）');
@@ -1102,8 +1112,12 @@ export class ApiSection extends SettingsSection {
                     if (result.sources.length > 0) {
                         testStatus.setText(`✅ 「${PROVIDER_LABELS[result.provider] ?? result.provider}」可用：返回 ${result.sources.length} 条来源`);
                     } else {
-                        testStatus.setText('⚠️ 通道可用但没有返回来源：'
-                            + (result.warnings[0] || '可换一个作品名再试'));
+                        // 先把「配置问题」与「通道问题」分开：密钥未解锁/未配置时，
+                        // 说「通道可用」会让用户以为搜索坏了。
+                        const blocked = result.warnings.find(item => /密钥|Key|锁定/.test(item));
+                        testStatus.setText(blocked
+                            ? `⚠️ ${blocked}`
+                            : `⚠️ 通道可用但没有返回来源：${result.warnings[0] || '可换一个作品名再试'}`);
                     }
                 } catch (error) {
                     testStatus.setText('❌ 检索失败：' + (error instanceof Error ? error.message : String(error)));
@@ -1177,8 +1191,10 @@ export class ApiSection extends SettingsSection {
                 .setPlaceholder('1200')
                 .setValue(String(cfg.excerptChars ?? 1200))
                 .onChange(async (value) => {
+                    // 与运行时口径一致：200–4000；旧实现不夹上限，写进 10000000 后
+                    // 设置页显示与实际生效值不一致
                     const n = parseInt(value, 10);
-                    cfg.excerptChars = Number.isFinite(n) && n >= 200 ? n : 1200;
+                    cfg.excerptChars = Number.isFinite(n) ? Math.max(200, Math.min(4000, n)) : 1200;
                     await this.plugin.saveSettings();
                 }));
     }
