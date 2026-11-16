@@ -16,3 +16,21 @@
 6. 代码与 git 是唯一真相源；质量数字以 `docs/progress/program-status.json` 为准。
 7. **可自行 `git push`**（2026-11-11 用户放行）；**`tag` / `Release` 仍需用户明确确认**；`E2E_REWRITE=1` 仍需用户明确确认（**当前无脚本消费该变量**——`rewrite-chapters` spec 已随「九霄逆脉行」下线，保留本条仅作破坏性 E2E 的通用红线）。
 8. 完整协作规范见 Vault 根 `PROJECT-RULES.md`；结构路线见 `docs/PLAN.md`。
+
+## 附：本仓作为独立 DSH 工作区（2026-11-17 起）
+
+用户已确认：**直接在插件仓根开 DSH 工作区**，不要在 vault 根开工作区做插件开发。
+
+- **工作区目录**：`D:\小说工坊\小说工坊\.obsidian\plugins\novel-writer-ai`（cwd = 本仓根）
+- **本仓是独立 git 仓**（remote `novel-writer-ai`），vault 的 `.gitignore` 忽略整个 `.obsidian/`，
+  两边互不跟踪：在本仓 `git` / `npm` 命令都不需要 `cd`。
+- **日常开发不需要 vault**：`typecheck` / `lint` / `test` / `build` / `preflight` 全在本仓内完成。
+- **界面级验证用独立开发 vault**：`D:\nw-dev-vault`（其 `.obsidian/plugins/novel-writer-ai`
+  是 junction 指回本仓，构建产物即时生效）。见 `docs/dev-vault.md`。
+  - 检查：`node scripts/dev-vault.mjs status`
+  - 验证加载：`node scripts/dev-vault.mjs verify`
+- **不要再往写作 vault 塞测试数据**（示例项目、测试书、缓存、视觉基线中间产物一律放开发 vault）。
+- **`obsidian eval` 的路径口径不受工作区 cwd 影响**：它运行在 vault 内，
+  读脚本仍用 vault 相对路径，如 `.obsidian/plugins/novel-writer-ai/scripts/xxx.js`。
+- 提交前跑 `npm run preflight`（含 30+ 项门禁），视觉改动另跑 `node scripts/check-visual-diff.mjs`。
+
