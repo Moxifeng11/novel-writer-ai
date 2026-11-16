@@ -88,7 +88,7 @@ export class SceneOutlineController {
         if (!project || chapNum <= 0) {
             container.createDiv({
                 text: '请先选择项目和章节',
-                cls: 'nw-u-p-20px-2 nw-u-c-text-muted-2 nw-u-ta-center-2'
+                cls: 'nw-u-p-20px nw-u-c-text-muted nw-u-ta-center'
             });
             return;
         }
@@ -96,7 +96,7 @@ export class SceneOutlineController {
         await this.loadScenes();
 
         const wrap = container.createDiv({
-            cls: "nw-scene-outline-container nw-u-d-flex-2 nw-u-fd-column-2 nw-u-h-100-2 nw-u-minh-0-2",
+            cls: "nw-scene-outline-container nw-u-d-flex nw-u-fd-column nw-u-h-100 nw-u-minh-0",
                     });
 
         this.renderHeader(wrap);
@@ -107,15 +107,15 @@ export class SceneOutlineController {
     /** 头部工具栏 */
     private renderHeader(container: HTMLElement): void {
         const header = container.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-p-8px-12px-2 nw-u-bb-1px-solid-background-m-2 nw-u-fsh-0-2'
+            cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-p-8px-12px nw-u-bb-1px-solid-background-m nw-u-fsh-0'
         });
 
         header.createSpan({
             text: '🎬 场景细纲',
-            cls: 'nw-u-fwt-600-2 nw-u-fs-0-95em'
+            cls: 'nw-u-fwt-600 nw-u-fs-0-95em'
         });
 
-        const btnGroup = header.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-4px-2' });
+        const btnGroup = header.createDiv({ cls: 'nw-u-d-flex nw-u-gap-4px' });
 
         // 2026-11-16：内联样式改为类名（P-13）
         const addBtn = btnGroup.createEl('button', {
@@ -144,7 +144,7 @@ export class SceneOutlineController {
     /** 主体内容：左列表 + 右编辑器 */
     private renderMainContent(container: HTMLElement): void {
         const main = container.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-flex-1-2 nw-u-minh-0-2 nw-u-ov-hidden-2'
+            cls: 'nw-u-d-flex nw-u-flex-1 nw-u-minh-0 nw-u-ov-hidden'
         });
 
         this.renderSceneList(main);
@@ -154,22 +154,22 @@ export class SceneOutlineController {
     /** 左侧场景列表 */
     private renderSceneList(container: HTMLElement): void {
         const listWrap = container.createDiv({
-            cls: 'nw-u-w-180px nw-u-fsh-0-2 nw-u-brt-1px-solid-background-m-2 nw-u-d-flex-2 nw-u-fd-column-2 nw-u-minh-0-2'
+            cls: 'nw-u-w-180px nw-u-fsh-0 nw-u-brt-1px-solid-background-m nw-u-d-flex nw-u-fd-column nw-u-minh-0'
         });
 
         const listHeader = listWrap.createDiv({
-            cls: 'nw-u-p-8px-10px-2 nw-u-fs-0-8em nw-u-c-text-muted-2 nw-u-bb-1px-solid-background-m-2'
+            cls: 'nw-u-p-8px-10px nw-u-fs-0-8em nw-u-c-text-muted nw-u-bb-1px-solid-background-m'
         });
         listHeader.setText(`共 ${this.scenes.length} 个场景`);
 
         const list = listWrap.createDiv({
-            cls: 'nw-u-flex-1-2 nw-u-ovy-auto-2 nw-u-p-4px'
+            cls: 'nw-u-flex-1 nw-u-ovy-auto nw-u-p-4px'
         });
 
         if (this.scenes.length === 0) {
             list.createDiv({
                 text: '暂无场景，点击 ➕ 添加',
-                cls: 'nw-u-p-20px-10px nw-u-ta-center-2 nw-u-c-text-faint-2 nw-u-fs-0-85em'
+                cls: 'nw-u-p-20px-10px nw-u-ta-center nw-u-c-text-faint nw-u-fs-0-85em'
             });
             return;
         }
@@ -187,7 +187,7 @@ export class SceneOutlineController {
                 }
             });
 
-            const topRow = item.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-4px-2' });
+            const topRow = item.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-4px' });
 
             const statusDot = topRow.createSpan({
                 attr: {
@@ -197,7 +197,7 @@ export class SceneOutlineController {
 
             topRow.createSpan({
                 text: `场景${scene.index}`,
-                cls: 'nw-u-fwt-600-2'
+                cls: 'nw-u-fwt-600'
             });
 
             if (scene.isKeyScene) {
@@ -264,14 +264,14 @@ export class SceneOutlineController {
     /** 右侧场景编辑器 */
     private renderSceneEditor(container: HTMLElement): void {
         const editorWrap = container.createDiv({
-            cls: "nw-scene-editor-wrap nw-u-flex-1-2 nw-u-minw-0-2 nw-u-d-flex-2 nw-u-fd-column-2 nw-u-minh-0-2",
+            cls: "nw-scene-editor-wrap nw-u-flex-1 nw-u-minw-0 nw-u-d-flex nw-u-fd-column nw-u-minh-0",
                     });
 
         const scene = this.scenes[this.currentSceneIndex];
         if (!scene) {
             editorWrap.createDiv({
                 text: '请选择或创建一个场景',
-                cls: 'nw-u-p-40px-20px nw-u-ta-center-2 nw-u-c-text-muted-2'
+                cls: 'nw-u-p-40px-20px nw-u-ta-center nw-u-c-text-muted'
             });
             return;
         }
@@ -284,10 +284,10 @@ export class SceneOutlineController {
     /** 编辑器工具栏 */
     private renderEditorToolbar(container: HTMLElement, scene: ExtendedSceneData): void {
         const toolbar = container.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-p-8px-12px-2 nw-u-bb-1px-solid-background-m-2 nw-u-fsh-0-2'
+            cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-p-8px-12px nw-u-bb-1px-solid-background-m nw-u-fsh-0'
         });
 
-        const titleArea = toolbar.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2' });
+        const titleArea = toolbar.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px' });
 
         const statusSelect = titleArea.createEl('select', { cls: 'nw-scene-outline-btn' });
         const statusOptions: { value: SceneStatus; label: string }[] = [
@@ -307,10 +307,10 @@ export class SceneOutlineController {
 
         titleArea.createSpan({
             text: `场景${scene.index}：${scene.name || '(未命名)'}`,
-            cls: 'nw-u-fwt-600-2 nw-u-fs-0-9em'
+            cls: 'nw-u-fwt-600 nw-u-fs-0-9em'
         });
 
-        const btnGroup = toolbar.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-4px-2' });
+        const btnGroup = toolbar.createDiv({ cls: 'nw-u-d-flex nw-u-gap-4px' });
 
         const actionBtns = [
             { icon: '⬆️', title: '上移', action: () => this.moveUp() },
@@ -334,7 +334,7 @@ export class SceneOutlineController {
     /** Tab 切换栏 */
     private renderTabBar(container: HTMLElement): void {
         const tabBar = container.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-bb-1px-solid-background-m-2 nw-u-fsh-0-2'
+            cls: 'nw-u-d-flex nw-u-bb-1px-solid-background-m nw-u-fsh-0'
         });
 
         const tabs: { id: 'basic' | 'conflict' | 'foreshadow'; label: string; icon: string }[] = [
@@ -360,7 +360,7 @@ export class SceneOutlineController {
     /** Tab 内容区 */
     private renderTabContent(container: HTMLElement, scene: ExtendedSceneData): void {
         const content = container.createDiv({
-            cls: 'nw-u-flex-1-2 nw-u-ovy-auto-2 nw-u-p-12px-2'
+            cls: 'nw-u-flex-1 nw-u-ovy-auto nw-u-p-12px'
         });
 
         switch (this.activeTab) {
@@ -398,7 +398,7 @@ export class SceneOutlineController {
         this.createTextArea(container, '🧭 工艺备注 (craft_notes)', 'craftNotes', scene);
 
         const keySceneRow = container.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-m-10px-0'
+            cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-m-10px-0'
         });
         const keySceneCheckbox = keySceneRow.createEl('input', {
             attr: { type: 'checkbox' }
@@ -430,13 +430,13 @@ export class SceneOutlineController {
         this.createTextArea(container, '⚔️ 核心冲突 (conflict)', 'conflict', scene);
 
         const typeRow = container.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-gap-12px-2 nw-u-m-10px-0'
+            cls: 'nw-u-d-flex nw-u-gap-12px nw-u-m-10px-0'
         });
 
-        const conflictTypeWrap = typeRow.createDiv({ cls: 'nw-u-flex-1-2' });
+        const conflictTypeWrap = typeRow.createDiv({ cls: 'nw-u-flex-1' });
         conflictTypeWrap.createEl('div', {
             text: '冲突类型',
-            cls: 'nw-u-fs-0-82em nw-u-c-text-muted-2 nw-u-marginbottom-4px-2 nw-u-fwt-500-2'
+            cls: 'nw-u-fs-0-82em nw-u-c-text-muted nw-u-marginbottom-4px nw-u-fwt-500'
         });
         const conflictSelect = conflictTypeWrap.createEl('select', { cls: 'nw-scene-outline-input' });
         const conflictOptions: { value: ConflictType; label: string }[] = [
@@ -454,10 +454,10 @@ export class SceneOutlineController {
             this.markDirty();
         };
 
-        const pleasureWrap = typeRow.createDiv({ cls: 'nw-u-flex-1-2' });
+        const pleasureWrap = typeRow.createDiv({ cls: 'nw-u-flex-1' });
         pleasureWrap.createEl('div', {
             text: '爽点类型',
-            cls: 'nw-u-fs-0-82em nw-u-c-text-muted-2 nw-u-marginbottom-4px-2 nw-u-fwt-500-2'
+            cls: 'nw-u-fs-0-82em nw-u-c-text-muted nw-u-marginbottom-4px nw-u-fwt-500'
         });
         const pleasureSelect = pleasureWrap.createEl('select', { cls: 'nw-scene-outline-input' });
         const pleasureOptions: { value: PleasureType; label: string }[] = [
@@ -484,19 +484,19 @@ export class SceneOutlineController {
         this.createTextArea(container, '🎯 伏笔回收', 'foreshadowRecover', scene);
 
         const statsRow = container.createDiv({
-            cls: 'nw-u-margintop-16px-2 nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-8px-2'
+            cls: 'nw-u-margintop-16px nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-8px'
         });
         statsRow.createEl('div', {
             text: '📊 场景统计',
-            cls: 'nw-u-fwt-600-2 nw-u-marginbottom-8px-2 nw-u-fs-0-9em'
+            cls: 'nw-u-fwt-600 nw-u-marginbottom-8px nw-u-fs-0-9em'
         });
 
         const wordEstimateWrap = statsRow.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-marginbottom-6px-2'
+            cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-marginbottom-6px'
         });
         wordEstimateWrap.createSpan({
             text: '预估字数：',
-            cls: 'nw-u-fs-0-85em nw-u-c-text-muted-2'
+            cls: 'nw-u-fs-0-85em nw-u-c-text-muted'
         });
         const wordInput = wordEstimateWrap.createEl('input', {
             cls: 'nw-scene-outline-input-sm',
@@ -511,16 +511,16 @@ export class SceneOutlineController {
         };
         wordEstimateWrap.createSpan({
             text: '字',
-            cls: 'nw-u-fs-0-85em nw-u-c-text-muted-2'
+            cls: 'nw-u-fs-0-85em nw-u-c-text-muted'
         });
     }
 
     /** 创建单行文本输入 */
     private createTextInput(container: HTMLElement, label: string, fieldKey: SceneTextFieldKey, scene: ExtendedSceneData): void {
-        const wrap = container.createDiv({ cls: 'nw-u-marginbottom-10px-2' });
+        const wrap = container.createDiv({ cls: 'nw-u-marginbottom-10px' });
         wrap.createEl('div', {
             text: label,
-            cls: 'nw-u-fs-0-82em nw-u-c-text-muted-2 nw-u-marginbottom-4px-2 nw-u-fwt-500-2'
+            cls: 'nw-u-fs-0-82em nw-u-c-text-muted nw-u-marginbottom-4px nw-u-fwt-500'
         });
         const input = wrap.createEl('input', {
                 cls: 'nw-scene-outline-input',
@@ -544,10 +544,10 @@ export class SceneOutlineController {
 
     /** 创建多行文本域 */
     private createTextArea(container: HTMLElement, label: string, fieldKey: SceneTextFieldKey, scene: ExtendedSceneData): void {
-        const wrap = container.createDiv({ cls: 'nw-u-marginbottom-10px-2' });
+        const wrap = container.createDiv({ cls: 'nw-u-marginbottom-10px' });
         wrap.createEl('div', {
             text: label,
-            cls: 'nw-u-fs-0-82em nw-u-c-text-muted-2 nw-u-marginbottom-4px-2 nw-u-fwt-500-2'
+            cls: 'nw-u-fs-0-82em nw-u-c-text-muted nw-u-marginbottom-4px nw-u-fwt-500'
         });
         const value = String(scene[fieldKey] || '');
         const textarea = wrap.createEl('textarea', { cls: 'nw-scene-outline-textarea' }) as HTMLTextAreaElement;
@@ -561,7 +561,7 @@ export class SceneOutlineController {
     /** 底部状态栏 */
     private renderFooter(container: HTMLElement): void {
         const footer = container.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-center-2 nw-u-p-8px-12px-2 nw-u-bt-1px-solid-background-m-2 nw-u-fs-0-78em nw-u-c-text-muted-2 nw-u-fsh-0-2'
+            cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center nw-u-p-8px-12px nw-u-bt-1px-solid-background-m nw-u-fs-0-78em nw-u-c-text-muted nw-u-fsh-0'
         });
 
         const totalWords = this.scenes.reduce((sum, s) => sum + (s.wordCountEstimate || 0), 0);

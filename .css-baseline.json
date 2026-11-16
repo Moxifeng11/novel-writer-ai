@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-16T13:50:48.235Z",
-  "note": "规划顺延项：大纲树/场景细纲内联样式收敛为类（+4.7KB，27 类）",
-  "bytes": 596864,
+  "generatedAt": "2026-11-16T14:09:00.480Z",
+  "note": "工具类去重与语义化后收紧（-5.4KB，-141 类）",
+  "bytes": 591458,
   "important": 24,
-  "hardcodedHex": 169,
-  "rgbHsl": 192,
-  "uniqueClasses": 3253,
+  "hardcodedHex": 156,
+  "rgbHsl": 183,
+  "uniqueClasses": 3112,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

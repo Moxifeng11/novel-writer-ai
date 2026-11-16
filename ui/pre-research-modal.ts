@@ -87,7 +87,7 @@ export class PreResearchModal extends Modal {
                 : '先完成红果短剧类型、商业钩子与集数规格，再创建项目。调研结果写入独立的 00-前期调研/，不复用长篇 11 步。',
         });
 
-        const aiRow = intro.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-fwr-wrap-2' });
+        const aiRow = intro.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-fwr-wrap' });
         const researchBtn = aiRow.createEl('button', {
             text: '🤖 AI 前期调研',
             cls: 'nw-btn nw-btn-primary',
@@ -98,8 +98,8 @@ export class PreResearchModal extends Modal {
             cls: 'nw-btn nw-btn-secondary',
             attr: { type: 'button', title: '只生成多层真随机因子预览，不调用 AI' },
         });
-        const aiStatus = aiRow.createDiv({ cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2', text: '尚未执行 AI 调研' });
-        const aiOutput = intro.createDiv({ cls: 'nw-u-fs-12px-2' });
+        const aiStatus = aiRow.createDiv({ cls: 'nw-u-fs-12px nw-u-c-text-muted', text: '尚未执行 AI 调研' });
+        const aiOutput = intro.createDiv({ cls: 'nw-u-fs-12px' });
         aiOutput.hidden = true;
         this.aiStatusEl = aiStatus;
         this.aiOutputEl = aiOutput;
@@ -410,7 +410,7 @@ export class PreResearchModal extends Modal {
         this.aiOutputEl.empty();
         this.aiOutputEl.createEl('pre', {
             text: result.premiseBlock,
-            cls: 'nw-u-fs-12px-2',
+            cls: 'nw-u-fs-12px',
         });
 
         const suggestions = result.suggestions;
@@ -436,7 +436,7 @@ export class PreResearchModal extends Modal {
             }
             this.aiStatusEl?.setText(`已应用候选 ${index + 1}：${item.name}`);
         };
-        this.aiOutputEl.createEl('div', { cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-fwr-wrap-2 nw-u-margintop-8px-2' }, (row) => {
+        this.aiOutputEl.createEl('div', { cls: 'nw-u-d-flex nw-u-gap-8px nw-u-fwr-wrap nw-u-margintop-8px' }, (row) => {
             suggestions.forEach((item, index) => {
                 const button = row.createEl('button', {
                     text: `应用候选 ${index + 1}`,

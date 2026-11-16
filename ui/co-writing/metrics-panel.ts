@@ -131,7 +131,7 @@ function renderMetricsFooter(
         container.createDiv({ cls: 'novel-writer-cowrite-next-directions', text: `下一轮方向：${directionText}` });
     }
     if (state.isError) {
-        const errorEl = container.createDiv({ cls: 'nw-cowrite-metrics-error nw-u-cursor-pointer-2', text: '❌ 评估失败，点击重试' });
+        const errorEl = container.createDiv({ cls: 'nw-cowrite-metrics-error nw-u-cur-pointer', text: '❌ 评估失败，点击重试' });
         errorEl.addEventListener('click', () => onRetry());
     }
     if (state.isInsufficient && !state.isEvaluating && !state.isError) {

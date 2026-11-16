@@ -82,7 +82,7 @@ export function buildKbBookCard(book: BookBasicInfo, host: KbBookCardHost): HTML
     const header = card.createDiv({ cls: 'nw-u-d-flex nw-u-ai-flex-start nw-u-jc-space-between nw-u-marginbottom-8px nw-u-gap-8px' });
     const title = header.createDiv({
         text: book.name,
-        cls: 'nw-u-fs-14px nw-u-fwt-500 nw-u-ov-hidden nw-u-textoverflow-ellipsis nw-u-d-webkit-box nw-u-webkitlineclamp-2 nw-u-webkitboxorient-vertical nw-u-lh-1-4 nw-u-flex-1'
+        cls: 'nw-u-fs-14px nw-u-fwt-500 nw-u-ov-hidden nw-u-textoverflow-ellipsis nw-u-d-webkit-box nw-u-clamp-2-lines nw-u-webkitboxorient-vertical nw-u-lh-1-4 nw-u-flex-1'
     });
     void title;
 
@@ -180,7 +180,7 @@ export function buildKbBookCard(book: BookBasicInfo, host: KbBookCardHost): HTML
     if (qualityText) {
         footer.createSpan({
             text: qualityText,
-            cls: 'nw-u-fs-12px nw-u-c-f59e0b nw-u-fwt-500'
+            cls: 'nw-u-fs-12px nw-u-c-warning nw-u-fwt-500'
         });
     } else {
         footer.createSpan();

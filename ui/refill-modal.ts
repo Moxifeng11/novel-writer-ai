@@ -223,25 +223,25 @@ export class RefillModal extends Modal {
 
         contentEl.createEl('h3', {
             text: `🔄 重新提取指纹 - ${this.fingerprint.name}`,
-            cls: 'nw-u-m-0-0-16px-0-2 nw-u-fs-16px-2'
+            cls: 'nw-u-m-0-0-16px-0 nw-u-fs-16px'
         });
 
         const completeness = this.getFingerprintCompleteness(this.fingerprint);
         const completenessRow = contentEl.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-20px-2'
+            cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-20px'
         });
         completenessRow.createEl('div', {
             text: '当前完整度',
-            cls: 'nw-u-fs-13px-2 nw-u-fwt-600-2'
+            cls: 'nw-u-fs-13px nw-u-fwt-600'
         });
         completenessRow.appendChild(this.getCompletenessBadge(completeness));
 
         const optionsSection = contentEl.createDiv({
-            cls: 'nw-u-marginbottom-20px-2 nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2'
+            cls: 'nw-u-marginbottom-20px nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px'
         });
         optionsSection.createEl('div', {
             text: '补全选项',
-            cls: 'nw-u-fs-13px-2 nw-u-fwt-600-2 nw-u-marginbottom-10px-2'
+            cls: 'nw-u-fs-13px nw-u-fwt-600 nw-u-marginbottom-10px'
         });
 
         const options = [
@@ -253,7 +253,7 @@ export class RefillModal extends Modal {
         options.forEach(opt => {
             const isSelected = this.fingerprintRefillOptions[opt.key as keyof FingerprintRefillOptions];
             const row = optionsSection.createDiv({
-                cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-p-8px-0-2 nw-u-cur-pointer-2 nw-u-bb-1px-solid-background-m-2'
+                cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-p-8px-0 nw-u-cur-pointer nw-u-bb-1px-solid-background-m'
             });
 
             const checkbox = row.createEl('input', {
@@ -270,29 +270,29 @@ export class RefillModal extends Modal {
                 this.render();
             });
 
-            const info = row.createDiv({ cls: 'nw-u-flex-1-2' });
+            const info = row.createDiv({ cls: 'nw-u-flex-1' });
             info.createEl('div', {
                 text: `${opt.icon} ${opt.label}`,
-                cls: 'nw-u-fs-13px-2 nw-u-fwt-500-2'
+                cls: 'nw-u-fs-13px nw-u-fwt-500'
             });
             info.createEl('div', {
                 text: opt.desc,
-                cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2'
+                cls: 'nw-u-fs-11px nw-u-c-text-muted'
             });
         });
 
         if (this.isRunning) {
             const progressSection = contentEl.createDiv({
-                cls: 'nw-u-marginbottom-16px-2'
+                cls: 'nw-u-marginbottom-16px'
             });
 
             progressSection.createEl('div', {
                 text: this.progressMessage || '重新提取中...',
-                cls: 'nw-u-fs-13px-2 nw-u-marginbottom-8px-2 nw-u-ta-center-2'
+                cls: 'nw-u-fs-13px nw-u-marginbottom-8px nw-u-ta-center'
             });
 
             const barContainer = progressSection.createDiv({
-                cls: 'nw-u-h-8px-2 nw-u-bg-background-secondary-2 nw-u-brd-4px-2 nw-u-ov-hidden-2'
+                cls: 'nw-u-h-8px nw-u-bg-background-secondary nw-u-brd-4px nw-u-ov-hidden'
             });
 
             this.progressBar = barContainer.createDiv({
@@ -307,12 +307,12 @@ export class RefillModal extends Modal {
 
             this.progressText = progressSection.createDiv({
                 text: `${this.currentProgress}%`,
-                cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-ta-center-2 nw-u-margintop-6px'
+                cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-ta-center nw-u-margintop-6px'
             });
         }
 
         const btnRow = contentEl.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-gap-10px-2 nw-u-jc-flex-end-2'
+            cls: 'nw-u-d-flex nw-u-gap-10px nw-u-jc-flex-end'
         });
 
         this.cancelBtn = btnRow.createEl('button', {
@@ -356,15 +356,15 @@ export class RefillModal extends Modal {
     private renderKnowledgeRefill(contentEl: HTMLElement): void {
         contentEl.createEl('h3', {
             text: `🔄 补全拆解 - 《${this.bookName}》`,
-            cls: 'nw-u-m-0-0-16px-0-2 nw-u-fs-16px-2'
+            cls: 'nw-u-m-0-0-16px-0 nw-u-fs-16px'
         });
 
         const modeSection = contentEl.createDiv({
-            cls: 'nw-u-marginbottom-20px-2 nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2'
+            cls: 'nw-u-marginbottom-20px nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px'
         });
         modeSection.createEl('div', {
             text: '拆解模式',
-            cls: 'nw-u-fs-13px-2 nw-u-fwt-600-2 nw-u-marginbottom-10px-2'
+            cls: 'nw-u-fs-13px nw-u-fwt-600 nw-u-marginbottom-10px'
         });
 
         this.modeRadios = [];
@@ -375,7 +375,7 @@ export class RefillModal extends Modal {
 
         modes.forEach(mode => {
             const row = modeSection.createDiv({
-                cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-p-6px-0-2 nw-u-cur-pointer-2'
+                cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-p-6px-0 nw-u-cur-pointer'
             });
 
             const radio = row.createEl('input', {
@@ -398,24 +398,24 @@ export class RefillModal extends Modal {
             const label = row.createDiv();
             label.createEl('div', {
                 text: mode.label,
-                cls: 'nw-u-fs-13px-2 nw-u-fwt-500-2'
+                cls: 'nw-u-fs-13px nw-u-fwt-500'
             });
             label.createEl('div', {
                 text: mode.desc,
-                cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2'
+                cls: 'nw-u-fs-11px nw-u-c-text-muted'
             });
         });
 
         const dimSection = contentEl.createDiv({
-            cls: 'nw-u-marginbottom-20px-2'
+            cls: 'nw-u-marginbottom-20px'
         });
         dimSection.createEl('div', {
             text: '选择维度',
-            cls: 'nw-u-fs-13px-2 nw-u-fwt-600-2 nw-u-marginbottom-10px-2'
+            cls: 'nw-u-fs-13px nw-u-fwt-600 nw-u-marginbottom-10px'
         });
 
         const grid = dimSection.createDiv({
-            cls: 'nw-u-d-grid-2 nw-u-gtc-1fr-1fr-2 nw-u-gap-8px-2'
+            cls: 'nw-u-d-grid nw-u-gtc-1fr-1fr nw-u-gap-8px'
         });
 
         this.dimensionCheckboxes = new Map();
@@ -456,10 +456,10 @@ export class RefillModal extends Modal {
             });
             this.dimensionCheckboxes!.set(dim.key, checkbox);
 
-            const info = checkboxEl.createDiv({ cls: 'nw-u-flex-1-2' });
+            const info = checkboxEl.createDiv({ cls: 'nw-u-flex-1' });
             info.createEl('div', {
                 text: `${dim.icon} ${dim.label}`,
-                cls: 'nw-u-fs-12px-2 nw-u-fwt-500-2'
+                cls: 'nw-u-fs-12px nw-u-fwt-500'
             });
 
             const statusText = status === 'completed' ? '✓ 已完成' : status === 'failed' ? '✗ 失败' : '○ 缺失';
@@ -471,36 +471,36 @@ export class RefillModal extends Modal {
         });
 
         const timeSection = contentEl.createDiv({
-            cls: 'nw-u-marginbottom-20px-2 nw-u-p-12px-2 nw-u-bg-background-secondary-a-2 nw-u-brd-6px-2'
+            cls: 'nw-u-marginbottom-20px nw-u-p-12px nw-u-bg-background-secondary-a nw-u-brd-6px'
         });
         timeSection.createEl('div', {
             text: `⏱️ 预估时间：${this.formatTime(this.getEstimatedTime())}（每维度约30秒）`,
-            cls: 'nw-u-fs-13px-2 nw-u-c-text-muted-2'
+            cls: 'nw-u-fs-13px nw-u-c-text-muted'
         });
         timeSection.createEl('div', {
             text: `📋 已选择 ${this.selectedDimensions.size} / 6 个维度`,
-            cls: 'nw-u-fs-12px-2 nw-u-c-text-faint-2 nw-u-margintop-4px-3'
+            cls: 'nw-u-fs-12px nw-u-c-text-faint nw-u-margintop-4px'
         });
 
         if (this.isRunning) {
             const progressSection = contentEl.createDiv({
-                cls: 'nw-u-marginbottom-16px-2'
+                cls: 'nw-u-marginbottom-16px'
             });
 
             progressSection.createEl('div', {
                 text: this.progressMessage || '拆解中...',
-                cls: 'nw-u-fs-13px-2 nw-u-marginbottom-8px-2 nw-u-ta-center-2'
+                cls: 'nw-u-fs-13px nw-u-marginbottom-8px nw-u-ta-center'
             });
 
             if (this.currentDimension) {
                 progressSection.createEl('div', {
                     text: `当前：${this.currentDimension}`,
-                    cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-ta-center-2 nw-u-marginbottom-8px-2'
+                    cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-ta-center nw-u-marginbottom-8px'
                 });
             }
 
             const barContainer = progressSection.createDiv({
-                cls: 'nw-u-h-8px-2 nw-u-bg-background-secondary-2 nw-u-brd-4px-2 nw-u-ov-hidden-2'
+                cls: 'nw-u-h-8px nw-u-bg-background-secondary nw-u-brd-4px nw-u-ov-hidden'
             });
 
             this.progressBar = barContainer.createDiv({
@@ -515,12 +515,12 @@ export class RefillModal extends Modal {
 
             this.progressText = progressSection.createDiv({
                 text: `${this.currentProgress}%`,
-                cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-ta-center-2 nw-u-margintop-6px'
+                cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-ta-center nw-u-margintop-6px'
             });
         }
 
         const btnRow = contentEl.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-gap-10px-2 nw-u-jc-flex-end-2'
+            cls: 'nw-u-d-flex nw-u-gap-10px nw-u-jc-flex-end'
         });
 
         this.cancelBtn = btnRow.createEl('button', {

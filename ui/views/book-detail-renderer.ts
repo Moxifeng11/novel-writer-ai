@@ -200,7 +200,7 @@ export class BookDetailRenderer {
         if (overallStyle) {
             const section = this.createDetailSection(container, '整体风格');
             const grid = section.createDiv({
-                cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-2 nw-u-gap-12px'
+                cls: 'nw-u-d-grid nw-u-grid-auto-fit-200 nw-u-gap-12px'
             });
             const styleCard = grid.createDiv({
                 cls: 'nw-u-p-14px nw-u-bg-background-secondary nw-u-brd-8px'
@@ -706,7 +706,7 @@ export class BookDetailRenderer {
     public renderBookOverviewTab(container: HTMLElement, book: BookBasicInfo): void {
         const infoSection = this.createDetailSection(container, '基本信息');
         const infoGrid = infoSection.createDiv({
-            cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-2 nw-u-gap-12px'
+            cls: 'nw-u-d-grid nw-u-grid-auto-fit-200 nw-u-gap-12px'
         });
         this.addInfoItem(infoGrid, '书名', book.name);
         this.addInfoItem(infoGrid, '作者', book.author || '未知');
@@ -755,7 +755,7 @@ export class BookDetailRenderer {
                 if (emitterState.currentStep) {
                     progressInfo.createSpan({
                         text: `📍 ${emitterState.currentStep}`,
-                        cls: 'nw-u-fs-12px nw-u-c-3b82f6 nw-u-fwt-500'
+                        cls: 'nw-u-fs-12px nw-u-c-accent nw-u-fwt-500'
                     });
                 }
 
@@ -1139,7 +1139,7 @@ export class BookDetailRenderer {
         // 角色卡片列表
         const mainSection = this.createDetailSection(container, '角色列表');
         const grid = mainSection.createDiv({
-            cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fill-minma-2 nw-u-gap-12px'
+            cls: 'nw-u-d-grid nw-u-grid-auto-fill-300 nw-u-gap-12px'
         });
 
         sortedChars.forEach((char, idx) => {
@@ -1196,7 +1196,7 @@ export class BookDetailRenderer {
                 });
                 arcBar.createSpan({
                     text: this.getArcTypeLabel(char.characterArc.transformationType),
-                    cls: "nw-flex-shrink-0 nw-u-fs-11px nw-u-p-2px-6px nw-u-bg-rgba-interactive-accen nw-u-c-interactive-accent nw-u-brd-4px", attr: {}
+                    cls: "nw-flex-shrink-0 nw-u-fs-11px nw-u-p-2px-6px nw-u-bg-accent-soft nw-u-c-interactive-accent nw-u-brd-4px", attr: {}
                 });
                 const barBg = arcBar.createDiv({
                     cls: 'nw-u-flex-1 nw-u-h-6px nw-u-bg-background-secondary nw-u-brd-3px nw-u-ov-hidden'
@@ -1479,7 +1479,7 @@ export class BookDetailRenderer {
                     });
                     relItem.createSpan({
                         text: rel.type,
-                        cls: 'nw-u-c-interactive-accent nw-u-p-2px-8px nw-u-bg-rgba-interactive-accen nw-u-brd-4px'
+                        cls: 'nw-u-c-interactive-accent nw-u-p-2px-8px nw-u-bg-accent-soft nw-u-brd-4px'
                     });
                     const weightPct = rel.weight != null ? `${(rel.weight * 100).toFixed(0)}%` : '-';
                     relItem.createSpan({
@@ -1705,7 +1705,7 @@ export class BookDetailRenderer {
                 cls: 'nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-10px nw-u-d-flex nw-u-ai-center nw-u-gap-24px'
             });
             const scoreCircle = card.createDiv({
-                cls: 'nw-u-w-100px nw-u-h-100px nw-u-brd-50 nw-u-bg-linear-gradient-135deg nw-u-d-flex nw-u-fd-column nw-u-ai-center nw-u-jc-center nw-u-c-white nw-u-fsh-0'
+                cls: 'nw-u-w-100px nw-u-h-100px nw-u-brd-50 nw-u-bg-gradient-accent nw-u-d-flex nw-u-fd-column nw-u-ai-center nw-u-jc-center nw-u-c-white nw-u-fsh-0'
             });
             scoreCircle.createDiv({ text: data.overallScore !== undefined ? data.overallScore.toString() : '-', cls: 'nw-u-fs-28px nw-u-fwt-700 nw-u-lh-1' });
             scoreCircle.createDiv({ text: '总分', cls: 'nw-u-fs-11px nw-u-op-0-9' });
@@ -1849,7 +1849,7 @@ export class BookDetailRenderer {
                 cls: 'nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-10px nw-u-d-flex nw-u-ai-center nw-u-gap-24px'
             });
             const scoreCircle = card.createDiv({
-                cls: 'nw-u-w-100px nw-u-h-100px nw-u-brd-50 nw-u-bg-linear-gradient-135deg-2 nw-u-d-flex nw-u-fd-column nw-u-ai-center nw-u-jc-center nw-u-c-white nw-u-fsh-0'
+                cls: 'nw-u-w-100px nw-u-h-100px nw-u-brd-50 nw-u-bg-gradient-success-accent nw-u-d-flex nw-u-fd-column nw-u-ai-center nw-u-jc-center nw-u-c-white nw-u-fsh-0'
             });
             scoreCircle.createDiv({ text: data.overallScore.toString(), cls: 'nw-u-fs-28px nw-u-fwt-700 nw-u-lh-1' });
             scoreCircle.createDiv({ text: '总分', cls: 'nw-u-fs-11px nw-u-op-0-9' });
@@ -2026,7 +2026,7 @@ export class BookDetailRenderer {
                         p.reasons.forEach(r => {
                             reasonsDiv.createSpan({
                                 text: r,
-                                cls: 'nw-u-p-2px-6px nw-u-bg-color-red nw-u-op-0-2 nw-u-brd-3px nw-u-fs-10px nw-u-c-color-red'
+                                cls: 'nw-u-p-2px-6px nw-u-bg-color-red nw-u-opacity-20 nw-u-brd-3px nw-u-fs-10px nw-u-c-color-red'
                             });
                         });
                     }

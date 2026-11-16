@@ -177,15 +177,15 @@ export class OutlineExpandModal extends Modal {
         // 切换模式时只重建标题栏，先移除旧的，避免重复堆叠（曾出现 3 层标题栏）
         this.headerEl?.remove();
         const header = container.createDiv({
-            cls: 'nw-u-p-16px-20px nw-u-bb-1px-solid-background-m-2 nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-fsh-0-2 nw-u-fwr-wrap-2 nw-u-rg-10px nw-u-cg-12px'
+            cls: 'nw-u-p-16px-20px nw-u-bb-1px-solid-background-m nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-fsh-0 nw-u-fwr-wrap nw-u-rg-10px nw-u-cg-12px'
         });
         this.headerEl = header;
         container.prepend(header);
 
-        const left = header.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-16px-2 nw-u-fwr-wrap-2 nw-u-rg-8px nw-u-minw-0-2' });
-        left.createEl('h2', { text: '✍️ 智能扩写编辑器', cls: 'nw-u-m-0-2 nw-u-fs-18px-2 nw-u-ws-nowrap-2 nw-u-fsh-0-2' });
+        const left = header.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-16px nw-u-fwr-wrap nw-u-rg-8px nw-u-minw-0' });
+        left.createEl('h2', { text: '✍️ 智能扩写编辑器', cls: 'nw-u-m-0 nw-u-fs-18px nw-u-ws-nowrap nw-u-fsh-0' });
 
-        const modeSelector = left.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-4px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2 nw-u-p-2px-2' });
+        const modeSelector = left.createDiv({ cls: 'nw-u-d-flex nw-u-gap-4px nw-u-bg-background-secondary nw-u-brd-6px nw-u-p-2px' });
         const modes: Array<{ key: ExpandMode; label: string }> = [
             { key: 'chapter', label: '整章扩写' },
             { key: 'scene', label: '场景扩写' },
@@ -208,9 +208,9 @@ export class OutlineExpandModal extends Modal {
             };
         }
 
-        const right = header.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-fwr-wrap-2 nw-u-rg-8px nw-u-marginleft-auto-2' });
+        const right = header.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-fwr-wrap nw-u-rg-8px nw-u-marginleft-auto' });
 
-        const strategyLabel = right.createSpan({ text: '策略：', cls: "nw-text-muted nw-u-ws-nowrap-2 nw-u-fsh-0-2", attr: {} });
+        const strategyLabel = right.createSpan({ text: '策略：', cls: "nw-text-muted nw-u-ws-nowrap nw-u-fsh-0", attr: {} });
         const strategySelect = right.createEl('select', {
             cls: 'nw-oe-select',
         }) as HTMLSelectElement;
@@ -227,8 +227,8 @@ export class OutlineExpandModal extends Modal {
             this.strategy = strategySelect.value as ExpansionStrategy;
         };
 
-        const wordInputWrap = right.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-4px-2 nw-u-fsh-0-2' });
-        wordInputWrap.createSpan({ text: '目标字数：', cls: "nw-text-muted nw-u-ws-nowrap-2 nw-u-fsh-0-2", attr: {} });
+        const wordInputWrap = right.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-4px nw-u-fsh-0' });
+        wordInputWrap.createSpan({ text: '目标字数：', cls: "nw-text-muted nw-u-ws-nowrap nw-u-fsh-0", attr: {} });
         const wordInput = wordInputWrap.createEl('input', {
             type: 'number',
             value: String(this.targetWords),
@@ -243,21 +243,21 @@ export class OutlineExpandModal extends Modal {
 
         right.createEl('button', {
             text: '✕',
-            cls: "nw-btn nw-u-p-4px-10px-2 nw-u-fs-16px-2 nw-u-b-none nw-u-bg-transparent nw-u-cur-pointer-2 nw-u-c-text-muted-2",
+            cls: "nw-btn nw-u-p-4px-10px nw-u-fs-16px nw-u-b-none nw-u-bg-transparent nw-u-cur-pointer nw-u-c-text-muted",
             attr: {}
         }).onclick = () => this.close();
     }
 
     private renderMainContent(container: HTMLElement): void {
         const main = container.createDiv({
-            cls: 'nw-u-flex-1-2 nw-u-d-flex-2 nw-u-ov-hidden-2 nw-u-minh-0-2'
+            cls: 'nw-u-flex-1 nw-u-d-flex nw-u-ov-hidden nw-u-minh-0'
         });
 
         this.leftPanel = main.createDiv({
-            cls: 'nw-u-w-320px nw-u-brt-1px-solid-background-m-2 nw-u-d-flex-2 nw-u-fd-column-2 nw-u-ov-hidden-2'
+            cls: 'nw-u-w-320px nw-u-brt-1px-solid-background-m nw-u-d-flex nw-u-fd-column nw-u-ov-hidden'
         });
         this.rightPanel = main.createDiv({
-            cls: 'nw-u-flex-1-2 nw-u-d-flex-2 nw-u-fd-column-2 nw-u-ov-hidden-2'
+            cls: 'nw-u-flex-1 nw-u-d-flex nw-u-fd-column nw-u-ov-hidden'
         });
 
         this.renderLeftPanel();
@@ -268,38 +268,38 @@ export class OutlineExpandModal extends Modal {
         this.leftPanel.empty();
 
         const leftHeader = this.leftPanel.createDiv({
-            cls: 'nw-u-p-12px-16px-2 nw-u-bb-1px-solid-background-m-2 nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-fsh-0-2'
+            cls: 'nw-u-p-12px-16px nw-u-bb-1px-solid-background-m nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-fsh-0'
         });
         leftHeader.createSpan({
             text: this.expandMode === 'chapter' ? '📋 章节场景' : this.expandMode === 'scene' ? '📝 场景段落' : '📄 段落列表',
-            cls: 'nw-u-fwt-500-2 nw-u-fs-14px-2'
+            cls: 'nw-u-fwt-500 nw-u-fs-14px'
         });
 
         if (this.expandMode === 'chapter') {
             const expandAllBtn = leftHeader.createEl('button', {
                 text: '全部展开',
-                cls: "nw-btn nw-u-fs-12px-2 nw-u-p-2px-8px-2",
+                cls: "nw-btn nw-u-fs-12px nw-u-p-2px-8px",
                 attr: {}
             });
             expandAllBtn.onclick = () => this.expandAllScenes();
         }
 
         const listContainer = this.leftPanel.createDiv({
-            cls: 'nw-u-flex-1-2 nw-u-ovy-auto-2 nw-u-p-8px-2'
+            cls: 'nw-u-flex-1 nw-u-ovy-auto nw-u-p-8px'
         });
 
         if (this.expandMode === 'chapter' || this.expandMode === 'scene') {
-            this.sceneListEl = listContainer.createDiv({ cls: 'nw-u-d-flex-2 nw-u-fd-column-2 nw-u-gap-4px-2' });
+            this.sceneListEl = listContainer.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-4px' });
             this.refreshSceneList();
         } else {
-            this.paragraphListEl = listContainer.createDiv({ cls: 'nw-u-d-flex-2 nw-u-fd-column-2 nw-u-gap-4px-2' });
+            this.paragraphListEl = listContainer.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-4px' });
             this.refreshParagraphList();
         }
 
         const settingsPanel = this.leftPanel.createDiv({
-            cls: 'nw-u-bt-1px-solid-background-m-2 nw-u-p-12px-16px-2 nw-u-fsh-0-2'
+            cls: 'nw-u-bt-1px-solid-background-m nw-u-p-12px-16px nw-u-fsh-0'
         });
-        settingsPanel.createEl('h4', { text: '增强选项', cls: 'nw-u-m-0-0-8px-0-2 nw-u-fs-13px-2 nw-u-c-text-muted-2' });
+        settingsPanel.createEl('h4', { text: '增强选项', cls: 'nw-u-m-0-0-8px-0 nw-u-fs-13px nw-u-c-text-muted' });
 
         const enhancements: Array<{ key: string; label: string; value: boolean }> = [
             { key: 'coolPoints', label: '🎯 爽点增强', value: this.enhanceCoolPoints },
@@ -309,10 +309,10 @@ export class OutlineExpandModal extends Modal {
         ];
 
         for (const enh of enhancements) {
-            const row = settingsPanel.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-marginbottom-6px-2' });
+            const row = settingsPanel.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-marginbottom-6px' });
             const checkbox = row.createEl('input', {
                 type: 'checkbox',
-                cls: 'nw-u-cur-pointer-2'
+                cls: 'nw-u-cur-pointer'
             }) as HTMLInputElement;
             checkbox.checked = enh.value;
             checkbox.onchange = () => {
@@ -323,7 +323,7 @@ export class OutlineExpandModal extends Modal {
                     case 'foreshadows': this.plantForeshadows = checkbox.checked; break;
                 }
             };
-            row.createSpan({ text: enh.label, cls: 'nw-u-fs-13px-2 nw-u-cur-pointer-2' }).onclick = () => {
+            row.createSpan({ text: enh.label, cls: 'nw-u-fs-13px nw-u-cur-pointer' }).onclick = () => {
                 checkbox.checked = !checkbox.checked;
                 checkbox.dispatchEvent(new Event('change'));
             };
@@ -334,10 +334,10 @@ export class OutlineExpandModal extends Modal {
         this.rightPanel.empty();
 
         const rightHeader = this.rightPanel.createDiv({
-            cls: 'nw-u-p-12px-16px-2 nw-u-bb-1px-solid-background-m-2 nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-fsh-0-2'
+            cls: 'nw-u-p-12px-16px nw-u-bb-1px-solid-background-m nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-fsh-0'
         });
 
-        const viewTabs = rightHeader.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-4px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2 nw-u-p-2px-2' });
+        const viewTabs = rightHeader.createDiv({ cls: 'nw-u-d-flex nw-u-gap-4px nw-u-bg-background-secondary nw-u-brd-6px nw-u-p-2px' });
         const viewModes: Array<{ key: ViewMode; label: string }> = [
             { key: 'edit', label: '编辑' },
             { key: 'diff', label: '对比' },
@@ -360,13 +360,13 @@ export class OutlineExpandModal extends Modal {
         });
 
         const editorContainer = this.rightPanel.createDiv({
-            cls: 'nw-u-flex-1-2 nw-u-ov-hidden-2 nw-u-pos-relative'
+            cls: 'nw-u-flex-1 nw-u-ov-hidden nw-u-pos-relative'
         });
 
         if (this.viewMode === 'edit') {
             this.editorEl = editorContainer.createEl('textarea', {
                 value: this.expandedText || this.sourceOutline,
-                cls: 'nw-u-w-100-2 nw-u-h-100-2 nw-u-b-none nw-u-outline-none nw-u-resize-none nw-u-p-16px-2 nw-u-fontfamily-font-interface nw-u-fs-14px-2 nw-u-lh-1-8 nw-u-bg-background-primary-2 nw-u-c-text-normal-2 nw-u-bx-border-box'
+                cls: 'nw-u-w-100 nw-u-h-100 nw-u-b-none nw-u-outline-none nw-u-resize-none nw-u-p-16px nw-u-fontfamily-font-interface nw-u-fs-14px nw-u-lh-1-8 nw-u-bg-background-primary nw-u-c-text-normal nw-u-bx-border-box'
             }) as HTMLTextAreaElement;
             this.editorEl.oninput = () => {
                 this.expandedText = this.editorEl.value;
@@ -377,29 +377,29 @@ export class OutlineExpandModal extends Modal {
         }
 
         this.progressEl = this.rightPanel.createDiv({
-            cls: 'nw-u-p-8px-16px nw-u-bt-1px-solid-background-m-2 nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-d-none nw-u-fsh-0-2'
+            cls: 'nw-u-p-8px-16px nw-u-bt-1px-solid-background-m nw-u-fs-12px nw-u-c-text-muted nw-u-d-none nw-u-fsh-0'
         });
     }
 
     private renderDiffView(container: HTMLElement): void {
         const diffContainer = container.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-h-100-2 nw-u-ov-hidden-2'
+            cls: 'nw-u-d-flex nw-u-h-100 nw-u-ov-hidden'
         });
 
         const origCol = diffContainer.createDiv({
-            cls: 'nw-u-flex-1-2 nw-u-d-flex-2 nw-u-fd-column-2 nw-u-brt-1px-solid-background-m-2 nw-u-ov-hidden-2'
+            cls: 'nw-u-flex-1 nw-u-d-flex nw-u-fd-column nw-u-brt-1px-solid-background-m nw-u-ov-hidden'
         });
-        origCol.createDiv({ text: '原文', cls: 'nw-u-p-8px-12px-2 nw-u-bg-background-secondary-2 nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-fwt-500-2 nw-u-fsh-0-2' });
+        origCol.createDiv({ text: '原文', cls: 'nw-u-p-8px-12px nw-u-bg-background-secondary nw-u-fs-12px nw-u-c-text-muted nw-u-fwt-500 nw-u-fsh-0' });
         const origContent = origCol.createDiv({
-            cls: 'nw-u-flex-1-2 nw-u-ovy-auto-2 nw-u-p-12px-2 nw-u-fs-14px-2 nw-u-lh-1-8 nw-u-fontfamily-font-monospace'
+            cls: 'nw-u-flex-1 nw-u-ovy-auto nw-u-p-12px nw-u-fs-14px nw-u-lh-1-8 nw-u-fontfamily-font-monospace'
         });
 
         const newCol = diffContainer.createDiv({
-            cls: 'nw-u-flex-1-2 nw-u-d-flex-2 nw-u-fd-column-2 nw-u-ov-hidden-2'
+            cls: 'nw-u-flex-1 nw-u-d-flex nw-u-fd-column nw-u-ov-hidden'
         });
-        newCol.createDiv({ text: '扩写后', cls: 'nw-u-p-8px-12px-2 nw-u-bg-background-secondary-2 nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-fwt-500-2 nw-u-fsh-0-2' });
+        newCol.createDiv({ text: '扩写后', cls: 'nw-u-p-8px-12px nw-u-bg-background-secondary nw-u-fs-12px nw-u-c-text-muted nw-u-fwt-500 nw-u-fsh-0' });
         const newContent = newCol.createDiv({
-            cls: 'nw-u-flex-1-2 nw-u-ovy-auto-2 nw-u-p-12px-2 nw-u-fs-14px-2 nw-u-lh-1-8 nw-u-fontfamily-font-monospace'
+            cls: 'nw-u-flex-1 nw-u-ovy-auto nw-u-p-12px nw-u-fs-14px nw-u-lh-1-8 nw-u-fontfamily-font-monospace'
         });
 
         const diffs = lineDiff(this.originalText || this.sourceOutline, this.expandedText);
@@ -433,11 +433,11 @@ export class OutlineExpandModal extends Modal {
     private renderFooter(container: HTMLElement): void {
         this.footerEl?.remove();
         const footer = container.createDiv({
-            cls: 'nw-u-p-12px-20px nw-u-bt-1px-solid-background-m-2 nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-fsh-0-2 nw-u-gap-12px-2'
+            cls: 'nw-u-p-12px-20px nw-u-bt-1px-solid-background-m nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-fsh-0 nw-u-gap-12px'
         });
         this.footerEl = footer;
 
-        const leftActions = footer.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2' });
+        const leftActions = footer.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px' });
 
         if (this.expandMode === 'paragraph') {
             leftActions.createEl('button', {
@@ -451,7 +451,7 @@ export class OutlineExpandModal extends Modal {
             cls: 'nw-btn',
         }).onclick = () => this.runExpansion();
 
-        const rightActions = footer.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2' });
+        const rightActions = footer.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px' });
 
         rightActions.createEl('button', {
             text: '取消',
@@ -471,7 +471,7 @@ export class OutlineExpandModal extends Modal {
         if (this.scenes.length === 0) {
             this.sceneListEl.createDiv({
                 text: '点击「开始扩写」生成场景列表',
-                cls: 'nw-u-p-20px-2 nw-u-ta-center-2 nw-u-c-text-muted-2 nw-u-fs-13px-2'
+                cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted nw-u-fs-13px'
             });
 
             const startBtn = this.sceneListEl.createEl('button', {
@@ -491,25 +491,25 @@ export class OutlineExpandModal extends Modal {
                 cls: `nw-expand-scene-item${i === this.selectedSceneIndex ? ' nw-expand-scene-item-active' : ''}${expansion ? (expansion.adopted ? ' nw-expand-scene-adopted' : ' nw-expand-scene-skipped') : ''}`,
             });
 
-            const header = item.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-6px-2 nw-u-marginbottom-4px-2' });
+            const header = item.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-6px nw-u-marginbottom-4px' });
             header.createSpan({
                 text: `${scene.isKeyScene ? '⭐' : '📍'} 场景${scene.index}`,
-                cls: 'nw-u-fwt-500-2 nw-u-fs-13px-2 nw-u-fsh-0-2'
+                cls: 'nw-u-fwt-500 nw-u-fs-13px nw-u-fsh-0'
             });
             header.createSpan({
                 text: scene.name,
-                cls: 'nw-u-fs-13px-2 nw-u-ov-hidden-2 nw-u-textoverflow-ellipsis-2 nw-u-ws-nowrap-2 nw-u-flex-1-2 nw-u-minw-0-2'
+                cls: 'nw-u-fs-13px nw-u-ov-hidden nw-u-textoverflow-ellipsis nw-u-ws-nowrap nw-u-flex-1 nw-u-minw-0'
             });
 
             item.createDiv({
                 text: scene.summary?.slice(0, 60) + (scene.summary && scene.summary.length > 60 ? '...' : ''),
-                cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-lh-1-5-2'
+                cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-lh-1-5'
             });
 
-            const actionRow = item.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-4px-2 nw-u-margintop-6px' });
+            const actionRow = item.createDiv({ cls: 'nw-u-d-flex nw-u-gap-4px nw-u-margintop-6px' });
             const expandBtn = actionRow.createEl('button', {
                 text: '展开',
-                cls: "nw-btn nw-u-fs-11px-2 nw-u-p-2px-8px-2 nw-u-flex-1-2",
+                cls: "nw-btn nw-u-fs-11px nw-u-p-2px-8px nw-u-flex-1",
                 attr: {}
             });
             expandBtn.onclick = (e) => {
@@ -521,7 +521,7 @@ export class OutlineExpandModal extends Modal {
             if (expansion) {
                 const toggleBtn = actionRow.createEl('button', {
                     text: expansion.adopted ? '✓ 采用中' : '✕ 已跳过',
-                    cls: `nw-btn nw-u-fs-11px-2 nw-u-p-2px-8px-2 nw-expand-adopt-btn${expansion.adopted ? ' nw-expand-adopt-on' : ''}`,
+                    cls: `nw-btn nw-u-fs-11px nw-u-p-2px-8px nw-expand-adopt-btn${expansion.adopted ? ' nw-expand-adopt-on' : ''}`,
                     attr: { title: expansion.adopted ? '点击跳过该场景（应用时不写入）' : '点击重新采用该场景' },
                 });
                 toggleBtn.onclick = (e) => {
@@ -590,7 +590,7 @@ export class OutlineExpandModal extends Modal {
         if (this.paragraphs.length === 0) {
             this.paragraphListEl.createDiv({
                 text: '暂无段落，请先进行场景扩写',
-                cls: 'nw-u-p-20px-2 nw-u-ta-center-2 nw-u-c-text-muted-2 nw-u-fs-13px-2'
+                cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted nw-u-fs-13px'
             });
             return;
         }
@@ -610,7 +610,7 @@ export class OutlineExpandModal extends Modal {
 
             const checkbox = item.createEl('input', {
                 type: 'checkbox',
-                cls: 'nw-u-margintop-3px nw-u-fsh-0-2 nw-u-cur-pointer-2'
+                cls: 'nw-u-margintop-3px nw-u-fsh-0 nw-u-cur-pointer'
             }) as HTMLInputElement;
             checkbox.checked = isSelected;
             checkbox.onclick = (e) => {
@@ -623,14 +623,14 @@ export class OutlineExpandModal extends Modal {
                 this.refreshParagraphList();
             };
 
-            const content = item.createDiv({ cls: 'nw-u-flex-1-2 nw-u-minw-0-2' });
+            const content = item.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-0' });
             content.createDiv({
                 text: `第${para.index}段`,
-                cls: 'nw-u-fwt-500-2 nw-u-fs-12px-2 nw-u-marginbottom-2px-2 nw-u-c-text-muted-2'
+                cls: 'nw-u-fwt-500 nw-u-fs-12px nw-u-marginbottom-2px nw-u-c-text-muted'
             });
             content.createDiv({
                 text: para.content.slice(0, 80) + (para.content.length > 80 ? '...' : ''),
-                cls: 'nw-u-fs-12px-2 nw-u-lh-1-5-2 nw-u-ov-hidden-2 nw-u-textoverflow-ellipsis-2 nw-u-d-webkit-box-2 nw-u-webkitlineclamp-2-2 nw-u-webkitboxorient-vertical-2'
+                cls: 'nw-u-fs-12px nw-u-lh-1-5 nw-u-ov-hidden nw-u-textoverflow-ellipsis nw-u-d-webkit-box nw-u-clamp-2-lines nw-u-webkitboxorient-vertical'
             });
 
             item.onclick = () => {

@@ -173,7 +173,7 @@ export class McpManagerModal extends Modal {
                         : '⚪ 未测试',
         );
         head.createSpan({ text: ` ${server.name} `, cls: 'nw-mcp-server-name' });
-        head.createSpan({ text: `(${server.id})`, cls: 'nw-u-c-text-muted-2' });
+        head.createSpan({ text: `(${server.id})`, cls: 'nw-u-c-text-muted' });
 
         card.createEl('p', {
             text: describeMcpServer(server) + (server.enabled === false ? ' · 已停用' : ''),
@@ -198,7 +198,7 @@ export class McpManagerModal extends Modal {
             const toolNames = state.tools.map(tool => tool.name);
             const summary = head.createSpan({
                 text: ` ${state.tools.length} 个工具${state.durationMs ? `（${state.durationMs}ms）` : ''}`,
-                cls: 'nw-u-c-text-muted-2',
+                cls: 'nw-u-c-text-muted',
             });
             void toolNames;
             const toggleLink = card.createEl('button', {

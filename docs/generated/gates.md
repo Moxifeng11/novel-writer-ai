@@ -39,6 +39,7 @@
 | `npm run check:support-qr` | — |
 | `npm run check:templates` | 校验模板生成物与 assets 一致 |
 | `npm run check:test-standard` | — |
+| `npm run check:utility` | — |
 | `npm run check:view-tests` | — |
 | `npm run check:workers-inline` | — |
 | `npm run check:write-entry` | — |
@@ -81,29 +82,30 @@
 05. npm run check:styles
 06. npm run check:css
 07. npm run check:inline-styles
-08. npm run check:obsidian-api
-09. npm run check:secrets
-10. npm run check:deps -- --baseline .arch-baseline.json --require-baseline
-11. npm run check-engines
-12. npm run check:program
-13. npm run check:relationship-authority
-14. npm run check:silent-failures
-15. npm run check:hotpaths
-16. npm run check:write-entry
-17. npm run check:linked-scenarios
-18. npm run check:automation
-19. npm run check:jsdoc
-20. npm run check:any
-21. npm run check:command-handlers
-22. npm run check:view-tests
-23. npm run check:test-standard
-24. npm run check:changelog
-25. npm run check:docs
-26. npm run check:support-qr
-27. npm run check:workers-inline
-28. npm run build
-29. npm run check:bundle
-30. npm run check:release
+08. npm run check:utility
+09. npm run check:obsidian-api
+10. npm run check:secrets
+11. npm run check:deps -- --baseline .arch-baseline.json --require-baseline
+12. npm run check-engines
+13. npm run check:program
+14. npm run check:relationship-authority
+15. npm run check:silent-failures
+16. npm run check:hotpaths
+17. npm run check:write-entry
+18. npm run check:linked-scenarios
+19. npm run check:automation
+20. npm run check:jsdoc
+21. npm run check:any
+22. npm run check:command-handlers
+23. npm run check:view-tests
+24. npm run check:test-standard
+25. npm run check:changelog
+26. npm run check:docs
+27. npm run check:support-qr
+28. npm run check:workers-inline
+29. npm run build
+30. npm run check:bundle
+31. npm run check:release
 ```
 
 ## 说明

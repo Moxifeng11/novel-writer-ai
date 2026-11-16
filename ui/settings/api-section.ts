@@ -672,7 +672,7 @@ export class ApiSection extends SettingsSection {
         addModelBtn.setText('＋ 添加模型');
         addModelBtn.onclick = () => this.openModelEditor(raw, '');
 
-        const list = modelsBlock.createDiv({ cls: 'nw-api-model-list nw-u-maxh-240px nw-u-ovy-auto-2' });
+        const list = modelsBlock.createDiv({ cls: 'nw-api-model-list nw-u-maxh-240px nw-u-ovy-auto' });
         const disabled = new Set(raw.disabledModels || []);
         if (raw.models.length === 0) {
             list.createDiv({ cls: 'nw-api-model-empty', text: '还没有模型。点「从 URL 获取」自动导入，或手动添加。' });
@@ -1187,12 +1187,12 @@ export class ApiSection extends SettingsSection {
 
     /** v4.18: 同人考据来源设置。没有 API Key 时只允许手动官方来源。 */
     private renderCanonResearchRows(section: HTMLElement): void {
-        const card = section.createDiv({ cls: 'nw-u-margintop-20px-2' });
-        card.createEl('h4', { text: '📚 同人考据来源', cls: 'nw-u-m-0-0-6px-0-2 nw-u-fs-14px-2' });
+        const card = section.createDiv({ cls: 'nw-u-margintop-20px' });
+        card.createEl('h4', { text: '📚 同人考据来源', cls: 'nw-u-m-0-0-6px nw-u-fs-14px' });
         card.createEl('div', {
             text: '同人设定以原著/官方资料为优先依据；没有官方来源时可用百科/wiki 二手资料补充（会标注等级），'
                 + '同人、改编、外传等衍生作品不作为设定来源。维基百科与 Bangumi 为免 Key 通道，开箱可用。',
-            cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginbottom-8px-2',
+            cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-8px',
         });
         const cfg = this.plugin.settings.canonResearch || {
             provider: 'manual' as const,
@@ -1394,19 +1394,19 @@ export class ApiSection extends SettingsSection {
      * 不填即继承该任务的默认模型与能力值。
      */
     private renderTaskBudgetRows(section: HTMLElement, providerId?: string): void {
-        const card = section.createDiv({ cls: 'nw-u-margintop-20px-2' });
+        const card = section.createDiv({ cls: 'nw-u-margintop-20px' });
         const currentId = this.plugin.getCurrentProviderId();
         const isCurrentProvider = !providerId || providerId === currentId;
         if (!isCurrentProvider) {
             card.createEl('div', {
-                cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginbottom-8px-2',
+                cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-8px',
                 text: '任务级参数按渠道各自记忆：这里显示/编辑的是「' + (this.plugin.getAllProviders().find(item => item.id === providerId)?.name || providerId) + '」，切换到该渠道后生效。',
             });
         }
-        card.createEl('h4', { text: '🧠 任务级模型参数', cls: 'nw-u-m-0-0-6px-0-2 nw-u-fs-14px-2' });
+        card.createEl('h4', { text: '🧠 任务级模型参数', cls: 'nw-u-m-0-0-6px nw-u-fs-14px' });
         card.createEl('div', {
             text: '每个任务可单独覆盖模型/输入/输出/思考参数；留空即继承默认值。输出上限不会自动超过模型能力。',
-            cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginbottom-8px-2',
+            cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-8px',
         });
 
         // 全局思考强度只对「当前渠道」开放：非当前渠道改它会静默改掉别的渠道正在用的参数。
@@ -1425,15 +1425,15 @@ export class ApiSection extends SettingsSection {
                 ?? thinkingIntensityFromMode(this.plugin.settings.thinkingMode);
             let currentLevel: ThinkingLevel = initialLevel;
 
-            const levelRow = globalCard.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-fwr-wrap-2 nw-u-margintop-8px-2' });
+            const levelRow = globalCard.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-fwr-wrap nw-u-margintop-8px' });
             const levelButtons = new Map<ThinkingLevel, HTMLButtonElement>();
-            const levelDesc = globalCard.createDiv({ cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-margintop-6px-2' });
-            const sliderRow = globalCard.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-margintop-8px-2' });
+            const levelDesc = globalCard.createDiv({ cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-margintop-6px' });
+            const sliderRow = globalCard.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-margintop-8px' });
             const range = sliderRow.createEl('input', {
                 type: 'range',
                 attr: { min: '0', max: '100', step: '5' },
             }) as HTMLInputElement;
-            const percentEl = sliderRow.createSpan({ cls: 'nw-u-fs-12px-2 nw-u-c-text-normal-2' });
+            const percentEl = sliderRow.createSpan({ cls: 'nw-u-fs-12px nw-u-c-text-normal' });
 
             const refreshLevelUi = (level: ThinkingLevel, intensity: number): void => {
                 currentLevel = level;

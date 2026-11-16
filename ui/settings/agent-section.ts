@@ -20,7 +20,7 @@ export class AgentBackendSection extends SettingsSection {
         section.createEl('h3', { text: '🤖 Agent 对话' });
         section.createEl('p', {
             text: 'Agent 工作台运行插件内置 Harness：支持工具调用、写入确认与只读模式，不依赖外部进程。',
-            cls: 'nw-u-c-text-muted-2 nw-u-fs-13px-2 nw-u-marginbottom-16px-2',
+            cls: 'nw-u-c-text-muted nw-u-fs-13px nw-u-marginbottom-16px',
         });
 
         new Setting(section)

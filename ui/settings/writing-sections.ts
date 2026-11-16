@@ -539,8 +539,8 @@ export class TemplateSection extends SettingsSection {
         await templateManager.renderTemplateList(section);
 
         // 提示词策略配置子分区
-        section.createEl('hr', { cls: 'nw-u-m-20px-0 nw-u-b-none nw-u-bt-1px-solid-background-m-2' });
-        section.createEl('h3', { text: '💬 提示词策略', cls: 'nw-u-margintop-16px-2' });
+        section.createEl('hr', { cls: 'nw-u-m-20px-0 nw-u-b-none nw-u-bt-1px-solid-background-m' });
+        section.createEl('h3', { text: '💬 提示词策略', cls: 'nw-u-margintop-16px' });
         if (this.plugin.promptManager) {
             const manager = new PromptManagerSettings(this.app, this.plugin, section);
             manager.render();
@@ -586,7 +586,7 @@ export class ProjectLibrarySection extends SettingsSection {
             cls: 'setting-item-description',
         });
 
-        const actions = section.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-marginbottom-8px-2' });
+        const actions = section.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-marginbottom-8px' });
         const planBtn = actions.createEl('button', {
             text: '📋 生成迁移计划',
             cls: 'nw-btn nw-btn-secondary',
@@ -597,11 +597,11 @@ export class ProjectLibrarySection extends SettingsSection {
             cls: 'nw-btn nw-btn-primary',
             attr: { type: 'button' },
         });
-        const resultEl = section.createDiv({ cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2' });
+        const resultEl = section.createDiv({ cls: 'nw-u-fs-12px nw-u-c-text-muted' });
 
         const renderPlan = (planText: string): void => {
             resultEl.empty();
-            resultEl.createEl('pre', { text: planText, cls: 'nw-u-fs-12px-2' });
+            resultEl.createEl('pre', { text: planText, cls: 'nw-u-fs-12px' });
         };
 
         planBtn.onclick = async () => {

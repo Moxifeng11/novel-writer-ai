@@ -214,16 +214,16 @@ export class PlotCanvasModal extends Modal {
                 this.bindDrag(card, vi, ci);
 
                 // 上移/下移（M3-3：触屏没有 HTML5 drag，移动端必须有点按入口）
-                const moveBar = card.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-4px-2' });
+                const moveBar = card.createDiv({ cls: 'nw-u-d-flex nw-u-gap-4px' });
                 const upBtn = moveBar.createSpan({
                     text: '▲',
-                    cls: 'nw-u-cur-pointer-2 nw-u-op-0-6 nw-u-fs-11px',
+                    cls: 'nw-u-cur-pointer nw-u-op-0-6 nw-u-fs-11px',
                     attr: { title: '上移', 'aria-label': '上移章节' },
                 });
                 upBtn.addEventListener('click', (e) => { e.stopPropagation(); this.moveChapter(vi, ci, -1); });
                 const downBtn = moveBar.createSpan({
                     text: '▼',
-                    cls: 'nw-u-cur-pointer-2 nw-u-op-0-6 nw-u-fs-11px',
+                    cls: 'nw-u-cur-pointer nw-u-op-0-6 nw-u-fs-11px',
                     attr: { title: '下移', 'aria-label': '下移章节' },
                 });
                 downBtn.addEventListener('click', (e) => { e.stopPropagation(); this.moveChapter(vi, ci, 1); });

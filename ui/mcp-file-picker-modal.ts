@@ -132,7 +132,7 @@ export class McpFilePickerModal extends Modal {
             this.onPick(entry.path);
             this.close();
         });
-        if (!entry.isDirectory) row.createSpan({ text: ` ${formatSize(entry.size)}`, cls: 'nw-u-c-text-muted-2' });
+        if (!entry.isDirectory) row.createSpan({ text: ` ${formatSize(entry.size)}`, cls: 'nw-u-c-text-muted' });
     }
 }
 

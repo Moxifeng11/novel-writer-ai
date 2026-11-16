@@ -26,7 +26,7 @@ export class McpSection extends SettingsSection {
         section.createEl('p', {
             text: '接入外部 MCP 服务：本地程序（stdio 子进程）或 HTTP 端点。连接后工具以 mcp__<服务ID>__<工具> 提供给 Agent 调用。'
                 + '在管理面板里可以选本机程序文件、测试连接、查看工具清单，也可一键生成示例服务验证链路。',
-            cls: 'nw-u-c-text-muted-2 nw-u-fs-13px-2 nw-u-marginbottom-16px-2',
+            cls: 'nw-u-c-text-muted nw-u-fs-13px nw-u-marginbottom-16px',
         });
 
         const list = normalizeMcpServers(this.plugin.settings.mcpServers);

@@ -820,7 +820,7 @@ export class KnowledgeDetailModal extends Modal {
             });
 
             const header = group.createDiv({
-                cls: 'nw-u-p-10px-14px-2 nw-u-bg-background-secondary-2 nw-u-fwt-500-2 nw-u-fs-13px-2'
+                cls: 'nw-u-p-10px-14px nw-u-bg-background-secondary nw-u-fwt-500 nw-u-fs-13px'
             });
             header.textContent = category;
 
@@ -834,9 +834,9 @@ export class KnowledgeDetailModal extends Modal {
                 });
 
                 const itemHeader = item.createDiv({
-                    cls: 'nw-u-p-8px-14px nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-cur-pointer-2'
+                    cls: 'nw-u-p-8px-14px nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-cur-pointer'
                 });
-                itemHeader.createEl('span', { text: tech.name, cls: 'nw-u-fs-13px-2' });
+                itemHeader.createEl('span', { text: tech.name, cls: 'nw-u-fs-13px' });
                 itemHeader.createEl('span', {
                     text: isExpanded ? '▼' : '▶',
                     cls: 'nw-text-xs-muted'
@@ -849,13 +849,13 @@ export class KnowledgeDetailModal extends Modal {
 
                 if (isExpanded) {
                     const body = item.createDiv({
-                        cls: 'nw-u-p-0-14px-12px nw-u-fs-12px-2 nw-u-lh-1-6-2 nw-u-c-text-muted-2'
+                        cls: 'nw-u-p-0-14px-12px nw-u-fs-12px nw-u-lh-1-6 nw-u-c-text-muted'
                     });
-                    body.createEl('div', { text: '示例片段：', cls: 'nw-u-fwt-500-2 nw-u-marginbottom-6px-2 nw-u-c-text-normal-2' });
+                    body.createEl('div', { text: '示例片段：', cls: 'nw-u-fwt-500 nw-u-marginbottom-6px nw-u-c-text-normal' });
                     for (const example of tech.examples) {
                         body.createDiv({
                             text: `• ${example}`,
-                            cls: 'nw-u-p-4px-0-2 nw-u-paddingleft-8px'
+                            cls: 'nw-u-p-4px-0 nw-u-paddingleft-8px'
                         });
                     }
                 }
@@ -906,7 +906,7 @@ export class KnowledgeDetailModal extends Modal {
 
             for (const line of lineDefs) {
                 const row = threeLinesCard.createDiv({ attr: { style: 'margin-bottom:12px;&:last-child { margin-bottom:0; }' } });
-                const labelRow = row.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-marginbottom-6px-2 nw-u-fs-12px-2' });
+                const labelRow = row.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-marginbottom-6px nw-u-fs-12px' });
                 labelRow.createEl('span', { text: line.label, cls: 'nw-font-medium' });
                 labelRow.createEl('span', { text: `${line.value}%`, cls: 'nw-color-muted' });
                 const barBg = row.createDiv({
@@ -941,11 +941,11 @@ export class KnowledgeDetailModal extends Modal {
             });
 
             const header = item.createDiv({
-                cls: 'nw-u-p-10px-16px nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-cur-pointer-2'
+                cls: 'nw-u-p-10px-16px nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-cur-pointer'
             });
             header.createEl('span', {
                 text: unit.level,
-                cls: 'nw-u-p-2px-8px-2 nw-u-brd-4px-2 nw-u-fs-11px-2 nw-u-bg-interactive-accent-2 nw-u-c-text-on-accent-2 nw-u-fwt-500-2'
+                cls: 'nw-u-p-2px-8px nw-u-brd-4px nw-u-fs-11px nw-u-bg-interactive-accent nw-u-c-text-on-accent nw-u-fwt-500'
             });
             header.createEl('span', { text: unit.name, cls: 'nw-text-13-flex nw-font-medium' });
             header.createEl('span', {
@@ -963,7 +963,7 @@ export class KnowledgeDetailModal extends Modal {
                 for (const child of unit.children) {
                     children.createDiv({
                         text: child,
-                        cls: 'nw-u-p-4px-0-2 nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-bb-1px-dashed-background--2'
+                        cls: 'nw-u-p-4px-0 nw-u-fs-12px nw-u-c-text-muted nw-u-bb-1px-dashed-background-'
                     });
                 }
             }
@@ -980,7 +980,7 @@ export class KnowledgeDetailModal extends Modal {
         });
 
         if (data.structureType) {
-            typeCard.createEl('div', { text: data.structureType, cls: 'nw-u-fwt-600-2 nw-u-marginbottom-8px-2 nw-u-c-interactive-accent-2' });
+            typeCard.createEl('div', { text: data.structureType, cls: 'nw-u-fwt-600 nw-u-marginbottom-8px nw-u-c-interactive-accent' });
         }
         // 不能给 typeCard 赋 textContent：那会清空上面刚创建的 structureType 节点
         typeCard.createEl('div', { text: data.structureDescription || '暂无结构类型说明' });
@@ -1002,7 +1002,7 @@ export class KnowledgeDetailModal extends Modal {
         if (mainChars && mainChars.length > 0) {
 
         const charsGrid = mainSection.createDiv({
-            cls: 'nw-u-d-grid-2 nw-u-gtc-repeat-auto-fill-minma-7 nw-u-gap-12px-2'
+            cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fill-minma-7 nw-u-gap-12px'
         });
 
         for (const char of mainChars) {
@@ -1011,25 +1011,25 @@ export class KnowledgeDetailModal extends Modal {
             });
 
             const avatar = card.createDiv({
-                cls: 'nw-u-w-60px-2 nw-u-h-60px nw-u-brd-50-2 nw-u-bg-linear-gradient-135deg-4 nw-u-m-0-auto-10px nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-center-2 nw-u-c-white-2 nw-u-fs-24px nw-u-fwt-600-2'
+                cls: 'nw-u-w-60px nw-u-h-60px nw-u-brd-50 nw-u-bg-linear-gradient-135deg-4 nw-u-m-0-auto-10px nw-u-d-flex nw-u-ai-center nw-u-jc-center nw-u-c-white nw-u-fs-24px nw-u-fwt-600'
             });
             avatar.textContent = char.name.charAt(0);
 
             card.createEl('div', { text: char.name, cls: 'nw-stat-sm' });
             card.createEl('div', { text: char.role, cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-8px' });
 
-            const tagsContainer = card.createDiv({ cls: 'nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-4px-2 nw-u-jc-center-2 nw-u-marginbottom-8px-2' });
+            const tagsContainer = card.createDiv({ cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-4px nw-u-jc-center nw-u-marginbottom-8px' });
             for (const tag of char.tags) {
                 tagsContainer.createEl('span', {
                     text: tag,
-                    cls: 'nw-u-p-2px-8px-2 nw-u-brd-10px-2 nw-u-fs-11px-2 nw-u-bg-background-primary-2 nw-u-c-text-muted-2'
+                    cls: 'nw-u-p-2px-8px nw-u-brd-10px nw-u-fs-11px nw-u-bg-background-primary nw-u-c-text-muted'
                 });
             }
 
             if (char.growth) {
                 card.createEl('div', {
                     text: char.growth,
-                    cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-lh-1-4-2 nw-u-paddingtop-8px-2 nw-u-bt-1px-solid-background-m-2'
+                    cls: 'nw-u-fs-11px nw-u-c-text-muted nw-u-lh-1-4 nw-u-paddingtop-8px nw-u-bt-1px-solid-background-m'
                 });
             }
         }
@@ -1049,7 +1049,7 @@ export class KnowledgeDetailModal extends Modal {
         const searchInput = searchSection.createEl('input', {
             type: 'text',
             placeholder: '搜索人物...',
-            cls: 'nw-u-w-100-2 nw-u-p-8px-12px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-fs-13px-2 nw-u-bg-background-secondary-2'
+            cls: 'nw-u-w-100 nw-u-p-8px-12px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-fs-13px nw-u-bg-background-secondary'
         });
         searchInput.value = this.characterFilter;
 
@@ -1085,11 +1085,11 @@ export class KnowledgeDetailModal extends Modal {
 
             for (const char of filtered) {
                 const item = allCard.createDiv({
-                    cls: "nw-item-border-b nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-12px-2 nw-u-p-10px-16px", attr: {}
+                    cls: "nw-item-border-b nw-u-d-flex nw-u-ai-center nw-u-gap-12px nw-u-p-10px-16px", attr: {}
                 });
 
                 const miniAvatar = item.createDiv({
-                    cls: 'nw-u-w-32px nw-u-h-32px nw-u-brd-50-2 nw-u-bg-interactive-accent-2 nw-u-op-0-8 nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-center-2 nw-u-c-white-2 nw-u-fs-14px-2 nw-u-fwt-600-2 nw-u-fsh-0-2'
+                    cls: 'nw-u-w-32px nw-u-h-32px nw-u-brd-50 nw-u-bg-interactive-accent nw-u-op-0-8 nw-u-d-flex nw-u-ai-center nw-u-jc-center nw-u-c-white nw-u-fs-14px nw-u-fwt-600 nw-u-fsh-0'
                 });
                 miniAvatar.textContent = char.name.charAt(0);
 
@@ -1101,7 +1101,7 @@ export class KnowledgeDetailModal extends Modal {
                 for (const tag of char.tags.slice(0, 2)) {
                     tags.createEl('span', {
                         text: tag,
-                        cls: 'nw-u-p-2px-6px-2 nw-u-brd-4px-2 nw-u-fs-10px-2 nw-u-bg-background-primary-2 nw-u-c-text-muted-2'
+                        cls: 'nw-u-p-2px-6px nw-u-brd-4px nw-u-fs-10px nw-u-bg-background-primary nw-u-c-text-muted'
                     });
                 }
             }
@@ -1215,19 +1215,19 @@ export class KnowledgeDetailModal extends Modal {
             });
 
             const qualityGrid = qualityCard.createDiv({
-                cls: 'nw-u-d-grid-2 nw-u-gtc-auto-1fr nw-u-gap-10px-16px nw-u-ai-center-2'
+                cls: 'nw-u-d-grid nw-u-gtc-auto-1fr nw-u-gap-10px-16px nw-u-ai-center'
             });
 
             qualityGrid.createEl('div', { text: '平均质量', cls: 'nw-text-13-muted' });
             const avgQualityBar = qualityGrid.createDiv({ cls: 'nw-flex-row' });
             avgQualityBar.createEl('div', {
-                cls: 'nw-u-flex-1-2 nw-u-h-8px-2 nw-u-bg-background-modifier-bo-3 nw-u-brd-4px-2 nw-u-ov-hidden-2'
+                cls: 'nw-u-flex-1 nw-u-h-8px nw-u-bg-background-modifier-bo nw-u-brd-4px nw-u-ov-hidden'
             }).createEl('div', {
                 attr: {
                     style: `width:${data.resolutionQualityStats.avgQuality}%;height:100%;background:linear-gradient(90deg, var(--nw-success-soft), var(--nw-info));border-radius:4px;`
                 }
             });
-            avgQualityBar.createEl('span', { text: `${data.resolutionQualityStats.avgQuality}分`, cls: 'nw-u-fs-12px-2 nw-u-fwt-500-2 nw-u-minw-40px nw-u-ta-right' });
+            avgQualityBar.createEl('span', { text: `${data.resolutionQualityStats.avgQuality}分`, cls: 'nw-u-fs-12px nw-u-fwt-500 nw-u-minw-40px nw-u-ta-right' });
 
             const qd = data.resolutionQualityStats.qualityDistribution;
             const qualityBars = [
@@ -1244,7 +1244,7 @@ export class KnowledgeDetailModal extends Modal {
                 }).createEl('div', {
                     attr: { style: `width:${Math.min(100, q.value * 10)}%;height:100%;background:${q.color};border-radius:3px;` }
                 });
-                barWrapper.createEl('span', { text: `${q.value}个`, cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-minw-30px nw-u-ta-right' });
+                barWrapper.createEl('span', { text: `${q.value}个`, cls: 'nw-u-fs-11px nw-u-c-text-muted nw-u-minw-30px nw-u-ta-right' });
             }
         }
 
@@ -1313,7 +1313,7 @@ export class KnowledgeDetailModal extends Modal {
             });
 
             const netGrid = networkCard.createDiv({
-                cls: 'nw-u-d-grid-2 nw-u-gtc-1fr-1fr-2 nw-u-gap-12px-2 nw-u-marginbottom-12px-2'
+                cls: 'nw-u-d-grid nw-u-gtc-1fr-1fr nw-u-gap-12px nw-u-marginbottom-12px'
             });
 
             const mainlineCount = data.networkAnalysis.mainlineCount || 0;
@@ -1332,7 +1332,7 @@ export class KnowledgeDetailModal extends Modal {
                 const rhythmDiv = networkCard.createDiv({ cls: 'nw-mt-sm' });
                 rhythmDiv.createEl('div', {
                     text: `节奏平衡度：${rhythmBalance.balanceScore}% ${rhythmBalance.isBalanced ? '✅ 平衡' : '⚠️ 需调整'}`,
-                    cls: 'nw-u-fs-12px-2 nw-u-marginbottom-6px-2'
+                    cls: 'nw-u-fs-12px nw-u-marginbottom-6px'
                 });
                 rhythmDiv.createEl('div', {
                     cls: 'nw-bar-track-6-static'
@@ -1365,7 +1365,7 @@ export class KnowledgeDetailModal extends Modal {
                 });
 
                 const header = row.createDiv({
-                    cls: 'nw-u-p-10px-16px nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-10px-2 nw-u-cur-pointer-2'
+                    cls: 'nw-u-p-10px-16px nw-u-d-flex nw-u-ai-center nw-u-gap-10px nw-u-cur-pointer'
                 });
 
                 const confidenceColor = pair.confidence >= 70 ? '#10b981' : pair.confidence >= 50 ? '#f59e0b' : '#ef4444';
@@ -1387,7 +1387,7 @@ export class KnowledgeDetailModal extends Modal {
                 const info = header.createDiv({ cls: 'nw-flex-fill' });
                 info.createEl('div', {
                     text: `${pair.setupForeshadowName} → ${pair.payoffForeshadowName || '未知'}`,
-                    cls: 'nw-u-fs-12px-2 nw-u-fwt-500-2 nw-u-ov-hidden-2 nw-u-textoverflow-ellipsis-2 nw-u-ws-nowrap-2'
+                    cls: 'nw-u-fs-12px nw-u-fwt-500 nw-u-ov-hidden nw-u-textoverflow-ellipsis nw-u-ws-nowrap'
                 });
                 info.createEl('div', {
                     text: `${pairTypeLabels[pair.pairType] || pair.pairType}${pair.qualityScore ? ` · 回收质量：${pair.qualityScore}分` : ''}`,
@@ -1406,7 +1406,7 @@ export class KnowledgeDetailModal extends Modal {
 
                 if (isExpanded && pair.matchDimensions) {
                     const body = row.createDiv({
-                        cls: 'nw-u-p-0-16px-10px-52px nw-u-fs-11px-2 nw-u-lh-1-8'
+                        cls: 'nw-u-p-0-16px-10px-52px nw-u-fs-11px nw-u-lh-1-8'
                     });
 
                     const dims = [
@@ -1418,14 +1418,14 @@ export class KnowledgeDetailModal extends Modal {
 
                     for (const dim of dims) {
                         const dimRow = body.createDiv({ cls: 'nw-flex-row' });
-                        dimRow.createEl('span', { text: dim.label, cls: 'nw-u-minw-60px nw-u-c-text-muted-2' });
+                        dimRow.createEl('span', { text: dim.label, cls: 'nw-u-minw-60px nw-u-c-text-muted' });
                         const bar = dimRow.createEl('div', {
                             cls: 'nw-bar-track-4-flex'
                         });
                         bar.createEl('div', {
                             attr: { style: `width:${dim.value}%;height:100%;background:var(--interactive-accent);border-radius:2px;` }
                         });
-                        dimRow.createEl('span', { text: `${dim.value}%`, cls: 'nw-u-minw-30px nw-u-ta-right nw-u-c-text-muted-2' });
+                        dimRow.createEl('span', { text: `${dim.value}%`, cls: 'nw-u-minw-30px nw-u-ta-right nw-u-c-text-muted' });
                     }
                 }
             }
@@ -1441,28 +1441,28 @@ export class KnowledgeDetailModal extends Modal {
 
             if (data.unresolvedTracker.forgottenForeshadows && data.unresolvedTracker.forgottenForeshadows.length > 0) {
                 const warnDiv = unresolvedCard.createDiv({
-                    cls: 'nw-u-p-10px-12px-2 nw-u-bg-nw-danger-bright-bg nw-u-brd-6px-2 nw-u-marginbottom-12px-2'
+                    cls: 'nw-u-p-10px-12px nw-u-bg-nw-danger-bright-bg nw-u-brd-6px nw-u-marginbottom-12px'
                 });
                 warnDiv.createEl('div', {
                     text: `⚠️ 发现 ${data.unresolvedTracker.forgottenForeshadows.length} 个疑似被遗忘的伏笔`,
-                    cls: 'nw-u-fs-12px-2 nw-u-fwt-500-2 nw-u-c-text-error-nw-danger-b nw-u-marginbottom-4px-2'
+                    cls: 'nw-u-fs-12px nw-u-fwt-500 nw-u-c-text-error-nw-danger-b nw-u-marginbottom-4px'
                 });
                 const names = data.unresolvedTracker.forgottenForeshadows.slice(0, 3).map(f => f.name).join('、');
                 warnDiv.createEl('div', {
                     text: names + (data.unresolvedTracker.forgottenForeshadows.length > 3 ? '...' : ''),
-                    cls: 'nw-u-fs-11px-2 nw-u-c-text-error-nw-danger-b nw-u-op-0-8'
+                    cls: 'nw-u-fs-11px nw-u-c-text-error-nw-danger-b nw-u-op-0-8'
                 });
             }
 
             if (data.unresolvedTracker.recallSuggestions && data.unresolvedTracker.recallSuggestions.length > 0) {
-                unresolvedCard.createEl('div', { text: '回收建议', cls: 'nw-u-fwt-500-2 nw-u-fs-12px-2 nw-u-marginbottom-8px-2' });
+                unresolvedCard.createEl('div', { text: '回收建议', cls: 'nw-u-fwt-500 nw-u-fs-12px nw-u-marginbottom-8px' });
                 for (const s of data.unresolvedTracker.recallSuggestions.slice(0, 3)) {
                     const sDiv = unresolvedCard.createDiv({
-                        cls: 'nw-u-p-8px-10px-2 nw-u-bg-background-primary-2 nw-u-brd-6px-2 nw-u-marginbottom-6px-2'
+                        cls: 'nw-u-p-8px-10px nw-u-bg-background-primary nw-u-brd-6px nw-u-marginbottom-6px'
                     });
                     sDiv.createEl('div', {
                         text: `📌 第${s.chapter}章附近：${s.reason}`,
-                        cls: 'nw-u-fs-11px-2 nw-u-fwt-500-2 nw-u-marginbottom-3px'
+                        cls: 'nw-u-fs-11px nw-u-fwt-500 nw-u-marginbottom-3px'
                     });
                     sDiv.createEl('div', {
                         text: s.foreshadows.join('、'),
@@ -1472,7 +1472,7 @@ export class KnowledgeDetailModal extends Modal {
             }
         }
 
-        const filterSection = container.createDiv({ cls: 'nw-u-marginbottom-12px-2 nw-u-d-flex-2 nw-u-gap-6px-2 nw-u-fwr-wrap-2' });
+        const filterSection = container.createDiv({ cls: 'nw-u-marginbottom-12px nw-u-d-flex nw-u-gap-6px nw-u-fwr-wrap' });
         const categories = ['all', '物品', '功法', '人物', '设定', '事件'];
         const categoryLabels: Record<string, string> = {
             all: '全部',
@@ -1532,7 +1532,7 @@ export class KnowledgeDetailModal extends Modal {
                 });
 
                 const header = row.createDiv({
-                    cls: 'nw-u-p-12px-16px-2 nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-10px-2 nw-u-cur-pointer-2'
+                    cls: 'nw-u-p-12px-16px nw-u-d-flex nw-u-ai-center nw-u-gap-10px nw-u-cur-pointer'
                 });
 
                 header.createEl('span', {
@@ -1550,7 +1550,7 @@ export class KnowledgeDetailModal extends Modal {
                 info.createEl('div', { text: item.name, cls: 'nw-text-13-medium' });
                 info.createEl('div', {
                     text: `${item.category} · 首次出现：${item.firstAppearance}`,
-                    cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-margintop-2px-2'
+                    cls: 'nw-u-fs-11px nw-u-c-text-muted nw-u-margintop-2px'
                 });
 
                 header.createEl('span', {
@@ -1565,15 +1565,15 @@ export class KnowledgeDetailModal extends Modal {
 
                 if (isExpanded) {
                     const body = row.createDiv({
-                        cls: 'nw-u-p-0-16px-12px-46px nw-u-fs-12px-2 nw-u-lh-1-6-2'
+                        cls: 'nw-u-p-0-16px-12px-46px nw-u-fs-12px nw-u-lh-1-6'
                     });
 
                     body.createEl('div', { text: '首次出现', cls: 'nw-foreshadow-title' });
-                    body.createEl('div', { text: item.firstAppearance, cls: 'nw-u-c-text-muted-2 nw-u-marginbottom-8px-2' });
+                    body.createEl('div', { text: item.firstAppearance, cls: 'nw-u-c-text-muted nw-u-marginbottom-8px' });
 
                     body.createEl('div', { text: '重要呼应', cls: 'nw-foreshadow-title' });
                     for (const echo of item.echoes) {
-                        body.createDiv({ text: `• ${echo}`, cls: 'nw-u-c-text-muted-2 nw-u-paddingleft-4px' });
+                        body.createDiv({ text: `• ${echo}`, cls: 'nw-u-c-text-muted nw-u-paddingleft-4px' });
                     }
 
                     body.createEl('div', {
@@ -1602,10 +1602,10 @@ export class KnowledgeDetailModal extends Modal {
     // ============== 通用方法 ==============
     private renderEmptyState(container: HTMLElement, dataName: string, dimension: string): void {
         const card = container.createDiv({
-            cls: 'nw-u-p-40px-20px nw-u-ta-center-2 nw-u-bg-background-secondary-2 nw-u-brd-8px-2'
+            cls: 'nw-u-p-40px-20px nw-u-ta-center nw-u-bg-background-secondary nw-u-brd-8px'
         });
-        card.createEl('div', { text: '📭', cls: 'nw-u-fs-40px nw-u-marginbottom-12px-2' });
-        card.createEl('div', { text: `暂无${dataName}`, cls: 'nw-u-fs-14px-2 nw-u-fwt-500-2 nw-u-marginbottom-8px-2' });
+        card.createEl('div', { text: '📭', cls: 'nw-u-fs-40px nw-u-marginbottom-12px' });
+        card.createEl('div', { text: `暂无${dataName}`, cls: 'nw-u-fs-14px nw-u-fwt-500 nw-u-marginbottom-8px' });
         card.createEl('div', {
             text: '该维度数据待拆解，请先运行书籍拆解功能。',
             cls: 'nw-text-sm-muted'
@@ -1638,8 +1638,8 @@ export class KnowledgeDetailModal extends Modal {
 
     private renderInfoRow(container: HTMLElement, label: string, value: string): void {
         const row = container.createDiv({ cls: 'nw-flex-gap6' });
-        row.createEl('span', { text: `${label}:`, cls: 'nw-u-c-text-muted-2 nw-u-minw-70px nw-u-fsh-0-2' });
-        row.createEl('span', { text: value, cls: 'nw-u-c-text-normal-2 nw-u-flex-1-2 nw-u-minw-0-2' });
+        row.createEl('span', { text: `${label}:`, cls: 'nw-u-c-text-muted nw-u-minw-70px nw-u-fsh-0' });
+        row.createEl('span', { text: value, cls: 'nw-u-c-text-normal nw-u-flex-1 nw-u-minw-0' });
     }
 
     private formatWordCount(count: number): string {

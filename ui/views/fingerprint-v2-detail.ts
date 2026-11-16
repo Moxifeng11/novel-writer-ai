@@ -77,47 +77,47 @@ export function renderV2FeaturesSection(container: HTMLElement, v2: V2Fingerprin
     const section = container.createDiv({ cls: 'nw-fingerprint-v2-section nw-mb-lg' });
 
     const titleRow = section.createDiv({
-        cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-marginbottom-8px-2'
+        cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-marginbottom-8px'
     });
     titleRow.createEl('h4', {
         text: '🧬 十二维结构化特征',
-        cls: 'nw-fp-section-h4 nw-u-m-0-2'
+        cls: 'nw-fp-section-h4 nw-u-m-0'
     });
     titleRow.createEl('span', {
         text: '本地词表统计 · V2',
-        cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2'
+        cls: 'nw-u-fs-11px nw-u-c-text-muted'
     });
 
     for (const row of buildV2FeatureRows(v2.features)) {
-        const block = section.createDiv({ cls: 'nw-u-marginbottom-10px-2' });
+        const block = section.createDiv({ cls: 'nw-u-marginbottom-10px' });
 
         const head = block.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-6px-2 nw-u-marginbottom-4px-2'
+            cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-6px nw-u-marginbottom-4px'
         });
         head.createEl('span', {
             text: row.label,
-            cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2'
+            cls: 'nw-u-fs-12px nw-u-c-text-muted'
         });
         if (row.status !== 'complete') {
             head.createEl('span', {
                 text: '样本不足',
-                cls: 'nw-u-fs-11px-2 nw-u-c-text-faint-2'
+                cls: 'nw-u-fs-11px nw-u-c-text-faint'
             });
         }
 
         block.createDiv({
             text: row.description,
-            cls: 'nw-u-fs-13px-2 nw-u-lh-1-5-2 nw-u-p-8px-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-4px-2'
+            cls: 'nw-u-fs-13px nw-u-lh-1-5 nw-u-p-8px-12px nw-u-bg-background-secondary nw-u-brd-4px'
         });
 
         if (row.samples.length > 0) {
             const sampleWrap = block.createDiv({
-                cls: 'nw-u-margintop-4px-2 nw-u-fs-11px-2 nw-u-c-text-muted-2'
+                cls: 'nw-u-margin-top-neg-4px nw-u-fs-11px nw-u-c-text-muted'
             });
             for (const sample of row.samples) {
                 sampleWrap.createDiv({
                     text: `「${sample}」`,
-                    cls: 'nw-u-marginbottom-2px-2'
+                    cls: 'nw-u-marginbottom-2px'
                 });
             }
         }

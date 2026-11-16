@@ -314,18 +314,18 @@ export class WritingFingerprintView extends ItemView {
         containerEl.addClass('nw-fingerprint-view');
 
         const mainLayout = containerEl.createDiv({
-            cls: "nw-fingerprint-main-layout nw-u-d-flex-2 nw-u-h-100-2 nw-u-w-100-2",
+            cls: "nw-fingerprint-main-layout nw-u-d-flex nw-u-h-100 nw-u-w-100",
             attr: {}
         });
 
         this.leftSidebar = mainLayout.createDiv({
-            cls: "nw-fingerprint-left-sidebar nw-u-w-300px nw-u-minw-240px nw-u-maxw-400px nw-u-brt-1px-solid-background-m-2 nw-u-d-flex-2 nw-u-fd-column-2",
+            cls: "nw-fingerprint-left-sidebar nw-u-w-300px nw-u-minw-240px nw-u-maxw-400px nw-u-brt-1px-solid-background-m nw-u-d-flex nw-u-fd-column",
             attr: {}
         });
 
         // 界面流转：直达工作台 / 协同写作 / 知识库
         const navBtnStyle = 'padding:4px 10px;font-size:12px;border:1px solid var(--background-modifier-border);border-radius:4px;cursor:pointer;background:var(--background-primary);color:var(--text-muted);';
-        const navRow = this.leftSidebar.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-6px-2 nw-u-p-8px-2 nw-u-bb-1px-solid-background-m-2 nw-u-fwr-wrap-2' });
+        const navRow = this.leftSidebar.createDiv({ cls: 'nw-u-d-flex nw-u-gap-6px nw-u-p-8px nw-u-bb-1px-solid-background-m nw-u-fwr-wrap' });
         const backBtn = navRow.createEl('button', { text: '← 工作台', attr: { style: navBtnStyle, title: '返回完整写作工作台' } });
         backBtn.addEventListener('click', () => void this.plugin.openFullWriterView());
         const coBtn = navRow.createEl('button', { text: '✍️ 协同', attr: { style: navBtnStyle, title: '打开句级协同写作工作台' } });
@@ -337,7 +337,7 @@ export class WritingFingerprintView extends ItemView {
         this.modelSwitcher = renderModelQuickSwitcher(this.leftSidebar, this.plugin);
 
         this.rightPanel = mainLayout.createDiv({
-            cls: "nw-fingerprint-right-panel nw-u-flex-1-2 nw-u-ovy-auto-2 nw-u-p-16px-2",
+            cls: "nw-fingerprint-right-panel nw-u-flex-1 nw-u-ovy-auto nw-u-p-16px",
             attr: {}
         });
     }
@@ -400,7 +400,7 @@ export class WritingFingerprintView extends ItemView {
         if (previous) previous.remove();
 
         const container = this.leftSidebar.createDiv({
-            cls: "nw-fingerprint-scope-tabs nw-u-d-flex-2 nw-u-bb-1px-solid-background-m-2",
+            cls: "nw-fingerprint-scope-tabs nw-u-d-flex nw-u-bb-1px-solid-background-m",
             attr: {}
         });
 
@@ -435,7 +435,7 @@ export class WritingFingerprintView extends ItemView {
             this.toolbar.remove();
         }
         this.toolbar = this.leftSidebar.createDiv({
-            cls: "nw-fingerprint-toolbar nw-u-p-8px-2 nw-u-bb-1px-solid-background-m-2 nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-4px-2",
+            cls: "nw-fingerprint-toolbar nw-u-p-8px nw-u-bb-1px-solid-background-m nw-u-d-flex nw-u-fwr-wrap nw-u-gap-4px",
             attr: {}
         });
 
@@ -477,7 +477,7 @@ export class WritingFingerprintView extends ItemView {
         const anchor = this.fingerprintList ?? null;
 
         const searchContainer = this.leftSidebar.createDiv({
-            cls: "nw-fingerprint-search-container nw-u-p-8px-2 nw-u-bb-1px-solid-background-m-2",
+            cls: "nw-fingerprint-search-container nw-u-p-8px nw-u-bb-1px-solid-background-m",
             attr: {}
         });
 
@@ -489,7 +489,7 @@ export class WritingFingerprintView extends ItemView {
         this.searchInput = searchContainer.createEl('input', {
             type: 'text',
             placeholder: '🔍 搜索指纹...',
-            cls: 'nw-u-w-100-2 nw-u-p-6px-10px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-fs-12px-2 nw-u-bg-background-primary-2 nw-u-c-text-normal-2 nw-u-bx-border-box'
+            cls: 'nw-u-w-100 nw-u-p-6px-10px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-fs-12px nw-u-bg-background-primary nw-u-c-text-normal nw-u-bx-border-box'
         });
         this.searchInput.value = this.filter.searchQuery;
         this.searchInput.addEventListener('input', (e) => {
@@ -498,7 +498,7 @@ export class WritingFingerprintView extends ItemView {
         });
 
         this.tagFilter = searchContainer.createDiv({
-            cls: "nw-fingerprint-tag-filter nw-u-margintop-8px-2 nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-4px-2",
+            cls: "nw-fingerprint-tag-filter nw-u-margintop-8px nw-u-d-flex nw-u-fwr-wrap nw-u-gap-4px",
             attr: {}
         });
 
@@ -539,7 +539,7 @@ export class WritingFingerprintView extends ItemView {
         }
 
         this.fingerprintList = this.leftSidebar.createDiv({
-            cls: "nw-fingerprint-list nw-u-flex-1-2 nw-u-ovy-auto-2",
+            cls: "nw-fingerprint-list nw-u-flex-1 nw-u-ovy-auto",
             attr: {}
         });
 
@@ -548,7 +548,7 @@ export class WritingFingerprintView extends ItemView {
         if (this.isLoading) {
             this.updateCountLabel(null);
             this.fingerprintList.createDiv({
-                cls: 'nw-u-p-40px-2 nw-u-ta-center-2 nw-u-c-text-faint-2 nw-u-fs-13px-2',
+                cls: 'nw-u-p-40px nw-u-ta-center nw-u-c-text-faint nw-u-fs-13px',
                 text: '加载中...'
             });
             return;
@@ -595,17 +595,17 @@ export class WritingFingerprintView extends ItemView {
             });
 
             const header = item.createDiv({
-                cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-4px-2'
+                cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-4px'
             });
 
             const nameRow = header.createDiv({
-                cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-6px-2 nw-u-flex-1-2 nw-u-minw-0-2'
+                cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-6px nw-u-flex-1 nw-u-minw-0'
             });
 
             if (!fp.enabled) {
                 nameRow.createEl('span', {
                     text: '🔇',
-                    cls: 'nw-u-fs-11px-2 nw-u-op-0-6'
+                    cls: 'nw-u-fs-11px nw-u-op-0-6'
                 });
             }
 
@@ -620,11 +620,11 @@ export class WritingFingerprintView extends ItemView {
 
             header.createEl('span', {
                 text: SCOPE_ICONS[fp.scope],
-                cls: 'nw-u-fs-11px-2 nw-u-fsh-0-2'
+                cls: 'nw-u-fs-11px nw-u-fsh-0'
             });
 
             const source = item.createDiv({
-                cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-marginbottom-4px-2 nw-u-ov-hidden-2 nw-u-textoverflow-ellipsis-2 nw-u-ws-nowrap-2'
+                cls: 'nw-u-fs-11px nw-u-c-text-muted nw-u-marginbottom-4px nw-u-ov-hidden nw-u-textoverflow-ellipsis nw-u-ws-nowrap'
             });
             source.textContent = fp.source || '未知来源';
 
@@ -637,12 +637,12 @@ export class WritingFingerprintView extends ItemView {
 
             if (fp.tags.length > 0) {
                 const tagsRow = item.createDiv({
-                    cls: 'nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-3px'
+                    cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-3px'
                 });
                 fp.tags.slice(0, 3).forEach(tag => {
                     tagsRow.createEl('span', {
                         text: tag,
-                        cls: 'nw-u-p-1px-6px-2 nw-u-fs-10px-2 nw-u-bg-background-secondary-2 nw-u-c-text-muted-2 nw-u-brd-8px-2'
+                        cls: 'nw-u-p-1px-6px nw-u-fs-10px nw-u-bg-background-secondary nw-u-c-text-muted nw-u-brd-8px'
                     });
                 });
             }
@@ -663,7 +663,7 @@ export class WritingFingerprintView extends ItemView {
         this.countEl = null;
         if (count === null) return;
         this.countEl = this.leftSidebar.createDiv({
-            cls: "nw-fingerprint-count nw-u-p-6px-12px nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-bt-1px-solid-background-m-2",
+            cls: "nw-fingerprint-count nw-u-p-6px-12px nw-u-fs-11px nw-u-c-text-muted nw-u-bt-1px-solid-background-m",
             attr: {}
         });
         this.countEl.textContent = `共 ${count} 个指纹`;
@@ -674,7 +674,7 @@ export class WritingFingerprintView extends ItemView {
 
         if (!this.selectedFingerprintId || !this.selectedFingerprintScope) {
             this.rightPanel.createDiv({
-                cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-center-2 nw-u-h-100-2 nw-u-c-text-faint-2 nw-u-fs-14px-2',
+                cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-center nw-u-h-100 nw-u-c-text-faint nw-u-fs-14px',
                 text: '👈 请从左侧选择一个指纹查看详情'
             });
             return;
@@ -683,24 +683,24 @@ export class WritingFingerprintView extends ItemView {
         const fp = this.getSelectedFingerprint();
         if (!fp) {
             this.rightPanel.createDiv({
-                cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-center-2 nw-u-h-100-2 nw-u-c-text-faint-2 nw-u-fs-14px-2',
+                cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-center nw-u-h-100 nw-u-c-text-faint nw-u-fs-14px',
                 text: '指纹不存在'
             });
             return;
         }
 
         const header = this.rightPanel.createDiv({
-            cls: "nw-fingerprint-detail-header nw-u-marginbottom-16px-2 nw-u-paddingbottom-12px nw-u-bb-1px-solid-background-m-2",
+            cls: "nw-fingerprint-detail-header nw-u-marginbottom-16px nw-u-paddingbottom-12px nw-u-bb-1px-solid-background-m",
             attr: {}
         });
 
         const titleRow = header.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-8px-2'
+            cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-8px'
         });
 
         titleRow.createEl('h3', {
             text: fp.name,
-            cls: 'nw-u-m-0-2 nw-u-fs-18px-2'
+            cls: 'nw-u-m-0 nw-u-fs-18px'
         });
 
         const effectiveEnabled = this.isEffectivelyEnabled(fp);
@@ -716,7 +716,7 @@ export class WritingFingerprintView extends ItemView {
         });
 
         const metaRow = header.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-12px-2 nw-u-fs-12px-2 nw-u-c-text-muted-2'
+            cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-12px nw-u-fs-12px nw-u-c-text-muted'
         });
 
         metaRow.createEl('span', { text: `${SCOPE_LABELS[fp.scope as FingerprintScope]}` });
@@ -727,12 +727,12 @@ export class WritingFingerprintView extends ItemView {
 
         if (fp.tags.length > 0) {
             const tagsSection = header.createDiv({
-                cls: 'nw-u-margintop-8px-2 nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-6px-2'
+                cls: 'nw-u-margintop-8px nw-u-d-flex nw-u-fwr-wrap nw-u-gap-6px'
             });
             fp.tags.forEach(tag => {
                 tagsSection.createEl('span', {
                     text: tag,
-                    cls: 'nw-u-p-3px-10px-2 nw-u-fs-11px-2 nw-u-bg-background-secondary-2 nw-u-c-text-normal-2 nw-u-brd-10px-2'
+                    cls: 'nw-u-p-3px-10px nw-u-fs-11px nw-u-bg-background-secondary nw-u-c-text-normal nw-u-brd-10px'
                 });
             });
         }
@@ -760,27 +760,27 @@ export class WritingFingerprintView extends ItemView {
     }
 
     private renderInjectionCard(fp: StyleFingerprint): void {        const card = this.rightPanel.createDiv({ cls: 'nw-fingerprint-inject-card nw-mb-lg' });
-        card.createEl('h4', { text: '🎯 注入影响', cls: 'nw-u-m-0-2 nw-u-margintop-8px-2 nw-u-marginbottom-6px-2 nw-u-fs-14px-2' });
+        card.createEl('h4', { text: '🎯 注入影响', cls: 'nw-u-m-0 nw-u-margintop-8px nw-u-marginbottom-6px nw-u-fs-14px' });
 
         const sampleCount = (fp.samples || []).length;
-        const rows = card.createDiv({ cls: 'nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-12px-2 nw-u-fs-12px-2' });
+        const rows = card.createDiv({ cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-12px nw-u-fs-12px' });
         rows.createEl('span', { text: `原文样本: ${sampleCount} 段（段落层 few-shot）` });
         rows.createEl('span', { text: '注入层: 全局特征 + 段落样本 + 句子提示' });
         rows.createEl('span', { text: `总预算: ${this.injectionBudget()} 字符（设置可调 fingerprintInjectionBudget）` });
         if (sampleCount === 0) {
             const warn = card.createDiv({
-                cls: 'nw-fingerprint-sample-warn nw-u-margintop-6px-2 nw-u-p-6px-10px-2 nw-u-fs-12px-2 nw-u-brd-8px-2'
+                cls: 'nw-fingerprint-sample-warn nw-u-margintop-6px nw-u-p-6px-10px nw-u-fs-12px nw-u-brd-8px'
             });
             warn.setText('⚠️ 该指纹没有原文样本：注入只剩特征描述，段落层（真实文风 few-shot）不会生效，指引力大减。');
             const fixBtn = card.createEl('button', {
                 text: '📚 从知识库补样本',
-                cls: 'nw-btn nw-btn-secondary nw-u-margintop-6px-2',
+                cls: 'nw-btn nw-btn-secondary nw-u-margintop-6px',
             });
             fixBtn.onclick = () => { void this.handleImportFromKnowledge(); };
         }
 
         card.createDiv({
-            cls: 'nw-u-margintop-6px-2 nw-u-fs-11px-2 nw-u-c-text-muted-2',
+            cls: 'nw-u-margintop-6px nw-u-fs-11px nw-u-c-text-muted',
             text: '指纹塑造文风（跨章节持续生效的风格记忆）；长篇记忆防 OOC（事实清单）。两条线独立注入、预算叠加——每次 AI 调用的注入明细见工作台执行日志「prompt-ledger」。',
         });
     }
@@ -797,32 +797,32 @@ export class WritingFingerprintView extends ItemView {
         });
 
         const titleRow = section.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-8px-2'
+            cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-8px'
         });
         titleRow.createEl('h4', {
             text: '🏷️ 自动分类',
-            cls: 'nw-fp-section-h4 nw-u-m-0-2'
+            cls: 'nw-fp-section-h4 nw-u-m-0'
         });
         titleRow.createEl('span', {
             text: classification.primary,
-            cls: 'nw-fingerprint-class-primary nw-u-fs-12px-2'
+            cls: 'nw-fingerprint-class-primary nw-u-fs-12px'
         });
 
         section.createDiv({
             text: classification.summary,
-            cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginbottom-8px-2'
+            cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-8px'
         });
 
         if (classification.tags.length === 0) {
             section.createDiv({
                 text: '当前统计特征不足以规则归类，可先用 AI 提取特征后重新归类。',
-                cls: 'nw-u-fs-12px-2 nw-u-c-text-faint-2'
+                cls: 'nw-u-fs-12px nw-u-c-text-faint'
             });
             return;
         }
 
         const tagWrap = section.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-6px-2'
+            cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-6px'
         });
         classification.tags.forEach(tag => {
             const chip = tagWrap.createSpan({
@@ -845,20 +845,20 @@ export class WritingFingerprintView extends ItemView {
         });
 
         const statsGrid = section.createDiv({
-            cls: 'nw-u-d-grid-2 nw-u-gtc-repeat-auto-fit-minmax-6 nw-u-gap-8px-2'
+            cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-6 nw-u-gap-8px'
         });
 
         buildStatItems(fp.stats).forEach(item => {
             const card = statsGrid.createDiv({
-                cls: 'nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2 nw-u-ta-center-2'
+                cls: 'nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-ta-center'
             });
             card.createEl('div', {
                 text: item.value,
-                cls: 'nw-u-fs-16px-2 nw-u-fwt-600-2 nw-u-marginbottom-4px-2'
+                cls: 'nw-u-fs-16px nw-u-fwt-600 nw-u-marginbottom-4px'
             });
             card.createEl('div', {
                 text: item.label,
-                cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2'
+                cls: 'nw-u-fs-11px nw-u-c-text-muted'
             });
         });
     }
@@ -885,15 +885,15 @@ export class WritingFingerprintView extends ItemView {
 
         buildFeatureRows(fp.features as unknown as Record<string, unknown>, featureLabels).forEach(f => {
             const row = section.createDiv({
-                cls: 'nw-u-marginbottom-10px-2'
+                cls: 'nw-u-marginbottom-10px'
             });
             row.createEl('div', {
                 text: f.label,
-                cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginbottom-4px-2'
+                cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-4px'
             });
             row.createEl('div', {
                 text: f.value,
-                cls: 'nw-u-fs-13px-2 nw-u-lh-1-5-2 nw-u-p-8px-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-4px-2'
+                cls: 'nw-u-fs-13px nw-u-lh-1-5 nw-u-p-8px-12px nw-u-bg-background-secondary nw-u-brd-4px'
             });
         });
     }
@@ -911,29 +911,29 @@ export class WritingFingerprintView extends ItemView {
         if (fp.samples.length === 0) {
             section.createEl('div', {
                 text: '无代表片段',
-                cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2'
+                cls: 'nw-u-fs-12px nw-u-c-text-muted'
             });
             return;
         }
 
         visibleSamples(fp.samples).forEach((sample, index) => {
             const sampleEl = section.createDiv({
-                cls: 'nw-u-marginbottom-10px-2 nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-4px-2 nw-u-fs-12px-2 nw-u-lh-1-6-2 nw-u-blt-3px-solid-interactive-'
+                cls: 'nw-u-marginbottom-10px nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-4px nw-u-fs-12px nw-u-lh-1-6 nw-u-blt-3px-solid-interactive-'
             });
             sampleEl.createEl('div', {
                 text: `片段 ${index + 1}`,
-                cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-marginbottom-6px-2'
+                cls: 'nw-u-fs-11px nw-u-c-text-muted nw-u-marginbottom-6px'
             });
             sampleEl.createEl('div', {
                 text: sample,
-                cls: 'nw-u-c-text-normal-2'
+                cls: 'nw-u-c-text-normal'
             });
         });
     }
 
     private renderActionsSection(fp: StyleFingerprint): void {
         const section = this.rightPanel.createDiv({
-            cls: "nw-fingerprint-actions-section nw-u-margintop-20px-2 nw-u-paddingtop-16px nw-u-bt-1px-solid-background-m-2",
+            cls: "nw-fingerprint-actions-section nw-u-margintop-20px nw-u-paddingtop-16px nw-u-bt-1px-solid-background-m",
             attr: {}
         });
 
@@ -943,7 +943,7 @@ export class WritingFingerprintView extends ItemView {
         });
 
         const actionsGrid = section.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-8px-2'
+            cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-8px'
         });
 
         const sourceOnly = isSourceOnlyFingerprintScope(fp.scope);
@@ -951,7 +951,7 @@ export class WritingFingerprintView extends ItemView {
         if (sourceOnly) {
             section.createEl('div', {
                 text: '📋 模板层是来源库：复制/同步到项目后才会影响正文，本层的启用状态与强度不参与注入。',
-                cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-marginbottom-8px-2 nw-u-lh-1-5-2'
+                cls: 'nw-u-fs-11px nw-u-c-text-muted nw-u-marginbottom-8px nw-u-lh-1-5'
             });
         } else {
             const toggleBtn = this.createActionButton(
@@ -1776,10 +1776,10 @@ class EditFingerprintModal extends Modal {
                 .onChange(v => this.tagsValue = v));
 
         if (this.v2Features) {
-            const dims = contentEl.createDiv({ cls: 'nw-u-margintop-12px-2' });
+            const dims = contentEl.createDiv({ cls: 'nw-u-margintop-12px' });
             dims.createEl('h4', {
                 text: '🧬 十二维特征（本地统计，可逐维修改描述）',
-                cls: 'nw-fp-section-h4 nw-u-m-0-2 nw-u-marginbottom-8px-2'
+                cls: 'nw-fp-section-h4 nw-u-m-0 nw-u-marginbottom-8px'
             });
             for (const { key, label } of V2_FEATURE_LABELS) {
                 const dim = this.v2Features[key];
@@ -1799,18 +1799,18 @@ class EditFingerprintModal extends Modal {
         }
 
         const btnRow = contentEl.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-jc-flex-end-2 nw-u-gap-8px-2 nw-u-margintop-20px-2'
+            cls: 'nw-u-d-flex nw-u-jc-flex-end nw-u-gap-8px nw-u-margintop-20px'
         });
 
         const cancelBtn = btnRow.createEl('button', {
             text: '取消',
-            cls: 'nw-u-p-6px-16px nw-u-cur-pointer-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-bg-background-secondary-2'
+            cls: 'nw-u-p-6px-16px nw-u-cur-pointer nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-bg-background-secondary'
         });
         cancelBtn.addEventListener('click', () => this.close());
 
         const saveBtn = btnRow.createEl('button', {
             text: '💾 保存',
-            cls: 'nw-u-p-6px-16px nw-u-cur-pointer-2 nw-u-b-none nw-u-brd-4px-2 nw-u-bg-interactive-accent-2 nw-u-c-text-on-accent-2'
+            cls: 'nw-u-p-6px-16px nw-u-cur-pointer nw-u-b-none nw-u-brd-4px nw-u-bg-interactive-accent nw-u-c-text-on-accent'
         });
         saveBtn.addEventListener('click', () => {
             this.fingerprint.name = this.nameValue.trim() || this.fingerprint.name;
@@ -1866,7 +1866,7 @@ export class ExtractFromChaptersModal extends Modal {
 
         const desc = contentEl.createEl('p', {
             text: `共找到 ${this.chapters.length} 个章节，选择要提取的章节：`,
-            cls: 'nw-u-fs-13px-2 nw-u-c-text-muted-2 nw-u-m-8px-0-16px-0'
+            cls: 'nw-u-fs-13px nw-u-c-text-muted nw-u-m-8px-0-16px-0'
         });
         void desc;
 
@@ -1877,12 +1877,12 @@ export class ExtractFromChaptersModal extends Modal {
                 .onChange(v => this.fingerprintName = v));
 
         const btnRow1 = contentEl.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-m-12px-0'
+            cls: 'nw-u-d-flex nw-u-gap-8px nw-u-m-12px-0'
         });
 
         const selectAllBtn = btnRow1.createEl('button', {
             text: '全选',
-            cls: "nw-btn nw-u-flex-1-2",
+            cls: "nw-btn nw-u-flex-1",
             attr: {}
         });
         selectAllBtn.addEventListener('click', () => {
@@ -1892,7 +1892,7 @@ export class ExtractFromChaptersModal extends Modal {
 
         const deselectAllBtn = btnRow1.createEl('button', {
             text: '取消全选',
-            cls: "nw-btn nw-u-flex-1-2",
+            cls: "nw-btn nw-u-flex-1",
             attr: {}
         });
         deselectAllBtn.addEventListener('click', () => {
@@ -1901,7 +1901,7 @@ export class ExtractFromChaptersModal extends Modal {
         });
 
         const chapterListContainer = contentEl.createDiv({
-            cls: 'nw-u-maxh-300px-2 nw-u-ovy-auto-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-m-8px-0'
+            cls: 'nw-u-maxh-300px nw-u-ovy-auto nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-m-8px-0'
         });
 
         const renderChapterList = () => {
@@ -1910,7 +1910,7 @@ export class ExtractFromChaptersModal extends Modal {
             if (this.chapters.length === 0) {
                 chapterListContainer.createDiv({
                     text: '未找到章节',
-                    cls: 'nw-u-p-20px-2 nw-u-ta-center-2 nw-u-c-text-faint-2'
+                    cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-faint'
                 });
                 return;
             }
@@ -1918,7 +1918,7 @@ export class ExtractFromChaptersModal extends Modal {
             this.chapters.forEach(chapterPath => {
                 const fileName = chapterPath.split('/').pop() || chapterPath;
                 const item = chapterListContainer.createDiv({
-                    cls: 'nw-u-p-6px-12px nw-u-cur-pointer-2 nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-bb-1px-solid-background-m-2'
+                    cls: 'nw-u-p-6px-12px nw-u-cur-pointer nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-bb-1px-solid-background-m'
                 });
 
                 const checkbox = document.createElement('input');
@@ -1954,7 +1954,7 @@ export class ExtractFromChaptersModal extends Modal {
         renderChapterList();
 
         const btnRow = contentEl.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-jc-flex-end-2 nw-u-gap-8px-2 nw-u-margintop-20px-2'
+            cls: 'nw-u-d-flex nw-u-jc-flex-end nw-u-gap-8px nw-u-margintop-20px'
         });
 
         const cancelBtn = btnRow.createEl('button', {

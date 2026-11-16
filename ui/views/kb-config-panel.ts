@@ -144,7 +144,7 @@ export function buildKbConfigPanel(rightContentEl: HTMLElement, host: KbConfigPa
     }
 
     const grid = configContent.createDiv({
-        cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fill-minma-2 nw-u-gap-12px'
+        cls: 'nw-u-d-grid nw-u-grid-auto-fill-300 nw-u-gap-12px'
     });
 
     genres.forEach(genre => {
@@ -165,7 +165,7 @@ export function buildKbConfigPanel(rightContentEl: HTMLElement, host: KbConfigPa
         if (isCustom) {
             titleRow.createSpan({
                 text: '自定义',
-                cls: 'nw-u-p-1px-6px nw-u-fs-10px nw-u-bg-rgba-46-204-113-0-15 nw-u-c-2ecc71 nw-u-brd-8px nw-u-fsh-0'
+                cls: 'nw-u-p-1px-6px nw-u-fs-10px nw-u-bg-success-soft nw-u-c-success nw-u-brd-8px nw-u-fsh-0'
             });
         }
 
@@ -184,7 +184,7 @@ export function buildKbConfigPanel(rightContentEl: HTMLElement, host: KbConfigPa
 
         card.createDiv({
             text: genre.description,
-            cls: "nw-text-sm-muted nw-u-lh-1-5 nw-u-marginbottom-12px nw-u-d-webkit-box nw-u-webkitlineclamp-2 nw-u-webkitboxorient-vertical nw-u-ov-hidden", attr: {}
+            cls: "nw-text-sm-muted nw-u-lh-1-5 nw-u-marginbottom-12px nw-u-d-webkit-box nw-u-clamp-2-lines nw-u-webkitboxorient-vertical nw-u-ov-hidden", attr: {}
         });
 
         const stats = card.createDiv({ cls: 'nw-u-d-grid nw-u-gtc-repeat-3-1fr nw-u-gap-8px' });

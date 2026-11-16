@@ -61,9 +61,9 @@ export class DeconstructionSection extends SettingsSection {
         const cfg = this.getDeconstructionEngineSettings();
 
         const qualityCard = section.createDiv({
-            cls: 'nw-u-p-12px-16px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-marginbottom-16px-2 nw-u-bg-background-secondary-2'
+            cls: 'nw-u-p-12px-16px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-marginbottom-16px nw-u-bg-background-secondary'
         });
-        qualityCard.createEl('h4', { text: '🎯 增强级别', cls: 'nw-u-m-0-0-12px-0-2 nw-u-fs-14px-2' });
+        qualityCard.createEl('h4', { text: '🎯 增强级别', cls: 'nw-u-m-0-0-12px-0 nw-u-fs-14px' });
 
         new Setting(qualityCard)
             .setName('默认质量级别')
@@ -93,15 +93,15 @@ export class DeconstructionSection extends SettingsSection {
             });
 
         const dimCard = section.createDiv({
-            cls: 'nw-u-p-12px-16px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-marginbottom-16px-2 nw-u-bg-background-secondary-2'
+            cls: 'nw-u-p-12px-16px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-marginbottom-16px nw-u-bg-background-secondary'
         });
-        dimCard.createEl('h4', { text: '🧩 拆解维度', cls: 'nw-u-m-0-0-12px-0-2 nw-u-fs-14px-2' });
+        dimCard.createEl('h4', { text: '🧩 拆解维度', cls: 'nw-u-m-0-0-12px-0 nw-u-fs-14px' });
         dimCard.createEl('div', {
             text: '选择默认启用的拆解维度（调用方未显式指定维度时使用）',
-            cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginbottom-10px-2'
+            cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-10px'
         });
 
-        const dimList = dimCard.createDiv({ cls: 'nw-u-d-grid-2 nw-u-gtc-repeat-auto-fill-minma-5 nw-u-gap-6px-2' });
+        const dimList = dimCard.createDiv({ cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fill-minma-5 nw-u-gap-6px' });
         const dimSet = new Set(cfg.enabledDimensions);
         const DIMENSION_DESC: Record<string, string> = {
             style: '分析文笔风格与语言特色',
@@ -158,9 +158,9 @@ export class DeconstructionSection extends SettingsSection {
             });
 
         const vectorCard = section.createDiv({
-            cls: 'nw-u-p-12px-16px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-marginbottom-16px-2 nw-u-bg-background-secondary-2'
+            cls: 'nw-u-p-12px-16px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-marginbottom-16px nw-u-bg-background-secondary'
         });
-        vectorCard.createEl('h4', { text: '🧠 向量增强', cls: 'nw-u-m-0-0-12px-0-2 nw-u-fs-14px-2' });
+        vectorCard.createEl('h4', { text: '🧠 向量增强', cls: 'nw-u-m-0-0-12px-0 nw-u-fs-14px' });
 
         new Setting(vectorCard)
             .setName('启用向量增强')
@@ -221,15 +221,15 @@ export class DeconstructionSection extends SettingsSection {
             });
 
         const llmCard = section.createDiv({
-            cls: 'nw-u-p-12px-16px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-marginbottom-16px-2 nw-u-bg-background-secondary-2'
+            cls: 'nw-u-p-12px-16px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-marginbottom-16px nw-u-bg-background-secondary'
         });
         llmCard.createEl('h4', {
             text: '🤖 LLM 增强 · 实验性',
-            cls: 'nw-u-m-0-0-12px-0-2 nw-u-fs-14px-2'
+            cls: 'nw-u-m-0-0-12px-0 nw-u-fs-14px'
         });
         llmCard.createEl('div', {
             text: '⚠️ 实验性功能：调用大模型对拆解结果做二次提炼，会增加 API 调用成本',
-            cls: 'nw-u-fs-12px-2 nw-u-c-text-warning nw-u-marginbottom-10px-2'
+            cls: 'nw-u-fs-12px nw-u-c-text-warning nw-u-marginbottom-10px'
         });
 
         new Setting(llmCard)
@@ -259,9 +259,9 @@ export class DeconstructionSection extends SettingsSection {
             });
 
         const perfCard = section.createDiv({
-            cls: 'nw-u-p-12px-16px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-marginbottom-16px-2 nw-u-bg-background-secondary-2'
+            cls: 'nw-u-p-12px-16px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-marginbottom-16px nw-u-bg-background-secondary'
         });
-        perfCard.createEl('h4', { text: '⚙️ 性能', cls: 'nw-u-m-0-0-12px-0-2 nw-u-fs-14px-2' });
+        perfCard.createEl('h4', { text: '⚙️ 性能', cls: 'nw-u-m-0-0-12px-0 nw-u-fs-14px' });
 
         new Setting(perfCard)
             .setName('最大并发拆解数')
@@ -311,7 +311,7 @@ export class DeconstructionSection extends SettingsSection {
                 });
             });
 
-        const resetRow = section.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-flex-end-2 nw-u-margintop-12px-2' });
+        const resetRow = section.createDiv({ cls: 'nw-u-d-flex nw-u-jc-flex-end nw-u-margintop-12px' });
         const resetBtn = resetRow.createEl('button', {
             text: '↩️ 恢复默认',
             attr: { type: 'button', title: '将拆解引擎所有配置恢复为默认值', style: 'padding:6px 16px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:13px;background:var(--background-primary);' }

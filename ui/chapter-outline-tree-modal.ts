@@ -127,7 +127,7 @@ export class ChapterOutlineTreeModal extends Modal {
         await this.loadOutline();
 
         if (this.volumes.length === 0) {
-            contentEl.createEl('p', { text: '⚠️ 未找到分卷大纲，请先执行"全书规划"步骤。', cls: 'nw-u-c-text-warning nw-u-p-20px-2' });
+            contentEl.createEl('p', { text: '⚠️ 未找到分卷大纲，请先执行"全书规划"步骤。', cls: 'nw-u-c-text-warning nw-u-p-20px' });
             return;
         }
 
@@ -463,23 +463,23 @@ export class ChapterOutlineTreeModal extends Modal {
         contentEl.empty();
 
         // ── 标题栏 + 章号区间搜索 + 全文切换 ──
-        const header = contentEl.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-center-2 nw-u-fwr-wrap-2 nw-u-gap-8px-2 nw-u-p-0-4px-12px-4px nw-u-bb-1px-solid-background-m-2 nw-u-marginbottom-12px-2' });
-        header.createEl('h3', { text: '📖 分卷大纲 · 章节冲突预览', cls: 'nw-u-m-0-2 nw-u-fs-1-1em nw-u-ws-nowrap-2' });
+        const header = contentEl.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center nw-u-fwr-wrap nw-u-gap-8px nw-u-p-0-4px-12px-4px nw-u-bb-1px-solid-background-m nw-u-marginbottom-12px' });
+        header.createEl('h3', { text: '📖 分卷大纲 · 章节冲突预览', cls: 'nw-u-m-0 nw-u-fs-1-1em nw-u-ws-nowrap' });
 
         // 章号区间搜索 + 全文按钮
-        const actionsWrap = header.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-6px-2 nw-u-ai-center-2 nw-u-fwr-wrap-2' });
-        const searchWrap = actionsWrap.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-6px-2 nw-u-ai-center-2 nw-u-fs-0-85em' });
-        searchWrap.createSpan({ text: '【', cls: 'nw-u-c-text-muted-2' });
+        const actionsWrap = header.createDiv({ cls: 'nw-u-d-flex nw-u-gap-6px nw-u-ai-center nw-u-fwr-wrap' });
+        const searchWrap = actionsWrap.createDiv({ cls: 'nw-u-d-flex nw-u-gap-6px nw-u-ai-center nw-u-fs-0-85em' });
+        searchWrap.createSpan({ text: '【', cls: 'nw-u-c-text-muted' });
         const fromInput = searchWrap.createEl('input', {
             cls: 'nw-outline-range-input', attr: { placeholder: '起始章', type: 'number', min: '1' }
         });
         fromInput.value = this.rangeFrom > 0 ? String(this.rangeFrom) : '';
-        searchWrap.createSpan({ text: '章 ——【', cls: 'nw-u-c-text-muted-2' });
+        searchWrap.createSpan({ text: '章 ——【', cls: 'nw-u-c-text-muted' });
         const toInput = searchWrap.createEl('input', {
             cls: 'nw-outline-range-input', attr: { placeholder: '结束章', type: 'number', min: '1' }
         });
         toInput.value = this.rangeTo > 0 ? String(this.rangeTo) : '';
-        searchWrap.createSpan({ text: '章 】', cls: 'nw-u-c-text-muted-2' });
+        searchWrap.createSpan({ text: '章 】', cls: 'nw-u-c-text-muted' });
 
         // 定位按钮
         const goBtn = searchWrap.createEl('button', {
@@ -524,7 +524,7 @@ export class ChapterOutlineTreeModal extends Modal {
             const raw = this.sources.map(s => s.lines.join('\n')).join('\n\n---\n');
             const bodyContent = raw.replace(/^---[\s\S]*?---\n*/gm, '').trim();
             textEl = contentEl.createDiv({
-                cls: 'nw-u-m-0-4px-12px nw-u-p-10px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-maxh-30vh nw-u-ovy-auto-2 nw-u-fs-0-82em nw-u-lh-1-5-2 nw-u-ws-pre-wrap nw-u-wordbreak-break-word nw-u-bg-background-primary-2'
+                cls: 'nw-u-m-0-4px-12px nw-u-p-10px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-maxh-30vh nw-u-ovy-auto nw-u-fs-0-82em nw-u-lh-1-5 nw-u-ws-pre-wrap nw-u-wordbreak-break-word nw-u-bg-background-primary'
             });
             textEl.setText(bodyContent.slice(0, 20000));
             textBtn.textContent = '📄 收起';
@@ -532,7 +532,7 @@ export class ChapterOutlineTreeModal extends Modal {
 
         // ── 树容器 ──
         const treeContainer = contentEl.createDiv({
-            cls: 'nw-u-maxh-50vh nw-u-ovy-auto-2 nw-u-p-0-4px nw-u-marginbottom-12px-2'
+            cls: 'nw-u-maxh-50vh nw-u-ovy-auto nw-u-p-0-4px nw-u-marginbottom-12px'
         });
 
         // ── 渲染卷 ──
@@ -549,14 +549,14 @@ export class ChapterOutlineTreeModal extends Modal {
                     if (!isExpanded) {
                         // 渲染折叠标题
                         const volHeader = treeContainer.createDiv({
-                            cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-p-6px-8px-2 nw-u-m-2px-0 nw-u-brd-6px-2 nw-u-cur-pointer-2 nw-u-bg-background-secondary-2 nw-u-op-0-5'
+                            cls: 'nw-u-d-flex nw-u-ai-center nw-u-p-6px-8px nw-u-m-2px-0 nw-u-brd-6px nw-u-cur-pointer nw-u-bg-background-secondary nw-u-op-0-5'
                         });
                         volHeader.addEventListener('click', () => {
                             this.expandedVolumes.add(vi);
                             this.render();
                         });
                         volHeader.createSpan({ text: '▶', cls: 'nw-u-marginright-8px nw-u-fs-0-8em nw-u-minw-16px' });
-                        volHeader.createSpan({ text: `第${vol.volNum}卷 ${vol.volName || '(未命名)'} — ${vol.chapters.length}章 (无匹配)`, cls: 'nw-u-fs-0-85em nw-u-c-text-faint-2' });
+                        volHeader.createSpan({ text: `第${vol.volNum}卷 ${vol.volName || '(未命名)'} — ${vol.chapters.length}章 (无匹配)`, cls: 'nw-u-fs-0-85em nw-u-c-text-faint' });
                     }
                     continue;
                 }
@@ -564,7 +564,7 @@ export class ChapterOutlineTreeModal extends Modal {
 
             // 卷标题行
             const volHeader = treeContainer.createDiv({
-                cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-p-8px-10px-2 nw-u-m-6px-0-2px-0 nw-u-brd-8px-2 nw-u-cur-pointer-2 nw-u-bg-background-secondary-2'
+                cls: 'nw-u-d-flex nw-u-ai-center nw-u-p-8px-10px nw-u-m-6px-0-2px-0 nw-u-brd-8px nw-u-cur-pointer nw-u-bg-background-secondary'
             });
             volHeader.addEventListener('click', () => {
                 if (this.expandedVolumes.has(vi)) this.expandedVolumes.delete(vi);
@@ -573,9 +573,9 @@ export class ChapterOutlineTreeModal extends Modal {
             });
 
             volHeader.createSpan({ text: isExpanded ? '▼' : '▶', cls: 'nw-u-marginright-8px nw-u-fs-0-8em nw-u-minw-16px' });
-            volHeader.createSpan({ text: `第${vol.volNum}卷`, cls: 'nw-u-fwt-700-2 nw-u-c-text-accent nw-u-marginright-8px' });
-            volHeader.createSpan({ text: vol.volName || '(未命名)', cls: 'nw-u-c-text-normal-2 nw-u-fwt-600-2 nw-u-marginright-12px' });
-            volHeader.createSpan({ text: `${vol.chapters.length}章`, cls: 'nw-u-fs-0-78em nw-u-c-text-faint-2' });
+            volHeader.createSpan({ text: `第${vol.volNum}卷`, cls: 'nw-u-fwt-700 nw-u-c-text-accent nw-u-marginright-8px' });
+            volHeader.createSpan({ text: vol.volName || '(未命名)', cls: 'nw-u-c-text-normal nw-u-fwt-600 nw-u-marginright-12px' });
+            volHeader.createSpan({ text: `${vol.chapters.length}章`, cls: 'nw-u-fs-0-78em nw-u-c-text-faint' });
 
             if (!isExpanded) continue;
 
@@ -583,16 +583,16 @@ export class ChapterOutlineTreeModal extends Modal {
             const hasOverview = vol.coreConflict || vol.chapterRange;
             if (hasOverview) {
                 const overviewBox = treeContainer.createDiv({
-                    cls: 'nw-u-m-2px-4px-8px-28px nw-u-p-8px-10px-2 nw-u-brd-6px-2 nw-u-bg-rgba-color-accent-rgb- nw-u-blt-3px-solid-text-accent nw-u-fs-0-82em nw-u-lh-1-5-2'
+                    cls: 'nw-u-m-2px-4px-8px-28px nw-u-p-8px-10px nw-u-brd-6px nw-u-bg-accent-faint nw-u-blt-3px-solid-text-accent nw-u-fs-0-82em nw-u-lh-1-5'
                 });
                 if (vol.chapterRange) {
                     overviewBox.createSpan({ text: '📐 ', cls: 'nw-u-fs-0-9em' });
-                    overviewBox.createSpan({ text: vol.chapterRange, cls: 'nw-u-c-text-faint-2' });
+                    overviewBox.createSpan({ text: vol.chapterRange, cls: 'nw-u-c-text-faint' });
                 }
                 if (vol.coreConflict) {
                     if (vol.chapterRange) overviewBox.createEl('br');
                     overviewBox.createSpan({ text: '🎯 ', cls: 'nw-u-fs-0-9em' });
-                    overviewBox.createSpan({ text: vol.coreConflict, cls: 'nw-u-c-text-muted-2' });
+                    overviewBox.createSpan({ text: vol.coreConflict, cls: 'nw-u-c-text-muted' });
                 }
                 // 章节数统计
                 if (this.hasRangeFilter()) {
@@ -638,7 +638,7 @@ export class ChapterOutlineTreeModal extends Modal {
                 // 章号
                 chapRow.createSpan({
                     text: `第${chap.chapNum}章`,
-                    cls: 'nw-u-fwt-600-2 nw-u-ws-nowrap-2 nw-u-marginright-8px nw-u-minw-48px nw-u-c-text-accent'
+                    cls: 'nw-u-fwt-600 nw-u-ws-nowrap nw-u-marginright-8px nw-u-minw-48px nw-u-c-text-accent'
                 });
 
                 // 冲突文本（可编辑）
@@ -654,20 +654,20 @@ export class ChapterOutlineTreeModal extends Modal {
                 // 编辑按钮
                 const editBtn = chapRow.createSpan({
                     text: '✏️',
-                    cls: 'nw-u-cur-pointer-2 nw-u-op-0-5 nw-u-fs-0-8em nw-u-marginleft-6px'
+                    cls: 'nw-u-cur-pointer nw-u-op-0-5 nw-u-fs-0-8em nw-u-marginleft-6px'
                 });
                 editBtn.addEventListener('click', (e) => { e.stopPropagation(); this.startEdit(chapRow, conflictSpan, chap); });
 
                 // 上移/下移（M3-3：触屏没有 HTML5 drag，移动端必须有点按入口）
                 const upBtn = chapRow.createSpan({
                     text: '▲',
-                    cls: 'nw-u-cur-pointer-2 nw-u-op-0-6 nw-u-fs-11px nw-u-marginleft-4px-2',
+                    cls: 'nw-u-cur-pointer nw-u-op-0-6 nw-u-fs-11px nw-u-marginleft-4px',
                     attr: { title: '上移', 'aria-label': '上移章节' },
                 });
                 upBtn.addEventListener('click', (e) => { e.stopPropagation(); this.moveChapter(vi, ci, -1); });
                 const downBtn = chapRow.createSpan({
                     text: '▼',
-                    cls: 'nw-u-cur-pointer-2 nw-u-op-0-6 nw-u-fs-11px nw-u-marginleft-4px-2',
+                    cls: 'nw-u-cur-pointer nw-u-op-0-6 nw-u-fs-11px nw-u-marginleft-4px',
                     attr: { title: '下移', 'aria-label': '下移章节' },
                 });
                 downBtn.addEventListener('click', (e) => { e.stopPropagation(); this.moveChapter(vi, ci, 1); });
@@ -676,7 +676,7 @@ export class ChapterOutlineTreeModal extends Modal {
                 if (chap.scenes.length > 0 || chap.sceneSourcePath) {
                     const addSceneBtn = chapRow.createSpan({
                         text: '+ 场景',
-                        cls: 'nw-u-cur-pointer-2 nw-u-op-0-5 nw-u-fs-0-7em nw-u-marginleft-4px-2 nw-u-c-text-accent'
+                        cls: 'nw-u-cur-pointer nw-u-op-0-5 nw-u-fs-0-7em nw-u-marginleft-4px nw-u-c-text-accent'
                     });
                     addSceneBtn.addEventListener('click', (e) => { e.stopPropagation(); this.addScene(chap); });
                 }
@@ -718,7 +718,7 @@ export class ChapterOutlineTreeModal extends Modal {
                     // 场景编号
                     sceneRow.createSpan({
                         text: `场景${scene.sceneNum}`,
-                        cls: 'nw-u-fwt-500-2 nw-u-ws-nowrap-2 nw-u-marginright-6px nw-u-minw-40px nw-u-c-text-muted-2'
+                        cls: 'nw-u-fwt-500 nw-u-ws-nowrap nw-u-marginright-6px nw-u-minw-40px nw-u-c-text-muted'
                     });
 
                     // 场景名（可双击编辑）
@@ -758,20 +758,20 @@ export class ChapterOutlineTreeModal extends Modal {
                     // 删除按钮
                     const delSceneBtn = sceneRow.createSpan({
                         text: '🗑️',
-                        cls: 'nw-u-cur-pointer-2 nw-u-op-0-4 nw-u-fs-0-7em nw-u-marginleft-6px'
+                        cls: 'nw-u-cur-pointer nw-u-op-0-4 nw-u-fs-0-7em nw-u-marginleft-6px'
                     });
                     delSceneBtn.addEventListener('click', (e) => { e.stopPropagation(); this.deleteScene(chap, si); });
 
                     // 上移/下移（触屏没有 HTML5 drag）
                     const sceneUpBtn = sceneRow.createSpan({
                         text: '▲',
-                        cls: 'nw-u-cur-pointer-2 nw-u-op-0-6 nw-u-fs-10px nw-u-marginleft-4px-2',
+                        cls: 'nw-u-cur-pointer nw-u-op-0-6 nw-u-fs-10px nw-u-marginleft-4px',
                         attr: { title: '上移', 'aria-label': '上移场景' },
                     });
                     sceneUpBtn.addEventListener('click', (e) => { e.stopPropagation(); this.moveScene(chap, si, -1); });
                     const sceneDownBtn = sceneRow.createSpan({
                         text: '▼',
-                        cls: 'nw-u-cur-pointer-2 nw-u-op-0-6 nw-u-fs-10px nw-u-marginleft-4px-2',
+                        cls: 'nw-u-cur-pointer nw-u-op-0-6 nw-u-fs-10px nw-u-marginleft-4px',
                         attr: { title: '下移', 'aria-label': '下移场景' },
                     });
                     sceneDownBtn.addEventListener('click', (e) => { e.stopPropagation(); this.moveScene(chap, si, 1); });
@@ -788,16 +788,16 @@ export class ChapterOutlineTreeModal extends Modal {
 
         // 筛选结果
         if (this.hasRangeFilter() && totalVisible === 0) {
-            treeContainer.createEl('p', { text: '未找到匹配的章节区间。', cls: 'nw-u-p-20px-2 nw-u-c-text-muted-2 nw-u-ta-center-2' });
+            treeContainer.createEl('p', { text: '未找到匹配的章节区间。', cls: 'nw-u-p-20px nw-u-c-text-muted nw-u-ta-center' });
         } else if (this.hasRangeFilter()) {
             treeContainer.createDiv({
                 text: `匹配 ${totalVisible} 个章节`,
-                cls: 'nw-u-p-4px-8px-2 nw-u-fs-0-8em nw-u-c-text-faint-2 nw-u-ta-right'
+                cls: 'nw-u-p-4px-8px nw-u-fs-0-8em nw-u-c-text-faint nw-u-ta-right'
             });
         }
 
         // ── 底部按钮 ──
-        const footer = contentEl.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-flex-end-2 nw-u-gap-8px-2 nw-u-paddingtop-12px-2 nw-u-bt-1px-solid-background-m-2' });
+        const footer = contentEl.createDiv({ cls: 'nw-u-d-flex nw-u-jc-flex-end nw-u-gap-8px nw-u-paddingtop-12px nw-u-bt-1px-solid-background-m' });
 
         const cancelBtn = footer.createEl('button', {
             text: '✕ 关闭', cls: 'nw-outline-footer-btn',
@@ -813,7 +813,7 @@ export class ChapterOutlineTreeModal extends Modal {
         toCanvasBtn.addEventListener('click', () => { void this.pushToPlanningCanvas(); });
 
         const saveBtn = footer.createEl('button', {
-            text: '💾 保存所有修改', cls: 'nw-u-p-6px-16px nw-u-bg-text-accent nw-u-c-white-2 nw-u-b-none nw-u-brd-6px-2 nw-u-cur-pointer-2 nw-u-fwt-600-2'
+            text: '💾 保存所有修改', cls: 'nw-u-p-6px-16px nw-u-bg-text-accent nw-u-c-white nw-u-b-none nw-u-brd-6px nw-u-cur-pointer nw-u-fwt-600'
         });
         saveBtn.addEventListener('click', () => this.saveAll());
     }
@@ -878,7 +878,7 @@ export class ChapterOutlineTreeModal extends Modal {
         container.querySelectorAll('.nw-inline-editor').forEach(el => el.remove());
         displaySpan.addClass('nw-u-d-none');
 
-        const editorWrap = container.createDiv({ cls: "nw-inline-editor nw-u-flex-1-2 nw-u-d-flex-2 nw-u-gap-4px-2", attr: {} });
+        const editorWrap = container.createDiv({ cls: "nw-inline-editor nw-u-flex-1 nw-u-d-flex nw-u-gap-4px", attr: {} });
         const input = editorWrap.createEl('input', {
             cls: 'nw-outline-edit-input',
             value: chap.conflict
@@ -886,7 +886,7 @@ export class ChapterOutlineTreeModal extends Modal {
         input.focus();
 
         const confirmBtn = editorWrap.createEl('button', {
-            text: '✓', cls: 'nw-u-p-2px-6px-2 nw-u-bg-text-success nw-u-c-white-2 nw-u-b-none nw-u-brd-3px-2 nw-u-cur-pointer-2 nw-u-fs-0-8em'
+            text: '✓', cls: 'nw-u-p-2px-6px nw-u-bg-text-success nw-u-c-white nw-u-b-none nw-u-brd-3px nw-u-cur-pointer nw-u-fs-0-8em'
         });
         confirmBtn.addEventListener('click', () => {
             const newVal = input.value.trim();
@@ -899,7 +899,7 @@ export class ChapterOutlineTreeModal extends Modal {
         });
 
         const cancelEditBtn = editorWrap.createEl('button', {
-            text: '✕', cls: 'nw-u-p-2px-6px-2 nw-u-bg-background-modifier-bo-3 nw-u-b-none nw-u-brd-3px-2 nw-u-cur-pointer-2 nw-u-fs-0-8em'
+            text: '✕', cls: 'nw-u-p-2px-6px nw-u-bg-background-modifier-bo nw-u-b-none nw-u-brd-3px nw-u-cur-pointer nw-u-fs-0-8em'
         });
         cancelEditBtn.addEventListener('click', () => this.finishEdit(container, displaySpan));
 
@@ -921,7 +921,7 @@ export class ChapterOutlineTreeModal extends Modal {
         container.querySelectorAll('.nw-inline-editor').forEach(el => el.remove());
         displaySpan.addClass('nw-u-d-none');
 
-        const editorWrap = container.createDiv({ cls: "nw-inline-editor nw-u-flex-1-2 nw-u-d-flex-2 nw-u-gap-4px-2", attr: {} });
+        const editorWrap = container.createDiv({ cls: "nw-inline-editor nw-u-flex-1 nw-u-d-flex nw-u-gap-4px", attr: {} });
         const input = editorWrap.createEl('input', {
             cls: 'nw-outline-edit-input nw-outline-edit-input-scene',
             value: scene.sceneName
@@ -929,7 +929,7 @@ export class ChapterOutlineTreeModal extends Modal {
         input.focus();
 
         const confirmBtn = editorWrap.createEl('button', {
-            text: '✓', cls: 'nw-u-p-1px-4px nw-u-bg-text-success nw-u-c-white-2 nw-u-b-none nw-u-brd-2px-2 nw-u-cur-pointer-2 nw-u-fs-0-75em'
+            text: '✓', cls: 'nw-u-p-1px-4px nw-u-bg-text-success nw-u-c-white nw-u-b-none nw-u-brd-2px nw-u-cur-pointer nw-u-fs-0-75em'
         });
         confirmBtn.addEventListener('click', () => {
             const newVal = input.value.trim();
@@ -942,7 +942,7 @@ export class ChapterOutlineTreeModal extends Modal {
         });
 
         const cancelEditBtn = editorWrap.createEl('button', {
-            text: '✕', cls: 'nw-u-p-1px-4px nw-u-bg-background-modifier-bo-3 nw-u-b-none nw-u-brd-2px-2 nw-u-cur-pointer-2 nw-u-fs-0-75em'
+            text: '✕', cls: 'nw-u-p-1px-4px nw-u-bg-background-modifier-bo nw-u-b-none nw-u-brd-2px nw-u-cur-pointer nw-u-fs-0-75em'
         });
         cancelEditBtn.addEventListener('click', () => this.finishSceneEdit(container, displaySpan));
 

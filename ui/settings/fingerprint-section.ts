@@ -51,7 +51,7 @@ export class FingerprintSection extends SettingsSection {
 
         if (this.fingerprintLoading) {
             section.createDiv({
-                cls: 'nw-u-p-40px-2 nw-u-ta-center-2 nw-u-c-text-faint-2 nw-u-fs-13px-2',
+                cls: 'nw-u-p-40px nw-u-ta-center nw-u-c-text-faint nw-u-fs-13px',
                 text: '加载中...'
             });
             return;
@@ -74,10 +74,10 @@ export class FingerprintSection extends SettingsSection {
             this.currentLibraryProject = activeProject || null;
         }
 
-        const templateSection = section.createDiv({ cls: 'nw-u-marginbottom-24px-2' });
+        const templateSection = section.createDiv({ cls: 'nw-u-marginbottom-24px' });
         this.renderFingerprintGroup(templateSection, '模板指纹库', this.templateFingerprints, 'template');
 
-        const globalSection = section.createDiv({ cls: 'nw-u-marginbottom-24px-2' });
+        const globalSection = section.createDiv({ cls: 'nw-u-marginbottom-24px' });
         this.renderFingerprintGroup(globalSection, '全局指纹库', this.globalFingerprints, 'global');
 
         const projectSection = section.createDiv();
@@ -136,18 +136,18 @@ export class FingerprintSection extends SettingsSection {
         scope: 'template' | 'global' | 'project',
         activeProject?: string | null
     ): void {
-        const headerRow = container.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-10px-2' });
+        const headerRow = container.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-10px' });
         
         if (scope === 'project') {
             const titleText = activeProject ? `${title}（${fingerprints.length} 个）· ${activeProject}` : `${title}（${fingerprints.length} 个）`;
-            headerRow.createEl('span', { text: titleText, cls: 'nw-u-fwt-600-2 nw-u-fs-13px-2' });
+            headerRow.createEl('span', { text: titleText, cls: 'nw-u-fwt-600 nw-u-fs-13px' });
         } else {
-            headerRow.createEl('span', { text: `${title}（${fingerprints.length} 个）`, cls: 'nw-u-fwt-600-2 nw-u-fs-13px-2' });
+            headerRow.createEl('span', { text: `${title}（${fingerprints.length} 个）`, cls: 'nw-u-fwt-600 nw-u-fs-13px' });
         }
 
         const isProjectWithoutProject = scope === 'project' && !activeProject;
         const headerRight = scope === 'project' && activeProject
-            ? headerRow.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-10px-2' })
+            ? headerRow.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-10px' })
             : headerRow;
 
         const addBtn = headerRight.createEl('button', {
@@ -197,7 +197,7 @@ export class FingerprintSection extends SettingsSection {
 
         if (isProjectWithoutProject) {
             container.createDiv({
-                cls: 'nw-u-p-20px-2 nw-u-ta-center-2 nw-u-c-text-muted-2 nw-u-fs-13px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2',
+                cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted nw-u-fs-13px nw-u-bg-background-secondary nw-u-brd-6px',
                 text: '请先打开一个项目查看项目级指纹'
             });
             return;

@@ -868,7 +868,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     const closeBtn = header.createEl("button", { text: "\u2715", cls: "nw-btn nw-btn-ghost" });
     closeBtn.addEventListener("click", () => { this.logicCheckContainer.addClass('nw-u-d-none'); });
     if (report.issues.length === 0) {
-      this.logicCheckContainer.createDiv({ text: "\u672A\u53D1\u73B0\u4E0E\u524D\u6587\u91CD\u590D\u7684\u573A\u666F\u3001\u51B2\u7A81\u6216\u77ED\u8BED\u3002", cls: "nw-u-fs-12px-2" });
+      this.logicCheckContainer.createDiv({ text: "\u672A\u53D1\u73B0\u4E0E\u524D\u6587\u91CD\u590D\u7684\u573A\u666F\u3001\u51B2\u7A81\u6216\u77ED\u8BED\u3002", cls: "nw-u-fs-12px" });
       return;
     }
     const list = this.logicCheckContainer.createDiv({ cls: "nw-logic-check-list" });
@@ -876,7 +876,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
       const row = list.createDiv({ cls: "nw-logic-check-item" });
       row.createDiv({ text: `\u2022 ${issue.message} \u00D7${issue.count}` });
       if (issue.sample) {
-        row.createDiv({ text: `\u300C${issue.sample}\u300D`, cls: "nw-u-fs-11px-2 nw-u-c-text-muted-2" });
+        row.createDiv({ text: `\u300C${issue.sample}\u300D`, cls: "nw-u-fs-11px nw-u-c-text-muted" });
       }
     }
   }

@@ -109,7 +109,7 @@ export class FingerprintDetailModal extends Modal {
         }
         contentEl.addClass('nw-modal-content-85');
 
-        contentEl.createEl('h3', { text: `🔍 ${fp.name}`, cls: 'nw-u-margintop-0 nw-u-marginbottom-8px-2' });
+        contentEl.createEl('h3', { text: `🔍 ${fp.name}`, cls: 'nw-u-margintop-0 nw-u-marginbottom-8px' });
 
         this.renderBasicInfo(contentEl, fp);
         this.renderStats(contentEl, fp);
@@ -119,10 +119,10 @@ export class FingerprintDetailModal extends Modal {
     }
 
     private renderBasicInfo(container: HTMLElement, fp: StyleFingerprint): void {
-        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px-2 nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2' });
-        section.createEl('div', { text: '基本信息', cls: 'nw-u-fwt-600-2 nw-u-fs-13px-2 nw-u-marginbottom-8px-2' });
+        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px' });
+        section.createEl('div', { text: '基本信息', cls: 'nw-u-fwt-600 nw-u-fs-13px nw-u-marginbottom-8px' });
 
-        const grid = section.createDiv({ cls: 'nw-u-d-grid-2 nw-u-gtc-1fr-1fr-2 nw-u-gap-8px-16px nw-u-fs-12px-2' });
+        const grid = section.createDiv({ cls: 'nw-u-d-grid nw-u-gtc-1fr-1fr nw-u-gap-8px-16px nw-u-fs-12px' });
 
         this.renderInfoRow(grid, '名称', fp.name);
         this.renderInfoRow(grid, '来源', fp.source);
@@ -134,16 +134,16 @@ export class FingerprintDetailModal extends Modal {
     }
 
     private renderInfoRow(container: HTMLElement, label: string, value: string): void {
-        const row = container.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-6px-2' });
-        row.createEl('span', { text: `${label}:`, cls: 'nw-u-c-text-muted-2 nw-u-minw-56px' });
-        row.createEl('span', { text: value, cls: 'nw-u-c-text-normal-2' });
+        const row = container.createDiv({ cls: 'nw-u-d-flex nw-u-gap-6px' });
+        row.createEl('span', { text: `${label}:`, cls: 'nw-u-c-text-muted nw-u-minw-56px' });
+        row.createEl('span', { text: value, cls: 'nw-u-c-text-normal' });
     }
 
     private renderStats(container: HTMLElement, fp: StyleFingerprint): void {
-        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px-2' });
-        section.createEl('div', { text: '数据可视化', cls: 'nw-u-fwt-600-2 nw-u-fs-13px-2 nw-u-marginbottom-10px-2' });
+        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px' });
+        section.createEl('div', { text: '数据可视化', cls: 'nw-u-fwt-600 nw-u-fs-13px nw-u-marginbottom-10px' });
 
-        const statsGrid = section.createDiv({ cls: 'nw-u-d-grid-2 nw-u-gtc-1fr-1fr-2 nw-u-gap-12px-2 nw-u-marginbottom-12px-2' });
+        const statsGrid = section.createDiv({ cls: 'nw-u-d-grid nw-u-gtc-1fr-1fr nw-u-gap-12px nw-u-marginbottom-12px' });
 
         const statCards = [
             { label: '平均句长', value: `${fp.stats.avgSentenceLength} 字` },
@@ -154,19 +154,19 @@ export class FingerprintDetailModal extends Modal {
 
         for (const stat of statCards) {
             const card = statsGrid.createDiv({
-                cls: 'nw-u-p-10px-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2 nw-u-d-flex-2 nw-u-fd-column-2 nw-u-gap-4px-2'
+                cls: 'nw-u-p-10px-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-d-flex nw-u-fd-column nw-u-gap-4px'
             });
-            card.createEl('span', { text: stat.label, cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2' });
-            card.createEl('span', { text: stat.value, cls: 'nw-u-fs-16px-2 nw-u-fwt-600-2 nw-u-c-text-normal-2' });
+            card.createEl('span', { text: stat.label, cls: 'nw-u-fs-11px nw-u-c-text-muted' });
+            card.createEl('span', { text: stat.value, cls: 'nw-u-fs-16px nw-u-fwt-600 nw-u-c-text-normal' });
         }
 
-        const chartsRow = section.createDiv({ cls: 'nw-u-d-grid-2 nw-u-gtc-1fr-1fr-2 nw-u-gap-12px-2 nw-u-marginbottom-12px-2' });
+        const chartsRow = section.createDiv({ cls: 'nw-u-d-grid nw-u-gtc-1fr-1fr nw-u-gap-12px nw-u-marginbottom-12px' });
 
         // V2 12 维雷达图（基于维度数据状态评分，移除旧估算函数）
         const radarCard = chartsRow.createDiv({
-            cls: 'nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2 nw-u-d-flex-2 nw-u-fd-column-2 nw-u-ai-center-2'
+            cls: 'nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-d-flex nw-u-fd-column nw-u-ai-center'
         });
-        radarCard.createEl('div', { text: '风格维度雷达图（V2 12 维）', cls: 'nw-u-fs-12px-2 nw-u-fwt-500-2 nw-u-marginbottom-8px-2' });
+        radarCard.createEl('div', { text: '风格维度雷达图（V2 12 维）', cls: 'nw-u-fs-12px nw-u-fwt-500 nw-u-marginbottom-8px' });
 
         const v2 = this.getV2();
         const radarData = FEATURE_DIMENSIONS_V2.map(dim => {
@@ -179,9 +179,9 @@ export class FingerprintDetailModal extends Modal {
         appendSanitizedHtml(radarCard, radarChart(radarData, { size: 280 }));
 
         const donutCard = chartsRow.createDiv({
-            cls: 'nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2'
+            cls: 'nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px'
         });
-        donutCard.createEl('div', { text: '内容占比分布', cls: 'nw-u-fs-12px-2 nw-u-fwt-500-2 nw-u-marginbottom-8px-2' });
+        donutCard.createEl('div', { text: '内容占比分布', cls: 'nw-u-fs-12px nw-u-fwt-500 nw-u-marginbottom-8px' });
 
         const narrationRatio = Math.max(0, 1 - fp.stats.dialogueRatio - fp.stats.descriptionRatio);
         const donutData = [
@@ -192,9 +192,9 @@ export class FingerprintDetailModal extends Modal {
         appendSanitizedHtml(donutCard, donutChart(donutData, { size: 220 }));
 
         const barCard = section.createDiv({
-            cls: 'nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2'
+            cls: 'nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px'
         });
-        barCard.createEl('div', { text: '平均长度统计', cls: 'nw-u-fs-12px-2 nw-u-fwt-500-2 nw-u-marginbottom-8px-2' });
+        barCard.createEl('div', { text: '平均长度统计', cls: 'nw-u-fs-12px nw-u-fwt-500 nw-u-marginbottom-8px' });
 
         const barData = [
             { label: '平均句长', value: fp.stats.avgSentenceLength },
@@ -258,36 +258,36 @@ export class FingerprintDetailModal extends Modal {
     }
 
     private renderStatRow(container: HTMLElement, label: string, value: string): void {
-        const row = container.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-gap-8px-2' });
-        row.createEl('span', { text: label, cls: 'nw-u-c-text-muted-2' });
-        row.createEl('span', { text: value, cls: 'nw-u-c-text-normal-2 nw-u-fwt-500-2' });
+        const row = container.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-gap-8px' });
+        row.createEl('span', { text: label, cls: 'nw-u-c-text-muted' });
+        row.createEl('span', { text: value, cls: 'nw-u-c-text-normal nw-u-fwt-500' });
     }
 
     private renderV2Features(container: HTMLElement): void {
-        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px-2' });
+        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px' });
         section.createEl('div', {
             text: '风格特征（V2 12 维详情）',
-            cls: 'nw-u-fwt-600-2 nw-u-fs-13px-2 nw-u-marginbottom-8px-2'
+            cls: 'nw-u-fwt-600 nw-u-fs-13px nw-u-marginbottom-8px'
         });
 
         const v2 = this.getV2();
-        const featuresList = section.createDiv({ cls: 'nw-u-d-flex-2 nw-u-fd-column-2 nw-u-gap-6px-2' });
+        const featuresList = section.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-6px' });
 
         for (const dim of FEATURE_DIMENSIONS_V2) {
             const dimData = v2.features[dim.key];
             const featureEl = featuresList.createDiv({
-                cls: 'nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-ov-hidden-2'
+                cls: 'nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-ov-hidden'
             });
 
             const header = featureEl.createDiv({
-                cls: 'nw-u-p-8px-12px-2 nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-cur-pointer-2 nw-u-bg-background-secondary-2'
+                cls: 'nw-u-p-8px-12px nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-cur-pointer nw-u-bg-background-secondary'
             });
             const headerLeft = header.createDiv({
-                cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2'
+                cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px'
             });
             headerLeft.createEl('span', {
                 text: dim.name,
-                cls: 'nw-u-fwt-500-2 nw-u-fs-13px-2'
+                cls: 'nw-u-fwt-500 nw-u-fs-13px'
             });
             // 数据状态徽章
             const statusColor = this.getStatusColor(dimData.status);
@@ -306,7 +306,7 @@ export class FingerprintDetailModal extends Modal {
             }
             header.createEl('span', {
                 text: this.expandedFeatures[dim.key] ? '▼' : '▶',
-                cls: 'nw-u-fs-10px-2 nw-u-c-text-muted-2'
+                cls: 'nw-u-fs-10px nw-u-c-text-muted'
             });
 
             header.addEventListener('click', () => {
@@ -316,37 +316,37 @@ export class FingerprintDetailModal extends Modal {
 
             if (this.expandedFeatures[dim.key]) {
                 const body = featureEl.createDiv({
-                    cls: 'nw-u-p-10px-12px-2 nw-u-fs-12px-2 nw-u-lh-1-6-2 nw-u-c-text-normal-2 nw-u-bt-1px-solid-background-m-2'
+                    cls: 'nw-u-p-10px-12px nw-u-fs-12px nw-u-lh-1-6 nw-u-c-text-normal nw-u-bt-1px-solid-background-m'
                 });
 
                 // 描述
                 body.createEl('div', {
                     text: dimData.description || '（暂无描述）',
-                    cls: 'nw-u-marginbottom-8px-2'
+                    cls: 'nw-u-marginbottom-8px'
                 });
 
                 // 定量指标网格
                 const metricsGrid = body.createDiv({
-                    cls: 'nw-u-d-grid-2 nw-u-gtc-repeat-auto-fit-minmax-6 nw-u-gap-6px-2 nw-u-marginbottom-8px-2'
+                    cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-6 nw-u-gap-6px nw-u-marginbottom-8px'
                 });
                 const metrics = this.extractMetricsForDisplay(dim.key, dimData);
                 for (const metric of metrics) {
                     const row = metricsGrid.createDiv({
-                        cls: 'nw-u-p-4px-8px-2 nw-u-bg-background-primary-2 nw-u-brd-4px-2'
+                        cls: 'nw-u-p-4px-8px nw-u-bg-background-primary nw-u-brd-4px'
                     });
                     row.createEl('div', {
                         text: metric.label,
-                        cls: 'nw-u-fs-10px-2 nw-u-c-text-muted-2'
+                        cls: 'nw-u-fs-10px nw-u-c-text-muted'
                     });
                     row.createEl('div', {
                         text: metric.value,
-                        cls: 'nw-u-fs-12px-2 nw-u-fwt-600-2 nw-u-c-text-normal-2'
+                        cls: 'nw-u-fs-12px nw-u-fwt-600 nw-u-c-text-normal'
                     });
                 }
                 if (metrics.length === 0) {
                     body.createEl('div', {
                         text: '（暂无定量指标）',
-                        cls: 'nw-u-c-text-faint-2 nw-u-fs-11px-2'
+                        cls: 'nw-u-c-text-faint nw-u-fs-11px'
                     });
                 }
 
@@ -354,12 +354,12 @@ export class FingerprintDetailModal extends Modal {
                 if (dimData.samples && dimData.samples.length > 0) {
                     body.createEl('div', {
                         text: '代表性示例:',
-                        cls: 'nw-u-margintop-8px-2 nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-marginbottom-4px-2'
+                        cls: 'nw-u-margintop-8px nw-u-fs-11px nw-u-c-text-muted nw-u-marginbottom-4px'
                     });
                     dimData.samples.forEach((sample, idx) => {
                         body.createEl('div', {
                             text: sample,
-                            cls: 'nw-u-p-6px-8px-2 nw-u-bg-background-secondary-2 nw-u-brd-4px-2 nw-u-fs-11px-2 nw-u-marginbottom-4px-2 nw-u-ws-pre-wrap nw-u-wordbreak-break-word'
+                            cls: 'nw-u-p-6px-8px nw-u-bg-background-secondary nw-u-brd-4px nw-u-fs-11px nw-u-marginbottom-4px nw-u-ws-pre-wrap nw-u-wordbreak-break-word'
                         });
                     });
                 }
@@ -472,18 +472,18 @@ export class FingerprintDetailModal extends Modal {
     }
 
     private renderSamples(container: HTMLElement, fp: StyleFingerprint): void {
-        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px-2' });
-        const header = section.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-marginbottom-8px-2' });
-        header.createEl('span', { text: '示例片段', cls: 'nw-u-fwt-600-2 nw-u-fs-13px-2' });
-        header.createEl('span', { text: `共 ${fp.samples.length} 段`, cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2' });
+        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px' });
+        const header = section.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-8px' });
+        header.createEl('span', { text: '示例片段', cls: 'nw-u-fwt-600 nw-u-fs-13px' });
+        header.createEl('span', { text: `共 ${fp.samples.length} 段`, cls: 'nw-u-fs-11px nw-u-c-text-muted' });
 
         const samplesList = section.createDiv({
-            cls: 'nw-u-maxh-300px-2 nw-u-ovy-auto-2 nw-u-d-flex-2 nw-u-fd-column-2 nw-u-gap-8px-2 nw-u-p-4px'
+            cls: 'nw-u-maxh-300px nw-u-ovy-auto nw-u-d-flex nw-u-fd-column nw-u-gap-8px nw-u-p-4px'
         });
 
         if (fp.samples.length === 0) {
             samplesList.createDiv({
-                cls: 'nw-u-p-20px-2 nw-u-ta-center-2 nw-u-c-text-faint-2 nw-u-fs-12px-2',
+                cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-faint nw-u-fs-12px',
                 text: '暂无示例片段'
             });
             return;
@@ -491,11 +491,11 @@ export class FingerprintDetailModal extends Modal {
 
         fp.samples.forEach((sample, idx) => {
             const sampleEl = samplesList.createDiv({
-                cls: 'nw-u-p-10px-12px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-fs-12px-2 nw-u-lh-1-6-2 nw-u-c-text-normal-2 nw-u-bg-background-primary-2'
+                cls: 'nw-u-p-10px-12px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-fs-12px nw-u-lh-1-6 nw-u-c-text-normal nw-u-bg-background-primary'
             });
             const idxLabel = sampleEl.createEl('div', {
                 text: `片段 ${idx + 1}`,
-                cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-marginbottom-4px-2'
+                cls: 'nw-u-fs-11px nw-u-c-text-muted nw-u-marginbottom-4px'
             });
             const textEl = sampleEl.createEl('div', {
                 cls: 'nw-u-ws-pre-wrap nw-u-wordbreak-break-word'
@@ -506,7 +506,7 @@ export class FingerprintDetailModal extends Modal {
 
     private renderActions(container: HTMLElement, fp: StyleFingerprint): void {
         const canEdit = this.options.canEdit !== false;
-        const btnRow = container.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-jc-flex-end-2 nw-u-fwr-wrap-2' });
+        const btnRow = container.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-jc-flex-end nw-u-fwr-wrap' });
 
         if (this.options.onToggle) {
             const toggleBtn = btnRow.createEl('button', {

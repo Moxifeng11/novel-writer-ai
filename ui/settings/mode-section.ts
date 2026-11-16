@@ -73,7 +73,7 @@ export class ModeSection extends SettingsSection {
 
         section.createEl('p', {
             text: '提示：写作规则唯一来源是「元文件/00-系统模板/写作规则.md」；模式附录由插件按项目自动拼接，无需手动选择。',
-            cls: 'nw-u-c-text-muted-2 nw-u-fs-12px',
+            cls: 'nw-u-c-text-muted nw-u-fs-12px',
         });
     }
 }

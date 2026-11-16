@@ -42,7 +42,7 @@ export class PerformanceSection extends SettingsSection {
         const section = container.createEl('section');
 
         section.createEl('h3', { text: '🔒 只读模式' });
-        section.createEl('p', { text: '开启后，所有会修改作品的命令（写正文 / 改设定 / 改规划）都会被拒绝，只保留查看、统计、导出。适合审阅或多人协作时防止误改。', cls: 'nw-u-c-text-muted-2 nw-u-fs-13px-2 nw-u-marginbottom-16px-2' });
+        section.createEl('p', { text: '开启后，所有会修改作品的命令（写正文 / 改设定 / 改规划）都会被拒绝，只保留查看、统计、导出。适合审阅或多人协作时防止误改。', cls: 'nw-u-c-text-muted nw-u-fs-13px nw-u-marginbottom-16px' });
         new Setting(section)
             .setName('启用只读模式')
             .setDesc('由动作契约判定（shared/action-contract）：读动作不受影响，写动作会被阻止并提示')
@@ -56,7 +56,7 @@ export class PerformanceSection extends SettingsSection {
             );
 
         section.createEl('h3', { text: '📊 性能监控' });
-        section.createEl('p', { text: '监控插件关键操作的性能，识别性能瓶颈并优化。', cls: 'nw-u-c-text-muted-2 nw-u-fs-13px-2 nw-u-marginbottom-16px-2' });
+        section.createEl('p', { text: '监控插件关键操作的性能，识别性能瓶颈并优化。', cls: 'nw-u-c-text-muted nw-u-fs-13px nw-u-marginbottom-16px' });
 
         const perfEnabled = performanceMonitor.isEnabled();
         new Setting(section)
@@ -85,7 +85,7 @@ export class PerformanceSection extends SettingsSection {
         if (!performanceMonitor.isEnabled()) {
             section.createEl('div', {
                 text: '⚠️  性能监控已关闭',
-                cls: "nw-empty-info-card nw-u-margintop-16px-2", attr: {}
+                cls: "nw-empty-info-card nw-u-margintop-16px", attr: {}
             });
             return;
         }
@@ -112,7 +112,7 @@ export class PerformanceSection extends SettingsSection {
         section.createEl('h4', { text: '📈 概览统计', cls: 'nw-h4-section' });
 
         const statsGrid = section.createEl('div', {
-            cls: 'nw-u-d-grid-2 nw-u-gtc-repeat-auto-fit-minmax-6 nw-u-gap-12px-2 nw-u-marginbottom-20px-2'
+            cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-6 nw-u-gap-12px nw-u-marginbottom-20px'
         });
 
         const totals = aggregateOperationStats(categoryStats);
@@ -135,7 +135,7 @@ export class PerformanceSection extends SettingsSection {
         section.createEl('h4', { text: '📂 分类统计', cls: 'nw-h4-section' });
 
         const catTable = section.createEl('table', {
-            cls: 'nw-u-w-100-2 nw-u-bordercollapse-collapse-2 nw-u-marginbottom-20px-2 nw-u-fs-13px-2'
+            cls: 'nw-u-w-100 nw-u-bordercollapse-collapse nw-u-marginbottom-20px nw-u-fs-13px'
         });
         const thead = catTable.createEl('thead');
         const headRow = thead.createEl('tr');
@@ -166,21 +166,21 @@ export class PerformanceSection extends SettingsSection {
             });
         } else {
             const slowList = section.createEl('div', {
-                cls: 'nw-u-maxh-240px nw-u-ovy-auto-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-8px-2'
+                cls: 'nw-u-maxh-240px nw-u-ovy-auto nw-u-b-1px-solid-background-m nw-u-brd-8px'
             });
             for (const op of slowOps.slice(0, 20)) {
                 const item = slowList.createEl('div', {
-                    cls: 'nw-u-p-10px-14px-2 nw-u-bb-1px-solid-background-m-2'
+                    cls: 'nw-u-p-10px-14px nw-u-bb-1px-solid-background-m'
                 });
-                const top = item.createEl('div', { cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-center-2' });
-                top.createEl('span', { text: op.name, cls: 'nw-u-fwt-600-2' });
+                const top = item.createEl('div', { cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center' });
+                top.createEl('span', { text: op.name, cls: 'nw-u-fwt-600' });
                 top.createEl('span', {
                     text: this.formatDuration(op.duration),
-                    cls: 'nw-u-c-text-error nw-u-fwt-600-2'
+                    cls: 'nw-u-c-text-error nw-u-fwt-600'
                 });
                 const bottom = item.createEl('div', {
                     text: `${op.category} · ${new Date(op.timestamp).toLocaleString()} · 阈值: ${this.formatDuration(op.threshold)}`,
-                    cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-margintop-4px-3'
+                    cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-margintop-4px'
                 });
             }
         }
@@ -194,16 +194,16 @@ export class PerformanceSection extends SettingsSection {
             });
         } else {
             const logContainer = section.createEl('div', {
-                cls: 'nw-u-maxh-300px-2 nw-u-ovy-auto-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-8px-2 nw-u-fontfamily-font-monospace nw-u-fs-12px-2'
+                cls: 'nw-u-maxh-300px nw-u-ovy-auto nw-u-b-1px-solid-background-m nw-u-brd-8px nw-u-fontfamily-font-monospace nw-u-fs-12px'
             });
             for (const entry of log.slice(0, 50)) {
                 const item = logContainer.createEl('div', {
-                    cls: 'nw-u-p-6px-12px nw-u-bb-1px-solid-background-m-2 nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-gap-12px-2'
+                    cls: 'nw-u-p-6px-12px nw-u-bb-1px-solid-background-m nw-u-d-flex nw-u-jc-space-between nw-u-gap-12px'
                 });
                 const left = item.createEl('span');
                 left.textContent = `[${entry.category}] ${entry.name}`;
                 const right = item.createEl('span', {
-                    cls: 'nw-u-c-text-muted-2 nw-u-ws-nowrap-2'
+                    cls: 'nw-u-c-text-muted nw-u-ws-nowrap'
                 });
                 right.textContent = this.formatDuration(entry.duration);
             }
@@ -212,7 +212,7 @@ export class PerformanceSection extends SettingsSection {
         section.createEl('h4', { text: '⚙️ 操作', cls: 'nw-h4-section' });
 
         const btnRow = section.createEl('div', {
-            cls: 'nw-u-d-flex-2 nw-u-gap-10px-2 nw-u-fwr-wrap-2'
+            cls: 'nw-u-d-flex nw-u-gap-10px nw-u-fwr-wrap'
         });
 
         const reportBtn = btnRow.createEl('button', {
@@ -278,15 +278,15 @@ export class PerformanceSection extends SettingsSection {
 
     private addStatCard(container: HTMLElement, label: string, value: string): void {
         const card = container.createEl('div', {
-            cls: 'nw-u-p-14px-2 nw-u-bg-background-secondary-2 nw-u-brd-8px-2'
+            cls: 'nw-u-p-14px nw-u-bg-background-secondary nw-u-brd-8px'
         });
         card.createEl('div', {
             text: label,
-            cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginbottom-6px-2'
+            cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-6px'
         });
         card.createEl('div', {
             text: value,
-            cls: 'nw-u-fs-18px-2 nw-u-fwt-700-2'
+            cls: 'nw-u-fs-18px nw-u-fwt-700'
         });
     }
 
@@ -305,7 +305,7 @@ export class PerformanceSection extends SettingsSection {
         });
         textarea.value = report;
         const btnRow = contentEl.createEl('div', {
-            cls: 'nw-u-d-flex-2 nw-u-gap-10px-2 nw-u-jc-flex-end-2 nw-u-margintop-16px-2'
+            cls: 'nw-u-d-flex nw-u-gap-10px nw-u-jc-flex-end nw-u-margintop-16px'
         });
         const copyBtn = btnRow.createEl('button', {
             text: '📋 复制报告',
@@ -363,22 +363,22 @@ export class PerformanceSection extends SettingsSection {
             if (updateChecker && updateChecker.hasNotifiedVersion(latestVersion)) return;
 
             const banner = container.createDiv({
-                cls: 'nw-u-marginbottom-16px-2 nw-u-p-14px-18px nw-u-bg-linear-gradient-135deg-3 nw-u-brd-10px-2 nw-u-c-white-2 nw-u-d-flex-2 nw-u-ai-center-2 nw-u-jc-space-between-2 nw-u-gap-12px-2 nw-u-fwr-wrap-2'
+                cls: 'nw-u-marginbottom-16px nw-u-p-14px-18px nw-u-bg-linear-gradient-135deg-3 nw-u-brd-10px nw-u-c-white nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-gap-12px nw-u-fwr-wrap'
             });
 
-            const left = banner.createDiv({ cls: 'nw-u-flex-1-2 nw-u-minw-200px-2' });
+            const left = banner.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-200px' });
             left.createEl('div', {
                 text: `🎉 发现新版本 v${latestVersion}`,
-                cls: 'nw-u-fwt-600-2 nw-u-fs-15px-2 nw-u-marginbottom-4px-2'
+                cls: 'nw-u-fwt-600 nw-u-fs-15px nw-u-marginbottom-4px'
             });
             left.createEl('div', {
                 text: lastResult.releaseNotes
                     ? lastResult.releaseNotes.substring(0, 80) + (lastResult.releaseNotes.length > 80 ? '...' : '')
                     : '点击查看详情了解新功能和改进',
-                cls: 'nw-u-fs-12px-2 nw-u-op-0-9-2'
+                cls: 'nw-u-fs-12px nw-u-op-0-9'
             });
 
-            const right = banner.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-fsh-0-2' });
+            const right = banner.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-fsh-0' });
 
             const detailBtn = right.createEl('button', {
                 text: '查看详情',
@@ -481,11 +481,11 @@ export class RulesSection extends SettingsSection {
 
         section.createEl('p', {
             text: '写作规则是 AI 生成正文时遵循的核心准则。唯一来源是 vault 的「元文件/00-系统模板/写作规则.md」——编辑这个文件，就是修改所有项目的写作规则。',
-            cls: 'nw-u-c-text-muted-2 nw-u-fs-13px-2 nw-u-marginbottom-20px-2'
+            cls: 'nw-u-c-text-muted nw-u-fs-13px nw-u-marginbottom-20px'
         });
 
         const statusCard = section.createDiv({
-            cls: 'nw-u-p-20px-2 nw-u-bg-background-secondary-2 nw-u-brd-10px-2 nw-u-marginbottom-20px-2'
+            cls: 'nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-10px nw-u-marginbottom-20px'
         });
 
         try {
@@ -506,17 +506,17 @@ export class RulesSection extends SettingsSection {
 
             const statusRow2 = statusCard.createDiv({ cls: 'nw-status-row' });
             statusRow2.createDiv({ text: '模式附录:', cls: 'nw-status-label' });
-            statusRow2.createDiv({ text: '当前项目按创作模式自动拼接（长篇连载 / 短篇单元 / 剧本分镜）', cls: 'nw-u-fs-12px-2' });
+            statusRow2.createDiv({ text: '当前项目按创作模式自动拼接（长篇连载 / 短篇单元 / 剧本分镜）', cls: 'nw-u-fs-12px' });
 
             if (!isPresent) {
                 section.createDiv({
                     text: '⚠️ 未找到写作规则文件。重启插件时会自动写入 v4 引导版模板；也可点击「重新检查」立即生成。',
-                    cls: 'nw-u-p-12px-2 nw-u-bg-background-modifier-wa nw-u-c-text-warning nw-u-brd-6px-2 nw-u-marginbottom-16px-2'
+                    cls: 'nw-u-p-12px nw-u-bg-background-modifier-wa nw-u-c-text-warning nw-u-brd-6px nw-u-marginbottom-16px'
                 });
             } else {
                 section.createDiv({
                     text: '✅ 单一来源已就绪。没有可选版本、没有漂移——改文件即全局生效。',
-                    cls: 'nw-u-p-12px-2 nw-u-bg-background-modifier-su nw-u-c-text-success nw-u-brd-6px-2 nw-u-marginbottom-16px-2'
+                    cls: 'nw-u-p-12px nw-u-bg-background-modifier-su nw-u-c-text-success nw-u-brd-6px nw-u-marginbottom-16px'
                 });
             }
 
@@ -549,7 +549,7 @@ export class RulesSection extends SettingsSection {
                         const { contentEl } = this;
                         contentEl.createEl('h3', { text: '写作规则内容' });
                         const textarea = contentEl.createEl('textarea', {
-                            cls: 'nw-u-w-100-2 nw-u-h-400px nw-u-p-12px-2 nw-u-fontfamily-monospace nw-u-fs-12px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-bg-background-primary-2 nw-u-c-text-primary nw-u-resize-none'
+                            cls: 'nw-u-w-100 nw-u-h-400px nw-u-p-12px nw-u-fontfamily-monospace nw-u-fs-12px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-bg-background-primary nw-u-c-text-primary nw-u-resize-none'
                         });
                         textarea.value = rules;
                     }
@@ -609,16 +609,16 @@ export class AboutSection extends SettingsSection {
         const currentVersion = PLUGIN_VERSION;
 
         const versionCard = section.createDiv({
-            cls: 'nw-u-p-20px-2 nw-u-bg-background-secondary-2 nw-u-brd-10px-2 nw-u-marginbottom-20px-2 nw-u-ta-center-2'
+            cls: 'nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-10px nw-u-marginbottom-20px nw-u-ta-center'
         });
 
         versionCard.createEl('div', {
             text: '当前版本',
-            cls: 'nw-u-fs-13px-2 nw-u-c-text-muted-2 nw-u-marginbottom-4px-2'
+            cls: 'nw-u-fs-13px nw-u-c-text-muted nw-u-marginbottom-4px'
         });
         versionCard.createEl('div', {
             text: `v${currentVersion}`,
-            cls: 'nw-u-fs-32px nw-u-fwt-700-2 nw-u-c-text-normal-2 nw-u-marginbottom-8px-2'
+            cls: 'nw-u-fs-32px nw-u-fwt-700 nw-u-c-text-normal nw-u-marginbottom-8px'
         });
 
         let lastCheckInfo = '从未检查';
@@ -645,14 +645,14 @@ export class AboutSection extends SettingsSection {
         }
 
         const infoGrid = versionCard.createDiv({
-            cls: 'nw-u-d-grid-2 nw-u-gtc-1fr-1fr-2 nw-u-gap-12px-2 nw-u-margintop-16px-2 nw-u-ta-left-2'
+            cls: 'nw-u-d-grid nw-u-gtc-1fr-1fr nw-u-gap-12px nw-u-margintop-16px nw-u-ta-left'
         });
 
         this.renderInfoItem(infoGrid, '最新版本', latestVersionInfo);
         this.renderInfoItem(infoGrid, '上次检查', lastCheckInfo);
 
         const btnRow = section.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-gap-10px-2 nw-u-marginbottom-24px-2 nw-u-fwr-wrap-2'
+            cls: 'nw-u-d-flex nw-u-gap-10px nw-u-marginbottom-24px nw-u-fwr-wrap'
         });
 
         const checkBtn = btnRow.createEl('button', {
@@ -720,7 +720,7 @@ export class AboutSection extends SettingsSection {
         // 热重载：Obsidian 政策禁止插件自行 disable/enable 自身，所以按钮只做
         // 「保存 + 把工作台状态写进 sessionStorage + 提示手动切换」。
         // 原实现放在设置页最底部（任何 tab 都能看到、且是红色内联样式），位置不合理，移到这里。
-        section.createEl('h4', { text: '🧰 维护', cls: 'nw-u-marginbottom-12px-2' });
+        section.createEl('h4', { text: '🧰 维护', cls: 'nw-u-marginbottom-12px' });
         new Setting(section)
             .setName('热重载插件')
             .setDesc('Obsidian 不允许插件自行重启：点击后请到「设置 → 第三方插件」关闭再启用，工作台会自动恢复。')
@@ -744,7 +744,7 @@ export class AboutSection extends SettingsSection {
                     new Notice('请在「设置 → 第三方插件」中关闭再启用「小说工坊 AI」完成重载（工作台状态会自动恢复）', 6000);
                 }));
 
-        section.createEl('h4', { text: '⚙️ 更新设置', cls: 'nw-u-marginbottom-12px-2' });
+        section.createEl('h4', { text: '⚙️ 更新设置', cls: 'nw-u-marginbottom-12px' });
 
         new Setting(section)
             .setName('自动检查更新')
@@ -873,29 +873,29 @@ export class AboutSection extends SettingsSection {
         section.createEl('h4', { text: '📌 关于插件', cls: 'nw-u-m-24px-0-12px-0' });
 
         const aboutCard = section.createDiv({
-            cls: 'nw-u-p-16px-2 nw-u-bg-background-secondary-2 nw-u-brd-8px-2 nw-u-fs-13px-2 nw-u-lh-1-7 nw-u-c-text-muted-2'
+            cls: 'nw-u-p-16px nw-u-bg-background-secondary nw-u-brd-8px nw-u-fs-13px nw-u-lh-1-7 nw-u-c-text-muted'
         });
 
         aboutCard.createEl('p', {
             text: '全流程 AI 长篇小说创作系统 — 协同写作工作台 + 多模型智能引擎 + 数据安全架构。',
-            cls: 'nw-u-m-0-0-12px-0-2'
+            cls: 'nw-u-m-0-0-12px-0'
         });
 
-        aboutCard.createEl('div', { text: '作者：南柯一梦', cls: 'nw-u-marginbottom-4px-2' });
-        aboutCard.createEl('div', { text: '许可证：MIT', cls: 'nw-u-marginbottom-4px-2' });
+        aboutCard.createEl('div', { text: '作者：南柯一梦', cls: 'nw-u-marginbottom-4px' });
+        aboutCard.createEl('div', { text: '许可证：MIT', cls: 'nw-u-marginbottom-4px' });
     }
 
     private renderInfoItem(container: HTMLElement, label: string, value: string): void {
         const item = container.createDiv({
-            cls: 'nw-u-p-10px-12px-2 nw-u-bg-background-primary-2 nw-u-brd-6px-2'
+            cls: 'nw-u-p-10px-12px nw-u-bg-background-primary nw-u-brd-6px'
         });
         item.createEl('div', {
             text: label,
-            cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-marginbottom-2px-2'
+            cls: 'nw-u-fs-11px nw-u-c-text-muted nw-u-marginbottom-2px'
         });
         item.createEl('div', {
             text: value,
-            cls: 'nw-u-fs-14px-2 nw-u-fwt-600-2 nw-u-c-text-normal-2'
+            cls: 'nw-u-fs-14px nw-u-fwt-600 nw-u-c-text-normal'
         });
     }
 }
@@ -918,7 +918,7 @@ export class RecognitionSection extends SettingsSection {
             cls: 'setting-item-description'
         });
 
-        section.createEl('h4', { text: '启用的识别层', cls: 'nw-u-margintop-20px-2 nw-u-marginbottom-8px-2' });
+        section.createEl('h4', { text: '启用的识别层', cls: 'nw-u-margintop-20px nw-u-marginbottom-8px' });
 
         const layers = this.plugin.settings.characterRecognitionLayers || ['rule', 'vector'];
 
@@ -990,7 +990,7 @@ export class RecognitionSection extends SettingsSection {
             enableVerbFilter: true,
         };
 
-        section.createEl('h4', { text: '📋 规则层配置', cls: 'nw-u-margintop-24px nw-u-marginbottom-8px-2' });
+        section.createEl('h4', { text: '📋 规则层配置', cls: 'nw-u-margintop-24px nw-u-marginbottom-8px' });
 
         new Setting(section)
             .setName('最小提及次数')
@@ -1054,7 +1054,7 @@ export class RecognitionSection extends SettingsSection {
             mergeSimilarityThreshold: 0.85,
         };
 
-        section.createEl('h4', { text: '🔗 向量层配置', cls: 'nw-u-margintop-24px nw-u-marginbottom-8px-2' });
+        section.createEl('h4', { text: '🔗 向量层配置', cls: 'nw-u-margintop-24px nw-u-marginbottom-8px' });
 
         new Setting(section)
             .setName('启用向量层')
@@ -1111,7 +1111,7 @@ export class RecognitionSection extends SettingsSection {
             minConfidence: 0.3,
         };
 
-        section.createEl('h4', { text: '🤖 LLM 层配置', cls: 'nw-u-margintop-24px nw-u-marginbottom-8px-2' });
+        section.createEl('h4', { text: '🤖 LLM 层配置', cls: 'nw-u-margintop-24px nw-u-marginbottom-8px' });
 
         new Setting(section)
             .setName('启用 LLM 层')

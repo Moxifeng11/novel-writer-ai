@@ -43,7 +43,7 @@ export function createErrorState(host: HTMLElement, options: ErrorStateOptions):
     box.createDiv({ cls: 'nw-flow-error-title', text: options.title });
     if (options.detail) box.createDiv({ cls: 'nw-flow-error-detail', text: options.detail });
     if (options.actions && options.actions.length > 0) {
-        const row = box.createDiv({ cls: 'nw-flow-error-actions nw-u-flex nw-u-gap-8' });
+        const row = box.createDiv({ cls: 'nw-flow-error-actions nw-u-d-flex nw-u-gap-8px' });
         for (const action of options.actions) {
             const button = row.createEl('button', {
                 cls: `nw-btn ${action.primary ? 'nw-btn-primary' : 'nw-btn-secondary'}`,

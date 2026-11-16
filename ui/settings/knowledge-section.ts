@@ -59,7 +59,7 @@ export class KnowledgeSection extends SettingsSection {
 
         if (this.knowledgeLoading) {
             section.createDiv({
-                cls: 'nw-u-p-40px-2 nw-u-ta-center-2 nw-u-c-text-faint-2 nw-u-fs-13px-2',
+                cls: 'nw-u-p-40px nw-u-ta-center nw-u-c-text-faint nw-u-fs-13px',
                 text: '加载中...'
             });
             return;
@@ -75,7 +75,7 @@ export class KnowledgeSection extends SettingsSection {
             await this.loadKnowledgeBooks();
         }
 
-        const toolbar = section.createDiv({ cls: 'nw-u-marginbottom-16px-2' });
+        const toolbar = section.createDiv({ cls: 'nw-u-marginbottom-16px' });
 
         new Setting(toolbar)
             .setName('知识库路径')
@@ -96,7 +96,7 @@ export class KnowledgeSection extends SettingsSection {
                     }
                 }));
 
-        const actionRow = toolbar.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-margintop-8px-2 nw-u-marginbottom-16px-2' });
+        const actionRow = toolbar.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-margintop-8px nw-u-marginbottom-16px' });
 
         const importBtn = actionRow.createEl('button', {
             text: '📥 批量导入',
@@ -139,10 +139,10 @@ export class KnowledgeSection extends SettingsSection {
         revectorizeBtn.addEventListener('click', () => rebuildAllVectorsWithConfirm(this.app, this.plugin));
 
         const filterBar = section.createDiv({
-            cls: 'nw-u-p-12px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-marginbottom-16px-2 nw-u-bg-background-secondary-2'
+            cls: 'nw-u-p-12px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-marginbottom-16px nw-u-bg-background-secondary'
         });
 
-        const searchRow = filterBar.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-marginbottom-10px-2 nw-u-fwr-wrap-2' });
+        const searchRow = filterBar.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-marginbottom-10px nw-u-fwr-wrap' });
 
         const searchInput = searchRow.createEl('input', {
             attr: {
@@ -170,7 +170,7 @@ export class KnowledgeSection extends SettingsSection {
         });
 
         const statusSelect = searchRow.createEl('select', {
-            cls: 'nw-u-p-6px-10px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-fs-13px-2 nw-u-bg-background-primary-2 nw-u-c-text-normal-2'
+            cls: 'nw-u-p-6px-10px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-fs-13px nw-u-bg-background-primary nw-u-c-text-normal'
         });
         const statusOptions: { value: string; label: string }[] = [
             { value: 'all', label: '全部状态' },
@@ -188,29 +188,29 @@ export class KnowledgeSection extends SettingsSection {
             this.refresh();
         });
 
-        const tagFilterRow = filterBar.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-12px-2 nw-u-fwr-wrap-2' });
+        const tagFilterRow = filterBar.createDiv({ cls: 'nw-u-d-flex nw-u-gap-12px nw-u-fwr-wrap' });
 
-        const themeFilterDiv = tagFilterRow.createDiv({ cls: 'nw-u-flex-1-2 nw-u-minw-200px-2' });
-        themeFilterDiv.createEl('span', { text: '📖 题材：全部', cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginright-8px' });
+        const themeFilterDiv = tagFilterRow.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-200px' });
+        themeFilterDiv.createEl('span', { text: '📖 题材：全部', cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginright-8px' });
 
-        const techniqueFilterDiv = tagFilterRow.createDiv({ cls: 'nw-u-flex-1-2 nw-u-minw-200px-2' });
-        techniqueFilterDiv.createEl('span', { text: '✍️ 技巧：全部', cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginright-8px' });
+        const techniqueFilterDiv = tagFilterRow.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-200px' });
+        techniqueFilterDiv.createEl('span', { text: '✍️ 技巧：全部', cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginright-8px' });
 
         const filteredBooks = this.filterKnowledgeBooks();
 
         if (filteredBooks.length === 0) {
             const emptyState = section.createDiv({
-                cls: 'nw-u-p-60px-20px nw-u-ta-center-2 nw-u-b-1px-dashed-background- nw-u-brd-8px-2 nw-u-bg-background-secondary-2'
+                cls: 'nw-u-p-60px-20px nw-u-ta-center nw-u-b-1px-dashed-background- nw-u-brd-8px nw-u-bg-background-secondary'
             });
             emptyState.createEl('div', {
                 text: '📚',
-                cls: 'nw-u-fs-48px nw-u-marginbottom-16px-2 nw-u-op-0-5'
+                cls: 'nw-u-fs-48px nw-u-marginbottom-16px nw-u-op-0-5'
             });
             emptyState.createEl('div', {
                 text: this.knowledgeBooks.length === 0
                     ? '知识库暂无书籍，点击上方「批量导入」开始添加'
                     : '没有符合筛选条件的书籍',
-                cls: 'nw-u-fs-14px-2 nw-u-c-text-muted-2 nw-u-marginbottom-8px-2'
+                cls: 'nw-u-fs-14px nw-u-c-text-muted nw-u-marginbottom-8px'
             });
             if (this.knowledgeBooks.length === 0) {
                 const emptyImportBtn = emptyState.createEl('button', {
@@ -228,11 +228,11 @@ export class KnowledgeSection extends SettingsSection {
         const countRow = section.createDiv({ cls: 'nw-status-row' });
         countRow.createEl('span', {
             text: `共 ${filteredBooks.length} 本书籍`,
-            cls: 'nw-u-fs-13px-2 nw-u-c-text-muted-2'
+            cls: 'nw-u-fs-13px nw-u-c-text-muted'
         });
 
         const gridContainer = section.createDiv({
-            cls: 'nw-u-d-grid-2 nw-u-gtc-repeat-auto-fill-minma-4 nw-u-gap-12px-2 nw-u-maxh-500px nw-u-ovy-auto-2 nw-u-p-4px'
+            cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fill-minma-4 nw-u-gap-12px nw-u-maxh-500px nw-u-ovy-auto nw-u-p-4px'
         });
 
         filteredBooks.forEach(book => {
@@ -263,7 +263,7 @@ export class KnowledgeSection extends SettingsSection {
 
     private renderKnowledgeBookCard(container: HTMLElement, book: BookBasicInfo): void {
         const card = container.createDiv({
-            cls: 'nw-u-p-14px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-8px-2 nw-u-bg-background-primary-2 nw-u-cur-pointer-2 nw-u-transition-all-0-2s-ease nw-u-pos-relative nw-u-ov-hidden-2 nw-kb-book-card'
+            cls: 'nw-u-p-14px nw-u-b-1px-solid-background-m nw-u-brd-8px nw-u-bg-background-primary nw-u-cur-pointer nw-u-transition-all-0-2s-ease nw-u-pos-relative nw-u-ov-hidden nw-kb-book-card'
         });
 
         card.addEventListener('click', () => {
@@ -275,7 +275,7 @@ export class KnowledgeSection extends SettingsSection {
         });
 
         const actionsRow = card.createDiv({
-            cls: "nw-kb-card-actions kb-card-actions nw-u-pos-absolute nw-u-t-8px nw-u-r-8px nw-u-d-flex-2 nw-u-gap-4px-2 nw-u-op-0 nw-u-transition-opacity-0-2s-ease nw-u-z-10",
+            cls: "nw-kb-card-actions kb-card-actions nw-u-pos-absolute nw-u-t-8px nw-u-r-8px nw-u-d-flex nw-u-gap-4px nw-u-op-0 nw-u-transition-opacity-0-2s-ease nw-u-z-10",
             attr: {}
         });
 
@@ -327,16 +327,16 @@ export class KnowledgeSection extends SettingsSection {
             }
         });
 
-        const titleRow = card.createDiv({ cls: 'nw-u-marginbottom-6px-2 nw-u-paddingright-60px' });
+        const titleRow = card.createDiv({ cls: 'nw-u-marginbottom-6px nw-u-paddingright-60px' });
         titleRow.createEl('div', {
             text: book.name,
-            cls: 'nw-u-fs-15px-2 nw-u-fwt-600-2 nw-u-c-text-normal-2 nw-u-lh-1-4-2'
+            cls: 'nw-u-fs-15px nw-u-fwt-600 nw-u-c-text-normal nw-u-lh-1-4'
         });
 
         if (book.author) {
             titleRow.createEl('div', {
                 text: book.author,
-                cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-margintop-2px-2'
+                cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-margintop-2px'
             });
         }
 
@@ -346,25 +346,25 @@ export class KnowledgeSection extends SettingsSection {
         const allTags = [...book.themeTags, ...book.techniqueTags, ...book.customTags];
         if (allTags.length > 0) {
             const tagRow = card.createDiv({
-                cls: 'nw-u-d-flex-2 nw-u-gap-4px-2 nw-u-fwr-wrap-2 nw-u-m-10px-0'
+                cls: 'nw-u-d-flex nw-u-gap-4px nw-u-fwr-wrap nw-u-m-10px-0'
             });
             const displayTags = allTags.slice(0, 3);
             displayTags.forEach(tag => {
                 tagRow.createEl('span', {
                     text: tag,
-                    cls: 'nw-u-p-2px-8px-2 nw-u-bg-background-secondary-2 nw-u-brd-10px-2 nw-u-fs-11px-2 nw-u-c-text-muted-2'
+                    cls: 'nw-u-p-2px-8px nw-u-bg-background-secondary nw-u-brd-10px nw-u-fs-11px nw-u-c-text-muted'
                 });
             });
             if (allTags.length > 3) {
                 tagRow.createEl('span', {
                     text: `+${allTags.length - 3}`,
-                    cls: 'nw-u-p-2px-8px-2 nw-u-bg-background-secondary-2 nw-u-brd-10px-2 nw-u-fs-11px-2 nw-u-c-text-faint-2'
+                    cls: 'nw-u-p-2px-8px nw-u-bg-background-secondary nw-u-brd-10px nw-u-fs-11px nw-u-c-text-faint'
                 });
             }
         }
 
         const metaRow = card.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-gap-12px-2 nw-u-fs-11px-2 nw-u-c-text-faint-2 nw-u-paddingtop-8px-2 nw-u-bt-1px-solid-background-m-2'
+            cls: 'nw-u-d-flex nw-u-gap-12px nw-u-fs-11px nw-u-c-text-faint nw-u-paddingtop-8px nw-u-bt-1px-solid-background-m'
         });
 
         if (book.wordCount) {
@@ -445,12 +445,12 @@ export class KnowledgeSection extends SettingsSection {
 
     private renderVectorEnhancementSettings(container: HTMLElement): void {
         const vectorSection = container.createDiv({
-            cls: 'nw-u-p-12px-16px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-6px-2 nw-u-marginbottom-16px-2 nw-u-bg-background-secondary-2'
+            cls: 'nw-u-p-12px-16px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-marginbottom-16px nw-u-bg-background-secondary'
         });
 
         vectorSection.createEl('h4', {
             text: '🧠 向量增强设置',
-            cls: 'nw-u-m-0-0-12px-0-2 nw-u-fs-14px-2'
+            cls: 'nw-u-m-0-0-12px-0 nw-u-fs-14px'
         });
 
         new Setting(vectorSection)

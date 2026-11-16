@@ -754,7 +754,7 @@ export class GenreEditModal extends Modal {
         if (this.tempGenre.techniques.length < 5 && this.isEditable()) {
             section.createDiv({
                 text: '⚠️ 至少需要 5 个写作技巧',
-                cls: 'nw-u-fs-12px nw-u-c-e74c3c nw-u-marginbottom-8px'
+                cls: 'nw-u-fs-12px nw-u-c-error nw-u-marginbottom-8px'
             });
         }
 

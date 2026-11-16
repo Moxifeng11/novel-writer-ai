@@ -172,9 +172,9 @@ describe('renderV2FeaturesSection', () => {
         const section = root.findAll('nw-fingerprint-v2-section')[0];
         expect(root.allText()).toContain('十二维结构化特征');
         // 12 个维度块
-        expect(section.findAll('nw-u-marginbottom-10px-2')).toHaveLength(12);
+        expect(section.findAll('nw-u-marginbottom-10px')).toHaveLength(12);
         expect(root.allText()).toContain('rhythm 描述');
-        const sampleBlocks = section.findAll('nw-u-margintop-4px-2');
+        const sampleBlocks = section.findAll('nw-u-margin-top-neg-4px');
         expect(sampleBlocks[0].children.map(c => c.textContent)).toEqual(['「样本一」', '「样本二」']);
     });
 
@@ -189,9 +189,9 @@ describe('renderV2FeaturesSection', () => {
         expect(text).toContain('样本不足');
         expect(text).toContain('样本未体现');
         // 只有 rhythm 这一维缺样本 → 只标记一次
-        expect(root.findAll('nw-u-c-text-faint-2')).toHaveLength(1);
+        expect(root.findAll('nw-u-c-text-faint')).toHaveLength(1);
         // 无样本维度不渲染样本区
         const section = root.findAll('nw-fingerprint-v2-section')[0];
-        expect(section.findAll('nw-u-margintop-4px-2').length).toBeLessThan(12);
+        expect(section.findAll('nw-u-margin-top-neg-4px').length).toBeLessThan(12);
     });
 });

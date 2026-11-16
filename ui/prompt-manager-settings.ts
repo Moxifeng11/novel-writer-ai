@@ -82,10 +82,10 @@ export class PromptManagerSettings {
     }
 
     private renderTemplatesTab(container: HTMLElement): void {
-        const layout = container.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-16px-2' });
+        const layout = container.createDiv({ cls: 'nw-u-d-flex nw-u-gap-16px' });
 
-        const sidebar = layout.createDiv({ cls: 'nw-u-w-260px nw-u-fsh-0-2' });
-        const main = layout.createDiv({ cls: 'nw-u-flex-1-2 nw-u-minw-0-2' });
+        const sidebar = layout.createDiv({ cls: 'nw-u-w-260px nw-u-fsh-0' });
+        const main = layout.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-0' });
 
         this.renderTemplateSidebar(sidebar);
         this.renderTemplateDetail(main);
@@ -103,7 +103,7 @@ export class PromptManagerSettings {
                     });
             });
 
-        const categoryList = container.createDiv({ cls: 'nw-u-marginbottom-12px-2' });
+        const categoryList = container.createDiv({ cls: 'nw-u-marginbottom-12px' });
         const allBtn = categoryList.createEl('button', {
             text: `📚 全部 (${this.promptManager.getAllTemplates().length})`,
             attr: {
@@ -140,7 +140,7 @@ export class PromptManagerSettings {
         );
 
         const templateList = container.createDiv({
-            cls: 'nw-u-bt-1px-solid-background-m-2 nw-u-paddingtop-8px-2 nw-u-maxh-400px-2 nw-u-ovy-auto-2'
+            cls: 'nw-u-bt-1px-solid-background-m nw-u-paddingtop-8px nw-u-maxh-400px nw-u-ovy-auto'
         });
 
         for (const t of filtered) {
@@ -151,16 +151,16 @@ export class PromptManagerSettings {
             });
             item.createDiv({
                 text: t.name,
-                cls: 'nw-u-fwt-600-2 nw-u-fs-13px-2'
+                cls: 'nw-u-fwt-600 nw-u-fs-13px'
             });
             item.createDiv({
                 text: t.description.slice(0, 40) + (t.description.length > 40 ? '...' : ''),
-                cls: 'nw-u-fs-11px-2 nw-u-c-text-muted-2 nw-u-margintop-2px-2'
+                cls: 'nw-u-fs-11px nw-u-c-text-muted nw-u-margintop-2px'
             });
             if (t.isCustom) {
                 item.createEl('span', {
                     text: '自定义',
-                    cls: 'nw-u-d-inline-block nw-u-p-1px-6px-2 nw-u-fs-10px-2 nw-u-bg-background-modifier-su nw-u-c-text-on-accent-2 nw-u-brd-3px-2 nw-u-margintop-4px-3'
+                    cls: 'nw-u-d-inline-block nw-u-p-1px-6px nw-u-fs-10px nw-u-bg-background-modifier-su nw-u-c-text-on-accent nw-u-brd-3px nw-u-margintop-4px'
                 });
             }
             item.onclick = () => {
@@ -194,15 +194,15 @@ export class PromptManagerSettings {
             return;
         }
 
-        const header = container.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-flex-start-2 nw-u-marginbottom-16px-2' });
+        const header = container.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-flex-start nw-u-marginbottom-16px' });
         const titleArea = header.createDiv();
         titleArea.createEl('h3', { text: template.name, cls: 'nw-u-m-0-0-4px-0' });
         titleArea.createEl('div', {
             text: `${PROMPT_CATEGORY_LABELS[template.category] || template.category} · v${this.promptManager.getActiveVersion(template)?.version || '?'}`,
-            cls: 'nw-u-fs-13px-2 nw-u-c-text-muted-2'
+            cls: 'nw-u-fs-13px nw-u-c-text-muted'
         });
 
-        const actions = header.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2' });
+        const actions = header.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px' });
 
         const editBtn = actions.createEl('button', {
             text: template.isCustom ? '✏️ 编辑' : '📝 自定义',
@@ -237,7 +237,7 @@ export class PromptManagerSettings {
 
         const desc = container.createDiv({
             text: template.description,
-            cls: 'nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2 nw-u-marginbottom-16px-2 nw-u-fs-13px-2 nw-u-c-text-muted-2'
+            cls: 'nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-marginbottom-16px nw-u-fs-13px nw-u-c-text-muted'
         });
 
         this.renderVersionsList(container, template);
@@ -253,11 +253,11 @@ export class PromptManagerSettings {
     }
 
     private renderVersionsList(container: HTMLElement, template: PromptTemplate): void {
-        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px-2' });
+        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px' });
         section.createEl('h4', { text: '📋 版本历史', cls: 'nw-h4-sm' });
 
         const versionList = section.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-fwr-wrap-2 nw-u-gap-6px-2 nw-u-marginbottom-8px-2'
+            cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-6px nw-u-marginbottom-8px'
         });
 
         for (const ver of template.versions) {
@@ -291,17 +291,17 @@ export class PromptManagerSettings {
     }
 
     private renderPromptPreview(container: HTMLElement, version: PromptTemplateVersion): void {
-        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px-2' });
+        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px' });
         section.createEl('h4', { text: '🔤 系统提示词', cls: 'nw-h4-sm' });
         const systemBox = section.createEl('pre', {
             text: version.systemPrompt,
-            cls: 'nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2 nw-u-fs-12px-2 nw-u-ws-pre-wrap nw-u-maxh-200px-2 nw-u-ovy-auto-2 nw-u-m-0-2'
+            cls: 'nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-fs-12px nw-u-ws-pre-wrap nw-u-maxh-200px nw-u-ovy-auto nw-u-m-0'
         });
 
         section.createEl('h4', { text: '📝 用户提示词模板', cls: 'nw-u-m-16px-0-8px-0' });
         const userBox = section.createEl('pre', {
             text: version.userPrompt,
-            cls: 'nw-u-p-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2 nw-u-fs-12px-2 nw-u-ws-pre-wrap nw-u-maxh-200px-2 nw-u-ovy-auto-2 nw-u-m-0-2'
+            cls: 'nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-fs-12px nw-u-ws-pre-wrap nw-u-maxh-200px nw-u-ovy-auto nw-u-m-0'
         });
     }
 
@@ -310,39 +310,39 @@ export class PromptManagerSettings {
         section.createEl('h4', { text: '🔧 可用变量', cls: 'nw-h4-sm' });
 
         const varGrid = section.createDiv({
-            cls: 'nw-u-d-grid-2 nw-u-gtc-1fr-1fr-2 nw-u-gap-8px-2'
+            cls: 'nw-u-d-grid nw-u-gtc-1fr-1fr nw-u-gap-8px'
         });
 
         for (const v of template.variables) {
             const item = varGrid.createDiv({
-                cls: 'nw-u-p-8px-10px-2 nw-u-bg-background-secondary-2 nw-u-brd-4px-2 nw-u-fs-12px-2'
+                cls: 'nw-u-p-8px-10px nw-u-bg-background-secondary nw-u-brd-4px nw-u-fs-12px'
             });
             item.createDiv({
                 text: `\${${v.name}}`,
-                cls: 'nw-u-fontfamily-monospace nw-u-fwt-600-2 nw-u-c-interactive-accent-2'
+                cls: 'nw-u-fontfamily-monospace nw-u-fwt-600 nw-u-c-interactive-accent'
             });
             item.createDiv({
                 text: v.description,
-                cls: 'nw-u-c-text-muted-2 nw-u-margintop-2px-2 nw-u-fs-11px-2'
+                cls: 'nw-u-c-text-muted nw-u-margintop-2px nw-u-fs-11px'
             });
             if (v.required) {
                 item.createEl('span', {
                     text: '必填',
-                    cls: 'nw-u-d-inline-block nw-u-p-1px-4px nw-u-fs-10px-2 nw-u-bg-background-modifier-er nw-u-c-text-on-accent-2 nw-u-brd-3px-2 nw-u-margintop-4px-3'
+                    cls: 'nw-u-d-inline-block nw-u-p-1px-4px nw-u-fs-10px nw-u-bg-background-modifier-er nw-u-c-text-on-accent nw-u-brd-3px nw-u-margintop-4px'
                 });
             }
         }
     }
 
     private renderABTestsTab(container: HTMLElement): void {
-        const header = container.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-center-2 nw-u-marginbottom-16px-2' });
-        header.createEl('h3', { text: '🧪 A/B 测试管理', cls: 'nw-u-m-0-2' });
+        const header = container.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center nw-u-marginbottom-16px' });
+        header.createEl('h3', { text: '🧪 A/B 测试管理', cls: 'nw-u-m-0' });
 
-        const enableRow = header.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2' });
-        enableRow.createSpan({ text: '启用A/B测试', cls: 'nw-u-fs-13px-2' });
+        const enableRow = header.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px' });
+        enableRow.createSpan({ text: '启用A/B测试', cls: 'nw-u-fs-13px' });
         const toggle = enableRow.createEl('input', {
             type: 'checkbox',
-            cls: 'nw-u-cur-pointer-2'
+            cls: 'nw-u-cur-pointer'
         });
         toggle.checked = this.promptManager.isABTestingEnabled();
         toggle.addEventListener('change', async () => {
@@ -359,7 +359,7 @@ export class PromptManagerSettings {
                 cls: 'nw-empty-center-muted'
             });
         } else {
-            const testList = container.createDiv({ cls: 'nw-u-d-flex-2 nw-u-fd-column-2 nw-u-gap-8px-2' });
+            const testList = container.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-8px' });
             for (const test of tests) {
                 this.renderTestCard(testList, test);
             }
@@ -386,11 +386,11 @@ export class PromptManagerSettings {
             this.render();
         };
 
-        const header = card.createDiv({ cls: 'nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-center-2' });
+        const header = card.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center' });
         const title = header.createDiv();
         title.createDiv({
             text: test.name,
-            cls: 'nw-u-fwt-600-2 nw-u-fs-14px-2'
+            cls: 'nw-u-fwt-600 nw-u-fs-14px'
         });
         title.createDiv({
             text: `模板: ${test.templateId} · 流量 ${test.trafficSplit.a}/${test.trafficSplit.b}`,
@@ -431,18 +431,18 @@ export class PromptManagerSettings {
 
     private renderTestDetail(container: HTMLElement, test: ABTest): void {
         const detail = container.createDiv({
-            cls: 'nw-u-margintop-12px-2 nw-u-paddingtop-12px-2 nw-u-bt-1px-solid-background-m-2'
+            cls: 'nw-u-margintop-12px nw-u-paddingtop-12px nw-u-bt-1px-solid-background-m'
         });
 
         if (test.description) {
             detail.createDiv({
                 text: test.description,
-                cls: 'nw-u-fs-13px-2 nw-u-c-text-muted-2 nw-u-marginbottom-12px-2'
+                cls: 'nw-u-fs-13px nw-u-c-text-muted nw-u-marginbottom-12px'
             });
         }
 
         const statsGrid = detail.createDiv({
-            cls: 'nw-u-d-grid-2 nw-u-gtc-1fr-1fr-2 nw-u-gap-12px-2 nw-u-marginbottom-12px-2'
+            cls: 'nw-u-d-grid nw-u-gtc-1fr-1fr nw-u-gap-12px nw-u-marginbottom-12px'
         });
 
         this.renderVariantStats(statsGrid, 'A 版本', test.variantA, test.trafficSplit.a);
@@ -451,12 +451,12 @@ export class PromptManagerSettings {
         const stats = this.promptManager.getABTestStats(test.id);
         if (stats?.winner) {
             const winnerBox = detail.createDiv({
-                cls: 'nw-u-p-10px-2 nw-u-bg-background-modifier-su nw-u-c-text-on-accent-2 nw-u-brd-6px-2 nw-u-ta-center-2 nw-u-fwt-600-2 nw-u-marginbottom-12px-2'
+                cls: 'nw-u-p-10px nw-u-bg-background-modifier-su nw-u-c-text-on-accent nw-u-brd-6px nw-u-ta-center nw-u-fwt-600 nw-u-marginbottom-12px'
             });
             winnerBox.setText(`🏆 当前优胜: ${stats.winner.toUpperCase()} 版本`);
         }
 
-        const actions = detail.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-fwr-wrap-2' });
+        const actions = detail.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-fwr-wrap' });
 
         if (test.status === 'draft') {
             const startBtn = actions.createEl('button', {
@@ -535,11 +535,11 @@ export class PromptManagerSettings {
 
     private renderVariantStats(container: HTMLElement, label: string, variant: { version: string; metrics: ABTestMetrics }, traffic: number): void {
         const card = container.createDiv({
-            cls: 'nw-u-p-10px-2 nw-u-bg-background-secondary-2 nw-u-brd-6px-2'
+            cls: 'nw-u-p-10px nw-u-bg-background-secondary nw-u-brd-6px'
         });
         card.createDiv({
             text: `${label} (v${variant.version})`,
-            cls: 'nw-u-fwt-600-2 nw-u-fs-13px-2 nw-u-marginbottom-8px-2'
+            cls: 'nw-u-fwt-600 nw-u-fs-13px nw-u-marginbottom-8px'
         });
         // 指标行构造抽到 prompt-manager-logic：0 样本时不能显示 NaN/10
         for (const row of buildVariantStatRows(variant.metrics, traffic)) {
@@ -551,7 +551,7 @@ export class PromptManagerSettings {
     }
 
     private renderUsageTab(container: HTMLElement): void {
-        container.createEl('h3', { text: '📊 使用记录', cls: 'nw-u-m-0-0-16px-0-2' });
+        container.createEl('h3', { text: '📊 使用记录', cls: 'nw-u-m-0-0-16px-0' });
 
         const history = this.promptManager.getUsageHistory(undefined, 50);
 
@@ -564,30 +564,30 @@ export class PromptManagerSettings {
         }
 
         const list = container.createDiv({
-            cls: 'nw-u-d-flex-2 nw-u-fd-column-2 nw-u-gap-4px-2 nw-u-maxh-500px nw-u-ovy-auto-2'
+            cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-4px nw-u-maxh-500px nw-u-ovy-auto'
         });
 
         for (const record of history) {
             const item = list.createDiv({
-                cls: 'nw-u-p-8px-12px-2 nw-u-bg-background-secondary-2 nw-u-brd-4px-2 nw-u-fs-12px-2 nw-u-d-flex-2 nw-u-jc-space-between-2 nw-u-ai-center-2'
+                cls: 'nw-u-p-8px-12px nw-u-bg-background-secondary nw-u-brd-4px nw-u-fs-12px nw-u-d-flex nw-u-jc-space-between nw-u-ai-center'
             });
             const left = item.createDiv();
             left.createSpan({
                 text: record.templateId,
-                cls: 'nw-u-fwt-600-2 nw-u-marginright-8px'
+                cls: 'nw-u-fwt-600 nw-u-marginright-8px'
             });
             left.createSpan({
                 text: `v${record.version}`,
-                cls: 'nw-u-c-text-muted-2'
+                cls: 'nw-u-c-text-muted'
             });
             if (record.abTestId) {
                 left.createEl('span', {
                     text: `A/B ${record.abVariant?.toUpperCase()}`,
-                    cls: 'nw-u-marginleft-8px nw-u-p-2px-6px-2 nw-u-fs-10px-2 nw-u-bg-interactive-accent-2 nw-u-c-text-on-accent-2 nw-u-brd-3px-2'
+                    cls: 'nw-u-marginleft-8px nw-u-p-2px-6px nw-u-fs-10px nw-u-bg-interactive-accent nw-u-c-text-on-accent nw-u-brd-3px'
                 });
             }
 
-            const right = item.createDiv({ cls: 'nw-u-c-text-muted-2' });
+            const right = item.createDiv({ cls: 'nw-u-c-text-muted' });
             right.setText(new Date(record.timestamp).toLocaleString());
             if (record.rating !== undefined) {
                 right.setText(right.textContent + ` · ⭐${record.rating}`);
@@ -596,15 +596,15 @@ export class PromptManagerSettings {
     }
 
     private renderImportExportTab(container: HTMLElement): void {
-        container.createEl('h3', { text: '📦 导入/导出', cls: 'nw-u-m-0-0-16px-0-2' });
+        container.createEl('h3', { text: '📦 导入/导出', cls: 'nw-u-m-0-0-16px-0' });
 
         const exportSection = container.createDiv({
-            cls: 'nw-u-p-16px-2 nw-u-bg-background-secondary-2 nw-u-brd-8px-2 nw-u-marginbottom-16px-2'
+            cls: 'nw-u-p-16px nw-u-bg-background-secondary nw-u-brd-8px nw-u-marginbottom-16px'
         });
         exportSection.createEl('h4', { text: '📤 导出配置', cls: 'nw-h4-sm' });
         exportSection.createDiv({
             text: '导出所有自定义提示词模板和A/B测试配置',
-            cls: 'nw-u-fs-13px-2 nw-u-c-text-muted-2 nw-u-marginbottom-12px-2'
+            cls: 'nw-u-fs-13px nw-u-c-text-muted nw-u-marginbottom-12px'
         });
         const exportBtn = exportSection.createEl('button', {
             text: '📥 导出 JSON',
@@ -616,12 +616,12 @@ export class PromptManagerSettings {
         exportBtn.onclick = () => { void this.exportConfig(); };
 
         const importSection = container.createDiv({
-            cls: 'nw-u-p-16px-2 nw-u-bg-background-secondary-2 nw-u-brd-8px-2'
+            cls: 'nw-u-p-16px nw-u-bg-background-secondary nw-u-brd-8px'
         });
         importSection.createEl('h4', { text: '📥 导入配置', cls: 'nw-h4-sm' });
         importSection.createDiv({
             text: '从 JSON 文件导入提示词配置（将覆盖现有自定义配置）',
-            cls: 'nw-u-fs-13px-2 nw-u-c-text-muted-2 nw-u-marginbottom-12px-2'
+            cls: 'nw-u-fs-13px nw-u-c-text-muted nw-u-marginbottom-12px'
         });
 
         const input = importSection.createEl('input', {
@@ -789,14 +789,14 @@ export class PromptManagerSettings {
 
         content.createEl('h4', { text: '系统提示词' });
         const sysTextarea = content.createEl('textarea', {
-            cls: 'nw-u-w-100-2 nw-u-minh-150px nw-u-p-8px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-bg-background-primary-2 nw-u-c-text-normal-2 nw-u-fontfamily-monospace nw-u-fs-12px-2 nw-u-resize-vertical'
+            cls: 'nw-u-w-100 nw-u-minh-150px nw-u-p-8px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-bg-background-primary nw-u-c-text-normal nw-u-fontfamily-monospace nw-u-fs-12px nw-u-resize-vertical'
         });
         sysTextarea.value = systemPrompt;
         sysTextarea.addEventListener('input', () => systemPrompt = sysTextarea.value);
 
         content.createEl('h4', { text: '用户提示词模板' });
         const userTextarea = content.createEl('textarea', {
-            cls: 'nw-u-w-100-2 nw-u-minh-150px nw-u-p-8px-2 nw-u-b-1px-solid-background-m-2 nw-u-brd-4px-2 nw-u-bg-background-primary-2 nw-u-c-text-normal-2 nw-u-fontfamily-monospace nw-u-fs-12px-2 nw-u-resize-vertical'
+            cls: 'nw-u-w-100 nw-u-minh-150px nw-u-p-8px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-bg-background-primary nw-u-c-text-normal nw-u-fontfamily-monospace nw-u-fs-12px nw-u-resize-vertical'
         });
         userTextarea.value = userPrompt;
         userTextarea.addEventListener('input', () => userPrompt = userTextarea.value);
@@ -1073,7 +1073,7 @@ export class PromptManagerSettings {
         const content = modal.contentEl;
         content.createDiv({
             text: '选择优胜版本，该版本将设为提示词的活跃版本。',
-            cls: 'nw-u-marginbottom-16px-2 nw-u-c-text-muted-2'
+            cls: 'nw-u-marginbottom-16px nw-u-c-text-muted'
         });
 
         const stats = this.promptManager.getABTestStats(test.id);
@@ -1081,7 +1081,7 @@ export class PromptManagerSettings {
         if (stats?.winner && stats.winner !== 'tie') {
             content.createDiv({
                 text: `🏆 推荐优胜: ${stats.winner.toUpperCase()} 版本`,
-                cls: 'nw-u-p-10px-2 nw-u-bg-background-modifier-su nw-u-c-text-on-accent-2 nw-u-brd-6px-2 nw-u-ta-center-2 nw-u-fwt-600-2 nw-u-marginbottom-16px-2'
+                cls: 'nw-u-p-10px nw-u-bg-background-modifier-su nw-u-c-text-on-accent nw-u-brd-6px nw-u-ta-center nw-u-fwt-600 nw-u-marginbottom-16px'
             });
         }
 

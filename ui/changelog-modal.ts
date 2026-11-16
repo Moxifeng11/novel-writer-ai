@@ -88,7 +88,7 @@ export class ChangelogModal extends Modal {
         // 不接管点击（避免 window 全局在多窗口下指向错误宿主），也不新增网络请求
         footerLeft.createEl('a', {
             text: '查看完整更新日志 →',
-            cls: 'nw-u-fs-12px nw-u-c-text-accent nw-u-cur-pointer-2',
+            cls: 'nw-u-fs-12px nw-u-c-text-accent nw-u-cur-pointer',
             attr: {
                 href: `${GITHUB_REPO_URL}/releases`,
                 target: '_blank',

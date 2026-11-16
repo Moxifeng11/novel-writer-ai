@@ -2695,7 +2695,7 @@ export class KnowledgeBaseView extends ItemView {
 
             if (shouldShowTaskError(task.status, task.error) && task.error) {
                 const errorMsg = card.createDiv({
-                    cls: 'nw-u-p-10px-12px nw-u-bg-rgba-231-76-60-0-1 nw-u-brd-6px nw-u-marginbottom-12px nw-u-fs-12px nw-u-c-e74c3c'
+                    cls: 'nw-u-p-10px-12px nw-u-bg-error-soft nw-u-brd-6px nw-u-marginbottom-12px nw-u-fs-12px nw-u-c-error'
                 });
                 errorMsg.createSpan({ text: '错误信息：', cls: 'nw-u-fwt-600' });
                 errorMsg.createSpan({ text: task.error });
@@ -3302,7 +3302,7 @@ export class KnowledgeBaseView extends ItemView {
                 text: `${progress.bookName}${dimLabel ? ' · ' + dimLabel : ''}`
             });
             const barContainer = infoEl.createDiv({
-                cls: 'nw-u-w-120px nw-u-h-4px nw-u-bg-background-modifier-bo-2 nw-u-brd-2px nw-u-margintop-2px nw-u-ov-hidden'
+                cls: 'nw-u-w-120px nw-u-h-4px nw-u-bg-modifier-border-hover nw-u-brd-2px nw-u-margintop-2px nw-u-ov-hidden'
             });
             barContainer.createDiv({
                 attr: {
