@@ -66,31 +66,27 @@ export interface KbConfigPanelHost {
  */
 export function buildKbConfigPanel(rightContentEl: HTMLElement, host: KbConfigPanelHost): void {
     const content = rightContentEl.createDiv({
-        cls: "nw-kb-config-tab nw-u-d-flex nw-u-h-100",
+        cls: "nw-kb-config-tab",
         attr: {}
     });
 
     const categoryPanel = content.createDiv({
-        cls: "nw-kb-config-category-panel nw-u-w-160px nw-u-brt-1px-solid-background-m nw-u-d-flex nw-u-fd-column",
+        cls: "nw-kb-config-category-panel",
         attr: {}
     });
 
     const categoryHeader = categoryPanel.createDiv({
-        cls: 'nw-section-header'
+        cls: 'nw-kb-config-category-header'
     });
-    categoryHeader.createEl('h3', { text: '频道分类', cls: 'nw-u-m-0 nw-u-fs-14px' });
+    categoryHeader.createEl('h3', { text: '频道分类', cls: 'nw-kb-config-category-title' });
 
     const categories = KB_CONFIG_CATEGORIES;
 
     categories.forEach(cat => {
         const item = categoryPanel.createDiv({
-            attr: {
-                style: `padding:10px 16px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;border-left:3px solid ${
-                    host.configCategory === cat.key ? 'var(--interactive-accent)' : 'transparent'
-                };background:${host.configCategory === cat.key ? 'var(--background-secondary-alt)' : 'transparent'};color:${
-                    host.configCategory === cat.key ? 'var(--text-normal)' : 'var(--text-muted)'
-                };`
-            }
+            cls: host.configCategory === cat.key
+                ? 'nw-kb-config-category-item nw-kb-config-category-item--active'
+                : 'nw-kb-config-category-item',
         });
         item.createSpan({ text: cat.icon });
         item.createSpan({ text: cat.label });
@@ -98,16 +94,16 @@ export function buildKbConfigPanel(rightContentEl: HTMLElement, host: KbConfigPa
     });
 
     const mainContent = content.createDiv({
-        cls: "nw-kb-config-main nw-u-flex-1 nw-u-d-flex nw-u-fd-column nw-u-minw-0",
+        cls: "nw-kb-config-main",
         attr: {}
     });
 
     const toolbar = mainContent.createDiv({
-        cls: "nw-section-header nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-gap-12px nw-u-fwr-wrap", attr: {}
+        cls: "nw-kb-config-toolbar", attr: {}
     });
-    toolbar.createEl('h3', { text: `${host.getChannelLabel(host.configCategory)}题材配置`, cls: 'nw-u-m-0 nw-u-fs-15px' });
+    toolbar.createEl('h3', { text: `${host.getChannelLabel(host.configCategory)}题材配置`, cls: 'nw-kb-config-title' });
 
-    const actions = toolbar.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-fwr-wrap' });
+    const actions = toolbar.createDiv({ cls: 'nw-kb-config-actions' });
     const addGenreBtn = actions.createEl('button', {
         text: '➕ 新增题材',
         cls: 'nw-btn nw-btn-primary nw-btn-sm'
@@ -130,7 +126,7 @@ export function buildKbConfigPanel(rightContentEl: HTMLElement, host: KbConfigPa
     resetBtn.addEventListener('click', () => host.resetConfig());
 
     const configContent = mainContent.createDiv({
-        cls: "nw-kb-config-content nw-u-flex-1 nw-u-ovy-auto nw-u-p-16px",
+        cls: "nw-kb-config-content",
         attr: {}
     });
 
@@ -138,42 +134,39 @@ export function buildKbConfigPanel(rightContentEl: HTMLElement, host: KbConfigPa
 
     if (genres.length === 0) {
         configContent.createDiv({
-            cls: 'nw-u-ta-center nw-u-p-60px nw-u-c-text-muted'
+            cls: 'nw-kb-config-empty'
         }).createSpan({ text: '暂无题材配置' });
         return;
     }
 
     const grid = configContent.createDiv({
-        cls: 'nw-u-d-grid nw-u-grid-auto-fill-300 nw-u-gap-12px'
+        cls: 'nw-kb-config-grid'
     });
 
     genres.forEach(genre => {
         const isCustom = isCustomGenreUi(genre, host.kb ? id => host.kb!.isCustomGenre(id) : undefined);
         const card = grid.createDiv({
-            attr: {
-                style: `border:1px solid var(--background-modifier-border);border-radius:8px;padding:16px;cursor:pointer;background:var(--background-primary);transition:all 0.15s;position:relative;${
-                    host.isSelectedGenre(genre.id) ? 'border-color:var(--interactive-accent);box-shadow:0 0 0 2px rgba(var(--interactive-accent-rgb),0.1);' : ''
-                }`
-            }
+            cls: host.isSelectedGenre(genre.id)
+                ? 'nw-kb-config-card nw-kb-config-card--selected'
+                : 'nw-kb-config-card',
         });
-        card.addClass('nw-hover-border');
 
-        const header = card.createDiv({ cls: 'nw-u-d-flex nw-u-ai-flex-start nw-u-jc-space-between nw-u-marginbottom-8px nw-u-gap-8px' });
-        const titleWrap = header.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-0' });
-        const titleRow = titleWrap.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-6px nw-u-fwr-wrap' });
-        titleRow.createDiv({ text: genre.name, cls: 'nw-u-fs-15px nw-u-fwt-600' });
+        const header = card.createDiv({ cls: 'nw-kb-config-card-header' });
+        const titleWrap = header.createDiv({ cls: 'nw-kb-config-card-title-wrap' });
+        const titleRow = titleWrap.createDiv({ cls: 'nw-kb-config-card-title-row' });
+        titleRow.createDiv({ text: genre.name, cls: 'nw-kb-config-card-name' });
         if (isCustom) {
             titleRow.createSpan({
                 text: '自定义',
-                cls: 'nw-u-p-1px-6px nw-u-fs-10px nw-u-bg-success-soft nw-u-c-success nw-u-brd-8px nw-u-fsh-0'
+                cls: 'nw-kb-config-badge'
             });
         }
 
-        const actions = header.createDiv({ cls: 'nw-u-d-flex nw-u-gap-4px nw-u-fsh-0' });
+        const actions = header.createDiv({ cls: 'nw-kb-config-card-actions' });
         if (isCustom) {
             const deleteIcon = actions.createSpan({
                 text: '🗑️',
-                cls: 'nw-u-fs-14px nw-u-c-text-muted nw-u-cur-pointer nw-u-p-2px',
+                cls: 'nw-kb-config-delete',
                 attr: { 'aria-label': '删除这个题材', role: 'button', tabindex: '0' }
             });
             deleteIcon.addEventListener('click', (e) => {
@@ -184,34 +177,34 @@ export function buildKbConfigPanel(rightContentEl: HTMLElement, host: KbConfigPa
 
         card.createDiv({
             text: genre.description,
-            cls: "nw-text-sm-muted nw-u-lh-1-5 nw-u-marginbottom-12px nw-u-d-webkit-box nw-u-clamp-2-lines nw-u-webkitboxorient-vertical nw-u-ov-hidden", attr: {}
+            cls: "nw-kb-config-desc", attr: {}
         });
 
-        const stats = card.createDiv({ cls: 'nw-u-d-grid nw-u-gtc-repeat-3-1fr nw-u-gap-8px' });
+        const stats = card.createDiv({ cls: 'nw-kb-config-stats' });
         const statItems = buildGenreStatItems(genre);
         statItems.forEach(s => {
             const statItem = stats.createDiv({
-                cls: 'nw-u-ta-center nw-u-p-8px nw-u-bg-background-secondary nw-u-brd-6px'
+                cls: 'nw-kb-config-stat'
             });
-            statItem.createDiv({ text: s.value.toString(), cls: 'nw-u-fs-16px nw-u-fwt-600 nw-u-c-interactive-accent' });
-            statItem.createDiv({ text: s.label, cls: 'nw-u-fs-10px nw-u-c-text-muted nw-u-margintop-2px' });
+            statItem.createDiv({ text: s.value.toString(), cls: 'nw-kb-config-stat-value' });
+            statItem.createDiv({ text: s.label, cls: 'nw-kb-config-stat-label' });
         });
 
         const subGenrePreview = selectSubGenrePreview(genre.subGenres);
         if (subGenrePreview.shown.length > 0) {
-            const subSection = card.createDiv({ cls: 'nw-u-margintop-12px nw-u-paddingtop-12px nw-u-bt-1px-solid-background-m' });
-            subSection.createDiv({ text: formatSubGenreSectionTitle(genre.subGenres!.length), cls: "nw-text-sm-muted nw-u-marginbottom-6px", attr: {} });
-            const subTags = subSection.createDiv({ cls: 'nw-flex-wrap-sm' });
+            const subSection = card.createDiv({ cls: 'nw-kb-config-subgenres' });
+            subSection.createDiv({ text: formatSubGenreSectionTitle(genre.subGenres!.length), cls: "nw-kb-config-subgenres-title", attr: {} });
+            const subTags = subSection.createDiv({ cls: 'nw-kb-config-subgenres-tags' });
             subGenrePreview.shown.forEach(sub => {
                 subTags.createSpan({
                     text: sub.name,
-                    cls: 'nw-u-p-2px-8px nw-u-fs-11px nw-u-bg-background-secondary nw-u-brd-10px nw-u-c-text-muted'
+                    cls: 'nw-kb-config-subgenre-tag'
                 });
             });
             if (subGenrePreview.overflow > 0) {
                 subTags.createSpan({
                     text: `+${subGenrePreview.overflow}`,
-                    cls: "nw-text-muted-11 nw-u-p-2px-8px", attr: {}
+                    cls: "nw-kb-config-subgenre-more", attr: {}
                 });
             }
         }

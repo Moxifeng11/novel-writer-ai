@@ -123,12 +123,13 @@ describe('配置面板-2：频道分类栏', () => {
         expect(host.calls.some(c => c.startsWith('switch:'))).toBe(true);
     });
 
-    it('当前分类项高亮为 accent，其它为 transparent', () => {
+    it('当前分类项带 --active 修饰类，其它项不带', () => {
         const root = render(makeHost());
-        const panel = byClass(root, 'nw-kb-config-category-panel')[0];
-        const styles = panel.children.map(c => c.attr.style || '');
-        expect(styles.some(s => s.includes('var(--interactive-accent)'))).toBe(true);
-        expect(styles.some(s => s.includes('transparent'))).toBe(true);
+        const items = byClass(root, 'nw-kb-config-category-item');
+        expect(items.length).toBeGreaterThan(0);
+        expect(items.filter(i => i.classList.contains('nw-kb-config-category-item--active'))).toHaveLength(1);
+        // 选中态样式在 27-knowledge-base.css 的 --active 修饰类里，不再拼内联 style
+        expect(items.every(i => !i.attr.style)).toBe(true);
     });
 });
 
@@ -217,20 +218,20 @@ describe('配置面板-4：题材卡片', () => {
     it('点击卡片回调 selectGenre', () => {
         const host = hostWithGenres([genre({ id: 'g1', name: '题材一' })]);
         const root = render(host);
-        const grid = byClass(root, 'nw-u-d-grid')[0];
+        const grid = byClass(root, 'nw-kb-config-grid')[0];
         const card = grid.children[0];
         for (const fn of card.listeners.get('click') || []) fn({});
         expect(host.calls).toContain('select:g1');
     });
 
-    it('选中题材的卡片带 accent 边框', () => {
+    it('选中题材的卡片带 --selected 修饰类', () => {
         const root = render(hostWithGenres(
             [genre({ id: 'g1', name: '题材一' }), genre({ id: 'g2', name: '题材二' })],
             { selected: 'g2' },
         ));
-        const grid = byClass(root, 'nw-u-d-grid')[0];
-        expect(grid.children[0].attr.style).not.toContain('interactive-accent');
-        expect(grid.children[1].attr.style).toContain('interactive-accent');
+        const grid = byClass(root, 'nw-kb-config-grid')[0];
+        expect(grid.children[0].classList.contains('nw-kb-config-card--selected')).toBe(false);
+        expect(grid.children[1].classList.contains('nw-kb-config-card--selected')).toBe(true);
     });
 
     it('细分题材预览显示标签与溢出计数', () => {

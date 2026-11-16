@@ -1,6 +1,6 @@
 # 知识库 / 设定（视觉重构）
 
-> 模块页（Module Page）。状态：**doing（视觉重构 Slice A–E 完成 2026-11-17；F 配置页 / G 弹窗待做）**
+> 模块页（Module Page）。状态：**doing（视觉重构 Slice A–F 完成 2026-11-17；G 弹窗待做）**
 > 规范：[视觉重构规范](../design/2026-11-16-visual-refactor-standard.md)
 > 基线：[`docs/quality/visual-baseline/kb-books.json`](../quality/visual-baseline/kb-books.json)
 
@@ -243,6 +243,36 @@
 after 构建里八个页签的 `nw-u-` 工具类引用均为 **0**（before：技巧 141、结构 2300、人设 23183、文风 54、节奏 82），
 证明快照确实落在语义化后的 DOM 上。结论：Slice E 的类替换跨页签达到像素级等价，两处可见差异均为设计意图内的修正。
 
+## 3.9 Slice F：题材配置页（2026-11-17 完成）
+
+**改动**
+
+- `ui/views/kb-config-panel.ts`（199 → 214 行）整体语义化，类前缀 `nw-kb-config-`：
+  布局 `-tab` / `-category-panel` / `-main` / `-content` / `-empty` / `-grid`、
+  分类栏 `-category-header` / `-category-title` / `-category-item`（+ `--active`）、
+  工具栏 `-toolbar` / `-title` / `-actions`、
+  题材卡 `-card`（+ `--selected`，悬停改 CSS `:hover`）/ `-card-header` / `-card-title-wrap` /
+  `-card-title-row` / `-card-name` / `-badge` / `-card-actions` / `-delete` / `-desc` /
+  `-stats` / `-stat` / `-stat-value` / `-stat-label` /
+  `-subgenres` / `-subgenres-title` / `-subgenres-tags` / `-subgenre-tag` / `-subgenre-more`。
+- 分类项与题材卡原本用内联 `style` 拼的 padding / border-left / 选中阴影 / 悬停过渡全部移入 27 号样式；
+  该文件 `nw-u-` 及 `nw-text-` / `nw-hover-border` / `nw-section-header` 引用 **86 → 0**，内联样式 **2 → 0**。
+- 27 号样式新增「配置页：题材配置（Slice F）」段约 226 行；CSS 预算基线随提交更新：
+  唯一类 +19、体积 +3689B、rgbHsl +1（选中态 `rgba(var(--interactive-accent-rgb),0.1)` 从内联搬进 CSS）。
+
+**等价审计**：28 组「旧工具类串 → 新语义类」逐组比对声明并集，27 组完全一致（4 组仅因旧类串本身含同名语义类而顺序不同）；
+唯一真差异是 `nw-text-muted-11`（从未定义）由 `-subgenre-more` 按设计意图补真为 11px 弱化色。
+分类项 active 由「`border-left` 整条重写」改为「base 透明 + `--active` 覆写 `border-left-color`」，计算值相同。
+
+**像素快照**（before = Slice F 前构建，after = 当前构建；1440×2600，DSF=1；截图与 diff 结论存
+`D:\nw-dev-vault\_visual-fg\{before,after,diff}`，不在仓内）：
+
+| 目标 | 差异 | 归因 |
+| --- | --- | --- |
+| 题材配置页 | 6.23%（138,541 px） | 全部来自死类补真：`+N` 溢出计数由继承 15px/正文色变为 11px 弱化色，行高 23.5 → 18.3px、卡片 253.1 → 247.9px，整行变矮 5.2px、后续行整体上移。注入 `.nw-kb-config-subgenre-more{font-size:15px;color:var(--text-normal)}` 后卡片高度精确回到 253.1px，确认差异只此一处 |
+| 题材编辑弹窗 / 编辑书籍弹窗 | 0 px | 完全一致 |
+| 导入弹窗 / 批量操作弹窗 | 32 px / 10 px（0.016% / 0.006%） | 仅 y=0 标题字形抗锯齿差异，非本 slice 文件 |
+
 ## 4. 后续 slice 清单
 
 | # | Slice | 文件 | 目标 |
@@ -252,7 +282,7 @@ after 构建里八个页签的 `nw-u-` 工具类引用均为 **0**（before：�
 | ~~D~~ | ~~详情外壳与页签条~~ | ~~已完成 2026-11-16~~ | ~~工具类 239 → 175~~ |
 | ~~E~~ | ~~详情各页签内容区（文风/节奏/技巧/结构/角色/伏笔/商业/易读性）~~ | ~~已完成 2026-11-17~~ | ~~工具类 866 → 126~~ |
 | ~~E-补~~ | ~~开发 vault 运行期数据解耦 + 已拆解样本书（✅ 2026-11-17）~~ | ~~`scripts/dev-vault.mjs`~~ | ~~见 §3.8.1~~ |
-| F | 题材/配置页 | `knowledge-base-view.ts` 后段 | `nw-kb-config-*` |
-| G | 弹窗（需人工视觉验收） | `knowledge-detail-modal.ts` / `knowledge-base-modals.ts` | `nw-kb-modal-*` |
+| ~~F~~ | ~~题材/配置页~~ | ~~`ui/views/kb-config-panel.ts`，已完成 2026-11-17~~ | ~~工具类 86 → 0~~ |
+| G | 弹窗（需人工视觉验收） | `ui/views/knowledge-base-modals.ts`（导入 / 编辑书籍 / 题材编辑 / 批量操作四个弹窗） | `nw-kb-modal-*` |
 
 每个 slice 都必须走规范 §4 的六步（含 before/after 快照比对）。

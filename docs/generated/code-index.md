@@ -11,7 +11,7 @@
 | `shared/` | 255 | 50823 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3387 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 300 | 113697 | 1155 | 917 | 79% |
+| `ui/` | 300 | 113690 | 1155 | 917 | 79% |
 
 ## 文件清单
 
@@ -985,7 +985,7 @@
 | `ui/views/kb-book-filter.ts` | 190 | 11 | 7 |
 | `ui/views/kb-card-logic.ts` | 233 | 20 | 14 |
 | `ui/views/kb-config-import-logic.ts` | 98 | 5 | 4 |
-| `ui/views/kb-config-panel.ts` | 222 | 3 | 3 |
+| `ui/views/kb-config-panel.ts` | 215 | 3 | 3 |
 | `ui/views/kb-detail-actions.ts` | 180 | 2 | 2 |
 | `ui/views/kb-format.ts` | 168 | 10 | 7 |
 | `ui/views/kb-import-file-logic.ts` | 73 | 6 | 5 |

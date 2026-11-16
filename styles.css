@@ -23928,3 +23928,229 @@ button.nw-kb-detail-tab--active {
     background: var(--background-secondary-alt);
 }
 
+
+/* ── 配置页：题材配置（Slice F）────────────────────────────────────────
+ * 原实现把布局与选中态写在内联 style 里，这里改为语义类；
+ * 频道分类项与题材卡的选中态分别用 --active / --selected 修饰类。
+ */
+.nw-kb-config-tab {
+    display: flex;
+    height: 100%;
+}
+
+.nw-kb-config-category-panel {
+    display: flex;
+    flex-direction: column;
+    width: 160px;
+    border-right: 1px solid var(--background-modifier-border);
+}
+
+.nw-kb-config-category-header {
+    padding: 12px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-kb-config-category-title {
+    margin: 0;
+    font-size: 14px;
+}
+
+.nw-kb-config-category-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--text-muted);
+    background: transparent;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+}
+
+.nw-kb-config-category-item--active {
+    color: var(--text-normal);
+    background: var(--background-secondary-alt);
+    border-left-color: var(--interactive-accent);
+}
+
+.nw-kb-config-main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.nw-kb-config-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-kb-config-title {
+    margin: 0;
+    font-size: 15px;
+}
+
+.nw-kb-config-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.nw-kb-config-content {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.nw-kb-config-empty {
+    padding: 60px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.nw-kb-config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 12px;
+}
+
+/* 原来内联 style + nw-hover-border：hover 只改描边，选中态由 --selected 给出 */
+.nw-kb-config-card {
+    position: relative;
+    padding: 16px;
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.nw-kb-config-card:hover {
+    border-color: var(--interactive-accent);
+}
+
+.nw-kb-config-card--selected {
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.1);
+}
+
+.nw-kb-config-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.nw-kb-config-card-title-wrap {
+    flex: 1;
+    min-width: 0;
+}
+
+.nw-kb-config-card-title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.nw-kb-config-card-name {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.nw-kb-config-badge {
+    flex-shrink: 0;
+    padding: 1px 6px;
+    font-size: 10px;
+    color: var(--text-success);
+    background: color-mix(in srgb, var(--text-success) 15%, transparent);
+    border-radius: 8px;
+}
+
+.nw-kb-config-card-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 4px;
+}
+
+.nw-kb-config-delete {
+    padding: 2px;
+    font-size: 14px;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.nw-kb-config-desc {
+    display: -webkit-box;
+    margin-bottom: 12px;
+    overflow: hidden;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.nw-kb-config-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.nw-kb-config-stat {
+    padding: 8px;
+    text-align: center;
+    background: var(--background-secondary);
+    border-radius: 6px;
+}
+
+.nw-kb-config-stat-value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--interactive-accent);
+}
+
+.nw-kb-config-stat-label {
+    margin-top: 2px;
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.nw-kb-config-subgenres {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.nw-kb-config-subgenres-title {
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.nw-kb-config-subgenres-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.nw-kb-config-subgenre-tag {
+    padding: 2px 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--background-secondary);
+    border-radius: 10px;
+}
+
+.nw-kb-config-subgenre-more {
+    padding: 2px 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
