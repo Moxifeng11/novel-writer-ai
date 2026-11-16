@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-16T15:11:35.943Z",
-  "note": "知识库视觉重构 Slice C：详情公共构件与概览页（+3.0KB、18 类）",
-  "bytes": 605471,
+  "generatedAt": "2026-11-16T15:25:59.034Z",
+  "note": "Slice D 动效注释修正（transition 显式属性，+158 bytes）",
+  "bytes": 607175,
   "important": 24,
   "hardcodedHex": 164,
   "rgbHsl": 184,
-  "uniqueClasses": 3189,
+  "uniqueClasses": 3199,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

@@ -111,6 +111,26 @@ node scripts/check-visual-diff.mjs docs/quality/visual-baseline/kb-before.json .
 不存类名 —— 类名正是要被重构的东西；用路径定位元素，因此**重构期间不得改变 DOM 结构**
 （改结构属于行为重构，需单独一轮并更新基线）。
 
+## 3.5 反复踩到的坑（必须记住）
+
+### 坑 1：Obsidian 默认控件样式的特异性高于单类选择器
+
+Obsidian 自带 `button:not(.clickable-icon)` 特异性是 **(0,1,1)**，
+`input[type=text]` 同理。我们自己写的 `.nw-xxx-btn` 只有 (0,1,0)，
+**去掉内联样式后会立刻被压住**，按钮/输入框退回默认外观。
+
+在知识库重构中连续踩了三次（导航按钮、搜索框、详情页签）。规则：
+
+- 组件按钮/输入框 → 用 `button.nw-xxx-btn` / `input.nw-xxx-input` 写规则；
+- 或者用祖先限定提高特异性：`.nw-kb-sidebar-header .nw-kb-nav-btn`。
+
+### 坑 2：视觉基线只能证明「拍到的页面」没变
+
+如果目标区块没渲染出来（数据缺失、未切到对应页签），diff 会是 0 差异——
+**这是假绿**。Slice C 就踩过：详情页没打开，0 差异毫无意义。
+
+采集脚本必须打印目标元素计数，且 `> 0` 才算有效采集。
+
 ## 4. 单模块重构步骤
 
 1. 采集基线（before）→ 入库。

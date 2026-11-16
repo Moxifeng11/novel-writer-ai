@@ -702,3 +702,76 @@ input.nw-kb-search-input {
     color: var(--text-muted);
 }
 
+/* ── 书籍详情：外壳与页签条（Slice D）── */
+.nw-kb-detail-container {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.nw-kb-detail-back {
+    margin-bottom: 12px;
+}
+
+.nw-kb-detail-title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.nw-kb-detail-title {
+    margin: 0;
+    font-size: 20px;
+}
+
+.nw-kb-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.nw-kb-detail-tabs-wrapper {
+    margin-bottom: 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-bottom: 1px solid var(--background-modifier-border);
+    -webkit-overflow-scrolling: touch;
+}
+
+.nw-kb-detail-tabs {
+    display: flex;
+    gap: 0;
+    min-width: fit-content;
+}
+
+/* 注意：与 nw-kb-nav-btn 同样的问题——Obsidian 自带 button:not(.clickable-icon) 是 (0,1,1)，
+   单类选择器 (0,1,0) 会被压住（页签会退回默认按钮灰底），所以带 button 前缀。 */
+button.nw-kb-detail-tab {
+    min-width: 80px;
+    flex-shrink: 0;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    color: var(--text-normal);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    /* 项目动效规范：禁止 transition-all 简写（会连布局属性一起补间，拖拽时抖动） */
+    transition: color 0.2s, background-color 0.2s, border-color 0.2s;
+}
+
+button.nw-kb-detail-tab--active {
+    font-weight: 600;
+    color: var(--text-accent);
+    border-bottom-color: var(--interactive-accent);
+}
+
+.nw-kb-detail-tab-content {
+    padding-bottom: 24px;
+}
+

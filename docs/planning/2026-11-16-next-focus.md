@@ -614,4 +614,18 @@ CSS −5.4KB，唯一类 −141；preflight EXIT=0。
 FakeEl.style 支持 setProperty（组件可用 CSS 变量而非 setAttribute('style')）。
 
 下一轮：Slice C 书籍详情概览区（book-detail-renderer.ts，914 处工具类是主战场）。
+### 2026-11-16 第二十四轮：视觉重构 Slice C（77b6acde）
+
+详情公共构件 + 概览页语义化：createDetailSection / addInfoItem / 信息网格 /
+简介 / 维度网格 / 维度卡片（三态修饰类）/ 拆解进度块。
+
+**本轮抓到的「假绿」**：第一次采集时详情页没渲染（fixture 假书走不到详情），
+diff 显示 0 差异但目标区块根本不在快照里。改为真实书籍数据后重做 before/after，
+才发现 63 处几何 + 24 处样式差异——全部源于信息项 label 的死类（nw-text-muted-11）
+补上 11px 弱化色。已记录进模块页与规范使用提示：采集前必须确认目标元素数量 > 0。
+
+R1 结构差异 0；有意改动已用 --accept 记入基线 kb-detail.json。
+preflight EXIT=0（956 测试文件 / 10092 用例）。
+
+下一轮：Slice D 详情其余分区（角色/文风/情感/伏笔，工具类约 800 处）。
 

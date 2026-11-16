@@ -1562,27 +1562,20 @@ export class KnowledgeBaseView extends ItemView {
 
         this.renderBooksToolbar(booksPanel as HTMLElement);
 
-        const detailContainer = (booksPanel as HTMLElement).createDiv({
-            cls: "nw-kb-detail-container nw-u-flex-1 nw-u-ovy-auto",
-            attr: {}
-        });
+        // 2026-11-16 视觉重构 Slice D：详情外壳与页签条语义化
+        const detailContainer = (booksPanel as HTMLElement).createDiv({ cls: 'nw-kb-detail-container' });
 
         const backBtn = detailContainer.createEl('button', {
             text: '← 返回列表',
-            cls: "nw-btn nw-btn-ghost nw-btn-sm nw-u-marginbottom-12px",
-            attr: {}
+            cls: 'nw-btn nw-btn-ghost nw-btn-sm nw-kb-detail-back',
+            attr: {},
         });
         backBtn.addEventListener('click', () => this.closeBookDetail());
 
-        const titleRow = detailContainer.createDiv({
-            cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-16px nw-u-fwr-wrap nw-u-gap-12px'
-        });
-        titleRow.createEl('h2', { text: book.name, cls: 'nw-u-m-0 nw-u-fs-20px' });
+        const titleRow = detailContainer.createDiv({ cls: 'nw-kb-detail-title-row' });
+        titleRow.createEl('h2', { text: book.name, cls: 'nw-kb-detail-title' });
 
-        const actions = titleRow.createDiv({
-            cls: "nw-kb-detail-actions nw-u-d-flex nw-u-gap-8px nw-u-fwr-wrap",
-            attr: {}
-        });
+        const actions = titleRow.createDiv({ cls: 'nw-kb-detail-actions' });
         this.renderDetailActionButtons(book, actions);
 
         const classification = this.classifyBookInfo(book);
@@ -1609,25 +1602,14 @@ export class KnowledgeBaseView extends ItemView {
             });
         }
 
-        const tabsWrapper = detailContainer.createDiv({
-            cls: "nw-kb-detail-tabs-wrapper nw-u-ovx-auto nw-u-ovy-hidden nw-u-bb-1px-solid-background-m nw-u-marginbottom-16px nw-u-webkitoverflowscrolling-touch",
-            attr: {}
-        });
-        const tabs = tabsWrapper.createDiv({
-            cls: "nw-kb-detail-tabs nw-u-d-flex nw-u-gap-0 nw-u-minw-fit-content",
-            attr: {}
-        });
+        const tabsWrapper = detailContainer.createDiv({ cls: 'nw-kb-detail-tabs-wrapper' });
+        const tabs = tabsWrapper.createDiv({ cls: 'nw-kb-detail-tabs' });
         const tabKeys: BookDetailTabKey[] = ['overview', 'style', 'rhythm', 'technique', 'structure', 'character', 'foreshadow', 'commercial', 'readability', 'tags'];
         tabKeys.forEach(key => {
             const tab = tabs.createEl('button', {
                 text: BOOK_DETAIL_TABS[key],
-                cls: `nw-kb-detail-tab${this.activeBookDetailTab === key ? ' is-active' : ''}`,
-                attr: {
-                    type: 'button',
-                    style: `padding:10px 20px;font-size:13px;cursor:pointer;background:none;border:none;border-bottom:2px solid ${
-                        this.activeBookDetailTab === key ? 'var(--interactive-accent)' : 'transparent'
-                    };color:${this.activeBookDetailTab === key ? 'var(--interactive-accent)' : 'var(--text-normal)'};font-weight:${this.activeBookDetailTab === key ? '600' : '500'};white-space:nowrap;flex-shrink:0;min-width:80px;text-align:center;transition:all 0.2s;`
-                }
+                cls: `nw-kb-detail-tab${this.activeBookDetailTab === key ? ' nw-kb-detail-tab--active' : ''}`,
+                attr: { type: 'button' },
             });
             tab.addEventListener('click', () => {
                 this.activeBookDetailTab = key;
@@ -1636,7 +1618,7 @@ export class KnowledgeBaseView extends ItemView {
         });
 
         const tabContent = detailContainer.createDiv({
-            cls: "nw-kb-detail-tab-content nw-u-paddingbottom-24px",
+            cls: 'nw-kb-detail-tab-content',
             attr: {}
         });
 

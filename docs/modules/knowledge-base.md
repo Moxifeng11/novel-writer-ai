@@ -1,6 +1,6 @@
 # 知识库 / 设定（视觉重构）
 
-> 模块页（Module Page）。状态：**doing（视觉重构 Slice A+B+C 完成 2026-11-16）**
+> 模块页（Module Page）。状态：**doing（视觉重构 Slice A+B+C+D 完成 2026-11-16）**
 > 规范：[视觉重构规范](../design/2026-11-16-visual-refactor-standard.md)
 > 基线：[`docs/quality/visual-baseline/kb-books.json`](../quality/visual-baseline/kb-books.json)
 
@@ -139,13 +139,36 @@
 视觉基线只能证明「拍到的页面」没变。如果目标区块没渲染出来，0 差异是假绿。
 后续每个 slice 采集前必须先确认「目标元素数量 > 0」（本次用 `sections/infoItems/dims` 三项自检）。
 
+## 3.7 Slice D：详情外壳与页签条（2026-11-16 完成）
+
+**改动**
+
+- 详情容器/返回按钮/标题行/操作区/页签条/页签/页签内容区全部语义化：
+  `nw-kb-detail-container`、`-back`、`-title-row`、`-title`、`-actions`、
+  `-tabs-wrapper`、`-tabs`、`-tab` + `--active`、`-tab-content`。
+- 页签选中态从内联样式改为 `--active` 修饰类（同时消掉裸状态类 `is-active`）。
+- 该文件工具类 239 → 175。
+
+**防倒退验证（真正的 before/after）**
+
+| 判据 | 结果 |
+| --- | --- |
+| R1 结构 | 0 差异 |
+| R2 几何 | 0 差异 |
+| R3 样式 | 首轮 12 处（页签底色/选中色被 Obsidian 默认按钮样式压住）→ 修复后 **0 差异** |
+| R4 文本 | 0 差异 |
+
+首轮那 12 处正是「坑 1」：`button:not(.clickable-icon)` 的 (0,1,1) 压过
+`.nw-kb-detail-tab` 的 (0,1,0)，页签退化成默认灰底按钮。改为 `button.nw-kb-detail-tab` 后归零。
+
 ## 4. 后续 slice 清单
 
 | # | Slice | 文件 | 目标 |
 | --- | --- | --- | --- |
 | ~~B~~ | ~~书籍工具栏与卡片~~ | ~~已完成 2026-11-16~~ | ~~工具类 39 → 0~~ |
 | ~~C~~ | ~~详情公共构件 + 概览页~~ | ~~已完成 2026-11-16~~ | ~~详情主战场第一刀~~ |
-| D | 详情：角色/文风/情感区 | 同上 | `nw-kb-detail-*` |
+| ~~D~~ | ~~详情外壳与页签条~~ | ~~已完成 2026-11-16~~ | ~~工具类 239 → 175~~ |
+| E | 详情各页签内容区（文风/节奏/技巧/结构/角色/伏笔/商业/易读性） | `book-detail-renderer.ts` | 剩余工具类主战场 |
 | E | 详情：伏笔/商业/易读性区 | 同上 | 同上 |
 | F | 题材/配置页 | `knowledge-base-view.ts` 后段 | `nw-kb-config-*` |
 | G | 弹窗（需人工视觉验收） | `knowledge-detail-modal.ts` / `knowledge-base-modals.ts` | `nw-kb-modal-*` |
