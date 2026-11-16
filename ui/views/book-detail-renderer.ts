@@ -135,7 +135,7 @@ export class BookDetailRenderer {
         if (book) {
             container.createDiv({
                 text: `基于全书 ${this.deps.formatWordCount(book.wordCount)} 字`,
-                cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-16px'
+                cls: 'nw-kb-detail-caption'
             });
         }
 
@@ -145,7 +145,7 @@ export class BookDetailRenderer {
         if (radarItems.length >= 3) {
             const radarSection = this.createDetailSection(container, '风格雷达图');
             const radarDiv = radarSection.createDiv({
-                cls: 'nw-u-d-flex nw-u-jc-center'
+                cls: 'nw-kb-detail-chart'
             });
             this.renderChart(radarDiv, radarChart(radarItems, { size: 320, title: '写作风格特征' }));
         }
@@ -154,7 +154,7 @@ export class BookDetailRenderer {
         if (sentenceRhythm || paragraphStructure || narrativeStyle) {
             const section = this.createDetailSection(container, '基础统计');
             const grid = section.createDiv({
-                cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax nw-u-gap-12px'
+                cls: 'nw-kb-detail-grid nw-kb-detail-grid--min-160'
             });
             if (sentenceRhythm?.avgSentenceLength !== undefined) {
                 this.addInfoItem(grid, '平均句长', formatDetailNumber(sentenceRhythm.avgSentenceLength, 1, ' 字'));
@@ -181,7 +181,7 @@ export class BookDetailRenderer {
             const section = this.createDetailSection(container, '高频词词云');
             const wordItems = buildWordCloudItems(wordPreference.topWords);
             const wordCloudDiv = section.createDiv({
-                cls: 'nw-u-d-flex nw-u-jc-center'
+                cls: 'nw-kb-detail-chart'
             });
             this.renderChart(wordCloudDiv, wordCloud(wordItems, { width: 500, height: 200, title: '高频词分布' }));
         }
@@ -191,7 +191,7 @@ export class BookDetailRenderer {
             const section = this.createDetailSection(container, '修辞手法');
             const barData = buildRhetoricBarData(rhetoric);
             const barDiv = section.createDiv({
-                cls: 'nw-u-d-flex nw-u-jc-center'
+                cls: 'nw-kb-detail-chart'
             });
             this.renderChart(barDiv, barChart(barData, { width: 500, height: 180, title: '修辞手法统计' }));
         }
@@ -200,28 +200,28 @@ export class BookDetailRenderer {
         if (overallStyle) {
             const section = this.createDetailSection(container, '整体风格');
             const grid = section.createDiv({
-                cls: 'nw-u-d-grid nw-u-grid-auto-fit-200 nw-u-gap-12px'
+                cls: 'nw-kb-detail-grid'
             });
             const styleCard = grid.createDiv({
-                cls: 'nw-u-p-14px nw-u-bg-background-secondary nw-u-brd-8px'
+                cls: 'nw-kb-detail-card--lg'
             });
-            styleCard.createEl('div', { text: '主要文风', cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-4px' });
-            styleCard.createEl('div', { text: overallStyle.primaryStyle, cls: 'nw-u-fs-18px nw-u-fwt-700 nw-u-c-interactive-accent' });
+            styleCard.createEl('div', { text: '主要文风', cls: 'nw-kb-detail-note nw-kb-detail-mb-4' });
+            styleCard.createEl('div', { text: overallStyle.primaryStyle, cls: 'nw-kb-detail-primary-style' });
             if (overallStyle.secondaryStyle) {
-                styleCard.createEl('div', { text: `次要文风: ${overallStyle.secondaryStyle}`, cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-margintop-4px' });
+                styleCard.createEl('div', { text: `次要文风: ${overallStyle.secondaryStyle}`, cls: 'nw-kb-detail-note nw-kb-detail-mt-4' });
             }
-            styleCard.createEl('div', { text: `置信度: ${formatDetailPercent(overallStyle.confidence)}`, cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-margintop-4px' });
+            styleCard.createEl('div', { text: `置信度: ${formatDetailPercent(overallStyle.confidence)}`, cls: 'nw-kb-detail-note nw-kb-detail-mt-4' });
 
             if (overallStyle.styleScores) {
                 const scoresCard = grid.createDiv({
-                    cls: 'nw-u-p-14px nw-u-bg-background-secondary nw-u-brd-8px'
+                    cls: 'nw-kb-detail-card--lg'
                 });
-                scoresCard.createEl('div', { text: '文风评分', cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-8px' });
-                const scoreList = scoresCard.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-4px' });
+                scoresCard.createEl('div', { text: '文风评分', cls: 'nw-kb-detail-note nw-kb-detail-mb-8' });
+                const scoreList = scoresCard.createDiv({ cls: 'nw-kb-detail-stack nw-kb-detail-stack--gap-4' });
                 buildStyleScoreLines(overallStyle.styleScores, score => formatDetailPercent(score)).forEach(line => {
                     scoreList.createEl('div', {
                         text: line,
-                        cls: 'nw-u-fs-12px'
+                        cls: 'nw-kb-detail-fine'
                     });
                 });
             }
@@ -231,19 +231,19 @@ export class BookDetailRenderer {
             const vr = data.vocabularyRichness;
             const section = this.createDetailSection(container, '词汇丰富度');
             const grid = section.createDiv({
-                cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-3 nw-u-gap-12px'
+                cls: 'nw-kb-detail-grid nw-kb-detail-grid--min-140'
             });
             this.addInfoItem(grid, 'TTR', formatDetailNumber(vr.ttr, 3));
             this.addInfoItem(grid, 'MTLD', formatDetailNumber(vr.mtld, 1));
             this.addInfoItem(grid, "Yule's K", formatDetailNumber(vr.yulesK, 3));
             this.addInfoItem(grid, '词汇量', formatDetailCount(vr.vocabularySize));
             const levelItem = grid.createDiv({
-                cls: 'nw-u-p-10px-12px nw-u-bg-background-secondary nw-u-brd-6px'
+                cls: 'nw-kb-detail-card--inset'
             });
-            levelItem.createDiv({ text: '级别', cls: "nw-text-muted-11 nw-u-marginbottom-4px", attr: {} });
+            levelItem.createDiv({ text: '级别', cls: "nw-kb-detail-label-xs nw-kb-detail-mb-4", attr: {} });
             levelItem.createDiv({
                 text: `${vr.level} (${formatDetailNumber(vr.score, 1, '分')})`,
-                cls: 'nw-u-fs-13px nw-u-c-interactive-accent nw-u-fwt-500'
+                cls: 'nw-kb-detail-accent-text'
             });
         }
 
@@ -252,11 +252,11 @@ export class BookDetailRenderer {
             const radarData = buildFiveSensesRadarData(fs);
             if (radarData.length > 0) {
                 const section = this.createDetailSection(container, '五感描写分布');
-                const radarDiv = section.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
+                const radarDiv = section.createDiv({ cls: 'nw-kb-detail-chart' });
                 this.renderChart(radarDiv, radarChart(radarData, { size: 300, title: '五感雷达图' }));
 
                 const statsRow = section.createDiv({
-                    cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-4 nw-u-gap-12px nw-u-margintop-16px'
+                    cls: 'nw-kb-detail-grid nw-kb-detail-grid--min-120 nw-kb-detail-mt-16'
                 });
                 this.addInfoItem(statsRow, '平衡度', formatDetailNumber(fs.balanceScore, 1, '分'));
                 this.addInfoItem(statsRow, '级别', fs.level);
@@ -268,7 +268,7 @@ export class BookDetailRenderer {
             const std = data.sentenceRhythm.sentenceTypeDistribution;
             const donutData = buildSentenceTypeDonutData(std);
             const section = this.createDetailSection(container, '句式类型分布');
-            const chartDiv = section.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
+            const chartDiv = section.createDiv({ cls: 'nw-kb-detail-chart' });
             this.renderChart(chartDiv, donutChart(donutData, { size: 260, title: '句式类型' }));
         }
 
@@ -276,7 +276,7 @@ export class BookDetailRenderer {
             const sld = data.sentenceRhythm.lengthDistribution;
             const barData = buildSentenceLengthBarData(sld);
             const section = this.createDetailSection(container, '句长分布');
-            const chartDiv = section.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
+            const chartDiv = section.createDiv({ cls: 'nw-kb-detail-chart' });
             this.renderChart(chartDiv, barChart(barData, { width: 400, height: 180, title: '句长分布' }));
         }
 
@@ -284,7 +284,7 @@ export class BookDetailRenderer {
             const pld = data.paragraphStructure.lengthDistribution;
             const barData = buildParagraphLengthBarData(pld);
             const section = this.createDetailSection(container, '段落长度分布');
-            const chartDiv = section.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
+            const chartDiv = section.createDiv({ cls: 'nw-kb-detail-chart' });
             this.renderChart(chartDiv, barChart(barData, { width: 400, height: 180, title: '段落长度' }));
         }
     }
@@ -307,7 +307,7 @@ export class BookDetailRenderer {
         if (book) {
             container.createDiv({
                 text: `基于全书 ${this.deps.formatWordCount(book.wordCount)} 字`,
-                cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-16px'
+                cls: 'nw-kb-detail-caption'
             });
         }
 
@@ -316,7 +316,7 @@ export class BookDetailRenderer {
         if (data.stats) {
             const statsSection = this.createDetailSection(container, '节奏统计摘要');
             const statsGrid = statsSection.createDiv({
-                cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-4 nw-u-gap-12px'
+                cls: 'nw-kb-detail-grid nw-kb-detail-grid--min-120'
             });
             this.addInfoItem(statsGrid, '平均节奏', data.stats.avgRhythm != null ? data.stats.avgRhythm.toFixed(2) : '-');
             this.addInfoItem(statsGrid, '高潮点', data.stats.climaxCount != null ? String(data.stats.climaxCount) : '-');
@@ -338,7 +338,7 @@ export class BookDetailRenderer {
                 smooth: true
             }];
             const lineDiv = section.createDiv({
-                cls: 'nw-u-d-flex nw-u-jc-center'
+                cls: 'nw-kb-detail-chart'
             });
             this.renderChart(lineDiv, lineChart(emotionSeries, { width: 600, height: 200, title: '情绪强度变化', xAxisLabel: '章节', yAxisLabel: '强度(%)' }));
 
@@ -360,7 +360,7 @@ export class BookDetailRenderer {
             }));
             const barSection = this.createDetailSection(container, '情绪类型分布');
             const barDiv = barSection.createDiv({
-                cls: 'nw-u-d-flex nw-u-jc-center'
+                cls: 'nw-kb-detail-chart'
             });
             this.renderChart(barDiv, barChart(barData, { width: 400, height: 160, title: '情绪类型统计' }));
         }
@@ -395,7 +395,7 @@ export class BookDetailRenderer {
                 }
             ];
             const lineDiv = section.createDiv({
-                cls: 'nw-u-d-flex nw-u-jc-center'
+                cls: 'nw-kb-detail-chart'
             });
             this.renderChart(lineDiv, lineChart(series, { width: 600, height: 220, title: '章节节奏多维评分', xAxisLabel: '章节', yAxisLabel: '评分(%)' }));
         }
@@ -410,7 +410,7 @@ export class BookDetailRenderer {
                 category: p.type
             }));
             const scatterDiv = section.createDiv({
-                cls: 'nw-u-d-flex nw-u-jc-center'
+                cls: 'nw-kb-detail-chart'
             });
             new SmartChart(scatterDiv, {
                 data: scatterPoints,
@@ -434,7 +434,7 @@ export class BookDetailRenderer {
                 category: p.category
             }));
             const scatterDiv = section.createDiv({
-                cls: 'nw-u-d-flex nw-u-jc-center'
+                cls: 'nw-kb-detail-chart'
             });
             new SmartChart(scatterDiv, {
                 data: scatterPoints,
@@ -448,30 +448,30 @@ export class BookDetailRenderer {
 
             // 详情卡片
             const grid = section.createDiv({
-                cls: 'nw-u-margintop-12px nw-u-d-grid nw-u-gtc-repeat-auto-fill-minma nw-u-gap-8px'
+                cls: 'nw-kb-detail-grid nw-kb-detail-grid--fill-220 nw-kb-detail-grid--tight nw-kb-detail-mt-12'
             });
             data.coolPoints.forEach(p => {
                 const card = grid.createDiv({
-                    cls: 'nw-u-p-10px nw-u-bg-background-secondary nw-u-brd-6px nw-u-fs-12px'
+                    cls: 'nw-kb-detail-peak-tile'
                 });
                 card.createEl('div', {
                     text: `${p.category || '未分类'} · 位置 ${formatDetailNumber(p.x, 1, '%')}`,
-                    cls: 'nw-u-fwt-500 nw-u-c-interactive-accent nw-u-marginbottom-4px'
+                    cls: 'nw-kb-detail-peak-title'
                 });
-                card.createEl('div', { text: p.label, cls: 'nw-u-c-text-muted' });
+                card.createEl('div', { text: p.label, cls: 'nw-kb-detail-muted' });
             });
         }
 
         // 剧情阶段
         if (data.plotStages && data.plotStages.length > 0) {
             const section = this.createDetailSection(container, '剧情阶段');
-            const wrap = section.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-6px' });
+            const wrap = section.createDiv({ cls: 'nw-kb-detail-stack nw-kb-detail-stack--gap-6' });
             data.plotStages.forEach(p => {
                 wrap.createDiv({
-                    cls: 'nw-u-d-flex nw-u-gap-12px nw-u-ai-center nw-u-p-8px-12px nw-u-bg-background-secondary nw-u-brd-6px'
+                    cls: 'nw-kb-detail-phase'
                 }).createEl('div', {
                     text: `${p.name} (${p.start}% - ${p.end}%)`,
-                    cls: 'nw-u-fs-13px nw-u-fwt-500'
+                    cls: 'nw-kb-detail-text--strong'
                 });
             });
         }
@@ -486,30 +486,30 @@ export class BookDetailRenderer {
         if (data.hookAnalysis) {
             const ha = data.hookAnalysis;
             const section = this.createDetailSection(container, '钩子分析');
-            const wrap = section.createDiv({ cls: 'nw-u-d-flex nw-u-gap-24px nw-u-fwr-wrap nw-u-ai-flex-start' });
-            const chartWrap = wrap.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-200px' });
+            const wrap = section.createDiv({ cls: 'nw-kb-detail-split' });
+            const chartWrap = wrap.createDiv({ cls: 'nw-kb-detail-chart-column' });
             const typeDistArr = Object.entries(ha.typeDistribution || {}).map(([k, v]) => ({ label: k, value: v }));
             this.renderChart(chartWrap, donutChart(typeDistArr, { size: 240, title: '钩子类型分布' }));
 
-            const infoWrap = wrap.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-180px nw-u-d-flex nw-u-fd-column nw-u-gap-10px' });
+            const infoWrap = wrap.createDiv({ cls: 'nw-kb-detail-side-column' });
             infoWrap.createDiv({
                 text: `钩子率: ${formatDetailNumber(typeof ha.hookRate === 'number' ? ha.hookRate * 100 : undefined, 1, '%')}`,
-                cls: 'nw-u-fs-20px nw-u-fwt-700 nw-u-c-interactive-accent'
+                cls: 'nw-kb-detail-figure'
             });
             infoWrap.createDiv({
                 text: `无钩子章节: ${ha.noHookChapters?.length ?? 0} 章`,
-                cls: 'nw-u-fs-13px nw-u-c-text-muted'
+                cls: 'nw-kb-detail-text'
             });
             infoWrap.createDiv({
                 text: `平均强度: ${formatDetailNumber(ha.avgIntensity, 2)}`,
-                cls: 'nw-u-fs-13px nw-u-c-text-muted'
+                cls: 'nw-kb-detail-text'
             });
-            const distWrap = infoWrap.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-4px' });
+            const distWrap = infoWrap.createDiv({ cls: 'nw-kb-detail-stack nw-kb-detail-stack--gap-4' });
             if (ha.typeDistribution) {
                 Object.entries(ha.typeDistribution).forEach(([type, count]) => {
                     distWrap.createDiv({
                         text: `${type}: ${count}`,
-                        cls: 'nw-u-fs-12px nw-u-c-text-normal nw-u-p-2px-8px nw-u-bg-background-secondary nw-u-brd-4px'
+                        cls: 'nw-kb-detail-chip--plain'
                     });
                 });
             }
@@ -519,7 +519,7 @@ export class BookDetailRenderer {
             const tc = data.tensionCurve;
             const section = this.createDetailSection(container, '张力曲线分析');
             const statsRow = section.createDiv({
-                cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-4 nw-u-gap-12px nw-u-marginbottom-16px'
+                cls: 'nw-kb-detail-grid nw-kb-detail-grid--min-120 nw-kb-detail-mb-16'
             });
             this.addInfoItem(statsRow, '平均张力', formatDetailNumber(tc.overallTensionAvg, 3));
             this.addInfoItem(statsRow, '张力标准差', formatDetailNumber(tc.overallTensionStd, 3));
@@ -527,7 +527,7 @@ export class BookDetailRenderer {
 
             if (tc.peaks && tc.valleys) {
                 const linePoints = sortTensionPoints(tc.peaks, tc.valleys);
-                const lineDiv = section.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
+                const lineDiv = section.createDiv({ cls: 'nw-kb-detail-chart' });
                 this.renderChart(lineDiv, lineChart([{ name: '张力', data: linePoints, showPoints: true }], { width: 600, height: 200, title: '张力峰谷' }));
             }
         }
@@ -537,7 +537,7 @@ export class BookDetailRenderer {
             const radarData = buildNrcEmotionRadarData(ne);
             if (radarData.length >= 3) {
                 const section = this.createDetailSection(container, 'NRC 情绪分布');
-                const radarDiv = section.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
+                const radarDiv = section.createDiv({ cls: 'nw-kb-detail-chart' });
                 this.renderChart(radarDiv, radarChart(radarData, { size: 320, title: 'NRC 八维情绪雷达' }));
             }
         }
@@ -546,20 +546,20 @@ export class BookDetailRenderer {
             const ea = data.emotionArc;
             const section = this.createDetailSection(container, '情绪弧线');
             const card = section.createDiv({
-                cls: 'nw-u-p-16px nw-u-bg-background-secondary nw-u-brd-8px'
+                cls: 'nw-kb-detail-card--xl'
             });
             card.createDiv({
                 text: `弧线类型: ${resolveEmotionArcLabel(ea.arcType)}`,
-                cls: 'nw-u-fs-16px nw-u-fwt-600 nw-u-c-interactive-accent nw-u-marginbottom-8px'
+                cls: 'nw-kb-detail-headline nw-kb-detail-headline--lg'
             });
             card.createDiv({
                 text: `置信度: ${formatDetailPercent(ea.confidence)}`,
-                cls: 'nw-u-fs-13px nw-u-c-text-muted'
+                cls: 'nw-kb-detail-text'
             });
             if (ea.description) {
                 card.createDiv({
                     text: ea.description,
-                    cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-margintop-8px'
+                    cls: 'nw-kb-detail-note nw-kb-detail-mt-8'
                 });
             }
         }
@@ -583,7 +583,7 @@ export class BookDetailRenderer {
         if (book) {
             container.createDiv({
                 text: `基于全书 ${this.deps.formatWordCount(book.wordCount)} 字`,
-                cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-16px'
+                cls: 'nw-kb-detail-caption'
             });
         }
 
@@ -594,7 +594,7 @@ export class BookDetailRenderer {
             const section = this.createDetailSection(container, '结构类型');
             section.createDiv({
                 text: structureType,
-                cls: 'nw-u-p-14px nw-u-bg-background-secondary nw-u-brd-8px nw-u-fs-14px nw-u-fwt-500'
+                cls: 'nw-kb-detail-card--lg nw-kb-detail-heading--light'
             });
         }
 
@@ -602,7 +602,7 @@ export class BookDetailRenderer {
         if (stats) {
             const section = this.createDetailSection(container, '结构统计');
             const grid = section.createDiv({
-                cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-4 nw-u-gap-12px'
+                cls: 'nw-kb-detail-grid nw-kb-detail-grid--min-120'
             });
             this.addInfoItem(grid, '卷数', stats.volumeCount.toString());
             this.addInfoItem(grid, '章节数', stats.chapterCount.toString());
@@ -623,28 +623,29 @@ export class BookDetailRenderer {
             
             const timelineEvents = buildTimelineEvents(qcchSegments);
             const timelineDiv = section.createDiv({
-                cls: 'nw-u-d-flex nw-u-jc-center'
+                cls: 'nw-kb-detail-chart'
             });
             this.renderChart(timelineDiv, timelineChart(timelineEvents, { width: 500, height: 100, title: '起承转合时间轴' }));
 
-            const list = section.createDiv({ cls: 'nw-u-margintop-12px nw-u-d-flex nw-u-fd-column nw-u-gap-8px' });
+            const list = section.createDiv({ cls: 'nw-kb-detail-stack nw-kb-detail-mt-12' });
             qcchSegments.forEach(seg => {
                 const row = list.createDiv({
-                    cls: 'nw-u-d-flex nw-u-gap-12px nw-u-ai-center nw-u-p-10px nw-u-bg-background-secondary nw-u-brd-6px'
+                    cls: 'nw-kb-detail-tile-row'
                 });
                 const typeEl = row.createEl('div', {
                     text: seg.type,
-                    attr: { style: `min-width:40px;padding:4px 12px;background:${qcchColors[seg.type] || '#6b7280'};color:#fff;border-radius:4px;font-size:13px;font-weight:500;text-align:center;` }
+                    cls: 'nw-kb-detail-qcch-badge'
                 });
-                const content = row.createDiv({ cls: 'nw-u-flex-1' });
+                typeEl.style.setProperty('--nw-detail-tone', qcchColors[seg.type] || '#6b7280');
+                const content = row.createDiv({ cls: 'nw-kb-detail-fill' });
                 content.createEl('div', {
                     text: `位置: ${formatDetailPercent(seg.startPosition)} - ${formatDetailPercent(seg.endPosition)}`,
-                    cls: 'nw-u-fs-13px nw-u-fwt-500 nw-u-marginbottom-2px'
+                    cls: 'nw-kb-detail-text--strong nw-kb-detail-mb-2'
                 });
                 if (seg.chapterRange && seg.chapterRange.length === 2) {
                     content.createEl('div', {
                         text: `章节范围: 第${seg.chapterRange[0]+1}-${seg.chapterRange[1]+1}章`,
-                        cls: 'nw-u-fs-12px nw-u-c-text-muted'
+                        cls: 'nw-kb-detail-note'
                     });
                 }
             });
@@ -663,18 +664,19 @@ export class BookDetailRenderer {
                 const lineData = threeLineStructure[key as keyof typeof threeLineStructure] as { description: string; keyNodes?: Array<{ position: number; description: string }> };
                 if (!lineData) return;
                 
-                const card = section.createDiv({
-                    attr: { style: `border-left:3px solid ${color};padding:12px;background:var(--background-secondary);border-radius:0 6px 6px 0;margin-bottom:8px;` }
-                });
-                card.createDiv({ text: lineData.description, cls: 'nw-u-fs-12px nw-u-c-text-normal nw-u-lh-1-5' });
+                const card = section.createDiv({ cls: 'nw-kb-detail-line-card' });
+                card.style.setProperty('--nw-detail-tone', color);
+                card.createDiv({ text: lineData.description, cls: 'nw-kb-detail-prose' });
                 
                 if (lineData.keyNodes && lineData.keyNodes.length > 0) {
-                    const nodes = card.createDiv({ cls: 'nw-u-margintop-8px nw-u-d-flex nw-u-fwr-gap-4px' });
+                    const nodes = card.createDiv({ cls: 'nw-kb-detail-tag-row nw-kb-detail-mt-8' });
                     lineData.keyNodes.forEach(node => {
-                        nodes.createSpan({
+                        const nodeChip = nodes.createSpan({
                             text: `${(node.position * 100).toFixed(0)}%`,
-                            attr: { style: `padding:2px 8px;background:${color}20;color:${color};border-radius:4px;font-size:11px;margin-right:4px;margin-bottom:4px;display:inline-block;` }
+                            cls: 'nw-kb-detail-line-node'
                         });
+                        nodeChip.style.setProperty('--nw-detail-tone', color);
+                        nodeChip.style.setProperty('--nw-detail-tone-bg', `${color}20`);
                     });
                 }
             });
@@ -685,13 +687,13 @@ export class BookDetailRenderer {
             const chapters = rhythmUnits.filter(u => u.level === 'chapter').slice(0, 10);
             if (chapters.length > 0) {
                 const section = this.createDetailSection(container, '章节列表（前10章）');
-                const list = section.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-6px' });
+                const list = section.createDiv({ cls: 'nw-kb-detail-stack nw-kb-detail-stack--gap-6' });
                 chapters.forEach(ch => {
                     const row = list.createDiv({
-                        cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center nw-u-p-8px-12px nw-u-bg-background-secondary nw-u-brd-6px'
+                        cls: 'nw-kb-detail-tile-row--split'
                     });
-                    row.createSpan({ text: ch.title, cls: 'nw-u-fs-13px nw-u-fwt-500' });
-                    row.createSpan({ text: `${formatDetailCount(ch.wordCount)}字`, cls: 'nw-u-fs-12px nw-u-c-text-muted' });
+                    row.createSpan({ text: ch.title, cls: 'nw-kb-detail-text--strong' });
+                    row.createSpan({ text: `${formatDetailCount(ch.wordCount)}字`, cls: 'nw-kb-detail-note' });
                 });
             }
         }
@@ -1020,14 +1022,14 @@ export class BookDetailRenderer {
         if (book) {
             container.createDiv({
                 text: `基于全书 ${this.deps.formatWordCount(book.wordCount)} 字`,
-                cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-16px'
+                cls: 'nw-kb-detail-caption'
             });
         }
 
         if (data.stats) {
             const section = this.createDetailSection(container, '角色统计');
             const statsGrid = section.createDiv({
-                cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-3 nw-u-gap-12px'
+                cls: 'nw-kb-detail-grid nw-kb-detail-grid--min-140'
             });
             this.addInfoItem(statsGrid, '总角色数', String(data.stats.totalCharacters));
             this.addInfoItem(statsGrid, '主角数', String(data.stats.mainCharacterCount));
@@ -1038,23 +1040,23 @@ export class BookDetailRenderer {
         if (sortedChars.length > 0) {
             const rankSection = this.createDetailSection(container, '角色重要度排行');
             const rankTable = rankSection.createDiv({
-                cls: 'nw-u-ovx-auto nw-u-b-1px-solid-background-m nw-u-brd-6px'
+                cls: 'nw-kb-detail-table-wrap nw-kb-detail-table-wrap--x'
             });
             const table = rankTable.createEl('table', {
-                cls: 'nw-u-w-100 nw-u-bordercollapse-collapse nw-u-fs-12px'
+                cls: 'nw-kb-detail-table'
             });
             const thead = table.createEl('thead');
-            const headRow = thead.createEl('tr', { cls: 'nw-u-bg-background-secondary' });
+            const headRow = thead.createEl('tr', { cls: 'nw-kb-detail-surface' });
             ['排名', '姓名', '分级', '综合', '出场', '对话', '剧情', '关系', '视角'].forEach(h => {
                 headRow.createEl('th', {
                     text: h,
-                    cls: 'nw-u-p-8px-10px nw-u-ta-left nw-u-fwt-600 nw-u-bb-1px-solid-background-m'
+                    cls: 'nw-kb-detail-th'
                 });
             });
             const tbody = table.createEl('tbody');
             sortedChars.slice(0, 10).forEach((char, idx) => {
                 const row = tbody.createEl('tr', {
-                    attr: { style: idx % 2 === 0 ? '' : 'background:var(--background-secondary-alt);' }
+                    cls: idx % 2 === 0 ? undefined : 'nw-kb-detail-tr--alt'
                 });
                 const imp = char.importance;
                 const cells = [
@@ -1071,7 +1073,7 @@ export class BookDetailRenderer {
                 cells.forEach((c, i) => {
                     row.createEl('td', {
                         text: String(c),
-                        attr: { style: 'padding:6px 10px;border-bottom:1px solid var(--background-modifier-border);' + (i === 1 ? 'font-weight:500;' : '') }
+                        cls: i === 1 ? 'nw-kb-detail-td nw-kb-detail-td--name' : 'nw-kb-detail-td'
                     });
                 });
             });
@@ -1090,7 +1092,7 @@ export class BookDetailRenderer {
                     { label: '视角占比', value: topChar.importance.perspectiveRatio },
                 ];
                 const radarDiv = radarSection.createDiv({
-                    cls: 'nw-u-d-flex nw-u-jc-center'
+                    cls: 'nw-kb-detail-chart'
                 });
                 this.renderChart(radarDiv, radarChart(radarData, { size: 320, title: '角色重要性维度' }));
             }
@@ -1099,7 +1101,7 @@ export class BookDetailRenderer {
         // 角色卡片列表
         const mainSection = this.createDetailSection(container, '角色列表');
         const grid = mainSection.createDiv({
-            cls: 'nw-u-d-grid nw-u-grid-auto-fill-300 nw-u-gap-12px'
+            cls: 'nw-kb-detail-grid nw-kb-detail-grid--fill-300'
         });
 
         sortedChars.forEach((char, idx) => {
@@ -1107,28 +1109,28 @@ export class BookDetailRenderer {
             const isExpanded = this.deps.getExpandedItems()[key] ?? false;
 
             const card = grid.createDiv({
-                cls: 'nw-u-b-1px-solid-background-m nw-u-brd-8px nw-u-ov-hidden nw-u-bg-background-primary'
+                cls: 'nw-kb-detail-char-card'
             });
 
             const header = card.createDiv({
-                cls: 'nw-u-p-12px nw-u-cur-pointer nw-u-d-flex nw-u-ai-center nw-u-gap-10px'
+                cls: 'nw-kb-detail-char-head'
             });
 
             const avatar = header.createDiv({
                 text: char.name.charAt(0),
-                cls: "nw-flex-center nw-flex-shrink-0 nw-u-w-40px nw-u-h-40px nw-u-brd-50 nw-u-bg-interactive-accent nw-u-c-text-on-accent nw-u-fs-16px nw-u-fwt-600", attr: {}
+                cls: "nw-kb-detail-avatar nw-kb-detail-avatar--accent", attr: {}
             });
             void avatar;
 
-            const info = header.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-0' });
-            info.createDiv({ text: char.name, cls: 'nw-u-fs-14px nw-u-fwt-500 nw-u-marginbottom-2px' });
+            const info = header.createDiv({ cls: 'nw-kb-detail-grow' });
+            info.createDiv({ text: char.name, cls: 'nw-kb-detail-name nw-kb-detail-mb-2' });
             const roleInfo = [char.role || '未知角色', char.gender || ''];
             if (char.importance?.tier) roleInfo.push(this.getTierLabel(char.importance.tier));
-            info.createDiv({ text: joinRoleParts(roleInfo), cls: 'nw-text-sm-muted' });
+            info.createDiv({ text: joinRoleParts(roleInfo), cls: 'nw-kb-detail-note' });
 
             const toggle = header.createSpan({
                 text: isExpanded ? '▼' : '▶',
-                cls: 'nw-text-sm-muted nw-flex-shrink-0'
+                cls: 'nw-kb-detail-meta'
             });
             void toggle;
 
@@ -1139,45 +1141,44 @@ export class BookDetailRenderer {
 
             // 标签显示（性格+能力）
             const tagsEl = card.createDiv({
-                cls: "nw-flex-wrap-sm nw-u-p-0-12px-12px", attr: {}
+                cls: "nw-kb-detail-tag-row nw-kb-detail-tag-row--padded", attr: {}
             });
             const allTags = [...(char.personality || []), ...(char.abilities || [])];
             allTags.slice(0, 4).forEach(tag => {
                 tagsEl.createSpan({
                     text: tag,
-                    cls: 'nw-u-p-2px-8px nw-u-fs-11px nw-u-bg-background-secondary nw-u-c-text-muted nw-u-brd-10px'
+                    cls: 'nw-kb-detail-chip'
                 });
             });
 
             // 角色弧光进度条
             if (char.characterArc) {
                 const arcBar = card.createDiv({
-                    cls: 'nw-u-p-0-12px-10px nw-u-d-flex nw-u-ai-center nw-u-gap-8px'
+                    cls: 'nw-kb-detail-arc-bar'
                 });
                 arcBar.createSpan({
                     text: this.getArcTypeLabel(char.characterArc.transformationType),
-                    cls: "nw-flex-shrink-0 nw-u-fs-11px nw-u-p-2px-6px nw-u-bg-accent-soft nw-u-c-interactive-accent nw-u-brd-4px", attr: {}
+                    cls: "nw-kb-detail-chip--accent", attr: {}
                 });
                 const barBg = arcBar.createDiv({
-                    cls: 'nw-u-flex-1 nw-u-h-6px nw-u-bg-background-secondary nw-u-brd-3px nw-u-ov-hidden'
+                    cls: 'nw-kb-detail-meter nw-kb-detail-meter--grow'
                 });
-                barBg.createDiv({
-                    attr: { style: `height:100%;width:${char.characterArc.completeness}%;background:var(--interactive-accent);border-radius:3px;` }
-                });
+                const arcFill = barBg.createDiv({ cls: 'nw-kb-detail-meter-fill' });
+                arcFill.style.setProperty('--nw-progress', `${char.characterArc.completeness}%`);
                 arcBar.createSpan({
                     text: `${char.characterArc.completeness}%`,
-                    cls: 'nw-text-muted-11 nw-flex-shrink-0'
+                    cls: 'nw-kb-detail-arc-percent'
                 });
             }
 
             if (isExpanded) {
                 const body = card.createDiv({
-                    cls: 'nw-u-p-12px nw-u-bt-1px-solid-background-m nw-u-bg-background-secondary'
+                    cls: 'nw-kb-detail-char-body'
                 });
 
                 // 基础统计
                 const statsRow = body.createDiv({
-                    cls: 'nw-u-d-grid nw-u-gtc-repeat-4-1fr nw-u-gap-8px nw-u-marginbottom-12px'
+                    cls: 'nw-kb-detail-grid nw-kb-detail-grid--cols-4 nw-kb-detail-grid--tight nw-kb-detail-mb-12'
                 });
                 const quickStats = [
                     { label: '出场', value: char.appearanceCount ?? '-' },
@@ -1187,80 +1188,80 @@ export class BookDetailRenderer {
                 ];
                 quickStats.forEach(s => {
                     const item = statsRow.createDiv({
-                        cls: 'nw-u-ta-center nw-u-p-6px nw-u-bg-background-primary nw-u-brd-4px'
+                        cls: 'nw-kb-detail-stat--mini'
                     });
-                    item.createDiv({ text: String(s.value), cls: 'nw-u-fs-14px nw-u-fwt-600' });
-                    item.createDiv({ text: s.label, cls: 'nw-u-fs-10px nw-u-c-text-muted' });
+                    item.createDiv({ text: String(s.value), cls: 'nw-kb-detail-heading' });
+                    item.createDiv({ text: s.label, cls: 'nw-kb-detail-stat-label--mini' });
                 });
 
                 // 性格特点
                 if (char.personality && char.personality.length > 0) {
-                    body.createDiv({ text: '🏷️ 性格特点', cls: "nw-text-sm-muted nw-u-marginbottom-6px nw-u-fwt-500", attr: {} });
-                    const tagsWrap = body.createDiv({ cls: "nw-flex-wrap-sm nw-u-marginbottom-12px", attr: {} });
+                    body.createDiv({ text: '🏷️ 性格特点', cls: "nw-kb-detail-subheading", attr: {} });
+                    const tagsWrap = body.createDiv({ cls: "nw-kb-detail-tag-row nw-kb-detail-mb-12", attr: {} });
                     char.personality.forEach(tag => {
                         tagsWrap.createSpan({
                             text: tag,
-                            cls: 'nw-u-p-2px-8px nw-u-fs-11px nw-u-bg-background-primary nw-u-c-text-normal nw-u-brd-10px'
+                            cls: 'nw-kb-detail-chip nw-kb-detail-chip--outline'
                         });
                     });
                 }
 
                 // 能力特点
                 if (char.abilities && char.abilities.length > 0) {
-                    body.createDiv({ text: '🛡️ 能力特点', cls: "nw-text-sm-muted nw-u-marginbottom-6px nw-u-fwt-500", attr: {} });
-                    const tagsWrap = body.createDiv({ cls: "nw-flex-wrap-sm nw-u-marginbottom-12px", attr: {} });
+                    body.createDiv({ text: '🛡️ 能力特点', cls: "nw-kb-detail-subheading", attr: {} });
+                    const tagsWrap = body.createDiv({ cls: "nw-kb-detail-tag-row nw-kb-detail-mb-12", attr: {} });
                     char.abilities.forEach(tag => {
                         tagsWrap.createSpan({
                             text: tag,
-                            cls: 'nw-u-p-2px-8px nw-u-fs-11px nw-u-bg-background-primary nw-u-c-text-normal nw-u-brd-10px'
+                            cls: 'nw-kb-detail-chip nw-kb-detail-chip--outline'
                         });
                     });
                 }
 
                 // 角色弧光详情
                 if (char.characterArc) {
-                    body.createDiv({ text: '⚡ 角色弧光', cls: "nw-text-sm-muted nw-u-marginbottom-6px nw-u-fwt-500", attr: {} });
+                    body.createDiv({ text: '⚡ 角色弧光', cls: "nw-kb-detail-subheading", attr: {} });
                     const arcInfo = body.createDiv({
-                        cls: 'nw-u-p-8px nw-u-bg-background-primary nw-u-brd-4px nw-u-marginbottom-12px'
+                        cls: 'nw-kb-detail-arc-info'
                     });
                     arcInfo.createDiv({
                         text: `转变类型：${this.getArcTypeLabel(char.characterArc.transformationType)}`,
-                        cls: 'nw-u-fs-12px nw-u-marginbottom-4px'
+                        cls: 'nw-kb-detail-fine nw-kb-detail-mb-4'
                     });
                     arcInfo.createDiv({
                         text: `弧光完整度：${char.characterArc.completeness}%`,
-                        cls: 'nw-u-fs-12px nw-u-marginbottom-4px'
+                        cls: 'nw-kb-detail-fine nw-kb-detail-mb-4'
                     });
                     if (char.characterArc.initialState?.goals && char.characterArc.initialState.goals.length > 0) {
                         const goalText = char.characterArc.initialState.goals[0];
                         arcInfo.createDiv({
                             text: `初始目标：${goalText.length > 40 ? goalText.substring(0, 40) + '...' : goalText}`,
-                            cls: 'nw-u-fs-12px'
+                            cls: 'nw-kb-detail-fine'
                         });
                     }
 
                     // 成长节点
                     if (char.characterArc.growthNodes && char.characterArc.growthNodes.length > 0) {
-                        body.createDiv({ text: '📈 成长节点', cls: "nw-text-sm-muted nw-u-marginbottom-6px nw-u-fwt-500", attr: {} });
+                        body.createDiv({ text: '📈 成长节点', cls: "nw-kb-detail-subheading", attr: {} });
                         const nodesList = body.createDiv({
-                            cls: 'nw-u-marginbottom-12px nw-u-maxh-150px nw-u-ovy-auto'
+                            cls: 'nw-kb-detail-node-list'
                         });
                         char.characterArc.growthNodes.slice(0, 5).forEach(node => {
                             const nodeItem = nodesList.createDiv({
-                                cls: 'nw-u-p-6px-8px nw-u-bg-background-primary nw-u-brd-4px nw-u-marginbottom-4px nw-u-fs-11px'
+                                cls: 'nw-kb-detail-node'
                             });
-                            const topRow = nodeItem.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-marginbottom-2px' });
+                            const topRow = nodeItem.createDiv({ cls: 'nw-kb-detail-node-row' });
                             topRow.createSpan({
                                 text: `[${node.changeType}]`,
-                                cls: 'nw-u-c-interactive-accent nw-u-fwt-500'
+                                cls: 'nw-kb-detail-accent-strong'
                             });
                             topRow.createSpan({
                                 text: `${(node.position * 100).toFixed(0)}%`,
-                                cls: 'nw-u-c-text-muted'
+                                cls: 'nw-kb-detail-muted'
                             });
                             nodeItem.createDiv({
                                 text: node.event.length > 50 ? node.event.substring(0, 50) + '...' : node.event,
-                                cls: 'nw-u-c-text-normal nw-u-lh-1-4'
+                                cls: 'nw-kb-detail-event-text'
                             });
                         });
                     }
@@ -1271,7 +1272,7 @@ export class BookDetailRenderer {
         if (data.relationDetails && data.relationDetails.length > 0) {
             const relSection = this.createDetailSection(container, '关系深度分析');
             const relGrid = relSection.createDiv({
-                cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fill-minma-3 nw-u-gap-10px'
+                cls: 'nw-kb-detail-grid nw-kb-detail-grid--fill-280 nw-kb-detail-grid--snug'
             });
             data.relationDetails.slice(0, 8).forEach((rd, idx) => {
                 const relKey = `rel_detail_${idx}`;
@@ -1285,23 +1286,23 @@ export class BookDetailRenderer {
                     data.allCharacters?.find(c => c.name === rd.toId)?.name || rd.toId;
 
                 const card = relGrid.createDiv({
-                    cls: 'nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-ov-hidden'
+                    cls: 'nw-kb-detail-card--outlined'
                 });
                 const header = card.createDiv({
-                    cls: 'nw-u-p-10px nw-u-cur-pointer nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-bg-background-secondary'
+                    cls: 'nw-kb-detail-relation-head'
                 });
                 header.createDiv({
                     text: `${fromName} ↔ ${toName}`,
-                    cls: "nw-ellipsis nw-u-flex-1 nw-u-fs-13px nw-u-fwt-500 nw-u-minw-0", attr: {}
+                    cls: "nw-kb-detail-relation-name", attr: {}
                 });
                 const strengthBadge = header.createSpan({
                     text: `${rd.strength}%`,
-                    cls: "nw-flex-shrink-0 nw-u-p-2px-6px nw-u-fs-10px nw-u-bg-interactive-accent nw-u-c-text-on-accent nw-u-brd-4px", attr: {}
+                    cls: "nw-kb-detail-chip--solid", attr: {}
                 });
                 void strengthBadge;
                 header.createSpan({
                     text: isExpanded ? '▼' : '▶',
-                    cls: "nw-flex-shrink-0 nw-u-fs-10px nw-u-c-text-muted", attr: {}
+                    cls: "nw-kb-detail-toggle nw-kb-detail-toggle--fixed", attr: {}
                 });
                 header.addEventListener('click', () => {
                     this.deps.getExpandedItems()[relKey] = !isExpanded;
@@ -1310,28 +1311,28 @@ export class BookDetailRenderer {
 
                 card.createDiv({
                     text: rd.type,
-                    cls: "nw-text-muted-11 nw-u-p-4px-10px nw-u-bg-background-primary", attr: {}
+                    cls: "nw-kb-detail-relation-type", attr: {}
                 });
 
                 if (isExpanded) {
                     const body = card.createDiv({
-                        cls: 'nw-u-p-10px nw-u-bt-1px-solid-background-m nw-u-fs-12px'
+                        cls: 'nw-kb-detail-relation-body'
                     });
                     if (rd.history && rd.history.length > 0) {
-                        body.createDiv({ text: '关系变化', cls: 'nw-u-fwt-500 nw-u-marginbottom-6px nw-u-c-text-muted' });
+                        body.createDiv({ text: '关系变化', cls: 'nw-kb-detail-muted-strong nw-kb-detail-mb-6' });
                         rd.history.forEach(h => {
                             body.createDiv({
                                 text: `${(h.position * 100).toFixed(0)}%：${h.fromType} → ${h.toType}`,
-                                cls: 'nw-u-p-4px-0 nw-u-bb-1px-dashed-background-'
+                                cls: 'nw-kb-detail-history-line'
                             });
                         });
                     }
                     if (rd.keyEvents && rd.keyEvents.length > 0) {
-                        body.createDiv({ text: '关键事件', cls: 'nw-u-fwt-500 nw-u-m-8px-0-6px nw-u-c-text-muted' });
+                        body.createDiv({ text: '关键事件', cls: 'nw-kb-detail-muted-strong nw-kb-detail-m-8-0-6' });
                         rd.keyEvents.slice(0, 3).forEach(e => {
                             body.createDiv({
                                 text: e.length > 50 ? e.substring(0, 50) + '...' : e,
-                                cls: 'nw-u-p-4px-0 nw-u-fs-11px nw-u-lh-1-4'
+                                cls: 'nw-kb-detail-event-line'
                             });
                         });
                     }
@@ -1342,63 +1343,57 @@ export class BookDetailRenderer {
         if (data.relationships && data.relationships.length > 0) {
             const netSection = this.createDetailSection(container, `人物关系网络 (${data.relationships.length})`);
             const netTable = netSection.createDiv({
-                cls: 'nw-u-maxh-250px nw-u-ovy-auto nw-u-b-1px-solid-background-m nw-u-brd-6px'
+                cls: 'nw-kb-detail-table-wrap nw-kb-detail-table-wrap--scroll-250'
             });
             const table = netTable.createEl('table', {
-                cls: 'nw-u-w-100 nw-u-bordercollapse-collapse nw-u-fs-12px'
+                cls: 'nw-kb-detail-table'
             });
             const thead = table.createEl('thead');
-            const headRow = thead.createEl('tr', { cls: 'nw-u-pos-sticky nw-u-t-0 nw-u-bg-background-secondary nw-u-z-1' });
+            const headRow = thead.createEl('tr', { cls: 'nw-kb-detail-thead--sticky' });
             ['人物A', '人物B', '关系类型', '强度'].forEach(h => {
                 headRow.createEl('th', {
                     text: h,
-                    cls: 'nw-u-p-8px-10px nw-u-ta-left nw-u-fwt-600 nw-u-bb-1px-solid-background-m'
+                    cls: 'nw-kb-detail-th'
                 });
             });
             const tbody = table.createEl('tbody');
             data.relationships.forEach((rel, idx) => {
                 const row = tbody.createEl('tr', {
-                    attr: { style: idx % 2 === 0 ? '' : 'background:var(--background-secondary-alt);' }
+                    cls: idx % 2 === 0 ? undefined : 'nw-kb-detail-tr--alt'
                 });
                 const fromName = data.mainCharacters?.find(m => m.name === rel.from)?.name ||
                     data.allCharacters?.find(c => c.name === rel.from)?.name || rel.from;
                 const toName = data.mainCharacters?.find(m => m.name === rel.to)?.name ||
                     data.allCharacters?.find(c => c.name === rel.to)?.name || rel.to;
-                row.createEl('td', { text: fromName, cls: 'nw-u-p-6px-10px nw-u-bb-1px-solid-background-m' });
-                row.createEl('td', { text: toName, cls: 'nw-u-p-6px-10px nw-u-bb-1px-solid-background-m' });
-                row.createEl('td', { text: rel.type, cls: 'nw-u-p-6px-10px nw-u-bb-1px-solid-background-m' });
+                row.createEl('td', { text: fromName, cls: 'nw-kb-detail-td' });
+                row.createEl('td', { text: toName, cls: 'nw-kb-detail-td' });
+                row.createEl('td', { text: rel.type, cls: 'nw-kb-detail-td' });
                 const strength = rel.weight ? Math.round(rel.weight * 100) : '-';
-                row.createEl('td', { text: `${strength}${typeof strength === 'number' ? '%' : ''}`, cls: 'nw-u-p-6px-10px nw-u-bb-1px-solid-background-m' });
+                row.createEl('td', { text: `${strength}${typeof strength === 'number' ? '%' : ''}`, cls: 'nw-kb-detail-td' });
             });
         }
 
         if (data.allCharacters && data.allCharacters.length > 0) {
             const allSection = this.createDetailSection(container, `全部角色 (${data.allCharacters.length})`);
             const list = allSection.createDiv({
-                cls: 'nw-u-maxh-300px nw-u-ovy-auto nw-u-b-1px-solid-background-m nw-u-brd-6px'
+                cls: 'nw-kb-detail-table-wrap nw-kb-detail-table-wrap--scroll-300'
             });
-            data.allCharacters.forEach((char, idx) => {
-                const item = list.createDiv({
-                    attr: {
-                        style: `padding:8px 12px;display:flex;align-items:center;gap:10px;${
-                            idx < data.allCharacters!.length - 1 ? 'border-bottom:1px solid var(--background-modifier-border);' : ''
-                        }`
-                    }
-                });
+            data.allCharacters.forEach((char) => {
+                const item = list.createDiv({ cls: 'nw-kb-detail-char-row' });
                 item.createSpan({
                     text: char.name.charAt(0),
-                    cls: "nw-flex-center nw-flex-shrink-0 nw-u-w-24px nw-u-h-24px nw-u-brd-50 nw-u-bg-background-secondary nw-u-fs-11px nw-u-fwt-500", attr: {}
+                    cls: "nw-kb-detail-avatar nw-kb-detail-avatar--sm", attr: {}
                 });
-                item.createSpan({ text: char.name, cls: 'nw-u-fs-13px nw-u-fwt-500 nw-u-flex-1' });
+                item.createSpan({ text: char.name, cls: 'nw-kb-detail-text--strong nw-kb-detail-fill' });
                 const roleParts = [char.role || ''];
                 if (char.tier) roleParts.push(this.getTierLabel(char.tier));
-                item.createSpan({ text: joinRoleParts(roleParts), cls: 'nw-text-sm-muted nw-flex-shrink-0' });
+                item.createSpan({ text: joinRoleParts(roleParts), cls: 'nw-kb-detail-meta' });
                 if (char.tags && char.tags.length > 0) {
-                    const tagsWrap = item.createDiv({ cls: "nw-flex-shrink-0 nw-u-d-flex nw-u-gap-4px", attr: {} });
+                    const tagsWrap = item.createDiv({ cls: "nw-kb-detail-tag-row--inline", attr: {} });
                     char.tags.slice(0, 2).forEach(tag => {
                         tagsWrap.createSpan({
                             text: tag,
-                            cls: 'nw-u-p-1px-6px nw-u-fs-10px nw-u-bg-background-secondary nw-u-c-text-muted nw-u-brd-8px'
+                            cls: 'nw-kb-detail-chip nw-kb-detail-chip--tiny'
                         });
                     });
                 }
@@ -1410,15 +1405,15 @@ export class BookDetailRenderer {
             const isExpanded = this.deps.getExpandedItems()[relKey] ?? false;
             const section = this.createDetailSection(container, '角色关系网络');
             const header = section.createDiv({
-                cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-cur-pointer nw-u-p-8px-0'
+                cls: 'nw-kb-detail-collapse-head'
             });
             header.createSpan({
                 text: isExpanded ? '▼' : '▶',
-                cls: 'nw-u-fs-12px nw-u-c-text-muted'
+                cls: 'nw-kb-detail-note'
             });
             header.createSpan({
                 text: `${data.relations.length} 条关系`,
-                cls: 'nw-u-fs-13px nw-u-c-text-muted'
+                cls: 'nw-kb-detail-text'
             });
             header.addEventListener('click', () => {
                 this.deps.getExpandedItems()[relKey] = !isExpanded;
@@ -1427,29 +1422,29 @@ export class BookDetailRenderer {
 
             if (isExpanded) {
                 const list = section.createDiv({
-                    cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-6px nw-u-maxh-400px nw-u-ovy-auto'
+                    cls: 'nw-kb-detail-stack nw-kb-detail-stack--gap-6 nw-kb-detail-scroll-400'
                 });
                 data.relations.slice(0, 15).forEach(rel => {
                     const relItem = list.createDiv({
-                        cls: 'nw-u-p-8px-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-fs-12px nw-u-d-flex nw-u-ai-center nw-u-gap-10px'
+                        cls: 'nw-kb-detail-relation-row'
                     });
                     relItem.createSpan({
                         text: `${rel.fromId} → ${rel.toId}`,
-                        cls: 'nw-u-fwt-500 nw-u-c-text-normal nw-u-minw-120px'
+                        cls: 'nw-kb-detail-relation-key'
                     });
                     relItem.createSpan({
                         text: rel.type,
-                        cls: 'nw-u-c-interactive-accent nw-u-p-2px-8px nw-u-bg-accent-soft nw-u-brd-4px'
+                        cls: 'nw-kb-detail-chip--accent-inline'
                     });
                     const weightPct = rel.weight != null ? `${(rel.weight * 100).toFixed(0)}%` : '-';
                     relItem.createSpan({
                         text: `权重: ${weightPct}`,
-                        cls: 'nw-u-c-text-muted'
+                        cls: 'nw-kb-detail-muted'
                     });
                     const eventCount = rel.keyEvents?.length ?? 0;
                     relItem.createSpan({
                         text: `事件: ${eventCount}`,
-                        cls: 'nw-u-c-text-muted nw-u-marginleft-auto'
+                        cls: 'nw-kb-detail-muted nw-kb-detail-ml-auto'
                     });
                 });
             }
@@ -1458,7 +1453,7 @@ export class BookDetailRenderer {
         if (data.networkCentrality?.centrality && data.networkCentrality.centrality.length > 0) {
             const section = this.createDetailSection(container, '角色中心度排名 (PageRank)');
             const barData = topCentralityBars(data.networkCentrality.centrality);
-            const chartDiv = section.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
+            const chartDiv = section.createDiv({ cls: 'nw-kb-detail-chart' });
             this.renderChart(chartDiv, barChart(barData, { width: 500, height: 220, horizontal: true, title: 'PageRank 中心度' }));
         }
     }
@@ -1494,7 +1489,7 @@ export class BookDetailRenderer {
         if (book) {
             container.createDiv({
                 text: `基于全书 ${this.deps.formatWordCount(book.wordCount)} 字`,
-                cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-16px'
+                cls: 'nw-kb-detail-caption'
             });
         }
 
@@ -1504,18 +1499,16 @@ export class BookDetailRenderer {
         if (qualityScore) {
             const scoreSection = this.createDetailSection(container, '伏笔质量评分');
             const scoreGrid = scoreSection.createDiv({
-                cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-4 nw-u-gap-10px'
+                cls: 'nw-kb-detail-grid nw-kb-detail-grid--min-120 nw-kb-detail-grid--snug'
             });
             const scoreItems = buildForeshadowQualityItems(qualityScore);
             scoreItems.forEach(item => {
                 const card = scoreGrid.createDiv({
-                    cls: 'nw-u-p-12px nw-u-ta-center nw-u-bg-background-secondary nw-u-brd-6px'
+                    cls: 'nw-kb-detail-stat nw-kb-detail-stat--compact'
                 });
-                card.createDiv({
-                    text: item.value,
-                    attr: { style: `font-size:16px;font-weight:700;color:${item.color};margin-bottom:4px;` }
-                });
-                card.createDiv({ text: item.label, cls: 'nw-text-muted-11' });
+                const valueEl = card.createDiv({ text: item.value, cls: 'nw-kb-detail-stat-value' });
+                valueEl.style.setProperty('--nw-detail-tone', item.color);
+                card.createDiv({ text: item.label, cls: 'nw-kb-detail-label-xs' });
             });
         }
 
@@ -1525,23 +1518,21 @@ export class BookDetailRenderer {
         if (stats) {
             const donutData = buildForeshadowDonutData(stats);
             const donutDiv = statsSection.createDiv({
-                cls: 'nw-u-d-flex nw-u-jc-center nw-u-marginbottom-16px'
+                cls: 'nw-kb-detail-chart nw-kb-detail-mb-16'
             });
             this.renderChart(donutDiv, donutChart(donutData, { size: 280, title: '伏笔回收状态' }));
 
             const statsGrid = statsSection.createDiv({
-                cls: 'nw-u-d-grid nw-u-gtc-repeat-4-1fr nw-u-gap-12px'
+                cls: 'nw-kb-detail-grid nw-kb-detail-grid--cols-4'
             });
             const statItems = buildForeshadowStatItems(stats, v => formatDetailPercent(v));
             statItems.forEach(item => {
                 const card = statsGrid.createDiv({
-                    cls: 'nw-u-p-14px nw-u-ta-center nw-u-bg-background-secondary nw-u-brd-8px'
+                    cls: 'nw-kb-detail-stat nw-kb-detail-stat--lg'
                 });
-                card.createDiv({
-                    text: String(item.value),
-                    attr: { style: `font-size:20px;font-weight:700;color:${item.color};margin-bottom:4px;` }
-                });
-                card.createDiv({ text: item.label, cls: 'nw-text-sm-muted' });
+                const valueEl = card.createDiv({ text: String(item.value), cls: 'nw-kb-detail-stat-value nw-kb-detail-stat-value--lg' });
+                valueEl.style.setProperty('--nw-detail-tone', item.color);
+                card.createDiv({ text: item.label, cls: 'nw-kb-detail-note' });
             });
         }
 
@@ -1549,14 +1540,14 @@ export class BookDetailRenderer {
         if (typeDistribution && Object.keys(typeDistribution).length > 0) {
             const typeSection = this.createDetailSection(container, '类型分布');
             const typeGrid = typeSection.createDiv({
-                cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-5 nw-u-gap-8px'
+                cls: 'nw-kb-detail-grid nw-kb-detail-grid--min-100 nw-kb-detail-grid--tight'
             });
             Object.entries(typeDistribution).forEach(([type, count]) => {
                 typeGrid.createDiv({
-                    cls: 'nw-u-p-10px nw-u-ta-center nw-u-bg-background-secondary nw-u-brd-6px'
+                    cls: 'nw-kb-detail-stat'
                 }).createDiv({
                     text: `${resolveForeshadowTypeLabel(type)}：${count}`,
-                    cls: 'nw-u-fs-12px'
+                    cls: 'nw-kb-detail-fine'
                 });
             });
         }
@@ -1565,7 +1556,7 @@ export class BookDetailRenderer {
         const listSection = this.createDetailSection(container, '伏笔列表');
 
         const filterRow = listSection.createDiv({
-            cls: 'nw-u-d-flex nw-u-gap-8px nw-u-marginbottom-12px nw-u-fwr-wrap'
+            cls: 'nw-kb-detail-filter-row'
         });
         const filterOptions = FORESHADOW_FILTER_OPTIONS;
         const currentFilter = this.deps.getForeshadowFilter() || 'all';
@@ -1584,55 +1575,40 @@ export class BookDetailRenderer {
         const filteredItems = filterForeshadows(foreshadows, currentFilter);
 
         const list = listSection.createDiv({
-            cls: 'nw-u-maxh-400px nw-u-ovy-auto nw-u-b-1px-solid-background-m nw-u-brd-8px'
+            cls: 'nw-kb-detail-list'
         });
 
         filteredItems.forEach((item) => {
-            const itemEl = list.createDiv({
-                attr: {
-                    style: `border-bottom:1px solid var(--background-modifier-border);&:last-child{border-bottom:none;}`
-                }
-            });
+            const itemEl = list.createDiv({ cls: 'nw-kb-detail-list-item' });
 
             const header = itemEl.createDiv({
-                cls: 'nw-u-p-12px nw-u-cur-pointer nw-u-d-flex nw-u-ai-flex-start nw-u-gap-10px'
+                cls: 'nw-kb-detail-fore-item-head'
             });
 
-            const statusIcon = header.createSpan({
+            header.createSpan({
                 text: item.hasResolution ? '✓' : '○',
-                cls: 'nw-flex-center nw-flex-shrink-0',
-                attr: {
-                    style: `width:20px;height:20px;border-radius:50%;font-size:12px;margin-top:1px;${
-                        item.hasResolution ? 'background:rgba(46,204,113,0.15);color:#2ecc71;' : 'background:var(--background-secondary);color:var(--text-muted);'
-                    }`
-                }
+                cls: item.hasResolution ? 'nw-kb-detail-mark nw-kb-detail-mark--done' : 'nw-kb-detail-mark'
             });
-            void statusIcon;
 
-            const content = header.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-0' });
-            content.createDiv({ text: item.name, cls: 'nw-u-fs-13px nw-u-fwt-500 nw-u-marginbottom-4px' });
-            const meta = content.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-ai-center nw-u-fwr-wrap' });
+            const content = header.createDiv({ cls: 'nw-kb-detail-grow' });
+            content.createDiv({ text: item.name, cls: 'nw-kb-detail-text--strong nw-kb-detail-mb-4' });
+            const meta = content.createDiv({ cls: 'nw-kb-detail-chip-row' });
             
             meta.createSpan({
                 text: resolveForeshadowTypeLabel(item.type),
-                cls: 'nw-u-p-2px-8px nw-u-fs-11px nw-u-bg-background-secondary nw-u-brd-10px nw-u-c-text-muted'
+                cls: 'nw-kb-detail-chip'
             });
 
             const importancePct = formatDetailPercent(item.importance);
-            meta.createSpan({
-                text: `重要度 ${importancePct}`,
-                attr: {
-                    style: `padding:2px 8px;font-size:11px;border-radius:10px;${
-                        item.importance >= 0.7 ? 'background:rgba(231,76,60,0.1);color:#e74c3c;' :
-                        item.importance >= 0.4 ? 'background:rgba(245,158,11,0.1);color:#f59e0b;' :
-                        'background:var(--background-secondary);color:var(--text-muted);'
-                    }`
-                }
-            });
+            const importanceEl = meta.createSpan({ text: `重要度 ${importancePct}`, cls: 'nw-kb-detail-chip--tone' });
+            importanceEl.style.setProperty('--nw-detail-tone',
+                item.importance >= 0.7 ? '#e74c3c' : item.importance >= 0.4 ? '#f59e0b' : 'var(--text-muted)');
+            importanceEl.style.setProperty('--nw-detail-tone-bg',
+                item.importance >= 0.7 ? 'rgba(231,76,60,0.1)' : item.importance >= 0.4 ? 'rgba(245,158,11,0.1)' : 'var(--background-secondary)');
 
             meta.createSpan({
                 text: `出场 ${formatDetailCount(item.totalAppearances)}次`,
-                cls: 'nw-text-muted-11'
+                cls: 'nw-kb-detail-label-xs'
             });
         });
     }
@@ -1655,28 +1631,28 @@ export class BookDetailRenderer {
         if (book) {
             container.createDiv({
                 text: `基于全书 ${this.deps.formatWordCount(book.wordCount)} 字`,
-                cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-16px'
+                cls: 'nw-kb-detail-caption'
             });
         }
 
         if (data.overallScore !== undefined || data.overallLevel) {
             const section = this.createDetailSection(container, '商业可行性总览');
             const card = section.createDiv({
-                cls: 'nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-10px nw-u-d-flex nw-u-ai-center nw-u-gap-24px'
+                cls: 'nw-kb-detail-hero'
             });
             const scoreCircle = card.createDiv({
-                cls: 'nw-u-w-100px nw-u-h-100px nw-u-brd-50 nw-u-bg-gradient-accent nw-u-d-flex nw-u-fd-column nw-u-ai-center nw-u-jc-center nw-u-c-white nw-u-fsh-0'
+                cls: 'nw-kb-detail-score-circle nw-kb-detail-score-circle--warm'
             });
-            scoreCircle.createDiv({ text: data.overallScore !== undefined ? data.overallScore.toString() : '-', cls: 'nw-u-fs-28px nw-u-fwt-700 nw-u-lh-1' });
-            scoreCircle.createDiv({ text: '总分', cls: 'nw-u-fs-11px nw-u-op-0-9' });
-            const infoDiv = card.createDiv({ cls: 'nw-u-flex-1' });
+            scoreCircle.createDiv({ text: data.overallScore !== undefined ? data.overallScore.toString() : '-', cls: 'nw-kb-detail-hero-value' });
+            scoreCircle.createDiv({ text: '总分', cls: 'nw-kb-detail-hero-sub' });
+            const infoDiv = card.createDiv({ cls: 'nw-kb-detail-fill' });
             infoDiv.createDiv({
                 text: `等级：${data.overallLevel || '-'}`,
-                cls: 'nw-u-fs-18px nw-u-fwt-600 nw-u-marginbottom-8px nw-u-c-interactive-accent'
+                cls: 'nw-kb-detail-headline nw-kb-detail-headline--xl'
             });
             infoDiv.createDiv({
                 text: '综合评估作品的市场竞争力和读者吸引力',
-                cls: 'nw-u-fs-13px nw-u-c-text-muted'
+                cls: 'nw-kb-detail-text'
             });
         }
 
@@ -1686,12 +1662,12 @@ export class BookDetailRenderer {
 
             if (gtc.totalScore !== undefined || gtc.subScores) {
                 const scoreRow = section.createDiv({
-                    cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-20px nw-u-marginbottom-16px nw-u-p-14px nw-u-bg-background-secondary nw-u-brd-8px'
+                    cls: 'nw-kb-detail-summary-row'
                 });
                 if (gtc.totalScore !== undefined) {
                     scoreRow.createDiv({
                         text: `黄金三章总分：${gtc.totalScore} 分`,
-                        cls: 'nw-u-fs-15px nw-u-fwt-600 nw-u-c-interactive-accent'
+                        cls: 'nw-kb-detail-headline'
                     });
                 }
                 if (gtc.subScores) {
@@ -1705,7 +1681,7 @@ export class BookDetailRenderer {
                     const barData = buildScoreBars(gtc.subScores, subLabels);
                     if (barData.length > 0) {
                         const barDiv = section.createDiv({
-                            cls: 'nw-u-d-flex nw-u-jc-center'
+                            cls: 'nw-kb-detail-chart'
                         });
                         this.renderChart(barDiv, barChart(barData, { width: 480, height: 180, title: '五维评分', horizontal: true }));
                     }
@@ -1715,21 +1691,20 @@ export class BookDetailRenderer {
             if (gtc.improvementSuggestions && gtc.improvementSuggestions.length > 0) {
                 const suggSection = this.createDetailSection(container, '改进建议');
                 const sortedSuggestions = sortSuggestionsBySeverity(gtc.improvementSuggestions);
-                const list = suggSection.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-8px' });
+                const list = suggSection.createDiv({ cls: 'nw-kb-detail-stack' });
 
                 sortedSuggestions.forEach(s => {
                     const item = list.createDiv({
-                        cls: 'nw-u-p-10px-14px nw-u-bg-background-secondary nw-u-brd-6px'
+                        cls: 'nw-kb-detail-item'
                     });
-                    const header = item.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-marginbottom-4px' });
-                    header.createSpan({
+                    const header = item.createDiv({ cls: 'nw-kb-detail-item-head' });
+                    const severityEl = header.createSpan({
                         text: resolveSeverityLabel(s.severity),
-                        attr: {
-                            style: `padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;color:white;background:${resolveSeverityColor(s.severity)};`
-                        }
+                        cls: 'nw-kb-detail-severity'
                     });
-                    header.createSpan({ text: s.category, cls: 'nw-u-fs-12px nw-u-fwt-500' });
-                    item.createDiv({ text: s.suggestion, cls: 'nw-u-fs-13px nw-u-c-text-muted' });
+                    severityEl.style.setProperty('--nw-detail-tone', resolveSeverityColor(s.severity));
+                    header.createSpan({ text: s.category, cls: 'nw-kb-detail-label-strong' });
+                    item.createDiv({ text: s.suggestion, cls: 'nw-kb-detail-text' });
                 });
             }
         }
@@ -1740,20 +1715,17 @@ export class BookDetailRenderer {
 
             if (wr.complianceRate !== undefined) {
                 const progressWrap = section.createDiv({
-                    cls: 'nw-u-p-14px nw-u-bg-background-secondary nw-u-brd-8px nw-u-marginbottom-12px'
+                    cls: 'nw-kb-detail-card--lg nw-kb-detail-mb-12'
                 });
                 progressWrap.createDiv({
                     text: `节奏合规率：${formatDetailPercent(wr.complianceRate, 1)}`,
-                    cls: 'nw-u-fs-14px nw-u-fwt-600 nw-u-marginbottom-8px'
+                    cls: 'nw-kb-detail-heading nw-kb-detail-mb-8'
                 });
                 const barBg = progressWrap.createDiv({
-                    cls: 'nw-u-h-10px nw-u-bg-background-modifier-bo nw-u-brd-5px nw-u-ov-hidden'
+                    cls: 'nw-kb-detail-meter nw-kb-detail-meter--lg'
                 });
-                barBg.createDiv({
-                    attr: {
-                        style: `height:100%;width:${Math.min(100, Math.max(0, wr.complianceRate * 100))}%;background:linear-gradient(90deg,var(--interactive-accent),var(--nw-warning-hover));border-radius:5px;transition:width 0.3s;`
-                    }
-                });
+                const complianceFill = barBg.createDiv({ cls: 'nw-kb-detail-meter-fill nw-kb-detail-meter-fill--warm' });
+                complianceFill.style.setProperty('--nw-progress', `${Math.min(100, Math.max(0, wr.complianceRate * 100))}%`);
             }
 
             if (wr.violations && wr.violations.length > 0) {
@@ -1763,18 +1735,18 @@ export class BookDetailRenderer {
                     big_climax: '大高潮'
                 };
                 const vSection = this.createDetailSection(container, `违规记录 (${wr.violations.length})`);
-                const list = vSection.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-6px' });
+                const list = vSection.createDiv({ cls: 'nw-kb-detail-stack nw-kb-detail-stack--gap-6' });
                 wr.violations.forEach((v, i) => {
                     const item = list.createDiv({
-                        cls: 'nw-u-p-10px-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-fs-12px'
+                        cls: 'nw-kb-detail-card--inset nw-kb-detail-fine'
                     });
                     item.createEl('div', {
                         text: `#${i + 1} ${typeLabels[v.type] || v.type} · 第${v.startChapter}-${v.endChapter}章`,
-                        cls: 'nw-u-fwt-500 nw-u-c-color-orange nw-u-marginbottom-4px'
+                        cls: 'nw-kb-detail-violation-title'
                     });
                     item.createEl('div', {
                         text: `间隔：${v.gap} 章（阈值：${v.threshold} 章）`,
-                        cls: 'nw-u-c-text-muted'
+                        cls: 'nw-kb-detail-muted'
                     });
                 });
             }
@@ -1799,28 +1771,28 @@ export class BookDetailRenderer {
         if (book) {
             container.createDiv({
                 text: `基于全书 ${this.deps.formatWordCount(book.wordCount)} 字`,
-                cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-16px'
+                cls: 'nw-kb-detail-caption'
             });
         }
 
         if (data.overallScore !== undefined) {
             const section = this.createDetailSection(container, '可读性总览');
             const card = section.createDiv({
-                cls: 'nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-10px nw-u-d-flex nw-u-ai-center nw-u-gap-24px'
+                cls: 'nw-kb-detail-hero'
             });
             const scoreCircle = card.createDiv({
-                cls: 'nw-u-w-100px nw-u-h-100px nw-u-brd-50 nw-u-bg-gradient-success-accent nw-u-d-flex nw-u-fd-column nw-u-ai-center nw-u-jc-center nw-u-c-white nw-u-fsh-0'
+                cls: 'nw-kb-detail-score-circle nw-kb-detail-score-circle--cool'
             });
-            scoreCircle.createDiv({ text: data.overallScore.toString(), cls: 'nw-u-fs-28px nw-u-fwt-700 nw-u-lh-1' });
-            scoreCircle.createDiv({ text: '总分', cls: 'nw-u-fs-11px nw-u-op-0-9' });
-            const infoDiv = card.createDiv({ cls: 'nw-u-flex-1' });
+            scoreCircle.createDiv({ text: data.overallScore.toString(), cls: 'nw-kb-detail-hero-value' });
+            scoreCircle.createDiv({ text: '总分', cls: 'nw-kb-detail-hero-sub' });
+            const infoDiv = card.createDiv({ cls: 'nw-kb-detail-fill' });
             infoDiv.createDiv({
                 text: '可读性综合评分',
-                cls: 'nw-u-fs-18px nw-u-fwt-600 nw-u-marginbottom-8px nw-u-c-interactive-accent'
+                cls: 'nw-kb-detail-headline nw-kb-detail-headline--xl'
             });
             infoDiv.createDiv({
                 text: '评估作品的阅读流畅度、代入感和AI痕迹水平',
-                cls: 'nw-u-fs-13px nw-u-c-text-muted'
+                cls: 'nw-kb-detail-text'
             });
         }
 
@@ -1831,7 +1803,7 @@ export class BookDetailRenderer {
             const hasDonutData = st.showPercentage !== undefined || st.tellPercentage !== undefined || (st.stats && st.stats.mixedCount !== undefined);
             if (hasDonutData) {
                 const chartWrap = section.createDiv({
-                    cls: 'nw-u-d-flex nw-u-jc-center nw-u-gap-24px nw-u-ai-flex-start nw-u-fwr-wrap'
+                    cls: 'nw-kb-detail-chart-row'
                 });
                 const donutData = [];
                 if (st.showPercentage !== undefined) {
@@ -1851,9 +1823,9 @@ export class BookDetailRenderer {
 
                 if (st.stats) {
                     const statsDiv = chartWrap.createDiv({
-                        cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-10px nw-u-minw-180px'
+                        cls: 'nw-kb-detail-stats-column'
                     });
-                    statsDiv.createDiv({ text: '统计数据', cls: 'nw-u-fs-14px nw-u-fwt-600 nw-u-marginbottom-4px' });
+                    statsDiv.createDiv({ text: '统计数据', cls: 'nw-kb-detail-heading nw-kb-detail-mb-4' });
                     if (st.stats.totalSegments !== undefined) {
                         this.addInfoItem(statsDiv, '总片段数', st.stats.totalSegments.toString());
                     }
@@ -1871,19 +1843,19 @@ export class BookDetailRenderer {
 
             if (st.highRiskTellSegments && st.highRiskTellSegments.length > 0) {
                 const riskSection = this.createDetailSection(container, `高风险 Tell 段落 (${st.highRiskTellSegments.length})`);
-                const list = riskSection.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-8px' });
+                const list = riskSection.createDiv({ cls: 'nw-kb-detail-stack' });
                 st.highRiskTellSegments.slice(0, 10).forEach((seg, i) => {
                     const item = list.createDiv({
-                        cls: 'nw-u-p-10px-14px nw-u-bg-background-secondary nw-u-brd-6px'
+                        cls: 'nw-kb-detail-item'
                     });
-                    const header = item.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center nw-u-marginbottom-6px' });
-                    header.createSpan({ text: `#${i + 1}`, cls: 'nw-u-fs-12px nw-u-fwt-600 nw-u-c-color-red' });
+                    const header = item.createDiv({ cls: 'nw-kb-detail-item-head--split' });
+                    header.createSpan({ text: `#${i + 1}`, cls: 'nw-kb-detail-excerpt-index' });
                     if (seg.confidence !== undefined) {
-                        header.createSpan({ text: `置信度：${formatDetailPercent(seg.confidence)}`, cls: 'nw-u-fs-11px nw-u-c-text-muted' });
+                        header.createSpan({ text: `置信度：${formatDetailPercent(seg.confidence)}`, cls: 'nw-kb-detail-label-xs' });
                     }
                     item.createDiv({
                         text: seg.excerpt,
-                        cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-lh-1-6 nw-u-d-webkit-box nw-u-webkitlineclamp-3 nw-u-webkitboxorient-vertical nw-u-ov-hidden'
+                        cls: 'nw-kb-detail-excerpt'
                     });
                 });
             }
@@ -1891,21 +1863,20 @@ export class BookDetailRenderer {
             if (st.suggestions && st.suggestions.length > 0) {
                 const suggSection = this.createDetailSection(container, '改进建议');
                 const sortedSuggestions = sortSuggestionsBySeverity(st.suggestions);
-                const list = suggSection.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-8px' });
+                const list = suggSection.createDiv({ cls: 'nw-kb-detail-stack' });
 
                 sortedSuggestions.forEach(s => {
                     const item = list.createDiv({
-                        cls: 'nw-u-p-10px-14px nw-u-bg-background-secondary nw-u-brd-6px'
+                        cls: 'nw-kb-detail-item'
                     });
-                    const header = item.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-marginbottom-4px' });
-                    header.createSpan({
+                    const header = item.createDiv({ cls: 'nw-kb-detail-item-head' });
+                    const severityEl = header.createSpan({
                         text: resolveSeverityLabel(s.severity),
-                        attr: {
-                            style: `padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;color:white;background:${resolveSeverityColor(s.severity)};`
-                        }
+                        cls: 'nw-kb-detail-severity'
                     });
-                    header.createSpan({ text: s.type, cls: 'nw-u-fs-12px nw-u-fwt-500' });
-                    item.createDiv({ text: s.message, cls: 'nw-u-fs-13px nw-u-c-text-muted' });
+                    severityEl.style.setProperty('--nw-detail-tone', resolveSeverityColor(s.severity));
+                    header.createSpan({ text: s.type, cls: 'nw-kb-detail-label-strong' });
+                    item.createDiv({ text: s.message, cls: 'nw-kb-detail-text' });
                 });
             }
         }
@@ -1915,12 +1886,12 @@ export class BookDetailRenderer {
             const section = this.createDetailSection(container, 'AI 痕迹检测');
 
             const overviewRow = section.createDiv({
-                cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-20px nw-u-marginbottom-16px nw-u-p-14px nw-u-bg-background-secondary nw-u-brd-8px'
+                cls: 'nw-kb-detail-summary-row'
             });
             if (ai.overallScore !== undefined) {
                 overviewRow.createDiv({
                     text: `AI 痕迹率：${formatDetailPercent(ai.overallScore, 1)}`,
-                    cls: 'nw-u-fs-15px nw-u-fwt-600 nw-u-c-color-orange'
+                    cls: 'nw-kb-detail-headline nw-kb-detail-headline--warning'
                 });
             }
             if (ai.level) {
@@ -1934,12 +1905,11 @@ export class BookDetailRenderer {
                     medium: '中风险',
                     high: '高风险'
                 };
-                overviewRow.createSpan({
+                const levelEl = overviewRow.createSpan({
                     text: levelLabels[ai.level] || ai.level,
-                    attr: {
-                        style: `padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;color:white;background:${levelColors[ai.level] || 'var(--text-muted)'};`
-                    }
+                    cls: 'nw-kb-detail-level-badge'
                 });
+                levelEl.style.setProperty('--nw-detail-tone', levelColors[ai.level] || 'var(--text-muted)');
             }
 
             if (ai.dimensions) {
@@ -1959,7 +1929,7 @@ export class BookDetailRenderer {
                     }));
                 if (barData.length > 0) {
                     const barDiv = section.createDiv({
-                        cls: 'nw-u-d-flex nw-u-jc-center'
+                        cls: 'nw-kb-detail-chart'
                     });
                     this.renderChart(barDiv, barChart(barData, { width: 500, height: 200, title: '六维分析', horizontal: true }));
                 }
@@ -1967,26 +1937,26 @@ export class BookDetailRenderer {
 
             if (ai.highRiskParagraphs && ai.highRiskParagraphs.length > 0) {
                 const riskSection = this.createDetailSection(container, `高风险段落 (${ai.highRiskParagraphs.length})`);
-                const list = riskSection.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-8px' });
+                const list = riskSection.createDiv({ cls: 'nw-kb-detail-stack' });
                 ai.highRiskParagraphs.slice(0, 10).forEach((p, i) => {
                     const item = list.createDiv({
-                        cls: 'nw-u-p-10px-14px nw-u-bg-background-secondary nw-u-brd-6px'
+                        cls: 'nw-kb-detail-item'
                     });
-                    const header = item.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center nw-u-marginbottom-6px' });
-                    header.createSpan({ text: `#${i + 1}`, cls: 'nw-u-fs-12px nw-u-fwt-600 nw-u-c-color-red' });
+                    const header = item.createDiv({ cls: 'nw-kb-detail-item-head--split' });
+                    header.createSpan({ text: `#${i + 1}`, cls: 'nw-kb-detail-excerpt-index' });
                     if (p.score !== undefined) {
-                        header.createSpan({ text: `风险分：${formatDetailPercent(p.score)}`, cls: 'nw-u-fs-11px nw-u-c-text-muted' });
+                        header.createSpan({ text: `风险分：${formatDetailPercent(p.score)}`, cls: 'nw-kb-detail-label-xs' });
                     }
                     item.createDiv({
                         text: p.excerpt,
-                        cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-lh-1-6 nw-u-d-webkit-box nw-u-webkitlineclamp-3 nw-u-webkitboxorient-vertical nw-u-ov-hidden nw-u-marginbottom-6px'
+                        cls: 'nw-kb-detail-excerpt nw-kb-detail-mb-6'
                     });
                     if (p.reasons && p.reasons.length > 0) {
-                        const reasonsDiv = item.createDiv({ cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-4px' });
+                        const reasonsDiv = item.createDiv({ cls: 'nw-kb-detail-tag-row' });
                         p.reasons.forEach(r => {
                             reasonsDiv.createSpan({
                                 text: r,
-                                cls: 'nw-u-p-2px-6px nw-u-bg-color-red nw-u-opacity-20 nw-u-brd-3px nw-u-fs-10px nw-u-c-color-red'
+                                cls: 'nw-kb-detail-chip--danger'
                             });
                         });
                     }
@@ -2037,7 +2007,7 @@ export class BookDetailRenderer {
                 value
             }));
             const donutDiv = section.createDiv({
-                cls: 'nw-u-d-flex nw-u-jc-center'
+                cls: 'nw-kb-detail-chart'
             });
             this.renderChart(donutDiv, donutChart(donutData, { size: 300, title: '技巧分类占比' }));
         }
@@ -2048,7 +2018,7 @@ export class BookDetailRenderer {
         const chartSection = this.createDetailSection(container, 'Top 10 写作技巧排名');
         const barData = top10.map(t => ({ label: t.name, value: t.count }));
         const barDiv = chartSection.createDiv({
-            cls: 'nw-u-d-flex nw-u-jc-center'
+            cls: 'nw-kb-detail-chart'
         });
         this.renderChart(barDiv, barChart(barData, { width: 500, height: 250, title: '技巧使用频率', horizontal: true }));
 
@@ -2056,7 +2026,7 @@ export class BookDetailRenderer {
         if (qualityScore) {
             const section = this.createDetailSection(container, '技巧质量评分');
             const grid = section.createDiv({
-                cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-3 nw-u-gap-12px'
+                cls: 'nw-kb-detail-grid nw-kb-detail-grid--min-140'
             });
             this.addInfoItem(grid, '综合评分', `${qualityScore.totalScore} / 100`);
             this.addInfoItem(grid, '多样性', `${qualityScore.diversityScore}%`);
@@ -2069,27 +2039,21 @@ export class BookDetailRenderer {
                 const isExpanded = this.deps.getExpandedItems()[key] ?? false;
 
                 const item = section.createDiv({
-                    cls: 'nw-u-b-1px-solid-background-m nw-u-brd-8px nw-u-marginbottom-8px nw-u-ov-hidden'
+                    cls: 'nw-kb-detail-card--outlined-lg nw-kb-detail-mb-8'
                 });
 
                 const header = item.createDiv({
-                    cls: 'nw-u-p-10px-12px nw-u-cur-pointer nw-u-d-flex nw-u-ai-center nw-u-gap-10px'
+                    cls: 'nw-kb-detail-technique-head'
                 });
 
-                const rank = header.createSpan({
+                header.createSpan({
                     text: `${i + 1}`,
-                    cls: 'nw-flex-center nw-flex-shrink-0',
-                    attr: {
-                        style: `width:24px;height:24px;border-radius:50%;font-size:12px;font-weight:600;${
-                            i < 3 ? 'background:var(--interactive-accent);color:var(--text-on-accent);' : 'background:var(--background-secondary);color:var(--text-muted);'
-                        }`
-                    }
+                    cls: i < 3 ? 'nw-kb-detail-rank nw-kb-detail-rank--top' : 'nw-kb-detail-rank'
                 });
-                void rank;
 
-                const info = header.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-0' });
-                info.createDiv({ text: tech.name, cls: 'nw-u-fs-13px nw-u-fwt-500' });
-                const meta = info.createDiv({ cls: "nw-text-muted-11 nw-u-d-flex nw-u-gap-12px nw-u-margintop-2px nw-u-fwr-wrap", attr: {} });
+                const info = header.createDiv({ cls: 'nw-kb-detail-grow' });
+                info.createDiv({ text: tech.name, cls: 'nw-kb-detail-text--strong' });
+                const meta = info.createDiv({ cls: "nw-kb-detail-meta-row", attr: {} });
                 meta.createSpan({ text: `出现 ${formatDetailCount(tech.count)} 次` });
                 meta.createSpan({ text: `分类: ${categoryLabels[tech.category] || tech.category}` });
                 meta.createSpan({ text: `置信度 ${formatDetailPercent(tech.confidence)}` });
@@ -2097,7 +2061,7 @@ export class BookDetailRenderer {
 
                 const toggle = header.createSpan({
                     text: isExpanded ? '▼' : '▶',
-                    cls: 'nw-text-sm-muted nw-flex-shrink-0'
+                    cls: 'nw-kb-detail-meta'
                 });
                 void toggle;
 
@@ -2108,10 +2072,10 @@ export class BookDetailRenderer {
 
                 if (isExpanded) {
                     const body = item.createDiv({
-                        cls: 'nw-u-p-12px nw-u-bt-1px-solid-background-m nw-u-bg-background-secondary'
+                        cls: 'nw-kb-detail-char-body'
                     });
-                    body.createDiv({ text: `技巧ID: ${tech.id}`, cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-4px' });
-                    body.createDiv({ text: `题材权重: ${formatDetailNumber(tech.genreWeight, 1, 'x')}`, cls: 'nw-u-fs-12px nw-u-c-text-muted' });
+                    body.createDiv({ text: `技巧ID: ${tech.id}`, cls: 'nw-kb-detail-note nw-kb-detail-mb-4' });
+                    body.createDiv({ text: `题材权重: ${formatDetailNumber(tech.genreWeight, 1, 'x')}`, cls: 'nw-kb-detail-note' });
                 }
             });
     }
@@ -2224,42 +2188,27 @@ export class BookDetailRenderer {
         const levelLabel = levelMeta.label;
         const usedLevelLabel = resolveUsedLevelLabel(qs.usedLevel);
 
-        const card = container.createDiv({
-            cls: 'nw-u-marginbottom-16px nw-u-p-12px-16px nw-u-bg-background-secondary nw-u-brd-8px nw-u-blt-4px-solid-interactive-'
-        });
+        const card = container.createDiv({ cls: 'nw-kb-detail-quality-card' });
 
-        const header = card.createDiv({
-            cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-12px nw-u-marginbottom-10px'
-        });
-        header.createSpan({ text: '质量评分', cls: 'nw-u-fs-13px nw-u-fwt-600 nw-u-c-text-normal' });
-        header.createSpan({
-            text: `${qs.overall}/100`,
-            attr: { style: `font-size:20px;font-weight:700;color:${levelColor};` }
-        });
-        header.createSpan({
-            text: levelLabel,
-            attr: { style: `font-size:11px;padding:2px 8px;border-radius:4px;background:${levelColor}22;color:${levelColor};font-weight:600;` }
-        });
+        const header = card.createDiv({ cls: 'nw-kb-detail-quality-head' });
+        header.createSpan({ text: '质量评分', cls: 'nw-kb-detail-quality-title' });
+        const scoreEl = header.createSpan({ text: `${qs.overall}/100`, cls: 'nw-kb-detail-quality-score' });
+        scoreEl.style.setProperty('--nw-detail-tone', levelColor);
+        const levelEl = header.createSpan({ text: levelLabel, cls: 'nw-kb-detail-quality-level' });
+        levelEl.style.setProperty('--nw-detail-tone', levelColor);
         header.createSpan({
             text: `档位: ${usedLevelLabel}`,
-            cls: 'nw-u-fs-10px nw-u-c-text-muted nw-u-marginleft-auto'
+            cls: 'nw-kb-detail-toggle nw-kb-detail-ml-auto'
         });
 
-        const metrics = card.createDiv({
-            cls: 'nw-u-d-flex nw-u-gap-16px nw-u-fwr-wrap'
-        });
-        const metricStyle = 'display:flex;flex-direction:column;align-items:center;min-width:60px;';
-        const valueStyle = 'font-size:16px;font-weight:600;';
-        const labelStyle = 'font-size:10px;color:var(--text-muted);margin-top:2px;';
+        const metrics = card.createDiv({ cls: 'nw-kb-detail-quality-metrics' });
 
         const scoreItems = buildQualityScoreItems(qs);
         for (const item of scoreItems) {
-            const metric = metrics.createDiv({ attr: { style: metricStyle } });
-            metric.createSpan({
-                text: `${item.value}`,
-                attr: { style: `${valueStyle}color:${TONE_COLOR[item.tone]};` },
-            });
-            metric.createSpan({ text: item.label, attr: { style: labelStyle } });
+            const metric = metrics.createDiv({ cls: 'nw-kb-detail-metric' });
+            const valueEl = metric.createSpan({ text: `${item.value}`, cls: 'nw-kb-detail-metric-value' });
+            valueEl.style.setProperty('--nw-detail-tone', TONE_COLOR[item.tone]);
+            metric.createSpan({ text: item.label, cls: 'nw-kb-detail-metric-label' });
         }
     }
 }

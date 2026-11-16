@@ -323,7 +323,11 @@ function collectHtml(el: FakeEl): string[] {
 
 /** 收集子树里的 attr.style 串 */
 function collectAttrs(el: FakeEl): string[] {
-    return [el.attr['style'] ?? '', ...el.children.flatMap(c => collectAttrs(c))].filter(Boolean);
+    // 语义化后动态配色改走 CSS 变量（style.setProperty），不再写 attr.style，两条路径都收
+    const styleVars = Object.entries(el.style)
+        .filter(([k]) => k.startsWith('--'))
+        .map(([k, v]) => `${k}: ${v}`);
+    return [el.attr['style'] ?? '', ...styleVars, ...el.children.flatMap(c => collectAttrs(c))].filter(Boolean);
 }
 
 /** 收集子树全部元素 */

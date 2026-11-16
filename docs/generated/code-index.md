@@ -11,7 +11,7 @@
 | `shared/` | 255 | 50850 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3307 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 300 | 113733 | 1155 | 917 | 79% |
+| `ui/` | 300 | 113682 | 1155 | 917 | 79% |
 
 ## 文件清单
 
@@ -971,7 +971,7 @@
 | `ui/vector-rebuild-action.ts` | 148 | 1 | 1 |
 | `ui/views/book-detail-logic.ts` | 161 | 10 | 7 |
 | `ui/views/book-detail-metrics.ts` | 392 | 29 | 21 |
-| `ui/views/book-detail-renderer.ts` | 2266 | 2 | 2 |
+| `ui/views/book-detail-renderer.ts` | 2215 | 2 | 2 |
 | `ui/views/book-emotion-logic.ts` | 107 | 9 | 4 |
 | `ui/views/book-foreshadow-logic.ts` | 142 | 13 | 5 |
 | `ui/views/book-style-logic.ts` | 145 | 11 | 6 |

@@ -1,6 +1,6 @@
 # 知识库 / 设定（视觉重构）
 
-> 模块页（Module Page）。状态：**doing（视觉重构 Slice A+B+C+D 完成 2026-11-16）**
+> 模块页（Module Page）。状态：**doing（视觉重构 Slice A–E 完成 2026-11-17；F 配置页 / G 弹窗待做）**
 > 规范：[视觉重构规范](../design/2026-11-16-visual-refactor-standard.md)
 > 基线：[`docs/quality/visual-baseline/kb-books.json`](../quality/visual-baseline/kb-books.json)
 
@@ -161,6 +161,59 @@
 首轮那 12 处正是「坑 1」：`button:not(.clickable-icon)` 的 (0,1,1) 压过
 `.nw-kb-detail-tab` 的 (0,1,0)，页签退化成默认灰底按钮。改为 `button.nw-kb-detail-tab` 后归零。
 
+
+## 3.8 Slice E：详情各页签内容区（2026-11-17 完成）
+
+**改动**
+
+- 八个页签（文风 / 节奏 / 结构 / 角色 / 伏笔 / 商业 / 易读性 / 技巧）的内容区全部语义化：
+  布局用 `nw-kb-detail-chart` / `-chart-row` / `-split` / `-stack` / `-grid`（含 min/fill/cols 修饰类）、
+  卡片 `nw-kb-detail-card`（--inset/--roomy/--lg/--xl/--flat/--outlined）、
+  统计 `-stat`（--lg/--compact/--mini）+ `-stat-value` / `-stat-label`、
+  徽标 `-chip`（--outline/--tiny/--plain/--accent/--solid/--danger/--tone）、
+  进度 `-meter`（--grow/--lg）+ `-meter-fill`（--warm）、
+  表格 `-table-wrap` / `-table` / `-th` / `-td` / `-thead` / `-tr--alt`、
+  折叠条目 `-char-head` / `-char-body` / `-relation-head` / `-technique-head` / `-fore-item-head`。
+- 间距不再拼 `nw-u-margin*`，改用模块内 `nw-kb-detail-mt-*/mb-*/ml-*`（只用到的档位）。
+- 动态配色从内联 `style` 改为 CSS 变量：`--nw-detail-tone` / `--nw-detail-tone-bg`（段类型色、三线色、
+  伏笔重要度、建议严重度、AI 风险等级）与 `--nw-progress`（弧光进度、节奏合规率）。
+- 每页签顶部共用的「维度质量评分卡」一并归位：`nw-kb-detail-quality-card/-head/-score/-level/-metrics`、
+  `nw-kb-detail-metric` / `-metric-value` / `-metric-label`。
+- 该文件：`nw-u-` 工具类引用 **866 → 126（−740）**；内联样式 **28 → 3**（剩 3 处在概览页与标签页，不属本 slice）。
+- 27 号样式新增 Slice E 段（网格/卡片/统计/徽标/进度/表格/列表/评分卡等构件）；CSS 预算基线随提交更新：
+  唯一类 +168（`.nw-kb-detail-*`）、体积 +21.5KB、1 个 hex 与 1 个 rgba 从 TS 内联搬进 CSS。
+
+**已知有意差异（5 处，全部是原本挂「死类」的节点）**
+
+| 节点 | 原状 | 现在 |
+| --- | --- | --- |
+| 角色「级别」、伏笔重要度说明、技巧元信息行等 4 处挂 `nw-text-muted-11` | 该类从未定义 → 实际继承父级字号/正文色 | 11px 弱化色（与 Slice C 同一口径） |
+| 关系卡折叠箭头挂 `nw-flex-shrink-0` | 该类从未定义 → 会被压缩 | `flex-shrink: 0` |
+
+**防倒退验证（本轮用「声明级等价审计」替代像素快照）**
+
+148 组「旧工具类串 → 新语义类」逐组比对**计算属性并集**（脚本读 `styles-src/` 解析，跳过伪类规则）：
+
+| 判据 | 结果 |
+| --- | --- |
+| R1 DOM 结构 | 未改结构：映射脚本只替换 `cls:` 字符串值，节点/标签/文本不变 |
+| R3 计算样式 | 143/148 完全一致；余 5 组即上表的有意差异 |
+| R5 单测 | `book-detail-renderer-tabs` + `tabs2` 共 19 条全过 |
+| R6 门禁 | `npm run preflight` EXIT=0 |
+| R7 工具类 | 全仓引用 4763 → 3800（基线已收紧） |
+
+**为什么这轮没有 before/after 像素快照（需要后续补）**
+
+开发 vault `D:\nw-dev-vault` 的插件目录是**目录联接（junction）**指回源仓，
+因此 `<vault>/.obsidian/plugins/novel-writer-ai/data.json` 就是源仓的 `data.json`——
+在开发 vault 里造样本书会写进真实数据文件；而且该 vault 内没有已拆解的书可供八个页签渲染。
+
+要恢复像素级验收，需先做两件事（TODO，已登记 §4）：
+1. 让开发 vault 的运行期数据与源仓解耦（init 时复制一份 data.json 到独立目录，而不是共用 junction 内的文件）；
+2. 在开发 vault 内准备一本已拆解的样本书，覆盖八个页签都有数据的场景。
+
+在此之前，跨页签的样式等价以「声明级审计 + 单测 + 门禁」为准，并在提交信息里写明。
+
 ## 4. 后续 slice 清单
 
 | # | Slice | 文件 | 目标 |
@@ -168,8 +221,8 @@
 | ~~B~~ | ~~书籍工具栏与卡片~~ | ~~已完成 2026-11-16~~ | ~~工具类 39 → 0~~ |
 | ~~C~~ | ~~详情公共构件 + 概览页~~ | ~~已完成 2026-11-16~~ | ~~详情主战场第一刀~~ |
 | ~~D~~ | ~~详情外壳与页签条~~ | ~~已完成 2026-11-16~~ | ~~工具类 239 → 175~~ |
-| E | 详情各页签内容区（文风/节奏/技巧/结构/角色/伏笔/商业/易读性） | `book-detail-renderer.ts` | 剩余工具类主战场 |
-| E | 详情：伏笔/商业/易读性区 | 同上 | 同上 |
+| ~~E~~ | ~~详情各页签内容区（文风/节奏/技巧/结构/角色/伏笔/商业/易读性）~~ | ~~已完成 2026-11-17~~ | ~~工具类 866 → 126~~ |
+| E-补 | 开发 vault 运行期数据解耦 + 已拆解样本书（恢复像素级验收） | `scripts/dev-vault.mjs` | 见 §3.8 末尾 |
 | F | 题材/配置页 | `knowledge-base-view.ts` 后段 | `nw-kb-config-*` |
 | G | 弹窗（需人工视觉验收） | `knowledge-detail-modal.ts` / `knowledge-base-modals.ts` | `nw-kb-modal-*` |
 

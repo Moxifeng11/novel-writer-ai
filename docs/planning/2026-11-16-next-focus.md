@@ -657,3 +657,20 @@ preflight EXIT=0（956 测试文件 / 10092 用例）。
 
 后续验证一律在开发 vault 内做，写作 vault 不再放测试项目/测试书/缓存。
 
+### 2026-11-17 第二十七轮：视觉重构 Slice E（详情各页签内容区）
+
+八个页签（文风/节奏/结构/角色/伏笔/商业/易读性/技巧）内容区语义化，
+book-detail-renderer.ts 工具类 866 → 126、内联样式 28 → 3；
+动态配色改 CSS 变量 --nw-detail-tone / --nw-detail-tone-bg / --nw-progress。
+27 号样式新增 nw-kb-detail-* 构件（唯一类 +168，styles.css +21.5KB）。
+
+**本轮换了验收方式**：148 组「旧工具类串 → 新语义类」做声明级等价审计
+（解析 styles-src 取声明并集），143 组完全一致，5 组是原本挂死类
+（nw-text-muted-11 ×4、nw-flex-shrink-0 ×1）按设计意图补真，已逐条登记在模块页。
+
+**为什么没拍像素快照**：开发 vault 的插件目录是 junction，data.json 与源仓共用，
+在 vault 里造样本书会写进真实数据；且该 vault 没有已拆解的书可渲染八个页签。
+已登记补做项：开发 vault 运行期数据解耦 + 已拆解样本书。
+
+下一轮候选：Slice F 题材/配置页；Slice G 弹窗（需人工视觉验收）；开发 vault 数据解耦。
+

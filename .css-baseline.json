@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-16T15:25:59.034Z",
-  "note": "Slice D 动效注释修正（transition 显式属性，+158 bytes）",
-  "bytes": 607175,
+  "generatedAt": "2026-11-16T17:32:18.798Z",
+  "note": "Slice E 详情各页签内容区语义化：新增 nw-kb-detail-* 构件；内联色移入 CSS（+1 hex +1 rgba）；工具类 4763→3800",
+  "bytes": 629669,
   "important": 24,
-  "hardcodedHex": 164,
-  "rgbHsl": 184,
-  "uniqueClasses": 3199,
+  "hardcodedHex": 165,
+  "rgbHsl": 185,
+  "uniqueClasses": 3380,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

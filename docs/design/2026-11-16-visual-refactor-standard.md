@@ -144,4 +144,4 @@ Obsidian 自带 `button:not(.clickable-icon)` 特异性是 **(0,1,1)**，
 
 | 模块 | 状态 | 快照 |
 | --- | --- | --- |
-| 知识库 / 设定（`kb-`） | 进行中：Slice A 书架外壳 | `docs/quality/visual-baseline/kb-books.json` |
+| 知识库 / 设定（`kb-`） | 进行中：Slice A–E 完成（书架 / 工具栏卡片 / 详情公共构件+概览 / 外壳页签条 / 各页签内容区）；剩 F 配置页、G 弹窗 | `docs/quality/visual-baseline/kb-books.json`、`kb-detail.json` |
