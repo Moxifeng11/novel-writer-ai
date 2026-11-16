@@ -1,0 +1,285 @@
+/* 27-knowledge-base.css — 知识库 / 设定模块（2026-11-16 视觉重构）
+ *
+ * 负责：ui/views/knowledge-base-view.ts（书架外壳、题材导航）、
+ *       ui/views/book-detail-renderer.ts（书籍详情各分区，渐次迁移中）。
+ * 不负责：文笔指纹库（见 11-fingerprint-and-workbench.css）、知识库相关弹窗（后续 slice）。
+ *
+ * 命名规范见 docs/design/2026-11-16-visual-refactor-standard.md：
+ *   nw-kb-<block>[-<element>][--<modifier>]
+ * 迁移原则：先等价替换（计算样式不变），再单独提案视觉调整。
+ */
+
+/* ── 外壳布局（Slice A）── */
+.nw-kb-main-layout {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.nw-kb-left-sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 200px;
+    min-width: 160px;
+    max-width: 280px;
+    background: var(--background-secondary);
+    border-right: 1px solid var(--background-modifier-border);
+}
+
+.nw-kb-right-panel {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.nw-kb-right-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.nw-kb-monitor-bar {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 16px;
+    height: 48px;
+    padding: 0 16px;
+    font-size: 12px;
+    background: var(--background-secondary);
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+/* ── 左栏（Slice A）── */
+.nw-kb-sidebar-header {
+    padding: 16px 12px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-kb-sidebar-title {
+    margin: 0;
+    font-size: 16px;
+}
+
+.nw-kb-nav-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+/* 注意：Obsidian 自带 button:not(.clickable-icon) 的特异性是 (0,1,1)，
+   单类选择器 (0,1,0) 会被压住，所以这里必须带 button 前缀。 */
+button.nw-kb-nav-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button.nw-kb-nav-btn:hover {
+    color: var(--text-normal);
+    background: var(--background-modifier-hover);
+}
+
+.nw-kb-sidebar-nav {
+    flex: 1;
+    padding: 8px 0;
+}
+
+.nw-kb-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-muted);
+    background: transparent;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+}
+
+.nw-kb-nav-item:hover {
+    color: var(--text-normal);
+}
+
+.nw-kb-nav-item--active {
+    color: var(--text-normal);
+    font-weight: 500;
+    background: var(--background-secondary-alt);
+    border-left-color: var(--interactive-accent);
+}
+
+.nw-kb-nav-icon {
+    font-size: 16px;
+}
+
+.nw-kb-fanfic-section {
+    padding: 8px 0;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.nw-kb-fanfic-btn {
+    width: 100%;
+    font-size: 13px;
+}
+
+.nw-kb-sidebar-footer {
+    padding: 12px;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+/* ── 书架页：题材面板与通道页签（Slice A）── */
+.nw-kb-books-tab {
+    display: flex;
+    height: 100%;
+}
+
+.nw-kb-genre-panel {
+    display: flex;
+    flex-direction: column;
+    width: 220px;
+    min-width: 180px;
+    border-right: 1px solid var(--background-modifier-border);
+}
+
+.nw-kb-genre-title {
+    margin: 0;
+    font-size: 14px;
+}
+
+.nw-kb-channel-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-kb-channel-tab {
+    flex: 1;
+    padding: 8px 4px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+}
+
+.nw-kb-channel-tab--active {
+    color: var(--text-accent);
+    border-bottom-color: var(--interactive-accent);
+}
+
+.nw-kb-genre-list {
+    flex: 1;
+    padding: 4px 0;
+    overflow-y: auto;
+}
+
+.nw-kb-books-panel {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+
+/* ── 题材导航项（Slice A）── */
+.nw-kb-genre-item,
+.nw-kb-genre-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: var(--text-normal);
+    cursor: pointer;
+}
+
+.nw-kb-genre-item--sub {
+    padding-left: 28px;
+}
+
+.nw-kb-genre-item--active,
+.nw-kb-genre-group-header--active {
+    color: var(--text-accent);
+    background: var(--background-secondary-alt);
+}
+
+.nw-kb-genre-item-main {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.nw-kb-genre-item-icon {
+    flex-shrink: 0;
+    font-size: 12px;
+}
+
+.nw-kb-genre-item-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nw-kb-genre-toggle {
+    flex-shrink: 0;
+    width: 12px;
+    font-size: 9px;
+    color: var(--text-muted);
+}
+
+.nw-kb-genre-count {
+    flex-shrink: 0;
+}
+
+/* ── 窄屏（沿用原 26-cleanup-utilities.css 的规则，归位到本文件）── */
+@container (max-width: 860px) {
+    .nw-kb-main-layout {
+        flex-direction: column;
+    }
+
+    .nw-kb-left-sidebar {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        border-right: none;
+        border-bottom: 1px solid var(--background-modifier-border);
+    }
+
+    .nw-kb-sidebar-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 6px;
+    }
+}
+
+@media (max-width: 900px) {
+    .nw-kb-books-tab {
+        flex-direction: column;
+    }
+
+    .nw-kb-genre-panel {
+        width: auto;
+        min-width: 0;
+        max-height: 170px;
+        border-right: none;
+        border-bottom: 1px solid var(--background-modifier-border);
+    }
+
+    .nw-kb-genre-list {
+        max-height: 110px;
+    }
+}

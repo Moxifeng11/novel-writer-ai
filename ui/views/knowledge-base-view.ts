@@ -835,52 +835,32 @@ export class KnowledgeBaseView extends ItemView {
         containerEl.empty();
         containerEl.addClass('nw-kb-view');
 
-        this.mainLayout = containerEl.createDiv({
-            cls: "nw-kb-main-layout nw-u-d-flex nw-u-h-100 nw-u-w-100",
-            attr: {}
-        });
+        // 2026-11-16 视觉重构 Slice A：外壳布局改为语义类（规范见
+        // docs/design/2026-11-16-visual-refactor-standard.md），样式集中在 27-knowledge-base.css。
+        this.mainLayout = containerEl.createDiv({ cls: 'nw-kb-main-layout' });
 
-        this.leftSidebar = this.mainLayout.createDiv({
-            cls: "nw-kb-left-sidebar nw-u-w-200px nw-u-minw-160px nw-u-maxw-280px nw-u-brt-1px-solid-background-m nw-u-d-flex nw-u-fd-column nw-u-bg-background-secondary",
-            attr: {}
-        });
+        this.leftSidebar = this.mainLayout.createDiv({ cls: 'nw-kb-left-sidebar' });
 
-        this.rightPanel = this.mainLayout.createDiv({
-            cls: "nw-kb-right-panel nw-u-flex-1 nw-u-d-flex nw-u-fd-column nw-u-ov-hidden",
-            attr: {}
-        });
+        this.rightPanel = this.mainLayout.createDiv({ cls: 'nw-kb-right-panel' });
 
-        this.rightContentEl = this.rightPanel.createDiv({
-            cls: "nw-kb-right-content nw-u-flex-1 nw-u-ovy-auto nw-u-d-flex nw-u-fd-column nw-u-minh-0",
-            attr: {}
-        });
+        this.rightContentEl = this.rightPanel.createDiv({ cls: 'nw-kb-right-content' });
 
-        this.monitorBarEl = this.rightPanel.createDiv({
-            cls: "nw-kb-monitor-bar nw-u-h-48px nw-u-bt-1px-solid-background-m nw-u-bg-background-secondary nw-u-d-flex nw-u-ai-center nw-u-p-0-16px nw-u-gap-16px nw-u-fsh-0 nw-u-fs-12px",
-            attr: {}
-        });
+        this.monitorBarEl = this.rightPanel.createDiv({ cls: 'nw-kb-monitor-bar' });
     }
 
     private renderLeftSidebar(): void {
         this.leftSidebar.empty();
 
-        const header = this.leftSidebar.createDiv({
-            cls: "nw-kb-sidebar-header nw-u-p-16px-12px nw-u-bb-1px-solid-background-m",
-            attr: {}
-        });
-        header.createEl('h2', {
-            text: '📚 知识库管理',
-            cls: 'nw-u-m-0 nw-u-fs-16px'
-        });
+        const header = this.leftSidebar.createDiv({ cls: 'nw-kb-sidebar-header' });
+        header.createEl('h2', { text: '📚 知识库管理', cls: 'nw-kb-sidebar-title' });
 
         // 界面流转：直达工作台 / 协同写作 / 指纹库
-        const navBtnStyle = 'padding:4px 10px;font-size:12px;border:1px solid var(--background-modifier-border);border-radius:4px;cursor:pointer;background:var(--background-primary);color:var(--text-muted);';
-        const navRow = header.createDiv({ cls: 'nw-u-d-flex nw-u-gap-6px nw-u-margintop-8px nw-u-fwr-wrap' });
-        const backBtn = navRow.createEl('button', { text: '← 工作台', attr: { style: navBtnStyle, title: '返回完整写作工作台' } });
+        const navRow = header.createDiv({ cls: 'nw-kb-nav-row' });
+        const backBtn = navRow.createEl('button', { text: '← 工作台', cls: 'nw-kb-nav-btn', attr: { title: '返回完整写作工作台' } });
         backBtn.addEventListener('click', () => void this.plugin.openFullWriterView());
-        const coBtn = navRow.createEl('button', { text: '✍️ 协同写作', attr: { style: navBtnStyle, title: '打开句级协同写作工作台' } });
+        const coBtn = navRow.createEl('button', { text: '✍️ 协同写作', cls: 'nw-kb-nav-btn', attr: { title: '打开句级协同写作工作台' } });
         coBtn.addEventListener('click', () => void this.plugin.openCoWritingFromActiveContext());
-        const fpBtn = navRow.createEl('button', { text: '🔍 指纹库', attr: { style: navBtnStyle, title: '打开写作指纹库' } });
+        const fpBtn = navRow.createEl('button', { text: '🔍 指纹库', cls: 'nw-kb-nav-btn', attr: { title: '打开写作指纹库' } });
         fpBtn.addEventListener('click', () => this.plugin.executeCommand('novel-writer-fingerprint-library'));
 
         // 2026-10-28: 原右下角状态栏浮窗移除后，模型快速切换装配到知识库侧栏（四个主界面之一）。
@@ -888,23 +868,15 @@ export class KnowledgeBaseView extends ItemView {
         this.modelSwitcher?.destroy();
         this.modelSwitcher = renderModelQuickSwitcher(header, this.plugin);
 
-        const nav = this.leftSidebar.createDiv({
-            cls: "nw-kb-sidebar-nav nw-u-flex-1 nw-u-p-8px-0",
-            attr: {}
-        });
+        const nav = this.leftSidebar.createDiv({ cls: 'nw-kb-sidebar-nav' });
 
         MAIN_TABS.forEach(tab => {
+            // 选中态用修饰类（--active），不再拼内联样式
+            const active = this.activeMainTab === tab.key;
             const item = nav.createDiv({
-                cls: `nw-kb-nav-item${this.activeMainTab === tab.key ? ' is-active' : ''}`,
-                attr: {
-                    style: `padding:10px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:13px;border-left:3px solid ${
-                        this.activeMainTab === tab.key ? 'var(--interactive-accent)' : 'transparent'
-                    };background:${this.activeMainTab === tab.key ? 'var(--background-secondary-alt)' : 'transparent'};color:${
-                        this.activeMainTab === tab.key ? 'var(--text-normal)' : 'var(--text-muted)'
-                    };font-weight:${this.activeMainTab === tab.key ? '500' : '400'};`
-                }
+                cls: `nw-kb-nav-item${active ? ' nw-kb-nav-item--active' : ''}`,
             });
-            item.createSpan({ text: tab.icon, cls: 'nw-u-fs-16px' });
+            item.createSpan({ text: tab.icon, cls: 'nw-kb-nav-icon' });
             item.createSpan({ text: tab.label });
 
             item.addEventListener('click', () => {
@@ -917,12 +889,10 @@ export class KnowledgeBaseView extends ItemView {
         // v4.83.1：知识库界面直达「添加同人设定」。
         // 此前该入口只在命令面板、工具目录与项目选择器里，知识库里没有——
         // 而「同人设定」和「参考书籍」是同一件事的两面（一个用来源、一个用拆解素材）。
-        const fanficSection = this.leftSidebar.createDiv({
-            cls: 'nw-u-p-8px-0 nw-u-bt-1px-solid-background-m',
-        });
+        const fanficSection = this.leftSidebar.createDiv({ cls: 'nw-kb-fanfic-section' });
         const fanficEntry = fanficSection.createEl('button', {
             text: '📚 添加同人设定',
-            cls: 'nw-btn nw-btn-secondary nw-u-w-100 nw-u-fs-13px',
+            cls: 'nw-btn nw-btn-secondary nw-kb-fanfic-btn',
             attr: {
                 title: '检索官方资料，或用知识库已拆解的内容生成同人设定草稿（生成后会联网验证并存入待审核）',
             },
@@ -931,9 +901,8 @@ export class KnowledgeBaseView extends ItemView {
             new AddFanficSettingModal(this.app, this.plugin, this.plugin.getActiveProject() || undefined).open();
         });
 
-        const footer = this.leftSidebar.createDiv({
-            cls: "nw-kb-sidebar-footer nw-text-muted-11 nw-u-p-12px nw-u-bt-1px-solid-background-m", attr: {}
-        });
+        // 注：原来的 nw-text-muted-11 从未在任何样式表中定义（死类），移除后外观不变
+        const footer = this.leftSidebar.createDiv({ cls: 'nw-kb-sidebar-footer' });
         footer.createSpan({ text: `共 ${this.allBooks.length} 本书籍` });
     }
 
@@ -967,25 +936,14 @@ export class KnowledgeBaseView extends ItemView {
         this.expandedItems = {};
         this.foreshadowFilter = 'all';
 
-        const content = this.rightContentEl.createDiv({
-            cls: "nw-kb-books-tab nw-u-d-flex nw-u-h-100",
-            attr: {}
-        });
+        const content = this.rightContentEl.createDiv({ cls: 'nw-kb-books-tab' });
 
-        const genrePanel = content.createDiv({
-            cls: "nw-kb-genre-panel nw-u-w-220px nw-u-minw-180px nw-u-brt-1px-solid-background-m nw-u-d-flex nw-u-fd-column",
-            attr: {}
-        });
+        const genrePanel = content.createDiv({ cls: 'nw-kb-genre-panel' });
 
-        const genreHeader = genrePanel.createDiv({
-            cls: 'nw-kb-genre-header nw-section-header'
-        });
-        genreHeader.createEl('h3', { text: '题材分类', cls: 'nw-u-m-0 nw-u-fs-14px' });
+        const genreHeader = genrePanel.createDiv({ cls: 'nw-kb-genre-header nw-section-header' });
+        genreHeader.createEl('h3', { text: '题材分类', cls: 'nw-kb-genre-title' });
 
-        const channelTabs = genrePanel.createDiv({
-            cls: "nw-kb-channel-tabs nw-u-d-flex nw-u-bb-1px-solid-background-m",
-            attr: {}
-        });
+        const channelTabs = genrePanel.createDiv({ cls: 'nw-kb-channel-tabs' });
 
         const channels: { id: ConfigCategoryKey | 'all'; name: string }[] = [
             { id: 'all', name: '全部' },
@@ -996,12 +954,7 @@ export class KnowledgeBaseView extends ItemView {
 
         channels.forEach(ch => {
             const tab = channelTabs.createDiv({
-                cls: `nw-kb-channel-tab${this.filter.channel === ch.id ? ' is-active' : ''}`,
-                attr: {
-                    style: `flex:1;padding:8px 4px;text-align:center;cursor:pointer;font-size:12px;border-bottom:2px solid ${
-                        this.filter.channel === ch.id ? 'var(--interactive-accent)' : 'transparent'
-                    };color:${this.filter.channel === ch.id ? 'var(--interactive-accent)' : 'var(--text-muted)'};`
-                }
+                cls: `nw-kb-channel-tab${this.filter.channel === ch.id ? ' nw-kb-channel-tab--active' : ''}`,
             });
             tab.textContent = ch.name;
             tab.addEventListener('click', () => {
@@ -1012,17 +965,11 @@ export class KnowledgeBaseView extends ItemView {
             });
         });
 
-        const genreList = genrePanel.createDiv({
-            cls: "nw-kb-genre-list nw-u-flex-1 nw-u-ovy-auto nw-u-p-4px-0",
-            attr: {}
-        });
+        const genreList = genrePanel.createDiv({ cls: 'nw-kb-genre-list' });
 
         this.renderGenreList(genreList);
 
-        const booksPanel = content.createDiv({
-            cls: "nw-kb-books-panel nw-u-flex-1 nw-u-d-flex nw-u-fd-column nw-u-minw-0",
-            attr: {}
-        });
+        const booksPanel = content.createDiv({ cls: 'nw-kb-books-panel' });
 
         // 能力边界：拆解完成 ≠ 检索可用；把当前阶段直接放在列表顶部
         const capability = computeKnowledgeCapability(this.allBooks, this.embeddingSnapshot);
@@ -1137,22 +1084,16 @@ export class KnowledgeBaseView extends ItemView {
         onClick: () => void;
         isSub?: boolean;
     }): HTMLElement {
+        // 2026-11-16：内联样式与死类（nw-text-muted-11 从未定义）改为语义类
         const item = createDiv({
-            attr: {
-                style: `padding:6px 12px 6px ${opts.isSub ? '28px' : '12px'};cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:13px;${
-                    opts.isActive ? 'background:var(--background-secondary-alt);color:var(--interactive-accent);' : 'color:var(--text-normal);'
-                }`
-            }
+            cls: `nw-kb-genre-item${opts.isSub ? ' nw-kb-genre-item--sub' : ''}${opts.isActive ? ' nw-kb-genre-item--active' : ''}`,
         });
 
-        const left = item.createDiv({ cls: "nw-flex-row-sm nw-u-minw-0 nw-u-flex-1", attr: {} });
-        left.createSpan({ text: opts.icon, cls: "nw-flex-shrink-0 nw-u-fs-12px", attr: {} });
-        left.createSpan({ text: opts.name, cls: 'nw-ellipsis' });
+        const left = item.createDiv({ cls: 'nw-kb-genre-item-main' });
+        left.createSpan({ text: opts.icon, cls: 'nw-kb-genre-item-icon' });
+        left.createSpan({ text: opts.name, cls: 'nw-kb-genre-item-label' });
 
-        item.createSpan({
-            text: opts.count.toString(),
-            cls: 'nw-text-muted-11 nw-flex-shrink-0'
-        });
+        item.createSpan({ text: opts.count.toString(), cls: 'nw-kb-genre-count' });
 
         item.addEventListener('click', opts.onClick);
         return item;
@@ -1164,25 +1105,18 @@ export class KnowledgeBaseView extends ItemView {
         const count = this.getGenreBookCount(genre.id);
 
         const header = createDiv({
-            attr: {
-                style: `padding:6px 12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:13px;${
-                    this.filter.primaryGenre === genre.id ? 'background:var(--background-secondary-alt);color:var(--interactive-accent);' : ''
-                }`
-            }
+            cls: `nw-kb-genre-group-header${this.filter.primaryGenre === genre.id ? ' nw-kb-genre-group-header--active' : ''}`,
         });
 
-        const left = header.createDiv({ cls: "nw-flex-row-sm nw-u-minw-0 nw-u-flex-1", attr: {} });
+        const left = header.createDiv({ cls: 'nw-kb-genre-item-main' });
         const toggle = left.createSpan({
             text: isExpanded ? '▼' : '▶',
-            cls: "nw-flex-shrink-0 nw-u-fs-9px nw-u-w-12px nw-u-c-text-muted", attr: {}
+            cls: 'nw-kb-genre-toggle',
         });
-        left.createSpan({ text: '📂', cls: "nw-flex-shrink-0 nw-u-fs-12px", attr: {} });
-        left.createSpan({ text: genre.name, cls: 'nw-ellipsis' });
+        left.createSpan({ text: '📂', cls: 'nw-kb-genre-item-icon' });
+        left.createSpan({ text: genre.name, cls: 'nw-kb-genre-item-label' });
 
-        header.createSpan({
-            text: count.toString(),
-            cls: 'nw-text-muted-11 nw-flex-shrink-0'
-        });
+        header.createSpan({ text: count.toString(), cls: 'nw-kb-genre-count' });
 
         toggle.addEventListener('click', (e) => {
             e.stopPropagation();

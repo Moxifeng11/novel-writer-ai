@@ -68,7 +68,8 @@
     "check:project-standard": "node scripts/check-project-standard.mjs",
     "gen:workers-inline": "node scripts/generate-worker-inline.mjs",
     "check:workers-inline": "node scripts/generate-worker-inline.mjs --check",
-    "check:utility": "node scripts/check-utility-classes.mjs"
+    "check:utility": "node scripts/check-utility-classes.mjs",
+    "visual:diff": "node scripts/check-visual-diff.mjs"
   },
   "engines": {
     "node": ">=20",

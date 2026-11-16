@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-16T14:09:00.480Z",
-  "note": "工具类去重与语义化后收紧（-5.4KB，-141 类）",
-  "bytes": 591458,
+  "generatedAt": "2026-11-16T14:29:47.157Z",
+  "note": "知识库视觉重构 Slice A：语义类归位到 27-knowledge-base.css（+5.2KB、26 类，其中 26 类为原工具类拆分出的语义类）",
+  "bytes": 596639,
   "important": 24,
   "hardcodedHex": 156,
   "rgbHsl": 183,
-  "uniqueClasses": 3112,
+  "uniqueClasses": 3138,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

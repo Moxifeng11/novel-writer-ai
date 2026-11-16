@@ -71,6 +71,7 @@
 | `npm run test:e2e:ui` | Playwright UI 模式 |
 | `npm run typecheck` | tsc --noEmit |
 | `npm run version:sync` | 同步 package.json 版本到 manifest.json 与 versions.json |
+| `npm run visual:diff` | — |
 
 ## preflight 展开
 

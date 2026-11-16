@@ -191,22 +191,6 @@
     margin-top: 2px;
 }
 
-/* 知识库书籍页：窄屏把题材栏收成顶部横条，避免 220px + 书籍列表互相挤压 */
-@media (max-width: 900px) {
-    .nw-kb-books-tab {
-        flex-direction: column;
-    }
-    .nw-kb-genre-panel {
-        width: auto;
-        min-width: 0;
-        max-height: 170px;
-        border-right: none;
-        border-bottom: 1px solid var(--background-modifier-border);
-    }
-    .nw-kb-genre-list {
-        max-height: 110px;
-    }
-}
 .nw-intensity-preview {
     margin-bottom: 16px;
     padding: 12px;
