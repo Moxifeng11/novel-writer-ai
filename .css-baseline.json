@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-16T20:59:41.463Z",
-  "note": "2026-11-17 Slice G：四个知识库弹窗改 nw-kb-modal-* 语义类（+79 类、+8405B、+1 rgb）；收尾实测 641824 字符（较记录 -5，构建产物精确对齐）",
-  "bytes": 641824,
+  "generatedAt": "2026-11-16T21:16:12.749Z",
+  "note": "工具类清理：删 57 个零引用声明级工具类；修正 writing-fingerprint-view 死引用 nw-u-w-full-2",
+  "bytes": 639017,
   "important": 24,
   "hardcodedHex": 165,
   "rgbHsl": 187,
-  "uniqueClasses": 3478,
+  "uniqueClasses": 3421,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

@@ -11,7 +11,7 @@
 | `shared/` | 255 | 50823 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3387 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 300 | 113576 | 1155 | 917 | 79% |
+| `ui/` | 300 | 113575 | 1155 | 917 | 79% |
 
 ## 文件清单
 
@@ -1001,7 +1001,7 @@
 | `ui/views/link-status.ts` | 117 | 2 | 1 |
 | `ui/views/memory-graph-view.ts` | 289 | 3 | 2 |
 | `ui/views/planning-canvas-view.ts` | 954 | 4 | 3 |
-| `ui/views/writing-fingerprint-view.ts` | 2039 | 3 | 3 |
+| `ui/views/writing-fingerprint-view.ts` | 2038 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |

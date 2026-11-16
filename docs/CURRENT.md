@@ -74,4 +74,5 @@ Obsidian 插件「小说工坊 AI」：长篇 / 短篇 / 剧本三域创作 + �
 - `window.novelAI` 全局挂载：已删除，并有 `global-namespace` 门禁。
 - `rewrite-chapters` spec / `E2E_REWRITE`：随「九霄逆脉行」下线，无脚本消费。
 - `src/` 目录、`ui/views/kb-panel.ts` 等旧文件名：不存在。
-- `nw-u-*` 工具类：正在按切片退场，改语义类；新代码不要新增 `nw-u-`。
+- `nw-u-*` 工具类：按切片退场改语义类，**新代码不要新增**。存量口径、剩余存量大户与清理记录见
+  `docs/design/2026-11-16-visual-refactor-standard.md` §5.1（定义 373 个、零引用 0、TS 引用 3602 处 / 65 文件）。

@@ -46,6 +46,7 @@ const SCRIPT_DESCRIPTIONS = {
     'check:deps': '分层依赖与循环依赖（棘轮）',
     'check:css': 'CSS 预算与命名棘轮',
     'check:inline-styles': '内联样式基线棘轮',
+    'check:utility': 'nw-u- 工具类体系：重名后缀/死引用/死定义/基线只降不升',
     'css:baseline': '更新 CSS 基线',
     'inline:baseline': '更新内联样式基线',
     'eval:fingerprint': '指纹检索评估',

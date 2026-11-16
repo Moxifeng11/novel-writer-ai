@@ -145,3 +145,41 @@ Obsidian 自带 `button:not(.clickable-icon)` 特异性是 **(0,1,1)**，
 | 模块 | 状态 | 快照 |
 | --- | --- | --- |
 | 知识库 / 设定（`kb-`） | 完成：Slice A–G（书架 / 工具栏卡片 / 详情公共构件+概览 / 外壳页签条 / 各页签内容区 / 题材配置页 / 四个管理弹窗）；后续新页签沿用同一模式 | `docs/quality/visual-baseline/kb-books.json`、`kb-detail.json`；F 截图 `D:\nw-dev-vault\_visual-fg\`、G 截图 `D:\nw-dev-vault\_visual-g\`（未入库） |
+
+### 5.1 工具类退场进度（`nw-u-*`）
+
+定义全部集中在 `styles-src/10-entity-and-utilities.css`，门禁 `npm run check:utility`。
+检查项：A 重名后缀、B `cls:` 字面量死引用、B2 源码全文死引用（覆盖 `addClass()` 与模板串）、
+D 零引用死定义，外加 C 定义数与使用量只许下降。
+**纪律：新代码不得新增 `nw-u-*`；已在用的类随所属模块切片换成语义类。**
+
+2026-11-17 清理后实测（脚本口径：扫 `ui/engine/services/shared/core/domains/utils` + `main.ts`）：
+
+| 指标 | 数值 |
+| --- | --- |
+| 定义 | 373 个（清理前 430） |
+| 零引用定义 | 0（清理前 57，已删） |
+| 引用但未定义的类 | 0（清理前 5：真实缺陷 1 处 `nw-u-w-full-2` 已删，另 4 处是 `tests/` 断言与历史文档示例） |
+| TS 引用 | 373 个类 / 3602 次 / 65 个文件 |
+| `styles.css` 体积 | 639017 字节（清理前 641824，−2807） |
+
+清理记录：删除 57 个零引用声明级工具类；去掉 `ui/views/writing-fingerprint-view.ts` 里 `addClass('nw-u-w-full-2')`（类从未定义，等于空操作，删除后渲染不变）。
+
+**取词陷阱**：历史生成器对超长类名做了截断，留下 `nw-u-blt-3px-solid-interactive-`、`nw-u-bt-1px-dashed-nw-divider-`、
+`nw-u-animation-nw-progress-anim-1-5s-` 等**以 `-` 结尾却真实生效**的类名。B2/D 的正则必须把尾部连字符一起吞掉
+（`/nw-u-[a-zA-Z0-9_-]+/`），否则会把它们误报成「引用了未定义的类」。
+
+剩余存量大户（下一批切片候选，按引用次数）：
+
+| 文件 | 引用 | 文件 | 引用 |
+| --- | --- | --- | --- |
+| `ui/batch-import-modal.ts` | 365 | `ui/settings/general-sections.ts` | 160 |
+| `ui/knowledge-detail-modal.ts` | 294 | `ui/fingerprint-detail-modal.ts` | 157 |
+| `ui/full-writer/wizard-step-renderers.ts` | 265 | `ui/views/book-detail-renderer.ts` | 126 |
+| `ui/monitor-panel-b.ts` | 232 | `ui/full-writer/scene-outline-controller.ts` | 123 |
+| `ui/views/writing-fingerprint-view.ts` | 228 | `ui/settings/knowledge-section.ts` | 108 |
+| `ui/outline-expand-modal.ts` | 220 | `ui/polish-editor.ts` | 104 |
+| `ui/prompt-manager-settings.ts` | 192 | `ui/refill-modal.ts` | 97 |
+| `ui/chapter-outline-tree-modal.ts` | 177 | `ui/views/kb-stats-panel.ts` | 81 |
+| `ui/views/knowledge-base-view.ts` | 175 | `ui/settings/deconstruction-section.ts` | 47 |
+| `ui/rendering/context-panel.ts` | 173 | `ui/settings/api-section.ts` | 30 |

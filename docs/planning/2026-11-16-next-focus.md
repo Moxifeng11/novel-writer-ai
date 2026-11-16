@@ -836,3 +836,34 @@ after 构建八个页签 `nw-u-` 引用均为 0（before：技巧 141 / 结构 2
 几乎不可见——差点被误判成「语义化把标题改坏了」。视觉采集前应确认 `theme: auto`（默认值）或与 Obsidian 主题一致。
 
 下一轮：Slice A–G 已全部完成，收尾工具类清点（全仓 `nw-u-` 存量）与全局 INDEX 更新。
+
+### 2026-11-17 第三十三轮：工具类存量清理（零引用定义 + 死引用）
+
+**范围**：`styles-src/10-entity-and-utilities.css`（589 → 532 行，纯删除，无空行残留）与 `ui/views/writing-fingerprint-view.ts`。
+
+**盘点**：全仓 `nw-u-*` 定义 430 个（全在该文件），TS 引用 378 个类；脚本核对「定义集合 ∩ 引用集合」后：
+57 个定义零引用；5 处引用无定义（1 个真实缺陷 `nw-u-w-full-2`，其余 4 处是 `tests/` 断言与历史文档示例）。
+
+**改动**：删 57 个零引用定义（按名字精确匹配整条规则，脚本报告 removed=57 / missing=0 / 重名=0）；
+删 `ui/views/writing-fingerprint-view.ts:1795` 的 `area.inputEl.addClass('nw-u-w-full-2')`——该类从未定义，
+是空操作，删除后指纹编辑弹窗的渲染不变（12 维描述文本域本就吃 Obsidian 默认宽度）。
+
+**结果**：定义 430 → 373，零引用 0，未定义引用 0，TS 引用 373 类 / 3602 次 / 65 文件；
+`styles.css` 641824 → 639017 字节（−2807）；唯一类 3478 → 3421。
+
+**门禁升级**：`check:utility` 新增 B2（源码全文死引用，覆盖 `addClass()`）与 D（零引用死定义）两项，README 头注释同步。
+取词正则须连尾部长连字符一起取——历史生成器截断的长名（`nw-u-blt-3px-solid-interactive-` 等）真实生效，否则误报。
+
+**门禁**：`check:css`、`check:utility`（定义 373、使用 3483）、`check:bundle` 三处基线已 `--update-baseline`
+收紧（`.css-baseline.json` 的 note 记明「删 57 个零引用工具类 + 修 `nw-u-w-full-2` 死引用」）；
+`check:inline-styles`（总计 685，静态 533 / 动态 152）、`typecheck` 通过。
+
+**教训（盘点口径）**：`check-utility` 的 B 项只扫 `cls:` 字面量，`addClass('nw-u-…')` 里的死类拦不住——
+以后清点要按「TS 全文出现的 `nw-u-*` 集合」与「CSS 定义集合」做双向差集，两边任一方向非空都算债。
+
+**文档**：`docs/design/2026-11-16-visual-refactor-standard.md` 新增 §5.1「工具类退场进度」（指标表 + 剩余存量大户
+20 行 + 清理记录），`docs/CURRENT.md` §6 的 `nw-u-*` 条目改为指向 §5.1。
+
+下一轮：按 §5.1 的存量大户推进语义化，建议先做 `ui/batch-import-modal.ts`（365 处）或
+`ui/knowledge-detail-modal.ts`（294 处）——两者都是弹窗，可复用 Slice G 的 `nw-kb-modal-*` 模式。
+

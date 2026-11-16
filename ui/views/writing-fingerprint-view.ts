@@ -1792,7 +1792,6 @@ class EditFingerprintModal extends Modal {
                                 dim.description = v;
                                 dim.status = v.trim() ? 'complete' : dim.status;
                             });
-                        area.inputEl.addClass('nw-u-w-full-2');
                         return area;
                     });
             }

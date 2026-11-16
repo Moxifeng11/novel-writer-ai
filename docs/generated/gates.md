@@ -39,7 +39,7 @@
 | `npm run check:support-qr` | — |
 | `npm run check:templates` | 校验模板生成物与 assets 一致 |
 | `npm run check:test-standard` | — |
-| `npm run check:utility` | — |
+| `npm run check:utility` | nw-u- 工具类体系：重名后缀/死引用/死定义/基线只降不升 |
 | `npm run check:view-tests` | — |
 | `npm run check:workers-inline` | — |
 | `npm run check:write-entry` | — |

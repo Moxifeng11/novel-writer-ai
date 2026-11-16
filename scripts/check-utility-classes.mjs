@@ -12,8 +12,10 @@
  *
  * 检查项：
  *   A. 不允许出现 -2/-3 后缀的工具类（重名复制）
- *   B. TS 里引用的 nw-u-* 必须有对应定义（防死类）
+ *   B. TS 里 cls: 字面量引用的 nw-u-* 必须有对应定义（防死类）
+ *   B2. 源码全文（不含 tests/）出现的 nw-u-* 都必须有定义（覆盖 addClass 等写法）
  *   C. 工具类定义数与使用量不得超过基线（只允许下降）
+ *   D. 不允许「定义了但没人用」的死定义（2026-11-17 清理后为 0，保持住）
  */
 import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -69,6 +71,19 @@ for (const file of files) {
 const undefinedRefs = [...references.keys()].filter(name => !defined.has(name));
 const totalUsage = [...references.values()].reduce((sum, n) => sum + n, 0);
 
+// B2/D. 源码全文扫描（排除 tests/：那里有「断言某类不存在」的用例）
+const srcFiles = SCAN_DIRS.filter(dir => dir !== 'tests')
+    .flatMap(dir => collectTs(join(ROOT, dir)));
+if (existsSync(rootMain)) srcFiles.push(rootMain);
+const mentioned = new Set();
+for (const file of srcFiles) {
+    const text = readFileSync(file, 'utf8');
+    // 注意：历史生成器会产出以 - 结尾的名字（如 nw-u-blt-3px-solid-interactive-），必须连尾部连字符一起取
+    for (const match of text.matchAll(/nw-u-[a-zA-Z0-9_-]+/g)) mentioned.add(match[0]);
+}
+const undefinedMentioned = [...mentioned].filter(name => !defined.has(name)).sort();
+const unusedDefinitions = definitions.filter(name => !mentioned.has(name)).sort();
+
 const baseline = existsSync(BASELINE_FILE)
     ? JSON.parse(readFileSync(BASELINE_FILE, 'utf8'))
     : { definitions: definitions.length, usage: totalUsage, note: '初始基线' };
@@ -86,6 +101,7 @@ function updateBaseline() {
 
 console.log('=== 工具类检查 ===');
 console.log(`定义: ${definitions.length}；TS 引用: ${references.size} 个类 / ${totalUsage} 次`);
+console.log(`全文扫描: ${srcFiles.length} 个源文件，出现 ${mentioned.size} 个类；零引用定义 ${unusedDefinitions.length}，未定义类 ${undefinedMentioned.length}`);
 
 let failed = false;
 if (suffixed.length > 0) {
@@ -94,6 +110,14 @@ if (suffixed.length > 0) {
 }
 if (undefinedRefs.length > 0) {
     console.error(`❌ 引用了未定义的工具类: ${undefinedRefs.slice(0, 10).join(', ')}`);
+    failed = true;
+}
+if (undefinedMentioned.length > 0) {
+    console.error(`❌ 源码里出现未定义的工具类: ${undefinedMentioned.slice(0, 10).join(', ')}`);
+    failed = true;
+}
+if (unusedDefinitions.length > 0) {
+    console.error(`❌ 存在零引用的工具类定义（应删除）: ${unusedDefinitions.slice(0, 10).join(', ')}`);
     failed = true;
 }
 if (process.argv.includes('--update-baseline')) {
