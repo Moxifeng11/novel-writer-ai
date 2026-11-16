@@ -78,7 +78,7 @@ describe('discoverModels', () => {
         const result = await discoverModels('https://api.example.com/v1', 'openai-chat', 'sk-1', fn);
 
         expect(result.kind).toBe('ok');
-        expect(calls[0].url).toBe('https://api.example.com/models');
+        expect(calls[0].url).toBe('https://api.example.com/v1/models');
         expect(calls[0].method).toBe('GET');
         expect(calls[0].headers?.Authorization).toBe('Bearer sk-1');
     });

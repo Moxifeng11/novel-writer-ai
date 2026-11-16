@@ -7,8 +7,10 @@ import {
     parseChatResponse,
     parseSseFrame,
     isNativeOllamaEndpoint,
+    resolveApiBaseUrl,
     resolveApiRoot,
     resolveModelsUrl,
+    resolveModelsUrlCandidates,
     resolveRequestUrl,
     usesDoneSentinel,
 } from '../../../shared/api-format';
@@ -70,13 +72,33 @@ describe('API 格式：规范化与 URL 推导', () => {
             .toBe('http://localhost:11434/api/chat');
     });
 
-    it('模型列表地址按协议推导', () => {
-        expect(resolveModelsUrl('https://api.deepseek.com', 'openai-chat'))
-            .toBe('https://api.deepseek.com/models');
+    // 语义变更（2026-11-16）：模型列表 URL 不再一律剥到站点根。
+    // 实测 SenseNova 正确地址 /v1/models 返回 401、错误推导 /models 返回 404；
+    // OpenCode Go 正确 /inference/go/openai/v1/models 200、错误推导 404。
+    it('模型列表地址保留渠道路径前缀，并按候选回退', () => {
+        // 纯站点根：官方口径 /models 优先，/v1/models 兜底
+        expect(resolveModelsUrlCandidates('https://api.deepseek.com', 'openai-chat'))
+            .toEqual(['https://api.deepseek.com/models', 'https://api.deepseek.com/v1/models']);
+        // 已带 /v1：优先 /v1/models（用户填写的意图），失败回退 /models
         expect(resolveModelsUrl('https://api.deepseek.com/v1', 'openai-chat'))
-            .toBe('https://api.deepseek.com/models');
-        expect(resolveModelsUrl('https://api.deepseek.com/anthropic', 'anthropic-messages'))
+            .toBe('https://api.deepseek.com/v1/models');
+        expect(resolveModelsUrlCandidates('https://token.sensenova.cn/v1/chat/completions', 'openai-chat'))
+            .toEqual(['https://token.sensenova.cn/v1/models', 'https://token.sensenova.cn/models']);
+        expect(resolveModelsUrl('https://opencode.ai/zen/v1/chat/completions', 'openai-chat'))
+            .toBe('https://opencode.ai/zen/v1/models');
+        expect(resolveModelsUrl('https://opencode.ai/inference/go/openai/v1', 'openai-chat'))
+            .toBe('https://opencode.ai/inference/go/openai/v1/models');
+        expect(resolveModelsUrl('https://api.deepseek.com/anthropic/v1', 'anthropic-messages'))
             .toBe('https://api.deepseek.com/anthropic/v1/models?limit=1000');
+    });
+
+    it('基址推导保留路径前缀', () => {
+        expect(resolveApiBaseUrl('https://opencode.ai/zen/v1/chat/completions'))
+            .toBe('https://opencode.ai/zen/v1');
+        expect(resolveApiBaseUrl('https://opencode.ai/inference/go/openai/v1'))
+            .toBe('https://opencode.ai/inference/go/openai/v1');
+        expect(resolveApiBaseUrl('https://api.deepseek.com/v1/chat/completions'))
+            .toBe('https://api.deepseek.com/v1');
     });
 
     it('空地址不推导出半截 URL', () => {
@@ -349,6 +371,6 @@ describe('Ollama 原生端点', () => {
         expect(resolveRequestUrl('https://api.deepseek.com', 'openai-chat'))
             .toBe('https://api.deepseek.com/v1/chat/completions');
         expect(resolveModelsUrl('https://api.deepseek.com/v1', 'openai-chat'))
-            .toBe('https://api.deepseek.com/models');
+            .toBe('https://api.deepseek.com/v1/models');
     });
 });

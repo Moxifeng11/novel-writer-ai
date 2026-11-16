@@ -117,6 +117,47 @@ export function resolveApiRoot(endpoint: string): string {
 }
 
 /**
+ * 把用户填写的端点还原成「API 基址」——保留渠道自己的路径前缀。
+ *
+ * 这是「从 URL 获取模型」能否工作的关键：很多渠道把 API 挂在子路径下
+ * （OpenCode `/zen/v1`、`/inference/go/openai/v1`，SenseNova `/v1`）。
+ * 旧实现先剥掉 `/chat/completions` 再剥掉结尾 `/v1`，于是一路退到站点根，
+ * 请求 `/models` 直接 404（实测 SenseNova 正确地址 401、错误推导 404）。
+ *
+ * 规则：
+ * - 完整地址（`.../chat/completions`、`.../responses`、`.../messages`）→ 去掉末段协议路径；
+ * - 已带版本段的基址（`.../v1`、`.../openai/v1`、`.../api/v3`）→ 原样保留；
+ * - 纯站点根 → 原样，由调用方补 `/v1/...`。
+ *
+ * @param endpoint - 用户填写的端点
+ * @returns API 基址
+ * @example
+ * resolveApiBaseUrl('https://opencode.ai/zen/v1/chat/completions'); // 'https://opencode.ai/zen/v1'
+ * resolveApiBaseUrl('https://opencode.ai/inference/go/openai/v1');  // 'https://opencode.ai/inference/go/openai/v1'
+ * resolveApiBaseUrl('https://api.deepseek.com');                    // 'https://api.deepseek.com'
+ */
+export function resolveApiBaseUrl(endpoint: string): string {
+    let base = trimSlash(endpoint);
+    if (!base) return '';
+    // 去掉已写全的协议路径，保留版本段
+    base = base.replace(/\/(?:chat\/completions|responses|messages)$/i, '');
+    return trimSlash(base);
+}
+
+/**
+ * 端点是否已经指向某个版本段（`/v1`、`/api/v3`、`/openai/v1` 等）。
+ *
+ * @param endpoint - 端点或基址
+ * @returns 是否已带版本段
+ * @example
+ * hasVersionSegment('https://x.com/v1');      // true
+ * hasVersionSegment('https://x.com');         // false
+ */
+export function hasVersionSegment(endpoint: string): boolean {
+    return /\/(?:v\d+(?:beta\d*)?|api\/v\d+)$/i.test(trimSlash(endpoint));
+}
+
+/**
  * 推导实际请求 URL。
  *
  * - openai-chat：端点已指向 chat/completions 或 Ollama `/api/chat` 时原样复用，
@@ -135,13 +176,16 @@ export function resolveRequestUrl(endpoint: string, format: ApiFormat): string {
         // Ollama 原生端点（/api/generate、/api/chat）本身就是完整地址，不能再追加路径
         if (isNativeOllamaEndpoint(raw)) return raw;
         if (/\/chat\/completions$/i.test(raw)) return raw;
-        const root = resolveApiRoot(raw);
-        return root ? `${root}/v1/chat/completions` : raw;
+        // 已带版本段的基址（/v1、/openai/v1、/zen/v1）保留原样，不能再加一层 /v1
+        const base = resolveApiBaseUrl(raw);
+        if (!base) return raw;
+        return hasVersionSegment(base) ? `${base}/chat/completions` : `${base}/v1/chat/completions`;
     }
 
-    const root = resolveApiRoot(raw);
-    if (!root) return raw;
-    return format === 'anthropic-messages' ? `${root}/v1/messages` : `${root}/v1/responses`;
+    const base = resolveApiBaseUrl(raw);
+    if (!base) return raw;
+    const path = format === 'anthropic-messages' ? '/messages' : '/responses';
+    return hasVersionSegment(base) ? `${base}${path}` : `${base}/v1${path}`;
 }
 
 /**
@@ -165,10 +209,55 @@ export function resolveModelsUrl(endpoint: string, format: ApiFormat): string {
             return '';
         }
     }
-    const root = resolveApiRoot(raw);
-    if (!root) return '';
-    if (format === 'anthropic-messages') return `${root}/v1/models?limit=1000`;
-    return `${root}/models`;
+    const candidates = resolveModelsUrlCandidates(raw, format);
+    return candidates[0] ?? '';
+}
+
+/**
+ * 推导模型列表 URL 的候选序列（按优先级）。
+ *
+ * 各渠道把 `/models` 挂在不同的路径下（DeepSeek 官方是站点根 `/models`，
+ * SenseNova/OpenCode 是 `/v1/models`、`/zen/v1/models`）。与其猜一个，
+ * 不如按用户填写时体现的意图排序、失败再回退，避免「换个渠道就 404」。
+ *
+ * @param endpoint - 用户填写的 Base URL 或完整端点
+ * @param format - 协议格式
+ * @returns 候选 URL（去重；空端点返回空数组）
+ * @example
+ * resolveModelsUrlCandidates('https://token.sensenova.cn/v1', 'openai-chat');
+ * // ['https://token.sensenova.cn/v1/models', 'https://token.sensenova.cn/models']
+ */
+export function resolveModelsUrlCandidates(endpoint: string, format: ApiFormat): string[] {
+    const raw = trimSlash(endpoint);
+    if (!raw) return [];
+    if (isNativeOllamaEndpoint(raw)) {
+        try {
+            return [`${new URL(raw).origin}/api/tags`];
+        } catch {
+            return [];
+        }
+    }
+    const base = resolveApiBaseUrl(raw);
+    if (!base) return [];
+    const suffix = format === 'anthropic-messages' ? '/models?limit=1000' : '/models';
+    const candidates: string[] = [];
+    const push = (url: string): void => {
+        const trimmed = trimSlash(url.split('?')[0]);
+        if (!candidates.some(item => trimSlash(item.split('?')[0]) === trimmed)) candidates.push(url);
+    };
+    if (hasVersionSegment(base)) {
+        push(`${base}${suffix}`);
+        const stripped = base.replace(/\/v\d+(?:beta\d*)?$/i, '').replace(/\/api\/v\d+$/i, '');
+        if (stripped && stripped !== base) push(`${stripped}${suffix}`);
+    } else if (format === 'anthropic-messages') {
+        // Anthropic 官方基址不带版本段（https://api.anthropic.com），列表在 /v1/models
+        push(`${base}/v1${suffix}`);
+        push(`${base}${suffix}`);
+    } else {
+        push(`${base}${suffix}`);
+        push(`${base}/v1${suffix}`);
+    }
+    return candidates;
 }
 
 /**

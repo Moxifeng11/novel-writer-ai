@@ -30,6 +30,30 @@ export interface ModelPickerResult {
 }
 
 /**
+ * 候选默认勾选规则（纯函数，便于单测）。
+ *
+ * @param candidates - 端点返回的候选模型
+ * @param configured - 当前已配置的模型
+ * @param id - 候选模型 id
+ * @returns 默认是否勾选
+ * @example
+ * isPickedByDefault([{ id: 'a' }], [], 'a');        // true（首次导入全选）
+ * isPickedByDefault([{ id: 'a' }], ['b'], 'a');     // true（完全不重合→全选）
+ * isPickedByDefault([{ id: 'a' }], ['a'], 'a');     // true（只勾已配置）
+ */
+export function isPickedByDefault(
+    candidates: DiscoveredModel[],
+    configured: string[],
+    id: string,
+): boolean {
+    if (configured.length === 0) return true;
+    const listed = new Set(candidates.map(model => model.id));
+    const overlapping = configured.filter(configuredId => listed.has(configuredId));
+    if (overlapping.length === 0) return true;
+    return configured.includes(id);
+}
+
+/**
  * 计算「确认勾选」后的模型列表与能力回填数据。
  *
  * 规则：端点没列出的已配置模型原样保留；列出的按勾选状态增删；
@@ -110,9 +134,19 @@ export class ModelPickerModal extends Modal {
         this.render();
     }
 
-    /** 默认勾选：空列表全选；非空列表只勾已配置的 */
+    /**
+     * 默认勾选规则。
+     *
+     * - 没有已配置模型 → 全选（首次导入）；
+     * - 已配置模型**与本次候选完全不重合**（渠道换了 / 之前是空列表）→ 也全选，
+     *   否则弹窗里一个都不勾，点「应用」等于什么都没导入，用户看到的是「获取成功但没效果」；
+     * - 有重合 → 只勾已配置的，新候选留给用户手动勾。
+     *
+     * @param id - 候选模型 id
+     * @returns 默认是否勾选
+     */
     private pickedByDefault(id: string): boolean {
-        return this.configured.length === 0 || this.configured.includes(id);
+        return isPickedByDefault(this.candidates, this.configured, id);
     }
 
     private isPicked(id: string): boolean {

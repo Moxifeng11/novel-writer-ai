@@ -5,7 +5,7 @@
  * 上下文/输出/视觉/单价，供调用方写入 modelMeta。
  */
 import { describe, expect, it } from 'vitest';
-import { buildPickerResult } from '../../../ui/model-picker-modal';
+import { buildPickerResult, isPickedByDefault } from '../../../ui/model-picker-modal';
 import type { DiscoveredModel } from '../../../services/model-discovery';
 
 const CANDIDATES: DiscoveredModel[] = [
@@ -54,3 +54,29 @@ describe('buildPickerResult', () => {
         expect(result?.models).toEqual(['deepseek-v4.1-flash', 'glm-5.3-flash']);
     });
 });
+
+// 2026-11-16（M-27）：OpenCode go 拉回 86 个模型但弹窗一个都没勾，
+// 点「应用」等于没导入——用户看到「获取成功却没效果」。
+// 规则：已配置模型与候选完全不重合时视为首次导入，全选。
+describe('ModelPickerModal 默认勾选规则', () => {
+    it('已配置模型与候选完全不重合时全选（否则应用等于没导入）', () => {
+        for (const id of ['deepseek-v4.1-flash', 'glm-5.3-flash', 'plain-model']) {
+            expect(isPickedByDefault(CANDIDATES, ['old-channel-model'], id)).toBe(true);
+        }
+        // 已配置但未列出的模型仍会保留在结果里
+        const result = buildPickerResult(CANDIDATES, ['old-channel-model'], () => true);
+        expect(result?.models).toEqual(['old-channel-model', 'deepseek-v4.1-flash', 'glm-5.3-flash', 'plain-model']);
+    });
+
+    it('首次导入（无已配置）全选', () => {
+        for (const model of CANDIDATES) {
+            expect(isPickedByDefault(CANDIDATES, [], model.id)).toBe(true);
+        }
+    });
+
+    it('有重合时只勾已配置的', () => {
+        const result = buildPickerResult(CANDIDATES, ['glm-5.3-flash'], id => id === 'glm-5.3-flash');
+        expect(result?.models).toEqual(['glm-5.3-flash']);
+    });
+});
+

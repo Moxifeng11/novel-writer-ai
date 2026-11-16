@@ -15,7 +15,7 @@
 import { requestUrl } from 'obsidian';
 import { createLogger } from '@/shared/logger';
 import type { ApiFormat } from '@/shared/api-format';
-import { buildAuthHeaders, resolveModelsUrl } from '@/shared/api-format';
+import { buildAuthHeaders, resolveModelsUrl, resolveModelsUrlCandidates } from '@/shared/api-format';
 import { isStoredCiphertext } from '@/shared/secret-value';
 
 const log = createLogger('ModelDiscovery');
@@ -358,7 +358,8 @@ export async function discoverModels(
     if (isStoredCiphertext(apiKey)) {
         return { kind: 'error', message: 'API Key 处于加密锁定状态，请先在设置中解锁口令', url: resolveModelsUrl(endpoint, format) || '' };
     }
-    const url = resolveModelsUrl(endpoint, format);
+    const candidates = resolveModelsUrlCandidates(endpoint, format);
+    const url = candidates[0] ?? resolveModelsUrl(endpoint, format);
     if (!url) return { kind: 'error', message: '请先填写 Base URL', url: '' };
     try {
         new URL(url);
@@ -368,27 +369,43 @@ export async function discoverModels(
 
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-        const timeout = new Promise<never>((_, reject) => {
-            timer = setTimeout(() => reject(new Error('timeout')), TIMEOUT_MS);
-        });
-        const response = await Promise.race([
-            request({
-                url,
-                method: 'GET',
-                headers: {
-                    accept: 'application/json',
-                    ...buildAuthHeaders(format, apiKey),
-                    ...(headers && typeof headers === 'object' ? headers : {}),
-                },
-                throw: false,
-            }),
-            timeout,
-        ]);
-
-        if (response.status < 200 || response.status >= 300) {
-            log.warn('[ModelDiscovery] 请求失败', { status: response.status, url });
-            return { kind: 'error', message: describeStatus(response.status), url };
+        // 各渠道把 /models 挂在不同路径下：按候选序列逐个尝试，
+        // 只有 404（路径不对）才继续下一个；401/429/5xx 说明地址已对，直接报原因。
+        let response: { status: number; text: string; json?: unknown } | null = null;
+        let usedUrl = url;
+        let lastStatus = 0;
+        for (const candidate of candidates) {
+            const attempt = await Promise.race([
+                request({
+                    url: candidate,
+                    method: 'GET',
+                    headers: {
+                        accept: 'application/json',
+                        ...buildAuthHeaders(format, apiKey),
+                        ...(headers && typeof headers === 'object' ? headers : {}),
+                    },
+                    throw: false,
+                }),
+                new Promise<never>((_, reject) => {
+                    timer = setTimeout(() => reject(new Error('timeout')), TIMEOUT_MS);
+                }),
+            ]);
+            lastStatus = attempt.status;
+            if (attempt.status >= 200 && attempt.status < 300) {
+                response = attempt;
+                usedUrl = candidate;
+                break;
+            }
+            if (attempt.status !== 404) {
+                log.warn('[ModelDiscovery] 请求失败', { status: attempt.status, url: candidate });
+                return { kind: 'error', message: describeStatus(attempt.status), url: candidate };
+            }
+            log.info('[ModelDiscovery] 候选地址 404，尝试下一个', { url: candidate });
         }
+        if (!response) {
+            return { kind: 'error', message: describeStatus(lastStatus || 404), url: usedUrl };
+        }
+        const urlResolved = usedUrl;
 
         const text = boundedText(response.text);
         let payload: unknown = response.json;

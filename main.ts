@@ -257,12 +257,19 @@ export interface CanonResearchSettings {
      * `wikipedia` / `bangumi` 是免 Key 的公开 API，但可能受网络环境影响
      * （实测部分网络直接超时）；其余需要第三方搜索 Key。
      */
-    provider: 'manual' | 'bing' | 'brave' | 'serper' | 'tavily' | 'wikipedia' | 'bangumi' | 'deepseek';
+    provider: 'manual' | 'bing' | 'brave' | 'serper' | 'tavily' | 'wikipedia' | 'bangumi' | 'deepseek' | 'mcp';
     apiKey?: string;
     allowedDomains?: string[];
     blockedDomains?: string[];
     maxSources?: number;
+    /** 单条来源抓取入库字符上限（200–20000）；prompt 注入另有独立预算 */
     excerptChars?: number;
+    /** MCP 检索通道：服务 id */
+    mcpServerId?: string;
+    /** MCP 检索通道：工具名 */
+    mcpToolName?: string;
+    /** MCP 检索通道：查询参数名（query/q/search_query） */
+    mcpQueryParam?: string;
 }
 
 export interface NovelWriterSettings {
@@ -836,6 +843,39 @@ export default class NovelWriterPlugin extends Plugin {
         sources: Parameters<typeof indexCanonSourcesImpl>[3],
     ): ReturnType<typeof indexCanonSourcesImpl> {
         return indexCanonSourcesImpl(this.knowledgeVectorStore ?? null, project, workName, sources);
+    }
+
+    /**
+     * 调用用户配置的 MCP 服务里的工具（考据/调研的联网检索通道）。
+     *
+     * 每次调用短连接：连接目标服务 → 调工具 → 立即关闭，不常驻进程
+     * （设置页检索是偶发操作，常驻反而占资源、且会与 Agent 工作台的连接冲突）。
+     *
+     * @param serverId - MCP 服务 id
+     * @param toolName - 工具名
+     * @param args - 工具参数
+     * @returns 工具返回文本
+     */
+    async mcpCallTool(serverId: string, toolName: string, args: Record<string, unknown>): Promise<string> {
+        const servers = (this.settings.mcpServers || []).filter(server => server.id === serverId);
+        if (servers.length === 0) throw new Error(`未找到 MCP 服务「${serverId}」，请先在设置 → MCP 服务里配置`);
+        const { connectMcpServers, closeMcpClients } = await import('./engine/agent/harness/mcp-manager');
+        const connected = await connectMcpServers(servers);
+        try {
+            if (connected.failures.length > 0) {
+                throw new Error(`MCP 服务连接失败：${connected.failures.map(item => item.reason).join('；')}`);
+            }
+            const target = connected.tools.find(tool => tool.name === `mcp__${serverId}__${toolName}`)
+                ?? connected.tools.find(tool => tool.name.endsWith(`__${toolName}`));
+            if (!target) {
+                throw new Error(`MCP 服务里没有工具「${toolName}」，可用：${connected.tools.map(tool => tool.name.split('__').pop()).join('、')}`);
+            }
+            const result = await target.execute(args, { memory: { slots: {} } });
+            if (!result.ok) throw new Error(result.content || 'MCP 工具调用失败');
+            return result.content;
+        } finally {
+            closeMcpClients(connected.clients);
+        }
     }
 
     /**

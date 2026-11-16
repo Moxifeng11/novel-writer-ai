@@ -26,7 +26,9 @@ export type TrendSearchProvider =
     | 'wikipedia'
     | 'bangumi'
     /** DeepSeek 官方联网搜索（复用已配置的 DeepSeek Key） */
-    | 'deepseek';
+    | 'deepseek'
+    /** 用户配置的 MCP 服务里的搜索工具 */
+    | 'mcp';
 
 /**
  * 趋势研究配置。

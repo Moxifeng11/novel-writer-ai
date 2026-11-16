@@ -287,10 +287,10 @@ export function selectSourcesForPrompt(sources: CanonSource[]): {
  * 写明冲突裁决规则；`derivative`（同人/衍生/改编）依然被排除。
  *
  * @param sources - 来源列表
- * @param maxChars - 字符预算
+ * @param maxChars - 字符预算（默认 24000；按模型上下文与来源数量可调）
  * @returns prompt 文本
  */
-export function formatCanonSourcesForPrompt(sources: CanonSource[], maxChars = 12000): string {
+export function formatCanonSourcesForPrompt(sources: CanonSource[], maxChars = 24000): string {
     const { authoritative, references } = selectSourcesForPrompt(sources);
     if (authoritative.length === 0 && references.length === 0) {
         return '（没有可用的原著来源：既未找到官方资料，也没有可用的百科/wiki 二手资料。'
@@ -307,12 +307,19 @@ export function formatCanonSourcesForPrompt(sources: CanonSource[], maxChars = 1
         for (const source of list) {
             const excerpt = source.excerpt.trim();
             const budget = Math.max(0, Math.min(excerpt.length, maxChars - used));
-            if (budget <= 0) break;
+            if (budget <= 0) {
+                // 预算用尽时明确标注还有多少未注入，避免模型把「没看到」当成「不存在」
+                const rest = list.slice(list.indexOf(source)).reduce((sum, item) => sum + item.excerpt.trim().length, 0);
+                if (rest > 0) lines.push(`（篇幅所限，另有约 ${rest} 字来源内容未注入；如需请缩窄检索范围）`);
+                break;
+            }
             const text = excerpt.slice(0, budget);
+            const truncated = text.length < excerpt.length;
             // S3-2（安全 r3）：原著摘录属外部内容，必须围栏后才可进 system prompt
             lines.push(
                 `[${source.id}] ${source.title}\n来源：${source.url}\n等级：${CANON_TIER_LABEL[source.tier]}\n`
-                + `摘录：${wrapUntrustedContent(text, '原著摘录')}`,
+                + `摘录：${wrapUntrustedContent(text, '原著摘录')}`
+                + (truncated ? `\n（该条摘录仍有 ${excerpt.length - text.length} 字未展示，不要据此断言"原著未提及"）` : ''),
             );
             used += text.length;
         }

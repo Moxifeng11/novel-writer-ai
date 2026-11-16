@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 354 | 146793 | 1951 | 1545 | 79% |
-| `services/` | 65 | 19197 | 293 | 201 | 69% |
-| `shared/` | 253 | 50573 | 2140 | 1673 | 78% |
+| `engine/` | 354 | 146795 | 1951 | 1545 | 79% |
+| `services/` | 65 | 19337 | 294 | 202 | 69% |
+| `shared/` | 253 | 50669 | 2143 | 1676 | 78% |
 | `core/` | 7 | 3253 | 35 | 20 | 57% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 284 | 109384 | 1053 | 852 | 81% |
+| `ui/` | 284 | 109473 | 1054 | 853 | 81% |
 
 ## 文件清单
 
@@ -219,7 +219,7 @@
 | `engine/harness/single-call-runner.ts` | 222 | 7 | 7 |
 | `engine/harness/structured-output.ts` | 118 | 6 | 6 |
 | `engine/harness/tool-registry.ts` | 153 | 6 | 6 |
-| `engine/harness/trend-research-service.ts` | 326 | 9 | 9 |
+| `engine/harness/trend-research-service.ts` | 328 | 9 | 9 |
 | `engine/harness/true-random.ts` | 8 | 0 | 0 |
 | `engine/heavy-task-worker-manager.ts` | 312 | 2 | 2 |
 | `engine/incremental-result-aggregator.ts` | 1707 | 3 | 3 |
@@ -398,7 +398,7 @@
 | `services/attachment-service.ts` | 102 | 2 | 1 |
 | `services/backup-center-service.ts` | 182 | 4 | 1 |
 | `services/baseline-probe-service.ts` | 226 | 4 | 1 |
-| `services/canon-research-service.ts` | 753 | 11 | 9 |
+| `services/canon-research-service.ts` | 876 | 12 | 10 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
 | `services/chapter-version-service.ts` | 755 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
@@ -422,7 +422,7 @@
 | `services/ledger-migration-service.ts` | 248 | 4 | 1 |
 | `services/local-model-probe.ts` | 185 | 6 | 5 |
 | `services/memory-graph-service.ts` | 245 | 2 | 2 |
-| `services/model-discovery.ts` | 420 | 5 | 5 |
+| `services/model-discovery.ts` | 437 | 5 | 5 |
 | `services/performance-monitor.ts` | 819 | 9 | 9 |
 | `services/plan-spec-service.ts` | 147 | 3 | 2 |
 | `services/planning-store.ts` | 76 | 1 | 1 |
@@ -461,7 +461,7 @@
 | `shared/action-contract.ts` | 301 | 14 | 13 |
 | `shared/adaptive-debounce-manager.ts` | 315 | 2 | 2 |
 | `shared/ai-credentials.ts` | 96 | 4 | 4 |
-| `shared/api-format.ts` | 488 | 17 | 16 |
+| `shared/api-format.ts` | 577 | 20 | 19 |
 | `shared/api-response-utils.ts` | 253 | 10 | 10 |
 | `shared/api-types.ts` | 24 | 1 | 1 |
 | `shared/array-move.ts` | 48 | 2 | 2 |
@@ -473,7 +473,7 @@
 | `shared/body-format.ts` | 224 | 9 | 6 |
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
-| `shared/canon-source.ts` | 368 | 21 | 20 |
+| `shared/canon-source.ts` | 375 | 21 | 20 |
 | `shared/changelog-data.ts` | 339 | 3 | 3 |
 | `shared/chapter-progress.ts` | 142 | 7 | 6 |
 | `shared/chapter-ref.ts` | 205 | 7 | 5 |
@@ -876,7 +876,7 @@
 | `ui/mini-settings-modal.ts` | 107 | 1 | 0 |
 | `ui/mode-document-modal.ts` | 201 | 2 | 2 |
 | `ui/model-editor-modal.ts` | 150 | 2 | 1 |
-| `ui/model-picker-modal.ts` | 245 | 3 | 3 |
+| `ui/model-picker-modal.ts` | 279 | 4 | 4 |
 | `ui/model-picker-popover.ts` | 298 | 4 | 3 |
 | `ui/model-quick-switcher.ts` | 321 | 13 | 12 |
 | `ui/monitor-panel-a.ts` | 200 | 2 | 2 |
@@ -892,7 +892,7 @@
 | `ui/plot-canvas-modal.ts` | 366 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
 | `ui/polish-editor.ts` | 834 | 5 | 5 |
-| `ui/pre-research-modal.ts` | 714 | 2 | 2 |
+| `ui/pre-research-modal.ts` | 717 | 2 | 2 |
 | `ui/project-health-modal.ts` | 205 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 457 | 5 | 5 |
 | `ui/project-utils.ts` | 366 | 11 | 10 |
@@ -922,7 +922,7 @@
 | `ui/settings-tab.ts` | 405 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 39 | 1 | 1 |
-| `ui/settings/api-section.ts` | 1476 | 1 | 1 |
+| `ui/settings/api-section.ts` | 1528 | 1 | 1 |
 | `ui/settings/deconstruction-section.ts` | 332 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 290 | 1 | 1 |

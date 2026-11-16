@@ -46,7 +46,8 @@ const BANGUMI_USER_AGENT = `NovelWriterAI/4.83.1 (${GITHUB_REPO_URL})`;
  * @returns 是否需要 Key
  */
 export function providerNeedsApiKey(provider: CanonSearchProvider): boolean {
-    return provider !== 'manual' && provider !== 'wikipedia' && provider !== 'bangumi';
+    // mcp：鉴权与地址都在 MCP 服务配置里，本插件不需要再要一个 Key
+    return provider !== 'manual' && provider !== 'wikipedia' && provider !== 'bangumi' && provider !== 'mcp';
 }
 
 /**
@@ -60,6 +61,75 @@ export function providerNeedsApiKey(provider: CanonSearchProvider): boolean {
  */
 export function providerUsesModelChannelKey(provider: CanonSearchProvider): boolean {
     return provider === 'deepseek';
+}
+
+/**
+ * 把 MCP 搜索工具的返回文本解析成来源。
+ *
+ * 各 MCP 搜索服务返回格式不一，这里做通用兜底：
+ * 1. JSON：`results` / `data` / `items` / `web.results` 数组，取 title/url/snippet|summary|content；
+ * 2. 纯文本：按行找 URL，URL 所在行或上一行作为标题/摘录。
+ *
+ * @param raw - MCP 工具返回文本
+ * @returns 来源输入（已去重、仅保留 http(s)）
+ * @example
+ * parseMcpSearchText('[{"title":"A","url":"https://a.com","snippet":"x"}]').length; // 1
+ */
+export function parseMcpSearchText(raw: string): CanonSourceInput[] {
+    const text = String(raw || '').trim();
+    if (!text) return [];
+    const collected: CanonSourceInput[] = [];
+    const seen = new Set<string>();
+    const push = (title: unknown, url: unknown, excerpt: unknown): void => {
+        const link = typeof url === 'string' ? url.trim() : '';
+        if (!/^https?:\/\//i.test(link) || seen.has(link)) return;
+        seen.add(link);
+        collected.push({
+            title: String(title ?? '').trim().slice(0, 200) || link,
+            url: link,
+            excerpt: String(excerpt ?? '').trim().slice(0, 4000),
+        });
+    };
+
+    // ① JSON 形态
+    try {
+        const parsed = JSON.parse(text) as Record<string, unknown>;
+        const buckets: unknown[] = [];
+        for (const key of ['results', 'data', 'items', 'web', 'pages']) {
+            const value = parsed?.[key];
+            if (Array.isArray(value)) buckets.push(...value);
+            else if (value && typeof value === 'object') {
+                const nested = (value as Record<string, unknown>).results;
+                if (Array.isArray(nested)) buckets.push(...nested);
+            }
+        }
+        for (const entry of buckets) {
+            const item = entry as Record<string, unknown>;
+            if (!item || typeof item !== 'object') continue;
+            push(
+                item.title ?? item.name,
+                item.url ?? item.link ?? item.href,
+                item.snippet ?? item.summary ?? item.content ?? item.description,
+            );
+        }
+        if (collected.length > 0) return collected;
+    } catch {
+        // 非 JSON：继续按文本解析
+    }
+
+    // ② 文本形态：逐行找 URL
+    const lines = text.split(/\r?\n/);
+    for (let index = 0; index < lines.length; index += 1) {
+        const match = lines[index].match(/https?:\/\/[^\s)"'<>]+/i);
+        if (!match) continue;
+        const inline = lines[index].slice(0, match.index ?? 0).replace(/^[-*\d.\s]+/, '').trim();
+        const previous = index > 0 && !/https?:\/\//i.test(lines[index - 1])
+            ? lines[index - 1].replace(/^[-*\d.\s]+/, '').trim()
+            : '';
+        const title = inline || previous;
+        push(title, match[0], lines[index].replace(match[0], '').trim() || title);
+    }
+    return collected;
 }
 
 /**
@@ -78,12 +148,15 @@ export type CanonSearchProvider =
     | 'wikipedia'
     | 'bangumi'
     /** DeepSeek 官方联网搜索（POST /v1/tools/search，按次计费，复用已配置的 DeepSeek Key） */
-    | 'deepseek';
+    | 'deepseek'
+    /** 用户自己配置的 MCP 服务里的搜索工具（不限定具体服务，什么 MCP 都能接） */
+    | 'mcp';
 
 /** 各检索通道的展示名（设置页与错误提示共用） */
 export const PROVIDER_LABELS: Record<CanonSearchProvider, string> = {
     manual: '手动官方来源',
     deepseek: 'DeepSeek 联网搜索',
+    mcp: 'MCP 检索工具',
     wikipedia: '维基百科',
     bangumi: 'Bangumi 番组计划',
     bing: 'Bing web search',
@@ -101,7 +174,20 @@ export interface CanonResearchConfig {
     allowedDomains?: string[];
     blockedDomains?: string[];
     maxSources?: number;
+    /**
+     * 单条来源抓取入库的字符上限（200–20000）。
+     *
+     * 只管「存多少」，不管「注入多少」：prompt 注入由
+     * `formatCanonSourcesForPrompt` 的总预算单独控制，并在被裁剪时显式标注，
+     * 避免长条目被截断后模型误判「原著没写」。
+     */
     excerptChars?: number;
+    /** MCP 检索通道：服务 id */
+    mcpServerId?: string;
+    /** MCP 检索通道：工具名 */
+    mcpToolName?: string;
+    /** MCP 检索通道：查询参数名（不同搜索工具用 query/q/search_query） */
+    mcpQueryParam?: string;
 }
 
 /** 考据来源写入检索库的结果（结构由 engine 侧实现返回） */
@@ -131,6 +217,12 @@ interface CanonResearchHost {
         workName: string,
         sources: CanonSource[],
     ) => Promise<CanonIndexOutcome>;
+    /**
+     * 调用用户配置的 MCP 服务里的工具（依赖注入：services 层不能直接 import engine）。
+     *
+     * 返回工具原始文本；解析成来源由本服务负责，接入方（main.ts）只管连接与调用。
+     */
+    mcpCallTool?: (serverId: string, toolName: string, args: Record<string, unknown>) => Promise<string>;
 }
 
 /**
@@ -232,7 +324,9 @@ export class CanonResearchService {
         }
 
         const maxSources = Math.max(1, Math.min(12, config.maxSources ?? 6));
-        const excerptChars = Math.max(200, Math.min(4000, config.excerptChars ?? 1200));
+        // 抓取入库上限 20000：旧实现硬砍 4000，长条目（设定集/百科词条）会被截掉关键信息。
+        // prompt 注入另有独立预算（formatCanonSourcesForPrompt），两者不该共用一个死上限。
+        const excerptChars = Math.max(200, Math.min(20000, config.excerptChars ?? 1200));
         const sources: CanonSource[] = [];
         const seen = new Set<string>();
 
@@ -372,7 +466,7 @@ export class CanonResearchService {
         if (!normalized) throw new Error('只支持 http/https 官方资料 URL');
         if (isPrivateHost(new URL(normalized).hostname)) throw new Error('不允许使用本机/内网地址作为同人资料');
         const effective = { ...this.getConfig(), ...(config || {}) };
-        const chars = Math.max(200, Math.min(4000, effective.excerptChars ?? 1200));
+        const chars = Math.max(200, Math.min(20000, effective.excerptChars ?? 1200));
         let finalExcerpt = excerpt.trim();
         let finalTitle = title.trim();
         if (!finalExcerpt) {
@@ -404,6 +498,8 @@ export class CanonResearchService {
                 return this.searchBangumi(workName);
             case 'deepseek':
                 return this.searchDeepSeek(workName, config);
+            case 'mcp':
+                return this.searchMcp(workName, config);
             default:
                 return [];
         }
@@ -560,6 +656,33 @@ export class CanonResearchService {
                 url: item.url || '',
                 excerpt: (item.summary || item.snippet || '').slice(0, 1600),
             }));
+    }
+
+    /**
+     * MCP 检索通道：调用用户配置的任意 MCP 搜索工具。
+     *
+     * 设计上不绑定具体服务（brave / tavily / exa / 自建搜索都行），只要求：
+     * 用户选中一个 MCP 服务 + 一个工具 + 查询参数名；工具返回文本或 JSON。
+     * 解析顺序：JSON 的 results/data/items 数组 → 文本里的 URL 行。
+     *
+     * @param workName - 作品名
+     * @param config - 配置
+     * @returns 来源输入
+     */
+    private async searchMcp(workName: string, config: CanonResearchConfig): Promise<CanonSourceInput[]> {
+        const call = this.host.mcpCallTool;
+        if (!call) throw new Error('当前环境未接入 MCP 调用能力');
+        const serverId = (config.mcpServerId || '').trim();
+        const toolName = (config.mcpToolName || '').trim();
+        if (!serverId || !toolName) {
+            throw new Error('MCP 检索需要在设置里选择 MCP 服务与工具（例如 brave_search / tavily_search）');
+        }
+        const queryParam = (config.mcpQueryParam || 'query').trim() || 'query';
+        const raw = await call(serverId, toolName, {
+            [queryParam]: `${workName} 原作 官方 设定`,
+            ...(queryParam === 'query' ? {} : { query: `${workName} 原作 官方 设定` }),
+        });
+        return parseMcpSearchText(raw);
     }
 
     private buildQuery(workName: string, options: CanonResearchOptions): string {

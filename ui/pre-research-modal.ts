@@ -371,7 +371,10 @@ export class PreResearchModal extends Modal {
         this.aiStatusEl?.setText('正在检索热点/行业素材，并结合固化框架与真随机因子生成候选…');
         try {
             const settings = this.plugin.settings;
-            const canonProvider = settings.canonResearch?.provider || 'manual';
+            // MCP 通道走的是考据服务的注入能力，调研这里没有等价实现：退回 manual 并提示，
+            // 而不是把 'mcp' 硬塞进类型导致运行时静默失败。
+            const rawProvider = settings.canonResearch?.provider || 'manual';
+            const canonProvider = rawProvider === 'mcp' ? 'manual' : rawProvider;
             const service = new AiAssistedPremiseService(this.plugin.aiEngine, {
                 provider: canonProvider,
                 // DeepSeek 联网搜索复用模型渠道的 Key，不需要用户在考据里再填一次

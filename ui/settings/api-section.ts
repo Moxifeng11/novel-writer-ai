@@ -22,6 +22,7 @@ import {
 } from '@/shared/provider-ui-model';
 import { ModelEditorModal } from '@/ui/model-editor-modal';
 import { CanonResearchService, PROVIDER_LABELS } from '@/services/canon-research-service';
+import { normalizeMcpServers } from '@/shared/mcp-config';
 import { API_FORMAT_OPTIONS, normalizeApiFormat, type ApiFormat } from '@/shared/api-format';
 import { discoverModels } from '@/services/model-discovery';
 import { ModelPickerModal } from '@/ui/model-picker-modal';
@@ -1067,9 +1068,9 @@ export class ApiSection extends SettingsSection {
             excerptChars: 1200,
         };
         // 旧数据里可能写过超出范围的值（例如 10000000）：打开设置时按运行端口径
-        // 夹取并回写，避免「设置页显示 10000000、实际按 4000 生效」的误导。
+        // 夹取并回写，避免「设置页显示 10000000、实际按 20000 生效」的误导。
         const clampedExcerpt = Number.isFinite(cfg.excerptChars)
-            ? Math.max(200, Math.min(4000, cfg.excerptChars as number))
+            ? Math.max(200, Math.min(20000, cfg.excerptChars as number))
             : 1200;
         if (cfg.excerptChars !== clampedExcerpt) {
             cfg.excerptChars = clampedExcerpt;
@@ -1079,10 +1080,11 @@ export class ApiSection extends SettingsSection {
 
         new Setting(card)
             .setName('检索方式')
-            .setDesc('手动=只导入自己提供的来源；维基百科/Bangumi 免 key；其余需要对应搜索 API key')
+            .setDesc('手动=只导入自己提供的来源；DeepSeek 复用渠道 Key；MCP 用你配置的任意搜索工具；其余需要对应搜索 API key')
             .addDropdown(dropdown => {
                 dropdown.addOption('manual', '手动官方来源（默认）');
                 dropdown.addOption('deepseek', 'DeepSeek 联网搜索（复用 DeepSeek Key，按次计费）');
+                dropdown.addOption('mcp', 'MCP 检索工具（用你已配置的 MCP 服务，不限于某个搜索源）');
                 dropdown.addOption('wikipedia', '维基百科（免 key，可能受网络限制）');
                 dropdown.addOption('bangumi', 'Bangumi 番组计划（免 key，可能受网络限制）');
                 dropdown.addOption('bing', 'Bing web search（需 key）');
@@ -1093,8 +1095,59 @@ export class ApiSection extends SettingsSection {
                 dropdown.onChange(async (value) => {
                     cfg.provider = value as typeof cfg.provider;
                     await this.plugin.saveSettings();
+                    // MCP 通道需要展开「服务/工具/参数名」配置，必须重渲染
+                    if (value === 'mcp') this.refresh();
                 });
             });
+
+        // MCP 检索通道：不绑定具体搜索服务，用户选「已配置的 MCP 服务 + 工具」即可。
+        if (cfg.provider === 'mcp') {
+            const servers = normalizeMcpServers(this.plugin.settings.mcpServers);
+            const serverBox = card.createDiv({ cls: 'nw-card nw-form-stack' });
+            serverBox.createDiv({ cls: 'nw-form-label', text: 'MCP 检索配置' });
+            if (servers.length === 0) {
+                serverBox.createDiv({
+                    cls: 'nw-text-12-muted',
+                    text: '还没有配置 MCP 服务：请先到「MCP 服务」页添加一个提供搜索工具的服务（brave / tavily / exa / 自建均可）。',
+                });
+            } else {
+                const currentServer = servers.find(server => server.id === cfg.mcpServerId) || servers[0];
+                cfg.mcpServerId = currentServer.id;
+                new Setting(serverBox)
+                    .setName('MCP 服务')
+                    .setDesc('选择提供搜索工具的服务')
+                    .addDropdown(dropdown => {
+                        for (const server of servers) dropdown.addOption(server.id, server.name || server.id);
+                        dropdown.setValue(currentServer.id);
+                        dropdown.onChange(async (value) => {
+                            cfg.mcpServerId = value;
+                            cfg.mcpToolName = '';
+                            await this.plugin.saveSettings();
+                            this.refresh();
+                        });
+                    });
+                new Setting(serverBox)
+                    .setName('工具名')
+                    .setDesc('该服务里的搜索工具名，例如 brave_search / tavily_search / search')
+                    .addText(text => text
+                        .setPlaceholder('brave_search')
+                        .setValue(cfg.mcpToolName || '')
+                        .onChange(async (value) => {
+                            cfg.mcpToolName = value.trim();
+                            await this.plugin.saveSettings();
+                        }));
+                new Setting(serverBox)
+                    .setName('查询参数名')
+                    .setDesc('多数搜索工具用 query；部分用 q / search_query')
+                    .addText(text => text
+                        .setPlaceholder('query')
+                        .setValue(cfg.mcpQueryParam || 'query')
+                        .onChange(async (value) => {
+                            cfg.mcpQueryParam = value.trim() || 'query';
+                            await this.plugin.saveSettings();
+                        }));
+            }
+        }
 
         // 联网检索本质上是「外部服务」：没有测试入口时，用户分不清是网络问题、Key 问题还是没结果。
         const testRow = new Setting(card)
@@ -1186,15 +1239,14 @@ export class ApiSection extends SettingsSection {
 
         new Setting(card)
             .setName('单源摘录长度')
-            .setDesc('每个来源只保存审计所需的短文本（字符数）。')
+            .setDesc('每个来源抓取入库的字符数（200–20000）。只管存多少；注入 prompt 另有总预算，被裁剪时会显式标注。')
             .addText(text => text
                 .setPlaceholder('1200')
                 .setValue(String(cfg.excerptChars ?? 1200))
                 .onChange(async (value) => {
-                    // 与运行时口径一致：200–4000；旧实现不夹上限，写进 10000000 后
-                    // 设置页显示与实际生效值不一致
+                    // 与运行时口径一致：200–20000（旧版硬砍 4000，长条目会丢关键信息）
                     const n = parseInt(value, 10);
-                    cfg.excerptChars = Number.isFinite(n) ? Math.max(200, Math.min(4000, n)) : 1200;
+                    cfg.excerptChars = Number.isFinite(n) ? Math.max(200, Math.min(20000, n)) : 1200;
                     await this.plugin.saveSettings();
                 }));
     }

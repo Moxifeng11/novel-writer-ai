@@ -152,6 +152,29 @@ describe('formatCanonSourcesForPrompt — prompt 语义', () => {
         const prompt = formatCanonSourcesForPrompt([long], 300);
         expect(prompt.length).toBeLessThan(1200);
     });
+
+    // 2026-11-16：预算被裁剪时必须显式标注「还有多少没展示」，
+    // 否则模型会把「没看到」当成「原著没写」，反而制造信息缺失。
+    it('摘录被预算裁剪时显式标注剩余字数', () => {
+        const long = createCanonSource({
+            url: 'https://baike.baidu.com/item/长',
+            title: '长条目',
+            excerpt: '设定内容'.repeat(300),
+        }, 0);
+        const prompt = formatCanonSourcesForPrompt([long], 200);
+        expect(prompt).toMatch(/仍有 \d+ 字未展示/);
+        expect(prompt).toContain('不要据此断言');
+    });
+
+    it('默认预算足以容纳较长的单条摘录（不再 4000 死限）', () => {
+        const long = createCanonSource({
+            url: 'https://baike.baidu.com/item/长',
+            title: '长条目',
+            excerpt: '设定内容'.repeat(800), // 3200 字
+        }, 0);
+        const prompt = formatCanonSourcesForPrompt([long]);
+        expect(prompt).not.toMatch(/仍有 \d+ 字未展示/);
+    });
 });
 
 describe('向后兼容：selectAuthoritativeSources 语义不变', () => {
