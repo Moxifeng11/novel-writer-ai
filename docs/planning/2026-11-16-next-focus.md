@@ -643,4 +643,17 @@ preflight EXIT=0（956 测试文件 / 10092 用例）。
 
 下一轮：Slice E 详情各页签内容区（文风/节奏/技巧/结构/角色/伏笔/商业/易读性），
 剩余工具类主战场；建议按页签逐个做，每次采集对应页签的 before/after。
+### 2026-11-17 第二十六轮：开发环境隔离（f6bf8742）
+
+用户问「能否只在插件仓开发测试、避免污染写作 vault」。核查结论：
+- 类型检查/单测/构建/preflight 都不需要 vault，日常 95% 工作只在插件仓内（本来就是这样做的）；
+- 界面级验证必须有 vault（Obsidian 只从 <vault>/.obsidian/plugins/<id> 加载），
+  但不能把插件仓当 vault（会形成 .obsidian/.obsidian 嵌套）；
+- 方案：独立开发 vault + junction 指回插件仓。已建好 D:\nw-dev-vault 并实测通过
+  （verify: loaded=true, version=4.96.0, commands=110）。
+
+新增 scripts/dev-vault.mjs（init/status/verify）+ docs/dev-vault.md。
+清理了 .obsidian/.obsidian 残留（先备份到 .rollback-backup）。
+
+后续验证一律在开发 vault 内做，写作 vault 不再放测试项目/测试书/缓存。
 
