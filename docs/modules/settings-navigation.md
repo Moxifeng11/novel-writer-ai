@@ -1,0 +1,114 @@
+# 设置框架 / 导航（settings-navigation）
+
+> 状态：**Brief 待确认**（2026-11-16 盘点完成，未改代码）
+> 模块入口：`ui/settings-tab.ts`、`ui/settings/section-*.ts`、`ui/mini-settings-modal.ts`、`ui/settings/section-factory.ts`
+> 目标（INDEX）：导航密度、搜索、跨分区一致性
+
+## 1. 现状盘点（2026-11-16）
+
+### 1.1 文件与规模
+
+| 文件 | 行数 | 职责 |
+| --- | --- | --- |
+| `ui/settings-tab.ts` | 381 | 设置页宿主：6 个一级分组 pill + 二级 tab 栏 + 分区调度 + DOM 缓存 |
+| `ui/mini-settings-modal.ts` | 98 | 设置弹窗宿主：20 个 tab 平铺（无一级分组） |
+| `ui/settings/section-factory.ts` | 89 | 唯一装配表：`SETTINGS_GROUPS`（6 组）、`SETTINGS_TAB_DEFINITIONS`（20 tab）、`createSettingsSection` |
+| `ui/settings/section-base.ts` | 50 | 分区基类：app / plugin / refresh / reopen |
+| `ui/settings/api-section.ts` | 1566 | API 配置（刚验收 stable） |
+| `ui/settings/general-sections.ts` | 1100 | 性能 / 规则 / 关于 / 角色识别 / 建议 |
+| `ui/settings/writing-sections.ts` | 790 | 协同 / 写作 / 模板 / 外观 / 项目库 / 布局 |
+| `ui/settings/knowledge-section.ts` | 723 | 知识库 |
+| 其余 section | 35–361 | 首启 / 拆解 / 指纹 / 伏笔 / 模式 / Agent / MCP |
+
+### 1.2 导航结构
+
+- 设置页：一级 6 组（🔌 连接与模型 / ✍️ 写作与协同 / 📜 规则与一致性 / 📚 知识与拆解 / 🎨 界面与工作台 / 🗂 项目与运维）→ 二级 20 个 tab。
+- 高级开关（`settingsUiShowAdvanced`）：隐藏其中 9 个 advanced tab（创作模式、角色识别、建议设置、模板管理、指纹库、拆解引擎、伏笔管理、工作台布局、项目库迁移、性能监控、Agent 对话、MCP 服务 —— 实际 12 个 advanced）。
+- 无搜索框、无「最近使用」、无面包屑；切组后再回来停在组内第一个 tab。
+- 设置弹窗（MiniSettingsModal）：20 个 tab 平铺（按 TAB_DEFINITIONS 顺序），无一级分组。
+
+### 1.3 两宿主装配差异（实测代码）
+
+- 设置页 **没有** 使用 `createSettingsSection`，而是手动 `new` 20 个 Section，并在 `renderSection` 的 switch 里硬编码，另外把 `renderStatKeywords` 注入 fingerprint tab、`renderRuleKeywords` 注入 rules tab。
+- 弹窗 **使用** `createSettingsSection`，因此这两块内容在弹窗里**不存在**。
+- 结论：同一个 tab 在设置页与弹窗里内容不同，新增分区要改两处，属于结构性漂移。
+
+## 2. 问题清单
+
+### P0（阻塞体验）
+
+| 编号 | 现象 | 证据 | 影响 |
+| --- | --- | --- | --- |
+| S-01 | 设置页没有搜索：找「AI 味阈值」「字数目标」「保存间隔」只能逐个 tab 翻，20 个 tab × 平均 10+ 项 | `ui/settings-tab.ts` 只有分组栏 + tab 栏 + 内容，无输入框/索引 | 设置项可发现性差，用户以为「没有这个功能」 |
+
+### P1（一致性 / 效率）
+
+| 编号 | 现象 | 证据 | 影响 |
+| --- | --- | --- | --- |
+| S-02 | 设置页与设置弹窗同一 tab 内容不一致：统计词表、关键词兜底只在设置页有 | 设置页 `renderStatKeywords`/`renderRuleKeywords` 注入；弹窗只 `createSettingsSection` | 用户从弹窗改配置时找不到项，以为功能缺失 |
+| S-03 | 设置页未使用唯一装配表 `createSettingsSection`，新增分区需改两处 | settings-tab.ts 手动 new + switch 硬编码 | 后续每加一个分区都有漂移风险 |
+| S-04 | 切换一级分组后，该组上次停留的二级 tab 丢失，总是回到组内第一个 | `activeGroup` 变化时 `activeTab = visibleTabsOfGroup(group.id)[0]` | 在「连接与模型 → API 配置」与其他组间来回切，每次都要重点 API 配置 |
+| S-05 | 高级开关默认隐藏 12 个 tab，其中 MCP 服务、Agent 对话、创作模式、伏笔管理在日常使用中很常用 | `SETTINGS_TAB_DEFINITIONS` 的 group 标记 | 用户找不到 MCP/Agent 配置（需先点「⚙ 高级设置」） |
+| S-06 | 异步分区（知识库 / 指纹库 / 拆解 / 伏笔）命中 DOM 缓存后不重新拉数据，且各区刷新入口不统一 | 缓存策略注释 + 各分区自带刷新按钮 | 切换回来看到旧数据，像 bug |
+| S-07 | 设置弹窗 20 个 tab 平铺、无分组，扫视成本高于设置页 | `mini-settings-modal.ts` renderTabs | 小屏/快速改配置时更难找 |
+
+### P2（清理 / 细节）
+
+| 编号 | 现象 | 证据 |
+| --- | --- | --- |
+| S-08 | `resetSettings()` 是死代码（无调用、无入口），实现直接 Object.assign 默认值且无确认 | settings-tab.ts:398 |
+| S-09 | 底部「🔄 热重载插件」文案与行为不符（实际只提示手动关闭再启用），且内联 style + 错误色，风格不一致 | settings-tab.ts:307-332 |
+| S-10 | 注释漂移：settings-tab / section-factory 都写「18 个 tab」，实际 20 个 | 两文件头注释 |
+| S-11 | 设置页无「重置当前分区」「恢复默认外观」等分区级操作 | 无 |
+
+## 3. Brief（待确认）
+
+### 3.1 目标
+
+把设置框架从「两级 tab 靠手动翻」升级为「可搜索、可直达、两宿主一致」，并在导航层补「命令面板/工作台直达设置分区」。
+
+### 3.2 范围（本轮要做）
+
+1. **设置搜索（S-01）**：顶部搜索框，索引 tab 名 / 分组名 / 分区内一级标题 / 设置项名；输入即出结果列表（分组 › tab › 项），点击跳到对应 tab 并高亮该项 2 秒。
+2. **两宿主统一装配（S-02/S-03）**：设置页改用 `createSettingsSection`；把统计词表/关键词兜底挪进 FingerprintSection / RulesSection 内部，删除宿主里的特例注入。
+3. **导航记忆（S-04）**：每个一级分组记住上次停留的二级 tab（会话内记忆即可；是否跨会话见决策 D）。
+4. **高级区重划（S-05）**：把 MCP 服务、Agent 对话、创作模式、伏笔管理移到 primary；其余保持 advanced。
+5. **异步分区一致性（S-06）**：统一在分区标题右侧提供「刷新」按钮 + 「数据可能过期」提示文案（沿用各分区现有能力，不重写数据层）。
+6. **弹窗分组（S-07）**：弹窗 tab 栏改为「组标题 + 组内 tab」两行布局，与设置页语义一致。
+7. **清理（S-08/S-09/S-10）**：删死代码 `resetSettings`；把「热重载」从页面底部移到「关于」tab 并改为说明+按钮；修正注释为 20。
+8. **命令直达**：新增命令「设置：打开 <分组> › <tab>」（按 20 个 tab 生成），命令面板可直接跳转。
+
+### 3.3 不做（本轮排除）
+
+- 不改任何分区内部的业务字段与保存语义（只挪位置、加搜索索引、统一刷新入口）。
+- 不动 API 配置模块内部（刚 stable，不回炉）。
+- 不做视觉主题重做，只做布局与导航。
+- 不改工作台（full-writer-view）的导航结构（放到「写作工作台首页」模块）。
+
+### 3.4 验收标准
+
+| # | 验收项 | 判定方法 |
+| --- | --- | --- |
+| 1 | 搜索能命中 tab 名、分区标题、设置项名三类实体 | 单测索引 + 实机输入「AI 味」「字数」「MCP」各 1 次 |
+| 2 | 搜索结果点击后跳到正确 tab 且目标项高亮 | 实机 3 次 |
+| 3 | 设置页与弹窗同一 tab 渲染项数一致（含统计词表/关键词兜底） | 单测对比两个宿主的 section 列表 |
+| 4 | 切组再切回，停在原二级 tab | 实机 2 组往返 |
+| 5 | MCP/Agent/创作模式/伏笔在默认（未开高级）下可见 | 实机 |
+| 6 | 命令面板可直达任一 primary tab | 实机命令面板搜「设置：」 |
+| 7 | 死代码清理后无未使用导出/方法告警 | `preflight`（含 check:deadcode / jsdoc） |
+| 8 | 无回归 | 全量测试 + 30 道检查 EXIT=0 |
+
+### 3.5 风险
+
+- 搜索框与 DOM 缓存的交互：过滤时不能破坏已缓存 panel（计划只隐藏/显示，不重建）。
+- 两宿主统一后，弹窗首次出现「统计词表/关键词兜底」，可能改变弹窗高度与滚动行为，需回归。
+- 命令数量增加 20 条：需确认 Obsidian 命令面板性能无感（纯注册，无副作用）。
+
+## 4. 待用户确认（4 个决策点）
+
+| 决策 | 选项 | 建议 |
+| --- | --- | --- |
+| A. 搜索形态 | A1 全局索引跳转（跨 tab，点结果跳过去）/ A2 仅过滤当前 tab 内设置项 / A3 两者都做 | **A1 先做**（成本低、收益最大）；A2 后续可选 |
+| B. 高级区划分 | B1 按上面 3.2-4 调整（MCP/Agent/创作模式/伏笔 → 常用）/ B2 保持现状 / B3 默认打开高级 | **B1** |
+| C. 导航范围 | C1 只做设置框架（推荐）/ C2 顺带改工作台导航入口 | **C1**（工作台属于下一个模块） |
+| D. 导航记忆 | D1 会话内记忆（关闭 Obsidian 重置）/ D2 持久化到 settings | **D1**（设置页是低频入口，不值得写盘） |
