@@ -311,8 +311,24 @@ async function verify() {
             }
             if (!page) throw new Error('找不到渲染进程页面');
 
+            // 独立 --user-data-dir 是全新配置，Obsidian 首次打开该 vault 会弹「是否信任仓库作者」；
+            // 不点「信任仓库作者并启用插件」插件根本不会加载（verify 会假报 loaded:false）。
+            let trusted = false;
+            for (let i = 0; i < 20; i++) {
+                trusted = await page.evaluate(() => {
+                    const btn = Array.from(document.querySelectorAll('.modal button'))
+                        .find((b) => (b.textContent || '').includes('信任仓库作者'));
+                    if (!btn) return false;
+                    btn.click();
+                    return true;
+                });
+                if (trusted) break;
+                await new Promise((r) => setTimeout(r, 500));
+            }
+            if (trusted) console.log('[dev-vault] 已点击「信任仓库作者并启用插件」');
+
             let result = null;
-            for (let i = 0; i < 30; i++) {
+            for (let i = 0; i < 40; i++) {
                 await new Promise((r) => setTimeout(r, 600));
                 result = await page.evaluate((id) => {
                     const app = window.app;
@@ -327,7 +343,8 @@ async function verify() {
                         commands: Object.keys(app.commands?.commands ?? {}).filter((k) => k.startsWith(id)).length,
                     };
                 }, PLUGIN_ID);
-                if (result?.loaded) break;
+                // 命令在 onload 之后才注册，等它非零才算真正就绪（否则会误报 commands: 0）
+                if (result?.loaded && result.commands > 0) break;
             }
             const ok = !!result?.loaded;
             const expectedVault = path.basename(vaultPath);

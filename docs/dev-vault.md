@@ -72,11 +72,15 @@ node scripts/dev-vault.mjs reset-data --yes --vault=D:\nw-dev-vault
 ```json
 { "ok": true, "expectedVault": "nw-dev-vault", "dataOwned": true,
   "vaultName": "nw-dev-vault", "enabled": ["novel-writer-ai"],
-  "loaded": true, "version": "4.96.0", "commands": 110 }
+  "loaded": true, "version": "4.96.1", "commands": 110 }
 ```
 
 该命令用独立 `--user-data-dir` 启动，**不会占用或干扰你正在用的 Obsidian 窗口**，
 验证完自动退出实例。
+
+独立 user-data 相当于全新配置，Obsidian 首次打开该 vault 会弹「是否信任仓库作者」；
+脚本会自动点「信任仓库作者并启用插件」（不点则插件根本不加载，会假报 `loaded: false`），
+并等到命令注册非零才判定就绪（否则会误报 `commands: 0`）。
 
 ### 3.2 手动在 Obsidian 里打开
 
