@@ -31,6 +31,7 @@
  *   - styles-src/24-planning-canvas.css
  *   - styles-src/24-unified-entity.css
  *   - styles-src/25-outline-expand.css
+ *   - styles-src/25-planning-outline-controls.css
  *   - styles-src/26-cleanup-utilities.css
  *   - styles-src/27-consistency-audit.css
  *
@@ -21370,6 +21371,225 @@ body.nw-panel-resizing .nw-awb-center iframe {
 .nw-oe-diff-line.nw-is-replace-new {
     background: color-mix(in srgb, var(--text-success) 10%, transparent);
     color: var(--text-success);
+}
+/* 规划 / 大纲 / 场景细纲的控件样式（2026-11-16）
+   目的：把这两个界面的历史内联样式收敛为类名，统一主题与窄屏表现。
+   只写「与 .nw-btn 基础不同的部分」，避免重复造按钮体系。 */
+
+/* 大纲树底部按钮 */
+.nw-outline-footer-btn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  cursor: pointer;
+}
+
+.nw-outline-footer-btn:hover {
+  background: var(--background-modifier-hover);
+}
+
+/* 大纲树搜索行 */
+.nw-outline-range-input {
+  width: 60px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 12px;
+}
+
+.nw-outline-search-btn {
+  padding: 3px 8px;
+  border: none;
+  border-radius: 4px;
+  background: var(--text-accent);
+  color: var(--text-on-accent);
+  cursor: pointer;
+}
+
+.nw-outline-clear-btn,
+.nw-outline-fulltext-btn {
+  padding: 3px 6px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.nw-outline-fulltext-btn {
+  padding: 3px 10px;
+}
+
+/* 大纲树：卷折叠箭头 / 章行 / 场景行 */
+.nw-outline-arrow {
+  margin-right: 4px;
+  color: var(--text-faint);
+  user-select: none;
+  font-size: 0.9em;
+}
+
+.nw-outline-arrow-scene {
+  font-size: 0.8em;
+}
+
+.nw-outline-chap-label {
+  flex: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+}
+
+.nw-outline-scene-label {
+  flex: 1;
+  cursor: pointer;
+  padding: 1px 3px;
+  border-radius: 2px;
+  border: 1px solid transparent;
+}
+
+.nw-outline-chap-label:hover,
+.nw-outline-scene-label:hover {
+  background: var(--background-modifier-hover);
+}
+
+/* 场景行上的小标记（名场面/对白功能/悬念） */
+.nw-outline-flag {
+  margin-left: 4px;
+  font-size: 0.85em;
+}
+
+.nw-outline-flag-dialogue,
+.nw-outline-flag-cliffhanger {
+  font-size: 0.75em;
+}
+
+.nw-outline-flag-dialogue {
+  color: var(--text-faint);
+}
+
+.nw-outline-flag-cliffhanger {
+  color: var(--text-accent);
+}
+
+/* 大纲树内联编辑输入框 */
+.nw-outline-edit-input {
+  flex: 1;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--text-accent);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font: inherit;
+}
+
+.nw-outline-edit-input-scene {
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+/* 场景细纲头部小按钮 */
+.nw-scene-outline-btn {
+  padding: 2px 8px;
+  font-size: 0.85em;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  cursor: pointer;
+}
+
+.nw-scene-outline-btn:hover {
+  background: var(--background-modifier-hover);
+}
+
+/* 场景细纲表单控件 */
+.nw-scene-outline-input,
+.nw-scene-outline-textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font: inherit;
+}
+
+.nw-scene-outline-textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.nw-scene-outline-input-sm {
+  width: 80px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+}
+
+/* 跨章复制弹窗 */
+.nw-scene-copy-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.nw-scene-copy-select {
+  width: 100%;
+  margin: 8px 0 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+}
+
+.nw-scene-copy-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* 扩写弹窗：场景列表项与逐段采用 */
+.nw-expand-scene-item {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.nw-expand-scene-item:hover {
+  background: var(--background-modifier-hover);
+}
+
+.nw-expand-scene-item-active {
+  background: var(--background-modifier-hover);
+  border-color: var(--interactive-accent);
+}
+
+/* 已扩写：左侧色条区分状态 */
+.nw-expand-scene-adopted {
+  border-left: 3px solid var(--text-success);
+}
+
+.nw-expand-scene-skipped {
+  border-left: 3px solid var(--text-faint);
+  opacity: 0.7;
+}
+
+.nw-expand-adopt-btn {
+  flex: none;
+}
+
+.nw-expand-adopt-on {
+  border-color: var(--text-success);
+  color: var(--text-success);
 }
 /* ==========================================================================
  * 26-cleanup-utilities.css — B4 收尾共用类（v4.80.0）

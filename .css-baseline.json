@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-16T13:30:26.332Z",
-  "note": "规划模块：画布搜索/缩放/章节行/便签内联编辑/项目选择器（+3.3KB，16 类）",
-  "bytes": 592191,
+  "generatedAt": "2026-11-16T13:50:48.235Z",
+  "note": "规划顺延项：大纲树/场景细纲内联样式收敛为类（+4.7KB，27 类）",
+  "bytes": 596864,
   "important": 24,
   "hardcodedHex": 169,
   "rgbHsl": 192,
-  "uniqueClasses": 3226,
+  "uniqueClasses": 3253,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

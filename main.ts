@@ -716,6 +716,8 @@ export interface NovelWriterSettings {
     coWriteSyntaxHighlight?: boolean;
     /** 专注模式（E-07） */
     coWriteFocusMode?: boolean;
+    /** 全书规划上次填写的参数（P-16：下次打开直接回填） */
+    planBookLastParams?: { totalChars?: string; volCount?: string; chapWords?: string };
     /** v8.2: 是否显示协同写作高级功能 */
     coWriteShowAdvanced?: boolean;
 }

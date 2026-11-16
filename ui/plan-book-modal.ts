@@ -93,11 +93,13 @@ export class PlanBookModal extends Modal {
 
             const totalCharsRow = paramsSection.createDiv({ cls: 'novel-writer-input-row' });
             totalCharsRow.createEl('label', { text: '全书总字数：', cls: 'novel-writer-input-label' });
+            // P-16：回填上次用的参数，避免每次重填
+            const lastParams = this.plugin.settings?.planBookLastParams;
             const totalCharsInput = totalCharsRow.createEl('input', {
                 type: 'text',
                 placeholder: '如：100万',
                 cls: 'nw-input novel-writer-input',
-                value: '100万'
+                value: lastParams?.totalChars || '100万'
             });
 
             const volCountRow = paramsSection.createDiv({ cls: 'novel-writer-input-row' });
@@ -106,7 +108,7 @@ export class PlanBookModal extends Modal {
                 type: 'text',
                 placeholder: '如：3',
                 cls: 'nw-input novel-writer-input',
-                value: '3'
+                value: lastParams?.volCount || '3'
             });
 
             const chapWordsRow = paramsSection.createDiv({ cls: 'novel-writer-input-row' });
@@ -115,7 +117,7 @@ export class PlanBookModal extends Modal {
                 type: 'text',
                 placeholder: '如：2500',
                 cls: 'nw-input novel-writer-input',
-                value: '2500'
+                value: lastParams?.chapWords || '2500'
             });
 
             // 上下文预览区域

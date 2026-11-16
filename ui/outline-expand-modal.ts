@@ -57,6 +57,11 @@ export class OutlineExpandModal extends Modal {
     private plantForeshadows: boolean = false;
 
     private scenes: SceneOutline[] = [];
+    /**
+     * 逐场景扩写结果与采用状态（P-15）。
+     * 键 = scenes 下标；采用状态决定「应用」时是否写入。
+     */
+    private sceneExpansions = new Map<number, { text: string; adopted: boolean }>();
     private selectedSceneIndex: number = -1;
     private paragraphs: ParagraphOutline[] = [];
     private selectedParagraphIndices: Set<number> = new Set();
@@ -480,13 +485,10 @@ export class OutlineExpandModal extends Modal {
 
         for (let i = 0; i < this.scenes.length; i++) {
             const scene = this.scenes[i];
+            const expansion = this.sceneExpansions.get(i);
+            // P-13：内联样式改为类名 + 状态类
             const item = this.sceneListEl.createDiv({
-                attr: {
-                    style: 'padding:10px 12px;border-radius:6px;cursor:pointer;border:1px solid transparent;' +
-                        (i === this.selectedSceneIndex
-                            ? 'background:var(--background-modifier-hover);border-color:var(--interactive-accent);'
-                            : 'hover:background:var(--background-modifier-hover);')
-                }
+                cls: `nw-expand-scene-item${i === this.selectedSceneIndex ? ' nw-expand-scene-item-active' : ''}${expansion ? (expansion.adopted ? ' nw-expand-scene-adopted' : ' nw-expand-scene-skipped') : ''}`,
             });
 
             const header = item.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-6px-2 nw-u-marginbottom-4px-2' });
@@ -515,6 +517,19 @@ export class OutlineExpandModal extends Modal {
                 this.expandSingleScene(i);
             };
 
+            // P-15：逐段采纳 —— 已扩写的场景可以单独跳过，不影响其它场景
+            if (expansion) {
+                const toggleBtn = actionRow.createEl('button', {
+                    text: expansion.adopted ? '✓ 采用中' : '✕ 已跳过',
+                    cls: `nw-btn nw-u-fs-11px-2 nw-u-p-2px-8px-2 nw-expand-adopt-btn${expansion.adopted ? ' nw-expand-adopt-on' : ''}`,
+                    attr: { title: expansion.adopted ? '点击跳过该场景（应用时不写入）' : '点击重新采用该场景' },
+                });
+                toggleBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.toggleSceneAdoption(i);
+                };
+            }
+
             item.onclick = () => {
                 this.selectedSceneIndex = i;
                 if (this.expandMode === 'scene') {
@@ -523,6 +538,49 @@ export class OutlineExpandModal extends Modal {
                 this.refreshSceneList();
             };
         }
+    }
+
+    /**
+     * 切换某场景的采用状态（P-15）。
+     *
+     * @param sceneIndex - 场景下标
+     */
+    private toggleSceneAdoption(sceneIndex: number): void {
+        const expansion = this.sceneExpansions.get(sceneIndex);
+        if (!expansion) return;
+        expansion.adopted = !expansion.adopted;
+        this.refreshSceneList();
+        this.rebuildAdoptedText();
+        const scene = this.scenes[sceneIndex];
+        new Notice(
+            expansion.adopted
+                ? `已采用场景${scene?.index ?? sceneIndex + 1}`
+                : `已跳过场景${scene?.index ?? sceneIndex + 1}（应用时不写入）`,
+            2000,
+        );
+    }
+
+    /**
+     * 按当前采用状态重建待应用正文（P-15）。
+     *
+     * 未扩写的场景保留原始场景文本，避免整篇丢内容。
+     */
+    private rebuildAdoptedText(): void {
+        if (this.sceneExpansions.size === 0) return;
+        const parts: string[] = [];
+        for (let i = 0; i < this.scenes.length; i += 1) {
+            const scene = this.scenes[i];
+            const expansion = this.sceneExpansions.get(i);
+            if (expansion && expansion.adopted) {
+                parts.push(expansion.text);
+                continue;
+            }
+            if (expansion && !expansion.adopted) continue;
+            // 未扩写的场景：保留原场景大纲文本，提示用户这不是成品
+            parts.push(`## 场景${scene.index}：${scene.name}\n${scene.summary}`);
+        }
+        this.expandedText = parts.join('\n\n').trim();
+        this.updateEditorContent();
     }
 
     private refreshParagraphList(): void {
@@ -662,9 +720,12 @@ export class OutlineExpandModal extends Modal {
                 this.paragraphs = result.paragraphs;
                 this.expandedText = result.content;
                 this.originalText = sceneText;
+                // P-15：记住该场景的扩写结果，供逐段采纳/跳过
+                this.sceneExpansions.set(sceneIndex, { text: result.content, adopted: true });
                 this.refreshParagraphList();
+                this.refreshSceneList();
                 this.updateEditorContent();
-                showSuccessNotice(`场景${scene.index}扩写完成`);
+                showSuccessNotice(`场景${scene.index}扩写完成（可单独跳过）`);
             } else {
                 showErrorNotice(result.error || '未知错误', { title: '扩写失败' });
             }
@@ -713,6 +774,8 @@ export class OutlineExpandModal extends Modal {
                         index: allParagraphs.length + p.index,
                     }));
                     allParagraphs.push(...adjustedParas);
+                    // P-15：逐场景留存，默认采用
+                    this.sceneExpansions.set(i, { text: result.content, adopted: true });
                     fullText += result.content + sep;
                 } else {
                     fullText += sceneText + sep;

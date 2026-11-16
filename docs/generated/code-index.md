@@ -11,7 +11,7 @@
 | `shared/` | 255 | 50850 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3307 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 298 | 113442 | 1146 | 910 | 79% |
+| `ui/` | 300 | 113913 | 1155 | 917 | 79% |
 
 ## 文件清单
 
@@ -729,7 +729,7 @@
 | `ui/batch-novels-modal.ts` | 236 | 1 | 1 |
 | `ui/button-busy.ts` | 37 | 1 | 1 |
 | `ui/changelog-modal.ts` | 207 | 1 | 1 |
-| `ui/chapter-outline-tree-modal.ts` | 1338 | 1 | 1 |
+| `ui/chapter-outline-tree-modal.ts` | 1404 | 1 | 1 |
 | `ui/chapter-settlement-modal.ts` | 428 | 1 | 1 |
 | `ui/chapter-version-modal.ts` | 658 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
@@ -845,7 +845,8 @@
 | `ui/full-writer/project-selector-controller.ts` | 1144 | 3 | 3 |
 | `ui/full-writer/quick-tools-panel.ts` | 150 | 3 | 3 |
 | `ui/full-writer/recent-projects.ts` | 133 | 6 | 4 |
-| `ui/full-writer/scene-outline-controller.ts` | 1150 | 2 | 1 |
+| `ui/full-writer/scene-outline-controller.ts` | 1221 | 2 | 1 |
+| `ui/full-writer/scene-outline-format.ts` | 141 | 4 | 4 |
 | `ui/full-writer/setting-lib-controller.ts` | 63 | 1 | 1 |
 | `ui/full-writer/settings-menu.ts` | 85 | 4 | 3 |
 | `ui/full-writer/status-bar-controller.ts` | 90 | 2 | 2 |
@@ -897,13 +898,14 @@
 | `ui/novel-analysis-modal.ts` | 267 | 1 | 1 |
 | `ui/novel-tags-modal.ts` | 335 | 1 | 1 |
 | `ui/onboarding-modal.ts` | 318 | 1 | 1 |
-| `ui/outline-expand-modal.ts` | 880 | 2 | 1 |
+| `ui/outline-expand-modal.ts` | 943 | 2 | 1 |
 | `ui/panel-resizer.ts` | 260 | 4 | 3 |
 | `ui/password-modal.ts` | 152 | 1 | 1 |
 | `ui/pet-image-settings.ts` | 465 | 3 | 3 |
-| `ui/plan-book-modal.ts` | 558 | 1 | 1 |
+| `ui/plan-book-modal.ts` | 560 | 1 | 1 |
 | `ui/planning/canvas-link.ts` | 108 | 3 | 2 |
 | `ui/planning/canvas-tools.ts` | 99 | 8 | 5 |
+| `ui/planning/outline-bridge.ts` | 128 | 5 | 3 |
 | `ui/plot-canvas-modal.ts` | 366 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
 | `ui/polish-editor.ts` | 834 | 5 | 5 |
