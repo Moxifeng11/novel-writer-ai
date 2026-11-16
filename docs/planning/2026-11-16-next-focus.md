@@ -434,3 +434,28 @@
 | 实机 | 20 条命令；执行「打开 MCP 服务」→ 设置页停在「🔌 MCP 服务」 | 通过 |
 | 实机 | 工作台设置菜单（需正文写作页渲染标题栏）未能自动化验证，由接线测试覆盖代码路径 | 部分 |
 | 门禁 | `preflight` | 见提交 |
+### 2026-11-16 第十五轮：写作工作台首页实现（A3/B1/C1/D2/E1）
+
+用户确认：A3 只做工作台首页、B1 持久化最近排序、C1 折叠旧版工具、D2 深度接入 flow-state、E1 ⋯ 菜单。
+
+**实现**
+
+- 新增 `ui/full-writer/recent-projects.ts`：recordProjectOpened（上限 30）/ sortProjectsByRecent / pruneMissingProjects / formatRecentLabel。
+- 新增 `ui/full-writer/next-step.ts`：buildNextStepPlan 从流程快照推演「下一步」，blocked 沿依赖回溯防环。
+- `project-selector-controller.ts`：项目网格按最近排序并在卡片显示相对时间；右栏顶部新增主操作卡（下一步 + 百分比 + 双按钮），dispatchNextStep 按 CreationFlowAction 分发；流程快照每渲染只采集一次；卡片常驻动作收敛为 3 + ⋯ 菜单。
+- `domains/long/tool-catalog.ts`：三个旧版生成工具拆成「📦 旧版工具」默认折叠。
+- 设置新增 `projectLastOpened`；新增样式 22-workbench-home.css。
+
+**验证**
+
+| 层级 | 内容 | 结果 |
+| --- | --- | --- |
+| 单测 | recent-projects 17 + next-step 10 + 接线 10 | 全过 |
+| 实机 | 旧版工具折叠（collapsed=true）、章节生成组只剩批量建章 | 通过 |
+| 实机 | 卡片动作 [向导, 写作, 句级协同, ⋯] | 通过 |
+| 实机 | 示例项目右栏：「继续写第 1 章」25% + 「继续写作/查看完整流程」 | 通过 |
+| 实机 | 选中项目后排序列落盘 data.json，卡片显示「刚刚」 | 通过 |
+| 实机 | 删除项目后重开：卡片 0、hero 恢复、幽灵记录清空 | 通过 |
+| 门禁 | `preflight` | 见提交 |
+
+**说明**：验证用「示例项目」已删除（删除前备份），vault 恢复 0 项目。创作主页（home-view）的 H-02/H-04/H-05 按 A3 范围本轮未做，已记入模块页 5.2。

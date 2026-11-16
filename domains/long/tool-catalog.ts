@@ -29,6 +29,15 @@ export const TOOL_GROUPS: ToolGroup[] = [
         label: '📝 章节生成',
         buttons: [
             { label: '批量建章', desc: '批量创建新章节骨架', icon: '📦', commandId: 'novel-writer-batch-create' },
+        ],
+    },
+    {
+        // C1（2026-11-16）：旧批量生成工具默认收起。
+        // 它们与「协同写作工作台」职责重叠，平铺在首屏会让新用户误点旧流程；
+        // 需要时展开仍可用（命令本身未删）。
+        label: '📦 旧版工具',
+        defaultCollapsed: true,
+        buttons: [
             { label: '整章生成（旧）', desc: '辅助生成整章草稿；正式入口请用协同写作工作台', icon: '✍️', commandId: 'novel-writer-write-chapter' },
             { label: '自动写作器（旧）', desc: '辅助连续生成草稿；不替代协同写作工作台', icon: '🤖', commandId: 'novel-writer-auto-writer' },
             { label: '批量写正文（旧）', desc: '批量生成草稿；后续需进入协同写作检查与结算', icon: '📝', commandId: 'novel-writer-batch-chapters' },

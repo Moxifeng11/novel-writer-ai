@@ -1,0 +1,74 @@
+/* ── 写作工作台首页：下一步主操作卡 / 卡片菜单 / 最近标签（2026-11-16）──────── */
+
+/* 下一步主操作卡：右栏最上方，视觉权重高于快捷工具 */
+.nw-next-step {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--interactive-accent);
+    border-radius: 10px;
+    background: var(--background-secondary);
+}
+
+.nw-next-step-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.nw-next-step-kicker {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-accent);
+    letter-spacing: 0.04em;
+}
+
+.nw-next-step-percent {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.nw-next-step-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-normal);
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.nw-next-step-desc {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-muted);
+    word-break: break-word;
+}
+
+.nw-next-step-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+/* 项目卡片「⋯」更多操作按钮：与其它动作同高但更窄 */
+.novel-writer-fw-card-more-btn {
+    flex: none;
+    min-width: 28px;
+    padding-left: 6px;
+    padding-right: 6px;
+    font-weight: 600;
+}
+
+/* 卡片上的「最近使用」标签 */
+.novel-writer-fw-card-recent {
+    flex: none;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--background-modifier-border);
+    color: var(--text-faint);
+    font-size: 10px;
+    line-height: 16px;
+}

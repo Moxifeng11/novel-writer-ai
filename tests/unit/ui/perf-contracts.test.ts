@@ -95,10 +95,13 @@ describe('PF-5 项目选择页单次文件快照', () => {
     });
 
     it('卡片点击与流程摘要复用整页快照（P-3）', () => {
-        // 点击卡片不再无参重扫；流程摘要把已扫描章节传给 collectCreationFlowState
+        // 点击卡片不再无参重扫；流程快照由 collectSnapshotSafe 统一采集一次
+        // （2026-11-16 D2：主操作卡与流程摘要共用同一快照，避免重复全库扫描）
         expect(src).toContain('void this.renderRightPanel(unitsCache, metaOf, files)');
-        expect(src).toContain('renderFlowSummary(panel, project, mode, unitsCache?.get(project))');
+        expect(src).toContain('this.collectSnapshotSafe(project, mode, unitsCache?.get(project))');
         expect(src).toContain("longChapters: mode === 'long' ? chapters : undefined");
+        // 快照只采集一次，两个消费方都用同一个变量
+        expect(src.match(/await this\.collectSnapshotSafe\(/g)).toHaveLength(1);
     });
 
     it('初始渲染把 files 快照透传给长篇扫描与短篇/剧本单元（P2-3）', () => {

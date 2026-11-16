@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-16T10:30:30.945Z",
-  "note": "设置框架：搜索/导航记忆/异步刷新条/弹窗分组样式（21-settings-navigation.css，+2.9KB，16 类）",
-  "bytes": 577306,
+  "generatedAt": "2026-11-16T11:15:32.361Z",
+  "note": "工作台首页：下一步主操作卡/卡片⋯按钮/最近标签样式（22-workbench-home.css，+1.7KB，9 类）",
+  "bytes": 578987,
   "important": 24,
   "hardcodedHex": 169,
   "rgbHsl": 192,
-  "uniqueClasses": 3158,
+  "uniqueClasses": 3167,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

@@ -7,7 +7,7 @@
  * 与现有子模块保持一致的控制器模式：通过 deps 对象注入外部依赖。
  */
 
-import { App, Modal, Notice, TFile } from 'obsidian';
+import { App, Menu, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
 import { CoverPickerController } from './cover-picker-controller';
@@ -19,6 +19,9 @@ import { ModeDocumentModal } from '@/ui/mode-document-modal';
 import { getToolCatalogForMode, getToolGroupsForMode, getModeToolTitle } from '@/domains/kernel/tool-catalog-aggregator';
 import type { CreationMode } from '@/shared/creation-mode';
 import { collectCreationFlowState } from './creation-flow-state';
+import { buildNextStepPlan, type NextStepPlan } from './next-step';
+import { formatRecentLabel, pruneMissingProjects, recordProjectOpened, sortProjectsByRecent } from './recent-projects';
+import type { CreationFlowSnapshot } from '@/shared/creation-flow';
 import { findNextModeUnit, listModeUnits, modeUnitLabel } from '@/shared/mode-content';
 import { projectDisplayName } from '@/domains/kernel/project-locator';
 import { RenameProjectModal } from '@/ui/rename-project-modal';
@@ -210,7 +213,21 @@ export class ProjectSelectorController {
         return units;
     }
 
+    /**
+     * 记录项目「最近使用」时间并异步落盘。
+     *
+     * @param project - 项目 id
+     */
+    private noteProjectOpened(project: string): void {
+        if (!project) return;
+        const map = this.plugin.settings.projectLastOpened ?? {};
+        recordProjectOpened(map, project);
+        this.plugin.settings.projectLastOpened = map;
+        void this.plugin.saveSettings();
+    }
+
     private async openUnit(project: string, mode: CreationMode, unit: ChapterItem | null): Promise<void> {
+        this.noteProjectOpened(project);
         if (!unit) {
             new Notice(
                 mode === 'long'
@@ -304,8 +321,19 @@ export class ProjectSelectorController {
             this.selectedMode = modeOf.get(this.highlightedProject) || 'long';
         }
 
+        // B1：清掉已删除项目的幽灵记录（否则会占用最近名额）
+        const pruned = pruneMissingProjects(this.plugin.settings.projectLastOpened, allProjects);
+        if (pruned.changed) {
+            this.plugin.settings.projectLastOpened = pruned.map;
+            void this.plugin.saveSettings();
+        }
+
         this.renderModeNav(modeNav, allProjects, modeOf);
-        const projects = allProjects.filter(project => (modeOf.get(project) || 'long') === this.selectedMode);
+        // B1（2026-11-16）：项目按「最近使用」排序，没有记录的保持原顺序
+        const projects = sortProjectsByRecent(
+            allProjects.filter(project => (modeOf.get(project) || 'long') === this.selectedMode),
+            this.plugin.settings.projectLastOpened,
+        );
 
         if (this.selectedProject && !projects.includes(this.selectedProject)) {
             this.selectedProject = null;
@@ -430,6 +458,15 @@ export class ProjectSelectorController {
             const writtenChapters = sortedChapters.filter(c => c.status === 'written' || c.status === 'settled');
 
             metaRow.createSpan({ text: `${sortedChapters.length}${meta.unitLabel}`, cls: 'novel-writer-fw-card-count-badge' });
+            // B1：显示「最近使用」时间，让排序结果可解释（否则用户不知道为何是这个顺序）
+            const recentLabel = formatRecentLabel(this.plugin.settings.projectLastOpened?.[project]);
+            if (recentLabel) {
+                metaRow.createSpan({
+                    text: recentLabel,
+                    cls: 'novel-writer-fw-card-recent',
+                    attr: { title: '最近打开时间（决定排序）' },
+                });
+            }
 
             if (sortedChapters.length > 0) {
                 const progressPct = meta.totalChapters > 0
@@ -458,6 +495,7 @@ export class ProjectSelectorController {
                 wizardBtn.setAttribute('title', '打开项目向导，逐步搭建世界观和大纲');
                 wizardBtn.onclick = async (e: MouseEvent) => {
                     e.stopPropagation();
+                    this.noteProjectOpened(project);
                     await this.deps.onOpenWizard(project);
                 };
             } else {
@@ -465,6 +503,7 @@ export class ProjectSelectorController {
                 researchBtn.setAttribute('title', '编辑本项目的类型定位与创作约束');
                 researchBtn.onclick = (e: MouseEvent) => {
                     e.stopPropagation();
+                    this.noteProjectOpened(project);
                     new PreResearchModal(this.app, this.plugin, meta.creationMode as 'short' | 'script', { project }).open();
                 };
             }
@@ -481,6 +520,7 @@ export class ProjectSelectorController {
                 cowriteBtn.onclick = async (e: MouseEvent) => {
                     e.stopPropagation();
                     if (nextChapter) {
+                        this.noteProjectOpened(project);
                         await this.deps.onOpenCoWriting(project, nextChapter);
                     } else {
                         new Notice('该项目还没有章节，请先通过向导或批量建章创建章节。', 4000);
@@ -488,27 +528,30 @@ export class ProjectSelectorController {
                 };
             }
 
-            const browseBtn = actions.createEl('button', {
-                text: meta.creationMode === 'long' ? '全部章节' : `全部${meta.unitLabel}`,
-                cls: 'novel-writer-fw-card-action-btn secondary',
+            // E1（2026-11-16）：低频动作收进「⋯」菜单。
+            // 常驻只留「向导/调研 + 写作 + 句级协同」；删除/重命名不再裸露在卡片上。
+            const moreBtn = actions.createEl('button', {
+                text: '⋯',
+                cls: 'novel-writer-fw-card-action-btn secondary novel-writer-fw-card-more-btn',
+                attr: { title: '更多操作' },
             });
-            browseBtn.onclick = (e: MouseEvent) => {
+            moreBtn.onclick = (e: MouseEvent) => {
                 e.stopPropagation();
-                this.showAllChapters(project, sortedChapters, meta.unitLabel, meta.creationMode !== 'long');
-            };
-
-            const renameBtn = actions.createEl('button', { text: '✏️', cls: 'novel-writer-fw-card-action-btn secondary' });
-            renameBtn.setAttribute('title', '重命名项目');
-            renameBtn.onclick = (e: MouseEvent) => {
-                e.stopPropagation();
-                this.openRenameProject(project);
-            };
-
-            const deleteBtn = actions.createEl('button', { text: '🗑️', cls: 'novel-writer-fw-card-delete-btn' });
-            deleteBtn.setAttribute('title', '删除项目');
-            deleteBtn.onclick = (e: MouseEvent) => {
-                e.stopPropagation();
-                this.showDeleteProjectModal(project);
+                const menu = new Menu();
+                menu.addItem(item => item
+                    .setTitle(meta.creationMode === 'long' ? '📖 全部章节' : `📖 全部${meta.unitLabel}`)
+                    .onClick(() => this.showAllChapters(project, sortedChapters, meta.unitLabel, meta.creationMode !== 'long')));
+                menu.addItem(item => item
+                    .setTitle(coverUrl ? '📷 更换封面' : '📷 添加封面')
+                    .onClick(() => this.deps.getCoverPicker().openCoverPicker(project, coverArea)));
+                menu.addItem(item => item
+                    .setTitle('✏️ 重命名项目')
+                    .onClick(() => this.openRenameProject(project)));
+                menu.addSeparator();
+                menu.addItem(item => item
+                    .setTitle('🗑️ 删除项目')
+                    .onClick(() => this.showDeleteProjectModal(project)));
+                menu.showAtMouseEvent(e);
             };
 
             card.onclick = () => {
@@ -519,6 +562,8 @@ export class ProjectSelectorController {
                 } else {
                     card.classList.add('selected');
                     this.selectedProject = project;
+                    // B1：选中即视为「最近使用」，下次进入按此排序
+                    this.noteProjectOpened(project);
                 }
                 this.deps.onProjectSelected?.(this.selectedProject);
                 // P-3：卡片点击复用整页快照，不再为一个项目重扫全库
@@ -545,8 +590,11 @@ export class ProjectSelectorController {
             meta = metaOf?.get(project) ?? await getProjectMeta(this.app, project, files);
             mode = meta.creationMode;
             this.selectedMode = mode;
+            // D2（2026-11-16）：流程快照只采集一次，供「下一步」主操作卡与流程摘要共用
+            const snapshot = await this.collectSnapshotSafe(project, mode, unitsCache?.get(project));
+            this.renderNextStepCard(panel, project, mode, snapshot, unitsCache);
             await this.renderProjectDetail(panel, project, meta, unitsCache);
-            await this.renderFlowSummary(panel, project, mode, unitsCache?.get(project));
+            this.renderFlowSummary(panel, snapshot);
         } else {
             const hint = panel.createDiv({ cls: 'nw-qt-empty-hint' });
             hint.createDiv({ text: '👈 点击左侧项目卡片', cls: 'nw-qt-empty-title' });
@@ -576,26 +624,137 @@ export class ProjectSelectorController {
     }
 
     /**
-     * 右侧流程摘要：让用户不用先点开页签就知道「进行到哪、下一步做什么」。
-     * 详情仍以「创作流程」页签为准，这里只做摘要与入口。
+     * 采集流程快照（失败时返回 null，不阻塞右栏渲染）。
+     *
+     * @param project - 项目 id
+     * @param mode - 创作模式
+     * @param chapters - 长篇已扫描章节（复用，避免重复全库扫描）
+     * @returns 快照或 null
      */
-    private async renderFlowSummary(
-        panel: HTMLElement,
+    private async collectSnapshotSafe(
         project: string,
         mode: CreationMode,
         chapters?: ChapterItem[],
-    ): Promise<void> {
-        let snapshot;
+    ): Promise<CreationFlowSnapshot | null> {
         try {
-            // P-3：长篇复用已扫描章节，避免再跑两次全库遍历
-            snapshot = (await collectCreationFlowState(this.app, project, {
+            return (await collectCreationFlowState(this.app, project, {
                 mode,
                 longChapters: mode === 'long' ? chapters : undefined,
             })).snapshot;
         } catch {
-            return;
+            return null;
         }
-        if (snapshot.stages.length === 0) return;
+    }
+
+    /**
+     * 「下一步」主操作卡（D2）：按项目真实状态推演下一步并给一键入口。
+     *
+     * 与「创作流程」页签同一套事实源（shared/creation-flow 快照），
+     * 因此卡片上的「下一步」与流程页的阶段高亮永远一致。
+     *
+     * @param panel - 右栏容器
+     * @param project - 项目 id
+     * @param mode - 创作模式
+     * @param snapshot - 流程快照
+     * @param unitsCache - 章节缓存
+     */
+    private renderNextStepCard(
+        panel: HTMLElement,
+        project: string,
+        mode: CreationMode,
+        snapshot: CreationFlowSnapshot | null,
+        unitsCache?: Map<string, ChapterItem[]>,
+    ): void {
+        const plan = buildNextStepPlan(snapshot);
+        if (!plan) return;
+        const chapters = this.getUnitsForProject(project, mode, unitsCache);
+        const card = panel.createDiv({ cls: 'nw-next-step' });
+        const head = card.createDiv({ cls: 'nw-next-step-head' });
+        head.createSpan({
+            cls: 'nw-next-step-kicker',
+            text: plan.allDone ? '🎉 已完成' : '👉 下一步',
+        });
+        head.createSpan({ cls: 'nw-next-step-percent', text: `${plan.percent}%` });
+        card.createDiv({ cls: 'nw-next-step-title', text: plan.title });
+        card.createDiv({ cls: 'nw-next-step-desc', text: plan.description });
+        const actions = card.createDiv({ cls: 'nw-next-step-actions' });
+        const cta = actions.createEl('button', {
+            cls: 'nw-btn nw-btn-primary',
+            text: plan.ctaLabel,
+        });
+        cta.onclick = () => this.dispatchNextStep(project, mode, plan, chapters);
+        const flowLink = actions.createEl('button', {
+            cls: 'nw-btn nw-btn-secondary',
+            text: '查看完整流程',
+        });
+        flowLink.onclick = () => { void this.deps.onOpenFlow?.(project); };
+    }
+
+    /**
+     * 执行「下一步」主操作卡的动作。
+     *
+     * 动作语义与创作流程页签一致（同一套 CreationFlowAction），
+     * 因此从首页点进来和从流程页点进去效果相同。
+     *
+     * @param project - 项目 id
+     * @param mode - 创作模式
+     * @param plan - 主操作卡数据
+     * @param chapters - 已扫描章节
+     */
+    private dispatchNextStep(
+        project: string,
+        mode: CreationMode,
+        plan: NextStepPlan,
+        chapters: ChapterItem[],
+    ): void {
+        this.noteProjectOpened(project);
+        switch (plan.action) {
+            case 'wizard':
+                void this.deps.onOpenWizard(project);
+                return;
+            case 'research':
+                if (mode === 'long') return;
+                new PreResearchModal(this.app, this.plugin, mode === 'short' ? 'short' : 'script', { project }).open();
+                return;
+            case 'document': {
+                const kind = plan.stageId === 'bible'
+                    ? (mode === 'short' ? 'storyCore' : 'bible')
+                    : plan.stageId === 'storyboard'
+                        ? 'storyboard'
+                        : plan.stageId === 'outline'
+                            ? 'outline'
+                            : (mode === 'short' ? 'storyCore' : 'bible');
+                new ModeDocumentModal(this.app, this.plugin, mode === 'long' ? 'short' : mode, kind as 'storyCore' | 'bible' | 'outline' | 'storyboard', project).open();
+                return;
+            }
+            case 'create-units':
+                this.deps.executeCommand('novel-writer-batch-create');
+                return;
+            case 'write-unit': {
+                const target = chapters.find(chapter => chapter.chapter.includes(String(plan.unitNumber ?? '')))
+                    ?? getNextChapter(chapters);
+                void this.openUnit(project, mode, target ?? null);
+                return;
+            }
+            case 'settle':
+                this.deps.executeCommand('novel-writer-chapter-settlement');
+                return;
+            case 'export':
+                this.deps.executeCommand('novel-writer-export-manuscript');
+                return;
+            default:
+                void this.deps.onOpenFlow?.(project);
+        }
+    }
+
+    /**
+     * 右侧流程摘要：项目进行到哪、整体百分比、各阶段状态。
+     *
+     * @param panel - 右栏容器
+     * @param snapshot - 流程快照（由 renderRightPanel 统一采集）
+     */
+    private renderFlowSummary(panel: HTMLElement, snapshot: CreationFlowSnapshot | null): void {
+        if (!snapshot || snapshot.stages.length === 0) return;
 
         const card = panel.createDiv({ cls: 'nw-flow-summary' });
         const head = card.createDiv({ cls: 'nw-flow-summary-head' });
@@ -619,12 +778,9 @@ export class ProjectSelectorController {
         card.createDiv({
             cls: 'nw-flow-summary-next',
             text: next
-                ? `下一步：${next.label} · ${next.ctaLabel}`
+                ? `阶段进度：${next.label} · ${next.progressText}`
                 : `全部阶段已完成 · ${snapshot.unitLabel}与导出均已就绪`,
         });
-
-        const button = card.createEl('button', { cls: 'nw-btn nw-btn-secondary nw-flow-summary-btn', text: '查看完整流程' });
-        button.onclick = () => { void this.deps.onOpenFlow?.(project); };
     }
 
     private buildProjectActions(

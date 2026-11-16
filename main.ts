@@ -456,6 +456,13 @@ export interface NovelWriterSettings {
      * SDK 协议没有逐次审批通道：开启等于整会话 workspace-write，启动前会再确认一次。
      */
     /**
+     * 项目最近打开时间（工作台首页「最近使用」排序用）。
+     *
+     * 键 = 项目 id（含模式目录前缀），值 = 毫秒时间戳。
+     * 只保留最近 30 项，避免无限增长；写入集中在 recent-projects.recordProjectOpened()。
+     */
+    projectLastOpened?: Record<string, number>;
+    /**
      * 2026-10-29 第 4 轮：其余面板的可拖拽尺寸（px）。
      * 统一放在 panelSizes 下，避免再加一堆散落字段。
      */

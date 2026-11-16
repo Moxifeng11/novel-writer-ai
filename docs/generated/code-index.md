@@ -10,8 +10,8 @@
 | `services/` | 65 | 19405 | 295 | 203 | 69% |
 | `shared/` | 255 | 50850 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3307 | 35 | 20 | 57% |
-| `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 286 | 110143 | 1067 | 861 | 81% |
+| `domains/` | 15 | 1521 | 85 | 55 | 65% |
+| `ui/` | 288 | 110583 | 1075 | 866 | 81% |
 
 ## 文件清单
 
@@ -30,7 +30,7 @@
 | `domains/kernel/tool-catalog-aggregator.ts` | 94 | 6 | 5 |
 | `domains/kernel/tool-catalog-types.ts` | 15 | 2 | 0 |
 | `domains/long/harness-profile.ts` | 44 | 1 | 1 |
-| `domains/long/tool-catalog.ts` | 115 | 4 | 3 |
+| `domains/long/tool-catalog.ts` | 124 | 4 | 3 |
 | `domains/memory/history.ts` | 128 | 9 | 6 |
 | `domains/memory/model.ts` | 247 | 19 | 11 |
 | `domains/memory/patch.ts` | 34 | 3 | 2 |
@@ -833,8 +833,10 @@
 | `ui/full-writer/full-writer-store.ts` | 401 | 5 | 5 |
 | `ui/full-writer/full-writer-utils.ts` | 115 | 6 | 6 |
 | `ui/full-writer/intervention-controller.ts` | 412 | 3 | 3 |
-| `ui/full-writer/project-selector-controller.ts` | 988 | 3 | 3 |
+| `ui/full-writer/next-step.ts` | 151 | 2 | 1 |
+| `ui/full-writer/project-selector-controller.ts` | 1144 | 3 | 3 |
 | `ui/full-writer/quick-tools-panel.ts` | 150 | 3 | 3 |
+| `ui/full-writer/recent-projects.ts` | 133 | 6 | 4 |
 | `ui/full-writer/scene-outline-controller.ts` | 1150 | 2 | 1 |
 | `ui/full-writer/setting-lib-controller.ts` | 63 | 1 | 1 |
 | `ui/full-writer/settings-menu.ts` | 85 | 4 | 3 |
