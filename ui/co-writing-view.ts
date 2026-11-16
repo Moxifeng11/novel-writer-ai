@@ -139,6 +139,11 @@ import {
 } from '@/ui/co-writing/find-replace';
 import { parseChapterNumber, renderChapterNav, type NavChapter } from '@/ui/co-writing/chapter-nav';
 import { describeWordGoalSource, resolveChapterWordGoal, type ChapterWordGoal } from '@/ui/co-writing/word-goal';
+import { canUndoRedo, ChapterHistoryStore, pushHistory, redoHistory, undoHistory } from '@/ui/co-writing/edit-history';
+import { applyEditorMetrics, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, formatCursorInfo, normalizeFontSize, normalizeLineHeight } from '@/ui/co-writing/editor-display';
+import { copyEditorBoxStyles, renderHighlightDom, syncHighlightScroll } from '@/ui/co-writing/markdown-highlight';
+import { renderEditorAux, syncHistoryButtons, syncToggleButton, type EditorAuxHandles } from '@/ui/co-writing/editor-aux';
+import { describeDiff, diffLines, type TextDiffResult } from '@/ui/co-writing/text-diff';
 import { applyQualityHighlights } from '@/ui/co-writing/quality-highlight';
 import {
     createScoreCard as createScoreCardFn,
@@ -240,6 +245,16 @@ export class CoWritingView extends ItemView {
   private chapterList: NavChapter[] = [];
   /** 本章字数目标（E-03：大纲 > 项目 > 全局） */
   private chapterWordGoal: ChapterWordGoal | null = null;
+  /** 编辑辅助条句柄（撤销/字号/行距/专注/高亮/保存，E-04~E-08/E-11） */
+  private auxBar: EditorAuxHandles | null = null;
+  /** 语法着色镜像层（textarea 下方） */
+  private highlightBackdrop: HTMLElement | null = null;
+  /** 多章撤销栈（会话内，切章再回来可继续撤销） */
+  private readonly editHistory = new ChapterHistoryStore();
+  /** 最近一次提交撤销栈的时间（防抖用） */
+  private lastHistoryPushAt = 0;
+  /** 高亮层刷新定时器 */
+  private highlightTimer: number | null = null;
   wordCountDisplay!: HTMLElement;
   wordGoalDisplay!: HTMLElement;
   saveStateDisplay!: HTMLElement;
@@ -672,6 +687,11 @@ export class CoWritingView extends ItemView {
     await this.loadChapterWordGoal();
     // 切章时关闭查找条：旧命中偏移对新正文无意义
     this.closeFindBar();
+    // E-04：切章后把新章内容作为该章撤销栈起点（切回来仍可继续撤销）
+    this.editHistory.get(this.historyKey(), bodyOnly);
+    this.pushHistorySnapshot(true);
+    this.syncHighlightSoon();
+    this.refreshCursorInfo();
     this.refreshStatusBar();
     this.updateMarkdownStatus();
     void this.resolveEditorContract().then(() => this.updateMarkdownStatus());
@@ -827,8 +847,14 @@ export class CoWritingView extends ItemView {
     this.centerPanel = centerPanel;
     const editorWrap = centerPanel.createDiv({ cls: "nw-cowrite-editor-wrap" });
     this.editorWrapEl = editorWrap;
+    // E-04~E-11：编辑辅助条（撤销/字号/行距/专注/高亮/保存）独立成行，
+    // 不塞进 Markdown 工具条，避免窄面板下换行错位
+    this.buildEditorAuxBar(editorWrap);
     this.buildMarkdownToolbar(editorWrap);
-    this.rightEditor = editorWrap.createEl("textarea", { cls: "nw-cowrite-editor has-md-chrome" });
+    // E-11：语法着色镜像层必须与 textarea 完全同盒，先建层再建 textarea
+    const editorStack = editorWrap.createDiv({ cls: "nw-cowrite-editor-stack" });
+    this.highlightBackdrop = editorStack.createDiv({ cls: "nw-cowrite-editor-backdrop" });
+    this.rightEditor = editorStack.createEl("textarea", { cls: "nw-cowrite-editor has-md-chrome" });
     this.rightEditor.spellcheck = false;
     this.rightEditor.placeholder = "在此写作……支持 Markdown；Tab 生成 AI 建议";
     this.ghostSuggestionContainer = editorWrap.createDiv({ cls: "nw-cowrite-ghost-suggestion" });
@@ -1021,9 +1047,19 @@ export class CoWritingView extends ItemView {
    */
   bindEvents() {
     this.rightEditor.addEventListener("keydown", (event: KeyboardEvent) => this.handleEditorKeydown(event));
+    // E-10：光标移动/选区变化也要刷新行列与选中字数
+    this.rightEditor.addEventListener("keyup", () => this.refreshCursorInfo());
+    this.rightEditor.addEventListener("mouseup", () => this.refreshCursorInfo());
+    this.rightEditor.addEventListener("select", () => this.refreshCursorInfo());
+    // E-11：滚动同步镜像层，避免着色文本与光标错位
+    this.rightEditor.addEventListener("scroll", () => syncHighlightScroll(this.highlightBackdrop, this.rightEditor));
     this.rightEditor.addEventListener("input", () => {
       this.facade.updateSnapshot(this.rightEditor.value);
       this.updateMarkdownStatus();
+      // E-04/E-10/E-11：撤销快照、光标位置、语法着色随输入更新
+      this.pushHistorySnapshot();
+      this.refreshCursorInfo();
+      this.syncHighlightSoon();
       this.updateControlState("编辑中");
       void this.refreshPreview(false);
       this.liveAnalysis.scheduleRefresh("input");
@@ -1084,6 +1120,196 @@ export class CoWritingView extends ItemView {
     // 统一走状态类：初始挂载的 nw-u-d-none 必须被移除，否则只改 inline display 会被类继续隐藏
     this.hintStateDisplay.toggleClass('nw-u-d-none', !visible);
   }
+  /**
+   * 装配编辑辅助条（E-04/E-06/E-07/E-08/E-11）。
+   *
+   * @param wrap - 编辑器容器
+   */
+  private buildEditorAuxBar(wrap: HTMLElement): void {
+    const settings = this.facade.settings;
+    this.auxBar = renderEditorAux(wrap, {
+      onUndo: () => this.undoEdit(),
+      onRedo: () => this.redoEdit(),
+      onFontSizeChange: size => this.applyDisplayMetrics(size, normalizeLineHeight(settings.coWriteLineHeight)),
+      onLineHeightChange: height => this.applyDisplayMetrics(normalizeFontSize(settings.coWriteFontSize), height),
+      onToggleFocus: () => this.toggleFocusMode(),
+      onToggleHighlight: () => this.toggleHighlight(),
+      onSave: () => { void this.saveBody(true); },
+    }, {
+      fontSize: normalizeFontSize(settings.coWriteFontSize),
+      lineHeight: normalizeLineHeight(settings.coWriteLineHeight),
+      focusMode: settings.coWriteFocusMode === true,
+      highlight: settings.coWriteSyntaxHighlight !== false,
+    });
+    this.applyDisplayMetrics(
+      normalizeFontSize(settings.coWriteFontSize),
+      normalizeLineHeight(settings.coWriteLineHeight),
+    );
+    this.applyHighlightSetting(settings.coWriteSyntaxHighlight !== false);
+    this.syncAuxToggles();
+    this.refreshHistoryButtons();
+  }
+
+  /**
+   * 应用字号/行距（编辑器 + 幽灵层 + 预览 + 高亮镜像层必须一致，否则错位）。
+   *
+   * @param fontSize - 字号（px）
+   * @param lineHeight - 行距倍数
+   */
+  private applyDisplayMetrics(fontSize: number, lineHeight: number): void {
+    const size = normalizeFontSize(fontSize);
+    const height = normalizeLineHeight(lineHeight);
+    this.facade.settings.coWriteFontSize = size;
+    this.facade.settings.coWriteLineHeight = height;
+    void this.plugin.saveSettings();
+    applyEditorMetrics({
+      editor: this.rightEditor,
+      ghost: this.ghostSuggestionContainer,
+      preview: this.previewContent,
+      backdrop: this.highlightBackdrop,
+    }, size, height);
+    // 字号变化后镜像层尺寸需重算
+    copyEditorBoxStyles(this.rightEditor, this.highlightBackdrop);
+    if (this.auxBar) {
+      this.auxBar.fontSelect.value = String(size);
+      this.auxBar.lineSelect.value = String(height);
+    }
+    this.syncHighlightSoon();
+  }
+
+  /**
+   * 开启/关闭语法着色（E-11）。
+   *
+   * @param enabled - 是否启用
+   */
+  private applyHighlightSetting(enabled: boolean): void {
+    this.facade.settings.coWriteSyntaxHighlight = enabled;
+    void this.plugin.saveSettings();
+    const backdrop = this.highlightBackdrop;
+    const editor = this.rightEditor;
+    if (backdrop) backdrop.toggleClass('nw-u-d-none', !enabled);
+    // 关闭着色时恢复 textarea 文字可见
+    editor?.toggleClass('nw-cowrite-editor-highlight-on', enabled);
+    if (enabled) this.syncHighlightSoon();
+    this.syncAuxToggles();
+  }
+
+  /** 切换语法着色 */
+  private toggleHighlight(): void {
+    this.applyHighlightSetting(this.facade.settings.coWriteSyntaxHighlight === false);
+  }
+
+  /**
+   * 刷新高亮镜像层内容（内容变化后调用；带 60ms 防抖避免每键重排）。
+   */
+  private syncHighlightSoon(): void {
+    if (this.facade.settings.coWriteSyntaxHighlight === false) return;
+    if (this.highlightTimer !== null) window.clearTimeout(this.highlightTimer);
+    this.highlightTimer = window.setTimeout(() => {
+      this.highlightTimer = null;
+      const backdrop = this.highlightBackdrop;
+      const editor = this.rightEditor;
+      if (!backdrop || !editor) return;
+      // 盒模型样式必须从 textarea 实时复制，避免主题/类覆盖导致错位
+      copyEditorBoxStyles(editor, backdrop);
+      // 用 DOM 节点渲染（不用 innerHTML）：内容经 textContent 写入，无注入风险
+      renderHighlightDom(backdrop, editor.value);
+      syncHighlightScroll(backdrop, editor);
+    }, 60);
+  }
+
+  /** 同步「专注/高亮」按钮按下态 */
+  private syncAuxToggles(): void {
+    if (!this.auxBar) return;
+    syncToggleButton(this.auxBar.highlightBtn, this.facade.settings.coWriteSyntaxHighlight !== false);
+    syncToggleButton(this.auxBar.focusBtn, this.isFocusMode());
+  }
+
+  /** 是否处于专注模式 */
+  private isFocusMode(): boolean {
+    return this.mainContainer?.hasClass('nw-cowrite-focus') === true;
+  }
+
+  /**
+   * 切换专注模式（E-07）：隐藏左右栏与建议面板，只留正文（Esc 退出）。
+   */
+  private toggleFocusMode(force?: boolean): void {
+    const next = typeof force === 'boolean' ? force : !this.isFocusMode();
+    this.mainContainer?.toggleClass('nw-cowrite-focus', next);
+    this.facade.settings.coWriteFocusMode = next;
+    void this.plugin.saveSettings();
+    this.syncAuxToggles();
+    if (next) this.rightEditor?.focus();
+  }
+
+  /** 当前章节的撤销栈键 */
+  private historyKey(): string {
+    return `${this.project || ''}|${this.chapterName || ''}`;
+  }
+
+  /**
+   * 提交一次撤销快照（编辑输入后防抖调用）。
+   *
+   * @param force - 跳过节流（关键操作前用）
+   */
+  private pushHistorySnapshot(force = false): void {
+    const editor = this.rightEditor;
+    if (!editor) return;
+    const now = Date.now();
+    // 800ms 节流：连续打字不产生几十个快照，但仍能按段撤销
+    if (!force && now - this.lastHistoryPushAt < 800) return;
+    this.lastHistoryPushAt = now;
+    const history = this.editHistory.get(this.historyKey(), editor.value);
+    pushHistory(history, editor.value);
+    this.refreshHistoryButtons();
+  }
+
+  /** 执行撤销 */
+  private undoEdit(): void {
+    const editor = this.rightEditor;
+    if (!editor) return;
+    const history = this.editHistory.get(this.historyKey(), editor.value);
+    // 先把当前内容补进栈，避免「输入后立刻撤销」丢掉最新一版
+    pushHistory(history, editor.value);
+    const previous = undoHistory(history);
+    if (previous === null) {
+      showWarningNotice('已到最早一版，无法继续撤销', { timeout: 2000 });
+      return;
+    }
+    this.applyTextEdit({ text: previous, selectionStart: previous.length, selectionEnd: previous.length });
+    this.refreshHistoryButtons();
+  }
+
+  /** 执行重做 */
+  private redoEdit(): void {
+    const editor = this.rightEditor;
+    if (!editor) return;
+    const history = this.editHistory.get(this.historyKey(), editor.value);
+    const next = redoHistory(history);
+    if (next === null) {
+      showWarningNotice('没有可重做的内容', { timeout: 2000 });
+      return;
+    }
+    this.applyTextEdit({ text: next, selectionStart: next.length, selectionEnd: next.length });
+    this.refreshHistoryButtons();
+  }
+
+  /** 刷新撤销/重做按钮禁用态 */
+  private refreshHistoryButtons(): void {
+    if (!this.auxBar) return;
+    const history = this.editHistory.get(this.historyKey(), this.rightEditor?.value ?? '');
+    const state = canUndoRedo(history);
+    syncHistoryButtons(this.auxBar.undoBtn, this.auxBar.redoBtn, state);
+  }
+
+  /** 刷新光标位置（E-10） */
+  private refreshCursorInfo(): void {
+    const el = this.mdStatusHandles?.cursorEl;
+    if (!el || !this.rightEditor) return;
+    const text = this.rightEditor.value;
+    el.setText(formatCursorInfo(text, this.rightEditor.selectionStart ?? 0, this.rightEditor.selectionEnd ?? 0));
+  }
+
   /** 编辑器顶部：字体选择 + Markdown / 段落 / 一键排版工具条 */
   private buildMarkdownToolbar(wrap: HTMLElement): void {
     renderMarkdownToolbar(wrap, {
@@ -1106,6 +1332,12 @@ export class CoWritingView extends ItemView {
   /** 应用编辑器字体（空串=恢复主题默认） */
   private applyEditorFont(fontFamily: string): void {
     applyEditorFontTo({ editor: this.rightEditor, ghost: this.ghostSuggestionContainer, preview: this.previewContent }, fontFamily);
+    // 字体族必须同步到高亮镜像层，否则字宽不同会换行错位
+    if (this.rightEditor && this.highlightBackdrop) {
+      this.highlightBackdrop.style.fontFamily = this.rightEditor.style.fontFamily || '';
+      copyEditorBoxStyles(this.rightEditor, this.highlightBackdrop);
+      this.syncHighlightSoon();
+    }
   }
 
   /** 编辑器底部：Markdown / 格式契约 / 字数 / 段落 */
@@ -1220,6 +1452,18 @@ export class CoWritingView extends ItemView {
   private handleFindShortcut(event: KeyboardEvent): boolean {
     const mod = event.ctrlKey || event.metaKey;
     const key = event.key.toLowerCase();
+    // E-04：撤销/重做交给自建栈（原生栈在切章/重开后不可用）
+    if (mod && key === 'z') {
+      event.preventDefault();
+      if (event.shiftKey) this.redoEdit();
+      else this.undoEdit();
+      return true;
+    }
+    if (mod && key === 'y') {
+      event.preventDefault();
+      this.redoEdit();
+      return true;
+    }
     if (mod && key === 'f') {
       event.preventDefault();
       this.openFindBar(false);
@@ -1230,10 +1474,18 @@ export class CoWritingView extends ItemView {
       this.openFindBar(true);
       return true;
     }
-    if (event.key === 'Escape' && this.findBar) {
-      event.preventDefault();
-      this.closeFindBar();
-      return true;
+    if (event.key === 'Escape') {
+      if (this.findBar) {
+        event.preventDefault();
+        this.closeFindBar();
+        return true;
+      }
+      // E-07：专注模式下 Esc 直接退出
+      if (this.isFocusMode()) {
+        event.preventDefault();
+        this.toggleFocusMode(false);
+        return true;
+      }
     }
     return false;
   }
@@ -1418,6 +1670,7 @@ export class CoWritingView extends ItemView {
         this.handleRewriteSelection();
         return;
       case 'save':
+        this.pushHistorySnapshot(true);
         await this.saveBody(true);
         return;
       case 'focus-hint':
@@ -1695,6 +1948,14 @@ export class CoWritingView extends ItemView {
         this.acceptInFlight = false;
       },
       createScoreCard: (label, value) => this.createScoreCard(label, value),
+      // E-05：候选与「当前光标前正文」做行级差异，帮助判断改动范围
+      computeDiff: suggestion => {
+        const text = this.rightEditor?.value ?? '';
+        if (!text.trim()) return null;
+        const cursor = this.rightEditor?.selectionStart ?? 0;
+        const before = text.slice(0, cursor);
+        return diffLines(before, (before ? before.replace(/\s+$/, '') + '\n' : '') + suggestion.text);
+      },
     };
   }
   // B2: 多轮迭代改写——基于单条候选做定向迭代，不重新生成整组
@@ -2971,6 +3232,11 @@ ${text}`;
   updateControlState(state: string) {
     this.refreshStatusBar();
     updateSaveStateDisplay(this.saveStateDisplay, state);
+    // E-08：辅助条上的保存状态与主状态同步（避免两处显示不一致）
+    if (this.auxBar) {
+      this.auxBar.saveState.setText(state);
+      this.auxBar.saveState.toggleClass('nw-cowrite-aux-state-dirty', state !== '已保存' && state !== '已加载');
+    }
   }
   /**
    * 应用提示。
@@ -3401,6 +3667,16 @@ ${text}`;
       summaryEl: this.briefSummaryEl,
       getBrief: () => this.facade.getChapterBrief(),
       openFullWriterView: () => { void this.plugin.openFullWriterView(); },
+      // E-09：缺规划时就地给入口，不用来回跳视图
+      openSceneStep: () => {
+        if (!this.project) return;
+        void this.plugin.openProjectWizard(this.project);
+      },
+      openFlowTab: () => {
+        if (!this.project) return;
+        void this.plugin.openCreationFlow?.(this.project);
+      },
+      focusEditor: () => this.rightEditor?.focus(),
       selectScene: index => {
         const brief = this.facade.getChapterBrief();
         const scene = brief?.scenes[index];

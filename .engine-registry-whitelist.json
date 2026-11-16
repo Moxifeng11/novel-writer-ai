@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft-07/schema",
   "description": "EngineRegistry 治理白名单 — 列出允许直接 new 实例化的类（多实例或合理 fallback 或延迟迁移）",
-  "lastUpdated": "2026-11-05",
+  "lastUpdated": "2026-11-16",
   "whitelist": [
     {
       "className": "LocalVectorStore",
@@ -380,6 +380,12 @@
       "reason": "结算回滚日志落盘（按项目构造，非单例）",
       "category": "service",
       "allowedInstances": 2
+    },
+    {
+      "className": "ChapterHistoryStore",
+      "reason": "纯内存撤销栈（章节键→历史数组），无外部依赖、无生命周期，不属于引擎；每个协同视图实例各持一份",
+      "category": "context-isolated",
+      "allowedInstances": -1
     }
   ],
   "notes": {

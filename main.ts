@@ -708,6 +708,14 @@ export interface NovelWriterSettings {
     coWriteEditorWidthRatio?: number;
     /** v8.2: 协同写作建议面板是否可见 */
     coWriteSuggestionPanelVisible?: boolean;
+    /** 协同编辑区字号（px，E-06） */
+    coWriteFontSize?: number;
+    /** 协同编辑区行距倍数（E-06） */
+    coWriteLineHeight?: number;
+    /** Markdown 语法着色（E-11） */
+    coWriteSyntaxHighlight?: boolean;
+    /** 专注模式（E-07） */
+    coWriteFocusMode?: boolean;
     /** v8.2: 是否显示协同写作高级功能 */
     coWriteShowAdvanced?: boolean;
 }
@@ -2150,6 +2158,23 @@ export default class NovelWriterPlugin extends Plugin {
      * 创建短篇/剧本、Agent 引导、命令面板都走这里，避免各自重复实现跳转。
      * @param project - 项目（路径或对象）
      */
+    /**
+     * 打开指定项目的初始化向导（供协同视图「就地补规划」用，E-09）。
+     *
+     * @param project - 项目 id
+     * @returns 无
+     * @example
+     * void plugin.openProjectWizard('长篇小说/斗破');
+     */
+    public async openProjectWizard(project: string): Promise<void> {
+        await this.openFullWriterView();
+        const leaves = this.app.workspace.getLeavesOfType('novel-writer-full-writer');
+        const view = leaves[0]?.view as unknown as { openWizardForProjectById?: (id: string) => Promise<void> } | undefined;
+        if (view?.openWizardForProjectById) {
+            await view.openWizardForProjectById(project);
+        }
+    }
+
     public async openCreationFlow(project?: string): Promise<void> {
         await this.openFullWriterView();
         const leaf = this.app.workspace.getLeavesOfType(FULL_WRITER_VIEW_TYPE)[0];

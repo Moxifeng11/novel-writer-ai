@@ -105,6 +105,8 @@ export interface MarkdownStatusHandles {
     wordsEl: HTMLElement;
     /** 段落数 */
     paragraphsEl: HTMLElement;
+    /** 光标位置 / 选中字数（E-10） */
+    cursorEl: HTMLElement;
 }
 
 /** 顶栏装配回调。 */
@@ -399,8 +401,10 @@ export function renderMarkdownStatus(wrap: HTMLElement): MarkdownStatusHandles {
     const contractEl = status.createSpan({ cls: 'nw-cowrite-md-status-item nw-cowrite-md-status-contract' });
     const wordsEl = status.createSpan({ cls: 'nw-cowrite-md-status-item' });
     const paragraphsEl = status.createSpan({ cls: 'nw-cowrite-md-status-item' });
-    status.createSpan({ cls: 'nw-cowrite-md-status-hint', text: 'Ctrl+Alt+F 一键排版' });
-    return { container: status, modeEl, contractEl, wordsEl, paragraphsEl };
+    // E-10：光标行列与选中字数（间隔 200ms 内刷新，避免输入时抖动）
+    const cursorEl = status.createSpan({ cls: 'nw-cowrite-md-status-item nw-cowrite-md-status-cursor' });
+    status.createSpan({ cls: 'nw-cowrite-md-status-hint', text: 'Ctrl+Alt+F 一键排版 · Ctrl+F 查找' });
+    return { container: status, modeEl, contractEl, wordsEl, paragraphsEl, cursorEl };
 }
 
 /**

@@ -16,6 +16,12 @@ export interface BriefPanelHost {
     getBrief(): ChapterBrief | null;
     /** 打开完整写作工作台 */
     openFullWriterView(): void;
+    /** E-09：就地打开工作台的「Scene 展开」步骤（缺规划时不用跳出视图） */
+    openSceneStep?(): void;
+    /** E-09：就地打开创作流程页签 */
+    openFlowTab?(): void;
+    /** E-09：把焦点放到编辑器，直接手写第一句 */
+    focusEditor?(): void;
     /** 切换当前场景下标 */
     selectScene(index: number): void;
 }
@@ -166,8 +172,25 @@ export function renderBriefPanel(host: BriefPanelHost): void {
     if (!brief || (brief.scenes.length === 0 && !brief.outlineSummary)) {
         host.summaryEl?.setText('未找到章节规划');
         const empty = host.container.createDiv({ cls: 'nw-cowrite-brief-empty' });
-        empty.createDiv({ text: '未找到 Scene 展开，无法从规划直接开头。可先回工作台完成步骤 6，或直接手写第一句。' });
-        const btn = empty.createEl('button', { text: '去工作台', cls: 'nw-btn nw-btn-ghost' });
+        empty.createDiv({ text: '本章还没有 Scene 展开。可以就地补齐规划，或直接手写第一句。' });
+        const actions = empty.createDiv({ cls: 'nw-cowrite-brief-empty-actions' });
+        if (host.openSceneStep) {
+            const sceneBtn = actions.createEl('button', { text: '🧩 生成 Scene 展开', cls: 'nw-btn nw-btn-primary' });
+            sceneBtn.setAttribute('title', '打开本项目向导的「Scene 展开」步骤，就地补齐场景规划');
+            sceneBtn.addEventListener('click', () => host.openSceneStep?.());
+        }
+        if (host.openFlowTab) {
+            const flowBtn = actions.createEl('button', { text: '🧭 查看创作流程', cls: 'nw-btn nw-btn-secondary' });
+            flowBtn.setAttribute('title', '打开本项目创作流程页签，查看还缺哪些规划产物');
+            flowBtn.addEventListener('click', () => host.openFlowTab?.());
+        }
+        if (host.focusEditor) {
+            const writeBtn = actions.createEl('button', { text: '✍️ 直接手写', cls: 'nw-btn nw-btn-ghost' });
+            writeBtn.setAttribute('title', '不依赖规划，直接把光标放进正文开始写');
+            writeBtn.addEventListener('click', () => host.focusEditor?.());
+        }
+        const btn = actions.createEl('button', { text: '← 工作台', cls: 'nw-btn nw-btn-ghost' });
+        btn.setAttribute('title', '回到完整写作工作台');
         btn.addEventListener('click', () => host.openFullWriterView());
         return;
     }

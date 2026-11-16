@@ -20042,6 +20042,258 @@ body.nw-panel-resizing .nw-awb-center iframe {
     color: var(--text-muted);
     font-size: 11px;
 }
+
+/* ── P1/P2：编辑辅助条 / 高亮镜像层 / 专注模式 / 差异对比 / 简报入口（2026-11-16）── */
+
+/* 编辑辅助条：独立一行，窄屏自动换行不重叠 */
+.nw-cowrite-aux {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    padding: 4px 6px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-cowrite-aux-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* 保存组靠右；窄屏换行后仍自成一行不与其它组挤在一起 */
+.nw-cowrite-aux-right {
+    margin-left: auto;
+}
+
+.nw-cowrite-aux-label {
+    font-size: 11px;
+    color: var(--text-faint);
+}
+
+.nw-cowrite-aux-select {
+    padding: 1px 4px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: var(--background-primary);
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.nw-cowrite-aux-btn {
+    padding: 2px 8px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    background: var(--background-primary);
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.nw-cowrite-aux-btn:hover:not(:disabled) {
+    color: var(--text-normal);
+    background: var(--background-modifier-hover);
+}
+
+.nw-cowrite-aux-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.nw-cowrite-aux-btn.nw-cowrite-aux-btn-on {
+    border-color: var(--interactive-accent);
+    color: var(--text-accent);
+    background: var(--background-modifier-hover);
+}
+
+.nw-cowrite-aux-save {
+    color: var(--text-normal);
+    border-color: var(--interactive-accent);
+}
+
+.nw-cowrite-aux-state {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.nw-cowrite-aux-state.nw-cowrite-aux-state-dirty {
+    color: var(--text-warning);
+}
+
+/* 高亮镜像层：与 textarea 完全同盒（盒模型由 copyEditorBoxStyles 运行时复制） */
+.nw-cowrite-editor-stack {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    min-width: 0;
+}
+
+.nw-cowrite-editor-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    box-sizing: border-box;
+    /* padding/border/字体等由 copyEditorBoxStyles 运行时按 textarea 实际值复制 */
+    background: transparent;
+}
+
+.nw-cowrite-editor-backdrop:empty {
+    display: none;
+}
+
+/* 高亮开启时 textarea 文字透明（保留光标与选区），由镜像层显示文字 */
+.nw-cowrite-editor.nw-cowrite-editor-highlight-on {
+    position: relative;
+    z-index: 1;
+    background: transparent;
+    color: transparent;
+    caret-color: var(--text-normal);
+}
+
+.nw-cowrite-editor.nw-cowrite-editor-highlight-on::selection {
+    background: var(--text-selection);
+    color: transparent;
+}
+
+/* Markdown 着色 */
+.nw-md-heading {
+    color: var(--text-accent);
+    font-weight: 600;
+}
+
+.nw-md-bold {
+    font-weight: 700;
+    color: var(--text-normal);
+}
+
+.nw-md-italic {
+    font-style: italic;
+    color: var(--text-normal);
+}
+
+.nw-md-quote {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.nw-md-list {
+    color: var(--text-normal);
+}
+
+.nw-md-hr {
+    color: var(--text-faint);
+}
+
+.nw-md-marker {
+    color: var(--text-faint);
+}
+
+/* 编辑器在镜像层之上；不改 padding/border，保持主题与 has-md-chrome 原样 */
+.nw-cowrite-editor-stack .nw-cowrite-editor {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    min-width: 0;
+}
+
+/* 专注模式：隐藏左右栏与建议面板，正文居中变宽。
+   注意：中栏是 flex 子项且编辑区宽度来自 --nw-cowrite-editor-percent，
+   只隐藏左右栏会让中栏按百分比算法塌缩（实测只剩 118px），
+   因此这里显式把主区域切回块级、中栏与编辑区占满可用宽度。 */
+.nw-cowrite-root.nw-cowrite-focus .nw-cowrite-left,
+.nw-cowrite-root.nw-cowrite-focus .nw-cowrite-right,
+.nw-cowrite-root.nw-cowrite-focus .nw-cowrite-suggestions-panel,
+.nw-cowrite-root.nw-cowrite-focus .nw-cowrite-resizer {
+    display: none;
+}
+
+.nw-cowrite-root.nw-cowrite-focus .nw-cowrite-main {
+    display: block;
+    width: 100%;
+}
+
+.nw-cowrite-root.nw-cowrite-focus .nw-cowrite-center {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    max-width: 880px;
+    margin: 0 auto;
+    height: 100%;
+}
+
+.nw-cowrite-root.nw-cowrite-focus .nw-cowrite-editor-wrap {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+}
+
+/* 建议卡差异对比 */
+.novel-writer-cowrite-diff {
+    margin-top: 8px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.novel-writer-cowrite-diff-head {
+    padding: 4px 8px;
+    background: var(--background-secondary);
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.novel-writer-cowrite-diff-body {
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.novel-writer-cowrite-diff-line {
+    display: flex;
+    gap: 6px;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+
+.novel-writer-cowrite-diff-line.nw-diff-add {
+    color: var(--text-success);
+    background: var(--background-modifier-success);
+}
+
+.novel-writer-cowrite-diff-line.nw-diff-del {
+    color: var(--text-error);
+    background: var(--background-modifier-error);
+}
+
+.novel-writer-cowrite-diff-sign {
+    flex: none;
+    width: 10px;
+    text-align: center;
+}
+
+.novel-writer-cowrite-diff-same {
+    color: var(--text-faint);
+    font-size: 12px;
+}
+
+/* 简报空态的就地入口 */
+.nw-cowrite-brief-empty-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+/* 状态栏光标位置 */
+.nw-cowrite-md-status-cursor {
+    color: var(--text-faint);
+}
 /* ==========================================================================
  * 23-generate-modals.css — 实体生成弹窗共用样式（v4.80.0 批次 B3a）
  * ==========================================================================

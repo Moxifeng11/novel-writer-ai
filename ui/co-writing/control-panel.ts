@@ -9,6 +9,19 @@
 import { withButtonBusy } from '@/ui/button-busy';
 import { renderTabHeaders } from '@/ui/co-writing/layout-assembly';
 
+/** 工具按钮的悬浮说明（E-12：图标/短文案不足以说明用途） */
+const TOOL_BUTTON_HINTS: Record<ControlToolAction, string> = {
+    history: '查看本章的正文版本历史，可回滚',
+    memory: '打开写作记忆管理（人物/情节记忆条目）',
+    'batch-import': '批量导入已有正文到当前项目',
+    monitor: '打开知识库监控面板，查看检索命中与丢弃',
+    analysis: '打开章节分析报告（连贯性/质量/风格）',
+    guard: '立即检查设定守卫：OOC、实体状态变更',
+    quality: '生成并查看本章质检报告',
+    save: '立即保存当前正文（Ctrl+S）',
+    written: '把本章标记为完稿并进入结算流程',
+};
+
 /** 右栏页签定义。 */
 export interface RightTabSpec {
     id: 'overview' | 'knowledge';
@@ -329,7 +342,12 @@ export function renderControlPanelAssembly(
     const toolsPanel = toolsSection.createDiv({ cls: 'nw-cowrite-tools-panel nw-cowrite-tools-panel-inline' });
 
     for (const spec of getToolButtonSpecs()) {
-        const el = toolsPanel.createEl('button', { text: spec.text, cls: 'nw-btn nw-btn-ghost' });
+        // E-12：这些按钮只有图标+短名，补 title 说明用途
+        const el = toolsPanel.createEl('button', {
+            text: spec.text,
+            cls: 'nw-btn nw-btn-ghost nw-cowrite-tool-btn',
+            attr: { title: TOOL_BUTTON_HINTS[spec.action] ?? spec.text },
+        });
         el.addEventListener('click', () => {
             toolsPanel.removeClass('is-open');
             toolsToggle.setText(getToolsToggleLabel(false));

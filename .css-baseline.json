@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-16T11:57:22.736Z",
-  "note": "协同写作 P0：查找替换条 + 状态栏章节导航（23-co-writing-editor.css，+2.7KB，11 类）",
-  "bytes": 581708,
+  "generatedAt": "2026-11-16T12:21:43.183Z",
+  "note": "协同写作 P1/P2：辅助条/高亮镜像层/专注模式/差异对比/光标信息/简报入口（+5.7KB，31 类）",
+  "bytes": 587454,
   "important": 24,
   "hardcodedHex": 169,
   "rgbHsl": 192,
-  "uniqueClasses": 3178,
+  "uniqueClasses": 3209,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

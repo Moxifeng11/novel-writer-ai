@@ -7,6 +7,7 @@
 import type { AssociationSuggestion } from '@/shared/co-writer-types';
 import type { EditValidation, SuggestionRecord } from '@/shared/types';
 import { getAssociationLabel, getDirectionLabel, getStyleLabel } from '@/ui/cowrite/cowrite-mappers';
+import { describeDiff, type TextDiffResult } from '@/ui/co-writing/text-diff';
 
 /** 卡片动作宿主。 */
 export interface SuggestionCardActions {
@@ -26,6 +27,10 @@ export interface SuggestionCardActions {
     endAccept(): void;
     /** 创建评分卡 */
     createScoreCard(label: string, value: number): HTMLElement;
+    /**
+     * 计算候选相对当前正文的差异（E-05）。返回 null 表示无法比较（无正文）。
+     */
+    computeDiff?(suggestion: SuggestionRecord): TextDiffResult | null;
 }
 
 /**
@@ -112,7 +117,48 @@ export function renderSuggestionCards(
         iterateBtn.addEventListener('click', () => actions.onIterate(suggestion));
         const rejectBtn = actionRow.createEl('button', { text: '× 拒绝', cls: 'novel-writer-cowrite-secondary-btn' });
         rejectBtn.addEventListener('click', () => actions.onReject(suggestion.id));
+        // E-05：差异对比——先给摘要，展开后列出行级 +/-，避免盲采纳
+        if (actions.computeDiff) {
+          const diffResult = actions.computeDiff(suggestion);
+          if (diffResult) {
+            const diffBtn = actionRow.createEl('button', {
+                text: `⇄ 差异（${describeDiff(diffResult)}）`,
+                cls: 'novel-writer-cowrite-secondary-btn',
+                attr: { title: '查看该候选相对当前正文的改动' },
+            });
+            const diffBox = card.createDiv({ cls: 'novel-writer-cowrite-diff nw-u-d-none' });
+            diffBtn.addEventListener('click', () => {
+                const hidden = diffBox.hasClass('nw-u-d-none');
+                if (hidden) renderDiffRows(diffBox, diffResult);
+                diffBox.toggleClass('nw-u-d-none', !hidden);
+            });
+          }
+        }
     });
+}
+
+/**
+ * 渲染行级差异（+ 绿 / − 红 / 未变灰）。
+ *
+ * @param container - 差异容器
+ * @param result - 差异结果
+ * @example
+ * renderDiffRows(box, diffLines(before, after));
+ */
+export function renderDiffRows(container: HTMLElement, result: TextDiffResult): void {
+    container.empty();
+    const head = container.createDiv({ cls: 'novel-writer-cowrite-diff-head' });
+    head.setText(`相对正文：${describeDiff(result)}`);
+    const body = container.createDiv({ cls: 'novel-writer-cowrite-diff-body' });
+    for (const row of result.rows) {
+        if (row.kind === 'same') continue;
+        const line = body.createDiv({ cls: `novel-writer-cowrite-diff-line nw-diff-${row.kind}` });
+        line.createSpan({ cls: 'novel-writer-cowrite-diff-sign', text: row.kind === 'add' ? '+' : '−' });
+        line.createSpan({ cls: 'novel-writer-cowrite-diff-text', text: row.text || '（空行）' });
+    }
+    if (result.rows.every(row => row.kind === 'same')) {
+        body.createDiv({ cls: 'novel-writer-cowrite-diff-same', text: '与当前正文完全一致' });
+    }
 }
 
 /**
