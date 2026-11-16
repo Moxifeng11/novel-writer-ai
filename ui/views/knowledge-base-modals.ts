@@ -71,16 +71,13 @@ export class ImportBookModal extends Modal {
         ];
 
         options.forEach(opt => {
-            const card = contentEl.createDiv({
-                cls: 'nw-u-p-16px nw-u-b-1px-solid-background-m nw-u-brd-8px nw-u-marginbottom-12px nw-u-cur-pointer nw-u-d-flex nw-u-ai-center nw-u-gap-12px nw-u-transition-all-0-15s'
-            });
-            card.addClass('nw-hover-border');
+            const card = contentEl.createDiv({ cls: 'nw-kb-modal-choice' });
 
-            card.createSpan({ text: opt.icon, cls: 'nw-u-fs-28px' });
-            const info = card.createDiv({ cls: 'nw-u-flex-1' });
-            info.createDiv({ text: opt.label, cls: 'nw-u-fs-14px nw-u-fwt-500 nw-u-marginbottom-4px' });
-            info.createDiv({ text: opt.desc, cls: 'nw-text-sm-muted' });
-            card.createSpan({ text: '→', cls: 'nw-u-c-text-muted nw-u-fs-16px' });
+            card.createSpan({ text: opt.icon, cls: 'nw-kb-modal-choice-icon' });
+            const info = card.createDiv({ cls: 'nw-kb-modal-choice-body' });
+            info.createDiv({ text: opt.label, cls: 'nw-kb-modal-choice-label' });
+            info.createDiv({ text: opt.desc, cls: 'nw-kb-modal-choice-desc' });
+            card.createSpan({ text: '→', cls: 'nw-kb-modal-choice-arrow' });
 
             card.addEventListener('click', opt.action);
         });
@@ -112,27 +109,22 @@ export class ImportBookModal extends Modal {
                     this.modalEl.addClass('nw-modal-sm');
                     const { contentEl } = this;
                     contentEl.empty();
+                    // 文件选择是窄弹窗（nw-modal-sm），标题保持浏览器默认间距，不加 nw-modal-title(0 margin)
                     contentEl.createEl('h3', { text: '选择文件' });
 
                     const searchInput = contentEl.createEl('input', {
                         type: 'text',
-                        attr: {
-                            placeholder: '搜索文件...',
-                            style: 'width:100%;padding:8px;margin-bottom:12px;border:1px solid var(--background-modifier-border);border-radius:4px;'
-                        }
+                        cls: 'nw-kb-modal-search',
+                        attr: { placeholder: '搜索文件...' }
                     });
 
-                    const list = contentEl.createDiv({
-                        cls: 'nw-u-maxh-300px nw-u-ovy-auto nw-u-b-1px-solid-background-m nw-u-brd-6px'
-                    });
+                    const list = contentEl.createDiv({ cls: 'nw-kb-modal-file-list' });
 
                     const renderList = (filter: string) => {
                         list.empty();
                         const filtered = filterBookFiles(this.files, filter);
                         filtered.forEach(file => {
-                            const item = list.createDiv({
-                                attr: { style: 'padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--background-modifier-border);&:last-child{border-bottom:none;}' }
-                            });
+                            const item = list.createDiv({ cls: 'nw-kb-modal-file-item' });
                             item.createSpan({ text: '📄 ' + file.name });
                             item.addEventListener('click', () => {
                                 this.onSelect(file);
@@ -198,9 +190,7 @@ export class ImportBookModal extends Modal {
                 .setValue(this.authorValue)
                 .onChange(v => this.authorValue = v));
 
-        const actions = contentEl.createDiv({
-            cls: "nw-flex-end nw-u-margintop-20px", attr: {}
-        });
+        const actions = contentEl.createDiv({ cls: 'nw-kb-modal-actions' });
 
         const backBtn = actions.createEl('button', {
             text: '返回',
@@ -337,7 +327,7 @@ export class EditBookModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h3', { text: '✏️ 编辑书籍信息' });
+        contentEl.createEl('h3', { text: '✏️ 编辑书籍信息', cls: 'nw-modal-title' });
 
         new Setting(contentEl)
             .setName('书名')
@@ -358,7 +348,7 @@ export class EditBookModal extends Modal {
                 .onChange(v => this.synopsisValue = v)
                 .inputEl.rows = 4);
 
-        contentEl.createEl('h4', { text: '题材分类', cls: 'nw-u-margintop-20px nw-u-marginbottom-8px nw-u-fs-14px' });
+        contentEl.createEl('h4', { text: '题材分类', cls: 'nw-kb-modal-section-title nw-kb-modal-section-title--spaced' });
 
         const channelSetting = new Setting(contentEl)
             .setName('频道')
@@ -418,22 +408,16 @@ export class EditBookModal extends Modal {
             }
         }
 
-        contentEl.createEl('h4', { text: '自定义标签', cls: 'nw-u-margintop-20px nw-u-marginbottom-8px nw-u-fs-14px' });
+        contentEl.createEl('h4', { text: '自定义标签', cls: 'nw-kb-modal-section-title nw-kb-modal-section-title--spaced' });
 
-        const tagsContainer = contentEl.createDiv({
-            cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-6px nw-u-marginbottom-12px nw-u-minh-30px'
-        });
+        const tagsContainer = contentEl.createDiv({ cls: 'nw-kb-modal-tag-list' });
         this.renderCustomTags(tagsContainer);
 
-        const addTagContainer = contentEl.createDiv({
-            cls: 'nw-u-d-flex nw-u-gap-8px nw-u-marginbottom-12px'
-        });
+        const addTagContainer = contentEl.createDiv({ cls: 'nw-kb-modal-inline-row nw-kb-modal-inline-row--mb' });
         const tagInput = addTagContainer.createEl('input', {
             type: 'text',
-            attr: {
-                placeholder: '输入标签，按回车添加',
-                style: 'flex:1;padding:6px 10px;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:13px;'
-            }
+            cls: 'nw-kb-modal-input nw-kb-modal-input--md nw-kb-modal-input--flex',
+            attr: { placeholder: '输入标签，按回车添加' }
         });
         const addTagBtn = addTagContainer.createEl('button', {
             text: '添加',
@@ -453,9 +437,7 @@ export class EditBookModal extends Modal {
             if (e.key === 'Enter') addTagHandler();
         });
 
-        const actions = contentEl.createDiv({
-            cls: "nw-flex-end nw-u-margintop-20px", attr: {}
-        });
+        const actions = contentEl.createDiv({ cls: 'nw-kb-modal-actions' });
 
         const cancelBtn = actions.createEl('button', {
             text: '取消',
@@ -473,22 +455,13 @@ export class EditBookModal extends Modal {
     private renderCustomTags(container: HTMLElement): void {
         container.empty();
         if (this.customTagsList.length === 0) {
-            container.createSpan({
-                text: '暂无标签',
-                cls: 'nw-u-c-text-muted nw-u-fs-13px'
-            });
+            container.createSpan({ text: '暂无标签', cls: 'nw-kb-modal-tag-empty' });
             return;
         }
         this.customTagsList.forEach((tag, idx) => {
-            const tagEl = container.createSpan({
-                cls: "nw-flex-row-sm nw-u-p-4px-10px nw-u-fs-12px nw-u-bg-background-secondary nw-u-brd-12px",
-                attr: {}
-            });
+            const tagEl = container.createSpan({ cls: 'nw-kb-modal-tag' });
             tagEl.createSpan({ text: tag });
-            const delBtn = tagEl.createSpan({
-                text: '×',
-                cls: 'nw-u-cur-pointer nw-u-c-text-muted nw-u-fs-14px nw-u-lh-1'
-            });
+            const delBtn = tagEl.createSpan({ text: '×', cls: 'nw-kb-modal-tag-close' });
             delBtn.addEventListener('click', () => {
                 this.customTagsList.splice(idx, 1);
                 this.renderCustomTags(container);
@@ -620,32 +593,30 @@ export class GenreEditModal extends Modal {
     }
 
     private renderBasicInfo(container: HTMLElement): void {
-        const section = container.createDiv({ cls: 'nw-u-marginbottom-20px' });
-        section.createEl('h4', { text: '基本信息', cls: 'nw-u-m-0-0-12px-0 nw-u-fs-14px' });
+        const section = container.createDiv({ cls: 'nw-kb-modal-section' });
+        section.createEl('h4', { text: '基本信息', cls: 'nw-kb-modal-section-title nw-kb-modal-section-title--roomy' });
 
-        const form = section.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-12px' });
+        const form = section.createDiv({ cls: 'nw-kb-modal-form' });
 
-        const nameRow = form.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-4px' });
-        nameRow.createSpan({ text: '名称', cls: 'nw-text-sm-muted' });
+        const nameRow = form.createDiv({ cls: 'nw-kb-modal-field' });
+        nameRow.createSpan({ text: '名称', cls: 'nw-kb-modal-field-label' });
         if (this.isEditable()) {
             const input = nameRow.createEl('input', {
                 type: 'text',
                 value: this.tempGenre.name,
-                cls: 'nw-u-p-8px-12px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-fs-13px nw-u-bg-background-primary nw-u-c-text-normal'
+                cls: 'nw-kb-modal-input nw-kb-modal-input--lg'
             });
             input.addEventListener('input', () => {
                 this.tempGenre.name = input.value.trim();
             });
         } else {
-            nameRow.createDiv({ text: this.tempGenre.name, cls: 'nw-u-fs-14px nw-u-fwt-500' });
+            nameRow.createDiv({ text: this.tempGenre.name, cls: 'nw-kb-modal-field-value' });
         }
 
-        const categoryRow = form.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-4px' });
-        categoryRow.createSpan({ text: '频道', cls: 'nw-text-sm-muted' });
+        const categoryRow = form.createDiv({ cls: 'nw-kb-modal-field' });
+        categoryRow.createSpan({ text: '频道', cls: 'nw-kb-modal-field-label' });
         if (this.isEditable()) {
-            const select = categoryRow.createEl('select', {
-                cls: 'nw-u-p-8px-12px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-fs-13px nw-u-bg-background-primary nw-u-c-text-normal'
-            });
+            const select = categoryRow.createEl('select', { cls: 'nw-kb-modal-select nw-kb-modal-select--lg' });
             const options = [
                 { value: 'male', label: '男频' },
                 { value: 'female', label: '女频' },
@@ -663,49 +634,38 @@ export class GenreEditModal extends Modal {
             categoryRow.createDiv({ text: labelMap[this.tempGenre.category] || this.tempGenre.category });
         }
 
-        const descRow = form.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-4px' });
-        descRow.createSpan({ text: '描述', cls: 'nw-text-sm-muted' });
+        const descRow = form.createDiv({ cls: 'nw-kb-modal-field' });
+        descRow.createSpan({ text: '描述', cls: 'nw-kb-modal-field-label' });
         if (this.isEditable()) {
             const textarea = descRow.createEl('textarea', {
                 value: this.tempGenre.description,
+                cls: 'nw-kb-modal-textarea nw-kb-modal-textarea--lg',
                 attr: {
                     rows: '3',
-                    placeholder: '描述该题材的读者群体、爽点、常见元素等（可选）',
-                    style: 'padding:8px 12px;border:1px solid var(--background-modifier-border);border-radius:6px;font-size:13px;background:var(--background-primary);color:var(--text-normal);resize:vertical;'
+                    placeholder: '描述该题材的读者群体、爽点、常见元素等（可选）'
                 }
             });
             textarea.addEventListener('input', () => {
                 this.tempGenre.description = textarea.value.trim();
             });
         } else {
-            descRow.createDiv({
-                text: this.tempGenre.description,
-                cls: 'nw-u-fs-13px nw-u-lh-1-6 nw-u-c-text-normal'
-            });
+            descRow.createDiv({ text: this.tempGenre.description, cls: 'nw-kb-modal-field-text' });
         }
     }
 
     private renderTagSection(container: HTMLElement, label: string, field: 'personalityTags' | 'abilityTypes' | 'roleTypes' | 'backgroundTypes'): void {
-        const section = container.createDiv({ cls: 'nw-u-marginbottom-20px' });
+        const section = container.createDiv({ cls: 'nw-kb-modal-section' });
         section.createEl('h4', {
             text: `${label} (${this.tempGenre[field].length})`,
-            cls: 'nw-u-m-0-0-8px-0 nw-u-fs-14px'
+            cls: 'nw-kb-modal-section-title'
         });
 
-        const tagsWrap = section.createDiv({
-            cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-6px nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-minh-48px'
-        });
+        const tagsWrap = section.createDiv({ cls: 'nw-kb-modal-tag-field' });
 
         this.tempGenre[field].forEach((tag, idx) => {
-            const tagEl = tagsWrap.createSpan({
-                text: tag,
-                cls: 'nw-u-p-3px-10px nw-u-fs-12px nw-u-bg-background-primary nw-u-brd-10px nw-u-c-text-normal nw-u-d-flex nw-u-ai-center nw-u-gap-4px'
-            });
+            const tagEl = tagsWrap.createSpan({ text: tag, cls: 'nw-kb-modal-tag nw-kb-modal-tag--chip' });
             if (this.isEditable()) {
-                const removeBtn = tagEl.createSpan({
-                    text: '×',
-                    cls: 'nw-u-cur-pointer nw-u-c-text-muted nw-u-fs-14px nw-u-lh-1'
-                });
+                const removeBtn = tagEl.createSpan({ text: '×', cls: 'nw-kb-modal-tag-close' });
                 removeBtn.addEventListener('click', () => {
                     this.tempGenre[field].splice(idx, 1);
                     this.render();
@@ -714,13 +674,11 @@ export class GenreEditModal extends Modal {
         });
 
         if (this.isEditable()) {
-            const inputRow = section.createDiv({ cls: 'nw-u-d-flex nw-u-gap-6px nw-u-margintop-8px' });
+            const inputRow = section.createDiv({ cls: 'nw-kb-modal-inline-row nw-kb-modal-inline-row--mt' });
             const input = inputRow.createEl('input', {
                 type: 'text',
-                attr: {
-                    placeholder: `添加${label}...`,
-                    style: 'flex:1;padding:6px 10px;border:1px solid var(--background-modifier-border);border-radius:6px;font-size:12px;background:var(--background-primary);color:var(--text-normal);'
-                }
+                cls: 'nw-kb-modal-input nw-kb-modal-input--md nw-kb-modal-input--flex',
+                attr: { placeholder: `添加${label}...` }
             });
             const addBtn = inputRow.createEl('button', {
                 text: '添加',
@@ -745,45 +703,34 @@ export class GenreEditModal extends Modal {
     }
 
     private renderTechniquesSection(container: HTMLElement): void {
-        const section = container.createDiv({ cls: 'nw-u-marginbottom-20px' });
+        const section = container.createDiv({ cls: 'nw-kb-modal-section' });
         section.createEl('h4', {
             text: `写作技巧 (${this.tempGenre.techniques.length})`,
-            cls: 'nw-u-m-0-0-8px-0 nw-u-fs-14px'
+            cls: 'nw-kb-modal-section-title'
         });
 
         if (this.tempGenre.techniques.length < 5 && this.isEditable()) {
-            section.createDiv({
-                text: '⚠️ 至少需要 5 个写作技巧',
-                cls: 'nw-u-fs-12px nw-u-c-error nw-u-marginbottom-8px'
-            });
+            section.createDiv({ text: '⚠️ 至少需要 5 个写作技巧', cls: 'nw-kb-modal-hint-error' });
         }
 
-        const techniquesList = section.createDiv({
-            cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-8px nw-u-maxh-300px nw-u-ovy-auto'
-        });
+        const techniquesList = section.createDiv({ cls: 'nw-kb-modal-list' });
 
         this.tempGenre.techniques.forEach((tech, idx) => {
-            const techItem = techniquesList.createDiv({
-                cls: 'nw-u-p-10px-12px nw-u-bg-background-secondary nw-u-brd-6px'
-            });
+            const techItem = techniquesList.createDiv({ cls: 'nw-kb-modal-item nw-kb-modal-item--roomy' });
 
             if (this.isEditable()) {
-                const headerRow = techItem.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-8px nw-u-gap-8px' });
+                const headerRow = techItem.createDiv({ cls: 'nw-kb-modal-item-head' });
                 const nameInput = headerRow.createEl('input', {
                     type: 'text',
                     value: tech.name,
-                    attr: {
-                        placeholder: '技巧名称',
-                        style: 'flex:1;padding:4px 8px;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;background:var(--background-primary);color:var(--text-normal);'
-                    }
+                    cls: 'nw-kb-modal-input nw-kb-modal-input--flex',
+                    attr: { placeholder: '技巧名称' }
                 });
                 nameInput.addEventListener('input', () => {
                     this.tempGenre.techniques[idx].name = nameInput.value.trim();
                 });
 
-                const categorySelect = headerRow.createEl('select', {
-                    cls: 'nw-u-p-4px-8px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-fs-12px nw-u-bg-background-primary nw-u-c-text-normal'
-                });
+                const categorySelect = headerRow.createEl('select', { cls: 'nw-kb-modal-select' });
                 const categories = [
                     { value: 'structure', label: '结构' },
                     { value: 'cool_point', label: '爽点' },
@@ -803,7 +750,7 @@ export class GenreEditModal extends Modal {
 
                 const deleteBtn = headerRow.createEl('button', {
                     text: '🗑️',
-                    cls: "nw-btn nw-btn-ghost nw-btn-xs nw-u-p-4px-8px",
+                    cls: 'nw-btn nw-btn-ghost nw-btn-xs nw-kb-modal-btn--padded',
                     attr: {}
                 });
                 deleteBtn.addEventListener('click', () => {
@@ -815,21 +762,21 @@ export class GenreEditModal extends Modal {
                     structure: '结构', cool_point: '爽点', emotion: '情感', rhythm: '节奏',
                     genre: '题材', style: '风格', foreshadow: '伏笔'
                 };
-                const headerRow = techItem.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-4px' });
-                headerRow.createDiv({ text: tech.name, cls: 'nw-u-fs-13px nw-u-fwt-500' });
+                const headerRow = techItem.createDiv({ cls: 'nw-kb-modal-item-head nw-kb-modal-item-head--readonly' });
+                headerRow.createDiv({ text: tech.name, cls: 'nw-kb-modal-item-name' });
                 headerRow.createSpan({
                     text: categoryMap[tech.category] || tech.category,
-                    cls: 'nw-u-fs-11px nw-u-p-2px-8px nw-u-bg-background-primary nw-u-brd-8px nw-u-c-text-muted'
+                    cls: 'nw-kb-modal-item-chip'
                 });
             }
 
             if (this.isEditable()) {
                 const descInput = techItem.createEl('textarea', {
                     value: tech.description,
+                    cls: 'nw-kb-modal-textarea nw-kb-modal-textarea--mb',
                     attr: {
                         rows: '2',
-                        placeholder: '技巧描述',
-                        style: 'width:100%;padding:4px 8px;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;background:var(--background-primary);color:var(--text-normal);resize:vertical;margin-bottom:6px;box-sizing:border-box;'
+                        placeholder: '技巧描述'
                     }
                 });
                 descInput.addEventListener('input', () => {
@@ -839,26 +786,18 @@ export class GenreEditModal extends Modal {
                 const kwInput = techItem.createEl('input', {
                     type: 'text',
                     value: tech.keywords.join(', '),
-                    attr: {
-                        placeholder: '关键词（用逗号分隔）',
-                        style: 'width:100%;padding:4px 8px;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;background:var(--background-primary);color:var(--text-normal);box-sizing:border-box;'
-                    }
+                    cls: 'nw-kb-modal-input nw-kb-modal-input--full',
+                    attr: { placeholder: '关键词（用逗号分隔）' }
                 });
                 kwInput.addEventListener('input', () => {
                     this.tempGenre.techniques[idx].keywords = kwInput.value.split(',').map(k => k.trim()).filter(k => k);
                 });
             } else {
-                techItem.createDiv({
-                    text: tech.description,
-                    cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-lh-1-5 nw-u-marginbottom-4px'
-                });
+                techItem.createDiv({ text: tech.description, cls: 'nw-kb-modal-item-meta' });
                 if (tech.keywords.length > 0) {
-                    const kwWrap = techItem.createDiv({ cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-4px' });
+                    const kwWrap = techItem.createDiv({ cls: 'nw-kb-modal-kw-wrap' });
                     tech.keywords.forEach(kw => {
-                        kwWrap.createSpan({
-                            text: kw,
-                            cls: 'nw-u-fs-11px nw-u-p-1px-6px nw-u-bg-background-primary nw-u-brd-8px nw-u-c-text-muted'
-                        });
+                        kwWrap.createSpan({ text: kw, cls: 'nw-kb-modal-kw' });
                     });
                 }
             }
@@ -867,7 +806,7 @@ export class GenreEditModal extends Modal {
         if (this.isEditable()) {
             const addTechBtn = section.createEl('button', {
                 text: '➕ 添加技巧',
-                cls: "nw-btn nw-btn-secondary nw-btn-sm nw-u-margintop-8px nw-u-w-100",
+                cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-kb-modal-btn--block',
                 attr: {}
             });
             addTechBtn.addEventListener('click', () => {
@@ -887,31 +826,25 @@ export class GenreEditModal extends Modal {
     }
 
     private renderSubGenresSection(container: HTMLElement): void {
-        const section = container.createDiv({ cls: 'nw-u-marginbottom-20px' });
+        const section = container.createDiv({ cls: 'nw-kb-modal-section' });
         const subGenres = this.tempGenre.subGenres || [];
         section.createEl('h4', {
             text: `细分题材 (${subGenres.length}) - 可选`,
-            cls: 'nw-u-m-0-0-8px-0 nw-u-fs-14px'
+            cls: 'nw-kb-modal-section-title'
         });
 
         if (subGenres.length > 0) {
-            const subList = section.createDiv({
-                cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-6px nw-u-maxh-200px nw-u-ovy-auto'
-            });
+            const subList = section.createDiv({ cls: 'nw-kb-modal-list nw-kb-modal-list--sm' });
             subGenres.forEach((sub, idx) => {
-                const subItem = subList.createDiv({
-                    cls: 'nw-u-p-8px-10px nw-u-bg-background-secondary nw-u-brd-6px'
-                });
+                const subItem = subList.createDiv({ cls: 'nw-kb-modal-item nw-kb-modal-item--compact' });
 
                 if (this.isEditable()) {
-                    const row1 = subItem.createDiv({ cls: 'nw-u-d-flex nw-u-gap-6px nw-u-marginbottom-4px' });
+                    const row1 = subItem.createDiv({ cls: 'nw-kb-modal-item-row' });
                     const nameInput = row1.createEl('input', {
                         type: 'text',
                         value: sub.name,
-                        attr: {
-                            placeholder: '子题材名称',
-                            style: 'flex:1;padding:4px 8px;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;background:var(--background-primary);color:var(--text-normal);'
-                        }
+                        cls: 'nw-kb-modal-input nw-kb-modal-input--flex',
+                        attr: { placeholder: '子题材名称' }
                     });
                     nameInput.addEventListener('input', () => {
                         if (this.tempGenre.subGenres) {
@@ -930,10 +863,8 @@ export class GenreEditModal extends Modal {
                     const descInput = subItem.createEl('input', {
                         type: 'text',
                         value: sub.description,
-                        attr: {
-                            placeholder: '描述',
-                            style: 'width:100%;padding:4px 8px;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;background:var(--background-primary);color:var(--text-normal);box-sizing:border-box;'
-                        }
+                        cls: 'nw-kb-modal-input nw-kb-modal-input--full',
+                        attr: { placeholder: '描述' }
                     });
                     descInput.addEventListener('input', () => {
                         if (this.tempGenre.subGenres) {
@@ -941,11 +872,8 @@ export class GenreEditModal extends Modal {
                         }
                     });
                 } else {
-                    subItem.createDiv({ text: sub.name, cls: 'nw-u-fs-13px nw-u-fwt-500 nw-u-marginbottom-2px' });
-                    subItem.createDiv({
-                        text: sub.description,
-                        cls: "nw-text-muted-11 nw-u-fs-12px", attr: {}
-                    });
+                    subItem.createDiv({ text: sub.name, cls: 'nw-kb-modal-item-name' });
+                    subItem.createDiv({ text: sub.description, cls: 'nw-kb-modal-item-desc' });
                 }
             });
         }
@@ -953,7 +881,7 @@ export class GenreEditModal extends Modal {
         if (this.isEditable()) {
             const addSubBtn = section.createEl('button', {
                 text: '➕ 添加细分题材',
-                cls: "nw-btn nw-btn-secondary nw-btn-sm nw-u-margintop-8px nw-u-w-100",
+                cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-kb-modal-btn--block',
                 attr: {}
             });
             addSubBtn.addEventListener('click', () => {
@@ -974,12 +902,10 @@ export class GenreEditModal extends Modal {
     }
 
     private renderWeightsSection(container: HTMLElement): void {
-        const section = container.createDiv({ cls: 'nw-u-marginbottom-20px' });
-        section.createEl('h4', { text: '权重配置', cls: 'nw-u-m-0-0-12px-0 nw-u-fs-14px' });
+        const section = container.createDiv({ cls: 'nw-kb-modal-section' });
+        section.createEl('h4', { text: '权重配置', cls: 'nw-kb-modal-section-title nw-kb-modal-section-title--roomy' });
 
-        const weightsGrid = section.createDiv({
-            cls: 'nw-u-d-grid nw-u-gtc-repeat-2-1fr nw-u-gap-12px'
-        });
+        const weightsGrid = section.createDiv({ cls: 'nw-kb-modal-grid' });
 
         const weightLabels: { key: keyof GenreConfig['weights']; label: string }[] = [
             { key: 'character', label: '人设' },
@@ -991,25 +917,23 @@ export class GenreEditModal extends Modal {
         ];
 
         weightLabels.forEach(({ key, label }) => {
-            const weightItem = weightsGrid.createDiv({
-                cls: 'nw-u-p-10px nw-u-bg-background-secondary nw-u-brd-6px'
-            });
-            const labelRow = weightItem.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-marginbottom-6px' });
-            labelRow.createSpan({ text: label, cls: 'nw-u-fs-12px' });
+            const weightItem = weightsGrid.createDiv({ cls: 'nw-kb-modal-item' });
+            const labelRow = weightItem.createDiv({ cls: 'nw-kb-modal-item-row nw-kb-modal-item-row--between' });
+            labelRow.createSpan({ text: label, cls: 'nw-kb-modal-weight-name' });
             labelRow.createSpan({
                 text: (this.tempGenre.weights[key] * 100).toFixed(0) + '%',
-                cls: 'nw-u-fs-12px nw-u-fwt-600 nw-u-c-interactive-accent'
+                cls: 'nw-kb-modal-weight-value'
             });
 
             if (this.isEditable()) {
                 const slider = weightItem.createEl('input', {
                     type: 'range',
+                    cls: 'nw-kb-modal-range',
                     attr: {
                         min: '0',
                         max: '1',
                         step: '0.05',
-                        value: this.tempGenre.weights[key].toString(),
-                        style: 'width:100%;'
+                        value: this.tempGenre.weights[key].toString()
                     }
                 });
                 slider.addEventListener('input', () => {
@@ -1017,23 +941,15 @@ export class GenreEditModal extends Modal {
                     this.render();
                 });
             } else {
-                const barBg = weightItem.createDiv({
-                    cls: 'nw-u-h-6px nw-u-bg-background-primary nw-u-brd-3px nw-u-ov-hidden'
-                });
-                barBg.createDiv({
-                    attr: {
-                        style: `height:100%;width:${this.tempGenre.weights[key] * 100}%;background:var(--interactive-accent);border-radius:3px;`
-                    }
-                });
+                const barBg = weightItem.createDiv({ cls: 'nw-kb-modal-bar' });
+                const barFill = barBg.createDiv({ cls: 'nw-kb-modal-bar-fill' });
+                barFill.style.setProperty('--nw-kb-pct', `${this.tempGenre.weights[key] * 100}%`);
             }
         });
     }
 
     private renderActions(container: HTMLElement): void {
-        const actions = container.createDiv({
-            cls: "nw-flex-end nw-u-margintop-20px nw-u-d-flex nw-u-gap-8px nw-u-pos-sticky nw-u-bot-0 nw-u-bg-background-primary nw-u-paddingtop-12px nw-u-bt-1px-solid-background-m",
-            attr: {}
-        });
+        const actions = container.createDiv({ cls: 'nw-kb-modal-actions nw-kb-modal-actions--sticky' });
 
         if (this.mode === 'view') {
             const saveAsBtn = actions.createEl('button', {
@@ -1195,16 +1111,11 @@ export class BatchOperationsModal extends Modal {
         contentEl.createEl('h3', { text: '⚙️ 批量操作', cls: 'nw-modal-title' });
 
         if (this.loading) {
-            contentEl.createDiv({
-                text: '加载中...',
-                cls: 'nw-u-p-40px nw-u-ta-center nw-u-c-text-muted nw-u-fs-13px'
-            });
+            contentEl.createDiv({ text: '加载中...', cls: 'nw-kb-modal-empty' });
             return;
         }
 
-        const opsRow = contentEl.createDiv({
-            cls: 'nw-u-d-flex nw-u-gap-8px nw-u-marginbottom-16px'
-        });
+        const opsRow = contentEl.createDiv({ cls: 'nw-kb-modal-ops' });
 
         const operations: Array<{ key: 'classify'; label: string; desc: string }> = [
             { key: 'classify', label: '🏷️ 自动分类', desc: '自动识别书籍分类' },
@@ -1213,8 +1124,7 @@ export class BatchOperationsModal extends Modal {
         operations.forEach(op => {
             const btn = opsRow.createEl('button', {
                 text: op.label,
-                cls: `nw-btn ${this.operation === op.key ? 'nw-btn-primary' : 'nw-btn-secondary'}`,
-                attr: { style: 'flex:1;padding:12px;text-align:left;' }
+                cls: `nw-btn nw-kb-modal-op ${this.operation === op.key ? 'nw-btn-primary' : 'nw-btn-secondary'}`
             });
             btn.addEventListener('click', () => {
                 this.operation = op.key;
@@ -1225,15 +1135,13 @@ export class BatchOperationsModal extends Modal {
         const books = this.books;
         const uncategorizedCount = books.filter(b => !b.primaryGenre).length;
 
-        const selectRow = contentEl.createDiv({
-            cls: "nw-flex-between nw-u-marginbottom-12px", attr: {}
-        });
+        const selectRow = contentEl.createDiv({ cls: 'nw-kb-modal-row nw-kb-modal-row--between nw-kb-modal-row--mb' });
         selectRow.createSpan({
             text: `共 ${books.length} 本书籍（未分类 ${uncategorizedCount} 本）`,
-            cls: 'nw-text-sm-muted'
+            cls: 'nw-kb-modal-count'
         });
 
-        const selectBtns = selectRow.createDiv({ cls: 'nw-u-d-flex nw-u-gap-6px' });
+        const selectBtns = selectRow.createDiv({ cls: 'nw-kb-modal-btn-group' });
 
         const selectAllBtn = selectBtns.createEl('button', {
             text: '全选',
@@ -1263,22 +1171,15 @@ export class BatchOperationsModal extends Modal {
             this.render();
         });
 
-        const bookList = contentEl.createDiv({
-            cls: 'nw-u-maxh-300px nw-u-ovy-auto nw-u-b-1px-solid-background-m nw-u-brd-6px'
-        });
+        const bookList = contentEl.createDiv({ cls: 'nw-kb-modal-file-list' });
 
         if (books.length === 0) {
-            bookList.createDiv({
-                text: '暂无书籍',
-                cls: 'nw-u-p-40px nw-u-ta-center nw-u-c-text-muted nw-u-fs-13px'
-            });
+            bookList.createDiv({ text: '暂无书籍', cls: 'nw-kb-modal-empty' });
         } else {
-            books.forEach((book, idx) => {
+            books.forEach((book) => {
                 const isSelected = this.selectedBooks.has(book.id);
                 const item = bookList.createDiv({
-                    attr: {
-                        style: `padding:8px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;${idx < books.length - 1 ? 'border-bottom:1px solid var(--background-modifier-border);' : ''}${isSelected ? 'background:rgba(var(--interactive-accent-rgb),0.08);' : ''}`
-                    }
+                    cls: `nw-kb-modal-file-item nw-kb-modal-file-item--selectable${isSelected ? ' nw-kb-modal-file-item--selected' : ''}`
                 });
                 item.addEventListener('click', () => {
                     if (isSelected) {
@@ -1289,42 +1190,27 @@ export class BatchOperationsModal extends Modal {
                     this.render();
                 });
 
-                const checkbox = item.createSpan({
-                    text: isSelected ? '☑' : '☐',
-                    cls: "nw-flex-shrink-0 nw-u-fs-14px nw-u-w-16px", attr: {}
-                });
-                void checkbox;
+                item.createSpan({ text: isSelected ? '☑' : '☐', cls: 'nw-kb-modal-check' });
 
-                const info = item.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-0' });
-                info.createDiv({
-                    text: book.name,
-                    cls: "nw-ellipsis nw-u-fs-13px nw-u-c-text-normal", attr: {}
-                });
-                info.createDiv({
-                    text: book.author || '未知作者',
-                    cls: 'nw-text-muted-11'
-                });
+                const info = item.createDiv({ cls: 'nw-kb-modal-book-info' });
+                info.createDiv({ text: book.name, cls: 'nw-kb-modal-book-name' });
+                info.createDiv({ text: book.author || '未知作者', cls: 'nw-kb-modal-meta' });
 
                 const genreText = book.primaryGenre
                     ? this.getGenreLabel(book.primaryGenre, book.primarySubGenre)
                     : '未分类';
-                item.createSpan({
-                    text: genreText,
-                    cls: 'nw-text-muted-11 nw-flex-shrink-0'
-                });
+                item.createSpan({ text: genreText, cls: 'nw-kb-modal-meta nw-kb-modal-meta--shrink' });
             });
         }
 
-        const actions = contentEl.createDiv({
-            cls: "nw-flex-between nw-u-margintop-16px nw-u-paddingtop-12px nw-u-bt-1px-solid-background-m", attr: {}
-        });
+        const actions = contentEl.createDiv({ cls: 'nw-kb-modal-row nw-kb-modal-row--between nw-kb-modal-footer' });
 
         actions.createSpan({
             text: `已选择 ${this.selectedBooks.size} 本`,
-            cls: 'nw-text-sm-muted'
+            cls: 'nw-kb-modal-count'
         });
 
-        const btnGroup = actions.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px' });
+        const btnGroup = actions.createDiv({ cls: 'nw-kb-modal-btn-group' });
 
         const cancelBtn = btnGroup.createEl('button', {
             text: '取消',

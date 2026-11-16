@@ -273,6 +273,58 @@ after 构建里八个页签的 `nw-u-` 工具类引用均为 **0**（before：�
 | 题材编辑弹窗 / 编辑书籍弹窗 | 0 px | 完全一致 |
 | 导入弹窗 / 批量操作弹窗 | 32 px / 10 px（0.016% / 0.006%） | 仅 y=0 标题字形抗锯齿差异，非本 slice 文件 |
 
+## 3.10 Slice G：知识库管理弹窗（2026-11-17 完成）
+
+**改动**
+
+- `ui/views/knowledge-base-modals.ts`（1378 → 1263 行）四个弹窗（导入 / 编辑书籍 / 题材编辑 / 批量操作）
+  统一换 `nw-kb-modal-*` 语义类：
+  区块 `-section`（+ `--roomy` / `--spaced`）/ `-section-title` / `-form` /
+  字段 `-field`（`-label` / `-value` / `-text`）/ `-input`（+ `--md` / `--lg` / `--flex` / `--full`）/
+  `-select`（+ `--lg`）/ `-textarea`（+ `--mb` / `--lg`）/ `-inline-row`（+ `--mb` / `--mt`）/
+  标签 `-tag-list` / `-tag-field` / `-tag`（+ `--chip`）/ `-tag-close` / `-tag-empty` /
+  `-hint-error` / 列表 `-list`（+ `--sm`）/ `-item`（+ `--roomy` / `--compact`）/
+  `-item-head`（+ `--readonly`）/ `-item-row`（+ `--between`）/ `-item-name` / `-item-desc` /
+  `-item-meta` / `-item-chip` / `-kw-wrap` / `-kw` /
+  权重 `-grid` / `-weight-name` / `-weight-value` / `-range` / `-bar` / `-bar-fill` /
+  底部 `-actions`（+ `--sticky`）/ `-row`（+ `--between` / `--mb`）/ `-footer` / `-btn-group` /
+  `-count` / `-empty` / `-btn`（+ `--block` / `--padded`）；
+  导入特有 `-choice`（`-icon` / `-body` / `-label` / `-desc` / `-arrow`）/ `-search` / `-file-list` /
+  `-file-item`（+ `--selectable` / `--selected`）；
+  批量特有 `-ops` / `-op` / `-check` / `-book-info` / `-book-name` / `-meta`（+ `--shrink`）。
+- 该文件工具类引用 **249 处 / 84 个不重复类名 → 0**（`nw-u-*` 240 处 79 个，另 5 个 `nw-flex-center` /
+  `nw-hover-*` / `nw-section-*` 死类一并清掉）；内联 `style` 14 → 1，仅剩隐藏 file input 的
+  `display:none`（功能性，非视觉）。
+- 两处动态值改走 CSS 变量与修饰类：权重条宽度 `barFill.style.setProperty('--nw-kb-pct', pct)`
+  + `width: var(--nw-kb-pct, 0%)`；批量列表选中态由内联背景色改为 `-file-item--selected` /
+  `-op--selected` 修饰类。
+- `styles-src/27-knowledge-base.css` 新增「知识库：管理弹窗语义化（Slice G）」段约 472 行；
+  choice 卡片的过渡同样写成显式属性，不引入 `transition: all`。
+- EditBookModal 的 h3 原先没有类（裸 `h3`，UA 19.77px、margin 16px 0），补 `nw-modal-title`
+  与另外三个弹窗一致（18px / 700 / margin 0）。
+
+**像素快照**（before = Slice G 前构建，after = 当前构建；1440×2600，DSF=1；产物在
+`D:\nw-dev-vault\_visual-g\{before,after,diff}`，不在仓内）：
+
+| 目标 | 差异 | 归因 |
+| --- | --- | --- |
+| 题材编辑（查看态） | 2.012% | 只读子题材项：名称 margin-bottom 2px → 0；描述原为死类串 `nw-text-muted-11 nw-u-fs-12px`（实际 12px、继承正文色），语义化后 `-item-desc` 按设计补真为 11px 弱化色。写作品类的 item 行（旧 `nw-u-p-8px-10px nw-u-bg-background-secondary nw-u-brd-6px`）与新 `-item--compact` 完全一致 |
+| 题材编辑（新建态） | 1.264% | 标签输入框旧为 fs12 / padding 6px 10px / 圆角 6，新为 fs13 / 4px 8px / 圆角 5（与同弹窗的名称输入框统一）；区块标题 14px、字段标签 12px 弱化不变 |
+| 导入（选择步骤） | 0 px | 完全一致 |
+| 导入（表单步骤） | 0 px | 完全一致 |
+| 导入（Vault 文件列表） | 8.203%（220 → 218） | 旧代码把 `&:last-child{border-bottom:none;}` 写进内联 style 字符串（SCSS 语法，浏览器丢弃），末行也带下边框；改为 `.nw-kb-modal-file-item:not(:last-child){border-bottom:…}` 后末行少 1px、总高 −2px，其余为整行 1px 位移带来的字形抗锯齿 |
+| 批量操作 | 6.728%（276 → 270） | 两处死类 `nw-text-muted-11` 补真：作者行 15px 继承 → 11px 弱化（`-item-meta`），右侧题材同样 15px → 11px（`-item-meta--shrink`）；单行 52.4 → 47.2px，弹窗 −5.2px。padding / 边框前后一致 |
+| 编辑书籍信息 | 13.58%（696 → 662） | 标题由裸 h3（19.77px、margin 16px 0、高 25.7px）统一为 `nw-modal-title`（18px、margin 0、高 23.4px），content 650.1 → 615.8px；字段行与输入框盒模型完全一致 |
+
+**门禁**：`check:css` 超基线（唯一类 +79、+8405B、rgbHsl +1——选中态背景由内联搬进 CSS），
+`.css-baseline.json` 与 `.bundle-baseline.json`（styles.css 633424 → 641829）均已 `--update-baseline --note` 说明；
+`check:inline-styles`、`check:utility` 通过。
+
+**截图环境坑**：开发 vault 的 `data.json` 里 `theme` 曾是 `dark`，而 Obsidian 界面是亮色主题，
+于是 `--nw-text-primary` 被主题管理器写成暗色方案的 `#f0ece4`，弹窗标题（跟随 Obsidian 亮色底）
+几乎不可见——看起来像「语义化把标题弄没了」，其实是配置不一致。截图前把 `theme` 设为 `auto`（默认值）
+后重新采集 before/after，标题恢复正常深色。旧配置备份在 `data.json.bak-themeDark`。
+
 ## 4. 后续 slice 清单
 
 | # | Slice | 文件 | 目标 |
@@ -283,6 +335,6 @@ after 构建里八个页签的 `nw-u-` 工具类引用均为 **0**（before：�
 | ~~E~~ | ~~详情各页签内容区（文风/节奏/技巧/结构/角色/伏笔/商业/易读性）~~ | ~~已完成 2026-11-17~~ | ~~工具类 866 → 126~~ |
 | ~~E-补~~ | ~~开发 vault 运行期数据解耦 + 已拆解样本书（✅ 2026-11-17）~~ | ~~`scripts/dev-vault.mjs`~~ | ~~见 §3.8.1~~ |
 | ~~F~~ | ~~题材/配置页~~ | ~~`ui/views/kb-config-panel.ts`，已完成 2026-11-17~~ | ~~工具类 86 → 0~~ |
-| G | 弹窗（需人工视觉验收） | `ui/views/knowledge-base-modals.ts`（导入 / 编辑书籍 / 题材编辑 / 批量操作四个弹窗） | `nw-kb-modal-*` |
+| ~~G~~ | ~~弹窗（导入 / 编辑书籍 / 题材编辑 / 批量操作）~~ | ~~`ui/views/knowledge-base-modals.ts`，已完成 2026-11-17~~ | ~~工具类 249 处 → 0~~ |
 
 每个 slice 都必须走规范 §4 的六步（含 before/after 快照比对）。

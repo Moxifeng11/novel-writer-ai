@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-16T20:07:33.626Z",
-  "note": "2026-11-17 Slice F：题材卡悬停过渡改为显式属性（不用 transition: all，避免连布局属性补间），+66B",
-  "bytes": 633424,
+  "generatedAt": "2026-11-16T20:59:41.463Z",
+  "note": "2026-11-17 Slice G：四个知识库弹窗改 nw-kb-modal-* 语义类（+79 类、+8405B、+1 rgb）；收尾实测 641824 字符（较记录 -5，构建产物精确对齐）",
+  "bytes": 641824,
   "important": 24,
   "hardcodedHex": 165,
-  "rgbHsl": 186,
-  "uniqueClasses": 3399,
+  "rgbHsl": 187,
+  "uniqueClasses": 3478,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

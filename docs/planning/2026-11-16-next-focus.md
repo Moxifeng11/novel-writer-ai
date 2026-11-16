@@ -807,3 +807,32 @@ after 构建八个页签 `nw-u-` 引用均为 0（before：技巧 141 / 结构 2
 下一轮：Slice G 四个弹窗（`ui/views/knowledge-base-modals.ts`，1243 行）；之后收尾工具类清理与全局 INDEX。
 
 
+
+### 2026-11-17 第三十二轮：Slice G 知识库管理弹窗语义化
+
+**范围**：`ui/views/knowledge-base-modals.ts`（1378 → 1263 行）——导入 / 编辑书籍 / 题材编辑 / 批量操作四个弹窗。
+
+**改动**：类名统一换 `nw-kb-modal-*`（区块 / 字段 / 输入 / 标签 / 列表 / 权重条 / 底部按钮组，以及导入与批量各自的
+`-choice`、`-file-item`、`-op` 等专项类）；工具类引用 249 处（84 个不重复类名）→ 0，内联 `style` 14 → 1
+（只剩隐藏 file input 的 `display:none`）。权重条宽度改走 `--nw-kb-pct` 变量，批量选中态改修饰类；
+27 号样式新增约 472 行。EditBookModal 的 h3 补 `nw-modal-title`，与另外三个弹窗统一。
+
+**像素快照**（1440×2600，DSF=1；产物在 `D:\nw-dev-vault\_visual-g`）：
+
+| 目标 | 差异 | 归因 |
+| --- | --- | --- |
+| 题材编辑（查看 / 新建） | 2.012% / 1.264% | 只读子题材描述由 12px 正文色补真为 11px 弱化色、名称 margin-bottom 2px → 0；新建态标签输入框与名称框统一为 fs13 / 4×8 / 圆角 5 |
+| 导入（选择 / 表单） | 0 px | 完全一致 |
+| 导入（文件列表） | 8.203%（220 → 218） | 旧代码把 `&:last-child{border-bottom:none;}` 写进内联 style（SCSS 语法被浏览器丢弃），末行仍有下边框；改 `:not(:last-child)` 后 −2px |
+| 批量操作 | 6.728%（276 → 270） | 两处死类 `nw-text-muted-11` 补真为 11px 弱化色，单行 52.4 → 47.2px |
+| 编辑书籍信息 | 13.58%（696 → 662） | 标题由裸 h3（19.77px / margin 16px 0）统一为 `nw-modal-title`（18px / margin 0），content −34.3px |
+
+**门禁**：`check:css` 超基线（唯一类 +79、+8405B、rgbHsl +1），`.css-baseline.json` /
+`.bundle-baseline.json`（styles.css 633424 → 641829）已 `--update-baseline --note`；`check:inline-styles` /
+`check:utility` 通过。
+
+**教训（截图配置一致性）**：开发 vault 的 `data.json` 里 `theme` 曾残留 `dark`，而 Obsidian 用亮色主题，
+主题管理器把 `--nw-text-primary` 写成暗色方案的 `#f0ece4`，于是所有用 `nw-modal-title` 的弹窗标题在亮色底上
+几乎不可见——差点被误判成「语义化把标题改坏了」。视觉采集前应确认 `theme: auto`（默认值）或与 Obsidian 主题一致。
+
+下一轮：Slice A–G 已全部完成，收尾工具类清点（全仓 `nw-u-` 存量）与全局 INDEX 更新。

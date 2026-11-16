@@ -2011,3 +2011,475 @@ button.nw-kb-detail-tab--active {
     color: var(--text-muted);
 }
 
+/* ==========================================================================
+   知识库：管理弹窗语义化（Slice G）
+   导入 / 编辑书籍 / 题材编辑 / 批量操作四个弹窗共用。
+   原来是一串工具类拼装；这里按结构角色命名，行为与旧声明一致。
+   ========================================================================== */
+
+.nw-kb-modal-section {
+    margin-bottom: 20px;
+}
+
+.nw-kb-modal-section-title {
+    margin: 0 0 8px;
+    font-size: 14px;
+}
+
+.nw-kb-modal-section-title--roomy {
+    margin-bottom: 12px;
+}
+
+.nw-kb-modal-section-title--spaced {
+    margin-top: 20px;
+}
+
+.nw-kb-modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.nw-kb-modal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.nw-kb-modal-field-label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.nw-kb-modal-field-value {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.nw-kb-modal-field-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-normal);
+}
+
+.nw-kb-modal-input,
+.nw-kb-modal-textarea,
+.nw-kb-modal-select {
+    padding: 4px 8px;
+    font-size: 12px;
+    color: var(--text-normal);
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+}
+
+.nw-kb-modal-input--md {
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+.nw-kb-modal-input--lg,
+.nw-kb-modal-select--lg {
+    padding: 8px 12px;
+    font-size: 13px;
+    border-radius: 6px;
+}
+
+.nw-kb-modal-input--flex {
+    flex: 1;
+}
+
+.nw-kb-modal-input--full {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.nw-kb-modal-textarea {
+    width: 100%;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.nw-kb-modal-textarea--mb {
+    margin-bottom: 6px;
+}
+
+.nw-kb-modal-textarea--lg {
+    padding: 8px 12px;
+    font-size: 13px;
+    border-radius: 6px;
+}
+
+.nw-kb-modal-inline-row {
+    display: flex;
+    gap: 8px;
+}
+
+.nw-kb-modal-inline-row--mb {
+    margin-bottom: 12px;
+}
+
+.nw-kb-modal-inline-row--mt {
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.nw-kb-modal-tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 30px;
+    margin-bottom: 12px;
+}
+
+.nw-kb-modal-tag-field {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 48px;
+    padding: 12px;
+    background: var(--background-secondary);
+    border-radius: 6px;
+}
+
+.nw-kb-modal-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    font-size: 12px;
+    background: var(--background-secondary);
+    border-radius: 12px;
+}
+
+.nw-kb-modal-tag--chip {
+    padding: 3px 10px;
+    color: var(--text-normal);
+    background: var(--background-primary);
+    border-radius: 10px;
+}
+
+.nw-kb-modal-tag-close {
+    font-size: 14px;
+    line-height: 1;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.nw-kb-modal-tag-empty {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.nw-kb-modal-hint-error {
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: var(--text-error);
+}
+
+.nw-kb-modal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.nw-kb-modal-list--sm {
+    gap: 6px;
+    max-height: 200px;
+}
+
+.nw-kb-modal-item {
+    padding: 10px;
+    background: var(--background-secondary);
+    border-radius: 6px;
+}
+
+.nw-kb-modal-item--roomy {
+    padding: 10px 12px;
+}
+
+.nw-kb-modal-item--compact {
+    padding: 8px 10px;
+}
+
+.nw-kb-modal-item-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.nw-kb-modal-item-head--readonly {
+    margin-bottom: 4px;
+}
+
+.nw-kb-modal-item-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.nw-kb-modal-item-row--between {
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.nw-kb-modal-item-name {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.nw-kb-modal-item-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.nw-kb-modal-item-meta {
+    margin-bottom: 4px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+
+.nw-kb-modal-item-chip {
+    padding: 2px 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--background-primary);
+    border-radius: 8px;
+}
+
+.nw-kb-modal-kw-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.nw-kb-modal-kw {
+    padding: 1px 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--background-primary);
+    border-radius: 8px;
+}
+
+.nw-kb-modal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.nw-kb-modal-weight-name {
+    font-size: 12px;
+}
+
+.nw-kb-modal-weight-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--interactive-accent);
+}
+
+.nw-kb-modal-range {
+    width: 100%;
+}
+
+.nw-kb-modal-bar {
+    height: 6px;
+    overflow: hidden;
+    background: var(--background-primary);
+    border-radius: 3px;
+}
+
+.nw-kb-modal-bar-fill {
+    width: var(--nw-kb-pct, 0%);
+    height: 100%;
+    background: var(--interactive-accent);
+    border-radius: 3px;
+}
+
+.nw-kb-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.nw-kb-modal-actions--sticky {
+    position: sticky;
+    bottom: 0;
+    padding-top: 12px;
+    background: var(--background-primary);
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.nw-kb-modal-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nw-kb-modal-row--between {
+    justify-content: space-between;
+}
+
+.nw-kb-modal-row--mb {
+    margin-bottom: 12px;
+}
+
+.nw-kb-modal-footer {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.nw-kb-modal-btn-group {
+    display: flex;
+    gap: 6px;
+}
+
+.nw-kb-modal-count {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.nw-kb-modal-empty {
+    padding: 40px;
+    font-size: 13px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.nw-kb-modal-btn--block {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.nw-kb-modal-btn--padded {
+    padding: 4px 8px;
+}
+
+/* —— 导入弹窗：来源选择卡片 —— */
+
+.nw-kb-modal-choice {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+}
+
+.nw-kb-modal-choice:hover {
+    border-color: var(--interactive-accent);
+}
+
+.nw-kb-modal-choice-icon {
+    font-size: 28px;
+}
+
+.nw-kb-modal-choice-body {
+    flex: 1;
+}
+
+.nw-kb-modal-choice-label {
+    margin-bottom: 4px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.nw-kb-modal-choice-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.nw-kb-modal-choice-arrow {
+    font-size: 16px;
+    color: var(--text-muted);
+}
+
+/* —— 文件 / 书籍列表（导入选文件、批量操作） —— */
+
+.nw-kb-modal-search {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+}
+
+.nw-kb-modal-file-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+}
+
+.nw-kb-modal-file-item {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.nw-kb-modal-file-item:not(:last-child) {
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-kb-modal-file-item--selectable {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nw-kb-modal-file-item--selected {
+    background: rgba(var(--interactive-accent-rgb), 0.08);
+}
+
+.nw-kb-modal-check {
+    flex-shrink: 0;
+    width: 16px;
+    font-size: 14px;
+}
+
+.nw-kb-modal-book-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.nw-kb-modal-book-name {
+    overflow: hidden;
+    font-size: 13px;
+    color: var(--text-normal);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nw-kb-modal-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.nw-kb-modal-meta--shrink {
+    flex-shrink: 0;
+}
+
+/* —— 批量操作 —— */
+
+.nw-kb-modal-ops {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.nw-kb-modal-op {
+    flex: 1;
+    padding: 12px;
+    text-align: left;
+}
+
+
