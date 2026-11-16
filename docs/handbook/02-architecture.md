@@ -1,5 +1,6 @@
 # 02 · 架构与边界
 
+> 状态：活跃 · 2026-11-17
 > 本文只给「唯一可执行口径」与「目标口径」的差异；深度内容见 [../ARCHITECTURE.md](../ARCHITECTURE.md)。
 > 可执行口径以 `scripts/check-dependencies.mjs` 为准，文档不得另行定义第四种分层。
 

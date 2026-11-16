@@ -1,7 +1,8 @@
 # 小说工坊 AI · 长期目标与 Harness 优化纲要
 
+> 状态：目标（长期，非排期） · 2026-11-17
 > **文档性质**：长期目标描述（不是排期表，不是需求文档）
-> **生效版本**：v1.0 · 2026-11-11 · 基线 v4.83.0
+> **生效版本**：v1.0 · 2026-11-11 · 基线见 `CURRENT.md`
 > **维护方式**：每个阶段收口时更新「§二 基线」与「§十 变更记录」；目标本身不轻易改
 > **配套**：`docs/PLAN.md`（战术排期）、`docs/progress/program-status.json`（质量台账）、`docs/handbook/`（操作手册）
 
@@ -23,52 +24,27 @@
 |---|---|---|
 | **产品层** | 作者不需要理解插件内部结构，就能拿到可发布的稿子 | 新用户 30 分钟内跑通「建项目 → 拆解参考书 → 写一章 → 结算」 |
 | **Harness 层** | 插件的 agent 执行层能自主规划、调用工具、管理上下文、从失败中恢复 | agent 在无人干预下完成一个完整创作阶段，失败时能自我诊断 |
-| **工程层** | 代码库在 40 万行量级上仍能高速安全演进 | 新增功能不增加「静默失效」；29 步门禁始终绿灯；bundle 不失控 |
+| **工程层** | 代码库在 40 万行量级上仍能高速安全演进 | 新增功能不增加「静默失效」；全量门禁始终绿灯；bundle 不失控 |
 
 三层的关系：**产品层是目的，Harness 层是手段，工程层是刹车**。工程层永远不能让前两层停下来，但可以让它们不翻车。
 
 ---
 
-## 二、现状基线（v4.83.0 · 2026-11-11）
+## 二、现状基线（指针，2026-11-17 核对）
 
-### 2.1 规模
+> 本节不抄数字：规模、测试、体积、覆盖率每批都在变，抄一次腐化一次。
+>
+> - 版本与门禁命令：`package.json`（可读版 `docs/generated/gates.md`）
+> - 文件数与行数：`docs/generated/code-index.md`
+> - 测试与 E2E：`docs/progress/program-status.json`（实测以最近一次 `preflight` 输出为准）
+> - 体积 / 覆盖率 / CSS / JSDoc 棘轮：`.bundle-baseline.json`、`.coverage-baseline.json`、`.css-baseline.json`、`.jsdoc-baseline.json`
+> - 当前全局状态与「哪些是历史」：[CURRENT.md](CURRENT.md)
 
-| 项 | 数值 |
-|---|---|
-| 版本 | 4.83.0 |
-| TypeScript 源文件 | 826 |
-| 测试文件 | 707 |
-| 源码总行数 | 379,098 |
-| `engine/` | 124,395 行（含 agent harness ≈ 4,000 行） |
-| `ui/` | 92,193 行 |
-| `shared/` | 37,853 行 |
-| `tests/` | 105,676 行 |
-| 构建产物 | `main.js` 4,897,414 B（预算 5 MB，余量 ≈ 2.1%） |
+### 2.1 已知欠账
 
-### 2.2 质量门禁（29 步 preflight，全绿）
-
-```
-typecheck · lint · test · check:templates · check:styles · check:css
-check:inline-styles · check:obsidian-api · check:secrets · check:deps
-check-engines · check:program · check:relationship-authority
-check:silent-failures · check:hotpaths · check:write-entry
-check:linked-scenarios · check:automation · check:dsh-isolation
-check:jsdoc · check:any · check:view-tests · check:test-standard · check:changelog
-check:docs · check:support-qr · build · check:bundle · check:release
-```
+见 [planning/2026-11-16-next-focus.md](planning/2026-11-16-next-focus.md) §二/§三——那是唯一的未修项台账。
 
 **8 个只降不升的棘轮基线**：`.arch-baseline.json`、`.bundle-baseline.json`、`.any-baseline.json`、`.css-baseline.json`、`.inline-style-baseline.json`、`.jsdoc-baseline.json`、`.obsidian-api-baseline.json`、`.view-tests-baseline.json`
-
-### 2.3 已知欠账（截至 v4.83.0）
-
-| 项 | 现状 | 性质 |
-|---|---|---|
-| 测试用例 | 700 文件 / 7,363 通过 / 3 跳过 | 良好 |
-| 覆盖率 | 总 46.77%（lines）/ `ui/views` 域 8.68% | **结构性欠账**（见 §六 D2 说明） |
-| 零覆盖的 >200 行文件 | 94 个（`check:view-tests` 基线） | **结构性欠账** |
-| GUI 点击级验收 | 未系统化（需关闭 Obsidian + `OBSIDIAN_PATH`） | 空白 |
-| 移动端 | 未实测 | 空白 |
-| 上游依赖残留 | S3-5（dsh 凭据机制）、S3-20（redirect/DNS 不可控） | 外部约束 |
 
 ### 2.4 已完成的主线（G1–G7，全部 done）
 

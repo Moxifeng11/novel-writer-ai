@@ -3,12 +3,14 @@
  * check-docs.mjs — 文档门禁
  *
  * 校验：
- *  1. 版本戳与 package.json 一致（指定的活跃文档）
- *  2. 文档索引完整（handbook / adr / glossary / 发布模板）
- *  3. 相对链接可达（限定活跃文档，历史快照不查）
- *  4. 文档中出现的 `npm run <script>` 必须存在
- *  5. NUL / U+FFFD / 典型乱码
- *  6. docs/generated/* 与生成结果一致
+ *  1. 版本戳与 package.json 一致（指定的活跃文档，含 docs/CURRENT.md）
+ *  2. 每份现行/参考文档带 `> 状态：…` 头（防止「历史当现状」）
+ *  3. 现状类文档不得写死易漂移计数（N 步 preflight / N 道门 / N 个用例）
+ *  4. 文档索引完整（handbook / adr / glossary / 发布模板）
+ *  5. 相对链接可达（限定活跃文档，历史快照不查）
+ *  6. 文档中出现的 `npm run <script>` 必须存在
+ *  7. NUL / U+FFFD / 典型乱码
+ *  8. docs/generated/* 与生成结果一致
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -30,6 +32,7 @@ const VERSION_FILES = {
     'docs/API.md': /\*\*版本\*\*:\s*v?(\d+\.\d+\.\d+)/,
     'docs/PLAN.md': /版本：v(\d+\.\d+\.\d+)/,
     'docs/CODE-INDEX.md': /版本：v(\d+\.\d+\.\d+)/,
+    'docs/CURRENT.md': /版本：v(\d+\.\d+\.\d+)/,
 };
 
 const LINK_SCOPE = [
@@ -65,6 +68,44 @@ for (const [rel, pattern] of Object.entries(VERSION_FILES)) {
     const match = read(rel).match(pattern);
     if (!match) problems.push(`${rel} 未找到版本戳（期望格式匹配 ${pattern}）`);
     else if (match[1] !== VERSION) problems.push(`${rel} 版本戳 v${match[1]} ≠ package.json ${VERSION}`);
+}
+
+// 1b) 状态头：每份文档都要能自证「还算不算现状」
+const STATUS_SCOPE = [
+    ...fs.readdirSync(path.join(ROOT, 'docs')).filter((n) => n.endsWith('.md')).map((n) => `docs/${n}`),
+    ...['docs/handbook', 'docs/modules', 'docs/planning', 'docs/guides', 'docs/regression'].flatMap((d) =>
+        listFiles(path.join(ROOT, d), '.md').map((p) => path.relative(ROOT, p).split(path.sep).join('/')),
+    ),
+];
+for (const rel of STATUS_SCOPE) {
+    if (path.basename(rel) === '_TEMPLATE.md') continue;
+    const head = read(rel).split(/\r?\n/).slice(0, 12).join('\n');
+    if (!/状态\*{0,2}\s*[：:]/.test(head)) problems.push(`${rel} 缺少状态头（> 状态：活跃/参考/历史）`);
+}
+
+// 1c) 计数不写死：现状类文档只允许指向真相源，不允许抄「N 步 / N 个用例」
+const COUNT_SCOPE = [
+    'docs/CURRENT.md',
+    'docs/README.md',
+    'docs/BASELINE.md',
+    'docs/PRODUCT.md',
+    'docs/PROGRAM.md',
+    ...listFiles(path.join(ROOT, 'docs/handbook'), '.md').map((p) => path.relative(ROOT, p).split(path.sep).join('/')),
+    ...listFiles(path.join(ROOT, 'docs/modules'), '.md').map((p) => path.relative(ROOT, p).split(path.sep).join('/')),
+];
+const COUNT_RULES = [
+    [/\d+\s*步\s*(?:的)?\s*preflight/, '「N 步 preflight」'],
+    [/\d+\s*道门/, '「N 道门」'],
+    [/\d+\s*个测试文件/, '「N 个测试文件」'],
+    [/\d+\s*(?:个|条)用例/, '「N 个用例」'],
+    [/\d+\s*个源码文件/, '「N 个源码文件」'],
+];
+for (const rel of COUNT_SCOPE) {
+    if (!fs.existsSync(path.join(ROOT, rel))) continue;
+    const text = read(rel);
+    for (const [re, label] of COUNT_RULES) {
+        if (re.test(text)) problems.push(`${rel} 写死了易漂移计数 ${label}；改为指向真相源（program-status.json / generated/*）`);
+    }
 }
 
 // 2) 索引完整

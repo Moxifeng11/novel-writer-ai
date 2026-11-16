@@ -1,5 +1,6 @@
 # 01 · 环境搭建
 
+> 状态：活跃 · 2026-11-17
 > 适用于 Windows / macOS / Linux。CI 使用 Ubuntu + Node 20；本地允许 Node ≥ 20，但以 CI 为准。
 
 ---

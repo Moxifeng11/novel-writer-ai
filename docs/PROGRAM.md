@@ -4,6 +4,9 @@
 > 定位：**本文件是全系统优化的任务组级唯一入口**（做什么、怎么分组、谁负责、怎么验收、什么时候交）。
 > 结构边界看 [`docs/PLAN.md`](PLAN.md)；问题取证看 `docs/audits/`；进度报告看 [`docs/progress/PROGRAM-STATUS.md`](progress/PROGRAM-STATUS.md)。
 > 单一数据源：`docs/progress/program-status.json`（改这里 → `npm run program:render`；`preflight` 会校验两者一致）。
+>
+> **文档状态：历史（已收口，2026-11-17 标注）**。G1–G7 共 61 项已于 v4.23.0–v4.25.0 全部 done；本文只作为「任务编号 / 验收口径」的追溯来源。
+> **当前排期**看 [planning/2026-11-16-next-focus.md](planning/2026-11-16-next-focus.md)，**进度**看 `docs/progress/program-status.json`。不要把本文当待办清单。
 
 ---
 

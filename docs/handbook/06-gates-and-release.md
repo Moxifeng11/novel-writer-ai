@@ -1,5 +1,6 @@
 # 06 · 门禁与发布
 
+> 状态：活跃 · 2026-11-17
 > 命令清单以 `package.json` 为准，完整表格见生成物 [../generated/gates.md](../generated/gates.md)。
 > 本文只解释「什么时候跑哪一组、失败了怎么办」。
 
@@ -10,7 +11,7 @@
 | 组 | 命令 | 包含 | 用途 |
 |---|---|---|---|
 | 快速 | `npm run typecheck` / `npm run test -- <file>` | 类型 + 指定测试 | 编辑期 |
-| 本地总门禁 | `npm run preflight` | 24 步：类型、Lint、全量测试、模板/样式/CSS/内联样式、分层依赖、引擎注册、台账（program）、关系权威源、静默失败、热路径、写入入口、联动场景、自动化台账、dsh 隔离、JSDoc、any 预算、变更日志、文档（含 `docs/generated/*` 漂移）、构建、bundle 体积、发布资产 | 提交前 |
+| 本地总门禁 | `npm run preflight` | 类型、Lint、全量测试、模板/样式/CSS/内联样式、分层依赖、引擎注册、台账（program）、关系权威源、静默失败、热路径、写入入口、联动场景、自动化台账、dsh 隔离、JSDoc、any 预算、变更日志、文档（含 `docs/generated/*` 漂移）、构建、bundle 体积、发布资产 | 提交前 |
 | 发布前 | `npm run preflight:release` | `preflight` + `test:cov` | 打 tag 前 |
 | CI | `.github/workflows/ci.yml` | `preflight:release` 等价 + 生产依赖审计 + 构建产物入仓检查 + Playwright 用例解析 | PR / master |
 | 发布 | `.github/workflows/release.yml` | 同一组门禁 + `check:release -- --tag` | 推 `v*` tag |

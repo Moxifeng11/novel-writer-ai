@@ -1,19 +1,20 @@
 # 下一步优化建议与遗留问题台账（2026-11-16）
 
-> 版本：v4.96.0 · 对应 HEAD `14306a20` · 数据来源：`docs/progress/program-status.json`、`.coverage-baseline.json`、`.bundle-baseline.json`、`docs/audit/2026-11-15-adversarial-review.md`、`docs/design/2026-11-15-architecture-remediation-plan.md`（数字以真相源为准，本文只引用结论）。
+> 状态：活跃 · 2026-11-17
+> 版本：v4.96.0 · 对应 HEAD `14306a20` · 数据来源：`docs/progress/program-status.json`、`.coverage-baseline.json`、`.bundle-baseline.json`、`docs/audits/2026-11-15-adversarial-review.md`、`docs/design/2026-11-15-architecture-remediation-plan.md`（数字以真相源为准，本文只引用结论）。
 
 ## 一、现状快照
 
 | 维度 | 现状 | 证据 |
 |---|---|---|
-| 代码规模 | 978 个源码文件 / 约 301K 行；最大单文件 `main.ts` 146KB | `docs/generated/code-index.md` |
-| 测试 | 924 个测试文件 / 约 9700 用例全绿 | `npm run test` |
-| 门禁 | 30 道门 `preflight EXIT=0` | 本轮实跑 |
-| 产物 | `main.js` 5.75MB（基线棘轮）、`styles.css` 570KB、worker 793KB（内联副本另入 main.js） | `.bundle-baseline.json` |
-| 覆盖率 | 总行 50.5%；`ui/` 行 21.4%、`ui/views/` 28.3% | `.coverage-baseline.json` |
+| 代码规模 | 见生成物（不抄数字） | `docs/generated/code-index.md` |
+| 测试 | 见台账与最近一次 `preflight` | `docs/progress/program-status.json` |
+| 门禁 | `preflight EXIT=0`（步骤清单以 package.json 为准） | `docs/generated/gates.md` |
+| 产物 | 体积棘轮当前值 | `.bundle-baseline.json` |
+| 覆盖率 | 棘轮当前值 | `.coverage-baseline.json` |
 | 业务专项 | 7 组（G1–G7，共 61 项）全部 done | `program-status.json` |
 | 架构整改 | 12 项（C2–C5、B1–B4、A1–A4）全部交付并带测试 | `design/2026-11-15-architecture-remediation-plan.md` §十三 |
-| 对抗性审查 | 25 项：22 ✅ + 1 ◑（启动顺序）+ 2 ⏳（体积、全局挂载）；其中「全局挂载」实际已在 `52350d41` 删除，审计表未回填 | 同上 |
+| 对抗性审查 | 25 项：22 ✅ + 1 ◑（启动顺序）+ 2 ⏳（体积、全局挂载）；「全局挂载」实际已在 `52350d41` 删除，审计表未回填 | 同上 |
 
 ## 二、历史架构遗留：结论
 

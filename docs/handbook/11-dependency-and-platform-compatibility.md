@@ -1,5 +1,6 @@
 # 11 · 依赖治理与平台兼容
 
+> 状态：活跃 · 2026-11-17
 > 适用于发版前确认「依赖还能不能升、平台还能不能跑」。
 > 命令以 `package.json` 为准；门禁总览见 [06-gates-and-release.md](06-gates-and-release.md)。
 

@@ -1,10 +1,14 @@
 # 插件结构化规划（PLAN）
 
+> 状态：参考 · 2026-11-17
 > 版本：v4.96.0 · 更新：2026-11-12
 > 定位：**本文件是插件仓的唯一结构性规划入口**。代码是最终真相源；本文件只回答「有哪些模块、边界在哪、下一轮做什么」。
 > 历史文档：`docs/audits/`（各轮取证）、`docs/releases/`（各版本交付）、`CHANGELOG.md`（变更流水）。
 > **全系统优化专项**（16 板块 / 7 任务组 / 排期与验收）：[`docs/PROGRAM.md`](PROGRAM.md) · 进度报告：[`docs/progress/PROGRAM-STATUS.md`](progress/PROGRAM-STATUS.md)。
 > **开发手册**：[`docs/README.md`](README.md)（环境、模块标准、接口契约、排障、评审、注释规范）。
+>
+> **状态说明（2026-11-17）**：§一 模块地图、§二 治理机制、§五 版本与提交纪律、§六 真相源 仍是现行；
+> **§三 待办矩阵与 §四 里程碑是 2026-11-05～06 的时点快照**，条目现状以 `program-status.json` 与 `planning/` 为准，不要再当待办清单读。
 
 ---
 
@@ -476,7 +480,7 @@ Agent（harness）
   - 验证：`typecheck` 0 error；`eslint` 两文件 0 error（10 条既有 warning）；`check:any` **160→154**（85 文件，-6，未自改 `.any-baseline.json`，余量 6 留 ZCode 收单时下调）；`build` 后 `main.js` **4,869,200 逐字节不变**、`check:bundle` 绿；定向 `entity-reader`/`entity-persistence` 16 例 + `publication-profile` 23 例通过；全量 `preflight:release` EXIT=0（591 文件 / 6,491 用例；statements 43.8% / branches 43.47% / functions 44.53% / lines 44.13%）。
   - 评分：影响3×风险降低2×可验证5/成本1=30，×gate-fix 1.76 ≈ 53；派工优先级最高（决策阶梯第 1 级，指令来自 ZCode 信箱）；上两轮均为 gate-fix，同型 -20% ≈ 42（派工仍优先）；explorationRoll 0.58 未触发。首版 `knowledge-base-view` 用本地别名 `const legacySettings = …` 曾使 `main.js` 变 4,869,204（+4B，esbuild 保留 const 绑定），改为内联断言后逐字节回到基线——**零体积收口时不要引入变量别名**。
   - 边界：未动 `engine/**`、`ui/views/writing-fingerprint-view.ts`、`ui/views/fingerprint-v2-detail.ts`、`.any-baseline.json`、`program-status`（用例 6,491 无变化）；零新增文件；`docs/generated/code-index.md` 因源码行数变化随 `gen:docs` 纳入本路径。
-  - 收口提示：本轮后非 engine 的 ≥3 处 any 文件清空（仅剩 `shared/types.ts` 有意设计），Trae 侧 gate-fix 长尾（1–2 处/文件）不再满足派工门槛，下一轮应强制换型（docs/audit/test-hardening）。
+  - 收口提示：本轮后非 engine 的 ≥3 处 any 文件清空（仅剩 `shared/types.ts` 有意设计），Trae 侧 gate-fix 长尾（1–2 处/文件）不再满足派工门槛，下一轮应强制换型（docs/audits/test-hardening）。
   - 并发事实：开工 HEAD `cd6750f` / ahead 187；执行期间 ZCode 以 `b135dbc` 收单第 76 轮（HEAD 推进、ahead 188），本轮 3 路径（两源码 + code-index）待收单。
 - 第 78 轮（v5-product / docs-correction；兑现 ZCode 第 77 轮派工：B5 三份文档边界审计，只读 + 文档）：
   - 盘点（先问是不是）：开工 HEAD `b135dbc` / ahead 188，工作树 5 路径为第 77 轮待收单；信箱 1 条未读＝ZCode 第 76 轮收单（`b135dbc`）+ 第 77 轮派工「核对 USER-GUIDE / COMMERCIAL-GUIDE / handbook 的阶段面板、Agent 闭环、三档导出描述与代码偏差，只改文档」。第 77 轮实际执行 gate-fix，派工未兑现。

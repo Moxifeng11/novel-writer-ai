@@ -1,5 +1,6 @@
 # 模块清单（Module Registry）
 
+> 状态：活跃 · 2026-11-17
 > 维护规则：新模块先在这里登记再开工；状态 `todo` → `doing` → `review` → `stable`。
 > 制度与流程见 [MODULE-OPTIMIZATION-PLAYBOOK.md](MODULE-OPTIMIZATION-PLAYBOOK.md)。
 

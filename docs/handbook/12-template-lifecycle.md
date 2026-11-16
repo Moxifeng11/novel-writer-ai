@@ -1,5 +1,6 @@
 # 12 · 模板流转全生命周期
 
+> 状态：活跃 · 2026-11-17
 > 目标：模板从「文件/内置常量」到「实际发给模型」只有一条可追踪链路。
 > 契约实现：`engine/prompt-resolver.ts`、`engine/template-service.ts`、`shared/template-scaffold.ts`。
 > 相关门禁：`tests/unit/shared/template-flow.test.ts`、`tests/unit/engine/prompt-resolver.test.ts`。

@@ -1,7 +1,7 @@
 # 架构整改计划（C → B → A）：从「能写」到「写得好」
 
 > 目标文档。回答一个问题：**为什么插件总是解决不了架构问题、写书效果不理想**，以及**按什么顺序、改哪些地方才能真正改善**。
-> 前置材料：`docs/audit/2026-11-15-plugin-data-model-audit.md`、`docs/audit/2026-11-15-atomization-audit.md`、`docs/design/2026-11-15-v4-status.md`。
+> 前置材料：`docs/audits/2026-11-15-plugin-data-model-audit.md`、`docs/audits/2026-11-15-atomization-audit.md`、`docs/design/2026-11-15-v4-status.md`。
 > 原则：先量基线、再动结构；每步默认关闭、可回退；**没有指标改善的改动视为未完成**。
 
 ## 一、问题定位（为什么效果不理想）

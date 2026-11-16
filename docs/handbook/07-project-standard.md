@@ -1,5 +1,6 @@
 # 项目标准（Project Standard）
 
+> 状态：活跃 · 2026-11-17
 > 对应代码：`shared/project-standard.ts`（类型门面）·
 > `scripts/lib/project-standard-lib.mjs`（运行时单一实现）·
 > `services/project-standard-service.ts`（校验门面）

@@ -1,5 +1,6 @@
 # 模块化优化开发制度（MODULE-OPTIMIZATION-PLAYBOOK）
 
+> 状态：活跃 · 2026-11-17
 > 版本：1.0（2026-11-16 建立）
 > 适用范围：所有「一个模块一个模块打磨」的迭代（设置页各分区、写作工作台、规划、设定、正文、统计、桌宠、MCP、市场等）
 > 配套文件：模块清单 `docs/modules/INDEX.md`、模块页模板 `docs/modules/_TEMPLATE.md`、任务板 `scripts/board.mjs`、交接快照 `scripts/handoff.mjs`
