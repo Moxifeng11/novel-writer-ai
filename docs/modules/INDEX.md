@@ -8,7 +8,7 @@
 | API 配置 / 模型渠道 | `ui/settings/api-section.ts`、`core/provider-manager.ts`、`shared/provider-ui-model.ts`、`services/model-discovery.ts`、`shared/model-pricing.ts` | `customProviders`、`providerKeys`、`providerAssignments`、`providerThinking`、`providerTaskBudgets`、`enabledProviderIds`、`modelMeta`（识别缓存） | stable（验收通过 2026-11-16） | 端点能力自动识别/价格按渠道/模型弹窗/联网检索；下一轮按反馈打磨 | [api-config.md](api-config.md) |
 | 桌宠 | `ui/writing-pet.ts`、`shared/pet-image-store.ts` | `petImage`、`pet-image.png/json` | stable | 无（已验收） | [pet.md](pet.md) |
 | 写作工作台首页 | `ui/full-writer/project-selector-controller.ts`、`ui/full-writer/recent-projects.ts`、`ui/full-writer/next-step.ts`、`ui/home-view.ts` | `projectLastOpened` | stable（验收通过 2026-11-16） | 最近排序 / 下一步推演 / 主操作卡 / 旧版工具与卡片动作收纳 | [workbench-home.md](workbench-home.md) |
-| 规划 / 大纲 | `ui/planning-*`、`engine/planning*` | 章节/卷/大纲数据 | todo | 规划树操作效率、与正文联动 | — |
+| 规划 / 大纲 | `ui/chapter-outline-tree-modal.ts`、`ui/plan-book-modal.ts`、`ui/views/planning-canvas-view.ts`、`ui/full-writer/scene-outline-controller.ts`、`engine/outline-*`、`domains/planning/model.ts` | 分卷大纲 md、`planning/canvas.json`、章节 Scene 字段 | doing（审计完成待决策 2026-11-16） | P0：撤销失效/删除无确认/prompt 编辑/空态断头 | [planning.md](planning.md) |
 | 设定 / 人物卡 | `ui/setting-*`、`engine/memory*` | 设定库、人物卡 | todo | 检索、关系图、去重 | — |
 | 正文编辑器 / 协同写作 | `ui/co-writing-view.ts`、`ui/co-writing/*`、`engine/co-writer*` | 章节、协同配置、`coWrite*` 设置 | stable（2026-11-16 全量自检通过） | 查找替换/章节流转/字数目标/撤销重做/建议 diff/字号行距/专注/高亮/光标/简报入口；11 项真实缺陷已修 | [co-writing.md](co-writing.md) |
 | 质量闭环 / 审稿 | `ui/quality-loop-modal.ts`、`engine/quality-*` | 质量报告、修订记录 | todo | 闭环入口、报告可读性、一键修复 | — |
