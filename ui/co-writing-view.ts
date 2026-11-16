@@ -144,6 +144,7 @@ import { applyEditorMetrics, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, formatCurso
 import { copyEditorBoxStyles, renderHighlightDom, syncHighlightScroll } from '@/ui/co-writing/markdown-highlight';
 import { renderEditorAux, syncHistoryButtons, syncToggleButton, type EditorAuxHandles } from '@/ui/co-writing/editor-aux';
 import { describeDiff, diffLines, type TextDiffResult } from '@/ui/co-writing/text-diff';
+import { addChapterEventNode } from '@/ui/planning/canvas-link';
 import { applyQualityHighlights } from '@/ui/co-writing/quality-highlight';
 import {
     createScoreCard as createScoreCardFn,
@@ -1157,6 +1158,8 @@ export class CoWritingView extends ItemView {
       onToggleFocus: () => this.toggleFocusMode(),
       onToggleHighlight: () => this.toggleHighlight(),
       onSave: () => { void this.saveBody(true); },
+      // 规划 ↔ 正文：把本章登记为规划画布事件节点
+      onAddToPlanning: () => { void this.addChapterToPlanningCanvas(); },
     }, {
       fontSize: normalizeFontSize(settings.coWriteFontSize),
       lineHeight: normalizeLineHeight(settings.coWriteLineHeight),
@@ -1300,6 +1303,33 @@ export class CoWritingView extends ItemView {
     void this.plugin.saveSettings();
     this.syncAuxToggles();
     if (next) this.rightEditor?.focus();
+  }
+
+  /**
+   * 把当前章节登记为规划画布的事件节点（规划 ↔ 正文双向链接）。
+   *
+   * 已登记过则提示跳过（同一章不重复建节点）。
+   */
+  private async addChapterToPlanningCanvas(): Promise<void> {
+    if (!this.project || !this.chapterNum) {
+      showWarningNotice('请先绑定项目与章节', { timeout: 2500 });
+      return;
+    }
+    const title = this.chapterName || `第${this.chapterNum}章`;
+    const summary = (this.facade.getChapterBrief()?.outlineSummary || '').slice(0, 200);
+    try {
+      // 先保存正文，避免登记到还没落盘的内容
+      await this.saveBody(false);
+      const result = await addChapterEventNode(this.app, this.project, this.chapterNum, title, summary);
+      if (result.added) {
+        showSuccessNotice(`已登记到规划画布：${title}`, { timeout: 2500 });
+      } else {
+        showWarningNotice(result.reason || '未新增', { timeout: 2500 });
+      }
+    } catch (error) {
+      log.warn('[CoWritingView] 登记规划画布失败:', error);
+      showWarningNotice('登记规划画布失败，请重试', { timeout: 3000 });
+    }
   }
 
   /** 当前章节的撤销栈键 */

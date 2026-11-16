@@ -28,6 +28,8 @@ export interface EditorAuxHost {
     onToggleHighlight(): void;
     /** 保存 */
     onSave(): void;
+    /** 把本章登记为规划画布的事件节点（规划 ↔ 正文双向链接） */
+    onAddToPlanning?(): void;
 }
 
 /** 辅助条句柄（视图用它同步禁用态/文案） */
@@ -98,6 +100,14 @@ export function renderEditorAux(
     lineSelect.addEventListener('change', () => host.onLineHeightChange(Number(lineSelect.value)));
 
     const viewGroup = root.createDiv({ cls: 'nw-cowrite-aux-group' });
+    if (host.onAddToPlanning) {
+      const planBtn = viewGroup.createEl('button', {
+          cls: 'nw-cowrite-aux-btn',
+          text: '🗺 记为事件',
+          attr: { type: 'button', title: '把本章登记到规划画布的事件节点（已存在则跳过）' },
+      }) as HTMLButtonElement;
+      planBtn.addEventListener('click', () => host.onAddToPlanning?.());
+    }
     const focusBtn = viewGroup.createEl('button', {
         cls: 'nw-cowrite-aux-btn',
         text: '🎯 专注',

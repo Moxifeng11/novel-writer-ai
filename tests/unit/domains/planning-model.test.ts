@@ -222,3 +222,25 @@ describe('画布便签', () => {
         expect(noteCount(two)).toBe(2);
     });
 });
+
+describe('chapterNum（规划 ↔ 正文联动字段）', () => {
+    it('作为可选字段不破坏既有节点，且不当作落文证据', () => {
+        const canvas = emptyCanvas(1);
+        const node = {
+            id: 'n1',
+            title: '开门',
+            summary: '',
+            kind: 'event' as const,
+            status: 'idea' as const,
+            parentId: null,
+            position: { x: 0, y: 0 },
+            chapterNum: 12,
+        };
+        const next = { ...canvas, nodes: [node] };
+        expect(next.nodes[0].chapterNum).toBe(12);
+        expect(canvasStats(next).idea).toBe(1);
+        // chapterNum 不是落文证据：written 仍需 chapterRefs
+        expect(validateNode({ ...node, status: 'written' })).toContain('chapterRefs');
+    });
+});
+

@@ -1692,6 +1692,9 @@ export default class NovelWriterPlugin extends Plugin {
     public async openPlanningCanvas(): Promise<void> {
         const existing = this.app.workspace.getLeavesOfType(PLANNING_CANVAS_VIEW_TYPE)[0];
         if (existing) {
+            // 视图单例复用：也要重新读盘，否则看不到别处（协同视图/其它窗口）刚写的事件
+            const view = existing.view as unknown as { refreshFromDisk?: () => Promise<void> };
+            if (view.refreshFromDisk) await view.refreshFromDisk();
             this.app.workspace.setActiveLeaf(existing, { focus: true });
             return;
         }

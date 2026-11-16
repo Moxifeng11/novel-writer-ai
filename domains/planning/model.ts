@@ -37,6 +37,12 @@ export interface PlanningNode {
     position: { x: number; y: number };
     /** 已落正文的证据（written 必填） */
     chapterRefs?: ChapterRef[];
+    /**
+     * 关联的章节号（规划 ↔ 正文双向链接）。
+     * 与 chapterRefs 的区别：chapterNum 只是「这个事件打算/已经写在第 N 章」，
+     * 不构成落文证据；written 仍然必须有 chapterRefs。
+     */
+    chapterNum?: number;
 }
 
 /** 连线类型 */

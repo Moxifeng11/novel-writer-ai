@@ -10,8 +10,8 @@
 | `services/` | 65 | 19405 | 295 | 203 | 69% |
 | `shared/` | 255 | 50850 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3307 | 35 | 20 | 57% |
-| `domains/` | 15 | 1521 | 85 | 55 | 65% |
-| `ui/` | 296 | 112718 | 1135 | 903 | 80% |
+| `domains/` | 15 | 1527 | 85 | 55 | 65% |
+| `ui/` | 298 | 113442 | 1146 | 910 | 79% |
 
 ## 文件清单
 
@@ -34,7 +34,7 @@
 | `domains/memory/history.ts` | 128 | 9 | 6 |
 | `domains/memory/model.ts` | 247 | 19 | 11 |
 | `domains/memory/patch.ts` | 34 | 3 | 2 |
-| `domains/planning/model.ts` | 363 | 26 | 16 |
+| `domains/planning/model.ts` | 369 | 26 | 16 |
 | `domains/script/harness-profile.ts` | 39 | 1 | 1 |
 | `domains/script/tool-catalog.ts` | 43 | 1 | 0 |
 | `domains/short/harness-profile.ts` | 42 | 1 | 1 |
@@ -735,7 +735,7 @@
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1021 | 2 | 2 |
 | `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |
-| `ui/co-writing-view.ts` | 3912 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3942 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 247 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
@@ -744,7 +744,7 @@
 | `ui/co-writing/control-panel.ts` | 409 | 14 | 8 |
 | `ui/co-writing/dashboard-status.ts` | 187 | 9 | 7 |
 | `ui/co-writing/edit-history.ts` | 152 | 8 | 6 |
-| `ui/co-writing/editor-aux.ts` | 158 | 5 | 3 |
+| `ui/co-writing/editor-aux.ts` | 168 | 5 | 3 |
 | `ui/co-writing/editor-display.ts` | 127 | 10 | 6 |
 | `ui/co-writing/editor-shortcuts.ts` | 87 | 4 | 2 |
 | `ui/co-writing/find-replace.ts` | 269 | 11 | 6 |
@@ -902,6 +902,8 @@
 | `ui/password-modal.ts` | 152 | 1 | 1 |
 | `ui/pet-image-settings.ts` | 465 | 3 | 3 |
 | `ui/plan-book-modal.ts` | 558 | 1 | 1 |
+| `ui/planning/canvas-link.ts` | 108 | 3 | 2 |
+| `ui/planning/canvas-tools.ts` | 99 | 8 | 5 |
 | `ui/plot-canvas-modal.ts` | 366 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
 | `ui/polish-editor.ts` | 834 | 5 | 5 |
@@ -996,7 +998,7 @@
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/link-status.ts` | 117 | 2 | 1 |
 | `ui/views/memory-graph-view.ts` | 289 | 3 | 2 |
-| `ui/views/planning-canvas-view.ts` | 477 | 4 | 3 |
+| `ui/views/planning-canvas-view.ts` | 954 | 4 | 3 |
 | `ui/views/writing-fingerprint-view.ts` | 2039 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
