@@ -307,3 +307,27 @@
 **待确认**
 
 - 「URL 和 API 格式现在的方式错误」具体指哪种：A 只填完整请求 URL、协议自动识别；B URL 所见即所发、协议只决定请求体；C 保留推导但显示可编辑的最终请求 URL。确认后再改，不猜。
+### 2026-11-16 第十轮：方案 C（实际请求 URL 可见可改）+ 测试结果独立区
+
+用户确认走方案 C，并要求测试连通性的提示不挤在模型设置行中。
+
+**改动**
+
+- `shared/api-format.ts`：新增 `resolveEffectiveRequestUrl(endpoint, format, override)`（覆盖优先，否则推导）。
+- `CustomProvider.requestUrlOverride`：用户显式填写的实际请求 URL；为空 = 自动推导。
+- `engine/ai-api-client.ts`：`resolveRequestEndpoint` 优先返回覆盖值（不再推导/Ollama 改写），非流式与流式共用。
+- `core/provider-manager.ts`：改 Base URL 时自动清空覆盖，避免打旧地址。
+- `services/api-connectivity-service.ts`：新增 `requestUrl`，测试与实际生成打同一地址。
+- `ui/settings/api-section.ts`：协议下方新增「实际请求 URL」字段（显示自动推导值 / 覆盖中提示 / 恢复自动按钮）；「从 URL 获取」也按覆盖地址推导；测试结果改为模型列表下方独立结果区（按模型分条、可清空）。
+- 样式：新增 `.nw-api-test-results` 等（只用 Obsidian CSS 变量）。
+
+**验证**
+
+| 层级 | 内容 | 结果 |
+| --- | --- | --- |
+| 单测 | 覆盖优先/空白视为未覆盖；连通性 requestUrl 优先；改址清空覆盖；接线断言 | 全过 |
+| 实机 | 渠道详情出现「实际请求 URL」，提示「自动推导：http://localhost:11434/api/generate」 | 通过 |
+| 实机 | 覆盖为 `http://localhost:11434/api/chat` → 提示「覆盖中：…（清空输入即恢复自动）」；点模型测试 ✅ 53ms（走覆盖地址，未覆盖时 /api/generate 需 9.6s） | 通过 |
+| 实机 | 测试结果显示在模型列表下方独立区（`inModelRow: 0`），模型行内无结果文本 | 通过 |
+| 实机 | 验证后已把 Ollama 的覆盖清空，恢复自动推导 | 通过 |
+| 门禁 | `npm run gen:docs && npm run preflight` | 见提交 |

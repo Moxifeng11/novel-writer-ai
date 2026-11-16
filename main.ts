@@ -209,6 +209,13 @@ export interface CustomProvider {
     isHidden?: boolean;  // 标记是否被隐藏
     /** 额外请求头（适配 OpenRouter/自建网关等需要 HTTP-Referer、X-Title 等头的渠道） */
     headers?: Record<string, string>;
+    /**
+     * 用户显式指定的「实际请求 URL」（方案 C）。
+     *
+     * 为空 = 按 Base URL + API 格式自动推导；非空 = 所见即所发，不再推导/拼接。
+     * 改 Base URL 时会自动清空，避免地址变了还打旧地址。
+     */
+    requestUrlOverride?: string;
 }
 
 /** 模型源类型与解析（v4.11 架构底座，定义见 shared/model-source.ts） */

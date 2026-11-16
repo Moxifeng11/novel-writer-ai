@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-15T23:36:08.584Z",
-  "note": "棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因",
-  "bytes": 572702,
+  "generatedAt": "2026-11-16T08:47:48.735Z",
+  "note": "M-36：模型连通性测试结果独立区（nw-api-test-results/__head/__row 3 个类，+1.1KB）",
+  "bytes": 573835,
   "important": 24,
   "hardcodedHex": 169,
   "rgbHsl": 192,
-  "uniqueClasses": 3137,
+  "uniqueClasses": 3140,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

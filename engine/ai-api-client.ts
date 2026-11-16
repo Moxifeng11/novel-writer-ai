@@ -443,6 +443,10 @@ export class AIApiClient {
      * 兼容历史配置里已写全路径（…/chat/completions）的情况。
      */
     private resolveRequestEndpoint(endpoint: string, format: ApiFormat): string {
+        // 方案 C：用户显式填写的「实际请求 URL」优先，所见即所发，不再推导/改写
+        const provider = this.plugin.settings.customProviders?.find(p => p.endpoint === endpoint);
+        const override = provider?.requestUrlOverride?.trim();
+        if (override) return override;
         const ollama = this.normalizeOllamaEndpoint(endpoint);
         if (ollama !== endpoint) return ollama;
         return resolveRequestUrl(endpoint, format);

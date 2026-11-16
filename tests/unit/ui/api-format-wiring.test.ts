@@ -99,3 +99,19 @@ describe('设置页 API 格式与模型获取的接线', () => {
         expect(source).toContain('parseSseFrame(apiFormat, parsed)');
     });
 });
+
+// 2026-11-16（M-35 方案 C）：设置页展示/测试/生成必须用同一个「实际请求 URL」，
+// 否则会出现「界面显示的地址」和「实际请求的地址」不一致。
+describe('实际请求 URL 接线', () => {
+    it('运行时优先使用用户覆盖的 requestUrlOverride', () => {
+        const source = read('engine/ai-api-client.ts');
+        expect(source).toContain('requestUrlOverride');
+        expect(source).toContain('requestUrlOverride?.trim()');
+    });
+
+    it('连通性测试与模型列表同源使用覆盖地址', () => {
+        const source = read('ui/settings/api-section.ts');
+        expect(source).toContain('resolveEffectiveRequestUrl(raw.endpoint, format, raw.requestUrlOverride)');
+        expect(source).toContain('requestUrl: resolveEffectiveRequestUrl');
+    });
+});

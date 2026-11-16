@@ -9,6 +9,7 @@ import {
     isNativeOllamaEndpoint,
     resolveApiBaseUrl,
     resolveApiRoot,
+    resolveEffectiveRequestUrl,
     resolveModelsUrl,
     resolveModelsUrlCandidates,
     resolveRequestUrl,
@@ -374,3 +375,26 @@ describe('Ollama 原生端点', () => {
             .toBe('https://api.deepseek.com/v1/models');
     });
 });
+
+// 2026-11-16（M-35 方案 C）：实际请求 URL 必须可见可改；覆盖后所见即所发。
+describe('resolveEffectiveRequestUrl — 实际请求 URL 覆盖', () => {
+    it('未覆盖时按协议推导', () => {
+        expect(resolveEffectiveRequestUrl('https://api.deepseek.com', 'openai-chat'))
+            .toBe('https://api.deepseek.com/v1/chat/completions');
+        expect(resolveEffectiveRequestUrl('https://token.sensenova.cn/v1', 'openai-chat'))
+            .toBe('https://token.sensenova.cn/v1/chat/completions');
+    });
+
+    it('覆盖后原样使用，不再推导/拼接', () => {
+        expect(resolveEffectiveRequestUrl('https://a.example.com', 'openai-chat', 'https://a.example.com/custom/chat'))
+            .toBe('https://a.example.com/custom/chat');
+        expect(resolveEffectiveRequestUrl('https://a.example.com/v1', 'anthropic-messages', 'https://a.example.com/x'))
+            .toBe('https://a.example.com/x');
+    });
+
+    it('空白覆盖视为未覆盖', () => {
+        expect(resolveEffectiveRequestUrl('https://api.deepseek.com', 'openai-chat', '   '))
+            .toBe('https://api.deepseek.com/v1/chat/completions');
+    });
+});
+

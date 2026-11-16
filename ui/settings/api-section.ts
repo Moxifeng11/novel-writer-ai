@@ -23,7 +23,7 @@ import {
 import { ModelEditorModal } from '@/ui/model-editor-modal';
 import { CanonResearchService, PROVIDER_LABELS } from '@/services/canon-research-service';
 import { normalizeMcpServers } from '@/shared/mcp-config';
-import { API_FORMAT_OPTIONS, normalizeApiFormat, type ApiFormat } from '@/shared/api-format';
+import { API_FORMAT_OPTIONS, normalizeApiFormat, resolveEffectiveRequestUrl, type ApiFormat } from '@/shared/api-format';
 import { discoverModels } from '@/services/model-discovery';
 import { ModelPickerModal } from '@/ui/model-picker-modal';
 import { PasswordModal } from '@/ui/password-modal';
@@ -489,6 +489,52 @@ export class ApiSection extends SettingsSection {
             });
         }, `请求路径：${API_FORMAT_OPTIONS.map(o => `${o.label} → ${o.path}`).join('；')}`);
 
+        // ── 实际请求 URL（方案 C）──
+        // 推导结果必须可见、可改：旧版只显示「由下方协议推导」，用户不知道最终会打到哪个地址，
+        // 自建网关/特殊路径只能靠猜。
+        this.renderField(container, '实际请求 URL', (field) => {
+            const derived = resolveEffectiveRequestUrl(raw.endpoint, format);
+            let override = raw.requestUrlOverride?.trim() || '';
+            const input = field.createEl('input', {
+                cls: 'nw-api-text-input',
+                attr: {
+                    type: 'text',
+                    spellcheck: 'false',
+                    placeholder: derived || 'https://api.example.com/v1/chat/completions',
+                },
+            });
+            input.value = override;
+            const hint = field.createEl('div', { cls: 'nw-api-hint' });
+            const syncHint = (): void => {
+                const effective = resolveEffectiveRequestUrl(raw.endpoint, format, override);
+                hint.setText(override
+                    ? `覆盖中：${effective}（清空输入即恢复自动）`
+                    : `自动推导：${derived || '（先填 Base URL）'}`);
+            };
+            syncHint();
+            input.addEventListener('change', async () => {
+                const next = input.value.trim();
+                this.plugin.updateProvider(raw.id, { requestUrlOverride: next || undefined });
+                await this.plugin.saveSettings();
+                override = next;
+                syncHint();
+                showSuccessNotice(next ? '已固定实际请求 URL' : '已恢复自动推导', { timeout: 3000 });
+            });
+            const reset = field.createEl('button', {
+                cls: 'nw-api-ghost-btn',
+                text: '恢复自动',
+                attr: { type: 'button' },
+            });
+            reset.onclick = async () => {
+                input.value = '';
+                this.plugin.updateProvider(raw.id, { requestUrlOverride: undefined });
+                await this.plugin.saveSettings();
+                override = '';
+                syncHint();
+                showSuccessNotice('已恢复自动推导', { timeout: 3000 });
+            };
+        }, '留空 = 按 Base URL + 协议自动推导；填写后「所见即所发」，测试与生成都打这个地址');
+
         // ── API Key ──
         this.renderField(container, 'API Key', (field) => {
             const row = field.createDiv({ cls: 'nw-api-key-row' });
@@ -556,7 +602,9 @@ export class ApiSection extends SettingsSection {
             fetchBtn.setText('⏳ 获取中…');
             try {
                 const key = this.plugin.settings.providerKeys?.[raw.id] || '';
-                const result = await discoverModels(raw.endpoint, format, key, undefined, resolveProviderHeaders(raw));
+                // 模型列表按「实际请求 URL」推导（覆盖时不再用 Base URL），保持与生成同源
+                const listEndpoint = resolveEffectiveRequestUrl(raw.endpoint, format, raw.requestUrlOverride);
+                const result = await discoverModels(listEndpoint, format, key, undefined, resolveProviderHeaders(raw));
                 if (result.kind === 'error') {
                     showErrorNotice(result.message, { title: '获取模型失败', timeout: 10000 });
                     return;
@@ -630,13 +678,12 @@ export class ApiSection extends SettingsSection {
                 attr: { type: 'button', title: '测试该模型连通性' },
             });
             testBtn.setText('🔌');
-            const testStatus = row.createDiv({ cls: 'nw-api-model-test-status' });
             testBtn.onclick = async () => {
                 if (testBtn.disabled) return;
                 testBtn.disabled = true;
                 testBtn.setText('⏳');
-                testStatus.setText('正在测试该模型…');
-                testStatus.className = 'nw-api-model-test-status';
+                // 结果不塞在模型行里（长错误会把行撑变形）：统一写到模型列表下方的结果区
+                this.appendModelTestResult(raw.id, modelId, { level: 'pending', message: '正在测试…' });
                 try {
                     const result = await testProviderConnectivity({
                         providerName: raw.name,
@@ -646,10 +693,9 @@ export class ApiSection extends SettingsSection {
                         sourceType: raw.sourceType === 'local' ? 'local' : 'cloud',
                         apiFormat: format,
                         headers: resolveProviderHeaders(raw),
+                        requestUrl: resolveEffectiveRequestUrl(raw.endpoint, format, raw.requestUrlOverride),
                     });
-                    const icon = result.level === 'ok' ? '✅' : result.level === 'warn' ? '⚠️' : '❌';
-                    testStatus.setText(`${icon} ${modelId}：${result.message}`);
-                    testStatus.addClass(`nw-api-test-status-${result.level}`);
+                    this.appendModelTestResult(raw.id, modelId, result);
                 } finally {
                     testBtn.disabled = false;
                     testBtn.setText('🔌');
@@ -692,6 +738,70 @@ export class ApiSection extends SettingsSection {
                 this.plugin.updateStatusBarText();
                 rerender();
             };
+        }
+
+        // 连通性测试结果区：独立在模型列表下方，不放模型行内（长错误会撑变形）
+        const resultsBox = modelsBlock.createDiv({ cls: 'nw-api-test-results' });
+        this.modelTestResultsEl = resultsBox;
+        this.renderModelTestResults(raw.id);
+    }
+
+    /** 当前渲染的测试结果容器（append 后局部重绘，避免整页刷新） */
+    private modelTestResultsEl: HTMLElement | null = null;
+
+    /** 每个渠道各模型最近一次的连通性测试结果 */
+    private modelTestResults = new Map<string, Map<string, {
+        level: 'ok' | 'warn' | 'error' | 'pending';
+        message: string;
+        at: number;
+    }>>();
+
+    /**
+     * 记录并展示某个模型的连通性测试结果。
+     *
+     * @param providerId - 渠道 id
+     * @param modelId - 模型 id
+     * @param result - 测试结果
+     */
+    private appendModelTestResult(
+        providerId: string,
+        modelId: string,
+        result: { level: 'ok' | 'warn' | 'error' | 'pending'; message: string },
+    ): void {
+        const bucket = this.modelTestResults.get(providerId) ?? new Map();
+        bucket.set(modelId, { ...result, at: Date.now() });
+        this.modelTestResults.set(providerId, bucket);
+        this.renderModelTestResults(providerId);
+    }
+
+    /**
+     * 渲染测试结果区（按渠道隔离；只在该渠道的详情页出现）。
+     *
+     * @param providerId - 渠道 id
+     */
+    private renderModelTestResults(providerId: string): void {
+        const box = this.modelTestResultsEl;
+        if (!box) return;
+        box.empty();
+        const bucket = this.modelTestResults.get(providerId);
+        if (!bucket || bucket.size === 0) return;
+        const head = box.createDiv({ cls: 'nw-api-test-results-head' });
+        head.createSpan({ text: '连通性测试结果' });
+        const clear = head.createEl('button', {
+            cls: 'nw-api-ghost-btn',
+            text: '清空',
+            attr: { type: 'button' },
+        });
+        clear.onclick = () => {
+            this.modelTestResults.delete(providerId);
+            this.renderModelTestResults(providerId);
+        };
+        for (const [modelId, result] of bucket) {
+            const icon = result.level === 'ok' ? '✅' : result.level === 'warn' ? '⚠️' : result.level === 'pending' ? '⏳' : '❌';
+            box.createDiv({
+                cls: 'nw-api-test-result-row' + (result.level === 'pending' ? '' : ` nw-api-test-status-${result.level}`),
+                text: `${icon} ${modelId}：${result.message}`,
+            });
         }
     }
 

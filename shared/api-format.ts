@@ -189,6 +189,32 @@ export function resolveRequestUrl(endpoint: string, format: ApiFormat): string {
 }
 
 /**
+ * 计算「实际生效的请求 URL」：用户显式覆盖优先，否则按协议推导。
+ *
+ * 方案 C：设置页展示推导结果并允许直接改；一旦覆盖就以用户填的为准，
+ * 运行时不可再拼接/推导，避免「显示的地址和实际请求的地址不一致」。
+ *
+ * @param endpoint - Base URL 或完整端点
+ * @param format - 协议格式
+ * @param override - 用户显式覆盖的完整 URL（空 = 自动推导）
+ * @returns 实际请求 URL
+ * @example
+ * resolveEffectiveRequestUrl('https://a.com', 'openai-chat', undefined);
+ * // 'https://a.com/v1/chat/completions'
+ * resolveEffectiveRequestUrl('https://a.com', 'openai-chat', 'https://a.com/custom/chat');
+ * // 'https://a.com/custom/chat'
+ */
+export function resolveEffectiveRequestUrl(
+    endpoint: string,
+    format: ApiFormat,
+    override?: string,
+): string {
+    const explicit = String(override ?? '').trim();
+    if (explicit) return explicit;
+    return resolveRequestUrl(endpoint, format);
+}
+
+/**
  * 推导模型列表 URL（用于「从 URL 获取模型」）。
  *
  * OpenAI 系在根上补 `/models`；Anthropic 用 `/v1/models`（官方同时接受带与不带 /v1

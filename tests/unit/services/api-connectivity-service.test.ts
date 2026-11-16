@@ -138,3 +138,34 @@ describe('Ollama 原生端点与渠道请求头', () => {
         expect(captured.headers['Authorization']).toContain('sk-test');
     });
 });
+
+// 2026-11-16（M-35 方案 C）：测试必须与实际生成打同一个地址（显式覆盖优先）。
+describe('显式请求 URL 覆盖', () => {
+    it('requestUrl 优先于推导结果', async () => {
+        let captured: any = null;
+        const request: RequestUrlFn = async (options) => {
+            captured = options;
+            return response(200, '{"choices":[{"message":{"content":"OK"}}]}');
+        };
+        await testProviderConnectivity({
+            ...base,
+            endpoint: 'https://a.example.com',
+            requestUrl: 'https://a.example.com/custom/chat',
+        }, request);
+        expect(captured.url).toBe('https://a.example.com/custom/chat');
+    });
+
+    it('未覆盖时仍按协议推导', async () => {
+        let captured: any = null;
+        const request: RequestUrlFn = async (options) => {
+            captured = options;
+            return response(200, '{"choices":[{"message":{"content":"OK"}}]}');
+        };
+        await testProviderConnectivity({
+            ...base,
+            endpoint: 'https://a.example.com/v1',
+        }, request);
+        expect(captured.url).toBe('https://a.example.com/v1/chat/completions');
+    });
+});
+

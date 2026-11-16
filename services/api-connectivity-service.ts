@@ -54,6 +54,12 @@ export interface ApiConnectivityConfig {
      * 缺失会让「测试通过但生成 400」的渠道（如 OpenCode Go 要求 x-opencode-session）测不出来。
      */
     headers?: Record<string, string>;
+    /**
+     * 用户显式覆盖的「实际请求 URL」（方案 C）。
+     *
+     * 非空时直接用它发请求，不再按 endpoint + 协议推导，保证「测试的地址 = 生成用的地址」。
+     */
+    requestUrl?: string;
 }
 
 /**
@@ -195,11 +201,13 @@ export async function testProviderConnectivity(
     const started = Date.now();
     const testedAt = started;
     const format = normalizeApiFormat(config.apiFormat);
-    // Anthropic / Responses 的请求地址与 OpenAI 不同：统一按格式推导，
-    // 已写全路径的历史端点由 resolveRequestUrl 原样复用。
-    const endpoint = format === 'openai-chat'
-        ? normalizeChatEndpoint(config.endpoint)
-        : resolveRequestUrl(config.endpoint, format);
+    // 方案 C：用户显式填写的实际请求 URL 优先；否则按格式推导
+    const explicitUrl = String(config.requestUrl ?? '').trim();
+    const endpoint = explicitUrl
+        ? explicitUrl
+        : format === 'openai-chat'
+            ? normalizeChatEndpoint(config.endpoint)
+            : resolveRequestUrl(config.endpoint, format);
     const model = String(config.model || '').trim();
     const base = { endpoint: endpoint || config.endpoint || '', model, testedAt };
 

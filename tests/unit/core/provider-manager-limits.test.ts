@@ -160,4 +160,28 @@ describe('ProviderManager — 模型能力优先级', () => {
             maxOutput: 8192,
         });
     });
+
+    // 2026-11-16（M-35 方案 C）：改 Base URL 必须清掉旧的「实际请求 URL」覆盖，
+    // 否则用户改完地址仍打旧地址。
+    it('改 Base URL 清空 requestUrlOverride', () => {
+        const endpoint = 'https://a.example.com/v1/chat/completions';
+        const settings = makeSettings({
+            apiEndpoint: endpoint,
+            customProviders: [{
+                id: 'custom-1',
+                name: '自建',
+                endpoint,
+                models: ['m'],
+                maxContext: 128000,
+                maxOutput: 8192,
+                sourceType: 'cloud',
+                isDefault: false,
+                requestUrlOverride: 'https://a.example.com/custom/chat',
+            }],
+        });
+        const manager = makeManager(settings);
+        manager.updateProvider('custom-1', { endpoint: 'https://b.example.com/v1/chat/completions' });
+        const provider = settings.customProviders[0] as { requestUrlOverride?: string };
+        expect(provider.requestUrlOverride).toBeUndefined();
+    });
 });

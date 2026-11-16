@@ -693,7 +693,17 @@ export class ProviderManager {
         // getCurrentProviderId() 按 apiEndpoint 匹配旧端点会失配，
         // 导致改了 Base URL 但 apiEndpoint/availableModels 不跟着更新，请求仍打旧端点。
         const isCurrent = this.getCurrentProviderId() === id;
-        s.customProviders[idx] = { ...s.customProviders[idx], ...updates };
+        const previous = s.customProviders[idx];
+        const endpointChanged = updates.endpoint !== undefined && updates.endpoint !== previous.endpoint;
+        s.customProviders[idx] = {
+            ...previous,
+            ...updates,
+            // 方案 C：Base URL 变了，用户之前覆盖的「实际请求 URL」大概率已过期，
+            // 不清掉会让他改完地址却仍打旧地址（除非本次显式传了新覆盖值）。
+            ...(endpointChanged && updates.requestUrlOverride === undefined
+                ? { requestUrlOverride: undefined }
+                : {}),
+        };
         if (isCurrent) {
             if (updates.endpoint !== undefined) s.apiEndpoint = updates.endpoint;
             if (updates.models !== undefined) s.availableModels = [...updates.models];
