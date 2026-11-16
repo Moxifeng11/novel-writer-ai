@@ -702,6 +702,48 @@ book-detail-renderer.ts 工具类 866 → 126、内联样式 28 → 3；
 loaded: true, version: "4.96.0", commands: 110 }`。
 
 剩余：E-补-B（开发 vault 内的已拆解样本书），补齐后才能对视觉切片拍 before/after。
+### 2026-11-17 第二十九轮：解锁后重复弹口令框修复（4.96.1）
+
+用户反馈：设置页输入口令一次、已提示「已解锁，密钥可正常读取」，随后又弹同一个口令框，
+再输也解不开。要求先修这个 bug 再继续开发。
+
+**根因**：`core/crypto-service.ts` 的 `decryptV2` 旧实现里，**每一次解密失败**都会
+`clearSessionPassword()` 再重问一次口令——它假定「失败 = 口令输错」。但磁盘上只要有一条
+密文用了旧口令或已损坏（历史混合状态：部分条目明文、部分是旧口令密文），
+在已解锁状态下解到那一条就会把刚设好的会话口令整场清掉并再弹口令框；
+而重输同一个口令永远解不开那一条密文，于是表现为「输过、提示成功、又要输」。
+触发点有两处：`core/settings-service.ts` 的 `loadSettings` 静默解密全部密钥，以及后台 AI 请求的
+`engine/ai-api-client.ts` `resolveApiKey`。
+
+**改动**（四处）：
+1. `core/crypto-service.ts`：只试一次。入口取 `hadSessionPassword`，有几口令时 attempts=1；
+   失败时记入 `_undecryptableSecrets` 并原样返回密文，**不清口令、不再弹框**；
+   无会话口令（口令是本次刚问的）才保留「清掉重问一次」。
+   新增 `getUndecryptableSecretCount()`；`setSessionPassword`/`clearSessionPassword` 都会清空该集合。
+2. `core/settings-service.ts`：`decryptSecretField(label, stored)` 在「有会话口令却解不开」时记录标签，
+   新增 `mismatchedSecretCount()` / `mismatchedSecretLabels()`；未解锁时的锁定态仍走 `lockedSecretCount`，两者不混。
+3. `ui/settings/api-section.ts` + `shared/secret-display.ts`：状态行带 `mismatched` 提示「重输同一口令也无法解开，
+   需要重新填写密钥」；解锁成功的 Notice 在有不匹配项时改为 warning，如实点名数量。
+4. `engine/ai-api-client.ts` + `ui/co-writing/friendly-error.ts`：报错分流——
+   已解锁但该条解不开时提示「口令不匹配，请重新填写该供应商密钥」，不再误导用户去输口令。
+
+**测试**：新增 8 条（crypto-service 3、settings-service 2、secret-display 2、ai-api-client 1、friendly-error 1），
+实跑 5 个文件 89 条通过；`preflight` EXIT=0（956 文件 / 10101 用例）。
+
+**实机验证**（临时 vault + 独立 `--user-data-dir`，用 PBKDF2+AES-GCM 自造密文：
+`apiKey` 用 pwA、`providerKeys.volc` 用 pwA、`providerKeys.deepseek` 用旧口令 pwB 模拟历史遗留）：
+
+```json
+{ "version": "4.96.1", "mismatched": 1, "labels": ["供应商 deepseek"],
+  "apiKeyDecrypted": true, "deepseekStillCipher": true,
+  "stillUnlocked": true, "passwordPrompts": 0 }
+```
+
+即：解不开的那一条被如实报出、会话口令保持、口令框一次都没有再弹。
+
+**经验**：新 vault 首次以独立 `--user-data-dir` 打开时，Obsidian 会弹「是否信任仓库作者」，
+插件在点「信任仓库作者并启用插件」之前根本不加载——自动化脚本要先点掉这个弹窗再断言
+（此前误判成「卡在弹窗」）。
 
 下一轮候选：Slice E 的像素级补验收（依赖 E-补-B）；Slice F 题材/配置页；Slice G 弹窗。
 

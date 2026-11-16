@@ -95,6 +95,8 @@ export interface KeyEncryptionStatusInput {
     encrypted: boolean;
     /** v1 旧格式条目数（下次保存会升级） */
     legacy: number;
+    /** 已解锁但与当前口令不匹配、仍解不开的条目数（旧口令密文/损坏） */
+    mismatched?: number;
 }
 
 /** 密钥落盘状态的展示文案 */
@@ -117,6 +119,10 @@ export interface KeyEncryptionStatusDescription {
  */
 export function describeKeyEncryptionStatus(input: KeyEncryptionStatusInput): KeyEncryptionStatusDescription {
     const legacyHint = input.legacy > 0 ? ` 另有 ${input.legacy} 项旧版加密条目，下次保存时自动升级。` : '';
+    const mismatchCount = input.mismatched ?? 0;
+    const mismatchHint = mismatchCount > 0
+        ? ` ⚠ 其中 ${mismatchCount} 项与本次会话口令不匹配（旧口令或损坏密文），重输同一口令也无法解开，需要重新填写密钥。`
+        : '';
     if (input.locked > 0) {
         return {
             text: `磁盘上有 ${input.locked} 项密钥处于加密状态。重启或更新后需要输入口令才能读取。${legacyHint}`,
@@ -129,8 +135,8 @@ export function describeKeyEncryptionStatus(input: KeyEncryptionStatusInput): Ke
         const v1Only = input.locked === 0 && input.legacy > 0;
         return {
             text: v1Only
-                ? '⚠ 磁盘上的密钥是旧版混淆格式（aes256:，知道库路径即可解密，不等于真正加密）。设定口令后保存一次即可升级为 v2。'
-                : `密钥已加密（本次会话已解锁）。重启或更新后需要输入口令才能读取。${legacyHint}`,
+                ? `⚠ 磁盘上的密钥是旧版混淆格式（aes256:，知道库路径即可解密，不等于真正加密）。设定口令后保存一次即可升级为 v2。${mismatchHint}`
+                : `密钥已加密（本次会话已解锁）。重启或更新后需要输入口令才能读取。${legacyHint}${mismatchHint}`,
             plaintext: false,
         };
     }

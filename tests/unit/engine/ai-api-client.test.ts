@@ -449,6 +449,32 @@ describe('callAI — 密钥未解锁 / 认证失败快速失败', () => {
         }
     });
 
+    it('已解锁但该条密文不匹配：提示重新填写密钥，而不是再去输口令（2026-11-17）', async () => {
+        const fetchSpy = vi.fn();
+        vi.stubGlobal('fetch', fetchSpy);
+
+        try {
+            const plugin = {
+                ...makePlugin({ providerKeys: { deepseek: 'aes256:AAAA:BBBB' } }),
+                // 已持有会话口令，但这条密文解不开（旧口令加密）
+                hasSessionPassword: () => true,
+                decryptKey: async (stored: string) => stored,
+            };
+            const client = new AIApiClient(plugin as never);
+
+            const result = await client.callAI(
+                'sys', 'user', 'test-model', 0.7, 64,
+                { apiKey: 'aes256:AAAA:BBBB' } as never
+            );
+
+            expect(fetchSpy).not.toHaveBeenCalled();
+            expect(result.error).toContain('口令不匹配');
+            expect(result.error).not.toContain('未解锁');
+        } finally {
+            vi.unstubAllGlobals();
+        }
+    });
+
     it('后台调用 allowKeyPrompt:false 时不走口令框，未解锁直接失败', async () => {
         const fetchSpy = vi.fn();
         vi.stubGlobal('fetch', fetchSpy);

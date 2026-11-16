@@ -1004,7 +1004,8 @@ export class ApiSection extends SettingsSection {
         const locked = service?.lockedSecretCount?.() ?? 0;
         const legacy = service?.legacySecretCount?.() ?? 0;
         const encrypted = service?.hasEncryptedSecrets?.() ?? false;
-        const status = describeKeyEncryptionStatus({ locked, encrypted, legacy });
+        const mismatched = service?.mismatchedSecretCount?.() ?? 0;
+        const status = describeKeyEncryptionStatus({ locked, encrypted, legacy, mismatched });
 
         const row = new Setting(container)
             .setName('密钥加密')
@@ -1024,7 +1025,17 @@ export class ApiSection extends SettingsSection {
                     this.plugin.setSessionPassword?.(password);
                     await this.plugin.loadSettings();
                     this.refresh();
-                    showSuccessNotice('已解锁，密钥可正常读取');
+                    // 解锁成功 ≠ 全部可读：旧口令遗留的密文永远解不开，必须如实告知，
+                    // 否则用户以为已恢复，调用 AI 时才发现 Key 无效（历史 bug 的另一半）
+                    const mismatched = this.plugin.getSettingsService?.()?.mismatchedSecretCount?.() ?? 0;
+                    if (mismatched > 0) {
+                        showWarningNotice(
+                            `口令正确，但 ${mismatched} 项密钥与当前口令不匹配（旧口令或已损坏），请在这些供应商处重新填写密钥`,
+                            { timeout: 10000 },
+                        );
+                    } else {
+                        showSuccessNotice('已解锁，密钥可正常读取');
+                    }
                     return;
                 }
                 const password = await PasswordModal.setup(this.app);

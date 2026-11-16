@@ -10,6 +10,13 @@ describe('co-writing friendly-error', () => {
         expect(getFriendlyErrorMessage('API Key 未解锁，操作已取消')).toBe('API 密钥未解锁：请输入加密口令后重试');
     });
 
+    it('已解锁但密文不匹配：引导重新填写，不引导再输口令（2026-11-17）', () => {
+        const message = getFriendlyErrorMessage('API 密钥口令不匹配：该密钥由旧口令加密或已损坏');
+        expect(message).toContain('不匹配');
+        expect(message).toContain('重新填写');
+        expect(message).not.toContain('输入加密口令');
+    });
+
     it('取消/中断映射为生成已取消', () => {
         expect(getFriendlyErrorMessage('AbortError: cancelled')).toBe('生成已取消');
         expect(getFriendlyErrorMessage('请求已取消')).toBe('生成已取消');

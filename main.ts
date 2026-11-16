@@ -2352,11 +2352,19 @@ export default class NovelWriterPlugin extends Plugin {
         return this.engineRegistry.get(ENGINE_NAMES.JOB_SERVICE);
     }
 
-    getSettingsService(): { lockedSecretCount(): number; legacySecretCount(): number; hasEncryptedSecrets(): boolean } | null {
+    getSettingsService(): {
+        lockedSecretCount(): number;
+        legacySecretCount(): number;
+        hasEncryptedSecrets(): boolean;
+        mismatchedSecretCount(): number;
+        mismatchedSecretLabels(): string[];
+    } | null {
         const service = this.engineRegistry.getOrNull<{
             lockedSecretCount(): number;
             legacySecretCount(): number;
             hasEncryptedSecrets(): boolean;
+            mismatchedSecretCount(): number;
+            mismatchedSecretLabels(): string[];
         }>(ENGINE_NAMES.SETTINGS_SERVICE);
         return service ?? null;
     }
@@ -2371,12 +2379,21 @@ export default class NovelWriterPlugin extends Plugin {
     }
 
     /**
+     * 当前会话是否已持有口令（2026-11-17：区分「未解锁」与「口令不匹配」）。
+     *
+     * @returns 已解锁为 true
+     */
+    hasSessionPassword(): boolean {
+        return this._cryptoService.hasSessionPassword();
+    }
+
+    /**
      * 重置密钥加密口令（2026-10-29 恢复路径）。
      *
      * 用新口令重新加密所有可读的明文；解不开的旧密文会被清空并列名，
      * 让用户重新填写——避免它们停留在「看起来配好但实际无效」的状态。
-     * @param password - 口令
-      * @returns string[] }> 结果
+     * @param password - 新口令
+     * @returns 重新加密的条目数与需要重新填写的字段标签
      */
     async resetKeyPassword(password: string): Promise<{ reencrypted: number; cleared: string[] }> {
         this._cryptoService.setSessionPassword(password);

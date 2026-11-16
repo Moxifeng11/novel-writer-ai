@@ -169,6 +169,47 @@ describe('CryptoService 口令一致性（2026-10-29 修复 API Key 失效）', 
         expect(stored.startsWith('aes256v2:')).toBe(true);
     });
 
+    it('已解锁后单条密文解不开：不清会话口令、不重复弹框（2026-11-17 二次输口令 bug）', async () => {
+        // 用旧口令加密的「历史遗留」密文
+        const oldSvc = new CryptoService(deps, { requestNewPassword: async () => 'old-pw' });
+        const oldCipher = await oldSvc.encrypt('sk-old-password');
+
+        const ask = vi.fn(async () => 'new-pw');
+        const svc = new CryptoService(deps, { requestPassword: ask });
+        svc.setSessionPassword('new-pw'); // 用户刚解锁成功
+
+        const result = await svc.decrypt(oldCipher);
+
+        expect(result).toBe(oldCipher); // 这一条仍锁定，原样返回
+        expect(ask).not.toHaveBeenCalled(); // 不得再弹口令框
+        expect(svc.hasSessionPassword()).toBe(true); // 会话口令不能被清掉
+        expect(svc.getUndecryptableSecretCount()).toBe(1);
+    });
+
+    it('已解锁且口令正确：正常解密，不记入不匹配集合', async () => {
+        const seed = new CryptoService(deps, { requestNewPassword: async () => 'pw-ok' });
+        const cipher = await seed.encrypt('sk-ok');
+
+        const ask = vi.fn();
+        const svc = new CryptoService(deps, { requestPassword: ask });
+        svc.setSessionPassword('pw-ok');
+
+        expect(await svc.decrypt(cipher)).toBe('sk-ok');
+        expect(ask).not.toHaveBeenCalled();
+        expect(svc.getUndecryptableSecretCount()).toBe(0);
+    });
+
+    it('未解锁时 decryptWithoutPrompt 仍静默返回密文（不触发弹框）', async () => {
+        const seed = new CryptoService(deps, { requestNewPassword: async () => 'pw-silent' });
+        const cipher = await seed.encrypt('sk-silent');
+
+        const ask = vi.fn();
+        const svc = new CryptoService(deps, { requestPassword: ask });
+        expect(await svc.decryptWithoutPrompt(cipher)).toBe(cipher);
+        expect(ask).not.toHaveBeenCalled();
+        expect(svc.getUndecryptableSecretCount()).toBe(0); // 未解锁不算「不匹配」
+    });
+
     it('canDecryptWith 能区分正确与错误口令', async () => {
         const svc = new CryptoService(deps, { requestNewPassword: async () => 'pw-ok' });
         const stored = await svc.encrypt('sk-x');

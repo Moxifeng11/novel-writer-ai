@@ -21,6 +21,14 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.96.1',
+        date: '2026-11-17',
+        title: '解锁口令重复弹框修复',
+        sections: [
+            { type: 'fixed', label: '🔓 密钥解锁', items: ['已解锁后不再重复弹口令框（旧口令密文不再清掉会话口令）', '解不开的密钥如实提示「与当前口令不匹配，请重新填写」'] },
+        ],
+    },
+    {
         version: '4.96.0',
         date: '2026-11-14',
         title: '链路修复 + 设置重构',
@@ -267,48 +275,6 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
                 items: [
                     '新增门禁 check:silent-failures：识别「读失败当没有 / 写失败当成功」，基线 191 处只降不升（检测先剥注释与字符串，消除 121 处假阳性）',
                     '新增 npm run check:prod：真实 Obsidian + 真实 AI 一键冒烟（6 步，含版本一致性与流式调用）',
-                ],
-            },
-        ],
-    },
-    {
-        version: '4.85.0',
-        date: '2026-11-13',
-        title: '静默失效大扫除：27 处真 bug + 测试标准',
-        sections: [
-            {
-                type: 'fixed',
-                label: '🎯 同人约束',
-                items: [
-                    '修 5 处「用 vault 索引 API 读 .project」——点文件不入索引，同人约束此前全线静默失效且不报警',
-                    '向导的「故事结构」「同人」步骤不再永远判为未完成',
-                ],
-            },
-            {
-                type: 'fixed',
-                label: '💾 数据安全',
-                items: [
-                    '修 5 处「读失败→空→覆盖写」：自定义题材/标签、质量历史、简介版本、风格偏好、整章正文不再被静默抹掉',
-                    '损坏文件先留档为 .corrupt-<时间戳>，可人工抢救',
-                ],
-            },
-            {
-                type: 'fixed',
-                label: '🌊 流式 / 拆解 / 指纹 / 导出结算',
-                items: [
-                    '流被截断不再当成功、重试不再导致正文两轮拼接、协议错误帧不再被当成正常结束',
-                    '拆解维度失败不再算完成、不再弹「拆解完成 100%」',
-                    '指纹保存/删除/启停/强度/迁移不再「提示成功但重启回滚」',
-                    'EPUB 投稿简介与平台标签不再丢失；结算静默漏写路径全部可见化',
-                    '向量落盘失败不再谎报「向量化完成」',
-                ],
-            },
-            {
-                type: 'improved',
-                label: '🧪 工程',
-                items: [
-                    '新增测试标准：7 条硬规则 + 生产环境测试三层矩阵 + 发版前 10 条手工验收清单',
-                    '新增门禁 check:test-standard（禁止 .only / 无理由 .skip / 空断言 / 替身不忠实）',
                 ],
             },
         ],

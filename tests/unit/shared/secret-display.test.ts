@@ -83,6 +83,19 @@ describe('describeKeyEncryptionStatus — S-4 决策 B（明文但标注风险�
         expect(status.text).not.toContain('密钥已加密');
     });
 
+    it('已解锁但有条目不匹配：如实提示需要重新填写（2026-11-17）', () => {
+        const status = describeKeyEncryptionStatus({ locked: 0, encrypted: true, legacy: 0, mismatched: 2 });
+        expect(status.plaintext).toBe(false);
+        expect(status.text).toContain('2 项');
+        expect(status.text).toContain('不匹配');
+        expect(status.text).toContain('重新填写');
+    });
+
+    it('无条目不匹配：不出现误报文案', () => {
+        const status = describeKeyEncryptionStatus({ locked: 0, encrypted: true, legacy: 0, mismatched: 0 });
+        expect(status.text).not.toContain('不匹配');
+    });
+
     it('有锁定条目：提示输入口令；legacy 追加升级说明', () => {
         const status = describeKeyEncryptionStatus({ locked: 3, encrypted: true, legacy: 2 });
         expect(status.plaintext).toBe(false);

@@ -86,6 +86,13 @@ export class SettingsService {
      * 并造成「部分加密、部分明文」的混合状态。
      */
     private rawSecrets: Record<string, string> = {};
+    /**
+     * 本次加载时「已有会话口令却解不开」的密钥字段标签。
+     *
+     * 用途：解锁后如实告诉用户哪几项需要重新填写；这些条目通常是历史口令
+     * 遗留的密文，重输同一个口令也永远解不开。
+     */
+    private mismatchSecretLabels: string[] = [];
 
     constructor(deps: SettingsServiceDeps) {
         this.deps = deps;
@@ -117,8 +124,27 @@ export class SettingsService {
     }
 
     /**
+     * 已有会话口令但解不开的密钥条目数（界面提示用）。
+     *
+     * @returns 条目数
+     */
+    mismatchedSecretCount(): number {
+        return this.mismatchSecretLabels.length;
+    }
+
+    /**
+     * 已有会话口令但解不开的密钥字段标签（返回副本，避免外部改写内部状态）。
+     *
+     * @returns 字段标签数组
+     */
+    mismatchedSecretLabels(): string[] {
+        return [...this.mismatchSecretLabels];
+    }
+
+    /**
      * 候选口令能否解开磁盘上已有的 v2 密文（解锁前校验）。
      * 旧实现输入任意口令都提示「已解锁」，真正调用 AI 时才发现解不开。
+     *
      * @param password - 口令
      * @returns 是否成功
      */
@@ -214,20 +240,21 @@ export class SettingsService {
         // 注意：这里不要覆盖 rawSecrets。rawSecrets 记录的是「磁盘上原本是否为密文」，
         // 保存时靠它判断该保留旧密文还是升级加密（v1 无口令也会被自动解出明文，
         // 覆盖成明文会导致下次保存把明文落盘）。「是否已解锁」由 lockedSecretCount 判断。
-        settings.apiKey = await this.deps.crypto.decryptWithoutPrompt(settings.apiKey);
+        this.mismatchSecretLabels = [];
+        settings.apiKey = await this.decryptSecretField('当前供应商密钥', settings.apiKey);
         settings.providerKeys = settings.providerKeys || {};
         for (const [k, v] of Object.entries(settings.providerKeys)) {
             if (typeof v === 'string' && v) {
-                settings.providerKeys[k] = await this.deps.crypto.decryptWithoutPrompt(v);
+                settings.providerKeys[k] = await this.decryptSecretField(`供应商 ${k}`, v);
             }
         }
         // 解密向量模型 API Key
-        settings.vectorOpenaiApiKey = await this.deps.crypto.decryptWithoutPrompt(settings.vectorOpenaiApiKey || '');
-        settings.vectorDoubaoApiKey = await this.deps.crypto.decryptWithoutPrompt(settings.vectorDoubaoApiKey || '');
-        settings.vectorQwenApiKey = await this.deps.crypto.decryptWithoutPrompt(settings.vectorQwenApiKey || '');
-        settings.updateGithubToken = await this.deps.crypto.decryptWithoutPrompt(settings.updateGithubToken || '');
+        settings.vectorOpenaiApiKey = await this.decryptSecretField('向量-OpenAI', settings.vectorOpenaiApiKey || '');
+        settings.vectorDoubaoApiKey = await this.decryptSecretField('向量-豆包', settings.vectorDoubaoApiKey || '');
+        settings.vectorQwenApiKey = await this.decryptSecretField('向量-千问', settings.vectorQwenApiKey || '');
+        settings.updateGithubToken = await this.decryptSecretField('更新令牌', settings.updateGithubToken || '');
         if (settings.canonResearch && settings.canonResearch.apiKey) {
-            settings.canonResearch.apiKey = await this.deps.crypto.decryptWithoutPrompt(settings.canonResearch.apiKey);
+            settings.canonResearch.apiKey = await this.decryptSecretField('同人考据密钥', settings.canonResearch.apiKey);
         }
 
         // 同步自定义提供商模型列表
@@ -287,6 +314,25 @@ export class SettingsService {
             if (typeof v === 'string') out[`providerKeys.${k}`] = v;
         }
         return out;
+    }
+
+    /**
+     * 静默解密单个密钥字段，并记录「有会话口令却解不开」的条目。
+     *
+     * 只有已解锁（有会话口令）时才算不匹配；未解锁时解不开是正常锁定状态，
+     * 由 lockedSecretCount 统计，不能混进「需要重新填写」的提示里。
+     *
+     * @param label - 展示用字段标签
+     * @param stored - 磁盘上的原始值
+     * @returns 解密结果（解不开时原样返回密文）
+     */
+    private async decryptSecretField(label: string, stored: string): Promise<string> {
+        const value = await this.deps.crypto.decryptWithoutPrompt(stored);
+        const stillCipher = !!value && value === stored && value.startsWith('aes256v2:');
+        if (stillCipher && this.deps.crypto.hasSessionPassword()) {
+            this.mismatchSecretLabels.push(label);
+        }
+        return value;
     }
 
     /**

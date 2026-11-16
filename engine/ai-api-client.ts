@@ -486,9 +486,12 @@ export class AIApiClient {
             log.warn('[小说工坊] API 密钥解密失败:', e);
         }
         if (isEncryptedSecret(decrypted)) {
+            // 已解锁却仍解不开：这条密文用了旧口令或已损坏，再输同一口令也没用（2026-11-17）
             return {
                 key: '',
-                error: 'API 密钥未解锁：请在口令框中输入加密口令后重试（若已取消，请重新生成建议）',
+                error: this.plugin.hasSessionPassword?.()
+                    ? 'API 密钥口令不匹配：该密钥由旧口令加密或已损坏，请在设置中重新填写该供应商的密钥'
+                    : 'API 密钥未解锁：请在口令框中输入加密口令后重试（若已取消，请重新生成建议）',
             };
         }
         return { key: decrypted };

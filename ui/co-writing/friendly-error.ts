@@ -19,6 +19,10 @@
  */
 export function getFriendlyErrorMessage(error: string): string {
     const lower = error.toLowerCase();
+    // 已解锁但密文与口令不匹配：重输同一口令无用，只能重新填写密钥（2026-11-17）
+    if (lower.includes('口令不匹配')) {
+        return '密钥与当前口令不匹配：请在设置中重新填写该供应商的密钥';
+    }
     // 必须先于 abort 判断：解锁提示里含有「已取消」，否则会被误判成「生成已取消」
     if (lower.includes('未解锁')) {
         return 'API 密钥未解锁：请输入加密口令后重试';

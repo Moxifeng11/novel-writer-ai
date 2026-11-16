@@ -324,3 +324,54 @@ describe('SettingsService — 解锁后锁定计数归零（单次解锁）', ()
         expect(service.lockedSecretCount()).toBe(1);
     });
 });
+
+// 2026-11-17：用户反馈「解锁成功后又要求再输一遍口令」。
+// 根因在 CryptoService.decryptV2：已解锁状态下单条密文解不开会 clearSessionPassword()
+// 并再弹框（那条密文其实用了旧口令，重输同一口令永远解不开）。
+// SettingsService 侧配套：把「已解锁却仍解不开」的字段记下来，界面如实提示重新填写。
+describe('SettingsService — 已解锁但部分密文不匹配', () => {
+    const CIPHER = 'aes256v2:210000:c2FsdA==:aXY=:Y3Q=';
+
+    let decryptedOnce = false;
+    function harness(decrypt: (v: string) => Promise<string>) {
+        let current: Record<string, unknown> | undefined;
+        const service = new SettingsService({
+            crypto: {
+                decryptWithoutPrompt: decrypt,
+                hasSessionPassword: () => true,
+                encryptStrict: async (v: string) => v,
+            } as never,
+            providerManager: { syncCustomModelsOnRestart: () => undefined, updateModelLimits: () => undefined } as never,
+            cacheManager: null,
+            settingsWriter: { enqueueAutoClean: (op: () => Promise<unknown>) => op() } as never,
+            getSettings: () => current as never,
+            setSettings: (v) => { current = v as unknown as Record<string, unknown>; },
+            loadData: async () => ({ schemaVersion: CURRENT_SCHEMA_VERSION, providerKeys: { volc: CIPHER, deepseek: CIPHER } }),
+            saveData: async () => undefined,
+        });
+        return { service, current: () => current };
+    }
+
+    it('一条解开、一条解不开 → 只记录解不开的那条', async () => {
+        const { service } = harness(async (v) => {
+            // 只把第一条密文解开，其余原样返回（旧口令密文）
+            if (v === CIPHER && !decryptedOnce) {
+                decryptedOnce = true;
+                return 'sk-plain';
+            }
+            return v;
+        });
+
+        await service.loadSettings();
+
+        expect(service.mismatchedSecretCount()).toBe(1);
+        expect(service.mismatchedSecretLabels()[0]).toContain('deepseek');
+    });
+
+    it('全部解开 → 不匹配计数为 0（不应误报）', async () => {
+        const { service } = harness(async () => 'sk-plain');
+        await service.loadSettings();
+        expect(service.mismatchedSecretCount()).toBe(0);
+    });
+});
+

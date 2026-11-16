@@ -89,6 +89,8 @@ export class CryptoService {
     private _askPromise: Promise<string | null> | null = null;
     /** 按 salt 缓存已派生的 v2 密钥，避免同 salt 重复执行 21 万次 PBKDF2 */
     private _derivedKeys = new Map<string, CryptoKey>();
+    /** 与当前会话口令不匹配的密文（旧口令/损坏条目；仅有口令时才会记录） */
+    private _undecryptableSecrets = new Set<string>();
     private readonly deps: CryptoServiceDeps;
     private readonly callbacks: CryptoPasswordCallbacks;
 
@@ -105,12 +107,14 @@ export class CryptoService {
     setSessionPassword(password: string): void {
         this._password = password;
         this._derivedKeys.clear();
+        this._undecryptableSecrets.clear();
     }
 
     /** 清除会话口令与派生缓存（锁定效果：下次解密需重新输入） */
     clearSessionPassword(): void {
         this._password = null;
         this._derivedKeys.clear();
+        this._undecryptableSecrets.clear();
     }
 
     /**
@@ -120,6 +124,18 @@ export class CryptoService {
      */
     hasSessionPassword(): boolean {
         return this._password != null;
+    }
+
+    /**
+     * 与当前会话口令不匹配、当前无法解密的密文条数。
+     *
+     * 用途：解锁后仍有条目解不开时，界面要如实提示「需要重新填写」，
+     * 而不是笼统显示「已解锁」。
+     *
+     * @returns 数值结果
+     */
+    getUndecryptableSecretCount(): number {
+        return this._undecryptableSecrets.size;
     }
 
     // ─── v1（旧 seed 派生，仅保留兼容读取） ───
@@ -374,7 +390,17 @@ export class CryptoService {
         return this.decrypt(stored);
     }
 
-    /** v2 解密：口令错误时清除会话口令并重问一次，仍失败则原样返回 */
+    /**
+     * v2 解密。
+     *
+     * - 无会话口令：询问口令（最多两次，第一次多半是输错）后解密。
+     * - 已有会话口令（本次已解锁）：失败只说明**这一条**用的是旧口令或密文损坏，
+     *   记入不匹配集合后原样返回；绝不清掉会话口令、也不再弹口令框。
+     *
+     * 历史 bug（用户实测「解锁成功后又被要求输一遍」）：此前无论是否有会话口令，
+     * 单条 GCM 校验失败都会 `clearSessionPassword()` 并重问，于是一条旧口令密文
+     * 就能让整场解锁作废、口令框反复弹出——而且再输同样的口令永远解不开那一条。
+     */
     private async decryptV2(stored: string): Promise<string> {
         const parts = stored.slice(V2_PREFIX.length).split(':');
         if (parts.length !== 4) return stored;
@@ -386,7 +412,9 @@ export class CryptoService {
             return stored;
         }
 
-        for (let attempt = 0; attempt < 2; attempt++) {
+        const hadSessionPassword = this.hasSessionPassword();
+        const attempts = hadSessionPassword ? 1 : 2;
+        for (let attempt = 0; attempt < attempts; attempt++) {
             const password = await this.ensurePassword(false);
             if (!password) {
                 new Notice('小说工坊：已加密的密钥需要口令才能读取');
@@ -399,10 +427,16 @@ export class CryptoService {
                 const plaintext = await crypto.subtle.decrypt(
                     { name: 'AES-GCM', iv }, key, ciphertextWithTag
                 );
+                this._undecryptableSecrets.delete(stored);
                 return new TextDecoder().decode(plaintext);
             } catch (e) {
-                // 口令错误（GCM 校验失败）：清除会话口令与派生缓存后重问
                 log.warn(`[小说工坊] v2 解密失败（第 ${attempt + 1} 次）:`, e);
+                if (hadSessionPassword) {
+                    // 会话口令已通过既有密文校验：这条解不开是数据问题，不是口令问题
+                    this._undecryptableSecrets.add(stored);
+                    return stored;
+                }
+                // 口令是本次刚问的：可能输错，清掉会话口令后重问一次
                 this.clearSessionPassword();
             }
         }

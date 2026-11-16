@@ -6,23 +6,23 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 354 | 146799 | 1951 | 1545 | 79% |
+| `engine/` | 354 | 146802 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19405 | 295 | 203 | 69% |
-| `shared/` | 255 | 50850 | 2149 | 1680 | 78% |
-| `core/` | 7 | 3307 | 35 | 20 | 57% |
+| `shared/` | 255 | 50822 | 2149 | 1680 | 78% |
+| `core/` | 7 | 3387 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 300 | 113682 | 1155 | 917 | 79% |
+| `ui/` | 300 | 113697 | 1155 | 917 | 79% |
 
 ## 文件清单
 
 | 文件 | 行数 | 导出 | 有 JSDoc |
 |---|---:|---:|---:|
 | `core/command-registry.ts` | 817 | 9 | 5 |
-| `core/crypto-service.ts` | 413 | 5 | 3 |
+| `core/crypto-service.ts` | 447 | 5 | 3 |
 | `core/example-project-service.ts` | 331 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 800 | 4 | 2 |
-| `core/settings-service.ts` | 597 | 5 | 4 |
+| `core/settings-service.ts` | 643 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
@@ -70,7 +70,7 @@
 | `engine/agent/harness/tool-registry.ts` | 307 | 5 | 2 |
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
 | `engine/ai-api-client-shared.ts` | 86 | 6 | 5 |
-| `engine/ai-api-client.ts` | 1071 | 2 | 2 |
+| `engine/ai-api-client.ts` | 1074 | 2 | 2 |
 | `engine/ai-api-stream.ts` | 1034 | 3 | 2 |
 | `engine/ai-batch-entity-generator.ts` | 578 | 1 | 1 |
 | `engine/ai-chapter-helpers.ts` | 339 | 1 | 1 |
@@ -474,7 +474,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 375 | 21 | 20 |
-| `shared/changelog-data.ts` | 339 | 3 | 3 |
+| `shared/changelog-data.ts` | 305 | 3 | 3 |
 | `shared/chapter-progress.ts` | 142 | 7 | 6 |
 | `shared/chapter-ref.ts` | 205 | 7 | 5 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
@@ -643,7 +643,7 @@
 | `shared/scene-body-merge.ts` | 24 | 2 | 2 |
 | `shared/scene-card.ts` | 242 | 9 | 8 |
 | `shared/scene-context-prompt.ts` | 100 | 3 | 2 |
-| `shared/secret-display.ts` | 144 | 8 | 5 |
+| `shared/secret-display.ts` | 150 | 8 | 5 |
 | `shared/secret-redaction.ts` | 156 | 6 | 5 |
 | `shared/secret-value.ts` | 31 | 2 | 2 |
 | `shared/semantic-keywords.ts` | 124 | 11 | 3 |
@@ -748,7 +748,7 @@
 | `ui/co-writing/editor-display.ts` | 127 | 10 | 6 |
 | `ui/co-writing/editor-shortcuts.ts` | 87 | 4 | 2 |
 | `ui/co-writing/find-replace.ts` | 269 | 11 | 6 |
-| `ui/co-writing/friendly-error.ts` | 46 | 1 | 1 |
+| `ui/co-writing/friendly-error.ts` | 50 | 1 | 1 |
 | `ui/co-writing/ghost-association.ts` | 92 | 4 | 2 |
 | `ui/co-writing/human-rate.ts` | 125 | 3 | 2 |
 | `ui/co-writing/kb-panel.ts` | 386 | 12 | 11 |
@@ -939,7 +939,7 @@
 | `ui/settings-tab.ts` | 372 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 39 | 1 | 1 |
-| `ui/settings/api-section.ts` | 1663 | 1 | 1 |
+| `ui/settings/api-section.ts` | 1674 | 1 | 1 |
 | `ui/settings/deconstruction-section.ts` | 335 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 441 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 293 | 1 | 1 |
