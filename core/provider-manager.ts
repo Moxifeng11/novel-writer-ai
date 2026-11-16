@@ -74,12 +74,16 @@ export interface ProviderManagerCallbacks {
  * @returns 文本结果
  */
 export function normalizeEndpointKey(endpoint?: string): string {
-    return String(endpoint || '')
-        .trim()
-        .toLowerCase()
-        .replace(/\/+$/, '')
-        .replace(/\/(chat\/completions|completions|v1)$/, '')
-        .replace(/\/+$/, '');
+    let out = String(endpoint || '').trim().toLowerCase().replace(/\/+$/, '');
+    // 循环剥离：`…/v1/chat/completions` 要连剥两层才能和 `…com` 对齐。
+    // 旧实现只剥一次，结果 `…/v1` 与 `…com` 归一化不相等，
+    // 于是历史覆盖（存在完整地址 key 下）读不到 → 「手动覆盖填了不生效」。
+    for (let guard = 0; guard < 4; guard += 1) {
+        const next = out.replace(/\/(chat\/completions|completions|v1)$/, '').replace(/\/+$/, '');
+        if (next === out || !next) break;
+        out = next;
+    }
+    return out;
 }
 
 /**
@@ -97,13 +101,35 @@ function findOverrideByEndpoint(
     normalized: string,
     modelName: string,
 ): { maxContext?: number; maxOutput?: number } | undefined {
+    return resolveOverrideEntry(overrides, endpointKey, normalized, modelName)?.entry;
+}
+
+/**
+ * 找到覆盖条目所在的真实 key。
+ *
+ * 同一个渠道可能因为历史写法不同而存在两条 key（`https://a.com` 与
+ * `https://a.com/v1/chat/completions`）。读要按归一化匹配，但**写必须落在同一条 key 上**，
+ * 否则会新增第二条覆盖、读到时仍然命中旧值 —— 表现为「手动覆盖填了不生效」。
+ *
+ * @param overrides - 覆盖表
+ * @param endpointKey - 精确端点键
+ * @param normalized - 归一化端点键
+ * @param modelName - 模型名
+ * @returns 命中的条目与其 key；未命中返回 undefined
+ */
+export function resolveOverrideEntry(
+    overrides: Record<string, Record<string, { maxContext?: number; maxOutput?: number }>> | undefined,
+    endpointKey: string,
+    normalized: string,
+    modelName: string,
+): { key: string; entry: { maxContext?: number; maxOutput?: number } } | undefined {
     if (!overrides) return undefined;
     const exact = overrides[endpointKey]?.[modelName];
-    if (exact) return exact;
+    if (exact) return { key: endpointKey, entry: exact };
     for (const [key, models] of Object.entries(overrides)) {
         if (normalizeEndpointKey(key) !== normalized) continue;
         const hit = models?.[modelName];
-        if (hit) return hit;
+        if (hit) return { key, entry: hit };
     }
     return undefined;
 }
@@ -283,11 +309,15 @@ export class ProviderManager {
         const provider = (s.customProviders || []).find(p => p.id === providerId);
         const endpoint = provider?.endpoint || s.apiEndpoint;
         const overrides = s.modelOverrides;
-        if (!overrides[endpoint]) overrides[endpoint] = {};
-        if (!overrides[endpoint][model]) overrides[endpoint][model] = {};
-        const oldValue = overrides[endpoint][model][field] ?? this.resolveModelLimits(model, endpoint)[field];
+        // 写回「已存在的那条 key」：历史配置里同一端点的覆盖键可能是完整地址，
+        // 直接按 provider.endpoint 新建 key 会读不到（运行时优先命中旧 key）。
+        const existing = resolveOverrideEntry(overrides, endpoint, normalizeEndpointKey(endpoint), model);
+        const targetKey = existing?.key ?? endpoint;
+        if (!overrides[targetKey]) overrides[targetKey] = {};
+        if (!overrides[targetKey][model]) overrides[targetKey][model] = {};
+        const oldValue = overrides[targetKey][model][field] ?? this.resolveModelLimits(model, endpoint)[field];
         if (oldValue === newValue) return;
-        overrides[endpoint][model][field] = newValue;
+        overrides[targetKey][model][field] = newValue;
         // 不再同步改写全局 maxContext/maxOutput：全局值只作为旧版兼容默认，
         // 真正的预算由任务级解析读取 modelOverrides。
         const entry = {
@@ -317,14 +347,33 @@ export class ProviderManager {
         const s = this.cb.getSettings();
         const provider = (s.customProviders || []).find(p => p.id === providerId);
         const endpoint = provider?.endpoint || s.apiEndpoint;
-        const entry = s.modelOverrides?.[endpoint]?.[model];
-        if (!entry || entry[field] === undefined) return;
-        delete entry[field];
-        if (Object.keys(entry).length === 0) delete s.modelOverrides[endpoint][model];
-        if (s.modelOverrides[endpoint] && Object.keys(s.modelOverrides[endpoint]).length === 0) {
-            delete s.modelOverrides[endpoint];
+        const existing = resolveOverrideEntry(s.modelOverrides, endpoint, normalizeEndpointKey(endpoint), model);
+        if (!existing || existing.entry[field] === undefined) return;
+        delete existing.entry[field];
+        if (Object.keys(existing.entry).length === 0) delete s.modelOverrides[existing.key][model];
+        if (s.modelOverrides[existing.key] && Object.keys(s.modelOverrides[existing.key]).length === 0) {
+            delete s.modelOverrides[existing.key];
         }
         this.scheduleSave();
+    }
+
+    /**
+     * 读取某个渠道/模型当前生效的覆盖值（UI 展示用，与运行时同源）。
+     *
+     * @param providerId - 渠道 id
+     * @param model - 模型 id
+     * @returns 覆盖值与所在 key；未命中返回 undefined
+     */
+    getModelOverride(
+        providerId: string,
+        model: string,
+    ): { key: string; maxContext?: number; maxOutput?: number } | undefined {
+        const s = this.cb.getSettings();
+        const provider = (s.customProviders || []).find(p => p.id === providerId);
+        const endpoint = provider?.endpoint || s.apiEndpoint;
+        const hit = resolveOverrideEntry(s.modelOverrides, endpoint, normalizeEndpointKey(endpoint), model);
+        if (!hit) return undefined;
+        return { key: hit.key, maxContext: hit.entry.maxContext, maxOutput: hit.entry.maxOutput };
     }
 
     /**

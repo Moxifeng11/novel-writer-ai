@@ -1091,7 +1091,9 @@ export class ApiSection extends SettingsSection {
 
             const currentModel = assignment.defaultModel;
             const rawProvider = this.getRawProvider(provider.id);
-            const override = this.plugin.settings.modelOverrides[provider.endpoint]?.[currentModel];
+            // 用 ProviderManager 的统一查询：历史配置的覆盖 key 可能是完整地址，
+            // 直接按 provider.endpoint 索引会读不到（表现为「手动覆盖填了不生效」）
+            const override = this.plugin.getProviderModelOverride(provider.id, currentModel);
             const defaults = this.plugin.resolveModelLimits(currentModel, provider.endpoint);
             const detected = getDetectedModelCapability(currentModel) !== null;
 

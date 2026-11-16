@@ -67,6 +67,10 @@ function makeHost(options: {
         setProviderAssignment: vi.fn(),
         getProviderThinking: () => ({}),
         setProviderThinking: vi.fn(),
+        // 2026-11-16（M-42）：覆盖值读取改走 ProviderManager，mock 需要同源返回值
+        getProviderModelOverride: () => undefined,
+        setProviderModelOverride: vi.fn(),
+        clearProviderModelOverride: vi.fn(),
         loadSettings: vi.fn(async () => {}),
         verifySettingsPassword: vi.fn(async () => true),
         getSettingsService: undefined,

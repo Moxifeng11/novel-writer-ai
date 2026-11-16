@@ -2658,6 +2658,16 @@ export default class NovelWriterPlugin extends Plugin {
     public clearProviderModelOverride(providerId: string, model: string, field: 'maxContext' | 'maxOutput'): void {
         this._providerManager.clearModelOverride(providerId, model, field);
     }
+    /**
+     * 读取指定渠道/模型的覆盖值（与运行时同源，避免 UI 与请求读不同 key）。
+     *
+     * @param providerId - 渠道 id
+     * @param model - 模型 id
+     * @returns 覆盖值与所在端点 key；未命中 undefined
+     */
+    public getProviderModelOverride(providerId: string, model: string) {
+        return this._providerManager.getModelOverride(providerId, model);
+    }
     public addCustomProvider(name: string, endpoint: string, models: string[], maxContext: number, maxOutput: number, apiKey: string, apiFormat?: CustomProvider['apiFormat']): string | null {
         return this._providerManager.addCustom(name, endpoint, models, maxContext, maxOutput, apiKey, apiFormat);
     }

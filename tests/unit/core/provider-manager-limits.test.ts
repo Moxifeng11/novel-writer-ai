@@ -184,4 +184,43 @@ describe('ProviderManager — 模型能力优先级', () => {
         const provider = settings.customProviders[0] as { requestUrlOverride?: string };
         expect(provider.requestUrlOverride).toBeUndefined();
     });
+
+    // 2026-11-16（验收异常）：历史覆盖键是完整地址（…/v1/chat/completions），
+    // 而渠道 endpoint 改成了站点根（…com）。旧实现按 endpoint 新建第二条 key，
+    // 运行时优先命中旧 key → 「手动覆盖填了不生效」。
+    it('覆盖写入落在已存在的历史 key 上，并立即生效', () => {
+        vi.useFakeTimers();
+        const endpoint = 'https://api.deepseek.com';
+        const legacyKey = 'https://api.deepseek.com/v1/chat/completions';
+        const settings = makeSettings({
+            apiEndpoint: endpoint,
+            availableModels: ['deepseek-flash'],
+            defaultModel: 'deepseek-flash',
+            customProviders: [{
+                id: 'deepseek',
+                name: 'DeepSeek 官网',
+                endpoint,
+                models: ['deepseek-flash'],
+                maxContext: 1048576,
+                maxOutput: 131072,
+                sourceType: 'cloud',
+                isDefault: true,
+            }],
+            modelOverrides: { [legacyKey]: { 'deepseek-flash': { maxContext: 1048576 } } },
+        });
+        const manager = makeManager(settings);
+
+        // 读取能跨写法命中历史覆盖
+        const read = manager.getModelOverride('deepseek', 'deepseek-flash');
+        expect(read?.key).toBe(legacyKey);
+        expect(read?.maxContext).toBe(1048576);
+
+        manager.setModelOverride('deepseek', 'deepseek-flash', 'maxContext', 777777);
+        // 不新增第二条 key
+        expect(Object.keys(settings.modelOverrides)).toEqual([legacyKey]);
+        expect(manager.resolveModelLimits('deepseek-flash', endpoint).maxContext).toBe(777777);
+
+        manager.clearModelOverride('deepseek', 'deepseek-flash', 'maxContext');
+        expect(manager.getModelOverride('deepseek', 'deepseek-flash')?.maxContext).toBeUndefined();
+    });
 });

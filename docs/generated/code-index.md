@@ -9,9 +9,9 @@
 | `engine/` | 354 | 146799 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19405 | 295 | 203 | 69% |
 | `shared/` | 253 | 50695 | 2144 | 1677 | 78% |
-| `core/` | 7 | 3273 | 35 | 20 | 57% |
+| `core/` | 7 | 3322 | 36 | 21 | 58% |
 | `domains/` | 15 | 1512 | 85 | 55 | 65% |
-| `ui/` | 284 | 109591 | 1054 | 853 | 81% |
+| `ui/` | 284 | 109593 | 1054 | 853 | 81% |
 
 ## 文件清单
 
@@ -21,7 +21,7 @@
 | `core/crypto-service.ts` | 413 | 5 | 3 |
 | `core/example-project-service.ts` | 331 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
-| `core/provider-manager.ts` | 766 | 4 | 2 |
+| `core/provider-manager.ts` | 815 | 5 | 3 |
 | `core/settings-service.ts` | 597 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
@@ -922,7 +922,7 @@
 | `ui/settings-tab.ts` | 405 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 39 | 1 | 1 |
-| `ui/settings/api-section.ts` | 1633 | 1 | 1 |
+| `ui/settings/api-section.ts` | 1635 | 1 | 1 |
 | `ui/settings/deconstruction-section.ts` | 332 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 391 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 290 | 1 | 1 |
