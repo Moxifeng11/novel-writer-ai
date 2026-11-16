@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-16T14:54:09.214Z",
-  "note": "知识库视觉重构 Slice B：工具栏/列表/卡片语义类替换工具类（+3.4KB、27 类）",
-  "bytes": 602332,
+  "generatedAt": "2026-11-16T15:11:35.943Z",
+  "note": "知识库视觉重构 Slice C：详情公共构件与概览页（+3.0KB、18 类）",
+  "bytes": 605471,
   "important": 24,
   "hardcodedHex": 164,
   "rgbHsl": 184,
-  "uniqueClasses": 3168,
+  "uniqueClasses": 3189,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

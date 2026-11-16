@@ -1,6 +1,6 @@
 # 知识库 / 设定（视觉重构）
 
-> 模块页（Module Page）。状态：**doing（视觉重构 Slice A+B 完成 2026-11-16）**
+> 模块页（Module Page）。状态：**doing（视觉重构 Slice A+B+C 完成 2026-11-16）**
 > 规范：[视觉重构规范](../design/2026-11-16-visual-refactor-standard.md)
 > 基线：[`docs/quality/visual-baseline/kb-books.json`](../quality/visual-baseline/kb-books.json)
 
@@ -106,13 +106,46 @@
   去掉内联样式后外观退回默认输入框 → 改为 `input.nw-kb-search-input` 并复现原取值。
 - 质量分颜色一度被改成 `--nw-warning`（#f59e0b），与原 `--text-warning` 不一致 → 已回退。
 
+## 3.6 Slice C：书籍详情公共构件与概览页（2026-11-16 完成）
+
+**改动**
+
+- 公共构件（**所有页签共用**）：
+  `createDetailSection` → `nw-kb-detail-section` / `-section-title`；
+  `addInfoItem` → `nw-kb-detail-info-item/_label/_value`；
+  `renderDetailEmpty` 走 `createEmptyState`（不变）。
+- 概览页：信息网格 `nw-kb-detail-info-grid`、简介 `nw-kb-detail-synopsis`、
+  维度网格 `nw-kb-detail-dim-grid`、维度卡片 `nw-kb-detail-dim` + `--done/--active/--pending` 修饰类；
+  拆解进度块 `nw-kb-detail-progress*`，进度宽度走 CSS 变量。
+
+**防倒退验证（这次是真正的 before/after）**
+
+第一次采集时详情页没渲染（fixture 假书走不到详情），diff 显示 0 差异但**没有覆盖到详情**。
+改用「打开项目内真实文件 → 让管理器识别项目 → addBook 真书 → 点卡片」后，详情页渲染出
+3 个分区 / 6 个信息项 / 6 个维度卡，再重做 before/after：
+
+| 判据 | 结果 |
+| --- | --- |
+| R1 结构 | **0 差异** |
+| R2 几何 | 63 处，全部是**信息项 label 字号变化导致的高度收缩**（−5px/项、−10px/分区） |
+| R3 样式 | 24 处，全部是同一原因（fs 15→11、lh 19.5→14.3、color normal→muted） |
+| 其他 | 维度卡配色、网格列数、简介限高 **均无变化** |
+
+有意改动：label 原来挂死类 `nw-text-muted-11`（从未定义，实际继承 15px 正文色），
+按设计意图改为 11px 弱化色。基线 `docs/quality/visual-baseline/kb-detail.json` 已记录原因。
+
+**经验教训（已写进规范使用方式）**
+
+视觉基线只能证明「拍到的页面」没变。如果目标区块没渲染出来，0 差异是假绿。
+后续每个 slice 采集前必须先确认「目标元素数量 > 0」（本次用 `sections/infoItems/dims` 三项自检）。
+
 ## 4. 后续 slice 清单
 
 | # | Slice | 文件 | 目标 |
 | --- | --- | --- | --- |
 | ~~B~~ | ~~书籍工具栏与卡片~~ | ~~已完成 2026-11-16~~ | ~~工具类 39 → 0~~ |
-| C | 详情外壳与概览区 | `book-detail-renderer.ts` 前 1/3 | `nw-kb-detail-*` |
-| D | 详情：角色/文风/情感区 | 同上 | 同上 |
+| ~~C~~ | ~~详情公共构件 + 概览页~~ | ~~已完成 2026-11-16~~ | ~~详情主战场第一刀~~ |
+| D | 详情：角色/文风/情感区 | 同上 | `nw-kb-detail-*` |
 | E | 详情：伏笔/商业/易读性区 | 同上 | 同上 |
 | F | 题材/配置页 | `knowledge-base-view.ts` 后段 | `nw-kb-config-*` |
 | G | 弹窗（需人工视觉验收） | `knowledge-detail-modal.ts` / `knowledge-base-modals.ts` | `nw-kb-modal-*` |

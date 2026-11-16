@@ -705,9 +705,7 @@ export class BookDetailRenderer {
      */
     public renderBookOverviewTab(container: HTMLElement, book: BookBasicInfo): void {
         const infoSection = this.createDetailSection(container, '基本信息');
-        const infoGrid = infoSection.createDiv({
-            cls: 'nw-u-d-grid nw-u-grid-auto-fit-200 nw-u-gap-12px'
-        });
+        const infoGrid = infoSection.createDiv({ cls: 'nw-kb-detail-info-grid' });
         this.addInfoItem(infoGrid, '书名', book.name);
         this.addInfoItem(infoGrid, '作者', book.author || '未知');
         this.addInfoItem(infoGrid, '字数', this.deps.formatWordCount(book.wordCount));
@@ -718,10 +716,7 @@ export class BookDetailRenderer {
         if (book.synopsis) {
             const synopsisSection = this.createDetailSection(container, '简介');
             // 简介可能上千字，直接整段渲染会把概览页拉成数千行；限高滚动保留全文
-            synopsisSection.createDiv({
-                text: book.synopsis,
-                cls: 'nw-u-fs-13px nw-u-lh-1-6 nw-u-c-text-normal nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-maxh-400px nw-u-ovy-auto'
-            });
+            synopsisSection.createDiv({ text: book.synopsis, cls: 'nw-kb-detail-synopsis' });
         }
 
         const genreSection = this.createDetailSection(container, '题材分类');
@@ -741,41 +736,29 @@ export class BookDetailRenderer {
             const emitterState = emitter?.getState();
 
             if (emitterState) {
-                const progressHeader = dimSection.createDiv({
-                    cls: 'nw-u-marginbottom-12px'
-                });
+                const progressHeader = dimSection.createDiv({ cls: 'nw-kb-detail-progress' });
 
-                const progressInfo = progressHeader.createDiv({
-                    cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center nw-u-marginbottom-6px'
-                });
+                const progressInfo = progressHeader.createDiv({ cls: 'nw-kb-detail-progress-head' });
                 progressInfo.createSpan({
                     text: `拆解进度：${Math.round(emitterState.progress)}%`,
-                    cls: 'nw-u-fs-13px nw-u-fwt-500 nw-u-c-text-normal'
+                    cls: 'nw-kb-detail-progress-value',
                 });
                 if (emitterState.currentStep) {
                     progressInfo.createSpan({
                         text: `📍 ${emitterState.currentStep}`,
-                        cls: 'nw-u-fs-12px nw-u-c-accent nw-u-fwt-500'
+                        cls: 'nw-kb-detail-progress-step',
                     });
                 }
 
-                const progressBarWrap = progressHeader.createDiv({
-                    cls: 'nw-u-h-8px nw-u-bg-background-secondary nw-u-brd-4px nw-u-ov-hidden nw-u-marginbottom-8px'
-                });
-                progressBarWrap.createDiv({
-                    attr: { style: `height:100%;width:${emitterState.progress}%;background:var(--interactive-accent);transition:width 0.3s;` }
-                });
+                const progressBarWrap = progressHeader.createDiv({ cls: 'nw-kb-detail-progress-track' });
+                const progressFill = progressBarWrap.createDiv({ cls: 'nw-kb-detail-progress-fill' });
+                progressFill.style.setProperty('--nw-progress', `${emitterState.progress}%`);
 
                 if (emitterState.message) {
-                    progressHeader.createDiv({
-                        text: emitterState.message,
-                        cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-8px'
-                    });
+                    progressHeader.createDiv({ text: emitterState.message, cls: 'nw-kb-detail-progress-message' });
                 }
 
-                const timeInfo = progressHeader.createDiv({
-                    cls: 'nw-u-d-flex nw-u-gap-20px nw-u-fs-12px nw-u-c-text-muted'
-                });
+                const timeInfo = progressHeader.createDiv({ cls: 'nw-kb-detail-progress-time' });
                 if (emitterState.elapsed !== undefined) {
                     timeInfo.createSpan({ text: `⏱️ 已用：${this.deps.formatDuration(emitterState.elapsed)}` });
                 }
@@ -785,9 +768,7 @@ export class BookDetailRenderer {
             }
         }
 
-        const dimGrid = dimSection.createDiv({
-            cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-4 nw-u-gap-8px'
-        });
+        const dimGrid = dimSection.createDiv({ cls: 'nw-kb-detail-dim-grid' });
         const dimensions: { key: BreakdownDimension; label: string; data: unknown }[] = [
             { key: 'style', label: '风格分析', data: this.deps.getStyleData() },
             { key: 'rhythm', label: '节奏分析', data: this.deps.getRhythmData() },
@@ -805,50 +786,25 @@ export class BookDetailRenderer {
 
         dimensions.forEach(dim => {
             const isCurrentStep = currentStepName === this.deps.getDimensionLabels()[dim.key as BreakdownDimension];
-            const item = dimGrid.createDiv({
-                attr: {
-                    style: `padding:12px;border-radius:6px;text-align:center;${
-                        dim.data
-                            ? 'background:rgba(46,204,113,0.1);'
-                            : isCurrentStep
-                                ? 'background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);'
-                                : 'background:var(--background-secondary);'
-                    }`
-                }
-            });
+            // 三态：已完成 / 进行中 / 未开始 —— 状态走修饰类，不再拼内联样式
+            const state = dim.data ? 'done' : isCurrentStep ? 'active' : 'pending';
+            const item = dimGrid.createDiv({ cls: `nw-kb-detail-dim nw-kb-detail-dim--${state}` });
             item.createDiv({
                 text: dim.data ? '✓' : isCurrentStep ? '⏳' : '○',
-                attr: {
-                    style: `font-size:20px;margin-bottom:4px;${
-                        dim.data
-                            ? 'color:#2ecc71;'
-                            : isCurrentStep
-                                ? 'color:#3b82f6;'
-                                : 'color:var(--text-muted);'
-                    }`
-                }
+                cls: 'nw-kb-detail-dim-icon',
             });
-            item.createDiv({
-                text: dim.label,
-                attr: {
-                    style: `font-size:12px;${
-                        dim.data
-                            ? 'color:var(--text-normal);'
-                            : isCurrentStep
-                                ? 'color:#3b82f6;font-weight:500;'
-                                : 'color:var(--text-muted);'
-                    }`
-                }
-            });
+            item.createDiv({ text: dim.label, cls: 'nw-kb-detail-dim-label' });
         });
     }
 
+    /**
+     * 详情页分区容器（所有页签共用）。
+     *
+     * 2026-11-16 视觉重构：语义类 nw-kb-detail-section / -title，样式见 27-knowledge-base.css。
+     */
     private createDetailSection(container: HTMLElement, title: string): HTMLElement {
-        const section = container.createDiv({ cls: 'nw-u-marginbottom-24px' });
-        section.createEl('h3', {
-            text: title,
-            cls: 'nw-u-m-0-0-12px-0 nw-u-fs-15px nw-u-fwt-600'
-        });
+        const section = container.createDiv({ cls: 'nw-kb-detail-section' });
+        section.createEl('h3', { text: title, cls: 'nw-kb-detail-section-title' });
         return section;
     }
 
@@ -860,12 +816,16 @@ export class BookDetailRenderer {
         }
     }
 
+    /**
+     * 信息项（label + value），所有页签共用。
+     *
+     * 2026-11-16 视觉重构：语义类 nw-kb-detail-info-item / -label / -value。
+     * 说明：原 label 挂的 nw-text-muted-11 从未定义（死类），本次按设计意图补上 11px 弱化色。
+     */
     private addInfoItem(container: HTMLElement, label: string, value: string): void {
-        const item = container.createDiv({
-            cls: 'nw-u-p-10px-12px nw-u-bg-background-secondary nw-u-brd-6px'
-        });
-        item.createDiv({ text: label, cls: "nw-text-muted-11 nw-u-marginbottom-4px", attr: {} });
-        item.createDiv({ text: value, cls: 'nw-u-fs-13px nw-u-c-text-normal nw-u-fwt-500' });
+        const item = container.createDiv({ cls: 'nw-kb-detail-info-item' });
+        item.createDiv({ text: label, cls: 'nw-kb-detail-info-label' });
+        item.createDiv({ text: value, cls: 'nw-kb-detail-info-value' });
     }
 
     private renderGenreInfo(container: HTMLElement, book: BookBasicInfo): void {

@@ -598,4 +598,20 @@ CSS −5.4KB，唯一类 −141；preflight EXIT=0。
 首轮抓到 2 处真实倒退（误加 overflow:hidden、按钮选择器特异性不足）并修复——证明门禁有效。
 
 后续 slice 清单见 docs/modules/knowledge-base.md §4（工具栏/卡片、详情三区、配置页、弹窗）。
+### 2026-11-16 第二十三轮：视觉重构 Slice B（c56821f5）
+
+知识库书架工具栏 + 列表 + 书籍卡片语义化：
+- 工具栏/列表/卡片全部换成 nw-kb-* 语义类；卡片状态色改修饰类、进度改 CSS 变量。
+- kb-book-card.ts 工具类 39 → 0、内联样式 4 → 0。
+- 清掉 6 个从未定义的类（nw-kb-book-card / nw-kb-book-grid / nw-kb-toolbar /
+  nw-kb-select / nw-hover-border / nw-text-muted-11 / nw-flex-shrink-0）。
+
+防倒退：R1 结构 0 差异；R2/R3 共 44 处均为有意改动（列表 flex、
+日期/进度标签接上设计意图、状态色改项目 token），已写入基线 acceptedDiffs。
+门禁又抓到 1 处真回归（搜索框特异性不足退回默认外观）并修复。
+
+工具链增强：check-visual-diff 支持 --accept/--note 留痕；
+FakeEl.style 支持 setProperty（组件可用 CSS 变量而非 setAttribute('style')）。
+
+下一轮：Slice C 书籍详情概览区（book-detail-renderer.ts，914 处工具类是主战场）。
 

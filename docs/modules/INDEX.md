@@ -9,7 +9,7 @@
 | 桌宠 | `ui/writing-pet.ts`、`shared/pet-image-store.ts` | `petImage`、`pet-image.png/json` | stable | 无（已验收） | [pet.md](pet.md) |
 | 写作工作台首页 | `ui/full-writer/project-selector-controller.ts`、`ui/full-writer/recent-projects.ts`、`ui/full-writer/next-step.ts`、`ui/home-view.ts` | `projectLastOpened` | stable（验收通过 2026-11-16） | 最近排序 / 下一步推演 / 主操作卡 / 旧版工具与卡片动作收纳 | [workbench-home.md](workbench-home.md) |
 | 规划 / 大纲 | `ui/views/planning-canvas-view.ts`、`ui/planning/*`、`ui/chapter-outline-tree-modal.ts`、`ui/plan-book-modal.ts`、`ui/full-writer/scene-outline-controller.ts`、`engine/outline-*`、`domains/planning/model.ts` | 分卷大纲 md、`04-项目总控/规划/画布.json`、章节 Scene 字段 | review（P0+P1+顺延完成 2026-11-16） | 画布撤销/搜索/缩放/键盘/事件↔章节双向链接/场景跨章复制/树↔画布桥接/扩写逐段采用/参数记忆/内联样式收敛 | [planning.md](planning.md) |
-| 设定 / 人物卡（含知识库） | `ui/views/knowledge-base-view.ts`、`ui/views/book-detail-renderer.ts`、`ui/knowledge-*modal*.ts`、`styles-src/27-knowledge-base.css` | 知识库 json、书籍拆解数据 | doing（视觉重构 Slice A+B 完成 2026-11-16） | 书架外壳/工具栏/卡片已语义化；后续：详情各分区、弹窗 | [knowledge-base.md](knowledge-base.md) |
+| 设定 / 人物卡（含知识库） | `ui/views/knowledge-base-view.ts`、`ui/views/book-detail-renderer.ts`、`ui/knowledge-*modal*.ts`、`styles-src/27-knowledge-base.css` | 知识库 json、书籍拆解数据 | doing（视觉重构 Slice A+B+C 完成 2026-11-16） | 书架外壳/工具栏/卡片/详情公共构件与概览页已语义化；后续：详情其余分区、弹窗 | [knowledge-base.md](knowledge-base.md) |
 | 正文编辑器 / 协同写作 | `ui/co-writing-view.ts`、`ui/co-writing/*`、`engine/co-writer*` | 章节、协同配置、`coWrite*` 设置 | stable（2026-11-16 全量自检通过） | 查找替换/章节流转/字数目标/撤销重做/建议 diff/字号行距/专注/高亮/光标/简报入口；11 项真实缺陷已修 | [co-writing.md](co-writing.md) |
 | 质量闭环 / 审稿 | `ui/quality-loop-modal.ts`、`engine/quality-*` | 质量报告、修订记录 | todo | 闭环入口、报告可读性、一键修复 | — |
 | 统计 / 进度 | `ui/writing-stats*`、`engine/writing-stats*` | 字数、进度、目标 | todo | 图表可读性、目标设置 | — |
