@@ -673,5 +673,35 @@ book-detail-renderer.ts 工具类 866 → 126、内联样式 28 → 3；
 在 vault 里造样本书会写进真实数据；且该 vault 没有已拆解的书可渲染八个页签。
 已登记补做项：开发 vault 运行期数据解耦 + 已拆解样本书。
 
-下一轮候选：Slice F 题材/配置页；Slice G 弹窗（需人工视觉验收）；开发 vault 数据解耦。
+### 2026-11-17 第二十八轮：开发 vault 运行期数据解耦（E-补-A）＋插件目录清理
+
+用户要求先把 E-补 的数据解耦做掉，并清理插件目录里过时/多余的文件。
+
+**根因**：开发 vault 的插件目录是 junction（指回本仓），因而
+`<vault>/.obsidian/plugins/novel-writer-ai/data.json` 就是本仓的 `data.json`——
+两个 vault 共用同一份设置与 `data/`，造样本书会写进真实设置，测试残留也留在写作侧。
+
+**做法**：插件目录改为**真实目录 + 产物单向同步**（`scripts/dev-vault.mjs` 重写）：
+- `init` 识别并安全迁移旧 junction（校验联接目标就是本仓，只删联接本身）；
+  从 `data.example.json` 生成开发 vault 专属 `data.json`，写归属标记 `.nw-dev-vault.json`。
+- 新增 `sync`：按大小 + mtime 同步 manifest.json / main.js / styles.css / versions.json / workers/。
+- 新增 `reset-data --yes`：清空开发 vault 的 data.json / data/ / .sessions / pet-image.*。
+- `status` 显示目录形态、产物新鲜度、运行数据归属，并与写作 vault 的 data.json 比对是否已分离。
+- `verify` 前置校验「真实目录 + 专属 data.json」，输出新增 `expectedVault` / `dataOwned`。
+
+**清理**（本仓）：
+- 删除零字节、无人引用的 `_build.bat`；
+- `一键编译.bat` 改为调用 `npm run build`（原脚本硬编码绝对路径且绕过样式/模板/worker 构建）；
+- 删除临时目录 `tmp/`（15.95MB）、`.tmp-rollup/`、`coverage/`（47.56MB）、`playwright-report/`、`test-results/`；
+- 删除 8 份指向已不存在项目的 `data/*-preferences.json`（_nw测试项目 / _nw回归测试 / _nwRG02测试 /
+  苍青 / 苍穹之痕 / 九霄逆脉行 / 修仙世界录 / 严谨测试项目），保留 `示例项目-preferences.json`；
+- 写作 vault 的 `data.json` / `data/` / `.sessions/` 未动（那是真实运行数据）。
+
+**验证**：`init` 迁移成功（仓内文件未受影响）；`sync` 首次 6 个文件；
+`verify` → `{ ok: true, expectedVault: "nw-dev-vault", dataOwned: true, vaultName: "nw-dev-vault",
+loaded: true, version: "4.96.0", commands: 110 }`。
+
+剩余：E-补-B（开发 vault 内的已拆解样本书），补齐后才能对视觉切片拍 before/after。
+
+下一轮候选：Slice E 的像素级补验收（依赖 E-补-B）；Slice F 题材/配置页；Slice G 弹窗。
 

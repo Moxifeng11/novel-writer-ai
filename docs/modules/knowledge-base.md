@@ -202,17 +202,17 @@
 | R6 门禁 | `npm run preflight` EXIT=0 |
 | R7 工具类 | 全仓引用 4763 → 3800（基线已收紧） |
 
-**为什么这轮没有 before/after 像素快照（需要后续补）**
+**为什么这轮没有 before/after 像素快照**
 
-开发 vault `D:\nw-dev-vault` 的插件目录是**目录联接（junction）**指回源仓，
-因此 `<vault>/.obsidian/plugins/novel-writer-ai/data.json` 就是源仓的 `data.json`——
-在开发 vault 里造样本书会写进真实数据文件；而且该 vault 内没有已拆解的书可供八个页签渲染。
+当时开发 vault `D:\nw-dev-vault` 的插件目录还是**目录联接（junction）**指回源仓，
+`<vault>/.obsidian/plugins/novel-writer-ai/data.json` 就是源仓的 `data.json`——
+造样本书会写进真实数据文件；而且该 vault 内没有已拆解的书可供八个页签渲染。
 
-要恢复像素级验收，需先做两件事（TODO，已登记 §4）：
-1. 让开发 vault 的运行期数据与源仓解耦（init 时复制一份 data.json 到独立目录，而不是共用 junction 内的文件）；
-2. 在开发 vault 内准备一本已拆解的样本书，覆盖八个页签都有数据的场景。
+2026-11-17 已完成第 1 步（E-补-A）：插件目录改为**真实目录 + 产物同步**，
+`data.json` / `data/` / `.sessions/` 由开发 vault 独占，见 [dev-vault.md](../dev-vault.md)。
 
-在此之前，跨页签的样式等价以「声明级审计 + 单测 + 门禁」为准，并在提交信息里写明。
+仍缺第 2 步（E-补-B）：在开发 vault 内准备一本已拆解的样本书，覆盖八个页签都有数据的场景。
+在补上之前，跨页签的样式等价以「声明级审计 + 单测 + 门禁」为准，并在提交信息里写明。
 
 ## 4. 后续 slice 清单
 
@@ -222,7 +222,7 @@
 | ~~C~~ | ~~详情公共构件 + 概览页~~ | ~~已完成 2026-11-16~~ | ~~详情主战场第一刀~~ |
 | ~~D~~ | ~~详情外壳与页签条~~ | ~~已完成 2026-11-16~~ | ~~工具类 239 → 175~~ |
 | ~~E~~ | ~~详情各页签内容区（文风/节奏/技巧/结构/角色/伏笔/商业/易读性）~~ | ~~已完成 2026-11-17~~ | ~~工具类 866 → 126~~ |
-| E-补 | 开发 vault 运行期数据解耦 + 已拆解样本书（恢复像素级验收） | `scripts/dev-vault.mjs` | 见 §3.8 末尾 |
+| E-补 | 开发 vault 运行期数据解耦（✅ 2026-11-17）+ 已拆解样本书（待做） | `scripts/dev-vault.mjs` | 解耦已完成，样本书见 §3.8 |
 | F | 题材/配置页 | `knowledge-base-view.ts` 后段 | `nw-kb-config-*` |
 | G | 弹窗（需人工视觉验收） | `knowledge-detail-modal.ts` / `knowledge-base-modals.ts` | `nw-kb-modal-*` |
 

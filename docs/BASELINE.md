@@ -9,7 +9,7 @@
 - 工作目录：`.obsidian/plugins/novel-writer-ai`（**独立 git 仓**；vault 根是另一个仓，vault 的 `.gitignore` 忽略整个 `.obsidian/`）
 - 远端：`git@github.com:Moxifeng11/novel-writer-ai.git`
 - 运行平台：Obsidian 插件（桌面端 + 移动端；系统级文件保护仅桌面端）
-- 开发验证 vault：`D:\nw-dev-vault`（插件目录是 junction，指回本仓）
+- 开发验证 vault：`D:\nw-dev-vault`（插件目录是真实目录，产物用 `node scripts/dev-vault.mjs sync` 从本仓同步，运行数据独立）
 
 ## 2. 源码目录
 

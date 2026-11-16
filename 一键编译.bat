@@ -1,11 +1,21 @@
 @echo off
 chcp 65001 >nul
-cd /d "D:\小说工坊\小说工坊\.obsidian\plugins\novel-writer-ai"
+cd /d "%~dp0"
 echo ========================================
 echo   小说工坊 - 一键编译
 echo ========================================
 echo.
-echo 正在编译 main.js ...
-node -e "require('esbuild').build({entryPoints:['main.ts'],bundle:true,external:['obsidian'],format:'cjs',platform:'node',outfile:'main.js'}).then(function(r){var kb=Math.round(r.outputFiles[0].text.length/1024);console.log('✅ 编译成功! main.js = '+kb+'KB');}).catch(function(e){console.error('❌ 编译失败:',String(e));pause})"
+echo 正在通过 npm run build 编译（含样式、模板资源、worker 内联）...
+call npm run build
+if errorlevel 1 (
+  echo.
+  echo 编译失败。
+  pause
+  exit /b 1
+)
+echo.
+echo 已编译：main.js / styles.css
+echo 若需在开发 vault 里查看，再执行：
+echo   node scripts/dev-vault.mjs sync --vault=D:\nw-dev-vault
 echo.
 pause
