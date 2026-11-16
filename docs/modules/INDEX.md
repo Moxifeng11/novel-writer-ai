@@ -7,10 +7,10 @@
 | --- | --- | --- | --- | --- | --- |
 | API 配置 / 模型渠道 | `ui/settings/api-section.ts`、`core/provider-manager.ts`、`shared/provider-ui-model.ts`、`services/model-discovery.ts`、`shared/model-pricing.ts` | `customProviders`、`providerKeys`、`providerAssignments`、`providerThinking`、`providerTaskBudgets`、`enabledProviderIds`、`modelMeta`（识别缓存） | stable（验收通过 2026-11-16） | 端点能力自动识别/价格按渠道/模型弹窗/联网检索；下一轮按反馈打磨 | [api-config.md](api-config.md) |
 | 桌宠 | `ui/writing-pet.ts`、`shared/pet-image-store.ts` | `petImage`、`pet-image.png/json` | stable | 无（已验收） | [pet.md](pet.md) |
-| 写作工作台首页 | `ui/full-writer/project-selector-controller.ts`、`ui/full-writer/recent-projects.ts`、`ui/full-writer/next-step.ts`、`ui/home-view.ts` | `projectLastOpened` | review（实现完成待验收 2026-11-16；范围仅工作台首页） | 最近排序 / 下一步推演 / 主操作卡 / 旧版工具与卡片动作收纳 | [workbench-home.md](workbench-home.md) |
+| 写作工作台首页 | `ui/full-writer/project-selector-controller.ts`、`ui/full-writer/recent-projects.ts`、`ui/full-writer/next-step.ts`、`ui/home-view.ts` | `projectLastOpened` | stable（验收通过 2026-11-16） | 最近排序 / 下一步推演 / 主操作卡 / 旧版工具与卡片动作收纳 | [workbench-home.md](workbench-home.md) |
 | 规划 / 大纲 | `ui/planning-*`、`engine/planning*` | 章节/卷/大纲数据 | todo | 规划树操作效率、与正文联动 | — |
 | 设定 / 人物卡 | `ui/setting-*`、`engine/memory*` | 设定库、人物卡 | todo | 检索、关系图、去重 | — |
-| 正文编辑器 / 协同写作 | `ui/editor*`、`ui/cowrite*`、`engine/cowrite*` | 章节、协同配置 | todo | 输入体验、上下文提示、保存可靠性 | — |
+| 正文编辑器 / 协同写作 | `ui/co-writing-view.ts`、`ui/co-writing/*`、`engine/co-writer*` | 章节、协同配置、`coWrite*` 设置 | doing（Brief 待确认 2026-11-16） | 查找替换、章节流转、字数目标语义、撤销/字号/专注模式 | [co-writing.md](co-writing.md) |
 | 质量闭环 / 审稿 | `ui/quality-loop-modal.ts`、`engine/quality-*` | 质量报告、修订记录 | todo | 闭环入口、报告可读性、一键修复 | — |
 | 统计 / 进度 | `ui/writing-stats*`、`engine/writing-stats*` | 字数、进度、目标 | todo | 图表可读性、目标设置 | — |
 | MCP / Agent | `ui/mcp-*`、`engine/agent/harness/mcp-*` | `mcpServers` | review（二期完成） | 运行时统计展示、失败重试可视化 | — |
