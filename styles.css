@@ -15077,6 +15077,22 @@ body.nw-panel-resizing .nw-awb-center iframe {
     line-height: 1.6;
     color: var(--text-muted);
 }
+
+/* 已隐藏渠道行：灰化 + 恢复按钮（2026-11-16） */
+.nw-api-sidebar-row-hidden {
+    opacity: 0.7;
+}
+
+.nw-api-sidebar-row-hidden .nw-api-sidebar-name {
+    color: var(--text-muted);
+}
+
+.nw-api-sidebar-row-hidden .nw-api-ghost-btn {
+    margin-left: auto;
+    flex: none;
+    padding: 2px 8px;
+    font-size: 11px;
+}
 /* ==========================================================================
  * 设置行防塌陷（2026-10-29）
  * --------------------------------------------------------------------------

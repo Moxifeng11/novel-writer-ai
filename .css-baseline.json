@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-16T09:02:46.136Z",
-  "note": "M-39：测试结果建议行样式 nw-api-test-result-hint（+188B，1 个类）",
-  "bytes": 574023,
+  "generatedAt": "2026-11-16T09:59:06.976Z",
+  "note": "隐藏渠道恢复入口：nw-api-sidebar-row-hidden 样式（+330B，1 类）",
+  "bytes": 574353,
   "important": 24,
   "hardcodedHex": 169,
   "rgbHsl": 192,
-  "uniqueClasses": 3141,
+  "uniqueClasses": 3142,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

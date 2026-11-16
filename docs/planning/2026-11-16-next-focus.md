@@ -388,3 +388,22 @@
 | 日日新（自定义） | ✅ 连通正常 1347ms |
 
 **遗留**：OpenCode Zen 余额不足（402）尚未处理，用户若要用 Zen 通道需充值；当前用 Go 订阅通道即可。
+### 2026-11-16 第十三轮：API 模块遗留清理
+
+验收遗留三项，全部处理并实机验证。
+
+1. **同一端点两条 modelOverrides key**：新增 `shared/provider-settings-maintenance.ts` 的 `mergeDuplicateOverrideKeys`，按归一化端点分组，保留「与渠道 endpoint 完全一致」的 key（否则条目最多、否则最先出现），合并时先出现值优先（与运行时读取顺序一致），空条目丢弃。幂等。
+2. **enabledProviderIds 幽灵 id**：新增 `pruneUnknownProviderIds`，启动时过滤已删除渠道；undefined（全部显示）保持不变。幂等。
+3. **隐藏渠道无恢复入口**：侧栏新增「已隐藏（N）」分组，每行「恢复显示」按钮调用 `setHidden(id,false)`。
+
+顺带把 `normalizeEndpointKey` 从 core 下沉到 `shared/endpoint-key.ts`，让 shared 层也能复用（core 仍 re-export，保持兼容），避免两套归一化逻辑漂移。
+
+**验证**
+
+| 层级 | 内容 | 结果 |
+| --- | --- | --- |
+| 单测 | 合并（分组合并/冲突先出现优先/无重复不标记变化/幂等/空条目）、清理（过滤/undefined/幂等）、归一化（循环剥离/不误合并子路径）、DOM（已隐藏分组与恢复按钮） | 新增 14 条全过 |
+| 实机 | 启动后 modelOverrides 7→6 条，deepseek 合并为 `https://api.deepseek.com` 且 maxOutput=131072 未丢 | 通过 |
+| 实机 | enabledProviderIds 由含 volc/catcat → 仅 4 个真实渠道 | 通过 |
+| 实机 | 侧栏出现「已隐藏（3）」与 3 个恢复按钮；点恢复后渠道回到侧栏；验证后还原 | 通过 |
+| 门禁 | `npm run gen:docs && npm run preflight` | EXIT=0（937 文件 / 9878+ 用例） |

@@ -231,6 +231,16 @@
 **本轮验收发现并修复的异常**：M-42（覆盖不生效）——已修并回归。
 
 **遗留（P2，不阻塞）**：
-- 同一端点可能存在两条 `modelOverrides` key（历史写法差异），运行时与 UI 已兼容读取，可后续做一次性合并迁移。
-- `enabledProviderIds` 里残留已删除渠道 id（volc/catcat），无功能影响，可在「恢复默认供应商」时顺带清理。
-- 被隐藏的自定义渠道在设置页没有显式「恢复显示」入口（预设走「恢复默认」，自定义隐藏后不可达），记入 backlog。
+- [x] 同一端点两条 `modelOverrides` key 的一次性合并迁移（2026-11-16 已做，幂等，读取语义不变）
+- [x] `enabledProviderIds` 幽灵 id 清理（2026-11-16 启动时自动清理，实测 volc/catcat 已移除）
+- [x] 隐藏渠道恢复显示入口（2026-11-16 侧栏新增「已隐藏（N）」分组 + 恢复按钮）
+
+## 14. 遗留问题清理（2026-11-16）
+
+| 遗留 | 处理 | 结果 |
+| --- | --- | --- |
+| 同一端点两条 modelOverrides key | 新增 shared/provider-settings-maintenance：按归一化端点分组合并，保留精确端点 key，先出现值优先（与运行时读取一致），空条目丢弃 | 实测 7 条 key → 6 条，deepseek 合并为 `https://api.deepseek.com`，deepseek-flash 的 maxOutput 131072 未丢 |
+| enabledProviderIds 幽灵 id | pruneUnknownProviderIds 启动时过滤（undefined 保持不变） | 实测 `[deepseek,ollama,volc,catcat,sensenova,opencode]` → `[deepseek,ollama,sensenova,opencode]` |
+| 隐藏渠道无恢复入口 | 侧栏新增「已隐藏（N）」分组 + 每行「恢复显示」按钮（setHidden(false)） | 实测 3 个隐藏渠道（open code/日日新/君站）出现在分组中，点恢复后渠道回到侧边栏，验证后已还原 |
+
+两个清理都幂等，并且合并不会改变任何模型的生效上限（按运行时读取顺序先出现优先）。

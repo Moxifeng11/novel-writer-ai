@@ -214,4 +214,17 @@ describe('ApiSection.render', () => {
         const editBtns = root.findAll('nw-api-icon-btn');
         expect(editBtns.length).toBeGreaterThan(0);
     });
+
+    // 2026-11-16 验收遗留：隐藏渠道必须有「恢复显示」入口（旧实现没有任何入口找回）
+    it('侧栏列出已隐藏渠道并提供恢复按钮', () => {
+        const providers = [
+            ...PROVIDERS,
+            { id: 'hidden-1', name: '被隐藏的渠道', endpoint: 'https://hidden.example.com', models: ['m1'], isHidden: true },
+        ];
+        const root = renderApi(makeHost({ providers, currentId: 'p1' }));
+        const text = root.allText();
+        expect(text).toContain('已隐藏（1）');
+        expect(text).toContain('被隐藏的渠道');
+        expect(text).toContain('恢复显示');
+    });
 });

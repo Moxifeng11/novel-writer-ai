@@ -67,24 +67,9 @@ export interface ProviderManagerCallbacks {
     addOverrideHistory?(entry: NovelWriterSettings['modelOverrideHistory'][number]): void;
 }
 
-/**
- * 端点归一：忽略协议尾部斜杠、`/v1`、`/chat/completions`，用于供应商与覆盖表匹配
- *
- * @param endpoint - 接口地址
- * @returns 文本结果
- */
-export function normalizeEndpointKey(endpoint?: string): string {
-    let out = String(endpoint || '').trim().toLowerCase().replace(/\/+$/, '');
-    // 循环剥离：`…/v1/chat/completions` 要连剥两层才能和 `…com` 对齐。
-    // 旧实现只剥一次，结果 `…/v1` 与 `…com` 归一化不相等，
-    // 于是历史覆盖（存在完整地址 key 下）读不到 → 「手动覆盖填了不生效」。
-    for (let guard = 0; guard < 4; guard += 1) {
-        const next = out.replace(/\/(chat\/completions|completions|v1)$/, '').replace(/\/+$/, '');
-        if (next === out || !next) break;
-        out = next;
-    }
-    return out;
-}
+// 端点归一化已下沉到 shared（供 core / shared 共用，避免两套逻辑漂移）
+import { normalizeEndpointKey } from '@/shared/endpoint-key';
+export { normalizeEndpointKey } from '@/shared/endpoint-key';
 
 /**
  * 覆盖表按「精确 key → 归一化 key」两级查找

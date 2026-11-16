@@ -227,6 +227,34 @@ export class ApiSection extends SettingsSection {
             }
         }
 
+        // 已隐藏渠道：预设/自定义都可能被隐藏（删除预设=隐藏，可恢复）。
+        // 旧实现没有任何入口把隐藏渠道找回来，自定义渠道隐藏后等于「数据还在但不可达」。
+        const hidden = (this.plugin.settings.customProviders || []).filter(provider => provider.isHidden === true);
+        if (hidden.length > 0) {
+            container.createDiv({ cls: 'nw-api-sidebar-group', text: `已隐藏（${hidden.length}）` });
+            for (const provider of hidden) {
+                const row = container.createDiv({ cls: 'nw-api-sidebar-row nw-api-sidebar-row-hidden' });
+                row.createSpan({
+                    cls: 'nw-api-sidebar-icon',
+                    text: provider.sourceType === 'local' ? '💻' : '☁️',
+                });
+                row.createSpan({ cls: 'nw-api-sidebar-name', text: provider.name });
+                const restore = row.createEl('button', {
+                    cls: 'nw-api-ghost-btn',
+                    text: '恢复显示',
+                    attr: { type: 'button', title: '恢复该渠道到侧栏' },
+                });
+                restore.onclick = async (event) => {
+                    event.stopPropagation();
+                    this.plugin.setHidden(provider.id, false);
+                    await this.plugin.saveSettings();
+                    this.apiSelectedProviderId = provider.id;
+                    this.refresh();
+                    showSuccessNotice(`已恢复显示「${provider.name}」`, { timeout: 3000 });
+                };
+            }
+        }
+
         // 行内新建供应商（替代原来的「添加供应商」弹窗）：直接在侧栏填完创建
         if (this.newProviderFormOpen) {
             this.renderNewProviderForm(container);

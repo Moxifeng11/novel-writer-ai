@@ -238,6 +238,7 @@ import { projectFromFilePath } from './domains/kernel/project-locator';
 import { listProjectIds } from '@/shared/project-catalog';
 import { consumePendingReloadState } from '@/shared/reload-state';
 import { migrateLegacyPluginData } from '@/shared/plugin-data-migration';
+import { mergeDuplicateOverrideKeys, pruneUnknownProviderIds } from '@/shared/provider-settings-maintenance';
 import { UnloadBarrier } from '@/shared/unload-barrier';
 import { createLogger } from './shared/logger';
 import { pruneSessions, SESSION_RETENTION_DEFAULTS } from './shared/session-retention';
@@ -1027,6 +1028,8 @@ export default class NovelWriterPlugin extends Plugin {
             // 预设供应商收敛迁移（旧火山/CatCat → 自定义供应商）；引擎初始化时设置可能还没加载，
             // 这里设置就绪后再补一次，避免老用户升级后预设"消失"。
             this._providerManager?.migrateLegacyPresets();
+            // 供应商数据清理（幂等）：合并重复的覆盖 key、清掉 enabledProviderIds 里的幽灵 id
+            await this.maintainProviderSettings();
             // 参考书籍：设置里的 referenceBookIds → 实例字段镜像。
             // 启动路径只走 SettingsService.loadSettings()，不会调用 plugin.loadSettings()，
             // 不在这里补一次，重启后协同写作的参考书籍与主参考会全部为空。
@@ -2366,6 +2369,31 @@ export default class NovelWriterPlugin extends Plugin {
 
         await this.saveSettings();
         return { reencrypted, cleared };
+    }
+
+    /**
+     * 供应商相关设置的一次性清理（幂等，仅在确有变化时保存）。
+     *
+     * - 同一端点因历史写法残留两条 `modelOverrides` key → 合并为一条（读取语义不变）
+     * - `enabledProviderIds` 残留已删除渠道 id → 过滤
+     *
+     * @returns 是否发生了写入
+     */
+    async maintainProviderSettings(): Promise<boolean> {
+        const providers = this.settings.customProviders || [];
+        const endpoints = providers.map(provider => provider.endpoint);
+        const ids = providers.map(provider => provider.id);
+        const merged = mergeDuplicateOverrideKeys(this.settings.modelOverrides, endpoints);
+        const pruned = pruneUnknownProviderIds(this.settings.enabledProviderIds, ids);
+        if (!merged.changed && !pruned.changed) return false;
+        if (merged.changed) this.settings.modelOverrides = merged.value;
+        if (pruned.changed) this.settings.enabledProviderIds = pruned.value;
+        await this.saveSettings();
+        log.info('[小说工坊] 已清理供应商设置', {
+            mergedOverrides: merged.changed,
+            prunedEnabledIds: pruned.changed,
+        });
+        return true;
     }
 
     async loadSettings() {
