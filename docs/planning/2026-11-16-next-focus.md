@@ -745,5 +745,36 @@ loaded: true, version: "4.96.0", commands: 110 }`。
 插件在点「信任仓库作者并启用插件」之前根本不加载——自动化脚本要先点掉这个弹窗再断言
 （此前误判成「卡在弹窗」）。
 
-下一轮候选：Slice E 的像素级补验收（依赖 E-补-B）；Slice F 题材/配置页；Slice G 弹窗。
+
+### 2026-11-17 第三十轮：E-补-B 已拆解样本书 + 像素快照 + 索引写入修复
+
+**背景**：第二十七轮 Slice E 的跨页签等价只有「声明级审计」，缺 R4 像素快照；原因是开发 vault 里没有已拆解的书。
+本轮用真实原文补齐。
+
+**样本书**：`D:\nw-dev-vault\写作知识库\将夜\`，正文取自 `指纹资料库\将夜.txt`（GB18030，11.9MB），
+走插件自身导入 + `deconstructionScheduler.rerunBook()`，`sampleMode=true` / `textSampleLimit=120000` /
+`vectorEnabled=false`，约 1.5 分钟拆解完成；`wordCount=3,743,515`、`breakdownStatus=completed`，八份分析文件齐全。
+拆解不依赖 AI 密钥——`engine/deconstructors/*` 的 LLM 增强是可选的，无密钥自动降级纯统计。
+
+**顺带修掉的索引 bug**：`services/knowledge-base-manager.ts` 的 `saveIndex` 无条件 tmp+rename，
+`adapter.rename` 在目标存在时抛 `Destination file already exists!` → 索引永远 65B 的 `books: []`，
+新导入书重启即消失（实测开发 vault 索引停在 1:36）。改为「已存在就覆写、不存在才 tmp+rename」；
+`tests/unit/services/knowledge-base-index-atomic.test.ts` 1 → 3 条，实机重建索引 643B 且含「将夜」、无 `.tmp` 残留。
+
+**像素快照**（before = `73b2c01a`，after = 当前构建；同一本书、1440×2600、DSF=1）：
+
+| 页签 | 差异 | 归因 |
+| --- | --- | --- |
+| 概览/文风/节奏/结构/伏笔/商业/可读性/标签 | **0 px** | 完全一致 |
+| 技巧 | 2.611% | 序号徽标整体上移 4px（同色 `152,115,247`、同宽 x=16–45）；原 `nw-flex-center` 从未定义、徽标按行内基线对齐，语义化后 `.nw-kb-detail-rank` 自带 flex 垂直居中 |
+| 人设 | 0.273% | 整页 −27px（0.05%），差异集中在尾段弧光条与卡片右边缘，逐卡累积的间距微差 |
+
+after 构建八个页签 `nw-u-` 引用均为 0（before：技巧 141 / 结构 2300 / 人设 23183 / 文风 54 / 节奏 82）。
+详细结论见 `docs/modules/knowledge-base.md` §3.8.1。
+
+**经验**：截图必须用真实 DOM 分片滚动拼接——把容器克隆到全屏浮层再截图，canvas 图表像素会全丢、
+祖先 `overflow:hidden` 还会出黑底，两版都「看起来一样」但比对无效。
+
+下一轮候选：Slice F 题材/配置页；Slice G 弹窗（需人工视觉验收）。
+
 

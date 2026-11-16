@@ -418,6 +418,14 @@ export class KnowledgeBaseManager {
             const content = `---\n${fmContent}\n---\n\n# 知识库索引\n\n共 ${booksArray.length} 本书籍。\n`;
 
             const indexPath = kbIndexFile(this.baseDir);
+            // 目标已存在时不能走 rename：Obsidian 的 adapter.rename 在**目标存在**时抛
+            // `Destination file already exists!`（本仓已在断言库/字数台账各踩一次）。
+            // 这里漏了 exists 分流，导致首次建库后每次 saveIndex 都静默失败、
+            // 索引永远停在旧内容——新导入的书重启后从列表消失（2026-11-17 实测）。
+            if (await fs.exists(indexPath)) {
+                await fs.write(indexPath, content);
+                return;
+            }
             // 原子写：先写临时文件再 rename。旧实现直接 fs.write，写到一半崩溃/同步占用
             // 会留下 0 字节 index（实测出现过），下次加载解析失败只能靠目录重建，书籍元数据全丢。
             const tmpPath = `${indexPath}.tmp`;

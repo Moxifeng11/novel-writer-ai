@@ -26,6 +26,7 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
         title: '解锁口令重复弹框修复',
         sections: [
             { type: 'fixed', label: '🔓 密钥解锁', items: ['已解锁后不再重复弹口令框（旧口令密文不再清掉会话口令）', '解不开的密钥如实提示「与当前口令不匹配，请重新填写」'] },
+            { type: 'fixed', label: '📚 知识库', items: ['新导入的书不再从列表消失（索引写入不再失败）'] },
         ],
     },
     {

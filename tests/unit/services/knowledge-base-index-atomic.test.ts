@@ -31,7 +31,7 @@ class FakeFileSystem {
 }
 
 describe('KnowledgeBaseManager.saveIndex — 原子写', () => {
-    it('写入 .tmp 后 rename 到正式索引，不直接覆盖', async () => {
+    it('索引不存在：写入 .tmp 后 rename 到正式索引', async () => {
         const fake = new FakeFileSystem();
         const manager = new KnowledgeBaseManager({} as never);
         (manager as unknown as { fs: FakeFileSystem }).fs = fake;
@@ -46,5 +46,44 @@ describe('KnowledgeBaseManager.saveIndex — 原子写', () => {
         expect(fake.renames[0][1]).toBe(index);
         expect(fake.files.get(index)).toContain('书一');
         expect(fake.files.has(`${index}.tmp`)).toBe(false);
+    });
+
+    it('索引已存在：直接覆盖写，不 rename（Obsidian rename 目标存在会抛错）', async () => {
+        const fake = new FakeFileSystem();
+        const index = kbIndexFile();
+        // 首次建库写下的空索引：真实环境里正是这一份让后续 rename 全部失败
+        fake.files.set(index, '---\n{\n  "books": []\n}\n---\n');
+
+        const manager = new KnowledgeBaseManager({} as never);
+        (manager as unknown as { fs: FakeFileSystem }).fs = fake;
+        (manager as unknown as { books: Map<string, unknown> }).books.set('b1', { id: 'b1', name: '书一' });
+
+        await (manager as unknown as { saveIndex(): Promise<void> }).saveIndex();
+        await (manager as unknown as { indexWriter: { flush(ms?: number): Promise<void> } }).indexWriter.flush(2000);
+
+        expect(fake.renames.length).toBe(0);
+        expect(fake.files.get(index)).toContain('书一');
+        expect(fake.files.has(`${index}.tmp`)).toBe(false);
+    });
+
+    it('索引已存在时 rename 会抛错：说明走 rename 就永远写不进新书（回归守卫）', async () => {
+        const fake = new FakeFileSystem();
+        const index = kbIndexFile();
+        fake.files.set(index, 'old');
+        // 模拟 Obsidian adapter 语义：目标存在即失败
+        fake.rename = async (oldPath: string, newPath: string): Promise<void> => {
+            if (fake.files.has(newPath)) throw new Error('Destination file already exists!');
+            const content = fake.files.get(oldPath);
+            if (content !== undefined) { fake.files.delete(oldPath); fake.files.set(newPath, content); }
+        };
+
+        const manager = new KnowledgeBaseManager({} as never);
+        (manager as unknown as { fs: FakeFileSystem }).fs = fake;
+        (manager as unknown as { books: Map<string, unknown> }).books.set('b2', { id: 'b2', name: '书二' });
+
+        await (manager as unknown as { saveIndex(): Promise<void> }).saveIndex();
+        await (manager as unknown as { indexWriter: { flush(ms?: number): Promise<void> } }).indexWriter.flush(2000);
+
+        expect(fake.files.get(index)).toContain('书二');
     });
 });

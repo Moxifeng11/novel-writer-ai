@@ -7,8 +7,8 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146802 | 1951 | 1545 | 79% |
-| `services/` | 65 | 19405 | 295 | 203 | 69% |
-| `shared/` | 255 | 50822 | 2149 | 1680 | 78% |
+| `services/` | 65 | 19413 | 295 | 203 | 69% |
+| `shared/` | 255 | 50823 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3387 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
 | `ui/` | 300 | 113697 | 1155 | 917 | 79% |
@@ -416,7 +416,7 @@
 | `services/id-migration-service.ts` | 123 | 2 | 1 |
 | `services/id-registry-service.ts` | 138 | 1 | 1 |
 | `services/job-service.ts` | 364 | 9 | 1 |
-| `services/knowledge-base-manager.ts` | 1716 | 6 | 4 |
+| `services/knowledge-base-manager.ts` | 1724 | 6 | 4 |
 | `services/knowledge-migration-service.ts` | 222 | 4 | 1 |
 | `services/knowledge-original-chunker.ts` | 119 | 3 | 3 |
 | `services/ledger-migration-service.ts` | 248 | 4 | 1 |
@@ -474,7 +474,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 375 | 21 | 20 |
-| `shared/changelog-data.ts` | 305 | 3 | 3 |
+| `shared/changelog-data.ts` | 306 | 3 | 3 |
 | `shared/chapter-progress.ts` | 142 | 7 | 6 |
 | `shared/chapter-ref.ts` | 205 | 7 | 5 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |

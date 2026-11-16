@@ -87,7 +87,22 @@ node scripts/dev-vault.mjs reset-data --yes --vault=D:\nw-dev-vault
 首次需要手动打开一次：Obsidian → 打开其他库 → 打开文件夹作为库 → 选 `D:\nw-dev-vault`。
 之后它会出现在库列表里，可直接切换。
 
-### 3.3 用 CLI 定向到开发 vault
+### 3.3 视觉验收用的样本书（2026-11-17 起）
+
+开发 vault 里有一本**已拆解**的样本书，供知识库详情页做界面/像素验收：
+
+| 项 | 值 |
+| --- | --- |
+| 位置 | `D:\nw-dev-vault\写作知识库\将夜\` |
+| 正文来源 | `指纹资料库\将夜.txt`（GB18030 → UTF-8，11.9MB） |
+| 拆解参数 | `sampleMode=true` / `textSampleLimit=120000` / `vectorEnabled=false`，约 1.5 分钟 |
+| 产物 | 八份分析文件齐全（风格指纹.json、节奏分析.md、写作技巧.md、结构拆解.md、人设提取.md、伏笔库.md、商业价值.md、可读性分析.md） |
+
+重建方式：插件内正常「导入书籍」后调 `plugin.deconstructionScheduler.rerunBook(bookId)`；
+拆解不需要 AI 密钥（LLM 增强是可选降级路径）。
+视觉快照/比对脚本属于一次性工具，跑完即删，不入库；结论写在 `docs/modules/knowledge-base.md` §3.8.1。
+
+### 3.4 用 CLI 定向到开发 vault
 
 ```powershell
 obsidian vault=nw-dev-vault plugin:reload id=novel-writer-ai

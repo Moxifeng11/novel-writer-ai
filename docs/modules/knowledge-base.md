@@ -211,8 +211,37 @@
 2026-11-17 已完成第 1 步（E-补-A）：插件目录改为**真实目录 + 产物同步**，
 `data.json` / `data/` / `.sessions/` 由开发 vault 独占，见 [dev-vault.md](../dev-vault.md)。
 
-仍缺第 2 步（E-补-B）：在开发 vault 内准备一本已拆解的样本书，覆盖八个页签都有数据的场景。
-在补上之前，跨页签的样式等价以「声明级审计 + 单测 + 门禁」为准，并在提交信息里写明。
+### 3.8.1 像素快照补测（E-补-B，2026-11-17 完成）
+
+第 2 步也在 2026-11-17 补齐，R4（实现快照）从「声明级审计」升级为真实像素比对。
+
+**样本书**：开发 vault `D:\nw-dev-vault\写作知识库\将夜\`，取自 `指纹资料库\将夜.txt`（GB18030 原文 11.9MB → UTF-8），
+走插件自身导入 + `deconstructionScheduler.rerunBook()` 本地拆解（`sampleMode=true` / `textSampleLimit=120000` /
+`vectorEnabled=false`，约 1.5 分钟），八份分析文件齐全（风格指纹.json、节奏分析.md、写作技巧.md 62KB、
+结构拆解.md 103KB、人设提取.md 1.09MB、伏笔库.md、商业价值.md、可读性分析.md），`breakdownStatus=completed`。
+拆解不依赖 AI 密钥：`engine/deconstructors/*` 的 LLM 增强是可选的，无密钥走纯统计降级。
+
+**顺带修掉的索引 bug**：`services/knowledge-base-manager.ts` 的 `saveIndex` 原来无条件写临时文件再 `rename`，
+而 Obsidian 的 `adapter.rename` 在目标已存在时抛 `Destination file already exists!`——首次建库后每次保存都静默失败，
+索引永远停在 `books: []`，新导入的书重启后从列表消失。现改为「索引已存在就直接覆写」，不存在才走 tmp+rename；
+`tests/unit/services/knowledge-base-index-atomic.test.ts` 由 1 条扩到 3 条（不存在→rename / 已存在→覆写 /
+模拟 Obsidian rename 语义时仍能写入）。
+
+**快照方法**：独立 Obsidian 实例（临时 `--user-data-dir`）+ CDP，1440×2600、DSF=1；逐页签设
+`view.activeBookDetailTab` 后 `renderBookDetail()`，从 `.nw-kb-detail-tab-content` 向上找滚动容器，
+按视口高度分片滚动截图再在页面 canvas 里拼成整图。
+（踩过的坑：先把容器克隆到全屏浮层再截图会导致 canvas 图表像素全丢、祖先 `overflow:hidden` 出黑底——两版都「看起来一样」但无效。）
+
+**结果**（before = `73b2c01a`（Slice E 前），after = 含 `saveIndex` 修复的当前构建；同一本书、同一视口）：
+
+| 页签 | 差异率 | 说明 |
+| --- | --- | --- |
+| 概览 / 文风 / 节奏 / 结构 / 伏笔 / 商业 / 可读性 / 标签 | **0 px** | 完全一致 |
+| 技巧 | 2.611%（65,877 px） | 序号徽标整体上移 4px：前后同色 `152,115,247`、同宽 x=16–45，y 由 1290–1319 → 1286–1315。原因是原类 `nw-flex-center` 从未定义、徽标按行内基线对齐，语义化后 `.nw-kb-detail-rank` 自带 `display:flex` 垂直居中——即上文「已知有意差异」里死类补真的效果 |
+| 人设 | 0.273%（119,654 px） | 整页 845×51816 vs 51789（−27px，0.05%）；差异集中在尾段人设卡弧光条与卡片右边缘，逐卡累积的行高/间距微差，无颜色或构件缺失 |
+
+after 构建里八个页签的 `nw-u-` 工具类引用均为 **0**（before：技巧 141、结构 2300、人设 23183、文风 54、节奏 82），
+证明快照确实落在语义化后的 DOM 上。结论：Slice E 的类替换跨页签达到像素级等价，两处可见差异均为设计意图内的修正。
 
 ## 4. 后续 slice 清单
 
@@ -222,7 +251,7 @@
 | ~~C~~ | ~~详情公共构件 + 概览页~~ | ~~已完成 2026-11-16~~ | ~~详情主战场第一刀~~ |
 | ~~D~~ | ~~详情外壳与页签条~~ | ~~已完成 2026-11-16~~ | ~~工具类 239 → 175~~ |
 | ~~E~~ | ~~详情各页签内容区（文风/节奏/技巧/结构/角色/伏笔/商业/易读性）~~ | ~~已完成 2026-11-17~~ | ~~工具类 866 → 126~~ |
-| E-补 | 开发 vault 运行期数据解耦（✅ 2026-11-17）+ 已拆解样本书（待做） | `scripts/dev-vault.mjs` | 解耦已完成，样本书见 §3.8 |
+| ~~E-补~~ | ~~开发 vault 运行期数据解耦 + 已拆解样本书（✅ 2026-11-17）~~ | ~~`scripts/dev-vault.mjs`~~ | ~~见 §3.8.1~~ |
 | F | 题材/配置页 | `knowledge-base-view.ts` 后段 | `nw-kb-config-*` |
 | G | 弹窗（需人工视觉验收） | `knowledge-detail-modal.ts` / `knowledge-base-modals.ts` | `nw-kb-modal-*` |
 
