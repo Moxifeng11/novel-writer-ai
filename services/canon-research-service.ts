@@ -58,6 +58,17 @@ export function providerNeedsApiKey(provider: CanonSearchProvider): boolean {
  */
 export type CanonSearchProvider = 'manual' | 'bing' | 'brave' | 'serper' | 'tavily' | 'wikipedia' | 'bangumi';
 
+/** 各检索通道的展示名（设置页与错误提示共用） */
+export const PROVIDER_LABELS: Record<CanonSearchProvider, string> = {
+    manual: '手动官方来源',
+    wikipedia: '维基百科',
+    bangumi: 'Bangumi 番组计划',
+    bing: 'Bing web search',
+    brave: 'Brave search',
+    serper: 'Serper.dev',
+    tavily: 'Tavily',
+};
+
 /**
  * 考据配置。
  */
@@ -173,7 +184,14 @@ export class CanonResearchService {
                     const searched = await this.search(workName, options, config);
                     inputs.push(...searched);
                 } catch (error) {
-                    warnings.push(`联网检索失败：${error instanceof Error ? error.message : String(error)}`);
+                    const detail = error instanceof Error ? error.message : String(error);
+                    // 超时/不可达与「Key 配错」是两类问题：前者换网络或换通道，后者改配置。
+                    // 旧实现把原始 fetch 错误原样抛给用户，看不出该做什么。
+                    const unreachable = /timeout|超时|ECONNREFUSED|ENOTFOUND|fetch failed|network/i.test(detail);
+                    warnings.push(unreachable
+                        ? `联网检索失败：无法连接「${PROVIDER_LABELS[config.provider] ?? config.provider}」（超时或网络不可达）。`
+                            + '该通道可能受当前网络限制，可改用其它检索通道，或手动导入来源。'
+                        : `联网检索失败：${detail}`);
                 }
             }
         }

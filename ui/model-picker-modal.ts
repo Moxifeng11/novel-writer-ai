@@ -17,8 +17,61 @@ import type { DiscoveredModel } from '@/services/model-discovery';
 export interface ModelPickerResult {
     /** 确认后的模型 id 列表（保持原有顺序，新项追加在后） */
     models: string[];
-    /** 端点披露的上下文/输出上限，供调用方回填默认值 */
-    capacities: Array<{ id: string; contextWindow?: number; maxTokens?: number }>;
+    /** 端点披露的能力，供调用方回填默认值（上下文/输出/视觉/单价） */
+    capacities: Array<{
+        id: string;
+        contextWindow?: number;
+        maxTokens?: number;
+        vision?: boolean;
+        inputPricePerM?: number;
+        outputPricePerM?: number;
+        priceCurrency?: 'USD' | 'CNY';
+    }>;
+}
+
+/**
+ * 计算「确认勾选」后的模型列表与能力回填数据。
+ *
+ * 规则：端点没列出的已配置模型原样保留；列出的按勾选状态增删；
+ * 结果为空时不允许确认（空列表会让上游回退到端点默认行为）。
+ *
+ * @param candidates - 端点返回的候选模型
+ * @param configured - 当前已配置的模型
+ * @param isPicked - 勾选判定（由弹窗根据用户翻转状态提供）
+ * @returns 确认结果；`null` 表示至少保留一个模型，不能确认
+ * @example
+ * buildPickerResult([{ id: 'a' }], [], () => true)?.models; // ['a']
+ */
+export function buildPickerResult(
+    candidates: DiscoveredModel[],
+    configured: string[],
+    isPicked: (id: string) => boolean,
+): ModelPickerResult | null {
+    const listed = new Set(candidates.map(model => model.id));
+    const kept = configured.filter(id => !listed.has(id) || isPicked(id));
+    const keptSet = new Set(kept);
+    const added = candidates
+        .filter(model => isPicked(model.id) && !keptSet.has(model.id))
+        .map(model => model.id);
+    const models = [...kept, ...added];
+    if (models.length === 0) return null;
+
+    const capacities = candidates
+        .filter(model => keptSet.has(model.id) || added.includes(model.id))
+        .filter(model => model.contextWindow !== undefined
+            || model.maxTokens !== undefined
+            || model.vision !== undefined
+            || model.pricing !== undefined)
+        .map(model => ({
+            id: model.id,
+            ...(model.contextWindow === undefined ? {} : { contextWindow: model.contextWindow }),
+            ...(model.maxTokens === undefined ? {} : { maxTokens: model.maxTokens }),
+            ...(model.vision === undefined ? {} : { vision: model.vision }),
+            ...(model.pricing?.inputPerM === undefined ? {} : { inputPricePerM: model.pricing.inputPerM }),
+            ...(model.pricing?.outputPerM === undefined ? {} : { outputPricePerM: model.pricing.outputPerM }),
+            ...(model.pricing === undefined ? {} : { priceCurrency: model.pricing.currency }),
+        }));
+    return { models, capacities };
 }
 
 /**
@@ -93,27 +146,13 @@ export class ModelPickerModal extends Modal {
     }
 
     private confirm(): void {
-        const listed = new Set(this.candidates.map(model => model.id));
-        // 端点没列出的已配置模型原样保留；列出的按勾选状态增删
-        const kept = this.configured.filter(id => !listed.has(id) || this.isPicked(id));
-        const keptSet = new Set(kept);
-        const added = this.candidates
-            .filter(model => this.isPicked(model.id) && !keptSet.has(model.id))
-            .map(model => model.id);
-        const models = [...kept, ...added];
-
-        if (models.length === 0) {
+        const result = buildPickerResult(this.candidates, this.configured, id => this.isPicked(id));
+        if (!result) {
             this.confirmBtn?.setText('❌ 至少保留一个模型');
             window.setTimeout(() => this.confirmBtn?.setText('✅ 应用选择'), 1800);
             return;
         }
-
-        const capacities = this.candidates
-            .filter(model => keptSet.has(model.id) || added.includes(model.id))
-            .filter(model => model.contextWindow !== undefined || model.maxTokens !== undefined)
-            .map(model => ({ id: model.id, contextWindow: model.contextWindow, maxTokens: model.maxTokens }));
-
-        this.onConfirm({ models, capacities });
+        this.onConfirm(result);
         this.close();
     }
 
@@ -137,6 +176,16 @@ export class ModelPickerModal extends Modal {
             if (model.contextWindow) {
                 const k = Math.round(model.contextWindow / 1000);
                 row.createSpan({ cls: 'nw-model-fetch-meta', text: `${k}K` });
+            }
+            if (model.vision) {
+                row.createSpan({ cls: 'nw-model-fetch-meta', text: '视觉' });
+            }
+            if (model.pricing && model.pricing.inputPerM !== undefined) {
+                const symbol = model.pricing.currency === 'USD' ? '$' : '¥';
+                row.createSpan({
+                    cls: 'nw-model-fetch-meta',
+                    text: `${symbol}${model.pricing.inputPerM}/${symbol}${model.pricing.outputPerM ?? 0}`,
+                });
             }
             if (this.configured.includes(model.id)) {
                 row.createSpan({ cls: 'nw-model-fetch-tag', text: '已配置' });

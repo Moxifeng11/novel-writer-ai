@@ -73,6 +73,16 @@ export interface AIStreamHost {
     handleRateLimit(currentModel: string, hasMoreModels: boolean): Promise<'break' | 'continue'>;
     isKeylessLocalEndpoint(endpoint: string): boolean;
     isLocalEndpoint(endpoint: string): boolean;
+    /**
+     * 该端点的渠道请求头（内置适配 + 用户自定义）。
+     *
+     * 流式链路此前完全没合并渠道头：OpenCode Go 缺 `x-opencode-session`
+     * 会 400，而同一渠道的非流式调用却正常，表现为「生成时好时坏」。
+     *
+     * @param endpoint - 本次请求端点
+     * @returns 请求头
+     */
+    resolveProviderHeaders(endpoint: string | undefined): Record<string, string>;
     isUnreachableError(error: unknown): boolean;
     resolveApiFormat(endpoint: string): ApiFormat;
     resolveApiKey(rawKey: string | undefined, allowPrompt?: boolean): Promise<{ key: string; error?: string }>;
@@ -258,6 +268,7 @@ export async function callAIStream(
                             headers: {
                                 'Content-Type': 'application/json',
                                 ...buildAuthHeaders(apiFormat, apiKey),
+                                ...host.resolveProviderHeaders(endpoint),
                                 'Accept': 'text/event-stream',
                             },
                             body: JSON.stringify(streamRequestBody),
@@ -763,6 +774,7 @@ async function* nativeStreamIterator(
                         headers: {
                             'Content-Type': 'application/json',
                             ...buildAuthHeaders(apiFormat, apiKey),
+                            ...host.resolveProviderHeaders(endpoint),
                             'Accept': 'text/event-stream',
                         },
                         body: JSON.stringify(streamRequestBody),

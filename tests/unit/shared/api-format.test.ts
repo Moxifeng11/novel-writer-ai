@@ -6,6 +6,7 @@ import {
     normalizeApiFormat,
     parseChatResponse,
     parseSseFrame,
+    isNativeOllamaEndpoint,
     resolveApiRoot,
     resolveModelsUrl,
     resolveRequestUrl,
@@ -317,5 +318,37 @@ describe('responses 协议失败事件映射（DSH-20261113-20）', () => {
 
     it('正常事件不受影响（response.completed 仍是 stop）', () => {
         expect(parseSseFrame('openai-responses', { type: 'response.completed' })).toEqual({ done: true, finishReason: 'stop' });
+    });
+});
+
+// 2026-11-16（M-14/M-15）：Ollama 原生端点被错误拼成 /api/generate/v1/chat/completions，
+// 导致「测试连通性」和「从 URL 获取」双双 404。原生端点必须原样使用，模型列表走 /api/tags。
+describe('Ollama 原生端点', () => {
+    it('识别 /api/generate 与 /api/chat', () => {
+        expect(isNativeOllamaEndpoint('http://localhost:11434/api/generate')).toBe(true);
+        expect(isNativeOllamaEndpoint('http://localhost:11434/api/chat')).toBe(true);
+        expect(isNativeOllamaEndpoint('http://localhost:11434/v1/chat/completions')).toBe(false);
+        expect(isNativeOllamaEndpoint('https://api.deepseek.com')).toBe(false);
+    });
+
+    it('请求 URL 原样保留，不再追加 /v1/chat/completions', () => {
+        expect(resolveRequestUrl('http://localhost:11434/api/generate', 'openai-chat'))
+            .toBe('http://localhost:11434/api/generate');
+        expect(resolveRequestUrl('http://localhost:11434/api/chat', 'openai-chat'))
+            .toBe('http://localhost:11434/api/chat');
+    });
+
+    it('模型列表走 /api/tags 而不是 /models', () => {
+        expect(resolveModelsUrl('http://localhost:11434/api/generate', 'openai-chat'))
+            .toBe('http://localhost:11434/api/tags');
+        expect(resolveModelsUrl('http://127.0.0.1:11434/api/chat', 'openai-chat'))
+            .toBe('http://127.0.0.1:11434/api/tags');
+    });
+
+    it('OpenAI 兼容端点行为不变', () => {
+        expect(resolveRequestUrl('https://api.deepseek.com', 'openai-chat'))
+            .toBe('https://api.deepseek.com/v1/chat/completions');
+        expect(resolveModelsUrl('https://api.deepseek.com/v1', 'openai-chat'))
+            .toBe('https://api.deepseek.com/models');
     });
 });

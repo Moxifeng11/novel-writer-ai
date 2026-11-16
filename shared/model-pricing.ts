@@ -41,12 +41,43 @@ export const DEFAULT_MODEL_PRICING: Record<string, ModelPricing> = {
 /** 单价来源：用户配置 / 默认参考价 */
 export type PricingSource = 'user' | 'default';
 
+/** 美元 → 人民币记账汇率（仅用于把端点披露的美元价折算成元；设置页可改） */
+export const DEFAULT_USD_TO_CNY = 7.3;
+
 /** 模型单价（元/百万 tokens）。 */
 export interface ModelPricing {
     /** 输入（提示词）单价：元 / 百万 tokens */
     inputPerM: number;
     /** 输出（补全）单价：元 / 百万 tokens */
     outputPerM: number;
+    /**
+     * 原始币种；缺省视为人民币（兼容旧配置）。
+     *
+     * 端点自动识别（OpenCode/OpenRouter）披露的是美元价，标记 `USD` 后
+     * `estimateCostYuan` 会按汇率折算，避免把 $0.15 当成 ¥0.15。
+     */
+    currency?: 'USD' | 'CNY';
+}
+
+/** 单价查找选项 */
+export interface ModelPricingLookupOptions {
+    /** 未配置单价时回退内置参考价 */
+    allowDefaults?: boolean;
+    /** 渠道端点：指定后只在该渠道内匹配，避免同名模型跨渠道串价 */
+    endpoint?: string;
+    /** 渠道 id：endpoint 匹配不到时的补充定位 */
+    providerId?: string;
+}
+
+/** 设置里的渠道形状（只取价格查找需要的字段） */
+interface PricingProviderLike {
+    id?: string;
+    endpoint?: string;
+    modelMeta?: Record<string, {
+        inputPricePerM?: number;
+        outputPricePerM?: number;
+        priceCurrency?: 'USD' | 'CNY';
+    }>;
 }
 
 /**
@@ -71,12 +102,22 @@ export interface ModelPricing {
  */
 export function lookupModelPricing(
     model: string,
-    settings?: { customProviders?: Array<{ modelMeta?: Record<string, { inputPricePerM?: number; outputPricePerM?: number }> }> },
-    options?: { allowDefaults?: boolean },
+    settings?: { customProviders?: PricingProviderLike[] },
+    options?: ModelPricingLookupOptions,
 ): ModelPricing | null {
     const key = (model || '').trim();
     if (!key) return null;
-    for (const provider of settings?.customProviders || []) {
+    const all = settings?.customProviders || [];
+    // 指定渠道时只在该渠道里找：同名模型在不同渠道价格不同（如官方 DeepSeek 与 OpenCode 转售）
+    const scoped = options?.endpoint || options?.providerId
+        ? all.filter(provider => {
+            if (options.providerId && provider.id === options.providerId) return true;
+            if (!options.endpoint) return false;
+            const target = normalizePricingEndpoint(options.endpoint);
+            return !!provider.endpoint && normalizePricingEndpoint(provider.endpoint) === target;
+        })
+        : all;
+    for (const provider of scoped) {
         const meta = provider.modelMeta?.[key];
         if (!meta) continue;
         const hasInput = typeof meta.inputPricePerM === 'number' && Number.isFinite(meta.inputPricePerM);
@@ -86,6 +127,7 @@ export function lookupModelPricing(
         return {
             inputPerM: hasInput ? meta.inputPricePerM as number : 0,
             outputPerM: hasOutput ? meta.outputPricePerM as number : 0,
+            ...(meta.priceCurrency ? { currency: meta.priceCurrency } : {}),
         };
     }
     if (options?.allowDefaults) {
@@ -93,6 +135,22 @@ export function lookupModelPricing(
         if (fallback) return { ...fallback };
     }
     return null;
+}
+
+/**
+ * 端点归一化：忽略协议尾缀差异（`/v1`、`/chat/completions`、尾部斜杠）。
+ *
+ * @param endpoint - 端点
+ * @returns 归一化后的键
+ */
+function normalizePricingEndpoint(endpoint: string): string {
+    return String(endpoint || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\/+$/, '')
+        .replace(/\/v1\/chat\/completions$/, '')
+        .replace(/\/chat\/completions$/, '')
+        .replace(/\/v1$/, '');
 }
 
 /**
@@ -104,6 +162,7 @@ export function lookupModelPricing(
  * @param pricing - 模型单价；null 表示未配置单价
  * @param promptTokens - 输入 token 数
  * @param completionTokens - 输出 token 数
+ * @param options - 可选；`usdToCny` 覆盖美元→人民币汇率（缺省用 `DEFAULT_USD_TO_CNY`）
  * @returns 费用（元，6 位小数）；未配置单价时返回 null
  *
  * @example
@@ -112,13 +171,23 @@ export function lookupModelPricing(
  * estimateCostYuan(pricing, 1_000_000, 500_000); // 5（2 元输入 + 3 元输出）
  * estimateCostYuan(pricing, 1000, 2000);         // 0.014
  * estimateCostYuan(null, 1000, 2000);            // null（未配置单价）
+ * estimateCostYuan({ inputPerM: 1, outputPerM: 0, currency: 'USD' }, 1_000_000, 0); // 7.3
  * ```
  */
-export function estimateCostYuan(pricing: ModelPricing | null, promptTokens: number, completionTokens: number): number | null {
+export function estimateCostYuan(
+    pricing: ModelPricing | null,
+    promptTokens: number,
+    completionTokens: number,
+    options?: { usdToCny?: number },
+): number | null {
     if (!pricing) return null;
     const cost = (promptTokens / 1_000_000) * pricing.inputPerM
         + (completionTokens / 1_000_000) * pricing.outputPerM;
-    return Number(cost.toFixed(6));
+    // 端点自动识别给的是美元价：按汇率折成元，避免账本把 $ 当 ¥
+    const rate = pricing.currency === 'USD'
+        ? (Number.isFinite(options?.usdToCny) && options!.usdToCny! > 0 ? options!.usdToCny! : DEFAULT_USD_TO_CNY)
+        : 1;
+    return Number((cost * rate).toFixed(6));
 }
 
 /**
@@ -133,10 +202,10 @@ export function estimateCostYuan(pricing: ModelPricing | null, promptTokens: num
  */
 export function lookupModelPricingWithSource(
     model: string,
-    settings?: { customProviders?: Array<{ modelMeta?: Record<string, { inputPricePerM?: number; outputPricePerM?: number }> }> },
-    options?: { allowDefaults?: boolean },
+    settings?: { customProviders?: PricingProviderLike[] },
+    options?: ModelPricingLookupOptions,
 ): { pricing: ModelPricing; source: 'user' | 'default' } | null {
-    const userPricing = lookupModelPricing(model, settings);
+    const userPricing = lookupModelPricing(model, settings, options);
     if (userPricing) return { pricing: userPricing, source: 'user' };
     if (!options?.allowDefaults) return null;
     const fallback = DEFAULT_MODEL_PRICING[String(model || '').trim().toLowerCase()];

@@ -8,10 +8,12 @@ import {
     defaultHeadersForProvider,
     defaultAssignmentFor,
     describeThinkingLevel,
+    getOpenCodeSessionId,
     isProviderVisible,
     migrateRemovedPresets,
     parseHeaderLines,
     PRESET_PROVIDER_IDS,
+    resolveProviderHeaders,
     resolveThinkingCapability,
     serializeHeaderLines,
     thinkingBudgetFromLevel,
@@ -73,10 +75,16 @@ describe('resolveThinkingCapability 按渠道自动识别', () => {
             .toBe('reasoning_effort');
     });
 
-    it('DeepSeek / SenseNova / OpenCode → thinking.type', () => {
+    it('DeepSeek / SenseNova → thinking.type', () => {
         expect(resolveThinkingCapability(provider(), 'deepseek-v4-pro').kind).toBe('thinking');
         expect(resolveThinkingCapability(provider({ endpoint: 'https://token.sensenova.cn/v1/chat/completions' }), 'x').kind).toBe('thinking');
-        expect(resolveThinkingCapability(provider({ endpoint: 'https://opencode.ai/zen/v1/chat/completions' }), 'big-pickle').kind).toBe('thinking');
+    });
+
+    // 语义变更（2026-11-16）：OpenCode 网关按 reasoning_effort 分级（能力声明 low/high/max，
+    // 实测 thinking.type 也兼容，但旧实现是「UI 说支持、运行时完全不下发」）。
+    it('OpenCode → reasoning_effort（与运行时下发同源）', () => {
+        expect(resolveThinkingCapability(provider({ endpoint: 'https://opencode.ai/zen/v1/chat/completions' }), 'big-pickle').kind)
+            .toBe('reasoning_effort');
     });
 
     it('未知渠道 → 不下发', () => {
@@ -120,9 +128,26 @@ describe('内置请求头适配', () => {
         expect(result.headers['anthropic-version']).toBe('2023-06-01');
     });
 
-    it('OpenCode / 普通渠道不补额外头', () => {
-        expect(defaultHeadersForProvider({ endpoint: 'https://opencode.ai/zen/v1/chat/completions' }).headers).toEqual({});
+    // 语义变更（2026-11-16）：OpenCode Go 缺 x-opencode-session 会 400 MissingSessionID，
+    // 因此改为自动补会话头；普通渠道仍然不补。
+    it('OpenCode 自动补会话头，普通渠道不补', () => {
+        const opencode = defaultHeadersForProvider(
+            { endpoint: 'https://opencode.ai/zen/v1/chat/completions' },
+            { sessionId: 'fixed-session' },
+        );
+        expect(opencode.headers['x-opencode-session']).toBe('fixed-session');
         expect(defaultHeadersForProvider({ endpoint: 'https://api.deepseek.com/v1/chat/completions' }).headers).toEqual({});
+    });
+
+    it('用户自定义请求头覆盖内置值，且会话 id 稳定', () => {
+        const a = getOpenCodeSessionId();
+        const b = getOpenCodeSessionId();
+        expect(a).toBe(b);
+        const merged = resolveProviderHeaders({
+            endpoint: 'https://opencode.ai/zen/v1/chat/completions',
+            headers: { 'x-opencode-session': 'mine' },
+        });
+        expect(merged['x-opencode-session']).toBe('mine');
     });
 });
 

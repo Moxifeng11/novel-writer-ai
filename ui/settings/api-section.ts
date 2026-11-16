@@ -11,18 +11,23 @@ import { Setting, Notice, Menu } from 'obsidian';
 import { CustomProvider } from '@/main';
 import {
     defaultHeadersForProvider,
+    describeLimitSource,
+    describeLimitSourceLabel,
     describeThinkingLevel,
     parseHeaderLines,
+    resolveProviderHeaders,
     resolveThinkingCapability,
     serializeHeaderLines,
     thinkingBudgetFromLevel,
 } from '@/shared/provider-ui-model';
+import { ModelEditorModal } from '@/ui/model-editor-modal';
+import { CanonResearchService, PROVIDER_LABELS } from '@/services/canon-research-service';
 import { API_FORMAT_OPTIONS, normalizeApiFormat, type ApiFormat } from '@/shared/api-format';
 import { discoverModels } from '@/services/model-discovery';
 import { ModelPickerModal } from '@/ui/model-picker-modal';
 import { PasswordModal } from '@/ui/password-modal';
 import { describeKeyEncryptionStatus, describeSecretForInput, isStoredCiphertext, SECRET_INPUT_ATTRS } from '@/shared/secret-display';
-import { lookupModelCapability } from '@/shared/model-capabilities';
+import { getDetectedModelCapability, lookupModelCapability } from '@/shared/model-capabilities';
 import { testProviderConnectivity } from '@/services/api-connectivity-service';
 import { renderCollapsibleSection } from '@/ui/settings-utils';
 import {
@@ -80,6 +85,20 @@ export class ApiSection extends SettingsSection {
     }
 
     /** 取供应商原始配置（含 apiFormat / disabledModels / modelMeta 等未透出字段） */
+    /** 模型单价摘要：美元显示 $，人民币显示 ¥（输入/输出，每百万 tokens） */
+    private formatModelPrice(meta: {
+        inputPricePerM?: number;
+        outputPricePerM?: number;
+        priceCurrency?: 'USD' | 'CNY';
+    } | undefined): string {
+        const input = meta?.inputPricePerM;
+        const output = meta?.outputPricePerM;
+        if (!Number.isFinite(input) && !Number.isFinite(output)) return '';
+        const symbol = meta?.priceCurrency === 'USD' ? '$' : '¥';
+        const fmt = (value: number | undefined): string => (Number.isFinite(value) ? String(value) : '0');
+        return `${symbol}${fmt(input)}/${symbol}${fmt(output)}`;
+    }
+
     private getRawProvider(id: string): CustomProvider | undefined {
         return (this.plugin.settings.customProviders || []).find(provider => provider.id === id);
     }
@@ -536,7 +555,7 @@ export class ApiSection extends SettingsSection {
             fetchBtn.setText('⏳ 获取中…');
             try {
                 const key = this.plugin.settings.providerKeys?.[raw.id] || '';
-                const result = await discoverModels(raw.endpoint, format, key);
+                const result = await discoverModels(raw.endpoint, format, key, undefined, resolveProviderHeaders(raw));
                 if (result.kind === 'error') {
                     showErrorNotice(result.message, { title: '获取模型失败', timeout: 10000 });
                     return;
@@ -548,6 +567,10 @@ export class ApiSection extends SettingsSection {
                             ...meta[item.id],
                             ...(item.contextWindow ? { contextWindow: item.contextWindow } : {}),
                             ...(item.maxTokens ? { maxTokens: item.maxTokens } : {}),
+                            ...(item.vision === undefined ? {} : { vision: item.vision }),
+                            ...(item.inputPricePerM === undefined ? {} : { inputPricePerM: item.inputPricePerM }),
+                            ...(item.outputPricePerM === undefined ? {} : { outputPricePerM: item.outputPricePerM }),
+                            ...(item.priceCurrency === undefined ? {} : { priceCurrency: item.priceCurrency }),
                         };
                     }
                     this.plugin.updateProvider(raw.id, { models, modelMeta: meta });
@@ -568,7 +591,7 @@ export class ApiSection extends SettingsSection {
             attr: { type: 'button' },
         });
         addModelBtn.setText('＋ 添加模型');
-        addModelBtn.onclick = () => this.renderInlineModelEditor(modelsBlock, raw, '');
+        addModelBtn.onclick = () => this.openModelEditor(raw, '');
 
         const list = modelsBlock.createDiv({ cls: 'nw-api-model-list nw-u-maxh-240px nw-u-ovy-auto-2' });
         const disabled = new Set(raw.disabledModels || []);
@@ -584,8 +607,18 @@ export class ApiSection extends SettingsSection {
             const main = row.createDiv({ cls: 'nw-api-model-main' });
             main.createSpan({ cls: 'nw-api-model-id', text: modelId });
             const capacity = this.formatCapacity(contextWindow);
-            if (capacity) main.createSpan({ cls: 'nw-api-model-badge', text: capacity });
+            if (capacity) {
+                const source = describeLimitSource(raw, modelId, false, getDetectedModelCapability(modelId) !== null);
+                main.createSpan({
+                    cls: 'nw-api-model-badge',
+                    text: capacity,
+                    attr: { title: `${contextWindow} tokens（来源：${describeLimitSourceLabel(source)}）` },
+                });
+            }
             if (meta?.vision) main.createSpan({ cls: 'nw-api-model-badge', text: '视觉' });
+            // M-20：单价按渠道识别后直接展示，用户不用点进编辑也能确认「费用是按什么价在算」
+            const price = this.formatModelPrice(meta);
+            if (price) main.createSpan({ cls: 'nw-api-model-badge nw-api-model-price', text: price });
 
             const rowActions = row.createDiv({ cls: 'nw-api-model-actions' });
 
@@ -610,7 +643,7 @@ export class ApiSection extends SettingsSection {
                 attr: { type: 'button', title: '编辑模型' },
             });
             editBtn.setText('✏️');
-            editBtn.onclick = () => this.renderInlineModelEditor(row, raw, modelId);
+            editBtn.onclick = () => this.openModelEditor(raw, modelId);
 
             const delBtn = rowActions.createEl('button', {
                 cls: 'nw-api-icon-btn',
@@ -635,13 +668,17 @@ export class ApiSection extends SettingsSection {
      * @param raw - 供应商原始配置
      */
     private renderProviderCapabilityRows(container: HTMLElement, raw: CustomProvider): void {
-        const capability = resolveThinkingCapability(raw, raw.models[0] || '');
+        // 按「该渠道当前分配的默认模型」判定，而不是永远拿 models[0]：
+        // 一个渠道里不同模型的思考能力可能不同（有的支持 reasoning，有的纯文本）。
+        const assignment = this.plugin.getProviderAssignment(raw.id);
+        const capabilityModel = assignment.defaultModel || raw.models[0] || '';
+        const capability = resolveThinkingCapability(raw, capabilityModel);
         if (capability.supported) {
             const thinking = this.plugin.getProviderThinking(raw.id);
             const mode = thinking.mode === 'off' ? 0 : Math.round((thinking.budget ?? 0) / 128);
             new Setting(container)
                 .setName('思考强度')
-                .setDesc(`${capability.hint}；当前：${describeThinkingLevel(mode)}`)
+                .setDesc(`${capability.hint}（${capabilityModel ? `按 ${capabilityModel} 判定` : '按渠道判定'}）；当前：${describeThinkingLevel(mode)}`)
                 .addDropdown(dropdown => {
                     dropdown.addOption('0', '关闭');
                     dropdown.addOption('30', '低（快速）');
@@ -723,6 +760,8 @@ export class ApiSection extends SettingsSection {
                     apiKey: this.plugin.settings.providerKeys?.[raw.id] || '',
                     sourceType: raw.sourceType === 'local' ? 'local' : 'cloud',
                     apiFormat: format,
+                    // 与真实调用同源：缺了内置头（OpenCode 会话头）会出现「测试 400 但以为是端点问题」
+                    headers: resolveProviderHeaders(raw),
                 });
                 const icon = result.level === 'ok' ? '✅' : result.level === 'warn' ? '⚠️' : '❌';
                 statusEl.setText(`${icon} ${result.message}`);
@@ -768,87 +807,55 @@ export class ApiSection extends SettingsSection {
         }
     }
 
-    /** 行内模型编辑（替代弹窗）：改 id / 上下文 / 输出 / 单价 / 是否支持图片 */
-    private renderInlineModelEditor(container: HTMLElement, raw: CustomProvider, modelId: string): void {
-        const existing = container.createDiv({ cls: 'nw-api-model-inline-editor' });
-        const meta = raw.modelMeta?.[modelId] ?? {};
-        let idValue = modelId || '';
-        let contextValue = meta.contextWindow ?? 0;
-        let outputValue = meta.maxTokens ?? 0;
-        let inputPrice = meta.inputPricePerM ?? 0;
-        let outputPrice = meta.outputPricePerM ?? 0;
-        let vision = meta.vision === true;
-        existing.createDiv({ cls: 'nw-api-sidebar-group', text: modelId ? '编辑模型' : '新增模型' });
-
-        new Setting(existing)
-            .setName('模型 ID')
-            .setDesc('请求时使用；保存后会同步到模型列表')
-            .addText(text => text.setValue(idValue).onChange(value => { idValue = value.trim(); }));
-        new Setting(existing)
-            .setName('上下文窗口（tokens）')
-            .setDesc('留空则按内置能力表推断')
-            .addText(text => text.setPlaceholder('1048576')
-                .setValue(contextValue > 0 ? String(contextValue) : '')
-                .onChange(value => { contextValue = parseInt(value, 10) || 0; }));
-        new Setting(existing)
-            .setName('输出上限（tokens）')
-            .setDesc('留空则按内置能力表推断')
-            .addText(text => text.setPlaceholder('65536')
-                .setValue(outputValue > 0 ? String(outputValue) : '')
-                .onChange(value => { outputValue = parseInt(value, 10) || 0; }));
-        new Setting(existing)
-            .setName('输入单价（元/百万 tokens）')
-            .setDesc('用于 AI 用量账本估算，留空不计费')
-            .addText(text => text.setPlaceholder('0')
-                .setValue(inputPrice > 0 ? String(inputPrice) : '')
-                .onChange(value => { inputPrice = parseFloat(value) || 0; }));
-        new Setting(existing)
-            .setName('输出单价（元/百万 tokens）')
-            .setDesc('用于 AI 用量账本估算，留空不计费')
-            .addText(text => text.setPlaceholder('0')
-                .setValue(outputPrice > 0 ? String(outputPrice) : '')
-                .onChange(value => { outputPrice = parseFloat(value) || 0; }));
-        new Setting(existing)
-            .setName('支持图片输入')
-            .setDesc('该模型能否接收图片；开启后模型列表显示「视觉」标记')
-            .addToggle(toggle => toggle.setValue(vision).onChange(value => { vision = value; }));
-
-        new Setting(existing)
-            .addButton(button => button.setButtonText('取消').onClick(() => {
-                existing.remove();
-            }))
-            .addButton(button => button
-                .setButtonText('保存')
-                .setCta()
-                .onClick(async () => {
-                    const nextId = idValue || modelId;
-                    if (!nextId) { new Notice('请输入模型 ID'); return; }
-                    const current = this.getRawProvider(raw.id);
-                    if (!current) return;
-                    const models = [...current.models];
-                    if (modelId) {
-                        const index = models.indexOf(modelId);
-                        if (index >= 0) models[index] = nextId;
-                        else models.push(nextId);
-                    } else if (!models.includes(nextId)) {
-                        models.push(nextId);
-                    }
-                    const modelMeta = { ...(current.modelMeta || {}) };
-                    if (modelId && modelId !== nextId) delete modelMeta[modelId];
-                    modelMeta[nextId] = {
-                        contextWindow: contextValue > 0 ? contextValue : undefined,
-                        maxTokens: outputValue > 0 ? outputValue : undefined,
-                        inputPricePerM: inputPrice > 0 ? inputPrice : undefined,
-                        outputPricePerM: outputPrice > 0 ? outputPrice : undefined,
-                        vision,
-                    };
-                    this.plugin.updateProvider(raw.id, { models, modelMeta });
-                    this.syncAvailableModels(raw.id);
-                    await this.plugin.saveSettings();
-                    this.plugin.updateStatusBarText();
-                    showSuccessNotice('已保存模型设置', { timeout: 3000 });
-                    this.refresh();
-                }));
+    /**
+     * 打开模型编辑弹窗（M-21）。
+     *
+     * 从行内编辑改为弹窗：窄面板里行内表单会把模型 ID 挤成竖排单字，
+     * 且六个字段要横向滚动才能看全。弹窗一次展示完整，保存后即改即存。
+     *
+     * @param raw - 当前渠道
+     * @param modelId - 要编辑的模型 id；空字符串表示新增
+     */
+    private openModelEditor(raw: CustomProvider, modelId: string): void {
+        const current = this.getRawProvider(raw.id);
+        if (!current) return;
+        const meta = current.modelMeta?.[modelId] ?? {};
+        new ModelEditorModal(this.app, modelId ? '编辑模型' : '新增模型', {
+            id: modelId,
+            contextWindow: meta.contextWindow,
+            maxTokens: meta.maxTokens,
+            inputPricePerM: meta.inputPricePerM,
+            outputPricePerM: meta.outputPricePerM,
+            priceCurrency: meta.priceCurrency,
+            vision: meta.vision,
+        }, async (value) => {
+            const latest = this.getRawProvider(raw.id);
+            if (!latest) return;
+            const models = [...latest.models];
+            if (modelId) {
+                const index = models.indexOf(modelId);
+                if (index >= 0) models[index] = value.id;
+                else models.push(value.id);
+            } else if (!models.includes(value.id)) {
+                models.push(value.id);
+            }
+            const modelMeta = { ...(latest.modelMeta || {}) };
+            if (modelId && modelId !== value.id) delete modelMeta[modelId];
+            modelMeta[value.id] = {
+                ...(value.contextWindow ? { contextWindow: value.contextWindow } : {}),
+                ...(value.maxTokens ? { maxTokens: value.maxTokens } : {}),
+                ...(value.inputPricePerM ? { inputPricePerM: value.inputPricePerM } : {}),
+                ...(value.outputPricePerM ? { outputPricePerM: value.outputPricePerM } : {}),
+                ...(value.priceCurrency ? { priceCurrency: value.priceCurrency } : {}),
+                vision: value.vision === true,
+            };
+            this.plugin.updateProvider(raw.id, { models, modelMeta });
+            this.syncAvailableModels(raw.id);
+            await this.plugin.saveSettings();
+            this.plugin.updateStatusBarText();
+            showSuccessNotice('已保存模型设置', { timeout: 3000 });
+            this.refresh();
+        }).open();
     }
 
     /**
@@ -977,28 +984,51 @@ export class ApiSection extends SettingsSection {
             });
 
             const currentModel = assignment.defaultModel;
+            const rawProvider = this.getRawProvider(provider.id);
             const override = this.plugin.settings.modelOverrides[provider.endpoint]?.[currentModel];
             const defaults = this.plugin.resolveModelLimits(currentModel, provider.endpoint);
-            new Setting(inner)
-                .setName('最大上下文')
-                .setDesc(`${currentModel} 默认 ${defaults.maxContext.toLocaleString()} tokens${override?.maxContext !== undefined ? ' · ⚠️ 已设置自定义值' : ''}`)
-                .addText(text => text
-                    .setPlaceholder(String(defaults.maxContext))
-                    .setValue(override?.maxContext !== undefined ? String(override.maxContext) : '')
-                    .onChange(value => {
-                        const parsed = parseInt(value, 10);
-                        this.plugin.setCurrentModelOverride('maxContext', Number.isFinite(parsed) && parsed > 0 ? parsed : defaults.maxContext);
-                    }));
-            new Setting(inner)
-                .setName('最大输出')
-                .setDesc(`${currentModel} 默认 ${defaults.maxOutput.toLocaleString()} tokens${override?.maxOutput !== undefined ? ' · ⚠️ 已设置自定义值' : ''}`)
-                .addText(text => text
-                    .setPlaceholder(String(defaults.maxOutput))
-                    .setValue(override?.maxOutput !== undefined ? String(override.maxOutput) : '')
-                    .onChange(value => {
-                        const parsed = parseInt(value, 10);
-                        this.plugin.setCurrentModelOverride('maxOutput', Number.isFinite(parsed) && parsed > 0 ? parsed : defaults.maxOutput);
-                    }));
+            const detected = getDetectedModelCapability(currentModel) !== null;
+
+            // 上限默认按「该渠道该模型」自动识别，输入框只作为手动覆盖；
+            // 清空输入 = 回到自动（旧实现清空会把自动值固化成覆盖）。
+            const removeOverride = (field: 'maxContext' | 'maxOutput'): void => {
+                this.plugin.clearProviderModelOverride(provider.id, currentModel, field);
+                void this.plugin.saveSettings();
+            };
+            const limitRows: Array<{ field: 'maxContext' | 'maxOutput'; label: string; value: number }> = [
+                { field: 'maxContext', label: '最大上下文', value: defaults.maxContext },
+                { field: 'maxOutput', label: '最大输出', value: defaults.maxOutput },
+            ];
+            for (const row of limitRows) {
+                const source = describeLimitSource(
+                    rawProvider,
+                    currentModel,
+                    override?.[row.field] !== undefined,
+                    detected,
+                );
+                const hasOverride = override?.[row.field] !== undefined;
+                new Setting(inner)
+                    .setName(row.label)
+                    .setDesc(`${currentModel}：自动识别 ${row.value.toLocaleString()} tokens（来源：${describeLimitSourceLabel(source)}）`
+                        + (hasOverride ? ' · ⚠️ 当前为手动覆盖，清空输入可恢复自动' : ' · 留空即自动'))
+                    .addText(text => text
+                        .setPlaceholder(String(row.value))
+                        .setValue(hasOverride ? String(override?.[row.field]) : '')
+                        .onChange(value => {
+                            const trimmed = value.trim();
+                            if (!trimmed) {
+                                removeOverride(row.field);
+                                return;
+                            }
+                            const parsed = parseInt(trimmed, 10);
+                            if (!Number.isFinite(parsed) || parsed <= 0) {
+                                new Notice('请输入大于 0 的 token 数；清空表示自动识别');
+                                return;
+                            }
+                            this.plugin.setProviderModelOverride(provider.id, currentModel, row.field, parsed);
+                            void this.plugin.saveSettings();
+                        }));
+            }
         });
 
         renderCollapsibleSection(wrap, '任务级模型参数（按渠道记忆）', false, inner => this.renderTaskBudgetRows(inner, providerId));
@@ -1055,6 +1085,32 @@ export class ApiSection extends SettingsSection {
                     await this.plugin.saveSettings();
                 });
             });
+
+        // 联网检索本质上是「外部服务」：没有测试入口时，用户分不清是网络问题、Key 问题还是没结果。
+        const testRow = new Setting(card)
+            .setName('测试检索')
+            .setDesc('用当前通道检索一个示例作品名，确认这条通道在本机网络下是否可用');
+        const testStatus = card.createDiv({ cls: 'nw-text-12-muted' });
+        testRow.addButton(button => button
+            .setButtonText('🔍 测试检索')
+            .onClick(async () => {
+                button.setDisabled(true);
+                testStatus.setText('正在检索…');
+                try {
+                    const service = new CanonResearchService(this.app, this.plugin);
+                    const result = await service.research('斗破苍穹');
+                    if (result.sources.length > 0) {
+                        testStatus.setText(`✅ 「${PROVIDER_LABELS[result.provider] ?? result.provider}」可用：返回 ${result.sources.length} 条来源`);
+                    } else {
+                        testStatus.setText('⚠️ 通道可用但没有返回来源：'
+                            + (result.warnings[0] || '可换一个作品名再试'));
+                    }
+                } catch (error) {
+                    testStatus.setText('❌ 检索失败：' + (error instanceof Error ? error.message : String(error)));
+                } finally {
+                    button.setDisabled(false);
+                }
+            }));
 
         new Setting(card)
             .setName('搜索 API key')
@@ -1150,123 +1206,133 @@ export class ApiSection extends SettingsSection {
             cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-marginbottom-8px-2',
         });
 
-        const globalCard = card.createDiv({ cls: 'nw-card' });
-        globalCard.addClass('nw-form-stack');
-        globalCard.createDiv({ cls: 'nw-form-label', text: '全局思考强度' });
-        globalCard.createDiv({
-            cls: 'nw-text-12-muted',
-            text: '四级预设 + 0–100% 拖拽强度。等级决定默认语义，滑杆可微调实际思考预算；任务级设置优先。',
-        });
-
-        const initialLevel = this.plugin.settings.thinkingLevel
-            ?? thinkingLevelFromMode(this.plugin.settings.thinkingMode);
-        const initialIntensity = this.plugin.settings.thinkingIntensity
-            ?? thinkingIntensityFromMode(this.plugin.settings.thinkingMode);
-        let currentLevel: ThinkingLevel = initialLevel;
-
-        const levelRow = globalCard.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-fwr-wrap-2 nw-u-margintop-8px-2' });
-        const levelButtons = new Map<ThinkingLevel, HTMLButtonElement>();
-        const levelDesc = globalCard.createDiv({ cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-margintop-6px-2' });
-        const sliderRow = globalCard.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-margintop-8px-2' });
-        const range = sliderRow.createEl('input', {
-            type: 'range',
-            attr: { min: '0', max: '100', step: '5' },
-        }) as HTMLInputElement;
-        const percentEl = sliderRow.createSpan({ cls: 'nw-u-fs-12px-2 nw-u-c-text-normal-2' });
-
-        const refreshLevelUi = (level: ThinkingLevel, intensity: number): void => {
-            currentLevel = level;
-            for (const [key, button] of levelButtons) {
-                const active = key === level;
-                button.classList.toggle('nw-btn-primary', active);
-                button.classList.toggle('nw-btn-secondary', !active);
-            }
-            range.value = String(intensity);
-            percentEl.setText(`${intensity}%`);
-            const spec = thinkingLevelSpec(level);
-            levelDesc.setText(`${spec.label} · ${intensity}% — ${spec.description}`);
-        };
-
-        const persistThinking = async (level: ThinkingLevel, intensity: number): Promise<void> => {
-            this.plugin.settings.thinkingLevel = level;
-            this.plugin.settings.thinkingIntensity = intensity;
-            this.plugin.settings.thinkingMode = thinkingLevelSpec(level).mode;
-            await this.plugin.saveSettings();
-            this.refreshTaskBudgetPreview?.();
-        };
-
-        for (const spec of THINKING_LEVELS) {
-            const button = levelRow.createEl('button', {
-                text: `${spec.label} ${spec.percent}%`,
-                cls: 'nw-btn nw-btn-secondary',
-                attr: { type: 'button', title: spec.description },
+        // 全局思考强度只对「当前渠道」开放：非当前渠道改它会静默改掉别的渠道正在用的参数。
+        if (isCurrentProvider) {
+            const globalCard = card.createDiv({ cls: 'nw-card' });
+            globalCard.addClass('nw-form-stack');
+            globalCard.createDiv({ cls: 'nw-form-label', text: '全局思考强度' });
+            globalCard.createDiv({
+                cls: 'nw-text-12-muted',
+                text: '四级预设 + 0–100% 拖拽强度。等级决定默认语义，滑杆可微调实际思考预算；任务级设置优先。',
             });
-            levelButtons.set(spec.level, button);
-            button.onclick = () => {
-                refreshLevelUi(spec.level, spec.percent);
-                void persistThinking(spec.level, spec.percent);
+
+            const initialLevel = this.plugin.settings.thinkingLevel
+                ?? thinkingLevelFromMode(this.plugin.settings.thinkingMode);
+            const initialIntensity = this.plugin.settings.thinkingIntensity
+                ?? thinkingIntensityFromMode(this.plugin.settings.thinkingMode);
+            let currentLevel: ThinkingLevel = initialLevel;
+
+            const levelRow = globalCard.createDiv({ cls: 'nw-u-d-flex-2 nw-u-gap-8px-2 nw-u-fwr-wrap-2 nw-u-margintop-8px-2' });
+            const levelButtons = new Map<ThinkingLevel, HTMLButtonElement>();
+            const levelDesc = globalCard.createDiv({ cls: 'nw-u-fs-12px-2 nw-u-c-text-muted-2 nw-u-margintop-6px-2' });
+            const sliderRow = globalCard.createDiv({ cls: 'nw-u-d-flex-2 nw-u-ai-center-2 nw-u-gap-8px-2 nw-u-margintop-8px-2' });
+            const range = sliderRow.createEl('input', {
+                type: 'range',
+                attr: { min: '0', max: '100', step: '5' },
+            }) as HTMLInputElement;
+            const percentEl = sliderRow.createSpan({ cls: 'nw-u-fs-12px-2 nw-u-c-text-normal-2' });
+
+            const refreshLevelUi = (level: ThinkingLevel, intensity: number): void => {
+                currentLevel = level;
+                for (const [key, button] of levelButtons) {
+                    const active = key === level;
+                    button.classList.toggle('nw-btn-primary', active);
+                    button.classList.toggle('nw-btn-secondary', !active);
+                }
+                range.value = String(intensity);
+                percentEl.setText(`${intensity}%`);
+                const spec = thinkingLevelSpec(level);
+                levelDesc.setText(`${spec.label} · ${intensity}% — ${spec.description}`);
             };
-        }
 
-        range.oninput = () => {
-            const intensity = clampThinkingIntensity(parseInt(range.value, 10));
-            refreshLevelUi(nearestThinkingLevel(intensity), intensity);
-        };
-        range.onchange = () => {
-            const intensity = clampThinkingIntensity(parseInt(range.value, 10));
-            const level = nearestThinkingLevel(intensity);
-            refreshLevelUi(level, intensity);
-            void persistThinking(level, intensity);
-        };
-        refreshLevelUi(initialLevel, initialIntensity);
+            const persistThinking = async (level: ThinkingLevel, intensity: number): Promise<void> => {
+                this.plugin.settings.thinkingLevel = level;
+                this.plugin.settings.thinkingIntensity = intensity;
+                this.plugin.settings.thinkingMode = thinkingLevelSpec(level).mode;
+                await this.plugin.saveSettings();
+                this.refreshTaskBudgetPreview?.();
+            };
 
-        // ── 预算档位（唯一的输入/输出调节入口）──────────────────
-        // 用户只选一个档位，引擎按任务类别分发输入/输出预算。
-        // 旧的 6 张任务卡片各带输入/输出/思考 3 个数字框，共 18 个；
-        // 现在这 18 个控件收敛成这一处。
-        const globalGrid = globalCard.createDiv({ cls: 'nw-form-grid' });
+            for (const spec of THINKING_LEVELS) {
+                const button = levelRow.createEl('button', {
+                    text: `${spec.label} ${spec.percent}%`,
+                    cls: 'nw-btn nw-btn-secondary',
+                    attr: { type: 'button', title: spec.description },
+                });
+                levelButtons.set(spec.level, button);
+                button.onclick = () => {
+                    refreshLevelUi(spec.level, spec.percent);
+                    void persistThinking(spec.level, spec.percent);
+                };
+            }
 
-        const tierField = globalGrid.createDiv({ cls: 'nw-form-field' });
-        tierField.createEl('label', { cls: 'nw-form-label', text: '预算档位' });
-        const tierSelect = tierField.createEl('select', { cls: 'nw-select' });
-        for (const spec of BUDGET_TIERS) {
-            tierSelect.createEl('option', {
-                value: spec.value,
-                text: spec.label,
-                attr: { title: spec.description },
+            range.oninput = () => {
+                const intensity = clampThinkingIntensity(parseInt(range.value, 10));
+                refreshLevelUi(nearestThinkingLevel(intensity), intensity);
+            };
+            range.onchange = () => {
+                const intensity = clampThinkingIntensity(parseInt(range.value, 10));
+                const level = nearestThinkingLevel(intensity);
+                refreshLevelUi(level, intensity);
+                void persistThinking(level, intensity);
+            };
+            refreshLevelUi(initialLevel, initialIntensity);
+
+            // ── 预算档位（唯一的输入/输出调节入口）──────────────────
+            // 用户只选一个档位，引擎按任务类别分发输入/输出预算。
+            // 旧的 6 张任务卡片各带输入/输出/思考 3 个数字框，共 18 个；
+            // 现在这 18 个控件收敛成这一处。
+            const globalGrid = globalCard.createDiv({ cls: 'nw-form-grid' });
+
+            const tierField = globalGrid.createDiv({ cls: 'nw-form-field' });
+            tierField.createEl('label', { cls: 'nw-form-label', text: '预算档位' });
+            const tierSelect = tierField.createEl('select', { cls: 'nw-select' });
+            for (const spec of BUDGET_TIERS) {
+                tierSelect.createEl('option', {
+                    value: spec.value,
+                    text: spec.label,
+                    attr: { title: spec.description },
+                });
+            }
+            tierSelect.value = normalizeBudgetTier(this.plugin.settings.budgetTier);
+            const tierDesc = tierField.createDiv({ cls: 'nw-text-12-muted' });
+            const syncTierDesc = (): void => {
+                const spec = budgetTierSpec(tierSelect.value as BudgetTier);
+                tierDesc.setText(spec.description);
+                tierSelect.setAttr('title', spec.description);
+            };
+            syncTierDesc();
+
+            const globalBudgetField = globalGrid.createDiv({ cls: 'nw-form-field' });
+            globalBudgetField.createEl('label', { cls: 'nw-form-label', text: '思考预算上限（0=按强度自动）' });
+            const globalBudget = globalBudgetField.createEl('input', {
+                type: 'text',
+                cls: 'nw-input',
+                attr: { placeholder: '0' },
+            });
+            globalBudget.value = String(this.plugin.settings.thinkingBudget || 0);
+
+            tierSelect.onchange = async () => {
+                this.plugin.settings.budgetTier = normalizeBudgetTier(tierSelect.value);
+                syncTierDesc();
+                await this.plugin.saveSettings();
+                this.refreshTaskBudgetPreview?.();
+            };
+
+            globalBudget.onchange = async () => {
+                const n = parseInt(globalBudget.value, 10);
+                this.plugin.settings.thinkingBudget = Number.isFinite(n) && n > 0 ? n : 0;
+                await this.plugin.saveSettings();
+                this.refreshTaskBudgetPreview?.();
+            };
+
+
+        } else {
+            card.createEl('div', {
+                cls: 'nw-card nw-text-12-muted',
+                text: '全局思考强度与预算档位只对当前渠道开放；该渠道的思考强度请在「渠道能力与高级项」里单独设置。',
             });
         }
-        tierSelect.value = normalizeBudgetTier(this.plugin.settings.budgetTier);
-        const tierDesc = tierField.createDiv({ cls: 'nw-text-12-muted' });
-        const syncTierDesc = (): void => {
-            const spec = budgetTierSpec(tierSelect.value as BudgetTier);
-            tierDesc.setText(spec.description);
-            tierSelect.setAttr('title', spec.description);
-        };
-        syncTierDesc();
-
-        const globalBudgetField = globalGrid.createDiv({ cls: 'nw-form-field' });
-        globalBudgetField.createEl('label', { cls: 'nw-form-label', text: '思考预算上限（0=按强度自动）' });
-        const globalBudget = globalBudgetField.createEl('input', {
-            type: 'text',
-            cls: 'nw-input',
-            attr: { placeholder: '0' },
-        });
-        globalBudget.value = String(this.plugin.settings.thinkingBudget || 0);
-
-        tierSelect.onchange = async () => {
-            this.plugin.settings.budgetTier = normalizeBudgetTier(tierSelect.value);
-            syncTierDesc();
-            await this.plugin.saveSettings();
-            this.refreshTaskBudgetPreview?.();
-        };
-
-        globalBudget.onchange = async () => {
-            const n = parseInt(globalBudget.value, 10);
-            this.plugin.settings.thinkingBudget = Number.isFinite(n) && n > 0 ? n : 0;
-            await this.plugin.saveSettings();
-            this.refreshTaskBudgetPreview?.();
-        };
 
         // ── 预算分发表（只读）────────────────────────────────────
         // 旧版给 6 个任务各渲染一张卡片（模型/输入/输出/思考等级/思考预算），
@@ -1301,6 +1367,14 @@ export class ApiSection extends SettingsSection {
         // 6 列表格必然横向滚动，把「输入/输出/思考」三列挤到视野外。
         const renderPreview = (): void => {
             previewList.empty();
+            if (!isCurrentProvider) {
+                // 预算分发是按「当前渠道」的模型能力算的；非当前渠道展示会误导
+                previewList.createDiv({
+                    cls: 'nw-text-12-muted',
+                    text: '预算分发按当前渠道的模型能力计算：切到该渠道后可查看实际结果。',
+                });
+                return;
+            }
             for (const task of previewTasks) {
                 const effective = resolveTaskModelConfig(
                     this.plugin.settings,
@@ -1336,8 +1410,12 @@ export class ApiSection extends SettingsSection {
         const refreshPreview = () => renderPreview();
         this.refreshTaskBudgetPreview = refreshPreview;
 
-        // ── 已保存的任务级覆盖 ──────────────────────────────────
-        const overrides = this.plugin.settings.taskBudgets || {};
+        // ── 已保存的任务级覆盖（按渠道）──────────────────────────
+        // 旧实现固定读 settings.taskBudgets（当前渠道那份），在非当前渠道的设置页里
+        // 会显示并清除别的渠道的覆盖。
+        const overrides = isCurrentProvider
+            ? (this.plugin.settings.taskBudgets || {})
+            : (this.plugin.settings.providerTaskBudgets?.[providerId || ''] || {});
         const overrideKeys = Object.keys(overrides).filter(key => {
             const entry = overrides[key as AiTask];
             return entry && (
@@ -1360,10 +1438,19 @@ export class ApiSection extends SettingsSection {
                 .setButtonText(overrideKeys.length > 0 ? '清除全部覆盖' : '已由引擎接管')
                 .setDisabled(overrideKeys.length === 0)
                 .onClick(async () => {
-                    this.plugin.settings.taskBudgets = {};
+                    if (isCurrentProvider) {
+                        this.plugin.settings.taskBudgets = {};
+                    } else {
+                        const key = providerId || '';
+                        if (this.plugin.settings.providerTaskBudgets) {
+                            delete this.plugin.settings.providerTaskBudgets[key];
+                        }
+                    }
                     await this.plugin.saveSettings();
                     this.refresh();
-                    showSuccessNotice('已清除任务级覆盖，改由引擎分发');
+                    showSuccessNotice(isCurrentProvider
+                        ? '已清除任务级覆盖，改由引擎分发'
+                        : '已清除该渠道的任务级覆盖');
                 }));
     }
 

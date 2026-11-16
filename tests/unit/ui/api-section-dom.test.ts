@@ -18,6 +18,14 @@ interface ProviderStub {
     endpoint: string;
     apiKey?: string;
     models?: string[];
+    modelMeta?: Record<string, {
+        contextWindow?: number;
+        maxTokens?: number;
+        vision?: boolean;
+        inputPricePerM?: number;
+        outputPricePerM?: number;
+        priceCurrency?: 'USD' | 'CNY';
+    }>;
 }
 
 function makeHost(options: {
@@ -166,5 +174,40 @@ describe('ApiSection.render', () => {
         const root = renderApi(makeHost({ providers: PROVIDERS, currentId: 'p1' }));
         const text = root.allText();
         expect(text.length).toBeGreaterThan(200);
+    });
+
+    // 2026-11-16（M-19/M-20/M-21）：识别结果要可见——单价、上限来源、弹窗编辑入口
+    it('模型行显示识别到的单价，上限区显示来源', () => {
+        const providers: ProviderStub[] = [{
+            id: 'opencode',
+            name: 'OpenCode Go',
+            endpoint: 'https://opencode.ai/inference/go/openai/v1',
+            models: ['deepseek-v4.1-flash'],
+            modelMeta: {
+                'deepseek-v4.1-flash': {
+                    contextWindow: 1000000,
+                    maxTokens: 384000,
+                    vision: true,
+                    inputPricePerM: 0.15,
+                    outputPricePerM: 0.6,
+                    priceCurrency: 'USD',
+                },
+            },
+        }];
+        const root = renderApi(makeHost({ providers, currentId: 'opencode' }));
+        const text = root.allText();
+        expect(text).toContain('$0.15/$0.6');
+        expect(text).toContain('视觉');
+        // 上限区不再只有手填框：明确告诉用户值来自哪里
+        expect(text).toContain('来源：');
+    });
+
+    it('模型编辑入口改为弹窗（不再渲染行内编辑表单）', () => {
+        const root = renderApi(makeHost({ providers: PROVIDERS, currentId: 'p1' }));
+        // 行内编辑器只有点「编辑」才挂载；渲染阶段不应出现
+        expect(root.findAll('nw-api-model-inline-editor').length).toBe(0);
+        // 编辑按钮仍在
+        const editBtns = root.findAll('nw-api-icon-btn');
+        expect(editBtns.length).toBeGreaterThan(0);
     });
 });

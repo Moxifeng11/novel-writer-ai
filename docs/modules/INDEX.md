@@ -5,7 +5,7 @@
 
 | 模块 | 代码入口 | 数据/配置 | 状态 | 本轮/下轮目标 | 模块页 |
 | --- | --- | --- | --- | --- | --- |
-| API 配置 / 模型渠道 | `ui/settings/api-section.ts`、`core/provider-manager.ts`、`shared/provider-ui-model.ts` | `customProviders`、`providerKeys`、`providerAssignments`、`providerThinking`、`providerTaskBudgets`、`enabledProviderIds` | review（第一轮完成） | 交互细节打磨、请求头/思考参数边角、渠道卡片信息密度 | [api-config.md](api-config.md) |
+| API 配置 / 模型渠道 | `ui/settings/api-section.ts`、`core/provider-manager.ts`、`shared/provider-ui-model.ts`、`services/model-discovery.ts`、`shared/model-pricing.ts` | `customProviders`、`providerKeys`、`providerAssignments`、`providerThinking`、`providerTaskBudgets`、`enabledProviderIds`、`modelMeta`（识别缓存） | review（第二轮完成，待验收） | 端点能力自动识别/价格按渠道/模型弹窗/联网检索；下一轮按反馈打磨 | [api-config.md](api-config.md) |
 | 桌宠 | `ui/writing-pet.ts`、`shared/pet-image-store.ts` | `petImage`、`pet-image.png/json` | stable | 无（已验收） | [pet.md](pet.md) |
 | 写作工作台首页 | `ui/full-writer-view.ts`、`ui/workbench-*` | `panelSizes`、工作台布局 | todo | 信息层级、空态引导、快捷入口可发现性 | — |
 | 规划 / 大纲 | `ui/planning-*`、`engine/planning*` | 章节/卷/大纲数据 | todo | 规划树操作效率、与正文联动 | — |

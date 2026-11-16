@@ -9,6 +9,7 @@ import { createLogger } from '@/shared/logger';
 import {
     buildAuthHeaders,
     buildChatRequestBody,
+    isNativeOllamaEndpoint,
     normalizeApiFormat,
     resolveRequestUrl,
     type ApiFormat,
@@ -48,6 +49,11 @@ export interface ApiConnectivityConfig {
     sourceType?: 'cloud' | 'local';
     /** API 协议格式；缺省按 openai-chat，与运行时保持一致 */
     apiFormat?: ApiFormat;
+    /**
+     * 渠道请求头（内置适配 + 用户自定义），与真实调用同源。
+     * 缺失会让「测试通过但生成 400」的渠道（如 OpenCode Go 要求 x-opencode-session）测不出来。
+     */
+    headers?: Record<string, string>;
 }
 
 /**
@@ -96,8 +102,9 @@ const DEGRADED_LATENCY_MS = 5_000;
 export function normalizeChatEndpoint(endpoint: string): string {
     const raw = String(endpoint || '').trim().replace(/\/+$/, '');
     if (!raw) return '';
+    // Ollama 原生端点本身就是完整地址，不能再补 /v1/chat/completions
+    if (isNativeOllamaEndpoint(raw)) return raw;
     if (/\/chat\/completions$/i.test(raw)) return raw;
-    if (/\/api\/chat$/i.test(raw)) return raw;
     if (/\/v1$/i.test(raw)) return `${raw}/chat/completions`;
     if (/\/api\/v3$/i.test(raw)) return `${raw}/chat/completions`;
     return `${raw}/v1/chat/completions`;
@@ -145,6 +152,15 @@ function buildProbeBody(config: ApiConnectivityConfig, endpoint: string, format:
             options: { num_predict: 8, temperature: 0 },
         });
     }
+    // Ollama native /api/generate：无 messages，用 prompt；字段与 Chat Completions 不同
+    if (/\/api\/generate$/i.test(endpoint)) {
+        return JSON.stringify({
+            model: config.model,
+            prompt: 'Reply with OK.',
+            stream: false,
+            options: { num_predict: 8, temperature: 0 },
+        });
+    }
     // Anthropic / Responses 的字段与 Chat Completions 不同，直接复用协议构造器，
     // 避免「格式选对了但连通性测试仍按 OpenAI 发」这种自相矛盾的失败。
     return JSON.stringify(buildChatRequestBody(format, {
@@ -161,6 +177,8 @@ function buildHeaders(config: ApiConnectivityConfig, format: ApiFormat): Record<
     return {
         'Content-Type': 'application/json',
         ...buildAuthHeaders(format, String(config.apiKey || '')),
+        // 渠道自定义/内置头放最后：用户显式配置优先于协议默认
+        ...(config.headers && typeof config.headers === 'object' ? config.headers : {}),
     };
 }
 
@@ -246,11 +264,17 @@ export async function testProviderConnectivity(
         // 部分代理会返回 HTTP 200 + error body，必须识别为失败。
         let hasError = false;
         try {
-            const data = response.json as { error?: unknown; choices?: unknown[]; message?: unknown } | undefined;
+            const data = response.json as {
+                error?: unknown;
+                choices?: unknown[];
+                message?: unknown;
+                response?: unknown;
+            } | undefined;
             hasError = !!data?.error && !Array.isArray(data?.choices);
             if (!hasError && data && !Array.isArray(data.choices) && !data.message) {
-                // Ollama /api/chat 返回 message，不要求 choices
-                hasError = !/\/api\/chat$/i.test(endpoint);
+                // Ollama /api/chat 返回 message；/api/generate 返回 response，都不要求 choices
+                const ollamaNative = /\/api\/(?:chat|generate)$/i.test(endpoint);
+                hasError = !ollamaNative || (typeof data.response !== 'string' && !data.message);
             }
         } catch {
             // 非 JSON：按空响应处理

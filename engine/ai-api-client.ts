@@ -15,7 +15,7 @@ import {
 } from '@/shared/thresholds';
 import { calculateTokenBudget, getModelContextWindow, getModelMaxOutput } from '@/shared/token-estimator';
 import { resolveProviderSourceType } from '@/shared/model-source';
-import { defaultHeadersForProvider, resolveThinkingCapability } from '@/shared/provider-ui-model';
+import { resolveProviderHeaders, resolveThinkingCapability } from '@/shared/provider-ui-model';
 import type { ThinkingMode } from '@/shared/task-model';
 import type { APIResponse } from './ai-engine';
 
@@ -299,23 +299,29 @@ export class AIApiClient {
         endpoint: string | undefined,
         budget: number | undefined,
     ): Record<string, unknown> | null {
-        const lowerModel = (model || '').toLowerCase();
-        const lowerEndpoint = (endpoint || '').toLowerCase();
-
-        if (/^(o1|o3|o4|gpt-5)/.test(lowerModel)) {
-            const amount = budget && budget > 0 ? budget : 0;
-            const effort = amount > 8192 ? 'high' : amount > 2048 ? 'medium' : 'low';
+        // 下发形态必须与设置页的判定同源：旧实现两套逻辑（UI 说支持、运行时不下发），
+        // 用户把强度调到高也看不到任何变化。
+        const provider = this.plugin.settings.customProviders?.find(p => p.endpoint === endpoint);
+        const capability = resolveThinkingCapability({
+            endpoint: endpoint || '',
+            apiFormat: provider?.apiFormat,
+            sourceType: provider?.sourceType,
+        }, model);
+        const amount = budget && budget > 0 ? budget : 0;
+        if (!capability.supported) return null;
+        if (capability.kind === 'reasoning_effort') {
+            const lowerEndpoint = (endpoint || '').toLowerCase();
+            // OpenCode 只有 low/high/max，没有 medium；按预算落在两档内更安全
+            const effort = lowerEndpoint.includes('opencode.ai')
+                ? (amount > 8192 ? 'high' : amount > 0 ? 'low' : 'low')
+                : amount > 8192 ? 'high' : amount > 2048 ? 'medium' : 'low';
             return { reasoning_effort: effort };
         }
-
-        if (lowerEndpoint.includes('volces.com')
-            || lowerEndpoint.includes('deepseek.com')
-            || lowerEndpoint.includes('sensenova.cn')) {
+        if (capability.kind === 'thinking') {
             const thinking: Record<string, unknown> = { type: 'enabled' };
-            if (budget && budget > 0) thinking.budget_tokens = budget;
+            if (amount > 0) thinking.budget_tokens = amount;
             return { thinking };
         }
-
         return null;
     }
 
@@ -340,13 +346,36 @@ export class AIApiClient {
      * （此前 callAI / callAIStream 硬性要求 apiKey，导致「本地 Ollama + 空密钥」
      * 这一内置配置下所有非流式 AI 调用都返回「API密钥未配置」，流水线无法运行。）
      */
-    /** 该端点的自定义请求头（适配 OpenRouter/自建网关的 HTTP-Referer、X-Title 等） */
-    private providerHeaders(endpoint: string | undefined): Record<string, string> {
+    /**
+     * 按「渠道 + 模型」查单价：同名模型在不同渠道价格不同，不能跨渠道串价。
+     *
+     * @param model - 记账口径的模型 id
+     * @param endpoint - 本次请求端点（缺省用当前渠道）
+     * @returns 单价与来源；未配置且无内置参考价时为 null
+     */
+    private pricingForModel(model: string, endpoint?: string) {
+        return lookupModelPricingWithSource(model, this.plugin.settings, {
+            allowDefaults: true,
+            endpoint: endpoint || this.plugin.settings.apiEndpoint,
+        });
+    }
+
+    /**
+     * 该端点的渠道请求头（内置适配 + 用户自定义）。
+     *
+     * 非流式与流式两条链路、以及设置页的连通性测试都走这一个来源，
+     * 避免出现「测试通过但生成 400」或「非流式正常、流式中断」。
+     *
+     * @param endpoint - 本次请求端点
+     * @returns 请求头
+     * @example
+     * client.resolveProviderHeaders('https://opencode.ai/zen/v1/chat/completions');
+     * // { 'x-opencode-session': 'nw-...' }
+     */
+    resolveProviderHeaders(endpoint: string | undefined): Record<string, string> {
         const provider = this.plugin.settings.customProviders?.find(p => p.endpoint === endpoint);
         if (!provider) return {};
-        // 内置适配头（OpenRouter Referer/Title、Anthropic 版本）→ 用户自定义头覆盖
-        const merged = defaultHeadersForProvider(provider).headers;
-        return { ...merged, ...(provider.headers && typeof provider.headers === 'object' ? provider.headers : {}) };
+        return resolveProviderHeaders(provider);
     }
 
     /** 该端点所属渠道的思考设置（未设置回落全局） */
@@ -493,7 +522,7 @@ export class AIApiClient {
         const scope = currentUsageScope();
         // 费用估算：按记录口径的 model 查用户配置单价（fallback 后的实际模型暂不区分），未配置则不计费
         const usageModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
-        const pricingInfo = lookupModelPricingWithSource(usageModel, this.plugin.settings, { allowDefaults: true });
+        const pricingInfo = this.pricingForModel(usageModel, options?.endpoint);
         const pricing = pricingInfo?.pricing ?? null;
         const costYuan = estimateCostYuan(pricing, result.usage?.prompt ?? 0, result.usage?.completion ?? 0);
         void getUsageLedger(this.plugin.app).record({
@@ -708,7 +737,7 @@ export class AIApiClient {
                         headers: {
                             'Content-Type': 'application/json',
                             ...buildAuthHeaders(apiFormat, apiKey),
-                            ...this.providerHeaders(endpoint),
+                            ...this.resolveProviderHeaders(endpoint),
                         },
                         body: JSON.stringify(requestBody),
                         signal: ac.signal,
@@ -962,7 +991,7 @@ export class AIApiClient {
         const scope = currentUsageScope();
         // 费用估算：按记录口径的 model 查用户配置单价（fallback 后的实际模型暂不区分），未配置则不计费
         const usageModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
-        const pricingInfo = lookupModelPricingWithSource(usageModel, this.plugin.settings, { allowDefaults: true });
+        const pricingInfo = this.pricingForModel(usageModel, options?.endpoint);
         const pricing = pricingInfo?.pricing ?? null;
         const costYuan = estimateCostYuan(pricing, result.usage?.prompt ?? 0, result.usage?.completion ?? 0);
         void getUsageLedger(this.plugin.app).record({
@@ -1008,7 +1037,7 @@ export class AIApiClient {
         const scope = currentUsageScope();
         // 费用估算：按记录口径的 model 查用户配置单价（fallback 后的实际模型暂不区分），未配置则不计费
         const usageModel = model || this.plugin.settings.defaultModel || 'gpt-3.5-turbo';
-        const pricingInfo = lookupModelPricingWithSource(usageModel, this.plugin.settings, { allowDefaults: true });
+        const pricingInfo = this.pricingForModel(usageModel, options?.endpoint);
         const pricing = pricingInfo?.pricing ?? null;
         const costYuan = estimateCostYuan(pricing, result.usage?.prompt ?? 0, result.usage?.completion ?? 0);
         void getUsageLedger(this.plugin.app).record({

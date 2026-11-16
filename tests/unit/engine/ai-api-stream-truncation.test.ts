@@ -70,6 +70,7 @@ function makeHost(options: {
         handleRateLimit: vi.fn(async () => 'break' as const),
         isKeylessLocalEndpoint: vi.fn(() => false),
         isLocalEndpoint: vi.fn(() => false),
+        resolveProviderHeaders: vi.fn(() => ({})),
         isUnreachableError: vi.fn(() => false),
         resolveApiFormat: vi.fn(() => options.format ?? 'openai-chat'),
         resolveApiKey: vi.fn(async () => ({ key: 'test-key' })),
@@ -223,5 +224,25 @@ describe('callAIAsyncIterator：重试/降级不得重复正文（缺陷②）',
         expect(callAI).toHaveBeenCalled();
         expect(chunks.join('')).toBe('一次性完整正文');
         expect(chunks.filter(c => c.includes('一次性'))).toHaveLength(1); // 无重复
+    });
+});
+
+// 2026-11-16（M-17）：流式链路此前完全不合并渠道请求头——非流式能通、
+// 流式 400，表现为「生成时好时坏」。这里锁定流式请求必须带渠道头。
+describe('流式请求头与真实调用同源', () => {
+    it('流式请求带上渠道内置/自定义请求头', async () => {
+        const fetchMock = vi.fn(async (_url: RequestInfo | URL, _init?: RequestInit) => sseResponse([
+            'data: {"choices":[{"delta":{"content":"好"},"finish_reason":"stop"}]}\n\n',
+            'data: [DONE]\n\n',
+        ]));
+        vi.stubGlobal('fetch', fetchMock);
+        const host = makeHost();
+        (host.resolveProviderHeaders as unknown as ReturnType<typeof vi.fn>)
+            .mockReturnValue({ 'x-opencode-session': 'nw-fixed' });
+
+        await callAIStream(host, 'sys', 'user', 'test-model', 0.7, 4096);
+
+        const init = fetchMock.mock.calls[0]?.[1];
+        expect((init?.headers as Record<string, string> | undefined)?.['x-opencode-session']).toBe('nw-fixed');
     });
 });

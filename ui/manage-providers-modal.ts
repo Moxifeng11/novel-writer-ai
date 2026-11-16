@@ -5,6 +5,7 @@ import { discoverModels } from '@/services/model-discovery';
 import { ModelPickerModal } from './model-picker-modal';
 import { describeSecretForInput, isStoredCiphertext, SECRET_INPUT_ATTRS } from '@/shared/secret-display';
 import { lookupModelCapability } from '@/shared/model-capabilities';
+import { resolveProviderHeaders } from '@/shared/provider-ui-model';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 import type { CustomProvider, NovelWriterSettings } from '@/main';
 
@@ -360,7 +361,7 @@ export class ManageProvidersModal extends Modal {
             fetchBtn.setText('⏳ 获取中…');
             try {
                 const key = this.plugin.settings.providerKeys?.[raw.id] || '';
-                const result = await discoverModels(raw.endpoint, format, key);
+                const result = await discoverModels(raw.endpoint, format, key, undefined, resolveProviderHeaders(raw));
                 if (result.kind === 'error') {
                     showErrorNotice(result.message, { title: '获取模型失败', timeout: 10000 });
                     return;
@@ -372,6 +373,10 @@ export class ManageProvidersModal extends Modal {
                             ...meta[item.id],
                             ...(item.contextWindow ? { contextWindow: item.contextWindow } : {}),
                             ...(item.maxTokens ? { maxTokens: item.maxTokens } : {}),
+                            ...(item.vision === undefined ? {} : { vision: item.vision }),
+                            ...(item.inputPricePerM === undefined ? {} : { inputPricePerM: item.inputPricePerM }),
+                            ...(item.outputPricePerM === undefined ? {} : { outputPricePerM: item.outputPricePerM }),
+                            ...(item.priceCurrency === undefined ? {} : { priceCurrency: item.priceCurrency }),
                         };
                     }
                     this.plugin.updateProvider(raw.id, { models, modelMeta: meta });

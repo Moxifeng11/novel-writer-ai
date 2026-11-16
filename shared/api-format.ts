@@ -79,6 +79,22 @@ function trimSlash(url: string): string {
 }
 
 /**
+ * 是否为 Ollama 原生端点（`/api/generate` 或 `/api/chat`）。
+ *
+ * 这两个路径本身就是完整请求地址，不能再补 `/v1/chat/completions`；
+ * 模型列表也走 Ollama 自己的 `/api/tags` 而不是 OpenAI 的 `/models`。
+ *
+ * @param endpoint - 用户填写的 Base URL 或完整端点
+ * @returns 是否原生端点
+ * @example
+ * isNativeOllamaEndpoint('http://localhost:11434/api/generate'); // true
+ * isNativeOllamaEndpoint('http://localhost:11434/v1/chat/completions'); // false
+ */
+export function isNativeOllamaEndpoint(endpoint: string): boolean {
+    return /\/api\/(?:generate|chat)$/i.test(trimSlash(endpoint));
+}
+
+/**
  * 把 Base URL 规范成「协议根」：
  * 去掉已经写进来的 `/{chat/completions|messages|responses}` 与结尾 `/v1`。
  *
@@ -116,7 +132,9 @@ export function resolveRequestUrl(endpoint: string, format: ApiFormat): string {
     if (!raw) return '';
 
     if (format === 'openai-chat') {
-        if (/\/chat\/completions$/i.test(raw) || /\/api\/chat$/i.test(raw)) return raw;
+        // Ollama 原生端点（/api/generate、/api/chat）本身就是完整地址，不能再追加路径
+        if (isNativeOllamaEndpoint(raw)) return raw;
+        if (/\/chat\/completions$/i.test(raw)) return raw;
         const root = resolveApiRoot(raw);
         return root ? `${root}/v1/chat/completions` : raw;
     }
@@ -138,6 +156,15 @@ export function resolveRequestUrl(endpoint: string, format: ApiFormat): string {
 export function resolveModelsUrl(endpoint: string, format: ApiFormat): string {
     const raw = trimSlash(endpoint);
     if (!raw) return '';
+    // Ollama 原生协议没有 /models，模型列表在 /api/tags（返回 { models: [{ name }] }）
+    if (isNativeOllamaEndpoint(raw)) {
+        try {
+            const url = new URL(raw);
+            return `${url.origin}/api/tags`;
+        } catch {
+            return '';
+        }
+    }
     const root = resolveApiRoot(raw);
     if (!root) return '';
     if (format === 'anthropic-messages') return `${root}/v1/models?limit=1000`;

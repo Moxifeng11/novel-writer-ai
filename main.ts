@@ -193,6 +193,15 @@ export interface CustomProvider {
         inputPricePerM?: number;
         /** 输出单价（元/百万 tokens）；留空不参与费用估算 */
         outputPricePerM?: number;
+        /**
+         * 单价的原始币种。
+         *
+         * 端点自动识别（OpenCode/OpenRouter）给的是美元，记账时按汇率折算；
+         * 用户手填按元。缺省视为元，兼容旧配置。
+         */
+        priceCurrency?: 'USD' | 'CNY';
+        /** 是否支持可调思考（端点披露）；供设置页展示思考强度开关 */
+        reasoning?: boolean;
     }>;
     /** v4.15: URL 自动识别出的预设供应商 ID；仅用于提示，不覆盖用户设置 */
     providerIdHint?: string;
@@ -242,7 +251,13 @@ export const DEFAULT_PROVIDERS: Record<string, CustomProvider> = {
 // 新代码应直接从 './shared/model-capabilities' 导入
 
 export interface CanonResearchSettings {
-    provider: 'manual' | 'bing' | 'brave' | 'serper' | 'tavily';
+    /**
+     * 考据检索通道。
+     *
+     * `wikipedia` / `bangumi` 是免 Key 的公开 API，但可能受网络环境影响
+     * （实测部分网络直接超时）；其余需要第三方搜索 Key。
+     */
+    provider: 'manual' | 'bing' | 'brave' | 'serper' | 'tavily' | 'wikipedia' | 'bangumi';
     apiKey?: string;
     allowedDomains?: string[];
     blockedDomains?: string[];
@@ -2564,6 +2579,30 @@ export default class NovelWriterPlugin extends Plugin {
     public updateModelLimitsFromModel(modelName: string): void { this._providerManager.updateModelLimits(modelName); }
     public setCurrentModelOverride(field: 'maxContext' | 'maxOutput', value: number): void {
         this._providerManager.setModelOverride(this.getCurrentProviderId() || 'unknown', this.settings.defaultModel, field, value);
+    }
+    /**
+     * 按「指定渠道 + 指定模型」写上限覆盖。
+     *
+     * 旧实现固定写「当前渠道 + settings.defaultModel」，在非当前渠道的设置页里
+     * 改上限会静默写到别的渠道，切过去也不生效。
+     *
+     * @param providerId - 渠道 id
+     * @param model - 模型 id
+     * @param field - maxContext | maxOutput
+     * @param value - 新值
+     */
+    public setProviderModelOverride(providerId: string, model: string, field: 'maxContext' | 'maxOutput', value: number): void {
+        this._providerManager.setModelOverride(providerId, model, field, value);
+    }
+    /**
+     * 清除指定渠道/模型的上限覆盖，回到自动识别。
+     *
+     * @param providerId - 渠道 id
+     * @param model - 模型 id
+     * @param field - maxContext | maxOutput
+     */
+    public clearProviderModelOverride(providerId: string, model: string, field: 'maxContext' | 'maxOutput'): void {
+        this._providerManager.clearModelOverride(providerId, model, field);
     }
     public addCustomProvider(name: string, endpoint: string, models: string[], maxContext: number, maxOutput: number, apiKey: string, apiFormat?: CustomProvider['apiFormat']): string | null {
         return this._providerManager.addCustom(name, endpoint, models, maxContext, maxOutput, apiKey, apiFormat);

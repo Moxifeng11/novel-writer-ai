@@ -80,3 +80,48 @@ describe('默认参考价兜底（成本看板可见性）', () => {
         expect(estimateCostYuan(pricing, 1_000_000, 500_000)).toBe(6);
     });
 });
+
+// 2026-11-16（M-20）：同名模型在不同渠道价格不同，按模型名跨渠道匹配会把 A 渠道的价算到 B 渠道；
+// 端点披露的美元价必须按汇率折算，不能把 $0.15 当 ¥0.15。
+describe('单价按渠道识别与币种折算', () => {
+    const twoChannels = {
+        customProviders: [
+            {
+                id: 'official',
+                endpoint: 'https://api.deepseek.com/v1/chat/completions',
+                modelMeta: { 'deepseek-v4-flash': { inputPricePerM: 1, outputPricePerM: 4 } },
+            },
+            {
+                id: 'reseller',
+                endpoint: 'https://reseller.example.com/v1/chat/completions',
+                modelMeta: { 'deepseek-v4-flash': { inputPricePerM: 0.5, outputPricePerM: 2, priceCurrency: 'USD' as const } },
+            },
+        ],
+    };
+
+    it('指定渠道时只读该渠道的单价', () => {
+        expect(lookupModelPricing('deepseek-v4-flash', twoChannels, {
+            endpoint: 'https://api.deepseek.com',
+        })).toEqual({ inputPerM: 1, outputPerM: 4 });
+        expect(lookupModelPricing('deepseek-v4-flash', twoChannels, {
+            endpoint: 'https://reseller.example.com/v1',
+        })).toMatchObject({ inputPerM: 0.5, outputPerM: 2, currency: 'USD' });
+    });
+
+    it('端点写法差异（尾斜杠/v1）仍能匹配', () => {
+        expect(lookupModelPricing('deepseek-v4-flash', twoChannels, {
+            endpoint: 'https://api.deepseek.com/v1/chat/completions/',
+        })).toMatchObject({ inputPerM: 1 });
+    });
+
+    it('未指定渠道时保持旧行为（全渠道查找）', () => {
+        expect(lookupModelPricing('deepseek-v4-flash', twoChannels)).toMatchObject({ inputPerM: 1 });
+    });
+
+    it('美元单价按汇率折算成元', () => {
+        const usd = { inputPerM: 0.15, outputPerM: 0.6, currency: 'USD' as const };
+        // 100 万输入 + 100 万输出 = 0.75 美元 → 7.3 汇率 = 5.475 元
+        expect(estimateCostYuan(usd, 1_000_000, 1_000_000)).toBe(5.475);
+        expect(estimateCostYuan(usd, 1_000_000, 1_000_000, { usdToCny: 7 })).toBe(5.25);
+    });
+});

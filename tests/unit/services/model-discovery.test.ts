@@ -155,3 +155,57 @@ describe('discoverModels', () => {
         expect(calls[0].url).toBe('https://gateway.example/openai/models');
     });
 });
+
+// 2026-11-16（M-19/M-20/M-26）：端点会披露上下文/输出/视觉/思考/价格，
+// 旧实现只取 id，用户还得手填，且手填的上下文不进预算解析。
+describe('端点披露的能力自动识别', () => {
+    it('解析 OpenCode 风格的 limit / modalities / cost / reasoning', () => {
+        const models = parseModelListing({
+            object: 'list',
+            data: [{
+                id: 'deepseek-v4.1-flash',
+                name: 'DeepSeek V4.1 Flash 1017',
+                modalities: { input: ['text', 'image/png', 'image/jpeg'] },
+                capabilities: { reasoning: { supported: true, effort: ['low', 'high', 'max'] } },
+                limit: { context: 1000000, output: 384000 },
+                cost: { text: { input: { price: 0.15 }, output: { price: 0.6 } } },
+            }],
+        });
+        expect(models[0]).toMatchObject({
+            id: 'deepseek-v4.1-flash',
+            name: 'DeepSeek V4.1 Flash 1017',
+            contextWindow: 1000000,
+            maxTokens: 384000,
+            vision: true,
+            reasoningEfforts: ['low', 'high', 'max'],
+            pricing: { inputPerM: 0.15, outputPerM: 0.6, currency: 'USD' },
+        });
+    });
+
+    it('解析 OpenRouter 风格 pricing（美元/token → 每百万）', () => {
+        const models = parseModelListing({
+            data: [{
+                id: 'x',
+                pricing: { prompt: '0.00000015', completion: '0.0000006' },
+            }],
+        });
+        expect(models[0].pricing).toEqual({ inputPerM: 0.15, outputPerM: 0.6, currency: 'USD' });
+    });
+
+    it('解析 Ollama /api/tags 的 models 数组', () => {
+        const models = parseModelListing({
+            models: [
+                { name: 'qwen2.5:7b', model: 'qwen2.5:7b' },
+                { name: 'deepseek-r1:7b' },
+            ],
+        });
+        expect(models.map(model => model.id)).toEqual(['qwen2.5:7b', 'deepseek-r1:7b']);
+    });
+
+    it('未披露时不写多余字段', () => {
+        const models = parseModelListing({ data: [{ id: 'plain' }] });
+        expect(models[0].vision).toBeUndefined();
+        expect(models[0].pricing).toBeUndefined();
+        expect(models[0].reasoningEfforts).toBeUndefined();
+    });
+});

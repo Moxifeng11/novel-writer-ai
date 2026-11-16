@@ -240,16 +240,31 @@ export class ProviderManager {
         // 自定义供应商的显式上限优先于静态表：用户可能用同一模型名指向不同规格的代理。
         // 预设供应商仍以静态表为准，避免内置预设的保守值覆盖官方文档能力。
         const customProviderCaps = provider && !provider.isDefault ? providerCaps : null;
-        const baseCaps = detectedCaps
-            ?? customProviderCaps
-            ?? staticCaps
-            ?? providerCaps
-            ?? fallbackCaps;
+        // 端点披露 / 用户在「编辑模型」里填写的上限（modelMeta）必须真正参与预算解析。
+        // 旧实现只拿它做列表徽章，用户把 393216 填进去后预算仍是内置表的 32768。
+        const meta = provider?.modelMeta?.[modelName];
+        const firstPositive = (...values: Array<number | undefined>): number | undefined =>
+            values.find(value => typeof value === 'number' && Number.isFinite(value) && value > 0);
+        const maxContext = override?.maxContext
+            ?? firstPositive(
+                meta?.contextWindow,
+                detectedCaps?.maxContext,
+                customProviderCaps?.maxContext,
+                staticCaps?.maxContext,
+                providerCaps?.maxContext,
+            )
+            ?? fallbackCaps.maxContext;
+        const maxOutput = override?.maxOutput
+            ?? firstPositive(
+                meta?.maxTokens,
+                detectedCaps?.maxOutput,
+                customProviderCaps?.maxOutput,
+                staticCaps?.maxOutput,
+                providerCaps?.maxOutput,
+            )
+            ?? fallbackCaps.maxOutput;
 
-        return {
-            maxContext: override?.maxContext ?? baseCaps.maxContext,
-            maxOutput: override?.maxOutput ?? baseCaps.maxOutput,
-        };
+        return { maxContext, maxOutput };
     }
 
     /**
@@ -288,6 +303,27 @@ export class ProviderManager {
             s.modelOverrideHistory = s.modelOverrideHistory.slice(-100);
         }
         this.cb.addOverrideHistory?.(entry);
+        this.scheduleSave();
+    }
+
+    /**
+     * 清除某个模型的覆盖值，回落到自动识别。
+     *
+     * @param providerId - 提供方ID
+     * @param model - 模型标识
+     * @param field - 字段
+     */
+    clearModelOverride(providerId: string, model: string, field: 'maxContext' | 'maxOutput'): void {
+        const s = this.cb.getSettings();
+        const provider = (s.customProviders || []).find(p => p.id === providerId);
+        const endpoint = provider?.endpoint || s.apiEndpoint;
+        const entry = s.modelOverrides?.[endpoint]?.[model];
+        if (!entry || entry[field] === undefined) return;
+        delete entry[field];
+        if (Object.keys(entry).length === 0) delete s.modelOverrides[endpoint][model];
+        if (s.modelOverrides[endpoint] && Object.keys(s.modelOverrides[endpoint]).length === 0) {
+            delete s.modelOverrides[endpoint];
+        }
         this.scheduleSave();
     }
 

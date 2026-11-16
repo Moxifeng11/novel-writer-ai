@@ -91,3 +91,50 @@ describe('API 连通性测试', () => {
         expect(result.level).toBe('ok');
     });
 });
+
+// 2026-11-16（M-14/M-17）：本地 Ollama 无 Key、原生端点也必须能测；
+// 渠道请求头必须与真实调用同源（OpenCode Go 缺 x-opencode-session 会 400）。
+describe('Ollama 原生端点与渠道请求头', () => {
+    it('原生端点保持原样，不被拼成 /api/generate/v1/chat/completions', () => {
+        expect(normalizeChatEndpoint('http://localhost:11434/api/generate'))
+            .toBe('http://localhost:11434/api/generate');
+    });
+
+    it('本地端点无 Key 也能测试，且发原生 prompt 请求体', async () => {
+        let captured: any = null;
+        const request: RequestUrlFn = async (options) => {
+            captured = options;
+            return response(200, '{"model":"qwen2.5:7b","response":"OK","done":true}', {
+                model: 'qwen2.5:7b',
+                response: 'OK',
+                done: true,
+            });
+        };
+        const result = await testProviderConnectivity({
+            endpoint: 'http://localhost:11434/api/generate',
+            model: 'qwen2.5:7b',
+            apiKey: '',
+            sourceType: 'local',
+        }, request);
+        expect(result.level).toBe('ok');
+        expect(captured.url).toBe('http://localhost:11434/api/generate');
+        const body = JSON.parse(captured.body);
+        expect(body.prompt).toBeTruthy();
+        expect(body.messages).toBeUndefined();
+    });
+
+    it('渠道请求头会随测试一起发出', async () => {
+        let captured: any = null;
+        const request: RequestUrlFn = async (options) => {
+            captured = options;
+            return response(200, '{"choices":[{"message":{"content":"OK"}}]}');
+        };
+        await testProviderConnectivity({
+            ...base,
+            endpoint: 'https://opencode.ai/zen/v1/chat/completions',
+            headers: { 'x-opencode-session': 'nw-fixed' },
+        }, request);
+        expect(captured.headers['x-opencode-session']).toBe('nw-fixed');
+        expect(captured.headers['Authorization']).toContain('sk-test');
+    });
+});

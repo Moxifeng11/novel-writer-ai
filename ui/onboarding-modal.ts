@@ -7,6 +7,7 @@
 import { App, Modal, Notice, Setting } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import { testProviderConnectivity, type ApiConnectivityResult } from '@/services/api-connectivity-service';
+import { resolveProviderHeaders } from '@/shared/provider-ui-model';
 import { importExampleProject, EXAMPLE_PROJECT_NAME } from '@/core/example-project-service';
 
 interface OnboardingProvider {
@@ -285,6 +286,7 @@ export class OnboardingModal extends Modal {
                 model: provider.models[0],
                 sourceType: provider.sourceType,
                 apiFormat: provider.apiFormat,
+                headers: resolveProviderHeaders(provider),
             });
             this.testResult = result;
             this.step = 2;

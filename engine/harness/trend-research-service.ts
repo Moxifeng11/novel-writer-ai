@@ -15,7 +15,9 @@ const log = createLogger('TrendResearch');
 /**
  * 趋势搜索提供方。
  */
-export type TrendSearchProvider = 'manual' | 'bing' | 'brave' | 'serper' | 'tavily';
+// 与 CanonSearchProvider 对齐：设置页已经开放 wikipedia / bangumi 免 Key 通道，
+// 类型不补会导致「设置里能选、调研时类型不允许」的不一致。
+export type TrendSearchProvider = 'manual' | 'bing' | 'brave' | 'serper' | 'tavily' | 'wikipedia' | 'bangumi';
 
 /**
  * 趋势研究配置。
@@ -58,6 +60,21 @@ export type RequestUrlFn = (options: {
 }) => Promise<{ status: number; text: string; json?: unknown }>;
 
 const DEFAULT_MAX_SOURCES = 6;
+
+/**
+ * 该趋势检索通道是否需要 API Key。
+ *
+ * wikipedia / bangumi 走公开 API，免 Key 可用；manual 不联网。
+ *
+ * @param provider - 检索通道
+ * @returns 是否需要 Key
+ * @example
+ * trendProviderNeedsApiKey('wikipedia'); // false
+ * trendProviderNeedsApiKey('bing');      // true
+ */
+export function trendProviderNeedsApiKey(provider: TrendSearchProvider): boolean {
+    return provider !== 'manual' && provider !== 'wikipedia' && provider !== 'bangumi';
+}
 
 /**
  * 规范化趋势配置。
@@ -122,7 +139,10 @@ export class TrendResearchService {
      */
     async search(mode: 'short' | 'script', categoryOrGenre: string, audience?: string): Promise<TrendSource[]> {
         const config = normalizeTrendConfig(this.config);
-        if (config.provider === 'manual' || !String(config.apiKey || '').trim()) return [];
+        // 免 Key 通道（wikipedia / bangumi）不能用「有没有 Key」当开关：
+        // 旧实现会在这里直接 return []，用户选了免 Key 通道也永远搜不到东西，且没有任何提示。
+        if (config.provider === 'manual') return [];
+        if (trendProviderNeedsApiKey(config.provider) && !String(config.apiKey || '').trim()) return [];
         const query = buildTrendQuery(mode, categoryOrGenre, audience);
         try {
             switch (config.provider) {
@@ -130,12 +150,68 @@ export class TrendResearchService {
                 case 'brave': return await this.searchBrave(query, config);
                 case 'serper': return await this.searchSerper(query, config);
                 case 'tavily': return await this.searchTavily(query, config);
+                case 'wikipedia': return await this.searchWikipedia(categoryOrGenre, config);
+                case 'bangumi': return await this.searchBangumi(categoryOrGenre, config);
                 default: return [];
             }
         } catch (e) {
             log.warn('trend search failed', e instanceof Error ? e.message : String(e));
             return [];
         }
+    }
+
+    /**
+     * 维基百科检索（免 Key）。
+     *
+     * @param workName - 作品名/分类关键词
+     * @param config - 配置
+     * @returns 趋势来源
+     */
+    private async searchWikipedia(workName: string, config: TrendResearchConfig): Promise<TrendSource[]> {
+        const url = 'https://zh.wikipedia.org/w/api.php'
+            + `?action=query&list=search&srsearch=${encodeURIComponent(workName)}&format=json&srlimit=${config.maxSources ?? 6}`;
+        const response = await requestJson(this.request, {
+            url,
+            method: 'GET',
+            headers: { 'User-Agent': `NovelWriterAI/4.83.1 (+https://github.com/novel-writer-ai)`, Accept: 'application/json' },
+        });
+        const data = response.json as { query?: { search?: Array<{ title?: string; snippet?: string; pageid?: number }> } } | undefined;
+        return (data?.query?.search || [])
+            .filter(item => item.title)
+            .map(item => ({
+                title: item.title || '',
+                url: `https://zh.wikipedia.org/wiki/${encodeURIComponent(item.title || '')}`,
+                snippet: String(item.snippet || '').replace(/<[^>]+>/g, '').slice(0, 300),
+            }))
+            .slice(0, config.maxSources);
+    }
+
+    /**
+     * Bangumi 检索（免 Key）。
+     *
+     * @param workName - 作品名/分类关键词
+     * @param config - 配置
+     * @returns 趋势来源
+     */
+    private async searchBangumi(workName: string, config: TrendResearchConfig): Promise<TrendSource[]> {
+        const url = `https://api.bgm.tv/search/subject/${encodeURIComponent(workName)}?type=2&responseGroup=small&max_results=${config.maxSources ?? 6}`;
+        const response = await requestJson(this.request, {
+            url,
+            method: 'GET',
+            headers: { 'User-Agent': `NovelWriterAI/4.83.1 (https://github.com/novel-writer-ai)`, Accept: 'application/json' },
+        });
+        const data = response.json as { list?: Array<{ id?: number; name?: string; name_cn?: string; summary?: string; url?: string }> } | undefined;
+        return (data?.list || [])
+            .filter(item => item.id)
+            .map(item => {
+                const title = item.name_cn || item.name || '';
+                return {
+                    title,
+                    url: item.url || `https://bgm.tv/subject/${item.id}`,
+                    snippet: (item.summary || '').trim().slice(0, 300) || title,
+                };
+            })
+            .slice(0, config.maxSources);
     }
 
     private async searchBing(query: string, config: TrendResearchConfig): Promise<TrendSource[]> {

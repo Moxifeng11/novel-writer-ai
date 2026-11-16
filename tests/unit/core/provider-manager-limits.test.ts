@@ -100,4 +100,64 @@ describe('ProviderManager — 模型能力优先级', () => {
         expect(settings.maxOutput).toBe(8192);
         expect(manager.resolveModelLimits('qwen2.5:7b').maxOutput).toBe(1234);
     });
+
+    // 2026-11-16（M-16）：用户在「编辑模型」或「从 URL 获取」时写入的 modelMeta
+    // 之前只做列表徽章，预算解析完全无视它（填 393216 仍按 32768 算）。
+    it('modelMeta 的上下文/输出进入预算解析', () => {
+        const endpoint = 'https://opencode.ai/zen/v1/chat/completions';
+        const settings = makeSettings({
+            apiEndpoint: endpoint,
+            availableModels: ['deepseek-v4.1-flash'],
+            defaultModel: 'deepseek-v4.1-flash',
+            flashModel: 'deepseek-v4.1-flash',
+            proModel: 'deepseek-v4.1-flash',
+            customProviders: [{
+                id: 'opencode',
+                name: 'OpenCode Zen',
+                endpoint,
+                models: ['deepseek-v4.1-flash'],
+                maxContext: 1048576,
+                maxOutput: 65536,
+                sourceType: 'cloud',
+                isDefault: true,
+                modelMeta: {
+                    'deepseek-v4.1-flash': { contextWindow: 1000000, maxTokens: 384000 },
+                },
+            }],
+        });
+        const manager = makeManager(settings);
+
+        expect(manager.resolveModelLimits('deepseek-v4.1-flash')).toEqual({
+            maxContext: 1000000,
+            maxOutput: 384000,
+        });
+    });
+
+    it('模型覆盖值仍然优先于 modelMeta', () => {
+        vi.useFakeTimers();
+        const endpoint = 'https://opencode.ai/zen/v1/chat/completions';
+        const settings = makeSettings({
+            apiEndpoint: endpoint,
+            availableModels: ['deepseek-v4.1-flash'],
+            defaultModel: 'deepseek-v4.1-flash',
+            customProviders: [{
+                id: 'opencode',
+                name: 'OpenCode Zen',
+                endpoint,
+                models: ['deepseek-v4.1-flash'],
+                maxContext: 1048576,
+                maxOutput: 65536,
+                sourceType: 'cloud',
+                isDefault: true,
+                modelMeta: { 'deepseek-v4.1-flash': { contextWindow: 1000000, maxTokens: 384000 } },
+            }],
+            modelOverrides: { [endpoint]: { 'deepseek-v4.1-flash': { maxOutput: 8192 } } },
+        });
+        const manager = makeManager(settings);
+
+        expect(manager.resolveModelLimits('deepseek-v4.1-flash')).toEqual({
+            maxContext: 1000000,
+            maxOutput: 8192,
+        });
+    });
 });

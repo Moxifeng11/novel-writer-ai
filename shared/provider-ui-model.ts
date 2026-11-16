@@ -18,6 +18,8 @@ export interface ProviderLike {
     sourceType?: 'cloud' | 'local';
     apiFormat?: string;
     isDefault?: boolean;
+    /** 渠道自定义请求头（覆盖内置适配值） */
+    headers?: Record<string, string>;
 }
 
 /** 全局模型分配 */
@@ -156,7 +158,13 @@ export function resolveThinkingCapability(
     if (/^(o1|o3|o4|gpt-5)/.test(lowerModel) || /openai\.com/.test(endpoint)) {
         return { supported: true, kind: 'reasoning_effort', hint: 'OpenAI 风格：下发 reasoning_effort（low/medium/high）' };
     }
-    if (/volces\.com|deepseek\.com|sensenova\.cn|opencode\.ai/.test(endpoint)) {
+    // OpenCode Go / Zen：网关按 reasoning_effort 分级（实测 low/high/max，thinking.type 也兼容，
+    // 但按模型能力声明的 effort 下发更准）。旧实现误判为 thinking.type，而运行时又完全不下发，
+    // 结果「设置页可调、实际不生效」。
+    if (/opencode\.ai/.test(endpoint)) {
+        return { supported: true, kind: 'reasoning_effort', hint: 'OpenCode 渠道：下发 reasoning_effort（low/high/max）' };
+    }
+    if (/volces\.com|deepseek\.com|sensenova\.cn/.test(endpoint)) {
         return { supported: true, kind: 'thinking', hint: '该渠道支持 thinking.type + budget_tokens' };
     }
     return { supported: false, kind: 'none', hint: '未识别的渠道：不下发思考参数，避免 400' };
@@ -262,10 +270,50 @@ export interface ProviderDefaultHeaders {
 }
 
 /**
+ * OpenCode Go 要求的会话标识请求头名。
+ *
+ * 官方文档：客户端应为每段对话带一个稳定的 `x-opencode-session`，
+ * 否则网关直接返回 400 MissingSessionID（无法做路由与 prompt 缓存优化）。
+ */
+export const OPENCODE_SESSION_HEADER = 'x-opencode-session';
+
+let opencodeSessionId: string | null = null;
+
+/**
+ * 取得本进程内稳定的 OpenCode 会话 id（首次调用时生成）。
+ *
+ * 只在插件实例生命周期内稳定：重载后换新 id 只会让网关路由缓存失效，
+ * 不影响鉴权与计费。
+ *
+ * @returns 会话 id
+ * @example
+ * getOpenCodeSessionId() === getOpenCodeSessionId(); // true（同一进程内稳定）
+ */
+export function getOpenCodeSessionId(): string {
+    if (!opencodeSessionId) {
+        const random = Math.random().toString(36).slice(2, 10);
+        opencodeSessionId = `nw-${Date.now().toString(36)}-${random}`;
+    }
+    return opencodeSessionId;
+}
+
+/**
+ * 覆盖会话 id（测试或按对话切分时使用）。
+ *
+ * @param value - 新 id；传 null 表示下次重新生成
+ * @example
+ * setOpenCodeSessionId('test-session');
+ */
+export function setOpenCodeSessionId(value: string | null): void {
+    opencodeSessionId = value && value.trim() ? value.trim() : null;
+}
+
+/**
  * 按渠道补内置请求头（OpenRouter 必带 Referer/Title、Anthropic 必带版本号）。
  * 用户自定义 headers 在调用侧覆盖这里的默认值。
  *
  * @param provider - 供应商（端点/协议）
+ * @param options - 可选；`sessionId` 覆盖 OpenCode 会话 id
  * @returns 需要补的请求头与说明
  * @example
  * defaultHeadersForProvider({ endpoint: 'https://openrouter.ai/api/v1/chat/completions' }).headers;
@@ -273,6 +321,7 @@ export interface ProviderDefaultHeaders {
  */
 export function defaultHeadersForProvider(
     provider: Pick<ProviderLike, 'endpoint' | 'apiFormat'>,
+    options?: { sessionId?: string },
 ): ProviderDefaultHeaders {
     const endpoint = String(provider.endpoint ?? '').toLowerCase();
     if (provider.apiFormat === 'anthropic-messages') {
@@ -288,7 +337,83 @@ export function defaultHeadersForProvider(
         };
     }
     if (endpoint.includes('opencode.ai')) {
-        return { headers: {}, note: 'OpenCode Zen 无需额外请求头' };
+        // OpenCode Go / Zen：缺 x-opencode-session 会 400 MissingSessionID（实测 2026-11-16）
+        return {
+            headers: { [OPENCODE_SESSION_HEADER]: options?.sessionId || getOpenCodeSessionId() },
+            note: 'OpenCode：自动补 x-opencode-session（缺了会 400 MissingSessionID，可在自定义请求头覆盖）',
+        };
     }
     return { headers: {}, note: '该渠道没有必需的内置请求头' };
+}
+
+/**
+ * 解析一次请求真正要带上的渠道请求头（内置适配 + 用户自定义覆盖）。
+ *
+ * 运行时调用、连通性测试、模型列表三处共用这一个入口，避免出现
+ * 「测试通过但生成失败」的不一致。
+ *
+ * @param provider - 供应商（端点/协议/自定义头）
+ * @param options - 可选；`sessionId` 覆盖 OpenCode 会话 id
+ * @returns 合并后的请求头
+ * @example
+ * resolveProviderHeaders({ endpoint: 'https://opencode.ai/zen/v1/chat/completions' });
+ * // { 'x-opencode-session': 'nw-...' }
+ */
+export function resolveProviderHeaders(
+    provider: Pick<ProviderLike, 'endpoint' | 'apiFormat' | 'headers'>,
+    options?: { sessionId?: string },
+): Record<string, string> {
+    const builtin = defaultHeadersForProvider(provider, options).headers;
+    const custom = provider.headers && typeof provider.headers === 'object' ? provider.headers : {};
+    return { ...builtin, ...custom };
+}
+
+/** 模型上限来源（设置页展示用） */
+export type LimitSource = 'override' | 'endpoint' | 'detected' | 'builtin' | 'provider' | 'fallback';
+
+/**
+ * 解释某个模型的上下文/输出上限是从哪来的。
+ *
+ * 优先级与 ProviderManager.resolveModelLimits 保持一致：
+ * 手动覆盖 > 端点披露/模型编辑（modelMeta）> 运行时探测 > 内置能力表 > 渠道默认 > 兜底。
+ *
+ * @param provider - 渠道（可只有 endpoint/modelMeta）
+ * @param model - 模型 id
+ * @param hasOverride - 是否配置了手动覆盖
+ * @param detected - 是否有运行时探测值
+ * @returns 来源类型
+ * @example
+ * describeLimitSource({ endpoint: 'e', modelMeta: { m: { contextWindow: 1 } } }, 'm', false, false);
+ * // 'endpoint'
+ */
+export function describeLimitSource(
+    provider: { modelMeta?: Record<string, { contextWindow?: number; maxTokens?: number }> } | undefined,
+    model: string,
+    hasOverride: boolean,
+    detected: boolean,
+): LimitSource {
+    if (hasOverride) return 'override';
+    const meta = provider?.modelMeta?.[model];
+    if (meta && ((meta.contextWindow ?? 0) > 0 || (meta.maxTokens ?? 0) > 0)) return 'endpoint';
+    if (detected) return 'detected';
+    return 'builtin';
+}
+
+/**
+ * 上限来源的中文说明。
+ *
+ * @param source - 来源
+ * @returns 文案
+ * @example
+ * describeLimitSourceLabel('endpoint'); // '端点识别'
+ */
+export function describeLimitSourceLabel(source: LimitSource): string {
+    switch (source) {
+        case 'override': return '手动覆盖';
+        case 'endpoint': return '端点识别';
+        case 'detected': return '运行时探测';
+        case 'builtin': return '内置能力表';
+        case 'provider': return '渠道默认';
+        default: return '保守兜底';
+    }
 }
