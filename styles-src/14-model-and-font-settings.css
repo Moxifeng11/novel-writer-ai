@@ -1273,3 +1273,11 @@
 .nw-api-test-result-row.nw-api-test-status-error {
     color: var(--text-error);
 }
+
+/* 诊断建议行：错误原文之外的可执行下一步 */
+.nw-api-test-result-hint {
+    margin-top: 2px;
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--text-muted);
+}

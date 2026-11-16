@@ -331,3 +331,34 @@
 | 实机 | 测试结果显示在模型列表下方独立区（`inModelRow: 0`），模型行内无结果文本 | 通过 |
 | 实机 | 验证后已把 Ollama 的覆盖清空，恢复自动推导 | 通过 |
 | 门禁 | `npm run gen:docs && npm run preflight` | 见提交 |
+### 2026-11-16 第十一轮：OpenCode / 日日新连接测试排查
+
+用户反馈两个渠道连接测试都有问题。实机 + 直连双向排查。
+
+**实机现象**：两个渠道点模型测试都报 401（OpenCode：Invalid credential；SenseNova：Forbidden）。
+
+**真实原因（两层）**
+
+1. 插件 P0 bug：密钥处于加密锁定状态（locked=7）时，连通性测试没有判密文，直接把 `aes256v2:...` 当 Bearer 发给服务端。服务端当然返回 401，于是「没解锁」被显示成「密钥错误」。这也意味着密文被外发到第三方。
+2. 渠道配置问题：OpenCode go 渠道的 Base URL 是 Zen 端点（`opencode.ai/zen/v1`），但该账号是 Go 订阅——直连实测 Zen + 该 Key 返回 **402 Insufficient balance**，Go 端点（`inference/go/openai/v1`）+ 同 Key 返回 **200**。SenseNova 的 API 格式被存成 `openai-responses`，应为 `openai-chat`。
+
+**改动**
+
+- `services/api-connectivity-service.ts`：新增密文判定（锁定态不发请求，提示先解锁）；402 归类 `quota_exceeded`；新增 `suggestFix` 给可执行建议。
+- `ui/settings/api-section.ts`：测试结果区第二行展示建议。
+- 数据修正：SenseNova 预设 `apiFormat` → `openai-chat`。
+- 样式：新增建议行样式。
+
+**验证**
+
+| 层级 | 内容 | 结果 |
+| --- | --- | --- |
+| 单测 | 密文不外发（请求未发出 + 提示解锁）、402 归类与建议、suggestFix 三种场景 | 全过 |
+| 实机 | 未解锁点测试：OpenCode go / 日日新/SenseNova 均提示「密钥处于加密锁定状态：请先…解锁」，且日志无请求发出 | 通过 |
+| 直连 | Zen+QQ Key → 402 余额不足；Go+QQ Key → 200；Zen+GO Key → 401 | 见模块页 §11 |
+| 门禁 | `npm run gen:docs && npm run preflight` | 见提交 |
+
+**留给用户确认**
+
+- OpenCode go 渠道端点是否改为 `https://opencode.ai/inference/go/openai/v1`（插件不擅自改，避免改到第二个账号）。
+- SenseNova 解锁后若仍 401/400，需要核对 Key 与模型名（当前模型名是 `deepseek-v4-flash`，SenseNova 自带模型名为 `sensenova-6.7-flash-lite`）。

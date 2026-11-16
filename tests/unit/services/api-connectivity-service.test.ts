@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     normalizeChatEndpoint,
+    suggestFix,
     testProviderConnectivity,
     type RequestUrlFn,
 } from '../../../services/api-connectivity-service';
@@ -166,6 +167,48 @@ describe('显式请求 URL 覆盖', () => {
             endpoint: 'https://a.example.com/v1',
         }, request);
         expect(captured.url).toBe('https://a.example.com/v1/chat/completions');
+    });
+});
+
+// 2026-11-16：用户反馈 OpenCode / 日日新「连接测试有问题」，实测两者都返回 401，
+// 但真正原因是密钥处于加密锁定状态，插件把 aes256v2: 密文当 Bearer 发了出去。
+describe('密钥锁定态不得外发', () => {
+    const CIPHER = 'aes256v2:210000:c2FsdA==:aXY=:Y3Q==';
+
+    it('密文不当凭据：不发请求，提示先解锁', async () => {
+        let called = false;
+        const request: RequestUrlFn = async () => {
+            called = true;
+            return response(200, '{}');
+        };
+        const result = await testProviderConnectivity({ ...base, apiKey: CIPHER }, request);
+        expect(called).toBe(false);
+        expect(result.status).toBe('auth_failed');
+        expect(result.message).toContain('加密锁定');
+        expect(result.message).toContain('解锁');
+    });
+
+    it('402 归类为余额不足而不是未知错误', async () => {
+        const request: RequestUrlFn = async () => response(402, '{"error":{"message":"Insufficient balance"}}');
+        const result = await testProviderConnectivity(base, request);
+        expect(result.status).toBe('quota_exceeded');
+        expect(result.message).toContain('余额');
+        expect(result.hint).toContain('充值');
+    });
+});
+
+describe('suggestFix — 可执行建议', () => {
+    it('Zen 端点鉴权失败 → 提示 Go 订阅端点', () => {
+        expect(suggestFix('auth_failed', 'https://opencode.ai/zen/v1/chat/completions'))
+            .toContain('inference/go');
+    });
+
+    it('404 → 提示核对实际请求 URL 与协议', () => {
+        expect(suggestFix('not_found', 'https://x.com/v1/chat/completions')).toContain('实际请求 URL');
+    });
+
+    it('普通鉴权失败给通用建议', () => {
+        expect(suggestFix('auth_failed', 'https://token.sensenova.cn/v1/chat/completions')).toContain('Key');
     });
 });
 

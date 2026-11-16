@@ -6,6 +6,7 @@
  */
 import { requestUrl } from 'obsidian';
 import { createLogger } from '@/shared/logger';
+import { isStoredCiphertext } from '@/shared/secret-value';
 import {
     buildAuthHeaders,
     buildChatRequestBody,
@@ -32,6 +33,8 @@ export type ApiConnectivityStatus =
     | 'auth_failed'
     | 'not_found'
     | 'rate_limited'
+    /** 余额/额度不足（402）：与「密钥无效」是两回事，提示要分开 */
+    | 'quota_exceeded'
     | 'server_error'
     | 'network_error'
     | 'timeout'
@@ -74,6 +77,8 @@ export interface ApiConnectivityResult {
     endpoint: string;
     model: string;
     testedAt: number;
+    /** 可执行的下一步建议（例如「Go 订阅请换成 go 端点」），UI 第二行展示 */
+    hint?: string;
 }
 
 /**
@@ -145,8 +150,43 @@ function classifyStatus(status: number): { level: ApiConnectivityLevel; status: 
     if (status === 404) return { level: 'error', status: 'not_found' };
     if (status === 408) return { level: 'error', status: 'timeout' };
     if (status === 429) return { level: 'warn', status: 'rate_limited' };
+    if (status === 402) return { level: 'error', status: 'quota_exceeded' };
     if (status >= 500) return { level: 'error', status: 'server_error' };
     return { level: 'error', status: 'unknown_error' };
+}
+
+/**
+ * 按失败类型给出可执行的下一步建议。
+ *
+ * 渠道语义差异靠这里兜住：同样是 401，可能是密钥没解锁、可能是密钥无效；
+ * 同样是 402，可能是余额不足（Zen 按量付费）而不是 Go 订阅失效。
+ *
+ * @param status - 分类后的状态
+ * @param endpoint - 实际请求地址
+ * @returns 建议文本；无建议返回 undefined
+ * @example
+ * suggestFix('quota_exceeded', 'https://opencode.ai/zen/v1/chat/completions');
+ * // '余额不足：Zen 是按量付费端点…'
+ */
+export function suggestFix(status: ApiConnectivityStatus, endpoint: string): string | undefined {
+    const url = String(endpoint || '').toLowerCase();
+    if (status === 'quota_exceeded') {
+        if (url.includes('opencode.ai/zen')) {
+            return 'OpenCode Zen 采用按量付费：余额不足会返回 402。若你买的是 Go 订阅，'
+                + '请把 Base URL 改成 https://opencode.ai/inference/go/openai/v1 后重试。';
+        }
+        return '余额/额度不足：请到该渠道控制台充值，或确认订阅是否到期。';
+    }
+    if (status === 'auth_failed') {
+        if (url.includes('opencode.ai/zen')) {
+            return 'Zen 与 Go 的 Key/端点不能混用：Go 订阅请用 https://opencode.ai/inference/go/openai/v1。';
+        }
+        return '请确认 Key 是否有效、是否已过期，以及该 Key 是否属于当前端点对应的账号。';
+    }
+    if (status === 'not_found') {
+        return '检查 Base URL 与 API 格式是否匹配：可展开「实际请求 URL」核对最终地址，路径不对时改成完整地址即可。';
+    }
+    return undefined;
 }
 
 function buildProbeBody(config: ApiConnectivityConfig, endpoint: string, format: ApiFormat): string {
@@ -223,7 +263,20 @@ export async function testProviderConnectivity(
         return { ...base, level: 'error', status: 'invalid_config', message: '未选择模型', latencyMs: 0 };
     }
     const local = config.sourceType === 'local' || isLocalEndpoint(endpoint);
-    if (!local && !String(config.apiKey || '').trim()) {
+    const key = String(config.apiKey || '').trim();
+    // S3-4：锁定态密文绝不能当凭据外发。旧实现直接把 `aes256v2:...` 当 Bearer 发出去，
+    // 服务端返回 401 "Invalid credential / Forbidden"，把「没解锁」伪装成「密钥错误」，
+    // 用户只能瞎猜（实测 OpenCode / SenseNova 都栽在这）。
+    if (key && isStoredCiphertext(key)) {
+        return {
+            ...base,
+            level: 'error',
+            status: 'auth_failed',
+            message: '密钥处于加密锁定状态：请先在页面顶部「输入口令解锁」，再测试连通性',
+            latencyMs: 0,
+        };
+    }
+    if (!local && !key) {
         return { ...base, level: 'error', status: 'auth_failed', message: '缺少 API 密钥', latencyMs: 0 };
     }
 
@@ -251,7 +304,9 @@ export async function testProviderConnectivity(
                 ? '鉴权失败'
                 : classified.status === 'not_found'
                     ? '端点或模型不存在'
-                    : classified.status === 'rate_limited'
+                    : classified.status === 'quota_exceeded'
+                        ? '余额/额度不足'
+                        : classified.status === 'rate_limited'
                         ? '请求被限流'
                         : classified.status === 'server_error'
                             ? '服务端错误'
@@ -266,6 +321,7 @@ export async function testProviderConnectivity(
                 message: `${label}（HTTP ${response.status}）${detail ? `：${detail}` : ''}`,
                 latencyMs,
                 httpStatus: response.status,
+                hint: suggestFix(classified.status, endpoint),
             };
         }
 

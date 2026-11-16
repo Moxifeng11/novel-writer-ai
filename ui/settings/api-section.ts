@@ -753,6 +753,7 @@ export class ApiSection extends SettingsSection {
     private modelTestResults = new Map<string, Map<string, {
         level: 'ok' | 'warn' | 'error' | 'pending';
         message: string;
+        hint?: string;
         at: number;
     }>>();
 
@@ -766,7 +767,7 @@ export class ApiSection extends SettingsSection {
     private appendModelTestResult(
         providerId: string,
         modelId: string,
-        result: { level: 'ok' | 'warn' | 'error' | 'pending'; message: string },
+        result: { level: 'ok' | 'warn' | 'error' | 'pending'; message: string; hint?: string },
     ): void {
         const bucket = this.modelTestResults.get(providerId) ?? new Map();
         bucket.set(modelId, { ...result, at: Date.now() });
@@ -798,10 +799,12 @@ export class ApiSection extends SettingsSection {
         };
         for (const [modelId, result] of bucket) {
             const icon = result.level === 'ok' ? '✅' : result.level === 'warn' ? '⚠️' : result.level === 'pending' ? '⏳' : '❌';
-            box.createDiv({
+            const row = box.createDiv({
                 cls: 'nw-api-test-result-row' + (result.level === 'pending' ? '' : ` nw-api-test-status-${result.level}`),
-                text: `${icon} ${modelId}：${result.message}`,
             });
+            row.createDiv({ text: `${icon} ${modelId}：${result.message}` });
+            // 建议单独一行：401/402 这类错误的「下一步该做什么」比错误原文更重要
+            if (result.hint) row.createDiv({ cls: 'nw-api-test-result-hint', text: `→ ${result.hint}` });
         }
     }
 

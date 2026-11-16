@@ -75,6 +75,15 @@
 | M-35 | P1 | URL 与 API 格式的输入方式（Base URL + 协议推导路径）用户认为不合理 | 方案 C：协议下方显示「实际请求 URL」，可直接覆盖；覆盖后所见即所发，测试/生成/模型列表全部同源 | done |
 | M-36 | P2 | 测试结果挤在模型行内，长错误把行撑变形 | 模型列表下方独立「连通性测试结果」区，按模型分条显示、可清空 | done |
 
+### 第五轮（2026-11-16 用户反馈：OpenCode / 日日新连接测试异常）
+
+| 编号 | 级别 | 现象 | 期望 | 状态 |
+| --- | --- | --- | --- | --- |
+| M-37 | P0 | 密钥未解锁时，连通性测试把 `aes256v2:` 密文当 Bearer 发出去，服务端返回 401「Invalid credential / Forbidden」，把「没解锁」伪装成「密钥错误」（OpenCode / SenseNova 实测都栽在这） | 锁定态不外发，直接提示先解锁 | done |
+| M-38 | P1 | 402（余额不足）被归为「请求失败 HTTP 402」，看不出是钱的问题 | 单独归类「余额/额度不足」，并给充值/换端点建议 | done |
+| M-39 | P1 | 鉴权/404 失败只给错误原文，用户不知道下一步做什么 | 结果区第二行给可执行建议（Go 端点、核对实际请求 URL 等） | done |
+| M-40 | P1 | SenseNova 预设的 API 格式被存成 `openai-responses`，实际请求会打到 `/v1/responses`（SenseNova 是 OpenAI Chat 兼容） | 修正为 `openai-chat` | done |
+
 ## 3.5 第二轮 Brief（2026-11-16）
 
 - **一句话目标**：渠道能力（端点/请求头/上下文/输出/价格/思考/视觉）全部「自动识别 + 可按渠道覆盖」，测试与真实调用同源，任务级参数按渠道独立。
@@ -163,3 +172,21 @@
 - **连通性测试下放**：渠道级按钮删除，改为模型行内按钮（显示该模型 id 与结果），失败能定位到具体模型。
 - **M-35 方案 C（已确认）**：保留 Base URL + 协议，同时在协议下方显示「实际请求 URL」并可覆盖；覆盖后运行时不再推导（`requestUrlOverride`），测试、生成、模型列表三处同源；改 Base URL 自动清空覆盖，避免打旧地址。
 - **测试结果位置（M-36）**：从模型行内移到模型列表下方的独立结果区，长错误不再挤压行布局。
+
+
+## 11. 第五轮诊断记录（2026-11-16）
+
+**实测数据（直连，不经过插件）**
+
+| 组合 | 结果 |
+| --- | --- |
+| `POST https://opencode.ai/zen/v1/chat/completions` + QQ(pc) Key | **402 Insufficient balance**（Key 有效，Zen 按量付费余额不足） |
+| `POST https://opencode.ai/inference/go/openai/v1/chat/completions` + QQ(pc) Key | **200**（Go 订阅通道正常） |
+| `POST https://opencode.ai/zen/v1/chat/completions` + OPENCODE_GO Key | **401 Invalid credential** |
+| `POST https://token.sensenova.cn/v1/chat/completions`（无 Key） | 401 Authorization Not Found（地址存在） |
+
+**结论**
+
+1. 插件在未解锁时把密文当 Key 发送 → 401，是「两个渠道都失败」的共同原因（已修 M-37）。
+2. OpenCode go 渠道当前指向 Zen 端点；该账号是 Go 订阅，Zen 会 402。正确端点应为 `https://opencode.ai/inference/go/openai/v1`（需在渠道里改，插件不擅自改，因为有第二个 OpenCode 账号）。
+3. SenseNova 协议被存成 Responses，已修正为 Chat Completions（M-40）。
