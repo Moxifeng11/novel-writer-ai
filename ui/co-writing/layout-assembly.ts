@@ -131,6 +131,8 @@ export interface HeaderAssemblyOptions {
 export interface HeaderHandles {
     /** 章节上下文状态 */
     statusBar: HTMLElement;
+    /** 章节流转槽位（上一章/选择器/下一章），独立于状态栏以免被状态刷新清空 */
+    chapterNavSlot: HTMLElement;
     /** 模型快速切换器 */
     modelSwitcher: ModelQuickSwitcherHandle;
     /** 精准模式按钮 */
@@ -279,6 +281,9 @@ export function renderHeader(header: HTMLElement, options: HeaderAssemblyOptions
     titleDiv.createSpan({ text: '协同写作' });
     // 空态不再显示「加载中...」，改为准确的上下文状态（openChapter 成功后会由 refreshStatusBar 覆盖）
     const statusBar = headerLeft.createDiv({ cls: 'nw-cowrite-status', text: '未绑定章节' });
+    // E-02：章节流转放在状态栏外侧的独立槽位——
+    // 状态栏每次刷新都会 empty() 重建文本，导航若在里面会被每键输入反复销毁。
+    const chapterNavSlot = headerLeft.createDiv({ cls: 'nw-cowrite-chapter-nav-slot' });
 
     // 中区：资源引用入口（知识库 → 指纹库 → 实体，按参考资料使用频率排序）
     const headerTools = header.createDiv({ cls: 'nw-cowrite-header-tools' });
@@ -311,7 +316,7 @@ export function renderHeader(header: HTMLElement, options: HeaderAssemblyOptions
     const assetStatusBar = headerRight.createDiv({ cls: 'nw-asset-status-bar' });
     options.renderAssetStatus();
 
-    return { statusBar, modelSwitcher, precisionModeBtn: precisionBtn, assetStatusBar };
+    return { statusBar, chapterNavSlot, modelSwitcher, precisionModeBtn: precisionBtn, assetStatusBar };
 }
 
 /**

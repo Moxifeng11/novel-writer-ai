@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-16T12:21:43.183Z",
-  "note": "协同写作 P1/P2：辅助条/高亮镜像层/专注模式/差异对比/光标信息/简报入口（+5.7KB，31 类）",
-  "bytes": 587454,
+  "generatedAt": "2026-11-16T13:04:25.799Z",
+  "note": "协同写作全量自检：窄屏堆叠/章节导航槽位/辅助条压缩（+1.4KB，1 类）",
+  "bytes": 588907,
   "important": 24,
   "hardcodedHex": 169,
   "rgbHsl": 192,
-  "uniqueClasses": 3209,
+  "uniqueClasses": 3210,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

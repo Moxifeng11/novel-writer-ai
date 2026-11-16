@@ -118,22 +118,7 @@ export function renderSuggestionCards(
         const rejectBtn = actionRow.createEl('button', { text: '× 拒绝', cls: 'novel-writer-cowrite-secondary-btn' });
         rejectBtn.addEventListener('click', () => actions.onReject(suggestion.id));
         // E-05：差异对比——先给摘要，展开后列出行级 +/-，避免盲采纳
-        if (actions.computeDiff) {
-          const diffResult = actions.computeDiff(suggestion);
-          if (diffResult) {
-            const diffBtn = actionRow.createEl('button', {
-                text: `⇄ 差异（${describeDiff(diffResult)}）`,
-                cls: 'novel-writer-cowrite-secondary-btn',
-                attr: { title: '查看该候选相对当前正文的改动' },
-            });
-            const diffBox = card.createDiv({ cls: 'novel-writer-cowrite-diff nw-u-d-none' });
-            diffBtn.addEventListener('click', () => {
-                const hidden = diffBox.hasClass('nw-u-d-none');
-                if (hidden) renderDiffRows(diffBox, diffResult);
-                diffBox.toggleClass('nw-u-d-none', !hidden);
-            });
-          }
-        }
+        attachDiffToggle(card, actionRow, suggestion, actions);
     });
 }
 
@@ -159,6 +144,40 @@ export function renderDiffRows(container: HTMLElement, result: TextDiffResult): 
     if (result.rows.every(row => row.kind === 'same')) {
         body.createDiv({ cls: 'novel-writer-cowrite-diff-same', text: '与当前正文完全一致' });
     }
+}
+
+/**
+ * 给卡片挂上「差异对比」按钮与可展开的差异区。
+ *
+ * 候选卡与联想卡共用，避免两处实现漂移。
+ *
+ * @param card - 卡片容器
+ * @param actionRow - 按钮行
+ * @param suggestion - 建议记录
+ * @param actions - 卡片动作（需提供 computeDiff）
+ * @example
+ * attachDiffToggle(card, actionRow, suggestion, actions);
+ */
+function attachDiffToggle(
+    card: HTMLElement,
+    actionRow: HTMLElement,
+    suggestion: SuggestionRecord,
+    actions: SuggestionCardActions,
+): void {
+    if (!actions.computeDiff) return;
+    const diffResult = actions.computeDiff(suggestion);
+    if (!diffResult) return;
+    const diffBtn = actionRow.createEl('button', {
+        text: `⇄ 差异（${describeDiff(diffResult)}）`,
+        cls: 'novel-writer-cowrite-secondary-btn',
+        attr: { title: '查看该候选相对当前正文的改动' },
+    });
+    const diffBox = card.createDiv({ cls: 'novel-writer-cowrite-diff nw-u-d-none' });
+    diffBtn.addEventListener('click', () => {
+        const hidden = diffBox.hasClass('nw-u-d-none');
+        if (hidden) renderDiffRows(diffBox, diffResult);
+        diffBox.toggleClass('nw-u-d-none', !hidden);
+    });
 }
 
 /**
@@ -199,6 +218,8 @@ export function renderAssociationCards(
         editBtn.addEventListener('click', () => actions.onEdit(suggestion));
         const rejectBtn = actionRow.createEl('button', { text: '× 拒绝', cls: 'novel-writer-cowrite-secondary-btn' });
         rejectBtn.addEventListener('click', () => actions.onReject(suggestion.id));
+        // E-05：联想也可先看差异再插入
+        attachDiffToggle(card, actionRow, suggestion, actions);
     });
 }
 

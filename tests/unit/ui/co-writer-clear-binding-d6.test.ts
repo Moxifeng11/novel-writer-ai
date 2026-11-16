@@ -34,6 +34,13 @@ type Ctx = {
     resetPlotMetricsForChapterSwitch: ReturnType<typeof vi.fn>;
     renderMetrics: ReturnType<typeof vi.fn>;
     flushPendingBodySaveBeforeChapterSwitch: ReturnType<typeof vi.fn>;
+    /** 清空绑定后新增的同步调用（高亮/光标/章节导航） */
+    syncHighlightSoon: ReturnType<typeof vi.fn>;
+    refreshCursorInfo: ReturnType<typeof vi.fn>;
+    refreshHistoryButtons: ReturnType<typeof vi.fn>;
+    chapterList: unknown[];
+    chapterNavKey: string | null;
+    chapterNavSlot: { empty: ReturnType<typeof vi.fn> } | null;
     clearChapterBinding: () => Promise<void>;
 };
 
@@ -59,6 +66,13 @@ function makeCtx(): Ctx {
         resetPlotMetricsForChapterSwitch: vi.fn(),
         renderMetrics: vi.fn(),
         flushPendingBodySaveBeforeChapterSwitch: vi.fn(async () => true),
+        // 清空时需要同步清理的下游状态（高亮层 / 光标 / 导航 / 撤销按钮）
+        syncHighlightSoon: vi.fn(),
+        refreshCursorInfo: vi.fn(),
+        refreshHistoryButtons: vi.fn(),
+        chapterList: [{ chapter: '第1章' }],
+        chapterNavKey: 'A书|第1章|1',
+        chapterNavSlot: { empty: vi.fn() },
     } as unknown as Ctx;
     ctx.clearChapterBinding = CoWritingView.prototype['clearChapterBinding'].bind(ctx) as Ctx['clearChapterBinding'];
     return ctx;
@@ -84,6 +98,13 @@ describe('D6 CoWritingView — 无上下文回到空态', () => {
         expect(ctx.renderEmptySuggestions).toHaveBeenCalledWith(
             expect.stringContaining('尚未绑定章节'),
         );
+        // 残留清理：着色层/光标/导航/撤销按钮不能停在上一条正文的状态
+        expect(ctx.syncHighlightSoon).toHaveBeenCalled();
+        expect(ctx.refreshCursorInfo).toHaveBeenCalled();
+        expect(ctx.chapterList).toEqual([]);
+        expect(ctx.chapterNavKey).toBeNull();
+        expect(ctx.chapterNavSlot?.empty).toHaveBeenCalled();
+        expect(ctx.refreshHistoryButtons).toHaveBeenCalled();
     });
 
     it('清空前先按旧身份冲刷排队保存', async () => {

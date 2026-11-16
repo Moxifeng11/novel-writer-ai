@@ -20294,6 +20294,68 @@ body.nw-panel-resizing .nw-awb-center iframe {
 .nw-cowrite-md-status-cursor {
     color: var(--text-faint);
 }
+
+/* 窄面板（<900px 容器）：编辑区与建议区必须纵向堆叠，否则编辑区只有 ~300px 宽。
+   这条补在 container 查询内，与 04-workspace-layers 的 main 纵向降级配套。 */
+@container nw-cowrite (max-width: 900px) {
+    .nw-cowrite-center {
+        flex-direction: column;
+    }
+
+    .nw-cowrite-center .nw-cowrite-editor-wrap {
+        flex: 1 1 auto;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .nw-cowrite-center .nw-cowrite-suggestions-panel {
+        flex: 0 0 auto;
+        min-height: 180px;
+        max-height: 320px;
+    }
+
+    .nw-cowrite-center .nw-cowrite-resizer {
+        display: none;
+    }
+
+    /* 工具条在窄面板改为可换行，避免按钮被裁掉 */
+    .nw-cowrite-md-toolbar {
+        flex-wrap: wrap;
+        overflow: visible;
+    }
+}
+
+/* 超窄面板（<460px）：辅助条压缩，避免占用四行纵向空间 */
+@container nw-cowrite (max-width: 460px) {
+    .nw-cowrite-aux {
+        gap: 4px 6px;
+        padding: 3px 4px;
+    }
+
+    .nw-cowrite-aux-label {
+        display: none;
+    }
+
+    .nw-cowrite-aux-btn {
+        padding: 2px 6px;
+        font-size: 11px;
+    }
+
+    .nw-cowrite-aux-state {
+        display: none;
+    }
+}
+
+/* 章节流转槽位：与状态栏同一行，不占额外高度 */
+.nw-cowrite-chapter-nav-slot {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.nw-cowrite-chapter-nav-slot:empty {
+    display: none;
+}
 /* ==========================================================================
  * 23-generate-modals.css — 实体生成弹窗共用样式（v4.80.0 批次 B3a）
  * ==========================================================================

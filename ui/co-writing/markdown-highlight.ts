@@ -205,6 +205,10 @@ export function copyEditorBoxStyles(editor: HTMLElement | null, backdrop: HTMLEl
         ['boxSizing', computed.boxSizing],
         ['fontFamily', computed.fontFamily],
         ['fontWeight', computed.fontWeight],
+        // 字号/行高必须跟编辑器完全一致：镜像层若在应用 metrics 前创建，
+        // 会沿用父级行高（实测 19.5px vs 27px），长文下整篇错位。
+        ['fontSize', computed.fontSize],
+        ['lineHeight', computed.lineHeight],
         ['whiteSpace', computed.whiteSpace],
         ['overflowWrap', computed.overflowWrap],
         ['wordBreak', computed.wordBreak],
@@ -215,6 +219,14 @@ export function copyEditorBoxStyles(editor: HTMLElement | null, backdrop: HTMLEl
     const style = backdrop.style as unknown as Record<string, string>;
     for (const [prop, value] of props) {
         if (value) style[prop] = value;
+    }
+    // 滚动条补偿：textarea 有滚动条时内容宽度比 backdrop 窄一个滚动条，
+    // 两者换行结果会不同 → 长文下着色文本与正文整体错位。
+    // 把滚动条宽度加到 backdrop 的右内边距里，使两侧内容宽度一致。
+    const scrollbar = Math.max(0, editor.offsetWidth - editor.clientWidth);
+    if (scrollbar > 0) {
+        const paddingRight = parseFloat(computed.paddingRight) || 0;
+        style.paddingRight = `${paddingRight + scrollbar}px`;
     }
 }
 

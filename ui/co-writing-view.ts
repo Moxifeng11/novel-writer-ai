@@ -245,6 +245,10 @@ export class CoWritingView extends ItemView {
   private chapterList: NavChapter[] = [];
   /** 本章字数目标（E-03：大纲 > 项目 > 全局） */
   private chapterWordGoal: ChapterWordGoal | null = null;
+  /** 章节流转槽位（与状态栏并列，避免刷新时被销毁） */
+  private chapterNavSlot: HTMLElement | null = null;
+  /** 已渲染导航对应的章节键（相同则不重建，避免输入时反复销毁下拉） */
+  private chapterNavKey: string | null = null;
   /** 编辑辅助条句柄（撤销/字号/行距/专注/高亮/保存，E-04~E-08/E-11） */
   private auxBar: EditorAuxHandles | null = null;
   /** 语法着色镜像层（textarea 下方） */
@@ -255,6 +259,8 @@ export class CoWritingView extends ItemView {
   private lastHistoryPushAt = 0;
   /** 高亮层刷新定时器 */
   private highlightTimer: number | null = null;
+  /** 上次渲染到镜像层的正文（内容未变则跳过重建，长文下避免无谓开销） */
+  private highlightRenderedText: string | null = null;
   wordCountDisplay!: HTMLElement;
   wordGoalDisplay!: HTMLElement;
   saveStateDisplay!: HTMLElement;
@@ -465,6 +471,8 @@ export class CoWritingView extends ItemView {
     this.applyEditorFont(this.facade.settings.coWriteEditorFont || '');
     this.renderEmptySuggestions();
     this.renderMetrics(this.facade.getSession()?.currentMetrics || emptyMetrics());
+    // E-07：恢复上次的专注模式（设置已持久化，视图重建后必须重新应用）
+    if (this.facade.settings.coWriteFocusMode === true) this.toggleFocusMode(true);
     if (this.project && this.chapterName) {
       await this.openChapter(this.project, this.chapterName, this.volume, this.chapterNum);
       await this.historyStore.loadSuggestionHistory();
@@ -597,6 +605,14 @@ export class CoWritingView extends ItemView {
     if (this.rightEditor) this.rightEditor.value = "";
     this.renderMetrics(emptyMetrics());
     this.statusBar?.setText("未绑定章节");
+    // 清空绑定后：高亮层/光标/撤销栈/章节导航都要跟着清，避免残留上一章内容
+    this.syncHighlightSoon();
+    this.refreshCursorInfo();
+    this.chapterList = [];
+    this.chapterNavKey = null;
+    this.chapterNavSlot?.empty();
+    this.highlightRenderedText = null;
+    this.refreshHistoryButtons();
   }
   /** 按章号反查正文实际所在卷；找不到返回 null（调用方回落第 1 卷） */
   private resolveVolumeForChapter(project: string, chapterNum: number): string | null {
@@ -687,6 +703,7 @@ export class CoWritingView extends ItemView {
     await this.loadChapterWordGoal();
     // 切章时关闭查找条：旧命中偏移对新正文无意义
     this.closeFindBar();
+    this.highlightRenderedText = null;
     // E-04：切章后把新章内容作为该章撤销栈起点（切回来仍可继续撤销）
     this.editHistory.get(this.historyKey(), bodyOnly);
     this.pushHistorySnapshot(true);
@@ -829,6 +846,7 @@ export class CoWritingView extends ItemView {
       renderModelSwitcher: (el) => renderModelQuickSwitcher(el, this.plugin),
     });
     this.statusBar = headerHandles.statusBar;
+    this.chapterNavSlot = headerHandles.chapterNavSlot;
     this.modelSwitcher = headerHandles.modelSwitcher;
     this.precisionModeBtn = headerHandles.precisionModeBtn;
     this.assetStatusBar = headerHandles.assetStatusBar;
@@ -857,6 +875,8 @@ export class CoWritingView extends ItemView {
     this.rightEditor = editorStack.createEl("textarea", { cls: "nw-cowrite-editor has-md-chrome" });
     this.rightEditor.spellcheck = false;
     this.rightEditor.placeholder = "在此写作……支持 Markdown；Tab 生成 AI 建议";
+    // 镜像层在辅助条之后才创建：这里补一次视觉参数，保证字号/行高/字体四层一致
+    this.applyEditorVisuals();
     this.ghostSuggestionContainer = editorWrap.createDiv({ cls: "nw-cowrite-ghost-suggestion" });
     this.ghostSuggestionContainer.addEventListener("click", () => {
       if (this.ghostSuggestion && !this.isSuggesting)
@@ -886,6 +906,8 @@ export class CoWritingView extends ItemView {
 
     this.renderKnowledgeTab();
 
+    // 所有层都已创建：统一应用一次视觉参数（字体/字号/行距/高亮可见性）
+    this.applyEditorVisuals();
     this.renderEmptySuggestions();
   }
 
@@ -1151,6 +1173,36 @@ export class CoWritingView extends ItemView {
   }
 
   /**
+   * 统一应用编辑器视觉参数（字体 + 字号 + 行距 + 盒模型），四层一次对齐。
+   *
+   * 布局阶段镜像层晚于辅助条创建，必须再调用一次，否则镜像层会沿用父级行高。
+   */
+  private applyEditorVisuals(): void {
+    const settings = this.facade.settings;
+    const size = normalizeFontSize(settings.coWriteFontSize);
+    const height = normalizeLineHeight(settings.coWriteLineHeight);
+    applyEditorFontTo({ editor: this.rightEditor, ghost: this.ghostSuggestionContainer, preview: this.previewContent }, settings.coWriteEditorFont || '');
+    applyEditorMetrics({
+      editor: this.rightEditor,
+      ghost: this.ghostSuggestionContainer,
+      preview: this.previewContent,
+      backdrop: this.highlightBackdrop,
+    }, size, height);
+    if (this.rightEditor && this.highlightBackdrop) {
+      this.highlightBackdrop.style.fontFamily = this.rightEditor.style.fontFamily
+        || getComputedStyle(this.rightEditor).fontFamily;
+      copyEditorBoxStyles(this.rightEditor, this.highlightBackdrop);
+    }
+    // 高亮开关的「可见性」必须在这里同步：编辑器/镜像层晚于辅助条创建，
+    // 只在 buildEditorAuxBar 里设置会导致首次打开时两层文字都可见（重影）。
+    const highlightOn = this.facade.settings.coWriteSyntaxHighlight !== false;
+    this.rightEditor?.toggleClass('nw-cowrite-editor-highlight-on', highlightOn);
+    this.highlightBackdrop?.toggleClass('nw-u-d-none', !highlightOn);
+    this.syncAuxToggles();
+    this.syncHighlightSoon();
+  }
+
+  /**
    * 应用字号/行距（编辑器 + 幽灵层 + 预览 + 高亮镜像层必须一致，否则错位）。
    *
    * @param fontSize - 字号（px）
@@ -1183,8 +1235,11 @@ export class CoWritingView extends ItemView {
    * @param enabled - 是否启用
    */
   private applyHighlightSetting(enabled: boolean): void {
-    this.facade.settings.coWriteSyntaxHighlight = enabled;
-    void this.plugin.saveSettings();
+    const changed = this.facade.settings.coWriteSyntaxHighlight !== enabled;
+    if (changed) {
+      this.facade.settings.coWriteSyntaxHighlight = enabled;
+      void this.plugin.saveSettings();
+    }
     const backdrop = this.highlightBackdrop;
     const editor = this.rightEditor;
     if (backdrop) backdrop.toggleClass('nw-u-d-none', !enabled);
@@ -1212,8 +1267,13 @@ export class CoWritingView extends ItemView {
       if (!backdrop || !editor) return;
       // 盒模型样式必须从 textarea 实时复制，避免主题/类覆盖导致错位
       copyEditorBoxStyles(editor, backdrop);
-      // 用 DOM 节点渲染（不用 innerHTML）：内容经 textContent 写入，无注入风险
-      renderHighlightDom(backdrop, editor.value);
+      // 内容未变（滚动/光标/尺寸变化）时不重建整篇 DOM，长文下省掉大量开销。
+      // 注意：纯文本内容只会产生「文本节点」，不能用 childElementCount 判断是否渲染过。
+      if (editor.value !== this.highlightRenderedText) {
+        // 用 DOM 节点渲染（不用 innerHTML）：内容经 textContent 写入，无注入风险
+        renderHighlightDom(backdrop, editor.value);
+        this.highlightRenderedText = editor.value;
+      }
       syncHighlightScroll(backdrop, editor);
     }, 60);
   }
@@ -1332,12 +1392,8 @@ export class CoWritingView extends ItemView {
   /** 应用编辑器字体（空串=恢复主题默认） */
   private applyEditorFont(fontFamily: string): void {
     applyEditorFontTo({ editor: this.rightEditor, ghost: this.ghostSuggestionContainer, preview: this.previewContent }, fontFamily);
-    // 字体族必须同步到高亮镜像层，否则字宽不同会换行错位
-    if (this.rightEditor && this.highlightBackdrop) {
-      this.highlightBackdrop.style.fontFamily = this.rightEditor.style.fontFamily || '';
-      copyEditorBoxStyles(this.rightEditor, this.highlightBackdrop);
-      this.syncHighlightSoon();
-    }
+    // 字体族/字号/行高/盒模型统一同步到镜像层（统一入口，避免多处逻辑漂移）
+    this.applyEditorVisuals();
   }
 
   /** 编辑器底部：Markdown / 格式契约 / 字数 / 段落 */
@@ -3133,7 +3189,7 @@ ${text}`;
       wordGoal: (this.chapterWordGoal?.goal ?? this.facade.settings.defaultWordCount) || 3000,
       wordGoalSource: this.chapterWordGoal ? describeWordGoalSource(this.chapterWordGoal.source) : undefined,
     });
-    // E-02：状态栏尾部渲染章节流转（上一章 / 章节选择器 / 下一章）
+    // E-02：章节流转渲染到独立槽位，且仅在章节变化时重建
     this.renderChapterNavInto();
   }
 
@@ -3143,12 +3199,21 @@ ${text}`;
    * 章节列表在 openChapter 时刷新；为空时按当前章号从项目扫描一次兜底。
    */
   private renderChapterNavInto(): void {
-    const bar = this.statusBar;
-    if (!bar || !this.project) return;
-    renderChapterNav(bar, this.chapterList, this.chapterName, {
+    const slot = this.chapterNavSlot;
+    if (!slot) return;
+    const key = `${this.project || ''}|${this.chapterName || ''}|${this.chapterList.length}`;
+    // 同一章节不重建：状态栏每次输入都会刷新，重建会让下拉在用户操作时消失
+    if (key === this.chapterNavKey && slot.childElementCount > 0) return;
+    slot.empty();
+    if (!this.project) {
+      this.chapterNavKey = key;
+      return;
+    }
+    renderChapterNav(slot, this.chapterList, this.chapterName, {
       onSelect: chapter => { void this.switchChapterTo(chapter); },
       onStep: () => { /* 按钮直接带目标章，这里不需要额外处理 */ },
     });
+    this.chapterNavKey = key;
   }
 
   /**
@@ -3364,6 +3429,11 @@ ${text}`;
     this.rightEditor.selectionStart = this.rightEditor.selectionEnd = pos;
     this.rightEditor.focus();
     this.facade.updateSnapshot(nextText);
+    // 程序化改写不派发 input：高亮层、撤销栈、光标信息都要显式刷新，
+    // 否则采纳建议后正文与着色文本会一旧一新（错行）。
+    this.pushHistorySnapshot(true);
+    this.refreshCursorInfo();
+    this.syncHighlightSoon();
     // 快照已更新，但落盘必须显式排程
     this.bodySaveController.markDirty();
     this.updateControlState("编辑中");
