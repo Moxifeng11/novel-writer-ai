@@ -97,6 +97,8 @@ export class SettingsService {
      * @returns 是否成功
      */
     hasEncryptedSecrets(): boolean {
+        // 已解锁（有有效会话口令）时无需再提示用户输入口令
+        if (this.deps.crypto.hasSessionPassword()) return false;
         return Object.values(this.rawSecrets).some(
             v => typeof v === 'string' && v.startsWith('aes256v2:'),
         );
@@ -141,6 +143,11 @@ export class SettingsService {
      * @returns 数值结果
      */
     lockedSecretCount(): number {
+        // 有有效会话口令 = 已解锁：界面不应再提示「还有 N 项未解锁」。
+        // 旧实现只按磁盘密文计数，用户解锁后仍看到锁定状态，被迫再输一次口令
+        // （实测反馈「要连续输入两次」）。rawSecrets 仍保持磁盘原值，
+        // 保存时的「保留旧密文」判定不受影响。
+        if (this.deps.crypto.hasSessionPassword()) return 0;
         return Object.values(this.rawSecrets).filter(
             v => typeof v === 'string' && v.startsWith('aes256v2:'),
         ).length;
@@ -204,6 +211,9 @@ export class SettingsService {
         }
 
         // 解密所有密钥（启动期静默：未解锁时保留密文，避免弹口令阻塞 onload）
+        // 注意：这里不要覆盖 rawSecrets。rawSecrets 记录的是「磁盘上原本是否为密文」，
+        // 保存时靠它判断该保留旧密文还是升级加密（v1 无口令也会被自动解出明文，
+        // 覆盖成明文会导致下次保存把明文落盘）。「是否已解锁」由 lockedSecretCount 判断。
         settings.apiKey = await this.deps.crypto.decryptWithoutPrompt(settings.apiKey);
         settings.providerKeys = settings.providerKeys || {};
         for (const [k, v] of Object.entries(settings.providerKeys)) {

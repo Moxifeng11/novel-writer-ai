@@ -531,8 +531,8 @@ export class ApiSection extends SettingsSection {
             };
         });
 
-        // ── 连通性测试（紧跟密钥，避免用户滚到模型列表底部才能测） ──
-        this.renderConnectivityTest(container, raw, format);
+        // 连通性测试已下放到模型列表的每个模型行（见 renderProviderDetail 的 model row）：
+        // 渠道级按钮测不出「测的是哪个模型」，失败也无法定位。
 
         // ── 能力与高级项（折叠）：思考强度按渠道自动识别、图片输入、请求头 ──
         renderCollapsibleSection(container, '渠道能力与高级项', false, inner => {
@@ -622,6 +622,39 @@ export class ApiSection extends SettingsSection {
             if (price) main.createSpan({ cls: 'nw-api-model-badge nw-api-model-price', text: price });
 
             const rowActions = row.createDiv({ cls: 'nw-api-model-actions' });
+
+            // 每个模型行独立测试：旧实现在密钥下方放一个渠道级按钮，用户不知道测的是哪个模型
+            // （当前渠道用 defaultModel，非当前渠道用第一个启用模型），失败也无法定位到具体模型。
+            const testBtn = rowActions.createEl('button', {
+                cls: 'nw-api-icon-btn',
+                attr: { type: 'button', title: '测试该模型连通性' },
+            });
+            testBtn.setText('🔌');
+            const testStatus = row.createDiv({ cls: 'nw-api-model-test-status' });
+            testBtn.onclick = async () => {
+                if (testBtn.disabled) return;
+                testBtn.disabled = true;
+                testBtn.setText('⏳');
+                testStatus.setText('正在测试该模型…');
+                testStatus.className = 'nw-api-model-test-status';
+                try {
+                    const result = await testProviderConnectivity({
+                        providerName: raw.name,
+                        endpoint: raw.endpoint,
+                        model: modelId,
+                        apiKey: this.plugin.settings.providerKeys?.[raw.id] || '',
+                        sourceType: raw.sourceType === 'local' ? 'local' : 'cloud',
+                        apiFormat: format,
+                        headers: resolveProviderHeaders(raw),
+                    });
+                    const icon = result.level === 'ok' ? '✅' : result.level === 'warn' ? '⚠️' : '❌';
+                    testStatus.setText(`${icon} ${modelId}：${result.message}`);
+                    testStatus.addClass(`nw-api-test-status-${result.level}`);
+                } finally {
+                    testBtn.disabled = false;
+                    testBtn.setText('🔌');
+                }
+            };
 
             const enableLabel = rowActions.createEl('label', { cls: 'nw-api-switch', attr: { title: '启用该模型' } });
             const enable = enableLabel.createEl('input', { type: 'checkbox' });
@@ -729,56 +762,6 @@ export class ApiSection extends SettingsSection {
             });
     }
 
-    /**
-     * 连通性测试行：发送一次最小请求，验证端点、密钥与模型。
-     * 放在 API Key 之后，长错误信息可换行，不把右栏继续拉长。
-     */
-    private renderConnectivityTest(container: HTMLElement, raw: CustomProvider, format: ApiFormat): void {
-        const testRow = container.createDiv({ cls: 'nw-api-test-row' });
-        const testBtn = testRow.createEl('button', {
-            cls: 'nw-api-ghost-btn',
-            attr: { type: 'button', title: '发送一次最小请求，验证端点、密钥与模型' },
-        });
-        testBtn.setText('🔌 测试连通性');
-        const statusEl = testRow.createSpan({ cls: 'nw-api-test-status', text: '未测试' });
-        testBtn.onclick = async () => {
-            if (testBtn.disabled) return;
-            testBtn.disabled = true;
-            testBtn.setText('⏳ 测试中…');
-            statusEl.setText('正在检测…');
-            statusEl.className = 'nw-api-test-status';
-            try {
-                const disabled = new Set(this.getRawProvider(raw.id)?.disabledModels || []);
-                const enabledModels = raw.models.filter(model => !disabled.has(model));
-                const model = (raw.id === this.plugin.getCurrentProviderId() ? this.plugin.settings.defaultModel : '')
-                    || enabledModels[0]
-                    || raw.models[0]
-                    || '';
-                const result = await testProviderConnectivity({
-                    providerName: raw.name,
-                    endpoint: raw.endpoint,
-                    model,
-                    apiKey: this.plugin.settings.providerKeys?.[raw.id] || '',
-                    sourceType: raw.sourceType === 'local' ? 'local' : 'cloud',
-                    apiFormat: format,
-                    // 与真实调用同源：缺了内置头（OpenCode 会话头）会出现「测试 400 但以为是端点问题」
-                    headers: resolveProviderHeaders(raw),
-                });
-                const icon = result.level === 'ok' ? '✅' : result.level === 'warn' ? '⚠️' : '❌';
-                statusEl.setText(`${icon} ${result.message}`);
-                statusEl.classList.remove(
-                    'nw-api-test-status-ok',
-                    'nw-api-test-status-warn',
-                    'nw-api-test-status-error',
-                );
-                statusEl.classList.add(`nw-api-test-status-${result.level}`);
-            } finally {
-                testBtn.disabled = false;
-                testBtn.setText('🔌 测试连通性');
-            }
-        };
-    }
-
     /** 「标签 + 控件 + 说明」的统一排版 */
     private renderField(
         container: HTMLElement,
@@ -801,6 +784,13 @@ export class ApiSection extends SettingsSection {
         const disabled = new Set(raw.disabledModels || []);
         const enabled = raw.models.filter(model => !disabled.has(model));
         settings.availableModels = enabled.length > 0 ? [...enabled] : [...raw.models];
+        // 模型列表可能被用户清空（取消全部勾选）：此时 availableModels 为空，
+        // 不能把 defaultModel/flashModel/proModel 写成 undefined（会让请求回落到兜底模型），
+        // 保持旧值并提示用户在模型列表里补回或切换渠道。
+        if (settings.availableModels.length === 0) {
+            showWarningNotice('该渠道已没有模型：请在模型列表里「从 URL 获取」或手动添加', { timeout: 8000 });
+            return;
+        }
         for (const key of ['defaultModel', 'flashModel', 'proModel'] as const) {
             if (!settings.availableModels.includes(settings[key])) {
                 settings[key] = settings.availableModels[0];

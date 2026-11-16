@@ -45,8 +45,15 @@ describe('buildPickerResult', () => {
         });
     });
 
-    it('全部取消时不允许确认', () => {
-        expect(buildPickerResult(CANDIDATES, [], () => false)).toBeNull();
+    // 2026-11-16（M-32）：旧实现强制「至少保留一个」，导致「全部取消」后下方列表仍是全部模型。
+    // 现在允许清空：取消哪些，列表里就不该再有那些。
+    it('全部取消 → 返回空列表（允许清空）', () => {
+        expect(buildPickerResult(CANDIDATES, [], () => false).models).toEqual([]);
+    });
+
+    it('只取消部分 → 列表里只剩勾选的', () => {
+        const result = buildPickerResult(CANDIDATES, [], id => id !== 'glm-5.3-flash');
+        expect(result.models).toEqual(['deepseek-v4.1-flash', 'plain-model']);
     });
 
     it('勾选判定生效：只保留被勾的候选', () => {

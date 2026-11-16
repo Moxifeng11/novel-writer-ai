@@ -62,23 +62,25 @@ export function isPickedByDefault(
  * @param candidates - 端点返回的候选模型
  * @param configured - 当前已配置的模型
  * @param isPicked - 勾选判定（由弹窗根据用户翻转状态提供）
- * @returns 确认结果；`null` 表示至少保留一个模型，不能确认
+ * @returns 确认结果（允许空列表：用户取消全部勾选时就是清空）
  * @example
- * buildPickerResult([{ id: 'a' }], [], () => true)?.models; // ['a']
+ * buildPickerResult([{ id: 'a' }], [], () => true).models; // ['a']
+ * buildPickerResult([{ id: 'a' }], [], () => false).models; // []
  */
 export function buildPickerResult(
     candidates: DiscoveredModel[],
     configured: string[],
     isPicked: (id: string) => boolean,
-): ModelPickerResult | null {
+): ModelPickerResult {
     const listed = new Set(candidates.map(model => model.id));
     const kept = configured.filter(id => !listed.has(id) || isPicked(id));
     const keptSet = new Set(kept);
     const added = candidates
         .filter(model => isPicked(model.id) && !keptSet.has(model.id))
         .map(model => model.id);
+    // 允许清空：用户取消勾选哪些，列表里就不该再出现哪些（旧实现强制「至少保留一个」，
+    // 于是「全部取消」后下方列表仍是全部模型，与勾选结果不一致）。
     const models = [...kept, ...added];
-    if (models.length === 0) return null;
 
     const capacities = candidates
         .filter(model => keptSet.has(model.id) || added.includes(model.id))
@@ -181,11 +183,7 @@ export class ModelPickerModal extends Modal {
 
     private confirm(): void {
         const result = buildPickerResult(this.candidates, this.configured, id => this.isPicked(id));
-        if (!result) {
-            this.confirmBtn?.setText('❌ 至少保留一个模型');
-            window.setTimeout(() => this.confirmBtn?.setText('✅ 应用选择'), 1800);
-            return;
-        }
+        // 空结果是合法选择（用户想清空该渠道模型列表），由调用方决定是否提示
         this.onConfirm(result);
         this.close();
     }

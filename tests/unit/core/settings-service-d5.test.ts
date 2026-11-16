@@ -263,3 +263,64 @@ describe('SettingsService — 密钥不降级（2026-10-29 修复 API Key 失效
         expect(written.vectorQwenApiKey).toBe('enc:sk-qwen');
     });
 });
+// 2026-11-16：用户反馈「输入口令解锁要连输两次」。
+// 根因：loadSettings 解密后没有回写 rawSecrets，lockedSecretCount() 仍按解密前
+// 的磁盘密文计数 → 界面一直显示「已加密锁定」，用户只能再输一次。
+describe('SettingsService — 解锁后锁定计数归零（单次解锁）', () => {
+    const CIPHER = 'aes256v2:210000:c2FsdA==:aXY=:Y3Q=';
+
+    it('有会话口令时解密成功 → lockedSecretCount 归零', async () => {
+        let current: Record<string, unknown> | undefined;
+        const service = new SettingsService({
+            crypto: {
+                // 模拟「已解锁」：密文解成明文，其余原样返回
+                decryptWithoutPrompt: async (value: string) => (value === CIPHER ? 'sk-plain' : value),
+                hasSessionPassword: () => true,
+                encryptStrict: async (value: string) => value,
+            } as never,
+            providerManager: { syncCustomModelsOnRestart: () => undefined, updateModelLimits: () => undefined } as never,
+            cacheManager: null,
+            settingsWriter: { enqueueAutoClean: (operation: () => Promise<unknown>) => operation() } as never,
+            getSettings: () => current as never,
+            setSettings: (value) => { current = value as unknown as Record<string, unknown>; },
+            loadData: async () => ({
+                schemaVersion: CURRENT_SCHEMA_VERSION,
+                apiKey: CIPHER,
+                providerKeys: { deepseek: CIPHER },
+            }),
+            saveData: async () => undefined,
+        });
+
+        await service.loadSettings();
+
+        // 解密后内存是明文
+        expect(current?.apiKey).toBe('sk-plain');
+        expect((current?.providerKeys as Record<string, string> | undefined)?.deepseek).toBe('sk-plain');
+        // 关键：解锁后不应再报「还有 N 项锁定」
+        expect(service.lockedSecretCount()).toBe(0);
+        expect(service.hasEncryptedSecrets()).toBe(false);
+    });
+
+    it('没有会话口令 → 保持密文与原锁定计数', async () => {
+        let current: Record<string, unknown> | undefined;
+        const service = new SettingsService({
+            crypto: {
+                decryptWithoutPrompt: async (value: string) => value,
+                hasSessionPassword: () => false,
+                encryptStrict: async (value: string) => value,
+            } as never,
+            providerManager: { syncCustomModelsOnRestart: () => undefined, updateModelLimits: () => undefined } as never,
+            cacheManager: null,
+            settingsWriter: { enqueueAutoClean: (operation: () => Promise<unknown>) => operation() } as never,
+            getSettings: () => current as never,
+            setSettings: (value) => { current = value as unknown as Record<string, unknown>; },
+            loadData: async () => ({ schemaVersion: CURRENT_SCHEMA_VERSION, apiKey: CIPHER }),
+            saveData: async () => undefined,
+        });
+
+        await service.loadSettings();
+
+        expect(current?.apiKey).toBe(CIPHER);
+        expect(service.lockedSecretCount()).toBe(1);
+    });
+});
