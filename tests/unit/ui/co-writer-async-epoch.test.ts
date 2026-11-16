@@ -29,6 +29,7 @@ type KeyCtx = {
     acceptByIndex: ReturnType<typeof vi.fn>;
     handleTabSuggest: ReturnType<typeof vi.fn>;
     handleMarkdownShortcut: (event: KeyboardEvent) => boolean;
+    handleFindShortcut?: (event: KeyboardEvent) => boolean;
     handleEditorKeydown: (event: KeyboardEvent) => Promise<void>;
 };
 
@@ -40,8 +41,9 @@ function makeKeyCtx(options: { isSuggesting: boolean; ghost?: Suggestion | null 
         handleAcceptSuggestion: vi.fn(),
         acceptByIndex: vi.fn(),
         handleTabSuggest: vi.fn(),
-        // 本组只验证 Tab 的异步归属；Markdown 快捷键由编辑器测试覆盖
+        // 本组只验证 Tab 的异步归属；Markdown/查找快捷键由各自测试覆盖
         handleMarkdownShortcut: () => false,
+        handleFindShortcut: () => false,
     } as unknown as KeyCtx;
     ctx.handleEditorKeydown = CoWritingView.prototype['handleEditorKeydown'];
     return ctx;

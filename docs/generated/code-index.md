@@ -11,7 +11,7 @@
 | `shared/` | 255 | 50850 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3307 | 35 | 20 | 57% |
 | `domains/` | 15 | 1521 | 85 | 55 | 65% |
-| `ui/` | 288 | 110583 | 1075 | 866 | 81% |
+| `ui/` | 291 | 111426 | 1097 | 878 | 80% |
 
 ## 文件清单
 
@@ -735,14 +735,16 @@
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1021 | 2 | 2 |
 | `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |
-| `ui/co-writing-view.ts` | 3270 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3566 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 224 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
 | `ui/co-writing/chapter-match.ts` | 163 | 3 | 3 |
+| `ui/co-writing/chapter-nav.ts` | 156 | 6 | 3 |
 | `ui/co-writing/control-panel.ts` | 391 | 14 | 8 |
-| `ui/co-writing/dashboard-status.ts` | 180 | 9 | 7 |
+| `ui/co-writing/dashboard-status.ts` | 187 | 9 | 7 |
 | `ui/co-writing/editor-shortcuts.ts` | 87 | 4 | 2 |
+| `ui/co-writing/find-replace.ts` | 269 | 11 | 6 |
 | `ui/co-writing/friendly-error.ts` | 46 | 1 | 1 |
 | `ui/co-writing/ghost-association.ts` | 92 | 4 | 2 |
 | `ui/co-writing/human-rate.ts` | 125 | 3 | 2 |
@@ -765,6 +767,7 @@
 | `ui/co-writing/suggestion-cards.ts` | 352 | 12 | 11 |
 | `ui/co-writing/suggestion-flow.ts` | 475 | 3 | 2 |
 | `ui/co-writing/suggestion-loading.ts` | 130 | 4 | 2 |
+| `ui/co-writing/word-goal.ts` | 115 | 5 | 3 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
 | `ui/command-ui-executor.ts` | 723 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 105 | 1 | 1 |

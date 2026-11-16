@@ -13,7 +13,7 @@ export interface StatusBarHost {
     /** 字数展示元素 */
     wordCountDisplay: { setText(text: string): void } | null;
     /** 目标展示元素 */
-    wordGoalDisplay: { setText(text: string): void } | null;
+    wordGoalDisplay: { setText(text: string): void; setAttribute?(name: string, value: string): void } | null;
     /** 项目名 */
     project: string;
     /** 卷名 */
@@ -26,6 +26,8 @@ export interface StatusBarHost {
     editorText: string;
     /** 目标字数 */
     wordGoal: number;
+    /** 目标来源短标签（大纲/项目/默认）；不传则不标注 */
+    wordGoalSource?: string;
 }
 
 /** 人工率仪表盘宿主。 */
@@ -117,7 +119,12 @@ export function renderStatusBar(host: StatusBarHost): void {
     host.wordCountDisplay?.setText(String(count));
     if (host.wordGoalDisplay) {
         const progress = computeWordGoalProgress(count, host.wordGoal);
-        host.wordGoalDisplay.setText(`目标: ${host.wordGoal} · ${progress}%`);
+        // E-03：标注目标来源，避免用户误以为是全局默认值
+        const sourceTag = host.wordGoalSource ? `（${host.wordGoalSource}）` : '';
+        host.wordGoalDisplay.setText(`目标: ${host.wordGoal}${sourceTag} · ${progress}%`);
+        host.wordGoalDisplay.setAttribute?.('title', host.wordGoalSource
+            ? `本章字数目标来源：${host.wordGoalSource}`
+            : '本章字数目标');
     }
 }
 

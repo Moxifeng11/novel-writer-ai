@@ -7,6 +7,8 @@
 
 import { ItemView, WorkspaceLeaf, Notice, MarkdownRenderer, TFile } from 'obsidian';
 import { SUBDIR_STEP_ROOT, pjBodyFile } from '@/shared/paths';
+import { getChaptersForProject, getProjectMeta } from '@/ui/project-utils';
+import { readMergedVolumeOutline } from '@/utils/helpers';
 import { revealLeafCompat } from '@/shared/workspace-reveal';
 import { volumeNumber } from '@/shared/chapter-target';
 import { CHAPTER_FILE_TYPES, findBodyFileV4 } from '@/engine/chapter-utils';
@@ -124,6 +126,19 @@ import {
     type KbReferenceHost,
 } from '@/ui/co-writing/kb-reference-config';
 import { isImeComposingEvent, resolveEditorShortcut } from '@/ui/co-writing/editor-shortcuts';
+import {
+  DEFAULT_FIND_OPTIONS,
+  findMatches,
+  nextMatchIndex,
+  renderFindBar,
+  replaceAll,
+  replaceOne,
+  type FindBarHandles,
+  type FindMatch,
+  type FindOptions,
+} from '@/ui/co-writing/find-replace';
+import { parseChapterNumber, renderChapterNav, type NavChapter } from '@/ui/co-writing/chapter-nav';
+import { describeWordGoalSource, resolveChapterWordGoal, type ChapterWordGoal } from '@/ui/co-writing/word-goal';
 import { applyQualityHighlights } from '@/ui/co-writing/quality-highlight';
 import {
     createScoreCard as createScoreCardFn,
@@ -213,6 +228,18 @@ export class CoWritingView extends ItemView {
   ghostSuggestionContainer!: HTMLElement;
   metricsContainer!: HTMLElement;
   statusBar!: HTMLElement;
+  /** 查找条句柄（null = 未打开） */
+  private findBar: FindBarHandles | null = null;
+  /** 当前查找命中（正文变化时会重算） */
+  private currentMatches: FindMatch[] = [];
+  /** 当前命中下标 */
+  private currentMatchIndex = -1;
+  /** 当前查找选项 */
+  private currentFindOptions: FindOptions = { ...DEFAULT_FIND_OPTIONS };
+  /** 当前项目的章节列表（章节流转用） */
+  private chapterList: NavChapter[] = [];
+  /** 本章字数目标（E-03：大纲 > 项目 > 全局） */
+  private chapterWordGoal: ChapterWordGoal | null = null;
   wordCountDisplay!: HTMLElement;
   wordGoalDisplay!: HTMLElement;
   saveStateDisplay!: HTMLElement;
@@ -640,6 +667,11 @@ export class CoWritingView extends ItemView {
     // 切章会重建/覆写正文容器：字体设置在这里补一次，保证与下拉显示一致
     this.applyEditorFont(this.facade.settings.coWriteEditorFont || '');
     this.updateControlState("\u5DF2\u52A0\u8F7D");
+    // E-02/E-03：切章后刷新章节流转列表与本章字数目标（大纲优先）
+    await this.refreshChapterListAsync();
+    await this.loadChapterWordGoal();
+    // 切章时关闭查找条：旧命中偏移对新正文无意义
+    this.closeFindBar();
     this.refreshStatusBar();
     this.updateMarkdownStatus();
     void this.resolveEditorContract().then(() => this.updateMarkdownStatus());
@@ -1178,6 +1210,176 @@ export class CoWritingView extends ItemView {
   }
 
   /**
+   * 查找/替换快捷键拦截（E-01）：Ctrl+F 打开、Ctrl+H 直接带替换、Esc 关闭。
+   *
+   * 只在编辑器聚焦时拦截，焦点在别处时 Obsidian 全局搜索保持原行为。
+   *
+   * @param event - 键盘事件
+   * @returns 是否已处理
+   */
+  private handleFindShortcut(event: KeyboardEvent): boolean {
+    const mod = event.ctrlKey || event.metaKey;
+    const key = event.key.toLowerCase();
+    if (mod && key === 'f') {
+      event.preventDefault();
+      this.openFindBar(false);
+      return true;
+    }
+    if (mod && key === 'h') {
+      event.preventDefault();
+      this.openFindBar(true);
+      return true;
+    }
+    if (event.key === 'Escape' && this.findBar) {
+      event.preventDefault();
+      this.closeFindBar();
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * 打开查找条（已打开则只聚焦，不重复渲染）。
+   *
+   * @param withReplace - 是否同时展开替换行
+   */
+  private openFindBar(withReplace: boolean): void {
+    if (this.findBar) {
+      this.findBar.input.focus();
+      this.findBar.input.select();
+      if (withReplace) this.findBar.setReplaceVisible(true);
+      return;
+    }
+    const host = this.editorWrapEl;
+    if (!host) return;
+    this.findBar = renderFindBar(host, {
+      onQueryChange: (query, options) => {
+        this.currentFindOptions = options;
+        this.recomputeMatches(query);
+      },
+      onNavigate: direction => this.navigateMatch(direction),
+      onReplaceOne: replacement => this.replaceCurrentMatch(replacement),
+      onReplaceAll: replacement => this.replaceAllMatches(replacement),
+      onClose: () => this.closeFindBar(),
+    });
+    if (withReplace) this.findBar.setReplaceVisible(true);
+    // 用选中文本预填查找词（选中后 Ctrl+F 是最自然的入口）
+    const selected = this.getSelectedText();
+    if (selected && selected.length <= 120) {
+      this.findBar.input.value = selected;
+      this.recomputeMatches(selected);
+    }
+    this.findBar.input.focus();
+    this.findBar.input.select();
+    this.updateFindCounter();
+  }
+
+  /** 关闭查找条并清除高亮 */
+  private closeFindBar(): void {
+    if (!this.findBar) return;
+    this.findBar.root.remove();
+    this.findBar = null;
+    this.currentMatches = [];
+    this.currentMatchIndex = -1;
+    this.rightEditor?.focus();
+  }
+
+  /** 编辑器当前选中的文本（无选中返回空串） */
+  private getSelectedText(): string {
+    const editor = this.rightEditor;
+    if (!editor) return '';
+    const start = editor.selectionStart ?? 0;
+    const end = editor.selectionEnd ?? 0;
+    return end > start ? editor.value.slice(start, end) : '';
+  }
+
+  /**
+   * 重新计算命中并刷新计数。
+   *
+   * @param query - 查找词
+   */
+  private recomputeMatches(query: string): void {
+    const text = this.rightEditor?.value ?? '';
+    this.currentMatches = findMatches(text, query, this.currentFindOptions);
+    // 保持当前命中位置：按光标重新定位
+    const cursor = this.rightEditor?.selectionStart ?? 0;
+    this.currentMatchIndex = this.currentMatches.length > 0
+      ? Math.max(0, nextMatchIndex(this.currentMatches, cursor - 1, 1))
+      : -1;
+    // 实时高亮首个命中的选区，让用户看到结果在哪
+    if (this.currentMatchIndex >= 0 && this.currentMatches[this.currentMatchIndex]) {
+      const match = this.currentMatches[this.currentMatchIndex];
+      this.rightEditor?.setSelectionRange(match.start, match.end);
+    }
+    this.updateFindCounter();
+  }
+
+  /** 刷新命中计数文案 */
+  private updateFindCounter(): void {
+    if (!this.findBar) return;
+    const total = this.currentMatches.length;
+    const current = this.currentMatchIndex >= 0 ? this.currentMatchIndex + 1 : 0;
+    this.findBar.counter.setText(total === 0 ? '0/0' : `${current}/${total}`);
+    this.findBar.counter.toggleClass('nw-cowrite-findbar-counter-empty', total === 0);
+  }
+
+  /**
+   * 跳到下一个/上一个命中。
+   *
+   * @param direction - 1 下一个 / -1 上一个
+   */
+  private navigateMatch(direction: 1 | -1): void {
+    const editor = this.rightEditor;
+    if (!editor || this.currentMatches.length === 0) return;
+    const cursor = this.currentMatchIndex >= 0 ? this.currentMatches[this.currentMatchIndex].start : (editor.selectionStart ?? 0);
+    // direction=1 时从「当前命中之后」开始找，避免原地不动
+    const from = direction === 1 ? cursor + 1 : cursor - 1;
+    const index = nextMatchIndex(this.currentMatches, from, direction);
+    this.currentMatchIndex = index;
+    const match = this.currentMatches[index];
+    if (!match) return;
+    editor.focus();
+    editor.setSelectionRange(match.start, match.end);
+    // 让命中行进入可视区（textarea 无 scrollIntoView，按行号估算）
+    const lineIndex = editor.value.slice(0, match.start).split('\n').length - 1;
+    const lineHeight = 24;
+    const targetTop = Math.max(0, lineIndex * lineHeight - editor.clientHeight / 2);
+    editor.scrollTop = targetTop;
+    this.updateFindCounter();
+  }
+
+  /**
+   * 替换当前命中。
+   *
+   * @param replacement - 替换文本
+   */
+  private replaceCurrentMatch(replacement: string): void {
+    const editor = this.rightEditor;
+    if (!editor || this.currentMatchIndex < 0) return;
+    const match = this.currentMatches[this.currentMatchIndex];
+    if (!match) return;
+    const result = replaceOne(editor.value, match, replacement);
+    this.applyTextEdit({ text: result.text, selectionStart: result.cursor, selectionEnd: result.cursor });
+    // 正文已变，按同一查找词重算命中（保持继续替换的可用性）
+    if (this.findBar) this.recomputeMatches(this.findBar.input.value);
+  }
+
+  /**
+   * 全部替换。
+   *
+   * @param replacement - 替换文本
+   */
+  private replaceAllMatches(replacement: string): void {
+    const editor = this.rightEditor;
+    if (!editor || this.currentMatches.length === 0) return;
+    const count = this.currentMatches.length;
+    const result = replaceAll(editor.value, this.currentMatches, replacement);
+    this.applyTextEdit({ text: result.text, selectionStart: 0, selectionEnd: 0 });
+    if (this.findBar) this.recomputeMatches(this.findBar.input.value);
+    showSuccessNotice(`已替换 ${count} 处`, { timeout: 2500 });
+  }
+
+  /**
    * 处理编辑器快捷键（Tab 建议/格式命令）。
    *
    * @param event - 事件
@@ -1186,6 +1388,8 @@ export class CoWritingView extends ItemView {
     // P1-15（v4.27）：中文输入法组合期间不拦截任何按键，
     // 否则 Tab/数字键会被当成「接受建议」，候选词被打断。
     if (isImeComposingEvent(event)) return;
+    // E-01：查找/替换优先（Ctrl+F 不落到 Obsidian 全局搜索）
+    if (this.handleFindShortcut(event)) return;
     if (this.handleMarkdownShortcut(event)) return;
     const action = resolveEditorShortcut(event, {
       hasGhost: !!this.ghostSuggestion,
@@ -2040,7 +2244,7 @@ ${text}`;
       get project() { return view.project; },
       get volume() { return view.volume; },
       get chapterName() { return view.chapterName; },
-      get targetWordCount() { return view.facade.settings.defaultWordCount || 3000; },
+      get targetWordCount() { return view.chapterWordGoal?.goal ?? view.facade.settings.defaultWordCount ?? 3000; },
       get saveStateText() { return view.saveStateDisplay?.textContent || "\u672A\u77E5"; },
       refreshMetrics: force => view.refreshMetrics(force),
     };
@@ -2664,7 +2868,99 @@ ${text}`;
       chapterName: this.chapterName,
       chapterNum: this.chapterNum,
       editorText: this.rightEditor?.value || '',
-      wordGoal: this.facade.settings.defaultWordCount || 3000,
+      // E-03：目标按「大纲每章字数 > 项目配置 > 全局默认」解析，不再死读全局值
+      wordGoal: (this.chapterWordGoal?.goal ?? this.facade.settings.defaultWordCount) || 3000,
+      wordGoalSource: this.chapterWordGoal ? describeWordGoalSource(this.chapterWordGoal.source) : undefined,
+    });
+    // E-02：状态栏尾部渲染章节流转（上一章 / 章节选择器 / 下一章）
+    this.renderChapterNavInto();
+  }
+
+  /**
+   * 在状态栏渲染章节流转控件（E-02）。
+   *
+   * 章节列表在 openChapter 时刷新；为空时按当前章号从项目扫描一次兜底。
+   */
+  private renderChapterNavInto(): void {
+    const bar = this.statusBar;
+    if (!bar || !this.project) return;
+    renderChapterNav(bar, this.chapterList, this.chapterName, {
+      onSelect: chapter => { void this.switchChapterTo(chapter); },
+      onStep: () => { /* 按钮直接带目标章，这里不需要额外处理 */ },
+    });
+  }
+
+  /**
+   * 切换到指定章节（先保存当前章，再走 openChapter 的完整切章流程）。
+   *
+   * @param target - 目标章节
+   */
+  private async switchChapterTo(target: NavChapter): Promise<void> {
+    if (!this.project || !target) return;
+    if (target.chapter === this.chapterName) return;
+    // openChapter 内部会 flush 上一章待保存内容；这里再显式保存一次，
+    // 让「有未保存修改」的场景有可见反馈，且保存失败可中止切章。
+    const saved = await this.saveBody(false);
+    if (!saved) {
+      showWarningNotice('当前章节保存失败，已取消切章', { timeout: 4000 });
+      return;
+    }
+    await this.openChapter(this.project, target.chapter, target.volume, target.number || undefined);
+    showSuccessNotice(`已切换到 ${target.chapter}`, { timeout: 2000 });
+  }
+
+  /**
+   * 刷新章节列表（切项目/切章后调用）。
+   */
+  private async refreshChapterListAsync(): Promise<void> {
+    if (!this.project) {
+      this.chapterList = [];
+      return;
+    }
+    try {
+      const entries = getChaptersForProject(this.app, this.project);
+      this.chapterList = entries
+        .map(entry => ({
+          chapter: entry.chapter,
+          volume: entry.volume,
+          title: entry.title,
+          number: parseChapterNumber(entry.chapter),
+        }))
+        .sort((a, b) => a.number - b.number);
+    } catch (e) {
+      log.warn('[CoWritingView] 章节列表加载失败:', e);
+      this.chapterList = [];
+    }
+  }
+
+  /**
+   * 解析本章字数目标（E-03 / D1）。
+   *
+   * 读取合并分卷大纲 → 解析「每章字数」；失败按项目配置、全局默认依次回退。
+   */
+  private async loadChapterWordGoal(): Promise<void> {
+    if (!this.project) {
+      this.chapterWordGoal = null;
+      return;
+    }
+    let outlineContent: string | null = null;
+    try {
+      outlineContent = (await readMergedVolumeOutline(this.app, this.project)) || null;
+    } catch (e) {
+      log.warn('[CoWritingView] 读取分卷大纲失败，字数目标回退:', e);
+    }
+    let meta: { modeTargetWords?: number; modeTargetUnits?: number } = {};
+    try {
+      const projectMeta = await getProjectMeta(this.app, this.project);
+      meta = { modeTargetWords: projectMeta.modeTargetWords, modeTargetUnits: projectMeta.modeTargetUnits };
+    } catch {
+      meta = {};
+    }
+    this.chapterWordGoal = resolveChapterWordGoal({
+      outlineContent,
+      modeTargetWords: meta.modeTargetWords,
+      modeTargetUnits: meta.modeTargetUnits,
+      defaultWordCount: this.facade.settings.defaultWordCount || 3000,
     });
   }
   /**
