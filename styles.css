@@ -42,6 +42,7 @@
  *   - styles-src/32-fingerprint.css
  *   - styles-src/33-prompt-manager.css
  *   - styles-src/34-outline-tree.css
+ *   - styles-src/35-context-panel.css
  *
  * 修改样式请编辑 styles-src/ 下对应源文件，然后运行 npm run build:styles
  * （npm run build 与 preflight 均已包含该步骤 / 一致性校验）。
@@ -10069,7 +10070,6 @@ button.nw-btn-icon {
 .nw-u-m-0-0-12px-0{margin:0 0 12px 0}
 .nw-u-m-0-0-16px-0{margin:0 0 16px 0}
 .nw-u-m-0-0-20px-0{margin:0 0 20px 0}
-.nw-u-m-0-0-8px-0{margin:0 0 8px 0}
 .nw-u-p-10px-12px{padding:10px 12px}
 .nw-u-p-10px-14px{padding:10px 14px}
 .nw-u-p-12px{padding:12px}
@@ -10082,7 +10082,6 @@ button.nw-btn-icon {
 .nw-u-p-40px{padding:40px}
 
 .nw-u-p-4px-12px{padding:4px 12px}
-.nw-u-p-4px-8px{padding:4px 8px}
 .nw-u-p-6px-0{padding:6px 0}
 .nw-u-p-6px-10px{padding:6px 10px}
 .nw-u-p-6px-8px{padding:6px 8px}
@@ -10130,7 +10129,6 @@ button.nw-btn-icon {
 .nw-u-ovy-auto{overflow-y:auto}
 .nw-u-ta-center{text-align:center}
 .nw-u-ta-left{text-align:left}
-.nw-u-textoverflow-ellipsis{text-overflow:ellipsis}
 .nw-u-transition-background-0-15s{transition:background 0.15s}
 .nw-u-ws-nowrap{white-space:nowrap}
 .nw-u-w-100{width:100%}
@@ -10150,7 +10148,6 @@ button.nw-btn-icon {
 .nw-u-fd-column{flex-direction:column}
 .nw-u-fsh-0{flex-shrink:0}
 .nw-u-fwr-wrap{flex-wrap:wrap}
-.nw-u-fs-10px{font-size:10px}
 .nw-u-fs-11px{font-size:11px}
 .nw-u-fs-12px{font-size:12px}
 .nw-u-fs-13px{font-size:13px}
@@ -10177,10 +10174,8 @@ button.nw-btn-icon {
 .nw-u-marginbottom-6px{margin-bottom:6px}
 .nw-u-marginbottom-8px{margin-bottom:8px}
 .nw-u-marginleft-4px{margin-left:4px}
-.nw-u-marginleft-auto{margin-left:auto}
 .nw-u-margintop-12px{margin-top:12px}
 .nw-u-margintop-16px{margin-top:16px}
-.nw-u-margintop-1px{margin-top:1px}
 .nw-u-margintop-20px{margin-top:20px}
 .nw-u-margintop-2px{margin-top:2px}
 .nw-u-margintop-4px{margin-top:4px}
@@ -10189,20 +10184,13 @@ button.nw-btn-icon {
 .nw-u-paddingtop-8px{padding-top:8px}
 
 /* ===== A3: 声明级工具类（从设置/向导/监控等页面内联样式提取，2026-10-26） ===== */
-.nw-u-bg-modifier-error-soft{background:var(--background-modifier-error-rgb, 255, 100, 100, 0.1)}
-.nw-u-bg-background-modifier-ho{background:var(--background-modifier-hover)}
 .nw-u-bg-background-modifier-su{background:var(--background-modifier-success)}
 .nw-u-bg-background-modifier-wa{background:var(--background-modifier-warning)}
 .nw-u-bg-linear-gradient-135deg-3{background:linear-gradient(135deg, var(--background-modifier-success) 0%, var(--interactive-accent) 100%)}
-.nw-u-bg-warning-soft{background:color-mix(in srgb, var(--text-warning) 10%, transparent)}
-.nw-u-bg-warning-soft-10{background:color-mix(in srgb, var(--text-warning) 10%, transparent)}
-.nw-u-bg-warning-soft-15{background:color-mix(in srgb, var(--text-warning) 15%, transparent)}
 
 
 .nw-u-b-1px-dashed-background-{border:1px dashed var(--background-modifier-border)}
-.nw-u-b-warning-border{border:1px solid color-mix(in srgb, var(--text-warning) 40%, transparent)}
 .nw-u-b-none{border:none}
-.nw-u-lst-none{list-style:none}
 .nw-u-m-0-0-6px{margin:0 0 6px}
 .nw-u-m-10px-0{margin:10px 0}
 .nw-u-m-16px-0-12px-0{margin:16px 0 12px 0}
@@ -10210,45 +10198,30 @@ button.nw-btn-icon {
 .nw-u-m-20px-0{margin:20px 0}
 .nw-u-m-24px-0-12px-0{margin:24px 0 12px 0}
 .nw-u-m-2px-0{margin:2px 0}
-.nw-u-m-2px-0-0-12px{margin:2px 0 0 12px}
-.nw-u-m-2px-0-0-8px{margin:2px 0 0 8px}
-.nw-u-m-4px-0{margin:4px 0}
-.nw-u-m-4px-0-0-8px{margin:4px 0 0 8px}
-.nw-u-m-4px-0-4px-16px{margin:4px 0 4px 16px}
-.nw-u-m-4px-0-4px-8px{margin:4px 0 4px 8px}
 .nw-u-m-4px-0-8px-0{margin:4px 0 8px 0}
-.nw-u-m-4px-0-8px-16px{margin:4px 0 8px 16px}
 .nw-u-m-6px-0-0-0{margin:6px 0 0 0}
 .nw-u-m-6px-0-2px-0{margin:6px 0 2px 0}
 .nw-u-m-8px-0{margin:8px 0}
 .nw-u-m-8px-0-4px-0{margin:8px 0 4px 0}
 
-.nw-u-p-0{padding:0}
 
 .nw-u-p-14px-18px{padding:14px 18px}
 
-.nw-u-p-1px-4px{padding:1px 4px}
 .nw-u-p-20px-10px{padding:20px 10px}
-.nw-u-p-2px-0{padding:2px 0}
 .nw-u-p-2px-10px{padding:2px 10px}
-.nw-u-p-3px-0{padding:3px 0}
 .nw-u-p-40px-20px{padding:40px 20px}
 .nw-u-p-4px{padding:4px}
 
-.nw-u-p-4px-6px{padding:4px 6px}
 .nw-u-p-60px-20px{padding:60px 20px}
 .nw-u-p-6px-12px{padding:6px 12px}
 
 
-.nw-u-c-error-strong{color:var(--text-error)}
-.nw-u-c-warning-strong{color:var(--text-warning)}
 .nw-u-c-text-accent{color:var(--text-accent)}
 .nw-u-c-text-error{color:var(--text-error)}
 .nw-u-c-text-primary{color:var(--text-primary)}
 .nw-u-c-text-success{color:var(--text-success)}
 .nw-u-c-text-warning{color:var(--text-warning)}
 
-.nw-u-d-block{display:block}
 .nw-u-d-none{display:none}
 
 .nw-u-h-400px{height:400px}
@@ -10269,12 +10242,9 @@ button.nw-btn-icon {
 .nw-u-resize-none{resize:none}
 .nw-u-transition-all-0-2s-ease{transition:all 0.2s ease}
 .nw-u-transition-opacity-0-2s-ease{transition:opacity 0.2s ease}
-.nw-u-userselect-none{user-select:none}
-.nw-u-ws-pre-wrap{white-space:pre-wrap}
 .nw-u-w-180px{width:180px}
 .nw-u-z-10{z-index:10}
 .nw-u-bordercolor-background-modifier-bo{border-color:var(--background-modifier-border)}
-.nw-u-bt-warning-border{border-top:1px solid color-mix(in srgb, var(--text-warning) 30%, transparent)}
 
 .nw-u-fontfamily-font-monospace{font-family:var(--font-monospace)}
 .nw-u-fontfamily-monospace{font-family:monospace}
@@ -29303,4 +29273,387 @@ button.nw-pm-create-btn {
   padding: 1px 4px;
   border-radius: 2px;
   font-size: 0.75em;
+}
+/* ==========================================================================
+ * 35-context-panel.css — 上下文监控面板（Slice Q）
+ *
+ * 来源：ui/rendering/context-panel.ts 里 173 处 nw-u-* 工具类 + 3 处内联样式。
+ * 全部收敛为 nw-cp-* 语义类，并按「逐条复刻被删工具类的声明」推进：每条规则的
+ * 属性值都等于原先实际生效的声明，唯一例外是汇总块里提到的两处无效值。
+ *
+ * 约定：
+ *  - 作用域前缀统一 .novel-writer-fw-context-panel（面板根节点，全局唯一）；
+ *  - 状态走 -- 修饰类，显隐走 nw-cp-is-collapsed / nw-cp-trunc-details--open；
+ *  - 动态数值（进度条宽度）走 CSS 变量 --nw-cp-pct，不写内联 width。
+ * ========================================================================== */
+
+/* ── 顶部提示行 ───────────────────────────────────────────── */
+
+/* token 预算行：原先靠 style.cssText 写死 font-size / color / margin-bottom，
+ * 且被 .novel-writer-context-mode-hint 的 11px 竞争。逐条保留同值。 */
+.novel-writer-fw-context-panel .nw-cp-token-hint {
+    font-size: 11px;
+    margin-bottom: 6px;
+    color: var(--text-faint);
+}
+
+.novel-writer-fw-context-panel .nw-cp-token-hint--warn {
+    color: #ffaa00;
+}
+
+.novel-writer-fw-context-panel .nw-cp-token-hint--danger {
+    color: #ff4444;
+}
+
+/* ── 模块加载失败提示 ─────────────────────────────────────── */
+
+/* 外壳 .novel-writer-fw-warning 提供 padding/margin/border/背景/行高；
+ * 这里只覆盖被删工具类真正生效的那几项。注意：原 nw-u-bg-modifier-error-soft
+ * 的声明 background: var(--background-modifier-error-rgb, 255,100,100,0.1) 在
+ * computed-value 阶段非法（IACVT），实际把 background 归为 transparent，所以
+ * 删掉它之后外壳的 --nw-warning-bg（浅色 0.12 / 深色 0.15）重新生效 —— 这是
+ * 本切片唯一有意的视觉修正（提示条恢复浅橙底色），见 docs/modules/context-panel.md。 */
+.novel-writer-fw-context-panel .nw-cp-alert {
+    padding: 6px 10px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+}
+
+.novel-writer-fw-context-panel .nw-cp-alert--error {
+    color: var(--text-error);
+}
+
+/* ── 上下文压缩截断警告 ───────────────────────────────────── */
+
+.novel-writer-fw-context-panel .nw-cp-trunc {
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    border: 1px solid color-mix(in srgb, var(--text-warning) 40%, transparent);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--text-warning) 15%, transparent);
+    font-size: 0.85em;
+    color: var(--text-normal);
+    cursor: pointer;
+    user-select: none;
+}
+
+.novel-writer-fw-context-panel .nw-cp-trunc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.novel-writer-fw-context-panel .nw-cp-trunc-icon {
+    font-size: 0.8em;
+    color: var(--text-muted);
+}
+
+.novel-writer-fw-context-panel .nw-cp-trunc-details {
+    display: none;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid color-mix(in srgb, var(--text-warning) 30%, transparent);
+    font-size: 0.9em;
+}
+
+.novel-writer-fw-context-panel .nw-cp-trunc-details--open {
+    display: block;
+}
+
+.novel-writer-fw-context-panel .nw-cp-trunc-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+}
+
+.novel-writer-fw-context-panel .nw-cp-trunc-label {
+    color: var(--text-muted);
+}
+
+.novel-writer-fw-context-panel .nw-cp-trunc-value {
+    font-weight: 500;
+}
+
+/* ── 智能实体上下文 / 场景细纲 共用 ───────────────────────── */
+
+.novel-writer-fw-context-panel .nw-cp-tip {
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-top: 4px;
+}
+
+.novel-writer-fw-context-panel .nw-cp-stats {
+    padding: 6px 8px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    background: var(--background-modifier-hover);
+    font-size: 11px;
+}
+
+.novel-writer-fw-context-panel .nw-cp-stats-head {
+    font-weight: 600;
+}
+
+.novel-writer-fw-context-panel .nw-cp-text-muted {
+    color: var(--text-muted);
+}
+
+.novel-writer-fw-context-panel .nw-cp-section-title {
+    display: block;
+    font-size: 11px;
+    margin-bottom: 4px;
+}
+
+.novel-writer-fw-context-panel .nw-cp-section-title--spaced {
+    margin: 8px 0 4px 0;
+}
+
+.novel-writer-fw-context-panel .nw-cp-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 11px;
+}
+
+.novel-writer-fw-context-panel .nw-cp-list--mb8 {
+    margin-bottom: 8px;
+}
+
+.novel-writer-fw-context-panel .nw-cp-list-item {
+    padding: 3px 0;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.novel-writer-fw-context-panel .nw-cp-name-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.novel-writer-fw-context-panel .nw-cp-name {
+    font-weight: 600;
+}
+
+.novel-writer-fw-context-panel .nw-cp-badge {
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: var(--background-modifier-hover);
+    font-size: 10px;
+}
+
+.novel-writer-fw-context-panel .nw-cp-level {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--text-faint);
+}
+
+.novel-writer-fw-context-panel .nw-cp-sub {
+    margin-top: 2px;
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.novel-writer-fw-context-panel .nw-cp-sub--faint {
+    color: var(--text-faint);
+}
+
+.novel-writer-fw-context-panel .nw-cp-sub--tight {
+    margin-top: 1px;
+}
+
+.novel-writer-fw-context-panel .nw-cp-more {
+    margin: 4px 0;
+    font-size: 10px;
+    text-align: center;
+}
+
+.novel-writer-fw-context-panel .nw-cp-more--faint {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--text-faint);
+    text-align: center;
+}
+
+.novel-writer-fw-context-panel .nw-cp-rel-item {
+    padding: 2px 0;
+    color: var(--text-muted);
+}
+
+.novel-writer-fw-context-panel .nw-cp-rel-names {
+    color: var(--text-normal);
+}
+
+.novel-writer-fw-context-panel .nw-cp-rel-type {
+    color: var(--text-faint);
+}
+
+.novel-writer-fw-context-panel .nw-cp-missing {
+    margin-top: 8px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--text-warning) 10%, transparent);
+    font-size: 11px;
+}
+
+.novel-writer-fw-context-panel .nw-cp-missing-label {
+    font-weight: 600;
+    color: var(--text-warning);
+}
+
+.novel-writer-fw-context-panel .nw-cp-muted-sm {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+/* ── 场景细纲 ─────────────────────────────────────────────── */
+
+.novel-writer-fw-context-panel .nw-cp-scene-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 12px;
+}
+
+.novel-writer-fw-context-panel .nw-cp-scene-key {
+    color: var(--text-warning);
+}
+
+.novel-writer-fw-context-panel .nw-cp-scene-index {
+    font-weight: 600;
+    color: var(--text-accent);
+}
+
+.novel-writer-fw-context-panel .nw-cp-scene-star {
+    font-size: 10px;
+}
+
+.novel-writer-fw-context-panel .nw-cp-scene-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.novel-writer-fw-context-panel .nw-cp-hook {
+    margin-top: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--text-warning) 10%, transparent);
+    font-size: 11px;
+}
+
+/* ── 同人 OOC 规则 ────────────────────────────────────────── */
+
+.novel-writer-fw-context-panel .nw-cp-warn-box {
+    margin-top: 8px;
+    padding: 12px;
+    border: 2px solid var(--nw-warning);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--nw-warning) 18%, transparent);
+}
+
+.novel-writer-fw-context-panel .nw-cp-rule-list {
+    margin: 4px 0 8px 16px;
+    font-size: 12px;
+}
+
+.novel-writer-fw-context-panel .nw-cp-rule-list--tight {
+    margin-bottom: 4px;
+}
+
+.novel-writer-fw-context-panel .nw-cp-rule-text--warning {
+    color: var(--text-warning);
+}
+
+.novel-writer-fw-context-panel .nw-cp-rule-text--error {
+    color: var(--text-error);
+}
+
+/* ── 写作规则 ─────────────────────────────────────────────── */
+
+.novel-writer-fw-context-panel .nw-cp-rule-section {
+    margin-bottom: 8px;
+}
+
+.novel-writer-fw-context-panel .nw-cp-rule-section--tight {
+    margin-bottom: 4px;
+}
+
+.novel-writer-fw-context-panel .nw-cp-rule-heading {
+    font-size: 11px;
+}
+
+.novel-writer-fw-context-panel .nw-cp-rule-card {
+    margin: 4px 0 4px 8px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    background: var(--background-primary);
+    font-size: 11px;
+}
+
+.novel-writer-fw-context-panel .nw-cp-rule-title {
+    margin-bottom: 2px;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.novel-writer-fw-context-panel .nw-cp-rule-desc {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.novel-writer-fw-context-panel .nw-cp-rule-points {
+    margin: 2px 0 0 12px;
+    padding: 0;
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.novel-writer-fw-context-panel .nw-cp-check-list {
+    margin: 4px 0 0 8px;
+    padding: 0;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.novel-writer-fw-context-panel .nw-cp-check-item {
+    margin: 2px 0;
+}
+
+.novel-writer-fw-context-panel .nw-cp-more-note {
+    font-size: 10px;
+    color: var(--text-faint);
+}
+
+.novel-writer-fw-context-panel .nw-cp-style-text {
+    margin: 2px 0 0 8px;
+    font-size: 10px;
+    white-space: pre-wrap;
+}
+
+.novel-writer-fw-context-panel .nw-cp-edit-link {
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+.novel-writer-fw-context-panel .nw-cp-error-text {
+    font-size: 11px;
+    color: var(--text-error);
+}
+
+/* ── 折叠卡片 ─────────────────────────────────────────────── */
+
+/* 用复合选择器（0,2,0）压住 .nw-context-bar__collapsible-body 的 padding 等声明，
+ * 只做显隐，不改变展开时的任何布局。 */
+.novel-writer-fw-context-panel .nw-cp-card-body.nw-cp-is-collapsed {
+    display: none;
+}
+
+/* ── 上下文使用进度条 ─────────────────────────────────────── */
+
+/* 宽度由脚本写入 --nw-cp-pct（原先写内联 width）。保留 02 号文件的
+ * .novel-writer-fw-token-fill 高度/配色/过渡，这里只接管宽度。 */
+.novel-writer-fw-context-panel .nw-cp-token-fill {
+    width: var(--nw-cp-pct, 0%);
 }

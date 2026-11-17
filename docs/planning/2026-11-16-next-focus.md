@@ -1182,3 +1182,28 @@ PNG 差异只剩三簇——标题栏按钮簇（y=28–58）、页脚按钮簇�
 **文档**：新增 `docs/modules/knowledge-base-view.md`（8 节，P-01..P-04 done、P-05 open）；`docs/modules/INDEX.md` 插「知识库主视图」行；视觉标准 §5 加行、§5.1 指标重算（216 / 1159 / 737042）、清理记录补 Slice P、特异性段补配色陷阱、存量大户表移除 175；`docs/CURRENT.md` §4 改切片 A–P、§6 口径改 216 / 1159。
 
 **下一轮候选**（按 §5.1 存量大户）：`ui/rendering/context-panel.ts`（173）、`ui/settings/general-sections.ts`（160）、`ui/views/book-detail-renderer.ts`（126，与 Slice C/D/E 同族可收尾）。
+### 2026-11-17 第四十二轮：Slice Q 上下文监控面板语义化（nw-cp-*）
+
+**范围**：`ui/rendering/context-panel.ts`（961 行）——全屏写作右栏的上下文监控面板：失败模块条、Token 预算提示、压缩截断条（可展开）、智能实体上下文（统计 / 人物 / 关系 / 缺失实体）、场景细纲、同人 OOC 规则、写作规则（必守 / 检查清单 / 文笔风格）、文笔风格编辑链接、渲染异常兜底，以及 `renderCollapsibleCard()` 折叠卡片。
+
+**改动**：`nw-u-*` 173 → 0；真内联 `style` 3 → 0。
+- token 预算提示的 `const color = pct > 70 ? '#ff4444' : pct > 50 ? '#ffaa00' : 'var(--text-faint)'` + `style.cssText` → `nw-cp-token-hint` + `--warn`/`--danger` 修饰类（两个 hex 因此从 TS 迁入 CSS，硬编码 hex 计数 168 → 170）。
+- 截断详情 `detailsPanel.style.display = 'block'` → `nw-cp-trunc-details--open` 修饰类（CSS `display:none` + `--open{display:block}`）。
+- 进度条 `fill.style.width = pct + '%'` → `fill.style.setProperty('--nw-cp-pct', …)`，CSS `width: var(--nw-cp-pct, 0%)`（先例 `ui/batch-import-modal.ts:784` 的 `--nw-bi-pct`），并顺手给 fill 补上 `nw-cp-token-fill` 类（原只有外壳类，变量吃不到）。
+- 折叠卡片 `nw-u-d-none` → `nw-cp-is-collapsed`，body 加 `nw-cp-card-body`；CSS 用复合选择器 `.nw-cp-card-body.nw-cp-is-collapsed`（0,3,0）压住 `.nw-context-bar__collapsible-body` 的 padding/line-height。
+- 新建 `styles-src/35-context-panel.css`（383 行 / 10818 字节，样式源 40 → 41），规则全部 `.novel-writer-fw-context-panel ` 前缀（0,2,0）；外壳类 `novel-writer-fw-warning`/`novel-writer-fw-muted`/`nw-context-bar__collapsible-*` 保留，`.nw-cp-alert` 只覆盖被删工具类真正生效的五项。
+- 删两个死类 `novel-writer-fw-truncation-warning`、`nw-context-fanfic-rules`（全仓零定义）；`nw-ctx-warn-box`（`styles-src/26-cleanup-utilities.css:399`）的声明原样复刻成 `nw-cp-warn-box`。
+- 删 31 个零引用工具类（定义 216 → 185，引用 1159 → 988），连锁 4 轮才收敛：`check-utility-classes.mjs` 的零引用列表每次只打印 10 个。
+
+**三处坑**
+1. **`D:\nw-dev-vault\.obsidian\plugins\novel-writer-ai` 是真实目录、不是 junction**：`npm run build` 只写仓内产物，`scripts/dev-vault.mjs sync` 的目标又是 `C:\Users\admin\nw-dev-vault`。第一轮 6 张「after」截图其实全是 HEAD 旧代码（DOM 里还是 `nw-u-p-8px-12px` 那批），必须把 `main.js`/`styles.css` 直接拷进 D: 那个目录。
+2. **被删的工具类不等于「什么都没写」**：`nw-u-bg-modifier-error-soft` 的声明 `background:var(--background-modifier-error-rgb, 255, 100, 100, 0.1)` 在 computed-value 阶段非法，CSS 规定此时回落 initial（IACVT → `transparent`），于是它一直把外壳 `--nw-warning-bg`（浅色 0.12 / 深色 0.15）压成透明；删掉后告警条恢复浅橙底。
+3. before 产物不能用 stash 取（build 会重写 tracked 的 `styles.css`，pop 必冲突），改 `git worktree add D:\nw-tmp\before-q 45b76bfe` + `mklink /J node_modules` 在 worktree 里 build。
+
+**验收**：`D:\nw-dev-vault\_visual-q\{before,after}` 6 场景（01-empty / 02-failed-token60 / 03-truncation-open / 04-entities / 05-rules-style / 06-progress80），面板放进自建 384px 容器截图（`#nw-q-host`）。高度 6/6 一致；struct/style/rect 三类探针差全 0；PNG 5/6 为 0，`02-failed-token60` 差 3.151%（10468 px，全在告警条矩形内，maxDelta 22，无文字重排）——即 IACVT 那条有意修正，闭合图 `D:\nw-tmp\crop-q-alert.png`。
+
+**门禁**：`tsc --noEmit` 0 错；`build` 通过（41 个样式源，styles.css 29659 行）；`check:utility` 定义 185 / 引用 988 / 零引用 0；`check:css` bytes 746349 / 唯一类 4091 / hex 170 / rgbHsl 211 / important 24；`check:bundle` styles.css 737042 → 746349（净 +9307）；`check:inline-styles` 577（静态 486 / 动态 91）；`npx vitest run tests/unit/ui/context-panel-dom.test.ts tests/unit/ui/entity-state-context-refresh.test.ts` 2 文件 / 24 用例通过（新增 4 条语义类契约）。
+
+**文档**：新增 `docs/modules/context-panel.md`（8 节，CP-01..CP-05 全 done）；`docs/modules/INDEX.md` 插「上下文监控面板」行；视觉标准 §5 加 `nw-cp-*` 行、§5.1 指标重算（185 / 988 / 746349）、清理记录补 Slice Q、特异性段补 IACVT 陷阱、存量大户表移除 173；`docs/CURRENT.md` §4 改切片 A–Q、§6 口径改 185 / 988。
+
+**下一轮候选**（按 §5.1 存量大户）：`ui/settings/general-sections.ts`（160）、`ui/views/book-detail-renderer.ts`（126）、`ui/full-writer/scene-outline-controller.ts`（123）。

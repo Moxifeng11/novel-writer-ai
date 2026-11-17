@@ -74,15 +74,15 @@ export class ContextPanel {
         // 上下文模式状态提示 + token 估算
         const modeHint = plugin.settings.contextScope === 'full' ? '（完整遍历所有实体）' : '（仅注入本章涉及实体）';
         panel.createEl('div', { text: `当前：${modeHint}`, cls: 'novel-writer-context-mode-hint' });
-        
+
         // v3.5.0: token 预算（从 vars 读取，运行时由 FullWriterView 注入到 plugin 上）
         const fwView = (plugin as unknown as { fullWriterView?: { vars?: Record<string, string> } }).fullWriterView;
         const ctxTokens = parseInt(fwView?.vars?.['_contextTokens'] || '0') || 0;
         const maxCtx = plugin.settings.maxContext || 128000;
         if (ctxTokens > 0) {
             const pct = Math.round(ctxTokens / maxCtx * 100);
-            const color = pct > 70 ? '#ff4444' : pct > 50 ? '#ffaa00' : 'var(--text-faint)';
-            panel.createEl('div', { text: `Token 预算: ${ctxTokens.toLocaleString()} / ${(maxCtx/1000).toFixed(0)}K (${pct}%)`, cls: 'novel-writer-context-mode-hint' }).style.cssText = `font-size:11px;color:${color};margin-bottom:6px;`; 
+            const tone = pct > 70 ? ' nw-cp-token-hint--danger' : pct > 50 ? ' nw-cp-token-hint--warn' : '';
+            panel.createEl('div', { text: `Token 预算: ${ctxTokens.toLocaleString()} / ${(maxCtx/1000).toFixed(0)}K (${pct}%)`, cls: `novel-writer-context-mode-hint nw-cp-token-hint${tone}` });
         }
 
         // 上下文切换按钮行
@@ -119,7 +119,7 @@ export class ContextPanel {
         // ✅ v1.6.0: 显示失败的模块提示
         const failedModules = d['_failedModules'] as string[] | undefined;
         if (failedModules && failedModules.length > 0) {
-            const warnEl = panel.createDiv({ cls: "novel-writer-fw-warning nw-u-p-6px-10px nw-u-marginbottom-8px nw-u-bg-modifier-error-soft nw-u-brd-4px nw-u-fs-0-85em nw-u-c-text-error", attr: {}});
+            const warnEl = panel.createDiv({ cls: 'novel-writer-fw-warning nw-cp-alert nw-cp-alert--error' });
             warnEl.createSpan({ text: `⚠️ 以下模块加载失败：${failedModules.join('、')}（已跳过）` });
         }
 
@@ -128,12 +128,12 @@ export class ContextPanel {
         if (compressed?.truncationApplied) {
             let detailsExpanded = false;
 
-            const truncationWarn = panel.createDiv({ cls: "novel-writer-fw-truncation-warning nw-u-p-8px-12px nw-u-marginbottom-10px nw-u-bg-warning-soft-15 nw-u-b-warning-border nw-u-brd-6px nw-u-cur-pointer nw-u-fs-0-85em nw-u-c-text-normal nw-u-userselect-none", attr: {}});
-            const warnHeader = truncationWarn.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between' });
+            const truncationWarn = panel.createDiv({ cls: 'nw-cp-trunc' });
+            const warnHeader = truncationWarn.createDiv({ cls: 'nw-cp-trunc-header' });
             warnHeader.createSpan({ text: '⚠️ 上下文过长，已智能压缩（点击查看详情）' });
-            const warnIcon = warnHeader.createSpan({ text: '▶', cls: 'nw-u-fs-0-8em nw-u-c-text-muted' });
+            const warnIcon = warnHeader.createSpan({ text: '▶', cls: 'nw-cp-trunc-icon' });
 
-            const detailsPanel = truncationWarn.createDiv({ cls: 'nw-u-d-none nw-u-margintop-8px nw-u-paddingtop-8px nw-u-bt-warning-border nw-u-fs-0-9em' });
+            const detailsPanel = truncationWarn.createDiv({ cls: 'nw-cp-trunc-details' });
 
             const wvRaw = (d.world_view as MarkdownContent)?.raw?.length || 0;
             const wvComp = compressed.worldView?.length || 0;
@@ -158,14 +158,14 @@ export class ContextPanel {
             ];
 
             for (const item of detailItems) {
-                const row = detailsPanel.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-p-3px-0' });
-                row.createSpan({ text: item.label, cls: 'nw-u-c-text-muted' });
-                row.createSpan({ text: `${item.raw} → ${item.comp}${item.extra}`, cls: 'nw-u-fwt-500' });
+                const row = detailsPanel.createDiv({ cls: 'nw-cp-trunc-row' });
+                row.createSpan({ text: item.label, cls: 'nw-cp-trunc-label' });
+                row.createSpan({ text: `${item.raw} → ${item.comp}${item.extra}`, cls: 'nw-cp-trunc-value' });
             }
 
             truncationWarn.addEventListener('click', () => {
                 detailsExpanded = !detailsExpanded;
-                detailsPanel.style.display = detailsExpanded ? 'block' : 'none';
+                detailsPanel.toggleClass('nw-cp-trunc-details--open', detailsExpanded);
                 warnIcon.setText(detailsExpanded ? '▼' : '▶');
             });
         }
@@ -223,48 +223,48 @@ export class ContextPanel {
                     ._smartEntityContext;
                 if (!smartCtx) {
                     body.createEl('p', { text: '智能上下文加载中...', cls: 'novel-writer-fw-muted' });
-                    body.createEl('p', { 
-                        text: '💡 打开章节后自动生成智能实体推荐', 
-                        cls: 'nw-u-fs-11px nw-u-c-text-faint nw-u-margintop-4px'
-                    });
+                    body.createEl('p', {
+                        text: '💡 打开章节后自动生成智能实体推荐',
+                        cls: 'nw-cp-tip'
+                     });
                     return;
                 }
 
                 const summary = smartCtx.selectionSummary;
                 if (summary) {
-                    const statsDiv = body.createDiv({ 
-                        cls: 'nw-u-p-6px-8px nw-u-bg-background-modifier-ho nw-u-brd-4px nw-u-marginbottom-8px nw-u-fs-11px' 
-                    });
-                    statsDiv.createSpan({ 
+                    const statsDiv = body.createDiv({
+                        cls: 'nw-cp-stats'
+                     });
+                    statsDiv.createSpan({
                         text: `已选择 ${summary.selectedCount}/${summary.totalEntities} 个实体`,
-                        cls: 'nw-u-fwt-600'
-                    });
+                        cls: 'nw-cp-stats-head'
+                     });
                     statsDiv.createEl('br');
-                    statsDiv.createSpan({ 
+                    statsDiv.createSpan({
                         text: `人物${summary.byCategory.character} · 地点${summary.byCategory.location} · 势力${summary.byCategory.faction} · 物品${summary.byCategory.item}`,
-                        cls: 'nw-u-c-text-muted'
-                    });
+                        cls: 'nw-cp-text-muted'
+                     });
                     statsDiv.createEl('br');
-                    statsDiv.createSpan({ 
+                    statsDiv.createSpan({
                         text: `预估 ~${summary.estimatedTokens.toLocaleString()} tokens`,
-                        cls: 'nw-u-c-text-muted'
-                    });
+                        cls: 'nw-cp-text-muted'
+                     });
                 }
 
                 if (smartCtx.characters && smartCtx.characters.length > 0) {
-                    body.createEl('strong', { text: '🎭 相关人物', cls: 'nw-u-fs-11px nw-u-d-block nw-u-marginbottom-4px' });
-                    const charList = body.createEl('ul', { 
-                        cls: 'nw-u-lst-none nw-u-p-0 nw-u-m-0-0-8px-0 nw-u-fs-11px' 
-                    });
+                    body.createEl('strong', { text: '🎭 相关人物', cls: 'nw-cp-section-title' });
+                    const charList = body.createEl('ul', {
+                        cls: 'nw-cp-list nw-cp-list--mb8'
+                     });
                     for (const c of smartCtx.characters.slice(0, 8)) {
-                        const li = charList.createEl('li', { 
-                            cls: 'nw-u-p-3px-0 nw-u-bb-1px-solid-background-m' 
-                        });
-                        const nameRow = li.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-4px' });
-                        nameRow.createSpan({ text: c.name, cls: 'nw-u-fwt-600' });
+                        const li = charList.createEl('li', {
+                            cls: 'nw-cp-list-item'
+                         });
+                        const nameRow = li.createDiv({ cls: 'nw-cp-name-row' });
+                        nameRow.createSpan({ text: c.name, cls: 'nw-cp-name' });
                         if (c.importanceLevel) {
                             const impLabel = this.getImportanceBadge(c.importanceLevel);
-                            nameRow.createSpan({ text: impLabel, cls: 'nw-u-fs-10px nw-u-p-1px-4px nw-u-bg-background-modifier-ho nw-u-brd-3px' });
+                            nameRow.createSpan({ text: impLabel, cls: 'nw-cp-badge' });
                         }
                         if (c.detailLevel) {
                             const levelMap: Record<string, string> = {
@@ -273,64 +273,62 @@ export class ContextPanel {
                                 brief: '简要',
                                 minimal: '极简'
                             };
-                            nameRow.createSpan({ 
+                            nameRow.createSpan({
                                 text: levelMap[c.detailLevel] || c.detailLevel,
-                                cls: 'nw-u-fs-10px nw-u-c-text-faint nw-u-marginleft-auto' 
-                            });
+                                cls: 'nw-cp-level'
+                             });
                         }
                         if (c.statusLabel) {
-                            li.createDiv({ 
+                            li.createDiv({
                                 text: `状态：${c.statusLabel}`,
-                                cls: 'nw-u-c-text-muted nw-u-fs-10px nw-u-margintop-2px' 
-                            });
+                                cls: 'nw-cp-sub'
+                             });
                         }
                         if (c.lastAppearance) {
-                            li.createDiv({ 
+                            li.createDiv({
                                 text: `最近出场：${c.lastAppearance}`,
-                                cls: 'nw-u-c-text-faint nw-u-fs-10px nw-u-margintop-1px' 
-                            });
+                                cls: 'nw-cp-sub nw-cp-sub--faint nw-cp-sub--tight'
+                             });
                         }
                     }
                     if (smartCtx.characters.length > 8) {
-                        body.createEl('p', { 
+                        body.createEl('p', {
                             text: `...还有 ${smartCtx.characters.length - 8} 个相关人物`,
-                            cls: "novel-writer-fw-muted nw-u-fs-10px nw-u-ta-center nw-u-m-4px-0",
-                            attr: {}
+                            cls: 'novel-writer-fw-muted nw-cp-more',
                         });
                     }
                 }
 
                 if (smartCtx.relations && smartCtx.relations.length > 0) {
-                    body.createEl('strong', { text: '💞 人物关系', cls: 'nw-u-fs-11px nw-u-d-block nw-u-m-8px-0-4px-0' });
-                    const relList = body.createEl('ul', { 
-                        cls: 'nw-u-lst-none nw-u-p-0 nw-u-m-0 nw-u-fs-11px' 
-                    });
+                    body.createEl('strong', { text: '💞 人物关系', cls: 'nw-cp-section-title nw-cp-section-title--spaced' });
+                    const relList = body.createEl('ul', {
+                        cls: 'nw-cp-list'
+                     });
                     for (const r of smartCtx.relations.slice(0, 6)) {
-                        const li = relList.createEl('li', { 
-                            cls: 'nw-u-p-2px-0 nw-u-c-text-muted' 
-                        });
-                        li.createSpan({ text: `${r.from} ↔ ${r.to}`, cls: 'nw-u-c-text-normal' });
-                        li.createSpan({ text: `：${r.type}`, cls: 'nw-u-c-text-faint' });
+                        const li = relList.createEl('li', {
+                            cls: 'nw-cp-rel-item'
+                         });
+                        li.createSpan({ text: `${r.from} ↔ ${r.to}`, cls: 'nw-cp-rel-names' });
+                        li.createSpan({ text: `：${r.type}`, cls: 'nw-cp-rel-type' });
                     }
                     if (smartCtx.relations.length > 6) {
-                        body.createEl('p', { 
+                        body.createEl('p', {
                             text: `...还有 ${smartCtx.relations.length - 6} 条关系`,
-                            cls: "novel-writer-fw-muted nw-u-fs-10px nw-u-ta-center nw-u-m-4px-0",
-                            attr: {}
+                            cls: 'novel-writer-fw-muted nw-cp-more',
                         });
                     }
                 }
 
                 if (smartCtx.missingEntities && smartCtx.missingEntities.length > 0) {
-                    body.createDiv({ 
-                        cls: 'nw-u-margintop-8px nw-u-p-6px-8px nw-u-bg-warning-soft-10 nw-u-brd-4px nw-u-fs-11px' 
-                    });
-                    body.createSpan({ text: '⚠️ 未设定人物：', cls: 'nw-u-c-text-warning nw-u-fwt-600' });
+                    body.createDiv({
+                        cls: 'nw-cp-missing'
+                     });
+                    body.createSpan({ text: '⚠️ 未设定人物：', cls: 'nw-cp-missing-label' });
                     body.createEl('br');
-                    body.createSpan({ 
+                    body.createSpan({
                         text: smartCtx.missingEntities.join('、'),
-                        cls: 'nw-u-c-text-muted nw-u-fs-10px' 
-                    });
+                        cls: 'nw-cp-muted-sm'
+                     });
                 }
             } catch (e) {
                 body.createEl('p', { text: '智能上下文加载失败', cls: 'novel-writer-fw-muted' });
@@ -443,13 +441,13 @@ export class ContextPanel {
         this.renderCollapsibleCard(panel, '🎬 场景细纲', async (body) => {
             try {
                 const sceneExpansion = d.scene_expansion as MarkdownContent | undefined;
-                
+
                 if (!sceneExpansion || !sceneExpansion.raw || sceneExpansion.raw.trim() === '') {
                     body.createEl('p', { text: '暂无场景数据', cls: 'novel-writer-fw-muted' });
                     const tip = body.createEl('p', {
                         text: '💡 在步骤6「Scene展开」中生成场景后可在此查看',
-                        cls: 'nw-u-fs-11px nw-u-c-text-faint nw-u-margintop-4px'
-                    });
+                        cls: 'nw-cp-tip'
+                     });
                     return;
                 }
 
@@ -461,55 +459,55 @@ export class ContextPanel {
                 }
 
                 const statsRow = body.createDiv({
-                    cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-marginbottom-8px nw-u-fs-12px'
-                });
+                    cls: 'nw-cp-scene-stats'
+                 });
                 statsRow.createSpan({ text: `共 ${sceneInfo.total} 个场景` });
                 statsRow.createSpan({
                     text: sceneInfo.hasKeyScene ? '⭐ 有名场面' : '',
-                    cls: 'nw-u-c-text-warning'
-                });
+                    cls: 'nw-cp-scene-key'
+                 });
 
                 const sceneList = body.createEl('ul', {
-                    cls: 'nw-u-lst-none nw-u-p-0 nw-u-m-0 nw-u-fs-11px'
-                });
+                    cls: 'nw-cp-list'
+                 });
 
                 for (let i = 0; i < Math.min(sceneInfo.scenes.length, 5); i++) {
                     const s = sceneInfo.scenes[i];
                     const li = sceneList.createEl('li', {
-                        cls: 'nw-u-p-3px-0 nw-u-bb-1px-solid-background-m'
-                    });
-                    const nameRow = li.createDiv({ cls: 'nw-u-d-flex nw-u-gap-4px nw-u-ai-center' });
+                        cls: 'nw-cp-list-item'
+                     });
+                    const nameRow = li.createDiv({ cls: 'nw-cp-name-row' });
                     nameRow.createSpan({
                         text: `场景${s.index}`,
-                        cls: 'nw-u-fwt-600 nw-u-c-text-accent'
-                    });
+                        cls: 'nw-cp-scene-index'
+                     });
                     if (s.isKeyScene) {
-                        nameRow.createSpan({ text: '⭐', cls: 'nw-u-fs-10px' });
+                        nameRow.createSpan({ text: '⭐', cls: 'nw-cp-scene-star' });
                     }
                     nameRow.createSpan({
                         text: s.name,
-                        cls: 'nw-u-ws-nowrap nw-u-ov-hidden nw-u-textoverflow-ellipsis nw-u-flex-1'
-                    });
+                        cls: 'nw-cp-scene-name'
+                     });
                     if (s.objective) {
                         li.createDiv({
                             text: s.objective.slice(0, 30) + (s.objective.length > 30 ? '...' : ''),
-                            cls: 'nw-u-c-text-faint nw-u-fs-10px nw-u-margintop-2px'
-                        });
+                            cls: 'nw-cp-sub nw-cp-sub--faint'
+                         });
                     }
                 }
 
                 if (sceneInfo.total > 5) {
                     body.createEl('p', {
                         text: `...还有 ${sceneInfo.total - 5} 个场景`,
-                        cls: 'nw-u-ta-center nw-u-c-text-faint nw-u-fs-11px nw-u-margintop-6px'
-                    });
+                        cls: 'nw-cp-more--faint'
+                     });
                 }
 
                 if (sceneInfo.hasCliffhanger) {
                     body.createDiv({
                         text: '🪝 已设置结尾钩子',
-                        cls: 'nw-u-margintop-8px nw-u-p-4px-8px nw-u-bg-warning-soft nw-u-brd-4px nw-u-fs-11px'
-                    });
+                        cls: 'nw-cp-hook'
+                     });
                 }
             } catch (e) {
                 body.createEl('p', { text: '加载场景数据失败', cls: 'novel-writer-fw-muted' });
@@ -697,20 +695,19 @@ export class ContextPanel {
             const rules = d.fanfic_rules as FanficRules;
             if (rules.mustFollow?.length > 0 || rules.redlines?.length > 0) {
                 this.renderCollapsibleCard(panel, '⚠️ OOC 防护规则', (body) => {
-                    const warnBox = body.createDiv({ cls: 'nw-context-fanfic-rules' });
-                    warnBox.addClass('nw-ctx-warn-box');
-                    
+                    const warnBox = body.createDiv({ cls: 'nw-cp-warn-box' });
+
                     if (rules.mustFollow?.length > 0) {
-                        warnBox.createEl('strong', { text: '必须遵守的原作规则：', cls: 'nw-u-c-warning-strong' });
-                        const ul = warnBox.createEl('ul', { cls: 'nw-u-m-4px-0-8px-16px nw-u-c-warning-strong nw-u-fs-12px' });
+                        warnBox.createEl('strong', { text: '必须遵守的原作规则：', cls: 'nw-cp-rule-text--warning' });
+                        const ul = warnBox.createEl('ul', { cls: 'nw-cp-rule-list nw-cp-rule-text--warning' });
                         for (const r of rules.mustFollow) {
                             ul.createEl('li', { text: r });
                         }
                     }
-                    
+
                     if (rules.redlines?.length > 0) {
-                        warnBox.createEl('strong', { text: '🚫 禁止触及的红线：', cls: 'nw-u-c-error-strong' });
-                        const ul = warnBox.createEl('ul', { cls: 'nw-u-m-4px-0-4px-16px nw-u-c-error-strong nw-u-fs-12px' });
+                        warnBox.createEl('strong', { text: '🚫 禁止触及的红线：', cls: 'nw-cp-rule-text--error' });
+                        const ul = warnBox.createEl('ul', { cls: 'nw-cp-rule-list nw-cp-rule-list--tight nw-cp-rule-text--error' });
                         for (const r of rules.redlines) {
                             ul.createEl('li', { text: r });
                         }
@@ -750,16 +747,16 @@ export class ContextPanel {
             }
             // 强制写作规则
             if (wr.mandatory && wr.mandatory.length > 0) {
-                const sectionDiv = body.createDiv({ cls: 'nw-u-marginbottom-8px' });
-                sectionDiv.createEl('strong', { text: '📜 强制规则:', cls: 'nw-u-fs-11px' });
+                const sectionDiv = body.createDiv({ cls: 'nw-cp-rule-section' });
+                sectionDiv.createEl('strong', { text: '📜 强制规则:', cls: 'nw-cp-rule-heading' });
                 for (const r of wr.mandatory.slice(0, 5)) {
-                    const ruleDiv = sectionDiv.createDiv({ cls: 'nw-u-m-4px-0-4px-8px nw-u-p-4px-6px nw-u-bg-background-primary nw-u-brd-4px nw-u-fs-11px' });
-                    ruleDiv.createEl('div', { text: `▸ ${r.title}`, cls: 'nw-u-fwt-600 nw-u-c-text-normal nw-u-marginbottom-2px' });
+                    const ruleDiv = sectionDiv.createDiv({ cls: 'nw-cp-rule-card' });
+                    ruleDiv.createEl('div', { text: `▸ ${r.title}`, cls: 'nw-cp-rule-title' });
                     if (r.description && r.description.trim()) {
-                        ruleDiv.createEl('div', { text: r.description.slice(0, 150), cls: 'nw-u-c-text-muted nw-u-fs-10px' });
+                        ruleDiv.createEl('div', { text: r.description.slice(0, 150), cls: 'nw-cp-rule-desc' });
                     }
                     if (r.points && r.points.length > 0) {
-                        const ptsList = ruleDiv.createEl('ul', { cls: 'nw-u-m-2px-0-0-12px nw-u-p-0 nw-u-fs-10px nw-u-c-text-muted' });
+                        const ptsList = ruleDiv.createEl('ul', { cls: 'nw-cp-rule-points' });
                         for (const pt of r.points.slice(0, 3)) {
                             ptsList.createEl('li', { text: pt });
                         }
@@ -768,24 +765,23 @@ export class ContextPanel {
             }
             // 章节自查清单
             if (wr.checklist && wr.checklist.length > 0) {
-                const chkDiv = body.createDiv({ cls: 'nw-u-marginbottom-8px' });
-                chkDiv.createEl('strong', { text: '✅ 自查清单:', cls: 'nw-u-fs-11px' });
-                const chkList = chkDiv.createEl('ul', { cls: 'nw-u-m-4px-0-0-8px nw-u-p-0 nw-u-fs-11px nw-u-c-text-muted' });
+                const chkDiv = body.createDiv({ cls: 'nw-cp-rule-section' });
+                chkDiv.createEl('strong', { text: '✅ 自查清单:', cls: 'nw-cp-rule-heading' });
+                const chkList = chkDiv.createEl('ul', { cls: 'nw-cp-check-list' });
                 for (const item of wr.checklist.slice(0, 8)) {
-                    chkList.createEl('li', { text: item, cls: 'nw-u-m-2px-0' });
+                    chkList.createEl('li', { text: item, cls: 'nw-cp-check-item' });
                 }
                 if (wr.checklist.length > 8) {
-                    chkDiv.createEl('span', { text: `...还有${wr.checklist.length - 8}项`, cls: 'nw-u-fs-10px nw-u-c-text-faint' });
+                    chkDiv.createEl('span', { text: `...还有${wr.checklist.length - 8}项`, cls: 'nw-cp-more-note' });
                 }
             }
             // 文风参考
             if (wr.style && wr.style.trim()) {
-                const styleDiv = body.createDiv({ cls: 'nw-u-marginbottom-4px' });
-                styleDiv.createEl('strong', { text: '🖊️ 文风参考:', cls: 'nw-u-fs-11px' });
+                const styleDiv = body.createDiv({ cls: 'nw-cp-rule-section nw-cp-rule-section--tight' });
+                styleDiv.createEl('strong', { text: '🖊️ 文风参考:', cls: 'nw-cp-rule-heading' });
                 styleDiv.createEl('p', {
                     text: wr.style.slice(0, 200),
-                    cls: "novel-writer-fw-muted nw-u-fs-10px nw-u-m-2px-0-0-8px nw-u-ws-pre-wrap",
-                    attr: {}
+                    cls: 'novel-writer-fw-muted nw-cp-style-text',
                 });
             }
             if ((!wr.mandatory || wr.mandatory.length === 0) && (!wr.checklist || wr.checklist.length === 0) && (!wr.style || !wr.style.trim())) {
@@ -809,8 +805,8 @@ export class ContextPanel {
                 );
                 const editLink = body.createEl('a', {
                     text: '编辑文笔风格',
-                    cls: 'nw-u-fs-0-85em nw-u-cur-pointer'
-                });
+                    cls: 'nw-cp-edit-link'
+                 });
                 editLink.addEventListener('click', async () => {
                     const wsFile = await findWritingStyleFile(this.app, project, { allowPlaceholder: true });
                     if (wsFile) {
@@ -848,8 +844,8 @@ export class ContextPanel {
             const barContainer = body.createDiv({ cls: 'novel-writer-fw-token-bar-container' });
             const bar = barContainer.createDiv({ cls: 'novel-writer-fw-token-bar' });
             const pct = Math.min(100, (estimatedTokens / maxTokens) * 100);
-            const fill = bar.createDiv({ cls: 'novel-writer-fw-token-fill' });
-            fill.style.width = `${pct}%`;
+            const fill = bar.createDiv({ cls: 'novel-writer-fw-token-fill nw-cp-token-fill' });
+            fill.style.setProperty('--nw-cp-pct', `${pct}%`);
 
             if (pct > 80) {
                 fill.addClass('nw-token-fill-danger');
@@ -860,7 +856,7 @@ export class ContextPanel {
             body.createEl('p', {
                 text: `~${estimatedTokens.toLocaleString()} / ${maxTokens.toLocaleString()} tokens（${pct.toFixed(1)}%）`,
                 cls: 'novel-writer-fw-token-text'
-            });
+             });
         }, true);
     }
 
@@ -929,31 +925,31 @@ export class ContextPanel {
      */
     private renderCollapsibleCard(panel: HTMLElement, title: string, renderBody: (body: HTMLElement) => void, reRender: boolean = false): void {
         const container = panel.createDiv({ cls: 'nw-context-bar__collapsible-card' });
-        
+
         const header = container.createDiv({ cls: 'nw-context-bar__collapsible-header' });
         const titleEl = header.createSpan({ cls: 'nw-context-bar__collapsible-title', text: title });
         const iconEl = header.createSpan({ cls: 'nw-context-bar__collapsible-icon' });
-        
-        const body = container.createDiv({ cls: 'nw-context-bar__collapsible-body' });
-        
+
+        const body = container.createDiv({ cls: 'nw-context-bar__collapsible-body nw-cp-card-body' });
+
         let collapsed = true;
-        body.addClass('nw-u-d-none');
+        body.addClass('nw-cp-is-collapsed');
         iconEl.setText('▶');
-        
+
         header.onclick = () => {
             collapsed = !collapsed;
-            body.toggleClass('nw-u-d-none', collapsed);
+            body.toggleClass('nw-cp-is-collapsed', collapsed);
             iconEl.setText(collapsed ? '▶' : '▼');
             if (reRender && !collapsed) {
                 body.empty();
                 renderBody(body);
             }
         };
-        
+
         // Pre-render body content (hidden by default)
         // v3.4.9 P0-1: 包裹 try-catch 防止任一卡片异常导致整个面板崩溃
         try { renderBody(body); } catch (e) {
-            body.createEl('p', { text: '⚠️ 渲染异常', cls: 'nw-u-c-text-error nw-u-fs-11px' });
+            body.createEl('p', { text: '⚠️ 渲染异常', cls: 'nw-cp-error-text' });
             log.warn('[ContextPanel] renderCollapsibleCard renderBody 异常:', e);
         }
     }

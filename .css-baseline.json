@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-17T14:25:14.993Z",
-  "note": "棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因\n2026-11-17 Slice P（知识库主视图）：新增拆解任务页 nw-kb-tasks-*（header/title/filter-bar/stats/stat/stat-value(--六档)/stat-label/toolbar/tool-group/…/task-card 系列）与监控条 nw-kb-monitor-* 语义类，同时删除 14 个零引用工具类（230→216）。bytes 729260→737042（+7782）、uniqueClasses 4008→4058、rgbHsl 195→211——后者上升是有意为之：统计卡与状态徽标的旧内联色按 rgb() 字面值逐条复刻（不套 --nw-* 语义 token，那组 token 在本主题下已被调成弱化色，套上会漂移 99/255）。\n补充：收尾时把 CSS 注释里那处会触发 motion 门禁的字面串改写成「transition:all」写法，注释文本比初测时多 19 字节（737023→737042），无规则声明变化。",
-  "bytes": 737042,
+  "generatedAt": "2026-11-17T14:53:15.892Z",
+  "note": "Slice Q：上下文面板语义化（新建 styles-src/35-context-panel.css 10.6KB，40→41 个样式源）；同时删除 31 个因本切片而零引用的工具类定义（nw-u-bg-warning-soft* / nw-u-p-* / nw-u-m-* / nw-u-userselect-none 等）。styles.css 737042→746349（净 +9307），唯一类 4058→4091（新增 nw-cp-* 33 个），硬编码 hex 168→170（token 进度条 #ff4444/#ffaa00 由内联样式迁入 CSS）。",
+  "bytes": 746349,
   "important": 24,
-  "hardcodedHex": 168,
+  "hardcodedHex": 170,
   "rgbHsl": 211,
-  "uniqueClasses": 4058,
+  "uniqueClasses": 4091,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

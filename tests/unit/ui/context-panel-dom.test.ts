@@ -24,6 +24,7 @@ function renderPanel(options: {
     settingsExtra?: Record<string, unknown>;
     context?: unknown;
     vars?: Record<string, string>;
+    totalChars?: number;
 } = {}): { root: FakeEl; plugin: ReturnType<typeof makePluginStub> } {
     const root = new FakeEl('div');
     const plugin = makePluginStub(options.settingsExtra);
@@ -35,7 +36,7 @@ function renderPanel(options: {
         '长篇小说/晨星外传',
         3,
         pluginWithVars as never,
-        () => 0,
+        () => options.totalChars ?? 0,
     );
     return { root, plugin };
 }
@@ -62,24 +63,26 @@ describe('ContextPanel.render（context=null）', () => {
         expect(text).toContain('🔍 上下文：完整模式');
     });
 
-    it('token 预算 ≤50%：绿色提示出现且百分比取整', () => {
+    it('token 预算 ≤50%：默认弱化配色出现且百分比取整', () => {
         const { root } = renderPanel({ vars: { _contextTokens: '51200' } });
         const text = root.allText();
         expect(text).toContain('Token 预算: 51,200 / 128K (40%)');
+        // Slice Q：配色从内联 cssText 改为语义类修饰符
+        expect(root.findAll('nw-cp-token-hint')).toHaveLength(1);
+        expect(root.findAll('nw-cp-token-hint--warn')).toHaveLength(0);
+        expect(root.findAll('nw-cp-token-hint--danger')).toHaveLength(0);
     });
 
     it('token 预算 >70%：红色提示出现', () => {
         const { root } = renderPanel({ vars: { _contextTokens: '102400' } });
         expect(root.allText()).toContain('Token 预算: 102,400 / 128K (80%)');
-        // 配色走 el.style.cssText 直接赋值（FakeEl.style 是普通对象，字段落在 cssText 上）
-        const styles = collectStyles(root);
-        expect(styles.some(st => typeof st.cssText === 'string' && st.cssText.includes('#ff4444'))).toBe(true);
+        expect(root.findAll('nw-cp-token-hint--danger')).toHaveLength(1);
     });
 
     it('50%~70% 区间：黄色配色', () => {
         const { root } = renderPanel({ vars: { _contextTokens: '76800' } });
         expect(root.allText()).toContain('Token 预算: 76,800 / 128K (60%)');
-        expect(collectStyles(root).some(st => typeof st.cssText === 'string' && st.cssText.includes('#ffaa00'))).toBe(true);
+        expect(root.findAll('nw-cp-token-hint--warn')).toHaveLength(1);
     });
 });
 
@@ -272,11 +275,71 @@ describe('ContextPanel.render（时间线与压缩警告）', () => {
     });
 });
 
-/** 收集子树里每个元素的 style 对象（cssText 直接赋值场景） */
-function collectStyles(el: FakeEl): Array<{ cssText?: string }> {
-    // FakeEl.style 现在带 setProperty/getPropertyValue（贴近真实 CSSStyleDeclaration），
-    // 这里只关心 cssText，用索引签名断言避免多余属性冲突。
-    const out: Array<{ cssText?: string }> = [el.style as { cssText?: string }];
-    el.children.forEach(c => out.push(...collectStyles(c)));
-    return out;
+/** 压缩警告场景（truncationApplied + 四类可压缩数据） */
+function truncationCtx(): unknown {
+    return {
+        data: {
+            compressed: {
+                truncationApplied: true,
+                worldView: '压缩后的世界观',
+                settingLib: '压缩后的设定库',
+                foreshadows: '伏笔一行\n第二行',
+                timeline: '时间线一行',
+            },
+            world_view: { raw: '原始世界观'.repeat(10) },
+            setting_lib: { raw: '原始设定库'.repeat(10) },
+            foreshadows: { unrevealed: [{ name: 'x', importance: '中' }], revealed: [], abandoned: [] },
+            timeline: [{ time: 't', chapter: '第1章', event: 'e' }],
+        },
+    };
 }
+
+type Clickable = { onclick?: (e: unknown) => void };
+
+describe('ContextPanel.render（Slice Q 语义类）', () => {
+    it('失败模块条：错误态走 nw-cp-alert--error，不留内联样式', () => {
+        const { root } = renderPanel({ context: { data: { _failedModules: ['风格引擎'] } } });
+        const alerts = root.findAll('nw-cp-alert');
+        expect(alerts).toHaveLength(1);
+        expect(alerts[0].classList.contains('nw-cp-alert--error')).toBe(true);
+        expect(Object.keys(alerts[0].style)).toHaveLength(0);
+    });
+
+    it('上下文使用进度条：宽度走 --nw-cp-pct 自定义属性', () => {
+        // 204,800 字符 ≈ 51,200 token，占 128K 的 40%
+        const { root } = renderPanel({ context: { data: {} }, totalChars: 204800 });
+        const fills = root.findAll('nw-cp-token-fill');
+        expect(fills).toHaveLength(1);
+        expect(fills[0].style.getPropertyValue('--nw-cp-pct')).toBe('40%');
+        expect(fills[0].style.width).toBeUndefined();
+    });
+
+    it('压缩警告：收起态靠类名，点击标题展开并翻转箭头', () => {
+        const { root } = renderPanel({ context: truncationCtx() });
+        const trunc = root.findAll('nw-cp-trunc');
+        expect(trunc).toHaveLength(1);
+        const details = root.findAll('nw-cp-trunc-details');
+        expect(details).toHaveLength(1);
+        expect(details[0].classList.contains('nw-cp-trunc-details--open')).toBe(false);
+        const icon = root.findAll('nw-cp-trunc-icon');
+        expect(icon[0].textContent).toBe('▶');
+        const clickWarn = (): void => { trunc[0].listeners.get('click')?.forEach(fn => fn({})); };
+        clickWarn();
+        expect(details[0].classList.contains('nw-cp-trunc-details--open')).toBe(true);
+        expect(icon[0].textContent).toBe('▼');
+        clickWarn();
+        expect(details[0].classList.contains('nw-cp-trunc-details--open')).toBe(false);
+        expect(icon[0].textContent).toBe('▶');
+    });
+
+    it('折叠卡片：正文默认 nw-cp-is-collapsed，点标题展开', () => {
+        const { root } = renderPanel({ context: { data: {} } });
+        const bodies = root.findAll('nw-cp-card-body');
+        const headers = root.findAll('nw-context-bar__collapsible-header');
+        expect(bodies.length).toBeGreaterThan(0);
+        expect(headers).toHaveLength(bodies.length);
+        expect(bodies[0].classList.contains('nw-cp-is-collapsed')).toBe(true);
+        (headers[0] as unknown as Clickable).onclick?.({});
+        expect(bodies[0].classList.contains('nw-cp-is-collapsed')).toBe(false);
+    });
+});

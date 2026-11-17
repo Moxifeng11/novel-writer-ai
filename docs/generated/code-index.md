@@ -11,7 +11,7 @@
 | `shared/` | 255 | 50823 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3387 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 300 | 113208 | 1156 | 917 | 79% |
+| `ui/` | 300 | 113204 | 1156 | 917 | 79% |
 
 ## 文件清单
 
@@ -921,7 +921,7 @@
 | `ui/rebuild-chapters-modal.ts` | 353 | 1 | 1 |
 | `ui/refill-modal.ts` | 713 | 1 | 1 |
 | `ui/rename-project-modal.ts` | 105 | 1 | 1 |
-| `ui/rendering/context-panel.ts` | 961 | 1 | 1 |
+| `ui/rendering/context-panel.ts` | 957 | 1 | 1 |
 | `ui/rendering/safe-html.ts` | 36 | 2 | 2 |
 | `ui/review-chapter-modal.ts` | 67 | 1 | 1 |
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
