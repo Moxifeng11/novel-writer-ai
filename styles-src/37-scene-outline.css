@@ -1,0 +1,274 @@
+/* 场景细纲面板（Slice T，2026-11-17）
+   来源：ui/full-writer/scene-outline-controller.ts
+   作用域：面板根 .nw-scene-outline-container。早退空态（未选项目/章节）挂在根之外，
+   因此 .nw-so-empty 单列一条、不带作用域前缀。
+   注意：旧卡片的非选中分支写的是
+   `background: var(--background-secondary) hover: var(--background-modifier-hover);`
+   ——这是无效声明，浏览器整条丢弃，所以非选中场景卡原本既无底色也无 hover 效果。
+   这里按实际渲染结果复刻（不设 background、不加 hover），避免引入新的视觉差异。 */
+
+.nw-scene-outline-container.nw-so-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.nw-so-empty {
+  padding: 20px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.nw-scene-outline-container .nw-so-header,
+.nw-scene-outline-container .nw-so-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  flex-shrink: 0;
+}
+
+.nw-scene-outline-container .nw-so-title {
+  font-weight: 600;
+  font-size: 0.95em;
+}
+
+.nw-scene-outline-container .nw-so-btn-group {
+  display: flex;
+  gap: 4px;
+}
+
+.nw-scene-outline-container .nw-so-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.nw-scene-outline-container .nw-so-list {
+  width: 180px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--background-modifier-border);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.nw-scene-outline-container .nw-so-list-header {
+  padding: 8px 10px;
+  font-size: 0.8em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-scene-outline-container .nw-so-list-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.nw-scene-outline-container .nw-so-list-empty {
+  padding: 20px 10px;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 0.85em;
+}
+
+.nw-scene-outline-container .nw-so-item {
+  padding: 8px 10px;
+  margin: 2px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82em;
+}
+
+.nw-scene-outline-container .nw-so-item--active {
+  background: var(--text-accent);
+  color: white;
+}
+
+.nw-scene-outline-container .nw-so-item--dragging {
+  opacity: 0.5;
+}
+
+.nw-scene-outline-container .nw-so-item-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nw-scene-outline-container .nw-so-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--text-faint);
+}
+
+.nw-scene-outline-container .nw-so-dot--completed {
+  background: #22c55e;
+}
+
+.nw-scene-outline-container .nw-so-dot--in-progress {
+  background: #f59e0b;
+}
+
+.nw-scene-outline-container .nw-so-item-index {
+  font-weight: 600;
+}
+
+.nw-scene-outline-container .nw-so-item-flag {
+  font-size: 0.8em;
+}
+
+.nw-scene-outline-container .nw-so-item-name {
+  font-size: 0.78em;
+  margin-top: 3px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nw-scene-outline-container .nw-so-item--active .nw-so-item-name {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.nw-scene-outline-container .nw-so-item-arc {
+  font-size: 0.72em;
+  margin-top: 2px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nw-scene-outline-container .nw-so-item--active .nw-so-item-arc {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.nw-scene-outline-container .nw-so-editor {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.nw-scene-outline-container .nw-so-editor-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.nw-scene-outline-container .nw-so-toolbar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nw-scene-outline-container .nw-so-toolbar-name {
+  font-weight: 600;
+  font-size: 0.9em;
+}
+
+.nw-scene-outline-container .nw-so-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--background-modifier-border);
+  flex-shrink: 0;
+}
+
+.nw-scene-outline-container .nw-so-tab {
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 0.85em;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+}
+
+.nw-scene-outline-container .nw-so-tab--active {
+  border-bottom-color: var(--text-accent);
+  color: var(--text-accent);
+  font-weight: 600;
+}
+
+.nw-scene-outline-container .nw-so-tab-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.nw-scene-outline-container .nw-so-field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+/* 原类组合 nw-u-d-flex nw-u-gap-12px nw-u-m-10px-0 没有 ai-center，
+   两个下拉列是按 stretch 排列的；这里显式还原，避免与基础行混淆 */
+.nw-scene-outline-container .nw-so-field-row--gap12 {
+  align-items: normal;
+  gap: 12px;
+}
+
+.nw-scene-outline-container .nw-so-fs-85 {
+  font-size: 0.85em;
+}
+
+.nw-scene-outline-container .nw-so-flex-1 {
+  flex: 1;
+}
+
+.nw-scene-outline-container .nw-so-field-label {
+  font-size: 0.82em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.nw-scene-outline-container .nw-so-stats {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--background-secondary);
+  border-radius: 8px;
+}
+
+.nw-scene-outline-container .nw-so-stats-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 0.9em;
+}
+
+.nw-scene-outline-container .nw-so-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.nw-scene-outline-container .nw-so-stat-unit {
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+.nw-scene-outline-container .nw-so-field {
+  margin-bottom: 10px;
+}
+
+.nw-scene-outline-container .nw-so-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-top: 1px solid var(--background-modifier-border);
+  font-size: 0.78em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.nw-scene-outline-container .nw-so-save-hint {
+  color: var(--text-warning);
+}

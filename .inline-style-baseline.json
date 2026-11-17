@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-11-17T15:56:08.590Z",
+  "generatedAt": "2026-11-17T16:14:16.649Z",
   "note": "棘轮基线：每文件只允许下降；新增内联样式需先说明动态原因并显式更新",
-  "total": 563,
+  "total": 558,
   "static": 474,
-  "dynamic": 89,
+  "dynamic": 84,
   "files": {
     "ui/svg-charts.ts": 64,
     "ui/knowledge-monitor-modal.ts": 40,
@@ -28,7 +28,6 @@
     "ui/batch-create-modal.ts": 10,
     "ui/co-writing/asset-status.ts": 10,
     "ui/full-writer-view.ts": 7,
-    "ui/full-writer/scene-outline-controller.ts": 5,
     "ui/polish-editor.ts": 5,
     "ui/views/kb-stats-panel.ts": 4,
     "ui/character-recognition-modal.ts": 3,

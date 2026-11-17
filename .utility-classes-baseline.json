@@ -1,6 +1,6 @@
 {
-  "definitions": 144,
-  "usage": 702,
+  "definitions": 128,
+  "usage": 579,
   "updatedAt": "2026-11-17",
-  "note": "Slice S：book-detail-renderer 语义化后删 18 个零引用工具类（定义 162→144、使用 828→702）"
+  "note": "Slice T：scene-outline-controller 语义化后定义 144→128、使用 702→579（删 16 个零引用工具类）"
 }

@@ -1251,3 +1251,28 @@ PNG 差异只剩三簇——标题栏按钮簇（y=28–58）、页脚按钮簇�
 **文档**：新增 `docs/modules/book-detail.md`（8 节，SS-01..SS-05 全 done）；`docs/modules/INDEX.md` 插「书籍详情渲染」行；视觉标准 §5 加 `nw-kb-detail-*` 续行、§5.1 重算（144 / 702 / 759136）、清理记录补 Slice S 删 18、特异性段补「输入框特异性 + 别复用带动效的类」、存量大户表移除 126；`docs/CURRENT.md` §4 改切片 A–S、§6 口径改 144 / 702。
 
 **下一轮候选**（按 §5.1 存量大户）：`ui/full-writer/scene-outline-controller.ts`（123）、`ui/settings/knowledge-section.ts`（108）、`ui/polish-editor.ts`（104）。
+
+
+### 2026-11-17 第四十五轮：Slice T 场景细纲面板语义化（nw-so-*）
+
+**范围**：`ui/full-writer/scene-outline-controller.ts`（1209 行，CRLF）——123 处 `nw-u-*` + 5 处内联 `style` + 1 处 `getStatusColor()` 内联串。挂载点 `ui/full-writer/step-render-controller.ts:603-605`。
+
+**改动**
+- 新建 `styles-src/37-scene-outline.css`（275 行 / 6034 字节，样式源 42 → 43），前缀 `nw-so-*`（42 个类，TS 与 CSS 两个集合完全相等，零死类/零缺类）。作用域统一 `.nw-scene-outline-container`；唯一例外是早退空态 `nw-so-empty`（挂在根之外，单列一条）。
+- 5 处内联三元改语义类：场景卡 → `nw-so-item` + `--active` / `--dragging`；状态圆点 → `nw-so-dot--completed` / `--in-progress`（`getStatusColor` → `getStatusClass`）；卡名/情绪弧线 → `nw-so-item-name` / `nw-so-item-arc`（选中态由 `.nw-so-item--active .nw-so-item-name` 提供）；页签按钮 → `nw-so-tab` + `--active`。
+- 头部 `nw-so-header` 与编辑器工具栏 `nw-so-toolbar` 旧声明逐条相同，合并成一个选择器组。
+- 删掉 16 个只有本文件在用的零引用工具类：`nw-u-brt-1px-solid-background-m, nw-u-fd-column, nw-u-fs-0-78em, nw-u-fs-0-82em, nw-u-fs-0-85em, nw-u-fs-0-8em, nw-u-fs-0-95em, nw-u-fs-0-9em, nw-u-fsh-0, nw-u-minh-0, nw-u-minw-0, nw-u-p-20px-10px, nw-u-p-40px-20px, nw-u-p-8px-10px, nw-u-p-8px-12px, nw-u-w-180px`（定义 144 → 128、使用 702 → 579）。
+
+**两处「照字面复刻会出错」的坑**
+1. **非法内联声明**：旧场景卡非选中分支写 `background: var(--background-secondary) hover: var(--background-modifier-hover);`，`hover:` 不是合法属性名 → 整条声明在解析阶段被丢弃，所以非选中卡从来没有底色、也没有 hover。按实际渲染复刻（不设 background、不加 `:hover`），否则每张卡都会变灰。
+2. **行对齐差异**：基础字段行来自 `nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-m-10px-0`，冲突页那行是 `nw-u-d-flex nw-u-gap-12px nw-u-m-10px-0`（无 `ai-center`）。基类给了 `align-items:center` 后，`--gap12` 修饰类必须显式写 `align-items: normal` 还原 stretch——首轮 diff 的 probes 报 `align-items normal → center`（像素 0 差但语义不等价），补上后归零。
+
+**验收**：`D:\nw-dev-vault\_visual-t\{before,after}` 6 场景（宿主 `#nw-t-host` 720×640）：`01-no-project`（30 元素）、`02-empty-scenes`（17）、`03-list-basic`（116）、`04-conflict`（78）、`05-foreshadow-dirty`（75）、`06-basic-key`（120）。**PNG 6/6 全 0 px**；probes struct/style/rect 全 0（唯一差异是 cls 改名，预期内）。before 取自 worktree `D:\nw-tmp\before-t`（43b17789 + node_modules junction + build：main.js 5,637,189 / 788,324 字节）。
+
+**门禁**：`tsc --noEmit` 0 错；`build` 43 个样式源 / styles.css 30500 行；`check:inline-styles` 558（-5）；`check:utility` 定义 128 / 引用 579 / 零引用 0；`check:css` bytes 764628 / 唯一类 4168 / hex 172 / rgbHsl 215 / !important 24（hex 与 rgbHsl 各 +2，因为 #22c55e 与 #f59e0b 从内联迁进 CSS）；`check:bundle` main.js 5635056 / styles.css 764628（759136 → 764628，净 +5492）；`npm run lint` 0 error（1102 warning 存量）。
+
+**文档**：新增 `docs/modules/scene-outline.md`（8 节，SO-01..SO-04 全 done）；`docs/modules/INDEX.md` 插「场景细纲面板」行（在「规划 / 大纲」之前）；视觉标准 §5 加 `nw-so-*` 行、§5.1 重算（128 / 579 / 764628）、清理记录补 Slice T 删 16、特异性段补「非法声明 + align-items 差异」、存量大户表移除 123 并重排为 3 行 5 项；`docs/CURRENT.md` §4 改切片 A–T、§6 口径改 128 / 579。
+
+**方案 B 收尾**：R/S/T 三连到此结束。剩余 52 个文件里的长尾（26 个文件各 ≤4 处）按「碰哪改哪」处理，`check:utility` 的 C 项（定义数/使用量只许下降）就是新增 `nw-u-*` 的门禁，不再单独加 lint 规则。
+
+**下一轮候选**（按 §5.1 存量大户）：`ui/settings/knowledge-section.ts`（108）、`ui/polish-editor.ts`（104）、`ui/refill-modal.ts`（97）、`ui/views/kb-stats-panel.ts`（81）、`ui/settings/deconstruction-section.ts`（47）。若继续走视觉重构，建议先做 `knowledge-section`（设置页，与 Slice R 同宿主、脚手架可复用）。
