@@ -388,6 +388,47 @@ after 构建里八个页签的 `nw-u-` 工具类引用均为 **0**（before：�
 带元素限定符，单类权重(0,1,0)永远输。弹窗内构件要么挂 `.nw-scope`（(0,0,2,0)），要么用双类，
 否则会被静默覆盖，且截图差异看起来像「设计改动」。
 
+### 3.12 Slice I：读书拆解详情弹窗（`nw-kd-*`）
+
+**范围**：`ui/knowledge-detail-modal.ts`（1707 行，7 个页签：概览 / 风格 / 节奏 / 技巧 / 结构 / 人设 / 伏笔）。
+改造前含 `nw-u-*` 工具类 294 处、120 组 `cls` 组合、17 处内联 `style:`。
+
+**改动**
+- 120 组 `cls` 组合（234 处 `cls:`）→ 122 个 `nw-kd-*` 语义类；`nw-u-*` 与共享原子类
+  （`nw-card-lg` / `nw-stat-*` / `nw-section-heading` / `nw-text-*` / `nw-btn-outline` /
+  `nw-bar-track-*` / `nw-scroll-card-*` / `nw-flex-*` …）残留均为 0。
+- 新增 `styles-src/29-knowledge-detail-modal.css`（约 200 条规则），**全部加 `.nw-scope ` 前缀**：
+  `onOpen` 早已给 `modalEl` 挂 `nw-scope`（`ui/knowledge-detail-modal.ts:202`），叠加后特异性
+  (0,2,0)，压得过 Obsidian 的 `.modal button`(0,1,1) 与 `input[type=text]`(0,1,1)——H 的教训直接复用。
+- 17 处内联样式清零：页签/按钮/徽标/状态图标改 `--active`、`--on`、`--top`、`--resolved` 修饰类；
+  进度条宽度改用 CSS 变量 `--nw-kd-pct`（`el.style.setProperty` 不算内联样式，门禁只匹配
+  `style:` / `style="` / `setAttribute`）；颜色全部走令牌（`--nw-danger` / `--nw-info` /
+  `--nw-success` / `--nw-warning`），三线「感情线」的粉色仓库无令牌，用 `var(--color-pink)`；
+  置信度徽标底色 `color-mix(in srgb, currentColor 13%, transparent)` 替代原来的 `${color}22` 拼接。
+- 三线行旧代码写的是 `style: 'margin-bottom:12px;&:last-child{margin-bottom:0}'`——内联里的
+  `&:last-child` 本来就不生效。新样式**故意不加 `:last-child` 归零**，保持像素一致（记录在注释里）。
+
+**像素与计算样式（`D:\nw-dev-vault\_visual-i\{before,after,diff}`，1440×1000、DSF=1，弹窗 clip 900×860 级）**
+
+| 页签 | 像素差异 | 计算样式 |
+| --- | --- | --- |
+| 概览 / 风格 / 节奏 / 技巧 / 结构 / 人设 / 伏笔 | **全部 0.000%（diffPx = 0）** | 7 页签 44 个属性、85/66/30/58/255/27/47 个节点**全部 0 差异** |
+
+这是 A–I 九个 slice 里唯一一次**纯等价重构**：没有补真，也没有修死类（该文件 161 个类 token 在
+`styles.css` 里全部有定义），所以 before/after 应当逐像素相同，实测也确实相同。
+
+**门禁**：`typecheck` 0 错；`check:inline-styles` 通过；`check:utility` 报出 30 条零引用工具类
+（本 slice 删掉引用后暴露），已从 `styles-src/10-entity-and-utilities.css` 删除，定义 360 → 330、
+使用 3118 → 2824；`check:bundle` styles.css 659626 → 675920（+16294，全部为 `nw-kd-*` 段，
+main.js 因类名缩短下降 6126）；`check:css` 唯一类 3575 → 3692（+117 全为 `nw-kd-*`），
+硬编码 hex 165 / rgbHsl 187 保持在基线内。三份基线均已 `--update-baseline --note` 说明。
+
+**教训**
+- 采集链路：设置面板在 Obsidian 1.14.5 是**独立 BrowserWindow**（CDP 里 `about:blank` 那个 page），
+  插件导航项文字是 `Novel Writer AI`，卡片 `.nw-kb-book-card` 点开才是详情弹窗；
+  主窗口里同名卡片属于知识库管理视图，点了不弹窗。截图要 clip 到 `.modal` 里 textContent 含「概览」的那个。
+- 该弹窗模块是**懒加载**的，源码钩子挂在它自己文件里永远不会执行；`getAllBooks()` 还是 async。
+
 ## 4. 后续 slice 清单
 
 | # | Slice | 文件 | 目标 |
@@ -400,5 +441,6 @@ after 构建里八个页签的 `nw-u-` 工具类引用均为 **0**（before：�
 | ~~F~~ | ~~题材/配置页~~ | ~~`ui/views/kb-config-panel.ts`，已完成 2026-11-17~~ | ~~工具类 86 → 0~~ |
 | ~~G~~ | ~~弹窗（导入 / 编辑书籍 / 题材编辑 / 批量操作）~~ | ~~`ui/views/knowledge-base-modals.ts`，已完成 2026-11-17~~ | ~~工具类 249 处 → 0~~ |
 | ~~H~~ | ~~批量导入弹窗（独立命名空间）~~ | ~~`ui/batch-import-modal.ts`，已完成 2026-11-17~~ | ~~工具类 365 处 → 0~~ |
+| ~~I~~ | ~~读书拆解详情弹窗（`nw-kd-*`）~~ | ~~`ui/knowledge-detail-modal.ts`，已完成 2026-11-17~~ | ~~工具类 294 处 → 0，像素 0 差异~~ |
 
 每个 slice 都必须走规范 §4 的六步（含 before/after 快照比对）。

@@ -1,6 +1,6 @@
 {
-  "definitions": 360,
-  "usage": 3118,
+  "definitions": 330,
+  "usage": 2824,
   "updatedAt": "2026-11-17",
-  "note": "Slice H 删除 13 条零引用工具类定义（batch-import-modal 语义化后不再使用），定义 373→360、使用 3483→3118"
+  "note": ""
 }

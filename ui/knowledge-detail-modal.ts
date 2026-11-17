@@ -273,7 +273,7 @@ export class KnowledgeDetailModal extends Modal {
         contentEl.addClass('nw-modal-content-88');
 
         if (!this.bookInfo) {
-            contentEl.createDiv({ text: '书籍不存在或已被删除', cls: 'nw-u-p-40px nw-u-ta-center nw-u-c-text-muted' });
+            contentEl.createDiv({ text: '书籍不存在或已被删除', cls: 'nw-kd-missing' });
             return;
         }
 
@@ -363,63 +363,38 @@ export class KnowledgeDetailModal extends Modal {
 
 
     private renderHeader(container: HTMLElement): void {
-        const header = container.createDiv({ cls: 'nw-u-marginbottom-16px nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-gap-12px' });
+        const header = container.createDiv({ cls: 'nw-kd-header' });
         
-        const titleWrap = header.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-12px nw-u-flex-1 nw-u-minw-0' });
-        titleWrap.createEl('h3', { text: `📚 ${this.bookInfo!.name}`, cls: 'nw-u-m-0 nw-u-fsh-0' });
+        const titleWrap = header.createDiv({ cls: 'nw-kd-header-main' });
+        titleWrap.createEl('h3', { text: `📚 ${this.bookInfo!.name}`, cls: 'nw-kd-title' });
 
         const isRef = this.isReferenceBook();
         const refBtn = titleWrap.createEl('button', {
             text: isRef ? '⭐ 取消参考' : '⭐ 设为参考书籍',
-            attr: {
-                type: 'button',
-                style: `
-                    padding:6px 14px;
-                    cursor:pointer;
-                    border:1px solid ${isRef ? 'var(--interactive-accent)' : 'var(--background-modifier-border)'};
-                    border-radius:6px;
-                    font-size:12px;
-                    background:${isRef ? 'var(--interactive-accent)' : 'transparent'};
-                    color:${isRef ? 'var(--text-on-accent)' : 'var(--text-muted)'};
-                    flex-shrink:0;
-                `
-            }
+            attr: { type: 'button' },
+            cls: `nw-kd-ref-btn${isRef ? ' nw-kd-ref-btn--on' : ''}`,
         });
         refBtn.addEventListener('click', () => this.toggleReferenceBook());
 
         const closeBtn = header.createEl('button', {
             text: '✕',
-            attr: {
-                type: 'button',
-                style: 'padding:4px 10px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;background:transparent;font-size:14px;flex-shrink:0;'
-            }
+            attr: { type: 'button' },
+            cls: 'nw-kd-close-btn',
         });
         closeBtn.addEventListener('click', () => this.close());
     }
 
     private renderTabs(container: HTMLElement): void {
         const tabsContainer = container.createDiv({
-            cls: 'nw-u-d-flex nw-u-gap-2px nw-u-bb-1px-solid-background-m nw-u-marginbottom-16px nw-u-ovx-auto'
+            cls: 'nw-kd-tabs'
         });
 
         const tabKeys: TabKey[] = ['overview', 'style', 'rhythm', 'technique', 'structure', 'character', 'foreshadow'];
         for (const key of tabKeys) {
             const tab = tabsContainer.createEl('button', {
                 text: TAB_LABELS[key],
-                attr: {
-                    type: 'button',
-                    style: `
-                        padding:8px 16px;
-                        cursor:pointer;
-                        border:none;
-                        background:transparent;
-                        font-size:13px;
-                        white-space:nowrap;
-                        border-bottom:2px solid ${this.activeTab === key ? 'var(--interactive-accent)' : 'transparent'};
-                        color: ${this.activeTab === key ? 'var(--interactive-accent)' : 'var(--text-muted)'};
-                        font-weight: ${this.activeTab === key ? '600' : '400'};
-                    `
-                }
+                attr: { type: 'button' },
+                cls: `nw-kd-tab${this.activeTab === key ? ' nw-kd-tab--active' : ''}`,
             });
             tab.addEventListener('click', () => {
                 this.activeTab = key;
@@ -459,11 +434,11 @@ export class KnowledgeDetailModal extends Modal {
         const book = this.bookInfo!;
 
         const infoCard = container.createDiv({
-            cls: 'nw-u-p-16px nw-u-bg-background-secondary nw-u-brd-8px nw-u-marginbottom-16px'
+            cls: 'nw-kd-info-card'
         });
-        infoCard.createEl('div', { text: '基本信息', cls: 'nw-section-heading' });
+        infoCard.createEl('div', { text: '基本信息', cls: 'nw-kd-section-title' });
 
-        const grid = infoCard.createDiv({ cls: 'nw-u-d-grid nw-u-gtc-1fr-1fr nw-u-gap-10px-20px nw-u-fs-13px' });
+        const grid = infoCard.createDiv({ cls: 'nw-kd-info-grid' });
         this.renderInfoRow(grid, '书名', book.name);
         this.renderInfoRow(grid, '作者', book.author || '未知');
         this.renderInfoRow(grid, '题材标签', book.themeTags.length ? book.themeTags.join('、') : '暂无');
@@ -472,8 +447,8 @@ export class KnowledgeDetailModal extends Modal {
         this.renderInfoRow(grid, '拆解状态', this.getStatusText(book.breakdownStatus));
         this.renderInfoRow(grid, '向量状态', this.getVectorStatusText(book.vectorStatus, book.vectorError));
 
-        const chartSection = container.createDiv({ cls: 'nw-mb-lg' });
-        chartSection.createEl('div', { text: '拆解完成度', cls: 'nw-section-heading' });
+        const chartSection = container.createDiv({ cls: 'nw-kd-section' });
+        chartSection.createEl('div', { text: '拆解完成度', cls: 'nw-kd-section-title' });
 
         const donutData = DIMENSION_LABELS.map((label, i) => ({
             label,
@@ -482,19 +457,19 @@ export class KnowledgeDetailModal extends Modal {
         }));
 
         const donutCard = chartSection.createDiv({
-            cls: 'nw-card-lg'
+            cls: 'nw-kd-card'
         });
         appendSanitizedHtml(donutCard, donutChart(donutData, { size: 300 }));
 
-        const actionsSection = container.createDiv({ cls: 'nw-mb-lg' });
-        actionsSection.createEl('div', { text: '快速操作', cls: 'nw-section-heading' });
+        const actionsSection = container.createDiv({ cls: 'nw-kd-section' });
+        actionsSection.createEl('div', { text: '快速操作', cls: 'nw-kd-section-title' });
 
-        const btnRow = actionsSection.createDiv({ cls: 'nw-flex-gap10-wrap' });
+        const btnRow = actionsSection.createDiv({ cls: 'nw-kd-actions' });
 
         const reanalyzeBtn = btnRow.createEl('button', {
             text: '🔄 重新拆解',
             attr: { type: 'button' },
-            cls: 'nw-btn-outline',
+            cls: 'nw-kd-btn',
         });
         reanalyzeBtn.addEventListener('click', () => {
             if (!this.ensureScheduler()) return;
@@ -510,7 +485,7 @@ export class KnowledgeDetailModal extends Modal {
         const convertFingerprintBtn = btnRow.createEl('button', {
             text: '🎨 转为写作指纹',
             attr: { type: 'button' },
-            cls: 'nw-btn-outline',
+            cls: 'nw-kd-btn',
         });
         convertFingerprintBtn.addEventListener('click', () => this.onConvertToFingerprint(convertFingerprintBtn));
 
@@ -519,7 +494,7 @@ export class KnowledgeDetailModal extends Modal {
             const retryVectorBtn = btnRow.createEl('button', {
                 text: '🧠 重试向量化',
                 attr: { type: 'button', title: book.vectorError || '按当前 embedding 模型重新生成向量' },
-                cls: 'nw-btn-outline',
+                cls: 'nw-kd-btn',
             });
             retryVectorBtn.addEventListener('click', async () => {
                 const scheduler = this.ensureScheduler();
@@ -543,7 +518,7 @@ export class KnowledgeDetailModal extends Modal {
         const openFolderBtn = btnRow.createEl('button', {
             text: '📁 打开文件夹',
             attr: { type: 'button' },
-            cls: 'nw-btn-outline',
+            cls: 'nw-kd-btn',
         });
         openFolderBtn.addEventListener('click', () => {
             const dir = kbBookDir(book.name, this.baseDir);
@@ -553,10 +528,8 @@ export class KnowledgeDetailModal extends Modal {
 
         const deleteBtn = btnRow.createEl('button', {
             text: '🗑 删除',
-            attr: {
-                type: 'button',
-                style: 'padding:8px 16px;cursor:pointer;border:1px solid var(--background-modifier-error);border-radius:6px;font-size:13px;color:var(--text-error);background:transparent;'
-            }
+            attr: { type: 'button' },
+            cls: 'nw-kd-btn nw-kd-btn--danger',
         });
         deleteBtn.addEventListener('click', async () => {
             const confirmed = await OperationConfirmModal.confirm(this.app, {
@@ -580,7 +553,7 @@ export class KnowledgeDetailModal extends Modal {
         });
 
         const descSection = container.createDiv({
-            cls: 'nw-u-p-12px nw-u-bg-background-secondary-a nw-u-brd-6px nw-u-fs-12px nw-u-c-text-muted nw-u-lh-1-6'
+            cls: 'nw-kd-synopsis'
         });
         descSection.textContent = book.synopsis || '暂无书籍简介。点击各 Tab 查看详细拆解数据。';
     }
@@ -601,11 +574,11 @@ export class KnowledgeDetailModal extends Modal {
             return;
         }
 
-        const radarSection = container.createDiv({ cls: 'nw-mb-lg' });
-        radarSection.createEl('div', { text: '风格维度雷达图', cls: 'nw-section-heading' });
+        const radarSection = container.createDiv({ cls: 'nw-kd-section' });
+        radarSection.createEl('div', { text: '风格维度雷达图', cls: 'nw-kd-section-title' });
 
         const radarCard = radarSection.createDiv({
-            cls: 'nw-p-16-bg2-br8-center'
+            cls: 'nw-kd-card nw-kd-card--center'
         });
 
         const radarData = STYLE_DIMENSIONS.map(label => ({
@@ -614,10 +587,10 @@ export class KnowledgeDetailModal extends Modal {
         }));
         appendSanitizedHtml(radarCard, radarChart(radarData, { size: 320 }));
 
-        const statsSection = container.createDiv({ cls: 'nw-mb-lg' });
-        statsSection.createEl('div', { text: '统计数据', cls: 'nw-section-heading' });
+        const statsSection = container.createDiv({ cls: 'nw-kd-section' });
+        statsSection.createEl('div', { text: '统计数据', cls: 'nw-kd-section-title' });
 
-        const statsGrid = statsSection.createDiv({ cls: 'nw-grid-4' });
+        const statsGrid = statsSection.createDiv({ cls: 'nw-kd-grid-4' });
         const statItems = [
             { label: '平均句长', value: data.avgSentenceLength ? `${data.avgSentenceLength} 字` : '待分析' },
             { label: '平均段长', value: data.avgParagraphLength ? `${data.avgParagraphLength} 字` : '待分析' },
@@ -626,17 +599,17 @@ export class KnowledgeDetailModal extends Modal {
         ];
         for (const stat of statItems) {
             const card = statsGrid.createDiv({
-                cls: 'nw-p-12-bg2-br6-center'
+                cls: 'nw-kd-mini-card'
             });
-            card.createEl('div', { text: stat.value, cls: 'nw-stat-md' });
-            card.createEl('div', { text: stat.label, cls: 'nw-text-sm-muted' });
+            card.createEl('div', { text: stat.value, cls: 'nw-kd-stat-value' });
+            card.createEl('div', { text: stat.label, cls: 'nw-kd-muted-sm' });
         }
 
-        const descSection = container.createDiv({ cls: 'nw-mb-lg' });
-        descSection.createEl('div', { text: '风格特征描述', cls: 'nw-section-heading' });
+        const descSection = container.createDiv({ cls: 'nw-kd-section' });
+        descSection.createEl('div', { text: '风格特征描述', cls: 'nw-kd-section-title' });
 
         const descCard = descSection.createDiv({
-            cls: 'nw-card-lg-text'
+            cls: 'nw-kd-card nw-kd-card--text'
         });
 
         if (data.description) {
@@ -645,12 +618,12 @@ export class KnowledgeDetailModal extends Modal {
             const featureTexts = Object.entries(data.features || {});
             if (featureTexts.length > 0) {
                 for (const [key, value] of featureTexts) {
-                    const item = descCard.createDiv({ cls: 'nw-mb-sm' });
-                    item.createEl('span', { text: `${key}：`, cls: 'nw-font-medium' });
-                    item.createEl('span', { text: value || '暂无数据', cls: 'nw-color-muted' });
+                    const item = descCard.createDiv({ cls: 'nw-kd-feature-row' });
+                    item.createEl('span', { text: `${key}：`, cls: 'nw-kd-strong' });
+                    item.createEl('span', { text: value || '暂无数据', cls: 'nw-kd-muted' });
                 }
             } else {
-                descCard.createDiv({ text: '暂无详细风格特征描述', cls: 'nw-color-muted' });
+                descCard.createDiv({ text: '暂无详细风格特征描述', cls: 'nw-kd-muted' });
             }
         }
     }
@@ -672,11 +645,11 @@ export class KnowledgeDetailModal extends Modal {
             return;
         }
 
-        const curveSection = container.createDiv({ cls: 'nw-mb-lg' });
-        curveSection.createEl('div', { text: '情绪强度曲线', cls: 'nw-section-heading' });
+        const curveSection = container.createDiv({ cls: 'nw-kd-section' });
+        curveSection.createEl('div', { text: '情绪强度曲线', cls: 'nw-kd-section-title' });
 
         const curveCard = curveSection.createDiv({
-            cls: 'nw-card-lg nw-scroll-x'
+            cls: 'nw-kd-card nw-kd-card--scroll'
         });
 
         const curveData = data.emotionCurve;
@@ -688,55 +661,55 @@ export class KnowledgeDetailModal extends Modal {
             ];
             appendSanitizedHtml(curveCard, lineChart(series, { width: 600, height: 280 }));
         } else {
-            curveCard.createDiv({ text: '暂无情绪曲线数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
+            curveCard.createDiv({ text: '暂无情绪曲线数据', cls: 'nw-kd-empty' });
         }
 
-        const scatterSection = container.createDiv({ cls: 'nw-mb-lg' });
-        scatterSection.createEl('div', { text: '爽点分布', cls: 'nw-section-heading' });
+        const scatterSection = container.createDiv({ cls: 'nw-kd-section' });
+        scatterSection.createEl('div', { text: '爽点分布', cls: 'nw-kd-section-title' });
 
         const scatterCard = scatterSection.createDiv({
-            cls: 'nw-card-lg nw-scroll-x'
+            cls: 'nw-kd-card nw-kd-card--scroll'
         });
 
         const scatterPoints = data.coolPoints;
         if (scatterPoints && scatterPoints.length > 0) {
             appendSanitizedHtml(scatterCard, scatterChart(scatterPoints, { width: 600, height: 250, xAxisLabel: '章节进度', yAxisLabel: '爽感强度' }));
         } else {
-            scatterCard.createDiv({ text: '暂无爽点数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
+            scatterCard.createDiv({ text: '暂无爽点数据', cls: 'nw-kd-empty' });
         }
 
-        const structureSection = container.createDiv({ cls: 'nw-mb-lg' });
-        structureSection.createEl('div', { text: '结构理论匹配度', cls: 'nw-section-heading' });
+        const structureSection = container.createDiv({ cls: 'nw-kd-section' });
+        structureSection.createEl('div', { text: '结构理论匹配度', cls: 'nw-kd-section-title' });
 
         const structureCard = structureSection.createDiv({
-            cls: 'nw-card-lg nw-scroll-x'
+            cls: 'nw-kd-card nw-kd-card--scroll'
         });
 
         const matchData = data.structureMatches;
         if (matchData && matchData.length > 0) {
             appendSanitizedHtml(structureCard, barChart(matchData, { width: 500, height: 220, horizontal: true }));
         } else {
-            structureCard.createDiv({ text: '暂无结构匹配数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
+            structureCard.createDiv({ text: '暂无结构匹配数据', cls: 'nw-kd-empty' });
         }
 
-        const keyPointsSection = container.createDiv({ cls: 'nw-mb-lg' });
-        keyPointsSection.createEl('div', { text: '关键情绪点', cls: 'nw-section-heading' });
+        const keyPointsSection = container.createDiv({ cls: 'nw-kd-section' });
+        keyPointsSection.createEl('div', { text: '关键情绪点', cls: 'nw-kd-section-title' });
 
         const keyPointsCard = keyPointsSection.createDiv({
-            cls: 'nw-p-12-bg2-br8'
+            cls: 'nw-kd-panel'
         });
 
         const keyPoints = data.keyEmotionPoints;
         if (keyPoints && keyPoints.length > 0) {
             for (const point of keyPoints) {
                 const item = keyPointsCard.createDiv({
-                    cls: 'nw-u-d-flex nw-u-gap-12px nw-u-p-8px-0 nw-u-bb-1px-solid-background-m'
+                    cls: 'nw-kd-kp-item'
                 });
-                item.createEl('span', { text: point.position, cls: 'nw-text-accent-13' });
-                item.createEl('span', { text: point.description, cls: 'nw-text-13-normal-flex' });
+                item.createEl('span', { text: point.position, cls: 'nw-kd-kp-pos' });
+                item.createEl('span', { text: point.description, cls: 'nw-kd-desc-flex' });
             }
         } else {
-            keyPointsCard.createDiv({ text: '暂无关键情绪点数据', cls: 'nw-u-p-10px nw-u-ta-center nw-u-c-text-muted' });
+            keyPointsCard.createDiv({ text: '暂无关键情绪点数据', cls: 'nw-kd-empty nw-kd-empty--tight' });
         }
     }
 
@@ -751,11 +724,11 @@ export class KnowledgeDetailModal extends Modal {
             return;
         }
 
-        const categorySection = container.createDiv({ cls: 'nw-mb-lg' });
-        categorySection.createEl('div', { text: '技巧分类分布', cls: 'nw-section-heading' });
+        const categorySection = container.createDiv({ cls: 'nw-kd-section' });
+        categorySection.createEl('div', { text: '技巧分类分布', cls: 'nw-kd-section-title' });
 
         const categoryCard = categorySection.createDiv({
-            cls: 'nw-card-lg nw-scroll-x'
+            cls: 'nw-kd-card nw-kd-card--scroll'
         });
 
         const categories = data.categories;
@@ -763,47 +736,35 @@ export class KnowledgeDetailModal extends Modal {
             const barData = Object.entries(categories).map(([label, value]) => ({ label, value }));
             appendSanitizedHtml(categoryCard, barChart(barData, { width: 500, height: 220 }));
         } else {
-            categoryCard.createDiv({ text: '暂无技巧分类数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
+            categoryCard.createDiv({ text: '暂无技巧分类数据', cls: 'nw-kd-empty' });
         }
 
-        const top10Section = container.createDiv({ cls: 'nw-mb-lg' });
-        top10Section.createEl('div', { text: 'Top 10 技巧排行', cls: 'nw-section-heading' });
+        const top10Section = container.createDiv({ cls: 'nw-kd-section' });
+        top10Section.createEl('div', { text: 'Top 10 技巧排行', cls: 'nw-kd-section-title' });
 
         const top10Card = top10Section.createDiv({
-            cls: 'nw-p-12-16-bg2-br8'
+            cls: 'nw-kd-panel nw-kd-panel--wide'
         });
 
         const top10 = data.top10;
         if (top10 && top10.length > 0) {
             for (let i = 0; i < top10.length; i++) {
                 const item = top10Card.createDiv({
-                    cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-12px nw-u-p-6px-0 nw-u-bb-1px-solid-background-m'
+                    cls: 'nw-kd-rank-item'
                 });
                 const rank = item.createEl('span', {
                     text: `${i + 1}`,
-                    attr: {
-                        style: `
-                            width:24px;
-                            height:24px;
-                            border-radius:50%;
-                            display:flex;
-                            align-items:center;
-                            justify-content:center;
-                            font-size:12px;
-                            font-weight:600;
-                            ${i < 3 ? 'background:var(--interactive-accent);color:var(--text-on-accent);' : 'background:var(--background-primary);color:var(--text-muted);'}
-                        `
-                    }
+                    cls: `nw-kd-rank-badge${i < 3 ? ' nw-kd-rank-badge--top' : ''}`,
                 });
-                item.createEl('span', { text: top10[i].name, cls: 'nw-text-13-flex' });
-                item.createEl('span', { text: `${top10[i].count} 次`, cls: 'nw-text-12-muted' });
+                item.createEl('span', { text: top10[i].name, cls: 'nw-kd-name-flex' });
+                item.createEl('span', { text: `${top10[i].count} 次`, cls: 'nw-kd-count' });
             }
         } else {
-            top10Card.createDiv({ text: '暂无技巧排行数据', cls: 'nw-u-p-10px nw-u-ta-center nw-u-c-text-muted' });
+            top10Card.createDiv({ text: '暂无技巧排行数据', cls: 'nw-kd-empty nw-kd-empty--tight' });
         }
 
-        const listSection = container.createDiv({ cls: 'nw-mb-lg' });
-        listSection.createEl('div', { text: '技巧详情', cls: 'nw-section-heading' });
+        const listSection = container.createDiv({ cls: 'nw-kd-section' });
+        listSection.createEl('div', { text: '技巧详情', cls: 'nw-kd-section-title' });
 
         const techniques = data.techniques;
         if (techniques && techniques.length > 0) {
@@ -816,30 +777,30 @@ export class KnowledgeDetailModal extends Modal {
 
         for (const [category, items] of Object.entries(categoryGroups)) {
             const group = listSection.createDiv({
-                cls: 'nw-u-marginbottom-12px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-ov-hidden'
+                cls: 'nw-kd-group'
             });
 
             const header = group.createDiv({
-                cls: 'nw-u-p-10px-14px nw-u-bg-background-secondary nw-u-fwt-500 nw-u-fs-13px'
+                cls: 'nw-kd-group-head'
             });
             header.textContent = category;
 
-            const list = group.createDiv({ cls: 'nw-py-4' });
+            const list = group.createDiv({ cls: 'nw-kd-list' });
             for (const tech of items) {
                 const key = `tech_${tech.name}`;
                 const isExpanded = this.expandedItems[key] ?? false;
 
                 const item = list.createDiv({
-                    cls: 'nw-item-border-b'
+                    cls: 'nw-kd-row'
                 });
 
                 const itemHeader = item.createDiv({
-                    cls: 'nw-u-p-8px-14px nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-cur-pointer'
+                    cls: 'nw-kd-tech-head'
                 });
-                itemHeader.createEl('span', { text: tech.name, cls: 'nw-u-fs-13px' });
+                itemHeader.createEl('span', { text: tech.name, cls: 'nw-kd-tech-name' });
                 itemHeader.createEl('span', {
                     text: isExpanded ? '▼' : '▶',
-                    cls: 'nw-text-xs-muted'
+                    cls: 'nw-kd-muted-xs'
                 });
 
                 itemHeader.addEventListener('click', () => {
@@ -849,20 +810,20 @@ export class KnowledgeDetailModal extends Modal {
 
                 if (isExpanded) {
                     const body = item.createDiv({
-                        cls: 'nw-u-p-0-14px-12px nw-u-fs-12px nw-u-lh-1-6 nw-u-c-text-muted'
+                        cls: 'nw-kd-tech-body'
                     });
-                    body.createEl('div', { text: '示例片段：', cls: 'nw-u-fwt-500 nw-u-marginbottom-6px nw-u-c-text-normal' });
+                    body.createEl('div', { text: '示例片段：', cls: 'nw-kd-body-title' });
                     for (const example of tech.examples) {
                         body.createDiv({
                             text: `• ${example}`,
-                            cls: 'nw-u-p-4px-0 nw-u-paddingleft-8px'
+                            cls: 'nw-kd-example'
                         });
                     }
                 }
             }
         }
         } else {
-            listSection.createDiv({ text: '暂无技巧详情数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
+            listSection.createDiv({ text: '暂无技巧详情数据', cls: 'nw-kd-empty' });
         }
     }
 
@@ -875,58 +836,55 @@ export class KnowledgeDetailModal extends Modal {
             return;
         }
 
-        const timelineSection = container.createDiv({ cls: 'nw-mb-lg' });
-        timelineSection.createEl('div', { text: '起承转合时间线', cls: 'nw-section-heading' });
+        const timelineSection = container.createDiv({ cls: 'nw-kd-section' });
+        timelineSection.createEl('div', { text: '起承转合时间线', cls: 'nw-kd-section-title' });
 
         const timelineCard = timelineSection.createDiv({
-            cls: 'nw-card-lg nw-scroll-x'
+            cls: 'nw-kd-card nw-kd-card--scroll'
         });
 
         const timelineEvents = data.timeline;
         if (timelineEvents && timelineEvents.length > 0) {
             appendSanitizedHtml(timelineCard, timelineChart(timelineEvents, { width: 650, height: 140 }));
         } else {
-            timelineCard.createDiv({ text: '暂无起承转合数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
+            timelineCard.createDiv({ text: '暂无起承转合数据', cls: 'nw-kd-empty' });
         }
 
-        const threeLinesSection = container.createDiv({ cls: 'nw-mb-lg' });
-        threeLinesSection.createEl('div', { text: '三线并行示意', cls: 'nw-section-heading' });
+        const threeLinesSection = container.createDiv({ cls: 'nw-kd-section' });
+        threeLinesSection.createEl('div', { text: '三线并行示意', cls: 'nw-kd-section-title' });
 
         const threeLinesCard = threeLinesSection.createDiv({
-            cls: 'nw-card-lg'
+            cls: 'nw-kd-card'
         });
 
         const threeLines = data.threeLines;
         if (threeLines) {
             const lineDefs = [
-                { label: '主线', value: threeLines.main, color: '#ef4444' },
-                { label: '副线', value: threeLines.sub, color: '#3b82f6' },
-                { label: '感情线', value: threeLines.romance, color: '#ec4899' },
+                { label: '主线', value: threeLines.main, tone: 'nw-kd-fill--danger' },
+                { label: '副线', value: threeLines.sub, tone: 'nw-kd-fill--info' },
+                { label: '感情线', value: threeLines.romance, tone: 'nw-kd-fill--rose' },
             ];
 
             for (const line of lineDefs) {
-                const row = threeLinesCard.createDiv({ attr: { style: 'margin-bottom:12px;&:last-child { margin-bottom:0; }' } });
-                const labelRow = row.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-marginbottom-6px nw-u-fs-12px' });
-                labelRow.createEl('span', { text: line.label, cls: 'nw-font-medium' });
-                labelRow.createEl('span', { text: `${line.value}%`, cls: 'nw-color-muted' });
+                const row = threeLinesCard.createDiv({ cls: 'nw-kd-line' });
+                const labelRow = row.createDiv({ cls: 'nw-kd-line-label' });
+                labelRow.createEl('span', { text: line.label, cls: 'nw-kd-strong' });
+                labelRow.createEl('span', { text: `${line.value}%`, cls: 'nw-kd-muted' });
                 const barBg = row.createDiv({
-                    cls: 'nw-bar-track-8'
+                    cls: 'nw-kd-track nw-kd-track--8'
                 });
-                barBg.createDiv({
-                    attr: {
-                        style: `height:100%;width:${line.value}%;background:${line.color};border-radius:4px;transition:width 0.3s;`
-                    }
-                });
+                const fill = barBg.createDiv({ cls: `nw-kd-fill nw-kd-fill--smooth ${line.tone}` });
+                fill.style.setProperty('--nw-kd-pct', `${line.value}%`);
             }
         } else {
-            threeLinesCard.createDiv({ text: '暂无三线并行数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
+            threeLinesCard.createDiv({ text: '暂无三线并行数据', cls: 'nw-kd-empty' });
         }
 
-        const rhythmSection = container.createDiv({ cls: 'nw-mb-lg' });
-        rhythmSection.createEl('div', { text: '节奏单元', cls: 'nw-section-heading' });
+        const rhythmSection = container.createDiv({ cls: 'nw-kd-section' });
+        rhythmSection.createEl('div', { text: '节奏单元', cls: 'nw-kd-section-title' });
 
         const rhythmCard = rhythmSection.createDiv({
-            cls: 'nw-scroll-card-300 nw-py-4'
+            cls: 'nw-kd-scroll nw-kd-scroll--pad'
         });
 
         const rhythmUnits = data.rhythmUnits;
@@ -937,20 +895,20 @@ export class KnowledgeDetailModal extends Modal {
             const isExpanded = this.expandedItems[key] ?? true;
 
             const item = rhythmCard.createDiv({
-                cls: 'nw-item-border-b'
+                cls: 'nw-kd-row'
             });
 
             const header = item.createDiv({
-                cls: 'nw-u-p-10px-16px nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-cur-pointer'
+                cls: 'nw-kd-unit-head'
             });
             header.createEl('span', {
                 text: unit.level,
-                cls: 'nw-u-p-2px-8px nw-u-brd-4px nw-u-fs-11px nw-u-bg-interactive-accent nw-u-c-text-on-accent nw-u-fwt-500'
+                cls: 'nw-kd-level'
             });
-            header.createEl('span', { text: unit.name, cls: 'nw-text-13-flex nw-font-medium' });
+            header.createEl('span', { text: unit.name, cls: 'nw-kd-name-flex nw-kd-strong' });
             header.createEl('span', {
                 text: isExpanded ? '▼' : '▶',
-                cls: 'nw-text-xs-muted'
+                cls: 'nw-kd-muted-xs'
             });
 
             header.addEventListener('click', () => {
@@ -959,28 +917,28 @@ export class KnowledgeDetailModal extends Modal {
             });
 
             if (isExpanded && unit.children) {
-                const children = item.createDiv({ cls: 'nw-u-p-0-16px-12px-48px' });
+                const children = item.createDiv({ cls: 'nw-kd-unit-body' });
                 for (const child of unit.children) {
                     children.createDiv({
                         text: child,
-                        cls: 'nw-u-p-4px-0 nw-u-fs-12px nw-u-c-text-muted nw-u-bb-1px-dashed-background-'
+                        cls: 'nw-kd-unit-child'
                     });
                 }
             }
         }
         } else {
-            rhythmCard.createDiv({ text: '暂无节奏单元数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
+            rhythmCard.createDiv({ text: '暂无节奏单元数据', cls: 'nw-kd-empty' });
         }
 
-        const typeSection = container.createDiv({ cls: 'nw-mb-lg' });
-        typeSection.createEl('div', { text: '结构类型说明', cls: 'nw-section-heading' });
+        const typeSection = container.createDiv({ cls: 'nw-kd-section' });
+        typeSection.createEl('div', { text: '结构类型说明', cls: 'nw-kd-section-title' });
 
         const typeCard = typeSection.createDiv({
-            cls: 'nw-card-lg-text'
+            cls: 'nw-kd-card nw-kd-card--text'
         });
 
         if (data.structureType) {
-            typeCard.createEl('div', { text: data.structureType, cls: 'nw-u-fwt-600 nw-u-marginbottom-8px nw-u-c-interactive-accent' });
+            typeCard.createEl('div', { text: data.structureType, cls: 'nw-kd-type-name' });
         }
         // 不能给 typeCard 赋 textContent：那会清空上面刚创建的 structureType 节点
         typeCard.createEl('div', { text: data.structureDescription || '暂无结构类型说明' });
@@ -995,69 +953,69 @@ export class KnowledgeDetailModal extends Modal {
             return;
         }
 
-        const mainSection = container.createDiv({ cls: 'nw-mb-lg' });
-        mainSection.createEl('div', { text: '主要人物', cls: 'nw-section-heading' });
+        const mainSection = container.createDiv({ cls: 'nw-kd-section' });
+        mainSection.createEl('div', { text: '主要人物', cls: 'nw-kd-section-title' });
 
         const mainChars = data.mainCharacters;
         if (mainChars && mainChars.length > 0) {
 
         const charsGrid = mainSection.createDiv({
-            cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fill-minma-7 nw-u-gap-12px'
+            cls: 'nw-kd-char-grid'
         });
 
         for (const char of mainChars) {
             const card = charsGrid.createDiv({
-                cls: 'nw-stat-card'
+                cls: 'nw-kd-stat-card'
             });
 
             const avatar = card.createDiv({
-                cls: 'nw-u-w-60px nw-u-h-60px nw-u-brd-50 nw-u-bg-linear-gradient-135deg-4 nw-u-m-0-auto-10px nw-u-d-flex nw-u-ai-center nw-u-jc-center nw-u-c-white nw-u-fs-24px nw-u-fwt-600'
+                cls: 'nw-kd-avatar'
             });
             avatar.textContent = char.name.charAt(0);
 
-            card.createEl('div', { text: char.name, cls: 'nw-stat-sm' });
-            card.createEl('div', { text: char.role, cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-8px' });
+            card.createEl('div', { text: char.name, cls: 'nw-kd-char-name' });
+            card.createEl('div', { text: char.role, cls: 'nw-kd-char-role' });
 
-            const tagsContainer = card.createDiv({ cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-4px nw-u-jc-center nw-u-marginbottom-8px' });
+            const tagsContainer = card.createDiv({ cls: 'nw-kd-tag-row' });
             for (const tag of char.tags) {
                 tagsContainer.createEl('span', {
                     text: tag,
-                    cls: 'nw-u-p-2px-8px nw-u-brd-10px nw-u-fs-11px nw-u-bg-background-primary nw-u-c-text-muted'
+                    cls: 'nw-kd-tag'
                 });
             }
 
             if (char.growth) {
                 card.createEl('div', {
                     text: char.growth,
-                    cls: 'nw-u-fs-11px nw-u-c-text-muted nw-u-lh-1-4 nw-u-paddingtop-8px nw-u-bt-1px-solid-background-m'
+                    cls: 'nw-kd-char-growth'
                 });
             }
         }
         } else {
-            mainSection.createDiv({ text: '暂无主要人物数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
+            mainSection.createDiv({ text: '暂无主要人物数据', cls: 'nw-kd-empty' });
         }
 
-        const relationSection = container.createDiv({ cls: 'nw-mb-lg' });
-        relationSection.createEl('div', { text: '人物关系网络', cls: 'nw-section-heading' });
+        const relationSection = container.createDiv({ cls: 'nw-kd-section' });
+        relationSection.createEl('div', { text: '人物关系网络', cls: 'nw-kd-section-title' });
 
         const relationCard = relationSection.createDiv({
-            cls: 'nw-p-20-bg2-br8-center'
+            cls: 'nw-kd-card nw-kd-card--center nw-kd-card--roomy'
         });
         appendSanitizedHtml(relationCard, this.renderRelationshipGraph(data.relationships || [], mainChars || []));
 
-        const searchSection = container.createDiv({ cls: 'nw-mb-md' });
+        const searchSection = container.createDiv({ cls: 'nw-kd-toolbar' });
         const searchInput = searchSection.createEl('input', {
             type: 'text',
             placeholder: '搜索人物...',
-            cls: 'nw-u-w-100 nw-u-p-8px-12px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-fs-13px nw-u-bg-background-secondary'
+            cls: 'nw-kd-search'
         });
         searchInput.value = this.characterFilter;
 
-        const allSection = container.createDiv({ cls: 'nw-mb-lg' });
-        allSection.createEl('div', { text: '全部人物', cls: 'nw-section-heading' });
+        const allSection = container.createDiv({ cls: 'nw-kd-section' });
+        allSection.createEl('div', { text: '全部人物', cls: 'nw-kd-section-title' });
 
         const allCard = allSection.createDiv({
-            cls: 'nw-scroll-card-300'
+            cls: 'nw-kd-scroll'
         });
 
         // 只重绘「全部人物」列表：整体 this.render() 会 empty 重建整个弹窗，
@@ -1066,7 +1024,7 @@ export class KnowledgeDetailModal extends Modal {
             allCard.empty();
             const allChars = data.allCharacters;
             if (!allChars || allChars.length === 0) {
-                allCard.createDiv({ text: '暂无全部人物数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
+                allCard.createDiv({ text: '暂无全部人物数据', cls: 'nw-kd-empty' });
                 return;
             }
 
@@ -1078,30 +1036,30 @@ export class KnowledgeDetailModal extends Modal {
             if (filtered.length === 0) {
                 allCard.createDiv({
                     text: '没有找到匹配的人物',
-                    cls: 'nw-empty-text-mini'
+                    cls: 'nw-kd-empty-mini'
                 });
                 return;
             }
 
             for (const char of filtered) {
                 const item = allCard.createDiv({
-                    cls: "nw-item-border-b nw-u-d-flex nw-u-ai-center nw-u-gap-12px nw-u-p-10px-16px", attr: {}
+                    cls: 'nw-kd-char-row', attr: {}
                 });
 
                 const miniAvatar = item.createDiv({
-                    cls: 'nw-u-w-32px nw-u-h-32px nw-u-brd-50 nw-u-bg-interactive-accent nw-u-op-0-8 nw-u-d-flex nw-u-ai-center nw-u-jc-center nw-u-c-white nw-u-fs-14px nw-u-fwt-600 nw-u-fsh-0'
+                    cls: 'nw-kd-avatar nw-kd-avatar--sm'
                 });
                 miniAvatar.textContent = char.name.charAt(0);
 
-                const info = item.createDiv({ cls: 'nw-flex-fill' });
-                info.createEl('div', { text: char.name, cls: 'nw-text-13-medium' });
-                info.createEl('div', { text: char.role, cls: 'nw-text-faint' });
+                const info = item.createDiv({ cls: 'nw-kd-flex-fill' });
+                info.createEl('div', { text: char.name, cls: 'nw-kd-name' });
+                info.createEl('div', { text: char.role, cls: 'nw-kd-faint' });
 
-                const tags = item.createDiv({ cls: 'nw-flex-gap4-shrink' });
+                const tags = item.createDiv({ cls: 'nw-kd-tags' });
                 for (const tag of char.tags.slice(0, 2)) {
                     tags.createEl('span', {
                         text: tag,
-                        cls: 'nw-u-p-2px-6px nw-u-brd-4px nw-u-fs-10px nw-u-bg-background-primary nw-u-c-text-muted'
+                        cls: 'nw-kd-tag nw-kd-tag--sm'
                     });
                 }
             }
@@ -1117,7 +1075,7 @@ export class KnowledgeDetailModal extends Modal {
 
     private renderRelationshipGraph(relationships: Array<{ from: string; to: string; type: string }>, mainChars: Array<{ name: string }>): string {
         if (!mainChars || mainChars.length === 0) {
-            return '<div style="padding:20px;text-align:center;color:var(--text-muted);">暂无人物关系数据</div>';
+            return '<div class="nw-kd-empty">暂无人物关系数据</div>';
         }
         const width = 400;
         const height = 300;
@@ -1151,7 +1109,7 @@ export class KnowledgeDetailModal extends Modal {
         `;
 
         return `
-            <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="display:block;">
+            <svg class="nw-kd-graph" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
                 ${lines}
                 ${nodes}
             </svg>
@@ -1167,10 +1125,10 @@ export class KnowledgeDetailModal extends Modal {
             return;
         }
 
-        const statsSection = container.createDiv({ cls: 'nw-mb-lg' });
-        statsSection.createEl('div', { text: '伏笔统计', cls: 'nw-section-heading' });
+        const statsSection = container.createDiv({ cls: 'nw-kd-section' });
+        statsSection.createEl('div', { text: '伏笔统计', cls: 'nw-kd-section-title' });
 
-        const statsGrid = statsSection.createDiv({ cls: 'nw-grid-4' });
+        const statsGrid = statsSection.createDiv({ cls: 'nw-kd-grid-4' });
 
         const stats = data.stats;
         if (stats) {
@@ -1179,80 +1137,78 @@ export class KnowledgeDetailModal extends Modal {
             const total = resolved + unresolved;
 
             const totalCard = statsGrid.createDiv({
-                cls: 'nw-stat-card'
+                cls: 'nw-kd-stat-card'
             });
-            totalCard.createEl('div', { text: String(total), cls: 'nw-stat-num-normal' });
-            totalCard.createEl('div', { text: '伏笔总数', cls: 'nw-text-sm-muted' });
+            totalCard.createEl('div', { text: String(total), cls: 'nw-kd-stat-num' });
+            totalCard.createEl('div', { text: '伏笔总数', cls: 'nw-kd-muted-sm' });
 
             const resolvedCard = statsGrid.createDiv({
-                cls: 'nw-stat-card'
+                cls: 'nw-kd-stat-card'
             });
-            resolvedCard.createEl('div', { text: String(resolved), cls: 'nw-stat-num-success' });
-            resolvedCard.createEl('div', { text: '已回收', cls: 'nw-text-sm-muted' });
+            resolvedCard.createEl('div', { text: String(resolved), cls: 'nw-kd-stat-num nw-kd-stat-num--success' });
+            resolvedCard.createEl('div', { text: '已回收', cls: 'nw-kd-muted-sm' });
 
             const unresolvedCard = statsGrid.createDiv({
-                cls: 'nw-stat-card'
+                cls: 'nw-kd-stat-card'
             });
-            unresolvedCard.createEl('div', { text: String(unresolved), cls: 'nw-stat-num-warning' });
-            unresolvedCard.createEl('div', { text: '待回收', cls: 'nw-text-sm-muted' });
+            unresolvedCard.createEl('div', { text: String(unresolved), cls: 'nw-kd-stat-num nw-kd-stat-num--warning' });
+            unresolvedCard.createEl('div', { text: '待回收', cls: 'nw-kd-muted-sm' });
 
             const forgottenCount = data.unresolvedTracker?.forgottenForeshadows?.length || 0;
             const forgottenCard = statsGrid.createDiv({
-                cls: 'nw-stat-card'
+                cls: 'nw-kd-stat-card'
             });
-            forgottenCard.createEl('div', { text: forgottenCount.toString(), cls: 'nw-stat-num-error' });
-            forgottenCard.createEl('div', { text: '疑似遗忘', cls: 'nw-text-sm-muted' });
+            forgottenCard.createEl('div', { text: forgottenCount.toString(), cls: 'nw-kd-stat-num nw-kd-stat-num--error' });
+            forgottenCard.createEl('div', { text: '疑似遗忘', cls: 'nw-kd-muted-sm' });
         } else {
-            statsSection.createDiv({ text: '暂无伏笔统计数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
+            statsSection.createDiv({ text: '暂无伏笔统计数据', cls: 'nw-kd-empty' });
         }
 
         if (data.resolutionQualityStats) {
-            const qualitySection = container.createDiv({ cls: 'nw-mb-lg' });
-            qualitySection.createEl('div', { text: '回收质量统计', cls: 'nw-section-heading' });
+            const qualitySection = container.createDiv({ cls: 'nw-kd-section' });
+            qualitySection.createEl('div', { text: '回收质量统计', cls: 'nw-kd-section-title' });
 
             const qualityCard = qualitySection.createDiv({
-                cls: 'nw-card-lg'
+                cls: 'nw-kd-card'
             });
 
             const qualityGrid = qualityCard.createDiv({
-                cls: 'nw-u-d-grid nw-u-gtc-auto-1fr nw-u-gap-10px-16px nw-u-ai-center'
+                cls: 'nw-kd-quality-grid'
             });
 
-            qualityGrid.createEl('div', { text: '平均质量', cls: 'nw-text-13-muted' });
-            const avgQualityBar = qualityGrid.createDiv({ cls: 'nw-flex-row' });
-            avgQualityBar.createEl('div', {
-                cls: 'nw-u-flex-1 nw-u-h-8px nw-u-bg-background-modifier-bo nw-u-brd-4px nw-u-ov-hidden'
-            }).createEl('div', {
-                attr: {
-                    style: `width:${data.resolutionQualityStats.avgQuality}%;height:100%;background:linear-gradient(90deg, var(--nw-success-soft), var(--nw-info));border-radius:4px;`
-                }
+            qualityGrid.createEl('div', { text: '平均质量', cls: 'nw-kd-label' });
+            const avgQualityBar = qualityGrid.createDiv({ cls: 'nw-kd-bar-row' });
+            const avgTrack = avgQualityBar.createEl('div', {
+                cls: 'nw-kd-track nw-kd-track--8 nw-kd-track--grow'
             });
-            avgQualityBar.createEl('span', { text: `${data.resolutionQualityStats.avgQuality}分`, cls: 'nw-u-fs-12px nw-u-fwt-500 nw-u-minw-40px nw-u-ta-right' });
+            const avgFill = avgTrack.createEl('div', { cls: 'nw-kd-fill nw-kd-fill--gradient' });
+            avgFill.style.setProperty('--nw-kd-pct', `${data.resolutionQualityStats.avgQuality}%`);
+            avgQualityBar.createEl('span', { text: `${data.resolutionQualityStats.avgQuality}分`, cls: 'nw-kd-quality-value' });
 
             const qd = data.resolutionQualityStats.qualityDistribution;
             const qualityBars = [
-                { label: '优秀', value: qd.excellent, color: '#10b981' },
-                { label: '良好', value: qd.good, color: '#3b82f6' },
-                { label: '一般', value: qd.fair, color: '#f59e0b' },
-                { label: '低质', value: qd.poor, color: '#ef4444' },
+                { label: '优秀', value: qd.excellent, tone: 'nw-kd-fill--success' },
+                { label: '良好', value: qd.good, tone: 'nw-kd-fill--info' },
+                { label: '一般', value: qd.fair, tone: 'nw-kd-fill--warning' },
+                { label: '低质', value: qd.poor, tone: 'nw-kd-fill--danger' },
             ];
             for (const q of qualityBars) {
-                qualityGrid.createEl('div', { text: q.label, cls: 'nw-text-sm-muted' });
-                const barWrapper = qualityGrid.createDiv({ cls: 'nw-flex-row' });
-                barWrapper.createEl('div', {
-                    cls: 'nw-bar-track-6-flex'
-                }).createEl('div', {
-                    attr: { style: `width:${Math.min(100, q.value * 10)}%;height:100%;background:${q.color};border-radius:3px;` }
+                qualityGrid.createEl('div', { text: q.label, cls: 'nw-kd-muted-sm' });
+                const barWrapper = qualityGrid.createDiv({ cls: 'nw-kd-bar-row' });
+                const qTrack = barWrapper.createEl('div', {
+                    cls: 'nw-kd-track nw-kd-track--6 nw-kd-track--grow'
                 });
-                barWrapper.createEl('span', { text: `${q.value}个`, cls: 'nw-u-fs-11px nw-u-c-text-muted nw-u-minw-30px nw-u-ta-right' });
+                const qFill = qTrack.createEl('div', { cls: `nw-kd-fill ${q.tone}` });
+                qFill.style.setProperty('--nw-kd-pct', `${Math.min(100, q.value * 10)}%`);
+                barWrapper.createEl('span', { text: `${q.value}个`, cls: 'nw-kd-quality-count' });
             }
         }
 
-        const donutSection = container.createDiv({ cls: 'nw-mb-lg' });
-        donutSection.createEl('div', { text: '回收进度', cls: 'nw-section-heading' });
+        const donutSection = container.createDiv({ cls: 'nw-kd-section' });
+        donutSection.createEl('div', { text: '回收进度', cls: 'nw-kd-section-title' });
 
         const donutCard = donutSection.createDiv({
-            cls: 'nw-card-lg'
+            cls: 'nw-kd-card'
         });
 
         if (stats) {
@@ -1264,11 +1220,11 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         if (data.networkAnalysis?.densityByChapter) {
-            const densitySection = container.createDiv({ cls: 'nw-mb-lg' });
-            densitySection.createEl('div', { text: '伏笔密度趋势', cls: 'nw-section-heading' });
+            const densitySection = container.createDiv({ cls: 'nw-kd-section' });
+            densitySection.createEl('div', { text: '伏笔密度趋势', cls: 'nw-kd-section-title' });
 
             const densityCard = densitySection.createDiv({
-                cls: 'nw-card-lg nw-scroll-x'
+                cls: 'nw-kd-card nw-kd-card--scroll'
             });
 
             const setupData = data.networkAnalysis.densityByChapter.map(d => ({
@@ -1290,64 +1246,64 @@ export class KnowledgeDetailModal extends Modal {
             }));
         }
 
-        const timelineSection = container.createDiv({ cls: 'nw-mb-lg' });
-        timelineSection.createEl('div', { text: '伏笔出现时间线', cls: 'nw-section-heading' });
+        const timelineSection = container.createDiv({ cls: 'nw-kd-section' });
+        timelineSection.createEl('div', { text: '伏笔出现时间线', cls: 'nw-kd-section-title' });
 
         const timelineCard = timelineSection.createDiv({
-            cls: 'nw-card-lg nw-scroll-x'
+            cls: 'nw-kd-card nw-kd-card--scroll'
         });
 
         const timelineEvents = data.timeline;
         if (timelineEvents && timelineEvents.length > 0) {
             appendSanitizedHtml(timelineCard, timelineChart(timelineEvents, { width: 650, height: 160 }));
         } else {
-            timelineCard.createDiv({ text: '暂无伏笔时间线数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
+            timelineCard.createDiv({ text: '暂无伏笔时间线数据', cls: 'nw-kd-empty' });
         }
 
         if (data.networkAnalysis) {
-            const networkSection = container.createDiv({ cls: 'nw-mb-lg' });
-            networkSection.createEl('div', { text: '伏笔网络分析', cls: 'nw-section-heading' });
+            const networkSection = container.createDiv({ cls: 'nw-kd-section' });
+            networkSection.createEl('div', { text: '伏笔网络分析', cls: 'nw-kd-section-title' });
 
             const networkCard = networkSection.createDiv({
-                cls: 'nw-card-lg'
+                cls: 'nw-kd-card'
             });
 
             const netGrid = networkCard.createDiv({
-                cls: 'nw-u-d-grid nw-u-gtc-1fr-1fr nw-u-gap-12px nw-u-marginbottom-12px'
+                cls: 'nw-kd-net-grid'
             });
 
             const mainlineCount = data.networkAnalysis.mainlineCount || 0;
             const sidelineCount = data.networkAnalysis.sidelineCount || 0;
             const rhythmBalance = data.networkAnalysis.rhythmBalance;
 
-            const netItem1 = netGrid.createDiv({ cls: 'nw-text-center' });
-            netItem1.createEl('div', { text: mainlineCount.toString(), cls: 'nw-stat-lg-accent' });
-            netItem1.createEl('div', { text: '主线伏笔', cls: 'nw-text-faint' });
+            const netItem1 = netGrid.createDiv({ cls: 'nw-kd-center' });
+            netItem1.createEl('div', { text: mainlineCount.toString(), cls: 'nw-kd-net-num nw-kd-net-num--accent' });
+            netItem1.createEl('div', { text: '主线伏笔', cls: 'nw-kd-faint' });
 
-            const netItem2 = netGrid.createDiv({ cls: 'nw-text-center' });
-            netItem2.createEl('div', { text: sidelineCount.toString(), cls: 'nw-stat-lg-muted' });
-            netItem2.createEl('div', { text: '支线伏笔', cls: 'nw-text-faint' });
+            const netItem2 = netGrid.createDiv({ cls: 'nw-kd-center' });
+            netItem2.createEl('div', { text: sidelineCount.toString(), cls: 'nw-kd-net-num nw-kd-net-num--muted' });
+            netItem2.createEl('div', { text: '支线伏笔', cls: 'nw-kd-faint' });
 
             if (rhythmBalance) {
-                const rhythmDiv = networkCard.createDiv({ cls: 'nw-mt-sm' });
+                const rhythmDiv = networkCard.createDiv({ cls: 'nw-kd-balance' });
                 rhythmDiv.createEl('div', {
                     text: `节奏平衡度：${rhythmBalance.balanceScore}% ${rhythmBalance.isBalanced ? '✅ 平衡' : '⚠️ 需调整'}`,
-                    cls: 'nw-u-fs-12px nw-u-marginbottom-6px'
+                    cls: 'nw-kd-balance-note'
                 });
-                rhythmDiv.createEl('div', {
-                    cls: 'nw-bar-track-6-static'
-                }).createEl('div', {
-                    attr: { style: `width:${rhythmBalance.balanceScore}%;height:100%;background:${rhythmBalance.isBalanced ? '#10b981' : '#f59e0b'};border-radius:3px;` }
+                const balanceTrack = rhythmDiv.createEl('div', { cls: 'nw-kd-track nw-kd-track--6' });
+                const balanceFill = balanceTrack.createEl('div', {
+                    cls: `nw-kd-fill ${rhythmBalance.isBalanced ? 'nw-kd-fill--success' : 'nw-kd-fill--warning'}`
                 });
+                balanceFill.style.setProperty('--nw-kd-pct', `${rhythmBalance.balanceScore}%`);
             }
         }
 
         if (data.pairs && data.pairs.length > 0) {
-            const pairSection = container.createDiv({ cls: 'nw-mb-lg' });
-            pairSection.createEl('div', { text: '伏笔-回收配对', cls: 'nw-section-heading' });
+            const pairSection = container.createDiv({ cls: 'nw-kd-section' });
+            pairSection.createEl('div', { text: '伏笔-回收配对', cls: 'nw-kd-section-title' });
 
             const pairCard = pairSection.createDiv({
-                cls: 'nw-scroll-card-300'
+                cls: 'nw-kd-scroll'
             });
 
             const pairTypeLabels: Record<string, string> = {
@@ -1361,42 +1317,32 @@ export class KnowledgeDetailModal extends Modal {
                 const isExpanded = this.expandedItems[key] ?? false;
 
                 const row = pairCard.createDiv({
-                    cls: 'nw-item-border-b'
+                    cls: 'nw-kd-row'
                 });
 
                 const header = row.createDiv({
-                    cls: 'nw-u-p-10px-16px nw-u-d-flex nw-u-ai-center nw-u-gap-10px nw-u-cur-pointer'
+                    cls: 'nw-kd-item-head'
                 });
 
-                const confidenceColor = pair.confidence >= 70 ? '#10b981' : pair.confidence >= 50 ? '#f59e0b' : '#ef4444';
+                const confidenceTone = pair.confidence >= 70 ? 'high' : pair.confidence >= 50 ? 'mid' : 'low';
                 header.createEl('span', {
                     text: `${pair.confidence}%`,
-                    attr: {
-                        style: `
-                            font-size:12px;
-                            font-weight:600;
-                            color:${confidenceColor};
-                            padding:2px 8px;
-                            background:${confidenceColor}22;
-                            border-radius:10px;
-                            flex-shrink:0;
-                        `
-                    }
+                    cls: `nw-kd-confidence nw-kd-confidence--${confidenceTone}`,
                 });
 
-                const info = header.createDiv({ cls: 'nw-flex-fill' });
+                const info = header.createDiv({ cls: 'nw-kd-flex-fill' });
                 info.createEl('div', {
                     text: `${pair.setupForeshadowName} → ${pair.payoffForeshadowName || '未知'}`,
-                    cls: 'nw-u-fs-12px nw-u-fwt-500 nw-u-ov-hidden nw-u-textoverflow-ellipsis nw-u-ws-nowrap'
+                    cls: 'nw-kd-pair-title'
                 });
                 info.createEl('div', {
                     text: `${pairTypeLabels[pair.pairType] || pair.pairType}${pair.qualityScore ? ` · 回收质量：${pair.qualityScore}分` : ''}`,
-                    cls: 'nw-u-fs-10px nw-u-c-text-muted nw-u-margintop-2px'
+                    cls: 'nw-kd-pair-meta'
                 });
 
                 header.createEl('span', {
                     text: isExpanded ? '▼' : '▶',
-                    cls: 'nw-text-10-muted-shrink'
+                    cls: 'nw-kd-muted-10'
                 });
 
                 header.addEventListener('click', () => {
@@ -1406,7 +1352,7 @@ export class KnowledgeDetailModal extends Modal {
 
                 if (isExpanded && pair.matchDimensions) {
                     const body = row.createDiv({
-                        cls: 'nw-u-p-0-16px-10px-52px nw-u-fs-11px nw-u-lh-1-8'
+                        cls: 'nw-kd-pair-body'
                     });
 
                     const dims = [
@@ -1417,62 +1363,61 @@ export class KnowledgeDetailModal extends Modal {
                     ];
 
                     for (const dim of dims) {
-                        const dimRow = body.createDiv({ cls: 'nw-flex-row' });
-                        dimRow.createEl('span', { text: dim.label, cls: 'nw-u-minw-60px nw-u-c-text-muted' });
+                        const dimRow = body.createDiv({ cls: 'nw-kd-bar-row' });
+                        dimRow.createEl('span', { text: dim.label, cls: 'nw-kd-dim-label' });
                         const bar = dimRow.createEl('div', {
-                            cls: 'nw-bar-track-4-flex'
+                            cls: 'nw-kd-track nw-kd-track--4 nw-kd-track--grow'
                         });
-                        bar.createEl('div', {
-                            attr: { style: `width:${dim.value}%;height:100%;background:var(--interactive-accent);border-radius:2px;` }
-                        });
-                        dimRow.createEl('span', { text: `${dim.value}%`, cls: 'nw-u-minw-30px nw-u-ta-right nw-u-c-text-muted' });
+                        const dimFill = bar.createEl('div', { cls: 'nw-kd-fill' });
+                        dimFill.style.setProperty('--nw-kd-pct', `${dim.value}%`);
+                        dimRow.createEl('span', { text: `${dim.value}%`, cls: 'nw-kd-dim-value' });
                     }
                 }
             }
         }
 
         if (data.unresolvedTracker && data.unresolvedTracker.totalUnresolved > 0) {
-            const unresolvedSection = container.createDiv({ cls: 'nw-mb-lg' });
-            unresolvedSection.createEl('div', { text: '未回收伏笔追踪', cls: 'nw-section-heading' });
+            const unresolvedSection = container.createDiv({ cls: 'nw-kd-section' });
+            unresolvedSection.createEl('div', { text: '未回收伏笔追踪', cls: 'nw-kd-section-title' });
 
             const unresolvedCard = unresolvedSection.createDiv({
-                cls: 'nw-card-lg'
+                cls: 'nw-kd-card'
             });
 
             if (data.unresolvedTracker.forgottenForeshadows && data.unresolvedTracker.forgottenForeshadows.length > 0) {
                 const warnDiv = unresolvedCard.createDiv({
-                    cls: 'nw-u-p-10px-12px nw-u-bg-nw-danger-bright-bg nw-u-brd-6px nw-u-marginbottom-12px'
+                    cls: 'nw-kd-warn'
                 });
                 warnDiv.createEl('div', {
                     text: `⚠️ 发现 ${data.unresolvedTracker.forgottenForeshadows.length} 个疑似被遗忘的伏笔`,
-                    cls: 'nw-u-fs-12px nw-u-fwt-500 nw-u-c-text-error-nw-danger-b nw-u-marginbottom-4px'
+                    cls: 'nw-kd-warn-title'
                 });
                 const names = data.unresolvedTracker.forgottenForeshadows.slice(0, 3).map(f => f.name).join('、');
                 warnDiv.createEl('div', {
                     text: names + (data.unresolvedTracker.forgottenForeshadows.length > 3 ? '...' : ''),
-                    cls: 'nw-u-fs-11px nw-u-c-text-error-nw-danger-b nw-u-op-0-8'
+                    cls: 'nw-kd-warn-names'
                 });
             }
 
             if (data.unresolvedTracker.recallSuggestions && data.unresolvedTracker.recallSuggestions.length > 0) {
-                unresolvedCard.createEl('div', { text: '回收建议', cls: 'nw-u-fwt-500 nw-u-fs-12px nw-u-marginbottom-8px' });
+                unresolvedCard.createEl('div', { text: '回收建议', cls: 'nw-kd-suggest-title' });
                 for (const s of data.unresolvedTracker.recallSuggestions.slice(0, 3)) {
                     const sDiv = unresolvedCard.createDiv({
-                        cls: 'nw-u-p-8px-10px nw-u-bg-background-primary nw-u-brd-6px nw-u-marginbottom-6px'
+                        cls: 'nw-kd-suggest'
                     });
                     sDiv.createEl('div', {
                         text: `📌 第${s.chapter}章附近：${s.reason}`,
-                        cls: 'nw-u-fs-11px nw-u-fwt-500 nw-u-marginbottom-3px'
+                        cls: 'nw-kd-suggest-head'
                     });
                     sDiv.createEl('div', {
                         text: s.foreshadows.join('、'),
-                        cls: 'nw-text-xs-muted'
+                        cls: 'nw-kd-muted-xs'
                     });
                 }
             }
         }
 
-        const filterSection = container.createDiv({ cls: 'nw-u-marginbottom-12px nw-u-d-flex nw-u-gap-6px nw-u-fwr-wrap' });
+        const filterSection = container.createDiv({ cls: 'nw-kd-filter' });
         const categories = ['all', '物品', '功法', '人物', '设定', '事件'];
         const categoryLabels: Record<string, string> = {
             all: '全部',
@@ -1486,18 +1431,8 @@ export class KnowledgeDetailModal extends Modal {
         for (const cat of categories) {
             const btn = filterSection.createEl('button', {
                 text: categoryLabels[cat],
-                attr: {
-                    type: 'button',
-                    style: `
-                        padding:6px 12px;
-                        cursor:pointer;
-                        border:1px solid ${this.foreshadowFilter === cat ? 'var(--interactive-accent)' : 'var(--background-modifier-border)'};
-                        border-radius:16px;
-                        font-size:12px;
-                        background:${this.foreshadowFilter === cat ? 'var(--interactive-accent)' : 'transparent'};
-                        color:${this.foreshadowFilter === cat ? 'var(--text-on-accent)' : 'var(--text-muted)'};
-                    `
-                }
+                attr: { type: 'button' },
+                cls: `nw-kd-filter-btn${this.foreshadowFilter === cat ? ' nw-kd-filter-btn--active' : ''}`,
             });
             btn.addEventListener('click', () => {
                 this.foreshadowFilter = cat;
@@ -1505,8 +1440,8 @@ export class KnowledgeDetailModal extends Modal {
             });
         }
 
-        const listSection = container.createDiv({ cls: 'nw-mb-lg' });
-        listSection.createEl('div', { text: '伏笔详情', cls: 'nw-section-heading' });
+        const listSection = container.createDiv({ cls: 'nw-kd-section' });
+        listSection.createEl('div', { text: '伏笔详情', cls: 'nw-kd-section-title' });
 
         const items = data.items;
         if (items && items.length > 0) {
@@ -1514,13 +1449,13 @@ export class KnowledgeDetailModal extends Modal {
         const filtered = this.foreshadowFilter === 'all' ? items : items.filter(i => i.category === this.foreshadowFilter);
 
         const listCard = listSection.createDiv({
-            cls: 'nw-scroll-card-400'
+            cls: 'nw-kd-scroll nw-kd-scroll--tall'
         });
 
         if (filtered.length === 0) {
             listCard.createDiv({
                 text: '该分类下暂无伏笔',
-                cls: 'nw-empty-text-mini'
+                cls: 'nw-kd-empty-mini'
             });
         } else {
             for (const item of filtered) {
@@ -1528,34 +1463,28 @@ export class KnowledgeDetailModal extends Modal {
                 const isExpanded = this.expandedItems[key] ?? false;
 
                 const row = listCard.createDiv({
-                    cls: 'nw-item-border-b'
+                    cls: 'nw-kd-row'
                 });
 
                 const header = row.createDiv({
-                    cls: 'nw-u-p-12px-16px nw-u-d-flex nw-u-ai-center nw-u-gap-10px nw-u-cur-pointer'
+                    cls: 'nw-kd-item-head nw-kd-item-head--main'
                 });
 
                 header.createEl('span', {
                     text: item.resolved ? '✓' : '○',
-                    attr: {
-                        style: `
-                            font-size:16px;
-                            color:${item.resolved ? 'var(--interactive-success, #10b981)' : 'var(--text-muted)'};
-                            flex-shrink:0;
-                        `
-                    }
+                    cls: item.resolved ? 'nw-kd-status nw-kd-status--resolved' : 'nw-kd-status',
                 });
 
-                const info = header.createDiv({ cls: 'nw-flex-fill' });
-                info.createEl('div', { text: item.name, cls: 'nw-text-13-medium' });
+                const info = header.createDiv({ cls: 'nw-kd-flex-fill' });
+                info.createEl('div', { text: item.name, cls: 'nw-kd-name' });
                 info.createEl('div', {
                     text: `${item.category} · 首次出现：${item.firstAppearance}`,
-                    cls: 'nw-u-fs-11px nw-u-c-text-muted nw-u-margintop-2px'
+                    cls: 'nw-kd-meta'
                 });
 
                 header.createEl('span', {
                     text: isExpanded ? '▼' : '▶',
-                    cls: 'nw-text-10-muted-shrink'
+                    cls: 'nw-kd-muted-10'
                 });
 
                 header.addEventListener('click', () => {
@@ -1565,58 +1494,56 @@ export class KnowledgeDetailModal extends Modal {
 
                 if (isExpanded) {
                     const body = row.createDiv({
-                        cls: 'nw-u-p-0-16px-12px-46px nw-u-fs-12px nw-u-lh-1-6'
+                        cls: 'nw-kd-item-body'
                     });
 
-                    body.createEl('div', { text: '首次出现', cls: 'nw-foreshadow-title' });
-                    body.createEl('div', { text: item.firstAppearance, cls: 'nw-u-c-text-muted nw-u-marginbottom-8px' });
+                    body.createEl('div', { text: '首次出现', cls: 'nw-kd-field-title' });
+                    body.createEl('div', { text: item.firstAppearance, cls: 'nw-kd-body-text' });
 
-                    body.createEl('div', { text: '重要呼应', cls: 'nw-foreshadow-title' });
+                    body.createEl('div', { text: '重要呼应', cls: 'nw-kd-field-title' });
                     for (const echo of item.echoes) {
-                        body.createDiv({ text: `• ${echo}`, cls: 'nw-u-c-text-muted nw-u-paddingleft-4px' });
+                        body.createDiv({ text: `• ${echo}`, cls: 'nw-kd-body-echo' });
                     }
 
                     body.createEl('div', {
                         text: '回收情况',
-                        cls: 'nw-foreshadow-title-mt'
+                        cls: 'nw-kd-field-title nw-kd-field-title--mt'
                     });
                     if (item.resolved) {
                         body.createEl('div', {
                             text: `已回收：${item.resolution || '已回收'}`,
-                            cls: 'nw-u-c-interactive-success-nw'
+                            cls: 'nw-kd-state nw-kd-state--resolved'
                         });
                     } else {
                         body.createEl('div', {
                             text: '待回收',
-                            cls: 'nw-u-c-text-warning-nw-warnin'
+                            cls: 'nw-kd-state nw-kd-state--pending'
                         });
                     }
                 }
             }
         }
         } else {
-            listSection.createDiv({ text: '暂无伏笔详情数据', cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted' });
+            listSection.createDiv({ text: '暂无伏笔详情数据', cls: 'nw-kd-empty' });
         }
     }
 
     // ============== 通用方法 ==============
     private renderEmptyState(container: HTMLElement, dataName: string, dimension: string): void {
         const card = container.createDiv({
-            cls: 'nw-u-p-40px-20px nw-u-ta-center nw-u-bg-background-secondary nw-u-brd-8px'
+            cls: 'nw-kd-empty-card'
         });
-        card.createEl('div', { text: '📭', cls: 'nw-u-fs-40px nw-u-marginbottom-12px' });
-        card.createEl('div', { text: `暂无${dataName}`, cls: 'nw-u-fs-14px nw-u-fwt-500 nw-u-marginbottom-8px' });
+        card.createEl('div', { text: '📭', cls: 'nw-kd-empty-icon' });
+        card.createEl('div', { text: `暂无${dataName}`, cls: 'nw-kd-empty-title' });
         card.createEl('div', {
             text: '该维度数据待拆解，请先运行书籍拆解功能。',
-            cls: 'nw-text-sm-muted'
+            cls: 'nw-kd-muted-sm'
         });
 
         const btn = card.createEl('button', {
             text: '🔄 开始拆解',
-            attr: {
-                type: 'button',
-                style: 'margin-top:16px;padding:8px 20px;cursor:pointer;background:var(--interactive-accent);color:var(--text-on-accent);border:none;border-radius:6px;font-size:13px;'
-            }
+            attr: { type: 'button' },
+            cls: 'nw-kd-start-btn',
         });
         btn.addEventListener('click', async () => {
             if (this.deconstructionScheduler) {
@@ -1637,9 +1564,9 @@ export class KnowledgeDetailModal extends Modal {
     }
 
     private renderInfoRow(container: HTMLElement, label: string, value: string): void {
-        const row = container.createDiv({ cls: 'nw-flex-gap6' });
-        row.createEl('span', { text: `${label}:`, cls: 'nw-u-c-text-muted nw-u-minw-70px nw-u-fsh-0' });
-        row.createEl('span', { text: value, cls: 'nw-u-c-text-normal nw-u-flex-1 nw-u-minw-0' });
+        const row = container.createDiv({ cls: 'nw-kd-info-row' });
+        row.createEl('span', { text: `${label}:`, cls: 'nw-kd-info-label' });
+        row.createEl('span', { text: value, cls: 'nw-kd-info-value' });
     }
 
     private formatWordCount(count: number): string {

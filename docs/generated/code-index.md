@@ -11,7 +11,7 @@
 | `shared/` | 255 | 50823 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3387 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 300 | 113422 | 1155 | 917 | 79% |
+| `ui/` | 300 | 113349 | 1155 | 917 | 79% |
 
 ## 文件清单
 
@@ -877,7 +877,7 @@
 | `ui/ideation-modal.ts` | 814 | 1 | 1 |
 | `ui/job-center-modal.ts` | 124 | 1 | 1 |
 | `ui/knowledge-detail-format.ts` | 46 | 4 | 4 |
-| `ui/knowledge-detail-modal.ts` | 1707 | 1 | 1 |
+| `ui/knowledge-detail-modal.ts` | 1634 | 1 | 1 |
 | `ui/knowledge-folder-navigation.ts` | 15 | 1 | 1 |
 | `ui/knowledge-monitor-modal.ts` | 500 | 1 | 1 |
 | `ui/knowledge-rebuild-action.ts` | 48 | 1 | 1 |

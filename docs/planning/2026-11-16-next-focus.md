@@ -903,4 +903,34 @@ A–H、§5.1 指标与存量大户表重算、新增「特异性陷阱」段。
 下一轮：按 §5.1 存量大户继续，优先 `ui/knowledge-detail-modal.ts`（294 处）与
 `ui/full-writer/wizard-step-renderers.ts`（265 处）——前者是详情弹窗，可复用 Slice G 的 `nw-kb-modal-*`。
 
+### 2026-11-17 第三十四轮：Slice I 读书拆解详情弹窗语义化
+
+**范围**：`ui/knowledge-detail-modal.ts`（1707 行、7 页签），独立 `nw-kd-*` 命名空间。
+
+**改动**：120 组 `cls` 组合（234 处 `cls:`）→ 122 个 `nw-kd-*` 语义类；`nw-u-*` 与共享原子类残留 0；
+新增 `styles-src/29-knowledge-detail-modal.css`（约 200 条规则，全部加 `.nw-scope ` 前缀——弹窗 `onOpen`
+本就挂了 `nw-scope`，特异性 (0,2,0)）；17 处内联 `style:` 清零，进度条宽度改 `--nw-kd-pct` 变量，
+颜色全走令牌（三线粉色用 `var(--color-pink)`，仓库无 pink 令牌），置信度底色用 `color-mix(... currentColor 13% ...)`。
+三线行旧代码的 `&:last-child` 在内联里本就不生效，新样式故意不加归零以保像素。
+
+**像素快照**（1440×1000，DSF=1；产物在 `D:\nw-dev-vault\_visual-i`）：7 个页签 **diffPx 全为 0（0.000%）**，
+计算样式 44 个属性 × 7 页签（85/66/30/58/255/27/47 节点）**全部 0 差异**——A–I 九个 slice 里唯一一次纯等价重构
+（该文件无死类、无补真需求）。
+
+**门禁**：`typecheck` 0 错、`check:inline-styles` 通过；`check:utility` 暴露 30 条零引用定义（本 slice 删引用后
+才归零），已从 `10-entity-and-utilities.css` 删除，定义 360 → 330、使用 3118 → 2824；`check:bundle`
+styles.css 659626 → 675920（+16294，main.js −6126）；`check:css` 唯一类 3575 → 3692（+117 全为 `nw-kd-*`），
+hex/rgbHsl 保持基线。三份基线均 `--update-baseline --note`。
+
+**采集链路（踩坑）**：Obsidian 1.14.5 的设置面板是**独立 BrowserWindow**（CDP 里那个 `about:blank` page），
+插件导航项文字是 `Novel Writer AI`；详情弹窗只能在设置窗口里点 `.nw-kb-book-card` 打开，主窗口同名卡片属于
+知识库管理视图。该弹窗模块是懒加载的，源码钩子挂在自己文件里永不执行；`getAllBooks()` 也是 async。
+截图需 clip 到 `textContent` 含「概览」的那个 `.modal`。
+
+**文档**：`docs/modules/knowledge-base.md` §3.12；`docs/design/2026-11-16-visual-refactor-standard.md` §5 改 A–I、
+§5.1 指标与存量大户表重算（移除本文件 294 处）。
+
+下一轮：`ui/full-writer/wizard-step-renderers.ts`（265 处）与 `ui/monitor-panel-b.ts`（232 处）是新的前两名；
+两者都在长流程面板里，需先确认可截图入口再动刀。
+
 

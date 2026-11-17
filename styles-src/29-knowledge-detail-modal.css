@@ -1,0 +1,911 @@
+/* 知识详情弹窗（Slice I）：nw-kd-* 语义类
+   一律带 .nw-scope 前缀（(0,2,0)），以压过 Obsidian 自身的 .modal button(0,1,1) /
+   input[type=text](0,1,1)。数值与旧 nw-u-*、内联样式逐条等价，动态宽度走 --nw-kd-pct。 */
+
+.nw-scope .nw-kd-missing {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+/* ---------- 头部 ---------- */
+.nw-scope .nw-kd-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.nw-scope .nw-kd-header-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.nw-scope .nw-kd-title {
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.nw-scope .nw-kd-ref-btn,
+.nw-scope .nw-kd-close-btn,
+.nw-scope .nw-kd-btn,
+.nw-scope .nw-kd-filter-btn,
+.nw-scope .nw-kd-start-btn,
+.nw-scope .nw-kd-tab {
+    cursor: pointer;
+    height: auto;
+    line-height: normal;
+    font-weight: 400;
+}
+
+.nw-scope .nw-kd-ref-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    font-size: 12px;
+    background: transparent;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.nw-scope .nw-kd-ref-btn--on {
+    border-color: var(--interactive-accent);
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.nw-scope .nw-kd-close-btn {
+    padding: 4px 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: transparent;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+/* ---------- 页签 ---------- */
+.nw-scope .nw-kd-tabs {
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    margin-bottom: 16px;
+    overflow-x: auto;
+}
+
+.nw-scope .nw-kd-tab {
+    padding: 8px 16px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    font-size: 13px;
+    white-space: nowrap;
+    color: var(--text-muted);
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.nw-scope .nw-kd-tab--active {
+    border-bottom-color: var(--interactive-accent);
+    color: var(--interactive-accent);
+    font-weight: 600;
+}
+
+/* ---------- 区块骨架 ---------- */
+.nw-scope .nw-kd-section {
+    margin-bottom: 20px;
+}
+
+.nw-scope .nw-kd-section-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+
+.nw-scope .nw-kd-card {
+    padding: 16px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+}
+
+.nw-scope .nw-kd-card--scroll {
+    overflow-x: auto;
+}
+
+.nw-scope .nw-kd-card--text {
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+.nw-scope .nw-kd-card--center {
+    display: flex;
+    justify-content: center;
+}
+
+.nw-scope .nw-kd-card--roomy {
+    padding: 20px;
+}
+
+.nw-scope .nw-kd-mini-card {
+    padding: 12px;
+    background: var(--background-secondary);
+    border-radius: 6px;
+    text-align: center;
+}
+
+.nw-scope .nw-kd-panel {
+    padding: 12px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+}
+
+.nw-scope .nw-kd-panel--wide {
+    padding: 12px 16px;
+}
+
+.nw-scope .nw-kd-scroll {
+    background: var(--background-secondary);
+    border-radius: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.nw-scope .nw-kd-scroll--tall {
+    max-height: 400px;
+}
+
+.nw-scope .nw-kd-scroll--pad,
+.nw-scope .nw-kd-list {
+    padding: 4px 0;
+}
+
+.nw-scope .nw-kd-row {
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-scope .nw-kd-grid-4 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 12px;
+}
+
+/* ---------- 文本 ---------- */
+.nw-scope .nw-kd-strong {
+    font-weight: 500;
+}
+
+.nw-scope .nw-kd-muted {
+    color: var(--text-muted);
+}
+
+.nw-scope .nw-kd-muted-sm {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.nw-scope .nw-kd-muted-xs {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.nw-scope .nw-kd-muted-10 {
+    font-size: 10px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.nw-scope .nw-kd-faint {
+    color: var(--text-faint);
+    font-size: 11px;
+}
+
+.nw-scope .nw-kd-name {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.nw-scope .nw-kd-name-flex {
+    flex: 1;
+    font-size: 13px;
+}
+
+.nw-scope .nw-kd-desc-flex {
+    color: var(--text-normal);
+    font-size: 13px;
+    flex: 1;
+}
+
+.nw-scope .nw-kd-count {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.nw-scope .nw-kd-label {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.nw-scope .nw-kd-kp-pos {
+    color: var(--interactive-accent);
+    font-weight: 500;
+    flex-shrink: 0;
+    font-size: 13px;
+}
+
+.nw-scope .nw-kd-center {
+    text-align: center;
+}
+
+.nw-scope .nw-kd-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* ---------- 空态 ---------- */
+.nw-scope .nw-kd-empty {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.nw-scope .nw-kd-empty--tight {
+    padding: 10px;
+}
+
+.nw-scope .nw-kd-empty-mini {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.nw-scope .nw-kd-empty-card {
+    padding: 40px 20px;
+    text-align: center;
+    background: var(--background-secondary);
+    border-radius: 8px;
+}
+
+.nw-scope .nw-kd-empty-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+}
+
+.nw-scope .nw-kd-empty-title {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+/* ---------- 按钮 ---------- */
+.nw-scope .nw-kd-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    font-size: 13px;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    box-shadow: none;
+}
+
+.nw-scope .nw-kd-btn--danger {
+    border-color: var(--background-modifier-error);
+    color: var(--text-error);
+    background: transparent;
+}
+
+.nw-scope .nw-kd-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.nw-scope .nw-kd-toolbar {
+    margin-bottom: 12px;
+}
+
+.nw-scope .nw-kd-feature-row {
+    margin-bottom: 4px;
+}
+
+.nw-scope .nw-kd-balance {
+    margin-top: 4px;
+}
+
+.nw-scope .nw-kd-bar-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.nw-scope .nw-kd-flex-fill {
+    flex: 1;
+    min-width: 0;
+}
+
+.nw-scope .nw-kd-tags {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.nw-scope .nw-kd-info-row {
+    display: flex;
+    gap: 6px;
+}
+
+/* ---------- 概览 ---------- */
+.nw-scope .nw-kd-info-card {
+    padding: 16px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.nw-scope .nw-kd-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 20px;
+    font-size: 13px;
+}
+
+.nw-scope .nw-kd-info-label {
+    color: var(--text-muted);
+    min-width: 70px;
+    flex-shrink: 0;
+}
+
+.nw-scope .nw-kd-info-value {
+    color: var(--text-normal);
+    flex: 1;
+    min-width: 0;
+}
+
+.nw-scope .nw-kd-synopsis {
+    padding: 12px;
+    background: var(--background-secondary-alt);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+/* ---------- 统计 ---------- */
+.nw-scope .nw-kd-stat-card {
+    padding: 16px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.nw-scope .nw-kd-stat-value {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.nw-scope .nw-kd-char-name {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.nw-scope .nw-kd-stat-num {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text-normal);
+}
+
+.nw-scope .nw-kd-stat-num--success {
+    color: var(--interactive-success, var(--nw-success));
+}
+
+.nw-scope .nw-kd-stat-num--warning {
+    color: var(--text-warning, var(--nw-warning));
+}
+
+.nw-scope .nw-kd-stat-num--error {
+    color: var(--text-error, var(--nw-danger));
+}
+
+/* ---------- 节奏 ---------- */
+.nw-scope .nw-kd-kp-item {
+    display: flex;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/* ---------- 技巧 ---------- */
+.nw-scope .nw-kd-rank-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-scope .nw-kd-rank-badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--background-primary);
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.nw-scope .nw-kd-rank-badge--top {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.nw-scope .nw-kd-group {
+    margin-bottom: 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.nw-scope .nw-kd-group-head {
+    padding: 10px 14px;
+    background: var(--background-secondary);
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.nw-scope .nw-kd-tech-head {
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.nw-scope .nw-kd-tech-name {
+    font-size: 13px;
+}
+
+.nw-scope .nw-kd-tech-body {
+    padding: 0 14px 12px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-muted);
+}
+
+.nw-scope .nw-kd-body-title {
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: var(--text-normal);
+}
+
+.nw-scope .nw-kd-example {
+    padding: 4px 0 4px 8px;
+}
+
+/* ---------- 结构 ---------- */
+.nw-scope .nw-kd-line {
+    margin-bottom: 12px;
+}
+
+.nw-scope .nw-kd-line-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 12px;
+}
+
+.nw-scope .nw-kd-track {
+    height: 6px;
+    background: var(--background-modifier-border);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.nw-scope .nw-kd-track--8 {
+    height: 8px;
+    background: var(--background-primary);
+    border-radius: 4px;
+}
+
+.nw-scope .nw-kd-track--4 {
+    height: 4px;
+    border-radius: 2px;
+}
+
+.nw-scope .nw-kd-track--grow {
+    flex: 1;
+}
+
+.nw-scope .nw-kd-fill {
+    height: 100%;
+    width: var(--nw-kd-pct, 0%);
+    border-radius: inherit;
+    background: var(--interactive-accent);
+}
+
+.nw-scope .nw-kd-fill--smooth {
+    transition: width 0.3s ease;
+}
+
+.nw-scope .nw-kd-fill--danger {
+    background: var(--nw-danger);
+}
+
+.nw-scope .nw-kd-fill--info {
+    background: var(--nw-info);
+}
+
+.nw-scope .nw-kd-fill--rose {
+    background: var(--color-pink);
+}
+
+.nw-scope .nw-kd-fill--success {
+    background: var(--interactive-success, var(--nw-success));
+}
+
+.nw-scope .nw-kd-fill--warning {
+    background: var(--text-warning, var(--nw-warning));
+}
+
+.nw-scope .nw-kd-fill--gradient {
+    background: linear-gradient(90deg, var(--nw-success-soft), var(--nw-info));
+}
+
+.nw-scope .nw-kd-unit-head {
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.nw-scope .nw-kd-level {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    font-weight: 500;
+}
+
+.nw-scope .nw-kd-unit-body {
+    padding: 0 16px 12px 48px;
+}
+
+.nw-scope .nw-kd-unit-child {
+    padding: 4px 0;
+    font-size: 12px;
+    color: var(--text-muted);
+    border-bottom: 1px dashed var(--background-modifier-border);
+}
+
+.nw-scope .nw-kd-type-name {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--interactive-accent);
+}
+
+/* ---------- 人设 ---------- */
+.nw-scope .nw-kd-char-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.nw-scope .nw-kd-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--interactive-accent), var(--nw-warning-hover));
+    margin: 0 auto 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.nw-scope .nw-kd-avatar--sm {
+    width: 32px;
+    height: 32px;
+    background: var(--interactive-accent);
+    opacity: 0.8;
+    font-size: 14px;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.nw-scope .nw-kd-char-role {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.nw-scope .nw-kd-tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.nw-scope .nw-kd-tag {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    background: var(--background-primary);
+    color: var(--text-muted);
+}
+
+.nw-scope .nw-kd-tag--sm {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+}
+
+.nw-scope .nw-kd-char-growth {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+    padding-top: 8px;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.nw-scope .nw-kd-search {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    font-size: 13px;
+    background: var(--background-secondary);
+}
+
+.nw-scope .nw-kd-char-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-scope .nw-kd-graph {
+    display: block;
+}
+
+/* ---------- 伏笔 ---------- */
+.nw-scope .nw-kd-quality-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px 16px;
+    align-items: center;
+}
+
+.nw-scope .nw-kd-quality-value {
+    font-size: 12px;
+    font-weight: 500;
+    min-width: 40px;
+    text-align: right;
+}
+
+.nw-scope .nw-kd-quality-count {
+    font-size: 11px;
+    color: var(--text-muted);
+    min-width: 30px;
+    text-align: right;
+}
+
+.nw-scope .nw-kd-net-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.nw-scope .nw-kd-net-num {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.nw-scope .nw-kd-net-num--accent {
+    color: var(--interactive-accent);
+}
+
+.nw-scope .nw-kd-net-num--muted {
+    color: var(--text-muted);
+}
+
+.nw-scope .nw-kd-balance-note {
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.nw-scope .nw-kd-item-head {
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.nw-scope .nw-kd-item-head--main {
+    padding: 12px 16px;
+}
+
+.nw-scope .nw-kd-confidence {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    background: color-mix(in srgb, currentColor 13%, transparent);
+}
+
+.nw-scope .nw-kd-confidence--high {
+    color: var(--interactive-success, var(--nw-success));
+}
+
+.nw-scope .nw-kd-confidence--mid {
+    color: var(--text-warning, var(--nw-warning));
+}
+
+.nw-scope .nw-kd-confidence--low {
+    color: var(--text-error, var(--nw-danger));
+}
+
+.nw-scope .nw-kd-pair-title {
+    font-size: 12px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nw-scope .nw-kd-pair-meta {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.nw-scope .nw-kd-pair-body {
+    padding: 0 16px 10px 52px;
+    font-size: 11px;
+    line-height: 1.8;
+}
+
+.nw-scope .nw-kd-dim-label {
+    min-width: 60px;
+    color: var(--text-muted);
+}
+
+.nw-scope .nw-kd-dim-value {
+    min-width: 30px;
+    text-align: right;
+    color: var(--text-muted);
+}
+
+.nw-scope .nw-kd-warn {
+    padding: 10px 12px;
+    background: var(--nw-danger-bright-bg);
+    border-radius: 6px;
+    margin-bottom: 12px;
+}
+
+.nw-scope .nw-kd-warn-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-error, var(--nw-danger-bright));
+    margin-bottom: 4px;
+}
+
+.nw-scope .nw-kd-warn-names {
+    font-size: 11px;
+    color: var(--text-error, var(--nw-danger-bright));
+    opacity: 0.8;
+}
+
+.nw-scope .nw-kd-suggest-title {
+    font-weight: 500;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.nw-scope .nw-kd-suggest {
+    padding: 8px 10px;
+    background: var(--background-primary);
+    border-radius: 6px;
+    margin-bottom: 6px;
+}
+
+.nw-scope .nw-kd-suggest-head {
+    font-size: 11px;
+    font-weight: 500;
+    margin-bottom: 3px;
+}
+
+.nw-scope .nw-kd-filter {
+    margin-bottom: 12px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.nw-scope .nw-kd-filter-btn {
+    padding: 6px 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 16px;
+    font-size: 12px;
+    background: transparent;
+    color: var(--text-muted);
+    box-shadow: none;
+}
+
+.nw-scope .nw-kd-filter-btn--active {
+    border-color: var(--interactive-accent);
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.nw-scope .nw-kd-status {
+    font-size: 16px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.nw-scope .nw-kd-status--resolved {
+    color: var(--interactive-success, var(--nw-success));
+}
+
+.nw-scope .nw-kd-item-body {
+    padding: 0 16px 12px 46px;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.nw-scope .nw-kd-field-title {
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: var(--text-normal);
+}
+
+.nw-scope .nw-kd-field-title--mt {
+    margin-top: 8px;
+}
+
+.nw-scope .nw-kd-body-text {
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.nw-scope .nw-kd-body-echo {
+    color: var(--text-muted);
+    padding-left: 4px;
+}
+
+.nw-scope .nw-kd-state--resolved {
+    color: var(--interactive-success, var(--nw-success-soft));
+}
+
+.nw-scope .nw-kd-state--pending {
+    color: var(--text-warning, var(--nw-warning));
+}
+
+.nw-scope .nw-kd-start-btn {
+    margin-top: 16px;
+    padding: 8px 20px;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+}

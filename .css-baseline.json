@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-17T09:35:08.453Z",
-  "note": "棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因",
-  "bytes": 659626,
+  "generatedAt": "2026-11-17T10:11:08.394Z",
+  "note": "Slice I：新增 styles-src/29-knowledge-detail-modal.css（nw-kd-* 语义类），styles.css 体积与唯一类上调",
+  "bytes": 675920,
   "important": 24,
   "hardcodedHex": 165,
   "rgbHsl": 187,
-  "uniqueClasses": 3575,
+  "uniqueClasses": 3692,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }
