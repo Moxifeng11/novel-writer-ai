@@ -1,0 +1,449 @@
+/* ==========================================================================
+   31-monitor-panel-b.css — 监控面板B（Slice K）
+   命名空间 nw-monb-*：只表达「监控面板B 的完成度/偏离/质量/结算」语义。
+   作用域前缀 .nw-float-monitor-b（DraggablePanel 按 panelId 注入），特异性 (0,2,0)，
+   与 .nw-scope 同策略：高于 Obsidian 原生 .modal / button / input 规则，避免被主题覆盖。
+   ========================================================================== */
+
+/* 卡片骨架继续用共享的 .nw-float-card / -card-body / .nw-float-btn，
+   这里只补面板B 自己的语义层。 */
+.nw-float-monitor-b .nw-monb-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--nw-divider, var(--background-modifier-border-hover));
+}
+
+.nw-float-monitor-b .nw-monb-card-title {
+  margin: 0;
+}
+
+/* 卡头按钮：原 .nw-btn-mini（字 11 / padding 2px 8px / 高 28px）叠在共享 .nw-float-btn 外观上 */
+.nw-float-monitor-b .nw-monb-header-btn,
+.nw-float-monitor-b .nw-monb-settle-btn {
+  font-size: 11px;
+  padding: 2px 8px;
+  height: 28px;
+  min-height: 28px;
+}
+
+@media (max-width: 768px) {
+  .nw-float-monitor-b .nw-monb-header-btn,
+  .nw-float-monitor-b .nw-monb-settle-btn {
+    height: auto;
+    min-height: var(--nw-hit-min, 44px);
+  }
+}
+
+/* 说明文字 / 弱化提示 */
+.nw-float-monitor-b .nw-monb-note {
+  font-size: 11px;
+  color: var(--nw-text-muted, var(--text-faint));
+}
+
+/* 综合行（左侧标签 + 右侧数值） */
+.nw-float-monitor-b .nw-monb-overall {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.nw-float-monitor-b .nw-monb-overall-label {
+  font-size: 12px;
+  color: var(--nw-text-secondary, var(--text-muted));
+}
+
+/* 综合数值：颜色由调用方决定（共享色类或 --nw-monb-tone） */
+.nw-float-monitor-b .nw-monb-overall-value {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.nw-float-monitor-b .nw-monb-overall-value--tone {
+  color: var(--nw-monb-tone);
+}
+
+/* 综合进度条 */
+.nw-float-monitor-b .nw-monb-track {
+  height: 8px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--nw-bg-muted, var(--background-modifier-cover));
+}
+
+.nw-float-monitor-b .nw-monb-track--lg {
+  height: 10px;
+  border-radius: 5px;
+}
+
+.nw-float-monitor-b .nw-monb-track-fill {
+  height: 100%;
+  width: var(--nw-monb-pct);
+  border-radius: 4px;
+  background: var(--nw-monb-tone);
+  transition: width 0.3s ease;
+}
+
+.nw-float-monitor-b .nw-monb-track-fill--lg {
+  border-radius: 5px;
+}
+
+/* 分维行 */
+.nw-float-monitor-b .nw-monb-dim-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 3px 0;
+}
+
+.nw-float-monitor-b .nw-monb-dim-row--tight {
+  margin: 2px 0;
+}
+
+.nw-float-monitor-b .nw-monb-dim-icon {
+  min-width: 18px;
+  font-size: 12px;
+}
+
+.nw-float-monitor-b .nw-monb-dim-icon--sm {
+  min-width: 16px;
+  font-size: 11px;
+}
+
+.nw-float-monitor-b .nw-monb-dim-label {
+  min-width: 40px;
+  font-size: 11px;
+  color: var(--nw-text-muted, var(--text-muted));
+}
+
+.nw-float-monitor-b .nw-monb-dim-label--sm {
+  min-width: 32px;
+  font-size: 10px;
+  color: var(--nw-text-muted, var(--text-faint));
+}
+
+/* 分维迷你进度条 */
+.nw-float-monitor-b .nw-monb-dim-track {
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--nw-bg-muted, var(--background-modifier-cover));
+}
+
+.nw-float-monitor-b .nw-monb-dim-track--sm {
+  height: 5px;
+}
+
+.nw-float-monitor-b .nw-monb-dim-fill {
+  height: 100%;
+  width: var(--nw-monb-pct);
+  border-radius: 3px;
+  background: var(--nw-monb-tone);
+}
+
+/* 分维数值 */
+.nw-float-monitor-b .nw-monb-dim-value {
+  min-width: 28px;
+  font-size: 10px;
+  text-align: right;
+  color: var(--nw-text-secondary, var(--text-muted));
+}
+
+/* 完成度面板的分维数值：11px / 30px，颜色由共享色类决定 */
+.nw-float-monitor-b .nw-monb-dim-value--md {
+  min-width: 30px;
+  font-size: 11px;
+  text-align: right;
+}
+
+/* 偏离面板的分维数值：颜色跟随该维等级 */
+.nw-float-monitor-b .nw-monb-dim-score {
+  min-width: 30px;
+  font-size: 11px;
+  text-align: right;
+  color: var(--nw-monb-tone);
+}
+
+/* 分隔段 */
+.nw-float-monitor-b .nw-monb-sep {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--nw-divider, var(--background-modifier-border-hover));
+}
+
+.nw-float-monitor-b .nw-monb-sep--compact {
+  margin-top: 8px;
+  padding-top: 6px;
+}
+
+.nw-float-monitor-b .nw-monb-sep-title {
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--nw-text-secondary, var(--text-muted));
+}
+
+.nw-float-monitor-b .nw-monb-sub-title {
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--nw-text-secondary, var(--text-muted));
+}
+
+.nw-float-monitor-b .nw-monb-sub-title--danger {
+  color: var(--nw-danger, var(--text-error));
+}
+
+/* 详情面板 */
+.nw-float-monitor-b .nw-monb-detail {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--nw-divider, var(--background-modifier-border-hover));
+}
+
+.nw-float-monitor-b .nw-monb-section {
+  margin-bottom: 10px;
+}
+
+.nw-float-monitor-b .nw-monb-section--tight {
+  margin-bottom: 8px;
+}
+
+.nw-float-monitor-b .nw-monb-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.nw-float-monitor-b .nw-monb-section-head--tight {
+  margin-bottom: 3px;
+}
+
+.nw-float-monitor-b .nw-monb-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--nw-text-secondary, var(--text-muted));
+}
+
+/* 详情段分数（颜色由调用方给） */
+.nw-float-monitor-b .nw-monb-section-score {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.nw-float-monitor-b .nw-monb-section-score--tone {
+  color: var(--nw-monb-tone);
+}
+
+.nw-float-monitor-b .nw-monb-section-text {
+  margin-bottom: 4px;
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--nw-text-muted, var(--text-muted));
+}
+
+.nw-float-monitor-b .nw-monb-section-text--faint {
+  margin-bottom: 3px;
+  color: var(--nw-text-muted, var(--text-faint));
+}
+
+.nw-float-monitor-b .nw-monb-section-stat {
+  margin-bottom: 4px;
+  font-size: 10px;
+}
+
+/* 问题 / 建议列表 */
+.nw-float-monitor-b .nw-monb-issue-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 2px 0;
+}
+
+.nw-float-monitor-b .nw-monb-issue-text {
+  line-height: 1.4;
+  color: var(--nw-danger, var(--text-error));
+}
+
+.nw-float-monitor-b .nw-monb-sug-list {
+  font-size: 10px;
+}
+
+.nw-float-monitor-b .nw-monb-sug-text {
+  margin: 2px 0;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--nw-text-secondary, var(--text-muted));
+}
+
+.nw-float-monitor-b .nw-monb-sug-text--flat {
+  font-size: inherit;
+}
+
+.nw-float-monitor-b .nw-monb-prio-icon {
+  font-size: 9px;
+}
+
+/* 历史记录 */
+.nw-float-monitor-b .nw-monb-history {
+  margin-top: 6px;
+}
+
+.nw-float-monitor-b .nw-monb-history-row {
+  margin: 2px 0;
+  font-size: 10px;
+  color: var(--nw-text-muted, var(--text-muted));
+}
+
+.nw-float-monitor-b .nw-monb-history-row--faint {
+  color: var(--nw-text-muted, var(--text-faint));
+}
+
+/* 图表 */
+.nw-float-monitor-b .nw-monb-chart {
+  display: block;
+}
+
+.nw-float-monitor-b .nw-monb-chart-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--nw-text-muted, var(--text-muted));
+}
+
+/* 质量卡：综合分 / 等级 / 基线 */
+.nw-float-monitor-b .nw-monb-score-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.nw-float-monitor-b .nw-monb-score-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--nw-monb-tone);
+}
+
+.nw-float-monitor-b .nw-monb-score-grade {
+  font-size: 14px;
+}
+
+.nw-float-monitor-b .nw-monb-grade-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--nw-monb-tone);
+}
+
+.nw-float-monitor-b .nw-monb-baseline {
+  margin-bottom: 8px;
+  font-size: 10px;
+  color: var(--nw-monb-tone);
+}
+
+/* 元信息行 */
+.nw-float-monitor-b .nw-monb-meta {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--nw-text-muted, var(--text-muted));
+}
+
+.nw-float-monitor-b .nw-monb-meta--loose {
+  margin-top: 8px;
+}
+
+.nw-float-monitor-b .nw-monb-meta--faint {
+  gap: 8px;
+  color: var(--nw-text-muted, var(--text-faint));
+}
+
+.nw-float-monitor-b .nw-monb-meta-diff {
+  color: var(--nw-monb-tone);
+}
+
+/* Top 建议 / 全部建议 */
+.nw-float-monitor-b .nw-monb-top-sug-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 3px 0;
+}
+
+.nw-float-monitor-b .nw-monb-top-sug-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-size: 9px;
+}
+
+.nw-float-monitor-b .nw-monb-top-sug-text {
+  flex: 1;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--nw-text-secondary, var(--text-muted));
+}
+
+.nw-float-monitor-b .nw-monb-all-sug-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 4px 0;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: var(--nw-bg-muted, var(--background-modifier-cover));
+}
+
+.nw-float-monitor-b .nw-monb-all-sug-text {
+  flex: 1;
+  line-height: 1.4;
+  color: var(--nw-text-secondary, var(--text-muted));
+}
+
+.nw-float-monitor-b .nw-monb-all-sug-effort {
+  flex-shrink: 0;
+  font-size: 9px;
+  color: var(--nw-text-muted, var(--text-faint));
+}
+
+/* 优先级徽标：底色由调用方按紧急度注入 */
+.nw-float-monitor-b .nw-monb-prio-badge {
+  flex-shrink: 0;
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: white;
+  background: var(--nw-monb-tone);
+}
+
+/* 联动提示 */
+.nw-float-monitor-b .nw-monb-tip {
+  margin: 3px 0;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--nw-warning-text, var(--text-warning));
+}
+
+/* 无数据 / 评估失败标题（字号由调用方按卡片尺寸注入 --nw-monb-fs） */
+.nw-float-monitor-b .nw-monb-nodata-title {
+  margin-bottom: 6px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--nw-text-muted, var(--text-faint));
+}
+
+.nw-float-monitor-b .nw-monb-nodata-title--lg {
+  font-size: 20px;
+}
+
+.nw-float-monitor-b .nw-monb-eval-title {
+  margin-bottom: 6px;
+  font-size: var(--nw-monb-fs, 16px);
+  font-weight: 700;
+  color: var(--nw-text-muted, var(--text-faint));
+}

@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-17T10:41:18.460Z",
-  "note": "Slice J：新增 styles-src/30-wizard-steps.css（向导 9 步渲染器语义化，nw-wizard-* 43 个新类，全部走设计令牌）",
-  "bytes": 684251,
+  "generatedAt": "2026-11-17T11:16:21.661Z",
+  "note": "Slice K：新增 styles-src/31-monitor-panel-b.css（nw-monb-* 语义类 + 18 处内联样式收敛为 CSS 变量），删除 20 个零引用工具类",
+  "bytes": 693379,
   "important": 24,
   "hardcodedHex": 165,
   "rgbHsl": 187,
-  "uniqueClasses": 3735,
+  "uniqueClasses": 3788,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

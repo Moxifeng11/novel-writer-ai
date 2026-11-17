@@ -27,6 +27,8 @@ type FakeEl = {
     cls: string;
     children: FakeEl[];
     detached: boolean;
+    /** 语义化后动态配色改走 CSS 变量（style.setProperty），替身必须支持 */
+    style: { setProperty: (name: string, value: string) => void; getPropertyValue: (name: string) => string };
     empty: () => void;
     createDiv: (opts?: { text?: string; cls?: string; attr?: Record<string, string> }) => FakeEl;
     createSpan: (opts?: { text?: string; cls?: string; attr?: Record<string, string> }) => FakeEl;
@@ -43,6 +45,7 @@ function createFakeEl(tag = 'div'): FakeEl {
         cls: '',
         children: [],
         detached: false,
+        style: createStyleStore(),
         empty() {
             el.children.length = 0;
             el.text = '';
@@ -74,6 +77,18 @@ function createFakeEl(tag = 'div'): FakeEl {
         },
     };
     return el;
+}
+
+function createStyleStore(): { setProperty: (name: string, value: string) => void; getPropertyValue: (name: string) => string } {
+    const values: Record<string, string> = {};
+    return {
+        setProperty(name, value) {
+            values[name] = String(value);
+        },
+        getPropertyValue(name) {
+            return values[name] ?? '';
+        },
+    };
 }
 
 function applyOpts(el: FakeEl, opts?: { text?: string; cls?: string }): void {
@@ -201,7 +216,7 @@ describe('MonitorPanelB — 完成度短正文口径', () => {
         const ctx = makeCtx();
         ctx.completionExpanded = true;
         const existing = createFakeEl();
-        existing.cls = 'nw-completion-detail';
+        existing.cls = 'nw-monb-detail';
         ctx.completionDetailPanel = existing;
         ctx.completionContent.children.push(existing);
 
@@ -209,7 +224,7 @@ describe('MonitorPanelB — 完成度短正文口径', () => {
 
         expect(ctx.completionDetailPanel).not.toBe(existing);
         expect(ctx.completionContent.contains(ctx.completionDetailPanel!)).toBe(true);
-        expect(ctx.completionDetailPanel!.cls).toContain('nw-completion-detail');
+        expect(ctx.completionDetailPanel!.cls).toContain('nw-monb-detail');
     });
 });
 
@@ -254,7 +269,7 @@ describe('MonitorPanelB — 偏离短正文口径', () => {
         const ctx = makeCtx();
         ctx.divergenceExpanded = true;
         const existing = createFakeEl();
-        existing.cls = 'nw-divergence-detail';
+        existing.cls = 'nw-monb-detail';
         ctx.divergenceDetailPanel = existing;
         ctx.divergenceContent.children.push(existing);
 
@@ -262,6 +277,6 @@ describe('MonitorPanelB — 偏离短正文口径', () => {
 
         expect(ctx.divergenceDetailPanel).not.toBe(existing);
         expect(ctx.divergenceContent.contains(ctx.divergenceDetailPanel!)).toBe(true);
-        expect(ctx.divergenceDetailPanel!.cls).toContain('nw-divergence-detail');
+        expect(ctx.divergenceDetailPanel!.cls).toContain('nw-monb-detail');
     });
 });

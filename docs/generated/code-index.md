@@ -11,7 +11,7 @@
 | `shared/` | 255 | 50823 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3387 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 300 | 113349 | 1155 | 917 | 79% |
+| `ui/` | 300 | 113328 | 1155 | 917 | 79% |
 
 ## 文件清单
 
@@ -894,7 +894,7 @@
 | `ui/model-picker-popover.ts` | 298 | 4 | 3 |
 | `ui/model-quick-switcher.ts` | 321 | 13 | 12 |
 | `ui/monitor-panel-a.ts` | 200 | 2 | 2 |
-| `ui/monitor-panel-b.ts` | 1910 | 2 | 2 |
+| `ui/monitor-panel-b.ts` | 1889 | 2 | 2 |
 | `ui/novel-analysis-modal.ts` | 267 | 1 | 1 |
 | `ui/novel-tags-modal.ts` | 335 | 1 | 1 |
 | `ui/onboarding-modal.ts` | 318 | 1 | 1 |

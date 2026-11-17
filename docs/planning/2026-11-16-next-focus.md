@@ -966,5 +966,35 @@ entities-done 2.87%、worldview 1.88%、worldview-exec 1.45%——全部只差�
 **文档**：新增 `docs/modules/full-writer-wizard.md` 并登记 INDEX；`docs/design/2026-11-16-visual-refactor-standard.md`
 §5 加向导行、§5.1 指标与存量大户表重算（移除本文件 265 处）。
 
-下一轮（Slice K）：`ui/monitor-panel-b.ts`（232 处、1910 行）——新 `nw-monb-*` 命名空间，
-作用域用 `DraggablePanel` 自带的 `.nw-float-monitor-b ` 祖先。
+### 2026-11-17 第三十六轮：Slice K 监控面板 B 语义化（nw-monb-*）
+
+**范围**：`ui/monitor-panel-b.ts`（1910 行 / 116 处 `cls` 字面量），新开 `nw-monb-*` 命名空间。
+
+**改动**：62 组含 `nw-u-*` 的 `cls` 组合（65 个唯一串）→ 约 60 个 `nw-monb-*` 语义类；`nw-u-*` 清零；
+18 处内联 `style` 字符串改 `el.style.setProperty('--nw-monb-tone'|'--nw-monb-pct', ...)`，
+样式表里 `background:var(--nw-monb-tone)`、`width:var(--nw-monb-pct)`；新增 `styles-src/31-monitor-panel-b.css`（约 300 行）。
+选择器统一加 `.nw-float-monitor-b ` 前缀——`DraggablePanel` 按 panelId 注入该类（`ui/draggable-panel.ts`），
+是真实存在的 (0,2,0) 作用域，不需要第二个容器命名空间。
+
+**关键手法**：`getScoreColorClass()` 返回的 `nw-float-ok`/`nw-float-warn-text`/`nw-float-danger` 只有 (0,1,0)，
+所以「带共享色类」的站点（`-overall-value`、`-dim-value--md`、`-section-score`）**不声明 color**，
+否则 (0,2,0) 会把它压掉；只有行内给色的站点才加 `--tone` 变体。`nw-svg-block` 3 处 → `nw-monb-chart`。
+
+**像素快照**（330px 宽、DSF=1；产物在 `D:\nw-dev-vault\_visual-k`，12 个场景）：
+**全部 0 差异**——diffPx=0、高度完全一致、30 个计算属性 × 786 节点零差异
+（body-empty 28/571、completion-summary 72/768、completion-nodata 29/571、completion-detail 113/1204、
+divergence-summary 68/763、divergence-nodata 29/571、divergence-detail 109/1192、quality-summary 89/846、
+quality-nodata 29/574、quality-detail 180/1768、eval-failure 29/571、eval-failure-detail 32/629）。
+采集用 `D:\nw-tmp\snap-k.mjs`（主区 tab 打开面板、`[0]` 选根、清固定布局内联、两段式钉高），diff 用 `D:\nw-tmp\diff-k.mjs`。
+
+**门禁**：`typecheck` 0 错、`lint` 0 错；`check:inline-styles` 通过；`check:utility` 删 20 个零引用工具类
+（定义 319 → 299、使用 2559 → 2327）；`check:bundle` styles.css 684251 → 693379（+9128）；
+`check:css` 唯一类 3735 → 3788。三份基线均 `--update-baseline --note`。
+`tests/unit/ui/monitor-panel-b-{eval-failure,plot-guard,quality-guard}` 的 FakeEl 补 `style` 替身、
+断言旧类名 `nw-*-detail` → `nw-monb-detail`（8 文件 32 用例通过）。
+
+**文档**：新增 `docs/modules/monitor-panel-b.md` 并登记 INDEX；`docs/design/2026-11-16-visual-refactor-standard.md`
+§5 加面板 B 行、§5.1 指标与存量大户表重算（移除本文件 232 处）。
+
+下一轮（Slice L）：`ui/views/writing-fingerprint-view.ts`（228 处）——指纹库视图，先确认根节点可用的作用域祖先
+（视图容器类）再决定 `.nw-fp-*` 前缀；同批可带 `ui/fingerprint-detail-modal.ts`（157 处）一起做，二者共享命名空间。

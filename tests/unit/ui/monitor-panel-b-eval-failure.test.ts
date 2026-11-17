@@ -18,6 +18,8 @@ type FakeEl = {
     cls: string;
     children: FakeEl[];
     detached: boolean;
+    /** 语义化后动态配色改走 CSS 变量（style.setProperty），替身必须支持 */
+    style: { setProperty: (name: string, value: string) => void; getPropertyValue: (name: string) => string };
     empty: () => void;
     createDiv: (opts?: { text?: string; cls?: string; attr?: Record<string, string> }) => FakeEl;
     createSpan: (opts?: { text?: string; cls?: string; attr?: Record<string, string> }) => FakeEl;
@@ -34,6 +36,7 @@ function createFakeEl(tag = 'div'): FakeEl {
         cls: '',
         children: [],
         detached: false,
+        style: createStyleStore(),
         empty() {
             el.children.length = 0;
             el.text = '';
@@ -65,6 +68,18 @@ function createFakeEl(tag = 'div'): FakeEl {
         },
     };
     return el;
+}
+
+function createStyleStore(): { setProperty: (name: string, value: string) => void; getPropertyValue: (name: string) => string } {
+    const values: Record<string, string> = {};
+    return {
+        setProperty(name, value) {
+            values[name] = String(value);
+        },
+        getPropertyValue(name) {
+            return values[name] ?? '';
+        },
+    };
 }
 
 function applyOpts(el: FakeEl, opts?: { text?: string; cls?: string }): void {

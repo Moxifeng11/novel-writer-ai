@@ -21,6 +21,8 @@ type FakeEl = {
     cls: string;
     children: FakeEl[];
     detached: boolean;
+    /** 语义化后动态配色改走 CSS 变量（style.setProperty），替身必须支持 */
+    style: { setProperty: (name: string, value: string) => void; getPropertyValue: (name: string) => string };
     empty: () => void;
     createDiv: (opts?: { text?: string; cls?: string; attr?: Record<string, string> }) => FakeEl;
     createSpan: (opts?: { text?: string; cls?: string; attr?: Record<string, string> }) => FakeEl;
@@ -37,6 +39,7 @@ function createFakeEl(tag = 'div'): FakeEl {
         cls: '',
         children: [],
         detached: false,
+        style: createStyleStore(),
         empty() {
             el.children.length = 0;
             el.text = '';
@@ -68,6 +71,18 @@ function createFakeEl(tag = 'div'): FakeEl {
         },
     };
     return el;
+}
+
+function createStyleStore(): { setProperty: (name: string, value: string) => void; getPropertyValue: (name: string) => string } {
+    const values: Record<string, string> = {};
+    return {
+        setProperty(name, value) {
+            values[name] = String(value);
+        },
+        getPropertyValue(name) {
+            return values[name] ?? '';
+        },
+    };
 }
 
 function applyOpts(el: FakeEl, opts?: { text?: string; cls?: string }): void {
@@ -163,7 +178,7 @@ describe('MonitorPanelB — 正文不足可评估长度时的展示口径', () =
     it('ensureQualityDetailPanel 在节点已挂载时复用，不重复创建', () => {
         const ctx = makeCtx();
         const existing = createFakeEl();
-        existing.cls = 'nw-quality-detail';
+        existing.cls = 'nw-monb-detail';
         ctx.qualityContent.children.push(existing);
         ctx.qualityDetailPanel = existing;
 
@@ -197,6 +212,6 @@ describe('MonitorPanelB — 正文不足可评估长度时的展示口径', () =
         // empty() 会清空子节点：详情面板引用必须指向重新挂载的新节点
         expect(ctx.qualityDetailPanel).not.toBeNull();
         expect(ctx.qualityContent.contains(ctx.qualityDetailPanel!)).toBe(true);
-        expect(ctx.qualityDetailPanel!.cls).toContain('nw-quality-detail');
+        expect(ctx.qualityDetailPanel!.cls).toContain('nw-monb-detail');
     });
 });

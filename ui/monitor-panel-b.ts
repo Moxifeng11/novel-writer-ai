@@ -139,40 +139,40 @@ export class MonitorPanelB extends DraggablePanel {
   protected renderBody(container: HTMLElement): void {
     container.addClass("nw-float-monitor-grid");
 
-    const completionCard = container.createDiv({ cls: "nw-float-card nw-completion-card" });
+    const completionCard = container.createDiv({ cls: "nw-float-card nw-monb-card" });
     const completionHeader = completionCard.createDiv({
-      cls: "nw-monitor-card-header"
+      cls: "nw-monb-card-header"
     });
-    completionHeader.createEl("h5", { text: "📊 剧情完成度", cls: "nw-m0" });
+    completionHeader.createEl("h5", { text: "📊 剧情完成度", cls: "nw-monb-card-title" });
     const expandBtn = completionHeader.createEl("button", {
       text: "展开",
-      cls: "nw-float-btn nw-btn-mini",
+      cls: "nw-float-btn nw-monb-header-btn",
     });
     expandBtn.addEventListener("click", () => this.toggleCompletionDetail());
     this.completionContent = completionCard.createDiv({ cls: "nw-float-card-body" });
     this.completionContent.createDiv({ cls: "nw-float-empty", text: "开始写作后自动评估" });
 
-    const divergenceCard = container.createDiv({ cls: "nw-float-card nw-divergence-card" });
+    const divergenceCard = container.createDiv({ cls: "nw-float-card nw-monb-card" });
     const divergenceHeader = divergenceCard.createDiv({
-      cls: "nw-monitor-card-header"
+      cls: "nw-monb-card-header"
     });
-    divergenceHeader.createEl("h5", { text: "⚠️ 偏离预警", cls: "nw-m0" });
+    divergenceHeader.createEl("h5", { text: "⚠️ 偏离预警", cls: "nw-monb-card-title" });
     const divExpandBtn = divergenceHeader.createEl("button", {
       text: "展开",
-      cls: "nw-float-btn nw-btn-mini",
+      cls: "nw-float-btn nw-monb-header-btn",
     });
     divExpandBtn.addEventListener("click", () => this.toggleDivergenceDetail());
     this.divergenceContent = divergenceCard.createDiv({ cls: "nw-float-card-body" });
     this.divergenceContent.createDiv({ cls: "nw-float-empty", text: "开始写作后自动检测" });
 
-    const qualityCard = container.createDiv({ cls: "nw-float-card nw-quality-card" });
+    const qualityCard = container.createDiv({ cls: "nw-float-card nw-monb-card" });
     const qualityHeader = qualityCard.createDiv({
-      cls: "nw-monitor-card-header"
+      cls: "nw-monb-card-header"
     });
-    qualityHeader.createEl("h5", { text: "✨ 写作质量", cls: "nw-m0" });
+    qualityHeader.createEl("h5", { text: "✨ 写作质量", cls: "nw-monb-card-title" });
     const qualityExpandBtn = qualityHeader.createEl("button", {
       text: "展开",
-      cls: "nw-float-btn nw-btn-mini",
+      cls: "nw-float-btn nw-monb-header-btn",
     });
     qualityExpandBtn.addEventListener("click", () => this.toggleQualityDetail());
     this.qualityContent = qualityCard.createDiv({ cls: "nw-float-card-body" });
@@ -182,7 +182,7 @@ export class MonitorPanelB extends DraggablePanel {
     settleCard.createEl("h5", { text: "💰 章节结算(G1)" });
     const settleContent = settleCard.createDiv({ cls: "nw-float-card-body" });
     const settleBtn = settleContent.createEl("button", {
-      cls: "nw-float-btn nw-btn-settle",
+      cls: "nw-float-btn nw-monb-settle-btn",
       text: "📊 执行结算",
     });
     settleBtn.addEventListener("click", () => {
@@ -380,15 +380,14 @@ export class MonitorPanelB extends DraggablePanel {
     fontSize: number
   ): void {
     container.empty();
-    container.createDiv({
+    const titleEl = container.createDiv({
       text: title,
-      attr: {
-        style: `font-weight:700;font-size:${fontSize}px;color:var(--nw-text-muted, var(--text-faint));margin-bottom:6px;`
-      }
+      cls: 'nw-monb-eval-title'
     });
+    titleEl.style.setProperty('--nw-monb-fs', `${fontSize}px`);
     container.createDiv({
       text: reason,
-      cls: 'nw-u-fs-11px nw-u-c-nw-text-muted-text-fai'
+      cls: 'nw-monb-note'
     });
   }
 
@@ -429,27 +428,24 @@ export class MonitorPanelB extends DraggablePanel {
     const label = getDivergenceLevelLabel(level);
 
     const overallRow = this.divergenceContent.createDiv({
-      cls: "nw-overall-row"
+      cls: "nw-monb-overall"
     });
     overallRow.createSpan({
       text: "整体偏离度",
-      cls: "nw-text-sm-secondary"
+      cls: "nw-monb-overall-label"
     });
-    overallRow.createSpan({
-      attr: {
-        style: `font-weight:600;font-size:16px;color:${getDivergenceLevelColor(level)};`
-      },
+    const overallValueEl = overallRow.createSpan({
+      cls: 'nw-monb-overall-value nw-monb-overall-value--tone',
       text: `${icon} ${overallDivergence}% · ${label}`
     });
+    overallValueEl.style.setProperty('--nw-monb-tone', getDivergenceLevelColor(level));
 
     const progressBar = this.divergenceContent.createDiv({
-      cls: 'nw-u-h-8px nw-u-bg-nw-bg-muted-background nw-u-brd-4px nw-u-ov-hidden nw-u-marginbottom-10px'
+      cls: 'nw-monb-track'
     });
-    progressBar.createDiv({
-      attr: {
-        style: `height:100%;width:${overallDivergence}%;background:${getDivergenceLevelColor(level)};border-radius:4px;transition:width 0.3s ease;`
-      }
-    });
+    const overallFillEl = progressBar.createDiv({ cls: 'nw-monb-track-fill' });
+    overallFillEl.style.setProperty('--nw-monb-pct', `${overallDivergence}%`);
+    overallFillEl.style.setProperty('--nw-monb-tone', getDivergenceLevelColor(level));
 
     const dimensions = [
       { key: 'mainline', label: '主线', score: result.mainlineDivergence.score, icon: '🧭' },
@@ -461,26 +457,22 @@ export class MonitorPanelB extends DraggablePanel {
 
     for (const dim of dimensions) {
       const row = this.divergenceContent.createDiv({
-        cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-6px nw-u-m-3px-0'
+        cls: 'nw-monb-dim-row'
       });
-      row.createSpan({ text: dim.icon, cls: 'nw-u-fs-12px nw-u-minw-18px' });
+      row.createSpan({ text: dim.icon, cls: 'nw-monb-dim-icon' });
       row.createSpan({
         text: dim.label,
-        cls: 'nw-u-fs-11px nw-u-c-nw-text-muted-text-mut nw-u-minw-40px'
+        cls: 'nw-monb-dim-label'
       });
       const miniBar = row.createDiv({
-        cls: 'nw-u-flex-1 nw-u-h-6px nw-u-bg-nw-bg-muted-background nw-u-brd-3px nw-u-ov-hidden'
+        cls: 'nw-monb-dim-track'
       });
       const dimLevel = this.getDivergenceLevelFromScore(dim.score);
-      miniBar.createDiv({
-        attr: {
-          style: `height:100%;width:${dim.score}%;background:${getDivergenceLevelColor(dimLevel)};border-radius:3px;`
-        }
-      });
-      row.createSpan({
-        attr: { style: `font-size:11px;min-width:30px;text-align:right;color:${getDivergenceLevelColor(dimLevel)};` },
-        text: `${dim.score}%`
-      });
+      const dimFillEl = miniBar.createDiv({ cls: 'nw-monb-dim-fill' });
+      dimFillEl.style.setProperty('--nw-monb-pct', `${dim.score}%`);
+      dimFillEl.style.setProperty('--nw-monb-tone', getDivergenceLevelColor(dimLevel));
+      const dimScoreEl = row.createSpan({ cls: 'nw-monb-dim-score', text: `${dim.score}%` });
+      dimScoreEl.style.setProperty('--nw-monb-tone', getDivergenceLevelColor(dimLevel));
     }
 
     const allIssues = [
@@ -493,22 +485,22 @@ export class MonitorPanelB extends DraggablePanel {
 
     if (allIssues.length > 0) {
       const issueRow = this.divergenceContent.createDiv({
-        cls: 'nw-u-margintop-8px nw-u-paddingtop-6px nw-u-bt-1px-dashed-nw-divider-'
+        cls: 'nw-monb-sep nw-monb-sep--compact'
       });
       issueRow.createDiv({
         text: `🚨 ${allIssues.length}个问题`,
-        cls: 'nw-u-fs-11px nw-u-fwt-600 nw-u-c-danger nw-u-marginbottom-4px'
+        cls: 'nw-monb-sub-title nw-monb-sub-title--danger'
       });
       for (const issue of allIssues.slice(0, 2)) {
         issueRow.createDiv({
           text: `• ${issue}`,
-          cls: 'nw-u-fs-10px nw-u-c-nw-text-secondary-text nw-u-m-2px-0 nw-u-lh-1-4'
+          cls: 'nw-monb-sug-text'
         });
       }
     }
 
     const metaRow = this.divergenceContent.createDiv({
-      cls: 'nw-u-d-flex nw-u-gap-10px nw-u-margintop-6px nw-u-fs-10px nw-u-c-nw-text-muted-text-mut'
+      cls: 'nw-monb-meta'
     });
     metaRow.createSpan({ text: `${result.wordCount}字` });
 
@@ -521,11 +513,11 @@ export class MonitorPanelB extends DraggablePanel {
       this.divergenceContent.empty();
       this.divergenceContent.createDiv({
         text: "整体偏离度 --",
-        cls: 'nw-u-fwt-700 nw-u-fs-16px nw-u-c-nw-text-muted-text-fai nw-u-marginbottom-6px'
+        cls: 'nw-monb-nodata-title'
       });
       this.divergenceContent.createDiv({
         text: `正文不足 ${DEVIATION_MIN_EVALUABLE_CHARS} 字，暂不检测（当前 ${wordCount} 字）`,
-        cls: 'nw-u-fs-11px nw-u-c-nw-text-muted-text-fai'
+        cls: 'nw-monb-note'
       });
     }
     if (this.divergenceExpanded) {
@@ -534,7 +526,7 @@ export class MonitorPanelB extends DraggablePanel {
         this.divergenceDetailPanel.empty();
         this.divergenceDetailPanel.createDiv({
           text: "正文过短，暂无偏离详情",
-          cls: 'nw-u-fs-11px nw-u-c-nw-text-muted-text-fai'
+          cls: 'nw-monb-note'
         });
       }
     }
@@ -545,7 +537,7 @@ export class MonitorPanelB extends DraggablePanel {
     if (!this.divergenceContent) return;
     if (this.divergenceDetailPanel && this.divergenceContent.contains(this.divergenceDetailPanel)) return;
     this.divergenceDetailPanel = this.divergenceContent.createDiv({
-      cls: "nw-divergence-detail nw-u-margintop-10px nw-u-paddingtop-10px nw-u-bt-1px-solid-nw-divider-b",
+      cls: "nw-monb-detail",
       attr: {}
     });
   }
@@ -589,7 +581,7 @@ export class MonitorPanelB extends DraggablePanel {
       this.divergenceDetailPanel.empty();
       this.divergenceDetailPanel.createDiv({
         text: "正文过短，暂无偏离详情",
-        cls: 'nw-u-fs-11px nw-u-c-nw-text-muted-text-fai'
+        cls: 'nw-monb-note'
       });
       return;
     }
@@ -606,23 +598,24 @@ export class MonitorPanelB extends DraggablePanel {
 
     for (const section of sections) {
       const secDiv = this.divergenceDetailPanel.createDiv({
-        cls: 'nw-u-marginbottom-10px'
+        cls: 'nw-monb-section'
       });
 
       const secHeader = secDiv.createDiv({
-        cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-4px'
+        cls: 'nw-monb-section-head'
       });
       secHeader.createSpan({
         text: section.label,
-        cls: "nw-section-label"
+        cls: "nw-monb-section-label"
       });
-      secHeader.createSpan({
-        attr: { style: `font-size:11px;font-weight:600;color:${getDivergenceLevelColor(section.dim.level)};` },
+      const secScoreEl = secHeader.createSpan({
+        cls: 'nw-monb-section-score nw-monb-section-score--tone',
         text: `${section.dim.score}% · ${getDivergenceLevelLabel(section.dim.level)}`
       });
+      secScoreEl.style.setProperty('--nw-monb-tone', getDivergenceLevelColor(section.dim.level));
 
       const detailsRow = secDiv.createDiv({
-        cls: 'nw-u-fs-10px nw-u-c-nw-text-muted-text-mut nw-u-marginbottom-4px nw-u-lh-1-6'
+        cls: 'nw-monb-section-text'
       });
       const detailStr = Object.entries(section.dim.details)
         .map(([k, v]) => `${this.formatDivergenceDetailKey(k)}: ${v}`)
@@ -631,31 +624,31 @@ export class MonitorPanelB extends DraggablePanel {
 
       if (section.dim.issues.length > 0) {
         const issueList = secDiv.createDiv({
-          cls: 'nw-u-fs-10px nw-u-marginbottom-4px'
+          cls: 'nw-monb-section-stat'
         });
         for (const issue of section.dim.issues) {
           const issueRow = issueList.createDiv({
-            cls: 'nw-u-d-flex nw-u-ai-flex-start nw-u-gap-4px nw-u-m-2px-0'
+            cls: 'nw-monb-issue-row'
           });
           issueRow.createSpan({
             text: "⚠️",
-            cls: "nw-suggestion-list"
+            cls: "nw-monb-sug-list"
           });
           issueRow.createSpan({
             text: issue,
-            cls: 'nw-u-c-danger nw-u-lh-1-4'
+            cls: 'nw-monb-issue-text'
           });
         }
       }
 
       if (section.dim.suggestions.length > 0) {
         const sugList = secDiv.createDiv({
-          cls: "nw-suggestion-list"
+          cls: "nw-monb-sug-list"
         });
         for (const sug of section.dim.suggestions.slice(0, 2)) {
           sugList.createDiv({
             text: `💡 ${sug}`,
-            cls: 'nw-u-c-nw-text-secondary-text nw-u-m-2px-0 nw-u-lh-1-4'
+            cls: 'nw-monb-sug-text'
           });
         }
       }
@@ -663,17 +656,17 @@ export class MonitorPanelB extends DraggablePanel {
 
     if (this.divergenceHistory.length >= 2) {
       const historySection = this.divergenceDetailPanel.createDiv({
-        cls: "nw-dashed-sep"
+        cls: "nw-monb-sep"
       });
       historySection.createDiv({
         text: "📈 偏离趋势（最近10次）",
-        cls: "nw-section-title-sm"
+        cls: "nw-monb-sep-title"
       });
 
       this.renderDivergenceHistoryChart(historySection);
 
       const historyList = historySection.createDiv({
-        cls: 'nw-u-margintop-6px'
+        cls: 'nw-monb-history'
       });
       const recentHistory = [...this.divergenceHistory].reverse().slice(0, 5);
       for (let i = 0; i < recentHistory.length; i++) {
@@ -682,7 +675,7 @@ export class MonitorPanelB extends DraggablePanel {
         const icon = getDivergenceLevelIcon(entry.level);
         historyList.createDiv({
           text: `${icon} ${timeStr} · ${entry.overallDivergence}% · ${entry.wordCount}字`,
-          cls: 'nw-u-fs-10px nw-u-c-nw-text-muted-text-mut nw-u-m-2px-0'
+          cls: 'nw-monb-history-row'
         });
       }
     }
@@ -699,7 +692,7 @@ export class MonitorPanelB extends DraggablePanel {
     svg.setAttribute("width", chartW.toString());
     svg.setAttribute("height", chartH.toString());
     svg.setAttribute("viewBox", `0 0 ${chartW} ${chartH}`);
-    svg.addClass('nw-svg-block');
+    svg.addClass('nw-monb-chart');
 
     const scores = this.divergenceHistory.map(h => h.overallDivergence);
     const minScore = Math.max(0, Math.min(...scores) - 10);
@@ -816,27 +809,23 @@ export class MonitorPanelB extends DraggablePanel {
     const label = getScoreLabel(overallScore);
 
     const overallRow = this.completionContent.createDiv({
-      cls: "nw-overall-row"
+      cls: "nw-monb-overall"
     });
     overallRow.createSpan({
       text: "综合完成度",
-      cls: "nw-text-sm-secondary"
+      cls: "nw-monb-overall-label"
     });
     overallRow.createSpan({
-      cls: colorCls,
-      attr: { style: "font-weight:600;font-size:16px;" },
+      cls: `nw-monb-overall-value ${colorCls}`,
       text: `${overallScore}分 · ${label}`
     });
 
     const progressBar = this.completionContent.createDiv({
-      cls: 'nw-u-h-8px nw-u-bg-nw-bg-muted-background nw-u-brd-4px nw-u-ov-hidden nw-u-marginbottom-10px'
+      cls: 'nw-monb-track'
     });
-    const progressFill = progressBar.createDiv({
-      attr: {
-        style: `height:100%;width:${overallScore}%;background:${this.getScoreColor(overallScore)};border-radius:4px;transition:width 0.3s ease;`
-      }
-    });
-    void progressFill;
+    const progressFill = progressBar.createDiv({ cls: 'nw-monb-track-fill' });
+    progressFill.style.setProperty('--nw-monb-pct', `${overallScore}%`);
+    progressFill.style.setProperty('--nw-monb-tone', this.getScoreColor(overallScore));
 
     const dimensions = [
       { key: 'scene', label: '场景', score: result.sceneCompletion.score, icon: '🏔️' },
@@ -849,30 +838,27 @@ export class MonitorPanelB extends DraggablePanel {
 
     for (const dim of dimensions) {
       const row = this.completionContent.createDiv({
-        cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-6px nw-u-m-3px-0'
+        cls: 'nw-monb-dim-row'
       });
-      row.createSpan({ text: dim.icon, cls: 'nw-u-fs-12px nw-u-minw-18px' });
+      row.createSpan({ text: dim.icon, cls: 'nw-monb-dim-icon' });
       row.createSpan({
         text: dim.label,
-        cls: 'nw-u-fs-11px nw-u-c-nw-text-muted-text-mut nw-u-minw-40px'
+        cls: 'nw-monb-dim-label'
       });
       const miniBar = row.createDiv({
-        cls: 'nw-u-flex-1 nw-u-h-6px nw-u-bg-nw-bg-muted-background nw-u-brd-3px nw-u-ov-hidden'
+        cls: 'nw-monb-dim-track'
       });
-      miniBar.createDiv({
-        attr: {
-          style: `height:100%;width:${dim.score}%;background:${this.getScoreColor(dim.score)};border-radius:3px;`
-        }
-      });
+      const dimFillEl = miniBar.createDiv({ cls: 'nw-monb-dim-fill' });
+      dimFillEl.style.setProperty('--nw-monb-pct', `${dim.score}%`);
+      dimFillEl.style.setProperty('--nw-monb-tone', this.getScoreColor(dim.score));
       row.createSpan({
-        cls: getScoreColorClass(dim.score),
-        attr: { style: "font-size:11px;min-width:30px;text-align:right;" },
+        cls: `nw-monb-dim-value--md ${getScoreColorClass(dim.score)}`,
         text: `${dim.score}分`
       });
     }
 
     const metaRow = this.completionContent.createDiv({
-      cls: 'nw-u-d-flex nw-u-gap-10px nw-u-margintop-8px nw-u-fs-10px nw-u-c-nw-text-muted-text-mut'
+      cls: 'nw-monb-meta nw-monb-meta--loose'
     });
     metaRow.createSpan({ text: `${result.wordCount}字` });
     metaRow.createSpan({ text: `${result.overallCompletion.details.paragraphs || 0}段` });
@@ -887,11 +873,11 @@ export class MonitorPanelB extends DraggablePanel {
       this.completionContent.empty();
       this.completionContent.createDiv({
         text: "综合完成度 --",
-        cls: 'nw-u-fwt-700 nw-u-fs-16px nw-u-c-nw-text-muted-text-fai nw-u-marginbottom-6px'
+        cls: 'nw-monb-nodata-title'
       });
       this.completionContent.createDiv({
         text: `正文不足 ${PLOT_COMPLETION_MIN_EVALUABLE_CHARS} 字，暂不评估（当前 ${wordCount} 字）`,
-        cls: 'nw-u-fs-11px nw-u-c-nw-text-muted-text-fai'
+        cls: 'nw-monb-note'
       });
     }
     if (this.completionExpanded) {
@@ -900,7 +886,7 @@ export class MonitorPanelB extends DraggablePanel {
         this.completionDetailPanel.empty();
         this.completionDetailPanel.createDiv({
           text: "正文过短，暂无完成度详情",
-          cls: 'nw-u-fs-11px nw-u-c-nw-text-muted-text-fai'
+          cls: 'nw-monb-note'
         });
       }
     }
@@ -911,7 +897,7 @@ export class MonitorPanelB extends DraggablePanel {
     if (!this.completionContent) return;
     if (this.completionDetailPanel && this.completionContent.contains(this.completionDetailPanel)) return;
     this.completionDetailPanel = this.completionContent.createDiv({
-      cls: "nw-completion-detail nw-u-margintop-10px nw-u-paddingtop-10px nw-u-bt-1px-solid-nw-divider-b",
+      cls: "nw-monb-detail",
       attr: {}
     });
   }
@@ -955,7 +941,7 @@ export class MonitorPanelB extends DraggablePanel {
       this.completionDetailPanel.empty();
       this.completionDetailPanel.createDiv({
         text: "正文过短，暂无完成度详情",
-        cls: 'nw-u-fs-11px nw-u-c-nw-text-muted-text-fai'
+        cls: 'nw-monb-note'
       });
       return;
     }
@@ -973,24 +959,23 @@ export class MonitorPanelB extends DraggablePanel {
 
     for (const section of sections) {
       const secDiv = this.completionDetailPanel.createDiv({
-        cls: 'nw-u-marginbottom-8px'
+        cls: 'nw-monb-section nw-monb-section--tight'
       });
 
       const secHeader = secDiv.createDiv({
-        cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-4px'
+        cls: 'nw-monb-section-head'
       });
       secHeader.createSpan({
         text: section.label,
-        cls: "nw-section-label"
+        cls: "nw-monb-section-label"
       });
       secHeader.createSpan({
-        cls: getScoreColorClass(section.dim.score),
-        attr: { style: "font-size:11px;font-weight:600;" },
+        cls: `nw-monb-section-score ${getScoreColorClass(section.dim.score)}`,
         text: `${section.dim.score}分 · ${getScoreLabel(section.dim.score)}`
       });
 
       const detailsRow = secDiv.createDiv({
-        cls: 'nw-u-fs-10px nw-u-c-nw-text-muted-text-mut nw-u-marginbottom-4px nw-u-lh-1-6'
+        cls: 'nw-monb-section-text'
       });
       const detailStr = Object.entries(section.dim.details)
         .map(([k, v]) => `${this.formatDetailKey(k)}: ${v}`)
@@ -999,12 +984,12 @@ export class MonitorPanelB extends DraggablePanel {
 
       if (section.dim.suggestions.length > 0) {
         const sugList = secDiv.createDiv({
-          cls: "nw-suggestion-list"
+          cls: "nw-monb-sug-list"
         });
         for (const sug of section.dim.suggestions.slice(0, 2)) {
           sugList.createDiv({
             text: `💡 ${sug}`,
-            cls: 'nw-u-c-nw-text-secondary-text nw-u-m-2px-0'
+            cls: 'nw-monb-sug-text nw-monb-sug-text--flat'
           });
         }
       }
@@ -1012,11 +997,11 @@ export class MonitorPanelB extends DraggablePanel {
 
     if (this.history.length >= 2) {
       const historySection = this.completionDetailPanel.createDiv({
-        cls: "nw-dashed-sep"
+        cls: "nw-monb-sep"
       });
       historySection.createDiv({
         text: "📈 写作进度曲线",
-        cls: "nw-section-title-sm"
+        cls: "nw-monb-sep-title"
       });
 
       this.renderHistoryChart(historySection);
@@ -1034,7 +1019,7 @@ export class MonitorPanelB extends DraggablePanel {
     svg.setAttribute("width", chartW.toString());
     svg.setAttribute("height", chartH.toString());
     svg.setAttribute("viewBox", `0 0 ${chartW} ${chartH}`);
-    svg.addClass('nw-svg-block');
+    svg.addClass('nw-monb-chart');
 
     const scores = this.history.map(h => h.overallScore);
     const minScore = Math.max(0, Math.min(...scores) - 10);
@@ -1072,7 +1057,7 @@ export class MonitorPanelB extends DraggablePanel {
     container.appendChild(svg);
 
     const historyMeta = container.createDiv({
-      cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-fs-10px nw-u-c-nw-text-muted-text-mut nw-u-margintop-4px'
+      cls: 'nw-monb-chart-meta'
     });
     historyMeta.createSpan({ text: `起点: ${scores[0]}分` });
     historyMeta.createSpan({ text: `当前: ${scores[scores.length - 1]}分` });
@@ -1358,40 +1343,35 @@ export class MonitorPanelB extends DraggablePanel {
     const trendLabel = getQualityTrendLabel(chapterTrend);
 
     const scoreRow = this.qualityContent.createDiv({
-      cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-6px'
+      cls: 'nw-monb-score-row'
     });
     scoreRow.createSpan({
       text: "综合质量",
-      cls: "nw-text-sm-secondary"
+      cls: "nw-monb-overall-label"
     });
-    const scoreValue = scoreRow.createSpan({
-      attr: { style: `font-weight:700;font-size:20px;color:${gradeColor};` }
-    });
+    const scoreValue = scoreRow.createSpan({ cls: 'nw-monb-score-value' });
+    scoreValue.style.setProperty('--nw-monb-tone', gradeColor);
     scoreValue.createSpan({ text: `${overallScore}` });
-    scoreValue.createSpan({ text: ` ${grade}`, cls: 'nw-u-fs-14px' });
+    scoreValue.createSpan({ text: ` ${grade}`, cls: 'nw-monb-score-grade' });
 
     const gradeRow = this.qualityContent.createDiv({
-      cls: "nw-overall-row"
+      cls: "nw-monb-overall"
     });
     gradeRow.createSpan({
       text: `${trendIcon} ${trendLabel}`,
-      cls: 'nw-u-fs-11px nw-u-c-nw-text-muted-text-fai'
+      cls: 'nw-monb-note'
     });
-    gradeRow.createSpan({
-      text: gradeLabel,
-      attr: { style: `font-size:11px;font-weight:600;color:${gradeColor};` }
-    });
+    const gradeLabelEl = gradeRow.createSpan({ text: gradeLabel, cls: 'nw-monb-grade-label' });
+    gradeLabelEl.style.setProperty('--nw-monb-tone', gradeColor);
 
     this.renderBaselineComparison(result);
 
     const progressBar = this.qualityContent.createDiv({
-      cls: 'nw-u-h-10px nw-u-bg-nw-bg-muted-background nw-u-brd-5px nw-u-ov-hidden nw-u-marginbottom-10px'
+      cls: 'nw-monb-track nw-monb-track--lg'
     });
-    progressBar.createDiv({
-      attr: {
-        style: `height:100%;width:${overallScore}%;background:${gradeColor};border-radius:5px;transition:width 0.3s ease;`
-      }
-    });
+    const qualityFillEl = progressBar.createDiv({ cls: 'nw-monb-track-fill nw-monb-track-fill--lg' });
+    qualityFillEl.style.setProperty('--nw-monb-pct', `${overallScore}%`);
+    qualityFillEl.style.setProperty('--nw-monb-tone', gradeColor);
 
     const dimensions = [
       { key: 'language', label: '语言', score: result.languageQuality.score, icon: '📝' },
@@ -1404,61 +1384,60 @@ export class MonitorPanelB extends DraggablePanel {
 
     for (const dim of dimensions) {
       const row = this.qualityContent.createDiv({
-        cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-6px nw-u-m-2px-0'
+        cls: 'nw-monb-dim-row nw-monb-dim-row--tight'
       });
-      row.createSpan({ text: dim.icon, cls: 'nw-u-fs-11px nw-u-minw-16px' });
+      row.createSpan({ text: dim.icon, cls: 'nw-monb-dim-icon nw-monb-dim-icon--sm' });
       row.createSpan({
         text: dim.label,
-        cls: 'nw-u-fs-10px nw-u-c-nw-text-muted-text-fai nw-u-minw-32px'
+        cls: 'nw-monb-dim-label nw-monb-dim-label--sm'
       });
       const miniBar = row.createDiv({
-        cls: 'nw-u-flex-1 nw-u-h-5px nw-u-bg-nw-bg-muted-background nw-u-brd-3px nw-u-ov-hidden'
+        cls: 'nw-monb-dim-track nw-monb-dim-track--sm'
       });
-      miniBar.createDiv({
-        attr: {
-          style: `height:100%;width:${dim.score}%;background:${this.getQualityScoreColor(dim.score)};border-radius:3px;`
-        }
-      });
+      const dimFillEl = miniBar.createDiv({ cls: 'nw-monb-dim-fill' });
+      dimFillEl.style.setProperty('--nw-monb-pct', `${dim.score}%`);
+      dimFillEl.style.setProperty('--nw-monb-tone', this.getQualityScoreColor(dim.score));
       row.createSpan({
-        cls: 'nw-u-fs-10px nw-u-minw-28px nw-u-ta-right nw-u-c-nw-text-secondary-text',
+        cls: 'nw-monb-dim-value nw-monb-dim-value--sm',
         text: `${dim.score}分`
       });
     }
 
     if (result.topSuggestions.length > 0) {
       const sugSection = this.qualityContent.createDiv({
-        cls: 'nw-u-margintop-8px nw-u-paddingtop-6px nw-u-bt-1px-dashed-nw-divider-'
+        cls: 'nw-monb-sep nw-monb-sep--compact'
       });
       sugSection.createDiv({
         text: `💡 Top 3 改进建议`,
-        cls: 'nw-u-fs-11px nw-u-fwt-600 nw-u-c-nw-text-secondary-text nw-u-marginbottom-4px'
+        cls: 'nw-monb-sub-title'
       });
       for (const sug of result.topSuggestions.slice(0, 3)) {
         const sugRow = sugSection.createDiv({
-          cls: 'nw-u-d-flex nw-u-ai-flex-start nw-u-gap-4px nw-u-m-3px-0'
+          cls: 'nw-monb-top-sug-row'
         });
         sugRow.createSpan({
           text: sug.priority === 'high' ? '🔴' : sug.priority === 'medium' ? '🟡' : '🟢',
-          cls: 'nw-u-fs-9px nw-u-fsh-0 nw-u-margintop-1px'
+          cls: 'nw-monb-top-sug-icon'
         });
         sugRow.createSpan({
           text: sug.content,
-          cls: 'nw-u-fs-10px nw-u-c-nw-text-secondary-text nw-u-lh-1-4 nw-u-flex-1'
+          cls: 'nw-monb-top-sug-text'
         });
       }
     }
 
     const metaRow = this.qualityContent.createDiv({
-      cls: 'nw-u-d-flex nw-u-gap-8px nw-u-margintop-6px nw-u-fs-10px nw-u-c-nw-text-muted-text-fai'
+      cls: 'nw-monb-meta nw-monb-meta--faint'
     });
     metaRow.createSpan({ text: `${result.wordCount}字` });
     metaRow.createSpan({ text: `${result.evalTimeMs}ms` });
     if (result.comparedToAverage !== 0) {
       const diffText = result.comparedToAverage > 0 ? `+${result.comparedToAverage}` : result.comparedToAverage;
-      metaRow.createSpan({
-        text: `均${diffText}`,
-        attr: { style: `color:${result.comparedToAverage > 0 ? 'var(--nw-success, #22c55e)' : 'var(--nw-danger, #ef4444)'};` }
-      });
+      const diffEl = metaRow.createSpan({ text: `均${diffText}`, cls: 'nw-monb-meta-diff' });
+      diffEl.style.setProperty(
+        '--nw-monb-tone',
+        result.comparedToAverage > 0 ? 'var(--nw-success, #22c55e)' : 'var(--nw-danger, #ef4444)'
+      );
     }
 
     // qualityContent.empty() 会连带移除详情面板：展开状态下必须重建，
@@ -1472,11 +1451,11 @@ export class MonitorPanelB extends DraggablePanel {
       this.qualityContent.empty();
       this.qualityContent.createDiv({
         text: "综合质量 --",
-        cls: 'nw-u-fwt-700 nw-u-fs-20px nw-u-c-nw-text-muted-text-fai nw-u-marginbottom-6px'
+        cls: 'nw-monb-nodata-title nw-monb-nodata-title--lg'
       });
       this.qualityContent.createDiv({
         text: `正文不足 ${QUALITY_MIN_EVALUABLE_CHARS} 字，暂不评估（当前 ${wordCount} 字）`,
-        cls: 'nw-u-fs-11px nw-u-c-nw-text-muted-text-fai'
+        cls: 'nw-monb-note'
       });
     }
     if (this.qualityExpanded) {
@@ -1485,7 +1464,7 @@ export class MonitorPanelB extends DraggablePanel {
         this.qualityDetailPanel.empty();
         this.qualityDetailPanel.createDiv({
           text: "正文过短，暂无质量详情",
-          cls: 'nw-u-fs-11px nw-u-c-nw-text-muted-text-fai'
+          cls: 'nw-monb-note'
         });
       }
     }
@@ -1496,7 +1475,7 @@ export class MonitorPanelB extends DraggablePanel {
     if (!this.qualityContent) return;
     if (this.qualityDetailPanel && this.qualityContent.contains(this.qualityDetailPanel)) return;
     this.qualityDetailPanel = this.qualityContent.createDiv({
-      cls: "nw-quality-detail nw-u-margintop-10px nw-u-paddingtop-10px nw-u-bt-1px-solid-nw-divider-b",
+      cls: "nw-monb-detail",
       attr: {}
     });
   }
@@ -1545,10 +1524,11 @@ export class MonitorPanelB extends DraggablePanel {
     const deltaText = `${overall.delta > 0 ? '+' : ''}${overall.delta.toFixed(1)}`;
     const zText = `${overall.zScore > 0 ? '+' : ''}${overall.zScore.toFixed(1)}σ`;
 
-    this.qualityContent.createDiv({
+    const baselineEl = this.qualityContent.createDiv({
       text: `📊 ${label} ${deltaText}（${zText}） · 基线 ${overall.baseline.toFixed(1)}（近${sampleCount}章）`,
-      attr: { style: `font-size:10px;color:${color};margin-bottom:8px;` }
+      cls: 'nw-monb-baseline'
     });
+    baselineEl.style.setProperty('--nw-monb-tone', color);
   }
 
   /** 切换质量详情面板 */
@@ -1592,7 +1572,7 @@ export class MonitorPanelB extends DraggablePanel {
       this.qualityDetailPanel.empty();
       this.qualityDetailPanel.createDiv({
         text: "正文过短，暂无质量详情",
-        cls: 'nw-u-fs-11px nw-u-c-nw-text-muted-text-fai'
+        cls: 'nw-monb-note'
       });
       return;
     }
@@ -1610,23 +1590,24 @@ export class MonitorPanelB extends DraggablePanel {
 
     for (const section of sections) {
       const secDiv = this.qualityDetailPanel.createDiv({
-        cls: 'nw-u-marginbottom-8px'
+        cls: 'nw-monb-section nw-monb-section--tight'
       });
 
       const secHeader = secDiv.createDiv({
-        cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-3px'
+        cls: 'nw-monb-section-head nw-monb-section-head--tight'
       });
       secHeader.createSpan({
         text: section.label,
-        cls: "nw-section-label"
+        cls: "nw-monb-section-label"
       });
-      secHeader.createSpan({
-        attr: { style: `font-size:11px;font-weight:600;color:${this.getQualityScoreColor(section.dim.score)};` },
+      const secScoreEl = secHeader.createSpan({
+        cls: 'nw-monb-section-score nw-monb-section-score--tone',
         text: `${section.dim.score}分`
       });
+      secScoreEl.style.setProperty('--nw-monb-tone', this.getQualityScoreColor(section.dim.score));
 
       const detailsRow = secDiv.createDiv({
-        cls: 'nw-u-fs-10px nw-u-c-nw-text-muted-text-fai nw-u-marginbottom-3px nw-u-lh-1-6'
+        cls: 'nw-monb-section-text nw-monb-section-text--faint'
       });
       const detailStr = Object.entries(section.dim.details)
         .map(([k, v]) => `${this.formatQualityDetailKey(k)}: ${v}`)
@@ -1635,19 +1616,19 @@ export class MonitorPanelB extends DraggablePanel {
 
       if (section.dim.suggestions.length > 0) {
         const sugList = secDiv.createDiv({
-          cls: "nw-suggestion-list"
+          cls: "nw-monb-sug-list"
         });
         for (const sug of section.dim.suggestions.slice(0, 2)) {
           const sugRow = sugList.createDiv({
-            cls: 'nw-u-d-flex nw-u-ai-flex-start nw-u-gap-4px nw-u-m-2px-0'
+            cls: 'nw-monb-issue-row'
           });
           sugRow.createSpan({
             text: "💡",
-            cls: 'nw-u-fs-9px'
+            cls: 'nw-monb-prio-icon'
           });
           sugRow.createSpan({
             text: sug.content,
-            cls: 'nw-u-c-nw-text-secondary-text nw-u-lh-1-4 nw-u-flex-1'
+            cls: 'nw-monb-all-sug-text'
           });
         }
       }
@@ -1655,17 +1636,17 @@ export class MonitorPanelB extends DraggablePanel {
 
     if (this.qualityHistory.length >= 3) {
       const historySection = this.qualityDetailPanel.createDiv({
-        cls: "nw-dashed-sep"
+        cls: "nw-monb-sep"
       });
       historySection.createDiv({
         text: "📈 质量趋势（最近10次）",
-        cls: "nw-section-title-sm"
+        cls: "nw-monb-sep-title"
       });
 
       this.renderQualityHistoryChart(historySection);
 
       const historyList = historySection.createDiv({
-        cls: 'nw-u-margintop-6px'
+        cls: 'nw-monb-history'
       });
       const recentHistory = [...this.qualityHistory].reverse().slice(0, 5);
       for (let i = 0; i < recentHistory.length; i++) {
@@ -1673,7 +1654,7 @@ export class MonitorPanelB extends DraggablePanel {
         const timeStr = new Date(entry.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
         historyList.createDiv({
           text: `${getQualityTrendIcon(entry.trend)} ${timeStr} · ${entry.overallScore}分 · ${entry.grade} · ${entry.wordCount}字`,
-          cls: 'nw-u-fs-10px nw-u-c-nw-text-muted-text-fai nw-u-m-2px-0'
+          cls: 'nw-monb-history-row nw-monb-history-row--faint'
         });
       }
     }
@@ -1681,31 +1662,29 @@ export class MonitorPanelB extends DraggablePanel {
     const allSuggestions = this.collectAllSuggestions(result);
     if (allSuggestions.length > 3) {
       const allSugSection = this.qualityDetailPanel.createDiv({
-        cls: "nw-dashed-sep"
+        cls: "nw-monb-sep"
       });
       allSugSection.createDiv({
         text: "📋 全部改进建议",
-        cls: "nw-section-title-sm"
+        cls: "nw-monb-sep-title"
       });
       for (const sug of allSuggestions) {
         const sugRow = allSugSection.createDiv({
-          cls: 'nw-u-d-flex nw-u-ai-flex-start nw-u-gap-6px nw-u-m-4px-0 nw-u-p-4px-6px nw-u-brd-4px nw-u-bg-nw-bg-muted-background'
+          cls: 'nw-monb-all-sug-row'
         });
         const priorityBadge = sugRow.createSpan({
-          attr: {
-            style: `font-size:9px;padding:1px 4px;border-radius:3px;color:white;background:${getPriorityColor(sug.priority)};flex-shrink:0;`
-          },
+          cls: 'nw-monb-prio-badge',
           text: getPriorityLabel(sug.priority)
         });
-        void priorityBadge;
+        priorityBadge.style.setProperty('--nw-monb-tone', getPriorityColor(sug.priority));
         const sugContent = sugRow.createSpan({
           text: sug.content,
-          cls: 'nw-u-fs-10px nw-u-c-nw-text-secondary-text nw-u-lh-1-4 nw-u-flex-1'
+          cls: 'nw-monb-top-sug-text'
         });
         void sugContent;
         const effortSpan = sugRow.createSpan({
           text: `改动:${sug.estimatedEffort}`,
-          cls: 'nw-u-fs-9px nw-u-c-nw-text-muted-text-fai nw-u-fsh-0'
+          cls: 'nw-monb-all-sug-effort'
         });
         void effortSpan;
       }
@@ -1730,16 +1709,16 @@ export class MonitorPanelB extends DraggablePanel {
 
     if (tips.length > 0) {
       const linkSection = this.qualityDetailPanel.createDiv({
-        cls: "nw-dashed-sep"
+        cls: "nw-monb-sep"
       });
       linkSection.createDiv({
         text: "🔗 联动分析",
-        cls: "nw-section-title-sm"
+        cls: "nw-monb-sep-title"
       });
       for (const tip of tips) {
         linkSection.createDiv({
           text: tip,
-          cls: 'nw-u-fs-10px nw-u-c-warning-text nw-u-m-3px-0 nw-u-lh-1-4'
+          cls: 'nw-monb-tip'
         });
       }
     }
@@ -1772,7 +1751,7 @@ export class MonitorPanelB extends DraggablePanel {
     svg.setAttribute("width", chartW.toString());
     svg.setAttribute("height", chartH.toString());
     svg.setAttribute("viewBox", `0 0 ${chartW} ${chartH}`);
-    svg.addClass('nw-svg-block');
+    svg.addClass('nw-monb-chart');
 
     const scores = this.qualityHistory.map(h => h.overallScore).slice(-10);
     if (scores.length < 2) return;
