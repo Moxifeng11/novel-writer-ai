@@ -11,6 +11,7 @@
 
 import type { BookBasicInfo } from '@/services/knowledge-base-manager';
 import { radarChart, barChart, donutChart } from '@/ui/svg-charts';
+import type { KbStatusKey } from './kb-panels-logic';
 import {
     KB_QUALITY_DIMENSIONS,
     selectCompletedBooks,
@@ -34,6 +35,13 @@ export interface KbStatsPanelHost {
     renderChart(container: HTMLElement, svgHtml: string): void;
     /** 查询题材显示名；题材不存在时回退为 id，知识库未就绪时返回「未分类」。 */
     getGenreName(genreId?: string): string;
+    /**
+     * 点击状态清单某一行时回调（未注入则图例行保持只读）。
+     *
+     * 宿主负责「跳到书架并按该状态筛选」；构建器只把用户选中的状态原样传出，
+     * 不持有筛选状态、也不改变自己渲染的数据快照。
+     */
+    onStatusClick?: (status: KbStatusKey) => void;
 }
 
 /**
@@ -120,11 +128,29 @@ export function buildKbStatsPanel(rightContentEl: HTMLElement, host: KbStatsPane
 
     const statusList = statusWrap.createDiv({ cls: 'nw-ks-chart-card' });
     const statusItems = buildStatusLegendData(statusCounts);
+    const onStatusClick = host.onStatusClick;
     statusItems.forEach(item => {
-        const row = statusList.createDiv({ cls: 'nw-ks-legend-row' });
+        // 0 本的状态不提供跳转：点进空书架只会让用户以为自己筛错了
+        const actionable = Boolean(onStatusClick) && item.value > 0;
+        const row = statusList.createDiv({
+            cls: `nw-ks-legend-row${actionable ? ' nw-ks-legend-row--action' : ' nw-ks-legend-row--idle'}`,
+        });
         const left = row.createDiv({ cls: 'nw-ks-legend-left' });
         left.createSpan({ cls: `nw-ks-legend-dot nw-ks-legend-dot--${item.status}` });
         left.createSpan({ text: item.label, cls: 'nw-ks-legend-label' });
         row.createSpan({ text: item.value.toString(), cls: 'nw-ks-legend-value' });
+
+        if (!actionable || !onStatusClick) return;
+        const status = item.status;
+        const activate = () => onStatusClick(status);
+        row.setAttribute('role', 'button');
+        row.setAttribute('tabindex', '0');
+        row.setAttribute('title', `在书架中查看「${item.label}」的 ${item.value} 本书`);
+        row.addEventListener('click', activate);
+        row.addEventListener('keydown', (event: KeyboardEvent) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            activate();
+        });
     });
 }

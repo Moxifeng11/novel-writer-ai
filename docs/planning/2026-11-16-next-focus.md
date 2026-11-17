@@ -1512,3 +1512,30 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 
 **下一轮**：缺口 ⑤「质量统计状态清单不可交互」（`ui/views/kb-stats-panel.ts` 的 `nw-ks-legend-row` 无 cursor/onclick，点击跳书架并按状态筛选），或按作者挑选 ⑥ TTS / ⑦ i18n。
 
+
+
+### 2026-11-18 第五十五轮：功能缺口 ⑤——质量统计状态清单可交互（`nw-ks-*` 增补）
+
+**背景**：缺口清单 ⑤（`docs/modules/kb-stats.md` §7 backlog 第 3 条）：`ui/views/kb-stats-panel.ts` 的状态图例行 `nw-ks-legend-row` 看起来该能点，实际没有 cursor、没有 hover、没有 onclick —— 用户看完「失败 1」想找那本书只能回书架手工筛。
+
+**交付**：
+- `KbStatsPanelHost` 新增可选 `onStatusClick?(status: KbStatusKey)`。`actionable = Boolean(host.onStatusClick) && item.value > 0`：成立的行追加 `nw-ks-legend-row--action` + `role="button"` + `tabindex="0"` + `title="在书架中查看「<label>」的 N 本书"`；不成立（0 本）追加 `--idle`，数值转 muted。click 与 keydown（Enter / 空格）走同一个 `activate()` 闭包。
+- `ui/views/knowledge-base-view.ts` 新增 `private openBookShelfWithStatus(status)`：切 `activeMainTab='books'`，**先清**频道 / 主题材 / 子题材 / 关键词（否则书架条数会小于图例数字），再设 `filter.status`，然后 `renderLeftSidebar()` + `renderRightPanel()`。
+- `styles-src/27-knowledge-base.css` 追加 22 行：`--action`（`padding:10px 8px;margin:0 -8px;border-radius:6px;cursor:pointer;transition:background-color 0.15s ease`）、`:hover` 底色、`:focus-visible` 描边、`--idle .nw-ks-legend-value` 弱化。padding/margin 正负抵消，行高与间距不变。
+- 单测新增 4 条（点击回调、Enter/空格触发而普通键不触发、0 本行无 role 且点击无反应、未注入回调时全只读），文件 11 条全绿。
+
+**坑（三条）**
+1. **before 构建只能重建**：`main.js` 不在 git 里（`git ls-files main.js styles.css` 只回 styles.css）。拿 before 产物的做法是 `git stash push -- <四个改动文件>` → `npm run build` → 拷 main.js/styles.css 到 `D:\nw-tmp\gap5-before\` → 跑探针 → `git stash pop` → 再 build。忘了 pop 就会以为「改动没生效」。
+2. **探针要兼容两侧类名**：只有 after 有 `--action` / `--idle`。第一版探针写死 `locator('.nw-ks-legend-row--action')`，在 before 侧 30s 超时；改成先算 `interactive` 再决定选择器，并且「点完没跳书架时不截书架列表」。
+3. **书架条目类名是 `nw-kb-book-card-title`**（`ui/views/kb-book-card.ts:68`），不是 `nw-kb-book-name`；计数条是 `.nw-kb-book-list-count`，文案「共 N 本书籍」。
+
+**验收**（`D:\nw-tmp\probe-gap5.mjs --tag=before|after`，dev vault 注入 6 本种子书：1 待拆解 / 1 拆解中 / 2 已完成 / 1 失败 / 1 中断）
+- before：五行 cls 全 `nw-ks-legend-row`，`role/tabindex/title` 全 null，hover `{cursor:'auto', background:'rgba(0, 0, 0, 0)', radius:'0px'}`，点「失败」后 `activeMainTab` 仍 `stats`、`filter.status` 仍 `all`。
+- after：五行全 `--action` + `role=button` + `tabindex=0` + title，hover `{cursor:'pointer', background:'oklch(0 0 none / 0.067)', radius:'6px'}`；点「失败」→ `activeMainTab=books`、`filter.status=failed`、下拉 `failed`、「共 1 本书籍」、列表只有「雾港」；首行 `focus()` 后按 Enter → `books` / `pending`。
+- 像素：`stats-status.png` 370×431 **0 px**；`stats-status-hover.png` 16857 px（10.571%，bbox y=337-382 即被悬停的那一行）。
+- 门禁：`check:css` 795890 B / 31948 行 / uniqueClasses 4320（+2）/ hex 192 / rgbHsl 223 / !important 24 / 深度 4；`check:bundle` main.js 5652503（+685）/ styles.css 795890（+558）/ workers 684381 + 108804；`check:inline-styles` 与 `check:utility`（46 类 / 142 次 / 零引用 0）不变；两份基线已 `--update-baseline` 并写明原因（`check-css.js` 的 `--note` 仍会整体覆盖，脚本外补回旧两行）。
+- 全量：\`npm run preflight\` **EXIT=0**（964 个测试文件 / 10171 通过 + 3 跳过；JSDoc 979 文件、测试标准 982 文件、活跃文档 20 个）。
+
+**文档**：`docs/modules/kb-stats.md`（状态行、§1 用户视角与宿主接口、§2 交互小节、§3 KS-06、§4 四条决策、§5 七条验收、§7 删掉该 backlog、§8 三条新坑）；`docs/modules/INDEX.md` 行更新；`docs/design/2026-11-16-visual-refactor-standard.md` §5 行与 §5.1 styles.css 体积；`docs/planning/2026-11-18-feature-gaps.md` ⑤ 标 done；`docs/CURRENT.md` §4 改「①②③④⑤ 已交付」。
+
+**下一轮**：缺口 ⑥「章节朗读（TTS）听校」或 ⑦「i18n」——按作者挑选；若继续做体验补洞，`docs/modules/` 里还有若干 §7 backlog 可复用同一套路（实机 before/after + 像素 diff + 门禁）。

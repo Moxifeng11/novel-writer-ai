@@ -25,7 +25,11 @@ function book(overrides: Partial<BookBasicInfo> = {}): BookBasicInfo {
     } as BookBasicInfo;
 }
 
-function makeHost(books: BookBasicInfo[], genreName: (id?: string) => string = id => id ?? '未分类') {
+function makeHost(
+    books: BookBasicInfo[],
+    genreName: (id?: string) => string = id => id ?? '未分类',
+    onStatusClick?: (status: string) => void,
+) {
     const charts: string[] = [];
     return {
         charts,
@@ -33,6 +37,7 @@ function makeHost(books: BookBasicInfo[], genreName: (id?: string) => string = i
             allBooks: books,
             renderChart: (_container: HTMLElement, svgHtml: string) => { charts.push(svgHtml); },
             getGenreName: genreName,
+            onStatusClick,
         },
     };
 }
@@ -131,5 +136,66 @@ describe('buildKbStatsPanel 空数据分支', () => {
         const legend = root.findAll('nw-ks-legend-value').map(el => el.textContent);
         expect(legend).toContain('2');
         expect(legend).toContain('1');
+    });
+});
+
+describe('状态清单可点击（功能缺口 ⑤）', () => {
+    it('注入回调后，数量非 0 的行带 role/tabindex/title，点击把状态交给宿主', () => {
+        const root = new FakeEl('div');
+        const calls: string[] = [];
+        const { host } = makeHost([
+            book({ breakdownStatus: 'completed' }),
+            book({ id: 'b2', breakdownStatus: 'failed' }),
+        ], undefined, status => calls.push(status));
+
+        buildKbStatsPanel(root as unknown as HTMLElement, host as never);
+
+        const failedRow = root.findAll('nw-ks-legend-row').find(row => row.allText().includes('失败'));
+        expect(failedRow).toBeTruthy();
+        expect(failedRow?.className).toContain('nw-ks-legend-row--action');
+        expect(failedRow?.getAttribute('role')).toBe('button');
+        expect(failedRow?.getAttribute('tabindex')).toBe('0');
+        expect(failedRow?.getAttribute('title')).toContain('失败');
+
+        failedRow?.dispatch('click');
+        expect(calls).toEqual(['failed']);
+    });
+
+    it('键盘 Enter / 空格同样触发跳转', () => {
+        const root = new FakeEl('div');
+        const calls: string[] = [];
+        const { host } = makeHost([book({ breakdownStatus: 'failed' })], undefined, status => calls.push(status));
+
+        buildKbStatsPanel(root as unknown as HTMLElement, host as never);
+
+        const row = root.findAll('nw-ks-legend-row--action')[0];
+        row.dispatch('keydown', { key: 'Enter' });
+        row.dispatch('keydown', { key: ' ' });
+        row.dispatch('keydown', { key: 'a' });
+        expect(calls).toEqual(['failed', 'failed']);
+    });
+
+    it('0 本的状态不给跳转（无 role，点击无反应）', () => {
+        const root = new FakeEl('div');
+        const calls: string[] = [];
+        const { host } = makeHost([book({ breakdownStatus: 'completed' })], undefined, status => calls.push(status));
+
+        buildKbStatsPanel(root as unknown as HTMLElement, host as never);
+
+        const emptyRow = root.findAll('nw-ks-legend-row').find(row => row.allText().includes('失败'));
+        expect(emptyRow?.className).toContain('nw-ks-legend-row--idle');
+        expect(emptyRow?.getAttribute('role')).toBeNull();
+        emptyRow?.dispatch('click');
+        expect(calls).toEqual([]);
+    });
+
+    it('未注入回调：全部行保持只读（构建器不替宿主做决定）', () => {
+        const root = new FakeEl('div');
+        const { host } = makeHost([book({ breakdownStatus: 'failed' })]);
+
+        buildKbStatsPanel(root as unknown as HTMLElement, host as never);
+
+        expect(root.findAll('nw-ks-legend-row--action')).toHaveLength(0);
+        expect(root.findAll('nw-ks-legend-row')).toHaveLength(5);
     });
 });

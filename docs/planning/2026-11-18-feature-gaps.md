@@ -1,6 +1,6 @@
 # 功能缺口清单（2026-11-18）
 
-> 状态：**①②③④已交付（2026-11-18）**，其余待作者挑选 · 编制：DSH · 背景：视觉重构 Slice A–Y 收尾、`nw-u-*` 存量清零后，工作重心转功能实现。
+> 状态：**①②③④⑤已交付（2026-11-18）**，其余待作者挑选 · 编制：DSH · 背景：视觉重构 Slice A–Y 收尾、`nw-u-*` 存量清零后，工作重心转功能实现。
 > 口径：只列**已核实**的缺口（附代码证据），按「用户价值 / 工作量」排序；不含纯重构与 P2 技术债。
 > 每项交付定义：功能实现 + 单测 + 实机或像素验收 + 模块文档 + 门禁 + 提交推送。
 
@@ -12,7 +12,7 @@
 | 2 | 全屏写作视图缺写作时实时体检 | 新能力接入 | 1–2 轮 | ✅ done（2026-11-18） |
 | 3 | 发布前错别字 / 标点体检 | 新功能 | 1 轮 | ✅ done（2026-11-18） |
 | 4 | 提示词管理器交付级修补 | 体验补洞 | 1 轮 | ✅ done（2026-11-18） |
-| 5 | 质量统计状态清单不可交互 | 体验补洞 | 0.5 轮 | 强（模块文档 §7） |
+| 5 | 质量统计状态清单不可交互 | 体验补洞 | 0.5 轮 | ✅ done（2026-11-18） |
 | 6 | 章节朗读（TTS）写作用「听校」 | 新功能 | 0.5–1 轮 | 强（全仓 0 引用） |
 | 7 | 英文界面（i18n） | 新能力 | 3–5 轮 | 强（无 i18n 框架） |
 
@@ -92,11 +92,18 @@
 - 验收：四个单测文件（设置页 DOM / 服务分页与导入 / 导入纯逻辑 / 预览弹窗）全过；实机 before/after 8 场景截图——`templates-list`/`templates-detail`/`abtests` **PNG 字节完全相同**（局部重绘零视觉变化），`usage-page1/2` 显示工具条与 3 页页码器，导入预览弹窗与清空确认弹窗按设计出图；键盘实测 `tabindex=0` + ArrowDown 焦点移位。
 - 门禁：styles.css 793258 → 795332（+2074）、main.js 5643485 → 5651818（+8333），两份基线已按实上调并写明原因；详见 `docs/modules/prompt-manager-settings.md` §5.1。
 
-## 5. 质量统计状态清单不可交互（体验补洞）
+## 5. 质量统计状态清单不可交互（体验补洞，✅ 已修 2026-11-18）
 
 **证据**：`docs/modules/kb-stats.md` §7；`ui/views/kb-stats-panel.ts` 的 `nw-ks-legend-row` 无 cursor、无 onclick。
 
 **做法**：点「失败 / 拆解中 / 已完成」跳到书架并按状态筛选（知识库视图已有筛选能力）；行加 hover 与 cursor。
+
+**已交付（2026-11-18）**
+- 状态行可点：`KbStatsPanelHost` 新增可选 `onStatusClick?(status: KbStatusKey)`；`item.value > 0` 且注入了回调时该行追加 `nw-ks-legend-row--action` + `role="button"` + `tabindex="0"` + `title`，否则 `--idle`（数值转 muted）。click 与 Enter/空格走同一个 `activate()`。
+- 跳转：视图新增 `openBookShelfWithStatus(status)` —— 切 `books` 页签、清掉频道/主题材/子题材/关键词残留筛选、设 `filter.status`，再重绘侧栏与右栏（不清会造成「图例说 1 本、书架说 0 本」）。
+- 样式：`styles-src/27-knowledge-base.css` 新增 4 条规则（hover 底色 / `cursor:pointer` / `:focus-visible` 描边 / idle 数值弱化），`padding`+`margin` 正负抵消保证行高不变。
+- 验收：实机 before/after（6 本种子书）——before 无 role/tabindex/title、hover `cursor:auto`、点击无效；after 五行全 `--action`、hover `cursor:pointer`、点「失败」后 `activeMainTab=books` / `filter.status=failed` / 「共 1 本书籍」/ 列表仅「雾港」，首行 focus 后按 Enter 亦生效。像素：静态页 370×431 **0 px**，hover 态 16857 px（仅被悬停那一行的底色）。单测 11 条（新增 4 条）。
+- 门禁：styles.css 795332 → 795890（+558 / +2 类）、main.js 5651818 → 5652503（+685），两份基线已按实上调并写明原因；详见 `docs/modules/kb-stats.md` §5。
 
 ## 6. 章节朗读（TTS）写作「听校」（新功能）
 
@@ -120,6 +127,6 @@
 
 1 → 2 → 3 → 4 → 5 →（6 可选）→ 7。
 
-进度：①②③④ 已交付（2026-11-18）。
+进度：①②③④⑤ 已交付（2026-11-18）；下一个候选是 6（TTS 听校）或 7（i18n）。
 
 理由：1 是修「假成功」缺陷；2 是把已交付引擎变成写作时可见的价值；3 是投稿刚需且不依赖 AI；4/5 是低成本体验补洞；6/7 视需要。

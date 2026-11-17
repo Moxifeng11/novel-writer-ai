@@ -1,14 +1,14 @@
 # 质量统计面板（kb-stats-panel）
 
-> 状态：stable（视觉重构 Slice X 完成 2026-11-17）　｜　最后更新：2026-11-17　｜　Owner：dsh
+> 状态：stable（视觉重构 Slice X 完成 2026-11-17；功能缺口 ⑤ 交互补洞 2026-11-18）　｜　最后更新：2026-11-18　｜　Owner：dsh
 
 ## 1. 定位
 
-- **用户视角**：知识库右侧「质量统计」页签 —— 顶部 4 张概览卡（书籍总数 / 已拆解 / 拆解中 / 平均质量分），其下三段：「各维度质量分布」（平均质量雷达图 + 12 维平均分横条）、「题材分布」（Top 10 柱状图，无数据时显示「暂无题材数据」）、「拆解状态分布」（状态环图 + 状态清单）。
+- **用户视角**：知识库右侧「质量统计」页签 —— 顶部 4 张概览卡（书籍总数 / 已拆解 / 拆解中 / 平均质量分），其下三段：「各维度质量分布」（平均质量雷达图 + 12 维平均分横条）、「题材分布」（Top 10 柱状图，无数据时显示「暂无题材数据」）、「拆解状态分布」（状态环图 + 状态清单）。状态清单里**数量大于 0 的行可点**（鼠标指针变手型 + hover 底色 + `role=button`/`tabindex=0`/`title`「在书架中查看「X」的 N 本书」），点击或按 Enter / 空格即跳回「参考书籍」书架并按该状态筛选；数量为 0 的行保持只读（数值转灰）。
 - **代码入口**
-  - `ui/views/kb-stats-panel.ts`（130 行，LF 行尾）。唯一导出 `export function buildKbStatsPanel(rightContentEl: HTMLElement, host: KbStatsPanelHost): void`（`:48`）。
-  - `KbStatsPanelHost`（`:30`）：`allBooks: BookBasicInfo[]`、`renderChart(container, svgHtml)`、`getGenreName(genreId?)`。
-  - 挂载点：`ui/views/knowledge-base-view.ts:24` 引入，`:2813` 在 `renderStatsTab()`（`:2809` 注释）里调用，图表挂载与题材命名由视图注入。
+  - `ui/views/kb-stats-panel.ts`（157 行，LF 行尾）。唯一导出 `export function buildKbStatsPanel(rightContentEl: HTMLElement, host: KbStatsPanelHost): void`（`:48`）。
+  - `KbStatsPanelHost`（`:30`）：`allBooks: BookBasicInfo[]`、`renderChart(container, svgHtml)`、`getGenreName(genreId?)`、可选 `onStatusClick?(status: KbStatusKey)`（功能缺口 ⑤ 新增，未注入时整段只读）。
+  - 挂载点：`ui/views/knowledge-base-view.ts:24` 引入，`:2813` 在 `renderStatsTab()`（`:2809` 注释）里调用，图表挂载与题材命名由视图注入；`onStatusClick` 注入 `status => this.openBookShelfWithStatus(status)`（新增私有方法，切 `activeMainTab='books'` + 重置频道/主题材/子题材/关键词后设 `filter.status`，再 `renderLeftSidebar()` + `renderRightPanel()`）。
   - 纯逻辑层：`ui/views/kb-panels-logic.ts`（概览卡 `buildStatsOverviewCards` `:250`、题材柱状 `buildGenreBarData` `:303`、状态环图 `buildStatusDonutData` `:335`、状态清单 `buildStatusLegendData` `:349`、状态配色 `KB_STATUS_STYLES` `:88`）。
 - **数据来源**：`host.allBooks`（`BookBasicInfo[]`，构建期只读快照）；质量分取已完成拆解书的 `qualityScores`；题材名走 `host.getGenreName`（题材不存在时回退 id，知识库未就绪时返回「未分类」）。不落盘、无自有状态。
 - **样式**：`styles-src/27-knowledge-base.css` 末尾「质量统计面板：Slice X」段（192 行，文件现 3324 行 / 71965 字节）。**不新建样式文件**——与 Slice S 同理，同一模块不拆两套前缀。
@@ -22,6 +22,7 @@
 - **题材分布**（`:95-105`）：有数据时 `nw-ks-bar-chart`（flex / 居中）挂 `barChart`(500×300)，否则 `nw-ks-empty`（居中 / p40 / muted）显示「暂无题材数据」。
 - **拆解状态分布**（`:107-129`）：`-chart-row` → `-chart-card--centered`（有状态数据时挂 `donutChart` 220px）+ `-chart-card` 状态清单；每行 `-legend-row`（flex / space-between / padding 10px 0 / border-bottom）> `-legend-left`（flex / center / gap 8 / `-legend-dot--{status}` 10×10 圆点 + `-legend-label`）+ `-legend-value`。
 - **状态五态**：`pending`(`#f59e0b`) / `processing`(`#3b82f6`) / `completed`(`#2ecc71`) / `failed`(`#e74c3c`) / `interrupted`(`#f97316`)，环图配色仍由 `KB_STATUS_STYLES` 提供，图例圆点改走修饰类。
+- **状态清单可交互（功能缺口 ⑤，2026-11-18）**：`actionable = Boolean(host.onStatusClick) && item.value > 0`；成立的行追加 `nw-ks-legend-row--action` + `role="button"` + `tabindex="0"` + `title="在书架中查看「<label>」的 N 本书"`，否则 `--idle`。`click` 与 `keydown`（Enter / 空格）走同一个 `activate()` 闭包（`event.preventDefault()` 后调用 `host.onStatusClick(status)`）。样式只有 4 条规则（22 行）：`.nw-ks-legend-row--action{padding:10px 8px;margin:0 -8px;border-radius:6px;cursor:pointer;transition:background-color 0.15s ease}` + `:hover{background:var(--background-modifier-hover)}` + `:focus-visible{outline:2px solid var(--interactive-accent);outline-offset:-2px}` + `.nw-ks-legend-row--idle .nw-ks-legend-value{color:var(--text-muted)}`。`padding`/`margin` 正负抵消，行高与间距不变（像素比对 0 差）。
 - **进度条**：`fill.style.setProperty('--nw-ks-pct', …)`（`:91`，值为 `avg + '%'`），CSS `.nw-ks-bar-fill{ width: var(--nw-ks-pct, 0%) }`；JS 不再写 `style.width`。
 - **历史包袱（Slice X 处理前）**：81 处 `nw-u-*` 工具类 + 4 处内联样式（四条 `fill.style.width`、概览卡 4 个裸色 `color`、图例圆点 `background: item.color`、图例行 `&:last-child` 非法声明）。
 
@@ -34,6 +35,7 @@
 | KS-03 | P1 | 图例圆点用 `background: ${item.color}` 内联 | `buildStatusLegendData` 增 `status: KbStatusKey`，圆点改 `--{status}` 修饰类 | done（Slice X） |
 | KS-04 | P1 | 四条平均分进度条用 `fill.style.width = avg + '%'` | 改 CSS 变量 `--nw-ks-pct`（与 `--nw-bi-pct` / `--nw-cp-pct` / `--nw-rf-pct` 同套路） | done（Slice X） |
 | KS-05 | P2 | 图例行内联里的 `&:last-child{border-bottom:none}` 在 style 属性中非法，被浏览器丢弃 —— 每行其实都有下边框 | 新 CSS 不加 `:last-child` 规则，按**实际渲染**复刻 | done（Slice X） |
+| KS-06 | P1 | 状态清单看起来可点却无任何交互（无 cursor / 无 hover / 无 click），用户看完「失败 1」想找那本书只能回书架手工筛 | 有书的行可点可键盘激活，跳书架并预置状态筛选；0 本行只读且数值弱化 | done（功能缺口 ⑤） |
 
 ## 4. 关键决策
 
@@ -43,6 +45,10 @@
 - **2026-11-17 进度条走 CSS 变量**：保留 `bar-fill` 元素与 `setProperty` 写法，CSS 默认 `0%`；比 `style.width` 的好处是宽度可被主题/紧凑模式覆盖，且 JS 侧零内联。
 - **2026-11-17 按实际渲染复刻 `:last-child`**：旧内联把 `&:last-child` 塞进 style 属性，浏览器整条丢弃 → 原来每行都有下边框。新 CSS **刻意不补** `:last-child`（补了会让最后一行少 1px 边框，产生像素差异）。这是「不要顺手修旧 bug」的典型：等价优先。
 - **2026-11-17 标签 label 继续用 `nw-text-sm-muted`**：`styles.css` 里已有等价定义（12px muted），属于仍在用的外壳类，不纳入本轮改名范围。
+- **2026-11-18 0 本不给跳转**：`item.value > 0` 才可点。点进空书架只会看到「暂无书籍」，比不给点更迷惑；0 值行改 `--idle` 把数值压成 muted，顺带让「哪个状态还是 0」一眼可读。
+- **2026-11-18 跳转前必须清筛选**：书架数字来自图例的 `host.allBooks` 全量统计，而书架列表还要叠加频道/主题材/子题材/关键词。只设 `filter.status` 的话，点「失败 1」可能看到 0 本（残留的题材筛选把书滤掉了）。`openBookShelfWithStatus()` 因此先把前四项重置为 `all` / 空串，再设 `status`。
+- **2026-11-18 键盘走 activate 回调而不是 `el.click()`**：`buildKbStatsPanel` 只依赖 `HTMLElement`，单测里的 `FakeEl` 没有 `click()`；keydown 直接调同一个 `activate()` 闭包，测试可以只派发 `keydown` 就验证行为。
+- **2026-11-18 交互态不改结构**：只在既有 `nw-ks-legend-row` 上追加修饰类，不新增 DOM 节点、不改 flex 顺序 —— 这是像素比对能拿到 0 差的前提。
 
 ## 5. 验收记录
 
@@ -54,6 +60,13 @@
 | 2026-11-17 | 像素（5 场景 before/after） | PNG **5/5 = 0 px**；probes struct 0 / style 0 / rect 0（仅 cls 改名） |
 | 2026-11-17 | 门禁 | `check:inline-styles` 530→**526**；`check:utility` 75/270→**55/189**（零引用 0）；`check:css` bytes **784775** / uniqueClasses **4263** / hex **192** / rgbHsl 223；`check:bundle` main.js **5625961** / styles.css **784775** |
 | 2026-11-17 | `npm run preflight` | EXIT=0（见 §8 与交接快照） |
+| 2026-11-18 | `npx tsc --noEmit` | EXIT 0 |
+| 2026-11-18 | 单测 | `npx vitest run tests/unit/ui/kb-stats-panel.test.ts` → 1 file / 11 通过（新增 4 条交互用例） |
+| 2026-11-18 | 实机 before（dev vault，6 本种子书） | 5 行 cls 全 `nw-ks-legend-row`、`role/tabindex/title` 全 null、hover `cursor:auto`、点击后 `activeMainTab` 仍 `stats` |
+| 2026-11-18 | 实机 after | 5 行 `nw-ks-legend-row--action` + `role=button` + `tabindex=0` + title「在书架中查看「失败」的 1 本书」；hover `cursor:pointer` / `background:oklch(0 0 none / 0.067)` / `radius:6px`；点「失败」后 `activeMainTab=books`、`filter.status=failed`、下拉 `failed`、「共 1 本书籍」、列表仅「雾港」 |
+| 2026-11-18 | 实机键盘 | 首行 `focus()` 后 `document.activeElement === row`；按 Enter → `activeMainTab=books` / `filter.status=pending` |
+| 2026-11-18 | 像素（before/after） | `stats-status.png` 370×431 **0 px**；`stats-status-hover.png` 16857 px（10.571%，bbox y=337-382 即被 hover 的那一行，底色属预期新增） |
+| 2026-11-18 | 门禁 | `check:css` 795890 B / 31948 行 / uniqueClasses 4320 / hex 192 / rgbHsl 223 / !important 24 / 深度 4；`check:bundle` main.js 5652503 / styles.css 795890 / workers 684381 + 108804；`check:inline-styles` 通过；`check:utility` 46 类 / 142 次 / 零引用 0；`check:view-tests` 84 基线无新增 |
 
 ## 6. 测试清单
 
@@ -66,7 +79,6 @@
 
 - [ ] `nw-ks-overview` 写死 `repeat(4, 1fr)`，窄右栏（<640px）会挤压；可改 `repeat(auto-fit, minmax(140px, 1fr))`（会改变布局，需单独验收）。
 - [ ] 概览卡 icon 用 emoji 文本（28px），不同平台字形宽度不一，可改 SVG。
-- [ ] 状态清单无交互（不能点「失败」筛选书单）；`nw-ks-legend-row` 未加 `cursor`，与「看起来可点」的预期不符。
 - [ ] 图表尺寸（雷达 280 / 柱状 500×300 / 环图 220）散落在视图层，可提到 `kb-panels-logic` 的常量表。
 - [ ] `buildKbStatsPanel` 每次重建整页（含三张 SVG），书籍多时无谓重绘；可只重绘变化段落。
 
@@ -78,5 +90,8 @@
   2. **算零引用要排除定义文件**：自己写脚本扫「零引用工具类」时，若把 `styles-src/10-entity-and-utilities.css` 也算进搜索文本，定义会自己命中自己，得到 `defs 162 / zero 0` 的假结果；且必须排除 `tests/`（那里有「断言某类不存在」的用例）。`scripts/check-utility-classes.mjs` 的 D 项口径就是这样。
   3. **DeferredView 兜底**：E2E / 截图脚本里 `app.workspace.getLeavesOfType('novel-writer-knowledge-base')[0].view` 可能是空壳，要循环 `await leaf.loadIfDeferred()` 直到 `leaf.view.bookDetailRenderer` 存在。
   4. **宿主高度要靠内容撑开**：截图宿主若不设 height，`.nw-ks-panel{height:100%}` 会解析成 auto（这正是我们要的「内容多高就多高」），否则只能截到首屏。
-- **仓外临时脚本（勿提交）**：`D:\nw-tmp\snap-x.mjs`（before/after 采集，`--tag=`）、`D:\nw-tmp\diff-x.mjs`（PNG + 探针对比，ROOT=`D:/nw-dev-vault/_visual-x`）。before 侧要从 `6c5cc8c1` 的 worktree 构建并在源码末尾补 `// TEMP-SNAP-HOOK`（`window.__nwKbStats`），截完必须删钩子重建。
+  5. **before 构建只能重建**：`main.js` 不在 git 里（`git ls-files main.js styles.css` 只回 styles.css），要拿 before 侧产物只能 `git stash push -- <改过的源文件>` → `npm run build` → 拷 main.js/styles.css → `git stash pop` → 再 build。忘了 pop 就会以为「改动没生效」。
+  6. **探针必须兼容两侧**：after 才有 `--action` / `--idle` 类，before 侧一个都没有。探针要先 `report.interactive = rows.some(...)` 再决定选择器与要不要按键盘，否则 `locator('.nw-ks-legend-row--action')` 在 before 直接 30s 超时；点完没跳书架时也不能硬截 `.nw-kb-book-list-container`。
+  7. **书架条目类名是 `nw-kb-book-card-title`**（`ui/views/kb-book-card.ts:68`），不是 `nw-kb-book-name`；书架计数条是 `.nw-kb-book-list-count`，文案「共 N 本书籍」。
+- **仓外临时脚本（勿提交）**：`D:\nw-tmp\snap-x.mjs`（before/after 采集，`--tag=`）、`D:\nw-tmp\diff-x.mjs`（PNG + 探针对比，ROOT=`D:/nw-dev-vault/_visual-x`）；功能缺口 ⑤ 另用 `D:\nw-tmp\probe-gap5.mjs`（真实 obsidian 进程 + CDP，播种 6 本书，输出 `_visual-gap5/<tag>/report.json` 与三张 PNG）与 `D:\nw-tmp\diff-gap5.mjs`（纯 node PNG 解码，ROOT=`D:/nw-dev-vault/_visual-gap5`）。before 侧产物副本放在 `D:\nw-tmp\gap5-before\`。before 侧要从 `6c5cc8c1` 的 worktree 构建并在源码末尾补 `// TEMP-SNAP-HOOK`（`window.__nwKbStats`），截完必须删钩子重建。
 - **dev vault**：`D:\nw-dev-vault\.obsidian\plugins\novel-writer-ai` 是**真实目录**（不是 junction），每轮截图前手工 `Copy-Item main.js,styles.css` 过去。

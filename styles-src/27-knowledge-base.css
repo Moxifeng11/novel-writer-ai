@@ -3279,6 +3279,28 @@ input[type='text'].nw-kb-detail-tag-input {
     border-bottom: 1px solid var(--background-modifier-border);
 }
 
+/* 可点击的状态行（功能缺口 5）：hover 有底色、指针变手；0 本的行保持只读 */
+.nw-ks-legend-row--action {
+    padding: 10px 8px;
+    margin: 0 -8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.nw-ks-legend-row--action:hover {
+    background: var(--background-modifier-hover);
+}
+
+.nw-ks-legend-row--action:focus-visible {
+    outline: 2px solid var(--interactive-accent);
+    outline-offset: -2px;
+}
+
+.nw-ks-legend-row--idle .nw-ks-legend-value {
+    color: var(--text-muted);
+}
+
 .nw-ks-legend-left {
     display: flex;
     align-items: center;

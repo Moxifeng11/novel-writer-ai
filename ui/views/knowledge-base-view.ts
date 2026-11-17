@@ -40,6 +40,7 @@ import {
     formatDateTime as formatDateTimeText,
     formatDuration as formatDurationText,
 } from './kb-format';
+import type { KbStatusKey } from './kb-panels-logic';
 import {
     filterAndSortBooks,
     countBooksInChannel,
@@ -2814,7 +2815,27 @@ export class KnowledgeBaseView extends ItemView {
             allBooks: this.allBooks,
             renderChart: (container, svgHtml) => this.renderChart(container, svgHtml),
             getGenreName: genreId => this.getGenreName(genreId),
+            onStatusClick: status => this.openBookShelfWithStatus(status),
         });
+    }
+
+    /**
+     * 从质量统计的状态清单跳到书架，并按该状态筛选。
+     *
+     * 统计口径是「全部书籍」，所以这里必须先清掉频道/题材/关键词筛选，
+     * 否则书架条数会小于用户刚才看到的图例数字（看起来像筛选错了）。
+     *
+     * @param status - 目标拆解状态（来自图例行）
+     */
+    private openBookShelfWithStatus(status: KbStatusKey): void {
+        this.activeMainTab = 'books';
+        this.filter.channel = 'all';
+        this.filter.primaryGenre = 'all';
+        this.filter.subGenre = 'all';
+        this.filter.keyword = '';
+        this.filter.status = status;
+        this.renderLeftSidebar();
+        this.renderRightPanel();
     }
 
     // ============== 操作方法 ==============
