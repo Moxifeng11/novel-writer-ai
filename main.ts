@@ -447,6 +447,13 @@ export interface NovelWriterSettings {
      */
     language?: 'auto' | 'zh-CN' | 'en-US';
     /**
+     * 听校（TTS）语速：0.5–2，缺省 1。
+     * 播放器下拉直接改这个值（即时生效 + 持久化），不做单独设置页。
+     */
+    ttsRate?: number;
+    /** 听校音色：SpeechSynthesisVoice.voiceURI；空 / 缺省 = 系统默认（桌面端常无清单） */
+    ttsVoice?: string;
+    /**
      * Agent 对话后端（D）：native = 内置 Harness（默认）；dsh = 外部 DeepSeek Harness。
      * dsh 仅桌面端、需用户自行安装 @deepseek-ai/dsh。
      */

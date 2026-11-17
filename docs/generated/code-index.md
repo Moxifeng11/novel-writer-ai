@@ -8,21 +8,21 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146805 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19499 | 295 | 203 | 69% |
-| `shared/` | 257 | 51465 | 2167 | 1692 | 78% |
-| `core/` | 7 | 3391 | 35 | 20 | 57% |
+| `shared/` | 258 | 51733 | 2177 | 1698 | 78% |
+| `core/` | 7 | 3403 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 304 | 114277 | 1167 | 923 | 79% |
+| `ui/` | 306 | 114901 | 1176 | 926 | 79% |
 
 ## 文件清单
 
 | 文件 | 行数 | 导出 | 有 JSDoc |
 |---|---:|---:|---:|
-| `core/command-registry.ts` | 820 | 9 | 5 |
+| `core/command-registry.ts` | 829 | 9 | 5 |
 | `core/crypto-service.ts` | 447 | 5 | 3 |
 | `core/example-project-service.ts` | 331 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 800 | 4 | 2 |
-| `core/settings-service.ts` | 644 | 5 | 4 |
+| `core/settings-service.ts` | 647 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
@@ -485,7 +485,7 @@
 | `shared/character-rules.ts` | 180 | 10 | 6 |
 | `shared/clipboard.ts` | 40 | 1 | 1 |
 | `shared/co-writer-types.ts` | 113 | 0 | 0 |
-| `shared/command-ids.ts` | 141 | 2 | 2 |
+| `shared/command-ids.ts` | 147 | 2 | 2 |
 | `shared/command-mode-rules.ts` | 145 | 8 | 5 |
 | `shared/command-ui-port.ts` | 48 | 4 | 2 |
 | `shared/constraint-block-model.ts` | 109 | 7 | 3 |
@@ -687,6 +687,7 @@
 | `shared/timeline-events-format.ts` | 59 | 2 | 2 |
 | `shared/token-estimator.ts` | 187 | 8 | 8 |
 | `shared/true-random.ts` | 134 | 3 | 3 |
+| `shared/tts-text.ts` | 262 | 10 | 6 |
 | `shared/types.ts` | 729 | 48 | 11 |
 | `shared/unit-card-model.ts` | 306 | 13 | 9 |
 | `shared/unit-context-prompt.ts` | 119 | 4 | 4 |
@@ -776,7 +777,7 @@
 | `ui/co-writing/text-diff.ts` | 134 | 5 | 2 |
 | `ui/co-writing/word-goal.ts` | 115 | 5 | 3 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
-| `ui/command-ui-executor.ts` | 753 | 2 | 2 |
+| `ui/command-ui-executor.ts` | 785 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 105 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
 | `ui/components/categorization-review-panel.ts` | 449 | 2 | 2 |
@@ -970,6 +971,8 @@
 | `ui/svg-charts.ts` | 2356 | 49 | 49 |
 | `ui/template-manager.ts` | 710 | 5 | 2 |
 | `ui/tomato-rank-modal.ts` | 132 | 1 | 1 |
+| `ui/tts/tts-player.ts` | 428 | 4 | 2 |
+| `ui/tts/tts-speech.ts` | 164 | 5 | 1 |
 | `ui/unified-entity-generate-modal.ts` | 865 | 1 | 1 |
 | `ui/unified-entity-manager-modal.ts` | 754 | 1 | 1 |
 | `ui/usage-ledger-modal.ts` | 202 | 1 | 1 |

@@ -544,6 +544,9 @@ export function getDefaultSettings(): NovelWriterSettings {
         agentWorkbenchRightCollapsed: false,
         settingsUiShowAdvanced: false,
         language: 'auto',
+        /** 听校（TTS）：语速与音色（空 = 系统默认） */
+        ttsRate: 1,
+        ttsVoice: '',
         agentWriteApproval: 'ask',
         storyContextTier: 'auto',
         /** v4.20 写作指纹注入总预算（字符）；0 = 不限制 */

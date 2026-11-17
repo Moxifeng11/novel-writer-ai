@@ -85,6 +85,12 @@ export const CommandIds = {
     EXPORT_MANUSCRIPT: 'novel-writer-export-manuscript',
     /** 发布前文面体检：本地规则扫描错别字/标点，问题可逐条跳转（长篇） */
     TEXT_PRECHECK: 'novel-writer-text-precheck',
+    /** 听校（TTS）：朗读当前章（从正文开头逐句念，高亮当前句） */
+    TTS_READ_CHAPTER: 'novel-writer-tts-read-chapter',
+    /** 听校（TTS）：只朗读编辑器里选中的文字 */
+    TTS_READ_SELECTION: 'novel-writer-tts-read-selection',
+    /** 听校（TTS）：停止朗读并收起播放条 */
+    TTS_STOP: 'novel-writer-tts-stop',
     STORY_LINKAGE_BOARD: 'novel-writer-story-linkage',
     /** 只读校验：断链/孤立实体/关系缺卡/类型冲突，输出故事一致性报告 */
     VALIDATE_STORY_GRAPH: 'novel-writer-validate-story-graph',

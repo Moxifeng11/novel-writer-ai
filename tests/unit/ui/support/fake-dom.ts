@@ -18,9 +18,13 @@ export class FakeEl {
     tagName: string;
     className = '';
     textContent = '';
+    /** <select>/<input> 的当前值（真实 DOM 的 HTMLSelectElement.value 语义） */
+    value = '';
     innerHTML = '';
     attr: Record<string, string> = {};
     children: FakeEl[] = [];
+    /** 父节点（remove() 需要从父的 children 里摘掉自己） */
+    parent: FakeEl | null = null;
     listeners = new Map<string, Array<(e: unknown) => void>>();
     /**
      * 内联样式（真实运行时是 CSSStyleDeclaration）。
@@ -82,8 +86,18 @@ export class FakeEl {
             this.innerHTML += fragment.html;
             return child;
         }
-        this.children.push(child as unknown as FakeEl);
+        const el = child as unknown as FakeEl;
+        if (el instanceof FakeEl) el.parent = this;
+        this.children.push(el);
         return child;
+    }
+
+    /** 原生 HTMLElement.remove()：从父节点摘除自己（播放条关闭时用到） */
+    remove(): void {
+        const parent = this.parent;
+        if (!parent) return;
+        parent.children = parent.children.filter(child => child !== this);
+        this.parent = null;
     }
 
     /** Obsidian mock 的 Setting 走 settingEl.append(...)（DOM ParentNode.append 语义） */
@@ -221,6 +235,7 @@ export class FakeEl {
 
     private child(tag: string, o?: { cls?: string; text?: string; attr?: Record<string, string> }): FakeEl {
         const el = new FakeEl(tag);
+        el.parent = this;
         if (o?.cls) el.className = o.cls;
         if (o?.text !== undefined) el.textContent = o.text;
         if (o?.attr) for (const [k, v] of Object.entries(o.attr)) el.setAttribute(k, v);

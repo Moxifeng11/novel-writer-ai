@@ -22,7 +22,7 @@ Obsidian 插件「小说工坊 AI」：长篇 / 短篇 / 剧本三域创作 + �
 | `services/` | 长流程与外围服务：执行台账、Worker、模型发现、备份 |
 | `shared/` | 跨层原语：路径 `paths.ts`、缓存、存储、加密、写锁、类型 |
 | `domains/` | 三域模型：`kernel`（共享）、`long`、`short`、`script` |
-| `ui/` | 视图、弹窗、组件、工作台（`ui/full-writer/`）、设置页 |
+| `ui/` | 视图、弹窗、组件、工作台（`ui/full-writer/`）、设置页、听校播放条（`ui/tts/`） |
 | `types/` `utils/` `workers/` | 类型声明、工具函数、Worker 源码 |
 | `styles-src/` | 样式源文件，拼接为根目录 `styles.css`（`npm run build:styles`） |
 | `tests/` | unit / integration / e2e / benchmark |
@@ -51,7 +51,7 @@ Obsidian 插件「小说工坊 AI」：长篇 / 短篇 / 剧本三域创作 + �
 | `docs/modules/INDEX.md` | 模块清单与推进顺序（一次只推进一个模块） |
 | `docs/modules/<模块>.md` | 单模块现状、验收记录、待办 |
 | `docs/design/2026-11-16-visual-refactor-standard.md` | 视觉重构标准（切片 A–Y） |
-| `docs/planning/2026-11-18-feature-gaps.md` | 功能缺口清单（7 项，按用户价值排序；①②③④⑤已交付、⑥待挑选、⑦i18n 第一期已交付） |
+| `docs/planning/2026-11-18-feature-gaps.md` | 功能缺口清单（7 项，按用户价值排序；①②③④⑤⑥已交付、⑦i18n 第一期已交付、第二/三期待做） |
 
 ## 5. 文档怎么读（重要）
 

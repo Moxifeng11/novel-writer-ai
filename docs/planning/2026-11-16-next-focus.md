@@ -1577,3 +1577,37 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 **文档**：新增 `docs/modules/i18n.md`（8 节模板，含 I18N-01..07 问题清单、7 条决策、验收表、backlog）；`docs/modules/INDEX.md` 新增行（doing）；`docs/CURRENT.md` §2 加 `i18n/` 目录行、§4 缺口状态、§6 加「ui/ 裸中文不要新增」；`docs/planning/2026-11-18-feature-gaps.md` ⑦ 补「已交付（第一期）」小节并改进度行。
 
 **下一轮**：缺口 ⑦ 第二期（迁命令面板 / 设置分区正文 / 写作主流程 + `Notice`）或缺口 ⑥（TTS 听校）。第二期的两个已知绊脚石：命令名进 `tests/unit/core/command-registry.test.ts` 的期望集合；e2e `tests/e2e/utils/settings-nav.ts:48` 靠 `textContent.includes('高级设置')` 找高级开关，得先改成按类名 `.nw-settings-tab-advanced-toggle`。
+### 2026-11-18 第五十七轮：功能缺口 ⑥——章节朗读（TTS）听校
+
+**背景**：缺口清单 ⑥ 的证据是「全仓 `speechSynthesis` 0 引用」；做法写的是「Web Speech 朗读当前章节/选区，可设语速、音色；朗读时高亮当前句；不支持平台降级提示」。用户 m12693「下一步6」在 i18n 第一期交付后把它提上来。实机探针（`D:\nw-tmp\probe-tts.mjs`）先确认：Obsidian 1.15.1 / Windows 上 `hasSynth=true`、`hasUtterance=function`，但 `getVoices()` 首次返回 **空数组**，而 `speak()` 的 `onstart`+`onend` 都触发 —— **不能以「音色为空」判不支持**。
+
+**交付（4 个新模块 + 3 处命令接线 + 设置/i18n/样式）**
+- `shared/tts-text.ts`（261 行，纯函数）：`frontmatterEndOffset`（只认文件开头的 `---\n…\n---\n`，含 CRLF）、`cleanForSpeech`（图片丢弃；行内代码去反引号、双链取别名、链接取文字；去 HTML/标题/引用/列表/分隔线/强调/零宽字符，压空白）、`splitSentences(text,{from,to,maxChars=120})`（句末 `。！？…；!?;` + 非数字后的 `.`，换行软边界，收尾符 `”’」』）)】》` 并入前句；超长句先按 `，、,` 切再硬切；空片段丢弃、短残句并入上句）、`offsetToPosition`、`clampRate`（非法→1、夹 0.5–2）、`estimateSpeechMs`（220ms/字 ÷ rate）、`TTS_RATE_OPTIONS=[0.75,1,1.25,1.5,2]`。
+- `ui/tts/tts-speech.ts`（163 行）：`createTtsSpeechEngine(synth?)` → `{isSupported, voices, speak, pause, resume, cancel, onVoicesChanged}`，所有 Web Speech 调用 try/catch，`onerror` 取 `event.error`；音色按 `voiceUri` 找不到回系统默认。
+- `ui/tts/tts-player.ts`（427 行）：`TtsPlayer` + 单例 `getTtsPlayer(app, plugin)`（`plugin.register` 清理）+ `resetTtsPlayerForTests()`；浮层 `.nw-tts-bar.nw-scope` = 头部（`🎧 听校 · <标题>` + 进度 `1/1417`）+ 控制排（⏮⏸⏭⏹✕）+ 下拉排（语速/音色）；`playChapter` / `playSelection` / `togglePause` / `nextSentence` / `prevSentence` / `stop` / `destroy`；每次起停自增 `session`，迟到 `onEnd` 直接丢弃；高亮用编辑器原生选区 `editor.setSelection` + `scrollIntoView`（`toEditorPosition` 优先 `offsetToPos`，否则从选区起点逐字符数换行）；单句出错提示后跳下一句；编辑器随文件关闭 → `stop()`。
+- `styles-src/44-tts-player.css`（127 行）：右下角浮动条（`bottom:24px;right:24px`），`.nw-tts-*` 语义类，颜色全用 Obsidian 变量，`transition` 只写 `border-color`/`background-color`。
+- 命令三件：`shared/command-ids.ts:89-93` 新增 `TTS_READ_CHAPTER = 'novel-writer-tts-read-chapter'` / `TTS_READ_SELECTION` / `TTS_STOP`；`core/command-registry.ts` 三处（COMMANDS `:164-166` 的「🎧 听校：…」、`uiCommandIds` `:384-386`、`addCommand` `:576-578`，组 `Tools`、`callback: exec(...)`，不设模式守卫）；`ui/command-ui-executor.ts:688-706` 三个 case + `ttsReadChapter`/`ttsReadSelection`（`resolveEditor` 在 `:681`，缺编辑器时 `showWarningNotice(t('tts.noEditor'))`）。
+- i18n：`tts` 子树 **18 条**（title/play/pause/prev/next/stop/close/rate/voice/voiceDefault/progress/unsupported/noEditor/noText/finished/untitled/selection/error），两份资源 42 → **60 条**。
+- 设置：`NovelWriterSettings.ttsRate?: number`（默认 `1`）、`ttsVoice?: string`（默认 `''`），下拉变化即 `saveSettings()`。
+
+**实机验收（Obsidian 1.15.1 / Windows，截图在 `D:\nw-dev-vault\_visual-tts\`）**
+- 章节模式（1,003,133 字 / 40,546 行、frontmatter 占 39,092 行）：条出现、`1/1417` 句、`speechSynthesis.speaking === true`；高亮 14 字 `# 将夜 - 人设提取报告\n` 落在 **第 39,094 行**（frontmatter 后第一行，证明 frontmatter 跳过生效）；⏭ → `2/1417`；语速改 1.5× 写回设置且重启保留；音色下拉列出 6 个 Microsoft 音色 +「系统默认」（首调为空，`voiceschanged` 后补齐）；停止后条消失、`speaking=false`。
+- 选段模式（2,340 字文件选中 80 字）：标题 `🎧 听校 · 选段`、`1/4`、高亮 = 选段第一句。
+- 暂停：按钮 `.nw-tts-btn-play` 文本 `⏸→▶`、`speechSynthesis.paused === true`；**Chromium 暂停时 `speaking` 仍为 true**，判暂停只能用 `paused`。
+- 几何：条 `y=737.6 h=106.4 → bottom=844`，状态栏 `y=873.2 h=26.8`，间隙 29px 无遮挡。
+
+**坑（都已写进 `docs/modules/tts.md` §8）**
+- `scripts/dev-vault.mjs` 认的 vault 是 `C:\Users\admin\nw-dev-vault`，视觉验收用的是 `D:\nw-dev-vault`；`sync` 只写 C 盘，D 盘要手工 `Copy-Item main.js,styles.css,manifest.json,versions.json <D 盘插件目录> -Force`。症状是「命令已进 bundle 但 `app.commands` 里没有」。
+- CDP 里命令 id 必须带插件前缀：`app.commands.executeCommandById('novel-writer-ai:novel-writer-tts-read-chapter')`，漏前缀静默失败。
+- CDP 里 `window.require('obsidian')` 取不到；用 `app.workspace.getLeavesOfType('markdown')` 找匹配叶子拿 `view.editor`。
+- 测试替身 `tests/unit/ui/support/fake-dom.ts` 的 `FakeEl` 原来没有 `value` 与 `remove()/parent`；播放条 `stop()` 调 `root.remove()`、语速断言读 `select.value`，两处补齐后 tsc 从 EXIT=2 回到 0。
+
+**测试（42 例 + 命令注册 7 例）**
+- `tests/unit/shared/tts-text.test.ts`（19）、`tests/unit/ui/tts-speech.test.ts`（10）、`tests/unit/ui/tts-player.test.ts`（13）；`tests/unit/core/command-registry.test.ts` 的 `EXPECTED_REGISTERED_IDS` 由 98 条增至 **101** 条。
+
+**门禁**：`npm run preflight` EXIT=0（970 个测试文件 / 10251 通过 + 3 跳过；JSDoc 与活跃文档 20 个检查通过）；`check:i18n` 通过（zh 60 / en 60、0 个无法解析键、3 处动态键 warn、棘轮 269 文件 / 11892 条**不变**）；`check:bundle` main.js 5656950 → **5669728**（+12778）、styles.css 795890 → **798852**（+2962）、workers 不变，均已 `--update-baseline --note` 写明「新增 TTS 模块与 44 号样式」；`check:css` bytes +2962、uniqueClasses 4320 → **4331**（+11 个 `.nw-tts-*`）。
+
+**文档**：新增 `docs/modules/tts.md`（8 节模板，TTS-01..06 全 done、7 条关键决策、验收表、测试清单、6 条 backlog）；`docs/modules/INDEX.md` 新增「章节朗读（TTS · 听校）」行（stable）；`docs/CURRENT.md` §2 `ui/` 行补 `ui/tts/`、§4 缺口状态改「①②③④⑤⑥已交付、⑦ i18n 第一期已交付」；`docs/planning/2026-11-18-feature-gaps.md` ⑥ 补「已交付（2026-11-18）」小节。
+
+**下一轮**：缺口 ⑦ i18n 第二期（命令面板/设置分区正文/写作主流程）或 ⑥ 的 backlog（代码块整段跳过、`lang` 跟随音色、停止后恢复原选区、`estimateSpeechMs` 接进度显示）。
+

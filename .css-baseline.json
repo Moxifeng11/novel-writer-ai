@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-17T20:28:43.387Z",
-  "note": "Slice gap3：新增 43-manuscript-precheck.css（文面体检弹窗，+2472 字节 / +15 类）\nGap4 提示词管理器：使用统计工具条/分页器 + 导入预览弹窗 + 列表焦点描边（33 号样式表 +2074 字节 / +15 类）\nGap5 质量统计状态清单可交互：27 号样式表新增 .nw-ks-legend-row--action / --idle 与 hover/focus-visible 态（+22 行 / +2 类 / +558 字节）",
-  "bytes": 795890,
+  "generatedAt": "2026-11-17T21:30:00.520Z",
+  "note": "棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因\n缺口⑥ TTS（2026-11-18）：新增 styles-src/44-tts-player.css（127 行、11 个 .nw-tts-* 类），全部使用 Obsidian CSS 变量；bytes 795890→798852（+2962）、uniqueClasses 4320→4331（+11）。",
+  "bytes": 798852,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 223,
-  "uniqueClasses": 4320,
+  "uniqueClasses": 4331,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

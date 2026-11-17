@@ -161,6 +161,9 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     { id: CommandIds.BATCH_DECONSTRUCT, name: '📚 批量拆解', group: CommandGroup.Tools, description: '打开知识库：批量导入书籍并按维度拆解，结果持久化到拆解库' },
     { id: CommandIds.EXPORT_MANUSCRIPT, name: '📦 成稿导出', group: CommandGroup.Tools, description: '编译全书为 Markdown / TXT / HTML 稿件' },
     { id: CommandIds.TEXT_PRECHECK, name: '🔎 文面体检（错别字/标点）', group: CommandGroup.Tools, description: '本地规则扫描错别字、重复词、中英标点混用与引号配对，问题可跳到正文对应行列' },
+    { id: CommandIds.TTS_READ_CHAPTER, name: '🎧 听校：朗读当前章', group: CommandGroup.Tools, description: '用系统语音逐句朗读当前章节（跳过 frontmatter），朗读时高亮当前句，可调语速' },
+    { id: CommandIds.TTS_READ_SELECTION, name: '🎧 听校：朗读选中文字', group: CommandGroup.Tools, description: '只朗读编辑器里选中的片段，用于逐句听查语感与标点' },
+    { id: CommandIds.TTS_STOP, name: '🎧 听校：停止朗读', group: CommandGroup.Tools, description: '停止当前朗读并收起播放条' },
     { id: CommandIds.PRUNE_SESSIONS, name: '🧹 清理旧会话', group: CommandGroup.Tools, description: '手动清理超出保留上限的旧分析会话与 Agent 会话（最近各 30 个以内不动）' },
 
     // ─── 视图类 ───
@@ -378,6 +381,9 @@ export class CommandRegistry {
             CommandIds.VALIDATE_STORY_GRAPH,
             CommandIds.EXPORT_MANUSCRIPT,
             CommandIds.TEXT_PRECHECK,
+            CommandIds.TTS_READ_CHAPTER,
+            CommandIds.TTS_READ_SELECTION,
+            CommandIds.TTS_STOP,
             CommandIds.FULL_WRITER,
             CommandIds.CO_WRITING,
             CommandIds.OPEN_SETTINGS,
@@ -567,6 +573,9 @@ export class CommandRegistry {
         addCommand({ id: CommandIds.CHARACTER_RECOGNITION, name: '👤 角色识别审核', callback: exec(CommandIds.CHARACTER_RECOGNITION) });
         addCommand({ id: CommandIds.EXPORT_MANUSCRIPT, name: '📦 成稿导出', callback: exec(CommandIds.EXPORT_MANUSCRIPT) });
         addCommand({ id: CommandIds.TEXT_PRECHECK, name: '🔎 文面体检（错别字/标点）', checkCallback: execGuarded(CommandIds.TEXT_PRECHECK, LONG_ONLY) });
+        addCommand({ id: CommandIds.TTS_READ_CHAPTER, name: '🎧 听校：朗读当前章', callback: exec(CommandIds.TTS_READ_CHAPTER) });
+        addCommand({ id: CommandIds.TTS_READ_SELECTION, name: '🎧 听校：朗读选中文字', callback: exec(CommandIds.TTS_READ_SELECTION) });
+        addCommand({ id: CommandIds.TTS_STOP, name: '🎧 听校：停止朗读', callback: exec(CommandIds.TTS_STOP) });
         addCommand({ id: CommandIds.OPEN_HOME, name: '🏠 创作主页', callback: exec(CommandIds.OPEN_HOME) });
         addCommand({ id: CommandIds.JOB_CENTER, name: '🧵 任务中心', callback: exec(CommandIds.JOB_CENTER) });
         addCommand({ id: CommandIds.PROJECT_HEALTH, name: '🩺 项目体检', callback: exec(CommandIds.PROJECT_HEALTH) });

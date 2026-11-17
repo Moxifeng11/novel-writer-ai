@@ -26,6 +26,8 @@ import { PreResearchModal } from './pre-research-modal';
 import { ModeDocumentModal } from './mode-document-modal';
 import { OperationConfirmModal } from './components/progress';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
+import { t } from '@/i18n';
+import { getTtsPlayer } from './tts/tts-player';
 import { ConsistencyAuditModal } from './consistency-audit-modal';
 import { FactStoreModal } from './fact-store-modal';
 
@@ -539,6 +541,15 @@ export class CommandUiExecutor implements CommandUiPort {
                 new ManuscriptPrecheckModal(app, project).open();
                 return true;
             }
+            case CommandIds.TTS_READ_CHAPTER:
+                this.ttsReadChapter(payload?.editor);
+                return true;
+            case CommandIds.TTS_READ_SELECTION:
+                this.ttsReadSelection(payload?.editor);
+                return true;
+            case CommandIds.TTS_STOP:
+                getTtsPlayer(this.deps.app, this.deps.plugin).stop();
+                return true;
             case CommandIds.PRUNE_SESSIONS:
                 // v4.34.0：手动会话清理；manual=true 忽略「启动时清理旧会话」开关
                 void plugin.runSessionPrune(true);
@@ -671,6 +682,27 @@ export class CommandUiExecutor implements CommandUiPort {
         if (editor) return editor;
         const view = this.deps.app.workspace.getActiveViewOfType(MarkdownView);
         return view?.editor ?? null;
+    }
+
+    /** 听校：朗读当前章（从 frontmatter 之后逐句念） */
+    private ttsReadChapter(editor?: Editor): void {
+        const activeEditor = this.resolveEditor(editor);
+        if (!activeEditor) {
+            showWarningNotice(t('tts.noEditor'), { title: t('tts.title') });
+            return;
+        }
+        const label = this.deps.app.workspace.getActiveFile()?.basename ?? t('tts.untitled');
+        getTtsPlayer(this.deps.app, this.deps.plugin).playChapter(activeEditor, label);
+    }
+
+    /** 听校：只朗读选中片段 */
+    private ttsReadSelection(editor?: Editor): void {
+        const activeEditor = this.resolveEditor(editor);
+        if (!activeEditor) {
+            showWarningNotice(t('tts.noEditor'), { title: t('tts.title') });
+            return;
+        }
+        getTtsPlayer(this.deps.app, this.deps.plugin).playSelection(activeEditor);
     }
 
     private expandText(editor?: Editor): void {

@@ -113,6 +113,23 @@
 
 **风险**：Obsidian 桌面（Electron）与移动端语音可用性差异，需要实机确认。
 
+**已交付（2026-11-18）**
+- 命令：`novel-writer-tts-read-chapter` / `-read-selection` / `-stop`（命令面板「🎧 听校：…」三条，
+  `shared/command-ids.ts:89-93` → `core/command-registry.ts:576-578` → `ui/command-ui-executor.ts:688-706`）。
+- 朗读核心：`ui/tts/tts-player.ts`（浮层 `.nw-tts-bar`：标题+进度 / ⏮⏸⏭⏹✕ / 语速 0.75×–2× / 音色下拉；
+  逐句 `speak` 串行续读、`session` 号丢弃迟到回调、原生选区高亮 + `scrollIntoView`）、
+  `ui/tts/tts-speech.ts`（Web Speech 薄封装，全部 try/catch，`voiceschanged` 回填音色）、
+  `shared/tts-text.ts`（frontmatter 跳过 / 念稿清洗 / 120 字断句 / `clampRate`）。
+- 设置：`ttsRate`（默认 1）/ `ttsVoice`（默认 ''）持久化，下拉改动即保存；语言/样式走既有 i18n 与
+  `styles-src/44-tts-player.css`（`.nw-tts-*`，18 条文案双语）。
+- 降级：无 `speechSynthesis` 不建条并提示；空内容提示；编辑器已关闭则停。
+- 验收：Obsidian 1.15.1 / Windows 实机——百万字级章节 1417 句、高亮落在 frontmatter 后首行、
+  ⏭ 跳到 2/1417、语速 1.5× 重启保留、6 个 Microsoft 音色 + 系统默认；选段 80 字 → 4 句且标题「选段」；
+  暂停走 `speechSynthesis.paused`（Chromium 暂停时 `speaking` 仍为 true）；
+  条与状态栏间隙 29px。证据 `D:\nw-dev-vault\_visual-tts\`。
+- 单测 42 例（tts-text 19 / tts-speech 10 / tts-player 13）+ 命令注册 7 例；详见 `docs/modules/tts.md`。
+- 后续：代码块整段跳过、`lang` 跟随音色（现固定 zh-CN）、停止后恢复原选区、`estimateSpeechMs` 接进度显示。
+
 ## 7. 英文界面（i18n）（新能力）
 
 **证据**：全仓无 i18n 框架，界面文案硬编码中文（500+ 文件）。
