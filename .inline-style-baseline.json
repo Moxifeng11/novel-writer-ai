@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-11-17T17:34:17.495Z",
+  "generatedAt": "2026-11-17T17:46:34.026Z",
   "note": "棘轮基线：每文件只允许下降；新增内联样式需先说明动态原因并显式更新",
-  "total": 526,
-  "static": 454,
+  "total": 525,
+  "static": 453,
   "dynamic": 72,
   "files": {
     "ui/svg-charts.ts": 64,
@@ -34,7 +34,6 @@
     "ui/full-writer/project-selector-controller.ts": 2,
     "ui/plan-book-modal.ts": 2,
     "ui/refill-modal.ts": 2,
-    "ui/settings/deconstruction-section.ts": 2,
     "ui/settings/foreshadow-section.ts": 2,
     "ui/views/knowledge-base-modals.ts": 2,
     "ui/views/knowledge-base-view.ts": 2,
@@ -51,6 +50,7 @@
     "ui/knowledge-detail-modal.ts": 1,
     "ui/plot-canvas-modal.ts": 1,
     "ui/settings-utils.ts": 1,
+    "ui/settings/deconstruction-section.ts": 1,
     "ui/settings/fingerprint-section.ts": 1,
     "ui/sidebar-component.ts": 1
   }

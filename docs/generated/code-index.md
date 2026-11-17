@@ -11,7 +11,7 @@
 | `shared/` | 255 | 50823 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3387 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 300 | 113076 | 1159 | 917 | 79% |
+| `ui/` | 300 | 113077 | 1159 | 917 | 79% |
 
 ## 文件清单
 
@@ -940,7 +940,7 @@
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 39 | 1 | 1 |
 | `ui/settings/api-section.ts` | 1674 | 1 | 1 |
-| `ui/settings/deconstruction-section.ts` | 335 | 1 | 1 |
+| `ui/settings/deconstruction-section.ts` | 336 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 441 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 293 | 1 | 1 |
 | `ui/settings/general-sections.ts` | 1258 | 5 | 5 |

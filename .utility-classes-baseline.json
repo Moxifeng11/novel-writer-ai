@@ -1,6 +1,6 @@
 {
-  "definitions": 55,
-  "usage": 189,
+  "definitions": 46,
+  "usage": 142,
   "updatedAt": "2026-11-17",
-  "note": "Slice X 删除 20 个零引用工具类（定义 75→55，使用 270→189）"
+  "note": ""
 }

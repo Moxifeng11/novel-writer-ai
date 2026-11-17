@@ -1371,3 +1371,28 @@ PNG 差异只剩三簇——标题栏按钮簇（y=28–58）、页脚按钮簇�
 **文档**：新增 `docs/modules/kb-stats.md`（8 节，KS-01..KS-05 done）；`docs/modules/INDEX.md` 插「质量统计面板」行（在「规划 / 大纲」前）；视觉标准 §5 加 `nw-ks-*` 行、§5.1 改 55 / 189 / 784775、清理记录补 Slice X 删 20、存量大户只剩 `ui/settings/deconstruction-section.ts` 47；`docs/CURRENT.md` §4 改切片 A–X、§6 口径 55 / 189。
 
 **下一轮候选**：`ui/settings/deconstruction-section.ts`（47 处，Slice Y）——做完 `nw-u-*` 存量清零，此后长尾按「碰哪改哪」，`check:utility` 的 C 项即为新增禁令门禁。
+
+
+### 2026-11-17 第五十轮：Slice Y 拆解引擎设置分区语义化（nw-st-dc-*）
+
+**背景**：用户（m09227）「那就按顺序直接做完全部」→ Slice V（polish-editor）→ W（refill-modal）→ X（kb-stats-panel）→ **Y（本切片，最后一站）**。Slice Y 之后 `nw-u-*` 存量清空（46 定义 / 142 次引用均为仍在使用中的类）。
+
+**范围**：`ui/settings/deconstruction-section.ts`（336 行，CRLF）—— 设置页「高级 → 🧬 拆解引擎」：增强级别 / 拆解维度 / 向量增强 / LLM 增强 / 性能 五张卡 + 底部「恢复默认」。
+
+**改动**
+- 47 处 `nw-u-*` + 1 处 `attr: { style }` 内联清零；新建 `styles-src/41-settings-deconstruction.css`（1640 字节 / 62 行 / 7 个选择器，样式源 46 → 47），**不套 `.nw-scope`**（设置页整体不在 scope 容器内，同 Slice R/U）。
+- 五张卡合并成 `.nw-st-dc-card`（原逐字重复 `nw-u-p-12px-16px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-marginbottom-16px nw-u-bg-background-secondary`）；卡标题 `-card-title`；说明 `-note` / `-note--warning`；维度网格 `-dim-grid`（`repeat(auto-fill, minmax(180px, 1fr))`）；底部 `-reset-row` + `button.nw-st-dc-reset-btn`（元素限定，旧实现是 inline style）。
+- 删 9 个零引用工具类（`styles-src/10-entity-and-utilities.css` 251 → 242 行）：`nw-u-b-1px-solid-background-m`、`nw-u-c-text-warning`、`nw-u-d-grid`、`nw-u-gap-6px`、`nw-u-gtc-repeat-auto-fill-minma-5`、`nw-u-jc-flex-end`、`nw-u-m-0-0-12px-0`、`nw-u-margintop-12px`、`nw-u-p-12px-16px`。
+
+**坑**
+1. 八个维度**恒渲染八行**（`ALL_BREAKDOWN_DIMENSIONS.forEach`），改 `enabledDimensions` 只改 toggle 勾选，DOM 元素数与高度完全不变（166 / 1869）——别把「尺寸没变」当数据没注入，要 dump `input[type=checkbox]` 的 checked。
+2. 设置分区可绕过整页：`settingsTab.sections.get('deconstruction') || settingsTab.getSection('deconstruction')`（TS private 运行时可达）拿实例后直接 `render(host)`；宿主须带 `vertical-tab-content nw-settings-root nw-settings-tab-content` 三件套，`15-late-fixes.css` 的 `.nw-settings-tab-content .setting-item` 保护才命中。
+3. `DIMENSION_DESC` 里的 `style: '分析文笔风格与语言特色'` 是数据字段，grep `style:` 会假阳性。
+
+**验收**：`npx tsc --noEmit` EXIT 0；`npm run build` → 「[styles] 拼接 47 个源文件 → styles.css（31547 行）」；`npx vitest run tests/unit/ui/settings-framework-wiring.test.ts tests/unit/ui/settings-no-duplicate-render.test.ts tests/unit/ui/settings-search.test.ts` → 3 files / 39 通过；像素 `_visual-y` 3 场景 **PNG 3/3 = 0 px**、probes（166 元素）struct/style/rect 全 0（仅 15 个类串改名）。
+
+**门禁**：`check:inline-styles` 526→**525**；`check:utility` 55/189→**46/142**（零引用 0）；`check:css` bytes **786456** / 31548 行 / uniqueClasses **4261** / hex 192 / rgbHsl 223；`check:bundle` main.js **5625149** / styles.css **786456**；`npm run preflight` EXIT=0。
+
+**文档**：新增 `docs/modules/settings-deconstruction.md`（8 节，SY-01..SY-05 全 done）；`docs/modules/INDEX.md` 插「拆解引擎设置分区」行（在「规划 / 大纲」前）；视觉标准 §5 加 `nw-st-dc-*` 行、§5.1 改 46 / 142 / 786456、清理记录补 Slice Y 删 9、新增 Slice Y 特异性段、存量大户表改为「已无存量大户」；`docs/CURRENT.md` §4「切片 A–Y」、§6 口径 46 / 142。
+
+**下一轮**：`nw-u-*` 存量清零，长尾转「碰哪改哪」；剩余工作重心转向内联样式 525 处（`ui/svg-charts.ts` 64、`ui/knowledge-monitor-modal.ts` 40、`ui/fingerprint-blend-modal.ts` 36 …）与硬编码色值 192 处。
