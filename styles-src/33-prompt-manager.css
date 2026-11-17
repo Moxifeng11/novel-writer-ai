@@ -1,0 +1,307 @@
+/* ══════════════════════════════════════════════════════════════
+   Slice N：提示词管理设置（设置页 Tab，不在 .nw-scope 下）
+   — ui/prompt-manager-settings.ts 的内联样式与 nw-u-* 工具类
+     改为语义类 nw-pm-*，本文件为唯一定义处。
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── 模板页：左右分栏 ── */
+.nw-pm-layout { display: flex; gap: 16px; }
+.nw-pm-sidebar { width: 260px; flex-shrink: 0; }
+.nw-pm-main { flex: 1; min-width: 0; }
+
+/* ── 模板页：分类列表 ── */
+.nw-pm-category-list { margin-bottom: 12px; }
+button.nw-pm-category-btn {
+    width: 100%;
+    text-align: left;
+    padding: 6px 10px;
+    margin-bottom: 2px;
+    border: none;
+    background: transparent;
+    color: var(--text-normal);
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 13px;
+}
+button.nw-pm-category-btn--all { margin-bottom: 4px; }
+button.nw-pm-category-btn--active { background: var(--background-modifier-hover); }
+
+/* ── 模板页：模板列表 ── */
+.nw-pm-template-list {
+    border-top: 1px solid var(--background-modifier-border);
+    padding-top: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+.nw-pm-template-item {
+    padding: 8px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 2px;
+    background: transparent;
+}
+.nw-pm-template-item--selected { background: var(--background-modifier-hover); }
+.nw-pm-template-name { font-weight: 600; font-size: 13px; }
+.nw-pm-template-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+button.nw-pm-add-btn {
+    width: 100%;
+    margin-top: 12px;
+    padding: 8px;
+    border: 1px dashed var(--background-modifier-border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+/* ── 徽标（自定义 / 必填 / A/B） ── */
+.nw-pm-badge {
+    display: inline-block;
+    font-size: 10px;
+    color: var(--text-on-accent);
+    border-radius: 3px;
+}
+.nw-pm-badge--custom {
+    padding: 1px 6px;
+    margin-top: 4px;
+    background: var(--background-modifier-success);
+}
+.nw-pm-badge--required {
+    padding: 1px 4px;
+    margin-top: 4px;
+    background: var(--background-modifier-error);
+}
+.nw-pm-badge--ab {
+    display: inline;
+    margin-left: 8px;
+    padding: 2px 6px;
+    background: var(--interactive-accent);
+}
+
+/* ── 详情页 ── */
+.nw-pm-error { color: var(--text-error); }
+.nw-pm-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+.nw-pm-detail-title { margin: 0 0 4px 0; }
+.nw-pm-detail-meta { font-size: 13px; color: var(--text-muted); }
+.nw-pm-detail-actions { display: flex; gap: 8px; }
+.nw-pm-detail-desc {
+    padding: 12px;
+    background: var(--background-secondary);
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+.nw-pm-section { margin-bottom: 16px; }
+
+/* ── 通用按钮（本区块内） ── */
+button.nw-pm-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: var(--background-secondary);
+    color: var(--text-normal);
+}
+button.nw-pm-btn--danger { color: var(--text-error); }
+button.nw-pm-btn--primary {
+    border: none;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+button.nw-pm-btn--primary-lg {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    font-size: 13px;
+}
+.nw-pm-btn--push-end { margin-left: auto; }
+
+/* ── 版本历史 ── */
+.nw-pm-version-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.nw-pm-version-badge {
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    background: var(--background-secondary);
+    color: var(--text-muted);
+}
+.nw-pm-version-badge--active {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+button.nw-pm-version-add {
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px dashed var(--background-modifier-border);
+    background: transparent;
+    color: var(--text-muted);
+    border-radius: 4px;
+}
+
+/* ── 提示词预览 / 变量网格 ── */
+.nw-pm-prompt-box {
+    padding: 12px;
+    background: var(--background-secondary);
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow-y: auto;
+    margin: 0;
+}
+.nw-pm-subheading-gap { margin: 16px 0 8px 0; }
+.nw-pm-var-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.nw-pm-var-item {
+    padding: 8px 10px;
+    background: var(--background-secondary);
+    border-radius: 4px;
+    font-size: 12px;
+}
+.nw-pm-var-code {
+    font-family: monospace;
+    font-weight: 600;
+    color: var(--interactive-accent);
+}
+.nw-pm-var-desc { color: var(--text-muted); margin-top: 2px; font-size: 11px; }
+
+/* ── A/B 测试页 ── */
+.nw-pm-ab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.nw-pm-ab-title { margin: 0; }
+.nw-pm-ab-enable { display: flex; align-items: center; gap: 8px; }
+.nw-pm-ab-enable-label { font-size: 13px; }
+.nw-pm-check { cursor: pointer; }
+
+.nw-pm-test-list { display: flex; flex-direction: column; gap: 8px; }
+button.nw-pm-create-btn {
+    margin-top: 16px;
+    padding: 8px 16px;
+    cursor: pointer;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    font-size: 13px;
+}
+.nw-pm-test-card {
+    padding: 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background: var(--background-primary);
+    cursor: pointer;
+}
+.nw-pm-test-card--selected {
+    cursor: default;
+    border-color: var(--interactive-accent);
+}
+.nw-pm-test-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.nw-pm-test-name { font-weight: 600; font-size: 14px; }
+
+.nw-pm-status {
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 4px;
+}
+.nw-pm-status--draft { background: var(--background-secondary); color: var(--text-muted); }
+.nw-pm-status--running { background: var(--background-modifier-success); color: var(--text-on-accent); }
+.nw-pm-status--paused { background: var(--background-modifier-warning); color: var(--text-on-accent); }
+.nw-pm-status--completed { background: var(--interactive-accent); color: var(--text-on-accent); }
+
+.nw-pm-test-detail {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--background-modifier-border);
+}
+.nw-pm-test-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+.nw-pm-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.nw-pm-winner {
+    padding: 10px;
+    background: var(--background-modifier-success);
+    color: var(--text-on-accent);
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+.nw-pm-winner--lg { margin-bottom: 16px; }
+.nw-pm-test-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.nw-pm-variant {
+    padding: 10px;
+    background: var(--background-secondary);
+    border-radius: 6px;
+}
+.nw-pm-variant-title { font-weight: 600; font-size: 13px; margin-bottom: 8px; }
+
+/* ── 使用统计页 ── */
+.nw-pm-tab-title { margin: 0 0 16px 0; }
+.nw-pm-usage-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+.nw-pm-usage-item {
+    padding: 8px 12px;
+    background: var(--background-secondary);
+    border-radius: 4px;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.nw-pm-usage-id { font-weight: 600; margin-right: 8px; }
+.nw-pm-usage-version { color: var(--text-muted); }
+.nw-pm-usage-time { color: var(--text-muted); }
+
+/* ── 导入/导出页 ── */
+.nw-pm-io-box {
+    padding: 16px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+.nw-pm-io-box--last { margin-bottom: 0; }
+.nw-pm-io-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+.nw-pm-file-input { margin-bottom: 12px; }
+
+/* ── 弹窗补充 ── */
+.nw-pm-textarea {
+    width: 100%;
+    min-height: 150px;
+    padding: 8px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    font-family: monospace;
+    font-size: 12px;
+    resize: vertical;
+}
+.nw-pm-finish-desc { margin-bottom: 16px; color: var(--text-muted); }

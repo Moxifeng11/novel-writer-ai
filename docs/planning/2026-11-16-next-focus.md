@@ -1078,3 +1078,46 @@ paragraph-list 与 progress 为 0；探针 struct/style/rect 六场景全 0，`c
 
 下一轮候选：`ui/prompt-manager-settings.ts`（192 处，设置页需先确认祖先作用域与 `.nw-scope` 可用性）、
 `ui/chapter-outline-tree-modal.ts`（177 处）、`ui/views/knowledge-base-view.ts`（175 处）。
+
+
+### 2026-11-17 第三十九轮：Slice N 提示词管理设置语义化（nw-pm-*）
+
+**范围**：`ui/prompt-manager-settings.ts`（1083 行 / 192 处 `nw-u-*` + 15 处内联 `style`；设置页 → 写作 → 提示词模板，
+4 个子页签 + 5 个弹窗）；新建 `styles-src/33-prompt-manager.css`（307 行 / 9411 字节）。
+子页签外壳 `nw-settings-subtab-bar` / `-subtab(.is-active)` / `-subtab-content`（`styles-src/06-cowrite-missing-and-dark.css:756-792`）
+与本页共享类（`nw-modal-footer` / `nw-modal-btn-primary` / `nw-modal-btn-secondary` / `nw-h4-sm` / `nw-stat-muted-mt` /
+`nw-action-btn` / `nw-empty-center-muted`）**保持不动**。
+
+**改动**：`nw-pm-*` 按 12 段组织——布局（`layout/sidebar/main`）、分类（`category-list/-btn(--all|--active)`）、
+模板列表（`template-list/-item(--selected)/-name/-desc/add-btn`）、徽标（`badge(--custom|--required|--ab)`）、
+详情（`detail-header/-title/-meta/-actions/-desc`、`section`、`error`）、按钮（`btn(--danger|--primary|--primary-lg|--push-end)`）、
+版本（`version-list/-badge(--active)/-add`）、提示词与变量（`prompt-box/subheading-gap/var-grid/-item/-code/-desc`）、
+A/B（`ab-header/-title/-enable/-enable-label/check/test-list/create-btn/test-card(--selected)/-head/-name`、
+`status(--draft|--running|--paused|--completed)`、`test-detail/-desc`、`stats-grid`、`winner(--lg)`、`test-actions`、`variant/-title`）、
+使用统计（`tab-title/usage-list/-item/-id/-version/-time`）、导入导出（`io-box(--last)/io-desc/file-input`）、弹窗（`textarea/finish-desc`）。
+`getStatusStyle()` 改为 `getStatusClass()` 返回修饰类；模板项/分类按钮/A/B 卡/文件输入/textarea 的内联 `style` 全部改类。
+删掉 12 个因此零引用的工具类（定义 267 → 255）。
+
+**三处必须记住的坑**
+1. **`<button>` 上的单类规则会被 Obsidian 默认样式压掉**：第一轮 after 里分类按钮、`nw-pm-btn--danger`、
+   `nw-pm-btn--primary-lg` 全部退回白底黑字（PNG 差 1.1%–1.9%），改成 `button.nw-pm-*`（(0,1,1)）后探针归零。
+   设置页没有 `.nw-scope` 祖先，不能靠命名空间前缀提权，这是与 Slice H/L 不同的地方。
+2. **`--ab` 徽标要保留 `display:inline`**：「自定义」「必填」旧代码带 `nw-u-d-inline-block`，只有使用记录的
+   `A/B A` 没带；统一成 inline-block 会让行高 15.6 → 17px、整页 +3px。按逐项等价保留 inline 并写注释。
+3. **TEMP-SNAP-HOOK 不能直接写 `window`**：`vitest` 环境是 `node`，`(window as ...).__pmCtor = ...` 会让单测在
+   import 阶段报 `ReferenceError: window is not defined`；调试钩子必须包 `if (typeof window !== 'undefined')`，提交前整段删除。
+
+**像素快照**（900px 宽 harness、viewport 1200×1700、11 个场景；产物 `D:\nw-dev-vault\_visual-n\{before,after}` 与 `diff-report.json`）：
+PNG 差异 10 个场景 0px；`templates-detail` 874px（0.138%，maxDelta 8，仅 `y=704` 最底扫描线的容器底边抗锯齿）。
+探针 struct/style/rect 11 个场景全 0，`cls` 差 0–50 条均为预期改名。
+
+**门禁**：`typecheck`/目标单测（6 条）通过；`check:inline-styles` 602 → 587（本文件 15 处清零）；
+`check:utility` 定义 255 / 引用 255 类 1507 次 / 零引用 0（基线收紧）；`check:css` bytes 724614 / 28663 行 / 唯一类 3994；
+`check:bundle` styles.css 715979 → 724614（+8635）。三份基线均 `--update-baseline` 并写 note。
+
+**文档**：新增 `docs/modules/prompt-manager-settings.md`（8 节模板，含 11 场景验收表与 backlog）并登记 INDEX；
+视觉标准 §5 加提示词管理设置行、§5.1 指标与存量大户表重算（移除 192 处）、特异性段补 `button.` 前缀决策；
+`docs/CURRENT.md` §4 改切片 A–N、§6 口径改 255 / 1507。
+
+下一轮候选：`ui/chapter-outline-tree-modal.ts`（177 处）、`ui/views/knowledge-base-view.ts`（175 处）、
+`ui/rendering/context-panel.ts`（173 处）。

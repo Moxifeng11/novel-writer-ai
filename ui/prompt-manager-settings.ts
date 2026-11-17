@@ -82,10 +82,10 @@ export class PromptManagerSettings {
     }
 
     private renderTemplatesTab(container: HTMLElement): void {
-        const layout = container.createDiv({ cls: 'nw-u-d-flex nw-u-gap-16px' });
+        const layout = container.createDiv({ cls: 'nw-pm-layout' });
 
-        const sidebar = layout.createDiv({ cls: 'nw-u-w-260px nw-u-fsh-0' });
-        const main = layout.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-0' });
+        const sidebar = layout.createDiv({ cls: 'nw-pm-sidebar' });
+        const main = layout.createDiv({ cls: 'nw-pm-main' });
 
         this.renderTemplateSidebar(sidebar);
         this.renderTemplateDetail(main);
@@ -103,12 +103,11 @@ export class PromptManagerSettings {
                     });
             });
 
-        const categoryList = container.createDiv({ cls: 'nw-u-marginbottom-12px' });
+        const categoryList = container.createDiv({ cls: 'nw-pm-category-list' });
         const allBtn = categoryList.createEl('button', {
             text: `📚 全部 (${this.promptManager.getAllTemplates().length})`,
-            attr: {
-                style: `width:100%;text-align:left;padding:6px 10px;margin-bottom:4px;border:none;background:${this.selectedCategory === 'all' ? 'var(--background-modifier-hover)' : 'transparent'};color:var(--text-normal);cursor:pointer;border-radius:4px;font-size:13px;`
-            }
+            cls: `nw-pm-category-btn nw-pm-category-btn--all${this.selectedCategory === 'all' ? ' nw-pm-category-btn--active' : ''}`,
+            attr: { type: 'button' }
         });
         allBtn.onclick = () => {
             this.selectedCategory = 'all';
@@ -119,9 +118,8 @@ export class PromptManagerSettings {
             const label = PROMPT_CATEGORY_LABELS[category] || category;
             const btn = categoryList.createEl('button', {
                 text: `${label} (${count})`,
-                attr: {
-                    style: `width:100%;text-align:left;padding:6px 10px;margin-bottom:2px;border:none;background:${this.selectedCategory === category ? 'var(--background-modifier-hover)' : 'transparent'};color:var(--text-normal);cursor:pointer;border-radius:4px;font-size:13px;`
-                }
+                cls: `nw-pm-category-btn${this.selectedCategory === category ? ' nw-pm-category-btn--active' : ''}`,
+                attr: { type: 'button' }
             });
             btn.onclick = () => {
                 this.selectedCategory = category;
@@ -139,28 +137,24 @@ export class PromptManagerSettings {
             t.description.toLowerCase().includes(this.searchKeyword.toLowerCase())
         );
 
-        const templateList = container.createDiv({
-            cls: 'nw-u-bt-1px-solid-background-m nw-u-paddingtop-8px nw-u-maxh-400px nw-u-ovy-auto'
-        });
+        const templateList = container.createDiv({ cls: 'nw-pm-template-list' });
 
         for (const t of filtered) {
             const item = templateList.createDiv({
-                attr: {
-                    style: `padding:8px 10px;border-radius:4px;cursor:pointer;margin-bottom:2px;background:${this.selectedTemplateId === t.id ? 'var(--background-modifier-hover)' : 'transparent'};`
-                }
+                cls: `nw-pm-template-item${this.selectedTemplateId === t.id ? ' nw-pm-template-item--selected' : ''}`
             });
             item.createDiv({
                 text: t.name,
-                cls: 'nw-u-fwt-600 nw-u-fs-13px'
+                cls: 'nw-pm-template-name'
             });
             item.createDiv({
                 text: t.description.slice(0, 40) + (t.description.length > 40 ? '...' : ''),
-                cls: 'nw-u-fs-11px nw-u-c-text-muted nw-u-margintop-2px'
+                cls: 'nw-pm-template-desc'
             });
             if (t.isCustom) {
                 item.createEl('span', {
                     text: '自定义',
-                    cls: 'nw-u-d-inline-block nw-u-p-1px-6px nw-u-fs-10px nw-u-bg-background-modifier-su nw-u-c-text-on-accent nw-u-brd-3px nw-u-margintop-4px'
+                    cls: 'nw-pm-badge nw-pm-badge--custom'
                 });
             }
             item.onclick = () => {
@@ -171,10 +165,8 @@ export class PromptManagerSettings {
 
         const addBtn = container.createEl('button', {
             text: '➕ 新建自定义提示词',
-            attr: {
-                type: 'button',
-                style: 'width:100%;margin-top:12px;padding:8px;border:1px dashed var(--background-modifier-border);background:transparent;color:var(--text-muted);cursor:pointer;border-radius:6px;font-size:13px;'
-            }
+            cls: 'nw-pm-add-btn',
+            attr: { type: 'button' }
         });
         addBtn.onclick = () => this.showCreateTemplateModal();
     }
@@ -190,19 +182,19 @@ export class PromptManagerSettings {
 
         const template = this.promptManager.getTemplateById(this.selectedTemplateId);
         if (!template) {
-            container.createDiv({ text: '模板未找到', cls: 'nw-u-c-text-error' });
+            container.createDiv({ text: '模板未找到', cls: 'nw-pm-error' });
             return;
         }
 
-        const header = container.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-flex-start nw-u-marginbottom-16px' });
+        const header = container.createDiv({ cls: 'nw-pm-detail-header' });
         const titleArea = header.createDiv();
-        titleArea.createEl('h3', { text: template.name, cls: 'nw-u-m-0-0-4px-0' });
+        titleArea.createEl('h3', { text: template.name, cls: 'nw-pm-detail-title' });
         titleArea.createEl('div', {
             text: `${PROMPT_CATEGORY_LABELS[template.category] || template.category} · v${this.promptManager.getActiveVersion(template)?.version || '?'}`,
-            cls: 'nw-u-fs-13px nw-u-c-text-muted'
+            cls: 'nw-pm-detail-meta'
         });
 
-        const actions = header.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px' });
+        const actions = header.createDiv({ cls: 'nw-pm-detail-actions' });
 
         const editBtn = actions.createEl('button', {
             text: template.isCustom ? '✏️ 编辑' : '📝 自定义',
@@ -214,10 +206,8 @@ export class PromptManagerSettings {
         if (template.isCustom) {
             const resetBtn = actions.createEl('button', {
                 text: '🔄 重置',
-                attr: {
-                    type: 'button',
-                    style: 'padding:6px 12px;font-size:12px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;background:var(--background-secondary);color:var(--text-error);'
-                }
+                cls: 'nw-pm-btn nw-pm-btn--danger',
+                attr: { type: 'button' }
             });
             resetBtn.onclick = async () => {
                 const confirmed = await OperationConfirmModal.confirm(this.app, {
@@ -237,7 +227,7 @@ export class PromptManagerSettings {
 
         const desc = container.createDiv({
             text: template.description,
-            cls: 'nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-marginbottom-16px nw-u-fs-13px nw-u-c-text-muted'
+            cls: 'nw-pm-detail-desc'
         });
 
         this.renderVersionsList(container, template);
@@ -253,22 +243,15 @@ export class PromptManagerSettings {
     }
 
     private renderVersionsList(container: HTMLElement, template: PromptTemplate): void {
-        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px' });
+        const section = container.createDiv({ cls: 'nw-pm-section' });
         section.createEl('h4', { text: '📋 版本历史', cls: 'nw-h4-sm' });
 
-        const versionList = section.createDiv({
-            cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-6px nw-u-marginbottom-8px'
-        });
+        const versionList = section.createDiv({ cls: 'nw-pm-version-list' });
 
         for (const ver of template.versions) {
             const badge = versionList.createEl('span', {
                 text: `v${ver.version}${ver.isActive ? ' ✓' : ''}`,
-                attr: {
-                    style: `padding:4px 10px;font-size:12px;border-radius:4px;cursor:pointer;${ver.isActive
-                        ? 'background:var(--interactive-accent);color:var(--text-on-accent);'
-                        : 'background:var(--background-secondary);color:var(--text-muted);'
-                        }`
-                }
+                cls: `nw-pm-version-badge${ver.isActive ? ' nw-pm-version-badge--active' : ''}`
             });
             badge.title = new Date(ver.createdAt).toLocaleString();
             if (!ver.isActive) {
@@ -282,26 +265,24 @@ export class PromptManagerSettings {
 
         const addVerBtn = section.createEl('button', {
             text: '➕ 新建版本',
-            attr: {
-                type: 'button',
-                style: 'padding:4px 10px;font-size:12px;cursor:pointer;border:1px dashed var(--background-modifier-border);background:transparent;color:var(--text-muted);border-radius:4px;'
-            }
+            cls: 'nw-pm-version-add',
+            attr: { type: 'button' }
         });
         addVerBtn.onclick = () => this.showAddVersionModal(template);
     }
 
     private renderPromptPreview(container: HTMLElement, version: PromptTemplateVersion): void {
-        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px' });
+        const section = container.createDiv({ cls: 'nw-pm-section' });
         section.createEl('h4', { text: '🔤 系统提示词', cls: 'nw-h4-sm' });
         const systemBox = section.createEl('pre', {
             text: version.systemPrompt,
-            cls: 'nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-fs-12px nw-u-ws-pre-wrap nw-u-maxh-200px nw-u-ovy-auto nw-u-m-0'
+            cls: 'nw-pm-prompt-box'
         });
 
-        section.createEl('h4', { text: '📝 用户提示词模板', cls: 'nw-u-m-16px-0-8px-0' });
+        section.createEl('h4', { text: '📝 用户提示词模板', cls: 'nw-pm-subheading-gap' });
         const userBox = section.createEl('pre', {
             text: version.userPrompt,
-            cls: 'nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-fs-12px nw-u-ws-pre-wrap nw-u-maxh-200px nw-u-ovy-auto nw-u-m-0'
+            cls: 'nw-pm-prompt-box'
         });
     }
 
@@ -309,40 +290,36 @@ export class PromptManagerSettings {
         const section = container.createDiv();
         section.createEl('h4', { text: '🔧 可用变量', cls: 'nw-h4-sm' });
 
-        const varGrid = section.createDiv({
-            cls: 'nw-u-d-grid nw-u-gtc-1fr-1fr nw-u-gap-8px'
-        });
+        const varGrid = section.createDiv({ cls: 'nw-pm-var-grid' });
 
         for (const v of template.variables) {
-            const item = varGrid.createDiv({
-                cls: 'nw-u-p-8px-10px nw-u-bg-background-secondary nw-u-brd-4px nw-u-fs-12px'
-            });
+            const item = varGrid.createDiv({ cls: 'nw-pm-var-item' });
             item.createDiv({
                 text: `\${${v.name}}`,
-                cls: 'nw-u-fontfamily-monospace nw-u-fwt-600 nw-u-c-interactive-accent'
+                cls: 'nw-pm-var-code'
             });
             item.createDiv({
                 text: v.description,
-                cls: 'nw-u-c-text-muted nw-u-margintop-2px nw-u-fs-11px'
+                cls: 'nw-pm-var-desc'
             });
             if (v.required) {
                 item.createEl('span', {
                     text: '必填',
-                    cls: 'nw-u-d-inline-block nw-u-p-1px-4px nw-u-fs-10px nw-u-bg-background-modifier-er nw-u-c-text-on-accent nw-u-brd-3px nw-u-margintop-4px'
+                    cls: 'nw-pm-badge nw-pm-badge--required'
                 });
             }
         }
     }
 
     private renderABTestsTab(container: HTMLElement): void {
-        const header = container.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center nw-u-marginbottom-16px' });
-        header.createEl('h3', { text: '🧪 A/B 测试管理', cls: 'nw-u-m-0' });
+        const header = container.createDiv({ cls: 'nw-pm-ab-header' });
+        header.createEl('h3', { text: '🧪 A/B 测试管理', cls: 'nw-pm-ab-title' });
 
-        const enableRow = header.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px' });
-        enableRow.createSpan({ text: '启用A/B测试', cls: 'nw-u-fs-13px' });
+        const enableRow = header.createDiv({ cls: 'nw-pm-ab-enable' });
+        enableRow.createSpan({ text: '启用A/B测试', cls: 'nw-pm-ab-enable-label' });
         const toggle = enableRow.createEl('input', {
             type: 'checkbox',
-            cls: 'nw-u-cur-pointer'
+            cls: 'nw-pm-check'
         });
         toggle.checked = this.promptManager.isABTestingEnabled();
         toggle.addEventListener('change', async () => {
@@ -359,7 +336,7 @@ export class PromptManagerSettings {
                 cls: 'nw-empty-center-muted'
             });
         } else {
-            const testList = container.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-8px' });
+            const testList = container.createDiv({ cls: 'nw-pm-test-list' });
             for (const test of tests) {
                 this.renderTestCard(testList, test);
             }
@@ -367,30 +344,26 @@ export class PromptManagerSettings {
 
         const createBtn = container.createEl('button', {
             text: '➕ 创建A/B测试',
-            attr: {
-                type: 'button',
-                style: 'margin-top:16px;padding:8px 16px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:6px;background:var(--background-secondary);color:var(--text-normal);font-size:13px;'
-            }
+            cls: 'nw-pm-create-btn',
+            attr: { type: 'button' }
         });
         createBtn.onclick = () => this.showCreateTestModal();
     }
 
     private renderTestCard(container: HTMLElement, test: ABTest): void {
         const card = container.createDiv({
-            attr: {
-                style: `padding:12px;border:1px solid var(--background-modifier-border);border-radius:8px;background:var(--background-primary);cursor:${this.selectedTestId === test.id ? 'default' : 'pointer'};${this.selectedTestId === test.id ? 'border-color:var(--interactive-accent);' : ''}`
-            }
+            cls: `nw-pm-test-card${this.selectedTestId === test.id ? ' nw-pm-test-card--selected' : ''}`
         });
         card.onclick = () => {
             this.selectedTestId = this.selectedTestId === test.id ? null : test.id;
             this.render();
         };
 
-        const header = card.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center' });
+        const header = card.createDiv({ cls: 'nw-pm-test-head' });
         const title = header.createDiv();
         title.createDiv({
             text: test.name,
-            cls: 'nw-u-fwt-600 nw-u-fs-14px'
+            cls: 'nw-pm-test-name'
         });
         title.createDiv({
             text: `模板: ${test.templateId} · 流量 ${test.trafficSplit.a}/${test.trafficSplit.b}`,
@@ -399,9 +372,7 @@ export class PromptManagerSettings {
 
         const statusBadge = header.createEl('span', {
             text: this.getStatusLabel(test.status),
-            attr: {
-                style: `padding:4px 10px;font-size:11px;border-radius:4px;${this.getStatusStyle(test.status)}`
-            }
+            cls: `nw-pm-status ${this.getStatusClass(test.status)}`
         });
 
         if (this.selectedTestId === test.id) {
@@ -419,31 +390,27 @@ export class PromptManagerSettings {
         return labels[status] || status;
     }
 
-    private getStatusStyle(status: string): string {
-        const styles: Record<string, string> = {
-            draft: 'background:var(--background-secondary);color:var(--text-muted);',
-            running: 'background:var(--background-modifier-success);color:var(--text-on-accent);',
-            paused: 'background:var(--background-modifier-warning);color:var(--text-on-accent);',
-            completed: 'background:var(--interactive-accent);color:var(--text-on-accent);',
+    private getStatusClass(status: string): string {
+        const classes: Record<string, string> = {
+            draft: 'nw-pm-status--draft',
+            running: 'nw-pm-status--running',
+            paused: 'nw-pm-status--paused',
+            completed: 'nw-pm-status--completed',
         };
-        return styles[status] || '';
+        return classes[status] || 'nw-pm-status--draft';
     }
 
     private renderTestDetail(container: HTMLElement, test: ABTest): void {
-        const detail = container.createDiv({
-            cls: 'nw-u-margintop-12px nw-u-paddingtop-12px nw-u-bt-1px-solid-background-m'
-        });
+        const detail = container.createDiv({ cls: 'nw-pm-test-detail' });
 
         if (test.description) {
             detail.createDiv({
                 text: test.description,
-                cls: 'nw-u-fs-13px nw-u-c-text-muted nw-u-marginbottom-12px'
+                cls: 'nw-pm-test-desc'
             });
         }
 
-        const statsGrid = detail.createDiv({
-            cls: 'nw-u-d-grid nw-u-gtc-1fr-1fr nw-u-gap-12px nw-u-marginbottom-12px'
-        });
+        const statsGrid = detail.createDiv({ cls: 'nw-pm-stats-grid' });
 
         this.renderVariantStats(statsGrid, 'A 版本', test.variantA, test.trafficSplit.a);
         this.renderVariantStats(statsGrid, 'B 版本', test.variantB, test.trafficSplit.b);
@@ -451,20 +418,18 @@ export class PromptManagerSettings {
         const stats = this.promptManager.getABTestStats(test.id);
         if (stats?.winner) {
             const winnerBox = detail.createDiv({
-                cls: 'nw-u-p-10px nw-u-bg-background-modifier-su nw-u-c-text-on-accent nw-u-brd-6px nw-u-ta-center nw-u-fwt-600 nw-u-marginbottom-12px'
+                cls: 'nw-pm-winner'
             });
             winnerBox.setText(`🏆 当前优胜: ${stats.winner.toUpperCase()} 版本`);
         }
 
-        const actions = detail.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-fwr-wrap' });
+        const actions = detail.createDiv({ cls: 'nw-pm-test-actions' });
 
         if (test.status === 'draft') {
             const startBtn = actions.createEl('button', {
                 text: '▶️ 开始测试',
-                attr: {
-                    type: 'button',
-                    style: 'padding:6px 12px;cursor:pointer;border:none;border-radius:4px;background:var(--interactive-accent);color:var(--text-on-accent);font-size:12px;'
-                }
+                cls: 'nw-pm-btn nw-pm-btn--primary',
+                attr: { type: 'button' }
             });
             startBtn.onclick = async () => {
                 await this.promptManager.updateABTestStatus(test.id, 'running');
@@ -489,10 +454,8 @@ export class PromptManagerSettings {
         if (test.status === 'paused') {
             const resumeBtn = actions.createEl('button', {
                 text: '▶️ 继续',
-                attr: {
-                    type: 'button',
-                    style: 'padding:6px 12px;cursor:pointer;border:none;border-radius:4px;background:var(--interactive-accent);color:var(--text-on-accent);font-size:12px;'
-                }
+                cls: 'nw-pm-btn nw-pm-btn--primary',
+                attr: { type: 'button' }
             });
             resumeBtn.onclick = async () => {
                 await this.promptManager.updateABTestStatus(test.id, 'running');
@@ -512,10 +475,8 @@ export class PromptManagerSettings {
 
         const deleteBtn = actions.createEl('button', {
             text: '🗑️ 删除',
-            attr: {
-                type: 'button',
-                style: 'padding:6px 12px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;background:var(--background-secondary);color:var(--text-error);font-size:12px;margin-left:auto;'
-            }
+            cls: 'nw-pm-btn nw-pm-btn--danger nw-pm-btn--push-end',
+            attr: { type: 'button' }
         });
         deleteBtn.onclick = async () => {
             const confirmed = await OperationConfirmModal.confirm(this.app, {
@@ -535,11 +496,11 @@ export class PromptManagerSettings {
 
     private renderVariantStats(container: HTMLElement, label: string, variant: { version: string; metrics: ABTestMetrics }, traffic: number): void {
         const card = container.createDiv({
-            cls: 'nw-u-p-10px nw-u-bg-background-secondary nw-u-brd-6px'
+            cls: 'nw-pm-variant'
         });
         card.createDiv({
             text: `${label} (v${variant.version})`,
-            cls: 'nw-u-fwt-600 nw-u-fs-13px nw-u-marginbottom-8px'
+            cls: 'nw-pm-variant-title'
         });
         // 指标行构造抽到 prompt-manager-logic：0 样本时不能显示 NaN/10
         for (const row of buildVariantStatRows(variant.metrics, traffic)) {
@@ -551,7 +512,7 @@ export class PromptManagerSettings {
     }
 
     private renderUsageTab(container: HTMLElement): void {
-        container.createEl('h3', { text: '📊 使用记录', cls: 'nw-u-m-0-0-16px-0' });
+        container.createEl('h3', { text: '📊 使用记录', cls: 'nw-pm-tab-title' });
 
         const history = this.promptManager.getUsageHistory(undefined, 50);
 
@@ -563,31 +524,27 @@ export class PromptManagerSettings {
             return;
         }
 
-        const list = container.createDiv({
-            cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-4px nw-u-maxh-500px nw-u-ovy-auto'
-        });
+        const list = container.createDiv({ cls: 'nw-pm-usage-list' });
 
         for (const record of history) {
-            const item = list.createDiv({
-                cls: 'nw-u-p-8px-12px nw-u-bg-background-secondary nw-u-brd-4px nw-u-fs-12px nw-u-d-flex nw-u-jc-space-between nw-u-ai-center'
-            });
+            const item = list.createDiv({ cls: 'nw-pm-usage-item' });
             const left = item.createDiv();
             left.createSpan({
                 text: record.templateId,
-                cls: 'nw-u-fwt-600 nw-u-marginright-8px'
+                cls: 'nw-pm-usage-id'
             });
             left.createSpan({
                 text: `v${record.version}`,
-                cls: 'nw-u-c-text-muted'
+                cls: 'nw-pm-usage-version'
             });
             if (record.abTestId) {
                 left.createEl('span', {
                     text: `A/B ${record.abVariant?.toUpperCase()}`,
-                    cls: 'nw-u-marginleft-8px nw-u-p-2px-6px nw-u-fs-10px nw-u-bg-interactive-accent nw-u-c-text-on-accent nw-u-brd-3px'
+                    cls: 'nw-pm-badge nw-pm-badge--ab'
                 });
             }
 
-            const right = item.createDiv({ cls: 'nw-u-c-text-muted' });
+            const right = item.createDiv({ cls: 'nw-pm-usage-time' });
             right.setText(new Date(record.timestamp).toLocaleString());
             if (record.rating !== undefined) {
                 right.setText(right.textContent + ` · ⭐${record.rating}`);
@@ -596,37 +553,36 @@ export class PromptManagerSettings {
     }
 
     private renderImportExportTab(container: HTMLElement): void {
-        container.createEl('h3', { text: '📦 导入/导出', cls: 'nw-u-m-0-0-16px-0' });
+        container.createEl('h3', { text: '📦 导入/导出', cls: 'nw-pm-tab-title' });
 
         const exportSection = container.createDiv({
-            cls: 'nw-u-p-16px nw-u-bg-background-secondary nw-u-brd-8px nw-u-marginbottom-16px'
+            cls: 'nw-pm-io-box'
         });
         exportSection.createEl('h4', { text: '📤 导出配置', cls: 'nw-h4-sm' });
         exportSection.createDiv({
             text: '导出所有自定义提示词模板和A/B测试配置',
-            cls: 'nw-u-fs-13px nw-u-c-text-muted nw-u-marginbottom-12px'
+            cls: 'nw-pm-io-desc'
         });
         const exportBtn = exportSection.createEl('button', {
             text: '📥 导出 JSON',
-            attr: {
-                type: 'button',
-                style: 'padding:8px 16px;cursor:pointer;border:none;border-radius:6px;background:var(--interactive-accent);color:var(--text-on-accent);font-size:13px;'
-            }
+            cls: 'nw-pm-btn nw-pm-btn--primary-lg',
+            attr: { type: 'button' }
         });
         exportBtn.onclick = () => { void this.exportConfig(); };
 
         const importSection = container.createDiv({
-            cls: 'nw-u-p-16px nw-u-bg-background-secondary nw-u-brd-8px'
+            cls: 'nw-pm-io-box nw-pm-io-box--last'
         });
         importSection.createEl('h4', { text: '📥 导入配置', cls: 'nw-h4-sm' });
         importSection.createDiv({
             text: '从 JSON 文件导入提示词配置（将覆盖现有自定义配置）',
-            cls: 'nw-u-fs-13px nw-u-c-text-muted nw-u-marginbottom-12px'
+            cls: 'nw-pm-io-desc'
         });
 
         const input = importSection.createEl('input', {
             type: 'file',
-            attr: { accept: '.json', style: 'margin-bottom:12px;' }
+            cls: 'nw-pm-file-input',
+            attr: { accept: '.json' }
         });
         input.addEventListener('change', async (e) => {
             const file = (e.target as HTMLInputElement).files?.[0];
@@ -789,14 +745,14 @@ export class PromptManagerSettings {
 
         content.createEl('h4', { text: '系统提示词' });
         const sysTextarea = content.createEl('textarea', {
-            cls: 'nw-u-w-100 nw-u-minh-150px nw-u-p-8px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-bg-background-primary nw-u-c-text-normal nw-u-fontfamily-monospace nw-u-fs-12px nw-u-resize-vertical'
+            cls: 'nw-pm-textarea'
         });
         sysTextarea.value = systemPrompt;
         sysTextarea.addEventListener('input', () => systemPrompt = sysTextarea.value);
 
         content.createEl('h4', { text: '用户提示词模板' });
         const userTextarea = content.createEl('textarea', {
-            cls: 'nw-u-w-100 nw-u-minh-150px nw-u-p-8px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-bg-background-primary nw-u-c-text-normal nw-u-fontfamily-monospace nw-u-fs-12px nw-u-resize-vertical'
+            cls: 'nw-pm-textarea'
         });
         userTextarea.value = userPrompt;
         userTextarea.addEventListener('input', () => userPrompt = userTextarea.value);
@@ -1073,7 +1029,7 @@ export class PromptManagerSettings {
         const content = modal.contentEl;
         content.createDiv({
             text: '选择优胜版本，该版本将设为提示词的活跃版本。',
-            cls: 'nw-u-marginbottom-16px nw-u-c-text-muted'
+            cls: 'nw-pm-finish-desc'
         });
 
         const stats = this.promptManager.getABTestStats(test.id);
@@ -1081,7 +1037,7 @@ export class PromptManagerSettings {
         if (stats?.winner && stats.winner !== 'tie') {
             content.createDiv({
                 text: `🏆 推荐优胜: ${stats.winner.toUpperCase()} 版本`,
-                cls: 'nw-u-p-10px nw-u-bg-background-modifier-su nw-u-c-text-on-accent nw-u-brd-6px nw-u-ta-center nw-u-fwt-600 nw-u-marginbottom-16px'
+                cls: 'nw-pm-winner nw-pm-winner--lg'
             });
         }
 
@@ -1123,3 +1079,5 @@ export class PromptManagerSettings {
         modal.open();
     }
 }
+
+

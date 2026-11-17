@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-17T12:39:29.319Z",
-  "note": "Slice M（大纲智能扩写弹窗语义化）：新增 29 个 nw-oe-* 类（外壳/分栏/场景项/段落项/diff/底栏），并把 16 个仅此弹窗使用的 nw-u-* 定义删除；styles.css 净 +5377 字节，唯一类 3931。",
-  "bytes": 715979,
+  "generatedAt": "2026-11-17T13:17:45.196Z",
+  "note": "棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因",
+  "bytes": 724614,
   "important": 24,
   "hardcodedHex": 168,
   "rgbHsl": 192,
-  "uniqueClasses": 3931,
+  "uniqueClasses": 3994,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

@@ -11,7 +11,7 @@
 | `shared/` | 255 | 50823 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3387 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 300 | 113277 | 1155 | 917 | 79% |
+| `ui/` | 300 | 113235 | 1155 | 917 | 79% |
 
 ## 文件清单
 
@@ -914,7 +914,7 @@
 | `ui/project-side-panel-view.ts` | 457 | 5 | 5 |
 | `ui/project-utils.ts` | 366 | 11 | 10 |
 | `ui/prompt-manager-logic.ts` | 76 | 4 | 3 |
-| `ui/prompt-manager-settings.ts` | 1126 | 1 | 1 |
+| `ui/prompt-manager-settings.ts` | 1084 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 87 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 504 | 2 | 2 |
 | `ui/quality-loop-modal.ts` | 294 | 1 | 1 |
