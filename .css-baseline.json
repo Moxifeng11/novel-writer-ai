@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-17T19:04:30.886Z",
-  "note": "Slice gap3：新增 43-manuscript-precheck.css（文面体检弹窗，+2472 字节 / +15 类）",
-  "bytes": 793258,
+  "generatedAt": "2026-11-17T20:08:04.591Z",
+  "note": "Slice gap3：新增 43-manuscript-precheck.css（文面体检弹窗，+2472 字节 / +15 类）\nGap4 提示词管理器：使用统计工具条/分页器 + 导入预览弹窗 + 列表焦点描边（33 号样式表 +2074 字节 / +15 类）",
+  "bytes": 795332,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 223,
-  "uniqueClasses": 4303,
+  "uniqueClasses": 4318,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

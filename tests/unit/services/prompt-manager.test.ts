@@ -100,3 +100,102 @@ describe('PromptManager — 导入配置校验（C2-4）', () => {
         if (!rejected.ok) expect(rejected.error).toContain('未知配置字段');
     });
 });
+
+describe('PromptManager — 使用记录分页与清空（功能缺口 ④）', () => {
+    function seededManager(count: number) {
+        const usageHistory = Array.from({ length: count }, (_, i) => ({
+            id: `u${i}`,
+            templateId: i % 2 === 0 ? 'custom-1' : 'chapter',
+            version: 'v1',
+            timestamp: i + 1,
+        }));
+        return makeManager({ usageHistory });
+    }
+
+    it('分页返回本页记录与总数，最新在前', () => {
+        const { manager } = seededManager(45);
+
+        const first = manager.getUsageHistoryPage(0, 20);
+        expect(first.total).toBe(45);
+        expect(first.records).toHaveLength(20);
+        expect(first.records[0].id).toBe('u44');
+        expect(first.records[19].id).toBe('u25');
+
+        const second = manager.getUsageHistoryPage(20, 20);
+        expect(second.records).toHaveLength(20);
+        expect(second.records[0].id).toBe('u24');
+        expect(second.records[19].id).toBe('u5');
+
+        const third = manager.getUsageHistoryPage(40, 20);
+        expect(third.records.map(r => r.id)).toEqual(['u4', 'u3', 'u2', 'u1', 'u0']);
+    });
+
+    it('分页可按模板过滤，越界页返回空记录但总数仍正确', () => {
+        const { manager } = seededManager(10);
+        const filtered = manager.getUsageHistoryPage(0, 3, 'custom-1');
+        expect(filtered.total).toBe(5);
+        expect(filtered.records.map(r => r.id)).toEqual(['u8', 'u6', 'u4']);
+
+        const beyond = manager.getUsageHistoryPage(999, 20);
+        expect(beyond.total).toBe(10);
+        expect(beyond.records).toEqual([]);
+    });
+
+    it('清空使用记录后落盘且列表为空', async () => {
+        const { manager, saved } = seededManager(3);
+        await manager.clearUsageHistory();
+        await tick();
+        expect(manager.getUsageHistoryPage(0, 20).total).toBe(0);
+        expect(saved.length).toBeGreaterThan(0);
+    });
+});
+
+describe('PromptManager — 导入 dry-run 与合并模式（功能缺口 ④）', () => {
+    it('parseImportPayload 不改内存，坏 JSON 给出具体原因', () => {
+        const { manager } = makeManager();
+        const broken = manager.parseImportPayload('{broken');
+        expect(broken.ok).toBe(false);
+        if (!broken.ok) expect(broken.error).toBe('JSON 解析失败');
+
+        const wrong = manager.parseImportPayload(JSON.stringify({ customTemplates: {} }));
+        expect(wrong.ok).toBe(false);
+        expect(manager.getAllTemplates().some(t => t.id === 'custom-1')).toBe(false);
+    });
+
+    it('merge 导入：同名模板覆盖版本，未提到的模板与使用记录保留', async () => {
+        const { manager } = makeManager({
+            customTemplates: [template('keep')],
+            usageHistory: [{ id: 'u1', templateId: 'keep', version: 'v1', timestamp: 1 }],
+            abTestingEnabled: false,
+        });
+        const payload = {
+            customTemplates: [template('custom-2')],
+            abTests: [],
+            usageHistory: [{ id: 'u2', templateId: 'custom-2', version: 'v1', timestamp: 2 }],
+            abTestingEnabled: true,
+        };
+
+        expect(manager.importConfig(JSON.stringify(payload), 'merge')).toBe(true);
+        await tick();
+
+        const ids = manager.getAllTemplates().map(t => t.id);
+        expect(ids).toContain('keep');
+        expect(ids).toContain('custom-2');
+        expect(manager.getUsageHistory(undefined, 10).map(r => r.id).sort()).toEqual(['u1', 'u2']);
+        expect(manager.isABTestingEnabled()).toBe(false);
+    });
+
+    it('replace 导入：整份替换，未提到的模板被移除', async () => {
+        const { manager } = makeManager({ customTemplates: [template('keep')] });
+        const payload = {
+            customTemplates: [template('custom-2')],
+            abTests: [],
+            usageHistory: [],
+            abTestingEnabled: false,
+        };
+        expect(manager.importConfig(JSON.stringify(payload), 'replace')).toBe(true);
+        await tick();
+        expect(manager.getAllTemplates().map(t => t.id)).not.toContain('keep');
+        expect(manager.getAllTemplates().map(t => t.id)).toContain('custom-2');
+    });
+});

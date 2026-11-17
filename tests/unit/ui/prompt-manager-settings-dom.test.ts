@@ -19,15 +19,29 @@ function makePluginStub(overrides: { templateCount?: number } = {}) {
         description: '种子模板描述，用于列表截断断言。',
         category: i === 0 ? 'chapter' : 'scene',
         steps: [],
+        versions: [] as Array<Record<string, unknown>>,
+        variables: [] as Array<Record<string, unknown>>,
+        isCustom: false,
     }));
     return {
         promptManager: {
             getAllTemplates: vi.fn(() => templates),
-            getCategories: vi.fn(() => ['chapter', 'scene']),
+            // 真实实现返回 {category, count}[]，桩必须同形状，否则分类按钮文案是 undefined
+            getCategories: vi.fn(() => [
+                { category: 'chapter', count: 1 },
+                { category: 'scene', count: templates.length - 1 },
+            ]),
             getTemplatesByCategory: vi.fn((cat: string) => templates.filter(t => t.category === cat)),
             getTemplateById: vi.fn((id: string) => templates.find(t => t.id === id)),
             getABTests: vi.fn(() => []),
             getUsageHistory: vi.fn((_id?: unknown, _limit?: unknown) => [] as Array<Record<string, unknown>>),
+            getUsageHistoryPage: vi.fn((_offset?: number, _limit?: number, _id?: string) => ({
+                records: [] as Array<{ templateId: string; version: number; timestamp: number }>,
+                total: 0,
+            })),
+            getCustomTemplates: vi.fn(() => templates.filter(t => t.isCustom)),
+            clearUsageHistory: vi.fn(async () => undefined),
+            parseImportPayload: vi.fn(() => ({ ok: false as const, error: '测试桩' })),
             isABTestingEnabled: vi.fn(() => false),
             getABTestStats: vi.fn(() => ({})),
             addVersion: vi.fn(),
@@ -82,9 +96,10 @@ describe('PromptManagerSettings 子页签：使用统计与导入导出', () => 
 
     it('使用统计：有历史时渲染记录列表', () => {
         const stub = makePluginStub();
-        stub.promptManager.getUsageHistory = vi.fn((_id?: unknown, _limit?: unknown) => [
-            { templateId: 'tpl_0', version: 2, timestamp: Date.UTC(2026, 0, 2) },
-        ]);
+        stub.promptManager.getUsageHistoryPage = vi.fn(() => ({
+            records: [{ templateId: 'tpl_0', version: 2, timestamp: Date.UTC(2026, 0, 2) }],
+            total: 1,
+        }));
         const { root } = render(stub);
         switchTab(root, '📊 使用统计');
         // 列表按 templateId + 版本号渲染（与实现一致：没有模板名字段）
@@ -129,5 +144,61 @@ describe('PromptManagerSettings', () => {
         const { root } = render(makePluginStub());
         // Setting mock 的 addText 会立刻回调组件；至少保证初始渲染稳定
         expect(root.findAll('nw-settings-subtab-content')).toHaveLength(1);
+    });
+});
+
+describe('PromptManagerSettings 局部重建与键盘导航（功能缺口 ④）', () => {
+    it('使用统计：条数 + 分页器，点「下一页」翻页', () => {
+        const stub = makePluginStub();
+        const all = Array.from({ length: 45 }, (_, i) => ({
+            templateId: 'tpl_0',
+            version: 1,
+            timestamp: Date.UTC(2026, 0, 1) + i * 3600_000,
+        }));
+        stub.promptManager.getUsageHistoryPage = vi.fn((offset: number = 0, limit: number = 20) => {
+            const end = Math.max(0, all.length - offset);
+            const start = Math.max(0, end - limit);
+            return { records: all.slice(start, end).reverse(), total: all.length };
+        });
+        const { root } = render(stub);
+        switchTab(root, '📊 使用统计');
+        expect(root.allText()).toContain('共 45 条记录');
+        expect(root.allText()).toContain('第 1 / 3 页');
+        const next = root.findAll('nw-pm-pager-btn').find(b => b.textContent.includes('下一页'));
+        expect(next).toBeTruthy();
+        (next as unknown as { onclick: () => void }).onclick();
+        expect(root.allText()).toContain('第 2 / 3 页');
+    });
+
+    it('使用统计：空历史不渲染分页器', () => {
+        const { root } = render(makePluginStub());
+        switchTab(root, '📊 使用统计');
+        expect(root.findAll('nw-pm-usage-pager')).toHaveLength(0);
+        expect(root.findAll('nw-pm-pager-btn')).toHaveLength(0);
+    });
+
+    it('模板页：列表项可聚焦且 Enter 激活后渲染详情', () => {
+        const { root } = render(makePluginStub());
+        const item = root.findAll('nw-pm-template-item')[0];
+        expect(item.getAttribute('tabindex')).toBe('0');
+        item.dispatch('keydown', { key: 'Enter' });
+        expect(root.allText()).toContain('📋 版本历史');
+        expect(root.findAll('nw-pm-template-item--selected')).toHaveLength(1);
+    });
+
+    it('模板页：切分类只重绘列表，页签栏与详情容器不被重建', () => {
+        const { root } = render(makePluginStub({ templateCount: 3 }));
+        const tabBar = root.findAll('nw-settings-subtab-bar')[0];
+        const categoryBtn = root.findAll('nw-pm-category-btn')[1];
+        expect(categoryBtn.textContent).not.toContain('全部');
+        (categoryBtn as unknown as { onclick: () => void }).onclick();
+        // 外壳未重建：页签栏仍是同一个对象且仍有四个子页签
+        expect(root.findAll('nw-settings-subtab-bar')[0]).toBe(tabBar);
+        expect(tabBar.children).toHaveLength(4);
+        // 列表被过滤成 chapter 分类（模板0），场景模板（模板1）消失
+        const listText = root.findAll('nw-pm-template-list')[0].allText();
+        expect(listText).toContain('模板0');
+        expect(listText).not.toContain('模板1');
+        expect(categoryBtn.className).toContain('nw-pm-category-btn--active');
     });
 });

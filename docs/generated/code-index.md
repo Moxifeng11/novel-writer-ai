@@ -7,11 +7,11 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146802 | 1951 | 1545 | 79% |
-| `services/` | 65 | 19413 | 295 | 203 | 69% |
-| `shared/` | 256 | 51257 | 2161 | 1689 | 78% |
+| `services/` | 65 | 19499 | 295 | 203 | 69% |
+| `shared/` | 257 | 51465 | 2167 | 1692 | 78% |
 | `core/` | 7 | 3390 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 302 | 113721 | 1163 | 921 | 79% |
+| `ui/` | 303 | 114140 | 1165 | 922 | 79% |
 
 ## 文件清单
 
@@ -431,7 +431,7 @@
 | `services/project-index-service.ts` | 232 | 1 | 1 |
 | `services/project-rename-service.ts` | 192 | 2 | 2 |
 | `services/project-standard-service.ts` | 68 | 3 | 1 |
-| `services/prompt-manager.ts` | 783 | 5 | 5 |
+| `services/prompt-manager.ts` | 869 | 5 | 5 |
 | `services/prompt-templates-default.ts` | 644 | 1 | 1 |
 | `services/quality-history-store.ts` | 182 | 5 | 5 |
 | `services/quality-panel-service.ts` | 113 | 2 | 1 |
@@ -612,6 +612,7 @@
 | `shared/project-root.ts` | 48 | 2 | 2 |
 | `shared/project-standard.ts` | 28 | 1 | 0 |
 | `shared/prompt-budget.ts` | 575 | 19 | 17 |
+| `shared/prompt-manager-import.ts` | 208 | 6 | 3 |
 | `shared/prompt-manager-types.ts` | 139 | 11 | 11 |
 | `shared/prompt-template-catalog.ts` | 50 | 3 | 0 |
 | `shared/prose-metrics.ts` | 574 | 10 | 10 |
@@ -916,8 +917,9 @@
 | `ui/project-health-modal.ts` | 205 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 457 | 5 | 5 |
 | `ui/project-utils.ts` | 366 | 11 | 10 |
+| `ui/prompt-import-preview-modal.ts` | 135 | 2 | 1 |
 | `ui/prompt-manager-logic.ts` | 76 | 4 | 3 |
-| `ui/prompt-manager-settings.ts` | 1084 | 1 | 1 |
+| `ui/prompt-manager-settings.ts` | 1368 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 87 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 504 | 2 | 2 |
 | `ui/quality-loop-modal.ts` | 294 | 1 | 1 |

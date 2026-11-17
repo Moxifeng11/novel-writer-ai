@@ -1,6 +1,6 @@
 # 功能缺口清单（2026-11-18）
 
-> 状态：**①②③已交付（2026-11-18）**，其余待作者挑选 · 编制：DSH · 背景：视觉重构 Slice A–Y 收尾、`nw-u-*` 存量清零后，工作重心转功能实现。
+> 状态：**①②③④已交付（2026-11-18）**，其余待作者挑选 · 编制：DSH · 背景：视觉重构 Slice A–Y 收尾、`nw-u-*` 存量清零后，工作重心转功能实现。
 > 口径：只列**已核实**的缺口（附代码证据），按「用户价值 / 工作量」排序；不含纯重构与 P2 技术债。
 > 每项交付定义：功能实现 + 单测 + 实机或像素验收 + 模块文档 + 门禁 + 提交推送。
 
@@ -11,7 +11,7 @@
 | 1 | 大纲智能扩写「应用」不写回正文 | 缺陷修复 | 0.5–1 轮 | ✅ done（2026-11-18） |
 | 2 | 全屏写作视图缺写作时实时体检 | 新能力接入 | 1–2 轮 | ✅ done（2026-11-18） |
 | 3 | 发布前错别字 / 标点体检 | 新功能 | 1 轮 | ✅ done（2026-11-18） |
-| 4 | 提示词管理器交付级修补 | 体验补洞 | 1 轮 | 强（模块文档 §7） |
+| 4 | 提示词管理器交付级修补 | 体验补洞 | 1 轮 | ✅ done（2026-11-18） |
 | 5 | 质量统计状态清单不可交互 | 体验补洞 | 0.5 轮 | 强（模块文档 §7） |
 | 6 | 章节朗读（TTS）写作用「听校」 | 新功能 | 0.5–1 轮 | 强（全仓 0 引用） |
 | 7 | 英文界面（i18n） | 新能力 | 3–5 轮 | 强（无 i18n 框架） |
@@ -76,7 +76,7 @@
 - 验收：15 条单测；实机扫示例章 6 处、跳转光标 第6行列2、过滤 6→2→6、导出 Notice 三行齐全；门禁全绿（styles.css 793,258 B / inline 525 / utility 46 类 142 次）。
 - 详见 `docs/modules/manuscript-precheck.md`。
 
-## 4. 提示词管理器交付级修补（体验补洞）
+## 4. 提示词管理器交付级修补（体验补洞，✅ 已交付 2026-11-18）
 
 **证据**：`docs/modules/prompt-manager-settings.md` §7 四条：
 - 导入是「覆盖现有自定义配置」，无 dry-run 预览与冲突提示；
@@ -85,6 +85,12 @@
 - `render()` 全量重建。
 
 **做法**：导入改为「预览差异 → 合并/覆盖二选一」；统计加分页与清空；列表加键盘导航；局部重绘。
+**已交付（2026-11-18）**
+- 导入 dry-run：`shared/prompt-manager-import.ts`（208 行纯逻辑：`isSameTemplate` / `buildPromptImportDiff` / `mergePromptConfigs`）+ `ui/prompt-import-preview-modal.ts`（135 行预览弹窗）+ `PromptManager#importConfig(jsonStr, mode)`（`'replace' | 'merge'`，默认合并）。选文件后先校验再预览「新增 / 覆盖 / 移除 / 使用记录条数」，用户点「合并导入」或「覆盖导入」才写盘。
+- 使用统计：`PromptManager#getUsageHistoryPage(offset, limit, templateId?)` 返回 `{ records, total }`、`clearUsageHistory()`；UI 每页 20 条、工具条「共 N 条记录 / 🗑 清空记录」、页码器「← 上一页 / 第 x / y 页 / 下一页 →」（首末页 disabled），清空走 `OperationConfirmModal` 二次确认。
+- 局部重绘 + 键盘导航：`render()` 只建外壳（页签栏 + `contentEl`），`renderActiveTab()` 重绘内容；搜索框不再每键失焦；分类按钮与模板项加 `tabindex="0"` / `role="button"` / `aria-pressed`，`bindListKeyboardNav` 支持方向键取模循环、Home/End、Enter/Space（`activate()` 回调，不依赖 `el.click()`）。
+- 验收：四个单测文件（设置页 DOM / 服务分页与导入 / 导入纯逻辑 / 预览弹窗）全过；实机 before/after 8 场景截图——`templates-list`/`templates-detail`/`abtests` **PNG 字节完全相同**（局部重绘零视觉变化），`usage-page1/2` 显示工具条与 3 页页码器，导入预览弹窗与清空确认弹窗按设计出图；键盘实测 `tabindex=0` + ArrowDown 焦点移位。
+- 门禁：styles.css 793258 → 795332（+2074）、main.js 5643485 → 5651818（+8333），两份基线已按实上调并写明原因；详见 `docs/modules/prompt-manager-settings.md` §5.1。
 
 ## 5. 质量统计状态清单不可交互（体验补洞）
 
@@ -114,6 +120,6 @@
 
 1 → 2 → 3 → 4 → 5 →（6 可选）→ 7。
 
-进度：①②③ 已交付（2026-11-18）。
+进度：①②③④ 已交付（2026-11-18）。
 
 理由：1 是修「假成功」缺陷；2 是把已交付引擎变成写作时可见的价值；3 是投稿刚需且不依赖 AI；4/5 是低成本体验补洞；6/7 视需要。

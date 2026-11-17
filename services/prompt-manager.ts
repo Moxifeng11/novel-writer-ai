@@ -7,6 +7,10 @@ import type {
     PromptUsageRecord,
     PromptManagerConfig,
 } from '@/shared/prompt-manager-types';
+import {
+    mergePromptConfigs,
+    type PromptImportMode,
+} from '@/shared/prompt-manager-import';
 import { DEFAULT_PROMPT_TEMPLATES } from './prompt-templates-default';
 
 import { createLogger } from '@/shared/logger';
@@ -191,6 +195,18 @@ export class PromptManager {
         }
 
         return result;
+    }
+
+    /**
+     * 返回磁盘上的自定义模板（不含内置模板）。
+     *
+     * 导入预览需要知道「当前有哪些自定义模板会被覆盖/移除」，
+     * 直接用 getAllTemplates() 会把内置模板也算进去，统计就错了。
+     *
+     * @returns 自定义模板数组（浅拷贝，改它不影响配置）
+     */
+    getCustomTemplates(): PromptTemplate[] {
+        return this.config.customTemplates.slice();
     }
 
     /**
@@ -648,11 +664,11 @@ export class PromptManager {
     }
 
     /**
-     * 读取模板使用历史。
+     * 读取模板使用历史（最新在前）。
      *
-     * @param templateId - 参数
-     * @param limit = 100 - 参数
-     * @returns 使用记录数组
+     * @param templateId - 只看某个模板的记录（省略则全部）
+     * @param limit - 最多返回多少条（默认 100）
+     * @returns 使用记录数组，最新在前
      */
     getUsageHistory(templateId?: string, limit = 100): PromptUsageRecord[] {
         let history = [...this.config.usageHistory];
@@ -660,6 +676,44 @@ export class PromptManager {
             history = history.filter(r => r.templateId === templateId);
         }
         return history.slice(-limit).reverse();
+    }
+
+    /**
+     * 分页读取使用历史（最新在前），同时返回总数供分页器使用。
+     *
+     * 为什么要单独一个方法：getUsageHistory 只能「取最后 N 条」，
+     * 界面无法知道一共有多少条，也就画不出「第 x / y 页」。
+     *
+     * @param offset - 从最新一条开始跳过的条数（0 = 第一页）
+     * @param limit - 每页条数
+     * @param templateId - 只看某个模板的记录（省略则全部）
+     * @returns 本页记录（最新在前）与总条数
+     *
+     * @example
+     * getUsageHistoryPage(0, 20).total // 45
+     */
+    getUsageHistoryPage(
+        offset = 0,
+        limit = 20,
+        templateId?: string,
+    ): { records: PromptUsageRecord[]; total: number } {
+        const all = templateId
+            ? this.config.usageHistory.filter(r => r.templateId === templateId)
+            : this.config.usageHistory;
+        const total = all.length;
+        const end = Math.max(0, total - Math.max(0, offset));
+        const start = Math.max(0, end - Math.max(0, limit));
+        return { records: all.slice(start, end).reverse(), total };
+    }
+
+    /**
+     * 清空全部使用记录并落盘。
+     *
+     * @returns 无
+     */
+    async clearUsageHistory(): Promise<void> {
+        this.config.usageHistory = [];
+        await this.saveConfig();
     }
 
     /**
@@ -742,26 +796,58 @@ export class PromptManager {
     }
 
     /**
-     * 从 JSON 导入配置。
+     * 解析并校验导入的 JSON（不落盘、不改内存）。
+     *
+     * 与 importConfig 分开，是为了先给用户看一眼「会新增/覆盖/移除什么」，
+     * 用户确认后才真正写盘——导入是破坏性操作，不能点一下文件就生效。
      *
      * @param jsonStr - JSON 字符串
-     * @returns 是否成功
+     * @returns 校验结果（失败时带具体原因）
+     *
+     * @example
+     * parseImportPayload('{"customTemplates":[]}')
+     * // { ok: false, error: 'abTests 必须是数组' }
      */
-    importConfig(jsonStr: string): boolean {
+    parseImportPayload(
+        jsonStr: string,
+    ): { ok: true; config: PromptManagerConfig } | { ok: false; error: string } {
+        let parsed: unknown;
         try {
-            const parsed: unknown = JSON.parse(jsonStr);
-            const validation = validatePromptManagerImport(parsed);
-            if (!validation.ok) {
-                // 形状不对整份拒绝：不修改内存、不写盘、不报“导入成功”
-                log.warn('[PromptManager] 导入配置被拒绝:', validation.error);
-                return false;
-            }
-            this.config = validation.config;
-            this.flushConfig();
-            return true;
+            parsed = JSON.parse(jsonStr);
         } catch {
-            return false;
+            return { ok: false, error: 'JSON 解析失败' };
         }
+        const validation = validatePromptManagerImport(parsed);
+        if (!validation.ok) {
+            log.warn('[PromptManager] 导入配置被拒绝:', validation.error);
+            return validation;
+        }
+        return validation;
+    }
+
+    /**
+     * 从 JSON 导入配置。
+     *
+     * 校验不过整份拒绝：不修改内存、不写盘、不报「导入成功」。
+     * merge 模式下与现有配置合并（同 id/同名模板覆盖、版本取并集、
+     * 使用记录按 id 去重、A/B 总开关保留当前值）；replace 模式整份替换。
+     *
+     * @param jsonStr - JSON 字符串
+     * @param mode - 导入模式（默认 replace，与历史行为一致）
+     * @returns 是否成功
+     *
+     * @example
+     * importConfig(text, 'merge'); // true
+     */
+    importConfig(jsonStr: string, mode: PromptImportMode = 'replace'): boolean {
+        const parsed = this.parseImportPayload(jsonStr);
+        if (!parsed.ok) return false;
+
+        this.config = mode === 'merge'
+            ? mergePromptConfigs(this.config, parsed.config)
+            : parsed.config;
+        this.flushConfig();
+        return true;
     }
 }
 

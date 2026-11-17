@@ -50,7 +50,7 @@ Obsidian 插件「小说工坊 AI」：长篇 / 短篇 / 剧本三域创作 + �
 | `docs/modules/INDEX.md` | 模块清单与推进顺序（一次只推进一个模块） |
 | `docs/modules/<模块>.md` | 单模块现状、验收记录、待办 |
 | `docs/design/2026-11-16-visual-refactor-standard.md` | 视觉重构标准（切片 A–Y） |
-| `docs/planning/2026-11-18-feature-gaps.md` | 功能缺口清单（7 项，按用户价值排序；①②③已交付、④起待挑选） |
+| `docs/planning/2026-11-18-feature-gaps.md` | 功能缺口清单（7 项，按用户价值排序；①②③④已交付、⑤起待挑选） |
 
 ## 5. 文档怎么读（重要）
 

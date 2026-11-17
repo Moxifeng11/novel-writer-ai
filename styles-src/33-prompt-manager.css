@@ -33,6 +33,12 @@ button.nw-pm-category-btn--active { background: var(--background-modifier-hover)
     max-height: 400px;
     overflow-y: auto;
 }
+.nw-pm-template-empty { padding: 12px 10px; font-size: 12px; color: var(--text-muted); }
+.nw-pm-template-item:focus-visible,
+button.nw-pm-category-btn:focus-visible {
+    outline: 2px solid var(--interactive-accent);
+    outline-offset: -2px;
+}
 .nw-pm-template-item {
     padding: 8px 10px;
     border-radius: 4px;
@@ -280,6 +286,35 @@ button.nw-pm-create-btn {
 .nw-pm-usage-version { color: var(--text-muted); }
 .nw-pm-usage-time { color: var(--text-muted); }
 
+/* 使用统计：条数 + 清空 工具条、分页器（功能缺口 ④） */
+.nw-pm-usage-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.nw-pm-usage-summary { font-size: 12px; color: var(--text-muted); }
+.nw-pm-usage-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+.nw-pm-pager-label { font-size: 12px; color: var(--text-muted); }
+button.nw-pm-pager-btn {
+    padding: 4px 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    font-size: 12px;
+    cursor: pointer;
+}
+button.nw-pm-pager-btn:hover:not(:disabled) { background: var(--background-modifier-hover); }
+button.nw-pm-pager-btn:disabled { opacity: 0.45; cursor: default; }
+
 /* ── 导入/导出页 ── */
 .nw-pm-io-box {
     padding: 16px;
@@ -290,6 +325,38 @@ button.nw-pm-create-btn {
 .nw-pm-io-box--last { margin-bottom: 0; }
 .nw-pm-io-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
 .nw-pm-file-input { margin-bottom: 12px; }
+
+/* 导入预览弹窗（功能缺口 ④） */
+.nw-pm-import-body { display: flex; flex-direction: column; gap: 10px; }
+.nw-pm-import-file { font-size: 12px; color: var(--text-muted); }
+.nw-pm-import-summary {
+    padding: 8px 12px;
+    border-radius: 4px;
+    background: var(--background-secondary);
+    font-size: 13px;
+    font-weight: 600;
+}
+.nw-pm-import-group-title {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    margin-bottom: 4px;
+}
+.nw-pm-import-list { display: flex; flex-direction: column; gap: 2px; }
+.nw-pm-import-item {
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: var(--background-secondary);
+    font-size: 12px;
+}
+.nw-pm-import-item--warn { color: var(--text-error); }
+.nw-pm-import-empty { font-size: 12px; color: var(--text-muted); }
+.nw-pm-import-mode-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-top: 4px;
+}
 
 /* ── 弹窗补充 ── */
 .nw-pm-textarea {

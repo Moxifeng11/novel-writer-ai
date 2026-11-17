@@ -1490,5 +1490,25 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 **验收**：`tsc --noEmit` 0 错；单测 `tests/unit/shared/manuscript-precheck.test.ts` 15 条全绿；实机 `D:\nw-tmp\probe-gap3.mjs` 写临时第4章（「必竟 / 既使 / 我们我们 / 英文逗号 / ，， / ...」6 处）→ 摘要「发现 6 处（错别字 2、重复词 1、中英标点 1、连续标点 1、省略号 1）」、徽标 必改×2 + 待确认×4、点首行后光标 `{ line: 5, ch: 1 }` 且活动文件切到该章、「只看必改项」6 → 2 → 6（摘要不随过滤变）；导出弹窗点「查看问题」叠出体检弹窗、点「导出」的 Notice 同时含结构检查 + 出版检查 + 文面体检三行，随后「✅ 完成已导出 4 章 / 297 字」；`check:inline-styles` 525（453/72）、`check:utility` 46/142 不变；`check:css` 793,258 / uniqueClasses 4,303、`check:bundle` main.js 5,643,485 / styles.css 793,258 已 `--update-baseline --note`；`npm run preflight` EXIT=0。
 
 **文档**：新增 `docs/modules/manuscript-precheck.md`（8 节，MC-01..MC-05 全 done）；`docs/modules/INDEX.md` 插行；视觉标准 §1.3 登记 `precheck-`、§5 加行、§5.1 styles.css 改 793,258；`docs/CURRENT.md` §4 状态；`docs/planning/2026-11-18-feature-gaps.md` ③标 done 并记录实际做法。
+### 2026-11-18 第五十四轮：功能缺口 ④——提示词管理器交付级修补（`nw-pm-*` 增补）
 
-**下一轮**：缺口 ④「提示词管理器交付级修补」（`docs/modules/prompt-manager-settings.md` §7 四条），或按作者挑选 ⑤–⑦。
+**背景**：缺口清单 ④（`docs/modules/prompt-manager-settings.md` §7 四条 backlog）：导入无 dry-run、使用统计无分页/清空、列表选中靠整页重绘且无键盘导航、`render()` 全量重建。
+
+**交付**：
+- 导入 dry-run：新增 `shared/prompt-manager-import.ts`（208 行纯逻辑：`isSameTemplate` / `buildPromptImportDiff` / `mergePromptConfigs`）与 `ui/prompt-import-preview-modal.ts`（135 行，`PromptImportPreviewModal`，三按钮「取消 / 覆盖导入 / 合并导入」，合并为主按钮）；`services/prompt-manager.ts` 新增 `parseImportPayload` 与 `importConfig(jsonStr, mode: 'replace' | 'merge' = 'merge')`。合并语义：按 id 优先、同名视为同一模板、版本取并集、`abTestingEnabled` 保留当前值、使用记录按 id 去重后截断 1000。
+- 使用统计：`getUsageHistoryPage(offset, limit, templateId?)` → `{ records, total }`（最新在前）、`clearUsageHistory()`；UI 每页 20 条 + 工具条「共 N 条记录 / 🗑 清空记录」+ 页码器「← 上一页 / 第 x / y 页 / 下一页 →」（首末页 disabled），清空走 `OperationConfirmModal`。
+- 局部重绘 + 键盘导航：`render()` 只建页签栏与 `contentEl`，`renderActiveTab()` 重绘内容；搜索框 `onChange` 只重绘列表（**修掉每敲一键失焦**）；分类按钮与模板项加 `tabindex="0"` / `role="button"` / `aria-pressed`，`bindListKeyboardNav` 支持 ArrowUp/Down 取模、Home/End、Enter/Space（`activate()` 回调，不用 `el.click()`）。
+- 样式：`styles-src/33-prompt-manager.css` 307 行 → 375 行（工具条、分页器、`nw-pm-import-*` 预览弹窗、`:focus-visible` 描边）。
+
+**坑（四条）**
+1. **机器上有两份 dev vault**：`D:\nw-dev-vault` 与 `C:\Users\admin\nw-dev-vault`。探针写死 D: 那份，`dev-vault.mjs status` 默认管 C: 那份 → 不同步就会截到旧 UI；必须 `node scripts/dev-vault.mjs sync --vault=D:/nw-dev-vault`。
+2. **设置页在独立 CDP page**：Obsidian 1.14.5 的设置窗口是单独 page，`window.app` 不存在（插件实例只能从主 page 取）；tab id 是 `template`，属 advanced 组，需先 `settings.showAdvanced = true` 再 `openTabById('novel-writer-ai')` + `settingsTab.openTab('template')`。
+3. **Modal 挂主窗口**：设置弹窗里触发的导入预览 / 清空确认都挂主窗口 `activeDocument`，截图要按标题找宿主 page；每次 `page.evaluate` 内都要重设 `window.activeWindow/activeDocument`。
+4. **导入样例的 `category` 必须合法**：`services/prompt-manager.ts` 的 `PROMPT_CATEGORIES` 不含 `scene`，样例写 `scene` 会被整份拒绝（`customTemplates 存在结构不合法的条目`）。
+
+**验收**：`tsc --noEmit` 0 错；单测 `prompt-manager-settings-dom` / `services/prompt-manager` / `shared/prompt-manager-import` / `ui/prompt-import-preview-modal` 四文件全绿；实机 `D:\nw-tmp\probe-n4.mjs --tag=before|after` 八场景——`templates-list` / `templates-detail` / `abtests` **PNG 字节完全相同**，`usage-page1` 688×544→688×622（工具条 + 3 页页码器）、`usage-page2` 页码「第 2 / 3 页」、导入预览弹窗 800×444、清空确认 800×398，键盘 `tabindex=0` + ArrowDown 焦点移位；`check:inline-styles` 525（453/72）、`check:utility` 46/142 不变；`check:css` 795,332 / uniqueClasses 4,318（+15 类）、`check:bundle` main.js 5,651,818（+8,333）/ styles.css 795,332（+2,074），两份基线已 `--update-baseline` 并写明原因。
+
+**文档**：`docs/modules/prompt-manager-settings.md`（状态行、§1 入口、§2 现状、§3 新增 PM-05..PM-08、§4 八条决策、§5.1 验收、§6 测试清单、§7 backlog、§8 交接备注）；`docs/modules/INDEX.md` 行更新；`docs/design/2026-11-16-visual-refactor-standard.md` §5.1 styles.css 改 795,332；`docs/planning/2026-11-18-feature-gaps.md` ④ 标 done；`docs/CURRENT.md` §4 改「①②③④已交付」。
+
+**下一轮**：缺口 ⑤「质量统计状态清单不可交互」（`ui/views/kb-stats-panel.ts` 的 `nw-ks-legend-row` 无 cursor/onclick，点击跳书架并按状态筛选），或按作者挑选 ⑥ TTS / ⑦ i18n。
+
