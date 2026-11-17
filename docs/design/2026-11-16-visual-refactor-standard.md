@@ -147,6 +147,7 @@ Obsidian 自带 `button:not(.clickable-icon)` 特异性是 **(0,1,1)**，
 | 新手向导（`nw-wizard-*`） | 完成：Slice J（`ui/full-writer/wizard-step-renderers.ts` 9 个渲染方法；265 处 `nw-u-*` + 62 个工具类 token + 11 处内联 `style` 全部清零），新增 `styles-src/30-wizard-steps.css`，选择器统一 `.nw-wizard-content-area ` 前缀 | `D:\nw-dev-vault\_visual-j\{before,after,diff}`（13 个场景，未入库） |
 | 监控面板 B（`nw-monb-*`） | 完成：Slice K（`ui/monitor-panel-b.ts`；232 处 `nw-u-*` + 18 处内联 `style` 清零），新增 `styles-src/31-monitor-panel-b.css`，选择器统一 `.nw-float-monitor-b ` 前缀（基类按 panelId 注入） | `D:\nw-dev-vault\_visual-k\{before,after,diff}`（12 个场景，diffPx 全 0，未入库） |
 | 写作指纹库（`nw-fp-*`） | 完成：Slice L（`ui/views/writing-fingerprint-view.ts` 228 处、`ui/fingerprint-detail-modal.ts` 157 处、`ui/views/fingerprint-v2-detail.ts` 20 处工具类 + 15 行内联 `style` 全部清零），新增 `styles-src/32-fingerprint.css`，选择器统一 `.nw-scope ` 前缀；外壳类 `nw-fingerprint-*` 保留以兼容 E2E 与 container query | `D:\nw-dev-vault\_visual-l\{before,after}`（8 个场景，未入库） |
+| 大纲智能扩写（`nw-oe-*`） | 完成：Slice M（`ui/outline-expand-modal.ts` 220 处 `nw-u-*` + 1 处内联 `style` 清零；场景项的 `nw-expand-scene-*` / `nw-expand-adopt-*` 从 `styles-src/25-planning-outline-controls.css` 迁入并改名），规则全部集中在 `styles-src/25-outline-expand.css`；弹窗虽挂 `.nw-scope`，但按「声明级等价」保留单类选择器 | `D:\nw-dev-vault\_visual-m\{before,after}`（6 个场景，struct/style/rect 探针全 0，未入库） |
 | 知识库 / 设定（`kb-`） | 完成：Slice A–I（书架 / 工具栏卡片 / 详情公共构件+概览 / 外壳页签条 / 各页签内容区 / 题材配置页 / 四个管理弹窗 / 批量导入弹窗 / 读书拆解详情弹窗）；H 用独立 `nw-bi-*`、I 用 `nw-kd-*` 命名空间，后续新页签沿用同一模式 | `docs/quality/visual-baseline/kb-books.json`、`kb-detail.json`；F 截图 `D:\nw-dev-vault\_visual-fg\`、G 截图 `_visual-g\`、H 截图 `_visual-h\`、I 截图 `_visual-i\`（未入库） |
 
 ### 5.1 工具类退场进度（`nw-u-*`）
@@ -160,13 +161,13 @@ D 零引用死定义，外加 C 定义数与使用量只许下降。
 
 | 指标 | 数值 |
 | --- | --- |
-| 定义 | 286 个（清理前 430；Slice H 删 13 个、Slice I 删 30 个、Slice J 删 11 个、Slice K 删 20 个、Slice L 删 13 个零引用类） |
+| 定义 | 267 个（清理前 430；Slice H 删 13 个、Slice I 删 30 个、Slice J 删 11 个、Slice K 删 20 个、Slice L 删 13 个、Slice M 删 19 个零引用类） |
 | 零引用定义 | 0（清理前 57，已删） |
 | 引用但未定义的类 | 0（清理前 5：真实缺陷 1 处 `nw-u-w-full-2` 已删，另 4 处是 `tests/` 断言与历史文档示例） |
-| TS 引用 | 286 个类 / 1917 次（`check:utility` 口径，`cls:` 字面量；Slice L 后） |
-| `styles.css` 体积 | 710602 字节（Slice G 后 641829；Slice H 新增 `nw-bi-*` 段约 1060 行；Slice I 新增 `nw-kd-*` 段 17545 字节；Slice J 新增 `30-wizard-steps.css` 约 290 行；Slice K 新增 `31-monitor-panel-b.css` +9128 字节；Slice L 新增 `styles-src/32-fingerprint.css` 16887 字节，净 +17223 字节，同时删掉 13 个零引用工具类） |
+| TS 引用 | 267 个类 / 1699 次（`check:utility` 口径，`cls:` 字面量；Slice M 后） |
+| `styles.css` 体积 | 715979 字节（Slice G 后 641829；Slice H 新增 `nw-bi-*` 段约 1060 行；Slice I 新增 `nw-kd-*` 段 17545 字节；Slice J 新增 `30-wizard-steps.css` 约 290 行；Slice K 新增 `31-monitor-panel-b.css` +9128 字节；Slice L 新增 `styles-src/32-fingerprint.css` 16887 字节，净 +17223 字节，同时删掉 13 个零引用工具类；Slice M 新增 `nw-oe-*` 段约 220 行，净 +5377 字节，同时删掉 19 个零引用工具类） |
 
-清理记录：删除 57 个零引用声明级工具类；去掉 `ui/views/writing-fingerprint-view.ts` 里 `addClass('nw-u-w-full-2')`（类从未定义，等于空操作，删除后渲染不变）；Slice L 随指纹库语义化再删 13 个零引用类（定义 299 → 286）。
+清理记录：删除 57 个零引用声明级工具类；去掉 `ui/views/writing-fingerprint-view.ts` 里 `addClass('nw-u-w-full-2')`（类从未定义，等于空操作，删除后渲染不变）；Slice L 随指纹库语义化再删 13 个零引用类（定义 299 → 286）；Slice M 随扩写弹窗语义化再删 19 个零引用类（定义 286 → 267）。
 
 **取词陷阱**：历史生成器对超长类名做了截断，留下 `nw-u-blt-3px-solid-interactive-`、`nw-u-bt-1px-dashed-nw-divider-`、
 `nw-u-animation-nw-progress-anim-1-5s-` 等**以 `-` 结尾却真实生效**的类名。B2/D 的正则必须把尾部连字符一起吞掉
@@ -183,15 +184,16 @@ Slice L 的指纹库走 `.nw-scope`（视图根节点与三个 `modalEl` 已挂�
 `.modal.nw-scope{margin:auto}`（`styles-src/22-modal-layout.css:14`）会让它横移 2px；
 同一次实测还发现：`nw-u-*` 对 `<button>` 的 `background`/`color` 同样失效（渲染成白底黑字），
 所以语义化时按**设计意图**恢复强调色，而不是复刻这个级联事故。
+Slice M 的扩写弹窗虽然也挂了 `.nw-scope`，但验收口径是「与旧渲染逐项等价」，因此 `nw-oe-*` 规则保持单类；
+6 个场景的 computed style 探针证明没有被基础样式压掉，若后续新增构件出现覆盖再补前缀。
 
-剩余存量大户（下一批切片候选，按引用次数；`ui/batch-import-modal.ts` 365 处在 Slice H 清零、`ui/knowledge-detail-modal.ts` 294 处在 Slice I 清零、`ui/full-writer/wizard-step-renderers.ts` 265 处在 Slice J 清零、`ui/monitor-panel-b.ts` 232 处在 Slice K 清零；Slice L 清零 `ui/views/writing-fingerprint-view.ts` 228 处 + `ui/fingerprint-detail-modal.ts` 157 处 + `ui/views/fingerprint-v2-detail.ts` 20 处，均不在表内）：
+剩余存量大户（下一批切片候选，按引用次数；`ui/batch-import-modal.ts` 365 处在 Slice H 清零、`ui/knowledge-detail-modal.ts` 294 处在 Slice I 清零、`ui/full-writer/wizard-step-renderers.ts` 265 处在 Slice J 清零、`ui/monitor-panel-b.ts` 232 处在 Slice K 清零；Slice L 清零 `ui/views/writing-fingerprint-view.ts` 228 处 + `ui/fingerprint-detail-modal.ts` 157 处 + `ui/views/fingerprint-v2-detail.ts` 20 处；Slice M 清零 `ui/outline-expand-modal.ts` 220 处，均不在表内）：
 
 | 文件 | 引用 | 文件 | 引用 |
 | --- | --- | --- | --- |
-| `ui/outline-expand-modal.ts` | 220 | `ui/prompt-manager-settings.ts` | 192 |
-| `ui/chapter-outline-tree-modal.ts` | 177 | `ui/views/knowledge-base-view.ts` | 175 |
-| `ui/rendering/context-panel.ts` | 173 | `ui/settings/general-sections.ts` | 160 |
-| `ui/views/book-detail-renderer.ts` | 126 | `ui/full-writer/scene-outline-controller.ts` | 123 |
-| `ui/settings/knowledge-section.ts` | 108 | `ui/polish-editor.ts` | 104 |
-| `ui/refill-modal.ts` | 97 | `ui/views/kb-stats-panel.ts` | 81 |
-| `ui/settings/deconstruction-section.ts` | 47 | — | — |
+| `ui/prompt-manager-settings.ts` | 192 | `ui/chapter-outline-tree-modal.ts` | 177 |
+| `ui/views/knowledge-base-view.ts` | 175 | `ui/rendering/context-panel.ts` | 173 |
+| `ui/settings/general-sections.ts` | 160 | `ui/views/book-detail-renderer.ts` | 126 |
+| `ui/full-writer/scene-outline-controller.ts` | 123 | `ui/settings/knowledge-section.ts` | 108 |
+| `ui/polish-editor.ts` | 104 | `ui/refill-modal.ts` | 97 |
+| `ui/views/kb-stats-panel.ts` | 81 | `ui/settings/deconstruction-section.ts` | 47 |

@@ -1037,3 +1037,44 @@ probes 逐位对齐（struct 差 0），三视图 rect 差 0；仅剩三类**有
 
 下一轮（Slice M 候选）：`ui/outline-expand-modal.ts`（220 处）——大纲扩写弹窗，可沿用弹窗的 `.nw-scope` 模式；
 其次 `ui/prompt-manager-settings.ts`（192 处，设置页需确认祖先作用域）与 `ui/chapter-outline-tree-modal.ts`（177 处）。
+
+### 2026-11-17 第三十八轮：Slice M 大纲智能扩写编辑器语义化（nw-oe-*）
+
+**范围**：`ui/outline-expand-modal.ts`（942 行 / 220 处 `nw-u-*` + 1 处内联 `style`）；
+`styles-src/25-outline-expand.css`（Slice M 前仅 67 行，只覆盖 modal/tab/select/word-input/diff-line）；
+`styles-src/25-planning-outline-controls.css:185-219`（场景项 `nw-expand-scene-*` / `nw-expand-adopt-*`，35 行）。
+
+**改动**：`25-outline-expand.css` 扩到 395 行，按「外壳 / 右栏编辑器 / 左栏场景项 / 左栏段落项」四段组织 `nw-oe-*`
+（`-header/-header-left/-title/-switch/-header-right/-label/-word-wrap/-close/-main/-left/-right/-left-header/-right-header/
+-left-title/-left-action/-list/-list-inner/-settings/-settings-title/-enhance-*/-footer/-footer-actions/-empty/-start`；
+`-status/-editor-wrap/-editor/-progress/-diff/-diff-col(--orig)/-diff-head/-diff-body`；
+`-scene-item(--active|--adopted|--skipped)/-scene-head/-scene-index/-scene-name/-scene-summary/-scene-actions/-scene-expand/-adopt(--on)`；
+`-para-item(--selected)/-para-check/-para-body/-para-index/-para-text`）。状态一律用 `--` 修饰类，显隐改 `nw-is-hidden`
+（替换 `nw-u-d-none`）；段落项的内联样式（含写死在 style 串里的无效 `hover:`）改成基础类 + `:hover` + `--selected`。
+删掉 19 个因此零引用的工具类（定义 286 → 267）。
+
+**三处必须记住的坑**
+1. **以 `-` 结尾的类名会被 `\b` 正则误判为零引用**：`.nw-u-b-1px-dashed-background-` 被自动脚本删掉后
+   门禁立刻报「引用了未定义的工具类」，实际使用者是 `ui/settings/knowledge-section.ts:203`。
+   删除工具类前必须核对 B2 报错，不能只信零引用列表。
+2. **弹窗挂在 about:blank 副窗**：截图时 `OutlineExpandModal` 的 `modalEl.ownerDocument` 不是主文档
+   （CDP 里有两个 page），`executeCommand` 前必须先
+   `page.evaluate(() => { window.activeWindow = window; window.activeDocument = document; })`，否则 `.modal` 定位超时。
+3. **after 截图用的是带临时 hook 的构建**：`(window as unknown as { __oeModal?: unknown }).__oeModal = this` 只为注入场景数据，
+   提交前已删除；最终 `main.js` 与截图构建只差这一行，渲染不受影响。
+
+**像素快照**（1300×800、6 个场景；产物 `D:\nw-dev-vault\_visual-m\{before,after}` 与 `diff-report.json`）：
+PNG 差异 chapter-empty 6px / scene-list 7px / diff 5px / edit 3px（maxDelta ≤9，bbox 全在弹窗左边缘 `x=0` 竖列的抗锯齿），
+paragraph-list 与 progress 为 0；探针 struct/style/rect 六场景全 0，`cls` 差 42–63 条均为预期改名。
+
+**门禁**：`typecheck`/`lint` 0 错；`check:inline-styles` 603 → 602（本弹窗那 1 处已消）；
+`check:utility` 定义 267 / 使用 1699 / 零引用 0；`check:css` bytes 715979 / 唯一类 3931；
+`check:bundle` styles.css 710602 → 715979（+5377）。三份基线均 `--update-baseline` 并写 note。
+新增 `tests/unit/ui/outline-expand-modal-contract.test.ts`（5 条源码契约，含「无 `nw-u-*`」「无 `style:`」「`nw-expand-*` 已迁出」）。
+
+**文档**：新增 `docs/modules/outline-expand-editor.md`（8 节模板，含 6 场景验收表与 backlog）并登记 INDEX；
+视觉标准 §5 加扩写弹窗行、§5.1 指标与存量大户表重算（移除 220 处）、特异性段补「本弹窗按声明等价保留单类」；
+`docs/CURRENT.md` §4 改切片 A–M、§6 口径改 267 / 1699。
+
+下一轮候选：`ui/prompt-manager-settings.ts`（192 处，设置页需先确认祖先作用域与 `.nw-scope` 可用性）、
+`ui/chapter-outline-tree-modal.ts`（177 处）、`ui/views/knowledge-base-view.ts`（175 处）。

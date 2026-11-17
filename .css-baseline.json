@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-17T12:15:47.403Z",
-  "note": "Slice L：新增 styles-src/32-fingerprint.css（nw-fp-* 语义类，替换 writing-fingerprint-view/fingerprint-detail-modal/fingerprint-v2-detail 的 405 处工具类与 15 行内联样式）；bytes/uniqueClasses 上升来自新语义类（详情弹窗样本空态独立命名 nw-fp-detail-samples-empty，避免与视图同名规则互相覆盖），+3 hex 与 +5 rgb/hsl 是从 TS 内联样式原样搬进 CSS 的徽标配色（像素等价必需）",
-  "bytes": 710602,
+  "generatedAt": "2026-11-17T12:39:29.319Z",
+  "note": "Slice M（大纲智能扩写弹窗语义化）：新增 29 个 nw-oe-* 类（外壳/分栏/场景项/段落项/diff/底栏），并把 16 个仅此弹窗使用的 nw-u-* 定义删除；styles.css 净 +5377 字节，唯一类 3931。",
+  "bytes": 715979,
   "important": 24,
   "hardcodedHex": 168,
   "rgbHsl": 192,
-  "uniqueClasses": 3902,
+  "uniqueClasses": 3931,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

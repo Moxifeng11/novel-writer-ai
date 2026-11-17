@@ -177,15 +177,15 @@ export class OutlineExpandModal extends Modal {
         // 切换模式时只重建标题栏，先移除旧的，避免重复堆叠（曾出现 3 层标题栏）
         this.headerEl?.remove();
         const header = container.createDiv({
-            cls: 'nw-u-p-16px-20px nw-u-bb-1px-solid-background-m nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-fsh-0 nw-u-fwr-wrap nw-u-rg-10px nw-u-cg-12px'
+            cls: 'nw-oe-header'
         });
         this.headerEl = header;
         container.prepend(header);
 
-        const left = header.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-16px nw-u-fwr-wrap nw-u-rg-8px nw-u-minw-0' });
-        left.createEl('h2', { text: '✍️ 智能扩写编辑器', cls: 'nw-u-m-0 nw-u-fs-18px nw-u-ws-nowrap nw-u-fsh-0' });
+        const left = header.createDiv({ cls: 'nw-oe-header-left' });
+        left.createEl('h2', { text: '✍️ 智能扩写编辑器', cls: 'nw-oe-title' });
 
-        const modeSelector = left.createDiv({ cls: 'nw-u-d-flex nw-u-gap-4px nw-u-bg-background-secondary nw-u-brd-6px nw-u-p-2px' });
+        const modeSelector = left.createDiv({ cls: 'nw-oe-switch' });
         const modes: Array<{ key: ExpandMode; label: string }> = [
             { key: 'chapter', label: '整章扩写' },
             { key: 'scene', label: '场景扩写' },
@@ -208,9 +208,9 @@ export class OutlineExpandModal extends Modal {
             };
         }
 
-        const right = header.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-fwr-wrap nw-u-rg-8px nw-u-marginleft-auto' });
+        const right = header.createDiv({ cls: 'nw-oe-header-right' });
 
-        const strategyLabel = right.createSpan({ text: '策略：', cls: "nw-text-muted nw-u-ws-nowrap nw-u-fsh-0", attr: {} });
+        const strategyLabel = right.createSpan({ text: '策略：', cls: "nw-oe-label", attr: {} });
         const strategySelect = right.createEl('select', {
             cls: 'nw-oe-select',
         }) as HTMLSelectElement;
@@ -227,8 +227,8 @@ export class OutlineExpandModal extends Modal {
             this.strategy = strategySelect.value as ExpansionStrategy;
         };
 
-        const wordInputWrap = right.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-4px nw-u-fsh-0' });
-        wordInputWrap.createSpan({ text: '目标字数：', cls: "nw-text-muted nw-u-ws-nowrap nw-u-fsh-0", attr: {} });
+        const wordInputWrap = right.createDiv({ cls: 'nw-oe-word-wrap' });
+        wordInputWrap.createSpan({ text: '目标字数：', cls: "nw-oe-label", attr: {} });
         const wordInput = wordInputWrap.createEl('input', {
             type: 'number',
             value: String(this.targetWords),
@@ -243,21 +243,21 @@ export class OutlineExpandModal extends Modal {
 
         right.createEl('button', {
             text: '✕',
-            cls: "nw-btn nw-u-p-4px-10px nw-u-fs-16px nw-u-b-none nw-u-bg-transparent nw-u-cur-pointer nw-u-c-text-muted",
+            cls: "nw-btn nw-oe-close",
             attr: {}
         }).onclick = () => this.close();
     }
 
     private renderMainContent(container: HTMLElement): void {
         const main = container.createDiv({
-            cls: 'nw-u-flex-1 nw-u-d-flex nw-u-ov-hidden nw-u-minh-0'
+            cls: 'nw-oe-main'
         });
 
         this.leftPanel = main.createDiv({
-            cls: 'nw-u-w-320px nw-u-brt-1px-solid-background-m nw-u-d-flex nw-u-fd-column nw-u-ov-hidden'
+            cls: 'nw-oe-left'
         });
         this.rightPanel = main.createDiv({
-            cls: 'nw-u-flex-1 nw-u-d-flex nw-u-fd-column nw-u-ov-hidden'
+            cls: 'nw-oe-right'
         });
 
         this.renderLeftPanel();
@@ -268,38 +268,38 @@ export class OutlineExpandModal extends Modal {
         this.leftPanel.empty();
 
         const leftHeader = this.leftPanel.createDiv({
-            cls: 'nw-u-p-12px-16px nw-u-bb-1px-solid-background-m nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-fsh-0'
+            cls: 'nw-oe-left-header'
         });
         leftHeader.createSpan({
             text: this.expandMode === 'chapter' ? '📋 章节场景' : this.expandMode === 'scene' ? '📝 场景段落' : '📄 段落列表',
-            cls: 'nw-u-fwt-500 nw-u-fs-14px'
+            cls: 'nw-oe-left-title'
         });
 
         if (this.expandMode === 'chapter') {
             const expandAllBtn = leftHeader.createEl('button', {
                 text: '全部展开',
-                cls: "nw-btn nw-u-fs-12px nw-u-p-2px-8px",
+                cls: "nw-btn nw-oe-left-action",
                 attr: {}
             });
             expandAllBtn.onclick = () => this.expandAllScenes();
         }
 
         const listContainer = this.leftPanel.createDiv({
-            cls: 'nw-u-flex-1 nw-u-ovy-auto nw-u-p-8px'
+            cls: 'nw-oe-list'
         });
 
         if (this.expandMode === 'chapter' || this.expandMode === 'scene') {
-            this.sceneListEl = listContainer.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-4px' });
+            this.sceneListEl = listContainer.createDiv({ cls: 'nw-oe-list-inner' });
             this.refreshSceneList();
         } else {
-            this.paragraphListEl = listContainer.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-4px' });
+            this.paragraphListEl = listContainer.createDiv({ cls: 'nw-oe-list-inner' });
             this.refreshParagraphList();
         }
 
         const settingsPanel = this.leftPanel.createDiv({
-            cls: 'nw-u-bt-1px-solid-background-m nw-u-p-12px-16px nw-u-fsh-0'
+            cls: 'nw-oe-settings'
         });
-        settingsPanel.createEl('h4', { text: '增强选项', cls: 'nw-u-m-0-0-8px-0 nw-u-fs-13px nw-u-c-text-muted' });
+        settingsPanel.createEl('h4', { text: '增强选项', cls: 'nw-oe-settings-title' });
 
         const enhancements: Array<{ key: string; label: string; value: boolean }> = [
             { key: 'coolPoints', label: '🎯 爽点增强', value: this.enhanceCoolPoints },
@@ -309,10 +309,10 @@ export class OutlineExpandModal extends Modal {
         ];
 
         for (const enh of enhancements) {
-            const row = settingsPanel.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-marginbottom-6px' });
+            const row = settingsPanel.createDiv({ cls: 'nw-oe-enhance-row' });
             const checkbox = row.createEl('input', {
                 type: 'checkbox',
-                cls: 'nw-u-cur-pointer'
+                cls: 'nw-oe-enhance-check'
             }) as HTMLInputElement;
             checkbox.checked = enh.value;
             checkbox.onchange = () => {
@@ -323,7 +323,7 @@ export class OutlineExpandModal extends Modal {
                     case 'foreshadows': this.plantForeshadows = checkbox.checked; break;
                 }
             };
-            row.createSpan({ text: enh.label, cls: 'nw-u-fs-13px nw-u-cur-pointer' }).onclick = () => {
+            row.createSpan({ text: enh.label, cls: 'nw-oe-enhance-label' }).onclick = () => {
                 checkbox.checked = !checkbox.checked;
                 checkbox.dispatchEvent(new Event('change'));
             };
@@ -334,10 +334,10 @@ export class OutlineExpandModal extends Modal {
         this.rightPanel.empty();
 
         const rightHeader = this.rightPanel.createDiv({
-            cls: 'nw-u-p-12px-16px nw-u-bb-1px-solid-background-m nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-fsh-0'
+            cls: 'nw-oe-right-header'
         });
 
-        const viewTabs = rightHeader.createDiv({ cls: 'nw-u-d-flex nw-u-gap-4px nw-u-bg-background-secondary nw-u-brd-6px nw-u-p-2px' });
+        const viewTabs = rightHeader.createDiv({ cls: 'nw-oe-switch' });
         const viewModes: Array<{ key: ViewMode; label: string }> = [
             { key: 'edit', label: '编辑' },
             { key: 'diff', label: '对比' },
@@ -356,17 +356,17 @@ export class OutlineExpandModal extends Modal {
 
         this.statusEl = rightHeader.createSpan({
             text: `字数：${countWords(this.expandedText)}`,
-            cls: 'nw-text-muted'
+            cls: 'nw-oe-status'
         });
 
         const editorContainer = this.rightPanel.createDiv({
-            cls: 'nw-u-flex-1 nw-u-ov-hidden nw-u-pos-relative'
+            cls: 'nw-oe-editor-wrap'
         });
 
         if (this.viewMode === 'edit') {
             this.editorEl = editorContainer.createEl('textarea', {
                 value: this.expandedText || this.sourceOutline,
-                cls: 'nw-u-w-100 nw-u-h-100 nw-u-b-none nw-u-outline-none nw-u-resize-none nw-u-p-16px nw-u-fontfamily-font-interface nw-u-fs-14px nw-u-lh-1-8 nw-u-bg-background-primary nw-u-c-text-normal nw-u-bx-border-box'
+                cls: 'nw-oe-editor'
             }) as HTMLTextAreaElement;
             this.editorEl.oninput = () => {
                 this.expandedText = this.editorEl.value;
@@ -377,29 +377,29 @@ export class OutlineExpandModal extends Modal {
         }
 
         this.progressEl = this.rightPanel.createDiv({
-            cls: 'nw-u-p-8px-16px nw-u-bt-1px-solid-background-m nw-u-fs-12px nw-u-c-text-muted nw-u-d-none nw-u-fsh-0'
+            cls: 'nw-oe-progress nw-is-hidden'
         });
     }
 
     private renderDiffView(container: HTMLElement): void {
         const diffContainer = container.createDiv({
-            cls: 'nw-u-d-flex nw-u-h-100 nw-u-ov-hidden'
+            cls: 'nw-oe-diff'
         });
 
         const origCol = diffContainer.createDiv({
-            cls: 'nw-u-flex-1 nw-u-d-flex nw-u-fd-column nw-u-brt-1px-solid-background-m nw-u-ov-hidden'
+            cls: 'nw-oe-diff-col nw-oe-diff-col--orig'
         });
-        origCol.createDiv({ text: '原文', cls: 'nw-u-p-8px-12px nw-u-bg-background-secondary nw-u-fs-12px nw-u-c-text-muted nw-u-fwt-500 nw-u-fsh-0' });
+        origCol.createDiv({ text: '原文', cls: 'nw-oe-diff-head' });
         const origContent = origCol.createDiv({
-            cls: 'nw-u-flex-1 nw-u-ovy-auto nw-u-p-12px nw-u-fs-14px nw-u-lh-1-8 nw-u-fontfamily-font-monospace'
+            cls: 'nw-oe-diff-body'
         });
 
         const newCol = diffContainer.createDiv({
-            cls: 'nw-u-flex-1 nw-u-d-flex nw-u-fd-column nw-u-ov-hidden'
+            cls: 'nw-oe-diff-col'
         });
-        newCol.createDiv({ text: '扩写后', cls: 'nw-u-p-8px-12px nw-u-bg-background-secondary nw-u-fs-12px nw-u-c-text-muted nw-u-fwt-500 nw-u-fsh-0' });
+        newCol.createDiv({ text: '扩写后', cls: 'nw-oe-diff-head' });
         const newContent = newCol.createDiv({
-            cls: 'nw-u-flex-1 nw-u-ovy-auto nw-u-p-12px nw-u-fs-14px nw-u-lh-1-8 nw-u-fontfamily-font-monospace'
+            cls: 'nw-oe-diff-body'
         });
 
         const diffs = lineDiff(this.originalText || this.sourceOutline, this.expandedText);
@@ -433,11 +433,11 @@ export class OutlineExpandModal extends Modal {
     private renderFooter(container: HTMLElement): void {
         this.footerEl?.remove();
         const footer = container.createDiv({
-            cls: 'nw-u-p-12px-20px nw-u-bt-1px-solid-background-m nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-fsh-0 nw-u-gap-12px'
+            cls: 'nw-oe-footer'
         });
         this.footerEl = footer;
 
-        const leftActions = footer.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px' });
+        const leftActions = footer.createDiv({ cls: 'nw-oe-footer-actions' });
 
         if (this.expandMode === 'paragraph') {
             leftActions.createEl('button', {
@@ -451,7 +451,7 @@ export class OutlineExpandModal extends Modal {
             cls: 'nw-btn',
         }).onclick = () => this.runExpansion();
 
-        const rightActions = footer.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px' });
+        const rightActions = footer.createDiv({ cls: 'nw-oe-footer-actions' });
 
         rightActions.createEl('button', {
             text: '取消',
@@ -471,12 +471,12 @@ export class OutlineExpandModal extends Modal {
         if (this.scenes.length === 0) {
             this.sceneListEl.createDiv({
                 text: '点击「开始扩写」生成场景列表',
-                cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted nw-u-fs-13px'
+                cls: 'nw-oe-empty'
             });
 
             const startBtn = this.sceneListEl.createEl('button', {
                 text: '🚀 开始扩写',
-                cls: "nw-btn nw-btn-primary novel-writer-primary-button nw-u-m-8px-auto nw-u-d-block",
+                cls: "nw-btn nw-btn-primary novel-writer-primary-button nw-oe-start",
                 attr: {}
             });
             startBtn.onclick = () => this.runChapterExpansion();
@@ -488,28 +488,28 @@ export class OutlineExpandModal extends Modal {
             const expansion = this.sceneExpansions.get(i);
             // P-13：内联样式改为类名 + 状态类
             const item = this.sceneListEl.createDiv({
-                cls: `nw-expand-scene-item${i === this.selectedSceneIndex ? ' nw-expand-scene-item-active' : ''}${expansion ? (expansion.adopted ? ' nw-expand-scene-adopted' : ' nw-expand-scene-skipped') : ''}`,
+                cls: `nw-oe-scene-item${i === this.selectedSceneIndex ? ' nw-oe-scene-item--active' : ''}${expansion ? (expansion.adopted ? ' nw-oe-scene-item--adopted' : ' nw-oe-scene-item--skipped') : ''}`,
             });
 
-            const header = item.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-6px nw-u-marginbottom-4px' });
+            const header = item.createDiv({ cls: 'nw-oe-scene-head' });
             header.createSpan({
                 text: `${scene.isKeyScene ? '⭐' : '📍'} 场景${scene.index}`,
-                cls: 'nw-u-fwt-500 nw-u-fs-13px nw-u-fsh-0'
+                cls: 'nw-oe-scene-index'
             });
             header.createSpan({
                 text: scene.name,
-                cls: 'nw-u-fs-13px nw-u-ov-hidden nw-u-textoverflow-ellipsis nw-u-ws-nowrap nw-u-flex-1 nw-u-minw-0'
+                cls: 'nw-oe-scene-name'
             });
 
             item.createDiv({
                 text: scene.summary?.slice(0, 60) + (scene.summary && scene.summary.length > 60 ? '...' : ''),
-                cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-lh-1-5'
+                cls: 'nw-oe-scene-summary'
             });
 
-            const actionRow = item.createDiv({ cls: 'nw-u-d-flex nw-u-gap-4px nw-u-margintop-6px' });
+            const actionRow = item.createDiv({ cls: 'nw-oe-scene-actions' });
             const expandBtn = actionRow.createEl('button', {
                 text: '展开',
-                cls: "nw-btn nw-u-fs-11px nw-u-p-2px-8px nw-u-flex-1",
+                cls: "nw-btn nw-oe-scene-expand",
                 attr: {}
             });
             expandBtn.onclick = (e) => {
@@ -521,7 +521,7 @@ export class OutlineExpandModal extends Modal {
             if (expansion) {
                 const toggleBtn = actionRow.createEl('button', {
                     text: expansion.adopted ? '✓ 采用中' : '✕ 已跳过',
-                    cls: `nw-btn nw-u-fs-11px nw-u-p-2px-8px nw-expand-adopt-btn${expansion.adopted ? ' nw-expand-adopt-on' : ''}`,
+                    cls: `nw-btn nw-oe-adopt${expansion.adopted ? ' nw-oe-adopt--on' : ''}`,
                     attr: { title: expansion.adopted ? '点击跳过该场景（应用时不写入）' : '点击重新采用该场景' },
                 });
                 toggleBtn.onclick = (e) => {
@@ -590,7 +590,7 @@ export class OutlineExpandModal extends Modal {
         if (this.paragraphs.length === 0) {
             this.paragraphListEl.createDiv({
                 text: '暂无段落，请先进行场景扩写',
-                cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted nw-u-fs-13px'
+                cls: 'nw-oe-empty'
             });
             return;
         }
@@ -600,17 +600,12 @@ export class OutlineExpandModal extends Modal {
             const isSelected = this.selectedParagraphIndices.has(i);
 
             const item = this.paragraphListEl.createDiv({
-                attr: {
-                    style: 'padding:10px 12px;border-radius:6px;cursor:pointer;border:1px solid transparent;display:flex;gap:8px;' +
-                        (isSelected
-                            ? 'background:var(--background-modifier-hover);border-color:var(--interactive-accent);'
-                            : 'hover:background:var(--background-modifier-hover);')
-                }
+                cls: `nw-oe-para-item${isSelected ? ' nw-oe-para-item--selected' : ''}`,
             });
 
             const checkbox = item.createEl('input', {
                 type: 'checkbox',
-                cls: 'nw-u-margintop-3px nw-u-fsh-0 nw-u-cur-pointer'
+                cls: 'nw-oe-para-check'
             }) as HTMLInputElement;
             checkbox.checked = isSelected;
             checkbox.onclick = (e) => {
@@ -623,14 +618,14 @@ export class OutlineExpandModal extends Modal {
                 this.refreshParagraphList();
             };
 
-            const content = item.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-0' });
+            const content = item.createDiv({ cls: 'nw-oe-para-body' });
             content.createDiv({
                 text: `第${para.index}段`,
-                cls: 'nw-u-fwt-500 nw-u-fs-12px nw-u-marginbottom-2px nw-u-c-text-muted'
+                cls: 'nw-oe-para-index'
             });
             content.createDiv({
                 text: para.content.slice(0, 80) + (para.content.length > 80 ? '...' : ''),
-                cls: 'nw-u-fs-12px nw-u-lh-1-5 nw-u-ov-hidden nw-u-textoverflow-ellipsis nw-u-d-webkit-box nw-u-clamp-2-lines nw-u-webkitboxorient-vertical'
+                cls: 'nw-oe-para-text'
             });
 
             item.onclick = () => {
@@ -904,14 +899,14 @@ export class OutlineExpandModal extends Modal {
 
     private showProgress(text: string): void {
         if (this.progressEl) {
-            this.progressEl.removeClass('nw-u-d-none');
+            this.progressEl.removeClass('nw-is-hidden');
             this.progressEl.textContent = text;
         }
     }
 
     private hideProgress(): void {
         if (this.progressEl) {
-            this.progressEl.addClass('nw-u-d-none');
+            this.progressEl.addClass('nw-is-hidden');
         }
     }
 

@@ -181,39 +181,3 @@
   justify-content: flex-end;
   gap: 8px;
 }
-
-/* 扩写弹窗：场景列表项与逐段采用 */
-.nw-expand-scene-item {
-  padding: 10px 12px;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  cursor: pointer;
-}
-
-.nw-expand-scene-item:hover {
-  background: var(--background-modifier-hover);
-}
-
-.nw-expand-scene-item-active {
-  background: var(--background-modifier-hover);
-  border-color: var(--interactive-accent);
-}
-
-/* 已扩写：左侧色条区分状态 */
-.nw-expand-scene-adopted {
-  border-left: 3px solid var(--text-success);
-}
-
-.nw-expand-scene-skipped {
-  border-left: 3px solid var(--text-faint);
-  opacity: 0.7;
-}
-
-.nw-expand-adopt-btn {
-  flex: none;
-}
-
-.nw-expand-adopt-on {
-  border-color: var(--text-success);
-  color: var(--text-success);
-}

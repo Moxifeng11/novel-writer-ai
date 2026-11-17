@@ -11,7 +11,7 @@
 | `shared/` | 255 | 50823 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3387 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 300 | 113283 | 1155 | 917 | 79% |
+| `ui/` | 300 | 113277 | 1155 | 917 | 79% |
 
 ## 文件清单
 
@@ -898,7 +898,7 @@
 | `ui/novel-analysis-modal.ts` | 267 | 1 | 1 |
 | `ui/novel-tags-modal.ts` | 335 | 1 | 1 |
 | `ui/onboarding-modal.ts` | 318 | 1 | 1 |
-| `ui/outline-expand-modal.ts` | 943 | 2 | 1 |
+| `ui/outline-expand-modal.ts` | 937 | 2 | 1 |
 | `ui/panel-resizer.ts` | 260 | 4 | 3 |
 | `ui/password-modal.ts` | 152 | 1 | 1 |
 | `ui/pet-image-settings.ts` | 465 | 3 | 3 |
