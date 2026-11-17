@@ -1160,3 +1160,25 @@ PNG 差异只剩三簇——标题栏按钮簇（y=28–58）、页脚按钮簇�
 
 **下一轮候选**（按 §5.1 存量大户）：`ui/views/knowledge-base-view.ts`（175）、`ui/rendering/context-panel.ts`（173）、
 `ui/settings/general-sections.ts`（160）。
+
+### 2026-11-17 第四十一轮：Slice P 知识库主视图语义化（nw-kb-tasks-* / nw-kb-monitor-*）
+
+**范围**：`ui/views/knowledge-base-view.ts`（3267 行）——拆解任务页（统计卡 / 筛选栏 / 任务卡 / 批量工具栏）、底部监控条（图标 / 书名 / 进度 / 排队提示 / 模型名 / 连接圆点 / 设置按钮）、以及零散小件（分类分隔线、书架头、详情加载态、隐藏 file input、导入冲突弹窗）。
+
+**改动**：`nw-u-*` 175 → 0；真内联 `style` 9 → 0（另 2 处 `style: '风格'` 是数据字段）；删 `TASK_STATUS_TONE_STYLES`。
+- 统计卡配色从 `TaskStatItem.color` 内联串改为 `tone` 档位枚举（`TaskStatTone` = accent/info/warning/success/danger/muted，类型在 `ui/views/kb-task-panel.ts` 导出），配色落 CSS 修饰类 `.nw-kb-tasks-stat-value--<tone>`；进度条宽度改 `--nw-kb-pct` 变量（先例 `ui/batch-import-modal.ts:784` 的 `--nw-bi-pct`）。
+- 新增约 60 个类写进 `styles-src/27-knowledge-base.css` 从 `:2489` 起的段落（约 396 行），`nw-kb-tasks-*` / `nw-kb-task-status(--<tone>)` / `nw-kb-monitor-*`；复用既有 `nw-kb-select`、`nw-kb-book-list-header/-count`、`nw-text-sm-muted`、`nw-btn*`。
+- 删 14 个零引用工具类（定义 230 → 216，引用 1334 → 1159）。
+
+**三处坑**
+1. **别把改前内联色换成 `--nw-*` 语义 token**：本主题那组 token 已被调淡（`--nw-warning` rgb(212,167,106) ≠ #f59e0b、`--nw-success` rgb(122,171,142) ≠ #2ecc71、`--nw-danger` rgb(212,120,120) ≠ #e74c3c），首轮套上去 `tasks-list` 立刻差 0.41%（maxDelta 99）；按 `rgb()` 字面值逐条复刻后归零。
+2. CSS 注释里写出「禁止 transition: all」也会触发 `tests/unit/ui/panel-resizer-and-motion.test.ts:108` 的 `not.toContain('transition: all')`，注释得换措辞。
+3. 探针按 index 配对会报假位移：改前统计卡 6 个数值 div 与 5 个状态徽标没有 class、`[class]` 选择器采不到，after 侧多 12 个元素；要按「tag+文本+字号+字重」重配后再比 rect。
+
+**验收**：`D:\nw-dev-vault\_visual-p\{before,after}` 6 场景（tasks-empty / tasks-list / tasks-filter / monitor-running / monitor-paused / monitor-idle），viewport 1400×1000，截 `.nw-kb-tasks-tab`（756 宽）与 `.nw-kb-monitor-bar`（756×48）。**PNG 6/6 全 0 像素差**；探针 35 键 computed style 差全 0、重配后 rect 位移 0。
+
+**门禁**：`tsc --noEmit` 0 错；`build` 通过；`check:utility` 定义 216 / 零引用 0 / 引用 1159；`check:css` bytes 737042 / 唯一类 4058 / rgbHsl 211；`check:bundle` styles.css 729260 → 737042（净 +7782，main.js −2661）；`check:inline-styles` 通过；`npm run test` 959 文件 / 10117 用例（10114 通过 + 3 skipped）。
+
+**文档**：新增 `docs/modules/knowledge-base-view.md`（8 节，P-01..P-04 done、P-05 open）；`docs/modules/INDEX.md` 插「知识库主视图」行；视觉标准 §5 加行、§5.1 指标重算（216 / 1159 / 737042）、清理记录补 Slice P、特异性段补配色陷阱、存量大户表移除 175；`docs/CURRENT.md` §4 改切片 A–P、§6 口径改 216 / 1159。
+
+**下一轮候选**（按 §5.1 存量大户）：`ui/rendering/context-panel.ts`（173）、`ui/settings/general-sections.ts`（160）、`ui/views/book-detail-renderer.ts`（126，与 Slice C/D/E 同族可收尾）。

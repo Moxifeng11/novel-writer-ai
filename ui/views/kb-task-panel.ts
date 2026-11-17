@@ -32,11 +32,14 @@ export type TaskStatusTone = 'success' | 'info' | 'danger' | 'warning' | 'muted'
 /** 任务卡上的单个操作按钮 */
 export type TaskRowActionKey = 'retry' | 'cancel' | 'delete' | 'view-book';
 
+/** 统计卡的语义色档位（六档，配色在 styles-src/27-knowledge-base.css） */
+export type TaskStatTone = 'accent' | 'info' | 'warning' | 'success' | 'danger' | 'muted';
+
 /** 统计卡配置 */
 export interface TaskStatItem {
     label: string;
     value: number;
-    color: string;
+    tone: TaskStatTone;
 }
 
 /** 可取消的状态集合：进行中与待执行 */
@@ -109,12 +112,12 @@ export function filterAndSortTasks(tasks: BreakdownTask[], filter: TaskFilterTyp
 export function computeTaskStats(tasks: BreakdownTask[]): TaskStatItem[] {
     const countBy = (status: TaskStatus): number => tasks.filter(task => task.status === status).length;
     return [
-        { label: '总任务数', value: tasks.length, color: 'var(--interactive-accent)' },
-        { label: '运行中', value: countBy('running'), color: '#3b82f6' },
-        { label: '等待中', value: countBy('pending'), color: '#f59e0b' },
-        { label: '已完成', value: countBy('completed'), color: '#2ecc71' },
-        { label: '失败', value: countBy('failed'), color: '#e74c3c' },
-        { label: '已取消', value: countBy('cancelled'), color: '#9ca3af' },
+        { label: '总任务数', value: tasks.length, tone: 'accent' },
+        { label: '运行中', value: countBy('running'), tone: 'info' },
+        { label: '等待中', value: countBy('pending'), tone: 'warning' },
+        { label: '已完成', value: countBy('completed'), tone: 'success' },
+        { label: '失败', value: countBy('failed'), tone: 'danger' },
+        { label: '已取消', value: countBy('cancelled'), tone: 'muted' },
     ];
 }
 

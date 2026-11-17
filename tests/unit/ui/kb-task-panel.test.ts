@@ -128,8 +128,8 @@ describe('computeTaskStats — 六张统计卡', () => {
 
     it('配色固定', () => {
         const stats = computeTaskStats([]);
-        expect(stats.map(s => s.color)).toEqual([
-            'var(--interactive-accent)', '#3b82f6', '#f59e0b', '#2ecc71', '#e74c3c', '#9ca3af',
+        expect(stats.map(s => s.tone)).toEqual([
+            'accent', 'info', 'warning', 'success', 'danger', 'muted',
         ]);
         expect(stats.map(s => s.value)).toEqual([0, 0, 0, 0, 0, 0]);
     });

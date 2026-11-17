@@ -1,6 +1,6 @@
 {
-  "definitions": 230,
-  "usage": 1334,
+  "definitions": 216,
+  "usage": 1159,
   "updatedAt": "2026-11-17",
-  "note": "Slice O：章节大纲树弹窗语义化（nw-ot-*），删除 25 个零引用工具类"
+  "note": "Slice P：knowledge-base-view.ts 175 处工具类收敛为 nw-kb-tasks-* / nw-kb-monitor-*，并删除 14 个零引用工具类定义（230→216、1334→1159，2026-11-17）"
 }

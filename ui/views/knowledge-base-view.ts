@@ -67,15 +67,7 @@ import {
     disabledCursor,
 } from './kb-task-panel';
 
-/** 任务状态档位 → 徽标配色（样式留在视图，档位判定在 kb-task-panel） */
-const TASK_STATUS_TONE_STYLES: Record<ReturnType<typeof resolveTaskStatusTone>, string> = {
-    success: 'background:rgba(46,204,113,0.15);color:#2ecc71;',
-    info: 'background:rgba(59,130,246,0.15);color:#3b82f6;',
-    danger: 'background:rgba(231,76,60,0.15);color:#e74c3c;',
-    warning: 'background:rgba(245,158,11,0.15);color:#f59e0b;',
-    muted: 'background:var(--background-secondary);color:var(--text-muted);',
-};
-import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
+ import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
 import { yieldToUI } from '@/shared/yield';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 import {
@@ -1064,7 +1056,7 @@ export class KnowledgeBaseView extends ItemView {
         container.appendChild(uncategorizedItem);
 
         const divider = container.createDiv({
-            cls: 'nw-u-h-1px nw-u-bg-background-modifier-bo nw-u-m-4px-8px'
+            cls: 'nw-kb-nav-divider'
         });
         void divider;
 
@@ -1364,9 +1356,9 @@ export class KnowledgeBaseView extends ItemView {
         }
 
         const header = containerEl.createDiv({
-            cls: 'nw-u-marginbottom-12px nw-u-d-flex nw-u-ai-center nw-u-jc-space-between'
+            cls: 'nw-kb-book-list-header'
         });
-        header.createSpan({ text: `共 ${books.length} 本书籍`, cls: 'nw-text-sm-muted' });
+        header.createSpan({ text: `共 ${books.length} 本书籍`, cls: 'nw-kb-book-list-count' });
 
         if (books.length === 0) {
             this.renderBooksEmptyState(containerEl);
@@ -1624,7 +1616,7 @@ export class KnowledgeBaseView extends ItemView {
 
         const loadingEl = tabContent.createDiv({
             text: '加载中...',
-            cls: 'nw-u-ta-center nw-u-p-40px nw-u-c-text-muted nw-u-fs-14px'
+            cls: 'nw-kb-detail-loading'
         });
         void loadingEl;
 
@@ -2122,7 +2114,8 @@ export class KnowledgeBaseView extends ItemView {
 
     private handleImportConfig(): void {
         const input = createEl('input', {
-            attr: { type: 'file', accept: '.json', style: 'display:none;' }
+            cls: 'nw-kb-hidden-input',
+            attr: { type: 'file', accept: '.json' }
         });
         input.addEventListener('change', async (e) => {
             const file = (e.target as HTMLInputElement).files?.[0];
@@ -2170,10 +2163,10 @@ export class KnowledgeBaseView extends ItemView {
             contentEl.createEl('h3', { text: '⚠️ 发现重复题材', cls: 'nw-modal-title' });
             contentEl.createDiv({
                 text: `检测到 ${conflictCount} 个题材ID已存在，请选择处理方式：`,
-                cls: 'nw-u-marginbottom-16px nw-u-fs-13px nw-u-c-text-muted'
+                cls: 'nw-kb-conflict-hint'
             });
 
-            const btnContainer = contentEl.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-8px' });
+            const btnContainer = contentEl.createDiv({ cls: 'nw-kb-conflict-actions' });
 
             const overwriteBtn = btnContainer.createEl('button', {
                 text: '覆盖现有题材',
@@ -2315,20 +2308,18 @@ export class KnowledgeBaseView extends ItemView {
         // 不先清空就会每个进度事件都追加一整套任务页。
         this.rightContentEl.empty();
         const content = this.rightContentEl.createDiv({
-            cls: "nw-kb-tasks-tab nw-u-p-16px nw-u-ovy-auto nw-u-h-100",
-            attr: {}
+            cls: 'nw-kb-tasks-tab'
         });
 
         const header = content.createDiv({
-            cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-16px nw-u-fwr-wrap nw-u-gap-12px'
+            cls: 'nw-kb-tasks-header'
         });
-        header.createEl('h2', { text: '拆解任务监控', cls: 'nw-u-m-0 nw-u-fs-18px' });
+        header.createEl('h2', { text: '拆解任务监控', cls: 'nw-kb-tasks-title' });
 
-        const filterBar = header.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-ai-center' });
+        const filterBar = header.createDiv({ cls: 'nw-kb-tasks-filter-bar' });
         filterBar.createSpan({ text: '状态筛选：', cls: 'nw-text-sm-muted' });
         const statusSelect = filterBar.createEl('select', {
-            cls: "nw-kb-select nw-u-p-4px-8px nw-u-fs-12px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-bg-background-primary nw-u-c-text-normal",
-            attr: {}
+            cls: 'nw-kb-select'
         });
         type TaskFilterType = 'all' | 'running' | 'pending' | 'completed' | 'failed' | 'cancelled';
         const filterOptions = TASK_FILTER_OPTIONS;
@@ -2357,23 +2348,26 @@ export class KnowledgeBaseView extends ItemView {
         }
 
         const statsRow = content.createDiv({
-            cls: 'nw-u-d-grid nw-u-gtc-repeat-6-1fr nw-u-gap-8px nw-u-marginbottom-16px'
+            cls: 'nw-kb-tasks-stats'
         });
         const allTasks = tasks;
         const statItems = computeTaskStats(allTasks);
         statItems.forEach(item => {
             const card = statsRow.createDiv({
-                cls: 'nw-u-p-12px-8px nw-u-bg-background-secondary nw-u-brd-6px nw-u-ta-center'
+                cls: 'nw-kb-tasks-stat'
             });
-            card.createDiv({ text: item.value.toString(), attr: { style: `font-size:20px;font-weight:700;color:${item.color};margin-bottom:2px;` } });
-            card.createDiv({ text: item.label, cls: "nw-text-sm-muted nw-u-fs-11px", attr: {} });
+            card.createDiv({
+                text: item.value.toString(),
+                cls: `nw-kb-tasks-stat-value nw-kb-tasks-stat-value--${item.tone}`
+            });
+            card.createDiv({ text: item.label, cls: 'nw-kb-tasks-stat-label' });
         });
 
         const toolbar = content.createDiv({
-            cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-12px nw-u-p-10px-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-fwr-wrap nw-u-gap-8px'
+            cls: 'nw-kb-tasks-toolbar'
         });
 
-        const leftTools = toolbar.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-fwr-wrap' });
+        const leftTools = toolbar.createDiv({ cls: 'nw-kb-tasks-tool-group' });
 
         const selectAllBtn = leftTools.createEl('button', {
             text: '☑️ 全选',
@@ -2407,12 +2401,11 @@ export class KnowledgeBaseView extends ItemView {
 
         const selectedCount = leftTools.createSpan({
             text: formatSelectionLabel(this.selectedTaskIds.size, filteredTasks.length),
-            cls: "nw-text-sm-muted nw-u-marginleft-4px",
-            attr: {}
+            cls: 'nw-kb-tasks-selected-count',
         });
         void selectedCount;
 
-        const rightTools = toolbar.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-fwr-wrap' });
+        const rightTools = toolbar.createDiv({ cls: 'nw-kb-tasks-tool-group' });
 
         // 批量取消：只针对 running | pending（不同于批量删除，见 kb-task-panel 文件头）
         const cancellableSelected = selectSelectedCancellable(filteredTasks, this.selectedTaskIds);
@@ -2462,26 +2455,25 @@ export class KnowledgeBaseView extends ItemView {
         });
 
         const taskList = content.createDiv({
-            cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-8px'
+
+            cls: 'nw-kb-tasks-list'
         });
 
         filteredTasks.forEach(task => {
             const isSelected = this.selectedTaskIds.has(task.id);
             const card = taskList.createDiv({
-                attr: {
-                    style: `border:2px solid ${isSelected ? 'var(--interactive-accent)' : 'var(--background-modifier-border)'} ;border-radius:8px;padding:16px;background:${isSelected ? 'rgba(var(--interactive-accent-rgb),0.05)' : 'var(--background-primary)'};transition:all 0.15s;`
-                }
+                cls: `nw-kb-tasks-card${isSelected ? ' nw-kb-tasks-card--selected' : ''}`
             });
 
             const headerRow = card.createDiv({
-                cls: 'nw-u-d-flex nw-u-ai-flex-start nw-u-jc-space-between nw-u-marginbottom-12px nw-u-fwr-wrap nw-u-gap-8px'
+                cls: 'nw-kb-tasks-card-head'
             });
 
-            const titleLeft = headerRow.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-10px nw-u-flex-1 nw-u-minw-0' });
+            const titleLeft = headerRow.createDiv({ cls: 'nw-kb-tasks-title-row' });
 
             const checkbox = titleLeft.createEl('input', {
                 type: 'checkbox',
-                cls: 'nw-u-w-16px nw-u-h-16px nw-u-cur-pointer nw-u-fsh-0'
+                cls: 'nw-kb-tasks-check'
             });
             checkbox.checked = isSelected;
             checkbox.addEventListener('click', (e) => {
@@ -2496,27 +2488,25 @@ export class KnowledgeBaseView extends ItemView {
                 this.renderRightPanel();
             });
 
-            const titleInfo = titleLeft.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-10px nw-u-flex-1 nw-u-minw-0' });
+            const titleInfo = titleLeft.createDiv({ cls: 'nw-kb-tasks-title-info' });
             titleInfo.createSpan({
                 text: '📖',
-                cls: 'nw-u-fs-20px nw-u-fsh-0'
+                cls: 'nw-kb-tasks-book-icon'
             });
             titleInfo.createDiv({
                 text: task.bookName,
-                cls: 'nw-u-fs-15px nw-u-fwt-600 nw-u-ov-hidden nw-u-textoverflow-ellipsis nw-u-ws-nowrap'
+                cls: 'nw-kb-tasks-book-name'
             });
 
             const statusTone = resolveTaskStatusTone(task.status);
             const statusBadge = headerRow.createSpan({
                 text: this.getTaskStatusLabel(task.status),
-                attr: {
-                    style: `padding:4px 12px;font-size:12px;border-radius:12px;${TASK_STATUS_TONE_STYLES[statusTone]}`
-                }
+                cls: `nw-kb-task-status nw-kb-task-status--${statusTone}`
             });
             void statusBadge;
 
             const infoRow = card.createDiv({
-                cls: "nw-text-sm-muted nw-u-d-flex nw-u-gap-20px nw-u-marginbottom-12px nw-u-fwr-wrap", attr: {}
+                cls: 'nw-kb-tasks-info-row'
             });
             infoRow.createSpan({ text: `创建时间：${this.formatDateTime(task.createdAt)}` });
             if (task.startedAt) {
@@ -2532,15 +2522,14 @@ export class KnowledgeBaseView extends ItemView {
             const emitterState = emitter?.getState();
 
             if (shouldShowTaskProgress(task.status, Boolean(emitterState)) && emitterState) {
-                const progressWrap = card.createDiv({ cls: 'nw-u-marginbottom-12px' });
+                const progressWrap = card.createDiv({ cls: 'nw-kb-tasks-progress' });
                 const bar = progressWrap.createDiv({
-                    cls: 'nw-u-h-8px nw-u-bg-background-secondary nw-u-brd-4px nw-u-ov-hidden nw-u-marginbottom-6px'
+                    cls: 'nw-kb-tasks-progress-track'
                 });
-                bar.createDiv({
-                    attr: { style: `height:100%;width:${emitterState.progress}%;background:var(--interactive-accent);transition:width 0.3s;` }
-                });
+                const fill = bar.createDiv({ cls: 'nw-kb-tasks-progress-fill' });
+                fill.style.setProperty('--nw-kb-pct', `${emitterState.progress}%`);
                 const progressInfo = progressWrap.createDiv({
-                    cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center'
+                    cls: 'nw-kb-tasks-progress-info'
                 });
                 progressInfo.createSpan({
                     text: formatTaskProgressPercent(emitterState.progress),
@@ -2549,14 +2538,14 @@ export class KnowledgeBaseView extends ItemView {
                 if (emitterState.currentStep) {
                     progressInfo.createSpan({
                         text: `📍 ${emitterState.currentStep}`,
-                        cls: 'nw-u-fs-12px nw-u-c-text-normal nw-u-fwt-500'
+                        cls: 'nw-kb-tasks-current-step'
                     });
                 }
             }
 
             if (shouldShowTaskMessage(task.status, emitterState?.message) && emitterState) {
                 const messageEl = card.createDiv({
-                    cls: 'nw-u-p-8px-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-marginbottom-12px nw-u-fs-12px nw-u-c-text-muted'
+                    cls: 'nw-kb-tasks-message'
                 });
                 messageEl.createSpan({ text: '💬 ' });
                 messageEl.createSpan({ text: emitterState.message });
@@ -2564,38 +2553,38 @@ export class KnowledgeBaseView extends ItemView {
 
             if (shouldShowTaskTiming(task.status, Boolean(emitterState)) && emitterState) {
                 const timeRow = card.createDiv({
-                    cls: 'nw-u-d-flex nw-u-gap-20px nw-u-marginbottom-12px nw-u-fs-12px nw-u-c-text-muted nw-u-fwr-wrap'
+                    cls: 'nw-kb-tasks-time-row'
                 });
                 if (emitterState.elapsed !== undefined) {
-                    const elapsedEl = timeRow.createSpan({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-4px' });
+                    const elapsedEl = timeRow.createSpan({ cls: 'nw-kb-tasks-time-item' });
                     elapsedEl.createSpan({ text: '⏱️' });
                     elapsedEl.createSpan({ text: '已用：' });
                     elapsedEl.createSpan({
                         text: this.formatDuration(emitterState.elapsed),
-                        cls: 'nw-u-fwt-500 nw-u-c-text-normal'
+                        cls: 'nw-kb-tasks-time-value'
                     });
                 }
                 if (emitterState.eta !== undefined) {
-                    const etaEl = timeRow.createSpan({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-4px' });
+                    const etaEl = timeRow.createSpan({ cls: 'nw-kb-tasks-time-item' });
                     etaEl.createSpan({ text: '⏳' });
                     etaEl.createSpan({ text: '剩余：' });
                     etaEl.createSpan({
                         text: this.formatDuration(emitterState.eta),
-                        cls: 'nw-u-fwt-500 nw-u-c-text-normal'
+                        cls: 'nw-kb-tasks-time-value'
                     });
                 }
             }
 
             if (shouldShowTaskError(task.status, task.error) && task.error) {
                 const errorMsg = card.createDiv({
-                    cls: 'nw-u-p-10px-12px nw-u-bg-error-soft nw-u-brd-6px nw-u-marginbottom-12px nw-u-fs-12px nw-u-c-error'
+                    cls: 'nw-kb-tasks-error'
                 });
-                errorMsg.createSpan({ text: '错误信息：', cls: 'nw-u-fwt-600' });
+                errorMsg.createSpan({ text: '错误信息：', cls: 'nw-kb-tasks-error-label' });
                 errorMsg.createSpan({ text: task.error });
             }
 
             const actions = card.createDiv({
-                cls: 'nw-u-d-flex nw-u-gap-8px nw-u-jc-flex-end nw-u-fwr-wrap'
+                cls: 'nw-kb-tasks-actions'
             });
 
             // 每个状态该出现哪些按钮由 kb-task-panel.resolveTaskRowActions 决定（有单测）
@@ -3177,7 +3166,7 @@ export class KnowledgeBaseView extends ItemView {
 
         // 左侧：拆解任务状态
         const taskStatusEl = this.monitorBarEl.createDiv({
-            cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-flex-1 nw-u-minw-0'
+            cls: 'nw-kb-monitor-task'
         });
 
         if (isDeconstructing && this.latestProgress) {
@@ -3185,40 +3174,37 @@ export class KnowledgeBaseView extends ItemView {
             const dimLabel = progress.currentDimension ? DIMENSION_LABELS[progress.currentDimension] : '';
             taskStatusEl.createSpan({
                 text: '🔄',
-                cls: 'nw-u-fs-14px'
+                cls: 'nw-kb-monitor-icon'
             });
             const infoEl = taskStatusEl.createDiv({
-                cls: 'nw-u-d-flex nw-u-fd-column nw-u-minw-0 nw-u-ov-hidden'
+                cls: 'nw-kb-monitor-info'
             });
             infoEl.createEl('div', {
-                cls: 'nw-u-fwt-500 nw-u-ws-nowrap nw-u-ov-hidden nw-u-textoverflow-ellipsis',
+                cls: 'nw-kb-monitor-book',
                 text: `${progress.bookName}${dimLabel ? ' · ' + dimLabel : ''}`
             });
             const barContainer = infoEl.createDiv({
-                cls: 'nw-u-w-120px nw-u-h-4px nw-u-bg-modifier-border-hover nw-u-brd-2px nw-u-margintop-2px nw-u-ov-hidden'
+                cls: 'nw-kb-monitor-progress'
             });
-            barContainer.createDiv({
-                attr: {
-                    style: `height:100%;width:${progress.totalProgress}%;background:var(--interactive-accent);transition:width 0.3s;`
-                }
-            });
+            const barFill = barContainer.createDiv({ cls: 'nw-kb-monitor-progress-fill' });
+            barFill.style.setProperty('--nw-kb-pct', `${progress.totalProgress}%`);
             if (pendingCount > 0) {
                 infoEl.createEl('div', {
-                    cls: 'nw-u-fs-10px nw-u-c-text-muted nw-u-margintop-1px',
+                    cls: 'nw-kb-monitor-queued',
                     text: `排队中 ${pendingCount} 个任务`
                 });
             }
         } else if (hasPaused) {
-            taskStatusEl.createSpan({ text: '⏸️', cls: 'nw-u-fs-14px' });
-            taskStatusEl.createSpan({ text: '拆解已暂停', cls: 'nw-u-c-text-muted' });
+            taskStatusEl.createSpan({ text: '⏸️', cls: 'nw-kb-monitor-icon' });
+            taskStatusEl.createSpan({ text: '拆解已暂停', cls: 'nw-kb-monitor-text' });
         } else {
-            taskStatusEl.createSpan({ text: '⏹️', cls: 'nw-u-fs-14px' });
-            taskStatusEl.createSpan({ text: '暂无拆解任务', cls: 'nw-u-c-text-muted' });
+            taskStatusEl.createSpan({ text: '⏹️', cls: 'nw-kb-monitor-icon' });
+            taskStatusEl.createSpan({ text: '暂无拆解任务', cls: 'nw-kb-monitor-text' });
         }
 
         // 中间：模型状态
         const modelStatusEl = this.monitorBarEl.createDiv({
-            cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px'
+            cls: 'nw-kb-monitor-model'
         });
 
         const providerMap: Record<string, string> = {
@@ -3232,27 +3218,23 @@ export class KnowledgeBaseView extends ItemView {
         const modelName = (settings as unknown as LegacyVectorSettingsView).vectorModel || settings.vectorOllamaModel || 'bge-m3';
 
         const connStatus = (settings as unknown as LegacyVectorSettingsView).vectorConnectionStatus || 'idle';
-        const statusColor = connStatus === 'connected'
-            ? '#4caf50'
+        const connTone = connStatus === 'connected'
+            ? 'connected'
             : connStatus === 'disconnected'
-                ? '#f44336'
-                : 'var(--text-muted)';
+                ? 'disconnected'
+                : 'idle';
         modelStatusEl.createEl('span', {
-            attr: {
-                style: `width:8px;height:8px;border-radius:50%;background:${statusColor};display:inline-block;`
-            }
+            cls: `nw-kb-monitor-dot nw-kb-monitor-dot--${connTone}`
         });
         modelStatusEl.createSpan({
             text: `${providerName} · ${modelName}`,
-            cls: 'nw-u-c-text-muted nw-u-ws-nowrap'
+            cls: 'nw-kb-monitor-model-text'
         });
 
         // 右侧：设置按钮
         const settingsBtn = this.monitorBarEl.createEl('button', {
             text: '⚙️ 设置',
-            attr: {
-                style: `padding:4px 10px;border-radius:4px;border:1px solid var(--background-modifier-border);background:var(--background-primary);cursor:${isDeconstructing ? 'not-allowed' : 'pointer'};font-size:12px;opacity:${isDeconstructing ? '0.5' : '1'};`
-            }
+            cls: 'nw-kb-monitor-settings'
         });
         if (isDeconstructing) {
             settingsBtn.setAttribute('title', '拆解进行中，暂停后可修改设置');

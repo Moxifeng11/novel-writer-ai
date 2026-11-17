@@ -172,12 +172,9 @@
 }
 
 /* ===== A2: 声明级工具类（从知识库页面内联样式提取，2026-10-26） ===== */
-.nw-u-bg-background-modifier-bo{background:var(--background-modifier-border)}
-.nw-u-bg-modifier-border-hover{background:var(--background-modifier-border-hover)}
 .nw-u-bg-background-primary{background:var(--background-primary)}
 .nw-u-bg-background-secondary{background:var(--background-secondary)}
 .nw-u-bg-background-secondary-a{background:var(--background-secondary-alt)}
-.nw-u-bg-error-soft{background:color-mix(in srgb, var(--text-error) 10%, transparent)}
 .nw-u-b-1px-solid-background-m{border:1px solid var(--background-modifier-border)}
 .nw-u-flex-1{flex:1}
 .nw-u-m-0{margin:0}
@@ -185,12 +182,10 @@
 .nw-u-m-0-0-16px-0{margin:0 0 16px 0}
 .nw-u-m-0-0-20px-0{margin:0 0 20px 0}
 .nw-u-m-0-0-8px-0{margin:0 0 8px 0}
-.nw-u-m-4px-8px{margin:4px 8px}
 .nw-u-p-10px-12px{padding:10px 12px}
 .nw-u-p-10px-14px{padding:10px 14px}
 .nw-u-p-12px{padding:12px}
 .nw-u-p-12px-16px{padding:12px 16px}
-.nw-u-p-12px-8px{padding:12px 8px}
 .nw-u-p-14px{padding:14px}
 .nw-u-p-16px{padding:16px}
 .nw-u-p-1px-6px{padding:1px 6px}
@@ -210,7 +205,6 @@
 
 .nw-u-ai-center{align-items:center}
 .nw-u-ai-flex-start{align-items:flex-start}
-.nw-u-c-error{color:var(--text-error)}
 .nw-u-c-interactive-accent{color:var(--interactive-accent)}
 .nw-u-c-text-faint{color:var(--text-faint)}
 .nw-u-c-text-muted{color:var(--text-muted)}
@@ -222,15 +216,11 @@
 
 .nw-u-gap-10px{gap:10px}
 .nw-u-gap-12px{gap:12px}
-.nw-u-gap-20px{gap:20px}
 .nw-u-gap-24px{gap:24px}
 .nw-u-gap-4px{gap:4px}
 .nw-u-gap-6px{gap:6px}
 .nw-u-gap-8px{gap:8px}
 .nw-u-h-100{height:100%}
-.nw-u-h-16px{height:16px}
-.nw-u-h-1px{height:1px}
-.nw-u-h-4px{height:4px}
 .nw-u-h-6px{height:6px}
 .nw-u-h-8px{height:8px}
 .nw-u-jc-center{justify-content:center}
@@ -256,7 +246,6 @@
 .nw-u-transition-background-0-15s{transition:background 0.15s}
 .nw-u-ws-nowrap{white-space:nowrap}
 .nw-u-w-100{width:100%}
-.nw-u-w-120px{width:120px}
 .nw-u-w-16px{width:16px}
 .nw-u-w-60px{width:60px}
 .nw-u-w-80px{width:80px}
@@ -264,7 +253,6 @@
 .nw-u-bordercollapse-collapse{border-collapse:collapse}
 .nw-u-brd-10px{border-radius:10px}
 .nw-u-brd-12px{border-radius:12px}
-.nw-u-brd-2px{border-radius:2px}
 .nw-u-brd-3px{border-radius:3px}
 .nw-u-brd-4px{border-radius:4px}
 .nw-u-brd-6px{border-radius:6px}
@@ -282,7 +270,6 @@
 .nw-u-fs-15px{font-size:15px}
 .nw-u-fs-16px{font-size:16px}
 .nw-u-fs-18px{font-size:18px}
-.nw-u-fs-20px{font-size:20px}
 .nw-u-fs-28px{font-size:28px}
 .nw-u-fs-36px{font-size:36px}
 .nw-u-fwt-400{font-weight:400}
@@ -291,7 +278,6 @@
 .nw-u-fwt-700{font-weight:700}
 .nw-u-gtc-1fr-1fr{grid-template-columns:1fr 1fr}
 .nw-u-gtc-repeat-4-1fr{grid-template-columns:repeat(4,1fr)}
-.nw-u-gtc-repeat-6-1fr{grid-template-columns:repeat(6,1fr)}
 .nw-u-marginbottom-10px{margin-bottom:10px}
 .nw-u-marginbottom-12px{margin-bottom:12px}
 .nw-u-marginbottom-14px{margin-bottom:14px}
