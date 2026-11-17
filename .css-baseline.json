@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-17T16:32:56.745Z",
-  "note": "Slice U：新增 styles-src/38-settings-knowledge.css（约 7KB，47 个 nw-st-kb-* 类），删 25 个零引用 nw-u-* 工具类；bytes 764628→770834（+6206），uniqueClasses 4168→4190（+22），rgbHsl 215→218（+3：状态徽标沿用 rgba(var(--*-rgb),0.1)）",
-  "bytes": 770834,
+  "generatedAt": "2026-11-17T16:59:26.777Z",
+  "note": "棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因",
+  "bytes": 775975,
   "important": 24,
-  "hardcodedHex": 172,
-  "rgbHsl": 218,
-  "uniqueClasses": 4190,
+  "hardcodedHex": 184,
+  "rgbHsl": 219,
+  "uniqueClasses": 4218,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

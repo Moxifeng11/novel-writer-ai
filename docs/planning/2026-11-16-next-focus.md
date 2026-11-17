@@ -1300,3 +1300,28 @@ PNG 差异只剩三簇——标题栏按钮簇（y=28–58）、页脚按钮簇�
 **文档**：新增 `docs/modules/settings-knowledge.md`（8 节，SK-01..SK-05 done / SK-06 backlog）；`docs/modules/INDEX.md` 插「知识库设置分区」行（在「规划 / 大纲」前）；视觉标准 §5 加 `nw-st-kb-*` 行、§5.1 重算（103 / 471 / 770834）、清理记录补 Slice U 删 25、特异性段补「基类别吞字重 + 别重复外壳类几何」、存量大户表移除 108 并重排为 2 行 4 项；`docs/CURRENT.md` §4 改切片 A–U、§6 口径改 103 / 471。
 
 **下一轮候选**（按 §5.1 存量大户）：`ui/polish-editor.ts`（104）、`ui/refill-modal.ts`（97）、`ui/views/kb-stats-panel.ts`（81）、`ui/settings/deconstruction-section.ts`（47）。
+
+### 2026-11-17 第四十七轮：Slice V 文笔润色编辑器与 AI 润色弹窗语义化（nw-pe-*）
+
+**范围**：`ui/polish-editor.ts`（830 行，LF）——104 处 `nw-u-*` + 3 处内联 `style`（编辑区 10 条声明整串、图例 `${color}22`/`${color}44`、结果态/加载态各 1 处）+ 条件工具类三元串。用户 m09227 要求「按顺序直接做完全部」，本轮（V）→ W `refill-modal`(97) → X `kb-stats-panel`(81) → Y `deconstruction-section`(47)。
+
+**改动**
+- 新建 `styles-src/39-polish-editor.css`（286 行 / 5842 字节 / 47 个类，样式源 44 → 45），前缀 `nw-pe-*`；编辑区不带 `.nw-scope`（全屏写作视图已在 scope 内），弹窗侧说明文字用 `.nw-scope .nw-pe-hint*`。
+- 结构类：`nw-pe-divider` / `-header` / `-title-group` / `-title` / `button.nw-pe-btn` / `-status` / `-legend` + `-legend-item--char|--loc|--faction|--item` / `.novel-writer-polish-editor.nw-pe-editor`；面板 `-panel` / `-panel-header` / `-panel-title` / `button.nw-pe-close-btn` / `-overview` / `-text--warning|--success` / `-block` / `-subtitle` / `-suggestion` / `-detail` / `-seg-row`(+--issue) / `-seg-icon` / `-seg-type` / `-seg-metric`(+--warning|--error|--success) / `-seg-issue` / `-empty-text` / `-style-content` / `-style-heading` / `-style-pref` / `-style-avoid` / `-style-item` / `-style-line`；弹窗侧 `-hint`(+--tight|--section|--below) / `-muted` / `-checkbox` / `-toggle-label`。
+- 图例四项保留**字面 8 位 hex**（`#e74c3c22` / `#e74c3c44` 等 12 个字面色）：改 `color-mix` 会因 `0x22/255=13.3%` 取整差 1~2 色阶，像素归零只能照搬。
+- `legendItems` 由 `[label, color, type]` 改 `[label, tone]`；条件配色（拖沓段/密度/紧张度/问题行）全部改修饰类；删 7 处 `attr: {}`；`nw-rhythm-panel` / `nw-style-panel` 只是 JS 移除钩子、CSS 零定义，原样保留。
+- 删 19 个零引用工具类（`nw-u-bordercolor-background-modifier-bo, nw-u-c-text-error, nw-u-c-text-success, nw-u-lh-1-6, nw-u-m-0, nw-u-m-16px-0-12px-0, nw-u-m-1px-0-1px-8px, nw-u-m-2px-0, nw-u-m-4px-0-8px-0, nw-u-m-6px-0-0-0, nw-u-m-6px-0-2px-0, nw-u-m-8px-0, nw-u-m-8px-0-4px-0, nw-u-marginbottom-4px, nw-u-maxh-200px, nw-u-minw-16px, nw-u-minw-60px, nw-u-p-1px-6px, nw-u-p-2px-10px`，定义 103 → 84、使用 471 → 367）。
+
+**发现的产品缺陷（未修，记 PE-06 backlog）**
+- `PolishAIPolishModal` 的私有字段 `selection: string` 与 Obsidian `Modal.open()` 写回的选区字段**同名**：`open()` 之后 `this.selection` 变成 DOM Selection，`renderInputForm` 抛 `TypeError: this.selection.trim is not a function`。HEAD 上同样存在，截图脚手架用 `Object.defineProperty(m,'selection',{get/set 只接受 string})` 绕过，未改产品代码。
+
+**验收**：`D:\nw-dev-vault\_visual-v\{before,after}` 8 场景（宿主 `#nw-v-host` 720px；弹窗截 `.modal` 560px）：`01-editor`(720×398) / `02-rhythm`(720×670) / `03-style`(720×705) / `04-style-empty`(720×495) / `05-modal-form`(560×490) / `06-modal-form-sel`(560×469) / `07-modal-loading`(560×165) / `08-modal-result`(560×572)。**PNG 8/8 = 0 px**；probes struct/style/rect 全 0；另用 `diag-v.mjs` 做 0.01px 几何复核（rect/scroll/box + 14 项计算样式）8 场景 0 差。before 取自 worktree `D:\nw-tmp\before-v`（432fb696 + node_modules junction + 补同一钩子 + build）。
+
+**像素验收的判定经验（重要）**
+- 首次 after 采集在 `02`(1px) / `03`(88px) / `05`(226px) / `06`(137px) 出现 1px 边缘差异，全部落在元素边界行/列；重采后 8/8 归零，且「同一构建两次采集」互差同样是 226px → 判定为新开 Obsidian 首轮启动状态影响边缘合成像素，**不是**重构建引入的。结论：像素验收要重采一次，稳定复现才算真差异。
+
+**门禁**：`tsc --noEmit` 0 错；`build` 45 个样式源 / styles.css 31072 行（check:css 口径 31054）；`check:inline-styles` 542（静态 465 / 动态 77，-5）；`check:utility` 定义 84 / 引用 367 / 零引用 0；`check:css` bytes 775975 / 唯一类 4218 / hex 184（+12 图例字面色）/ rgbHsl 219（+1 问题行底色）/ !important 24；`check:bundle` main.js 5630471（-1551）/ styles.css 775975（770834 → 775975，净 +5141）；`preflight` EXIT=0（959 文件 / 10118 通过 + 3 skipped）。
+
+**文档**：新增 `docs/modules/polish-editor.md`（8 节，PE-01..PE-05 done / PE-06 backlog）；`docs/modules/INDEX.md` 插「文笔润色编辑器 / AI 润色弹窗」行（在「规划 / 大纲」前）；视觉标准 §5 加 `nw-pe-*` 行、§5.1 重算（84 / 367 / 775975）、清理记录补 Slice V 删 19、特异性段补三条（字面 hex vs color-mix、Modal.open 覆写字段、像素验收重采）；存量大户表移除 104 并重排为 2 行；`docs/CURRENT.md` §4 改切片 A–V、§6 口径改 84 / 367。
+
+**下一轮候选**：`ui/refill-modal.ts`（97）、`ui/views/kb-stats-panel.ts`（81）、`ui/settings/deconstruction-section.ts`（47）。

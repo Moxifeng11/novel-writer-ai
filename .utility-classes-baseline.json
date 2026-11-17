@@ -1,6 +1,6 @@
 {
-  "definitions": 103,
-  "usage": 471,
+  "definitions": 84,
+  "usage": 367,
   "updatedAt": "2026-11-17",
-  "note": "Slice U：知识库设置分区语义化，删 25 个零引用工具类（128→103、579→471）"
+  "note": "Slice V 清零 polish-editor 104 处；删 19 个零引用定义（103→84），使用 471→367"
 }
