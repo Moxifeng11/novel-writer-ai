@@ -1539,3 +1539,41 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 **文档**：`docs/modules/kb-stats.md`（状态行、§1 用户视角与宿主接口、§2 交互小节、§3 KS-06、§4 四条决策、§5 七条验收、§7 删掉该 backlog、§8 三条新坑）；`docs/modules/INDEX.md` 行更新；`docs/design/2026-11-16-visual-refactor-standard.md` §5 行与 §5.1 styles.css 体积；`docs/planning/2026-11-18-feature-gaps.md` ⑤ 标 done；`docs/CURRENT.md` §4 改「①②③④⑤ 已交付」。
 
 **下一轮**：缺口 ⑥「章节朗读（TTS）听校」或 ⑦「i18n」——按作者挑选；若继续做体验补洞，`docs/modules/` 里还有若干 §7 backlog 可复用同一套路（实机 before/after + 像素 diff + 门禁）。
+
+### 2026-11-18 第五十六轮：功能缺口 ⑦——界面文案国际化 i18n（第一期：`t()` + 双语言资源 + 门禁）
+
+**背景**：缺口清单 ⑦ 的证据是「全仓无 i18n 框架，界面文案硬编码中文（500+ 文件）」。实测（node 统计 TS，排除 node_modules/dist）2009 个文件里 2004 个含 CJK，`git ls-files` 2639 个文件，仓里没有任何 `i18n/` 或 `locale/` 目录。用户 m12281「先做7」把它提到 ⑥（TTS）之前。
+
+**交付（4 个新文件 + 6 处改造）**
+- `i18n/index.ts`（247 行）：`Locale = 'zh-CN' | 'en-US'`、`SUPPORTED_LOCALES`、`DEFAULT_LOCALE='zh-CN'`、`LOCALE_OPTIONS`、模块态 `activeLocale` / `listeners` / `warnedKeys`；`t(key, params?)`、`translate(locale, key, params?)`（目标语言 → zh-CN → 键名）、`interpolate`（`/\{(\w+)\}/g`，未提供的占位符原样保留）、`resolveLocale` / `detectHostLocale`（只读 `window.localStorage.getItem('language')`，`zh*`→zh-CN / `en*`→en-US / 否则默认）、`setLocale` / `applyLocaleSetting` / `onLocaleChange`、`flattenMessages` / `placeholdersOf` / `getCatalog` / `hasMessage`。缺失键**返回键名 + 每个键只 `console.warn` 一次**，不抛错。
+- `i18n/messages/zh-CN.ts` / `i18n/messages/en-US.ts`：`MessageTree = { [key: string]: string | MessageTree }`，两份各 **42 条**（`common` 5 / `settings.group` 6 / `settings.tab` 20 / `settings.shell` 6 / `settings.appearance.language` 5），键与占位符逐条对齐。
+- `ui/settings/locale-setting.ts`：`renderLocaleSetting(container, plugin, onChanged)` —— `new Setting().setName(t(...)).setDesc(t(...)).addDropdown()`，`onChange` 里写 `plugin.settings.language` → `applyLocaleSetting()` → `await plugin.saveSettings()` → `onChanged()`；另有 `coalesceLocaleSetting(value)` 收敛非法值。挂在 `ui/settings/writing-sections.ts` 的 `AppearanceSection.render()` 最前面（`onChanged = () => this.reopen()`）。
+- `main.ts`：`NovelWriterSettings` 新增 `language?: 'auto' | 'zh-CN' | 'en-US'`；`core/settings-service.ts` 的 `getDefaultSettings()` 加 `language: 'auto'`。
+- `engine/engine-registry.ts`：Phase 5 的 `await settingsService.loadSettings()` 之后紧跟 `applyLocaleSetting(plugin.settings.language)` —— 那是设置加载的唯一收敛点（启动路径不走 `plugin.loadSettings()`）。
+- `ui/settings/section-factory.ts`：新增 `group(id, labelKey, tabs)` / `tab(id, labelKey, group, create)` 两个构造器，`label` 写成 **getter**（`get label() { return t(labelKey); }`）。理由：`SETTINGS_TAB_DEFINITIONS` 被 `settings-tab.ts` / `mini-settings-modal.ts` / `settings-menu.ts` / `settings-search.ts` / `main.ts` / 单测 6 处消费且类型都是 `label: string`，算成字符串会在切换语言后永久定格。20 个 tab + 6 个 group 全部换成键。
+- `ui/settings-tab.ts`：外壳 6 条迁到 `settings.shell.*` —— 标题（`📖 设置` → `📖 Settings`）、搜索占位、搜索空态、`⚙ 高级设置`/`⚙ 收起高级`、`` `未知设置页签：${tabId}` ``（改 `t('settings.shell.unknownTab', { tabId })`）。
+
+**门禁 `scripts/check-i18n.mjs`（新增，已进 preflight）**
+- 资源一致性：用 `ts.transpileModule(..., { module: CommonJS })` 把两份 `.ts` 降级后 `new Function('exports','module',code)` 求值（不依赖 node 的 .ts 实验开关），拍平比对键缺失/多余/空文案/占位符不一致。
+- 键可解析：扫 `ui`/`engine`/`services`/`shared`/`core`/`domains`/`utils`/`i18n` 共 **1007 个文件**，正则抓 `t('literal')` 与 `translate('en-US','literal')`；不在 zh 资源里的键 → fail。当前 0 个无法解析，2 处动态键（`ui/settings/locale-setting.ts` 的 `t(option.labelKey)`、`ui/settings/section-factory.ts` 的 getter）只 warn。
+- UI 中文棘轮：只扫 `ui/**`，用 TS **AST** 数「含 CJK 的 StringLiteral / NoSubstitutionTemplateLiteral / TemplateExpression 的 head+span」，首跑 **269 文件 / 11898 条**；基线 `.i18n-baseline.json` 按路径记 `{files:{path:count}, total, updatedAt, note}`。规则「per-file 只许降不许升」+ 新文件默认允许 0 条；`--update-baseline` 在有失败项时拒绝（除非 `--force`），`--note=` 写说明。迁移后棘轮已收紧到 **269 文件 / 11892 条**。
+- `package.json`：`"check:i18n": "node scripts/check-i18n.mjs"`，preflight 里插在 `check:test-standard` 与 `check:changelog` 之间。
+
+**测试（3 个新文件 38 例）**
+- `tests/unit/i18n/i18n-core.test.ts`（24）：语言枚举、`normalizeLocaleSetting`、`detectHostLocale`（`globalThis.window = { localStorage: { getItem } }` 桩，含 `getItem` 抛错 → zh-CN）、`setLocale` 订阅/去重/单订阅者抛错不影响他人、`translate` 回退链、缺失键只警告一次、`hasMessage` 不对中间节点命中、`interpolate` 只认自有属性、`flattenMessages` / `placeholdersOf`（排序、重复保留）/ `getCatalog`。
+- `tests/unit/i18n/i18n-parity.test.ts`（7）：中英键集合双向相等、每条非空、占位符逐键一致、英文资源不含中文（放行 `settings.appearance.language.zhCN` = `简体中文`，语言自称故意不译）、每个 `SUPPORTED_LOCALES` 键数一致。
+- `tests/unit/i18n/settings-locale.test.ts`（7）：**局部 `vi.mock('obsidian')`** 自定义 `Setting` 捕获 dropdown（`tests/__mocks__/obsidian.ts:581` 的全局 `Setting` 走 `addText`，**不保存 onChange 回调**，所以交互只能局部 mock）；验证三选项文案随语言变、切 en 后标题英文、非法值显示 auto、`onChange` 写设置并立即生效、`saveSettings` 先于 `onChanged`（`mock.invocationCallOrder`）、`coalesceLocaleSetting` 容错、每个 `labelKey` 两语言都有非空无占位符文案。
+- 回归：`settings-tab-groups` / `settings-sections-dom` / `settings-search` 共 30 例；`npx tsc --noEmit` EXIT=0。
+
+**实机 before/after（zh-CN vs en-US，820×1476）**
+- 脚本 `D:\nw-tmp\snap-i18n.mjs --tag=before|after`：直接改写 `D:\nw-dev-vault\.obsidian\plugins\novel-writer-ai\data.json` 的 `language`（before=`auto`、after=`en-US`）后启动 Obsidian 1.15.1。
+- **坑一（承接 Slice R）**：`app.setting.open()` 在 CDP 下拿不到 modal（`.modal-container` 数 0）。必须手工挂载：`div.vertical-tab-content.nw-settings-root`（`position:absolute;left:24px;top:24px;width:820px`）→ `plugin.settingsTab.containerEl = host` → `display()` → `openTab('appearance')` → `refresh()`；还要 `Object.defineProperty(window,'activeDocument',{configurable:true,get:()=>document})`（同理 activeWindow）。
+- **坑二**：viewport 要设到 1200×2900 并 clip 到 host 的 box，否则 2757px 高的面板只截到一半。
+- 结果：before `📖 设置` / `搜索设置：如「AI 味」…` / 6 个中文分组 pill / `🎨 外观设置 · 🧩 工作台布局` / `界面语言` / `⚙ 收起高级`；after `📖 Settings` / `Search settings, e.g. "AI flavor"…` / `🔌 Connect & Models … 🗂 Projects & Operations` / `🎨 Appearance · 🧩 Workspace Layout` / `Interface language` / `⚙ Hide advanced`，下拉 `Follow Obsidian / 简体中文 / English`。**布局像素级一致**（截图同 820×1476；host box 高 2757→2773，仅英文描述多一行）。产物 `D:\nw-dev-vault\_visual-i18n\{before,after}\settings-appearance.png` + `probe.json`（未入库）。
+- 仍中文：设置分区正文（`ui/appearance-settings.ts` 等）、命令面板、写作主流程 —— 属第二期迁移面。
+
+**门禁**：`npm run preflight` **EXIT=0**（967 个测试文件 / 10209 通过 + 3 跳过；JSDoc 980 文件、活跃文档 20 个）；`check:i18n` 通过（zh 42 / en 42、0 个无法解析的键、棘轮 269 文件 / 11892 条）；`check:bundle` main.js 5652503 → **5656950**（+4447，基线已 `--update-baseline` 并写明原因）、styles.css 795890 不变。
+
+**文档**：新增 `docs/modules/i18n.md`（8 节模板，含 I18N-01..07 问题清单、7 条决策、验收表、backlog）；`docs/modules/INDEX.md` 新增行（doing）；`docs/CURRENT.md` §2 加 `i18n/` 目录行、§4 缺口状态、§6 加「ui/ 裸中文不要新增」；`docs/planning/2026-11-18-feature-gaps.md` ⑦ 补「已交付（第一期）」小节并改进度行。
+
+**下一轮**：缺口 ⑦ 第二期（迁命令面板 / 设置分区正文 / 写作主流程 + `Notice`）或缺口 ⑥（TTS 听校）。第二期的两个已知绊脚石：命令名进 `tests/unit/core/command-registry.test.ts` 的期望集合；e2e `tests/e2e/utils/settings-nav.ts:48` 靠 `textContent.includes('高级设置')` 找高级开关，得先改成按类名 `.nw-settings-tab-advanced-toggle`。

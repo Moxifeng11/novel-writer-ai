@@ -121,12 +121,27 @@
 
 **价值**：取决于是否有海外用户；工程量大，建议最后做。
 
+**已交付（2026-11-18，第一期）**
+- 运行时：`i18n/index.ts` —— `t(key, params?)` / `translate(locale, key, params?)` / `setLocale` / `applyLocaleSetting` /
+  `onLocaleChange` / `resolveLocale`（auto 读 `localStorage.language`）/ `interpolate` /
+  `flattenMessages` / `placeholdersOf`。缺失键返回键名并只警告一次，不炸界面。
+- 资源：`i18n/messages/zh-CN.ts`（源语言）+ `en-US.ts`，各 42 条（common 5 / group 6 / tab 20 / shell 6 / language 5）。
+- 设置：`NovelWriterSettings.language?: 'auto' | 'zh-CN' | 'en-US'`（默认 auto），设置页「🎨 外观设置 → 界面语言」；
+  启动在 `engine/engine-registry.ts` Phase 5 的 `loadSettings()` 之后 `applyLocaleSetting()`。
+- 迁移面：设置页导航（6 分组 + 20 页签，`section-factory.ts` 的 `label` 改 getter）+ 设置页外壳 6 条
+  （`settings-tab.ts` 的标题/搜索占位/空态/高级开关/未知页签）。
+- 门禁：`scripts/check-i18n.mjs`（`npm run check:i18n`，已进 preflight）——中英键集合与占位符双向一致、
+  `t()` 字面量键必须存在、`ui/**` 中文数量**按文件棘轮**（基线 `.i18n-baseline.json`：269 文件 / 11892 条）。
+- 验收：单测 38 例 + 设置页回归 30 例；实机 before/after（zh-CN vs en-US）导航全换语言、布局像素级一致
+  （`D:\nw-dev-vault\_visual-i18n\{before,after}\settings-appearance.png`）。
+- 后续：第二期迁命令面板/设置分区正文/写作主流程，第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
+
 ---
 
 ## 建议顺序
 
 1 → 2 → 3 → 4 → 5 →（6 可选）→ 7。
 
-进度：①②③④⑤ 已交付（2026-11-18）；下一个候选是 6（TTS 听校）或 7（i18n）。
+进度：①②③④⑤ 已交付、⑦ 第一期已交付（2026-11-18）；下一个候选是 6（TTS 听校）或 ⑦ 第二期（迁移高频界面）。
 
 理由：1 是修「假成功」缺陷；2 是把已交付引擎变成写作时可见的价值；3 是投稿刚需且不依赖 AI；4/5 是低成本体验补洞；6/7 视需要。

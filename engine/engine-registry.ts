@@ -24,6 +24,7 @@
  * - 旧的 repositoryInstances / styleLearnerInstances 保留，行为不变
  */
 import { FileTxService } from '@/services/file-tx';
+import { applyLocaleSetting } from '@/i18n';
 import { Notice } from 'obsidian';
 import type { SerializedWriter } from '@/shared/serialized-writer';
 import type NovelWriterPlugin from '@/main';
@@ -1280,6 +1281,8 @@ export class EngineRegistry {
         // ─── Phase 5: 设置加载 ───
         log.info('[小说工坊] 开始加载设置...');
         await settingsService.loadSettings();
+        // i18n 第一期：界面语言在设置落盘之后立刻生效，后续任何 t() 都拿对语言
+        applyLocaleSetting(plugin.settings.language);
         log.info('[小说工坊] 设置加载完成');
 
         // ─── Phase 6: 知识库系统 ───

@@ -24,6 +24,7 @@
 | `npm run check:deps` | 分层依赖与循环依赖（棘轮） |
 | `npm run check:docs` | 文档索引/链接/版本/编码检查 |
 | `npm run check:hotpaths` | 热路径全库扫描检查 |
+| `npm run check:i18n` | — |
 | `npm run check:inline-styles` | 内联样式基线棘轮 |
 | `npm run check:jsdoc` | 注释覆盖率（棘轮） |
 | `npm run check:linked-scenarios` | 联动场景文档锚点检查 |
@@ -100,13 +101,14 @@
 22. npm run check:command-handlers
 23. npm run check:view-tests
 24. npm run check:test-standard
-25. npm run check:changelog
-26. npm run check:docs
-27. npm run check:support-qr
-28. npm run check:workers-inline
-29. npm run build
-30. npm run check:bundle
-31. npm run check:release
+25. npm run check:i18n
+26. npm run check:changelog
+27. npm run check:docs
+28. npm run check:support-qr
+29. npm run check:workers-inline
+30. npm run build
+31. npm run check:bundle
+32. npm run check:release
 ```
 
 ## 说明

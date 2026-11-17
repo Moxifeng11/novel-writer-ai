@@ -156,7 +156,9 @@ describe('写作配置与写作规则的分工', () => {
         // v4.26：规则页不再有版本下拉（唯一来源），改为来源卡片 + 打开按钮
         expect(general).toContain("唯一来源:");
         expect(general).not.toContain("setName('生效版本')");
-        expect(tab).toContain("label: '📜 写作规则'");
+        // i18n 第一期：页签文案改由 i18n 资源提供，工厂里只剩键名
+        expect(tab).toContain("tab('rules', 'settings.tab.rules'");
+        expect(read('i18n/messages/zh-CN.ts')).toContain("rules: '📜 写作规则'");
     });
 
     it('写作配置按五组标题组织，实验分组标签移到写作规则页', () => {
@@ -173,7 +175,7 @@ describe('创作模式设置与字数校验', () => {
     it('设置页有「创作模式」分区，并展示三类项目的根目录', () => {
         const tab = read('ui/settings/section-factory.ts');
         const mode = read('ui/settings/mode-section.ts');
-        expect(tab).toContain("id: 'modes'");
+        expect(tab).toContain("tab('modes', 'settings.tab.modes'");
         expect(tab).toContain('new ModeSection');
         expect(mode).toContain('MODE_LIBRARY_ROOTS');
         expect(mode).toContain('项目库根目录');

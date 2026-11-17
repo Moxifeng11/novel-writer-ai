@@ -18,6 +18,7 @@ import { ENGINE_NAMES } from '@/shared/engine-names';
 import { OperationConfirmModal } from '@/ui/components/progress';
 import { setBusinessThresholdOverrides } from '@/shared/thresholds';
 import { SettingsSection } from './section-base';
+import { renderLocaleSetting } from './locale-setting';
 
 /**
  * 协同写作设置分区。
@@ -561,6 +562,8 @@ export class AppearanceSection extends SettingsSection {
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
+        // 界面语言放最前：它是「整个页面长什么样」的开关，先于具体外观项
+        renderLocaleSetting(section, this.plugin, () => this.reopen());
         renderAppearanceSettings(section, this.plugin, {
             compact: false,
             rerender: () => this.refresh(),

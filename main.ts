@@ -442,6 +442,11 @@ export interface NovelWriterSettings {
     /** 设置页是否展开「高级设置」页签组 */
     settingsUiShowAdvanced?: boolean;
     /**
+     * 界面语言（i18n 第一期）：`'auto'` = 跟随 Obsidian 应用语言；
+     * 其余取 `'zh-CN'` / `'en-US'`。缺省按 auto 处理。
+     */
+    language?: 'auto' | 'zh-CN' | 'en-US';
+    /**
      * Agent 对话后端（D）：native = 内置 Harness（默认）；dsh = 外部 DeepSeek Harness。
      * dsh 仅桌面端、需用户自行安装 @deepseek-ai/dsh。
      */

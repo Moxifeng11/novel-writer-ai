@@ -18,6 +18,7 @@ import { App, PluginSettingTab, Setting } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import type { SettingsSection, SettingsSectionHost } from './settings/section-base';
 import { SETTINGS_GROUPS, SETTINGS_TAB_DEFINITIONS, createSettingsSection } from './settings/section-factory';
+import { t } from '@/i18n';
 import {
     buildStaticSearchIndex,
     collectRenderedItems,
@@ -134,7 +135,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         containerEl.empty();
         containerEl.addClass('nw-settings-root');
 
-        new Setting(containerEl).setName('📖 设置').setHeading();
+        new Setting(containerEl).setName(t('settings.shell.title')).setHeading();
 
         this.renderSearch(containerEl);
 
@@ -163,7 +164,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             cls: 'nw-settings-search-input',
             attr: {
                 type: 'search',
-                placeholder: '搜索设置：如「AI 味」「字数目标」「MCP」…',
+                placeholder: t('settings.shell.searchPlaceholder'),
                 spellcheck: 'false',
             },
         });
@@ -205,7 +206,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         }
         const hits = searchSettings(this.searchIndex, value, 12);
         if (hits.length === 0) {
-            results.createDiv({ cls: 'nw-settings-search-empty', text: '没有匹配的设置项' });
+            results.createDiv({ cls: 'nw-settings-search-empty', text: t('settings.shell.searchEmpty') });
             results.toggleClass('nw-u-d-none', false);
             return;
         }
@@ -267,7 +268,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         const advancedOpen = this.plugin.settings.settingsUiShowAdvanced === true;
         const toggle = this.tabBar.createDiv({
             cls: 'nw-settings-tab nw-settings-tab-advanced-toggle',
-            text: advancedOpen ? '⚙ 收起高级' : '⚙ 高级设置',
+            text: advancedOpen ? t('settings.shell.hideAdvanced') : t('settings.shell.showAdvanced'),
         });
         toggle.addEventListener('click', () => {
             this.plugin.settings.settingsUiShowAdvanced = !advancedOpen;
@@ -325,7 +326,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
     private renderSection(tabId: string, container: HTMLElement): void {
         const section = this.getSection(tabId);
         if (!section) {
-            container.createEl('p', { text: `未知设置页签：${tabId}` });
+            container.createEl('p', { text: t('settings.shell.unknownTab', { tabId }) });
             return;
         }
         if (section.asyncLoad) {

@@ -543,6 +543,7 @@ export function getDefaultSettings(): NovelWriterSettings {
         agentWorkbenchLeftCollapsed: false,
         agentWorkbenchRightCollapsed: false,
         settingsUiShowAdvanced: false,
+        language: 'auto',
         agentWriteApproval: 'ask',
         storyContextTier: 'auto',
         /** v4.20 写作指纹注入总预算（字符）；0 = 不限制 */

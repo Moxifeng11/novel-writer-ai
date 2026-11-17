@@ -5,6 +5,7 @@
  * API/协同/写作/外观设置；字段校验与保存语义在两边漂移。这里把「tab → 分区类」
  * 的映射收敛成一份，两个宿主只负责外壳（设置页/弹窗）。
  */
+import { t } from '@/i18n';
 import type { SettingsSection, SettingsSectionHost } from './section-base';
 import { ApiSection } from './api-section';
 import { SetupSection } from './setup-section';
@@ -47,37 +48,67 @@ export interface SettingsTabDefinition {
  * （「Agent 后端」在最末、「模板管理」夹在建议设置与指纹库之间）。
  * 一级只留 6 个功能域，二级才是具体 tab。
  */
+/**
+ * 一级分组建构器。
+ *
+ * `label` 写成 getter：设置页在语言切换后会整页重开，getter 保证每次读取
+ * 都取到当前语言的文案；若在这里直接算成字符串，切换语言后分组名不会变。
+ */
+function group(id: string, labelKey: string, tabs: readonly string[]): { id: string; label: string; tabs: readonly string[] } {
+    return {
+        id,
+        get label(): string { return t(labelKey); },
+        tabs,
+    };
+}
+
+/** 一级分组 → 二级 tab 归属（6 个功能域） */
 export const SETTINGS_GROUPS: ReadonlyArray<{ id: string; label: string; tabs: readonly string[] }> = [
-    { id: 'connect', label: '🔌 连接与模型', tabs: ['setup', 'api', 'agent', 'mcp'] },
-    { id: 'writing', label: '✍️ 写作与协同', tabs: ['cowrite', 'writing', 'modes', 'suggestions'] },
-    { id: 'rules', label: '📜 规则与一致性', tabs: ['rules', 'recognition', 'foreshadow'] },
-    { id: 'knowledge', label: '📚 知识与拆解', tabs: ['knowledge', 'deconstruction', 'template', 'fingerprint'] },
-    { id: 'ui', label: '🎨 界面与工作台', tabs: ['appearance', 'layout'] },
-    { id: 'ops', label: '🗂 项目与运维', tabs: ['projects', 'performance', 'about'] },
+    group('connect', 'settings.group.connect', ['setup', 'api', 'agent', 'mcp']),
+    group('writing', 'settings.group.writing', ['cowrite', 'writing', 'modes', 'suggestions']),
+    group('rules', 'settings.group.rules', ['rules', 'recognition', 'foreshadow']),
+    group('knowledge', 'settings.group.knowledge', ['knowledge', 'deconstruction', 'template', 'fingerprint']),
+    group('ui', 'settings.group.ui', ['appearance', 'layout']),
+    group('ops', 'settings.group.ops', ['projects', 'performance', 'about']),
 ];
+
+/** 页签构造器：`label` 同样是 getter，理由见 `group()` */
+function tab(
+    id: string,
+    labelKey: string,
+    group: 'primary' | 'advanced',
+    create: (host: SettingsSectionHost) => SettingsSection,
+): SettingsTabDefinition {
+    return {
+        id,
+        get label(): string { return t(labelKey); },
+        group,
+        create,
+    };
+}
 
 /** 唯一设置页签表（顺序即界面顺序） */
 export const SETTINGS_TAB_DEFINITIONS: ReadonlyArray<SettingsTabDefinition> = [
-    { id: 'setup', label: '🚀 首启与自检', group: 'primary', create: host => new SetupSection(host) },
-    { id: 'api', label: '🔌 API 配置', group: 'primary', create: host => new ApiSection(host) },
-    { id: 'cowrite', label: '🖥 协同写作', group: 'primary', create: host => new CoWriteSection(host) },
-    { id: 'writing', label: '✍️ 写作配置', group: 'primary', create: host => new WritingSection(host) },
-    { id: 'modes', label: '🎯 创作模式', group: 'primary', create: host => new ModeSection(host) },
-    { id: 'recognition', label: '🎭 角色识别', group: 'advanced', create: host => new RecognitionSection(host) },
-    { id: 'suggestions', label: '💡 建议设置', group: 'advanced', create: host => new SuggestionsSection(host) },
-    { id: 'template', label: '📋 模板管理', group: 'advanced', create: host => new TemplateSection(host) },
-    { id: 'fingerprint', label: '🔍 写作指纹库', group: 'advanced', create: host => new FingerprintSection(host) },
-    { id: 'knowledge', label: '📚 写作知识库', group: 'primary', create: host => new KnowledgeSection(host) },
-    { id: 'deconstruction', label: '🧬 拆解引擎', group: 'advanced', create: host => new DeconstructionSection(host) },
-    { id: 'foreshadow', label: '🔮 伏笔管理', group: 'primary', create: host => new ForeshadowSection(host) },
-    { id: 'rules', label: '📜 写作规则', group: 'primary', create: host => new RulesSection(host) },
-    { id: 'appearance', label: '🎨 外观设置', group: 'primary', create: host => new AppearanceSection(host) },
-    { id: 'layout', label: '🧩 工作台布局', group: 'advanced', create: host => new LayoutSection(host) },
-    { id: 'projects', label: '🗂 项目库迁移', group: 'advanced', create: host => new ProjectLibrarySection(host) },
-    { id: 'performance', label: '📈 性能监控', group: 'advanced', create: host => new PerformanceSection(host) },
-    { id: 'agent', label: '🤖 Agent 对话', group: 'primary', create: host => new AgentBackendSection(host) },
-    { id: 'mcp', label: '🔌 MCP 服务', group: 'primary', create: host => new McpSection(host) },
-    { id: 'about', label: 'ℹ️ 关于', group: 'primary', create: host => new AboutSection(host) },
+    tab('setup', 'settings.tab.setup', 'primary', host => new SetupSection(host)),
+    tab('api', 'settings.tab.api', 'primary', host => new ApiSection(host)),
+    tab('cowrite', 'settings.tab.cowrite', 'primary', host => new CoWriteSection(host)),
+    tab('writing', 'settings.tab.writing', 'primary', host => new WritingSection(host)),
+    tab('modes', 'settings.tab.modes', 'primary', host => new ModeSection(host)),
+    tab('recognition', 'settings.tab.recognition', 'advanced', host => new RecognitionSection(host)),
+    tab('suggestions', 'settings.tab.suggestions', 'advanced', host => new SuggestionsSection(host)),
+    tab('template', 'settings.tab.template', 'advanced', host => new TemplateSection(host)),
+    tab('fingerprint', 'settings.tab.fingerprint', 'advanced', host => new FingerprintSection(host)),
+    tab('knowledge', 'settings.tab.knowledge', 'primary', host => new KnowledgeSection(host)),
+    tab('deconstruction', 'settings.tab.deconstruction', 'advanced', host => new DeconstructionSection(host)),
+    tab('foreshadow', 'settings.tab.foreshadow', 'primary', host => new ForeshadowSection(host)),
+    tab('rules', 'settings.tab.rules', 'primary', host => new RulesSection(host)),
+    tab('appearance', 'settings.tab.appearance', 'primary', host => new AppearanceSection(host)),
+    tab('layout', 'settings.tab.layout', 'advanced', host => new LayoutSection(host)),
+    tab('projects', 'settings.tab.projects', 'advanced', host => new ProjectLibrarySection(host)),
+    tab('performance', 'settings.tab.performance', 'advanced', host => new PerformanceSection(host)),
+    tab('agent', 'settings.tab.agent', 'primary', host => new AgentBackendSection(host)),
+    tab('mcp', 'settings.tab.mcp', 'primary', host => new McpSection(host)),
+    tab('about', 'settings.tab.about', 'primary', host => new AboutSection(host)),
 ];
 
 /**
