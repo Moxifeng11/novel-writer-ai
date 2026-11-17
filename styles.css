@@ -43,6 +43,7 @@
  *   - styles-src/33-prompt-manager.css
  *   - styles-src/34-outline-tree.css
  *   - styles-src/35-context-panel.css
+ *   - styles-src/36-settings-general.css
  *
  * 修改样式请编辑 styles-src/ 下对应源文件，然后运行 npm run build:styles
  * （npm run build 与 preflight 均已包含该步骤 / 一致性校验）。
@@ -10070,8 +10071,6 @@ button.nw-btn-icon {
 .nw-u-m-0-0-12px-0{margin:0 0 12px 0}
 .nw-u-m-0-0-16px-0{margin:0 0 16px 0}
 .nw-u-m-0-0-20px-0{margin:0 0 20px 0}
-.nw-u-p-10px-12px{padding:10px 12px}
-.nw-u-p-10px-14px{padding:10px 14px}
 .nw-u-p-12px{padding:12px}
 .nw-u-p-12px-16px{padding:12px 16px}
 .nw-u-p-14px{padding:14px}
@@ -10096,7 +10095,6 @@ button.nw-btn-icon {
 .nw-u-c-text-faint{color:var(--text-faint)}
 .nw-u-c-text-muted{color:var(--text-muted)}
 .nw-u-c-text-normal{color:var(--text-normal)}
-.nw-u-c-white{color:white}
 .nw-u-cur-pointer{cursor:pointer}
 .nw-u-d-flex{display:flex}
 .nw-u-d-grid{display:grid}
@@ -10117,26 +10115,21 @@ button.nw-btn-icon {
 .nw-u-lh-1-4{line-height:1.4}
 .nw-u-lh-1-6{line-height:1.6}
 .nw-u-maxh-200px{max-height:200px}
-.nw-u-maxh-300px{max-height:300px}
 .nw-u-minh-0{min-height:0}
 .nw-u-minh-48px{min-height:48px}
 .nw-u-minw-0{min-width:0}
 .nw-u-minw-200px{min-width:200px}
 .nw-u-minw-280px{min-width:280px}
 .nw-u-minw-320px{min-width:320px}
-.nw-u-op-0-9{opacity:0.9}
 .nw-u-ov-hidden{overflow:hidden}
 .nw-u-ovy-auto{overflow-y:auto}
 .nw-u-ta-center{text-align:center}
-.nw-u-ta-left{text-align:left}
 .nw-u-transition-background-0-15s{transition:background 0.15s}
-.nw-u-ws-nowrap{white-space:nowrap}
 .nw-u-w-100{width:100%}
 .nw-u-w-16px{width:16px}
 .nw-u-w-60px{width:60px}
 .nw-u-w-80px{width:80px}
 .nw-u-bb-1px-solid-background-m{border-bottom:1px solid var(--background-modifier-border)}
-.nw-u-bordercollapse-collapse{border-collapse:collapse}
 .nw-u-brd-10px{border-radius:10px}
 .nw-u-brd-12px{border-radius:12px}
 .nw-u-brd-3px{border-radius:3px}
@@ -10169,7 +10162,6 @@ button.nw-btn-icon {
 .nw-u-marginbottom-16px{margin-bottom:16px}
 .nw-u-marginbottom-20px{margin-bottom:20px}
 .nw-u-marginbottom-24px{margin-bottom:24px}
-.nw-u-marginbottom-2px{margin-bottom:2px}
 .nw-u-marginbottom-4px{margin-bottom:4px}
 .nw-u-marginbottom-6px{margin-bottom:6px}
 .nw-u-marginbottom-8px{margin-bottom:8px}
@@ -10184,9 +10176,6 @@ button.nw-btn-icon {
 .nw-u-paddingtop-8px{padding-top:8px}
 
 /* ===== A3: 声明级工具类（从设置/向导/监控等页面内联样式提取，2026-10-26） ===== */
-.nw-u-bg-background-modifier-su{background:var(--background-modifier-success)}
-.nw-u-bg-background-modifier-wa{background:var(--background-modifier-warning)}
-.nw-u-bg-linear-gradient-135deg-3{background:linear-gradient(135deg, var(--background-modifier-success) 0%, var(--interactive-accent) 100%)}
 
 
 .nw-u-b-1px-dashed-background-{border:1px dashed var(--background-modifier-border)}
@@ -10196,7 +10185,6 @@ button.nw-btn-icon {
 .nw-u-m-16px-0-12px-0{margin:16px 0 12px 0}
 .nw-u-m-1px-0-1px-8px{margin:1px 0 1px 8px}
 .nw-u-m-20px-0{margin:20px 0}
-.nw-u-m-24px-0-12px-0{margin:24px 0 12px 0}
 .nw-u-m-2px-0{margin:2px 0}
 .nw-u-m-4px-0-8px-0{margin:4px 0 8px 0}
 .nw-u-m-6px-0-0-0{margin:6px 0 0 0}
@@ -10205,7 +10193,6 @@ button.nw-btn-icon {
 .nw-u-m-8px-0-4px-0{margin:8px 0 4px 0}
 
 
-.nw-u-p-14px-18px{padding:14px 18px}
 
 .nw-u-p-20px-10px{padding:20px 10px}
 .nw-u-p-2px-10px{padding:2px 10px}
@@ -10213,19 +10200,15 @@ button.nw-btn-icon {
 .nw-u-p-4px{padding:4px}
 
 .nw-u-p-60px-20px{padding:60px 20px}
-.nw-u-p-6px-12px{padding:6px 12px}
 
 
 .nw-u-c-text-accent{color:var(--text-accent)}
 .nw-u-c-text-error{color:var(--text-error)}
-.nw-u-c-text-primary{color:var(--text-primary)}
 .nw-u-c-text-success{color:var(--text-success)}
 .nw-u-c-text-warning{color:var(--text-warning)}
 
 .nw-u-d-none{display:none}
 
-.nw-u-h-400px{height:400px}
-.nw-u-lh-1-7{line-height:1.7}
 
 .nw-u-maxh-240px{max-height:240px}
 .nw-u-maxh-500px{max-height:500px}
@@ -10239,26 +10222,21 @@ button.nw-btn-icon {
 
 .nw-u-pos-absolute{position:absolute}
 .nw-u-pos-relative{position:relative}
-.nw-u-resize-none{resize:none}
 .nw-u-transition-all-0-2s-ease{transition:all 0.2s ease}
 .nw-u-transition-opacity-0-2s-ease{transition:opacity 0.2s ease}
 .nw-u-w-180px{width:180px}
 .nw-u-z-10{z-index:10}
 .nw-u-bordercolor-background-modifier-bo{border-color:var(--background-modifier-border)}
 
-.nw-u-fontfamily-font-monospace{font-family:var(--font-monospace)}
-.nw-u-fontfamily-monospace{font-family:monospace}
 .nw-u-fs-0-78em{font-size:0.78em}
 .nw-u-fs-0-82em{font-size:0.82em}
 .nw-u-fs-0-85em{font-size:0.85em}
 .nw-u-fs-0-8em{font-size:0.8em}
 .nw-u-fs-0-95em{font-size:0.95em}
 .nw-u-fs-0-9em{font-size:0.9em}
-.nw-u-fs-32px{font-size:32px}
 .nw-u-fs-48px{font-size:48px}
 .nw-u-gtc-repeat-auto-fill-minma-4{grid-template-columns:repeat(auto-fill, minmax(280px, 1fr))}
 .nw-u-gtc-repeat-auto-fill-minma-5{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
-.nw-u-gtc-repeat-auto-fit-minmax-6{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
 .nw-u-marginright-8px{margin-right:8px}
 .nw-u-margintop-0{margin-top:0}
 .nw-u-margintop-24px{margin-top:24px}
@@ -29656,4 +29634,384 @@ button.nw-pm-create-btn {
  * .novel-writer-fw-token-fill 高度/配色/过渡，这里只接管宽度。 */
 .novel-writer-fw-context-panel .nw-cp-token-fill {
     width: var(--nw-cp-pct, 0%);
+}
+/* ==========================================================================
+ * 36-settings-general.css — 设置页「通用」分区的语义类（Slice R）
+ *
+ * 覆盖 ui/settings/general-sections.ts 的五个分区：
+ * 性能监控 / 写作规则 / 关于 / 角色识别 / 建议设置（后者本来就是 Setting 控件）。
+ *
+ * 约定：
+ * - 设置页不套 .nw-scope（与 Slice N 的提示词管理一致），类名用 nw-st- 前缀。
+ * - 全部声明按「被删掉的 nw-u-* 工具类实际生效值」逐条复刻，视觉等价。
+ * - 按钮/文本框用元素限定选择器（button.nw-st-* / textarea.nw-st-*）：
+ *   .modal button 的特异性是 (0,1,1)，纯类选择器会被压住
+ *   （Slice L 编辑弹窗按钮就是这样被压成白底黑字的）。
+ * ========================================================================== */
+
+/* ── 说明文字与小号变体 ─────────────────────────────────────────── */
+.nw-st-lead {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
+.nw-st-lead--spaced {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-bottom: 20px;
+}
+
+/* 「⚠️ 性能监控已关闭」这类空态卡只是补一个上间距，壳类 nw-empty-info-card 仍在 */
+.nw-st-card-spaced {
+    margin-top: 16px;
+}
+
+.nw-st-fs12 {
+    font-size: 12px;
+}
+
+.nw-st-mono {
+    font-family: monospace;
+}
+
+.nw-st-strong {
+    font-weight: 600;
+}
+
+.nw-st-muted-nowrap {
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.nw-st-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+/* ── 标题间距（原来是 nw-u-margintop-* / nw-u-marginbottom-*） ───── */
+.nw-st-heading--flush {
+    margin-top: 0;
+}
+
+.nw-st-h4--spaced {
+    margin-bottom: 12px;
+}
+
+.nw-st-h4--gap {
+    margin: 24px 0 12px 0;
+}
+
+.nw-st-h4--section-first {
+    margin-top: 20px;
+    margin-bottom: 8px;
+}
+
+.nw-st-h4--section {
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+/* ── 卡片 ───────────────────────────────────────────────────────── */
+.nw-st-card {
+    padding: 20px;
+    background: var(--background-secondary);
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.nw-st-card--center {
+    text-align: center;
+}
+
+/* 关于插件卡：内边距/圆角与 .nw-st-card 不同，且没有下外边距 —— 独立成类 */
+.nw-st-about-card {
+    padding: 16px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text-muted);
+}
+
+.nw-st-about-p {
+    margin: 0 0 12px 0;
+}
+
+.nw-st-about-line {
+    margin-bottom: 4px;
+}
+
+/* ── 性能统计 ───────────────────────────────────────────────────── */
+.nw-st-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.nw-st-stat-card {
+    padding: 14px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+}
+
+.nw-st-stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.nw-st-stat-value {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* ── 分类统计表 ─────────────────────────────────────────────────── */
+.nw-st-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    font-size: 13px;
+}
+
+/* ── 慢操作 / 操作日志滚动区 ────────────────────────────────────── */
+.nw-st-scroll-box {
+    max-height: 240px;
+    overflow-y: auto;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+}
+
+.nw-st-scroll-box--tall {
+    max-height: 300px;
+}
+
+.nw-st-scroll-box--mono {
+    font-family: var(--font-monospace);
+    font-size: 12px;
+}
+
+.nw-st-scroll-item {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-st-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nw-st-duration {
+    color: var(--text-error);
+    font-weight: 600;
+}
+
+.nw-st-log-item {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+/* ── 按钮行 ─────────────────────────────────────────────────────── */
+.nw-st-btn-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.nw-st-btn-row--mb24 {
+    margin-bottom: 24px;
+}
+
+.nw-st-btn-row--end {
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    margin-top: 16px;
+}
+
+/* ── 按钮（原来每条都是 attr.style 内联样式） ──────────────────── */
+button.nw-st-btn,
+.modal button.nw-st-btn {
+    padding: 8px 16px;
+    cursor: pointer;
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+button.nw-st-btn--primary,
+.modal button.nw-st-btn--primary {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+}
+
+button.nw-st-btn--fw500,
+.modal button.nw-st-btn--fw500 {
+    font-weight: 500;
+}
+
+button.nw-st-btn--danger,
+.modal button.nw-st-btn--danger {
+    color: var(--text-error);
+    border-color: var(--background-modifier-error);
+}
+
+button.nw-st-btn--lg,
+.modal button.nw-st-btn--lg {
+    padding: 8px 18px;
+}
+
+/* 与强调按钮并排的次要按钮：底色取面板底色，而不是基类的 secondary */
+button.nw-st-btn--bg-primary,
+.modal button.nw-st-btn--bg-primary {
+    background: var(--background-primary);
+}
+
+/* 更新提示条上的两个按钮（白底 / 半透明白），只在横幅里用 */
+button.nw-st-banner-btn {
+    padding: 6px 14px;
+    cursor: pointer;
+    background: white;
+    color: var(--interactive-accent);
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+button.nw-st-banner-btn--ghost {
+    background: rgba(255, 255, 255, 0.2);
+    font-weight: 400;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* ── 更新提示条 ─────────────────────────────────────────────────── */
+.nw-st-update-banner {
+    margin-bottom: 16px;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, var(--background-modifier-success) 0%, var(--interactive-accent) 100%);
+    border-radius: 10px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.nw-st-update-left {
+    flex: 1;
+    min-width: 200px;
+}
+
+.nw-st-update-title {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.nw-st-update-note {
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.nw-st-update-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* ── 规则状态提示（警告 / 成功） ───────────────────────────────── */
+.nw-st-notice {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+}
+
+.nw-st-notice--warning {
+    background: var(--background-modifier-warning);
+    color: var(--text-warning);
+}
+
+.nw-st-notice--success {
+    background: var(--background-modifier-success);
+    color: var(--text-success);
+}
+
+/* ── 关于页 ─────────────────────────────────────────────────────── */
+.nw-st-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.nw-st-version {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-normal);
+    margin-bottom: 8px;
+}
+
+.nw-st-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 16px;
+    text-align: left;
+}
+
+.nw-st-info-item {
+    padding: 10px 12px;
+    background: var(--background-primary);
+    border-radius: 6px;
+}
+
+.nw-st-info-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+}
+
+.nw-st-info-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+/* ── 只读文本框（性能报告 / 规则内容弹窗） ─────────────────────── */
+textarea.nw-st-report-textarea,
+.modal textarea.nw-st-report-textarea {
+    width: 100%;
+    height: 400px;
+    font-family: var(--font-monospace);
+    font-size: 12px;
+    padding: 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    resize: vertical;
+}
+
+textarea.nw-st-code-textarea,
+.modal textarea.nw-st-code-textarea {
+    width: 100%;
+    height: 400px;
+    padding: 12px;
+    font-family: monospace;
+    font-size: 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    background: var(--background-primary);
+    color: var(--text-primary);
+    resize: none;
 }

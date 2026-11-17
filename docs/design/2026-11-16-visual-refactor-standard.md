@@ -153,6 +153,7 @@ Obsidian 自带 `button:not(.clickable-icon)` 特异性是 **(0,1,1)**，
 | 知识库主视图（`nw-kb-tasks-*` / `nw-kb-monitor-*`） | 完成：Slice P（`ui/views/knowledge-base-view.ts` 175 处 `nw-u-*` + 9 处内联 `style` 清零；统计卡配色由 `TaskStatItem.color` 内联串改为 `tone` 档位枚举 + 修饰类，进度条宽度改 CSS 变量 `--nw-kb-pct`；规则并入 `styles-src/27-knowledge-base.css` 从 `:2489` 起的 Slice P 段，未新建文件） | `D:\nw-dev-vault\_visual-p\{before,after}`（6 个场景，PNG 差全 0，未入库） |
 | 上下文监控面板（`nw-cp-*`） | 完成：Slice Q（`ui/rendering/context-panel.ts` 173 处 `nw-u-*` + 3 处内联 `style` 全部清零；token 配色改 `--warn`/`--danger` 修饰类、截断详情改 `--open`、进度条改 CSS 变量 `--nw-cp-pct`），新增 `styles-src/35-context-panel.css`（383 行 / 10818 字节），规则全部 `.novel-writer-fw-context-panel ` 前缀；外壳类 `novel-writer-fw-warning` 保留，`.nw-cp-alert` 只覆盖被删工具类真正生效的五项 | `D:\nw-dev-vault\_visual-q\{before,after}`（6 个场景，5 个 PNG 0 差、`02` 仅有意的告警条底色差 3.151%，struct/style/rect 探针全 0，未入库） |
 | 知识库 / 设定（`kb-`） | 完成：Slice A–I（书架 / 工具栏卡片 / 详情公共构件+概览 / 外壳页签条 / 各页签内容区 / 题材配置页 / 四个管理弹窗 / 批量导入弹窗 / 读书拆解详情弹窗）；H 用独立 `nw-bi-*`、I 用 `nw-kd-*` 命名空间，后续新页签沿用同一模式 | `docs/quality/visual-baseline/kb-books.json`、`kb-detail.json`；F 截图 `D:\nw-dev-vault\_visual-fg\`、G 截图 `_visual-g\`、H 截图 `_visual-h\`、I 截图 `_visual-i\`（未入库） |
+| 设置页通用分区（`nw-st-*`） | 完成：Slice R（`ui/settings/general-sections.ts` 五个分区 160 处 `nw-u-*` + 11 处内联 `style` 全部清零；基类收多数派声明，三处差异用修饰类恢复：`--bg-primary`（更新日志按钮底色）、`--ghost` 补 `font-weight: 400`、`--end` 补 `flex-wrap: nowrap`），新增 `styles-src/36-settings-general.css`（380 行 / 9596 字节），按钮/文本框用元素限定选择器 | `D:\nw-dev-vault\_visual-r\{before,after}`（8 个场景 PNG 全 0 差，struct/style/rect 探针全 0，未入库） |
 
 ### 5.1 工具类退场进度（`nw-u-*`）
 
@@ -165,13 +166,13 @@ D 零引用死定义，外加 C 定义数与使用量只许下降。
 
 | 指标 | 数值 |
 | --- | --- |
-| 定义 | 216 个（清理前 430；Slice H 删 13 个、Slice I 删 30 个、Slice J 删 11 个、Slice K 删 20 个、Slice L 删 13 个、Slice M 删 19 个、Slice N 删 12 个、Slice O 删 25 个、Slice P 删 14 个、Slice Q 删 31 个零引用类） |
+| 定义 | 162 个（清理前 430；Slice H 删 13 个、Slice I 删 30 个、Slice J 删 11 个、Slice K 删 20 个、Slice L 删 13 个、Slice M 删 19 个、Slice N 删 12 个、Slice O 删 25 个、Slice P 删 14 个、Slice Q 删 31 个、Slice R 删 23 个零引用类） |
 | 零引用定义 | 0（清理前 57，已删） |
 | 引用但未定义的类 | 0（清理前 5：真实缺陷 1 处 `nw-u-w-full-2` 已删，另 4 处是 `tests/` 断言与历史文档示例） |
-| TS 引用 | 185 个类 / 988 次（`check:utility` 口径，`cls:` 字面量；Slice Q 后） |
-| `styles.css` 体积 | 746349 字节（Slice G 后 641829；Slice H 新增 `nw-bi-*` 段约 1060 行；Slice I 新增 `nw-kd-*` 段 17545 字节；Slice J 新增 `30-wizard-steps.css` 约 290 行；Slice K 新增 `31-monitor-panel-b.css` +9128 字节；Slice L 新增 `styles-src/32-fingerprint.css` 16887 字节，净 +17223 字节，同时删掉 13 个零引用工具类；Slice M 新增 `nw-oe-*` 段约 220 行，净 +5377 字节，同时删掉 19 个零引用工具类；Slice N 新增 `styles-src/33-prompt-manager.css` 307 行 / 9411 字节，净 +8635 字节，同时删掉 12 个零引用工具类；Slice O 新增 `styles-src/34-outline-tree.css` 401 行 / 8342 字节，同时迁移 `25-planning-outline-controls.css` 的旧 `nw-outline-*` 段并删掉 25 个零引用工具类，净 +4646 字节；Slice P 在 `27-knowledge-base.css` 追加约 396 行语义类段、删掉 14 个零引用工具类，净 +7782 字节；Slice Q 新增 `styles-src/35-context-panel.css` 383 行 / 10818 字节，同时删掉 31 个零引用工具类，净 +9307 字节） |
+| TS 引用 | 162 个类 / 828 次（`check:utility` 口径，`cls:` 字面量；Slice R 后，定义数=引用数，零引用 0） |
+| `styles.css` 体积 | 754868 字节（Slice G 后 641829；Slice H 新增 `nw-bi-*` 段约 1060 行；Slice I 新增 `nw-kd-*` 段 17545 字节；Slice J 新增 `30-wizard-steps.css` 约 290 行；Slice K 新增 `31-monitor-panel-b.css` +9128 字节；Slice L 新增 `styles-src/32-fingerprint.css` 16887 字节，净 +17223 字节，同时删掉 13 个零引用工具类；Slice M 新增 `nw-oe-*` 段约 220 行，净 +5377 字节，同时删掉 19 个零引用工具类；Slice N 新增 `styles-src/33-prompt-manager.css` 307 行 / 9411 字节，净 +8635 字节，同时删掉 12 个零引用工具类；Slice O 新增 `styles-src/34-outline-tree.css` 401 行 / 8342 字节，同时迁移 `25-planning-outline-controls.css` 的旧 `nw-outline-*` 段并删掉 25 个零引用工具类，净 +4646 字节；Slice P 在 `27-knowledge-base.css` 追加约 396 行语义类段、删掉 14 个零引用工具类，净 +7782 字节；Slice Q 新增 `styles-src/35-context-panel.css` 383 行 / 10818 字节，同时删掉 31 个零引用工具类，净 +9307 字节；Slice R 新增 `styles-src/36-settings-general.css` 380 行 / 9596 字节，同时删掉 23 个零引用工具类，净 +8519 字节） |
 
-清理记录：删除 57 个零引用声明级工具类；去掉 `ui/views/writing-fingerprint-view.ts` 里 `addClass('nw-u-w-full-2')`（类从未定义，等于空操作，删除后渲染不变）；Slice L 随指纹库语义化再删 13 个零引用类（定义 299 → 286）；Slice M 随扩写弹窗语义化再删 19 个零引用类（定义 286 → 267）；Slice N 随提示词管理设置语义化再删 12 个零引用类（定义 267 → 255）；Slice O 随章节大纲树语义化再删 25 个零引用类（定义 255 → 230）；Slice P 随知识库主视图语义化再删 14 个零引用类（定义 230 → 216）；Slice Q 随上下文面板语义化再删 31 个零引用类（定义 216 → 185）。
+清理记录：删除 57 个零引用声明级工具类；去掉 `ui/views/writing-fingerprint-view.ts` 里 `addClass('nw-u-w-full-2')`（类从未定义，等于空操作，删除后渲染不变）；Slice L 随指纹库语义化再删 13 个零引用类（定义 299 → 286）；Slice M 随扩写弹窗语义化再删 19 个零引用类（定义 286 → 267）；Slice N 随提示词管理设置语义化再删 12 个零引用类（定义 267 → 255）；Slice O 随章节大纲树语义化再删 25 个零引用类（定义 255 → 230）；Slice P 随知识库主视图语义化再删 14 个零引用类（定义 230 → 216）；Slice Q 随上下文面板语义化再删 31 个零引用类（定义 216 → 185）；Slice R 随设置页通用分区语义化再删 23 个零引用类（定义 185 → 162）。
 
 **取词陷阱**：历史生成器对超长类名做了截断，留下 `nw-u-blt-3px-solid-interactive-`、`nw-u-bt-1px-dashed-nw-divider-`、
 `nw-u-animation-nw-progress-anim-1-5s-` 等**以 `-` 结尾却真实生效**的类名。B2/D 的正则必须把尾部连字符一起吞掉
@@ -201,11 +202,13 @@ Slice O 的大纲树弹窗同时踩到两个坑：`.modal button` 压掉六个�
 Slice P 的知识库主视图不在 `.nw-scope` 里也能直接写单类，因为它渲染在视图根节点内、目标元素多为自建 `div`；唯一的配色陷阱是**别把改前内联色换成 `--nw-*` 语义 token**——那组 token 在本主题已被调淡（`--nw-warning` rgb(212,167,106) ≠ 原 #f59e0b、`--nw-success` rgb(122,171,142) ≠ #2ecc71、`--nw-danger` rgb(212,120,120) ≠ #e74c3c），套上去 `tasks-list` 立刻差 0.41%（maxDelta 99）；按 `rgb()` 字面值逐条复刻后 6 场景归零。
 Slice Q 的上下文面板根节点自带 `.novel-writer-fw-context-panel`（(0,2,0)），单类 `nw-cp-*` 已被前缀盖住，不需要额外命名空间；本切片的教训在另一头——**被删的工具类不等于「什么都没写」**：`nw-u-bg-modifier-error-soft` 的声明 `background:var(--background-modifier-error-rgb, 255, 100, 100, 0.1)` 在 computed-value 阶段非法，CSS 规定此时回落到 initial（IACVT，即 `transparent`），于是它一直把外壳 `.novel-writer-fw-warning` 的 `--nw-warning-bg` 浅橙底压成透明；删掉后告警条恢复底色（`02-failed-token60` 差 3.151%，maxDelta 22，无文字重排），属有意修正，其余 5 场景 0 差。
 
-剩余存量大户（下一批切片候选，按引用次数；`ui/batch-import-modal.ts` 365 处在 Slice H 清零、`ui/knowledge-detail-modal.ts` 294 处在 Slice I 清零、`ui/full-writer/wizard-step-renderers.ts` 265 处在 Slice J 清零、`ui/monitor-panel-b.ts` 232 处在 Slice K 清零；Slice L 清零 `ui/views/writing-fingerprint-view.ts` 228 处 + `ui/fingerprint-detail-modal.ts` 157 处 + `ui/views/fingerprint-v2-detail.ts` 20 处；Slice M 清零 `ui/outline-expand-modal.ts` 220 处；Slice N 清零 `ui/prompt-manager-settings.ts` 192 处；Slice O 清零 `ui/chapter-outline-tree-modal.ts` 177 处；Slice P 清零 `ui/views/knowledge-base-view.ts` 175 处；Slice Q 清零 `ui/rendering/context-panel.ts` 173 处，均不在表内）：
+Slice R 的设置页五个分区同样不在 `.nw-scope` 里，但目标元素大量是 `<button>` / `<textarea>`：规则一律写 `button.nw-st-*` / `textarea.nw-st-*`（(0,1,1)），并对 `.modal button` 再补一条同样特异性的规则。本轮真正的教训是**基类粒度**：把 11 处内联样式归并成 3 个基类后，像素验收抓出三处「基类多数派 ≠ 该元素原值」——更新日志按钮原为 `--background-primary`（基类给了 secondary）、横幅 ghost 按钮原无 `font-weight`（基类给了 600）、报告弹窗按钮行原为 `nowrap`（基类给了 wrap）。结论：合并内联样式时先做「声明集」分组，组内不一致的值必须留修饰类，不能取众数硬吞。
+
+剩余存量大户（下一批切片候选，按引用次数；`ui/batch-import-modal.ts` 365 处在 Slice H 清零、`ui/knowledge-detail-modal.ts` 294 处在 Slice I 清零、`ui/full-writer/wizard-step-renderers.ts` 265 处在 Slice J 清零、`ui/monitor-panel-b.ts` 232 处在 Slice K 清零；Slice L 清零 `ui/views/writing-fingerprint-view.ts` 228 处 + `ui/fingerprint-detail-modal.ts` 157 处 + `ui/views/fingerprint-v2-detail.ts` 20 处；Slice M 清零 `ui/outline-expand-modal.ts` 220 处；Slice N 清零 `ui/prompt-manager-settings.ts` 192 处；Slice O 清零 `ui/chapter-outline-tree-modal.ts` 177 处；Slice P 清零 `ui/views/knowledge-base-view.ts` 175 处；Slice Q 清零 `ui/rendering/context-panel.ts` 173 处；Slice R 清零 `ui/settings/general-sections.ts` 160 处，均不在表内）：
 
 | 文件 | 引用 | 文件 | 引用 |
 | --- | --- | --- | --- |
-| `ui/settings/general-sections.ts` | 160 | `ui/views/book-detail-renderer.ts` | 126 |
-| `ui/full-writer/scene-outline-controller.ts` | 123 | `ui/settings/knowledge-section.ts` | 108 |
-| `ui/polish-editor.ts` | 104 | `ui/refill-modal.ts` | 97 |
-| `ui/views/kb-stats-panel.ts` | 81 | `ui/settings/deconstruction-section.ts` | 47 |
+| `ui/views/book-detail-renderer.ts` | 126 | `ui/full-writer/scene-outline-controller.ts` | 123 |
+| `ui/settings/knowledge-section.ts` | 108 | `ui/polish-editor.ts` | 104 |
+| `ui/refill-modal.ts` | 97 | `ui/views/kb-stats-panel.ts` | 81 |
+| `ui/settings/deconstruction-section.ts` | 47 |  |  |

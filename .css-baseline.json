@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-17T14:53:15.892Z",
-  "note": "Slice Q：上下文面板语义化（新建 styles-src/35-context-panel.css 10.6KB，40→41 个样式源）；同时删除 31 个因本切片而零引用的工具类定义（nw-u-bg-warning-soft* / nw-u-p-* / nw-u-m-* / nw-u-userselect-none 等）。styles.css 737042→746349（净 +9307），唯一类 4058→4091（新增 nw-cp-* 33 个），硬编码 hex 168→170（token 进度条 #ff4444/#ffaa00 由内联样式迁入 CSS）。",
-  "bytes": 746349,
+  "generatedAt": "2026-11-17T15:29:45.280Z",
+  "note": "Slice R：新增 styles-src/36-settings-general.css（general-sections.ts 的 nw-st-* 语义类），并删除 10 号文件里 23 个零引用 nw-u-* 定义。",
+  "bytes": 754868,
   "important": 24,
   "hardcodedHex": 170,
-  "rgbHsl": 211,
-  "uniqueClasses": 4091,
+  "rgbHsl": 213,
+  "uniqueClasses": 4125,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

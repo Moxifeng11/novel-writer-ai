@@ -1207,3 +1207,24 @@ PNG 差异只剩三簇——标题栏按钮簇（y=28–58）、页脚按钮簇�
 **文档**：新增 `docs/modules/context-panel.md`（8 节，CP-01..CP-05 全 done）；`docs/modules/INDEX.md` 插「上下文监控面板」行；视觉标准 §5 加 `nw-cp-*` 行、§5.1 指标重算（185 / 988 / 746349）、清理记录补 Slice Q、特异性段补 IACVT 陷阱、存量大户表移除 173；`docs/CURRENT.md` §4 改切片 A–Q、§6 口径改 185 / 988。
 
 **下一轮候选**（按 §5.1 存量大户）：`ui/settings/general-sections.ts`（160）、`ui/views/book-detail-renderer.ts`（126）、`ui/full-writer/scene-outline-controller.ts`（123）。
+### 2026-11-17 第四十三轮：Slice R 设置页通用分区语义化（nw-st-*）
+
+**范围**：`ui/settings/general-sections.ts`（1280 → 1257 行）五个分区——`PerformanceSection:35`、`RulesSection:399`、`AboutSection:580`、`RecognitionSection:884`、`SuggestionsSection:1174`；注册见 `ui/settings/section-factory.ts:66/67/73/77/80`。
+
+**改动**：`nw-u-*` 160 → 0；内联 `style` 11 → 0（11 处全是 `attr: { style: '...' }`，改成 `cls:` 语义类）。
+- 新建 `styles-src/36-settings-general.css`（380 行 / 9596 字节，样式源 41 → 42），57 个 `nw-st-*` 类：说明文字 `nw-st-lead(--spaced)` / `nw-st-card-spaced` / `nw-st-fs12` / `nw-st-mono` / `nw-st-strong` / `nw-st-muted-nowrap` / `nw-st-meta`；标题间距 `nw-st-heading--flush` / `--spaced` / `--gap` / `--section-first` / `--section`；卡片 `nw-st-card(--center)` / `nw-st-about-card` / `nw-st-about-p` / `nw-st-about-line`；性能页 `nw-st-stat-grid` / `-stat-card` / `-stat-label` / `-stat-value` / `-table` / `-scroll-box(--tall/--mono)` / `-scroll-item` / `-row` / `-duration` / `-log-item`；按钮行 `nw-st-btn-row(--mb24/--end)` 与 `button.nw-st-btn(--primary/--fw500/--danger/--lg/--bg-primary)`、`button.nw-st-banner-btn(--ghost)`；更新横幅 `nw-st-update-banner(-left/-title/-note/-actions)`；提示条 `nw-st-notice(--warning/--success)`；关于页 `nw-st-label` / `-version` / `-info-grid` / `-info-item` / `-info-label` / `-info-value`；只读框 `textarea.nw-st-report-textarea` / `-code-textarea`。
+- 按钮与文本框一律元素限定（`button.nw-st-*` / `textarea.nw-st-*`），并对 `.modal button` 补同特异性规则——`.modal button` 是 (0,1,1)，纯类名会被压掉。
+- 删 23 个零引用工具类（定义 185 → 162，引用 988 → 828）。
+
+**三处坑**
+1. **基类粒度**：11 处内联归并成 3 个基类后，像素验收抓出三处「基类多数派 ≠ 该元素原值」——更新日志按钮底色（`--background-primary` vs 基类 secondary）、横幅 ghost 按钮 `font-weight`（400 vs 基类 600）、报告弹窗按钮行 `flex-wrap`（nowrap vs 基类 wrap）。合并内联样式前先做「声明集」分组，组内不一致的值必须留修饰类，不能取众数硬吞。
+2. **性能页截图不可比**：耗时/内存每次运行都不同（`130.10ms` vs `130.00ms`、`71.46 MB` vs `60.92 MB`），首轮 `01-perf-data` 差 1322 px 全是数据噪声；改用确定性种子（`perf.importLog(JSON.stringify(entries))` + `Object.defineProperty(performance,'memory',…)` + 固定 `peakMemory`/`memorySamples`）后归零。设置分区还有 `settingsTab.panelCache`，每场景前必须 `clear()`，否则 perf-on / perf-off 截到同一份 DOM。
+3. **设置弹窗不在主 document**：`app.setting.open()` 后 `.modal-container` 数为 0；`window.activeWindow/activeDocument` 直接赋值读回是 false，必须 `Object.defineProperty(window,'activeDocument',{configurable:true,get:()=>document})`（activeWindow 同法），Modal 才挂到 `document.body`。改走自建 `<div class="vertical-tab-content nw-settings-root">` 宿主 + `plugin.settingsTab.display()`，才既能走真实渲染路径又能截图。
+
+**验收**：`D:\nw-dev-vault\_visual-r\{before,after}` 8 场景——`01-perf-data` h1810、`02-perf-off` h831、`03-rules` h1238、`04-about` h1547、`05-recognition` h1461、`06-suggestions` h638、`07-banner` 664×67、`08-report-modal` 640×549（宽统一 760）。**PNG 8/8 全 0 像素差**；struct / style / rect 三类探针全 0；cls 差为改名预期。before 产物取自 worktree `D:\nw-tmp\before-r`（`git worktree add <path> HEAD` + `node_modules` junction + build：main.js 5,642,098 / styles.css 775,957），after 为仓内 build（main.js **5,638,584** / styles.css **764,224**，删掉 `services/performance-monitor.ts` 的 `// TEMP-SNAP-HOOK` 后）。
+
+**门禁**：`tsc --noEmit` 0 错；`lint` 0 error / 1103 warning；`build` 42 个样式源 / styles.css 30017 行；`check:inline-styles` 566（静态 475 / 动态 91）；`check:utility` 定义 162 / 引用 828 / 零引用 0；`check:css` bytes 754868 / 唯一类 4125 / hex 170 / rgbHsl 213 / !important 24；`check:bundle` main.js 5638584 / styles.css 754868（746349 → 754868，净 +8519）；`check:silent-failures` 基线 191 → 188（三处装饰性 catch 补 `silent-ok`）；`npx vitest run settings-sections-dom settings-no-duplicate-render settings-framework-wiring metrics-format` 4 文件 / 53 用例通过。
+
+**文档**：新增 `docs/modules/settings-general.md`（8 节，SG-01..SG-05 全 done）；`docs/modules/INDEX.md` 插「设置页通用分区」行；视觉标准 §5 加 `nw-st-*` 行、§5.1 重算（162 / 828 / 754868）、清理记录补 Slice R 删 23、特异性段补「基类粒度」、存量大户表移除 160；`docs/CURRENT.md` §4 改切片 A–R、§6 口径改 162 / 828。
+
+**下一轮候选**（按 §5.1 存量大户）：`ui/views/book-detail-renderer.ts`（126）、`ui/full-writer/scene-outline-controller.ts`（123）、`ui/settings/knowledge-section.ts`（108）。

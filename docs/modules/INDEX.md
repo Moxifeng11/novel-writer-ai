@@ -24,6 +24,7 @@
 | 统计 / 进度 | `ui/writing-stats*`、`engine/writing-stats*` | 字数、进度、目标 | todo | 图表可读性、目标设置 | — |
 | MCP / Agent | `ui/mcp-*`、`engine/agent/harness/mcp-*` | `mcpServers` | review（二期完成） | 运行时统计展示、失败重试可视化 | — |
 | 市场 / 插件 | `community-marketplace`、`ui/marketplace-*` | 插件索引、安装状态 | todo | 首装引导、下载即用闭环 | — |
+| 设置页通用分区（性能 / 规则 / 关于 / 角色识别 / 建议） | `ui/settings/general-sections.ts`、`styles-src/36-settings-general.css`、`services/performance-monitor.ts` | `plugin.settings`（监控/建议开关、识别阈值）；性能日志在内存（上限 1000 条）；更新信息来自 `UPDATE_CHECKER` | stable（视觉重构 Slice R 完成 2026-11-17） | 160 处 `nw-u-*` + 11 处内联样式已清零（`nw-st-*`，8 场景 0 像素差）；后续：1257 行按分区拆文件、窄窗表格滚动 | [settings-general.md](settings-general.md) |
 | 设置框架 / 导航 | `ui/settings-tab.ts`、`ui/settings/section-*`、`ui/mini-settings-modal.ts`、`ui/settings/settings-search.ts` | `settingsUiShowAdvanced`、分区注册表 | stable（验收通过 2026-11-16） | 搜索（A3）/两宿主统一装配/导航记忆/指令直达/工作台菜单 | [settings-navigation.md](settings-navigation.md) |
 | 导出 / 发布 | `ui/export-*`、`engine/export*` | 导出模板、发布配置 | todo | 导出流程、格式完整性 | — |
 

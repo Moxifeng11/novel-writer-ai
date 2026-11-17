@@ -42,7 +42,7 @@ export class PerformanceSection extends SettingsSection {
         const section = container.createEl('section');
 
         section.createEl('h3', { text: '🔒 只读模式' });
-        section.createEl('p', { text: '开启后，所有会修改作品的命令（写正文 / 改设定 / 改规划）都会被拒绝，只保留查看、统计、导出。适合审阅或多人协作时防止误改。', cls: 'nw-u-c-text-muted nw-u-fs-13px nw-u-marginbottom-16px' });
+        section.createEl('p', { text: '开启后，所有会修改作品的命令（写正文 / 改设定 / 改规划）都会被拒绝，只保留查看、统计、导出。适合审阅或多人协作时防止误改。', cls: 'nw-st-lead' });
         new Setting(section)
             .setName('启用只读模式')
             .setDesc('由动作契约判定（shared/action-contract）：读动作不受影响，写动作会被阻止并提示')
@@ -56,7 +56,7 @@ export class PerformanceSection extends SettingsSection {
             );
 
         section.createEl('h3', { text: '📊 性能监控' });
-        section.createEl('p', { text: '监控插件关键操作的性能，识别性能瓶颈并优化。', cls: 'nw-u-c-text-muted nw-u-fs-13px nw-u-marginbottom-16px' });
+        section.createEl('p', { text: '监控插件关键操作的性能，识别性能瓶颈并优化。', cls: 'nw-st-lead' });
 
         const perfEnabled = performanceMonitor.isEnabled();
         new Setting(section)
@@ -85,7 +85,7 @@ export class PerformanceSection extends SettingsSection {
         if (!performanceMonitor.isEnabled()) {
             section.createEl('div', {
                 text: '⚠️  性能监控已关闭',
-                cls: "nw-empty-info-card nw-u-margintop-16px", attr: {}
+                cls: 'nw-empty-info-card nw-st-card-spaced'
             });
             return;
         }
@@ -106,13 +106,13 @@ export class PerformanceSection extends SettingsSection {
                     totalSize: s.totalSize,
                 };
             }
-        } catch {
+        } catch { // silent-ok: 缓存统计（装饰性：读失败就不显示缓存行）
         }
 
         section.createEl('h4', { text: '📈 概览统计', cls: 'nw-h4-section' });
 
         const statsGrid = section.createEl('div', {
-            cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-6 nw-u-gap-12px nw-u-marginbottom-20px'
+            cls: 'nw-st-stat-grid'
         });
 
         const totals = aggregateOperationStats(categoryStats);
@@ -135,7 +135,7 @@ export class PerformanceSection extends SettingsSection {
         section.createEl('h4', { text: '📂 分类统计', cls: 'nw-h4-section' });
 
         const catTable = section.createEl('table', {
-            cls: 'nw-u-w-100 nw-u-bordercollapse-collapse nw-u-marginbottom-20px nw-u-fs-13px'
+            cls: 'nw-st-table'
         });
         const thead = catTable.createEl('thead');
         const headRow = thead.createEl('tr');
@@ -166,21 +166,21 @@ export class PerformanceSection extends SettingsSection {
             });
         } else {
             const slowList = section.createEl('div', {
-                cls: 'nw-u-maxh-240px nw-u-ovy-auto nw-u-b-1px-solid-background-m nw-u-brd-8px'
+                cls: 'nw-st-scroll-box'
             });
             for (const op of slowOps.slice(0, 20)) {
                 const item = slowList.createEl('div', {
-                    cls: 'nw-u-p-10px-14px nw-u-bb-1px-solid-background-m'
+                    cls: 'nw-st-scroll-item'
                 });
-                const top = item.createEl('div', { cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center' });
-                top.createEl('span', { text: op.name, cls: 'nw-u-fwt-600' });
+                const top = item.createEl('div', { cls: 'nw-st-row' });
+                top.createEl('span', { text: op.name, cls: 'nw-st-strong' });
                 top.createEl('span', {
                     text: this.formatDuration(op.duration),
-                    cls: 'nw-u-c-text-error nw-u-fwt-600'
+                    cls: 'nw-st-duration'
                 });
                 const bottom = item.createEl('div', {
                     text: `${op.category} · ${new Date(op.timestamp).toLocaleString()} · 阈值: ${this.formatDuration(op.threshold)}`,
-                    cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-margintop-4px'
+                    cls: 'nw-st-meta'
                 });
             }
         }
@@ -194,16 +194,16 @@ export class PerformanceSection extends SettingsSection {
             });
         } else {
             const logContainer = section.createEl('div', {
-                cls: 'nw-u-maxh-300px nw-u-ovy-auto nw-u-b-1px-solid-background-m nw-u-brd-8px nw-u-fontfamily-font-monospace nw-u-fs-12px'
+                cls: 'nw-st-scroll-box nw-st-scroll-box--tall nw-st-scroll-box--mono'
             });
             for (const entry of log.slice(0, 50)) {
                 const item = logContainer.createEl('div', {
-                    cls: 'nw-u-p-6px-12px nw-u-bb-1px-solid-background-m nw-u-d-flex nw-u-jc-space-between nw-u-gap-12px'
+                    cls: 'nw-st-log-item'
                 });
                 const left = item.createEl('span');
                 left.textContent = `[${entry.category}] ${entry.name}`;
                 const right = item.createEl('span', {
-                    cls: 'nw-u-c-text-muted nw-u-ws-nowrap'
+                    cls: 'nw-st-muted-nowrap'
                 });
                 right.textContent = this.formatDuration(entry.duration);
             }
@@ -212,15 +212,13 @@ export class PerformanceSection extends SettingsSection {
         section.createEl('h4', { text: '⚙️ 操作', cls: 'nw-h4-section' });
 
         const btnRow = section.createEl('div', {
-            cls: 'nw-u-d-flex nw-u-gap-10px nw-u-fwr-wrap'
+            cls: 'nw-st-btn-row'
         });
 
         const reportBtn = btnRow.createEl('button', {
             text: '📄 生成性能报告',
-            attr: {
-                type: 'button',
-                style: 'padding:8px 16px;cursor:pointer;background:var(--interactive-accent);color:var(--text-on-accent);border:none;border-radius:6px;font-size:13px;font-weight:500;'
-            }
+            cls: 'nw-st-btn nw-st-btn--primary nw-st-btn--fw500',
+            attr: { type: 'button' }
         });
         reportBtn.onclick = () => {
             const report = performanceMonitor.generateTextReport(cacheStats);
@@ -229,10 +227,8 @@ export class PerformanceSection extends SettingsSection {
 
         const exportBtn = btnRow.createEl('button', {
             text: '📤 导出日志',
-            attr: {
-                type: 'button',
-                style: 'padding:8px 16px;cursor:pointer;background:var(--background-secondary);color:var(--text-normal);border:1px solid var(--background-modifier-border);border-radius:6px;font-size:13px;'
-            }
+            cls: 'nw-st-btn',
+            attr: { type: 'button' }
         });
         exportBtn.onclick = async () => {
             const json = performanceMonitor.exportLog();
@@ -244,10 +240,8 @@ export class PerformanceSection extends SettingsSection {
 
         const clearBtn = btnRow.createEl('button', {
             text: '🗑️ 清空日志',
-            attr: {
-                type: 'button',
-                style: 'padding:8px 16px;cursor:pointer;background:var(--background-secondary);color:var(--text-error);border:1px solid var(--background-modifier-error);border-radius:6px;font-size:13px;'
-            }
+            cls: 'nw-st-btn nw-st-btn--danger',
+            attr: { type: 'button' }
         });
         clearBtn.onclick = async () => {
             const confirmed = await OperationConfirmModal.confirm(this.app, {
@@ -266,10 +260,8 @@ export class PerformanceSection extends SettingsSection {
 
         const refreshBtn = btnRow.createEl('button', {
             text: '🔄 刷新',
-            attr: {
-                type: 'button',
-                style: 'padding:8px 16px;cursor:pointer;background:var(--background-secondary);color:var(--text-normal);border:1px solid var(--background-modifier-border);border-radius:6px;font-size:13px;'
-            }
+            cls: 'nw-st-btn',
+            attr: { type: 'button' }
         });
         refreshBtn.onclick = () => {
             this.refresh();
@@ -278,15 +270,15 @@ export class PerformanceSection extends SettingsSection {
 
     private addStatCard(container: HTMLElement, label: string, value: string): void {
         const card = container.createEl('div', {
-            cls: 'nw-u-p-14px nw-u-bg-background-secondary nw-u-brd-8px'
+            cls: 'nw-st-stat-card'
         });
         card.createEl('div', {
             text: label,
-            cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-6px'
+            cls: 'nw-st-stat-label'
         });
         card.createEl('div', {
             text: value,
-            cls: 'nw-u-fs-18px nw-u-fwt-700'
+            cls: 'nw-st-stat-value'
         });
     }
 
@@ -298,21 +290,17 @@ export class PerformanceSection extends SettingsSection {
         contentEl.empty();
         contentEl.createEl('h3', { text: '📊 性能报告' });
         const textarea = contentEl.createEl('textarea', {
-            attr: {
-                style: 'width:100%;height:400px;font-family:var(--font-monospace);font-size:12px;padding:12px;border:1px solid var(--background-modifier-border);border-radius:6px;background:var(--background-primary);color:var(--text-normal);resize:vertical;',
-                readonly: 'readonly'
-            }
+            cls: 'nw-st-report-textarea',
+            attr: { readonly: 'readonly' }
         });
         textarea.value = report;
         const btnRow = contentEl.createEl('div', {
-            cls: 'nw-u-d-flex nw-u-gap-10px nw-u-jc-flex-end nw-u-margintop-16px'
+            cls: 'nw-st-btn-row nw-st-btn-row--end'
         });
         const copyBtn = btnRow.createEl('button', {
             text: '📋 复制报告',
-            attr: {
-                type: 'button',
-                style: 'padding:8px 16px;cursor:pointer;background:var(--interactive-accent);color:var(--text-on-accent);border:none;border-radius:6px;font-size:13px;'
-            }
+            cls: 'nw-st-btn nw-st-btn--primary',
+            attr: { type: 'button' }
         });
         copyBtn.onclick = async () => {
             try {
@@ -324,10 +312,8 @@ export class PerformanceSection extends SettingsSection {
         };
         const closeBtn = btnRow.createEl('button', {
             text: '关闭',
-            attr: {
-                type: 'button',
-                style: 'padding:8px 16px;cursor:pointer;background:var(--background-secondary);color:var(--text-normal);border:1px solid var(--background-modifier-border);border-radius:6px;font-size:13px;'
-            }
+            cls: 'nw-st-btn',
+            attr: { type: 'button' }
         });
         closeBtn.onclick = () => modal.close();
         modal.open();
@@ -363,29 +349,27 @@ export class PerformanceSection extends SettingsSection {
             if (updateChecker && updateChecker.hasNotifiedVersion(latestVersion)) return;
 
             const banner = container.createDiv({
-                cls: 'nw-u-marginbottom-16px nw-u-p-14px-18px nw-u-bg-linear-gradient-135deg-3 nw-u-brd-10px nw-u-c-white nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-gap-12px nw-u-fwr-wrap'
+                cls: 'nw-st-update-banner'
             });
 
-            const left = banner.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-200px' });
+            const left = banner.createDiv({ cls: 'nw-st-update-left' });
             left.createEl('div', {
                 text: `🎉 发现新版本 v${latestVersion}`,
-                cls: 'nw-u-fwt-600 nw-u-fs-15px nw-u-marginbottom-4px'
+                cls: 'nw-st-update-title'
             });
             left.createEl('div', {
                 text: lastResult.releaseNotes
                     ? lastResult.releaseNotes.substring(0, 80) + (lastResult.releaseNotes.length > 80 ? '...' : '')
                     : '点击查看详情了解新功能和改进',
-                cls: 'nw-u-fs-12px nw-u-op-0-9'
+                cls: 'nw-st-update-note'
             });
 
-            const right = banner.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-fsh-0' });
+            const right = banner.createDiv({ cls: 'nw-st-update-actions' });
 
             const detailBtn = right.createEl('button', {
                 text: '查看详情',
-                attr: {
-                    type: 'button',
-                    style: 'padding:6px 14px;cursor:pointer;background:white;color:var(--interactive-accent);border:none;border-radius:6px;font-size:12px;font-weight:600;'
-                }
+                cls: 'nw-st-banner-btn',
+                attr: { type: 'button' }
             });
             detailBtn.addEventListener('click', () => {
                 new ChangelogModal(this.app, {
@@ -395,10 +379,8 @@ export class PerformanceSection extends SettingsSection {
 
             const laterBtn = right.createEl('button', {
                 text: '稍后提醒',
-                attr: {
-                    type: 'button',
-                    style: 'padding:6px 14px;cursor:pointer;background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.3);border-radius:6px;font-size:12px;'
-                }
+                cls: 'nw-st-banner-btn nw-st-banner-btn--ghost',
+                attr: { type: 'button' }
             });
             laterBtn.addEventListener('click', () => {
                 if (updateChecker) {
@@ -406,7 +388,7 @@ export class PerformanceSection extends SettingsSection {
                 }
                 this.reopen();
             });
-        } catch {
+        } catch { // silent-ok: 更新横幅（装饰性：读失败就不显示横幅）
         }
     }
 }
@@ -477,15 +459,15 @@ export class RulesSection extends SettingsSection {
      */
     private async mountRulesSection(section: HTMLElement): Promise<void> {
         section.empty();
-        section.createEl('h3', { text: '📜 写作规则版本管理', cls: 'nw-u-margintop-0' });
+        section.createEl('h3', { text: '📜 写作规则版本管理', cls: 'nw-st-heading--flush' });
 
         section.createEl('p', {
             text: '写作规则是 AI 生成正文时遵循的核心准则。唯一来源是 vault 的「元文件/00-系统模板/写作规则.md」——编辑这个文件，就是修改所有项目的写作规则。',
-            cls: 'nw-u-c-text-muted nw-u-fs-13px nw-u-marginbottom-20px'
+            cls: 'nw-st-lead--spaced'
         });
 
         const statusCard = section.createDiv({
-            cls: 'nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-10px nw-u-marginbottom-20px'
+            cls: 'nw-st-card'
         });
 
         try {
@@ -497,26 +479,26 @@ export class RulesSection extends SettingsSection {
             statusRow0.createDiv({ text: '唯一来源:', cls: 'nw-status-label' });
             statusRow0.createDiv({
                 text: isPresent ? info.sourcePath : '⚠️ 未找到（将写入 v4 模板）',
-                cls: 'nw-u-fontfamily-monospace',
+                cls: 'nw-st-mono',
             });
 
             const statusRow1 = statusCard.createDiv({ cls: 'nw-status-row' });
             statusRow1.createDiv({ text: '规则版本:', cls: 'nw-status-label' });
-            statusRow1.createDiv({ text: `v${info.version}`, cls: 'nw-u-fontfamily-monospace' });
+            statusRow1.createDiv({ text: `v${info.version}`, cls: 'nw-st-mono' });
 
             const statusRow2 = statusCard.createDiv({ cls: 'nw-status-row' });
             statusRow2.createDiv({ text: '模式附录:', cls: 'nw-status-label' });
-            statusRow2.createDiv({ text: '当前项目按创作模式自动拼接（长篇连载 / 短篇单元 / 剧本分镜）', cls: 'nw-u-fs-12px' });
+            statusRow2.createDiv({ text: '当前项目按创作模式自动拼接（长篇连载 / 短篇单元 / 剧本分镜）', cls: 'nw-st-fs12' });
 
             if (!isPresent) {
                 section.createDiv({
                     text: '⚠️ 未找到写作规则文件。重启插件时会自动写入 v4 引导版模板；也可点击「重新检查」立即生成。',
-                    cls: 'nw-u-p-12px nw-u-bg-background-modifier-wa nw-u-c-text-warning nw-u-brd-6px nw-u-marginbottom-16px'
+                    cls: 'nw-st-notice nw-st-notice--warning'
                 });
             } else {
                 section.createDiv({
                     text: '✅ 单一来源已就绪。没有可选版本、没有漂移——改文件即全局生效。',
-                    cls: 'nw-u-p-12px nw-u-bg-background-modifier-su nw-u-c-text-success nw-u-brd-6px nw-u-marginbottom-16px'
+                    cls: 'nw-st-notice nw-st-notice--success'
                 });
             }
 
@@ -549,7 +531,7 @@ export class RulesSection extends SettingsSection {
                         const { contentEl } = this;
                         contentEl.createEl('h3', { text: '写作规则内容' });
                         const textarea = contentEl.createEl('textarea', {
-                            cls: 'nw-u-w-100 nw-u-h-400px nw-u-p-12px nw-u-fontfamily-monospace nw-u-fs-12px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-bg-background-primary nw-u-c-text-primary nw-u-resize-none'
+                            cls: 'nw-st-code-textarea'
                         });
                         textarea.value = rules;
                     }
@@ -604,21 +586,21 @@ export class AboutSection extends SettingsSection {
     render(container: HTMLElement): void {
         const section = container.createEl('section');
 
-        section.createEl('h3', { text: '📖 小说工坊 AI', cls: 'nw-u-margintop-0' });
+        section.createEl('h3', { text: '📖 小说工坊 AI', cls: 'nw-st-heading--flush' });
 
         const currentVersion = PLUGIN_VERSION;
 
         const versionCard = section.createDiv({
-            cls: 'nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-10px nw-u-marginbottom-20px nw-u-ta-center'
+            cls: 'nw-st-card nw-st-card--center'
         });
 
         versionCard.createEl('div', {
             text: '当前版本',
-            cls: 'nw-u-fs-13px nw-u-c-text-muted nw-u-marginbottom-4px'
+            cls: 'nw-st-label'
         });
         versionCard.createEl('div', {
             text: `v${currentVersion}`,
-            cls: 'nw-u-fs-32px nw-u-fwt-700 nw-u-c-text-normal nw-u-marginbottom-8px'
+            cls: 'nw-st-version'
         });
 
         let lastCheckInfo = '从未检查';
@@ -641,26 +623,24 @@ export class AboutSection extends SettingsSection {
                     latestVersionInfo = `检查失败：${lastResult.error}`;
                 }
             }
-        } catch {
+        } catch { // silent-ok: 版本信息（装饰性：读失败就只显示版本号）
         }
 
         const infoGrid = versionCard.createDiv({
-            cls: 'nw-u-d-grid nw-u-gtc-1fr-1fr nw-u-gap-12px nw-u-margintop-16px nw-u-ta-left'
+            cls: 'nw-st-info-grid'
         });
 
         this.renderInfoItem(infoGrid, '最新版本', latestVersionInfo);
         this.renderInfoItem(infoGrid, '上次检查', lastCheckInfo);
 
         const btnRow = section.createDiv({
-            cls: 'nw-u-d-flex nw-u-gap-10px nw-u-marginbottom-24px nw-u-fwr-wrap'
+            cls: 'nw-st-btn-row nw-st-btn-row--mb24'
         });
 
         const checkBtn = btnRow.createEl('button', {
             text: '🔍 检查更新',
-            attr: {
-                type: 'button',
-                style: 'padding:8px 18px;cursor:pointer;background:var(--interactive-accent);color:var(--text-on-accent);border:none;border-radius:6px;font-size:13px;font-weight:500;'
-            }
+            cls: 'nw-st-btn nw-st-btn--primary nw-st-btn--lg nw-st-btn--fw500',
+            attr: { type: 'button' }
         });
         checkBtn.addEventListener('click', async () => {
             checkBtn.disabled = true;
@@ -692,10 +672,8 @@ export class AboutSection extends SettingsSection {
 
         const changelogBtn = btnRow.createEl('button', {
             text: '📜 更新日志',
-            attr: {
-                type: 'button',
-                style: 'padding:8px 18px;cursor:pointer;border:1px solid var(--background-modifier-border);background:var(--background-primary);color:var(--text-normal);border-radius:6px;font-size:13px;'
-            }
+            cls: 'nw-st-btn nw-st-btn--lg nw-st-btn--bg-primary',
+            attr: { type: 'button' }
         });
         changelogBtn.addEventListener('click', () => {
             new ChangelogModal(this.app, {
@@ -720,7 +698,7 @@ export class AboutSection extends SettingsSection {
         // 热重载：Obsidian 政策禁止插件自行 disable/enable 自身，所以按钮只做
         // 「保存 + 把工作台状态写进 sessionStorage + 提示手动切换」。
         // 原实现放在设置页最底部（任何 tab 都能看到、且是红色内联样式），位置不合理，移到这里。
-        section.createEl('h4', { text: '🧰 维护', cls: 'nw-u-marginbottom-12px' });
+        section.createEl('h4', { text: '🧰 维护', cls: 'nw-st-h4--spaced' });
         new Setting(section)
             .setName('热重载插件')
             .setDesc('Obsidian 不允许插件自行重启：点击后请到「设置 → 第三方插件」关闭再启用，工作台会自动恢复。')
@@ -744,7 +722,7 @@ export class AboutSection extends SettingsSection {
                     new Notice('请在「设置 → 第三方插件」中关闭再启用「小说工坊 AI」完成重载（工作台状态会自动恢复）', 6000);
                 }));
 
-        section.createEl('h4', { text: '⚙️ 更新设置', cls: 'nw-u-marginbottom-12px' });
+        section.createEl('h4', { text: '⚙️ 更新设置', cls: 'nw-st-h4--spaced' });
 
         new Setting(section)
             .setName('自动检查更新')
@@ -870,32 +848,32 @@ export class AboutSection extends SettingsSection {
                 });
             });
 
-        section.createEl('h4', { text: '📌 关于插件', cls: 'nw-u-m-24px-0-12px-0' });
+        section.createEl('h4', { text: '📌 关于插件', cls: 'nw-st-h4--gap' });
 
         const aboutCard = section.createDiv({
-            cls: 'nw-u-p-16px nw-u-bg-background-secondary nw-u-brd-8px nw-u-fs-13px nw-u-lh-1-7 nw-u-c-text-muted'
+            cls: 'nw-st-about-card'
         });
 
         aboutCard.createEl('p', {
             text: '全流程 AI 长篇小说创作系统 — 协同写作工作台 + 多模型智能引擎 + 数据安全架构。',
-            cls: 'nw-u-m-0-0-12px-0'
+            cls: 'nw-st-about-p'
         });
 
-        aboutCard.createEl('div', { text: '作者：南柯一梦', cls: 'nw-u-marginbottom-4px' });
-        aboutCard.createEl('div', { text: '许可证：MIT', cls: 'nw-u-marginbottom-4px' });
+        aboutCard.createEl('div', { text: '作者：南柯一梦', cls: 'nw-st-about-line' });
+        aboutCard.createEl('div', { text: '许可证：MIT', cls: 'nw-st-about-line' });
     }
 
     private renderInfoItem(container: HTMLElement, label: string, value: string): void {
         const item = container.createDiv({
-            cls: 'nw-u-p-10px-12px nw-u-bg-background-primary nw-u-brd-6px'
+            cls: 'nw-st-info-item'
         });
         item.createEl('div', {
             text: label,
-            cls: 'nw-u-fs-11px nw-u-c-text-muted nw-u-marginbottom-2px'
+            cls: 'nw-st-info-label'
         });
         item.createEl('div', {
             text: value,
-            cls: 'nw-u-fs-14px nw-u-fwt-600 nw-u-c-text-normal'
+            cls: 'nw-st-info-value'
         });
     }
 }
@@ -918,7 +896,7 @@ export class RecognitionSection extends SettingsSection {
             cls: 'setting-item-description'
         });
 
-        section.createEl('h4', { text: '启用的识别层', cls: 'nw-u-margintop-20px nw-u-marginbottom-8px' });
+        section.createEl('h4', { text: '启用的识别层', cls: 'nw-st-h4--section-first' });
 
         const layers = this.plugin.settings.characterRecognitionLayers || ['rule', 'vector'];
 
@@ -990,7 +968,7 @@ export class RecognitionSection extends SettingsSection {
             enableVerbFilter: true,
         };
 
-        section.createEl('h4', { text: '📋 规则层配置', cls: 'nw-u-margintop-24px nw-u-marginbottom-8px' });
+        section.createEl('h4', { text: '📋 规则层配置', cls: 'nw-st-h4--section' });
 
         new Setting(section)
             .setName('最小提及次数')
@@ -1054,7 +1032,7 @@ export class RecognitionSection extends SettingsSection {
             mergeSimilarityThreshold: 0.85,
         };
 
-        section.createEl('h4', { text: '🔗 向量层配置', cls: 'nw-u-margintop-24px nw-u-marginbottom-8px' });
+        section.createEl('h4', { text: '🔗 向量层配置', cls: 'nw-st-h4--section' });
 
         new Setting(section)
             .setName('启用向量层')
@@ -1111,7 +1089,7 @@ export class RecognitionSection extends SettingsSection {
             minConfidence: 0.3,
         };
 
-        section.createEl('h4', { text: '🤖 LLM 层配置', cls: 'nw-u-margintop-24px nw-u-marginbottom-8px' });
+        section.createEl('h4', { text: '🤖 LLM 层配置', cls: 'nw-st-h4--section' });
 
         new Setting(section)
             .setName('启用 LLM 层')

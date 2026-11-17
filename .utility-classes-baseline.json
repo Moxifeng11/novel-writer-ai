@@ -1,6 +1,6 @@
 {
-  "definitions": 185,
-  "usage": 988,
+  "definitions": 162,
+  "usage": 828,
   "updatedAt": "2026-11-17",
-  "note": ""
+  "note": "Slice R（general-sections.ts → nw-st-*）删除 23 个零引用工具类：定义 185→162、引用 988→828。"
 }

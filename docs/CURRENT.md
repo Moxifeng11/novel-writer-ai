@@ -49,7 +49,7 @@ Obsidian 插件「小说工坊 AI」：长篇 / 短篇 / 剧本三域创作 + �
 | `docs/planning/2026-11-16-next-focus.md` | **下一步优先级**（P0 质量闭环入口 / P1 可发现性 / P2 技术债） |
 | `docs/modules/INDEX.md` | 模块清单与推进顺序（一次只推进一个模块） |
 | `docs/modules/<模块>.md` | 单模块现状、验收记录、待办 |
-| `docs/design/2026-11-16-visual-refactor-standard.md` | 视觉重构标准（切片 A–Q） |
+| `docs/design/2026-11-16-visual-refactor-standard.md` | 视觉重构标准（切片 A–R） |
 
 ## 5. 文档怎么读（重要）
 
@@ -75,4 +75,4 @@ Obsidian 插件「小说工坊 AI」：长篇 / 短篇 / 剧本三域创作 + �
 - `rewrite-chapters` spec / `E2E_REWRITE`：随「九霄逆脉行」下线，无脚本消费。
 - `src/` 目录、`ui/views/kb-panel.ts` 等旧文件名：不存在。
 - `nw-u-*` 工具类：按切片退场改语义类，**新代码不要新增**。存量口径、剩余存量大户与清理记录见
-  `docs/design/2026-11-16-visual-refactor-standard.md` §5.1（定义 185 个、零引用 0、TS 引用 988 处）。
+  `docs/design/2026-11-16-visual-refactor-standard.md` §5.1（定义 162 个、零引用 0、TS 引用 828 处）。
