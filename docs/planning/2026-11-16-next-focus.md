@@ -1350,3 +1350,24 @@ PNG 差异只剩三簇——标题栏按钮簇（y=28–58）、页脚按钮簇�
 **文档**：新增 `docs/modules/refill-modal.md`（8 节，RF-01..RF-05 done）；`docs/modules/INDEX.md` 插「补全拆解 / 重新提取指纹弹窗」行（在「规划 / 大纲」前）；视觉标准 §5 加 `nw-rf-*` 行、§5.1 重算（75 / 270 / 781932）、清理记录补 Slice W 删 9、特异性段补三条（`transition:all` 禁令、变体不能共用条件样式、首轮像素噪声复现）；存量大户表移除 97 并重排为 1 行；`docs/CURRENT.md` §4 改切片 A–W、§6 口径改 75 / 270。
 
 **下一轮候选**：`ui/views/kb-stats-panel.ts`（81）、`ui/settings/deconstruction-section.ts`（47）。
+
+### 2026-11-17 第四十九轮：Slice X 质量统计面板语义化（nw-ks-*）
+
+**范围**：`ui/views/kb-stats-panel.ts`（155 行 / LF，81 处 `nw-u-*` + 4 处内联 `style`）+ 纯逻辑层 `ui/views/kb-panels-logic.ts`（新增两个枚举型别）。
+
+**改动**
+- 根死类 `nw-kb-stats-tab`（CSS 零定义）→ `nw-ks-panel`；全部类换 `nw-ks-*`，规则**追加**到 `styles-src/27-knowledge-base.css` 末尾 192 行（文件 3324 行 / 71965 字节），不新建 41 号样式文件。
+- 概览卡：`KbStatsOverviewCard.color: string` → `tone: KbStatsTone`（`'accent' | 'success' | 'info' | 'warning'`），四档配色回 CSS（accent 用 `var(--interactive-accent)`，其余 #2ecc71 / #3b82f6 / #f59e0b）。
+- 图例：新增 `KbStatusKey` / `KbStatusLegendItem`，`buildStatusLegendData` 返回 `{label, value, color, status}`；圆点改 `nw-ks-legend-dot--{status}`。**`KB_STATUS_STYLES` 的 `color` 保留**（环图 SVG 由逻辑层直接消费）。
+- 进度条：`fill.style.width` → `style.setProperty('--nw-ks-pct', …)`，CSS `width: var(--nw-ks-pct, 0%)`（与 `--nw-bi-pct` / `--nw-cp-pct` / `--nw-rf-pct` 同套路）。
+- **刻意不补**旧内联里非法的 `&:last-child{border-bottom:none}`——它在 style 属性里被整条丢弃，图例每行原本都有下边框。
+
+**测试**：`tests/unit/ui/kb-stats-panel.test.ts` 三处选择器改 `nw-ks-panel` / `nw-ks-overview` / `nw-ks-legend-value`；`tests/e2e/obsidian-plugin.spec.ts:1505` `.nw-kb-stats-tab` → `.nw-ks-panel`。`npx vitest run kb-stats-panel kb-panels-logic` → 2 files / 29 通过。
+
+**像素验收**：`D:\nw-dev-vault\_visual-x\{before,after}`，宿主 720 宽（不设高，让 `.nw-ks-panel{height:100%}` 解析成 auto 撑开）：`01-empty` 720×720(51) / `02-full` 720×1421(182) / `03-no-completed` 720×1009(100) / `04-genre-unknown` 720×1421(158) / `05-many-genres` 720×1421(181)。PNG **5/5 = 0 px**；probes struct/style/rect 全 0（仅 cls 改名）。before 来自 `6c5cc8c1` 的 worktree（末尾补 `// TEMP-SNAP-HOOK` → `window.__nwKbStats`）。
+
+**门禁**：`tsc --noEmit` 0 错；`build` 46 个样式源 / styles.css 31493 行；`check:inline-styles` 530→**526**；`check:utility` 75/270→**55/189**（删 20 个零引用类，零引用 0）；`check:css` bytes **784775** / uniqueClasses **4263** / hex **192** / rgbHsl 223 / 深度 4；`check:bundle` main.js **5625961** / styles.css **784775**；`preflight` 见交接快照。
+
+**文档**：新增 `docs/modules/kb-stats.md`（8 节，KS-01..KS-05 done）；`docs/modules/INDEX.md` 插「质量统计面板」行（在「规划 / 大纲」前）；视觉标准 §5 加 `nw-ks-*` 行、§5.1 改 55 / 189 / 784775、清理记录补 Slice X 删 20、存量大户只剩 `ui/settings/deconstruction-section.ts` 47；`docs/CURRENT.md` §4 改切片 A–X、§6 口径 55 / 189。
+
+**下一轮候选**：`ui/settings/deconstruction-section.ts`（47 处，Slice Y）——做完 `nw-u-*` 存量清零，此后长尾按「碰哪改哪」，`check:utility` 的 C 项即为新增禁令门禁。

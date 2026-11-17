@@ -48,107 +48,83 @@ export interface KbStatsPanelHost {
 export function buildKbStatsPanel(rightContentEl: HTMLElement, host: KbStatsPanelHost): void {
     // 同 renderTasksTab：任务完成回调会直接调用它，必须先清空再重建
     rightContentEl.empty();
-    const content = rightContentEl.createDiv({
-        cls: "nw-kb-stats-tab nw-u-p-16px nw-u-ovy-auto nw-u-h-100",
-        attr: {}
-    });
+    const content = rightContentEl.createDiv({ cls: 'nw-ks-panel' });
 
-    content.createEl('h2', { text: '质量统计', cls: 'nw-u-m-0-0-20px-0 nw-u-fs-18px' });
+    content.createEl('h2', { text: '质量统计', cls: 'nw-ks-title' });
 
     const completedBooks = selectCompletedBooks(host.allBooks);
 
-    const overviewGrid = content.createDiv({
-        cls: 'nw-u-d-grid nw-u-gtc-repeat-4-1fr nw-u-gap-12px nw-u-marginbottom-24px'
-    });
+    const overviewGrid = content.createDiv({ cls: 'nw-ks-overview' });
     const overviewItems = buildStatsOverviewCards(host.allBooks);
     overviewItems.forEach(item => {
-        const card = overviewGrid.createDiv({
-            cls: 'nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-8px nw-u-ta-center'
+        const card = overviewGrid.createDiv({ cls: 'nw-ks-overview-card' });
+        card.createDiv({ text: item.icon, cls: 'nw-ks-overview-icon' });
+        card.createDiv({
+            text: item.value.toString(),
+            cls: `nw-ks-overview-value nw-ks-overview-value--${item.tone}`
         });
-        card.createDiv({ text: item.icon, cls: 'nw-u-fs-28px nw-u-marginbottom-8px' });
-        card.createDiv({ text: item.value.toString(), attr: { style: `font-size:24px;font-weight:700;color:${item.color};margin-bottom:4px;` } });
         card.createDiv({ text: item.label, cls: 'nw-text-sm-muted' });
     });
 
     if (completedBooks.length > 0) {
-        const qualitySection = content.createDiv({
-            cls: 'nw-u-marginbottom-24px nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-8px'
-        });
-        qualitySection.createEl('h3', { text: '各维度质量分布', cls: 'nw-u-m-0-0-16px-0 nw-u-fs-15px' });
+        const qualitySection = content.createDiv({ cls: 'nw-ks-section' });
+        qualitySection.createEl('h3', { text: '各维度质量分布', cls: 'nw-ks-section-title' });
 
         const dimensions = KB_QUALITY_DIMENSIONS;
 
-        const chartWrap = qualitySection.createDiv({
-            cls: 'nw-u-d-flex nw-u-gap-24px nw-u-fwr-wrap nw-u-ai-center nw-u-jc-center'
-        });
+        const chartWrap = qualitySection.createDiv({ cls: 'nw-ks-chart-row' });
 
         const dimensionAverages = computeDimensionAverages(completedBooks);
         const radarData = dimensionAverages.map(d => ({ label: d.label, value: d.avg }));
-        const radarCard = chartWrap.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-280px nw-u-d-flex nw-u-jc-center' });
+        const radarCard = chartWrap.createDiv({ cls: 'nw-ks-chart-card nw-ks-chart-card--radar' });
         host.renderChart(radarCard, radarChart(radarData, { size: 280, title: '平均质量雷达图' }));
 
-        const avgCard = chartWrap.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-200px' });
+        const avgCard = chartWrap.createDiv({ cls: 'nw-ks-chart-card' });
         dimensionAverages.forEach(d => {
             const avg = d.avg;
-            const item = avgCard.createDiv({ cls: 'nw-u-marginbottom-14px' });
-            const top = item.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-marginbottom-6px' });
-            top.createSpan({ text: d.label, cls: 'nw-u-fs-13px nw-u-c-text-normal' });
-            top.createSpan({ text: avg.toFixed(1) + '分', cls: 'nw-u-fs-13px nw-u-c-text-muted nw-u-fwt-500' });
-            const bar = item.createDiv({
-                cls: 'nw-u-h-8px nw-u-bg-background-primary nw-u-brd-4px nw-u-ov-hidden'
-            });
-            bar.createDiv({
-                attr: { style: `height:100%;width:${avg}%;background:var(--interactive-accent);border-radius:4px;` }
-            });
+            const item = avgCard.createDiv({ cls: 'nw-ks-avg-item' });
+            const top = item.createDiv({ cls: 'nw-ks-avg-top' });
+            top.createSpan({ text: d.label, cls: 'nw-ks-avg-label' });
+            top.createSpan({ text: avg.toFixed(1) + '分', cls: 'nw-ks-avg-score' });
+            const bar = item.createDiv({ cls: 'nw-ks-bar' });
+            const fill = bar.createDiv({ cls: 'nw-ks-bar-fill' });
+            fill.style.setProperty('--nw-ks-pct', `${avg}%`);
         });
     }
 
-    const genreSection = content.createDiv({
-        cls: 'nw-u-marginbottom-24px nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-8px'
-    });
-    genreSection.createEl('h3', { text: '题材分布', cls: 'nw-u-m-0-0-16px-0 nw-u-fs-15px' });
+    const genreSection = content.createDiv({ cls: 'nw-ks-section' });
+    genreSection.createEl('h3', { text: '题材分布', cls: 'nw-ks-section-title' });
 
     const genreData = buildGenreBarData(host.allBooks, id => host.getGenreName(id));
 
     if (genreData.length > 0) {
-        const chartCard = genreSection.createDiv({ cls: 'nw-u-d-flex nw-u-jc-center' });
+        const chartCard = genreSection.createDiv({ cls: 'nw-ks-bar-chart' });
         host.renderChart(chartCard, barChart(genreData, { width: 500, height: 300, title: 'Top 10 题材分布' }));
     } else {
-        genreSection.createDiv({
-            text: '暂无题材数据',
-            cls: 'nw-u-ta-center nw-u-p-40px nw-u-c-text-muted'
-        });
+        genreSection.createDiv({ text: '暂无题材数据', cls: 'nw-ks-empty' });
     }
 
-    const statusSection = content.createDiv({
-        cls: 'nw-u-marginbottom-24px nw-u-p-20px nw-u-bg-background-secondary nw-u-brd-8px'
-    });
-    statusSection.createEl('h3', { text: '拆解状态分布', cls: 'nw-u-m-0-0-16px-0 nw-u-fs-15px' });
+    const statusSection = content.createDiv({ cls: 'nw-ks-section' });
+    statusSection.createEl('h3', { text: '拆解状态分布', cls: 'nw-ks-section-title' });
 
     const statusCounts = computeStatusCounts(host.allBooks);
 
     const donutData = buildStatusDonutData(statusCounts);
 
-    const statusWrap = statusSection.createDiv({
-        cls: 'nw-u-d-flex nw-u-gap-24px nw-u-fwr-wrap nw-u-ai-center nw-u-jc-center'
-    });
+    const statusWrap = statusSection.createDiv({ cls: 'nw-ks-chart-row' });
 
     if (donutData.length > 0) {
-        const donutCard = statusWrap.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-200px nw-u-d-flex nw-u-jc-center' });
+        const donutCard = statusWrap.createDiv({ cls: 'nw-ks-chart-card nw-ks-chart-card--centered' });
         host.renderChart(donutCard, donutChart(donutData, { size: 220, title: '状态分布' }));
     }
 
-    const statusList = statusWrap.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-200px' });
+    const statusList = statusWrap.createDiv({ cls: 'nw-ks-chart-card' });
     const statusItems = buildStatusLegendData(statusCounts);
     statusItems.forEach(item => {
-        const row = statusList.createDiv({
-            attr: { style: 'display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--background-modifier-border);&:last-child{border-bottom:none;}' }
-        });
-        const left = row.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px' });
-        left.createSpan({
-            attr: { style: `width:10px;height:10px;border-radius:50%;background:${item.color};` }
-        });
-        left.createSpan({ text: item.label, cls: 'nw-u-fs-13px nw-u-c-text-normal' });
-        row.createSpan({ text: item.value.toString(), cls: 'nw-u-fs-13px nw-u-fwt-600 nw-u-c-text-normal' });
+        const row = statusList.createDiv({ cls: 'nw-ks-legend-row' });
+        const left = row.createDiv({ cls: 'nw-ks-legend-left' });
+        left.createSpan({ cls: `nw-ks-legend-dot nw-ks-legend-dot--${item.status}` });
+        left.createSpan({ text: item.label, cls: 'nw-ks-legend-label' });
+        row.createSpan({ text: item.value.toString(), cls: 'nw-ks-legend-value' });
     });
 }

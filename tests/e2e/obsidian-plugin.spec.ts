@@ -1502,7 +1502,7 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
             view.renderRightPanel();
             view.renderStatsTab();
             view.renderStatsTab();
-            const statsBlocks = document.querySelectorAll('.nw-kb-stats-tab').length;
+            const statsBlocks = document.querySelectorAll('.nw-ks-panel').length;
 
             return { taskBlocks, statsBlocks };
         });

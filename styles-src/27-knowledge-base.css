@@ -3129,3 +3129,195 @@ input[type='text'].nw-kb-detail-tag-input {
     border: 1px solid var(--background-modifier-border);
     border-radius: 4px;
 }
+/* ========== 质量统计页（Slice X）：nw-ks-* ========== */
+/* 原实现混用 81 处 nw-u-* 工具类 + 4 处内联样式，这里按被删工具类的实际声明逐条复刻。
+   注意两处刻意「不照抄」：
+   1) 图例行旧内联里的 &:last-child{border-bottom:none;} 写在 style 属性里属非法声明，被浏览器丢弃，
+      因此这里不加 :last-child 规则，保持每行都有下边框；
+   2) 配色从裸色值改为档位/状态修饰类，环图仍用原色表，色值不变。 */
+
+.nw-ks-panel {
+    padding: 16px;
+    overflow-y: auto;
+    height: 100%;
+}
+
+.nw-ks-title {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+}
+
+.nw-ks-overview {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.nw-ks-overview-card {
+    padding: 20px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.nw-ks-overview-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.nw-ks-overview-value {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.nw-ks-overview-value--accent {
+    color: var(--interactive-accent);
+}
+
+.nw-ks-overview-value--success {
+    color: #2ecc71;
+}
+
+.nw-ks-overview-value--info {
+    color: #3b82f6;
+}
+
+.nw-ks-overview-value--warning {
+    color: #f59e0b;
+}
+
+.nw-ks-section {
+    padding: 20px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    margin-bottom: 24px;
+}
+
+.nw-ks-section-title {
+    margin: 0 0 16px 0;
+    font-size: 15px;
+}
+
+.nw-ks-chart-row {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+}
+
+.nw-ks-chart-card {
+    flex: 1;
+    min-width: 200px;
+}
+
+.nw-ks-chart-card--radar {
+    min-width: 280px;
+    display: flex;
+    justify-content: center;
+}
+
+.nw-ks-chart-card--centered {
+    display: flex;
+    justify-content: center;
+}
+
+.nw-ks-bar-chart {
+    display: flex;
+    justify-content: center;
+}
+
+.nw-ks-avg-item {
+    margin-bottom: 14px;
+}
+
+.nw-ks-avg-top {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.nw-ks-avg-label {
+    font-size: 13px;
+    color: var(--text-normal);
+}
+
+.nw-ks-avg-score {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.nw-ks-bar {
+    height: 8px;
+    background: var(--background-primary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+/* 宽度由 JS 写 --nw-ks-pct 变量提供，避免逐条内联 style */
+.nw-ks-bar-fill {
+    height: 100%;
+    width: var(--nw-ks-pct, 0%);
+    background: var(--interactive-accent);
+    border-radius: 4px;
+}
+
+.nw-ks-empty {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+}
+
+.nw-ks-legend-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-ks-legend-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nw-ks-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.nw-ks-legend-dot--pending {
+    background: #f59e0b;
+}
+
+.nw-ks-legend-dot--processing {
+    background: #3b82f6;
+}
+
+.nw-ks-legend-dot--completed {
+    background: #2ecc71;
+}
+
+.nw-ks-legend-dot--failed {
+    background: #e74c3c;
+}
+
+.nw-ks-legend-dot--interrupted {
+    background: #f97316;
+}
+
+.nw-ks-legend-label {
+    font-size: 13px;
+    color: var(--text-normal);
+}
+
+.nw-ks-legend-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-normal);
+}

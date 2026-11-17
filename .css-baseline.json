@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-17T17:15:19.831Z",
-  "note": "棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因",
-  "bytes": 781932,
+  "generatedAt": "2026-11-17T17:34:17.227Z",
+  "note": "Slice X：styles.css 781932→784775（+2843B，新增 nw-ks-* 段；同批删 20 个零引用工具类抵扣部分）；uniqueClasses 4249→4263（新增 nw-ks-* 减去删掉的 20 个 nw-u-* 与死类 nw-kb-stats-tab）；hardcodedHex 184→192（概览 4 档与图例 5 态色由内联迁入 CSS）",
+  "bytes": 784775,
   "important": 24,
-  "hardcodedHex": 184,
+  "hardcodedHex": 192,
   "rgbHsl": 223,
-  "uniqueClasses": 4249,
+  "uniqueClasses": 4263,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

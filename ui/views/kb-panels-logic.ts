@@ -22,6 +22,14 @@ export interface KbDonutItem extends KbChartItem {
     color: string;
 }
 
+/** 拆解状态取值（与 `KB_STATUS_STYLES` 的 status 一致） */
+export type KbStatusKey = 'pending' | 'processing' | 'completed' | 'failed' | 'interrupted';
+
+/** 图例数据项（带颜色与稳定状态键，视图据此拼 `nw-ks-legend-dot--<status>`） */
+export interface KbStatusLegendItem extends KbDonutItem {
+    status: KbStatusKey;
+}
+
 /** 拆解状态到操作按钮的稳定标识（视图据此绑定具体 handler） */
 export type KbDetailActionKey =
     | 'start-deconstruction'
@@ -47,12 +55,16 @@ export interface KbDetailActionButton {
     disabled: boolean;
 }
 
-/** 统计概览卡（图标 + 数值 + 文案 + 颜色） */
+/** 统计概览卡的配色档位（对应 `nw-ks-overview-value--<tone>` 修饰类） */
+export type KbStatsTone = 'accent' | 'success' | 'info' | 'warning';
+
+/** 统计概览卡（图标 + 数值 + 文案 + 配色档位） */
 export interface KbStatsOverviewCard {
     label: string;
     value: string;
     icon: string;
-    color: string;
+    /** 配色档位；视图据此拼 `nw-ks-overview-value--<tone>`，不再携带裸色值 */
+    tone: KbStatsTone;
 }
 
 /** 单个质量维度的均分 */
@@ -73,7 +85,7 @@ export const KB_QUALITY_DIMENSIONS: Array<{ key: Exclude<keyof QualityScores, 'o
 ];
 
 /** 拆解状态在环图/图例中的固定配色与文案（顺序固定） */
-export const KB_STATUS_STYLES: Array<{ status: 'pending' | 'processing' | 'completed' | 'failed' | 'interrupted'; label: string; color: string }> = [
+export const KB_STATUS_STYLES: Array<{ status: KbStatusKey; label: string; color: string }> = [
     { status: 'pending', label: '待拆解', color: '#f59e0b' },
     { status: 'processing', label: '拆解中', color: '#3b82f6' },
     { status: 'completed', label: '已完成', color: '#2ecc71' },
@@ -240,10 +252,10 @@ export function buildStatsOverviewCards(books: BookBasicInfo[] | undefined): KbS
     const completed = selectCompletedBooks(all);
     const processing = all.filter(book => book.breakdownStatus === 'processing').length;
     return [
-        { label: '书籍总数', value: String(all.length), icon: '📚', color: 'var(--interactive-accent)' },
-        { label: '已拆解', value: String(completed.length), icon: '✅', color: '#2ecc71' },
-        { label: '拆解中', value: String(processing), icon: '⏳', color: '#3b82f6' },
-        { label: '平均质量分', value: computeAverageQuality(completed), icon: '⭐', color: '#f59e0b' },
+        { label: '书籍总数', value: String(all.length), icon: '📚', tone: 'accent' },
+        { label: '已拆解', value: String(completed.length), icon: '✅', tone: 'success' },
+        { label: '拆解中', value: String(processing), icon: '⏳', tone: 'info' },
+        { label: '平均质量分', value: computeAverageQuality(completed), icon: '⭐', tone: 'warning' },
     ];
 }
 
@@ -335,7 +347,12 @@ export function buildStatusDonutData(
  * @returns 图例数据项（顺序固定）
  */
 export function buildStatusLegendData(
-    counts: Record<'pending' | 'processing' | 'completed' | 'failed' | 'interrupted', number>,
-): KbDonutItem[] {
-    return KB_STATUS_STYLES.map(style => ({ label: style.label, value: counts[style.status], color: style.color }));
+    counts: Record<KbStatusKey, number>,
+): KbStatusLegendItem[] {
+    return KB_STATUS_STYLES.map(style => ({
+        label: style.label,
+        value: counts[style.status],
+        color: style.color,
+        status: style.status,
+    }));
 }

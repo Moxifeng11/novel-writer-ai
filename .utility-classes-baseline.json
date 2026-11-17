@@ -1,6 +1,6 @@
 {
-  "definitions": 75,
-  "usage": 270,
+  "definitions": 55,
+  "usage": 189,
   "updatedAt": "2026-11-17",
-  "note": "Slice W：定义 84→75、使用 367→270（refill-modal 97 处工具类清零，删 9 个零引用类：nw-u-bb-1px-solid-background-m / nw-u-bg-background-secondary-a / nw-u-fs-16px / nw-u-gtc-1fr-1fr / nw-u-marginbottom-20px / nw-u-margintop-4px / nw-u-p-12px / nw-u-p-6px-0 / nw-u-p-8px-0）"
+  "note": "Slice X 删除 20 个零引用工具类（定义 75→55，使用 270→189）"
 }

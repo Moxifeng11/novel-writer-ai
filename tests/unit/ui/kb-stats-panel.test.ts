@@ -55,7 +55,7 @@ describe('buildKbStatsPanel 结构', () => {
         buildKbStatsPanel(root as unknown as HTMLElement, host as never);
 
         expect(root.allText()).not.toContain('旧内容');
-        expect(root.findAll('nw-kb-stats-tab')).toHaveLength(1);
+        expect(root.findAll('nw-ks-panel')).toHaveLength(1);
         expect(root.allText()).toContain('质量统计');
     });
 
@@ -65,7 +65,7 @@ describe('buildKbStatsPanel 结构', () => {
 
         buildKbStatsPanel(root as unknown as HTMLElement, host as never);
 
-        const grid = root.findAll('nw-u-gtc-repeat-4-1fr')[0];
+        const grid = root.findAll('nw-ks-overview')[0];
         expect(grid.children).toHaveLength(4);
         expect(grid.children[0].children).toHaveLength(3); // icon / value / label
     });
@@ -128,7 +128,7 @@ describe('buildKbStatsPanel 空数据分支', () => {
 
         expect(root.allText()).toContain('拆解状态分布');
         // 两条图例（完成 / 失败），数值分别为 2 与 1
-        const legend = root.findAll('nw-u-fwt-600').map(el => el.textContent);
+        const legend = root.findAll('nw-ks-legend-value').map(el => el.textContent);
         expect(legend).toContain('2');
         expect(legend).toContain('1');
     });
