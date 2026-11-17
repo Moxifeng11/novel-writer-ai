@@ -676,15 +676,35 @@ export class CommandUiExecutor implements CommandUiPort {
     private outlineExpand(editor?: Editor): void {
         const activeEditor = this.resolveEditor(editor);
         if (!activeEditor) {
-            new Notice('请先打开 Markdown 编辑器并选中需要扩写的段落');
+            new Notice('请先打开 Markdown 编辑器（选中段落可改写该段，不选则按整章扩写）');
             return;
         }
         const selectedText = activeEditor.getSelection();
         const allText = activeEditor.getValue();
         const sourceText = selectedText || allText;
+        const hasSelection = selectedText.length > 0;
         const modal = new OutlineExpandModal(this.deps.app, this.deps.plugin, sourceText, {
-            mode: selectedText ? 'paragraph' : 'chapter',
+            mode: hasSelection ? 'paragraph' : 'chapter',
             targetWords: 3000,
+            // 写回语义：有选区 → 替换选区；整章扩写 → 整篇替换（一次可撤销的编辑事务）。
+            // 选区在弹窗打开后被改动时退化为光标插入，避免把结果写到用户没看的地方。
+            onApply: (text: string) => {
+                if (hasSelection) {
+                    if (activeEditor.getSelection() === selectedText) {
+                        activeEditor.replaceSelection(text);
+                    } else {
+                        activeEditor.replaceRange(text, activeEditor.getCursor());
+                    }
+                    return;
+                }
+                const lastLine = activeEditor.lastLine();
+                activeEditor.replaceRange(
+                    text,
+                    { line: 0, ch: 0 },
+                    { line: lastLine, ch: activeEditor.getLine(lastLine).length },
+                );
+                activeEditor.setCursor({ line: 0, ch: 0 });
+            },
         });
         modal.open();
     }

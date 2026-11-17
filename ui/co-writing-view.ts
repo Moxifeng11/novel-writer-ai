@@ -2220,6 +2220,7 @@ export class CoWritingView extends ItemView {
     const selectedText = this.rightEditor.value.slice(start, end);
     const allText = this.rightEditor.value;
     const sourceText = selectedText || allText;
+    const hasSelection = end > start;
 
     const modal = new OutlineExpandModal(this.app, this.plugin, sourceText, {
       mode: selectedText ? 'paragraph' : 'chapter',
@@ -2229,6 +2230,31 @@ export class CoWritingView extends ItemView {
         project: this.project,
         volumeNum: parseInt(this.volume.replace(/[^\d]/g, '')) || 1,
         chapterNum: this.chapterNum,
+      },
+      // 写回语义与命令面板一致：有选区 → 替换该区间；整章扩写 → 整篇替换。
+      // 必须走 applyProgrammaticEdit（唯一程序化改写入口），否则快照/高亮/光标不刷新，
+      // 且自动保存只挂在 input 上会导致切章丢字。
+      onApply: (text: string) => {
+        const value = this.rightEditor.value;
+        if (!hasSelection) {
+          this.applyProgrammaticEdit(text, text.length, 'outline-expand');
+          return;
+        }
+        // 选区在弹窗打开后被改动时退化为光标插入，避免把结果写到用户没看的地方
+        if (value.slice(start, end) !== selectedText) {
+          const caret = this.rightEditor.selectionStart ?? value.length;
+          this.applyProgrammaticEdit(
+            `${value.slice(0, caret)}${text}${value.slice(caret)}`,
+            caret + text.length,
+            'outline-expand',
+          );
+          return;
+        }
+        this.applyProgrammaticEdit(
+          `${value.slice(0, start)}${text}${value.slice(end)}`,
+          start + text.length,
+          'outline-expand',
+        );
       },
     });
     modal.open();

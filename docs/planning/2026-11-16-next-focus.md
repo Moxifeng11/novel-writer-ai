@@ -1396,3 +1396,43 @@ PNG 差异只剩三簇——标题栏按钮簇（y=28–58）、页脚按钮簇�
 **文档**：新增 `docs/modules/settings-deconstruction.md`（8 节，SY-01..SY-05 全 done）；`docs/modules/INDEX.md` 插「拆解引擎设置分区」行（在「规划 / 大纲」前）；视觉标准 §5 加 `nw-st-dc-*` 行、§5.1 改 46 / 142 / 786456、清理记录补 Slice Y 删 9、新增 Slice Y 特异性段、存量大户表改为「已无存量大户」；`docs/CURRENT.md` §4「切片 A–Y」、§6 口径 46 / 142。
 
 **下一轮**：`nw-u-*` 存量清零，长尾转「碰哪改哪」；剩余工作重心转向内联样式 525 处（`ui/svg-charts.ts` 64、`ui/knowledge-monitor-modal.ts` 40、`ui/fingerprint-blend-modal.ts` 36 …）与硬编码色值 192 处。
+
+### 2026-11-18 第五十一轮：功能缺口 ①「大纲扩写应用写回正文」（缺陷修复）
+
+**背景**：视觉重构 A–Y 收尾后用户（m10190）要求「转向功能实现」；我方盘点出 7 项已核实缺口
+（`docs/planning/2026-11-18-feature-gaps.md`），用户选定「按顺序 1→2 连做」。本轮是第 1 项，
+也是唯一一处「看起来成功、实际丢结果」的欺骗性交互：`applyResult()` 只弹提示就关窗，
+两个入口谁也没取 `getExpandedText()` 写回。
+
+**改动**
+- `ui/outline-expand-modal.ts`（990 行，LF）：构造函数新增 `onApply?: (text: string) => void | Promise<void>`；
+  底部按钮文案 `this.onApply ? '✅ 写入正文' : '📋 复制到剪贴板'`；`applyResult()` 改 async——
+  有回调 `await onApply(expandedText.trim())`，成功发「已写入正文（Ctrl+Z 可撤销）」并关窗，
+  抛错发 `showErrorNotice('写回正文失败', { detail })` 且**保持弹窗打开**（AI 长文不能丢）；
+  无回调降级 `navigator.clipboard.writeText`，失败同样不关窗。
+- `ui/command-ui-executor.ts:676-710`：有选区且 `getSelection() === selectedText` → `replaceSelection`；
+  选区已被改动 → 光标处 `replaceRange`；无选区（整章）→ `replaceRange` 覆盖 0..末行并 `setCursor({line:0,ch:0})`。
+  顺带把「请先打开 Markdown 编辑器并选中需要扩写的段落」改成「（选中段落可改写该段，不选则按整章扩写）」。
+- `ui/co-writing-view.ts:2217-2261`：`onApply` 一律走 `applyProgrammaticEdit(...)`（唯一程序化改写入口，
+  刷新快照/高亮/光标/dirty）；直接改 `.value` 不会被 `input` 驱动的自动保存捕获，切章会丢字。
+- 选区失效退化策略沿用先例 `ui/expand-text-modal.ts:207-216`。
+
+**测试**：新增 `tests/unit/ui/outline-expand-apply-writeback.test.ts`（6 条，全通过）——有回调→收到 trim 文本并关窗；
+同步/异步抛错→不关窗；无回调→写剪贴板并关窗；剪贴板不可用→不关窗；空结果→不回调不关门。
+私有字段在单测里必须 `(modal as unknown as { expandedText: string }).expandedText = …`，否则 tsc TS2352。
+
+**实机验收**：`D:\nw-tmp\verify-writeback.mjs`（Playwright `connectOverCDP` + 临时 user-data-dir +
+`D:/nw-dev-vault`），5 用例全 PASS：命令面板有选区→替换选区；命令面板无选区→整篇替换；
+协同工作台整段选中/部分选中→替换区间且保留尾部上下文；协同无选区→整篇替换。
+**坑**：弹窗右侧文本域是 `.nw-oe-right textarea`，只改 `value` 不派发 `input` 事件不会写回 `expandedText`；
+命令面板要调 `plugin.commandUiPort.outlineExpand(editor)`（实例名是 `commandUiPort`，`main.ts:1020`）。
+
+**门禁**：`tsc --noEmit` 0 错；`npm run build` 47 源 / styles.css 31547 行 / main.js 5,626,504B；
+`check:inline-styles` 525（静态 453 / 动态 72，不变）、`check:utility` 46/142（不变）、`check:css` 786456（不变）、
+`check:bundle` main.js 5625149→**5626504**（+1355，新增写回分支与回调）已 `--update-baseline --note`，styles.css 不变；`npm run preflight` EXIT=0。
+
+**文档**：`docs/modules/outline-expand-editor.md` 增 §5.1（5 用例表 + 驱动要点）、OE-05、4 条关键决策、
+测试清单新增一行、backlog 删掉「从不落盘」条目并改为两条新待办；`docs/modules/INDEX.md` 该行状态与备注更新；
+`docs/planning/2026-11-18-feature-gaps.md` ①标 done 并记录交付；`docs/CURRENT.md` §4 增缺口清单行。
+
+**下一轮**：缺口 ②「全屏写作视图接实时体检」（`ui/full-writer/` 目前对 `live-analysis` 零引用）。

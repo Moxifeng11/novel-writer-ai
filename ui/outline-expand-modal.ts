@@ -81,6 +81,8 @@ export class OutlineExpandModal extends Modal {
     private progressEl!: HTMLElement;
     private chapterContext: OutlineExpandChapterContext | null = null;
     private bodyFormat: BodyFormatContract | null = null;
+    /** 写回回调；为 null 表示当前入口没有写回目标（退化为复制到剪贴板） */
+    private onApply: ((text: string) => void | Promise<void>) | null = null;
 
     constructor(
         app: App,
@@ -90,6 +92,14 @@ export class OutlineExpandModal extends Modal {
             mode?: ExpandMode;
             targetWords?: number;
             chapterContext?: OutlineExpandChapterContext;
+            /**
+             * 应用结果的写回目标（缺陷修复：此前「应用」只弹提示、不落盘）。
+             *
+             * 传了就由调用方负责把扩写结果写进自己的编辑器/正文，
+             * 弹窗只负责「成功才关窗、失败留窗重试」；不传则退化为复制到剪贴板，
+             * 绝不出现「提示已应用、实际什么都没变」。
+             */
+            onApply?: (text: string) => void | Promise<void>;
         }
     ) {
         super(app);
@@ -98,6 +108,7 @@ export class OutlineExpandModal extends Modal {
         if (options?.mode) this.expandMode = options.mode;
         if (options?.targetWords) this.targetWords = options.targetWords;
         if (options?.chapterContext) this.chapterContext = options.chapterContext;
+        if (options?.onApply) this.onApply = options.onApply;
 
         this.expander = new OutlineToTextExpander(
             plugin.aiEngine,
@@ -458,10 +469,11 @@ export class OutlineExpandModal extends Modal {
             cls: 'nw-btn',
         }).onclick = () => this.close();
 
+        // 按钮文案跟着写回能力走：没有写回目标就别承诺「应用」，改说「复制」
         rightActions.createEl('button', {
-            text: '✅ 应用',
+            text: this.onApply ? '✅ 写入正文' : '📋 复制到剪贴板',
             cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
-        }).onclick = () => this.applyResult();
+        }).onclick = () => void this.applyResult();
     }
 
     private refreshSceneList(): void {
@@ -910,13 +922,54 @@ export class OutlineExpandModal extends Modal {
         }
     }
 
-    private applyResult(): void {
-        if (!this.expandedText.trim()) {
+    /**
+     * 应用扩写结果。
+     *
+     * 有写回目标时由回调真正落盘：成功才关窗，失败留窗（结果不丢，可重试或手动复制）。
+     * 没有写回目标时退化为复制到剪贴板，避免「点了应用什么都没有发生」。
+     */
+    private async applyResult(): Promise<void> {
+        const text = this.expandedText.trim();
+        if (!text) {
             new Notice('没有可应用的内容');
             return;
         }
-        showSuccessNotice('已应用扩写结果');
+
+        if (!this.onApply) {
+            const copied = await this.copyToClipboard(text);
+            if (copied) {
+                showSuccessNotice('已复制扩写结果到剪贴板');
+            } else {
+                showWarningNotice('当前入口不支持写回，且复制到剪贴板失败，请手动复制右侧内容');
+                return;
+            }
+            this.close();
+            return;
+        }
+
+        try {
+            await this.onApply(text);
+        } catch (e) {
+            log.warn('[OutlineExpand] 写回正文失败:', e);
+            showErrorNotice('写回正文失败', {
+                detail: e instanceof Error ? e.message : String(e),
+            });
+            return;
+        }
+        showSuccessNotice('已写入正文（Ctrl+Z 可撤销）');
         this.close();
+    }
+
+    /** 复制到剪贴板；环境不支持时返回 false，由调用方给出手动复制的提示 */
+    private async copyToClipboard(text: string): Promise<boolean> {
+        try {
+            if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) return false;
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch (e) {
+            log.warn('[OutlineExpand] 复制到剪贴板失败:', e);
+            return false;
+        }
     }
 
     /**

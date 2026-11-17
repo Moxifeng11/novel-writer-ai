@@ -11,7 +11,7 @@
 | `shared/` | 255 | 50823 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3387 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 300 | 113077 | 1159 | 917 | 79% |
+| `ui/` | 300 | 113176 | 1159 | 917 | 79% |
 
 ## 文件清单
 
@@ -735,7 +735,7 @@
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1021 | 2 | 2 |
 | `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |
-| `ui/co-writing-view.ts` | 3942 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3968 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 247 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
@@ -774,7 +774,7 @@
 | `ui/co-writing/text-diff.ts` | 134 | 5 | 2 |
 | `ui/co-writing/word-goal.ts` | 115 | 5 | 3 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
-| `ui/command-ui-executor.ts` | 723 | 2 | 2 |
+| `ui/command-ui-executor.ts` | 743 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 105 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
 | `ui/components/categorization-review-panel.ts` | 449 | 2 | 2 |
@@ -898,7 +898,7 @@
 | `ui/novel-analysis-modal.ts` | 267 | 1 | 1 |
 | `ui/novel-tags-modal.ts` | 335 | 1 | 1 |
 | `ui/onboarding-modal.ts` | 318 | 1 | 1 |
-| `ui/outline-expand-modal.ts` | 937 | 2 | 1 |
+| `ui/outline-expand-modal.ts` | 990 | 2 | 1 |
 | `ui/panel-resizer.ts` | 260 | 4 | 3 |
 | `ui/password-modal.ts` | 152 | 1 | 1 |
 | `ui/pet-image-settings.ts` | 465 | 3 | 3 |
