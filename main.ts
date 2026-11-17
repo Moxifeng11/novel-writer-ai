@@ -242,6 +242,7 @@ import { migrateLegacyPluginData } from '@/shared/plugin-data-migration';
 import { mergeDuplicateOverrideKeys, pruneUnknownProviderIds } from '@/shared/provider-settings-maintenance';
 import { UnloadBarrier } from '@/shared/unload-barrier';
 import { createLogger } from './shared/logger';
+import { applyLocaleSetting } from './i18n';
 import { pruneSessions, SESSION_RETENTION_DEFAULTS } from './shared/session-retention';
 import type { PruneResult, RetentionTarget } from './shared/session-retention';
 import { cancelScheduledGraphValidations } from './engine/graph/graph-validation-trigger';
@@ -1108,6 +1109,10 @@ export default class NovelWriterPlugin extends Plugin {
                     await this.saveSettings();
                 },
             });
+
+            // 语言必须在注册命令之前落定：命令面板的命令名是 Obsidian 注册时写死的字符串，
+            // 晚一步切换只会让设置页变英文、命令面板仍是中文（i18n 第二期第一片踩过）。
+            applyLocaleSetting(this.settings.language);
 
             // 注册 Obsidian 命令（CommandRegistry 已在 initialize 中创建并 registerInternalCommands）
             const commandRegistry = this.engineRegistry.get(ENGINE_NAMES.COMMAND_REGISTRY);

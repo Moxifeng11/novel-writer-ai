@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 
 vi.mock('../../../main', () => ({
     default: class NovelWriterPlugin {},
@@ -6,6 +6,7 @@ vi.mock('../../../main', () => ({
 
 import { CommandRegistry, CommandIds } from '../../../core/command-registry';
 import { COMMAND_MODE_RULES } from '../../../shared/command-mode-rules';
+import { setLocale } from '../../../i18n';
 
 /**
  * CommandRegistry 的命令注册护栏。
@@ -237,5 +238,47 @@ describe('命令 id 跨表一致性', () => {
         const unknown = Object.keys(COMMAND_MODE_RULES)
             .filter(id => !allCommandIds.has(id));
         expect(unknown).toEqual([]);
+    });
+});
+
+/**
+ * 命令面板文案（i18n 第二期第一片）。
+ *
+ * 面板名称是 Obsidian 注册时写死的字符串，所以必须走 t() 在注册那一刻取当前语言；
+ * 缺失键时 t() 回退成键名（形如 commands.xxx），这里直接钉住这种回退不会发生。
+ */
+describe('命令面板文案走 i18n', () => {
+    afterEach(() => { setLocale('zh-CN'); });
+
+    function paletteNames(): { registry: CommandRegistry; names: string[] } {
+        const { registry } = makeHarness();
+        const names: string[] = [];
+        registry.registerObsidianCommands(cmd => { names.push(cmd.name); });
+        return { registry, names };
+    }
+
+    it('中文下每条命令都有文案，且不出现键名回退', () => {
+        const { registry, names } = paletteNames();
+        const expected = registry.getAllCommands().filter(cmd => !cmd.internalOnly).length;
+        expect(names).toHaveLength(expected);
+        expect(names.filter(name => name.startsWith('commands.'))).toEqual([]);
+        expect(names.filter(name => name.trim().length === 0)).toEqual([]);
+        // 面板里重名会让用户没法区分，中文资源本身也要保证唯一
+        expect(new Set(names).size).toBe(names.length);
+    });
+
+    it('英文下命令名里不再残留中文', () => {
+        setLocale('en-US');
+        const { names } = paletteNames();
+        expect(names.filter(name => /[\u4e00-\u9fff]/.test(name))).toEqual([]);
+        expect(names.filter(name => name.startsWith('commands.'))).toEqual([]);
+    });
+
+    it('切换语言后重新注册即可拿到对应语言的名称', () => {
+        const zh = paletteNames().names;
+        setLocale('en-US');
+        const en = paletteNames().names;
+        expect(en).not.toEqual(zh);
+        expect(en[0]).toBe('New project');
     });
 });

@@ -17,6 +17,7 @@ import type { CreationMode } from '@/shared/creation-mode';
 import { getProjectModeSync } from '@/shared/project-mode';
 import { LONG_ONLY, SCRIPT_ONLY, SHORT_ONLY } from '@/shared/command-mode-rules';
 import { actionKind, changesProse, type ActionKind } from '@/shared/action-contract';
+import { t } from '@/i18n';
 
 
 const log = createLogger('CommandRegistry');
@@ -520,128 +521,128 @@ export class CommandRegistry {
             return true;
         };
 
-        addCommand({ id: CommandIds.CREATE_PROJECT, name: '新建项目', callback: exec(CommandIds.CREATE_PROJECT) });
-        addCommand({ id: CommandIds.AGENT_GUIDE, name: '🤖 对话引导（新建/继续项目）', callback: exec(CommandIds.AGENT_GUIDE) });
-        addCommand({ id: CommandIds.CREATE_SHORT, name: '新建短篇项目（前期调研）', callback: exec(CommandIds.CREATE_SHORT) });
-        addCommand({ id: CommandIds.CREATE_SCRIPT, name: '新建剧本项目（前期调研）', callback: exec(CommandIds.CREATE_SCRIPT) });
-        addCommand({ id: CommandIds.SHORT_RESEARCH, name: '编辑短篇前期调研', checkCallback: execGuarded(CommandIds.SHORT_RESEARCH, SHORT_ONLY) });
-        addCommand({ id: CommandIds.SCRIPT_RESEARCH, name: '编辑剧本前期调研', checkCallback: execGuarded(CommandIds.SCRIPT_RESEARCH, SCRIPT_ONLY) });
-        addCommand({ id: CommandIds.SHORT_STORY_CORE, name: '编辑短篇故事核', checkCallback: execGuarded(CommandIds.SHORT_STORY_CORE, SHORT_ONLY) });
-        addCommand({ id: CommandIds.SHORT_OUTLINE, name: '编辑短篇分节大纲', checkCallback: execGuarded(CommandIds.SHORT_OUTLINE, SHORT_ONLY) });
-        addCommand({ id: CommandIds.SCRIPT_SCENE_BIBLE, name: '编辑剧本场景圣经', checkCallback: execGuarded(CommandIds.SCRIPT_SCENE_BIBLE, SCRIPT_ONLY) });
-        addCommand({ id: CommandIds.SCRIPT_OUTLINE, name: '编辑剧本分集大纲', checkCallback: execGuarded(CommandIds.SCRIPT_OUTLINE, SCRIPT_ONLY) });
-        addCommand({ id: CommandIds.SCRIPT_STORYBOARD, name: '编辑剧本分镜表', checkCallback: execGuarded(CommandIds.SCRIPT_STORYBOARD, SCRIPT_ONLY) });
-        addCommand({ id: CommandIds.IMPORT_EXAMPLE, name: '导入示例项目', callback: exec(CommandIds.IMPORT_EXAMPLE) });
-        addCommand({ id: CommandIds.PLAN_BOOK, name: 'AI全书规划', checkCallback: execGuarded(CommandIds.PLAN_BOOK, LONG_ONLY) });
-        addCommand({ id: CommandIds.VOLUME_INTRO, name: '全书简介', checkCallback: execGuarded(CommandIds.VOLUME_INTRO, LONG_ONLY) });
-        addCommand({ id: CommandIds.CONTINUE_CHAPTERS, name: '续写规划', checkCallback: execGuarded(CommandIds.CONTINUE_CHAPTERS, LONG_ONLY) });
-        addCommand({ id: CommandIds.DIAGNOSE, name: '流程诊断', callback: exec(CommandIds.DIAGNOSE) });
-        addCommand({ id: CommandIds.FACT_STORE, name: '知识库事实库', callback: exec(CommandIds.FACT_STORE) });
-    addCommand({ id: CommandIds.CONSISTENCY_AUDIT, name: '一致性审核', callback: exec(CommandIds.CONSISTENCY_AUDIT) });
-        addCommand({ id: CommandIds.TOMATO_RANK, name: '番茄榜单分析', callback: exec(CommandIds.TOMATO_RANK) });
-        addCommand({ id: CommandIds.REBUILD_CHAPTERS, name: '重建章节', checkCallback: execGuarded(CommandIds.REBUILD_CHAPTERS, LONG_ONLY) });
-        addCommand({ id: CommandIds.BACKUP_META, name: '备份元文件', callback: exec(CommandIds.BACKUP_META) });
-        addCommand({ id: CommandIds.PROTECT_META, name: '保护元文件', callback: exec(CommandIds.PROTECT_META) });
-        addCommand({ id: CommandIds.TAGS_ANALYSIS, name: '作品标签分析', checkCallback: execGuarded(CommandIds.TAGS_ANALYSIS, LONG_ONLY) });
-        addCommand({ id: CommandIds.AI_BUILDER, name: 'AI世界元素生成', checkCallback: execGuarded(CommandIds.AI_BUILDER, LONG_ONLY) });
-        addCommand({ id: CommandIds.ADD_FANFIC, name: '添加同人设定', checkCallback: execGuarded(CommandIds.ADD_FANFIC, LONG_ONLY) });
-        addCommand({ id: CommandIds.REVIEW_CHAPTER, name: '连贯性审查', checkCallback: execGuarded(CommandIds.REVIEW_CHAPTER, LONG_ONLY) });
-        addCommand({ id: CommandIds.TARGETED_REVISION, name: '定向修订（当前章）', checkCallback: execGuarded(CommandIds.TARGETED_REVISION, LONG_ONLY) });
-        addCommand({ id: CommandIds.QUALITY_DASHBOARD, name: '📊 质量仪表盘', checkCallback: execGuarded(CommandIds.QUALITY_DASHBOARD, LONG_ONLY) });
-        addCommand({ id: CommandIds.QUALITY_LOOP, name: '🔁 质量闭环（校验/修订/历史）', checkCallback: execGuarded(CommandIds.QUALITY_LOOP, LONG_ONLY) });
-        addCommand({ id: CommandIds.RECOVER_SETTLEMENT, name: '🧯 恢复中断结算', checkCallback: execGuarded(CommandIds.RECOVER_SETTLEMENT, LONG_ONLY) });
-        addCommand({ id: CommandIds.ADVANCED_MAINTENANCE, name: '🧰 高级维护（同步/重建/探测/场景循环）', checkCallback: execGuarded(CommandIds.ADVANCED_MAINTENANCE, LONG_ONLY) });
-        addCommand({ id: CommandIds.BATCH_CREATE, name: '批量建章', checkCallback: execGuarded(CommandIds.BATCH_CREATE, LONG_ONLY) });
-        addCommand({ id: CommandIds.WORLDVIEW, name: '生成世界观', checkCallback: execGuarded(CommandIds.WORLDVIEW, LONG_ONLY) });
-        addCommand({ id: CommandIds.CHARACTER, name: '生成人物', checkCallback: execGuarded(CommandIds.CHARACTER, LONG_ONLY) });
-        addCommand({ id: CommandIds.FACTION, name: '生成势力', checkCallback: execGuarded(CommandIds.FACTION, LONG_ONLY) });
-        addCommand({ id: CommandIds.LOCATION, name: '生成地点', checkCallback: execGuarded(CommandIds.LOCATION, LONG_ONLY) });
-        addCommand({ id: CommandIds.ITEM, name: '生成物品功法', checkCallback: execGuarded(CommandIds.ITEM, LONG_ONLY) });
-        addCommand({ id: CommandIds.ENTITY_MANAGER, name: '📚 实体管理', checkCallback: execGuarded(CommandIds.ENTITY_MANAGER, LONG_ONLY) });
-        addCommand({ id: CommandIds.ENTITY_GENERATE, name: '✨ 统一生成实体', checkCallback: execGuarded(CommandIds.ENTITY_GENERATE, LONG_ONLY) });
-        addCommand({ id: CommandIds.REFRESH_INFO_DEBT, name: '刷新信息债看板', callback: exec(CommandIds.REFRESH_INFO_DEBT) });
-        addCommand({ id: CommandIds.CROSS_VOLUME_STATE, name: '跨卷状态继承', checkCallback: execGuarded(CommandIds.CROSS_VOLUME_STATE, LONG_ONLY) });
-        addCommand({ id: CommandIds.STYLE_DISTILLER, name: '文笔风格蒸馏', checkCallback: execGuarded(CommandIds.STYLE_DISTILLER, LONG_ONLY) });
-        addCommand({ id: CommandIds.CONTEXT_INJECTOR, name: '上下文注入', checkCallback: execGuarded(CommandIds.CONTEXT_INJECTOR, LONG_ONLY) });
-        addCommand({ id: CommandIds.CHAPTER_SETTLEMENT, name: '章节结算', checkCallback: execGuarded(CommandIds.CHAPTER_SETTLEMENT, LONG_ONLY) });
-        addCommand({ id: CommandIds.IDEATION, name: '💡 脑洞构思工坊', callback: exec(CommandIds.IDEATION) });
-        addCommand({ id: CommandIds.GOLDEN_OPENING, name: '🌟 黄金开篇工坊', callback: exec(CommandIds.GOLDEN_OPENING) });
-        addCommand({ id: CommandIds.STEP_RESULT_VIEWER, name: '📋 步骤结果查看', checkCallback: execGuarded(CommandIds.STEP_RESULT_VIEWER, LONG_ONLY) });
-        addCommand({ id: CommandIds.STORY_LINKAGE_BOARD, name: '🔗 关联索引看板', checkCallback: execGuarded(CommandIds.STORY_LINKAGE_BOARD, LONG_ONLY) });
-        addCommand({ id: CommandIds.VALIDATE_STORY_GRAPH, name: '🧭 校验故事一致性', checkCallback: execGuarded(CommandIds.VALIDATE_STORY_GRAPH, LONG_ONLY) });
-        addCommand({ id: CommandIds.BATCH_DECONSTRUCT, name: '📚 批量拆解', checkCallback: execGuarded(CommandIds.BATCH_DECONSTRUCT, LONG_ONLY) });
-        addCommand({ id: CommandIds.CHARACTER_RECOGNITION, name: '👤 角色识别审核', callback: exec(CommandIds.CHARACTER_RECOGNITION) });
-        addCommand({ id: CommandIds.EXPORT_MANUSCRIPT, name: '📦 成稿导出', callback: exec(CommandIds.EXPORT_MANUSCRIPT) });
-        addCommand({ id: CommandIds.TEXT_PRECHECK, name: '🔎 文面体检（错别字/标点）', checkCallback: execGuarded(CommandIds.TEXT_PRECHECK, LONG_ONLY) });
-        addCommand({ id: CommandIds.TTS_READ_CHAPTER, name: '🎧 听校：朗读当前章', callback: exec(CommandIds.TTS_READ_CHAPTER) });
-        addCommand({ id: CommandIds.TTS_READ_SELECTION, name: '🎧 听校：朗读选中文字', callback: exec(CommandIds.TTS_READ_SELECTION) });
-        addCommand({ id: CommandIds.TTS_STOP, name: '🎧 听校：停止朗读', callback: exec(CommandIds.TTS_STOP) });
-        addCommand({ id: CommandIds.OPEN_HOME, name: '🏠 创作主页', callback: exec(CommandIds.OPEN_HOME) });
-        addCommand({ id: CommandIds.JOB_CENTER, name: '🧵 任务中心', callback: exec(CommandIds.JOB_CENTER) });
-        addCommand({ id: CommandIds.PROJECT_HEALTH, name: '🩺 项目体检', callback: exec(CommandIds.PROJECT_HEALTH) });
-        addCommand({ id: CommandIds.ASSET_REGISTRY, name: '🧩 资产总览', callback: exec(CommandIds.ASSET_REGISTRY) });
-        addCommand({ id: CommandIds.USAGE_LEDGER, name: '💰 AI 用量账本', callback: exec(CommandIds.USAGE_LEDGER) });
-        addCommand({ id: CommandIds.BACKUP_CENTER, name: '🗂 版本与备份中心', callback: exec(CommandIds.BACKUP_CENTER) });
-        addCommand({ id: CommandIds.OPEN_ONBOARDING, name: '🚀 首启引导（3 分钟）', callback: exec(CommandIds.OPEN_ONBOARDING) });
-        addCommand({ id: CommandIds.MCP_MANAGER, name: '🔌 MCP 服务管理', callback: exec(CommandIds.MCP_MANAGER) });
-        addCommand({ id: CommandIds.FULL_WRITER, name: '📖 项目与章节（流程工作台）', callback: exec(CommandIds.FULL_WRITER) });
-        addCommand({ id: CommandIds.CREATION_FLOW, name: '🧭 创作流程（当前项目）', callback: exec(CommandIds.CREATION_FLOW) });
-        addCommand({ id: CommandIds.MIGRATE_ENTITY_LINKS, name: '🔗 实体链接迁移（存量关系图谱化）', callback: exec(CommandIds.MIGRATE_ENTITY_LINKS) });
-        addCommand({ id: CommandIds.PROJECT_SIDE_PANEL, name: '🧭 项目速览面板（右侧栏）', callback: exec(CommandIds.PROJECT_SIDE_PANEL) });
-        addCommand({ id: CommandIds.GENERATE_BASES, name: '📊 生成/刷新项目看板（Bases）', callback: exec(CommandIds.GENERATE_BASES) });
-        addCommand({ id: CommandIds.MIGRATE_NAMESPACE_TAGS, name: '🏷️ 补齐分层标签（先预览）', callback: exec(CommandIds.MIGRATE_NAMESPACE_TAGS) });
-        addCommand({ id: CommandIds.MIGRATE_LEDGER_CARDS, name: '🧾 迁移台账与设定（预览）', callback: exec(CommandIds.MIGRATE_LEDGER_CARDS) });
-        addCommand({ id: CommandIds.CONTEXT_METRICS, name: '📊 上下文注入量体检', callback: exec(CommandIds.CONTEXT_METRICS) });
-        addCommand({ id: CommandIds.REBUILD_UNIT_OUTLINE, name: '🧾 重建单元派生大纲（短篇/剧本）', callback: exec(CommandIds.REBUILD_UNIT_OUTLINE) });
-        addCommand({ id: CommandIds.COMPLETE_PROPERTIES, name: '🧩 补齐笔记属性（先预览）', callback: exec(CommandIds.COMPLETE_PROPERTIES) });
-        addCommand({ id: CommandIds.WRITING_STATS, name: '📊 写作统计（日/周/月）', callback: exec(CommandIds.WRITING_STATS) });
-        addCommand({ id: CommandIds.TOGGLE_PET, name: '🐾 显示/隐藏桌面宠物', callback: exec(CommandIds.TOGGLE_PET) });
-        addCommand({ id: CommandIds.CO_WRITING, name: '✍️ 句级协同写作工作台', checkCallback: execGuarded(CommandIds.CO_WRITING, LONG_ONLY) });
-        addCommand({ id: CommandIds.BATCH_NOVELS, name: '📚 批量生成章节（正式流程）', checkCallback: execGuarded(CommandIds.BATCH_NOVELS, LONG_ONLY) });
-        addCommand({ id: CommandIds.FINGERPRINT_LIBRARY, name: '🔍 打开写作指纹库', callback: exec(CommandIds.FINGERPRINT_LIBRARY) });
-        addCommand({ id: CommandIds.OPEN_KNOWLEDGE_BASE, name: '📚 打开知识库管理界面', callback: exec(CommandIds.OPEN_KNOWLEDGE_BASE) });
-        addCommand({ id: CommandIds.SWITCH_PROVIDER, name: '快速切换 AI 提供商', callback: exec(CommandIds.SWITCH_PROVIDER) });
-        addCommand({ id: CommandIds.OPEN_SETTINGS, name: '⚙️ 打开插件设置', callback: exec(CommandIds.OPEN_SETTINGS) });
+        addCommand({ id: CommandIds.CREATE_PROJECT, name: t('commands.CreateProject'), callback: exec(CommandIds.CREATE_PROJECT) });
+        addCommand({ id: CommandIds.AGENT_GUIDE, name: t('commands.AgentGuide'), callback: exec(CommandIds.AGENT_GUIDE) });
+        addCommand({ id: CommandIds.CREATE_SHORT, name: t('commands.CreateShort'), callback: exec(CommandIds.CREATE_SHORT) });
+        addCommand({ id: CommandIds.CREATE_SCRIPT, name: t('commands.CreateScript'), callback: exec(CommandIds.CREATE_SCRIPT) });
+        addCommand({ id: CommandIds.SHORT_RESEARCH, name: t('commands.ShortResearch'), checkCallback: execGuarded(CommandIds.SHORT_RESEARCH, SHORT_ONLY) });
+        addCommand({ id: CommandIds.SCRIPT_RESEARCH, name: t('commands.ScriptResearch'), checkCallback: execGuarded(CommandIds.SCRIPT_RESEARCH, SCRIPT_ONLY) });
+        addCommand({ id: CommandIds.SHORT_STORY_CORE, name: t('commands.ShortStoryCore'), checkCallback: execGuarded(CommandIds.SHORT_STORY_CORE, SHORT_ONLY) });
+        addCommand({ id: CommandIds.SHORT_OUTLINE, name: t('commands.ShortOutline'), checkCallback: execGuarded(CommandIds.SHORT_OUTLINE, SHORT_ONLY) });
+        addCommand({ id: CommandIds.SCRIPT_SCENE_BIBLE, name: t('commands.ScriptSceneBible'), checkCallback: execGuarded(CommandIds.SCRIPT_SCENE_BIBLE, SCRIPT_ONLY) });
+        addCommand({ id: CommandIds.SCRIPT_OUTLINE, name: t('commands.ScriptOutline'), checkCallback: execGuarded(CommandIds.SCRIPT_OUTLINE, SCRIPT_ONLY) });
+        addCommand({ id: CommandIds.SCRIPT_STORYBOARD, name: t('commands.ScriptStoryboard'), checkCallback: execGuarded(CommandIds.SCRIPT_STORYBOARD, SCRIPT_ONLY) });
+        addCommand({ id: CommandIds.IMPORT_EXAMPLE, name: t('commands.ImportExample'), callback: exec(CommandIds.IMPORT_EXAMPLE) });
+        addCommand({ id: CommandIds.PLAN_BOOK, name: t('commands.PlanBook'), checkCallback: execGuarded(CommandIds.PLAN_BOOK, LONG_ONLY) });
+        addCommand({ id: CommandIds.VOLUME_INTRO, name: t('commands.VolumeIntro'), checkCallback: execGuarded(CommandIds.VOLUME_INTRO, LONG_ONLY) });
+        addCommand({ id: CommandIds.CONTINUE_CHAPTERS, name: t('commands.ContinueChapters'), checkCallback: execGuarded(CommandIds.CONTINUE_CHAPTERS, LONG_ONLY) });
+        addCommand({ id: CommandIds.DIAGNOSE, name: t('commands.Diagnose'), callback: exec(CommandIds.DIAGNOSE) });
+        addCommand({ id: CommandIds.FACT_STORE, name: t('commands.FactStore'), callback: exec(CommandIds.FACT_STORE) });
+    addCommand({ id: CommandIds.CONSISTENCY_AUDIT, name: t('commands.ConsistencyAudit'), callback: exec(CommandIds.CONSISTENCY_AUDIT) });
+        addCommand({ id: CommandIds.TOMATO_RANK, name: t('commands.TomatoRank'), callback: exec(CommandIds.TOMATO_RANK) });
+        addCommand({ id: CommandIds.REBUILD_CHAPTERS, name: t('commands.RebuildChapters'), checkCallback: execGuarded(CommandIds.REBUILD_CHAPTERS, LONG_ONLY) });
+        addCommand({ id: CommandIds.BACKUP_META, name: t('commands.BackupMeta'), callback: exec(CommandIds.BACKUP_META) });
+        addCommand({ id: CommandIds.PROTECT_META, name: t('commands.ProtectMeta'), callback: exec(CommandIds.PROTECT_META) });
+        addCommand({ id: CommandIds.TAGS_ANALYSIS, name: t('commands.TagsAnalysis'), checkCallback: execGuarded(CommandIds.TAGS_ANALYSIS, LONG_ONLY) });
+        addCommand({ id: CommandIds.AI_BUILDER, name: t('commands.AiBuilder'), checkCallback: execGuarded(CommandIds.AI_BUILDER, LONG_ONLY) });
+        addCommand({ id: CommandIds.ADD_FANFIC, name: t('commands.AddFanfic'), checkCallback: execGuarded(CommandIds.ADD_FANFIC, LONG_ONLY) });
+        addCommand({ id: CommandIds.REVIEW_CHAPTER, name: t('commands.ReviewChapter'), checkCallback: execGuarded(CommandIds.REVIEW_CHAPTER, LONG_ONLY) });
+        addCommand({ id: CommandIds.TARGETED_REVISION, name: t('commands.TargetedRevision'), checkCallback: execGuarded(CommandIds.TARGETED_REVISION, LONG_ONLY) });
+        addCommand({ id: CommandIds.QUALITY_DASHBOARD, name: t('commands.QualityDashboard'), checkCallback: execGuarded(CommandIds.QUALITY_DASHBOARD, LONG_ONLY) });
+        addCommand({ id: CommandIds.QUALITY_LOOP, name: t('commands.QualityLoop'), checkCallback: execGuarded(CommandIds.QUALITY_LOOP, LONG_ONLY) });
+        addCommand({ id: CommandIds.RECOVER_SETTLEMENT, name: t('commands.RecoverSettlement'), checkCallback: execGuarded(CommandIds.RECOVER_SETTLEMENT, LONG_ONLY) });
+        addCommand({ id: CommandIds.ADVANCED_MAINTENANCE, name: t('commands.AdvancedMaintenance'), checkCallback: execGuarded(CommandIds.ADVANCED_MAINTENANCE, LONG_ONLY) });
+        addCommand({ id: CommandIds.BATCH_CREATE, name: t('commands.BatchCreate'), checkCallback: execGuarded(CommandIds.BATCH_CREATE, LONG_ONLY) });
+        addCommand({ id: CommandIds.WORLDVIEW, name: t('commands.Worldview'), checkCallback: execGuarded(CommandIds.WORLDVIEW, LONG_ONLY) });
+        addCommand({ id: CommandIds.CHARACTER, name: t('commands.Character'), checkCallback: execGuarded(CommandIds.CHARACTER, LONG_ONLY) });
+        addCommand({ id: CommandIds.FACTION, name: t('commands.Faction'), checkCallback: execGuarded(CommandIds.FACTION, LONG_ONLY) });
+        addCommand({ id: CommandIds.LOCATION, name: t('commands.Location'), checkCallback: execGuarded(CommandIds.LOCATION, LONG_ONLY) });
+        addCommand({ id: CommandIds.ITEM, name: t('commands.Item'), checkCallback: execGuarded(CommandIds.ITEM, LONG_ONLY) });
+        addCommand({ id: CommandIds.ENTITY_MANAGER, name: t('commands.EntityManager'), checkCallback: execGuarded(CommandIds.ENTITY_MANAGER, LONG_ONLY) });
+        addCommand({ id: CommandIds.ENTITY_GENERATE, name: t('commands.EntityGenerate'), checkCallback: execGuarded(CommandIds.ENTITY_GENERATE, LONG_ONLY) });
+        addCommand({ id: CommandIds.REFRESH_INFO_DEBT, name: t('commands.RefreshInfoDebt'), callback: exec(CommandIds.REFRESH_INFO_DEBT) });
+        addCommand({ id: CommandIds.CROSS_VOLUME_STATE, name: t('commands.CrossVolumeState'), checkCallback: execGuarded(CommandIds.CROSS_VOLUME_STATE, LONG_ONLY) });
+        addCommand({ id: CommandIds.STYLE_DISTILLER, name: t('commands.StyleDistiller'), checkCallback: execGuarded(CommandIds.STYLE_DISTILLER, LONG_ONLY) });
+        addCommand({ id: CommandIds.CONTEXT_INJECTOR, name: t('commands.ContextInjector'), checkCallback: execGuarded(CommandIds.CONTEXT_INJECTOR, LONG_ONLY) });
+        addCommand({ id: CommandIds.CHAPTER_SETTLEMENT, name: t('commands.ChapterSettlement'), checkCallback: execGuarded(CommandIds.CHAPTER_SETTLEMENT, LONG_ONLY) });
+        addCommand({ id: CommandIds.IDEATION, name: t('commands.Ideation'), callback: exec(CommandIds.IDEATION) });
+        addCommand({ id: CommandIds.GOLDEN_OPENING, name: t('commands.GoldenOpening'), callback: exec(CommandIds.GOLDEN_OPENING) });
+        addCommand({ id: CommandIds.STEP_RESULT_VIEWER, name: t('commands.StepResultViewer'), checkCallback: execGuarded(CommandIds.STEP_RESULT_VIEWER, LONG_ONLY) });
+        addCommand({ id: CommandIds.STORY_LINKAGE_BOARD, name: t('commands.StoryLinkageBoard'), checkCallback: execGuarded(CommandIds.STORY_LINKAGE_BOARD, LONG_ONLY) });
+        addCommand({ id: CommandIds.VALIDATE_STORY_GRAPH, name: t('commands.ValidateStoryGraph'), checkCallback: execGuarded(CommandIds.VALIDATE_STORY_GRAPH, LONG_ONLY) });
+        addCommand({ id: CommandIds.BATCH_DECONSTRUCT, name: t('commands.BatchDeconstruct'), checkCallback: execGuarded(CommandIds.BATCH_DECONSTRUCT, LONG_ONLY) });
+        addCommand({ id: CommandIds.CHARACTER_RECOGNITION, name: t('commands.CharacterRecognition'), callback: exec(CommandIds.CHARACTER_RECOGNITION) });
+        addCommand({ id: CommandIds.EXPORT_MANUSCRIPT, name: t('commands.ExportManuscript'), callback: exec(CommandIds.EXPORT_MANUSCRIPT) });
+        addCommand({ id: CommandIds.TEXT_PRECHECK, name: t('commands.TextPrecheck'), checkCallback: execGuarded(CommandIds.TEXT_PRECHECK, LONG_ONLY) });
+        addCommand({ id: CommandIds.TTS_READ_CHAPTER, name: t('commands.TtsReadChapter'), callback: exec(CommandIds.TTS_READ_CHAPTER) });
+        addCommand({ id: CommandIds.TTS_READ_SELECTION, name: t('commands.TtsReadSelection'), callback: exec(CommandIds.TTS_READ_SELECTION) });
+        addCommand({ id: CommandIds.TTS_STOP, name: t('commands.TtsStop'), callback: exec(CommandIds.TTS_STOP) });
+        addCommand({ id: CommandIds.OPEN_HOME, name: t('commands.OpenHome'), callback: exec(CommandIds.OPEN_HOME) });
+        addCommand({ id: CommandIds.JOB_CENTER, name: t('commands.JobCenter'), callback: exec(CommandIds.JOB_CENTER) });
+        addCommand({ id: CommandIds.PROJECT_HEALTH, name: t('commands.ProjectHealth'), callback: exec(CommandIds.PROJECT_HEALTH) });
+        addCommand({ id: CommandIds.ASSET_REGISTRY, name: t('commands.AssetRegistry'), callback: exec(CommandIds.ASSET_REGISTRY) });
+        addCommand({ id: CommandIds.USAGE_LEDGER, name: t('commands.UsageLedger'), callback: exec(CommandIds.USAGE_LEDGER) });
+        addCommand({ id: CommandIds.BACKUP_CENTER, name: t('commands.BackupCenter'), callback: exec(CommandIds.BACKUP_CENTER) });
+        addCommand({ id: CommandIds.OPEN_ONBOARDING, name: t('commands.OpenOnboarding'), callback: exec(CommandIds.OPEN_ONBOARDING) });
+        addCommand({ id: CommandIds.MCP_MANAGER, name: t('commands.McpManager'), callback: exec(CommandIds.MCP_MANAGER) });
+        addCommand({ id: CommandIds.FULL_WRITER, name: t('commands.FullWriter'), callback: exec(CommandIds.FULL_WRITER) });
+        addCommand({ id: CommandIds.CREATION_FLOW, name: t('commands.CreationFlow'), callback: exec(CommandIds.CREATION_FLOW) });
+        addCommand({ id: CommandIds.MIGRATE_ENTITY_LINKS, name: t('commands.MigrateEntityLinks'), callback: exec(CommandIds.MIGRATE_ENTITY_LINKS) });
+        addCommand({ id: CommandIds.PROJECT_SIDE_PANEL, name: t('commands.ProjectSidePanel'), callback: exec(CommandIds.PROJECT_SIDE_PANEL) });
+        addCommand({ id: CommandIds.GENERATE_BASES, name: t('commands.GenerateBases'), callback: exec(CommandIds.GENERATE_BASES) });
+        addCommand({ id: CommandIds.MIGRATE_NAMESPACE_TAGS, name: t('commands.MigrateNamespaceTags'), callback: exec(CommandIds.MIGRATE_NAMESPACE_TAGS) });
+        addCommand({ id: CommandIds.MIGRATE_LEDGER_CARDS, name: t('commands.MigrateLedgerCards'), callback: exec(CommandIds.MIGRATE_LEDGER_CARDS) });
+        addCommand({ id: CommandIds.CONTEXT_METRICS, name: t('commands.ContextMetrics'), callback: exec(CommandIds.CONTEXT_METRICS) });
+        addCommand({ id: CommandIds.REBUILD_UNIT_OUTLINE, name: t('commands.RebuildUnitOutline'), callback: exec(CommandIds.REBUILD_UNIT_OUTLINE) });
+        addCommand({ id: CommandIds.COMPLETE_PROPERTIES, name: t('commands.CompleteProperties'), callback: exec(CommandIds.COMPLETE_PROPERTIES) });
+        addCommand({ id: CommandIds.WRITING_STATS, name: t('commands.WritingStats'), callback: exec(CommandIds.WRITING_STATS) });
+        addCommand({ id: CommandIds.TOGGLE_PET, name: t('commands.TogglePet'), callback: exec(CommandIds.TOGGLE_PET) });
+        addCommand({ id: CommandIds.CO_WRITING, name: t('commands.CoWriting'), checkCallback: execGuarded(CommandIds.CO_WRITING, LONG_ONLY) });
+        addCommand({ id: CommandIds.BATCH_NOVELS, name: t('commands.BatchNovels'), checkCallback: execGuarded(CommandIds.BATCH_NOVELS, LONG_ONLY) });
+        addCommand({ id: CommandIds.FINGERPRINT_LIBRARY, name: t('commands.FingerprintLibrary'), callback: exec(CommandIds.FINGERPRINT_LIBRARY) });
+        addCommand({ id: CommandIds.OPEN_KNOWLEDGE_BASE, name: t('commands.OpenKnowledgeBase'), callback: exec(CommandIds.OPEN_KNOWLEDGE_BASE) });
+        addCommand({ id: CommandIds.SWITCH_PROVIDER, name: t('commands.SwitchProvider'), callback: exec(CommandIds.SWITCH_PROVIDER) });
+        addCommand({ id: CommandIds.OPEN_SETTINGS, name: t('commands.OpenSettings'), callback: exec(CommandIds.OPEN_SETTINGS) });
         // v4.34.0：手动会话清理。不进 InternalRegistry（registerInternalCommands 的
         // 注册集合被 command-registry.test.ts 快照钉死），与 RENAME_PROJECT 同模式：
         // 直接委托 UI 执行器，由 command-ui-executor 的 switch 分支调用 runSessionPrune
         addCommand({
             id: CommandIds.PRUNE_SESSIONS,
-            name: '🧹 清理旧会话',
+            name: t('commands.PruneSessions'),
             callback: () => { void this.ui.executeCommand(CommandIds.PRUNE_SESSIONS); },
         });
-        addCommand({ id: CommandIds.EXTRACT_ELEMENTS, name: 'AI 元素提取', checkCallback: execGuarded(CommandIds.EXTRACT_ELEMENTS, LONG_ONLY) });
+        addCommand({ id: CommandIds.EXTRACT_ELEMENTS, name: t('commands.ExtractElements'), checkCallback: execGuarded(CommandIds.EXTRACT_ELEMENTS, LONG_ONLY) });
         addCommand({
             id: CommandIds.EXPAND_TEXT,
-            name: '📝 段落扩写',
+            name: t('commands.ExpandText'),
             editorCallback: (editor, _view) => {
                 void this.ui.executeCommand(CommandIds.EXPAND_TEXT, { editor });
             },
         });
         addCommand({
             id: CommandIds.OUTLINE_EXPAND,
-            name: '✨ 智能大纲扩写',
+            name: t('commands.OutlineExpand'),
             editorCallback: (editor, _view) => {
                 void this.ui.executeCommand(CommandIds.OUTLINE_EXPAND, { editor });
             },
         });
         addCommand({
             id: CommandIds.REWRITE_SUGGESTION,
-            name: '✨ AI 改写建议',
+            name: t('commands.RewriteSuggestion'),
             editorCallback: (editor, _view) => {
                 void this.ui.executeCommand(CommandIds.REWRITE_SUGGESTION, { editor });
             },
         });
-        addCommand({ id: CommandIds.POPULATE_SETTING_LIB, name: '从世界观生成设定库', checkCallback: execGuarded(CommandIds.POPULATE_SETTING_LIB_INTERNAL, LONG_ONLY) });
-        addCommand({ id: CommandIds.RENAME_PROJECT, name: '重命名当前项目', callback: () => this.renameProject() });
+        addCommand({ id: CommandIds.POPULATE_SETTING_LIB, name: t('commands.PopulateSettingLib'), checkCallback: execGuarded(CommandIds.POPULATE_SETTING_LIB_INTERNAL, LONG_ONLY) });
+        addCommand({ id: CommandIds.RENAME_PROJECT, name: t('commands.RenameProject'), callback: () => this.renameProject() });
 
         // 叙事总览（直接执行，不走 registry）
-        addCommand({ id: CommandIds.NARRATIVE_OVERVIEW, name: '叙事总览', checkCallback: execGuarded(CommandIds.NARRATIVE_OVERVIEW, LONG_ONLY) });
+        addCommand({ id: CommandIds.NARRATIVE_OVERVIEW, name: t('commands.NarrativeOverview'), checkCallback: execGuarded(CommandIds.NARRATIVE_OVERVIEW, LONG_ONLY) });
 
-        addCommand({ id: CommandIds.MEMORY_GRAPH, name: '🕸 设定实体图（关系）', callback: exec(CommandIds.MEMORY_GRAPH) });
-        addCommand({ id: CommandIds.PLANNING_CANVAS, name: '🗺 规划画布（事件节点）', callback: exec(CommandIds.PLANNING_CANVAS) });
-        addCommand({ id: CommandIds.VERSION_HISTORY, name: '📜 版本历史与回滚', callback: exec(CommandIds.VERSION_HISTORY) });
-        addCommand({ id: CommandIds.SAVE_VERSION, name: '💾 保存当前版本', callback: exec(CommandIds.SAVE_VERSION) });
+        addCommand({ id: CommandIds.MEMORY_GRAPH, name: t('commands.MemoryGraph'), callback: exec(CommandIds.MEMORY_GRAPH) });
+        addCommand({ id: CommandIds.PLANNING_CANVAS, name: t('commands.PlanningCanvas'), callback: exec(CommandIds.PLANNING_CANVAS) });
+        addCommand({ id: CommandIds.VERSION_HISTORY, name: t('commands.VersionHistory'), callback: exec(CommandIds.VERSION_HISTORY) });
+        addCommand({ id: CommandIds.SAVE_VERSION, name: t('commands.SaveVersion'), callback: exec(CommandIds.SAVE_VERSION) });
     }
 
     // ─── 私有辅助 ───

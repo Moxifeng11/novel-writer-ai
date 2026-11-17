@@ -1611,3 +1611,33 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 
 **下一轮**：缺口 ⑦ i18n 第二期（命令面板/设置分区正文/写作主流程）或 ⑥ 的 backlog（代码块整段跳过、`lang` 跟随音色、停止后恢复原选区、`estimateSpeechMs` 接进度显示）。
 
+---
+
+## 第五十八轮：i18n 第二期第一片 —— 命令面板名称（2026-11-18）
+
+目标：命令面板里 94 条插件命令的名称跟着语言设置走（缺口 ⑦ 第二期第一片）。
+
+**改动**
+- `i18n/messages/zh-CN.ts` / `en-US.ts` 新增 `commands:` 子树 94 键（键名 = 命令 id 的 camelCase，英文名手写并保留 emoji 前缀）；资源 60 → 154 条。
+- `core/command-registry.ts`：`registerObsidianCommands()` 里 94 处 `name: '中文'` → `name: t('commands.Xxx')`；`COMMAND_DEFINITIONS`（只被单测/内部查找消费，用户不可见）保持中文。
+- `main.ts`：`registerObsidianCommands(...)` 前一行加 `applyLocaleSetting(this.settings.language)` —— 命令名在 `addCommand` 时就写死，晚切语言只会「设置页英文、面板中文」。
+- 语言设置 desc（中英各一条）补「命令面板里的命令名在 Obsidian 注册时固定，切换语言后需重启 Obsidian 才会更新」。
+- `tests/unit/core/command-registry.test.ts` 新增「命令面板文案走 i18n」3 例（zh 无键名回退/无空名/名称唯一；en 无 CJK；重注册首条 `New project`）。
+
+**实机（开发 vault，1280×900）**
+- zh：搜「导出」→ `导出为 PDF` + `Novel Writer AI📦 成稿导出`。
+- en（data.json `language: 'en-US'` + 全新启动）：搜 `export` → `Novel Writer AI📦 Export manuscript`；命令表前四条 `New project` / `🤖 Guided setup (new / continue project)` / `New short-story project (research first)` / `New screenplay project (research first)`。
+- 面板底部「导航 / 使用 / 退出」仍是中文 —— 那是 Obsidian 自己的 UI 语言，不归插件管。
+- 截图 `D:\nw-dev-vault\_visual-i18n\{zh,en}-palette-export.png`（未入库）；脚本 `D:\nw-tmp\snap-i18n2.mjs <lang> <query> <tag>`。
+
+**坑（两条，已写进 `docs/modules/i18n.md` §8）**
+- 面板仍中文但 `settings.language` 已是 en-US：先查开发 vault 产物是否同步。`D:\nw-dev-vault` 的插件目录是真实目录，`npm run build` 后要 `node scripts/dev-vault.mjs sync --vault=D:\nw-dev-vault`；脚本不带 `--vault` 时默认写 `C:\Users\admin\nw-dev-vault`（空壳副仓）。
+- CDP 下先 `window.activeWindow=window; window.activeDocument=document`，否则 `.prompt` / `.modal` 数都是 0；core 插件 `command-palette` 默认 disabled，要先 `app.internalPlugins.plugins['command-palette'].enable()`，否则连 `command-palette:open` 命令都不存在。
+
+**门禁**
+- `npx tsc --noEmit` 0 错；`npx vitest run tests/unit/core/command-registry.test.ts tests/unit/i18n` = 4 文件 / 48 例通过。
+- `check:i18n` 通过：zh 154 / en 154、0 无法解析键、动态键 3 处、棘轮 269 文件 / 11892 条不变（`core/**` 不计入棘轮）。
+- `npm run lint` 0 error / 1100 warning（存量）；`npm run preflight` 全绿。
+
+**下一轮候选**：i18n 第二期余下（设置分区正文 `ui/appearance-settings.ts`、`ui/settings/*-sections.ts`、写作主流程按钮与 Notice）；或清理 `COMMAND_DEFINITIONS` 的 description 与 `CommandGroupInfo` 死数据。
+
