@@ -1228,3 +1228,26 @@ PNG 差异只剩三簇——标题栏按钮簇（y=28–58）、页脚按钮簇�
 **文档**：新增 `docs/modules/settings-general.md`（8 节，SG-01..SG-05 全 done）；`docs/modules/INDEX.md` 插「设置页通用分区」行；视觉标准 §5 加 `nw-st-*` 行、§5.1 重算（162 / 828 / 754868）、清理记录补 Slice R 删 23、特异性段补「基类粒度」、存量大户表移除 160；`docs/CURRENT.md` §4 改切片 A–R、§6 口径改 162 / 828。
 
 **下一轮候选**（按 §5.1 存量大户）：`ui/views/book-detail-renderer.ts`（126）、`ui/full-writer/scene-outline-controller.ts`（123）、`ui/settings/knowledge-section.ts`（108）。
+### 2026-11-17 第四十四轮：Slice S 书籍详情渲染语义化（nw-kb-detail-* 续）
+
+**范围**：`ui/views/book-detail-renderer.ts`（2215 → 2206 行）剩余三块——`renderGenreInfo:833`（题材分类卡 + 分类建议 Top3 + 次要题材标签）、`renderQualityChart:954`（12 维评分雷达 + 分数条）、`renderBookTagsTab:2082`（题材/技法/自定义标签增删 + 空态）；文件里 Slice C/D/E 已建 `nw-kb-detail-*` 命名空间，本轮沿用而不新开前缀。
+
+**改动**：`nw-u-*` 126 → 0；内联 `style` 3 → 0。
+- 卡片复用既有 `.nw-kb-detail-card`（p10 / secondary / r6）与 `.nw-kb-detail-card--xl`（p16 / secondary / r8），正好等于旧工具类 `nw-u-p-16px nw-u-bg-background-secondary nw-u-brd-8px`；新增 `-card-header/-card-title/-card-actions/-field/-field-label/-field-value/-confidence`、`-rec-section/-rec-title/-rec-row(-main/-rank/-name/-bar)`、`-subgenres/-subgenre-list/-subgenre-tag`、`-quality(-radar/-scores/-overall/-overall-value/-overall-label/-score/-score-top/-score-name/-score-na/-score-bar)`、`-tag-group(--spaced)/-tag/-tag--custom/-tag-del/-tag-add/-tag-input`，共 35 个新类（含修饰类）。
+- 两处进度条 fill 合并成 `nw-kb-detail-bar-fill`（`width: var(--nw-kb-detail-pct, 0%)`，JS 改 `style.setProperty('--nw-kb-detail-pct', …)`）；**刻意不复用** `.nw-kb-detail-meter-fill`，因为它自带 `transition: width 0.3s`，旧内联没有，复用会引入补间。
+- 标签输入框改 `cls: 'nw-kb-detail-tag-input'`，CSS 选择器必须写 `input[type='text'].nw-kb-detail-tag-input`（`input[type=text]` 是 (0,1,1)，纯类名压不住）。
+- 规则追加到 `styles-src/27-knowledge-base.css`（不新建 37 号文件，避免同模块两套前缀），「Slice S」段从 `:2887` 起 246 行 / 5445 字节；把只此一处使用的 `.nw-rec-row` / `:hover` 从 `styles-src/26-cleanup-utilities.css` 折进 `-rec-row` 并删旧规则（−6 行）。
+- 删 18 个零引用工具类（定义 162 → 144，引用 828 → 702）：`nw-u-ai-flex-start, nw-u-brd-12px, nw-u-brd-3px, nw-u-c-interactive-accent, nw-u-fs-36px, nw-u-fwt-400, nw-u-fwt-700, nw-u-h-6px, nw-u-lh-1, nw-u-marginleft-4px, nw-u-minw-320px, nw-u-p-4px-12px, nw-u-p-6px-8px, nw-u-paddingtop-12px, nw-u-transition-background-0-15s, nw-u-w-16px, nw-u-w-60px, nw-u-w-80px`。
+
+**三处坑**
+1. **死类按意图补真就是像素差异**：被删的 `nw-flex-shrink-0`（全仓零定义）与 `nw-text-muted-11`（零定义）在旧 DOM 里等于没写，本轮按本文件 `:821-826` 的既有先例（`addInfoItem` 注释）补成真声明——4 个字段 label 的 `flex-shrink:0`、3 个置信度百分比 span 的 11px / muted。于是 `01-genre` 出现 610 px（0.274%）差异：百分比字号 13 → 11px、行高 16.9 → 14.3、颜色 rgb(34,34,34) → rgb(92,92,92)、rect 31×17 → 26×14，其余三场景 0 差。判为有意修正，闭合图 `D:\nw-tmp\crop-s-genre.png`。
+2. **知识库视图会以 DeferredView 恢复**：`getLeavesOfType('novel-writer-knowledge-base')[0].view` 有时拿到的是只有 base 方法的空壳（`view.constructor.name === 't'`），`view.bookDetailRenderer` 为 undefined；循环里必须先 `await leaf.loadIfDeferred()`，仍不是真视图再 `await leaf.setViewState({type:'novel-writer-knowledge-base', active:true})` 强制加载。该失败是间歇性的，同一脚本重跑就过。
+3. **题材 id 必须从真实知识库取**：手写 `'xianxia' / 'xuanhuan' / 'dushi'` 在 `kb.getGenre()` 里返回 undefined，次要题材标签与分类建议会渲染成空、验收等于没测；改成 `kb.getGenresByCategory('male')` + `kb.getSubGenres(g1.id)[0]` 才测到真名（`shared/webnovel-knowledge-base.ts:2666/2695/2705/2717`）。
+
+**验收**：`D:\nw-dev-vault\_visual-s\{before,after}` 4 场景（`01-genre` 720×308 / `02-quality` 720×405 / `03-tags` 720×279 / `04-tags-empty` 720×259，宿主 `#nw-s-host` 720px 宽）。高度 4/4 一致；`02/03/04` PNG 0 px、探针 struct/style/rect 全 0；`01-genre` 610 px（0.274%，bbox [109,64,162,122]，maxDelta 212，上述有意补真）、struct 0 / style 25 / rect 3。before 取自 worktree `D:\nw-tmp\before-s`（de9baf17 + node_modules junction + build：main.js 5,638,584 / styles.css 784,833），after 为仓内 build（**5,637,137 / 759136**）。
+
+**门禁**：`tsc --noEmit` 0 错；`build` 42 个样式源 / styles.css 30240 行；`check:inline-styles` 563（静态 472 / 动态 91）；`check:utility` 定义 144 / 引用 702 / 零引用 0；`check:css` bytes 759136 / 唯一类 4142 / hex 170 / rgbHsl 213 / !important 24；`check:bundle` main.js 5637137 / styles.css 759136（754868 → 759136，净 +4268）；`npx vitest run book-detail-renderer-tabs book-detail-renderer-tabs2 book-detail-logic book-detail-metrics` 4 文件 / 69 用例通过。`npm run preflight` EXIT=0（959 文件 / 10118 通过 + 3 skipped）。
+
+**文档**：新增 `docs/modules/book-detail.md`（8 节，SS-01..SS-05 全 done）；`docs/modules/INDEX.md` 插「书籍详情渲染」行；视觉标准 §5 加 `nw-kb-detail-*` 续行、§5.1 重算（144 / 702 / 759136）、清理记录补 Slice S 删 18、特异性段补「输入框特异性 + 别复用带动效的类」、存量大户表移除 126；`docs/CURRENT.md` §4 改切片 A–S、§6 口径改 144 / 702。
+
+**下一轮候选**（按 §5.1 存量大户）：`ui/full-writer/scene-outline-controller.ts`（123）、`ui/settings/knowledge-section.ts`（108）、`ui/polish-editor.ts`（104）。

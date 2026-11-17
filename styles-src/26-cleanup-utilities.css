@@ -340,12 +340,6 @@
 .nw-hover-border:hover {
     border-color: var(--interactive-accent);
 }
-.nw-rec-row {
-    background: transparent;
-}
-.nw-rec-row:hover {
-    background: var(--background-primary);
-}
 .nw-tpl-btn {
     padding: 6px 14px;
     border: 1px solid var(--background-modifier-border);

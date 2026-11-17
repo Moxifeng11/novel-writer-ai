@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-17T15:29:45.280Z",
-  "note": "Slice R：新增 styles-src/36-settings-general.css（general-sections.ts 的 nw-st-* 语义类），并删除 10 号文件里 23 个零引用 nw-u-* 定义。",
-  "bytes": 754868,
+  "generatedAt": "2026-11-17T15:56:27.578Z",
+  "note": "2026-11-17 Slice S（书籍详情渲染语义化）：styles.css 754868→759136（+4268B），uniqueClasses 4125→4142（+17 = 新增 35 个 nw-kb-detail-* 减去删掉的 18 个零引用 nw-u-*）；hex 170 / rgb-hsl 213 不变。",
+  "bytes": 759136,
   "important": 24,
   "hardcodedHex": 170,
   "rgbHsl": 213,
-  "uniqueClasses": 4125,
+  "uniqueClasses": 4142,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

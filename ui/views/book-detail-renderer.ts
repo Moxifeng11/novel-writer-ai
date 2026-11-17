@@ -832,18 +832,18 @@ export class BookDetailRenderer {
 
     private renderGenreInfo(container: HTMLElement, book: BookBasicInfo): void {
         const card = container.createDiv({
-            cls: 'nw-u-p-16px nw-u-bg-background-secondary nw-u-brd-8px'
+            cls: 'nw-kb-detail-card nw-kb-detail-card--xl'
         });
 
         const headerRow = card.createDiv({
-            cls: "nw-flex-between nw-u-marginbottom-12px", attr: {}
+            cls: "nw-kb-detail-card-header"
         });
         headerRow.createSpan({
             text: '分类信息',
-            cls: 'nw-u-fs-13px nw-u-fwt-600 nw-u-c-text-normal'
+            cls: 'nw-kb-detail-card-title'
         });
 
-        const actionBtns = headerRow.createDiv({ cls: 'nw-u-d-flex nw-u-gap-6px' });
+        const actionBtns = headerRow.createDiv({ cls: 'nw-kb-detail-card-actions' });
 
         const autoClassifyBtn = actionBtns.createEl('button', {
             text: '🔍 自动分类',
@@ -869,72 +869,68 @@ export class BookDetailRenderer {
 
         rows.forEach(row => {
             const rowEl = card.createDiv({
-                cls: 'nw-u-d-flex nw-u-ai-center nw-u-marginbottom-8px'
+                cls: 'nw-kb-detail-field'
             });
             rowEl.createSpan({
                 text: row.label + '：',
-                cls: "nw-flex-shrink-0 nw-u-fs-13px nw-u-c-text-muted nw-u-w-60px", attr: {}
+                cls: "nw-kb-detail-field-label"
             });
             const valueEl = rowEl.createSpan({
                 text: row.value,
-                cls: 'nw-u-fs-13px nw-u-c-text-normal nw-u-fwt-500 nw-u-flex-1'
+                cls: 'nw-kb-detail-field-value'
             });
             if (row.confidence !== undefined) {
                 valueEl.createSpan({
                     text: ` ${formatDetailPercent(row.confidence)}`,
-                    cls: "nw-text-muted-11 nw-u-fwt-400 nw-u-marginleft-4px", attr: {}
+                    cls: "nw-kb-detail-confidence"
                 });
             }
         });
 
         if (book.genreRecommendations && book.genreRecommendations.length > 0) {
-            const recSection = card.createDiv({ cls: 'nw-u-margintop-12px nw-u-paddingtop-12px nw-u-bt-1px-solid-background-m' });
+            const recSection = card.createDiv({ cls: 'nw-kb-detail-rec-section' });
             recSection.createDiv({
                 text: '分类建议 (Top 3)',
-                cls: "nw-text-sm-muted nw-u-marginbottom-8px", attr: {}
+                cls: "nw-kb-detail-rec-title"
             });
 
             book.genreRecommendations.forEach((rec, idx) => {
                 const recRow = recSection.createDiv({
-                    cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-p-6px-8px nw-u-brd-4px nw-u-cur-pointer nw-u-transition-background-0-15s nw-u-marginbottom-4px'
+                    cls: 'nw-kb-detail-rec-row'
                 });
-                recRow.addClass('nw-rec-row');
                 recRow.addEventListener('click', async () => {
                     await this.deps.onApplyGenreRecommendation(book, rec);
                 });
 
-                const left = recRow.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px' });
+                const left = recRow.createDiv({ cls: 'nw-kb-detail-rec-main' });
                 left.createSpan({
                     text: `${idx + 1}.`,
-                    cls: "nw-text-sm-muted nw-u-w-16px", attr: {}
+                    cls: "nw-kb-detail-rec-rank"
                 });
                 left.createSpan({
                     text: `${this.getGenreName(rec.genreId)}${rec.subGenreId ? ' · ' + this.getSubGenreName(rec.genreId, rec.subGenreId) : ''}`,
-                    cls: 'nw-u-fs-12px nw-u-c-text-normal'
+                    cls: 'nw-kb-detail-rec-name'
                 });
 
-                const confBar = recRow.createDiv({
-                    cls: 'nw-u-w-80px nw-u-h-6px nw-u-bg-background-primary nw-u-brd-3px nw-u-ov-hidden'
-                });
-                confBar.createDiv({
-                    attr: { style: `height:100%;width:${(rec.confidence * 100).toFixed(0)}%;background:var(--interactive-accent);border-radius:3px;` }
-                });
+                const confBar = recRow.createDiv({ cls: 'nw-kb-detail-rec-bar' });
+                const confFill = confBar.createDiv({ cls: 'nw-kb-detail-bar-fill' });
+                confFill.style.setProperty('--nw-kb-detail-pct', `${(rec.confidence * 100).toFixed(0)}%`);
             });
         }
 
         if (book.secondaryGenres && book.secondaryGenres.length > 0) {
-            const row = card.createDiv({ cls: 'nw-u-d-flex nw-u-ai-flex-start nw-u-margintop-8px' });
+            const row = card.createDiv({ cls: 'nw-kb-detail-subgenres' });
             row.createSpan({
                 text: '次要：',
-                cls: "nw-flex-shrink-0 nw-u-fs-13px nw-u-c-text-muted nw-u-w-60px", attr: {}
+                cls: "nw-kb-detail-field-label"
             });
-            const tagsEl = row.createDiv({ cls: "nw-flex-wrap-sm nw-u-flex-1", attr: {} });
+            const tagsEl = row.createDiv({ cls: "nw-kb-detail-subgenre-list" });
             book.secondaryGenres.forEach(gid => {
                 const g = this.deps.getKb()?.getGenre(gid);
                 if (g) {
                     tagsEl.createSpan({
                         text: g.name,
-                        cls: 'nw-u-p-2px-8px nw-u-fs-11px nw-u-bg-background-primary nw-u-brd-10px nw-u-c-text-muted'
+                        cls: 'nw-kb-detail-subgenre-tag'
                     });
                 }
             });
@@ -961,43 +957,40 @@ export class BookDetailRenderer {
         const qs = book.qualityScores;
 
         const wrap = container.createDiv({
-            cls: 'nw-u-d-flex nw-u-gap-24px nw-u-fwr-wrap nw-u-ai-flex-start'
+            cls: 'nw-kb-detail-quality'
         });
 
         const radarCard = wrap.createDiv({
-            cls: 'nw-u-flex-1 nw-u-minw-320px nw-u-d-flex nw-u-jc-center'
+            cls: 'nw-kb-detail-quality-radar'
         });
         this.renderChart(radarCard, radarChart(buildQualityRadarData(qs), { size: 300, title: '质量雷达图 (8维)' }));
 
         const scoresCard = wrap.createDiv({
-            cls: 'nw-u-flex-1 nw-u-minw-200px'
+            cls: 'nw-kb-detail-quality-scores'
         });
 
         const overall = scoresCard.createDiv({
-            cls: 'nw-u-ta-center nw-u-marginbottom-20px nw-u-p-16px nw-u-bg-background-secondary nw-u-brd-8px'
+            cls: 'nw-kb-detail-quality-overall'
         });
         overall.createDiv({
             text: formatDetailNumber(qs.overall, 0),
-            cls: 'nw-u-fs-36px nw-u-fwt-700 nw-u-c-interactive-accent'
+            cls: 'nw-kb-detail-quality-overall-value'
         });
-        overall.createDiv({ text: '综合评分', cls: 'nw-u-fs-13px nw-u-c-text-muted nw-u-margintop-4px' });
+        overall.createDiv({ text: '综合评分', cls: 'nw-kb-detail-quality-overall-label' });
 
         buildQualityScoreRows(qs).forEach(s => {
-            const item = scoresCard.createDiv({ cls: 'nw-u-marginbottom-10px' });
-            const top = item.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-marginbottom-4px' });
-            top.createSpan({ text: s.name, cls: 'nw-u-fs-12px nw-u-c-text-normal' });
+            const item = scoresCard.createDiv({ cls: 'nw-kb-detail-score' });
+            const top = item.createDiv({ cls: 'nw-kb-detail-score-top' });
+            top.createSpan({ text: s.name, cls: 'nw-kb-detail-score-name' });
             if (s.optional && s.value == null) {
-                top.createSpan({ text: 'N/A', cls: 'nw-u-fs-12px nw-u-c-text-faint' });
+                top.createSpan({ text: 'N/A', cls: 'nw-kb-detail-score-na' });
             } else {
                 top.createSpan({ text: formatDetailNumber(s.value, 0, '分'), cls: 'nw-text-sm-muted' });
             }
-            const bar = item.createDiv({
-                cls: 'nw-u-h-6px nw-u-bg-background-secondary nw-u-brd-3px nw-u-ov-hidden'
-            });
+            const bar = item.createDiv({ cls: 'nw-kb-detail-score-bar' });
             const displayVal = s.optional && s.value == null ? 0 : (s.value ?? 0);
-            bar.createDiv({
-                attr: { style: `height:100%;width:${displayVal}%;background:var(--interactive-accent);border-radius:3px;` }
-            });
+            const fill = bar.createDiv({ cls: 'nw-kb-detail-bar-fill' });
+            fill.style.setProperty('--nw-kb-detail-pct', `${displayVal}%`);
         });
     }
 
@@ -2088,45 +2081,45 @@ export class BookDetailRenderer {
      */
     public renderBookTagsTab(container: HTMLElement, book: BookBasicInfo): void {
         const themeSection = this.createDetailSection(container, '主题标签');
-        const themeWrap = themeSection.createDiv({ cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-6px' });
+        const themeWrap = themeSection.createDiv({ cls: 'nw-kb-detail-tag-group' });
         if (book.themeTags.length === 0) {
-            themeWrap.createSpan({ text: '暂无主题标签', cls: 'nw-u-c-text-muted nw-u-fs-13px' });
+            themeWrap.createSpan({ text: '暂无主题标签', cls: 'nw-kb-detail-text' });
         } else {
             book.themeTags.forEach(tag => {
                 themeWrap.createSpan({
                     text: tag,
-                    cls: 'nw-u-p-4px-12px nw-u-fs-12px nw-u-bg-background-secondary nw-u-brd-12px nw-u-c-text-normal'
+                    cls: 'nw-kb-detail-tag'
                 });
             });
         }
 
         const techniqueSection = this.createDetailSection(container, '技巧标签');
-        const techWrap = techniqueSection.createDiv({ cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-6px' });
+        const techWrap = techniqueSection.createDiv({ cls: 'nw-kb-detail-tag-group' });
         if (book.techniqueTags.length === 0) {
-            techWrap.createSpan({ text: '暂无技巧标签', cls: 'nw-u-c-text-muted nw-u-fs-13px' });
+            techWrap.createSpan({ text: '暂无技巧标签', cls: 'nw-kb-detail-text' });
         } else {
             book.techniqueTags.forEach(tag => {
                 techWrap.createSpan({
                     text: tag,
-                    cls: 'nw-u-p-4px-12px nw-u-fs-12px nw-u-bg-background-secondary nw-u-brd-12px nw-u-c-text-normal'
+                    cls: 'nw-kb-detail-tag'
                 });
             });
         }
 
         const customSection = this.createDetailSection(container, '自定义标签');
-        const customTagsWrap = customSection.createDiv({ cls: 'nw-u-d-flex nw-u-fwr-wrap nw-u-gap-6px nw-u-marginbottom-12px' });
+        const customTagsWrap = customSection.createDiv({ cls: 'nw-kb-detail-tag-group nw-kb-detail-tag-group--spaced' });
 
         if (book.customTags.length === 0) {
-            customTagsWrap.createSpan({ text: '暂无自定义标签', cls: 'nw-u-c-text-muted nw-u-fs-13px' });
+            customTagsWrap.createSpan({ text: '暂无自定义标签', cls: 'nw-kb-detail-text' });
         } else {
             book.customTags.forEach((tag, idx) => {
                 const tagEl = customTagsWrap.createSpan({
-                    cls: "nw-flex-row-sm nw-u-p-4px-12px nw-u-fs-12px nw-u-bg-background-secondary nw-u-brd-12px nw-u-c-text-normal", attr: {}
+                    cls: "nw-kb-detail-tag nw-kb-detail-tag--custom"
                 });
                 tagEl.createSpan({ text: tag });
                 const delBtn = tagEl.createSpan({
                     text: '×',
-                    cls: 'nw-u-cur-pointer nw-u-c-text-muted nw-u-fs-14px nw-u-lh-1',
+                    cls: 'nw-kb-detail-tag-del',
                     attr: { 'aria-label': `删除标签 ${tag}`, role: 'button', tabindex: '0' }
                 });
                 delBtn.addEventListener('click', (e) => {
@@ -2138,13 +2131,11 @@ export class BookDetailRenderer {
             });
         }
 
-        const addWrap = customSection.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px' });
+        const addWrap = customSection.createDiv({ cls: 'nw-kb-detail-tag-add' });
         const addInput = addWrap.createEl('input', {
             type: 'text',
-            attr: {
-                placeholder: '输入新标签，按回车添加',
-                style: 'flex:1;padding:6px 10px;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;background:var(--background-primary);color:var(--text-normal);'
-            }
+            cls: 'nw-kb-detail-tag-input',
+            attr: { placeholder: '输入新标签，按回车添加' }
         });
         const addBtn = addWrap.createEl('button', {
             text: '添加',

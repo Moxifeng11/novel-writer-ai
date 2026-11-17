@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-11-17T15:30:10.587Z",
+  "generatedAt": "2026-11-17T15:56:08.590Z",
   "note": "棘轮基线：每文件只允许下降；新增内联样式需先说明动态原因并显式更新",
-  "total": 566,
-  "static": 475,
-  "dynamic": 91,
+  "total": 563,
+  "static": 474,
+  "dynamic": 89,
   "files": {
     "ui/svg-charts.ts": 64,
     "ui/knowledge-monitor-modal.ts": 40,
@@ -34,7 +34,6 @@
     "ui/character-recognition-modal.ts": 3,
     "ui/co-writing-view.ts": 3,
     "ui/full-writer/wizard-controller.ts": 3,
-    "ui/views/book-detail-renderer.ts": 3,
     "ui/write-chapter-modal.ts": 3,
     "ui/batch-chapters-modal.ts": 2,
     "ui/full-writer/project-selector-controller.ts": 2,

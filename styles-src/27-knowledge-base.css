@@ -2882,3 +2882,250 @@ button.nw-kb-monitor-settings:disabled {
     cursor: not-allowed;
     opacity: 0.5;
 }
+
+
+/* ---- Slice S：书籍详情 · 题材卡片 / 质量评分 / 标签页（nw-kb-detail-* 续） ----
+   替代 ui/views/book-detail-renderer.ts 里原有的 nw-u-* 工具类组合与三处内联样式；
+   每条声明按原先生效值复刻。分类建议条与质量评分条共用一个填充类，
+   宽度通过 CSS 变量 --nw-kb-detail-pct 注入（原先写内联 style 宽度）。 */
+
+.nw-kb-detail-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.nw-kb-detail-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.nw-kb-detail-card-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.nw-kb-detail-field {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+/* 原先挂的 nw-flex-shrink-0 从未定义（死类），这里按设计意图补上 flex-shrink */
+.nw-kb-detail-field-label {
+    flex-shrink: 0;
+    width: 60px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.nw-kb-detail-field-value {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-normal);
+}
+
+/* 原先挂的 nw-text-muted-11 从未定义（死类），同 addInfoItem 的处理：按意图补成 11px 弱化色 */
+.nw-kb-detail-confidence {
+    margin-left: 4px;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.nw-kb-detail-rec-section {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.nw-kb-detail-rec-title {
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.nw-kb-detail-rec-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    margin-bottom: 4px;
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.nw-kb-detail-rec-row:hover {
+    background: var(--background-primary);
+}
+
+.nw-kb-detail-rec-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nw-kb-detail-rec-rank {
+    width: 16px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.nw-kb-detail-rec-name {
+    font-size: 12px;
+    color: var(--text-normal);
+}
+
+.nw-kb-detail-rec-bar {
+    width: 80px;
+    height: 6px;
+    overflow: hidden;
+    background: var(--background-primary);
+    border-radius: 3px;
+}
+
+.nw-kb-detail-bar-fill {
+    width: var(--nw-kb-detail-pct, 0%);
+    height: 100%;
+    background: var(--interactive-accent);
+    border-radius: 3px;
+}
+
+.nw-kb-detail-subgenres {
+    display: flex;
+    align-items: flex-start;
+    margin-top: 8px;
+}
+
+.nw-kb-detail-subgenre-list {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.nw-kb-detail-subgenre-tag {
+    padding: 2px 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--background-primary);
+    border-radius: 10px;
+}
+
+.nw-kb-detail-quality {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 24px;
+}
+
+.nw-kb-detail-quality-radar {
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    min-width: 320px;
+}
+
+.nw-kb-detail-quality-scores {
+    flex: 1;
+    min-width: 200px;
+}
+
+.nw-kb-detail-quality-overall {
+    padding: 16px;
+    margin-bottom: 20px;
+    text-align: center;
+    background: var(--background-secondary);
+    border-radius: 8px;
+}
+
+.nw-kb-detail-quality-overall-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--interactive-accent);
+}
+
+.nw-kb-detail-quality-overall-label {
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.nw-kb-detail-score {
+    margin-bottom: 10px;
+}
+
+.nw-kb-detail-score-top {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.nw-kb-detail-score-name {
+    font-size: 12px;
+    color: var(--text-normal);
+}
+
+.nw-kb-detail-score-na {
+    font-size: 12px;
+    color: var(--text-faint);
+}
+
+.nw-kb-detail-score-bar {
+    height: 6px;
+    overflow: hidden;
+    background: var(--background-secondary);
+    border-radius: 3px;
+}
+
+.nw-kb-detail-tag-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.nw-kb-detail-tag-group--spaced {
+    margin-bottom: 12px;
+}
+
+.nw-kb-detail-tag {
+    padding: 4px 12px;
+    font-size: 12px;
+    color: var(--text-normal);
+    background: var(--background-secondary);
+    border-radius: 12px;
+}
+
+.nw-kb-detail-tag--custom {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nw-kb-detail-tag-del {
+    font-size: 14px;
+    line-height: 1;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.nw-kb-detail-tag-add {
+    display: flex;
+    gap: 8px;
+}
+
+/* 输入框必须带元素限定：Obsidian 的 input[type=text]（0,1,1）会压掉纯类选择器 */
+input[type='text'].nw-kb-detail-tag-input {
+    flex: 1;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: var(--text-normal);
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+}
