@@ -11,7 +11,7 @@
 | `shared/` | 255 | 50823 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3387 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 300 | 113176 | 1159 | 917 | 79% |
+| `ui/` | 301 | 113483 | 1161 | 919 | 79% |
 
 ## 文件清单
 
@@ -824,11 +824,12 @@
 | `ui/fingerprint-library-modal.ts` | 306 | 1 | 1 |
 | `ui/fingerprint-utils.ts` | 209 | 11 | 11 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |
-| `ui/full-writer-view.ts` | 2751 | 2 | 2 |
+| `ui/full-writer-view.ts` | 2772 | 2 | 2 |
 | `ui/full-writer/batch-pipeline-runner.ts` | 502 | 5 | 4 |
 | `ui/full-writer/batch-step-retry.ts` | 26 | 2 | 1 |
 | `ui/full-writer/batch-targets.ts` | 68 | 4 | 4 |
 | `ui/full-writer/chapter-orchestrator.ts` | 503 | 10 | 9 |
+| `ui/full-writer/checkup-bar-controller.ts` | 286 | 2 | 2 |
 | `ui/full-writer/context-loader-controller.ts` | 274 | 2 | 2 |
 | `ui/full-writer/cover-picker-controller.ts` | 146 | 1 | 1 |
 | `ui/full-writer/creation-flow-state.ts` | 262 | 5 | 4 |

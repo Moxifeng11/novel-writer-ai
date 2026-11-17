@@ -1,0 +1,192 @@
+/* ============================================================
+   42-full-writer-checkup.css — 全屏写作视图「写作体检」条
+   负责：ui/full-writer/checkup-bar-controller.ts（整体进度 / 偏离风险 / 建议 / 情节线明细）
+   不负责：三栏布局与状态栏（02-full-writer-view.css / 04-workspace-layers.css）
+   类名前缀：nw-fw-checkup-*
+   ============================================================ */
+
+.novel-writer-fw-checkup {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--nw-surface, var(--background-secondary));
+    border-top: 1px solid var(--nw-divider, var(--background-modifier-border));
+    font-size: 12px;
+    color: var(--nw-text-secondary, var(--text-muted));
+}
+
+.nw-fw-checkup-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 6px 20px;
+}
+
+.nw-fw-checkup-icon {
+    flex-shrink: 0;
+}
+
+.nw-fw-checkup-title {
+    flex-shrink: 0;
+    font-weight: 600;
+    color: var(--nw-text-primary, var(--text-normal));
+}
+
+.nw-fw-checkup-progress {
+    flex-shrink: 0;
+    min-width: 38px;
+    font-variant-numeric: tabular-nums;
+}
+
+.nw-fw-checkup-track {
+    flex-shrink: 0;
+    width: 96px;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--background-modifier-border);
+    overflow: hidden;
+}
+
+.nw-fw-checkup-track--sm {
+    width: 72px;
+    height: 4px;
+}
+
+.nw-fw-checkup-fill {
+    height: 100%;
+    width: var(--nw-fw-checkup-pct, 0%);
+    background: var(--interactive-accent);
+    border-radius: 3px;
+    transition: width 0.2s ease;
+}
+
+.nw-fw-checkup-fill--empty {
+    width: 0;
+}
+
+.nw-fw-checkup-risk {
+    flex-shrink: 0;
+    padding: 0 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--background-modifier-hover);
+}
+
+.nw-fw-checkup-risk--low {
+    color: var(--text-success);
+    background: color-mix(in srgb, var(--text-success) 14%, transparent);
+}
+
+.nw-fw-checkup-risk--medium {
+    color: var(--text-warning);
+    background: color-mix(in srgb, var(--text-warning) 14%, transparent);
+}
+
+.nw-fw-checkup-risk--high {
+    color: var(--text-error);
+    background: color-mix(in srgb, var(--text-error) 14%, transparent);
+}
+
+.nw-fw-checkup-tip {
+    flex: 1;
+    min-width: 120px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--nw-text-secondary, var(--text-muted));
+}
+
+.nw-fw-checkup-tip--error {
+    color: var(--text-error);
+}
+
+.nw-fw-checkup-actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nw-fw-checkup-time {
+    font-size: 11px;
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+}
+
+button.nw-fw-checkup-btn {
+    padding: 2px 10px;
+    font-size: 11px;
+    line-height: 1.5;
+    cursor: pointer;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: var(--background-primary);
+    color: var(--nw-text-secondary, var(--text-muted));
+}
+
+button.nw-fw-checkup-btn:hover {
+    background: var(--background-modifier-hover);
+}
+
+button.nw-fw-checkup-btn:disabled {
+    cursor: default;
+    opacity: 0.5;
+}
+
+button.nw-fw-checkup-btn--detail {
+    color: var(--text-accent);
+    border-color: var(--background-modifier-border);
+}
+
+.nw-fw-checkup-details {
+    display: none;
+    padding: 0 20px 8px;
+}
+
+.nw-fw-checkup-details--open {
+    display: block;
+}
+
+.nw-fw-checkup-detail-title {
+    margin: 6px 0 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--nw-text-primary, var(--text-normal));
+}
+
+.nw-fw-checkup-detail-item {
+    font-size: 11px;
+    line-height: 1.7;
+    color: var(--text-muted);
+}
+
+.nw-fw-checkup-thread {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    line-height: 1.9;
+}
+
+.nw-fw-checkup-thread-name {
+    flex-shrink: 0;
+    max-width: 220px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--nw-text-secondary, var(--text-muted));
+}
+
+.nw-fw-checkup-thread-meta {
+    flex-shrink: 0;
+    color: var(--text-faint);
+}
+
+.nw-fw-checkup-thread-pct {
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-faint);
+}

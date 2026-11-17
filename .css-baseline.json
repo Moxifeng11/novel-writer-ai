@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-17T17:46:23.904Z",
-  "note": "Slice Y：拆解引擎分区语义化，styles-src 新增 41-settings-deconstruction.css；bytes 784775→见实测、uniqueClasses +7（新增 nw-st-dc-*），删除 9 个零引用工具类（定义 55→46）",
-  "bytes": 786456,
+  "generatedAt": "2026-11-17T18:28:47.635Z",
+  "note": "缺口 2：全屏写作体检条新增 styles-src/42-full-writer-checkup.css（+27 个 nw-fw-checkup-* 类，含空态修饰类），bytes 786456→790741（+4285B），uniqueClasses 4261→4288",
+  "bytes": 790741,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 223,
-  "uniqueClasses": 4261,
+  "uniqueClasses": 4288,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

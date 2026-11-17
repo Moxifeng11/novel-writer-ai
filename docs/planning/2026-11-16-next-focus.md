@@ -1436,3 +1436,38 @@ PNG 差异只剩三簇——标题栏按钮簇（y=28–58）、页脚按钮簇�
 `docs/planning/2026-11-18-feature-gaps.md` ①标 done 并记录交付；`docs/CURRENT.md` §4 增缺口清单行。
 
 **下一轮**：缺口 ②「全屏写作视图接实时体检」（`ui/full-writer/` 目前对 `live-analysis` 零引用）。
+
+### 2026-11-18 第五十二轮：功能缺口 ②——全屏写作体检条（`nw-fw-*`）
+
+**背景**：缺口清单 ②（用户 m10275 选「按顺序 1→2 连做」的第二项）。改前 `ui/full-writer/` 对 `live-analysis` **零引用**，
+实时分析只在协同写作视图；且 `ui/cowrite/live-analysis-controller.ts` 与 `CoWritingView` 强耦合（读 `rightEditor.value`、
+`engine.inspectSettingGuard`、`refreshMetrics`/`refreshMonitorPanel`、`tractionEngine`、`tractionContainer`/`warningContainer`、
+`volume`/`chapterNum` 共 8 处内部字段），不能直接复用。
+
+**交付**：新增 `ui/full-writer/checkup-bar-controller.ts`（288 行，`FullWriterCheckupController`）——
+- `render(container)` 建条 + 首次 `refresh(true)`；`refresh(force)` 走 `EndingTractionEngine.checkTraction(volume, chapterNum)`
+  （纯分卷大纲正则解析，**不调 AI**），20s 节流（`MIN_INTERVAL_MS`），步骤完成/手动刷新走 `force`。
+- 条内容：🩺 写作体检 / 完成度百分比 / 进度轨道（CSS 变量 `--nw-fw-checkup-pct`）/ 偏离徽标（`--low|--medium|--high`）/
+  一句话建议 / 「最近 HH:MM」/ 刷新 + 详情；详情就地展开情节线清单（`--open`）。
+- 空态（无项目或无章节）显示「打开章节后自动体检」并禁用按钮；失败只覆盖建议文案（`体检失败：…`）并恢复按钮；
+  `seq` token 防切章后陈旧回写；`busy` 期间忽略重复点击。
+- 装配 `ui/full-writer-view.ts` 5 处：import `:14`、字段 `:138`、构造 `:871`、渲染 `:1936`（try/catch + `// silent-ok`）、
+  `onStepComplete` 强制刷新 `:1391`。
+- 样式 `styles-src/42-full-writer-checkup.css`（4240 字节 / 193 行 / 29 个选择器）；模块短名 `fw-` 在视觉标准 §1.3 首次登记。
+
+**坑**：`applyIdle` 里写 `style.setProperty('--nw-fw-checkup-pct', '0%')` 会被 `obsidianmd/no-static-styles-assignment` 判 **error**
+（字面量内联样式），`npm run lint` 直接挂；改成修饰类 `nw-fw-checkup-fill--empty`（`width: 0`，靠源码顺序压过变量），
+动态百分比仍写 CSS 变量。
+
+**验收**：`tsc --noEmit` 0 错；`npm run lint` 0 error / 1102 warning；`npm run build` 48 源 / styles.css 31740 行 /
+main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八条全绿；
+实机 `D:\nw-tmp\verify-checkup.mjs`（临时分卷大纲 + Playwright，连跑两次 `ok:true`）：`progress 0%` / `risk 偏离 中` /
+`tip 主线进度滞后：林昭的身世之谜` / `rect [366,870,1309,43]`，详情展开 2 条情节线（主线·活跃 / 副线·活跃），刷新不回空态；
+`check:inline-styles` 525、`check:utility` 46/142 均不变；`check:css` 790741 / uniqueClasses 4288、
+`check:bundle` main.js 5632554 / styles.css 790741 已 `--update-baseline --note`；`npm run preflight` EXIT=0。
+
+**文档**：新增 `docs/modules/full-writer-checkup.md`（8 节，CW-01..CW-04 全 done）；`docs/modules/INDEX.md` 插行；
+视觉标准 §1.3 登记 `fw-`、§5 加行、§5.1 styles.css 改 790741；`docs/CURRENT.md` §4 缺口清单状态；
+`docs/planning/2026-11-18-feature-gaps.md` ②标 done 并记录实际做法。
+
+**下一轮**：缺口 ③「发布前错别字 / 标点体检」（纯本地规则 + 接入导出前置检查）。

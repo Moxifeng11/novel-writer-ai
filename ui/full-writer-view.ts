@@ -11,6 +11,7 @@ import { TabController } from './full-writer/tab-controller';
 import { EntityStateController } from './full-writer/entity-state-controller';
 import { TitleBarController } from './full-writer/title-bar-controller';
 import { StatusBarController } from './full-writer/status-bar-controller';
+import { FullWriterCheckupController } from './full-writer/checkup-bar-controller';
 import { ContextLoaderController } from './full-writer/context-loader-controller';
 import { parseChapterFromPath, estimateTotalChars as calcTotalChars, rebuildChapDir, calcResumeStepIndex as calcResumeIdx, findStepByIndex } from './full-writer/full-writer-utils';
 import { CoverPickerController } from './full-writer/cover-picker-controller';
@@ -134,6 +135,7 @@ export class FullWriterView extends ItemView {
     private entityStateController!: EntityStateController;
     private titleBarController!: TitleBarController;
     private statusBarController!: StatusBarController;
+    private checkupController!: FullWriterCheckupController;
     private contextLoaderController!: ContextLoaderController;
 
     private context: GatheredContext | null = null;
@@ -866,6 +868,14 @@ export class FullWriterView extends ItemView {
             onChangeNarrativeStructure: (id) => { void this.switchNarrativeStructure(id); },
         });
 
+        this.checkupController = new FullWriterCheckupController({
+            app: this.app,
+            plugin: this.plugin,
+            getProject: () => this.project,
+            getVolume: () => this.volume,
+            getChapterNum: () => this.chapterNum,
+        });
+
         this.contextLoaderController = new ContextLoaderController({
             app: this.app,
             plugin: this.plugin,
@@ -1375,6 +1385,10 @@ export class FullWriterView extends ItemView {
                 // v3.4.8 B7: 扩展 onStepComplete 触发——fix/finalFix 改写正文后也需重新检测实体状态
                 if ((stepKey === 'bodyGeneration' || stepKey === 'fix' || stepKey === 'finalFix') && this.project && this.chapterNum) {
                     await this.detectAndUpdateEntityStates(content);
+                }
+                // 正文变动后重算体检（情节进度依赖当前章节号，不读正文）
+                if (stepKey === 'bodyGeneration' || stepKey === 'fix' || stepKey === 'finalFix') {
+                    void this.checkupController.refresh(true);
                 }
             },
 
@@ -1916,6 +1930,13 @@ export class FullWriterView extends ItemView {
             }
             // 三栏可拖拽：在两个翼与中栏之间插入分隔条（第 4 轮统一原语）
             this.initWorkspaceResizers(workspace);
+
+            // 写作体检条：状态栏之上的一条，随章节切换与正文生成刷新
+            try {
+                this.checkupController.render(mainContainer);
+            } catch (e) { // silent-ok: 体检条是旁路，异常跳过不阻塞主流程
+                log.warn('[小说工坊] 写作体检条渲染异常（已跳过）:', e);
+            }
 
             // 状态栏
             this.renderStatusBar(mainContainer);
