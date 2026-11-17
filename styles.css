@@ -39,6 +39,7 @@
  *   - styles-src/29-knowledge-detail-modal.css
  *   - styles-src/30-wizard-steps.css
  *   - styles-src/31-monitor-panel-b.css
+ *   - styles-src/32-fingerprint.css
  *
  * 修改样式请编辑 styles-src/ 下对应源文件，然后运行 npm run build:styles
  * （npm run build 与 preflight 均已包含该步骤 / 一致性校验）。
@@ -10085,7 +10086,6 @@ button.nw-btn-icon {
 .nw-u-p-2px{padding:2px}
 .nw-u-p-2px-6px{padding:2px 6px}
 .nw-u-p-2px-8px{padding:2px 8px}
-.nw-u-p-3px-10px{padding:3px 10px}
 .nw-u-p-40px{padding:40px}
 .nw-u-p-4px-10px{padding:4px 10px}
 .nw-u-p-4px-12px{padding:4px 12px}
@@ -10231,7 +10231,6 @@ button.nw-btn-icon {
 .nw-u-m-0-0-6px{margin:0 0 6px}
 .nw-u-m-0-4px-12px{margin:0 4px 12px}
 .nw-u-m-10px-0{margin:10px 0}
-.nw-u-m-12px-0{margin:12px 0}
 .nw-u-m-16px-0-12px-0{margin:16px 0 12px 0}
 .nw-u-m-16px-0-8px-0{margin:16px 0 8px 0}
 .nw-u-m-1px-0-1px-8px{margin:1px 0 1px 8px}
@@ -10250,7 +10249,6 @@ button.nw-btn-icon {
 .nw-u-m-6px-0-0-0{margin:6px 0 0 0}
 .nw-u-m-6px-0-2px-0{margin:6px 0 2px 0}
 .nw-u-m-8px-0{margin:8px 0}
-.nw-u-m-8px-0-16px-0{margin:8px 0 16px 0}
 .nw-u-m-8px-0-4px-0{margin:8px 0 4px 0}
 .nw-u-m-8px-auto{margin:8px auto}
 .nw-u-p-0{padding:0}
@@ -10286,8 +10284,6 @@ button.nw-btn-icon {
 
 .nw-u-d-none{display:none}
 
-.nw-u-gap-3px{gap:3px}
-.nw-u-gap-8px-16px{gap:8px 16px}
 .nw-u-h-400px{height:400px}
 .nw-u-lh-1-7{line-height:1.7}
 .nw-u-lh-1-8{line-height:1.8}
@@ -10295,14 +10291,11 @@ button.nw-btn-icon {
 .nw-u-maxh-30vh{max-height:30vh}
 .nw-u-maxh-500px{max-height:500px}
 .nw-u-maxh-50vh{max-height:50vh}
-.nw-u-maxw-400px{max-width:400px}
 .nw-u-minh-150px{min-height:150px}
 
 .nw-u-minw-16px{min-width:16px}
-.nw-u-minw-240px{min-width:240px}
 .nw-u-minw-40px{min-width:40px}
 .nw-u-minw-48px{min-width:48px}
-.nw-u-minw-56px{min-width:56px}
 .nw-u-minw-60px{min-width:60px}
 .nw-u-op-0{opacity:0}
 .nw-u-op-0-4{opacity:0.4}
@@ -10322,12 +10315,10 @@ button.nw-btn-icon {
 .nw-u-ws-pre-wrap{white-space:pre-wrap}
 .nw-u-w-180px{width:180px}
 .nw-u-w-260px{width:260px}
-.nw-u-w-300px{width:300px}
 .nw-u-w-320px{width:320px}
 .nw-u-wordbreak-break-word{word-break:break-word}
 .nw-u-z-10{z-index:10}
 .nw-u-bordercolor-background-modifier-bo{border-color:var(--background-modifier-border)}
-.nw-u-blt-3px-solid-interactive-{border-left:3px solid var(--interactive-accent)}
 .nw-u-blt-3px-solid-text-accent{border-left:3px solid var(--text-accent)}
 .nw-u-bt-warning-border{border-top:1px solid color-mix(in srgb, var(--text-warning) 30%, transparent)}
 .nw-u-fontfamily-font-interface{font-family:var(--font-interface)}
@@ -10355,11 +10346,8 @@ button.nw-btn-icon {
 .nw-u-margintop-0{margin-top:0}
 .nw-u-margintop-24px{margin-top:24px}
 .nw-u-margintop-3px{margin-top:3px}
-.nw-u-margin-top-neg-4px{margin-top:-4px}
 .nw-u-margintop-6px{margin-top:6px}
-.nw-u-paddingbottom-12px{padding-bottom:12px}
 .nw-u-paddingright-60px{padding-right:60px}
-.nw-u-paddingtop-16px{padding-top:16px}
 .nw-u-r-8px{right:8px}
 .nw-u-t-8px{top:8px}
 
@@ -10495,17 +10483,34 @@ button.nw-btn-icon {
 }
 
 .nw-fingerprint-main-layout {
+    /* Slice L：原 nw-u-d-flex / nw-u-h-100 / nw-u-w-100 已删除，声明合并进本规则
+       （不能在 32-fingerprint.css 另写 .nw-scope 规则，否则 (0,2,0) 会压过下方 container query）。 */
+    display: flex;
+    width: 100%;
+    height: 100%;
     min-height: 0;
     overflow: hidden;
 }
 
 .nw-fingerprint-left-sidebar {
+    /* 原 nw-u-w-300px / nw-u-minw-240px / nw-u-maxw-400px / nw-u-brt-1px-solid-background-m
+       / nw-u-d-flex / nw-u-fd-column 合并至此；窄屏覆盖见文件下方 @container。 */
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+    min-width: 240px;
+    max-width: 400px;
+    border-right: 1px solid var(--background-modifier-border);
     overflow: hidden;
     background: var(--background-secondary);
 }
 
 .nw-fingerprint-right-panel {
+    /* 原 nw-u-flex-1 / nw-u-ovy-auto / nw-u-p-16px 合并至此；窄屏 padding 覆盖见 @container。 */
+    flex: 1;
     min-width: 0;
+    padding: 16px;
+    overflow-y: auto;
 }
 
 .nw-fingerprint-list {
@@ -27248,4 +27253,827 @@ button.nw-kb-detail-tab--active {
   font-size: var(--nw-monb-fs, 16px);
   font-weight: 700;
   color: var(--nw-text-muted, var(--text-faint));
+}
+/* 文笔指纹库（Slice L）：nw-fp-* 语义类
+   负责：ui/views/writing-fingerprint-view.ts 的视图外壳/侧栏/列表/详情区与两个弹窗
+        （编辑指纹、从章节提取），以及 ui/fingerprint-detail-modal.ts。
+        知识库选书弹窗（KnowledgeBookPickerModal）内容只有既有 nw-kb-picker-* 类，未纳入本切片。
+   不负责：nw-fingerprint-* 既有块的响应式（container query 仍在 11-fingerprint-and-workbench.css），
+          nw-btn-*、nw-fp-section-h4、nw-kb-picker-* 等既有构件的自身样式。
+
+   作用域与特异性：宿主一律带 .nw-scope（视图 containerEl 用 applyNwScope；三个弹窗在 modalEl 上补），
+   因此本文件全部规则以 .nw-scope 前缀取 (0,2,0)，压过 Obsidian 的 .modal button(0,1,1) /
+   input[type=text](0,1,1)。数值与旧 nw-u-* 及内联样式逐条等价；状态改修饰类，不再写内联样式。 */
+
+/* ---------- 视图外壳 ---------- */
+.nw-scope .nw-fingerprint-scope-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-scope .nw-fingerprint-scope-tab {
+    flex: 1;
+    padding: 10px 8px;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 400;
+    text-align: center;
+    cursor: pointer;
+}
+
+.nw-scope .nw-fingerprint-scope-tab--active {
+    border-bottom-color: var(--interactive-accent);
+    color: var(--interactive-accent);
+    font-weight: 600;
+}
+
+/* 顶部导航：直达工作台 / 协同写作 / 知识库 */
+.nw-scope .nw-fp-nav-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-scope .nw-fp-nav-btn {
+    padding: 4px 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: var(--background-primary);
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* ---------- 工具栏与搜索 ---------- */
+.nw-scope .nw-fingerprint-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-scope .nw-fingerprint-search-container {
+    padding: 8px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-scope .nw-fingerprint-search-input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    font-size: 12px;
+}
+
+.nw-scope .nw-fingerprint-tag-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+/* ---------- 指纹列表 ---------- */
+.nw-scope .nw-fingerprint-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.nw-scope .nw-fp-list-loading {
+    padding: 40px;
+    color: var(--text-faint);
+    font-size: 13px;
+    text-align: center;
+}
+
+.nw-scope .nw-fingerprint-list-item {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    cursor: pointer;
+}
+
+.nw-scope .nw-fingerprint-list-item--selected {
+    background: var(--background-secondary-alt);
+}
+
+.nw-scope .nw-fp-item-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.nw-scope .nw-fp-item-name-row {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.nw-scope .nw-fp-item-mute {
+    font-size: 11px;
+    opacity: 0.6;
+}
+
+.nw-scope .nw-fp-item-name {
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nw-scope .nw-fp-item-name--muted {
+    opacity: 0.5;
+}
+
+.nw-scope .nw-fp-item-scope-icon {
+    flex-shrink: 0;
+    font-size: 11px;
+}
+
+.nw-scope .nw-fp-item-source {
+    overflow: hidden;
+    margin-bottom: 4px;
+    color: var(--text-muted);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nw-scope .nw-fp-item-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+}
+
+.nw-scope .nw-fp-item-tag {
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: var(--background-secondary);
+    color: var(--text-muted);
+    font-size: 10px;
+}
+
+.nw-scope .nw-fingerprint-count {
+    padding: 6px 12px;
+    border-top: 1px solid var(--background-modifier-border);
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+/* ---------- 详情面板 ---------- */
+.nw-scope .nw-fp-detail-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-faint);
+    font-size: 14px;
+}
+
+.nw-scope .nw-fingerprint-detail-header {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-scope .nw-fp-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.nw-scope .nw-fp-detail-title {
+    margin: 0;
+    font-size: 18px;
+}
+
+.nw-scope .nw-fp-status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+}
+
+.nw-scope .nw-fp-status-badge--on {
+    background: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+}
+
+.nw-scope .nw-fp-status-badge--off {
+    background: rgba(0, 0, 0, 0.1);
+    color: var(--text-muted);
+}
+
+.nw-scope .nw-fp-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.nw-scope .nw-fp-meta-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.nw-scope .nw-fp-meta-tag {
+    padding: 3px 10px;
+    border-radius: 10px;
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    font-size: 11px;
+}
+
+/* 注入影响卡 */
+.nw-scope .nw-fp-inject-title {
+    margin: 8px 0 6px 0;
+    font-size: 14px;
+}
+
+.nw-scope .nw-fp-inject-rows {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 12px;
+}
+
+.nw-scope .nw-fp-inject-fix {
+    margin-top: 6px;
+}
+
+.nw-scope .nw-fp-inject-note {
+    margin-top: 6px;
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+/* 自动分类 */
+.nw-scope .nw-fp-section-title {
+    margin: 0;
+}
+
+.nw-scope .nw-fp-class-summary {
+    margin-bottom: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.nw-scope .nw-fp-class-empty {
+    color: var(--text-faint);
+    font-size: 12px;
+}
+
+.nw-scope .nw-fp-class-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+/* 统计特征 */
+.nw-scope .nw-fp-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+}
+
+.nw-scope .nw-fp-stat-card {
+    padding: 12px;
+    border-radius: 6px;
+    background: var(--background-secondary);
+    text-align: center;
+}
+
+.nw-scope .nw-fp-stat-value {
+    margin-bottom: 4px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.nw-scope .nw-fp-stat-label {
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+/* 风格特征 */
+.nw-scope .nw-fp-feature {
+    margin-bottom: 10px;
+}
+
+.nw-scope .nw-fp-feature-label {
+    margin-bottom: 4px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.nw-scope .nw-fp-feature-value {
+    padding: 8px 12px;
+    border-radius: 4px;
+    background: var(--background-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* 代表片段 */
+.nw-scope .nw-fp-samples-empty {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.nw-scope .nw-fp-sample-card {
+    margin-bottom: 10px;
+    padding: 12px;
+    border-left: 3px solid var(--interactive-accent);
+    border-radius: 4px;
+    background: var(--background-secondary);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.nw-scope .nw-fp-sample-index {
+    margin-bottom: 6px;
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.nw-scope .nw-fp-sample-text {
+    color: var(--text-normal);
+}
+
+/* 操作区 */
+.nw-scope .nw-fingerprint-actions-section {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.nw-scope .nw-fp-actions-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.nw-scope .nw-fp-actions-note {
+    margin-bottom: 8px;
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* ---------- 编辑指纹弹窗 ---------- */
+.nw-scope .nw-fp-edit-dims {
+    margin-top: 12px;
+}
+
+.nw-scope .nw-fp-edit-dims-title {
+    margin: 0 0 8px 0;
+}
+
+.nw-scope .nw-fp-btn-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.nw-scope .nw-fp-modal-btn {
+    padding: 6px 16px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: var(--background-secondary);
+    cursor: pointer;
+}
+
+.nw-scope .nw-fp-modal-btn--primary {
+    border: none;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+/* ---------- 从章节提取弹窗 ---------- */
+.nw-scope .nw-fp-extract-desc {
+    margin: 8px 0 16px 0;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.nw-scope .nw-fp-extract-actions {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.nw-scope .nw-fp-extract-btn {
+    flex: 1;
+}
+
+.nw-scope .nw-fp-chapter-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin: 8px 0;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+}
+
+.nw-scope .nw-fp-chapter-empty {
+    padding: 20px;
+    color: var(--text-faint);
+    text-align: center;
+}
+
+.nw-scope .nw-fp-chapter-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    cursor: pointer;
+}
+
+/* ---------- 指纹详情弹窗 ---------- */
+.nw-scope .nw-fp-modal-title {
+    margin: 0 0 8px 0;
+}
+
+.nw-scope .nw-fp-detail-section {
+    margin-bottom: 16px;
+}
+
+.nw-scope .nw-fp-info-section {
+    margin-bottom: 16px;
+    padding: 12px;
+    border-radius: 6px;
+    background: var(--background-secondary);
+}
+
+.nw-scope .nw-fp-section-heading {
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.nw-scope .nw-fp-section-heading--spaced {
+    margin-bottom: 10px;
+}
+
+.nw-scope .nw-fp-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+    font-size: 12px;
+}
+
+.nw-scope .nw-fp-info-row {
+    display: flex;
+    gap: 6px;
+}
+
+.nw-scope .nw-fp-info-label {
+    min-width: 56px;
+    color: var(--text-muted);
+}
+
+.nw-scope .nw-fp-info-value {
+    color: var(--text-normal);
+}
+
+.nw-scope .nw-fp-pair-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.nw-scope .nw-fp-stat-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    background: var(--background-secondary);
+}
+
+.nw-scope .nw-fp-stat-tile-label {
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.nw-scope .nw-fp-stat-tile-value {
+    color: var(--text-normal);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.nw-scope .nw-fp-chart-card {
+    padding: 12px;
+    border-radius: 6px;
+    background: var(--background-secondary);
+}
+
+.nw-scope .nw-fp-chart-card--center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.nw-scope .nw-fp-chart-title {
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.nw-scope .nw-fp-stat-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.nw-scope .nw-fp-stat-row-label {
+    color: var(--text-muted);
+}
+
+.nw-scope .nw-fp-stat-row-value {
+    color: var(--text-normal);
+    font-weight: 500;
+}
+
+/* 十二维折叠行 */
+.nw-scope .nw-fp-dim-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.nw-scope .nw-fp-dim {
+    overflow: hidden;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+}
+
+.nw-scope .nw-fp-dim-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--background-secondary);
+    cursor: pointer;
+}
+
+.nw-scope .nw-fp-dim-head-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nw-scope .nw-fp-dim-name {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.nw-scope .nw-fp-dim-status {
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 10px;
+}
+
+.nw-scope .nw-fp-dim-status--complete {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--text-success, #10b981);
+}
+
+.nw-scope .nw-fp-dim-status--partial {
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--text-warning, #f59e0b);
+}
+
+.nw-scope .nw-fp-dim-status--pending {
+    background: rgba(107, 114, 128, 0.2);
+    color: var(--text-muted);
+}
+
+.nw-scope .nw-fp-dim-new {
+    font-size: 10px;
+}
+
+.nw-scope .nw-fp-dim-caret {
+    color: var(--text-muted);
+    font-size: 10px;
+}
+
+.nw-scope .nw-fp-dim-body {
+    padding: 10px 12px;
+    border-top: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.nw-scope .nw-fp-dim-desc {
+    margin-bottom: 8px;
+}
+
+.nw-scope .nw-fp-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.nw-scope .nw-fp-metric {
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: var(--background-primary);
+}
+
+.nw-scope .nw-fp-metric-label {
+    color: var(--text-muted);
+    font-size: 10px;
+}
+
+.nw-scope .nw-fp-metric-value {
+    color: var(--text-normal);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.nw-scope .nw-fp-metric-empty {
+    color: var(--text-faint);
+    font-size: 11px;
+}
+
+.nw-scope .nw-fp-dim-samples-label {
+    margin: 8px 0 4px 0;
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.nw-scope .nw-fp-dim-sample {
+    margin-bottom: 4px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    background: var(--background-secondary);
+    font-size: 11px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* 示例片段与操作 */
+.nw-scope .nw-fp-samples-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.nw-scope .nw-fp-samples-title {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.nw-scope .nw-fp-samples-count {
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.nw-scope .nw-fp-samples-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 4px;
+}
+
+.nw-scope .nw-fp-detail-samples-empty {
+    padding: 20px;
+    color: var(--text-faint);
+    font-size: 12px;
+    text-align: center;
+}
+
+.nw-scope .nw-fp-sample {
+    padding: 10px 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.nw-scope .nw-fp-sample-label {
+    margin-bottom: 4px;
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.nw-scope .nw-fp-sample-body {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.nw-scope .nw-fp-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.nw-scope .nw-fp-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.nw-scope .nw-fp-btn--plain {
+    background: var(--background-primary);
+}
+
+.nw-scope .nw-fp-btn--primary {
+    border: none;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.nw-scope .nw-fp-btn--danger {
+    border-color: var(--background-modifier-error);
+    background: transparent;
+    color: var(--text-error);
+}
+
+/* ---------- 指纹库 V2 十二维面板（fingerprint-v2-detail.ts） ---------- */
+.nw-scope .nw-fingerprint-v2-section {
+    margin-bottom: 20px;
+}
+
+.nw-scope .nw-fp-v2-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.nw-scope .nw-fp-v2-kind {
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.nw-scope .nw-fp-v2-dim {
+    margin-bottom: 10px;
+}
+
+.nw-scope .nw-fp-v2-dim-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.nw-scope .nw-fp-v2-dim-label {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.nw-scope .nw-fp-v2-dim-pending {
+    color: var(--text-faint);
+    font-size: 11px;
+}
+
+.nw-scope .nw-fp-v2-desc {
+    padding: 8px 12px;
+    border-radius: 4px;
+    background: var(--background-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.nw-scope .nw-fp-v2-samples {
+    margin-top: -4px;
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.nw-scope .nw-fp-v2-sample {
+    margin-bottom: 2px;
+}
+
+/* 注入影响黄条（与 .nw-fingerprint-sample-warn 的配色叠加） */
+.nw-scope .nw-fp-inject-warn {
+    padding: 6px 10px;
+    margin-top: 6px;
+    font-size: 12px;
+    border-radius: 8px;
 }

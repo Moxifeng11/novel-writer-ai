@@ -109,7 +109,7 @@ export class FingerprintDetailModal extends Modal {
         }
         contentEl.addClass('nw-modal-content-85');
 
-        contentEl.createEl('h3', { text: `🔍 ${fp.name}`, cls: 'nw-u-margintop-0 nw-u-marginbottom-8px' });
+        contentEl.createEl('h3', { text: `🔍 ${fp.name}`, cls: 'nw-fp-modal-title' });
 
         this.renderBasicInfo(contentEl, fp);
         this.renderStats(contentEl, fp);
@@ -119,10 +119,10 @@ export class FingerprintDetailModal extends Modal {
     }
 
     private renderBasicInfo(container: HTMLElement, fp: StyleFingerprint): void {
-        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px' });
-        section.createEl('div', { text: '基本信息', cls: 'nw-u-fwt-600 nw-u-fs-13px nw-u-marginbottom-8px' });
+        const section = container.createDiv({ cls: 'nw-fp-info-section' });
+        section.createEl('div', { text: '基本信息', cls: 'nw-fp-section-heading' });
 
-        const grid = section.createDiv({ cls: 'nw-u-d-grid nw-u-gtc-1fr-1fr nw-u-gap-8px-16px nw-u-fs-12px' });
+        const grid = section.createDiv({ cls: 'nw-fp-info-grid' });
 
         this.renderInfoRow(grid, '名称', fp.name);
         this.renderInfoRow(grid, '来源', fp.source);
@@ -134,16 +134,16 @@ export class FingerprintDetailModal extends Modal {
     }
 
     private renderInfoRow(container: HTMLElement, label: string, value: string): void {
-        const row = container.createDiv({ cls: 'nw-u-d-flex nw-u-gap-6px' });
-        row.createEl('span', { text: `${label}:`, cls: 'nw-u-c-text-muted nw-u-minw-56px' });
-        row.createEl('span', { text: value, cls: 'nw-u-c-text-normal' });
+        const row = container.createDiv({ cls: 'nw-fp-info-row' });
+        row.createEl('span', { text: `${label}:`, cls: 'nw-fp-info-label' });
+        row.createEl('span', { text: value, cls: 'nw-fp-info-value' });
     }
 
     private renderStats(container: HTMLElement, fp: StyleFingerprint): void {
-        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px' });
-        section.createEl('div', { text: '数据可视化', cls: 'nw-u-fwt-600 nw-u-fs-13px nw-u-marginbottom-10px' });
+        const section = container.createDiv({ cls: 'nw-fp-detail-section' });
+        section.createEl('div', { text: '数据可视化', cls: 'nw-fp-section-heading nw-fp-section-heading--spaced' });
 
-        const statsGrid = section.createDiv({ cls: 'nw-u-d-grid nw-u-gtc-1fr-1fr nw-u-gap-12px nw-u-marginbottom-12px' });
+        const statsGrid = section.createDiv({ cls: 'nw-fp-pair-grid' });
 
         const statCards = [
             { label: '平均句长', value: `${fp.stats.avgSentenceLength} 字` },
@@ -154,19 +154,19 @@ export class FingerprintDetailModal extends Modal {
 
         for (const stat of statCards) {
             const card = statsGrid.createDiv({
-                cls: 'nw-u-p-10px-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-d-flex nw-u-fd-column nw-u-gap-4px'
+                cls: 'nw-fp-stat-tile'
             });
-            card.createEl('span', { text: stat.label, cls: 'nw-u-fs-11px nw-u-c-text-muted' });
-            card.createEl('span', { text: stat.value, cls: 'nw-u-fs-16px nw-u-fwt-600 nw-u-c-text-normal' });
+            card.createEl('span', { text: stat.label, cls: 'nw-fp-stat-tile-label' });
+            card.createEl('span', { text: stat.value, cls: 'nw-fp-stat-tile-value' });
         }
 
-        const chartsRow = section.createDiv({ cls: 'nw-u-d-grid nw-u-gtc-1fr-1fr nw-u-gap-12px nw-u-marginbottom-12px' });
+        const chartsRow = section.createDiv({ cls: 'nw-fp-pair-grid' });
 
         // V2 12 维雷达图（基于维度数据状态评分，移除旧估算函数）
         const radarCard = chartsRow.createDiv({
-            cls: 'nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px nw-u-d-flex nw-u-fd-column nw-u-ai-center'
+            cls: 'nw-fp-chart-card nw-fp-chart-card--center'
         });
-        radarCard.createEl('div', { text: '风格维度雷达图（V2 12 维）', cls: 'nw-u-fs-12px nw-u-fwt-500 nw-u-marginbottom-8px' });
+        radarCard.createEl('div', { text: '风格维度雷达图（V2 12 维）', cls: 'nw-fp-chart-title' });
 
         const v2 = this.getV2();
         const radarData = FEATURE_DIMENSIONS_V2.map(dim => {
@@ -179,9 +179,9 @@ export class FingerprintDetailModal extends Modal {
         appendSanitizedHtml(radarCard, radarChart(radarData, { size: 280 }));
 
         const donutCard = chartsRow.createDiv({
-            cls: 'nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px'
+            cls: 'nw-fp-chart-card'
         });
-        donutCard.createEl('div', { text: '内容占比分布', cls: 'nw-u-fs-12px nw-u-fwt-500 nw-u-marginbottom-8px' });
+        donutCard.createEl('div', { text: '内容占比分布', cls: 'nw-fp-chart-title' });
 
         const narrationRatio = Math.max(0, 1 - fp.stats.dialogueRatio - fp.stats.descriptionRatio);
         const donutData = [
@@ -192,9 +192,9 @@ export class FingerprintDetailModal extends Modal {
         appendSanitizedHtml(donutCard, donutChart(donutData, { size: 220 }));
 
         const barCard = section.createDiv({
-            cls: 'nw-u-p-12px nw-u-bg-background-secondary nw-u-brd-6px'
+            cls: 'nw-fp-chart-card'
         });
-        barCard.createEl('div', { text: '平均长度统计', cls: 'nw-u-fs-12px nw-u-fwt-500 nw-u-marginbottom-8px' });
+        barCard.createEl('div', { text: '平均长度统计', cls: 'nw-fp-chart-title' });
 
         const barData = [
             { label: '平均句长', value: fp.stats.avgSentenceLength },
@@ -258,55 +258,53 @@ export class FingerprintDetailModal extends Modal {
     }
 
     private renderStatRow(container: HTMLElement, label: string, value: string): void {
-        const row = container.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-gap-8px' });
-        row.createEl('span', { text: label, cls: 'nw-u-c-text-muted' });
-        row.createEl('span', { text: value, cls: 'nw-u-c-text-normal nw-u-fwt-500' });
+        const row = container.createDiv({ cls: 'nw-fp-stat-row' });
+        row.createEl('span', { text: label, cls: 'nw-fp-stat-row-label' });
+        row.createEl('span', { text: value, cls: 'nw-fp-stat-row-value' });
     }
 
     private renderV2Features(container: HTMLElement): void {
-        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px' });
+        const section = container.createDiv({ cls: 'nw-fp-detail-section' });
         section.createEl('div', {
             text: '风格特征（V2 12 维详情）',
-            cls: 'nw-u-fwt-600 nw-u-fs-13px nw-u-marginbottom-8px'
+            cls: 'nw-fp-section-heading'
         });
 
         const v2 = this.getV2();
-        const featuresList = section.createDiv({ cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-6px' });
+        const featuresList = section.createDiv({ cls: 'nw-fp-dim-list' });
 
         for (const dim of FEATURE_DIMENSIONS_V2) {
             const dimData = v2.features[dim.key];
             const featureEl = featuresList.createDiv({
-                cls: 'nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-ov-hidden'
+                cls: 'nw-fp-dim'
             });
 
             const header = featureEl.createDiv({
-                cls: 'nw-u-p-8px-12px nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-cur-pointer nw-u-bg-background-secondary'
+                cls: 'nw-fp-dim-head'
             });
             const headerLeft = header.createDiv({
-                cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px'
+                cls: 'nw-fp-dim-head-main'
             });
             headerLeft.createEl('span', {
                 text: dim.name,
-                cls: 'nw-u-fwt-500 nw-u-fs-13px'
+                cls: 'nw-fp-dim-name'
             });
             // 数据状态徽章
-            const statusColor = this.getStatusColor(dimData.status);
             headerLeft.createEl('span', {
                 text: DIMENSION_STATUS_LABELS[dimData.status],
-                attr: {
-                    style: `padding:1px 6px;font-size:10px;border-radius:8px;background:${statusColor.bg};color:${statusColor.fg};`
-                }
+                cls: `nw-fp-dim-status nw-fp-dim-status--${dimData.status}`,
             });
             // V1 来源标记
             if (!dim.fromV1) {
                 headerLeft.createEl('span', {
                     text: '🆕',
-                    attr: { style: 'font-size:10px;', title: 'V2 新增维度' }
+                    cls: 'nw-fp-dim-new',
+                    attr: { title: 'V2 新增维度' }
                 });
             }
             header.createEl('span', {
                 text: this.expandedFeatures[dim.key] ? '▼' : '▶',
-                cls: 'nw-u-fs-10px nw-u-c-text-muted'
+                cls: 'nw-fp-dim-caret'
             });
 
             header.addEventListener('click', () => {
@@ -316,37 +314,37 @@ export class FingerprintDetailModal extends Modal {
 
             if (this.expandedFeatures[dim.key]) {
                 const body = featureEl.createDiv({
-                    cls: 'nw-u-p-10px-12px nw-u-fs-12px nw-u-lh-1-6 nw-u-c-text-normal nw-u-bt-1px-solid-background-m'
+                    cls: 'nw-fp-dim-body'
                 });
 
                 // 描述
                 body.createEl('div', {
                     text: dimData.description || '（暂无描述）',
-                    cls: 'nw-u-marginbottom-8px'
+                    cls: 'nw-fp-dim-desc'
                 });
 
                 // 定量指标网格
                 const metricsGrid = body.createDiv({
-                    cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-6 nw-u-gap-6px nw-u-marginbottom-8px'
+                    cls: 'nw-fp-metric-grid'
                 });
                 const metrics = this.extractMetricsForDisplay(dim.key, dimData);
                 for (const metric of metrics) {
                     const row = metricsGrid.createDiv({
-                        cls: 'nw-u-p-4px-8px nw-u-bg-background-primary nw-u-brd-4px'
+                        cls: 'nw-fp-metric'
                     });
                     row.createEl('div', {
                         text: metric.label,
-                        cls: 'nw-u-fs-10px nw-u-c-text-muted'
+                        cls: 'nw-fp-metric-label'
                     });
                     row.createEl('div', {
                         text: metric.value,
-                        cls: 'nw-u-fs-12px nw-u-fwt-600 nw-u-c-text-normal'
+                        cls: 'nw-fp-metric-value'
                     });
                 }
                 if (metrics.length === 0) {
                     body.createEl('div', {
                         text: '（暂无定量指标）',
-                        cls: 'nw-u-c-text-faint nw-u-fs-11px'
+                        cls: 'nw-fp-metric-empty'
                     });
                 }
 
@@ -354,29 +352,16 @@ export class FingerprintDetailModal extends Modal {
                 if (dimData.samples && dimData.samples.length > 0) {
                     body.createEl('div', {
                         text: '代表性示例:',
-                        cls: 'nw-u-margintop-8px nw-u-fs-11px nw-u-c-text-muted nw-u-marginbottom-4px'
+                        cls: 'nw-fp-dim-samples-label'
                     });
                     dimData.samples.forEach((sample, idx) => {
                         body.createEl('div', {
                             text: sample,
-                            cls: 'nw-u-p-6px-8px nw-u-bg-background-secondary nw-u-brd-4px nw-u-fs-11px nw-u-marginbottom-4px nw-u-ws-pre-wrap nw-u-wordbreak-break-word'
+                            cls: 'nw-fp-dim-sample'
                         });
                     });
                 }
             }
-        }
-    }
-
-    /** 获取状态对应颜色 */
-    private getStatusColor(status: DimensionStatus): { bg: string; fg: string } {
-        switch (status) {
-            case 'complete':
-                return { bg: 'rgba(16,185,129,0.2)', fg: 'var(--text-success, #10b981)' };
-            case 'partial':
-                return { bg: 'rgba(245,158,11,0.2)', fg: 'var(--text-warning, #f59e0b)' };
-            case 'pending':
-            default:
-                return { bg: 'rgba(107,114,128,0.2)', fg: 'var(--text-muted)' };
         }
     }
 
@@ -472,18 +457,18 @@ export class FingerprintDetailModal extends Modal {
     }
 
     private renderSamples(container: HTMLElement, fp: StyleFingerprint): void {
-        const section = container.createDiv({ cls: 'nw-u-marginbottom-16px' });
-        const header = section.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-8px' });
-        header.createEl('span', { text: '示例片段', cls: 'nw-u-fwt-600 nw-u-fs-13px' });
-        header.createEl('span', { text: `共 ${fp.samples.length} 段`, cls: 'nw-u-fs-11px nw-u-c-text-muted' });
+        const section = container.createDiv({ cls: 'nw-fp-detail-section' });
+        const header = section.createDiv({ cls: 'nw-fp-samples-head' });
+        header.createEl('span', { text: '示例片段', cls: 'nw-fp-samples-title' });
+        header.createEl('span', { text: `共 ${fp.samples.length} 段`, cls: 'nw-fp-samples-count' });
 
         const samplesList = section.createDiv({
-            cls: 'nw-u-maxh-300px nw-u-ovy-auto nw-u-d-flex nw-u-fd-column nw-u-gap-8px nw-u-p-4px'
+            cls: 'nw-fp-samples-list'
         });
 
         if (fp.samples.length === 0) {
             samplesList.createDiv({
-                cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-faint nw-u-fs-12px',
+                cls: 'nw-fp-detail-samples-empty',
                 text: '暂无示例片段'
             });
             return;
@@ -491,14 +476,14 @@ export class FingerprintDetailModal extends Modal {
 
         fp.samples.forEach((sample, idx) => {
             const sampleEl = samplesList.createDiv({
-                cls: 'nw-u-p-10px-12px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-fs-12px nw-u-lh-1-6 nw-u-c-text-normal nw-u-bg-background-primary'
+                cls: 'nw-fp-sample'
             });
             const idxLabel = sampleEl.createEl('div', {
                 text: `片段 ${idx + 1}`,
-                cls: 'nw-u-fs-11px nw-u-c-text-muted nw-u-marginbottom-4px'
+                cls: 'nw-fp-sample-label'
             });
             const textEl = sampleEl.createEl('div', {
-                cls: 'nw-u-ws-pre-wrap nw-u-wordbreak-break-word'
+                cls: 'nw-fp-sample-body'
             });
             textEl.textContent = sample;
         });
@@ -506,15 +491,13 @@ export class FingerprintDetailModal extends Modal {
 
     private renderActions(container: HTMLElement, fp: StyleFingerprint): void {
         const canEdit = this.options.canEdit !== false;
-        const btnRow = container.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-jc-flex-end nw-u-fwr-wrap' });
+        const btnRow = container.createDiv({ cls: 'nw-fp-actions' });
 
         if (this.options.onToggle) {
             const toggleBtn = btnRow.createEl('button', {
                 text: this.isEnabled(fp) ? '⏸ 禁用' : '✅ 启用',
-                attr: {
-                    type: 'button',
-                    style: 'padding:6px 14px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;'
-                }
+                cls: 'nw-fp-btn',
+                attr: { type: 'button' },
             });
             toggleBtn.addEventListener('click', async () => {
                 if (toggleBtn.disabled) return;
@@ -535,10 +518,8 @@ export class FingerprintDetailModal extends Modal {
         if (canEdit && this.options.onReextract) {
             const reextractBtn = btnRow.createEl('button', {
                 text: '🔄 重新提取',
-                attr: {
-                    type: 'button',
-                    style: 'padding:6px 14px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;'
-                }
+                cls: 'nw-fp-btn',
+                attr: { type: 'button' },
             });
             reextractBtn.addEventListener('click', async () => {
                 const confirmed = await OperationConfirmModal.confirm(this.app, {
@@ -556,10 +537,8 @@ export class FingerprintDetailModal extends Modal {
         if (this.options.onOpenIntensity) {
             const intensityBtn = btnRow.createEl('button', {
                 text: '🎚 强度调节',
-                attr: {
-                    type: 'button',
-                    style: 'padding:6px 14px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;background:var(--background-primary);'
-                }
+                cls: 'nw-fp-btn nw-fp-btn--plain',
+                attr: { type: 'button' },
             });
             intensityBtn.addEventListener('click', () => {
                 this.options.onOpenIntensity?.(fp);
@@ -569,10 +548,8 @@ export class FingerprintDetailModal extends Modal {
         if (canEdit && this.options.onDelete) {
             const deleteBtn = btnRow.createEl('button', {
                 text: '🗑 删除',
-                attr: {
-                    type: 'button',
-                    style: 'padding:6px 14px;cursor:pointer;border:1px solid var(--background-modifier-error);border-radius:4px;font-size:12px;color:var(--text-error);background:transparent;'
-                }
+                cls: 'nw-fp-btn nw-fp-btn--danger',
+                attr: { type: 'button' },
             });
             deleteBtn.addEventListener('click', async () => {
                 const confirmed = await OperationConfirmModal.confirm(this.app, {
@@ -590,10 +567,8 @@ export class FingerprintDetailModal extends Modal {
 
         const closeBtn = btnRow.createEl('button', {
             text: '关闭',
-            attr: {
-                type: 'button',
-                style: 'padding:6px 14px;cursor:pointer;background:var(--interactive-accent);color:var(--text-on-accent);border:none;border-radius:4px;font-size:12px;'
-            }
+            cls: 'nw-fp-btn nw-fp-btn--primary',
+            attr: { type: 'button' },
         });
         closeBtn.addEventListener('click', () => this.close());
     }

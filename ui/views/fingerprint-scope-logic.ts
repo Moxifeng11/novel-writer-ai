@@ -1,7 +1,7 @@
 /**
  * fingerprint-scope-logic.ts — 指纹库三层作用域的判定与引导文案（纯逻辑，阶段 D2）
  *
- * 从 `ui/views/writing-fingerprint-view.ts` 抽出：作用域页签的选中样式、
+ * 从 `ui/views/writing-fingerprint-view.ts` 抽出：作用域页签的选中类名、
  * 当前层为空时的「去别的层看看」引导、切层时的选中态重置、标签芯片截断。
  * 此前内联在渲染方法里零覆盖——NBI-01 的引导文案拼错层名、切层忘了清选中，
  * 用户会看到「幽灵选中」而没人知道为什么。
@@ -30,17 +30,16 @@ export const SCOPE_ICONS: Record<FingerprintScope, string> = {
 };
 
 /**
- * 作用域页签的内联样式（选中层用强调色下划线 + 加粗）。
+ * 作用域页签的类名（选中层追加 `--active` 修饰类，样式见 styles-src/32-fingerprint.css）。
  *
  * @param activeScope - 当前选中层
  * @param scope - 本页签对应的层
- * @returns 样式串（与抽取前逐字一致）
+ * @returns 类名串
  */
-export function buildScopeTabStyle(activeScope: FingerprintScope, scope: FingerprintScope): string {
-    const isActive = activeScope === scope;
-    return `flex:1;padding:10px 8px;text-align:center;cursor:pointer;font-size:12px;border-bottom:2px solid ${
-        isActive ? 'var(--interactive-accent)' : 'transparent'
-    };color:${isActive ? 'var(--interactive-accent)' : 'var(--text-muted)'};font-weight:${isActive ? '600' : '400'};`;
+export function buildScopeTabClass(activeScope: FingerprintScope, scope: FingerprintScope): string {
+    return scope === activeScope
+        ? 'nw-fingerprint-scope-tab nw-fingerprint-scope-tab--active'
+        : 'nw-fingerprint-scope-tab';
 }
 
 /**

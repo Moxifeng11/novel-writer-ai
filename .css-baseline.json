@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-17T11:16:21.661Z",
-  "note": "Slice K：新增 styles-src/31-monitor-panel-b.css（nw-monb-* 语义类 + 18 处内联样式收敛为 CSS 变量），删除 20 个零引用工具类",
-  "bytes": 693379,
+  "generatedAt": "2026-11-17T12:15:47.403Z",
+  "note": "Slice L：新增 styles-src/32-fingerprint.css（nw-fp-* 语义类，替换 writing-fingerprint-view/fingerprint-detail-modal/fingerprint-v2-detail 的 405 处工具类与 15 行内联样式）；bytes/uniqueClasses 上升来自新语义类（详情弹窗样本空态独立命名 nw-fp-detail-samples-empty，避免与视图同名规则互相覆盖），+3 hex 与 +5 rgb/hsl 是从 TS 内联样式原样搬进 CSS 的徽标配色（像素等价必需）",
+  "bytes": 710602,
   "important": 24,
-  "hardcodedHex": 165,
-  "rgbHsl": 187,
-  "uniqueClasses": 3788,
+  "hardcodedHex": 168,
+  "rgbHsl": 192,
+  "uniqueClasses": 3902,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

@@ -998,3 +998,42 @@ quality-nodata 29/574、quality-detail 180/1768、eval-failure 29/571、eval-fai
 
 下一轮（Slice L）：`ui/views/writing-fingerprint-view.ts`（228 处）——指纹库视图，先确认根节点可用的作用域祖先
 （视图容器类）再决定 `.nw-fp-*` 前缀；同批可带 `ui/fingerprint-detail-modal.ts`（157 处）一起做，二者共享命名空间。
+
+### 2026-11-17 第三十七轮：Slice L 写作指纹库语义化（nw-fp-*）
+
+**范围**：`ui/views/writing-fingerprint-view.ts`（2037 行 / 228 处工具类）、`ui/fingerprint-detail-modal.ts`（600 行 / 157 处）、
+`ui/views/fingerprint-v2-detail.ts`（125 行 / 20 处），合计 405 处 —— 外加 15 行内联 `style`（14 个站点）与 `buildScopeTabStyle`。
+
+**改动**：新增 `styles-src/32-fingerprint.css`（约 760 行，`.nw-scope ` 前缀）；新语义类分两段——外壳沿用既有
+`nw-fingerprint-*` 块类（E2E 选择器与 container query 依赖它们，只补声明不改名），内部构件改 `nw-fp-*`
+（`-nav-row/-nav-btn`、`-item-*`、`-detail-*`、`-stat-card/-stat-value`、`-sample-card`、`-actions-grid`、
+`-modal-btn(--primary)`、`-btn(--plain|--danger|--primary)`、`-dim-*(--status)`、`-metric-*`、`-samples-empty` 等约 90 个）。
+`buildScopeTabStyle()` → `buildScopeTabClass()`：页签激活态改 `nw-fingerprint-scope-tab--active` 修饰类。
+
+**三处必须记住的坑**
+1. `styles-src/11-fingerprint-and-workbench.css:132/137/142` 的三块布局声明（main-layout 的 `display:flex`、
+   left-sidebar 的 300px/240px/400px + 右边框、right-panel 的 `flex:1;padding:16px;overflow-y:auto`）
+   **只能写进 11 号文件**：同文件 `:269` 有 `@container (max-width:860px/560px)` 覆盖，若写进 `.nw-scope` 规则，
+   (0,2,0) 会压过 container query 造成窄屏回归。首轮截图正是漏了这三块，导致整页高度 2530 → 2331。
+2. `KnowledgeBookPickerModal` **不要** `modalEl.addClass('nw-scope')`：`.modal.nw-scope{margin:auto}`
+   （`styles-src/22-modal-layout.css:14`）会让弹窗横移 2px；它沿用既有 `nw-kb-picker-*`，本切片不纳入。
+3. 视图与详情弹窗原本共用 `nw-fp-samples-empty` 一个类，两处规则合并后视图空态凭空多出 20px padding →
+   详情弹窗那份改名 `nw-fp-detail-samples-empty`。
+
+**像素快照**（1440×2600、DSF=1；产物 `D:\nw-dev-vault\_visual-l\{before,after}`、`diff-report.json`，8 个场景）：
+probes 逐位对齐（struct 差 0），三视图 rect 差 0；仅剩三类**有意义**的差异：
+搜索框 618px（0.031%，旧工具类被 `input[type=text]` 压住从未生效，语义类让 6px 10px / 12px / 4px 真正生效）、
+编辑指纹弹窗按钮 3819px（0.53%，旧工具类被 `.modal button` 压成白底黑字，恢复灰底/强调色）、
+详情弹窗 9px（0.001%，文字 AA）；`modal-extract`/`modal-picker` 为 0。
+
+**门禁**：`typecheck`/`lint` 0 错；`check:inline-styles` 通过；`check:utility` 删 13 个零引用类
+（定义 299 → 286、使用 2327 → 1917）；`check:bundle` styles.css 693379 → 710602（+17223，主要为新增 32 号文件 16887 字节）；
+`check:css` 唯一类 3901 → 3902、bytes 710602。三份基线均 `--update-baseline` 并写 note。
+测试：`tests/unit/ui/fingerprint-scope-logic.test.ts` 断言 style 串 → 断言类名；
+`tests/unit/ui/view-banners-dom.test.ts` 同步 `nw-fp-inject-warn` 结构。
+
+**文档**：新增 `docs/modules/writing-fingerprint.md` 并登记 INDEX；`docs/design/2026-11-16-visual-refactor-standard.md`
+§5 加指纹库行、§5.1 指标与存量大户表重算（移除 228 + 157 + 20 处）；`docs/CURRENT.md` 口径同步。
+
+下一轮（Slice M 候选）：`ui/outline-expand-modal.ts`（220 处）——大纲扩写弹窗，可沿用弹窗的 `.nw-scope` 模式；
+其次 `ui/prompt-manager-settings.ts`（192 处，设置页需确认祖先作用域）与 `ui/chapter-outline-tree-modal.ts`（177 处）。

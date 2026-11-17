@@ -11,7 +11,7 @@
 | `shared/` | 255 | 50823 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3387 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 300 | 113328 | 1155 | 917 | 79% |
+| `ui/` | 300 | 113283 | 1155 | 917 | 79% |
 
 ## 文件清单
 
@@ -818,7 +818,7 @@
 | `ui/fanfic-prompt-notice.ts` | 20 | 1 | 1 |
 | `ui/fanfic-review-modal.ts` | 419 | 1 | 1 |
 | `ui/fingerprint-blend-modal.ts` | 620 | 2 | 2 |
-| `ui/fingerprint-detail-modal.ts` | 601 | 1 | 1 |
+| `ui/fingerprint-detail-modal.ts` | 576 | 1 | 1 |
 | `ui/fingerprint-embedding.ts` | 32 | 1 | 1 |
 | `ui/fingerprint-intensity-modal.ts` | 502 | 2 | 2 |
 | `ui/fingerprint-library-modal.ts` | 306 | 1 | 1 |
@@ -978,7 +978,7 @@
 | `ui/views/capability-banner.ts` | 88 | 5 | 1 |
 | `ui/views/fingerprint-capability.ts` | 105 | 3 | 1 |
 | `ui/views/fingerprint-detail-logic.ts` | 95 | 8 | 4 |
-| `ui/views/fingerprint-scope-logic.ts` | 98 | 9 | 4 |
+| `ui/views/fingerprint-scope-logic.ts` | 97 | 9 | 4 |
 | `ui/views/fingerprint-v2-detail.ts` | 126 | 4 | 2 |
 | `ui/views/fingerprint-view-logic.ts` | 121 | 7 | 6 |
 | `ui/views/kb-book-card.ts` | 167 | 2 | 2 |
@@ -1001,7 +1001,7 @@
 | `ui/views/link-status.ts` | 117 | 2 | 1 |
 | `ui/views/memory-graph-view.ts` | 289 | 3 | 2 |
 | `ui/views/planning-canvas-view.ts` | 954 | 4 | 3 |
-| `ui/views/writing-fingerprint-view.ts` | 2038 | 3 | 3 |
+| `ui/views/writing-fingerprint-view.ts` | 2019 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |

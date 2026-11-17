@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     buildEmptyScopeGuidance,
-    buildScopeTabStyle,
+    buildScopeTabClass,
     FINGERPRINT_SCOPES,
     resetScopeSelection,
     SCOPE_ICONS,
@@ -16,19 +16,16 @@ import {
     visibleTagChips,
 } from '../../../ui/views/fingerprint-scope-logic';
 
-describe('buildScopeTabStyle', () => {
-    it('选中层：强调色下划线 + 600 字重', () => {
-        const style = buildScopeTabStyle('global', 'global');
-        expect(style).toContain('border-bottom:2px solid var(--interactive-accent)');
-        expect(style).toContain('color:var(--interactive-accent)');
-        expect(style).toContain('font-weight:600');
+describe('buildScopeTabClass', () => {
+    it('选中层：基础类 + --active 修饰类', () => {
+        const cls = buildScopeTabClass('global', 'global');
+        expect(cls).toBe('nw-fingerprint-scope-tab nw-fingerprint-scope-tab--active');
     });
 
-    it('未选中层：透明下划线 + muted + 400 字重', () => {
-        const style = buildScopeTabStyle('global', 'template');
-        expect(style).toContain('border-bottom:2px solid transparent');
-        expect(style).toContain('color:var(--text-muted)');
-        expect(style).toContain('font-weight:400');
+    it('未选中层：只有基础类', () => {
+        const cls = buildScopeTabClass('global', 'template');
+        expect(cls).toBe('nw-fingerprint-scope-tab');
+        expect(cls).not.toContain('--active');
     });
 });
 

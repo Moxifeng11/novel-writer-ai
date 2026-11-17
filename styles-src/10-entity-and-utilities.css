@@ -200,7 +200,6 @@
 .nw-u-p-2px{padding:2px}
 .nw-u-p-2px-6px{padding:2px 6px}
 .nw-u-p-2px-8px{padding:2px 8px}
-.nw-u-p-3px-10px{padding:3px 10px}
 .nw-u-p-40px{padding:40px}
 .nw-u-p-4px-10px{padding:4px 10px}
 .nw-u-p-4px-12px{padding:4px 12px}
@@ -346,7 +345,6 @@
 .nw-u-m-0-0-6px{margin:0 0 6px}
 .nw-u-m-0-4px-12px{margin:0 4px 12px}
 .nw-u-m-10px-0{margin:10px 0}
-.nw-u-m-12px-0{margin:12px 0}
 .nw-u-m-16px-0-12px-0{margin:16px 0 12px 0}
 .nw-u-m-16px-0-8px-0{margin:16px 0 8px 0}
 .nw-u-m-1px-0-1px-8px{margin:1px 0 1px 8px}
@@ -365,7 +363,6 @@
 .nw-u-m-6px-0-0-0{margin:6px 0 0 0}
 .nw-u-m-6px-0-2px-0{margin:6px 0 2px 0}
 .nw-u-m-8px-0{margin:8px 0}
-.nw-u-m-8px-0-16px-0{margin:8px 0 16px 0}
 .nw-u-m-8px-0-4px-0{margin:8px 0 4px 0}
 .nw-u-m-8px-auto{margin:8px auto}
 .nw-u-p-0{padding:0}
@@ -401,8 +398,6 @@
 
 .nw-u-d-none{display:none}
 
-.nw-u-gap-3px{gap:3px}
-.nw-u-gap-8px-16px{gap:8px 16px}
 .nw-u-h-400px{height:400px}
 .nw-u-lh-1-7{line-height:1.7}
 .nw-u-lh-1-8{line-height:1.8}
@@ -410,14 +405,11 @@
 .nw-u-maxh-30vh{max-height:30vh}
 .nw-u-maxh-500px{max-height:500px}
 .nw-u-maxh-50vh{max-height:50vh}
-.nw-u-maxw-400px{max-width:400px}
 .nw-u-minh-150px{min-height:150px}
 
 .nw-u-minw-16px{min-width:16px}
-.nw-u-minw-240px{min-width:240px}
 .nw-u-minw-40px{min-width:40px}
 .nw-u-minw-48px{min-width:48px}
-.nw-u-minw-56px{min-width:56px}
 .nw-u-minw-60px{min-width:60px}
 .nw-u-op-0{opacity:0}
 .nw-u-op-0-4{opacity:0.4}
@@ -437,12 +429,10 @@
 .nw-u-ws-pre-wrap{white-space:pre-wrap}
 .nw-u-w-180px{width:180px}
 .nw-u-w-260px{width:260px}
-.nw-u-w-300px{width:300px}
 .nw-u-w-320px{width:320px}
 .nw-u-wordbreak-break-word{word-break:break-word}
 .nw-u-z-10{z-index:10}
 .nw-u-bordercolor-background-modifier-bo{border-color:var(--background-modifier-border)}
-.nw-u-blt-3px-solid-interactive-{border-left:3px solid var(--interactive-accent)}
 .nw-u-blt-3px-solid-text-accent{border-left:3px solid var(--text-accent)}
 .nw-u-bt-warning-border{border-top:1px solid color-mix(in srgb, var(--text-warning) 30%, transparent)}
 .nw-u-fontfamily-font-interface{font-family:var(--font-interface)}
@@ -470,11 +460,8 @@
 .nw-u-margintop-0{margin-top:0}
 .nw-u-margintop-24px{margin-top:24px}
 .nw-u-margintop-3px{margin-top:3px}
-.nw-u-margin-top-neg-4px{margin-top:-4px}
 .nw-u-margintop-6px{margin-top:6px}
-.nw-u-paddingbottom-12px{padding-bottom:12px}
 .nw-u-paddingright-60px{padding-right:60px}
-.nw-u-paddingtop-16px{padding-top:16px}
 .nw-u-r-8px{right:8px}
 .nw-u-t-8px{top:8px}
 

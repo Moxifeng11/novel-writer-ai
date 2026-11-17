@@ -130,17 +130,34 @@
 }
 
 .nw-fingerprint-main-layout {
+    /* Slice L：原 nw-u-d-flex / nw-u-h-100 / nw-u-w-100 已删除，声明合并进本规则
+       （不能在 32-fingerprint.css 另写 .nw-scope 规则，否则 (0,2,0) 会压过下方 container query）。 */
+    display: flex;
+    width: 100%;
+    height: 100%;
     min-height: 0;
     overflow: hidden;
 }
 
 .nw-fingerprint-left-sidebar {
+    /* 原 nw-u-w-300px / nw-u-minw-240px / nw-u-maxw-400px / nw-u-brt-1px-solid-background-m
+       / nw-u-d-flex / nw-u-fd-column 合并至此；窄屏覆盖见文件下方 @container。 */
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+    min-width: 240px;
+    max-width: 400px;
+    border-right: 1px solid var(--background-modifier-border);
     overflow: hidden;
     background: var(--background-secondary);
 }
 
 .nw-fingerprint-right-panel {
+    /* 原 nw-u-flex-1 / nw-u-ovy-auto / nw-u-p-16px 合并至此；窄屏 padding 覆盖见 @container。 */
+    flex: 1;
     min-width: 0;
+    padding: 16px;
+    overflow-y: auto;
 }
 
 .nw-fingerprint-list {

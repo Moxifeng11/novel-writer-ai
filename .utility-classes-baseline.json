@@ -1,6 +1,6 @@
 {
-  "definitions": 299,
-  "usage": 2327,
+  "definitions": 286,
+  "usage": 1917,
   "updatedAt": "2026-11-17",
-  "note": ""
+  "note": "Slice L：删除 13 个零引用工具类（原供 writing-fingerprint-view/fingerprint-detail-modal/fingerprint-v2-detail 使用，已改语义类 nw-fp-*）"
 }

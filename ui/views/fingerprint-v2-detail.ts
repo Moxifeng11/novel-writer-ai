@@ -74,50 +74,50 @@ export function buildV2FeatureRows(features: StyleFingerprintFeaturesV2): V2Feat
  * ```
  */
 export function renderV2FeaturesSection(container: HTMLElement, v2: V2Fingerprint): void {
-    const section = container.createDiv({ cls: 'nw-fingerprint-v2-section nw-mb-lg' });
+    const section = container.createDiv({ cls: 'nw-fingerprint-v2-section' });
 
     const titleRow = section.createDiv({
-        cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-marginbottom-8px'
+        cls: 'nw-fp-v2-title-row'
     });
     titleRow.createEl('h4', {
         text: '🧬 十二维结构化特征',
-        cls: 'nw-fp-section-h4 nw-u-m-0'
+        cls: 'nw-fp-section-h4 nw-fp-section-title'
     });
     titleRow.createEl('span', {
         text: '本地词表统计 · V2',
-        cls: 'nw-u-fs-11px nw-u-c-text-muted'
+        cls: 'nw-fp-v2-kind'
     });
 
     for (const row of buildV2FeatureRows(v2.features)) {
-        const block = section.createDiv({ cls: 'nw-u-marginbottom-10px' });
+        const block = section.createDiv({ cls: 'nw-fp-v2-dim' });
 
         const head = block.createDiv({
-            cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-6px nw-u-marginbottom-4px'
+            cls: 'nw-fp-v2-dim-head'
         });
         head.createEl('span', {
             text: row.label,
-            cls: 'nw-u-fs-12px nw-u-c-text-muted'
+            cls: 'nw-fp-v2-dim-label'
         });
         if (row.status !== 'complete') {
             head.createEl('span', {
                 text: '样本不足',
-                cls: 'nw-u-fs-11px nw-u-c-text-faint'
+                cls: 'nw-fp-v2-dim-pending'
             });
         }
 
         block.createDiv({
             text: row.description,
-            cls: 'nw-u-fs-13px nw-u-lh-1-5 nw-u-p-8px-12px nw-u-bg-background-secondary nw-u-brd-4px'
+            cls: 'nw-fp-v2-desc'
         });
 
         if (row.samples.length > 0) {
             const sampleWrap = block.createDiv({
-                cls: 'nw-u-margin-top-neg-4px nw-u-fs-11px nw-u-c-text-muted'
+                cls: 'nw-fp-v2-samples'
             });
             for (const sample of row.samples) {
                 sampleWrap.createDiv({
                     text: `「${sample}」`,
-                    cls: 'nw-u-marginbottom-2px'
+                    cls: 'nw-fp-v2-sample'
                 });
             }
         }
