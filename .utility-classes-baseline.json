@@ -1,6 +1,6 @@
 {
-  "definitions": 255,
-  "usage": 1507,
+  "definitions": 230,
+  "usage": 1334,
   "updatedAt": "2026-11-17",
-  "note": "Slice N：提示词管理设置语义化（nw-pm-*），零引用工具类删 12 个"
+  "note": "Slice O：章节大纲树弹窗语义化（nw-ot-*），删除 25 个零引用工具类"
 }

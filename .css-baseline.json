@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-17T13:17:45.196Z",
-  "note": "棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因",
-  "bytes": 724614,
+  "generatedAt": "2026-11-17T13:58:27.443Z",
+  "note": "棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因。2026-11-17 Slice O：新增 styles-src/34-outline-tree.css（41 类 nw-ot-* + nw-is-hidden），25 号文件删除旧 nw-outline-* 规则 35→0；styles.css 724614→729260（+4646B）；uniqueClasses 3994→4008；rgbHsl 192→195（章节行目标态/target 修饰类的 rgba(245,158,11,.18) 与 rgb(245,158,11) 从内联样式搬入 CSS，未新增 hex）。",
+  "bytes": 729260,
   "important": 24,
   "hardcodedHex": 168,
-  "rgbHsl": 192,
-  "uniqueClasses": 3994,
+  "rgbHsl": 195,
+  "uniqueClasses": 4008,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

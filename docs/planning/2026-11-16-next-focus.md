@@ -1121,3 +1121,42 @@ PNG 差异 10 个场景 0px；`templates-detail` 874px（0.138%，maxDelta 8，�
 
 下一轮候选：`ui/chapter-outline-tree-modal.ts`（177 处）、`ui/views/knowledge-base-view.ts`（175 处）、
 `ui/rendering/context-panel.ts`（173 处）。
+
+### 2026-11-17 第四十轮：Slice O 章节大纲树弹窗语义化（nw-ot-*）
+
+**范围**：`ui/chapter-outline-tree-modal.ts`（1392 行，177 处 `nw-u-*` / 82 个唯一 token、2 处内联 `style`）。
+
+**改动**
+- 177 处工具类 → `nw-ot-*`（header/title/actions/search/-search-go/-search-clear/-fulltext-btn/-fulltext/-tree；
+  vol-header(+--collapsed)/arrow/vol-hint/vol-num/vol-name/vol-count；overview 五件；chap-row(+--target/--dragging)/drag/chap-num/chap-label/
+  row-icon/row-move(+--sm)/add-scene；scene-row/scene-num/scene-label/flag(+--dialogue/--cliffhanger)/scene-del；empty/match-count；
+  footer/footer-btn/save；editor-row/edit-input(+--scene)/edit-ok(+--sm)/edit-cancel(+--sm)；warning）。
+- 2 处内联 `style` → `cls` + 修饰类：`nw-ot-chap-row--target`（`rgba(245,158,11,0.18)` 底 + 3px 橙左边）、`--dragging`（opacity .4 + accent 半透明底）。
+- 新增 `styles-src/34-outline-tree.css`（401 行 / 8342 字节），规则全部 `.nw-scope ` 前缀，9 条按钮规则 `button.nw-ot-*`；
+  补 `.nw-scope .nw-is-hidden{display:none}`；删 `styles-src/25-planning-outline-controls.css:5-120` 整块旧 `nw-outline-*`（184 → 67 行）。
+- 删 25 个零引用工具类（定义 255 → 230，引用 1507 → 1334）。
+
+**三处坑**
+1. `attr: { cls: 'nw-outline-chap-label' }` **不落 class**（Obsidian 只写同名属性）——章标签/场景标签/拖拽手柄四个类的 CSS 从来没生效。改 `cls:` 后
+   标签才开始有 `:hover` 与 `cursor:pointer`。
+2. 死规则不能原样启用：旧 `.nw-outline-chap-label` 带 `flex:1; padding:2px 4px; border:1px solid transparent`，原样启用会把
+   ⭐/💬/🪝 与 ▲▼ 推到行尾、整窗 914→998px。定案只还原非几何声明（cursor/border-radius/:hover、手柄 color/user-select）。
+3. 本切片的探针 rect 对比**不可用**：before 那批元素没有 class 属性，探针选择器 `[class], input, button, h3, p, br` 抓不到它们，
+   元素数 163→201 / 103→123，按 index 对齐整体错位。几何稳定性改用逐行聚簇统计（`D:\nw-tmp\dbgdiff-o.mjs`）证明。
+
+**验收**：`D:\nw-dev-vault\_visual-o\{before,after}` 8 场景（tree-default / tree-range / tree-dragging / tree-fulltext / tree-no-match /
+tree-warning / edit-chapter / edit-scene，弹窗 1020px 宽、viewport 1200×1700）。高度 8/8 完全一致；computed style 差全 0；
+PNG 差异只剩三簇——标题栏按钮簇（y=28–58）、页脚按钮簇（y≈867–896）、每行 ⠿ 字色 5–9px，无整行位移。
+除 tree-warning 0 px 外，其余 1.247%–4.556%（tree-no-match 因图仅 244px 高、按钮簇占比大）。
+
+**门禁**：`tsc --noEmit` 0 错；`build` 通过（40 个样式源，styles.css 28921 行）；`check:utility` 定义 230 / 引用 1334 / 零引用 0；
+`check:css` bytes 729260 / 28922 行 / 唯一类 4008 / hex 168 / rgbHsl 195 / important 24；`check:bundle` styles.css 724614 → 729260（+4646）；
+`check:inline-styles` 587 → 585（静态 487 / 动态 98）；新契约测试 `tests/unit/ui/outline-tree-modal-contract.test.ts` 5 用例 +
+`mobile-reorder-contract.test.ts` 5 用例全过。
+
+**文档**：新增 `docs/modules/outline-tree-modal.md`（8 节，OT-01..OT-05 全 done）；`docs/modules/INDEX.md` 插「章节大纲树弹窗」行；
+视觉标准 §5 加 `nw-ot-*` 行、§5.1 指标与存量大户表重算（移除 177 处）、特异性段补「`attr.cls` 不落 class + 死规则不原样启用」；
+`docs/CURRENT.md` §4 改切片 A–O、§6 口径改 230 / 1334。
+
+**下一轮候选**（按 §5.1 存量大户）：`ui/views/knowledge-base-view.ts`（175）、`ui/rendering/context-panel.ts`（173）、
+`ui/settings/general-sections.ts`（160）。

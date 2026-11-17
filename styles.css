@@ -41,6 +41,7 @@
  *   - styles-src/31-monitor-panel-b.css
  *   - styles-src/32-fingerprint.css
  *   - styles-src/33-prompt-manager.css
+ *   - styles-src/34-outline-tree.css
  *
  * 修改样式请编辑 styles-src/ 下对应源文件，然后运行 npm run build:styles
  * （npm run build 与 preflight 均已包含该步骤 / 一致性校验）。
@@ -10073,7 +10074,6 @@ button.nw-btn-icon {
 .nw-u-m-0-0-20px-0{margin:0 0 20px 0}
 .nw-u-m-0-0-8px-0{margin:0 0 8px 0}
 .nw-u-m-4px-8px{margin:4px 8px}
-.nw-u-p-10px{padding:10px}
 .nw-u-p-10px-12px{padding:10px 12px}
 .nw-u-p-10px-14px{padding:10px 14px}
 .nw-u-p-12px{padding:12px}
@@ -10083,7 +10083,6 @@ button.nw-btn-icon {
 .nw-u-p-16px{padding:16px}
 .nw-u-p-1px-6px{padding:1px 6px}
 .nw-u-p-20px{padding:20px}
-.nw-u-p-2px-6px{padding:2px 6px}
 .nw-u-p-2px-8px{padding:2px 8px}
 .nw-u-p-40px{padding:40px}
 
@@ -10127,7 +10126,6 @@ button.nw-btn-icon {
 .nw-u-jc-space-between{justify-content:space-between}
 .nw-u-lh-1{line-height:1}
 .nw-u-lh-1-4{line-height:1.4}
-.nw-u-lh-1-5{line-height:1.5}
 .nw-u-lh-1-6{line-height:1.6}
 .nw-u-maxh-200px{max-height:200px}
 .nw-u-maxh-300px{max-height:300px}
@@ -10213,9 +10211,6 @@ button.nw-btn-icon {
 .nw-u-bg-warning-soft{background:color-mix(in srgb, var(--text-warning) 10%, transparent)}
 .nw-u-bg-warning-soft-10{background:color-mix(in srgb, var(--text-warning) 10%, transparent)}
 .nw-u-bg-warning-soft-15{background:color-mix(in srgb, var(--text-warning) 15%, transparent)}
-.nw-u-bg-accent-faint{background:color-mix(in srgb, var(--interactive-accent) 6%, transparent)}
-.nw-u-bg-text-accent{background:var(--text-accent)}
-.nw-u-bg-text-success{background:var(--text-success)}
 
 
 .nw-u-b-1px-dashed-background-{border:1px dashed var(--background-modifier-border)}
@@ -10223,7 +10218,6 @@ button.nw-btn-icon {
 .nw-u-b-none{border:none}
 .nw-u-lst-none{list-style:none}
 .nw-u-m-0-0-6px{margin:0 0 6px}
-.nw-u-m-0-4px-12px{margin:0 4px 12px}
 .nw-u-m-10px-0{margin:10px 0}
 .nw-u-m-16px-0-12px-0{margin:16px 0 12px 0}
 .nw-u-m-1px-0-1px-8px{margin:1px 0 1px 8px}
@@ -10232,7 +10226,6 @@ button.nw-btn-icon {
 .nw-u-m-2px-0{margin:2px 0}
 .nw-u-m-2px-0-0-12px{margin:2px 0 0 12px}
 .nw-u-m-2px-0-0-8px{margin:2px 0 0 8px}
-.nw-u-m-2px-4px-8px-28px{margin:2px 4px 8px 28px}
 .nw-u-m-4px-0{margin:4px 0}
 .nw-u-m-4px-0-0-8px{margin:4px 0 0 8px}
 .nw-u-m-4px-0-4px-16px{margin:4px 0 4px 16px}
@@ -10245,8 +10238,6 @@ button.nw-btn-icon {
 .nw-u-m-8px-0-4px-0{margin:8px 0 4px 0}
 
 .nw-u-p-0{padding:0}
-.nw-u-p-0-4px{padding:0 4px}
-.nw-u-p-0-4px-12px-4px{padding:0 4px 12px 4px}
 
 .nw-u-p-14px-18px{padding:14px 18px}
 
@@ -10261,7 +10252,6 @@ button.nw-btn-icon {
 .nw-u-p-4px-6px{padding:4px 6px}
 .nw-u-p-60px-20px{padding:60px 20px}
 .nw-u-p-6px-12px{padding:6px 12px}
-.nw-u-p-6px-16px{padding:6px 16px}
 
 
 .nw-u-c-error-strong{color:var(--text-error)}
@@ -10279,54 +10269,40 @@ button.nw-btn-icon {
 .nw-u-lh-1-7{line-height:1.7}
 
 .nw-u-maxh-240px{max-height:240px}
-.nw-u-maxh-30vh{max-height:30vh}
 .nw-u-maxh-500px{max-height:500px}
-.nw-u-maxh-50vh{max-height:50vh}
 .nw-u-minh-150px{min-height:150px}
 
 .nw-u-minw-16px{min-width:16px}
-.nw-u-minw-40px{min-width:40px}
-.nw-u-minw-48px{min-width:48px}
 .nw-u-minw-60px{min-width:60px}
 .nw-u-op-0{opacity:0}
-.nw-u-op-0-4{opacity:0.4}
 .nw-u-op-0-5{opacity:0.5}
 .nw-u-op-0-6{opacity:0.6}
 
 .nw-u-pos-absolute{position:absolute}
 .nw-u-pos-relative{position:relative}
 .nw-u-resize-none{resize:none}
-.nw-u-ta-right{text-align:right}
 .nw-u-transition-all-0-2s-ease{transition:all 0.2s ease}
 .nw-u-transition-opacity-0-2s-ease{transition:opacity 0.2s ease}
 .nw-u-userselect-none{user-select:none}
 .nw-u-ws-pre-wrap{white-space:pre-wrap}
 .nw-u-w-180px{width:180px}
-.nw-u-wordbreak-break-word{word-break:break-word}
 .nw-u-z-10{z-index:10}
 .nw-u-bordercolor-background-modifier-bo{border-color:var(--background-modifier-border)}
-.nw-u-blt-3px-solid-text-accent{border-left:3px solid var(--text-accent)}
 .nw-u-bt-warning-border{border-top:1px solid color-mix(in srgb, var(--text-warning) 30%, transparent)}
 
 .nw-u-fontfamily-font-monospace{font-family:var(--font-monospace)}
 .nw-u-fontfamily-monospace{font-family:monospace}
-.nw-u-fs-0-75em{font-size:0.75em}
 .nw-u-fs-0-78em{font-size:0.78em}
-.nw-u-fs-0-7em{font-size:0.7em}
 .nw-u-fs-0-82em{font-size:0.82em}
 .nw-u-fs-0-85em{font-size:0.85em}
 .nw-u-fs-0-8em{font-size:0.8em}
 .nw-u-fs-0-95em{font-size:0.95em}
 .nw-u-fs-0-9em{font-size:0.9em}
-.nw-u-fs-1-1em{font-size:1.1em}
 .nw-u-fs-32px{font-size:32px}
 .nw-u-fs-48px{font-size:48px}
 .nw-u-gtc-repeat-auto-fill-minma-4{grid-template-columns:repeat(auto-fill, minmax(280px, 1fr))}
 .nw-u-gtc-repeat-auto-fill-minma-5{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
 .nw-u-gtc-repeat-auto-fit-minmax-6{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
-.nw-u-marginleft-6px{margin-left:6px}
-.nw-u-marginright-12px{margin-right:12px}
-.nw-u-marginright-6px{margin-right:6px}
 .nw-u-marginright-8px{margin-right:8px}
 .nw-u-margintop-0{margin-top:0}
 .nw-u-margintop-24px{margin-top:24px}
@@ -21407,123 +21383,6 @@ body.nw-panel-resizing .nw-awb-center iframe {
    目的：把这两个界面的历史内联样式收敛为类名，统一主题与窄屏表现。
    只写「与 .nw-btn 基础不同的部分」，避免重复造按钮体系。 */
 
-/* 大纲树底部按钮 */
-.nw-outline-footer-btn {
-  padding: 6px 16px;
-  border-radius: 6px;
-  border: 1px solid var(--background-modifier-border);
-  background: var(--background-secondary);
-  color: var(--text-normal);
-  cursor: pointer;
-}
-
-.nw-outline-footer-btn:hover {
-  background: var(--background-modifier-hover);
-}
-
-/* 大纲树搜索行 */
-.nw-outline-range-input {
-  width: 60px;
-  padding: 3px 6px;
-  border-radius: 4px;
-  border: 1px solid var(--background-modifier-border);
-  background: var(--background-primary);
-  color: var(--text-normal);
-  font-size: 12px;
-}
-
-.nw-outline-search-btn {
-  padding: 3px 8px;
-  border: none;
-  border-radius: 4px;
-  background: var(--text-accent);
-  color: var(--text-on-accent);
-  cursor: pointer;
-}
-
-.nw-outline-clear-btn,
-.nw-outline-fulltext-btn {
-  padding: 3px 6px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  background: var(--background-primary);
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.nw-outline-fulltext-btn {
-  padding: 3px 10px;
-}
-
-/* 大纲树：卷折叠箭头 / 章行 / 场景行 */
-.nw-outline-arrow {
-  margin-right: 4px;
-  color: var(--text-faint);
-  user-select: none;
-  font-size: 0.9em;
-}
-
-.nw-outline-arrow-scene {
-  font-size: 0.8em;
-}
-
-.nw-outline-chap-label {
-  flex: 1;
-  cursor: pointer;
-  padding: 2px 4px;
-  border-radius: 3px;
-  border: 1px solid transparent;
-}
-
-.nw-outline-scene-label {
-  flex: 1;
-  cursor: pointer;
-  padding: 1px 3px;
-  border-radius: 2px;
-  border: 1px solid transparent;
-}
-
-.nw-outline-chap-label:hover,
-.nw-outline-scene-label:hover {
-  background: var(--background-modifier-hover);
-}
-
-/* 场景行上的小标记（名场面/对白功能/悬念） */
-.nw-outline-flag {
-  margin-left: 4px;
-  font-size: 0.85em;
-}
-
-.nw-outline-flag-dialogue,
-.nw-outline-flag-cliffhanger {
-  font-size: 0.75em;
-}
-
-.nw-outline-flag-dialogue {
-  color: var(--text-faint);
-}
-
-.nw-outline-flag-cliffhanger {
-  color: var(--text-accent);
-}
-
-/* 大纲树内联编辑输入框 */
-.nw-outline-edit-input {
-  flex: 1;
-  padding: 2px 6px;
-  border-radius: 3px;
-  border: 1px solid var(--text-accent);
-  background: var(--background-primary);
-  color: var(--text-normal);
-  font: inherit;
-}
-
-.nw-outline-edit-input-scene {
-  padding: 1px 4px;
-  border-radius: 2px;
-}
-
 /* 场景细纲头部小按钮 */
 .nw-scene-outline-btn {
   padding: 2px 8px;
@@ -28660,3 +28519,403 @@ button.nw-pm-create-btn {
     resize: vertical;
 }
 .nw-pm-finish-desc { margin-bottom: 16px; color: var(--text-muted); }
+/* ============================================================
+   章节大纲树弹窗（Slice O，2026-11-17）
+   作用域：.nw-scope（ui/chapter-outline-tree-modal.ts 的 onOpen 里给 modalEl 加）。
+   按钮一律用 button.nw-ot-* 前缀：Obsidian 的 .modal button（0,1,1）会压掉
+   单类规则（曾导致搜索/全文/关闭/保存全部退回白底黑字）。
+   ============================================================ */
+
+/* 显示 / 隐藏（标签进入内联编辑状态时用） */
+.nw-scope .nw-is-hidden {
+  display: none;
+}
+
+/* ── 标题栏 + 区间搜索 ── */
+.nw-scope .nw-ot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 4px 12px 4px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  margin-bottom: 12px;
+}
+
+.nw-scope .nw-ot-title {
+  margin: 0;
+  font-size: 1.1em;
+  white-space: nowrap;
+}
+
+.nw-scope .nw-ot-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.nw-scope .nw-ot-search {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 0.85em;
+}
+
+.nw-scope .nw-ot-search-label {
+  color: var(--text-muted);
+}
+
+.nw-scope .nw-ot-range-input {
+  width: 60px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-size: 12px;
+}
+
+.nw-scope button.nw-ot-search-go {
+  padding: 3px 8px;
+  border: none;
+  border-radius: 4px;
+  background: var(--text-accent);
+  color: var(--text-on-accent);
+  cursor: pointer;
+}
+
+.nw-scope button.nw-ot-search-clear,
+.nw-scope button.nw-ot-fulltext-btn {
+  padding: 3px 6px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.nw-scope button.nw-ot-fulltext-btn {
+  padding: 3px 10px;
+}
+
+.nw-scope .nw-ot-fulltext {
+  margin: 0 4px 12px;
+  padding: 10px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-primary);
+  max-height: 30vh;
+  overflow-y: auto;
+  font-size: 0.82em;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.nw-scope .nw-ot-tree {
+  max-height: 50vh;
+  overflow-y: auto;
+  padding: 0 4px;
+  margin-bottom: 12px;
+}
+
+/* ── 卷 ── */
+.nw-scope .nw-ot-vol-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  margin: 6px 0 2px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  background: var(--background-secondary);
+}
+
+.nw-scope .nw-ot-vol-header--collapsed {
+  padding: 6px 8px;
+  margin: 2px 0;
+  border-radius: 6px;
+  opacity: 0.5;
+}
+
+.nw-scope .nw-ot-arrow {
+  margin-right: 8px;
+  min-width: 16px;
+  font-size: 0.8em;
+  color: var(--text-faint);
+  user-select: none;
+}
+
+.nw-scope .nw-ot-vol-hint {
+  font-size: 0.85em;
+  color: var(--text-faint);
+}
+
+.nw-scope .nw-ot-vol-num {
+  font-weight: 700;
+  color: var(--text-accent);
+  margin-right: 8px;
+}
+
+.nw-scope .nw-ot-vol-name {
+  color: var(--text-normal);
+  font-weight: 600;
+  margin-right: 12px;
+}
+
+.nw-scope .nw-ot-vol-count {
+  font-size: 0.78em;
+  color: var(--text-faint);
+}
+
+/* 卷概览（章节范围 / 核心冲突 / 区间匹配数） */
+.nw-scope .nw-ot-overview {
+  margin: 2px 4px 8px 28px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--interactive-accent) 6%, transparent);
+  border-left: 3px solid var(--text-accent);
+  font-size: 0.82em;
+  line-height: 1.5;
+}
+
+.nw-scope .nw-ot-overview-icon {
+  font-size: 0.9em;
+}
+
+.nw-scope .nw-ot-overview-range {
+  color: var(--text-faint);
+}
+
+.nw-scope .nw-ot-overview-text {
+  color: var(--text-muted);
+}
+
+.nw-scope .nw-ot-overview-match {
+  color: var(--text-accent);
+  font-size: 0.85em;
+}
+
+/* ── 章节行 ── */
+.nw-scope .nw-ot-chap-row {
+  display: flex;
+  align-items: flex-start;
+  padding: 4px 8px 4px 8px;
+  margin: 1px 0;
+  border-radius: 4px;
+  font-size: 0.84em;
+}
+
+.nw-scope .nw-ot-chap-row--target {
+  background: rgba(245, 158, 11, 0.18);
+  border-left: 3px solid rgb(245, 158, 11);
+}
+
+.nw-scope .nw-ot-chap-row--dragging {
+  opacity: 0.4;
+  background: rgba(var(--color-accent-rgb), 0.1);
+}
+
+.nw-scope .nw-ot-drag {
+  color: var(--text-faint);
+  user-select: none;
+}
+
+.nw-scope .nw-ot-chap-num {
+  font-weight: 600;
+  white-space: nowrap;
+  margin-right: 8px;
+  min-width: 48px;
+  color: var(--text-accent);
+}
+
+.nw-scope .nw-ot-chap-label {
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.nw-scope .nw-ot-chap-label:hover {
+  background: var(--background-modifier-hover);
+}
+
+.nw-scope .nw-ot-row-icon {
+  cursor: pointer;
+  opacity: 0.5;
+  font-size: 0.8em;
+  margin-left: 6px;
+}
+
+.nw-scope .nw-ot-row-move {
+  cursor: pointer;
+  opacity: 0.6;
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.nw-scope .nw-ot-row-move--sm {
+  font-size: 10px;
+}
+
+.nw-scope .nw-ot-add-scene {
+  cursor: pointer;
+  opacity: 0.5;
+  font-size: 0.7em;
+  margin-left: 4px;
+  color: var(--text-accent);
+}
+
+/* ── 场景行 ── */
+.nw-scope .nw-ot-scene-row {
+  display: flex;
+  align-items: flex-start;
+  padding: 3px 8px 3px 28px;
+  margin: 1px 0;
+  border-radius: 3px;
+  font-size: 0.78em;
+}
+
+.nw-scope .nw-ot-scene-num {
+  font-weight: 500;
+  white-space: nowrap;
+  margin-right: 6px;
+  min-width: 40px;
+  color: var(--text-muted);
+}
+
+.nw-scope .nw-ot-scene-label {
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.nw-scope .nw-ot-scene-label:hover {
+  background: var(--background-modifier-hover);
+}
+
+.nw-scope .nw-ot-flag {
+  margin-left: 4px;
+  font-size: 0.85em;
+}
+
+.nw-scope .nw-ot-flag--dialogue {
+  font-size: 0.75em;
+  color: var(--text-faint);
+}
+
+.nw-scope .nw-ot-flag--cliffhanger {
+  font-size: 0.75em;
+  color: var(--text-accent);
+}
+
+.nw-scope .nw-ot-scene-del {
+  cursor: pointer;
+  opacity: 0.4;
+  font-size: 0.7em;
+  margin-left: 6px;
+}
+
+/* ── 空态 / 统计 ── */
+.nw-scope .nw-ot-empty {
+  padding: 20px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.nw-scope .nw-ot-match-count {
+  padding: 4px 8px;
+  font-size: 0.8em;
+  color: var(--text-faint);
+  text-align: right;
+}
+
+.nw-scope .nw-ot-warning {
+  padding: 20px;
+  color: var(--text-warning);
+}
+
+/* ── 底部按钮 ── */
+.nw-scope .nw-ot-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.nw-scope button.nw-ot-footer-btn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  cursor: pointer;
+}
+
+.nw-scope button.nw-ot-footer-btn:hover {
+  background: var(--background-modifier-hover);
+}
+
+.nw-scope button.nw-ot-save {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 6px;
+  background: var(--text-accent);
+  color: var(--text-on-accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* ── 内联编辑 ── */
+.nw-scope .nw-ot-editor-row {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+}
+
+.nw-scope .nw-ot-edit-input {
+  flex: 1;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--text-accent);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font: inherit;
+}
+
+.nw-scope .nw-ot-edit-input--scene {
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+.nw-scope button.nw-ot-edit-ok {
+  padding: 2px 6px;
+  border: none;
+  border-radius: 3px;
+  background: var(--text-success);
+  color: white;
+  cursor: pointer;
+  font-size: 0.8em;
+}
+
+.nw-scope button.nw-ot-edit-cancel {
+  padding: 2px 6px;
+  border: none;
+  border-radius: 3px;
+  background: var(--background-modifier-border);
+  color: white;
+  cursor: pointer;
+  font-size: 0.8em;
+}
+
+.nw-scope button.nw-ot-edit-ok--sm {
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 0.75em;
+}
+
+.nw-scope button.nw-ot-edit-cancel--sm {
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 0.75em;
+}

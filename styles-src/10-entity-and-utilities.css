@@ -186,7 +186,6 @@
 .nw-u-m-0-0-20px-0{margin:0 0 20px 0}
 .nw-u-m-0-0-8px-0{margin:0 0 8px 0}
 .nw-u-m-4px-8px{margin:4px 8px}
-.nw-u-p-10px{padding:10px}
 .nw-u-p-10px-12px{padding:10px 12px}
 .nw-u-p-10px-14px{padding:10px 14px}
 .nw-u-p-12px{padding:12px}
@@ -196,7 +195,6 @@
 .nw-u-p-16px{padding:16px}
 .nw-u-p-1px-6px{padding:1px 6px}
 .nw-u-p-20px{padding:20px}
-.nw-u-p-2px-6px{padding:2px 6px}
 .nw-u-p-2px-8px{padding:2px 8px}
 .nw-u-p-40px{padding:40px}
 
@@ -240,7 +238,6 @@
 .nw-u-jc-space-between{justify-content:space-between}
 .nw-u-lh-1{line-height:1}
 .nw-u-lh-1-4{line-height:1.4}
-.nw-u-lh-1-5{line-height:1.5}
 .nw-u-lh-1-6{line-height:1.6}
 .nw-u-maxh-200px{max-height:200px}
 .nw-u-maxh-300px{max-height:300px}
@@ -326,9 +323,6 @@
 .nw-u-bg-warning-soft{background:color-mix(in srgb, var(--text-warning) 10%, transparent)}
 .nw-u-bg-warning-soft-10{background:color-mix(in srgb, var(--text-warning) 10%, transparent)}
 .nw-u-bg-warning-soft-15{background:color-mix(in srgb, var(--text-warning) 15%, transparent)}
-.nw-u-bg-accent-faint{background:color-mix(in srgb, var(--interactive-accent) 6%, transparent)}
-.nw-u-bg-text-accent{background:var(--text-accent)}
-.nw-u-bg-text-success{background:var(--text-success)}
 
 
 .nw-u-b-1px-dashed-background-{border:1px dashed var(--background-modifier-border)}
@@ -336,7 +330,6 @@
 .nw-u-b-none{border:none}
 .nw-u-lst-none{list-style:none}
 .nw-u-m-0-0-6px{margin:0 0 6px}
-.nw-u-m-0-4px-12px{margin:0 4px 12px}
 .nw-u-m-10px-0{margin:10px 0}
 .nw-u-m-16px-0-12px-0{margin:16px 0 12px 0}
 .nw-u-m-1px-0-1px-8px{margin:1px 0 1px 8px}
@@ -345,7 +338,6 @@
 .nw-u-m-2px-0{margin:2px 0}
 .nw-u-m-2px-0-0-12px{margin:2px 0 0 12px}
 .nw-u-m-2px-0-0-8px{margin:2px 0 0 8px}
-.nw-u-m-2px-4px-8px-28px{margin:2px 4px 8px 28px}
 .nw-u-m-4px-0{margin:4px 0}
 .nw-u-m-4px-0-0-8px{margin:4px 0 0 8px}
 .nw-u-m-4px-0-4px-16px{margin:4px 0 4px 16px}
@@ -358,8 +350,6 @@
 .nw-u-m-8px-0-4px-0{margin:8px 0 4px 0}
 
 .nw-u-p-0{padding:0}
-.nw-u-p-0-4px{padding:0 4px}
-.nw-u-p-0-4px-12px-4px{padding:0 4px 12px 4px}
 
 .nw-u-p-14px-18px{padding:14px 18px}
 
@@ -374,7 +364,6 @@
 .nw-u-p-4px-6px{padding:4px 6px}
 .nw-u-p-60px-20px{padding:60px 20px}
 .nw-u-p-6px-12px{padding:6px 12px}
-.nw-u-p-6px-16px{padding:6px 16px}
 
 
 .nw-u-c-error-strong{color:var(--text-error)}
@@ -392,54 +381,40 @@
 .nw-u-lh-1-7{line-height:1.7}
 
 .nw-u-maxh-240px{max-height:240px}
-.nw-u-maxh-30vh{max-height:30vh}
 .nw-u-maxh-500px{max-height:500px}
-.nw-u-maxh-50vh{max-height:50vh}
 .nw-u-minh-150px{min-height:150px}
 
 .nw-u-minw-16px{min-width:16px}
-.nw-u-minw-40px{min-width:40px}
-.nw-u-minw-48px{min-width:48px}
 .nw-u-minw-60px{min-width:60px}
 .nw-u-op-0{opacity:0}
-.nw-u-op-0-4{opacity:0.4}
 .nw-u-op-0-5{opacity:0.5}
 .nw-u-op-0-6{opacity:0.6}
 
 .nw-u-pos-absolute{position:absolute}
 .nw-u-pos-relative{position:relative}
 .nw-u-resize-none{resize:none}
-.nw-u-ta-right{text-align:right}
 .nw-u-transition-all-0-2s-ease{transition:all 0.2s ease}
 .nw-u-transition-opacity-0-2s-ease{transition:opacity 0.2s ease}
 .nw-u-userselect-none{user-select:none}
 .nw-u-ws-pre-wrap{white-space:pre-wrap}
 .nw-u-w-180px{width:180px}
-.nw-u-wordbreak-break-word{word-break:break-word}
 .nw-u-z-10{z-index:10}
 .nw-u-bordercolor-background-modifier-bo{border-color:var(--background-modifier-border)}
-.nw-u-blt-3px-solid-text-accent{border-left:3px solid var(--text-accent)}
 .nw-u-bt-warning-border{border-top:1px solid color-mix(in srgb, var(--text-warning) 30%, transparent)}
 
 .nw-u-fontfamily-font-monospace{font-family:var(--font-monospace)}
 .nw-u-fontfamily-monospace{font-family:monospace}
-.nw-u-fs-0-75em{font-size:0.75em}
 .nw-u-fs-0-78em{font-size:0.78em}
-.nw-u-fs-0-7em{font-size:0.7em}
 .nw-u-fs-0-82em{font-size:0.82em}
 .nw-u-fs-0-85em{font-size:0.85em}
 .nw-u-fs-0-8em{font-size:0.8em}
 .nw-u-fs-0-95em{font-size:0.95em}
 .nw-u-fs-0-9em{font-size:0.9em}
-.nw-u-fs-1-1em{font-size:1.1em}
 .nw-u-fs-32px{font-size:32px}
 .nw-u-fs-48px{font-size:48px}
 .nw-u-gtc-repeat-auto-fill-minma-4{grid-template-columns:repeat(auto-fill, minmax(280px, 1fr))}
 .nw-u-gtc-repeat-auto-fill-minma-5{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
 .nw-u-gtc-repeat-auto-fit-minmax-6{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
-.nw-u-marginleft-6px{margin-left:6px}
-.nw-u-marginright-12px{margin-right:12px}
-.nw-u-marginright-6px{margin-right:6px}
 .nw-u-marginright-8px{margin-right:8px}
 .nw-u-margintop-0{margin-top:0}
 .nw-u-margintop-24px{margin-top:24px}
