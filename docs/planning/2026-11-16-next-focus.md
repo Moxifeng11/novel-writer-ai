@@ -1325,3 +1325,28 @@ PNG 差异只剩三簇——标题栏按钮簇（y=28–58）、页脚按钮簇�
 **文档**：新增 `docs/modules/polish-editor.md`（8 节，PE-01..PE-05 done / PE-06 backlog）；`docs/modules/INDEX.md` 插「文笔润色编辑器 / AI 润色弹窗」行（在「规划 / 大纲」前）；视觉标准 §5 加 `nw-pe-*` 行、§5.1 重算（84 / 367 / 775975）、清理记录补 Slice V 删 19、特异性段补三条（字面 hex vs color-mix、Modal.open 覆写字段、像素验收重采）；存量大户表移除 104 并重排为 2 行；`docs/CURRENT.md` §4 改切片 A–V、§6 口径改 84 / 367。
 
 **下一轮候选**：`ui/refill-modal.ts`（97）、`ui/views/kb-stats-panel.ts`（81）、`ui/settings/deconstruction-section.ts`（47）。
+
+### 2026-11-17 第四十八轮：Slice W 补全拆解 / 重新提取指纹弹窗语义化（nw-rf-*）
+
+**范围**：`ui/refill-modal.ts`（650 行，LF）——97 处 `nw-u-*` + 14 处内联 `style`（维度卡 `transition:all 0.2s`、取消/开始按钮背景与透明度、进度条 `width`、徽标 `rgba(var(--…-rgb),0.15)`、维度状态 `color`）+ `getCompletenessBadge()` / 维度状态的颜色表。用户 m09227「按顺序直接做完全部」的第二站。
+
+**改动**
+- 新建 `styles-src/40-refill-modal.css`（277 行 / 6330 字节 / 39 个选择器，样式源 45 → 46），前缀 `nw-rf-*`；整体挂在 `.nw-scope` 下（`onOpen()` 给 `modalEl` 加类），按钮写 `.nw-scope button.nw-rf-btn`。
+- 结构类：`nw-rf-title` / `-completeness-row` / `-field-label` / `-badge`(+ `--green|--yellow|--red`) / `-section`(+ `--alt`) / `-section-title` / `-option-row` / `-mode-row` / `-flex1` / `-option-label` / `-option-desc` / `input.nw-rf-check`(+ `--sm`) / `input.nw-rf-radio` / `-dim-section` / `-dim-grid` / `-dim-card`(+ `--selected`) / `-dim-label` / `-dim-status`(+ `--completed|--failed|--missing`) / `-time-line` / `-time-sub` / `-progress`(+ `-message`/`-dim`/`-track`/`-fill`/`-pct`) / `-btn-row` / `button.nw-rf-btn`(+ `--dim`) / `button.nw-rf-btn-primary`(+ `--disabled`)。
+- 徽标：`getCompletenessBadge()` 删掉 `colors` 颜色表，改 `cls: \`nw-rf-badge nw-rf-badge--${completeness.level}\``；维度状态删 `statusColor` 表，改 `nw-rf-dim-status--${status}`。
+- 进度条：`this.progressBar.style.width` → `style.setProperty('--nw-rf-pct', …)`，CSS `.nw-rf-progress-fill{width: var(--nw-rf-pct, 0%)}`（与 `ui/batch-import-modal.ts` 的 `--nw-bi-pct`、Slice Q 的 `--nw-cp-pct` 同套路）。
+- `transition:all 0.2s` 是 lint 硬禁令（`tests/unit/ui/panel-resizer-and-motion.test.ts`），拆成 `background-color 0.2s ease, border-color 0.2s ease`；**代价是 6 张维度卡的 `transition` 计算值从 `0.2s` 变成两属性串**，像素零差异，属有意偏差。
+- 单选/复选拆成 `input.nw-rf-check` 与 `input.nw-rf-radio`（后者原本没有 `cursor:pointer`）。
+- 删 9 个零引用工具类：`nw-u-bb-1px-solid-background-m, nw-u-bg-background-secondary-a, nw-u-fs-16px, nw-u-gtc-1fr-1fr, nw-u-marginbottom-20px, nw-u-margintop-4px, nw-u-p-12px, nw-u-p-6px-0, nw-u-p-8px-0`。
+
+**一处像素验收抓出的回归（已修）**
+- 首版把两个变体的取消按钮都写成 `this.isRunning ? 'nw-rf-btn nw-rf-btn--dim' : 'nw-rf-btn'`，但**指纹变体**的取消按钮旧代码恒为 `background: var(--background-primary)`（只有知识库变体按 `isRunning` 切 `background-secondary`）→ `05-fingerprint-yellow-running` 报 1 处 style 差（`rgb(255,255,255) → rgb(246,246,246)`，PNG 3969 px）。
+- 修法：指纹那处恒 `cls: 'nw-rf-btn'`，知识库保留条件修饰类；改后 6/6 归零。**教训：同一组件的不同变体按各自原始声明分别复刻，不要为了「少一个类」合并语义。**
+
+**验收**：`D:\nw-dev-vault\_visual-w\{before,after}` 6 场景（截 `.modal`，均 480 宽）：`01-knowledge-missing`(480×551) / `02-knowledge-all-done`(480×551) / `03-knowledge-running`(480×645) / `04-fingerprint-green`(480×370) / `05-fingerprint-yellow-running`(480×441) / `06-fingerprint-red`(480×370)。PNG **6/6 = 0 px**，probes struct 0 / rect 0、cls 改名差异外只剩 6 张维度卡的 `transition`。首次采集有 523/523/541 px 的 `maxDelta` 6~7 噪声，重采归零（与 Slice V 同一现象）。
+
+**门禁**：`tsc --noEmit` 0 错；`build` 46 个样式源 / styles.css 31322 行；`check:inline-styles` 530（静态 455 / 动态 75，-12）；`check:utility` 定义 75 / 引用 270 / 零引用 0；`check:css` bytes 781932 / uniqueClasses 4249 / hex 184 / rgbHsl 223 / 深度 4；`check:bundle` main.js 5627977 / styles.css 781932；`preflight` EXIT=0（959 文件 / 10118 通过 + 3 skipped）。
+
+**文档**：新增 `docs/modules/refill-modal.md`（8 节，RF-01..RF-05 done）；`docs/modules/INDEX.md` 插「补全拆解 / 重新提取指纹弹窗」行（在「规划 / 大纲」前）；视觉标准 §5 加 `nw-rf-*` 行、§5.1 重算（75 / 270 / 781932）、清理记录补 Slice W 删 9、特异性段补三条（`transition:all` 禁令、变体不能共用条件样式、首轮像素噪声复现）；存量大户表移除 97 并重排为 1 行；`docs/CURRENT.md` §4 改切片 A–W、§6 口径改 75 / 270。
+
+**下一轮候选**：`ui/views/kb-stats-panel.ts`（81）、`ui/settings/deconstruction-section.ts`（47）。

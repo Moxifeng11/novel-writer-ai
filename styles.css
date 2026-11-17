@@ -47,6 +47,7 @@
  *   - styles-src/37-scene-outline.css
  *   - styles-src/38-settings-knowledge.css
  *   - styles-src/39-polish-editor.css
+ *   - styles-src/40-refill-modal.css
  *
  * 修改样式请编辑 styles-src/ 下对应源文件，然后运行 npm run build:styles
  * （npm run build 与 preflight 均已包含该步骤 / 一致性校验）。
@@ -10067,20 +10068,16 @@ button.nw-btn-icon {
 /* ===== A2: 声明级工具类（从知识库页面内联样式提取，2026-10-26） ===== */
 .nw-u-bg-background-primary{background:var(--background-primary)}
 .nw-u-bg-background-secondary{background:var(--background-secondary)}
-.nw-u-bg-background-secondary-a{background:var(--background-secondary-alt)}
 .nw-u-b-1px-solid-background-m{border:1px solid var(--background-modifier-border)}
 .nw-u-flex-1{flex:1}
 .nw-u-m-0-0-12px-0{margin:0 0 12px 0}
 .nw-u-m-0-0-16px-0{margin:0 0 16px 0}
 .nw-u-m-0-0-20px-0{margin:0 0 20px 0}
-.nw-u-p-12px{padding:12px}
 .nw-u-p-12px-16px{padding:12px 16px}
 .nw-u-p-16px{padding:16px}
 .nw-u-p-20px{padding:20px}
 .nw-u-p-40px{padding:40px}
 
-.nw-u-p-6px-0{padding:6px 0}
-.nw-u-p-8px-0{padding:8px 0}
 
 
 .nw-u-ai-center{align-items:center}
@@ -10109,7 +10106,6 @@ button.nw-btn-icon {
 .nw-u-ovy-auto{overflow-y:auto}
 .nw-u-ta-center{text-align:center}
 .nw-u-w-100{width:100%}
-.nw-u-bb-1px-solid-background-m{border-bottom:1px solid var(--background-modifier-border)}
 .nw-u-brd-4px{border-radius:4px}
 .nw-u-brd-6px{border-radius:6px}
 .nw-u-brd-8px{border-radius:8px}
@@ -10120,25 +10116,21 @@ button.nw-btn-icon {
 .nw-u-fs-13px{font-size:13px}
 .nw-u-fs-14px{font-size:14px}
 .nw-u-fs-15px{font-size:15px}
-.nw-u-fs-16px{font-size:16px}
 .nw-u-fs-18px{font-size:18px}
 .nw-u-fs-28px{font-size:28px}
 .nw-u-fwt-500{font-weight:500}
 .nw-u-fwt-600{font-weight:600}
-.nw-u-gtc-1fr-1fr{grid-template-columns:1fr 1fr}
 .nw-u-gtc-repeat-4-1fr{grid-template-columns:repeat(4,1fr)}
 .nw-u-marginbottom-10px{margin-bottom:10px}
 .nw-u-marginbottom-12px{margin-bottom:12px}
 .nw-u-marginbottom-14px{margin-bottom:14px}
 .nw-u-marginbottom-16px{margin-bottom:16px}
-.nw-u-marginbottom-20px{margin-bottom:20px}
 .nw-u-marginbottom-24px{margin-bottom:24px}
 .nw-u-marginbottom-6px{margin-bottom:6px}
 .nw-u-marginbottom-8px{margin-bottom:8px}
 .nw-u-margintop-12px{margin-top:12px}
 .nw-u-margintop-16px{margin-top:16px}
 .nw-u-margintop-20px{margin-top:20px}
-.nw-u-margintop-4px{margin-top:4px}
 .nw-u-margintop-8px{margin-top:8px}
 
 /* ===== A3: 声明级工具类（从设置/向导/监控等页面内联样式提取，2026-10-26） ===== */
@@ -31050,4 +31042,280 @@ button.nw-pe-close-btn {
 .nw-scope .nw-pe-toggle-label {
     font-size: 13px;
     cursor: pointer;
+}
+/* 40-refill-modal.css —— 补全拆解 / 重新提取指纹弹窗（视觉重构 Slice W）
+ *
+ * 作用域：RefillModal.onOpen() 里 this.modalEl.addClass('nw-scope')，所以统一用 .nw-scope 前缀，
+ * 既拿到足够特异性（按钮压得住 Obsidian 的 button 规则），也和 Slice V 的弹窗侧写法保持一致。
+ *
+ * Slice W 之前这两套界面的排版全部由 nw-u-* 工具类 + 内联 style 拼出（97 处工具类 / 14 处内联），
+ * 本文件按「被删声明实际生效的值」逐条复刻，不新增视觉。
+ *
+ * 注意：旧维度卡写的是 transition:all 0.2s，这里必须拆成显式属性——仓内
+ * tests/unit/ui/panel-resizer-and-motion.test.ts 硬断言 styles.css 不含 transition:all。
+ */
+
+/* ---------- 标题 ---------- */
+
+.nw-scope .nw-rf-title {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+}
+
+/* ---------- 完整度行 ---------- */
+
+.nw-scope .nw-rf-completeness-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.nw-scope .nw-rf-field-label {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.nw-scope .nw-rf-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.nw-scope .nw-rf-badge--green {
+    color: var(--text-success);
+    background: rgba(var(--background-modifier-success-rgb), 0.15);
+}
+
+.nw-scope .nw-rf-badge--yellow {
+    color: var(--text-warning);
+    background: rgba(var(--background-modifier-warning-rgb), 0.15);
+}
+
+.nw-scope .nw-rf-badge--red {
+    color: var(--text-error);
+    background: rgba(var(--background-modifier-error-rgb), 0.15);
+}
+
+/* ---------- 分区卡片 ---------- */
+
+.nw-scope .nw-rf-section {
+    margin-bottom: 20px;
+    padding: 12px;
+    border-radius: 6px;
+    background: var(--background-secondary);
+}
+
+/* 预估时间块原本用 background-secondary-alt，与其它区块的底色不同 */
+.nw-scope .nw-rf-section--alt {
+    background: var(--background-secondary-alt);
+}
+
+.nw-scope .nw-rf-section-title {
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* ---------- 选项行（补全选项 / 拆解模式） ---------- */
+
+.nw-scope .nw-rf-option-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--background-modifier-border);
+    cursor: pointer;
+}
+
+.nw-scope .nw-rf-mode-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    cursor: pointer;
+}
+
+.nw-scope .nw-rf-flex1 {
+    flex: 1;
+}
+
+.nw-scope .nw-rf-option-label {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.nw-scope .nw-rf-option-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* ---------- 勾选框 / 单选框 ---------- */
+
+.nw-scope input.nw-rf-check {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.nw-scope input.nw-rf-check--sm {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+}
+
+/* 模式单选按钮本身不带手型光标，只有整行是手型 */
+.nw-scope input.nw-rf-radio {
+    width: 16px;
+    height: 16px;
+}
+
+/* ---------- 维度多选网格 ---------- */
+
+.nw-scope .nw-rf-dim-section {
+    margin-bottom: 20px;
+}
+
+.nw-scope .nw-rf-dim-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.nw-scope .nw-rf-dim-card {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    background: var(--background-secondary);
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.nw-scope .nw-rf-dim-card--selected {
+    border-color: var(--interactive-accent);
+    background: rgba(var(--interactive-accent-rgb), 0.1);
+}
+
+.nw-scope .nw-rf-dim-label {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.nw-scope .nw-rf-dim-status {
+    font-size: 10px;
+}
+
+.nw-scope .nw-rf-dim-status--completed {
+    color: var(--text-success);
+}
+
+.nw-scope .nw-rf-dim-status--failed {
+    color: var(--text-error);
+}
+
+.nw-scope .nw-rf-dim-status--missing {
+    color: var(--text-muted);
+}
+
+/* ---------- 预估时间 ---------- */
+
+.nw-scope .nw-rf-time-line {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.nw-scope .nw-rf-time-sub {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-faint);
+}
+
+/* ---------- 进度 ---------- */
+
+.nw-scope .nw-rf-progress {
+    margin-bottom: 16px;
+}
+
+.nw-scope .nw-rf-progress-message {
+    margin-bottom: 8px;
+    font-size: 13px;
+    text-align: center;
+}
+
+.nw-scope .nw-rf-progress-dim {
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.nw-scope .nw-rf-progress-track {
+    height: 8px;
+    overflow: hidden;
+    border-radius: 4px;
+    background: var(--background-secondary);
+}
+
+/* 进度值走 CSS 变量：JS 只 setProperty('--nw-rf-pct')，不写 width 内联 */
+.nw-scope .nw-rf-progress-fill {
+    width: var(--nw-rf-pct, 0%);
+    height: 100%;
+    border-radius: 4px;
+    background: var(--interactive-accent);
+    transition: width 0.3s ease;
+}
+
+.nw-scope .nw-rf-progress-pct {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* ---------- 按钮行 ---------- */
+
+.nw-scope .nw-rf-btn-row {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.nw-scope button.nw-rf-btn {
+    padding: 8px 20px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+/* 运行中「关闭（后台继续）」用次级底色，避免看起来像主操作 */
+.nw-scope button.nw-rf-btn--dim {
+    background: var(--background-secondary);
+}
+
+.nw-scope button.nw-rf-btn-primary {
+    padding: 8px 24px;
+    border: none;
+    border-radius: 6px;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* 没勾任何选项时的禁用态：灰底 + 弱化文字 + 禁用光标 */
+.nw-scope button.nw-rf-btn-primary--disabled {
+    background: var(--background-modifier-border);
+    color: var(--text-muted);
+    cursor: not-allowed;
 }
