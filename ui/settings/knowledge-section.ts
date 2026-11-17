@@ -59,7 +59,7 @@ export class KnowledgeSection extends SettingsSection {
 
         if (this.knowledgeLoading) {
             section.createDiv({
-                cls: 'nw-u-p-40px nw-u-ta-center nw-u-c-text-faint nw-u-fs-13px',
+                cls: 'nw-st-kb-loading',
                 text: '加载中...'
             });
             return;
@@ -75,7 +75,7 @@ export class KnowledgeSection extends SettingsSection {
             await this.loadKnowledgeBooks();
         }
 
-        const toolbar = section.createDiv({ cls: 'nw-u-marginbottom-16px' });
+        const toolbar = section.createDiv({ cls: 'nw-st-kb-toolbar' });
 
         new Setting(toolbar)
             .setName('知识库路径')
@@ -96,60 +96,60 @@ export class KnowledgeSection extends SettingsSection {
                     }
                 }));
 
-        const actionRow = toolbar.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-margintop-8px nw-u-marginbottom-16px' });
+        const actionRow = toolbar.createDiv({ cls: 'nw-st-kb-actions' });
 
         const importBtn = actionRow.createEl('button', {
             text: '📥 批量导入',
+            cls: 'nw-st-kb-btn nw-st-kb-btn--primary nw-st-kb-btn--fw500',
             attr: {
                 type: 'button',
-                title: '从文件夹批量导入书籍',
-                style: 'padding:6px 16px;cursor:pointer;background:var(--interactive-accent);color:var(--text-on-accent);border:none;border-radius:4px;font-size:13px;font-weight:500;'
+                title: '从文件夹批量导入书籍'
             }
         });
         importBtn.addEventListener('click', () => this.showBatchImportModal());
 
         const monitorBtn = actionRow.createEl('button', {
             text: '📊 监控面板',
+            cls: 'nw-st-kb-btn',
             attr: {
                 type: 'button',
-                title: '查看拆解任务监控面板',
-                style: 'padding:6px 16px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:13px;background:var(--background-primary);'
+                title: '查看拆解任务监控面板'
             }
         });
         monitorBtn.addEventListener('click', () => this.showKnowledgeMonitorModal());
 
         const rebuildBtn = actionRow.createEl('button', {
             text: '🔄 重建索引',
+            cls: 'nw-st-kb-btn',
             attr: {
                 type: 'button',
-                title: '重建向量索引（重新扫描所有向量文件）',
-                style: 'padding:6px 16px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:13px;background:var(--background-primary);'
+                title: '重建向量索引（重新扫描所有向量文件）'
             }
         });
         rebuildBtn.addEventListener('click', () => rebuildKnowledgeIndexWithConfirm(this.app, this.plugin));
 
         const revectorizeBtn = actionRow.createEl('button', {
             text: '🧠 重向量化',
+            cls: 'nw-st-kb-btn',
             attr: {
                 type: 'button',
-                title: '按当前向量提供商重新计算知识库与指纹向量（不调用 AI、不重新拆解）',
-                style: 'padding:6px 16px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:13px;background:var(--background-primary);'
+                title: '按当前向量提供商重新计算知识库与指纹向量（不调用 AI、不重新拆解）'
             }
         });
         revectorizeBtn.addEventListener('click', () => rebuildAllVectorsWithConfirm(this.app, this.plugin));
 
         const filterBar = section.createDiv({
-            cls: 'nw-u-p-12px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-marginbottom-16px nw-u-bg-background-secondary'
+            cls: 'nw-st-kb-filters'
         });
 
-        const searchRow = filterBar.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-marginbottom-10px nw-u-fwr-wrap' });
+        const searchRow = filterBar.createDiv({ cls: 'nw-st-kb-search-row' });
 
         const searchInput = searchRow.createEl('input', {
+            cls: 'nw-st-kb-search-input',
             attr: {
                 type: 'text',
                 placeholder: '🔍 搜索书名/作者/标签...',
-                value: this.knowledgeSearchKeyword,
-                style: 'flex:1;min-width:200px;padding:6px 10px;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:13px;background:var(--background-primary);color:var(--text-normal);'
+                value: this.knowledgeSearchKeyword
             }
         });
         searchInput.addEventListener('input', (e) => {
@@ -170,7 +170,7 @@ export class KnowledgeSection extends SettingsSection {
         });
 
         const statusSelect = searchRow.createEl('select', {
-            cls: 'nw-u-p-6px-10px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-fs-13px nw-u-bg-background-primary nw-u-c-text-normal'
+            cls: 'nw-st-kb-status-select'
         });
         const statusOptions: { value: string; label: string }[] = [
             { value: 'all', label: '全部状态' },
@@ -188,36 +188,36 @@ export class KnowledgeSection extends SettingsSection {
             this.refresh();
         });
 
-        const tagFilterRow = filterBar.createDiv({ cls: 'nw-u-d-flex nw-u-gap-12px nw-u-fwr-wrap' });
+        const tagFilterRow = filterBar.createDiv({ cls: 'nw-st-kb-tag-row' });
 
-        const themeFilterDiv = tagFilterRow.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-200px' });
-        themeFilterDiv.createEl('span', { text: '📖 题材：全部', cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginright-8px' });
+        const themeFilterDiv = tagFilterRow.createDiv({ cls: 'nw-st-kb-tag-filter' });
+        themeFilterDiv.createEl('span', { text: '📖 题材：全部', cls: 'nw-st-kb-tag-label' });
 
-        const techniqueFilterDiv = tagFilterRow.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-200px' });
-        techniqueFilterDiv.createEl('span', { text: '✍️ 技巧：全部', cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginright-8px' });
+        const techniqueFilterDiv = tagFilterRow.createDiv({ cls: 'nw-st-kb-tag-filter' });
+        techniqueFilterDiv.createEl('span', { text: '✍️ 技巧：全部', cls: 'nw-st-kb-tag-label' });
 
         const filteredBooks = this.filterKnowledgeBooks();
 
         if (filteredBooks.length === 0) {
             const emptyState = section.createDiv({
-                cls: 'nw-u-p-60px-20px nw-u-ta-center nw-u-b-1px-dashed-background- nw-u-brd-8px nw-u-bg-background-secondary'
+                cls: 'nw-st-kb-empty'
             });
             emptyState.createEl('div', {
                 text: '📚',
-                cls: 'nw-u-fs-48px nw-u-marginbottom-16px nw-u-op-0-5'
+                cls: 'nw-st-kb-empty-icon'
             });
             emptyState.createEl('div', {
                 text: this.knowledgeBooks.length === 0
                     ? '知识库暂无书籍，点击上方「批量导入」开始添加'
                     : '没有符合筛选条件的书籍',
-                cls: 'nw-u-fs-14px nw-u-c-text-muted nw-u-marginbottom-8px'
+                cls: 'nw-st-kb-empty-text'
             });
             if (this.knowledgeBooks.length === 0) {
                 const emptyImportBtn = emptyState.createEl('button', {
                     text: '📥 批量导入书籍',
+                    cls: 'nw-st-kb-btn nw-st-kb-btn--primary nw-st-kb-btn--lg',
                     attr: {
-                        type: 'button',
-                        style: 'padding:8px 20px;cursor:pointer;background:var(--interactive-accent);color:var(--text-on-accent);border:none;border-radius:4px;font-size:13px;margin-top:8px;'
+                        type: 'button'
                     }
                 });
                 emptyImportBtn.addEventListener('click', () => this.showBatchImportModal());
@@ -228,11 +228,11 @@ export class KnowledgeSection extends SettingsSection {
         const countRow = section.createDiv({ cls: 'nw-status-row' });
         countRow.createEl('span', {
             text: `共 ${filteredBooks.length} 本书籍`,
-            cls: 'nw-u-fs-13px nw-u-c-text-muted'
+            cls: 'nw-st-kb-count'
         });
 
         const gridContainer = section.createDiv({
-            cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fill-minma-4 nw-u-gap-12px nw-u-maxh-500px nw-u-ovy-auto nw-u-p-4px'
+            cls: 'nw-st-kb-grid'
         });
 
         filteredBooks.forEach(book => {
@@ -263,7 +263,7 @@ export class KnowledgeSection extends SettingsSection {
 
     private renderKnowledgeBookCard(container: HTMLElement, book: BookBasicInfo): void {
         const card = container.createDiv({
-            cls: 'nw-u-p-14px nw-u-b-1px-solid-background-m nw-u-brd-8px nw-u-bg-background-primary nw-u-cur-pointer nw-u-transition-all-0-2s-ease nw-u-pos-relative nw-u-ov-hidden nw-kb-book-card'
+            cls: 'nw-kb-book-card nw-st-kb-card'
         });
 
         card.addEventListener('click', () => {
@@ -274,17 +274,14 @@ export class KnowledgeSection extends SettingsSection {
             }).open();
         });
 
-        const actionsRow = card.createDiv({
-            cls: "nw-kb-card-actions kb-card-actions nw-u-pos-absolute nw-u-t-8px nw-u-r-8px nw-u-d-flex nw-u-gap-4px nw-u-op-0 nw-u-transition-opacity-0-2s-ease nw-u-z-10",
-            attr: {}
-        });
+        const actionsRow = card.createDiv({ cls: 'nw-kb-card-actions nw-st-kb-card-actions' });
 
         const retryBtn = actionsRow.createEl('button', {
             text: '🔄 重拆',
+            cls: 'nw-st-kb-mini-btn',
             attr: {
                 type: 'button',
-                title: '重新拆解',
-                style: 'padding:4px 8px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;background:var(--background-secondary);'
+                title: '重新拆解'
             }
         });
         retryBtn.addEventListener('click', (e) => {
@@ -301,10 +298,10 @@ export class KnowledgeSection extends SettingsSection {
 
         const deleteBtn = actionsRow.createEl('button', {
             text: '🗑 删除',
+            cls: 'nw-st-kb-mini-btn nw-st-kb-mini-btn--danger',
             attr: {
                 type: 'button',
-                title: '删除',
-                style: 'padding:4px 8px;cursor:pointer;border:1px solid var(--background-modifier-error);border-radius:4px;font-size:12px;background:var(--background-secondary);color:var(--text-error);'
+                title: '删除'
             }
         });
         deleteBtn.addEventListener('click', async (e) => {
@@ -327,16 +324,16 @@ export class KnowledgeSection extends SettingsSection {
             }
         });
 
-        const titleRow = card.createDiv({ cls: 'nw-u-marginbottom-6px nw-u-paddingright-60px' });
+        const titleRow = card.createDiv({ cls: 'nw-st-kb-card-title-row' });
         titleRow.createEl('div', {
             text: book.name,
-            cls: 'nw-u-fs-15px nw-u-fwt-600 nw-u-c-text-normal nw-u-lh-1-4'
+            cls: 'nw-st-kb-card-name'
         });
 
         if (book.author) {
             titleRow.createEl('div', {
                 text: book.author,
-                cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-margintop-2px'
+                cls: 'nw-st-kb-card-author'
             });
         }
 
@@ -346,25 +343,25 @@ export class KnowledgeSection extends SettingsSection {
         const allTags = [...book.themeTags, ...book.techniqueTags, ...book.customTags];
         if (allTags.length > 0) {
             const tagRow = card.createDiv({
-                cls: 'nw-u-d-flex nw-u-gap-4px nw-u-fwr-wrap nw-u-m-10px-0'
+                cls: 'nw-st-kb-tags'
             });
             const displayTags = allTags.slice(0, 3);
             displayTags.forEach(tag => {
                 tagRow.createEl('span', {
                     text: tag,
-                    cls: 'nw-u-p-2px-8px nw-u-bg-background-secondary nw-u-brd-10px nw-u-fs-11px nw-u-c-text-muted'
+                    cls: 'nw-st-kb-tag'
                 });
             });
             if (allTags.length > 3) {
                 tagRow.createEl('span', {
                     text: `+${allTags.length - 3}`,
-                    cls: 'nw-u-p-2px-8px nw-u-bg-background-secondary nw-u-brd-10px nw-u-fs-11px nw-u-c-text-faint'
+                    cls: 'nw-st-kb-tag nw-st-kb-tag--more'
                 });
             }
         }
 
         const metaRow = card.createDiv({
-            cls: 'nw-u-d-flex nw-u-gap-12px nw-u-fs-11px nw-u-c-text-faint nw-u-paddingtop-8px nw-u-bt-1px-solid-background-m'
+            cls: 'nw-st-kb-meta'
         });
 
         if (book.wordCount) {
@@ -376,18 +373,17 @@ export class KnowledgeSection extends SettingsSection {
     }
 
     private getStatusBadge(status: string): HTMLElement {
-        const statusMap: Record<string, { label: string; color: string; bg: string }> = {
-            pending: { label: '待拆解', color: 'var(--text-muted)', bg: 'var(--background-secondary)' },
-            processing: { label: '拆解中', color: 'var(--text-accent)', bg: 'rgba(var(--interactive-accent-rgb), 0.1)' },
-            completed: { label: '已完成', color: 'var(--text-success)', bg: 'rgba(var(--background-modifier-success-rgb), 0.1)' },
-            failed: { label: '失败', color: 'var(--text-error)', bg: 'rgba(var(--background-modifier-error-rgb), 0.1)' },
+        // 状态徽标：配色与底色全部交给 nw-st-kb-badge--<状态> 修饰类（Slice U）
+        const statusMap: Record<string, { label: string; tone: string }> = {
+            pending: { label: '待拆解', tone: 'pending' },
+            processing: { label: '拆解中', tone: 'processing' },
+            completed: { label: '已完成', tone: 'completed' },
+            failed: { label: '失败', tone: 'failed' },
         };
 
         const info = statusMap[status] || statusMap.pending;
         const badge = createDiv({
-            attr: {
-                style: `display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;color:${info.color};background:${info.bg};margin-top:8px;`
-            },
+            cls: `nw-st-kb-badge nw-st-kb-badge--${info.tone}`,
             text: info.label
         });
         return badge;
@@ -445,12 +441,12 @@ export class KnowledgeSection extends SettingsSection {
 
     private renderVectorEnhancementSettings(container: HTMLElement): void {
         const vectorSection = container.createDiv({
-            cls: 'nw-u-p-12px-16px nw-u-b-1px-solid-background-m nw-u-brd-6px nw-u-marginbottom-16px nw-u-bg-background-secondary'
+            cls: 'nw-st-kb-vector'
         });
 
         vectorSection.createEl('h4', {
             text: '🧠 向量增强设置',
-            cls: 'nw-u-m-0-0-12px-0 nw-u-fs-14px'
+            cls: 'nw-st-kb-vector-title'
         });
 
         new Setting(vectorSection)
@@ -713,13 +709,7 @@ export class KnowledgeSection extends SettingsSection {
                 });
         }
 
-        const statusColors: Record<string, string> = {
-            idle: 'var(--text-muted)',
-            checking: 'var(--text-muted)',
-            connected: 'var(--text-success)',
-            disconnected: 'var(--text-error)',
-        };
-
+        // 圆点/文字配色走修饰类（Slice U）：旧的动态内联 color/background 已删除
         const statusLabels: Record<string, string> = {
             idle: '未检测',
             checking: '检测中...',
@@ -732,9 +722,10 @@ export class KnowledgeSection extends SettingsSection {
 
         const updateStatusDisplay = () => {
             if (statusDot && statusText) {
-                statusDot.style.backgroundColor = statusColors[this.vectorConnectionStatus] || 'var(--text-muted)';
-                statusText.textContent = statusLabels[this.vectorConnectionStatus] || '未检测';
-                statusText.style.color = statusColors[this.vectorConnectionStatus] || 'var(--text-muted)';
+                const tone = this.vectorConnectionStatus;
+                statusDot.className = `nw-st-kb-dot nw-st-kb-dot--${tone}`;
+                statusText.className = `nw-st-kb-status-text nw-st-kb-status-text--${tone}`;
+                statusText.textContent = statusLabels[tone] || '未检测';
             }
         };
 
@@ -786,13 +777,11 @@ export class KnowledgeSection extends SettingsSection {
         if (statusDesc) {
             statusDesc.addClass('nw-kb-status-desc');
             statusDot = statusDesc.createSpan({
-                attr: {
-                    style: `width:8px;height:8px;border-radius:50%;background-color:${statusColors[this.vectorConnectionStatus]};display:inline-block;`
-                }
+                cls: `nw-st-kb-dot nw-st-kb-dot--${this.vectorConnectionStatus}`
             });
             statusText = statusDesc.createSpan({
                 text: statusLabels[this.vectorConnectionStatus],
-                attr: { style: `color:${statusColors[this.vectorConnectionStatus]};font-weight:500;` }
+                cls: `nw-st-kb-status-text nw-st-kb-status-text--${this.vectorConnectionStatus}`
             });
         }
     }

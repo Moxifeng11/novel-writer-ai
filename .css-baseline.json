@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-17T16:14:16.830Z",
-  "note": "Slice T：759136→764628（+5492B；新增 37-scene-outline.css 与 51 个 nw-so-*），uniqueClasses 4142→4168，hardcodedHex 170→172、rgbHsl 213→215（#22c55e/#f59e0b 由内联迁入 CSS）",
-  "bytes": 764628,
+  "generatedAt": "2026-11-17T16:32:56.745Z",
+  "note": "Slice U：新增 styles-src/38-settings-knowledge.css（约 7KB，47 个 nw-st-kb-* 类），删 25 个零引用 nw-u-* 工具类；bytes 764628→770834（+6206），uniqueClasses 4168→4190（+22），rgbHsl 215→218（+3：状态徽标沿用 rgba(var(--*-rgb),0.1)）",
+  "bytes": 770834,
   "important": 24,
   "hardcodedHex": 172,
-  "rgbHsl": 215,
-  "uniqueClasses": 4168,
+  "rgbHsl": 218,
+  "uniqueClasses": 4190,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

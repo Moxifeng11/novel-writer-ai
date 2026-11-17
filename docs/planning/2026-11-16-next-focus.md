@@ -1276,3 +1276,27 @@ PNG 差异只剩三簇——标题栏按钮簇（y=28–58）、页脚按钮簇�
 **方案 B 收尾**：R/S/T 三连到此结束。剩余 52 个文件里的长尾（26 个文件各 ≤4 处）按「碰哪改哪」处理，`check:utility` 的 C 项（定义数/使用量只许下降）就是新增 `nw-u-*` 的门禁，不再单独加 lint 规则。
 
 **下一轮候选**（按 §5.1 存量大户）：`ui/settings/knowledge-section.ts`（108）、`ui/polish-editor.ts`（104）、`ui/refill-modal.ts`（97）、`ui/views/kb-stats-panel.ts`（81）、`ui/settings/deconstruction-section.ts`（47）。若继续走视觉重构，建议先做 `knowledge-section`（设置页，与 Slice R 同宿主、脚手架可复用）。
+
+### 2026-11-17 第四十六轮：Slice U 知识库设置分区语义化（nw-st-kb-*）
+
+**范围**：`ui/settings/knowledge-section.ts`（788 行，CRLF，`class KnowledgeSection extends SettingsSection` `:31`，注册于 `ui/settings/section-factory.ts:70`）——108 处 `nw-u-*` + 11 处 `attr: { style }` 内联样式 + `statusColors` 表与两处动态内联色。
+
+**改动**
+- 新建 `styles-src/38-settings-knowledge.css`（311 行 / 7130 字节 / 47 个 `nw-st-kb-*` 类，样式源 43 → 44），**不套 `.nw-scope`**（与 Slice R 同：设置页整体不在 scope 容器内），按钮/输入框/下拉全部元素限定（`button.` / `input[type='text'].` / `select.`）。
+- 分区结构：加载态 `nw-st-kb-loading`；工具条 `nw-st-kb-toolbar` + 按钮行 `nw-st-kb-actions`（首个按钮 `--primary --fw500`，其余纯 `-btn`）；筛选条 `nw-st-kb-filters` + `-search-row` / `-search-input` / `-status-select` + `-tag-row` / `-tag-filter` / `-tag-label`；空态 `-empty` / `-empty-icon` / `-empty-text`；计数 `-count`；网格 `-grid`；卡片 `-card` / `-card-actions` / `-mini-btn`(+--danger) / `-card-title-row` / `-card-name` / `-card-author` / `-badge`(+四态) / `-tags` / `-tag`(+--more) / `-meta`；向量区 `-vector` / `-vector-title` / `-dot`(+四态) / `-status-text`(+四态)。
+- `getStatusBadge()` 的 `{label,color,bg}` 表改成 `{label,tone}` + 修饰类；连接状态删 `statusColors` 表，`updateStatusDisplay()`（`:723`）与首渲（`:779-785`）都只改 `className`。
+- 书籍卡**保留外壳** `.nw-kb-book-card`（`styles-src/27-knowledge-base.css:376`）：旧的 `nw-u-p-14px` 因源序（10 号文件在前）本就输给它的 `padding:12px`，所以 `nw-st-kb-card` 只写 `position:relative; overflow:hidden`；`-card-actions` 只写定位，opacity 0 与 hover 过渡留给 `.nw-kb-book-card .nw-kb-card-actions`。
+- 删 25 个只有本文件在用的零引用工具类：`nw-u-b-1px-dashed-background-, nw-u-brd-10px, nw-u-fs-48px, nw-u-gtc-repeat-auto-fill-minma-4, nw-u-lh-1-4, nw-u-m-10px-0, nw-u-marginright-8px, nw-u-margintop-2px, nw-u-maxh-500px, nw-u-op-0, nw-u-op-0-5, nw-u-p-14px, nw-u-p-2px-8px, nw-u-p-4px, nw-u-p-60px-20px, nw-u-p-6px-10px, nw-u-paddingright-60px, nw-u-paddingtop-8px, nw-u-pos-absolute, nw-u-pos-relative, nw-u-r-8px, nw-u-t-8px, nw-u-transition-all-0-2s-ease, nw-u-transition-opacity-0-2s-ease, nw-u-z-10`（定义 128 → 103、使用 579 → 471）。
+
+**一处像素验收抓出的回归（已修）**
+- 首轮把 `font-weight:500` 写进 `button.nw-st-kb-btn--primary`，`02-empty` 场景报 1 处 style 差（空态「📥 批量导入书籍」按钮 400 → 500）——旧内联里只有工具条那颗导入按钮带 fw500。
+- 修法：`--primary` 只管配色，新增 `button.nw-st-kb-btn--fw500`，工具条按钮 cls 改 `nw-st-kb-btn nw-st-kb-btn--primary nw-st-kb-btn--fw500`；改后 7 场景全 0。
+- 另一次 `06-vector-doubao` 出现 1 px（maxDelta 3，bbox [47,1193,47,1217]），重截即 0 → 判定为一次性抗锯齿抖动。
+
+**验收**：`D:\nw-dev-vault\_visual-u\{before,after}` 7 场景（宿主 `#nw-u-host`，`vertical-tab-content nw-settings-root` 820px，走 `plugin.settingsTab.containerEl = host; display()`）：`01-loaded`(h1858，5 卡 4 徽标) / `02-empty`(1593) / `03-loading`(1202) / `04-filtered-empty`(1555) / `05-vector-openai`(1600，2 卡 connected) / `06-vector-doubao`(1600，1 卡 disconnected) / `07-vector-qwen`(1600，1 卡 checking)。**PNG 7/7 = 0 px**；probes struct/style/rect 全 0。before 取自 worktree `D:\nw-tmp\before-u`（2fcc6332 + node_modules junction + build）。
+
+**门禁**：`tsc --noEmit` 0 错；`build` 44 个样式源 / styles.css 30786 行（check:css 口径 30787）；`check:inline-styles` 547（静态 466 / 动态 81）；`check:utility` 定义 103 / 引用 471 / 零引用 0；`check:css` bytes 770834 / 唯一类 4190 / hex 172 / rgbHsl 218 / !important 24；`check:bundle` main.js 5632022（-3034B）/ styles.css 770834（764628 → 770834，净 +6206）；`npm run preflight` EXIT=0（959 文件 / 10118 通过 + 3 skipped）。
+
+**文档**：新增 `docs/modules/settings-knowledge.md`（8 节，SK-01..SK-05 done / SK-06 backlog）；`docs/modules/INDEX.md` 插「知识库设置分区」行（在「规划 / 大纲」前）；视觉标准 §5 加 `nw-st-kb-*` 行、§5.1 重算（103 / 471 / 770834）、清理记录补 Slice U 删 25、特异性段补「基类别吞字重 + 别重复外壳类几何」、存量大户表移除 108 并重排为 2 行 4 项；`docs/CURRENT.md` §4 改切片 A–U、§6 口径改 103 / 471。
+
+**下一轮候选**（按 §5.1 存量大户）：`ui/polish-editor.ts`（104）、`ui/refill-modal.ts`（97）、`ui/views/kb-stats-panel.ts`（81）、`ui/settings/deconstruction-section.ts`（47）。

@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-11-17T16:14:16.649Z",
+  "generatedAt": "2026-11-17T16:32:39.103Z",
   "note": "棘轮基线：每文件只允许下降；新增内联样式需先说明动态原因并显式更新",
-  "total": 558,
-  "static": 474,
-  "dynamic": 84,
+  "total": 547,
+  "static": 466,
+  "dynamic": 81,
   "files": {
     "ui/svg-charts.ts": 64,
     "ui/knowledge-monitor-modal.ts": 40,
@@ -24,7 +24,6 @@
     "ui/refill-modal.ts": 14,
     "ui/memory-preview.ts": 13,
     "ui/full-writer/step-render-controller.ts": 12,
-    "ui/settings/knowledge-section.ts": 11,
     "ui/batch-create-modal.ts": 10,
     "ui/co-writing/asset-status.ts": 10,
     "ui/full-writer-view.ts": 7,
