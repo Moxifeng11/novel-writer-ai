@@ -11,7 +11,7 @@
 | `shared/` | 255 | 50823 | 2149 | 1680 | 78% |
 | `core/` | 7 | 3387 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 300 | 113575 | 1155 | 917 | 79% |
+| `ui/` | 300 | 113422 | 1155 | 917 | 79% |
 
 ## 文件清单
 
@@ -725,7 +725,7 @@
 | `ui/backup-yuan-modal.ts` | 125 | 1 | 1 |
 | `ui/batch-chapters-modal.ts` | 340 | 1 | 1 |
 | `ui/batch-create-modal.ts` | 521 | 1 | 1 |
-| `ui/batch-import-modal.ts` | 1879 | 1 | 1 |
+| `ui/batch-import-modal.ts` | 1726 | 1 | 1 |
 | `ui/batch-novels-modal.ts` | 236 | 1 | 1 |
 | `ui/button-busy.ts` | 37 | 1 | 1 |
 | `ui/changelog-modal.ts` | 207 | 1 | 1 |

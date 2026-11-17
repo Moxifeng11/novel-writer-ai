@@ -867,3 +867,40 @@ after 构建八个页签 `nw-u-` 引用均为 0（before：技巧 141 / 结构 2
 下一轮：按 §5.1 的存量大户推进语义化，建议先做 `ui/batch-import-modal.ts`（365 处）或
 `ui/knowledge-detail-modal.ts`（294 处）——两者都是弹窗，可复用 Slice G 的 `nw-kb-modal-*` 模式。
 
+### 2026-11-17 第三十三轮：Slice H 批量导入弹窗语义化
+
+**范围**：`ui/batch-import-modal.ts`（1882 → 1726 行），独立 `nw-bi-*` 命名空间（作者要求不复用 Slice G 的
+`nw-kb-modal-*` 骨架，只保留共享 h3 `nw-modal-title`）。
+
+**改动**：工具类 365 处 → 0（连同 8 个死类与 `nw-text-*`/`nw-flex-*`/`nw-drop-area`/`nw-is-dragover` 一起清掉）；
+新增 `styles-src/28-batch-import.css`（1051 行）；动态值走 `--nw-bi-pct`，补齐 `@keyframes nw-bi-pulse`
+（原内联 `animation:pulse` 指向从未定义的动画）；新增 `getStatusTone()` / `addStatCard()` 两个私有方法收敛重复拼装。
+
+**核心发现（特异性）**：首轮比对出现页签文字变黑、搜索框边框异常、picker 1px 焦点环。实测定位为
+`.modal button` / `input[type=text]`（(0,1,1)）盖过 `.nw-bi-*`（(0,1,0)）。修法：28 号样式 173 条规则全部加
+`.nw-scope ` 前缀（(0,0,2,0)，按仓库 `00-header.css:13` 约定）。副作用两处：`-meta-input` 作用域后压过原生
+input → 只留 `width:100%`；picker 差异来自焦点态 outline/box-shadow → 截图前 blur 输入框。
+
+**像素快照**（1440×2600，DSF=1；产物在 `D:\nw-dev-vault\_visual-h`）：
+
+| 目标 | 差异 | 归因 |
+| --- | --- | --- |
+| 文件/文件夹选择器、历史记录 | 0.000% | 作用域后与旧内联样式像素级等价 |
+| 导入表单 | 0.541% | 书名/作者输入框 1px 行高差 |
+| 文件选择 | 0.28% | 卡片行高 1px 级差异 |
+| 扫描结果 | 7.254% | 结果卡/统计卡按设计补真 |
+| 空态（第一步 / 最近项目） | 11.321% / 14.261% | 空态容器与卡片间距补真 |
+| 生成选项 | 32.132% | 卡片/标签/开关/主按钮由内联样式转语义类并补真 |
+
+**门禁**：`typecheck` 0 错、`check:inline-styles` 通过；`check:utility` 暴露 13 条零引用定义（本 slice 删引用后
+才归零），已从 `10-entity-and-utilities.css` 删除，定义 373 → 360、使用 3483 → 3118；`check:bundle`
+styles.css 639017 → 659626；`check:css` 的 hex/rgbHsl 各 +8 经改用 `--nw-info|success|warning|danger` 与
+`color-mix` 回到基线，唯一类 +154 全为 `nw-bi-*`。三份基线均已 `--update-baseline --note`。
+
+**文档**：`docs/modules/knowledge-base.md` §3.11；`docs/design/2026-11-16-visual-refactor-standard.md` §5 进度改
+A–H、§5.1 指标与存量大户表重算、新增「特异性陷阱」段。
+
+下一轮：按 §5.1 存量大户继续，优先 `ui/knowledge-detail-modal.ts`（294 处）与
+`ui/full-writer/wizard-step-renderers.ts`（265 处）——前者是详情弹窗，可复用 Slice G 的 `nw-kb-modal-*`。
+
+

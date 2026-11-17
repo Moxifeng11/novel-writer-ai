@@ -325,6 +325,69 @@ after 构建里八个页签的 `nw-u-` 工具类引用均为 **0**（before：�
 几乎不可见——看起来像「语义化把标题弄没了」，其实是配置不一致。截图前把 `theme` 设为 `auto`（默认值）
 后重新采集 before/after，标题恢复正常深色。旧配置备份在 `data.json.bak-themeDark`。
 
+## 3.11 Slice H：批量导入弹窗（2026-11-17 完成）
+
+**为什么单独开命名空间**：作者明确要求不复用 Slice G 的 `nw-kb-modal-*` 骨架——批量导入是独立工作流
+（选源 → 匹配 → 扫描 → 生成 → 历史），与知识库管理弹窗的字段/列表密度不同，硬套骨架会把两套语义绑死。
+新增 `nw-bi-*` 前缀，只保留共享的 h3 `nw-modal-title`。
+
+**改动**
+
+- `ui/batch-import-modal.ts`（1882 → 1726 行）：工具类引用从 365 处降到 **0**；8 个死类
+  （`nw-empty-hint` / `nw-setting-card` / `nw-tag-container` / `nw-chip` / `nw-result-card` /
+  `nw-result-number` / `nw-label-md` / `nw-scroll-box`）连同 `nw-text-muted` / `nw-text-sm-muted` /
+  `nw-flex-*` / `nw-drop-area` / `nw-is-dragover` / `nw-row-hover` 一并清掉。
+- `styles-src/28-batch-import.css`（新增 1051 行）承载 `nw-bi-*`：页签、步骤条、来源卡、匹配列表、
+  扫描进度、结果统计卡、标签行、历史记录、Vault 文件/文件夹选择器、空态、按钮组。
+  动态值走 CSS 变量（`--nw-bi-pct` 进度条宽度），进度脉冲自带 `@keyframes nw-bi-pulse`
+  （原代码内联 `animation:pulse` 指向从未定义的动画，`css-animation-integrity` 用例要求有 `@keyframes`）。
+- 新增两个私有方法收敛重复拼装：`getStatusTone(status)`（processing/completed/failed/cancelled/pending
+  五档映射到 CSS 修饰类）与 `addStatCard(container, label, value, tone)`（结果区统计卡）。
+
+**关键发现：Obsidian 默认样式比单个语义类更具体**
+
+首轮像素比对出现不可归因差异（页签选中文字变黑、搜索框边框色异常、picker 1px 焦点环）。实测计算样式后定位到
+选择器特异性：`.modal button`(0,1,1)、`input[type=text]`(0,1,1) 都高于 `.nw-bi-xxx`(0,1,0)，
+于是语义类里同名的 `color` / `border-color` 被 Obsidian 基础样式盖掉，只有 `border-bottom-color` 这类
+没被覆盖的属性生效。
+
+修法沿用仓库既有约定（`styles-src/00-header.css:13` 注释：`.nw-scope` 命名空间提供 (0,0,2,0) 特异性）：
+把 28 号样式全部 **173 条规则**机械加 `.nw-scope ` 前缀（脚本按大括号深度跟踪，跳过 `@keyframes`；
+文件内无 `@media`/`@supports`，无遗漏顶层选择器）。加作用域后 picker 与 step5-history 两组像素差异回到 0。
+
+作用域带来两处副作用，均已按「渲染等价」原则修正：
+
+| 现象 | 原因 | 处理 |
+| --- | --- | --- |
+| 作者字段变成无框纯文本 | `.nw-bi-meta-input` 原声明 `border:none;background:transparent;padding:0;outline:none;font-size:12px`，作用域后压过原生 input | 只留 `width:100%`，保留 Obsidian 原生输入框外观——旧代码挂的是未定义类，实际渲染的就是原生 input |
+| picker 950px 差异 | 焦点态：`document.activeElement` 是输入框，带来 `outline: rgb(152,115,247) solid 1.6px` + `box-shadow: 0 0 0 2px`；同名旧式 clone 无焦点故无差异 | 采集脚本在每个 picker 截图前 `document.activeElement?.blur()`；非 CSS 回归 |
+
+**像素快照**（before = Slice H 前构建，after = 当前构建；1440×2600，DSF=1；产物在
+`D:\nw-dev-vault\_visual-h\{before,after,diff}`，不在仓内）：
+
+| 目标 | 差异 | 归因 |
+| --- | --- | --- |
+| 文件选择器 / 文件夹选择器 | 0.000% | `nw-scope` 作用域后与旧内联样式像素级等价 |
+| 历史记录（第二步） | 0.000% | 同上 |
+| 导入表单（第二步） | 0.541% | 书名/作者输入框 1px 行高差异（原生 input 恢复后仍存的字形高度差） |
+| 文件选择（第一步） | 0.28% | 卡片行高 1px 级差异 |
+| 扫描结果（第四步） | 7.254% | 结果卡与统计卡按设计补真（此前是内联拼装 + 死类） |
+| 空态（第一步） | 11.321% | 空态容器补真，高度 +40px |
+| 空态（最近项目） | 14.261% | 同上，卡片间距统一 |
+| 生成选项（第三步） | 32.132% | 最大项：卡片/标签/开关/主按钮全部由内联样式转语义类并补真 |
+
+**门禁**：`typecheck` 0 错；`check:inline-styles` 通过；`check:utility` 报出 13 条零引用定义
+（本 slice 删掉引用后暴露），已从 `styles-src/10-entity-and-utilities.css` 删除，定义 373 → 360、
+使用 3483 → 3118；`check:bundle` styles.css 639017 → 659626（+20609，全部为 `nw-bi-*` 段）；
+`check:css` 首轮 hardcoded hex / rgbHsl 各 +8，改走 `var(--nw-info|success|warning|danger)` 与
+`color-mix(in srgb, var(--nw-*) 15%, transparent)` 后回到基线，唯一类 +154（全为 `nw-bi-*`）。
+四份基线（`.css-baseline.json` / `.bundle-baseline.json` / `.utility-classes-baseline.json`）均已
+`--update-baseline --note` 说明。
+
+**教训**：语义类不是「加了就一定生效」——`.modal button`、`input[type=text]` 这类 Obsidian 基础选择器
+带元素限定符，单类权重(0,1,0)永远输。弹窗内构件要么挂 `.nw-scope`（(0,0,2,0)），要么用双类，
+否则会被静默覆盖，且截图差异看起来像「设计改动」。
+
 ## 4. 后续 slice 清单
 
 | # | Slice | 文件 | 目标 |
@@ -336,5 +399,6 @@ after 构建里八个页签的 `nw-u-` 工具类引用均为 **0**（before：�
 | ~~E-补~~ | ~~开发 vault 运行期数据解耦 + 已拆解样本书（✅ 2026-11-17）~~ | ~~`scripts/dev-vault.mjs`~~ | ~~见 §3.8.1~~ |
 | ~~F~~ | ~~题材/配置页~~ | ~~`ui/views/kb-config-panel.ts`，已完成 2026-11-17~~ | ~~工具类 86 → 0~~ |
 | ~~G~~ | ~~弹窗（导入 / 编辑书籍 / 题材编辑 / 批量操作）~~ | ~~`ui/views/knowledge-base-modals.ts`，已完成 2026-11-17~~ | ~~工具类 249 处 → 0~~ |
+| ~~H~~ | ~~批量导入弹窗（独立命名空间）~~ | ~~`ui/batch-import-modal.ts`，已完成 2026-11-17~~ | ~~工具类 365 处 → 0~~ |
 
 每个 slice 都必须走规范 §4 的六步（含 before/after 快照比对）。

@@ -134,6 +134,9 @@ describe('动效统一（zcode 手感）', () => {
             'nw-progress-anim',
             'nw-awb-dot-pulse',
             'nw-awb-plan-pulse',
+            // Slice H：批量导入「处理中」状态点（只动 opacity；旧内联写的 pulse 从未定义，
+            // 语义化时自带 keyframes 才真正生效；reduced-motion 由 .nw-scope 全局兜底停掉）
+            'nw-bi-pulse',
             'nw-pet-float',
             'nw-pet-tail',
             'nw-pet-blink',

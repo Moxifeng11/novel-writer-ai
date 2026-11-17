@@ -144,7 +144,7 @@ Obsidian 自带 `button:not(.clickable-icon)` 特异性是 **(0,1,1)**，
 
 | 模块 | 状态 | 快照 |
 | --- | --- | --- |
-| 知识库 / 设定（`kb-`） | 完成：Slice A–G（书架 / 工具栏卡片 / 详情公共构件+概览 / 外壳页签条 / 各页签内容区 / 题材配置页 / 四个管理弹窗）；后续新页签沿用同一模式 | `docs/quality/visual-baseline/kb-books.json`、`kb-detail.json`；F 截图 `D:\nw-dev-vault\_visual-fg\`、G 截图 `D:\nw-dev-vault\_visual-g\`（未入库） |
+| 知识库 / 设定（`kb-`） | 完成：Slice A–H（书架 / 工具栏卡片 / 详情公共构件+概览 / 外壳页签条 / 各页签内容区 / 题材配置页 / 四个管理弹窗 / 批量导入弹窗）；H 用独立 `nw-bi-*` 命名空间，后续新页签沿用同一模式 | `docs/quality/visual-baseline/kb-books.json`、`kb-detail.json`；F 截图 `D:\nw-dev-vault\_visual-fg\`、G 截图 `_visual-g\`、H 截图 `_visual-h\`（未入库） |
 
 ### 5.1 工具类退场进度（`nw-u-*`）
 
@@ -157,11 +157,11 @@ D 零引用死定义，外加 C 定义数与使用量只许下降。
 
 | 指标 | 数值 |
 | --- | --- |
-| 定义 | 373 个（清理前 430） |
+| 定义 | 360 个（清理前 430；Slice H 后又删 13 个零引用类） |
 | 零引用定义 | 0（清理前 57，已删） |
 | 引用但未定义的类 | 0（清理前 5：真实缺陷 1 处 `nw-u-w-full-2` 已删，另 4 处是 `tests/` 断言与历史文档示例） |
-| TS 引用 | 373 个类 / 3602 次 / 65 个文件 |
-| `styles.css` 体积 | 639017 字节（清理前 641824，−2807） |
+| TS 引用 | 360 个类 / 3118 次（`check:utility` 口径，`cls:` 字面量） |
+| `styles.css` 体积 | 659626 字节（Slice G 后 641829；Slice H 新增 `nw-bi-*` 段约 1060 行） |
 
 清理记录：删除 57 个零引用声明级工具类；去掉 `ui/views/writing-fingerprint-view.ts` 里 `addClass('nw-u-w-full-2')`（类从未定义，等于空操作，删除后渲染不变）。
 
@@ -169,17 +169,22 @@ D 零引用死定义，外加 C 定义数与使用量只许下降。
 `nw-u-animation-nw-progress-anim-1-5s-` 等**以 `-` 结尾却真实生效**的类名。B2/D 的正则必须把尾部连字符一起吞掉
 （`/nw-u-[a-zA-Z0-9_-]+/`），否则会把它们误报成「引用了未定义的类」。
 
-剩余存量大户（下一批切片候选，按引用次数）：
+**特异性陷阱（Slice H 实测）**：弹窗内语义类会被 Obsidian 基础样式静默盖掉——`.modal button`、`input[type=text]`
+都是 (0,1,1)，而单个 `.nw-xxx` 只有 (0,1,0)，于是 `color`/`border-color` 不生效，只有没被覆盖的
+`border-bottom-color` 之类起作用，截图看起来像「设计改了但没生效」。约定：弹窗/面板构件要么挂在 `.nw-scope`
+命名空间下（(0,0,2,0)，见 `styles-src/00-header.css:13`），要么用双类，二者择一；Slice H 的
+`styles-src/28-batch-import.css` 采用前者（173 条规则全部加前缀）。
+
+剩余存量大户（下一批切片候选，按引用次数；`ui/batch-import-modal.ts` 365 处已在 Slice H 清零，故不在表内）：
 
 | 文件 | 引用 | 文件 | 引用 |
 | --- | --- | --- | --- |
-| `ui/batch-import-modal.ts` | 365 | `ui/settings/general-sections.ts` | 160 |
-| `ui/knowledge-detail-modal.ts` | 294 | `ui/fingerprint-detail-modal.ts` | 157 |
-| `ui/full-writer/wizard-step-renderers.ts` | 265 | `ui/views/book-detail-renderer.ts` | 126 |
-| `ui/monitor-panel-b.ts` | 232 | `ui/full-writer/scene-outline-controller.ts` | 123 |
-| `ui/views/writing-fingerprint-view.ts` | 228 | `ui/settings/knowledge-section.ts` | 108 |
-| `ui/outline-expand-modal.ts` | 220 | `ui/polish-editor.ts` | 104 |
-| `ui/prompt-manager-settings.ts` | 192 | `ui/refill-modal.ts` | 97 |
-| `ui/chapter-outline-tree-modal.ts` | 177 | `ui/views/kb-stats-panel.ts` | 81 |
-| `ui/views/knowledge-base-view.ts` | 175 | `ui/settings/deconstruction-section.ts` | 47 |
-| `ui/rendering/context-panel.ts` | 173 | `ui/settings/api-section.ts` | 30 |
+| `ui/knowledge-detail-modal.ts` | 294 | `ui/settings/general-sections.ts` | 160 |
+| `ui/full-writer/wizard-step-renderers.ts` | 265 | `ui/fingerprint-detail-modal.ts` | 157 |
+| `ui/monitor-panel-b.ts` | 232 | `ui/views/book-detail-renderer.ts` | 126 |
+| `ui/views/writing-fingerprint-view.ts` | 228 | `ui/full-writer/scene-outline-controller.ts` | 123 |
+| `ui/outline-expand-modal.ts` | 220 | `ui/settings/knowledge-section.ts` | 108 |
+| `ui/prompt-manager-settings.ts` | 192 | `ui/polish-editor.ts` | 104 |
+| `ui/chapter-outline-tree-modal.ts` | 177 | `ui/refill-modal.ts` | 97 |
+| `ui/views/knowledge-base-view.ts` | 175 | `ui/views/kb-stats-panel.ts` | 81 |
+| `ui/rendering/context-panel.ts` | 173 | `ui/settings/deconstruction-section.ts` | 47 |

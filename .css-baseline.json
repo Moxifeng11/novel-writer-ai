@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-16T21:16:12.749Z",
-  "note": "工具类清理：删 57 个零引用声明级工具类；修正 writing-fingerprint-view 死引用 nw-u-w-full-2",
-  "bytes": 639017,
+  "generatedAt": "2026-11-17T09:35:08.453Z",
+  "note": "棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因",
+  "bytes": 659626,
   "important": 24,
   "hardcodedHex": 165,
   "rgbHsl": 187,
-  "uniqueClasses": 3421,
+  "uniqueClasses": 3575,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

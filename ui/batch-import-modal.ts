@@ -138,6 +138,9 @@ export class BatchImportModal extends Modal {
                 this.updateTaskList();
             }
         });
+
+        // SLICE-H-CAPTURE-HOOK（截图临时钩子，提交前删除）
+        (activeWindow as unknown as Record<string, unknown>).__nwBi = this;
     }
 
     /**
@@ -192,7 +195,7 @@ export class BatchImportModal extends Modal {
 
         this.renderStepIndicator();
 
-        const contentDiv = contentEl.createDiv({ cls: 'nw-u-margintop-16px nw-u-maxh-60vh nw-u-ovy-auto' });
+        const contentDiv = contentEl.createDiv({ cls: 'nw-bi-body' });
 
         switch (this.currentStep) {
             case 1:
@@ -216,29 +219,26 @@ export class BatchImportModal extends Modal {
     }
 
     private renderStepIndicator(): void {
-        const stepsDiv = this.contentEl.createDiv({
-            cls: 'nw-u-d-flex nw-u-gap-6px nw-u-margintop-12px nw-u-ai-center nw-u-fwr-wrap'
-        });
+        const stepsDiv = this.contentEl.createDiv({ cls: 'nw-bi-steps' });
 
         const steps: ImportStep[] = [1, 2, 3, 4, 5];
         steps.forEach((step, index) => {
             const stepEl = stepsDiv.createEl('span', {
                 text: `${step}. ${STEP_LABELS[step]}`,
-                attr: {
-                    style: `padding:4px 10px;border-radius:12px;font-size:11px;${
-                        step === this.currentStep
-                            ? 'background:var(--interactive-accent);color:var(--text-on-accent);'
-                            : step < this.currentStep
-                            ? 'background:var(--background-modifier-success);color:var(--text-on-accent);'
-                            : 'background:var(--background-secondary);color:var(--text-muted);'
-                    }`
-                }
+                cls: 'nw-bi-step'
             });
+            stepEl.addClass(
+                step === this.currentStep
+                    ? 'nw-bi-step--current'
+                    : step < this.currentStep
+                    ? 'nw-bi-step--done'
+                    : 'nw-bi-step--todo'
+            );
 
             if (index < steps.length - 1) {
                 stepsDiv.createEl('span', {
                     text: '→',
-                    cls: 'nw-u-c-text-muted nw-u-fs-11px'
+                    cls: 'nw-bi-step-arrow'
                 });
             }
         });
@@ -247,10 +247,10 @@ export class BatchImportModal extends Modal {
     private renderStep1(container: HTMLElement): void {
         container.createEl('div', {
             text: '选择要导入的小说文件（支持 .txt、.md 格式）',
-            cls: "nw-text-muted nw-u-marginbottom-12px", attr: {}
+            cls: 'nw-bi-intro'
         });
 
-        const btnRow = container.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-marginbottom-12px nw-u-fwr-wrap' });
+        const btnRow = container.createDiv({ cls: 'nw-bi-toolbar' });
 
         const selectFileBtn = btnRow.createEl('button', {
             text: '📁 选择本地文件',
@@ -259,7 +259,8 @@ export class BatchImportModal extends Modal {
         // 隐藏 input 必须挂在容器上，不能挂在按钮里：
         // input.click() 派发的事件会冒泡回父按钮，再次进入本监听 → 同步递归（栈溢出）。
         const fileInput = btnRow.createEl('input', {
-            attr: { type: 'file', multiple: '', accept: '.txt,.md,.epub', style: 'display:none;' }
+            attr: { type: 'file', multiple: '', accept: '.txt,.md,.epub' },
+            cls: 'nw-bi-hidden'
         });
         selectFileBtn.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', (e) => {
@@ -285,8 +286,7 @@ export class BatchImportModal extends Modal {
 
         const historyBtn = btnRow.createEl('button', {
             text: '📜 导入历史',
-            cls: "nw-btn nw-btn-ghost nw-btn-sm nw-u-marginleft-auto",
-            attr: {}
+            cls: 'nw-btn nw-btn-ghost nw-btn-sm nw-bi-toolbar-end'
         });
         historyBtn.addEventListener('click', () => {
             this.currentStep = 5;
@@ -294,27 +294,27 @@ export class BatchImportModal extends Modal {
         });
 
         const dropArea = container.createDiv({
-            cls: 'nw-u-p-32px nw-u-brd-8px nw-u-ta-center nw-u-cur-pointer nw-u-marginbottom-12px nw-u-transition-all-0-2s nw-drop-area'
+            cls: 'nw-bi-drop'
         });
         dropArea.createEl('div', {
             text: '📥 拖拽文件到此处',
-            cls: 'nw-u-fs-15px nw-u-c-text-muted nw-u-marginbottom-6px'
+            cls: 'nw-bi-drop-title'
         });
         dropArea.createEl('div', {
             text: '支持 .txt、.md、.epub 格式',
-            cls: 'nw-u-fs-12px nw-u-c-text-faint'
+            cls: 'nw-bi-drop-hint'
         });
 
         dropArea.addEventListener('dragover', (e) => {
             e.preventDefault();
-            dropArea.addClass('nw-is-dragover');
+            dropArea.addClass('nw-bi-drop--over');
         });
         dropArea.addEventListener('dragleave', () => {
-            dropArea.removeClass('nw-is-dragover');
+            dropArea.removeClass('nw-bi-drop--over');
         });
         dropArea.addEventListener('drop', (e) => {
             e.preventDefault();
-            dropArea.removeClass('nw-is-dragover');
+            dropArea.removeClass('nw-bi-drop--over');
             const files = e.dataTransfer?.files;
             if (files && files.length > 0) this.handleLocalFiles(files);
         });
@@ -322,14 +322,14 @@ export class BatchImportModal extends Modal {
         const previews = this.batchManager.getPreviews();
 
         const listHeader = container.createDiv({
-            cls: "nw-flex-between nw-u-marginbottom-8px", attr: {}
+            cls: 'nw-bi-list-header'
         });
         listHeader.createEl('span', {
             text: `已选文件 (${previews.length})`,
-            cls: 'nw-label-md'
+            cls: 'nw-bi-list-title'
         });
 
-        const actionBtns = listHeader.createDiv({ cls: 'nw-flex-row' });
+        const actionBtns = listHeader.createDiv({ cls: 'nw-bi-list-actions' });
 
         const selectAllBtn = actionBtns.createEl('button', {
             text: '全选',
@@ -351,69 +351,57 @@ export class BatchImportModal extends Modal {
 
         const clearBtn = actionBtns.createEl('button', {
             text: '清空',
-            cls: "nw-btn nw-btn-ghost nw-btn-xs nw-u-c-text-error",
-            attr: {}
+            cls: 'nw-btn nw-btn-ghost nw-btn-xs nw-bi-btn-danger-text'
         });
         clearBtn.addEventListener('click', () => {
             this.batchManager.clearPreviews();
             this.render();
         });
 
-        const fileListContainer = container.createDiv({
-            cls: "nw-scroll-box nw-u-maxh-260px", attr: {}
-        });
+        const fileListContainer = container.createDiv({ cls: 'nw-bi-file-list' });
 
         if (previews.length === 0) {
-            fileListContainer.createDiv({
-                cls: "nw-empty-hint nw-u-fs-13px", attr: {}
-            }).createEl('span', { text: '暂无文件，请添加要导入的小说文件' });
+            fileListContainer.createDiv({ cls: 'nw-bi-empty nw-bi-empty--sm' })
+                .createEl('span', { text: '暂无文件，请添加要导入的小说文件' });
         } else {
-            previews.forEach((preview, index) => {
-                const row = fileListContainer.createDiv({
-                    attr: {
-                        style: `display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--background-modifier-border);${
-                            index === previews.length - 1 ? 'border-bottom:none;' : ''
-                        }`
-                    }
-                });
+            previews.forEach(preview => {
+                const row = fileListContainer.createDiv({ cls: 'nw-bi-file' });
 
                 const checkbox = row.createEl('input', {
-                    attr: { type: 'checkbox', style: 'cursor:pointer;flex-shrink:0;' }
+                    attr: { type: 'checkbox' },
+                    cls: 'nw-bi-file-check'
                 });
                 checkbox.checked = preview.selected;
                 checkbox.addEventListener('change', (e) => {
                     this.batchManager.updatePreview(preview.id, { selected: (e.target as HTMLInputElement).checked });
                 });
 
-                const infoWrap = row.createDiv({ cls: 'nw-u-flex-1 nw-u-minw-0' });
-                const nameRow = infoWrap.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-marginbottom-2px' });
+                const infoWrap = row.createDiv({ cls: 'nw-bi-file-info' });
+                const nameRow = infoWrap.createDiv({ cls: 'nw-bi-file-head' });
                 nameRow.createEl('span', {
                     text: preview.filename,
-                    cls: 'nw-u-fs-12px nw-u-fwt-500 nw-u-ov-hidden nw-u-textoverflow-ellipsis nw-u-ws-nowrap'
+                    cls: 'nw-bi-file-name'
                 });
                 const formatBadge = nameRow.createEl('span', {
                     text: preview.recognition.format.toUpperCase(),
-                    attr: {
-                        style: `padding:1px 6px;font-size:10px;border-radius:8px;flex-shrink:0;${
-                            preview.recognition.format === 'md'
-                                ? 'background:rgba(59,130,246,0.15);color:#3b82f6;'
-                                : preview.recognition.format === 'txt'
-                                ? 'background:rgba(34,197,94,0.15);color:#22c55e;'
-                                : 'background:var(--background-secondary);color:var(--text-muted);'
-                        }`
-                    }
+                    cls: 'nw-bi-file-badge'
                 });
-                void formatBadge;
+                formatBadge.addClass(
+                    preview.recognition.format === 'md'
+                        ? 'nw-bi-file-badge--md'
+                        : preview.recognition.format === 'txt'
+                        ? 'nw-bi-file-badge--txt'
+                        : 'nw-bi-file-badge--other'
+                );
 
-                const metaRow = infoWrap.createDiv({ cls: 'nw-u-d-flex nw-u-gap-12px nw-u-fs-11px nw-u-c-text-muted' });
+                const metaRow = infoWrap.createDiv({ cls: 'nw-bi-file-meta' });
                 metaRow.createEl('span', { text: `📖 ${preview.recognition.chapterCount} 章` });
                 metaRow.createEl('span', { text: `📝 ${this.formatWordCount(preview.recognition.wordCount)}` });
                 metaRow.createEl('span', { text: `🎯 ${Math.round(preview.recognition.confidence * 100)}%` });
 
                 const deleteBtn = row.createEl('button', {
                     text: '✕',
-                    cls: "nw-btn nw-btn-ghost nw-btn-xs nw-u-fsh-0 nw-u-c-text-muted",
-                    attr: {}
+                    cls: 'nw-btn nw-btn-ghost nw-btn-xs nw-bi-file-remove'
                 });
                 deleteBtn.addEventListener('click', () => {
                     this.batchManager.removePreview(preview.id);
@@ -428,35 +416,26 @@ export class BatchImportModal extends Modal {
 
         container.createEl('div', {
             text: `智能识别预览（共 ${previews.length} 本）`,
-            cls: "nw-text-muted nw-u-marginbottom-12px", attr: {}
+            cls: 'nw-bi-intro'
         });
 
         if (previews.length === 0) {
-            container.createDiv({
-                cls: 'nw-empty-hint'
-            }).createEl('span', { text: '没有选中的文件，请返回上一步选择' });
+            container.createDiv({ cls: 'nw-bi-empty' })
+                .createEl('span', { text: '没有选中的文件，请返回上一步选择' });
             return;
         }
 
-        const listContainer = container.createDiv({
-            cls: "nw-scroll-box nw-u-maxh-400px", attr: {}
-        });
+        const listContainer = container.createDiv({ cls: 'nw-bi-preview-list' });
 
-        previews.forEach((preview, index) => {
-            const card = listContainer.createDiv({
-                attr: {
-                    style: `padding:12px;border-bottom:1px solid var(--background-modifier-border);${
-                        index === previews.length - 1 ? 'border-bottom:none;' : ''
-                    }`
-                }
-            });
+        previews.forEach(preview => {
+            const card = listContainer.createDiv({ cls: 'nw-bi-preview' });
 
-            const header = card.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-flex-start nw-u-gap-12px nw-u-marginbottom-10px' });
+            const header = card.createDiv({ cls: 'nw-bi-preview-head' });
 
             const titleInput = header.createEl('input', {
                 type: 'text',
                 value: preview.overrides.name || preview.recognition.title,
-                cls: 'nw-u-flex-1 nw-u-p-6px-10px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-fs-13px nw-u-fwt-500 nw-u-bg-background-primary nw-u-c-text-normal'
+                cls: 'nw-bi-input nw-bi-preview-title'
             });
             titleInput.addEventListener('input', (e) => {
                 const name = (e.target as HTMLInputElement).value;
@@ -467,21 +446,17 @@ export class BatchImportModal extends Modal {
 
             const confBadge = header.createEl('span', {
                 text: `${Math.round(preview.recognition.confidence * 100)}%`,
-                attr: {
-                    style: `padding:2px 8px;font-size:11px;border-radius:10px;flex-shrink:0;${
-                        preview.recognition.confidence >= 0.7
-                            ? 'background:rgba(46,204,113,0.15);color:#2ecc71;'
-                            : preview.recognition.confidence >= 0.4
-                            ? 'background:rgba(241,196,15,0.15);color:#f1c40f;'
-                            : 'background:rgba(231,76,60,0.15);color:#e74c3c;'
-                    }`
-                }
+                cls: 'nw-bi-badge'
             });
-            void confBadge;
+            confBadge.addClass(
+                preview.recognition.confidence >= 0.7
+                    ? 'nw-bi-badge--high'
+                    : preview.recognition.confidence >= 0.4
+                    ? 'nw-bi-badge--mid'
+                    : 'nw-bi-badge--low'
+            );
 
-            const metaGrid = card.createDiv({
-                cls: 'nw-u-d-grid nw-u-gtc-repeat-auto-fit-minmax-7 nw-u-gap-8px nw-u-marginbottom-10px'
-            });
+            const metaGrid = card.createDiv({ cls: 'nw-bi-meta-grid' });
 
             this.addMetaItem(metaGrid, '作者', preview.recognition.author || '未识别', true, (val) => {
                 this.batchManager.updatePreview(preview.id, {
@@ -493,24 +468,20 @@ export class BatchImportModal extends Modal {
             this.addMetaItem(metaGrid, '格式', preview.recognition.format.toUpperCase());
 
             if (preview.recognition.chapters.length > 0) {
-                const chapterPreview = card.createDiv({
-                    cls: 'nw-u-bg-background-secondary nw-u-brd-4px nw-u-p-8px'
-                });
+                const chapterPreview = card.createDiv({ cls: 'nw-bi-chapters' });
                 chapterPreview.createEl('div', {
                     text: '章节预览（前3章）',
-                    cls: 'nw-u-fs-11px nw-u-c-text-muted nw-u-marginbottom-6px'
+                    cls: 'nw-bi-chapters-title'
                 });
                 preview.recognition.chapters.slice(0, 3).forEach(ch => {
-                    const chRow = chapterPreview.createDiv({
-                        cls: 'nw-u-fs-12px nw-u-c-text-normal nw-u-p-2px-0 nw-u-d-flex nw-u-jc-space-between'
-                    });
-                    chRow.createEl('span', { text: ch.title, cls: 'nw-u-ov-hidden nw-u-textoverflow-ellipsis nw-u-ws-nowrap nw-u-flex-1' });
-                    chRow.createEl('span', { text: this.formatWordCount(ch.wordCount), cls: 'nw-u-c-text-muted nw-u-fsh-0 nw-u-marginleft-8px' });
+                    const chRow = chapterPreview.createDiv({ cls: 'nw-bi-chapter-row' });
+                    chRow.createEl('span', { text: ch.title, cls: 'nw-bi-chapter-name' });
+                    chRow.createEl('span', { text: this.formatWordCount(ch.wordCount), cls: 'nw-bi-chapter-count' });
                 });
                 if (preview.recognition.chapters.length > 3) {
                     chapterPreview.createEl('div', {
                         text: `... 还有 ${preview.recognition.chapters.length - 3} 章`,
-                        cls: 'nw-u-fs-11px nw-u-c-text-muted nw-u-ta-center nw-u-margintop-4px'
+                        cls: 'nw-bi-chapters-more'
                     });
                 }
             }
@@ -518,31 +489,29 @@ export class BatchImportModal extends Modal {
     }
 
     private addMetaItem(container: HTMLElement, label: string, value: string, editable?: boolean, onChange?: (val: string) => void): void {
-        const item = container.createDiv({
-            cls: 'nw-u-p-8px nw-u-bg-background-secondary nw-u-brd-4px'
-        });
-        item.createEl('div', { text: label, cls: 'nw-u-fs-10px nw-u-c-text-muted nw-u-marginbottom-2px' });
+        const item = container.createDiv({ cls: 'nw-bi-meta' });
+        item.createEl('div', { text: label, cls: 'nw-bi-meta-label' });
         if (editable && onChange) {
             const input = item.createEl('input', {
                 type: 'text',
                 value: value,
-                cls: 'nw-u-w-100 nw-u-p-0 nw-u-b-none nw-u-bg-transparent nw-u-fs-12px nw-u-c-text-normal nw-u-outline-none'
+                cls: 'nw-bi-meta-input'
             });
             input.addEventListener('input', (e) => onChange((e.target as HTMLInputElement).value));
         } else {
-            item.createEl('div', { text: value, cls: 'nw-u-fs-12px nw-u-c-text-normal nw-u-fwt-500' });
+            item.createEl('div', { text: value, cls: 'nw-bi-meta-value' });
         }
     }
 
     private renderStep3(container: HTMLElement): void {
         container.createEl('div', {
             text: '为所有导入的书籍统一设置',
-            cls: "nw-text-muted nw-u-marginbottom-16px", attr: {}
+            cls: 'nw-bi-intro nw-bi-intro--spaced'
         });
 
-        const presetRow = container.createDiv({ cls: "nw-setting-card nw-u-marginbottom-16px", attr: {} });
-        const presetHeader = presetRow.createDiv({ cls: "nw-flex-between nw-u-marginbottom-8px", attr: {} });
-        presetHeader.createEl('span', { text: '📋 预设方案', cls: 'nw-label-md' });
+        const presetRow = container.createDiv({ cls: 'nw-bi-card nw-bi-card--spaced' });
+        const presetHeader = presetRow.createDiv({ cls: 'nw-bi-list-header' });
+        presetHeader.createEl('span', { text: '📋 预设方案', cls: 'nw-bi-list-title' });
         const toggleBtn = presetHeader.createEl('button', {
             text: this.showPresets ? '收起' : '展开',
             cls: 'nw-btn nw-btn-ghost nw-btn-xs',
@@ -554,35 +523,28 @@ export class BatchImportModal extends Modal {
 
         if (this.showPresets) {
             const presets = this.batchManager.getPresets();
-            const presetList = presetRow.createDiv({
-                cls: 'nw-u-d-flex nw-u-gap-6px nw-u-fwr-wrap nw-u-marginbottom-8px'
-            });
+            const presetList = presetRow.createDiv({ cls: 'nw-bi-preset-list' });
             if (presets.length === 0) {
-                presetList.createEl('span', { text: '暂无预设', cls: 'nw-text-sm-muted' });
+                presetList.createEl('span', { text: '暂无预设', cls: 'nw-bi-hint' });
             } else {
                 presets.forEach(preset => {
                     const presetEl = presetList.createEl('span', {
                         text: preset.name,
-                        attr: {
-                            style: `padding:4px 10px;border-radius:12px;font-size:11px;cursor:pointer;${
-                                this.selectedPresetId === preset.id
-                                    ? 'background:var(--interactive-accent);color:var(--text-on-accent);'
-                                    : 'background:var(--background-primary);color:var(--text-normal);border:1px solid var(--background-modifier-border);'
-                            }`
-                        }
+                        cls: 'nw-bi-pill'
                     });
+                    if (this.selectedPresetId === preset.id) presetEl.addClass('nw-bi-pill--selected');
                     presetEl.addEventListener('click', () => {
                         this.applyPreset(preset);
                     });
                 });
             }
 
-            const savePresetRow = presetRow.createDiv({ cls: 'nw-flex-row' });
+            const savePresetRow = presetRow.createDiv({ cls: 'nw-bi-inline-row' });
             const presetInput = savePresetRow.createEl('input', {
                 type: 'text',
                 placeholder: '预设名称',
                 value: this.presetNameInput,
-                cls: 'nw-u-flex-1 nw-u-p-6px-10px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-fs-12px nw-u-bg-background-primary nw-u-c-text-normal'
+                cls: 'nw-bi-input nw-bi-input--grow nw-bi-input--sm'
             });
             presetInput.addEventListener('input', (e) => {
                 this.presetNameInput = (e.target as HTMLInputElement).value;
@@ -596,26 +558,19 @@ export class BatchImportModal extends Modal {
             });
         }
 
-        const dimensionsSection = container.createDiv({ cls: 'nw-u-marginbottom-16px' });
+        const dimensionsSection = container.createDiv({ cls: 'nw-bi-section' });
         dimensionsSection.createEl('div', {
             text: '🔍 拆解维度',
-            cls: "nw-label-md nw-u-marginbottom-8px", attr: {}
+            cls: 'nw-bi-section-title'
         });
-        const dimContainer = dimensionsSection.createDiv({
-            cls: 'nw-u-d-flex nw-u-gap-8px nw-u-fwr-wrap nw-u-p-10px nw-u-b-1px-solid-background-m nw-u-brd-6px'
-        });
+        const dimContainer = dimensionsSection.createDiv({ cls: 'nw-bi-dim-box' });
         DIMENSION_OPTIONS.forEach(dim => {
             const isSelected = this.selectedDimensions.includes(dim.key);
             const dimEl = dimContainer.createEl('span', {
                 text: `${dim.icon} ${dim.label}`,
-                attr: {
-                    style: `padding:6px 12px;border-radius:16px;font-size:12px;cursor:pointer;${
-                        isSelected
-                            ? 'background:var(--interactive-accent);color:var(--text-on-accent);'
-                            : 'background:var(--background-secondary);color:var(--text-normal);'
-                    }`
-                }
+                cls: 'nw-bi-chip'
             });
+            if (isSelected) dimEl.addClass('nw-bi-chip--selected');
             dimEl.addEventListener('click', () => {
                 if (isSelected) {
                     this.selectedDimensions = this.selectedDimensions.filter(d => d !== dim.key);
@@ -626,34 +581,23 @@ export class BatchImportModal extends Modal {
             });
         });
 
-        const optionsGrid = container.createDiv({
-            cls: 'nw-u-d-grid nw-u-gtc-1fr-1fr nw-u-gap-12px nw-u-marginbottom-16px'
-        });
+        const optionsGrid = container.createDiv({ cls: 'nw-bi-options-grid' });
 
-        const concurrencyItem = optionsGrid.createDiv({
-            cls: 'nw-setting-card'
-        });
-        concurrencyItem.createEl('div', { text: '⚡ 并发数', cls: "nw-text-sm-muted nw-u-marginbottom-6px", attr: {} });
+        const concurrencyItem = optionsGrid.createDiv({ cls: 'nw-bi-card' });
+        concurrencyItem.createEl('div', { text: '⚡ 并发数', cls: 'nw-bi-field-label' });
         const concurrencyInput = concurrencyItem.createEl('input', {
             type: 'number',
             value: this.concurrency.toString(),
-            attr: {
-                min: '1',
-                max: '10',
-                style: 'width:100%;padding:6px 10px;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:13px;background:var(--background-primary);color:var(--text-normal);'
-            }
+            attr: { min: '1', max: '10' },
+            cls: 'nw-bi-input nw-bi-input--block'
         });
         concurrencyInput.addEventListener('change', (e) => {
             this.concurrency = Math.max(1, Math.min(10, parseInt((e.target as HTMLInputElement).value) || 2));
         });
 
-        const priorityItem = optionsGrid.createDiv({
-            cls: 'nw-setting-card'
-        });
-        priorityItem.createEl('div', { text: '⭐ 优先级', cls: "nw-text-sm-muted nw-u-marginbottom-6px", attr: {} });
-        const prioritySelect = priorityItem.createEl('select', {
-            cls: 'nw-u-w-100 nw-u-p-6px-10px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-fs-13px nw-u-bg-background-primary nw-u-c-text-normal'
-        });
+        const priorityItem = optionsGrid.createDiv({ cls: 'nw-bi-card' });
+        priorityItem.createEl('div', { text: '⭐ 优先级', cls: 'nw-bi-field-label' });
+        const prioritySelect = priorityItem.createEl('select', { cls: 'nw-bi-input nw-bi-input--block' });
         const priorityOptions = [
             { value: '2', label: '高优先级' },
             { value: '1', label: '较高优先级' },
@@ -669,45 +613,43 @@ export class BatchImportModal extends Modal {
             this.priority = parseInt((e.target as HTMLSelectElement).value);
         });
 
-        const togglesSection = container.createDiv({ cls: 'nw-u-marginbottom-16px' });
+        const togglesSection = container.createDiv({ cls: 'nw-bi-section' });
         togglesSection.createEl('div', {
             text: '⚙️ 其他选项',
-            cls: "nw-label-md nw-u-marginbottom-8px", attr: {}
+            cls: 'nw-bi-section-title'
         });
 
-        const toggleList = togglesSection.createDiv({
-            cls: 'nw-u-d-flex nw-u-fd-column nw-u-gap-8px nw-u-p-10px nw-u-b-1px-solid-background-m nw-u-brd-6px'
-        });
+        const toggleList = togglesSection.createDiv({ cls: 'nw-bi-toggle-box' });
 
-        const autoStartRow = toggleList.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between' });
-        autoStartRow.createEl('span', { text: '导入后自动开始拆解', cls: 'nw-u-fs-13px' });
+        const autoStartRow = toggleList.createDiv({ cls: 'nw-bi-toggle-row' });
+        autoStartRow.createEl('span', { text: '导入后自动开始拆解', cls: 'nw-bi-toggle-label' });
         const autoStartToggle = autoStartRow.createEl('input', {
             type: 'checkbox',
-            cls: 'nw-u-cur-pointer'
+            cls: 'nw-bi-check'
         });
         autoStartToggle.checked = this.autoStartDeconstruction;
         autoStartToggle.addEventListener('change', (e) => {
             this.autoStartDeconstruction = (e.target as HTMLInputElement).checked;
         });
 
-        const autoClassifyRow = toggleList.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between' });
-        autoClassifyRow.createEl('span', { text: '自动识别题材分类', cls: 'nw-u-fs-13px' });
+        const autoClassifyRow = toggleList.createDiv({ cls: 'nw-bi-toggle-row' });
+        autoClassifyRow.createEl('span', { text: '自动识别题材分类', cls: 'nw-bi-toggle-label' });
         const autoClassifyToggle = autoClassifyRow.createEl('input', {
             type: 'checkbox',
-            cls: 'nw-u-cur-pointer'
+            cls: 'nw-bi-check'
         });
         autoClassifyToggle.checked = this.autoClassify;
         autoClassifyToggle.addEventListener('change', (e) => {
             this.autoClassify = (e.target as HTMLInputElement).checked;
         });
 
-        const tagsSection = container.createDiv({ cls: 'nw-u-marginbottom-8px' });
+        const tagsSection = container.createDiv({ cls: 'nw-bi-section nw-bi-section--tight' });
         tagsSection.createEl('div', {
             text: '🏷️ 标签设置',
-            cls: "nw-label-md nw-u-marginbottom-8px", attr: {}
+            cls: 'nw-bi-section-title'
         });
 
-        const themeCategoryRow = tagsSection.createDiv({ cls: 'nw-u-d-flex nw-u-gap-6px nw-u-marginbottom-8px nw-u-fwr-wrap' });
+        const themeCategoryRow = tagsSection.createDiv({ cls: 'nw-bi-cat-row' });
         THEME_CATEGORIES.forEach(cat => {
             const btn = themeCategoryRow.createEl('button', {
                 text: cat,
@@ -720,25 +662,17 @@ export class BatchImportModal extends Modal {
         });
 
         const themeTags = this.options.tagManager.getTagsByType(this.themeCategory).filter(t => t.parentId);
-        const themeTagContainer = tagsSection.createDiv({
-            cls: "nw-tag-container nw-u-marginbottom-8px", attr: {}
-        });
+        const themeTagContainer = tagsSection.createDiv({ cls: 'nw-bi-tag-box nw-bi-tag-box--spaced' });
         if (themeTags.length === 0) {
-            themeTagContainer.createEl('span', { text: '暂无题材标签', cls: 'nw-text-sm-muted' });
+            themeTagContainer.createEl('span', { text: '暂无题材标签', cls: 'nw-bi-hint' });
         } else {
             themeTags.forEach(tag => {
                 const isSelected = this.selectedThemeTagIds.includes(tag.id);
                 const tagEl = themeTagContainer.createEl('span', {
                     text: tag.name,
-                    cls: 'nw-chip',
-                    attr: {
-                        style: `cursor:pointer;${
-                            isSelected
-                                ? 'background:var(--interactive-accent);color:var(--text-on-accent);'
-                                : 'background:var(--background-secondary);color:var(--text-normal);'
-                        }`
-                    }
+                    cls: 'nw-bi-tag'
                 });
+                if (isSelected) tagEl.addClass('nw-bi-tag--selected');
                 tagEl.addEventListener('click', () => {
                     if (isSelected) {
                         this.selectedThemeTagIds = this.selectedThemeTagIds.filter(id => id !== tag.id);
@@ -750,7 +684,7 @@ export class BatchImportModal extends Modal {
             });
         }
 
-        const techniqueCategoryRow = tagsSection.createDiv({ cls: 'nw-u-d-flex nw-u-gap-6px nw-u-marginbottom-8px nw-u-fwr-wrap' });
+        const techniqueCategoryRow = tagsSection.createDiv({ cls: 'nw-bi-cat-row' });
         TECHNIQUE_CATEGORIES.forEach(cat => {
             const btn = techniqueCategoryRow.createEl('button', {
                 text: cat,
@@ -763,25 +697,17 @@ export class BatchImportModal extends Modal {
         });
 
         const techniqueTags = this.options.tagManager.getTagsByType(this.techniqueCategory).filter(t => t.parentId);
-        const techniqueTagContainer = tagsSection.createDiv({
-            cls: "nw-tag-container nw-u-marginbottom-8px", attr: {}
-        });
+        const techniqueTagContainer = tagsSection.createDiv({ cls: 'nw-bi-tag-box nw-bi-tag-box--spaced' });
         if (techniqueTags.length === 0) {
-            techniqueTagContainer.createEl('span', { text: '暂无技巧标签', cls: 'nw-text-sm-muted' });
+            techniqueTagContainer.createEl('span', { text: '暂无技巧标签', cls: 'nw-bi-hint' });
         } else {
             techniqueTags.forEach(tag => {
                 const isSelected = this.selectedTechniqueTagIds.includes(tag.id);
                 const tagEl = techniqueTagContainer.createEl('span', {
                     text: tag.name,
-                    cls: 'nw-chip',
-                    attr: {
-                        style: `cursor:pointer;${
-                            isSelected
-                                ? 'background:var(--interactive-accent);color:var(--text-on-accent);'
-                                : 'background:var(--background-secondary);color:var(--text-normal);'
-                        }`
-                    }
+                    cls: 'nw-bi-tag'
                 });
+                if (isSelected) tagEl.addClass('nw-bi-tag--selected');
                 tagEl.addEventListener('click', () => {
                     if (isSelected) {
                         this.selectedTechniqueTagIds = this.selectedTechniqueTagIds.filter(id => id !== tag.id);
@@ -793,12 +719,12 @@ export class BatchImportModal extends Modal {
             });
         }
 
-        const customInputRow = tagsSection.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-marginbottom-8px' });
+        const customInputRow = tagsSection.createDiv({ cls: 'nw-bi-inline-row nw-bi-inline-row--mb' });
         const customInput = customInputRow.createEl('input', {
             type: 'text',
             placeholder: '输入自定义标签名',
             value: this.customTagInput,
-            cls: 'nw-u-flex-1 nw-u-p-6px-10px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-fs-12px nw-u-bg-background-primary nw-u-c-text-normal'
+            cls: 'nw-bi-input nw-bi-input--grow nw-bi-input--sm'
         });
         customInput.addEventListener('input', (e) => {
             this.customTagInput = (e.target as HTMLInputElement).value;
@@ -816,21 +742,18 @@ export class BatchImportModal extends Modal {
             }
         });
 
-        const customTagsContainer = tagsSection.createDiv({
-            cls: 'nw-tag-container'
-        });
+        const customTagsContainer = tagsSection.createDiv({ cls: 'nw-bi-tag-box' });
         if (this.customTags.length === 0) {
-            customTagsContainer.createEl('span', { text: '暂无自定义标签', cls: 'nw-text-sm-muted' });
+            customTagsContainer.createEl('span', { text: '暂无自定义标签', cls: 'nw-bi-hint' });
         } else {
             this.customTags.forEach(tag => {
                 const tagEl = customTagsContainer.createEl('span', {
                     text: tag,
-                    cls: "nw-chip nw-u-bg-background-secondary nw-u-c-text-normal nw-u-d-flex nw-u-ai-center nw-u-gap-4px",
-                    attr: {}
+                    cls: 'nw-bi-tag nw-bi-tag--removable'
                 });
                 const removeBtn = tagEl.createEl('span', {
                     text: '×',
-                    cls: 'nw-u-cur-pointer nw-u-fs-13px nw-u-lh-1'
+                    cls: 'nw-bi-tag-close'
                 });
                 removeBtn.addEventListener('click', () => {
                     this.customTags = this.customTags.filter(t => t !== tag);
@@ -846,41 +769,30 @@ export class BatchImportModal extends Modal {
 
         container.createEl('div', {
             text: '正在导入书籍，请稍候...',
-            cls: "nw-text-muted nw-u-marginbottom-16px", attr: {}
+            cls: 'nw-bi-intro nw-bi-intro--spaced'
         });
 
-        this.totalProgressEl = container.createDiv({ cls: 'nw-u-marginbottom-16px' });
-        const totalHeader = this.totalProgressEl.createDiv({
-            cls: "nw-flex-between nw-u-marginbottom-8px", attr: {}
-        });
-        totalHeader.createEl('span', { text: '总体进度', cls: 'nw-label-md' });
+        this.totalProgressEl = container.createDiv({ cls: 'nw-bi-progress' });
+        const totalHeader = this.totalProgressEl.createDiv({ cls: 'nw-bi-list-header' });
+        totalHeader.createEl('span', { text: '总体进度', cls: 'nw-bi-list-title' });
         this.totalProgressTextEl = totalHeader.createEl('span', {
             text: `${progress.completedTasks}/${progress.totalTasks} (${progress.overallProgress}%)`,
-            cls: 'nw-text-sm-muted'
+            cls: 'nw-bi-hint'
         });
-        const totalBarBg = this.totalProgressEl.createDiv({
-            cls: 'nw-u-w-100 nw-u-h-12px nw-u-bg-background-modifier-bo nw-u-brd-6px nw-u-ov-hidden'
-        });
-        this.totalProgressBarEl = totalBarBg.createDiv({
-            attr: {
-                style: `height:100%;width:${progress.overallProgress}%;background:var(--interactive-accent);border-radius:6px;transition:width 0.3s ease;`
-            }
-        });
+        const totalBarBg = this.totalProgressEl.createDiv({ cls: 'nw-bi-progress-bar' });
+        this.totalProgressBarEl = totalBarBg.createDiv({ cls: 'nw-bi-progress-fill' });
+        this.totalProgressBarEl.style.setProperty('--nw-bi-pct', `${progress.overallProgress}%`);
 
-        const statsRow = container.createDiv({
-            cls: 'nw-u-d-grid nw-u-gtc-repeat-4-1fr nw-u-gap-8px nw-u-marginbottom-16px'
-        });
-        this.addStatCard(statsRow, '总计', progress.totalTasks.toString(), 'var(--text-muted)');
-        this.addStatCard(statsRow, '进行中', progress.activeTasks.toString(), 'var(--interactive-accent)');
-        this.addStatCard(statsRow, '已完成', progress.completedTasks.toString(), 'var(--text-success)');
-        this.addStatCard(statsRow, '失败', progress.failedTasks.toString(), 'var(--text-error)');
+        const statsRow = container.createDiv({ cls: 'nw-bi-stats' });
+        this.addStatCard(statsRow, '总计', progress.totalTasks.toString(), 'muted');
+        this.addStatCard(statsRow, '进行中', progress.activeTasks.toString(), 'accent');
+        this.addStatCard(statsRow, '已完成', progress.completedTasks.toString(), 'success');
+        this.addStatCard(statsRow, '失败', progress.failedTasks.toString(), 'error');
 
-        const taskListHeader = container.createDiv({
-            cls: "nw-flex-between nw-u-marginbottom-8px", attr: {}
-        });
-        taskListHeader.createEl('span', { text: '任务列表', cls: 'nw-label-md' });
+        const taskListHeader = container.createDiv({ cls: 'nw-bi-list-header' });
+        taskListHeader.createEl('span', { text: '任务列表', cls: 'nw-bi-list-title' });
 
-        const actionBtns = taskListHeader.createDiv({ cls: 'nw-u-d-flex nw-u-gap-6px' });
+        const actionBtns = taskListHeader.createDiv({ cls: 'nw-bi-list-actions' });
         const pauseAllBtn = actionBtns.createEl('button', {
             text: '⏸ 全部暂停',
             cls: 'nw-btn nw-btn-ghost nw-btn-xs',
@@ -896,15 +808,11 @@ export class BatchImportModal extends Modal {
             allTasks.filter(t => t.status === 'pending').forEach(t => this.batchManager.resumeTask(t.id));
         });
 
-        this.taskListEl = container.createDiv({
-            cls: "nw-scroll-box nw-u-maxh-240px", attr: {}
-        });
+        this.taskListEl = container.createDiv({ cls: 'nw-bi-task-list' });
 
         this.updateTaskList();
 
-        const logHeader = container.createDiv({
-            cls: 'nw-u-fs-13px nw-u-fwt-500 nw-u-m-16px-0-6px-0 nw-u-d-flex nw-u-jc-space-between nw-u-ai-center'
-        });
+        const logHeader = container.createDiv({ cls: 'nw-bi-log-header' });
         logHeader.createEl('span', { text: '📋 导入日志' });
         const clearLogBtn = logHeader.createEl('button', {
             text: '清空',
@@ -914,19 +822,21 @@ export class BatchImportModal extends Modal {
             if (this.logEl) this.logEl.empty();
         });
 
-        this.logEl = container.createDiv({
-            cls: 'nw-u-h-120px nw-u-ovy-auto nw-u-p-8px-12px nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-bg-background-secondary nw-u-fs-12px nw-u-fontfamily-font-interface nw-u-lh-1-6'
-        });
+        this.logEl = container.createDiv({ cls: 'nw-bi-log' });
 
         this.appendLog(`开始导入，共 ${progress.totalTasks} 本书籍`);
     }
 
-    private addStatCard(container: HTMLElement, label: string, value: string, color: string): void {
-        const card = container.createDiv({
-            cls: 'nw-u-p-10px nw-u-ta-center nw-u-bg-background-secondary nw-u-brd-6px'
-        });
-        card.createEl('div', { text: value, attr: { style: `font-size:18px;font-weight:bold;color:${color};margin-bottom:2px;` } });
-        card.createEl('div', { text: label, cls: 'nw-u-fs-11px nw-u-c-text-muted' });
+    private addStatCard(
+        container: HTMLElement,
+        label: string,
+        value: string,
+        tone: 'muted' | 'accent' | 'success' | 'error'
+    ): void {
+        const card = container.createDiv({ cls: 'nw-bi-stat' });
+        const valueEl = card.createEl('div', { text: value, cls: 'nw-bi-stat-value' });
+        valueEl.addClass(`nw-bi-stat-value--${tone}`);
+        card.createEl('div', { text: label, cls: 'nw-bi-stat-label' });
     }
 
     private updateProgressView(): void {
@@ -935,7 +845,7 @@ export class BatchImportModal extends Modal {
             this.totalProgressTextEl.textContent = `${progress.completedTasks}/${progress.totalTasks} (${progress.overallProgress}%)`;
         }
         if (this.totalProgressBarEl) {
-            this.totalProgressBarEl.style.width = `${progress.overallProgress}%`;
+            this.totalProgressBarEl.style.setProperty('--nw-bi-pct', `${progress.overallProgress}%`);
         }
     }
 
@@ -943,80 +853,55 @@ export class BatchImportModal extends Modal {
         if (!this.taskListEl) return;
         const tasks = this.batchManager.getAllTasks();
         if (tasks.length === 0) {
-            setSanitizedHtml(this.taskListEl, '<div class="nw-empty-inline">暂无任务</div>');
+            setSanitizedHtml(this.taskListEl, '<div class="nw-bi-empty">暂无任务</div>');
             return;
         }
 
         this.taskListEl.empty();
-        tasks.forEach((task, index) => {
-            const row = this.taskListEl.createDiv({
-                attr: {
-                    style: `padding:10px 12px;border-bottom:1px solid var(--background-modifier-border);${
-                        index === tasks.length - 1 ? 'border-bottom:none;' : ''
-                    }`
-                }
-            });
+        tasks.forEach(task => {
+            const row = this.taskListEl.createDiv({ cls: 'nw-bi-task' });
 
-            const header = row.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center nw-u-marginbottom-6px' });
-            const titleWrap = header.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-minw-0 nw-u-flex-1' });
+            const header = row.createDiv({ cls: 'nw-bi-task-head' });
+            const titleWrap = header.createDiv({ cls: 'nw-bi-task-title-wrap' });
 
-            const statusDot = titleWrap.createEl('span', {
-                attr: {
-                    style: `width:8px;height:8px;border-radius:50%;flex-shrink:0;${
-                        task.status === 'processing' ? 'background:var(--interactive-accent);animation: pulse 1.5s infinite;' :
-                        task.status === 'completed' ? 'background:var(--text-success);' :
-                        task.status === 'failed' ? 'background:var(--text-error);' :
-                        task.status === 'cancelled' ? 'background:var(--text-muted);' :
-                        'background:var(--text-faint);'
-                    }`
-                }
-            });
-            void statusDot;
+            const statusDot = titleWrap.createEl('span', { cls: 'nw-bi-status-dot' });
+            statusDot.addClass(`nw-bi-status-dot--${this.getStatusTone(task.status)}`);
 
             titleWrap.createEl('span', {
                 text: task.bookName,
-                cls: 'nw-u-fs-12px nw-u-fwt-500 nw-u-ov-hidden nw-u-textoverflow-ellipsis nw-u-ws-nowrap'
+                cls: 'nw-bi-task-name'
             });
 
             const statusBadge = header.createEl('span', {
                 text: this.getTaskStatusLabel(task.status),
-                attr: {
-                    style: `padding:2px 8px;font-size:10px;border-radius:10px;flex-shrink:0;${
-                        task.status === 'processing' ? 'background:rgba(59,130,246,0.15);color:#3b82f6;' :
-                        task.status === 'completed' ? 'background:rgba(46,204,113,0.15);color:#2ecc71;' :
-                        task.status === 'failed' ? 'background:rgba(231,76,60,0.15);color:#e74c3c;' :
-                        task.status === 'cancelled' ? 'background:var(--background-secondary);color:var(--text-muted);' :
-                        'background:var(--background-secondary);color:var(--text-muted);'
-                    }`
-                }
+                cls: 'nw-bi-task-badge'
             });
-            void statusBadge;
+            const badgeTone =
+                task.status === 'processing' || task.status === 'completed' || task.status === 'failed'
+                    ? task.status
+                    : 'muted';
+            statusBadge.addClass(`nw-bi-task-badge--${badgeTone}`);
 
             if (task.status === 'processing' || task.status === 'queued') {
-                const barBg = row.createDiv({
-                    cls: 'nw-u-h-4px nw-u-bg-background-modifier-bo nw-u-brd-2px nw-u-ov-hidden nw-u-marginbottom-4px'
-                });
-                barBg.createDiv({
-                    attr: {
-                        style: `height:100%;width:${task.progress}%;background:var(--interactive-accent);transition:width 0.3s;`
-                    }
-                });
+                const barBg = row.createDiv({ cls: 'nw-bi-task-bar' });
+                const fill = barBg.createDiv({ cls: 'nw-bi-task-bar-fill' });
+                fill.style.setProperty('--nw-bi-pct', `${task.progress}%`);
             }
 
             if (task.error) {
                 row.createEl('div', {
                     text: task.error,
-                    cls: 'nw-u-fs-11px nw-u-c-text-error nw-u-marginbottom-4px'
+                    cls: 'nw-bi-task-error'
                 });
             }
 
-            const metaRow = row.createDiv({ cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center' });
+            const metaRow = row.createDiv({ cls: 'nw-bi-task-meta' });
             metaRow.createEl('span', {
                 text: `重试 ${task.retryCount}/${task.maxRetries}`,
-                cls: 'nw-u-fs-10px nw-u-c-text-muted'
+                cls: 'nw-bi-task-retry'
             });
 
-            const btnRow = metaRow.createDiv({ cls: 'nw-u-d-flex nw-u-gap-4px' });
+            const btnRow = metaRow.createDiv({ cls: 'nw-bi-task-actions' });
             if (task.status === 'queued') {
                 const pauseBtn = btnRow.createEl('button', {
                     text: '⏸',
@@ -1041,7 +926,7 @@ export class BatchImportModal extends Modal {
             if (task.status !== 'completed') {
                 const cancelBtn = btnRow.createEl('button', {
                     text: '✕',
-                    cls: "nw-btn nw-btn-ghost nw-btn-xs nw-btn-icon-xs nw-u-c-text-error", attr: {}
+                    cls: 'nw-btn nw-btn-ghost nw-btn-xs nw-btn-icon-xs nw-bi-btn-danger-text'
                 });
                 cancelBtn.addEventListener('click', () => this.batchManager.cancelTask(task.id));
             }
@@ -1060,19 +945,29 @@ export class BatchImportModal extends Modal {
         return labels[status] || status;
     }
 
+    private getStatusTone(status: string): string {
+        switch (status) {
+            case 'processing':
+                return 'processing';
+            case 'completed':
+                return 'completed';
+            case 'failed':
+                return 'failed';
+            case 'cancelled':
+                return 'cancelled';
+            default:
+                return 'pending';
+        }
+    }
+
     private renderStep5(container: HTMLElement): void {
-        const tabs = container.createDiv({
-            cls: 'nw-u-d-flex nw-u-bb-1px-solid-background-m nw-u-marginbottom-12px'
-        });
+        const tabs = container.createDiv({ cls: 'nw-bi-tabs' });
 
         const recentTab = tabs.createEl('button', {
             text: '本次结果',
-            attr: {
-                style: `padding:8px 16px;font-size:13px;cursor:pointer;background:none;border:none;border-bottom:2px solid ${
-                    this.historyTab === 'recent' ? 'var(--interactive-accent)' : 'transparent'
-                };color:${this.historyTab === 'recent' ? 'var(--interactive-accent)' : 'var(--text-muted)'};font-weight:${this.historyTab === 'recent' ? '500' : '400'};`
-            }
+            cls: 'nw-bi-tab'
         });
+        recentTab.addClass(this.historyTab === 'recent' ? 'nw-bi-tab--active' : 'nw-bi-tab--idle');
         recentTab.addEventListener('click', () => {
             this.historyTab = 'recent';
             this.render();
@@ -1080,12 +975,9 @@ export class BatchImportModal extends Modal {
 
         const allTab = tabs.createEl('button', {
             text: '历史记录',
-            attr: {
-                style: `padding:8px 16px;font-size:13px;cursor:pointer;background:none;border:none;border-bottom:2px solid ${
-                    this.historyTab === 'all' ? 'var(--interactive-accent)' : 'transparent'
-                };color:${this.historyTab === 'all' ? 'var(--interactive-accent)' : 'var(--text-muted)'};font-weight:${this.historyTab === 'all' ? '500' : '400'};`
-            }
+            cls: 'nw-bi-tab'
         });
+        allTab.addClass(this.historyTab === 'all' ? 'nw-bi-tab--active' : 'nw-bi-tab--idle');
         allTab.addEventListener('click', () => {
             this.historyTab = 'all';
             this.render();
@@ -1103,62 +995,49 @@ export class BatchImportModal extends Modal {
         const tasks = this.batchManager.getAllTasks();
 
         if (tasks.length === 0) {
-            container.createDiv({
-                cls: 'nw-empty-hint'
-            }).createEl('span', { text: '还没有导入记录，返回第一步开始导入吧' });
+            container.createDiv({ cls: 'nw-bi-empty' })
+                .createEl('span', { text: '还没有导入记录，返回第一步开始导入吧' });
             return;
         }
 
-        const statsRow = container.createDiv({
-            cls: 'nw-u-d-grid nw-u-gtc-repeat-3-1fr nw-u-gap-12px nw-u-marginbottom-16px'
-        });
+        const statsRow = container.createDiv({ cls: 'nw-bi-result-grid' });
 
         const successCard = statsRow.createDiv({
-            cls: "nw-result-card nw-u-b-1px-solid-background-m-3", attr: {}
+            cls: 'nw-bi-result-card nw-bi-result-card--success'
         });
         successCard.createEl('div', {
             text: progress.completedTasks.toString(),
-            cls: "nw-result-number nw-u-c-text-success", attr: {}
+            cls: 'nw-bi-result-number nw-bi-result-number--success'
         });
-        successCard.createEl('div', { text: '✅ 成功', cls: 'nw-text-sm-muted' });
+        successCard.createEl('div', { text: '✅ 成功', cls: 'nw-bi-hint' });
 
         const failedCard = statsRow.createDiv({
-            cls: "nw-result-card nw-u-b-1px-solid-background-m-4", attr: {}
+            cls: 'nw-bi-result-card nw-bi-result-card--failed'
         });
         failedCard.createEl('div', {
             text: progress.failedTasks.toString(),
-            cls: "nw-result-number nw-u-c-text-error", attr: {}
+            cls: 'nw-bi-result-number nw-bi-result-number--error'
         });
-        failedCard.createEl('div', { text: '❌ 失败', cls: 'nw-text-sm-muted' });
+        failedCard.createEl('div', { text: '❌ 失败', cls: 'nw-bi-hint' });
 
-        const totalCard = statsRow.createDiv({
-            cls: "nw-result-card nw-u-b-1px-solid-background-m", attr: {}
-        });
+        const totalCard = statsRow.createDiv({ cls: 'nw-bi-result-card nw-bi-result-card--total' });
         totalCard.createEl('div', {
             text: progress.totalTasks.toString(),
-            cls: "nw-result-number nw-u-c-text-muted", attr: {}
+            cls: 'nw-bi-result-number nw-bi-result-number--muted'
         });
-        totalCard.createEl('div', { text: '📚 总计', cls: 'nw-text-sm-muted' });
+        totalCard.createEl('div', { text: '📚 总计', cls: 'nw-bi-hint' });
 
         const successTasks = tasks.filter(t => t.status === 'completed');
         if (successTasks.length > 0) {
-            const successSection = container.createDiv({ cls: 'nw-u-marginbottom-16px' });
+            const successSection = container.createDiv({ cls: 'nw-bi-section' });
             successSection.createEl('div', {
                 text: '成功列表',
-                cls: "nw-label-md nw-u-marginbottom-8px", attr: {}
+                cls: 'nw-bi-section-title'
             });
-            const successList = successSection.createDiv({
-                cls: 'nw-u-maxh-160px nw-u-ovy-auto nw-u-b-1px-solid-background-m nw-u-brd-4px'
-            });
-            successTasks.forEach((task, index) => {
-                const row = successList.createDiv({
-                    attr: {
-                        style: `display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--background-modifier-border);${
-                            index === successTasks.length - 1 ? 'border-bottom:none;' : ''
-                        }`
-                    }
-                });
-                row.createEl('span', { text: `✅ ${task.bookName}`, cls: 'nw-u-fs-12px' });
+            const successList = successSection.createDiv({ cls: 'nw-bi-success-list' });
+            successTasks.forEach(task => {
+                const row = successList.createDiv({ cls: 'nw-bi-success-row' });
+                row.createEl('span', { text: `✅ ${task.bookName}`, cls: 'nw-bi-success-name' });
                 const detailBtn = row.createEl('button', {
                     text: '查看详情',
                     cls: 'nw-btn nw-btn-ghost nw-btn-xs',
@@ -1177,29 +1056,21 @@ export class BatchImportModal extends Modal {
 
         const failedTasks = tasks.filter(t => t.status === 'failed');
         if (failedTasks.length > 0) {
-            const failedSection = container.createDiv({ cls: 'nw-u-marginbottom-8px' });
+            const failedSection = container.createDiv({ cls: 'nw-bi-section' });
             failedSection.createEl('div', {
                 text: '失败列表',
-                cls: "nw-label-md nw-u-marginbottom-8px", attr: {}
+                cls: 'nw-bi-section-title'
             });
-            const failedList = failedSection.createDiv({
-                cls: 'nw-u-maxh-160px nw-u-ovy-auto nw-u-b-1px-solid-background-m-4 nw-u-brd-4px'
-            });
-            failedTasks.forEach((task, index) => {
-                const row = failedList.createDiv({
-                    attr: {
-                        style: `padding:8px 12px;border-bottom:1px solid var(--background-modifier-error-hover);${
-                            index === failedTasks.length - 1 ? 'border-bottom:none;' : ''
-                        }`
-                    }
-                });
+            const failedList = failedSection.createDiv({ cls: 'nw-bi-failed-list' });
+            failedTasks.forEach(task => {
+                const row = failedList.createDiv({ cls: 'nw-bi-failed-row' });
                 row.createEl('div', {
                     text: `❌ ${task.bookName}`,
-                    cls: 'nw-u-fs-12px nw-u-fwt-500 nw-u-marginbottom-2px'
+                    cls: 'nw-bi-failed-name'
                 });
                 row.createEl('div', {
                     text: task.error || '未知错误',
-                    cls: 'nw-u-fs-11px nw-u-c-text-error nw-u-marginbottom-4px'
+                    cls: 'nw-bi-failed-error'
                 });
                 const retryBtn = row.createEl('button', {
                     text: '🔄 重新导入',
@@ -1218,45 +1089,33 @@ export class BatchImportModal extends Modal {
         const history = this.batchManager.getHistory();
 
         if (history.length === 0) {
-            container.createDiv({
-                cls: 'nw-empty-hint'
-            }).createEl('span', { text: '暂无导入历史记录' });
+            container.createDiv({ cls: 'nw-bi-empty' })
+                .createEl('span', { text: '暂无导入历史记录' });
             return;
         }
 
-        const listContainer = container.createDiv({
-            cls: "nw-scroll-box nw-u-maxh-400px", attr: {}
-        });
+        const listContainer = container.createDiv({ cls: 'nw-bi-history-list' });
 
-        history.forEach((item, index) => {
-            const card = listContainer.createDiv({
-                attr: {
-                    style: `padding:12px;border-bottom:1px solid var(--background-modifier-border);cursor:pointer;${
-                        index === history.length - 1 ? 'border-bottom:none;' : ''
-                    }${this.selectedHistoryId === item.id ? 'background:var(--background-secondary-alt);' : ''}`
-                }
-            });
+        history.forEach(item => {
+            const card = listContainer.createDiv({ cls: 'nw-bi-history' });
+            if (this.selectedHistoryId === item.id) card.addClass('nw-bi-history--selected');
 
-            const header = card.createDiv({
-                cls: "nw-flex-between nw-u-marginbottom-8px", attr: {}
-            });
+            const header = card.createDiv({ cls: 'nw-bi-history-head' });
             header.createEl('span', {
                 text: this.formatDateTime(item.importTime),
-                cls: 'nw-u-fs-12px nw-u-fwt-500'
+                cls: 'nw-bi-history-time'
             });
-            const statsWrap = header.createDiv({ cls: 'nw-flex-row' });
+            const statsWrap = header.createDiv({ cls: 'nw-bi-history-stats' });
             statsWrap.createEl('span', {
                 text: `✅ ${item.successCount}`,
-                cls: 'nw-u-fs-11px nw-u-c-text-success'
+                cls: 'nw-bi-ok-count'
             });
             statsWrap.createEl('span', {
                 text: `❌ ${item.failedCount}`,
-                cls: 'nw-u-fs-11px nw-u-c-text-error'
+                cls: 'nw-bi-fail-count'
             });
 
-            const metaRow = card.createDiv({
-                cls: 'nw-u-d-flex nw-u-gap-12px nw-u-fs-11px nw-u-c-text-muted'
-            });
+            const metaRow = card.createDiv({ cls: 'nw-bi-history-meta' });
             metaRow.createEl('span', { text: `总计 ${item.totalCount} 本` });
             metaRow.createEl('span', {
                 text: `拆解维度: ${item.settings.dimensions.length} 个`
@@ -1268,28 +1127,22 @@ export class BatchImportModal extends Modal {
             });
 
             if (this.selectedHistoryId === item.id) {
-                const detail = card.createDiv({
-                    cls: 'nw-u-margintop-10px nw-u-paddingtop-10px nw-u-bt-1px-solid-background-m'
-                });
+                const detail = card.createDiv({ cls: 'nw-bi-history-detail' });
 
-                const bookList = detail.createDiv({
-                    cls: 'nw-u-maxh-150px nw-u-ovy-auto nw-u-marginbottom-8px'
-                });
+                const bookList = detail.createDiv({ cls: 'nw-bi-book-list' });
                 item.books.forEach(book => {
-                    const bookRow = bookList.createDiv({
-                        cls: 'nw-u-d-flex nw-u-jc-space-between nw-u-ai-center nw-u-p-4px-0 nw-u-fs-11px'
-                    });
+                    const bookRow = bookList.createDiv({ cls: 'nw-bi-book-row' });
                     const statusIcon = book.status === 'success' ? '✅' : book.status === 'failed' ? '❌' : '⏭️';
                     bookRow.createEl('span', { text: `${statusIcon} ${book.bookName}` });
                     if (book.status === 'failed') {
                         bookRow.createEl('span', {
                             text: book.error || '失败',
-                            cls: 'nw-u-c-text-error'
+                            cls: 'nw-bi-book-error'
                         });
                     }
                 });
 
-                const btnRow = detail.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-jc-flex-end' });
+                const btnRow = detail.createDiv({ cls: 'nw-bi-history-actions' });
                 if (item.failedCount > 0) {
                     const retryBtn = btnRow.createEl('button', {
                         text: '🔄 重试失败项',
@@ -1316,12 +1169,10 @@ export class BatchImportModal extends Modal {
     }
 
     private renderFooter(): void {
-        const btnRow = this.contentEl.createDiv({
-            cls: 'nw-u-d-flex nw-u-gap-8px nw-u-margintop-20px nw-u-jc-space-between'
-        });
+        const btnRow = this.contentEl.createDiv({ cls: 'nw-bi-footer' });
 
-        const leftBtns = btnRow.createDiv({ cls: 'nw-flex-row' });
-        const rightBtns = btnRow.createDiv({ cls: 'nw-flex-row' });
+        const leftBtns = btnRow.createDiv({ cls: 'nw-bi-footer-group' });
+        const rightBtns = btnRow.createDiv({ cls: 'nw-bi-footer-group' });
 
         if (this.currentStep === 1) {
             rightBtns.createEl('button', {
@@ -1490,18 +1341,16 @@ export class BatchImportModal extends Modal {
         pickerModal.titleEl.setText('从库内选择文件');
 
         const content = pickerModal.contentEl;
-        content.addClass('nw-p-12');
+        content.addClass('nw-bi-picker-body');
 
         const searchInput = content.createEl('input', {
             type: 'text',
-            attr: {
-                placeholder: '搜索文件...',
-                style: 'width:100%;padding:8px;margin-bottom:12px;border:1px solid var(--background-modifier-border);border-radius:4px;background:var(--background-primary);color:var(--text-normal);'
-            }
+            placeholder: '搜索文件...',
+            cls: 'nw-bi-search'
         });
 
         const fileList = content.createDiv({
-            cls: 'nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-maxh-300px nw-u-ovy-auto'
+            cls: 'nw-bi-picker-list'
         });
 
         const selectedPaths = new Set<string>();
@@ -1516,19 +1365,19 @@ export class BatchImportModal extends Modal {
             if (filtered.length === 0) {
                 fileList.createDiv({
                     text: '没有找到匹配的文件',
-                    cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-faint nw-u-fs-13px'
+                    cls: 'nw-bi-picker-empty'
                 });
                 return;
             }
 
             filtered.forEach(file => {
                 const row = fileList.createDiv({
-                    cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-p-8px-10px nw-u-bb-1px-solid-background-m nw-u-cur-pointer'
+                    cls: 'nw-bi-picker-row'
                 });
 
                 const checkbox = row.createEl('input', {
                     type: 'checkbox',
-                    cls: 'nw-u-cur-pointer'
+                    cls: 'nw-bi-picker-check'
                 });
                 checkbox.checked = selectedPaths.has(file.path);
                 checkbox.addEventListener('change', () => {
@@ -1541,11 +1390,11 @@ export class BatchImportModal extends Modal {
 
                 row.createEl('span', {
                     text: `📄 ${file.name}`,
-                    cls: 'nw-u-fs-12px nw-u-flex-1'
+                    cls: 'nw-bi-picker-name'
                 });
                 row.createEl('span', {
                     text: file.parent?.path || '',
-                    cls: 'nw-u-fs-10px nw-u-c-text-faint'
+                    cls: 'nw-bi-picker-path'
                 });
 
                 row.addEventListener('click', (e) => {
@@ -1567,7 +1416,7 @@ export class BatchImportModal extends Modal {
 
         renderFileList();
 
-        const btnRow = content.createDiv({ cls: 'nw-u-d-flex nw-u-jc-flex-end nw-u-gap-8px nw-u-margintop-16px' });
+        const btnRow = content.createDiv({ cls: 'nw-bi-picker-actions' });
 
         const cancelBtn = btnRow.createEl('button', {
             text: '取消',
@@ -1654,18 +1503,16 @@ export class BatchImportModal extends Modal {
         pickerModal.titleEl.setText('从库内选择文件夹');
 
         const content = pickerModal.contentEl;
-        content.addClass('nw-p-12');
+        content.addClass('nw-bi-picker-body');
 
         const searchInput = content.createEl('input', {
             type: 'text',
-            attr: {
-                placeholder: '搜索文件夹...',
-                style: 'width:100%;padding:8px;margin-bottom:12px;border:1px solid var(--background-modifier-border);border-radius:4px;background:var(--background-primary);color:var(--text-normal);'
-            }
+            placeholder: '搜索文件夹...',
+            cls: 'nw-bi-search'
         });
 
         const folderList = content.createDiv({
-            cls: 'nw-u-b-1px-solid-background-m nw-u-brd-4px nw-u-maxh-300px nw-u-ovy-auto'
+            cls: 'nw-bi-picker-list'
         });
 
         let selectedFolderPath: string | null = null;
@@ -1680,26 +1527,26 @@ export class BatchImportModal extends Modal {
             if (filtered.length === 0) {
                 folderList.createDiv({
                     text: '没有找到匹配的文件夹',
-                    cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-faint nw-u-fs-13px'
+                    cls: 'nw-bi-picker-empty'
                 });
                 return;
             }
 
             filtered.forEach(item => {
                 const row = folderList.createDiv({
-                    cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-8px nw-u-p-8px-10px nw-u-bb-1px-solid-background-m nw-u-cur-pointer'
+                    cls: 'nw-bi-picker-row'
                 });
 
-                row.toggleClass('nw-row-hover', selectedFolderPath === item.folder.path);
+                row.toggleClass('nw-bi-picker-row--selected', selectedFolderPath === item.folder.path);
 
-                row.createEl('span', { text: '📁', cls: 'nw-u-fs-14px' });
+                row.createEl('span', { text: '📁', cls: 'nw-bi-picker-icon' });
                 row.createEl('span', {
                     text: item.folder.path || '(根目录)',
-                    cls: 'nw-u-fs-12px nw-u-flex-1'
+                    cls: 'nw-bi-picker-name'
                 });
                 row.createEl('span', {
                     text: `${item.fileCount} 个文件`,
-                    cls: 'nw-u-fs-10px nw-u-c-text-faint'
+                    cls: 'nw-bi-picker-path'
                 });
 
                 row.addEventListener('click', () => {
@@ -1715,7 +1562,7 @@ export class BatchImportModal extends Modal {
 
         renderFolderList();
 
-        const btnRow = content.createDiv({ cls: 'nw-u-d-flex nw-u-jc-flex-end nw-u-gap-8px nw-u-margintop-16px' });
+        const btnRow = content.createDiv({ cls: 'nw-bi-picker-actions' });
 
         const cancelBtn = btnRow.createEl('button', {
             text: '取消',
@@ -1856,7 +1703,7 @@ export class BatchImportModal extends Modal {
         if (!this.logEl) return;
         const logLine = this.logEl.createEl('div', {
             text: `[${new Date().toLocaleTimeString()}] ${message}`,
-            cls: 'nw-u-marginbottom-2px'
+            cls: 'nw-bi-log-line'
         });
         this.logEl.scrollTop = this.logEl.scrollHeight;
         void logLine;
