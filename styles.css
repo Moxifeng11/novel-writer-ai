@@ -37,6 +37,7 @@
  *   - styles-src/27-knowledge-base.css
  *   - styles-src/28-batch-import.css
  *   - styles-src/29-knowledge-detail-modal.css
+ *   - styles-src/30-wizard-steps.css
  *
  * 修改样式请编辑 styles-src/ 下对应源文件，然后运行 npm run build:styles
  * （npm run build 与 preflight 均已包含该步骤 / 一致性校验）。
@@ -10216,10 +10217,7 @@ button.nw-btn-icon {
 .nw-u-bg-background-modifier-ho{background:var(--background-modifier-hover)}
 .nw-u-bg-background-modifier-su{background:var(--background-modifier-success)}
 .nw-u-bg-background-modifier-wa{background:var(--background-modifier-warning)}
-.nw-u-bg-background-primary-alt{background:var(--background-primary-alt)}
-.nw-u-bg-warning{background:var(--text-warning)}
 .nw-u-bg-linear-gradient-135deg-3{background:linear-gradient(135deg, var(--background-modifier-success) 0%, var(--interactive-accent) 100%)}
-.nw-u-bg-gradient-progress{background:linear-gradient(90deg,var(--text-accent),var(--text-warning))}
 .nw-u-bg-nw-bg-muted-background{background:var(--nw-bg-muted, var(--background-modifier-cover))}
 .nw-u-bg-warning-soft{background:color-mix(in srgb, var(--text-warning) 10%, transparent)}
 .nw-u-bg-warning-soft-10{background:color-mix(in srgb, var(--text-warning) 10%, transparent)}
@@ -10258,7 +10256,6 @@ button.nw-btn-icon {
 .nw-u-m-8px-0{margin:8px 0}
 .nw-u-m-8px-0-16px-0{margin:8px 0 16px 0}
 .nw-u-m-8px-0-4px-0{margin:8px 0 4px 0}
-.nw-u-m-8px-12px-8px-0{margin:8px 12px 8px 0}
 .nw-u-m-8px-auto{margin:8px auto}
 .nw-u-p-0{padding:0}
 .nw-u-p-0-4px{padding:0 4px}
@@ -10274,15 +10271,11 @@ button.nw-btn-icon {
 .nw-u-p-40px-20px{padding:40px 20px}
 .nw-u-p-4px{padding:4px}
 
-.nw-u-p-4px-14px{padding:4px 14px}
 .nw-u-p-4px-6px{padding:4px 6px}
 .nw-u-p-60px-20px{padding:60px 20px}
 .nw-u-p-6px-12px{padding:6px 12px}
-.nw-u-p-6px-14px{padding:6px 14px}
 .nw-u-p-6px-16px{padding:6px 16px}
 .nw-u-p-8px-16px{padding:8px 16px}
-.nw-u-animation-nw-progress-anim-1-5s-{animation:nw-progress-anim 1.5s ease-in-out infinite}
-.nw-u-animation-nw-progress-anim-2s-ea{animation:nw-progress-anim 2s ease-in-out infinite}
 .nw-u-bx-border-box{box-sizing:border-box}
 .nw-u-c-error-strong{color:var(--text-error)}
 .nw-u-c-warning-strong{color:var(--text-warning)}
@@ -10328,7 +10321,6 @@ button.nw-btn-icon {
 .nw-u-op-0-4{opacity:0.4}
 .nw-u-op-0-5{opacity:0.5}
 .nw-u-op-0-6{opacity:0.6}
-.nw-u-op-0-8{opacity:0.8}
 .nw-u-outline-none{outline:none}
 .nw-u-pos-absolute{position:absolute}
 .nw-u-pos-relative{position:relative}
@@ -10345,7 +10337,6 @@ button.nw-btn-icon {
 .nw-u-w-260px{width:260px}
 .nw-u-w-300px{width:300px}
 .nw-u-w-320px{width:320px}
-.nw-u-w-60{width:60%}
 .nw-u-wordbreak-break-word{word-break:break-word}
 .nw-u-z-10{z-index:10}
 .nw-u-bordercolor-background-modifier-bo{border-color:var(--background-modifier-border)}
@@ -10379,7 +10370,6 @@ button.nw-btn-icon {
 .nw-u-marginright-8px{margin-right:8px}
 .nw-u-margintop-0{margin-top:0}
 .nw-u-margintop-10px{margin-top:10px}
-.nw-u-margintop-14px{margin-top:14px}
 .nw-u-margintop-24px{margin-top:24px}
 .nw-u-margintop-3px{margin-top:3px}
 .nw-u-margin-top-neg-4px{margin-top:-4px}
@@ -26488,4 +26478,344 @@ button.nw-kb-detail-tab--active {
     border: none;
     border-radius: 6px;
     font-size: 13px;
+}
+/* ============================================================================
+ * 向导步骤内容（Slice J）
+ *
+ * 原 ui/full-writer/wizard-step-renderers.ts 用 42 组 nw-u-* 工具类 + 11 处内联
+ * style 拼装样式。这里改成 nw-wizard-* 语义类：选择器统一以真实祖先
+ * .nw-wizard-content-area（wizard-controller.ts 里 createDiv 出来的步骤容器）
+ * 为前缀，拿到 (0,2,0) 特异性，才能稳定压过 Obsidian 自带的 button/input 规则
+ * （实测 button 的背景/文字色在 (0,1,0) 工具类下会被压掉，导致主按钮渲染成白底黑字）。
+ *
+ * 声明值按改造前实测计算样式逐属性复刻：原本只设 margin-top 的，这里也只设
+ * margin-top，避免把 p 的默认下边距（1em）覆盖掉造成行距变化。
+ * ========================================================================== */
+
+/* ---------- 说明文字 ---------- */
+.nw-wizard-content-area .nw-wizard-note {
+    color: var(--text-muted);
+}
+
+.nw-wizard-content-area .nw-wizard-note--sm {
+    font-size: 0.85em;
+}
+
+/* 强调式警告（原 c-text-accent + fs-0-85em） */
+.nw-wizard-content-area .nw-wizard-warn-text {
+    color: var(--text-accent);
+    font-size: 0.85em;
+}
+
+/* 「目标项目: xxx」 */
+.nw-wizard-content-area .nw-wizard-target {
+    margin-top: 8px;
+    color: var(--text-muted);
+    font-size: 0.85em;
+}
+
+.nw-wizard-content-area .nw-wizard-project-name {
+    color: var(--text-muted);
+    font-size: 1.1em;
+}
+
+/* 纯间距行（原 mt-12px utility） */
+.nw-wizard-content-area .nw-wizard-action-hint {
+    margin-top: 12px;
+}
+
+/* 弱化提示：p 与 div 两种用法并存（世界观模块清单是 div） */
+.nw-wizard-content-area .nw-wizard-hint {
+    margin-top: 8px;
+    color: var(--text-muted);
+    font-size: 0.8em;
+}
+
+.nw-wizard-content-area .nw-wizard-hint--accent {
+    color: var(--text-accent);
+}
+
+.nw-wizard-content-area .nw-wizard-hint--lg {
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+.nw-wizard-content-area .nw-wizard-tip {
+    margin-top: 8px;
+    color: var(--text-muted);
+    font-size: 0.78em;
+}
+
+/* ---------- 状态行 ---------- */
+.nw-wizard-content-area .nw-wizard-status {
+    margin-top: 12px;
+    font-weight: 600;
+}
+
+.nw-wizard-content-area .nw-wizard-status--accent {
+    color: var(--text-accent);
+}
+
+.nw-wizard-content-area .nw-wizard-status--success {
+    color: var(--text-success);
+}
+
+.nw-wizard-content-area .nw-wizard-status--error {
+    color: var(--text-error);
+}
+
+.nw-wizard-content-area .nw-wizard-status--warning {
+    color: var(--text-warning);
+}
+
+.nw-wizard-content-area .nw-wizard-status--sm {
+    margin-top: 8px;
+}
+
+.nw-wizard-content-area .nw-wizard-status--lg {
+    margin-top: 16px;
+}
+
+/* ---------- 表单（同人设定） ---------- */
+/* 保持块级：原先是裸 div（块），改成 flex 会让内部 input 被块化，
+   丢掉 inline-block 的基线留白，整张表单矮 13px。 */
+.nw-wizard-content-area .nw-wizard-field-group {
+    display: block;
+}
+
+/* 多行字段独占一整行（原 attr: style grid-column:1/-1） */
+.nw-wizard-content-area .nw-wizard-field-group--full {
+    grid-column: 1 / -1;
+}
+
+.nw-wizard-content-area .nw-wizard-field-label {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--text-muted);
+    font-size: 0.8em;
+}
+
+/* 原内联 width:100%; padding:6px 8px; border-radius:6px; border:1px solid …; font-size:0.85em */
+.nw-wizard-content-area .nw-wizard-field {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    font-size: 0.85em;
+}
+
+.nw-wizard-content-area .nw-wizard-bind-box {
+    margin-top: 14px;
+    padding: 8px 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+}
+
+.nw-wizard-content-area .nw-wizard-bind-note {
+    margin: 0 0 6px;
+    color: var(--text-muted);
+    font-size: 0.8em;
+}
+
+/* ---------- 进度条 ---------- */
+.nw-wizard-content-area .nw-wizard-progress-panel {
+    margin-top: 16px;
+    padding: 12px;
+    background: var(--background-primary-alt);
+    border-radius: 8px;
+}
+
+.nw-wizard-content-area .nw-wizard-progress-track {
+    margin-top: 8px;
+    height: 6px;
+    overflow: hidden;
+    background: var(--background-modifier-border);
+    border-radius: 3px;
+}
+
+.nw-wizard-content-area .nw-wizard-progress-bar {
+    width: 60%;
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--text-accent), var(--text-warning));
+    animation: nw-progress-anim 1.5s ease-in-out infinite;
+}
+
+/* 世界观步骤沿用 2s + 纯色（改造前即是如此，保持一致以免动到既有观感） */
+.nw-wizard-content-area .nw-wizard-progress-bar--slow {
+    border-radius: 0;
+    background: var(--text-accent);
+    animation-duration: 2s;
+}
+
+.nw-wizard-content-area .nw-wizard-progress-text {
+    font-weight: 600;
+}
+
+/* ---------- 完成页统计 ---------- */
+.nw-wizard-content-area .nw-wizard-summary-panel {
+    margin-top: 20px;
+    padding: 16px;
+    background: var(--background-primary-alt);
+    border-radius: 8px;
+}
+
+.nw-wizard-content-area .nw-wizard-summary-title {
+    margin: 0 0 12px;
+}
+
+.nw-wizard-content-area .nw-wizard-stats-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.nw-wizard-content-area .nw-wizard-stats-cell {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.nw-wizard-content-area .nw-wizard-stats-cell--label {
+    font-weight: 600;
+}
+
+/* ---------- 实体步骤 ---------- */
+/* 复用 .nw-wizard-toolbar 的 flex/gap/margin，这里只补底边距 12px */
+.nw-wizard-content-area .nw-wizard-entity-toolbar {
+    margin-bottom: 12px;
+}
+
+/* 保持内容宽度（原先是裸 div，不参与 space-between 之外的伸缩） */
+.nw-wizard-content-area .nw-wizard-entity-info {
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+.nw-wizard-content-area .nw-wizard-entity-name {
+    font-weight: 600;
+}
+
+.nw-wizard-content-area .nw-wizard-entity-desc {
+    color: var(--text-muted);
+    font-size: 0.8em;
+}
+
+.nw-wizard-content-area .nw-wizard-entity-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.nw-wizard-content-area .nw-wizard-entity-state {
+    margin-right: 6px;
+    color: var(--text-muted);
+    font-size: 0.8em;
+}
+
+/* 原 attr: style opacity:0.6（已完成行） */
+.nw-wizard-content-area .nw-wizard-entity-row--done {
+    opacity: 0.6;
+}
+
+.nw-wizard-content-area .nw-wizard-entity-manager-btn {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 6px;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* ---------- 按钮 ---------- */
+/* 查看类（灰底） */
+.nw-wizard-content-area .nw-wizard-file-btn {
+    margin: 8px 12px 8px 0;
+    padding: 6px 14px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    background: var(--background-modifier-border);
+    cursor: pointer;
+}
+
+.nw-wizard-content-area .nw-wizard-file-btn--start {
+    margin: 8px 0;
+}
+
+/* 主操作 */
+.nw-wizard-content-area .nw-wizard-primary-btn {
+    margin: 8px 0;
+    padding: 6px 14px;
+    border: none;
+    border-radius: 6px;
+    background: var(--text-accent);
+    color: var(--text-on-accent);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.nw-wizard-content-area .nw-wizard-primary-btn--neutral {
+    background: var(--interactive-accent);
+}
+
+.nw-wizard-content-area .nw-wizard-primary-btn--adjacent {
+    margin: 8px 0 8px 8px;
+}
+
+/* 重新生成/重建类 */
+.nw-wizard-content-area .nw-wizard-warn-btn {
+    margin: 8px 0;
+    padding: 6px 14px;
+    border: none;
+    border-radius: 6px;
+    background: var(--text-warning);
+    color: var(--text-on-accent);
+    cursor: pointer;
+}
+
+.nw-wizard-content-area .nw-wizard-warn-btn--inline {
+    margin: 8px 12px 8px 0;
+}
+
+.nw-wizard-content-area .nw-wizard-warn-btn--lg {
+    font-size: 0.9em;
+}
+
+/* 禁用态要盖过上面的 cursor:pointer（原 nw-disabled-look 的语义） */
+.nw-wizard-content-area button.nw-disabled-look {
+    cursor: not-allowed;
+}
+
+/* 次要操作（保存/绑定） */
+.nw-wizard-content-area .nw-wizard-secondary-btn {
+    padding: 6px 16px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    background: var(--background-secondary);
+    cursor: pointer;
+}
+
+.nw-wizard-content-area .nw-wizard-secondary-btn--mt12 {
+    margin-top: 12px;
+}
+
+.nw-wizard-content-area .nw-wizard-secondary-btn--mt8 {
+    margin-top: 8px;
+}
+
+/* 实体行内小按钮 */
+.nw-wizard-content-area .nw-wizard-entity-btn {
+    padding: 4px 14px;
+    border: none;
+    border-radius: 4px;
+    background: var(--text-accent);
+    color: var(--text-on-accent);
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+.nw-wizard-content-area .nw-wizard-entity-btn--sm {
+    padding: 4px 10px;
+    font-size: 0.8em;
+    opacity: 0.8;
 }

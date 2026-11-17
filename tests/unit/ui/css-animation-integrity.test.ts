@@ -42,7 +42,12 @@ describe('CSS 动画完整性', () => {
             path.join(root, 'ui/full-writer/wizard-step-renderers.ts'),
             'utf8',
         );
-        expect(ui).toContain('nw-u-animation-nw-progress-anim');
+        // Slice J：进度条改用语义类 nw-wizard-progress-bar，动画收敛到 styles-src/30-wizard-steps.css
+        expect(ui).toContain('nw-wizard-progress-bar');
+        expect(ui).not.toContain('nw-u-animation-nw-progress-anim');
+        expect(css).toMatch(
+            /\.nw-wizard-content-area \.nw-wizard-progress-bar\s*\{[^}]*animation:\s*nw-progress-anim/,
+        );
     });
 
     it('reduced-motion 有全局兜底，且覆盖 nw- 前缀类', () => {

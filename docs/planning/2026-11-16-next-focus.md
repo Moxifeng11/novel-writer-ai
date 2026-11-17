@@ -934,3 +934,37 @@ hex/rgbHsl 保持基线。三份基线均 `--update-baseline --note`。
 两者都在长流程面板里，需先确认可截图入口再动刀。
 
 
+
+### 2026-11-17 第三十五轮：Slice J 新手向导 9 步语义化（nw-wizard-*）
+
+**范围**：`ui/full-writer/wizard-step-renderers.ts`（946 行 / 9 个渲染方法），沿用既有 `nw-wizard-*` 命名空间。
+
+**改动**：42 组含 `nw-u-*` 的 `cls` 组合 + 62 个工具类 token → 约 60 个 `nw-wizard-*` 语义类；`nw-u-*` 与
+11 处内联 `style` 字符串清零；新增 `styles-src/30-wizard-steps.css`（约 290 行）。
+选择器统一加 `.nw-wizard-content-area ` 前缀——向导区没有 `.nw-scope` 祖先，真实祖先链只有
+`.nw-wizard-container` > `.nw-wizard-content-area` > stepContent（`wizard-controller.ts:186/225/246`），
+且 TS 里的 `nw-wizard-root` 是死选择器。前缀拿到 (0,2,0) 才能压过 Obsidian 的 `.modal button` / `input[type=text]` (0,1,1)。
+
+**发现的真实缺陷（before 侧）**：`nw-u-*` 对 `<button>` 的 `background`/`color` 被 Obsidian 基础样式压掉，
+所有按钮都渲染成**白底黑字**（设计意图是强调紫 / 警告橙），非 button 元素的 bg/color 工具类则正常。
+Slice J 按设计意图恢复颜色，因此这类场景的像素差异是**修正**而非回归；非颜色属性逐属性复刻 before 实测值。
+
+**像素快照**（900px 宽、DSF=1；产物在 `D:\nw-dev-vault\_visual-j`，13 个场景）：
+story-empty / story-rich / setting-lib / writing-style / outline / chapters / complete 七个场景 **0px**；
+fanfic 0.61%（仅保存按钮底色 white→#f6f6f6，次要按钮设计色）；setting-lib-exec 1.39%、entities 2.54%、
+entities-done 2.87%、worldview 1.88%、worldview-exec 1.45%——全部只差按钮 color/bg/border，计算样式逐节点 diff 无其他属性差异。
+
+**级联修正（首轮 after 抓到）**：表单分组写成 `display:flex` 会把内部 `input`（inline-block）块化，
+丢掉基线留白，同人表单 394.9px → 382px；实体信息 `flex:1 1 auto` 会把内容宽度 352px 撑到 780px；
+`nw-disabled-look` 的 `cursor:not-allowed` 被新按钮规则盖成 `pointer`。三处均已修。
+
+**门禁**：`typecheck` 0 错、`lint` 0 错；`check:inline-styles` 通过；`check:utility` 删 11 个零引用工具类，
+定义 330 → 319、使用 2824 → 2559；`check:bundle` styles.css 675920 → 684251（+8331）；`check:css` 唯一类 3692 → 3735。
+`tests/unit/ui/css-animation-integrity.test.ts` 的断言从 `nw-u-animation-nw-progress-anim` 改为语义类
+`nw-wizard-progress-bar`（并断言样式表里该规则带 `nw-progress-anim`）。三份基线均 `--update-baseline --note`。
+
+**文档**：新增 `docs/modules/full-writer-wizard.md` 并登记 INDEX；`docs/design/2026-11-16-visual-refactor-standard.md`
+§5 加向导行、§5.1 指标与存量大户表重算（移除本文件 265 处）。
+
+下一轮（Slice K）：`ui/monitor-panel-b.ts`（232 处、1910 行）——新 `nw-monb-*` 命名空间，
+作用域用 `DraggablePanel` 自带的 `.nw-float-monitor-b ` 祖先。

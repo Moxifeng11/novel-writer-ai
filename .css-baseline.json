@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-17T10:11:08.394Z",
-  "note": "Slice I：新增 styles-src/29-knowledge-detail-modal.css（nw-kd-* 语义类），styles.css 体积与唯一类上调",
-  "bytes": 675920,
+  "generatedAt": "2026-11-17T10:41:18.460Z",
+  "note": "Slice J：新增 styles-src/30-wizard-steps.css（向导 9 步渲染器语义化，nw-wizard-* 43 个新类，全部走设计令牌）",
+  "bytes": 684251,
   "important": 24,
   "hardcodedHex": 165,
   "rgbHsl": 187,
-  "uniqueClasses": 3692,
+  "uniqueClasses": 3735,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }
