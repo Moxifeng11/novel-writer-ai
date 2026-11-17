@@ -1,0 +1,117 @@
+/**
+ * 43-manuscript-precheck.css — 文面体检弹窗（错别字/标点问题列表）
+ *
+ * 只放静态样式；行号、严重度等动态值由 JS 以文本或修饰类呈现，不写内联样式。
+ */
+
+.nw-precheck-summary {
+    border-left: 3px solid var(--interactive-accent);
+    padding: 6px 10px;
+    margin-bottom: 10px;
+    background: var(--background-secondary);
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.nw-precheck-list {
+    max-height: 52vh;
+    overflow-y: auto;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    padding: 4px 6px;
+}
+
+.nw-precheck-group + .nw-precheck-group {
+    margin-top: 8px;
+}
+
+.nw-precheck-group-title {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 4px 6px;
+    background: var(--background-primary);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.nw-precheck-issue {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.nw-precheck-issue:hover {
+    background: var(--background-modifier-hover);
+}
+
+.nw-precheck-badge {
+    flex-shrink: 0;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    line-height: 1.6;
+    white-space: nowrap;
+    background: var(--background-modifier-hover);
+    color: var(--text-muted);
+}
+
+.nw-precheck-badge--error {
+    background: color-mix(in srgb, var(--text-error) 15%, transparent);
+    color: var(--text-error);
+}
+
+.nw-precheck-badge--warning {
+    background: color-mix(in srgb, var(--text-warning) 18%, transparent);
+    color: var(--text-warning);
+}
+
+.nw-precheck-badge--info {
+    background: var(--background-modifier-hover);
+    color: var(--text-muted);
+}
+
+.nw-precheck-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.nw-precheck-message {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-normal);
+}
+
+.nw-precheck-snippet {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nw-precheck-meta {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--text-faint);
+    white-space: nowrap;
+}
+
+.nw-precheck-meta:hover {
+    color: var(--text-accent);
+}
+
+.nw-precheck-empty,
+.nw-precheck-truncated {
+    padding: 12px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+}

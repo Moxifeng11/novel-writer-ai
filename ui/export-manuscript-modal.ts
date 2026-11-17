@@ -25,6 +25,8 @@ import { showErrorNotice, showSuccessNotice, showWarningNotice } from './compone
 import type { CreationMode } from '@/shared/creation-mode';
 import { collectModeManuscript, listModeUnits } from '@/shared/mode-content';
 import { formatExportPrecheck } from '@/shared/export-precheck';
+import { checkManuscript, formatPrecheckSummary } from '@/shared/manuscript-precheck';
+import { ManuscriptPrecheckModal } from './manuscript-precheck-modal';
 import { buildPublicationFacts, checkPublicationReadiness, formatPublicationReport, PUBLICATION_LEVEL_LABELS, splitUnitsByBody, type PublicationLevel, type PublicationScope } from '@/shared/publication-profile';
 import { getExecutionLedger } from '@/services/execution-ledger';
 import type { JobRunContext } from '@/services/job-service';
@@ -100,6 +102,8 @@ export class ExportManuscriptModal extends Modal {
     private publicationLevel: PublicationLevel = 'finished';
     /** 导出范围：full 整包 / written-only 仅已写单元 */
     private publicationScope: PublicationScope = 'full';
+    /** 导出前是否跑文面体检（错别字/标点；本地规则，可在弹窗里关掉） */
+    private textPrecheck = true;
     private scopeSettingRef: Setting | null = null;
     private scopeDropdownRef: DropdownComponent | null = null;
 
@@ -245,6 +249,20 @@ export class ExportManuscriptModal extends Modal {
                 this.scopeDropdownRef = dropdown;
             });
         this.scopeSettingRef = scopeSetting;
+
+        new Setting(contentEl)
+            .setName('文面体检')
+            .setDesc('导出前扫描错别字与标点（本地规则，不调用 AI）；只提示不阻断')
+            .addToggle((toggle) =>
+                toggle.setValue(this.textPrecheck).onChange((value) => {
+                    this.textPrecheck = value;
+                })
+            )
+            .addButton((button) =>
+                button.setButtonText('查看问题').onClick(() => {
+                    new ManuscriptPrecheckModal(this.app, this.project).open();
+                })
+            );
 
         this.summaryEl = contentEl.createDiv({ cls: 'nw-export-summary' });
         this.hintEl = contentEl.createDiv({ cls: 'nw-export-hint' });
@@ -498,6 +516,17 @@ export class ExportManuscriptModal extends Modal {
         const publicationReport = formatPublicationReport(publicationIssues);
         if (publicationReport) {
             precheck = `${precheck ? `${precheck}\n` : ''}${publicationReport}`;
+        }
+        if (this.textPrecheck) {
+            const textReport = checkManuscript(exportChapters.map(chapter => ({
+                name: chapter.title ? chapter.chapter + ' ' + chapter.title : chapter.chapter,
+                path: chapter.path,
+                text: chapter.content,
+            })));
+            const textSummary = formatPrecheckSummary(textReport, 3);
+            if (textSummary) {
+                precheck = `${precheck ? `${precheck}\n` : ''}${textSummary}（在「🔎 文面体检」里可逐条跳转）`;
+            }
         }
         if (precheck) new Notice(precheck, 8000);
 

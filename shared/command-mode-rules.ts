@@ -43,6 +43,8 @@ export const COMMAND_MODE_RULES: Record<string, CreationMode[]> = {
     [CommandIds.TARGETED_REVISION]: LONG_ONLY,
     [CommandIds.QUALITY_DASHBOARD]: LONG_ONLY,
     [CommandIds.CHAPTER_SETTLEMENT]: LONG_ONLY,
+    // 文面体检按章扫描正文（第N章），短篇/剧本的节/集走不到这里
+    [CommandIds.TEXT_PRECHECK]: LONG_ONLY,
     [CommandIds.CROSS_VOLUME_STATE]: LONG_ONLY,
     [CommandIds.NARRATIVE_OVERVIEW]: LONG_ONLY,
     [CommandIds.STEP_RESULT_VIEWER]: LONG_ONLY,

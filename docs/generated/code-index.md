@@ -8,16 +8,16 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146802 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19413 | 295 | 203 | 69% |
-| `shared/` | 255 | 50823 | 2149 | 1680 | 78% |
-| `core/` | 7 | 3387 | 35 | 20 | 57% |
+| `shared/` | 256 | 51257 | 2161 | 1689 | 78% |
+| `core/` | 7 | 3390 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 301 | 113483 | 1161 | 919 | 79% |
+| `ui/` | 302 | 113721 | 1163 | 921 | 79% |
 
 ## 文件清单
 
 | 文件 | 行数 | 导出 | 有 JSDoc |
 |---|---:|---:|---:|
-| `core/command-registry.ts` | 817 | 9 | 5 |
+| `core/command-registry.ts` | 820 | 9 | 5 |
 | `core/crypto-service.ts` | 447 | 5 | 3 |
 | `core/example-project-service.ts` | 331 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
@@ -485,8 +485,8 @@
 | `shared/character-rules.ts` | 180 | 10 | 6 |
 | `shared/clipboard.ts` | 40 | 1 | 1 |
 | `shared/co-writer-types.ts` | 113 | 0 | 0 |
-| `shared/command-ids.ts` | 139 | 2 | 2 |
-| `shared/command-mode-rules.ts` | 143 | 8 | 5 |
+| `shared/command-ids.ts` | 141 | 2 | 2 |
+| `shared/command-mode-rules.ts` | 145 | 8 | 5 |
 | `shared/command-ui-port.ts` | 48 | 4 | 2 |
 | `shared/constraint-block-model.ts` | 109 | 7 | 3 |
 | `shared/content-classifier.ts` | 248 | 11 | 11 |
@@ -567,6 +567,7 @@
 | `shared/logger.ts` | 101 | 5 | 5 |
 | `shared/lru-cache.ts` | 221 | 2 | 2 |
 | `shared/maintenance-model.ts` | 80 | 2 | 2 |
+| `shared/manuscript-precheck.ts` | 430 | 12 | 9 |
 | `shared/mcp-config.ts` | 125 | 9 | 5 |
 | `shared/mcp-example-server.ts` | 123 | 2 | 1 |
 | `shared/mcp-file-browse.ts` | 183 | 7 | 5 |
@@ -774,7 +775,7 @@
 | `ui/co-writing/text-diff.ts` | 134 | 5 | 2 |
 | `ui/co-writing/word-goal.ts` | 115 | 5 | 3 |
 | `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
-| `ui/command-ui-executor.ts` | 743 | 2 | 2 |
+| `ui/command-ui-executor.ts` | 753 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 105 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
 | `ui/components/categorization-review-panel.ts` | 449 | 2 | 2 |
@@ -811,7 +812,7 @@
 | `ui/draggable-panel.ts` | 379 | 2 | 2 |
 | `ui/existing-entity-manager.ts` | 555 | 1 | 1 |
 | `ui/expand-text-modal.ts` | 226 | 1 | 1 |
-| `ui/export-manuscript-modal.ts` | 665 | 4 | 4 |
+| `ui/export-manuscript-modal.ts` | 694 | 4 | 4 |
 | `ui/fact-store-edit.ts` | 153 | 9 | 8 |
 | `ui/fact-store-format.ts` | 121 | 8 | 7 |
 | `ui/fact-store-modal.ts` | 254 | 1 | 1 |
@@ -883,6 +884,7 @@
 | `ui/knowledge-monitor-modal.ts` | 500 | 1 | 1 |
 | `ui/knowledge-rebuild-action.ts` | 48 | 1 | 1 |
 | `ui/manage-providers-modal.ts` | 647 | 1 | 1 |
+| `ui/manuscript-precheck-modal.ts` | 199 | 2 | 2 |
 | `ui/mcp-file-picker-modal.ts` | 174 | 2 | 2 |
 | `ui/mcp-manager-modal.ts` | 332 | 1 | 1 |
 | `ui/mcp-server-form-modal.ts` | 322 | 3 | 3 |

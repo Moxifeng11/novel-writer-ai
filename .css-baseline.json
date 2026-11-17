@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-17T18:28:47.635Z",
-  "note": "缺口 2：全屏写作体检条新增 styles-src/42-full-writer-checkup.css（+27 个 nw-fw-checkup-* 类，含空态修饰类），bytes 786456→790741（+4285B），uniqueClasses 4261→4288",
-  "bytes": 790741,
+  "generatedAt": "2026-11-17T19:04:30.886Z",
+  "note": "Slice gap3：新增 43-manuscript-precheck.css（文面体检弹窗，+2472 字节 / +15 类）",
+  "bytes": 793258,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 223,
-  "uniqueClasses": 4288,
+  "uniqueClasses": 4303,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

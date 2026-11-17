@@ -160,6 +160,7 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     { id: CommandIds.VALIDATE_STORY_GRAPH, name: '🧭 校验故事一致性', group: CommandGroup.Tools, description: '只读检查断链、孤立实体、关系缺卡、双链字段类型冲突，输出诊断报告' },
     { id: CommandIds.BATCH_DECONSTRUCT, name: '📚 批量拆解', group: CommandGroup.Tools, description: '打开知识库：批量导入书籍并按维度拆解，结果持久化到拆解库' },
     { id: CommandIds.EXPORT_MANUSCRIPT, name: '📦 成稿导出', group: CommandGroup.Tools, description: '编译全书为 Markdown / TXT / HTML 稿件' },
+    { id: CommandIds.TEXT_PRECHECK, name: '🔎 文面体检（错别字/标点）', group: CommandGroup.Tools, description: '本地规则扫描错别字、重复词、中英标点混用与引号配对，问题可跳到正文对应行列' },
     { id: CommandIds.PRUNE_SESSIONS, name: '🧹 清理旧会话', group: CommandGroup.Tools, description: '手动清理超出保留上限的旧分析会话与 Agent 会话（最近各 30 个以内不动）' },
 
     // ─── 视图类 ───
@@ -376,6 +377,7 @@ export class CommandRegistry {
             CommandIds.STORY_LINKAGE_BOARD,
             CommandIds.VALIDATE_STORY_GRAPH,
             CommandIds.EXPORT_MANUSCRIPT,
+            CommandIds.TEXT_PRECHECK,
             CommandIds.FULL_WRITER,
             CommandIds.CO_WRITING,
             CommandIds.OPEN_SETTINGS,
@@ -564,6 +566,7 @@ export class CommandRegistry {
         addCommand({ id: CommandIds.BATCH_DECONSTRUCT, name: '📚 批量拆解', checkCallback: execGuarded(CommandIds.BATCH_DECONSTRUCT, LONG_ONLY) });
         addCommand({ id: CommandIds.CHARACTER_RECOGNITION, name: '👤 角色识别审核', callback: exec(CommandIds.CHARACTER_RECOGNITION) });
         addCommand({ id: CommandIds.EXPORT_MANUSCRIPT, name: '📦 成稿导出', callback: exec(CommandIds.EXPORT_MANUSCRIPT) });
+        addCommand({ id: CommandIds.TEXT_PRECHECK, name: '🔎 文面体检（错别字/标点）', checkCallback: execGuarded(CommandIds.TEXT_PRECHECK, LONG_ONLY) });
         addCommand({ id: CommandIds.OPEN_HOME, name: '🏠 创作主页', callback: exec(CommandIds.OPEN_HOME) });
         addCommand({ id: CommandIds.JOB_CENTER, name: '🧵 任务中心', callback: exec(CommandIds.JOB_CENTER) });
         addCommand({ id: CommandIds.PROJECT_HEALTH, name: '🩺 项目体检', callback: exec(CommandIds.PROJECT_HEALTH) });

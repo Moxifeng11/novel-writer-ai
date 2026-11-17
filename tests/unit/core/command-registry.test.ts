@@ -83,6 +83,7 @@ const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.OUTLINE_EXPAND,
     CommandIds.REWRITE_SUGGESTION,
     CommandIds.EXPORT_MANUSCRIPT,
+    CommandIds.TEXT_PRECHECK,
     CommandIds.FINGERPRINT_LIBRARY,
     CommandIds.OPEN_KNOWLEDGE_BASE,
     CommandIds.CLEAR_WORLDVIEW_CACHE,

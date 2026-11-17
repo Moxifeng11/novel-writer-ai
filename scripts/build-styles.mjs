@@ -55,7 +55,9 @@ ${list}
 
 function buildText() {
     const files = listSources();
-    const parts = files.map((f) => fs.readFileSync(path.join(srcDir, f), 'utf8'));
+    // 统一行尾为 LF：Windows 下 `core.autocrlf=true` 会把源文件检出成 CRLF，
+    // 直接拼接会让 styles.css 体积虚增（9000+ 字节）并造成 `check:css` / `check:bundle` 假失败。
+    const parts = files.map((f) => fs.readFileSync(path.join(srcDir, f), 'utf8').replace(/\r\n/g, '\n'));
     return { files, text: renderHeader(files) + parts.join('') };
 }
 

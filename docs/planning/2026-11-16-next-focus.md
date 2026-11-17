@@ -1471,3 +1471,24 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 `docs/planning/2026-11-18-feature-gaps.md` ②标 done 并记录实际做法。
 
 **下一轮**：缺口 ③「发布前错别字 / 标点体检」（纯本地规则 + 接入导出前置检查）。
+
+### 2026-11-18 第五十三轮：功能缺口 ③——发布前文面体检（`nw-precheck-*`）
+
+**背景**：缺口清单 ③（「1→2→3 连做」的第三项）。改前导出弹窗只有「交付检查」（空单元 / 字数 / 作者 / 质控），**没有任何字面体检**，全仓也无错别字检查实现。
+
+**交付**：三块 + 两处接线。
+- 引擎 `shared/manuscript-precheck.ts`（纯函数、无 Obsidian 依赖）：`checkManuscriptText` / `checkManuscript«` / `formatPrecheckSummary(report, maxChapters = 3)` / `splitFrontmatter(content): { body, offset }`；7 条规则（错别字 51 对、重复词 2–4 汉字 + 白名单、中英标点混用、连续标点、引号栈配对、省略号、破折号），三档严重度 error / warning / info，单章上限 200 条。
+- 弹窗 `ui/manuscript-precheck-modal.ts`（198 行，`ManuscriptPrecheckModal(app, project)`）：摘要条 + 「只看必改项」+ 按章分组列表（徽标 / 文案 / 摘录 / 「第N行 · 列M · 跳到正文」）+ 底部「重新扫描 / 关闭」；点行 `setCursor({ line: line - 1, ch: column - 1 })` → `scrollIntoView` → 关窗。
+- 样式 `styles-src/43-manuscript-precheck.css`（2472 字节 / 117 行 / 16 个选择器），全 `nw-precheck-*`，无 `.nw-scope`。
+- 命令 `novel-writer-text-precheck`（LONG_ONLY）：`shared/command-ids.ts`、`core/command-registry.ts` 三处、`shared/command-mode-rules.ts`、`ui/command-ui-executor.ts`、`tests/unit/core/command-registry.test.ts` 五处接线。
+- 导出接线 `ui/export-manuscript-modal.ts`：「文面体检」开关（默认开）+「查看问题」（叠开体检弹窗，不关导出弹窗）；`exportManuscript()` 在结构检查 Notice 之前把 `formatPrecheckSummary` 拼进 `precheck`，**不阻断导出**。
+
+**坑（两条，都值得记）**
+1. **CDP 下 Modal 挂不上**：`executeCommandById` 返回 true，但 `.modal-container` 恒为 0。根因是渲染进程 `app.workspace.activeWindow.document` 为 undefined。必须在**每一次** `page.evaluate` 内、**执行命令之前**重设 `window.activeWindow = window; window.activeDocument = document;`；只在会话开头设一次会被 `openFile` 等操作重置。
+2. **styles.css 被 CRLF 虚增**：Windows `core.autocrlf=true` 让 13 份 `styles-src` 检出为 CRLF，`build-styles.mjs` 纯文本拼接把 9,064 个 `\r\n` 带进产物（802,322 vs 790,741），`check:css` / `check:bundle` 假失败。已在 `buildText()` 里 `.replace(/\r\n/g, '\n')` 归一（源文件本身 git 索引是 LF，无 diff），并实测「临时改回 CRLF 的源文件」重构建仍是 793,258。
+
+**验收**：`tsc --noEmit` 0 错；单测 `tests/unit/shared/manuscript-precheck.test.ts` 15 条全绿；实机 `D:\nw-tmp\probe-gap3.mjs` 写临时第4章（「必竟 / 既使 / 我们我们 / 英文逗号 / ，， / ...」6 处）→ 摘要「发现 6 处（错别字 2、重复词 1、中英标点 1、连续标点 1、省略号 1）」、徽标 必改×2 + 待确认×4、点首行后光标 `{ line: 5, ch: 1 }` 且活动文件切到该章、「只看必改项」6 → 2 → 6（摘要不随过滤变）；导出弹窗点「查看问题」叠出体检弹窗、点「导出」的 Notice 同时含结构检查 + 出版检查 + 文面体检三行，随后「✅ 完成已导出 4 章 / 297 字」；`check:inline-styles` 525（453/72）、`check:utility` 46/142 不变；`check:css` 793,258 / uniqueClasses 4,303、`check:bundle` main.js 5,643,485 / styles.css 793,258 已 `--update-baseline --note`；`npm run preflight` EXIT=0。
+
+**文档**：新增 `docs/modules/manuscript-precheck.md`（8 节，MC-01..MC-05 全 done）；`docs/modules/INDEX.md` 插行；视觉标准 §1.3 登记 `precheck-`、§5 加行、§5.1 styles.css 改 793,258；`docs/CURRENT.md` §4 状态；`docs/planning/2026-11-18-feature-gaps.md` ③标 done 并记录实际做法。
+
+**下一轮**：缺口 ④「提示词管理器交付级修补」（`docs/modules/prompt-manager-settings.md` §7 四条），或按作者挑选 ⑤–⑦。

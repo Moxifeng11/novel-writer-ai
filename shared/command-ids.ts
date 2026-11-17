@@ -83,6 +83,8 @@ export const CommandIds = {
     STEP_RESULT_VIEWER: 'novel-writer-step-result-viewer',
     BATCH_DECONSTRUCT: 'novel-writer-batch-deconstruct',
     EXPORT_MANUSCRIPT: 'novel-writer-export-manuscript',
+    /** 发布前文面体检：本地规则扫描错别字/标点，问题可逐条跳转（长篇） */
+    TEXT_PRECHECK: 'novel-writer-text-precheck',
     STORY_LINKAGE_BOARD: 'novel-writer-story-linkage',
     /** 只读校验：断链/孤立实体/关系缺卡/类型冲突，输出故事一致性报告 */
     VALIDATE_STORY_GRAPH: 'novel-writer-validate-story-graph',

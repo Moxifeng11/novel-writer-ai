@@ -66,6 +66,7 @@ import { AddFanficSettingModal } from './add-fanfic-setting-modal';
 import { UnifiedEntityManagerModal } from './unified-entity-manager-modal';
 import { UnifiedEntityGenerateModal } from './unified-entity-generate-modal';
 import { ExportManuscriptModal } from './export-manuscript-modal';
+import { ManuscriptPrecheckModal } from './manuscript-precheck-modal';
 import { RewriteSuggestionModal } from './rewrite-suggestion-modal';
 import { VIEW_TYPE_WRITING_FINGERPRINT } from './views/writing-fingerprint-view';
 import { VIEW_TYPE_KNOWLEDGE_BASE } from './views/knowledge-base-view';
@@ -529,6 +530,15 @@ export class CommandUiExecutor implements CommandUiPort {
             case CommandIds.EXPORT_MANUSCRIPT:
                 new ExportManuscriptModal(app, plugin, resolveProject() ?? '').open();
                 return true;
+            case CommandIds.TEXT_PRECHECK: {
+                const project = resolveProject();
+                if (!project) {
+                    showWarningNotice('请先打开一个项目', { title: '文面体检' });
+                    return true;
+                }
+                new ManuscriptPrecheckModal(app, project).open();
+                return true;
+            }
             case CommandIds.PRUNE_SESSIONS:
                 // v4.34.0：手动会话清理；manual=true 忽略「启动时清理旧会话」开关
                 void plugin.runSessionPrune(true);
