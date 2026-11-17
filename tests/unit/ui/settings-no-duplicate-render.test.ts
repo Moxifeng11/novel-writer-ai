@@ -100,9 +100,10 @@ describe('设置页每个 render*Section 都创建自己的根容器', () => {
 describe('外观设置：三层模型结构', () => {
     it('只暴露三层颜色控件（基底/卡片/强调），不再有独立面板色', () => {
         const source = read('ui/appearance-settings.ts');
-        expect(source).toContain("'基底色'");
-        expect(source).toContain("'卡片色'");
-        expect(source).toContain("'强调色'");
+        // i18n 第二期第二片：文案改由 i18n 资源提供，源码里只剩键名
+        expect(source).toContain("t('settings.appearance.baseColor.name')");
+        expect(source).toContain("t('settings.appearance.cardColor.name')");
+        expect(source).toContain("t('settings.appearance.accentColor.name')");
         // 旧的独立面板色输入与卡片开关已从 UI 移除
         expect(source).not.toContain("'面板色'");
         expect(source).not.toContain("'启用自定义卡片背景'");
@@ -124,16 +125,16 @@ describe('外观设置：三层模型结构', () => {
 
     it('预览色板是三层（基底/卡片/强调）', () => {
         const source = read('ui/appearance-settings.ts');
-        expect(source).toContain("nw-theme-preview-swatch-app' }).createSpan({ text: '基底'");
-        expect(source).toContain("nw-theme-preview-swatch-card' }).createSpan({ text: '卡片'");
-        expect(source).toContain("nw-theme-preview-swatch-accent' }).createSpan({ text: '强调'");
+        expect(source).toContain("nw-theme-preview-swatch-app' }).createSpan({ text: t('settings.appearance.preview.base')");
+        expect(source).toContain("nw-theme-preview-swatch-card' }).createSpan({ text: t('settings.appearance.preview.card')");
+        expect(source).toContain("nw-theme-preview-swatch-accent' }).createSpan({ text: t('settings.appearance.preview.accent')");
     });
 
     it('提供配色方案的保存/应用/删除/导入/导出入口', () => {
         const source = read('ui/appearance-settings.ts');
-        expect(source).toContain('保存当前配色');
-        expect(source).toContain('导出');
-        expect(source).toContain('导入');
+        expect(source).toContain("t('settings.appearance.presets.save')");
+        expect(source).toContain("t('settings.appearance.presets.export')");
+        expect(source).toContain("t('settings.appearance.presets.import')");
         expect(source).toContain('presetToSettings');
         expect(source).toContain('capturePreset');
     });

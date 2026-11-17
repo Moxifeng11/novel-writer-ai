@@ -1639,5 +1639,36 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 - `check:i18n` 通过：zh 154 / en 154、0 无法解析键、动态键 3 处、棘轮 269 文件 / 11892 条不变（`core/**` 不计入棘轮）。
 - `npm run lint` 0 error / 1100 warning（存量）；`npm run preflight` 全绿。
 
-**下一轮候选**：i18n 第二期余下（设置分区正文 `ui/appearance-settings.ts`、`ui/settings/*-sections.ts`、写作主流程按钮与 Notice）；或清理 `COMMAND_DEFINITIONS` 的 description 与 `CommandGroupInfo` 死数据。
+**下一轮候选**：i18n 第二期余下（设置分区正文 `ui/settings/*-sections.ts`、写作主流程按钮与 Notice）；或清理 `COMMAND_DEFINITIONS` 的 description 与 `CommandGroupInfo` 死数据。
+
+---
+
+## 第五十九轮：i18n 第二期第二片 —— 外观设置页（2026-11-18）
+
+目标：设置页「🎨 外观设置」正文（主题模式 / 界面氛围 / 三个颜色层 / 内置主题 / 配色方案）跟着语言设置走（缺口 ⑦ 第二期第二片）。
+
+**改动**
+- `i18n/messages/zh-CN.ts` / `en-US.ts`：`settings.appearance` 从 5 条语言项扩到 **71 条**（title/intro、预览卡 5 条、themeMode 5、atmosphere 5、三个颜色层各 4、gallery 5、galleryCompact 4、themeApplied、presets 26）；资源 154 → **220 条/语言**。
+- `ui/appearance-settings.ts`（574 行）：47 处用户可见文案全部 `t('settings.appearance.*')`；新增模块级 `modeLabel(mode)`（`themeMode.dark/light`）给 notice 用；两个弹窗的「取消」复用 `common.cancel`；notice 用 `{name}`/`{count}`/`{theme}`/`{mode}` 插值。
+- 决策：`shared/theme-gallery.ts` 的 7 套主题名/描述**故意不迁**——主题名会被 `galleryThemeToPreset` 写进已保存的配色方案名，按语言渲染会让老方案随切语言改名；真要英文化应改成「存 id、渲染时查表」。
+- 测试：新增 `tests/unit/ui/appearance-settings-i18n.test.ts` 2 例（假 DOM 最小宿主；en 下 8 个标题全英文且不含中文标题，zh 下保持中文）。
+
+**实机（开发 vault，1180×2600 视口，设置窗口）**
+- en：labels = `Interface language / Theme mode / Surface atmosphere / Base color / Card color / Accent color`；headings = `🎨 Appearance / 🎨 Built-in themes / 💾 Color presets`；预设按钮 `Light / Dark`；英文长描述自然换行、无溢出。
+- zh：对应中文。主题名（宣纸墨/青瓷/…）与「📊 写作统计与桌面宠物 / 🎨 桌宠形象」两块仍中文（按本片范围，后者在别的渲染函数里）。
+- 截图 `D:\nw-dev-vault\_visual-i18n\appearance-{zh,en}.png` 与 `appearance-en-tall.png`（未入库）；脚本 `D:\nw-tmp\snap-i18n3.mjs <lang> <tag>`。
+
+**坑（已写进 `docs/modules/i18n.md` §8）**
+- Obsidian 1.14.5 的设置是**独立窗口**：CDP 下 `app.setting.open()` 只新开一个 page（`about:blank`、title「设置 - …」），且必须先 `app.setting.openTab(setting.pluginTabs.find(t => t.id === 'novel-writer-ai'))` 才渲染 `.nw-settings-root`；之后 DOM 查询与截图都在那个 page 上做。只 open 不 openTab 时 `.nw-settings-root` 数量为 0。
+- `Setting.addButton` 的按钮文案挂在 `stubDocument` 上、不在容器子树里，`FakeEl.allText()` 取不到「恢复默认配色」，该断言删掉并留注释。
+- `tests/unit/ui/settings-no-duplicate-render.test.ts` 有 3 例按**源码里的中文字面量**断言外观页（`'基底色'`、`'保存当前配色'`、`createSpan({ text: '基底' })`），文案改 `t()` 后首跑全红；已改成断言 `t('settings.appearance.*')` 键名。教训：i18n 迁移前先 grep 测试里的中文快照，别等门禁报。
+- `check-i18n` 会提示「已下降（可 --update-baseline 收紧）」：不收紧的话基线仍记旧数字，别人加回中文不会被拦。本片 269 文件 / 11892 条 → **268 / 11812**。
+
+**门禁**：`npm run preflight` **EXIT=0**（971 个测试文件 / 10256 通过 + 3 跳过；活跃文档 20 个）；
+- `check:i18n` 通过：zh 220 / en 220、0 个无法解析的键、动态键 3 处、棘轮收紧到 **268 文件 / 11812 条**。
+- `check:bundle` main.js 5678228 → **5685104**（+6876，双语资源进包；基线已 `--update-baseline` 写明原因）、styles.css 798852 不变。
+- `check:view-tests` 收紧到 83 个文件（新测试静态 import 了 `ui/appearance-settings.ts`）。
+- 日志 `D:\nw-tmp\preflight-i18n3c.log`；首跑红在 3 条存量源码断言（见下），修完复跑全绿。
+
+**下一轮候选**：i18n 第二期余下（`ui/settings/*-sections.ts`、外观页的统计/桌宠块、写作主流程按钮与 Notice）；或把 `shared/theme-gallery.ts` 的主题名改「存 id + 查表」为英文化铺路。
 

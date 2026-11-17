@@ -1,5 +1,6 @@
 import { Setting, Notice, Modal } from 'obsidian';
 import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
+import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import {
     capturePreset,
@@ -45,15 +46,15 @@ function renderThemePreview(parent: HTMLElement, compact: boolean): void {
     const cls = compact ? 'nw-theme-preview nw-theme-preview-mini' : 'nw-theme-preview';
     const preview = parent.createDiv({ cls });
     const swatches = preview.createDiv({ cls: 'nw-theme-preview-swatches' });
-    swatches.createDiv({ cls: 'nw-theme-preview-swatch nw-theme-preview-swatch-app' }).createSpan({ text: '基底' });
-    swatches.createDiv({ cls: 'nw-theme-preview-swatch nw-theme-preview-swatch-card' }).createSpan({ text: '卡片' });
-    swatches.createDiv({ cls: 'nw-theme-preview-swatch nw-theme-preview-swatch-accent' }).createSpan({ text: '强调' });
+    swatches.createDiv({ cls: 'nw-theme-preview-swatch nw-theme-preview-swatch-app' }).createSpan({ text: t('settings.appearance.preview.base') });
+    swatches.createDiv({ cls: 'nw-theme-preview-swatch nw-theme-preview-swatch-card' }).createSpan({ text: t('settings.appearance.preview.card') });
+    swatches.createDiv({ cls: 'nw-theme-preview-swatch nw-theme-preview-swatch-accent' }).createSpan({ text: t('settings.appearance.preview.accent') });
     if (!compact) {
         const sample = preview.createDiv({ cls: 'nw-theme-preview-sample' });
         sample.createDiv({ cls: 'nw-theme-preview-cover' });
         const body = sample.createDiv({ cls: 'nw-theme-preview-body' });
-        body.createEl('strong', { text: '示例项目卡片' });
-        body.createEl('span', { text: '基底定调，卡片自动抬起一层，面板跟随基底。' });
+        body.createEl('strong', { text: t('settings.appearance.preview.sampleTitle') });
+        body.createEl('span', { text: t('settings.appearance.preview.sampleText') });
     }
 }
 
@@ -101,9 +102,9 @@ export function renderAppearanceSettings(
     };
 
     const section = container.createDiv({ cls: compact ? 'novel-writer-mini-appearance' : 'novel-writer-appearance' });
-    section.createEl(compact ? 'h4' : 'h3', { text: '🎨 外观设置' });
+    section.createEl(compact ? 'h4' : 'h3', { text: t('settings.appearance.title') });
     section.createEl('p', {
-        text: '三层配色：基底决定整体明度，卡片自动抬起一层，强调色用于按钮与选中态。文字色按基底自动取深浅，无需单独配置。',
+        text: t('settings.appearance.intro'),
         cls: 'setting-item-description',
     });
 
@@ -112,12 +113,12 @@ export function renderAppearanceSettings(
     // ── 第一层：基底 ──
     if (!compact) {
         new Setting(section)
-            .setName('主题模式')
-            .setDesc('跟随系统 / 浅色 / 深色。它决定基底与文字的默认取值')
+            .setName(t('settings.appearance.themeMode.name'))
+            .setDesc(t('settings.appearance.themeMode.desc'))
             .addDropdown(dropdown => {
-                dropdown.addOption('auto', '跟随系统');
-                dropdown.addOption('light', '浅色');
-                dropdown.addOption('dark', '深色');
+                dropdown.addOption('auto', t('settings.appearance.themeMode.auto'));
+                dropdown.addOption('light', t('settings.appearance.themeMode.light'));
+                dropdown.addOption('dark', t('settings.appearance.themeMode.dark'));
                 dropdown.setValue(plugin.settings.theme);
                 dropdown.onChange(async (value) => {
                     plugin.settings.theme = value as 'light' | 'dark' | 'auto';
@@ -144,12 +145,12 @@ export function renderAppearanceSettings(
     }
 
     new Setting(section)
-        .setName('界面氛围')
-        .setDesc('决定卡片相对基底抬起的幅度：柔和 < 纸质感 < 清晰')
+        .setName(t('settings.appearance.atmosphere.name'))
+        .setDesc(t('settings.appearance.atmosphere.desc'))
         .addDropdown(dropdown => dropdown
-            .addOption('soft', '柔和（推荐）')
-            .addOption('clear', '清晰')
-            .addOption('paper', '纸质感')
+            .addOption('soft', t('settings.appearance.atmosphere.soft'))
+            .addOption('clear', t('settings.appearance.atmosphere.clear'))
+            .addOption('paper', t('settings.appearance.atmosphere.paper'))
             .setValue(normalizePreset(plugin.settings.themeColors?.appearancePreset))
             .onChange(async (value) => {
                 ensureThemeColors().appearancePreset = normalizePreset(value);
@@ -158,8 +159,8 @@ export function renderAppearanceSettings(
             }));
 
     const baseSetting = new Setting(section)
-        .setName('基底色')
-        .setDesc('页面最底层背景。留空则由主题模式决定；面板与卡片会从它自动派生')
+        .setName(t('settings.appearance.baseColor.name'))
+        .setDesc(t('settings.appearance.baseColor.desc'))
         .addColorPicker(picker => {
             if (plugin.settings.themeColors?.appBg) picker.setValue(plugin.settings.themeColors.appBg);
             picker.onChange((val) => {
@@ -170,7 +171,7 @@ export function renderAppearanceSettings(
         })
         .addExtraButton(btn => btn
             .setIcon('rotate-ccw')
-            .setTooltip('恢复基底为主题默认')
+            .setTooltip(t('settings.appearance.baseColor.reset'))
             .onClick(async () => {
                 if (plugin.settings.themeColors) delete plugin.settings.themeColors.appBg;
                 await apply();
@@ -180,8 +181,8 @@ export function renderAppearanceSettings(
 
     // ── 第二层：卡片 ──
     new Setting(section)
-        .setName('卡片色')
-        .setDesc('卡片/面板的底色。留空则按氛围预设从基底自动抬起一层')
+        .setName(t('settings.appearance.cardColor.name'))
+        .setDesc(t('settings.appearance.cardColor.desc'))
         .addColorPicker(picker => {
             if (plugin.settings.themeColors?.cardBg) picker.setValue(plugin.settings.themeColors.cardBg);
             picker.onChange((val) => {
@@ -192,7 +193,7 @@ export function renderAppearanceSettings(
         })
         .addExtraButton(btn => btn
             .setIcon('rotate-ccw')
-            .setTooltip('恢复卡片色为自动派生值')
+            .setTooltip(t('settings.appearance.cardColor.reset'))
             .onClick(async () => {
                 if (plugin.settings.themeColors) delete plugin.settings.themeColors.cardBg;
                 await apply();
@@ -201,8 +202,8 @@ export function renderAppearanceSettings(
 
     // ── 第三层：强调 ──
     new Setting(section)
-        .setName('强调色')
-        .setDesc('按钮、进度条、选中态的颜色。悬停色按基底明暗自动加深或提亮')
+        .setName(t('settings.appearance.accentColor.name'))
+        .setDesc(t('settings.appearance.accentColor.desc'))
         .addColorPicker(picker => {
             if (plugin.settings.themeColors?.accent) picker.setValue(plugin.settings.themeColors.accent);
             picker.onChange((val) => {
@@ -213,7 +214,7 @@ export function renderAppearanceSettings(
         })
         .addExtraButton(btn => btn
             .setIcon('rotate-ccw')
-            .setTooltip('恢复强调色为主题默认')
+            .setTooltip(t('settings.appearance.accentColor.reset'))
             .onClick(async () => {
                 if (plugin.settings.themeColors) delete plugin.settings.themeColors.accent;
                 await apply();
@@ -229,14 +230,28 @@ export function renderAppearanceSettings(
 
     new Setting(section)
         .addButton(btn => {
-            btn.setButtonText('恢复默认配色').onClick(async () => {
+            btn.setButtonText(t('settings.appearance.resetDefaults')).onClick(async () => {
                 plugin.settings.themeColors = {};
                 await apply();
                 rerender();
-                showSuccessNotice('已恢复默认配色');
+                showSuccessNotice(t('settings.appearance.resetDone'));
             });
             if (!compact) btn.setWarning();
         });
+}
+
+/**
+ * 主题模式的中文/英文显示名（浅色 / 深色）
+ *
+ * @param mode - 主题模式
+ * @returns 本地化后的模式名
+ * @example
+ * modeLabel('dark'); // 深色
+ */
+function modeLabel(mode: ThemeMode): string {
+    return mode === 'dark'
+        ? t('settings.appearance.themeMode.dark')
+        : t('settings.appearance.themeMode.light');
 }
 
 /**
@@ -258,7 +273,7 @@ async function applyGalleryTheme(
     plugin.settings.themeColors = themeColors;
     await plugin.saveSettings();
     plugin.injectThemeVariables();
-    showSuccessNotice(`已切换到「${theme.name} · ${mode === 'dark' ? '深色' : '浅色'}」`);
+    showSuccessNotice(t('settings.appearance.themeApplied', { theme: theme.name, mode: modeLabel(mode) }));
 }
 
 /**
@@ -276,9 +291,9 @@ function renderThemeGallery(
     const active = activeBuiltinTheme(plugin.settings.themeColors?.activePresetId);
     const activeId = active ? builtinPresetId(active.themeId, active.mode) : '';
 
-    section.createEl('h4', { text: '🎨 内置主题' });
+    section.createEl('h4', { text: t('settings.appearance.gallery.title') });
     section.createEl('p', {
-        text: '每套主题都定义了三个 CSS 层：基底（L1）、卡片（L2）、强调（L3），面板与文字由基底自动派生。点「浅色」或「深色」立即切换，切换后仍可在下面继续微调。',
+        text: t('settings.appearance.gallery.intro'),
         cls: 'setting-item-description',
     });
 
@@ -300,7 +315,10 @@ function renderThemeGallery(
         for (const mode of ['light', 'dark'] as const) {
             const variant = mode === 'dark' ? theme.dark : theme.light;
             const group = swatch.createDiv();
-            group.setAttribute('title', `${theme.name}（${mode === 'dark' ? '深色' : '浅色'}）：基底 / 卡片 / 强调`);
+            group.setAttribute('title', t('settings.appearance.gallery.swatchTitle', {
+                theme: theme.name,
+                mode: modeLabel(mode),
+            }));
             group.createDiv({ cls: 'nw-preset-chip' }).style.background = variant.base;
             group.createDiv({ cls: 'nw-preset-chip' }).style.background = variant.card;
             group.createDiv({ cls: 'nw-preset-chip' }).style.background = variant.accent;
@@ -315,7 +333,9 @@ function renderThemeGallery(
             const id = mode === 'dark' ? darkId : lightId;
             const btn = actions.createEl('button', {
                 cls: 'nw-preset-apply',
-                text: id === activeId ? `✓ ${mode === 'dark' ? '深色' : '浅色'}` : (mode === 'dark' ? '深色' : '浅色'),
+                text: id === activeId
+                    ? t('settings.appearance.gallery.active', { mode: modeLabel(mode) })
+                    : modeLabel(mode),
                 attr: { type: 'button' },
             });
             btn.addEventListener('click', () => {
@@ -341,14 +361,20 @@ function renderThemeGalleryCompact(
     const activeId = active ? builtinPresetId(active.themeId, active.mode) : '';
 
     new Setting(section)
-        .setName('内置主题')
-        .setDesc('三层配色预设，选一个立即生效')
+        .setName(t('settings.appearance.galleryCompact.name'))
+        .setDesc(t('settings.appearance.galleryCompact.desc'))
         .addDropdown(dropdown => {
-            dropdown.addOption('', '自定义（当前三层设置）');
+            dropdown.addOption('', t('settings.appearance.galleryCompact.custom'));
             for (const theme of BUILTIN_THEMES) {
                 if (!isGalleryThemeValid(theme)) continue;
-                dropdown.addOption(builtinPresetId(theme.id, 'light'), `${theme.name} · 浅色`);
-                dropdown.addOption(builtinPresetId(theme.id, 'dark'), `${theme.name} · 深色`);
+                dropdown.addOption(builtinPresetId(theme.id, 'light'), t('settings.appearance.galleryCompact.option', {
+                    theme: theme.name,
+                    mode: t('settings.appearance.themeMode.light'),
+                }));
+                dropdown.addOption(builtinPresetId(theme.id, 'dark'), t('settings.appearance.galleryCompact.option', {
+                    theme: theme.name,
+                    mode: t('settings.appearance.themeMode.dark'),
+                }));
             }
             dropdown.setValue(activeId);
             dropdown.onChange(async (value) => {
@@ -377,11 +403,11 @@ function renderPresetManager(
     const presets = plugin.settings.themePresets || [];
     const activeId = plugin.settings.themeColors?.activePresetId || '';
 
-    section.createEl('h4', { text: '💾 配色方案', cls: 'nw-appearance-presets-title' });
+    section.createEl('h4', { text: t('settings.appearance.presets.title'), cls: 'nw-appearance-presets-title' });
 
     if (presets.length === 0) {
         section.createEl('p', {
-            text: '还没有保存的方案。调好三层颜色后点「保存当前配色」，之后可一键切换。',
+            text: t('settings.appearance.presets.empty'),
             cls: 'setting-item-description',
         });
     }
@@ -401,14 +427,18 @@ function renderPresetManager(
         nameEl.createSpan({ text: preset.name });
         nameEl.createSpan({
             cls: 'nw-preset-meta',
-            text: preset.theme === 'light' ? '浅色' : preset.theme === 'dark' ? '深色' : '跟随系统',
+            text: preset.theme === 'light'
+                ? t('settings.appearance.themeMode.light')
+                : preset.theme === 'dark'
+                    ? t('settings.appearance.themeMode.dark')
+                    : t('settings.appearance.themeMode.auto'),
         });
 
         const actions = row.createDiv({ cls: 'nw-preset-actions' });
 
         const applyBtn = actions.createEl('button', {
             cls: 'nw-preset-apply',
-            text: preset.id === activeId ? '✓ 使用中' : '应用',
+            text: preset.id === activeId ? t('settings.appearance.presets.inUse') : t('settings.appearance.presets.apply'),
             attr: { type: 'button' },
         });
         applyBtn.addEventListener('click', async () => {
@@ -419,14 +449,14 @@ function renderPresetManager(
             plugin.settings.themeColors = themeColors;
             await plugin.saveSettings();
             plugin.injectThemeVariables();
-            showSuccessNotice(`已切换到「${preset.name}」`);
+            showSuccessNotice(t('settings.appearance.presets.applied', { name: preset.name }));
             rerender();
         });
 
         const delBtn = actions.createEl('button', {
             cls: 'nw-preset-delete',
-            text: '删除',
-            attr: { type: 'button', title: '删除该方案' },
+            text: t('settings.appearance.presets.delete'),
+            attr: { type: 'button', title: t('settings.appearance.presets.deleteTitle') },
         });
         delBtn.addEventListener('click', async () => {
             plugin.settings.themePresets = (plugin.settings.themePresets || []).filter(item => item.id !== preset.id);
@@ -434,7 +464,7 @@ function renderPresetManager(
                 delete plugin.settings.themeColors.activePresetId;
             }
             await plugin.saveSettings();
-            showSuccessNotice(`已删除「${preset.name}」`);
+            showSuccessNotice(t('settings.appearance.presets.deleted', { name: preset.name }));
             rerender();
         });
     }
@@ -443,7 +473,7 @@ function renderPresetManager(
 
     const saveBtn = actionsRow.createEl('button', {
         cls: 'nw-btn nw-btn-primary',
-        text: '💾 保存当前配色',
+        text: t('settings.appearance.presets.save'),
         attr: { type: 'button' },
     });
     saveBtn.addEventListener('click', () => {
@@ -451,23 +481,23 @@ function renderPresetManager(
             onOpen(): void {
                 this.modalEl.addClass('nw-scope');
                 const { contentEl } = this;
-                contentEl.createEl('h3', { text: '保存配色方案' });
+                contentEl.createEl('h3', { text: t('settings.appearance.presets.saveTitle') });
 
                 let nameValue = sanitizePresetName('', (plugin.settings.themePresets || []).length + 1);
                 new Setting(contentEl)
-                    .setName('方案名称')
-                    .setDesc('同名方案会被覆盖')
+                    .setName(t('settings.appearance.presets.nameLabel'))
+                    .setDesc(t('settings.appearance.presets.nameDesc'))
                     .addText(text => text
                         .setValue(nameValue)
-                        .setPlaceholder('例如：暖夜')
+                        .setPlaceholder(t('settings.appearance.presets.namePlaceholder'))
                         .onChange(value => { nameValue = value; }));
 
                 const footer = contentEl.createDiv({ cls: 'nw-api-modal-footer' });
-                footer.createEl('button', { text: '取消', attr: { type: 'button' } })
+                footer.createEl('button', { text: t('common.cancel'), attr: { type: 'button' } })
                     .onclick = () => this.close();
                 const confirm = footer.createEl('button', {
                     cls: 'nw-btn nw-btn-primary',
-                    text: '保存',
+                    text: t('settings.appearance.presets.saveConfirm'),
                     attr: { type: 'button' },
                 });
                 confirm.onclick = async () => {
@@ -481,7 +511,7 @@ function renderPresetManager(
                     if (!plugin.settings.themeColors) plugin.settings.themeColors = {};
                     plugin.settings.themeColors.activePresetId = next.id;
                     await plugin.saveSettings();
-                    showSuccessNotice(`已保存方案「${next.name}」`);
+                    showSuccessNotice(t('settings.appearance.presets.saved', { name: next.name }));
                     this.close();
                     rerender();
                 };
@@ -493,22 +523,22 @@ function renderPresetManager(
 
     const exportBtn = actionsRow.createEl('button', {
         cls: 'nw-btn nw-btn-secondary',
-        text: '📤 导出',
-        attr: { type: 'button', title: '导出全部方案为 JSON' },
+        text: t('settings.appearance.presets.export'),
+        attr: { type: 'button', title: t('settings.appearance.presets.exportTitle') },
     });
     exportBtn.addEventListener('click', async () => {
         const data: ThemePreset[] = plugin.settings.themePresets || [];
         if (data.length === 0) {
-            new Notice('还没有可导出的方案');
+            new Notice(t('settings.appearance.presets.exportEmpty'));
             return;
         }
         const modal = new (class extends Modal {
             onOpen(): void {
                 this.modalEl.addClass('nw-scope');
                 const { contentEl } = this;
-                contentEl.createEl('h3', { text: '导出配色方案' });
+                contentEl.createEl('h3', { text: t('settings.appearance.presets.exportDialogTitle') });
                 contentEl.createEl('p', {
-                    text: '复制下面的 JSON 保存到任意位置，可在其他库导入。',
+                    text: t('settings.appearance.presets.exportHint'),
                     cls: 'setting-item-description',
                 });
                 const area = contentEl.createEl('textarea', {
@@ -525,43 +555,43 @@ function renderPresetManager(
 
     const importBtn = actionsRow.createEl('button', {
         cls: 'nw-btn nw-btn-secondary',
-        text: '📥 导入',
-        attr: { type: 'button', title: '粘贴 JSON 导入方案' },
+        text: t('settings.appearance.presets.import'),
+        attr: { type: 'button', title: t('settings.appearance.presets.importTitle') },
     });
     importBtn.addEventListener('click', () => {
         const modal = new (class extends Modal {
             onOpen(): void {
                 this.modalEl.addClass('nw-scope');
                 const { contentEl } = this;
-                contentEl.createEl('h3', { text: '导入配色方案' });
+                contentEl.createEl('h3', { text: t('settings.appearance.presets.importDialogTitle') });
                 contentEl.createEl('p', {
-                    text: '粘贴导出的 JSON（单套或数组均可）。非法颜色值会被丢弃。',
+                    text: t('settings.appearance.presets.importHint'),
                     cls: 'setting-item-description',
                 });
                 const area = contentEl.createEl('textarea', {
                     cls: 'nw-preset-io',
-                    attr: { rows: '12', placeholder: '[{"name":"暖夜","base":"#1c1a1e",...}]', spellcheck: 'false' },
+                    attr: { rows: '12', placeholder: t('settings.appearance.presets.importPlaceholder'), spellcheck: 'false' },
                 });
 
                 const footer = contentEl.createDiv({ cls: 'nw-api-modal-footer' });
-                footer.createEl('button', { text: '取消', attr: { type: 'button' } })
+                footer.createEl('button', { text: t('common.cancel'), attr: { type: 'button' } })
                     .onclick = () => this.close();
                 const confirm = footer.createEl('button', {
                     cls: 'nw-btn nw-btn-primary',
-                    text: '导入',
+                    text: t('settings.appearance.presets.importConfirm'),
                     attr: { type: 'button' },
                 });
                 confirm.onclick = async () => {
                     const imported = parsePresetImport(area.value, plugin.settings.themePresets || []);
                     if (imported.length === 0) {
-                        showErrorNotice('没有解析到有效方案，请检查 JSON 格式与颜色值', { title: '导入失败' });
+                        showErrorNotice(t('settings.appearance.presets.importFailed'), { title: t('settings.appearance.presets.importFailedTitle') });
                         return;
                     }
                     let merged = plugin.settings.themePresets || [];
                     for (const preset of imported) merged = upsertPreset(merged, preset);
                     plugin.settings.themePresets = merged;
                     await plugin.saveSettings();
-                    showSuccessNotice(`已导入 ${imported.length} 套方案`);
+                    showSuccessNotice(t('settings.appearance.presets.imported', { count: imported.length }));
                     this.close();
                     rerender();
                 };
