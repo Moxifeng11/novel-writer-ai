@@ -11,7 +11,7 @@
 | `shared/` | 258 | 51769 | 2179 | 1700 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 115166 | 1180 | 930 | 79% |
+| `ui/` | 306 | 115169 | 1180 | 930 | 79% |
 
 ## 文件清单
 
@@ -906,7 +906,7 @@
 | `ui/outline-expand-modal.ts` | 990 | 2 | 1 |
 | `ui/panel-resizer.ts` | 260 | 4 | 3 |
 | `ui/password-modal.ts` | 152 | 1 | 1 |
-| `ui/pet-image-settings.ts` | 465 | 3 | 3 |
+| `ui/pet-image-settings.ts` | 466 | 3 | 3 |
 | `ui/plan-book-modal.ts` | 560 | 1 | 1 |
 | `ui/planning/canvas-link.ts` | 108 | 3 | 2 |
 | `ui/planning/canvas-tools.ts` | 99 | 8 | 5 |
@@ -1016,9 +1016,9 @@
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |
 | `ui/workspace-manager.ts` | 144 | 2 | 2 |
 | `ui/write-chapter-modal.ts` | 851 | 1 | 1 |
-| `ui/writing-pet.ts` | 661 | 10 | 8 |
+| `ui/writing-pet.ts` | 662 | 10 | 8 |
 | `ui/writing-stats-modal.ts` | 245 | 1 | 1 |
-| `ui/writing-stats-settings.ts` | 73 | 1 | 1 |
+| `ui/writing-stats-settings.ts` | 74 | 1 | 1 |
 | `ui/writing-style-modal.ts` | 589 | 1 | 1 |
 | `ui/writing-style-paths.ts` | 89 | 6 | 6 |
 | `ui/writing-style-presets.ts` | 248 | 8 | 7 |

@@ -142,7 +142,6 @@
     "ui/outline-expand-modal.ts": 86,
     "ui/panel-resizer.ts": 1,
     "ui/password-modal.ts": 12,
-    "ui/pet-image-settings.ts": 47,
     "ui/plan-book-modal.ts": 113,
     "ui/planning/canvas-link.ts": 6,
     "ui/planning/outline-bridge.ts": 7,
@@ -223,14 +222,12 @@
     "ui/welcome-modal.ts": 27,
     "ui/wizard-checker.ts": 95,
     "ui/write-chapter-modal.ts": 167,
-    "ui/writing-pet.ts": 28,
     "ui/writing-stats-modal.ts": 33,
-    "ui/writing-stats-settings.ts": 11,
     "ui/writing-style-modal.ts": 121,
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 8655,
+  "total": 8569,
   "updatedAt": "2026-11-18",
   "note": ""
 }

@@ -6,6 +6,7 @@
  */
 
 import { FuzzySuggestModal, Notice, Setting, TFile } from 'obsidian';
+import { t } from '@/i18n';
 import type NovelWriterPlugin from '@/main';
 import {
     describePetImageConfig,
@@ -28,7 +29,7 @@ class PetImagePickerModal extends FuzzySuggestModal<TFile> {
     constructor(app: NovelWriterPlugin['app'], onPick: (file: TFile) => void) {
         super(app);
         this.onPick = onPick;
-        this.setPlaceholder('选择一张桌宠图片（PNG / JPG / WebP）');
+        this.setPlaceholder(t('fullwriter.pet.imagePlaceholder'));
     }
 
     /**
@@ -74,21 +75,21 @@ export function renderPetImageSettings(
 ): void {
     const current = normalizePetImageConfig((plugin.settings as { petImage?: unknown }).petImage);
 
-    container.createEl('h4', { text: '🎨 桌宠形象' });
+    container.createEl('h4', { text: t('fullwriter.pet.imageTitle') });
     container.createEl('p', {
-        text: '默认使用插件内置的代码绘制形象（无第三方素材）。可以选电脑上任意位置的图片（自动压缩后存在插件数据里，不进仓库），也可以选 vault 里的图片。'
-            + '雪碧图约定：**每格 = 一个状态**，按从左到右、从上到下依次对应 '
-            + `${PET_IMAGE_MOOD_ORDER.join(' / ')}（格子不够时后面的状态共用最后一格）。`
-            + '桌宠会根据**正在运行的功能**（写作中 / AI 思考 / 刚完成 / 出错 / 待机）切到对应格子，不自动循环播放。'
-            + '选图后会自动识别网格，识别不准可手动改或点「重新识别」。',
+        text: t('fullwriter.pet.imageDesc1')
+            + t('fullwriter.pet.imageDesc2')
+            + `${PET_IMAGE_MOOD_ORDER.join(' / ')}${t('fullwriter.pet.imageDesc3')}`
+            + t('fullwriter.pet.imageDesc4')
+            + t('fullwriter.pet.imageDesc5'),
         cls: 'setting-item-description',
     });
 
     new Setting(container)
-        .setName('图片路径')
-        .setDesc(current ? `当前：${describePetImageConfig(current)}` : '未设置时使用内置绘制形象')
+        .setName(t('fullwriter.pet.imagePathName'))
+        .setDesc(current ? t('fullwriter.pet.imagePathCurrent', { config: describePetImageConfig(current) }) : t('fullwriter.pet.imagePathUnset'))
         .addText(text => {
-            text.setPlaceholder('例如 素材/桌宠.png');
+            text.setPlaceholder(t('fullwriter.pet.imagePathPlaceholder'));
             text.setValue(current?.source === 'vault' ? (current.path ?? '') : '');
             text.inputEl.addEventListener('change', () => {
                 const path = text.inputEl.value.trim();
@@ -97,14 +98,14 @@ export function renderPetImageSettings(
                     return;
                 }
                 if (!isSupportedImagePath(path)) {
-                    new Notice('❌ 仅支持 PNG / JPG / WebP / GIF 图片');
+                    new Notice(t('fullwriter.pet.imageFormatUnsupported'));
                     return;
                 }
                 void applyVaultImage(plugin, path, current, rerender);
             });
         })
         .addButton(button => button
-            .setButtonText('选择电脑图片')
+            .setButtonText(t('fullwriter.pet.pickLocalBtn'))
             .setCta()
             .onClick(() => {
                 pickLocalImage({}, async (dataUrl, image) => {
@@ -116,48 +117,48 @@ export function renderPetImageSettings(
                         rows: grid.rows,
                     });
                     if (!config) {
-                        new Notice('❌ 无法读取该图片，请换一张试试');
+                        new Notice(t('fullwriter.pet.imageUnreadable'));
                         return;
                     }
-                    new Notice(`✅ 已识别网格 ${grid.cols} 列 × ${grid.rows} 行，共 ${grid.cols * grid.rows} 格（每格一个状态）`, 5000);
+                    new Notice(t('fullwriter.pet.gridDetected', { cols: grid.cols, rows: grid.rows, total: grid.cols * grid.rows }), 5000);
                     await applyPetImage(plugin, config, rerender);
                 });
             }))
         .addButton(button => button
-            .setButtonText('选择仓库图片')
+            .setButtonText(t('fullwriter.pet.pickVaultBtn'))
             .onClick(() => {
                 new PetImagePickerModal(plugin.app, (file) => {
                     void applyVaultImage(plugin, file.path, current, rerender);
                 }).open();
             }))
         .addButton(button => button
-            .setButtonText('清除')
+            .setButtonText(t('fullwriter.pet.clearBtn'))
             .setWarning()
             .onClick(() => void applyPetImage(plugin, null, rerender)));
 
     new Setting(container)
-        .setName('网格自动识别')
-        .setDesc('按图片尺寸推断列/行；识别不准时可手动改下面的数字')
+        .setName(t('fullwriter.pet.autoGridName'))
+        .setDesc(t('fullwriter.pet.autoGridDesc'))
         .addButton(button => button
-            .setButtonText('重新识别')
+            .setButtonText(t('fullwriter.pet.redetectBtn'))
             .setDisabled(!current)
             .onClick(async () => {
                 if (!current) return;
                 const size = await readPetImageSize(plugin, current);
                 if (!size) {
-                    new Notice('❌ 无法读取图片尺寸，请重新选择图片');
+                    new Notice(t('fullwriter.pet.sizeUnreadable'));
                     return;
                 }
                 const grid = detectPetGrid(size.width, size.height);
                 const next = normalizePetImageConfig({ ...current, cols: grid.cols, rows: grid.rows });
                 if (!next) return;
-                new Notice(`✅ 已识别网格 ${grid.cols} 列 × ${grid.rows} 行，共 ${grid.cols * grid.rows} 格`, 5000);
+                new Notice(t('fullwriter.pet.gridDetectedShort', { cols: grid.cols, rows: grid.rows, total: grid.cols * grid.rows }), 5000);
                 await applyPetImage(plugin, next, rerender);
             }));
 
     new Setting(container)
-        .setName('网格列数')
-        .setDesc('横向格子数（1–8）：与行数相乘 = 总状态格数（6 档状态，多出的格子不会用到）')
+        .setName(t('fullwriter.pet.colsName'))
+        .setDesc(t('fullwriter.pet.colsDesc'))
         .addText(text => {
             text.setValue(String(current?.cols ?? PET_IMAGE_DEFAULT_COLS));
             text.inputEl.addEventListener('change', () => {
@@ -169,8 +170,8 @@ export function renderPetImageSettings(
         });
 
     new Setting(container)
-        .setName('网格行数')
-        .setDesc('纵向格子数（1–8）：每格一个状态；格子不足 6 个时后面的状态共用最后一格')
+        .setName(t('fullwriter.pet.rowsName'))
+        .setDesc(t('fullwriter.pet.rowsDesc'))
         .addText(text => {
             text.setValue(String(current?.rows ?? PET_IMAGE_DEFAULT_ROWS));
             text.inputEl.addEventListener('change', () => {
@@ -188,7 +189,7 @@ export function renderPetImageSettings(
             : plugin.app.vault.adapter.getResourcePath(current.path ?? '');
         preview.style.backgroundImage = `url(${resource})`;
         preview.style.backgroundSize = `${current.cols * 100}% ${current.rows * 100}%`;
-        preview.createSpan({ cls: 'nw-pet-image-preview-hint', text: '预览（第一格；桌宠上按运行状态切换格子）' });
+        preview.createSpan({ cls: 'nw-pet-image-preview-hint', text: t('fullwriter.pet.previewHint') });
     }
 }
 
@@ -225,7 +226,7 @@ function loadImageSize(src: string): Promise<{ width: number; height: number }> 
     return new Promise((resolve, reject) => {
         const image = new Image();
         image.onload = () => resolve({ width: image.naturalWidth || image.width, height: image.naturalHeight || image.height });
-        image.onerror = () => reject(new Error('图片加载失败'));
+        image.onerror = () => reject(new Error(t('fullwriter.pet.imageLoadFailed')));
         image.src = src;
     });
 }
@@ -254,10 +255,10 @@ async function applyVaultImage(
     }
     const config = normalizePetImageConfig({ source: 'vault', path, cols: grid.cols, rows: grid.rows });
     if (!config) {
-        new Notice('❌ 无法识别该图片，请换一张试试');
+        new Notice(t('fullwriter.pet.imageUnrecognizable'));
         return;
     }
-    new Notice(`✅ 已识别网格 ${grid.cols} 列 × ${grid.rows} 行（列=动画帧，行=状态）`, 5000);
+    new Notice(t('fullwriter.pet.gridDetectedFrames', { cols: grid.cols, rows: grid.rows }), 5000);
     await applyPetImage(plugin, config, rerender);
 }
 
@@ -306,7 +307,7 @@ export function pickLocalImage(
     const doc = deps.doc ?? active ?? (typeof document !== 'undefined' ? document : null);
     const notify = deps.onError ?? ((message: string) => new Notice(message));
     if (!doc) {
-        notify('❌ 当前环境无法打开文件选择器');
+        notify(t('fullwriter.pet.noFilePicker'));
         return;
     }
     const input = doc.createElement('input');
@@ -336,12 +337,12 @@ export function pickLocalImage(
                 const raw = deps.readAsDataUrl
                     ? await deps.readAsDataUrl(file)
                     : await readFileAsDataUrl(file);
-                if (!raw) throw new Error('读取图片失败');
+                if (!raw) throw new Error(t('fullwriter.pet.readImageFailed'));
                 const image = deps.loadImage ? await deps.loadImage(raw) : await loadImageElement(raw, doc);
                 const dataUrl = downscaleToDataUrl(image, doc);
                 await onPicked(dataUrl, image);
             } catch (error) {
-                notify('❌ 读取或保存图片失败：' + (error instanceof Error ? error.message : String(error)));
+                notify(t('fullwriter.pet.readSaveFailed', { msg: error instanceof Error ? error.message : String(error) }));
             } finally {
                 cleanup();
             }
@@ -365,7 +366,7 @@ export function pickLocalImage(
 
     const parent = doc.body ?? doc.documentElement;
     if (!parent) {
-        notify('❌ 当前环境无法打开文件选择器');
+        notify(t('fullwriter.pet.noFilePicker'));
         return;
     }
     parent.appendChild(input);
@@ -383,7 +384,7 @@ export function pickLocalImage(
             input.click();
         } catch (error) {
             cleanup();
-            notify('❌ 无法打开文件选择器：' + (error instanceof Error ? error.message : String(error)));
+            notify(t('fullwriter.pet.pickerOpenFailed', { msg: error instanceof Error ? error.message : String(error) }));
         }
     }
 }
@@ -398,7 +399,7 @@ function readFileAsDataUrl(file: File): Promise<string> {
     return new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(String(reader.result ?? ''));
-        reader.onerror = () => reject(new Error('读取文件失败'));
+        reader.onerror = () => reject(new Error(t('fullwriter.pet.readFileFailed')));
         reader.readAsDataURL(file);
     });
 }
@@ -414,7 +415,7 @@ function loadImageElement(src: string, doc?: Document): Promise<HTMLImageElement
         const ImageCtor = (doc?.defaultView as unknown as { Image?: new () => HTMLImageElement } | null)?.Image;
         const image = ImageCtor ? new ImageCtor() : new Image();
         image.onload = () => resolve(image);
-        image.onerror = () => reject(new Error('无法解析该图片'));
+        image.onerror = () => reject(new Error(t('fullwriter.pet.parseImageFailed')));
         image.src = src;
     });
 }
@@ -435,7 +436,7 @@ function downscaleToDataUrl(image: HTMLImageElement, doc?: Document): string {
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext('2d');
-    if (!context) throw new Error('无法创建画布');
+    if (!context) throw new Error(t('fullwriter.pet.canvasFailed'));
     context.drawImage(image, 0, 0, width, height);
     return canvas.toDataURL('image/png');
 }
@@ -457,7 +458,7 @@ async function applyPetImage(
     try {
         await plugin.applyPetImageConfig(config);
     } catch (error) {
-        new Notice('❌ 保存桌宠形象失败：' + (error instanceof Error ? error.message : String(error)), 8000);
+        new Notice(t('fullwriter.pet.saveImageFailed', { msg: error instanceof Error ? error.message : String(error) }), 8000);
         return;
     }
     rerender();

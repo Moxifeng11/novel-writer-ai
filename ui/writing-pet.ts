@@ -12,6 +12,7 @@
  */
 
 import { Notice } from 'obsidian';
+import { t } from '@/i18n';
 import type NovelWriterPlugin from '@/main';
 import { formatWords, type StatsSummary } from '@/shared/writing-stats';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
@@ -50,11 +51,11 @@ export interface WritingPetDeps {
  * 每层是独立 <g class="nw-pet-layer">，外层定位、内层动画，互不覆盖 transform。
  */
 export const PET_LAYERS = [
-    { id: 'shadow', label: '底层投影', required: true, defaultVisible: true },
-    { id: 'aura', label: '氛围光', required: false, defaultVisible: false },
-    { id: 'body', label: '主体形态', required: true, defaultVisible: true },
-    { id: 'detail', label: '细节装饰', required: true, defaultVisible: true },
-    { id: 'fx', label: '状态特效', required: false, defaultVisible: true },
+    { id: 'shadow', label: t('fullwriter.pet.layerShadow'), required: true, defaultVisible: true },
+    { id: 'aura', label: t('fullwriter.pet.layerAura'), required: false, defaultVisible: false },
+    { id: 'body', label: t('fullwriter.pet.layerBody'), required: true, defaultVisible: true },
+    { id: 'detail', label: t('fullwriter.pet.layerDetail'), required: true, defaultVisible: true },
+    { id: 'fx', label: t('fullwriter.pet.layerFx'), required: false, defaultVisible: true },
 ] as const;
 
 /** 图层 id */
@@ -345,7 +346,7 @@ export class WritingPet {
 
         const petBody = root.createDiv({
             cls: 'nw-pet-body-wrap',
-            attr: { role: 'button', tabindex: '0', 'aria-label': '写作宠物，单击查看本周/本月，双击打开统计' },
+            attr: { role: 'button', tabindex: '0', 'aria-label': t('fullwriter.pet.ariaMain') },
         });
         // 浮动动画放在内层 HTML 容器：外层是点击/拖拽目标，必须保持几何稳定。
         const floatWrap = petBody.createDiv({ cls: 'nw-pet-float' });
@@ -394,7 +395,7 @@ export class WritingPet {
         const close = root.createEl('button', {
             cls: 'nw-pet-close',
             text: '×',
-            attr: { type: 'button', 'aria-label': '隐藏写作宠物' },
+            attr: { type: 'button', 'aria-label': t('fullwriter.pet.ariaHide') },
         });
         close.addEventListener('click', (event) => {
             event.stopPropagation();
@@ -435,13 +436,13 @@ export class WritingPet {
         const ratio = target > 0 ? Math.min(1, today / target) : 0;
 
         if (this.bubbleMain) {
-            this.bubbleMain.setText(today > 0 ? `今日 ${formatWords(today)} 字` : '今日还没动笔');
+            this.bubbleMain.setText(today > 0 ? t('fullwriter.pet.bubbleToday', { words: formatWords(today) }) : t('fullwriter.pet.bubbleNoWrite'));
         }
         if (this.bubbleSub) {
             if (target > 0) {
-                this.bubbleSub.setText(`${Math.round(ratio * 100)}% / ${formatWords(target)} 字`);
+                this.bubbleSub.setText(t('fullwriter.pet.bubbleProgress', { pct: Math.round(ratio * 100), target: formatWords(target) }));
             } else {
-                this.bubbleSub.setText('点我看看进度');
+                this.bubbleSub.setText(t('fullwriter.pet.bubbleTip'));
             }
         }
 
@@ -518,11 +519,11 @@ export class WritingPet {
     private openRoleMenu(anchor: HTMLElement): void {
         this.root?.querySelector('.nw-pet-role-menu')?.remove();
         const menu = anchor.createDiv({ cls: 'nw-pet-role-menu' });
-        menu.createDiv({ cls: 'nw-pet-role-menu-title', text: '吸附边' });
+        menu.createDiv({ cls: 'nw-pet-role-menu-title', text: t('fullwriter.pet.snapEdge') });
         const snapRow = menu.createDiv({ cls: 'nw-pet-role-snap' });
         const currentSnap = (this.deps.plugin.settings as { petSnapEdges?: { left: boolean; right: boolean; bottom: boolean; threshold?: number } }).petSnapEdges
             ?? { left: true, right: true, bottom: true };
-        for (const [edge, label] of [['left', '左'], ['right', '右'], ['bottom', '底']] as const) {
+        for (const [edge, label] of [['left', t('fullwriter.pet.edgeLeft')], ['right', t('fullwriter.pet.edgeRight')], ['bottom', t('fullwriter.pet.edgeBottom')]] as const) {
             const chip = snapRow.createEl('button', {
                 cls: `nw-pet-snap-chip${currentSnap[edge] ? ' nw-is-active' : ''}`,
                 text: label,
@@ -537,7 +538,7 @@ export class WritingPet {
             });
         }
 
-        menu.createDiv({ cls: 'nw-pet-role-menu-title', text: '桌宠形象' });
+        menu.createDiv({ cls: 'nw-pet-role-menu-title', text: t('fullwriter.pet.imageTitle') });
         // 用 onNodeDoc 绑定到宠物所在窗口，popout 窗口也能正确关闭
         let disposeOutside: (() => void) | null = null;
         const closeMenu = (): void => {
@@ -546,7 +547,7 @@ export class WritingPet {
             disposeOutside = null;
         };
         const current = this.imageConfig ? 'custom' : 'builtin';
-        for (const [value, label] of [['builtin', '内置绘制'], ['custom', '自定义图片']] as const) {
+        for (const [value, label] of [['builtin', t('fullwriter.pet.sourceBuiltin')], ['custom', t('fullwriter.pet.sourceCustom')]] as const) {
             const item = menu.createEl('button', {
                 cls: `nw-pet-role-item${value === current ? ' nw-is-active' : ''}`,
                 text: label,
@@ -557,7 +558,7 @@ export class WritingPet {
                 if (value === 'builtin') {
                     void this.setImage(null);
                 } else if (!this.imageConfig) {
-                    new Notice('请先在「设置 → 写作统计与桌面宠物」里选择桌宠图片');
+                    new Notice(t('fullwriter.pet.needCustomImage'));
                 }
                 closeMenu();
             });
@@ -579,11 +580,11 @@ export class WritingPet {
         if (!this.card) return;
         this.card.empty();
         const rows: Array<{ label: string; value: string }> = [
-            { label: '今日', value: `${formatWords(summary?.today ?? 0)}${target > 0 ? ` / ${formatWords(target)}` : ''}` },
-            { label: '本周', value: formatWords(summary?.week ?? 0) },
-            { label: '本月', value: formatWords(summary?.month ?? 0) },
-            { label: '累计', value: formatWords(summary?.total ?? 0) },
-            { label: '连续', value: `${summary?.streak ?? 0} 天` },
+            { label: t('fullwriter.pet.popToday'), value: `${formatWords(summary?.today ?? 0)}${target > 0 ? ` / ${formatWords(target)}` : ''}` },
+            { label: t('fullwriter.pet.popWeek'), value: formatWords(summary?.week ?? 0) },
+            { label: t('fullwriter.pet.popMonth'), value: formatWords(summary?.month ?? 0) },
+            { label: t('fullwriter.pet.popTotal'), value: formatWords(summary?.total ?? 0) },
+            { label: t('fullwriter.pet.popStreak'), value: t('fullwriter.pet.popStreakValue', { count: summary?.streak ?? 0 }) },
         ];
         for (const row of rows) {
             const line = this.card.createDiv({ cls: 'nw-pet-card-row' });
@@ -608,8 +609,8 @@ export class WritingPet {
                 handler();
             });
         };
-        addAction('完整统计', () => this.deps.openStats());
-        if (this.deps.openUsage) addAction('用量与成本', () => this.deps.openUsage?.());
+        addAction(t('fullwriter.pet.actionFullStats'), () => this.deps.openStats());
+        if (this.deps.openUsage) addAction(t('fullwriter.pet.actionUsage'), () => this.deps.openUsage?.());
     }
 
     private onPointerDown(event: PointerEvent): void {

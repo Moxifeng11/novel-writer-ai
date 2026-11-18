@@ -6,6 +6,7 @@
  */
 
 import { Setting } from 'obsidian';
+import { t } from '@/i18n';
 import type NovelWriterPlugin from '@/main';
 import { renderPetImageSettings } from '@/ui/pet-image-settings';
 
@@ -20,15 +21,15 @@ export function renderWritingStatsAndPetSettings(
     plugin: NovelWriterPlugin,
     rerender: () => void,
 ): void {
-    container.createEl('h3', { text: '📊 写作统计与桌面宠物' });
+    container.createEl('h3', { text: t('fullwriter.pet.statsTitle') });
     container.createEl('p', {
-        text: '字数按正文净增长统计：每章保存后只把「新增的字」记到当天，改写/删章不扣减历史。数据存在插件目录（不写进 vault）。',
+        text: t('fullwriter.pet.statsDesc'),
         cls: 'setting-item-description',
     });
 
     new Setting(container)
-        .setName('桌面宠物')
-        .setDesc('浮窗常驻显示今日字数；可拖动换位置，单击展开本周/本月，双击打开统计。移动端不显示。')
+        .setName(t('fullwriter.pet.petName'))
+        .setDesc(t('fullwriter.pet.petDesc'))
         .addToggle(toggle => toggle
             .setValue(plugin.settings.petEnabled !== false)
             .onChange(async (value) => {
@@ -40,8 +41,8 @@ export function renderWritingStatsAndPetSettings(
     renderPetImageSettings(container, plugin, rerender);
 
     new Setting(container)
-        .setName('每日目标字数')
-        .setDesc('宠物与统计页的进度目标；填 0 表示不设目标')
+        .setName(t('fullwriter.pet.dailyGoalName'))
+        .setDesc(t('fullwriter.pet.dailyGoalDesc'))
         .addText(text => {
             text.setValue(String(plugin.settings.dailyWordTarget ?? 3000));
             text.inputEl.addEventListener('change', () => {
@@ -53,8 +54,8 @@ export function renderWritingStatsAndPetSettings(
         });
 
     new Setting(container)
-        .setName('状态栏显示今日字数')
-        .setDesc('关闭后状态栏不再显示「今日 X 字」；桌面宠物不受影响')
+        .setName(t('fullwriter.pet.statusBarName'))
+        .setDesc(t('fullwriter.pet.statusBarDesc'))
         .addToggle(toggle => toggle
             .setValue(plugin.settings.showWordCountInStatusBar !== false)
             .onChange(async (value) => {
@@ -64,9 +65,9 @@ export function renderWritingStatsAndPetSettings(
             }));
 
     new Setting(container)
-        .setName('统计明细')
-        .setDesc('按日 / 按周 / 按月查看产出、连续写作天数与分项目统计')
+        .setName(t('fullwriter.pet.detailName'))
+        .setDesc(t('fullwriter.pet.detailDesc'))
         .addButton(button => button
-            .setButtonText('📊 打开写作统计')
+            .setButtonText(t('fullwriter.pet.openStatsBtn'))
             .onClick(() => plugin.openWritingStats()));
 }
