@@ -9,6 +9,7 @@
  */
 
 import { formatDetailNumber, formatDetailPercent } from '@/ui/knowledge-detail-format';
+import { t } from '@/i18n';
 
 /** 指纹统计结构（与 StyleFingerprint.stats 兼容） */
 export interface FingerprintStatsLike {
@@ -42,10 +43,10 @@ export const DEFAULT_INJECTION_BUDGET = 2000;
  */
 export function buildStatItems(stats: FingerprintStatsLike | undefined): StatItem[] {
     return [
-        { label: '平均句长', value: formatDetailNumber(stats?.avgSentenceLength, 1, ' 字') },
-        { label: '平均段长', value: formatDetailNumber(stats?.avgParagraphLength, 0, ' 字') },
-        { label: '对话占比', value: formatDetailPercent(stats?.dialogueRatio, 1) },
-        { label: '描写占比', value: formatDetailPercent(stats?.descriptionRatio, 1) },
+        { label: t('fingerprint.view.statAvgSentenceLen'), value: formatDetailNumber(stats?.avgSentenceLength, 1, t('fingerprint.metric.unit.char')) },
+        { label: t('fingerprint.view.statAvgParaLen'), value: formatDetailNumber(stats?.avgParagraphLength, 0, t('fingerprint.metric.unit.char')) },
+        { label: t('fingerprint.view.statDialogueRatio'), value: formatDetailPercent(stats?.dialogueRatio, 1) },
+        { label: t('fingerprint.view.statDescriptionRatio'), value: formatDetailPercent(stats?.descriptionRatio, 1) },
     ];
 }
 

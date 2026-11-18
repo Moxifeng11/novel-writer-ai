@@ -13,7 +13,7 @@ import { LocalVectorStore } from '@/engine/local-vector-store';
 import { ENGINE_NAMES } from '@/engine/engine-registry';
 import { AIEngine } from '@/engine/ai-engine';
 import { FingerprintDetailModal } from '@/ui/fingerprint-detail-modal';
-import { isSourceOnlyFingerprintScope } from '@/ui/fingerprint-utils';
+import { isSourceOnlyFingerprintScope, dimensionNameV2 } from '@/ui/fingerprint-utils';
 import { FingerprintIntensityModal } from '@/ui/fingerprint-intensity-modal';
 import { FingerprintBlendModal } from '@/ui/fingerprint-blend-modal';
 import { KnowledgeToFingerprintConverter } from '@/engine/knowledge-to-fingerprint-converter';
@@ -24,6 +24,8 @@ import { createLogger } from '@/shared/logger';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
 import { formatDetailCount, formatDetailNumber, formatDetailPercent } from '@/ui/knowledge-detail-format';
 import * as scopeLogic from './fingerprint-scope-logic';
+import { scopeLabel } from './fingerprint-scope-logic';
+import { t } from '@/i18n';
 import {
     buildFeatureRows,
     buildStatItems,
@@ -124,7 +126,7 @@ export class WritingFingerprintView extends ItemView {
      * getDisplayText 方法。
      */
     getDisplayText() {
-        return '🔍 写作指纹库';
+        return t('fingerprint.view.title');
     }
 
     /**
@@ -325,11 +327,11 @@ export class WritingFingerprintView extends ItemView {
 
         // 界面流转：直达工作台 / 协同写作 / 知识库
         const navRow = this.leftSidebar.createDiv({ cls: 'nw-fp-nav-row' });
-        const backBtn = navRow.createEl('button', { text: '← 工作台', cls: 'nw-fp-nav-btn', attr: { title: '返回完整写作工作台' } });
+        const backBtn = navRow.createEl('button', { text: t('fingerprint.view.navWorkbench'), cls: 'nw-fp-nav-btn', attr: { title: t('fingerprint.view.navWorkbenchTitle') } });
         backBtn.addEventListener('click', () => void this.plugin.openFullWriterView());
-        const coBtn = navRow.createEl('button', { text: '✍️ 协同', cls: 'nw-fp-nav-btn', attr: { title: '打开句级协同写作工作台' } });
+        const coBtn = navRow.createEl('button', { text: t('fingerprint.view.navCoWrite'), cls: 'nw-fp-nav-btn', attr: { title: t('fingerprint.view.navCoWriteTitle') } });
         coBtn.addEventListener('click', () => void this.plugin.openCoWritingFromActiveContext());
-        const kbBtn = navRow.createEl('button', { text: '📚 知识库管理', cls: 'nw-fp-nav-btn', attr: { title: '打开知识库管理视图' } });
+        const kbBtn = navRow.createEl('button', { text: t('fingerprint.view.navKb'), cls: 'nw-fp-nav-btn', attr: { title: t('fingerprint.view.navKbTitle') } });
         kbBtn.addEventListener('click', () => void this.plugin.openKnowledgeBaseView());
 
         // 2026-10-28: 原右下角状态栏浮窗移除后，模型快速切换装配到指纹库侧栏（四个主界面之一）。
@@ -361,7 +363,7 @@ export class WritingFingerprintView extends ItemView {
             embeddingReady: Boolean(this.extractionProvider),
         });
         renderCapabilityBanner(this.capabilityEl, {
-            title: '写作指纹能力边界',
+            title: t('fingerprint.view.capabilityTitle'),
             ...capability,
         });
 
@@ -412,7 +414,7 @@ export class WritingFingerprintView extends ItemView {
         scopes.forEach(scope => {
             const tab = container.createDiv({
                 cls: scopeLogic.buildScopeTabClass(this.filter.activeScope, scope),
-                text: SCOPE_LABELS[scope],
+                text: scopeLabel(scope),
             });
             tab.addEventListener('click', () => {
                 const next = scopeLogic.resetScopeSelection(scope);
@@ -435,16 +437,16 @@ export class WritingFingerprintView extends ItemView {
             attr: {}
         });
 
-        const addBtn = this.createToolbarButton('➕ 新建', () => this.handleAddFingerprint(), false, '新建一个写作指纹（手动填写特征）');
-        const extractBtn = this.createToolbarButton('📝 从文本提取', () => this.handleExtractFromText(), false, '粘贴文本，AI 提取写作指纹');
-        const extractChapterBtn = this.createToolbarButton('📖 从章节提取', () => this.handleExtractFromChapters(), false, '从已有章节正文提取写作指纹');
-        const importBtn = this.createToolbarButton('📚 从知识库导入', () => this.handleImportFromKnowledge(), false, '从知识库书籍拆解结果导入为写作指纹');
-        const blendBtn = this.createToolbarButton('🎨 融合预览', () => this.handleBlendFingerprints(), false, '预览多个指纹融合后的效果');
-        const fillSamplesBtn = this.createToolbarButton('🩹 批量补样本', () => { void this.handleBatchFillSamples(); }, false, '为「知识库导入且无原文样本」的指纹批量补 few-shot 样本（需向量化，消耗额度）');
-        const migrateBtn = this.createToolbarButton('⬆ 批量升级 V2', () => this.handleMigrateToV2(), false, '批量升级指纹到 V2 12 维维度');
-        const deleteBtn = this.createToolbarButton('🗑️ 删除', () => this.handleDeleteFingerprint(), true, '删除选中指纹（不可恢复）');
-        const toggleBtn = this.createToolbarButton('🔌 启用/禁用', () => this.handleToggleEnabled(), false, '启用或禁用选中指纹');
-        const classifyBtn = this.createToolbarButton('🏷️ 自动归类', () => void this.handleAutoClassify(), false, '按本地规则为选中指纹归类并写入标签');
+        const addBtn = this.createToolbarButton(t('fingerprint.view.tbAdd'), () => this.handleAddFingerprint(), false, t('fingerprint.view.tbAddTip'));
+        const extractBtn = this.createToolbarButton(t('fingerprint.view.tbExtractText'), () => this.handleExtractFromText(), false, t('fingerprint.view.tbExtractTextTip'));
+        const extractChapterBtn = this.createToolbarButton(t('fingerprint.view.tbExtractChapters'), () => this.handleExtractFromChapters(), false, t('fingerprint.view.tbExtractChaptersTip'));
+        const importBtn = this.createToolbarButton(t('fingerprint.view.tbImportKb'), () => this.handleImportFromKnowledge(), false, t('fingerprint.view.tbImportKbTip'));
+        const blendBtn = this.createToolbarButton(t('fingerprint.view.tbBlend'), () => this.handleBlendFingerprints(), false, t('fingerprint.view.tbBlendTip'));
+        const fillSamplesBtn = this.createToolbarButton(t('fingerprint.view.tbFillSamples'), () => { void this.handleBatchFillSamples(); }, false, t('fingerprint.view.tbFillSamplesTip'));
+        const migrateBtn = this.createToolbarButton(t('fingerprint.view.tbMigrateV2'), () => this.handleMigrateToV2(), false, t('fingerprint.view.tbMigrateV2Tip'));
+        const deleteBtn = this.createToolbarButton(t('fingerprint.view.tbDelete'), () => this.handleDeleteFingerprint(), true, t('fingerprint.view.tbDeleteTip'));
+        const toggleBtn = this.createToolbarButton(t('fingerprint.view.tbToggle'), () => this.handleToggleEnabled(), false, t('fingerprint.view.tbToggleTip'));
+        const classifyBtn = this.createToolbarButton(t('fingerprint.view.tbClassify'), () => void this.handleAutoClassify(), false, t('fingerprint.view.tbClassifyTip'));
 
         this.toolbar.appendChild(addBtn);
         this.toolbar.appendChild(extractBtn);
@@ -484,7 +486,7 @@ export class WritingFingerprintView extends ItemView {
 
         this.searchInput = searchContainer.createEl('input', {
             type: 'text',
-            placeholder: '🔍 搜索指纹...',
+            placeholder: t('fingerprint.view.searchPlaceholder'),
             cls: 'nw-fingerprint-search-input'
         });
         this.searchInput.value = this.filter.searchQuery;
@@ -500,7 +502,7 @@ export class WritingFingerprintView extends ItemView {
 
         const allTags = this.getAllTags();
         if (allTags.length > 0) {
-            const allTag = this.createTagChip('全部', this.filter.selectedTag === null);
+            const allTag = this.createTagChip(t('fingerprint.view.tagAll'), this.filter.selectedTag === null);
             allTag.addEventListener('click', () => {
                 this.filter.selectedTag = null;
                 this.renderSearchAndFilter();
@@ -545,7 +547,7 @@ export class WritingFingerprintView extends ItemView {
             this.updateCountLabel(null);
             this.fingerprintList.createDiv({
                 cls: 'nw-fp-list-loading',
-                text: '加载中...'
+                text: t('fingerprint.view.loading')
             });
             return;
         }
@@ -553,9 +555,9 @@ export class WritingFingerprintView extends ItemView {
         if (this.loadError) {
             this.updateCountLabel(null);
             const errorBox = this.fingerprintList.createDiv({ cls: 'nw-fingerprint-error' });
-            errorBox.createDiv({ text: '⚠️ 指纹加载失败', cls: 'nw-fingerprint-error-title' });
+            errorBox.createDiv({ text: t('fingerprint.view.loadFailedTitle'), cls: 'nw-fingerprint-error-title' });
             errorBox.createDiv({ text: this.loadError, cls: 'nw-fingerprint-error-detail' });
-            const retry = errorBox.createEl('button', { text: '重试', cls: 'nw-btn nw-btn-secondary nw-btn-sm' });
+            const retry = errorBox.createEl('button', { text: t('fingerprint.view.retry'), cls: 'nw-btn nw-btn-secondary nw-btn-sm' });
             retry.onclick = () => { void this.loadAllFingerprints().then(() => this.renderFingerprintList()); };
             return;
         }
@@ -570,7 +572,7 @@ export class WritingFingerprintView extends ItemView {
             });
             const emptyState = createEmptyState({
                 icon: 'default',
-                title: '暂无指纹',
+                title: t('fingerprint.view.emptyTitle'),
                 description
             });
             this.fingerprintList.appendChild(emptyState);
@@ -613,13 +615,13 @@ export class WritingFingerprintView extends ItemView {
             const source = item.createDiv({
                 cls: 'nw-fp-item-source'
             });
-            source.textContent = fp.source || '未知来源';
+            source.textContent = fp.source || t('fingerprint.view.unknownSource');
 
             const classification = classifyFingerprint(fp);
             if (classification.tags.length > 0) {
                 const classRow = item.createDiv({ cls: 'nw-fingerprint-class-row' });
                 classRow.createSpan({ text: classification.primary, cls: 'nw-fingerprint-class-primary' });
-                classRow.createSpan({ text: `${classification.tags.length} 项`, cls: 'nw-fingerprint-class-count' });
+                classRow.createSpan({ text: t('fingerprint.view.tagCount', { count: classification.tags.length }), cls: 'nw-fingerprint-class-count' });
             }
 
             if (fp.tags.length > 0) {
@@ -653,7 +655,7 @@ export class WritingFingerprintView extends ItemView {
             cls: 'nw-fingerprint-count',
             attr: {}
         });
-        this.countEl.textContent = `共 ${count} 个指纹`;
+        this.countEl.textContent = t('fingerprint.view.countLabel', { count });
     }
 
     private renderDetailPanel(): void {
@@ -662,7 +664,7 @@ export class WritingFingerprintView extends ItemView {
         if (!this.selectedFingerprintId || !this.selectedFingerprintScope) {
             this.rightPanel.createDiv({
                 cls: 'nw-fp-detail-empty',
-                text: '👈 请从左侧选择一个指纹查看详情'
+                text: t('fingerprint.view.detailEmpty')
             });
             return;
         }
@@ -671,7 +673,7 @@ export class WritingFingerprintView extends ItemView {
         if (!fp) {
             this.rightPanel.createDiv({
                 cls: 'nw-fp-detail-empty',
-                text: '指纹不存在'
+                text: t('fingerprint.view.detailMissing')
             });
             return;
         }
@@ -692,7 +694,7 @@ export class WritingFingerprintView extends ItemView {
 
         const effectiveEnabled = this.isEffectivelyEnabled(fp);
         const statusBadge = titleRow.createEl('span', {
-            text: effectiveEnabled ? '✅ 已启用' : '🔇 已禁用',
+            text: effectiveEnabled ? t('fingerprint.view.statusOn') : t('fingerprint.view.statusOff'),
             cls: effectiveEnabled ? 'nw-fp-status-badge nw-fp-status-badge--on' : 'nw-fp-status-badge nw-fp-status-badge--off',
         });
 
@@ -700,11 +702,11 @@ export class WritingFingerprintView extends ItemView {
             cls: 'nw-fp-meta-row'
         });
 
-        metaRow.createEl('span', { text: `${SCOPE_LABELS[fp.scope as FingerprintScope]}` });
-        metaRow.createEl('span', { text: `来源: ${fp.source || '未知'}` });
-        metaRow.createEl('span', { text: `提取时间: ${new Date(fp.extractedAt).toLocaleString()}` });
-        metaRow.createEl('span', { text: `字数: ${formatDetailCount(fp.stats?.wordCount)}` });
-        metaRow.createEl('span', { text: `原文样本: ${(fp.samples || []).length} 段` });
+        metaRow.createEl('span', { text: scopeLabel(fp.scope as FingerprintScope) });
+        metaRow.createEl('span', { text: t('fingerprint.view.metaSource', { source: fp.source || t('fingerprint.view.unknown') }) });
+        metaRow.createEl('span', { text: t('fingerprint.view.metaExtractedAt', { time: new Date(fp.extractedAt).toLocaleString() }) });
+        metaRow.createEl('span', { text: t('fingerprint.view.metaWordCount', { count: formatDetailCount(fp.stats?.wordCount) }) });
+        metaRow.createEl('span', { text: t('fingerprint.view.metaSamples', { count: (fp.samples || []).length }) });
 
         if (fp.tags.length > 0) {
             const tagsSection = header.createDiv({
@@ -741,20 +743,20 @@ export class WritingFingerprintView extends ItemView {
     }
 
     private renderInjectionCard(fp: StyleFingerprint): void {        const card = this.rightPanel.createDiv({ cls: 'nw-fingerprint-inject-card nw-mb-lg' });
-        card.createEl('h4', { text: '🎯 注入影响', cls: 'nw-fp-inject-title' });
+        card.createEl('h4', { text: t('fingerprint.view.injectTitle'), cls: 'nw-fp-inject-title' });
 
         const sampleCount = (fp.samples || []).length;
         const rows = card.createDiv({ cls: 'nw-fp-inject-rows' });
-        rows.createEl('span', { text: `原文样本: ${sampleCount} 段（段落层 few-shot）` });
-        rows.createEl('span', { text: '注入层: 全局特征 + 段落样本 + 句子提示' });
-        rows.createEl('span', { text: `总预算: ${this.injectionBudget()} 字符（设置可调 fingerprintInjectionBudget）` });
+        rows.createEl('span', { text: t('fingerprint.view.injectSamples', { count: sampleCount }) });
+        rows.createEl('span', { text: t('fingerprint.view.injectLayers') });
+        rows.createEl('span', { text: t('fingerprint.view.injectBudget', { budget: this.injectionBudget() }) });
         if (sampleCount === 0) {
             const warn = card.createDiv({
                 cls: 'nw-fingerprint-sample-warn nw-fp-inject-warn'
             });
-            warn.setText('⚠️ 该指纹没有原文样本：注入只剩特征描述，段落层（真实文风 few-shot）不会生效，指引力大减。');
+            warn.setText(t('fingerprint.view.injectWarn'));
             const fixBtn = card.createEl('button', {
-                text: '📚 从知识库补样本',
+                text: t('fingerprint.view.injectFixBtn'),
                 cls: 'nw-btn nw-btn-secondary nw-fp-inject-fix',
             });
             fixBtn.onclick = () => { void this.handleImportFromKnowledge(); };
@@ -762,7 +764,7 @@ export class WritingFingerprintView extends ItemView {
 
         card.createDiv({
             cls: 'nw-fp-inject-note',
-            text: '指纹塑造文风（跨章节持续生效的风格记忆）；长篇记忆防 OOC（事实清单）。两条线独立注入、预算叠加——每次 AI 调用的注入明细见工作台执行日志「prompt-ledger」。',
+            text: t('fingerprint.view.injectNote'),
         });
     }
 
@@ -781,7 +783,7 @@ export class WritingFingerprintView extends ItemView {
             cls: 'nw-fp-title-row'
         });
         titleRow.createEl('h4', {
-            text: '🏷️ 自动分类',
+            text: t('fingerprint.view.classTitle'),
             cls: 'nw-fp-section-h4 nw-fp-section-title'
         });
         titleRow.createEl('span', {
@@ -796,7 +798,7 @@ export class WritingFingerprintView extends ItemView {
 
         if (classification.tags.length === 0) {
             section.createDiv({
-                text: '当前统计特征不足以规则归类，可先用 AI 提取特征后重新归类。',
+                text: t('fingerprint.view.classEmpty'),
                 cls: 'nw-fp-class-empty'
             });
             return;
@@ -808,7 +810,7 @@ export class WritingFingerprintView extends ItemView {
         classification.tags.forEach(tag => {
             const chip = tagWrap.createSpan({
                 cls: 'nw-fingerprint-class-chip',
-                attr: { title: `${tag.dimension} · ${tag.reason}（置信度 ${(tag.confidence * 100).toFixed(0)}%）` }
+                attr: { title: t('fingerprint.view.tagTitle', { dimension: tag.dimension, reason: tag.reason, confidence: (tag.confidence * 100).toFixed(0) }) }
             });
             chip.createSpan({ text: tag.dimension, cls: 'nw-fingerprint-class-dim' });
             chip.createSpan({ text: tag.label, cls: 'nw-fingerprint-class-label' });
@@ -821,7 +823,7 @@ export class WritingFingerprintView extends ItemView {
         });
 
         section.createEl('h4', {
-            text: '📊 统计特征',
+            text: t('fingerprint.view.statsTitle'),
             cls: 'nw-fp-section-h4'
         });
 
@@ -850,21 +852,21 @@ export class WritingFingerprintView extends ItemView {
         });
 
         section.createEl('h4', {
-            text: '🎨 风格特征',
+            text: t('fingerprint.view.featuresTitle'),
             cls: 'nw-fp-section-h4'
         });
 
         const featureLabels = [
-            { key: 'sentenceRhythm', label: '句式节奏' },
-            { key: 'wordPreference', label: '用词偏好' },
-            { key: 'narrativeStyle', label: '叙事风格' },
-            { key: 'rhetoric', label: '修辞特点' },
-            { key: 'dialogueStyle', label: '对话风格' },
-            { key: 'paragraphStructure', label: '段落结构' },
-            { key: 'overallTone', label: '整体基调' },
+            { key: 'sentenceRhythm', labelKey: 'fingerprint.view.v1dim.sentenceRhythm' },
+            { key: 'wordPreference', labelKey: 'fingerprint.view.v1dim.wordPreference' },
+            { key: 'narrativeStyle', labelKey: 'fingerprint.view.v1dim.narrativeStyle' },
+            { key: 'rhetoric', labelKey: 'fingerprint.view.v1dim.rhetoric' },
+            { key: 'dialogueStyle', labelKey: 'fingerprint.view.v1dim.dialogueStyle' },
+            { key: 'paragraphStructure', labelKey: 'fingerprint.view.v1dim.paragraphStructure' },
+            { key: 'overallTone', labelKey: 'fingerprint.view.v1dim.overallTone' },
         ];
 
-        buildFeatureRows(fp.features as unknown as Record<string, unknown>, featureLabels).forEach(f => {
+        buildFeatureRows(fp.features as unknown as Record<string, unknown>, featureLabels.map(l => ({ key: l.key, label: t(l.labelKey) }))).forEach(f => {
             const row = section.createDiv({
                 cls: 'nw-fp-feature'
             });
@@ -885,13 +887,13 @@ export class WritingFingerprintView extends ItemView {
         });
 
         section.createEl('h4', {
-            text: '📝 代表片段',
+            text: t('fingerprint.view.samplesTitle'),
             cls: 'nw-fp-section-h4'
         });
 
         if (fp.samples.length === 0) {
             section.createEl('div', {
-                text: '无代表片段',
+                text: t('fingerprint.view.samplesEmpty'),
                 cls: 'nw-fp-samples-empty'
             });
             return;
@@ -902,7 +904,7 @@ export class WritingFingerprintView extends ItemView {
                 cls: 'nw-fp-sample-card'
             });
             sampleEl.createEl('div', {
-                text: `片段 ${index + 1}`,
+                text: t('fingerprint.view.sampleIndex', { n: index + 1 }),
                 cls: 'nw-fp-sample-index'
             });
             sampleEl.createEl('div', {
@@ -919,7 +921,7 @@ export class WritingFingerprintView extends ItemView {
         });
 
         section.createEl('h4', {
-            text: '⚙️ 操作',
+            text: t('fingerprint.view.actionsTitle'),
             cls: 'nw-fp-section-h4'
         });
 
@@ -931,48 +933,48 @@ export class WritingFingerprintView extends ItemView {
 
         if (sourceOnly) {
             section.createEl('div', {
-                text: '📋 模板层是来源库：复制/同步到项目后才会影响正文，本层的启用状态与强度不参与注入。',
+                text: t('fingerprint.view.templateNote'),
                 cls: 'nw-fp-actions-note'
             });
         } else {
             const toggleBtn = this.createActionButton(
-                fp.enabled ? '🔇 禁用' : '✅ 启用',
+                fp.enabled ? t('fingerprint.view.actionDisable') : t('fingerprint.view.actionEnable'),
                 () => this.handleToggleEnabled(),
                 false,
-                '启用或禁用该指纹'
+                t('fingerprint.view.actionToggleTip')
             );
             actionsGrid.appendChild(toggleBtn);
         }
 
-        const editBtn = this.createActionButton('✏️ 编辑', () => this.handleEditFingerprint(fp), false, '编辑指纹内容');
+        const editBtn = this.createActionButton(t('fingerprint.view.actionEdit'), () => this.handleEditFingerprint(fp), false, t('fingerprint.view.actionEditTip'));
         actionsGrid.appendChild(editBtn);
 
         // V2 详情查看入口（打开 FingerprintDetailModal，含 12 维详情）
-        const detailBtn = this.createActionButton('🔍 V2 详情', () => this.handleOpenDetailModal(fp), false, '查看 V2 12 维详情');
+        const detailBtn = this.createActionButton(t('fingerprint.view.actionV2Detail'), () => this.handleOpenDetailModal(fp), false, t('fingerprint.view.actionV2DetailTip'));
         actionsGrid.appendChild(detailBtn);
 
         // V2 强度调节入口（模板层不参与注入，强度无消费方）
         if (!sourceOnly) {
-            const intensityBtn = this.createActionButton('🎚 强度调节', () => this.handleOpenIntensity(fp), false, '调节指纹强度');
+            const intensityBtn = this.createActionButton(t('fingerprint.view.actionIntensity'), () => this.handleOpenIntensity(fp), false, t('fingerprint.view.actionIntensityTip'));
             actionsGrid.appendChild(intensityBtn);
         }
 
         if (fp.scope === 'project') {
-            const promoteBtn = this.createActionButton('⬆️ 提升为全局', () => this.handlePromoteToGlobal(fp), false, '从项目提升为全局指纹');
+            const promoteBtn = this.createActionButton(t('fingerprint.view.actionPromote'), () => this.handlePromoteToGlobal(fp), false, t('fingerprint.view.actionPromoteTip'));
             actionsGrid.appendChild(promoteBtn);
         }
 
         if (fp.scope === 'template') {
-            const copyBtn = this.createActionButton('📋 复制到项目', () => this.handleCopyToProject(fp), false, '复制到项目');
+            const copyBtn = this.createActionButton(t('fingerprint.view.actionCopy'), () => this.handleCopyToProject(fp), false, t('fingerprint.view.actionCopyTip'));
             actionsGrid.appendChild(copyBtn);
         }
 
         if (fp.scope === 'global') {
-            const copyBtn = this.createActionButton('📋 复制到项目', () => this.handleCopyToProject(fp), false, '复制到项目');
+            const copyBtn = this.createActionButton(t('fingerprint.view.actionCopy'), () => this.handleCopyToProject(fp), false, t('fingerprint.view.actionCopyTip'));
             actionsGrid.appendChild(copyBtn);
         }
 
-        const deleteBtn = this.createActionButton('🗑️ 删除', () => this.handleDeleteFingerprint(), true, '删除该指纹（不可恢复）');
+        const deleteBtn = this.createActionButton(t('fingerprint.view.actionDelete'), () => this.handleDeleteFingerprint(), true, t('fingerprint.view.actionDeleteTip'));
         actionsGrid.appendChild(deleteBtn);
     }
 
@@ -1008,11 +1010,11 @@ export class WritingFingerprintView extends ItemView {
         const fp = this.getSelectedFingerprint();
         if (!fp) return;
         if (!this.fingerprintLibrary || !this.extractor || !this.vectorStore) {
-            new Notice('提取器未就绪');
+            new Notice(t('fingerprint.view.extractorNotReady'));
             return;
         }
         if (!fp.sourceText) {
-            new Notice('该指纹缺少原始文本，无法重新提取，请通过"从文本提取"或"从章节提取"重新生成');
+            new Notice(t('fingerprint.view.reextractNoText'));
             return;
         }
         try {
@@ -1027,10 +1029,10 @@ export class WritingFingerprintView extends ItemView {
             await this.loadAllFingerprints();
             this.renderFingerprintList();
             this.renderDetailPanel();
-            showSuccessNotice('重新提取完成');
+            showSuccessNotice(t('fingerprint.view.reextractDone'));
         } catch (e) {
             log.error('重新提取失败:', e);
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '重新提取失败' });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('fingerprint.view.reextractFailedTitle') });
         }
     }
 
@@ -1046,14 +1048,14 @@ export class WritingFingerprintView extends ItemView {
 
     private async handleAddFingerprint(): Promise<void> {
         if (!this.extractor || !this.fingerprintLibrary) {
-            new Notice('提取器未初始化');
+            new Notice(t('fingerprint.view.extractorNotInit'));
             return;
         }
 
         const modal = new AddFingerprintModal(this.app, {
             scope: this.filter.activeScope,
             extractor: this.extractor,
-            onCompleted: (fp) => this.saveExtractedFingerprint(fp, '✅ 指纹添加成功')
+            onCompleted: (fp) => this.saveExtractedFingerprint(fp, t('fingerprint.view.fpAdded'))
         });
         modal.open();
     }
@@ -1076,12 +1078,12 @@ export class WritingFingerprintView extends ItemView {
         }
 
         if (!selectedText || selectedText.length < 100) {
-            new Notice('请选择或打开至少 100 字的文本');
+            new Notice(t('fingerprint.view.need100Chars'));
             return;
         }
 
         if (!this.extractor || !this.fingerprintLibrary) {
-            new Notice('提取器未初始化');
+            new Notice(t('fingerprint.view.extractorNotInit'));
             return;
         }
 
@@ -1097,7 +1099,7 @@ export class WritingFingerprintView extends ItemView {
     /** 提取结果落库：Modal 已关闭，写失败必须兜住并提示，不能静默丢数据 */
     private async saveExtractedFingerprint(fp: StyleFingerprint, successMessage: string): Promise<void> {
         if (!this.fingerprintLibrary) {
-            showWarningNotice('指纹库未初始化，提取结果未保存', { timeout: 8000 });
+            showWarningNotice(t('fingerprint.view.libNotInitNoSave'), { timeout: 8000 });
             return;
         }
         try {
@@ -1114,7 +1116,7 @@ export class WritingFingerprintView extends ItemView {
             }
         } catch (e) {
             log.error('[FingerprintView] 保存指纹失败:', e);
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '指纹保存失败', timeout: 8000 });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('fingerprint.view.saveFailedTitle'), timeout: 8000 });
             return;
         }
         await this.afterFingerprintSaved(fp, successMessage.replace(/^✅\s*/u, ''));
@@ -1130,7 +1132,7 @@ export class WritingFingerprintView extends ItemView {
         sampleText: string,
     ): Promise<void> {
         if (!this.fingerprintLibrary) {
-            showWarningNotice('指纹库未初始化，提取结果未保存', { timeout: 8000 });
+            showWarningNotice(t('fingerprint.view.libNotInitNoSave'), { timeout: 8000 });
             return;
         }
         let analysis: StyleAnalysisResultV2 | null = null;
@@ -1138,7 +1140,7 @@ export class WritingFingerprintView extends ItemView {
             analysis = await new StyleFeaturesAnalyzerV2().analyze(sampleText);
         } catch (e) {
             log.warn('[FingerprintView] 本地十二维统计失败，按 V1 通道保存:', e);
-            showWarningNotice('本地十二维统计失败，将按基础指纹保存', { timeout: 6000 });
+            showWarningNotice(t('fingerprint.view.v2StatsFailed'), { timeout: 6000 });
         }
         if (analysis) {
             try {
@@ -1151,14 +1153,14 @@ export class WritingFingerprintView extends ItemView {
                     sourceText: fp.sourceText ?? sampleText,
                     analysis,
                 });
-                await this.afterFingerprintSaved(saved, '指纹提取成功（含 12 维结构化特征）');
+                await this.afterFingerprintSaved(saved, t('fingerprint.view.fpExtractedV2'));
                 return;
             } catch (e) {
                 log.warn('[FingerprintView] V2 直存失败，回落 V1 通道:', e);
-                showWarningNotice('十二维结构化保存失败，已按基础指纹保存', { timeout: 6000 });
+                showWarningNotice(t('fingerprint.view.v2SaveFailed'), { timeout: 6000 });
             }
         }
-        await this.saveExtractedFingerprint(fp, '✅ 指纹提取成功');
+        await this.saveExtractedFingerprint(fp, t('fingerprint.view.fpExtracted'));
     }
 
     /** 保存成功后的公共收尾：刷新缓存、选中新指纹并重绘三块区域。 */
@@ -1174,7 +1176,7 @@ export class WritingFingerprintView extends ItemView {
 
     private async handleExtractFromChapters(): Promise<void> {
         if (!this.currentProjectPath) {
-            new Notice('请先在项目中打开此面板');
+            new Notice(t('fingerprint.view.needProjectOpen'));
             return;
         }
 
@@ -1184,7 +1186,7 @@ export class WritingFingerprintView extends ItemView {
         try {
             const exists = await this.app.vault.adapter.exists(bodyDir);
             if (!exists) {
-                new Notice('未找到正文目录，请确保项目结构正确');
+                new Notice(t('fingerprint.view.noBodyDir'));
                 return;
             }
 
@@ -1207,7 +1209,7 @@ export class WritingFingerprintView extends ItemView {
             await collectChapters(bodyDir);
 
             if (chapters.length === 0) {
-                new Notice('未找到章节文件');
+                new Notice(t('fingerprint.view.noChapterFiles'));
                 return;
             }
 
@@ -1216,11 +1218,11 @@ export class WritingFingerprintView extends ItemView {
                 chapters,
                 async (selectedChapters, fingerprintName) => {
                     if (!this.extractor || !this.fingerprintLibrary) {
-                        new Notice('提取器未初始化');
+                        new Notice(t('fingerprint.view.extractorNotInit'));
                         return;
                     }
 
-                    new Notice(`正在从 ${selectedChapters.length} 个章节提取指纹...`, 3000);
+                    new Notice(t('fingerprint.view.extractingFromChapters', { count: selectedChapters.length }), 3000);
 
                     // 提取只需代表性样本：全选几百章会拼出百万字，超时且费用暴涨
                     const MAX_EXTRACT_CHARS = 60000;
@@ -1243,11 +1245,11 @@ export class WritingFingerprintView extends ItemView {
                         truncated = true;
                     }
                     if (truncated) {
-                        showWarningNotice(`已截取前 ${MAX_EXTRACT_CHARS} 字用于提取（避免超时与超量计费）`, { timeout: 6000 });
+                        showWarningNotice(t('fingerprint.view.truncatedNotice', { max: MAX_EXTRACT_CHARS }), { timeout: 6000 });
                     }
 
                     if (allText.length < 500) {
-                        new Notice('章节内容过少，至少需要 500 字');
+                        new Notice(t('fingerprint.view.chapterTooShort'));
                         return;
                     }
 
@@ -1266,32 +1268,32 @@ export class WritingFingerprintView extends ItemView {
                         this.renderSearchAndFilter();
                         this.renderFingerprintList();
                         this.renderDetailPanel();
-                        showSuccessNotice('从章节提取指纹成功');
+                        showSuccessNotice(t('fingerprint.view.chapterExtractDone'));
                     } catch (e) {
                         log.error('提取指纹失败:', e);
-                        showErrorNotice(e instanceof Error ? e.message : String(e), { title: '提取失败' });
+                        showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('fingerprint.view.extractFailedTitle') });
                     }
                 }
             );
             modal.open();
         } catch (e) {
             log.error('读取章节列表失败:', e);
-            showErrorNotice('读取章节列表失败');
+            showErrorNotice(t('fingerprint.view.readChaptersFailed'));
         }
     }
 
     private async handleImportFromKnowledge(): Promise<void> {
         const knowledgeManager = this.plugin.knowledgeBaseManager;
         if (!knowledgeManager) {
-            new Notice('知识库未初始化');
+            new Notice(t('fingerprint.view.kbNotInit'));
             return;
         }
         if (!this.fingerprintLibrary) {
-            new Notice('指纹库未初始化');
+            new Notice(t('fingerprint.view.libNotInit'));
             return;
         }
         if (!this.plugin.getActiveProject()) {
-            new Notice('请先打开一个项目');
+            new Notice(t('fingerprint.view.needOpenProject'));
             return;
         }
 
@@ -1300,11 +1302,11 @@ export class WritingFingerprintView extends ItemView {
             books = await knowledgeManager.getAllBooks();
         } catch (e) {
             log.error('读取知识库书籍列表失败:', e);
-            showErrorNotice('读取知识库书籍列表失败');
+            showErrorNotice(t('fingerprint.view.readBooksFailed'));
             return;
         }
         if (books.length === 0) {
-            new Notice('知识库为空，请先在知识库导入参考书籍');
+            new Notice(t('fingerprint.view.kbEmpty'));
             return;
         }
 
@@ -1330,10 +1332,10 @@ export class WritingFingerprintView extends ItemView {
                 await this.loadAllFingerprints();
                 this.renderFingerprintList();
                 this.renderDetailPanel();
-                showSuccessNotice(`已将《${book.name}》拆解结果转为项目写作指纹（原文样本 ${originalSamples.length} 段）`);
+                showSuccessNotice(t('fingerprint.view.kbImported', { book: book.name, count: originalSamples.length }));
             } catch (e) {
                 log.error('从知识库导入指纹失败:', e);
-                showErrorNotice(`导入失败: ${e instanceof Error ? e.message : String(e)}`);
+                showErrorNotice(t('fingerprint.view.importFailed', { msg: e instanceof Error ? e.message : String(e) }));
             }
         }).open();
     }
@@ -1345,11 +1347,11 @@ export class WritingFingerprintView extends ItemView {
     private async handleBatchFillSamples(): Promise<void> {
         const knowledgeManager = this.plugin.knowledgeBaseManager;
         if (!knowledgeManager) {
-            new Notice('知识库未初始化');
+            new Notice(t('fingerprint.view.kbNotInit'));
             return;
         }
         if (!this.fingerprintLibrary) {
-            new Notice('指纹库未初始化');
+            new Notice(t('fingerprint.view.libNotInit'));
             return;
         }
 
@@ -1357,7 +1359,7 @@ export class WritingFingerprintView extends ItemView {
             (fp) => (fp.samples || []).length === 0 && (fp.source || '').startsWith('knowledge-base:'),
         );
         if (targets.length === 0) {
-            new Notice('没有需要补样本的指纹（知识库导入且样本为空）');
+            new Notice(t('fingerprint.view.noFillTargets'));
             return;
         }
 
@@ -1365,13 +1367,11 @@ export class WritingFingerprintView extends ItemView {
         const bookIdByName = new Map(books.map((book) => [book.name, book.id] as const));
 
         const confirmed = await OperationConfirmModal.confirm(this.app, {
-            title: '批量补指纹样本',
-            description: `共 ${targets.length} 个知识库导入指纹没有原文样本：` +
-                targets.slice(0, 5).map((fp) => fp.name).join('、') + (targets.length > 5 ? ' 等' : '') +
-                '。将从知识库原文分块提取 few-shot 样本并向量化。',
-            warning: '向量化会消耗 embedding 额度',
-            confirmText: '开始补样本',
-            cancelText: '取消',
+            title: t('fingerprint.view.fillTitle'),
+            description: t('fingerprint.view.fillDesc', { count: targets.length, names: targets.slice(0, 5).map((fp) => fp.name).join('、') + (targets.length > 5 ? t('fingerprint.view.nameListMore') : '') }),
+            warning: t('fingerprint.view.fillWarning'),
+            confirmText: t('fingerprint.view.fillConfirm'),
+            cancelText: t('common.cancel'),
         });
         if (!confirmed) return;
 
@@ -1399,25 +1399,25 @@ export class WritingFingerprintView extends ItemView {
         await this.loadAllFingerprints();
         this.renderFingerprintList();
         this.renderDetailPanel();
-        showSuccessNotice(`成功 ${filled}，跳过 ${skipped}`, { title: '补样本完成', timeout: 6000 });
+        showSuccessNotice(t('fingerprint.view.fillDoneSummary', { ok: filled, skipped }), { title: t('fingerprint.view.fillDoneTitle'), timeout: 6000 });
     }
 
     private async handleToggleEnabled(): Promise<void> {
         if (!this.selectedFingerprintId || !this.selectedFingerprintScope || !this.fingerprintLibrary) {
             // UX 修复：未选中指纹时静默返回会让用户误以为按钮失效
-            new Notice('⚠️ 请先在左侧选择一个指纹');
+            new Notice(t('fingerprint.view.needSelectFirst'));
             return;
         }
 
         const fp = this.getSelectedFingerprint();
         if (!fp) {
-            new Notice('⚠️ 请先在左侧选择一个指纹');
+            new Notice(t('fingerprint.view.needSelectFirst'));
             return;
         }
 
         // 模板层仅用于复制/同步到项目，启用状态没有消费方
         if (isSourceOnlyFingerprintScope(fp.scope)) {
-            showWarningNotice('模板层指纹不参与注入：请先「复制到项目」或「从模板同步到项目」');
+            showWarningNotice(t('fingerprint.view.templateNoInjectWarn'));
             return;
         }
 
@@ -1427,19 +1427,19 @@ export class WritingFingerprintView extends ItemView {
         await this.loadAllFingerprints();
         this.renderFingerprintList();
         this.renderDetailPanel();
-        showSuccessNotice(wasEnabled ? '已禁用' : '已启用');
+        showSuccessNotice(wasEnabled ? t('fingerprint.view.toggledOff') : t('fingerprint.view.toggledOn'));
     }
 
     private async handleAutoClassify(): Promise<void> {
         const fp = this.getSelectedFingerprint();
         if (!fp || !this.fingerprintLibrary) {
-            new Notice('⚠️ 请先在左侧选择一个指纹');
+            new Notice(t('fingerprint.view.needSelectFirst'));
             return;
         }
         const result = classifyFingerprint(fp);
         const nextTags = mergeClassificationTags(fp.tags || [], result);
         if (nextTags.length === (fp.tags || []).length && nextTags.every((tag, index) => tag === fp.tags[index])) {
-            new Notice(`🏷️ 分类未变化：${result.summary}`);
+            new Notice(t('fingerprint.view.classUnchanged', { summary: result.summary }));
             return;
         }
         const updated: StyleFingerprint = { ...fp, tags: nextTags };
@@ -1453,32 +1453,32 @@ export class WritingFingerprintView extends ItemView {
             this.renderSearchAndFilter();
             this.renderFingerprintList();
             this.renderDetailPanel();
-            showSuccessNotice(`已归类：${result.summary}`, { timeout: 4000 });
+            showSuccessNotice(t('fingerprint.view.classified', { summary: result.summary }), { timeout: 4000 });
         } catch (e) {
             log.error('[WritingFingerprintView] 自动归类写入失败:', e);
-            showErrorNotice(`自动归类失败：${e instanceof Error ? e.message : String(e)}`);
+            showErrorNotice(t('fingerprint.view.classifyFailed', { msg: e instanceof Error ? e.message : String(e) }));
         }
     }
 
     private async handleDeleteFingerprint(): Promise<void> {
         if (!this.selectedFingerprintId || !this.selectedFingerprintScope || !this.fingerprintLibrary) {
             // UX 修复：未选中指纹时静默返回会让用户误以为按钮失效
-            new Notice('⚠️ 请先在左侧选择一个指纹');
+            new Notice(t('fingerprint.view.needSelectFirst'));
             return;
         }
 
         const fp = this.getSelectedFingerprint();
         if (!fp) {
-            new Notice('⚠️ 请先在左侧选择一个指纹');
+            new Notice(t('fingerprint.view.needSelectFirst'));
             return;
         }
 
         const confirmed = await OperationConfirmModal.confirm(this.app, {
-            title: '删除指纹',
-            description: `确定要删除指纹「${fp.name}」吗？`,
-            warning: '此操作不可恢复',
-            confirmText: '确认删除',
-            cancelText: '取消',
+            title: t('fingerprint.view.deleteTitle'),
+            description: t('fingerprint.view.deleteDesc', { name: fp.name }),
+            warning: t('fingerprint.view.deleteWarning'),
+            confirmText: t('fingerprint.view.deleteOk'),
+            cancelText: t('common.cancel'),
         });
         if (!confirmed) return;
 
@@ -1494,7 +1494,7 @@ export class WritingFingerprintView extends ItemView {
         this.renderSearchAndFilter();
         this.renderFingerprintList();
         this.renderDetailPanel();
-        showSuccessNotice('指纹已删除');
+        showSuccessNotice(t('fingerprint.view.fpDeleted'));
     }
 
     private handleEditFingerprint(fp: StyleFingerprint): void {
@@ -1507,7 +1507,7 @@ export class WritingFingerprintView extends ItemView {
             // 保存失败必须让用户看见：Modal 已关闭，静默 rejection 会表现为「看起来更新成功」
             void (async () => {
                 if (!this.fingerprintLibrary) {
-                    showErrorNotice('指纹库未初始化，修改未保存');
+                    showErrorNotice(t('fingerprint.view.libNotInitNoSave2'));
                     return;
                 }
                 try {
@@ -1518,21 +1518,21 @@ export class WritingFingerprintView extends ItemView {
                     }
                 } catch (e) {
                     log.error('[FingerprintView] 更新指纹失败:', e);
-                    showErrorNotice(`指纹更新失败：${e instanceof Error ? e.message : String(e)}`, { timeout: 8000 });
+                    showErrorNotice(t('fingerprint.view.updateFailed', { msg: e instanceof Error ? e.message : String(e) }), { timeout: 8000 });
                     return;
                 }
                 await this.loadAllFingerprints();
                 this.renderSearchAndFilter();
                 this.renderFingerprintList();
                 this.renderDetailPanel();
-                showSuccessNotice('指纹已更新');
+                showSuccessNotice(t('fingerprint.view.fpUpdated'));
             })();
             },
             v2,
             async (updated, features) => {
                 // V2 路径：十二维与 V1 投影同步更新，磁盘保持 version:'v2'
                 if (!this.fingerprintLibrary) {
-                    showErrorNotice('指纹库未初始化，修改未保存');
+                    showErrorNotice(t('fingerprint.view.libNotInitNoSave2'));
                     return;
                 }
                 try {
@@ -1540,14 +1540,14 @@ export class WritingFingerprintView extends ItemView {
                     if (!saved) throw new Error('V2 指纹条目不存在');
                 } catch (e) {
                     log.error('[FingerprintView] V2 指纹更新失败:', e);
-                    showErrorNotice(`十二维更新失败：${e instanceof Error ? e.message : String(e)}`, { timeout: 8000 });
+                    showErrorNotice(t('fingerprint.view.v2UpdateFailed', { msg: e instanceof Error ? e.message : String(e) }), { timeout: 8000 });
                     return;
                 }
                 await this.loadAllFingerprints();
                 this.renderSearchAndFilter();
                 this.renderFingerprintList();
                 this.renderDetailPanel();
-                showSuccessNotice('指纹已更新（含 12 维结构化特征）');
+                showSuccessNotice(t('fingerprint.view.fpUpdatedV2'));
             },
         ).open();
     }
@@ -1556,7 +1556,7 @@ export class WritingFingerprintView extends ItemView {
         if (!this.fingerprintLibrary) return;
         const result = await this.fingerprintLibrary.copyFingerprint('project', 'global', fp.id);
         if (!result) {
-            showErrorNotice('提升失败：未取到复制后的指纹，请重试');
+            showErrorNotice(t('fingerprint.view.promoteFailed'));
             return;
         }
         await this.loadAllFingerprints();
@@ -1567,14 +1567,14 @@ export class WritingFingerprintView extends ItemView {
         this.renderSearchAndFilter();
         this.renderFingerprintList();
         this.renderDetailPanel();
-        showSuccessNotice('已提升为全局指纹');
+        showSuccessNotice(t('fingerprint.view.promoted'));
     }
 
     private async handleCopyToProject(fp: StyleFingerprint): Promise<void> {
         if (!this.fingerprintLibrary) return;
         const project = this.plugin.getActiveProject();
         if (!project) {
-            new Notice('请先打开一个项目');
+            new Notice(t('fingerprint.view.needOpenProject'));
             return;
         }
         const result = await this.fingerprintLibrary.copyFingerprint(
@@ -1584,7 +1584,7 @@ export class WritingFingerprintView extends ItemView {
             project
         );
         if (!result) {
-            showErrorNotice('复制失败：未取到复制后的指纹，请重试');
+            showErrorNotice(t('fingerprint.view.copyFailed'));
             return;
         }
         await this.loadAllFingerprints();
@@ -1595,18 +1595,18 @@ export class WritingFingerprintView extends ItemView {
         this.renderSearchAndFilter();
         this.renderFingerprintList();
         this.renderDetailPanel();
-        showSuccessNotice('已复制到项目');
+        showSuccessNotice(t('fingerprint.view.copied'));
     }
 
     /** 打开 V2 多指纹融合预览 Modal */
     private handleBlendFingerprints(): void {
         if (!this.fingerprintLibrary) {
-            new Notice('指纹库未初始化');
+            new Notice(t('fingerprint.view.libNotInit'));
             return;
         }
         const currentFps = this.getCurrentFingerprints();
         if (currentFps.length === 0) {
-            new Notice('当前作用域下没有可用指纹');
+            new Notice(t('fingerprint.view.noFpsInScope'));
             return;
         }
         const project = this.plugin.getActiveProject() || undefined;
@@ -1627,48 +1627,48 @@ export class WritingFingerprintView extends ItemView {
     /** 批量升级当前作用域指纹到 V2 维度 */
     private async handleMigrateToV2(): Promise<void> {
         if (!this.fingerprintLibrary) {
-            new Notice('指纹库未初始化');
+            new Notice(t('fingerprint.view.libNotInit'));
             return;
         }
         const scope = this.filter.activeScope;
         const confirmed = await OperationConfirmModal.confirm(this.app, {
-            title: '升级指纹到 V2',
-            description: `确定要将${SCOPE_LABELS[scope]}下所有 V1 指纹升级到 V2 12 维格式吗？`,
+            title: t('fingerprint.view.upgradeTitle'),
+            description: t('fingerprint.view.upgradeDesc', { scope: scopeLabel(scope) }),
             steps: [
-                '原 V1 7 维扩展为 12 维',
-                '新增 5 维标记为"待补充"',
-                '自动备份原始数据到 .v1.bak 文件',
-                '迁移失败自动回滚',
+                t('fingerprint.view.upgradeBullet1'),
+                t('fingerprint.view.upgradeBullet2'),
+                t('fingerprint.view.upgradeBullet3'),
+                t('fingerprint.view.upgradeBullet4'),
             ],
-            confirmText: '确认升级',
-            cancelText: '取消',
+            confirmText: t('fingerprint.view.upgradeOk'),
+            cancelText: t('common.cancel'),
         });
         if (!confirmed) return;
         try {
             const result = await this.fingerprintLibrary.migrateV1ToV2Dimensions(scope);
             if (result.success) {
                 if (result.migrated > 0) {
-                    showSuccessNotice(`已升级 ${result.migrated} 个指纹到 V2 格式`);
+                    showSuccessNotice(t('fingerprint.view.upgraded', { count: result.migrated }));
                 } else {
-                    new Notice('ℹ️ 当前作用域无 V1 指纹需要升级');
+                    new Notice(t('fingerprint.view.nothingToUpgrade'));
                 }
                 await this.loadAllFingerprints();
                 this.renderSearchAndFilter();
                 this.renderFingerprintList();
                 this.renderDetailPanel();
             } else {
-                showErrorNotice(`升级失败：${result.error || '未知错误'}`);
+                showErrorNotice(t('fingerprint.view.upgradeFailedWith', { msg: result.error || t('fingerprint.view.unknownError') }));
             }
         } catch (e) {
             log.warn('[WritingFingerprintView] V2 升级失败:', e);
-            showErrorNotice(`升级失败：${(e as Error).message}`);
+            showErrorNotice(t('fingerprint.view.upgradeFailedWith', { msg: (e as Error).message }));
         }
     }
 
     /** 打开 V2 强度调节 Modal */
     private async handleOpenIntensity(fp: StyleFingerprint): Promise<void> {
         if (!this.fingerprintLibrary) {
-            new Notice('指纹库未初始化');
+            new Notice(t('fingerprint.view.libNotInit'));
             return;
         }
         const project = this.plugin.getActiveProject() || undefined;
@@ -1735,23 +1735,23 @@ class EditFingerprintModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h3', { text: '✏️ 编辑指纹' });
+        contentEl.createEl('h3', { text: t('fingerprint.view.editModalTitle') });
 
         new Setting(contentEl)
-            .setName('指纹名称')
+            .setName(t('fingerprint.view.fpName'))
             .addText(t => t
                 .setValue(this.nameValue)
                 .onChange(v => this.nameValue = v));
 
         new Setting(contentEl)
-            .setName('来源名称')
+            .setName(t('fingerprint.view.sourceName'))
             .addText(t => t
                 .setValue(this.sourceValue)
                 .onChange(v => this.sourceValue = v));
 
         new Setting(contentEl)
-            .setName('标签')
-            .setDesc('用逗号分隔多个标签')
+            .setName(t('fingerprint.view.tagsName'))
+            .setDesc(t('fingerprint.view.tagsDesc'))
             .addText(t => t
                 .setValue(this.tagsValue)
                 .onChange(v => this.tagsValue = v));
@@ -1759,13 +1759,13 @@ class EditFingerprintModal extends Modal {
         if (this.v2Features) {
             const dims = contentEl.createDiv({ cls: 'nw-fp-edit-dims' });
             dims.createEl('h4', {
-                text: '🧬 十二维特征（本地统计，可逐维修改描述）',
+                text: t('fingerprint.view.v2EditTitle'),
                 cls: 'nw-fp-section-h4 nw-fp-edit-dims-title'
             });
-            for (const { key, label } of V2_FEATURE_LABELS) {
+            for (const { key } of V2_FEATURE_LABELS) {
                 const dim = this.v2Features[key];
-                const dimSetting = new Setting(dims).setName(label);
-                if (dim.status !== 'complete') dimSetting.setDesc('样本不足（pending）');
+                const dimSetting = new Setting(dims).setName(dimensionNameV2(key));
+                if (dim.status !== 'complete') dimSetting.setDesc(t('fingerprint.view.dimPendingDesc'));
                 dimSetting.addTextArea(t => {
                         const area = t
                             .setValue(dim.description || '')
@@ -1783,13 +1783,13 @@ class EditFingerprintModal extends Modal {
         });
 
         const cancelBtn = btnRow.createEl('button', {
-            text: '取消',
+            text: t('common.cancel'),
             cls: 'nw-fp-modal-btn'
         });
         cancelBtn.addEventListener('click', () => this.close());
 
         const saveBtn = btnRow.createEl('button', {
-            text: '💾 保存',
+            text: t('fingerprint.view.save'),
             cls: 'nw-fp-modal-btn nw-fp-modal-btn--primary'
         });
         saveBtn.addEventListener('click', () => {
@@ -1842,16 +1842,16 @@ export class ExtractFromChaptersModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h3', { text: '📖 从章节提取写作指纹' });
+        contentEl.createEl('h3', { text: t('fingerprint.view.chapterModalTitle') });
 
         const desc = contentEl.createEl('p', {
-            text: `共找到 ${this.chapters.length} 个章节，选择要提取的章节：`,
+            text: t('fingerprint.view.chapterListDesc', { count: this.chapters.length }),
             cls: 'nw-fp-extract-desc'
         });
         void desc;
 
         new Setting(contentEl)
-            .setName('指纹名称')
+            .setName(t('fingerprint.view.fpName'))
             .addText(t => t
                 .setValue(this.fingerprintName)
                 .onChange(v => this.fingerprintName = v));
@@ -1861,7 +1861,7 @@ export class ExtractFromChaptersModal extends Modal {
         });
 
         const selectAllBtn = btnRow1.createEl('button', {
-            text: '全选',
+            text: t('fingerprint.view.selectAll'),
             cls: 'nw-btn nw-fp-extract-btn',
             attr: {}
         });
@@ -1871,7 +1871,7 @@ export class ExtractFromChaptersModal extends Modal {
         });
 
         const deselectAllBtn = btnRow1.createEl('button', {
-            text: '取消全选',
+            text: t('fingerprint.view.selectNone'),
             cls: 'nw-btn nw-fp-extract-btn',
             attr: {}
         });
@@ -1889,7 +1889,7 @@ export class ExtractFromChaptersModal extends Modal {
             
             if (this.chapters.length === 0) {
                 chapterListContainer.createDiv({
-                    text: '未找到章节',
+                    text: t('fingerprint.view.noChapters'),
                     cls: 'nw-fp-chapter-empty'
                 });
                 return;
@@ -1938,18 +1938,18 @@ export class ExtractFromChaptersModal extends Modal {
         });
 
         const cancelBtn = btnRow.createEl('button', {
-            text: '取消',
+            text: t('common.cancel'),
             cls: 'nw-btn'
         });
         cancelBtn.addEventListener('click', () => this.close());
 
         const confirmBtn = btnRow.createEl('button', {
-            text: '开始提取',
+            text: t('fingerprint.view.startExtract'),
             cls: 'nw-btn nw-btn-primary novel-writer-primary-button'
         });
         confirmBtn.addEventListener('click', () => {
             if (this.selectedChapters.size === 0) {
-                new Notice('请至少选择一个章节');
+                new Notice(t('fingerprint.view.needOneChapter'));
                 return;
             }
             this.onConfirm([...this.selectedChapters], this.fingerprintName);
@@ -1985,7 +1985,7 @@ class KnowledgeBookPickerModal extends Modal {
     onOpen(): void {
         const { contentEl } = this;
         contentEl.empty();
-        contentEl.createEl('h3', { text: '📚 选择要导入的知识库书籍' });
+        contentEl.createEl('h3', { text: t('fingerprint.view.kbModalTitle') });
 
         const list = contentEl.createEl('div');
         list.addClass('nw-kb-picker-list');
@@ -2001,7 +2001,7 @@ class KnowledgeBookPickerModal extends Modal {
                 author.addClass('nw-kb-picker-author');
             }
 
-            const btn = row.createEl('button', { text: '导入', cls: 'mod-cta' });
+            const btn = row.createEl('button', { text: t('fingerprint.view.importRowBtn'), cls: 'mod-cta' });
             btn.addEventListener('click', () => {
                 this.onSelect(book);
                 this.close();

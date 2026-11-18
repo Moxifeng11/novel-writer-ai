@@ -1,10 +1,11 @@
 import { App, Modal, Notice } from 'obsidian';
+import { t } from '@/i18n';
 import { appendSanitizedHtml } from '@/ui/rendering/safe-html';
 import { OperationConfirmModal } from './components/progress';
 import { StyleFingerprint, StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
 import { migrateV1ToV2 } from '@/engine/style/fingerprint-migrator';
 import { V2Fingerprint, StyleDimensionKeyV2, DimensionStatus } from '@/engine/style/style-dimensions-v2';
-import { formatWordCount, formatDateTime, FEATURE_DIMENSIONS, FEATURE_DIMENSIONS_V2, DIMENSION_STATUS_LABELS, getDimensionScore } from './fingerprint-utils';
+import { formatWordCount, formatDateTime, FEATURE_DIMENSIONS, FEATURE_DIMENSIONS_V2, dimensionNameV2, dimensionDescV2, dimensionStatusLabel, getDimensionScore } from './fingerprint-utils';
 import { radarChart, barChart, donutChart } from './svg-charts';
 
 interface FingerprintDetailModalOptions {
@@ -120,17 +121,17 @@ export class FingerprintDetailModal extends Modal {
 
     private renderBasicInfo(container: HTMLElement, fp: StyleFingerprint): void {
         const section = container.createDiv({ cls: 'nw-fp-info-section' });
-        section.createEl('div', { text: '基本信息', cls: 'nw-fp-section-heading' });
+        section.createEl('div', { text: t('fingerprint.detail.basicInfo'), cls: 'nw-fp-section-heading' });
 
         const grid = section.createDiv({ cls: 'nw-fp-info-grid' });
 
-        this.renderInfoRow(grid, '名称', fp.name);
-        this.renderInfoRow(grid, '来源', fp.source);
-        this.renderInfoRow(grid, '字数', formatWordCount(fp.stats.wordCount));
-        this.renderInfoRow(grid, '提取时间', formatDateTime(fp.extractedAt));
-        const scopeLabel = fp.scope === 'global' ? '全局' : fp.scope === 'template' ? '模板' : '项目';
-        this.renderInfoRow(grid, '作用域', scopeLabel);
-        this.renderInfoRow(grid, '状态', this.isEnabled(fp) ? '✅ 已启用' : '⏸ 已禁用');
+        this.renderInfoRow(grid, t('fingerprint.detail.name'), fp.name);
+        this.renderInfoRow(grid, t('fingerprint.detail.source'), fp.source);
+        this.renderInfoRow(grid, t('fingerprint.detail.wordCount'), formatWordCount(fp.stats.wordCount));
+        this.renderInfoRow(grid, t('fingerprint.detail.extractedAt'), formatDateTime(fp.extractedAt));
+        const scopeLabel = fp.scope === 'global' ? t('fingerprint.detail.scopeGlobal') : fp.scope === 'template' ? t('fingerprint.detail.scopeTemplate') : t('fingerprint.detail.scopeProject');
+        this.renderInfoRow(grid, t('fingerprint.detail.scopeLabel'), scopeLabel);
+        this.renderInfoRow(grid, t('fingerprint.detail.status'), this.isEnabled(fp) ? t('fingerprint.detail.enabled') : t('fingerprint.detail.disabled'));
     }
 
     private renderInfoRow(container: HTMLElement, label: string, value: string): void {
@@ -141,15 +142,15 @@ export class FingerprintDetailModal extends Modal {
 
     private renderStats(container: HTMLElement, fp: StyleFingerprint): void {
         const section = container.createDiv({ cls: 'nw-fp-detail-section' });
-        section.createEl('div', { text: '数据可视化', cls: 'nw-fp-section-heading nw-fp-section-heading--spaced' });
+        section.createEl('div', { text: t('fingerprint.detail.statsTitle'), cls: 'nw-fp-section-heading nw-fp-section-heading--spaced' });
 
         const statsGrid = section.createDiv({ cls: 'nw-fp-pair-grid' });
 
         const statCards = [
-            { label: '平均句长', value: `${fp.stats.avgSentenceLength} 字` },
-            { label: '平均段长', value: `${fp.stats.avgParagraphLength} 字` },
-            { label: '对话占比', value: `${Math.round(fp.stats.dialogueRatio * 100)}%` },
-            { label: '描写占比', value: `${Math.round(fp.stats.descriptionRatio * 100)}%` },
+            { label: t('fingerprint.detail.avgSentenceLen'), value: `${fp.stats.avgSentenceLength}${t('fingerprint.metric.unit.char')}` },
+            { label: t('fingerprint.detail.avgParaLen'), value: `${fp.stats.avgParagraphLength}${t('fingerprint.metric.unit.char')}` },
+            { label: t('fingerprint.detail.dialogueRatio'), value: `${Math.round(fp.stats.dialogueRatio * 100)}%` },
+            { label: t('fingerprint.detail.descriptionRatio'), value: `${Math.round(fp.stats.descriptionRatio * 100)}%` },
         ];
 
         for (const stat of statCards) {
@@ -166,13 +167,13 @@ export class FingerprintDetailModal extends Modal {
         const radarCard = chartsRow.createDiv({
             cls: 'nw-fp-chart-card nw-fp-chart-card--center'
         });
-        radarCard.createEl('div', { text: '风格维度雷达图（V2 12 维）', cls: 'nw-fp-chart-title' });
+        radarCard.createEl('div', { text: t('fingerprint.detail.radarTitle'), cls: 'nw-fp-chart-title' });
 
         const v2 = this.getV2();
         const radarData = FEATURE_DIMENSIONS_V2.map(dim => {
             const dimData = v2.features[dim.key];
             return {
-                label: dim.name,
+                label: dimensionNameV2(dim.key),
                 value: getDimensionScore(dimData.status, this.extractMetricForRadar(dim.key, dimData)),
             };
         });
@@ -181,24 +182,24 @@ export class FingerprintDetailModal extends Modal {
         const donutCard = chartsRow.createDiv({
             cls: 'nw-fp-chart-card'
         });
-        donutCard.createEl('div', { text: '内容占比分布', cls: 'nw-fp-chart-title' });
+        donutCard.createEl('div', { text: t('fingerprint.detail.donutTitle'), cls: 'nw-fp-chart-title' });
 
         const narrationRatio = Math.max(0, 1 - fp.stats.dialogueRatio - fp.stats.descriptionRatio);
         const donutData = [
-            { label: '对话', value: Math.round(fp.stats.dialogueRatio * 100), color: '#7c3aed' },
-            { label: '描写', value: Math.round(fp.stats.descriptionRatio * 100), color: '#ec4899' },
-            { label: '叙述', value: Math.round(narrationRatio * 100), color: '#10b981' },
+            { label: t('fingerprint.detail.donutDialogue'), value: Math.round(fp.stats.dialogueRatio * 100), color: '#7c3aed' },
+            { label: t('fingerprint.detail.donutDescription'), value: Math.round(fp.stats.descriptionRatio * 100), color: '#ec4899' },
+            { label: t('fingerprint.detail.donutNarration'), value: Math.round(narrationRatio * 100), color: '#10b981' },
         ];
         appendSanitizedHtml(donutCard, donutChart(donutData, { size: 220 }));
 
         const barCard = section.createDiv({
             cls: 'nw-fp-chart-card'
         });
-        barCard.createEl('div', { text: '平均长度统计', cls: 'nw-fp-chart-title' });
+        barCard.createEl('div', { text: t('fingerprint.detail.barTitle'), cls: 'nw-fp-chart-title' });
 
         const barData = [
-            { label: '平均句长', value: fp.stats.avgSentenceLength },
-            { label: '平均段长', value: fp.stats.avgParagraphLength },
+            { label: t('fingerprint.detail.avgSentenceLen'), value: fp.stats.avgSentenceLength },
+            { label: t('fingerprint.detail.avgParaLen'), value: fp.stats.avgParagraphLength },
         ];
         appendSanitizedHtml(barCard, barChart(barData, { width: 400, height: 180 }));
     }
@@ -266,7 +267,7 @@ export class FingerprintDetailModal extends Modal {
     private renderV2Features(container: HTMLElement): void {
         const section = container.createDiv({ cls: 'nw-fp-detail-section' });
         section.createEl('div', {
-            text: '风格特征（V2 12 维详情）',
+            text: t('fingerprint.detail.featuresTitle'),
             cls: 'nw-fp-section-heading'
         });
 
@@ -286,12 +287,12 @@ export class FingerprintDetailModal extends Modal {
                 cls: 'nw-fp-dim-head-main'
             });
             headerLeft.createEl('span', {
-                text: dim.name,
+                text: dimensionNameV2(dim.key),
                 cls: 'nw-fp-dim-name'
             });
             // 数据状态徽章
             headerLeft.createEl('span', {
-                text: DIMENSION_STATUS_LABELS[dimData.status],
+                text: dimensionStatusLabel(dimData.status),
                 cls: `nw-fp-dim-status nw-fp-dim-status--${dimData.status}`,
             });
             // V1 来源标记
@@ -299,7 +300,7 @@ export class FingerprintDetailModal extends Modal {
                 headerLeft.createEl('span', {
                     text: '🆕',
                     cls: 'nw-fp-dim-new',
-                    attr: { title: 'V2 新增维度' }
+                    attr: { title: t('fingerprint.detail.newDimTitle') }
                 });
             }
             header.createEl('span', {
@@ -319,7 +320,7 @@ export class FingerprintDetailModal extends Modal {
 
                 // 描述
                 body.createEl('div', {
-                    text: dimData.description || '（暂无描述）',
+                    text: dimData.description || t('fingerprint.detail.noDesc'),
                     cls: 'nw-fp-dim-desc'
                 });
 
@@ -343,7 +344,7 @@ export class FingerprintDetailModal extends Modal {
                 }
                 if (metrics.length === 0) {
                     body.createEl('div', {
-                        text: '（暂无定量指标）',
+                        text: t('fingerprint.detail.noMetrics'),
                         cls: 'nw-fp-metric-empty'
                     });
                 }
@@ -351,7 +352,7 @@ export class FingerprintDetailModal extends Modal {
                 // 代表性示例
                 if (dimData.samples && dimData.samples.length > 0) {
                     body.createEl('div', {
-                        text: '代表性示例:',
+                        text: t('fingerprint.detail.dimSamplesLabel'),
                         cls: 'nw-fp-dim-samples-label'
                     });
                     dimData.samples.forEach((sample, idx) => {
@@ -375,81 +376,81 @@ export class FingerprintDetailModal extends Modal {
         switch (key) {
             case 'rhythm':
                 return [
-                    { label: '短句占比', value: formatRatio(obj.shortSentenceRatio) },
-                    { label: '平均句长', value: formatNumber(obj.avgSentenceLength, ' 字') },
-                    { label: '标点密度', value: formatNumber(obj.punctuationDensity, '/千字') },
-                    { label: '段落密度', value: formatNumber(obj.paragraphDensity, '/千字') },
+                    { label: t('fingerprint.metric.shortRatio'), value: formatRatio(obj.shortSentenceRatio) },
+                    { label: t('fingerprint.metric.avgSentenceLen'), value: formatNumber(obj.avgSentenceLength, t('fingerprint.metric.unit.char')) },
+                    { label: t('fingerprint.metric.punctuationDensity'), value: formatNumber(obj.punctuationDensity, t('fingerprint.metric.unit.perK')) },
+                    { label: t('fingerprint.metric.paragraphDensity'), value: formatNumber(obj.paragraphDensity, t('fingerprint.metric.unit.perK')) },
                 ];
             case 'sentencePattern':
                 return [
-                    { label: '倒装句密度', value: formatNumber(obj.inversionDensity, '/千字') },
-                    { label: '省略句密度', value: formatNumber(obj.ellipsisDensity, '/千字') },
-                    { label: '排比句密度', value: formatNumber(obj.parallelismDensity, '/千字') },
-                    { label: '从句嵌套深度', value: formatNumber(obj.clauseNestingDepth) },
+                    { label: t('fingerprint.metric.inversionDensity'), value: formatNumber(obj.inversionDensity, t('fingerprint.metric.unit.perK')) },
+                    { label: t('fingerprint.metric.ellipsisDensity'), value: formatNumber(obj.ellipsisDensity, t('fingerprint.metric.unit.perK')) },
+                    { label: t('fingerprint.metric.parallelismDensity'), value: formatNumber(obj.parallelismDensity, t('fingerprint.metric.unit.perK')) },
+                    { label: t('fingerprint.metric.clauseNestingDepth'), value: formatNumber(obj.clauseNestingDepth) },
                 ];
             case 'wordChoice':
                 return [
-                    { label: '常用词比例', value: formatRatio(obj.commonWordRatio) },
-                    { label: '生僻词比例', value: formatRatio(obj.rareWordRatio) },
-                    { label: '虚词比例', value: formatRatio(obj.functionWordRatio) },
-                    { label: '四字格密度', value: formatNumber(obj.fourCharIdiomDensity, '/千字') },
+                    { label: t('fingerprint.metric.commonWordRatio'), value: formatRatio(obj.commonWordRatio) },
+                    { label: t('fingerprint.metric.rareWordRatio'), value: formatRatio(obj.rareWordRatio) },
+                    { label: t('fingerprint.metric.functionWordRatio'), value: formatRatio(obj.functionWordRatio) },
+                    { label: t('fingerprint.metric.fourCharIdiomDensity'), value: formatNumber(obj.fourCharIdiomDensity, t('fingerprint.metric.unit.perK')) },
                 ];
             case 'rhetoric':
                 return [
-                    { label: '比喻密度', value: formatNumber(obj.metaphorDensity, '/千字') },
-                    { label: '拟人密度', value: formatNumber(obj.personificationDensity, '/千字') },
-                    { label: '夸张密度', value: formatNumber(obj.hyperboleDensity, '/千字') },
-                    { label: '对偶密度', value: formatNumber(obj.antithesisDensity, '/千字') },
+                    { label: t('fingerprint.metric.metaphorDensity'), value: formatNumber(obj.metaphorDensity, t('fingerprint.metric.unit.perK')) },
+                    { label: t('fingerprint.metric.personificationDensity'), value: formatNumber(obj.personificationDensity, t('fingerprint.metric.unit.perK')) },
+                    { label: t('fingerprint.metric.hyperboleDensity'), value: formatNumber(obj.hyperboleDensity, t('fingerprint.metric.unit.perK')) },
+                    { label: t('fingerprint.metric.antithesisDensity'), value: formatNumber(obj.antithesisDensity, t('fingerprint.metric.unit.perK')) },
                 ];
             case 'perspective': {
                 const pd = obj.personDistribution as Record<string, number> | undefined;
                 return [
-                    { label: '第一人称', value: pd ? formatRatio(pd.first) : '—' },
-                    { label: '第三人称', value: pd ? formatRatio(pd.third) : '—' },
-                    { label: '视角切换频率', value: formatNumber(obj.perspectiveSwitchFrequency, '/千字') },
+                    { label: t('fingerprint.metric.firstPerson'), value: pd ? formatRatio(pd.first) : '—' },
+                    { label: t('fingerprint.metric.thirdPerson'), value: pd ? formatRatio(pd.third) : '—' },
+                    { label: t('fingerprint.metric.perspectiveSwitchFreq'), value: formatNumber(obj.perspectiveSwitchFrequency, t('fingerprint.metric.unit.perK')) },
                 ];
             }
             case 'emotion':
                 return [
-                    { label: '情绪基调', value: typeof obj.emotionalTone === 'string' ? obj.emotionalTone : '—' },
-                    { label: '情绪波动频率', value: formatNumber(obj.emotionalFluctuationFrequency, '/千字') },
+                    { label: t('fingerprint.metric.emotionalTone'), value: typeof obj.emotionalTone === 'string' ? obj.emotionalTone : '—' },
+                    { label: t('fingerprint.metric.emotionalFluctuation'), value: formatNumber(obj.emotionalFluctuationFrequency, t('fingerprint.metric.unit.perK')) },
                 ];
             case 'tension':
                 return [
-                    { label: '悬念密度', value: formatNumber(obj.suspenseDensity, '/千字') },
-                    { label: '冲突频率', value: formatNumber(obj.conflictFrequency, '/千字') },
-                    { label: '转折句密度', value: formatNumber(obj.turningPointDensity, '/千字') },
+                    { label: t('fingerprint.metric.suspenseDensity'), value: formatNumber(obj.suspenseDensity, t('fingerprint.metric.unit.perK')) },
+                    { label: t('fingerprint.metric.conflictFrequency'), value: formatNumber(obj.conflictFrequency, t('fingerprint.metric.unit.perK')) },
+                    { label: t('fingerprint.metric.turningPointDensity'), value: formatNumber(obj.turningPointDensity, t('fingerprint.metric.unit.perK')) },
                 ];
             case 'infoDensity':
                 return [
-                    { label: '信息密度', value: formatNumber(obj.infoDensity, '/百字') },
-                    { label: '专有名词密度', value: formatNumber(obj.properNounDensity, '/千字') },
-                    { label: '设定植入频率', value: formatNumber(obj.settingInjectionFrequency, '/千字') },
+                    { label: t('fingerprint.metric.infoDensity'), value: formatNumber(obj.infoDensity, t('fingerprint.metric.unit.perHundred')) },
+                    { label: t('fingerprint.metric.properNounDensity'), value: formatNumber(obj.properNounDensity, t('fingerprint.metric.unit.perK')) },
+                    { label: t('fingerprint.metric.settingInjectionFrequency'), value: formatNumber(obj.settingInjectionFrequency, t('fingerprint.metric.unit.perK')) },
                 ];
             case 'dialogue':
                 return [
-                    { label: '对话占比', value: formatRatio(obj.dialogueRatio) },
-                    { label: '对话风格', value: typeof obj.dialogueStyleTag === 'string' ? obj.dialogueStyleTag : '—' },
-                    { label: '个性化程度', value: formatRatio(obj.personalizationLevel) },
-                    { label: '潜台词比例', value: formatRatio(obj.subtextRatio) },
+                    { label: t('fingerprint.metric.dialogueRatio'), value: formatRatio(obj.dialogueRatio) },
+                    { label: t('fingerprint.metric.dialogueStyleTag'), value: typeof obj.dialogueStyleTag === 'string' ? obj.dialogueStyleTag : '—' },
+                    { label: t('fingerprint.metric.personalizationLevel'), value: formatRatio(obj.personalizationLevel) },
+                    { label: t('fingerprint.metric.subtextRatio'), value: formatRatio(obj.subtextRatio) },
                 ];
             case 'description':
                 return [
-                    { label: '环境描写占比', value: formatRatio(obj.environmentDescriptionRatio) },
-                    { label: '细节密度', value: formatNumber(obj.detailDensity, '/百字') },
+                    { label: t('fingerprint.metric.environmentDescriptionRatio'), value: formatRatio(obj.environmentDescriptionRatio) },
+                    { label: t('fingerprint.metric.detailDensity'), value: formatNumber(obj.detailDensity, t('fingerprint.metric.unit.perHundred')) },
                 ];
             case 'narration':
                 return [
-                    { label: '叙事速度', value: formatNumber(obj.narrationSpeed, '/千字') },
-                    { label: '时间跳跃频率', value: formatNumber(obj.timeJumpFrequency, '/千字') },
-                    { label: '场景切换频率', value: formatNumber(obj.sceneSwitchFrequency, '/千字') },
+                    { label: t('fingerprint.metric.narrationSpeed'), value: formatNumber(obj.narrationSpeed, t('fingerprint.metric.unit.perK')) },
+                    { label: t('fingerprint.metric.timeJumpFrequency'), value: formatNumber(obj.timeJumpFrequency, t('fingerprint.metric.unit.perK')) },
+                    { label: t('fingerprint.metric.sceneSwitchFrequency'), value: formatNumber(obj.sceneSwitchFrequency, t('fingerprint.metric.unit.perK')) },
                 ];
             case 'languageTexture':
                 return [
-                    { label: '书面化程度', value: formatRatio(obj.writtenLevel) },
-                    { label: '口语化程度', value: formatRatio(obj.colloquialLevel) },
-                    { label: '古风化程度', value: formatRatio(obj.archaismLevel) },
-                    { label: '地域特色词', value: formatNumber(obj.regionalWordDensity, '/千字') },
+                    { label: t('fingerprint.metric.writtenLevel'), value: formatRatio(obj.writtenLevel) },
+                    { label: t('fingerprint.metric.colloquialLevel'), value: formatRatio(obj.colloquialLevel) },
+                    { label: t('fingerprint.metric.archaismLevel'), value: formatRatio(obj.archaismLevel) },
+                    { label: t('fingerprint.metric.regionalWordDensity'), value: formatNumber(obj.regionalWordDensity, t('fingerprint.metric.unit.perK')) },
                 ];
             default:
                 return [];
@@ -459,8 +460,8 @@ export class FingerprintDetailModal extends Modal {
     private renderSamples(container: HTMLElement, fp: StyleFingerprint): void {
         const section = container.createDiv({ cls: 'nw-fp-detail-section' });
         const header = section.createDiv({ cls: 'nw-fp-samples-head' });
-        header.createEl('span', { text: '示例片段', cls: 'nw-fp-samples-title' });
-        header.createEl('span', { text: `共 ${fp.samples.length} 段`, cls: 'nw-fp-samples-count' });
+        header.createEl('span', { text: t('fingerprint.detail.samplesTitle'), cls: 'nw-fp-samples-title' });
+        header.createEl('span', { text: t('fingerprint.detail.samplesCount', { count: fp.samples.length }), cls: 'nw-fp-samples-count' });
 
         const samplesList = section.createDiv({
             cls: 'nw-fp-samples-list'
@@ -469,7 +470,7 @@ export class FingerprintDetailModal extends Modal {
         if (fp.samples.length === 0) {
             samplesList.createDiv({
                 cls: 'nw-fp-detail-samples-empty',
-                text: '暂无示例片段'
+                text: t('fingerprint.detail.samplesEmpty')
             });
             return;
         }
@@ -479,7 +480,7 @@ export class FingerprintDetailModal extends Modal {
                 cls: 'nw-fp-sample'
             });
             const idxLabel = sampleEl.createEl('div', {
-                text: `片段 ${idx + 1}`,
+                text: t('fingerprint.detail.sampleLabel', { n: idx + 1 }),
                 cls: 'nw-fp-sample-label'
             });
             const textEl = sampleEl.createEl('div', {
@@ -495,7 +496,7 @@ export class FingerprintDetailModal extends Modal {
 
         if (this.options.onToggle) {
             const toggleBtn = btnRow.createEl('button', {
-                text: this.isEnabled(fp) ? '⏸ 禁用' : '✅ 启用',
+                text: this.isEnabled(fp) ? t('fingerprint.detail.toggleDisable') : t('fingerprint.detail.toggleEnable'),
                 cls: 'nw-fp-btn',
                 attr: { type: 'button' },
             });
@@ -517,16 +518,16 @@ export class FingerprintDetailModal extends Modal {
 
         if (canEdit && this.options.onReextract) {
             const reextractBtn = btnRow.createEl('button', {
-                text: '🔄 重新提取',
+                text: t('fingerprint.detail.reextract'),
                 cls: 'nw-fp-btn',
                 attr: { type: 'button' },
             });
             reextractBtn.addEventListener('click', async () => {
                 const confirmed = await OperationConfirmModal.confirm(this.app, {
-                    title: '重新提取指纹',
-                    description: '确定要重新提取该指纹吗？现有数据将被覆盖。',
-                    confirmText: '确认提取',
-                    cancelText: '取消',
+                    title: t('fingerprint.detail.reextractTitle'),
+                    description: t('fingerprint.detail.reextractDesc'),
+                    confirmText: t('fingerprint.detail.reextractOk'),
+                    cancelText: t('common.cancel'),
                 });
                 if (!confirmed) return;
                 this.options.onReextract?.(fp);
@@ -536,7 +537,7 @@ export class FingerprintDetailModal extends Modal {
         // 强度调节入口（V2 Task 7）
         if (this.options.onOpenIntensity) {
             const intensityBtn = btnRow.createEl('button', {
-                text: '🎚 强度调节',
+                text: t('fingerprint.detail.intensity'),
                 cls: 'nw-fp-btn nw-fp-btn--plain',
                 attr: { type: 'button' },
             });
@@ -547,17 +548,17 @@ export class FingerprintDetailModal extends Modal {
 
         if (canEdit && this.options.onDelete) {
             const deleteBtn = btnRow.createEl('button', {
-                text: '🗑 删除',
+                text: t('fingerprint.detail.delete'),
                 cls: 'nw-fp-btn nw-fp-btn--danger',
                 attr: { type: 'button' },
             });
             deleteBtn.addEventListener('click', async () => {
                 const confirmed = await OperationConfirmModal.confirm(this.app, {
-                    title: '删除指纹',
-                    description: `确定要删除指纹「${fp.name}」吗？`,
-                    warning: '此操作不可恢复',
-                    confirmText: '确认删除',
-                    cancelText: '取消',
+                    title: t('fingerprint.detail.deleteTitle'),
+                    description: t('fingerprint.detail.deleteDesc', { name: fp.name }),
+                    warning: t('fingerprint.detail.deleteWarning'),
+                    confirmText: t('fingerprint.detail.deleteOk'),
+                    cancelText: t('common.cancel'),
                 });
                 if (!confirmed) return;
                 this.options.onDelete?.(fp);
@@ -566,7 +567,7 @@ export class FingerprintDetailModal extends Modal {
         }
 
         const closeBtn = btnRow.createEl('button', {
-            text: '关闭',
+            text: t('fingerprint.detail.close'),
             cls: 'nw-fp-btn nw-fp-btn--primary',
             attr: { type: 'button' },
         });

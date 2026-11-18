@@ -145,16 +145,16 @@ export function renderFingerprintList(
 }
 
 /**
- * 特征维度列表常量。
+ * 特征维度列表常量（i18n 第二期第16片：label 改 labelKey，渲染时求值）。
  */
-export const FEATURE_DIMENSIONS: Array<{ key: keyof StyleFingerprint['features']; label: string }> = [
-    { key: 'sentenceRhythm', label: '句式节奏' },
-    { key: 'wordPreference', label: '用词偏好' },
-    { key: 'narrativeStyle', label: '叙事特点' },
-    { key: 'rhetoric', label: '修辞手法' },
-    { key: 'dialogueStyle', label: '对话风格' },
-    { key: 'paragraphStructure', label: '段落结构' },
-    { key: 'overallTone', label: '整体文风' },
+export const FEATURE_DIMENSIONS: Array<{ key: keyof StyleFingerprint['features']; labelKey: string }> = [
+    { key: 'sentenceRhythm', labelKey: 'fingerprint.v1dim.sentenceRhythm' },
+    { key: 'wordPreference', labelKey: 'fingerprint.v1dim.wordPreference' },
+    { key: 'narrativeStyle', labelKey: 'fingerprint.v1dim.narrativeStyle' },
+    { key: 'rhetoric', labelKey: 'fingerprint.v1dim.rhetoric' },
+    { key: 'dialogueStyle', labelKey: 'fingerprint.v1dim.dialogueStyle' },
+    { key: 'paragraphStructure', labelKey: 'fingerprint.v1dim.paragraphStructure' },
+    { key: 'overallTone', labelKey: 'fingerprint.v1dim.overallTone' },
 ];
 
 // ============================================================
@@ -167,13 +167,32 @@ export const FEATURE_DIMENSIONS: Array<{ key: keyof StyleFingerprint['features']
 export const FEATURE_DIMENSIONS_V2: readonly StyleDimensionMetaV2[] = STYLE_DIMENSIONS_V2;
 
 /**
- * 维度数据状态中文标签
+ * V2 维度中文名（引擎常量 `STYLE_DIMENSIONS_V2` 的 name 被引擎日志消费，不改常量；
+ * UI 按 `fingerprint.dim.<key>.name` 求值，同第九片 `dimensionLabel()` 路数）。
+ * @param key - 维度键
+ * @returns 名称
  */
-export const DIMENSION_STATUS_LABELS: Record<DimensionStatus, string> = {
-    complete: '完整',
-    pending: '待补充',
-    partial: '部分',
-};
+export function dimensionNameV2(key: StyleDimensionKeyV2): string {
+    return t(`fingerprint.dim.${key}.name`);
+}
+
+/**
+ * V2 维度说明（`fingerprint.dim.<key>.desc`）。
+ * @param key - 维度键
+ * @returns 说明
+ */
+export function dimensionDescV2(key: StyleDimensionKeyV2): string {
+    return t(`fingerprint.dim.${key}.desc`);
+}
+
+/**
+ * 维度数据状态标签（`fingerprint.status.<status>`）。
+ * @param status - 状态
+ * @returns 标签
+ */
+export function dimensionStatusLabel(status: DimensionStatus): string {
+    return t(`fingerprint.status.${status}`);
+}
 
 /**
  * 维度数据状态对应分数（用于雷达图可视化，0-100）

@@ -6,7 +6,9 @@
  * 独立小节，与 7 维区块互补。数据装配（buildV2FeatureRows）与
  * DOM 渲染（renderV2FeaturesSection）分离，前者可单测。
  */
+import { t } from '@/i18n';
 import type { V2Fingerprint, StyleFingerprintFeaturesV2, StyleDimensionKeyV2, DimensionStatus } from '@/engine/style/style-dimensions-v2';
+import { dimensionNameV2 } from '@/ui/fingerprint-utils';
 
 /** 单个维度的展示行。 */
 export interface V2FeatureRow {
@@ -18,20 +20,20 @@ export interface V2FeatureRow {
     samples: string[];
 }
 
-/** 十二维的中文标签（展示顺序即此数组顺序）。 */
-export const V2_FEATURE_LABELS: ReadonlyArray<{ key: StyleDimensionKeyV2; label: string }> = [
-    { key: 'rhythm', label: '节奏' },
-    { key: 'sentencePattern', label: '句式' },
-    { key: 'wordChoice', label: '用词' },
-    { key: 'rhetoric', label: '修辞' },
-    { key: 'perspective', label: '视角' },
-    { key: 'emotion', label: '情绪' },
-    { key: 'tension', label: '张力' },
-    { key: 'infoDensity', label: '信息量' },
-    { key: 'dialogue', label: '对话' },
-    { key: 'description', label: '描写' },
-    { key: 'narration', label: '叙事' },
-    { key: 'languageTexture', label: '语言质感' },
+/** 十二维展示顺序（i18n 第16片：label 改 labelKey，随语言求值；顺序即渲染顺序）。 */
+export const V2_FEATURE_LABELS: ReadonlyArray<{ key: StyleDimensionKeyV2; labelKey: string }> = [
+    { key: 'rhythm', labelKey: 'fingerprint.dim.rhythm.name' },
+    { key: 'sentencePattern', labelKey: 'fingerprint.dim.sentencePattern.name' },
+    { key: 'wordChoice', labelKey: 'fingerprint.dim.wordChoice.name' },
+    { key: 'rhetoric', labelKey: 'fingerprint.dim.rhetoric.name' },
+    { key: 'perspective', labelKey: 'fingerprint.dim.perspective.name' },
+    { key: 'emotion', labelKey: 'fingerprint.dim.emotion.name' },
+    { key: 'tension', labelKey: 'fingerprint.dim.tension.name' },
+    { key: 'infoDensity', labelKey: 'fingerprint.dim.infoDensity.name' },
+    { key: 'dialogue', labelKey: 'fingerprint.dim.dialogue.name' },
+    { key: 'description', labelKey: 'fingerprint.dim.description.name' },
+    { key: 'narration', labelKey: 'fingerprint.dim.narration.name' },
+    { key: 'languageTexture', labelKey: 'fingerprint.dim.languageTexture.name' },
 ];
 
 const MAX_SAMPLES_PER_DIM = 2;
@@ -49,12 +51,12 @@ const MAX_SAMPLES_PER_DIM = 2;
  * ```
  */
 export function buildV2FeatureRows(features: StyleFingerprintFeaturesV2): V2FeatureRow[] {
-    return V2_FEATURE_LABELS.map(({ key, label }) => {
+    return V2_FEATURE_LABELS.map(({ key, labelKey }) => {
         const dim = features[key];
         return {
             key,
-            label,
-            description: (dim?.description || '').trim() || '样本未体现',
+            label: dimensionNameV2(key),
+            description: (dim?.description || '').trim() || t('fingerprint.v2.noSample'),
             status: dim?.status ?? 'pending',
             samples: (dim?.samples || []).slice(0, MAX_SAMPLES_PER_DIM),
         };
@@ -80,11 +82,11 @@ export function renderV2FeaturesSection(container: HTMLElement, v2: V2Fingerprin
         cls: 'nw-fp-v2-title-row'
     });
     titleRow.createEl('h4', {
-        text: '🧬 十二维结构化特征',
+        text: t('fingerprint.v2.sectionTitle'),
         cls: 'nw-fp-section-h4 nw-fp-section-title'
     });
     titleRow.createEl('span', {
-        text: '本地词表统计 · V2',
+        text: t('fingerprint.v2.kindBadge'),
         cls: 'nw-fp-v2-kind'
     });
 
@@ -100,7 +102,7 @@ export function renderV2FeaturesSection(container: HTMLElement, v2: V2Fingerprin
         });
         if (row.status !== 'complete') {
             head.createEl('span', {
-                text: '样本不足',
+                text: t('fingerprint.v2.sampleInsufficient'),
                 cls: 'nw-fp-v2-dim-pending'
             });
         }

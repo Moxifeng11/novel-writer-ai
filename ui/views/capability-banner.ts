@@ -4,6 +4,8 @@
  * 两个模块都容易出现「看起来有内容，实际检索/评分未生效」的误解。
  * 这里用统一的阶段徽标 + 指标 + 说明，把「当前能做什么、还缺什么」直接放进 UI。
  */
+import { t } from '@/i18n';
+
 
 /** 能力阶段 */
 export type CapabilityStage = 'empty' | 'accumulating' | 'ready' | 'degraded';
@@ -32,11 +34,11 @@ export interface CapabilityBannerOptions {
     actions?: CapabilityAction[];
 }
 
-const STAGE_LABELS: Record<CapabilityStage, string> = {
-    empty: '未积累',
-    accumulating: '积累中',
-    ready: '已生效',
-    degraded: '降级',
+const STAGE_LABEL_KEYS: Record<CapabilityStage, string> = {
+    empty: 'fingerprint.cap.stageEmpty',
+    accumulating: 'fingerprint.cap.stageAccumulating',
+    ready: 'fingerprint.cap.stageReady',
+    degraded: 'fingerprint.cap.stageDegraded',
 };
 
 /**
@@ -57,7 +59,7 @@ export function renderCapabilityBanner(
     head.createSpan({ cls: 'nw-capability-title', text: options.title });
     head.createSpan({
         cls: 'nw-capability-stage',
-        text: STAGE_LABELS[options.stage],
+        text: t(STAGE_LABEL_KEYS[options.stage]),
     });
 
     const metrics = banner.createDiv({ cls: 'nw-capability-metrics' });

@@ -2103,3 +2103,36 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 **下一轮候选**：写作指纹库视图三件套（ZC-06：`writing-fingerprint-view.ts` 236 处 +
 `fingerprint-detail-modal.ts` 117 处 + `fingerprint-v2-detail.ts` 16 处 + `fingerprint-utils.ts`
 12 维标签 10 处）→ 写作主流程（ZC-07）。
+
+## 第七十三轮：i18n 第二期第16片 —— 写作指纹库视图链 + 12 维标签（2026-11-19，ZCode · ZC-20261118-06）
+
+**改动**
+- `ui/views/writing-fingerprint-view.ts`（2018 行 / 约 150 处）147 对替换走仓外脚本
+  `migrate-fp-view.cjs`（唯一命中即替换、重复串 all 标记全量替换，147/147 命中）：
+  工具栏 10 按钮+tooltip、三层页签、列表与详情面板、注入影响卡、自动分类、编辑/章节提取/知识库导入
+  三弹窗、全部 Notice。走 `fingerprint.view.*`（142 键）。
+- `ui/fingerprint-detail-modal.ts`（575 行 / 约 116 处）迁 `fingerprint.detail.*`（45 键）+
+  `fingerprint.metric.*`（38 指标标签 + 3 单位）。
+- 12 维标签：引擎常量 `STYLE_DIMENSIONS_V2` 的 name 被引擎消费不改，`fingerprint-utils.ts` 并出
+  `dimensionNameV2()/dimensionDescV2()/dimensionStatusLabel()`（`fingerprint.dim.*` 24 + `status.*` 3），
+  v1 七维改 `labelKey`（7 键）；`fingerprint-v2-detail.ts` 标签表复用同一组键。
+- `fingerprint-scope-logic.ts`：层名走 `scopeLabel()`（`SCOPE_LABELS` 常量保留给测试）+ 空态引导。
+- 能力横幅链：`fingerprint-capability.ts`（15 键）+ `capability-banner.ts`（4 阶段标签）+
+  `link-status.ts` 外壳（13 键）。**已知缺口**：`shared/link-status-compute.ts` 的阶段名/明细
+  被 agent 诊断与知识库视图共用，本片不迁（backlog）。
+- 保留中文 = 数据：指纹 name/source/tags（用户数据）、默认名 `章节指纹_`/来源 `章节提取`
+  （落盘数据不随语言漂移）、正文目录路径。
+- 资源 zh/en 各 1644（+331，顶层 `fingerprint` 子树 299 键）。
+
+**验收**
+- 新增 `tests/unit/ui/fingerprint-view-i18n.test.ts` 4 例；`fingerprint-v2-detail.test.ts` 改
+  `t(labelKey)` 对比；scope-logic/capability/view-banners/detail-logic 等 5 个既有测试文件
+  **零修改全绿**（zh 资源逐字保留）。
+- `check:i18n` zh/en 各 1644、动态键 15 处、棘轮收紧到 **250 文件 / 10218 条**；
+  `check:bundle` main.js → **5841540**（+34556）；preflight EXIT=0。
+- 实机 `D:\nw-dev-vault\_visual-i18n16\fingerprint-view-{zh-CN,en-US}.png`（主窗口命令直开）：
+  en 下导航/页签/工具栏/能力横幅/链路条外壳/搜索/操作区全英文，剩余 CJK = 指纹数据 +
+  共享层缺口（链路阶段名/模型快切器/桌宠，backlog）；zh 页与改前一致。
+
+**下一轮候选**：写作主流程（ZC-07：`co-writing-view.ts` 8504 字 + `full-writer-view.ts` 4981 字，
+可再拆 2~3 次提交）→ 外观页统计/桌宠块 → section-factory/section-base 骨架。

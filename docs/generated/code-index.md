@@ -11,7 +11,7 @@
 | `shared/` | 258 | 51769 | 2179 | 1700 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 115062 | 1177 | 927 | 79% |
+| `ui/` | 306 | 115111 | 1180 | 930 | 79% |
 
 ## 文件清单
 
@@ -821,11 +821,11 @@
 | `ui/fanfic-prompt-notice.ts` | 20 | 1 | 1 |
 | `ui/fanfic-review-modal.ts` | 419 | 1 | 1 |
 | `ui/fingerprint-blend-modal.ts` | 620 | 2 | 2 |
-| `ui/fingerprint-detail-modal.ts` | 576 | 1 | 1 |
+| `ui/fingerprint-detail-modal.ts` | 577 | 1 | 1 |
 | `ui/fingerprint-embedding.ts` | 32 | 1 | 1 |
 | `ui/fingerprint-intensity-modal.ts` | 502 | 2 | 2 |
 | `ui/fingerprint-library-modal.ts` | 306 | 1 | 1 |
-| `ui/fingerprint-utils.ts` | 212 | 11 | 11 |
+| `ui/fingerprint-utils.ts` | 231 | 13 | 13 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |
 | `ui/full-writer-view.ts` | 2772 | 2 | 2 |
 | `ui/full-writer/batch-pipeline-runner.ts` | 502 | 5 | 4 |
@@ -984,11 +984,11 @@
 | `ui/views/book-emotion-logic.ts` | 107 | 9 | 4 |
 | `ui/views/book-foreshadow-logic.ts` | 142 | 13 | 5 |
 | `ui/views/book-style-logic.ts` | 145 | 11 | 6 |
-| `ui/views/capability-banner.ts` | 88 | 5 | 1 |
-| `ui/views/fingerprint-capability.ts` | 105 | 3 | 1 |
-| `ui/views/fingerprint-detail-logic.ts` | 95 | 8 | 4 |
-| `ui/views/fingerprint-scope-logic.ts` | 97 | 9 | 4 |
-| `ui/views/fingerprint-v2-detail.ts` | 126 | 4 | 2 |
+| `ui/views/capability-banner.ts` | 90 | 5 | 1 |
+| `ui/views/fingerprint-capability.ts` | 106 | 3 | 1 |
+| `ui/views/fingerprint-detail-logic.ts` | 96 | 8 | 4 |
+| `ui/views/fingerprint-scope-logic.ts` | 114 | 10 | 5 |
+| `ui/views/fingerprint-v2-detail.ts` | 128 | 4 | 2 |
 | `ui/views/fingerprint-view-logic.ts` | 121 | 7 | 6 |
 | `ui/views/kb-book-card.ts` | 167 | 2 | 2 |
 | `ui/views/kb-book-filter.ts` | 190 | 11 | 7 |
@@ -1007,7 +1007,7 @@
 | `ui/views/knowledge-base-view.ts` | 3270 | 10 | 10 |
 | `ui/views/knowledge-capability.ts` | 113 | 3 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
-| `ui/views/link-status.ts` | 117 | 2 | 1 |
+| `ui/views/link-status.ts` | 123 | 2 | 1 |
 | `ui/views/memory-graph-view.ts` | 289 | 3 | 2 |
 | `ui/views/planning-canvas-view.ts` | 954 | 4 | 3 |
 | `ui/views/writing-fingerprint-view.ts` | 2019 | 3 | 3 |

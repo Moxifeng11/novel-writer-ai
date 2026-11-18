@@ -8,6 +8,7 @@
  *
  * 约定：不 import obsidian、不碰 DOM；SCOPE_LABELS/ICONS 原样上收为单源。
  */
+import { t } from '@/i18n';
 
 /** 指纹作用域 */
 export type FingerprintScope = 'template' | 'global' | 'project';
@@ -15,12 +16,28 @@ export type FingerprintScope = 'template' | 'global' | 'project';
 /** 三层固定顺序（页签渲染顺序即此数组顺序） */
 export const FINGERPRINT_SCOPES: readonly FingerprintScope[] = ['template', 'global', 'project'];
 
-/** 层中文名（含图标，页签与详情头共用） */
+/** 层中文名（含图标；i18n 第16片起 UI 走 `scopeLabel()` 求值，本常量保留给测试与数据侧） */
 export const SCOPE_LABELS: Record<FingerprintScope, string> = {
     template: '📋 模板层',
     global: '🌐 全局层',
     project: '📁 项目层',
 };
+
+/** 层名键（UI 渲染用，随语言求值） */
+const SCOPE_LABEL_KEYS: Record<FingerprintScope, string> = {
+    template: 'fingerprint.view.scope.template',
+    global: 'fingerprint.view.scope.global',
+    project: 'fingerprint.view.scope.project',
+};
+
+/**
+ * 层名（含图标，随语言求值；页签与详情头共用）。
+ * @param scope - 层
+ * @returns 层名
+ */
+export function scopeLabel(scope: FingerprintScope): string {
+    return t(SCOPE_LABEL_KEYS[scope]);
+}
 
 /** 层图标 */
 export const SCOPE_ICONS: Record<FingerprintScope, string> = {
@@ -58,9 +75,9 @@ export function buildEmptyScopeGuidance(
     const otherScopes = FINGERPRINT_SCOPES
         .filter(scope => scope !== activeScope && scopeCounts[scope] > 0);
     if (otherScopes.length > 0) {
-        return `当前层暂无指纹，可切换到${otherScopes.map(scope => SCOPE_LABELS[scope]).join(' / ')}查看`;
+        return t('fingerprint.view.emptyWithOthers', { scopes: otherScopes.map(scope => scopeLabel(scope)).join(' / ') });
     }
-    return '从章节文本提取写作指纹，用于风格对齐与参考';
+    return t('fingerprint.view.emptyFallback');
 }
 
 /** 切层后的选中态（切层必须清空选中，否则详情面板显示的是别的层的指纹） */

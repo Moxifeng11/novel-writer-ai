@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { t, setLocale } from '../../../i18n';
 import {
     buildV2FeatureRows,
     V2_FEATURE_LABELS,
@@ -26,10 +27,12 @@ function makeFeatures(over: Partial<Record<string, { description?: string; statu
 
 describe('buildV2FeatureRows', () => {
     it('按固定顺序输出 12 行，标签与键一一对应', () => {
+        setLocale('zh-CN');
         const rows = buildV2FeatureRows(makeFeatures());
         expect(rows).toHaveLength(12);
         expect(rows.map(r => r.key)).toEqual(V2_FEATURE_LABELS.map(l => l.key));
-        expect(rows.map(r => r.label)).toEqual(V2_FEATURE_LABELS.map(l => l.label));
+        // i18n 第二期第16片：label 改按语言求值（zh 资源保持原文）
+        expect(rows.map(r => r.label)).toEqual(V2_FEATURE_LABELS.map(l => t(l.labelKey)));
     });
 
     it('pending 维度可识别；空描述回退「样本未体现」', () => {
