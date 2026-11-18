@@ -11,7 +11,7 @@
 | `shared/` | 258 | 51769 | 2179 | 1700 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 115160 | 1180 | 930 | 79% |
+| `ui/` | 306 | 115162 | 1180 | 930 | 79% |
 
 ## 文件清单
 
@@ -837,14 +837,14 @@
 | `ui/full-writer/cover-picker-controller.ts` | 146 | 1 | 1 |
 | `ui/full-writer/creation-flow-state.ts` | 262 | 5 | 4 |
 | `ui/full-writer/entity-state-controller.ts` | 136 | 2 | 2 |
-| `ui/full-writer/execution-panels.ts` | 390 | 4 | 4 |
+| `ui/full-writer/execution-panels.ts` | 391 | 4 | 4 |
 | `ui/full-writer/execution-run-store.ts` | 280 | 5 | 5 |
 | `ui/full-writer/fanfic-settings-utils.ts` | 305 | 13 | 13 |
 | `ui/full-writer/flow-panel-controller.ts` | 352 | 3 | 3 |
 | `ui/full-writer/flow-tab.ts` | 59 | 3 | 3 |
 | `ui/full-writer/full-writer-store.ts` | 401 | 5 | 5 |
 | `ui/full-writer/full-writer-utils.ts` | 115 | 6 | 6 |
-| `ui/full-writer/intervention-controller.ts` | 412 | 3 | 3 |
+| `ui/full-writer/intervention-controller.ts` | 413 | 3 | 3 |
 | `ui/full-writer/next-step.ts` | 152 | 2 | 1 |
 | `ui/full-writer/project-selector-controller.ts` | 1145 | 3 | 3 |
 | `ui/full-writer/quick-tools-panel.ts` | 151 | 3 | 3 |

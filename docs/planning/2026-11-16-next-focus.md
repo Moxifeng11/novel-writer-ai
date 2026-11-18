@@ -2341,3 +2341,22 @@ step-render-controller 106 → unit-writer-controller 98 → 外观页统计/桌
 
 **下一轮候选**：flow-tab → intervention-controller 68 → batch-pipeline-runner 79 →
 chapter-orchestrator 71 → execution-panels 62 → 外观页统计/桌宠块。
+
+## 第八十三轮：i18n 第二期第26片 —— 流程页签与干预/执行面板（2026-11-19，ZCode · ZC-20261119-16）
+
+**甄别结论**
+- `flow-tab.ts` 无 UI 文案（仅 1 行注释），自动清零。
+- `intervention-controller.ts`：UI 22 处迁移；**保留数据**——步骤名映射表（infoPlan/plotDistill/…）、
+  AI 理解提示词（含 JSON schema 与规则说明，属 AI 输入）。
+- `execution-panels.ts`：UI 38 处迁移（时间线/注入溯源表/失败卡/执行日志四段）；
+  debug 字段类型含 boolean，插值需 `String()` 收窄。
+
+**改动**
+- `migrate-iv-ep.cjs` 60 对全命中；`fullwriter.iv/ep.*` 60 键。
+
+**验收**
+- `check:i18n` zh/en 各 2824、棘轮 **230 文件 / 8760 条**（flow-tab 清零）；
+  `check:bundle` main.js → **5961108**（+5243）；preflight EXIT=0（10303 通过+3）。
+
+**下一轮候选**：batch-pipeline-runner 79 → chapter-orchestrator 71 → execution-run-store /
+entity-state-controller → 外观页统计/桌宠块 → 跨层数据专项。

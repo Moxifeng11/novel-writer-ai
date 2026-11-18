@@ -7,6 +7,7 @@
  */
 
 import { App, Notice } from 'obsidian';
+import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { AIEngine } from '@/engine/ai-engine';
 import { StepRunner, ALL_FULL_STEPS } from '@/engine/step-runner';
@@ -93,13 +94,13 @@ export class InterventionController {
         this.container = box;
 
         box.createEl('div', {
-            text: '🖊 干预',
+            text: t('fullwriter.iv.title'),
             attr: { style: 'margin: 0 0 6px 0; font-size: 0.8em; font-weight: 600; color: var(--text-muted);' }
         });
 
         this.inputEl = box.createEl('textarea', {
             attr: {
-                placeholder: '输入介入意见...',
+                placeholder: t('fullwriter.iv.placeholder'),
                 style: 'width: 100%; box-sizing: border-box; min-height: 60px; max-height: 160px; resize: vertical; padding: 6px; border: 1px solid var(--background-modifier-border); border-radius: 6px; font-size: 0.8em; line-height: 1.4; background: var(--background-primary); color: var(--text-normal);'
             }
         });
@@ -109,13 +110,13 @@ export class InterventionController {
         });
 
         const understandBtn = btnRow.createEl('button', {
-            text: '🤖 AI 理解',
+            text: t('fullwriter.iv.understandBtn'),
             attr: { style: 'padding: 6px 16px; cursor: pointer; background: var(--interactive-accent); color: var(--text-on-accent); border: none; border-radius: 6px; font-size: 0.85em;' }
         });
         understandBtn.addEventListener('click', () => this.onUnderstand());
 
         const clearBtn = btnRow.createEl('button', {
-            text: '🗑️ 清空',
+            text: t('fullwriter.iv.clearBtn'),
             attr: { style: 'padding: 6px 16px; cursor: pointer; background: transparent; color: var(--text-muted); border: 1px solid var(--background-modifier-border); border-radius: 6px; font-size: 0.85em;' }
         });
         clearBtn.addEventListener('click', () => {
@@ -126,7 +127,7 @@ export class InterventionController {
 
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const voiceBtn = btnRow.createEl('button', {
-                text: '🎤 语音',
+                text: t('fullwriter.iv.voiceBtn'),
                 attr: { style: 'padding: 6px 16px; cursor: pointer; background: transparent; color: var(--text-muted); border: 1px solid var(--background-modifier-border); border-radius: 6px; font-size: 0.85em;' }
             });
             voiceBtn.addEventListener('click', () => this.startVoiceInput());
@@ -145,19 +146,19 @@ export class InterventionController {
     private async onUnderstand(): Promise<void> {
         const input = this.inputEl.value.trim();
         if (!input) {
-            new Notice('⚠️ 请输入干预意见');
+            new Notice(t('fullwriter.iv.needInput'));
             return;
         }
 
-        showProgress('🤖 AI 正在理解您的意见...');
+        showProgress(t('fullwriter.iv.understanding'));
         try {
             const report = await this.callUnderstandingAPI(input);
             this.currentReport = report;
             this.reportStepKey = this.getCurrentStepKey();
             this.renderReport(report);
-            new Notice('✅ AI 理解完成，请确认报告');
+            new Notice(t('fullwriter.iv.understood'));
         } catch (e) {
-            showError(`AI 理解失败: ${e instanceof Error ? e.message : String(e)}`);
+            showError(t('fullwriter.iv.understandFailed', { msg: e instanceof Error ? e.message : String(e) }));
         } finally {
             hideProgress();
         }
@@ -230,7 +231,7 @@ ${userInput}
                 summary: userInput,
                 actions: [{ type: 'modify', target: '全文', content: userInput, confidence: 0.5 }],
                 affectsBody: true,
-                warnings: ['AI 返回格式异常，已按字面意思处理']
+                warnings: [t('fullwriter.iv.formatAnomaly')]
             } as InterventionReport;
         }
     }
@@ -243,12 +244,12 @@ ${userInput}
         this.reportEl.removeClass('nw-u-d-none');
 
         this.reportEl.createEl('h4', {
-            text: '🤖 AI 理解报告',
+            text: t('fullwriter.iv.reportTitle'),
             attr: { style: 'margin: 0 0 8px 0; font-size: 0.85em; color: var(--text-accent);' }
         });
 
         const summary = this.reportEl.createEl('p', {
-            text: report.summary || '已理解您的意见',
+            text: report.summary || t('fullwriter.iv.defaultSummary'),
             attr: { style: 'color: var(--text-accent); font-weight: 600; font-size: 0.85em; margin: 0 0 8px 0;' }
         });
 
@@ -269,7 +270,7 @@ ${userInput}
             const warnBox = this.reportEl.createDiv({
                 attr: { style: 'margin-top: 8px; padding: 8px; background: var(--background-modifier-error-rgb); border-radius: 4px; font-size: 0.8em;' }
             });
-            warnBox.createEl('strong', { text: '⚠️ 警告：' });
+            warnBox.createEl('strong', { text: t('fullwriter.iv.warnPrefix') });
             for (const w of report.warnings) {
                 warnBox.createEl('div', { text: `• ${w}` });
             }
@@ -280,13 +281,13 @@ ${userInput}
         });
 
         const confirmBtn = btnRow.createEl('button', {
-            text: '✅ 确认执行',
+            text: t('fullwriter.iv.confirmExecBtn'),
             attr: { style: 'padding: 6px 16px; cursor: pointer; background: var(--interactive-accent); color: var(--text-on-accent); border: none; border-radius: 6px; font-size: 0.85em;' }
         });
         confirmBtn.addEventListener('click', () => this.executeIntervention());
 
         const modifyBtn = btnRow.createEl('button', {
-            text: '✏️ 修改意见',
+            text: t('fullwriter.iv.editOpinionBtn'),
             attr: { style: 'padding: 6px 16px; cursor: pointer; background: transparent; color: var(--text-muted); border: 1px solid var(--background-modifier-border); border-radius: 6px; font-size: 0.85em;' }
         });
         modifyBtn.addEventListener('click', () => {
@@ -305,7 +306,7 @@ ${userInput}
         // 直接跑当前步骤会把 A 步的修改意见注入 B 步。
         const currentKey = this.getCurrentStepKey();
         if (this.reportStepKey && currentKey !== this.reportStepKey) {
-            new Notice(`⚠️ 当前步骤已从「${this.reportStepKey}」切换到「${currentKey}」，请重新点击「AI 理解」后再执行`, 6000);
+            new Notice(t('fullwriter.iv.stepSwitched', { from: this.reportStepKey, to: currentKey }), 6000);
             return;
         }
         this.executing = true;
@@ -324,10 +325,10 @@ ${userInput}
 
             await this.deps.onRenderNeeded();
 
-            new Notice('✅ 干预已执行');
+            new Notice(t('fullwriter.iv.executed'));
         } catch (e) {
             this.deps.deleteVar('userIntervention');
-            new Notice(`❌ 干预执行失败：${e instanceof Error ? e.message : String(e)}`, 6000);
+            new Notice(t('fullwriter.iv.execFailed', { msg: e instanceof Error ? e.message : String(e) }), 6000);
         } finally {
             this.executing = false;
         }
@@ -357,7 +358,7 @@ ${userInput}
         const w = window as unknown as { webkitSpeechRecognition?: SpeechRecognitionCtor; SpeechRecognition?: SpeechRecognitionCtor };
         const SpeechRecognition = w.webkitSpeechRecognition ?? w.SpeechRecognition;
         if (!SpeechRecognition) {
-            new Notice('⚠️ 当前浏览器不支持语音输入');
+            new Notice(t('fullwriter.iv.voiceUnsupported'));
             return;
         }
 
@@ -371,18 +372,18 @@ ${userInput}
         const toggleBtn = () => {
             if (!isRecording) {
                 recognition.start();
-                this.inputEl.placeholder = '🎤 正在录音...';
+                this.inputEl.placeholder = t('fullwriter.iv.recording');
                 isRecording = true;
             } else {
                 recognition.stop();
-                this.inputEl.placeholder = '输入您的介入意见...';
+                this.inputEl.placeholder = t('fullwriter.iv.placeholder2');
                 isRecording = false;
             }
         };
 
         const btns = this.container.querySelectorAll('button');
         btns.forEach(b => {
-            if (b.textContent?.includes('语音')) {
+            if (b.textContent?.includes(t('fullwriter.iv.voiceBtn'))) {
                 b.onclick = toggleBtn;
             }
         });
@@ -397,7 +398,7 @@ ${userInput}
 
         recognition.onerror = (event) => {
             log.error('Speech recognition error:', event.error);
-            this.inputEl.placeholder = '输入您的介入意见...';
+            this.inputEl.placeholder = t('fullwriter.iv.placeholder2');
             isRecording = false;
         };
     }
