@@ -14,6 +14,7 @@ import { extractResponseText } from '@/shared/api-response-utils';
 import { resolveTaskModelConfig } from '@/shared/task-model';
 import { resolveProviderSourceType } from '@/shared/model-source';
 import { createLogger } from '@/shared/logger';
+import { uiMessage, type UiMessageLike } from '@/shared/ui-message';
 import { computeFingerprintStats } from './fingerprint-stats';
 
 
@@ -30,7 +31,14 @@ export type ExtractionPhase = 'preprocessing' | 'feature-extraction' | 'sample-s
 export interface ExtractionProgress {
     phase: ExtractionPhase;
     percent: number;
-    message: string;
+    /**
+     * 进度文案。
+     *
+     * i18n engine 分层①：改为 `UiMessageLike`（结构化消息 | 纯文本）——
+     * 引擎不再拼中文，由界面层用 `resolveUiMessage()` 按当前语言求值。
+     * 类型是联合而非只收结构化，老调用方传字符串照常工作。
+     */
+    message: UiMessageLike;
 }
 
 /**
@@ -100,7 +108,7 @@ export class FingerprintExtractor {
         onProgress?.({
             phase: 'complete',
             percent: 100,
-            message: '指纹提取完成',
+            message: uiMessage('engineMsg.fp.complete', '指纹提取完成'),
         });
 
         return fingerprint;
@@ -134,7 +142,7 @@ export class FingerprintExtractor {
         onProgress?.({
             phase: 'preprocessing',
             percent: 0,
-            message: '正在预处理文本...',
+            message: uiMessage('engineMsg.fp.preprocessing', '正在预处理文本...'),
         });
 
         this.checkAbort(signal);
@@ -144,7 +152,7 @@ export class FingerprintExtractor {
         onProgress?.({
             phase: 'preprocessing',
             percent: 5,
-            message: '正在计算基础统计...',
+            message: uiMessage('engineMsg.fp.basicStats', '正在计算基础统计...'),
         });
 
         this.checkAbort(signal);
@@ -154,7 +162,7 @@ export class FingerprintExtractor {
         onProgress?.({
             phase: 'preprocessing',
             percent: 15,
-            message: '预处理完成',
+            message: uiMessage('engineMsg.fp.preprocessDone', '预处理完成'),
         });
 
         return stats;
@@ -177,7 +185,7 @@ export class FingerprintExtractor {
         onProgress?.({
             phase: 'feature-extraction',
             percent: 15,
-            message: '正在分析风格特征...',
+            message: uiMessage('engineMsg.fp.analyzingFeatures', '正在分析风格特征...'),
         });
 
         this.checkAbort(signal);
@@ -210,7 +218,7 @@ export class FingerprintExtractor {
         onProgress?.({
             phase: 'feature-extraction',
             percent: 25,
-            message: '正在调用 AI 分析...',
+            message: uiMessage('engineMsg.fp.callingAI', '正在调用 AI 分析...'),
         });
 
         this.checkAbort(signal);
@@ -232,7 +240,7 @@ export class FingerprintExtractor {
         onProgress?.({
             phase: 'feature-extraction',
             percent: 45,
-            message: '正在解析分析结果...',
+            message: uiMessage('engineMsg.fp.parsingResult', '正在解析分析结果...'),
         });
 
         this.checkAbort(signal);
@@ -246,7 +254,7 @@ export class FingerprintExtractor {
         onProgress?.({
             phase: 'feature-extraction',
             percent: 55,
-            message: '风格特征提取完成',
+            message: uiMessage('engineMsg.fp.featuresDone', '风格特征提取完成'),
         });
 
         return features;
@@ -374,7 +382,7 @@ export class FingerprintExtractor {
         onProgress?.({
             phase: 'sample-selection',
             percent: 55,
-            message: '正在筛选代表性片段...',
+            message: uiMessage('engineMsg.fp.selectingSamples', '正在筛选代表性片段...'),
         });
 
         this.checkAbort(signal);
@@ -384,7 +392,7 @@ export class FingerprintExtractor {
         onProgress?.({
             phase: 'sample-selection',
             percent: 60,
-            message: '正在组合文本片段...',
+            message: uiMessage('engineMsg.fp.combiningSamples', '正在组合文本片段...'),
         });
 
         this.checkAbort(signal);
@@ -394,7 +402,7 @@ export class FingerprintExtractor {
         onProgress?.({
             phase: 'sample-selection',
             percent: 65,
-            message: '正在智能筛选片段...',
+            message: uiMessage('engineMsg.fp.smartSelecting', '正在智能筛选片段...'),
         });
 
         this.checkAbort(signal);
@@ -404,7 +412,7 @@ export class FingerprintExtractor {
         onProgress?.({
             phase: 'sample-selection',
             percent: 75,
-            message: '片段筛选完成',
+            message: uiMessage('engineMsg.fp.samplesDone', '片段筛选完成'),
         });
 
         return samples;

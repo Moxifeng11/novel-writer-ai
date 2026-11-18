@@ -2,6 +2,7 @@ import { App, Modal, Setting, Notice } from 'obsidian';
 import { FingerprintExtractor, ExtractionProgress } from '@/engine/fingerprint-extractor';
 import { StyleFingerprint } from '@/engine/style-fingerprint-library';
 import { createLogger } from '@/shared/logger';
+import { resolveUiMessage } from '@/shared/ui-message';
 
 
 const log = createLogger('FingerprintLibraryModal');
@@ -293,7 +294,7 @@ export class AddFingerprintModal extends Modal {
     private updateProgress(progress: ExtractionProgress): void {
         const phaseLabel = PHASE_LABELS[progress.phase] || progress.phase;
         if (this.phaseTextEl) {
-            this.phaseTextEl.textContent = progress.message || phaseLabel;
+            this.phaseTextEl.textContent = resolveUiMessage(progress.message) || phaseLabel;
         }
         if (this.progressTextEl) {
             this.progressTextEl.textContent = `${Math.round(progress.percent)}%`;

@@ -8,6 +8,31 @@
 import type { MessageTree } from './zh-CN';
 
 export const enUS: MessageTree = {
+    engineMsg: {
+        review: {
+            chapterNotFound: '❌ Chapter file not found',
+            collectingContext: '⏳ Collecting context data...',
+            noApiKey: '❌ Please configure an API key or local model endpoint first',
+        },
+        fp: {
+            complete: 'Fingerprint extraction complete',
+            preprocessing: 'Preprocessing text...',
+            basicStats: 'Computing basic statistics...',
+            preprocessDone: 'Preprocessing complete',
+            analyzingFeatures: 'Analyzing style features...',
+            callingAI: 'Calling AI analysis...',
+            parsingResult: 'Parsing analysis result...',
+            featuresDone: 'Style feature extraction complete',
+            selectingSamples: 'Selecting representative samples...',
+            combiningSamples: 'Combining text samples...',
+            smartSelecting: 'Smart-selecting samples...',
+            samplesDone: 'Sample selection complete',
+        },
+        stepModal: {
+            noBody: 'No body text to rewrite',
+            emptyRewrite: 'Rewritten content cannot be empty',
+        },
+    },
     toolCatalog: {
         long: {
             group: {

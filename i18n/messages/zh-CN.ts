@@ -11,6 +11,31 @@
 export type MessageTree = { [key: string]: string | MessageTree };
 
 export const zhCN: MessageTree = {
+    engineMsg: {
+        review: {
+            chapterNotFound: '❌ 未找到章节文件',
+            collectingContext: '⏳ 收集上下文数据...',
+            noApiKey: '❌ 请先配置 API 密钥或本地模型端点',
+        },
+        fp: {
+            complete: '指纹提取完成',
+            preprocessing: '正在预处理文本...',
+            basicStats: '正在计算基础统计...',
+            preprocessDone: '预处理完成',
+            analyzingFeatures: '正在分析风格特征...',
+            callingAI: '正在调用 AI 分析...',
+            parsingResult: '正在解析分析结果...',
+            featuresDone: '风格特征提取完成',
+            selectingSamples: '正在筛选代表性片段...',
+            combiningSamples: '正在组合文本片段...',
+            smartSelecting: '正在智能筛选片段...',
+            samplesDone: '片段筛选完成',
+        },
+        stepModal: {
+            noBody: '没有正文可改写',
+            emptyRewrite: '改写内容不能为空',
+        },
+    },
     toolCatalog: {
         long: {
             group: {

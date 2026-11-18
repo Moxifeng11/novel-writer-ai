@@ -2752,3 +2752,49 @@ UI 接线：状态栏空间有限，仍显示短形式；完整版进 `title` to
 - preflight EXIT=0（985 文件 / 10329 通过 + 3 跳过）。
 
 **下一轮**：ZC-20261120-10（11 个旧弹窗退役清单，纯文档）。
+
+## 第九十六轮：i18n engine 分层① —— UI 消息契约（2026-11-19，ZCode · ZC-20261120-11）
+
+**问题**
+
+引擎层 65 个文件 / 8,613 字中文直接拼给用户看。三重后果：
+① 界面换语言改不了（不经 `t()`）；② 展示知识泄漏到领域层；③ 改文案要动引擎。
+
+**契约**
+
+`UiMessage = { code, params?, fallback }` + `resolveUiMessage()`。
+
+两个非显然的决定：
+- **`fallback` 必填**：引擎里的提示常在错误处理路径上，缺键时返回兜底而不是抛错——
+  抛错会把「一次提示」升级成「一次崩溃」。这不是防御性编程，是语义要求。
+- **对外签名用 `UiMessage | string` 联合类型**：老调用方传字符串照常工作，
+  改造可以一个文件一个文件推进，不必一次性全改。
+
+**三个代表点**
+
+- `review-agent`（3 条 `showNotice`/`showProgress`）
+- `fingerprint-extractor`（12 条进度 message）：`ExtractionProgress.message` 放宽为 `UiMessageLike`。
+  改完 tsc **当场报出** `ui/fingerprint-library-modal.ts:296` 的消费方漏点——
+  这正是分层的价值：类型系统帮你找出所有需要求值的地方，不用靠 grep。
+- `step-modal-controller`（2 条校验提示）
+
+**回退了一处（值得记）**
+
+我先试了 `character-consistency-checker` 的 `summary`，结果 tsc 报出
+`analysis-report-engine` 与 `heavy-task-worker-manager` 的 **worker 边界**结构依赖——
+worker 之间不能传对象。回退，留给 12 按域处理时专门设计（可能需要「worker 内保持 string，
+主线程侧转 UiMessage」的边界转换）。
+
+**验收**
+- 新增 8 例（zh/en 求值 / 未知 code 回落不抛错 / 参数透传 / string 兼容 /
+  两形态判别 / 进度消息双语 / 导出唯一防重复实现）。
+- shared+ui+engine+integration **846 文件 / 9127 例**全绿。
+- `check:i18n` zh/en 各 **3328**（+17）。
+- `check:bundle` main.js → **6021295**（+2514）——契约基础设施的一次性成本，
+  后续 12 批量迁移不再增加。
+- preflight EXIT=0（986 文件 / 10337 通过 + 3 跳过）。
+
+**踩到的门禁**：我替换 `export class StepModalController` 时把它的 JSDoc 注释挤成了孤儿，
+`check:jsdoc` 报「已注释导出从 2 降到 1，未注释导出从 0 增到 1」。修法是把注释移回类前。
+
+**下一轮**：ZC-20261120-12（按域批量迁移 ui-copy-in-engine）。

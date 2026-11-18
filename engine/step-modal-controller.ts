@@ -7,6 +7,7 @@
  */
 
 import { TFile } from 'obsidian';
+import { uiMessage, resolveUiMessage } from '@/shared/ui-message';
 import { AIEngine } from './ai-engine';
 import { LongNovelSingleCallTasks } from './harness/long-novel-tasks';
 import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
@@ -40,6 +41,17 @@ export interface StepModalDeps {
     /** A7: 正文被改写后的统一失效传播（优先于手动 delete，保证 stepLevels/staleSteps 同步） */
     invalidateSteps?: (stepKeys: string[]) => void;
 }
+
+/**
+ * 步骤弹窗的用户可见消息（i18n engine 分层①）。
+ *
+ * 集中成表的原因同 review-agent：原先散落在 `showError` / `showNotice` 调用里，
+ * 既无法静态校验，也无法整体审查「这个模块到底对用户说了什么」。
+ */
+const STEP_MODAL_MSG = {
+    noBody: uiMessage('engineMsg.stepModal.noBody', '没有正文可改写'),
+    emptyRewrite: uiMessage('engineMsg.stepModal.emptyRewrite', '改写内容不能为空'),
+} as const;
 
 /**
  * 步骤弹窗控制器。
@@ -115,7 +127,7 @@ export class StepModalController {
     ): Promise<void> {
         const bodyText = stepResults['bodyGeneration'];
         if (!bodyText) {
-            this.deps.callbacks.showError('没有正文可改写');
+            this.deps.callbacks.showError(resolveUiMessage(STEP_MODAL_MSG.noBody));
             return;
         }
 
@@ -298,7 +310,7 @@ export class StepModalController {
 
         acceptBtn.onclick = async () => {
             const finalText = rewriteResultTA.value;
-            if (!finalText.trim()) { this.deps.callbacks.showError('改写内容不能为空'); return; }
+            if (!finalText.trim()) { this.deps.callbacks.showError(resolveUiMessage(STEP_MODAL_MSG.emptyRewrite)); return; }
             try {
                 log.warn('[StepModalController] AI消痕接受: chapDir=', chapDir, 'len=', finalText.length);
                 stepResults['bodyGeneration'] = finalText;

@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 354 | 146809 | 1951 | 1545 | 79% |
+| `engine/` | 354 | 146849 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19508 | 296 | 203 | 69% |
-| `shared/` | 258 | 52063 | 2190 | 1712 | 78% |
+| `shared/` | 259 | 52164 | 2195 | 1715 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1596 | 88 | 58 | 66% |
-| `ui/` | 307 | 115286 | 1185 | 933 | 79% |
+| `ui/` | 307 | 115287 | 1185 | 933 | 79% |
 
 ## 文件清单
 
@@ -196,7 +196,7 @@
 | `engine/export/zip-writer.ts` | 157 | 4 | 4 |
 | `engine/fact-index-manager.ts` | 217 | 9 | 2 |
 | `engine/fact-index-vault.ts` | 119 | 3 | 2 |
-| `engine/fingerprint-extractor.ts` | 537 | 4 | 4 |
+| `engine/fingerprint-extractor.ts` | 545 | 4 | 4 |
 | `engine/fingerprint-stats.ts` | 127 | 4 | 4 |
 | `engine/foreshadow-config-manager.ts` | 310 | 2 | 1 |
 | `engine/foreshadow-context.ts` | 154 | 6 | 4 |
@@ -325,7 +325,7 @@
 | `engine/repository/item-repository.ts` | 117 | 1 | 1 |
 | `engine/repository/location-repository.ts` | 117 | 1 | 1 |
 | `engine/repository/project-repository.ts` | 145 | 1 | 1 |
-| `engine/review-agent.ts` | 430 | 1 | 1 |
+| `engine/review-agent.ts` | 450 | 1 | 1 |
 | `engine/revision/quality-issue-parser.ts` | 141 | 3 | 3 |
 | `engine/revision/revision-guard.ts` | 194 | 7 | 6 |
 | `engine/revision/revision-prompts.ts` | 99 | 2 | 2 |
@@ -349,7 +349,7 @@
 | `engine/settlement/settlement-table-writer.ts` | 79 | 3 | 2 |
 | `engine/settlement/settlement-types.ts` | 46 | 2 | 1 |
 | `engine/step-definitions.ts` | 268 | 13 | 11 |
-| `engine/step-modal-controller.ts` | 648 | 2 | 2 |
+| `engine/step-modal-controller.ts` | 660 | 2 | 2 |
 | `engine/step-prompt-assembly.ts` | 318 | 5 | 4 |
 | `engine/step-result-saver.ts` | 574 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
@@ -689,6 +689,7 @@
 | `shared/true-random.ts` | 134 | 3 | 3 |
 | `shared/tts-text.ts` | 262 | 10 | 6 |
 | `shared/types.ts` | 729 | 48 | 11 |
+| `shared/ui-message.ts` | 101 | 5 | 3 |
 | `shared/unit-card-model.ts` | 306 | 13 | 9 |
 | `shared/unit-context-prompt.ts` | 119 | 4 | 4 |
 | `shared/unload-barrier.ts` | 72 | 1 | 0 |
@@ -825,7 +826,7 @@
 | `ui/fingerprint-detail-modal.ts` | 577 | 1 | 1 |
 | `ui/fingerprint-embedding.ts` | 32 | 1 | 1 |
 | `ui/fingerprint-intensity-modal.ts` | 502 | 2 | 2 |
-| `ui/fingerprint-library-modal.ts` | 306 | 1 | 1 |
+| `ui/fingerprint-library-modal.ts` | 307 | 1 | 1 |
 | `ui/fingerprint-utils.ts` | 231 | 13 | 13 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |
 | `ui/full-writer-view.ts` | 2773 | 2 | 2 |

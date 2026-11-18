@@ -8,10 +8,30 @@ import { NOOP_NOTIFIER } from '@/shared/types';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
 import { NOTICE_ERROR, NOTICE_WARNING, NOTICE_CRITICAL, NOTICE_SUCCESS } from '@/shared/thresholds';
 import { createLogger } from '@/shared/logger';
+import { resolveUiMessage, uiMessage, type UiMessageLike } from '@/shared/ui-message';
 
 
 import { resolveBodyFilePath } from './chapter-utils';
 const log = createLogger('ReviewAgent');
+
+/**
+ * 审查相关的用户可见消息（i18n engine 分层①）。
+ *
+ * **为什么集中成常量表**：原先这些中文散落在 `showNotice(...)` 调用里，
+ * 既无法被 `check-i18n` 静态校验，也无法整体审查「这个模块对用户说了什么」。
+ * 集中之后每条的 code / fallback 并排，缺键与文案改动都是局部 diff。
+ *
+ * 命名：`engineMsg.review.<slug>`，fallback 是改造前的原文（保证视觉零回归）。
+ */
+const REVIEW_MSG = {
+    /** 章节文件不存在 */
+    chapterNotFound: uiMessage('engineMsg.review.chapterNotFound', '❌ 未找到章节文件'),
+    /** 正在收集上下文 */
+    collectingContext: uiMessage('engineMsg.review.collectingContext', '⏳ 收集上下文数据...'),
+    /** 未配置模型 */
+    noApiKey: uiMessage('engineMsg.review.noApiKey', '❌ 请先配置 API 密钥或本地模型端点'),
+} as const;
+
 /**
  * ReviewAgent 类。
  */
@@ -60,11 +80,11 @@ export class ReviewAgent {
     async reviewChapter(project: string, chapterPath: string): Promise<void> {
         const activeFile = this.getVaultMeta().getAbstractFileByPath(chapterPath);
         if (!(activeFile instanceof TFile)) {
-            this.notifier.showNotice('❌ 未找到章节文件', NOTICE_ERROR);
+            this.notifier.showNotice(resolveUiMessage(REVIEW_MSG.chapterNotFound), NOTICE_ERROR);
             return;
         }
 
-        const hideProgress = this.notifier.showProgress?.('⏳ 收集上下文数据...');
+        const hideProgress = this.notifier.showProgress?.(resolveUiMessage(REVIEW_MSG.collectingContext));
 
         const bodyText = await this.getFS().read(chapterPath);
 
@@ -136,7 +156,7 @@ export class ReviewAgent {
         hideProgress?.();
 
         if (!this.plugin.hasAiCredentials) {
-            this.notifier.showNotice('❌ 请先配置 API 密钥或本地模型端点', NOTICE_ERROR);
+            this.notifier.showNotice(resolveUiMessage(REVIEW_MSG.noApiKey), NOTICE_ERROR);
             return;
         }
 
