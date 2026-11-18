@@ -11,7 +11,7 @@
 | `shared/` | 258 | 51769 | 2179 | 1700 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 115155 | 1180 | 930 | 79% |
+| `ui/` | 306 | 115156 | 1180 | 930 | 79% |
 
 ## 文件清单
 
@@ -849,7 +849,7 @@
 | `ui/full-writer/project-selector-controller.ts` | 1145 | 3 | 3 |
 | `ui/full-writer/quick-tools-panel.ts` | 151 | 3 | 3 |
 | `ui/full-writer/recent-projects.ts` | 133 | 6 | 4 |
-| `ui/full-writer/scene-outline-controller.ts` | 1209 | 2 | 1 |
+| `ui/full-writer/scene-outline-controller.ts` | 1210 | 2 | 1 |
 | `ui/full-writer/scene-outline-format.ts` | 141 | 4 | 4 |
 | `ui/full-writer/setting-lib-controller.ts` | 63 | 1 | 1 |
 | `ui/full-writer/settings-menu.ts` | 85 | 4 | 3 |

@@ -94,7 +94,7 @@
     "ui/full-writer/next-step.ts": 1,
     "ui/full-writer/project-selector-controller.ts": 5,
     "ui/full-writer/recent-projects.ts": 6,
-    "ui/full-writer/scene-outline-controller.ts": 150,
+    "ui/full-writer/scene-outline-controller.ts": 45,
     "ui/full-writer/scene-outline-format.ts": 14,
     "ui/full-writer/setting-lib-controller.ts": 6,
     "ui/full-writer/settings-menu.ts": 1,
@@ -232,7 +232,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 9277,
+  "total": 9172,
   "updatedAt": "2026-11-18",
   "note": ""
 }

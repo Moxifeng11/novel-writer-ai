@@ -12,6 +12,7 @@
  */
 
 import { App, Modal, TFile, Notice } from 'obsidian';
+import { t } from '@/i18n';
 import { ExtendedSceneData, createDefaultScene, SceneStatus, ConflictType, PleasureType } from '@/shared/types';
 import { pjStepDir, pjStepFile } from '@/shared/paths';
 import { parseSceneHeadings } from '@/engine/scene-expander';
@@ -87,7 +88,7 @@ export class SceneOutlineController {
 
         if (!project || chapNum <= 0) {
             container.createDiv({
-                text: '请先选择项目和章节',
+                text: t('fullwriter.scene.needProjectChapter'),
                 cls: 'nw-so-empty'
             });
             return;
@@ -111,7 +112,7 @@ export class SceneOutlineController {
         });
 
         header.createSpan({
-            text: '🎬 场景细纲',
+            text: t('fullwriter.scene.title'),
             cls: 'nw-so-title'
         });
 
@@ -121,14 +122,14 @@ export class SceneOutlineController {
         const addBtn = btnGroup.createEl('button', {
             text: '➕',
             cls: 'nw-scene-outline-btn',
-            attr: { title: '新增场景' },
+            attr: { title: t('fullwriter.scene.addTip') },
         });
         addBtn.onclick = () => this.addScene();
 
         const genBtn = btnGroup.createEl('button', {
             text: '✨',
             cls: 'nw-scene-outline-btn',
-            attr: { title: '一键生成场景（调用 AI）' },
+            attr: { title: t('fullwriter.scene.genTip') },
         });
         genBtn.onclick = () => this.generateScenes();
 
@@ -136,7 +137,7 @@ export class SceneOutlineController {
         const copyToBtn = btnGroup.createEl('button', {
             text: '📤',
             cls: 'nw-scene-outline-btn',
-            attr: { title: '复制当前场景到其它章节' },
+            attr: { title: t('fullwriter.scene.copyTip') },
         });
         copyToBtn.onclick = () => { void this.copySceneToOtherChapter(); };
     }
@@ -160,7 +161,7 @@ export class SceneOutlineController {
         const listHeader = listWrap.createDiv({
             cls: 'nw-so-list-header'
         });
-        listHeader.setText(`共 ${this.scenes.length} 个场景`);
+        listHeader.setText(t('fullwriter.scene.sceneCount', { count: this.scenes.length }));
 
         const list = listWrap.createDiv({
             cls: 'nw-so-list-body'
@@ -168,7 +169,7 @@ export class SceneOutlineController {
 
         if (this.scenes.length === 0) {
             list.createDiv({
-                text: '暂无场景，点击 ➕ 添加',
+                text: t('fullwriter.scene.emptyList'),
                 cls: 'nw-so-list-empty'
             });
             return;
@@ -183,7 +184,7 @@ export class SceneOutlineController {
                 cls: `nw-so-item${isActive ? ' nw-so-item--active' : ''}${this.dragIndex === i ? ' nw-so-item--dragging' : ''}`,
                 attr: {
                     draggable: 'true',
-                    title: scene.name || '(未命名场景)',
+                    title: scene.name || t('fullwriter.scene.unnamedScene'),
                 }
             });
 
@@ -192,7 +193,7 @@ export class SceneOutlineController {
             topRow.createSpan({ cls: `nw-so-dot ${this.getStatusClass(scene.status)}` });
 
             topRow.createSpan({
-                text: `场景${scene.index}`,
+                text: t('fullwriter.scene.sceneN', { n: scene.index }),
                 cls: 'nw-so-item-index'
             });
 
@@ -204,7 +205,7 @@ export class SceneOutlineController {
             }
 
             const nameRow = item.createDiv({ cls: 'nw-so-item-name' });
-            nameRow.setText(scene.name || '(未命名)');
+            nameRow.setText(scene.name || t('fullwriter.scene.unnamed'));
 
             if (scene.emotionArc) {
                 const arcRow = item.createDiv({ cls: 'nw-so-item-arc' });
@@ -258,7 +259,7 @@ export class SceneOutlineController {
         const scene = this.scenes[this.currentSceneIndex];
         if (!scene) {
             editorWrap.createDiv({
-                text: '请选择或创建一个场景',
+                text: t('fullwriter.scene.pickOne'),
                 cls: 'nw-so-editor-empty'
             });
             return;
@@ -279,9 +280,9 @@ export class SceneOutlineController {
 
         const statusSelect = titleArea.createEl('select', { cls: 'nw-scene-outline-btn' });
         const statusOptions: { value: SceneStatus; label: string }[] = [
-            { value: 'not_started', label: '未开始' },
-            { value: 'in_progress', label: '进行中' },
-            { value: 'completed', label: '已完成' },
+            { value: 'not_started', label: t('fullwriter.scene.statusNotStarted') },
+            { value: 'in_progress', label: t('fullwriter.scene.statusInProgress') },
+            { value: 'completed', label: t('fullwriter.scene.statusCompleted') },
         ];
         statusOptions.forEach(opt => {
             const optEl = statusSelect.createEl('option', { text: opt.label, attr: { value: opt.value } });
@@ -294,19 +295,19 @@ export class SceneOutlineController {
         };
 
         titleArea.createSpan({
-            text: `场景${scene.index}：${scene.name || '(未命名)'}`,
+            text: t('fullwriter.scene.detailTitle', { n: scene.index, name: scene.name || t('fullwriter.scene.unnamed') }),
             cls: 'nw-so-toolbar-name'
         });
 
         const btnGroup = toolbar.createDiv({ cls: 'nw-so-btn-group' });
 
         const actionBtns = [
-            { icon: '⬆️', title: '上移', action: () => this.moveUp() },
-            { icon: '⬇️', title: '下移', action: () => this.moveDown() },
-            { icon: '📋', title: '复制', action: () => this.duplicateScene() },
-            { icon: '✂️', title: '拆分', action: () => this.splitScene() },
-            { icon: '🔗', title: '合并下一个', action: () => this.mergeScene() },
-            { icon: '🗑️', title: '删除', action: () => this.deleteScene() },
+            { icon: '⬆️', title: t('fullwriter.scene.moveUp'), action: () => this.moveUp() },
+            { icon: '⬇️', title: t('fullwriter.scene.moveDown'), action: () => this.moveDown() },
+            { icon: '📋', title: t('fullwriter.scene.duplicate'), action: () => this.duplicateScene() },
+            { icon: '✂️', title: t('fullwriter.scene.split'), action: () => this.splitScene() },
+            { icon: '🔗', title: t('fullwriter.scene.mergeNext'), action: () => this.mergeScene() },
+            { icon: '🗑️', title: t('fullwriter.scene.delete'), action: () => this.deleteScene() },
         ];
 
         actionBtns.forEach(btn => {
@@ -326,9 +327,9 @@ export class SceneOutlineController {
         });
 
         const tabs: { id: 'basic' | 'conflict' | 'foreshadow'; label: string; icon: string }[] = [
-            { id: 'basic', label: '基本信息', icon: '📝' },
-            { id: 'conflict', label: '冲突爽点', icon: '⚔️' },
-            { id: 'foreshadow', label: '伏笔信息', icon: '🔮' },
+            { id: 'basic', label: t('fullwriter.scene.tabBasic'), icon: '📝' },
+            { id: 'conflict', label: t('fullwriter.scene.tabConflict'), icon: '⚔️' },
+            { id: 'foreshadow', label: t('fullwriter.scene.tabForeshadow'), icon: '🔮' },
         ];
 
         tabs.forEach(tab => {
@@ -365,24 +366,24 @@ export class SceneOutlineController {
 
     /** 基本信息 Tab */
     private renderBasicTab(container: HTMLElement, scene: ExtendedSceneData): void {
-        this.createTextInput(container, '场景名称', 'name', scene);
-        this.createTextInput(container, '👁️ 视角人物 (pov)', 'pov', scene);
-        this.createTextInput(container, '⏰ 场景时间 (time)', 'time', scene);
-        this.createTextInput(container, '📍 场景地点', 'location', scene);
-        this.createTextInput(container, '👥 出场人物', 'characters', scene);
-        this.createTextArea(container, '🚪 入场状态 (entry_state)', 'entryState', scene);
-        this.createTextArea(container, '🎯 场景目标 (objective)', 'objective', scene);
-        this.createTextArea(container, '⚡ 场景转折 (turn)', 'turn', scene);
-        this.createTextArea(container, '🏁 离场状态 (exit_state)', 'exitState', scene);
-        this.createTextInput(container, '⏱️ 时间线位置', 'timelinePosition', scene);
-        this.createTextArea(container, '🎭 情绪弧线 (emotion_arc)', 'emotionArc', scene);
-        this.createTextArea(container, '👁️ 感官入口 (sensory_hook)', 'sensoryHook', scene);
-        this.createTextArea(container, '💭 记忆触发 (memory_trigger)', 'memoryTrigger', scene);
-        this.createTextArea(container, '💓 身体反应 (body_reaction)', 'bodyReaction', scene);
-        this.createTextArea(container, '🤐 潜台词 (subtext)', 'subtext', scene);
-        this.createTextArea(container, '🔗 关系变化 (relationship_shift)', 'relationshipShift', scene);
-        this.createTextArea(container, '💬 对话功能 (dialogue_function)', 'dialogueFunction', scene);
-        this.createTextArea(container, '🧭 工艺备注 (craft_notes)', 'craftNotes', scene);
+        this.createTextInput(container, t('fullwriter.scene.fName'), 'name', scene);
+        this.createTextInput(container, t('fullwriter.scene.fPov'), 'pov', scene);
+        this.createTextInput(container, t('fullwriter.scene.fTime'), 'time', scene);
+        this.createTextInput(container, t('fullwriter.scene.fLocation'), 'location', scene);
+        this.createTextInput(container, t('fullwriter.scene.fCharacters'), 'characters', scene);
+        this.createTextArea(container, t('fullwriter.scene.fEntryState'), 'entryState', scene);
+        this.createTextArea(container, t('fullwriter.scene.fObjective'), 'objective', scene);
+        this.createTextArea(container, t('fullwriter.scene.fTurn'), 'turn', scene);
+        this.createTextArea(container, t('fullwriter.scene.fExitState'), 'exitState', scene);
+        this.createTextInput(container, t('fullwriter.scene.fTimeline'), 'timelinePosition', scene);
+        this.createTextArea(container, t('fullwriter.scene.fEmotionArc'), 'emotionArc', scene);
+        this.createTextArea(container, t('fullwriter.scene.fSensoryHook'), 'sensoryHook', scene);
+        this.createTextArea(container, t('fullwriter.scene.fMemoryTrigger'), 'memoryTrigger', scene);
+        this.createTextArea(container, t('fullwriter.scene.fBodyReaction'), 'bodyReaction', scene);
+        this.createTextArea(container, t('fullwriter.scene.fSubtext'), 'subtext', scene);
+        this.createTextArea(container, t('fullwriter.scene.fRelationshipShift'), 'relationshipShift', scene);
+        this.createTextArea(container, t('fullwriter.scene.fDialogueFunction'), 'dialogueFunction', scene);
+        this.createTextArea(container, t('fullwriter.scene.fCraftNotes'), 'craftNotes', scene);
 
         const keySceneRow = container.createDiv({
             cls: 'nw-so-field-row'
@@ -393,28 +394,28 @@ export class SceneOutlineController {
         keySceneCheckbox.checked = scene.isKeyScene;
         keySceneCheckbox.onchange = () => {
             scene.isKeyScene = keySceneCheckbox.checked;
-            scene.keyScene = scene.isKeyScene ? '⭐ 名场面 — 待补充原因' : '否';
+            scene.keyScene = scene.isKeyScene ? t('fullwriter.scene.keySceneDefault') : t('fullwriter.scene.no');
             this.markDirty();
             this.refreshList();
         };
         keySceneRow.createSpan({
-            text: '⭐ 标记为名场面',
+            text: t('fullwriter.scene.markKeyScene'),
             cls: 'nw-so-fs-85'
         });
 
         if (scene.isKeyScene) {
-            this.createTextArea(container, '名场面原因 (key_scene)', 'keyScene', scene);
+            this.createTextArea(container, t('fullwriter.scene.fKeyScene'), 'keyScene', scene);
         }
 
         const isLast = this.currentSceneIndex === this.scenes.length - 1;
         if (isLast) {
-            this.createTextArea(container, '🪝 结尾钩子 (cliffhanger)', 'cliffhanger', scene);
+            this.createTextArea(container, t('fullwriter.scene.fCliffhanger'), 'cliffhanger', scene);
         }
     }
 
     /** 冲突爽点 Tab */
     private renderConflictTab(container: HTMLElement, scene: ExtendedSceneData): void {
-        this.createTextArea(container, '⚔️ 核心冲突 (conflict)', 'conflict', scene);
+        this.createTextArea(container, t('fullwriter.scene.fConflict'), 'conflict', scene);
 
         const typeRow = container.createDiv({
             cls: 'nw-so-field-row nw-so-field-row--gap12'
@@ -422,15 +423,15 @@ export class SceneOutlineController {
 
         const conflictTypeWrap = typeRow.createDiv({ cls: 'nw-so-flex-1' });
         conflictTypeWrap.createEl('div', {
-            text: '冲突类型',
+            text: t('fullwriter.scene.conflictTypeLabel'),
             cls: 'nw-so-field-label'
         });
         const conflictSelect = conflictTypeWrap.createEl('select', { cls: 'nw-scene-outline-input' });
         const conflictOptions: { value: ConflictType; label: string }[] = [
-            { value: '', label: '未分类' },
-            { value: 'internal', label: '内在冲突' },
-            { value: 'external', label: '外在冲突' },
-            { value: 'interpersonal', label: '人际冲突' },
+            { value: '', label: t('fullwriter.scene.uncategorized') },
+            { value: 'internal', label: t('fullwriter.scene.conflictInternal') },
+            { value: 'external', label: t('fullwriter.scene.conflictExternal') },
+            { value: 'interpersonal', label: t('fullwriter.scene.conflictInterpersonal') },
         ];
         conflictOptions.forEach(opt => {
             const optEl = conflictSelect.createEl('option', { text: opt.label, attr: { value: opt.value } });
@@ -443,16 +444,16 @@ export class SceneOutlineController {
 
         const pleasureWrap = typeRow.createDiv({ cls: 'nw-so-flex-1' });
         pleasureWrap.createEl('div', {
-            text: '爽点类型',
+            text: t('fullwriter.scene.pleasureTypeLabel'),
             cls: 'nw-so-field-label'
         });
         const pleasureSelect = pleasureWrap.createEl('select', { cls: 'nw-scene-outline-input' });
         const pleasureOptions: { value: PleasureType; label: string }[] = [
-            { value: '', label: '未分类' },
-            { value: 'face_slap', label: '打脸' },
-            { value: 'level_up', label: '升级' },
-            { value: 'reveal', label: '揭秘' },
-            { value: 'gain', label: '收获' },
+            { value: '', label: t('fullwriter.scene.uncategorized') },
+            { value: 'face_slap', label: t('fullwriter.scene.pleasureFaceSlap') },
+            { value: 'level_up', label: t('fullwriter.scene.pleasureLevelUp') },
+            { value: 'reveal', label: t('fullwriter.scene.pleasureReveal') },
+            { value: 'gain', label: t('fullwriter.scene.pleasureGain') },
         ];
         pleasureOptions.forEach(opt => {
             const optEl = pleasureSelect.createEl('option', { text: opt.label, attr: { value: opt.value } });
@@ -466,15 +467,15 @@ export class SceneOutlineController {
 
     /** 伏笔信息 Tab */
     private renderForeshadowTab(container: HTMLElement, scene: ExtendedSceneData): void {
-        this.createTextArea(container, '📖 信息增量（本章新披露的设定/信息）', 'infoIncrement', scene);
-        this.createTextArea(container, '🌱 伏笔埋设', 'foreshadowPlant', scene);
-        this.createTextArea(container, '🎯 伏笔回收', 'foreshadowRecover', scene);
+        this.createTextArea(container, t('fullwriter.scene.fInfoIncrement'), 'infoIncrement', scene);
+        this.createTextArea(container, t('fullwriter.scene.fForeshadowPlant'), 'foreshadowPlant', scene);
+        this.createTextArea(container, t('fullwriter.scene.fForeshadowRecover'), 'foreshadowRecover', scene);
 
         const statsRow = container.createDiv({
             cls: 'nw-so-stats'
         });
         statsRow.createEl('div', {
-            text: '📊 场景统计',
+            text: t('fullwriter.scene.statsTitle'),
             cls: 'nw-so-stats-title'
         });
 
@@ -482,7 +483,7 @@ export class SceneOutlineController {
             cls: 'nw-so-stat-row'
         });
         wordEstimateWrap.createSpan({
-            text: '预估字数：',
+            text: t('fullwriter.scene.wordEstimateLabel'),
             cls: 'nw-so-stat-unit'
         });
         const wordInput = wordEstimateWrap.createEl('input', {
@@ -497,7 +498,7 @@ export class SceneOutlineController {
             this.markDirty();
         };
         wordEstimateWrap.createSpan({
-            text: '字',
+            text: t('fullwriter.scene.unitChars'),
             cls: 'nw-so-stat-unit'
         });
     }
@@ -554,12 +555,12 @@ export class SceneOutlineController {
         const totalWords = this.scenes.reduce((sum, s) => sum + (s.wordCountEstimate || 0), 0);
         const completed = this.scenes.filter(s => s.status === 'completed').length;
 
-        footer.createSpan({ text: `预估总字数: ${totalWords} 字` });
-        footer.createSpan({ text: `进度: ${completed}/${this.scenes.length}` });
+        footer.createSpan({ text: t('fullwriter.scene.totalWords', { count: totalWords }) });
+        footer.createSpan({ text: t('fullwriter.scene.progress', { done: completed, total: this.scenes.length }) });
 
         if (this.isDirty) {
             const saveIndicator = footer.createSpan({
-                text: '⏳ 自动保存中...',
+                text: t('fullwriter.scene.autosaving'),
                 cls: 'nw-so-save-hint'
             });
         }
@@ -583,14 +584,14 @@ export class SceneOutlineController {
     /** 删除场景 */
     private async deleteScene(): Promise<void> {
         if (this.scenes.length <= 1) {
-            new Notice('⚠️ 至少保留一个场景', 2000);
+            new Notice(t('fullwriter.scene.keepOneScene'), 2000);
             return;
         }
         const confirmed = await OperationConfirmModal.confirm(this.app, {
-            title: '删除场景',
-            description: `确定删除场景${this.scenes[this.currentSceneIndex].index}吗？`,
-            confirmText: '确认删除',
-            cancelText: '取消',
+            title: t('fullwriter.scene.deleteTitle'),
+            description: t('fullwriter.scene.deleteConfirm', { n: this.scenes[this.currentSceneIndex].index }),
+            confirmText: t('fullwriter.scene.deleteOk'),
+            cancelText: t('common.cancel'),
         });
         if (!confirmed) return;
 
@@ -664,13 +665,13 @@ export class SceneOutlineController {
         this.reindexScenes();
         this.markDirty();
         this.refreshAll();
-        new Notice('✂️ 场景已拆分，新场景已插入', 2000);
+        new Notice(t('fullwriter.scene.splitDone'), 2000);
     }
 
     /** 合并场景（与下一个合并） */
     private mergeScene(): void {
         if (this.currentSceneIndex >= this.scenes.length - 1) {
-            new Notice('⚠️ 已经是最后一个场景，无法合并', 2000);
+            new Notice(t('fullwriter.scene.mergeAtEnd'), 2000);
             return;
         }
 
@@ -691,7 +692,7 @@ export class SceneOutlineController {
         this.reindexScenes();
         this.markDirty();
         this.refreshAll();
-        new Notice('🔗 场景已合并', 2000);
+        new Notice(t('fullwriter.scene.mergeDone'), 2000);
     }
 
     private mergeField(a: string, b: string): string {
@@ -717,19 +718,19 @@ export class SceneOutlineController {
     private async copySceneToOtherChapter(): Promise<void> {
         const project = this.deps.getProject();
         if (!project) {
-            new Notice('⚠️ 请先选择项目');
+            new Notice(t('fullwriter.scene.needProject'));
             return;
         }
         const scene = this.scenes[this.currentSceneIndex];
         if (!scene) {
-            new Notice('⚠️ 当前没有可复制的场景');
+            new Notice(t('fullwriter.scene.noSceneToCopy'));
             return;
         }
         // 先落盘当前编辑，避免复制到半成品
         if (this.isDirty) await this.saveScenes();
         const targets = this.listChapterTargets(project);
         if (targets.length === 0) {
-            new Notice('⚠️ 没有其它章节可复制');
+            new Notice(t('fullwriter.scene.noOtherChapters'));
             return;
         }
         new CopySceneModal(this.app, scene, targets, async target => {
@@ -791,10 +792,10 @@ export class SceneOutlineController {
                 await this.app.vault.createFolder(dir).catch(() => { });
                 await this.app.vault.create(filePath, next);
             }
-            new Notice(`✅ 已复制到 ${target.label}（第 ${existingCount + 1} 场）`, 3000);
+            new Notice(t('fullwriter.scene.copiedTo', { target: target.label, n: existingCount + 1 }), 3000);
         } catch (error) {
             log.error('[SceneOutline] 跨章复制失败:', error);
-            new Notice('⚠️ 复制失败，请检查文件权限', 4000);
+            new Notice(t('fullwriter.scene.copyFailed'), 4000);
         }
     }
 
@@ -803,7 +804,7 @@ export class SceneOutlineController {
         const project = this.deps.getProject();
         const chapNum = this.deps.getChapterNum();
         if (!plugin || !project || chapNum <= 0) {
-            new Notice('⚠️ 请先选择项目和章节后再生成场景', 3000);
+            new Notice(t('fullwriter.scene.needBothForGen'), 3000);
             return;
         }
 
@@ -812,7 +813,7 @@ export class SceneOutlineController {
         const volNum = volMatch ? parseInt(volMatch[1], 10) : 1;
         const chapterName = `第${chapNum}章`;
 
-        new Notice('✨ 正在生成场景细纲...', 3000);
+        new Notice(t('fullwriter.scene.generating'), 3000);
         try {
             const gathered = await plugin.ctxManager.gatherAll(project, chapterName);
             const data = gathered.data;
@@ -845,13 +846,13 @@ export class SceneOutlineController {
                     (data.items ?? []) as unknown as Record<string, string>[], 'item'),
             });
             if (response.error) {
-                new Notice(`❌ 场景生成失败：${response.error}`, 5000);
+                new Notice(t('fullwriter.scene.genFailedWith', { msg: response.error }), 5000);
                 return;
             }
 
             const generated = generator.parseScenes(response);
             if (generated.length === 0) {
-                new Notice('⚠️ 未解析到有效场景，请重试', 4000);
+                new Notice(t('fullwriter.scene.noValidScenes'), 4000);
                 return;
             }
 
@@ -873,10 +874,10 @@ export class SceneOutlineController {
             this.markDirty();
             await this.saveScenes();
             this.refreshAll();
-            new Notice(`✨ 已生成 ${this.scenes.length} 个场景`, 3000);
+            new Notice(t('fullwriter.scene.genDone', { count: this.scenes.length }), 3000);
         } catch (e) {
             log.warn('[SceneOutline] 场景生成失败:', e);
-            new Notice(`❌ 场景生成失败：${(e as Error).message}`, 5000);
+            new Notice(t('fullwriter.scene.genFailedWith', { msg: (e as Error).message }), 5000);
         }
     }
 
@@ -1036,7 +1037,7 @@ export class SceneOutlineController {
         if (this.scenes.length === 0 && stripFrontmatter(this.originalContent).trim().length > 0) {
             this.isDirty = false;
             this.pendingSaveTarget = null;
-            new Notice('⚠️ 未解析到任何场景，已阻止空内容覆盖原文件', 5000);
+            new Notice(t('fullwriter.scene.blockEmptyOverwrite'), 5000);
             return false;
         }
 
@@ -1066,7 +1067,7 @@ export class SceneOutlineController {
         } catch (e) {
             log.error('[SceneOutline] 保存失败:', e);
             // 保存失败保留脏标记，允许下一次编辑/手动保存重试
-            new Notice('⚠️ 场景细纲自动保存失败，请手动保存重试', 4000);
+            new Notice(t('fullwriter.scene.autosaveFailed'), 4000);
             return false;
         }
     }
@@ -1092,7 +1093,7 @@ export class SceneOutlineController {
         if (!project || chapNum <= 0) return false;
 
         if (!content.trim()) {
-            new Notice('⚠️ 内容为空，已阻止覆盖原文件', 5000);
+            new Notice(t('fullwriter.scene.blockEmptyOverwrite2'), 5000);
             return false;
         }
 
@@ -1180,19 +1181,19 @@ class CopySceneModal extends Modal {
     onOpen(): void {
         const { contentEl } = this;
         contentEl.empty();
-        contentEl.createEl('h3', { text: '📤 复制场景到其它章节' });
+        contentEl.createEl('h3', { text: t('fullwriter.scene.copyModalTitle') });
         contentEl.createEl('p', {
             cls: 'nw-scene-copy-hint',
-            text: `场景：${this.scene.name || '(未命名)'}（第 ${this.scene.index} 场）`,
+            text: t('fullwriter.scene.copyModalScene', { name: this.scene.name || t('fullwriter.scene.unnamed'), n: this.scene.index }),
         });
-        const select = contentEl.createEl('select', { cls: 'nw-scene-copy-select', attr: { 'aria-label': '目标章节' } });
+        const select = contentEl.createEl('select', { cls: 'nw-scene-copy-select', attr: { 'aria-label': t('fullwriter.scene.targetChapterAria') } });
         for (const target of this.targets) {
             select.createEl('option', { text: target.label, attr: { value: target.label } });
         }
         const actions = contentEl.createDiv({ cls: 'nw-scene-copy-actions' });
-        const cancel = actions.createEl('button', { text: '取消', cls: 'nw-btn nw-btn-secondary' });
+        const cancel = actions.createEl('button', { text: t('common.cancel'), cls: 'nw-btn nw-btn-secondary' });
         cancel.addEventListener('click', () => this.close());
-        const confirm = actions.createEl('button', { text: '复制', cls: 'nw-btn nw-btn-primary' });
+        const confirm = actions.createEl('button', { text: t('fullwriter.scene.copyBtn'), cls: 'nw-btn nw-btn-primary' });
         confirm.addEventListener('click', () => {
             const target = this.targets.find(item => item.label === select.value);
             if (!target) return;

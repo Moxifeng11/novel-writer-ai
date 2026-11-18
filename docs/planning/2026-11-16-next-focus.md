@@ -2283,3 +2283,22 @@ wizard 群 300+ → step-render 106 → unit-writer 98）→ 外观页统计/桌
 
 **下一轮候选**：scene-outline-controller（231 行，需先甄别提示词占比）→ wizard 群 →
 step-render-controller 106 → unit-writer-controller 98 → 外观页统计/桌宠块。
+
+## 第八十轮：i18n 第二期第23片 —— 场景细纲面板（2026-11-19，ZCode · ZC-20261119-13）
+
+**改动**
+- `ui/full-writer/scene-outline-controller.ts`（1208 行 / 约 200 处 UI 文案——甄别结论与
+template-vars 相反，主体为表单标签/按钮/页签/Notice）93 对替换走仓外脚本
+`migrate-scene-outline.cjs`：三层页签（基本信息/冲突爽点/伏笔信息）、22 个字段标签
+（含中英双写 `(pov)` 等键名后缀）、冲突/爽点类型下拉、场景统计与页脚、场景操作七按钮、
+删除确认、复制弹窗、生成/复制/拆分/合并全部 Notice。走 `fullwriter.scene.*` 96 键。
+- 保留数据：vault 路径（`05-步骤结果/Scene展开`）、解析键（`视角/场景时间…` 英中双取）、
+落盘场景名（`新场景{N}`/`(副本)`/`(下)`）、`/\u2B50|名场面/` 与 status 行为匹配。
+
+**验收**
+- `check:i18n` zh/en 各 2531、棘轮收紧到 **231 文件 / 9172 条**（-64）；
+`check:bundle` main.js → **5927291**（+7961）；preflight EXIT=0。
+- 场景细纲面板在工作台写作页签内（需绑定章节后渲染），文案由 check:i18n + 代码核对兜底。
+
+**下一轮候选**：wizard 群（wizard-controller 62 / step-renderers 213 / step-executors 61，需甄别）→
+step-render-controller 106 → unit-writer-controller 98 → 外观页统计/桌宠块。
