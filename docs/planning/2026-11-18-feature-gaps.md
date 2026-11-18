@@ -154,7 +154,8 @@
 - 第二期第一片（2026-11-18）：命令面板 94 条 `addCommand({ name })` 改 `t('commands.*')`，并在注册前应用语言；实机 zh/en 面板截图见 `D:\nw-dev-vault\_visual-i18n\{zh,en}-palette-export.png`。
 - 第二期第二片（2026-11-18）：外观设置页 `ui/appearance-settings.ts` 47 处文案迁 `settings.appearance.*`（71 键），三个弹窗与 11 条 notice 一并双语；实机 zh/en 截图见 `D:\nw-dev-vault\_visual-i18n\appearance-{zh,en}.png`。主题名/描述故意保留中文（会被写进已存配色方案名）。
 - 第二期第三片（2026-11-18）：模型设置页 `ui/settings/api-section.ts` 约 214 处文案迁 `settings.api.*`（213 键），并新增顶层 `secret.*`（10 键）把 `shared/secret-display.ts` 的占位/悬停/落盘状态文案一并英文化（`SECRET_LOCKED_PLACEHOLDER` 常量改为函数 `secretLockedPlaceholder()`）；实机 zh/en 截图见 `D:\nw-dev-vault\_visual-i18n\api-{zh,en}.png`。仍写死中文的只有跨模块共用常量（思考等级 `THINKING_LEVELS`、预算档位 `BUDGET_TIERS`）与主题名。
-- 后续：第二期余下（`ui/settings/general-sections.ts` 2349 字、`writing-sections.ts` 2239 字等其余分区、写作主流程 Notice、外观页的统计/桌宠块），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
+- 第二期第四片（2026-11-18）：通用设置六分区 `ui/settings/general-sections.ts`（221 个含中文行 / 2349 字）迁 `settings.general.*` 178 键，`cancel`×3 与性能报告 `close` 复用 `common.*`；zh/en 资源各 621 条；棘轮收紧到 267 文件 / 11390 条；实机五页中英截图见 `D:\nw-dev-vault\_visual-i18n5\`（en 下 CJK 仅剩真实 vault 路径与用户已保存的中文关键词）。同片顺手修好规则状态条「绿底绿字」不可读（改为中性底 + 左侧语义色描边）。
+- 后续：第二期余下（`ui/settings/writing-sections.ts` 2239 字、`knowledge-section.ts` 1075 字等其余分区、写作主流程 Notice、外观页的统计/桌宠块），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 
 ---
 
@@ -162,6 +163,6 @@
 
 1 → 2 → 3 → 4 → 5 →（6 可选）→ 7。
 
-进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第一片（命令面板）+ 第二片（外观设置页）+ 第三片（模型设置页）已交付（2026-11-18）；下一个候选是 ⑦ 第二期余下（其余设置分区/写作主流程 Notice）。
+进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第一/二/三/四片（命令面板 / 外观设置页 / 模型设置页 / 通用设置六分区）已交付（2026-11-18）；下一个候选是 ⑦ 第二期余下（writing-sections 2239 字起，及其余设置分区/写作主流程 Notice）。
 
 理由：1 是修「假成功」缺陷；2 是把已交付引擎变成写作时可见的价值；3 是投稿刚需且不依赖 AI；4/5 是低成本体验补洞；6/7 视需要。

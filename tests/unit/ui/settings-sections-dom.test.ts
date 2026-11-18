@@ -22,6 +22,7 @@ import {
     TemplateSection,
     WritingSection,
 } from '../../../ui/settings/writing-sections';
+import { setLocale } from '../../../i18n';
 import type { SettingsSectionHost } from '../../../ui/settings/section-base';
 
 /** 桩宿主：plugin 只带分区真正读取的最小字段 */
@@ -168,6 +169,31 @@ describe('WritingSection（写作配置五组）', () => {
         expect(text).toContain('默认字数');
         expect(text).toContain('正文形态');
         expect(text).toContain('自然段模式');
+    });
+});
+
+describe('通用设置分区双语（缺口⑦ 第二期第四片）', () => {
+    afterEach(() => setLocale('zh-CN'));
+
+    it('en-US 下性能/识别/建议/关于四个分区渲染英文且无键名回退', () => {
+        setLocale('en-US');
+        const host = makeHost();
+        const perf = render(new PerformanceSection(host), host).allText();
+        expect(perf).toContain('Performance monitoring');
+        expect(perf).toContain('Total operations');
+        const rec = render(new RecognitionSection(host), host).allText();
+        expect(rec).toContain('Character recognition settings');
+        expect(rec).toContain('Rule layer');
+        expect(rec).toContain('Minimum mentions');
+        const sug = render(new SuggestionsSection(host), host).allText();
+        expect(sug).toContain('Suggestion adoption');
+        expect(sug).toContain('Auto-adopt high-confidence suggestions');
+        const about = render(new AboutSection(host), host).allText();
+        expect(about).toContain('Hot-reload plugin');
+        expect(about).toContain('Check for updates automatically');
+        for (const text of [perf, rec, sug, about]) {
+            expect(text).not.toContain('settings.general.');
+        }
     });
 });
 

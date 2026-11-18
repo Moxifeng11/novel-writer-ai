@@ -1699,4 +1699,45 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 
 **下一轮候选**：`ui/settings/general-sections.ts`（2349 字）、`ui/settings/writing-sections.ts`（2239）、`ui/settings/knowledge-section.ts`（1075），或写作主流程按钮/`Notice`。
 
+## 第六十一轮：i18n 第二期第四片 —— 通用设置六分区（2026-11-18）
+
+用户 m14049 指定顺序：`general-sections.ts`（2349 中文字）→ `writing-sections.ts`（2239）→
+`knowledge-section.ts`（1075）。本轮完成第一块。
+
+**改动**
+- `ui/settings/general-sections.ts`（1258 行，221 个含中文行）：六分区（性能监控 / 写作规则版本 /
+  识别与伏笔 / 关于 / 识别设置 / 建议采纳）全部迁 `settings.general.*` **178 键**；
+  `cancelText: '取消'`×3 复用 `common.cancel`，性能报告弹窗 `'关闭'` 复用 `common.close`。
+  文件内已无中文 UI 字面量（只剩注释与两处 `catch { // silent-ok: … }`）。
+- 资源：`settings.general` 178 键（zh/en 621 条/语言），中英占位符逐键一致。
+- `tests/unit/ui/settings-sections-dom.test.ts` 新增「通用设置分区双语」1 例；另改
+  `settings-no-duplicate-render.test.ts`（2 条）、`settings-framework-wiring.test.ts`（1 条）、
+  `security-r3-4-paths-secrets.test.ts`（1 条）从中文快照改为断言 i18n 键。
+- 顺手修 **规则状态条对比度**：`styles-src/36-settings-general.css` 的
+  `nw-st-notice--success` 原为「绿底 + 绿字」，实机只剩 emoji 可见（中英同病，属既有视觉问题），
+  改成 `--background-secondary` 中性底 + 左侧 3px 语义色描边 + `--text-normal` 正文，warning 同步。
+
+**坑**
+- `i18n-parity.test.ts` 硬性禁止 en 资源出现 CJK：关键词例句与 vault 中文路径写进 en 值会挂。
+  例句按语言各自本地化（en 用等义短词，避免输入框横向滚动条）；规则路径在 en 文案里改成描述性说法。
+- 开发 vault 有两个：真实的是 `D:\nw-dev-vault`，`dev-vault.mjs` 不带 `--vault` 时操作
+  `C:\Users\admin\nw-dev-vault`（空壳）。截图前手工拷 `main.js/styles.css/manifest.json/versions.json` + `workers/`。
+- 设置是独立窗口：主窗口 `settingsTab.openTab(id)`，再在设置窗口 page 截图；
+  高级页签默认折叠，需 `settingsUiShowAdvanced:true`。
+- 刚 build 完第一次启动偶发 `plugin.settings` 未就绪（读 `language` 报 undefined），原样重跑一次即可。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；`settings-sections-dom`（11 例）、`i18n-parity`（7 例）、
+  `security-r3-4-paths-secrets`（12 例）全绿。
+- `check:i18n`：zh 621 / en 621、0 无法解析键、动态键 3 处、棘轮收紧到 **267 文件 / 11390 条**
+  （`--update-baseline`，general-sections 条目已移除）。
+- 实机五页（suggestions / rules / recognition / performance / about）× zh/en：
+  `D:\nw-dev-vault\_visual-i18n5\<tab>-{zh-CN,en-US}.png`（930×2970，未入库）；
+  en 下 CJK：suggestions/recognition/performance/about = **0**，rules = 11（真实 vault 路径 + 用户已保存的中文关键词，属数据）。
+  规则状态条修好后中文可见完整句「✅ 单一来源已就绪。没有可选版本、没有漂移——改文件即全局生效。」。
+- 全量 `npm run preflight`：见本提交与 `docs/modules/i18n.md` §5。
+
+**下一轮候选**：`ui/settings/writing-sections.ts`（2239 字）、`knowledge-section.ts`（1075）、
+`settings-search.ts`（1011），或写作主流程按钮/`Notice`。
+
 

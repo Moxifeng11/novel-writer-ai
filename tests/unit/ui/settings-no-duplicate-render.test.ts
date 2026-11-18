@@ -25,7 +25,7 @@ describe('规则版本：重新检查不得重复渲染模块', () => {
 
     it('「重新检查」只重绘本容器，不调用 renderRulesSection', () => {
         const source = read('ui/settings/general-sections.ts');
-        const refreshIndex = source.indexOf("'🔄 重新检查'");
+        const refreshIndex = source.indexOf("t('settings.general.rulesRecheck')");
         expect(refreshIndex).toBeGreaterThan(-1);
 
         // 找到该按钮后面的 addEventListener 回调
@@ -155,7 +155,7 @@ describe('写作配置与写作规则的分工', () => {
         const tab = read('ui/settings/section-factory.ts');
         expect(writing).not.toContain("setName('写作规则版本')");
         // v4.26：规则页不再有版本下拉（唯一来源），改为来源卡片 + 打开按钮
-        expect(general).toContain("唯一来源:");
+        expect(general).toContain("t('settings.general.rulesSourceLabel')");
         expect(general).not.toContain("setName('生效版本')");
         // i18n 第一期：页签文案改由 i18n 资源提供，工厂里只剩键名
         expect(tab).toContain("tab('rules', 'settings.tab.rules'");
@@ -167,8 +167,8 @@ describe('写作配置与写作规则的分工', () => {
         for (const title of ['篇幅与字数', '正文形态', '上下文与模型', '质量闸门与修订', '阈值与词表']) {
             expect(writing).toContain(`group('${title}'`);
         }
-        expect(writing).not.toContain("setName('实验分组标签')");
-        expect(read('ui/settings/general-sections.ts')).toContain("setName('实验分组标签')");
+        expect(writing).not.toContain('settings.general.rulesExperimentName');
+        expect(read('ui/settings/general-sections.ts')).toContain("setName(t('settings.general.rulesExperimentName'))");
     });
 });
 

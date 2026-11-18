@@ -84,7 +84,7 @@ describe('清理', () => {
     });
 
     it('热重载入口移到「关于」分区', () => {
-        expect(read('ui/settings/general-sections.ts')).toContain('热重载插件');
+        expect(read('ui/settings/general-sections.ts')).toContain("settings.general.aboutReloadName");
         expect(read('ui/settings-tab.ts')).not.toContain('热重载插件');
     });
 

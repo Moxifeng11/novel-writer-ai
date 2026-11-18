@@ -300,14 +300,19 @@ button.nw-st-banner-btn--ghost {
     margin-bottom: 16px;
 }
 
+/* 注意：--background-modifier-success / --text-success 在默认主题里接近同色，
+   直接配对会让提示文字与底色融成一片（浅色主题实机只剩 emoji 可见）。
+   改用中性底 + 左侧语义色描边，正文用 --text-normal 保证对比度。 */
 .nw-st-notice--warning {
-    background: var(--background-modifier-warning);
-    color: var(--text-warning);
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    border-left: 3px solid var(--text-warning);
 }
 
 .nw-st-notice--success {
-    background: var(--background-modifier-success);
-    color: var(--text-success);
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    border-left: 3px solid var(--text-success);
 }
 
 /* ── 关于页 ─────────────────────────────────────────────────────── */

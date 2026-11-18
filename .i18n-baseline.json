@@ -206,7 +206,6 @@
     "ui/settings/deconstruction-section.ts": 59,
     "ui/settings/fingerprint-section.ts": 49,
     "ui/settings/foreshadow-section.ts": 51,
-    "ui/settings/general-sections.ts": 187,
     "ui/settings/knowledge-section.ts": 107,
     "ui/settings/mcp-section.ts": 14,
     "ui/settings/mode-section.ts": 18,
@@ -269,7 +268,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 11577,
+  "total": 11390,
   "updatedAt": "2026-11-18",
-  "note": "第60轮：api-section.ts（4295 字）与 shared/secret-display.ts 文案入 t()，棘轮收紧"
+  "note": "第61轮 i18n 第二期第四片：general-sections.ts（221 行 / 2349 字、178 键）迁 settings.general，棘轮 268/11577 → 267/11390"
 }

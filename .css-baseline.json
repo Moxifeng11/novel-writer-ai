@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-17T21:30:00.520Z",
-  "note": "棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因\n缺口⑥ TTS（2026-11-18）：新增 styles-src/44-tts-player.css（127 行、11 个 .nw-tts-* 类），全部使用 Obsidian CSS 变量；bytes 795890→798852（+2962）、uniqueClasses 4320→4331（+11）。",
-  "bytes": 798852,
+  "generatedAt": "2026-11-18T12:06:15.877Z",
+  "note": "第61轮 i18n 第二期第四片：规则状态提示 success/warning 改中性底(--background-secondary)+左侧 3px 语义色描边+--text-normal 正文（原绿底绿字实测不可读）",
+  "bytes": 799217,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 223,

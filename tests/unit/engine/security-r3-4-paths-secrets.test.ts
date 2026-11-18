@@ -140,7 +140,9 @@ describe('S3-15 密钥展示与重置清单', () => {
         const src = read('ui/settings/general-sections.ts');
         expect(src).toContain('isStoredCiphertext');
         expect(src).toContain('tokenLocked ? \'\' : storedToken');
-        expect(src).toContain('口令未解锁，不显示');
+        expect(src).toContain("t('settings.general.aboutTokenSaved')");
+        // 文案已迁到 i18n 资源（第四片），断言资源本身仍表达「解锁前不显示」
+        expect(read('i18n/messages/zh-CN.ts')).toContain('口令未解锁，不显示');
     });
 
     it('更新检查只发送明文令牌（密文视为未配置）', () => {
