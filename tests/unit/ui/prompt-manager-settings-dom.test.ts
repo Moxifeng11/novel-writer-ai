@@ -5,8 +5,9 @@
  * 使用统计/导入导出）、模板侧栏分类与详情都在 Setting 链里。
  * 桩宿主：promptManager 提供 getAllTemplates/getTemplate 等最小面。
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeEl, stubCreateDiv, stubDocument } from './support/fake-dom';
+import { setLocale } from '../../../i18n';
 
 vi.mock('@/main', () => ({ default: class NovelWriterPlugin {} }));
 
@@ -202,3 +203,45 @@ describe('PromptManagerSettings 局部重建与键盘导航（功能缺口 ④�
         expect(categoryBtn.className).toContain('nw-pm-category-btn--active');
     });
 });
+
+describe('PromptManagerSettings 双语（缺口⑦ 第二期第七片）', () => {
+    afterEach(() => setLocale('zh-CN'));
+
+    it('en-US 下子页签、分类按钮、搜索与空态渲染英文且无键名回退', () => {
+        setLocale('en-US');
+        const { root } = render(makePluginStub({ templateCount: 0 }));
+        const text = root.allText();
+        expect(text).toContain('📝 Prompt templates');
+        expect(text).toContain('🧪 A/B tests');
+        expect(text).toContain('📦 Import / export');
+        expect(text).toContain('Search prompts');
+        expect(text).toContain('📚 All (0)');
+        expect(text).not.toContain('settings.promptManager.');
+        expect(text).not.toContain('提示词模板');
+    });
+
+    it('en-US 下使用统计的标题、条数与分页文案走英文', () => {
+        setLocale('en-US');
+        const stub = makePluginStub();
+        stub.promptManager.getUsageHistoryPage = vi.fn(() => ({
+            records: [{ templateId: 'tpl_0', version: 1, timestamp: Date.UTC(2026, 0, 2) }],
+            total: 45,
+        }));
+        const { root } = render(stub);
+        switchTab(root, '📊 Usage');
+        const text = root.allText();
+        expect(text).toContain('📊 Usage history');
+        expect(text).toContain('45 record(s)');
+        expect(text).toContain('Page 1 / 3');
+        expect(text).toContain('Next →');
+        expect(text).not.toContain('使用记录');
+    });
+
+    it('切回 zh-CN 后恢复原文案', () => {
+        setLocale('zh-CN');
+        const { root } = render(makePluginStub({ templateCount: 3 }));
+        expect(root.allText()).toContain('📝 提示词模板');
+        expect(root.allText()).toContain('📚 全部 (3)');
+    });
+});
+

@@ -14,6 +14,7 @@ import {
 import { DEFAULT_PROMPT_TEMPLATES } from './prompt-templates-default';
 
 import { createLogger } from '@/shared/logger';
+import { hasMessage, t } from '@/i18n';
 
 const log = createLogger('PromptManager');
 
@@ -851,18 +852,24 @@ export class PromptManager {
     }
 }
 
+/** 提示词分类的顺序（下拉框与遍历用；标签在 i18n 资源 `prompt.category.*`） */
+export const PROMPT_CATEGORY_IDS: readonly PromptCategory[] = [
+    'character', 'chapter', 'outline', 'expand', 'deconstruct',
+    'polish', 'cowrite', 'worldview', 'entity', 'other',
+];
+
 /**
- * PROMPT_CATEGORY_LABELS 常量。
+ * 取提示词分类的界面标签（走 i18n，支持中英切换）。
+ *
+ * 未登记的分类回落原始 key：vault 里可能存在旧版本写入的自定义分类名，
+ * 直接吞掉会让分类按钮变成空白。
+ *
+ * @param category - 分类 id
+ * @returns 当前语言下的标签
+ * @example
+ * promptCategoryLabel('character'); // '👤 人设生成'（en-US 下为 '👤 Character design'）
  */
-export const PROMPT_CATEGORY_LABELS: Record<PromptCategory, string> = {
-    character: '👤 人设生成',
-    chapter: '📖 章节生成',
-    outline: '📋 大纲生成',
-    expand: '✨ 扩写',
-    deconstruct: '🔍 拆解',
-    polish: '✍️ 润色',
-    cowrite: '🤝 协同写作',
-    worldview: '🌍 世界观',
-    entity: '🏛 实体生成',
-    other: '📦 其他',
-};
+export function promptCategoryLabel(category: PromptCategory | string): string {
+    const key = `prompt.category.${category}`;
+    return hasMessage(key) ? t(key) : category;
+}

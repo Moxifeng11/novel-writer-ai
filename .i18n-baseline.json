@@ -179,7 +179,6 @@
     "ui/project-utils.ts": 27,
     "ui/prompt-import-preview-modal.ts": 19,
     "ui/prompt-manager-logic.ts": 5,
-    "ui/prompt-manager-settings.ts": 155,
     "ui/protect-yuan-modal.ts": 12,
     "ui/quality-dashboard-modal.ts": 33,
     "ui/quality-loop-modal.ts": 53,
@@ -266,7 +265,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 11126,
+  "total": 10971,
   "updatedAt": "2026-11-18",
-  "note": "i18n 第二期第六片：knowledge-section 迁移完成（87 键），文件数/条数收紧"
+  "note": ""
 }

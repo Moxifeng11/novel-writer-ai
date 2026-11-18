@@ -1809,3 +1809,44 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 
 **下一轮候选**：`ui/prompt-manager-settings.ts`（192 字，模板页里的提示词库）→ `settings-search.ts`（1011）→
 `deconstruction-section.ts`（758）/ `fingerprint-section.ts`（569）等其余分区 → 写作主流程 Notice。
+
+## 第六十四轮：i18n 第二期第七片 —— 提示词管理器设置页（2026-11-18）
+
+**目标**：把 `ui/prompt-manager-settings.ts`（1367 行 / 192 中文字）全部用户可见文案迁到
+`settings.promptManager.*`，并把提示词分类标签从 services 层中文常量改为可翻译函数。
+
+**改动**
+- 四个子页签（`📝 提示词模板 / 🧪 A/B 测试 / 📊 使用统计 / 📦 导入/导出`）、侧栏（搜索 name+placeholder、
+  `📚 全部 ({count})`、分类按钮、`没有匹配的提示词模板`、`自定义` 徽标、`➕ 新建自定义提示词`）、
+  详情面板（选择提示/模板不存在、编辑/自定义/重置与三个确认弹窗、版本历史与 `已切换到 v{version}`、
+  新建版本、系统/用户提示词、变量与 `必填` 徽标）全部改 `t()`。
+- A/B 测试管理：标题、开关与两条通知、空态、`模板: {id} · 流量 {a}/{b}`、四种状态徽标、
+  A/B 版本标签、开始/暂停/恢复/结束/删除与各自确认弹窗与通知、创建测试弹窗九个字段与五条校验、
+  结束测试弹窗（含 `🏆 推荐优胜: {variant} 版本`）；使用统计（`共 {count} 条记录`/`第 {page} / {total} 页`/
+  清空确认）；导入导出（导出/导入说明、`导入失败：{error}`、合并/替换/导出完成通知）。
+- 状态徽标改 `STATUS_LABEL_KEYS` 映射 + `getStatusLabel()`（未登记状态回落原值）。
+- **服务层开先例**：`services/prompt-manager.ts` 从「`PROMPT_CATEGORY_LABELS` 中文常量」改为
+  `PROMPT_CATEGORY_IDS` + `promptCategoryLabel(category)`（查 `prompt.category.*`，`hasMessage()`
+  判定，未登记分类回落原始 key），这是第一个 `import { t } from '@/i18n'` 的 services 文件。
+- 资源：zh/en 各 **997 条**（新增 `settings.promptManager` 134 + `prompt.category` 10；删掉未使用的
+  两个 title 键）；`settings.shell` 6→8 的说明回填进 §2 清单。
+
+**三处坑**
+1. **局部变量遮蔽 `t`**：`templates.filter(t => …)`、`const t = getTemplateById(v)` 会让 `t('x')`
+   报 TS2349 / TS2721（不是「未使用 import」），统一改名 `tpl` 才干净。
+2. **D 盘开发 vault 产物是拷贝**：`node scripts/dev-vault.mjs sync` 不带 `--vault` 会同步到 C 盘空壳，
+   第一次 en 截图因此「外壳英文、正文中文」；正确写法 `--vault=D:\nw-dev-vault`，
+   确诊手段是 `Select-String main.js -Pattern 'settings.promptManager'`。
+3. **分页器要 total > pageSize 才渲染**：单测里 1 条记录时断言 `第 / 页` 会失败。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；`npx vitest run tests/unit/ui tests/unit/services` **292 文件 / 2596 例**全绿；
+  `tests/unit/ui/prompt-manager-settings-dom.test.ts` 13 例（含新增双语 3 例）。
+- `check:i18n`：zh 997 / en 997、0 无法解析键、动态键 6 处、棘轮 **264 文件 / 10971 条**。
+- 实机 `D:\nw-dev-vault\_visual-i18n7\`：模板页与 A/B 页各中英两张（930×3170），三个弹窗 en 一张
+  （1180×1400）；en 下 A/B 页 CJK 0，模板页 CJK 206 全为 vault 模板名/描述。
+- 全量 `npm run preflight` **EXIT=0**（971 文件 / 10264 通过 + 3 跳过；活跃文档 20 个）；`check:bundle` main.js 5755919 → **5769722**（+13803）、styles.css 799217 不变。首跑 EXIT=1 卡在 `check:docs`（文档改动后未重生成），`npm run gen:docs` 后复跑全绿。
+
+**下一轮候选**：`ui/settings/settings-search.ts`（1011 字）→ `deconstruction-section.ts`（758）→
+`fingerprint-section.ts`（569）→ 写作主流程 Notice。
+

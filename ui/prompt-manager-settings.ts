@@ -1,6 +1,7 @@
 import { App, Notice, Modal, Setting, TextComponent } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
-import { PromptManager, PROMPT_CATEGORY_LABELS } from '@/services/prompt-manager';
+import { PromptManager, promptCategoryLabel, PROMPT_CATEGORY_IDS } from '@/services/prompt-manager';
+import { t } from '@/i18n';
 import type {
     PromptTemplate,
     PromptCategory,
@@ -14,6 +15,14 @@ import { exportTextFile } from '@/shared/export-file';
 import { buildVariantStatRows } from './prompt-manager-logic';
 import { buildPromptImportDiff, type PromptImportMode } from '@/shared/prompt-manager-import';
 import { PromptImportPreviewModal } from './prompt-import-preview-modal';
+
+/** A/B 测试状态的标签键（未知状态回落原始值，避免旧数据渲染成空） */
+const STATUS_LABEL_KEYS: Record<string, string> = {
+    draft: 'settings.promptManager.statusDraft',
+    running: 'settings.promptManager.statusRunning',
+    paused: 'settings.promptManager.statusPaused',
+    completed: 'settings.promptManager.statusCompleted',
+};
 
 /**
  * 提示词管理器设置列表。
@@ -64,10 +73,10 @@ export class PromptManagerSettings {
 
         const subTabBar = this.container.createDiv({ cls: 'nw-settings-subtab-bar' });
         const subTabs = [
-            { id: 'templates', label: '📝 提示词模板' },
-            { id: 'abtests', label: '🧪 A/B 测试' },
-            { id: 'usage', label: '📊 使用统计' },
-            { id: 'import-export', label: '📦 导入/导出' },
+            { id: 'templates', label: t('settings.promptManager.subtabTemplates') },
+            { id: 'abtests', label: t('settings.promptManager.subtabABTests') },
+            { id: 'usage', label: t('settings.promptManager.subtabUsage') },
+            { id: 'import-export', label: t('settings.promptManager.subtabImportExport') },
         ];
 
         this.subTabEls = [];
@@ -146,9 +155,9 @@ export class PromptManagerSettings {
 
     private renderTemplateSidebar(container: HTMLElement): void {
         new Setting(container)
-            .setName('搜索提示词')
+            .setName(t('settings.promptManager.searchName'))
             .addText(text => {
-                text.setPlaceholder('输入关键词搜索...')
+                text.setPlaceholder(t('settings.promptManager.searchPlaceholder'))
                     .setValue(this.searchKeyword)
                     .onChange(value => {
                         this.searchKeyword = value;
@@ -161,14 +170,14 @@ export class PromptManagerSettings {
         const categoryEntries: Array<{ id: PromptCategory | 'all'; el: HTMLElement }> = [];
 
         const allBtn = categoryList.createEl('button', {
-            text: `📚 全部 (${this.promptManager.getAllTemplates().length})`,
+            text: t('settings.promptManager.allCategory', { count: this.promptManager.getAllTemplates().length }),
             cls: `nw-pm-category-btn nw-pm-category-btn--all${this.selectedCategory === 'all' ? ' nw-pm-category-btn--active' : ''}`,
             attr: { type: 'button', 'aria-pressed': this.selectedCategory === 'all' ? 'true' : 'false' },
         });
         categoryEntries.push({ id: 'all', el: allBtn });
 
         for (const { category, count } of this.promptManager.getCategories()) {
-            const label = PROMPT_CATEGORY_LABELS[category] || category;
+            const label = promptCategoryLabel(category);
             const btn = categoryList.createEl('button', {
                 text: `${label} (${count})`,
                 cls: `nw-pm-category-btn${this.selectedCategory === category ? ' nw-pm-category-btn--active' : ''}`,
@@ -189,7 +198,7 @@ export class PromptManagerSettings {
         this.renderTemplateListItems();
 
         const addBtn = container.createEl('button', {
-            text: '➕ 新建自定义提示词',
+            text: t('settings.promptManager.addCustomBtn'),
             cls: 'nw-pm-add-btn',
             attr: { type: 'button' }
         });
@@ -231,40 +240,40 @@ export class PromptManagerSettings {
             : this.promptManager.getTemplatesByCategory(this.selectedCategory);
 
         const keyword = this.searchKeyword.toLowerCase();
-        const filtered = templates.filter(t =>
+        const filtered = templates.filter(tpl =>
             !keyword ||
-            t.name.toLowerCase().includes(keyword) ||
-            t.description.toLowerCase().includes(keyword)
+            tpl.name.toLowerCase().includes(keyword) ||
+            tpl.description.toLowerCase().includes(keyword)
         );
 
         if (filtered.length === 0) {
-            list.createDiv({ cls: 'nw-pm-template-empty', text: '没有匹配的提示词模板' });
+            list.createDiv({ cls: 'nw-pm-template-empty', text: t('settings.promptManager.emptyList') });
             return;
         }
 
         const entries: Array<{ el: HTMLElement; activate: () => void }> = [];
-        for (const t of filtered) {
-            const selected = this.selectedTemplateId === t.id;
+        for (const tpl of filtered) {
+            const selected = this.selectedTemplateId === tpl.id;
             const item = list.createDiv({
                 cls: `nw-pm-template-item${selected ? ' nw-pm-template-item--selected' : ''}`,
             });
             item.setAttribute('role', 'button');
             item.setAttribute('aria-pressed', selected ? 'true' : 'false');
             item.createDiv({
-                text: t.name,
+                text: tpl.name,
                 cls: 'nw-pm-template-name'
             });
             item.createDiv({
-                text: t.description.slice(0, 40) + (t.description.length > 40 ? '...' : ''),
+                text: tpl.description.slice(0, 40) + (tpl.description.length > 40 ? '...' : ''),
                 cls: 'nw-pm-template-desc'
             });
-            if (t.isCustom) {
+            if (tpl.isCustom) {
                 item.createEl('span', {
-                    text: '自定义',
+                    text: t('settings.promptManager.customBadge'),
                     cls: 'nw-pm-badge nw-pm-badge--custom'
                 });
             }
-            const activate = () => this.selectTemplate(t.id);
+            const activate = () => this.selectTemplate(tpl.id);
             item.onclick = activate;
             entries.push({ el: item, activate });
         }
@@ -336,7 +345,7 @@ export class PromptManagerSettings {
     private renderTemplateDetail(container: HTMLElement): void {
         if (!this.selectedTemplateId) {
             container.createDiv({
-                text: '请从左侧选择一个提示词模板查看详情',
+                text: t('settings.promptManager.pickTemplate'),
                 cls: 'nw-empty-center-muted'
             });
             return;
@@ -344,7 +353,7 @@ export class PromptManagerSettings {
 
         const template = this.promptManager.getTemplateById(this.selectedTemplateId);
         if (!template) {
-            container.createDiv({ text: '模板未找到', cls: 'nw-pm-error' });
+            container.createDiv({ text: t('settings.promptManager.templateNotFound'), cls: 'nw-pm-error' });
             return;
         }
 
@@ -352,14 +361,14 @@ export class PromptManagerSettings {
         const titleArea = header.createDiv();
         titleArea.createEl('h3', { text: template.name, cls: 'nw-pm-detail-title' });
         titleArea.createEl('div', {
-            text: `${PROMPT_CATEGORY_LABELS[template.category] || template.category} · v${this.promptManager.getActiveVersion(template)?.version || '?'}`,
+            text: `${promptCategoryLabel(template.category)} · v${this.promptManager.getActiveVersion(template)?.version || '?'}`,
             cls: 'nw-pm-detail-meta'
         });
 
         const actions = header.createDiv({ cls: 'nw-pm-detail-actions' });
 
         const editBtn = actions.createEl('button', {
-            text: template.isCustom ? '✏️ 编辑' : '📝 自定义',
+            text: t(template.isCustom ? 'settings.promptManager.editBtn' : 'settings.promptManager.customizeBtn'),
             cls: 'nw-action-btn',
             attr: { type: 'button' }
         });
@@ -367,21 +376,21 @@ export class PromptManagerSettings {
 
         if (template.isCustom) {
             const resetBtn = actions.createEl('button', {
-                text: '🔄 重置',
+                text: t('settings.promptManager.resetBtn'),
                 cls: 'nw-pm-btn nw-pm-btn--danger',
                 attr: { type: 'button' }
             });
             resetBtn.onclick = async () => {
                 const confirmed = await OperationConfirmModal.confirm(this.app, {
-                    title: '重置提示词',
-                    description: '确定要重置为默认提示词吗？',
-                    warning: '自定义修改将丢失',
-                    confirmText: '确认重置',
-                    cancelText: '取消',
+                    title: t('settings.promptManager.resetTitle'),
+                    description: t('settings.promptManager.resetDesc'),
+                    warning: t('settings.promptManager.resetWarning'),
+                    confirmText: t('settings.promptManager.resetOk'),
+                    cancelText: t('common.cancel'),
                 });
                 if (confirmed) {
                     await this.promptManager.resetTemplateToDefault(template.id);
-                    showSuccessNotice('已重置为默认提示词');
+                    showSuccessNotice(t('settings.promptManager.resetNotice'));
                     this.renderActiveTab();
                 }
             };
@@ -406,7 +415,7 @@ export class PromptManagerSettings {
 
     private renderVersionsList(container: HTMLElement, template: PromptTemplate): void {
         const section = container.createDiv({ cls: 'nw-pm-section' });
-        section.createEl('h4', { text: '📋 版本历史', cls: 'nw-h4-sm' });
+        section.createEl('h4', { text: t('settings.promptManager.versionsTitle'), cls: 'nw-h4-sm' });
 
         const versionList = section.createDiv({ cls: 'nw-pm-version-list' });
 
@@ -419,14 +428,14 @@ export class PromptManagerSettings {
             if (!ver.isActive) {
                 badge.onclick = async () => {
                     await this.promptManager.setActiveVersion(template.id, ver.version);
-                    showSuccessNotice(`已切换到 v${ver.version}`);
+                    showSuccessNotice(t('settings.promptManager.versionSwitched', { version: ver.version }));
                     this.renderActiveTab();
                 };
             }
         }
 
         const addVerBtn = section.createEl('button', {
-            text: '➕ 新建版本',
+            text: t('settings.promptManager.addVersionBtn'),
             cls: 'nw-pm-version-add',
             attr: { type: 'button' }
         });
@@ -435,13 +444,13 @@ export class PromptManagerSettings {
 
     private renderPromptPreview(container: HTMLElement, version: PromptTemplateVersion): void {
         const section = container.createDiv({ cls: 'nw-pm-section' });
-        section.createEl('h4', { text: '🔤 系统提示词', cls: 'nw-h4-sm' });
+        section.createEl('h4', { text: t('settings.promptManager.systemPromptTitle'), cls: 'nw-h4-sm' });
         const systemBox = section.createEl('pre', {
             text: version.systemPrompt,
             cls: 'nw-pm-prompt-box'
         });
 
-        section.createEl('h4', { text: '📝 用户提示词模板', cls: 'nw-pm-subheading-gap' });
+        section.createEl('h4', { text: t('settings.promptManager.userPromptTitle'), cls: 'nw-pm-subheading-gap' });
         const userBox = section.createEl('pre', {
             text: version.userPrompt,
             cls: 'nw-pm-prompt-box'
@@ -450,7 +459,7 @@ export class PromptManagerSettings {
 
     private renderVariablesList(container: HTMLElement, template: PromptTemplate): void {
         const section = container.createDiv();
-        section.createEl('h4', { text: '🔧 可用变量', cls: 'nw-h4-sm' });
+        section.createEl('h4', { text: t('settings.promptManager.variablesTitle'), cls: 'nw-h4-sm' });
 
         const varGrid = section.createDiv({ cls: 'nw-pm-var-grid' });
 
@@ -466,7 +475,7 @@ export class PromptManagerSettings {
             });
             if (v.required) {
                 item.createEl('span', {
-                    text: '必填',
+                    text: t('settings.promptManager.requiredBadge'),
                     cls: 'nw-pm-badge nw-pm-badge--required'
                 });
             }
@@ -475,10 +484,10 @@ export class PromptManagerSettings {
 
     private renderABTestsTab(container: HTMLElement): void {
         const header = container.createDiv({ cls: 'nw-pm-ab-header' });
-        header.createEl('h3', { text: '🧪 A/B 测试管理', cls: 'nw-pm-ab-title' });
+        header.createEl('h3', { text: t('settings.promptManager.abTitle'), cls: 'nw-pm-ab-title' });
 
         const enableRow = header.createDiv({ cls: 'nw-pm-ab-enable' });
-        enableRow.createSpan({ text: '启用A/B测试', cls: 'nw-pm-ab-enable-label' });
+        enableRow.createSpan({ text: t('settings.promptManager.abEnableLabel'), cls: 'nw-pm-ab-enable-label' });
         const toggle = enableRow.createEl('input', {
             type: 'checkbox',
             cls: 'nw-pm-check'
@@ -486,7 +495,7 @@ export class PromptManagerSettings {
         toggle.checked = this.promptManager.isABTestingEnabled();
         toggle.addEventListener('change', async () => {
             this.promptManager.setABTestingEnabled(toggle.checked);
-            showSuccessNotice(toggle.checked ? 'A/B测试已启用' : 'A/B测试已关闭');
+            showSuccessNotice(t(toggle.checked ? 'settings.promptManager.abEnabledNotice' : 'settings.promptManager.abDisabledNotice'));
             this.renderActiveTab();
         });
 
@@ -494,7 +503,7 @@ export class PromptManagerSettings {
 
         if (tests.length === 0) {
             container.createDiv({
-                text: '暂无A/B测试。点击下方按钮创建第一个测试。',
+                text: t('settings.promptManager.abEmpty'),
                 cls: 'nw-empty-center-muted'
             });
         } else {
@@ -505,7 +514,7 @@ export class PromptManagerSettings {
         }
 
         const createBtn = container.createEl('button', {
-            text: '➕ 创建A/B测试',
+            text: t('settings.promptManager.abCreateBtn'),
             cls: 'nw-pm-create-btn',
             attr: { type: 'button' }
         });
@@ -528,7 +537,7 @@ export class PromptManagerSettings {
             cls: 'nw-pm-test-name'
         });
         title.createDiv({
-            text: `模板: ${test.templateId} · 流量 ${test.trafficSplit.a}/${test.trafficSplit.b}`,
+            text: t('settings.promptManager.abMeta', { id: test.templateId, a: test.trafficSplit.a, b: test.trafficSplit.b }),
             cls: 'nw-stat-muted-mt'
         });
 
@@ -543,13 +552,8 @@ export class PromptManagerSettings {
     }
 
     private getStatusLabel(status: string): string {
-        const labels: Record<string, string> = {
-            draft: '📝 草稿',
-            running: '▶️ 运行中',
-            paused: '⏸️ 已暂停',
-            completed: '✅ 已完成',
-        };
-        return labels[status] || status;
+        const key = STATUS_LABEL_KEYS[status];
+        return key ? t(key) : status;
     }
 
     private getStatusClass(status: string): string {
@@ -574,61 +578,61 @@ export class PromptManagerSettings {
 
         const statsGrid = detail.createDiv({ cls: 'nw-pm-stats-grid' });
 
-        this.renderVariantStats(statsGrid, 'A 版本', test.variantA, test.trafficSplit.a);
-        this.renderVariantStats(statsGrid, 'B 版本', test.variantB, test.trafficSplit.b);
+        this.renderVariantStats(statsGrid, t('settings.promptManager.variantA'), test.variantA, test.trafficSplit.a);
+        this.renderVariantStats(statsGrid, t('settings.promptManager.variantB'), test.variantB, test.trafficSplit.b);
 
         const stats = this.promptManager.getABTestStats(test.id);
         if (stats?.winner) {
             const winnerBox = detail.createDiv({
                 cls: 'nw-pm-winner'
             });
-            winnerBox.setText(`🏆 当前优胜: ${stats.winner.toUpperCase()} 版本`);
+            winnerBox.setText(t('settings.promptManager.winnerCurrent', { variant: stats.winner.toUpperCase() }));
         }
 
         const actions = detail.createDiv({ cls: 'nw-pm-test-actions' });
 
         if (test.status === 'draft') {
             const startBtn = actions.createEl('button', {
-                text: '▶️ 开始测试',
+                text: t('settings.promptManager.startTestBtn'),
                 cls: 'nw-pm-btn nw-pm-btn--primary',
                 attr: { type: 'button' }
             });
             startBtn.onclick = async () => {
                 await this.promptManager.updateABTestStatus(test.id, 'running');
-                showSuccessNotice('测试已开始');
+                showSuccessNotice(t('settings.promptManager.testStartedNotice'));
                 this.renderActiveTab();
             };
         }
 
         if (test.status === 'running') {
             const pauseBtn = actions.createEl('button', {
-                text: '⏸️ 暂停',
+                text: t('settings.promptManager.pauseTestBtn'),
                 cls: 'nw-action-btn',
                 attr: { type: 'button' }
             });
             pauseBtn.onclick = async () => {
                 await this.promptManager.updateABTestStatus(test.id, 'paused');
-                showSuccessNotice('测试已暂停');
+                showSuccessNotice(t('settings.promptManager.testPausedNotice'));
                 this.renderActiveTab();
             };
         }
 
         if (test.status === 'paused') {
             const resumeBtn = actions.createEl('button', {
-                text: '▶️ 继续',
+                text: t('settings.promptManager.resumeTestBtn'),
                 cls: 'nw-pm-btn nw-pm-btn--primary',
                 attr: { type: 'button' }
             });
             resumeBtn.onclick = async () => {
                 await this.promptManager.updateABTestStatus(test.id, 'running');
-                showSuccessNotice('测试已继续');
+                showSuccessNotice(t('settings.promptManager.testResumedNotice'));
                 this.renderActiveTab();
             };
         }
 
         if (test.status !== 'completed') {
             const finishBtn = actions.createEl('button', {
-                text: '🏁 结束测试',
+                text: t('settings.promptManager.finishTestBtn'),
                 cls: 'nw-action-btn',
                 attr: { type: 'button' }
             });
@@ -636,21 +640,21 @@ export class PromptManagerSettings {
         }
 
         const deleteBtn = actions.createEl('button', {
-            text: '🗑️ 删除',
+            text: t('settings.promptManager.deleteTestBtn'),
             cls: 'nw-pm-btn nw-pm-btn--danger nw-pm-btn--push-end',
             attr: { type: 'button' }
         });
         deleteBtn.onclick = async () => {
             const confirmed = await OperationConfirmModal.confirm(this.app, {
-                title: '删除测试',
-                description: '确定要删除这个测试吗？',
-                confirmText: '确认删除',
-                cancelText: '取消',
+                title: t('settings.promptManager.deleteTestTitle'),
+                description: t('settings.promptManager.deleteTestDesc'),
+                confirmText: t('settings.promptManager.deleteTestOk'),
+                cancelText: t('common.cancel'),
             });
             if (confirmed) {
                 await this.promptManager.deleteABTest(test.id);
                 this.selectedTestId = null;
-                showSuccessNotice('测试已删除');
+                showSuccessNotice(t('settings.promptManager.testDeletedNotice'));
                 this.renderActiveTab();
             }
         };
@@ -674,7 +678,7 @@ export class PromptManagerSettings {
     }
 
     private renderUsageTab(container: HTMLElement): void {
-        container.createEl('h3', { text: '📊 使用记录', cls: 'nw-pm-tab-title' });
+        container.createEl('h3', { text: t('settings.promptManager.usageTitle'), cls: 'nw-pm-tab-title' });
 
         const pageSize = this.usagePageSize;
         // 先取一次总数，把越界页码夹回来（清空/删除后当前页可能已不存在）
@@ -686,26 +690,26 @@ export class PromptManagerSettings {
         const toolbar = container.createDiv({ cls: 'nw-pm-usage-toolbar' });
         toolbar.createSpan({
             cls: 'nw-pm-usage-summary',
-            text: first.total === 0 ? '共 0 条记录' : `共 ${first.total} 条记录`,
+            text: t('settings.promptManager.usageCount', { count: first.total }),
         });
         if (first.total > 0) {
             const clearBtn = toolbar.createEl('button', {
-                text: '🗑 清空记录',
+                text: t('settings.promptManager.clearUsageBtn'),
                 cls: 'nw-pm-btn nw-pm-btn--danger',
                 attr: { type: 'button' },
             });
             clearBtn.onclick = async () => {
                 const confirmed = await OperationConfirmModal.confirm(this.app, {
-                    title: '清空使用记录',
-                    description: `确定要清空全部 ${first.total} 条使用记录吗？`,
-                    warning: '清空后无法恢复，模板与 A/B 配置不受影响',
-                    confirmText: '确认清空',
-                    cancelText: '取消',
+                    title: t('settings.promptManager.clearUsageTitle'),
+                    description: t('settings.promptManager.clearUsageDesc', { count: first.total }),
+                    warning: t('settings.promptManager.clearUsageWarning'),
+                    confirmText: t('settings.promptManager.clearUsageOk'),
+                    cancelText: t('common.cancel'),
                 });
                 if (confirmed) {
                     await this.promptManager.clearUsageHistory();
                     this.usagePage = 0;
-                    showSuccessNotice('使用记录已清空');
+                    showSuccessNotice(t('settings.promptManager.usageClearedNotice'));
                     this.renderActiveTab();
                 }
             };
@@ -713,7 +717,7 @@ export class PromptManagerSettings {
 
         if (first.total === 0) {
             container.createDiv({
-                text: '暂无使用记录',
+                text: t('settings.promptManager.usageEmpty'),
                 cls: 'nw-empty-center-muted'
             });
             return;
@@ -751,7 +755,7 @@ export class PromptManagerSettings {
             const pager = container.createDiv({ cls: 'nw-pm-usage-pager' });
 
             const prev = pager.createEl('button', {
-                text: '← 上一页',
+                text: t('settings.promptManager.prevPageBtn'),
                 cls: 'nw-pm-pager-btn',
                 attr: { type: 'button' },
             });
@@ -760,11 +764,11 @@ export class PromptManagerSettings {
 
             pager.createSpan({
                 cls: 'nw-pm-pager-label',
-                text: `第 ${this.usagePage + 1} / ${totalPages} 页`,
+                text: t('settings.promptManager.pageLabel', { page: this.usagePage + 1, total: totalPages }),
             });
 
             const next = pager.createEl('button', {
-                text: '下一页 →',
+                text: t('settings.promptManager.nextPageBtn'),
                 cls: 'nw-pm-pager-btn',
                 attr: { type: 'button' },
             });
@@ -790,18 +794,18 @@ export class PromptManagerSettings {
     }
 
     private renderImportExportTab(container: HTMLElement): void {
-        container.createEl('h3', { text: '📦 导入/导出', cls: 'nw-pm-tab-title' });
+        container.createEl('h3', { text: t('settings.promptManager.ioTitle'), cls: 'nw-pm-tab-title' });
 
         const exportSection = container.createDiv({
             cls: 'nw-pm-io-box'
         });
-        exportSection.createEl('h4', { text: '📤 导出配置', cls: 'nw-h4-sm' });
+        exportSection.createEl('h4', { text: t('settings.promptManager.exportTitle'), cls: 'nw-h4-sm' });
         exportSection.createDiv({
-            text: '导出所有自定义提示词模板和A/B测试配置',
+            text: t('settings.promptManager.exportDesc'),
             cls: 'nw-pm-io-desc'
         });
         const exportBtn = exportSection.createEl('button', {
-            text: '📥 导出 JSON',
+            text: t('settings.promptManager.exportBtn'),
             cls: 'nw-pm-btn nw-pm-btn--primary-lg',
             attr: { type: 'button' }
         });
@@ -810,9 +814,9 @@ export class PromptManagerSettings {
         const importSection = container.createDiv({
             cls: 'nw-pm-io-box nw-pm-io-box--last'
         });
-        importSection.createEl('h4', { text: '📥 导入配置', cls: 'nw-h4-sm' });
+        importSection.createEl('h4', { text: t('settings.promptManager.importTitle'), cls: 'nw-h4-sm' });
         importSection.createDiv({
-            text: '从 JSON 文件导入提示词配置（导入前先预览将要新增/覆盖的内容，可合并或整份覆盖）',
+            text: t('settings.promptManager.importDesc'),
             cls: 'nw-pm-io-desc'
         });
 
@@ -831,7 +835,7 @@ export class PromptManagerSettings {
             try {
                 text = await file.text();
             } catch {
-                showErrorNotice('导入失败：文件读取错误');
+                showErrorNotice(t('settings.promptManager.importReadFailed'));
                 return;
             }
             this.openImportPreview(file.name, text);
@@ -848,7 +852,7 @@ export class PromptManagerSettings {
     private openImportPreview(fileName: string, text: string): void {
         const parsed = this.promptManager.parseImportPayload(text);
         if (!parsed.ok) {
-            showErrorNotice(`导入失败：${parsed.error}`);
+            showErrorNotice(t('settings.promptManager.importParseFailed', { error: parsed.error }));
             return;
         }
 
@@ -878,10 +882,10 @@ export class PromptManagerSettings {
     private applyImport(text: string, mode: PromptImportMode): void {
         const success = this.promptManager.importConfig(text, mode);
         if (!success) {
-            showErrorNotice('导入失败：格式错误');
+            showErrorNotice(t('settings.promptManager.importFormatFailed'));
             return;
         }
-        showSuccessNotice(mode === 'merge' ? '已合并导入配置' : '已覆盖导入配置');
+        showSuccessNotice(t(mode === 'merge' ? 'settings.promptManager.importMergedNotice' : 'settings.promptManager.importReplacedNotice'));
         this.usagePage = 0;
         this.renderActiveTab();
     }
@@ -890,13 +894,13 @@ export class PromptManagerSettings {
         const json = this.promptManager.exportConfig();
         await exportTextFile(this.app, `prompt-config-${new Date().toISOString().slice(0, 10)}.json`, json, {
             mime: 'application/json',
-            successMessage: '✅ 配置已导出',
+            successMessage: t('settings.promptManager.exportedNotice'),
         });
     }
 
     private showCreateTemplateModal(): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('新建自定义提示词');
+        modal.titleEl.setText(t('settings.promptManager.createModalTitle'));
 
         let name = '';
         let category: PromptCategory = 'other';
@@ -907,49 +911,49 @@ export class PromptManagerSettings {
         const content = modal.contentEl;
 
         new Setting(content)
-            .setName('名称')
+            .setName(t('settings.promptManager.nameLabel'))
             .addText(text => text
-                .setPlaceholder('提示词名称')
+                .setPlaceholder(t('settings.promptManager.namePlaceholder'))
                 .onChange(v => name = v));
 
         new Setting(content)
-            .setName('分类')
+            .setName(t('settings.promptManager.categoryLabel'))
             .addDropdown(dropdown => {
-                for (const [key, label] of Object.entries(PROMPT_CATEGORY_LABELS)) {
-                    dropdown.addOption(key, label);
+                for (const key of PROMPT_CATEGORY_IDS) {
+                    dropdown.addOption(key, promptCategoryLabel(key));
                 }
                 dropdown.setValue(category);
                 dropdown.onChange(v => category = v as PromptCategory);
             });
 
         new Setting(content)
-            .setName('描述')
+            .setName(t('settings.promptManager.descLabel'))
             .addTextArea(text => text
-                .setPlaceholder('简要描述这个提示词的用途')
+                .setPlaceholder(t('settings.promptManager.descPlaceholder'))
                 .onChange(v => description = v));
 
-        content.createEl('h4', { text: '系统提示词' });
+        content.createEl('h4', { text: t('settings.promptManager.systemPromptTitle') });
         const sysTextarea = content.createEl('textarea', {
             cls: 'nw-textarea-code',
-            attr: { placeholder: '系统提示词内容...' }
+            attr: { placeholder: t('settings.promptManager.createSystemPromptPlaceholder') }
         });
         sysTextarea.addEventListener('input', () => systemPrompt = sysTextarea.value);
 
-        content.createEl('h4', { text: '用户提示词模板' });
+        content.createEl('h4', { text: t('settings.promptManager.userPromptTitle') });
         const userTextarea = content.createEl('textarea', {
             cls: 'nw-textarea-code',
-            attr: { placeholder: '用户提示词模板内容...' }
+            attr: { placeholder: t('settings.promptManager.createUserPromptPlaceholder') }
         });
         userTextarea.addEventListener('input', () => userPrompt = userTextarea.value);
 
         modal.modalEl.createDiv({ cls: 'nw-modal-footer' })
             .createEl('button', {
-                text: '创建',
+                text: t('settings.promptManager.createBtn'),
                 cls: 'nw-modal-btn-primary',
                 attr: { type: 'button' }
             }).onclick = async () => {
                 if (!name.trim()) {
-                    new Notice('请输入提示词名称');
+                    new Notice(t('settings.promptManager.nameRequired'));
                     return;
                 }
                 const now = Date.now();
@@ -974,7 +978,7 @@ export class PromptManagerSettings {
                 this.promptManager['config'].customTemplates.push(template);
                 await this.promptManager['saveConfig']();
                 this.selectedTemplateId = template.id;
-                showSuccessNotice('提示词已创建');
+                showSuccessNotice(t('settings.promptManager.templateCreatedNotice'));
                 modal.close();
                 this.renderActiveTab();
             };
@@ -987,7 +991,7 @@ export class PromptManagerSettings {
         if (!activeVersion) return;
 
         const modal = new Modal(this.app);
-        modal.titleEl.setText(template.isCustom ? '编辑提示词' : '自定义提示词');
+        modal.titleEl.setText(t(template.isCustom ? 'settings.promptManager.editModalTitleCustom' : 'settings.promptManager.editModalTitleDefault'));
 
         let name = template.name;
         let description = template.description;
@@ -999,42 +1003,42 @@ export class PromptManagerSettings {
         const content = modal.contentEl;
 
         new Setting(content)
-            .setName('名称')
+            .setName(t('settings.promptManager.editNameLabel'))
             .addText(text => text
                 .setValue(name)
                 .onChange(v => name = v));
 
         new Setting(content)
-            .setName('描述')
+            .setName(t('settings.promptManager.editDescLabel'))
             .addTextArea(text => text
                 .setValue(description)
                 .onChange(v => description = v));
 
         if (template.isCustom) {
             new Setting(content)
-                .setName('另存为新版本')
-                .setDesc('保存为新版本，保留历史版本')
+                .setName(t('settings.promptManager.saveAsNewVersion'))
+                .setDesc(t('settings.promptManager.saveAsNewVersionDesc'))
                 .addToggle(toggle => toggle
                     .setValue(false)
                     .onChange(v => newVersion = v));
 
             if (newVersion) {
                 new Setting(content)
-                    .setName('版本说明')
+                    .setName(t('settings.promptManager.versionNoteLabel'))
                     .addText(text => text
-                        .setPlaceholder('可选：版本更新说明')
+                        .setPlaceholder(t('settings.promptManager.versionNotePlaceholder'))
                         .onChange(v => versionNote = v));
             }
         }
 
-        content.createEl('h4', { text: '系统提示词' });
+        content.createEl('h4', { text: t('settings.promptManager.systemPromptTitle') });
         const sysTextarea = content.createEl('textarea', {
             cls: 'nw-pm-textarea'
         });
         sysTextarea.value = systemPrompt;
         sysTextarea.addEventListener('input', () => systemPrompt = sysTextarea.value);
 
-        content.createEl('h4', { text: '用户提示词模板' });
+        content.createEl('h4', { text: t('settings.promptManager.userPromptTitle') });
         const userTextarea = content.createEl('textarea', {
             cls: 'nw-pm-textarea'
         });
@@ -1044,14 +1048,14 @@ export class PromptManagerSettings {
         const footer = modal.modalEl.createDiv({ cls: 'nw-modal-footer' });
 
         const cancelBtn = footer.createEl('button', {
-            text: '取消',
+            text: t('settings.promptManager.cancelBtn'),
             cls: 'nw-modal-btn-secondary',
             attr: { type: 'button' }
         });
         cancelBtn.onclick = () => modal.close();
 
         const saveBtn = footer.createEl('button', {
-            text: template.isCustom ? '保存' : '保存为自定义',
+            text: t(template.isCustom ? 'settings.promptManager.saveBtn' : 'settings.promptManager.saveAsCustomBtn'),
             cls: 'nw-modal-btn-primary',
             attr: { type: 'button' }
         });
@@ -1064,7 +1068,7 @@ export class PromptManagerSettings {
                     description,
                     updatedAt: Date.now(),
                 });
-                showSuccessNotice('已保存');
+                showSuccessNotice(t('settings.promptManager.savedNotice'));
             } else {
                 const currentVersion = activeVersion.version;
                 const parts = currentVersion.split('.').map(Number);
@@ -1075,14 +1079,14 @@ export class PromptManagerSettings {
                     version: nextVersion,
                     systemPrompt,
                     userPrompt,
-                    description: versionNote || '用户修改',
+                    description: versionNote || t('settings.promptManager.defaultVersionNote'),
                     isActive: true,
                 });
                 await this.promptManager.updateTemplate(template.id, {
                     name,
                     description,
                 });
-                showSuccessNotice(`已保存为 v${nextVersion}`);
+                showSuccessNotice(t('settings.promptManager.savedAsVersion', { version: nextVersion }));
             }
             modal.close();
             this.renderActiveTab();
@@ -1096,7 +1100,7 @@ export class PromptManagerSettings {
         if (!activeVersion) return;
 
         const modal = new Modal(this.app);
-        modal.titleEl.setText('新建版本');
+        modal.titleEl.setText(t('settings.promptManager.newVersionTitle'));
 
         let version = '';
         let description = '';
@@ -1110,26 +1114,26 @@ export class PromptManagerSettings {
         const suggestedVersion = parts.join('.');
 
         new Setting(content)
-            .setName('版本号')
+            .setName(t('settings.promptManager.versionLabel'))
             .addText(text => text
                 .setValue(suggestedVersion)
                 .onChange(v => version = v));
         version = suggestedVersion;
 
         new Setting(content)
-            .setName('版本说明')
+            .setName(t('settings.promptManager.versionNoteLabel'))
             .addText(text => text
-                .setPlaceholder('版本更新说明（可选）')
+                .setPlaceholder(t('settings.promptManager.newVersionNotePlaceholder'))
                 .onChange(v => description = v));
 
-        content.createEl('h4', { text: '系统提示词' });
+        content.createEl('h4', { text: t('settings.promptManager.systemPromptTitle') });
         const sysTextarea = content.createEl('textarea', {
             cls: 'nw-textarea-code',
         });
         sysTextarea.value = systemPrompt;
         sysTextarea.addEventListener('input', () => systemPrompt = sysTextarea.value);
 
-        content.createEl('h4', { text: '用户提示词模板' });
+        content.createEl('h4', { text: t('settings.promptManager.userPromptTitle') });
         const userTextarea = content.createEl('textarea', {
             cls: 'nw-textarea-code',
         });
@@ -1139,18 +1143,18 @@ export class PromptManagerSettings {
         const footer = modal.modalEl.createDiv({ cls: 'nw-modal-footer' });
 
         footer.createEl('button', {
-            text: '取消',
+            text: t('settings.promptManager.cancelBtn'),
             cls: 'nw-modal-btn-secondary',
             attr: { type: 'button' }
         }).onclick = () => modal.close();
 
         footer.createEl('button', {
-            text: '创建版本',
+            text: t('settings.promptManager.createVersionBtn'),
             cls: 'nw-modal-btn-primary',
             attr: { type: 'button' }
         }).onclick = async () => {
             if (!version.trim()) {
-                new Notice('请输入版本号');
+                new Notice(t('settings.promptManager.versionRequired'));
                 return;
             }
             await this.promptManager.addVersion(template.id, {
@@ -1160,7 +1164,7 @@ export class PromptManagerSettings {
                 description: description || undefined,
                 isActive: true,
             });
-            showSuccessNotice(`v${version} 已创建`);
+            showSuccessNotice(t('settings.promptManager.versionCreatedNotice', { version }));
             modal.close();
             this.renderActiveTab();
         };
@@ -1170,7 +1174,7 @@ export class PromptManagerSettings {
 
     private showCreateTestModal(): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('创建A/B测试');
+        modal.titleEl.setText(t('settings.promptManager.createTestTitle'));
 
         let name = '';
         let description = '';
@@ -1183,68 +1187,68 @@ export class PromptManagerSettings {
         const content = modal.contentEl;
 
         new Setting(content)
-            .setName('测试名称')
+            .setName(t('settings.promptManager.testNameLabel'))
             .addText(text => text
-                .setPlaceholder('测试名称')
+                .setPlaceholder(t('settings.promptManager.testNamePlaceholder'))
                 .onChange(v => name = v));
 
         new Setting(content)
-            .setName('测试描述')
+            .setName(t('settings.promptManager.testDescLabel'))
             .addTextArea(text => text
-                .setPlaceholder('简要描述测试目的（可选）')
+                .setPlaceholder(t('settings.promptManager.testDescPlaceholder'))
                 .onChange(v => description = v));
 
         const templates = this.promptManager.getAllTemplates();
         new Setting(content)
-            .setName('选择提示词模板')
+            .setName(t('settings.promptManager.selectTemplateLabel'))
             .addDropdown(dropdown => {
-                dropdown.addOption('', '请选择模板');
-                for (const t of templates) {
-                    dropdown.addOption(t.id, t.name);
+                dropdown.addOption('', t('settings.promptManager.selectTemplatePlaceholder'));
+                for (const tpl of templates) {
+                    dropdown.addOption(tpl.id, tpl.name);
                 }
                 dropdown.onChange(v => {
                     templateId = v;
-                    const t = this.promptManager.getTemplateById(v);
-                    if (t && t.versions.length >= 1) {
-                        versionA = t.versions[0].version;
-                        versionB = t.versions[Math.min(1, t.versions.length - 1)].version;
+                    const tpl = this.promptManager.getTemplateById(v);
+                    if (tpl && tpl.versions.length >= 1) {
+                        versionA = tpl.versions[0].version;
+                        versionB = tpl.versions[Math.min(1, tpl.versions.length - 1)].version;
                     }
                     renderVersionDropdowns();
                 });
             });
 
-        const versionASetting = new Setting(content).setName('A 版本');
-        const versionBSetting = new Setting(content).setName('B 版本');
+        const versionASetting = new Setting(content).setName(t('settings.promptManager.versionALabel'));
+        const versionBSetting = new Setting(content).setName(t('settings.promptManager.versionBLabel'));
 
         function renderVersionDropdowns() {
-            const t = templateId ? this_2.promptManager.getTemplateById(templateId) : null;
+            const tpl = templateId ? this_2.promptManager.getTemplateById(templateId) : null;
             versionASetting.clear();
             versionBSetting.clear();
-            if (t) {
+            if (tpl) {
                 versionASetting.addDropdown(dropdown => {
-                    for (const v of t.versions) {
+                    for (const v of tpl.versions) {
                         dropdown.addOption(v.version, `v${v.version}`);
                     }
                     dropdown.setValue(versionA);
                     dropdown.onChange(v => versionA = v);
                 });
                 versionBSetting.addDropdown(dropdown => {
-                    for (const v of t.versions) {
+                    for (const v of tpl.versions) {
                         dropdown.addOption(v.version, `v${v.version}`);
                     }
                     dropdown.setValue(versionB);
                     dropdown.onChange(v => versionB = v);
                 });
             } else {
-                versionASetting.setDesc('请先选择模板');
-                versionBSetting.setDesc('请先选择模板');
+                versionASetting.setDesc(t('settings.promptManager.pickTemplateFirst'));
+                versionBSetting.setDesc(t('settings.promptManager.pickTemplateFirst'));
             }
         }
 
         const this_2 = this;
 
         new Setting(content)
-            .setName('A 流量占比')
+            .setName(t('settings.promptManager.trafficALabel'))
             .addSlider(slider => slider
                 .setLimits(10, 90, 5)
                 .setValue(50)
@@ -1255,7 +1259,7 @@ export class PromptManagerSettings {
                 }));
 
         new Setting(content)
-            .setName('B 流量占比')
+            .setName(t('settings.promptManager.trafficBLabel'))
             .setDesc(`${splitB}%`)
             .addText(text => text
                 .setValue(String(100 - splitA))
@@ -1264,30 +1268,30 @@ export class PromptManagerSettings {
         const footer = modal.modalEl.createDiv({ cls: 'nw-modal-footer' });
 
         footer.createEl('button', {
-            text: '取消',
+            text: t('settings.promptManager.cancelBtn'),
             cls: 'nw-modal-btn-secondary',
             attr: { type: 'button' }
         }).onclick = () => modal.close();
 
         footer.createEl('button', {
-            text: '创建',
+            text: t('settings.promptManager.createBtn'),
             cls: 'nw-modal-btn-primary',
             attr: { type: 'button' }
         }).onclick = async () => {
             if (!name.trim()) {
-                new Notice('请输入测试名称');
+                new Notice(t('settings.promptManager.testNameRequired'));
                 return;
             }
             if (!templateId) {
-                new Notice('请选择提示词模板');
+                new Notice(t('settings.promptManager.testTemplateRequired'));
                 return;
             }
             if (!versionA || !versionB) {
-                new Notice('请选择两个版本');
+                new Notice(t('settings.promptManager.testVersionsRequired'));
                 return;
             }
             if (versionA === versionB) {
-                new Notice('两个版本不能相同');
+                new Notice(t('settings.promptManager.testVersionsSame'));
                 return;
             }
             await this.promptManager.createABTest({
@@ -1298,7 +1302,7 @@ export class PromptManagerSettings {
                 variantBVersion: versionB,
                 trafficSplit: { a: splitA, b: splitB },
             });
-            showSuccessNotice('测试已创建');
+            showSuccessNotice(t('settings.promptManager.testCreatedNotice'));
             modal.close();
             this.renderActiveTab();
         };
@@ -1308,11 +1312,11 @@ export class PromptManagerSettings {
 
     private showFinishTestModal(test: ABTest): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('结束测试');
+        modal.titleEl.setText(t('settings.promptManager.finishTestTitle'));
 
         const content = modal.contentEl;
         content.createDiv({
-            text: '选择优胜版本，该版本将设为提示词的活跃版本。',
+            text: t('settings.promptManager.finishTestDesc'),
             cls: 'nw-pm-finish-desc'
         });
 
@@ -1320,7 +1324,7 @@ export class PromptManagerSettings {
 
         if (stats?.winner && stats.winner !== 'tie') {
             content.createDiv({
-                text: `🏆 推荐优胜: ${stats.winner.toUpperCase()} 版本`,
+                text: t('settings.promptManager.finishRecommended', { variant: stats.winner.toUpperCase() }),
                 cls: 'nw-pm-winner nw-pm-winner--lg'
             });
         }
@@ -1328,34 +1332,34 @@ export class PromptManagerSettings {
         const footer = modal.modalEl.createDiv({ cls: 'nw-modal-footer' });
 
         footer.createEl('button', {
-            text: 'A 获胜',
+            text: t('settings.promptManager.winnerABtn'),
             cls: 'nw-modal-btn-primary',
             attr: { type: 'button' }
         }).onclick = async () => {
             await this.promptManager.setWinner(test.id, 'a');
-            showSuccessNotice('A 版本获胜，已设为活跃版本');
+            showSuccessNotice(t('settings.promptManager.winnerANotice'));
             modal.close();
             this.renderActiveTab();
         };
 
         footer.createEl('button', {
-            text: 'B 获胜',
+            text: t('settings.promptManager.winnerBBtn'),
             cls: 'nw-modal-btn-primary',
             attr: { type: 'button' }
         }).onclick = async () => {
             await this.promptManager.setWinner(test.id, 'b');
-            showSuccessNotice('B 版本获胜，已设为活跃版本');
+            showSuccessNotice(t('settings.promptManager.winnerBNotice'));
             modal.close();
             this.renderActiveTab();
         };
 
         footer.createEl('button', {
-            text: '仅结束（不决出胜负）',
+            text: t('settings.promptManager.finishOnlyBtn'),
             cls: 'nw-modal-btn-secondary',
             attr: { type: 'button' }
         }).onclick = async () => {
             await this.promptManager.updateABTestStatus(test.id, 'completed');
-            showSuccessNotice('测试已结束');
+            showSuccessNotice(t('settings.promptManager.testFinishedNotice'));
             modal.close();
             this.renderActiveTab();
         };

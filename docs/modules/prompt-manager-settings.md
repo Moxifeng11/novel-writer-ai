@@ -1,6 +1,6 @@
 # 提示词管理设置（设置页 · 4 个子页签 + 5 个弹窗）
 
-> 状态：stable（视觉重构 Slice N 完成 2026-11-17；功能缺口 ④ 交付级修补 2026-11-18）　｜　最后更新：2026-11-18　｜　Owner：dsh
+> 状态：stable（视觉重构 Slice N 完成 2026-11-17；功能缺口 ④ 交付级修补 2026-11-18；i18n 第二期第七片 2026-11-18）　｜　最后更新：2026-11-18　｜　Owner：dsh
 
 ## 1. 定位
 
@@ -27,12 +27,17 @@
 - **使用统计**：`getUsageHistoryPage(offset, limit, templateId?)` 返回 `{ records, total }`，每页 20 条、最新在前；工具条显示「共 N 条记录」+「🗑 清空记录」（`OperationConfirmModal` 二次确认后 `clearUsageHistory()`）；超过一页时显示 `← 上一页 / 第 x / y 页 / 下一页 →`，首末页 `disabled`。
 - **导入**：选文件 → 清空 input.value（允许重选同一文件）→ `parseImportPayload()` 校验 → `buildPromptImportDiff()` 算差异 → `PromptImportPreviewModal` 预览 → 用户点「合并导入」或「覆盖导入」才写盘；解析/校验失败只弹 Notice，不打开弹窗。
 - **模板页三栏**：`nw-pm-layout`（flex + gap 16）→ `nw-pm-sidebar`（260px，`flex-shrink:0`，内含搜索框 + `nw-pm-category-list` + `nw-pm-template-list`（`max-height:400px; overflow-y:auto`）+ `nw-pm-add-btn`）/ `nw-pm-main`（`flex:1; min-width:0`，详情或空态）。
-- **分类按钮**：由 `getCategories()` 动态生成（「📚 全部 (N)」+ 每个有模板的分类，标签走 `PROMPT_CATEGORY_LABELS`，未登记分类回落原始 key），选中态用 `nw-pm-category-btn--active`；「全部」多一个 `--all` 修饰类（`margin-bottom:4px`，其余项 2px）——两档间距是旧实现就有的细节。
+- **分类按钮**：由 `getCategories()` 动态生成（「📚 全部 (N)」+ 每个有模板的分类，标签走 `promptCategoryLabel()`（内部查 `prompt.category.*` 资源键），未登记分类回落原始 key），选中态用 `nw-pm-category-btn--active`；「全部」多一个 `--all` 修饰类（`margin-bottom:4px`，其余项 2px）——两档间距是旧实现就有的细节。
 - **模板项**：`nw-pm-template-item`（padding 8px 10px / radius 4 / pointer / mb 2），选中 `--selected` 换 `--background-modifier-hover`；自定义模板挂 `nw-pm-badge--custom`（inline-block）。
 - **版本徽标**：`nw-pm-version-badge`（span，可点切换版本），当前版本 `--active` 用强调底色 + `--text-on-accent`，其余次底色 + `--text-muted`。
 - **A/B 状态**：Slice N 前由 `getStatusStyle(status)` 返回内联样式串，现在改为 `getStatusClass(status)` 返回 `nw-pm-status--draft|--running|--paused|--completed`，用法 `cls: \`nw-pm-status \${this.getStatusClass(test.status)}\``（未匹配时回落 `--draft`）。
 - **两个 A/B 徽标**：模板页自定义徽标、变量「必填」徽标、使用记录「A/B A」徽标共用 `nw-pm-badge` + 修饰类；`--ab` **显式 `display:inline`**（见 §4）。
 - **弹窗**：5 个 `Modal` 子类都在同一文件里，footer 按钮沿用共享类 `nw-modal-footer` / `nw-modal-btn-primary` / `nw-modal-btn-secondary`；两处长 textarea 的十几个工具类改成一个 `nw-pm-textarea`。
+- **文案国际化（i18n 第二期第七片）**：四个子页签、侧栏、详情、A/B、使用统计、导入导出与五个弹窗的约 120 处
+  用户可见文案全部走 `t('settings.promptManager.*')`（**134 键**，zh/en 各资源 997 条）；状态徽标走模块级
+  `STATUS_LABEL_KEYS` 映射 + `getStatusLabel()`，分类标签走 `promptCategoryLabel()`（`prompt.category.*` 10 键）；
+  弹窗取消按钮复用 `common.cancel`。文件内剩余 50 行 CJK **全是注释**。模板名/描述是 vault 数据，不迁。
+  详见 [i18n.md](i18n.md)。
 - **历史包袱**：Slice N 前本文件 192 处 `nw-u-*`（56 行）、15 处内联 `style`；模板项、分类按钮、A/B 卡的选中态全都靠内联样式三元表达式拼字符串。
 
 ## 3. 问题清单
