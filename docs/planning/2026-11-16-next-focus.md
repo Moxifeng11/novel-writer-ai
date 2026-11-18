@@ -2082,3 +2082,24 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
   移动端说明全英文，**CJK 0**（开发 vault 未配 MCP 服务，无数据行）；zh 页与改前一致。
 
 **下一轮候选**：`agent-section.ts`（125，完成后设置分区全迁完）→ 指纹视图三件套 → 写作主流程。
+
+## 第七十二轮：i18n 第二期第15片 —— Agent 对话分区（2026-11-19，ZCode · ZC-20261118-05）
+
+**改动**
+- `ui/settings/agent-section.ts`（45 行 / 125 中文字）6 处文案迁 `t('settings.agent.*')`：标题/引导语/
+  写入确认 name+desc/两个 option 可见文案（option 值 ask/allow 是存盘 id 不动）。
+- **设置分区正文至此全部迁完**（`ui/settings/*-section*.ts` 只剩 section-factory/section-base
+  骨架与外观页统计/桌宠块）。
+- 资源 zh/en 各 1313（+6）；新增 `tests/unit/ui/agent-section-i18n.test.ts` 3 例（en 骨架 CJK=0）。
+
+**验收**
+- 新增 3 例全绿；`check:i18n` zh/en 各 1313、棘轮收紧到 **257 文件 / 10611 条**（agent-section 移出）；
+  `check:bundle` main.js → **5806984**（+765）；preflight EXIT=0。
+- 实机 `D:\nw-dev-vault\_visual-i18n15\agent-chat-{zh-CN,en-US}.png`：en 下 heads=`🤖 Agent chat`、
+  Setting 行 `Agent write confirmation` 全英文，**CJK 0**；zh 页与改前一致。
+- 附：本片提交同时补齐第14片在 `docs/modules/i14n.md` 的 §1 入口/§2 资源规模/片次链/已迁移面/
+  未迁移面/验收记录六处（第14片提交时 heredoc 锚点失配只落了部分文档段，已在本次补全）。
+
+**下一轮候选**：写作指纹库视图三件套（ZC-06：`writing-fingerprint-view.ts` 236 处 +
+`fingerprint-detail-modal.ts` 117 处 + `fingerprint-v2-detail.ts` 16 处 + `fingerprint-utils.ts`
+12 维标签 10 处）→ 写作主流程（ZC-07）。

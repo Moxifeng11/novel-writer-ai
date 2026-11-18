@@ -1318,6 +1318,14 @@ export const enUS: MessageTree = {
             envMobileNotice: 'Mobile device detected: stdio servers are unavailable; use HTTP endpoints instead',
             envDesktopNotice: 'Desktop detected: stdio local-program servers are available',
         },
+        agent: {
+            title: '🤖 Agent chat',
+            intro: 'The agent workbench runs the plugin\'s built-in Harness: tool calls, write confirmation and read-only mode, with no external processes.',
+            writeApprovalName: 'Agent write confirmation',
+            writeApprovalDesc: 'On by default: confirm before overwriting/appending to existing notes, new files pass automatically; when off, all writes pass automatically (dangerous operations still confirm)',
+            optionAsk: 'Confirm every time (recommended)',
+            optionAllow: 'Allow automatically',
+        },
     },
     prompt: {
         category: {

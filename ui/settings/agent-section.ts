@@ -5,6 +5,7 @@
  */
 
 import { Setting } from 'obsidian';
+import { t } from '@/i18n';
 import { SettingsSection } from './section-base';
 
 /**
@@ -17,18 +18,18 @@ export class AgentBackendSection extends SettingsSection {
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
-        section.createEl('h3', { text: '🤖 Agent 对话' });
+        section.createEl('h3', { text: t('settings.agent.title') });
         section.createEl('p', {
-            text: 'Agent 工作台运行插件内置 Harness：支持工具调用、写入确认与只读模式，不依赖外部进程。',
+            text: t('settings.agent.intro'),
             cls: 'nw-u-c-text-muted nw-u-fs-13px nw-u-marginbottom-16px',
         });
 
         new Setting(section)
-            .setName('Agent 写入确认')
-            .setDesc('默认开启：覆盖/追加已有笔记前确认，新建文件自动放行；关闭后写操作全部自动放行（危险操作仍会确认）')
+            .setName(t('settings.agent.writeApprovalName'))
+            .setDesc(t('settings.agent.writeApprovalDesc'))
             .addDropdown(dropdown => dropdown
-                .addOption('ask', '每次确认（推荐）')
-                .addOption('allow', '自动放行')
+                .addOption('ask', t('settings.agent.optionAsk'))
+                .addOption('allow', t('settings.agent.optionAllow'))
                 .setValue(this.plugin.settings.agentWriteApproval === 'allow' ? 'allow' : 'ask')
                 .onChange(async (value) => {
                     this.plugin.settings.agentWriteApproval = value === 'allow' ? 'allow' : 'ask';

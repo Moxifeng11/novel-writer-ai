@@ -11,7 +11,7 @@
 | `shared/` | 258 | 51769 | 2179 | 1700 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 115061 | 1177 | 927 | 79% |
+| `ui/` | 306 | 115062 | 1177 | 927 | 79% |
 
 ## 文件清单
 
@@ -944,7 +944,7 @@
 | `ui/services/project-create-service.ts` | 473 | 6 | 5 |
 | `ui/settings-tab.ts` | 375 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
-| `ui/settings/agent-section.ts` | 39 | 1 | 1 |
+| `ui/settings/agent-section.ts` | 40 | 1 | 1 |
 | `ui/settings/api-section.ts` | 1698 | 1 | 1 |
 | `ui/settings/deconstruction-section.ts` | 338 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 447 | 1 | 1 |

@@ -1321,6 +1321,14 @@ export const zhCN: MessageTree = {
             envMobileNotice: '当前是移动端：stdio 服务不可用，请改用 HTTP 端点',
             envDesktopNotice: '当前是桌面端：可使用 stdio 本地程序服务',
         },
+        agent: {
+            title: '🤖 Agent 对话',
+            intro: 'Agent 工作台运行插件内置 Harness：支持工具调用、写入确认与只读模式，不依赖外部进程。',
+            writeApprovalName: 'Agent 写入确认',
+            writeApprovalDesc: '默认开启：覆盖/追加已有笔记前确认，新建文件自动放行；关闭后写操作全部自动放行（危险操作仍会确认）',
+            optionAsk: '每次确认（推荐）',
+            optionAllow: '自动放行',
+        },
     },
     prompt: {
         category: {
