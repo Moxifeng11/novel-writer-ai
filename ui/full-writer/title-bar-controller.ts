@@ -1,4 +1,5 @@
 import { App, TFile } from 'obsidian';
+import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
 import type { ChapterListEntry } from '@/ui/project-utils';
@@ -49,11 +50,11 @@ export class TitleBarController {
         const titleRow = bar.createDiv({ cls: 'novel-writer-fw-title-row' });
 
         const backBtn = titleRow.createEl('button', {
-            text: '← 返回',
+            text: t('fullwriter.tbBack'),
             cls: 'nw-btn-back',
             attr: {
                 style: 'padding:4px 10px; border:1px solid var(--background-modifier-border); border-radius:4px; cursor:pointer; background:var(--background-secondary); color:var(--text-muted); font-size:13px; margin-right:6px; white-space:nowrap;',
-                title: '返回项目与章节选择界面'
+                title: t('fullwriter.tbBackTip')
             }
         });
         backBtn.onclick = () => {
@@ -115,7 +116,7 @@ export class TitleBarController {
                 await this.deps.selectChapter(this.deps.state.project, { chapter: chapterName, volume, file });
             };
 
-            titleRow.createSpan({ text: ' 正文写作', cls: 'novel-writer-fw-title-suffix' });
+            titleRow.createSpan({ text: t('fullwriter.tbWritingSuffix'), cls: 'novel-writer-fw-title-suffix' });
             titleRow.createDiv({ cls: 'novel-writer-fw-title-spacer' });
         }
 
@@ -124,37 +125,37 @@ export class TitleBarController {
         if (this.deps.state.project && this.deps.state.chapterName) {
             const remaining = this.deps.getRemainingChapterActions();
             const runBtn = secondaryRow.createEl('button', {
-                text: remaining > 0 ? `🚀 一键完成本章（剩余 ${remaining} 步）` : '✅ 本章已完成',
+                text: remaining > 0 ? t('fullwriter.tbRunRemaining', { remaining }) : t('fullwriter.tbRunDone'),
                 cls: 'novel-writer-settings-btn',
             });
-            runBtn.setAttribute('title', '一次点击跑完剩余步骤；步骤仍可见、可编辑、可单独重生成');
+            runBtn.setAttribute('title', t('fullwriter.tbRunRemainingTip'));
             runBtn.disabled = remaining === 0;
             runBtn.onclick = () => this.deps.runChapterOneClick('recommended');
 
             const stepBtn = secondaryRow.createEl('button', {
-                text: '🐢 逐步完成',
+                text: t('fullwriter.tbStepwise'),
                 cls: 'novel-writer-settings-btn',
             });
-            stepBtn.setAttribute('title', '一次点击启动，但逐步执行、每步可见');
+            stepBtn.setAttribute('title', t('fullwriter.tbStepwiseTip'));
             stepBtn.onclick = () => this.deps.runChapterOneClick('step');
 
-            const coBtn = secondaryRow.createEl('button', { text: '✍️ 句级协同', cls: 'novel-writer-settings-btn' });
-            coBtn.setAttribute('title', '进入句级协同写作工作台（当前章节）');
+            const coBtn = secondaryRow.createEl('button', { text: t('fullwriter.tbCoWrite'), cls: 'novel-writer-settings-btn' });
+            coBtn.setAttribute('title', t('fullwriter.tbCoWriteTip'));
             coBtn.onclick = () => this.deps.openCurrentChapterInCoWriting();
         }
 
-        const kbBtn = secondaryRow.createEl('button', { text: '📚 知识库管理', cls: 'novel-writer-settings-btn' });
-        kbBtn.setAttribute('title', '打开知识库管理视图');
+        const kbBtn = secondaryRow.createEl('button', { text: t('fullwriter.tbKb'), cls: 'novel-writer-settings-btn' });
+        kbBtn.setAttribute('title', t('fullwriter.tbKbTip'));
         kbBtn.onclick = () => this.deps.openKnowledgeBase();
 
-        const fpBtn = secondaryRow.createEl('button', { text: '🔍 指纹库', cls: 'novel-writer-settings-btn' });
-        fpBtn.setAttribute('title', '打开写作指纹库');
+        const fpBtn = secondaryRow.createEl('button', { text: t('fullwriter.tbFingerprint'), cls: 'novel-writer-settings-btn' });
+        fpBtn.setAttribute('title', t('fullwriter.tbFingerprintTip'));
         fpBtn.onclick = () => this.deps.openFingerprintLibrary();
 
         // C2（2026-11-16）：工作台「设置」不再是「只打开默认 tab」——
         // 点开是常用分区菜单，直接进目标分区；最后一项打开完整设置页。
-        const settingsBtn = secondaryRow.createEl('button', { text: '⚙️ 设置', cls: 'novel-writer-settings-btn' });
-        settingsBtn.setAttribute('title', '打开设置（可直接跳常用分区）');
+        const settingsBtn = secondaryRow.createEl('button', { text: t('fullwriter.tbSettings'), cls: 'novel-writer-settings-btn' });
+        settingsBtn.setAttribute('title', t('fullwriter.tbSettingsTip'));
         settingsBtn.onclick = (event) => {
             openWorkbenchSettingsMenu(this.deps.app, this.deps.plugin, event);
         };
@@ -175,8 +176,8 @@ export class TitleBarController {
 
         // P0-4（v4.27）：版本历史入口——覆盖前自动备份已有，但用户需要一键查看/回滚
         if (this.deps.state.project && this.deps.state.chapterName) {
-            const verBtn = secondaryRow.createEl('button', { text: '📜 版本', cls: 'novel-writer-settings-btn' });
-            verBtn.setAttribute('title', '查看当前章节的正文版本历史（含覆盖前自动备份），可回滚');
+            const verBtn = secondaryRow.createEl('button', { text: t('fullwriter.tbVersions'), cls: 'novel-writer-settings-btn' });
+            verBtn.setAttribute('title', t('fullwriter.tbVersionsTip'));
             verBtn.onclick = async () => {
                 const { ChapterVersionModal } = await import('@/ui/chapter-version-modal');
                 new ChapterVersionModal(this.deps.app, {

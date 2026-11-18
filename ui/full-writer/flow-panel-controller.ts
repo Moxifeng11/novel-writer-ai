@@ -6,6 +6,7 @@
  * 这里用一个可停留、可点击、会跟着磁盘变化自动刷新的面板替代。
  */
 import type { App, EventRef } from 'obsidian';
+import { t } from '@/i18n';
 import type { CreationMode } from '@/shared/creation-mode';
 import { getCreationModeLabel } from '@/shared/creation-mode';
 import type { CreationFlowStageStatus, CreationFlowSnapshot } from '@/shared/creation-flow';
@@ -42,10 +43,10 @@ export interface FlowPanelDeps {
 }
 
 const STATE_CHIP: Record<CreationFlowStageStatus['state'], string> = {
-    done: '已完成',
-    active: '进行中',
-    blocked: '待前置',
-    todo: '未开始',
+    done: t('fullwriter.fp.done'),
+    active: t('fullwriter.fp.active'),
+    blocked: t('fullwriter.fp.blocked'),
+    todo: t('fullwriter.fp.todo'),
 };
 
 const REFRESH_DEBOUNCE_MS = 400;
@@ -186,9 +187,9 @@ export class FlowPanelController {
             log.warn('[创作流程] 读取项目状态失败:', e);
             this.container.empty();
             const error = this.container.createDiv({ cls: 'nw-flow-error' });
-            error.createDiv({ cls: 'nw-flow-error-title', text: '读取创作进度失败' });
+            error.createDiv({ cls: 'nw-flow-error-title', text: t('fullwriter.fp.readFailed') });
             error.createDiv({ cls: 'nw-flow-error-detail', text: e instanceof Error ? e.message : String(e) });
-            const retry = error.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: '重试' });
+            const retry = error.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: t('fullwriter.fp.retry') });
             retry.onclick = () => void this.refresh();
         }
     }
@@ -211,11 +212,11 @@ export class FlowPanelController {
         titleWrap.createDiv({ cls: 'nw-flow-title', text: projectShortName(snapshot.project) });
         const meta = titleWrap.createDiv({ cls: 'nw-flow-sub' });
         meta.createSpan({ cls: 'nw-flow-mode-badge', text: getCreationModeLabel(snapshot.mode) });
-        meta.createSpan({ text: ` · ${snapshot.stages.length} 个阶段 · 以「${snapshot.unitLabel}」为单位` });
+        meta.createSpan({ text: t('fullwriter.fp.stageMeta', { count: snapshot.stages.length, unit: snapshot.unitLabel }) });
 
         const overall = header.createDiv({ cls: 'nw-flow-overall' });
         overall.createDiv({ cls: 'nw-flow-percent', text: `${Math.round(snapshot.overallRatio * 100)}%` });
-        overall.createDiv({ cls: 'nw-flow-overall-label', text: '总进度' });
+        overall.createDiv({ cls: 'nw-flow-overall-label', text: t('fullwriter.fp.overall') });
     }
 
     private renderNextCard(container: HTMLElement, snapshot: CreationFlowSnapshot): void {
@@ -224,20 +225,20 @@ export class FlowPanelController {
 
         if (!next) {
             card.addClass('nw-is-complete');
-            card.createDiv({ cls: 'nw-flow-next-label', text: '🎉 全部阶段已完成' });
+            card.createDiv({ cls: 'nw-flow-next-label', text: t('fullwriter.fp.allStagesDone') });
             card.createDiv({
                 cls: 'nw-flow-next-desc',
-                text: `${snapshot.unitLabel}已写完，成稿也已导出。需要修改时回到任意阶段即可。`,
+                text: t('fullwriter.fp.allStagesDoneDesc', { unit: snapshot.unitLabel }),
             });
             const row = card.createDiv({ cls: 'nw-flow-next-actions' });
-            const browse = row.createEl('button', { cls: 'nw-btn nw-btn-primary', text: `浏览全部${snapshot.unitLabel}` });
+            const browse = row.createEl('button', { cls: 'nw-btn nw-btn-primary', text: t('fullwriter.fp.browseAll', { unit: snapshot.unitLabel }) });
             browse.onclick = () => this.deps.onBrowseUnits(this.project, this.mode);
-            const selector = row.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: '回到项目列表' });
+            const selector = row.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: t('fullwriter.fp.backToProjects') });
             selector.onclick = () => this.deps.onOpenSelector();
             return;
         }
 
-        card.createDiv({ cls: 'nw-flow-next-label', text: '下一步' });
+        card.createDiv({ cls: 'nw-flow-next-label', text: t('fullwriter.fp.nextLabel') });
         card.createDiv({ cls: 'nw-flow-next-title', text: next.label });
         card.createDiv({ cls: 'nw-flow-next-desc', text: `${next.progressText}${next.blockedReason ? ` · ${next.blockedReason}` : ''}` });
 
@@ -284,7 +285,7 @@ export class FlowPanelController {
 
     private renderSecondary(container: HTMLElement, snapshot: CreationFlowSnapshot): void {
         const footer = container.createDiv({ cls: 'nw-flow-secondary' });
-        footer.createDiv({ cls: 'nw-flow-secondary-title', text: '相关工作区' });
+        footer.createDiv({ cls: 'nw-flow-secondary-title', text: t('fullwriter.fp.relatedWorkspaces') });
 
         const row = footer.createDiv({ cls: 'nw-flow-secondary-actions' });
         const add = (label: string, onClick: () => void): void => {
@@ -293,21 +294,21 @@ export class FlowPanelController {
         };
 
         if (snapshot.mode !== 'long') {
-            add('前期调研', () => this.deps.onOpenResearch(this.project, this.mode));
-            add(snapshot.mode === 'short' ? '故事核' : '场景圣经', () =>
+            add(t('fullwriter.selector.qtResearch'), () => this.deps.onOpenResearch(this.project, this.mode));
+            add(snapshot.mode === 'short' ? t('fullwriter.selector.qtStoryCore') : t('fullwriter.selector.qtSceneBible'), () =>
                 this.deps.onOpenDocument(this.project, this.mode, snapshot.mode === 'short' ? 'storyCore' : 'bible'));
-            add(snapshot.mode === 'short' ? '分节大纲' : '分集大纲', () =>
+            add(snapshot.mode === 'short' ? t('fullwriter.selector.qtSectionOutline') : t('fullwriter.selector.qtEpisodeOutline'), () =>
                 this.deps.onOpenDocument(this.project, this.mode, 'outline'));
             if (snapshot.mode === 'script') {
-                add('分镜表', () => this.deps.onOpenDocument(this.project, this.mode, 'storyboard'));
+                add(t('fullwriter.selector.qtStoryboard'), () => this.deps.onOpenDocument(this.project, this.mode, 'storyboard'));
             }
-            add(`全部${snapshot.unitLabel}`, () => this.deps.onBrowseUnits(this.project, this.mode));
+            add(t('fullwriter.selector.qtAllUnits', { unit: snapshot.unitLabel }), () => this.deps.onBrowseUnits(this.project, this.mode));
         } else {
-            add('初始化向导', () => void this.deps.onOpenWizard(this.project));
-            add('全部章节', () => this.deps.onBrowseUnits(this.project, this.mode));
-            add('章节结算', () => this.deps.onSettle(this.project));
+            add(t('fullwriter.selector.qtWizard'), () => void this.deps.onOpenWizard(this.project));
+            add(t('fullwriter.selector.qtAllChapters'), () => this.deps.onBrowseUnits(this.project, this.mode));
+            add(t('fullwriter.fp.settlement'), () => this.deps.onSettle(this.project));
         }
-        add('回到项目列表', () => this.deps.onOpenSelector());
+        add(t('fullwriter.fp.backToProjects'), () => this.deps.onOpenSelector());
     }
 
     /** 统一的阶段动作分发；blocked 阶段先跳到它依赖的阶段 */

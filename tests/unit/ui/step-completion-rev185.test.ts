@@ -96,7 +96,9 @@ describe('Rev 185 · 章节选择器切换加固', () => {
     it('切换后校验当前章节，失败有明确提示', () => {
         const src = read('ui/full-writer/tab-controller.ts');
         expect(src).toContain("if (this.deps.state.chapterName !== chapter.chapter)");
-        expect(src).toContain('章节切换未生效');
+        // i18n 第二期第18片：源码断言改键 + 读 zh 资源确认原文
+        expect(src).toContain("t('fullwriter.tabSwitchFailed')");
+        expect(read('i18n/messages/zh-CN.ts')).toContain('章节切换未生效');
     });
 
     it('标题栏选择器仍绑定 change → selectChapter', () => {

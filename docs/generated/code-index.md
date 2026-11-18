@@ -11,7 +11,7 @@
 | `shared/` | 258 | 51769 | 2179 | 1700 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 115112 | 1180 | 930 | 79% |
+| `ui/` | 306 | 115119 | 1180 | 930 | 79% |
 
 ## 文件清单
 
@@ -840,14 +840,14 @@
 | `ui/full-writer/execution-panels.ts` | 390 | 4 | 4 |
 | `ui/full-writer/execution-run-store.ts` | 280 | 5 | 5 |
 | `ui/full-writer/fanfic-settings-utils.ts` | 305 | 13 | 13 |
-| `ui/full-writer/flow-panel-controller.ts` | 351 | 3 | 3 |
+| `ui/full-writer/flow-panel-controller.ts` | 352 | 3 | 3 |
 | `ui/full-writer/flow-tab.ts` | 59 | 3 | 3 |
 | `ui/full-writer/full-writer-store.ts` | 401 | 5 | 5 |
 | `ui/full-writer/full-writer-utils.ts` | 115 | 6 | 6 |
 | `ui/full-writer/intervention-controller.ts` | 412 | 3 | 3 |
-| `ui/full-writer/next-step.ts` | 151 | 2 | 1 |
-| `ui/full-writer/project-selector-controller.ts` | 1144 | 3 | 3 |
-| `ui/full-writer/quick-tools-panel.ts` | 150 | 3 | 3 |
+| `ui/full-writer/next-step.ts` | 152 | 2 | 1 |
+| `ui/full-writer/project-selector-controller.ts` | 1145 | 3 | 3 |
+| `ui/full-writer/quick-tools-panel.ts` | 151 | 3 | 3 |
 | `ui/full-writer/recent-projects.ts` | 133 | 6 | 4 |
 | `ui/full-writer/scene-outline-controller.ts` | 1209 | 2 | 1 |
 | `ui/full-writer/scene-outline-format.ts` | 141 | 4 | 4 |
@@ -855,10 +855,10 @@
 | `ui/full-writer/settings-menu.ts` | 85 | 4 | 3 |
 | `ui/full-writer/status-bar-controller.ts` | 90 | 2 | 2 |
 | `ui/full-writer/step-render-controller.ts` | 683 | 2 | 2 |
-| `ui/full-writer/streamlined-nav-presenter.ts` | 272 | 12 | 12 |
-| `ui/full-writer/tab-controller.ts` | 380 | 2 | 2 |
+| `ui/full-writer/streamlined-nav-presenter.ts` | 273 | 12 | 12 |
+| `ui/full-writer/tab-controller.ts` | 381 | 2 | 2 |
 | `ui/full-writer/template-vars-builder.ts` | 1228 | 7 | 7 |
-| `ui/full-writer/title-bar-controller.ts` | 195 | 2 | 2 |
+| `ui/full-writer/title-bar-controller.ts` | 196 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |
 | `ui/full-writer/unit-writer-controller.ts` | 797 | 2 | 2 |

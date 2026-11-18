@@ -5,6 +5,7 @@
  * 分类工具，用户一眼可见、一步可用。
  */
 import { setIcon } from 'obsidian';
+import { t } from '@/i18n';
 import { TOOL_GROUPS, type ToolButton, type ToolGroup } from './tool-catalog';
 
 /**
@@ -114,8 +115,8 @@ export function renderQuickToolsPanel(container: HTMLElement, opts: QuickToolsPa
 
     if (!opts.compact) {
         const header = panel.createDiv({ cls: 'nw-qt-header' });
-        header.createDiv({ text: opts.title || '⚡ 快捷工具', cls: 'nw-qt-title' });
-        header.createDiv({ text: opts.subtitle || '分类功能，一步直达', cls: 'nw-qt-subtitle' });
+        header.createDiv({ text: opts.title || t('fullwriter.qtPanel.title'), cls: 'nw-qt-title' });
+        header.createDiv({ text: opts.subtitle || t('fullwriter.qtPanel.subtitle'), cls: 'nw-qt-subtitle' });
     }
 
     renderProjectActions(panel, opts);

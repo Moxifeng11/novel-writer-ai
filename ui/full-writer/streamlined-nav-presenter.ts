@@ -1,4 +1,5 @@
 import { ALL_FULL_STEPS, FullStep } from '@/engine/step-definitions';
+import { t } from '@/i18n';
 import { StepLevel } from '@/engine/step-validator';
 import { createLogger } from '@/shared/logger';
 
@@ -48,10 +49,10 @@ interface PhaseDefinition {
 
 const PHASE_DEFINITIONS: PhaseDefinition[] = [
     { key: 'context', label: '上下文加载', icon: '🔄', colorClass: null, stepKeys: ['context', 'characterSoul'] },
-    { key: 'planning', label: '章节规划', icon: '📋', colorClass: 'novel-writer-fw-step-soul', stepKeys: ['infoPlan', 'plotDistill', 'outline', 'emotionPlan', 'sceneExpand'] },
-    { key: 'writing', label: '正文写作', icon: '✍️', colorClass: 'novel-writer-fw-step-creative', stepKeys: ['bodyGeneration'] },
-    { key: 'review', label: '质量审查', icon: '🎯', colorClass: 'novel-writer-fw-step-audit', stepKeys: ['qualityControl', 'analysisReport'] },
-    { key: 'settlement', label: '章节结算', icon: '💾', colorClass: null, stepKeys: ['settlement'] },
+    { key: 'planning', label: t('fullwriter.nav.phasePlanning'), icon: '📋', colorClass: 'novel-writer-fw-step-soul', stepKeys: ['infoPlan', 'plotDistill', 'outline', 'emotionPlan', 'sceneExpand'] },
+    { key: 'writing', label: t('fullwriter.nav.phaseWriting'), icon: '✍️', colorClass: 'novel-writer-fw-step-creative', stepKeys: ['bodyGeneration'] },
+    { key: 'review', label: t('fullwriter.nav.phaseReview'), icon: '🎯', colorClass: 'novel-writer-fw-step-audit', stepKeys: ['qualityControl', 'analysisReport'] },
+    { key: 'settlement', label: t('fullwriter.fp.settlement'), icon: '💾', colorClass: null, stepKeys: ['settlement'] },
 ];
 
 /**
@@ -145,7 +146,7 @@ export function getPhaseStatusDescriptor(
     const isActivePhase = phase.stepIndexes.includes(currentStepIndex);
 
     if (isActivePhase) {
-        return { icon: '●', cls: 'novel-writer-fw-step-active', title: '当前阶段', status: 'active' };
+        return { icon: '●', cls: 'novel-writer-fw-step-active', title: t('fullwriter.nav.currentPhase'), status: 'active' };
     }
 
     const isDone = (stepKey: string): boolean =>
@@ -171,28 +172,28 @@ export function getPhaseStatusDescriptor(
 
     if (requiredSatisfied) {
         if (staleCount > 0) {
-            return { icon: '⚠️', cls: 'novel-writer-fw-step-stale', title: '已过期，需重新执行', status: 'stale' };
+            return { icon: '⚠️', cls: 'novel-writer-fw-step-stale', title: t('fullwriter.nav.stale'), status: 'stale' };
         }
-        const optionalHint = optionalKeys.length > 0 ? `（可选 ${optionalDone}/${optionalKeys.length}）` : '';
-        return { icon: '✅', cls: 'novel-writer-fw-step-done', title: `已完成${optionalHint}`, status: 'complete' };
+        const optionalHint = optionalKeys.length > 0 ? t('fullwriter.nav.optionalHint', { done: optionalDone, total: optionalKeys.length }) : '';
+        return { icon: '✅', cls: 'novel-writer-fw-step-done', title: t('fullwriter.nav.doneTitle') + optionalHint, status: 'complete' };
     }
 
     if (requiredDone > 0 || optionalDone > 0 || partialCount > 0) {
         const doneHint = hasRequired
-            ? `必做 ${requiredDone}/${requiredKeys.length}`
-            : `已完成 ${optionalDone}/${phase.steps.length}`;
+            ? t('fullwriter.nav.requiredDone', { done: requiredDone, total: requiredKeys.length })
+            : t('fullwriter.nav.doneCount', { done: optionalDone, total: phase.steps.length });
         const optionalHint = hasRequired && optionalKeys.length > 0
-            ? ` · 可选 ${optionalDone}/${optionalKeys.length}`
+            ? t('fullwriter.nav.optionalSuffix', { done: optionalDone, total: optionalKeys.length })
             : '';
         return {
             icon: '◐',
             cls: 'novel-writer-fw-step-partial',
-            title: `进行中（${doneHint}${optionalHint}）`,
+            title: t('fullwriter.nav.inProgress', { detail: doneHint + optionalHint }),
             status: 'partial',
         };
     }
 
-    return { icon: '○', cls: 'novel-writer-fw-step-pending', title: '待执行', status: 'pending' };
+    return { icon: '○', cls: 'novel-writer-fw-step-pending', title: t('fullwriter.nav.pending'), status: 'pending' };
 }
 
 /**

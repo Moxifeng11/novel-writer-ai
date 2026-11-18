@@ -1,4 +1,5 @@
 import { App, Notice, TFile, Modal } from 'obsidian';
+import { t } from '@/i18n';
 import { FullWriterStore, WriterTab } from './full-writer-store';
 import { WizardTab } from './wizard-types';
 import NovelWriterPlugin from '@/main';
@@ -111,7 +112,7 @@ export class TabController {
         this.renderTabBar();
         await this.renderTabContent();
         if (wasActive) {
-            new Notice('已刷新当前页面', 2000);
+            new Notice(t('fullwriter.tabRefreshed'), 2000);
         }
     }
 
@@ -128,7 +129,7 @@ export class TabController {
                 ?.filter(s => s.id !== 'complete')
                 .every(s => s.status === 'done' || s.status === 'skipped');
             if (!allDone) {
-                new Notice('⚠️ 项目已创建但未完成初始化，可在项目选择中手动完成各步骤', 5000);
+                new Notice(t('fullwriter.tabWizardIncomplete'), 5000);
             }
         }
 
@@ -245,10 +246,10 @@ export class TabController {
         const navStack = this.deps.state.navStack;
         if (navStack.length > 0) {
             const backBtn = tabBar.createEl('button', {
-                text: '← 返回',
+                text: t('fullwriter.tbBack'),
                 cls: 'novel-writer-fw-back-btn',
                 attr: {
-                    title: '返回上一页',
+                    title: t('fullwriter.tabBackTip'),
                 }
             });
             backBtn.addEventListener('click', () => { this.popNav(); });
@@ -291,7 +292,7 @@ export class TabController {
             text: '+',
             cls: 'novel-writer-fw-tab-btn novel-writer-fw-tab-btn-add nw-btn-project-add',
             attr: {
-                title: '切换至项目选择页面',
+                title: t('fullwriter.tabSwitchSelector'),
             }
         });
         addBtn.addEventListener('click', () => {
@@ -302,7 +303,7 @@ export class TabController {
             text: '🔄',
             cls: 'novel-writer-fw-tab-btn novel-writer-fw-tab-btn-reload nw-btn-reload',
             attr: {
-                title: '热重载插件（按最新文件重新加载 UI 和后端）',
+                title: t('fullwriter.tabHotReloadTip'),
             }
         });
         reloadBtn.addEventListener('click', () => {
@@ -315,7 +316,7 @@ export class TabController {
 
             // Obsidian 开发者政策禁止插件自行 disable/enable 自身（会被判为
             // 「静默执行新下载代码」而拒绝上架）。改为提示手动切换。
-            new Notice('请在「设置 → 第三方插件」中关闭再启用「小说工坊 AI」完成重载（工作台状态会自动恢复）', 6000);
+            new Notice(t('fullwriter.tabHotReloadNotice'), 6000);
         });
     }
 
@@ -351,7 +352,7 @@ export class TabController {
             existingTab.label = `✍️ ${chapter.chapter}`;
             await this.activateTab(existingTab.id);
             if (this.deps.state.chapterName !== chapter.chapter) {
-                new Notice('⚠️ 章节切换未生效，请重试或点击标题栏 🔄 刷新工作台');
+                new Notice(t('fullwriter.tabSwitchFailed'));
             }
             return;
         }
@@ -373,7 +374,7 @@ export class TabController {
         this.renderTabBar();
         await this.renderTabContent();
         if (this.deps.state.chapterName !== chapter.chapter) {
-            new Notice('⚠️ 章节切换未生效，请重试或点击标题栏 🔄 刷新工作台');
+            new Notice(t('fullwriter.tabSwitchFailed'));
         }
     }
 }

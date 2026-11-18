@@ -8,6 +8,7 @@
  */
 
 import { App, Menu, Modal, Notice, TFile } from 'obsidian';
+import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
 import { CoverPickerController } from './cover-picker-controller';
@@ -165,11 +166,11 @@ export class ProjectSelectorController {
         modeOf: Map<string, CreationMode>
     ): void {
         container.empty();
-        container.createDiv({ text: '创作分类', cls: 'novel-writer-fw-mode-nav-title' });
+        container.createDiv({ text: t('fullwriter.selector.modeNavTitle'), cls: 'novel-writer-fw-mode-nav-title' });
         const modes: Array<{ mode: CreationMode; label: string; icon: string }> = [
-            { mode: 'long', label: '长篇小说', icon: '📖' },
-            { mode: 'short', label: '短篇小说', icon: '📄' },
-            { mode: 'script', label: '剧本', icon: '🎬' },
+            { mode: 'long', label: t('settings.mode.spec.long.label'), icon: '📖' },
+            { mode: 'short', label: t('settings.mode.spec.short.label'), icon: '📄' },
+            { mode: 'script', label: t('settings.mode.spec.script.label'), icon: '🎬' },
         ];
         for (const item of modes) {
             const count = projects.filter(p => (modeOf.get(p) || 'long') === item.mode).length;
@@ -231,8 +232,8 @@ export class ProjectSelectorController {
         if (!unit) {
             new Notice(
                 mode === 'long'
-                    ? '该项目还没有章节，请先完成初始化向导的「批量建章」。'
-                    : `该项目还没有${modeUnitLabel(mode)}骨架，请先在创作流程里创建。`,
+                    ? t('fullwriter.selector.noChaptersWizard')
+                    : t('fullwriter.selector.noSkeleton', { unit: modeUnitLabel(mode) }),
                 5000,
             );
             if (mode !== 'long' && this.deps.onOpenFlow) await this.deps.onOpenFlow(project);
@@ -250,7 +251,7 @@ export class ProjectSelectorController {
         if (unit.file) {
             await this.app.workspace.getLeaf(false).openFile(unit.file);
         } else {
-            new Notice('未找到对应的正文文件', 4000);
+            new Notice(t('fullwriter.selector.bodyFileNotFound'), 4000);
         }
     }
 
@@ -348,26 +349,26 @@ export class ProjectSelectorController {
         this.deps.onProjectSelected?.(this.selectedProject);
         await this.renderRightPanel(unitsCache, metaOf, files);
 
-        const modeLabel = this.selectedMode === 'long' ? '长篇小说' : this.selectedMode === 'short' ? '短篇小说' : '剧本';
+        const modeLabel = t(`settings.mode.spec.${this.selectedMode}.label`);
         const toolbar = projectArea.createDiv({ cls: 'novel-writer-fw-project-toolbar' });
         const toolbarInfo = toolbar.createDiv({ cls: 'novel-writer-fw-project-toolbar-info' });
         toolbarInfo.createSpan({ text: modeLabel, cls: 'novel-writer-fw-project-toolbar-title' });
-        toolbarInfo.createSpan({ text: `${projects.length} 个项目`, cls: 'novel-writer-fw-project-toolbar-count' });
+        toolbarInfo.createSpan({ text: t('fullwriter.selector.projectCount', { count: projects.length }), cls: 'novel-writer-fw-project-toolbar-count' });
         const toolbarActions = toolbar.createDiv({ cls: 'novel-writer-fw-project-toolbar-actions' });
 
         const agentBtn = toolbarActions.createEl('button', {
-            text: '🤖 Agent 工作台',
+            text: t('fullwriter.selector.agentBtn'),
             cls: 'novel-writer-fw-toolbar-btn is-primary',
-            attr: { type: 'button', title: '通过多轮对话创建/继续项目：先选长篇/短篇/剧本，再选原创/同人或自动模式' },
+            attr: { type: 'button', title: t('fullwriter.selector.agentBtnTip') },
         });
         agentBtn.onclick = () => {
             void this.plugin.openAgentWorkbench();
         };
 
         const createBtn = toolbarActions.createEl('button', {
-            text: `＋ 新建${modeLabel}`,
+            text: t('fullwriter.selector.newBtn', { mode: modeLabel }),
             cls: 'novel-writer-fw-toolbar-btn',
-            attr: { type: 'button', title: this.selectedMode === 'long' ? '打开长篇项目表单' : '打开前期调研' },
+            attr: { type: 'button', title: this.selectedMode === 'long' ? t('fullwriter.selector.newLongTip') : t('fullwriter.selector.newResearchTip') },
         });
         createBtn.onclick = () => {
             if (this.selectedMode === 'short') new PreResearchModal(this.app, this.plugin, 'short').open();
@@ -379,19 +380,19 @@ export class ProjectSelectorController {
             const emptyState = projectArea.createDiv({ cls: 'novel-writer-fw-empty-state' });
             const heroCard = emptyState.createDiv({ cls: 'novel-writer-fw-hero-card' });
             const spec = this.selectedMode === 'short' ? '📄' : this.selectedMode === 'script' ? '🎬' : '📖';
-            const label = this.selectedMode === 'short' ? '短篇小说' : this.selectedMode === 'script' ? '剧本' : '长篇小说';
+            const label = t(`settings.mode.spec.${this.selectedMode}.label`);
             heroCard.createDiv({ text: spec, cls: 'novel-writer-fw-hero-icon' });
-            heroCard.createEl('h2', { text: `创建第一篇${label}`, cls: 'novel-writer-fw-hero-title' });
+            heroCard.createEl('h2', { text: t('fullwriter.selector.heroTitle', { mode: label }), cls: 'novel-writer-fw-hero-title' });
             heroCard.createEl('p', {
                 text: this.selectedMode === 'short'
-                    ? '先完成番茄短篇定位与故事核，再进入分节写作。'
+                    ? t('fullwriter.selector.heroShortDesc')
                     : this.selectedMode === 'script'
-                        ? '先完成红果短剧定位与商业钩子，再进入分集/分镜。'
-                        : '创建长篇项目，AI 将协助你完成从世界观到正文的全程写作。',
+                        ? t('fullwriter.selector.heroScriptDesc')
+                        : t('fullwriter.selector.heroLongDesc'),
                 cls: 'novel-writer-fw-hero-desc',
             });
             const create = heroCard.createEl('button', {
-                text: `＋ 新建${label}`,
+                text: t('fullwriter.selector.newBtn', { mode: label }),
                 cls: 'novel-writer-fw-hero-btn',
             });
             create.onclick = () => {
@@ -401,9 +402,9 @@ export class ProjectSelectorController {
             };
             if (this.selectedMode === 'long') {
                 const agentBtn = heroCard.createEl('button', {
-                    text: '🤖 Agent 工作台创作（推荐）',
+                    text: t('fullwriter.selector.agentCreateBtn'),
                     cls: 'novel-writer-fw-hero-btn novel-writer-fw-hero-btn-secondary',
-                    attr: { title: '通过多轮对话完成项目创建与故事结构配置，无需填表单' },
+                    attr: { title: t('fullwriter.selector.agentCreateTip') },
                 });
                 agentBtn.onclick = () => {
                     void this.plugin.openAgentWorkbench();
@@ -428,9 +429,9 @@ export class ProjectSelectorController {
             } else {
                 const placeholder = coverArea.createDiv({ cls: 'novel-writer-fw-cover-placeholder' });
                 placeholder.createSpan({ text: '📷', cls: 'icon' });
-                placeholder.createSpan({ text: '添加封面', cls: 'text' });
+                placeholder.createSpan({ text: t('fullwriter.selector.addCover'), cls: 'text' });
             }
-            coverArea.setAttr('title', coverUrl ? '点击更换封面' : '点击添加封面');
+            coverArea.setAttr('title', coverUrl ? t('fullwriter.selector.changeCover') : t('fullwriter.selector.addCoverTitle'));
             coverArea.onclick = (e) => {
                 e.stopPropagation();
                 this.deps.getCoverPicker().openCoverPicker(project, coverArea);
@@ -441,7 +442,7 @@ export class ProjectSelectorController {
             const nameRow = info.createDiv({ cls: 'novel-writer-fw-card-name-row' });
             nameRow.createDiv({ text: `📖 ${projectDisplayName(project)}`, cls: 'novel-writer-fw-card-name' });
             if (project === this.highlightedProject) {
-                nameRow.createSpan({ text: '新', cls: 'novel-writer-fw-card-new-badge' });
+                nameRow.createSpan({ text: t('fullwriter.selector.newBadge'), cls: 'novel-writer-fw-card-new-badge' });
             }
 
             const metaRow = info.createDiv({ cls: 'novel-writer-fw-card-meta' });
@@ -464,7 +465,7 @@ export class ProjectSelectorController {
                 metaRow.createSpan({
                     text: recentLabel,
                     cls: 'novel-writer-fw-card-recent',
-                    attr: { title: '最近打开时间（决定排序）' },
+                    attr: { title: t('fullwriter.selector.lastOpenedTitle') },
                 });
             }
 
@@ -472,7 +473,7 @@ export class ProjectSelectorController {
                 const progressPct = meta.totalChapters > 0
                     ? Math.round((writtenChapters.length / meta.totalChapters) * 100)
                     : Math.round((writtenChapters.length / Math.max(sortedChapters.length, 1)) * 100);
-                info.createDiv({ text: `已完稿 ${writtenChapters.length}/${meta.totalChapters || sortedChapters.length} ${meta.unitLabel}`, cls: 'novel-writer-fw-card-progress-text' });
+                info.createDiv({ text: t('fullwriter.selector.cardProgress', { done: writtenChapters.length, total: meta.totalChapters || sortedChapters.length, unit: meta.unitLabel }), cls: 'novel-writer-fw-card-progress-text' });
                 const progressBar = info.createDiv({ cls: 'novel-writer-fw-card-progress-bar' });
                 progressBar.createDiv({
                     cls: 'novel-writer-fw-card-progress-fill',
@@ -484,23 +485,23 @@ export class ProjectSelectorController {
             if (nextChapter) {
                 const isPending = nextChapter.status !== 'written' && nextChapter.status !== 'settled';
                 info.createDiv({
-                    text: `${isPending ? `下一${meta.unitLabel}待写` : `最新${meta.unitLabel}`}：${nextChapter.chapter} · ${nextChapter.title || '无标题'}`,
+                    text: t(isPending ? 'fullwriter.selector.cardNextPending' : 'fullwriter.selector.cardNextLatest', { unit: meta.unitLabel, chapter: nextChapter.chapter, title: nextChapter.title || t('fullwriter.selector.untitled') }),
                     cls: 'novel-writer-fw-card-latest'
                 });
             }
 
             const actions = card.createDiv({ cls: 'novel-writer-fw-card-actions' });
             if (meta.creationMode === 'long') {
-                const wizardBtn = actions.createEl('button', { text: '🧙 向导', cls: 'novel-writer-fw-card-action-btn' });
-                wizardBtn.setAttribute('title', '打开项目向导，逐步搭建世界观和大纲');
+                const wizardBtn = actions.createEl('button', { text: t('fullwriter.selector.wizardBtn'), cls: 'novel-writer-fw-card-action-btn' });
+                wizardBtn.setAttribute('title', t('fullwriter.selector.wizardBtnTip'));
                 wizardBtn.onclick = async (e: MouseEvent) => {
                     e.stopPropagation();
                     this.noteProjectOpened(project);
                     await this.deps.onOpenWizard(project);
                 };
             } else {
-                const researchBtn = actions.createEl('button', { text: '📚 前期调研', cls: 'novel-writer-fw-card-action-btn' });
-                researchBtn.setAttribute('title', '编辑本项目的类型定位与创作约束');
+                const researchBtn = actions.createEl('button', { text: t('fullwriter.selector.researchBtn'), cls: 'novel-writer-fw-card-action-btn' });
+                researchBtn.setAttribute('title', t('fullwriter.selector.researchBtnTip'));
                 researchBtn.onclick = (e: MouseEvent) => {
                     e.stopPropagation();
                     this.noteProjectOpened(project);
@@ -508,22 +509,22 @@ export class ProjectSelectorController {
                 };
             }
 
-            const openBtn = actions.createEl('button', { text: '✍️ 写作', cls: 'novel-writer-fw-card-action-btn secondary' });
+            const openBtn = actions.createEl('button', { text: t('fullwriter.selector.writeBtn'), cls: 'novel-writer-fw-card-action-btn secondary' });
             openBtn.onclick = async (e: MouseEvent) => {
                 e.stopPropagation();
                 await this.openUnit(project, meta.creationMode, nextChapter);
             };
 
             if (meta.creationMode === 'long') {
-                const cowriteBtn = actions.createEl('button', { text: '✍️ 句级协同', cls: 'novel-writer-fw-card-action-btn secondary' });
-                cowriteBtn.setAttribute('title', '直接进入句级协同写作工作台（自动绑定章节）');
+                const cowriteBtn = actions.createEl('button', { text: t('fullwriter.selector.cowriteBtn'), cls: 'novel-writer-fw-card-action-btn secondary' });
+                cowriteBtn.setAttribute('title', t('fullwriter.selector.cowriteBtnTip'));
                 cowriteBtn.onclick = async (e: MouseEvent) => {
                     e.stopPropagation();
                     if (nextChapter) {
                         this.noteProjectOpened(project);
                         await this.deps.onOpenCoWriting(project, nextChapter);
                     } else {
-                        new Notice('该项目还没有章节，请先通过向导或批量建章创建章节。', 4000);
+                        new Notice(t('fullwriter.selector.noChaptersNotice'), 4000);
                     }
                 };
             }
@@ -533,23 +534,23 @@ export class ProjectSelectorController {
             const moreBtn = actions.createEl('button', {
                 text: '⋯',
                 cls: 'novel-writer-fw-card-action-btn secondary novel-writer-fw-card-more-btn',
-                attr: { title: '更多操作' },
+                attr: { title: t('fullwriter.selector.moreActions') },
             });
             moreBtn.onclick = (e: MouseEvent) => {
                 e.stopPropagation();
                 const menu = new Menu();
                 menu.addItem(item => item
-                    .setTitle(meta.creationMode === 'long' ? '📖 全部章节' : `📖 全部${meta.unitLabel}`)
+                    .setTitle(meta.creationMode === 'long' ? t('fullwriter.selector.allChaptersTitle') : t('fullwriter.selector.allUnitsTitle', { unit: meta.unitLabel }))
                     .onClick(() => this.showAllChapters(project, sortedChapters, meta.unitLabel, meta.creationMode !== 'long')));
                 menu.addItem(item => item
-                    .setTitle(coverUrl ? '📷 更换封面' : '📷 添加封面')
+                    .setTitle(coverUrl ? t('fullwriter.selector.menuChangeCover') : t('fullwriter.selector.menuAddCover'))
                     .onClick(() => this.deps.getCoverPicker().openCoverPicker(project, coverArea)));
                 menu.addItem(item => item
-                    .setTitle('✏️ 重命名项目')
+                    .setTitle(t('fullwriter.selector.menuRename'))
                     .onClick(() => this.openRenameProject(project)));
                 menu.addSeparator();
                 menu.addItem(item => item
-                    .setTitle('🗑️ 删除项目')
+                    .setTitle(t('fullwriter.selector.menuDelete'))
                     .onClick(() => this.showDeleteProjectModal(project)));
                 menu.showAtMouseEvent(e);
             };
@@ -597,8 +598,8 @@ export class ProjectSelectorController {
             this.renderFlowSummary(panel, snapshot);
         } else {
             const hint = panel.createDiv({ cls: 'nw-qt-empty-hint' });
-            hint.createDiv({ text: '👈 点击左侧项目卡片', cls: 'nw-qt-empty-title' });
-            hint.createDiv({ text: '点击任意项目卡片后，右侧会按项目类型显示对应的快捷工具。', cls: 'nw-qt-empty-desc' });
+            hint.createDiv({ text: t('fullwriter.selector.qtEmptyTitle'), cls: 'nw-qt-empty-title' });
+            hint.createDiv({ text: t('fullwriter.selector.qtEmptyDesc'), cls: 'nw-qt-empty-desc' });
         }
 
         const catalog = getToolCatalogForMode(mode);
@@ -614,10 +615,10 @@ export class ProjectSelectorController {
         if (catalog.hiddenLabels.length > 0) {
             const hint = panel.createDiv({ cls: 'nw-qt-empty-hint' });
             const shown = catalog.hiddenLabels.slice(0, 4).join('、');
-            const more = catalog.hiddenLabels.length > 4 ? ` 等 ${catalog.hiddenLabels.length} 项` : '';
-            hint.createDiv({ text: '本模式暂不支持', cls: 'nw-qt-empty-title' });
+            const more = catalog.hiddenLabels.length > 4 ? t('fullwriter.selector.qtMore', { count: catalog.hiddenLabels.length }) : '';
+            hint.createDiv({ text: t('fullwriter.selector.qtUnsupportedTitle'), cls: 'nw-qt-empty-title' });
             hint.createDiv({
-                text: `${shown}${more}属于长篇小说流水线；短篇/剧本请用上方的创作流程与单元工作台。`,
+                text: t('fullwriter.selector.qtUnsupportedDesc', { shown, more }),
                 cls: 'nw-qt-empty-desc',
             });
         }
@@ -672,7 +673,7 @@ export class ProjectSelectorController {
         const head = card.createDiv({ cls: 'nw-next-step-head' });
         head.createSpan({
             cls: 'nw-next-step-kicker',
-            text: plan.allDone ? '🎉 已完成' : '👉 下一步',
+            text: plan.allDone ? t('fullwriter.selector.flowDone') : t('fullwriter.selector.flowNext'),
         });
         head.createSpan({ cls: 'nw-next-step-percent', text: `${plan.percent}%` });
         card.createDiv({ cls: 'nw-next-step-title', text: plan.title });
@@ -685,7 +686,7 @@ export class ProjectSelectorController {
         cta.onclick = () => this.dispatchNextStep(project, mode, plan, chapters);
         const flowLink = actions.createEl('button', {
             cls: 'nw-btn nw-btn-secondary',
-            text: '查看完整流程',
+            text: t('fullwriter.selector.flowViewAll'),
         });
         flowLink.onclick = () => { void this.deps.onOpenFlow?.(project); };
     }
@@ -758,7 +759,7 @@ export class ProjectSelectorController {
 
         const card = panel.createDiv({ cls: 'nw-flow-summary' });
         const head = card.createDiv({ cls: 'nw-flow-summary-head' });
-        head.createSpan({ cls: 'nw-flow-summary-title', text: '创作流程' });
+        head.createSpan({ cls: 'nw-flow-summary-title', text: t('fullwriter.selector.flowTitle') });
         head.createSpan({ cls: 'nw-flow-summary-percent', text: `${Math.round(snapshot.overallRatio * 100)}%` });
 
         const bar = card.createDiv({ cls: 'nw-flow-bar' });
@@ -778,8 +779,8 @@ export class ProjectSelectorController {
         card.createDiv({
             cls: 'nw-flow-summary-next',
             text: next
-                ? `阶段进度：${next.label} · ${next.progressText}`
-                : `全部阶段已完成 · ${snapshot.unitLabel}与导出均已就绪`,
+                ? t('fullwriter.selector.flowStageProgress', { stage: next.label, progress: next.progressText })
+                : t('fullwriter.selector.flowAllDone', { unit: snapshot.unitLabel }),
         });
     }
 
@@ -796,44 +797,44 @@ export class ProjectSelectorController {
         if (mode === 'long') {
             return [
                 {
-                    label: '项目向导', icon: '🧙', primary: true,
-                    desc: '逐步搭建世界观、设定、实体与大纲',
+                    label: t('fullwriter.selector.qtWizard'), icon: '🧙', primary: true,
+                    desc: t('fullwriter.selector.qtWizardDesc'),
                     onClick: () => { void this.deps.onOpenWizard(project); },
                 },
                 {
-                    label: '继续写作', icon: '✍️',
-                    desc: '打开下一章写作工作台',
+                    label: t('fullwriter.selector.qtContinueWrite'), icon: '✍️',
+                    desc: t('fullwriter.selector.qtContinueWriteDesc'),
                     onClick: () => {
                         if (nextChapter) void this.deps.onSelectChapter(project, nextChapter);
-                        else new Notice('该项目还没有章节，请先通过向导或批量建章创建章节。', 4000);
+                        else new Notice(t('fullwriter.selector.noChaptersNotice'), 4000);
                     },
                 },
                 {
-                    label: '全部章节', icon: '📖',
-                    desc: '浏览并选择章节',
+                    label: t('fullwriter.selector.qtAllChapters'), icon: '📖',
+                    desc: t('fullwriter.selector.qtAllChaptersDesc'),
                     onClick: () => this.showAllChapters(project, chapters, unit),
                 },
                 {
-                    label: '文笔风格', icon: '🖋️',
-                    desc: '编辑或更换本项目的文笔风格',
+                    label: t('fullwriter.selector.qtStyle'), icon: '🖋️',
+                    desc: t('fullwriter.selector.qtStyleDesc'),
                     onClick: () => { new WritingStyleModal(this.app, this.plugin, project).open(); },
                 },
                 {
-                    label: '同人设定', icon: '📚',
-                    desc: '生成/补充同人设定并保存到本项目',
+                    label: t('fullwriter.selector.qtFanfic'), icon: '📚',
+                    desc: t('fullwriter.selector.qtFanficDesc'),
                     onClick: () => {
                         if (this.deps.onAddFanficSetting) this.deps.onAddFanficSetting(project);
                         else this.deps.executeCommand('novel-writer-add-fanfic');
                     },
                 },
                 {
-                    label: '重命名项目', icon: '✏️',
-                    desc: '修改项目名，并同步元数据与插件偏好',
+                    label: t('fullwriter.selector.qtRename'), icon: '✏️',
+                    desc: t('fullwriter.selector.qtRenameDesc'),
                     onClick: () => this.openRenameProject(project),
                 },
                 {
-                    label: '删除项目', icon: '🗑️',
-                    desc: '删除项目及其全部数据',
+                    label: t('fullwriter.selector.qtDelete'), icon: '🗑️',
+                    desc: t('fullwriter.selector.qtDeleteDesc'),
                     onClick: () => this.showDeleteProjectModal(project),
                 },
             ];
@@ -842,74 +843,74 @@ export class ProjectSelectorController {
         const researchMode = mode === 'short' ? 'short' : 'script';
         return [
             {
-                label: '前期调研', icon: '📚', primary: true,
+                label: t('fullwriter.selector.qtResearch'), icon: '📚', primary: true,
                 desc: mode === 'short'
-                    ? '编辑五维分类、故事核与分节规格'
-                    : '编辑类型、商业钩子、集数规格与场景圣经',
+                    ? t('fullwriter.selector.qtResearchShortDesc')
+                    : t('fullwriter.selector.qtResearchScriptDesc'),
                 onClick: () => {
                     new PreResearchModal(this.app, this.plugin, researchMode, { project }).open();
                 },
             },
             {
-                label: '继续写作', icon: '✍️',
-                desc: `打开下一${unit}写作工作台`,
+                label: t('fullwriter.selector.qtContinueWrite'), icon: '✍️',
+                desc: t('fullwriter.selector.qtContinueUnitDesc', { unit }),
                 onClick: () => {
                     void this.openUnit(project, mode, nextChapter);
                 },
             },
             mode === 'short'
                 ? {
-                    label: '故事核', icon: '📖',
-                    desc: '编辑故事核：主角、目标、阻力、反转与情绪承诺',
+                    label: t('fullwriter.selector.qtStoryCore'), icon: '📖',
+                    desc: t('fullwriter.selector.qtStoryCoreDesc'),
                     onClick: () => { new ModeDocumentModal(this.app, this.plugin, 'short', 'storyCore', project).open(); },
                 }
                 : {
-                    label: '场景圣经', icon: '🎭',
-                    desc: '编辑主场景、光线、道具与拍摄限制',
+                    label: t('fullwriter.selector.qtSceneBible'), icon: '🎭',
+                    desc: t('fullwriter.selector.qtSceneBibleDesc'),
                     onClick: () => { new ModeDocumentModal(this.app, this.plugin, 'script', 'bible', project).open(); },
                 },
             mode === 'short'
                 ? {
-                    label: '分节大纲', icon: '📋',
-                    desc: '规划每节目标、冲突、反转与结尾钩子',
+                    label: t('fullwriter.selector.qtSectionOutline'), icon: '📋',
+                    desc: t('fullwriter.selector.qtSectionOutlineDesc'),
                     onClick: () => { new ModeDocumentModal(this.app, this.plugin, 'short', 'outline', project).open(); },
                 }
                 : {
-                    label: '分集大纲', icon: '📋',
-                    desc: '规划每集冲突、爽点、钩子与场次',
+                    label: t('fullwriter.selector.qtEpisodeOutline'), icon: '📋',
+                    desc: t('fullwriter.selector.qtEpisodeOutlineDesc'),
                     onClick: () => { new ModeDocumentModal(this.app, this.plugin, 'script', 'outline', project).open(); },
                 },
             ...(mode === 'script' ? [{
-                label: '分镜表', icon: '🎬',
-                desc: '编辑镜号、景别、运镜、动作与台词',
+                label: t('fullwriter.selector.qtStoryboard'), icon: '🎬',
+                desc: t('fullwriter.selector.qtStoryboardDesc'),
                 onClick: () => { new ModeDocumentModal(this.app, this.plugin, 'script', 'storyboard', project).open(); },
             }] : []),
             {
-                label: `全部${unit}`, icon: '📖',
-                desc: `浏览并选择${unit}`,
+                label: t('fullwriter.selector.qtAllUnits', { unit }), icon: '📖',
+                desc: t('fullwriter.selector.qtAllUnitsDesc', { unit }),
                 onClick: () => this.showAllChapters(project, chapters, unit, true),
             },
             {
-                label: '文笔风格', icon: '🖋️',
-                desc: '编辑或更换本项目的文笔风格',
+                label: t('fullwriter.selector.qtStyle'), icon: '🖋️',
+                desc: t('fullwriter.selector.qtStyleDesc'),
                 onClick: () => { new WritingStyleModal(this.app, this.plugin, project).open(); },
             },
             {
-                label: '同人设定', icon: '📚',
-                desc: '生成/补充同人设定并保存到本项目',
+                label: t('fullwriter.selector.qtFanfic'), icon: '📚',
+                desc: t('fullwriter.selector.qtFanficDesc'),
                 onClick: () => {
                     if (this.deps.onAddFanficSetting) this.deps.onAddFanficSetting(project);
                     else this.deps.executeCommand('novel-writer-add-fanfic');
                 },
             },
             {
-                label: '重命名项目', icon: '✏️',
-                desc: '修改项目名，并同步元数据与插件偏好',
+                label: t('fullwriter.selector.qtRename'), icon: '✏️',
+                desc: t('fullwriter.selector.qtRenameDesc'),
                 onClick: () => this.openRenameProject(project),
             },
             {
-                label: '删除项目', icon: '🗑️',
-                desc: '删除项目及其全部数据',
+                label: t('fullwriter.selector.qtDelete'), icon: '🗑️',
+                desc: t('fullwriter.selector.qtDeleteDesc'),
                 onClick: () => this.showDeleteProjectModal(project),
             },
         ];
@@ -939,11 +940,11 @@ export class ProjectSelectorController {
         }
 
         const stats = detail.createDiv({ cls: 'novel-writer-fw-preview-stats' });
-        stats.createDiv({ text: `总${meta.unitLabel}：${meta.totalChapters || chapters.length}`, cls: 'novel-writer-fw-preview-stat' });
-        stats.createDiv({ text: `已完稿：${written.length} ${meta.unitLabel}`, cls: 'novel-writer-fw-preview-stat' });
+        stats.createDiv({ text: t('fullwriter.selector.previewTotal', { unit: meta.unitLabel, count: meta.totalChapters || chapters.length }), cls: 'novel-writer-fw-preview-stat' });
+        stats.createDiv({ text: t('fullwriter.selector.previewDone', { count: written.length, unit: meta.unitLabel }), cls: 'novel-writer-fw-preview-stat' });
         if (nextChapter) {
             stats.createDiv({
-                text: `下一${meta.unitLabel}：${nextChapter.chapter} · ${nextChapter.title || '无标题'}`,
+                text: t('fullwriter.selector.previewNext', { unit: meta.unitLabel, chapter: nextChapter.chapter, title: nextChapter.title || t('fullwriter.selector.untitled') }),
                 cls: 'novel-writer-fw-preview-next-chapter'
             });
         }
@@ -953,7 +954,7 @@ export class ProjectSelectorController {
             : (chapters.length > 0 ? Math.round((written.length / chapters.length) * 100) : 0);
         const bar = detail.createDiv({ cls: 'novel-writer-fw-preview-progress-bar' });
         bar.createDiv({ cls: 'novel-writer-fw-preview-progress-fill', attr: { style: `width: ${progressPct}%;` } });
-        detail.createDiv({ text: `${progressPct}% 完成`, cls: 'novel-writer-fw-preview-stat' });
+        detail.createDiv({ text: t('fullwriter.selector.previewPct', { pct: progressPct }), cls: 'novel-writer-fw-preview-stat' });
     }
 
     /**
@@ -970,7 +971,7 @@ export class ProjectSelectorController {
         const ordered = sortChaptersByNumber(chapters);
         const isLong = unitLabel === '章';
         const modal = new Modal(this.app);
-        modal.titleEl.setText(`📖 ${projectDisplayName(project)} - ${isLong ? '所有章节' : `所有${unitLabel}`}`);
+        modal.titleEl.setText(t('fullwriter.selector.pickerTitle', { project: projectDisplayName(project), units: isLong ? t('fullwriter.selector.allChaptersPlain') : t('fullwriter.selector.allUnitsPlain', { unit: unitLabel }) }));
         modal.modalEl.addClass('novel-writer-chapter-picker-modal');
 
         const picker = modal.contentEl.createDiv({ cls: 'novel-writer-chapter-picker' });
@@ -978,15 +979,15 @@ export class ProjectSelectorController {
         const toolbar = picker.createDiv({ cls: 'novel-writer-chapter-picker-toolbar' });
         const search = toolbar.createEl('input', {
             cls: 'novel-writer-chapter-search',
-            attr: { type: 'search', placeholder: `搜索${unitLabel}号或标题…` },
+            attr: { type: 'search', placeholder: t('fullwriter.selector.pickerSearch', { unit: unitLabel }) },
         });
         const legend = toolbar.createDiv({ cls: 'novel-writer-chapter-legend' });
-        legend.createSpan({ text: '✅ 已写' });
-        legend.createSpan({ text: `✏️ 下一${unitLabel}待写` });
-        legend.createSpan({ text: '📝 未开始' });
+        legend.createSpan({ text: t('fullwriter.selector.legendWritten') });
+        legend.createSpan({ text: t('fullwriter.selector.legendNext', { unit: unitLabel }) });
+        legend.createSpan({ text: t('fullwriter.selector.legendNotStarted') });
 
         const groupsEl = picker.createDiv({ cls: 'novel-writer-chapter-groups' });
-        const empty = picker.createEl('p', { text: isLong ? '未匹配到章节' : `未匹配到${unitLabel}`, cls: 'novel-writer-chapter-picker-empty' });
+        const empty = picker.createEl('p', { text: isLong ? t('fullwriter.selector.pickerNoMatch') : t('fullwriter.selector.pickerNoMatchUnit', { unit: unitLabel }), cls: 'novel-writer-chapter-picker-empty' });
         empty.hidden = true;
 
         const nextChapter = ordered.find(c => c.status !== 'written' && c.status !== 'settled');
@@ -996,7 +997,7 @@ export class ProjectSelectorController {
         const volumeOrder: string[] = [];
         const byVolume = new Map<string, ChapterItem[]>();
         for (const ch of ordered) {
-            const vol = ch.volume || '未分卷';
+            const vol = ch.volume || t('fullwriter.selector.noVolume');
             if (!byVolume.has(vol)) {
                 byVolume.set(vol, []);
                 volumeOrder.push(vol);
@@ -1009,10 +1010,10 @@ export class ProjectSelectorController {
             const group = groupsEl.createDiv({ cls: 'novel-writer-chapter-group' });
             group.createEl('h4', {
                 text: isLong
-                    ? `${vol}（${volChapters.length} 章）`
+                    ? t('fullwriter.selector.volChapterCount', { vol, count: volChapters.length })
                     : (volumeOrder.length > 1
                         ? `${vol}（${volChapters.length} ${unitLabel}）`
-                        : `全部${unitLabel}（${volChapters.length} ${unitLabel}）`),
+                        : t('fullwriter.selector.volUnitCount', { count: volChapters.length, unit: unitLabel })),
                 cls: 'novel-writer-chapter-group-title',
             });
             const list = group.createDiv({ cls: 'novel-writer-chapter-selector' });
@@ -1025,12 +1026,12 @@ export class ProjectSelectorController {
                 if (isCompleted) item.classList.add('is-completed');
                 if (isNext) item.classList.add('is-next');
 
-                const stIcon = isCompleted ? ' ✅' : (isNext ? ' ✏️ 待写' : ' 📝');
+                const stIcon = isCompleted ? ' ✅' : (isNext ? ' ' + t('fullwriter.selector.stNext') : ' 📝');
                 const displayChapter = formatUnitDisplay(ch.chapter, unitLabel);
                 // F1：ch.title 来自 frontmatter（AI 生成/导入可写入任意文本），用 DOM 文本节点
                 // 直接承载，不走 innerHTML，天然无 XSS。
                 item.createSpan({ cls: 'novel-writer-chapter-num', text: displayChapter });
-                item.createSpan({ cls: 'novel-writer-chapter-title', text: `${ch.title || '无标题'}${stIcon}` });
+                item.createSpan({ cls: 'novel-writer-chapter-title', text: `${ch.title || t('fullwriter.selector.untitled')}${stIcon}` });
                 item.onclick = async () => {
                     if (openDirectly && ch.file) {
                         await this.app.workspace.getLeaf(false).openFile(ch.file);
@@ -1042,7 +1043,7 @@ export class ProjectSelectorController {
                 rows.push({
                     el: item,
                     groupEl: group,
-                    text: `${displayChapter} ${ch.title || '无标题'}`.toLowerCase(),
+                    text: `${displayChapter} ${ch.title || t('fullwriter.selector.untitled')}`.toLowerCase(),
                 });
             }
         }
@@ -1109,20 +1110,20 @@ export class ProjectSelectorController {
     private async confirmDeleteProject(projectName: string): Promise<void> {
         const displayName = projectDisplayName(projectName);
         const first = await OperationConfirmModal.confirm(this.app, {
-            title: '⚠️ 删除项目',
-            description: `确定要删除项目「${displayName}」吗？`,
-            warning: '此操作不可撤销，将删除所有章节、大纲、设定、人物数据。',
-            confirmText: '继续删除',
-            cancelText: '取消',
+            title: t('fullwriter.selector.deleteTitle'),
+            description: t('fullwriter.selector.deleteDesc', { name: displayName }),
+            warning: t('fullwriter.selector.deleteWarning'),
+            confirmText: t('fullwriter.selector.deleteConfirm'),
+            cancelText: t('common.cancel'),
         });
         if (!first) return;
 
         const second = await OperationConfirmModal.confirm(this.app, {
-            title: '🚨 最终确认',
-            description: `即将永久删除「${displayName}」及其全部数据。`,
-            warning: '删除后无法恢复；如仍需保留，请先备份或取消。',
-            confirmText: '确认删除',
-            cancelText: '取消',
+            title: t('fullwriter.selector.finalTitle'),
+            description: t('fullwriter.selector.finalDesc', { name: displayName }),
+            warning: t('fullwriter.selector.finalWarning'),
+            confirmText: t('fullwriter.selector.finalOk'),
+            cancelText: t('common.cancel'),
         });
         if (!second) return;
 

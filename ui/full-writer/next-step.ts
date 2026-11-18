@@ -13,6 +13,7 @@
  * 纯函数：不读 Obsidian、不写文件，便于穷举单测；动作执行在控制器里。
  */
 import type { CreationFlowAction, CreationFlowSnapshot, CreationFlowStageStatus } from '@/shared/creation-flow';
+import { t } from '@/i18n';
 
 /** 主操作卡数据 */
 export interface NextStepPlan {
@@ -53,9 +54,9 @@ export function buildNextStepPlan(snapshot: CreationFlowSnapshot | null | undefi
     const rawNext = snapshot.stages.find(stage => stage.id === snapshot.nextStageId);
     if (!rawNext) {
         return {
-            title: '全部阶段已完成',
-            description: `${unitLabel}与导出都已就绪，可以合并成稿或回头看质量报告。`,
-            ctaLabel: '导出成稿',
+            title: t('fullwriter.ns.allDone'),
+            description: t('fullwriter.ns.allDoneDesc', { unit: unitLabel }),
+            ctaLabel: t('fullwriter.ns.exportCta'),
             action: 'export',
             stageId: 'export',
             unitNumber: null,
@@ -104,45 +105,45 @@ function actionCopy(
     switch (stage.primaryAction) {
         case 'wizard':
             return {
-                title: '完成初始化向导',
-                description: '世界观、设定、实体与分卷大纲还没搭完，先补齐这些再写正文。',
-                ctaLabel: '继续初始化',
+                title: t('fullwriter.ns.wizardTitle'),
+                description: t('fullwriter.ns.wizardDesc'),
+                ctaLabel: t('fullwriter.ns.wizardCta'),
             };
         case 'research':
             return {
-                title: '完成前期调研',
-                description: '类型定位、商业钩子与单元规格还没填，这是后续大纲与正文的前提。',
-                ctaLabel: '去填写调研',
+                title: t('fullwriter.ns.researchTitle'),
+                description: t('fullwriter.ns.researchDesc'),
+                ctaLabel: t('fullwriter.ns.researchCta'),
             };
         case 'document':
             return {
-                title: `完善「${stage.label}」`,
+                title: t('fullwriter.ns.stageTitle', { stage: stage.label }),
                 description: stage.description,
-                ctaLabel: '打开文档',
+                ctaLabel: t('fullwriter.ns.stageCta'),
             };
         case 'create-units':
             return {
-                title: `创建${unitLabel}骨架`,
-                description: `还没有${unitLabel}骨架，先按目标数量批量创建，再逐${unitLabel}写作。`,
-                ctaLabel: `批量建${unitLabel}`,
+                title: t('fullwriter.ns.skeletonTitle', { unit: unitLabel }),
+                description: t('fullwriter.ns.skeletonDesc', { unit: unitLabel }),
+                ctaLabel: t('fullwriter.ns.skeletonCta', { unit: unitLabel }),
             };
         case 'write-unit':
             return {
-                title: unitNumber ? `继续写第 ${unitNumber} ${unitLabel}` : `继续写下一${unitLabel}`,
+                title: unitNumber ? t('fullwriter.ns.continueN', { n: unitNumber, unit: unitLabel }) : t('fullwriter.ns.continueNext', { unit: unitLabel }),
                 description: stage.description,
-                ctaLabel: '继续写作',
+                ctaLabel: t('fullwriter.ns.continueCta'),
             };
         case 'settle':
             return {
-                title: `结算已完成${unitLabel}节`,
-                description: '把正文产生的实体、伏笔与时间线变动写回设定库，避免后续章节前后矛盾。',
-                ctaLabel: '去结算',
+                title: t('fullwriter.ns.settleTitle', { unit: unitLabel }),
+                description: t('fullwriter.ns.settleDesc'),
+                ctaLabel: t('fullwriter.ns.settleCta'),
             };
         case 'export':
             return {
-                title: '导出成稿',
-                description: '正文已齐，合并分卷并导出 Markdown / TXT / HTML。',
-                ctaLabel: '导出成稿',
+                title: t('fullwriter.ns.exportTitle'),
+                description: t('fullwriter.ns.exportDesc'),
+                ctaLabel: t('fullwriter.ns.exportCta'),
             };
         default:
             return { title: stage.label, description: stage.description, ctaLabel: stage.ctaLabel };

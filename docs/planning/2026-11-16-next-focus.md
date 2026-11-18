@@ -2161,3 +2161,37 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 
 **下一轮候选**：ZC-20261119-08 full-writer 子控制器（优先 project-selector-controller，214 行 CJK）→
 ZC-20261119-09 co-writing-view → 外观页统计/桌宠块 → section-factory/section-base 骨架。
+
+## 第七十五轮：i18n 第二期第18片 —— 项目选择器与工作台外壳（2026-11-19，ZCode · ZC-20261119-08）
+
+**改动**
+- `ui/full-writer/project-selector-controller.ts`（1143 行 / 约 110 处）95 对替换走仓外脚本
+  `migrate-psel.cjs`：创作分类三层导航（复用 `settings.mode.spec.*`）、工具栏与 hero 卡、
+  项目卡（封面/徽标/进度/下一章/四按钮/更多菜单）、快捷工具空态、创作流程摘要、
+  长篇与短篇/剧本两组快捷工具表、预览统计、章节选择弹窗、删除项目两级确认。
+  走 `fullwriter.selector.*` 90 键。
+- 带迁 6 个小模块（74 键）：`quick-tools-panel.ts`（qtPanel.*）、`next-step.ts`（ns.* 21）、
+  `flow-panel-controller.ts`（fp.* 15，相关工作区按钮复用 selector 键）、
+  `streamlined-nav-presenter.ts`（nav.* 12，本地阶段表）、`title-bar-controller.ts`（tb.* 18）、
+  `tab-controller.ts`（tab.* 7）。
+- **保留数据**：`domains/*/tool-catalog.ts` 工具名（94 个，「快捷工具」标题即来自此——
+  同 MCP「工具名是数据」边界，记 backlog）；`shared/creation-flow.ts` 阶段名与 progressText；
+  `meta.unitLabel`（落盘元数据）；章号解析正则；「无项目」行为匹配串。
+- 资源 zh/en 各 1948（+198）。
+
+**坑**
+- **占位符一致性按出现次数计**：zh `{unit}` 出现 2 次、en 出现 3 次也报不一致
+  （`ns.skeletonDesc` 踩过）——不只查占位符集合。
+- 迁移脚本 import 锚点失败也要检查是否已写入（第一版脚本 write 在 exit 之前，
+  二次运行会误报 MISSING——本片改为先查后写并手工补 import）。
+
+**验收**
+- `check:i18n` zh/en 各 1948、棘轮收紧到 **249 文件 / 9846 条**（7 个文件移出或下降）；
+  `check:bundle` main.js → **5872472**（+18870）；preflight EXIT=0。
+- 实机 `D:\nw-dev-vault\_visual-i18n18\fullwriter-view-{zh-CN,en-US}.png`：en 下创作分类/
+  导航/工具栏/项目卡/预览/创作流程/Next 卡/标题栏全英文；剩余 CJK = 项目数据 +
+  工具目录与流程阶段名（domains/shared 数据，backlog）+ Obsidian 自身。
+
+**下一轮候选**：写作主流程深水区（template-vars-builder 340 行 CJK → scene-outline 231 →
+wizard 群 300+ → step-render 106 → unit-writer 98）→ co-writing-view（ZC-20261119-09，625 行）→
+外观页统计/桌宠块 → section-factory/section-base 骨架。

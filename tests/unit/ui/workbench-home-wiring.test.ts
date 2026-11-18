@@ -67,8 +67,11 @@ describe('E1 卡片动作收纳', () => {
 
     it('删除与重命名改由菜单触发，不再有裸露的删除按钮类', () => {
         expect(controller).not.toContain('novel-writer-fw-card-delete-btn');
-        expect(controller).toContain("setTitle('🗑️ 删除项目')");
-        expect(controller).toContain("setTitle('✏️ 重命名项目')");
+        // i18n 第二期第18片：源码断言改键 + 读 zh 资源确认原文
+        expect(controller).toContain("setTitle(t('fullwriter.selector.menuDelete'))");
+        expect(controller).toContain("setTitle(t('fullwriter.selector.menuRename'))");
+        expect(read('i18n/messages/zh-CN.ts')).toContain('🗑️ 删除项目');
+        expect(read('i18n/messages/zh-CN.ts')).toContain('✏️ 重命名项目');
     });
 });
 
