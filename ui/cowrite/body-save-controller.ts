@@ -1,4 +1,5 @@
 import { App, Notice } from 'obsidian';
+import { t } from '@/i18n';
 import { BodyWriter } from '@/engine/body-writer';
 import { createLogger } from '@/shared/logger';
 
@@ -108,7 +109,7 @@ export class BodySaveController {
             return await Promise.race([
                 promise,
                 new Promise<T>((_, reject) => {
-                    timer = setTimeout(() => reject(new Error(`${label}超时（${Math.round(ms / 1000)}s），请检查文件是否被同步盘占用`)), ms);
+                    timer = setTimeout(() => reject(new Error(t('cowrite.save.timeout', { label, seconds: Math.round(ms / 1000) }))), ms);
                 }),
             ]);
         } finally {
@@ -143,29 +144,28 @@ export class BodySaveController {
             // UX：未绑定章节或正文为空时静默返回会让用户误以为按钮失效
             if (showNotice) {
                 new Notice(
-                    !body ? "⚠️ 正文为空，无需保存" : "⚠️ 未绑定章节，请先在左侧选择卷/章",
+                    !body ? t("cowrite.save.emptyBody") : t("cowrite.save.needChapter"),
                     3e3
                 );
             }
             return false;
         }
         this.saving = true;
-        this.host.updateControlState("保存中...");
+        this.host.updateControlState(t("cowrite.save.stateSaving"));
         try {
-            const chapterTitle = await this.withTimeout(this.host.getChapterTitle(identity), 10_000, '读取章节标题');
+            const chapterTitle = await this.withTimeout(this.host.getChapterTitle(identity), 10_000, t('cowrite.save.labelReadTitle'));
             // 外部写入检测（P0-6）：只在本视图写过的路径上生效，首次保存不拦截
             const conflict = await this.withTimeout(
                 this.detectExternalOverwrite(identity.bodyPath, body),
                 15_000,
-                '检查外部修改',
+                t('cowrite.save.labelCheckExternal'),
             );
             if (conflict) {
-                this.host.updateControlState("外部已修改");
+                this.host.updateControlState(t("cowrite.save.stateExternallyModified"));
                 if (!this.conflictNotified.has(identity.bodyPath)) {
                     this.conflictNotified.add(identity.bodyPath);
                     new Notice(
-                        "⚠️ 该章正文刚被其他入口（一键成文/续写）改写，已跳过本次自动保存以免覆盖新稿；"
-                        + "请重新打开本章后再编辑。",
+                        t("cowrite.save.externallyModifiedNotice"),
                         8000,
                     );
                 }
@@ -182,15 +182,15 @@ export class BodySaveController {
                 volume: identity.volume,
                 project: identity.project,
                 writingMode: "co-writer",
-            }), SAVE_TIMEOUT_MS, '保存正文');
+            }), SAVE_TIMEOUT_MS, t('cowrite.save.labelSaveBody'));
             this.lastWritten.set(identity.bodyPath, body);
             this.conflictNotified.delete(identity.bodyPath);
             // 写盘期间已切章：不要把「已保存」与结算提醒写到新章界面
             if (!this.host.isSameChapterIdentity(identity)) return true;
-            this.host.updateControlState("已保存");
+            this.host.updateControlState(t("cowrite.save.stateSaved"));
             this.host.onSaved();
             if (showNotice)
-                new Notice("✅ 正文已保存", 3e3);
+                new Notice(t("cowrite.save.savedNotice"), 3e3);
             return true;
         } catch (e) {
             log.warn("[CoWritingView] 保存失败:", e);
@@ -199,15 +199,15 @@ export class BodySaveController {
             // 把已删除项目“复活”。清空绑定并停止后续写入。
             if (message.includes('已不存在') || message.includes('缺少项目标志')) {
                 this.host.onProjectMissing?.();
-                if (showNotice) new Notice("⚠️ 项目已删除，已停止保存并清空章节绑定", 6e3);
+                if (showNotice) new Notice(t("cowrite.save.projectDeletedNotice"), 6e3);
                 return false;
             }
             // 状态栏不能停在「保存中...」，否则用户会以为仍在保存/已保存
             if (this.host.isSameChapterIdentity(identity)) {
-                this.host.updateControlState("保存失败");
+                this.host.updateControlState(t("cowrite.save.stateSaveFailed"));
             }
             if (showNotice)
-                new Notice(`⚠️ 保存失败：${message || '请检查章节路径或文件权限'}`, 6e3);
+                new Notice(t('cowrite.save.saveFailedNotice', { msg: message || t('cowrite.save.checkPathHint') }), 6e3);
             return false;
         } finally {
             this.saving = false;
@@ -251,10 +251,10 @@ export class BodySaveController {
     async flushBeforeChapterSwitch(): Promise<boolean> {
         const hasPending = this.host.takePendingAutoSave();
         try {
-            await this.withTimeout(this.chain, FLUSH_TIMEOUT_MS, '等待上一次保存');
+            await this.withTimeout(this.chain, FLUSH_TIMEOUT_MS, t('cowrite.save.labelAwaitPrevSave'));
         } catch (e) {
             log.warn('[BodySaveController] 切章前等待保存超时:', e);
-            new Notice('⚠️ 上一次保存超时，已中止切章以避免丢字；请稍后重试', 6e3);
+            new Notice(t('cowrite.save.prevSaveTimeout'), 6e3);
             return false;
         }
         const identity = this.host.getIdentity();

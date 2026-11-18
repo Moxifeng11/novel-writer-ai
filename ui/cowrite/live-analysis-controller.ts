@@ -9,6 +9,7 @@
  */
 
 import { Notice } from 'obsidian';
+import { t } from '@/i18n';
 import type { CoWritingView } from '@/ui/co-writing-view';
 import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
 import { createLogger } from '@/shared/logger';
@@ -202,13 +203,13 @@ export class LiveAnalysisController {
     const view = this.view;
     if (this.isInspectingGuard) {
       // 自动检查在途时用户点「检查」：此前静默丢弃，看起来像按钮没反应
-      if (trigger === "manual") new Notice("⏳ 设定检查正在进行，请稍候…", 2e3);
+      if (trigger === "manual") new Notice(t("cowrite.live.checking"), 2e3);
       return;
     }
     if (!view.rightEditor?.value?.trim()) {
       // UX 修复：正文为空时手动点击「检查」需给出明确反馈
       if (trigger === "manual") {
-        new Notice("⚠️ 正文为空，无法执行设定检查", 3e3);
+        new Notice(t("cowrite.live.emptyBody"), 3e3);
       }
       return;
     }
@@ -253,23 +254,23 @@ export class LiveAnalysisController {
         if (hasOOC && report.oocResult) monitorPanelA.showOOCWarnings(report.oocResult.warnings, report.oocResult.score);
         if (hasEntityChanges) monitorPanelA.showEntityChanges(report.entityChanges);
         view.warningContainer.empty();
-        view.warningContainer.createDiv({ cls: "novel-writer-cowrite-empty", text: "🛡️ A1/D1 警告已推送到右侧 MonitorPanelA" });
+        view.warningContainer.createDiv({ cls: "novel-writer-cowrite-empty", text: t("cowrite.live.warningsPushed") });
       } else {
         if (!hasOOC && !hasEntityChanges) {
           if (!view.warningContainer) return;
           view.warningContainer.empty();
-          view.warningContainer.createDiv({ cls: "novel-writer-cowrite-empty", text: trigger === "manual" ? "本次检查未发现角色 OOC 或实体状态变更。" : "暂无警告。插入建议或保存正文后会自动检测 OOC 和实体状态变更。" });
+          view.warningContainer.createDiv({ cls: "novel-writer-cowrite-empty", text: trigger === "manual" ? t("cowrite.live.noIssuesManual") : t("cowrite.live.noIssuesAuto") });
           return;
         }
         view.warningContainer.empty();
         if (hasOOC && report.oocResult) {
           const panel = view.warningContainer.createDiv({ cls: "nw-ooc-warning-panel" });
-          panel.createEl("strong", { text: "⚠️ OOC警告 (一致性: " + report.oocResult.score + "%)" });
+          panel.createEl("strong", { text: t("cowrite.live.oocTitle", { score: report.oocResult.score }) });
           for (const w of report.oocResult.warnings) panel.createDiv({ cls: "nw-warning-text", text: "· " + w });
         }
         if (hasEntityChanges) {
           const panel = view.warningContainer.createDiv({ cls: "nw-entity-state-panel" });
-          panel.createEl("strong", { text: "🔄 检测到实体状态变更" });
+          panel.createEl("strong", { text: t("cowrite.live.entityChangeTitle") });
           const list = panel.createDiv({ cls: "nw-state-change-list" });
           for (const change of report.entityChanges) {
             const item = list.createDiv({ cls: "nw-state-change-item" });
@@ -277,12 +278,12 @@ export class LiveAnalysisController {
             item.createSpan({ text: " → " });
             item.createSpan({ cls: "nw-new-status", text: change.newStatus });
           }
-          const confirmBtn = panel.createEl("button", { text: "📋 送入确认队列", cls: "novel-writer-cowrite-secondary-btn" });
+          const confirmBtn = panel.createEl("button", { text: t("cowrite.live.sendToQueue"), cls: "novel-writer-cowrite-secondary-btn" });
           confirmBtn.addEventListener("click", async () => {
             const count = await view.engine.confirmStateChanges();
             new Notice(count > 0
-              ? `📋 ${count} 项状态变化已进入待确认队列，可在「质量仪表盘」确认写入`
-              : "⚠️ 没有可确认的状态变化", 2e3);
+              ? t('cowrite.live.queuedNotice', { count })
+              : t("cowrite.live.nothingToConfirm"), 2e3);
           });
         }
       }

@@ -1,5 +1,6 @@
 ﻿import { Modal, Setting, Notice, type App } from 'obsidian';
 import { SentenceEditRecord } from '@/shared/types';
+import { t } from '@/i18n';
 
 // B3: 历史建议回溯弹窗
 /**
@@ -20,15 +21,15 @@ export class HistoryModal extends Modal {
      */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
-        this.titleEl.setText('\u{1F558} 历史建议回溯（最近 20 条）');
+        this.titleEl.setText(t('cowrite.hist.title'));
         const { contentEl } = this;
         contentEl.empty();
         if (!this.records.length) {
-            contentEl.createDiv({ cls: 'novel-writer-cowrite-modal-hint', text: '还没有已接受的建议记录。接受或编辑建议后，这里会出现可回溯的历史。' });
-            new Setting(contentEl).addButton(btn => btn.setButtonText('关闭').setCta().onClick(() => this.close()));
+            contentEl.createDiv({ cls: 'novel-writer-cowrite-modal-hint', text: t('cowrite.hist.emptyHint') });
+            new Setting(contentEl).addButton(btn => btn.setButtonText(t('cowrite.edit.close')).setCta().onClick(() => this.close()));
             return;
         }
-        contentEl.createDiv({ cls: 'novel-writer-cowrite-modal-hint', text: '点「重新插入」可把历史文本插入当前光标处。' });
+        contentEl.createDiv({ cls: 'novel-writer-cowrite-modal-hint', text: t('cowrite.hist.insertHint') });
         const list = contentEl.createDiv({ cls: 'novel-writer-cowrite-history-list' });
         this.records.forEach((rec, idx) => {
             const chosen = rec.suggestions?.find(sg => sg.id === rec.chosenSuggestionId);
@@ -40,10 +41,10 @@ export class HistoryModal extends Modal {
             item.createDiv({ cls: 'novel-writer-cowrite-history-meta', text: `#${idx + 1} \u00B7 ${stamp}${chosen ? ' \u00B7 ' + (chosen.direction || '') : ''}` });
             item.createDiv({ cls: 'novel-writer-cowrite-history-text', text });
             const actions = item.createDiv({ cls: 'novel-writer-cowrite-history-actions' });
-            const insertBtn = actions.createEl('button', { text: '\u21B5 重新插入', cls: 'novel-writer-cowrite-primary-btn' });
+            const insertBtn = actions.createEl('button', { text: t('cowrite.hist.reinsertBtn'), cls: 'novel-writer-cowrite-primary-btn' });
             insertBtn.addEventListener('click', () => { this.onInsert(text); this.close(); });
         });
-        new Setting(contentEl).addButton(btn => btn.setButtonText('关闭').onClick(() => this.close()));
+        new Setting(contentEl).addButton(btn => btn.setButtonText(t('cowrite.edit.close')).onClick(() => this.close()));
     }
 
     /**

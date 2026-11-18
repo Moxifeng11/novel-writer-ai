@@ -1,4 +1,5 @@
 ﻿import { Modal, Setting, Notice, type App } from 'obsidian';
+import { t } from '@/i18n';
 
 // B2: 迭代指令输入弹窗
 /**
@@ -18,23 +19,23 @@ export class IterateInstructionModal extends Modal {
      */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
-        this.titleEl.setText('↻ 迭代改写此候选');
+        this.titleEl.setText(t('cowrite.iterate.title'));
         const { contentEl } = this;
         contentEl.empty();
-        contentEl.createDiv({ cls: 'novel-writer-cowrite-modal-hint', text: '输入一条定向指令（如：更冷静、多一句动作、减少形容词），AI 会在原候选基础上迭代。' });
+        contentEl.createDiv({ cls: 'novel-writer-cowrite-modal-hint', text: t('cowrite.iterate.hint') });
         const textarea = contentEl.createEl('textarea', { cls: 'novel-writer-cowrite-modal-textarea' });
-        textarea.placeholder = '例：语气再冷一点，保留动作细节';
+        textarea.placeholder = t('cowrite.iterate.placeholder');
         textarea.focus();
 
         new Setting(contentEl)
-            .addButton(btn => btn.setButtonText('取消').onClick(() => this.close()))
+            .addButton(btn => btn.setButtonText(t('common.cancel')).onClick(() => this.close()))
             .addButton(btn => btn
-                .setButtonText('迭代')
+                .setButtonText(t('cowrite.iterate.submitBtn'))
                 .setCta()
                 .onClick(() => {
                     const value = textarea.value.trim();
                     if (!value) {
-                        new Notice('请输入迭代指令', 2000);
+                        new Notice(t('cowrite.iterate.needInstruction'), 2000);
                         return;
                     }
                     this.resolved = true;

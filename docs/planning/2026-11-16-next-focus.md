@@ -2243,3 +2243,26 @@ suggestion-cards 100 → suggestion-flow 98 → monitor-cards 81 …）→ 写�
 
 **下一轮候选**：`ui/cowrite/` 9 模块（约 282 行 CJK：body-save 86 / live-analysis 64 …）→
 写作主流程深水区（template-vars 340 → scene-outline 231 → wizard 群）→ 外观页统计/桌宠块。
+
+## 第七十八轮：i18n 第二期第21片 —— 协同写作弹窗与存储（2026-11-19，ZCode · ZC-20261119-11）
+
+**改动**
+- `ui/cowrite/` 7 模块迁完（`migrate-cowrite-mods.cjs` 71 对 + 手工补 4 处）：
+  memory-manager-modal（记忆管理器 25 处，含 E1/E3 分区与偏好类别表）、body-save-controller
+  （保存守卫与状态机外 Notice，15 处）、suggestion-edit-modal（编辑验证抽屉，11 处）、
+  live-analysis-controller（设定检查与 OOC/实体警告，10 处）、iterate-instruction-modal（6）、
+  history-modal（6）、suggestion-history-store（文件名数据）。走 `cowrite.edit/mem/live/save/
+  iterate/hist.*` 74 键。
+- **保留数据/行为串**：`updateControlState("已保存"/"已加载")` 状态机串被
+  layout-assembly/dashboard-status 行为比较耦合；`协同历史.json` 文件名；落盘章名 `第{N}章`；
+  withTimeout 的 label 参数。
+- 新增 `tests/unit/ui/cowrite-modals-i18n.test.ts` 3 例（mock Modal + FakeEl 补 focus 方法）。
+
+**验收**
+- 新增 3 例 + friendly-error/suggestion-cards 既有测试（专用键修正后）10/10 全绿；
+  `check:i18n` zh/en 各 2432、棘轮收紧到 **231 文件 / 9239 条**（4 个文件清零）；
+  `check:bundle` main.js → **5919027**（+7427）；preflight EXIT=0。
+- 弹窗为交互态，实机以主视图截图同口径覆盖；弹窗文案由单测 + check:i18n 兜底。
+
+**下一轮候选**：写作主流程深水区（template-vars-builder 340 行 CJK → scene-outline 231 →
+wizard 群 300+ → step-render 106 → unit-writer 98）→ 外观页统计/桌宠块 → 跨层数据专项。

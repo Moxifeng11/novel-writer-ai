@@ -1,4 +1,5 @@
 import { Notice } from 'obsidian';
+import { t } from '@/i18n';
 import type { App } from 'obsidian';
 import { SuggestionRecord } from '@/shared/types';
 
@@ -37,11 +38,11 @@ export class SuggestionEditModal {
 
         // ----- header -----
         const header = drawer.createDiv({ cls: 'nw-suggestion-drawer-header' });
-        header.createDiv({ cls: 'nw-suggestion-drawer-title', text: '✏️ 编辑建议并验证' });
+        header.createDiv({ cls: 'nw-suggestion-drawer-title', text: t('cowrite.edit.title') });
         const closeBtn = header.createEl('button', {
             cls: 'nw-suggestion-drawer-close',
             text: '✕',
-            attr: { 'aria-label': '关闭编辑面板' }
+            attr: { 'aria-label': t('cowrite.edit.closeAria') }
         });
         closeBtn.addEventListener('click', () => this.close());
 
@@ -49,7 +50,7 @@ export class SuggestionEditModal {
         const body = drawer.createDiv({ cls: 'nw-suggestion-drawer-body' });
         body.createDiv({
             cls: 'novel-writer-cowrite-modal-hint',
-            text: `原方向：${this.suggestion.direction}。修改后会传回 AI 做一致性 / 文风 / 剧情验证。`
+            text: t('cowrite.edit.originHint', { direction: this.suggestion.direction })
         });
         const textarea = body.createEl('textarea', { cls: 'novel-writer-cowrite-modal-textarea' });
         textarea.value = this.initialText;
@@ -64,14 +65,14 @@ export class SuggestionEditModal {
         const footer = drawer.createDiv({ cls: 'nw-suggestion-drawer-footer' });
         const cancelBtn = footer.createEl('button', {
             cls: 'nw-suggestion-drawer-btn',
-            text: '取消'
+            text: t('common.cancel')
         });
         cancelBtn.addEventListener('click', () => this.close());
         this.cancelBtn = cancelBtn;
 
         const submitBtn = footer.createEl('button', {
             cls: 'nw-suggestion-drawer-btn nw-suggestion-drawer-btn-primary',
-            text: '提交验证'
+            text: t('cowrite.edit.submitBtn')
         });
         submitBtn.addEventListener('click', () => this.handleSubmit(textarea));
         this.submitBtn = submitBtn;
@@ -100,13 +101,13 @@ export class SuggestionEditModal {
         if (this.isSubmitting) return;
         const text = textarea.value.trim();
         if (!text) {
-            new Notice('修改内容不能为空', 2000);
+            new Notice(t('cowrite.edit.emptyContent'), 2000);
             return;
         }
         this.isSubmitting = true;
         if (this.submitBtn) {
             this.submitBtn.disabled = true;
-            this.submitBtn.textContent = '验证中…';
+            this.submitBtn.textContent = t('cowrite.edit.validating');
         }
         if (this.cancelBtn) {
             this.cancelBtn.disabled = true;
@@ -131,7 +132,7 @@ export class SuggestionEditModal {
         this.validationPanel.empty();
         const loading = this.validationPanel.createDiv({ cls: 'nw-suggestion-drawer-validation-loading' });
         loading.createEl('span', { text: '⏳' });
-        loading.createSpan({ text: '正在传回 AI 验证，请稍候…' });
+        loading.createSpan({ text: t('cowrite.edit.validatingHint') });
     }
 
     private showValidationDone(isError: boolean, err?: unknown): void {
@@ -139,9 +140,9 @@ export class SuggestionEditModal {
         this.validationPanel.empty();
         const title = this.validationPanel.createDiv({ cls: 'nw-suggestion-drawer-validation-title' });
         if (isError) {
-            title.setText(`❌ 验证失败：${err instanceof Error ? err.message : String(err)}`);
+            title.setText(t('cowrite.edit.validateFailed', { msg: err instanceof Error ? err.message : String(err) }));
         } else {
-            title.setText('✅ 验证完成，请查看主面板结果');
+            title.setText(t('cowrite.edit.validateDone'));
         }
     }
 
@@ -152,7 +153,7 @@ export class SuggestionEditModal {
         footer.empty();
         const closeBtn = (footer as HTMLElement).createEl('button', {
             cls: 'nw-suggestion-drawer-btn nw-suggestion-drawer-btn-primary',
-            text: '关闭'
+            text: t('cowrite.edit.close')
         });
         closeBtn.addEventListener('click', () => this.close());
     }

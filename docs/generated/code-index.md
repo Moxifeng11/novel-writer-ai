@@ -11,7 +11,7 @@
 | `shared/` | 258 | 51769 | 2179 | 1700 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 115149 | 1180 | 930 | 79% |
+| `ui/` | 306 | 115154 | 1180 | 930 | 79% |
 
 ## 文件清单
 
@@ -801,12 +801,12 @@
 | `ui/continue-chapters-modal.ts` | 567 | 1 | 1 |
 | `ui/cowrite/body-save-controller.ts` | 282 | 3 | 2 |
 | `ui/cowrite/cowrite-mappers.ts` | 111 | 6 | 6 |
-| `ui/cowrite/history-modal.ts` | 55 | 1 | 1 |
+| `ui/cowrite/history-modal.ts` | 56 | 1 | 1 |
 | `ui/cowrite/insert-range.ts` | 86 | 4 | 4 |
-| `ui/cowrite/iterate-instruction-modal.ts` | 54 | 1 | 1 |
-| `ui/cowrite/live-analysis-controller.ts` | 305 | 2 | 1 |
-| `ui/cowrite/memory-manager-modal.ts` | 155 | 1 | 1 |
-| `ui/cowrite/suggestion-edit-modal.ts` | 160 | 1 | 1 |
+| `ui/cowrite/iterate-instruction-modal.ts` | 55 | 1 | 1 |
+| `ui/cowrite/live-analysis-controller.ts` | 306 | 2 | 1 |
+| `ui/cowrite/memory-manager-modal.ts` | 156 | 1 | 1 |
+| `ui/cowrite/suggestion-edit-modal.ts` | 161 | 1 | 1 |
 | `ui/cowrite/suggestion-history-store.ts` | 111 | 1 | 1 |
 | `ui/create-project-modal.ts` | 490 | 2 | 2 |
 | `ui/cross-volume-state-modal.ts` | 235 | 1 | 1 |

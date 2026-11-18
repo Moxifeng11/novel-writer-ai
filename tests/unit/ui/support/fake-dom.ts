@@ -119,6 +119,10 @@ export class FakeEl {
         return this;
     }
 
+    focus(): this {
+        return this;
+    }
+
     setTooltip(_text: string): this {
         return this;
     }

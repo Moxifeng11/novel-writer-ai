@@ -56,13 +56,9 @@
     "ui/context-injector-modal.ts": 26,
     "ui/context-metrics-modal.ts": 15,
     "ui/continue-chapters-modal.ts": 84,
-    "ui/cowrite/body-save-controller.ts": 26,
+    "ui/cowrite/body-save-controller.ts": 7,
     "ui/cowrite/cowrite-mappers.ts": 20,
-    "ui/cowrite/history-modal.ts": 6,
-    "ui/cowrite/iterate-instruction-modal.ts": 6,
-    "ui/cowrite/live-analysis-controller.ts": 17,
-    "ui/cowrite/memory-manager-modal.ts": 26,
-    "ui/cowrite/suggestion-edit-modal.ts": 12,
+    "ui/cowrite/live-analysis-controller.ts": 7,
     "ui/cowrite/suggestion-history-store.ts": 5,
     "ui/create-project-modal.ts": 108,
     "ui/cross-volume-state-modal.ts": 44,
@@ -236,7 +232,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 9359,
+  "total": 9280,
   "updatedAt": "2026-11-18",
   "note": ""
 }
