@@ -1,4 +1,5 @@
 import { App } from 'obsidian';
+import { t } from '@/i18n';
 import type NovelWriterPlugin from '@/main';
 import type { EndingTractionEngine, EndingTractionState, PlotThread } from '@/engine/ending-traction-engine';
 import { CoWriteFacade } from '@/ui/services/co-write-facade';
@@ -10,9 +11,9 @@ const log = createLogger('FullWriterCheckup');
 const MIN_INTERVAL_MS = 20_000;
 
 const RISK_LABEL: Record<EndingTractionState['divergenceRisk'], string> = {
-    low: '低',
-    medium: '中',
-    high: '高',
+    low: t('fullwriter.ck.riskLow'),
+    medium: t('fullwriter.ck.riskMid'),
+    high: t('fullwriter.ck.riskHigh'),
 };
 
 const RISK_CLASS: Record<EndingTractionState['divergenceRisk'], string> = {
@@ -22,17 +23,17 @@ const RISK_CLASS: Record<EndingTractionState['divergenceRisk'], string> = {
 };
 
 const THREAD_TYPE_LABEL: Record<PlotThread['type'], string> = {
-    main: '主线',
-    subplot: '副线',
-    romance: '感情线',
-    mystery: '悬疑线',
+    main: t('fullwriter.ck.threadMain'),
+    subplot: t('fullwriter.ck.threadSub'),
+    romance: t('fullwriter.ck.threadRomance'),
+    mystery: t('fullwriter.ck.threadMystery'),
 };
 
 const THREAD_STATUS_LABEL: Record<PlotThread['status'], string> = {
-    active: '活跃',
-    dormant: '蛰伏',
-    resolved: '已收束',
-    abandoned: '已废弃',
+    active: t('fullwriter.ck.statusActive'),
+    dormant: t('fullwriter.ck.statusDormant'),
+    resolved: t('fullwriter.ck.statusResolved'),
+    abandoned: t('fullwriter.ck.statusAbandoned'),
 };
 
 /**
@@ -90,20 +91,20 @@ export class FullWriterCheckupController {
         const row = root.createDiv({ cls: 'nw-fw-checkup-row' });
 
         row.createSpan({ text: '🎯', cls: 'nw-fw-checkup-icon' });
-        row.createSpan({ text: '写作体检', cls: 'nw-fw-checkup-title' });
+        row.createSpan({ text: t('fullwriter.ck.title'), cls: 'nw-fw-checkup-title' });
         this.progressEl = row.createSpan({ text: '—', cls: 'nw-fw-checkup-progress' });
 
         const track = row.createDiv({ cls: 'nw-fw-checkup-track' });
         this.fillEl = track.createDiv({ cls: 'nw-fw-checkup-fill' });
 
-        this.riskEl = row.createSpan({ text: '偏离 —', cls: 'nw-fw-checkup-risk' });
-        this.tipEl = row.createSpan({ text: '等待体检…', cls: 'nw-fw-checkup-tip' });
+        this.riskEl = row.createSpan({ text: t('fullwriter.ck.riskNone'), cls: 'nw-fw-checkup-risk' });
+        this.tipEl = row.createSpan({ text: t('fullwriter.ck.waiting'), cls: 'nw-fw-checkup-tip' });
 
         const actions = row.createDiv({ cls: 'nw-fw-checkup-actions' });
         this.timeEl = actions.createSpan({ text: '', cls: 'nw-fw-checkup-time' });
-        this.refreshBtn = actions.createEl('button', { text: '刷新', cls: 'nw-fw-checkup-btn' });
+        this.refreshBtn = actions.createEl('button', { text: t('common.refresh'), cls: 'nw-fw-checkup-btn' });
         this.refreshBtn.onclick = () => { void this.refresh(true); };
-        this.detailBtn = actions.createEl('button', { text: '详情', cls: 'nw-fw-checkup-btn nw-fw-checkup-btn--detail' });
+        this.detailBtn = actions.createEl('button', { text: t('fullwriter.ck.detailBtn'), cls: 'nw-fw-checkup-btn nw-fw-checkup-btn--detail' });
         this.detailBtn.onclick = () => this.toggleDetails();
 
         this.detailsEl = root.createDiv({ cls: 'nw-fw-checkup-details' });
@@ -121,7 +122,7 @@ export class FullWriterCheckupController {
         const project = this.deps.getProject();
         const chapterNum = this.deps.getChapterNum();
         if (!project || !chapterNum) {
-            this.applyIdle('打开章节后自动体检');
+            this.applyIdle(t('fullwriter.ck.idleHint'));
             return;
         }
         if (this.busy) return;
@@ -131,7 +132,7 @@ export class FullWriterCheckupController {
         const token = ++this.seq;
         this.busy = true;
         this.setControlsEnabled(false);
-        this.paintTip('体检中…', false);
+        this.paintTip(t('fullwriter.ck.checking'), false);
 
         try {
             const engine = await this.ensureEngine(project);
@@ -144,7 +145,7 @@ export class FullWriterCheckupController {
             if (token !== this.seq) return;
             const message = e instanceof Error ? e.message : String(e);
             log.warn('体检失败:', e);
-            this.paintTip(`体检失败：${message}`, true);
+            this.paintTip(t('fullwriter.ck.checkFailed', { msg: message }), true);
         } finally {
             if (token === this.seq) {
                 this.busy = false;
@@ -199,12 +200,12 @@ export class FullWriterCheckupController {
             this.fillEl.style.setProperty('--nw-fw-checkup-pct', `${pct}%`);
         }
         if (this.riskEl) {
-            this.riskEl.textContent = `偏离 ${RISK_LABEL[state.divergenceRisk]}`;
+            this.riskEl.textContent = t('fullwriter.ck.riskValue', { level: RISK_LABEL[state.divergenceRisk] });
             this.riskEl.className = RISK_CLASS[state.divergenceRisk];
         }
-        const tip = state.recommendations[0] ?? '情节线走势平稳，保持当前节奏。';
+        const tip = state.recommendations[0] ?? t('fullwriter.ck.stableTip');
         this.paintTip(tip, false);
-        if (this.timeEl) this.timeEl.textContent = `最近 ${formatClock(new Date())}`;
+        if (this.timeEl) this.timeEl.textContent = t('fullwriter.ck.lastChecked', { time: formatClock(new Date()) });
         this.renderDetails(state);
     }
 
@@ -213,7 +214,7 @@ export class FullWriterCheckupController {
         // 空态用修饰类归零进度条（门禁禁止字面量内联样式，动态值才允许写 CSS 变量）
         this.fillEl?.classList.add('nw-fw-checkup-fill--empty');
         if (this.riskEl) {
-            this.riskEl.textContent = '偏离 —';
+            this.riskEl.textContent = t('fullwriter.ck.riskNone');
             this.riskEl.className = 'nw-fw-checkup-risk';
         }
         this.paintTip(message, false);
@@ -241,7 +242,7 @@ export class FullWriterCheckupController {
 
     private toggleDetails(): void {
         this.expanded = !this.expanded;
-        if (this.detailBtn) this.detailBtn.textContent = this.expanded ? '收起' : '详情';
+        if (this.detailBtn) this.detailBtn.textContent = this.expanded ? t('fullwriter.ck.collapseBtn') : t('fullwriter.ck.detailBtn');
         this.detailsEl?.toggleClass('nw-fw-checkup-details--open', this.expanded);
     }
 
@@ -251,9 +252,9 @@ export class FullWriterCheckupController {
 
         const threads = state.threads;
         const title = this.detailsEl.createDiv({ cls: 'nw-fw-checkup-detail-title' });
-        title.textContent = `情节线（${threads.length}）`;
+        title.textContent = t('fullwriter.ck.threadsTitle', { count: threads.length });
         if (threads.length === 0) {
-            this.detailsEl.createDiv({ cls: 'nw-fw-checkup-detail-item', text: '未解析到情节线，请检查分卷大纲。' });
+            this.detailsEl.createDiv({ cls: 'nw-fw-checkup-detail-item', text: t('fullwriter.ck.noThreads') });
         }
         for (const thread of threads) {
             const row = this.detailsEl.createDiv({ cls: 'nw-fw-checkup-thread' });
@@ -268,9 +269,9 @@ export class FullWriterCheckupController {
             row.createSpan({ text: `${Math.round(thread.currentProgress)}%`, cls: 'nw-fw-checkup-thread-pct' });
         }
 
-        this.detailsEl.createDiv({ cls: 'nw-fw-checkup-detail-title', text: '建议' });
+        this.detailsEl.createDiv({ cls: 'nw-fw-checkup-detail-title', text: t('fullwriter.ck.suggestionsTitle') });
         if (state.recommendations.length === 0) {
-            this.detailsEl.createDiv({ cls: 'nw-fw-checkup-detail-item', text: '暂无建议。' });
+            this.detailsEl.createDiv({ cls: 'nw-fw-checkup-detail-item', text: t('fullwriter.ck.noSuggestions') });
         }
         for (const rec of state.recommendations) {
             this.detailsEl.createDiv({ cls: 'nw-fw-checkup-detail-item', text: rec });

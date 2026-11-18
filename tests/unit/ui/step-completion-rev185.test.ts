@@ -51,7 +51,9 @@ describe('Rev 185 · 上下文加载步骤显示输入并判定完整性', () =>
         expect(src).toContain('assessContextReadiness(context, this.deps.state.chapterNum)');
         expect(src).toContain("cs.stepLevels['context'] = 'complete'");
         expect(src).toContain("cs.stepLevels['context'] = 'partial'");
-        expect(src).toContain('上下文缺少必做输入');
+        // i18n 第二期第28片：源码断言改键 + 读 zh 资源
+expect(src).toContain("t('fullwriter.cl.missingRequired',");
+expect(read('i18n/messages/zh-CN.ts')).toContain('上下文缺少必做输入');
     });
 
     it('角色灵魂自动提取保存后还要过结构校验', () => {

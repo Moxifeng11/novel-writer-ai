@@ -1,4 +1,5 @@
 import { App, Notice, TFile, TFolder } from 'obsidian';
+import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { ContextManager, GatheredContext } from '@/engine/context-manager';
 import { showProgress, hideProgress, showSuccess, showError } from '@/utils/helpers';
@@ -88,14 +89,14 @@ export class ContextLoaderController {
             else new Notice(`⚠️ ${message}`, 6000);
         };
 
-        progress('⏳ 加载上下文数据...');
+        progress(t('fullwriter.cl.loadingData'));
 
         const cs = this.deps.getChapterStateManager();
 
         try {
-            progress('⏳ 加载上下文数据...');
+            progress(t('fullwriter.cl.loadingData'));
             const context = await this.deps.contextManager.gatherAll(targetProject, targetChapter, (completed, total, taskName) => {
-                progress(`⏳ 加载 ${taskName}... (${completed}/${total})`);
+                progress(t('fullwriter.cl.loadingTask', { task: taskName, done: completed, total }));
             });
             if (!stillCurrent()) {
                 stopProgress();
@@ -122,7 +123,7 @@ export class ContextLoaderController {
 
             const failedModules = context?.data?.['_failedModules'] as string[] || [];
             if (failedModules.length > 0) {
-                notice('warning', `以下模块加载失败（已跳过）: ${failedModules.join('、')}`);
+                notice('warning', t('fullwriter.cl.modulesFailed', { modules: failedModules.join('、') }));
             }
 
             // Rev 185：完成状态由「必做输入是否齐全」决定，不再无条件 complete。
@@ -133,13 +134,13 @@ export class ContextLoaderController {
                 cs.stepMissing['context'] = [];
                 cs.stepCompleted.add('context');
                 stopProgress();
-                notice('success', '上下文加载完成');
+                notice('success', t('fullwriter.cl.loaded'));
             } else {
                 cs.stepLevels['context'] = 'partial';
                 cs.stepMissing['context'] = readiness.requiredMissing;
                 cs.stepCompleted.delete('context');
                 stopProgress();
-                notice('warning', `上下文缺少必做输入：${readiness.requiredMissing.join('、')}。请补齐后重新加载`);
+                notice('warning', t('fullwriter.cl.missingRequired', { fields: readiness.requiredMissing.join('、') }));
             }
 
             const infoSummary = this.deps.contextManager.getInfoSummary(context);
@@ -152,9 +153,9 @@ export class ContextLoaderController {
                 getDegradationNotifier().notify({
                     source: 'injection',
                     dimension: 'context',
-                    from: '完整上下文',
-                    to: '压缩上下文',
-                    reason: '上下文超出预算，已压缩（关键信息可能被裁剪）',
+                    from: t('fullwriter.cl.fromFull'),
+                    to: t('fullwriter.cl.toCompressed'),
+                    reason: t('fullwriter.cl.compressReason'),
                     severity: 'warning',
                     recoverable: false,
                 });
@@ -166,10 +167,10 @@ export class ContextLoaderController {
             log.error('[小说工坊] 上下文加载异常:', errMsg);
             stopProgress();
             if (!this.deps.getContext()) {
-                notice('error', `上下文加载失败: ${errMsg}`);
+                notice('error', t('fullwriter.cl.loadFailed', { msg: errMsg }));
                 return;
             } else {
-                notice('warning', `上下文部分加载失败: ${errMsg}`);
+                notice('warning', t('fullwriter.cl.partialFailed', { msg: errMsg }));
             }
         }
 
@@ -188,7 +189,7 @@ export class ContextLoaderController {
         // 磁盘恢复出的真实内容（即使未达 complete）优先于自动提取，避免手工结果被覆盖
         const existingSoul = (cs.stepResults['characterSoul'] || '').trim();
         if (!cs.stepCompleted.has('characterSoul') && !existingSoul && !(await this.hasRealSoulFile())) {
-            progress('🫀 提取角色灵魂...');
+            progress(t('fullwriter.cl.extractingSoul'));
             try {
                 const context = this.deps.getContext();
                 const characterCoresData = context?.data?.character_cores as Array<Record<string, unknown>> | undefined;
@@ -211,17 +212,17 @@ export class ContextLoaderController {
                             cs.stepLevels['characterSoul'] = 'complete';
                             cs.stepMissing['characterSoul'] = [];
                             cs.stepCompleted.add('characterSoul');
-                            notice('success', '🫀 角色灵魂提取完成');
+                            notice('success', t('fullwriter.cl.soulDone'));
                         } else if (saved) {
                             cs.stepLevels['characterSoul'] = 'partial';
                             cs.stepMissing['characterSoul'] = soulVerdict.missing;
                             cs.stepCompleted.delete('characterSoul');
-                            notice('warning', `角色灵魂已写入但字段不完整：${soulVerdict.missing.join('、')}`);
+                            notice('warning', t('fullwriter.cl.soulIncomplete', { fields: soulVerdict.missing.join('、') }));
                         } else {
                             cs.stepLevels['characterSoul'] = 'partial';
-                            cs.stepMissing['characterSoul'] = ['保存失败'];
+                            cs.stepMissing['characterSoul'] = [t('fullwriter.cl.soulSaveFailedShort')];
                             cs.stepCompleted.delete('characterSoul');
-                            notice('warning', '角色灵魂已提取但保存失败，重启后需重新提取');
+                            notice('warning', t('fullwriter.cl.soulSaveFailed'));
                         }
                     } else {
                         log.warn('[ContextLoader] 没有完整的 9 字段角色灵魂层，跳过完成标记');
@@ -265,7 +266,7 @@ export class ContextLoaderController {
             const volName = this.deps.state.volume || `第${Math.ceil(this.deps.state.chapterNum / 10)}卷`;
             const snapshot = await integrator.generateSnapshot(this.deps.state.project, volName, `${this.deps.state.project}/04-项目总控`);
             this.deps.state.vars['crossVolumeSnapshot'] = snapshot.slice(0, 3000);
-            const message = `📸 已为「${volName}」生成状态快照`;
+            const message = t('fullwriter.cl.snapshotGenerated', { vol: volName });
             if (this.deps.reportNotice) this.deps.reportNotice('success', message);
             else new Notice(message, 4000);
         }

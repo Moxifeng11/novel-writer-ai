@@ -2381,3 +2381,27 @@ entity-state-controller → 外观页统计/桌宠块 → 跨层数据专项。
 **下一轮候选**：`ui/full-writer/` 长尾小模块（execution-run-store / batch-step-retry /
 entity-state-controller / context-loader / checkup-bar 等）→ 外观页统计与桌宠块 →
 跨层数据专项。
+
+## 第八十五轮：i18n 第二期第28片 —— 写作体检条与上下文加载（2026-11-19，ZCode · ZC-20261119-18）
+
+**甄别结论**
+- `fanfic-settings-utils.ts` 67 行 CJK 是**落盘文档模板**（frontmatter 键  + Markdown
+  章节结构，解析与生成两侧共用）——数据保留。
+- 同法复核 `ui/full-writer/` 剩余：template-vars 223（提示词）、scene-outline 44（解析键/
+  落盘名）、wizard-step-renderers 36（frontmatter 字段）、wizard-types 25（类型字段名）等，
+  均为数据。
+- 真正 UI 文案仅 checkup-bar 28 + context-loader 16。
+
+**改动**
+- `migrate-fw-tail.cjs` 44 对全命中；`fullwriter.ck/cl.*` 41 键（体检条风险/情节线类型/
+  状态标签/详情展开、上下文加载进度/失败/压缩降级/角色灵魂提取/状态快照）。
+- 两处既有测试修正：checkup 详情按钮原复用带 ▲ 的 `cowrite.layout.collapse` → 独立
+  `ck.collapseBtn`；rev185 源码断言改键（带参数  形式）。
+
+**验收**
+- `check:i18n` zh/en 各 2908、棘轮 **229 文件 / 8651 条**；`check:bundle` main.js →
+  **5969714**；preflight EXIT=0（10303 通过+3）。
+- `ui/full-writer/` 的 UI 文案至此全部迁完，剩余均为数据（提示词/落盘模板/解析键/字段键）。
+
+**下一轮候选**：外观页「写作统计与桌面宠物 / 桌宠形象」两块 → 跨层数据专项
+（工具目录 94 工具名 / shared 阶段名 / 契约描述 / 状态机串，需架构决策）。

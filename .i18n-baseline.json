@@ -78,8 +78,8 @@
     "ui/full-writer-view.ts": 30,
     "ui/full-writer/batch-pipeline-runner.ts": 7,
     "ui/full-writer/batch-targets.ts": 2,
-    "ui/full-writer/checkup-bar-controller.ts": 30,
-    "ui/full-writer/context-loader-controller.ts": 28,
+    "ui/full-writer/checkup-bar-controller.ts": 1,
+    "ui/full-writer/context-loader-controller.ts": 9,
     "ui/full-writer/cover-picker-controller.ts": 16,
     "ui/full-writer/creation-flow-state.ts": 4,
     "ui/full-writer/entity-state-controller.ts": 6,
@@ -230,7 +230,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 8703,
+  "total": 8655,
   "updatedAt": "2026-11-18",
   "note": ""
 }
