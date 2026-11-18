@@ -64,7 +64,9 @@ describe('Rev 185 · 上下文加载步骤显示输入并判定完整性', () =>
         const src = read('ui/full-writer/step-render-controller.ts');
         expect(src).toContain('renderContextInputs');
         expect(src).toContain('novel-writer-fw-context-input-row');
-        expect(src).toContain('🔄 重新加载上下文');
+        // i18n 第二期第25片：源码断言改键 + 读 zh 资源确认原文
+        expect(src).toContain("t('fullwriter.sr.reloadBtn')");
+        expect(read('i18n/messages/zh-CN.ts')).toContain('🔄 重新加载上下文');
         expect(src).toContain('reloadContext: () => Promise<void>');
         expect(src).not.toContain("area.createEl('p', { text: '✅ 上下文已加载完成。'");
     });

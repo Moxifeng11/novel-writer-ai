@@ -2323,3 +2323,21 @@ step-render-controller 106 → unit-writer-controller 98 → 外观页统计/桌
 **下一轮候选**：step-render-controller 106 → unit-writer-controller 98 → flow-tab / intervention
 -controller 68 / batch-pipeline-runner 79 / chapter-orchestrator 71（均需甄别）→
 外观页统计/桌宠块。
+
+## 第八十二轮：i18n 第二期第25片 —— 步骤渲染与单元写作控制器（2026-11-19，ZCode · ZC-20261119-15）
+
+**改动**
+- `migrate-sr-uw.cjs` 123 对全命中（step-render-controller 51 + unit-writer-controller 72）：
+  `fullwriter.sr/uw.*` 129 键。步骤渲染（阶段导航/必做标记/上下文输入清单/重新加载/故事上下文
+  包 telemetry 摘要/结算状态/结果区编辑保存/结构化分析/场景细纲切换）、单元写作器（列表导航/
+  AI 按钮组/参考面板/质检/单元结算/AI 状态/保存状态机）。
+- **遮蔽坑再现**：`const t = result.bundle.telemetry` 回调参数遮蔽 i18n `t`——盲目重命名误伤
+  i18n 调用与 `.setText`（变 `.setTextm`），三轮修正还原。
+- 既有 `step-completion-rev185` 源码断言改键 + 读 zh 资源。
+
+**验收**
+- `check:i18n` zh/en 各 2764、棘轮收紧到 **231 文件 / 8830 条**；`check:bundle` main.js →
+  **5955865**（+12705）；preflight EXIT=0（10303 通过+3）。
+
+**下一轮候选**：flow-tab → intervention-controller 68 → batch-pipeline-runner 79 →
+chapter-orchestrator 71 → execution-panels 62 → 外观页统计/桌宠块。

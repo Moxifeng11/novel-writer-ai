@@ -11,6 +11,7 @@
  * 行为与外迁前逐行等价，不改变写作流程。
  */
 import { App, TFile } from 'obsidian';
+import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { StepRunner, ALL_FULL_STEPS, FullStep } from '@/engine/step-runner';
 import { downstreamStepsAfterPlanningChange } from '@/engine/planning-step-advance';
@@ -84,7 +85,7 @@ export class StepRenderController {
         const d = this.deps;
         const cs = d.chapterState;
         const nav = workspace.createDiv({ cls: 'novel-writer-fw-step-nav' });
-        nav.createEl('h4', { text: '阶段导航', cls: 'novel-writer-fw-nav-title' });
+        nav.createEl('h4', { text: t('fullwriter.sr.navTitle'), cls: 'novel-writer-fw-nav-title' });
 
         const list = nav.createDiv({ cls: 'novel-writer-fw-step-list novel-writer-fw-streamlined-list' });
 
@@ -134,8 +135,8 @@ export class StepRenderController {
                 sub.setAttr('data-nw-substep', stepKey);
                 sub.createSpan({ text: icon, cls: 'novel-writer-fw-substep-icon' });
                 sub.createSpan({ text: def?.label || stepKey, cls: 'novel-writer-fw-substep-label' });
-                if (def?.required) sub.createSpan({ text: '必做', cls: 'novel-writer-fw-substep-mark' });
-                sub.setAttr('title', stale ? '已过期，需重新执行' : done ? '已完成' : partial ? '部分完成' : '未执行');
+                if (def?.required) sub.createSpan({ text: t('fullwriter.sr.requiredMark'), cls: 'novel-writer-fw-substep-mark' });
+                sub.setAttr('title', stale ? t('fullwriter.sr.staleTitle') : done ? t('fullwriter.sr.doneTitle') : partial ? t('fullwriter.sr.partialTitle') : t('fullwriter.sr.notRunTitle'));
                 if (clickable) {
                     sub.onclick = async () => {
                         if (stepIndex !== cs.currentStepIndex) {
@@ -173,28 +174,28 @@ export class StepRenderController {
             });
             row.createSpan({ text: item.ok ? '✅' : (item.required ? '⚠️' : '○'), cls: 'novel-writer-fw-context-input-icon' });
             row.createSpan({ text: item.label, cls: 'novel-writer-fw-context-input-label' });
-            if (item.required) row.createSpan({ text: '必做', cls: 'novel-writer-fw-context-input-badge' });
+            if (item.required) row.createSpan({ text: t('fullwriter.sr.requiredMark'), cls: 'novel-writer-fw-context-input-badge' });
             row.createSpan({ text: item.detail, cls: 'novel-writer-fw-context-input-detail' });
-            row.setAttr('title', item.required ? '本章必做输入，缺失会影响写作质量' : '可选输入，缺失不阻塞流程');
+            row.setAttr('title', item.required ? t('fullwriter.sr.requiredInputTip') : t('fullwriter.sr.optionalInputTip'));
         }
 
         this.renderStoryContextCoverage(area);
 
         const actions = area.createDiv({ cls: 'novel-writer-fw-context-actions' });
-        const reloadBtn = actions.createEl('button', { text: '🔄 重新加载上下文', cls: 'novel-writer-fw-btn' });
+        const reloadBtn = actions.createEl('button', { text: t('fullwriter.sr.reloadBtn'), cls: 'novel-writer-fw-btn' });
         reloadBtn.onclick = async () => {
             reloadBtn.disabled = true;
-            reloadBtn.setText('⏳ 重新加载中...');
+            reloadBtn.setText(t('fullwriter.sr.reloading'));
             try {
                 await d.reloadContext();
             } finally {
                 reloadBtn.disabled = false;
-                reloadBtn.setText('🔄 重新加载上下文');
+                reloadBtn.setText(t('fullwriter.sr.reloadBtn'));
             }
         };
 
         area.createEl('p', {
-            text: '清单反映本次加载结果；缺失必做项时，请先补齐项目设定/大纲/上章内容，再重新加载。',
+            text: t('fullwriter.sr.contextListHint'),
             cls: 'novel-writer-fw-context-hint',
         });
     }
@@ -227,32 +228,32 @@ export class StepRenderController {
                 emotionPlanText: d.chapterState.stepResults['emotionPlan'] || '',
                 precedingText: context.data.previous_chapter?.ending || '',
             });
-            const t = result.bundle.telemetry;
-            const ok = t.missingRequired.length === 0;
+            const tm = result.bundle.telemetry;
+            const ok = tm.missingRequired.length === 0;
             const row = area.createDiv({
                 cls: 'novel-writer-fw-context-input-row is-required ' + (ok ? 'is-ok' : 'is-missing'),
             });
             row.createSpan({ text: ok ? '✅' : '⚠️', cls: 'novel-writer-fw-context-input-icon' });
-            row.createSpan({ text: '故事上下文包', cls: 'novel-writer-fw-context-input-label' });
-            row.createSpan({ text: '自动检索', cls: 'novel-writer-fw-context-input-badge' });
+            row.createSpan({ text: t('fullwriter.sr.contextPack'), cls: 'novel-writer-fw-context-input-label' });
+            row.createSpan({ text: t('fullwriter.sr.autoRetrieve'), cls: 'novel-writer-fw-context-input-badge' });
             row.createSpan({
-                text: `${t.tier === 'local' ? '本地' : '云端'} · ${t.included} 项 · ${t.estimatedTokens}/${t.budgetTokens} tokens · 必含 ${t.requiredIncluded}/${t.requiredTotal}`,
+                text: t('fullwriter.sr.packSummary', { tier: tm.tier === 'local' ? t('cowrite.modeLocal') : t('cowrite.modeCloud'), included: tm.included, used: tm.estimatedTokens, budget: tm.budgetTokens, reqIn: tm.requiredIncluded, reqTotal: tm.requiredTotal }),
                 cls: 'novel-writer-fw-context-input-detail',
             });
-            const kindText = Object.entries(t.byKind)
+            const kindText = Object.entries(tm.byKind)
                 .filter(([, v]) => v.total > 0)
                 .map(([kind, v]) => `${STORY_CONTEXT_KIND_LABELS[kind as keyof typeof STORY_CONTEXT_KIND_LABELS]} ${v.included}/${v.total}`)
                 .join(' · ');
             const detail = area.createDiv({ cls: 'novel-writer-fw-context-hint' });
             detail.setText(kindText
-                + (t.deduped > 0 ? ` · 去重 ${t.deduped} 项（${Math.round(t.dedupeRate * 100)}%）` : '')
-                + (t.dropped > 0 ? ` · 丢弃 ${t.dropped} 项低优先级信息` : ''));
-            if (t.missingRequired.length > 0) {
-                detail.setText(`缺少必含项：${t.missingRequired.slice(0, 5).join('、')}；${detail.textContent || ''}`);
+                + (tm.deduped > 0 ? t('fullwriter.sr.deduped', { count: tm.deduped, pct: Math.round(tm.dedupeRate * 100) }) : '')
+                + (tm.dropped > 0 ? t('fullwriter.sr.dropped', { count: tm.dropped }) : ''));
+            if (tm.missingRequired.length > 0) {
+                detail.setText(t('fullwriter.sr.missingRequired', { fields: tm.missingRequired.slice(0, 5).join('、'), extra: detail.textContent || '' }));
             }
-            if (t.warnings.length > 0) {
+            if (tm.warnings.length > 0) {
                 const warn = area.createDiv({ cls: 'novel-writer-fw-context-hint' });
-                warn.setText(`⚠️ ${t.warnings.slice(0, 2).join('；')}`);
+                warn.setText(`⚠️ ${tm.warnings.slice(0, 2).join('；')}`);
             }
         } catch (e) {
             log.warn('[StepRenderController] 故事上下文包覆盖度计算失败:', e);
@@ -273,10 +274,10 @@ export class StepRenderController {
         } else if (step.auto && step.index > 0) {
             if (cs.stepCompleted.has('settlement')) {
                 this.autoSettlementAttempted.delete(`${d.getProject()}|${d.getChapDir()}`);
-                area.createEl('p', { text: '✅ 章节结算已完成。', cls: 'novel-writer-fw-success-text' });
+                area.createEl('p', { text: t('fullwriter.sr.settleDone'), cls: 'novel-writer-fw-success-text' });
                 // v1.3.0: 添加「重新结算」按钮，允许用户在补跑分析报告后重新触发
                 const reBtn = area.createEl('button', {
-                    text: '🔄 重新结算', cls: 'novel-writer-fw-btn'
+                    text: t('fullwriter.sr.reSettleBtn'), cls: 'novel-writer-fw-btn'
                 });
                 reBtn.addClass('nw-mt-8');
                 reBtn.onclick = () => {
@@ -299,11 +300,11 @@ export class StepRenderController {
                 const chapterKey = `${d.getProject()}|${d.getChapDir()}`;
                 if (this.autoSettlementAttempted.has(chapterKey)) {
                     area.createEl('p', {
-                        text: '⚠️ 自动结算未完成，请检查分析报告后重试。',
+                        text: t('fullwriter.sr.autoSettleIncomplete'),
                         cls: 'novel-writer-fw-context-hint',
                     });
                     const retryBtn = area.createEl('button', {
-                        text: '⚙️ 重新结算', cls: 'novel-writer-fw-btn',
+                        text: t('fullwriter.sr.reSettleBtn2'), cls: 'novel-writer-fw-btn',
                     });
                     retryBtn.addClass('nw-mt-8');
                     retryBtn.onclick = () => {
@@ -319,7 +320,7 @@ export class StepRenderController {
                     };
                 } else {
                     this.autoSettlementAttempted.add(chapterKey);
-                    area.createEl('p', { text: '触发自动结算...' });
+                    area.createEl('p', { text: t('fullwriter.sr.triggeringSettle') });
                     void d.stepRunner.executeSettlement(
                         d.getProject(), d.getChapDir(), d.getChapterName(),
                         cs.stepResults, cs.stepCompleted, d.getVars(),
@@ -389,7 +390,7 @@ export class StepRenderController {
 
         if (hasResult && skeleton && (cs.generatedThisSession.has(stepKey) || cs.stepCompleted.has(stepKey))) {
             area.createDiv({
-                text: '⚠️ 本步只有模板骨架，未产出有效内容；请按上方错误卡的提示重试本步。',
+                text: t('fullwriter.sr.skeletonOnly'),
                 cls: 'novel-writer-fw-warning',
             });
         }
@@ -403,14 +404,14 @@ export class StepRenderController {
         if (showResult) {
             const resultContainer = area.createDiv({ cls: 'novel-writer-fw-result-section' });
             const titleRow = resultContainer.createDiv({ cls: 'nw-result-title-row' });
-            const title = cs.stepCompleted.has(stepKey) ? '✅ 本步执行结果' : '📄 本步结果（未达完成标准）';
+            const title = cs.stepCompleted.has(stepKey) ? t('fullwriter.sr.resultDone') : t('fullwriter.sr.resultNotMet');
             titleRow.createEl('h4', { text: title, cls: 'novel-writer-fw-result-title' });
             titleRow.createSpan({
-                text: `${rawResult.trim().length} 字${cs.stepCompleted.has(stepKey) ? ' · 已通过结构校验' : ' · 已保存草稿'}`,
+                text: t('fullwriter.sr.resultMeta', { count: rawResult.trim().length, state: cs.stepCompleted.has(stepKey) ? t('fullwriter.sr.validated') : t('fullwriter.sr.draftSaved') }),
                 cls: 'nw-result-meta',
             });
             const saveBtn = titleRow.createEl('button', {
-                text: '💾 保存修改',
+                text: t('fullwriter.sr.saveChangesBtn'),
                 cls: 'nw-result-save-btn',
             });
 
@@ -425,15 +426,15 @@ export class StepRenderController {
                             .join('\n\n'),
                     },
                 });
-                strip.setText(`📚 知识来源：${summarizeRagSources(ragSources)}`);
+                strip.setText(t('fullwriter.sr.knowledgeSources', { sources: summarizeRagSources(ragSources) }));
             }
 
             // 先给结果预览，编辑原文折叠，避免大段 textarea 把成果挤到看不见。
             const preview = resultContainer.createDiv({ cls: 'nw-result-preview' });
-            preview.textContent = rawResult.length > 2400 ? `${rawResult.slice(0, 2400)}\n…（已截断预览，展开编辑可查看全文）` : rawResult;
+            preview.textContent = rawResult.length > 2400 ? rawResult.slice(0, 2400) + '\n' + t('fullwriter.sr.truncatedPreview') : rawResult;
 
             const editor = resultContainer.createEl('details', { cls: 'nw-result-editor' });
-            editor.createEl('summary', { text: `展开编辑原文（${rawResult.length} 字）` });
+            editor.createEl('summary', { text: t('fullwriter.sr.expandEdit', { count: rawResult.length }) });
             const textarea = editor.createEl('textarea', {
                 cls: 'nw-result-textarea',
             }) as HTMLTextAreaElement;
@@ -441,15 +442,15 @@ export class StepRenderController {
 
             saveBtn.onclick = async () => {
                 const newContent = textarea.value;
-                if (!newContent.trim()) { showError('内容不能为空'); return; }
+                if (!newContent.trim()) { showError(t('fullwriter.sr.contentEmpty')); return; }
                 try {
                     log.warn('[小说工坊] 💾保存按钮: stepKey=', stepKey, 'chapDir=', d.getChapDir(), 'chapterName=', d.getChapterName(), 'len=', newContent.length);
                     const saved = await d.stepRunner.saveStepResult(stepKey, newContent, d.getChapDir(), d.getChapterName(), d.getVolume());
                     if (!saved) {
                         // saveStepResult 返回 false 表示根本没落盘（chapDir 为空/无文件映射/写盘异常），
                         // 旧实现继续更新内存并提示「已保存」，用户切章后才发现内容丢了。
-                        showError(`${stepKey} 保存失败：未写入任何文件（请检查章节绑定与磁盘权限）`);
-                        if (d.reportStepError) d.reportStepError(stepKey, '保存失败：未写入文件');
+                        showError(t('fullwriter.sr.saveNoFile', { step: stepKey }));
+                        if (d.reportStepError) d.reportStepError(stepKey, t('fullwriter.sr.saveNoFileShort'));
                         return;
                     }
                     // A4: 手动保存不等于完成，仍由内容结构决定 level；
@@ -469,14 +470,14 @@ export class StepRenderController {
                     this.invalidateBodyAfterPlanningChange(cs, stepKey);
                     const missing = cs.stepMissing[stepKey] || [];
                     if (missing.length > 0) {
-                        showWarning(`${stepKey} 已保存，但未达到完成标准，缺少：${missing.join('、')}`);
+                        showWarning(t('fullwriter.sr.savedBelowStandard', { step: stepKey, fields: missing.join('、') }));
                     } else {
-                        showSuccess(`${stepKey} 已保存`);
+                        showSuccess(t('fullwriter.sr.savedOk', { step: stepKey }));
                     }
                     // v3.4.9 P0-4: 保存后重新渲染当前步骤区，以便"继续下一步"按钮即时出现
                     await d.renderInContainer(d.getTabContent());
                 } catch (e) {
-                    const message = `保存失败: ${(e as Error).message}`;
+                    const message = t('fullwriter.sr.saveFailedWith', { msg: (e as Error).message });
                     if (d.reportStepError) d.reportStepError(stepKey, message);
                     else showError(message);
                 }
@@ -486,7 +487,7 @@ export class StepRenderController {
             if (stepKey === 'analysisReport') {
                 const extra = resultContainer.createDiv({ attr: { style: 'margin-top:10px;' } });
                 const btn = extra.createEl('button', {
-                    text: '📊 结构化增强分析',
+                    text: t('fullwriter.sr.enhancedAnalysisBtn'),
                     attr: {
                         style: 'padding:4px 12px;font-size:12px;border-radius:3px;border:1px solid var(--background-modifier-border);cursor:pointer;background:var(--background-secondary);'
                     }
@@ -495,7 +496,7 @@ export class StepRenderController {
                 btn.onclick = async () => {
                     const bodyText = cs.stepResults['bodyGeneration'] || '';
                     if (!bodyText.trim()) {
-                        showError('无正文内容，无法执行结构化分析');
+                        showError(t('fullwriter.sr.needBodyForAnalysis'));
                         return;
                     }
                     btn.disabled = true;
@@ -512,19 +513,19 @@ export class StepRenderController {
                             cs.stepResults['analysisReport'] || '',
                         );
                         const applyBtn = host.createEl('button', {
-                            text: '✅ 应用报告变更',
+                            text: t('fullwriter.sr.applyChangesBtn'),
                             attr: { style: 'margin-top:8px;padding:4px 12px;font-size:12px;cursor:pointer;' }
                         });
                         applyBtn.onclick = async () => {
                             const result = await panel.applyChanges();
                             if (result.success) {
-                                showSuccess(`已应用 ${result.applied.length} 项变更` + (result.pending.length > 0 ? `，${result.pending.length} 项待手动处理` : ''));
+                                showSuccess(t('fullwriter.sr.changesApplied', { applied: result.applied.length, pending: result.pending.length > 0 ? t('fullwriter.sr.pendingSuffix', { count: result.pending.length }) : '' }));
                             } else {
                                 showError(result.details);
                             }
                         };
                     } catch (e) {
-                        showError(`结构化分析失败: ${(e as Error).message}`);
+                        showError(t('fullwriter.sr.analysisFailed', { msg: (e as Error).message }));
                     } finally {
                         btn.disabled = false;
                     }
@@ -546,7 +547,7 @@ export class StepRenderController {
             attr: { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;' }
         });
         titleRow.createEl('h4', {
-            text: '🎬 场景细纲编辑器',
+            text: t('fullwriter.sr.sceneEditorBtn'),
             cls: 'novel-writer-fw-result-title',
             attr: { style: 'margin:0;' }
         });
@@ -554,21 +555,21 @@ export class StepRenderController {
         const btnGroup = titleRow.createDiv({ attr: { style: 'display: flex; gap: 6px;' } });
 
         const rawEditBtn = btnGroup.createEl('button', {
-            text: '📝 纯文本编辑',
+            text: t('fullwriter.sr.rawEditBtn'),
             attr: {
                 style: 'padding:2px 10px;font-size:12px;border-radius:3px;border:1px solid var(--background-modifier-border);cursor:pointer;background:var(--background-secondary);'
             }
         });
 
         const sceneGenBtn = btnGroup.createEl('button', {
-            text: '🎬 逐场景生成',
+            text: t('fullwriter.sr.perSceneGenBtn'),
             attr: {
                 style: 'padding:2px 10px;font-size:12px;border-radius:3px;border:1px solid var(--background-modifier-border);cursor:pointer;background:var(--interactive-accent);color:var(--text-on-accent);'
             }
         });
         sceneGenBtn.onclick = async () => {
             const expansionText = cs.stepResults['sceneExpand'] || '';
-            if (!expansionText.trim()) { showError('请先生成 Scene展开 内容'); return; }
+            if (!expansionText.trim()) { showError(t('fullwriter.sr.needSceneExpand')); return; }
             const chapterName = d.getChapterName();
             const chapterNumMatch = chapterName.match(/\d+/);
             const chapterNumber = chapterNumMatch ? parseInt(chapterNumMatch[0]) : 0;
@@ -584,12 +585,12 @@ export class StepRenderController {
                     volumeName: d.getVolume(),
                 });
             } catch (e) {
-                showError(`打开逐场景生成失败: ${(e as Error).message}`);
+                showError(t('fullwriter.sr.perSceneOpenFailed', { msg: (e as Error).message }));
             }
         };
 
         const saveBtn = btnGroup.createEl('button', {
-            text: '💾 保存',
+            text: t('fullwriter.sr.saveBtn'),
             attr: {
                 style: 'padding:2px 10px;font-size:12px;border-radius:3px;border:1px solid var(--background-modifier-border);cursor:pointer;background:var(--interactive-accent);color:var(--text-on-accent);'
             }
@@ -622,7 +623,7 @@ export class StepRenderController {
                     cs.updateStepState('sceneExpand', saved);
                 }
                 this.invalidateBodyAfterPlanningChange(cs, 'sceneExpand');
-                showSuccess('场景细纲已自动保存');
+                showSuccess(t('fullwriter.sr.sceneAutosaved'));
             }
         });
 
@@ -635,7 +636,7 @@ export class StepRenderController {
             rawMode = !rawMode;
             if (rawMode) {
                 sceneEditorWrap.addClass('nw-u-d-none');
-                rawEditBtn.setText('🎬 场景编辑器');
+                rawEditBtn.setText(t('fullwriter.sr.sceneEditorBtn2'));
                 const rawContainer = editorContainer.createDiv({
                     attr: { style: 'padding: 8px;' }
                 });
@@ -647,7 +648,7 @@ export class StepRenderController {
                 rawTextarea.value = cs.stepResults['sceneExpand'] || '';
             } else {
                 sceneEditorWrap.removeClass('nw-u-d-none');
-                rawEditBtn.setText('📝 纯文本编辑');
+                rawEditBtn.setText(t('fullwriter.sr.rawEditBtn'));
                 if (rawTextarea && rawTextarea.parentElement) {
                     rawTextarea.parentElement.remove();
                 }
@@ -662,20 +663,20 @@ export class StepRenderController {
                     ? await sceneController.saveRawContent(rawTextarea.value)
                     : await sceneController.saveScenes();
                 if (!saved) {
-                    showError('保存未执行：内容为空、未解析到场景或内容未变更，原文件保持不变');
+                    showError(t('fullwriter.sr.sceneSaveSkipped'));
                     return;
                 }
                 cs.updateStepState('sceneExpand', sceneController.getSavedContent());
                 this.invalidateBodyAfterPlanningChange(cs, 'sceneExpand');
                 const missing = cs.stepMissing['sceneExpand'] || [];
                 if (missing.length > 0) {
-                    showWarning(`Scene展开 已保存，但未达到完成标准，缺少：${missing.join('、')}`);
+                    showWarning(t('fullwriter.sr.sceneSavedBelowStandard', { fields: missing.join('、') }));
                 } else {
-                    showSuccess('Scene展开 已保存');
+                    showSuccess(t('fullwriter.sr.sceneSavedOk'));
                 }
                 await d.renderInContainer(d.getTabContent());
             } catch (e) {
-                showError(`保存失败: ${(e as Error).message}`);
+                showError(t('fullwriter.sr.saveFailedWith', { msg: (e as Error).message }));
             }
         };
     }

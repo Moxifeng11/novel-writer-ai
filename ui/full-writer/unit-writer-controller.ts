@@ -6,6 +6,7 @@
  * 改写 → 保存 → 回写状态」这一条最短闭环。
  */
 import type { App } from 'obsidian';
+import { t } from '@/i18n';
 import { Notice } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import type { AIEngine } from '@/engine/ai-engine';
@@ -109,11 +110,11 @@ export class UnitWriterController {
 
         if (!tab.project || !tab.unitNumber) {
             this.ctx = null;
-            this.container.createDiv({ cls: 'nw-unit-empty', text: '缺少项目或单元信息' });
+            this.container.createDiv({ cls: 'nw-unit-empty', text: t('fullwriter.uw.missingInfo') });
             return;
         }
 
-        const loading = this.container.createDiv({ cls: 'nw-unit-loading', text: '正在读取单元内容…' });
+        const loading = this.container.createDiv({ cls: 'nw-unit-loading', text: t('fullwriter.uw.readingUnit') });
         try {
             const mode = tab.mode ?? 'short';
             this.units = listModeUnits(this.deps.app, tab.project, mode);
@@ -128,9 +129,9 @@ export class UnitWriterController {
             loading.remove();
             const message = e instanceof Error ? e.message : String(e);
             const error = this.container.createDiv({ cls: 'nw-unit-error' });
-            error.createDiv({ cls: 'nw-unit-error-title', text: '读取单元失败' });
+            error.createDiv({ cls: 'nw-unit-error-title', text: t('fullwriter.uw.readFailed') });
             error.createDiv({ cls: 'nw-unit-error-detail', text: message });
-            const retry = error.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: '重试' });
+            const retry = error.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: t('fullwriter.fp.retry') });
             retry.onclick = () => { void this.render(container, tab); };
         }
     }
@@ -161,7 +162,7 @@ export class UnitWriterController {
         this.abortController?.abort();
         this.abortController = null;
         this.running = false;
-        this.setAiStatus('已取消生成');
+        this.setAiStatus(t('fullwriter.uw.aiCancelled'));
     }
 
     // ============================================================
@@ -188,19 +189,19 @@ export class UnitWriterController {
 
         const head = sidebar.createDiv({ cls: 'nw-unit-sidebar-head' });
         head.createDiv({ cls: 'nw-unit-sidebar-title', text: `${getCreationModeLabel(mode)} · ${this.units.length} ${label}` });
-        const createBtn = head.createEl('button', { cls: 'nw-btn nw-btn-secondary nw-unit-create', text: `＋ 建${label}` });
+        const createBtn = head.createEl('button', { cls: 'nw-btn nw-btn-secondary nw-unit-create', text: t('fullwriter.uw.createBtn', { unit: label }) });
         createBtn.onclick = () => {
             if (this.ctx) this.deps.onCreateUnits(this.ctx.project);
         };
 
         const nav = sidebar.createDiv({ cls: 'nw-unit-nav' });
-        const prev = nav.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: `← 上一${label}` });
+        const prev = nav.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: t('fullwriter.uw.prevUnitBtn', { unit: label }) });
         prev.disabled = !this.units.some(unit => unit.number < (this.ctx?.unitNumber ?? 0));
         prev.onclick = () => {
             const target = [...this.units].reverse().find(unit => unit.number < (this.ctx?.unitNumber ?? 0));
             if (target) void this.switchUnit(target.number);
         };
-        const next = nav.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: `下一${label} →` });
+        const next = nav.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: t('fullwriter.uw.nextUnitBtn', { unit: label }) });
         next.disabled = !this.units.some(unit => unit.number > (this.ctx?.unitNumber ?? 0));
         next.onclick = () => {
             const target = this.units.find(unit => unit.number > (this.ctx?.unitNumber ?? 0));
@@ -209,8 +210,8 @@ export class UnitWriterController {
 
         if (this.units.length === 0) {
             const empty = sidebar.createDiv({ cls: 'nw-unit-sidebar-empty' });
-            empty.createDiv({ text: `还没有${label}骨架` });
-            empty.createDiv({ cls: 'nw-unit-sidebar-empty-hint', text: `先点上方「建${label}」批量创建，或回创作流程查看下一步。` });
+            empty.createDiv({ text: t('fullwriter.uw.noSkeleton', { unit: label }) });
+            empty.createDiv({ cls: 'nw-unit-sidebar-empty-hint', text: t('fullwriter.uw.noSkeletonHint', { unit: label }) });
             return;
         }
 
@@ -220,10 +221,10 @@ export class UnitWriterController {
                 cls: `nw-unit-list-item${unit.number === this.ctx.unitNumber ? ' nw-is-active' : ''}${unit.status === 'written' || unit.status === 'settled' ? ' nw-is-written' : ''}`,
             });
             item.createSpan({ cls: 'nw-unit-list-num', text: unit.unitName });
-            item.createSpan({ cls: 'nw-unit-list-title', text: unit.title || '无标题' });
+            item.createSpan({ cls: 'nw-unit-list-title', text: unit.title || t('fullwriter.uw.untitled') });
             item.createSpan({
                 cls: 'nw-unit-list-words',
-                text: unit.words > 0 ? `${unit.words} 字` : (unit.status === 'written' ? '已写' : '待写'),
+                text: unit.words > 0 ? t('fullwriter.uw.wordCount', { count: unit.words }) : (unit.status === 'written' ? t('fullwriter.uw.written') : t('fullwriter.uw.pendingWrite')),
             });
             item.onclick = () => {
                 if (unit.number !== this.ctx?.unitNumber) void this.switchUnit(unit.number);
@@ -240,7 +241,7 @@ export class UnitWriterController {
 
         const titleInput = header.createEl('input', {
             cls: 'nw-unit-title-input',
-            attr: { type: 'text', placeholder: `${this.ctx.unitName} 标题（可选）` },
+            attr: { type: 'text', placeholder: t('fullwriter.uw.titlePlaceholder', { unit: this.ctx.unitName }) },
         });
         titleInput.value = this.units.find(unit => unit.number === this.ctx?.unitNumber)?.title || '';
         titleInput.addEventListener('input', () => {
@@ -250,13 +251,13 @@ export class UnitWriterController {
         });
 
         this.headerMetaEl = header.createDiv({ cls: 'nw-unit-header-meta' });
-        this.saveStateEl = this.headerMetaEl.createSpan({ cls: 'nw-unit-save-state', text: '已保存' });
+        this.saveStateEl = this.headerMetaEl.createSpan({ cls: 'nw-unit-save-state', text: t('fullwriter.uw.stateSaved') });
         this.updateHeaderMeta();
 
         this.editorEl = main.createEl('textarea', {
             cls: 'nw-unit-editor',
             attr: {
-                placeholder: '在这里写正文，或点下方「AI 生成本节」。',
+                placeholder: t('fullwriter.uw.bodyPlaceholder'),
                 spellcheck: 'false',
             },
         });
@@ -264,14 +265,14 @@ export class UnitWriterController {
         this.editorEl.addEventListener('input', () => {
             this.dirty = true;
             this.updateHeaderMeta();
-            this.setSaveState('编辑中…');
+            this.setSaveState(t('fullwriter.uw.stateEditing'));
             this.scheduleSave();
         });
         this.editorEl.addEventListener('keydown', (event: KeyboardEvent) => {
             if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
                 event.preventDefault();
                 void this.flushSave().then(ok => {
-                    if (ok) showSuccessNotice('已保存', { timeout: 1500 });
+                    if (ok) showSuccessNotice(t('fullwriter.uw.savedNotice'), { timeout: 1500 });
                 });
             }
         });
@@ -297,14 +298,14 @@ export class UnitWriterController {
         };
 
         const hasBody = countUnitWords(this.getBody()) > 80;
-        make(hasBody ? '🤖 重新生成本节' : '🤖 AI 生成本节', !hasBody, () => { void this.runAI('generate'); });
-        make('✨ 续写', false, () => { void this.runAI('continue'); });
-        make('✂️ 改写选区', false, () => { void this.runAI('rewrite'); });
-        const qualityLabel = (this.ctx?.mode ?? 'short') === 'script' ? '🎬 可拍质检' : '🧪 六维质检';
+        make(hasBody ? t('fullwriter.uw.regenSectionBtn') : t('fullwriter.uw.aiGenSectionBtn'), !hasBody, () => { void this.runAI('generate'); });
+        make(t('fullwriter.uw.continueBtn'), false, () => { void this.runAI('continue'); });
+        make(t('fullwriter.uw.rewriteSelBtn'), false, () => { void this.runAI('rewrite'); });
+        const qualityLabel = (this.ctx?.mode ?? 'short') === 'script' ? t('fullwriter.uw.qcScript') : t('fullwriter.uw.qcSixDim');
         make(qualityLabel, false, () => { void this.runQualityCheck(); });
-        make('🫧 人味体检', false, () => this.openHumanizeReport());
-        const complete = make(`✅ 完成本${modeUnitLabel(this.ctx?.mode ?? 'short')}`, false, () => { void this.completeUnit(); });
-        make(`🧾 单元结算`, false, () => { void this.settleCurrentUnit(); });
+        make(t('fullwriter.uw.humanCheckBtn'), false, () => this.openHumanizeReport());
+        const complete = make(t('fullwriter.uw.completeBtn', { unit: modeUnitLabel(this.ctx?.mode ?? 'short') }), false, () => { void this.completeUnit(); });
+        make(t('fullwriter.uw.settleBtn'), false, () => { void this.settleCurrentUnit(); });
         complete.addClass('nw-unit-complete');
     }
 
@@ -312,31 +313,31 @@ export class UnitWriterController {
         if (!this.ctx) return;
         const mode = this.ctx.mode;
         const label = modeUnitLabel(mode);
-        inspector.createDiv({ cls: 'nw-unit-inspector-title', text: '本节参考' });
+        inspector.createDiv({ cls: 'nw-unit-inspector-title', text: t('fullwriter.uw.referenceTitle') });
 
         this.renderInspectorSection(
             inspector,
-            `本${label}大纲`,
-            this.ctx.outlineSection || '大纲里还没有这一节的段落。',
+            t('fullwriter.uw.sectionOutline', { unit: label }),
+            this.ctx.outlineSection || t('fullwriter.uw.noOutlineSection'),
             () => this.deps.onOpenDocument(this.ctx!.project, mode, 'outline'),
         );
 
         this.renderInspectorSection(
             inspector,
-            mode === 'script' ? '场景圣经' : '故事核',
-            this.ctx.storyDoc || '（尚未填写）',
+            mode === 'script' ? t('fullwriter.selector.qtSceneBible') : t('fullwriter.selector.qtStoryCore'),
+            this.ctx.storyDoc || t('fullwriter.uw.unfilled'),
             () => this.deps.onOpenDocument(this.ctx!.project, mode, mode === 'script' ? 'bible' : 'storyCore'),
         );
 
         if (this.ctx.previousTail) {
-            this.renderInspectorSection(inspector, `上一${label}结尾`, this.ctx.previousTail, null);
+            this.renderInspectorSection(inspector, t('fullwriter.uw.prevTail', { unit: label }), this.ctx.previousTail, null);
         }
 
         this.qualityEl = inspector.createDiv({ cls: 'nw-unit-quality' });
-        this.qualityEl.createDiv({ cls: 'nw-unit-quality-empty', text: '点「质量检查」查看六维评分' });
+        this.qualityEl.createDiv({ cls: 'nw-unit-quality-empty', text: t('fullwriter.uw.qualityHint') });
 
         const footer = inspector.createDiv({ cls: 'nw-unit-inspector-footer' });
-        const flow = footer.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: '🧭 查看创作流程' });
+        const flow = footer.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: t('cowrite.brief.viewFlowBtn') });
         flow.onclick = () => this.deps.onOpenFlow(this.ctx!.project);
     }
 
@@ -350,7 +351,7 @@ export class UnitWriterController {
         const summary = details.createEl('summary', { cls: 'nw-unit-inspector-summary' });
         summary.createSpan({ text: title });
         if (onEdit) {
-            const edit = summary.createEl('button', { cls: 'nw-unit-inspector-edit', text: '编辑' });
+            const edit = summary.createEl('button', { cls: 'nw-unit-inspector-edit', text: t('fullwriter.sr.editBtn2') });
             edit.onclick = (event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -382,7 +383,7 @@ export class UnitWriterController {
         const unit = this.units.find(item => item.number === this.ctx?.unitNumber);
         const written = unit?.status === 'written' || unit?.status === 'settled';
         this.headerMetaEl.setText(
-            `${this.ctx.unitName} · ${words} 字 · ${written ? '已写' : '待写'}`,
+            t('fullwriter.uw.summaryLine', { unit: this.ctx.unitName, words, state: written ? t('fullwriter.uw.written') : t('fullwriter.uw.pendingWrite') }),
         );
         if (this.saveStateEl) this.headerMetaEl.appendChild(this.saveStateEl);
     }
@@ -415,7 +416,7 @@ export class UnitWriterController {
             try { await this.saving; } catch { /* 上一轮已提示 */ }
         }
         if (!this.dirty && !this.pendingSaveOptions.markWritten && !this.pendingSaveOptions.title) {
-            this.setSaveState('已保存');
+            this.setSaveState(t('fullwriter.uw.stateSaved'));
             return true;
         }
 
@@ -424,7 +425,7 @@ export class UnitWriterController {
         const saveOptions = { ...this.pendingSaveOptions };
         this.pendingSaveOptions = {};
         this.dirty = false;
-        this.setSaveState('保存中…');
+        this.setSaveState(t('fullwriter.uw.stateSaving'));
 
         let ok = false;
         const savePort = ctx.project && (ctx.mode === 'short' || ctx.mode === 'script')
@@ -434,7 +435,7 @@ export class UnitWriterController {
         this.saving = run.then(() => undefined, () => undefined);
         try {
             const { words } = await run;
-            this.setSaveState('已保存');
+            this.setSaveState(t('fullwriter.uw.stateSaved'));
             const unit = this.units.find(item => item.number === ctx.unitNumber);
             if (unit) {
                 unit.words = words;
@@ -443,8 +444,8 @@ export class UnitWriterController {
             ok = true;
         } catch (e) {
             this.dirty = true;
-            this.setSaveState('保存失败');
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存失败', timeout: 6000 });
+            this.setSaveState(t('fullwriter.uw.stateSaveFailed'));
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('fullwriter.uw.saveFailedTitle'), timeout: 6000 });
         } finally {
             this.saving = null;
         }
@@ -470,11 +471,11 @@ export class UnitWriterController {
 
         if (action === 'generate' && countUnitWords(this.getBody()) > 80) {
             const confirmed = await OperationConfirmModal.confirm(this.deps.app, {
-                title: '重新生成本节？',
-                description: '当前正文会被清空并重新生成。已有内容不会自动备份，建议先复制留存。',
-                confirmText: '清空并重写',
-                cancelText: '取消',
-                warning: '该操作会覆盖本节现有正文',
+                title: t('fullwriter.uw.regenConfirmTitle'),
+                description: t('fullwriter.uw.regenConfirmDesc'),
+                confirmText: t('fullwriter.uw.regenConfirmOk'),
+                cancelText: t('common.cancel'),
+                warning: t('fullwriter.uw.regenConfirmWarning'),
             });
             if (!confirmed) return;
         }
@@ -482,7 +483,7 @@ export class UnitWriterController {
         if (action === 'rewrite') {
             const selection = this.getSelection();
             if (!selection) {
-                new Notice('请先在正文里选中要改写的片段', 4000);
+                new Notice(t('fullwriter.uw.needSelection'), 4000);
                 return;
             }
             this.pendingRewrite = selection;
@@ -508,7 +509,7 @@ export class UnitWriterController {
         this.running = true;
         this.abortController = new AbortController();
         this.renderToolbar();
-        this.setAiStatus(action === 'rewrite' ? 'AI 正在改写选区…' : 'AI 正在写作…');
+        this.setAiStatus(action === 'rewrite' ? t('fullwriter.uw.aiRewriting') : t('fullwriter.uw.aiWriting'));
         let streamed = '';
         let buffer = '';
         let flushTimer: number | null = null;
@@ -533,7 +534,7 @@ export class UnitWriterController {
             onDelta: (chunk) => {
                 streamed += chunk;
                 if (action === 'rewrite') {
-                    this.setAiStatus(`AI 正在改写选区… ${countUnitWords(streamed)} 字`);
+                    this.setAiStatus(t('fullwriter.uw.aiRewritingWords', { count: countUnitWords(streamed) }));
                     return;
                 }
                 buffer = action === 'generate'
@@ -571,10 +572,10 @@ export class UnitWriterController {
                     modeRevisionOptions(ctx.mode, namesFromEntitySummary(ctx.entities ?? '')),
                 );
                 if (!gate.accept) {
-                    showWarningNotice(gate.reasons.join('；'), { title: '改写未应用', timeout: 8000 });
-                    this.setAiStatus('改写未通过修订闸门，正文未改动');
+                    showWarningNotice(gate.reasons.join('；'), { title: t('fullwriter.uw.rewriteNotApplied'), timeout: 8000 });
+                    this.setAiStatus(t('fullwriter.uw.gateBlocked'));
                 } else if (current.slice(selection.start, selection.end) !== selection.originalText) {
-                    showWarningNotice('正文已改动，改写结果未应用；请重新选中后再试', { timeout: 6000 });
+                    showWarningNotice(t('cowrite.rewriteSourceChanged'), { timeout: 6000 });
                 } else {
                     this.setBody(
                         `${current.slice(0, selection.start)}${streamed}${current.slice(selection.end)}`,
@@ -587,7 +588,7 @@ export class UnitWriterController {
 
             this.pendingRewrite = null;
             this.updateHeaderMeta();
-            this.setAiStatus(`完成：${countUnitWords(streamed)} 字，已自动保存`);
+            this.setAiStatus(t('fullwriter.uw.aiDoneSaved', { count: countUnitWords(streamed) }));
             await this.flushSave();
             this.renderToolbar();
         } catch (e) {
@@ -597,12 +598,12 @@ export class UnitWriterController {
             this.dirty = true;
             void this.flushSave();
             if (name === 'AbortError') {
-                this.setAiStatus('已取消生成，正文未改动');
+                this.setAiStatus(t('fullwriter.uw.aiCancelledNoChange'));
             } else {
                 const message = e instanceof Error ? e.message : String(e);
                 log.warn('[单元写作] 生成失败:', message);
-                this.setAiStatus(`生成失败：${message}`);
-                showErrorNotice(message, { title: '生成失败', timeout: 8000 });
+                this.setAiStatus(t('fullwriter.uw.genFailedStatus', { msg: message }));
+                showErrorNotice(message, { title: t('cowrite.genFailedTitle'), timeout: 8000 });
             }
         } finally {
             if (flushTimer !== null) window.clearTimeout(flushTimer);
@@ -624,16 +625,16 @@ export class UnitWriterController {
         if (!this.qualityEl || !this.ctx) return;
         const body = this.getBody();
         if (countUnitWords(body) < 100) {
-            new Notice('正文太短，先写够 100 字再检查', 4000);
+            new Notice(t('fullwriter.uw.tooShortForCheck'), 4000);
             return;
         }
         const heavy = this.deps.plugin.engineRegistry.getOrNull(ENGINE_NAMES.HEAVY_TASK_WORKER_MANAGER);
         if (!heavy) {
-            new Notice('质量引擎未初始化，请重启插件后再试', 6000);
+            new Notice(t('fullwriter.uw.qualityEngineNotInit'), 6000);
             return;
         }
         this.qualityEl.empty();
-        this.qualityEl.createDiv({ cls: 'nw-unit-quality-loading', text: '正在做六维质检…' });
+        this.qualityEl.createDiv({ cls: 'nw-unit-quality-loading', text: t('fullwriter.uw.qualityRunning') });
         try {
             const report = await evaluateModeUnitQuality({
                 mode: this.ctx.mode,
@@ -653,7 +654,7 @@ export class UnitWriterController {
             const head = this.qualityEl.createDiv({ cls: 'nw-unit-quality-head' });
             head.createSpan({ cls: 'nw-unit-quality-score', text: String(report.overallScore) });
             head.createSpan({ cls: 'nw-unit-quality-unit', text: '/100' });
-            head.createSpan({ cls: `nw-unit-quality-result ${report.passed ? 'nw-is-pass' : 'nw-is-fail'}`, text: report.passed ? '通过' : '未通过' });
+            head.createSpan({ cls: `nw-unit-quality-result ${report.passed ? 'nw-is-pass' : 'nw-is-fail'}`, text: report.passed ? t('fullwriter.uw.passed') : t('fullwriter.uw.notPassed') });
             head.createSpan({ cls: 'nw-unit-quality-level', text: report.grade });
 
             const grid = this.qualityEl.createDiv({ cls: 'nw-unit-quality-grid' });
@@ -676,12 +677,12 @@ export class UnitWriterController {
 
             if (report.issues.length > 0) {
                 const issues = this.qualityEl.createDiv({ cls: 'nw-unit-quality-issues' });
-                issues.createDiv({ cls: 'nw-unit-quality-issues-title', text: '主要问题' });
+                issues.createDiv({ cls: 'nw-unit-quality-issues-title', text: t('fullwriter.uw.mainIssues') });
                 for (const issue of report.issues.slice(0, 6)) {
                     issues.createDiv({ cls: 'nw-unit-quality-issue', text: `· ${issue}` });
                 }
             } else {
-                this.qualityEl.createDiv({ cls: 'nw-unit-quality-empty', text: '未发现明显问题' });
+                this.qualityEl.createDiv({ cls: 'nw-unit-quality-empty', text: t('fullwriter.uw.noIssues') });
             }
 
             const path = await saveUnitQualityReport(
@@ -691,16 +692,16 @@ export class UnitWriterController {
                 this.ctx.unitName,
                 report,
             );
-            this.qualityEl.createDiv({ cls: 'nw-unit-quality-saved', text: `已保存：${path}` });
-            this.setAiStatus(`${report.passed ? '质检通过' : '质检未通过'} · ${report.overallScore} 分`);
+            this.qualityEl.createDiv({ cls: 'nw-unit-quality-saved', text: t('fullwriter.uw.savedTo', { path }) });
+            this.setAiStatus(t('fullwriter.uw.qualityResult', { result: report.passed ? t('fullwriter.uw.passed') : t('fullwriter.uw.notPassed'), score: report.overallScore }));
         } catch (e) {
             const message = e instanceof Error ? e.message : String(e);
-            showErrorNotice(message, { title: '质量检查失败', timeout: 8000 });
+            showErrorNotice(message, { title: t('fullwriter.uw.qualityFailedTitle'), timeout: 8000 });
             if (!this.qualityEl) return;
             this.qualityEl.empty();
             this.qualityEl.createDiv({
                 cls: 'nw-unit-error-detail',
-                text: `质量检查失败：${message}`,
+                text: t('fullwriter.uw.qualityFailedBody', { msg: message }),
             });
         }
     }
@@ -710,14 +711,14 @@ export class UnitWriterController {
         if (!this.ctx) return;
         const body = this.getBody();
         if (countUnitWords(body) < 50) {
-            new Notice('正文太短，先写够 50 字再结算', 5000);
+            new Notice(t('fullwriter.uw.tooShortForSettle'), 5000);
             return;
         }
         const saved = await this.flushSave({ markWritten: true });
         if (!saved) return;
         const settlement = this.deps.plugin.engineRegistry.getOrNull(ENGINE_NAMES.SETTLEMENT_ENGINE);
         if (!settlement) {
-            new Notice('结算引擎未初始化，请重启插件后再试', 6000);
+            new Notice(t('fullwriter.uw.settleEngineNotInit'), 6000);
             return;
         }
         try {
@@ -730,18 +731,18 @@ export class UnitWriterController {
                 this.ctx.mode,
                 body,
             );
-            showSuccessNotice(`${this.ctx.unitName} 已结算（更新 ${result.updated} 个实体）`, { timeout: 5000 });
-            this.setAiStatus(`已结算：${result.reportPath}`);
+            showSuccessNotice(t('fullwriter.uw.settled', { unit: this.ctx.unitName, count: result.updated }), { timeout: 5000 });
+            this.setAiStatus(t('fullwriter.uw.settledStatus', { path: result.reportPath }));
             this.updateHeaderMeta();
         } catch (e) {
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '单元结算失败', timeout: 8000 });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('fullwriter.uw.settleFailedTitle'), timeout: 8000 });
         }
     }
 
     private openHumanizeReport(): void {
         const body = this.getBody();
         if (!body.trim()) {
-            new Notice('正文还是空的', 3000);
+            new Notice(t('fullwriter.uw.bodyStillEmpty'), 3000);
             return;
         }
         new HumanizeReportModal(this.deps.app, {
@@ -749,7 +750,7 @@ export class UnitWriterController {
             onApply: async (nextText: string) => {
                 this.setBody(nextText);
                 await this.flushSave();
-                showSuccessNotice('已应用自然段重排', { timeout: 3000 });
+                showSuccessNotice(t('fullwriter.uw.rearranged'), { timeout: 3000 });
             },
         }).open();
     }
@@ -757,12 +758,12 @@ export class UnitWriterController {
     private async completeUnit(): Promise<void> {
         if (!this.ctx) return;
         if (countUnitWords(this.getBody()) < 50) {
-            new Notice('正文还太短，先写够 50 字再标记完成', 5000);
+            new Notice(t('fullwriter.uw.tooShortToComplete'), 5000);
             return;
         }
         const saved = await this.flushSave({ markWritten: true });
         if (!saved) return;
-        showSuccessNotice(`${this.ctx.unitName} 已标记为已写`, { timeout: 4000 });
+        showSuccessNotice(t('fullwriter.uw.markedWritten', { unit: this.ctx.unitName }), { timeout: 4000 });
 
         const current = this.ctx.unitNumber;
         const next = this.units.find(unit => unit.number > current);
