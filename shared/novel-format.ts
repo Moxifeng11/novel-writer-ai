@@ -332,6 +332,51 @@ export function countParagraphs(text: string): number {
 }
 
 /**
+ * 把契约里的实际字符转成**可见形式**，供界面展示给用户核对。
+ *
+ * 为什么需要（i18n 跨层数据⑧）：DSH 复核 ④ 时指出——契约字段不翻译是对的，
+ * 但 en 用户看到「Blank line between paragraphs」时，**没法确认自己文件里到底是什么**。
+ * 解法不是翻译值（那会破坏落盘契约），而是把**实际字符**也显示出来：
+ * 让用户在界面上直接对上文件里的样子。
+ *
+ * 映射刻意选 ASCII/常见符号，避免依赖特定字体：
+ * - `\n\n`   → `↵↵`（两次回车）
+ * - `\n`     → `↵`（一次回车）
+ * - `\u3000` → `▪`（全角空格，占位可见）
+ * - `\t`     → `⇥`（Tab）
+ * - 其他/空  → `∅`（无）
+ *
+ * @param contract - 正文契约
+ * @returns 分隔与缩进的可见形式
+ */
+export function describeContractVisible(contract: BodyFormatContract = DEFAULT_BODY_FORMAT): {
+  separatorVisible: string;
+  indentVisible: string;
+} {
+  // 用 string 变量承接：BodyFormatContract 的字段是字面量联合类型，
+  // 穷举分支后 TS 会把剩余分支收窄成 never，导致兜底分支的 .replace 报错。
+  const sep: string = contract.separator;
+  const ind: string = contract.indent;
+  const separatorVisible = sep === '\n\n'
+    ? '↵↵'
+    : sep === '\n'
+      ? '↵'
+      : sep
+        ? `⟨${sep.replace(/\n/g, '↵')}⟩`
+        : '∅';
+  const indentVisible = ind === '\u3000\u3000'
+    ? '▪▪'
+    : ind === '\u3000'
+      ? '▪'
+      : ind === '\t'
+        ? '⇥'
+        : ind
+          ? `⟨${ind.replace(/\u3000/g, '▪').replace(/\t/g, '⇥')}⟩`
+          : '∅';
+  return { separatorVisible, indentVisible };
+}
+
+/**
  * 契约的简短描述（状态栏/ Notice 用）
  *
  * 展示文案按语言求值（i18n 跨层数据④）；契约字段本身（separator/indent）是**结构数据**，
@@ -346,20 +391,44 @@ export function describeContractShort(contract: BodyFormatContract = DEFAULT_BOD
 }
 
 /**
- * 契约描述的两个展示分量（已按当前语言求值 + 中文兜底）。
+ * 带可见字符的契约描述（供 tooltip / 设置页展示）。
  *
- * 供需要拆分展示或做单测断言的调用方使用；`describeContractShort()` 在此之上拼串。
+ * 形如「空行分段（↵↵）· 首行空两格（▪▪）」——语义标签按语言求值，括号里是**实际字符**，
+ * 用户因此能在任何语言下核对「我的文件里到底长什么样」。
  *
  * @param contract - 正文契约
- * @returns 分隔方式与缩进方式（key / fallback 同时给出，便于缺键断言）
+ * @returns 带可见字符的描述
+ */
+export function describeContractWithVisible(contract: BodyFormatContract = DEFAULT_BODY_FORMAT): string {
+  const parts = describeContractParts(contract);
+  const visible = describeContractVisible(contract);
+  return `${parts.separator}（${visible.separatorVisible}） · ${parts.indent}（${visible.indentVisible}）`;
+}
+
+/**
+ * 契约描述的三个展示分量（已按当前语言求值 + 中文兜底 + 可见形式）。
+ *
+ * 供需要拆分展示或做单测断言的调用方使用；`describeContractShort()` / 
+ * `describeContractWithVisible()` 在此之上拼串。
+ *
+ * **三件套（i18n 跨层数据⑧）**：每个分量给三样东西——
+ * ① `*Key`：资源键（缺键断言用）；
+ * ② `*Fallback`：中文兜底（资源缺失时的兜底值，绝不进落盘）；
+ * ③ `*`：按当前语言求值的语义标签；
+ * ④ `*Visible`：**实际字符的可见形式**（用户核对文件用，与语言无关）。
+ *
+ * @param contract - 正文契约
+ * @returns 分隔方式与缩进方式（key / fallback / 展示值 / 可见形式）
  */
 export function describeContractParts(contract: BodyFormatContract = DEFAULT_BODY_FORMAT): {
   separatorKey: string;
   separatorFallback: string;
   separator: string;
+  separatorVisible: string;
   indentKey: string;
   indentFallback: string;
   indent: string;
+  indentVisible: string;
 } {
   const separatorKey = contract.separator === '\n\n' ? 'novelFormat.separator.blankLine' : 'novelFormat.separator.singleLine';
   const separatorFallback = contract.separator === '\n\n' ? '空行分段' : '单换行分段';
@@ -373,12 +442,15 @@ export function describeContractParts(contract: BodyFormatContract = DEFAULT_BOD
     : contract.indent === '\t'
       ? '首行 Tab'
       : '无缩进';
+  const { separatorVisible, indentVisible } = describeContractVisible(contract);
   return {
     separatorKey,
     separatorFallback,
     separator: hasMessage(separatorKey) ? t(separatorKey) : separatorFallback,
+    separatorVisible,
     indentKey,
     indentFallback,
     indent: hasMessage(indentKey) ? t(indentKey) : indentFallback,
+    indentVisible,
   };
 }

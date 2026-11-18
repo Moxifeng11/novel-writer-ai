@@ -7,7 +7,7 @@
  */
 import { SYSTEM_FONT_PRESETS } from '@/services/font-manager';
 import { t } from '@/i18n';
-import { countParagraphs, describeContractShort } from '@/shared/novel-format';
+import { countParagraphs, describeContractShort, describeContractWithVisible } from '@/shared/novel-format';
 import type { BodyFormatContract } from '@/shared/body-format';
 import { buildMarkdownToolbar, type MarkdownToolbarHost } from './markdown-toolbar';
 import { createPanelResizer } from '@/ui/panel-resizer';
@@ -247,10 +247,13 @@ export function resolveLayoutState(settings: LayoutSettings): LayoutState {
 export function formatMarkdownStatus(
     text: string,
     contract: BodyFormatContract,
-): { mode: string; contract: string; words: string; paragraphs: string } {
+): { mode: string; contract: string; contractTitle: string; words: string; paragraphs: string } {
     return {
         mode: 'Markdown',
+        // 状态栏只放语义标签；完整版（含可见实际字符）进 tooltip ——
+        // en 用户靠它核对「我文件里到底是 ↵↵ 还是 ↵」（i18n 跨层数据⑧）
         contract: t('cowrite.layout.formatLabel', { detail: describeContractShort(contract) }),
+        contractTitle: t('cowrite.layout.formatTitle', { detail: describeContractWithVisible(contract) }),
         words: t('cowrite.layout.wordsLabel', { count: text.replace(/\s+/g, '').length }),
         paragraphs: t('cowrite.layout.paragraphsLabel', { count: countParagraphs(text) }),
     };
@@ -432,6 +435,7 @@ export function refreshMarkdownStatus(
     const content = formatMarkdownStatus(text, contract);
     handles.modeEl.setText(content.mode);
     handles.contractEl.setText(content.contract);
+    handles.contractEl.setAttribute('title', content.contractTitle);
     handles.wordsEl.setText(content.words);
     handles.paragraphsEl.setText(content.paragraphs);
 }

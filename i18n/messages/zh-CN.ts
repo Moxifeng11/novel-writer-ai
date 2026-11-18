@@ -3011,6 +3011,7 @@ export const zhCN: MessageTree = {
             fontDefault: '默认（跟随主题）',
             fontManage: '⚙️ 管理自定义字体…',
             formatLabel: '格式：{detail}',
+            formatTitle: '格式：{detail}（括号内为文件中的实际字符）',
             wordsLabel: '字数 {count}',
             paragraphsLabel: '段落 {count}',
             title: '协同写作',

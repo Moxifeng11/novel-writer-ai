@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146809 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19508 | 296 | 203 | 69% |
-| `shared/` | 258 | 51991 | 2188 | 1710 | 78% |
+| `shared/` | 258 | 52063 | 2190 | 1712 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1596 | 88 | 58 | 66% |
-| `ui/` | 307 | 115282 | 1185 | 933 | 79% |
+| `ui/` | 307 | 115286 | 1185 | 933 | 79% |
 
 ## 文件清单
 
@@ -580,7 +580,7 @@
 | `shared/model-source.ts` | 43 | 3 | 1 |
 | `shared/multi-layer-cache.ts` | 556 | 6 | 6 |
 | `shared/narrative-number.ts` | 235 | 8 | 6 |
-| `shared/novel-format.ts` | 385 | 13 | 13 |
+| `shared/novel-format.ts` | 457 | 15 | 15 |
 | `shared/obsidian-internal-bridge.ts` | 86 | 3 | 3 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
@@ -757,7 +757,7 @@
 | `ui/co-writing/kb-panel.ts` | 386 | 12 | 11 |
 | `ui/co-writing/kb-reference-card.ts` | 174 | 2 | 2 |
 | `ui/co-writing/kb-reference-config.ts` | 206 | 10 | 7 |
-| `ui/co-writing/layout-assembly.ts` | 488 | 22 | 13 |
+| `ui/co-writing/layout-assembly.ts` | 492 | 22 | 13 |
 | `ui/co-writing/markdown-highlight.ts` | 258 | 9 | 7 |
 | `ui/co-writing/markdown-shortcut.ts` | 99 | 2 | 1 |
 | `ui/co-writing/markdown-toolbar.ts` | 98 | 2 | 1 |

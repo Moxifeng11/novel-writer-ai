@@ -3008,6 +3008,7 @@ export const enUS: MessageTree = {
             fontDefault: 'Default (follow theme)',
             fontManage: '⚙️ Manage custom fonts…',
             formatLabel: 'Format: {detail}',
+            formatTitle: 'Format: {detail} (characters in parentheses are the actual file content)',
             wordsLabel: 'Words {count}',
             paragraphsLabel: 'Paragraphs {count}',
             title: 'Co-writing',

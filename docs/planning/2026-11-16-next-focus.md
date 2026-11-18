@@ -2706,3 +2706,49 @@ DSH 复核时去查了代码：`formatLinkStatusForAgent()` 的两个消费点
 - preflight EXIT=0（985 文件 / 10326 通过 + 3 跳过）。
 
 **下一轮**：ZC-20261120-08（novel-format 展示带实际字符，按 DSH 的「显示语义标签 + 可见实际符号」）。
+
+## 第九十五轮：i18n 跨层数据⑧ —— 契约描述带上可见实际字符（2026-11-19，ZCode · ZC-20261120-08）
+
+**DSH 补的一手，补得对**
+
+④ 我拒绝翻译 `separator`/`indent`（落盘契约），但 DSH 指出我漏了用户的处境：
+en 用户看到「Blank-line paragraphing」时，**没法确认自己文件里到底是什么**。
+他的解法比我的更对——不是翻译值（那会破坏契约），而是**把实际字符也显示出来**。
+
+**做法**
+
+`describeContractVisible()`：把实际字符转成可见符号
+- `\n\n` → `↵↵`、`\n` → `↵`
+- `\u3000\u3000` → `▪▪`、`\t` → `⇥`、空 → `∅`
+
+`describeContractParts()` 从三件套扩成**四件套**：key / fallback / 语义标签 / visible。
+新增 `describeContractWithVisible()` 拼成「空行分段（↵↵） · 首行空两格（▪▪）」。
+
+UI 接线：状态栏空间有限，仍显示短形式；完整版进 `title` tooltip。
+
+**实机验收（这一步最能说明设计是对的）**
+
+- zh：`格式：单换行分段（↵） · 首行空两格（▪▪）（括号内为文件中的实际字符）`
+- en：`Format: Single-newline paragraphing（↵） · Two-character first-line indent（▪▪） (characters in parentheses are the actual file content)`
+
+**括号里的 `↵` 和 `▪▪` 两种语言完全相同**——用户不需要懂界面语言，只要看得见符号，
+就能对上自己文件里的样子。这正是「不翻译数据 + 让数据可见」的效果，
+比「翻译一个值然后告诉用户它对应什么」直接得多。
+
+顺带：en 页 CJK 从 88 降到 68。
+
+**踩到 TS 坑**
+
+`BodyFormatContract.indent` 是字面量联合类型（`'\u3000\u3000' | '\t' | ''`）。
+我写了穷举 + 兜底分支，但穷举完之后剩余分支被收窄成 `never`，
+兜底里的 `.replace()` 直接报「Property 'replace' does not exist on type 'never'」。
+解法：`const ind: string = contract.indent` 用宽类型变量跳出收窄。
+
+**验收**
+- 新增 3 例（三件套齐备且 visible 与语言无关 / 带可见字符的完整串 / 原契约对象未被触碰），7 例全绿。
+- shared+ui+engine+integration **845 文件 / 9119 例**全绿。
+- `check:i18n` zh/en 各 **3311**（+1 formatTitle）。
+- `check:bundle` main.js → **6018781**（**−1586**）——7 删双份的收益大于本轮新增，基线已收紧。
+- preflight EXIT=0（985 文件 / 10329 通过 + 3 跳过）。
+
+**下一轮**：ZC-20261120-10（11 个旧弹窗退役清单，纯文档）。
