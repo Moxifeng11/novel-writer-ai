@@ -156,7 +156,8 @@
 - 第二期第三片（2026-11-18）：模型设置页 `ui/settings/api-section.ts` 约 214 处文案迁 `settings.api.*`（213 键），并新增顶层 `secret.*`（10 键）把 `shared/secret-display.ts` 的占位/悬停/落盘状态文案一并英文化（`SECRET_LOCKED_PLACEHOLDER` 常量改为函数 `secretLockedPlaceholder()`）；实机 zh/en 截图见 `D:\nw-dev-vault\_visual-i18n\api-{zh,en}.png`。仍写死中文的只有跨模块共用常量（思考等级 `THINKING_LEVELS`、预算档位 `BUDGET_TIERS`）与主题名。
 - 第二期第四片（2026-11-18）：通用设置六分区 `ui/settings/general-sections.ts`（221 个含中文行 / 2349 字）迁 `settings.general.*` 178 键，`cancel`×3 与性能报告 `close` 复用 `common.*`；zh/en 资源各 621 条；棘轮收紧到 267 文件 / 11390 条；实机五页中英截图见 `D:\nw-dev-vault\_visual-i18n5\`（en 下 CJK 仅剩真实 vault 路径与用户已保存的中文关键词）。同片顺手修好规则状态条「绿底绿字」不可读（改为中性底 + 左侧语义色描边）。
 - 第二期第五片（2026-11-18）：写作设置五分区 `ui/settings/writing-sections.ts`（175 个含中文行 / 2239 字）迁 `settings.writing.*` 147 键，覆盖 CoWrite / Writing / Template / ProjectLibrary / Layout；面板尺寸行数据由 `label/desc` 改 `labelKey/descKey`（渲染时求值）；zh/en 资源各 768 条；棘轮收紧到 266 文件 / 11234 条；实机五页中英截图见 `D:\nw-dev-vault\_visual-i18n5\{cowrite,writing,template,projects,layout}-{zh-CN,en-US}.png`（en 下仅 template 页 CJK 276，属提示词库数据与 `ui/prompt-manager-settings.ts` 未迁文案）。
-- 后续：第二期余下（`ui/settings/knowledge-section.ts` 1075 字、`ui/prompt-manager-settings.ts` 192 字等其余分区、写作主流程 Notice、外观页的统计/桌宠块），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
+- 第二期第六片（2026-11-18）：写作知识库分区 `ui/settings/knowledge-section.ts`（1075 字）迁 `settings.knowledge.*` 87 键，覆盖工具栏四按钮、搜索/三重筛选、两种空态、卡片字数额、删除确认与向量增强整块；同时把设置页与设置弹窗两份异步刷新条统一到 `settings.shell.asyncStale/asyncRefresh`（弹窗的「未知页签」也改键）；zh/en 资源各 853 条；棘轮收紧到 265 文件 / 11126 条；实机截图见 `D:\nw-dev-vault\_visual-i18n6\knowledge-{zh-CN,en-US}.png`（en 下 CJK 11 全为书籍数据：书名/作者/样本书名）。
+- 后续：第二期余下（`ui/prompt-manager-settings.ts` 192 字、其余设置分区、写作主流程 Notice、外观页的统计/桌宠块），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 
 ---
 
@@ -164,6 +165,6 @@
 
 1 → 2 → 3 → 4 → 5 →（6 可选）→ 7。
 
-进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第一/二/三/四/五片（命令面板 / 外观设置页 / 模型设置页 / 通用设置六分区 / 写作设置五分区）已交付（2026-11-18）；下一个候选是 ⑦ 第二期余下（knowledge-section 1075 字起，及其余设置分区/写作主流程 Notice）。
+进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第一/二/三/四/五/六片（命令面板 / 外观设置页 / 模型设置页 / 通用设置六分区 / 写作设置五分区 / 写作知识库分区）已交付（2026-11-18）；下一个候选是 ⑦ 第二期余下（`ui/prompt-manager-settings.ts` 192 字起，及其余设置分区/写作主流程 Notice）。
 
 理由：1 是修「假成功」缺陷；2 是把已交付引擎变成写作时可见的价值；3 是投稿刚需且不依赖 AI；4/5 是低成本体验补洞；6/7 视需要。

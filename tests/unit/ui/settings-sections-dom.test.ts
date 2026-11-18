@@ -22,6 +22,7 @@ import {
     TemplateSection,
     WritingSection,
 } from '../../../ui/settings/writing-sections';
+import { KnowledgeSection } from '../../../ui/settings/knowledge-section';
 import { setLocale } from '../../../i18n';
 import type { SettingsSectionHost } from '../../../ui/settings/section-base';
 
@@ -215,5 +216,37 @@ describe('TemplateSection / AppearanceSection / ProjectLibrarySection / LayoutSe
         expect(layout.allText()).toContain('工作台布局');
         expect(layout.allText()).toContain('启动时恢复上次工作台');
         expect(layout.allText()).toContain('面板尺寸');
+    });
+});
+
+describe('KnowledgeSection（写作知识库）', () => {
+    it('英文界面下分区标题、按钮与刷新条全部走 i18n', async () => {
+        const host = makeHost();
+        setLocale('en-US');
+        try {
+            const container = new FakeEl('div');
+            await new KnowledgeSection(host).render(container as unknown as HTMLElement);
+            const text = container.allText();
+            expect(text).toContain('Writing knowledge base');
+            expect(text).toContain('Batch import');
+            expect(text).toContain('Rebuild index');
+            expect(text).toContain('Vector enhancement');
+            expect(text).toContain('Knowledge base path');
+            expect(text).not.toContain('settings.knowledge.');
+            expect(text).not.toContain('写作知识库');
+        } finally {
+            setLocale('zh-CN');
+        }
+    });
+
+    it('中文界面下保持原文案', async () => {
+        const host = makeHost();
+        setLocale('zh-CN');
+        const container = new FakeEl('div');
+        await new KnowledgeSection(host).render(container as unknown as HTMLElement);
+        const text = container.allText();
+        expect(text).toContain('写作知识库');
+        expect(text).toContain('📥 批量导入');
+        expect(text).toContain('🧠 向量增强设置');
     });
 });

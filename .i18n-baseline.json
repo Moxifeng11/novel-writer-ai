@@ -152,7 +152,7 @@
     "ui/mcp-manager-modal.ts": 44,
     "ui/mcp-server-form-modal.ts": 44,
     "ui/memory-preview.ts": 16,
-    "ui/mini-settings-modal.ts": 8,
+    "ui/mini-settings-modal.ts": 5,
     "ui/mode-document-modal.ts": 32,
     "ui/model-editor-modal.ts": 20,
     "ui/model-picker-modal.ts": 12,
@@ -200,13 +200,12 @@
     "ui/services/human-sample-loader.ts": 5,
     "ui/services/humanness-scorer.ts": 2,
     "ui/services/project-create-service.ts": 57,
-    "ui/settings-tab.ts": 2,
     "ui/settings/agent-section.ts": 6,
     "ui/settings/api-section.ts": 1,
     "ui/settings/deconstruction-section.ts": 59,
     "ui/settings/fingerprint-section.ts": 49,
     "ui/settings/foreshadow-section.ts": 51,
-    "ui/settings/knowledge-section.ts": 107,
+    "ui/settings/knowledge-section.ts": 4,
     "ui/settings/mcp-section.ts": 14,
     "ui/settings/mode-section.ts": 18,
     "ui/settings/settings-search.ts": 122,
@@ -267,7 +266,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 11234,
+  "total": 11126,
   "updatedAt": "2026-11-18",
-  "note": "第62轮 i18n 第二期第五片：writing-sections.ts（175 行 / 2239 字、147 键）迁 settings.writing，棘轮 267/11390 → 266/11234"
+  "note": "i18n 第二期第六片：knowledge-section 迁移完成（87 键），文件数/条数收紧"
 }

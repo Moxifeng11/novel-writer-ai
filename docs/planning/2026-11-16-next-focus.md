@@ -1779,3 +1779,33 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 **下一轮候选**：`ui/settings/knowledge-section.ts`（1075 字）→ `ui/prompt-manager-settings.ts`（192）→
 `settings-search.ts`（1011），或写作主流程按钮/`Notice`。
 
+## 第六十三轮：i18n 第二期第六片 —— 写作知识库分区（2026-11-18）
+
+用户 m14049 指定顺序的第三块：`ui/settings/knowledge-section.ts`（1075 中文字）。
+
+**改动**
+- 知识库分区全部迁 `settings.knowledge.*` **87 键**：标题与引导语、路径行、工具栏四按钮
+  （批量导入/监控面板/重建索引/重向量化）及其 `title` 提示、搜索占位、状态/题材/技巧三个筛选、
+  两种空态、`共 {count} 本书籍`、`{n}万字`/`{n}字`、重拆/删除、删除确认三行与 `已删除「{name}」`、
+  向量增强整块（开关、阈值含 `{value}`、四家提供商端点/模型/密钥、回退策略三项、
+  连接检测四态 + 成功/失败通知）。`'取消'` 复用 `common.cancel`。
+- **顺带修掉两个宿主的复制文案**：异步分区刷新条「数据为加载时快照，可能已过期 / 🔄 刷新」
+  在 `ui/settings-tab.ts:334-337` 与 `ui/mini-settings-modal.ts:177-180` 各写死一份，
+  改走 `settings.shell.asyncStale`/`asyncRefresh`；弹窗里裸中文 `未知设置页签：${tabId}`
+  （设置页早已迁 `unknownTab`）一并改键。
+- 测试：`tests/unit/ui/settings-sections-dom.test.ts` 新增 `KnowledgeSection` 两例（en 全英文/无键名回退、
+  zh 保持原文案），靠桩宿主 `engineRegistry.get` 恒 null 走空态分支；该文件 13 例全绿，
+  `npx vitest run tests/unit/ui` 212 文件 / 1956 例全绿。
+- 门禁联动：`check:view-tests` 基线收紧到 82 个文件（knowledge-section 已有静态 import）。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；`npm run lint` 0 error / 1068 warning。
+- `check:i18n`：zh 853 / en 853、0 无法解析键、动态键 4 处、棘轮 **265 文件 / 11126 条**。
+- 实机 `D:\nw-dev-vault\_visual-i18n6\knowledge-{zh-CN,en-US}.png`（930×2970，未入库）：
+  en 下 headings = `📖 Settings / 📚 Writing knowledge base / 🧠 Vector enhancement`，
+  labels/按钮全英文、刷新条 `Loaded from a snapshot — may be out of date / 🔄 Refresh`；
+  **CJK 11 全是书籍数据**（书名/作者/样本书名）。zh 页文案不变。
+- 全量 `npm run preflight` **EXIT=0**（971 文件 / 10261 通过 + 3 跳过；活跃文档 20 个）；`check:bundle` main.js 5747257 → **5755919**（+8662）、styles.css 799217 不变；`check:inline-styles` 525 站点。首跑 EXIT=1 卡在 `check:view-tests`（knowledge-section 已有静态 import 但基线未收紧），`--update-baseline` 后复跑全绿。
+
+**下一轮候选**：`ui/prompt-manager-settings.ts`（192 字，模板页里的提示词库）→ `settings-search.ts`（1011）→
+`deconstruction-section.ts`（758）/ `fingerprint-section.ts`（569）等其余分区 → 写作主流程 Notice。

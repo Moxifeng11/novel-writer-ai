@@ -11,7 +11,7 @@
 | `shared/` | 258 | 51739 | 2177 | 1699 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 114963 | 1176 | 926 | 79% |
+| `ui/` | 306 | 114967 | 1176 | 926 | 79% |
 
 ## 文件清单
 
@@ -892,7 +892,7 @@
 | `ui/mcp-server-form-modal.ts` | 322 | 3 | 3 |
 | `ui/memory-preview.ts` | 158 | 2 | 1 |
 | `ui/metrics-format.ts` | 103 | 6 | 4 |
-| `ui/mini-settings-modal.ts` | 185 | 1 | 0 |
+| `ui/mini-settings-modal.ts` | 186 | 1 | 0 |
 | `ui/mode-document-modal.ts` | 201 | 2 | 2 |
 | `ui/model-editor-modal.ts` | 150 | 2 | 1 |
 | `ui/model-picker-modal.ts` | 290 | 4 | 4 |
@@ -950,7 +950,7 @@
 | `ui/settings/fingerprint-section.ts` | 441 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 293 | 1 | 1 |
 | `ui/settings/general-sections.ts` | 1265 | 5 | 5 |
-| `ui/settings/knowledge-section.ts` | 789 | 1 | 1 |
+| `ui/settings/knowledge-section.ts` | 792 | 1 | 1 |
 | `ui/settings/locale-setting.ts` | 55 | 2 | 2 |
 | `ui/settings/mcp-section.ts` | 76 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |

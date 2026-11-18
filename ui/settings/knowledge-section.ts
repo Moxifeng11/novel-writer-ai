@@ -22,6 +22,7 @@ import { rebuildKnowledgeIndexWithConfirm } from '@/ui/knowledge-rebuild-action'
 import { rebuildAllVectorsWithConfirm } from '@/ui/vector-rebuild-action';
 import { SettingsSection } from './section-base';
 import { describeSecretForInput } from '@/shared/secret-display';
+import { t, getLocale } from '@/i18n';
 
 const log = createLogger('SettingsTab');
 
@@ -48,10 +49,10 @@ export class KnowledgeSection extends SettingsSection {
      */
     async render(container: HTMLElement): Promise<void> {
         const section = container.createEl('section');
-        section.createEl('h3', { text: '📚 写作知识库' });
+        section.createEl('h3', { text: t('settings.knowledge.title') });
 
         section.createEl('p', {
-            text: '管理你的写作知识库，导入小说进行深度拆解分析，提取写作技巧、结构、人设等宝贵经验。',
+            text: t('settings.knowledge.lead'),
             cls: 'setting-item-description'
         });
 
@@ -60,7 +61,7 @@ export class KnowledgeSection extends SettingsSection {
         if (this.knowledgeLoading) {
             section.createDiv({
                 cls: 'nw-st-kb-loading',
-                text: '加载中...'
+                text: t('settings.knowledge.loading')
             });
             return;
         }
@@ -78,62 +79,62 @@ export class KnowledgeSection extends SettingsSection {
         const toolbar = section.createDiv({ cls: 'nw-st-kb-toolbar' });
 
         new Setting(toolbar)
-            .setName('知识库路径')
-            .setDesc('知识库文件在 Vault 中的存储位置')
+            .setName(t('settings.knowledge.pathName'))
+            .setDesc(t('settings.knowledge.pathDesc'))
             .addText(text => text
                 .setValue('写作知识库/')
                 .setDisabled(true)
             )
             .addButton(btn => btn
-                .setButtonText('打开')
+                .setButtonText(t('settings.knowledge.openFolder'))
                 .onClick(() => {
                     const dirPath = kbKnowledgeBaseDir();
                     const file = this.app.vault.getAbstractFileByPath(dirPath);
                     if (file) {
                         void openKnowledgeFolder(this.app, dirPath);
                     } else {
-                        showWarningNotice('知识库目录不存在，请先导入书籍');
+                        showWarningNotice(t('settings.knowledge.pathMissing'));
                     }
                 }));
 
         const actionRow = toolbar.createDiv({ cls: 'nw-st-kb-actions' });
 
         const importBtn = actionRow.createEl('button', {
-            text: '📥 批量导入',
+            text: t('settings.knowledge.importBtn'),
             cls: 'nw-st-kb-btn nw-st-kb-btn--primary nw-st-kb-btn--fw500',
             attr: {
                 type: 'button',
-                title: '从文件夹批量导入书籍'
+                title: t('settings.knowledge.importTitle')
             }
         });
         importBtn.addEventListener('click', () => this.showBatchImportModal());
 
         const monitorBtn = actionRow.createEl('button', {
-            text: '📊 监控面板',
+            text: t('settings.knowledge.monitorBtn'),
             cls: 'nw-st-kb-btn',
             attr: {
                 type: 'button',
-                title: '查看拆解任务监控面板'
+                title: t('settings.knowledge.monitorTitle')
             }
         });
         monitorBtn.addEventListener('click', () => this.showKnowledgeMonitorModal());
 
         const rebuildBtn = actionRow.createEl('button', {
-            text: '🔄 重建索引',
+            text: t('settings.knowledge.rebuildBtn'),
             cls: 'nw-st-kb-btn',
             attr: {
                 type: 'button',
-                title: '重建向量索引（重新扫描所有向量文件）'
+                title: t('settings.knowledge.rebuildTitle')
             }
         });
         rebuildBtn.addEventListener('click', () => rebuildKnowledgeIndexWithConfirm(this.app, this.plugin));
 
         const revectorizeBtn = actionRow.createEl('button', {
-            text: '🧠 重向量化',
+            text: t('settings.knowledge.revectorizeBtn'),
             cls: 'nw-st-kb-btn',
             attr: {
                 type: 'button',
-                title: '按当前向量提供商重新计算知识库与指纹向量（不调用 AI、不重新拆解）'
+                title: t('settings.knowledge.revectorizeTitle')
             }
         });
         revectorizeBtn.addEventListener('click', () => rebuildAllVectorsWithConfirm(this.app, this.plugin));
@@ -144,11 +145,13 @@ export class KnowledgeSection extends SettingsSection {
 
         const searchRow = filterBar.createDiv({ cls: 'nw-st-kb-search-row' });
 
+        // 选择器与 placeholder 必须用同一个值，否则重建后无法把焦点放回搜索框
+        const searchPlaceholder = t('settings.knowledge.searchPlaceholder');
         const searchInput = searchRow.createEl('input', {
             cls: 'nw-st-kb-search-input',
             attr: {
                 type: 'text',
-                placeholder: '🔍 搜索书名/作者/标签...',
+                placeholder: searchPlaceholder,
                 value: this.knowledgeSearchKeyword
             }
         });
@@ -161,7 +164,7 @@ export class KnowledgeSection extends SettingsSection {
                 this.knowledgeSearchTimer = null;
                 const caret = this.knowledgeSearchKeyword.length;
                 this.refresh();
-                const next = document.querySelector<HTMLInputElement>('input[placeholder="🔍 搜索书名/作者/标签..."]');
+                const next = document.querySelector<HTMLInputElement>(`input[placeholder="${searchPlaceholder}"]`);
                 if (next) {
                     next.focus();
                     next.setSelectionRange(caret, caret);
@@ -173,11 +176,11 @@ export class KnowledgeSection extends SettingsSection {
             cls: 'nw-st-kb-status-select'
         });
         const statusOptions: { value: string; label: string }[] = [
-            { value: 'all', label: '全部状态' },
-            { value: 'pending', label: '待拆解' },
-            { value: 'processing', label: '拆解中' },
-            { value: 'completed', label: '已完成' },
-            { value: 'failed', label: '失败' },
+            { value: 'all', label: t('settings.knowledge.statusAll') },
+            { value: 'pending', label: t('settings.knowledge.statusPending') },
+            { value: 'processing', label: t('settings.knowledge.statusProcessing') },
+            { value: 'completed', label: t('settings.knowledge.statusCompleted') },
+            { value: 'failed', label: t('settings.knowledge.statusFailed') },
         ];
         statusOptions.forEach(opt => {
             const option = statusSelect.createEl('option', { text: opt.label, attr: { value: opt.value } });
@@ -191,10 +194,10 @@ export class KnowledgeSection extends SettingsSection {
         const tagFilterRow = filterBar.createDiv({ cls: 'nw-st-kb-tag-row' });
 
         const themeFilterDiv = tagFilterRow.createDiv({ cls: 'nw-st-kb-tag-filter' });
-        themeFilterDiv.createEl('span', { text: '📖 题材：全部', cls: 'nw-st-kb-tag-label' });
+        themeFilterDiv.createEl('span', { text: t('settings.knowledge.themeFilter'), cls: 'nw-st-kb-tag-label' });
 
         const techniqueFilterDiv = tagFilterRow.createDiv({ cls: 'nw-st-kb-tag-filter' });
-        techniqueFilterDiv.createEl('span', { text: '✍️ 技巧：全部', cls: 'nw-st-kb-tag-label' });
+        techniqueFilterDiv.createEl('span', { text: t('settings.knowledge.techniqueFilter'), cls: 'nw-st-kb-tag-label' });
 
         const filteredBooks = this.filterKnowledgeBooks();
 
@@ -208,13 +211,13 @@ export class KnowledgeSection extends SettingsSection {
             });
             emptyState.createEl('div', {
                 text: this.knowledgeBooks.length === 0
-                    ? '知识库暂无书籍，点击上方「批量导入」开始添加'
-                    : '没有符合筛选条件的书籍',
+                    ? t('settings.knowledge.emptyNone')
+                    : t('settings.knowledge.emptyFiltered'),
                 cls: 'nw-st-kb-empty-text'
             });
             if (this.knowledgeBooks.length === 0) {
                 const emptyImportBtn = emptyState.createEl('button', {
-                    text: '📥 批量导入书籍',
+                    text: t('settings.knowledge.emptyImportBtn'),
                     cls: 'nw-st-kb-btn nw-st-kb-btn--primary nw-st-kb-btn--lg',
                     attr: {
                         type: 'button'
@@ -227,7 +230,7 @@ export class KnowledgeSection extends SettingsSection {
 
         const countRow = section.createDiv({ cls: 'nw-status-row' });
         countRow.createEl('span', {
-            text: `共 ${filteredBooks.length} 本书籍`,
+            text: t('settings.knowledge.count', { count: filteredBooks.length }),
             cls: 'nw-st-kb-count'
         });
 
@@ -277,11 +280,11 @@ export class KnowledgeSection extends SettingsSection {
         const actionsRow = card.createDiv({ cls: 'nw-kb-card-actions nw-st-kb-card-actions' });
 
         const retryBtn = actionsRow.createEl('button', {
-            text: '🔄 重拆',
+            text: t('settings.knowledge.retryBtn'),
             cls: 'nw-st-kb-mini-btn',
             attr: {
                 type: 'button',
-                title: '重新拆解'
+                title: t('settings.knowledge.retryTitle')
             }
         });
         retryBtn.addEventListener('click', (e) => {
@@ -297,21 +300,21 @@ export class KnowledgeSection extends SettingsSection {
         });
 
         const deleteBtn = actionsRow.createEl('button', {
-            text: '🗑 删除',
+            text: t('settings.knowledge.deleteBtn'),
             cls: 'nw-st-kb-mini-btn nw-st-kb-mini-btn--danger',
             attr: {
                 type: 'button',
-                title: '删除'
+                title: t('settings.knowledge.deleteTitle')
             }
         });
         deleteBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const confirmed = await OperationConfirmModal.confirm(this.app, {
-                title: '删除书籍',
-                description: `确定要删除《${book.name}》吗？`,
-                warning: '此操作不可恢复',
-                confirmText: '确认删除',
-                cancelText: '取消',
+                title: t('settings.knowledge.deleteConfirmTitle'),
+                description: t('settings.knowledge.deleteConfirmDesc', { name: book.name }),
+                warning: t('settings.knowledge.deleteConfirmWarning'),
+                confirmText: t('settings.knowledge.deleteConfirmOk'),
+                cancelText: t('common.cancel'),
             });
             if (!confirmed) return;
             if (this.knowledgeBaseManager) {
@@ -320,7 +323,7 @@ export class KnowledgeSection extends SettingsSection {
                 await this.knowledgeBaseManager.deleteBook(book.id);
                 await this.loadKnowledgeBooks();
                 this.refresh();
-                showSuccessNotice(`已删除「${book.name}」`);
+                showSuccessNotice(t('settings.knowledge.deletedNotice', { name: book.name }));
             }
         });
 
@@ -368,17 +371,17 @@ export class KnowledgeSection extends SettingsSection {
             metaRow.createEl('span', { text: `📝 ${this.formatKbWordCount(book.wordCount)}` });
         }
 
-        const dateStr = new Date(book.updatedAt).toLocaleDateString('zh-CN');
+        const dateStr = new Date(book.updatedAt).toLocaleDateString(getLocale() === 'en-US' ? 'en-US' : 'zh-CN');
         metaRow.createEl('span', { text: `🕐 ${dateStr}` });
     }
 
     private getStatusBadge(status: string): HTMLElement {
         // 状态徽标：配色与底色全部交给 nw-st-kb-badge--<状态> 修饰类（Slice U）
         const statusMap: Record<string, { label: string; tone: string }> = {
-            pending: { label: '待拆解', tone: 'pending' },
-            processing: { label: '拆解中', tone: 'processing' },
-            completed: { label: '已完成', tone: 'completed' },
-            failed: { label: '失败', tone: 'failed' },
+            pending: { label: t('settings.knowledge.statusPending'), tone: 'pending' },
+            processing: { label: t('settings.knowledge.statusProcessing'), tone: 'processing' },
+            completed: { label: t('settings.knowledge.statusCompleted'), tone: 'completed' },
+            failed: { label: t('settings.knowledge.statusFailed'), tone: 'failed' },
         };
 
         const info = statusMap[status] || statusMap.pending;
@@ -392,9 +395,9 @@ export class KnowledgeSection extends SettingsSection {
     private formatKbWordCount(count: number): string {
         if (count >= 10000) {
             const wan = count / 10000;
-            return wan % 1 === 0 ? `${wan}万字` : `${wan.toFixed(1)}万字`;
+            return t('settings.knowledge.wordCountWan', { n: wan % 1 === 0 ? String(wan) : wan.toFixed(1) });
         }
-        return `${count}字`;
+        return t('settings.knowledge.wordCount', { n: count });
     }
 
     private async loadKnowledgeBooks(): Promise<void> {
@@ -445,13 +448,13 @@ export class KnowledgeSection extends SettingsSection {
         });
 
         vectorSection.createEl('h4', {
-            text: '🧠 向量增强设置',
+            text: t('settings.knowledge.vectorTitle'),
             cls: 'nw-st-kb-vector-title'
         });
 
         new Setting(vectorSection)
-            .setName('向量增强拆解')
-            .setDesc('启用后，知识库拆解时使用向量相似度匹配辅助定位相关内容，提升拆解质量')
+            .setName(t('settings.knowledge.vectorEnhanceName'))
+            .setDesc(t('settings.knowledge.vectorEnhanceDesc'))
             .addToggle(toggle => {
                 toggle.setValue(this.plugin.settings.vectorEnhancedDeconstruction ?? true);
                 toggle.onChange(async (value) => {
@@ -461,8 +464,8 @@ export class KnowledgeSection extends SettingsSection {
             });
 
         new Setting(vectorSection)
-            .setName('置信度阈值')
-            .setDesc(`向量匹配的最低置信度，低于此值的结果将被过滤（当前: ${(this.plugin.settings.vectorDeconstructionThreshold ?? 0.3).toFixed(2)}）`)
+            .setName(t('settings.knowledge.thresholdName'))
+            .setDesc(t('settings.knowledge.thresholdDesc', { value: (this.plugin.settings.vectorDeconstructionThreshold ?? 0.3).toFixed(2) }))
             .addSlider(slider => {
                 slider.setLimits(0.1, 0.9, 0.05);
                 slider.setValue(this.plugin.settings.vectorDeconstructionThreshold ?? 0.3);
@@ -471,20 +474,20 @@ export class KnowledgeSection extends SettingsSection {
                     this.plugin.settings.vectorDeconstructionThreshold = value;
                     const descEl = slider.sliderEl.closest('.setting-item')?.querySelector('.setting-item-description');
                     if (descEl) {
-                        descEl.textContent = `向量匹配的最低置信度，低于此值的结果将被过滤（当前: ${value.toFixed(2)}）`;
+                        descEl.textContent = t('settings.knowledge.thresholdDesc', { value: value.toFixed(2) });
                     }
                     await this.plugin.saveSettings();
                 });
             });
 
         const providerSetting = new Setting(vectorSection)
-            .setName('向量模型提供商')
-            .setDesc('选择向量嵌入模型的提供商')
+            .setName(t('settings.knowledge.providerName'))
+            .setDesc(t('settings.knowledge.providerDesc'))
             .addDropdown(dropdown => {
-                dropdown.addOption('ollama', '🖥 本地 Ollama');
-                dropdown.addOption('openai', '☁️ OpenAI 兼容');
-                dropdown.addOption('doubao', '☁️ 豆包/火山引擎');
-                dropdown.addOption('qwen', '☁️ 通义千问');
+                dropdown.addOption('ollama', t('settings.knowledge.providerOllama'));
+                dropdown.addOption('openai', t('settings.knowledge.providerOpenai'));
+                dropdown.addOption('doubao', t('settings.knowledge.providerDoubao'));
+                dropdown.addOption('qwen', t('settings.knowledge.providerQwen'));
                 dropdown.setValue(this.plugin.settings.vectorProviderType || 'ollama');
                 dropdown.onChange(async (value) => {
                     this.plugin.settings.vectorProviderType = value as 'ollama' | 'openai' | 'doubao' | 'qwen';
@@ -494,12 +497,12 @@ export class KnowledgeSection extends SettingsSection {
             });
 
         new Setting(vectorSection)
-            .setName('向量服务不可用时的回退')
-            .setDesc('local-only=只允许回退到本地 Ollama；never=直接失败；allow-cloud=允许回退到云端（可能把本地文本发到云端）')
+            .setName(t('settings.knowledge.fallbackName'))
+            .setDesc(t('settings.knowledge.fallbackDesc'))
             .addDropdown(dropdown => {
-                dropdown.addOption('local-only', '仅本地（推荐）');
-                dropdown.addOption('never', '不回退');
-                dropdown.addOption('allow-cloud', '允许云端（谨慎）');
+                dropdown.addOption('local-only', t('settings.knowledge.fallbackLocal'));
+                dropdown.addOption('never', t('settings.knowledge.fallbackNever'));
+                dropdown.addOption('allow-cloud', t('settings.knowledge.fallbackCloud'));
                 dropdown.setValue(this.plugin.settings.embeddingFallbackPolicy || 'local-only');
                 dropdown.onChange(async (value) => {
                     this.plugin.settings.embeddingFallbackPolicy = value as 'never' | 'local-only' | 'allow-cloud';
@@ -511,8 +514,8 @@ export class KnowledgeSection extends SettingsSection {
 
         if (providerType === 'ollama') {
             new Setting(vectorSection)
-                .setName('Ollama 端点')
-                .setDesc('Ollama 服务的 API 端点地址')
+                .setName(t('settings.knowledge.ollamaEndpoint'))
+                .setDesc(t('settings.knowledge.ollamaEndpointDesc'))
                 .addText(text => {
                     text.setValue(this.plugin.settings.vectorOllamaBaseUrl || 'http://localhost:11434');
                     text.setPlaceholder('http://localhost:11434');
@@ -523,8 +526,8 @@ export class KnowledgeSection extends SettingsSection {
                 });
 
             new Setting(vectorSection)
-                .setName('Ollama 模型')
-                .setDesc('用于向量嵌入的 Ollama 模型名称')
+                .setName(t('settings.knowledge.ollamaModel'))
+                .setDesc(t('settings.knowledge.ollamaModelDesc'))
                 .addText(text => {
                     text.setValue(this.plugin.settings.vectorOllamaModel || 'bge-m3');
                     text.setPlaceholder('bge-m3');
@@ -537,8 +540,8 @@ export class KnowledgeSection extends SettingsSection {
 
         if (providerType === 'openai') {
             new Setting(vectorSection)
-                .setName('API 端点')
-                .setDesc('OpenAI 兼容 API 的基础 URL（如豆包、通义、智谱等）')
+                .setName(t('settings.knowledge.endpointName'))
+                .setDesc(t('settings.knowledge.openaiEndpointDesc'))
                 .addText(text => {
                     text.setValue(this.plugin.settings.vectorOpenaiBaseUrl || 'https://ark.cn-beijing.volces.com/api/v3');
                     text.setPlaceholder('https://api.openai.com/v1');
@@ -549,8 +552,8 @@ export class KnowledgeSection extends SettingsSection {
                 });
 
             new Setting(vectorSection)
-                .setName('模型名称')
-                .setDesc('用于向量嵌入的模型名称')
+                .setName(t('settings.knowledge.modelName'))
+                .setDesc(t('settings.knowledge.openaiModelDesc'))
                 .addText(text => {
                     text.setValue(this.plugin.settings.vectorOpenaiModel || 'doubao-embedding-text-240915');
                     text.setPlaceholder('text-embedding-3-small');
@@ -561,13 +564,13 @@ export class KnowledgeSection extends SettingsSection {
                 });
 
             new Setting(vectorSection)
-                .setName('API Key')
-                .setDesc('OpenAI 兼容 API 的密钥')
+                .setName(t('settings.knowledge.apiKeyName'))
+                .setDesc(t('settings.knowledge.openaiKeyDesc'))
                 .addText(text => {
                     text.inputEl.type = 'password';
                     const secretDisplay = describeSecretForInput(this.plugin.settings.vectorOpenaiApiKey || '');
                     text.setValue(secretDisplay.value);
-                    text.setPlaceholder(secretDisplay.placeholder || '请输入 API Key');
+                    text.setPlaceholder(secretDisplay.placeholder || t('settings.knowledge.keyPlaceholder'));
                     text.inputEl.title = secretDisplay.title;
                     // 空值 = 未修改：加密锁定态输入框为空，写回会抹掉已加密密钥
                     text.inputEl.addEventListener('change', () => {
@@ -575,13 +578,13 @@ export class KnowledgeSection extends SettingsSection {
                         if (!next) return;
                         this.plugin.settings.vectorOpenaiApiKey = next;
                         void this.plugin.saveSettings().catch((e: unknown) => {
-                            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存密钥失败', timeout: 6000 });
+                            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('settings.knowledge.keySaveFailed'), timeout: 6000 });
                         });
                     });
                     const toggleBtn = text.inputEl.parentElement?.createEl('button', {
                         text: '👁',
                         cls: 'novel-writer-key-toggle',
-                        attr: { type: 'button', title: '显示/隐藏密钥' }
+                        attr: { type: 'button', title: t('settings.knowledge.keyToggle') },
                     });
                     if (toggleBtn) {
                         toggleBtn.addClass('nw-kb-toggle-btn');
@@ -595,8 +598,8 @@ export class KnowledgeSection extends SettingsSection {
 
         if (providerType === 'doubao') {
             new Setting(vectorSection)
-                .setName('API 端点')
-                .setDesc('豆包/火山引擎向量 API 的基础 URL')
+                .setName(t('settings.knowledge.endpointName'))
+                .setDesc(t('settings.knowledge.doubaoEndpointDesc'))
                 .addText(text => {
                     text.setValue(this.plugin.settings.vectorDoubaoBaseUrl || 'https://ark.cn-beijing.volces.com/api/v3');
                     text.setPlaceholder('https://ark.cn-beijing.volces.com/api/v3');
@@ -607,8 +610,8 @@ export class KnowledgeSection extends SettingsSection {
                 });
 
             new Setting(vectorSection)
-                .setName('模型名称')
-                .setDesc('用于向量嵌入的豆包模型名称')
+                .setName(t('settings.knowledge.modelName'))
+                .setDesc(t('settings.knowledge.doubaoModelDesc'))
                 .addText(text => {
                     text.setValue(this.plugin.settings.vectorDoubaoModel || 'doubao-embedding-text-240915');
                     text.setPlaceholder('doubao-embedding-text-240915');
@@ -619,13 +622,13 @@ export class KnowledgeSection extends SettingsSection {
                 });
 
             new Setting(vectorSection)
-                .setName('API Key')
-                .setDesc('豆包/火山引擎 API 的密钥')
+                .setName(t('settings.knowledge.apiKeyName'))
+                .setDesc(t('settings.knowledge.doubaoKeyDesc'))
                 .addText(text => {
                     text.inputEl.type = 'password';
                     const secretDisplay = describeSecretForInput(this.plugin.settings.vectorDoubaoApiKey || '');
                     text.setValue(secretDisplay.value);
-                    text.setPlaceholder(secretDisplay.placeholder || '请输入 API Key');
+                    text.setPlaceholder(secretDisplay.placeholder || t('settings.knowledge.keyPlaceholder'));
                     text.inputEl.title = secretDisplay.title;
                     // 空值 = 未修改：加密锁定态输入框为空，写回会抹掉已加密密钥
                     text.inputEl.addEventListener('change', () => {
@@ -633,13 +636,13 @@ export class KnowledgeSection extends SettingsSection {
                         if (!next) return;
                         this.plugin.settings.vectorDoubaoApiKey = next;
                         void this.plugin.saveSettings().catch((e: unknown) => {
-                            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存密钥失败', timeout: 6000 });
+                            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('settings.knowledge.keySaveFailed'), timeout: 6000 });
                         });
                     });
                     const toggleBtn = text.inputEl.parentElement?.createEl('button', {
                         text: '👁',
                         cls: 'novel-writer-key-toggle',
-                        attr: { type: 'button', title: '显示/隐藏密钥' }
+                        attr: { type: 'button', title: t('settings.knowledge.keyToggle') },
                     });
                     if (toggleBtn) {
                         toggleBtn.addClass('nw-kb-toggle-btn');
@@ -653,8 +656,8 @@ export class KnowledgeSection extends SettingsSection {
 
         if (providerType === 'qwen') {
             new Setting(vectorSection)
-                .setName('API 端点')
-                .setDesc('通义千问向量 API 的基础 URL（兼容模式）')
+                .setName(t('settings.knowledge.endpointName'))
+                .setDesc(t('settings.knowledge.qwenEndpointDesc'))
                 .addText(text => {
                     text.setValue(this.plugin.settings.vectorQwenBaseUrl || 'https://dashscope.aliyuncs.com/compatible-mode/v1');
                     text.setPlaceholder('https://dashscope.aliyuncs.com/compatible-mode/v1');
@@ -665,8 +668,8 @@ export class KnowledgeSection extends SettingsSection {
                 });
 
             new Setting(vectorSection)
-                .setName('模型名称')
-                .setDesc('用于向量嵌入的通义千问模型名称')
+                .setName(t('settings.knowledge.modelName'))
+                .setDesc(t('settings.knowledge.qwenModelDesc'))
                 .addText(text => {
                     text.setValue(this.plugin.settings.vectorQwenModel || 'text-embedding-v3');
                     text.setPlaceholder('text-embedding-v3');
@@ -677,13 +680,13 @@ export class KnowledgeSection extends SettingsSection {
                 });
 
             new Setting(vectorSection)
-                .setName('API Key')
-                .setDesc('通义千问 API 的密钥')
+                .setName(t('settings.knowledge.apiKeyName'))
+                .setDesc(t('settings.knowledge.qwenKeyDesc'))
                 .addText(text => {
                     text.inputEl.type = 'password';
                     const secretDisplay = describeSecretForInput(this.plugin.settings.vectorQwenApiKey || '');
                     text.setValue(secretDisplay.value);
-                    text.setPlaceholder(secretDisplay.placeholder || '请输入 API Key');
+                    text.setPlaceholder(secretDisplay.placeholder || t('settings.knowledge.keyPlaceholder'));
                     text.inputEl.title = secretDisplay.title;
                     // 空值 = 未修改：加密锁定态输入框为空，写回会抹掉已加密密钥
                     text.inputEl.addEventListener('change', () => {
@@ -691,13 +694,13 @@ export class KnowledgeSection extends SettingsSection {
                         if (!next) return;
                         this.plugin.settings.vectorQwenApiKey = next;
                         void this.plugin.saveSettings().catch((e: unknown) => {
-                            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存密钥失败', timeout: 6000 });
+                            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('settings.knowledge.keySaveFailed'), timeout: 6000 });
                         });
                     });
                     const toggleBtn = text.inputEl.parentElement?.createEl('button', {
                         text: '👁',
                         cls: 'novel-writer-key-toggle',
-                        attr: { type: 'button', title: '显示/隐藏密钥' }
+                        attr: { type: 'button', title: t('settings.knowledge.keyToggle') },
                     });
                     if (toggleBtn) {
                         toggleBtn.addClass('nw-kb-toggle-btn');
@@ -711,10 +714,10 @@ export class KnowledgeSection extends SettingsSection {
 
         // 圆点/文字配色走修饰类（Slice U）：旧的动态内联 color/background 已删除
         const statusLabels: Record<string, string> = {
-            idle: '未检测',
-            checking: '检测中...',
-            connected: '已连接',
-            disconnected: '未连接',
+            idle: t('settings.knowledge.statusIdle'),
+            checking: t('settings.knowledge.statusChecking'),
+            connected: t('settings.knowledge.statusConnected'),
+            disconnected: t('settings.knowledge.statusDisconnected'),
         };
 
         let statusDot: HTMLElement | null = null;
@@ -725,16 +728,16 @@ export class KnowledgeSection extends SettingsSection {
                 const tone = this.vectorConnectionStatus;
                 statusDot.className = `nw-st-kb-dot nw-st-kb-dot--${tone}`;
                 statusText.className = `nw-st-kb-status-text nw-st-kb-status-text--${tone}`;
-                statusText.textContent = statusLabels[tone] || '未检测';
+                statusText.textContent = statusLabels[tone] || t('settings.knowledge.statusIdle');
             }
         };
 
         const statusSetting = new Setting(vectorSection)
-            .setName('连接状态')
-            .setDesc('检测向量嵌入服务是否可用')
+            .setName(t('settings.knowledge.connectionName'))
+            .setDesc(t('settings.knowledge.connectionDesc'))
             .addButton(btn => {
                 btn
-                    .setButtonText('检测连接')
+                    .setButtonText(t('settings.knowledge.checkBtn'))
                     .onClick(async () => {
                         if (this.vectorConnectionStatus === 'checking') return;
                         this.vectorConnectionStatus = 'checking';
@@ -766,9 +769,9 @@ export class KnowledgeSection extends SettingsSection {
                         }
                         updateStatusDisplay();
                         if (this.vectorConnectionStatus === 'connected') {
-                            showSuccessNotice('向量服务连接正常');
+                            showSuccessNotice(t('settings.knowledge.checkOk'));
                         } else {
-                            showErrorNotice('无法连接到向量服务，请检查配置', { title: '连接失败' });
+                            showErrorNotice(t('settings.knowledge.checkFail'), { title: t('settings.knowledge.checkFailTitle') });
                         }
                     });
             });

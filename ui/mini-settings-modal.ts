@@ -19,6 +19,7 @@ import {
     highlightSettingItem,
     searchSettings,
 } from './settings/settings-search';
+import { t } from '@/i18n';
 
 /** 设置弹窗。 */
 export class MiniSettingsModal extends Modal {
@@ -170,13 +171,13 @@ export class MiniSettingsModal extends Modal {
         this.panel = panel;
         const section = createSettingsSection(this.activeTab, this.host);
         if (!section) {
-            panel.createEl('p', { text: `未知设置页签：${this.activeTab}` });
+            panel.createEl('p', { text: t('settings.shell.unknownTab', { tabId: this.activeTab }) });
             return;
         }
         if (section.asyncLoad) {
             const bar = panel.createDiv({ cls: 'nw-settings-async-bar' });
-            bar.createSpan({ text: '数据为加载时快照，可能已过期' });
-            const btn = bar.createEl('button', { cls: 'nw-settings-async-refresh', text: '🔄 刷新' });
+            bar.createSpan({ text: t('settings.shell.asyncStale') });
+            const btn = bar.createEl('button', { cls: 'nw-settings-async-refresh', text: t('settings.shell.asyncRefresh') });
             btn.onclick = () => this.renderActive();
         }
         void section.render(panel);

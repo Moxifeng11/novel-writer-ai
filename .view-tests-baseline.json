@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-17T22:19:23.828Z",
+  "updatedAt": "2026-11-18T12:47:29.235Z",
   "threshold": 200,
-  "note": "缺口⑦第二期第二片：新增 appearance-settings-i18n.test.ts 静态 import ui/appearance-settings.ts，棘轮收紧",
+  "note": "i18n 第六片：settings-sections-dom.test.ts 静态 import knowledge-section，基线收紧",
   "files": [
     "ui/add-fanfic-setting-modal.ts",
     "ui/agent-workbench-view.ts",
@@ -72,7 +72,6 @@
     "ui/settings/deconstruction-section.ts",
     "ui/settings/fingerprint-section.ts",
     "ui/settings/foreshadow-section.ts",
-    "ui/settings/knowledge-section.ts",
     "ui/step-result-viewer-modal.ts",
     "ui/story-linkage-modal.ts",
     "ui/story-settings-form.ts",
@@ -157,7 +156,6 @@
     "ui/settings/deconstruction-section.ts": 336,
     "ui/settings/fingerprint-section.ts": 441,
     "ui/settings/foreshadow-section.ts": 293,
-    "ui/settings/knowledge-section.ts": 789,
     "ui/step-result-viewer-modal.ts": 442,
     "ui/story-linkage-modal.ts": 390,
     "ui/story-settings-form.ts": 251,

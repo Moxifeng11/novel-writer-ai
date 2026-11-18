@@ -332,8 +332,8 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         if (section.asyncLoad) {
             // 统一「数据可能过期」条：异步分区命中缓存时不会自动重拉，用户需要知道能刷新
             const bar = container.createDiv({ cls: 'nw-settings-async-bar' });
-            bar.createSpan({ text: '数据为加载时快照，可能已过期' });
-            const btn = bar.createEl('button', { cls: 'nw-settings-async-refresh', text: '🔄 刷新' });
+            bar.createSpan({ text: t('settings.shell.asyncStale') });
+            const btn = bar.createEl('button', { cls: 'nw-settings-async-refresh', text: t('settings.shell.asyncRefresh') });
             btn.onclick = () => this.refresh();
         }
         void section.render(container);
