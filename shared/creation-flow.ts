@@ -12,6 +12,7 @@
  */
 import type { CreationMode } from './creation-mode';
 import { modeUnitLabel } from './mode-content';
+import { hasMessage, t } from '@/i18n';
 
 /**
  * CreationFlowAction 类型定义。
@@ -35,8 +36,14 @@ export type CreationFlowStageState = 'done' | 'active' | 'todo' | 'blocked';
  */
 export interface CreationFlowStage {
     id: string;
+    /** 中文展示名（zh 兜底；渲染请用 stageLabel()/stageDesc() 取当前语言） */
     label: string;
+    /** i18n 键（creationFlow.<mode>.stage.<id>.label） */
+    labelKey?: string;
+    /** 中文描述（zh 兜底） */
     description: string;
+    /** i18n 键（...description） */
+    descKey?: string;
     action: CreationFlowAction;
     /** 总进度权重；同一模式内权重之和为 1 */
     weight: number;
@@ -86,7 +93,9 @@ export interface CreationFlowStageStatus extends CreationFlowStage {
     state: CreationFlowStageState;
     /** 0..1 */
     ratio: number;
+    /** 进度文案（已按当前语言求值） */
     progressText: string;
+    /** 主按钮文案（已按当前语言求值） */
     ctaLabel: string;
     /** 解析后的主按钮动作：单元阶段在「无骨架」时是 create-units */
     primaryAction: CreationFlowAction;
@@ -109,19 +118,42 @@ export interface CreationFlowSnapshot {
     nextUnitNumber: number | null;
 }
 
+/**
+ * 阶段展示名（当前语言）；缺键回落目录里的中文兜底值。
+ *
+ * @param stage - 阶段定义或阶段状态
+ * @returns 展示名
+ */
+export function stageLabel(stage: CreationFlowStage): string {
+    return stage.labelKey && hasMessage(stage.labelKey) ? t(stage.labelKey) : stage.label;
+}
+
+/**
+ * 阶段描述（当前语言）；缺键回落目录里的中文兜底值。
+ *
+ * @param stage - 阶段定义或阶段状态
+ * @returns 描述
+ */
+export function stageDesc(stage: CreationFlowStage): string {
+    return stage.descKey && hasMessage(stage.descKey) ? t(stage.descKey) : stage.description;
+}
 const STAGE_LABELS: Record<CreationMode, CreationFlowStage[]> = {
     long: [
         {
             id: 'wizard',
             label: '初始化与全书规划',
+            labelKey: 'creationFlow.long.stage.wizard.label',
             description: '世界观、人物、势力与分卷章节规划',
+            descKey: 'creationFlow.long.stage.wizard.description',
             action: 'wizard',
             weight: 0.25,
         },
         {
             id: 'chapters',
             label: '章节写作',
+            labelKey: 'creationFlow.long.stage.chapters.label',
             description: '按章推进大纲、正文与质量分析',
+            descKey: 'creationFlow.long.stage.chapters.description',
             action: 'write-unit',
             weight: 0.5,
             dependsOn: ['wizard'],
@@ -129,7 +161,9 @@ const STAGE_LABELS: Record<CreationMode, CreationFlowStage[]> = {
         {
             id: 'settlement',
             label: '章节结算',
+            labelKey: 'creationFlow.long.stage.settlement.label',
             description: '把正文产生的实体、伏笔、时间线变动写回设定库',
+            descKey: 'creationFlow.long.stage.settlement.description',
             action: 'settle',
             weight: 0.15,
             dependsOn: ['chapters'],
@@ -137,7 +171,9 @@ const STAGE_LABELS: Record<CreationMode, CreationFlowStage[]> = {
         {
             id: 'export',
             label: '成稿导出',
+            labelKey: 'creationFlow.long.stage.export.label',
             description: '合并分卷正文，导出成稿',
+            descKey: 'creationFlow.long.stage.export.description',
             action: 'export',
             weight: 0.1,
             dependsOn: ['chapters'],
@@ -147,14 +183,18 @@ const STAGE_LABELS: Record<CreationMode, CreationFlowStage[]> = {
         {
             id: 'research',
             label: '前期调研',
+            labelKey: 'creationFlow.short.stage.research.label',
             description: '五维分类、故事核与分节规格',
+            descKey: 'creationFlow.short.stage.research.description',
             action: 'research',
             weight: 0.15,
         },
         {
             id: 'outline',
             label: '分节大纲',
+            labelKey: 'creationFlow.short.stage.outline.label',
             description: '为每一节写目标、冲突、反转与结尾钩子',
+            descKey: 'creationFlow.short.stage.outline.description',
             action: 'document',
             weight: 0.1,
             dependsOn: ['research'],
@@ -162,7 +202,9 @@ const STAGE_LABELS: Record<CreationMode, CreationFlowStage[]> = {
         {
             id: 'units',
             label: '分节写作',
+            labelKey: 'creationFlow.short.stage.units.label',
             description: '进入单元工作台，逐节生成、续写与质检',
+            descKey: 'creationFlow.short.stage.units.description',
             action: 'write-unit',
             weight: 0.6,
             dependsOn: ['outline'],
@@ -170,7 +212,9 @@ const STAGE_LABELS: Record<CreationMode, CreationFlowStage[]> = {
         {
             id: 'export',
             label: '导出成稿',
+            labelKey: 'creationFlow.short.stage.export.label',
             description: '合并全节正文并导出',
+            descKey: 'creationFlow.short.stage.export.description',
             action: 'export',
             weight: 0.15,
             dependsOn: ['units'],
@@ -180,14 +224,18 @@ const STAGE_LABELS: Record<CreationMode, CreationFlowStage[]> = {
         {
             id: 'research',
             label: '前期调研',
+            labelKey: 'creationFlow.script.stage.research.label',
             description: '类型、商业钩子、集数规格与场景基线',
+            descKey: 'creationFlow.script.stage.research.description',
             action: 'research',
             weight: 0.1,
         },
         {
             id: 'outline',
             label: '分集大纲',
+            labelKey: 'creationFlow.script.stage.outline.label',
             description: '为每一集写冲突、爽点、钩子与场次',
+            descKey: 'creationFlow.script.stage.outline.description',
             action: 'document',
             weight: 0.1,
             dependsOn: ['research'],
@@ -195,7 +243,9 @@ const STAGE_LABELS: Record<CreationMode, CreationFlowStage[]> = {
         {
             id: 'storyboard',
             label: '分镜表',
+            labelKey: 'creationFlow.script.stage.storyboard.label',
             description: '把分集大纲拆成可拍摄的镜号表',
+            descKey: 'creationFlow.script.stage.storyboard.description',
             action: 'document',
             weight: 0.1,
             dependsOn: ['outline'],
@@ -203,7 +253,9 @@ const STAGE_LABELS: Record<CreationMode, CreationFlowStage[]> = {
         {
             id: 'units',
             label: '分集写作',
+            labelKey: 'creationFlow.script.stage.units.label',
             description: '进入单元工作台，逐集生成剧本与质检',
+            descKey: 'creationFlow.script.stage.units.description',
             action: 'write-unit',
             weight: 0.55,
             dependsOn: ['outline'],
@@ -213,7 +265,9 @@ const STAGE_LABELS: Record<CreationMode, CreationFlowStage[]> = {
         {
             id: 'export',
             label: '导出成稿',
+            labelKey: 'creationFlow.script.stage.export.label',
             description: '合并全剧并导出',
+            descKey: 'creationFlow.script.stage.export.description',
             action: 'export',
             weight: 0.15,
             dependsOn: ['units'],
@@ -251,13 +305,14 @@ interface StageComputation {
 }
 
 function unitCtaLabel(mode: CreationMode, number: number, unitLabel: string): string {
-    if (mode === 'long') return `继续写第${number}章`;
-    return `继续写第${number}${unitLabel}`;
+    if (mode === 'long') return t('creationFlow.cta.continueChapter', { n: number });
+    return t('creationFlow.cta.continueUnit', { n: number, unit: unitLabel });
 }
 
 function createUnitCta(facts: CreationFlowFacts, unitLabel: string): string {
-    const amount = facts.unitTarget > 0 ? ` ${facts.unitTarget} ` : '';
-    return `创建${amount}${unitLabel}骨架`;
+    return facts.unitTarget > 0
+        ? t('creationFlow.cta.createUnitsWithTarget', { count: facts.unitTarget, unit: unitLabel })
+        : t('creationFlow.cta.createUnits', { unit: unitLabel });
 }
 
 function evaluateStage(
@@ -280,8 +335,8 @@ function evaluateStage(
             return {
                 ratio: wizardDone ? 1 : 0,
                 done: wizardDone,
-                progressText: wizardDone ? '初始化已完成' : '尚未完成初始化向导',
-                ctaLabel: '去完成初始化向导',
+                progressText: wizardDone ? t('creationFlow.progress.wizardDone') : t('creationFlow.progress.wizardTodo'),
+                ctaLabel: t('creationFlow.cta.gotoWizard'),
                 primaryAction: 'wizard',
             };
         }
@@ -292,9 +347,9 @@ function evaluateStage(
                 ratio: done ? 1 : 0,
                 done,
                 progressText: done
-                    ? (ownDone ? '前期调研已完成' : '已按既有正文跳过')
-                    : '尚未完成前期调研',
-                ctaLabel: '去完成前期调研',
+                    ? (ownDone ? t('creationFlow.progress.researchDone') : t('creationFlow.progress.skippedByExisting'))
+                    : t('creationFlow.progress.researchTodo'),
+                ctaLabel: t('creationFlow.cta.gotoResearch'),
                 primaryAction: 'research',
             };
         }
@@ -307,10 +362,10 @@ function evaluateStage(
                 done,
                 progressText: done
                     ? (ownDone
-                        ? (isScript ? '分集大纲已就绪' : '分节大纲已就绪')
-                        : '已按既有正文跳过')
-                    : (isScript ? '尚未编写分集大纲' : '尚未编写分节大纲'),
-                ctaLabel: isScript ? '编写分集大纲' : '编写分节大纲',
+                        ? (isScript ? t('creationFlow.progress.episodeOutlineReady') : t('creationFlow.progress.sectionOutlineReady'))
+                        : t('creationFlow.progress.skippedByExisting'))
+                    : (isScript ? t('creationFlow.progress.episodeOutlineTodo') : t('creationFlow.progress.sectionOutlineTodo')),
+                ctaLabel: isScript ? t('creationFlow.cta.writeEpisodeOutline') : t('creationFlow.cta.writeSectionOutline'),
                 primaryAction: 'document',
             };
         }
@@ -322,18 +377,18 @@ function evaluateStage(
             return {
                 ratio: done ? 1 : 0,
                 done,
-                progressText: done ? '分镜表已就绪' : '尚未编写分镜表',
-                ctaLabel: '编写分镜表',
+                progressText: done ? t('creationFlow.progress.storyboardReady') : t('creationFlow.progress.storyboardTodo'),
+                ctaLabel: t('creationFlow.cta.writeStoryboard'),
                 primaryAction: 'document',
             };
         }
         case 'chapters': {
             const done = total > 0 && written >= total;
             const progressText = total > 0
-                ? `${written}/${total} 章已写`
-                : '尚未创建章节骨架';
+                ? t('creationFlow.progress.chaptersWritten', { written, total })
+                : t('creationFlow.progress.chaptersTodo');
             const ctaLabel = total <= 0
-                ? '创建章节骨架'
+                ? t('creationFlow.cta.createChapters')
                 : unitCtaLabel('long', next ?? 1, unitLabel);
             return {
                 ratio: ratioOf(written, total),
@@ -346,8 +401,8 @@ function evaluateStage(
         case 'units': {
             const done = total > 0 && written >= total;
             const progressText = total > 0
-                ? `${written}/${total} ${unitLabel}已写`
-                : `尚未创建${unitLabel}骨架`;
+                ? t('creationFlow.progress.unitsWritten', { written, total, unit: unitLabel })
+                : t('creationFlow.progress.unitsTodo', { unit: unitLabel });
             const ctaLabel = total <= 0
                 ? createUnitCta(facts, unitLabel)
                 : unitCtaLabel(mode, next ?? 1, unitLabel);
@@ -368,9 +423,13 @@ function evaluateStage(
                 ratio: ratioOf(settled, total),
                 done,
                 progressText: total > 0
-                    ? `${settled}/${total} 章已结算${written > settled ? `（已写 ${written}）` : ''}`
-                    : '尚无章节可结算',
-                ctaLabel: done ? '全部已结算' : '结算下一章',
+                    ? t('creationFlow.progress.settlementDone', {
+                        settled,
+                        total,
+                        writtenNote: written > settled ? t('creationFlow.progress.settlementWrittenNote', { written }) : '',
+                    })
+                    : t('creationFlow.progress.settlementTodo'),
+                ctaLabel: done ? t('creationFlow.cta.allSettled') : t('creationFlow.cta.settleNext'),
                 primaryAction: 'settle',
             };
         }
@@ -380,11 +439,11 @@ function evaluateStage(
                 ratio: done ? 1 : 0,
                 done,
                 progressText: done
-                    ? '已生成成稿文件'
+                    ? t('creationFlow.progress.exportReady')
                     : written > 0
-                        ? `已写 ${written} ${unitLabel}，可随时导出`
-                        : '尚无内容可导出',
-                ctaLabel: done ? '查看导出文件' : '导出当前成稿',
+                        ? t('creationFlow.progress.exportAvailable', { written, unit: unitLabel })
+                        : t('creationFlow.progress.exportTodo'),
+                ctaLabel: done ? t('creationFlow.cta.viewExport') : t('creationFlow.cta.exportNow'),
                 primaryAction: 'export',
             };
         }
@@ -393,7 +452,7 @@ function evaluateStage(
                 ratio: 0,
                 done: false,
                 progressText: '',
-                ctaLabel: '查看',
+                ctaLabel: t('creationFlow.cta.view'),
                 primaryAction: stage.action,
             };
         }
@@ -410,15 +469,15 @@ function evaluateStage(
  */
 function doneCtaLabel(stage: CreationFlowStage, mode: CreationMode, unitLabel: string): string {
     switch (stage.id) {
-        case 'wizard': return '查看初始化向导';
-        case 'research': return '查看前期调研';
-        case 'outline': return mode === 'script' ? '查看分集大纲' : '查看分节大纲';
-        case 'storyboard': return '查看分镜表';
-        case 'chapters': return '浏览全部章节';
-        case 'units': return `浏览全部${unitLabel}`;
-        case 'settlement': return '查看结算记录';
-        case 'export': return '查看导出文件';
-        default: return '查看';
+        case 'wizard': return t('creationFlow.doneCta.wizard');
+        case 'research': return t('creationFlow.doneCta.research');
+        case 'outline': return mode === 'script' ? t('creationFlow.doneCta.episodeOutline') : t('creationFlow.doneCta.sectionOutline');
+        case 'storyboard': return t('creationFlow.doneCta.storyboard');
+        case 'chapters': return t('creationFlow.doneCta.chapters');
+        case 'units': return t('creationFlow.doneCta.units', { unit: unitLabel });
+        case 'settlement': return t('creationFlow.doneCta.settlement');
+        case 'export': return t('creationFlow.doneCta.export');
+        default: return t('creationFlow.cta.view');
     }
 }
 
@@ -442,7 +501,8 @@ export function resolveCreationFlow(
     facts: CreationFlowFacts,
 ): CreationFlowSnapshot {
     const stages = getCreationFlowStages(mode);
-    const unitLabel = modeUnitLabel(mode);
+    // 展示用单位按语言求值；文件/路径仍用 modeUnitLabel（数据契约）
+    const unitLabel = t(`settings.mode.spec.${mode}.unitLabel`);
     // 已有章节骨架说明初始化至少跑到过分卷/建章，避免老项目永远卡在第一步
     const wizardDone = facts.wizardDone === true || facts.unitTotal > 0;
 
@@ -473,7 +533,7 @@ export function resolveCreationFlow(
                 state = 'blocked';
                 const depStage = stageById.get(hardBlocked);
                 blockedBy = hardBlocked;
-                blockedReason = `先完成：${depStage?.label || hardBlocked}`;
+                blockedReason = t('creationFlow.blocked.needFirst', { stage: depStage ? stageLabel(depStage) : hardBlocked });
             } else if (computation.ratio > 0) {
                 state = 'active';
             } else {
@@ -484,7 +544,7 @@ export function resolveCreationFlow(
                 if (blockedBy) {
                     state = 'blocked';
                     const depStage = stageById.get(blockedBy);
-                    blockedReason = `先完成：${depStage?.label || blockedBy}`;
+                    blockedReason = t('creationFlow.blocked.needFirst', { stage: depStage ? stageLabel(depStage) : blockedBy });
                 } else {
                     state = 'todo';
                 }
@@ -493,13 +553,16 @@ export function resolveCreationFlow(
 
         return {
             ...stage,
+            // 展示字段按当前语言求值（id/action/weight/dependsOn 保持原样，行为契约不变）
+            label: stageLabel(stage),
+            description: stageDesc(stage),
             state,
             ratio: clamp01(computation.ratio),
             progressText: computation.progressText,
             ctaLabel: state === 'done'
                 ? doneCtaLabel(stage, mode, unitLabel)
                 : state === 'blocked'
-                    ? `先完成：${stageById.get(blockedBy || '')?.label || ''}`
+                    ? t('creationFlow.blocked.needFirst', { stage: (() => { const dep = stageById.get(blockedBy || ''); return dep ? stageLabel(dep) : ''; })() })
                     : computation.ctaLabel,
             primaryAction: computation.primaryAction,
             blockedReason,
@@ -581,6 +644,6 @@ export function hasMeaningfulDocContent(content: string, starter = ''): boolean 
 export function formatCreationFlowSummary(snapshot: CreationFlowSnapshot): string {
     const percent = Math.round(snapshot.overallRatio * 100);
     const next = snapshot.stages.find(stage => stage.id === snapshot.nextStageId);
-    const head = `《${snapshot.project}》${percent}%`;
-    return next ? `${head} · 下一步：${next.label}` : `${head} · 全部阶段已完成`;
+    const head = t('creationFlow.summary.head', { project: snapshot.project, percent });
+    return next ? t('creationFlow.summary.next', { head, stage: stageLabel(next) }) : t('creationFlow.summary.allDone', { head });
 }

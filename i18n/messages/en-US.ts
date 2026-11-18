@@ -182,6 +182,131 @@ export const enUS: MessageTree = {
             script: "⚡ Script tools",
         },
     },
+    creationFlow: {
+        long: {
+            stage: {
+                wizard: {
+                    label: "Setup & full-book planning",
+                    description: "Worldview, characters, factions and volume/chapter planning",
+                },
+                chapters: {
+                    label: "Chapter writing",
+                    description: "Advance outline, body and quality analysis chapter by chapter",
+                },
+                settlement: {
+                    label: "Chapter settlement",
+                    description: "Write entity, foreshadow and timeline changes from the body back into the settings library",
+                },
+                export: {
+                    label: "Manuscript export",
+                    description: "Merge volume bodies and export the manuscript",
+                },
+            },
+        },
+        short: {
+            stage: {
+                research: {
+                    label: "Pre-research",
+                    description: "Five-dimension categories, story core and section specs",
+                },
+                outline: {
+                    label: "Section outline",
+                    description: "Write goal, conflict, twist and ending hook for each section",
+                },
+                units: {
+                    label: "Section writing",
+                    description: "Enter the unit workbench to generate, continue and QC section by section",
+                },
+                export: {
+                    label: "Export",
+                    description: "Merge all section bodies and export",
+                },
+            },
+        },
+        script: {
+            stage: {
+                research: {
+                    label: "Pre-research",
+                    description: "Genre, commercial hooks, episode specs and scene baseline",
+                },
+                outline: {
+                    label: "Episode outline",
+                    description: "Write conflict, payoff, hook and scenes for each episode",
+                },
+                storyboard: {
+                    label: "Storyboard",
+                    description: "Break the episode outline into a shootable shot list",
+                },
+                units: {
+                    label: "Episode writing",
+                    description: "Enter the unit workbench to generate and QC episode by episode",
+                },
+                export: {
+                    label: "Export",
+                    description: "Merge all episodes and export",
+                },
+            },
+        },
+        progress: {
+            wizardDone: "Setup complete",
+            wizardTodo: "Setup wizard not finished yet",
+            researchDone: "Pre-research complete",
+            skippedByExisting: "Skipped (existing body text found)",
+            researchTodo: "Pre-research not finished yet",
+            sectionOutlineReady: "Section outline ready",
+            episodeOutlineReady: "Episode outline ready",
+            sectionOutlineTodo: "Section outline not written yet",
+            episodeOutlineTodo: "Episode outline not written yet",
+            storyboardReady: "Storyboard ready",
+            storyboardTodo: "Storyboard not written yet",
+            chaptersWritten: "{written}/{total} chapters written",
+            chaptersTodo: "Chapter skeletons not created yet",
+            unitsWritten: "{written}/{total} {unit} written",
+            unitsTodo: "No {unit} skeletons yet",
+            settlementDone: "{settled}/{total} chapters settled{writtenNote}",
+            settlementWrittenNote: " ({written} written)",
+            settlementTodo: "No chapters to settle yet",
+            exportReady: "Manuscript file generated",
+            exportAvailable: "{written} {unit} written; ready to export",
+            exportTodo: "Nothing to export yet",
+        },
+        cta: {
+            continueChapter: "Continue chapter {n}",
+            continueUnit: "Continue {unit} {n}",
+            createUnitsWithTarget: "Create {count} {unit} skeletons",
+            createUnits: "Create {unit} skeletons",
+            gotoWizard: "Finish the setup wizard",
+            gotoResearch: "Finish pre-research",
+            writeSectionOutline: "Write section outline",
+            writeEpisodeOutline: "Write episode outline",
+            writeStoryboard: "Write storyboard",
+            createChapters: "Create chapter skeletons",
+            allSettled: "All settled",
+            settleNext: "Settle the next chapter",
+            viewExport: "View export file",
+            exportNow: "Export current manuscript",
+            view: "View",
+        },
+        blocked: {
+            needFirst: "Finish first: {stage}",
+        },
+        summary: {
+            head: "{project} — {percent}%",
+            next: "{head} · Next: {stage}",
+            allDone: "{head} · All stages complete",
+        },
+        doneCta: {
+            wizard: "View setup wizard",
+            research: "View pre-research",
+            sectionOutline: "View section outline",
+            episodeOutline: "View episode outline",
+            storyboard: "View storyboard",
+            chapters: "Browse all chapters",
+            units: "Browse all {unit}",
+            settlement: "View settlement records",
+            export: "View export file",
+        },
+    },
     common: {
         cancel: 'Cancel',
         confirm: 'OK',

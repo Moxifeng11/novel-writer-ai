@@ -2454,3 +2454,32 @@ entity-state-controller / context-loader / checkup-bar 等）→ 外观页统计
   `Projects & chapters`，整页 CJK 191 → 109（余为项目数据、`按章推进大纲` 等 shared 文案）。
 
 **下一轮**：跨层数据②（`shared/creation-flow` 阶段名，硬验收要求单测证明 zh/en 下流程推进一致）。
+
+## 第八十八轮：i18n 跨层数据② —— 创作流程阶段名（2026-11-19，ZCode · ZC-20261120-02）
+
+**硬验收口径（DSH 派单明确要求）**
+- 语言只影响展示文案，**不影响流程推进**：新增 `tests/unit/shared/creation-flow-i18n.test.ts`，
+  对 3 模式 × 4 组事实（全空 / 部分 / 全满 / 有正文未结算）逐项断言
+  `id / state / ratio / primaryAction / blockedBy / overallRatio / nextStageId` 在 zh 与 en 下完全相等。
+
+**改动**
+- `CreationFlowStage` 加可选 `labelKey/descKey`（原 label/description 保留 zh 兜底），13 个阶段全部补键；
+  并出 `stageLabel()/stageDesc()`（`hasMessage()` 判空回落）。
+- 动态文案全部迁 `t()`：`progressText`（含 `{written}/{total}/{unit}` 插值）、`ctaLabel`、
+  `blockedReason`、`doneCtaLabel()`（已完成阶段的「查看 X」）、`formatCreationFlowSummary()`。
+- 覆盖 `creationFlow.<mode>.stage.<id>` + `progress/cta/blocked/summary/doneCta` 共 134 键。
+
+**三处真修复（都是新测试逼出来的）**
+1. `resolveCreationFlow()` 用 `...stage` 展开，会把**中文 label/description 原样带出**——en 下阶段名
+   仍是中文。改为产出时用 getter 覆盖（id/action/weight/dependsOn 不动）。
+2. **展示单位**原用 `modeUnitLabel()`（章/节/集），en 下进度串里出现「1 章 written」。改用
+   `settings.mode.spec.<mode>.unitLabel`（chapter/section/episode）；`modeUnitLabel()` 保留给文件名与路径。
+3. 剧本模式的 `export` 阶段漏配 labelKey（其描述是「合并全剧并导出」，与短篇「合并全节正文并导出」不同，
+   必须独立键）。
+
+**验收**
+- 新增 4 例全绿；shared + 相关 ui 测试 232 文件 / 2472 例全绿；preflight EXIT=0（10311 通过 + 3 跳过）。
+- `check:i18n` zh/en 各 **3244**（+134），ui/ 棘轮 226/8569 不变；`check:bundle` main.js → **6008772**。
+- 实机 full-writer en 页：流程摘要与阶段名全英文，整页 CJK 109 → 84（余为项目数据与 shared 长尾）。
+
+**下一轮**：跨层数据③（`shared/link-status-compute.ts`，注意 agent 诊断输出可能被下游比较）。

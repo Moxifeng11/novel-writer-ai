@@ -185,6 +185,131 @@ export const zhCN: MessageTree = {
             script: "⚡ 剧本快捷工具",
         },
     },
+    creationFlow: {
+        long: {
+            stage: {
+                wizard: {
+                    label: "初始化与全书规划",
+                    description: "世界观、人物、势力与分卷章节规划",
+                },
+                chapters: {
+                    label: "章节写作",
+                    description: "按章推进大纲、正文与质量分析",
+                },
+                settlement: {
+                    label: "章节结算",
+                    description: "把正文产生的实体、伏笔、时间线变动写回设定库",
+                },
+                export: {
+                    label: "成稿导出",
+                    description: "合并分卷正文，导出成稿",
+                },
+            },
+        },
+        short: {
+            stage: {
+                research: {
+                    label: "前期调研",
+                    description: "五维分类、故事核与分节规格",
+                },
+                outline: {
+                    label: "分节大纲",
+                    description: "为每一节写目标、冲突、反转与结尾钩子",
+                },
+                units: {
+                    label: "分节写作",
+                    description: "进入单元工作台，逐节生成、续写与质检",
+                },
+                export: {
+                    label: "导出成稿",
+                    description: "合并全节正文并导出",
+                },
+            },
+        },
+        script: {
+            stage: {
+                research: {
+                    label: "前期调研",
+                    description: "类型、商业钩子、集数规格与场景基线",
+                },
+                outline: {
+                    label: "分集大纲",
+                    description: "为每一集写冲突、爽点、钩子与场次",
+                },
+                storyboard: {
+                    label: "分镜表",
+                    description: "把分集大纲拆成可拍摄的镜号表",
+                },
+                units: {
+                    label: "分集写作",
+                    description: "进入单元工作台，逐集生成剧本与质检",
+                },
+                export: {
+                    label: "导出成稿",
+                    description: "合并全剧并导出",
+                },
+            },
+        },
+        progress: {
+            wizardDone: "初始化已完成",
+            wizardTodo: "尚未完成初始化向导",
+            researchDone: "前期调研已完成",
+            skippedByExisting: "已按既有正文跳过",
+            researchTodo: "尚未完成前期调研",
+            sectionOutlineReady: "分节大纲已就绪",
+            episodeOutlineReady: "分集大纲已就绪",
+            sectionOutlineTodo: "尚未编写分节大纲",
+            episodeOutlineTodo: "尚未编写分集大纲",
+            storyboardReady: "分镜表已就绪",
+            storyboardTodo: "尚未编写分镜表",
+            chaptersWritten: "{written}/{total} 章已写",
+            chaptersTodo: "尚未创建章节骨架",
+            unitsWritten: "{written}/{total} {unit}已写",
+            unitsTodo: "尚未创建{unit}骨架",
+            settlementDone: "{settled}/{total} 章已结算{writtenNote}",
+            settlementWrittenNote: "（已写 {written}）",
+            settlementTodo: "尚无章节可结算",
+            exportReady: "已生成成稿文件",
+            exportAvailable: "已写 {written} {unit}，可随时导出",
+            exportTodo: "尚无内容可导出",
+        },
+        cta: {
+            continueChapter: "继续写第{n}章",
+            continueUnit: "继续写第{n}{unit}",
+            createUnitsWithTarget: "创建 {count} {unit}骨架",
+            createUnits: "创建{unit}骨架",
+            gotoWizard: "去完成初始化向导",
+            gotoResearch: "去完成前期调研",
+            writeSectionOutline: "编写分节大纲",
+            writeEpisodeOutline: "编写分集大纲",
+            writeStoryboard: "编写分镜表",
+            createChapters: "创建章节骨架",
+            allSettled: "全部已结算",
+            settleNext: "结算下一章",
+            viewExport: "查看导出文件",
+            exportNow: "导出当前成稿",
+            view: "查看",
+        },
+        blocked: {
+            needFirst: "先完成：{stage}",
+        },
+        summary: {
+            head: "《{project}》{percent}%",
+            next: "{head} · 下一步：{stage}",
+            allDone: "{head} · 全部阶段已完成",
+        },
+        doneCta: {
+            wizard: '查看初始化向导',
+            research: '查看前期调研',
+            sectionOutline: '查看分节大纲',
+            episodeOutline: '查看分集大纲',
+            storyboard: '查看分镜表',
+            chapters: '浏览全部章节',
+            units: '浏览全部{unit}',
+            settlement: '查看结算记录',
+            export: '查看导出文件',
+        },
+    },
     common: {
         cancel: '取消',
         confirm: '确定',

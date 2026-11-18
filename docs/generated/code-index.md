@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146805 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19508 | 296 | 203 | 69% |
-| `shared/` | 258 | 51769 | 2179 | 1700 | 78% |
+| `shared/` | 258 | 51832 | 2181 | 1702 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1596 | 88 | 58 | 66% |
 | `ui/` | 306 | 115170 | 1180 | 930 | 79% |
@@ -497,7 +497,7 @@
 | `shared/context/budget-plan.ts` | 119 | 6 | 3 |
 | `shared/contrast-library.ts` | 104 | 4 | 4 |
 | `shared/cowrite-delta-model.ts` | 111 | 6 | 4 |
-| `shared/creation-flow.ts` | 587 | 11 | 11 |
+| `shared/creation-flow.ts` | 650 | 13 | 13 |
 | `shared/creation-mode.ts` | 441 | 22 | 18 |
 | `shared/cursor-position.ts` | 31 | 2 | 2 |
 | `shared/deconstruction-settings.ts` | 108 | 8 | 7 |
