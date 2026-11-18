@@ -2195,3 +2195,24 @@ ZC-20261119-09 co-writing-view → 外观页统计/桌宠块 → section-factory
 **下一轮候选**：写作主流程深水区（template-vars-builder 340 行 CJK → scene-outline 231 →
 wizard 群 300+ → step-render 106 → unit-writer 98）→ co-writing-view（ZC-20261119-09，625 行）→
 外观页统计/桌宠块 → section-factory/section-base 骨架。
+
+## 第七十六轮：i18n 第二期第19片 —— 协同写作主视图（2026-11-19，ZCode · ZC-20261119-09）
+
+**改动**
+- `ui/co-writing-view.ts`（3967 行 / 102 处文案）78 对替换走仓外脚本 `migrate-cowrite.cjs`（78/78 命中）：
+  绑定与切章守卫、前置规划横幅、编辑器占位、建议区标题与状态机（等待/生成/联想/验证/取消）、
+  小说排版与替换、模型与精准模式切换、剧情节点提示、程序化编辑来源标签（改写采纳/建议采纳/
+  知识库标签插入/AI 质量修复/历史回填）。走顶层 `cowrite.*` 82 键。
+- 保留数据：vault 路径与正则（`第N章_正文.md`）、落盘章名 `第{N}章`、行为匹配串。
+- **拆批**：`ui/co-writing/`（39 模块约 1200 行 CJK）与 `ui/cowrite/`（9 模块约 282 行）为第四批
+  （任务板 ZC-20261119-10，已指派 zcode）。
+
+**验收**
+- `check:i18n` zh/en 各 2030、棘轮收紧到 **249 文件 / 9751 条**；`check:bundle` main.js → **5880896**（+8424）；
+  preflight EXIT=0。
+- 实机 `D:\nw-dev-vault\_visual-i18n19\cowrite-view-{zh-CN,en-US}.png`：en 下编辑器占位/绑定状态/
+  建议区标题/通知全英文；剩余 CJK = 子模块（第四批）+ 工具目录数据 + Obsidian 自身。
+
+**下一轮候选**：ZC-20261119-10 协同写作子模块（layout-assembly 140 → control-panel 116 →
+suggestion-cards 100 → suggestion-flow 98 → monitor-cards 81 …）→ 写作主流程深水区 →
+外观页统计/桌宠块。

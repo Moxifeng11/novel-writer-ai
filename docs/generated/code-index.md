@@ -11,7 +11,7 @@
 | `shared/` | 258 | 51769 | 2179 | 1700 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 115119 | 1180 | 930 | 79% |
+| `ui/` | 306 | 115120 | 1180 | 930 | 79% |
 
 ## 文件清单
 
@@ -738,7 +738,7 @@
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1021 | 2 | 2 |
 | `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |
-| `ui/co-writing-view.ts` | 3968 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3969 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 247 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |

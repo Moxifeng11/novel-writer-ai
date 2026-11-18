@@ -20,7 +20,7 @@
     "ui/character-recognition-modal.ts": 14,
     "ui/co-write-floating-panel.ts": 113,
     "ui/co-write/logic-check-format.ts": 8,
-    "ui/co-writing-view.ts": 178,
+    "ui/co-writing-view.ts": 83,
     "ui/co-writing/asset-status.ts": 2,
     "ui/co-writing/brief-panel.ts": 36,
     "ui/co-writing/chapter-context.ts": 6,
@@ -250,7 +250,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 9846,
+  "total": 9751,
   "updatedAt": "2026-11-18",
   "note": ""
 }

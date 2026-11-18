@@ -6,6 +6,7 @@
  */
 
 import { ItemView, WorkspaceLeaf, Notice, MarkdownRenderer, TFile } from 'obsidian';
+import { t } from '@/i18n';
 import { SUBDIR_STEP_ROOT, pjBodyFile } from '@/shared/paths';
 import { getChaptersForProject, getProjectMeta } from '@/ui/project-utils';
 import { readMergedVolumeOutline } from '@/utils/helpers';
@@ -430,7 +431,7 @@ export class CoWritingView extends ItemView {
       },
       scheduleAutoSave: () => this.scheduleAutoSave(),
       onProjectMissing: () => {
-        showWarningNotice("项目已被删除，已清空章节绑定；未保存内容不会重建项目", { timeout: 8000 });
+        showWarningNotice(t("cowrite.projectDeletedWarning"), { timeout: 8000 });
         void this.clearChapterBinding({ skipFlush: true });
       },
     });
@@ -481,11 +482,11 @@ export class CoWritingView extends ItemView {
     const mode = this.facade.settings.coWriteModelMode || 'local';
     if (mode === 'local' && !resolveCoWriteLocalModel(this.facade.settings)) {
       // M-2（用户拍板）：本地模式未选本地模型时自动切云端，不再把请求打到 localhost
-      showWarningNotice('本地模式未选择本地模型，已自动切换到云端模型；可在设置中固定云端模式', { timeout: 8000 });
+      showWarningNotice(t('cowrite.localNoModel'), { timeout: 8000 });
     } else if (mode === 'cloud') {
       const providerId = this.facade.settings.coWriteCloudProvider || '';
       if (!providerId) {
-        showWarningNotice('云端模式未选择供应商，请在设置中配置', { timeout: 8000 });
+        showWarningNotice(t('cowrite.cloudNoProvider'), { timeout: 8000 });
       }
     }
     const precisionMode = this.facade.settings.precisionMode || false;
@@ -574,7 +575,7 @@ export class CoWritingView extends ItemView {
    */
   async clearChapterBinding(options?: { skipFlush?: boolean }): Promise<void> {
     if (!this.project && !this.chapterName) {
-      this.statusBar?.setText("未绑定章节");
+      this.statusBar?.setText(t("cowrite.noChapterBound"));
       return;
     }
     // 未落盘的旧正文先按旧身份保存；失败则中止清空，避免丢字。
@@ -582,7 +583,7 @@ export class CoWritingView extends ItemView {
     if (!options?.skipFlush) {
       const flushed = await this.flushPendingBodySaveBeforeChapterSwitch();
       if (!flushed) {
-        showWarningNotice("上一章正文未能保存，已取消清空章节绑定", { timeout: 4000 });
+        showWarningNotice(t("cowrite.prevBodySaveBlocked"), { timeout: 4000 });
         return;
       }
     }
@@ -593,7 +594,7 @@ export class CoWritingView extends ItemView {
     this.isAssociating = false;
     this.lastGhostSeed = "";
     this.lastGhostRequestAt = 0;
-    this.renderEmptySuggestions("尚未绑定章节：请先打开某章「正文」文件，或从完整写作工作台选择章节后再进入。");
+    this.renderEmptySuggestions(t("cowrite.noChapterForSuggestions"));
     this.project = "";
     this.chapterName = "";
     this.volume = "第1卷";
@@ -605,7 +606,7 @@ export class CoWritingView extends ItemView {
     this.warningContainer?.empty();
     if (this.rightEditor) this.rightEditor.value = "";
     this.renderMetrics(emptyMetrics());
-    this.statusBar?.setText("未绑定章节");
+    this.statusBar?.setText(t("cowrite.noChapterBound"));
     // 清空绑定后：高亮层/光标/撤销栈/章节导航都要跟着清，避免残留上一章内容
     this.syncHighlightSoon();
     this.refreshCursorInfo();
@@ -647,7 +648,7 @@ export class CoWritingView extends ItemView {
     const flushed = await this.flushPendingBodySaveBeforeChapterSwitch();
     if (seq !== this.openChapterSeq) return;
     if (!flushed) {
-      showWarningNotice("上一章正文未能保存，已取消切章", { timeout: 4000 });
+      showWarningNotice(t("cowrite.prevBodySaveBlockedSwitch"), { timeout: 4000 });
       return;
     }
     // 切章先取消上一章排队的尾随渲染，避免旧正文在新章加载期间被补渲染一次
@@ -751,8 +752,8 @@ export class CoWritingView extends ItemView {
 
     // 检查关键前置步骤文件是否存在 / 是否只是空模板
     const files = [
-      { name: '信息规划', file: `${stepDir}/${chapterPrefix}_信息规划.md` },
-      { name: '大纲摘要', file: `${stepDir}/${chapterPrefix}_大纲摘要.md` },
+      { name: t('cowrite.stepNameInfoPlan'), file: `${stepDir}/${chapterPrefix}_信息规划.md` },
+      { name: t('cowrite.stepNameOutline'), file: `${stepDir}/${chapterPrefix}_大纲摘要.md` },
     ];
     const checks: PrerequisiteCheck[] = [];
     for (const item of files) {
@@ -780,8 +781,8 @@ export class CoWritingView extends ItemView {
       attr: { style: 'flex:0 0 auto; background: var(--text-warning-bg, #fff3cd); color: var(--text-warning); padding: 8px 12px; margin: 0 0 4px; border-radius: 4px; font-size: 0.82em; border-left: 3px solid var(--text-warning, #f59e0b);' },
     });
     host.insertBefore(banner, host.firstChild);
-    banner.createEl('strong', { text: '⚠️ 前置规划未完成：' });
-    banner.createEl('span', { text: ` 缺少 ${missing.join('、')}。建议先在「全本写作工作台」中运行前置规划步骤，否则 AI 建议可能缺乏章节上下文和世界观设定信息。` });
+    banner.createEl('strong', { text: t('cowrite.prereqBannerTitle') });
+    banner.createEl('span', { text: t('cowrite.prereqBannerDetail', { missing: missing.join('、') }) });
     // 8 秒后淡出并移除节点（只把 opacity 设 0 会留下不可见但仍占位的元素）
     setTimeout(() => {
       banner.addClass('nw-fade-out');
@@ -839,7 +840,7 @@ export class CoWritingView extends ItemView {
         if (this.project) {
           new UnifiedEntityManagerModal(this.app, this.plugin, this.project).open();
         } else {
-          new Notice("⚠️ 请先打开一个项目章节", 3000);
+          new Notice(t("cowrite.needProjectChapter"), 3000);
         }
       },
       togglePrecisionMode: () => { this.togglePrecisionMode(); },
@@ -875,7 +876,7 @@ export class CoWritingView extends ItemView {
     this.highlightBackdrop = editorStack.createDiv({ cls: "nw-cowrite-editor-backdrop" });
     this.rightEditor = editorStack.createEl("textarea", { cls: "nw-cowrite-editor has-md-chrome" });
     this.rightEditor.spellcheck = false;
-    this.rightEditor.placeholder = "在此写作……支持 Markdown；Tab 生成 AI 建议";
+    this.rightEditor.placeholder = t("cowrite.editorPlaceholder");
     // 镜像层在辅助条之后才创建：这里补一次视觉参数，保证字号/行高/字体四层一致
     this.applyEditorVisuals();
     this.ghostSuggestionContainer = editorWrap.createDiv({ cls: "nw-cowrite-ghost-suggestion" });
@@ -892,8 +893,8 @@ export class CoWritingView extends ItemView {
     // v7.0: 建议窗口移到编辑器区域右侧，作为独立一栏
     this.suggestionContainer = centerPanel.createDiv({ cls: "nw-cowrite-suggestions-panel" });
     const suggestionHeader = this.suggestionContainer.createDiv({ cls: "nw-cowrite-suggestions-header" });
-    const suggestionTitle = suggestionHeader.createDiv({ cls: "nw-cowrite-suggestions-title", text: "AI 建议" });
-    this.suggestionStatusText = suggestionHeader.createDiv({ cls: "nw-cowrite-suggestions-status", text: "等待生成" });
+    const suggestionTitle = suggestionHeader.createDiv({ cls: "nw-cowrite-suggestions-title", text: t("cowrite.suggestionsTitle") });
+    this.suggestionStatusText = suggestionHeader.createDiv({ cls: "nw-cowrite-suggestions-status", text: t("cowrite.waitingForGen") });
     const suggestionCloseBtn = suggestionHeader.createEl("button", { text: "✕", cls: "nw-cowrite-suggestions-close" });
     suggestionCloseBtn.addEventListener("click", () => {
       this.toggleSuggestionPanel(false);
@@ -1312,7 +1313,7 @@ export class CoWritingView extends ItemView {
    */
   private async addChapterToPlanningCanvas(): Promise<void> {
     if (!this.project || !this.chapterNum) {
-      showWarningNotice('请先绑定项目与章节', { timeout: 2500 });
+      showWarningNotice(t('cowrite.needBinding'), { timeout: 2500 });
       return;
     }
     const title = this.chapterName || `第${this.chapterNum}章`;
@@ -1322,13 +1323,13 @@ export class CoWritingView extends ItemView {
       await this.saveBody(false);
       const result = await addChapterEventNode(this.app, this.project, this.chapterNum, title, summary);
       if (result.added) {
-        showSuccessNotice(`已登记到规划画布：${title}`, { timeout: 2500 });
+        showSuccessNotice(t('cowrite.planningCanvasRegistered', { title }), { timeout: 2500 });
       } else {
-        showWarningNotice(result.reason || '未新增', { timeout: 2500 });
+        showWarningNotice(result.reason || t('cowrite.planningSkipped'), { timeout: 2500 });
       }
     } catch (error) {
       log.warn('[CoWritingView] 登记规划画布失败:', error);
-      showWarningNotice('登记规划画布失败，请重试', { timeout: 3000 });
+      showWarningNotice(t('cowrite.planningCanvasFailed'), { timeout: 3000 });
     }
   }
 
@@ -1363,7 +1364,7 @@ export class CoWritingView extends ItemView {
     pushHistory(history, editor.value);
     const previous = undoHistory(history);
     if (previous === null) {
-      showWarningNotice('已到最早一版，无法继续撤销', { timeout: 2000 });
+      showWarningNotice(t('cowrite.undoEarliest'), { timeout: 2000 });
       return;
     }
     this.applyTextEdit({ text: previous, selectionStart: previous.length, selectionEnd: previous.length });
@@ -1377,7 +1378,7 @@ export class CoWritingView extends ItemView {
     const history = this.editHistory.get(this.historyKey(), editor.value);
     const next = redoHistory(history);
     if (next === null) {
-      showWarningNotice('没有可重做的内容', { timeout: 2000 });
+      showWarningNotice(t('cowrite.redoEmpty'), { timeout: 2000 });
       return;
     }
     this.applyTextEdit({ text: next, selectionStart: next.length, selectionEnd: next.length });
@@ -1509,13 +1510,13 @@ export class CoWritingView extends ItemView {
     if (!editor) return;
     const raw = editor.value;
     if (!raw.trim()) {
-      new Notice('编辑器为空，无法排版');
+      new Notice(t('cowrite.formatEmptyEditor'));
       return;
     }
     const contract = await this.resolveEditorContract();
     const formatted = formatNovelManuscript(raw, contract);
     if (formatted === raw) {
-      new Notice('当前正文已是小说格式');
+      new Notice(t('cowrite.alreadyNovelFormat'));
       return;
     }
     this.applyTextEdit({
@@ -1523,8 +1524,8 @@ export class CoWritingView extends ItemView {
       selectionStart: formatted.length,
       selectionEnd: formatted.length,
     });
-    const sourceHint = contract.source === 'writing-rules' ? '' : '（未找到写作规则，使用默认格式）';
-    showSuccessNotice(`已按小说格式排版：${describeContractShort(contract)}${sourceHint}`, { timeout: 4000 });
+    const sourceHint = contract.source === 'writing-rules' ? '' : t('cowrite.formatNoRulesHint');
+    showSuccessNotice(t('cowrite.formattedNotice', { detail: describeContractShort(contract), hint: sourceHint }), { timeout: 4000 });
   }
 
   /**
@@ -1714,7 +1715,7 @@ export class CoWritingView extends ItemView {
     const result = replaceAll(editor.value, this.currentMatches, replacement);
     this.applyTextEdit({ text: result.text, selectionStart: 0, selectionEnd: 0 });
     if (this.findBar) this.recomputeMatches(this.findBar.input.value);
-    showSuccessNotice(`已替换 ${count} 处`, { timeout: 2500 });
+    showSuccessNotice(t('cowrite.replacedCount', { count }), { timeout: 2500 });
   }
 
   /**
@@ -1846,19 +1847,19 @@ export class CoWritingView extends ItemView {
 
     // 切换后检查配置
     if (newMode === 'local' && !resolveCoWriteLocalModel(settings)) {
-      showWarningNotice('未配置本地模型，请在设置中配置', { timeout: 5000 });
+      showWarningNotice(t('cowrite.localModelMissing'), { timeout: 5000 });
     } else if (newMode === 'cloud') {
       const providerId = settings.coWriteCloudProvider || '';
       if (!providerId) {
-        showWarningNotice('未配置云端供应商，请在设置中选择', { timeout: 5000 });
+        showWarningNotice(t('cowrite.cloudProviderMissing'), { timeout: 5000 });
       } else {
         const apiKey = settings.providerKeys?.[providerId] || '';
         if (!apiKey) {
-          showWarningNotice(`供应商 ${providerId} 未配置 API Key`, { timeout: 5000 });
+          showWarningNotice(t('cowrite.providerKeyMissing', { provider: providerId }), { timeout: 5000 });
         }
       }
     }
-    showSuccessNotice(`已切换到${newMode === 'local' ? '本地' : '云端'}模型`, { timeout: 2000 });
+    showSuccessNotice(t('cowrite.switchedModel', { mode: newMode === 'local' ? t('cowrite.modeLocal') : t('cowrite.modeCloud') }), { timeout: 2000 });
   }
   /** v7.2: 更新模型切换按钮文字（文案规则见 co-writing/control-panel） */
   updateModelToggleBtn() {
@@ -1875,7 +1876,7 @@ export class CoWritingView extends ItemView {
     this.facade.setPrecisionMode(enabled);
     this.updatePrecisionModeBtn();
     this.updateHumanRateDashboard();
-    showSuccessNotice(enabled ? '精准模式已开启' : '精准模式已关闭', { timeout: 2000 });
+    showSuccessNotice(enabled ? t('cowrite.precisionOn') : t('cowrite.precisionOff'), { timeout: 2000 });
   }
 
   /** 更新精准模式按钮文字和高亮 */
@@ -1883,10 +1884,10 @@ export class CoWritingView extends ItemView {
     if (!this.precisionModeBtn) return;
     const enabled = this.facade.settings.precisionMode || false;
     if (enabled) {
-      this.precisionModeBtn.textContent = '🎯 精准模式 ✓';
+      this.precisionModeBtn.textContent = t('cowrite.precisionOnBtn');
       this.precisionModeBtn.addClass('nw-precision-on');
     } else {
-      this.precisionModeBtn.textContent = '🎯 精准模式';
+      this.precisionModeBtn.textContent = t('cowrite.precisionBtn');
       this.precisionModeBtn.removeClass('nw-precision-on');
     }
   }
@@ -1932,19 +1933,19 @@ export class CoWritingView extends ItemView {
     const body = this.rightEditor.value;
     const progress = this.facade.getPlotProgress(body);
     if (progress.totalNodes === 0) {
-      new Notice("本章未提取到剧情节点");
+      new Notice(t("cowrite.noPlotNodes"));
       return;
     }
     if (progress.allCompleted) {
-      new Notice("本章所有剧情节点已推进完毕");
+      new Notice(t("cowrite.allNodesDone"));
       return;
     }
     const node = progress.nextNode;
     const hintParts: string[] = [];
-    if (node?.goal) hintParts.push(`推进剧情：${node.goal}`);
-    if (node?.location) hintParts.push(`地点：${node.location}`);
-    if (node?.characters) hintParts.push(`人物：${node.characters}`);
-    if (node?.conflict) hintParts.push(`冲突：${node.conflict}`);
+    if (node?.goal) hintParts.push(t('cowrite.nodeHintGoal', { goal: node.goal }));
+    if (node?.location) hintParts.push(t('cowrite.nodeHintLocation', { location: node.location }));
+    if (node?.characters) hintParts.push(t('cowrite.nodeHintCharacters', { characters: node.characters }));
+    if (node?.conflict) hintParts.push(t('cowrite.nodeHintConflict', { conflict: node.conflict }));
     const savedHint = this.cursorHint;
     this.cursorHint = hintParts.join("；");
     try {
@@ -1961,11 +1962,11 @@ export class CoWritingView extends ItemView {
     const progress = this.facade.getPlotProgress(body);
     let text: string;
     if (progress.totalNodes === 0) {
-      text = "⏭ 无节点";
+      text = t("cowrite.nodeNone");
     } else if (progress.allCompleted) {
-      text = "✓ 节点完成";
+      text = t("cowrite.nodeDone");
     } else {
-      text = `⏭ 节点 ${progress.currentIndex + 1}/${progress.totalNodes}`;
+      text = t('cowrite.nodeProgress', { current: progress.currentIndex + 1, total: progress.totalNodes });
     }
     this.nextNodeBtn.textContent = text;
   }
@@ -2011,7 +2012,7 @@ export class CoWritingView extends ItemView {
   renderSuggestionCards(suggestions: SuggestionRecord[]) {
     this.setGhostSuggestion(null);
     this.showSuggestionPanel();
-    if (this.suggestionStatusText) this.suggestionStatusText.textContent = `${suggestions.length} 条建议`;
+    if (this.suggestionStatusText) this.suggestionStatusText.textContent = t('cowrite.suggestionsCount', { count: suggestions.length });
     renderSuggestionCards(this.suggestionContent, suggestions, this.suggestionCardActions());
   }
 
@@ -2177,7 +2178,7 @@ export class CoWritingView extends ItemView {
         this.pendingRewriteRange = null;
         if (this.isSuggestRequestOwner(signal)) {
           this.clearStreamingPreview();
-          if (this.suggestionStatusText) this.suggestionStatusText.textContent = "已取消";
+          if (this.suggestionStatusText) this.suggestionStatusText.textContent = t("cowrite.genCancelled");
         }
         return;
       }
@@ -2195,7 +2196,7 @@ export class CoWritingView extends ItemView {
       if (signal.aborted || !this.isCurrentSuggestionEpoch(epoch)) {
         if (this.isSuggestRequestOwner(signal)) {
           this.clearStreamingPreview();
-          if (this.suggestionStatusText) this.suggestionStatusText.textContent = "已取消";
+          if (this.suggestionStatusText) this.suggestionStatusText.textContent = t("cowrite.genCancelled");
         }
         return;
       }
@@ -2267,11 +2268,11 @@ export class CoWritingView extends ItemView {
       return;
     // UX 修复：未绑定章节时引擎未初始化，避免空等
     if (!this.project || !this.volume || !this.chapterNum) {
-      new Notice("⚠️ 未绑定章节，请先在左侧选择卷/章后再联想", 3e3);
+      new Notice(t("cowrite.needChapterForSuggest"), 3e3);
       return;
     }
     if (!this.rightEditor.value.trim() && !this.canColdStart()) {
-      new Notice("⚠️ 正文为空且没有章节规划，请先完成 Scene 展开或手写一句再联想", 5000);
+      new Notice(t("cowrite.needBodyOrScene"), 5000);
       return;
     }
     this.isAssociating = true;
@@ -2315,7 +2316,7 @@ export class CoWritingView extends ItemView {
       if (signal.aborted || !this.isCurrentSuggestionEpoch(epoch)) return;
       log.warn("[CoWritingView] \u8054\u60F3\u8F93\u5165\u5931\u8D25:", e);
       this.showSuggestionPanel();
-      if (this.suggestionStatusText) this.suggestionStatusText.textContent = "联想失败";
+      if (this.suggestionStatusText) this.suggestionStatusText.textContent = t("cowrite.suggestFailed");
       this.suggestionContent.empty();
       this.suggestionContent.createDiv({ cls: "novel-writer-cowrite-error", text: "\u8054\u60F3\u8F93\u5165\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002" });
     } finally {
@@ -2336,7 +2337,7 @@ export class CoWritingView extends ItemView {
    */
   renderAssociationCards(associations: AssociationSuggestion[], suggestions: SuggestionRecord[]) {
     this.showSuggestionPanel();
-    if (this.suggestionStatusText) this.suggestionStatusText.textContent = `${suggestions.length} 条联想`;
+    if (this.suggestionStatusText) this.suggestionStatusText.textContent = t('cowrite.suggestionsFromContext', { count: suggestions.length });
     renderAssociationCards(this.suggestionContent, associations, suggestions, this.suggestionCardActions());
   }
   /**
@@ -2344,7 +2345,7 @@ export class CoWritingView extends ItemView {
    */
   renderAssociationLoading() {
     this.showSuggestionPanel();
-    if (this.suggestionStatusText) this.suggestionStatusText.textContent = "联想中...";
+    if (this.suggestionStatusText) this.suggestionStatusText.textContent = t("cowrite.suggesting");
     renderAssociationLoading(this.suggestionContent);
   }
   /**
@@ -2399,14 +2400,14 @@ export class CoWritingView extends ItemView {
           // 原候选卡片也已被 renderValidationLoading 清空，只能重新生成才能恢复。
           log.warn("[CoWritingView] 建议验证失败:", e);
           this.showSuggestionPanel();
-          if (this.suggestionStatusText) this.suggestionStatusText.textContent = "验证失败";
+          if (this.suggestionStatusText) this.suggestionStatusText.textContent = t("cowrite.validateFailed");
           this.suggestionContent.empty();
           const box = this.suggestionContent.createDiv({ cls: "nw-cowrite-error-card novel-writer-cowrite-error" });
-          box.createDiv({ cls: "nw-cowrite-error-card__text", text: "验证请求失败，请检查网络或模型配置后重试。" });
+          box.createDiv({ cls: "nw-cowrite-error-card__text", text: t("cowrite.validateRequestFailed") });
           const actions = box.createDiv({ cls: "nw-cowrite-error-card__actions" });
-          const retry = actions.createEl("button", { text: "↻ 重新验证", cls: "nw-btn nw-btn-primary" });
+          const retry = actions.createEl("button", { text: t("cowrite.retryValidate"), cls: "nw-btn nw-btn-primary" });
           retry.addEventListener("click", () => this.handleEditSuggestion(suggestion, modifiedText));
-          const dismiss = actions.createEl("button", { text: "返回建议", cls: "nw-btn nw-btn-ghost" });
+          const dismiss = actions.createEl("button", { text: t("cowrite.backToSuggestions"), cls: "nw-btn nw-btn-ghost" });
           dismiss.addEventListener("click", () => this.renderSuggestionCards(this.currentSuggestions));
         }
       },
@@ -2429,7 +2430,7 @@ export class CoWritingView extends ItemView {
     this.showSuggestionPanel();
     const degraded = validation.degraded === true;
     if (this.suggestionStatusText) {
-      this.suggestionStatusText.textContent = degraded ? "校验未完成" : (validation.isValid ? "验证通过" : "存在风险");
+      this.suggestionStatusText.textContent = degraded ? t("cowrite.validateStatusFail") : (validation.isValid ? t("cowrite.validatePassed") : t("cowrite.validateRisky"));
     }
     renderValidationResult(this.suggestionContent, validation, modifiedText, suggestion, editDurationMs, this.suggestionCardActions());
   }
@@ -2455,7 +2456,7 @@ export class CoWritingView extends ItemView {
     if (resolved.staleRewrite) {
       // 原文在候选生成后被改动：宁可不应用，也不能覆盖用户新写的内容
       this.pendingRewriteRange = null;
-      showWarningNotice("原文已改动，改写结果未应用。请重新选中文本后再改写。", { timeout: 4000 });
+      showWarningNotice(t("cowrite.rewriteSourceChanged"), { timeout: 4000 });
       this.finalizeAcceptedInsert(epoch);
       return;
     }
@@ -2486,7 +2487,7 @@ ${text}`;
     // 不能再按 Ctrl+1 或点「接受」拿到同一条
     this.currentSuggestions = [];
     this.setGhostSuggestion(null);
-    this.applyProgrammaticEdit(nextText, newCursor, resolved.fromPendingRewrite ? '改写采纳' : '建议采纳');
+    this.applyProgrammaticEdit(nextText, newCursor, resolved.fromPendingRewrite ? t('cowrite.applySourceRewrite') : t('cowrite.applySourceSuggest'));
     this.facade.recordInteraction(record);
     this.facade.syncEditRecord(record);
     this.facade.syncEditorCursor(newCursor);
@@ -2699,7 +2700,7 @@ ${text}`;
    */
   renderSuggestionLoading() {
     this.showSuggestionPanel();
-    if (this.suggestionStatusText) this.suggestionStatusText.textContent = "生成中...";
+    if (this.suggestionStatusText) this.suggestionStatusText.textContent = t("cowrite.generating");
     this.suggestionContent.empty();
     this.lastSuggestError = null;
     renderSuggestionLoading({
@@ -2752,17 +2753,17 @@ ${text}`;
     if (state.status === 'running' && state.eta !== undefined && state.eta >= 3000) {
       const seconds = Math.ceil(state.eta / 1000);
       if (seconds > 0) {
-        this.suggestEtaDisplay.setText(`预估剩余: ${seconds} 秒`);
+        this.suggestEtaDisplay.setText(t('cowrite.etaRemaining', { seconds }));
       }
     }
 
     if (state.status === 'failed') {
-      this.showSuggestError(state.error || '生成失败，请重试');
+      this.showSuggestError(state.error || t('cowrite.genFailedRetry'));
     }
 
     if (state.status === 'cancelled') {
       if (this.suggestionStatusText) {
-        this.suggestionStatusText.textContent = "已取消";
+        this.suggestionStatusText.textContent = t("cowrite.genCancelled");
       }
     }
   }
@@ -2773,7 +2774,7 @@ ${text}`;
     this.suggestErrorContainer.removeClass('nw-u-d-none');
     this.suggestErrorContainer.empty();
     this.suggestErrorContainer.createDiv({
-      text: "❌ 生成失败",
+      text: t("cowrite.genFailedTitle"),
       attr: { style: "font-weight:600;font-size:13px;margin-bottom:6px;color:var(--text-error, #ef4444);" }
     });
     this.suggestErrorContainer.createDiv({
@@ -2785,7 +2786,7 @@ ${text}`;
     this.suggestCancelBtn.addClass('nw-u-d-none');
 
     if (this.suggestionStatusText) {
-      this.suggestionStatusText.textContent = "生成失败";
+      this.suggestionStatusText.textContent = t("cowrite.genFailedStatus");
     }
   }
 
@@ -2821,7 +2822,7 @@ ${text}`;
     isStreaming: boolean
   ): HTMLElement {
     this.showSuggestionPanel();
-    const statusText = isStreaming ? "生成中..." : `${index + 1} 条建议`;
+    const statusText = isStreaming ? t("cowrite.generating") : t('cowrite.suggestionN', { count: index + 1 });
     if (this.suggestionStatusText) this.suggestionStatusText.textContent = statusText;
     return renderStreamingSuggestionCard(this.suggestionContent, direction, style, index, currentText, isStreaming);
   }
@@ -2847,7 +2848,7 @@ ${text}`;
    */
   renderValidationLoading() {
     this.showSuggestionPanel();
-    if (this.suggestionStatusText) this.suggestionStatusText.textContent = "验证中...";
+    if (this.suggestionStatusText) this.suggestionStatusText.textContent = t("cowrite.validateInProgress");
     this.suggestionContent.empty();
     renderValidationLoadingMessage(this.suggestionContent);
   }
@@ -2896,10 +2897,10 @@ ${text}`;
 
     const subTabHeaders = container.createDiv({ cls: "nw-kb-subtab-headers" });
     const subTabs: Array<{ key: 'books' | 'match' | 'quote' | 'advice'; label: string; icon: string }> = [
-      { key: 'books', label: '书籍', icon: '📚' },
-      { key: 'match', label: '匹配', icon: '🎯' },
-      { key: 'quote', label: '引用', icon: '✨' },
-      { key: 'advice', label: '建议', icon: '💡' },
+      { key: 'books', label: t('cowrite.tabBooks'), icon: '📚' },
+      { key: 'match', label: t('cowrite.tabMatch'), icon: '🎯' },
+      { key: 'quote', label: t('cowrite.tabQuote'), icon: '✨' },
+      { key: 'advice', label: t('cowrite.tabAdvice'), icon: '💡' },
     ];
     subTabs.forEach(tab => {
       const btn = subTabHeaders.createDiv({
@@ -3100,7 +3101,7 @@ ${text}`;
   insertTechniqueExample(tech: { name: string; description: string }) {
     const exampleText = `【${tech.name}】${tech.description}`;
     this.quickInsertText(exampleText);
-    showSuccessNotice(`已插入：${tech.name}`, { timeout: 1500 });
+    showSuccessNotice(t('cowrite.techInserted', { name: tech.name }), { timeout: 1500 });
   }
 
   /**
@@ -3117,7 +3118,7 @@ ${text}`;
     const after = editor.value.slice(end);
     const insert = before.endsWith('\n') || before.length === 0 ? text : text;
     const nextText = before + insert + after;
-    this.applyProgrammaticEdit(nextText, start + insert.length, '知识库标签插入');
+    this.applyProgrammaticEdit(nextText, start + insert.length, t('cowrite.kbTagInsert'));
     void this.refreshPreview(false);
   }
 
@@ -3284,11 +3285,11 @@ ${text}`;
     // 让「有未保存修改」的场景有可见反馈，且保存失败可中止切章。
     const saved = await this.saveBody(false);
     if (!saved) {
-      showWarningNotice('当前章节保存失败，已取消切章', { timeout: 4000 });
+      showWarningNotice(t('cowrite.chapterSaveBlocked'), { timeout: 4000 });
       return;
     }
     await this.openChapter(this.project, target.chapter, target.volume, target.number || undefined);
-    showSuccessNotice(`已切换到 ${target.chapter}`, { timeout: 2000 });
+    showSuccessNotice(t('cowrite.switchedChapter', { chapter: target.chapter }), { timeout: 2000 });
   }
 
   /**
@@ -3596,7 +3597,7 @@ ${text}`;
   /** 打开批量导入弹窗 */
   openBatchImportModal() {
     if (!this.facade.knowledgeBaseManager || !this.plugin.knowledgeTagManager || !this.plugin.deconstructionScheduler) {
-      new Notice('知识库未初始化，请稍候再试');
+      new Notice(t('cowrite.kbNotInitWait'));
       return;
     }
     new BatchImportModal(this.app, {
@@ -3605,7 +3606,7 @@ ${text}`;
       tagManager: this.plugin.knowledgeTagManager,
       engineRegistry: this.plugin.engineRegistry,
       onComplete: () => {
-        showSuccessNotice('批量导入完成');
+        showSuccessNotice(t('cowrite.batchImportDone'));
       }
     }).open();
   }
@@ -3613,7 +3614,7 @@ ${text}`;
   /** 打开知识库监控弹窗 */
   openKnowledgeMonitorModal() {
     if (!this.plugin.deconstructionScheduler || !this.facade.knowledgeBaseManager) {
-      new Notice('知识库未初始化，请稍候再试');
+      new Notice(t('cowrite.kbNotInitWait'));
       return;
     }
     new KnowledgeMonitorModal(
@@ -3767,11 +3768,11 @@ ${text}`;
         return;
       }
       if (application.kind === 'replace') {
-        this.applyProgrammaticEdit(application.newText, application.selection, 'AI 质量修复');
+        this.applyProgrammaticEdit(application.newText, application.selection, t('cowrite.aiQualityFix'));
         void this.refreshPreview(true);
         showSuccessNotice("\u4FEE\u590D\u5B8C\u6210", { timeout: 2000 });
       } else if (application.kind === 'append') {
-        this.applyProgrammaticEdit(application.newText, application.selection, 'AI 修复建议追加');
+        this.applyProgrammaticEdit(application.newText, application.selection, t('cowrite.aiFixAppend'));
         void this.refreshPreview(true);
         showWarningNotice("\u672A\u5B9A\u4F4D\u5230\u7CBE\u786E\u4F4D\u7F6E\uFF0C\u5EFA\u8BAE\u5DF2\u8FFD\u52A0\u5728\u672B\u5C3E", { timeout: 3000 });
       }
@@ -3860,7 +3861,7 @@ ${text}`;
       const start = this.rightEditor.selectionStart ?? this.rightEditor.value.length;
       const end = this.rightEditor.selectionEnd ?? start;
       const nextText = this.rightEditor.value.slice(0, start) + text + this.rightEditor.value.slice(end);
-      this.applyProgrammaticEdit(nextText, start + text.length, '历史回填');
+      this.applyProgrammaticEdit(nextText, start + text.length, t('cowrite.historyBackfill'));
       void this.refreshPreview(true);
     }).open();
   }
@@ -3943,7 +3944,7 @@ ${text}`;
   private openRefillModal(type: 'knowledge' | 'fingerprint'): void {
     if (type === 'knowledge') {
       if (!this.facade.knowledgeBaseManager || !this.plugin.deconstructionScheduler) {
-        new Notice('知识库未初始化，请稍候再试');
+        new Notice(t('cowrite.kbNotInitWait'));
         return;
       }
       const books = this.facade.knowledgeBaseManager.getAllBooks().then(allBooks => {
@@ -3957,10 +3958,10 @@ ${text}`;
             deconstructionScheduler: this.plugin.deconstructionScheduler!,
           }).open();
         } else {
-          new Notice('所有知识库书籍已完成拆解');
+          new Notice(t('cowrite.allBooksDeconstructed'));
         }
       }).catch(() => {
-        showErrorNotice('获取书籍列表失败');
+        showErrorNotice(t('cowrite.bookListFailed'));
       });
     }
   }
