@@ -6,6 +6,11 @@
  * 常量与类型零运行时依赖，放 engine 会让 core 产生一条 core → engine 反向边。
  */
 
+import { hasMessage, t } from '@/i18n';
+
+/**
+ * 拆解维度标识（八维）。
+ */
 export type BreakdownDimension = 'style' | 'rhythm' | 'technique' | 'structure' | 'character' | 'foreshadow' | 'commercial' | 'readability';
 
 /**
@@ -75,3 +80,28 @@ export const DIMENSION_LABELS: Record<BreakdownDimension, string> = {
     commercial: '商业价值',
     readability: '可读性分析',
 };
+
+/** 维度显示名的资源键（界面用；引擎日志仍用上面的中文常量） */
+export const DIMENSION_LABEL_KEYS: Record<BreakdownDimension, string> = {
+    style: 'deconstruction.dimension.style',
+    rhythm: 'deconstruction.dimension.rhythm',
+    technique: 'deconstruction.dimension.technique',
+    structure: 'deconstruction.dimension.structure',
+    character: 'deconstruction.dimension.character',
+    foreshadow: 'deconstruction.dimension.foreshadow',
+    commercial: 'deconstruction.dimension.commercial',
+    readability: 'deconstruction.dimension.readability',
+};
+
+/**
+ * 取维度的界面显示名（跟随当前语言）。
+ *
+ * 未登记语言的资源缺失时回落到中文常量，避免英文界面出现裸键名。
+ *
+ * @param dim - 拆解维度
+ * @returns 显示名
+ */
+export function dimensionLabel(dim: BreakdownDimension): string {
+    const key = DIMENSION_LABEL_KEYS[dim];
+    return key && hasMessage(key) ? t(key) : (DIMENSION_LABELS[dim] ?? dim);
+}

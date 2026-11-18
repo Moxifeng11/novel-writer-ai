@@ -9,11 +9,12 @@ import { Setting, Notice } from 'obsidian';
 import {
     DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS,
     ALL_BREAKDOWN_DIMENSIONS,
-    DIMENSION_LABELS,
-} from '@/main';
-import type { DeconstructionEngineSettings } from '@/main';
+    dimensionLabel,
+} from '@/shared/deconstruction-settings';
+import type { DeconstructionEngineSettings } from '@/shared/deconstruction-settings';
 import { OperationConfirmModal } from '@/ui/components/progress';
 import { SettingsSection } from './section-base';
+import { t } from '@/i18n';
 
 /**
  * DeconstructionSection 类。
@@ -52,9 +53,9 @@ export class DeconstructionSection extends SettingsSection {
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
-        section.createEl('h3', { text: '🧬 拆解引擎' });
+        section.createEl('h3', { text: t('settings.deconstruction.title') });
         section.createEl('p', {
-            text: '配置小说拆解引擎的行为，包括增强级别、拆解维度、向量与 LLM 增强等。设置将在下一次拆解任务时生效。',
+            text: t('settings.deconstruction.intro'),
             cls: 'setting-item-description'
         });
 
@@ -63,15 +64,15 @@ export class DeconstructionSection extends SettingsSection {
         const qualityCard = section.createDiv({
             cls: 'nw-st-dc-card'
         });
-        qualityCard.createEl('h4', { text: '🎯 增强级别', cls: 'nw-st-dc-card-title' });
+        qualityCard.createEl('h4', { text: t('settings.deconstruction.qualityTitle'), cls: 'nw-st-dc-card-title' });
 
         new Setting(qualityCard)
-            .setName('默认质量级别')
-            .setDesc('快速=仅基础分析；标准=完整维度；深度=含向量+LLM 增强（耗时最长）')
+            .setName(t('settings.deconstruction.qualityLevelName'))
+            .setDesc(t('settings.deconstruction.qualityLevelDesc'))
             .addDropdown(dropdown => {
-                dropdown.addOption('fast', '⚡ 快速');
-                dropdown.addOption('standard', '✅ 标准');
-                dropdown.addOption('deep', '🔬 深度');
+                dropdown.addOption('fast', t('settings.deconstruction.levelFast'));
+                dropdown.addOption('standard', t('settings.deconstruction.levelStandard'));
+                dropdown.addOption('deep', t('settings.deconstruction.levelDeep'));
                 dropdown.setValue(cfg.defaultQualityLevel);
                 dropdown.onChange(async (value) => {
                     await this.ensureDeconstructionEngineSettingsPersists(s => {
@@ -81,8 +82,8 @@ export class DeconstructionSection extends SettingsSection {
             });
 
         new Setting(qualityCard)
-            .setName('低质量自动升级')
-            .setDesc('检测到拆解质量较低时，自动升级到更高级别重跑')
+            .setName(t('settings.deconstruction.autoUpgradeName'))
+            .setDesc(t('settings.deconstruction.autoUpgradeDesc'))
             .addToggle(toggle => {
                 toggle.setValue(cfg.enableAutoUpgrade);
                 toggle.onChange(async (value) => {
@@ -95,28 +96,29 @@ export class DeconstructionSection extends SettingsSection {
         const dimCard = section.createDiv({
             cls: 'nw-st-dc-card'
         });
-        dimCard.createEl('h4', { text: '🧩 拆解维度', cls: 'nw-st-dc-card-title' });
+        dimCard.createEl('h4', { text: t('settings.deconstruction.dimensionTitle'), cls: 'nw-st-dc-card-title' });
         dimCard.createEl('div', {
-            text: '选择默认启用的拆解维度（调用方未显式指定维度时使用）',
+            text: t('settings.deconstruction.dimensionNote'),
             cls: 'nw-st-dc-note'
         });
 
         const dimList = dimCard.createDiv({ cls: 'nw-st-dc-dim-grid' });
         const dimSet = new Set(cfg.enabledDimensions);
-        const DIMENSION_DESC: Record<string, string> = {
-            style: '分析文笔风格与语言特色',
-            rhythm: '分析叙事节奏与张弛变化',
-            technique: '提取写作技巧与手法',
-            structure: '拆解情节结构与章节组织',
-            character: '提取人物设定与性格弧线',
-            foreshadow: '梳理伏笔铺设与回收',
-            commercial: '分析商业卖点与爽点',
-            readability: '分析可读性与流畅度',
+        const DIMENSION_DESC_KEYS: Record<string, string> = {
+            style: 'settings.deconstruction.dimensionDescStyle',
+            rhythm: 'settings.deconstruction.dimensionDescRhythm',
+            technique: 'settings.deconstruction.dimensionDescTechnique',
+            structure: 'settings.deconstruction.dimensionDescStructure',
+            character: 'settings.deconstruction.dimensionDescCharacter',
+            foreshadow: 'settings.deconstruction.dimensionDescForeshadow',
+            commercial: 'settings.deconstruction.dimensionDescCommercial',
+            readability: 'settings.deconstruction.dimensionDescReadability',
         };
         ALL_BREAKDOWN_DIMENSIONS.forEach(dim => {
+            const descKey = DIMENSION_DESC_KEYS[dim];
             const item = new Setting(dimList)
-                .setName(DIMENSION_LABELS[dim])
-                .setDesc(DIMENSION_DESC[dim] || '')
+                .setName(dimensionLabel(dim))
+                .setDesc(descKey ? t(descKey) : '')
                 .addToggle(toggle => {
                     toggle.setValue(dimSet.has(dim));
                     toggle.onChange(async (value) => {
@@ -134,8 +136,8 @@ export class DeconstructionSection extends SettingsSection {
         });
 
         new Setting(dimCard)
-            .setName('包含商业价值分析')
-            .setDesc('即使未在维度列表中勾选 commercial，也自动追加商业维度')
+            .setName(t('settings.deconstruction.includeCommercialName'))
+            .setDesc(t('settings.deconstruction.includeCommercialDesc'))
             .addToggle(toggle => {
                 toggle.setValue(cfg.includeCommercial);
                 toggle.onChange(async (value) => {
@@ -146,8 +148,8 @@ export class DeconstructionSection extends SettingsSection {
             });
 
         new Setting(dimCard)
-            .setName('包含可读性分析')
-            .setDesc('即使未在维度列表中勾选 readability，也自动追加可读性维度')
+            .setName(t('settings.deconstruction.includeReadabilityName'))
+            .setDesc(t('settings.deconstruction.includeReadabilityDesc'))
             .addToggle(toggle => {
                 toggle.setValue(cfg.includeReadability);
                 toggle.onChange(async (value) => {
@@ -160,11 +162,11 @@ export class DeconstructionSection extends SettingsSection {
         const vectorCard = section.createDiv({
             cls: 'nw-st-dc-card'
         });
-        vectorCard.createEl('h4', { text: '🧠 向量增强', cls: 'nw-st-dc-card-title' });
+        vectorCard.createEl('h4', { text: t('settings.deconstruction.vectorTitle'), cls: 'nw-st-dc-card-title' });
 
         new Setting(vectorCard)
-            .setName('启用向量增强')
-            .setDesc('使用向量相似度匹配辅助定位相关内容，提升拆解质量')
+            .setName(t('settings.deconstruction.vectorEnabledName'))
+            .setDesc(t('settings.deconstruction.vectorEnabledDesc'))
             .addToggle(toggle => {
                 toggle.setValue(cfg.vectorEnabled);
                 toggle.onChange(async (value) => {
@@ -175,8 +177,8 @@ export class DeconstructionSection extends SettingsSection {
             });
 
         new Setting(vectorCard)
-            .setName('向量模型名称')
-            .setDesc('用于向量嵌入的模型名称（实际提供商端点请在「写作知识库」标签页配置）')
+            .setName(t('settings.deconstruction.vectorModelName'))
+            .setDesc(t('settings.deconstruction.vectorModelDesc'))
             .addText(text => {
                 text.setValue(cfg.vectorModel);
                 text.setPlaceholder('bge-m3');
@@ -189,8 +191,8 @@ export class DeconstructionSection extends SettingsSection {
             });
 
         new Setting(vectorCard)
-            .setName('向量缓存大小')
-            .setDesc(`向量缓存条目上限（当前: ${cfg.vectorCacheSize}）`)
+            .setName(t('settings.deconstruction.vectorCacheName'))
+            .setDesc(t('settings.deconstruction.vectorCacheDesc', { count: cfg.vectorCacheSize }))
             .addSlider(slider => {
                 slider.setLimits(100, 50000, 100);
                 slider.setValue(cfg.vectorCacheSize);
@@ -200,13 +202,13 @@ export class DeconstructionSection extends SettingsSection {
                         s.vectorCacheSize = value;
                     });
                     const descEl = slider.sliderEl.closest('.setting-item')?.querySelector('.setting-item-description');
-                    if (descEl) descEl.textContent = `向量缓存条目上限（当前: ${value}）`;
+                    if (descEl) descEl.textContent = t('settings.deconstruction.vectorCacheDesc', { count: value });
                 });
             });
 
         new Setting(vectorCard)
-            .setName('批处理大小')
-            .setDesc(`单次向量请求的文本条数（当前: ${cfg.vectorBatchSize}）`)
+            .setName(t('settings.deconstruction.vectorBatchName'))
+            .setDesc(t('settings.deconstruction.vectorBatchDesc', { count: cfg.vectorBatchSize }))
             .addSlider(slider => {
                 slider.setLimits(1, 256, 1);
                 slider.setValue(cfg.vectorBatchSize);
@@ -216,7 +218,7 @@ export class DeconstructionSection extends SettingsSection {
                         s.vectorBatchSize = value;
                     });
                     const descEl = slider.sliderEl.closest('.setting-item')?.querySelector('.setting-item-description');
-                    if (descEl) descEl.textContent = `单次向量请求的文本条数（当前: ${value}）`;
+                    if (descEl) descEl.textContent = t('settings.deconstruction.vectorBatchDesc', { count: value });
                 });
             });
 
@@ -224,17 +226,17 @@ export class DeconstructionSection extends SettingsSection {
             cls: 'nw-st-dc-card'
         });
         llmCard.createEl('h4', {
-            text: '🤖 LLM 增强 · 实验性',
+            text: t('settings.deconstruction.llmTitle'),
             cls: 'nw-st-dc-card-title'
         });
         llmCard.createEl('div', {
-            text: '⚠️ 实验性功能：调用大模型对拆解结果做二次提炼，会增加 API 调用成本',
+            text: t('settings.deconstruction.llmWarning'),
             cls: 'nw-st-dc-note nw-st-dc-note--warning'
         });
 
         new Setting(llmCard)
-            .setName('启用 LLM 增强')
-            .setDesc('使用大模型对拆解结果做二次提炼与归因')
+            .setName(t('settings.deconstruction.llmEnabledName'))
+            .setDesc(t('settings.deconstruction.llmEnabledDesc'))
             .addToggle(toggle => {
                 toggle.setValue(cfg.llmEnabled);
                 toggle.onChange(async (value) => {
@@ -245,8 +247,8 @@ export class DeconstructionSection extends SettingsSection {
             });
 
         new Setting(llmCard)
-            .setName('LLM 模型名称')
-            .setDesc('用于增强的 LLM 模型名称（使用当前 API 提供商）')
+            .setName(t('settings.deconstruction.llmModelName'))
+            .setDesc(t('settings.deconstruction.llmModelDesc'))
             .addText(text => {
                 text.setValue(cfg.llmModel);
                 text.setPlaceholder('deepseek-r1:7b');
@@ -261,11 +263,11 @@ export class DeconstructionSection extends SettingsSection {
         const perfCard = section.createDiv({
             cls: 'nw-st-dc-card'
         });
-        perfCard.createEl('h4', { text: '⚙️ 性能', cls: 'nw-st-dc-card-title' });
+        perfCard.createEl('h4', { text: t('settings.deconstruction.perfTitle'), cls: 'nw-st-dc-card-title' });
 
         new Setting(perfCard)
-            .setName('最大并发拆解数')
-            .setDesc(`同时执行的拆解任务数（当前: ${cfg.maxConcurrency}）`)
+            .setName(t('settings.deconstruction.maxConcurrencyName'))
+            .setDesc(t('settings.deconstruction.maxConcurrencyDesc', { count: cfg.maxConcurrency }))
             .addSlider(slider => {
                 slider.setLimits(1, 8, 1);
                 slider.setValue(cfg.maxConcurrency);
@@ -275,13 +277,13 @@ export class DeconstructionSection extends SettingsSection {
                         s.maxConcurrency = value;
                     });
                     const descEl = slider.sliderEl.closest('.setting-item')?.querySelector('.setting-item-description');
-                    if (descEl) descEl.textContent = `同时执行的拆解任务数（当前: ${value}）`;
+                    if (descEl) descEl.textContent = t('settings.deconstruction.maxConcurrencyDesc', { count: value });
                 });
             });
 
         new Setting(perfCard)
-            .setName('采样模式（仅分析前 N 字）')
-            .setDesc('默认关闭：全本智能分段拆解，逐段覆盖全部剧情。开启后仅分析开头“文本采样上限”字数，用于快速预览。')
+            .setName(t('settings.deconstruction.sampleModeName'))
+            .setDesc(t('settings.deconstruction.sampleModeDesc'))
             .addToggle(toggle => {
                 toggle.setValue(cfg.sampleMode === true);
                 toggle.onChange(async (value) => {
@@ -292,8 +294,8 @@ export class DeconstructionSection extends SettingsSection {
             });
 
         new Setting(perfCard)
-            .setName('文本采样上限')
-            .setDesc(`仅采样模式生效：采样模式下参与拆解的最大字数（当前: ${cfg.textSampleLimit.toLocaleString()}）。全本模式下此项不生效。`)
+            .setName(t('settings.deconstruction.sampleLimitName'))
+            .setDesc(t('settings.deconstruction.sampleLimitDesc', { count: cfg.textSampleLimit.toLocaleString() }))
             .addText(text => {
                 text.setValue(String(cfg.textSampleLimit));
                 text.setPlaceholder('100000');
@@ -301,7 +303,7 @@ export class DeconstructionSection extends SettingsSection {
                 text.onChange(async (value) => {
                     const n = parseInt(value, 10);
                     if (!Number.isFinite(n) || n <= 0) {
-                        new Notice('⚠️ 文本采样上限必须为正整数');
+                        new Notice(t('settings.deconstruction.sampleLimitInvalid'));
                         text.setValue(String(cfg.textSampleLimit));
                         return;
                     }
@@ -313,23 +315,23 @@ export class DeconstructionSection extends SettingsSection {
 
         const resetRow = section.createDiv({ cls: 'nw-st-dc-reset-row' });
         const resetBtn = resetRow.createEl('button', {
-            text: '↩️ 恢复默认',
+            text: t('settings.deconstruction.resetBtn'),
             cls: 'nw-st-dc-reset-btn',
-            attr: { type: 'button', title: '将拆解引擎所有配置恢复为默认值' }
+            attr: { type: 'button', title: t('settings.deconstruction.resetTitleAttr') }
         });
         resetBtn.addEventListener('click', async () => {
             const confirmed = await OperationConfirmModal.confirm(this.app, {
-                title: '恢复默认配置',
-                description: '确定要将拆解引擎所有配置恢复为默认值吗？',
-                warning: '所有自定义配置将丢失',
-                confirmText: '确认恢复',
-                cancelText: '取消',
+                title: t('settings.deconstruction.resetConfirmTitle'),
+                description: t('settings.deconstruction.resetConfirmDesc'),
+                warning: t('settings.deconstruction.resetConfirmWarning'),
+                confirmText: t('settings.deconstruction.resetConfirmOk'),
+                cancelText: t('common.cancel'),
             });
             if (!confirmed) return;
             this.plugin.settings.deconstructionEngine = { ...DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS };
             await this.plugin.saveSettings();
             this.refresh();
-            new Notice('✅ 已恢复默认配置');
+            new Notice(t('settings.deconstruction.resetNotice'));
         });
     }
 }

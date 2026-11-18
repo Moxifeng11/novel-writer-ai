@@ -1,6 +1,6 @@
 # 拆解引擎设置分区（settings / deconstruction-section）
 
-> 状态：stable（视觉重构 Slice Y 完成 2026-11-17）　｜　最后更新：2026-11-17　｜　Owner：dsh
+> 状态：stable（视觉重构 Slice Y 完成 2026-11-17；i18n 第二期第九片 2026-11-18）　｜　最后更新：2026-11-18　｜　Owner：dsh
 
 ## 1. 定位
 
@@ -11,7 +11,8 @@
   - `ensureDeconstructionEngineSettingsPersists(update)`（`:42`）：改完立即 `plugin.saveSettings()`。
   - `render(container)`（`:53`）：同步渲染整页。
   - 装配：`ui/settings/section-factory.ts:71` `{ id: 'deconstruction', label: '🧬 拆解引擎', group: 'advanced', create: host => new DeconstructionSection(host) }`；分组见同文件 `:54`。
-- **数据来源**：`plugin.settings.deconstructionEngine`（`DeconstructionEngineSettings`，类型在 `main.ts`）；维度清单 `ALL_BREAKDOWN_DIMENSIONS` / `DIMENSION_LABELS` 来自 `@/main`，`DIMENSION_DESC` 是本文件内的局部表（`:106`）。无自有状态、无异步读盘（`asyncLoad` 只影响宿主刷新条）。
+- **数据来源**：`plugin.settings.deconstructionEngine`（`DeconstructionEngineSettings`）；维度清单 `ALL_BREAKDOWN_DIMENSIONS`、界面名 `dimensionLabel(dim)`（`shared/deconstruction-settings.ts`）与资源键表 `DIMENSION_LABEL_KEYS` 均直接 `import … from '@/shared/deconstruction-settings'`（**不再走 `@/main`** —— `@` 指向仓根，vitest 里会先命中构建产物 `main.js` 报 `Cannot find module 'obsidian'`）；描述走本文件的 `DIMENSION_DESC_KEYS`（`:106` 附近的局部键表）。无自有状态、无异步读盘（`asyncLoad` 只影响宿主刷新条）。
+- **i18n（2026-11-18，第九片）**：24 处用户可见文案全部走 `t('settings.deconstruction.*')`（54 键）+ 维度名 `deconstruction.dimension.*`（8 键）；三个 slider 的实时 desc 用 `t(key, { count })` 插值；`cancelText` 复用 `common.cancel`。文件内剩余 CJK 全是注释。
 - **样式**：新建 `styles-src/41-settings-deconstruction.css`（1640 字节 / 62 行 / 7 个选择器：`nw-st-dc-card` / `-card-title` / `-note` / `-note--warning` / `-dim-grid` / `-reset-row` / `button.nw-st-dc-reset-btn`），样式源 46 → **47**。**不套 `.nw-scope`**（与 Slice R 的 `36-settings-general.css`、Slice U 的 `38-settings-knowledge.css` 一致：设置页整体不在 scope 容器内）。
 
 ## 2. 现状（事实，不写愿望）
@@ -42,6 +43,8 @@
 - **2026-11-17 五张卡合成一个类**：原本五处逐字重复同一串 5 个工具类，合并成 `.nw-st-dc-card` 后声明逐条按被删工具类实际生效值复刻（padding / border / radius / margin-bottom / background），像素验收 3/3 零差异。
 - **2026-11-17 按钮必须元素限定**：旧实现是 `attr.style`，特异性等同 inline，能压过 Obsidian 自带 `button` 规则；改成裸类会被压掉，所以写 `button.nw-st-dc-reset-btn`（与 Slice R/Slice U 结论一致）。
 - **2026-11-17 警示条用修饰类而不是第二个基类**：`nw-st-dc-note--warning` 只加一条 `color`，其余几何继承基类，避免两份重复声明漂移。
+- **2026-11-18 维度名「保留常量 + 并出函数」**：`DIMENSION_LABELS` 被 `engine/deconstruction-scheduler.ts` 用于任务日志与进度串（`:197/:1113/:1177/:1294`），直接改它会让日志随界面语言漂移；因此保留中文常量，另出 `dimensionLabel()`（查 `deconstruction.dimension.*`，缺失回落常量）给 UI。
+- **2026-11-18 描述表改成键表**：`DIMENSION_DESC` → `DIMENSION_DESC_KEYS`，渲染时 `t(key)`；与布局页 `labelKey/descKey` 同一套路，避免把算好的文案预先存进数据表。
 - **2026-11-17 不新建「拆解引擎视图」样式**：本分区只有设置页形态，没有独立的视图/弹窗，因此单开一个 41 号文件即够，不往 `27-knowledge-base.css` 里塞（它与知识库视图无关）。
 
 ## 5. 验收记录
@@ -54,6 +57,7 @@
 | 2026-11-17 | 像素（3 场景 before/after） | PNG **3/3 = 0 px**；probes（各 166 元素）struct 0 / style 0 / rect 0，仅 15 个类串改名 |
 | 2026-11-17 | 门禁 | `check:inline-styles` 526→**525**；`check:utility` 55/189→**46/142**（删 9 个零引用类，零引用 0）；`check:css` bytes **786456** / 31548 行 / uniqueClasses **4261** / hex 192 / rgbHsl 223；`check:bundle` main.js **5625149** / styles.css **786456** |
 | 2026-11-17 | `npm run preflight` | EXIT=0：959 文件 / 10118 通过 + 3 skipped；check:release 通过（v4.96.1） |
+| 2026-11-18 | i18n 第九片（zh/en 实机） | `D:\nw-dev-vault\_visual-i18n9\deconstruction-{zh-CN,en-US}.png`（930×2970）：en 下六张卡标题与全部 Setting 行英文、CJK **0**、无溢出；zh 与改前一致 |
 
 ## 6. 测试清单
 

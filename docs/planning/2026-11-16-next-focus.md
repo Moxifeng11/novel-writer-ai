@@ -1885,3 +1885,38 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 `setup-section.ts`（477）→ `foreshadow-section.ts`（447）→ 写作主流程 Notice。
 
 
+
+## 第六十六轮：i18n 第二期第九片 —— 拆解引擎分区（2026-11-18）
+
+用户 m15674「开始下一步」：按顺序迁 `ui/settings/deconstruction-section.ts`（335 行 / 58 个含中文行 / 758 中文字）。
+
+**改动**
+- 五张卡（增强级别 / 八个拆解维度 / 向量增强 / LLM 增强·实验性 / 性能）与「↩️ 恢复默认」确认框
+  共 24 处文案迁 `t('settings.deconstruction.*')` **54 键**；三个 slider 的实时 desc 用 `t(key, { count })` 插值；
+  `cancelText` 复用 `common.cancel`。
+- 文件内局部 `DIMENSION_DESC` 表改 `DIMENSION_DESC_KEYS` + 渲染时求值。
+- `shared/deconstruction-settings.ts` 新增 `DIMENSION_LABEL_KEYS` 与 `dimensionLabel(dim)`
+  （`deconstruction.dimension.*` 8 键，缺失回落原中文）；原 `DIMENSION_LABELS` 一字未改留给引擎日志。
+- 资源：zh/en 各 **1103 条**（+62）。
+
+**三处坑**
+1. **`DIMENSION_LABELS` 不能直接换 `t()`**：它被 `engine/deconstruction-scheduler.ts` 用在任务日志与进度串
+   （`:197/:1113/:1177/:1294`），换掉会让日志随界面语言漂移 → 保留常量 + `dimensionLabel()` 给 UI。
+2. **分区文件别从 `'@/main'` 取常量**：`@` 指向仓根，vitest 里先命中构建产物 `main.js`，
+   报 `Error: Cannot find module 'obsidian'` + `Require stack: …novel-writer-ai\main.js`；
+   改 `from '@/shared/deconstruction-settings'`（`main.ts:739` 只是再导出）。
+3. **新导出要补 JSDoc**：`check:jsdoc` 报「未注释导出从 0 增到 1」，且缺的是早已存在但没注释的
+   `export type BreakdownDimension`（棘轮按文件计数，新增导出会把旧债暴露）；补注释后 100% / @example 53/53。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；`tests/unit/ui/settings-sections-dom.test.ts` 新增 3 例（文件 16 例全绿）。
+- `check:i18n`：zh 1103 / en 1103、0 无法解析键、动态键 **9 处**、棘轮收紧到 **261 文件 / 10785 条**。
+- `check:bundle`：main.js 5773439 → **5781144**（+7705，62 条双语键进包）、styles.css 799217 不变。
+- 实机 `D:\nw-dev-vault\_visual-i18n9\deconstruction-{zh-CN,en-US}.png`（930×2970）：
+  en 下 heads = `📖 Settings / 🧬 Deconstruction engine / 🎯 Quality level / 🧩 Dimensions /
+  🧠 Vector enhancement / 🤖 LLM enhancement · experimental / ⚙️ Performance`，
+  维度名 `Style analysis … Readability analysis`，按钮 `🔄 Refresh / ↩️ Restore defaults`，**CJK 0**；两语言无溢出。
+
+**下一轮候选**：`ui/settings/fingerprint-section.ts`（569）→ `setup-section.ts`（477）→
+`foreshadow-section.ts`（447）→ `mode-section.ts`（402）→ `mcp-section.ts`（301）→ 写作主流程 `Notice`。
+

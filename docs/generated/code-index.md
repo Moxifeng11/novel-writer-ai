@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146805 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19506 | 296 | 203 | 69% |
-| `shared/` | 258 | 51739 | 2177 | 1699 | 78% |
+| `shared/` | 258 | 51769 | 2179 | 1700 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 115013 | 1177 | 927 | 79% |
+| `ui/` | 306 | 115015 | 1177 | 927 | 79% |
 
 ## 文件清单
 
@@ -500,7 +500,7 @@
 | `shared/creation-flow.ts` | 587 | 11 | 11 |
 | `shared/creation-mode.ts` | 441 | 22 | 18 |
 | `shared/cursor-position.ts` | 31 | 2 | 2 |
-| `shared/deconstruction-settings.ts` | 78 | 6 | 6 |
+| `shared/deconstruction-settings.ts` | 108 | 8 | 7 |
 | `shared/degradation-notifier.ts` | 286 | 11 | 5 |
 | `shared/desktop-shell.ts` | 79 | 3 | 2 |
 | `shared/diff-utils.ts` | 322 | 8 | 8 |
@@ -946,7 +946,7 @@
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 39 | 1 | 1 |
 | `ui/settings/api-section.ts` | 1698 | 1 | 1 |
-| `ui/settings/deconstruction-section.ts` | 336 | 1 | 1 |
+| `ui/settings/deconstruction-section.ts` | 338 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 441 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 293 | 1 | 1 |
 | `ui/settings/general-sections.ts` | 1265 | 5 | 5 |

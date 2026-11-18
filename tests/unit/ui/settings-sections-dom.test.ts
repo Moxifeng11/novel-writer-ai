@@ -23,6 +23,8 @@ import {
     WritingSection,
 } from '../../../ui/settings/writing-sections';
 import { KnowledgeSection } from '../../../ui/settings/knowledge-section';
+import { DeconstructionSection } from '../../../ui/settings/deconstruction-section';
+import { dimensionLabel } from '../../../shared/deconstruction-settings';
 import { setLocale } from '../../../i18n';
 import type { SettingsSectionHost } from '../../../ui/settings/section-base';
 
@@ -250,3 +252,49 @@ describe('KnowledgeSection（写作知识库）', () => {
         expect(text).toContain('🧠 向量增强设置');
     });
 });
+
+describe('DeconstructionSection（拆解引擎分区 · 缺口⑦ 第二期第九片）', () => {
+    it('中文界面渲染增强级别、八个维度与恢复默认', () => {
+        setLocale('zh-CN');
+        const host = makeHost();
+        const root = render(new DeconstructionSection(host), host);
+        const text = root.allText();
+        expect(text).toContain('🧬 拆解引擎');
+        expect(text).toContain('默认质量级别');
+        expect(text).toContain('分析文笔风格与语言特色');
+        for (const label of ['风格分析', '节奏分析', '写作技巧', '结构拆解', '人设提取', '伏笔梳理', '商业价值', '可读性分析']) {
+            expect(text).toContain(label);
+        }
+        expect(text).toContain('↩️ 恢复默认');
+    });
+
+    it('英文界面下标题、维度与按钮全部走 i18n', () => {
+        setLocale('en-US');
+        try {
+            const host = makeHost();
+            const root = render(new DeconstructionSection(host), host);
+            const text = root.allText();
+            expect(text).toContain('🧬 Deconstruction engine');
+            expect(text).toContain('Default quality level');
+            expect(text).toContain('Style analysis');
+            expect(text).toContain('Foreshadowing');
+            expect(text).toContain('Restore defaults');
+            expect(text).not.toContain('settings.deconstruction.');
+            expect(text).not.toContain('拆解');
+        } finally {
+            setLocale('zh-CN');
+        }
+    });
+
+    it('dimensionLabel 跟随语言且未登记维度不返回裸键名', () => {
+        setLocale('en-US');
+        try {
+            expect(dimensionLabel('style')).toBe('Style analysis');
+            expect(dimensionLabel('readability')).toBe('Readability analysis');
+        } finally {
+            setLocale('zh-CN');
+        }
+        expect(dimensionLabel('style')).toBe('风格分析');
+    });
+});
+
