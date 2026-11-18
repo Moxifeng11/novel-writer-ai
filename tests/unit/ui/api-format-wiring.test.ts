@@ -15,15 +15,16 @@ describe('设置页 API 格式与模型获取的接线', () => {
         expect(source).toContain("cls: 'nw-api-sidebar'");
         expect(source).toContain("cls: 'nw-api-detail'");
         // 供应商列表按预设/自定义分组
-        expect(source).toContain("title: '预设供应商'");
-        expect(source).toContain("title: '自定义供应商'");
+        // 文案走 i18n（缺口⑦ 第二期第三片）：断言键而非中文字面量
+        expect(source).toContain("t('settings.api.presetGroup')");
+        expect(source).toContain("t('settings.api.customGroup')");
     });
 
     it('详情区提供 Base URL、API 格式与密钥输入', () => {
         const source = read('ui/settings/api-section.ts');
-        expect(source).toContain("renderField(container, 'Base URL'");
-        expect(source).toContain("renderField(container, 'API 格式'");
-        expect(source).toContain("renderField(container, 'API Key'");
+        expect(source).toContain("renderField(container, t('settings.api.fieldBaseUrl')");
+        expect(source).toContain("renderField(container, t('settings.api.fieldFormat')");
+        expect(source).toContain("renderField(container, t('settings.api.fieldApiKey')");
         // 输入框必须用占满宽度的类，而不是旧版 Setting 内联的窄 input
         expect(source).toContain("cls: 'nw-api-text-input'");
         expect(source).toContain("cls: 'nw-api-select'");
@@ -31,7 +32,7 @@ describe('设置页 API 格式与模型获取的接线', () => {
 
     it('模型列表支持从 URL 拉取与逐模型启停', () => {
         const source = read('ui/settings/api-section.ts');
-        expect(source).toContain('从 URL 获取');
+        expect(source).toContain("t('settings.api.fetchModels')");
         expect(source).toContain('discoverModels(');
         expect(source).toContain('new ModelPickerModal(');
         expect(source).toContain('disabledModels');

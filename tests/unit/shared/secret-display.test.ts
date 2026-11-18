@@ -1,11 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect } from 'vitest';
 import {
     describeKeyEncryptionStatus,
     describeSecretForInput,
     isStoredCiphertext,
     resolveSecretInput,
-    SECRET_LOCKED_PLACEHOLDER,
+    secretLockedPlaceholder,
 } from '../../../shared/secret-display';
+import { setLocale } from '../../../i18n';
+
+// 缺口⑦：文案已走 i18n，测试固定中文口径（默认语言），避免宿主语言影响断言
+afterEach(() => setLocale('zh-CN'));
 
 describe('isStoredCiphertext', () => {
     it('识别 v1 / v2 密文', () => {
@@ -24,7 +28,8 @@ describe('describeSecretForInput', () => {
     it('密文 → 输入框留空 + 解锁提示（不泄露密文）', () => {
         const d = describeSecretForInput('aes256v2:210000:s:i:c');
         expect(d.value).toBe('');
-        expect(d.placeholder).toBe(SECRET_LOCKED_PLACEHOLDER);
+        expect(d.placeholder).toBe(secretLockedPlaceholder());
+        expect(d.placeholder).toContain('加密');
         expect(d.title).toContain('加密');
     });
 
@@ -103,3 +108,14 @@ describe('describeKeyEncryptionStatus — S-4 决策 B（明文但标注风险�
         expect(status.text).toContain('旧版加密条目');
     });
 });
+describe('i18n（缺口⑦ 第二期）', () => {
+    it('切到 en-US 后状态文案与占位提示走英文', () => {
+        setLocale('en-US');
+        const status = describeKeyEncryptionStatus({ locked: 0, encrypted: false, legacy: 0 });
+        expect(status.text).toContain('No passphrase set');
+        expect(status.text).not.toContain('未设置口令');
+        expect(describeSecretForInput('aes256v2:x').placeholder).toContain('Encrypted');
+        expect(describeSecretForInput('sk-abc').title).toBe('Current key (saved)');
+    });
+});
+

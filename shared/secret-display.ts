@@ -10,6 +10,8 @@
  * 而不是把密文露出来。
  */
 
+import { t } from '@/i18n';
+
 /** 与 crypto-service 保持一致的密文前缀 */
 const V2_PREFIX = 'aes256v2:';
 const V1_PREFIX = 'aes256:';
@@ -25,8 +27,17 @@ export function isStoredCiphertext(value: unknown): boolean {
         && (value.startsWith(V2_PREFIX) || value.startsWith(V1_PREFIX));
 }
 
-/** 输入框留空，用这个作为占位提示 */
-export const SECRET_LOCKED_PLACEHOLDER = '已加密 · 输入口令解锁后可修改';
+/**
+ * 输入框留空时的占位提示。
+ *
+ * 改成函数而不是常量：语言可在运行时切换，模块加载时求值会固化成
+ * 启动语言（缺口⑦ i18n 第二期）。
+ *
+ * @returns 占位文案
+ */
+export function secretLockedPlaceholder(): string {
+    return t('secret.lockedPlaceholder');
+}
 
 /**
  * 密钥输入框的通用属性（S3-14 安全 r3）。
@@ -60,15 +71,15 @@ export function describeSecretForInput(value: unknown): {
     if (isStoredCiphertext(value)) {
         return {
             value: '',
-            placeholder: SECRET_LOCKED_PLACEHOLDER,
-            title: '磁盘上保存的是加密密钥。输入口令解锁后才能看到明文；直接输入新密钥会要求先解锁。',
+            placeholder: secretLockedPlaceholder(),
+            title: t('secret.lockedTitle'),
         };
     }
     const text = typeof value === 'string' ? value : '';
     return {
         value: text,
         placeholder: 'sk-...',
-        title: text ? '当前密钥（已保存）' : '尚未填写密钥',
+        title: text ? t('secret.savedTitle') : t('secret.emptyTitle'),
     };
 }
 
@@ -118,14 +129,13 @@ export interface KeyEncryptionStatusDescription {
  * @returns 展示文案与「是否明文」标记
  */
 export function describeKeyEncryptionStatus(input: KeyEncryptionStatusInput): KeyEncryptionStatusDescription {
-    const legacyHint = input.legacy > 0 ? ` 另有 ${input.legacy} 项旧版加密条目，下次保存时自动升级。` : '';
+    // 拼接片段带前导空格：中英文都在句尾接续，避免出现「。另有」/「. 3 more」
+    const legacyHint = input.legacy > 0 ? ' ' + t('secret.statusLegacyHint', { count: input.legacy }) : '';
     const mismatchCount = input.mismatched ?? 0;
-    const mismatchHint = mismatchCount > 0
-        ? ` ⚠ 其中 ${mismatchCount} 项与本次会话口令不匹配（旧口令或损坏密文），重输同一口令也无法解开，需要重新填写密钥。`
-        : '';
+    const mismatchHint = mismatchCount > 0 ? ' ' + t('secret.statusMismatchHint', { count: mismatchCount }) : '';
     if (input.locked > 0) {
         return {
-            text: `磁盘上有 ${input.locked} 项密钥处于加密状态。重启或更新后需要输入口令才能读取。${legacyHint}`,
+            text: t('secret.statusLocked', { count: input.locked }) + legacyHint,
             plaintext: false,
         };
     }
@@ -134,16 +144,12 @@ export function describeKeyEncryptionStatus(input: KeyEncryptionStatusInput): Ke
         // 知道库路径即可解密，等同混淆；有口令时保存会自动升级为 v2。
         const v1Only = input.locked === 0 && input.legacy > 0;
         return {
-            text: v1Only
-                ? `⚠ 磁盘上的密钥是旧版混淆格式（aes256:，知道库路径即可解密，不等于真正加密）。设定口令后保存一次即可升级为 v2。${mismatchHint}`
-                : `密钥已加密（本次会话已解锁）。重启或更新后需要输入口令才能读取。${legacyHint}${mismatchHint}`,
+            text: (v1Only ? t('secret.statusV1Only') : t('secret.statusEncrypted') + legacyHint) + mismatchHint,
             plaintext: false,
         };
     }
     return {
-        text: '⚠️ 未设置口令：API Key 等密钥会以**明文**保存在插件 data.json，'
-            + '并随 vault 同步/备份扩散。共享或公开库请勿填写真实 Key；建议点击右侧设定口令。'
-            + legacyHint,
+        text: t('secret.statusPlaintext') + legacyHint,
         plaintext: true,
     };
 }

@@ -52,6 +52,7 @@ import {
 } from '@/shared/task-budget-engine';
 import { OperationConfirmModal } from '@/ui/components/progress';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
+import { t } from '@/i18n';
 import { SettingsSection } from './section-base';
 
 /**
@@ -130,7 +131,7 @@ export class ApiSection extends SettingsSection {
         if (!selectedId) {
             detail.createDiv({
                 cls: 'nw-api-empty',
-                text: '还没有供应商。点击右上角「＋ 添加供应商」创建第一个。',
+                text: t('settings.api.emptyNoProvider'),
             });
             this.renderApiGlobalSettings(detail, '');
             return;
@@ -143,29 +144,29 @@ export class ApiSection extends SettingsSection {
     private renderApiHeader(section: HTMLElement): void {
         const header = section.createDiv({ cls: 'nw-api-header' });
         const titleWrap = header.createDiv({ cls: 'nw-api-header-title' });
-        titleWrap.createEl('h2', { text: '模型设置' });
+        titleWrap.createEl('h2', { text: t('settings.api.title') });
         titleWrap.createEl('p', {
-            text: '管理自定义模型供应商，配置后可在写作任务中选择使用。',
+            text: t('settings.api.subtitle'),
         });
 
         const actions = header.createDiv({ cls: 'nw-api-header-actions' });
 
         const restoreBtn = actions.createEl('button', {
             cls: 'nw-api-icon-btn',
-            attr: { type: 'button', title: '恢复默认供应商', 'aria-label': '恢复默认供应商' },
+            attr: { type: 'button', title: t('settings.api.restoreDefaults'), 'aria-label': t('settings.api.restoreDefaults') },
         });
         restoreBtn.setText('🔄');
         restoreBtn.onclick = async () => {
             const confirmed = await OperationConfirmModal.confirm(this.app, {
-                title: '恢复默认供应商',
-                description: '确定要恢复默认供应商吗？已删除的默认供应商会重新加回来，已有的不会被覆盖。',
-                confirmText: '确认恢复',
-                cancelText: '取消',
+                title: t('settings.api.restoreConfirmTitle'),
+                description: t('settings.api.restoreConfirmDesc'),
+                confirmText: t('settings.api.restoreConfirmOk'),
+                cancelText: t('common.cancel'),
             });
             if (!confirmed) return;
             this.plugin.restoreDefaultProviders();
             await this.plugin.saveSettings();
-            showSuccessNotice('已恢复默认供应商');
+            showSuccessNotice(t('settings.api.restoreDone'));
             this.refresh();
         };
 
@@ -173,7 +174,7 @@ export class ApiSection extends SettingsSection {
             cls: 'nw-api-primary-btn',
             attr: { type: 'button' },
         });
-        addBtn.setText('＋ 添加供应商');
+        addBtn.setText(t('settings.api.addProvider'));
         addBtn.onclick = () => {
             this.newProviderFormOpen = true;
             this.refresh();
@@ -188,8 +189,8 @@ export class ApiSection extends SettingsSection {
         currentId: string | null,
     ): void {
         const groups: Array<{ title: string; items: typeof providers }> = [
-            { title: '预设供应商', items: providers.filter(p => p.isDefault) },
-            { title: '自定义供应商', items: providers.filter(p => !p.isDefault) },
+            { title: t('settings.api.presetGroup'), items: providers.filter(p => p.isDefault) },
+            { title: t('settings.api.customGroup'), items: providers.filter(p => !p.isDefault) },
         ];
 
         for (const group of groups) {
@@ -210,15 +211,15 @@ export class ApiSection extends SettingsSection {
                     row.createSpan({
                         cls: 'nw-api-sidebar-model',
                         text: assignment.defaultModel,
-                        attr: { title: '默认模型：' + assignment.defaultModel },
+                        attr: { title: t('settings.api.defaultModelTitle', { model: assignment.defaultModel }) },
                     });
                 }
                 if (!this.plugin.isProviderEnabled(provider.id)) {
-                    row.createSpan({ cls: 'nw-api-sidebar-muted', text: '已隐藏', attr: { title: '不在其他模块显示' } });
+                    row.createSpan({ cls: 'nw-api-sidebar-muted', text: t('settings.api.hiddenBadge'), attr: { title: t('settings.api.hiddenBadgeTitle') } });
                 }
                 row.createSpan({
                     cls: 'nw-api-sidebar-dot' + (isCurrent ? ' nw-api-sidebar-dot-current' : ''),
-                    attr: { title: isCurrent ? '当前使用中' : '可用' },
+                    attr: { title: isCurrent ? t('settings.api.currentTitle') : t('settings.api.availableTitle') },
                 });
                 row.onclick = () => {
                     this.apiSelectedProviderId = provider.id;
@@ -231,7 +232,7 @@ export class ApiSection extends SettingsSection {
         // 旧实现没有任何入口把隐藏渠道找回来，自定义渠道隐藏后等于「数据还在但不可达」。
         const hidden = (this.plugin.settings.customProviders || []).filter(provider => provider.isHidden === true);
         if (hidden.length > 0) {
-            container.createDiv({ cls: 'nw-api-sidebar-group', text: `已隐藏（${hidden.length}）` });
+            container.createDiv({ cls: 'nw-api-sidebar-group', text: t('settings.api.hiddenGroup', { count: hidden.length }) });
             for (const provider of hidden) {
                 const row = container.createDiv({ cls: 'nw-api-sidebar-row nw-api-sidebar-row-hidden' });
                 row.createSpan({
@@ -241,8 +242,8 @@ export class ApiSection extends SettingsSection {
                 row.createSpan({ cls: 'nw-api-sidebar-name', text: provider.name });
                 const restore = row.createEl('button', {
                     cls: 'nw-api-ghost-btn',
-                    text: '恢复显示',
-                    attr: { type: 'button', title: '恢复该渠道到侧栏' },
+                    text: t('settings.api.restoreShow'),
+                    attr: { type: 'button', title: t('settings.api.restoreShowTitle') },
                 });
                 restore.onclick = async (event) => {
                     event.stopPropagation();
@@ -250,7 +251,7 @@ export class ApiSection extends SettingsSection {
                     await this.plugin.saveSettings();
                     this.apiSelectedProviderId = provider.id;
                     this.refresh();
-                    showSuccessNotice(`已恢复显示「${provider.name}」`, { timeout: 3000 });
+                    showSuccessNotice(t('settings.api.restoredShow', { name: provider.name }), { timeout: 3000 });
                 };
             }
         }
@@ -261,7 +262,7 @@ export class ApiSection extends SettingsSection {
         } else {
             const add = container.createEl('button', {
                 cls: 'nw-api-sidebar-add',
-                text: '＋ 新建供应商',
+                text: t('settings.api.addNew'),
                 attr: { type: 'button' },
             });
             add.onclick = () => {
@@ -278,43 +279,43 @@ export class ApiSection extends SettingsSection {
      */
     private renderNewProviderForm(container: HTMLElement): void {
         const form = container.createDiv({ cls: 'nw-api-new-provider' });
-        form.createDiv({ cls: 'nw-api-sidebar-group', text: '新建供应商' });
+        form.createDiv({ cls: 'nw-api-sidebar-group', text: t('settings.api.formTitle') });
         let nameValue = '';
         let endpointValue = '';
         let formatValue: ApiFormat = 'openai-chat';
         let keyValue = '';
 
         new Setting(form)
-            .setName('名称')
-            .addText(text => text.setPlaceholder('我的代理').onChange(value => { nameValue = value; }));
+            .setName(t('settings.api.formName'))
+            .addText(text => text.setPlaceholder(t('settings.api.formNamePlaceholder')).onChange(value => { nameValue = value; }));
         new Setting(form)
-            .setName('Base URL')
-            .setDesc('可带也可不带 /v1')
-            .addText(text => text.setPlaceholder('https://api.example.com').onChange(value => { endpointValue = value.trim(); }));
+            .setName(t('settings.api.fieldBaseUrl'))
+            .setDesc(t('settings.api.formBaseUrlDesc'))
+            .addText(text => text.setPlaceholder(t('settings.api.formBaseUrlPlaceholder')).onChange(value => { endpointValue = value.trim(); }));
         new Setting(form)
-            .setName('API 格式')
+            .setName(t('settings.api.fieldFormat'))
             .addDropdown(dropdown => {
                 for (const option of API_FORMAT_OPTIONS) dropdown.addOption(option.value, option.label);
                 dropdown.setValue(formatValue);
                 dropdown.onChange(value => { formatValue = normalizeApiFormat(value); });
             });
         new Setting(form)
-            .setName('API Key')
+            .setName(t('settings.api.fieldApiKey'))
             .addText(text => {
                 text.inputEl.type = 'password';
                 text.setPlaceholder('sk-...').onChange(value => { keyValue = value.trim(); });
             });
         new Setting(form)
-            .addButton(button => button.setButtonText('取消').onClick(() => {
+            .addButton(button => button.setButtonText(t('common.cancel')).onClick(() => {
                 this.newProviderFormOpen = false;
                 this.refresh();
             }))
             .addButton(button => button
-                .setButtonText('创建')
+                .setButtonText(t('settings.api.formCreate'))
                 .setCta()
                 .onClick(async () => {
-                    if (!nameValue.trim()) { new Notice('请输入名称'); return; }
-                    if (!endpointValue) { new Notice('请输入 Base URL'); return; }
+                    if (!nameValue.trim()) { new Notice(t('settings.api.formNeedName')); return; }
+                    if (!endpointValue) { new Notice(t('settings.api.formNeedBaseUrl')); return; }
                     const id = this.plugin.addCustomProvider(
                         nameValue.trim(),
                         endpointValue,
@@ -329,7 +330,7 @@ export class ApiSection extends SettingsSection {
                     this.plugin.updateStatusBarText();
                     this.newProviderFormOpen = false;
                     this.apiSelectedProviderId = id;
-                    showSuccessNotice('已创建供应商，可点「从 URL 获取」导入模型', { timeout: 5000 });
+                    showSuccessNotice(t('settings.api.formCreated'), { timeout: 5000 });
                     this.refresh();
                 }));
     }
@@ -342,10 +343,10 @@ export class ApiSection extends SettingsSection {
             cls: 'nw-api-key-card' + (locked > 0 ? ' nw-api-key-card-locked' : ''),
         });
         if (locked > 0) {
-            card.createDiv({ cls: 'nw-api-key-card-title', text: '🔒 密钥已加密锁定' });
+            card.createDiv({ cls: 'nw-api-key-card-title', text: t('settings.api.keyLockedTitle') });
             card.createDiv({
                 cls: 'nw-api-key-card-hint',
-                text: `有 ${locked} 项密钥尚未解锁，解锁后各渠道 Key 才能正常使用。`,
+                text: t('settings.api.keyLockedHint', { count: locked }),
             });
         }
         this.renderKeyEncryptionRows(card);
@@ -356,7 +357,7 @@ export class ApiSection extends SettingsSection {
         const raw = this.getRawProvider(providerId);
         const provider = this.plugin.getAllProviders().find(p => p.id === providerId);
         if (!raw || !provider) {
-            container.createDiv({ cls: 'nw-api-empty', text: '该供应商已不可用。' });
+            container.createDiv({ cls: 'nw-api-empty', text: t('settings.api.detailUnavailable') });
             return;
         }
         const format = normalizeApiFormat(raw.apiFormat);
@@ -369,7 +370,7 @@ export class ApiSection extends SettingsSection {
             cls: 'nw-api-provider-name',
             type: 'text',
             value: raw.name,
-            attr: { 'aria-label': '供应商名称' },
+            attr: { 'aria-label': t('settings.api.providerNameAria') },
         });
         nameInput.addEventListener('change', async () => {
             const next = nameInput.value.trim();
@@ -385,29 +386,29 @@ export class ApiSection extends SettingsSection {
         // 「使用中」= 当前渠道（切换它）；「在其他模块显示」= 快切/工作台/协同是否列出该渠道（启用语义）
         const isCurrent = providerId === this.plugin.getCurrentProviderId();
         if (isCurrent) {
-            head.createSpan({ cls: 'nw-api-current-pill', text: '使用中' });
+            head.createSpan({ cls: 'nw-api-current-pill', text: t('settings.api.inUse') });
         } else {
             const useBtn = head.createEl('button', {
                 cls: 'nw-api-ghost-btn',
-                text: '设为当前',
-                attr: { type: 'button', title: '把该供应商切换为当前使用渠道' },
+                text: t('settings.api.setCurrent'),
+                attr: { type: 'button', title: t('settings.api.setCurrentTitle') },
             });
             useBtn.onclick = async () => {
                 this.plugin.switchProviderByEndpoint(raw.endpoint);
                 await this.plugin.saveSettings();
                 this.plugin.updateStatusBarText();
-                showSuccessNotice(`已切换到「${raw.name}」`);
+                showSuccessNotice(t('settings.api.switched', { name: raw.name }));
                 this.apiSelectedProviderId = providerId;
                 rerender();
             };
         }
 
         const visible = this.plugin.isProviderEnabled(providerId);
-        const visibleLabel = head.createEl('label', { cls: 'nw-api-switch', attr: { title: '在其他模块显示该渠道' } });
+        const visibleLabel = head.createEl('label', { cls: 'nw-api-switch', attr: { title: t('settings.api.visibleTitle') } });
         const visibleToggle = visibleLabel.createEl('input', { type: 'checkbox' });
         visibleToggle.checked = visible;
         visibleLabel.toggleClass('nw-is-active', visible);
-        visibleLabel.createSpan({ cls: 'nw-api-switch-text', text: '在其他模块显示' });
+        visibleLabel.createSpan({ cls: 'nw-api-switch-text', text: t('settings.api.visibleLabel') });
         visibleToggle.addEventListener('change', async () => {
             visibleLabel.toggleClass('nw-is-active', visibleToggle.checked);
             this.plugin.setProviderEnabled(providerId, visibleToggle.checked);
@@ -418,52 +419,52 @@ export class ApiSection extends SettingsSection {
 
         const moreBtn = head.createEl('button', {
             cls: 'nw-api-icon-btn',
-            attr: { type: 'button', title: '更多操作', 'aria-label': '更多操作' },
+            attr: { type: 'button', title: t('settings.api.moreTitle'), 'aria-label': t('settings.api.moreTitle') },
         });
         moreBtn.setText('⋯');
         moreBtn.onclick = (event) => {
             const menu = new Menu();
-            menu.addItem(item => item.setTitle('切换到该供应商').setDisabled(isCurrent).onClick(async () => {
+            menu.addItem(item => item.setTitle(t('settings.api.menuSwitch')).setDisabled(isCurrent).onClick(async () => {
                 this.plugin.switchProviderByEndpoint(raw.endpoint);
                 await this.plugin.saveSettings();
                 this.plugin.updateStatusBarText();
                 rerender();
             }));
             menu.addSeparator();
-            menu.addItem(item => item.setTitle(raw.isDefault ? '删除供应商' : '删除自定义供应商').onClick(async () => {
+            menu.addItem(item => item.setTitle(raw.isDefault ? t('settings.api.menuDeletePreset') : t('settings.api.menuDeleteCustom')).onClick(async () => {
                 // 预设：隐藏，可在「恢复默认供应商」找回；自定义：真删，不可恢复
                 const isPreset = raw.isDefault === true;
                 const confirmed = await OperationConfirmModal.confirm(this.app, {
-                    title: isPreset ? '删除供应商' : '删除自定义供应商',
+                    title: isPreset ? t('settings.api.deleteConfirmTitlePreset') : t('settings.api.deleteConfirmTitleCustom'),
                     description: isPreset
-                        ? `确定要删除供应商「${raw.name}」吗？可以在「恢复默认供应商」中找回。`
-                        : `确定要永久删除自定义供应商「${raw.name}」吗？此操作不可恢复（可重新添加）。`,
-                    confirmText: '确认删除',
-                    cancelText: '取消',
+                        ? t('settings.api.deleteConfirmDescPreset', { name: raw.name })
+                        : t('settings.api.deleteConfirmDescCustom', { name: raw.name }),
+                    confirmText: t('settings.api.deleteConfirmOk'),
+                    cancelText: t('common.cancel'),
                 });
                 if (!confirmed) return;
                 if (isPreset) this.plugin.setHidden(raw.id, true);
                 else if (!this.plugin.removeCustomProvider(raw.id)) {
-                    showErrorNotice('该供应商不存在或属于预设项', { title: '删除失败', timeout: 5000 });
+                    showErrorNotice(t('settings.api.deleteFailNotFound'), { title: t('settings.api.deleteFailTitle'), timeout: 5000 });
                     return;
                 }
                 await this.plugin.saveSettings();
                 this.plugin.updateStatusBarText();
                 this.apiSelectedProviderId = null;
                 rerender();
-                showSuccessNotice(`已删除「${raw.name}」`);
+                showSuccessNotice(t('settings.api.deleteDeleted', { name: raw.name }));
             }));
             menu.showAtMouseEvent(event);
         };
 
         // ── Base URL ──
-        this.renderField(container, 'Base URL', (field) => {
+        this.renderField(container, t('settings.api.fieldBaseUrl'), (field) => {
             // 用可换行的 textarea：长 URL（如火山 …/api/v3/chat/completions）在窄面板里
             // 单行 input 一定被截断，多行显示才能一眼看全。
             const input = field.createEl('textarea', {
                 cls: 'nw-api-text-input nw-api-text-area',
                 attr: {
-                    placeholder: 'https://api.example.com/v1',
+                    placeholder: t('settings.api.baseUrlPlaceholderDetail'),
                     spellcheck: 'false',
                     rows: '1',
                     wrap: 'soft',
@@ -479,7 +480,7 @@ export class ApiSection extends SettingsSection {
                 const next = input.value.trim();
                 if (!next) {
                     input.value = raw.endpoint;
-                    new Notice('Base URL 不能为空');
+                    new Notice(t('settings.api.baseUrlEmpty'));
                     return;
                 }
                 input.value = next;
@@ -489,10 +490,10 @@ export class ApiSection extends SettingsSection {
                 if (raw.id === this.plugin.getCurrentProviderId()) this.plugin.updateStatusBarText();
                 rerender();
             });
-        }, '可带也可不带 /v1，实际请求路径由下方「API 格式」推导');
+        }, t('settings.api.fieldBaseUrlHint'));
 
         // ── API 格式 ──
-        this.renderField(container, 'API 格式', (field) => {
+        this.renderField(container, t('settings.api.fieldFormat'), (field) => {
             const select = field.createEl('select', { cls: 'nw-api-select' });
             for (const option of API_FORMAT_OPTIONS) {
                 select.createEl('option', {
@@ -513,14 +514,14 @@ export class ApiSection extends SettingsSection {
                 syncTitle();
                 this.plugin.updateProvider(raw.id, { apiFormat: normalizeApiFormat(select.value) });
                 await this.plugin.saveSettings();
-                showSuccessNotice(`已切换为 ${API_FORMAT_OPTIONS.find(o => o.value === select.value)?.label ?? select.value}`);
+                showSuccessNotice(t('settings.api.formatSwitched', { label: API_FORMAT_OPTIONS.find(o => o.value === select.value)?.label ?? select.value }));
             });
-        }, `请求路径：${API_FORMAT_OPTIONS.map(o => `${o.label} → ${o.path}`).join('；')}`);
+        }, t('settings.api.formatHint', { list: API_FORMAT_OPTIONS.map(o => `${o.label} → ${o.path}`).join('; ') }));
 
         // ── 实际请求 URL（方案 C）──
         // 推导结果必须可见、可改：旧版只显示「由下方协议推导」，用户不知道最终会打到哪个地址，
         // 自建网关/特殊路径只能靠猜。
-        this.renderField(container, '实际请求 URL', (field) => {
+        this.renderField(container, t('settings.api.effectiveUrl'), (field) => {
             const derived = resolveEffectiveRequestUrl(raw.endpoint, format);
             let override = raw.requestUrlOverride?.trim() || '';
             const input = field.createEl('input', {
@@ -528,7 +529,7 @@ export class ApiSection extends SettingsSection {
                 attr: {
                     type: 'text',
                     spellcheck: 'false',
-                    placeholder: derived || 'https://api.example.com/v1/chat/completions',
+                    placeholder: derived || t('settings.api.effectiveUrlPlaceholder'),
                 },
             });
             input.value = override;
@@ -536,8 +537,10 @@ export class ApiSection extends SettingsSection {
             const syncHint = (): void => {
                 const effective = resolveEffectiveRequestUrl(raw.endpoint, format, override);
                 hint.setText(override
-                    ? `覆盖中：${effective}（清空输入即恢复自动）`
-                    : `自动推导：${derived || '（先填 Base URL）'}`);
+                    ? t('settings.api.overrideOn', { url: effective })
+                    : (derived
+                        ? t('settings.api.autoDerived', { url: derived })
+                        : t('settings.api.autoDerivedEmpty')));
             };
             syncHint();
             input.addEventListener('change', async () => {
@@ -546,11 +549,11 @@ export class ApiSection extends SettingsSection {
                 await this.plugin.saveSettings();
                 override = next;
                 syncHint();
-                showSuccessNotice(next ? '已固定实际请求 URL' : '已恢复自动推导', { timeout: 3000 });
+                showSuccessNotice(next ? t('settings.api.urlFixed') : t('settings.api.urlAuto'), { timeout: 3000 });
             });
             const reset = field.createEl('button', {
                 cls: 'nw-api-ghost-btn',
-                text: '恢复自动',
+                text: t('settings.api.restoreAuto'),
                 attr: { type: 'button' },
             });
             reset.onclick = async () => {
@@ -559,12 +562,12 @@ export class ApiSection extends SettingsSection {
                 await this.plugin.saveSettings();
                 override = '';
                 syncHint();
-                showSuccessNotice('已恢复自动推导', { timeout: 3000 });
+                showSuccessNotice(t('settings.api.urlAuto'), { timeout: 3000 });
             };
-        }, '留空 = 按 Base URL + 协议自动推导；填写后「所见即所发」，测试与生成都打这个地址');
+        }, t('settings.api.effectiveUrlHint'));
 
         // ── API Key ──
-        this.renderField(container, 'API Key', (field) => {
+        this.renderField(container, t('settings.api.fieldApiKey'), (field) => {
             const row = field.createDiv({ cls: 'nw-api-key-row' });
             // 未解锁时内存里是密文：不能把它塞进输入框（用户会看到乱码，
             // 误编辑还会把密文当新密钥存回去）。密文一律显示为空 + 提示语。
@@ -589,14 +592,14 @@ export class ApiSection extends SettingsSection {
                 const outcome = await this.plugin.saveSettingsWithOutcome();
                 // S3-8：口令未解锁时新密钥并未写入，不能提示「已保存」
                 if (outcome.droppedSecrets.length > 0) {
-                    showWarningNotice('密钥未保存：当前口令未解锁，请先解锁后再保存');
+                    showWarningNotice(t('settings.api.keyNotSaved'));
                 } else {
-                    showSuccessNotice('密钥已保存');
+                    showSuccessNotice(t('settings.api.keySaved'));
                 }
             });
             const eye = row.createEl('button', {
                 cls: 'nw-api-icon-btn',
-                attr: { type: 'button', title: '显示/隐藏密钥' },
+                attr: { type: 'button', title: t('settings.api.keyEyeTitle') },
             });
             eye.setText('👁');
             eye.onclick = () => {
@@ -609,32 +612,32 @@ export class ApiSection extends SettingsSection {
         // 渠道级按钮测不出「测的是哪个模型」，失败也无法定位。
 
         // ── 能力与高级项（折叠）：思考强度按渠道自动识别、图片输入、请求头 ──
-        renderCollapsibleSection(container, '渠道能力与高级项', false, inner => {
+        renderCollapsibleSection(container, t('settings.api.capabilitySection'), false, inner => {
             this.renderProviderCapabilityRows(inner, raw);
         });
 
         // ── 模型列表 ──
         const modelsBlock = container.createDiv({ cls: 'nw-api-field' });
         const modelsHead = modelsBlock.createDiv({ cls: 'nw-api-models-head' });
-        modelsHead.createEl('span', { cls: 'nw-api-label', text: '模型列表' });
+        modelsHead.createEl('span', { cls: 'nw-api-label', text: t('settings.api.modelsTitle') });
         const modelsActions = modelsHead.createDiv({ cls: 'nw-api-models-actions' });
 
         const fetchBtn = modelsActions.createEl('button', {
             cls: 'nw-api-ghost-btn',
-            attr: { type: 'button', title: '请求端点模型列表接口，勾选后写入' },
+            attr: { type: 'button', title: t('settings.api.fetchModelsTitle') },
         });
-        fetchBtn.setText('🔄 从 URL 获取');
+        fetchBtn.setText(t('settings.api.fetchModels'));
         fetchBtn.onclick = async () => {
             if (fetchBtn.disabled) return;
             fetchBtn.disabled = true;
-            fetchBtn.setText('⏳ 获取中…');
+            fetchBtn.setText(t('settings.api.fetchingModels'));
             try {
                 const key = this.plugin.settings.providerKeys?.[raw.id] || '';
                 // 模型列表按「实际请求 URL」推导（覆盖时不再用 Base URL），保持与生成同源
                 const listEndpoint = resolveEffectiveRequestUrl(raw.endpoint, format, raw.requestUrlOverride);
                 const result = await discoverModels(listEndpoint, format, key, undefined, resolveProviderHeaders(raw));
                 if (result.kind === 'error') {
-                    showErrorNotice(result.message, { title: '获取模型失败', timeout: 10000 });
+                    showErrorNotice(result.message, { title: t('settings.api.fetchFailedTitle'), timeout: 10000 });
                     return;
                 }
                 // 端点变了 → 旧模型在新端点通常不可用，用新列表替换
@@ -656,12 +659,12 @@ export class ApiSection extends SettingsSection {
                     this.syncAvailableModels(raw.id);
                     await this.plugin.saveSettings();
                     this.plugin.updateStatusBarText();
-                    showSuccessNotice(`已更新模型列表（${models.length} 个）`, { timeout: 4000 });
+                    showSuccessNotice(t('settings.api.modelsUpdated', { count: models.length }), { timeout: 4000 });
                     rerender();
                 }, endpointChanged).open();
             } finally {
                 fetchBtn.disabled = false;
-                fetchBtn.setText('🔄 从 URL 获取');
+                fetchBtn.setText(t('settings.api.fetchModels'));
             }
         };
 
@@ -669,13 +672,13 @@ export class ApiSection extends SettingsSection {
             cls: 'nw-api-ghost-btn',
             attr: { type: 'button' },
         });
-        addModelBtn.setText('＋ 添加模型');
+        addModelBtn.setText(t('settings.api.addModel'));
         addModelBtn.onclick = () => this.openModelEditor(raw, '');
 
         const list = modelsBlock.createDiv({ cls: 'nw-api-model-list nw-u-maxh-240px nw-u-ovy-auto' });
         const disabled = new Set(raw.disabledModels || []);
         if (raw.models.length === 0) {
-            list.createDiv({ cls: 'nw-api-model-empty', text: '还没有模型。点「从 URL 获取」自动导入，或手动添加。' });
+            list.createDiv({ cls: 'nw-api-model-empty', text: t('settings.api.modelsEmpty') });
         }
         for (const modelId of raw.models) {
             const meta = raw.modelMeta?.[modelId];
@@ -691,10 +694,10 @@ export class ApiSection extends SettingsSection {
                 main.createSpan({
                     cls: 'nw-api-model-badge',
                     text: capacity,
-                    attr: { title: `${contextWindow} tokens（来源：${describeLimitSourceLabel(source)}）` },
+                    attr: { title: t('settings.api.capacityTitle', { tokens: contextWindow ?? '', source: describeLimitSourceLabel(source) }) },
                 });
             }
-            if (meta?.vision) main.createSpan({ cls: 'nw-api-model-badge', text: '视觉' });
+            if (meta?.vision) main.createSpan({ cls: 'nw-api-model-badge', text: t('settings.api.visionBadge') });
             // M-20：单价按渠道识别后直接展示，用户不用点进编辑也能确认「费用是按什么价在算」
             const price = this.formatModelPrice(meta);
             if (price) main.createSpan({ cls: 'nw-api-model-badge nw-api-model-price', text: price });
@@ -705,7 +708,7 @@ export class ApiSection extends SettingsSection {
             // （当前渠道用 defaultModel，非当前渠道用第一个启用模型），失败也无法定位到具体模型。
             const testBtn = rowActions.createEl('button', {
                 cls: 'nw-api-icon-btn',
-                attr: { type: 'button', title: '测试该模型连通性' },
+                attr: { type: 'button', title: t('settings.api.testModelTitle') },
             });
             testBtn.setText('🔌');
             testBtn.onclick = async () => {
@@ -713,7 +716,7 @@ export class ApiSection extends SettingsSection {
                 testBtn.disabled = true;
                 testBtn.setText('⏳');
                 // 结果不塞在模型行里（长错误会把行撑变形）：统一写到模型列表下方的结果区
-                this.appendModelTestResult(raw.id, modelId, { level: 'pending', message: '正在测试…' });
+                this.appendModelTestResult(raw.id, modelId, { level: 'pending', message: t('settings.api.modelTesting') });
                 try {
                     const result = await testProviderConnectivity({
                         providerName: raw.name,
@@ -732,7 +735,7 @@ export class ApiSection extends SettingsSection {
                 }
             };
 
-            const enableLabel = rowActions.createEl('label', { cls: 'nw-api-switch', attr: { title: '启用该模型' } });
+            const enableLabel = rowActions.createEl('label', { cls: 'nw-api-switch', attr: { title: t('settings.api.enableModelTitle') } });
             const enable = enableLabel.createEl('input', { type: 'checkbox' });
             enable.checked = !disabled.has(modelId);
             enableLabel.toggleClass('nw-is-active', enable.checked);
@@ -750,14 +753,14 @@ export class ApiSection extends SettingsSection {
 
             const editBtn = rowActions.createEl('button', {
                 cls: 'nw-api-icon-btn',
-                attr: { type: 'button', title: '编辑模型' },
+                attr: { type: 'button', title: t('settings.api.editModelTitle') },
             });
             editBtn.setText('✏️');
             editBtn.onclick = () => this.openModelEditor(raw, modelId);
 
             const delBtn = rowActions.createEl('button', {
                 cls: 'nw-api-icon-btn',
-                attr: { type: 'button', title: '从列表移除' },
+                attr: { type: 'button', title: t('settings.api.removeModelTitle') },
             });
             delBtn.setText('🗑');
             delBtn.onclick = async () => {
@@ -817,10 +820,10 @@ export class ApiSection extends SettingsSection {
         const bucket = this.modelTestResults.get(providerId);
         if (!bucket || bucket.size === 0) return;
         const head = box.createDiv({ cls: 'nw-api-test-results-head' });
-        head.createSpan({ text: '连通性测试结果' });
+        head.createSpan({ text: t('settings.api.modelTestTitle') });
         const clear = head.createEl('button', {
             cls: 'nw-api-ghost-btn',
-            text: '清空',
+            text: t('settings.api.clear'),
             attr: { type: 'button' },
         });
         clear.onclick = () => {
@@ -854,13 +857,19 @@ export class ApiSection extends SettingsSection {
             const thinking = this.plugin.getProviderThinking(raw.id);
             const mode = thinking.mode === 'off' ? 0 : Math.round((thinking.budget ?? 0) / 128);
             new Setting(container)
-                .setName('思考强度')
-                .setDesc(`${capability.hint}（${capabilityModel ? `按 ${capabilityModel} 判定` : '按渠道判定'}）；当前：${describeThinkingLevel(mode)}`)
+                .setName(t('settings.api.thinking'))
+                .setDesc(t('settings.api.thinkingDesc', {
+                    hint: capability.hint,
+                    target: capabilityModel
+                        ? t('settings.api.thinkingTargetModel', { model: capabilityModel })
+                        : t('settings.api.thinkingTargetChannel'),
+                    level: describeThinkingLevel(mode),
+                }))
                 .addDropdown(dropdown => {
-                    dropdown.addOption('0', '关闭');
-                    dropdown.addOption('30', '低（快速）');
-                    dropdown.addOption('60', '中（平衡）');
-                    dropdown.addOption('85', '高（深入）');
+                    dropdown.addOption('0', t('settings.api.thinkingOff'));
+                    dropdown.addOption('30', t('settings.api.thinkingLow'));
+                    dropdown.addOption('60', t('settings.api.thinkingMid'));
+                    dropdown.addOption('85', t('settings.api.thinkingHigh'));
                     dropdown.setValue(String(mode === 0 ? 0 : mode >= 80 ? 85 : mode >= 50 ? 60 : 30));
                     dropdown.onChange(async (value) => {
                         const level = Number(value) || 0;
@@ -874,25 +883,27 @@ export class ApiSection extends SettingsSection {
                 });
         } else {
             new Setting(container)
-                .setName('思考强度')
-                .setDesc(`${capability.hint}（该渠道不显示强度设置）`);
+                .setName(t('settings.api.thinking'))
+                .setDesc(t('settings.api.thinkingUnsupported', { hint: capability.hint }));
         }
 
         const visionModels = raw.models.filter(model => raw.modelMeta?.[model]?.vision);
         new Setting(container)
-            .setName('图片输入')
+            .setName(t('settings.api.vision'))
             .setDesc(visionModels.length > 0
-                ? `支持：${visionModels.slice(0, 6).join('、')}${visionModels.length > 6 ? ' …' : ''}`
-                : '该渠道暂未标记支持图片输入的模型（可在模型编辑里勾选「支持图片输入」）');
+                ? t('settings.api.visionSupported', {
+                    models: visionModels.slice(0, 6).join(', ') + (visionModels.length > 6 ? ' …' : ''),
+                })
+                : t('settings.api.visionNone'));
 
         const headerDefault = defaultHeadersForProvider(raw);
         let headerText = serializeHeaderLines(raw.headers);
         new Setting(container)
-            .setName('自定义请求头')
-            .setDesc(headerDefault.note + '；每行一个 `Key: Value`，自定义值覆盖内置默认')
+            .setName(t('settings.api.headers'))
+            .setDesc(t('settings.api.headersDesc', { note: headerDefault.note }))
             .addTextArea(text => {
                 text.inputEl.rows = 3;
-                text.setPlaceholder('HTTP-Referer: https://example.com\nX-Title: novel-writer')
+                text.setPlaceholder(t('settings.api.headersPlaceholder'))
                     .setValue(headerText)
                     .onChange(async (value) => {
                         headerText = value;
@@ -931,7 +942,7 @@ export class ApiSection extends SettingsSection {
         // 不能把 defaultModel/flashModel/proModel 写成 undefined（会让请求回落到兜底模型），
         // 保持旧值并提示用户在模型列表里补回或切换渠道。
         if (settings.availableModels.length === 0) {
-            showWarningNotice('该渠道已没有模型：请在模型列表里「从 URL 获取」或手动添加', { timeout: 8000 });
+            showWarningNotice(t('settings.api.noModelsWarning'), { timeout: 8000 });
             return;
         }
         for (const key of ['defaultModel', 'flashModel', 'proModel'] as const) {
@@ -954,7 +965,7 @@ export class ApiSection extends SettingsSection {
         const current = this.getRawProvider(raw.id);
         if (!current) return;
         const meta = current.modelMeta?.[modelId] ?? {};
-        new ModelEditorModal(this.app, modelId ? '编辑模型' : '新增模型', {
+        new ModelEditorModal(this.app, modelId ? t('settings.api.modelEditorEdit') : t('settings.api.modelEditorAdd'), {
             id: modelId,
             contextWindow: meta.contextWindow,
             maxTokens: meta.maxTokens,
@@ -987,7 +998,7 @@ export class ApiSection extends SettingsSection {
             this.syncAvailableModels(raw.id);
             await this.plugin.saveSettings();
             this.plugin.updateStatusBarText();
-            showSuccessNotice('已保存模型设置', { timeout: 3000 });
+            showSuccessNotice(t('settings.api.modelSaved'), { timeout: 3000 });
             this.refresh();
         }).open();
     }
@@ -1008,18 +1019,18 @@ export class ApiSection extends SettingsSection {
         const status = describeKeyEncryptionStatus({ locked, encrypted, legacy, mismatched });
 
         const row = new Setting(container)
-            .setName('密钥加密')
+            .setName(t('settings.api.keyEncryption'))
             .setDesc(status.text);
 
         row.addButton(btn => btn
-            .setButtonText(locked > 0 ? '🔓 输入口令解锁' : '🔐 设定口令')
+            .setButtonText(locked > 0 ? t('settings.api.keyUnlock') : t('settings.api.keySetup'))
             .onClick(async () => {
                 if (locked > 0) {
                     const password = await PasswordModal.ask(this.app);
                     if (!password) return;
                     const ok = await this.plugin.verifySettingsPassword?.(password);
                     if (ok === false) {
-                        showErrorNotice('口令不正确，密钥仍未解锁', { timeout: 6000 });
+                        showErrorNotice(t('settings.api.keyWrong'), { timeout: 6000 });
                         return;
                     }
                     this.plugin.setSessionPassword?.(password);
@@ -1030,11 +1041,11 @@ export class ApiSection extends SettingsSection {
                     const mismatched = this.plugin.getSettingsService?.()?.mismatchedSecretCount?.() ?? 0;
                     if (mismatched > 0) {
                         showWarningNotice(
-                            `口令正确，但 ${mismatched} 项密钥与当前口令不匹配（旧口令或已损坏），请在这些供应商处重新填写密钥`,
+                            t('settings.api.keyMismatched', { count: mismatched }),
                             { timeout: 10000 },
                         );
                     } else {
-                        showSuccessNotice('已解锁，密钥可正常读取');
+                        showSuccessNotice(t('settings.api.keyUnlocked'));
                     }
                     return;
                 }
@@ -1043,19 +1054,19 @@ export class ApiSection extends SettingsSection {
                 this.plugin.setSessionPassword?.(password);
                 await this.plugin.saveSettings();
                 this.refresh();
-                showSuccessNotice('已启用密钥加密');
+                showSuccessNotice(t('settings.api.keyEnabled'));
             }));
 
         row.addButton(btn => btn
-            .setButtonText('♻️ 重置口令')
+            .setButtonText(t('settings.api.keyReset'))
             .setWarning()
             .onClick(async () => {
                 const confirmed = await OperationConfirmModal.confirm(this.app, {
-                    title: '重置密钥加密口令',
-                    description: '将用新口令重新加密所有密钥。用旧口令加密且无法解开的条目会被清空，需要重新填写。',
-                    warning: '请先确认已备份 API Key',
-                    confirmText: '继续重置',
-                    cancelText: '取消',
+                    title: t('settings.api.keyResetConfirmTitle'),
+                    description: t('settings.api.keyResetConfirmDesc'),
+                    warning: t('settings.api.keyResetWarning'),
+                    confirmText: t('settings.api.keyResetConfirmOk'),
+                    cancelText: t('common.cancel'),
                 });
                 if (!confirmed) return;
 
@@ -1066,11 +1077,11 @@ export class ApiSection extends SettingsSection {
                 this.refresh();
                 if (result.cleared.length > 0) {
                     showWarningNotice(
-                        `已重设口令：重新加密 ${result.reencrypted} 项；${result.cleared.join('、')} 需要重新填写`,
+                        t('settings.api.keyResetDoneCleared', { reencrypted: result.reencrypted, cleared: result.cleared.join('; ') }),
                         { timeout: 10000 },
                     );
                 } else {
-                    showSuccessNotice(`已重设口令：重新加密 ${result.reencrypted} 项`, { timeout: 10000 });
+                    showSuccessNotice(t('settings.api.keyResetDone', { reencrypted: result.reencrypted }), { timeout: 10000 });
                 }
             }));
     }
@@ -1078,10 +1089,10 @@ export class ApiSection extends SettingsSection {
     /** 全局模型分配与上限：按渠道分别记忆，切换渠道自动恢复（折叠） */
     private renderApiGlobalSettings(container: HTMLElement, providerId: string): void {
         const wrap = container.createDiv({ cls: 'nw-api-global' });
-        renderCollapsibleSection(wrap, '全局模型分配（按渠道分别记忆）', false, inner => {
+        renderCollapsibleSection(wrap, t('settings.api.globalTitle'), false, inner => {
             const provider = this.plugin.getAllProviders().find(item => item.id === providerId);
             if (!provider) {
-                inner.createEl('p', { cls: 'nw-api-global-hint', text: '先在左侧选择或创建一个供应商。' });
+                inner.createEl('p', { cls: 'nw-api-global-hint', text: t('settings.api.globalPickFirst') });
                 return;
             }
             const models = provider.models.length > 0 ? provider.models : ['default-model'];
@@ -1090,8 +1101,8 @@ export class ApiSection extends SettingsSection {
             inner.createEl('p', {
                 cls: 'nw-api-global-hint',
                 text: isCurrent
-                    ? `当前渠道：${provider.name}（改动立即生效）`
-                    : `渠道：${provider.name}（非当前渠道，改动只对该渠道记忆，切换过去后应用）`,
+                    ? t('settings.api.globalCurrent', { name: provider.name })
+                    : t('settings.api.globalOther', { name: provider.name }),
             });
             const addModelSelect = (
                 label: string,
@@ -1104,24 +1115,24 @@ export class ApiSection extends SettingsSection {
                     .setDesc(desc)
                     .addDropdown(dropdown => {
                         for (const model of models) dropdown.addOption(model, model);
-                        if (value && !models.includes(value)) dropdown.addOption(value, `${value}（已失效）`);
+                        if (value && !models.includes(value)) dropdown.addOption(value, t('settings.api.modelInvalid', { model: value }));
                         dropdown.setValue(value);
                         dropdown.onChange(onChange);
                     });
             };
-            addModelSelect('默认模型', '未单独指定的任务使用', assignment.defaultModel, async (value) => {
+            addModelSelect(t('settings.api.assignmentDefault'), t('settings.api.assignmentDefaultDesc'), assignment.defaultModel, async (value) => {
                 this.plugin.setProviderAssignment(provider.id, { ...assignment, defaultModel: value });
                 await this.plugin.saveSettings();
                 this.plugin.updateStatusBarText();
                 this.refresh();
             });
-            addModelSelect('Flash 模型（大纲/分析/规划）', '大纲骨架、分析报告、元素提取', assignment.flashModel, async (value) => {
+            addModelSelect(t('settings.api.assignmentFlash'), t('settings.api.assignmentFlashDesc'), assignment.flashModel, async (value) => {
                 this.plugin.setProviderAssignment(provider.id, { ...assignment, flashModel: value });
                 await this.plugin.saveSettings();
                 this.plugin.updateStatusBarText();
                 this.refresh();
             });
-            addModelSelect('Pro 模型（正文/角色/实体）', '正文创作、角色生成、设定任务', assignment.proModel, async (value) => {
+            addModelSelect(t('settings.api.assignmentPro'), t('settings.api.assignmentProDesc'), assignment.proModel, async (value) => {
                 this.plugin.setProviderAssignment(provider.id, { ...assignment, proModel: value });
                 await this.plugin.saveSettings();
                 this.plugin.updateStatusBarText();
@@ -1143,8 +1154,8 @@ export class ApiSection extends SettingsSection {
                 void this.plugin.saveSettings();
             };
             const limitRows: Array<{ field: 'maxContext' | 'maxOutput'; label: string; value: number }> = [
-                { field: 'maxContext', label: '最大上下文', value: defaults.maxContext },
-                { field: 'maxOutput', label: '最大输出', value: defaults.maxOutput },
+                { field: 'maxContext', label: t('settings.api.limitMaxContext'), value: defaults.maxContext },
+                { field: 'maxOutput', label: t('settings.api.limitMaxOutput'), value: defaults.maxOutput },
             ];
             for (const row of limitRows) {
                 const source = describeLimitSource(
@@ -1156,8 +1167,11 @@ export class ApiSection extends SettingsSection {
                 const hasOverride = override?.[row.field] !== undefined;
                 new Setting(inner)
                     .setName(row.label)
-                    .setDesc(`${currentModel}：自动识别 ${row.value.toLocaleString()} tokens（来源：${describeLimitSourceLabel(source)}）`
-                        + (hasOverride ? ' · ⚠️ 当前为手动覆盖，清空输入可恢复自动' : ' · 留空即自动'))
+                    .setDesc(t('settings.api.limitDesc', {
+                        model: currentModel,
+                        tokens: row.value.toLocaleString(),
+                        source: describeLimitSourceLabel(source),
+                    }) + (hasOverride ? t('settings.api.limitOverrideWarn') : t('settings.api.limitAutoHint')))
                     .addText(text => text
                         .setPlaceholder(String(row.value))
                         .setValue(hasOverride ? String(override?.[row.field]) : '')
@@ -1169,7 +1183,7 @@ export class ApiSection extends SettingsSection {
                             }
                             const parsed = parseInt(trimmed, 10);
                             if (!Number.isFinite(parsed) || parsed <= 0) {
-                                new Notice('请输入大于 0 的 token 数；清空表示自动识别');
+                                new Notice(t('settings.api.limitInvalid'));
                                 return;
                             }
                             this.plugin.setProviderModelOverride(provider.id, currentModel, row.field, parsed);
@@ -1178,8 +1192,8 @@ export class ApiSection extends SettingsSection {
             }
         });
 
-        renderCollapsibleSection(wrap, '任务级模型参数（按渠道记忆）', false, inner => this.renderTaskBudgetRows(inner, providerId));
-        renderCollapsibleSection(wrap, '同人考据来源', false, inner => this.renderCanonResearchRows(inner));
+        renderCollapsibleSection(wrap, t('settings.api.taskParamsTitle'), false, inner => this.renderTaskBudgetRows(inner, providerId));
+        renderCollapsibleSection(wrap, t('settings.api.canonTitle'), false, inner => this.renderCanonResearchRows(inner));
     }
 
     private updateTaskBudget(task: AiTask, patch: TaskBudgetOverride): void {
@@ -1199,10 +1213,9 @@ export class ApiSection extends SettingsSection {
     /** v4.18: 同人考据来源设置。没有 API Key 时只允许手动官方来源。 */
     private renderCanonResearchRows(section: HTMLElement): void {
         const card = section.createDiv({ cls: 'nw-u-margintop-20px' });
-        card.createEl('h4', { text: '📚 同人考据来源', cls: 'nw-u-m-0-0-6px nw-u-fs-14px' });
+        card.createEl('h4', { text: '📚 ' + t('settings.api.canonTitle'), cls: 'nw-u-m-0-0-6px nw-u-fs-14px' });
         card.createEl('div', {
-            text: '同人设定以原著/官方资料为优先依据；没有官方来源时可用百科/wiki 二手资料补充（会标注等级），'
-                + '同人、改编、外传等衍生作品不作为设定来源。维基百科与 Bangumi 为免 Key 通道，开箱可用。',
+            text: t('settings.api.canonIntro'),
             cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-8px',
         });
         const cfg = this.plugin.settings.canonResearch || {
@@ -1225,18 +1238,18 @@ export class ApiSection extends SettingsSection {
         this.plugin.settings.canonResearch = cfg;
 
         new Setting(card)
-            .setName('检索方式')
-            .setDesc('手动=只导入自己提供的来源；DeepSeek 复用渠道 Key；MCP 用你配置的任意搜索工具；其余需要对应搜索 API key')
+            .setName(t('settings.api.canonMode'))
+            .setDesc(t('settings.api.canonModeDesc'))
             .addDropdown(dropdown => {
-                dropdown.addOption('manual', '手动官方来源（默认）');
-                dropdown.addOption('deepseek', 'DeepSeek 联网搜索（复用 DeepSeek Key，按次计费）');
-                dropdown.addOption('mcp', 'MCP 检索工具（用你已配置的 MCP 服务，不限于某个搜索源）');
-                dropdown.addOption('wikipedia', '维基百科（免 key，可能受网络限制）');
-                dropdown.addOption('bangumi', 'Bangumi 番组计划（免 key，可能受网络限制）');
-                dropdown.addOption('bing', 'Bing web search（需 key）');
-                dropdown.addOption('brave', 'Brave search（需 key）');
-                dropdown.addOption('serper', 'Serper.dev（需 key）');
-                dropdown.addOption('tavily', 'Tavily（需 key）');
+                dropdown.addOption('manual', t('settings.api.canonModeManual'));
+                dropdown.addOption('deepseek', t('settings.api.canonModeDeepseek'));
+                dropdown.addOption('mcp', t('settings.api.canonModeMcp'));
+                dropdown.addOption('wikipedia', t('settings.api.canonModeWikipedia'));
+                dropdown.addOption('bangumi', t('settings.api.canonModeBangumi'));
+                dropdown.addOption('bing', t('settings.api.canonModeBing'));
+                dropdown.addOption('brave', t('settings.api.canonModeBrave'));
+                dropdown.addOption('serper', t('settings.api.canonModeSerper'));
+                dropdown.addOption('tavily', t('settings.api.canonModeTavily'));
                 dropdown.setValue(cfg.provider || 'manual');
                 dropdown.onChange(async (value) => {
                     cfg.provider = value as typeof cfg.provider;
@@ -1250,18 +1263,18 @@ export class ApiSection extends SettingsSection {
         if (cfg.provider === 'mcp') {
             const servers = normalizeMcpServers(this.plugin.settings.mcpServers);
             const serverBox = card.createDiv({ cls: 'nw-card nw-form-stack' });
-            serverBox.createDiv({ cls: 'nw-form-label', text: 'MCP 检索配置' });
+            serverBox.createDiv({ cls: 'nw-form-label', text: t('settings.api.mcpConfigTitle') });
             if (servers.length === 0) {
                 serverBox.createDiv({
                     cls: 'nw-text-12-muted',
-                    text: '还没有配置 MCP 服务：请先到「MCP 服务」页添加一个提供搜索工具的服务（brave / tavily / exa / 自建均可）。',
+                    text: t('settings.api.mcpEmpty'),
                 });
             } else {
                 const currentServer = servers.find(server => server.id === cfg.mcpServerId) || servers[0];
                 cfg.mcpServerId = currentServer.id;
                 new Setting(serverBox)
-                    .setName('MCP 服务')
-                    .setDesc('选择提供搜索工具的服务')
+                    .setName(t('settings.api.mcpServer'))
+                    .setDesc(t('settings.api.mcpServerDesc'))
                     .addDropdown(dropdown => {
                         for (const server of servers) dropdown.addOption(server.id, server.name || server.id);
                         dropdown.setValue(currentServer.id);
@@ -1273,20 +1286,20 @@ export class ApiSection extends SettingsSection {
                         });
                     });
                 new Setting(serverBox)
-                    .setName('工具名')
-                    .setDesc('该服务里的搜索工具名，例如 brave_search / tavily_search / search')
+                    .setName(t('settings.api.mcpTool'))
+                    .setDesc(t('settings.api.mcpToolDesc'))
                     .addText(text => text
-                        .setPlaceholder('brave_search')
+                        .setPlaceholder(t('settings.api.mcpToolPlaceholder'))
                         .setValue(cfg.mcpToolName || '')
                         .onChange(async (value) => {
                             cfg.mcpToolName = value.trim();
                             await this.plugin.saveSettings();
                         }));
                 new Setting(serverBox)
-                    .setName('查询参数名')
-                    .setDesc('多数搜索工具用 query；部分用 q / search_query')
+                    .setName(t('settings.api.mcpQueryParam'))
+                    .setDesc(t('settings.api.mcpQueryParamDesc'))
                     .addText(text => text
-                        .setPlaceholder('query')
+                        .setPlaceholder(t('settings.api.mcpQueryParamPlaceholder'))
                         .setValue(cfg.mcpQueryParam || 'query')
                         .onChange(async (value) => {
                             cfg.mcpQueryParam = value.trim() || 'query';
@@ -1297,42 +1310,49 @@ export class ApiSection extends SettingsSection {
 
         // 联网检索本质上是「外部服务」：没有测试入口时，用户分不清是网络问题、Key 问题还是没结果。
         const testRow = new Setting(card)
-            .setName('测试检索')
-            .setDesc('用当前通道检索一个示例作品名，确认这条通道在本机网络下是否可用');
+            .setName(t('settings.api.testSearch'))
+            .setDesc(t('settings.api.testSearchDesc'));
         const testStatus = card.createDiv({ cls: 'nw-text-12-muted' });
         testRow.addButton(button => button
-            .setButtonText('🔍 测试检索')
+            .setButtonText(t('settings.api.testSearch'))
             .onClick(async () => {
                 button.setDisabled(true);
-                testStatus.setText('正在检索…');
+                testStatus.setText(t('settings.api.testSearching'));
                 try {
                     const service = new CanonResearchService(this.app, this.plugin);
                     const result = await service.research('斗破苍穹');
                     if (result.sources.length > 0) {
-                        testStatus.setText(`✅ 「${PROVIDER_LABELS[result.provider] ?? result.provider}」可用：返回 ${result.sources.length} 条来源`);
+                        testStatus.setText(t('settings.api.testSearchOk', {
+                            provider: PROVIDER_LABELS[result.provider] ?? result.provider,
+                            count: result.sources.length,
+                        }));
                     } else {
                         // 先把「配置问题」与「通道问题」分开：密钥未解锁/未配置时，
                         // 说「通道可用」会让用户以为搜索坏了。
                         const blocked = result.warnings.find(item => /密钥|Key|锁定/.test(item));
                         testStatus.setText(blocked
                             ? `⚠️ ${blocked}`
-                            : `⚠️ 通道可用但没有返回来源：${result.warnings[0] || '可换一个作品名再试'}`);
+                            : t('settings.api.testSearchEmpty', {
+                                reason: result.warnings[0] || t('settings.api.testSearchFallbackReason'),
+                            }));
                     }
                 } catch (error) {
-                    testStatus.setText('❌ 检索失败：' + (error instanceof Error ? error.message : String(error)));
+                    testStatus.setText(t('settings.api.testSearchFail', {
+                        error: error instanceof Error ? error.message : String(error),
+                    }));
                 } finally {
                     button.setDisabled(false);
                 }
             }));
 
         new Setting(card)
-            .setName('搜索 API key')
-            .setDesc('仅用于同人考据检索；与其它密钥同一套加密保存')
+            .setName(t('settings.api.searchKey'))
+            .setDesc(t('settings.api.searchKeyDesc'))
             .addText(text => {
                 text.inputEl.type = 'password';
                 // 未解锁时内存里是密文：留空 + 占位提示，绝不把密文当明文展示/回写
                 const secretDisplay = describeSecretForInput(cfg.apiKey || '');
-                text.setPlaceholder(secretDisplay.placeholder || '留空则只能手动添加来源')
+                text.setPlaceholder(secretDisplay.placeholder || t('settings.api.searchKeyPlaceholder'))
                     .setValue(secretDisplay.value);
                 text.inputEl.title = secretDisplay.title;
                 // 用 change（失焦/回车）而不是 onChange：逐键保存会触发全量密钥加密 + 写盘
@@ -1341,16 +1361,16 @@ export class ApiSection extends SettingsSection {
                     if (!next) return; // 空值 = 未修改，避免把已加密 Key 清空
                     cfg.apiKey = next;
                     void this.plugin.saveSettings().catch(e => {
-                        showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存搜索 API Key 失败', timeout: 6000 });
+                        showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('settings.api.searchKeySaveFailed'), timeout: 6000 });
                     });
                 });
             });
 
         new Setting(card)
-            .setName('允许域名')
-            .setDesc('逗号分隔；留空表示不限制。示例：qidian.com, fanqienovel.com')
+            .setName(t('settings.api.allowedDomains'))
+            .setDesc(t('settings.api.allowedDomainsDesc'))
             .addText(text => text
-                .setPlaceholder('qidian.com, fanqienovel.com')
+                .setPlaceholder(t('settings.api.allowedDomainsPlaceholder'))
                 .setValue((cfg.allowedDomains || []).join(', '))
                 .onChange(async (value) => {
                     cfg.allowedDomains = value.split(/[,，]/).map(v => v.trim()).filter(Boolean);
@@ -1358,10 +1378,10 @@ export class ApiSection extends SettingsSection {
                 }));
 
         new Setting(card)
-            .setName('排除域名')
-            .setDesc('逗号分隔；同人/衍生站点建议加入这里')
+            .setName(t('settings.api.blockedDomains'))
+            .setDesc(t('settings.api.blockedDomainsDesc'))
             .addText(text => text
-                .setPlaceholder('lofter.com, ao3.org')
+                .setPlaceholder(t('settings.api.blockedDomainsPlaceholder'))
                 .setValue((cfg.blockedDomains || []).join(', '))
                 .onChange(async (value) => {
                     cfg.blockedDomains = value.split(/[,，]/).map(v => v.trim()).filter(Boolean);
@@ -1372,8 +1392,8 @@ export class ApiSection extends SettingsSection {
         // 右侧两个输入框挤成一列竖排单字（Obsidian 的 .setting-item-info
         // 是 min-width:0 的 flex 子项，中文可在任意字符处断行）。
         new Setting(card)
-            .setName('最大来源数')
-            .setDesc('来源越多越容易交叉验证，但也会增加审核成本。')
+            .setName(t('settings.api.maxSources'))
+            .setDesc(t('settings.api.maxSourcesDesc'))
             .addText(text => text
                 .setPlaceholder('6')
                 .setValue(String(cfg.maxSources ?? 6))
@@ -1384,8 +1404,8 @@ export class ApiSection extends SettingsSection {
                 }));
 
         new Setting(card)
-            .setName('单源摘录长度')
-            .setDesc('每个来源抓取入库的字符数（200–20000）。只管存多少；注入 prompt 另有总预算，被裁剪时会显式标注。')
+            .setName(t('settings.api.excerptChars'))
+            .setDesc(t('settings.api.excerptCharsDesc'))
             .addText(text => text
                 .setPlaceholder('1200')
                 .setValue(String(cfg.excerptChars ?? 1200))
@@ -1411,12 +1431,14 @@ export class ApiSection extends SettingsSection {
         if (!isCurrentProvider) {
             card.createEl('div', {
                 cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-8px',
-                text: '任务级参数按渠道各自记忆：这里显示/编辑的是「' + (this.plugin.getAllProviders().find(item => item.id === providerId)?.name || providerId) + '」，切换到该渠道后生效。',
+                text: t('settings.api.budgetNonCurrentChannel', {
+                    name: this.plugin.getAllProviders().find(item => item.id === providerId)?.name || providerId,
+                }),
             });
         }
-        card.createEl('h4', { text: '🧠 任务级模型参数', cls: 'nw-u-m-0-0-6px nw-u-fs-14px' });
+        card.createEl('h4', { text: '🧠 ' + t('settings.api.budgetTitle'), cls: 'nw-u-m-0-0-6px nw-u-fs-14px' });
         card.createEl('div', {
-            text: '每个任务可单独覆盖模型/输入/输出/思考参数；留空即继承默认值。输出上限不会自动超过模型能力。',
+            text: t('settings.api.budgetIntro'),
             cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-8px',
         });
 
@@ -1424,10 +1446,10 @@ export class ApiSection extends SettingsSection {
         if (isCurrentProvider) {
             const globalCard = card.createDiv({ cls: 'nw-card' });
             globalCard.addClass('nw-form-stack');
-            globalCard.createDiv({ cls: 'nw-form-label', text: '全局思考强度' });
+            globalCard.createDiv({ cls: 'nw-form-label', text: t('settings.api.globalThinking') });
             globalCard.createDiv({
                 cls: 'nw-text-12-muted',
-                text: '四级预设 + 0–100% 拖拽强度。等级决定默认语义，滑杆可微调实际思考预算；任务级设置优先。',
+                text: t('settings.api.globalThinkingDesc'),
             });
 
             const initialLevel = this.plugin.settings.thinkingLevel
@@ -1499,7 +1521,7 @@ export class ApiSection extends SettingsSection {
             const globalGrid = globalCard.createDiv({ cls: 'nw-form-grid' });
 
             const tierField = globalGrid.createDiv({ cls: 'nw-form-field' });
-            tierField.createEl('label', { cls: 'nw-form-label', text: '预算档位' });
+            tierField.createEl('label', { cls: 'nw-form-label', text: t('settings.api.tierLabel') });
             const tierSelect = tierField.createEl('select', { cls: 'nw-select' });
             for (const spec of BUDGET_TIERS) {
                 tierSelect.createEl('option', {
@@ -1518,7 +1540,7 @@ export class ApiSection extends SettingsSection {
             syncTierDesc();
 
             const globalBudgetField = globalGrid.createDiv({ cls: 'nw-form-field' });
-            globalBudgetField.createEl('label', { cls: 'nw-form-label', text: '思考预算上限（0=按强度自动）' });
+            globalBudgetField.createEl('label', { cls: 'nw-form-label', text: t('settings.api.globalBudget') });
             const globalBudget = globalBudgetField.createEl('input', {
                 type: 'text',
                 cls: 'nw-input',
@@ -1544,7 +1566,7 @@ export class ApiSection extends SettingsSection {
         } else {
             card.createEl('div', {
                 cls: 'nw-card nw-text-12-muted',
-                text: '全局思考强度与预算档位只对当前渠道开放；该渠道的思考强度请在「渠道能力与高级项」里单独设置。',
+                text: t('settings.api.globalOnlyCurrent'),
             });
         }
 
@@ -1554,27 +1576,27 @@ export class ApiSection extends SettingsSection {
         // shared/task-budget-engine.ts 分发，这里只展示推导结果。
         const previewCard = card.createDiv({ cls: 'nw-card' });
         previewCard.addClass('nw-form-stack');
-        previewCard.createDiv({ cls: 'nw-form-label', text: '预算分发结果（只读）' });
+        previewCard.createDiv({ cls: 'nw-form-label', text: t('settings.api.previewLabel') });
         previewCard.createDiv({
             cls: 'nw-text-12-muted',
-            text: '引擎按任务类别把上面的档位与强度分发到每个任务。数字会随档位、强度、模型切换实时变化。',
+            text: t('settings.api.previewDesc'),
         });
 
         const previewList = previewCard.createDiv({ cls: 'nw-budget-preview' });
 
         const categoryLabel: Record<string, string> = {
-            planning: '规划',
-            writing: '正文',
-            analysis: '分析',
+            planning: t('settings.api.catPlanning'),
+            writing: t('settings.api.catWriting'),
+            analysis: t('settings.api.catAnalysis'),
         };
         const previewTasks: AiTask[] = ['planning', 'body', 'analysis', 'quality', 'deconstruction', 'fingerprint'];
         const previewTaskLabels: Record<string, string> = {
-            planning: '规划',
-            body: '正文',
-            analysis: '分析报告',
-            quality: '质量控制',
-            deconstruction: '拆解 LLM',
-            fingerprint: '指纹提取',
+            planning: t('settings.api.taskPlanning'),
+            body: t('settings.api.taskBody'),
+            analysis: t('settings.api.taskAnalysis'),
+            quality: t('settings.api.taskQuality'),
+            deconstruction: t('settings.api.taskDeconstruction'),
+            fingerprint: t('settings.api.taskFingerprint'),
         };
 
         // 用卡片列表而不是表格：设置面板通常只有 300–400px 宽，
@@ -1585,7 +1607,7 @@ export class ApiSection extends SettingsSection {
                 // 预算分发是按「当前渠道」的模型能力算的；非当前渠道展示会误导
                 previewList.createDiv({
                     cls: 'nw-text-12-muted',
-                    text: '预算分发按当前渠道的模型能力计算：切到该渠道后可查看实际结果。',
+                    text: t('settings.api.previewNonCurrent'),
                 });
                 return;
             }
@@ -1612,9 +1634,11 @@ export class ApiSection extends SettingsSection {
                     : '—';
                 row.createDiv({
                     cls: 'nw-budget-row-numbers',
-                    text: '输入 ' + effective.maxInput.toLocaleString()
-                        + ' · 输出 ' + effective.maxOutput.toLocaleString()
-                        + ' · 思考 ' + thinking,
+                    text: t('settings.api.budgetNumbers', {
+                        input: effective.maxInput.toLocaleString(),
+                        output: effective.maxOutput.toLocaleString(),
+                        thinking,
+                    }),
                 });
             }
         };
@@ -1644,12 +1668,12 @@ export class ApiSection extends SettingsSection {
         });
 
         new Setting(previewCard)
-            .setName('任务级覆盖')
+            .setName(t('settings.api.overrideName'))
             .setDesc(overrideKeys.length > 0
-                ? `检测到 ${overrideKeys.length} 个任务存在旧的手工覆盖（${overrideKeys.join('、')}）。这些值仍优先于引擎，可一键清除交由引擎接管。`
-                : '没有手工覆盖，全部由引擎分发。')
+                ? t('settings.api.overrideDetected', { count: overrideKeys.length, keys: overrideKeys.join('; ') })
+                : t('settings.api.overrideNone'))
             .addButton(btn => btn
-                .setButtonText(overrideKeys.length > 0 ? '清除全部覆盖' : '已由引擎接管')
+                .setButtonText(overrideKeys.length > 0 ? t('settings.api.clearOverrides') : t('settings.api.engineManaged'))
                 .setDisabled(overrideKeys.length === 0)
                 .onClick(async () => {
                     if (isCurrentProvider) {
@@ -1663,8 +1687,8 @@ export class ApiSection extends SettingsSection {
                     await this.plugin.saveSettings();
                     this.refresh();
                     showSuccessNotice(isCurrentProvider
-                        ? '已清除任务级覆盖，改由引擎分发'
-                        : '已清除该渠道的任务级覆盖');
+                        ? t('settings.api.overridesCleared')
+                        : t('settings.api.overridesClearedChannel'));
                 }));
     }
 

@@ -7,9 +7,10 @@
  * - 有供应商 → 侧栏两条、详情头显示当前供应商名、设为当前按钮语义
  * - 头部按钮（恢复默认 / 添加供应商）存在
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeEl, stubCreateDiv, stubDocument } from './support/fake-dom';
 import { ApiSection } from '../../../ui/settings/api-section';
+import { setLocale } from '../../../i18n';
 import type { SettingsSectionHost } from '../../../ui/settings/section-base';
 
 interface ProviderStub {
@@ -228,3 +229,24 @@ describe('ApiSection.render', () => {
         expect(text).toContain('恢复显示');
     });
 });
+/** 缺口⑦ 第二期第三片：分区文案全部走 i18n（settings.api.*），这里只锁「切到英文后不再出中文」 */
+describe('ApiSection.render 双语', () => {
+    afterEach(() => setLocale('zh-CN'));
+
+    it('en-US：标题、副标题、侧栏分组与操作按钮走英文', () => {
+        setLocale('en-US');
+        // 预设 / 自定义两组都要出现，所以给第一条打上 isDefault
+        const providers = [{ ...PROVIDERS[0], isDefault: true }, PROVIDERS[1]];
+        const root = renderApi(makeHost({ providers, currentId: 'p1' }));
+        const text = root.allText();
+        expect(text).toContain('Model settings');
+        expect(text).toContain('Preset providers');
+        expect(text).toContain('Custom providers');
+        expect(text).toContain('Base URL');
+        expect(text).toContain('API Key');
+        // 分区级中文标题不应再出现（键名回退时会打印 commands./settings.api. 字样）
+        expect(text).not.toContain('模型设置');
+        expect(text).not.toContain('settings.api.');
+    });
+});
+

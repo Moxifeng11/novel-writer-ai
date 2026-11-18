@@ -609,6 +609,7 @@ CSS −5.4KB，唯一类 −141；preflight EXIT=0。
 
 防倒退：R1 结构 0 差异；R2/R3 共 44 处均为有意改动（列表 flex、
 日期/进度标签接上设计意图、状态色改项目 token），已写入基线 acceptedDiffs。
+
 门禁又抓到 1 处真回归（搜索框特异性不足退回默认外观）并修复。
 
 工具链增强：check-visual-diff 支持 --accept/--note 留痕；
@@ -1671,4 +1672,31 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 - 日志 `D:\nw-tmp\preflight-i18n3c.log`；首跑红在 3 条存量源码断言（见下），修完复跑全绿。
 
 **下一轮候选**：i18n 第二期余下（`ui/settings/*-sections.ts`、外观页的统计/桌宠块、写作主流程按钮与 Notice）；或把 `shared/theme-gallery.ts` 的主题名改「存 id + 查表」为英文化铺路。
+
+## 第六十轮：i18n 第二期第三片 —— 模型设置页与密钥展示（2026-11-18）
+
+用户「继续」缺口⑦ 第二期，按中文字数取设置分区里最大的一块 **`ui/settings/api-section.ts`**（1674 行 / 4295 个中文字），
+并把同一屏的 `shared/secret-display.ts`（密钥加密状态卡）一起迁。
+
+**改动**
+- `ui/settings/api-section.ts`：约 214 处文案全部走 `t('settings.api.*')`（供应商侧栏 / 新建表单 / 密钥加密卡片 / 渠道能力 / 模型列表 / 全局分配 / 任务级预算 / 同人考据），5 个 `Record` 任务标签表也改成 `t()` 取值；`'取消'` 复用 `common.cancel`。文件里剩的 CJK 只有注释与一条样本检索词 `'斗破苍穹'`。
+- `i18n/messages/{zh-CN,en-US}.ts`：`settings.api` 213 键 + 顶层 `secret` 10 键；资源 **220 → 443 条/语言**。
+- `shared/secret-display.ts`：占位/悬停/落盘状态文案改 `t('secret.*')`；`SECRET_LOCKED_PLACEHOLDER` 常量改为函数 `secretLockedPlaceholder()`（模块加载时求值会定格启动语言）；legacy/mismatch 提示片段自带前导空格。
+- 决策：`shared/theme-gallery.ts` 主题名与 `THINKING_LEVELS`/`BUDGET_TIERS` 的 label/描述**仍不迁**——前者写进持久化方案名，后者是跨模块共用常量；迁了会让英文界面出现半中半英，两条都记 backlog。
+
+**坑**
+- TS2322：`t('settings.api.capacityTitle', { tokens: contextWindow ?? '', ... })` —— `contextWindow` 是 `number | undefined`（`ui/settings/api-section.ts:697`）。
+- `api-format-wiring.test.ts` 三处是**源码字符串断言**（读文件文本），迁 `t()` 后中文字面量消失，必须改断言 i18n 键。
+- `api-section-dom.test.ts` 的预设分组只在 providers 有 `isDefault` 时渲染，双语用例要给第一条打 `{ ...PROVIDERS[0], isDefault: true }`。
+- 第一次英文截图密钥加密警示仍是中文：那张卡来自 `shared/secret-display.ts`，不在 api-section 里。
+- 截图前必须 `npm run build` + `node scripts/dev-vault.mjs sync --vault=D:\nw-dev-vault`；首次跑脚本插件未加载会报「Cannot read properties of undefined (reading 'language')」，重跑即可。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；`api-section-dom` / `api-format-wiring` / `secret-display` 3 文件 37 例全绿。
+- `check:i18n`：zh 443 / en 443、0 无法解析键、动态键 3 处、棘轮 **268 文件 / 11577 条**（`--update-baseline` 收紧）。
+- 实机 zh/en：`D:\nw-dev-vault\_visual-i18n\api-{zh,en}.png`（930×2570）；en 下标题/标签/按钮/长段风险文案全英文，仅共用常量（思考等级、预算档位）与供应商名保持中文；「In use」胶囊与「其它模块」在 930px 下的挤压中英一致，属既有布局。
+- 全量 `npm run preflight`：见提交信息与 `docs/modules/i18n.md` §5。
+
+**下一轮候选**：`ui/settings/general-sections.ts`（2349 字）、`ui/settings/writing-sections.ts`（2239）、`ui/settings/knowledge-section.ts`（1075），或写作主流程按钮/`Notice`。
+
 

@@ -142,7 +142,7 @@
 - 运行时：`i18n/index.ts` —— `t(key, params?)` / `translate(locale, key, params?)` / `setLocale` / `applyLocaleSetting` /
   `onLocaleChange` / `resolveLocale`（auto 读 `localStorage.language`）/ `interpolate` /
   `flattenMessages` / `placeholdersOf`。缺失键返回键名并只警告一次，不炸界面。
-- 资源：`i18n/messages/zh-CN.ts`（源语言）+ `en-US.ts`，各 **220 条**（common 5 / commands 94 / group 6 / tab 20 / shell 6 / appearance 71 / tts 18）。
+- 资源：`i18n/messages/zh-CN.ts`（源语言）+ `en-US.ts`，各 **443 条**（common 5 / commands 94 / group 6 / tab 20 / shell 6 / appearance 71 / api 213 / secret 10 / tts 18）。
 - 设置：`NovelWriterSettings.language?: 'auto' | 'zh-CN' | 'en-US'`（默认 auto），设置页「🎨 外观设置 → 界面语言」；
   启动在 `engine/engine-registry.ts` Phase 5 的 `loadSettings()` 之后 `applyLocaleSetting()`。
 - 迁移面：设置页导航（6 分组 + 20 页签，`section-factory.ts` 的 `label` 改 getter）+ 设置页外壳 6 条
@@ -153,7 +153,8 @@
   （`D:\nw-dev-vault\_visual-i18n\{before,after}\settings-appearance.png`）。
 - 第二期第一片（2026-11-18）：命令面板 94 条 `addCommand({ name })` 改 `t('commands.*')`，并在注册前应用语言；实机 zh/en 面板截图见 `D:\nw-dev-vault\_visual-i18n\{zh,en}-palette-export.png`。
 - 第二期第二片（2026-11-18）：外观设置页 `ui/appearance-settings.ts` 47 处文案迁 `settings.appearance.*`（71 键），三个弹窗与 11 条 notice 一并双语；实机 zh/en 截图见 `D:\nw-dev-vault\_visual-i18n\appearance-{zh,en}.png`。主题名/描述故意保留中文（会被写进已存配色方案名）。
-- 后续：第二期余下（`ui/settings/*-sections.ts`、写作主流程 Notice、外观页的统计/桌宠块），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
+- 第二期第三片（2026-11-18）：模型设置页 `ui/settings/api-section.ts` 约 214 处文案迁 `settings.api.*`（213 键），并新增顶层 `secret.*`（10 键）把 `shared/secret-display.ts` 的占位/悬停/落盘状态文案一并英文化（`SECRET_LOCKED_PLACEHOLDER` 常量改为函数 `secretLockedPlaceholder()`）；实机 zh/en 截图见 `D:\nw-dev-vault\_visual-i18n\api-{zh,en}.png`。仍写死中文的只有跨模块共用常量（思考等级 `THINKING_LEVELS`、预算档位 `BUDGET_TIERS`）与主题名。
+- 后续：第二期余下（`ui/settings/general-sections.ts` 2349 字、`writing-sections.ts` 2239 字等其余分区、写作主流程 Notice、外观页的统计/桌宠块），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 
 ---
 
@@ -161,6 +162,6 @@
 
 1 → 2 → 3 → 4 → 5 →（6 可选）→ 7。
 
-进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第一片（命令面板）+ 第二片（外观设置页）已交付（2026-11-18）；下一个候选是 ⑦ 第二期余下（其余设置分区/写作主流程 Notice）。
+进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第一片（命令面板）+ 第二片（外观设置页）+ 第三片（模型设置页）已交付（2026-11-18）；下一个候选是 ⑦ 第二期余下（其余设置分区/写作主流程 Notice）。
 
 理由：1 是修「假成功」缺陷；2 是把已交付引擎变成写作时可见的价值；3 是投稿刚需且不依赖 AI；4/5 是低成本体验补洞；6/7 视需要。

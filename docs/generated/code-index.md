@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146805 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19499 | 295 | 203 | 69% |
-| `shared/` | 258 | 51733 | 2177 | 1698 | 78% |
+| `shared/` | 258 | 51739 | 2177 | 1699 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 114931 | 1176 | 926 | 79% |
+| `ui/` | 306 | 114955 | 1176 | 926 | 79% |
 
 ## 文件清单
 
@@ -645,7 +645,7 @@
 | `shared/scene-body-merge.ts` | 24 | 2 | 2 |
 | `shared/scene-card.ts` | 242 | 9 | 8 |
 | `shared/scene-context-prompt.ts` | 100 | 3 | 2 |
-| `shared/secret-display.ts` | 150 | 8 | 5 |
+| `shared/secret-display.ts` | 156 | 8 | 6 |
 | `shared/secret-redaction.ts` | 156 | 6 | 5 |
 | `shared/secret-value.ts` | 31 | 2 | 2 |
 | `shared/semantic-keywords.ts` | 124 | 11 | 3 |
@@ -945,7 +945,7 @@
 | `ui/settings-tab.ts` | 373 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 39 | 1 | 1 |
-| `ui/settings/api-section.ts` | 1674 | 1 | 1 |
+| `ui/settings/api-section.ts` | 1698 | 1 | 1 |
 | `ui/settings/deconstruction-section.ts` | 336 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 441 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 293 | 1 | 1 |
