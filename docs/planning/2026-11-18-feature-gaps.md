@@ -142,13 +142,13 @@
 - 运行时：`i18n/index.ts` —— `t(key, params?)` / `translate(locale, key, params?)` / `setLocale` / `applyLocaleSetting` /
   `onLocaleChange` / `resolveLocale`（auto 读 `localStorage.language`）/ `interpolate` /
   `flattenMessages` / `placeholdersOf`。缺失键返回键名并只警告一次，不炸界面。
-- 资源：`i18n/messages/zh-CN.ts`（源语言）+ `en-US.ts`，各 **1222 条**（common 5 / commands 94 / group 6 / tab 20 / shell 10 / appearance 71 / api 213 / general 178 / writing 147 / knowledge 83 / promptManager 134 / deconstruction 54 / fingerprint 42 / setup 77 / search.topic 42 / prompt.category 10 / deconstruction.dimension 8 / secret 10 / tts 18）。
+- 资源：`i18n/messages/zh-CN.ts`（源语言）+ `en-US.ts`，各 **1270 条**（common 5 / commands 94 / group 6 / tab 20 / shell 10 / appearance 71 / api 213 / general 178 / writing 147 / knowledge 83 / promptManager 134 / deconstruction 54 / fingerprint 42 / setup 77 / foreshadow 48 / search.topic 42 / prompt.category 10 / deconstruction.dimension 8 / secret 10 / tts 18）。
 - 设置：`NovelWriterSettings.language?: 'auto' | 'zh-CN' | 'en-US'`（默认 auto），设置页「🎨 外观设置 → 界面语言」；
   启动在 `engine/engine-registry.ts` Phase 5 的 `loadSettings()` 之后 `applyLocaleSetting()`。
 - 迁移面：设置页导航（6 分组 + 20 页签，`section-factory.ts` 的 `label` 改 getter）+ 设置页外壳 6 条
   （`settings-tab.ts` 的标题/搜索占位/空态/高级开关/未知页签）。
 - 门禁：`scripts/check-i18n.mjs`（`npm run check:i18n`，已进 preflight）——中英键集合与占位符双向一致、
-  `t()` 字面量键必须存在、`ui/**` 中文数量**按文件棘轮**（基线 `.i18n-baseline.json`：260 文件 / 10697 条）。
+  `t()` 字面量键必须存在、`ui/**` 中文数量**按文件棘轮**（基线 `.i18n-baseline.json`：259 文件 / 10646 条）。
 - 验收：单测 38 例 + 设置页回归 30 例；实机 before/after（zh-CN vs en-US）导航全换语言、布局像素级一致
   （`D:\nw-dev-vault\_visual-i18n\{before,after}\settings-appearance.png`）。
 - 第二期第一片（2026-11-18）：命令面板 94 条 `addCommand({ name })` 改 `t('commands.*')`，并在注册前应用语言；实机 zh/en 面板截图见 `D:\nw-dev-vault\_visual-i18n\{zh,en}-palette-export.png`。
@@ -180,7 +180,13 @@
   `TEMPLATE_ROOT`/`USAGE_GUIDE_PATH` 是数据或 vault 路径不迁）；zh/en 资源各 1222 条；
   棘轮收紧到 260 文件 / 10697 条；实机截图 `D:\nw-dev-vault\_visual-i18n11\setup-{zh,en}.png`
   （en 下 CJK 17 全是数据：元文件 / 三模式目录 / 项目名）。
-- 后续：第二期余下（`foreshadow-section.ts` 447、`mode-section.ts` 402、
+- 第二期第十二片（2026-11-19，ZCode · 任务板 ZC-20261118-02）：伏笔管理分区
+  `ui/settings/foreshadow-section.ts`（447 字）迁 `settings.foreshadow.*` 48 键（类型列表
+  启停/编辑/删除确认、编辑与新增弹窗五字段、导入/导出/重置）；类型的 name/description/keywords
+  是用户数据不迁，关键词占位例 en 用英文例（i18n-parity 硬拦 en CJK）；zh/en 资源各 1270 条；
+  棘轮收紧到 259 文件 / 10646 条；实机截图 `D:\nw-dev-vault\_visual-i18n12\foreshadow-{zh,en}.png`
+  （en 下 CJK 110 全是类型数据）。
+- 后续：第二期余下（`mode-section.ts` 402、
   `mcp-section.ts` 301、`agent-section.ts` 125、写作主流程 Notice、外观页的统计/桌宠块、指纹 12 维标签），
   第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 

@@ -7,6 +7,7 @@
  */
 import { copyText } from '@/shared/clipboard';
 import { Setting, Notice, Modal } from 'obsidian';
+import { t } from '@/i18n';
 import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
 import { ForeshadowConfigManager, ForeshadowTypeConfig } from '@/engine/foreshadow-config-manager';
 import { OperationConfirmModal } from '@/ui/components/progress';
@@ -25,11 +26,11 @@ export class ForeshadowSection extends SettingsSection {
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
-        section.createEl('h3', { text: '🔮 伏笔管理' });
+        section.createEl('h3', { text: t('settings.foreshadow.title') });
 
         new Setting(section)
-            .setName('最大未揭示伏笔')
-            .setDesc('允许的最大未揭示伏笔数量')
+            .setName(t('settings.foreshadow.maxUnrevealed'))
+            .setDesc(t('settings.foreshadow.maxUnrevealedDesc'))
             .addText(text => text
                 .setPlaceholder('20')
                 .setValue(String(this.plugin.settings.maxUnrevealedForeshadow))
@@ -38,9 +39,9 @@ export class ForeshadowSection extends SettingsSection {
                     await this.plugin.saveSettings();
                 }));
 
-        section.createEl('h4', { text: '📝 伏笔类型配置' });
+        section.createEl('h4', { text: t('settings.foreshadow.typeConfigTitle') });
         const descP = section.createEl('p', { cls: 'setting-item-description' });
-        descP.setText('自定义伏笔类型及其关键词，系统会根据配置自动识别和分类伏笔。');
+        descP.setText(t('settings.foreshadow.typeConfigDesc'));
 
         const configManager = this.getForeshadowConfigManager();
         const types = configManager.getAllTypes();
@@ -59,40 +60,40 @@ export class ForeshadowSection extends SettingsSection {
             infoDiv.createEl('span', { cls: 'nw-foreshadow-type-desc', text: type.description });
             
             const keywordsBadge = infoDiv.createEl('span', { cls: 'nw-foreshadow-keywords-count' });
-            keywordsBadge.setText(`${type.keywords.length} 关键词`);
-            
+            keywordsBadge.setText(t('settings.foreshadow.keywordsCount', { count: type.keywords.length }));
+
             const actionsDiv = typeRow.createDiv({ cls: 'nw-foreshadow-type-actions' });
-            
+
             const toggleBtn = actionsDiv.createEl('button', {
                 cls: 'nw-foreshadow-toggle-btn',
                 text: type.enabled ? '✅' : '❌',
-                attr: { title: type.enabled ? '点击禁用' : '点击启用' }
+                attr: { title: type.enabled ? t('settings.foreshadow.toggleDisableTitle') : t('settings.foreshadow.toggleEnableTitle') }
             });
             toggleBtn.onclick = async () => {
                 configManager.toggleType(type.id, !type.enabled);
                 this.saveForeshadowConfig(configManager);
                 this.refresh();
             };
-            
+
             const editBtn = actionsDiv.createEl('button', {
                 cls: 'nw-foreshadow-action-btn',
-                text: '编辑'
+                text: t('settings.foreshadow.editBtn')
             });
             editBtn.onclick = () => {
                 this.showForeshadowTypeModal(type);
             };
-            
+
             const deleteBtn = actionsDiv.createEl('button', {
                 cls: 'nw-foreshadow-action-btn nw-foreshadow-delete-btn',
-                text: '删除'
+                text: t('settings.foreshadow.deleteBtn')
             });
             deleteBtn.onclick = async () => {
                 const confirmed = await OperationConfirmModal.confirm(this.app, {
-                    title: '删除伏笔类型',
-                    description: `确定删除伏笔类型 "${type.name}" 吗？`,
-                    warning: '此操作不可恢复',
-                    confirmText: '确认删除',
-                    cancelText: '取消',
+                    title: t('settings.foreshadow.deleteTitle'),
+                    description: t('settings.foreshadow.deleteConfirm', { name: type.name }),
+                    warning: t('settings.foreshadow.deleteWarning'),
+                    confirmText: t('settings.foreshadow.deleteConfirmBtn'),
+                    cancelText: t('common.cancel'),
                 });
                 if (confirmed) {
                     configManager.deleteType(type.id);
@@ -104,75 +105,75 @@ export class ForeshadowSection extends SettingsSection {
 
         const addBtn = section.createEl('button', {
             cls: 'nw-foreshadow-add-btn',
-            text: '+ 添加新伏笔类型'
+            text: t('settings.foreshadow.addBtn')
         });
         addBtn.onclick = () => {
             this.showForeshadowTypeModal();
         };
 
         const importExportDiv = section.createDiv({ cls: 'nw-foreshadow-import-export' });
-        
+
         const exportBtn = importExportDiv.createEl('button', {
             cls: 'nw-foreshadow-ie-btn',
-            text: '📥 导出配置'
+            text: t('settings.foreshadow.exportBtn')
         });
         exportBtn.onclick = () => {
             const json = configManager.exportConfig();
             copyText(json).then(() => {
-                showSuccessNotice('配置已复制到剪贴板');
+                showSuccessNotice(t('settings.foreshadow.copiedNotice'));
             });
         };
-        
+
         const importBtn = importExportDiv.createEl('button', {
             cls: 'nw-foreshadow-ie-btn',
-            text: '📤 导入配置'
+            text: t('settings.foreshadow.importBtn')
         });
         importBtn.onclick = async () => {
             const modal = new Modal(this.app);
-            modal.titleEl.setText('导入伏笔配置');
-            
+            modal.titleEl.setText(t('settings.foreshadow.importModalTitle'));
+
             const textarea = modal.contentEl.createEl('textarea', {
-                attr: { 
-                    placeholder: '粘贴导出的 JSON 配置...',
+                attr: {
+                    placeholder: t('settings.foreshadow.importPlaceholder'),
                     style: 'width: 100%; height: 200px; margin: 10px 0;'
                 }
             });
-            
+
             const importBtn = modal.contentEl.createEl('button', {
                 cls: 'mod-cta',
-                text: '导入'
+                text: t('settings.foreshadow.importConfirmBtn')
             });
             importBtn.onclick = async () => {
                 const result = configManager.importConfig(textarea.value);
                 if (result.success) {
                     this.saveForeshadowConfig(configManager);
-                    showSuccessNotice('配置导入成功');
+                    showSuccessNotice(t('settings.foreshadow.importSuccessNotice'));
                     modal.close();
                     this.refresh();
                 } else {
-                    showErrorNotice(result.errors.join(', '), { title: '导入失败' });
+                    showErrorNotice(result.errors.join(', '), { title: t('settings.foreshadow.importFailedTitle') });
                 }
             };
-            
+
             modal.open();
         };
-        
+
         const resetBtn = importExportDiv.createEl('button', {
             cls: 'nw-foreshadow-ie-btn nw-foreshadow-reset-btn',
-            text: '🔄 重置为默认'
+            text: t('settings.foreshadow.resetBtn')
         });
         resetBtn.onclick = async () => {
             const confirmed = await OperationConfirmModal.confirm(this.app, {
-                title: '重置伏笔类型',
-                description: '确定重置所有伏笔类型配置为默认值吗？',
-                warning: '所有自定义伏笔类型配置将丢失',
-                confirmText: '确认重置',
-                cancelText: '取消',
+                title: t('settings.foreshadow.resetTitle'),
+                description: t('settings.foreshadow.resetConfirm'),
+                warning: t('settings.foreshadow.resetWarning'),
+                confirmText: t('settings.foreshadow.resetConfirmBtn'),
+                cancelText: t('common.cancel'),
             });
             if (confirmed) {
                 configManager.resetToDefault();
                 this.saveForeshadowConfig(configManager);
-                showSuccessNotice('已重置为默认配置');
+                showSuccessNotice(t('settings.foreshadow.resetNotice'));
                 this.refresh();
             }
         };
@@ -193,7 +194,7 @@ export class ForeshadowSection extends SettingsSection {
 
     private showForeshadowTypeModal(existingType?: ForeshadowTypeConfig): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText(existingType ? `编辑伏笔类型: ${existingType.name}` : '添加新伏笔类型');
+        modal.titleEl.setText(existingType ? t('settings.foreshadow.editModalTitle', { name: existingType.name }) : t('settings.foreshadow.addModalTitle'));
         
         const form = modal.contentEl.createDiv({ cls: 'nw-foreshadow-type-form' });
         
@@ -204,48 +205,48 @@ export class ForeshadowSection extends SettingsSection {
         let keywordsValue = existingType?.keywords.join(', ') || '';
 
         new Setting(form)
-            .setName('类型名称')
-            .setDesc('伏笔类型的显示名称')
+            .setName(t('settings.foreshadow.nameName'))
+            .setDesc(t('settings.foreshadow.nameDesc'))
             .addText(text => text
-                .setPlaceholder('如：物品')
+                .setPlaceholder(t('settings.foreshadow.namePlaceholder'))
                 .setValue(nameValue)
                 .onChange(value => { nameValue = value; }));
-        
+
         new Setting(form)
-            .setName('类型描述')
-            .setDesc('描述该类型的含义和用途')
+            .setName(t('settings.foreshadow.descName'))
+            .setDesc(t('settings.foreshadow.descDesc'))
             .addText(text => text
-                .setPlaceholder('如：武器、道具、丹药等实体物品')
+                .setPlaceholder(t('settings.foreshadow.descPlaceholder'))
                 .setValue(descValue)
                 .onChange(value => { descValue = value; }));
-        
+
         new Setting(form)
-            .setName('优先级')
-            .setDesc('数值越大优先级越高，匹配时优先选择高优先级类型')
+            .setName(t('settings.foreshadow.priorityName'))
+            .setDesc(t('settings.foreshadow.priorityDesc'))
             .addText(text => text
                 .setPlaceholder('100')
                 .setValue(priorityValue)
                 .onChange(value => { priorityValue = value; }));
-        
+
         new Setting(form)
-            .setName('显示颜色')
-            .setDesc('用于在界面中标识该类型的颜色')
+            .setName(t('settings.foreshadow.colorName'))
+            .setDesc(t('settings.foreshadow.colorDesc'))
             .addText(text => text
                 .setPlaceholder('#4CAF50')
                 .setValue(colorValue)
                 .onChange(value => { colorValue = value; }));
-        
+
         new Setting(form)
-            .setName('关键词（逗号分隔）')
-            .setDesc('用于匹配伏笔的关键词，支持部分匹配')
+            .setName(t('settings.foreshadow.keywordsName'))
+            .setDesc(t('settings.foreshadow.keywordsDesc'))
             .addTextArea(textarea => textarea
-                .setPlaceholder('剑,刀,枪,玉佩')
+                .setPlaceholder(t('settings.foreshadow.keywordsPlaceholder'))
                 .setValue(keywordsValue)
                 .onChange(value => { keywordsValue = value; }));
-        
+
         const saveBtn = modal.contentEl.createEl('button', {
             cls: 'mod-cta',
-            text: '保存'
+            text: t('settings.foreshadow.saveBtn')
         });
         saveBtn.onclick = async () => {
             const name = nameValue.trim();
@@ -253,14 +254,14 @@ export class ForeshadowSection extends SettingsSection {
             const priority = parseInt(priorityValue) || 50;
             const color = colorValue.trim();
             const keywords = keywordsValue.split(/[,，]/).map(k => k.trim()).filter(k => k);
-            
+
             if (!name) {
-                new Notice('请输入类型名称');
+                new Notice(t('settings.foreshadow.nameRequiredNotice'));
                 return;
             }
-            
+
             const configManager = this.getForeshadowConfigManager();
-            
+
             if (existingType) {
                 configManager.updateType(existingType.id, {
                     name,
@@ -269,7 +270,7 @@ export class ForeshadowSection extends SettingsSection {
                     color,
                     keywords
                 });
-                showSuccessNotice('类型更新成功');
+                showSuccessNotice(t('settings.foreshadow.updateSuccessNotice'));
             } else {
                 configManager.addType({
                     name,
@@ -279,7 +280,7 @@ export class ForeshadowSection extends SettingsSection {
                     color,
                     keywords
                 });
-                showSuccessNotice('类型添加成功');
+                showSuccessNotice(t('settings.foreshadow.addSuccessNotice'));
             }
             
             this.saveForeshadowConfig(configManager);

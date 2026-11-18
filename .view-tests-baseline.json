@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-18T15:01:12.063Z",
+  "updatedAt": "2026-11-18T16:00:23.562Z",
   "threshold": 200,
-  "note": "i18n 第十片：fingerprint-section-i18n.test.ts 静态 import 分区，收紧",
+  "note": "i18n 第二期第12片（ZC-20261118-02）：foreshadow-section 新增双语测试（静态 import 分区），基线 80 → 79",
   "files": [
     "ui/add-fanfic-setting-modal.ts",
     "ui/agent-workbench-view.ts",
@@ -69,7 +69,6 @@
     "ui/scene-confirm-modal.ts",
     "ui/services/agent-session-store.ts",
     "ui/services/co-write-facade.ts",
-    "ui/settings/foreshadow-section.ts",
     "ui/step-result-viewer-modal.ts",
     "ui/story-linkage-modal.ts",
     "ui/story-settings-form.ts",
@@ -151,7 +150,6 @@
     "ui/scene-confirm-modal.ts": 467,
     "ui/services/agent-session-store.ts": 211,
     "ui/services/co-write-facade.ts": 907,
-    "ui/settings/foreshadow-section.ts": 293,
     "ui/step-result-viewer-modal.ts": 442,
     "ui/story-linkage-modal.ts": 390,
     "ui/story-settings-form.ts": 251,

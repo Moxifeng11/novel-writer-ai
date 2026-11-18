@@ -201,7 +201,6 @@
     "ui/settings/agent-section.ts": 6,
     "ui/settings/api-section.ts": 1,
     "ui/settings/fingerprint-section.ts": 4,
-    "ui/settings/foreshadow-section.ts": 51,
     "ui/settings/knowledge-section.ts": 4,
     "ui/settings/mcp-section.ts": 14,
     "ui/settings/mode-section.ts": 18,
@@ -261,7 +260,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 10697,
+  "total": 10646,
   "updatedAt": "2026-11-18",
   "note": ""
 }

@@ -2011,3 +2011,29 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 **下一轮候选**：`foreshadow-section.ts`（447）→ `mode-section.ts`（402）→ `mcp-section.ts`（301，
 工具名是数据不迁）→ `agent-section.ts`（125，完成后设置分区全迁完）→ 指纹 12 维标签
 （随写作指纹库视图切片）→ 写作主流程。
+
+## 第六十九轮：i18n 第二期第十二片 —— 伏笔管理分区（2026-11-19，ZCode · ZC-20261118-02）
+
+**改动**
+- `ui/settings/foreshadow-section.ts`（292 行 / 447 中文字）48 处文案迁 `t('settings.foreshadow.*')`：
+  最大未揭示伏笔、类型列表（关键词计数 `{count}` 插值、启停 title 两态、编辑/删除、删除确认五段）、
+  导入/导出/重置三按钮与两个确认框（取消复用 `common.cancel`）、导入弹窗、编辑与新增弹窗五字段
+  （标题带 `{name}` 插值）。类型 name/description/keywords 是用户数据（随配置导出导入）不迁。
+- 资源 zh/en 各 1270（+48）；关键词占位例 en 用英文例（`sword, blade, spear, jade pendant`，
+  i18n-parity 硬拦 en CJK，同第十片情绪词占位教训）。
+- 新增 `tests/unit/ui/foreshadow-section-i18n.test.ts` 3 例（分区同步渲染，静态 import）；
+  en CJK 白名单用 `DEFAULT_FORESHADOW_TYPES` 拼数据字符集，自动适配默认配置变化。
+
+**坑**
+- 启停按钮 title 走 `attr.title`，FakeEl 的 textContent 收集不到——attr 类文案单测别断言，靠 check:i18n。
+
+**验收**
+- 新增 3 例全绿；`check:i18n` zh/en 各 1270、棘轮收紧到 **259 文件 / 10646 条**（foreshadow-section 移出）；
+  `check:bundle` main.js → **5801322**（+4719）；`check:view-tests` 收紧到 **79 个文件**；
+  preflight EXIT=0。
+- 实机 `D:\nw-dev-vault\_visual-i18n12\foreshadow-{zh-CN,en-US}.png`：en 下页签 `Foreshadowing`、
+  8 张类型卡（Edit/Delete/`N keywords`）、导入导出重置全英文，剩余 CJK 110 全是类型数据；
+  zh 页与改前一致。
+
+**下一轮候选**：`mode-section.ts`（402）→ `mcp-section.ts`（301，工具名是数据不迁）→
+`agent-section.ts`（125，完成后设置分区全迁完）→ 指纹视图三件套 → 写作主流程。
