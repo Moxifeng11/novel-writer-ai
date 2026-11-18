@@ -2483,3 +2483,32 @@ entity-state-controller / context-loader / checkup-bar 等）→ 外观页统计
 - 实机 full-writer en 页：流程摘要与阶段名全英文，整页 CJK 109 → 84（余为项目数据与 shared 长尾）。
 
 **下一轮**：跨层数据③（`shared/link-status-compute.ts`，注意 agent 诊断输出可能被下游比较）。
+
+## 第八十九轮：i18n 跨层数据③ —— 设定联动状态（2026-11-19，ZCode · ZC-20261120-03）
+
+**DSH 的警示是对的**
+- 改到一半发现 `formatLinkStatusForAgent()` 的输出**随界面语言漂移**——它是 agent/LLM 的输入，
+  下游 `repair-tools` / `diagnose-tools` 可能匹配措辞。若按常规「detail 直接 t()」做法，
+  en 界面会让 agent 收到英文诊断，行为不可预期。
+- 最终方案：**稳定值契约**——`stage.name` / `status.breakpoint` / `status.title` 与
+  `stage.detail` 全部保留中文原值；另存 `nameKey/detailKey/detailParams/titleKey`，
+  由 `stageName()/stageDetail()/linkTitle()` 只在**渲染时**求值。
+
+**改动**
+- `shared/link-status-compute.ts`：13 个环节名 + 43 条 detail + 3 条链路名共 59 键；
+  `summarizeLink()` 加 `titleKey` 参数；三个 getter 用 `hasMessage()` 判空回落。
+- `ui/views/link-status.ts`：5 处渲染点改 getter；`breakpoint` 用 `stageName()` 求值展示。
+- **镜像库同步**：`scripts/lib/verify-flows-lib.mjs` 按逐字段 parity 对齐（这是门禁资产，
+  `verify-flows-parity.test.ts` 会对照真源与镜像，任何漂移当场变红）。
+- 新增 `tests/unit/shared/link-status-i18n.test.ts` 5 例：稳定值 zh/en 逐字相等 / detail en 全英文 /
+  链路名与环节名双语 / **agent 输出与语言完全无关** / 未知环节名回落。
+
+**验收**
+- 新增 5 例 + parity 6 例 + 既有 view-banners 6 例全绿；shared+ui **451 文件 / 4449 例**全绿。
+- `check:i18n` zh/en 各 **3303**（+59）；`check:bundle` main.js → **6018866**（+10094）。
+- preflight EXIT=0（10316 通过 + 3 跳过）。
+
+**踩到的门禁（值得记）**：新增导出函数/参数时 `check:jsdoc` 会要求 `@param` 齐——
+`summarizeLink` 加了 `titleKey` 但 JSDoc 没补，被拦下。
+
+**下一轮**：跨层数据④（`shared/novel-format.ts`，以甄别 + 结论为主）。

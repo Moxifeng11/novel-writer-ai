@@ -13,7 +13,7 @@
  */
 
 import { t } from '@/i18n';
-import type { LinkStatus } from '@/shared/link-status-compute';
+import { linkTitle, stageDetail, stageName, type LinkStatus } from '@/shared/link-status-compute';
 
 export {
     summarizeLink,
@@ -74,22 +74,24 @@ export function renderLinkStatus(container: HTMLElement, status: LinkStatus): HT
     const banner = container.createDiv({ cls: `nw-capability-banner ${stageClass}` });
 
     const head = banner.createDiv({ cls: 'nw-capability-head' });
-    head.createSpan({ cls: 'nw-capability-title', text: t('fingerprint.link.titleSuffix', { title: status.title }) });
+    head.createSpan({ cls: 'nw-capability-title', text: t('fingerprint.link.titleSuffix', { title: linkTitle(status) }) });
+    const brokenStage = status.breakpoint ? status.stages.find(stage => stage.name === status.breakpoint) : undefined;
     head.createSpan({
         cls: 'nw-capability-stage',
-        text: status.breakpoint ? t('fingerprint.link.brokenAt', { bp: status.breakpoint }) : statusText(status.overall),
+        // 断点保留 name 原值（稳定标识），展示走 stageName()
+        text: brokenStage ? t('fingerprint.link.brokenAt', { bp: stageName(brokenStage) }) : statusText(status.overall),
     });
 
     const metrics = banner.createDiv({ cls: 'nw-capability-metrics' });
     for (const stage of status.stages) {
         const item = metrics.createDiv({
             cls: 'nw-capability-metric',
-            attr: { title: `${stage.name}${t('fingerprint.link.colon')}${stage.detail}` },
+            attr: { title: `${stageName(stage)}${t('fingerprint.link.colon')}${stageDetail(stage)}` },
         });
         item.createSpan({ cls: 'nw-capability-metric-value', text: STATUS_ICON[stage.status] });
         item.createSpan({
             cls: 'nw-capability-metric-label',
-            text: `${stage.name} · ${stage.detail}`,
+            text: `${stageName(stage)} · ${stageDetail(stage)}`,
         });
     }
 
@@ -98,7 +100,7 @@ export function renderLinkStatus(container: HTMLElement, status: LinkStatus): HT
     if (firstBroken) {
         notes.createDiv({
             cls: 'nw-capability-note',
-            text: t('fingerprint.link.breakpointNote', { name: firstBroken.name, detail: firstBroken.detail }),
+            text: t('fingerprint.link.breakpointNote', { name: stageName(firstBroken), detail: stageDetail(firstBroken) }),
         });
     } else if (status.overall === 'ok') {
         notes.createDiv({ cls: 'nw-capability-note', text: t('fingerprint.link.okNote') });

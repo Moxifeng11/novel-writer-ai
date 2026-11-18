@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146805 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19508 | 296 | 203 | 69% |
-| `shared/` | 258 | 51832 | 2181 | 1702 | 78% |
+| `shared/` | 258 | 51908 | 2184 | 1705 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1596 | 88 | 58 | 66% |
-| `ui/` | 306 | 115170 | 1180 | 930 | 79% |
+| `ui/` | 306 | 115172 | 1180 | 930 | 79% |
 
 ## 文件清单
 
@@ -562,7 +562,7 @@
 | `shared/knowledge-position.ts` | 51 | 3 | 2 |
 | `shared/ledger-card-model.ts` | 230 | 7 | 5 |
 | `shared/ledger-migration-model.ts` | 94 | 3 | 2 |
-| `shared/link-status-compute.ts` | 345 | 12 | 5 |
+| `shared/link-status-compute.ts` | 421 | 15 | 8 |
 | `shared/local-ai-queue.ts` | 89 | 2 | 1 |
 | `shared/logger.ts` | 101 | 5 | 5 |
 | `shared/lru-cache.ts` | 221 | 2 | 2 |
@@ -1007,7 +1007,7 @@
 | `ui/views/knowledge-base-view.ts` | 3270 | 10 | 10 |
 | `ui/views/knowledge-capability.ts` | 113 | 3 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
-| `ui/views/link-status.ts` | 123 | 2 | 1 |
+| `ui/views/link-status.ts` | 125 | 2 | 1 |
 | `ui/views/memory-graph-view.ts` | 289 | 3 | 2 |
 | `ui/views/planning-canvas-view.ts` | 954 | 4 | 3 |
 | `ui/views/writing-fingerprint-view.ts` | 2019 | 3 | 3 |
