@@ -4,6 +4,7 @@
  * 背景：只能选字体，不能调字号/行距；状态栏也没有光标位置与选中字数。
  * 这里集中管理取值范围、CSS 应用与文案格式化，便于单测。
  */
+import { t } from '@/i18n';
 
 /** 字号可选值（px） */
 export const FONT_SIZE_OPTIONS: readonly number[] = [14, 15, 16, 17, 18, 20, 22, 24];
@@ -122,5 +123,5 @@ export function formatCursorInfo(text: string, start: number, end: number): stri
     const position = getCursorPosition(text, start);
     const base = `第 ${position.line} 行 第 ${position.column} 列`;
     const selected = getSelectionCount(text, start, end);
-    return selected > 0 ? `${base} · 选中 ${selected} 字` : base;
+    return selected > 0 ? t('cowrite.disp.cursorWithSel', { base, count: selected }) : base;
 }

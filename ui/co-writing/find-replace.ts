@@ -7,6 +7,8 @@
  *   - 顶部内联查找条（不弹窗、不打断写作），Ctrl+F 打开、Esc 关闭、Enter 下一个。
  */
 
+import { t } from '@/i18n';
+
 /** 查找选项 */
 export interface FindOptions {
     /** 区分大小写 */
@@ -197,23 +199,23 @@ export function renderFindBar(parent: HTMLElement, actions: FindBarActions): Fin
     const row = root.createDiv({ cls: 'nw-cowrite-findbar-row' });
     const input = row.createEl('input', {
         cls: 'nw-cowrite-findbar-input',
-        attr: { type: 'text', placeholder: '查找…', spellcheck: 'false' },
+        attr: { type: 'text', placeholder: t('cowrite.find.searchPlaceholder'), spellcheck: 'false' },
     }) as HTMLInputElement;
     const counter = row.createSpan({ cls: 'nw-cowrite-findbar-counter', text: '0/0' });
-    const prevBtn = row.createEl('button', { cls: 'nw-cowrite-findbar-btn', text: '↑', attr: { title: '上一个（Shift+Enter）' } });
-    const nextBtn = row.createEl('button', { cls: 'nw-cowrite-findbar-btn', text: '↓', attr: { title: '下一个（Enter）' } });
-    const toggleReplace = row.createEl('button', { cls: 'nw-cowrite-findbar-btn', text: '⇄', attr: { title: '显示/隐藏替换' } });
-    const caseBtn = row.createEl('button', { cls: 'nw-cowrite-findbar-btn', text: 'Aa', attr: { title: '区分大小写' } });
-    const wordBtn = row.createEl('button', { cls: 'nw-cowrite-findbar-btn', text: '\\b', attr: { title: '全词匹配' } });
-    const closeBtn = row.createEl('button', { cls: 'nw-cowrite-findbar-btn', text: '✕', attr: { title: '关闭（Esc）' } });
+    const prevBtn = row.createEl('button', { cls: 'nw-cowrite-findbar-btn', text: '↑', attr: { title: t('cowrite.find.prevTip') } });
+    const nextBtn = row.createEl('button', { cls: 'nw-cowrite-findbar-btn', text: '↓', attr: { title: t('cowrite.find.nextTip') } });
+    const toggleReplace = row.createEl('button', { cls: 'nw-cowrite-findbar-btn', text: '⇄', attr: { title: t('cowrite.find.toggleReplaceTip') } });
+    const caseBtn = row.createEl('button', { cls: 'nw-cowrite-findbar-btn', text: 'Aa', attr: { title: t('cowrite.find.caseTip') } });
+    const wordBtn = row.createEl('button', { cls: 'nw-cowrite-findbar-btn', text: '\\b', attr: { title: t('cowrite.find.wordTip') } });
+    const closeBtn = row.createEl('button', { cls: 'nw-cowrite-findbar-btn', text: '✕', attr: { title: t('cowrite.find.closeTip') } });
 
     const replaceRow = root.createDiv({ cls: 'nw-cowrite-findbar-row nw-cowrite-findbar-replace' });
     const replaceInput = replaceRow.createEl('input', {
         cls: 'nw-cowrite-findbar-input',
-        attr: { type: 'text', placeholder: '替换为…', spellcheck: 'false' },
+        attr: { type: 'text', placeholder: t('cowrite.find.replacePlaceholder'), spellcheck: 'false' },
     }) as HTMLInputElement;
-    const replaceOneBtn = replaceRow.createEl('button', { cls: 'nw-cowrite-findbar-btn nw-cowrite-findbar-btn-wide', text: '替换' });
-    const replaceAllBtn = replaceRow.createEl('button', { cls: 'nw-cowrite-findbar-btn nw-cowrite-findbar-btn-wide', text: '全部替换' });
+    const replaceOneBtn = replaceRow.createEl('button', { cls: 'nw-cowrite-findbar-btn nw-cowrite-findbar-btn-wide', text: t('cowrite.find.replaceBtn') });
+    const replaceAllBtn = replaceRow.createEl('button', { cls: 'nw-cowrite-findbar-btn nw-cowrite-findbar-btn-wide', text: t('cowrite.find.replaceAllBtn') });
     replaceRow.addClass('nw-u-d-none');
 
     const options: FindOptions = { ...DEFAULT_FIND_OPTIONS };

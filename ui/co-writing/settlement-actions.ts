@@ -5,6 +5,7 @@
  * 文件读写与弹窗通过宿主注入，错误提示文案保持原样。
  */
 import { App, Notice, TFile } from 'obsidian';
+import { t } from '@/i18n';
 import type NovelWriterPlugin from '@/main';
 import { ChapterSnapshotBuilder } from '@/engine/chapter-snapshot-builder';
 import { ConflictDetector } from '@/engine/conflict-detector';
@@ -84,7 +85,7 @@ export function checkSettlementDue(host: SettlementActionsHost): void {
         // 异步读取 frontmatter，不阻塞UI
         host.app.vault.read(file).then(content => {
             if (shouldShowSettlementBadge(content) && host.statusBar) {
-                const badge = host.statusBar.createSpan({ text: ' ⚠️ 待结算' });
+                const badge = host.statusBar.createSpan({ text: t('cowrite.settle.pendingBadge') });
                 badge.setCssStyles({
                     color: 'var(--text-warning, #f59e0b)',
                     fontWeight: '600',
@@ -110,7 +111,7 @@ export function checkSettlementDue(host: SettlementActionsHost): void {
  */
 export async function markAsWritten(host: SettlementActionsHost): Promise<void> {
     if (!host.project || !host.volume || !host.chapterNum) {
-        new Notice('⚠️ 未绑定章节，请先在左侧选择卷/章', 3e3);
+        new Notice(t('cowrite.settle.needChapter'), 3e3);
         return;
     }
     try {
@@ -118,7 +119,7 @@ export async function markAsWritten(host: SettlementActionsHost): Promise<void> 
         // 结算会基于磁盘上的旧正文执行，事实/伏笔被按错误内容更新
         const saved = await host.saveBody(false);
         if (!saved) {
-            showErrorNotice('正文未能保存（可能为空或写入失败），未标记为完稿', { timeout: 4000 });
+            showErrorNotice(t('cowrite.settle.saveFailedNotWritten'), { timeout: 4000 });
             return;
         }
         const bodyPath = host.getBodyPath();
@@ -129,13 +130,13 @@ export async function markAsWritten(host: SettlementActionsHost): Promise<void> 
                     fm["status"] = "written";
                 }
             });
-            showSuccessNotice('已标记为完稿', { timeout: 3000 });
+            showSuccessNotice(t('cowrite.settle.markedWritten'), { timeout: 3000 });
             host.renderMetrics(host.getSessionMetrics() || emptyMetrics());
             checkSettlementDue(host);
         }
     } catch (e) {
         log.warn('[CoWritingView] 标记完稿失败:', e);
-        showErrorNotice('标记完稿失败', { timeout: 4000 });
+        showErrorNotice(t('cowrite.settle.markFailed'), { timeout: 4000 });
     }
 }
 
@@ -152,7 +153,7 @@ export async function completeChapter(host: SettlementActionsHost): Promise<void
     // 保存失败仍弹结算：结算读的是磁盘正文，会和编辑器里看到的不一致
     const saved = await host.saveBody(true);
     if (!saved) {
-        showErrorNotice('正文未能保存，已取消结算', { timeout: 4000 });
+        showErrorNotice(t('cowrite.settle.saveFailedNoSettle'), { timeout: 4000 });
         return;
     }
     await host.refreshMetrics(true);

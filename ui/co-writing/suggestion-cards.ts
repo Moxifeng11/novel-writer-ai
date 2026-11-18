@@ -5,6 +5,7 @@
  * 只做 DOM 与纯函数格式化，采纳/编辑/拒绝等动作通过宿主回调注入。
  */
 import type { AssociationSuggestion } from '@/shared/co-writer-types';
+import { t } from '@/i18n';
 import type { EditValidation, SuggestionRecord } from '@/shared/types';
 import { getAssociationLabel, getDirectionLabel, getStyleLabel } from '@/ui/cowrite/cowrite-mappers';
 import { describeDiff, type TextDiffResult } from '@/ui/co-writing/text-diff';
@@ -44,7 +45,7 @@ export interface SuggestionCardActions {
  * ```
  */
 export function riskBadgeLabel(level: 'high' | 'medium' | 'low' | undefined): string {
-    return level === 'high' ? '⚠️ 剧透风险（高）' : '⚠️ 剧透风险（中）';
+    return level === 'high' ? t('cowrite.cards.spoilerHigh') : t('cowrite.cards.spoilerMid');
 }
 
 /**
@@ -59,8 +60,8 @@ export function riskBadgeLabel(level: 'high' | 'medium' | 'low' | undefined): st
  * ```
  */
 export function validationTitle(degraded: boolean, isValid: boolean): string {
-    if (degraded) return '⚠️ 校验未完成（结果无法解析）';
-    return isValid ? '✅ 验证通过' : '⚠️ 存在风险';
+    if (degraded) return t('cowrite.cards.validateDegraded');
+    return isValid ? t('cowrite.cards.validatePassed') : t('cowrite.cards.validateRisky');
 }
 
 /**
@@ -74,7 +75,7 @@ export function validationTitle(degraded: boolean, isValid: boolean): string {
  * ```
  */
 export function associationConfidenceText(confidence?: number): string {
-    return `置信 ${Math.round((confidence || 0) * 100)}%`;
+    return t('cowrite.cards.confidence', { pct: Math.round((confidence || 0) * 100) });
 }
 
 /**
@@ -109,13 +110,13 @@ export function renderSuggestionCards(
             (suggestion.riskWarnings || []).slice(0, 3).forEach(w => ul.createEl('li', { text: w }));
         }
         const actionRow = card.createDiv({ cls: 'novel-writer-cowrite-card-actions' });
-        const acceptBtn = actionRow.createEl('button', { text: '✓ 接受', cls: 'novel-writer-cowrite-primary-btn' });
+        const acceptBtn = actionRow.createEl('button', { text: t('cowrite.cards.acceptBtn'), cls: 'novel-writer-cowrite-primary-btn' });
         acceptBtn.addEventListener('click', () => actions.onAccept(suggestion));
-        const editBtn = actionRow.createEl('button', { text: '✏️ 编辑并验证', cls: 'novel-writer-cowrite-secondary-btn' });
+        const editBtn = actionRow.createEl('button', { text: t('cowrite.cards.editValidateBtn'), cls: 'novel-writer-cowrite-secondary-btn' });
         editBtn.addEventListener('click', () => actions.onEdit(suggestion));
-        const iterateBtn = actionRow.createEl('button', { text: '↻ 迭代', cls: 'novel-writer-cowrite-secondary-btn' });
+        const iterateBtn = actionRow.createEl('button', { text: t('cowrite.cards.iterateBtn'), cls: 'novel-writer-cowrite-secondary-btn' });
         iterateBtn.addEventListener('click', () => actions.onIterate(suggestion));
-        const rejectBtn = actionRow.createEl('button', { text: '× 拒绝', cls: 'novel-writer-cowrite-secondary-btn' });
+        const rejectBtn = actionRow.createEl('button', { text: t('cowrite.cards.rejectBtn'), cls: 'novel-writer-cowrite-secondary-btn' });
         rejectBtn.addEventListener('click', () => actions.onReject(suggestion.id));
         // E-05：差异对比——先给摘要，展开后列出行级 +/-，避免盲采纳
         attachDiffToggle(card, actionRow, suggestion, actions);
@@ -133,16 +134,16 @@ export function renderSuggestionCards(
 export function renderDiffRows(container: HTMLElement, result: TextDiffResult): void {
     container.empty();
     const head = container.createDiv({ cls: 'novel-writer-cowrite-diff-head' });
-    head.setText(`相对正文：${describeDiff(result)}`);
+    head.setText(t('cowrite.cards.vsBody', { diff: describeDiff(result) }));
     const body = container.createDiv({ cls: 'novel-writer-cowrite-diff-body' });
     for (const row of result.rows) {
         if (row.kind === 'same') continue;
         const line = body.createDiv({ cls: `novel-writer-cowrite-diff-line nw-diff-${row.kind}` });
         line.createSpan({ cls: 'novel-writer-cowrite-diff-sign', text: row.kind === 'add' ? '+' : '−' });
-        line.createSpan({ cls: 'novel-writer-cowrite-diff-text', text: row.text || '（空行）' });
+        line.createSpan({ cls: 'novel-writer-cowrite-diff-text', text: row.text || t('cowrite.cards.blankLine') });
     }
     if (result.rows.every(row => row.kind === 'same')) {
-        body.createDiv({ cls: 'novel-writer-cowrite-diff-same', text: '与当前正文完全一致' });
+        body.createDiv({ cls: 'novel-writer-cowrite-diff-same', text: t('cowrite.cards.identical') });
     }
 }
 
@@ -168,9 +169,9 @@ function attachDiffToggle(
     const diffResult = actions.computeDiff(suggestion);
     if (!diffResult) return;
     const diffBtn = actionRow.createEl('button', {
-        text: `⇄ 差异（${describeDiff(diffResult)}）`,
+        text: t('cowrite.cards.diffTab', { diff: describeDiff(diffResult) }),
         cls: 'novel-writer-cowrite-secondary-btn',
-        attr: { title: '查看该候选相对当前正文的改动' },
+        attr: { title: t('cowrite.cards.diffTabTip') },
     });
     const diffBox = card.createDiv({ cls: 'novel-writer-cowrite-diff nw-u-d-none' });
     diffBtn.addEventListener('click', () => {
@@ -200,8 +201,8 @@ export function renderAssociationCards(
 ): void {
     container.empty();
     const header = container.createDiv({ cls: 'novel-writer-cowrite-association-header' });
-    header.createSpan({ text: '✨ 联想输入' });
-    header.createSpan({ cls: 'novel-writer-cowrite-association-tip', text: 'Ctrl+1/2/3 插入，Ctrl+Space 换一组' });
+    header.createSpan({ text: t('cowrite.cards.assocInputTitle') });
+    header.createSpan({ cls: 'novel-writer-cowrite-association-tip', text: t('cowrite.cards.assocInputTip') });
     const row = container.createDiv({ cls: 'novel-writer-cowrite-card-row' });
     suggestions.forEach((suggestion, index) => {
         const association = associations[index];
@@ -212,11 +213,11 @@ export function renderAssociationCards(
         tags.createSpan({ cls: 'novel-writer-cowrite-index-tag', text: `Ctrl+${index + 1}` });
         card.createDiv({ cls: 'novel-writer-cowrite-suggestion-text', text: association.text });
         const actionRow = card.createDiv({ cls: 'novel-writer-cowrite-card-actions' });
-        const acceptBtn = actionRow.createEl('button', { text: '↵ 插入联想', cls: 'novel-writer-cowrite-primary-btn' });
+        const acceptBtn = actionRow.createEl('button', { text: t('cowrite.cards.insertAssocBtn'), cls: 'novel-writer-cowrite-primary-btn' });
         acceptBtn.addEventListener('click', () => actions.onAccept(suggestion));
-        const editBtn = actionRow.createEl('button', { text: '✏️ 编辑', cls: 'novel-writer-cowrite-secondary-btn' });
+        const editBtn = actionRow.createEl('button', { text: t('cowrite.cards.editBtn'), cls: 'novel-writer-cowrite-secondary-btn' });
         editBtn.addEventListener('click', () => actions.onEdit(suggestion));
-        const rejectBtn = actionRow.createEl('button', { text: '× 拒绝', cls: 'novel-writer-cowrite-secondary-btn' });
+        const rejectBtn = actionRow.createEl('button', { text: t('cowrite.cards.rejectBtn'), cls: 'novel-writer-cowrite-secondary-btn' });
         rejectBtn.addEventListener('click', () => actions.onReject(suggestion.id));
         // E-05：联想也可先看差异再插入
         attachDiffToggle(card, actionRow, suggestion, actions);
@@ -235,7 +236,7 @@ export function renderAssociationCards(
 export function renderAssociationLoading(container: HTMLElement): void {
     container.empty();
     const header = container.createDiv({ cls: 'novel-writer-cowrite-association-header' });
-    header.createSpan({ text: '✨ 正在联想下一句……' });
+    header.createSpan({ text: t('cowrite.cards.associating') });
     const row = container.createDiv({ cls: 'novel-writer-cowrite-card-row' });
     for (let i = 0; i < 3; i++) {
         const card = row.createDiv({ cls: 'novel-writer-cowrite-skeleton-card novel-writer-cowrite-association-card' });
@@ -277,22 +278,22 @@ export function renderValidationResult(
     });
     if (!degraded) {
         const scores = panel.createDiv({ cls: 'novel-writer-cowrite-score-grid' });
-        scores.appendChild(actions.createScoreCard('设定一致性', validation.consistencyScore));
-        scores.appendChild(actions.createScoreCard('文风对齐', validation.styleScore));
-        scores.appendChild(actions.createScoreCard('剧情对齐', validation.plotAlignmentScore));
+        scores.appendChild(actions.createScoreCard(t('cowrite.cards.scoreConsistency'), validation.consistencyScore));
+        scores.appendChild(actions.createScoreCard(t('cowrite.cards.scoreStyle'), validation.styleScore));
+        scores.appendChild(actions.createScoreCard(t('cowrite.cards.scorePlot'), validation.plotAlignmentScore));
     }
     if (validation.warnings.length > 0) {
         const warnings = panel.createDiv({ cls: 'novel-writer-cowrite-validation-list' });
-        warnings.createEl('strong', { text: '⚠️ 警告' });
+        warnings.createEl('strong', { text: t('cowrite.cards.warningsTitle') });
         validation.warnings.forEach(w => warnings.createDiv({ text: `· ${w}` }));
     }
     if (validation.suggestions.length > 0) {
         const tips = panel.createDiv({ cls: 'novel-writer-cowrite-validation-list' });
-        tips.createEl('strong', { text: '💡 改进建议' });
+        tips.createEl('strong', { text: t('cowrite.cards.tipsTitle') });
         validation.suggestions.forEach(t => tips.createDiv({ text: `· ${t}` }));
     }
     const actionRow = panel.createDiv({ cls: 'novel-writer-cowrite-card-actions' });
-    const useBtn = actionRow.createEl('button', { text: '继续使用', cls: 'novel-writer-cowrite-primary-btn' });
+    const useBtn = actionRow.createEl('button', { text: t('cowrite.cards.useBtn'), cls: 'novel-writer-cowrite-primary-btn' });
     // 与「✓ 接受」同一把采纳互斥锁：连点两次不能重复插入同一段校验后的文本
     useBtn.addEventListener('click', async () => {
         if (!actions.tryBeginAccept()) return;
@@ -302,7 +303,7 @@ export function renderValidationResult(
             actions.endAccept();
         }
     });
-    const editBtn = actionRow.createEl('button', { text: '修改后再验证', cls: 'novel-writer-cowrite-secondary-btn' });
+    const editBtn = actionRow.createEl('button', { text: t('cowrite.cards.editThenValidate'), cls: 'novel-writer-cowrite-secondary-btn' });
     editBtn.addEventListener('click', () => actions.onEdit(suggestion, modifiedText));
 }
 
@@ -364,7 +365,7 @@ export function ensureStreamingPreview(container: HTMLElement | null, cards: HTM
     for (let i = 0; i < 3; i++) {
         const card = row.createDiv({ cls: 'novel-writer-cowrite-suggestion-card nw-cowrite-streaming-card' });
         const tags = card.createDiv({ cls: 'novel-writer-cowrite-card-tags' });
-        tags.createSpan({ cls: 'novel-writer-cowrite-direction-tag', text: `候选 ${i + 1} · 生成中` });
+        tags.createSpan({ cls: 'novel-writer-cowrite-direction-tag', text: t('cowrite.cards.candidateGenerating', { n: i + 1 }) });
         const textEl = card.createDiv({ cls: 'novel-writer-cowrite-suggestion-text nw-cowrite-streaming-text' });
         textEl.createSpan({ cls: 'nw-cowrite-stream-cursor', text: '▍' });
         cards.push(card);

@@ -4,6 +4,8 @@
  * 从 `ui/co-writing-view.ts` 抽出：纯字符串匹配，无视图状态。
  */
 
+import { t } from '@/i18n';
+
 /**
  * 将底层错误文本转换为用户可读提示。
  *
@@ -21,29 +23,29 @@ export function getFriendlyErrorMessage(error: string): string {
     const lower = error.toLowerCase();
     // 已解锁但密文与口令不匹配：重输同一口令无用，只能重新填写密钥（2026-11-17）
     if (lower.includes('口令不匹配')) {
-        return '密钥与当前口令不匹配：请在设置中重新填写该供应商的密钥';
+        return t('cowrite.err.keyMismatch');
     }
     // 必须先于 abort 判断：解锁提示里含有「已取消」，否则会被误判成「生成已取消」
     if (lower.includes('未解锁')) {
-        return 'API 密钥未解锁：请输入加密口令后重试';
+        return t('cowrite.err.keyLocked');
     }
     if (lower.includes('abort') || lower.includes('取消')) {
-        return '生成已取消';
+        return t('cowrite.err.cancelledGen');
     }
     if (lower.includes('network') || lower.includes('fetch') || lower.includes('网络')) {
-        return '网络连接失败，请检查网络连接后重试';
+        return t('cowrite.err.network');
     }
     if (lower.includes('timeout') || lower.includes('超时')) {
-        return '请求超时，请稍后重试';
+        return t('cowrite.err.timeout');
     }
     if (lower.includes('api key') || lower.includes('api_key') || lower.includes('密钥') || lower.includes('认证')) {
-        return 'API 密钥无效，请检查设置中的 API 配置';
+        return t('cowrite.err.keyInvalid');
     }
     if (lower.includes('rate limit') || lower.includes('限流') || lower.includes('429')) {
-        return '请求过于频繁，请稍后再试';
+        return t('cowrite.err.rateLimit');
     }
     if (lower.includes('model') || lower.includes('模型')) {
-        return '模型调用失败，请检查模型配置';
+        return t('cowrite.err.modelFailed');
     }
-    return error || '生成失败，请重试';
+    return error || t('cowrite.genFailedRetry');
 }

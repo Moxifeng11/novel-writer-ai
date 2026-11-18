@@ -5,6 +5,7 @@
  * 单独成行的辅助条，避免把 6 个新控件塞进已经很挤的 Markdown 工具条
  * （窄面板下会换行错位，这是本轮要避免的排版问题）。
  */
+import { t } from '@/i18n';
 import {
     FONT_SIZE_OPTIONS,
     LINE_HEIGHT_OPTIONS,
@@ -66,21 +67,21 @@ export function renderEditorAux(
     const undoBtn = historyGroup.createEl('button', {
         cls: 'nw-cowrite-aux-btn',
         text: '↶',
-        attr: { type: 'button', title: '撤销（Ctrl+Z）', 'aria-label': '撤销' },
+        attr: { type: 'button', title: t('cowrite.aux.undoTip'), 'aria-label': t('cowrite.aux.undoTip') },
     }) as HTMLButtonElement;
     undoBtn.addEventListener('click', () => host.onUndo());
     const redoBtn = historyGroup.createEl('button', {
         cls: 'nw-cowrite-aux-btn',
         text: '↷',
-        attr: { type: 'button', title: '重做（Ctrl+Y / Ctrl+Shift+Z）', 'aria-label': '重做' },
+        attr: { type: 'button', title: t('cowrite.aux.redoTip'), 'aria-label': t('cowrite.aux.redoTip') },
     }) as HTMLButtonElement;
     redoBtn.addEventListener('click', () => host.onRedo());
 
     const sizeGroup = root.createDiv({ cls: 'nw-cowrite-aux-group' });
-    sizeGroup.createSpan({ cls: 'nw-cowrite-aux-label', text: '字号' });
+    sizeGroup.createSpan({ cls: 'nw-cowrite-aux-label', text: t('cowrite.aux.fontSize') });
     const fontSelect = sizeGroup.createEl('select', {
         cls: 'nw-cowrite-aux-select',
-        attr: { title: '正文字号（影响编辑器与高亮层）' },
+        attr: { title: t('cowrite.aux.fontSizeTip') },
     }) as HTMLSelectElement;
     for (const size of FONT_SIZE_OPTIONS) {
         fontSelect.createEl('option', { value: String(size), text: `${size}px` });
@@ -88,10 +89,10 @@ export function renderEditorAux(
     fontSelect.value = String(normalizeFontSize(initial.fontSize));
     fontSelect.addEventListener('change', () => host.onFontSizeChange(Number(fontSelect.value)));
 
-    sizeGroup.createSpan({ cls: 'nw-cowrite-aux-label', text: '行距' });
+    sizeGroup.createSpan({ cls: 'nw-cowrite-aux-label', text: t('cowrite.aux.lineHeight') });
     const lineSelect = sizeGroup.createEl('select', {
         cls: 'nw-cowrite-aux-select',
-        attr: { title: '正文行距（影响编辑器与高亮层）' },
+        attr: { title: t('cowrite.aux.lineHeightTip') },
     }) as HTMLSelectElement;
     for (const height of LINE_HEIGHT_OPTIONS) {
         lineSelect.createEl('option', { value: String(height), text: String(height) });
@@ -103,30 +104,30 @@ export function renderEditorAux(
     if (host.onAddToPlanning) {
       const planBtn = viewGroup.createEl('button', {
           cls: 'nw-cowrite-aux-btn',
-          text: '🗺 记为事件',
-          attr: { type: 'button', title: '把本章登记到规划画布的事件节点（已存在则跳过）' },
+          text: t('cowrite.aux.markEventBtn'),
+          attr: { type: 'button', title: t('cowrite.aux.markEventTip') },
       }) as HTMLButtonElement;
       planBtn.addEventListener('click', () => host.onAddToPlanning?.());
     }
     const focusBtn = viewGroup.createEl('button', {
         cls: 'nw-cowrite-aux-btn',
-        text: '🎯 专注',
-        attr: { type: 'button', title: '专注模式：隐藏左右栏，只留正文（Esc 退出）' },
+        text: t('cowrite.aux.focusBtn'),
+        attr: { type: 'button', title: t('cowrite.aux.focusTip') },
     }) as HTMLButtonElement;
     focusBtn.addEventListener('click', () => host.onToggleFocus());
     const highlightBtn = viewGroup.createEl('button', {
         cls: 'nw-cowrite-aux-btn',
-        text: '🎨 高亮',
-        attr: { type: 'button', title: 'Markdown 语法高亮（标题/引用/列表/加粗着色）' },
+        text: t('cowrite.aux.highlightBtn'),
+        attr: { type: 'button', title: t('cowrite.aux.highlightTip') },
     }) as HTMLButtonElement;
     highlightBtn.addEventListener('click', () => host.onToggleHighlight());
 
     const saveGroup = root.createDiv({ cls: 'nw-cowrite-aux-group nw-cowrite-aux-right' });
-    const saveState = saveGroup.createSpan({ cls: 'nw-cowrite-aux-state', text: '已加载' });
+    const saveState = saveGroup.createSpan({ cls: 'nw-cowrite-aux-state', text: t('cowrite.aux.loaded') });
     const saveBtn = saveGroup.createEl('button', {
         cls: 'nw-cowrite-aux-btn nw-cowrite-aux-save',
-        text: '💾 保存',
-        attr: { type: 'button', title: '保存正文（Ctrl+S）' },
+        text: t('cowrite.panel.btnSave'),
+        attr: { type: 'button', title: t('cowrite.aux.saveTip') },
     }) as HTMLButtonElement;
     saveBtn.addEventListener('click', () => host.onSave());
 

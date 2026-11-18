@@ -11,7 +11,7 @@
 | `shared/` | 258 | 51769 | 2179 | 1700 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 115120 | 1180 | 930 | 79% |
+| `ui/` | 306 | 115149 | 1180 | 930 | 79% |
 
 ## 文件清单
 
@@ -739,44 +739,44 @@
 | `ui/co-write-floating-panel.ts` | 1021 | 2 | 2 |
 | `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |
 | `ui/co-writing-view.ts` | 3969 | 3 | 2 |
-| `ui/co-writing/asset-status.ts` | 166 | 7 | 5 |
-| `ui/co-writing/brief-panel.ts` | 247 | 9 | 8 |
+| `ui/co-writing/asset-status.ts` | 167 | 7 | 5 |
+| `ui/co-writing/brief-panel.ts` | 248 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
-| `ui/co-writing/chapter-match.ts` | 163 | 3 | 3 |
-| `ui/co-writing/chapter-nav.ts` | 156 | 6 | 3 |
-| `ui/co-writing/control-panel.ts` | 409 | 14 | 8 |
-| `ui/co-writing/dashboard-status.ts` | 187 | 9 | 7 |
+| `ui/co-writing/chapter-match.ts` | 164 | 3 | 3 |
+| `ui/co-writing/chapter-nav.ts` | 157 | 6 | 3 |
+| `ui/co-writing/control-panel.ts` | 410 | 14 | 8 |
+| `ui/co-writing/dashboard-status.ts` | 188 | 9 | 7 |
 | `ui/co-writing/edit-history.ts` | 152 | 8 | 6 |
-| `ui/co-writing/editor-aux.ts` | 168 | 5 | 3 |
-| `ui/co-writing/editor-display.ts` | 127 | 10 | 6 |
+| `ui/co-writing/editor-aux.ts` | 169 | 5 | 3 |
+| `ui/co-writing/editor-display.ts` | 128 | 10 | 6 |
 | `ui/co-writing/editor-shortcuts.ts` | 87 | 4 | 2 |
-| `ui/co-writing/find-replace.ts` | 269 | 11 | 6 |
-| `ui/co-writing/friendly-error.ts` | 50 | 1 | 1 |
-| `ui/co-writing/ghost-association.ts` | 92 | 4 | 2 |
-| `ui/co-writing/human-rate.ts` | 125 | 3 | 2 |
+| `ui/co-writing/find-replace.ts` | 271 | 11 | 6 |
+| `ui/co-writing/friendly-error.ts` | 52 | 1 | 1 |
+| `ui/co-writing/ghost-association.ts` | 93 | 4 | 2 |
+| `ui/co-writing/human-rate.ts` | 126 | 3 | 2 |
 | `ui/co-writing/kb-panel.ts` | 386 | 12 | 11 |
-| `ui/co-writing/kb-reference-card.ts` | 173 | 2 | 2 |
-| `ui/co-writing/kb-reference-config.ts` | 205 | 10 | 7 |
-| `ui/co-writing/layout-assembly.ts` | 487 | 22 | 13 |
+| `ui/co-writing/kb-reference-card.ts` | 174 | 2 | 2 |
+| `ui/co-writing/kb-reference-config.ts` | 206 | 10 | 7 |
+| `ui/co-writing/layout-assembly.ts` | 488 | 22 | 13 |
 | `ui/co-writing/markdown-highlight.ts` | 258 | 9 | 7 |
 | `ui/co-writing/markdown-shortcut.ts` | 99 | 2 | 1 |
-| `ui/co-writing/markdown-toolbar.ts` | 97 | 2 | 1 |
-| `ui/co-writing/metrics-panel.ts` | 228 | 5 | 3 |
+| `ui/co-writing/markdown-toolbar.ts` | 98 | 2 | 1 |
+| `ui/co-writing/metrics-panel.ts` | 229 | 5 | 3 |
 | `ui/co-writing/metrics-refresh.ts` | 122 | 3 | 2 |
 | `ui/co-writing/metrics-render.ts` | 168 | 7 | 6 |
-| `ui/co-writing/monitor-cards.ts` | 322 | 7 | 4 |
+| `ui/co-writing/monitor-cards.ts` | 323 | 7 | 4 |
 | `ui/co-writing/quality-fix.ts` | 136 | 6 | 4 |
 | `ui/co-writing/quality-highlight.ts` | 102 | 3 | 2 |
-| `ui/co-writing/quality-popup.ts` | 149 | 6 | 5 |
+| `ui/co-writing/quality-popup.ts` | 150 | 6 | 5 |
 | `ui/co-writing/quality-report.ts` | 130 | 2 | 2 |
-| `ui/co-writing/settlement-actions.ts` | 189 | 6 | 5 |
-| `ui/co-writing/suggest-feedback.ts` | 185 | 9 | 7 |
-| `ui/co-writing/suggestion-cards.ts` | 419 | 13 | 12 |
-| `ui/co-writing/suggestion-flow.ts` | 475 | 3 | 2 |
-| `ui/co-writing/suggestion-loading.ts` | 130 | 4 | 2 |
-| `ui/co-writing/text-diff.ts` | 134 | 5 | 2 |
-| `ui/co-writing/word-goal.ts` | 115 | 5 | 3 |
-| `ui/co-writing/writing-advice.ts` | 184 | 3 | 3 |
+| `ui/co-writing/settlement-actions.ts` | 190 | 6 | 5 |
+| `ui/co-writing/suggest-feedback.ts` | 186 | 9 | 7 |
+| `ui/co-writing/suggestion-cards.ts` | 420 | 13 | 12 |
+| `ui/co-writing/suggestion-flow.ts` | 476 | 3 | 2 |
+| `ui/co-writing/suggestion-loading.ts` | 131 | 4 | 2 |
+| `ui/co-writing/text-diff.ts` | 135 | 5 | 2 |
+| `ui/co-writing/word-goal.ts` | 116 | 5 | 3 |
+| `ui/co-writing/writing-advice.ts` | 185 | 3 | 3 |
 | `ui/command-ui-executor.ts` | 785 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 105 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |

@@ -142,13 +142,13 @@
 - 运行时：`i18n/index.ts` —— `t(key, params?)` / `translate(locale, key, params?)` / `setLocale` / `applyLocaleSetting` /
   `onLocaleChange` / `resolveLocale`（auto 读 `localStorage.language`）/ `interpolate` /
   `flattenMessages` / `placeholdersOf`。缺失键返回键名并只警告一次，不炸界面。
-- 资源：`i18n/messages/zh-CN.ts`（源语言）+ `en-US.ts`，各 **2030 条**（… / fingerprint 299 / fullwriter 270 / search.topic 42 / prompt.category 10 / deconstruction.dimension 8 / secret 10 / tts 18）。
+- 资源：`i18n/messages/zh-CN.ts`（源语言）+ `en-US.ts`，各 **2360 条**（… / fingerprint 299 / fullwriter 270 / search.topic 42 / prompt.category 10 / deconstruction.dimension 8 / secret 10 / tts 18）。
 - 设置：`NovelWriterSettings.language?: 'auto' | 'zh-CN' | 'en-US'`（默认 auto），设置页「🎨 外观设置 → 界面语言」；
   启动在 `engine/engine-registry.ts` Phase 5 的 `loadSettings()` 之后 `applyLocaleSetting()`。
 - 迁移面：设置页导航（6 分组 + 20 页签，`section-factory.ts` 的 `label` 改 getter）+ 设置页外壳 6 条
   （`settings-tab.ts` 的标题/搜索占位/空态/高级开关/未知页签）。
 - 门禁：`scripts/check-i18n.mjs`（`npm run check:i18n`，已进 preflight）——中英键集合与占位符双向一致、
-  `t()` 字面量键必须存在、`ui/**` 中文数量**按文件棘轮**（基线 `.i18n-baseline.json`：249 文件 / 9751 条）。
+  `t()` 字面量键必须存在、`ui/**` 中文数量**按文件棘轮**（基线 `.i18n-baseline.json`：235 文件 / 9359 条）。
 - 验收：单测 38 例 + 设置页回归 30 例；实机 before/after（zh-CN vs en-US）导航全换语言、布局像素级一致
   （`D:\nw-dev-vault\_visual-i18n\{before,after}\settings-appearance.png`）。
 - 第二期第一片（2026-11-18）：命令面板 94 条 `addCommand({ name })` 改 `t('commands.*')`，并在注册前应用语言；实机 zh/en 面板截图见 `D:\nw-dev-vault\_visual-i18n\{zh,en}-palette-export.png`。
@@ -226,7 +226,13 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
   建议与联想状态机/排版/模型与精准模式/程序化编辑来源标签）；vault 路径与落盘章名是数据；
   zh/en 资源各 2030 条；棘轮收紧到 249 文件 / 9751 条；实机
   `D:\nw-dev-vault\_visual-i18n19\cowrite-view-{zh,en}.png`。
-- 后续：第二期余下（协同写作子模块 ZC-20261119-10：ui/co-writing/ 约 1200 行 CJK + ui/cowrite/ 约 282 行；
+- 第二期第20片（2026-11-19，ZCode · 任务板 ZC-20261119-10）：协同写作子模块
+  `ui/co-writing/` 全目录 20 个模块（控制台/五张监控卡/简报/建议卡/生成流水线/布局/错误文案/
+  指标面板/编辑辅助条/Markdown 工具条/查找替换等）迁 `cowrite.*` ≈ 340 键；
+  frontmatter 键、AI 提示词、字体名与工具目录是数据；zh/en 资源各 2360 条；棘轮收紧到
+  235 文件 / 9359 条（14 个文件清零）；实机
+  `D:\nw-dev-vault\_visual-i18n19\cowrite-view-{zh,en}.png`（en CJK 294→78）。
+- 后续：第二期余下（协同写作弹窗与存储 `ui/cowrite/` 9 模块约 282 行 CJK；
   写作主流程深水区：template-vars 340 / scene-outline 231 / wizard 群 / step-render 106 / unit-writer 98；
   外观页的统计/桌宠块），
   第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。

@@ -4,6 +4,7 @@
  * 从 `ui/co-writing-view.ts` 抽出：启用上限、顺序与权重规则、落盘与引擎同步。
  * 设置与插件镜像通过宿主注入，纯规则可单测。
  */
+import { t } from '@/i18n';
 
 /** 参考书籍配置（推给引擎/注入器）。 */
 export interface ReferenceBookConfig {
@@ -72,7 +73,7 @@ export function planToggleReference(
 ): ToggleReferencePlan {
     if (enable) {
         if (currentRefs.length >= max) {
-            return { kind: 'limit', refs: currentRefs, message: `最多只能启用 ${max} 本参考书籍` };
+            return { kind: 'limit', refs: currentRefs, message: t('cowrite.kbref.limitMessage', { max }) };
         }
         return { kind: 'change', refs: [...currentRefs, bookId], message: '' };
     }
@@ -155,7 +156,7 @@ export function toggleReferenceBook(
         return;
     }
     persistReferenceBookIds(host, plan.refs);
-    host.notifySuccess(enable ? `已启用《${bookName}》作为参考` : `已停用《${bookName}》的参考`);
+    host.notifySuccess(enable ? t('cowrite.kbref.enabled', { book: bookName }) : t('cowrite.kbref.disabled', { book: bookName }));
     host.renderBookList();
     host.refreshChapterMatch();
     host.refreshWritingAdvice();
@@ -176,7 +177,7 @@ export function setPrimaryReference(host: KbReferenceHost, bookId: string): void
     const index = currentRefs.indexOf(bookId);
     if (index <= 0) return;
     persistReferenceBookIds(host, [bookId, ...currentRefs.filter(id => id !== bookId)]);
-    host.notifySuccess('已设为主参考书籍');
+    host.notifySuccess(t('cowrite.kbref.setPrimary'));
     host.renderBookList();
     host.refreshWritingAdvice();
 }

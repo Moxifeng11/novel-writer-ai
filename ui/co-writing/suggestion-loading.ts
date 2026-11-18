@@ -5,6 +5,7 @@
  * 所有字段通过宿主 setter 回写，DOM 结构与内联样式保持原样。
  */
 import { StepListComponent } from '@/ui/components/progress/step-list';
+import { t } from '@/i18n';
 import type { ProgressState } from '@/shared/progress-emitter';
 
 /** 生成进度面板宿主。 */
@@ -47,7 +48,7 @@ export interface SuggestionLoadingHost {
  * ```
  */
 export function formatLocalProgressText(current: number, total: number): string {
-    return `正在生成第 ${current}/${total} 条建议…`;
+    return t('cowrite.flow.generatingN', { current, total });
 }
 
 /**
@@ -71,19 +72,19 @@ export function renderSuggestionLoading(host: SuggestionLoadingHost): void {
         justifyContent: 'space-between',
         marginBottom: '16px',
     });
-    const headerTitle = headerRow.createSpan({ text: '🤖 AI 正在生成建议' });
+    const headerTitle = headerRow.createSpan({ text: t('cowrite.loading.aiGenerating') });
     headerTitle.setCssStyles({ fontWeight: '600', fontSize: '14px' });
 
-    const etaDisplay = headerRow.createSpan({ text: '预估时间: 计算中...' });
+    const etaDisplay = headerRow.createSpan({ text: t('cowrite.loading.etaCalculating') });
     etaDisplay.setCssStyles({ fontSize: '12px', color: 'var(--text-muted)' });
     host.setEtaDisplay(etaDisplay);
 
     const stepListContainer = progressContainer.createDiv();
     stepListContainer.setCssStyles({ marginBottom: '16px' });
     const stepList = new StepListComponent(stepListContainer, [
-        '检索知识库内容',
-        '分析写作上下文',
-        '生成写作建议',
+        t('cowrite.flow.stepRetrieve'),
+        t('cowrite.flow.stepAnalyzeContext'),
+        t('cowrite.flow.stepGenerate'),
     ]);
     host.setStepList(stepList);
 
@@ -97,14 +98,14 @@ export function renderSuggestionLoading(host: SuggestionLoadingHost): void {
     actionsRow.setCssStyles({ display: 'flex', gap: '12px', justifyContent: 'flex-end' });
 
     const cancelBtn = actionsRow.createEl('button', {
-        text: '✕ 取消生成',
+        text: t('cowrite.loading.cancelGen'),
         cls: 'nw-btn nw-btn-ghost',
     });
     cancelBtn.addEventListener('click', () => host.onCancel());
     host.setCancelButton(cancelBtn);
 
     const retryBtn = actionsRow.createEl('button', {
-        text: '↻ 重试',
+        text: t('fullwriter.fp.retry'),
         cls: 'nw-btn nw-btn-primary',
     });
     retryBtn.setCssStyles({ display: 'none' });

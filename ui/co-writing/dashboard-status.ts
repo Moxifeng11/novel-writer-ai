@@ -5,6 +5,7 @@
  * 纯格式化函数与 DOM 渲染分离，便于锁定字数进度与脏状态判定。
  */
 import { calculateHumanRate, renderHumanRate } from '@/ui/co-writing/human-rate';
+import { t } from '@/i18n';
 
 /** 状态栏宿主。 */
 export interface StatusBarHost {
@@ -62,7 +63,7 @@ export function formatStatusLine(opts: {
     chapterNum: number;
     wordCount: number;
 }): string {
-    return `📍 ${opts.project || '未选择项目'} · ${opts.volume} · ${opts.chapterName || `第${opts.chapterNum}章`} · 字数 ${opts.wordCount}`;
+    return t('cowrite.dash.statusLine', { project: opts.project || t('cowrite.dash.noProject'), volume: opts.volume, chapter: opts.chapterName || `第${opts.chapterNum}章`, words: opts.wordCount });
 }
 
 /**
@@ -121,10 +122,10 @@ export function renderStatusBar(host: StatusBarHost): void {
         const progress = computeWordGoalProgress(count, host.wordGoal);
         // E-03：标注目标来源，避免用户误以为是全局默认值
         const sourceTag = host.wordGoalSource ? `（${host.wordGoalSource}）` : '';
-        host.wordGoalDisplay.setText(`目标: ${host.wordGoal}${sourceTag} · ${progress}%`);
+        host.wordGoalDisplay.setText(t('cowrite.dash.goalProgress', { goal: host.wordGoal, source: sourceTag, progress }));
         host.wordGoalDisplay.setAttribute?.('title', host.wordGoalSource
-            ? `本章字数目标来源：${host.wordGoalSource}`
-            : '本章字数目标');
+            ? t('cowrite.dash.goalSourceTip', { source: host.wordGoalSource })
+            : t('cowrite.dash.goalTip'));
     }
 }
 
@@ -161,7 +162,7 @@ export function renderHumanRatePanel(host: HumanRateHost): void {
     host.container.empty();
     if (!host.precisionMode) {
         host.container.createDiv({ cls: 'nw-hr-header' });
-        host.container.createDiv({ cls: 'nw-hr-disabled', text: '精准模式未开启' });
+        host.container.createDiv({ cls: 'nw-hr-disabled', text: t('cowrite.dash.precisionOffBanner') });
         return;
     }
     renderHumanRate(host.container, calculateHumanRate(host.editorText));

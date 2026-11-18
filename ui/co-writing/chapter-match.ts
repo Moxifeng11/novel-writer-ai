@@ -10,6 +10,7 @@
  */
 
 import type { BookBasicInfo } from '@/services/knowledge-base-manager';
+import { t } from '@/i18n';
 import type { WebnovelKnowledgeBase } from '@/shared/webnovel-knowledge-base';
 
 /**
@@ -134,7 +135,7 @@ export function buildMatchCard(match: ChapterMatch, onInsertTag: (tag: string) =
 
     if (match.topChars.length > 0) {
         const chars = card.createDiv({ cls: "nw-kb-match-section" });
-        chars.createSpan({ cls: "nw-kb-match-label", text: "相关人设：" });
+        chars.createSpan({ cls: "nw-kb-match-label", text: t("cowrite.match.charLabel") });
         const tags = chars.createDiv({ cls: "nw-kb-mini-tags" });
         match.topChars.forEach(tag => {
             const tagEl = tags.createSpan({
@@ -147,7 +148,7 @@ export function buildMatchCard(match: ChapterMatch, onInsertTag: (tag: string) =
 
     if (match.topTechs.length > 0) {
         const techs = card.createDiv({ cls: "nw-kb-match-section" });
-        techs.createSpan({ cls: "nw-kb-match-label", text: "相关技巧：" });
+        techs.createSpan({ cls: "nw-kb-match-label", text: t("cowrite.match.techLabel") });
         const tags = techs.createDiv({ cls: "nw-kb-mini-tags" });
         match.topTechs.forEach(tag => {
             const tagEl = tags.createSpan({

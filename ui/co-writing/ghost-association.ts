@@ -5,6 +5,7 @@
  * 同种子去重与最小间隔限频。网络编排、代次守卫与 abort 仍由视图负责。
  */
 import { shouldRequestGhostAssociationByInterval } from '@/shared/ghost-trigger';
+import { t } from '@/i18n';
 import type { SuggestionRecord } from '@/shared/types';
 
 /** 幽灵联想触发所需的视图状态快照。 */
@@ -86,6 +87,6 @@ export function renderGhostSuggestion(
     container.empty();
     container.toggleClass('is-visible', !!suggestion);
     if (!suggestion) return;
-    container.createSpan({ cls: 'nw-cowrite-ghost-prefix', text: 'Tab 接受联想：' });
+    container.createSpan({ cls: 'nw-cowrite-ghost-prefix', text: t('cowrite.ghost.prefix') });
     container.createSpan({ cls: 'nw-cowrite-ghost-text', text: suggestion.text });
 }

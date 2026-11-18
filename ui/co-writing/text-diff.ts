@@ -7,6 +7,7 @@
  * 实现：行级 LCS 差异（行数通常 < 100，O(n*m) 足够），输出 +/‑/空格行。
  * 纯函数，便于单测。
  */
+import { t } from '@/i18n';
 
 /** 差异行类型 */
 export type DiffKind = 'same' | 'add' | 'del';
@@ -128,6 +129,6 @@ function buildLcsTable(a: readonly string[], b: readonly string[]): number[][] {
  * describeDiff({ rows: [], added: 2, removed: 1, identical: false }); // '+2 −1 行'
  */
 export function describeDiff(result: TextDiffResult): string {
-    if (result.identical) return '与正文一致';
+    if (result.identical) return t('cowrite.diff.identical');
     return `+${result.added} −${result.removed} 行`;
 }

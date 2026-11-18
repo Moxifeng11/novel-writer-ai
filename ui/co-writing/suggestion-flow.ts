@@ -5,6 +5,7 @@
  * 单方向流式建议。中止控制器、代次与 UI 状态通过宿主读写，流程顺序保持原样。
  */
 import { Notice } from 'obsidian';
+import { t } from '@/i18n';
 import { createLogger } from '@/shared/logger';
 import { resolveCursorPosition } from '@/shared/cursor-position';
 import { ProgressEmitter } from '@/shared/progress-emitter';
@@ -118,11 +119,11 @@ export interface SuggestionFlowHost {
 export async function runTabSuggest(host: SuggestionFlowHost, force: boolean): Promise<void> {
     // UX 修复：未绑定章节时 CoWriterEngine 未初始化，原逻辑会空等数十秒才显示「无建议」
     if (!host.project || !host.volume || !host.chapterNum) {
-        new Notice("⚠️ 未绑定章节，请先在左侧选择卷/章后再生成建议", 3e3);
+        new Notice(t("cowrite.flow.needChapterForGen"), 3e3);
         return;
     }
     if (!host.rightEditor.value.trim() && !host.canColdStart()) {
-        new Notice("⚠️ 本章还没有 Scene 展开/大纲，请先完成步骤 6「Scene 展开」，或直接手写一句再生成建议", 6000);
+        new Notice(t("cowrite.flow.needSceneOrOutline"), 6000);
         return;
     }
     const now = Date.now();
@@ -148,7 +149,7 @@ export async function runTabSuggest(host: SuggestionFlowHost, force: boolean): P
     // BUG-K fix: 生成期间禁用建议按钮，给出视觉反馈
     if (host.suggestBtn) {
         host.suggestBtn.disabled = true;
-        host.suggestBtn.textContent = "⏳ 生成中...";
+        host.suggestBtn.textContent = t("cowrite.generating");
     }
 
     const cursor = resolveCursorPosition(host.rightEditor.selectionStart, host.rightEditor.value.length);
@@ -161,11 +162,11 @@ export async function runTabSuggest(host: SuggestionFlowHost, force: boolean): P
         count: 3
     });
 
-    const emitter = new ProgressEmitter(`suggest_${Date.now()}`, '生成建议');
+    const emitter = new ProgressEmitter(`suggest_${Date.now()}`, t('cowrite.flow.progressTitle'));
     emitter.registerSteps([
-        '检索知识库内容',
-        '分析写作上下文',
-        '生成写作建议'
+        t('cowrite.flow.stepRetrieve'),
+        t('cowrite.flow.stepAnalyzeContext'),
+        t('cowrite.flow.stepGenerate')
     ]);
     host.setSuggestProgressEmitter(emitter);
 
@@ -182,11 +183,11 @@ export async function runTabSuggest(host: SuggestionFlowHost, force: boolean): P
     // 串行生成时展示「第 N/M 条」，避免单条耗时较长被误认为卡死
     let suggestProgressTimer: number | null = null;
     if (isLocalModelMode && host.suggestEtaDisplay) {
-        host.suggestEtaDisplay.setText("本地模型生成需要一些时间，请耐心等待…");
+        host.suggestEtaDisplay.setText(t("cowrite.flow.localModelWait"));
         suggestProgressTimer = window.setInterval(() => {
             const progress = host.facade.getSuggestProgress();
             if (progress && progress.total > 0 && host.suggestEtaDisplay) {
-                host.suggestEtaDisplay.setText(`正在生成第 ${progress.current}/${progress.total} 条建议…`);
+                host.suggestEtaDisplay.setText(t('cowrite.flow.generatingN', { current: progress.current, total: progress.total }));
             }
         }, 1000);
     }
@@ -198,7 +199,7 @@ export async function runTabSuggest(host: SuggestionFlowHost, force: boolean): P
             mode: 'statistical'
         });
         if (est.confidence > 0) {
-            emitter.setProgress(1, `预计约 ${Math.ceil(est.eta / 1000)} 秒`);
+            emitter.setProgress(1, t('cowrite.flow.etaEstimate', { seconds: Math.ceil(est.eta / 1000) }));
         }
     }
     const record: SentenceEditRecord = {
@@ -213,27 +214,27 @@ export async function runTabSuggest(host: SuggestionFlowHost, force: boolean): P
     host.setCurrentRecord(record);
     try {
         if (signal.aborted) return;
-        emitter.nextStep('正在检索知识库...');
+        emitter.nextStep(t('cowrite.flow.retrieving'));
 
         await host.simulateStepDelay(300, signal);
         if (signal.aborted) return;
 
-        emitter.setStepProgress(50, '正在匹配相关知识片段...');
+        emitter.setStepProgress(50, t('cowrite.flow.matchingFragments'));
         await host.simulateStepDelay(200, signal);
         if (signal.aborted) return;
 
-        emitter.nextStep('正在分析写作上下文...');
-        emitter.setStepProgress(30, '分析剧情进度与角色状态...');
+        emitter.nextStep(t('cowrite.flow.analyzingContext'));
+        emitter.setStepProgress(30, t('cowrite.flow.analyzingPlot'));
 
         await host.simulateStepDelay(200, signal);
         if (signal.aborted) return;
 
-        emitter.setStepProgress(70, '调整建议方向...');
+        emitter.setStepProgress(70, t('cowrite.flow.adjustingDirection'));
         await host.simulateStepDelay(200, signal);
         if (signal.aborted) return;
 
-        emitter.nextStep('正在生成写作建议...');
-        emitter.setStepProgress(10, '调用 AI 模型...');
+        emitter.nextStep(t('cowrite.flow.generatingSuggestions'));
+        emitter.setStepProgress(10, t('cowrite.flow.callingModel'));
 
         const suggestions = await host.facade.suggestNext(
             precedingText,
@@ -254,7 +255,7 @@ export async function runTabSuggest(host: SuggestionFlowHost, force: boolean): P
             return;
         }
 
-        emitter.setStepProgress(100, '生成完成');
+        emitter.setStepProgress(100, t('cowrite.flow.genComplete'));
         emitter.complete();
 
         const duration = Date.now() - startTime;
@@ -274,7 +275,7 @@ export async function runTabSuggest(host: SuggestionFlowHost, force: boolean): P
         if (suggestions.length === 0) {
             const engineError = host.facade.getLastSuggestError();
             const statusText = host.getSuggestionStatusText();
-            if (statusText) statusText.textContent = engineError ? "生成失败" : "无建议";
+            if (statusText) statusText.textContent = engineError ? t("cowrite.genFailedStatus") : t("cowrite.flow.noSuggestions");
             const content = host.getSuggestionContent();
             content.empty();
 
@@ -365,7 +366,7 @@ export async function runStreamSuggestion(host: SuggestionFlowHost, directionInd
     host.facade.syncSuggestionsGenerating(true);
     if (host.suggestBtn) {
         host.suggestBtn.disabled = true;
-        host.suggestBtn.textContent = "⏳ 生成中...";
+        host.suggestBtn.textContent = t("cowrite.generating");
     }
 
     const cursor = resolveCursorPosition(host.rightEditor.selectionStart, host.rightEditor.value.length);
@@ -374,7 +375,7 @@ export async function runStreamSuggestion(host: SuggestionFlowHost, directionInd
     try {
         if (signal.aborted) return;
 
-        const styleLabels = ["默认", "创意", "保守"];
+        const styleLabels = [t("cowrite.flow.styleDefault"), t("cowrite.flow.styleCreative"), t("cowrite.flow.styleConservative")];
 
         let currentText = "";
         const card = host.renderStreamingSuggestionCard(
@@ -444,10 +445,10 @@ export async function runStreamSuggestion(host: SuggestionFlowHost, directionInd
             host.showKnowledgeInjectionNotice();
         } else {
             const statusText = host.getSuggestionStatusText();
-            if (statusText) statusText.textContent = "无建议";
+            if (statusText) statusText.textContent = t("cowrite.flow.noSuggestions");
             const content = host.getSuggestionContent();
             content.empty();
-            content.createDiv({ cls: "novel-writer-cowrite-empty", text: "这次没有拿到建议。可以换一批，或者检查 API 配置。" });
+            content.createDiv({ cls: "novel-writer-cowrite-empty", text: t("cowrite.flow.emptySuggestions") });
         }
     } catch (e) {
         if (signal.aborted) return;
@@ -456,10 +457,10 @@ export async function runStreamSuggestion(host: SuggestionFlowHost, directionInd
         host.facade.syncSuggestionsError(errorMsg);
         host.showSuggestionPanel();
         const statusText = host.getSuggestionStatusText();
-        if (statusText) statusText.textContent = "生成失败";
+        if (statusText) statusText.textContent = t("cowrite.genFailedStatus");
         const content = host.getSuggestionContent();
         content.empty();
-        content.createDiv({ cls: "novel-writer-cowrite-error", text: "生成建议失败，请稍后重试。" });
+        content.createDiv({ cls: "novel-writer-cowrite-error", text: t("cowrite.flow.genFailedBody") });
     } finally {
         if (host.suggestAbortController?.signal === signal) {
             host.setSuggesting(false);

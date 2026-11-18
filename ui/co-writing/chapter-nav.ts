@@ -6,6 +6,7 @@
  *   - 纯函数：按当前章定位上一章/下一章（含跨卷、边界处理）；
  *   - 状态栏内联章节选择器 + 上/下一章按钮（不占额外空间）。
  */
+import { t } from '@/i18n';
 
 /** 章节条目（与 project-utils.ChapterListEntry 对齐的最小子集） */
 export interface NavChapter {
@@ -110,7 +111,7 @@ export function renderChapterNav(
     const prevBtn = nav.createEl('button', {
         cls: 'nw-cowrite-chapter-nav-btn',
         text: '‹',
-        attr: { title: neighbors.previous ? `上一章：${neighbors.previous.chapter}` : '已是第一章', type: 'button' },
+        attr: { title: neighbors.previous ? t('cowrite.nav.prevChapterTip', { chapter: neighbors.previous.chapter }) : t('cowrite.nav.firstChapter'), type: 'button' },
     });
     prevBtn.disabled = !neighbors.previous;
     prevBtn.addEventListener('click', event => {
@@ -120,10 +121,10 @@ export function renderChapterNav(
 
     const select = nav.createEl('select', {
         cls: 'nw-cowrite-chapter-nav-select',
-        attr: { title: '切换章节（可直接跳章）' },
+        attr: { title: t('cowrite.nav.switchTip') },
     });
     if (chapters.length === 0) {
-        select.createEl('option', { text: '无章节', value: '' });
+        select.createEl('option', { text: t('cowrite.nav.noChapters'), value: '' });
     }
     const sorted = [...chapters].sort((a, b) => (a.number || 0) - (b.number || 0));
     for (const item of sorted) {
@@ -143,7 +144,7 @@ export function renderChapterNav(
     const nextBtn = nav.createEl('button', {
         cls: 'nw-cowrite-chapter-nav-btn',
         text: '›',
-        attr: { title: neighbors.next ? `下一章：${neighbors.next.chapter}` : '已是最后一章', type: 'button' },
+        attr: { title: neighbors.next ? t('cowrite.nav.nextChapterTip', { chapter: neighbors.next.chapter }) : t('cowrite.nav.lastChapter'), type: 'button' },
     });
     nextBtn.disabled = !neighbors.next;
     nextBtn.addEventListener('click', event => {

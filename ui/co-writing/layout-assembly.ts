@@ -6,6 +6,7 @@
  * 字体选项、布局状态、状态栏文案走纯函数导出，便于单元测试。
  */
 import { SYSTEM_FONT_PRESETS } from '@/services/font-manager';
+import { t } from '@/i18n';
 import { countParagraphs, describeContractShort } from '@/shared/novel-format';
 import type { BodyFormatContract } from '@/shared/body-format';
 import { buildMarkdownToolbar, type MarkdownToolbarHost } from './markdown-toolbar';
@@ -44,17 +45,17 @@ export function renderLeftPanel(leftPanel: HTMLElement): LeftPanelHandles {
     // 本章简报：把上一步（Scene 展开/大纲/情绪/信息规划）的成果直接摆出来
     const briefSection = leftPanel.createDiv({ cls: 'nw-cowrite-brief' });
     briefSection.createDiv({ cls: 'nw-cowrite-brief-head' })
-        .createSpan({ cls: 'nw-cowrite-brief-title', text: '📋 本章简报' });
-    const briefSummary = briefSection.createDiv({ cls: 'nw-cowrite-brief-summary', text: '等待章节规划…' });
+        .createSpan({ cls: 'nw-cowrite-brief-title', text: t('cowrite.layout.briefTitle') });
+    const briefSummary = briefSection.createDiv({ cls: 'nw-cowrite-brief-summary', text: t('cowrite.layout.waitingPlan') });
     const briefContent = briefSection.createDiv({ cls: 'nw-cowrite-brief-body' });
     const previewSection = leftPanel.createDiv({ cls: 'nw-cowrite-preview' });
-    previewSection.createDiv({ cls: 'nw-cowrite-preview-label', text: '预览' });
+    previewSection.createDiv({ cls: 'nw-cowrite-preview-label', text: t('cowrite.layout.preview') });
     const previewContent = previewSection.createDiv({ cls: 'nw-cowrite-preview-content' });
     const previewToggle = previewSection.createDiv({ cls: 'nw-cowrite-preview-toggle' });
-    previewToggle.createSpan({ text: '收起 ▲' });
+    previewToggle.createSpan({ text: t('cowrite.layout.collapse') });
     previewToggle.addEventListener('click', () => {
         leftPanel.toggleClass('nw-cowrite-left-collapsed', !leftPanel.hasClass('nw-cowrite-left-collapsed'));
-        previewToggle.setText(leftPanel.hasClass('nw-cowrite-left-collapsed') ? '展开 ▼' : '收起 ▲');
+        previewToggle.setText(leftPanel.hasClass('nw-cowrite-left-collapsed') ? t('cowrite.layout.expand') : t('cowrite.layout.collapse'));
     });
     return { briefSummary, briefContent, previewContent };
 }
@@ -200,13 +201,13 @@ export function resolveFontOptions(
     customFamilies: readonly string[],
 ): { options: FontOption[]; selected: string } {
     const options: FontOption[] = [
-        { value: '', label: '默认（跟随主题）' },
+        { value: '', label: t('cowrite.layout.fontDefault') },
         ...SYSTEM_FONT_PRESETS,
     ];
     for (const family of customFamilies) {
         options.push({ value: `"${family}", sans-serif`, label: `★ ${family}` });
     }
-    options.push({ value: FONT_MANAGE_VALUE, label: '⚙️ 管理自定义字体…' });
+    options.push({ value: FONT_MANAGE_VALUE, label: t('cowrite.layout.fontManage') });
     const selected = options.some((option) => option.value === saved) ? saved : '';
     return { options, selected };
 }
@@ -249,9 +250,9 @@ export function formatMarkdownStatus(
 ): { mode: string; contract: string; words: string; paragraphs: string } {
     return {
         mode: 'Markdown',
-        contract: `格式：${describeContractShort(contract)}`,
-        words: `字数 ${text.replace(/\s+/g, '').length}`,
-        paragraphs: `段落 ${countParagraphs(text)}`,
+        contract: t('cowrite.layout.formatLabel', { detail: describeContractShort(contract) }),
+        words: t('cowrite.layout.wordsLabel', { count: text.replace(/\s+/g, '').length }),
+        paragraphs: t('cowrite.layout.paragraphsLabel', { count: countParagraphs(text) }),
     };
 }
 
@@ -271,14 +272,14 @@ export function renderHeader(header: HTMLElement, options: HeaderAssemblyOptions
     // 左区：返回 · 标题 · 章节上下文状态
     const headerLeft = header.createDiv({ cls: 'nw-cowrite-header-left' });
     const backBtn = headerLeft.createEl('button', {
-        text: '← 工作台',
+        text: t('fullwriter.tbBack'),
         cls: 'nw-float-monitor-toggle nw-cowrite-back-btn',
     });
-    backBtn.setAttribute('title', '返回完整写作工作台');
+    backBtn.setAttribute('title', t('fullwriter.tbBackTip'));
     backBtn.addEventListener('click', () => options.openWriter());
     const titleDiv = headerLeft.createDiv({ cls: 'nw-cowrite-title' });
     titleDiv.createSpan({ cls: 'nw-cowrite-title-icon', text: '\u{1F4DD}' });
-    titleDiv.createSpan({ text: '协同写作' });
+    titleDiv.createSpan({ text: t('cowrite.layout.title') });
     // 空态不再显示「加载中...」，改为准确的上下文状态（openChapter 成功后会由 refreshStatusBar 覆盖）
     const statusBar = headerLeft.createDiv({ cls: 'nw-cowrite-status', text: '未绑定章节' });
     // E-02：章节流转放在状态栏外侧的独立槽位——
@@ -288,16 +289,16 @@ export function renderHeader(header: HTMLElement, options: HeaderAssemblyOptions
     // 中区：资源引用入口（知识库 → 指纹库 → 实体，按参考资料使用频率排序）
     const headerTools = header.createDiv({ cls: 'nw-cowrite-header-tools' });
     const kbBtn = headerTools.createEl('button', {
-        text: '\u{1F4DA} 知识库管理',
+        text: t('fullwriter.tbKb'),
         cls: 'nw-float-monitor-toggle nw-btn-knowledge',
     });
-    kbBtn.setAttribute('title', '打开知识库管理视图');
+    kbBtn.setAttribute('title', t('fullwriter.tbKbTip'));
     kbBtn.addEventListener('click', () => options.openKnowledge());
-    const fpBtn = headerTools.createEl('button', { text: '🔍 指纹库', cls: 'nw-float-monitor-toggle' });
-    fpBtn.setAttribute('title', '打开写作指纹库');
+    const fpBtn = headerTools.createEl('button', { text: t('fullwriter.tbFingerprint'), cls: 'nw-float-monitor-toggle' });
+    fpBtn.setAttribute('title', t('fullwriter.tbFingerprintTip'));
     fpBtn.addEventListener('click', () => options.openFingerprintLibrary());
-    const entityBtn = headerTools.createEl('button', { text: '👥 实体', cls: 'nw-float-monitor-toggle' });
-    entityBtn.setAttribute('title', '统一实体管理（人物/地点/势力/物品）');
+    const entityBtn = headerTools.createEl('button', { text: t('cowrite.layout.entityBtn'), cls: 'nw-float-monitor-toggle' });
+    entityBtn.setAttribute('title', t('cowrite.layout.entityTip'));
     entityBtn.addEventListener('click', () => options.openEntityManager());
 
     // 右区：视图模式（精准模式）· 资源状态
@@ -307,9 +308,9 @@ export function renderHeader(header: HTMLElement, options: HeaderAssemblyOptions
     // 2026-10-28: 原右下角状态栏浮窗移除后，模型快速切换装配到协同顶栏（四个主界面之一）。
     const modelSwitcher = options.renderModelSwitcher(headerRight);
     const precisionBtn = headerRight.createEl('button', {
-        text: '\uD83C\uDFAF 精准模式',
+        text: t('cowrite.precisionBtn'),
         cls: 'nw-precision-mode-btn nw-float-monitor-toggle',
-        attr: { title: '精准模式：逐句检索+风格评分+反AI检测' },
+        attr: { title: t('cowrite.layout.precisionTip') },
     });
     precisionBtn.addEventListener('click', () => options.togglePrecisionMode());
 
@@ -331,7 +332,7 @@ export function renderHeader(header: HTMLElement, options: HeaderAssemblyOptions
  */
 export function renderFontPicker(wrap: HTMLElement, options: FontPickerOptions): void {
     const group = wrap.createDiv({ cls: 'nw-cowrite-md-group nw-cowrite-font-group' });
-    group.createSpan({ cls: 'nw-cowrite-font-label', text: '字体' });
+    group.createSpan({ cls: 'nw-cowrite-font-label', text: t('cowrite.layout.fontLabel') });
     const select = group.createEl('select', { cls: 'nw-cowrite-font-select' });
     const { options: items, selected } = resolveFontOptions(options.saved, options.customFamilies);
     for (const item of items) {
@@ -408,7 +409,7 @@ export function renderMarkdownStatus(wrap: HTMLElement): MarkdownStatusHandles {
     const paragraphsEl = status.createSpan({ cls: 'nw-cowrite-md-status-item' });
     // E-10：光标行列与选中字数（间隔 200ms 内刷新，避免输入时抖动）
     const cursorEl = status.createSpan({ cls: 'nw-cowrite-md-status-item nw-cowrite-md-status-cursor' });
-    status.createSpan({ cls: 'nw-cowrite-md-status-hint', text: 'Ctrl+Alt+F 一键排版 · Ctrl+F 查找' });
+    status.createSpan({ cls: 'nw-cowrite-md-status-hint', text: t('cowrite.layout.mdStatusHint') });
     return { container: status, modeEl, contractEl, wordsEl, paragraphsEl, cursorEl };
 }
 
@@ -479,7 +480,7 @@ export function attachPanelResizer(options: PanelResizerOptions): void {
         step: 2,
         value: Math.round(options.ratio * 100),
         defaultValue: 65,
-        ariaLabel: '拖动调整编辑区宽度（方向键微调，双击复位）',
+        ariaLabel: t('cowrite.layout.dragEditorAria'),
         onCommit: options.onCommit,
     });
     options.registerCleanup(() => resizer.destroy());

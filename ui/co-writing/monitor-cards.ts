@@ -5,6 +5,7 @@
  * 数据通过宿主接口注入，DOM 结构、类名与展开/收起行为与抽取前逐行一致。
  */
 import type { TFile } from 'obsidian';
+import { t } from '@/i18n';
 import type { GuardSummary } from '@/ui/cowrite/live-analysis-controller';
 
 /** 伏笔快照（与章节状态快照结构一致）。 */
@@ -104,7 +105,7 @@ export function formatForeshadowItem(item: { name?: string; plannedReveal?: stri
  * ```
  */
 export function formatEntityStatusLine(charName: string, fm: Record<string, unknown>): string {
-    const status = (fm['当前状态'] as string | undefined) || '未知';
+    const status = (fm['当前状态'] as string | undefined) || t('cowrite.monitor.unknown');
     const realm = (fm['境界'] as string | undefined) || (fm['修为'] as string | undefined) || '';
     const lastChange = fm['entity_last_changed_at'] ? `(${fm['entity_last_changed_at'] as string})` : '';
     return `${charName}${realm ? ` · ${realm}` : ''} · ${status} ${lastChange}`;
@@ -144,9 +145,9 @@ function bindExpandToggle(
 function renderLedgerCard(host: MonitorCardsHost): void {
     // Facade 有 engine getter（CoWriterEngine）；getInjectionLedgerText 定义在引擎上
     const text = host.getInjectionLedgerText();
-    const { card, header, toggle, body } = createMonitorCard(host.container, '🧾', '注入溯源');
+    const { card, header, toggle, body } = createMonitorCard(host.container, '🧾', t('cowrite.monitor.traceTitle'));
     if (!text) {
-        body.createDiv({ cls: 'nw-cowrite-monitor-summary', text: '注入账本尚未生成' });
+        body.createDiv({ cls: 'nw-cowrite-monitor-summary', text: t('cowrite.monitor.ledgerNotReady') });
         return;
     }
     const lines = text.split('\n');
@@ -171,28 +172,28 @@ function renderForeshadowCard(host: MonitorCardsHost): void {
     const revealed = foreshadows.revealed || [];
     const abandoned = foreshadows.abandoned || [];
 
-    const { card, header, toggle, body } = createMonitorCard(host.container, '📌', '伏笔状态追踪');
+    const { card, header, toggle, body } = createMonitorCard(host.container, '📌', t('cowrite.monitor.foreshadowTitle'));
     body.createDiv({
         cls: 'nw-cowrite-monitor-summary',
-        text: `未揭示 ${unrevealed.length} · 已揭示 ${revealed.length} · 已放弃 ${abandoned.length}`,
+        text: t('cowrite.monitor.foreshadowSummary', { un: unrevealed.length, rev: revealed.length, drop: abandoned.length }),
     });
 
     const detail = body.createDiv({ cls: 'nw-cowrite-monitor-detail' });
     detail.setCssStyles({ display: 'none' });
     if (unrevealed.length > 0) {
-        detail.createDiv({ cls: 'nw-cowrite-monitor-detail-title', text: '未揭示伏笔:' });
+        detail.createDiv({ cls: 'nw-cowrite-monitor-detail-title', text: t('cowrite.monitor.unrevealedTitle') });
         const ul = detail.createEl('ul', { cls: 'nw-cowrite-monitor-list' });
         unrevealed.slice(0, 5).forEach(item => {
             ul.createEl('li', { text: formatForeshadowItem(item) });
         });
-        if (unrevealed.length > 5) ul.createEl('li', { cls: 'nw-cowrite-monitor-more', text: `...还有 ${unrevealed.length - 5} 条` });
+        if (unrevealed.length > 5) ul.createEl('li', { cls: 'nw-cowrite-monitor-more', text: t('cowrite.monitor.moreItems', { count: unrevealed.length - 5 }) });
     }
     bindExpandToggle(card, header, toggle, detail);
 }
 
 /** 渲染实体动态卡。 */
 function renderEntityCard(host: MonitorCardsHost): void {
-    const { card, header, toggle, body } = createMonitorCard(host.container, '🧑', '实体动态');
+    const { card, header, toggle, body } = createMonitorCard(host.container, '🧑', t('cowrite.monitor.entityTitle'));
 
     // 正文路径必须走 getBodyPath()：旧实现拼的是 `${project}/${volume}/${chapterName}_正文.md`，
     // 真实落盘路径是 03-大纲与章节/正文/...，拼接结果永远不存在 → 卡片恒为全 0。
@@ -206,14 +207,14 @@ function renderEntityCard(host: MonitorCardsHost): void {
 
     body.createDiv({
         cls: 'nw-cowrite-monitor-summary',
-        text: `人物 ${chars.length} · 地点 ${locs.length} · 势力 ${factions.length} · 物品 ${items.length}`,
+        text: t('cowrite.monitor.entitySummary', { chars: chars.length, locs: locs.length, factions: factions.length, items: items.length }),
     });
 
     const detail = body.createDiv({ cls: 'nw-cowrite-monitor-detail' });
     detail.setCssStyles({ display: 'none' });
 
     if (chars.length > 0) {
-        detail.createDiv({ cls: 'nw-cowrite-monitor-detail-title', text: '涉及人物:' });
+        detail.createDiv({ cls: 'nw-cowrite-monitor-detail-title', text: t('cowrite.monitor.involvedChars') });
         const ul = detail.createEl('ul', { cls: 'nw-cowrite-monitor-list' });
         // 只在本项目的人物设定目录里找：全库 includes 匹配会把同名角色的别书状态显示出来
         const projectPrefix = host.getProject() ? `${host.getProject()}/` : '';
@@ -224,15 +225,15 @@ function renderEntityCard(host: MonitorCardsHost): void {
             const charFm = charFile ? host.getFrontmatter(charFile) : {};
             ul.createEl('li', { text: formatEntityStatusLine(charName, charFm) });
         });
-        if (chars.length > 5) ul.createEl('li', { cls: 'nw-cowrite-monitor-more', text: `...还有 ${chars.length - 5} 人` });
+        if (chars.length > 5) ul.createEl('li', { cls: 'nw-cowrite-monitor-more', text: t('cowrite.monitor.moreChars', { count: chars.length - 5 }) });
     }
 
     if (locs.length > 0) {
-        detail.createDiv({ cls: 'nw-cowrite-monitor-detail-title', text: '涉及地点:' });
+        detail.createDiv({ cls: 'nw-cowrite-monitor-detail-title', text: t('cowrite.monitor.involvedLocs') });
         detail.createDiv({ cls: 'nw-cowrite-monitor-tags', text: locs.slice(0, 8).join(', ') + (locs.length > 8 ? `...` : '') });
     }
     if (factions.length > 0) {
-        detail.createDiv({ cls: 'nw-cowrite-monitor-detail-title', text: '涉及势力:' });
+        detail.createDiv({ cls: 'nw-cowrite-monitor-detail-title', text: t('cowrite.monitor.involvedFactions') });
         detail.createDiv({ cls: 'nw-cowrite-monitor-tags', text: factions.slice(0, 8).join(', ') + (factions.length > 8 ? `...` : '') });
     }
 
@@ -241,23 +242,23 @@ function renderEntityCard(host: MonitorCardsHost): void {
 
 /** 渲染设定守卫卡。 */
 function renderGuardCard(host: MonitorCardsHost): void {
-    const { card, header, toggle, body } = createMonitorCard(host.container, '⚠️', '设定守卫');
+    const { card, header, toggle, body } = createMonitorCard(host.container, '⚠️', t('cowrite.monitor.guardTitle'));
 
     // 数据源是 LiveAnalysisController 的真实守卫结果。
     // 旧实现读 `liveAnalysis.issues` —— 该字段从来没有存在过，卡片恒显示「高 0 · 中 0 · 低 0」。
     const summary = host.getGuardSummary();
     const oocCount = summary?.oocWarnings.length ?? 0;
     const changeCount = summary?.entityChanges.length ?? 0;
-    const scoreText = summary?.consistencyScore != null ? `一致性 ${summary.consistencyScore}% · ` : '';
+    const scoreText = summary?.consistencyScore != null ? t('cowrite.monitor.consistency', { score: summary.consistencyScore }) : '';
 
     if (!summary) {
-        body.createDiv({ cls: 'nw-cowrite-monitor-summary', text: '本章尚未检查（输入停顿或点「设定检查」后自动执行）' });
+        body.createDiv({ cls: 'nw-cowrite-monitor-summary', text: t('cowrite.monitor.guardNotChecked') });
         return;
     }
 
     body.createDiv({
         cls: 'nw-cowrite-monitor-summary',
-        text: `${scoreText}OOC ${oocCount} · 实体变更 ${changeCount}`,
+        text: t('cowrite.monitor.guardSummary', { score: scoreText, ooc: oocCount, change: changeCount }),
     });
 
     const detail = body.createDiv({ cls: 'nw-cowrite-monitor-detail' });
@@ -273,7 +274,7 @@ function renderGuardCard(host: MonitorCardsHost): void {
         });
         summary.entityChanges.slice(0, 5).forEach(change => {
             const li = ul.createEl('li');
-            const tag = li.createSpan({ cls: 'nw-cowrite-monitor-priority', text: '变更' });
+            const tag = li.createSpan({ cls: 'nw-cowrite-monitor-priority', text: t('cowrite.monitor.changeTag') });
             tag.setCssStyles({ color: '#3b82f6' });
             li.createSpan({ text: ` ${change.entityName} → ${change.newStatus}` });
         });
@@ -284,20 +285,20 @@ function renderGuardCard(host: MonitorCardsHost): void {
 
 /** 渲染状态监控卡。 */
 function renderStatusCard(host: MonitorCardsHost): void {
-    const { card, header, toggle, body } = createMonitorCard(host.container, '📊', '状态监控');
+    const { card, header, toggle, body } = createMonitorCard(host.container, '📊', t('cowrite.monitor.statsTitle'));
     const stats = computeTextStats(host.getEditorText());
 
     body.createDiv({
         cls: 'nw-cowrite-monitor-summary',
-        text: `段落 ${stats.paragraphs} · 对话 ${stats.dialogueRatio}% · 字数 ${stats.totalChars}`,
+        text: t('cowrite.monitor.statsSummary', { paras: stats.paragraphs, dialogue: stats.dialogueRatio, chars: stats.totalChars }),
     });
 
     const detail = body.createDiv({ cls: 'nw-cowrite-monitor-detail' });
     detail.setCssStyles({ display: 'none' });
-    detail.createDiv({ cls: 'nw-cowrite-monitor-detail-title', text: '详细统计:' });
-    detail.createDiv({ cls: 'nw-cowrite-monitor-stat', text: `平均段落长度: ${stats.averageParagraphLength} 字` });
-    detail.createDiv({ cls: 'nw-cowrite-monitor-stat', text: `对话片段数: ${stats.dialogueCount}` });
-    detail.createDiv({ cls: 'nw-cowrite-monitor-stat', text: `动作描写频次: ${stats.actionCount}` });
+    detail.createDiv({ cls: 'nw-cowrite-monitor-detail-title', text: t('cowrite.monitor.statsDetailTitle') });
+    detail.createDiv({ cls: 'nw-cowrite-monitor-stat', text: t('cowrite.monitor.avgParaLen', { count: stats.averageParagraphLength }) });
+    detail.createDiv({ cls: 'nw-cowrite-monitor-stat', text: t('cowrite.monitor.dialogueCount', { count: stats.dialogueCount }) });
+    detail.createDiv({ cls: 'nw-cowrite-monitor-stat', text: t('cowrite.monitor.actionCount', { count: stats.actionCount }) });
 
     bindExpandToggle(card, header, toggle, detail);
 }

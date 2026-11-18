@@ -9,6 +9,7 @@
  * 纯函数，不读 Obsidian；I/O 在视图里做。
  */
 import { FIELD_WORDS_PER_CHAPTER } from '@/shared/format-constants';
+import { t } from '@/i18n';
 
 /** 目标来源 */
 export type WordGoalSource = 'outline' | 'project' | 'global';
@@ -87,7 +88,7 @@ export function resolveChapterWordGoal(input: {
         return {
             goal: perUnit,
             source: 'project',
-            detail: '项目配置：目标字数 ÷ 单元数',
+            detail: t('cowrite.goal.projectDetail'),
         };
     }
 
@@ -95,7 +96,7 @@ export function resolveChapterWordGoal(input: {
     return {
         goal: fallback,
         source: 'global',
-        detail: '全局默认字数',
+        detail: t('cowrite.goal.globalDetail'),
     };
 }
 
@@ -108,7 +109,7 @@ export function resolveChapterWordGoal(input: {
  * describeWordGoalSource('outline'); // '大纲'
  */
 export function describeWordGoalSource(source: WordGoalSource): string {
-    if (source === 'outline') return '大纲';
-    if (source === 'project') return '项目';
-    return '默认';
+    if (source === 'outline') return t('cowrite.goal.srcOutline');
+    if (source === 'project') return t('cowrite.goal.srcProject');
+    return t('cowrite.goal.srcDefault');
 }

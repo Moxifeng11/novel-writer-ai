@@ -4,6 +4,7 @@
  * 从 5k 行的 co-writing-view.ts 拆出：输入框实时评分不依赖视图实例，
  * 计算函数是纯函数，便于单测；渲染函数只接收容器。
  */
+import { t } from '@/i18n';
 
 /** 人工率各维度评分（style = -1 表示尚未由指纹比对评估） */
 export interface HumanRateScores {
@@ -109,16 +110,16 @@ export function renderHumanRate(container: HTMLElement, scores: HumanRateScores)
     const colorClass = scores.overall >= 85 ? 'nw-hr-high' : scores.overall >= 60 ? 'nw-hr-mid' : 'nw-hr-low';
 
     const header = container.createDiv({ cls: 'nw-hr-header' });
-    header.createSpan({ cls: 'nw-hr-label', text: '人工率' });
+    header.createSpan({ cls: 'nw-hr-label', text: t('cowrite.hr.title') });
     header.createSpan({ cls: `nw-hr-score ${colorClass}`, text: `${scores.overall}%` });
 
     const bar = container.createDiv({ cls: 'nw-hr-bar' });
     bar.createDiv({ cls: `nw-hr-bar-fill ${colorClass}`, attr: { style: `width: ${scores.overall}%` } });
 
     const details = container.createDiv({ cls: 'nw-hr-details' });
-    details.createSpan({ text: scores.style < 0 ? '风格 未评估' : `风格 ${scores.style}%` });
-    details.createSpan({ text: `句长 ${scores.sentenceLength}%` });
-    details.createSpan({ text: `开头 ${scores.opening}%` });
-    details.createSpan({ text: `标点 ${scores.punctuation}%` });
-    details.createSpan({ text: `AI词 ${scores.aiWords}%` });
+    details.createSpan({ text: scores.style < 0 ? t('cowrite.hr.styleNotEval') : t('cowrite.hr.styleScore', { score: scores.style }) });
+    details.createSpan({ text: t('cowrite.hr.sentenceScore', { score: scores.sentenceLength }) });
+    details.createSpan({ text: t('cowrite.hr.openingScore', { score: scores.opening }) });
+    details.createSpan({ text: t('cowrite.hr.punctuationScore', { score: scores.punctuation }) });
+    details.createSpan({ text: t('cowrite.hr.aiWordsScore', { score: scores.aiWords }) });
 }

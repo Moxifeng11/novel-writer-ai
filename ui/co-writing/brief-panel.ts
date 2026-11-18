@@ -5,6 +5,7 @@
  * 场景切换与工作台跳转通过宿主回调注入，DOM 结构与类名保持不变。
  */
 import type { BriefScene, ChapterBrief } from '@/engine/chapter-brief';
+import { t } from '@/i18n';
 
 /** 本章简报宿主。 */
 export interface BriefPanelHost {
@@ -41,8 +42,8 @@ export interface BriefPanelHost {
 export function describeBriefProgress(total: number, currentIndex: number, writtenWords: number): string {
     const currentNo = total > 0 ? Math.min(currentIndex + 1, total) : 0;
     return total > 0
-        ? `场景 ${currentNo}/${total} · 已写 ${writtenWords} 字`
-        : `已写 ${writtenWords} 字`;
+        ? t('cowrite.brief.sceneProgress', { current: currentNo, total, words: writtenWords })
+        : t('cowrite.brief.wordsWritten', { words: writtenWords });
 }
 
 /**
@@ -73,7 +74,7 @@ export function sceneMarker(done: boolean, active: boolean): string {
  * ```
  */
 export function formatSceneItem(scene: BriefScene, done: boolean, active: boolean): string {
-    return `${sceneMarker(done, active)} 第${scene.index}场 ${scene.name || '未命名'}`;
+    return `${sceneMarker(done, active)} ${t('cowrite.brief.sceneN', { index: scene.index, name: scene.name || t('cowrite.brief.unnamed') })}`;
 }
 
 /**
@@ -88,14 +89,14 @@ export function formatSceneItem(scene: BriefScene, done: boolean, active: boolea
  */
 export function buildBriefRows(scene: BriefScene): Array<[string, string]> {
     const rows: Array<[string, string]> = [
-        ['目标', scene.objective],
-        ['冲突', scene.conflict],
-        ['感官', scene.sensoryHook],
-        ['记忆', scene.memoryTrigger],
-        ['身体', scene.bodyReaction],
-        ['潜台词', scene.subtext],
-        ['关系', scene.relationshipShift],
-        ['名场面', scene.keyScene],
+        [t('cowrite.brief.fieldObjective'), scene.objective],
+        [t('cowrite.brief.fieldConflict'), scene.conflict],
+        [t('cowrite.brief.fieldSensory'), scene.sensoryHook],
+        [t('cowrite.brief.fieldMemory'), scene.memoryTrigger],
+        [t('cowrite.brief.fieldBody'), scene.bodyReaction],
+        [t('cowrite.brief.fieldSubtext'), scene.subtext],
+        [t('cowrite.brief.fieldRelationship'), scene.relationshipShift],
+        [t('cowrite.brief.fieldKeyScene'), scene.keyScene],
     ];
     return rows.filter(([, value]) => !!value);
 }
@@ -111,7 +112,7 @@ export function buildBriefRows(scene: BriefScene): Array<[string, string]> {
  * ```
  */
 export function formatEmotionLine(scene: BriefScene): string {
-    return `情绪：${scene.emotionStart || '—'} → ${scene.emotionEnd || '—'}${scene.emotionDelta ? `（${scene.emotionDelta}）` : ''}`;
+    return t('cowrite.brief.emotionArc', { start: scene.emotionStart || '—', end: scene.emotionEnd || '—', delta: scene.emotionDelta ? t('cowrite.brief.emotionDelta', { delta: scene.emotionDelta }) : '' });
 }
 
 /**
@@ -149,10 +150,10 @@ export function updateStartButtonState(
     // 重渲染（保存、切章预览等）不能把它覆盖回「✍️ 生成开头 / ⇥ 建议」。
     if (isSuggesting) return;
     const empty = !editorText.trim();
-    button.textContent = empty ? '✍️ 生成开头' : '⇥ 建议';
+    button.textContent = empty ? t('cowrite.brief.genOpeningBtn') : t('cowrite.brief.suggestBtn');
     button.setAttribute(
         'title',
-        empty ? '由本章 Scene 展开生成开头候选（不自动写入正文）' : '基于上文生成续写建议（方向可在上方临时指令填写）',
+        empty ? t('cowrite.brief.genOpeningTip') : t('cowrite.brief.suggestTip'),
     );
 }
 
@@ -170,27 +171,27 @@ export function renderBriefPanel(host: BriefPanelHost): void {
     host.container.empty();
 
     if (!brief || (brief.scenes.length === 0 && !brief.outlineSummary)) {
-        host.summaryEl?.setText('未找到章节规划');
+        host.summaryEl?.setText(t('cowrite.brief.noPlan'));
         const empty = host.container.createDiv({ cls: 'nw-cowrite-brief-empty' });
-        empty.createDiv({ text: '本章还没有 Scene 展开。可以就地补齐规划，或直接手写第一句。' });
+        empty.createDiv({ text: t('cowrite.brief.noSceneExpand') });
         const actions = empty.createDiv({ cls: 'nw-cowrite-brief-empty-actions' });
         if (host.openSceneStep) {
-            const sceneBtn = actions.createEl('button', { text: '🧩 生成 Scene 展开', cls: 'nw-btn nw-btn-primary' });
-            sceneBtn.setAttribute('title', '打开本项目向导的「Scene 展开」步骤，就地补齐场景规划');
+            const sceneBtn = actions.createEl('button', { text: t('cowrite.brief.genSceneBtn'), cls: 'nw-btn nw-btn-primary' });
+            sceneBtn.setAttribute('title', t('cowrite.brief.genSceneTip'));
             sceneBtn.addEventListener('click', () => host.openSceneStep?.());
         }
         if (host.openFlowTab) {
-            const flowBtn = actions.createEl('button', { text: '🧭 查看创作流程', cls: 'nw-btn nw-btn-secondary' });
-            flowBtn.setAttribute('title', '打开本项目创作流程页签，查看还缺哪些规划产物');
+            const flowBtn = actions.createEl('button', { text: t('cowrite.brief.viewFlowBtn'), cls: 'nw-btn nw-btn-secondary' });
+            flowBtn.setAttribute('title', t('cowrite.brief.viewFlowTip'));
             flowBtn.addEventListener('click', () => host.openFlowTab?.());
         }
         if (host.focusEditor) {
-            const writeBtn = actions.createEl('button', { text: '✍️ 直接手写', cls: 'nw-btn nw-btn-ghost' });
-            writeBtn.setAttribute('title', '不依赖规划，直接把光标放进正文开始写');
+            const writeBtn = actions.createEl('button', { text: t('cowrite.brief.writeDirectBtn'), cls: 'nw-btn nw-btn-ghost' });
+            writeBtn.setAttribute('title', t('cowrite.brief.writeDirectTip'));
             writeBtn.addEventListener('click', () => host.focusEditor?.());
         }
-        const btn = actions.createEl('button', { text: '← 工作台', cls: 'nw-btn nw-btn-ghost' });
-        btn.setAttribute('title', '回到完整写作工作台');
+        const btn = actions.createEl('button', { text: t('cowrite.brief.workbenchBtn'), cls: 'nw-btn nw-btn-ghost' });
+        btn.setAttribute('title', t('cowrite.brief.workbenchTip'));
         btn.addEventListener('click', () => host.openFullWriterView());
         return;
     }
@@ -200,7 +201,7 @@ export function renderBriefPanel(host: BriefPanelHost): void {
 
     if (brief.outlineSummary) {
         const outline = host.container.createDiv({ cls: 'nw-cowrite-brief-outline' });
-        outline.createDiv({ cls: 'nw-cowrite-brief-label', text: '本章大纲' });
+        outline.createDiv({ cls: 'nw-cowrite-brief-label', text: t('cowrite.brief.outlineLabel') });
         outline.createDiv({ cls: 'nw-cowrite-brief-text', text: brief.outlineSummary.slice(0, 240) });
     }
 
@@ -224,7 +225,7 @@ export function renderBriefPanel(host: BriefPanelHost): void {
     const cur = brief.currentScene;
     if (cur) {
         const card = host.container.createDiv({ cls: 'nw-cowrite-brief-card' });
-        card.createDiv({ cls: 'nw-cowrite-brief-label', text: `当前场景：${cur.name || '未命名'}` });
+        card.createDiv({ cls: 'nw-cowrite-brief-label', text: t('cowrite.brief.currentScene', { name: cur.name || t('cowrite.brief.unnamed') }) });
         for (const [label, value] of buildBriefRows(cur)) {
             const row = card.createDiv({ cls: 'nw-cowrite-brief-row' });
             row.createSpan({ cls: 'nw-cowrite-brief-row-label', text: label });
@@ -234,13 +235,13 @@ export function renderBriefPanel(host: BriefPanelHost): void {
             card.createDiv({ cls: 'nw-cowrite-brief-emotion', text: formatEmotionLine(cur) });
         }
         if (cur.cliffhanger) {
-            card.createDiv({ cls: 'nw-cowrite-brief-hook', text: `钩子：${cur.cliffhanger}` });
+            card.createDiv({ cls: 'nw-cowrite-brief-hook', text: t('cowrite.brief.hook', { hook: cur.cliffhanger }) });
         }
     }
 
     if (brief.infoRelease) {
         const info = host.container.createDiv({ cls: 'nw-cowrite-brief-info' });
-        info.createDiv({ cls: 'nw-cowrite-brief-label', text: '信息释放' });
+        info.createDiv({ cls: 'nw-cowrite-brief-label', text: t('cowrite.brief.infoRelease') });
         info.createDiv({ cls: 'nw-cowrite-brief-text', text: brief.infoRelease.slice(0, 220) });
     }
 }

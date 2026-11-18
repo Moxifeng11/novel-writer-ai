@@ -8,6 +8,7 @@
  */
 
 import type { BookBasicInfo } from '@/services/knowledge-base-manager';
+import { t } from '@/i18n';
 import type { GenreConfig } from '@/shared/webnovel-knowledge-base';
 
 /**
@@ -53,8 +54,8 @@ export function generateWritingAdvice(input: WritingAdviceInput): WritingAdviceI
     if (text.length < 300) {
         advice.push({
             icon: "📝",
-            title: "继续充实内容",
-            desc: `当前 ${text.length} 字，建议至少写到 500 字让情节展开。`,
+            title: t("cowrite.advice.keepWritingTitle"),
+            desc: t('cowrite.advice.keepWritingDesc', { count: text.length }),
             category: "general"
         });
     }
@@ -67,13 +68,13 @@ export function generateWritingAdvice(input: WritingAdviceInput): WritingAdviceI
             const genre = refBook.primaryGenre ? input.getGenre(refBook.primaryGenre) : null;
             if (genre) {
                 const isActive = activeRefs.includes(refBook.id);
-                const sourceLabel = isActive ? `《${refBook.name}》（启用中）` : `《${refBook.name}》`;
+                const sourceLabel = isActive ? t('cowrite.advice.sourceActive', { book: refBook.name }) : t('cowrite.advice.sourceBook', { book: refBook.name });
 
                 const rhythmTech = genre.techniques.find(t => t.category === 'rhythm');
                 if (rhythmTech) {
                     advice.push({
                         icon: "📈",
-                        title: `节奏建议：${rhythmTech.name}`,
+                        title: t('cowrite.advice.rhythmTitle', { name: rhythmTech.name }),
                         desc: rhythmTech.description,
                         source: sourceLabel,
                         category: "rhythm"
@@ -84,7 +85,7 @@ export function generateWritingAdvice(input: WritingAdviceInput): WritingAdviceI
                 if (coolTech) {
                     advice.push({
                         icon: "🔥",
-                        title: `爽点建议：${coolTech.name}`,
+                        title: t('cowrite.advice.coolTitle', { name: coolTech.name }),
                         desc: coolTech.description,
                         source: sourceLabel,
                         category: "technique"
@@ -95,7 +96,7 @@ export function generateWritingAdvice(input: WritingAdviceInput): WritingAdviceI
                 if (emotionTech) {
                     advice.push({
                         icon: "💖",
-                        title: `情感建议：${emotionTech.name}`,
+                        title: t('cowrite.advice.emotionTitle', { name: emotionTech.name }),
                         desc: emotionTech.description,
                         source: sourceLabel,
                         category: "emotion"
@@ -106,8 +107,8 @@ export function generateWritingAdvice(input: WritingAdviceInput): WritingAdviceI
                     const charTag = genre.personalityTags[0];
                     advice.push({
                         icon: "🎭",
-                        title: `人设参考：${charTag}`,
-                        desc: `可借鉴${sourceLabel}中「${charTag}」类型的角色塑造方式，让人物更立体。`,
+                        title: t('cowrite.advice.charRefTitle', { tag: charTag }),
+                        desc: t('cowrite.advice.charRefDesc', { source: sourceLabel, tag: charTag }),
                         source: sourceLabel,
                         category: "character"
                     });
@@ -118,15 +119,15 @@ export function generateWritingAdvice(input: WritingAdviceInput): WritingAdviceI
         const first = input.books[0];
         advice.push({
             icon: "⏳",
-            title: "等待书籍拆解完成",
-            desc: `《${first.name}》正在拆解中，完成后可获得更多建议。`,
+            title: t("cowrite.advice.waitingTitle"),
+            desc: t('cowrite.advice.waitingDesc', { book: first.name }),
             category: "general"
         });
     } else {
         advice.push({
             icon: "📚",
-            title: "添加参考书籍",
-            desc: "导入参考书籍并拆解后，可获得个性化写作建议。",
+            title: t("cowrite.advice.addBookTitle"),
+            desc: t("cowrite.advice.addBookDesc"),
             category: "general"
         });
     }
@@ -135,8 +136,8 @@ export function generateWritingAdvice(input: WritingAdviceInput): WritingAdviceI
     if (sentenceCount > 0 && text.length / sentenceCount > 40) {
         advice.push({
             icon: "✂️",
-            title: "句子偏长，建议拆分",
-            desc: "当前平均句长较长，适当使用短句可以加快节奏。",
+            title: t("cowrite.advice.longSentenceTitle"),
+            desc: t("cowrite.advice.longSentenceDesc"),
             category: "style"
         });
     }
@@ -145,8 +146,8 @@ export function generateWritingAdvice(input: WritingAdviceInput): WritingAdviceI
     if (sentenceCount > 5 && dialogueCount < sentenceCount * 0.1) {
         advice.push({
             icon: "💬",
-            title: "增加对话互动",
-            desc: "对话可以让场景更生动，人物更鲜活，建议适当增加。",
+            title: t("cowrite.advice.moreDialogueTitle"),
+            desc: t("cowrite.advice.moreDialogueDesc"),
             category: "dialogue"
         });
     }
@@ -158,8 +159,8 @@ export function generateWritingAdvice(input: WritingAdviceInput): WritingAdviceI
         const refBook = completedBooks[0];
         advice.push({
             icon: "⚔️",
-            title: "战斗场景优化",
-            desc: `当前是战斗场景，可参考《${refBook.name}》的战斗节奏和动作描写方式。`,
+            title: t("cowrite.advice.battleTitle"),
+            desc: t('cowrite.advice.battleDesc', { book: refBook.name }),
             source: `《${refBook.name}》`,
             category: "scene"
         });
@@ -172,8 +173,8 @@ export function generateWritingAdvice(input: WritingAdviceInput): WritingAdviceI
         const refBook = completedBooks[0];
         advice.push({
             icon: "💕",
-            title: "情感场景深化",
-            desc: `当前是情感场景，可借鉴《${refBook.name}》的情感表达方式，让情绪更有层次。`,
+            title: t("cowrite.advice.emotionSceneTitle"),
+            desc: t('cowrite.advice.emotionSceneDesc', { book: refBook.name }),
             source: `《${refBook.name}》`,
             category: "scene"
         });

@@ -5,6 +5,7 @@
  * 无建议文案、校验加载态与知识注入提示的纯文案决策。
  */
 import { showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
+import { t } from '@/i18n';
 
 /** 错误卡动作。 */
 export interface SuggestErrorCardActions {
@@ -38,12 +39,12 @@ export function resolveKnowledgeInjectionNotice(count: number, dropped: number):
         return {
             kind: 'success',
             text: dropped > 0
-                ? `已注入 ${count} 条知识库片段（另 ${dropped} 条因预算不足未注入）`
-                : `已注入 ${count} 条知识库片段`,
+                ? t('cowrite.feedback.injectedWithDropped', { count, dropped })
+                : t('cowrite.feedback.injected', { count }),
         };
     }
     if (dropped > 0) {
-        return { kind: 'warning', text: `知识库片段因预算不足未注入（${dropped} 条）` };
+        return { kind: 'warning', text: t('cowrite.feedback.droppedWarning', { dropped }) };
     }
     return { kind: 'none', text: '' };
 }
@@ -84,11 +85,11 @@ export function renderSuggestErrorCard(
     actions: SuggestErrorCardActions,
 ): void {
     const box = container.createDiv({ cls: 'nw-cowrite-error-card' });
-    box.createDiv({ cls: 'nw-cowrite-error-card__text', text: `生成失败：${message}` });
+    box.createDiv({ cls: 'nw-cowrite-error-card__text', text: t('cowrite.feedback.genFailedWith', { msg: message }) });
     const actionRow = box.createDiv({ cls: 'nw-cowrite-error-card__actions' });
-    const notNow = actionRow.createEl('button', { text: '知道了', cls: 'nw-btn nw-btn-ghost' });
+    const notNow = actionRow.createEl('button', { text: t('cowrite.feedback.gotIt'), cls: 'nw-btn nw-btn-ghost' });
     notNow.addEventListener('click', () => actions.onDismiss());
-    const retry = actionRow.createEl('button', { text: '↻ 重试', cls: 'nw-btn nw-btn-primary' });
+    const retry = actionRow.createEl('button', { text: t('fullwriter.fp.retry'), cls: 'nw-btn nw-btn-primary' });
     retry.addEventListener('click', () => actions.onRetry());
 }
 
@@ -114,9 +115,9 @@ export function renderKnowledgeEmptyNotice(container: HTMLElement, onRefill: () 
         background: 'rgba(var(--background-modifier-warning-rgb), 0.15)',
         border: '1px solid var(--background-modifier-warning)',
     });
-    const noticeText = noticeBar.createSpan({ text: '⚠️ 未检索到知识库参考，可能知识库未完成拆解' });
+    const noticeText = noticeBar.createSpan({ text: t('cowrite.feedback.noKbRef') });
     noticeText.setCssStyles({ fontSize: '13px', color: 'var(--text-warning)' });
-    const refillBtn = noticeBar.createEl('button', { text: '补全知识库' });
+    const refillBtn = noticeBar.createEl('button', { text: t('cowrite.feedback.refillKb') });
     refillBtn.setCssStyles({
         padding: '4px 12px',
         borderRadius: '4px',
@@ -149,7 +150,7 @@ export function renderKnowledgeEmptyNotice(container: HTMLElement, onRefill: () 
 export function renderNoSuggestionMessage(container: HTMLElement): void {
     container.createDiv({
         cls: 'novel-writer-cowrite-empty',
-        text: '这次没有拿到建议。可以换一批，或者检查 API 配置。',
+        text: t('cowrite.flow.emptySuggestions'),
     });
 }
 
@@ -165,7 +166,7 @@ export function renderNoSuggestionMessage(container: HTMLElement): void {
 export function renderValidationLoadingMessage(container: HTMLElement): void {
     container.createDiv({
         cls: 'novel-writer-cowrite-empty',
-        text: '正在验证你的修改：设定一致性 / 文风对齐 / 剧情对齐……',
+        text: t('cowrite.feedback.validatingChanges'),
     });
 }
 

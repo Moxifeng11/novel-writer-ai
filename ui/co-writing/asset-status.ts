@@ -5,6 +5,7 @@
  * 视图只负责把结果渲染成状态条。
  */
 import type { KnowledgeBaseManager } from '@/services/knowledge-base-manager';
+import { t } from '@/i18n';
 import type { StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
 
 /** 单类资产的完成度 */
@@ -145,14 +146,14 @@ export function renderAssetStatusBar(
 
     const kbPart = badge.createDiv({ attr: { style: 'display:flex;align-items:center;gap:4px;' } });
     kbPart.createSpan({ text: '📚', attr: { style: 'font-size:14px;' } });
-    kbPart.createSpan({ text: `知识库 ${status.knowledgeBase.completed}/${status.knowledgeBase.total}`, attr: { style: 'font-size:12px;color:var(--text-muted);' } });
+    kbPart.createSpan({ text: t('cowrite.asset.kb', { done: status.knowledgeBase.completed, total: status.knowledgeBase.total }), attr: { style: 'font-size:12px;color:var(--text-muted);' } });
     kbPart.createSpan({ text: kbIcon.icon, attr: { style: `font-size:12px;color:${kbIcon.color};font-weight:600;` } });
 
     badge.createSpan({ text: '|', attr: { style: 'color:var(--background-modifier-border);' } });
 
     const fpPart = badge.createDiv({ attr: { style: 'display:flex;align-items:center;gap:4px;' } });
     fpPart.createSpan({ text: '🎨', attr: { style: 'font-size:14px;' } });
-    fpPart.createSpan({ text: `指纹 ${status.fingerprint.completed}/${status.fingerprint.total}`, attr: { style: 'font-size:12px;color:var(--text-muted);' } });
+    fpPart.createSpan({ text: t('cowrite.asset.fp', { done: status.fingerprint.completed, total: status.fingerprint.total }), attr: { style: 'font-size:12px;color:var(--text-muted);' } });
     fpPart.createSpan({ text: fpIcon.icon, attr: { style: `font-size:12px;color:${fpIcon.color};font-weight:600;` } });
 
     badge.addEventListener('mouseenter', () => {

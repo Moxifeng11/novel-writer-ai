@@ -7,19 +7,20 @@
  * 按钮文案、页签定义、场景提示词走纯函数导出，便于单元测试。
  */
 import { withButtonBusy } from '@/ui/button-busy';
+import { t } from '@/i18n';
 import { renderTabHeaders } from '@/ui/co-writing/layout-assembly';
 
 /** 工具按钮的悬浮说明（E-12：图标/短文案不足以说明用途） */
 const TOOL_BUTTON_HINTS: Record<ControlToolAction, string> = {
-    history: '查看本章的正文版本历史，可回滚',
-    memory: '打开写作记忆管理（人物/情节记忆条目）',
-    'batch-import': '批量导入已有正文到当前项目',
-    monitor: '打开知识库监控面板，查看检索命中与丢弃',
-    analysis: '打开章节分析报告（连贯性/质量/风格）',
-    guard: '立即检查设定守卫：OOC、实体状态变更',
-    quality: '生成并查看本章质检报告',
-    save: '立即保存当前正文（Ctrl+S）',
-    written: '把本章标记为完稿并进入结算流程',
+    history: t('cowrite.panel.tipHistory'),
+    memory: t('cowrite.panel.tipMemory'),
+    'batch-import': t('cowrite.panel.tipBatchImport'),
+    monitor: t('cowrite.panel.tipMonitor'),
+    analysis: t('cowrite.panel.tipAnalysis'),
+    guard: t('cowrite.panel.tipGuard'),
+    quality: t('cowrite.panel.tipQuality'),
+    save: t('cowrite.panel.tipSave'),
+    written: t('cowrite.panel.tipWritten'),
 };
 
 /** 右栏页签定义。 */
@@ -37,8 +38,8 @@ export interface RightTabSpec {
  */
 export function getRightTabSpecs(): RightTabSpec[] {
     return [
-        { id: 'overview', label: '📊 概览', active: true },
-        { id: 'knowledge', label: '📚 知识库', title: '内嵌知识库面板：检索与引用' },
+        { id: 'overview', label: t('cowrite.panel.tabOverview'), active: true },
+        { id: 'knowledge', label: t('cowrite.panel.tabKnowledge'), title: t('cowrite.panel.tabKnowledgeTitle') },
     ];
 }
 
@@ -67,15 +68,15 @@ export interface ToolButtonSpec {
  */
 export function getToolButtonSpecs(): ToolButtonSpec[] {
     return [
-        { text: '🕘 历史', action: 'history' },
-        { text: '🧠 记忆', action: 'memory' },
-        { text: '📥 批量导入', action: 'batch-import' },
-        { text: '📊 监控', action: 'monitor' },
-        { text: '🔬 分析', action: 'analysis' },
-        { text: '🛡 检查', action: 'guard' },
-        { text: '📋 质检', action: 'quality' },
-        { text: '💾 保存', action: 'save' },
-        { text: '✅ 标记完稿', action: 'written' },
+        { text: t('cowrite.panel.btnHistory'), action: 'history' },
+        { text: t('cowrite.panel.btnMemory'), action: 'memory' },
+        { text: t('cowrite.panel.btnBatchImport'), action: 'batch-import' },
+        { text: t('cowrite.panel.btnMonitor'), action: 'monitor' },
+        { text: t('cowrite.panel.btnAnalysis'), action: 'analysis' },
+        { text: t('cowrite.panel.btnGuard'), action: 'guard' },
+        { text: t('cowrite.panel.btnQuality'), action: 'quality' },
+        { text: t('cowrite.panel.btnSave'), action: 'save' },
+        { text: t('cowrite.panel.btnWritten'), action: 'written' },
     ];
 }
 
@@ -85,7 +86,7 @@ export function getToolButtonSpecs(): ToolButtonSpec[] {
  * @returns 核心创作 / 辅助润色 / 更多工具三组标题
  */
 export function getControlSectionTitles(): { core: string; assist: string; tools: string } {
-    return { core: '🎯 核心创作', assist: '✨ 辅助润色', tools: '⚙ 更多工具' };
+    return { core: t('cowrite.panel.groupCore'), assist: t('cowrite.panel.groupAssist'), tools: t('cowrite.panel.groupTools') };
 }
 
 /**
@@ -95,7 +96,7 @@ export function getControlSectionTitles(): { core: string; assist: string; tools
  * @returns 开关按钮文案
  */
 export function getToolsToggleLabel(open: boolean): string {
-    return open ? '⚙ 收起工具' : '⚙ 更多工具';
+    return open ? t('cowrite.panel.toolsCollapse') : t('cowrite.panel.groupTools');
 }
 
 /**
@@ -141,9 +142,9 @@ export interface ModelToggleSettings {
  * ```
  */
 export function resolveModelToggleLabel(settings: ModelToggleSettings): string {
-    if ((settings.coWriteModelMode || 'local') !== 'cloud') return '🖥 本地';
+    if ((settings.coWriteModelMode || 'local') !== 'cloud') return t('cowrite.panel.modelLocal');
     const providerId = settings.coWriteCloudProvider || '';
-    if (!providerId) return '☁ 未配置';
+    if (!providerId) return t('cowrite.panel.modelUnset');
     const providerName = settings.customProviders?.find((p) => p.id === providerId)?.name || providerId;
     return `☁ ${providerName}`;
 }
@@ -232,20 +233,20 @@ export function renderControlPanelAssembly(
 
     const cardsArea = overviewTabContent.createDiv({ cls: 'nw-cowrite-cards' });
     const completionCard = cardsArea.createDiv({ cls: 'nw-card' });
-    completionCard.createDiv({ cls: 'nw-card-title', text: '完成度' });
+    completionCard.createDiv({ cls: 'nw-card-title', text: t('cowrite.monitor.completion') });
     completionCard.createDiv({ cls: 'nw-card-value', text: '0%' });
     const completionProgress = completionCard.createDiv({ cls: 'nw-progress' });
     completionProgress.createDiv({ cls: 'nw-progress-fill nw-progress-fill-zero' });
 
     const tractionCard = cardsArea.createDiv({ cls: 'nw-card' });
-    tractionCard.createDiv({ cls: 'nw-card-title', text: '情节牵引' });
+    tractionCard.createDiv({ cls: 'nw-card-title', text: t('cowrite.monitor.traction') });
     tractionCard.createDiv({ cls: 'nw-card-value', text: '45%' });
-    tractionCard.createDiv({ cls: 'nw-card-sub', text: '偏离风险: 低' });
+    tractionCard.createDiv({ cls: 'nw-card-sub', text: t('cowrite.monitor.riskLow') });
 
     const wordCard = cardsArea.createDiv({ cls: 'nw-card nw-cowrite-word-card' });
-    wordCard.createDiv({ cls: 'nw-card-title', text: '字数' });
+    wordCard.createDiv({ cls: 'nw-card-title', text: t('cowrite.monitor.words') });
     const wordCountDisplay = wordCard.createDiv({ cls: 'nw-card-value', text: '0' });
-    const wordGoalDisplay = wordCard.createDiv({ cls: 'nw-card-sub', text: '目标: 3000' });
+    const wordGoalDisplay = wordCard.createDiv({ cls: 'nw-card-sub', text: t('cowrite.monitor.goalPlaceholder') });
 
     // 人工率仪表盘：属于「概览」数据，不再塞进 AI 建议面板
     const humanRateContainer = overviewTabContent.createDiv({
@@ -255,16 +256,16 @@ export function renderControlPanelAssembly(
     // 写作控制台（紧凑模式）
     const controlPanel = overviewTabContent.createDiv({ cls: 'nw-cowrite-control-panel' });
     const controlHead = controlPanel.createDiv({ cls: 'nw-cowrite-control-head' });
-    controlHead.createDiv({ cls: 'nw-cowrite-control-title', text: '控制台' });
+    controlHead.createDiv({ cls: 'nw-cowrite-control-title', text: t('cowrite.panel.controlTitle') });
     // NBI-04: 临时指令「已应用」状态标识，默认隐藏
-    const hintStateDisplay = controlHead.createDiv({ cls: 'nw-hint-state', text: '指令已应用' });
+    const hintStateDisplay = controlHead.createDiv({ cls: 'nw-hint-state', text: t('cowrite.panel.hintApplied') });
     hintStateDisplay.addClass('nw-u-d-none');
-    const saveStateDisplay = controlHead.createDiv({ cls: 'nw-cowrite-control-state', text: '未保存' });
+    const saveStateDisplay = controlHead.createDiv({ cls: 'nw-cowrite-control-state', text: t('cowrite.panel.unsaved') });
 
     // textarea：支持自然换行；Enter 应用，Shift+Enter 换行（见视图 keydown）
     const hintInput = controlPanel.createEl('textarea', {
         cls: 'nw-hint-input',
-        placeholder: '临时指令 / 方向（Enter 应用，Shift+Enter 换行）',
+        placeholder: t('cowrite.panel.hintPlaceholder'),
         attr: { rows: '2' },
     });
 
@@ -274,9 +275,9 @@ export function renderControlPanelAssembly(
     // 模式切换（顶部独立一行）
     const modeRow = actionsArea.createDiv({ cls: 'nw-cowrite-action-row' });
     const modelToggleBtn = modeRow.createEl('button', {
-        text: '🖥 本地',
+        text: t('cowrite.panel.modelLocalBtn'),
         cls: 'nw-btn nw-btn-ghost',
-        attr: { title: '切换本地/云端模型' },
+        attr: { title: t('cowrite.panel.modelToggleTip') },
     });
     modelToggleBtn.addEventListener('click', () => host.handleModelToggle());
 
@@ -285,52 +286,52 @@ export function renderControlPanelAssembly(
     coreSection.createDiv({ cls: 'nw-cowrite-action-section-title', text: titles.core });
     const coreRow = coreSection.createDiv({ cls: 'nw-cowrite-action-row' });
     const nextNodeBtn = coreRow.createEl('button', {
-        text: '⏭ 节点 -/-',
+        text: t('cowrite.panel.nodeIdle'),
         cls: 'nw-btn nw-btn-primary',
-        attr: { title: '推进到下一剧情节点，生成针对性建议' },
+        attr: { title: t('cowrite.panel.nodeTip') },
     });
     nextNodeBtn.addEventListener('click', () => {
-        void withButtonBusy(nextNodeBtn, '⏳ 推进中...', () => host.handleAdvanceNextNode());
+        void withButtonBusy(nextNodeBtn, t('cowrite.busyAdvancing'), () => host.handleAdvanceNextNode());
     });
     const suggestBtn = coreRow.createEl('button', {
-        text: '\u21E5 建议',
+        text: t('cowrite.panel.suggestBtn'),
         cls: 'nw-btn nw-btn-primary',
-        attr: { title: '基于上文生成续写建议（方向可在上方临时指令填写）' },
+        attr: { title: t('cowrite.panel.suggestTip') },
     });
     suggestBtn.addEventListener('click', () => host.handleTabSuggest());
     const sceneBtn = coreRow.createEl('button', {
-        text: '🎬 场景描写',
+        text: t('cowrite.panel.sceneBtn'),
         cls: 'nw-btn nw-btn-ghost',
-        attr: { title: '用当前 Scene 卡的地点/时间/感官钩子生成环境描写，不推进剧情' },
+        attr: { title: t('cowrite.panel.sceneTip') },
     });
     sceneBtn.addEventListener('click', () => {
         host.applySceneHint(getSceneHintText());
         host.handleTabSuggest();
     });
     const completeBtn = coreRow.createEl('button', {
-        text: '📊 结算',
+        text: t('cowrite.panel.settleBtn'),
         cls: 'nw-btn nw-btn-primary',
-        attr: { title: '结算本章：更新事实/伏笔/时间线' },
+        attr: { title: t('cowrite.panel.settleTip') },
     });
     completeBtn.addEventListener('click', () => {
-        void withButtonBusy(completeBtn, '⏳ 结算中...', () => host.handleComplete());
+        void withButtonBusy(completeBtn, t('cowrite.busySettling'), () => host.handleComplete());
     });
 
     // —— 辅助润色 ——
     const assistSection = actionsArea.createDiv({ cls: 'nw-cowrite-action-section' });
     assistSection.createDiv({ cls: 'nw-cowrite-action-section-title', text: titles.assist });
     const assistRow = assistSection.createDiv({ cls: 'nw-cowrite-action-row' });
-    const assocBtn = assistRow.createEl('button', { text: '✨ 联想', cls: 'nw-btn nw-btn-ghost', attr: { title: '联想后续情节走向' } });
+    const assocBtn = assistRow.createEl('button', { text: t('cowrite.panel.assocBtn'), cls: 'nw-btn nw-btn-ghost', attr: { title: t('cowrite.panel.assocTip') } });
     assocBtn.addEventListener('click', () => {
-        void withButtonBusy(assocBtn, '⏳ 联想中...', () => host.handleAssociationSuggest());
+        void withButtonBusy(assocBtn, t('cowrite.busyAssociating'), () => host.handleAssociationSuggest());
     });
-    const expandBtn = assistRow.createEl('button', { text: '✍️ 扩写', cls: 'nw-btn nw-btn-ghost', attr: { title: '扩写选中段落' } });
+    const expandBtn = assistRow.createEl('button', { text: t('cowrite.panel.expandBtn'), cls: 'nw-btn nw-btn-ghost', attr: { title: t('cowrite.panel.expandTip') } });
     expandBtn.addEventListener('click', () => {
-        void withButtonBusy(expandBtn, '⏳ 扩写中...', () => host.handleOutlineExpand());
+        void withButtonBusy(expandBtn, t('cowrite.busyExpanding'), () => host.handleOutlineExpand());
     });
-    const rewriteBtn = assistRow.createEl('button', { text: '✂ 改写', cls: 'nw-btn nw-btn-ghost', attr: { title: '改写选中段落（降 AI 痕迹 / 换文风）' } });
+    const rewriteBtn = assistRow.createEl('button', { text: t('cowrite.panel.rewriteBtn'), cls: 'nw-btn nw-btn-ghost', attr: { title: t('cowrite.panel.rewriteTip') } });
     rewriteBtn.addEventListener('click', () => {
-        void withButtonBusy(rewriteBtn, '⏳ 改写中...', () => host.handleRewriteSelection());
+        void withButtonBusy(rewriteBtn, t('cowrite.busyRewriting'), () => host.handleRewriteSelection());
     });
 
     // —— 更多工具（可折叠）——
@@ -351,7 +352,7 @@ export function renderControlPanelAssembly(
         el.addEventListener('click', () => {
             toolsPanel.removeClass('is-open');
             toolsToggle.setText(getToolsToggleLabel(false));
-            void withButtonBusy(el, '⏳ 处理中...', () => host.runToolAction(spec.action));
+            void withButtonBusy(el, t('cowrite.busyProcessing'), () => host.runToolAction(spec.action));
         });
     }
 

@@ -9,6 +9,7 @@
  */
 
 import type { BookBasicInfo } from '@/services/knowledge-base-manager';
+import { t } from '@/i18n';
 
 /**
  * 参考书迷你卡片构建所需的宿主能力集合。
@@ -82,21 +83,21 @@ export function buildKbReferenceCard(book: BookBasicInfo, host: KbReferenceCardH
 
         if (book.primaryGenre) {
             const genreRow = body.createDiv({ cls: 'nw-kb-mini-row' });
-            genreRow.createSpan({ cls: 'nw-kb-mini-label', text: '题材：' });
+            genreRow.createSpan({ cls: 'nw-kb-mini-label', text: t('cowrite.kbcard.genre') });
             const genreName = host.getGenreName(book.primaryGenre) || book.primaryGenre;
             genreRow.createSpan({ cls: 'nw-kb-tag nw-kb-tag-genre', text: genreName });
         }
 
         if (book.qualityScores) {
             const scoreRow = body.createDiv({ cls: 'nw-kb-mini-row' });
-            scoreRow.createSpan({ cls: 'nw-kb-mini-label', text: '质量：' });
-            scoreRow.createSpan({ text: `${book.qualityScores.overall.toFixed(0)}分` });
+            scoreRow.createSpan({ cls: 'nw-kb-mini-label', text: t('cowrite.kbcard.quality') });
+            scoreRow.createSpan({ text: t('cowrite.kbcard.score', { score: book.qualityScores.overall.toFixed(0) }) });
         }
 
         const topChars = host.getBookTopCharacters(book);
         if (topChars.length > 0) {
             const charRow = body.createDiv({ cls: 'nw-kb-mini-section' });
-            charRow.createDiv({ cls: 'nw-kb-mini-section-title', text: '🏷 主要人设 Top 5' });
+            charRow.createDiv({ cls: 'nw-kb-mini-section-title', text: t('cowrite.kbcard.topChars') });
             const tagsWrap = charRow.createDiv({ cls: 'nw-kb-mini-tags' });
             topChars.forEach(tag => {
                 const tagEl = tagsWrap.createSpan({
@@ -113,7 +114,7 @@ export function buildKbReferenceCard(book: BookBasicInfo, host: KbReferenceCardH
         const topTechniques = host.getBookTopTechniques(book);
         if (topTechniques.length > 0) {
             const techRow = body.createDiv({ cls: 'nw-kb-mini-section' });
-            techRow.createDiv({ cls: 'nw-kb-mini-section-title', text: '💡 核心技巧 Top 5' });
+            techRow.createDiv({ cls: 'nw-kb-mini-section-title', text: t('cowrite.kbcard.topTechs') });
             const tagsWrap = techRow.createDiv({ cls: 'nw-kb-mini-tags' });
             topTechniques.forEach(tag => {
                 const tagEl = tagsWrap.createSpan({
@@ -134,7 +135,7 @@ export function buildKbReferenceCard(book: BookBasicInfo, host: KbReferenceCardH
 
         const toggleBtn = actionRow.createEl('button', {
             cls: `nw-btn nw-btn-sm ${isActive ? 'nw-btn-primary' : 'nw-btn-ghost'}`,
-            text: isActive ? '✓ 已启用参考' : '启用参考'
+            text: isActive ? t('cowrite.kbcard.refActive') : t('cowrite.kbcard.enableRef')
         });
         toggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -144,7 +145,7 @@ export function buildKbReferenceCard(book: BookBasicInfo, host: KbReferenceCardH
         if (isActive) {
             const primaryBtn = actionRow.createEl('button', {
                 cls: `nw-btn nw-btn-sm ${isPrimary ? 'nw-btn-accent' : 'nw-btn-ghost'}`,
-                text: isPrimary ? '★ 主参考' : '设为主参考'
+                text: isPrimary ? t('cowrite.kbcard.primary') : t('cowrite.kbcard.setPrimaryShort')
             });
             primaryBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -153,7 +154,7 @@ export function buildKbReferenceCard(book: BookBasicInfo, host: KbReferenceCardH
 
             if (activeRefs.length > 1) {
                 const weightWrap = actionRow.createDiv({ cls: 'nw-kb-weight-wrap' });
-                weightWrap.createSpan({ cls: 'nw-kb-weight-label', text: '权重:' });
+                weightWrap.createSpan({ cls: 'nw-kb-weight-label', text: t('cowrite.kbcard.weight') });
                 const weightSlider = weightWrap.createEl('input', {
                     type: 'range',
                     cls: 'nw-kb-weight-slider',

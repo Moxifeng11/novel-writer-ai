@@ -6,6 +6,7 @@
  * 状态由调用方传入，重试动作通过回调注入，模块本身不持有视图字段。
  */
 import type { PlotCompletionMetrics } from '@/shared/types';
+import { t } from '@/i18n';
 
 /** 指标面板的三态判定结果。 */
 export interface MetricsRenderState {
@@ -71,10 +72,10 @@ function renderMetricGrid(
     isEvaluating: boolean,
 ): void {
     const rows: Array<[string, number]> = [
-        ['场景目标', metrics.sceneObjectivesMet],
-        ['人物弧', metrics.characterArcsAdvanced],
-        ['伏笔埋设', metrics.foreshadowingSeeded],
-        ['情绪弧', metrics.emotionalArcProgress],
+        [t('cowrite.metrics.sceneGoals'), metrics.sceneObjectivesMet],
+        [t('cowrite.metrics.charArcs'), metrics.characterArcsAdvanced],
+        [t('cowrite.metrics.foreshadow'), metrics.foreshadowingSeeded],
+        [t('cowrite.metrics.emotionArc'), metrics.emotionalArcProgress],
     ];
     const grid = container.createDiv({ cls: 'nw-cowrite-metrics-grid' });
     if (isEvaluating) grid.addClass('nw-cowrite-metrics-evaluating-dim');
@@ -99,7 +100,7 @@ function renderOverallRow(
 ): void {
     const overall = container.createDiv({ cls: 'nw-cowrite-metrics-overall' });
     const overallHead = overall.createDiv({ cls: 'nw-cowrite-metrics-head' });
-    overallHead.createSpan({ cls: 'nw-cowrite-metrics-label', text: '综合完成度' });
+    overallHead.createSpan({ cls: 'nw-cowrite-metrics-label', text: t('cowrite.metrics.overall') });
     if (isEvaluating) {
         overallHead.createSpan({ cls: 'nw-cowrite-metrics-value nw-cowrite-metrics-overall-value nw-cowrite-metrics-evaluating', text: '评估中...' });
         overall.createEl('progress', {
@@ -128,14 +129,14 @@ function renderMetricsFooter(
         container.createDiv({ cls: 'novel-writer-cowrite-advice', text: `💡 ${metrics.suggestionAdvice}` });
     }
     if (directionText && !state.isEvaluating) {
-        container.createDiv({ cls: 'novel-writer-cowrite-next-directions', text: `下一轮方向：${directionText}` });
+        container.createDiv({ cls: 'novel-writer-cowrite-next-directions', text: t('cowrite.metrics.nextDirections', { directions: directionText }) });
     }
     if (state.isError) {
-        const errorEl = container.createDiv({ cls: 'nw-cowrite-metrics-error nw-u-cur-pointer', text: '❌ 评估失败，点击重试' });
+        const errorEl = container.createDiv({ cls: 'nw-cowrite-metrics-error nw-u-cur-pointer', text: t('cowrite.metrics.evalFailedRetry') });
         errorEl.addEventListener('click', () => onRetry());
     }
     if (state.isInsufficient && !state.isEvaluating && !state.isError) {
-        container.createDiv({ cls: 'nw-cowrite-metrics-hint', text: '📝 内容不足，继续写作后自动评估' });
+        container.createDiv({ cls: 'nw-cowrite-metrics-hint', text: t('cowrite.metrics.contentInsufficient') });
     }
 }
 
@@ -160,11 +161,11 @@ export function renderMetricsPanel(
     onRetry: () => void,
 ): void {
     container.empty();
-    container.createEl('h4', { text: '📊 剧情完成度', cls: 'nw-cowrite-metrics-title' });
+    container.createEl('h4', { text: t('cowrite.metrics.plotTitle'), cls: 'nw-cowrite-metrics-title' });
     // 上下文信息：项目 · 章节 · 字数 · 保存状态
     const contextRow = container.createDiv({ cls: 'nw-cowrite-metrics-context' });
-    contextRow.createSpan({ text: `${ctx.project || '未绑定'} · ${ctx.volume || ''} ${ctx.chapterName || ''}` });
-    contextRow.createSpan({ text: `${ctx.wordCount}/${ctx.targetWordCount}字` });
+    contextRow.createSpan({ text: t('cowrite.metrics.contextLine', { project: ctx.project || t('cowrite.noChapterBound'), volume: ctx.volume || '', chapter: ctx.chapterName || '' }) });
+    contextRow.createSpan({ text: t('cowrite.metrics.wordProgress', { count: ctx.wordCount, target: ctx.targetWordCount }) });
     contextRow.createSpan({ cls: 'nw-cowrite-control-state', text: ctx.saveStateText });
     renderMetricGrid(container, metrics, state.isEvaluating);
     renderOverallRow(container, metrics, state.isEvaluating);
@@ -192,10 +193,10 @@ export function renderMetricsCompact(
     onRetry: () => void,
 ): void {
     container.empty();
-    container.createEl('h4', { text: '📊 剧情完成度', cls: 'nw-cowrite-metrics-title' });
+    container.createEl('h4', { text: t('cowrite.metrics.plotTitle'), cls: 'nw-cowrite-metrics-title' });
     const grid = container.createDiv({ cls: 'nw-cowrite-metrics-grid' });
     if (state.isEvaluating) grid.addClass('nw-cowrite-metrics-evaluating-dim');
-    const labels = ['场景目标', '人物弧', '伏笔', '情绪弧'];
+    const labels = [t('cowrite.metrics.sceneGoals'), t('cowrite.metrics.charArcs'), t('cowrite.metrics.foreshadow'), t('cowrite.metrics.emotionArc')];
     const values = [metrics.sceneObjectivesMet, metrics.characterArcsAdvanced, metrics.foreshadowingSeeded, metrics.emotionalArcProgress];
     for (let i = 0; i < 4; i++) {
         const item = grid.createDiv({ cls: 'nw-cowrite-metrics-item' });
@@ -209,7 +210,7 @@ export function renderMetricsCompact(
     }
     const overall = container.createDiv({ cls: 'nw-cowrite-metrics-overall' });
     const overallHead = overall.createDiv({ cls: 'nw-cowrite-metrics-head' });
-    overallHead.createSpan({ cls: 'nw-cowrite-metrics-label', text: '综合完成度' });
+    overallHead.createSpan({ cls: 'nw-cowrite-metrics-label', text: t('cowrite.metrics.overall') });
     if (state.isEvaluating) {
         overallHead.createSpan({ cls: 'nw-cowrite-metrics-value nw-cowrite-metrics-overall-value nw-cowrite-metrics-evaluating', text: '评估中...' });
         overall.createEl('progress', {

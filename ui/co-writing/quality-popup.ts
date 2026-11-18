@@ -4,6 +4,7 @@
  * 从 `ui/co-writing-view.ts` 抽出 DOM 部分；AI 修复动作通过回调注入。
  */
 import { Menu } from 'obsidian';
+import { t } from '@/i18n';
 import { showWarningNotice } from '@/ui/components/notice-helpers';
 import { lineTopForIndex } from './quality-fix';
 import type { QualityIssue } from './quality-report';
@@ -62,13 +63,13 @@ export function showQualityPopup(issue: QualityIssue, event: MouseEvent): HTMLEl
     const header = popup.createDiv({ cls: 'nw-quality-popup-header' });
     header.createSpan({ text: `${issue.severity} ${issue.category}` });
     const body = popup.createDiv({ cls: 'nw-quality-popup-body' });
-    body.createDiv({ cls: 'nw-quality-popup-label', text: '问题' });
+    body.createDiv({ cls: 'nw-quality-popup-label', text: t('cowrite.qp.problem') });
     body.createDiv({ cls: 'nw-quality-popup-text', text: issue.problem });
-    body.createDiv({ cls: 'nw-quality-popup-label', text: '建议' });
+    body.createDiv({ cls: 'nw-quality-popup-label', text: t('cowrite.qp.suggestion') });
     body.createDiv({ cls: 'nw-quality-popup-text', text: issue.suggestion });
     if (issue.locationText) {
-        body.createDiv({ cls: 'nw-quality-popup-label', text: '定位' });
-        body.createDiv({ cls: 'nw-quality-popup-location', text: `附近文字：${issue.locationText}` });
+        body.createDiv({ cls: 'nw-quality-popup-label', text: t('cowrite.qp.location') });
+        body.createDiv({ cls: 'nw-quality-popup-location', text: t('cowrite.qp.nearbyText', { text: issue.locationText }) });
     }
     return popup;
 }
@@ -104,12 +105,12 @@ export function showQualityContextMenu(
 ): void {
     const menu = new Menu();
     menu.addItem((item) => {
-        item.setTitle('🔧 AI 修复此问题');
+        item.setTitle(t('cowrite.qp.aiFixItem'));
         item.setIcon('wand');
         item.onClick(() => actions.onFix());
     });
     menu.addItem((item) => {
-        item.setTitle('📍 定位到编辑器');
+        item.setTitle(t('cowrite.qp.locateItem'));
         item.setIcon('go-to-file');
         item.onClick(() => actions.onLocate());
     });
@@ -144,5 +145,5 @@ export function scrollToTextInEditor(editor: HTMLTextAreaElement | null, text: s
         editor.scrollTop = Math.max(0, lineTopForIndex(value, fuzzyIdx) - 60);
         return;
     }
-    showWarningNotice(`正文中未找到 "${text.slice(0, 10)}..."`, { timeout: 2000 });
+    showWarningNotice(t('cowrite.qp.notFound', { text: text.slice(0, 10) }), { timeout: 2000 });
 }

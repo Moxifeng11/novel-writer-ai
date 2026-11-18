@@ -2216,3 +2216,30 @@ wizard 群 300+ → step-render 106 → unit-writer 98）→ co-writing-view（Z
 **下一轮候选**：ZC-20261119-10 协同写作子模块（layout-assembly 140 → control-panel 116 →
 suggestion-cards 100 → suggestion-flow 98 → monitor-cards 81 …）→ 写作主流程深水区 →
 外观页统计/桌宠块。
+
+## 第七十七轮：i18n 第二期第20片 —— 协同写作子模块全目录（2026-11-19，ZCode · ZC-20261119-10）
+
+**改动**
+- `ui/co-writing/` 全目录 20 个模块迁完（≈262 对走 6 个仓外脚本）：control-panel（控制台/
+  工具按钮/模型状态/静态监控卡，52 对）、monitor-cards（注入溯源/伏笔/实体/守卫/统计，24 对）、
+  brief-panel（简报/Scene 字段表/空态行动组，28 对）、suggestion-cards（候选卡/验证分卡，26 对）、
+  suggestion-flow（生成流水线进度，24 对）、layout-assembly（头部/简报/预览/字体，24 对）、
+  加 writing-advice / friendly-error / metrics-panel / editor-aux / markdown-toolbar / suggest-feedback /
+  find-replace / editor-display / dashboard-status / word-goal / text-diff / ghost-association /
+  chapter-match / asset-status / quality-popup / settlement-actions / chapter-nav / kb-reference-config /
+  human-rate / kb-reference-card / suggestion-loading（合计 ≈ 83 对）。走 `cowrite.panel/monitor/
+  brief/cards/flow/layout/advice/err/metrics/aux/md/feedback/find/disp/dash/goal/diff/ghost/match/
+  asset/qp/settle/nav/kbref/hr/kbcard/loading.*` ≈ 340 键。
+- `renderEmptySuggestions` 的默认参数是 `\u` 转义中文——grep 中文抓不到，改按正则匹配迁移。
+- 保留数据：frontmatter 键（当前状态/涉及人物）、AI 提示词（quality-fix）、字体名目录、
+  `shared/novel-format` 契约描述、行为匹配串（已保存/已加载、无项目）、场景正则。
+
+**验收**
+- `check:i18n` zh/en 各 2360、棘轮收紧到 **235 文件 / 9359 条**（14 个文件清零）；
+  `check:bundle` main.js → **5911373**（+30477）；preflight EXIT=0。
+- 实机 `D:\nw-dev-vault\_visual-i18n19\cowrite-view-{zh-CN,en-US}.png`：en 下简报/预览/字体/工具条/
+  控制台/五张监控卡/建议卡全英文（CJK 294→78），剩余 CJK = 字体名 + 工具目录 +
+  `shared/novel-format` 契约描述 + 项目数据。
+
+**下一轮候选**：`ui/cowrite/` 9 模块（约 282 行 CJK：body-save 86 / live-analysis 64 …）→
+写作主流程深水区（template-vars 340 → scene-outline 231 → wizard 群）→ 外观页统计/桌宠块。
