@@ -2360,3 +2360,24 @@ chapter-orchestrator 71 → execution-panels 62 → 外观页统计/桌宠块。
 
 **下一轮候选**：batch-pipeline-runner 79 → chapter-orchestrator 71 → execution-run-store /
 entity-state-controller → 外观页统计/桌宠块 → 跨层数据专项。
+
+## 第八十四轮：i18n 第二期第27片 —— 批处理与章节编排（2026-11-19，ZCode · ZC-20261119-17）
+
+**甄别结论**
+- 两模块 41 处 CJK 全是界面/错误提示文案（无 AI 提示词），直接迁移。
+
+**改动**
+- `migrate-bp-co.cjs` 39 对全命中（batch-pipeline-runner 19 + chapter-orchestrator 20）：
+  `fullwriter.bp/co.*` 43 键。批次步骤超时/空内容/截断/骨架判定/回滚叙事（恢复+失败数+不完整）/
+  结算失败四段；编排进度报告（加载上下文/合并规划/补生成/生成正文/质控/分析/结算）、
+  失败自动重试、暂停与 10 分钟自动续跑。
+- 跨文件复用键修正：`cowrite.genInterrupted` 改为 `fullwriter.co.genInterrupted`（独立键更稳）。
+
+**验收**
+- `check:i18n` zh/en 各 2867、棘轮 **229 文件 / 8703 条**；`check:bundle` main.js →
+  **5966053**（+4945）；preflight EXIT=0（10303 通过+3）。
+- **写作工作台主流程全链路 i18n 迁完**（场景→向导→步骤→单元→干预→执行→批处理→编排）。
+
+**下一轮候选**：`ui/full-writer/` 长尾小模块（execution-run-store / batch-step-retry /
+entity-state-controller / context-loader / checkup-bar 等）→ 外观页统计与桌宠块 →
+跨层数据专项。

@@ -76,9 +76,8 @@
     "ui/fingerprint-library-modal.ts": 38,
     "ui/font-manager-modal.ts": 15,
     "ui/full-writer-view.ts": 30,
-    "ui/full-writer/batch-pipeline-runner.ts": 36,
+    "ui/full-writer/batch-pipeline-runner.ts": 7,
     "ui/full-writer/batch-targets.ts": 2,
-    "ui/full-writer/chapter-orchestrator.ts": 28,
     "ui/full-writer/checkup-bar-controller.ts": 30,
     "ui/full-writer/context-loader-controller.ts": 28,
     "ui/full-writer/cover-picker-controller.ts": 16,
@@ -231,7 +230,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 8760,
+  "total": 8703,
   "updatedAt": "2026-11-18",
   "note": ""
 }

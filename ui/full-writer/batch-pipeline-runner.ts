@@ -9,6 +9,7 @@
  * 不依赖 FullWriterView 的 DOM 状态：每个步骤执行前用模板重新填充 prompt。
  */
 import { App, TFile } from 'obsidian';
+import { t } from '@/i18n';
 import { writeSettlementArtifacts } from '@/engine/settlement/settlement-coordinator';
 import type NovelWriterPlugin from '@/main';
 import { ALL_FULL_STEPS, StepRunner } from '@/engine/step-runner';
@@ -76,7 +77,7 @@ export interface BatchPipelineOptions {
 /** 单步批量执行的墙钟上限（与一键流程 chapter-orchestrator 的 8 分钟一致） */
 const BATCH_STEP_TIMEOUT_MS = 8 * 60_000;
 
-async function withBatchStepTimeout<T>(promise: Promise<T>, controller?: AbortController, label = '步骤'): Promise<T> {
+async function withBatchStepTimeout<T>(promise: Promise<T>, controller?: AbortController, label = t('fullwriter.bp.defaultStepLabel')): Promise<T> {
     let timer: ReturnType<typeof setTimeout> | null = null;
     try {
         return await Promise.race([
@@ -84,7 +85,7 @@ async function withBatchStepTimeout<T>(promise: Promise<T>, controller?: AbortCo
             new Promise<T>((_, reject) => {
                 timer = setTimeout(() => {
                     controller?.abort();
-                    reject(new Error(`${label}超时（${Math.round(BATCH_STEP_TIMEOUT_MS / 60000)} 分钟），已中止`));
+                    reject(new Error(t('fullwriter.bp.stepTimeout', { label, minutes: Math.round(BATCH_STEP_TIMEOUT_MS / 60000) })));
                 }, BATCH_STEP_TIMEOUT_MS);
             }),
         ]);
@@ -177,7 +178,7 @@ export class BatchPipelineRunner {
                 target,
                 status: 'failed',
                 completedSteps: [],
-                error: `读取步骤文件失败（已中止以避免覆盖）：${this.stepReadFailures.slice(0, 3).join('、')}`,
+                error: t('fullwriter.bp.readStepFilesFailed', { files: this.stepReadFailures.slice(0, 3).join('、') }),
             };
         }
 
@@ -192,7 +193,7 @@ export class BatchPipelineRunner {
 
         for (const stepKey of BATCH_STEP_KEYS) {
             if (options.signal?.aborted) {
-                return { target, status: 'failed', completedSteps: completed, error: '已取消' };
+                return { target, status: 'failed', completedSteps: completed, error: t('fullwriter.bp.cancelled') };
             }
             if (options.resume !== false && ctx.stepCompleted.has(stepKey)) {
                 completed.push(stepKey);
@@ -210,7 +211,7 @@ export class BatchPipelineRunner {
             })) {
                 log.warn(
                     `[BatchPipeline] ${target.chapterName} 步骤 ${stepKey} 未产出内容，重试一次：`,
-                    outcome.error || '空内容',
+                    outcome.error || t('fullwriter.bp.emptyContent'),
                 );
                 attempts += 1;
                 outcome = await this.runStepOnce(ctx, stepKey);
@@ -222,7 +223,7 @@ export class BatchPipelineRunner {
                     status: 'failed',
                     completedSteps: completed,
                     failedStep: stepKey,
-                    error: options.signal?.aborted ? '已取消' : (outcome.error || `${stepKey} 未产出内容`),
+                    error: options.signal?.aborted ? t('fullwriter.bp.cancelled') : (outcome.error || t('fullwriter.bp.noOutput', { step: stepKey })),
                 };
             }
             completed.push(stepKey);
@@ -254,11 +255,11 @@ export class BatchPipelineRunner {
      */
     private async runStepOnce(ctx: StepRunCtx, stepKey: string): Promise<{ ok: boolean; error?: string }> {
         this.lastError = '';
-        if (ctx.getAbortController?.()?.signal.aborted) return { ok: false, error: '已取消' };
+        if (ctx.getAbortController?.()?.signal.aborted) return { ok: false, error: t('fullwriter.bp.cancelled') };
         try {
             await this.preparePrompt(ctx, stepKey);
             const step = ALL_FULL_STEPS.find(s => s.key === stepKey);
-            if (!step) throw new Error(`未找到步骤定义: ${stepKey}`);
+            if (!step) throw new Error(t('fullwriter.bp.stepDefMissing', { step: stepKey }));
             ctx.currentStepIndex = step.index;
             await withBatchStepTimeout(this.stepRunner.executeCurrentStep(ctx), ctx.getAbortController?.() ?? undefined, stepKey);
         } catch (e) {
@@ -268,21 +269,21 @@ export class BatchPipelineRunner {
 
         // A6: abort 后本次调用可能仍残留部分输出（流式半章），必须在保存前判定取消，
         // 否则会被当成正常结果，后续 chapter 也会基于错误状态继续。
-        if (ctx.getAbortController?.()?.signal.aborted) return { ok: false, error: '已取消' };
+        if (ctx.getAbortController?.()?.signal.aborted) return { ok: false, error: t('fullwriter.bp.cancelled') };
         const meta = ctx.stepMeta?.[stepKey];
         if (meta?.truncated) {
-            return { ok: false, error: `${stepKey} 输出被截断（${meta.model || '模型'} 上限 ${meta.maxTokens || '?'} tokens）` };
+            return { ok: false, error: t('fullwriter.bp.outputTruncated', { step: stepKey, model: meta.model || t('fullwriter.bp.modelFallback'), max: meta.maxTokens || '?' }) };
         }
         const content = (ctx.stepResults[stepKey] || '').trim();
-        if (!content) return { ok: false, error: this.lastError || `${stepKey} 未产出内容` };
+        if (!content) return { ok: false, error: this.lastError || t('fullwriter.bp.noOutput', { step: stepKey }) };
         // A4: 非空不等于已生成，模板骨架必须视为未产出并重试
         const pure = stripFrontmatter(content);
         if (isTemplateSkeleton(pure, stepKey)) {
-            return { ok: false, error: `${stepKey} 仍是模板骨架` };
+            return { ok: false, error: t('fullwriter.bp.stillSkeleton', { step: stepKey }) };
         }
         // 截断/半成品即使有内容也不能进入下一步或结算；StepRunner 只在 complete 时标记。
         if (!ctx.stepCompleted.has(stepKey)) {
-            return { ok: false, error: `${stepKey} 未达到完成标准` };
+            return { ok: false, error: t('fullwriter.bp.belowStandard', { step: stepKey }) };
         }
         return { ok: true };
     }
@@ -298,7 +299,7 @@ export class BatchPipelineRunner {
         }
         // 与交互式单步同一解析入口：vault 自定义 > 用户覆盖 > 内置。
         const template = await resolveStepPrompt(this.app, stepKey, vars);
-        if (!template) throw new Error(`缺少步骤模板: ${stepKey}`);
+        if (!template) throw new Error(t('fullwriter.bp.stepTemplateMissing', { step: stepKey }));
         if (template.unresolved.length > 0) {
             log.warn(`[BatchPipeline] ${stepKey} 模板存在未替换变量：${template.unresolved.join('、')}`);
         }
@@ -450,7 +451,7 @@ export class BatchPipelineRunner {
         const analysisReport = ctx.stepResults['analysisReport'] || '';
         const bodyText = stripFrontmatter(ctx.stepResults['bodyGeneration'] || '');
         if (!analysisReport.trim() || !bodyText.trim()) {
-            throw new Error('结算缺少分析报告或正文');
+            throw new Error(t('fullwriter.bp.settleMissingInput'));
         }
 
         const engine = this.plugin.engineRegistry.get(ENGINE_NAMES.SETTLEMENT_ENGINE);
@@ -458,17 +459,17 @@ export class BatchPipelineRunner {
 
         // 空指令集：引擎未执行任何写入，不能继续写快照/叙事总览，也不应把本章当已结算
         if (result.mode === 'empty') {
-            throw new Error('分析报告未解析出可应用指令（UPDATE_*/NEW_*/RELATION 等），结算未执行');
+            throw new Error(t('fullwriter.bp.noApplicableCommands'));
         }
 
         // 部分失败已回滚：本章按失败处理，不能写快照/总览或让批量续跑跳过。
         if (result.rollback || result.settlementPartial || result.partialFailure?.length) {
             const detail = result.rollback
-                ? `恢复 ${result.rollback.reverted} 项${result.rollback.failed > 0 ? `，回滚失败 ${result.rollback.failed} 项` : ''}`
+                ? t('fullwriter.bp.rollbackRestored', { count: result.rollback.reverted, failed: result.rollback.failed > 0 ? t('fullwriter.bp.rollbackFailedSuffix', { count: result.rollback.failed }) : '' })
                 : result.settlementPartial
-                    ? '回滚不完整'
-                    : `附加步骤失败：${result.partialFailure!.join('、')}`;
-            throw new Error(`结算失败${result.rollback ? '并已回滚' : ''}（${detail}），本章未完成`);
+                    ? t('fullwriter.bp.rollbackIncomplete')
+                    : t('fullwriter.bp.extraStepsFailed', { steps: result.partialFailure!.join('、') });
+            throw new Error(t('fullwriter.bp.settleFailed', { rolledBack: result.rollback ? t('fullwriter.bp.rolledBack') : '', detail }));
         }
 
         const artifactReport = await writeSettlementArtifacts({

@@ -6,6 +6,7 @@
  * 因此步骤文件、校验、截断标记、失效传播、手动重生成全部保留。
  */
 import { ALL_FULL_STEPS } from '@/engine/step-definitions';
+import { t } from '@/i18n';
 import type { StepRunCtx } from '@/engine/step-definitions';
 import { isBodySettled } from './batch-targets';
 import type { ChapterRunMode } from '@/shared/chapter-run';
@@ -234,7 +235,7 @@ export class ChapterOrchestrator {
      */
     async run(options: ChapterRunOptions = {}): Promise<ChapterRunResult> {
         if (this.running) {
-            return { status: 'failed', message: '已有章节生成任务在运行', aiCalls: 0 };
+            return { status: 'failed', message: t('fullwriter.co.jobRunning'), aiCalls: 0 };
         }
         this.running = true;
         this.pauseRequested = false;
@@ -255,7 +256,7 @@ export class ChapterOrchestrator {
         try {
             // 1) 上下文
             if (!state.stepCompleted.has('context')) {
-                report('context', 1, 1, '加载上下文...');
+                report('context', 1, 1, t('fullwriter.co.loadingContext'));
                 await this.deps.loadContext();
                 await this.render(tabContent);
             }
@@ -282,7 +283,7 @@ export class ChapterOrchestrator {
                 if (plan.useCombinedPlanning) {
                     currentStepKey = 'infoPlan';
                     await this.activateStep('infoPlan', ctx);
-                    await beforeAction('planning', '合并生成全章规划（1 次 AI）...');
+                    await beforeAction('planning', t('fullwriter.co.mergedPlanning'));
                     aiCalls += 1;
                     const result = await this.deps.stepRunner.executePlanningCombined(ctx, { signal });
                     await this.render(tabContent);
@@ -294,7 +295,7 @@ export class ChapterOrchestrator {
                     const missingAfterCombined = CHAPTER_PLANNING_KEYS.filter(k => !state.stepCompleted.has(k));
                     for (const key of missingAfterCombined) {
                         currentStepKey = key;
-                        await beforeAction('planning', `补生成 ${key}（1 次 AI）...`);
+                        await beforeAction('planning', t('fullwriter.co.fillPlanning', { key }));
                         aiCalls += 1;
                         await this.runOneStep(key, ctx, tabContent);
                         await this.afterAction();
@@ -302,12 +303,12 @@ export class ChapterOrchestrator {
                     }
                     if (!result.success && missingAfterCombined.length === 0) {
                         // 合并接口报失败但模块齐全（例如只是尾部解析告警）：继续后续流程
-                        this.deps.showNotice?.('合并规划有告警，但必要的规划模块已齐全，继续生成');
+                        this.deps.showNotice?.(t('fullwriter.co.planningWarnContinue'));
                     }
                 } else {
                     for (const key of [...plan.missingPlanning]) {
                         currentStepKey = key;
-                        await beforeAction('planning', `生成 ${key}（1 次 AI）...`);
+                        await beforeAction('planning', t('fullwriter.co.generateModule', { key }));
                         aiCalls += 1;
                         await this.runOneStep(key, ctx, tabContent);
                         await this.afterAction();
@@ -320,7 +321,7 @@ export class ChapterOrchestrator {
             // 规划必须 5 步齐全才进入正文；缺任何一步都停在这里，避免正文基于残缺规划生成
             const missingPlanning = CHAPTER_PLANNING_KEYS.filter(k => !state.stepCompleted.has(k));
             if (missingPlanning.length > 0) {
-                this.deps.showError(`规划不完整（缺少 ${missingPlanning.join('、')}），已停止在本步；可重试或单独生成`, 8000);
+                this.deps.showError(t('fullwriter.co.planningIncomplete', { missing: missingPlanning.join('、') }), 8000);
                 return this.finish('failed', aiCalls, missingPlanning[0]);
             }
 
@@ -334,7 +335,7 @@ export class ChapterOrchestrator {
             // 3) 正文
             if (plan.runBody) {
                 currentStepKey = 'bodyGeneration';
-                await beforeAction('body', '生成正文（1 次 AI，流式）...');
+                await beforeAction('body', t('fullwriter.co.generateBody'));
                 aiCalls += 1;
                 await this.runOneStep('bodyGeneration', ctx, tabContent);
                 await this.afterAction();
@@ -351,7 +352,7 @@ export class ChapterOrchestrator {
             // 4) 质量控制
             if (plan.runQuality) {
                 currentStepKey = 'qualityControl';
-                await beforeAction('quality', '质量控制（1 次 AI）...');
+                await beforeAction('quality', t('fullwriter.co.qualityControl'));
                 aiCalls += 1;
                 await this.runOneStep('qualityControl', ctx, tabContent);
                 await this.afterAction();
@@ -368,7 +369,7 @@ export class ChapterOrchestrator {
             // 5) 分析报告
             if (plan.runAnalysis) {
                 currentStepKey = 'analysisReport';
-                await beforeAction('analysis', '分析报告（1 次 AI）...');
+                await beforeAction('analysis', t('fullwriter.co.analysisReport'));
                 aiCalls += 1;
                 await this.runOneStep('analysisReport', ctx, tabContent);
                 await this.afterAction();
@@ -387,13 +388,13 @@ export class ChapterOrchestrator {
                 ctx.setCurrentStepIndex(10);
                 state.currentStepIndex = 10;
                 await this.render(tabContent);
-                await beforeAction('settlement', '章节结算...');
+                await beforeAction('settlement', t('fullwriter.co.settlement'));
                 await this.deps.settle();
                 await this.render(tabContent);
                 await this.afterAction();
             }
 
-            this.deps.showSuccess(`本章完成：${state.stepCompleted.has('settlement') ? '含结算' : '正文/审查已完成'}（${aiCalls} 次 AI）`, 6000);
+            this.deps.showSuccess(t('fullwriter.co.chapterDone', { settled: state.stepCompleted.has('settlement') ? t('fullwriter.co.withSettlement') : t('fullwriter.co.bodyReviewDone'), calls: aiCalls }), 6000);
             return this.finish('completed', aiCalls);
         } catch (e) {
             if (signal.aborted) return this.finish('cancelled', aiCalls);
@@ -403,7 +404,7 @@ export class ChapterOrchestrator {
                 && !this._retriedThisRun;
             if (retryable) {
                 this._retriedThisRun = true;
-                this.deps.showNotice?.(`⚠️ ${message}，3 秒后自动重试…`, 6000);
+                this.deps.showNotice?.(t('fullwriter.co.autoRetry', { msg: message }), 6000);
                 await new Promise(resolve => setTimeout(resolve, this.deps.retryDelayMs ?? 3000));
                 if (signal.aborted) return this.finish('cancelled', aiCalls);
                 // 递归重跑前必须先释放运行锁：外层 finally 还没执行，running 仍为 true，
@@ -414,11 +415,11 @@ export class ChapterOrchestrator {
                     return await this.run(options);
                 } catch (retryError) {
                     const retryMsg = retryError instanceof Error ? retryError.message : String(retryError);
-                    this.deps.showError(`重试后仍失败：${retryMsg}`, 8000);
+                    this.deps.showError(t('fullwriter.co.retryStillFailed', { msg: retryMsg }), 8000);
                     return this.finish('failed', aiCalls, currentStepKey || undefined, retryMsg);
                 }
             }
-            this.deps.showError(`章节生成中断：${message}`, 8000);
+            this.deps.showError(t('fullwriter.co.genInterrupted', { reason: message }), 8000);
             return this.finish('failed', aiCalls, currentStepKey || undefined, message);
         } finally {
             this.running = false;
@@ -443,7 +444,7 @@ export class ChapterOrchestrator {
         const timeout = new Promise<never>((_, reject) => {
             timer = setTimeout(() => {
                 this.abortController?.abort();
-                reject(new Error(`步骤 ${stepKey} 超时（${Math.round(timeoutMs / 60000)} 分钟），已中止请求`));
+                reject(new Error(t('fullwriter.co.stepTimeout', { step: stepKey, minutes: Math.round(timeoutMs / 60000) })));
             }, timeoutMs);
         });
         try {
@@ -458,10 +459,10 @@ export class ChapterOrchestrator {
             // 可选步骤（质量控制/分析报告）保存 partial 内容后应继续，让结算与修订闭环照常走。
             const stepDef = ALL_FULL_STEPS.find(s => s.key === stepKey);
             if (stepDef?.required) {
-                throw new Error(`${stepKey} 未达到完成标准`);
+                throw new Error(t('fullwriter.bp.belowStandard', { step: stepKey }));
             }
             const warn = this.deps.showWarning ?? this.deps.showError;
-            warn(`⚠️ ${stepKey} 已保存但未达完成标准（部分小节缺失），已继续后续步骤；可单独重跑本步补齐`, 8000);
+            warn(t('fullwriter.co.savedBelowStandard', { step: stepKey }), 8000);
         }
     }
 
@@ -475,14 +476,14 @@ export class ChapterOrchestrator {
 
     private async waitIfPaused(): Promise<void> {
         if (!this.pauseRequested) return;
-        this.deps.showNotice('⏸️ 已在当前步骤结束后暂停；点击“继续”恢复（10 分钟无操作将自动继续）', 6000);
+        this.deps.showNotice(t('fullwriter.co.pausedNotice'), 6000);
         await new Promise<void>(resolve => {
             this.resumeResolver = resolve;
             this.resumeTimer = setTimeout(() => {
                 this.resumeTimer = null;
                 this.pauseRequested = false;
                 this.resumeResolver = null;
-                this.deps.showNotice('⏱️ 暂停已超过 10 分钟，自动继续后续步骤', 8000);
+                this.deps.showNotice(t('fullwriter.co.pauseAutoResume'), 8000);
                 resolve();
             }, 10 * 60_000);
         });
