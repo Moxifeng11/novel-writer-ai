@@ -7,6 +7,7 @@
  * renderTab / checkChaptersComplete）。
  */
 import { App, Notice } from 'obsidian';
+import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { AIEngine } from '@/engine/ai-engine';
 import { WizardTab, WizardStep } from './wizard-types';
@@ -112,7 +113,7 @@ export class WizardStepExecutors {
             }
         } catch (e) {
             log.error(`[Wizard] Step ${step.id} execution error:`, e);
-            showErrorNotice(`${step.label} 执行失败: ${e}`, { timeout: 8000 });
+            showErrorNotice(t('cowrite.wiz.execFailed', { step: step.label, msg: String(e) }), { timeout: 8000 });
             step.status = 'retry';
         } finally {
             this.wizardStepExecuting.delete(step.id);
@@ -146,14 +147,14 @@ export class WizardStepExecutors {
         }
         if (!content.trim()) {
             step.status = 'pending';
-            new Notice('⚠️ 请先保存同人设定，再执行此步骤', 6000);
+            new Notice(t('cowrite.wiz.saveFanficFirst'), 6000);
             return;
         }
 
         const validation = isFanficSettingsContentValidEnough(content);
         if (!validation.valid) {
             step.status = 'pending';
-            showWarningNotice(`同人设定缺少字段: ${validation.missingFields.slice(0, 5).join(', ')}`, { timeout: 8000 });
+            showWarningNotice(t('cowrite.wiz.fanficMissing', { fields: validation.missingFields.slice(0, 5).join(', ') }), { timeout: 8000 });
             return;
         }
 
@@ -169,8 +170,7 @@ export class WizardStepExecutors {
             await writeVaultText(this.app, pendingPath, content);
             step.status = 'pending';
             showWarningNotice(
-                `同人设定尚未通过审核（当前：${reviewStatus === 'rejected' ? '已驳回' : '待审核'}），`
-                + `已存入「_待审核」且不会参与写作。请到同人设定库审核通过后重新执行此步骤。\n${pendingPath}`,
+                t('cowrite.wiz.fanficPendingReview', { status: reviewStatus === 'rejected' ? t('cowrite.wiz.reviewRejected') : t('cowrite.wiz.reviewPending'), path: pendingPath }),
                 { timeout: 12000 },
             );
             return;
@@ -183,9 +183,9 @@ export class WizardStepExecutors {
 
         step.status = 'done';
         if (parseFanficReviewStatus(content) === 'legacy') {
-            showSuccessNotice('同人设定已保存并通过校验（旧文件无审核记录，建议在同人设定库重新审核）', { timeout: 6000 });
+            showSuccessNotice(t('cowrite.wiz.fanficSavedNoReview'), { timeout: 6000 });
         } else {
-            showSuccessNotice('同人设定已保存并通过校验', { timeout: 3000 });
+            showSuccessNotice(t('cowrite.wiz.fanficSavedValidated'), { timeout: 3000 });
         }
         // v3.5: 移除弹窗——内容通过步骤内联展示
     }
@@ -225,7 +225,7 @@ export class WizardStepExecutors {
                 undefined,
                 (phase: string, module?: string) => {
                     if (module) {
-                        const text = `正在生成：${module}`;
+                        const text = t('cowrite.wiz.generatingModule', { module });
                         this.wizardStepResults['_worldviewProgress'] = text;
                         updateProgress(text);
                     } else {
@@ -245,15 +245,15 @@ export class WizardStepExecutors {
             this.wizardStepResults['worldview'] = result;
             if (validation.valid) {
                 step.status = 'done';
-                showSuccessNotice('世界观生成成功，通过校验', { timeout: 3000 });
+                showSuccessNotice(t('cowrite.wiz.wvSavedValidated'), { timeout: 3000 });
             } else {
                 step.status = 'complete_with_warnings';
-                showWarningNotice(`世界观已生成，但缺少: ${validation.missingFields.slice(0, 5).join(', ')}。可点击"重新生成"重试。`, { timeout: 8000 });
+                showWarningNotice(t('cowrite.wiz.wvMissingFields', { fields: validation.missingFields.slice(0, 5).join(', ') }), { timeout: 8000 });
             }
             // v3.5: 移除弹窗——Modal 在 Obsidian 主窗口打开，遮挡工作台"下一步"按钮
         } else {
             step.status = 'retry';
-            showErrorNotice(failure || '未知错误，请检查 API 密钥与网络', { title: '世界观生成失败', timeout: 10000 });
+            showErrorNotice(failure || t('cowrite.wiz.unknownErrorCheckApi'), { title: t('cowrite.wiz.wvFailedTitle'), timeout: 10000 });
         }
     }
 
@@ -270,17 +270,17 @@ export class WizardStepExecutors {
             if (validation.valid) {
                 step.status = 'done';
                 log.warn('[Wizard:setting_lib] step.status 设为 done, tab.currentStepIdx=', tab.currentStepIdx);
-                showSuccessNotice('设定库已生成并通过校验', { timeout: 3000 });
+                showSuccessNotice(t('cowrite.wiz.slSavedValidated'), { timeout: 3000 });
             } else {
                 step.status = 'complete_with_warnings';
                 log.warn('[Wizard:setting_lib] 内容不完整:', validation.missingFields);
-                showWarningNotice(`设定库已生成，但缺少：${validation.missingFields.slice(0, 5).join('、')}。请重新生成或跳过此步骤。`, { timeout: 8000 });
+                showWarningNotice(t('cowrite.wiz.slMissingFields', { fields: validation.missingFields.slice(0, 5).join('、') }), { timeout: 8000 });
             }
             // v4.5: 不再此处 render，由 finally 统一刷新
         } else {
             step.status = 'retry';
             log.warn('[Wizard:setting_lib] AI 返回空, step.status 设为 retry');
-            showErrorNotice('设定库生成失败，请重试', { timeout: 5000 });
+            showErrorNotice(t('cowrite.wiz.slFailedRetry'), { timeout: 5000 });
         }
     }
 
@@ -295,10 +295,10 @@ export class WizardStepExecutors {
                 if (result.valid) {
                     step.status = 'done';
                     this.wizardStepResults['writing_style'] = 'done';
-                    showSuccessNotice(saved ? '文笔风格已保存并通过校验' : '检测到完整文笔风格，标记为完成', { timeout: 3000 });
+                    showSuccessNotice(saved ? t('cowrite.wiz.styleSavedValidated') : t('cowrite.wiz.styleDetectedComplete'), { timeout: 3000 });
                 } else {
                     step.status = 'complete_with_warnings';
-                    showWarningNotice(`文笔风格不完整，缺少：${result.missingFields.slice(0, 5).join('、')}。请重新生成或跳过此步骤。`, { timeout: 8000 });
+                    showWarningNotice(t('cowrite.wiz.styleMissingFields', { fields: result.missingFields.slice(0, 5).join('、') }), { timeout: 8000 });
                 }
                 resolve();
             };
@@ -316,15 +316,15 @@ export class WizardStepExecutors {
                 const outlineContent = await readMergedVolumeOutline(this.app, tab.project);
                 if (outlineContent.trim().length === 0) {
                     step.status = 'pending';
-                    showWarningNotice('未检测到分卷大纲文件，请重新生成', { timeout: 5000 });
+                    showWarningNotice(t('cowrite.wiz.noOutlineFile'), { timeout: 5000 });
                 } else {
                     const validation = validateOutlineOutput(outlineContent);
                     if (validation.valid) {
                         step.status = 'done';
-                        showSuccessNotice('全书规划已完成并通过校验', { timeout: 3000 });
+                        showSuccessNotice(t('cowrite.wiz.planSavedValidated'), { timeout: 3000 });
                     } else {
                         step.status = 'complete_with_warnings';
-                        showWarningNotice(`分卷大纲不完整，缺少：${validation.missingFields.slice(0, 5).join('、')}。请重新生成或跳过此步骤。`, { timeout: 8000 });
+                        showWarningNotice(t('cowrite.wiz.outlineMissingFields', { fields: validation.missingFields.slice(0, 5).join('、') }), { timeout: 8000 });
                     }
                 }
                 resolve();
@@ -344,7 +344,7 @@ export class WizardStepExecutors {
                     const validation = await validateWizardStepContent(this.app, tab.project, 'chapters');
                     if (!validation.valid) {
                         step.status = 'complete_with_warnings';
-                        showWarningNotice(`章节内容不完整：${validation.missingFields.slice(0, 3).join('、')}。请重新创建或跳过此步骤。`, { timeout: 8000 });
+                        showWarningNotice(t('cowrite.wiz.chapterMissingFields', { fields: validation.missingFields.slice(0, 3).join('、') }), { timeout: 8000 });
                         resolve();
                         return;
                     }
@@ -360,10 +360,10 @@ export class WizardStepExecutors {
                     log.debug(`[Wizard:chapters] 已创建 ${chapterFiles.length} 个章节文件，project=${tab.project}`);
                     log.debug(`[Wizard:chapters] ChapterContext 数据来源：write-chapter-modal 将通过 ContextManager.buildPromptSection 从磁盘读取 worldview/settingLib/characters/timeline`);
                     log.debug(`[Wizard:chapters] wizardStepResults 缓存：worldview=${hasWorldview}, settingLib=${hasSettingLib}（写作工作台不依赖此缓存，读磁盘）`);
-                    showSuccessNotice(`已创建 ${chapterFiles.length} 个章节文件`, { timeout: 3000 });
+                    showSuccessNotice(t('cowrite.wiz.chaptersCreated', { count: chapterFiles.length }), { timeout: 3000 });
                 } else {
                     step.status = 'pending';
-                    showWarningNotice('未检测到章节文件，请重新创建', { timeout: 5000 });
+                    showWarningNotice(t('cowrite.wiz.noChapterFiles'), { timeout: 5000 });
                 }
                 resolve();
             };

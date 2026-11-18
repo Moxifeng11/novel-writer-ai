@@ -2302,3 +2302,24 @@ template-vars 相反，主体为表单标签/按钮/页签/Notice）93 对替换
 
 **下一轮候选**：wizard 群（wizard-controller 62 / step-renderers 213 / step-executors 61，需甄别）→
 step-render-controller 106 → unit-writer-controller 98 → 外观页统计/桌宠块。
+
+## 第八十一轮：i18n 第二期第24片 —— 向导群（2026-11-19，ZCode · ZC-20261119-14）
+
+**改动**
+- wizard 群三模块迁完（`cowrite.wiz.*` ≈ 152 键）：
+  `wizard-step-renderers.ts`（107 对 + 1 处缩进差异手工补：故事结构卡/同人表单 9 字段/
+  设定库/文笔风格/全书规划/批量建章/完成统计/实体生成四卡/世界观全步骤）、
+  `wizard-controller.ts`（20 对：向导页签/步骤导航/上一步下一步/执行/跳过/重新生成）、
+  `wizard-step-executors.ts`（21 对 + 1 处多行 Notice 按行替换：各步执行结果 Notice 与校验警告）。
+- 保留数据：`addField` 第二参数（frontmatter 字段键，`作品名称` 等）、
+  `getStoryOptionLabel`（shared/story-structure 选项标签）、wizard 步骤定义 label（数据）、
+  vault 路径与正则、`window.confirm` 行为串。
+
+**验收**
+- `check:i18n` zh/en 各 2683、棘轮收紧到 **231 文件 / 8987 条**（-185，三模块大幅下降，
+  剩余为 frontmatter 字段键数据）；`check:bundle` main.js → **5943160**（+15869）；
+  preflight EXIT=0（10303 通过+3）。
+
+**下一轮候选**：step-render-controller 106 → unit-writer-controller 98 → flow-tab / intervention
+-controller 68 / batch-pipeline-runner 79 / chapter-orchestrator 71（均需甄别）→
+外观页统计/桌宠块。

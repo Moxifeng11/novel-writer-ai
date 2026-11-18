@@ -11,7 +11,7 @@
 | `shared/` | 258 | 51769 | 2179 | 1700 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 115156 | 1180 | 930 | 79% |
+| `ui/` | 306 | 115158 | 1180 | 930 | 79% |
 
 ## 文件清单
 
@@ -862,11 +862,11 @@
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |
 | `ui/full-writer/unit-writer-controller.ts` | 797 | 2 | 2 |
-| `ui/full-writer/wizard-controller.ts` | 420 | 1 | 1 |
+| `ui/full-writer/wizard-controller.ts` | 421 | 1 | 1 |
 | `ui/full-writer/wizard-results-store.ts` | 81 | 1 | 1 |
 | `ui/full-writer/wizard-step-executors.ts` | 374 | 1 | 1 |
 | `ui/full-writer/wizard-step-logic.ts` | 78 | 6 | 5 |
-| `ui/full-writer/wizard-step-renderers.ts` | 946 | 1 | 1 |
+| `ui/full-writer/wizard-step-renderers.ts` | 947 | 1 | 1 |
 | `ui/full-writer/wizard-step-validators.ts` | 151 | 2 | 2 |
 | `ui/full-writer/wizard-types.ts` | 77 | 5 | 3 |
 | `ui/full-writer/wizard-view-access.ts` | 45 | 2 | 2 |

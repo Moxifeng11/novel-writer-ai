@@ -105,10 +105,10 @@
     "ui/full-writer/template-vars-builder.ts": 239,
     "ui/full-writer/title-bar-controller.ts": 2,
     "ui/full-writer/unit-writer-controller.ts": 92,
-    "ui/full-writer/wizard-controller.ts": 30,
+    "ui/full-writer/wizard-controller.ts": 3,
     "ui/full-writer/wizard-results-store.ts": 4,
-    "ui/full-writer/wizard-step-executors.ts": 42,
-    "ui/full-writer/wizard-step-renderers.ts": 150,
+    "ui/full-writer/wizard-step-executors.ts": 10,
+    "ui/full-writer/wizard-step-renderers.ts": 24,
     "ui/full-writer/wizard-step-validators.ts": 12,
     "ui/full-writer/wizard-types.ts": 25,
     "ui/generate-character-modal.ts": 111,
@@ -232,7 +232,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 9172,
+  "total": 8987,
   "updatedAt": "2026-11-18",
   "note": ""
 }

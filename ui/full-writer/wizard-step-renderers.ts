@@ -7,6 +7,7 @@
  * executeWizardStep / renderTab）。
  */
 import { App, Notice, TFile } from 'obsidian';
+import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { WizardTab, WizardStep } from './wizard-types';
 import {
@@ -85,9 +86,9 @@ export class WizardStepRenderers {
 
         const card = container.createDiv({ cls: 'nw-wizard-story-structure' });
         if (!settings) {
-            card.createEl('h4', { text: '🧬 先确定故事结构' });
+            card.createEl('h4', { text: t('cowrite.wiz.structureTitle') });
             card.createEl('p', {
-                text: '选择起承转合、三幕式、五幕式、英雄之旅或序破急，并配置主角、冲突、力量体系；结构会作为硬约束注入后续每一步提示词。',
+                text: t('cowrite.wiz.structureDesc'),
                 cls: 'nw-text-12-muted',
             });
         } else {
@@ -98,14 +99,14 @@ export class WizardStepRenderers {
             card.createEl('p', { text: structure.description, cls: 'nw-text-12-muted' });
             const grid = card.createDiv({ cls: 'nw-wizard-story-settings' });
             const fields: Array<[string, string]> = [
-                ['主角起点', getStoryOptionLabel('protagonistStart', settings.protagonistStart)],
-                ['核心冲突', getStoryOptionLabel('coreConflict', settings.coreConflict)],
-                ['力量体系', getStoryOptionLabel('powerSystem', settings.powerSystem)],
-                ['金手指', getStoryOptionLabel('goldenFinger', settings.goldenFinger)],
-                ['人物原型', getStoryOptionLabel('archetype', settings.archetype)],
-                ['主角性格', getStoryOptionLabel('temperament', settings.temperament)],
-                ['叙事基调', getStoryOptionLabel('tone', settings.tone)],
-                ['推进节奏', getStoryOptionLabel('pacing', settings.pacing)],
+                [t('cowrite.wiz.optProtagonistStart'), getStoryOptionLabel('protagonistStart', settings.protagonistStart)],
+                [t('cowrite.wiz.optCoreConflict'), getStoryOptionLabel('coreConflict', settings.coreConflict)],
+                [t('cowrite.wiz.optPowerSystem'), getStoryOptionLabel('powerSystem', settings.powerSystem)],
+                [t('cowrite.wiz.optGoldenFinger'), getStoryOptionLabel('goldenFinger', settings.goldenFinger)],
+                [t('cowrite.wiz.optArchetype'), getStoryOptionLabel('archetype', settings.archetype)],
+                [t('cowrite.wiz.optTemperament'), getStoryOptionLabel('temperament', settings.temperament)],
+                [t('cowrite.wiz.optTone'), getStoryOptionLabel('tone', settings.tone)],
+                [t('cowrite.wiz.optPacing'), getStoryOptionLabel('pacing', settings.pacing)],
             ];
             for (const [label, value] of fields) {
                 const item = grid.createDiv({ cls: 'nw-wizard-story-setting' });
@@ -118,7 +119,7 @@ export class WizardStepRenderers {
         }
 
         const editBtn = card.createEl('button', {
-            text: settings ? '✏️ 编辑故事结构' : '🧬 配置故事结构',
+            text: settings ? t('cowrite.wiz.editStructureBtn') : t('cowrite.wiz.configStructureBtn'),
             cls: 'nw-btn nw-btn-primary',
             attr: { type: 'button' },
         });
@@ -164,7 +165,7 @@ export class WizardStepRenderers {
             return m ? m[1].trim() : '';
         };
         
-        container.createEl('p', { text: '⚠️ 同人创作必须设定原作信息，否则后续章节全部 OOC！', cls: 'nw-wizard-warn-box' });
+        container.createEl('p', { text: t('cowrite.wiz.fanficWarn'), cls: 'nw-wizard-warn-box' });
 
         const form = container.createDiv({ cls: 'nw-wizard-form-grid' });
         
@@ -201,26 +202,26 @@ export class WizardStepRenderers {
             return input;
         };
         
-        addField('作品名称 *', '作品名称');
-        addField('作品类型 *', '作品类型');
-        addField('作者 *', '作者');
-        addField('世界观类型 *', '世界观类型');
-        addField('力量体系 *', '力量体系');
-        addField('核心规则 *', '核心规则');
-        addField('必须遵守的原作规则 *', '必须遵守的原作规则', 'textarea');
-        addField('允许改编的范围 *', '允许改编的范围', 'textarea');
-        addField('禁止触及的红线 *', '禁止触及的红线', 'textarea');
+        addField(t('cowrite.wiz.fWorkName'), '作品名称');
+        addField(t('cowrite.wiz.fWorkType'), '作品类型');
+        addField(t('cowrite.wiz.fAuthor'), '作者');
+        addField(t('cowrite.wiz.fWorldviewType'), '世界观类型');
+        addField(t('cowrite.wiz.fPowerSystem'), '力量体系');
+        addField(t('cowrite.wiz.fCoreRules'), '核心规则');
+        addField(t('cowrite.wiz.fMustFollow'), '必须遵守的原作规则', 'textarea');
+        addField(t('cowrite.wiz.fAllowedAdapt'), '允许改编的范围', 'textarea');
+        addField(t('cowrite.wiz.fForbidden'), '禁止触及的红线', 'textarea');
         
         // Save button
         const saveBtn = container.createEl('button', { 
-            text: '💾 保存同人设定', 
+            text: t('cowrite.wiz.saveFanficBtn'), 
             cls: 'nw-wizard-secondary-btn nw-wizard-secondary-btn--mt12' 
         });
         saveBtn.addEventListener('click', async () => {
             const values = collectFanficValues();
             const missing = missingFanficValueLabels(values);
             if (missing.length > 0) {
-                new Notice(`⚠️ 请补全同人设定字段: ${missing.slice(0, 5).join(', ')}`, 6000);
+                new Notice(t('cowrite.wiz.fanficMissing', { fields: missing.slice(0, 5).join(', ') }), 6000);
                 return;
             }
             const content = buildFanficSettingsContent(values);
@@ -228,12 +229,12 @@ export class WizardStepRenderers {
             await writeVaultText(this.app, path, content);
             await attachFanficPathToProject(this.app, tab.project, path);
             this.wizardStepResults[fanficResultKey] = content;
-            showSuccessNotice(`同人设定已保存: ${path}`, { timeout: 3000 });
+            showSuccessNotice(t('cowrite.wiz.fanficSaved', { path }), { timeout: 3000 });
             this.renderTab(tab, true);
         });
         
         if (saved) {
-            container.createEl('p', { text: '📝 已有暂存设定，修改后请重新保存。', cls: 'nw-wizard-hint nw-wizard-hint--accent' });
+            container.createEl('p', { text: t('cowrite.wiz.draftExists'), cls: 'nw-wizard-hint nw-wizard-hint--accent' });
         }
 
         // 已存在设定文件（手写/拷入/旧项目遗留）时提供绑定入口：此前只能逐字段重填或手改 .project
@@ -241,7 +242,7 @@ export class WizardStepRenderers {
         if (candidates.length > 0) {
             const bindBox = container.createDiv({ cls: 'nw-wizard-bind-box' });
             bindBox.createEl('p', {
-                text: '🔗 项目里已有同人设定文件，可直接绑定（会把内容填入上方表单，保存时覆盖该文件）',
+                text: t('cowrite.wiz.bindHint'),
                 cls: 'nw-wizard-bind-note'
             });
             const select = bindBox.createEl('select', { cls: 'nw-wizard-field' });
@@ -249,34 +250,34 @@ export class WizardStepRenderers {
                 select.createEl('option', { text: `${candidate.name}（${candidate.path}）`, value: candidate.path });
             }
             const bindBtn = bindBox.createEl('button', {
-                text: '🔗 绑定所选文件',
+                text: t('cowrite.wiz.bindBtn'),
                 cls: 'nw-wizard-secondary-btn nw-wizard-secondary-btn--mt8'
             });
             bindBtn.addEventListener('click', async () => {
                 const path = select.value;
                 const file = this.app.vault.getAbstractFileByPath(path);
                 if (!(file instanceof TFile)) {
-                    showErrorNotice('文件不存在，可能已被移动或删除', { timeout: 6000 });
+                    showErrorNotice(t('cowrite.wiz.fileMissing'), { timeout: 6000 });
                     return;
                 }
                 let content = '';
                 try {
                     content = await this.app.vault.read(file);
                 } catch {
-                    showErrorNotice('读取失败，请检查文件权限后重试', { timeout: 6000 });
+                    showErrorNotice(t('cowrite.wiz.readFailed'), { timeout: 6000 });
                     return;
                 }
                 if (!content.trim()) {
-                    new Notice('❌ 该同人设定文件为空，无法绑定', 6000);
+                    new Notice(t('cowrite.wiz.emptyFile'), 6000);
                     return;
                 }
                 await attachFanficPathToProject(this.app, tab.project, path);
                 this.wizardStepResults[fanficResultKey] = content;
                 const check = isFanficSettingsContentValidEnough(content);
                 if (check.valid) {
-                    showSuccessNotice(`已绑定：${path}`, { timeout: 8000 });
+                    showSuccessNotice(t('cowrite.wiz.bound', { path }), { timeout: 8000 });
                 } else {
-                    showWarningNotice(`已绑定 ${path}，但仍缺少：${check.missingFields.slice(0, 5).join('、')}。请补全后点「保存同人设定」。`, { timeout: 8000 });
+                    showWarningNotice(t('cowrite.wiz.boundMissing', { path, fields: check.missingFields.slice(0, 5).join('、') }), { timeout: 8000 });
                 }
                 this.renderTab(tab, true);
             });
@@ -369,25 +370,25 @@ export class WizardStepRenderers {
         // 显示模块信息
         if (detectedModules.length > 0) {
             container.createEl('p', { 
-                text: `📚 已生成 ${detectedModules.length} 个模块：${detectedModules.join('、')}`, 
+                text: t('cowrite.wiz.slGenerated', { count: detectedModules.length, modules: detectedModules.join('、') }), 
                 cls: 'nw-wizard-note nw-wizard-note--sm' 
             });
         } else {
             container.createEl('p', { 
-                text: `📚 包含 ${SL_SECTIONS.length} 个模块：${SL_SECTIONS.join('、')}`, 
+                text: t('cowrite.wiz.slContains', { count: SL_SECTIONS.length, modules: SL_SECTIONS.join('、') }), 
                 cls: 'nw-wizard-note nw-wizard-note--sm' 
             });
         }
         
         if (!hasWorldview) {
-            container.createEl('p', { text: '⚠️ 未检测到世界观总览，请先生成世界观再生成设定库。', cls: 'nw-wizard-status nw-wizard-status--warning' });
+            container.createEl('p', { text: t('cowrite.wiz.noWorldview'), cls: 'nw-wizard-status nw-wizard-status--warning' });
             return;
         }
         
         // v4.5: 通用按钮工厂，复用 isExecuting 处理
         const makeViewBtn = () => {
             const viewBtn = container.createEl('button', {
-                text: '📖 查看设定库',
+                text: t('cowrite.wiz.viewSettingLib'),
                 cls: 'nw-wizard-file-btn'
             });
             viewBtn.addEventListener('click', () => {
@@ -398,7 +399,7 @@ export class WizardStepRenderers {
         
         const makeRegenBtn = () => {
             const regenBtn = container.createEl('button', {
-                text: isExecuting ? '⏳ 生成中...' : '🔄 重新生成',
+                text: isExecuting ? t('cowrite.generating') : t('cowrite.wiz.regenerate'),
                 cls: 'nw-wizard-warn-btn'
             });
             if (isExecuting) {
@@ -411,42 +412,42 @@ export class WizardStepRenderers {
         
         // 执行中状态统一处理
         if (isExecuting) {
-            container.createEl('p', { text: '⏳ 设定库正在生成中，请稍候...', cls: 'nw-wizard-status nw-wizard-status--accent' });
+            container.createEl('p', { text: t('cowrite.wiz.slGenerating'), cls: 'nw-wizard-status nw-wizard-status--accent' });
             // 执行中显示禁用按钮 + 动画进度条
             makeViewBtn();
             const disabledBtn = makeRegenBtn();
-            disabledBtn.textContent = '⏳ 生成中...';
+            disabledBtn.textContent = t('cowrite.generating');
             // 添加脉冲动画进度条
             const barTrack = container.createDiv({ cls: 'nw-wizard-progress-track' });
             barTrack.createDiv({ cls: 'nw-wizard-progress-bar' });
-            container.createEl('p', { text: `目标项目: ${tab.project}`, cls: 'nw-wizard-target' });
+            container.createEl('p', { text: t('cowrite.wiz.targetProject', { project: tab.project }), cls: 'nw-wizard-target' });
             return;
         }
         
         if (isDone) {
             if (slFile) {
-                container.createEl('p', { text: '✅ 设定库已生成。', cls: 'nw-wizard-status nw-wizard-status--success' });
+                container.createEl('p', { text: t('cowrite.wiz.slDone'), cls: 'nw-wizard-status nw-wizard-status--success' });
                 makeViewBtn();
                 makeRegenBtn();
             }
         }
         else if (isRetry) {
-            container.createEl('p', { text: '❌ 设定库生成失败，请检查 API 配置后重试。', cls: 'nw-wizard-status nw-wizard-status--error' });
+            container.createEl('p', { text: t('cowrite.wiz.slFailed'), cls: 'nw-wizard-status nw-wizard-status--error' });
             if (slFile) {
-                container.createEl('p', { text: '📄 检测到设定库文件（可能不完整），可先查看。', cls: 'nw-wizard-status nw-wizard-status--accent nw-wizard-status--sm' });
+                container.createEl('p', { text: t('cowrite.wiz.slPartialView'), cls: 'nw-wizard-status nw-wizard-status--accent nw-wizard-status--sm' });
                 makeViewBtn();
             }
             makeRegenBtn();
         }
         else {
             if (slFile) {
-                container.createEl('p', { text: '📄 检测到设定库文件，内容可能尚未填写完整。', cls: 'nw-wizard-status nw-wizard-status--accent' });
+                container.createEl('p', { text: t('cowrite.wiz.slPartial'), cls: 'nw-wizard-status nw-wizard-status--accent' });
                 makeViewBtn();
                 makeRegenBtn();
             }
         }
         
-        container.createEl('p', { text: `目标项目: ${tab.project}`, cls: 'nw-wizard-target' });
+        container.createEl('p', { text: t('cowrite.wiz.targetProject', { project: tab.project }), cls: 'nw-wizard-target' });
     }
 
     /**
@@ -464,22 +465,22 @@ export class WizardStepRenderers {
         const hasContent = !!wsFile;
         const wsPath = wsFile?.path ?? getWritingStylePath(tab.project);
 
-        container.createEl('p', { text: '定义本项目的文笔风格、叙事特征和语言习惯。此步骤为手动设定，点击按钮后请在弹窗中保存。', cls: 'nw-wizard-note' });
-        container.createEl('p', { text: '✍️ 包含 9 个模块：叙事视角、文笔特征、对话风格、描写风格、叙事节奏、情感表达、禁用/慎用、参考作品、格式要求', cls: 'nw-wizard-note nw-wizard-note--sm' });
-        container.createEl('p', { text: '⚠️ 此步骤不可跳过，文笔风格是 AI 写作质量的核心保障。', cls: 'nw-wizard-warn-text' });
+        container.createEl('p', { text: t('cowrite.wiz.styleNote'), cls: 'nw-wizard-note' });
+        container.createEl('p', { text: t('cowrite.wiz.styleModules'), cls: 'nw-wizard-note nw-wizard-note--sm' });
+        container.createEl('p', { text: t('cowrite.wiz.styleWarn'), cls: 'nw-wizard-warn-text' });
         
         if (hasContent && isDone) {
-            container.createEl('p', { text: '✅ 文笔风格已设定。', cls: 'nw-wizard-status nw-wizard-status--success' });
+            container.createEl('p', { text: t('cowrite.wiz.styleDone'), cls: 'nw-wizard-status nw-wizard-status--success' });
             // v3.4.2: 内联查看 + 重新生成按钮
             const viewBtn = container.createEl('button', { 
-                text: '📖 查看文笔风格', 
+                text: t('cowrite.wiz.viewStyle'), 
                 cls: 'nw-wizard-file-btn' 
             });
             viewBtn.addEventListener('click', () => {
                 this.showFileContentInline(container, wsPath, '文笔风格');
             });
             const regenBtn = container.createEl('button', { 
-                text: '🔄 重新设定', 
+                text: t('cowrite.wiz.resetStyleBtn'), 
                 cls: 'nw-wizard-warn-btn' 
             });
             regenBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
@@ -487,22 +488,22 @@ export class WizardStepRenderers {
         else if (hasContent) {
             // v4.1: 文件已存在但内容未填写完整（仍是模板）。此前按钮被 isDone 门控导致完全不显示，
             // 这里补出「查看 / 编辑」入口，让用户可直接查看现有文件并打开设定窗口填写。
-            container.createEl('p', { text: '📄 检测到文笔风格文件，但内容尚未填写完整。可查看现有内容或点击下方设定。', cls: 'nw-wizard-status nw-wizard-status--accent' });
+            container.createEl('p', { text: t('cowrite.wiz.stylePartial'), cls: 'nw-wizard-status nw-wizard-status--accent' });
             const viewBtn = container.createEl('button', {
-                text: '📖 查看文笔风格',
+                text: t('cowrite.wiz.viewStyle'),
                 cls: 'nw-wizard-file-btn'
             });
             viewBtn.addEventListener('click', () => {
                 this.showFileContentInline(container, wsPath, '文笔风格');
             });
             const editBtn = container.createEl('button', {
-                text: '✍️ 设定文笔风格',
+                text: t('cowrite.wiz.setStyleBtn'),
                 cls: 'nw-wizard-primary-btn'
             });
             editBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
         }
         
-        container.createEl('p', { text: `目标项目: ${tab.project}`, cls: 'nw-wizard-target' });
+        container.createEl('p', { text: t('cowrite.wiz.targetProject', { project: tab.project }), cls: 'nw-wizard-target' });
     }
 
     /**
@@ -518,26 +519,26 @@ export class WizardStepRenderers {
         const isDone = step.status === 'done';
         const isExecuting = this.wizardStepExecuting.has(step.id);
         
-        container.createEl('p', { text: '基于已生成的世界观和实体设定，AI 将生成完整的分卷大纲，包括每卷的核心冲突和章节分配表。', cls: 'nw-wizard-note' });
-        container.createEl('p', { text: '严格按照分卷大纲模板字段格式输出，确保批量建章能正确解析。', cls: 'nw-wizard-note nw-wizard-note--sm' });
+        container.createEl('p', { text: t('cowrite.wiz.outlineNote'), cls: 'nw-wizard-note' });
+        container.createEl('p', { text: t('cowrite.wiz.outlineFormatNote'), cls: 'nw-wizard-note nw-wizard-note--sm' });
         
         if (isExecuting) {
-            container.createEl('p', { text: '⏳ 正在打开全书规划窗口...', cls: 'nw-wizard-status nw-wizard-status--accent' });
+            container.createEl('p', { text: t('cowrite.wiz.openingPlanWindow'), cls: 'nw-wizard-status nw-wizard-status--accent' });
             // 脉冲动画进度条
             const barTrack = container.createDiv({ cls: 'nw-wizard-progress-track' });
             barTrack.createDiv({ cls: 'nw-wizard-progress-bar' });
-            container.createEl('p', { text: `目标项目: ${tab.project}`, cls: 'nw-wizard-target' });
+            container.createEl('p', { text: t('cowrite.wiz.targetProject', { project: tab.project }), cls: 'nw-wizard-target' });
         } else if (isDone) {
-            container.createEl('p', { text: '✅ 全书规划已完成。', cls: 'nw-wizard-status nw-wizard-status--success' });
+            container.createEl('p', { text: t('cowrite.wiz.outlineDone'), cls: 'nw-wizard-status nw-wizard-status--success' });
             // v3.4.2: 内联重新生成按钮
             const regenBtn = container.createEl('button', { 
-                text: '🔄 重新规划', 
+                text: t('cowrite.wiz.replanBtn'), 
                 cls: 'nw-wizard-warn-btn nw-wizard-warn-btn--inline' 
             });
             regenBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
             // v4.1.0: 统一入口 — 大纲树状预览（含全文查看，替代旧的双按钮）
             const treeBtn = container.createEl('button', { 
-                text: '📋 大纲树状预览', 
+                text: t('cowrite.wiz.outlinePreviewBtn'), 
                 cls: 'nw-wizard-primary-btn' 
             });
             treeBtn.addEventListener('click', () => {
@@ -546,7 +547,7 @@ export class WizardStepRenderers {
                 modal.open();
             });
             const canvasBtn = container.createEl('button', { 
-                text: '🗺️ 情节画布', 
+                text: t('cowrite.wiz.plotCanvasBtn'), 
                 cls: 'nw-wizard-primary-btn nw-wizard-primary-btn--neutral nw-wizard-primary-btn--adjacent' 
             });
             canvasBtn.addEventListener('click', () => openPlotCanvas(this.plugin, tab.project));
@@ -555,9 +556,9 @@ export class WizardStepRenderers {
             // v4.2: 未判定完成时，若分卷大纲文件已存在也提供树状预览入口。
             const existingOutline = await readMergedVolumeOutline(this.app, tab.project);
             if (existingOutline.trim().length > 0) {
-                container.createEl('p', { text: '📄 检测到分卷大纲文件，内容可能尚未填写完整。', cls: 'nw-wizard-status nw-wizard-status--accent' });
+                container.createEl('p', { text: t('cowrite.wiz.outlinePartial'), cls: 'nw-wizard-status nw-wizard-status--accent' });
                 const treeBtn = container.createEl('button', {
-                    text: '📋 大纲树状预览',
+                    text: t('cowrite.wiz.outlinePreviewBtn'),
                     cls: 'nw-wizard-primary-btn'
                 });
                 treeBtn.addEventListener('click', () => {
@@ -566,7 +567,7 @@ export class WizardStepRenderers {
                     modal.open();
                 });
             } else {
-                container.createEl('p', { text: '点击下方"▶ 执行"按钮打开全书规划窗口。', cls: 'nw-wizard-action-hint' });
+                container.createEl('p', { text: t('cowrite.wiz.outlineActionHint'), cls: 'nw-wizard-action-hint' });
             }
         }
     }
@@ -584,30 +585,30 @@ export class WizardStepRenderers {
         const isDone = step.status === 'done';
         const isExecuting = this.wizardStepExecuting.has(step.id);
         
-        container.createEl('p', { text: '根据分卷大纲自动批量创建所有章节目录和文件（大纲摘要、正文、信息规划）。', cls: 'nw-wizard-note' });
-        container.createEl('p', { text: '⚠️ 请确保已先完成"全书规划"步骤，否则无法解析卷结构。', cls: 'nw-wizard-warn-text' });
+        container.createEl('p', { text: t('cowrite.wiz.chaptersNote'), cls: 'nw-wizard-note' });
+        container.createEl('p', { text: t('cowrite.wiz.chaptersWarn'), cls: 'nw-wizard-warn-text' });
         
         if (isExecuting) {
-            container.createEl('p', { text: '⏳ 正在打开批量建章窗口...', cls: 'nw-wizard-status nw-wizard-status--accent' });
+            container.createEl('p', { text: t('cowrite.wiz.openingBatchWindow'), cls: 'nw-wizard-status nw-wizard-status--accent' });
             const barTrack = container.createDiv({ cls: 'nw-wizard-progress-track' });
             barTrack.createDiv({ cls: 'nw-wizard-progress-bar' });
-            container.createEl('p', { text: `目标项目: ${tab.project}`, cls: 'nw-wizard-target' });
+            container.createEl('p', { text: t('cowrite.wiz.targetProject', { project: tab.project }), cls: 'nw-wizard-target' });
         } else if (isDone) {
             const bodyRoot = `${tab.project}/${SUBDIR_BODY_ROOT}`;
             const chapterFiles = this.app.vault.getFiles().filter(f =>
                 f.path.startsWith(bodyRoot + '/')
                 && /\/第\d+卷\/第\d+章[^/]*_正文\.md$/.test(f.path)
             );
-            container.createEl('p', { text: `✅ 已创建 ${chapterFiles.length} 个章节文件。`, cls: 'nw-wizard-status nw-wizard-status--success' });
+            container.createEl('p', { text: t('cowrite.wiz.chaptersCreated', { count: chapterFiles.length }), cls: 'nw-wizard-status nw-wizard-status--success' });
             // v3.4.2: 内联重新生成按钮
             const regenBtn = container.createEl('button', { 
-                text: '🔄 重新建章', 
+                text: t('cowrite.wiz.recreateChaptersBtn'), 
                 cls: 'nw-wizard-warn-btn nw-wizard-warn-btn--inline' 
             });
             regenBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
             // v3.4.6: 内联"下一步"按钮已下线 — 保留右下角 nav bar 唯一下一步入口
         } else {
-            container.createEl('p', { text: '点击下方"▶ 执行"按钮打开批量建章窗口。', cls: 'nw-wizard-action-hint' });
+            container.createEl('p', { text: t('cowrite.wiz.chaptersActionHint'), cls: 'nw-wizard-action-hint' });
         }
     }
 
@@ -620,18 +621,18 @@ export class WizardStepRenderers {
     async renderWizardCompleteStep(container: HTMLElement, tab: WizardTab): Promise<void> {
         container.empty();
         
-        container.createEl('h3', { text: '🎉 项目初始化完成！' });
+        container.createEl('h3', { text: t('cowrite.wiz.doneTitle') });
         container.createEl('p', { text: `项目名称: ${tab.project}`, cls: 'nw-wizard-project-name' });
         
         const summary = container.createDiv({ cls: 'nw-wizard-summary-panel' });
-        summary.createEl('h4', { text: '📊 项目统计', cls: 'nw-wizard-summary-title' });
+        summary.createEl('h4', { text: t('cowrite.wiz.statsTitle'), cls: 'nw-wizard-summary-title' });
         
         const adapter = this.app.vault.adapter;
         const stats: Array<{ label: string; status: string; detail: string }> = [];
         
         // 世界观
         const worldviewExists = await adapter.exists(getWorldviewPath(tab.project));
-        stats.push({ label: '世界观', status: resolveSetupStatusIcon(resolveExistsStatus(worldviewExists)), detail: worldviewExists ? '已生成' : '未生成' });
+        stats.push({ label: '世界观', status: resolveSetupStatusIcon(resolveExistsStatus(worldviewExists)), detail: worldviewExists ? t('cowrite.wiz.stGenerated') : t('cowrite.wiz.stNotGenerated') });
         
         // 实体统计
         const countFiles = async (subDir: string): Promise<number> => {
@@ -646,16 +647,16 @@ export class WizardStepRenderers {
         const factionCount = await countFiles(SUBDIR_FACTIONS);
         const itemCount = await countFiles(SUBDIR_ITEMS);
         
-        stats.push({ label: '人物', status: resolveSetupStatusIcon(resolveCountStatus(charCount)), detail: `${charCount} 个` });
-        stats.push({ label: '地点', status: resolveSetupStatusIcon(resolveCountStatus(locCount)), detail: `${locCount} 个` });
-        stats.push({ label: '势力', status: resolveSetupStatusIcon(resolveCountStatus(factionCount)), detail: `${factionCount} 个` });
-        stats.push({ label: '物品功法', status: resolveSetupStatusIcon(resolveCountStatus(itemCount)), detail: `${itemCount} 个` });
+        stats.push({ label: '人物', status: resolveSetupStatusIcon(resolveCountStatus(charCount)), detail: t('cowrite.wiz.stCount', { count: charCount }) });
+        stats.push({ label: '地点', status: resolveSetupStatusIcon(resolveCountStatus(locCount)), detail: t('cowrite.wiz.stCount', { count: locCount }) });
+        stats.push({ label: '势力', status: resolveSetupStatusIcon(resolveCountStatus(factionCount)), detail: t('cowrite.wiz.stCount', { count: factionCount }) });
+        stats.push({ label: '物品功法', status: resolveSetupStatusIcon(resolveCountStatus(itemCount)), detail: t('cowrite.wiz.stCount', { count: itemCount }) });
         
         // 分卷大纲（v4.0：按卷归档，合并读取后统计卷数）
         const outlineContent = await readMergedVolumeOutline(this.app, tab.project);
         const outlineExists = outlineContent.trim().length > 0;
         const volumeCount = outlineExists ? countVolumeHeadings(outlineContent) : 0;
-        stats.push({ label: '分卷大纲', status: outlineExists ? '✅' : '❌', detail: outlineExists ? `${volumeCount} 卷` : '未生成' });
+        stats.push({ label: '分卷大纲', status: outlineExists ? '✅' : '❌', detail: outlineExists ? t('cowrite.wiz.stVolumes', { count: volumeCount }) : t('cowrite.wiz.stNotGenerated') });
         
         const baseDir = `${tab.project}/${SUBDIR_BODY_ROOT}`;
         let chapterCount = 0;
@@ -667,7 +668,7 @@ export class WizardStepRenderers {
                 chapterCount += volList.files.filter(f => /\/第\d+章[^/]*_正文\.md$/.test(f)).length;
             }
         }
-        stats.push({ label: '章节', status: chapterCount > 0 ? '✅' : '❌', detail: `${chapterCount} 章` });
+        stats.push({ label: '章节', status: chapterCount > 0 ? '✅' : '❌', detail: t('cowrite.wiz.stChapters', { count: chapterCount }) });
         
         const table = summary.createEl('table', { cls: 'nw-wizard-stats-table' });
         for (const s of stats) {
@@ -676,7 +677,7 @@ export class WizardStepRenderers {
             row.createEl('td', { text: `${s.status} ${s.detail}`, cls: 'nw-wizard-stats-cell' });
         }
         
-        container.createEl('p', { text: '点击下方"🎯 进入写作界面"开始写作。', cls: 'nw-wizard-status nw-wizard-status--accent nw-wizard-status--lg' });
+        container.createEl('p', { text: t('cowrite.wiz.enterWritingHint'), cls: 'nw-wizard-status nw-wizard-status--accent nw-wizard-status--lg' });
     }
 
     /**
@@ -719,13 +720,13 @@ export class WizardStepRenderers {
             }
         }
 
-        container.createEl('p', { text: '此步骤可选。点击下方按钮打开对应的实体生成窗口。', cls: 'nw-wizard-note' });
+        container.createEl('p', { text: t('cowrite.wiz.entityNote'), cls: 'nw-wizard-note' });
 
         const toolBar = container.createDiv({ cls: 'nw-wizard-toolbar nw-wizard-entity-toolbar' });
 
         // 直接进入统一实体管理界面，不再经过「实体概览」中间层
         const managerBtn = toolBar.createEl('button', {
-            text: '📚 实体管理',
+            text: t('cowrite.wiz.entityManagerBtn'),
             cls: 'nw-wizard-entity-manager-btn'
         });
         managerBtn.addEventListener('click', () => {
@@ -733,10 +734,10 @@ export class WizardStepRenderers {
         });
         
         const entityConfig = [
-            { id: 'characters', label: '人物', desc: '生成主要角色卡（含 frontmatter 字段和设定章节）', icon: '👤', commandId: 'novel-writer-character', dir: SUBDIR_CHARS },
-            { id: 'locations', label: '地点', desc: '生成故事场景地点设定', icon: '📍', commandId: 'novel-writer-location', dir: SUBDIR_LOCS },
-            { id: 'factions', label: '势力', desc: '生成各方势力组织设定', icon: '🏰', commandId: 'novel-writer-faction', dir: SUBDIR_FACTIONS },
-            { id: 'items', label: '物品功法', desc: '生成关键物品和功法设定', icon: '⚔️', commandId: 'novel-writer-item', dir: SUBDIR_ITEMS },
+            { id: 'characters', label: t('cowrite.wiz.entityChars'), desc: t('cowrite.wiz.entityCharsDesc'), icon: '👤', commandId: 'novel-writer-character', dir: SUBDIR_CHARS },
+            { id: 'locations', label: t('cowrite.wiz.entityLocs'), desc: t('cowrite.wiz.entityLocsDesc'), icon: '📍', commandId: 'novel-writer-location', dir: SUBDIR_LOCS },
+            { id: 'factions', label: t('cowrite.wiz.entityFactions'), desc: t('cowrite.wiz.entityFactionsDesc'), icon: '🏰', commandId: 'novel-writer-faction', dir: SUBDIR_FACTIONS },
+            { id: 'items', label: t('cowrite.wiz.entityItems'), desc: t('cowrite.wiz.entityItemsDesc'), icon: '⚔️', commandId: 'novel-writer-item', dir: SUBDIR_ITEMS },
         ];
         
         for (const cfg of entityConfig) {
@@ -751,11 +752,11 @@ export class WizardStepRenderers {
             const actions = row.createDiv({ cls: 'nw-wizard-entity-actions' });
             
             if (isDone) {
-                actions.createSpan({ text: subStep?.status === 'done' ? '✅ 已生成' : '⏭ 已跳过', cls: 'nw-wizard-entity-state' });
+                actions.createSpan({ text: subStep?.status === 'done' ? t('cowrite.wiz.stGenerated') : t('cowrite.wiz.stSkipped'), cls: 'nw-wizard-entity-state' });
                 // v3.4.1: done 后仍可继续生成，不锁按钮
                 const isOpening = this.entitiesExecuting.has(cfg.id);
                 const regenBtn = actions.createEl('button', { 
-                    text: isOpening ? '打开中...' : '继续生成', 
+                    text: isOpening ? t('cowrite.wiz.opening') : t('cowrite.wiz.continueGenBtn'), 
                     cls: 'nw-wizard-entity-btn nw-wizard-entity-btn--sm' 
                 });
                 if (isOpening) {
@@ -770,11 +771,11 @@ export class WizardStepRenderers {
                     const dispatched = this.plugin.executeCommand(cfg.commandId);
                     if (!dispatched) {
                         this.entitiesExecuting.delete(cfg.id);
-                        showErrorNotice(`${cfg.label}生成入口不可用（命令未注册）`, { timeout: 5000 });
+                        showErrorNotice(t('cowrite.wiz.entryUnavailable', { label: cfg.label }), { timeout: 5000 });
                         this.renderTab(tab, true);
                         return;
                     }
-                    showSuccessNotice(`${cfg.label}生成窗口已打开`, { timeout: 2000 });
+                    showSuccessNotice(t('cowrite.wiz.entryOpened', { label: cfg.label }), { timeout: 2000 });
                     if (subStep && subStep.status === 'done') subStep.status = 'pending';
                     this.renderTab(tab, true);
                     // 看门狗：弹窗未打开时关闭回调不会来，避免按钮永久禁用
@@ -802,7 +803,7 @@ export class WizardStepRenderers {
             } else {
                 const isOpening = this.entitiesExecuting.has(cfg.id);
                 const genBtn = actions.createEl('button', { 
-                    text: isOpening ? '打开中...' : '生成', 
+                    text: isOpening ? t('cowrite.wiz.opening') : t('cowrite.wiz.generateBtn'), 
                     cls: 'nw-wizard-entity-btn' 
                 });
                 if (isOpening) {
@@ -818,11 +819,11 @@ export class WizardStepRenderers {
                     if (!dispatched) {
                         // 命令未注册/路由失败：不会打开任何弹窗，关闭回调永远不来
                         this.entitiesExecuting.delete(cfg.id);
-                        showErrorNotice(`${cfg.label}生成入口不可用（命令未注册）`, { timeout: 5000 });
+                        showErrorNotice(t('cowrite.wiz.entryUnavailable', { label: cfg.label }), { timeout: 5000 });
                         this.renderTab(tab, true);
                         return;
                     }
-                    showSuccessNotice(`${cfg.label}生成窗口已打开`, { timeout: 2000 });
+                    showSuccessNotice(t('cowrite.wiz.entryOpened', { label: cfg.label }), { timeout: 2000 });
                     this.renderTab(tab, true);
                     // 看门狗：命令被分发但前置条件不满足时可能什么都没打开，
                     // 5 秒后若没等到弹窗关闭回调就恢复按钮，避免永久禁用。
@@ -850,10 +851,10 @@ export class WizardStepRenderers {
             }
         }
         
-        container.createEl('p', { text: '💡 跳过将影响后续全书规划的质量，建议至少生成人物。', cls: 'nw-wizard-hint nw-wizard-hint--lg' });
+        container.createEl('p', { text: t('cowrite.wiz.skipHint'), cls: 'nw-wizard-hint nw-wizard-hint--lg' });
 
         const tip = container.createEl('p', { 
-            text: '💡 「管理已生成」可批量改名磁盘上的"未命名_N"文件（联动 YAML名称 + H1标题 + 文件名三处）',
+            text: t('cowrite.wiz.manageGeneratedHint'),
             cls: 'nw-wizard-tip'
         });
     }
@@ -872,10 +873,10 @@ export class WizardStepRenderers {
         const isExecuting = this.wizardStepExecuting.has(step.id);
         const progress = this.wizardStepResults['_worldviewProgress'] || '';
         
-        container.createEl('p', { text: `AI 将严格按照模板字段格式生成世界观。包含 ${WV_SECTIONS.length} 个模块：${WV_SECTIONS.join('、')}。`, cls: 'nw-wizard-note' });
-        container.createEl('p', { text: '⚠️ 此步骤不可跳过，完整的世界观设定是后续所有步骤的基础。', cls: 'nw-wizard-warn-text' });
+        container.createEl('p', { text: t('cowrite.wiz.wvNote', { count: WV_SECTIONS.length, modules: WV_SECTIONS.join('、') }), cls: 'nw-wizard-note' });
+        container.createEl('p', { text: t('cowrite.wiz.wvWarn'), cls: 'nw-wizard-warn-text' });
         
-        container.createEl('p', { text: `目标项目: ${tab.project}`, cls: 'nw-wizard-target' });
+        container.createEl('p', { text: t('cowrite.wiz.targetProject', { project: tab.project }), cls: 'nw-wizard-target' });
         
         if (isExecuting && progress) {
             const progressEl = container.createDiv({ cls: 'nw-wizard-progress-panel' });
@@ -895,17 +896,17 @@ export class WizardStepRenderers {
                 } catch (e) { /* 忽略 */ }
             }
             
-            container.createEl('p', { text: '✅ 世界观已生成。', cls: 'nw-wizard-status nw-wizard-status--success' });
+            container.createEl('p', { text: t('cowrite.wiz.wvDone'), cls: 'nw-wizard-status nw-wizard-status--success' });
             
             // v3.4.2: 内联重新生成按钮（不依赖导航栏）
             const regenBtn = container.createEl('button', { 
-                text: '🔄 重新生成世界观', 
+                text: t('cowrite.wiz.regenerateWorldview'), 
                 cls: 'nw-wizard-warn-btn nw-wizard-warn-btn--inline nw-wizard-warn-btn--lg' 
             });
             regenBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
             
             const viewBtn = container.createEl('button', { 
-                text: '📖 打开世界观文件', 
+                text: t('cowrite.wiz.openWorldviewFile'), 
                 cls: 'nw-wizard-file-btn nw-wizard-file-btn--start' 
             });
             viewBtn.addEventListener('click', () => {
@@ -915,7 +916,7 @@ export class WizardStepRenderers {
             // Show module summary (only if we have content)
             if (worldviewContent) {
                 const summaryDiv = container.createDiv({ cls: 'nw-wizard-hint' });
-                summaryDiv.createEl('p', { text: `已生成模块（${WV_SECTIONS.length}个）：` });
+                summaryDiv.createEl('p', { text: t('cowrite.wiz.wvGeneratedModules', { count: WV_SECTIONS.length }) });
                 for (const s of WV_SECTIONS) {
                     const found = worldviewContent.includes(`## ${s}`);
                     summaryDiv.createSpan({ text: `${found ? '✅' : '❌'} ${s}  ` });
@@ -926,16 +927,16 @@ export class WizardStepRenderers {
             // v4.1: 未判定完成时，若世界观文件已存在也提供查看 / 重新生成入口。
             const wvFile = this.app.vault.getAbstractFileByPath(getWorldviewPath(tab.project));
             if (wvFile) {
-                container.createEl('p', { text: '📄 检测到世界观文件，内容可能尚未填写完整。', cls: 'nw-wizard-status nw-wizard-status--accent' });
+                container.createEl('p', { text: t('cowrite.wiz.wvPartial'), cls: 'nw-wizard-status nw-wizard-status--accent' });
                 const viewBtn = container.createEl('button', {
-                    text: '📖 打开世界观文件',
+                    text: t('cowrite.wiz.openWorldviewFile'),
                     cls: 'nw-wizard-file-btn'
                 });
                 viewBtn.addEventListener('click', () => {
                     this.showFileContentInline(container, getWorldviewPath(tab.project), '世界观设定');
                 });
                 const regenBtn = container.createEl('button', {
-                    text: '🔄 重新生成世界观',
+                    text: t('cowrite.wiz.regenerateWorldview'),
                     cls: 'nw-wizard-warn-btn'
                 });
                 regenBtn.addEventListener('click', () => this.executeWizardStep(tab, step));

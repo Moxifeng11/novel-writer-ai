@@ -1,4 +1,5 @@
 import { App, TFile, Notice, Modal } from 'obsidian';
+import { t } from '@/i18n';
 import { pjVolumeOutlineDir, getSettingLibPath, getWorldviewPath, readProjectMeta, SUBDIR_BODY_ROOT, SUBDIR_OUTLINE_ROOT } from '@/shared/paths';
 import { WizardTab, WizardStep, buildWizardSteps as buildWizardStepsExternal } from './wizard-types';
 import { WizardStepRenderers } from './wizard-step-renderers';
@@ -153,7 +154,7 @@ export class WizardController {
         const wizardId = `wizard-${Date.now()}`;
         this.view.tabs.push({
             id: wizardId,
-            label: `🧙 ${project} 向导`,
+            label: t('cowrite.wiz.wizardTabLabel', { project }),
             type: 'wizard',
             project,
             projectType,
@@ -176,7 +177,7 @@ export class WizardController {
         if (!(await this.view.app.vault.adapter.exists(tab.project))) {
             const idx = this.view.tabs.findIndex((t: { id: string }) => t.id === tab.id);
             if (idx >= 0) this.view.tabs.splice(idx, 1);
-            new Notice(`⚠️ 项目「${tab.project}」不存在，已关闭其向导`, 5000);
+            new Notice(t('cowrite.wiz.projectGone', { project: tab.project }), 5000);
             this.view.popNav();
             return;
         }
@@ -186,7 +187,7 @@ export class WizardController {
         const container = this.view.tabContent.createDiv({ cls: 'nw-wizard-container' });
 
         const sidebar = container.createDiv({ cls: 'nw-wizard-sidebar' });
-        sidebar.createEl('h4', { text: '📋 创建步骤', cls: 'nw-wizard-sidebar-title' });
+        sidebar.createEl('h4', { text: t('cowrite.wiz.stepsTitle'), cls: 'nw-wizard-sidebar-title' });
 
         for (let i = 0; i < tab.steps.length; i++) {
             const step = tab.steps[i];
@@ -207,7 +208,7 @@ export class WizardController {
                 });
             } else if (!canNavigate) {
                 stepEl.addClass('nw-wizard-step-disabled');
-                stepEl.setAttribute('title', '请先完成前置步骤');
+                stepEl.setAttribute('title', t('cowrite.wiz.prereqFirstTip'));
             }
 
             if (step.subSteps && i === tab.currentStepIdx) {
@@ -240,7 +241,7 @@ export class WizardController {
         contentArea.createEl('h3', { text: `${step.icon} ${step.label}` });
         
         if (step.id === 'complete' && step.status === 'done') {
-            contentArea.createEl('div', { text: '✅ 项目已完成，可以开始写作', attr: { style: 'font-size:1.1em; font-weight:600; color:var(--text-success); margin-bottom:16px; padding:12px; background:var(--background-secondary); border-radius:8px; text-align:center;' } });
+            contentArea.createEl('div', { text: t('cowrite.wiz.projectComplete'), attr: { style: 'font-size:1.1em; font-weight:600; color:var(--text-success); margin-bottom:16px; padding:12px; background:var(--background-secondary); border-radius:8px; text-align:center;' } });
         }
         
         const stepContent = contentArea.createDiv({ attr: { style: `flex: 1; min-height: var(--nw-step-min-h);` } });
@@ -298,7 +299,7 @@ export class WizardController {
         
         // 左侧按钮 — 使用 CSS 类名
         if (isStep0) {
-            const returnBtn = navBar.createEl('button', { text: '← 返回项目列表', cls: 'nw-wizard-nav-btn' });
+            const returnBtn = navBar.createEl('button', { text: t('fullwriter.fp.backToProjects'), cls: 'nw-wizard-nav-btn' });
             returnBtn.addEventListener('click', () => {
                 const wizardIdx = this.view.tabs.findIndex((t: { id: string }) => t.id === tab.id);
                 if (wizardIdx >= 0) {
@@ -307,7 +308,7 @@ export class WizardController {
                 }
             });
         } else {
-            const prevBtn = navBar.createEl('button', { text: '← 上一步', cls: 'nw-wizard-nav-btn' });
+            const prevBtn = navBar.createEl('button', { text: t('cowrite.wiz.prevStepBtn'), cls: 'nw-wizard-nav-btn' });
             prevBtn.addEventListener('click', () => {
                 tab.currentStepIdx--;
                 this.renderTabContent(tab, true);
@@ -317,13 +318,13 @@ export class WizardController {
         const rightGroup = navBar.createDiv({ cls: 'nw-wizard-nav-btn-group' });
         
         if (isLastStep) {
-            const enterBtn = rightGroup.createEl('button', { text: '🎯 进入写作', cls: 'nw-wizard-nav-btn-primary' });
+            const enterBtn = rightGroup.createEl('button', { text: t('cowrite.wiz.enterWritingBtn'), cls: 'nw-wizard-nav-btn-primary' });
             enterBtn.addEventListener('click', async () => {
                 const chaptersStep = tab.steps.find(s => s.id === 'chapters');
                 if (chaptersStep && chaptersStep.status !== 'skipped') {
                     const validation = await validateWizardStepContent(this.view.app, tab.project, 'chapters');
                     if (!validation.valid) {
-                        new Notice(`⚠️ 章节内容不完整：${validation.missingFields.slice(0, 5).join('、')}。请先完成批量建章。`, 10000);
+                        new Notice(t('cowrite.wiz.chapterIncomplete', { fields: validation.missingFields.slice(0, 5).join('、') }), 10000);
                         return;
                     }
                 }
@@ -335,8 +336,8 @@ export class WizardController {
         }
         
         if (isExecuting) {
-            rightGroup.createEl('button', { text: '⏳ 生成中...', cls: 'nw-wizard-nav-btn-disabled' });
-            rightGroup.createSpan({ text: '请等待 AI 返回...', cls: 'nw-wizard-nav-hint' });
+            rightGroup.createEl('button', { text: t('cowrite.generating'), cls: 'nw-wizard-nav-btn-disabled' });
+            rightGroup.createSpan({ text: t('cowrite.wiz.awaitAiHint'), cls: 'nw-wizard-nav-hint' });
             return;
         }
         
@@ -355,31 +356,31 @@ export class WizardController {
                     && /\/第\d+卷\/第\d+章[^/]*_正文\.md$/.test(f.path)
                 ))
             );
-            const execBtn = rightGroup.createEl('button', { text: '▶ 执行', cls: 'nw-wizard-nav-btn-primary' });
+            const execBtn = rightGroup.createEl('button', { text: t('cowrite.wiz.execBtn'), cls: 'nw-wizard-nav-btn-primary' });
             execBtn.addEventListener('click', () => this.stepExecutors.executeWizardStep(tab, step));
             if (hasExistingFile) {
-                const nextBtn = rightGroup.createEl('button', { text: '下一步 →', cls: 'nw-wizard-nav-btn-warning', attr: { title: '校验内容完整后进入下一步' } });
+                const nextBtn = rightGroup.createEl('button', { text: t('cowrite.wiz.nextStepWarnBtn'), cls: 'nw-wizard-nav-btn-warning', attr: { title: t('cowrite.wiz.nextStepValidateTip') } });
                 nextBtn.addEventListener('click', () => { void this.tryAdvance(tab, step); });
             } else if (isStep0) {
-                rightGroup.createEl('button', { text: '下一步 →', cls: 'nw-wizard-nav-btn-disabled', attr: { title: '请先完成当前步骤' } });
+                rightGroup.createEl('button', { text: t('cowrite.wiz.nextStepBtn'), cls: 'nw-wizard-nav-btn-disabled', attr: { title: t('cowrite.wiz.finishCurrentTip') } });
             }
         } else if (isPending && !isMandatory) {
             // 实体步骤只保留"跳过"：生成由步骤内的分类按钮打开对应生成窗口，避免两套生成路径。
-            const skipBtn = rightGroup.createEl('button', { text: '跳过实体，进入下一步 →', cls: 'nw-wizard-nav-btn-warning' });
+            const skipBtn = rightGroup.createEl('button', { text: t('cowrite.wiz.skipEntityBtn'), cls: 'nw-wizard-nav-btn-warning' });
             skipBtn.addEventListener('click', () => this.skipStep(tab, step));
         } else if (isDone || step.status === 'skipped') {
             // 前进前做内容校验：不完整则阻止并提示，必须重新生成或显式跳过
-            const nextBtn = rightGroup.createEl('button', { text: '下一步 →', cls: 'nw-wizard-nav-btn-primary' });
+            const nextBtn = rightGroup.createEl('button', { text: t('cowrite.wiz.nextStepBtn'), cls: 'nw-wizard-nav-btn-primary' });
             nextBtn.addEventListener('click', () => { void this.tryAdvance(tab, step); });
         } else if (step.status === 'retry') {
-            const retryBtn = rightGroup.createEl('button', { text: '🔄 重新生成', cls: 'nw-wizard-nav-btn-primary' });
+            const retryBtn = rightGroup.createEl('button', { text: t('cowrite.wiz.regenerate'), cls: 'nw-wizard-nav-btn-primary' });
             retryBtn.addEventListener('click', () => this.stepExecutors.executeWizardStep(tab, step));
         } else if (step.status === 'complete_with_warnings') {
-            const retryBtn = rightGroup.createEl('button', { text: '🔄 重新生成', cls: 'nw-wizard-nav-btn-primary' });
+            const retryBtn = rightGroup.createEl('button', { text: t('cowrite.wiz.regenerate'), cls: 'nw-wizard-nav-btn-primary' });
             retryBtn.addEventListener('click', () => this.stepExecutors.executeWizardStep(tab, step));
-            const skipBtn = rightGroup.createEl('button', { text: '跳过此步骤 →', cls: 'nw-wizard-nav-btn-warning' });
+            const skipBtn = rightGroup.createEl('button', { text: t('cowrite.wiz.skipStepBtn'), cls: 'nw-wizard-nav-btn-warning' });
             skipBtn.addEventListener('click', () => {
-                const ok = window.confirm(`「${step.label}」内容不完整。跳过后将带着缺失内容进入后续步骤，确定跳过？`);
+                const ok = window.confirm(t('cowrite.wiz.skipConfirm', { step: step.label }));
                 if (ok) this.skipStep(tab, step);
             });
         }
@@ -397,7 +398,7 @@ export class WizardController {
         if (!validation.valid) {
             step.status = 'complete_with_warnings';
             new Notice(
-                `⚠️ ${step.label} 内容不完整：${validation.missingFields.slice(0, 5).join('、')}${validation.missingFields.length > 5 ? ' 等' : ''}。请重新生成，或点击「跳过此步骤」。`,
+                t('cowrite.wiz.incompleteWarning', { step: step.label, fields: validation.missingFields.slice(0, 5).join('、'), more: validation.missingFields.length > 5 ? t('cowrite.wiz.andMore') : '' }),
                 12000
             );
             this.renderTabContent(tab, true);
