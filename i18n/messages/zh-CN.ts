@@ -377,6 +377,17 @@ export const zhCN: MessageTree = {
             styleInjectNoEmbedding: "特征可注入；嵌入不可用，向量筛选/示例检索不可用",
         },
     },
+    novelFormat: {
+        separator: {
+            blankLine: '空行分段',
+            singleLine: '单换行分段',
+        },
+        indent: {
+            blankIndent: '首行空两格',
+            tab: '首行 Tab',
+            none: '无缩进',
+        },
+    },
     common: {
         cancel: '取消',
         confirm: '确定',

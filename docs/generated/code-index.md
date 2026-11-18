@@ -8,7 +8,7 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146805 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19508 | 296 | 203 | 69% |
-| `shared/` | 258 | 51908 | 2184 | 1705 | 78% |
+| `shared/` | 258 | 51945 | 2185 | 1706 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1596 | 88 | 58 | 66% |
 | `ui/` | 306 | 115172 | 1180 | 930 | 79% |
@@ -580,7 +580,7 @@
 | `shared/model-source.ts` | 43 | 3 | 1 |
 | `shared/multi-layer-cache.ts` | 556 | 6 | 6 |
 | `shared/narrative-number.ts` | 235 | 8 | 6 |
-| `shared/novel-format.ts` | 348 | 12 | 12 |
+| `shared/novel-format.ts` | 385 | 13 | 13 |
 | `shared/obsidian-internal-bridge.ts` | 86 | 3 | 3 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |

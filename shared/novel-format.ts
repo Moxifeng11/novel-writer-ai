@@ -5,6 +5,7 @@
  * 保证 UI 行为可单测、与 BodyWriter 的落盘契约同源（shared/body-format.ts）。
  */
 
+import { hasMessage, t } from '@/i18n';
 import {
   BodyFormatContract,
   DEFAULT_BODY_FORMAT,
@@ -331,17 +332,53 @@ export function countParagraphs(text: string): number {
 }
 
 /**
- * 契约的简短中文描述（状态栏/ Notice 用）
+ * 契约的简短描述（状态栏/ Notice 用）
+ *
+ * 展示文案按语言求值（i18n 跨层数据④）；契约字段本身（separator/indent）是**结构数据**，
+ * 不参与翻译——落盘与解析都按它们比对。
  *
  * @param contract - 正文契约
  * @returns 文本结果
  */
 export function describeContractShort(contract: BodyFormatContract = DEFAULT_BODY_FORMAT): string {
-  const separator = contract.separator === '\n\n' ? '空行分段' : '单换行分段';
-  const indent = contract.indent === '\u3000\u3000'
+  const parts = describeContractParts(contract);
+  return `${parts.separator} · ${parts.indent}`;
+}
+
+/**
+ * 契约描述的两个展示分量（已按当前语言求值 + 中文兜底）。
+ *
+ * 供需要拆分展示或做单测断言的调用方使用；`describeContractShort()` 在此之上拼串。
+ *
+ * @param contract - 正文契约
+ * @returns 分隔方式与缩进方式（key / fallback 同时给出，便于缺键断言）
+ */
+export function describeContractParts(contract: BodyFormatContract = DEFAULT_BODY_FORMAT): {
+  separatorKey: string;
+  separatorFallback: string;
+  separator: string;
+  indentKey: string;
+  indentFallback: string;
+  indent: string;
+} {
+  const separatorKey = contract.separator === '\n\n' ? 'novelFormat.separator.blankLine' : 'novelFormat.separator.singleLine';
+  const separatorFallback = contract.separator === '\n\n' ? '空行分段' : '单换行分段';
+  const indentKey = contract.indent === '\u3000\u3000'
+    ? 'novelFormat.indent.blankIndent'
+    : contract.indent === '\t'
+      ? 'novelFormat.indent.tab'
+      : 'novelFormat.indent.none';
+  const indentFallback = contract.indent === '\u3000\u3000'
     ? '首行空两格'
     : contract.indent === '\t'
       ? '首行 Tab'
       : '无缩进';
-  return `${separator} · ${indent}`;
+  return {
+    separatorKey,
+    separatorFallback,
+    separator: hasMessage(separatorKey) ? t(separatorKey) : separatorFallback,
+    indentKey,
+    indentFallback,
+    indent: hasMessage(indentKey) ? t(indentKey) : indentFallback,
+  };
 }

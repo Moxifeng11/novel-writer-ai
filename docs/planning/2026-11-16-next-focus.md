@@ -2512,3 +2512,23 @@ entity-state-controller / context-loader / checkup-bar 等）→ 外观页统计
 `summarizeLink` 加了 `titleKey` 但 JSDoc 没补，被拦下。
 
 **下一轮**：跨层数据④（`shared/novel-format.ts`，以甄别 + 结论为主）。
+
+## 第九十轮：i18n 跨层数据④ —— novel-format 契约描述（2026-11-19，ZCode · ZC-20261120-04）
+
+**甄别结论（DSH 要求本条以结论为主）**
+- `BodyFormatContract` 的 `separator`（空行/单换行）与 `indent`（全角空格/Tab/无）是**结构数据**：
+  `BodyWriter` 落盘与解析器逐字比对它们，**绝不能翻译**——一旦本地化，已有的书将无法被正确解析。
+- 真正需要双语的只有 `describeContractShort()` 拼给人看的**展示串**。
+
+**改动**
+- 并出 `describeContractParts()`：返回 separator/indent 的 key、中文兜底、以及按当前语言求值的结果；
+  `describeContractShort()` 在其上拼 `{sep} · {indent}`。资源 5 键（separator 2 + indent 3）。
+- 新增 `tests/unit/shared/novel-format-i18n.test.ts` 4 例，其中**专门一条**断言：
+  翻译前后 `separatorKey/separatorFallback/indentKey/indentFallback` 不变、原契约对象未被触碰。
+
+**验收**
+- 新增 4 例全绿；shared+ui **452 文件 / 4453 例**全绿。
+- `check:i18n` zh/en 各 **3308**（+5）；`check:bundle` main.js → **6019597**（+731）；
+  preflight EXIT=0（10320 通过 + 3 跳过）。
+
+**下一轮**：跨层数据⑤（协同写作保存状态串，`ui/co-writing-view.ts` 的 `toggleClass` 比较是重点）。

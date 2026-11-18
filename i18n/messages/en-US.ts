@@ -374,6 +374,17 @@ export const enUS: MessageTree = {
             styleInjectNoEmbedding: "Features injectable; embedding unavailable, so vector filtering/sample retrieval are off",
         },
     },
+    novelFormat: {
+        separator: {
+            blankLine: 'Blank-line paragraphing',
+            singleLine: 'Single-newline paragraphing',
+        },
+        indent: {
+            blankIndent: 'Two-character first-line indent',
+            tab: 'Tab first-line indent',
+            none: 'No indent',
+        },
+    },
     common: {
         cancel: 'Cancel',
         confirm: 'OK',
