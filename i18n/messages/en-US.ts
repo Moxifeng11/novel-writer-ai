@@ -1671,6 +1671,12 @@ export const enUS: MessageTree = {
         },
     },
     fullwriter: {
+        vars: {
+            degradedFrom: 'Injection variables',
+            degradedTo: 'Empty/stale values',
+            degradedReason: 'Template variable build failed; this injection segment degraded',
+        },
+
         selector: {
             modeNavTitle: 'Creation categories',
             noChaptersWizard: 'This project has no chapters yet; finish the "batch chapter creation" step of the setup wizard first.',

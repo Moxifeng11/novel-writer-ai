@@ -11,7 +11,7 @@
 | `shared/` | 258 | 51769 | 2179 | 1700 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 115154 | 1180 | 930 | 79% |
+| `ui/` | 306 | 115155 | 1180 | 930 | 79% |
 
 ## 文件清单
 
@@ -857,7 +857,7 @@
 | `ui/full-writer/step-render-controller.ts` | 683 | 2 | 2 |
 | `ui/full-writer/streamlined-nav-presenter.ts` | 273 | 12 | 12 |
 | `ui/full-writer/tab-controller.ts` | 381 | 2 | 2 |
-| `ui/full-writer/template-vars-builder.ts` | 1228 | 7 | 7 |
+| `ui/full-writer/template-vars-builder.ts` | 1229 | 7 | 7 |
 | `ui/full-writer/title-bar-controller.ts` | 196 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |

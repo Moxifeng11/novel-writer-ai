@@ -5,6 +5,7 @@
  * （viewVars），构建用于提示词模板填充的变量字典 Record<string,string>。
  */
 import { App, TFile } from 'obsidian';
+import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { GatheredContext, CharacterData, ForeshadowItem } from '@/engine/context-manager';
 import { getForeshadowWarnings } from '@/engine/foreshadow-manager';
@@ -62,9 +63,9 @@ function warnVarsDegraded(label: string, error: unknown): void {
     getDegradationNotifier().notify({
         source: 'injection',
         dimension: label,
-        from: '注入变量',
-        to: '空/旧值',
-        reason: '模板变量构建失败，该段注入降级',
+        from: t('fullwriter.vars.degradedFrom'),
+        to: t('fullwriter.vars.degradedTo'),
+        reason: t('fullwriter.vars.degradedReason'),
         severity: 'warning',
         recoverable: true,
     });

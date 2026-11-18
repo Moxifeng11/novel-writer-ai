@@ -102,7 +102,7 @@
     "ui/full-writer/step-render-controller.ts": 68,
     "ui/full-writer/streamlined-nav-presenter.ts": 2,
     "ui/full-writer/tab-controller.ts": 2,
-    "ui/full-writer/template-vars-builder.ts": 242,
+    "ui/full-writer/template-vars-builder.ts": 239,
     "ui/full-writer/title-bar-controller.ts": 2,
     "ui/full-writer/unit-writer-controller.ts": 92,
     "ui/full-writer/wizard-controller.ts": 30,
@@ -232,7 +232,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 9280,
+  "total": 9277,
   "updatedAt": "2026-11-18",
   "note": ""
 }

@@ -1674,6 +1674,12 @@ export const zhCN: MessageTree = {
         },
     },
     fullwriter: {
+        vars: {
+            degradedFrom: '注入变量',
+            degradedTo: '空/旧值',
+            degradedReason: '模板变量构建失败，该段注入降级',
+        },
+
         selector: {
             modeNavTitle: '创作分类',
             noChaptersWizard: '该项目还没有章节，请先完成初始化向导的「批量建章」。',

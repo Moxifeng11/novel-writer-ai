@@ -2266,3 +2266,20 @@ suggestion-cards 100 → suggestion-flow 98 → monitor-cards 81 …）→ 写�
 
 **下一轮候选**：写作主流程深水区（template-vars-builder 340 行 CJK → scene-outline 231 →
 wizard 群 300+ → step-render 106 → unit-writer 98）→ 外观页统计/桌宠块 → 跨层数据专项。
+
+## 第七十九轮：i18n 第二期第22片 —— template-vars-builder 甄别式迁移（2026-11-19，ZCode · ZC-20261119-12）
+
+**甄别结论**
+- `ui/full-writer/template-vars-builder.ts`（1227 行 / 340 行 CJK）：**337 行为 AI 提示词内容与
+  vault frontmatter 字段键**——`【本章镜头】视角人物…` 等 AI 指令、`c.姓名/`c.身份` 等实体
+  字段读取与摘要拼接。按「AI 输入不随界面语言漂移」原则**保留并记录**（迁移它们会把
+  中文小说提示词变成英文，直接影响生成质量）。
+- 仅 3 处 UI 出口：降级报告 from/to/reason（经 degradation-notifier 流入链路横幅），
+  迁 `fullwriter.vars.*` 3 键。
+
+**验收**
+- `check:i18n` zh/en 各 2435、棘轮 231 文件 / 9236 条（-3，文件保留在基线）；
+  `check:bundle` main.js → **5919330**（+303）；preflight EXIT=0（10303 通过+3）。
+
+**下一轮候选**：scene-outline-controller（231 行，需先甄别提示词占比）→ wizard 群 →
+step-render-controller 106 → unit-writer-controller 98 → 外观页统计/桌宠块。
