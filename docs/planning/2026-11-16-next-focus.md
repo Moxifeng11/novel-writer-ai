@@ -1920,3 +1920,47 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 **下一轮候选**：`ui/settings/fingerprint-section.ts`（569）→ `setup-section.ts`（477）→
 `foreshadow-section.ts`（447）→ `mode-section.ts`（402）→ `mcp-section.ts`（301）→ 写作主流程 `Notice`。
 
+## 第六十七轮：i18n 第二期第十片 —— 写作指纹库分区与列表行 chrome（2026-11-18）
+
+用户 m15674 之后「继续」：按顺序迁 `ui/settings/fingerprint-section.ts`（440 行 / 569 中文字）。
+
+**改动**
+- 分区 35 处文案迁 `settings.fingerprint.*`：标题与引导语、加载态、三级分组标题（`groupTitle` /
+  `groupTitleWithProject` 带 `{count}` 与 `{project}` 插值）、三个添加按钮、`🔄 从模板同步`及 title、
+  同步成功（`{added}`/`{updated}`）/失败通知、无活动项目提示、删除确认四段、`已删除「{name}」`、
+  统计词表块（三个情绪词的 `{name, hint}` 表改 `{key, nameKey, hintKey}`）。
+- 截图校正抓到分区外的漏网：列表行渲染器在 `ui/fingerprint-utils.ts`（`renderFingerprintList()`），
+  空态/模板徽标与 title/详情与删除按钮 title/字数格式化一并迁 7 键（`emptyList / templateBadge /
+  templateBadgeTitle / detailBtn / deleteBtnTitle / wordCountWan / wordCount`）。
+- `formatWordCount()` 改「同一键 + 按语言换基数」：`getLocale() === 'en-US' ? count / 1000 : count / 10000`，
+  zh `{n}万字`/`{n}字`、en `{n}k words`/`{n} words`。
+- 资源：zh/en 各 **1145 条**（+42）。
+
+**三处坑**
+1. **分区迁完不等于迁完**：zh 页看起来全对了，en 页列表行仍是「详情 / 暂无指纹 / 12.5万字」——
+   真身是 `ui/fingerprint-utils.ts`。迁设置分区要顺着 `render*()` 再追一层，别只清零分区文件的棘轮条目。
+2. **计量单位不能拆成一对语言专用键**：`wordCountWan` 拆成 `…Cjk`/`…En` 会让两边占位符一致但语义错位，
+   `check-i18n` 的键一致性检查也失去意义；键写单位模板、基数在代码里按语言折算。
+3. **en 资源的占位示例句也算文案**：`aiHighFreqPlaceholder` 等四个键原来是 `'Comma separated, e.g. 不禁, 仿佛'`，
+   `i18n-parity.test.ts` 直接拦下（首跑 preflight 唯一的失败）；改成 `admittedly, seemingly` 等英文例。
+4. **截图脚本等待插件的条件太松**：`snap-i18n10.mjs` 原来等 `plugins['novel-writer-ai']` 存在就读
+   `settings.language`，但插件对象先于 `onload` 完成出现，偶发 `Cannot read properties of undefined
+   (reading 'language')`；改为等 `p.settings && p.settingsTab`。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；新增 `tests/unit/ui/fingerprint-section-i18n.test.ts` 4 例（`vi.hoisted` 桩库 +
+  `vi.mock('@/engine/style-fingerprint-library')`）；`npx vitest run tests/unit/ui` **213 文件 / 1974 例**全绿。
+- `check:i18n`：zh 1145 / en 1145、0 无法解析键、动态键 **10 处**、棘轮收紧到 **261 文件 / 10732 条**。
+- `check:bundle`：main.js 5781144 → **5785855**（+4711；其中 +12 是把 en-US 四个情绪词占位例句
+  `Comma separated, e.g. 不禁, 仿佛` 改成英文——
+  `i18n-parity.test.ts` 硬性禁止 en 资源出现 CJK，首跑 preflight 就栽在这四个键上）。
+- 全量 `npm run preflight` **EXIT=0**（972 文件 / 10277 通过 + 3 跳过；活跃文档 20 个）。
+- 实机 `D:\nw-dev-vault\_visual-i18n10\fingerprint-{zh-CN,en-US}.png`（930×2970）：en 下
+  heads = `📖 Settings / 📊 Statistic word lists (extra) / 🔍 Writing fingerprints`，按钮
+  `🔄 Refresh / ➕ Add template fingerprint / ➕ Add global fingerprint / ➕ Add project fingerprint /
+  🔄 Sync from templates / Details`，空态 `No fingerprints yet`，字数 `126.4k words`，剩余 CJK 73 全是数据。
+
+**下一轮候选**：`ui/settings/setup-section.ts`（477）→ `foreshadow-section.ts`（447）→
+`mode-section.ts`（402）→ `mcp-section.ts`（301）→ 指纹 12 维标签（`ui/fingerprint-utils.ts` 剩 10 处，
+随写作指纹库视图切片一起迁）→ 写作主流程 `Notice`。
+

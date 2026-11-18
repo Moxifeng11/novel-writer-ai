@@ -11,7 +11,7 @@
 | `shared/` | 258 | 51769 | 2179 | 1700 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 115015 | 1177 | 927 | 79% |
+| `ui/` | 306 | 115024 | 1177 | 927 | 79% |
 
 ## 文件清单
 
@@ -825,7 +825,7 @@
 | `ui/fingerprint-embedding.ts` | 32 | 1 | 1 |
 | `ui/fingerprint-intensity-modal.ts` | 502 | 2 | 2 |
 | `ui/fingerprint-library-modal.ts` | 306 | 1 | 1 |
-| `ui/fingerprint-utils.ts` | 209 | 11 | 11 |
+| `ui/fingerprint-utils.ts` | 212 | 11 | 11 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |
 | `ui/full-writer-view.ts` | 2772 | 2 | 2 |
 | `ui/full-writer/batch-pipeline-runner.ts` | 502 | 5 | 4 |
@@ -947,7 +947,7 @@
 | `ui/settings/agent-section.ts` | 39 | 1 | 1 |
 | `ui/settings/api-section.ts` | 1698 | 1 | 1 |
 | `ui/settings/deconstruction-section.ts` | 338 | 1 | 1 |
-| `ui/settings/fingerprint-section.ts` | 441 | 1 | 1 |
+| `ui/settings/fingerprint-section.ts` | 447 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 293 | 1 | 1 |
 | `ui/settings/general-sections.ts` | 1265 | 5 | 5 |
 | `ui/settings/knowledge-section.ts` | 792 | 1 | 1 |

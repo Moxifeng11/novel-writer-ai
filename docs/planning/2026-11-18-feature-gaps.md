@@ -142,13 +142,13 @@
 - 运行时：`i18n/index.ts` —— `t(key, params?)` / `translate(locale, key, params?)` / `setLocale` / `applyLocaleSetting` /
   `onLocaleChange` / `resolveLocale`（auto 读 `localStorage.language`）/ `interpolate` /
   `flattenMessages` / `placeholdersOf`。缺失键返回键名并只警告一次，不炸界面。
-- 资源：`i18n/messages/zh-CN.ts`（源语言）+ `en-US.ts`，各 **1103 条**（common 5 / commands 94 / group 6 / tab 20 / shell 10 / appearance 71 / api 213 / general 178 / writing 147 / knowledge 83 / promptManager 134 / deconstruction 54 / search.topic 42 / prompt.category 10 / deconstruction.dimension 8 / secret 10 / tts 18）。
+- 资源：`i18n/messages/zh-CN.ts`（源语言）+ `en-US.ts`，各 **1145 条**（common 5 / commands 94 / group 6 / tab 20 / shell 10 / appearance 71 / api 213 / general 178 / writing 147 / knowledge 83 / promptManager 134 / deconstruction 54 / fingerprint 42 / search.topic 42 / prompt.category 10 / deconstruction.dimension 8 / secret 10 / tts 18）。
 - 设置：`NovelWriterSettings.language?: 'auto' | 'zh-CN' | 'en-US'`（默认 auto），设置页「🎨 外观设置 → 界面语言」；
   启动在 `engine/engine-registry.ts` Phase 5 的 `loadSettings()` 之后 `applyLocaleSetting()`。
 - 迁移面：设置页导航（6 分组 + 20 页签，`section-factory.ts` 的 `label` 改 getter）+ 设置页外壳 6 条
   （`settings-tab.ts` 的标题/搜索占位/空态/高级开关/未知页签）。
 - 门禁：`scripts/check-i18n.mjs`（`npm run check:i18n`，已进 preflight）——中英键集合与占位符双向一致、
-  `t()` 字面量键必须存在、`ui/**` 中文数量**按文件棘轮**（基线 `.i18n-baseline.json`：261 文件 / 10785 条）。
+  `t()` 字面量键必须存在、`ui/**` 中文数量**按文件棘轮**（基线 `.i18n-baseline.json`：261 文件 / 10732 条）。
 - 验收：单测 38 例 + 设置页回归 30 例；实机 before/after（zh-CN vs en-US）导航全换语言、布局像素级一致
   （`D:\nw-dev-vault\_visual-i18n\{before,after}\settings-appearance.png`）。
 - 第二期第一片（2026-11-18）：命令面板 94 条 `addCommand({ name })` 改 `t('commands.*')`，并在注册前应用语言；实机 zh/en 面板截图见 `D:\nw-dev-vault\_visual-i18n\{zh,en}-palette-export.png`。
@@ -163,7 +163,19 @@
   rules）；`ui/mini-settings-modal.ts` 外壳 5 处（标题/搜索占位/空态/高级开关）迁 `settings.shell.*`；
   zh/en 资源各 1041 条；棘轮收紧到 262 文件 / 10844 条；实机截图见 `D:\nw-dev-vault\_visual-i18n8\`
   （设置页搜索三查询中英各三张；迷你弹窗在 CDP 下点不出 Modal，改由单测覆盖外壳文案）。
-- 后续：第二期余下（`deconstruction-section.ts` 758、`fingerprint-section.ts` 569、写作主流程 Notice、外观页的统计/桌宠块），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
+- 第二期第九片（2026-11-18）：拆解引擎分区 `ui/settings/deconstruction-section.ts`（758 字）迁
+  `settings.deconstruction.*` 54 键，八条维度描述改 `DIMENSION_DESC_KEYS`；维度名走
+  `shared/deconstruction-settings.ts` 新增的 `dimensionLabel()` + `deconstruction.dimension.*`（8 键），
+  原 `DIMENSION_LABELS` 保留给引擎日志；zh/en 资源各 1103 条；棘轮收紧到 261 文件 / 10785 条；
+  实机截图 `D:\nw-dev-vault\_visual-i18n9\deconstruction-{zh,en}.png`（en 下 CJK 0）。
+- 第二期第十片（2026-11-18）：写作指纹库分区 `ui/settings/fingerprint-section.ts`（569 字）迁
+  `settings.fingerprint.*` 35 键；截图校正发现列表行渲染器在 `ui/fingerprint-utils.ts`，
+  空态/模板徽标/详情与删除按钮 title/字数一并迁 7 键，`formatWordCount()` 改为按语言折算
+  （zh `12.3万字` / en `123.4k words`）；zh/en 资源各 1145 条；棘轮收紧到 261 文件 / 10732 条；
+  实机截图 `D:\nw-dev-vault\_visual-i18n10\fingerprint-{zh,en}.png`（en 下仅剩指纹数据中文）。
+- 后续：第二期余下（`setup-section.ts` 477、`foreshadow-section.ts` 447、`mode-section.ts` 402、
+  `mcp-section.ts` 301、写作主流程 Notice、外观页的统计/桌宠块、指纹 12 维标签），
+  第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 
 ---
 
@@ -171,6 +183,6 @@
 
 1 → 2 → 3 → 4 → 5 →（6 可选）→ 7。
 
-进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第一~八片（命令面板 / 外观设置页 / 模型设置页 / 通用设置六分区 / 写作设置五分区 / 写作知识库分区 / 提示词管理器设置页 / 设置搜索与迷你设置弹窗外壳）已交付（2026-11-18）；下一个候选是 ⑦ 第二期余下（`ui/settings/deconstruction-section.ts` 758 起，及其余设置分区/写作主流程 Notice）。
+进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第一~十片（命令面板 / 外观设置页 / 模型设置页 / 通用设置六分区 / 写作设置五分区 / 写作知识库分区 / 提示词管理器设置页 / 设置搜索与迷你设置弹窗外壳 / 拆解引擎分区 / 写作指纹库分区）已交付（2026-11-18）；下一个候选是 ⑦ 第二期余下（`ui/settings/setup-section.ts` 477 起，及其余设置分区/写作主流程 Notice）。
 
 理由：1 是修「假成功」缺陷；2 是把已交付引擎变成写作时可见的价值；3 是投稿刚需且不依赖 AI；4/5 是低成本体验补洞；6/7 视需要。

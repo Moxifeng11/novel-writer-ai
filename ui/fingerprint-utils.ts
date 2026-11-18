@@ -1,4 +1,5 @@
 import { StyleFingerprint } from '@/engine/style-fingerprint-library';
+import { getLocale, t } from '@/i18n';
 import {
     StyleDimensionKeyV2,
     StyleDimensionMetaV2,
@@ -13,10 +14,12 @@ import {
  */
 export function formatWordCount(count: number): string {
     if (count >= 10000) {
-        const wan = count / 10000;
-        return wan % 1 === 0 ? `${wan}万字` : `${wan.toFixed(1)}万字`;
+        // 中文按「万」、英文按「k」计数：同一个键，单位由资源文案决定
+        const scale = getLocale() === 'en-US' ? count / 1000 : count / 10000;
+        const n = scale % 1 === 0 ? String(scale) : scale.toFixed(1);
+        return t('settings.fingerprint.wordCountWan', { n });
     }
-    return `${count}字`;
+    return t('settings.fingerprint.wordCount', { n: count });
 }
 
 /**
@@ -68,7 +71,7 @@ export function renderFingerprintList(
     if (fingerprints.length === 0) {
         container.createDiv({
             attr: { style: 'padding:24px;text-align:center;color:var(--text-faint);font-size:13px;' },
-            text: '暂无指纹'
+            text: t('settings.fingerprint.emptyList')
         });
         return;
     }
@@ -104,9 +107,9 @@ export function renderFingerprintList(
         if (isSourceOnlyFingerprintScope(fp.scope)) {
             // 模板层不参与注入：给提示而不是给一个无效开关
             actions.createEl('span', {
-                text: '来源库 · 复制到项目后生效',
+                text: t('settings.fingerprint.templateBadge'),
                 attr: {
-                    title: '模板层指纹只在创建项目/从模板同步时复制进项目，本身的启用状态不影响正文',
+                    title: t('settings.fingerprint.templateBadgeTitle'),
                     style: 'font-size:11px;color:var(--text-faint);'
                 }
             });
@@ -122,7 +125,7 @@ export function renderFingerprintList(
         }
 
         const detailBtn = actions.createEl('button', {
-            text: '详情',
+            text: t('settings.fingerprint.detailBtn'),
             attr: { type: 'button', style: 'padding:4px 10px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:11px;' }
         });
         detailBtn.addEventListener('click', () => onDetail?.(fp));
@@ -132,7 +135,7 @@ export function renderFingerprintList(
                 text: '🗑',
                 attr: {
                     type: 'button',
-                    title: '删除',
+                    title: t('settings.fingerprint.deleteBtnTitle'),
                     style: 'padding:4px 8px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:11px;color:var(--text-error);'
                 }
             });

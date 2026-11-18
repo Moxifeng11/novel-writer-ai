@@ -16,6 +16,7 @@ import { renderFingerprintList } from '@/ui/fingerprint-utils';
 import { RefillModal } from '@/ui/refill-modal';
 import { OperationConfirmModal } from '@/ui/components/progress';
 import { createLogger } from '@/shared/logger';
+import { t } from '@/i18n';
 
 const log = createLogger('SettingsTab');
 
@@ -42,17 +43,17 @@ export class FingerprintSection extends SettingsSection {
         this.renderStatKeywords(container);
 
         const section = container.createEl('section');
-        section.createEl('h3', { text: '🔍 写作指纹库' });
+        section.createEl('h3', { text: t('settings.fingerprint.title') });
 
         section.createEl('p', {
-            text: '管理模板、全局和项目级写作指纹库，用于保持风格一致性。',
+            text: t('settings.fingerprint.intro'),
             cls: 'setting-item-description'
         });
 
         if (this.fingerprintLoading) {
             section.createDiv({
                 cls: 'nw-u-p-40px nw-u-ta-center nw-u-c-text-faint nw-u-fs-13px',
-                text: '加载中...'
+                text: t('common.loading')
             });
             return;
         }
@@ -75,13 +76,13 @@ export class FingerprintSection extends SettingsSection {
         }
 
         const templateSection = section.createDiv({ cls: 'nw-u-marginbottom-24px' });
-        this.renderFingerprintGroup(templateSection, '模板指纹库', this.templateFingerprints, 'template');
+        this.renderFingerprintGroup(templateSection, t('settings.fingerprint.groupTemplates'), this.templateFingerprints, 'template');
 
         const globalSection = section.createDiv({ cls: 'nw-u-marginbottom-24px' });
-        this.renderFingerprintGroup(globalSection, '全局指纹库', this.globalFingerprints, 'global');
+        this.renderFingerprintGroup(globalSection, t('settings.fingerprint.groupGlobal'), this.globalFingerprints, 'global');
 
         const projectSection = section.createDiv();
-        this.renderFingerprintGroup(projectSection, '项目指纹库', this.projectFingerprints, 'project', activeProject);
+        this.renderFingerprintGroup(projectSection, t('settings.fingerprint.groupProject'), this.projectFingerprints, 'project', activeProject);
     }
 
     /**
@@ -95,30 +96,30 @@ export class FingerprintSection extends SettingsSection {
     private renderStatKeywords(container: HTMLElement): void {
         const section = container.createDiv({ cls: 'nw-settings-section' });
         new Setting(section)
-            .setName('📊 统计词表（追加）')
-            .setDesc('只影响风格与 AI 味统计口径，不改变正文判定。')
+            .setName(t('settings.fingerprint.statKeywordsHeading'))
+            .setDesc(t('settings.fingerprint.statKeywordsDesc'))
             .setHeading();
         new Setting(section)
-            .setName('AI 高频词')
-            .setDesc('用于「AI 味」统计，逗号分隔。')
+            .setName(t('settings.fingerprint.aiHighFreqName'))
+            .setDesc(t('settings.fingerprint.aiHighFreqDesc'))
             .addTextArea(text => text
-                .setPlaceholder('逗号分隔，如：不禁, 仿佛')
+                .setPlaceholder(t('settings.fingerprint.aiHighFreqPlaceholder'))
                 .setValue((this.plugin.settings.extraAiHighFreqWords ?? []).join(', '))
                 .onChange(async value => {
                     this.plugin.settings.extraAiHighFreqWords = value
                         .split(/[,，\s]+/).map(word => word.trim()).filter(Boolean);
                     await this.plugin.saveSettings();
                 }));
-        const styleFields: Array<{ key: 'positiveEmotion' | 'negativeEmotion' | 'highIntensity'; name: string; hint: string }> = [
-            { key: 'positiveEmotion', name: '正面情绪词', hint: '逗号分隔，如：欣悦, 释然' },
-            { key: 'negativeEmotion', name: '负面情绪词', hint: '逗号分隔，如：郁结, 惶然' },
-            { key: 'highIntensity', name: '高强度情绪词', hint: '逗号分隔，如：暴怒, 狂喜' },
+        const styleFields: Array<{ key: 'positiveEmotion' | 'negativeEmotion' | 'highIntensity'; nameKey: string; hintKey: string }> = [
+            { key: 'positiveEmotion', nameKey: 'settings.fingerprint.positiveEmotionName', hintKey: 'settings.fingerprint.positiveEmotionPlaceholder' },
+            { key: 'negativeEmotion', nameKey: 'settings.fingerprint.negativeEmotionName', hintKey: 'settings.fingerprint.negativeEmotionPlaceholder' },
+            { key: 'highIntensity', nameKey: 'settings.fingerprint.highIntensityName', hintKey: 'settings.fingerprint.highIntensityPlaceholder' },
         ];
         for (const field of styleFields) {
             new Setting(section)
-                .setName(field.name)
+                .setName(t(field.nameKey))
                 .addTextArea(text => text
-                    .setPlaceholder(field.hint)
+                    .setPlaceholder(t(field.hintKey))
                     .setValue(((this.plugin.settings.styleKeywordOverrides ?? {})[field.key] ?? []).join(', '))
                     .onChange(async value => {
                         const next = { ...(this.plugin.settings.styleKeywordOverrides ?? {}) };
@@ -138,12 +139,10 @@ export class FingerprintSection extends SettingsSection {
     ): void {
         const headerRow = container.createDiv({ cls: 'nw-u-d-flex nw-u-ai-center nw-u-jc-space-between nw-u-marginbottom-10px' });
         
-        if (scope === 'project') {
-            const titleText = activeProject ? `${title}（${fingerprints.length} 个）· ${activeProject}` : `${title}（${fingerprints.length} 个）`;
-            headerRow.createEl('span', { text: titleText, cls: 'nw-u-fwt-600 nw-u-fs-13px' });
-        } else {
-            headerRow.createEl('span', { text: `${title}（${fingerprints.length} 个）`, cls: 'nw-u-fwt-600 nw-u-fs-13px' });
-        }
+        const groupLabel = scope === 'project' && activeProject
+            ? t('settings.fingerprint.groupTitleWithProject', { title, count: fingerprints.length, project: activeProject })
+            : t('settings.fingerprint.groupTitle', { title, count: fingerprints.length });
+        headerRow.createEl('span', { text: groupLabel, cls: 'nw-u-fwt-600 nw-u-fs-13px' });
 
         const isProjectWithoutProject = scope === 'project' && !activeProject;
         const headerRight = scope === 'project' && activeProject
@@ -151,7 +150,9 @@ export class FingerprintSection extends SettingsSection {
             : headerRow;
 
         const addBtn = headerRight.createEl('button', {
-            text: scope === 'template' ? '➕ 添加模板指纹' : scope === 'global' ? '➕ 添加全局指纹' : '➕ 添加项目指纹',
+            text: scope === 'template'
+                ? t('settings.fingerprint.addTemplateBtn')
+                : scope === 'global' ? t('settings.fingerprint.addGlobalBtn') : t('settings.fingerprint.addProjectBtn'),
             attr: {
                 type: 'button',
                 style: isProjectWithoutProject
@@ -174,10 +175,10 @@ export class FingerprintSection extends SettingsSection {
 
         if (scope === 'project' && activeProject) {
             const syncBtn = headerRight.createEl('button', {
-                text: '🔄 从模板同步',
+                text: t('settings.fingerprint.syncBtn'),
                 attr: {
                     type: 'button',
-                    title: '从模板指纹库同步到项目指纹库',
+                    title: t('settings.fingerprint.syncTitleAttr'),
                     style: 'padding:2px 8px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:11px;background:transparent;'
                 }
             });
@@ -187,10 +188,13 @@ export class FingerprintSection extends SettingsSection {
                     const result = await this.fingerprintLibrary.syncFromTemplate(activeProject);
                     await this.loadProjectFingerprints();
                     this.refresh();
-                    new Notice(`✅ 同步完成：新增 ${result.added.length} 个，更新 ${result.updated.length} 个`);
+                    new Notice(t('settings.fingerprint.syncDoneNotice', {
+                        added: result.added.length,
+                        updated: result.updated.length,
+                    }));
                 } catch (e) {
                     log.warn('[SettingsTab] 同步失败:', e);
-                    new Notice('❌ 同步失败，请查看控制台');
+                    new Notice(t('settings.fingerprint.syncFailedNotice'));
                 }
             });
         }
@@ -198,7 +202,7 @@ export class FingerprintSection extends SettingsSection {
         if (isProjectWithoutProject) {
             container.createDiv({
                 cls: 'nw-u-p-20px nw-u-ta-center nw-u-c-text-muted nw-u-fs-13px nw-u-bg-background-secondary nw-u-brd-6px',
-                text: '请先打开一个项目查看项目级指纹'
+                text: t('settings.fingerprint.noProjectHint')
             });
             return;
         }
@@ -231,13 +235,15 @@ export class FingerprintSection extends SettingsSection {
             },
             onDelete: async (fp) => {
                 if (!this.fingerprintLibrary) return;
-                const scopeLabel = scope === 'template' ? '模板' : scope === 'global' ? '全局' : '项目';
+                const scopeLabel = scope === 'template'
+                    ? t('settings.fingerprint.scopeTemplate')
+                    : scope === 'global' ? t('settings.fingerprint.scopeGlobal') : t('settings.fingerprint.scopeProject');
                 const confirmed = await OperationConfirmModal.confirm(this.app, {
-                    title: '删除指纹',
-                    description: `确定要删除${scopeLabel}指纹「${fp.name}」吗？`,
-                    warning: '此操作不可恢复',
-                    confirmText: '确认删除',
-                    cancelText: '取消',
+                    title: t('settings.fingerprint.deleteConfirmTitle'),
+                    description: t('settings.fingerprint.deleteConfirmDesc', { scope: scopeLabel, name: fp.name }),
+                    warning: t('settings.fingerprint.deleteConfirmWarning'),
+                    confirmText: t('settings.fingerprint.deleteConfirmOk'),
+                    cancelText: t('common.cancel'),
                 });
                 if (!confirmed) return;
                 if (scope === 'template') {
@@ -251,7 +257,7 @@ export class FingerprintSection extends SettingsSection {
                     await this.loadProjectFingerprints();
                 }
                 this.refresh();
-                new Notice(`已删除「${fp.name}」`);
+                new Notice(t('settings.fingerprint.deletedNotice', { name: fp.name }));
             },
         });
     }
@@ -291,7 +297,7 @@ export class FingerprintSection extends SettingsSection {
                 await this.fingerprintLibrary.deleteTemplate(fingerprint.id);
                 await this.loadTemplateFingerprints();
                 this.refresh();
-                new Notice(`已删除「${fingerprint.name}」`);
+                new Notice(t('settings.fingerprint.deletedNotice', { name: fingerprint.name }));
             },
         }).open();
     }
@@ -361,7 +367,7 @@ export class FingerprintSection extends SettingsSection {
                 await this.fingerprintLibrary.deleteGlobal(fingerprint.id);
                 await this.loadGlobalFingerprints();
                 this.refresh();
-                new Notice(`已删除「${fingerprint.name}」`);
+                new Notice(t('settings.fingerprint.deletedNotice', { name: fingerprint.name }));
             },
         }).open();
     }
@@ -387,7 +393,7 @@ export class FingerprintSection extends SettingsSection {
     private showAddProjectFingerprintModal(): void {
         const activeProject = this.plugin.getActiveProject();
         if (!activeProject) {
-            new Notice('请先打开一个项目');
+            new Notice(t('settings.fingerprint.noActiveProjectNotice'));
             return;
         }
         const { provider, vectorStore } = createFingerprintEmbedding(
@@ -433,7 +439,7 @@ export class FingerprintSection extends SettingsSection {
                 await this.fingerprintLibrary.deleteProject(fingerprint.id);
                 await this.loadProjectFingerprints();
                 this.refresh();
-                new Notice(`已删除「${fingerprint.name}」`);
+                new Notice(t('settings.fingerprint.deletedNotice', { name: fingerprint.name }));
             },
         }).open();
     }
