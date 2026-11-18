@@ -2064,3 +2064,21 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 
 **下一轮候选**：`mcp-section.ts`（301，工具名是数据不迁）→ `agent-section.ts`（125，
 完成后设置分区全迁完）→ 指纹视图三件套 → 写作主流程。
+
+## 第七十一轮：i18n 第二期第14片 —— MCP 服务分区（2026-11-19，ZCode · ZC-20261118-04）
+
+**改动**
+- `ui/settings/mcp-section.ts`（68 行 / 301 中文字）13 处文案迁 `t('settings.mcp.*')`：标题/引导语/
+  空态提示/服务器行「· 已停用」后缀/「管理」按钮/管理中心 name+desc+「打开管理中心」按钮/
+  移动端说明 name+desc+「检查当前环境」按钮与两条环境 Notice。
+- 服务器行 name 是用户数据、`describeMcpServer()` 输出只含全角括号与数据字段（无汉字），均不迁。
+- 资源 zh/en 各 1307（+13）；新增 `tests/unit/ui/mcp-section-i18n.test.ts` 3 例（空列表分支，
+  en 骨架 CJK=0 断言）。
+
+**验收**
+- 新增 3 例全绿；`check:i18n` zh/en 各 1307、棘轮收紧到 **258 文件 / 10617 条**（mcp-section 移出）；
+  `check:bundle` main.js → **5806219**（+1595）；preflight EXIT=0。
+- 实机 `D:\nw-dev-vault\_visual-i18n14\mcp-{zh-CN,en-US}.png`：en 下标题/引导语/管理中心/
+  移动端说明全英文，**CJK 0**（开发 vault 未配 MCP 服务，无数据行）；zh 页与改前一致。
+
+**下一轮候选**：`agent-section.ts`（125，完成后设置分区全迁完）→ 指纹视图三件套 → 写作主流程。

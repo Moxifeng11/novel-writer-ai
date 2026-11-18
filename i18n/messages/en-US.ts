@@ -1303,6 +1303,21 @@ export const enUS: MessageTree = {
                 },
             },
         },
+        mcp: {
+            title: '🔌 MCP servers',
+            intro: 'Connect external MCP servers: local programs (stdio subprocesses) or HTTP endpoints. Once connected, tools are exposed to the agent as mcp__<serverId>__<tool>. In the manager panel you can pick local program files, test connections, inspect tool lists, and generate a sample server to verify the chain.',
+            emptyHint: 'No MCP servers configured yet. Click "Open manager" below → "Generate sample server" to get one running first.',
+            disabledSuffix: ' · disabled',
+            manageBtn: 'Manage',
+            managerName: 'MCP management center',
+            managerDesc: 'Add / edit / delete servers, pick local programs, test connections, inspect tool lists, generate a sample server',
+            managerBtn: 'Open manager',
+            mobileName: 'Mobile note',
+            mobileDesc: 'stdio servers depend on local subprocesses and are desktop-only; on mobile, use HTTP endpoint servers.',
+            checkEnvBtn: 'Check environment',
+            envMobileNotice: 'Mobile device detected: stdio servers are unavailable; use HTTP endpoints instead',
+            envDesktopNotice: 'Desktop detected: stdio local-program servers are available',
+        },
     },
     prompt: {
         category: {

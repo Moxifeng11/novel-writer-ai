@@ -1306,6 +1306,21 @@ export const zhCN: MessageTree = {
                 },
             },
         },
+        mcp: {
+            title: '🔌 MCP 服务',
+            intro: '接入外部 MCP 服务：本地程序（stdio 子进程）或 HTTP 端点。连接后工具以 mcp__<服务ID>__<工具> 提供给 Agent 调用。在管理面板里可以选本机程序文件、测试连接、查看工具清单，也可一键生成示例服务验证链路。',
+            emptyHint: '还没有配置 MCP 服务。点下面「打开管理中心」→「生成示例服务」即可先跑通一个。',
+            disabledSuffix: ' · 已停用',
+            manageBtn: '管理',
+            managerName: 'MCP 管理中心',
+            managerDesc: '新增 / 编辑 / 删除服务、选择本机程序、测试连接、查看工具清单、生成示例服务',
+            managerBtn: '打开管理中心',
+            mobileName: '移动端说明',
+            mobileDesc: 'stdio 服务依赖本地子进程，仅在桌面端可用；移动端请使用 HTTP 端点服务。',
+            checkEnvBtn: '检查当前环境',
+            envMobileNotice: '当前是移动端：stdio 服务不可用，请改用 HTTP 端点',
+            envDesktopNotice: '当前是桌面端：可使用 stdio 本地程序服务',
+        },
     },
     prompt: {
         category: {

@@ -6,6 +6,7 @@
  */
 
 import { Platform, Setting } from 'obsidian';
+import { t } from '@/i18n';
 import { SettingsSection } from './section-base';
 import { describeMcpServer, normalizeMcpServers } from '@/shared/mcp-config';
 import { McpManagerModal } from '@/ui/mcp-manager-modal';
@@ -22,48 +23,47 @@ export class McpSection extends SettingsSection {
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
-        section.createEl('h3', { text: '🔌 MCP 服务' });
+        section.createEl('h3', { text: t('settings.mcp.title') });
         section.createEl('p', {
-            text: '接入外部 MCP 服务：本地程序（stdio 子进程）或 HTTP 端点。连接后工具以 mcp__<服务ID>__<工具> 提供给 Agent 调用。'
-                + '在管理面板里可以选本机程序文件、测试连接、查看工具清单，也可一键生成示例服务验证链路。',
+            text: t('settings.mcp.intro'),
             cls: 'nw-u-c-text-muted nw-u-fs-13px nw-u-marginbottom-16px',
         });
 
         const list = normalizeMcpServers(this.plugin.settings.mcpServers);
         if (list.length === 0) {
             section.createEl('p', {
-                text: '还没有配置 MCP 服务。点下面「打开管理中心」→「生成示例服务」即可先跑通一个。',
+                text: t('settings.mcp.emptyHint'),
                 cls: 'setting-item-description',
             });
         }
         for (const server of list) {
             new Setting(section)
                 .setName(server.name || server.id)
-                .setDesc(`${describeMcpServer(server)}${server.enabled === false ? ' · 已停用' : ''}`)
+                .setDesc(`${describeMcpServer(server)}${server.enabled === false ? t('settings.mcp.disabledSuffix') : ''}`)
                 .addButton(button => button
-                    .setButtonText('管理')
+                    .setButtonText(t('settings.mcp.manageBtn'))
                     .onClick(() => this.openManager()));
         }
 
         new Setting(section)
-            .setName('MCP 管理中心')
-            .setDesc('新增 / 编辑 / 删除服务、选择本机程序、测试连接、查看工具清单、生成示例服务')
+            .setName(t('settings.mcp.managerName'))
+            .setDesc(t('settings.mcp.managerDesc'))
             .addButton(button => button
-                .setButtonText('打开管理中心')
+                .setButtonText(t('settings.mcp.managerBtn'))
                 .setCta()
                 .onClick(() => this.openManager()));
 
         new Setting(section)
-            .setName('移动端说明')
-            .setDesc('stdio 服务依赖本地子进程，仅在桌面端可用；移动端请使用 HTTP 端点服务。')
+            .setName(t('settings.mcp.mobileName'))
+            .setDesc(t('settings.mcp.mobileDesc'))
             .addButton(button => button
-                .setButtonText('检查当前环境')
+                .setButtonText(t('settings.mcp.checkEnvBtn'))
                 .onClick(() => {
                     // 用公开的 Platform.isMobile（不读 app 内部字段，避免依赖私有结构）
                     if (Platform.isMobile) {
-                        showErrorNotice('当前是移动端：stdio 服务不可用，请改用 HTTP 端点', { timeout: 8000 });
+                        showErrorNotice(t('settings.mcp.envMobileNotice'), { timeout: 8000 });
                     } else {
-                        showErrorNotice('当前是桌面端：可使用 stdio 本地程序服务');
+                        showErrorNotice(t('settings.mcp.envDesktopNotice'));
                     }
                 }));
     }
