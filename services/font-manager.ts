@@ -232,16 +232,16 @@ export function unregisterAllCustomFonts(): void {
 }
 
 /** 系统字体预设（常见中文字体栈；浏览器无法枚举系统字体，用预设 + 主题变量） */
-export const SYSTEM_FONT_PRESETS: Array<{ label: string; value: string }> = [
-    { label: '跟随主题正文', value: 'var(--font-text)' },
-    { label: '跟随主题界面', value: 'var(--font-interface)' },
-    { label: '等宽字体', value: 'var(--font-monospace)' },
-    { label: '微软雅黑', value: '"Microsoft YaHei", "微软雅黑", sans-serif' },
-    { label: '苹方', value: '"PingFang SC", "Hiragino Sans GB", sans-serif' },
-    { label: '宋体', value: 'SimSun, "Songti SC", serif' },
-    { label: '楷体', value: 'KaiTi, "Kaiti SC", STKaiti, serif' },
-    { label: '黑体', value: 'SimHei, "Heiti SC", sans-serif' },
-    { label: '仿宋', value: 'FangSong, "Fangsong SC", STFangsong, serif' },
-    { label: '思源黑体', value: '"Source Han Sans SC", "Noto Sans CJK SC", sans-serif' },
-    { label: '思源宋体', value: '"Source Han Serif SC", "Noto Serif CJK SC", serif' },
+export const SYSTEM_FONT_PRESETS: Array<{ label: string; labelKey: string; value: string }> = [
+    { label: '跟随主题正文', labelKey: 'fontPreset.followText', value: 'var(--font-text)' },
+    { label: '跟随主题界面', labelKey: 'fontPreset.followInterface', value: 'var(--font-interface)' },
+    { label: '等宽字体', labelKey: 'fontPreset.monospace', value: 'var(--font-monospace)' },
+    { label: '微软雅黑', labelKey: 'fontPreset.yahei', value: '"Microsoft YaHei", "微软雅黑", sans-serif' },
+    { label: '苹方', labelKey: 'fontPreset.pingfang', value: '"PingFang SC", "Hiragino Sans GB", sans-serif' },
+    { label: '宋体', labelKey: 'fontPreset.songti', value: 'SimSun, "Songti SC", serif' },
+    { label: '楷体', labelKey: 'fontPreset.kaiti', value: 'KaiTi, "Kaiti SC", STKaiti, serif' },
+    { label: '黑体', labelKey: 'fontPreset.heiti', value: 'SimHei, "Heiti SC", sans-serif' },
+    { label: '仿宋', labelKey: 'fontPreset.fangsong', value: 'FangSong, "Fangsong SC", STFangsong, serif' },
+    { label: '思源黑体', labelKey: 'fontPreset.sourceHanSans', value: '"Source Han Sans SC", "Noto Sans CJK SC", sans-serif' },
+    { label: '思源宋体', labelKey: 'fontPreset.sourceHanSerif', value: '"Source Han Serif SC", "Noto Serif CJK SC", serif' },
 ];

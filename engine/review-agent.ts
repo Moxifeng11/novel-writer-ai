@@ -8,7 +8,7 @@ import { NOOP_NOTIFIER } from '@/shared/types';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
 import { NOTICE_ERROR, NOTICE_WARNING, NOTICE_CRITICAL, NOTICE_SUCCESS } from '@/shared/thresholds';
 import { createLogger } from '@/shared/logger';
-import { resolveUiMessage, uiMessage, type UiMessageLike } from '@/shared/ui-message';
+import { resolveUiMessage, uiMessage, withParams } from '@/shared/ui-message';
 
 
 import { resolveBodyFilePath } from './chapter-utils';
@@ -30,6 +30,18 @@ const REVIEW_MSG = {
     collectingContext: uiMessage('engineMsg.review.collectingContext', '⏳ 收集上下文数据...'),
     /** 未配置模型 */
     noApiKey: uiMessage('engineMsg.review.noApiKey', '❌ 请先配置 API 密钥或本地模型端点'),
+    analyzing: uiMessage('engineMsg.review.analyzing', '⏳ 审查 Agent 正在分析...'),
+    failed: uiMessage('engineMsg.review.failed', '❌ 审查失败: {error}'),
+    noChapterDir: uiMessage('engineMsg.review.noChapterDir', '❌ 无法确定章节目录（需在正文文件中执行审查）'),
+    saveFailed: uiMessage('engineMsg.review.saveFailed', '❌ 审查报告保存失败，请检查磁盘空间或文件权限'),
+    done: uiMessage('engineMsg.review.done', '✅ 审查完成 → {file}'),
+    collectingVolumeContext: uiMessage('engineMsg.review.collectingVolumeContext', '⏳ 收集整卷上下文数据...'),
+    volumeChaptersNotFound: uiMessage('engineMsg.review.volumeChaptersNotFound', '❌ 未找到该卷的章节文件'),
+    volumePartialRead: uiMessage('engineMsg.review.volumePartialRead', '⚠️ 整卷审查：{failed}/{total} 章读取失败，结果可能不完整'),
+    volumeSampled: uiMessage('engineMsg.review.volumeSampled', 'ℹ️ 该卷共 {total} 章，已分层抽样 {sampled} 章进行审查（首+中+尾）'),
+    analyzingVolume: uiMessage('engineMsg.review.analyzingVolume', '⏳ 审查 Agent 正在分析整卷连贯性...'),
+    volumeSaveFailed: uiMessage('engineMsg.review.volumeSaveFailed', '❌ 分卷审查报告保存失败，请检查磁盘空间'),
+    volumeDone: uiMessage('engineMsg.review.volumeDone', '✅ 整卷审查完成 → {file}'),
 } as const;
 
 /**
@@ -160,7 +172,7 @@ export class ReviewAgent {
             return;
         }
 
-        const hideCheck = this.notifier.showProgress?.('⏳ 审查 Agent 正在分析...');
+        const hideCheck = this.notifier.showProgress?.(resolveUiMessage(REVIEW_MSG.analyzing));
 
         const result = await this.aiEngine.reviewChapter(bodyText, {
             characters: allChars,
@@ -171,14 +183,14 @@ export class ReviewAgent {
         hideCheck?.();
 
         if (result.error) {
-            this.notifier.showNotice(`❌ 审查失败: ${result.error}`, NOTICE_CRITICAL);
+            this.notifier.showNotice(resolveUiMessage(withParams(REVIEW_MSG.failed, { error: result.error })), NOTICE_CRITICAL);
             return;
         }
 
         // v4.0: 单章审查报告写入 03-大纲与章节/步骤结果/第N卷/第M章/
         const v4Match = activeFile.path.match(/^(.*?)\/03-大纲与章节\/正文\/第(\d+)卷\/第(\d+)章[^/]*_正文\.md$/);
         if (!v4Match) {
-            this.notifier.showNotice('❌ 无法确定章节目录（需在正文文件中执行审查）', NOTICE_ERROR);
+            this.notifier.showNotice(resolveUiMessage(REVIEW_MSG.noChapterDir), NOTICE_ERROR);
             return;
         }
 
@@ -221,7 +233,7 @@ ${result.content}
         } catch (e) {
             writeFailed = true;
             log.warn('[小说工坊] 审查报告写入失败:', e);
-            this.notifier.showNotice('❌ 审查报告保存失败，请检查磁盘空间或文件权限', NOTICE_WARNING);
+            this.notifier.showNotice(resolveUiMessage(REVIEW_MSG.saveFailed), NOTICE_WARNING);
         }
 
         if (!writeFailed) {
@@ -229,7 +241,7 @@ ${result.content}
             if (savedFile instanceof TFile) {
                 await this.plugin.safeOpenFile(savedFile);
             }
-            this.notifier.showNotice(`✅ 审查完成 → ${getChapterFileName(chapName, CHAPTER_FILE_TYPES.continuityReview)}`, NOTICE_WARNING);
+            this.notifier.showNotice(resolveUiMessage(withParams(REVIEW_MSG.done, { file: getChapterFileName(chapName, CHAPTER_FILE_TYPES.continuityReview) })), NOTICE_WARNING);
         }
     }
 
@@ -284,7 +296,7 @@ ${result.content}
      * @param volume - 卷
      */
     async reviewVolume(project: string, volume: string): Promise<void> {
-        const hideProgressVol = this.notifier.showProgress?.('⏳ 收集整卷上下文数据...');
+        const hideProgressVol = this.notifier.showProgress?.(resolveUiMessage(REVIEW_MSG.collectingVolumeContext));
 
         // v4.0: 整卷正文位于 03-大纲与章节/正文/第X卷/
         const volMatchN = volume.match(/第(\d+)卷/);
@@ -297,7 +309,7 @@ ${result.content}
         );
 
         if (chapterFiles.length === 0) {
-            this.notifier.showNotice('❌ 未找到该卷的章节文件', NOTICE_ERROR);
+            this.notifier.showNotice(resolveUiMessage(REVIEW_MSG.volumeChaptersNotFound), NOTICE_ERROR);
             return;
         }
 
@@ -313,12 +325,12 @@ ${result.content}
             }
         }
         if (readFailed > 0) {
-            this.notifier.showNotice(`⚠️ 整卷审查：${readFailed}/${chapterFiles.length} 章读取失败，结果可能不完整`, NOTICE_CRITICAL);
+            this.notifier.showNotice(resolveUiMessage(withParams(REVIEW_MSG.volumePartialRead, { failed: readFailed, total: chapterFiles.length })), NOTICE_CRITICAL);
         }
 
         const { selected: selectedChapters, skipped: skippedChapters, isSampled: chapterSampled } = this.selectVolumeChapters(chapterContents);
         if (chapterSampled) {
-            this.notifier.showNotice(`ℹ️ 该卷共 ${chapterContents.length} 章，已分层抽样 ${selectedChapters.length} 章进行审查（首+中+尾）`, NOTICE_WARNING);
+            this.notifier.showNotice(resolveUiMessage(withParams(REVIEW_MSG.volumeSampled, { total: chapterContents.length, sampled: selectedChapters.length })), NOTICE_WARNING);
         }
 
         const perChapterChars = selectedChapters.length <= 6 ? 1000 : selectedChapters.length <= 10 ? 700 : 500;
@@ -355,11 +367,11 @@ ${result.content}
         hideProgressVol?.();
 
         if (!this.plugin.hasAiCredentials) {
-            this.notifier.showNotice('❌ 请先配置 API 密钥或本地模型端点', NOTICE_ERROR);
+            this.notifier.showNotice(resolveUiMessage(REVIEW_MSG.noApiKey), NOTICE_ERROR);
             return;
         }
 
-        const hideCheckVol = this.notifier.showProgress?.('⏳ 审查 Agent 正在分析整卷连贯性...');
+        const hideCheckVol = this.notifier.showProgress?.(resolveUiMessage(REVIEW_MSG.analyzingVolume));
 
         const systemPrompt = `你是一位严谨的小说连贯性审查员，专门审查整卷的连贯性。
 
@@ -397,7 +409,7 @@ ${selectedChapters.map((c, i) => {
         hideCheckVol?.();
 
         if (result.error) {
-            this.notifier.showNotice(`❌ 审查失败: ${result.error}`, NOTICE_CRITICAL);
+            this.notifier.showNotice(resolveUiMessage(withParams(REVIEW_MSG.failed, { error: result.error })), NOTICE_CRITICAL);
             return;
         }
 
@@ -435,7 +447,7 @@ ${result.content}
         } catch (e) {
             writeFailed = true;
             log.warn('[小说工坊] 分卷审查报告写入失败:', e);
-            this.notifier.showNotice('❌ 分卷审查报告保存失败，请检查磁盘空间', NOTICE_WARNING);
+            this.notifier.showNotice(resolveUiMessage(REVIEW_MSG.volumeSaveFailed), NOTICE_WARNING);
         }
 
         if (!writeFailed) {
@@ -443,7 +455,7 @@ ${result.content}
             if (savedFile instanceof TFile) {
                 await this.plugin.safeOpenFile(savedFile);
             }
-            this.notifier.showNotice(`✅ 整卷审查完成 → ${getChapterFileName(volume, CHAPTER_FILE_TYPES.continuityReview)}`, NOTICE_WARNING);
+            this.notifier.showNotice(resolveUiMessage(withParams(REVIEW_MSG.volumeDone, { file: getChapterFileName(volume, CHAPTER_FILE_TYPES.continuityReview) })), NOTICE_WARNING);
         }
     }
 }

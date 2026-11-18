@@ -6,7 +6,7 @@
  * 字体选项、布局状态、状态栏文案走纯函数导出，便于单元测试。
  */
 import { SYSTEM_FONT_PRESETS } from '@/services/font-manager';
-import { t } from '@/i18n';
+import { hasMessage, t } from '@/i18n';
 import { countParagraphs, describeContractShort, describeContractWithVisible } from '@/shared/novel-format';
 import type { BodyFormatContract } from '@/shared/body-format';
 import { buildMarkdownToolbar, type MarkdownToolbarHost } from './markdown-toolbar';
@@ -202,7 +202,8 @@ export function resolveFontOptions(
 ): { options: FontOption[]; selected: string } {
     const options: FontOption[] = [
         { value: '', label: t('cowrite.layout.fontDefault') },
-        ...SYSTEM_FONT_PRESETS,
+        // 字体预设的 label 走 labelKey 求值（i18n engine 分层②）；value 是 CSS 栈，绝不翻译
+        ...SYSTEM_FONT_PRESETS.map(preset => ({ value: preset.value, label: hasMessage(preset.labelKey) ? t(preset.labelKey) : preset.label })),
     ];
     for (const family of customFamilies) {
         options.push({ value: `"${family}", sans-serif`, label: `★ ${family}` });

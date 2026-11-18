@@ -11,11 +11,36 @@
 export type MessageTree = { [key: string]: string | MessageTree };
 
 export const zhCN: MessageTree = {
+    fontPreset: {
+        followText: '跟随主题正文',
+        followInterface: '跟随主题界面',
+        monospace: '等宽字体',
+        yahei: '微软雅黑',
+        pingfang: '苹方',
+        songti: '宋体',
+        kaiti: '楷体',
+        heiti: '黑体',
+        fangsong: '仿宋',
+        sourceHanSans: '思源黑体',
+        sourceHanSerif: '思源宋体',
+    },
     engineMsg: {
         review: {
             chapterNotFound: '❌ 未找到章节文件',
             collectingContext: '⏳ 收集上下文数据...',
             noApiKey: '❌ 请先配置 API 密钥或本地模型端点',
+            analyzing: '⏳ 审查 Agent 正在分析...',
+            failed: '❌ 审查失败: {error}',
+            noChapterDir: '❌ 无法确定章节目录（需在正文文件中执行审查）',
+            saveFailed: '❌ 审查报告保存失败，请检查磁盘空间或文件权限',
+            done: '✅ 审查完成 → {file}',
+            collectingVolumeContext: '⏳ 收集整卷上下文数据...',
+            volumeChaptersNotFound: '❌ 未找到该卷的章节文件',
+            volumePartialRead: '⚠️ 整卷审查：{failed}/{total} 章读取失败，结果可能不完整',
+            volumeSampled: 'ℹ️ 该卷共 {total} 章，已分层抽样 {sampled} 章进行审查（首+中+尾）',
+            analyzingVolume: '⏳ 审查 Agent 正在分析整卷连贯性...',
+            volumeSaveFailed: '❌ 分卷审查报告保存失败，请检查磁盘空间',
+            volumeDone: '✅ 整卷审查完成 → {file}',
         },
         fp: {
             complete: '指纹提取完成',
@@ -30,6 +55,10 @@ export const zhCN: MessageTree = {
             combiningSamples: '正在组合文本片段...',
             smartSelecting: '正在智能筛选片段...',
             samplesDone: '片段筛选完成',
+        },
+        attach: {
+            unsupported: '不支持的附件类型',
+            noProject: '请先打开一个项目',
         },
         stepModal: {
             noBody: '没有正文可改写',

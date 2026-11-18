@@ -98,3 +98,25 @@ export function uiMessage(
 export function isUiMessage(message: UiMessageLike): message is UiMessage {
     return typeof message === 'object' && message !== null && typeof message.code === 'string';
 }
+
+/**
+ * 给已有的 `UiMessage` 补上插值参数（不修改原对象）。
+ *
+ * **为什么需要**：带占位符的消息（如 `'❌ 审查失败: {error}'`）的 fallback 只能写在
+ * 常量表里一处；调用点拿到运行时的值后，用本函数补 params 而不是重新 `uiMessage(...)`
+ * ——否则 fallback 会散落回各个调用点，集中管理的意义就没了。
+ *
+ * @param message - 基础消息
+ * @param params - 插值参数
+ * @returns 带参数的新消息
+ * @example
+ * ```ts
+ * withParams(REVIEW_MSG.failed, { error: 'timeout' });
+ * ```
+ */
+export function withParams(
+    message: UiMessage,
+    params: Record<string, string | number>,
+): UiMessage {
+    return { ...message, params };
+}

@@ -8,11 +8,36 @@
 import type { MessageTree } from './zh-CN';
 
 export const enUS: MessageTree = {
+    fontPreset: {
+        followText: 'Follow theme body text',
+        followInterface: 'Follow theme interface text',
+        monospace: 'Monospace',
+        yahei: 'Microsoft YaHei',
+        pingfang: 'PingFang SC',
+        songti: 'SimSun',
+        kaiti: 'KaiTi',
+        heiti: 'SimHei',
+        fangsong: 'FangSong',
+        sourceHanSans: 'Source Han Sans SC',
+        sourceHanSerif: 'Source Han Serif SC',
+    },
     engineMsg: {
         review: {
             chapterNotFound: '❌ Chapter file not found',
             collectingContext: '⏳ Collecting context data...',
             noApiKey: '❌ Please configure an API key or local model endpoint first',
+            analyzing: '⏳ Review agent is analyzing...',
+            failed: '❌ Review failed: {error}',
+            noChapterDir: '❌ Cannot determine the chapter directory (run from a body file)',
+            saveFailed: '❌ Failed to save the review report; check disk space or file permissions',
+            done: '✅ Review complete → {file}',
+            collectingVolumeContext: '⏳ Collecting volume context...',
+            volumeChaptersNotFound: '❌ Chapter files for this volume not found',
+            volumePartialRead: '⚠️ Volume review: {failed}/{total} chapters failed to read; result may be incomplete',
+            volumeSampled: 'ℹ️ This volume has {total} chapters; {sampled} sampled (first+middle+last) for review',
+            analyzingVolume: '⏳ Review agent is analyzing volume coherence...',
+            volumeSaveFailed: '❌ Failed to save the volume review report; check disk space',
+            volumeDone: '✅ Volume review complete → {file}',
         },
         fp: {
             complete: 'Fingerprint extraction complete',
@@ -27,6 +52,10 @@ export const enUS: MessageTree = {
             combiningSamples: 'Combining text samples...',
             smartSelecting: 'Smart-selecting samples...',
             samplesDone: 'Sample selection complete',
+        },
+        attach: {
+            unsupported: 'Unsupported attachment type',
+            noProject: 'Please open a project first',
         },
         stepModal: {
             noBody: 'No body text to rewrite',

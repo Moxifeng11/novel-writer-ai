@@ -6,6 +6,7 @@
  */
 
 import { App, TFile } from 'obsidian';
+import { resolveUiMessage, uiMessage } from '@/shared/ui-message';
 import { createLogger } from '@/shared/logger';
 import { pjAttachmentDir } from '@/shared/paths';
 import {
@@ -47,8 +48,8 @@ export class AttachmentService {
      * @returns 附件 vault 路径
      */
     async save(project: string, name: string, data: ArrayBuffer): Promise<{ path: string; error?: string }> {
-        if (!isSupportedAttachment(name)) return { path: '', error: '不支持的附件类型' };
-        if (!project) return { path: '', error: '请先打开一个项目' };
+        if (!isSupportedAttachment(name)) return { path: '', error: resolveUiMessage(uiMessage('engineMsg.attach.unsupported', '不支持的附件类型')) };
+        if (!project) return { path: '', error: resolveUiMessage(uiMessage('engineMsg.attach.noProject', '请先打开一个项目')) };
         const dir = pjAttachmentDir(project);
         try {
             if (!this.app.vault.getAbstractFileByPath(dir)) {
