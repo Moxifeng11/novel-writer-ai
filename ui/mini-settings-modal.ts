@@ -15,6 +15,7 @@ import type { SettingsSectionHost } from './settings/section-base';
 import { SETTINGS_GROUPS, SETTINGS_TAB_DEFINITIONS, createSettingsSection } from './settings/section-factory';
 import {
     buildStaticSearchIndex,
+    entryLabel,
     filterSettingsItems,
     highlightSettingItem,
     searchSettings,
@@ -45,7 +46,7 @@ export class MiniSettingsModal extends Modal {
     /** 打开弹窗：构建搜索 + 分组 tab 外壳并渲染当前分区。 */
     onOpen(): void {
         this.modalEl.addClass('nw-scope', 'nw-modal', 'nw-settings-modal');
-        this.titleEl.setText('⚙️ 设置');
+        this.titleEl.setText(t('settings.shell.compactTitle'));
         const { contentEl } = this;
         contentEl.empty();
         contentEl.addClass('nw-mini-settings');
@@ -53,7 +54,7 @@ export class MiniSettingsModal extends Modal {
         const searchWrap = contentEl.createDiv({ cls: 'nw-settings-search nw-settings-search-compact' });
         this.searchInput = searchWrap.createEl('input', {
             cls: 'nw-settings-search-input',
-            attr: { type: 'search', placeholder: '搜索设置项…', spellcheck: 'false' },
+            attr: { type: 'search', placeholder: t('settings.shell.compactSearchPlaceholder'), spellcheck: 'false' },
         });
         this.searchResults = searchWrap.createDiv({ cls: 'nw-settings-search-results' });
         this.searchResults.toggleClass('nw-u-d-none', true);
@@ -70,18 +71,19 @@ export class MiniSettingsModal extends Modal {
             }
             const hits = searchSettings(index, query, 10);
             if (hits.length === 0) {
-                results.createDiv({ cls: 'nw-settings-search-empty', text: '没有匹配的设置项' });
+                results.createDiv({ cls: 'nw-settings-search-empty', text: t('settings.shell.searchEmpty') });
             } else {
                 for (const hit of hits) {
                     const row = results.createDiv({ cls: 'nw-settings-search-hit' });
                     row.createSpan({ cls: 'nw-settings-search-path', text: `${hit.entry.groupLabel} › ${hit.entry.tabLabel}` });
-                    if (hit.entry.itemName) {
-                        row.createSpan({ cls: 'nw-settings-search-item', text: hit.entry.itemName });
+                    const label = entryLabel(hit.entry);
+                    if (label) {
+                        row.createSpan({ cls: 'nw-settings-search-item', text: label });
                     }
                     row.onclick = () => {
                         this.switchTab(hit.entry.tabId);
-                        if (hit.entry.itemName && this.panel) {
-                            setTimeout(() => this.panel && highlightSettingItem(this.panel, hit.entry.itemName || ''), 260);
+                        if (label && this.panel) {
+                            setTimeout(() => this.panel && highlightSettingItem(this.panel, label), 260);
                         }
                         results.toggleClass('nw-u-d-none', true);
                         if (this.searchInput) this.searchInput.value = '';
@@ -149,7 +151,7 @@ export class MiniSettingsModal extends Modal {
             }
         }
         const toggle = this.tabBar.createEl('button', {
-            text: showAdvanced ? '⚙ 收起高级' : '⚙ 高级设置',
+            text: showAdvanced ? t('settings.shell.hideAdvanced') : t('settings.shell.showAdvanced'),
             cls: 'nw-mini-settings-tab nw-mini-settings-tab-advanced-toggle',
         });
         toggle.addEventListener('click', () => {

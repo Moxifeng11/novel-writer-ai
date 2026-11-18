@@ -152,7 +152,6 @@
     "ui/mcp-manager-modal.ts": 44,
     "ui/mcp-server-form-modal.ts": 44,
     "ui/memory-preview.ts": 16,
-    "ui/mini-settings-modal.ts": 5,
     "ui/mode-document-modal.ts": 32,
     "ui/model-editor-modal.ts": 20,
     "ui/model-picker-modal.ts": 12,
@@ -207,7 +206,6 @@
     "ui/settings/knowledge-section.ts": 4,
     "ui/settings/mcp-section.ts": 14,
     "ui/settings/mode-section.ts": 18,
-    "ui/settings/settings-search.ts": 122,
     "ui/settings/setup-section.ts": 35,
     "ui/settlement-recovery-modal.ts": 15,
     "ui/sidebar-component.ts": 6,
@@ -265,7 +263,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 10971,
+  "total": 10844,
   "updatedAt": "2026-11-18",
   "note": ""
 }

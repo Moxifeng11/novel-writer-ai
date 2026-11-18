@@ -21,6 +21,7 @@ import { SETTINGS_GROUPS, SETTINGS_TAB_DEFINITIONS, createSettingsSection } from
 import { t } from '@/i18n';
 import {
     buildStaticSearchIndex,
+    entryLabel,
     collectRenderedItems,
     filterSettingsItems,
     highlightSettingItem,
@@ -213,11 +214,12 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         for (const hit of hits) {
             const row = results.createDiv({ cls: 'nw-settings-search-hit' });
             row.createSpan({ cls: 'nw-settings-search-path', text: `${hit.entry.groupLabel} › ${hit.entry.tabLabel}` });
-            if (hit.entry.itemName) {
-                row.createSpan({ cls: 'nw-settings-search-item', text: hit.entry.itemName });
+            const label = entryLabel(hit.entry);
+            if (label) {
+                row.createSpan({ cls: 'nw-settings-search-item', text: label });
             }
             row.onclick = () => {
-                this.openTab(hit.entry.tabId, hit.entry.itemName);
+                this.openTab(hit.entry.tabId, label || undefined);
                 if (this.searchInput) this.searchInput.value = '';
                 results.toggleClass('nw-u-d-none', true);
             };
@@ -358,10 +360,10 @@ export class NovelWriterSettingTab extends PluginSettingTab {
      * @param entries - 采集到的条目
      */
     private mergeDynamicEntries(entries: SettingsSearchEntry[]): void {
-        const seen = new Set(this.searchIndex.map(entry => `${entry.tabId}|${entry.itemName ?? ''}`));
+        const seen = new Set(this.searchIndex.map(entry => `${entry.tabId}|${entryLabel(entry)}`));
         let added = false;
         for (const entry of entries) {
-            const key = `${entry.tabId}|${entry.itemName ?? ''}`;
+            const key = `${entry.tabId}|${entryLabel(entry)}`;
             if (seen.has(key)) continue;
             seen.add(key);
             this.searchIndex.push(entry);

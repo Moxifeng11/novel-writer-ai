@@ -4,11 +4,13 @@
  * 覆盖：静态索引（分组/tab/主题词）、全局搜索打分、当前分区过滤、目标项高亮、动态索引采集。
  * 用 tests/unit/ui/support/fake-dom 的 FakeEl（项目统一做法，不依赖 jsdom）。
  */
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { setLocale } from '../../../i18n';
 import { FakeEl } from './support/fake-dom';
 import {
     buildStaticSearchIndex,
     collectRenderedItems,
+    entryLabel,
     filterSettingsItems,
     highlightSettingItem,
     searchSettings,
@@ -61,8 +63,8 @@ describe('buildStaticSearchIndex', () => {
 
     it('包含常见主题词', () => {
         const index = buildStaticSearchIndex(GROUPS, TABS);
-        expect(index.some(entry => entry.tabId === 'rules' && entry.itemName === 'AI 味与禁用词')).toBe(true);
-        expect(index.some(entry => entry.tabId === 'mcp' && entry.itemName === 'MCP 服务')).toBe(true);
+        expect(index.some(entry => entry.tabId === 'rules' && entryLabel(entry) === 'AI 味与禁用词')).toBe(true);
+        expect(index.some(entry => entry.tabId === 'mcp' && entryLabel(entry) === 'MCP 服务')).toBe(true);
     });
 
     it('主题词对应的 tab 不在列表里时跳过（不产生幽灵条目）', () => {
@@ -140,5 +142,34 @@ describe('collectRenderedItems', () => {
         });
         expect(entries).toHaveLength(2);
         expect(entries.every(entry => entry.source === 'dynamic')).toBe(true);
+    });
+});
+
+describe('双语主题词（缺口⑦ 第二期第八片）', () => {
+    afterEach(() => setLocale('zh-CN'));
+
+    it('en-US 下主题词名称走英文资源，不回退键名', () => {
+        setLocale('en-US');
+        const index = buildStaticSearchIndex(GROUPS, TABS);
+        const labels = index.filter(entry => entry.source === 'topic').map(entry => entryLabel(entry));
+        expect(labels).toContain('Models & keys');
+        expect(labels).toContain('MCP servers');
+        expect(labels.some(label => label.startsWith('settings.search.topic.'))).toBe(false);
+    });
+
+    it('同义词是中英并集：英文界面搜中文、中文界面搜英文都能命中', () => {
+        setLocale('en-US');
+        const index = buildStaticSearchIndex(GROUPS, TABS);
+        expect(searchSettings(index, '敏感词')[0]?.entry.tabId).toBe('rules');
+        setLocale('zh-CN');
+        expect(searchSettings(index, 'banned').some(hit => hit.entry.tabId === 'rules')).toBe(true);
+    });
+
+    it('同一份索引在切语言后名称跟着变（entryLabel 惰性求值）', () => {
+        setLocale('en-US');
+        const index = buildStaticSearchIndex(GROUPS, TABS);
+        expect(index.some(entry => entryLabel(entry) === 'MCP servers')).toBe(true);
+        setLocale('zh-CN');
+        expect(index.some(entry => entryLabel(entry) === 'MCP 服务')).toBe(true);
     });
 });

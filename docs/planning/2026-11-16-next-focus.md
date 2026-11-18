@@ -1850,3 +1850,38 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 **下一轮候选**：`ui/settings/settings-search.ts`（1011 字）→ `deconstruction-section.ts`（758）→
 `fingerprint-section.ts`（569）→ 写作主流程 Notice。
 
+## 第六十五轮：i18n 第二期第八片 —— 设置搜索与迷你设置弹窗外壳（2026-11-18）
+
+**目标**：把设置搜索的 21 个主题词（42 条名称/同义词资源）与迷你设置弹窗外壳迁到 i18n，
+让英文界面里搜出来的主题词、弹窗标题与占位都是英文。
+
+**改动**
+- `ui/settings/settings-search.ts`：主题词条目的 `name: string` 改 `nameKey: string`，
+  新增 `entryLabel(entry)`（主题词 `t(nameKey)`，其余回落 `itemName`）；搜索匹配与结果渲染都走它。
+  新增 `topicKeywords(id)`：把 zh-CN 与 en-US 两份 `settings.search.topic.<id>.keywords`
+  按逗号拆开合并（`KEYWORD_LOCALES`），所以中英界面都能用两种语言的关键词搜到。
+- `ui/mini-settings-modal.ts`：标题、搜索占位、空态、高级开关两态改 `settings.shell.*`；
+  结果行改用 `entryLabel(hit.entry)` 渲染，并用同一个 label 调 `highlightSettingItem`。
+- 资源：zh/en 各 **1041 条**（新增 `settings.search.topic` 42 + `settings.shell.compactTitle` /
+  `compactSearchPlaceholder` 2）。
+
+**三处坑**
+1. **搜索结果不能存「算好的文案」**：索引常驻，构造时 `t()` 会定格语言（且门禁看不到键），
+   必须存 `nameKey` 并在渲染时求值。
+2. **测试 fixture 没有 writing 页签**：`settings-search.test.ts` 里的 GROUPS/TABS 只有
+   api/mcp/rules/fingerprint/knowledge，跨语言断言要用 rules 主题词，否则永远搜不到。
+3. **工作台 ⚙️ 设置 菜单在 CDP 里点不出 Modal**：菜单能弹出（7 项），但 `menu-item.click()` 后
+   `.modal-container` 仍为 0；迷你弹窗外壳改由单测覆盖，别再耗时间调 CDP。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；`tests/unit/ui/settings-search.test.ts` 16 例、
+  `mini-settings-modal.test.ts` 8 例（各含新增双语 3 例）。
+- `check:i18n`：zh 1041 / en 1041、0 无法解析键、动态键 7 处、棘轮 **262 文件 / 10844 条**。
+- 实机 `D:\nw-dev-vault\_visual-i18n8\search-q{1,2,3}-{zh-CN,en-US}.png`：en 界面搜 `mcp` 出
+  `🔌 Connect & Models › 🔌 MCP Servers  MCP servers` 与 `Web research (canon)`（后者来自
+  `'mcp search'` 关键词），中文界面搜 `banned` 命中「AI 味与禁用词」，探针 CJK 0。
+
+**下一轮候选**：`ui/settings/deconstruction-section.ts`（758）→ `fingerprint-section.ts`（569）→
+`setup-section.ts`（477）→ `foreshadow-section.ts`（447）→ 写作主流程 Notice。
+
+

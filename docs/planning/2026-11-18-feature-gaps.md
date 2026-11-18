@@ -148,7 +148,7 @@
 - 迁移面：设置页导航（6 分组 + 20 页签，`section-factory.ts` 的 `label` 改 getter）+ 设置页外壳 6 条
   （`settings-tab.ts` 的标题/搜索占位/空态/高级开关/未知页签）。
 - 门禁：`scripts/check-i18n.mjs`（`npm run check:i18n`，已进 preflight）——中英键集合与占位符双向一致、
-  `t()` 字面量键必须存在、`ui/**` 中文数量**按文件棘轮**（基线 `.i18n-baseline.json`：264 文件 / 10971 条）。
+  `t()` 字面量键必须存在、`ui/**` 中文数量**按文件棘轮**（基线 `.i18n-baseline.json`：262 文件 / 10844 条）。
 - 验收：单测 38 例 + 设置页回归 30 例；实机 before/after（zh-CN vs en-US）导航全换语言、布局像素级一致
   （`D:\nw-dev-vault\_visual-i18n\{before,after}\settings-appearance.png`）。
 - 第二期第一片（2026-11-18）：命令面板 94 条 `addCommand({ name })` 改 `t('commands.*')`，并在注册前应用语言；实机 zh/en 面板截图见 `D:\nw-dev-vault\_visual-i18n\{zh,en}-palette-export.png`。
@@ -158,7 +158,12 @@
 - 第二期第五片（2026-11-18）：写作设置五分区 `ui/settings/writing-sections.ts`（175 个含中文行 / 2239 字）迁 `settings.writing.*` 147 键，覆盖 CoWrite / Writing / Template / ProjectLibrary / Layout；面板尺寸行数据由 `label/desc` 改 `labelKey/descKey`（渲染时求值）；zh/en 资源各 768 条；棘轮收紧到 266 文件 / 11234 条；实机五页中英截图见 `D:\nw-dev-vault\_visual-i18n5\{cowrite,writing,template,projects,layout}-{zh-CN,en-US}.png`（en 下仅 template 页 CJK 276，属提示词库数据与 `ui/prompt-manager-settings.ts` 未迁文案）。
 - 第二期第六片（2026-11-18）：写作知识库分区 `ui/settings/knowledge-section.ts`（1075 字）迁 `settings.knowledge.*` 87 键，覆盖工具栏四按钮、搜索/三重筛选、两种空态、卡片字数额、删除确认与向量增强整块；同时把设置页与设置弹窗两份异步刷新条统一到 `settings.shell.asyncStale/asyncRefresh`（弹窗的「未知页签」也改键）；zh/en 资源各 853 条；棘轮收紧到 265 文件 / 11126 条；实机截图见 `D:\nw-dev-vault\_visual-i18n6\knowledge-{zh-CN,en-US}.png`（en 下 CJK 11 全为书籍数据：书名/作者/样本书名）。
 - 第二期第七片（2026-11-18）：提示词管理器设置页 `ui/prompt-manager-settings.ts`（192 字 / 50 行注释）迁 `settings.promptManager.*` 134 键，覆盖四个子页签、模板侧栏（搜索/「📚 全部 (N)」/分类/空态/自定义徽标）、详情面板（版本历史/系统与用户提示词/变量/三个确认弹窗）、A/B 管理（创建/启停/结束/删除/优胜推荐）、使用记录（条数/分页/清空）、导入导出（错误与合并/替换通知）与三个 Modal；服务层开先例——`services/prompt-manager.ts` 删 `PROMPT_CATEGORY_LABELS` 常量，改 `promptCategoryLabel()` + 顶层 `prompt.category.*` 10 键（未登记分类回落原值）；zh/en 资源各 997 条；棘轮收紧到 264 文件 / 10971 条；实机截图见 `D:\nw-dev-vault\_visual-i18n7\`（模板页/A-B 页/三个弹窗，en 下模板名与描述仍是 vault 数据）。
-- 后续：第二期余下（`ui/settings/settings-search.ts` 1011、`deconstruction-section.ts` 758、`fingerprint-section.ts` 569、写作主流程 Notice、外观页的统计/桌宠块），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
+- 第二期第八片（2026-11-18）：设置搜索 `ui/settings/settings-search.ts` 21 个主题词的 `name` 改 `nameKey`（42 键，
+  含 keywords）、结果行统一 `entryLabel()` 渲染，同义词取 zh/en 并集（英文界面搜「敏感词」、中文界面搜 `banned` 都命中
+  rules）；`ui/mini-settings-modal.ts` 外壳 5 处（标题/搜索占位/空态/高级开关）迁 `settings.shell.*`；
+  zh/en 资源各 1041 条；棘轮收紧到 262 文件 / 10844 条；实机截图见 `D:\nw-dev-vault\_visual-i18n8\`
+  （设置页搜索三查询中英各三张；迷你弹窗在 CDP 下点不出 Modal，改由单测覆盖外壳文案）。
+- 后续：第二期余下（`deconstruction-section.ts` 758、`fingerprint-section.ts` 569、写作主流程 Notice、外观页的统计/桌宠块），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 
 ---
 
@@ -166,6 +171,6 @@
 
 1 → 2 → 3 → 4 → 5 →（6 可选）→ 7。
 
-进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第一~七片（命令面板 / 外观设置页 / 模型设置页 / 通用设置六分区 / 写作设置五分区 / 写作知识库分区 / 提示词管理器设置页）已交付（2026-11-18）；下一个候选是 ⑦ 第二期余下（`ui/settings/settings-search.ts` 1011 起，及其余设置分区/写作主流程 Notice）。
+进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第一~八片（命令面板 / 外观设置页 / 模型设置页 / 通用设置六分区 / 写作设置五分区 / 写作知识库分区 / 提示词管理器设置页 / 设置搜索与迷你设置弹窗外壳）已交付（2026-11-18）；下一个候选是 ⑦ 第二期余下（`ui/settings/deconstruction-section.ts` 758 起，及其余设置分区/写作主流程 Notice）。
 
 理由：1 是修「假成功」缺陷；2 是把已交付引擎变成写作时可见的价值；3 是投稿刚需且不依赖 AI；4/5 是低成本体验补洞；6/7 视需要。

@@ -4,7 +4,8 @@
  * 弹窗 tab 栏由「20 个平铺按钮」改为「一级分组标题 + 组内 tab」两行布局，
  * 并接入同一套搜索。这里用假 DOM + 桩分区验证外壳结构。
  */
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { setLocale } from '../../../i18n';
 import { FakeEl } from './support/fake-dom';
 
 vi.mock('obsidian', () => {
@@ -99,5 +100,37 @@ describe('设置弹窗分组布局', () => {
         const input = content.findAll('nw-settings-search-input');
         expect(input).toHaveLength(1);
         expect(input[0].getAttribute('type')).toBe('search');
+    });
+});
+
+describe('设置弹窗外壳双语（缺口⑦ 第二期第八片）', () => {
+    afterEach(() => setLocale('zh-CN'));
+
+    it('en-US 下标题与搜索占位走英文资源', () => {
+        setLocale('en-US');
+        const modal = makeModal();
+        modal.onOpen();
+        const titleEl = (modal as unknown as { titleEl: FakeEl }).titleEl;
+        const content = (modal as unknown as { contentEl: FakeEl }).contentEl;
+        const input = content.findAll('nw-settings-search-input')[0];
+        expect(titleEl.textContent).toBe('⚙️ Settings');
+        expect(input.getAttribute('placeholder')).toBe('Search settings…');
+    });
+
+    it('en-US 下无结果提示为英文', () => {
+        setLocale('en-US');
+        const { content } = openModal();
+        const input = content.findAll('nw-settings-search-input')[0];
+        input.value = 'zzzz-no-hit';
+        input.dispatch('input');
+        const empty = content.findAll('nw-settings-search-empty');
+        expect(empty).toHaveLength(1);
+        expect(empty[0].textContent).toBe('No matching settings');
+    });
+
+    it('切回 zh-CN 后标题恢复中文', () => {
+        const modal = makeModal();
+        modal.onOpen();
+        expect((modal as unknown as { titleEl: FakeEl }).titleEl.textContent).toBe('⚙️ 设置');
     });
 });

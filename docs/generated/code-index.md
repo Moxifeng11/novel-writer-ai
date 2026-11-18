@@ -11,7 +11,7 @@
 | `shared/` | 258 | 51739 | 2177 | 1699 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 114971 | 1176 | 926 | 79% |
+| `ui/` | 306 | 115013 | 1177 | 927 | 79% |
 
 ## 文件清单
 
@@ -892,7 +892,7 @@
 | `ui/mcp-server-form-modal.ts` | 322 | 3 | 3 |
 | `ui/memory-preview.ts` | 158 | 2 | 1 |
 | `ui/metrics-format.ts` | 103 | 6 | 4 |
-| `ui/mini-settings-modal.ts` | 186 | 1 | 0 |
+| `ui/mini-settings-modal.ts` | 188 | 1 | 0 |
 | `ui/mode-document-modal.ts` | 201 | 2 | 2 |
 | `ui/model-editor-modal.ts` | 150 | 2 | 1 |
 | `ui/model-picker-modal.ts` | 290 | 4 | 4 |
@@ -942,7 +942,7 @@
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 473 | 6 | 5 |
-| `ui/settings-tab.ts` | 373 | 1 | 1 |
+| `ui/settings-tab.ts` | 375 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 39 | 1 | 1 |
 | `ui/settings/api-section.ts` | 1698 | 1 | 1 |
@@ -956,7 +956,7 @@
 | `ui/settings/mode-section.ts` | 80 | 1 | 1 |
 | `ui/settings/section-base.ts` | 66 | 1 | 1 |
 | `ui/settings/section-factory.ts` | 125 | 4 | 1 |
-| `ui/settings/settings-search.ts` | 251 | 9 | 5 |
+| `ui/settings/settings-search.ts` | 289 | 10 | 6 |
 | `ui/settings/setup-section.ts` | 135 | 1 | 1 |
 | `ui/settings/writing-sections.ts` | 852 | 6 | 6 |
 | `ui/settlement-recovery-modal.ts` | 141 | 1 | 1 |
