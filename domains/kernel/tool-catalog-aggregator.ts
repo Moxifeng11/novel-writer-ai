@@ -1,9 +1,54 @@
 import type { CreationMode } from '@/shared/creation-mode';
-import type { ToolGroup } from './tool-catalog-types';
+import { hasMessage, t } from '@/i18n';
+import type { ToolButton, ToolGroup } from './tool-catalog-types';
 import { TOOL_GROUPS } from '@/domains/long/tool-catalog';
 import { SHORT_TOOL_GROUPS } from '@/domains/short/tool-catalog';
 import { SCRIPT_TOOL_GROUPS } from '@/domains/script/tool-catalog';
 import { isCommandAllowedInMode } from '@/shared/command-mode-rules';
+
+/**
+ * 键查不到时回落原中文，避免界面上出现裸键名。
+ *
+ * @param key - i18n 键
+ * @param fallback - 资源缺键时的兜底文案
+ * @returns 展示文案
+ */
+function messageOr(key: string, fallback: string): string {
+    return hasMessage(key) ? t(key) : fallback;
+}
+
+/**
+ * 分组标题（当前语言）。
+ *
+ * 目录表里的 `label` 是 zh 兜底值，`labelKey` 才是渲染来源；缺键时回落原值，
+ * 保证新加的目录项不会显示成键名。
+ *
+ * @param group - 分组
+ * @returns 展示名
+ */
+export function toolGroupLabel(group: ToolGroup): string {
+    return group.labelKey ? messageOr(group.labelKey, group.label) : group.label;
+}
+
+/**
+ * 工具按钮展示名（当前语言）。
+ *
+ * @param tool - 按钮
+ * @returns 展示名
+ */
+export function toolLabel(tool: ToolButton): string {
+    return tool.labelKey ? messageOr(tool.labelKey, tool.label) : tool.label;
+}
+
+/**
+ * 工具按钮描述（当前语言）。
+ *
+ * @param tool - 按钮
+ * @returns 描述
+ */
+export function toolDesc(tool: ToolButton): string {
+    return tool.descKey ? messageOr(tool.descKey, tool.desc) : tool.desc;
+}
 
 /**
  * 按模式过滤工具按钮（v4.23 修复）。
@@ -34,6 +79,8 @@ export function filterToolGroupsByMode(groups: ToolGroup[], mode: CreationMode):
 /**
  * 被模式规则过滤掉的按钮名（用于「本模式暂不支持」提示，避免整组静默消失）。
  *
+ * 返回的是**当前语言**的展示名。
+ *
  * @param groups - 原始工具分组
  * @param mode - 当前创作模式
  * @returns 被隐藏按钮的展示名
@@ -42,7 +89,7 @@ export function getHiddenToolLabels(groups: ToolGroup[], mode: CreationMode): st
     const labels: string[] = [];
     for (const group of groups) {
         for (const button of group.buttons || []) {
-            if (isCommandAllowedInMode(button.commandId, mode) === false) labels.push(button.label);
+            if (isCommandAllowedInMode(button.commandId, mode) === false) labels.push(toolLabel(button));
         }
     }
     return labels;
@@ -87,7 +134,5 @@ export function getToolGroupsForMode(mode: CreationMode): ToolGroup[] {
  * @returns 标题文本
  */
 export function getModeToolTitle(mode: CreationMode): string {
-    if (mode === 'short') return '⚡ 短篇快捷工具';
-    if (mode === 'script') return '⚡ 剧本快捷工具';
-    return '⚡ 快捷工具';
+    return messageOr(`toolCatalog.title.${mode}`, mode === 'short' ? '⚡ 短篇快捷工具' : mode === 'script' ? '⚡ 剧本快捷工具' : '⚡ 快捷工具');
 }

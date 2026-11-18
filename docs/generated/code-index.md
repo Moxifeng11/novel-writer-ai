@@ -10,8 +10,8 @@
 | `services/` | 65 | 19508 | 296 | 203 | 69% |
 | `shared/` | 258 | 51769 | 2179 | 1700 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
-| `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 115169 | 1180 | 930 | 79% |
+| `domains/` | 15 | 1596 | 88 | 58 | 66% |
+| `ui/` | 306 | 115170 | 1180 | 930 | 79% |
 
 ## 文件清单
 
@@ -27,18 +27,18 @@
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
 | `domains/kernel/project-locator.ts` | 106 | 7 | 7 |
-| `domains/kernel/tool-catalog-aggregator.ts` | 94 | 6 | 5 |
-| `domains/kernel/tool-catalog-types.ts` | 15 | 2 | 0 |
+| `domains/kernel/tool-catalog-aggregator.ts` | 139 | 9 | 8 |
+| `domains/kernel/tool-catalog-types.ts` | 24 | 2 | 0 |
 | `domains/long/harness-profile.ts` | 44 | 1 | 1 |
-| `domains/long/tool-catalog.ts` | 124 | 4 | 3 |
+| `domains/long/tool-catalog.ts` | 131 | 4 | 3 |
 | `domains/memory/history.ts` | 128 | 9 | 6 |
 | `domains/memory/model.ts` | 247 | 19 | 11 |
 | `domains/memory/patch.ts` | 34 | 3 | 2 |
 | `domains/planning/model.ts` | 369 | 26 | 16 |
 | `domains/script/harness-profile.ts` | 39 | 1 | 1 |
-| `domains/script/tool-catalog.ts` | 43 | 1 | 0 |
+| `domains/script/tool-catalog.ts` | 47 | 1 | 0 |
 | `domains/short/harness-profile.ts` | 42 | 1 | 1 |
-| `domains/short/tool-catalog.ts` | 42 | 1 | 0 |
+| `domains/short/tool-catalog.ts` | 46 | 1 | 0 |
 | `engine/agent/agent-types.ts` | 382 | 23 | 17 |
 | `engine/agent/conversation-engine.ts` | 1267 | 1 | 1 |
 | `engine/agent/harness/agent-adapter.ts` | 83 | 2 | 1 |
@@ -847,7 +847,7 @@
 | `ui/full-writer/intervention-controller.ts` | 413 | 3 | 3 |
 | `ui/full-writer/next-step.ts` | 152 | 2 | 1 |
 | `ui/full-writer/project-selector-controller.ts` | 1145 | 3 | 3 |
-| `ui/full-writer/quick-tools-panel.ts` | 151 | 3 | 3 |
+| `ui/full-writer/quick-tools-panel.ts` | 152 | 3 | 3 |
 | `ui/full-writer/recent-projects.ts` | 133 | 6 | 4 |
 | `ui/full-writer/scene-outline-controller.ts` | 1210 | 2 | 1 |
 | `ui/full-writer/scene-outline-format.ts` | 141 | 4 | 4 |

@@ -7,6 +7,7 @@
 import { setIcon } from 'obsidian';
 import { t } from '@/i18n';
 import { TOOL_GROUPS, type ToolButton, type ToolGroup } from './tool-catalog';
+import { toolGroupLabel, toolLabel, toolDesc } from '@/domains/kernel/tool-catalog-aggregator';
 
 /**
  * ProjectQuickAction 类型定义。
@@ -47,7 +48,7 @@ function renderToolButton(
 ): void {
     const btn = parent.createEl('button', {
         cls: opts.compact ? 'nw-qt-chip' : 'nw-qt-tool',
-        attr: { title: `${tool.label}\n${tool.desc}` },
+        attr: { title: `${toolLabel(tool)}\n${toolDesc(tool)}` },
     });
     btn.type = 'button';
 
@@ -59,7 +60,7 @@ function renderToolButton(
         iconEl.setText(tool.icon);
     }
 
-    btn.createSpan({ text: tool.label, cls: opts.compact ? 'nw-qt-chip-label' : 'nw-qt-tool-label' });
+    btn.createSpan({ text: toolLabel(tool), cls: opts.compact ? 'nw-qt-chip-label' : 'nw-qt-tool-label' });
 
     btn.onclick = (e) => {
         e.stopPropagation();
@@ -135,7 +136,7 @@ export function renderQuickToolsPanel(container: HTMLElement, opts: QuickToolsPa
             cls: 'nw-qt-group-title',
             attr: { type: 'button', 'aria-expanded': String(!collapsed) },
         });
-        head.createSpan({ text: group.label, cls: 'nw-qt-group-label' });
+        head.createSpan({ text: toolGroupLabel(group), cls: 'nw-qt-group-label' });
         head.createSpan({ text: String(group.buttons.length), cls: 'nw-qt-group-count' });
         head.createSpan({ text: '▾', cls: 'nw-qt-group-caret' });
         head.onclick = (e) => {

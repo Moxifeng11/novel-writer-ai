@@ -2426,3 +2426,31 @@ entity-state-controller / context-loader / checkup-bar 等）→ 外观页统计
 **下一轮候选**：跨层数据专项（工具目录 94 工具名 / `shared/creation-flow` 与
 `shared/link-status-compute` 阶段名 / `shared/novel-format` 契约描述 / `updateControlState` 状态机串）——
 需引擎或 agent 侧协同、或按调用方注入语言，属架构决策，建议与 DSH/用户对齐。
+
+## 第八十七轮：i18n 跨层数据① —— 工具目录展示映射（2026-11-19，ZCode · ZC-20261120-01）
+
+**为什么是甄别式**
+- 工具目录的 `label/desc` 既做 UI 展示，也被 `getHiddenToolLabels()` 拿去做「本模式暂不支持」
+  提示；工具 id 与 commandId 是行为契约，一字不能动。做法：类型加可选 `labelKey/descKey`，
+  原 `label/desc` 保留为 zh 兜底，渲染走 getter（`hasMessage()` 判空后回落，与第九片
+  `dimensionLabel()` 同法）。
+
+**改动**
+- `domains/{long,short,script}/tool-catalog.ts`：82 项（15 分组 + 67 按钮）全部补键。
+- **键名带 mode**：`toolCatalog.<mode>.group.<slug>` / `.tool.<slug>`——同一 commandId 在三个
+  模式下措辞不同（批量建章 / 批量建节 / 批量建集；生成人物 / 创建短篇核心人物 / 创建剧本角色小传），
+  共用一键会让短篇误显长篇文案。
+- `domains/kernel/tool-catalog-aggregator.ts`：并出 `toolGroupLabel()/toolLabel()/toolDesc()`，
+  `getHiddenToolLabels()` 与 `getModeToolTitle()` 改按语言求值；`filterToolGroupsByMode()` 零改动。
+- `ui/full-writer/quick-tools-panel.ts`：三处渲染点改 getter。
+- 新增 `tests/unit/domains/tool-catalog-i18n.test.ts` 4 例：zh 逐字一致 / en 全英文无键名回退 /
+  同 commandId 三模式各自措辞 / 过滤口径与语言无关。
+
+**验收**
+- 新增 4 例 + 既有 mode-tool-catalog 10 例 + 架构隔离 7 例 = **21 例全绿**。
+- `check:i18n` zh/en 各 **3110**（+152），`ui/` 棘轮 226 文件 / 8569 条不变（跨层数据不参与棘轮）。
+- `check:bundle` main.js → **5999596**（+21716）；preflight EXIT=0（10307 通过 + 3 跳过）。
+- 实机 full-writer en 页工具面板：`⚡ Quick tools` / `Core writing` / `Co-writing workbench` /
+  `Projects & chapters`，整页 CJK 191 → 109（余为项目数据、`按章推进大纲` 等 shared 文案）。
+
+**下一轮**：跨层数据②（`shared/creation-flow` 阶段名，硬验收要求单测证明 zh/en 下流程推进一致）。
