@@ -84,9 +84,14 @@ describe('面板尺寸可调', () => {
     it('设置页提供面板尺寸数字输入与恢复默认', () => {
         const src = read('ui/settings/writing-sections.ts');
         expect(src).toContain('renderPanelSizeRows');
-        expect(src).toContain('写作工作台 · 左栏');
-        expect(src).toContain('写作工作台 · 右栏');
-        expect(src).toContain('恢复全部面板尺寸');
+        // i18n 第二期第五片：行文案进资源，源码只留键名（zh 原文在 i18n/messages/zh-CN.ts）
+        expect(src).toContain("labelKey: 'settings.writing.rowStepNavLabel'");
+        expect(src).toContain("labelKey: 'settings.writing.rowRightPanelLabel'");
+        expect(src).toContain("t('settings.writing.restoreAllName')");
+        const zh = read('i18n/messages/zh-CN.ts');
+        expect(zh).toContain('写作工作台 · 左栏');
+        expect(zh).toContain('写作工作台 · 右栏');
+        expect(zh).toContain('恢复全部面板尺寸');
     });
 
     it('可拖面板用 --nw-panel-size 作为唯一宽度来源', () => {

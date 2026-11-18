@@ -164,8 +164,8 @@ describe('写作配置与写作规则的分工', () => {
 
     it('写作配置按五组标题组织，实验分组标签移到写作规则页', () => {
         const writing = read('ui/settings/writing-sections.ts');
-        for (const title of ['篇幅与字数', '正文形态', '上下文与模型', '质量闸门与修订', '阈值与词表']) {
-            expect(writing).toContain(`group('${title}'`);
+        for (const key of ['groupWordTitle', 'groupFormTitle', 'groupContextTitle', 'groupGateTitle', 'groupThresholdTitle']) {
+            expect(writing).toContain(`group(t('settings.writing.${key}'), t('settings.writing.`);
         }
         expect(writing).not.toContain('settings.general.rulesExperimentName');
         expect(read('ui/settings/general-sections.ts')).toContain("setName(t('settings.general.rulesExperimentName'))");
@@ -185,7 +185,11 @@ describe('创作模式设置与字数校验', () => {
     it('写作配置对字数上下限做实时一致性提示', () => {
         const writing = read('ui/settings/writing-sections.ts');
         expect(writing).toContain('validateWordRange');
-        expect(writing).toContain('最小字数大于默认字数');
-        expect(writing).toContain('默认字数大于最大字数');
+        // i18n 第二期第五片：提示文案进资源，源码只剩键名
+        expect(writing).toContain("t('settings.writing.warnMinGtDefault')");
+        expect(writing).toContain("t('settings.writing.warnDefaultGtMax')");
+        const zh = read('i18n/messages/zh-CN.ts');
+        expect(zh).toContain('最小字数大于默认字数');
+        expect(zh).toContain('默认字数大于最大字数');
     });
 });

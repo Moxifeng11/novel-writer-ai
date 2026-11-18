@@ -19,6 +19,7 @@ import { OperationConfirmModal } from '@/ui/components/progress';
 import { setBusinessThresholdOverrides } from '@/shared/thresholds';
 import { SettingsSection } from './section-base';
 import { renderLocaleSetting } from './locale-setting';
+import { t } from '@/i18n';
 
 /**
  * 协同写作设置分区。
@@ -33,7 +34,7 @@ export class CoWriteSection extends SettingsSection {
         const section = container.createEl('section');
 
         section.createEl('p', {
-            text: '配置协同写作使用的模型。可在本地 Ollama 和云端 API 之间自由切换。',
+            text: t('settings.writing.cowriteLead'),
             cls: 'setting-item-description'
         });
 
@@ -60,11 +61,11 @@ export class CoWriteSection extends SettingsSection {
         const loadLocalModels = async () => {
             if (!localModelDropdown) return;
             localModelDropdown.selectEl.empty();
-            localModelDropdown.addOption('', '加载中...');
+            localModelDropdown.addOption('', t('settings.writing.cowriteLoading'));
             localModelDropdown.setValue('');
             const models = await getOllamaModelsWithFallback(this.plugin.settings);
             localModelDropdown.selectEl.empty();
-            localModelDropdown.addOption('', '（未设置 — 协同写作将无法使用）');
+            localModelDropdown.addOption('', t('settings.writing.cowriteUnsetModel'));
             for (const m of models) {
                 localModelDropdown.addOption(m, `🖥 ${m}`);
             }
@@ -74,7 +75,7 @@ export class CoWriteSection extends SettingsSection {
         const refreshCloudModelDropdown = () => {
             if (!cloudModelDropdown) return;
             cloudModelDropdown.selectEl.empty();
-            cloudModelDropdown.addOption('', '（使用默认模型）');
+            cloudModelDropdown.addOption('', t('settings.writing.cowriteUseDefaultModel'));
             const providerId = this.plugin.settings.coWriteCloudProvider || '';
             if (providerId) {
                 const custom = this.plugin.settings.customProviders?.find(p => p.id === providerId);
@@ -88,11 +89,11 @@ export class CoWriteSection extends SettingsSection {
         };
 
         new Setting(section)
-            .setName('模型模式')
-            .setDesc('选择协同写作使用本地模型还是云端模型')
+            .setName(t('settings.writing.cowriteModeName'))
+            .setDesc(t('settings.writing.cowriteModeDesc'))
             .addDropdown(dropdown => {
-                dropdown.addOption('local', '🖥 本地模型（Ollama）');
-                dropdown.addOption('cloud', '☁️ 云端模型');
+                dropdown.addOption('local', t('settings.writing.cowriteModeLocal'));
+                dropdown.addOption('cloud', t('settings.writing.cowriteModeCloud'));
                 dropdown.setValue(this.plugin.settings.coWriteModelMode || 'local');
                 dropdown.onChange(async (value) => {
                     this.plugin.settings.coWriteModelMode = value as 'local' | 'cloud';
@@ -102,11 +103,11 @@ export class CoWriteSection extends SettingsSection {
             });
 
         localModelSetting = new Setting(section)
-            .setName('本地模型')
-            .setDesc('选择协同写作使用的 Ollama 本地模型')
+            .setName(t('settings.writing.cowriteLocalName'))
+            .setDesc(t('settings.writing.cowriteLocalDesc'))
             .addDropdown(dropdown => {
                 localModelDropdown = dropdown;
-                dropdown.addOption('', '加载中...');
+                dropdown.addOption('', t('settings.writing.cowriteLoading'));
                 dropdown.setValue(this.plugin.settings.coWriteModel || '');
                 dropdown.onChange(async (value) => {
                     this.plugin.settings.coWriteModel = value;
@@ -115,8 +116,8 @@ export class CoWriteSection extends SettingsSection {
             })
             .addButton(btn => {
                 btn
-                    .setButtonText('刷新')
-                    .setTooltip('重新加载 Ollama 模型列表')
+                    .setButtonText(t('common.refresh'))
+                    .setTooltip(t('settings.writing.cowriteRefreshTooltip'))
                     .onClick(() => {
                         loadLocalModels();
                     });
@@ -124,11 +125,11 @@ export class CoWriteSection extends SettingsSection {
         loadLocalModels();
 
         cloudProviderSetting = new Setting(section)
-            .setName('云端供应商')
-            .setDesc('选择云端模型的供应商')
+            .setName(t('settings.writing.cowriteProviderName'))
+            .setDesc(t('settings.writing.cowriteProviderDesc'))
             .addDropdown(dropdown => {
                 cloudProviderDropdown = dropdown;
-                dropdown.addOption('', '（未选择）');
+                dropdown.addOption('', t('settings.writing.cowriteProviderNone'));
                 const allProviders = this.plugin.getAllProviders();
                 for (const p of allProviders) {
                     if (p.id !== 'ollama') {
@@ -144,8 +145,8 @@ export class CoWriteSection extends SettingsSection {
             });
 
         cloudModelSetting = new Setting(section)
-            .setName('云端模型')
-            .setDesc('选择协同写作使用的云端模型（留空则使用默认模型）')
+            .setName(t('settings.writing.cowriteCloudModelName'))
+            .setDesc(t('settings.writing.cowriteCloudModelDesc'))
             .addDropdown(dropdown => {
                 cloudModelDropdown = dropdown;
                 refreshCloudModelDropdown();
@@ -157,7 +158,7 @@ export class CoWriteSection extends SettingsSection {
 
         new Setting(section)
             .setName('Temperature')
-            .setDesc('模型的创造性参数（0-2，默认 0.7）')
+            .setDesc(t('settings.writing.cowriteTemperatureDesc'))
             .addSlider(slider => {
                 slider.setLimits(0, 2, 0.05);
                 slider.setValue(this.plugin.settings.coWriteTemperature ?? 0.7);
@@ -169,8 +170,8 @@ export class CoWriteSection extends SettingsSection {
             });
 
         new Setting(section)
-            .setName('最大输出 Token')
-            .setDesc('单次生成的最大 token 数（默认 600）')
+            .setName(t('settings.writing.cowriteMaxTokensName'))
+            .setDesc(t('settings.writing.cowriteMaxTokensDesc'))
             .addText(text => {
                 text.setValue(String(this.plugin.settings.coWriteMaxTokens ?? 600));
                 text.onChange(async (value) => {
@@ -183,10 +184,10 @@ export class CoWriteSection extends SettingsSection {
             });
 
         new Setting(section)
-            .setName('本地上下文窗口 num_ctx')
-            .setDesc('0=按模型探测窗口自动；显存不足时可下调（如 16384/32768）')
+            .setName(t('settings.writing.cowriteNumCtxName'))
+            .setDesc(t('settings.writing.cowriteNumCtxDesc'))
             .addText(text => {
-                text.setPlaceholder('0（自动）');
+                text.setPlaceholder(t('settings.writing.cowriteNumCtxPlaceholder'));
                 text.setValue(String(this.plugin.settings.coWriteNumCtx ?? 0));
                 text.onChange(async (value) => {
                     const num = parseInt(value, 10);
@@ -196,8 +197,8 @@ export class CoWriteSection extends SettingsSection {
             });
 
         new Setting(section)
-            .setName('本地候选批量化')
-            .setDesc('本地模型一次调用生成多个方向的候选，减少串行等待；解析失败自动回退逐方向生成')
+            .setName(t('settings.writing.cowriteBatchingName'))
+            .setDesc(t('settings.writing.cowriteBatchingDesc'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.coWriteCandidateBatching !== false)
                 .onChange(async (value) => {
@@ -206,8 +207,8 @@ export class CoWriteSection extends SettingsSection {
                 }));
 
         new Setting(section)
-            .setName('自动剧情评估')
-            .setDesc('输入正文时自动评估剧情完成度（建议开启以获得实时反馈，关闭可节省 AI 调用）')
+            .setName(t('settings.writing.cowriteAutoPlotName'))
+            .setDesc(t('settings.writing.cowriteAutoPlotDesc'))
             .addToggle(toggle => {
                 toggle.setValue(this.plugin.settings.autoPlotEvaluation ?? true);
                 toggle.onChange(async (value) => {
@@ -217,8 +218,8 @@ export class CoWriteSection extends SettingsSection {
             });
 
         new Setting(section)
-            .setName('自动联想（幽灵建议）')
-            .setDesc('输入停顿后自动生成后续联想，按 Tab 接受（每 4 秒最多一次；关闭可节省 AI 调用，手动联想仍可用）')
+            .setName(t('settings.writing.cowriteGhostName'))
+            .setDesc(t('settings.writing.cowriteGhostDesc'))
             .addToggle(toggle => {
                 toggle.setValue(this.plugin.settings.autoGhostAssociation ?? true);
                 toggle.onChange(async (value) => {
@@ -243,7 +244,7 @@ export class WritingSection extends SettingsSection {
     render(container: HTMLElement): void {
         const section = container.createEl('section');
         section.createEl('p', {
-            text: '控制每章字数、正文形态、上下文分配与质量闸门；规则版本与实验分组已移到「写作规则」页统一管理。',
+            text: t('settings.writing.writingLead'),
             cls: 'setting-item-description',
         });
 
@@ -252,7 +253,7 @@ export class WritingSection extends SettingsSection {
             section.createEl('p', { text: desc, cls: 'setting-item-description' });
         };
 
-        group('篇幅与字数', '每章的目标字数与上下限；质量控制与字数校验都使用这三个值。');
+        group(t('settings.writing.groupWordTitle'), t('settings.writing.groupWordDesc'));
         let wordRangeHint: HTMLElement | null = null;
         const validateWordRange = (): void => {
             if (!wordRangeHint) return;
@@ -260,14 +261,14 @@ export class WritingSection extends SettingsSection {
             const def = Number(this.plugin.settings.defaultWordCount) || 0;
             const max = Number(this.plugin.settings.maxWordCount) || 0;
             const problems: string[] = [];
-            if (min > def) problems.push('最小字数大于默认字数');
-            if (def > max) problems.push('默认字数大于最大字数');
-            if (min > max) problems.push('最小字数大于最大字数');
+            if (min > def) problems.push(t('settings.writing.warnMinGtDefault'));
+            if (def > max) problems.push(t('settings.writing.warnDefaultGtMax'));
+            if (min > max) problems.push(t('settings.writing.warnMinGtMax'));
             wordRangeHint.setText(problems.length > 0 ? `⚠️ ${problems.join('；')}` : '');
         };
         new Setting(section)
-            .setName('默认字数')
-            .setDesc('每章目标字数（默认 3000）。')
+            .setName(t('settings.writing.defaultWordsName'))
+            .setDesc(t('settings.writing.defaultWordsDesc'))
             .addText(text => text
                 .setPlaceholder('3000')
                 .setValue(String(this.plugin.settings.defaultWordCount))
@@ -278,8 +279,8 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
-            .setName('最小字数')
-            .setDesc('低于该值触发字数不足判定。')
+            .setName(t('settings.writing.minWordsName'))
+            .setDesc(t('settings.writing.minWordsDesc'))
             .addText(text => text
                 .setPlaceholder('2500')
                 .setValue(String(this.plugin.settings.minWordCount))
@@ -290,8 +291,8 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
-            .setName('最大字数')
-            .setDesc('高于该值触发超长提示。')
+            .setName(t('settings.writing.maxWordsName'))
+            .setDesc(t('settings.writing.maxWordsDesc'))
             .addText(text => text
                 .setPlaceholder('5000')
                 .setValue(String(this.plugin.settings.maxWordCount))
@@ -304,10 +305,10 @@ export class WritingSection extends SettingsSection {
         wordRangeHint = section.createDiv({ cls: 'nw-warning-text nw-u-fs-12px' });
         validateWordRange();
 
-        group('正文形态', '决定生成时如何断段、使用哪套正文模板，以及注入哪些人味约束。');
+        group(t('settings.writing.groupFormTitle'), t('settings.writing.groupFormDesc'));
         new Setting(section)
-            .setName('自然段模式')
-            .setDesc('把“一句一段”合并为 2–6 句自然段，并合并对话与说话人的动作；只影响自动生成，不影响手工编辑与协同逐段插入。')
+            .setName(t('settings.writing.paragraphName'))
+            .setDesc(t('settings.writing.paragraphDesc'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.naturalParagraphMode !== false)
                 .onChange(async (value) => {
@@ -316,14 +317,14 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
-            .setName('正文模板变体')
-            .setDesc('auto：有灵魂层走 V2；V3 节拍先行，V4 对话主干；V1/V2 可做对照。')
+            .setName(t('settings.writing.bodyTemplateName'))
+            .setDesc(t('settings.writing.bodyTemplateDesc'))
             .addDropdown((dropdown) => dropdown
-                .addOption('auto', 'auto（有灵魂层 → V2）')
-                .addOption('v1', 'V1 流水线正文')
-                .addOption('v2', 'V2 小说家模式')
-                .addOption('v3', 'V3 节拍先行')
-                .addOption('v4', 'V4 对话主干')
+                .addOption('auto', t('settings.writing.bodyTemplateAuto'))
+                .addOption('v1', t('settings.writing.bodyTemplateV1'))
+                .addOption('v2', t('settings.writing.bodyTemplateV2'))
+                .addOption('v3', t('settings.writing.bodyTemplateV3'))
+                .addOption('v4', t('settings.writing.bodyTemplateV4'))
                 .setValue((this.plugin.settings.activeBodyTemplate || 'auto') as string)
                 .onChange(async (value) => {
                     this.plugin.settings.activeBodyTemplate = (value || 'auto') as 'auto' | 'v1' | 'v2' | 'v3' | 'v4';
@@ -331,11 +332,11 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
-            .setName('人味约束模式')
-            .setDesc('样文优先：3 段真人样文 + 6 条弱约束；旧配额用于对照。正文/消痕/精修链路都生效。')
+            .setName(t('settings.writing.humanVoiceName'))
+            .setDesc(t('settings.writing.humanVoiceDesc'))
             .addDropdown((dropdown) => dropdown
-                .addOption('exemplar', '样文优先（默认）')
-                .addOption('quota', '旧版数值配额（对照）')
+                .addOption('exemplar', t('settings.writing.humanVoiceExemplar'))
+                .addOption('quota', t('settings.writing.humanVoiceQuota'))
                 .setValue(this.plugin.settings.humanVoiceMode === 'quota' ? 'quota' : 'exemplar')
                 .onChange(async (value) => {
                     this.plugin.settings.humanVoiceMode = value === 'quota' ? 'quota' : 'exemplar';
@@ -343,8 +344,8 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
-            .setName('可数硬指标（实验）')
-            .setDesc('在正文 system 末尾追加可数的人味要求：时间锚点、口语标记、对话占比、段落长度。默认关闭。')
+            .setName(t('settings.writing.countableName'))
+            .setDesc(t('settings.writing.countableDesc'))
             .addToggle((toggle) => toggle
                 .setValue(this.plugin.settings.countableHumanHints === true)
                 .onChange(async (value) => {
@@ -352,14 +353,14 @@ export class WritingSection extends SettingsSection {
                     await this.plugin.saveSettings();
                 }));
 
-        group('上下文与模型', '影响每次生成能看到多少资料，以及模型断联时的回退行为。');
+        group(t('settings.writing.groupContextTitle'), t('settings.writing.groupContextDesc'));
         new Setting(section)
-            .setName('故事上下文档位')
-            .setDesc('自动按本地/云端模型选择资料量；本地更省上下文，云端使用完整文本与更多条目。')
+            .setName(t('settings.writing.storyTierName'))
+            .setDesc(t('settings.writing.storyTierDesc'))
             .addDropdown(dropdown => dropdown
-                .addOption('auto', '自动')
-                .addOption('local', '本地 Ollama / 小窗口')
-                .addOption('cloud', '云端 API / 大窗口')
+                .addOption('auto', t('settings.writing.optionAuto'))
+                .addOption('local', t('settings.writing.storyTierLocal'))
+                .addOption('cloud', t('settings.writing.storyTierCloud'))
                 .setValue(this.plugin.settings.storyContextTier || 'auto')
                 .onChange(async (value) => {
                     this.plugin.settings.storyContextTier = value as 'auto' | 'local' | 'cloud';
@@ -367,8 +368,8 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
-            .setName('断联自动切换模型')
-            .setDesc('API 断联/超时/503 时，自动尝试同端点下其他可用模型；写作任务会注入文风接续保护。')
+            .setName(t('settings.writing.fallbackName'))
+            .setDesc(t('settings.writing.fallbackDesc'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.enableAutoModelFallback !== false)
                 .onChange(async (value) => {
@@ -377,8 +378,8 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
-            .setName('单步输入上限（token）')
-            .setDesc('0 = 按模型真实上下文窗口自动分配（推荐）；仅在需要控制成本时填写上限（最大 200000）。')
+            .setName(t('settings.writing.tokenCapName'))
+            .setDesc(t('settings.writing.tokenCapDesc'))
             .addText(text => text
                 .setPlaceholder('0')
                 .setValue(String(this.plugin.settings.contextTokenCap ?? 0))
@@ -389,11 +390,11 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
-            .setName('上下文超限处理')
-            .setDesc('extractive：先定向补检再按句抽取压缩，仍超则明确报错；off：超预算直接报错。两种情况都不会静默腰斩正文。')
+            .setName(t('settings.writing.compressionName'))
+            .setDesc(t('settings.writing.compressionDesc'))
             .addDropdown(dropdown => dropdown
-                .addOption('extractive', '抽取压缩（推荐）')
-                .addOption('off', '不压缩，直接报错')
+                .addOption('extractive', t('settings.writing.compressionExtractive'))
+                .addOption('off', t('settings.writing.compressionOff'))
                 .setValue(this.plugin.settings.contextCompressionMode ?? 'extractive')
                 .onChange(async (value) => {
                     this.plugin.settings.contextCompressionMode = value === 'off' ? 'off' : 'extractive';
@@ -401,8 +402,8 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
-            .setName('上下文范围')
-            .setDesc('紧凑模式只注入本章涉及实体（节省上下文）；完整模式遍历全部实体（质量优先）。')
+            .setName(t('settings.writing.contextScopeName'))
+            .setDesc(t('settings.writing.contextScopeDesc'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.contextScope === 'full')
                 .onChange(async (value) => {
@@ -411,8 +412,8 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
-            .setName('超长提示词分片比例')
-            .setDesc('提示词超出上下文安全线时保留头部的比例（0–1，默认 0.67）。')
+            .setName(t('settings.writing.splitRatioName'))
+            .setDesc(t('settings.writing.splitRatioDesc'))
             .addText(text => text
                 .setPlaceholder('0.67')
                 .setValue(String(this.plugin.settings.promptSplitRatio ?? 0.67))
@@ -424,10 +425,10 @@ export class WritingSection extends SettingsSection {
                     await this.plugin.saveSettings();
                 }));
 
-        group('质量闸门与修订', '生成后的检查与自动修复；关闭后只保留基础质控。');
+        group(t('settings.writing.groupGateTitle'), t('settings.writing.groupGateDesc'));
         new Setting(section)
-            .setName('精修迭代轮数')
-            .setDesc('「迭代精修」最多审查-修复几轮（0–5，默认 3）；首轮通过会提前结束，不额外消耗调用。')
+            .setName(t('settings.writing.refineRoundsName'))
+            .setDesc(t('settings.writing.refineRoundsDesc'))
             .addText(text => text
                 .setPlaceholder('3')
                 .setValue(String(this.plugin.settings.refineRounds ?? 3))
@@ -438,8 +439,8 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
-            .setName('质量控制后自动定向修订')
-            .setDesc('质量控制后按报告定向修订（最多 8 条），修订稿通过长度/人物/对话校验才落盘；每次多 1 次正文调用。默认开。')
+            .setName(t('settings.writing.autoRevisionName'))
+            .setDesc(t('settings.writing.autoRevisionDesc'))
             .addToggle((toggle) => toggle
                 .setValue(this.plugin.settings.autoRevisionAfterQC !== false)
                 .onChange(async (value) => {
@@ -447,8 +448,8 @@ export class WritingSection extends SettingsSection {
                     await this.plugin.saveSettings();
                 }));
         new Setting(section)
-            .setName('正文步场景精确注入（实验）')
-            .setDesc('开启后，正文步把整库人物/势力/地点/物品与世界观/设定库交给「场景精确上下文」，减少重复注入；关闭时保持原有全量注入')
+            .setName(t('settings.writing.scenePreciseName'))
+            .setDesc(t('settings.writing.scenePreciseDesc'))
             .addToggle((toggle) => toggle
                 .setValue(this.plugin.settings.bodySceneContextStrict === true)
                 .onChange(async (value) => {
@@ -456,8 +457,8 @@ export class WritingSection extends SettingsSection {
                     await this.plugin.saveSettings();
                 }));
         new Setting(section)
-            .setName('逐场生成正文（实验）')
-            .setDesc('开启后，正文步按 Scene 展开逐场生成再合并（失败场景不落盘、可回退）；关闭时整章一次性生成')
+            .setName(t('settings.writing.sceneLoopName'))
+            .setDesc(t('settings.writing.sceneLoopDesc'))
             .addToggle((toggle) => toggle
                 .setValue(this.plugin.settings.sceneLoopBodyGeneration === true)
                 .onChange(async (value) => {
@@ -465,8 +466,8 @@ export class WritingSection extends SettingsSection {
                     await this.plugin.saveSettings();
                 }));
         new Setting(section)
-            .setName('结算写入校验（实验）')
-            .setDesc('开启后，结算前会剔除字段值为空、缺名称、伏笔状态非法的指令并记录日志；关闭时按解析结果直接写入')
+            .setName(t('settings.writing.settlementName'))
+            .setDesc(t('settings.writing.settlementDesc'))
             .addToggle((toggle) => toggle
                 .setValue(this.plugin.settings.settlementStrictWrites === true)
                 .onChange(async (value) => {
@@ -474,8 +475,8 @@ export class WritingSection extends SettingsSection {
                     await this.plugin.saveSettings();
                 }));
         new Setting(section)
-            .setName('结构化约束注入（实验）')
-            .setDesc('开启后，协同写作复用正文步的约束块（在场人物事实/口吻、高重要度伏笔、节奏要求）；关闭时沿用原有知识注入')
+            .setName(t('settings.writing.structuredName'))
+            .setDesc(t('settings.writing.structuredDesc'))
             .addToggle((toggle) => toggle
                 .setValue(this.plugin.settings.coWriteStructuredConstraints === true)
                 .onChange(async (value) => {
@@ -484,8 +485,8 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
-            .setName('上下文体检')
-            .setDesc('发 prompt 前清理重复注入段；步骤结果引用别的章节号时在注入账本告警。默认开。')
+            .setName(t('settings.writing.hygieneName'))
+            .setDesc(t('settings.writing.hygieneDesc'))
             .addToggle((toggle) => toggle
                 .setValue(this.plugin.settings.contextHygieneAutoFix !== false)
                 .onChange(async (value) => {
@@ -493,10 +494,10 @@ export class WritingSection extends SettingsSection {
                     await this.plugin.saveSettings();
                 }));
 
-        group('阈值与词表', '一般保持默认；用于微调字数判定与 AI 味检测。');
+        group(t('settings.writing.groupThresholdTitle'), t('settings.writing.groupThresholdDesc'));
         new Setting(section)
-            .setName('步骤最低字数比例')
-            .setDesc('步骤输出低于「目标字数 × 此比例」即判定字数不足（0–1，默认 0.70）。')
+            .setName(t('settings.writing.wordMinRatioName'))
+            .setDesc(t('settings.writing.wordMinRatioDesc'))
             .addText(text => text
                 .setPlaceholder('0.70')
                 .setValue(String(this.plugin.settings.wordMinRatio ?? 0.7))
@@ -509,10 +510,10 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
-            .setName('AI 味词表扩充')
-            .setDesc('每行一个词；会加入 AI 味检测、写作避用词黑名单与拆解引擎的连接词统计。留空只用内置词表。')
+            .setName(t('settings.writing.antiAiName'))
+            .setDesc(t('settings.writing.antiAiDesc'))
             .addTextArea(area => {
-                area.setPlaceholder('例如：\n话说\n说白了\n不妨\n')
+                area.setPlaceholder(t('settings.writing.antiAiPlaceholder'))
                     .setValue((this.plugin.settings.antiAiExtraWords ?? []).join('\n'))
                     .onChange(async (value) => {
                         const words = value.split('\n').map(w => w.trim()).filter(w => w.length > 0);
@@ -541,12 +542,12 @@ export class TemplateSection extends SettingsSection {
 
         // 提示词策略配置子分区
         section.createEl('hr', { cls: 'nw-u-m-20px-0 nw-u-b-none nw-u-bt-1px-solid-background-m' });
-        section.createEl('h3', { text: '💬 提示词策略', cls: 'nw-u-margintop-16px' });
+        section.createEl('h3', { text: t('settings.writing.promptStrategyTitle'), cls: 'nw-u-margintop-16px' });
         if (this.plugin.promptManager) {
             const manager = new PromptManagerSettings(this.app, this.plugin, section);
             manager.render();
         } else {
-            section.createDiv({ text: '提示词管理器未初始化', cls: 'nw-text-error' });
+            section.createDiv({ text: t('settings.writing.promptManagerMissing'), cls: 'nw-text-error' });
         }
     }
 }
@@ -583,20 +584,20 @@ export class ProjectLibrarySection extends SettingsSection {
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
-        section.createEl('h3', { text: '🗂 项目库迁移' });
+        section.createEl('h3', { text: t('settings.writing.projectLibTitle') });
         section.createEl('p', {
-            text: '将根目录旧项目迁移到 长篇小说/、短篇小说/、剧本/ 三个独立模式库。默认 dry-run，只有点击迁移才会移动目录。',
+            text: t('settings.writing.projectLibLead'),
             cls: 'setting-item-description',
         });
 
         const actions = section.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-marginbottom-8px' });
         const planBtn = actions.createEl('button', {
-            text: '📋 生成迁移计划',
+            text: t('settings.writing.planButton'),
             cls: 'nw-btn nw-btn-secondary',
             attr: { type: 'button' },
         });
         const migrateBtn = actions.createEl('button', {
-            text: '🚚 执行迁移（含备份清单）',
+            text: t('settings.writing.migrateButton'),
             cls: 'nw-btn nw-btn-primary',
             attr: { type: 'button' },
         });
@@ -610,87 +611,87 @@ export class ProjectLibrarySection extends SettingsSection {
         planBtn.onclick = async () => {
             if (planBtn.disabled) return;
             planBtn.disabled = true;
-            planBtn.setText('⏳ 扫描中…');
+            planBtn.setText(t('settings.writing.scanning'));
             try {
                 const service = new ProjectMigrationService(this.app);
                 const plan = await service.plan();
                 if (plan.candidates.length === 0 && plan.conflicts.length === 0) {
-                    renderPlan('没有需要迁移的 legacy 项目。');
+                    renderPlan(t('settings.writing.noLegacy'));
                 } else {
                     const lines: string[] = [];
                     if (plan.candidates.length > 0) {
-                        lines.push('待迁移：');
+                        lines.push(t('settings.writing.planToMigrate'));
                         for (const item of plan.candidates) {
                             lines.push(`- [${item.mode}] ${item.projectId} → ${item.targetPath}`);
                         }
                     }
                     if (plan.conflicts.length > 0) {
-                        lines.push('冲突：');
+                        lines.push(t('settings.writing.planConflict'));
                         for (const item of plan.conflicts) lines.push(`- ${item.projectId}：${item.reason}`);
                     }
                     if (plan.skipped.length > 0) {
-                        lines.push('跳过：');
+                        lines.push(t('settings.writing.planSkip'));
                         for (const item of plan.skipped) lines.push(`- ${item.projectId}：${item.reason}`);
                     }
                     renderPlan(lines.join('\n'));
                 }
             } catch (e) {
-                renderPlan(`生成迁移计划失败：${e instanceof Error ? e.message : String(e)}`);
+                renderPlan(t('settings.writing.planFailed', { error: e instanceof Error ? e.message : String(e) }));
             } finally {
                 planBtn.disabled = false;
-                planBtn.setText('📋 生成迁移计划');
+                planBtn.setText(t('settings.writing.planButton'));
             }
         };
 
         migrateBtn.onclick = async () => {
             if (migrateBtn.disabled) return;
             const confirmed = await OperationConfirmModal.confirm(this.app, {
-                title: '迁移项目库',
-                description: '将把根目录 legacy 项目移动到对应模式库；迁移前会写入备份清单。',
-                confirmText: '开始迁移',
-                cancelText: '取消',
+                title: t('settings.writing.confirmMigrateTitle'),
+                description: t('settings.writing.confirmMigrateDesc'),
+                confirmText: t('settings.writing.confirmMigrateConfirm'),
+                cancelText: t('common.cancel'),
             });
             if (!confirmed) return;
             migrateBtn.disabled = true;
-            migrateBtn.setText('⏳ 迁移中…');
+            migrateBtn.setText(t('settings.writing.migrating'));
             try {
                 const service = new ProjectMigrationService(this.app);
                 const result = await service.migrateWithNotice({ backup: true });
                 const lines = [
-                    `已迁移 ${result.moved.length} 个项目`,
+                    t('settings.writing.migratedCount', { count: result.moved.length }),
                     ...result.moved.map(item => `- ${item.projectId} → ${item.targetPath}`),
                 ];
                 if (result.failed.length > 0) {
-                    lines.push('', '失败：');
+                    lines.push('', t('settings.writing.failedLabel'));
                     for (const item of result.failed) lines.push(`- ${item.projectId}：${item.error}`);
                 }
                 if (result.warnings.length > 0) lines.push('', ...result.warnings);
                 renderPlan(lines.join('\n'));
                 if (result.moved.length > 0) {
                     const undo = resultEl.createEl('button', {
-                        text: '↩️ 撤销本次迁移',
+                        text: t('settings.writing.undoButton'),
                         cls: 'nw-btn nw-btn-secondary',
                         attr: { type: 'button' },
                     });
                     undo.onclick = async () => {
                         if (undo.disabled) return;
                         const ok = await OperationConfirmModal.confirm(this.app, {
-                            title: '撤销本次迁移',
-                            description: `将把本次迁移的 ${result.moved.length} 个项目移回原路径。`,
-                            warning: '迁移后在新路径里做过的编辑会随目录一起移回；原路径若已被占用会跳过该项。',
-                            confirmText: '撤销迁移',
-                            cancelText: '保留现状',
+                            title: t('settings.writing.undoConfirmTitle'),
+                            description: t('settings.writing.undoConfirmDesc', { count: result.moved.length }),
+                            warning: t('settings.writing.undoConfirmWarning'),
+                            confirmText: t('settings.writing.undoConfirmConfirm'),
+                            cancelText: t('settings.writing.undoConfirmKeep'),
                         });
                         if (!ok) return;
                         undo.disabled = true;
-                        undo.setText('⏳ 撤销中…');
+                        undo.setText(t('settings.writing.undoing'));
                         const rollback = await service.rollbackWithNotice(result.moved);
                         const rollbackLines = [
-                            `已撤销 ${rollback.restored.length} 个项目`,
+                            t('settings.writing.undoneCount', { count: rollback.restored.length }),
                             ...rollback.restored.map(item => `- ${item.targetPath} → ${item.projectId}`),
                         ];
                         if (rollback.failed.length > 0) {
-                            rollbackLines.push('', '未能撤销：');
+                            rollbackLines.push('', t('settings.writing.undoFailedLabel'));
                             for (const item of rollback.failed) rollbackLines.push(`- ${item.projectId}：${item.error}`);
                         }
                         renderPlan(rollbackLines.join('\n'));
@@ -701,10 +702,10 @@ export class ProjectLibrarySection extends SettingsSection {
                 this.plugin.ctxManager.invalidateContextCache();
                 this.plugin.updateStatusBarText();
             } catch (e) {
-                renderPlan(`迁移失败：${e instanceof Error ? e.message : String(e)}`);
+                renderPlan(t('settings.writing.migrateFailed', { error: e instanceof Error ? e.message : String(e) }));
             } finally {
                 migrateBtn.disabled = false;
-                migrateBtn.setText('🚚 执行迁移（含备份清单）');
+                migrateBtn.setText(t('settings.writing.migrateButton'));
             }
         };
     }
@@ -721,9 +722,9 @@ export class LayoutSection extends SettingsSection {
      */
     render(container: HTMLElement): void {
         const section = container.createEl('section');
-        section.createEl('h3', { text: '🧩 工作台布局' });
+        section.createEl('h3', { text: t('settings.writing.layoutTitle') });
         section.createEl('p', {
-            text: '控制浮窗工作台是否在 Obsidian 启动后恢复上次布局。面板位置由浮窗系统自动记录。',
+            text: t('settings.writing.layoutLead'),
             cls: 'setting-item-description'
         });
 
@@ -731,8 +732,8 @@ export class LayoutSection extends SettingsSection {
         this.plugin.settings.panelLayout = panelLayout;
 
         new Setting(section)
-            .setName('启动时恢复上次工作台')
-            .setDesc('开启后，如果上次关闭 Obsidian 时工作台处于打开状态，插件加载后会自动恢复。')
+            .setName(t('settings.writing.autoRestoreName'))
+            .setDesc(t('settings.writing.autoRestoreDesc'))
             .addToggle(toggle => toggle
                 .setValue(panelLayout.autoRestore !== false)
                 .onChange(async (value) => {
@@ -745,10 +746,10 @@ export class LayoutSection extends SettingsSection {
 
         const savedCount = Array.isArray(panelLayout.panels) ? panelLayout.panels.length : 0;
         new Setting(section)
-            .setName('清除已保存浮窗位置')
-            .setDesc('当前已保存 ' + savedCount + ' 个面板位置。')
+            .setName(t('settings.writing.clearSavedName'))
+            .setDesc(t('settings.writing.clearSavedDesc', { count: savedCount }))
             .addButton(btn => btn
-                .setButtonText('清除布局记忆')
+                .setButtonText(t('settings.writing.clearSavedButton'))
                 .setWarning()
                 .onClick(async () => {
                     if (!this.plugin.settings.panelLayout) {
@@ -758,7 +759,7 @@ export class LayoutSection extends SettingsSection {
                     this.plugin.settings.panelLayout.lastWorkspaceOpen = false;
                     await this.plugin.saveSettings();
                     this.refresh();
-                    new Notice('✅ 已清除浮窗布局记忆');
+                    new Notice(t('settings.writing.clearedNotice'));
                 }));
 
         this.renderPanelSizeRows(section);
@@ -772,9 +773,9 @@ export class LayoutSection extends SettingsSection {
      * 这里给每一项一个数字输入 + 恢复默认，并在文案里说明也可拖拽。
      */
     private renderPanelSizeRows(section: HTMLElement): void {
-        section.createEl('h4', { text: '📐 面板尺寸' });
+        section.createEl('h4', { text: t('settings.writing.panelSizeTitle') });
         section.createEl('p', {
-            text: '可直接在界面上拖拽分隔条调整，也可在此精确输入。双击分隔条恢复默认。',
+            text: t('settings.writing.panelSizeLead'),
             cls: 'setting-item-description',
         });
 
@@ -793,20 +794,20 @@ export class LayoutSection extends SettingsSection {
 
         const rows: Array<{
             key: 'fwStepNav' | 'fwRightPanel';
-            label: string;
-            desc: string;
+            labelKey: string;
+            descKey: string;
             min: number;
             max: number;
             fallback: number;
         }> = [
-            { key: 'fwStepNav', label: '写作工作台 · 左栏', desc: '步骤导航宽度', min: 100, max: 400, fallback: 140 },
-            { key: 'fwRightPanel', label: '写作工作台 · 右栏', desc: '上下文/预览栏宽度', min: 160, max: 560, fallback: 220 },
+            { key: 'fwStepNav', labelKey: 'settings.writing.rowStepNavLabel', descKey: 'settings.writing.rowStepNavDesc', min: 100, max: 400, fallback: 140 },
+            { key: 'fwRightPanel', labelKey: 'settings.writing.rowRightPanelLabel', descKey: 'settings.writing.rowRightPanelDesc', min: 160, max: 560, fallback: 220 },
         ];
 
         for (const row of rows) {
             new Setting(section)
-                .setName(row.label)
-                .setDesc(`${row.desc}（${row.min}–${row.max}px，默认 ${row.fallback}px）`)
+                .setName(t(row.labelKey))
+                .setDesc(t('settings.writing.sizeRowDesc', { desc: t(row.descKey), min: row.min, max: row.max, fallback: row.fallback }))
                 .addText(text => {
                     text.inputEl.type = 'number';
                     text.inputEl.min = String(row.min);
@@ -823,7 +824,7 @@ export class LayoutSection extends SettingsSection {
                 })
                 .addExtraButton(btn => btn
                     .setIcon('rotate-ccw')
-                    .setTooltip('恢复默认宽度')
+                    .setTooltip(t('settings.writing.resetTooltip'))
                     .onClick(async () => {
                         await persist(() => { delete sizes()[row.key]; });
                         this.refresh();
@@ -831,10 +832,10 @@ export class LayoutSection extends SettingsSection {
         }
 
         new Setting(section)
-            .setName('恢复全部面板尺寸')
-            .setDesc('把所有面板宽高恢复为默认值（不影响浮窗位置记录）')
+            .setName(t('settings.writing.restoreAllName'))
+            .setDesc(t('settings.writing.restoreAllDesc'))
             .addButton(btn => btn
-                .setButtonText('全部恢复默认')
+                .setButtonText(t('settings.writing.restoreAllButton'))
                 .setWarning()
                 .onClick(async () => {
                     await persist(() => {
@@ -844,7 +845,7 @@ export class LayoutSection extends SettingsSection {
                         delete this.plugin.settings.coWriteEditorWidthRatio;
                     });
                     this.refresh();
-                    new Notice('✅ 已恢复全部面板尺寸');
+                    new Notice(t('settings.writing.restoredAllNotice'));
                 }));
     }
 }

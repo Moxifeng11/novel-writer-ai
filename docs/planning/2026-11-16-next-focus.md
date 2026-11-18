@@ -1741,3 +1741,41 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 `settings-search.ts`（1011），或写作主流程按钮/`Notice`。
 
 
+## 第六十二轮：i18n 第二期第五片 —— 写作设置五分区（2026-11-18）
+
+用户 m14049 指定顺序的第二块：`ui/settings/writing-sections.ts`（851 行 / 175 个含中文行 / 2239 中文字）。
+
+**改动**
+- 五个 Section（CoWrite / Writing / Template / ProjectLibrary / Layout）全部迁 `settings.writing.*` **147 键**：
+  `cowrite*`（29）、`writing*/group*/warn*/…`（66）、模板页 `promptStrategyTitle`/`promptManagerMissing`、
+  项目库迁移 `projectLib*/plan*/migrate*/undo*`、布局与面板尺寸 `layout*/autoRestore*/clearSaved*/panelSize*/row*/sizeRowDesc/restoreAll*`。
+  `'刷新'`/`'取消'` 复用 `common.refresh`/`common.cancel`；资源 zh/en 各 **768 条**。
+- 布局页面板尺寸行数据由 `{ key, label, desc, min, max, fallback }` 改
+  `{ key, labelKey, descKey, min, max, fallback }`，渲染时 `t(row.labelKey)` +
+  `t('settings.writing.sizeRowDesc', { desc: t(row.descKey), min, max, fallback })`
+  （zh 模板 `{desc}（{min}–{max}px，默认 {fallback}px）`）——文案在数据里就绕过了静态键校验。
+- 测试：`settings-no-duplicate-render.test.ts` 三处源码断言改键（五组标题循环改
+  `group(t('settings.writing.groupXxxTitle'), …)`；字数上下限提示改 `warnMinGtDefault`/`warnDefaultGtMax`
+  并额外读 zh 资源确认原文）。
+
+**做法（值得复用）**：仓外脚本 `D:\nw-tmp\migrate-writing-{1,2,3}.cjs` 持 `[[old,new],…]` 对逐条
+`split/join`，命中不到就 `console.error('MISSING: '+old)` 并非零退出；按 Section 类分三段跑。
+三个坑：① 文件是 CRLF（850 个 `\r\n`），**多行 old 串必须写 `\r\n`**；
+② 替换值必须是字符串字面量，写成 JS 代码会被 node 执行（`ReferenceError`）；
+③ **长串先替换**（`'本地模型'` 会拆坏 `'选择协同写作使用的 Ollama 本地模型'`）。
+多行占位符 `antiAiPlaceholder` 要写真实换行，生成脚本若用 JSON 转义会落成字面 `\n`，需 `\\n`→`\n` 修回。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；设置页 + i18n 目录 6 文件 **75 例全绿**；`npm run lint` 0 error / 1075 warning。
+- `check:i18n`：zh 768 / en 768、0 无法解析键、动态键 4 处、棘轮收紧到 **266 文件 / 11234 条**
+  （`--update-baseline`，writing-sections 条目已移除）。
+- 实机五页 × zh/en：`D:\nw-dev-vault\_visual-i18n5\{cowrite,writing,template,projects,layout}-{zh-CN,en-US}.png`
+  （930×2970，未入库）。en 下 cowrite / writing / projects / layout 的 CJK = **0**
+  （写作页五组标题 `Length / Body style / Context and model / Quality gates and revision / Thresholds and word lists`
+  与全部 Setting 行均英文，无溢出）；template 页 CJK 276 属预期——提示词库条目是 vault 数据，
+  搜索框占位「搜索提示词」来自本片范围外的 `ui/prompt-manager-settings.ts`（192 字）。
+- 全量 `npm run preflight`：见本提交与 `docs/modules/i18n.md` §5。
+
+**下一轮候选**：`ui/settings/knowledge-section.ts`（1075 字）→ `ui/prompt-manager-settings.ts`（192）→
+`settings-search.ts`（1011），或写作主流程按钮/`Notice`。
+
