@@ -2037,3 +2037,30 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 
 **下一轮候选**：`mode-section.ts`（402）→ `mcp-section.ts`（301，工具名是数据不迁）→
 `agent-section.ts`（125，完成后设置分区全迁完）→ 指纹视图三件套 → 写作主流程。
+
+## 第七十轮：i18n 第二期第13片 —— 创作模式与路径分区（2026-11-19，ZCode · ZC-20261118-03）
+
+**改动**
+- `ui/settings/mode-section.ts`（79 行 / 402 中文字）24 处文案迁 `t('settings.mode.*')`：标题/引导语/
+  三张模式卡（label + description）/项目库根目录 desc（`{root}` 插值）/内容结构/单元规格 desc 与
+  value/补充提示三态/页脚（`{path}` 插值 `WRITING_RULES_PATH_TEMPLATE`）。
+- **共享常量展示字段不改**：`CREATION_MODE_SPECS` 的 label/description/unitLabel/unitPlural 被
+  引擎、提示词与十余个视图共用，分区内 `MODE_SPEC_KEYS` 按语言求值（同第九片
+  `DIMENSION_LABEL_KEYS` 路数）；其他视图迁移时可直接复用 `settings.mode.spec.*` 键组。
+- `MODE_LIBRARY_ROOTS`、`MODE_CONTENT_LAYOUT` 与写作规则路径是真实 vault 路径（数据）不译，
+  经插值参数或原样展示进 en 页。
+- 资源 zh/en 各 1294（+24）；`settings-no-duplicate-render.test.ts` 的源码断言按第五片先例改键。
+
+**坑**
+- 禁用输入框的 value 走 `setValue()`，不进 FakeEl 的 textContent——单测别断言输入框值。
+
+**验收**
+- 新增 `tests/unit/ui/mode-section-i18n.test.ts` 3 例全绿；`check:i18n` zh/en 各 1294、动态键 11 处、
+  棘轮收紧到 **259 文件 / 10631 条**；`check:bundle` main.js → **5804624**（+3302）；
+  preflight EXIT=0。
+- 实机 `D:\nw-dev-vault\_visual-i18n13\modes-{zh-CN,en-US}.png`：en 下三张模式卡
+  （`Long-form novel` / `Short story` / `Short drama script`）与全部 Setting 行全英文，
+  剩余 CJK 62 全是 vault 路径与目录名；zh 页与改前一致。
+
+**下一轮候选**：`mcp-section.ts`（301，工具名是数据不迁）→ `agent-section.ts`（125，
+完成后设置分区全迁完）→ 指纹视图三件套 → 写作主流程。

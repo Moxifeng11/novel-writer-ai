@@ -179,7 +179,10 @@ describe('创作模式设置与字数校验', () => {
         expect(tab).toContain("tab('modes', 'settings.tab.modes'");
         expect(tab).toContain('new ModeSection');
         expect(mode).toContain('MODE_LIBRARY_ROOTS');
-        expect(mode).toContain('项目库根目录');
+        // i18n 第二期第13片：分区文案进资源，源码只剩键名
+        expect(mode).toContain("t('settings.mode.libraryRootName')");
+        const zh = read('i18n/messages/zh-CN.ts');
+        expect(zh).toContain('项目库根目录');
     });
 
     it('写作配置对字数上下限做实时一致性提示', () => {

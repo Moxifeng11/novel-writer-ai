@@ -1272,6 +1272,40 @@ export const zhCN: MessageTree = {
             updateSuccessNotice: '类型更新成功',
             addSuccessNotice: '类型添加成功',
         },
+        mode: {
+            title: '📚 创作模式与路径',
+            intro: '三个模式共用同一套设置；这里集中展示各自的根目录、内容结构与单元规格，所有设置项仍保留在原分区。',
+            libraryRootName: '项目库根目录',
+            libraryRootDesc: '项目 ID 形如「{root}/书名」；改目录结构前先备份。',
+            contentName: '内容结构',
+            unitSpecName: '单元规格',
+            unitSpecDesc: '每个{unit}默认 {words} 字；全书 {min}–{max} {plural}。',
+            unitSpecValue: '{min}–{max} 字/{unit}',
+            hintLong: '写作规则与正文模板（V1–V4）在此模式生效；章节结算与实体图谱走完整流水线。',
+            hintShort: '使用「单元写作」工作台；写作规则 + 短篇附录生效，不跑 11 步流水线。',
+            hintScript: '使用「单元写作」工作台；写作规则 + 剧本附录生效，输出场景标题/动作行/台词。',
+            footer: '提示：写作规则唯一来源是「{path}」；模式附录由插件按项目自动拼接，无需手动选择。',
+            spec: {
+                long: {
+                    label: '长篇小说',
+                    description: '分卷、多章、11 步流水线；面向长篇连载。',
+                    unitLabel: '章',
+                    unitPlural: '章',
+                },
+                short: {
+                    label: '短篇小说',
+                    description: '番茄短篇 5–10 万字，快开篇、高密度反转、单线强情绪。',
+                    unitLabel: '节',
+                    unitPlural: '节',
+                },
+                script: {
+                    label: '短剧剧本',
+                    description: '红果短剧快车道规格：分集、场次、强钩子与可拍对白。',
+                    unitLabel: '集',
+                    unitPlural: '集',
+                },
+            },
+        },
     },
     prompt: {
         category: {

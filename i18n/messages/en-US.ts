@@ -1269,6 +1269,40 @@ export const enUS: MessageTree = {
             updateSuccessNotice: 'Type updated',
             addSuccessNotice: 'Type added',
         },
+        mode: {
+            title: '📚 Creation modes & paths',
+            intro: 'All three modes share the same settings; this page gathers each mode\'s root directory, content layout and unit specification, while the settings themselves stay in their original sections.',
+            libraryRootName: 'Project library root',
+            libraryRootDesc: 'Project IDs look like "{root}/title"; back up before changing the directory structure.',
+            contentName: 'Content layout',
+            unitSpecName: 'Unit specification',
+            unitSpecDesc: 'Default {words} words per {unit}; {min}–{max} {plural} for the whole work.',
+            unitSpecValue: '{min}–{max} words/{unit}',
+            hintLong: 'Writing rules and manuscript templates (V1–V4) apply in this mode; chapter settlement and the entity graph run the full pipeline.',
+            hintShort: 'Uses the "unit writing" workbench; writing rules + short-story appendix apply, no 11-step pipeline.',
+            hintScript: 'Uses the "unit writing" workbench; writing rules + script appendix apply, outputting scene titles/action lines/dialogue.',
+            footer: 'Tip: the single source of writing rules is {path}; mode appendices are stitched in automatically per project — no manual selection needed.',
+            spec: {
+                long: {
+                    label: 'Long-form novel',
+                    description: 'Volumes, chapters and the 11-step pipeline; built for long serialization.',
+                    unitLabel: 'chapter',
+                    unitPlural: 'chapters',
+                },
+                short: {
+                    label: 'Short story',
+                    description: 'Tomato short stories of 50–100k words: fast opening, dense twists, one strong emotional line.',
+                    unitLabel: 'section',
+                    unitPlural: 'sections',
+                },
+                script: {
+                    label: 'Short drama script',
+                    description: 'Hongguo short-drama fast lane: episodes, scenes, strong hooks and shootable dialogue.',
+                    unitLabel: 'episode',
+                    unitPlural: 'episodes',
+                },
+            },
+        },
     },
     prompt: {
         category: {

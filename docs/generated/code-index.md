@@ -11,7 +11,7 @@
 | `shared/` | 258 | 51769 | 2179 | 1700 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 115026 | 1177 | 927 | 79% |
+| `ui/` | 306 | 115061 | 1177 | 927 | 79% |
 
 ## 文件清单
 
@@ -953,7 +953,7 @@
 | `ui/settings/knowledge-section.ts` | 792 | 1 | 1 |
 | `ui/settings/locale-setting.ts` | 55 | 2 | 2 |
 | `ui/settings/mcp-section.ts` | 76 | 1 | 1 |
-| `ui/settings/mode-section.ts` | 80 | 1 | 1 |
+| `ui/settings/mode-section.ts` | 115 | 1 | 1 |
 | `ui/settings/section-base.ts` | 66 | 1 | 1 |
 | `ui/settings/section-factory.ts` | 125 | 4 | 1 |
 | `ui/settings/settings-search.ts` | 289 | 10 | 6 |
