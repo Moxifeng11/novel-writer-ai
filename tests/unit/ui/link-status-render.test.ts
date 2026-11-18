@@ -10,22 +10,32 @@
  * 断言「分支为真时 DOM 真的长成那样」，而不是只断言函数被调用过。
  */
 
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+import {
+    describe,
+    expect,
+    it,
+    beforeEach,
+    afterEach,
+    vi } from 'vitest';
 import { renderLinkStatus } from '../../../ui/views/link-status';
-import type { LinkStage, LinkStatus } from '../../../shared/link-status-compute';
+import type { LinkStage,
+    LinkStatus,
+    stageDetail,
+    stageName,
+} from '../../../shared/link-status-compute';
 import { FakeEl, stubCreateDiv } from './support/fake-dom';
 
 /** 造一个环节 */
-function stage(name: string, status: LinkStage['status'], detail = '详情'): LinkStage {
-    return { name, status, detail };
+function stage(nameKey: string, status: LinkStage['status'], detailKey = '详情'): LinkStage {
+    return { nameKey, status, detailKey };
 }
 
 /** 造一个链路状态 */
 function status(partial: Partial<LinkStatus> & { overall: LinkStatus['overall'] }): LinkStatus {
     return {
-        title: '知识流',
+        titleKey: 'linkStatus.title.knowledge',
         stages: [stage('拆解', 'ok')],
-        breakpoint: null,
+        breakpointKey: null,
         ...partial,
     } as LinkStatus;
 }
@@ -79,7 +89,7 @@ describe('渲染-2：断点与说明文案', () => {
     it('有断点时标题区显示「断在「X」」而不是状态词', () => {
         const banner = render(status({
             overall: 'broken',
-            breakpoint: '向量化',
+            breakpointKey: '向量化',
             stages: [stage('拆解', 'ok'), stage('向量化', 'broken', '0 本就绪')],
         }));
         const all = texts(banner);

@@ -1,3 +1,4 @@
+import { stageDetail, stageName } from '../../shared/link-status-compute';
 /**
  * 阶段 B2：状态标记一致性
  *
@@ -35,8 +36,8 @@ describe('B2-1：vectorStatus=done 但向量库无该书', () => {
             // 但向量库实际没加载任何书
             storeLoadedBooks: 0,
         });
-        expect(status.breakpoint).toBe('检索');
-        expect(status.stages.find(s => s.name === '检索')?.detail).toContain('向量库里没有数据');
+        expect(status.breakpointKey).toBe('linkStatus.stage.retrieve');
+        expect(stageDetail(status.stages.find(s => s.nameKey === 'linkStatus.stage.retrieve')!)).toContain('向量库里没有数据');
     });
 
     it('向量库加载了该书时链路才通', () => {
@@ -48,7 +49,7 @@ describe('B2-1：vectorStatus=done 但向量库无该书', () => {
             embeddingReady: true,
             storeLoadedBooks: 1,
         });
-        expect(status.breakpoint).toBeNull();
+        expect(status.breakpointKey).toBeNull();
     });
 });
 
@@ -112,9 +113,9 @@ describe('B2-4：breakdownStatus=completed 但向量化失败', () => {
             embeddingReady: false,
             storeLoadedBooks: 0,
         });
-        expect(status.breakpoint).toBe('向量化');
-        const vectorize = status.stages.find(s => s.name === '向量化');
-        expect(vectorize?.detail).toContain('嵌入模型');
+        expect(status.breakpointKey).toBe('linkStatus.stage.vectorize');
+        const vectorize = status.stages.find(s => s.nameKey === 'linkStatus.stage.vectorize');
+        expect(stageDetail(vectorize!)).toContain('嵌入模型');
     });
 
     it('部分失败时是 warn 不是断（其余书仍可用）', () => {
@@ -126,8 +127,8 @@ describe('B2-4：breakdownStatus=completed 但向量化失败', () => {
             embeddingReady: true,
             storeLoadedBooks: 1,
         });
-        expect(status.stages.find(s => s.name === '向量化')?.status).toBe('warn');
-        expect(status.breakpoint).toBeNull();
+        expect(status.stages.find(s => s.nameKey === 'linkStatus.stage.vectorize')?.status).toBe('warn');
+        expect(status.breakpointKey).toBeNull();
     });
 });
 
@@ -146,7 +147,7 @@ describe('B2 结论：不一致必须可诊断', () => {
             }),
         ];
         for (const status of scenarios) {
-            expect(status.breakpoint).not.toBeNull();
+            expect(status.breakpointKey).not.toBeNull();
         }
     });
 });

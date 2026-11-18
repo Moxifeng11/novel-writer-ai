@@ -12,11 +12,14 @@
  */
 
 import type { HarnessTool } from './harness-types';
+import { translate } from '@/i18n';
 import {
     computeKnowledgeFlowStatus,
     computeStyleFlowStatus,
     computeConstraintFlowStatus,
+    AGENT_LOCALE,
     formatLinkStatusForAgent,
+    toAgentStatusView,
     type ConstraintFlowInput,
     type FlowKind,
     type KnowledgeFlowInput,
@@ -88,21 +91,22 @@ export function createDiagnoseTools(deps: FlowDiagnosisDeps): HarnessTool[] {
                         computeByKind('style', deps),
                         computeByKind('constraint', deps),
                     ]);
-                    const broken = statuses.filter(s => s.breakpoint);
+                    const broken = statuses.filter(s => s.breakpointKey);
                     const content = statuses.map(s => formatLinkStatusForAgent(s)).join('\n\n');
                     return {
                         ok: true,
+                        // i18n 跨层数据⑦：key 是唯一真源；agent 输出固定 zh，与 UI 语言无关
                         content: broken.length === 0
                             ? `三条链路都没有断点。\n\n${content}`
-                            : `发现 ${broken.length} 条链路有断点：${broken.map(s => `${s.title}断在「${s.breakpoint}」`).join('；')}\n\n${content}`,
-                        data: { statuses },
+                            : `发现 ${broken.length} 条链路有断点：${broken.map(s => `${translate(AGENT_LOCALE, s.titleKey)}断在「${translate(AGENT_LOCALE, s.breakpointKey!)}」`).join('；')}\n\n${content}`,
+                        data: { statuses: statuses.map(toAgentStatusView) },
                     };
                 }
                 const status = await computeByKind(flow, deps);
                 return {
                     ok: true,
                     content: formatLinkStatusForAgent(status),
-                    data: { status },
+                    data: { status: toAgentStatusView(status) },
                 };
             } catch (error) {
                 // 采集失败要如实报，不能假装「链路没问题」

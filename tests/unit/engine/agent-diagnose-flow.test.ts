@@ -193,7 +193,7 @@ describe('C1：与界面口径一致', () => {
         const uiStatus = computeKnowledgeFlowStatus(input);
         const deps = makeDeps({ collectKnowledge: async () => input });
         const result = await tool(deps).execute({ flow: 'knowledge' }, CTX);
-        expect(uiStatus.breakpoint).toBe('检索');
+        expect(uiStatus.breakpointKey).toBe('linkStatus.stage.retrieve');
         expect(result.content).toContain('断在「检索」');
     });
 });

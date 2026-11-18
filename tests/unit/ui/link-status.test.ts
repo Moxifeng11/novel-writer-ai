@@ -18,44 +18,53 @@ import {
     computeKnowledgeFlowStatus,
     computeStyleFlowStatus,
     computeConstraintFlowStatus,
+    stageDetail,
+    stageName,
+    linkBreakpointName,
     type LinkStage,
 } from '../../../ui/views/link-status';
 
 /** 构造环节 */
-function stage(name: string, status: LinkStage['status']): LinkStage {
-    return { name, status, detail: name };
+/**
+ * 构造环节。
+ *
+ * i18n 跨层数据⑦ 后 key 是唯一真源；这里的 key 直接当 nameKey/detailKey 用，
+ * 断言文案时走 stageDetail()/stageName() 求值（fixture 用任意串即可）。
+ */
+function stage(key: string, status: LinkStage['status']): LinkStage {
+    return { nameKey: key, status, detailKey: key };
 }
 
 describe('summarizeLink — 整体结论与断点', () => {
     it('全部 ok 时整体 ok 且无断点', () => {
-        const result = summarizeLink('测试流', [stage('a', 'ok'), stage('b', 'ok')]);
+        const result = summarizeLink('test.flow', [stage('a', 'ok'), stage('b', 'ok')]);
         expect(result.overall).toBe('ok');
-        expect(result.breakpoint).toBeNull();
+        expect(result.breakpointKey).toBeNull();
     });
 
     it('断点取第一个 broken（修链路要从头修）', () => {
-        const result = summarizeLink('测试流', [
+        const result = summarizeLink('test.flow', [
             stage('拆解', 'ok'),
             stage('向量化', 'broken'),
             stage('检索', 'broken'),
         ]);
         expect(result.overall).toBe('broken');
-        expect(result.breakpoint).toBe('向量化');
+        expect(result.breakpointKey).toBe('向量化');
     });
 
     it('broken 优先于 warn', () => {
-        const result = summarizeLink('测试流', [stage('a', 'warn'), stage('b', 'broken')]);
+        const result = summarizeLink('test.flow', [stage('a', 'warn'), stage('b', 'broken')]);
         expect(result.overall).toBe('broken');
     });
 
     it('无 broken 有 warn 时整体 warn', () => {
-        const result = summarizeLink('测试流', [stage('a', 'ok'), stage('b', 'warn')]);
+        const result = summarizeLink('test.flow', [stage('a', 'ok'), stage('b', 'warn')]);
         expect(result.overall).toBe('warn');
-        expect(result.breakpoint).toBeNull();
+        expect(result.breakpointKey).toBeNull();
     });
 
     it('只有 unknown 时整体 unknown（不冒充 ok）', () => {
-        const result = summarizeLink('测试流', [stage('a', 'unknown')]);
+        const result = summarizeLink('test.flow', [stage('a', 'unknown')]);
         expect(result.overall).toBe('unknown');
     });
 });
@@ -70,7 +79,7 @@ describe('知识流：拆解 → 向量化 → 嵌入 → 检索 → 归因', ()
             embeddingReady: false,
             storeLoadedBooks: 0,
         });
-        expect(status.breakpoint).toBe('向量化');
+        expect(status.breakpointKey).toBe('linkStatus.stage.vectorize');
     });
 
     it('向量化失败会说明检查嵌入模型', () => {
@@ -82,9 +91,9 @@ describe('知识流：拆解 → 向量化 → 嵌入 → 检索 → 归因', ()
             embeddingReady: false,
             storeLoadedBooks: 0,
         });
-        const vectorize = status.stages.find(s => s.name === '向量化');
+        const vectorize = status.stages.find(s => s.nameKey === 'linkStatus.stage.vectorize');
         expect(vectorize?.status).toBe('broken');
-        expect(vectorize?.detail).toContain('嵌入模型');
+        expect(vectorize ? stageDetail(vectorize) : '').toContain('嵌入模型');
     });
 
     it('向量就绪但部分失败 → 向量化环节 warn（不是断）', () => {
@@ -96,7 +105,7 @@ describe('知识流：拆解 → 向量化 → 嵌入 → 检索 → 归因', ()
             embeddingReady: true,
             storeLoadedBooks: 2,
         });
-        expect(status.stages.find(s => s.name === '向量化')?.status).toBe('warn');
+        expect(status.stages.find(s => s.nameKey === 'linkStatus.stage.vectorize')?.status).toBe('warn');
         expect(status.overall).toBe('warn');
     });
 
@@ -110,7 +119,7 @@ describe('知识流：拆解 → 向量化 → 嵌入 → 检索 → 归因', ()
             storeLoadedBooks: 2,
         });
         // 归因环节是 unknown（运行时数据），不拉低整体：可判定环节全 ok → 整体 ok\n        expect(status.overall).toBe('ok');
-        expect(status.breakpoint).toBeNull();
+        expect(status.breakpointKey).toBeNull();
     });
 
     it('空知识库时整体 unknown（不误报为断）', () => {
@@ -124,7 +133,7 @@ describe('知识流：拆解 → 向量化 → 嵌入 → 检索 → 归因', ()
         });
         expect(status.overall).not.toBe('ok');
         // 嵌入模型不可用是确定的 broken
-        expect(status.breakpoint).toBe('嵌入模型');
+        expect(status.breakpointKey).toBe('linkStatus.stage.embedding');
     });
 });
 
@@ -138,11 +147,11 @@ describe('风格流：指纹库 → 启用 → 强度 → 注入', () => {
             intensityDisabledCount: 0,
             embeddingReady: true,
         });
-        const library = status.stages.find(s => s.name === '指纹库');
+        const library = status.stages.find(s => s.nameKey === 'linkStatus.stage.fingerprintLib');
         expect(library?.status).toBe('warn');
-        expect(library?.detail).toContain('模板');
+        expect(stageDetail(library!)).toContain('模板');
         // 只有模板层是 warn 不是断：模板可复制到项目，链路并非走不通
-        expect(status.breakpoint).toBeNull();
+        expect(status.breakpointKey).toBeNull();
         expect(status.overall).toBe('warn');
     });
 
@@ -155,7 +164,7 @@ describe('风格流：指纹库 → 启用 → 强度 → 注入', () => {
             intensityDisabledCount: 0,
             embeddingReady: true,
         });
-        expect(status.breakpoint).toBe('启用');
+        expect(status.breakpointKey).toBe('linkStatus.stage.enabled');
     });
 
     it('全部启用但强度都是 0 → 断在强度', () => {
@@ -167,8 +176,8 @@ describe('风格流：指纹库 → 启用 → 强度 → 注入', () => {
             intensityDisabledCount: 2,
             embeddingReady: true,
         });
-        expect(status.breakpoint).toBe('强度');
-        expect(status.stages.find(s => s.name === '强度')?.detail).toContain('强度都是 0');
+        expect(status.breakpointKey).toBe('linkStatus.stage.intensity');
+        expect(stageDetail(status.stages.find(s => s.nameKey === 'linkStatus.stage.intensity')!)).toContain('强度都是 0');
     });
 
     it('部分强度为 0 → 强度环节 warn 且整体 warn', () => {
@@ -180,7 +189,7 @@ describe('风格流：指纹库 → 启用 → 强度 → 注入', () => {
             intensityDisabledCount: 1,
             embeddingReady: true,
         });
-        expect(status.stages.find(s => s.name === '强度')?.status).toBe('warn');
+        expect(status.stages.find(s => s.nameKey === 'linkStatus.stage.intensity')?.status).toBe('warn');
         expect(status.overall).toBe('warn');
     });
 
@@ -193,9 +202,9 @@ describe('风格流：指纹库 → 启用 → 强度 → 注入', () => {
             intensityDisabledCount: 0,
             embeddingReady: false,
         });
-        const inject = status.stages.find(s => s.name === '注入');
+        const inject = status.stages.find(s => s.nameKey === 'linkStatus.stage.inject');
         expect(inject?.status).toBe('warn');
-        expect(inject?.detail).toContain('特征可注入');
+        expect(stageDetail(inject!)).toContain('特征可注入');
     });
 });
 
@@ -211,7 +220,7 @@ describe('运行时降级影响整体状态（阶段 B1）', () => {
             degradations: ['V2 检索异常，回退全量注入'],
         });
         expect(status.overall).toBe('warn');
-        expect(status.breakpoint).toBeNull();
+        expect(status.breakpointKey).toBeNull();
         expect(status.degradations).toHaveLength(1);
     });
 
@@ -225,7 +234,7 @@ describe('运行时降级影响整体状态（阶段 B1）', () => {
             degradations: ['考据来源抓取失败'],
         });
         expect(status.overall).toBe('broken');
-        expect(status.breakpoint).toBe('审核');
+        expect(status.breakpointKey).toBe('linkStatus.stage.review');
     });
 
     it('无降级时不改变原有判定', () => {
@@ -251,7 +260,7 @@ describe('约束流：考据 → 设定 → 审核 → 绑定 → 注入', () =>
             bound: false,
             rulesHasContent: true,
         });
-        expect(status.breakpoint).toBe('审核');
+        expect(status.breakpointKey).toBe('linkStatus.stage.review');
     });
 
     it('已审核但未绑定 → 断在绑定', () => {
@@ -262,7 +271,7 @@ describe('约束流：考据 → 设定 → 审核 → 绑定 → 注入', () =>
             bound: false,
             rulesHasContent: true,
         });
-        expect(status.breakpoint).toBe('绑定');
+        expect(status.breakpointKey).toBe('linkStatus.stage.bind');
     });
 
     it('已绑定但内容是占位 → 断在注入', () => {
@@ -273,7 +282,7 @@ describe('约束流：考据 → 设定 → 审核 → 绑定 → 注入', () =>
             bound: true,
             rulesHasContent: false,
         });
-        expect(status.breakpoint).toBe('注入');
+        expect(status.breakpointKey).toBe('linkStatus.stage.inject');
     });
 
     it('全通时整体 ok', () => {
@@ -285,7 +294,7 @@ describe('约束流：考据 → 设定 → 审核 → 绑定 → 注入', () =>
             rulesHasContent: true,
         });
         expect(status.overall).toBe('ok');
-        expect(status.breakpoint).toBeNull();
+        expect(status.breakpointKey).toBeNull();
     });
 
     it('没有考据来源只算 warn（仍可人工写设定）', () => {
@@ -296,7 +305,7 @@ describe('约束流：考据 → 设定 → 审核 → 绑定 → 注入', () =>
             bound: true,
             rulesHasContent: true,
         });
-        expect(status.stages.find(s => s.name === '考据')?.status).toBe('warn');
+        expect(status.stages.find(s => s.nameKey === 'linkStatus.stage.research')?.status).toBe('warn');
         expect(status.overall).toBe('warn');
     });
 
@@ -308,7 +317,7 @@ describe('约束流：考据 → 设定 → 审核 → 绑定 → 注入', () =>
             bound: true,
             rulesHasContent: true,
         });
-        expect(status.stages.find(s => s.name === '审核')?.status).toBe('warn');
-        expect(status.breakpoint).toBeNull();
+        expect(status.stages.find(s => s.nameKey === 'linkStatus.stage.review')?.status).toBe('warn');
+        expect(status.breakpointKey).toBeNull();
     });
 });

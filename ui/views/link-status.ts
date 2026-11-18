@@ -21,6 +21,11 @@ export {
     computeStyleFlowStatus,
     computeConstraintFlowStatus,
     formatLinkStatusForAgent,
+    // i18n 跨层数据⑦：key 是唯一真源，展示名 / 说明 / 断点名都走这几个 helper
+    stageName,
+    stageDetail,
+    linkTitle,
+    linkBreakpointName,
 } from '@/shared/link-status-compute';
 export type {
     LinkStage,
@@ -75,10 +80,10 @@ export function renderLinkStatus(container: HTMLElement, status: LinkStatus): HT
 
     const head = banner.createDiv({ cls: 'nw-capability-head' });
     head.createSpan({ cls: 'nw-capability-title', text: t('fingerprint.link.titleSuffix', { title: linkTitle(status) }) });
-    const brokenStage = status.breakpoint ? status.stages.find(stage => stage.name === status.breakpoint) : undefined;
+    const brokenStage = status.breakpointKey ? status.stages.find(stage => stage.nameKey === status.breakpointKey) : undefined;
     head.createSpan({
         cls: 'nw-capability-stage',
-        // 断点保留 name 原值（稳定标识），展示走 stageName()
+        // 断点存 nameKey（稳定标识），展示走 stageName()
         text: brokenStage ? t('fingerprint.link.brokenAt', { bp: stageName(brokenStage) }) : statusText(status.overall),
     });
 

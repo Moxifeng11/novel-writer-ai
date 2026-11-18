@@ -17,7 +17,7 @@
 /**
  * @mirror shared/link-status-compute.ts#summarizeLink
  */
-export function summarizeLink(title, stages, degradations, titleKey) {
+export function summarizeLink(titleKey, stages, degradations) {
     const firstBroken = stages.find(stage => stage.status === 'broken');
     const hasWarn = stages.some(stage => stage.status === 'warn');
     const decidable = stages.filter(stage => stage.status !== 'unknown');
@@ -30,11 +30,11 @@ export function summarizeLink(title, stages, degradations, titleKey) {
                 ? 'unknown'
                 : 'ok';
     return {
-        title,
+
         titleKey,
         stages,
         overall,
-        breakpoint: firstBroken ? firstBroken.name : null,
+        breakpointKey: firstBroken ? firstBroken.nameKey : null,
         degradations,
     };
 }
@@ -45,19 +45,15 @@ export function summarizeLink(title, stages, degradations, titleKey) {
  */
 export function computeKnowledgeFlowStatus(input) {
     const breakdown = input.breakdownCompleted > 0
-        ? { name: '拆解', nameKey: 'linkStatus.stage.breakdown', status: 'ok', detail: `${input.breakdownCompleted} 本已拆解`, detailKey: 'linkStatus.detail.breakdownOk', detailParams: { count: input.breakdownCompleted } }
+        ? { nameKey: 'linkStatus.stage.breakdown', status: 'ok', detailKey: 'linkStatus.detail.breakdownOk', detailParams: { count: input.breakdownCompleted } }
         : input.bookTotal > 0
-            ? { name: '拆解', nameKey: 'linkStatus.stage.breakdown', status: 'broken', detail: `${input.bookTotal} 本已导入但都未完成拆解`, detailKey: 'linkStatus.detail.breakdownAllPending', detailParams: { count: input.bookTotal } }
-            : { name: '拆解', nameKey: 'linkStatus.stage.breakdown', status: 'unknown', detail: '知识库为空', detailKey: 'linkStatus.detail.breakdownEmpty' };
+            ? { nameKey: 'linkStatus.stage.breakdown', status: 'broken', detailKey: 'linkStatus.detail.breakdownAllPending', detailParams: { count: input.bookTotal } }
+            : { nameKey: 'linkStatus.stage.breakdown', status: 'unknown', detailKey: 'linkStatus.detail.breakdownEmpty' };
 
     const vectorize = input.vectorDone > 0
         ? {
-            name: '向量化',
             nameKey: 'linkStatus.stage.vectorize',
             status: input.vectorFailed > 0 ? 'warn' : 'ok',
-            detail: input.vectorFailed > 0
-                ? `${input.vectorDone} 本就绪，${input.vectorFailed} 本失败`
-                : `${input.vectorDone} 本就绪`,
             detailKey: input.vectorFailed > 0 ? 'linkStatus.detail.vectorizePartial' : 'linkStatus.detail.vectorizeOk',
             detailParams: input.vectorFailed > 0
                 ? { ok: input.vectorDone, failed: input.vectorFailed }
@@ -65,36 +61,28 @@ export function computeKnowledgeFlowStatus(input) {
         }
         : input.breakdownCompleted > 0
             ? {
-                name: '向量化',
                 nameKey: 'linkStatus.stage.vectorize',
                 status: 'broken',
-                detail: input.vectorFailed > 0
-                    ? `${input.vectorFailed} 本全部失败（检查嵌入模型配置）`
-                    : '已拆解但没有可用向量（检查嵌入模型）',
                 detailKey: input.vectorFailed > 0 ? 'linkStatus.detail.vectorizeAllFailed' : 'linkStatus.detail.vectorizeMissing',
                 detailParams: input.vectorFailed > 0 ? { failed: input.vectorFailed } : undefined,
             }
-            : { name: '向量化', nameKey: 'linkStatus.stage.vectorize', status: 'unknown', detail: '等待拆解完成', detailKey: 'linkStatus.detail.vectorizeWaiting' };
+            : { nameKey: 'linkStatus.stage.vectorize', status: 'unknown', detailKey: 'linkStatus.detail.vectorizeWaiting' };
 
     const embeddingStage = input.embeddingReady
-        ? { name: '嵌入模型', nameKey: 'linkStatus.stage.embedding', status: 'ok', detail: input.embeddingDetail || '可用', detailKey: 'linkStatus.detail.embeddingOk' }
+        ? { nameKey: 'linkStatus.stage.embedding', status: 'ok', detailKey: 'linkStatus.detail.embeddingOk' }
         : {
-            name: '嵌入模型',
             nameKey: 'linkStatus.stage.embedding',
             status: 'broken',
-            detail: input.embeddingDetail || '不可用（检索会退化为关键词匹配）',
             detailKey: 'linkStatus.detail.embeddingBroken',
         };
 
     const storeReady = input.storeReady !== false;
     const retrieve = !storeReady
-        ? { name: '检索', nameKey: 'linkStatus.stage.retrieve', status: 'unknown', detail: '向量库尚未加载，暂时无法判定', detailKey: 'linkStatus.detail.retrieveNotLoaded' }
+        ? { nameKey: 'linkStatus.stage.retrieve', status: 'unknown', detailKey: 'linkStatus.detail.retrieveNotLoaded' }
         : input.storeLoadedBooks > 0
             ? {
-                name: '检索',
                 nameKey: 'linkStatus.stage.retrieve',
                 status: input.orphanCount ? 'warn' : 'ok',
-                detail: `向量库已加载 ${input.storeLoadedBooks} 本${input.orphanCount ? `（其中 ${input.orphanCount} 本不在知识库索引，建议对账清理）` : ''}`,
                 detailKey: input.orphanCount ? 'linkStatus.detail.retrieveLoadedWithOrphans' : 'linkStatus.detail.retrieveLoaded',
                 detailParams: input.orphanCount
                     ? { count: input.storeLoadedBooks, orphans: input.orphanCount }
@@ -102,21 +90,17 @@ export function computeKnowledgeFlowStatus(input) {
             }
             : input.vectorDone > 0
                 ? {
-                    name: '检索',
                     nameKey: 'linkStatus.stage.retrieve',
-                    status: 'broken',
-                    detail: '状态显示向量就绪，但向量库里没有数据（可能文件丢失，建议重向量化）', detailKey: 'linkStatus.detail.retrieveStoreEmpty',
+                    status: 'broken', detailKey: 'linkStatus.detail.retrieveStoreEmpty',
                 }
-                : { name: '检索', nameKey: 'linkStatus.stage.retrieve', status: 'broken', detail: '向量库为空，检索无结果', detailKey: 'linkStatus.detail.retrieveEmpty' };
+                : { nameKey: 'linkStatus.stage.retrieve', status: 'broken', detailKey: 'linkStatus.detail.retrieveEmpty' };
 
     const attribute = {
-        name: '归因',
         nameKey: 'linkStatus.stage.attribute',
-        status: 'unknown',
-        detail: '写作后可在统计页核对 rag_sources', detailKey: 'linkStatus.detail.attributeTodo',
+        status: 'unknown', detailKey: 'linkStatus.detail.attributeTodo',
     };
 
-    return summarizeLink('知识流', [breakdown, vectorize, embeddingStage, retrieve, attribute], input.degradations, 'linkStatus.title.knowledge');
+    return summarizeLink('linkStatus.title.knowledge', [breakdown, vectorize, embeddingStage, retrieve, attribute], input.degradations);
 }
 
 /**
@@ -128,55 +112,43 @@ export function computeStyleFlowStatus(input) {
 
     const library = total > 0
         ? {
-            name: '指纹库',
             nameKey: 'linkStatus.stage.fingerprintLib',
             status: injectable > 0 ? 'ok' : 'warn',
-            detail: injectable > 0
-                ? `可注入 ${injectable}（另有模板 ${input.templateCount} 仅作来源）`
-                : `只有模板层 ${input.templateCount}（模板不参与注入，需复制到项目）`,
             detailKey: injectable > 0 ? 'linkStatus.detail.fpInjectable' : 'linkStatus.detail.fpTemplateOnly',
             detailParams: injectable > 0
                 ? { count: injectable, templates: input.templateCount }
                 : { templates: input.templateCount },
         }
-        : { name: '指纹库', nameKey: 'linkStatus.stage.fingerprintLib', status: 'unknown', detail: '还没有指纹', detailKey: 'linkStatus.detail.fpEmpty' };
+        : { nameKey: 'linkStatus.stage.fingerprintLib', status: 'unknown', detailKey: 'linkStatus.detail.fpEmpty' };
 
     const enabled = input.enabledCount > 0
-        ? { name: '启用', nameKey: 'linkStatus.stage.enabled', status: 'ok', detail: `${input.enabledCount} 枚已启用`, detailKey: 'linkStatus.detail.enabledOk', detailParams: { count: input.enabledCount } }
+        ? { nameKey: 'linkStatus.stage.enabled', status: 'ok', detailKey: 'linkStatus.detail.enabledOk', detailParams: { count: input.enabledCount } }
         : injectable > 0
-            ? { name: '启用', nameKey: 'linkStatus.stage.enabled', status: 'broken', detail: '指纹已存在但全部未启用', detailKey: 'linkStatus.detail.enabledNone' }
-            : { name: '启用', nameKey: 'linkStatus.stage.enabled', status: 'unknown', detail: '等待创建指纹', detailKey: 'linkStatus.detail.enabledWaiting' };
+            ? { nameKey: 'linkStatus.stage.enabled', status: 'broken', detailKey: 'linkStatus.detail.enabledNone' }
+            : { nameKey: 'linkStatus.stage.enabled', status: 'unknown', detailKey: 'linkStatus.detail.enabledWaiting' };
 
     const intensity = input.enabledCount === 0
-        ? { name: '强度', nameKey: 'linkStatus.stage.intensity', status: 'unknown', detail: '等待启用指纹', detailKey: 'linkStatus.detail.waitingEnabled' }
+        ? { nameKey: 'linkStatus.stage.intensity', status: 'unknown', detailKey: 'linkStatus.detail.waitingEnabled' }
         : input.enabledCount - input.intensityDisabledCount > 0
             ? {
-                name: '强度',
                 nameKey: 'linkStatus.stage.intensity',
                 status: input.intensityDisabledCount > 0 ? 'warn' : 'ok',
-                detail: input.intensityDisabledCount > 0
-                    ? `${input.intensityDisabledCount} 枚强度为 0（等于禁用）`
-                    : '全部 > 0',
                 detailKey: input.intensityDisabledCount > 0 ? 'linkStatus.detail.intensityPartialZero' : 'linkStatus.detail.intensityAllPositive',
                 detailParams: input.intensityDisabledCount > 0 ? { count: input.intensityDisabledCount } : undefined,
             }
-            : { name: '强度', nameKey: 'linkStatus.stage.intensity', status: 'broken', detail: '所有启用指纹强度都是 0，注入被禁用', detailKey: 'linkStatus.detail.intensityZero' };
+            : { nameKey: 'linkStatus.stage.intensity', status: 'broken', detailKey: 'linkStatus.detail.intensityZero' };
 
     const inject = input.enabledCount === 0
-        ? { name: '注入', nameKey: 'linkStatus.stage.inject', status: 'unknown', detail: '等待启用指纹', detailKey: 'linkStatus.detail.waitingEnabled' }
+        ? { nameKey: 'linkStatus.stage.inject', status: 'unknown', detailKey: 'linkStatus.detail.waitingEnabled' }
         : input.enabledCount - input.intensityDisabledCount > 0
             ? {
-                name: '注入',
                 nameKey: 'linkStatus.stage.inject',
                 status: input.embeddingReady ? 'ok' : 'warn',
-                detail: input.embeddingReady
-                    ? '特征与示例都会注入'
-                    : '特征可注入；嵌入不可用，向量筛选/示例检索不可用',
                 detailKey: input.embeddingReady ? 'linkStatus.detail.styleInjectOk' : 'linkStatus.detail.styleInjectNoEmbedding',
             }
-            : { name: '注入', nameKey: 'linkStatus.stage.inject', status: 'broken', detail: '所有启用指纹强度都是 0，注入被禁用', detailKey: 'linkStatus.detail.intensityZero' };
+            : { nameKey: 'linkStatus.stage.inject', status: 'broken', detailKey: 'linkStatus.detail.intensityZero' };
 
-    return summarizeLink('风格流', [library, enabled, intensity, inject], input.degradations, 'linkStatus.title.style');
+    return summarizeLink('linkStatus.title.style', [library, enabled, intensity, inject], input.degradations);
 }
 
 /**
@@ -184,36 +156,36 @@ export function computeStyleFlowStatus(input) {
  */
 export function computeConstraintFlowStatus(input) {
     const research = input.sourceCount > 0
-        ? { name: '考据', nameKey: 'linkStatus.stage.research', status: 'ok', detail: `${input.sourceCount} 条来源`, detailKey: 'linkStatus.detail.researchOk', detailParams: { count: input.sourceCount } }
-        : { name: '考据', nameKey: 'linkStatus.stage.research', status: 'warn', detail: '没有官方来源，设定只能写「待核实」', detailKey: 'linkStatus.detail.researchMissing' };
+        ? { nameKey: 'linkStatus.stage.research', status: 'ok', detailKey: 'linkStatus.detail.researchOk', detailParams: { count: input.sourceCount } }
+        : { nameKey: 'linkStatus.stage.research', status: 'warn', detailKey: 'linkStatus.detail.researchMissing' };
 
     const setting = input.settingExists
-        ? { name: '设定', nameKey: 'linkStatus.stage.setting', status: 'ok', detail: '文件存在', detailKey: 'linkStatus.detail.settingOk' }
-        : { name: '设定', nameKey: 'linkStatus.stage.setting', status: 'broken', detail: '还没有同人设定文件', detailKey: 'linkStatus.detail.settingMissing' };
+        ? { nameKey: 'linkStatus.stage.setting', status: 'ok', detailKey: 'linkStatus.detail.settingOk' }
+        : { nameKey: 'linkStatus.stage.setting', status: 'broken', detailKey: 'linkStatus.detail.settingMissing' };
 
     const review = input.reviewStatus === 'approved'
-        ? { name: '审核', nameKey: 'linkStatus.stage.review', status: 'ok', detail: '已通过人工审核', detailKey: 'linkStatus.detail.reviewApproved' }
+        ? { nameKey: 'linkStatus.stage.review', status: 'ok', detailKey: 'linkStatus.detail.reviewApproved' }
         : input.reviewStatus === 'legacy'
-            ? { name: '审核', nameKey: 'linkStatus.stage.review', status: 'warn', detail: '旧文件无审核记录，建议重新审核', detailKey: 'linkStatus.detail.reviewLegacy' }
+            ? { nameKey: 'linkStatus.stage.review', status: 'warn', detailKey: 'linkStatus.detail.reviewLegacy' }
             : input.reviewStatus === 'pending'
-                ? { name: '审核', nameKey: 'linkStatus.stage.review', status: 'broken', detail: '待审核，不能绑定到项目', detailKey: 'linkStatus.detail.reviewPending' }
+                ? { nameKey: 'linkStatus.stage.review', status: 'broken', detailKey: 'linkStatus.detail.reviewPending' }
                 : input.reviewStatus === 'rejected'
-                    ? { name: '审核', nameKey: 'linkStatus.stage.review', status: 'broken', detail: '已驳回，不能绑定到项目', detailKey: 'linkStatus.detail.reviewRejected' }
-                    : { name: '审核', nameKey: 'linkStatus.stage.review', status: 'unknown', detail: '没有可审核的设定', detailKey: 'linkStatus.detail.reviewNone' };
+                    ? { nameKey: 'linkStatus.stage.review', status: 'broken', detailKey: 'linkStatus.detail.reviewRejected' }
+                    : { nameKey: 'linkStatus.stage.review', status: 'unknown', detailKey: 'linkStatus.detail.reviewNone' };
 
     const bind = input.bound
-        ? { name: '绑定', nameKey: 'linkStatus.stage.bind', status: 'ok', detail: '已绑定到当前项目', detailKey: 'linkStatus.detail.bindOk' }
+        ? { nameKey: 'linkStatus.stage.bind', status: 'ok', detailKey: 'linkStatus.detail.bindOk' }
         : input.settingExists
-            ? { name: '绑定', nameKey: 'linkStatus.stage.bind', status: 'broken', detail: '设定未绑定到项目，写作时读不到', detailKey: 'linkStatus.detail.bindMissing' }
-            : { name: '绑定', nameKey: 'linkStatus.stage.bind', status: 'unknown', detail: '等待设定文件', detailKey: 'linkStatus.detail.bindWaiting' };
+            ? { nameKey: 'linkStatus.stage.bind', status: 'broken', detailKey: 'linkStatus.detail.bindMissing' }
+            : { nameKey: 'linkStatus.stage.bind', status: 'unknown', detailKey: 'linkStatus.detail.bindWaiting' };
 
     const inject = !input.bound
-        ? { name: '注入', nameKey: 'linkStatus.stage.inject', status: 'unknown', detail: '等待绑定', detailKey: 'linkStatus.detail.constraintInjectWaiting' }
+        ? { nameKey: 'linkStatus.stage.inject', status: 'unknown', detailKey: 'linkStatus.detail.constraintInjectWaiting' }
         : input.rulesHasContent
-            ? { name: '注入', nameKey: 'linkStatus.stage.inject', status: 'ok', detail: '约束会进入 prompt', detailKey: 'linkStatus.detail.constraintInjectOk' }
-            : { name: '注入', nameKey: 'linkStatus.stage.inject', status: 'broken', detail: '绑定的设定没有实质内容（全是占位）', detailKey: 'linkStatus.detail.constraintInjectPlaceholder' };
+            ? { nameKey: 'linkStatus.stage.inject', status: 'ok', detailKey: 'linkStatus.detail.constraintInjectOk' }
+            : { nameKey: 'linkStatus.stage.inject', status: 'broken', detailKey: 'linkStatus.detail.constraintInjectPlaceholder' };
 
-    return summarizeLink('约束流', [research, setting, review, bind, inject], input.degradations, 'linkStatus.title.constraint');
+    return summarizeLink('linkStatus.title.constraint', [research, setting, review, bind, inject], input.degradations);
 }
 
 /**

@@ -2668,3 +2668,41 @@ entity-state-controller / context-loader / checkup-bar 等）→ 外观页统计
 **验收**：preflight EXIT=0（含新门禁）；三重拦截各自注入验证过会 exit 1。
 
 **下一轮**：ZC-20261120-07（链路状态单一真源，按 DSH 的裁定砍掉中文双份字段）。
+
+## 第九十四轮：i18n 跨层数据⑦ —— 链路状态单一真源（2026-11-19，ZCode · ZC-20261120-07）
+
+**DSH 推翻了我 ③ 的一半做法，且他是对的**
+
+③ 我当时保留 `name`/`breakpoint`/`title`/`detail` 的中文双份，理由是「下游可能对措辞做匹配」。
+DSH 复核时去查了代码：`formatLinkStatusForAgent()` 的两个消费点
+（`diagnose-tools.ts:92/104`、`repair-tools.ts:181`）都是把文本**整段塞进 LLM**，
+**没有任何正则匹配这些措辞**，动作选择走 `REPAIR_ACTIONS` 枚举 id。
+所以「保留中文供匹配」这个理由不成立——我当时是**凭猜测做的保守决定**。
+
+教训：稳定值契约这种设计，必须**去代码里核实消费方**，不能凭「可能有人这么用」。
+我写了一大段注释论证「为什么保留」，但那论证的事实前提是错的。
+
+**改法**
+
+- 删除 39 个 `name` + 39 个 `detail`，`title`/`breakpoint` 也改 key。
+- `formatLinkStatusForAgent()` 内部用 `translate(AGENT_LOCALE, ...)` 而非 `t()`：
+  `t()` 跟 `activeLocale` 走，`translate(固定 locale)` 不跟。单测断言 en 下输出与 zh 逐字相等。
+- 新增 `toAgentStatusView()`：`data.status` 面向 agent，直接塞 `LinkStatus` 会变成
+  `{ titleKey: 'linkStatus.title.knowledge' }`——对模型无意义。该函数求值成
+  `{ title, breakpoint, stages[{name,detail}] }`，字段名与改造前一致，agent 侧零感知。
+
+**两个坑**
+
+1. **parity 盲区**：`scripts/lib/verify-flows-lib.d.mts` 是独立类型声明文件。
+   parity 测试比的是**运行时输出**，类型声明漂移**不会让测试红**——
+   我是靠 tsc 报「Argument not assignable」才发现的。已在文件头加注释说明这个盲区。
+2. **空值防御缺失**：删掉双份字段后，`linkTitle(status)` 在 `titleKey` 为空时
+   直接把 `undefined` 传进 `t()`，崩在 i18n 内部的 `key.split('.')`。
+   测试夹具与降级渲染路径会传不完整对象，已加空值防御返回空串。
+
+**验收**
+- shared+ui+engine+integration **845 文件 / 9116 例**全绿。
+- 灰区 35,082 → **34,546 字**（−536，就是删掉的双份），基线已收紧。
+- preflight EXIT=0（985 文件 / 10326 通过 + 3 跳过）。
+
+**下一轮**：ZC-20261120-08（novel-format 展示带实际字符，按 DSH 的「显示语义标签 + 可见实际符号」）。

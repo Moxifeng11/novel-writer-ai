@@ -19,11 +19,11 @@ import type { V2Fingerprint, StyleFingerprintFeaturesV2 } from '../../../engine/
 
 function status(overrides: Partial<LinkStatus> = {}): LinkStatus {
     return {
-        title: '知识库',
+        titleKey: 'linkStatus.title.knowledge',
         overall: 'ok',
         stages: [
-            { name: '书籍', status: 'ok', detail: '12 本' },
-            { name: '拆解', status: 'ok', detail: '9 本' },
+            { nameKey: 'linkStatus.stage.breakdown', status: 'ok', detailKey: 'linkStatus.detail.breakdownOk', detailParams: { count: 12 } },
+            { nameKey: 'linkStatus.stage.vectorize', status: 'ok', detailKey: 'linkStatus.detail.vectorizeOk', detailParams: { ok: 9 } },
         ],
         ...overrides,
     } as LinkStatus;
@@ -36,7 +36,7 @@ describe('renderLinkStatus', () => {
 
         const banner = root.findAll('nw-capability-banner')[0];
         expect(banner.className).toContain('nw-is-ready');
-        expect(root.allText()).toContain('知识库状态');
+        expect(root.allText()).toContain('知识流');
         expect(root.allText()).toContain('通');
         expect(root.allText()).toContain('链路已通');
     });
@@ -49,7 +49,7 @@ describe('renderLinkStatus', () => {
         ];
         for (const [overall, cls, text] of cases) {
             const root = new FakeEl('div');
-            renderLinkStatus(root as unknown as HTMLElement, status({ overall, stages: [], breakpoint: undefined }));
+            renderLinkStatus(root as unknown as HTMLElement, status({ overall, stages: [], breakpointKey: null }));
             expect(root.findAll('nw-capability-banner')[0].className).toContain(cls);
             expect(root.allText()).toContain(text);
         }
@@ -59,10 +59,10 @@ describe('renderLinkStatus', () => {
         const root = new FakeEl('div');
         renderLinkStatus(root as unknown as HTMLElement, status({
             overall: 'broken',
-            breakpoint: '向量化',
+            breakpointKey: 'linkStatus.stage.vectorize',
             stages: [
-                { name: '书籍', status: 'ok', detail: '12 本' },
-                { name: '向量化', status: 'broken', detail: '未配置模型' },
+                { nameKey: 'linkStatus.stage.breakdown', status: 'ok', detailKey: 'linkStatus.detail.breakdownOk', detailParams: { count: 12 } },
+                { nameKey: 'linkStatus.stage.vectorize', status: 'broken', detailKey: '未配置模型' },
             ],
         }));
 

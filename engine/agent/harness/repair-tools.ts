@@ -18,7 +18,7 @@
  */
 
 import type { HarnessApprovalRequest, HarnessTool, HarnessToolContext, HarnessToolResult } from './harness-types';
-import { computeKnowledgeFlowStatus, computeStyleFlowStatus, computeConstraintFlowStatus, formatLinkStatusForAgent, type LinkStatus } from '@/shared/link-status-compute';
+import { computeKnowledgeFlowStatus, computeStyleFlowStatus, computeConstraintFlowStatus, formatLinkStatusForAgent, toAgentStatusView, type LinkStatus } from '@/shared/link-status-compute';
 import type { FlowDiagnosisDeps } from './diagnose-tools';
 
 /** 工具名 */
@@ -267,7 +267,7 @@ export function createRepairTools(deps: FlowRepairDeps): HarnessTool[] {
                     return {
                         ok: true,
                         content: `已重新计算书籍 ${bookId} 的向量${result.detail ? `（${result.detail}）` : ''}。\n\n修复后链路状态：\n${recheckResult.text}`,
-                        data: { action, bookId, status: recheckResult.status },
+                        data: { action, bookId, status: toAgentStatusView(recheckResult.status) },
                     };
                 }
 
@@ -285,7 +285,7 @@ export function createRepairTools(deps: FlowRepairDeps): HarnessTool[] {
                         return {
                             ok: true,
                             content: `对账完成：没有孤儿向量，无需清理。\n\n修复后链路状态：\n${recheckResult.text}`,
-                            data: { action, orphanCount: 0, removed: [], status: recheckResult.status },
+                            data: { action, orphanCount: 0, removed: [], status: toAgentStatusView(recheckResult.status) },
                         };
                     }
                     const failed = result.skipped.length;
@@ -293,7 +293,7 @@ export function createRepairTools(deps: FlowRepairDeps): HarnessTool[] {
                     return {
                         ok: true,
                         content: `已清理 ${result.removed.length} 本孤儿向量（对账发现 ${result.orphanCount} 本）${failed > 0 ? `；${failed} 本未删除（已在索引或落盘失败）` : ''}。\n\n修复后链路状态：\n${recheckResult.text}`,
-                        data: { action, orphanCount: result.orphanCount, removed: result.removed, skipped: result.skipped, status: recheckResult.status },
+                        data: { action, orphanCount: result.orphanCount, removed: result.removed, skipped: result.skipped, status: toAgentStatusView(recheckResult.status) },
                     };
                 }
 
@@ -317,7 +317,7 @@ export function createRepairTools(deps: FlowRepairDeps): HarnessTool[] {
                         return {
                             ok: true,
                             content: `检查完成：没有强度为 0 的启用指纹，无需修复。\n\n修复后链路状态：\n${recheckResult.text}`,
-                            data: { action, fixed: [], failed: [], status: recheckResult.status },
+                            data: { action, fixed: [], failed: [], status: toAgentStatusView(recheckResult.status) },
                         };
                     }
                     const failedNote = result.failed.length > 0 ? `；${result.failed.length} 枚写入失败` : '';
@@ -325,7 +325,7 @@ export function createRepairTools(deps: FlowRepairDeps): HarnessTool[] {
                     return {
                         ok: true,
                         content: `已恢复 ${result.fixed.length} 枚指纹的强度（0 → 默认 1.0）${failedNote}。\n\n修复后链路状态：\n${recheckResult.text}`,
-                        data: { action, fixed: result.fixed, failed: result.failed, status: recheckResult.status },
+                        data: { action, fixed: result.fixed, failed: result.failed, status: toAgentStatusView(recheckResult.status) },
                     };
                 }
 
@@ -345,7 +345,7 @@ export function createRepairTools(deps: FlowRepairDeps): HarnessTool[] {
 
 修复后链路状态：
 ${recheckResult.text}`,
-                            data: { action, removed: [], skipped: result.skipped, status: recheckResult.status },
+                            data: { action, removed: [], skipped: result.skipped, status: toAgentStatusView(recheckResult.status) },
                         };
                     }
                     return {
@@ -354,7 +354,7 @@ ${recheckResult.text}`,
 
 修复后链路状态：
 ${recheckResult.text}`,
-                        data: { action, removed: result.removed, skipped: result.skipped, status: recheckResult.status },
+                        data: { action, removed: result.removed, skipped: result.skipped, status: toAgentStatusView(recheckResult.status) },
                     };
                 }
 
@@ -377,7 +377,7 @@ ${recheckResult.text}`,
 
 修复后链路状态：
 ${recheckResult.text}`,
-                        data: { action, sourceCount: result.sourceCount, workName: result.workName, status: recheckResult.status },
+                        data: { action, sourceCount: result.sourceCount, workName: result.workName, status: toAgentStatusView(recheckResult.status) },
                     };
                 }
 
@@ -393,7 +393,7 @@ ${recheckResult.text}`,
                 return {
                     ok: true,
                     content: `已重载指纹库：模板 ${counts.template} / 全局 ${counts.global} / 项目 ${counts.project}。\n\n修复后链路状态：\n${recheckResult.text}`,
-                    data: { action, counts, status: recheckResult.status },
+                    data: { action, counts, status: toAgentStatusView(recheckResult.status) },
                 };
             } catch (error) {
                 // 修复失败必须如实报，不得静默成功

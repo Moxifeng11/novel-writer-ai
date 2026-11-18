@@ -15,6 +15,7 @@ import {
     computeStyleFlowStatus as sharedStyle,
     computeConstraintFlowStatus as sharedConstraint,
     summarizeLink as sharedSummarize,
+    type LinkStage,
 } from '../../../shared/link-status-compute';
 import { sanitizeName as sharedSanitizeName } from '../../../shared/paths';
 import {
@@ -30,20 +31,20 @@ const covered: string[] = [];
 
 describe('parity：镜像库 ↔ shared 真源（同输入必须同输出）', () => {
     it('summarizeLink：四种 overall 组合与断点提取', () => {
-        const stagesOk = [{ name: 'A', status: 'ok' as const, detail: 'x' }];
-        const stagesBroken = [
-            { name: 'A', status: 'ok' as const, detail: 'x' },
-            { name: 'B', status: 'broken' as const, detail: 'y' },
+        const stagesOk: LinkStage[] = [{ nameKey: 'A', status: 'ok', detailKey: 'x' }];
+        const stagesBroken: LinkStage[] = [
+            { nameKey: 'A', status: 'ok', detailKey: 'x' },
+            { nameKey: 'B', status: 'broken', detailKey: 'y' },
         ];
-        const cases = [
-            { title: 't', stages: stagesOk, breakpoint: null, degradations: undefined },
-            { title: 't', stages: stagesBroken, breakpoint: 'B', degradations: undefined },
-            { title: 't', stages: [{ name: 'A', status: 'warn' as const, detail: 'w' }], breakpoint: null, degradations: ['d'] },
-            { title: 't', stages: [{ name: 'A', status: 'unknown' as const, detail: '?' }], breakpoint: null, degradations: undefined },
+        const cases: { titleKey: string; stages: LinkStage[]; degradations?: string[] }[] = [
+            { titleKey: 'linkStatus.title.knowledge', stages: stagesOk,  degradations: undefined },
+            { titleKey: 'linkStatus.title.knowledge', stages: stagesBroken,  degradations: undefined },
+            { titleKey: 'linkStatus.title.knowledge', stages: [{ nameKey: 'A', status: 'warn', detailKey: 'w' }],  degradations: ['d'] },
+            { titleKey: 'linkStatus.title.knowledge', stages: [{ nameKey: 'A', status: 'unknown', detailKey: '?' }],  degradations: undefined },
         ];
         for (const input of cases) {
-            expect(mirrorSummarize(input.title, input.stages, input.degradations))
-                .toEqual(sharedSummarize(input.title, input.stages, input.degradations));
+            expect(mirrorSummarize(input.titleKey, input.stages, input.degradations))
+                .toEqual(sharedSummarize(input.titleKey, input.stages, input.degradations));
             covered.push('summarize:' + input.stages[0].status);
         }
     });
