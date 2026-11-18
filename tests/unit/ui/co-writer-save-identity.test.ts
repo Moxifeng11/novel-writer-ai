@@ -120,8 +120,9 @@ describe('BodySaveController — 保存身份快照', () => {
 
         await expect(controller.save(false)).resolves.toBe(true);
         expect(writes[0].path).toBe('/A书/正文/第1章.md');
-        expect(updateControlState).toHaveBeenLastCalledWith('已保存');
-        expect(host.state).toBe('已保存');
+        // i18n 跨层数据⑤：host 收到的是枚举（稳定标识），展示文案由 updateControlState 求值
+        expect(updateControlState).toHaveBeenLastCalledWith('saved');
+        expect(host.state).toBe('saved');
         expect(onSaved).toHaveBeenCalledTimes(1);
     });
 

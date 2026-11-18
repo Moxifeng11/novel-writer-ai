@@ -3272,6 +3272,8 @@ export const zhCN: MessageTree = {
             externallyModifiedNotice: '⚠️ 该章正文刚被其他入口（一键成文/续写）改写，已跳过本次自动保存以免覆盖新稿；请重新打开本章后再编辑。',
             labelSaveBody: '保存正文',
             stateSaved: '已保存',
+            stateLoaded: '已加载',
+            stateEditing: '编辑中',
             savedNotice: '✅ 正文已保存',
             projectDeletedNotice: '⚠️ 项目已删除，已停止保存并清空章节绑定',
             stateSaveFailed: '保存失败',

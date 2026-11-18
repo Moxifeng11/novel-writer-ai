@@ -3269,6 +3269,8 @@ export const enUS: MessageTree = {
             externallyModifiedNotice: '⚠️ This chapter\'s body was just rewritten by another entry point (one-click generation/continuation); this auto-save was skipped to avoid overwriting the new draft; reopen the chapter before editing.',
             labelSaveBody: 'Save body text',
             stateSaved: 'Saved',
+            stateLoaded: 'Loaded',
+            stateEditing: 'Editing',
             savedNotice: '✅ Body text saved',
             projectDeletedNotice: '⚠️ The project was deleted; saving stopped and chapter bindings cleared',
             stateSaveFailed: 'Save failed',

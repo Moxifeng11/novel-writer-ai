@@ -1,5 +1,6 @@
 import { App, Notice } from 'obsidian';
 import { t } from '@/i18n';
+import type { SaveState } from '@/ui/co-writing/save-state';
 import { BodyWriter } from '@/engine/body-writer';
 import { createLogger } from '@/shared/logger';
 
@@ -37,7 +38,7 @@ export interface BodySaveHost {
       * @returns ChapterSaveIdentity 实例
      */
     getIdentity(): ChapterSaveIdentity;
-    updateControlState(state: string): void;
+    updateControlState(state: SaveState): void;
     /**
      * 按快照身份取章节标题（信息规划 / 大纲摘要）
      *
@@ -151,7 +152,7 @@ export class BodySaveController {
             return false;
         }
         this.saving = true;
-        this.host.updateControlState(t("cowrite.save.stateSaving"));
+        this.host.updateControlState('saving');
         try {
             const chapterTitle = await this.withTimeout(this.host.getChapterTitle(identity), 10_000, t('cowrite.save.labelReadTitle'));
             // 外部写入检测（P0-6）：只在本视图写过的路径上生效，首次保存不拦截
@@ -161,7 +162,7 @@ export class BodySaveController {
                 t('cowrite.save.labelCheckExternal'),
             );
             if (conflict) {
-                this.host.updateControlState(t("cowrite.save.stateExternallyModified"));
+                this.host.updateControlState('externallyModified');
                 if (!this.conflictNotified.has(identity.bodyPath)) {
                     this.conflictNotified.add(identity.bodyPath);
                     new Notice(
@@ -187,7 +188,7 @@ export class BodySaveController {
             this.conflictNotified.delete(identity.bodyPath);
             // 写盘期间已切章：不要把「已保存」与结算提醒写到新章界面
             if (!this.host.isSameChapterIdentity(identity)) return true;
-            this.host.updateControlState(t("cowrite.save.stateSaved"));
+            this.host.updateControlState('saved');
             this.host.onSaved();
             if (showNotice)
                 new Notice(t("cowrite.save.savedNotice"), 3e3);
@@ -204,7 +205,7 @@ export class BodySaveController {
             }
             // 状态栏不能停在「保存中...」，否则用户会以为仍在保存/已保存
             if (this.host.isSameChapterIdentity(identity)) {
-                this.host.updateControlState(t("cowrite.save.stateSaveFailed"));
+                this.host.updateControlState('saveFailed');
             }
             if (showNotice)
                 new Notice(t('cowrite.save.saveFailedNotice', { msg: message || t('cowrite.save.checkPathHint') }), 6e3);

@@ -11,7 +11,7 @@
 | `shared/` | 258 | 51945 | 2185 | 1706 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1596 | 88 | 58 | 66% |
-| `ui/` | 306 | 115172 | 1180 | 930 | 79% |
+| `ui/` | 307 | 115277 | 1185 | 933 | 79% |
 
 ## 文件清单
 
@@ -738,14 +738,14 @@
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write-floating-panel.ts` | 1021 | 2 | 2 |
 | `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |
-| `ui/co-writing-view.ts` | 3969 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3972 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 167 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 248 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
 | `ui/co-writing/chapter-match.ts` | 164 | 3 | 3 |
 | `ui/co-writing/chapter-nav.ts` | 157 | 6 | 3 |
 | `ui/co-writing/control-panel.ts` | 410 | 14 | 8 |
-| `ui/co-writing/dashboard-status.ts` | 188 | 9 | 7 |
+| `ui/co-writing/dashboard-status.ts` | 191 | 9 | 7 |
 | `ui/co-writing/edit-history.ts` | 152 | 8 | 6 |
 | `ui/co-writing/editor-aux.ts` | 169 | 5 | 3 |
 | `ui/co-writing/editor-display.ts` | 128 | 10 | 6 |
@@ -769,6 +769,7 @@
 | `ui/co-writing/quality-highlight.ts` | 102 | 3 | 2 |
 | `ui/co-writing/quality-popup.ts` | 150 | 6 | 5 |
 | `ui/co-writing/quality-report.ts` | 130 | 2 | 2 |
+| `ui/co-writing/save-state.ts` | 98 | 5 | 3 |
 | `ui/co-writing/settlement-actions.ts` | 190 | 6 | 5 |
 | `ui/co-writing/suggest-feedback.ts` | 186 | 9 | 7 |
 | `ui/co-writing/suggestion-cards.ts` | 420 | 13 | 12 |
@@ -799,7 +800,7 @@
 | `ui/context-injector-modal.ts` | 210 | 1 | 1 |
 | `ui/context-metrics-modal.ts` | 82 | 1 | 1 |
 | `ui/continue-chapters-modal.ts` | 567 | 1 | 1 |
-| `ui/cowrite/body-save-controller.ts` | 282 | 3 | 2 |
+| `ui/cowrite/body-save-controller.ts` | 283 | 3 | 2 |
 | `ui/cowrite/cowrite-mappers.ts` | 111 | 6 | 6 |
 | `ui/cowrite/history-modal.ts` | 56 | 1 | 1 |
 | `ui/cowrite/insert-range.ts` | 86 | 4 | 4 |

@@ -7,6 +7,7 @@
 
 import { ItemView, WorkspaceLeaf, Notice, MarkdownRenderer, TFile } from 'obsidian';
 import { t } from '@/i18n';
+import { isDirtySaveState, saveStateLabel, type SaveState } from './co-writing/save-state';
 import { SUBDIR_STEP_ROOT, pjBodyFile } from '@/shared/paths';
 import { getChaptersForProject, getProjectMeta } from '@/ui/project-utils';
 import { readMergedVolumeOutline } from '@/utils/helpers';
@@ -699,7 +700,7 @@ export class CoWritingView extends ItemView {
     this.facade.syncChapterLoaded(project, volumeNum, chapterNum, chapterName2, bodyOnly, bodyOnly.trim().length);
     // 切章会重建/覆写正文容器：字体设置在这里补一次，保证与下拉显示一致
     this.applyEditorFont(this.facade.settings.coWriteEditorFont || '');
-    this.updateControlState("\u5DF2\u52A0\u8F7D");
+    this.updateControlState('loaded');
     // E-02/E-03：切章后刷新章节流转列表与本章字数目标（大纲优先）
     await this.refreshChapterListAsync();
     await this.loadChapterWordGoal();
@@ -1084,7 +1085,7 @@ export class CoWritingView extends ItemView {
       this.pushHistorySnapshot();
       this.refreshCursorInfo();
       this.syncHighlightSoon();
-      this.updateControlState("编辑中");
+      this.updateControlState('editing');
       void this.refreshPreview(false);
       this.liveAnalysis.scheduleRefresh("input");
       this.scheduleGhostAssociationRefresh();
@@ -3349,15 +3350,17 @@ ${text}`;
   /**
    * 更新控件状态。
    *
-   * @param state - 状态
+   * @param state - 保存状态（稳定枚举，不随语言变）
    */
-  updateControlState(state: string) {
+  updateControlState(state: SaveState) {
     this.refreshStatusBar();
-    updateSaveStateDisplay(this.saveStateDisplay, state);
+    // 展示文案按当前语言求值；判脏比枚举（i18n 跨层数据⑤）
+    const label = saveStateLabel(state);
+    updateSaveStateDisplay(this.saveStateDisplay, label);
     // E-08：辅助条上的保存状态与主状态同步（避免两处显示不一致）
     if (this.auxBar) {
-      this.auxBar.saveState.setText(state);
-      this.auxBar.saveState.toggleClass('nw-cowrite-aux-state-dirty', state !== '已保存' && state !== '已加载');
+      this.auxBar.saveState.setText(label);
+      this.auxBar.saveState.toggleClass('nw-cowrite-aux-state-dirty', isDirtySaveState(state));
     }
   }
   /**
@@ -3493,7 +3496,7 @@ ${text}`;
     this.syncHighlightSoon();
     // 快照已更新，但落盘必须显式排程
     this.bodySaveController.markDirty();
-    this.updateControlState("编辑中");
+    this.updateControlState('editing');
     log.info(`[CoWritingView] 程序化写入（${reason}）: ${nextText.length} 字`);
   }
 

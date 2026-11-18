@@ -2532,3 +2532,42 @@ entity-state-controller / context-loader / checkup-bar 等）→ 外观页统计
   preflight EXIT=0（10320 通过 + 3 跳过）。
 
 **下一轮**：跨层数据⑤（协同写作保存状态串，`ui/co-writing-view.ts` 的 `toggleClass` 比较是重点）。
+
+## 第九十一轮：i18n 跨层数据⑤ —— 协同写作保存状态枚举化（2026-11-19，ZCode · ZC-20261120-05）
+
+**这是本轮唯一一处真 bug（不是单纯减棘轮）**
+- 此前保存状态是**中文文案字符串**在层间流转：`updateControlState('已保存')`。
+  判脏 `isDirtyState()` 与辅助条 `toggleClass(..., state !== '已保存' && state !== '已加载')`
+  都拿中文比较。en 界面下 `body-save-controller` 传的是**译文**（Saved / Editing / Save failed），
+  比较恒为 true → **脏标记永远亮着、切章未保存守卫失灵**。
+- 实机复现（修前，en）：初始辅助条 `Loaded` + `auxDirty=false`，输入后 `编辑中` + `auxDirty=true`
+  ——状态文案竟然还是中文，说明枚举根本没传到展示层。
+
+**改动**
+- 新增 `ui/co-writing/save-state.ts`：`SaveState` 枚举（saved/loaded/editing/saving/saveFailed/
+  externallyModified）、`SAVE_STATE_KEYS`、`saveStateLabel()`、`isDirtySaveState()`、`parseSaveState()`。
+  **判脏只比枚举**，这是本文件存在的理由。
+- `co-writing-view.ts`：`updateControlState(state: SaveState)` 内改为 `saveStateLabel()` 求展示
+  + `isDirtySaveState()` 切类；调用点 `'已加载'`/`'编辑中'` → `'loaded'`/`'editing'`。
+- `ui/cowrite/body-save-controller.ts`：host 接口与 4 个调用点改枚举。
+- `ui/co-writing/dashboard-status.ts`：`isDirtyState()` 先 `parseSaveState()` 再判，
+  兼容历史入参（`parseSaveState()` 从 `getCatalog('zh-CN')` 反查中文，不写死中文，棘轮干净）。
+
+**踩到两个坑（都值得记）**
+1. **迁移脚本的 "MISSING" 不代表没改**：脚本先 `writeFileSync` 再 `exit(1)`，
+   部分命中也会留下半套改动。本轮只改到了调用点和 import，**实现体没改**——
+   于是 en 下调用点传 `'editing'`、实现体仍把它当文案直接 `setText`，界面显示英文枚举名。
+   实机截图才发现（tsc 和单测都不会报）。
+2. **`dev-vault.mjs sync --vault=D:\nw-dev-vault` 在 Git Bash 下会被 MSYS 吃掉盘符**，
+   产物落进仓内 `nw-dev-vault/`（假的"同步成功"），实机跑的还是旧 bundle，
+   于是第一次 en 截图仍然显示「编辑中」。必须写正斜杠 `D:/nw-dev-vault`，
+   并 `md5sum` 对比仓内与 vault 内 main.js 才算同步成功。
+
+**验收**
+- 新增 `tests/unit/ui/save-state-i18n.test.ts` 5 例（判脏与语言无关 / en 下传 zh 文案仍正确 /
+  en 文案 / 展示无键名回退 / parse 三形态）；`co-writer-save-identity.test.ts` 的 host 断言改枚举。
+- shared+ui **453 文件 / 4458 例**全绿；`check:i18n` zh/en 各 **3310**、棘轮 **226 文件 / 8564 条**
+  （co-writing-view 82→77）；`check:bundle` main.js → **6020367**（+770，已 note）。
+- 实机 en：初始 `Loaded` + `dirty=false`，输入后 `Editing` + `dirty=true`（截图 _visual-i18n30）。
+
+**下一轮**：跨层数据⑥（全仓剩余 CJK 盘点 —— `scripts/audit-cjk.mjs` + 审计文档，回答「还剩什么、为什么留」）。

@@ -5,6 +5,7 @@
  * 纯格式化函数与 DOM 渲染分离，便于锁定字数进度与脏状态判定。
  */
 import { calculateHumanRate, renderHumanRate } from '@/ui/co-writing/human-rate';
+import { isDirtySaveState, parseSaveState } from '@/ui/co-writing/save-state';
 import { t } from '@/i18n';
 
 /** 状态栏宿主。 */
@@ -92,7 +93,9 @@ export function computeWordGoalProgress(count: number, goal: number): number {
  * ```
  */
 export function isDirtyState(state: string): boolean {
-    return state !== '已保存' && state !== '已加载';
+    // i18n 跨层数据⑤：先按枚举解析（兼容历史中文/英文文案），解析不到再按中文兜底
+    const parsed = parseSaveState(state);
+    return parsed ? isDirtySaveState(parsed) : state !== '已保存' && state !== '已加载';
 }
 
 /**
