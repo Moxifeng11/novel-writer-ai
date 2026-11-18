@@ -1964,3 +1964,50 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 `mode-section.ts`（402）→ `mcp-section.ts`（301）→ 指纹 12 维标签（`ui/fingerprint-utils.ts` 剩 10 处，
 随写作指纹库视图切片一起迁）→ 写作主流程 `Notice`。
 
+
+## 第六十八轮：i18n 第二期第十一片 —— 首启与自检分区 + 自检服务（2026-11-18，ZCode · ZC-20261118-01）
+
+**改动**
+- `ui/settings/setup-section.ts`（135 行 / 477 中文字）：分区骨架 34 处文案迁
+  `t('settings.setup.*')`——标题与引导语、加载态、摘要两态 + 计数插值
+  （`（ok {ok} / warn {warn} / missing {missing}）`）、清单行 `{icon, label}`、修复行、失败行、
+  六个 Setting、七个按钮、五条 Notice。
+- `services/setup-readiness-service.ts`（88 行含中文）：9 个自检项的 label/detail/fix
+  迁 `settings.setup.items.*` 43 键。**util 教训的 services 版**：数据源在 services/ 也要一并迁，
+  否则 en 页 9 个自检项满屏中文。服务每次 `check()` 都由 `main.ts` 新建实例，
+  方法体内 `t()` 即「当时语言」；`log.info`/`log.warn` 保留中文（日志非界面）。
+- 资源 zh/en 各 1222 条（+77：`settings.setup` 34 + `settings.setup.items` 43）；
+  vault 路径（`元文件`、`写作知识库/…`）不进 en 资源字面量——运行时拼接的走插值参数，
+  固定出现在 desc 里的 zh 直写、en 换说法，两边零占位符。
+- 新增 `tests/unit/ui/setup-section-i18n.test.ts` 4 例：分区直连真实 `SetupReadinessService`
+  （桩 deps + mock Vault），走通 service t() → 分区渲染整条链；en 渲染做 CJK 白名单断言
+  （只允许 元文件/三模式目录/项目名 字符）。
+
+**三处坑**
+1. **mock Vault 的 `_seedFile` 隐式创建父目录**：给 `长篇小说/测试书/作品信息.md` 播种后
+   `getAbstractFileByPath('长篇小说')` 已命中，模式目录自检从「缺三个」变「缺两个」；
+   要测目录缺失就把项目种在模式目录外（如 `测试书/作品信息.md`）。
+2. **mock Setting 的按钮是游离 `buttonEl`**：`FakeEl` 收集不到 `setButtonText` 的文案，
+   分区测试别断言按钮文字（键解析由 `check:i18n` 兜底）。
+3. **sync 后先 grep 再截图**：首次 `dev-vault.mjs sync --vault=D:\nw-dev-vault` 报了
+   「更新 6 个文件」但 D 盘 main.js 里没有新键（en 截图正文全中文即此症）；重跑 sync 后正常。
+   截图前 `grep -c '<新键片段>' main.js` 一眼定真伪。
+
+**验收**
+- 新增 4 例 + 既有 4 个 service 测试（zh 断言子串全部保留，零修改）全绿；
+  `npx tsc --noEmit` EXIT=0（preflight 内含）。
+- `check:i18n`：zh/en 各 1222、0 无法解析键、动态键 10 处、棘轮收紧到 **260 文件 / 10697 条**。
+- `check:bundle`：main.js 5785855 → **5796603**（+10748，77 条双语键进包）；styles.css 799217 不变。
+- 全量 `npm run preflight` EXIT=0（973 文件 / 10281 通过 + 3 跳过；首跑败在 check:docs 漂移——
+  `check:jsdoc` 重写生成物在 `check:docs` 之前 + 本片改了 INDEX，gen:docs 后复跑全绿）。
+- 实机 `D:\nw-dev-vault\_visual-i18n11\setup-{zh-CN,en-US}.png`（930×2970）：en 下 heads =
+  `📖 Settings / 🚀 First run & readiness`，Setting 行 `Re-run readiness check / Generate "meta file"
+  templates on startup / One-click fixes / Recover interrupted settlement / First-run guide /
+  Folder / tag / property conventions`，按钮 `Check now / Fill in templates / Create sample project /
+  Generate usage guide / Check & recover / Open guide / View conventions`，摘要
+  `✅ Ready to write (ok 7 / warn 2 / missing 0)`；剩余 CJK 17 全是数据（元文件 /
+  长篇小说, 短篇小说, 剧本 / 示例项目）；zh 页与改前逐字一致，两语言均无溢出。
+
+**下一轮候选**：`foreshadow-section.ts`（447）→ `mode-section.ts`（402）→ `mcp-section.ts`（301，
+工具名是数据不迁）→ `agent-section.ts`（125，完成后设置分区全迁完）→ 指纹 12 维标签
+（随写作指纹库视图切片）→ 写作主流程。

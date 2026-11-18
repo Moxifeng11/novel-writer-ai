@@ -6,6 +6,7 @@
  */
 
 import { Notice, Setting } from 'obsidian';
+import { t } from '@/i18n';
 import { SettingsSection } from './section-base';
 import type { ReadinessReport, ReadinessStatus } from '@/services/setup-readiness-service';
 import { SettlementRecoveryModal } from '@/ui/settlement-recovery-modal';
@@ -29,26 +30,26 @@ export class SetupSection extends SettingsSection {
     async render(container: HTMLElement): Promise<void> {
         const intro = container.createDiv({ cls: 'nw-settings-section' });
         new Setting(intro)
-            .setName('🚀 首启与自检')
-            .setDesc('从社区市场装好后，按这里补齐环境即可开始写作；每项都可一键修复。')
+            .setName(t('settings.setup.title'))
+            .setDesc(t('settings.setup.desc'))
             .setHeading();
 
         const list = container.createDiv({ cls: 'nw-settings-section' });
-        const reportEl = list.createDiv({ cls: 'setting-item-description', text: '正在自检…' });
+        const reportEl = list.createDiv({ cls: 'setting-item-description', text: t('settings.setup.checking') });
 
         const renderReport = (report: ReadinessReport): void => {
             this.report = report;
             reportEl.empty();
             const summary = reportEl.createDiv({
-                text: `${report.usable ? '✅ 可以开始写作' : '❌ 还差必要配置'}（ok ${report.counts.ok} / warn ${report.counts.warn} / missing ${report.counts.missing}）`,
+                text: `${report.usable ? t('settings.setup.summaryUsable') : t('settings.setup.summaryBlocked')}${t('settings.setup.summaryCounts', { ok: report.counts.ok, warn: report.counts.warn, missing: report.counts.missing })}`,
             });
             summary.addClass('nw-readiness-summary');
             const table = reportEl.createEl('ul', { cls: 'nw-readiness-list' });
             for (const item of report.items) {
                 const li = table.createEl('li', { cls: `nw-readiness-item is-${item.status}` });
-                li.createSpan({ text: `${STATUS_ICON[item.status]} ${item.label}：` });
+                li.createSpan({ text: t('settings.setup.itemLine', { icon: STATUS_ICON[item.status], label: item.label }) });
                 li.createSpan({ text: item.detail });
-                if (item.fix) li.createEl('div', { cls: 'setting-item-description', text: `修复：${item.fix}` });
+                if (item.fix) li.createEl('div', { cls: 'setting-item-description', text: t('settings.setup.fixLine', { fix: item.fix }) });
             }
         };
 
@@ -56,18 +57,18 @@ export class SetupSection extends SettingsSection {
             try {
                 renderReport(await this.plugin.runSetupReadiness());
             } catch (error) {
-                reportEl.setText(`自检失败：${error instanceof Error ? error.message : String(error)}`);
+                reportEl.setText(t('settings.setup.checkFailed', { msg: error instanceof Error ? error.message : String(error) }));
             }
         };
 
         new Setting(list)
-            .setName('重新自检')
-            .setDesc('检查 API Key、模板树、作品、模式目录、索引与使用说明')
-            .addButton(button => button.setButtonText('立即自检').onClick(() => { void refreshReport(); }));
+            .setName(t('settings.setup.recheck'))
+            .setDesc(t('settings.setup.recheckDesc'))
+            .addButton(button => button.setButtonText(t('settings.setup.recheckBtn')).onClick(() => { void refreshReport(); }));
 
         new Setting(list)
-            .setName('启动时自动生成「元文件」模板')
-            .setDesc('开启：首次启用插件会在库根写入 56 个模板文件（新建项目依赖它们）。关闭：不在启动时写库，改为新建作品时按需落盘。')
+            .setName(t('settings.setup.autoScaffold'))
+            .setDesc(t('settings.setup.autoScaffoldDesc'))
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.templateScaffoldOnStartup !== false)
                 .onChange(async value => {
@@ -76,55 +77,55 @@ export class SetupSection extends SettingsSection {
                 }));
 
         new Setting(list)
-            .setName('一键修复')
-            .setDesc('补齐模板文件 / 创建示例项目 / 生成使用说明（均不会覆盖已有内容）')
-            .addButton(button => button.setButtonText('补齐模板').onClick(async () => {
+            .setName(t('settings.setup.oneClickFix'))
+            .setDesc(t('settings.setup.oneClickFixDesc'))
+            .addButton(button => button.setButtonText(t('settings.setup.fixTemplatesBtn')).onClick(async () => {
                 const result = await this.plugin.ensureTemplatesNow();
-                new Notice(`模板：新建 ${result.created}，跳过 ${result.skipped}，失败 ${result.failed}`, 6000);
+                new Notice(t('settings.setup.fixTemplatesNotice', { created: result.created, skipped: result.skipped, failed: result.failed }), 6000);
                 await refreshReport();
             }))
-            .addButton(button => button.setButtonText('创建示例项目').onClick(async () => {
+            .addButton(button => button.setButtonText(t('settings.setup.createExampleBtn')).onClick(async () => {
                 const result = await this.plugin.createExampleProjectNow();
                 new Notice(
                     result.created
-                        ? `已创建示例项目：${result.project}`
+                        ? t('settings.setup.exampleCreated', { project: result.project })
                         : result.repaired > 0
-                            ? `已补齐示例项目缺失文件：${result.project}（${result.repaired} 个）`
-                            : `示例项目已存在且完整：${result.project}`,
+                            ? t('settings.setup.exampleRepaired', { project: result.project, count: result.repaired })
+                            : t('settings.setup.exampleComplete', { project: result.project }),
                     6000,
                 );
                 await refreshReport();
             }))
-            .addButton(button => button.setButtonText('生成使用说明').onClick(async () => {
+            .addButton(button => button.setButtonText(t('settings.setup.usageGuideBtn')).onClick(async () => {
                 const result = await this.plugin.writeUsageGuideNow();
-                new Notice(`已生成：${result.path}`, 6000);
+                new Notice(t('settings.setup.usageGuideDone', { path: result.path }), 6000);
                 await refreshReport();
             }));
 
         new Setting(list)
-            .setName('恢复中断结算')
-            .setDesc('结算中途崩溃/退出会留下回滚日志；这里按日志回滚，避免「实体已改、正文未结算」的半套状态')
-            .addButton(button => button.setButtonText('检查并恢复').onClick(() => {
+            .setName(t('settings.setup.settlementRecovery'))
+            .setDesc(t('settings.setup.settlementRecoveryDesc'))
+            .addButton(button => button.setButtonText(t('settings.setup.settlementRecoveryBtn')).onClick(() => {
                 const project = this.plugin.getWorkbenchContext()?.project ?? this.plugin.getActiveProject() ?? '';
                 if (!project) {
-                    new Notice('请先在「项目与章节」里打开一个作品，再恢复结算', 6000);
+                    new Notice(t('settings.setup.settlementNoProject'), 6000);
                     return;
                 }
                 new SettlementRecoveryModal(this.plugin, project).open();
             }));
 
         new Setting(list)
-            .setName('首启引导')
-            .setDesc('3 分钟走完「选供应商 → 填 Key → 连通性测试 → 示例项目 → 开始写作」')
-            .addButton(button => button.setButtonText('打开引导').setCta().onClick(() => {
+            .setName(t('settings.setup.onboarding'))
+            .setDesc(t('settings.setup.onboardingDesc'))
+            .addButton(button => button.setButtonText(t('settings.setup.onboardingBtn')).setCta().onClick(() => {
                 this.plugin.openOnboarding();
             }));
 
         const notes = container.createDiv({ cls: 'nw-settings-section' });
         new Setting(notes)
-            .setName('📌 目录 / 标签 / 属性约定')
-            .setDesc('不确定某个文件夹、标签或笔记属性该不该手改时，点「生成使用说明」查看速查（写在 写作知识库/插件使用约定.md）')
-            .addButton(button => button.setButtonText('查看约定').onClick(async () => {
+            .setName(t('settings.setup.conventions'))
+            .setDesc(t('settings.setup.conventionsDesc'))
+            .addButton(button => button.setButtonText(t('settings.setup.conventionsBtn')).onClick(async () => {
                 const result = await this.plugin.writeUsageGuideNow();
                 await this.app.workspace.openLinkText(result.path, '', false);
             }));

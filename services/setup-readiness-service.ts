@@ -8,6 +8,7 @@
  */
 
 import { App, TFile } from 'obsidian';
+import { t, getLocale } from '@/i18n';
 import { createLogger } from '@/shared/logger';
 import { TEMPLATE_SCAFFOLD_FILES } from '@/shared/template-scaffold-assets.generated';
 import { TEMPLATE_ROOT } from '@/shared/template-scaffold';
@@ -112,9 +113,9 @@ export class SetupReadinessService {
         if (ok) {
             return {
                 id: 'provider',
-                label: 'AI 供应商 API Key',
+                label: t('settings.setup.items.providerLabel'),
                 status: 'ok',
-                detail: '已配置至少一个供应商的 API Key',
+                detail: t('settings.setup.items.providerOkDetail'),
                 fix: '',
             };
         }
@@ -122,18 +123,18 @@ export class SetupReadinessService {
         if (this.deps.secretsLocked?.()) {
             return {
                 id: 'provider',
-                label: 'AI 供应商 API Key',
+                label: t('settings.setup.items.providerLabel'),
                 status: 'missing',
-                detail: '密钥已加密保存，但当前口令未解锁（此时调用 AI 会全部失败）',
-                fix: '在设置 → API 配置输入口令解锁，或重新填写 API Key',
+                detail: t('settings.setup.items.providerLockedDetail'),
+                fix: t('settings.setup.items.providerLockedFix'),
             };
         }
         return {
             id: 'provider',
-            label: 'AI 供应商 API Key',
+            label: t('settings.setup.items.providerLabel'),
             status: 'missing',
-            detail: '未配置任何 API Key，所有 AI 功能不可用',
-            fix: '打开「首启引导」或设置 → API 供应商，填写 Key 并点「连通性测试」',
+            detail: t('settings.setup.items.providerMissingDetail'),
+            fix: t('settings.setup.items.providerMissingFix'),
         };
     }
 
@@ -142,10 +143,10 @@ export class SetupReadinessService {
         const model = this.deps.currentModel();
         return {
             id: 'model',
-            label: '默认模型',
+            label: t('settings.setup.items.modelLabel'),
             status: model ? 'ok' : 'warn',
-            detail: model ? `当前默认模型：${model}` : '未选择默认模型，将回退到供应商第一个可用模型',
-            fix: model ? '' : '设置 → AI 供应商，选择默认模型与上下文窗口',
+            detail: model ? t('settings.setup.items.modelOkDetail', { model }) : t('settings.setup.items.modelMissingDetail'),
+            fix: model ? '' : t('settings.setup.items.modelMissingFix'),
         };
     }
 
@@ -163,14 +164,14 @@ export class SetupReadinessService {
             }
         }
         if (missing === 0) {
-            return { id: 'templates', label: `「${TEMPLATE_ROOT}」模板树`, status: 'ok', detail: `${paths.length} 个模板文件齐全`, fix: '' };
+            return { id: 'templates', label: t('settings.setup.items.templatesLabel', { root: TEMPLATE_ROOT }), status: 'ok', detail: t('settings.setup.items.templatesOkDetail', { count: paths.length }), fix: '' };
         }
         return {
             id: 'templates',
-            label: `「${TEMPLATE_ROOT}」模板树`,
+            label: t('settings.setup.items.templatesLabel', { root: TEMPLATE_ROOT }),
             status: 'missing',
-            detail: `缺少 ${missing}/${paths.length} 个模板文件，创建项目会拿不到大纲/世界观/规则模板`,
-            fix: '点「补齐模板文件」自动生成；或重启插件（启动维护会自动自举）',
+            detail: t('settings.setup.items.templatesMissingDetail', { missing, count: paths.length }),
+            fix: t('settings.setup.items.templatesMissingFix'),
         };
     }
 
@@ -178,29 +179,30 @@ export class SetupReadinessService {
     private checkProjects(): ReadinessItem {
         const projects = listProjectIds(this.app);
         if (projects.length > 0) {
-            return { id: 'projects', label: '作品项目', status: 'ok', detail: `已识别 ${projects.length} 个项目`, fix: '' };
+            return { id: 'projects', label: t('settings.setup.items.projectsLabel'), status: 'ok', detail: t('settings.setup.items.projectsOkDetail', { count: projects.length }), fix: '' };
         }
         return {
             id: 'projects',
-            label: '作品项目',
+            label: t('settings.setup.items.projectsLabel'),
             status: 'missing',
-            detail: '还没有任何项目；主界面不会出现可选作品',
-            fix: '点「创建示例项目」，或「新建作品」按向导创建',
+            detail: t('settings.setup.items.projectsMissingDetail'),
+            fix: t('settings.setup.items.projectsMissingFix'),
         };
     }
 
     /** 三模式根目录是否存在 */
     private checkFolders(): ReadinessItem {
         const missing = MODE_ROOTS.filter(root => !this.app.vault.getAbstractFileByPath(root));
+        const sep = getLocale() === 'zh-CN' ? '、' : ', ';
         if (missing.length === 0) {
-            return { id: 'folders', label: '模式目录', status: 'ok', detail: `已存在：${MODE_ROOTS.join('、')}`, fix: '' };
+            return { id: 'folders', label: t('settings.setup.items.foldersLabel'), status: 'ok', detail: t('settings.setup.items.foldersOkDetail', { roots: MODE_ROOTS.join(sep) }), fix: '' };
         }
         return {
             id: 'folders',
-            label: '模式目录',
+            label: t('settings.setup.items.foldersLabel'),
             status: 'warn',
-            detail: `缺少目录：${missing.join('、')}（新建对应模式作品时会自动创建）`,
-            fix: '无需手动处理；创建作品时会自动建目录',
+            detail: t('settings.setup.items.foldersMissingDetail', { roots: missing.join(sep) }),
+            fix: t('settings.setup.items.foldersFix'),
         };
     }
 
@@ -210,22 +212,22 @@ export class SetupReadinessService {
         if (!project) {
             return {
                 id: 'index',
-                label: '项目索引',
+                label: t('settings.setup.items.indexLabel'),
                 status: 'warn',
-                detail: '尚未选择当前作品，索引将在打开作品后建立',
-                fix: '打开任意作品后会自动建立索引',
+                detail: t('settings.setup.items.indexNoProjectDetail'),
+                fix: t('settings.setup.items.indexNoProjectFix'),
             };
         }
         const count = await this.deps.indexEntryCount(project).catch(() => 0);
         if (count > 0) {
-            return { id: 'index', label: '项目索引', status: 'ok', detail: `${project}：${count} 条索引条目`, fix: '' };
+            return { id: 'index', label: t('settings.setup.items.indexLabel'), status: 'ok', detail: t('settings.setup.items.indexOkDetail', { project, count }), fix: '' };
         }
         return {
             id: 'index',
-            label: '项目索引',
+            label: t('settings.setup.items.indexLabel'),
             status: 'warn',
-            detail: `${project}：索引为空（可能刚创建或缺文件）`,
-            fix: '点「重建索引」；若仍为 0，检查项目内是否有 作品信息.md / 世界观总览.md',
+            detail: t('settings.setup.items.indexEmptyDetail', { project }),
+            fix: t('settings.setup.items.indexEmptyFix'),
         };
     }
 
@@ -233,17 +235,17 @@ export class SetupReadinessService {
     private async checkWorkerMode(): Promise<ReadinessItem> {
         const mode = (await this.deps.workerMode?.()) ?? 'worker';
         if (mode === 'worker') {
-            return { id: 'worker', label: '后台线程（Worker）', status: 'ok', detail: '重活（拆解/质检）在后台线程执行（磁盘 workers）', fix: '' };
+            return { id: 'worker', label: t('settings.setup.items.workerLabel'), status: 'ok', detail: t('settings.setup.items.workerOkDetail'), fix: '' };
         }
         if (mode === 'worker-inline') {
-            return { id: 'worker', label: '后台线程（Worker）', status: 'ok', detail: '重活（拆解/质检）在后台线程执行（3 文件安装用内联 Worker）', fix: '' };
+            return { id: 'worker', label: t('settings.setup.items.workerLabel'), status: 'ok', detail: t('settings.setup.items.workerInlineDetail'), fix: '' };
         }
         return {
             id: 'worker',
-            label: '后台线程（Worker）',
+            label: t('settings.setup.items.workerLabel'),
             status: 'warn',
-            detail: '当前是主线程模式：目录版安装不含 workers/ 目录，重活会占用 UI 线程（功能可用、大文件更吃紧）',
-            fix: '需要后台执行可从仓库/BRAT 安装完整版；主线程模式已自动降级，无需处理',
+            detail: t('settings.setup.items.workerMainDetail'),
+            fix: t('settings.setup.items.workerMainFix'),
         };
     }
 
@@ -251,18 +253,18 @@ export class SetupReadinessService {
     private async checkSettlementPending(): Promise<ReadinessItem> {
         const project = this.deps.activeProject();
         if (!project || !this.deps.pendingSettlementCount) {
-            return { id: 'settlement', label: '结算完整性', status: 'warn', detail: '打开作品后可检查是否有中断的结算', fix: '打开作品后重新自检' };
+            return { id: 'settlement', label: t('settings.setup.items.settlementLabel'), status: 'warn', detail: t('settings.setup.items.settlementNoProjectDetail'), fix: t('settings.setup.items.settlementNoProjectFix') };
         }
         const pending = await this.deps.pendingSettlementCount(project).catch(() => 0);
         if (pending === 0) {
-            return { id: 'settlement', label: '结算完整性', status: 'ok', detail: '没有中断的结算残留', fix: '' };
+            return { id: 'settlement', label: t('settings.setup.items.settlementLabel'), status: 'ok', detail: t('settings.setup.items.settlementOkDetail'), fix: '' };
         }
         return {
             id: 'settlement',
-            label: '结算完整性',
+            label: t('settings.setup.items.settlementLabel'),
             status: 'missing',
-            detail: `检测到 ${pending} 章有中断的结算回滚日志（上次结算中途退出）`,
-            fix: '点「恢复中断结算」按日志回滚，避免实体已改而正文未结算的半套状态',
+            detail: t('settings.setup.items.settlementPendingDetail', { count: pending }),
+            fix: t('settings.setup.items.settlementPendingFix'),
         };
     }
 
@@ -273,12 +275,12 @@ export class SetupReadinessService {
         const exists = this.app.vault.getAbstractFileByPath(notePath) instanceof TFile;
         return {
             id: 'workspace',
-            label: '标签与笔记属性约定',
+            label: t('settings.setup.items.workspaceLabel'),
             status: exists ? 'ok' : 'warn',
             detail: exists
-                ? `已生成说明文件：${notePath}`
-                : '标签用 nw/ 命名空间（nw/人物、nw/设定/世界观…），笔记属性用于记录卷/章/状态与实体 ID',
-            fix: exists ? '' : '点「生成使用说明」，会在 写作知识库 写一份标签/属性/目录约定速查',
+                ? t('settings.setup.items.workspaceOkDetail', { path: notePath })
+                : t('settings.setup.items.workspaceMissingDetail'),
+            fix: exists ? '' : t('settings.setup.items.workspaceMissingFix'),
         };
     }
 }
