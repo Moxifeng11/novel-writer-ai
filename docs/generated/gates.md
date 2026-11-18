@@ -18,6 +18,7 @@
 | `npm run check:automation` | — |
 | `npm run check:bundle` | — |
 | `npm run check:changelog` | — |
+| `npm run check:cjk-keep` | — |
 | `npm run check:command-handlers` | — |
 | `npm run check:coverage` | — |
 | `npm run check:css` | CSS 预算与命名棘轮 |
@@ -102,13 +103,14 @@
 23. npm run check:view-tests
 24. npm run check:test-standard
 25. npm run check:i18n
-26. npm run check:changelog
-27. npm run check:docs
-28. npm run check:support-qr
-29. npm run check:workers-inline
-30. npm run build
-31. npm run check:bundle
-32. npm run check:release
+26. npm run check:cjk-keep
+27. npm run check:changelog
+28. npm run check:docs
+29. npm run check:support-qr
+30. npm run check:workers-inline
+31. npm run build
+32. npm run check:bundle
+33. npm run check:release
 ```
 
 ## 说明

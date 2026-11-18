@@ -128,6 +128,74 @@
 4. **不做**：`corpus` / `enum-value` / `parse-key` / `on-disk-template` / `disk-path`，
    以及第 5 节已给结论的 cross-layer 项。
 
+## 七补充、机检收紧（ZC-20261120-09，2026-11-19 同日追补）
+
+第六节的「三条判据」原先只能靠人工声明，容易被「这是数据」四个字滥用。本轮改成了机检 + closed set。
+
+### 1. sink 检测：判据的可执行版本
+
+`audit-cjk.mjs` 用 AST 判定每条中文字面量是否**直接**作为下游消费者的实参：
+
+| sink 类型 | 匹配的调用/语法 | 对应判据 | 实测命中 |
+| --- | --- | --- | --- |
+| disk | `writeVaultText` / `write` / `writeFile` / `create` / `modify` | 落盘即契约 | 11 条 |
+| model | `buildPrompt` / `callAI` / `callAIStream` / `serializeTool` / `generateText` | 喂模型即行为 | 8 条 |
+| regex | `new RegExp(...)` / 正则字面量 | 匹配即锚点 | 1,253 条 |
+| compare | `===` / `!==` / `case` 比较 | 匹配即锚点 | 205 条 |
+
+合计 1,477 / 53,785 条（2.7%），新增 `sink-contract` 类别 31 文件 / 3,256 字。
+
+**为什么只做「直接实参」而不是数据流分析**：写了个探针，扫 `shared/engine/services/domains` 全部
+中文变量声明共 190 处，其中**同作用域流向 sink 的只有 2 处**——188 处是经对象字段、返回值、
+模板串层层传递的。写一个看起来严谨但漏判 99% 的流分析，比老老实实只抓能确定的更糟。
+
+**compare sink 的价值**：205 处 `=== '中文'` 正是 ZC-20261120-05 那个真 bug 的形态
+（`state !== '已保存'` 在 en 下恒真）。这类字面量现在会被单独标记，下次同类问题能提前看见。
+
+### 2. closed set 白名单
+
+`scripts/cjk-keep-allowlist.json`：
+
+- `keep` 段（18 条）：声明保留的文件，每条必须写 `reason` + `reclassifiedAs`（真实类别）。
+- `triage` 段（43 条）：登记「待迁但还没迁」的文件，指向 ZC-20261120-11/12。
+- **未声明的一律算待迁**，不允许在报告里口头豁免。
+
+### 3. `--check` 门禁（已进 preflight）
+
+`npm run check:cjk-keep` → `node scripts/audit-cjk.mjs --check`，三重拦截，实测全部生效：
+
+| 场景 | 结果 |
+| --- | --- |
+| 未声明文件数超基线 | ❌ exit 1 |
+| 灰区（cross-layer）字数增长 | ❌ exit 1（实测注入 12 字被拦）|
+| **已登记待迁的文件字数增长** | ❌ exit 1（实测注入 7 字被拦）|
+| 正常状态 | ✅ exit 0 |
+
+第三条是刻意加的：否则「已登记待迁」就变成无限加中文的免死金牌。
+「已登记」只豁免「还没迁完」，不豁免「继续往上堆」。
+
+### 4. tools 目录 description → ai-prompt
+
+`engine/agent/harness/*-tools.ts` 的 `description`/`desc` 字段会被序列化进 LLM 的 tool schema，
+属提示词不属界面文案。加了「tools 目录 + description 属性名」规则后，8 个文件改判 `ai-prompt`
+（`ui-copy-in-engine` 8,613 字 → 6,916 字）。
+
+### 5. 收口数字变化
+
+| 类别 | ⑥ 后 | ⑨ 后（实测）| 变化 |
+| --- | --- | --- | --- |
+| ai-prompt | 58,264 | 63,166 | +4,902（tools description 改判 + prompt 骨架规则生效）|
+| ui-copy-in-engine | 8,613 | 3,745 | −4,868（18 个文件在白名单声明改判 + 8 个进 ai-prompt）|
+| cross-layer | 38,088 | 36,567 | −1,521（部分进 sink-contract）|
+| sink-contract | — | 3,256 | 新增（31 文件，机检确认保留）|
+| parse-key | 4,251 | 4,971 | +720（sink 判定的正则类归入）|
+
+注意 `ui-copy-in-engine` 的「41 文件 / 3,745 字」是**白名单改判之后**的剩余量；
+白名单把 18 个文件按真实类别改判（枚举值/日志/解析键/提示词），另有 8 个进 ai-prompt。
+
+**灰区基线**：225 文件 / 35,082 字（cross-layer 227 − 2 个已声明 = 225）（`allowlist.baseline.greyChars`）。
+**已登记待迁基线**：5,230 字（`allowlist.baseline.triageChars`）。两者都只允许下降。
+
 ## 八、复跑方式
 
 ```bash
@@ -136,6 +204,7 @@ node scripts/audit-cjk.mjs --json           # 机器可读（stdout 纯 JSON）
 node scripts/audit-cjk.mjs --json --out=x.json
 node scripts/audit-cjk.mjs --md             # Markdown 表格，直接贴文档
 node scripts/audit-cjk.mjs --min=100        # 只看 ≥100 条字面量的文件
+npm run check:cjk-keep                      # 门禁（preflight 已包含）：未声明/灰区增长则 exit 1
 ```
 
 退出码恒为 0：这是**体检**不是门禁。「有没有变多」由 `scripts/check-i18n.mjs`（`ui/**` 棘轮）
@@ -145,3 +214,4 @@ node scripts/audit-cjk.mjs --min=100        # 只看 ≥100 条字面量的文�
 | --- | --- | --- | --- |
 | `check-i18n.mjs` | 门禁 | 仅 `ui/**` | 会（棘轮只降不升、键必须存在、zh/en 键集相等） |
 | `audit-cjk.mjs` | 体检 | `ui/ shared/ services/ domains/ engine/` | 不会（数字变多由门禁兜） |
+| `audit-cjk.mjs --check` | 门禁 | 灰区 + 未声明 + 已登记待迁 | 会（三重拦截，见第七补充节） |

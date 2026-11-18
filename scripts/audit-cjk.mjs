@@ -31,9 +31,20 @@ const AUDIT_DIRS = ['ui', 'shared', 'services', 'domains', 'engine'];
 const CJK = /[\u4e00-\u9fff]/u;
 const CJK_ALL = /[\u4e00-\u9fff]/gu;
 
+/**
+ * sink 判定用的调用名清单。
+ *
+ * `DISK_SINKS` = 落盘即契约：写进去的值会被下次读回或解析。
+ * `MODEL_SINKS` = 喂模型即行为：文本进了 prompt 或 tool schema。
+ * 两者都只匹配**直接实参**，见 `sinkKindOf()` 的注释。
+ */
+const DISK_SINKS = /^(writeVaultText|write|writeFile|writeFileSync|appendFile|appendFileSync|create|modify|process|adapterWrite)$/;
+const MODEL_SINKS = /^(buildPrompt|composePrompt|askAI|callAI|callAIStream|chat|chatCompletion|invoke|generateText|buildMessages|serializeTool)$/;
+
 const args = process.argv.slice(2);
 const asJson = args.includes('--json');
 const asMd = args.includes('--md');
+const asCheck = args.includes('--check');
 const outArg = args.find(a => a.startsWith('--out='));
 const minArg = args.find(a => a.startsWith('--min='));
 const MIN = minArg ? Number(minArg.slice(6)) : 1;
@@ -76,6 +87,15 @@ function measure(file) {
     let regexLiterals = 0;
     let promptLiterals = 0;
     let enumLiterals = 0;
+    // ── sink 命中（DSH 复核后加的机检口径，见 §「三条判据的可执行版本」）──
+    let sinkLiterals = 0;
+    let sinkDisk = 0;
+    let sinkModel = 0;
+    let sinkRegex = 0;
+    let sinkCompare = 0;
+    const sinkKindsFound = new Set();
+    /** tool schema 里的 description/参数说明条数（决定 tools 目录该不该判 ai-prompt） */
+    let toolDescLiterals = 0;
     const samples = [];
     /** 向上找最近的调用名（决定这条字面量交给谁）：支持 `f('x')` 与 `log.info('x')` */
     const enclosingCall = node => {
@@ -105,8 +125,45 @@ function measure(file) {
         }
         return '';
     };
+    /**
+     * 这条字面量是否**直接**作为某个下游消费者的实参（sink 检测）。
+     *
+     * 为什么只做「直接」：探针实测（2026-11-19，shared/engine/services/domains）
+     * 中文字面量先赋给变量、再流向 sink 的只有 2 处，190 处中文变量声明里
+     * 188 处是经对象字段/返回值/模板串层层传递——**做同作用域数据流没有判别力**。
+     * 与其写一个看起来严谨但漏判 99% 的流分析，不如只抓能确定的直接实参，
+     * 再把「不能确定」的部分交给 closed-set 白名单强制声明（见 --check）。
+     *
+     * 返回 'disk' | 'model' | 'regex' | 'compare' | ''。
+     */
+    const sinkKindOf = node => {
+        const parent = node.parent;
+        if (!parent) return '';
+        // ① RegExp 实参
+        if (ts.isCallExpression(parent)) {
+            const name = ts.isIdentifier(parent.expression) ? parent.expression.text
+                : ts.isPropertyAccessExpression(parent.expression) && ts.isIdentifier(parent.expression.name) ? parent.expression.name.text
+                : '';
+            if (name === 'RegExp') { sinkKindsFound.add('regex'); return 'regex'; }
+            if (DISK_SINKS.test(name)) { sinkKindsFound.add('disk'); return 'disk'; }
+            if (MODEL_SINKS.test(name)) { sinkKindsFound.add('model'); return 'model'; }
+        }
+        // ② 状态比较：`x === '中文'` / `x !== '中文'`（i18n 跨层数据⑤ 就是栽在这里）
+        if (ts.isBinaryExpression(parent)) {
+            const op = parent.operatorToken.kind;
+            if (op === ts.SyntaxKind.EqualsEqualsEqualsToken || op === ts.SyntaxKind.ExclamationEqualsEqualsToken
+                || op === ts.SyntaxKind.EqualsEqualsToken || op === ts.SyntaxKind.ExclamationEqualsToken
+                || op === ts.SyntaxKind.InKeyword) {
+                sinkKindsFound.add('compare');
+                return 'compare';
+            }
+        }
+        // ③ switch/case 的 case 值
+        if (ts.isCaseClause(parent)) { sinkKindsFound.add('compare'); return 'compare'; }
+        return '';
+    };
     const visit = node => {
-        const hit = (text, callName, propName) => {
+        const hit = (text, callName, propName, sinkKind) => {
             if (!CJK.test(text)) return;
             literals += 1;
             const chars = countChars(text);
@@ -116,12 +173,19 @@ function measure(file) {
             if (text.length >= 150 && /(按以下|请严格|不要|输出格式|必须|禁止|要求|规则如下|【)/.test(text)) promptLiterals += 1;
             // 枚举值形态：极短（≤6 字）、无标点、无空格 —— 典型是分类/字段名/标签值
             if (text.length <= 6 && !/[，。！？；：、（）「」《》“”…\s]/.test(text)) enumLiterals += 1;
+            // sink 命中：这条字面量直接作为某个下游消费者的实参
+            if (sinkKind === 'disk') { sinkLiterals += 1; sinkDisk += 1; }
+            else if (sinkKind === 'model') { sinkLiterals += 1; sinkModel += 1; }
+            else if (sinkKind === 'regex') { sinkLiterals += 1; sinkRegex += 1; }
+            else if (sinkKind === 'compare') { sinkLiterals += 1; sinkCompare += 1; }
             // 日志：log.info('中文') / console.warn('中文')
             if (/^(log|logger|warn|error|info|debug|trace|console)$/.test(callName)) logLiterals += 1;
             // 通知/进度：showNotice/new Notice/setStatus 等具名调用
             else if (/^(showNotice|showWarningNotice|showErrorNotice|showSuccessNotice|Notice|setStatus|setStatusText|setProgress|setProgressText|reportProgress|toast)$/.test(callName)) noticeLiterals += 1;
             // 展示字段：`{ message: '中文' }` / `{ label: '中文' }`
             else if (propName) noticeLiterals += 1;
+            // tool schema 字段：tools 目录下的 description / parameters 说明
+            if (propName === 'description' || propName === 'desc') toolDescLiterals += 1;
             // 正则源：new RegExp('中文…') 或 /中文…/ 字面量
             else if (callName === 'RegExp') regexLiterals += 1;
             // 路径：含 / 或 \ 且整体不长，或形如 `01-世界架构.md`
@@ -134,24 +198,32 @@ function measure(file) {
         };
         const callName = enclosingCall(node);
         const propName = displayPropOf(node);
+        const sinkKind = sinkKindOf(node);
         if (ts.isRegularExpressionLiteral(node)) {
             // 正则字面量（/中文…/ ：解析用，属数据）
             if (CJK.test(node.text)) {
                 literals += 1;
                 literalChars += countChars(node.text);
                 regexLiterals += 1;
+                sinkLiterals += 1;
+                sinkRegex += 1;
                 if (samples.length < 6) samples.push(node.text.length > 60 ? node.text.slice(0, 60) + '…' : node.text);
             }
         } else if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
-            hit(node.text, callName, propName);
+            hit(node.text, callName, propName, sinkKind);
         } else if (ts.isTemplateExpression(node)) {
-            hit(node.head.text, callName, propName);
-            for (const span of node.templateSpans) hit(span.literal.text, callName, propName);
+            hit(node.head.text, callName, propName, sinkKind);
+            for (const span of node.templateSpans) hit(span.literal.text, callName, propName, sinkKind);
         }
         ts.forEachChild(node, visit);
     };
     visit(sf);
-    return { literals, literalChars, totalChars, outsideLiterals: totalChars - literalChars, longest, logLiterals, pathLiterals, noticeLiterals, regexLiterals, promptLiterals, enumLiterals, samples };
+    return {
+        literals, literalChars, totalChars, outsideLiterals: totalChars - literalChars, longest,
+        logLiterals, pathLiterals, noticeLiterals, regexLiterals, promptLiterals, enumLiterals,
+        sinkLiterals, sinkDisk, sinkModel, sinkRegex, sinkCompare,
+        toolDescLiterals, sinks: [...sinkKindsFound], samples,
+    };
 }
 
 // ---------------------------------------------------------------------------
@@ -246,14 +318,9 @@ const MANUAL = {
         category: 'parse-key',
         conclusion: '保留：跨卷一致性校验的正则与关键词匹配源，解析依赖',
     },
-    'engine/fingerprint-extractor.ts': {
-        category: 'ui-copy-in-engine',
-        conclusion: '待迁：进度快照里直接带中文 message，应改为 phase + 上层查键',
-    },
-    'engine/review-agent.ts': {
-        category: 'ui-copy-in-engine',
-        conclusion: '待迁：审稿进度/结果文本直接拼中文，应返回结构化结果由界面求值',
-    },
+    // 注：本表只写「保留」结论。待迁条目（ui-copy-in-engine）由
+    // scripts/cjk-keep-allowlist.json 的 triage 段驱动——那里是 closed set，
+    // 未声明的一律算待迁，不允许用 MANUAL 口头豁免。
 };
 
 function classify(file, m) {
@@ -266,6 +333,15 @@ function classify(file, m) {
     const base = basename(lower);
     if (/prompt|instruction/.test(base) || /\/prompts?\//.test(lower)) {
         return { category: 'ai-prompt', conclusion: '保留：AI 提示词，改语言会改变模型行为与输出分布' };
+    }
+    // agent 工具注册表：`description` 会被序列化进 LLM 的 tool schema，属提示词不属界面文案
+    if (/\/tools?[-.]/.test(lower) || /-tools\.ts$/.test(lower) || /tools\.ts$/.test(lower)) {
+        if (m.toolDescLiterals > 0) {
+            return {
+                category: 'ai-prompt',
+                conclusion: `保留：agent 工具描述/参数说明（${m.toolDescLiterals} 条进 tool schema），喂模型不迁`,
+            };
+        }
     }
     if (/template|scaffold|sample/.test(base)) {
         return { category: 'on-disk-template', conclusion: '保留：落盘模板/样例正文，解析与回填逐字依赖' };
@@ -296,6 +372,18 @@ function classify(file, m) {
     if (m.literals >= 30 && m.enumLiterals / m.literals >= 0.6) {
         return { category: 'enum-value', conclusion: '保留：枚举/字段/标签值（短词表，落盘与匹配用），不翻译' };
     }
+    // sink 契约：字面量直接参与落盘/模型调用/状态比较 —— 三条判据的可机检版本
+    if (m.literals > 0 && m.sinkLiterals / m.literals >= 0.25) {
+        const kinds = [];
+        if (m.sinkDisk) kinds.push('落盘');
+        if (m.sinkModel) kinds.push('模型输入');
+        if (m.sinkCompare) kinds.push('状态比较');
+        if (m.sinkRegex) kinds.push('正则');
+        return {
+            category: 'sink-contract',
+            conclusion: `保留：字面量直接流向${kinds.join('/')}（机检命中 ${m.sinkLiterals}/${m.literals} 条）`,
+        };
+    }
     // 日志串与盘上路径都不进界面：前者是开发者可见的调试信息，后者是落盘目录名
     if (m.literals > 0 && m.logLiterals / m.literals >= 0.6) {
         return { category: 'log-message', conclusion: '保留：日志/异常文本（开发者可见，非界面文案）' };
@@ -311,14 +399,44 @@ function classify(file, m) {
 }
 
 // ---------------------------------------------------------------------------
+// 保留白名单（closed set）
+//
+// 为什么需要它：`ui-copy-in-engine` 是「该迁但还没迁」的桶。没有 closed set 的话，
+// 谁都可以在自己文件里写中文，然后在报告里口头说「这是数据」——审计无法拦截。
+// 现在规则是：**只有 allowlist.keep 里声明过的文件才能被判为「保留」**，
+// 其余一律算待迁，`--check` 会对未声明数量超基线的情况非零退出。
+// 想豁免就得改 JSON，改了就进 diff、review 时看得见。
+// ---------------------------------------------------------------------------
+const ALLOWLIST_FILE = join(ROOT, 'scripts', 'cjk-keep-allowlist.json');
+const allowlist = existsSync(ALLOWLIST_FILE)
+    ? JSON.parse(readFileSync(ALLOWLIST_FILE, 'utf8'))
+    : { keep: [], triage: [], baseline: {} };
+const keepByPath = new Map((allowlist.keep ?? []).map(e => [e.path, e]));
+const triageByPath = new Map((allowlist.triage ?? []).map(e => [e.path, e]));
+
 const files = AUDIT_DIRS.flatMap(dir => collectTs(join(ROOT, dir)));
 const rows = [];
 for (const file of files) {
     const m = measure(file);
     if (!m) continue;
     const key = rel(file);
-    const { category, conclusion } = classify(key, m);
-    rows.push({ file: key, ...m, category, conclusion });
+    const classified = classify(key, m);
+    let { category, conclusion } = classified;
+    const wasEngineCopy = category === 'ui-copy-in-engine';
+    // 白名单接管 ui-copy-in-engine：声明过的降级为声明类别，未声明的保持 ui-copy-in-engine 并由 --check 拦
+    if (wasEngineCopy) {
+        const kept = keepByPath.get(key);
+        const triaged = triageByPath.get(key);
+        if (kept) {
+            category = kept.reclassifiedAs || 'declared-keep';
+            conclusion = `保留（已声明）：${kept.reason}`;
+        } else if (triaged) {
+            conclusion = `待迁（已登记）：${triaged.reason}`;
+        } else {
+            conclusion = '待迁（未声明）：不在 cjk-keep-allowlist.json，必须迁或补声明';
+        }
+    }
+    rows.push({ file: key, ...m, category, conclusion, wasEngineCopy, declared: keepByPath.has(key) || triageByPath.has(key) });
 }
 rows.sort((a, b) => b.literalChars - a.literalChars || a.file.localeCompare(b.file));
 
@@ -356,6 +474,70 @@ if (asMd) {
     for (const r of shown) {
         console.log(`| \`${r.file}\` | ${r.literals} | ${r.literalChars} | ${r.category} | ${r.conclusion} |`);
     }
+    process.exit(0);
+}
+
+// ---------------------------------------------------------------------------
+// --check：门禁模式（可接 CI）
+//
+// 只关心「**没被机检归为数据、也没被 allowlist 声明**的中文有没有变多」。
+// 这类是「既没迁走、也没说清为什么留」的灰区，每多一处，双语承诺就少一分。
+//
+// 注意范围是 `ui-copy-in-engine` **和** `cross-layer` 两者：
+// `cross-layer` 才是最大的灰桶（225 文件 / 3.5 万字），只盯前者等于放水。
+// 基线在 allowlist.baseline，只允许下降；要放宽必须改 JSON（进 diff、可 review）。
+// ---------------------------------------------------------------------------
+const GREY_CATEGORIES = new Set(['ui-copy-in-engine', 'cross-layer']);
+const isGrey = r => GREY_CATEGORIES.has(r.category) && !r.declared;
+
+if (asCheck) {
+    const unclaimed = rows.filter(r => r.wasEngineCopy && !r.declared);
+    const grey = rows.filter(isGrey);
+    const declared = rows.filter(r => r.declared && keepByPath.has(r.file));
+    const triaged = rows.filter(r => r.declared && triageByPath.has(r.file));
+    const base = allowlist.baseline ?? {};
+    const stats = {
+        unclaimedFiles: unclaimed.length,
+        unclaimedLiterals: unclaimed.reduce((n, r) => n + r.literals, 0),
+        unclaimedChars: unclaimed.reduce((n, r) => n + r.literalChars, 0),
+    };
+    const greyChars = grey.reduce((n, r) => n + r.literalChars, 0);
+    console.log('=== CJK 保留声明检查（closed set） ===');
+    console.log(`已声明保留 ${declared.length} 个文件 / 已登记待迁 ${triaged.length} 个文件`);
+    console.log(`未声明待迁：${stats.unclaimedFiles} 个文件 / ${stats.unclaimedLiterals} 条 / ${stats.unclaimedChars} 字`);
+    console.log(`灰区（cross-layer + 未声明 ui-copy-in-engine）：${grey.length} 个文件 / ${greyChars} 字`);
+    let failed = false;
+    if (stats.unclaimedFiles > (base.unclaimedFiles ?? 0)) {
+        console.error(`❌ 未声明的引擎层界面文案增加：${base.unclaimedFiles ?? 0} → ${stats.unclaimedFiles} 个文件`);
+        console.error('   请二选一：① 迁走（返回 {code, params} 由界面求值）；② 在 scripts/cjk-keep-allowlist.json 的 keep 段声明并写 reason。');
+        for (const r of unclaimed.slice(0, 10)) console.error(`   - ${r.file}（${r.literals} 条 / ${r.literalChars} 字）`);
+        failed = true;
+    }
+    const baseGrey = base.greyChars ?? 0;
+    if (greyChars > baseGrey) {
+        console.error(`❌ 灰区中文字数增加：${baseGrey} → ${greyChars}（+${greyChars - baseGrey}）`);
+        console.error('   灰区 = 没被机检判为数据、也没在 allowlist 声明保留的中文。新增中文请走 t()，或补分类规则/声明。');
+        const grown = grey.filter(r => r.literalChars >= 100).slice(0, 10);
+        for (const r of grown) console.error(`   - ${r.file}（${r.literals} 条 / ${r.literalChars} 字）`);
+        failed = true;
+    }
+    // 已登记待迁的文件同样设上限：否则「已登记」就变成无限加中文的免死金牌
+    const triageChars = triaged.reduce((n, r) => n + r.literalChars, 0);
+    const baseTriage = base.triageChars ?? 0;
+    if (triageChars > baseTriage) {
+        console.error(`❌ 已登记待迁的文件中文字数增加：${baseTriage} → ${triageChars}（+${triageChars - baseTriage}）`);
+        console.error('   「已登记待迁」只豁免「还没迁完」，不豁免「继续往上堆」。新写的文案请直接走 t()。');
+        failed = true;
+    }
+    // 声明了文件却已不存在（防僵尸声明）
+    for (const [p] of keepByPath) {
+        if (rows.length && !rows.some(r => r.file === p)) {
+            console.warn(`⚠️  声明了不存在的文件：${p}（请从 allowlist 移除）`);
+        }
+    }
+    console.log(`已登记待迁合计 ${triageChars} 字（由 ZC-20261120-11/12 消化）`);
+    if (failed) process.exit(1);
+    console.log('✅ 保留声明检查通过（无新增未声明/灰区项）');
     process.exit(0);
 }
 

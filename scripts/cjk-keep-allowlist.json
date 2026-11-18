@@ -1,0 +1,285 @@
+{
+  "$schema": "internal",
+  "description": "CJK 保留声明（closed set）。audit-cjk.mjs --check 时：ui-copy-in-engine 类的条目若未在此声明，一律算待迁并要求 --check 非零退出。每条必须写 reason，且 reason 会被 review 看见——这就是『不允许口头豁免』的机制。",
+  "version": 1,
+  "updatedAt": "2026-11-19",
+  "note": "按文件声明，不按字面量逐条声明：逐条声明会让文件膨胀到无法 review，且中文文案本来就会随迭代变动。粒度为『这个文件为什么整体保留』。",
+  "policy": "ui-copy-in-engine 是唯一必须声明的类别（漏到下层的界面文案）。其余类别（corpus/ai-prompt/on-disk-template/enum-value/parse-key/sink-contract/long-text/log-message/disk-path）由机检分类直接判定，不需声明。",
+  "keep": [
+    {
+      "path": "engine/agent/harness/harness-engine.ts",
+      "reason": "会话开场的系统提示词片段（『会话开始。用户有…』），进 LLM 上下文",
+      "reclassifiedAs": "ai-prompt"
+    },
+    {
+      "path": "engine/agent/harness/session-log.ts",
+      "reason": "会话日志落盘内容（不展示给用户，供事后排查）",
+      "reclassifiedAs": "log-message"
+    },
+    {
+      "path": "engine/agent/harness/skill-tools.ts",
+      "reason": "技能清单描述，进 tool schema",
+      "reclassifiedAs": "ai-prompt"
+    },
+    {
+      "path": "engine/agent/harness/context-tools.ts",
+      "reason": "上下文工具的参数说明，进 tool schema",
+      "reclassifiedAs": "ai-prompt"
+    },
+    {
+      "path": "engine/agent/harness/goal-tools.ts",
+      "reason": "目标工具的描述与参数说明，进 tool schema",
+      "reclassifiedAs": "ai-prompt"
+    },
+    {
+      "path": "engine/cache/preload-manager.ts",
+      "reason": "缓存预热失败的日志文本，开发者可见",
+      "reclassifiedAs": "log-message"
+    },
+    {
+      "path": "shared/provider-ui-model.ts",
+      "reason": "供应商展示模型的兜底名（供应商名本身是数据，见 i18n.md §4）",
+      "reclassifiedAs": "enum-value"
+    },
+    {
+      "path": "shared/theme-gallery.ts",
+      "reason": "7 套主题名与描述（i18n.md §4 决策：主题名不迁，需先定老方案名迁移策略）",
+      "reclassifiedAs": "enum-value"
+    },
+    {
+      "path": "shared/task-model.ts",
+      "reason": "THINKING_LEVELS 的 label/description（i18n.md §7 backlog 已记；需先确认是否被提示词消费）",
+      "reclassifiedAs": "enum-value"
+    },
+    {
+      "path": "shared/task-budget-engine.ts",
+      "reason": "BUDGET_TIERS 的 label/description（同 task-model，backlog 已记）",
+      "reclassifiedAs": "enum-value"
+    },
+    {
+      "path": "engine/graph/graph-validator.ts",
+      "reason": "图谱校验的规则名与错误说明（与落盘图谱字段对应）",
+      "reclassifiedAs": "parse-key"
+    },
+    {
+      "path": "shared/volume-plan.ts",
+      "reason": "分卷大纲的字段名与正则锚点（『章节范围』等），解析依赖",
+      "reclassifiedAs": "parse-key"
+    },
+    {
+      "path": "shared/human-feature-rubric.ts",
+      "reason": "人类特征评分表的维度名与正则词表（『好家伙|晓得|啥』），匹配用",
+      "reclassifiedAs": "parse-key"
+    },
+    {
+      "path": "engine/consistency/assertion-model.ts",
+      "reason": "设定的断言字段名（落盘 断言.json 的键）",
+      "reclassifiedAs": "enum-value"
+    },
+    {
+      "path": "shared/entity-field-mappings.ts",
+      "reason": "实体字段的中英映射（字段名本身是落盘契约）",
+      "reclassifiedAs": "enum-value"
+    },
+    {
+      "path": "shared/text-patch.ts",
+      "reason": "patch 匹配的定位文案，字符串比较用",
+      "reclassifiedAs": "parse-key"
+    },
+    {
+      "path": "engine/harness/tool-registry.ts",
+      "reason": "工具注册表的描述，进 tool schema",
+      "reclassifiedAs": "ai-prompt"
+    },
+    {
+      "path": "engine/mode-injection.ts",
+      "reason": "模式覆盖块的提示词片段，进 LLM 上下文",
+      "reclassifiedAs": "ai-prompt"
+    }
+  ],
+  "triage": [
+    {
+      "path": "engine/review-agent.ts",
+      "reason": "评审进度与结果文本直接拼中文；计划改为返回 {code, params} 由界面求值（ZC-20261120-11）"
+    },
+    {
+      "path": "engine/fingerprint-extractor.ts",
+      "reason": "onProgress 快照带中文 message；计划改为 phase 枚举 + 上层查键（ZC-20261120-11）"
+    },
+    {
+      "path": "shared/optimization-advisor.ts",
+      "reason": "优化建议文本；应返回 key + params（ZC-20261120-12）"
+    },
+    {
+      "path": "services/api-connectivity-service.ts",
+      "reason": "连接诊断的用户可见提示；应返回结构化结果（ZC-20261120-12）"
+    },
+    {
+      "path": "engine/quality-scorer.ts",
+      "reason": "质量维度名；可复用已迁的 fingerprint 资源（ZC-20261120-12）"
+    },
+    {
+      "path": "services/post-generation-check-service.ts",
+      "reason": "生成后检查的提示文本；应返回结构化结果（ZC-20261120-12）"
+    },
+    {
+      "path": "engine/step-definitions.ts",
+      "reason": "步骤定义里的 label/description；应参照 creation-flow 的 labelKey 做法（ZC-20261120-12）"
+    },
+    {
+      "path": "shared/publication-profile.ts",
+      "reason": "出版配置的展示名；应走 key（ZC-20261120-12）"
+    },
+    {
+      "path": "engine/context/state-advice.ts",
+      "reason": "状态建议文本；应返回结构化建议（ZC-20261120-12）"
+    },
+    {
+      "path": "engine/context/state-advice-wiring.ts",
+      "reason": "同上，接线层的展示文本（ZC-20261120-12）"
+    },
+    {
+      "path": "services/model-discovery.ts",
+      "reason": "模型发现失败的用户提示；应返回结构化结果（ZC-20261120-12）"
+    },
+    {
+      "path": "services/constraint-block-service.ts",
+      "reason": "约束块的展示文本；应走 key（ZC-20261120-12）"
+    },
+    {
+      "path": "engine/step-runner-retry.ts",
+      "reason": "重试原因文本；应返回 code（ZC-20261120-12）"
+    },
+    {
+      "path": "engine/project-migration-service.ts",
+      "reason": "迁移报告的用户可见文本；应结构化（ZC-20261120-12）"
+    },
+    {
+      "path": "engine/consistency/fact-maintenance.ts",
+      "reason": "事实维护的提示文本；应走 key（ZC-20261120-12）"
+    },
+    {
+      "path": "engine/harness/rule-engine.ts",
+      "reason": "规则命中的说明文本；应返回 rule id + params（ZC-20261120-12）"
+    },
+    {
+      "path": "engine/ledger/ledger-link.ts",
+      "reason": "台账关联的展示文本；应走 key（ZC-20261120-12）"
+    },
+    {
+      "path": "services/targeted-revision-service.ts",
+      "reason": "定向修订的进度文本；应返回 phase + params（ZC-20261120-12）"
+    },
+    {
+      "path": "shared/entity-persistence.ts",
+      "reason": "实体持久化的错误文本；应返回 code（ZC-20261120-12）"
+    },
+    {
+      "path": "shared/project-name.ts",
+      "reason": "项目名校验的用户可见提示；应返回 code（ZC-20261120-12）"
+    },
+    {
+      "path": "services/font-manager.ts",
+      "reason": "字体管理的提示文本；应走 key（ZC-20261120-12）"
+    },
+    {
+      "path": "shared/rhythm-baseline-model.ts",
+      "reason": "节奏基线的维度名；应走 key（ZC-20261120-12）"
+    },
+    {
+      "path": "engine/rag/retrieval-service.ts",
+      "reason": "检索失败的提示文本；应返回 code（ZC-20261120-12）"
+    },
+    {
+      "path": "engine/canon-vector-indexer.ts",
+      "reason": "向量化进度文本；应返回 phase（ZC-20261120-12）"
+    },
+    {
+      "path": "engine/style/style-intensity-engine.ts",
+      "reason": "文风强度维度名；应走 key（ZC-20261120-12）"
+    },
+    {
+      "path": "engine/style-similarity-scorer.ts",
+      "reason": "相似度评分的说明文本；应走 key（ZC-20261120-12）"
+    },
+    {
+      "path": "shared/info-debt.ts",
+      "reason": "信息债的描述文本；应走 key（ZC-20261120-12）"
+    },
+    {
+      "path": "shared/mcp-file-browse.ts",
+      "reason": "MCP 文件浏览的错误文本；应返回 code（ZC-20261120-12）"
+    },
+    {
+      "path": "shared/desktop-shell.ts",
+      "reason": "桌面外壳的提示文本；应走 key（ZC-20261120-12）"
+    },
+    {
+      "path": "services/attachment-service.ts",
+      "reason": "附件处理的提示文本；应返回 code（ZC-20261120-12）"
+    },
+    {
+      "path": "shared/degradation-notifier.ts",
+      "reason": "降级通知文本；应走 key（ZC-20261120-12）",
+      "reclassifiedAs": "ui-copy-in-engine"
+    },
+    {
+      "path": "shared/writeback-adapter.ts",
+      "reason": "回写适配器的错误文本；应返回 code（ZC-20261120-12）"
+    },
+    {
+      "path": "engine/style/fingerprint-migrator.ts",
+      "reason": "指纹迁移的报告文本；应结构化（ZC-20261120-12）"
+    },
+    {
+      "path": "services/checkpoint-manager.ts",
+      "reason": "检查点的提示文本；应走 key（ZC-20261120-12）"
+    },
+    {
+      "path": "engine/consistency/assertion-store.ts",
+      "reason": "断言库的错误文本；应返回 code（ZC-20261120-12）"
+    },
+    {
+      "path": "shared/entity-registry.ts",
+      "reason": "实体注册表的提示文本；应走 key（ZC-20261120-12）"
+    },
+    {
+      "path": "shared/rag/query-plan.ts",
+      "reason": "查询计划的展示文本；应走 key（ZC-20261120-12）"
+    },
+    {
+      "path": "services/writeback-review-service.ts",
+      "reason": "回写审阅的提示文本；应返回 code（ZC-20261120-12）"
+    },
+    {
+      "path": "services/vector-rebuild-service.ts",
+      "reason": "向量重建的进度文本；应返回 phase（ZC-20261120-12）"
+    },
+    {
+      "path": "engine/consistency/fact-store.ts",
+      "reason": "事实库的错误文本；应返回 code（ZC-20261120-12）"
+    },
+    {
+      "path": "domains/long/harness-profile.ts",
+      "reason": "模式 harness 描述；应走 key（ZC-20261120-12）"
+    },
+    {
+      "path": "domains/short/harness-profile.ts",
+      "reason": "模式 harness 描述；应走 key（ZC-20261120-12）"
+    },
+    {
+      "path": "domains/script/harness-profile.ts",
+      "reason": "模式 harness 描述；应走 key（ZC-20261120-12）"
+    }
+  ],
+  "baseline": {
+    "uiCopyInEngineFiles": 57,
+    "uiCopyInEngineLiterals": 963,
+    "uiCopyInEngineChars": 6916,
+    "unclaimedFiles": 0,
+    "unclaimedChars": 0,
+    "greyFiles": 225,
+    "greyChars": 35082,
+    "triageChars": 5230
+  }
+}
