@@ -55,11 +55,13 @@ npm run check:i18n     # 键集合/占位符双向一致、0 无法解析键；�
 ### ⑤ 实机截图（必做，zh + en 各一张）
 ```powershell
 npm run build
-node scripts/dev-vault.mjs sync --vault=D:\nw-dev-vault     # D 盘 vault 是拷贝，不是 junction
+node scripts/dev-vault.mjs sync --vault=D:/nw-dev-vault     # 正斜杠！D 盘 vault 是拷贝，不是 junction
 Copy-Item D:\nw-tmp\snap-i18n10.mjs D:\nw-tmp\snap-i18n<N>.mjs
 #   改 outDir（D:/nw-dev-vault/_visual-i18n<N>）与 targets: [['<tabId>','<文件名>']]
 node D:\nw-tmp\snap-i18n<N>.mjs zh-CN
 node D:\nw-tmp\snap-i18n<N>.mjs en-US
+# 同步后必须自己验一次，别信脚本的「同步成功」：
+md5sum main.js D:/nw-dev-vault/.obsidian/plugins/novel-writer-ai/main.js
 ```
 脚本流程：写开发 vault `data.json` 的 `language` → 独立 userData 启 Obsidian → 信任仓库 →
 主窗口 `settingsTab.openTab(id)` → 设置窗口按 `.modal-container` 裁剪截图 → 探针统计 CJK 与键名回退。
@@ -106,19 +108,46 @@ node scripts/handoff.mjs --from zcode --stage "…" --delivered "…" --doing "�
 再给 `all` 发一条信箱摘要（`send_message`，只写改动/坑/下一步，不贴大段正文），
 最后 `node scripts/board.mjs done <id> --me zcode --evidence "commit abc; 测试 N 条通过"` 收任务。
 
-## 4. 队列（按此顺序领任务，一次一片）
+## 4. 队列状态
 
-| 顺序 | 目标文件 | 中文规模 | 备注 |
+### 4.1 第一批（已完成，2026-11-18 由 ZCode 交付）
+
+设置分区 5 片（setup / foreshadow / mode / mcp / agent）、写作指纹库视图链、写作工作台全链路、
+协同写作全家族、`ui/full-writer/` 长尾、外观页统计与桌宠——共 **19 个任务 / 22 次提交**，
+资源 zh/en 各 2958 条，棘轮 261 文件 / 10732 条 → 226 文件 / 8569 条。
+`ui/` 界面层文案已收口，剩余 CJK 均为数据或跨层专项。
+
+### 4.2 第二批：跨层数据专项（ZC-20261120 系列）
+
+先甄别后迁移；三条保留判据：**落盘即契约 / 喂模型即行为 / 匹配即锚点**。
+「保留」必须写进 `scripts/cjk-keep-allowlist.json`（closed set），口头豁免无效。
+
+| 顺序 | 任务 | 目标 | 要点 |
 | --- | --- | --- | --- |
-| 1 | `ui/settings/setup-section.ts` | 134 行 / 31 处中文 | 初始化/引导分区 |
-| 2 | `ui/settings/foreshadow-section.ts` | 292 行 / 48 处 | 伏笔设置分区 |
-| 3 | `ui/settings/mode-section.ts` | 79 行 / 15 处 | 写作模式分区 |
-| 4 | `ui/settings/mcp-section.ts` | 75 行 / 14 处 | MCP 分区（工具名是数据，不迁） |
-| 5 | `ui/settings/agent-section.ts` | 38 行 / 6 处 | 收尾四个小分区 |
-| 6 | `ui/views/writing-fingerprint-view.ts` + `ui/fingerprint-detail-modal.ts` + `ui/views/fingerprint-v2-detail.ts` | 236 / 117 / 16 处 | 顺带把 `ui/fingerprint-utils.ts` 剩的 10 处 12 维标签与维度状态一起迁（backlog 已记） |
-| 7 | `ui/co-writing-view.ts` + `ui/full-writer-view.ts` | 8504 / 4981 字 | 写作主流程，最大一块；建议按面板/弹窗分 2~3 片 |
+| 1 | ZC-20261120-09 | `scripts/audit-cjk.mjs` | sink 检测 + 保留白名单 + `--check` 非零退出（先做，兜住后面所有迁移） |
+| 2 | ZC-20261120-01 | `domains/{long,short,script}/tool-catalog.ts`、`domains/kernel/tool-catalog-aggregator.ts` | `labelKey/descKey` + 求值函数；工具 id/commandId 不动 |
+| 3 | ZC-20261120-02 | `shared/creation-flow.ts` | 阶段名：稳定标识保留，展示名求值；单测证明 zh/en 流程推进一致 |
+| 4 | ZC-20261120-03 | `shared/link-status-compute.ts` | 见 07：key 为唯一真源 |
+| 5 | ZC-20261120-04 | `shared/novel-format.ts` | separator/indent 是结构数据，绝不翻译（见 08） |
+| 6 | ZC-20261120-05 | `ui/co-writing-view.ts` | 保存状态串枚举化；`:3360` 的 `toggleClass` 比较禁止再拿中文比 |
+| 7 | ZC-20261120-06 | `scripts/audit-cjk.mjs` + `docs/audits/` | 全仓 CJK 分类盘点报告 |
+| 8 | ZC-20261120-07 | `shared/link-status-compute.ts` | 删中文双份字段；`formatLinkStatusForAgent()` 固定 zh 求值 |
+| 9 | ZC-20261120-08 | `shared/novel-format.ts` | 展示串要给出**实际字符**（`\n\n`、`\u3000\u3000`） |
+| 10 | ZC-20261120-10 | `docs/planning/` | 11 个旧弹窗退役清单（替代者 + 下线里程碑） |
+| 11 | ZC-20261120-11 | `shared/ui-message.ts` + 3 个 engine 代表文件 | `{code, params}` 契约 + `resolveUiMessage()`；保留 string 兼容 |
+| 12 | ZC-20261120-12 | `engine/` | 按域批量迁移 `ui-copy-in-engine`，每域一提交 |
 
 做完一片再领下一片；不要在同一片里顺手改别的分区（写范围锁 + review 成本）。
+
+## 4.3 两条硬规矩（2026-11-19 踩过才写）
+
+1. **迁移脚本必须先 dry-run，命中率 100% 才写盘。** 只有「先 `writeFileSync` 再 `process.exit(1)`」
+   的写法会留下半套改动：调用点和 import 改了、实现体没改，tsc 与单测全绿，实机才暴露
+   （第 ⑤ 片就是 en 界面直接显示英文枚举名）。安全写法：先收集全部 `MISSING` → 有缺就退出不写；
+   或写盘前 `JSON` 之外再加一次「本轮命中数 === 期望数」断言。
+2. **`dev-vault.mjs sync` 的盘符会被 shell 吃掉。** Git Bash / MSYS 下 `--vault=D:\nw-dev-vault`
+   可能变成相对路径，产物同步进仓内 `nw-dev-vault/`，脚本仍报「同步成功」，实机跑的旧 bundle。
+   统一写正斜杠 `D:/nw-dev-vault`，并在截图前 `md5sum` 比对仓内与 vault 内 `main.js`。
 
 ## 5. 明确不要做的事
 
