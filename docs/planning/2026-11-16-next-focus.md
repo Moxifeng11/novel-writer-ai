@@ -2385,7 +2385,7 @@ entity-state-controller / context-loader / checkup-bar 等）→ 外观页统计
 ## 第八十五轮：i18n 第二期第28片 —— 写作体检条与上下文加载（2026-11-19，ZCode · ZC-20261119-18）
 
 **甄别结论**
-- `fanfic-settings-utils.ts` 67 行 CJK 是**落盘文档模板**（frontmatter 键  + Markdown
+- `fanfic-settings-utils.ts` 67 行 CJK 是**落盘文档模板**（frontmatter 键 `作品名称:` + Markdown
   章节结构，解析与生成两侧共用）——数据保留。
 - 同法复核 `ui/full-writer/` 剩余：template-vars 223（提示词）、scene-outline 44（解析键/
   落盘名）、wizard-step-renderers 36（frontmatter 字段）、wizard-types 25（类型字段名）等，
@@ -2396,7 +2396,7 @@ entity-state-controller / context-loader / checkup-bar 等）→ 外观页统计
 - `migrate-fw-tail.cjs` 44 对全命中；`fullwriter.ck/cl.*` 41 键（体检条风险/情节线类型/
   状态标签/详情展开、上下文加载进度/失败/压缩降级/角色灵魂提取/状态快照）。
 - 两处既有测试修正：checkup 详情按钮原复用带 ▲ 的 `cowrite.layout.collapse` → 独立
-  `ck.collapseBtn`；rev185 源码断言改键（带参数  形式）。
+  `ck.collapseBtn`；rev185 源码断言改键（带参数 `t(...,` 形式）。
 
 **验收**
 - `check:i18n` zh/en 各 2908、棘轮 **229 文件 / 8651 条**；`check:bundle` main.js →
