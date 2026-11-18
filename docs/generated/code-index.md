@@ -11,7 +11,7 @@
 | `shared/` | 258 | 51769 | 2179 | 1700 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1527 | 85 | 55 | 65% |
-| `ui/` | 306 | 115111 | 1180 | 930 | 79% |
+| `ui/` | 306 | 115112 | 1180 | 930 | 79% |
 
 ## 文件清单
 
@@ -827,7 +827,7 @@
 | `ui/fingerprint-library-modal.ts` | 306 | 1 | 1 |
 | `ui/fingerprint-utils.ts` | 231 | 13 | 13 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |
-| `ui/full-writer-view.ts` | 2772 | 2 | 2 |
+| `ui/full-writer-view.ts` | 2773 | 2 | 2 |
 | `ui/full-writer/batch-pipeline-runner.ts` | 502 | 5 | 4 |
 | `ui/full-writer/batch-step-retry.ts` | 26 | 2 | 1 |
 | `ui/full-writer/batch-targets.ts` | 68 | 4 | 4 |

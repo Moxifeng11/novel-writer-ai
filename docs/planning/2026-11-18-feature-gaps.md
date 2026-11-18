@@ -142,13 +142,13 @@
 - 运行时：`i18n/index.ts` —— `t(key, params?)` / `translate(locale, key, params?)` / `setLocale` / `applyLocaleSetting` /
   `onLocaleChange` / `resolveLocale`（auto 读 `localStorage.language`）/ `interpolate` /
   `flattenMessages` / `placeholdersOf`。缺失键返回键名并只警告一次，不炸界面。
-- 资源：`i18n/messages/zh-CN.ts`（源语言）+ `en-US.ts`，各 **1644 条**（common 5 / commands 94 / group 6 / tab 20 / shell 10 / appearance 71 / api 213 / general 178 / writing 147 / knowledge 83 / promptManager 134 / deconstruction 54 / fingerprint 42 / setup 77 / foreshadow 48 / mode 24 / mcp 13 / agent 6 / fingerprint 299 / search.topic 42 / prompt.category 10 / deconstruction.dimension 8 / secret 10 / tts 18）。
+- 资源：`i18n/messages/zh-CN.ts`（源语言）+ `en-US.ts`，各 **1750 条**（common 5 / commands 94 / group 6 / tab 20 / shell 10 / appearance 71 / api 213 / general 178 / writing 147 / knowledge 83 / promptManager 134 / deconstruction 54 / fingerprint 42 / setup 77 / foreshadow 48 / mode 24 / mcp 13 / agent 6 / fingerprint 299 / fullwriter 106 / search.topic 42 / prompt.category 10 / deconstruction.dimension 8 / secret 10 / tts 18）。
 - 设置：`NovelWriterSettings.language?: 'auto' | 'zh-CN' | 'en-US'`（默认 auto），设置页「🎨 外观设置 → 界面语言」；
   启动在 `engine/engine-registry.ts` Phase 5 的 `loadSettings()` 之后 `applyLocaleSetting()`。
 - 迁移面：设置页导航（6 分组 + 20 页签，`section-factory.ts` 的 `label` 改 getter）+ 设置页外壳 6 条
   （`settings-tab.ts` 的标题/搜索占位/空态/高级开关/未知页签）。
 - 门禁：`scripts/check-i18n.mjs`（`npm run check:i18n`，已进 preflight）——中英键集合与占位符双向一致、
-  `t()` 字面量键必须存在、`ui/**` 中文数量**按文件棘轮**（基线 `.i18n-baseline.json`：250 文件 / 10218 条）。
+  `t()` 字面量键必须存在、`ui/**` 中文数量**按文件棘轮**（基线 `.i18n-baseline.json`：250 文件 / 10081 条）。
 - 验收：单测 38 例 + 设置页回归 30 例；实机 before/after（zh-CN vs en-US）导航全换语言、布局像素级一致
   （`D:\nw-dev-vault\_visual-i18n\{before,after}\settings-appearance.png`）。
 - 第二期第一片（2026-11-18）：命令面板 94 条 `addCommand({ name })` 改 `t('commands.*')`，并在注册前应用语言；实机 zh/en 面板截图见 `D:\nw-dev-vault\_visual-i18n\{zh,en}-palette-export.png`。
@@ -209,7 +209,13 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
   迁顶层 `fingerprint.*` 299 键；指纹 name/source/tags 与 `shared/link-status-compute` 阶段名是数据
   （后者记 backlog）；zh/en 资源各 1644 条；棘轮收紧到 250 文件 / 10218 条；实机截图
   `D:\nw-dev-vault\_visual-i18n16\fingerprint-view-{zh,en}.png`（主窗口直开，en 剩余 CJK 为数据）。
-- 后续：第二期余下（写作主流程 Notice、外观页的统计/桌宠块），
+- 第二期第17片第一批（2026-11-19，ZCode · 任务板 ZC-20261118-07）：完整写作工作台主体
+  `ui/full-writer-view.ts`（2771 行 / 约 115 处）迁 `fullwriter.*` 106 键；管线步骤名
+  （`ALL_FULL_STEPS`，引擎/提示词共用）与落盘默认名是数据不迁；实机截图
+  `D:\nw-dev-vault\_visual-i18n17\fullwriter-view-{zh,en}.png`（en 下视图壳全英文，
+  剩余 CJK 为项目选择器子面板——第二批）。后续拆批：ZC-20261119-08（full-writer 子控制器）
+  与 ZC-20261119-09（co-writing-view，625 行 CJK），均已指派 zcode。
+- 后续：第二期余下（写作主流程子控制器、外观页的统计/桌宠块），
   第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 
 ---

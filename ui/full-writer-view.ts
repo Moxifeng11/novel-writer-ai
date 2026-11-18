@@ -91,6 +91,7 @@ import { pjSettingLib, pjWritingStyle, pjStepDir,
 import { getWritingStyleCandidatePaths } from './writing-style-paths';
 import { sortChaptersByNumber, getNextChapter, getProjectCover, getChaptersForProject, deleteProject, updateWritingStyleTemplate, getProjectMeta, type ChapterListEntry } from './project-utils';
 import { CHAR_TO_TOKEN_RATIO, getInfoDebtMax, INFO_DEBT_WARN_CRITICAL, INFO_DEBT_WARN_HIGH } from '@/shared/thresholds';
+import { t } from '@/i18n';
 import { createLogger } from '@/shared/logger';
 import { ensureTemplateScaffold } from '@/shared/template-scaffold';
 
@@ -236,7 +237,7 @@ export class FullWriterView extends ItemView {
         const step = ALL_FULL_STEPS.find(s => s.index === this.currentStepIndex);
         this.executionStore.recordFailure(createStepFailure({
             stepKey: step?.key || 'current-step',
-            stepLabel: step?.label || '当前步骤',
+            stepLabel: step?.label || t('fullwriter.currentStepLabel'),
             message,
         }));
         if (step?.key) this.scheduleFailureRender(step.key);
@@ -248,7 +249,7 @@ export class FullWriterView extends ItemView {
             level,
             message,
             stepKey: 'context',
-            stepLabel: '上下文加载',
+            stepLabel: t('fullwriter.contextStepLabel'),
         });
         if (level === 'success') {
             if (message.includes('上下文加载完成')) this.executionStore.clearFailure('context');
@@ -256,7 +257,7 @@ export class FullWriterView extends ItemView {
         }
         this.executionStore.recordFailure(createStepFailure({
             stepKey: 'context',
-            stepLabel: '上下文加载',
+            stepLabel: t('fullwriter.contextStepLabel'),
             message,
             kind: level === 'error' ? 'exception' : 'validation',
         }));
@@ -287,7 +288,7 @@ export class FullWriterView extends ItemView {
             this.executionStore.addEvent({
                 type: 'notice',
                 level: 'warning',
-                message: '章节任务仍在运行，请等待当前动作结束再重试',
+                message: t('fullwriter.jobRunningGuard'),
                 stepKey,
                 stepLabel: step.label,
             });
@@ -319,7 +320,7 @@ export class FullWriterView extends ItemView {
             this.executionStore.addEvent({
                 type: 'structure-switch',
                 level: 'warning',
-                message: '当前步骤仍在生成，暂不能切换叙事结构；请等待本次生成结束',
+                message: t('fullwriter.stepRunningGuard'),
             });
             return;
         }
@@ -347,15 +348,15 @@ export class FullWriterView extends ItemView {
             this.executionStore.addEvent({
                 type: 'structure-switch',
                 level: 'info',
-                message: `叙事结构已切换为「${structure.name}」`,
-                detail: '后续生成的步骤使用新结构；已生成内容不会自动改写。',
+                message: t('fullwriter.structureSwitched', { name: structure.name }),
+                detail: t('fullwriter.structureSwitchedDetail'),
             });
             if (this.tabContent) await this.renderInContainer(this.tabContent);
         } catch (e) {
             this.executionStore.addEvent({
                 type: 'structure-switch',
                 level: 'error',
-                message: `切换叙事结构失败：${e instanceof Error ? e.message : String(e)}`,
+                message: t('fullwriter.structureSwitchFailed', { msg: e instanceof Error ? e.message : String(e) }),
             });
         }
     }
@@ -397,7 +398,7 @@ export class FullWriterView extends ItemView {
             },
             onProgress: (p) => {
                 this.activeJobProgress?.(p);
-                const message = `${p.message}（${p.current}/${p.total} 步，预计 ${p.aiCalls} 次 AI）`;
+                const message = t('fullwriter.progressSummary', { msg: p.message, current: p.current, total: p.total, aiCalls: p.aiCalls });
                 this.executionStore.setStatus(p.message, p.current, p.total, p.aiCalls);
                 const status = this.chapterRunStrip?.querySelector('.nw-chapter-run-status') as HTMLElement | null;
                 if (status) status.setText(message);
@@ -407,7 +408,7 @@ export class FullWriterView extends ItemView {
                         type: 'run-progress',
                         level: 'info',
                         message: p.message,
-                        detail: `进度 ${p.current}/${p.total}，已用 AI ${p.aiCalls} 次`,
+                        detail: t('fullwriter.progressDetail', { current: p.current, total: p.total, aiCalls: p.aiCalls }),
                     });
                 }
             },
@@ -422,12 +423,12 @@ export class FullWriterView extends ItemView {
      */
     public async runChapterOneClick(mode: ChapterRunMode = 'recommended'): Promise<void> {
         if (!this.project || !this.chapterName || !this.chapDir) {
-            this.executionStore.addEvent({ type: 'run-error', level: 'error', message: '请先打开一个章节' });
+            this.executionStore.addEvent({ type: 'run-error', level: 'error', message: t('fullwriter.needChapter') });
             return;
         }
         const orchestrator = this.getChapterOrchestrator();
         if (orchestrator.isRunning) {
-            this.executionStore.addEvent({ type: 'run-error', level: 'warning', message: '章节生成任务已在运行' });
+            this.executionStore.addEvent({ type: 'run-error', level: 'warning', message: t('fullwriter.jobAlreadyRunning') });
             return;
         }
         this.executionStore.clearAllFailures();
@@ -435,31 +436,31 @@ export class FullWriterView extends ItemView {
         this.executionStore.addEvent({
             type: 'run-start',
             level: 'info',
-            message: mode === 'recommended' ? '开始一键完成本章（合并规划）' : '开始逐步完成本章',
+            message: mode === 'recommended' ? t('fullwriter.runStartOneClick') : t('fullwriter.runStartStepwise'),
         });
         this.showChapterRunStrip(orchestrator, mode);
         const jobs = this.plugin.getJobService();
         const job = jobs.start({
             kind: 'chapter-run',
-            title: `完成本章 · ${this.chapterName}`,
+            title: t('fullwriter.runChapterTitle', { name: this.chapterName }),
             project: this.project,
             onCancel: () => orchestrator.cancel(),
             run: async (ctx) => {
                 this.activeJobProgress = p => ctx.update({ current: p.current, total: p.total, label: p.message });
-                ctx.update({ current: 0, total: 1, label: '准备开始' });
+                ctx.update({ current: 0, total: 1, label: t('fullwriter.progressPreparing') });
                 const runResult = await orchestrator.run({ mode, pauseBetweenSteps: false });
                 if (runResult.status === 'cancelled') {
-                    const error = new Error('章节生成已取消') as Error & { jobResult?: unknown };
+                    const error = new Error(t('fullwriter.genCancelled')) as Error & { jobResult?: unknown };
                     error.name = 'AbortError';
                     error.jobResult = runResult;
                     throw error;
                 }
                 if (runResult.status === 'failed') {
-                    const error = new Error(runResult.message || '章节生成失败') as Error & { jobResult?: unknown };
+                    const error = new Error(runResult.message || t('fullwriter.genFailed')) as Error & { jobResult?: unknown };
                     error.jobResult = runResult;
                     throw error;
                 }
-                ctx.update({ current: 1, total: 1, label: '已完成' });
+                ctx.update({ current: 1, total: 1, label: t('fullwriter.progressDone') });
                 return runResult;
             },
         });
@@ -467,7 +468,7 @@ export class FullWriterView extends ItemView {
             const final = await jobs.waitFor(job.id);
             const result = (final.result ?? {
                 status: final.status === 'cancelled' ? 'cancelled' : 'failed',
-                message: final.error || '章节生成失败',
+                message: final.error || t('fullwriter.genFailed'),
                 aiCalls: 0,
             }) as Awaited<ReturnType<ChapterOrchestrator['run']>>;
             if (result.status === 'failed') {
@@ -476,25 +477,25 @@ export class FullWriterView extends ItemView {
                     this.executionStore.addEvent({
                         type: 'run-error',
                         level: 'error',
-                        message: `章节生成中断：${result.message || result.failedStep || '未知错误'}`,
+                        message: t('fullwriter.genInterrupted', { reason: result.message || result.failedStep || t('fullwriter.unknownError') }),
                         stepKey: result.failedStep,
-                        detail: '已保留已完成步骤；可在对应步骤的错误卡中重试。',
+                        detail: t('fullwriter.genInterruptedDetail'),
                     });
                 } else {
                     this.executionStore.addEvent({
                         type: 'run-aborted',
                         level: 'warning',
-                        message: `流程已停止在「${failedStep.stepLabel}」，请按错误卡处理后重试`,
+                        message: t('fullwriter.stoppedAtStep', { step: failedStep.stepLabel }),
                     });
                 }
                 this.openExecutionLog();
             } else if (result.status === 'cancelled') {
-                this.executionStore.addEvent({ type: 'run-cancelled', level: 'warning', message: '已取消章节生成' });
+                this.executionStore.addEvent({ type: 'run-cancelled', level: 'warning', message: t('fullwriter.genCancelledEvent') });
             } else if (result.status === 'completed') {
                 this.executionStore.addEvent({
                     type: 'run-complete',
                     level: 'success',
-                    message: `本章完成（${result.aiCalls} 次 AI 调用）`,
+                    message: t('fullwriter.chapterDone', { aiCalls: result.aiCalls }),
                 });
             }
         } finally {
@@ -515,16 +516,16 @@ export class FullWriterView extends ItemView {
         const strip = host.createDiv({ cls: 'novel-writer-fw-btn-row' });
         strip.addClass('nw-fw-run-strip');
         strip.createSpan({
-            text: mode === 'recommended' ? '🚀 一键完成本章（推荐：合并规划）' : '🐢 逐步完成本章',
+            text: mode === 'recommended' ? t('fullwriter.runBtnOneClick') : t('fullwriter.runBtnStepwise'),
             cls: 'novel-writer-fw-warning',
         });
-        const status = strip.createSpan({ text: '准备中...', cls: 'nw-chapter-run-status' });
+        const status = strip.createSpan({ text: t('fullwriter.preparingStatus'), cls: 'nw-chapter-run-status' });
         status.addClass('nw-fw-run-status');
         // P0-5（v4.27）：常驻状态信息——当前模型 / 规则版本 / token 消耗
         const infoSpan = strip.createSpan({ cls: 'nw-chapter-run-info' });
         infoSpan.addClass('nw-fw-run-info');
         const rulesVersion = this.plugin.settings.activeRulesVersion || 'auto';
-        const voiceMode = this.plugin.settings.humanVoiceMode === 'quota' ? '配额' : '样文';
+        const voiceMode = this.plugin.settings.humanVoiceMode === 'quota' ? t('fullwriter.voiceQuota') : t('fullwriter.voiceSample');
         const bodyVariant = (this.plugin.settings.activeBodyTemplate || 'auto').toUpperCase();
         infoSpan.setText(`📐 ${bodyVariant} | 📜 ${rulesVersion} | 🗣 ${voiceMode}`);
         // auto 时补上实际生效版本（此前硬编码「内置 3.6.0」，项目/vault 规则生效时会误报）
@@ -534,7 +535,7 @@ export class FullWriterView extends ItemView {
                     const { RulesService } = await import('@/services/rules-service');
                     const cfg = await RulesService.getInstance(this.app).getRulesConfig();
                     infoSpan.setText(
-                        `📐 ${bodyVariant} | 📜 ${cfg.version}${cfg.path ? '' : '（内置）'} | 🗣 ${voiceMode}`,
+                        `📐 ${bodyVariant} | 📜 ${cfg.version}${cfg.path ? '' : t('fullwriter.builtinSuffix')} | 🗣 ${voiceMode}`,
                     );
                 } catch {
                     // 解析失败时保留 auto 文案
@@ -543,17 +544,17 @@ export class FullWriterView extends ItemView {
         }
         // token 消耗在步骤事件中由 prompt-ledger 更新
         this._statusInfoEl = infoSpan;
-        const pauseBtn = strip.createEl('button', { text: '⏸ 暂停', cls: 'novel-writer-settings-btn' });
+        const pauseBtn = strip.createEl('button', { text: t('fullwriter.pauseBtn'), cls: 'novel-writer-settings-btn' });
         pauseBtn.onclick = () => {
-            if (pauseBtn.textContent === '▶ 继续') {
+            if (pauseBtn.textContent === t('fullwriter.resumeBtn')) {
                 orchestrator.resume();
-                pauseBtn.setText('⏸ 暂停');
+                pauseBtn.setText(t('fullwriter.pauseBtn'));
             } else {
                 orchestrator.pause();
-                pauseBtn.setText('▶ 继续');
+                pauseBtn.setText(t('fullwriter.resumeBtn'));
             }
         };
-        const cancelBtn = strip.createEl('button', { text: '✖ 取消', cls: 'novel-writer-settings-btn' });
+        const cancelBtn = strip.createEl('button', { text: t('fullwriter.cancelRunBtn'), cls: 'novel-writer-settings-btn' });
         cancelBtn.onclick = () => orchestrator.cancel();
         // 插在 Tab 栏之后、内容区之前（contentEl 不参与 tabContent.empty()）
         if (this.tabBar && this.tabBar.nextSibling) host.insertBefore(strip, this.tabBar.nextSibling);
@@ -819,7 +820,7 @@ export class FullWriterView extends ItemView {
                     this.executionStore.addEvent({
                         type: 'run-cancelled',
                         level: 'warning',
-                        message: '已切换章节，当前一键任务已取消',
+                        message: t('fullwriter.chapterSwitchCancelled'),
                     });
                 }
             },
@@ -913,7 +914,7 @@ export class FullWriterView extends ItemView {
      * @returns 名称
      */
     getDisplayText(): string {
-        return '📖 完整写作工作台';
+        return t('fullwriter.viewTitle');
     }
 
     /**
@@ -960,7 +961,7 @@ export class FullWriterView extends ItemView {
         });
 
         // 默认创建项目选择 Tab
-        this.tabs = [{ id: 'project-selector', label: '📋 项目与章节', type: 'selector' }];
+        this.tabs = [{ id: 'project-selector', label: t('fullwriter.tabProjects'), type: 'selector' }];
         this.activeTabId = 'project-selector';
 
         const pendingState = this.plugin._pendingReloadState;
@@ -1015,7 +1016,7 @@ export class FullWriterView extends ItemView {
                 const errMsg = e instanceof Error ? e.message : String(e);
                 log.error('[FullWriter] onOpen error:', errMsg);
                 // 回到项目页必须说明原因，否则用户只看到「闪一下又回去了」
-                showErrorNotice(errMsg, { title: '章节加载失败，已返回项目页', timeout: 8000 });
+                showErrorNotice(errMsg, { title: t('fullwriter.chapterLoadFailed'), timeout: 8000 });
                 this.activateTab('project-selector');
             }
         } else {
@@ -1029,7 +1030,7 @@ export class FullWriterView extends ItemView {
                 if (!this.openGuard.isCurrent(openToken)) return;
                 const errMsg = e instanceof Error ? e.message : String(e);
                 log.error('[FullWriter] onOpen 加载失败:', errMsg);
-                showErrorNotice('项目加载失败，请检查项目文件是否完整', { title: '加载失败', timeout: 5000 });
+                showErrorNotice(t('fullwriter.projectLoadFailed'), { title: t('fullwriter.loadFailedTitle'), timeout: 5000 });
             }
         }
 
@@ -1092,7 +1093,7 @@ export class FullWriterView extends ItemView {
             this.app.workspace.on('novel-writer:run-targeted-revision', () => {
                 void (async () => {
                     if (!this.chapDir) {
-                        new Notice('请先在工作台打开一个章节', 4000);
+                        new Notice(t('fullwriter.needOpenChapter'), 4000);
                         return;
                     }
                     try {
@@ -1106,7 +1107,7 @@ export class FullWriterView extends ItemView {
                         );
                         await this.renderInContainer(this.tabContent);
                     } catch (e) {
-                        showErrorNotice((e as Error).message, { title: '定向修订失败', timeout: 6000 });
+                        showErrorNotice((e as Error).message, { title: t('fullwriter.targetedRevisefailed'), timeout: 6000 });
                     }
                 })();
             })
@@ -1200,7 +1201,7 @@ export class FullWriterView extends ItemView {
             this.executionStore.addEvent({
                 type: 'run-cancelled',
                 level: 'warning',
-                message: '检测到切换章节，已取消在跑的生成任务',
+                message: t('fullwriter.switchCancelledJobs'),
             });
         }
 
@@ -1251,7 +1252,7 @@ export class FullWriterView extends ItemView {
     async showProjectSelector(): Promise<void> {
         if (this.activeTabId === 'project-selector') {
             await this.renderProjectSelectorInTab();
-            showSuccessNotice('已刷新项目与章节', { timeout: 2000 });
+            showSuccessNotice(t('fullwriter.refreshed'), { timeout: 2000 });
             return;
         }
         await this.activateTab('project-selector');
@@ -1313,7 +1314,7 @@ export class FullWriterView extends ItemView {
 
     private async openCurrentChapterInCoWriting(): Promise<void> {
         if (!this.project || !this.chapterName || !this.chapterNum) {
-            new Notice('请先选择具体章节，再进入句级协同写作。');
+            new Notice(t('fullwriter.needChapterForCoWrite'));
             return;
         }
         await this.plugin.activateCoWritingView(this.project, this.chapterName, this.volume || '第1卷', this.chapterNum);
@@ -1334,7 +1335,7 @@ export class FullWriterView extends ItemView {
     private async openChapterInCoWriting(project: string, chapter: { chapter: string; volume: string; file: TFile | null }): Promise<void> {
         const chapterNum = parseInt(chapter.chapter.match(/\d+/)?.[0] || '0', 10);
         if (!chapterNum) {
-            showErrorNotice('无法解析章号，请检查章节命名', { title: '打开失败', timeout: 4000 });
+            showErrorNotice(t('fullwriter.cannotParseChapterNum'), { title: t('fullwriter.openFailedTitle'), timeout: 4000 });
             return;
         }
         await this.plugin.activateCoWritingView(project, chapter.chapter, chapter.volume || '第1卷', chapterNum);
@@ -1551,11 +1552,11 @@ export class FullWriterView extends ItemView {
         const written = chapters.filter(chapter => chapter.written);
         const target = written.find(chapter => (chapter.status || '').toLowerCase() === 'written') ?? written[0];
         if (!target) {
-            new Notice('还没有已写章节：先在「创作流程」里完成一章正文', 6000);
+            new Notice(t('fullwriter.noWrittenChapters'), 6000);
             return;
         }
         await this.selectChapter(project, target);
-        showSuccessNotice('已定位到该章，可在步骤导航里执行「章节结算」', { timeout: 4000 });
+        showSuccessNotice(t('fullwriter.locatedChapter'), { timeout: 4000 });
     }
 
     // v3.4.9 委托: → project-utils.ts
@@ -1592,7 +1593,7 @@ export class FullWriterView extends ItemView {
         const normalized = String(chapterPath || '').split('\\').join('/');
         const file = this.app.vault.getAbstractFileByPath(normalized);
         if (!(file instanceof TFile)) {
-            showErrorNotice('未找到章节文件，可能已被移动或删除', { timeout: 5000 });
+            showErrorNotice(t('fullwriter.chapterFileMissing'), { timeout: 5000 });
             return;
         }
         const volume = chapterPath.match(/正文\/(第\d+卷)\//)?.[1] ?? '';
@@ -1648,7 +1649,7 @@ export class FullWriterView extends ItemView {
                 } else if (units.length > 0) {
                     await this.openUnitTab(project, units[0].number, mode);
                 } else {
-                    new Notice(`该项目还没有${modeUnitLabel(mode)}骨架，请在创作流程里创建`, 6000);
+                    new Notice(t('fullwriter.noSkeleton', { unit: modeUnitLabel(mode) }), 6000);
                     await this.openFlowTab(project);
                 }
                 return;
@@ -1666,12 +1667,12 @@ export class FullWriterView extends ItemView {
                 await this.selectChapter(project, nextChapter);
             } else {
                 // 没有章节则提示用户
-                showWarningNotice('未找到章节文件，请先运行批量建章', { timeout: 5000 });
+                showWarningNotice(t('fullwriter.noChaptersRunBatch'), { timeout: 5000 });
             }
         } catch (e: unknown) {
             const errMsg = e instanceof Error ? e.message : String(e);
             log.error('[小说工坊] 进入写作界面失败:', errMsg);
-            showErrorNotice(errMsg, { title: '进入写作界面失败', timeout: 5000 });
+            showErrorNotice(errMsg, { title: t('fullwriter.enterWriteFailed'), timeout: 5000 });
         }
     }
 
@@ -1749,7 +1750,7 @@ export class FullWriterView extends ItemView {
             const wizardId = `wizard-${Date.now()}`;
             this.tabs.push({
                 id: wizardId,
-                label: '🧙 项目向导',
+                label: t('fullwriter.wizardLabel'),
                 type: 'wizard',
                 project: projectName,
                 projectType,
@@ -1759,11 +1760,11 @@ export class FullWriterView extends ItemView {
             await this.pushNav(wizardId);
             // pushNav 内部已调用 activateTab → renderTabBar + renderTabContent，不重复渲染
             
-            showSuccessNotice(`项目 "${projectName}" 已创建，开始引导向导`, { timeout: 3000 });
+            showSuccessNotice(t('fullwriter.projectCreated', { name: projectName }), { timeout: 3000 });
         } catch (e: unknown) {
             const errMsg = e instanceof Error ? e.message : String(e);
             log.error('Quick create project failed:', errMsg);
-            showErrorNotice(errMsg, { title: '快速创建项目失败', timeout: 5000 });
+            showErrorNotice(errMsg, { title: t('fullwriter.quickCreateFailed'), timeout: 5000 });
         }
     }
 
@@ -1794,7 +1795,7 @@ export class FullWriterView extends ItemView {
 
         const file = this.app.vault.getAbstractFileByPath(filePath);
         if (!(file instanceof TFile)) {
-            showWarningNotice(filePath, { title: '文件不存在', timeout: 4000 });
+            showWarningNotice(filePath, { title: t('fullwriter.fileMissingTitle'), timeout: 4000 });
             return;
         }
         const rawContent = await this.app.vault.read(file);
@@ -1805,7 +1806,7 @@ export class FullWriterView extends ItemView {
         
         const header = preview.createDiv({ attr: { style: 'display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:var(--background-secondary); border-bottom:1px solid var(--background-modifier-border);' } });
         header.createSpan({ text: `📄 ${title}`, attr: { style: 'font-weight:600; font-size:0.9em;' } });
-        const closeBtn = header.createEl('button', { text: '✕ 关闭', attr: { style: 'padding:2px 10px; background:var(--background-modifier-border); border:none; border-radius:4px; cursor:pointer; font-size:0.8em;' } });
+        const closeBtn = header.createEl('button', { text: t('fullwriter.closeBtn'), attr: { style: 'padding:2px 10px; background:var(--background-modifier-border); border:none; border-radius:4px; cursor:pointer; font-size:0.8em;' } });
         closeBtn.addEventListener('click', () => preview.remove());
 
         const contentEl = preview.createDiv({ attr: { style: 'padding:12px; max-height:50vh; overflow-y:auto; font-size:0.85em; line-height:1.6; white-space:pre-wrap; word-break:break-word;' } });
@@ -1881,16 +1882,16 @@ export class FullWriterView extends ItemView {
             log.error('[小说工坊] 渲染前加载上下文失败:', e);
             this.executionStore.recordFailure(createStepFailure({
                 stepKey: 'context',
-                stepLabel: '上下文加载',
-                message: `加载上下文失败：${message}`,
+                stepLabel: t('fullwriter.contextStepLabel'),
+                message: t('fullwriter.contextLoadFailed', { msg: message }),
                 kind: 'exception',
             }));
             const errorBox = container.createDiv({ cls: 'novel-writer-fw-container' });
             errorBox.createEl('p', {
-                text: `⚠️ 加载上下文失败：${message}`,
+                text: t('fullwriter.contextLoadFailedBanner', { msg: message }),
                 cls: 'novel-writer-fw-warning',
             });
-            const retry = errorBox.createEl('button', { text: '🔄 重试', cls: 'novel-writer-fw-btn' });
+            const retry = errorBox.createEl('button', { text: t('fullwriter.retryBtn'), cls: 'novel-writer-fw-btn' });
             retry.onclick = () => {
                 this.executionStore.clearFailure('context');
                 void this.renderInContainer(container);
@@ -1926,7 +1927,7 @@ export class FullWriterView extends ItemView {
                 this.contextPanel.render(workspace, this.context, this.project, this.chapterNum, this.plugin, () => this.estimateTotalChars());
             } catch (e) { // silent-ok: 面板渲染是旁路，异常跳过不阻塞主流程
                 log.warn('[小说工坊] 上下文面板渲染异常（已跳过）:', e);
-                workspace.createDiv({ text: '⚠️ 上下文面板渲染失败', cls: 'novel-writer-fw-warning' });
+                workspace.createDiv({ text: t('fullwriter.contextPanelFailed'), cls: 'novel-writer-fw-warning' });
             }
             // 三栏可拖拽：在两个翼与中栏之间插入分隔条（第 4 轮统一原语）
             this.initWorkspaceResizers(workspace);
@@ -1945,7 +1946,7 @@ export class FullWriterView extends ItemView {
             const errMsg = e instanceof Error ? e.message : String(e);
             log.error('[小说工坊] 渲染失败:', errMsg);
             container.createEl('div', {
-                text: `❌ 渲染失败: ${errMsg}`,
+                text: t('fullwriter.renderFailed', { msg: errMsg }),
                 cls: 'novel-writer-fw-empty'
             });
         }
@@ -1984,7 +1985,7 @@ export class FullWriterView extends ItemView {
             max: 400,
             value: sizes.fwStepNav ?? 140,
             defaultValue: 140,
-            ariaLabel: '拖动调整步骤导航宽度（方向键微调，双击复位）',
+            ariaLabel: t('fullwriter.dragStepNavAria'),
             onCommit: (width) => {
                 sizes.fwStepNav = width;
                 void this.plugin.saveSettings();
@@ -2003,7 +2004,7 @@ export class FullWriterView extends ItemView {
             max: 560,
             value: sizes.fwRightPanel ?? 220,
             defaultValue: 220,
-            ariaLabel: '拖动调整上下文栏宽度（方向键微调，双击复位）',
+            ariaLabel: t('fullwriter.dragContextAria'),
             onCommit: (width) => {
                 sizes.fwRightPanel = width;
                 void this.plugin.saveSettings();
@@ -2039,7 +2040,7 @@ export class FullWriterView extends ItemView {
         const prevStepKey = prevStep?.key || (prevStep?.index === 0 ? 'context' : 'settlement');
         if (this.stepCompleted.has(prevStepKey)) return;
         const warning = area.createDiv({ cls: 'novel-writer-fw-warning' });
-        warning.createSpan({ text: `⚠️ 建议先完成「${prevStep?.label ?? '前置'}」步骤，再执行当前步骤以确保数据连贯性。` });
+        warning.createSpan({ text: t('fullwriter.stepOrderWarning', { step: prevStep?.label ?? t('fullwriter.prerequisite') }) });
     }
 
     /**
@@ -2104,7 +2105,7 @@ export class FullWriterView extends ItemView {
             const partial = !done && (this.chapterStateManager.stepLevels[key] === 'partial' || Boolean(this.stepResults[key]));
             const icon = sub.querySelector<HTMLElement>('.novel-writer-fw-substep-icon');
             if (icon) icon.setText(done ? '✅' : partial ? '◐' : '○');
-            sub.setAttr('title', done ? '已完成' : partial ? '部分完成' : '未执行');
+            sub.setAttr('title', done ? t('fullwriter.subDone') : partial ? t('fullwriter.subPartial') : t('fullwriter.subNotRun'));
             sub.toggleClass('novel-writer-fw-substep-active', key === currentKey);
         });
     }
@@ -2122,7 +2123,7 @@ export class FullWriterView extends ItemView {
         // 当前步骤信息
         const currentStep = findStepByIndex(this.currentStepIndex);
         if (!currentStep) {
-            area.createEl('p', { text: '未知步骤', cls: 'novel-writer-fw-error-text' });
+            area.createEl('p', { text: t('fullwriter.unknownStep'), cls: 'novel-writer-fw-error-text' });
             return;
         }
         const stepKey = currentStep.key;
@@ -2145,7 +2146,7 @@ export class FullWriterView extends ItemView {
         const template = await resolveStepPrompt(this.app, stepKey, vars);
         if (!template) {
             area.createEl('h3', { text: currentStep.label });
-            area.createEl('p', { text: '未知步骤', cls: 'novel-writer-fw-error-text' });
+            area.createEl('p', { text: t('fullwriter.unknownStep'), cls: 'novel-writer-fw-error-text' });
             return;
         }
 
@@ -2154,7 +2155,7 @@ export class FullWriterView extends ItemView {
         const headerTitle = header.createEl('h3');
         headerTitle.createSpan({ text: currentStep.label });
         if (currentStep.deprecated) {
-            headerTitle.createSpan({ text: ' 〔旧〕', attr: { style: 'color:var(--text-muted); font-size:0.7em; font-weight:400;' } });
+            headerTitle.createSpan({ text: t('fullwriter.legacyBadge'), attr: { style: 'color:var(--text-muted); font-size:0.7em; font-weight:400;' } });
         }
         header.createEl('p', { text: template.description, cls: 'novel-writer-fw-step-desc' });
 
@@ -2179,8 +2180,8 @@ export class FullWriterView extends ItemView {
 
         const systemPromptValue = template.systemPrompt;
         const userPromptValue = template.userPrompt;
-        this.systemPromptEl = this.renderPromptEditor(area, '系统提示词', systemPromptValue, 12);
-        this.userPromptEl = this.renderPromptEditor(area, '用户提示词', userPromptValue, 15);
+        this.systemPromptEl = this.renderPromptEditor(area, t('fullwriter.systemPrompt'), systemPromptValue, 12);
+        this.userPromptEl = this.renderPromptEditor(area, t('fullwriter.userPrompt'), userPromptValue, 15);
 
         // 步骤级附加操作（消痕/精修/定向修订/人味体检）+「继续下一步」，
         // 同样独立成区：步骤完成时只重绘这里，不动提示词编辑器。
@@ -2195,7 +2196,7 @@ export class FullWriterView extends ItemView {
             const deaiBtnRow = area.createDiv({ cls: 'novel-writer-fw-btn-row' });
             
             const deaiBtn = deaiBtnRow.createEl('button', {
-                text: '🧹 AI 消痕改写',
+                text: t('fullwriter.dehideBtn'),
                 cls: 'novel-writer-fw-btn novel-writer-fw-btn-secondary'
             });
             deaiBtn.onclick = () => {
@@ -2211,12 +2212,12 @@ export class FullWriterView extends ItemView {
                     this.stepCompleted,
                 ).catch((e) => {
                     log.error('[小说工坊] 消痕入口失败:', e);
-                    showErrorNotice(`消痕失败：${e instanceof Error ? e.message : String(e)}`, { timeout: 6000 });
+                    showErrorNotice(t('fullwriter.dehideFailed', { msg: e instanceof Error ? e.message : String(e) }), { timeout: 6000 });
                 }).finally(() => { deaiBtn.disabled = false; });
             };
 
             const refineBtn = deaiBtnRow.createEl('button', {
-                text: '🔁 自动迭代精修',
+                text: t('fullwriter.iterateBtn'),
                 cls: 'novel-writer-fw-btn novel-writer-fw-btn-secondary'
             });
             refineBtn.onclick = () => {
@@ -2235,17 +2236,17 @@ export class FullWriterView extends ItemView {
                     this.stepCompleted,
                 ).catch((e) => {
                     log.error('[小说工坊] 迭代精修入口失败:', e);
-                    showErrorNotice(`迭代精修失败：${e instanceof Error ? e.message : String(e)}`, { timeout: 6000 });
+                    showErrorNotice(t('fullwriter.iterateFailed', { msg: e instanceof Error ? e.message : String(e) }), { timeout: 6000 });
                 }).finally(() => { refineBtn.disabled = false; });
             };
 
             const targetedBtn = deaiBtnRow.createEl('button', {
-                text: '🎯 定向修订',
+                text: t('fullwriter.targetedReviseBtn'),
                 cls: 'novel-writer-fw-btn novel-writer-fw-btn-secondary'
             });
             targetedBtn.onclick = async () => {
                 targetedBtn.disabled = true;
-                targetedBtn.setText('修订中...');
+                targetedBtn.setText(t('fullwriter.revising'));
                 try {
                     await this.stepRunner.executeTargetedRevision(
                         this.stepResults,
@@ -2263,13 +2264,13 @@ export class FullWriterView extends ItemView {
             };
 
             const humanizeBtn = deaiBtnRow.createEl('button', {
-                text: '📊 人味体检',
+                text: t('fullwriter.humanCheckBtn'),
                 cls: 'novel-writer-fw-btn novel-writer-fw-btn-secondary',
             });
             humanizeBtn.onclick = () => {
                 const bodyText = this.stepResults['bodyGeneration'] || '';
                 if (!bodyText.trim()) {
-                    new Notice('当前还没有正文结果，先生成本章正文。');
+                    new Notice(t('fullwriter.needBodyFirst'));
                     return;
                 }
                 void import('./humanize-report-modal').then(({ HumanizeReportModal }) => {
@@ -2284,7 +2285,7 @@ export class FullWriterView extends ItemView {
                                 this.chapterName,
                                 this.volume,
                             );
-                            if (!saved) throw new Error('正文保存失败');
+                            if (!saved) throw new Error(t('fullwriter.bodySaveFailed'));
                             await this.renderInContainer(this.tabContent);
                         },
                     }).open();
@@ -2296,7 +2297,7 @@ export class FullWriterView extends ItemView {
         if (this.stepCompleted.has(stepKey) && stepKey !== 'context' && stepKey !== 'settlement') {
             const nextBtnRow = area.createDiv({ cls: 'novel-writer-fw-btn-row' });
             const nextBtn = nextBtnRow.createEl('button', {
-                text: '▶️ 继续下一步',
+                text: t('fullwriter.nextStepBtn'),
                 cls: 'novel-writer-fw-btn novel-writer-fw-btn-success'
             });
             nextBtn.onclick = () => this.stepRunner.moveToNextStep(this._makeStepRunCtx());
@@ -2323,7 +2324,7 @@ export class FullWriterView extends ItemView {
             }
             if (!this.stepResults['bodyGeneration']) {
                 area.createEl('p', {
-                    text: '⚠️ 未找到正文内容，无法打开润色编辑器。请先完成正文生成或打开本章正文。',
+                    text: t('fullwriter.polishNoBody'),
                     cls: 'novel-writer-fw-error-text',
                 });
                 return;
@@ -2337,8 +2338,8 @@ export class FullWriterView extends ItemView {
             );
         } catch (e) {
             log.error('[小说工坊] 渲染润色编辑器失败:', e);
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '润色编辑器加载失败', timeout: 6000 });
-            const retry = area.createEl('button', { text: '🔄 重试加载润色编辑器', cls: 'novel-writer-fw-btn' });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('fullwriter.polishLoadFailed'), timeout: 6000 });
+            const retry = area.createEl('button', { text: t('fullwriter.polishRetry'), cls: 'novel-writer-fw-btn' });
             retry.onclick = () => {
                 retry.disabled = true;
                 void this.renderPolishEditor(area).finally(() => { retry.disabled = false; });
@@ -2372,7 +2373,7 @@ export class FullWriterView extends ItemView {
 
         status.createSpan({ text: currentStep.label, cls: 'nw-step-actionbar-title' });
         const chip = status.createSpan({
-            text: failure ? '执行失败' : done ? '已完成' : '未完成',
+            text: failure ? t('fullwriter.stepFailed') : done ? t('fullwriter.stepDone') : t('fullwriter.stepNotDone'),
             cls: 'nw-step-status-chip',
         });
         chip.addClass(failure ? 'nw-step-status-error' : done ? 'nw-step-status-done' : 'nw-step-status-pending');
@@ -2384,45 +2385,45 @@ export class FullWriterView extends ItemView {
 
         if (stepKey === 'bodyGeneration') {
             const cowriteBtn = actions.createEl('button', {
-                text: '✨ 进入句级协同写作',
+                text: t('fullwriter.enterCoWriteBtn'),
                 cls: 'nw-step-action nw-step-action-cowrite',
-                attr: { title: '逐句生成候选并确认，推荐用于正文' },
+                attr: { title: t('fullwriter.enterCoWriteTip') },
             });
             cowriteBtn.addEventListener('click', () => this.openCurrentChapterInCoWriting());
 
             const draftBtn = actions.createEl('button', {
-                text: done ? '🔄 重新生成整章' : '🤖 整章草稿（可选）',
+                text: done ? t('fullwriter.regenChapterBtn') : t('fullwriter.draftChapterBtn'),
                 cls: 'nw-step-action nw-step-action-primary',
-                attr: { title: '一次生成整章草稿；出现错误时结果与错误卡会显示在下方' },
+                attr: { title: t('fullwriter.draftChapterTip') },
             });
             draftBtn.addEventListener('click', runStep);
         } else {
             const label = failure
-                ? '🔄 重新生成本步'
+                ? t('fullwriter.regenStepBtn')
                 : done
-                    ? '🔄 重新生成'
+                    ? t('fullwriter.regenBtn')
                     : hasResult
-                        ? '🚀 继续生成'
-                        : '🚀 生成此步';
+                        ? t('fullwriter.continueBtn')
+                        : t('fullwriter.generateBtn');
             const runBtn = actions.createEl('button', {
                 text: label,
                 cls: 'nw-step-action nw-step-action-primary',
-                attr: { title: '使用下方提示词执行本步；错误会直接显示在本步位置' },
+                attr: { title: t('fullwriter.generateTip') },
             });
             runBtn.addEventListener('click', runStep);
         }
 
         if (currentStep.canSkip) {
             const skipBtn = actions.createEl('button', {
-                text: '跳过',
+                text: t('fullwriter.skipBtn'),
                 cls: 'nw-step-action nw-step-action-ghost',
-                attr: { title: '跳过本步' },
+                attr: { title: t('fullwriter.skipTip') },
             });
             skipBtn.addEventListener('click', () => this.stepRunner.moveToNextStep(this._makeStepRunCtx()));
         }
 
         const params = bar.createDiv({ cls: 'nw-step-params' });
-        params.createSpan({ text: '温度', cls: 'nw-step-params-label' });
+        params.createSpan({ text: t('fullwriter.temperature'), cls: 'nw-step-params-label' });
         const tempValue = this.stepTemperature.toFixed(1);
         this.temperatureSlider = params.createEl('input', {
             type: 'range',
@@ -2443,7 +2444,7 @@ export class FullWriterView extends ItemView {
         const summary = details.createEl('summary', { cls: 'novel-writer-fw-label' });
         summary.createSpan({ text: label });
         summary.createSpan({
-            text: effective.length > 0 ? `${effective.length} 字 · 点击展开编辑` : '模板为空 · 点击展开查看',
+            text: effective.length > 0 ? t('fullwriter.templateExpand', { count: effective.length }) : t('fullwriter.templateEmpty'),
             cls: 'nw-prompt-summary-meta',
         });
         const textarea = details.createEl('textarea', {
@@ -2514,8 +2515,8 @@ export class FullWriterView extends ItemView {
 
     private renderReviewPhaseTabs(area: HTMLElement, activeStep: string): void {
         const tabs = [
-            { key: 'qualityControl', label: '质量控制', index: 8 },
-            { key: 'analysisReport', label: '分析报告', index: 9 },
+            { key: 'qualityControl', label: t('fullwriter.stepQualityControl'), index: 8 },
+            { key: 'analysisReport', label: t('fullwriter.stepAnalysisReport'), index: 9 },
         ];
 
         const tabBar = area.createDiv({ cls: 'novel-writer-fw-review-tabs' });
@@ -2535,17 +2536,17 @@ export class FullWriterView extends ItemView {
     }
     private renderPlanningQuickStart(area: HTMLElement): void {
         const planningSteps = [
-            { key: 'infoPlan', label: '信息规划' },
-            { key: 'plotDistill', label: '情节蒸馏' },
-            { key: 'outline', label: '大纲摘要' },
-            { key: 'emotionPlan', label: '情绪规划' },
-            { key: 'sceneExpand', label: 'Scene展开' },
+            { key: 'infoPlan', label: t('fullwriter.planInfoPlan') },
+            { key: 'plotDistill', label: t('fullwriter.planPlotDistill') },
+            { key: 'outline', label: t('fullwriter.planOutline') },
+            { key: 'emotionPlan', label: t('fullwriter.planEmotionPlan') },
+            { key: 'sceneExpand', label: t('fullwriter.planSceneExpand') },
         ];
 
         const card = area.createDiv({ cls: 'novel-writer-fw-planning-quickstart' });
 
         const header = card.createDiv({ cls: 'novel-writer-fw-planning-header' });
-        header.createEl('h4', { text: '🚀 一键生成全章规划', cls: 'novel-writer-fw-planning-title' });
+        header.createEl('h4', { text: t('fullwriter.planQuickTitle'), cls: 'novel-writer-fw-planning-title' });
 
         const statusList = card.createDiv({ cls: 'novel-writer-fw-planning-status-list' });
         for (const step of planningSteps) {
@@ -2559,17 +2560,17 @@ export class FullWriterView extends ItemView {
 
         const btnRow = card.createDiv({ cls: 'novel-writer-fw-planning-btn-row' });
         const generateBtn = btnRow.createEl('button', {
-            text: '⚡ 一键生成全部',
+            text: t('fullwriter.planGenerateAll'),
             cls: 'novel-writer-fw-btn novel-writer-fw-btn-primary',
         });
 
         const doneCount = planningSteps.filter(s => this.stepCompleted.has(s.key)).length;
         if (doneCount > 0 && doneCount < planningSteps.length) {
-            generateBtn.setText('⚡ 继续生成剩余');
+            generateBtn.setText(t('fullwriter.planContinueRemaining'));
         } else if (doneCount === planningSteps.length) {
-            generateBtn.setText('🔄 重新生成全部');
+            generateBtn.setText(t('fullwriter.planRegenAll'));
         } else {
-            generateBtn.setText('⚡ 一键生成全章规划（更快）');
+            generateBtn.setText(t('fullwriter.planFaster'));
         }
 
         generateBtn.addEventListener('click', async () => {
@@ -2580,7 +2581,7 @@ export class FullWriterView extends ItemView {
             const noneDone = doneCount === 0;
 
             generateBtn.disabled = true;
-            generateBtn.setText('⏳ 生成中...');
+            generateBtn.setText(t('fullwriter.generating'));
 
             try {
                 if (noneDone || allDone) {
@@ -2603,14 +2604,14 @@ export class FullWriterView extends ItemView {
                 const missing = planningSteps.filter(s => !this.stepCompleted.has(s.key));
                 if (missing.length === 0) {
                     this.chapterStateManager.currentStepIndex = 7;
-                    this.executionStore.addEvent({ type: 'run-complete', level: 'success', message: '全章规划完成，已进入正文写作' });
+                    this.executionStore.addEvent({ type: 'run-complete', level: 'success', message: t('fullwriter.planComplete') });
                 } else {
                     const first = ALL_FULL_STEPS.find(s => s.key === missing[0].key);
                     if (first) this.chapterStateManager.currentStepIndex = first.index;
                     this.executionStore.addEvent({
                         type: 'run-warning',
                         level: 'warning',
-                        message: `规划仍缺少：${missing.map(s => s.label).join('、')}，已停在缺失步骤`,
+                        message: t('fullwriter.planMissing', { missing: missing.map(s => s.label).join('、') }),
                         stepKey: missing[0].key,
                         stepLabel: missing[0].label,
                     });
@@ -2623,12 +2624,12 @@ export class FullWriterView extends ItemView {
                 this.executionStore.addEvent({
                     type: 'run-error',
                     level: 'error',
-                    message: `全章规划失败：${message}`,
+                    message: t('fullwriter.planFailed', { msg: message }),
                 });
-                showErrorNotice(message, { title: '全章规划失败', timeout: 8000 });
+                showErrorNotice(message, { title: t('fullwriter.planFailedTitle'), timeout: 8000 });
             } finally {
                 generateBtn.disabled = false;
-                generateBtn.setText('⚡ 重新生成全章规划');
+                generateBtn.setText(t('fullwriter.planRegenQuick'));
                 try {
                     await this.renderInContainer(this.tabContent);
                 } catch (renderError) {

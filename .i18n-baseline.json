@@ -93,7 +93,7 @@
     "ui/fingerprint-intensity-modal.ts": 35,
     "ui/fingerprint-library-modal.ts": 38,
     "ui/font-manager-modal.ts": 15,
-    "ui/full-writer-view.ts": 167,
+    "ui/full-writer-view.ts": 30,
     "ui/full-writer/batch-pipeline-runner.ts": 36,
     "ui/full-writer/batch-targets.ts": 2,
     "ui/full-writer/chapter-orchestrator.ts": 28,
@@ -251,7 +251,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 10218,
+  "total": 10081,
   "updatedAt": "2026-11-18",
   "note": ""
 }

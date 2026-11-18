@@ -2136,3 +2136,28 @@ main.js 5,632,554B；单测 `tests/unit/ui/full-writer-checkup-bar.test.ts` 八�
 
 **下一轮候选**：写作主流程（ZC-07：`co-writing-view.ts` 8504 字 + `full-writer-view.ts` 4981 字，
 可再拆 2~3 次提交）→ 外观页统计/桌宠块 → section-factory/section-base 骨架。
+
+## 第七十四轮：i18n 第二期第17片第一批 —— 完整写作工作台主体（2026-11-19，ZCode · ZC-20261118-07）
+
+**改动**
+- `ui/full-writer-view.ts`（2771 行 / 约 115 处文案）110 对替换走仓外脚本 `migrate-fw-view.cjs`
+  （110/110 命中）+ 手工补 3 处：一键条（一键/逐步/暂停/继续/取消）、执行事件与进度插值、
+  步骤操作区（生成/重生成/跳过/温度/提示词编辑器）、规划快捷卡、复审页签、上下文面板、
+  三处 Notice、拖拽 aria。走顶层 `fullwriter.*` 106 键。
+- **保留数据**：管线步骤名（`ALL_FULL_STEPS.label`，引擎/提示词/诊断共用）、vault 路径与模板源、
+  落盘默认名 `新项目-{ts}`、行为匹配串（`上下文加载完成`）。
+- 资源 zh/en 各 1750（+106）；新增 `tests/unit/i18n/fullwriter-i18n.test.ts` 3 例（资源级双语 +
+  en 子树零 CJK；视图 DOM 级测试随子控制器批补）。
+- **拆批**：`ui/full-writer/` 子控制器（project-selector-controller 等 20 个模块）为第二批
+  （任务板 ZC-20261119-08）；`ui/co-writing-view.ts`（3967 行 / 625 行 CJK）为第三批
+  （ZC-20261119-09）；均已定向指派 zcode。
+
+**验收**
+- 新增 3 例全绿；`check:i18n` zh/en 各 1750、棘轮收紧到 **250 文件 / 10081 条**；
+  `check:bundle` main.js → **5853602**（+12062）；preflight EXIT=0。
+- 实机 `D:\nw-dev-vault\_visual-i18n17\fullwriter-view-{zh-CN,en-US}.png`（主窗口命令直开）：
+  en 下视图壳/一键条/能力区全英文；剩余 CJK = 项目选择器子面板（第二批）+ 共享层
+  （管线步骤名/模型快切器）+ Obsidian 自身文案。
+
+**下一轮候选**：ZC-20261119-08 full-writer 子控制器（优先 project-selector-controller，214 行 CJK）→
+ZC-20261119-09 co-writing-view → 外观页统计/桌宠块 → section-factory/section-base 骨架。
