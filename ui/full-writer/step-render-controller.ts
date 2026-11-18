@@ -11,7 +11,7 @@
  * 行为与外迁前逐行等价，不改变写作流程。
  */
 import { App, TFile } from 'obsidian';
-import { t } from '@/i18n';
+import { hasMessage, t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { StepRunner, ALL_FULL_STEPS, FullStep } from '@/engine/step-runner';
 import { downstreamStepsAfterPlanningChange } from '@/engine/planning-step-advance';
@@ -134,7 +134,7 @@ export class StepRenderController {
                 // G6-5：分片刷新按 key 定位并更新完成标记
                 sub.setAttr('data-nw-substep', stepKey);
                 sub.createSpan({ text: icon, cls: 'novel-writer-fw-substep-icon' });
-                sub.createSpan({ text: def?.label || stepKey, cls: 'novel-writer-fw-substep-label' });
+                sub.createSpan({ text: def?.labelKey && hasMessage(def.labelKey) ? t(def.labelKey) : (def?.label || stepKey), cls: 'novel-writer-fw-substep-label' });
                 if (def?.required) sub.createSpan({ text: t('fullwriter.sr.requiredMark'), cls: 'novel-writer-fw-substep-mark' });
                 sub.setAttr('title', stale ? t('fullwriter.sr.staleTitle') : done ? t('fullwriter.sr.doneTitle') : partial ? t('fullwriter.sr.partialTitle') : t('fullwriter.sr.notRunTitle'));
                 if (clickable) {

@@ -32,12 +32,32 @@
  */
 
 import { validateStepResult } from './step-validator';
+import { resolveUiMessage, uiMessage, withParams } from '@/shared/ui-message';
 import { getBusinessThreshold } from '@/shared/thresholds';
 
 /**
  * A7: 正文/修正被改写后必须失效的下游步骤。
  * 所有写正文入口（工作台保存、润色自动保存、消痕/精修/逐轮选择）共用此列表，
  * 避免各写各的导致 stepLevels / staleSteps 不同步。
+ */
+
+/**
+ * 步骤前置/后置校验的用户可见消息（i18n engine 分层②）。
+ *
+ * 这些 `error` / `warning` 会直接显示在步骤面板上（用户手动执行时的主要反馈），
+ * 原先散在 6 个 return 里；集中后既能静态校验，也能一次读完全部校验话术。
+ */
+const STEP_MSG = {
+    needQualityControl: uiMessage('engineMsg.step.needQualityControl', '请先执行「质量控制」再执行此步骤'),
+    needBodyGeneration: uiMessage('engineMsg.step.needBodyGeneration', '请先执行「正文生成」步骤'),
+    qcIncomplete: uiMessage('engineMsg.step.qcIncomplete', '⚠️ 质量控制内容不完整（{missing}），结果可能不准确。如确认无误可继续。'),
+    bodyIncomplete: uiMessage('engineMsg.step.bodyIncomplete', '⚠️ 正文内容未达完整标准（{missing}），分析结果可能有偏差。'),
+    wordCountLow: uiMessage('engineMsg.step.wordCountLow', '⚠️ 字数不足：输出 {output} 字，低于最低要求 {min} 字（目标 {target} 字）。建议重新生成或使用迭代精修扩充。'),
+    wordCountSlightlyLow: uiMessage('engineMsg.step.wordCountSlightlyLow', '⚠️ 字数略低：输出 {output} 字，目标 {target} 字。如果内容完整可以接受。'),
+} as const;
+
+/**
+ * 正文变更后需要失效的后续步骤（改正文 → 这些结果不再可信）。
  */
 export const BODY_CHANGE_INVALIDATED_STEPS = [
     'selfCheck',
@@ -84,24 +104,24 @@ export type PostValidationFn = (content: string, ctx: StepRunCtx) => PostValidat
 export const preCheckQualityControl: PreValidationFn = (ctx) => {
     const qcContent = ctx.stepResults['qualityControl'];
     if (!qcContent) {
-        return { passed: false, error: '请先执行「质量控制」再执行此步骤' };
+        return { passed: false, error: resolveUiMessage(STEP_MSG.needQualityControl) };
     }
     const qcValidation = validateStepResult('qualityControl', qcContent);
     if (qcValidation.level !== 'complete') {
-        return { passed: true, warning: `⚠️ 质量控制内容不完整（${qcValidation.missing.join('、')}），结果可能不准确。如确认无误可继续。` };
+        return { passed: true, warning: resolveUiMessage(withParams(STEP_MSG.qcIncomplete, { missing: qcValidation.missing.join('、') })) };
     }
     return { passed: true };
 };
 
 const preCheckBodyGeneration: PreValidationFn = (ctx) => {
     if (!ctx.stepCompleted.has('bodyGeneration')) {
-        return { passed: false, error: '请先执行「正文生成」步骤' };
+        return { passed: false, error: resolveUiMessage(STEP_MSG.needBodyGeneration) };
     }
     const bodyContent = ctx.stepResults['bodyGeneration'];
     if (bodyContent) {
         const bodyValidation = validateStepResult('bodyGeneration', bodyContent);
         if (bodyValidation.level !== 'complete') {
-            return { passed: true, warning: `⚠️ 正文内容未达完整标准（${bodyValidation.missing.join('、')}），分析结果可能有偏差。` };
+            return { passed: true, warning: resolveUiMessage(withParams(STEP_MSG.bodyIncomplete, { missing: bodyValidation.missing.join('、') })) };
         }
     }
     return { passed: true };
@@ -116,10 +136,10 @@ const postCheckWordCount: PostValidationFn = (content, ctx) => {
     const outputLen = content.length;
     const minWords = Math.floor(baseWords * getBusinessThreshold('wordMinRatio'));
     if (outputLen < minWords) {
-        return { passed: false, error: `⚠️ 字数不足：输出 ${outputLen} 字，低于最低要求 ${minWords} 字（目标 ${baseWords} 字）。建议重新生成或使用迭代精修扩充。` };
+        return { passed: false, error: resolveUiMessage(withParams(STEP_MSG.wordCountLow, { output: outputLen, min: minWords, target: baseWords })) };
     }
     if (outputLen < baseWords) {
-        return { passed: true, warning: `⚠️ 字数略低：输出 ${outputLen} 字，目标 ${baseWords} 字。如果内容完整可以接受。` };
+        return { passed: true, warning: resolveUiMessage(withParams(STEP_MSG.wordCountSlightlyLow, { output: outputLen, target: baseWords })) };
     }
     return { passed: true };
 };
@@ -132,7 +152,10 @@ const postCheckWordCount: PostValidationFn = (content, ctx) => {
 export type FullStep = {
     index: number;
     key: string;          // 对应 ALL_STEPS 的 key，步骤0和10为空
+    /** 步骤名（中文兜底值；i18n engine 分层② 后展示请走 labelKey 求值） */
     label: string;
+    /** 步骤名 i18n 键（engineMsg.stepName.<slug>） */
+    labelKey?: string;
     required: boolean;
     canSkip: boolean;
     auto: boolean;        // 自动执行
@@ -146,22 +169,22 @@ export type FullStep = {
  * 全流程步骤定义。
  */
 export const ALL_FULL_STEPS: FullStep[] = [
-    { index: 0,  key: '',               label: '📦 上下文加载',     required: true,  canSkip: false, auto: true,  modelStrategy: 'default', preValidation: null, postValidation: null },
-    { index: 1,  key: 'infoPlan',       label: '📋 信息规划',       required: true,  canSkip: false, auto: false, modelStrategy: 'flash',   preValidation: null, postValidation: null },
-    { index: 2,  key: 'plotDistill',    label: '🔥 情节蒸馏',       required: false, canSkip: true,  auto: false, modelStrategy: 'flash',   preValidation: null, postValidation: null },
-    { index: 3,  key: 'characterSoul',  label: '🫀 角色灵魂提取',   required: false, canSkip: true,  auto: true,  modelStrategy: 'default', preValidation: null, postValidation: null },
-    { index: 4,  key: 'outline',        label: '📝 大纲摘要',       required: false, canSkip: true,  auto: false, modelStrategy: 'flash',   preValidation: null, postValidation: null },
-    { index: 5,  key: 'emotionPlan',    label: '🎭 情绪规划',       required: false, canSkip: true,  auto: false, modelStrategy: 'flash',   preValidation: null, postValidation: null },
-    { index: 6,  key: 'sceneExpand',    label: '🎬 Scene展开',      required: false, canSkip: true,  auto: false, modelStrategy: 'flash',   preValidation: null, postValidation: null },
+    { index: 0,  key: '',               label: '📦 上下文加载',   labelKey: 'engineMsg.stepName.contextLoad',     required: true,  canSkip: false, auto: true,  modelStrategy: 'default', preValidation: null, postValidation: null },
+    { index: 1,  key: 'infoPlan',       label: '📋 信息规划',   labelKey: 'engineMsg.stepName.infoPlan',       required: true,  canSkip: false, auto: false, modelStrategy: 'flash',   preValidation: null, postValidation: null },
+    { index: 2,  key: 'plotDistill',    label: '🔥 情节蒸馏',   labelKey: 'engineMsg.stepName.plotDistill',       required: false, canSkip: true,  auto: false, modelStrategy: 'flash',   preValidation: null, postValidation: null },
+    { index: 3,  key: 'characterSoul',  label: '🫀 角色灵魂提取',   labelKey: 'engineMsg.stepName.characterSoul',   required: false, canSkip: true,  auto: true,  modelStrategy: 'default', preValidation: null, postValidation: null },
+    { index: 4,  key: 'outline',        label: '📝 大纲摘要',   labelKey: 'engineMsg.stepName.outline',       required: false, canSkip: true,  auto: false, modelStrategy: 'flash',   preValidation: null, postValidation: null },
+    { index: 5,  key: 'emotionPlan',    label: '🎭 情绪规划',   labelKey: 'engineMsg.stepName.emotionPlan',       required: false, canSkip: true,  auto: false, modelStrategy: 'flash',   preValidation: null, postValidation: null },
+    { index: 6,  key: 'sceneExpand',    label: '🎬 Scene展开',   labelKey: 'engineMsg.stepName.sceneExpand',      required: false, canSkip: true,  auto: false, modelStrategy: 'flash',   preValidation: null, postValidation: null },
     /**
      * 正文生成：与句级协同写作共享同一正文文件与 `bodyGeneration` 结果键。
      * - 有角色灵魂/Scene 规划时自动使用 V2 小说家模板（见 getStepTemplateAuto）
      * - 落盘统一走 engine/body-writer.ts，格式契约来自项目「写作规则.md」
      */
-    { index: 7,  key: 'bodyGeneration', label: '✍️ 正文生成',       required: true,  canSkip: false, auto: false, modelStrategy: 'pro',     preValidation: null, postValidation: postCheckWordCount },
-    { index: 8,  key: 'qualityControl', label: '🎯 质量控制',       required: false, canSkip: true,  auto: false, modelStrategy: 'pro',     preValidation: null, postValidation: null },
-    { index: 9,  key: 'analysisReport', label: '📊 分析报告',       required: false, canSkip: true,  auto: false, modelStrategy: 'flash',   preValidation: preCheckBodyGeneration, postValidation: null },
-    { index: 10, key: '',               label: '💾 章节结算',       required: true,  canSkip: false, auto: true,  modelStrategy: 'default', preValidation: null, postValidation: null },
+    { index: 7,  key: 'bodyGeneration', label: '✍️ 正文生成',   labelKey: 'engineMsg.stepName.bodyGeneration',       required: true,  canSkip: false, auto: false, modelStrategy: 'pro',     preValidation: null, postValidation: postCheckWordCount },
+    { index: 8,  key: 'qualityControl', label: '🎯 质量控制',   labelKey: 'engineMsg.stepName.qualityControl',       required: false, canSkip: true,  auto: false, modelStrategy: 'pro',     preValidation: null, postValidation: null },
+    { index: 9,  key: 'analysisReport', label: '📊 分析报告',   labelKey: 'engineMsg.stepName.analysisReport',       required: false, canSkip: true,  auto: false, modelStrategy: 'flash',   preValidation: preCheckBodyGeneration, postValidation: null },
+    { index: 10, key: '',               label: '💾 章节结算',   labelKey: 'engineMsg.stepName.settlement',       required: true,  canSkip: false, auto: true,  modelStrategy: 'default', preValidation: null, postValidation: null },
 ];
 
 /**

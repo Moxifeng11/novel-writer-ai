@@ -11,6 +11,7 @@
  */
 
 import { isProjectDirectory } from '@/shared/project-catalog';
+import { resolveUiMessage, uiMessage, withParams } from '@/shared/ui-message';
 import { App, TFile, TFolder } from 'obsidian';
 import { createLogger } from '@/shared/logger';
 import {
@@ -24,6 +25,28 @@ import { detectRhythmDeviations } from '@/shared/rhythm-baseline-model';
 const log = createLogger('PostGenCheck');
 
 /** 名称解析器（插件侧注入项目索引 resolve） */
+
+/**
+ * 生成后校验的用户可见消息与建议（i18n engine 分层②）。
+ *
+ * 这些会出现在报告面板里；集中成表后能一次读完「这个校验到底对用户说什么」，
+ * 也能被 check-i18n 静态校验（散在模板串里时不行）。
+ */
+const PGC_MSG = {
+    projectMissing: uiMessage('engineMsg.pgc.projectMissing', '项目不存在或不是作品目录：{path}'),
+    sceneCharacterMissing: uiMessage('engineMsg.pgc.sceneCharacterMissing', '场景在场人物「{name}」在设定库中找不到对应实体'),
+    sceneCharacterFix: uiMessage('engineMsg.pgc.sceneCharacterFix', '先补建人物卡或修正名字，否则生成会拿不到该角色设定'),
+    foreshadowOverdue: uiMessage('engineMsg.pgc.foreshadowOverdue', '伏笔「{name}」计划在第{planned}章回收，当前已到第{current}章仍未回收'),
+    foreshadowOverdueFix: uiMessage('engineMsg.pgc.foreshadowOverdueFix', '本章或近章安排回收，或更新计划回收章节'),
+    rhythmDeviation: uiMessage('engineMsg.pgc.rhythmDeviation', '第{index}场节奏偏离（{kind}）：预期{expected}，实际{actual}——{detail}'),
+    rhythmDeviationFix: uiMessage('engineMsg.pgc.rhythmDeviationFix', '检查该场事件密度或情绪落点，必要时补充铺垫/压缩'),
+    consistencyIssue: uiMessage('engineMsg.pgc.consistencyIssue', '一致性审核记录了本章问题：{detail}'),
+    consistencyIssueFix: uiMessage('engineMsg.pgc.consistencyIssueFix', '核对左右证据后修正，或标记为有意为之'),
+} as const;
+
+/**
+ * 名称解析器（把场景/伏笔里的名字解析成设定库实体路径）。
+ */
 export type NameResolver = (name: string) => Promise<string | null>;
 
 /**
@@ -85,8 +108,8 @@ export class PostGenerationCheckService {
                 items.push({
                     kind: 'coverage',
                     severity: 'error',
-                    message: `场景在场人物「${name}」在设定库中找不到对应实体`,
-                    suggestion: '先补建人物卡或修正名字，否则生成会拿不到该角色设定',
+                    message: resolveUiMessage(withParams(PGC_MSG.sceneCharacterMissing, { name })),
+                    suggestion: resolveUiMessage(PGC_MSG.sceneCharacterFix),
                     refs: [name],
                 });
             }
@@ -112,8 +135,8 @@ export class PostGenerationCheckService {
                 items.push({
                     kind: 'foreshadow',
                     severity: 'warn',
-                    message: `伏笔「${name}」计划在第${planned}章回收，当前已到第${chapterNum}章仍未回收`,
-                    suggestion: '本章或近章安排回收，或更新计划回收章节',
+                    message: resolveUiMessage(withParams(PGC_MSG.foreshadowOverdue, { name, planned, current: chapterNum })),
+                    suggestion: resolveUiMessage(PGC_MSG.foreshadowOverdueFix),
                     refs: [name],
                 });
             }
@@ -131,8 +154,8 @@ export class PostGenerationCheckService {
         return deviations.map(deviation => ({
             kind: 'rhythm' as const,
             severity: 'warn' as const,
-            message: `第${deviation.index}场节奏偏离（${deviation.kind}）：预期${deviation.expected}，实际${deviation.actual}——${deviation.message}`,
-            suggestion: '检查该场事件密度或情绪落点，必要时补充铺垫/压缩',
+            message: resolveUiMessage(withParams(PGC_MSG.rhythmDeviation, { index: deviation.index, kind: deviation.kind, expected: deviation.expected, actual: deviation.actual, detail: deviation.message })),
+            suggestion: resolveUiMessage(PGC_MSG.rhythmDeviationFix),
         }));
     }
 
@@ -157,8 +180,8 @@ export class PostGenerationCheckService {
             .map(item => ({
                 kind: 'consistency' as const,
                 severity: 'warn' as const,
-                message: `一致性审核记录了本章问题：${String((item as { summary?: string; reason?: string }).summary ?? (item as { reason?: string }).reason ?? '见矛盾.json')}`,
-                suggestion: '核对左右证据后修正，或标记为有意为之',
+                message: resolveUiMessage(withParams(PGC_MSG.consistencyIssue, { detail: String((item as { summary?: string; reason?: string }).summary ?? (item as { reason?: string }).reason ?? '见矛盾.json') })),
+                suggestion: resolveUiMessage(PGC_MSG.consistencyIssueFix),
             }));
     }
 

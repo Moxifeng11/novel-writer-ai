@@ -87,6 +87,8 @@ function measure(file) {
     let regexLiterals = 0;
     let promptLiterals = 0;
     let enumLiterals = 0;
+    /** 有 *Key 伴生的字面量（已结构化：中文只是兜底，不再算界面文案待迁量） */
+    let keyedLiterals = 0;
     // ── sink 命中（DSH 复核后加的机检口径，见 §「三条判据的可执行版本」）──
     let sinkLiterals = 0;
     let sinkDisk = 0;
@@ -124,6 +126,42 @@ function measure(file) {
             if (ts.isStringLiteral(name) && DISPLAY_PROPS.test(name.text)) return name.text;
         }
         return '';
+    };
+    /**
+     * 这条字面量是否有同名的 `*Key` 伴生字段（`name` ↔ `nameKey`、`label` ↔ `labelKey`）。
+     *
+     * 判定「已结构化」：跨层数据①②③④ 与 engine 分层② 都用的同一套模式——
+     * 中文保留为兜底值，新增 `*Key` 兄弟姐妹供渲染时求值。
+     * 这类字面量**已经从「界面文案」变成「数据兜底」**，不该再算进待迁量：
+     * 它不会被直接 setText，而是 `hasMessage(key) ? t(key) : fallback`。
+     *
+     * 注意这不等于「不用管」：兜底值若与资源不一致会造成回退时的措辞漂移，
+     * 但那属于**一致性**问题（由 zh 资源对拍），不是**本地化**问题。
+     */
+    const hasKeyCompanion = node => {
+        const parent = node.parent;
+        // 形态 A：`uiMessage('code', '中文兜底')` —— engine 分层② 的常量表形态。
+        // 第二个实参是 fallback，中文退化为缺键兜底，不再直接上屏。
+        if (parent && ts.isCallExpression(parent)) {
+            const callee = parent.expression;
+            const calleeName = ts.isIdentifier(callee) ? callee.text : '';
+            if ((calleeName === 'uiMessage' || calleeName === 'resolveUiMessage') && parent.arguments[1] === node) {
+                return true;
+            }
+        }
+        // 形态 B：对象字面量里的 `field: '中文'` + 同对象 `fieldKey: '...'`
+        if (!parent || !ts.isPropertyAssignment(parent) || parent.initializer !== node) return false;
+        const obj = parent.parent;
+        if (!obj || !ts.isObjectLiteralExpression(obj)) return false;
+        const name = parent.name;
+        const fieldName = ts.isIdentifier(name) ? name.text : ts.isStringLiteral(name) ? name.text : '';
+        if (!fieldName) return false;
+        return obj.properties.some(p => {
+            if (!ts.isPropertyAssignment(p)) return false;
+            const n = p.name;
+            const text = ts.isIdentifier(n) ? n.text : ts.isStringLiteral(n) ? n.text : '';
+            return text === fieldName + 'Key';
+        });
     };
     /**
      * 这条字面量是否**直接**作为某个下游消费者的实参（sink 检测）。
@@ -169,6 +207,7 @@ function measure(file) {
             const chars = countChars(text);
             literalChars += chars;
             if (text.length > longest) longest = text.length;
+            if (hasKeyCompanion(node)) keyedLiterals += 1;
             // 提示词形态：超长且带「按以下格式」「严格」「不要」这类指令骨架
             if (text.length >= 150 && /(按以下|请严格|不要|输出格式|必须|禁止|要求|规则如下|【)/.test(text)) promptLiterals += 1;
             // 枚举值形态：极短（≤6 字）、无标点、无空格 —— 典型是分类/字段名/标签值
@@ -222,7 +261,7 @@ function measure(file) {
         literals, literalChars, totalChars, outsideLiterals: totalChars - literalChars, longest,
         logLiterals, pathLiterals, noticeLiterals, regexLiterals, promptLiterals, enumLiterals,
         sinkLiterals, sinkDisk, sinkModel, sinkRegex, sinkCompare,
-        toolDescLiterals, sinks: [...sinkKindsFound], samples,
+        toolDescLiterals, keyedLiterals, sinks: [...sinkKindsFound], samples,
     };
 }
 
@@ -363,6 +402,14 @@ function classify(file, m) {
     // 提示词形态（文件名看不出来时的兜底）：长且有指令骨架 → 喂 LLM 的，不迁
     if (m.promptLiterals >= 1 && m.literalChars > 0 && m.promptLiterals / m.literals >= 0.05) {
         return { category: 'ai-prompt', conclusion: '保留：内容形态是 AI 提示词（指令骨架 + 长文），改语言会改变模型行为' };
+    }
+    // 已结构化：大部分字面量都有 *Key 伴生（中文退化为兜底值，不再直接上屏）
+    // —— 跨层数据①②③④ 与 engine 分层② 的共同模式
+    if (m.literals >= 5 && m.keyedLiterals / m.literals >= 0.5) {
+        return {
+            category: 'structured',
+            conclusion: `已结构化：${m.keyedLiterals}/${m.literals} 条有 *Key 伴生（展示走 key 求值，中文仅兜底）`,
+        };
     }
     // 正则源：解析用的中文匹配模式，属数据
     if (m.literals > 0 && m.regexLiterals > 0 && m.regexLiterals / m.literals >= 0.5) {

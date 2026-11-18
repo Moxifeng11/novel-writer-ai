@@ -32,6 +32,10 @@ export interface CrossValidationRule {
     rule: 'positive_correlation' | 'negative_correlation' | 'range_check' | 'consistency';
     threshold?: number;
     description: string;
+    /** 规则名 i18n 键（i18n engine 分层②：name 保留中文兜底，展示走 key） */
+    nameKey?: string;
+    /** 规则说明 i18n 键 */
+    descriptionKey?: string;
 }
 
 /**
@@ -58,60 +62,60 @@ const DIMENSION_REQUIRED_FIELDS: Record<BreakdownDimension, string[]> = {
 
 const CROSS_VALIDATION_RULES: CrossValidationRule[] = [
     {
-        name: '爽点密度 vs 情绪曲线强度',
+        name: '爽点密度 vs 情绪曲线强度', nameKey: 'engineMsg.qualityRule.coolPointsVsEmotion.name',
         dimensionA: 'rhythm', dimensionB: 'rhythm',
         fieldA: 'coolPoints.length', fieldB: 'emotionPoints.avgIntensity',
         rule: 'positive_correlation',
-        description: '爽点密度高的章节应有更高的情绪强度',
+        description: '爽点密度高的章节应有更高的情绪强度', descriptionKey: 'engineMsg.qualityRule.coolPointsVsEmotion.desc',
     },
     {
-        name: '章末钩子率 vs 张力峰值',
+        name: '章末钩子率 vs 张力峰值', nameKey: 'engineMsg.qualityRule.hookRateVsTension.name',
         dimensionA: 'rhythm', dimensionB: 'rhythm',
         fieldA: 'hookAnalysis.hookRate', fieldB: 'tensionCurve.peaks.length',
         rule: 'positive_correlation',
-        description: '钩子率高的章节应有更多张力峰值',
+        description: '钩子率高的章节应有更多张力峰值', descriptionKey: 'engineMsg.qualityRule.hookRateVsTension.desc',
     },
     {
-        name: '对话比例 vs Show占比',
+        name: '对话比例 vs Show占比', nameKey: 'engineMsg.qualityRule.dialogueVsShow.name',
         dimensionA: 'style', dimensionB: 'readability',
         fieldA: 'dialogueStyle.dialogueRatio', fieldB: 'showTell.showPercentage',
         rule: 'positive_correlation',
-        description: '对话多的文本 Show 占比应更高',
+        description: '对话多的文本 Show 占比应更高', descriptionKey: 'engineMsg.qualityRule.dialogueVsShow.desc',
     },
     {
-        name: '词汇丰富度 vs AI痕迹',
+        name: '词汇丰富度 vs AI痕迹', nameKey: 'engineMsg.qualityRule.vocabularyVsAiTrace.name',
         dimensionA: 'style', dimensionB: 'readability',
         fieldA: 'vocabularyRichness.ttr', fieldB: 'aiTrace.overallScore',
         rule: 'negative_correlation',
-        description: '词汇丰富度越高，AI痕迹应越低',
+        description: '词汇丰富度越高，AI痕迹应越低', descriptionKey: 'engineMsg.qualityRule.vocabularyVsAiTrace.desc',
     },
     {
-        name: '金手指出现 vs 商业评分',
+        name: '金手指出现 vs 商业评分', nameKey: 'engineMsg.qualityRule.goldenFingerVsCommercial.name',
         dimensionA: 'commercial', dimensionB: 'commercial',
         fieldA: 'goldenThreeChapters.subScores.goldenFinger', fieldB: 'overallScore',
         rule: 'positive_correlation',
-        description: '金手指得分高则商业评分高',
+        description: '金手指得分高则商业评分高', descriptionKey: 'engineMsg.qualityRule.goldenFingerVsCommercial.desc',
     },
     {
-        name: '角色数 vs 网络密度',
+        name: '角色数 vs 网络密度', nameKey: 'engineMsg.qualityRule.charactersVsDensity.name',
         dimensionA: 'character', dimensionB: 'character',
         fieldA: 'characters.length', fieldB: 'networkCentrality.networkDensity',
         rule: 'range_check', threshold: 0.3,
-        description: '角色数多时网络密度不应过低',
+        description: '角色数多时网络密度不应过低', descriptionKey: 'engineMsg.qualityRule.charactersVsDensity.desc',
     },
     {
-        name: '设定密度 vs 世界观覆盖度',
+        name: '设定密度 vs 世界观覆盖度', nameKey: 'engineMsg.qualityRule.settingVsWorldbuilding.name',
         dimensionA: 'foreshadow', dimensionB: 'foreshadow',
         fieldA: 'settingDensity.avgDensity', fieldB: 'worldbuilding.coverageScore',
         rule: 'positive_correlation',
-        description: '设定密度高则世界观覆盖度高',
+        description: '设定密度高则世界观覆盖度高', descriptionKey: 'engineMsg.qualityRule.settingVsWorldbuilding.desc',
     },
     {
-        name: '结构匹配度 vs 节奏曲线评分',
+        name: '结构匹配度 vs 节奏曲线评分', nameKey: 'engineMsg.qualityRule.structureVsRhythm.name',
         dimensionA: 'structure', dimensionB: 'rhythm',
         fieldA: 'templateMatch.bestMatch.matchScore', fieldB: 'rhythmCurve.avgScore',
         rule: 'positive_correlation',
-        description: '结构清晰的作品节奏评分也高',
+        description: '结构清晰的作品节奏评分也高', descriptionKey: 'engineMsg.qualityRule.structureVsRhythm.desc',
     },
     {
         name: '情感波动度 vs 张力标准差',

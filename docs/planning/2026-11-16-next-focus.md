@@ -2798,3 +2798,40 @@ worker 之间不能传对象。回退，留给 12 按域处理时专门设计（
 `check:jsdoc` 报「已注释导出从 2 降到 1，未注释导出从 0 增到 1」。修法是把注释移回类前。
 
 **下一轮**：ZC-20261120-12（按域批量迁移 ui-copy-in-engine）。
+
+## 第九十七轮：i18n engine 分层② —— 按域批量迁移（2026-11-19，ZCode · ZC-20261120-12）
+
+**结果**：`ui-copy-in-engine` **5,230 → 1,908 字**，达到 DSH 定的 ≤2,000 目标。
+
+**按域提交（两批）**
+- 批 1 `dc8d7c28`：`review-agent`（15 条）+ `font-manager` 字体预设 labelKey（11 条）+ `attachment-service`（2 条）
+- 批 2：`api-connectivity-service`（13）+ `step-definitions`（6 校验 + 11 步骤名）+
+  `quality-scorer`（8 组规则 name/desc）+ `post-generation-check`（9）+ `publication-profile`（3）
+
+**必须补的两条审计判定（否则数字虚高）**
+
+迁移过程中发现：**「加了 key 但保留中文兜底」这种形态，审计脚本认不出来**，数字不降。
+这是真正的漏洞——如果脚本只认「中文消失」，那平台鼓励的做法（保留兜底 + 加 key）
+反而不被承认，会逼着人删兜底。补了两条：
+- `hasKeyCompanion` 认两种形态：对象里的 `field` + `fieldKey` 伴生、`uiMessage(code, '中文兜底')` 调用式；
+- 命中过半即判 `structured` —— 中文已退化为兜底值，不再直接上屏。
+
+**两处按判据改判（不迁，反而更诚实）**
+- `shared/optimization-advisor.ts`：`reason` 是决策理由，输出给 CLI 与 agent —— 属 `ai-prompt`；
+- `services/constraint-block-service.ts`：`assemble()` 组装的是**喂给 LLM 的本章约束块**
+  （人物卡/伏笔/节奏要求），是 prompt 内容不是界面文案 —— 属 `ai-prompt`。
+
+后一条尤其值得记：它被分类成 `ui-copy-in-engine` 是因为「短句 + 像给人看的」，
+但读代码就知道这些串是拼进 prompt 的。**审计脚本判形态，人判语义**——这也是为什么
+`MANUAL` 白名单要存在。
+
+**剩余 1,908 字 / 32 文件**（长尾，单文件均 <200 字）：`model-discovery`(184)、
+`state-advice`(158)+`wiring`(144)、`step-runner-retry`(122)、`project-migration-service`(116)、
+`fact-maintenance`(109)、`rule-engine`(105)、`ledger-link`(104)…
+
+**踩到的门禁**：三处导出（`BODY_CHANGE_INVALIDATED_STEPS` / `ApiConnectivityLevel` / `NameResolver`）
+因为是「常量表插在了它们前面」，被 `check:jsdoc` 判成「新导出缺注释」——补 JSDoc 解决。
+这个坑值得警惕：**插入代码块的位置会影响门禁的「新增」判定**。
+
+**验收**：preflight EXIT=0（986 文件 / 10337 通过 + 3 跳过）；`check:i18n` zh/en 各 **3411**；
+`check:bundle` main.js → **6036579**（+15,284，54 条资源 + 5 个域常量表，已 note）。

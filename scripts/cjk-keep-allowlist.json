@@ -95,6 +95,21 @@
       "path": "engine/mode-injection.ts",
       "reason": "模式覆盖块的提示词片段，进 LLM 上下文",
       "reclassifiedAs": "ai-prompt"
+    },
+    {
+      "path": "shared/optimization-advisor.ts",
+      "reason": "决策理由文本（reason 字段）：输出给 CLI 与 agent，是模型/工具的输入，改语言会改变判断依据的可读性",
+      "reclassifiedAs": "ai-prompt"
+    },
+    {
+      "path": "shared/publication-profile.ts",
+      "reason": "PUBLICATION_LEVEL_LABELS 已改为兜底值，展示走新增的 publicationLevelLabel()（PUBLICATION_LEVEL_KEYS）；审计脚本的 hasKeyCompanion 认不出「独立对象 + 独立求值函数」这种形态",
+      "reclassifiedAs": "structured"
+    },
+    {
+      "path": "services/constraint-block-service.ts",
+      "reason": "assemble() 组装的是喂给 LLM 的本章约束块（人物卡/伏笔/节奏要求），是 prompt 内容不是界面文案",
+      "reclassifiedAs": "ai-prompt"
     }
   ],
   "triage": [
@@ -105,10 +120,6 @@
     {
       "path": "engine/fingerprint-extractor.ts",
       "reason": "onProgress 快照带中文 message；计划改为 phase 枚举 + 上层查键（ZC-20261120-11）"
-    },
-    {
-      "path": "shared/optimization-advisor.ts",
-      "reason": "优化建议文本；应返回 key + params（ZC-20261120-12）"
     },
     {
       "path": "services/api-connectivity-service.ts",
@@ -127,10 +138,6 @@
       "reason": "步骤定义里的 label/description；应参照 creation-flow 的 labelKey 做法（ZC-20261120-12）"
     },
     {
-      "path": "shared/publication-profile.ts",
-      "reason": "出版配置的展示名；应走 key（ZC-20261120-12）"
-    },
-    {
       "path": "engine/context/state-advice.ts",
       "reason": "状态建议文本；应返回结构化建议（ZC-20261120-12）"
     },
@@ -141,10 +148,6 @@
     {
       "path": "services/model-discovery.ts",
       "reason": "模型发现失败的用户提示；应返回结构化结果（ZC-20261120-12）"
-    },
-    {
-      "path": "services/constraint-block-service.ts",
-      "reason": "约束块的展示文本；应走 key（ZC-20261120-12）"
     },
     {
       "path": "engine/step-runner-retry.ts",
@@ -275,11 +278,11 @@
   "baseline": {
     "uiCopyInEngineFiles": 57,
     "uiCopyInEngineLiterals": 963,
-    "uiCopyInEngineChars": 6916,
+    "uiCopyInEngineChars": 1908,
     "unclaimedFiles": 0,
     "unclaimedChars": 0,
     "greyFiles": 225,
     "greyChars": 34546,
-    "triageChars": 5230
+    "triageChars": 4553
   }
 }

@@ -5,6 +5,7 @@
  * 使用 Obsidian requestUrl 绕开 CORS；不记录密钥，不把响应正文写入日志。
  */
 import { requestUrl } from 'obsidian';
+import { resolveUiMessage, uiMessage } from '@/shared/ui-message';
 import { createLogger } from '@/shared/logger';
 import { isStoredCiphertext } from '@/shared/secret-value';
 import {
@@ -17,6 +18,33 @@ import {
 } from '@/shared/api-format';
 
 const log = createLogger('ApiConnectivity');
+
+/**
+ * 连通性等级。
+ */
+
+/**
+ * 连通性测试的用户可见消息（i18n engine 分层②）。
+ *
+ * 集中在表里而不是散在 12 个 return 分支：这个函数的返回值会被
+ * `ui/onboarding-modal.ts` 直接显示给用户，把文案集中后，
+ * 「这个模块对用户说了什么」可以一次读完。
+ */
+const CONN_MSG = {
+    endpointEmpty: uiMessage('engineMsg.conn.endpointEmpty', 'API 端点为空或格式无效'),
+    endpointInvalid: uiMessage('engineMsg.conn.endpointInvalid', 'API 端点不是合法 URL'),
+    noModel: uiMessage('engineMsg.conn.noModel', '未选择模型'),
+    keyLocked: uiMessage('engineMsg.conn.keyLocked', '密钥处于加密锁定状态：请先在页面顶部「输入口令解锁」，再测试连通性'),
+    noKey: uiMessage('engineMsg.conn.noKey', '缺少 API 密钥'),
+    httpOkButError: uiMessage('engineMsg.conn.httpOkButError', 'HTTP 200 但返回错误：{detail}'),
+    formatAbnormal: uiMessage('engineMsg.conn.formatAbnormal', '响应格式异常'),
+    emptyResponse: uiMessage('engineMsg.conn.emptyResponse', '端点可达且鉴权通过，但响应为空；请检查模型是否支持该接口'),
+    slow: uiMessage('engineMsg.conn.slow', '连通正常，但响应较慢（{ms}ms）'),
+    ok: uiMessage('engineMsg.conn.ok', '连通正常（{ms}ms）'),
+    timeout: uiMessage('engineMsg.conn.timeout', '请求超时（>{seconds}s）'),
+    networkError: uiMessage('engineMsg.conn.networkError', '网络错误：{detail}'),
+    httpError: uiMessage('engineMsg.conn.httpError', '{label}（HTTP {status}）：{detail}'),
+} as const;
 
 /**
  * 连通性等级。
@@ -256,15 +284,15 @@ export async function testProviderConnectivity(
     const base = { endpoint: endpoint || config.endpoint || '', model, testedAt };
 
     if (!config.endpoint || !endpoint) {
-        return { ...base, level: 'error', status: 'invalid_config', message: 'API 端点为空或格式无效', latencyMs: 0 };
+        return { ...base, level: 'error', status: 'invalid_config', message: resolveUiMessage(CONN_MSG.endpointEmpty), latencyMs: 0 };
     }
     try {
         new URL(endpoint);
     } catch {
-        return { ...base, level: 'error', status: 'invalid_config', message: 'API 端点不是合法 URL', latencyMs: 0 };
+        return { ...base, level: 'error', status: 'invalid_config', message: resolveUiMessage(CONN_MSG.endpointInvalid), latencyMs: 0 };
     }
     if (!model) {
-        return { ...base, level: 'error', status: 'invalid_config', message: '未选择模型', latencyMs: 0 };
+        return { ...base, level: 'error', status: 'invalid_config', message: resolveUiMessage(CONN_MSG.noModel), latencyMs: 0 };
     }
     const local = config.sourceType === 'local' || isLocalEndpoint(endpoint);
     const key = String(config.apiKey || '').trim();
@@ -276,12 +304,12 @@ export async function testProviderConnectivity(
             ...base,
             level: 'error',
             status: 'auth_failed',
-            message: '密钥处于加密锁定状态：请先在页面顶部「输入口令解锁」，再测试连通性',
+            message: resolveUiMessage(CONN_MSG.keyLocked),
             latencyMs: 0,
         };
     }
     if (!local && !key) {
-        return { ...base, level: 'error', status: 'auth_failed', message: '缺少 API 密钥', latencyMs: 0 };
+        return { ...base, level: 'error', status: 'auth_failed', message: resolveUiMessage(CONN_MSG.noKey), latencyMs: 0 };
     }
 
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -352,7 +380,7 @@ export async function testProviderConnectivity(
                 ...base,
                 level: 'error',
                 status: 'unknown_error',
-                message: `HTTP 200 但返回错误：${parseErrorMessage(response) || '响应格式异常'}`,
+                message: resolveUiMessage(uiMessage('engineMsg.conn.httpOkButError', 'HTTP 200 但返回错误：{detail}', { detail: parseErrorMessage(response) || resolveUiMessage(CONN_MSG.formatAbnormal) })),
                 latencyMs,
                 httpStatus: response.status,
             };
@@ -363,7 +391,7 @@ export async function testProviderConnectivity(
                 ...base,
                 level: 'warn',
                 status: 'empty_response',
-                message: '端点可达且鉴权通过，但响应为空；请检查模型是否支持该接口',
+                message: resolveUiMessage(CONN_MSG.emptyResponse),
                 latencyMs,
                 httpStatus: response.status,
             };
@@ -374,7 +402,7 @@ export async function testProviderConnectivity(
                 ...base,
                 level: 'warn',
                 status: 'degraded',
-                message: `连通正常，但响应较慢（${latencyMs}ms）`,
+                message: resolveUiMessage(uiMessage('engineMsg.conn.slow', '连通正常，但响应较慢（{ms}ms）', { ms: latencyMs })),
                 latencyMs,
                 httpStatus: response.status,
             };
@@ -384,7 +412,7 @@ export async function testProviderConnectivity(
             ...base,
             level: 'ok',
             status: 'ok',
-            message: `连通正常（${latencyMs}ms）`,
+            message: resolveUiMessage(uiMessage('engineMsg.conn.ok', '连通正常（{ms}ms）', { ms: latencyMs })),
             latencyMs,
             httpStatus: response.status,
         };
@@ -392,14 +420,14 @@ export async function testProviderConnectivity(
         const latencyMs = Date.now() - started;
         const message = e instanceof Error ? e.message : String(e);
         if (message === 'timeout') {
-            return { ...base, level: 'error', status: 'timeout', message: `请求超时（>${TIMEOUT_MS / 1000}s）`, latencyMs };
+            return { ...base, level: 'error', status: 'timeout', message: resolveUiMessage(uiMessage('engineMsg.conn.timeout', '请求超时（>{seconds}s）', { seconds: TIMEOUT_MS / 1000 })), latencyMs };
         }
         log.warn('[ApiConnectivity] network error', message);
         return {
             ...base,
             level: 'error',
             status: 'network_error',
-            message: `网络错误：${shortMessage(message)}`,
+            message: resolveUiMessage(uiMessage('engineMsg.conn.networkError', '网络错误：{detail}', { detail: shortMessage(message) })),
             latencyMs,
         };
     } finally {

@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 354 | 146849 | 1951 | 1545 | 79% |
-| `services/` | 65 | 19508 | 296 | 203 | 69% |
-| `shared/` | 259 | 52164 | 2195 | 1715 | 78% |
+| `engine/` | 354 | 146888 | 1951 | 1545 | 79% |
+| `services/` | 65 | 19560 | 296 | 204 | 69% |
+| `shared/` | 259 | 52210 | 2198 | 1718 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1596 | 88 | 58 | 66% |
-| `ui/` | 307 | 115287 | 1185 | 933 | 79% |
+| `ui/` | 307 | 115288 | 1185 | 933 | 79% |
 
 ## 文件清单
 
@@ -284,7 +284,7 @@
 | `engine/prompts/writing-rules-format.ts` | 48 | 3 | 3 |
 | `engine/prompts/writing-rules.ts` | 9 | 0 | 0 |
 | `engine/quality-gate.ts` | 206 | 5 | 4 |
-| `engine/quality-scorer.ts` | 384 | 5 | 3 |
+| `engine/quality-scorer.ts` | 388 | 5 | 3 |
 | `engine/quality/deviation-detector.ts` | 2056 | 26 | 22 |
 | `engine/quality/gate-snapshot.ts` | 131 | 3 | 3 |
 | `engine/quality/quality-engine-factory.ts` | 113 | 5 | 4 |
@@ -325,7 +325,7 @@
 | `engine/repository/item-repository.ts` | 117 | 1 | 1 |
 | `engine/repository/location-repository.ts` | 117 | 1 | 1 |
 | `engine/repository/project-repository.ts` | 145 | 1 | 1 |
-| `engine/review-agent.ts` | 450 | 1 | 1 |
+| `engine/review-agent.ts` | 462 | 1 | 1 |
 | `engine/revision/quality-issue-parser.ts` | 141 | 3 | 3 |
 | `engine/revision/revision-guard.ts` | 194 | 7 | 6 |
 | `engine/revision/revision-prompts.ts` | 99 | 2 | 2 |
@@ -348,7 +348,7 @@
 | `engine/settlement/settlement-journal.ts` | 273 | 6 | 6 |
 | `engine/settlement/settlement-table-writer.ts` | 79 | 3 | 2 |
 | `engine/settlement/settlement-types.ts` | 46 | 2 | 1 |
-| `engine/step-definitions.ts` | 268 | 13 | 11 |
+| `engine/step-definitions.ts` | 291 | 13 | 11 |
 | `engine/step-modal-controller.ts` | 660 | 2 | 2 |
 | `engine/step-prompt-assembly.ts` | 318 | 5 | 4 |
 | `engine/step-result-saver.ts` | 574 | 5 | 4 |
@@ -393,9 +393,9 @@
 | `engine/world-state-snapshot.ts` | 199 | 6 | 6 |
 | `engine/writing-profile.ts` | 566 | 8 | 8 |
 | `engine/writing-quality-engine.ts` | 1376 | 14 | 13 |
-| `services/api-connectivity-service.ts` | 409 | 9 | 9 |
+| `services/api-connectivity-service.ts` | 437 | 9 | 9 |
 | `services/assertion-context-service.ts` | 78 | 3 | 2 |
-| `services/attachment-service.ts` | 102 | 2 | 1 |
+| `services/attachment-service.ts` | 103 | 2 | 1 |
 | `services/backup-center-service.ts` | 182 | 4 | 1 |
 | `services/baseline-probe-service.ts` | 226 | 4 | 1 |
 | `services/canon-research-service.ts` | 876 | 12 | 10 |
@@ -426,7 +426,7 @@
 | `services/performance-monitor.ts` | 819 | 9 | 9 |
 | `services/plan-spec-service.ts` | 147 | 3 | 2 |
 | `services/planning-store.ts` | 76 | 1 | 1 |
-| `services/post-generation-check-service.ts` | 198 | 2 | 1 |
+| `services/post-generation-check-service.ts` | 221 | 2 | 2 |
 | `services/project-health-service.ts` | 223 | 5 | 2 |
 | `services/project-index-service.ts` | 232 | 1 | 1 |
 | `services/project-rename-service.ts` | 192 | 2 | 2 |
@@ -621,7 +621,7 @@
 | `shared/provider-detection.ts` | 240 | 4 | 4 |
 | `shared/provider-settings-maintenance.ts` | 125 | 4 | 2 |
 | `shared/provider-ui-model.ts` | 420 | 24 | 17 |
-| `shared/publication-profile.ts` | 306 | 15 | 15 |
+| `shared/publication-profile.ts` | 330 | 17 | 17 |
 | `shared/quality-baseline.ts` | 184 | 10 | 10 |
 | `shared/quality-benchmark.ts` | 112 | 6 | 6 |
 | `shared/quality-grade.ts` | 117 | 9 | 9 |
@@ -689,7 +689,7 @@
 | `shared/true-random.ts` | 134 | 3 | 3 |
 | `shared/tts-text.ts` | 262 | 10 | 6 |
 | `shared/types.ts` | 729 | 48 | 11 |
-| `shared/ui-message.ts` | 101 | 5 | 3 |
+| `shared/ui-message.ts` | 123 | 6 | 4 |
 | `shared/unit-card-model.ts` | 306 | 13 | 9 |
 | `shared/unit-context-prompt.ts` | 119 | 4 | 4 |
 | `shared/unload-barrier.ts` | 72 | 1 | 0 |
@@ -758,7 +758,7 @@
 | `ui/co-writing/kb-panel.ts` | 386 | 12 | 11 |
 | `ui/co-writing/kb-reference-card.ts` | 174 | 2 | 2 |
 | `ui/co-writing/kb-reference-config.ts` | 206 | 10 | 7 |
-| `ui/co-writing/layout-assembly.ts` | 492 | 22 | 13 |
+| `ui/co-writing/layout-assembly.ts` | 493 | 22 | 13 |
 | `ui/co-writing/markdown-highlight.ts` | 258 | 9 | 7 |
 | `ui/co-writing/markdown-shortcut.ts` | 99 | 2 | 1 |
 | `ui/co-writing/markdown-toolbar.ts` | 98 | 2 | 1 |

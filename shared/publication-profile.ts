@@ -5,6 +5,7 @@
  * 目标区间复用 `shared/creation-mode.ts` 的 CREATION_MODE_SPECS，避免第二套规格。
  */
 import { CREATION_MODE_SPECS, type CreationMode } from './creation-mode';
+import { hasMessage, t } from '@/i18n';
 import { countCjkChars } from './word-count';
 
 /**
@@ -37,13 +38,36 @@ export type PublicationLevel = 'draft' | 'finished' | 'submission';
 export type PublicationScope = 'full' | 'written-only';
 
 /**
- * 交付级别文案（UI 下拉与报告复用，避免第二套）。
+ * 交付级别 i18n 键（i18n engine 分层②）。
+ *
+ * 原 `PUBLICATION_LEVEL_LABELS` 里的中文改为**兜底值**，展示走
+ * `publicationLevelLabel()`；保留原常量是为了不漏调用方（缺键时回落它）。
+ */
+export const PUBLICATION_LEVEL_KEYS: Record<PublicationLevel, string> = {
+    draft: 'engineMsg.pubLevel.draft',
+    finished: 'engineMsg.pubLevel.finished',
+    submission: 'engineMsg.pubLevel.submission',
+};
+
+/**
+ * 交付级别中文兜底值（缺键时使用，与迁移前逐字一致）。
  */
 export const PUBLICATION_LEVEL_LABELS: Record<PublicationLevel, string> = {
     draft: '草稿导出（仅提示）',
     finished: '成品导出（推荐）',
     submission: '平台投稿（严格）',
 };
+
+/**
+ * 交付级别的展示名（当前语言）；缺键回落中文兜底。
+ *
+ * @param level - 交付级别
+ * @returns 展示名
+ */
+export function publicationLevelLabel(level: PublicationLevel): string {
+    const key = PUBLICATION_LEVEL_KEYS[level];
+    return key && hasMessage(key) ? t(key) : PUBLICATION_LEVEL_LABELS[level];
+}
 
 /**
  * 出版检查输入事实。
