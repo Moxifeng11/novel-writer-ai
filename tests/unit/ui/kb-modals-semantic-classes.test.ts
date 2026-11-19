@@ -44,13 +44,19 @@ describe('Slice G：知识库弹窗语义类', () => {
 
     it('四个主弹窗标题都挂 nw-modal-title（窄弹窗文件选择器除外）', () => {
         const titles = [...MODALS.matchAll(/createEl\('h3',\s*\{([^}]*)\}/g)].map(m => ({
-            text: /text:\s*'([^']*)'/.exec(m[1])?.[1] ?? '',
+            text: /text:\s*([^,}]+)/.exec(m[1])?.[1]?.trim() ?? '',
             cls: /cls:\s*'([^']*)'/.exec(m[1])?.[1] ?? '',
         }));
         const withTitle = titles.filter(t => t.cls.split(/\s+/).includes('nw-modal-title'));
         expect(withTitle).toHaveLength(4);
+        // 标题文案走 t()（键的存在性由 check:i18n 静态校验），不再硬编码中文
+        for (const title of withTitle) {
+            expect(title.text).not.toMatch(/[\u4e00-\u9fff]/);
+        }
         // 剩下的裸 h3 只应是窄弹窗「选择文件」——它保留浏览器默认间距，与主弹窗标题节奏不同
-        expect(titles.filter(t => !t.cls).map(t => t.text)).toEqual(['选择文件']);
+        expect(titles.filter(t => !t.cls).map(t => t.text)).toEqual([
+            "t('knowledgebase.modal.import.selectTitle')",
+        ]);
     });
 
     it('TS 用到的每个 nw-kb-modal-* 类都在样式源里有定义', () => {

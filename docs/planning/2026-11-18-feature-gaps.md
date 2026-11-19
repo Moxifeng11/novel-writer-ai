@@ -262,7 +262,13 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
   按语言走 `joinFields()`（zh `、` / en `, `）；保留 `EARLY_STAGE_HINT`、补全重试提示词、frontmatter 正则键、
   `content.includes('身份：主角')` 与 `log.*`；zh/en 资源各 **4386** 条；棘轮收紧到 **215 文件 / 7139 条**；
   新增 `tests/unit/i18n/character-gen-resources.test.ts` 5 例；实机 zh/en 均 647×528（英文未撑开弹窗）。
-- 后续：第二期余下（知识库弹窗链 `ui/views/knowledge-base-modals.ts` 563 字；知识库 D 类两文件 `ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`
+- 第二期第34片（2026-11-19，DSH）：知识库四个管理弹窗 —— `ui/views/knowledge-base-modals.ts`
+  1,378 → 1,275 行，124 处 `t()` 迁 `knowledgebase.modal.*` 99 键（import 22 / edit 17 /
+  genre 33 + tag 4 / cat 7 / batch 16）；复用 `common.*`、`format.channel.*`、`dim.*`（权重六项）；
+  技巧分类两处 7 项 map 合并为一组键；保留 `log.warn/error` 五行；zh/en 资源各 **4485** 条；
+  棘轮收紧到 **215 文件 / 7000 条**；`kb-modals-semantic-classes` 4 例改断言（标题不含 CJK）+
+  `kb-modals-logic` 12 例零修改；实机 7 场景 zh/en 零横向溢出、en UI 文案 CJK=0。
+- 后续：第二期余下（知识库 D 类两文件 `ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`
   用户已裁定随视觉重构；散落弹窗 golden-opening 1982 / novel-tags 1099 / add-fanfic-setting 973 /
   ai-builder 864 等），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 
@@ -272,6 +278,6 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
 
 1 → 2 → 3 → 4 → 5 →（6 可选）→ 7。
 
-进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第一~十片（命令面板 / 外观设置页 / 模型设置页 / 通用设置六分区 / 写作设置五分区 / 写作知识库分区 / 提示词管理器设置页 / 设置搜索与迷你设置弹窗外壳 / 拆解引擎分区 / 写作指纹库分区）已交付（2026-11-18）；下一个候选是 ⑦ 第二期余下（`ui/settings/setup-section.ts` 477 起，及其余设置分区/写作主流程 Notice）。
+进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~34 片（命令面板 → 知识库四个管理弹窗）已交付（2026-11-18/19）；下一个候选是 ⑦ 第二期余下（散落弹窗 golden-opening / novel-tags / add-fanfic-setting / ai-builder 等，知识库 D 类两文件随视觉重构）。
 
 理由：1 是修「假成功」缺陷；2 是把已交付引擎变成写作时可见的价值；3 是投稿刚需且不依赖 AI；4/5 是低成本体验补洞；6/7 视需要。

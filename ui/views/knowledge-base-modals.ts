@@ -7,6 +7,7 @@ import { createLogger } from '@/shared/logger';
 import { OperationConfirmModal } from '@/ui/components/progress';
 import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
 import { isImeComposing } from '@/shared/keyboard';
+import { t } from '@/i18n';
 import { detectGenreChanges, isValidBookName } from './kb-modals-logic';
 
 const log = createLogger('KnowledgeBaseModals');
@@ -19,6 +20,21 @@ type MkdirCapableAdapter = {
     mkdir(path: string): Promise<void>;
     write(path: string, data: string): Promise<void>;
 };
+
+/**
+ * 写作技巧的分类选项；下拉框与只读标签共用一份键表，避免两处译名漂移。
+ */
+function techniqueCategories(): Array<{ value: TechniqueDef['category']; label: string }> {
+    return [
+        { value: 'structure', label: t('knowledgebase.modal.genre.cat.structure') },
+        { value: 'cool_point', label: t('knowledgebase.modal.genre.cat.coolPoint') },
+        { value: 'emotion', label: t('knowledgebase.modal.genre.cat.emotion') },
+        { value: 'rhythm', label: t('knowledgebase.modal.genre.cat.rhythm') },
+        { value: 'genre', label: t('knowledgebase.modal.genre.cat.genre') },
+        { value: 'style', label: t('knowledgebase.modal.genre.cat.style') },
+        { value: 'foreshadow', label: t('knowledgebase.modal.genre.cat.foreshadow') },
+    ];
+}
 
 /**
  * 导入书籍弹窗。
@@ -48,7 +64,7 @@ export class ImportBookModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h3', { text: '📥 导入参考书籍', cls: 'nw-modal-title' });
+        contentEl.createEl('h3', { text: t('knowledgebase.modal.import.title'), cls: 'nw-modal-title' });
 
         if (this.step === 'select') {
             this.renderSelectStep();
@@ -65,9 +81,9 @@ export class ImportBookModal extends Modal {
         const { contentEl } = this;
 
         const options = [
-            { icon: '📂', label: '从 Vault 选择文件', desc: '选择 vault 中的 .txt 或 .md 文件', action: () => this.selectFromVault() },
-            { icon: '📄', label: '从本地文件导入', desc: '从本地文件系统选择文件', action: () => this.importFromFile() },
-            { icon: '✏️', label: '手动输入信息', desc: '手动填写书籍信息', action: () => { this.step = 'form'; this.render(); } },
+            { icon: '📂', label: t('knowledgebase.modal.import.vaultOption'), desc: t('knowledgebase.modal.import.vaultOptionDesc'), action: () => this.selectFromVault() },
+            { icon: '📄', label: t('knowledgebase.modal.import.fileOption'), desc: t('knowledgebase.modal.import.fileOptionDesc'), action: () => this.importFromFile() },
+            { icon: '✏️', label: t('knowledgebase.modal.import.manualOption'), desc: t('knowledgebase.modal.import.manualOptionDesc'), action: () => { this.step = 'form'; this.render(); } },
         ];
 
         options.forEach(opt => {
@@ -90,7 +106,7 @@ export class ImportBookModal extends Modal {
             );
 
             if (files.length === 0) {
-                new Notice('Vault 中没有找到 .txt 或 .md 文件');
+                new Notice(t('knowledgebase.modal.import.noFiles'));
                 return;
             }
 
@@ -110,12 +126,12 @@ export class ImportBookModal extends Modal {
                     const { contentEl } = this;
                     contentEl.empty();
                     // 文件选择是窄弹窗（nw-modal-sm），标题保持浏览器默认间距，不加 nw-modal-title(0 margin)
-                    contentEl.createEl('h3', { text: '选择文件' });
+                    contentEl.createEl('h3', { text: t('knowledgebase.modal.import.selectTitle') });
 
                     const searchInput = contentEl.createEl('input', {
                         type: 'text',
                         cls: 'nw-kb-modal-search',
-                        attr: { placeholder: '搜索文件...' }
+                        attr: { placeholder: t('knowledgebase.modal.import.searchPlaceholder') }
                     });
 
                     const list = contentEl.createDiv({ cls: 'nw-kb-modal-file-list' });
@@ -144,7 +160,7 @@ export class ImportBookModal extends Modal {
             });
             modal.open();
         } catch (e) {
-            showErrorNotice('选择文件失败');
+            showErrorNotice(t('knowledgebase.modal.import.selectFailed'));
         }
     }
 
@@ -157,7 +173,7 @@ export class ImportBookModal extends Modal {
             if (!file) return;
             if (isSourceFileTooLarge(file.size, MAX_SOURCE_FILE_SIZE)) {
                 // SEC-7：读前硬限（file.text() 是全量读，兜底截断为时已晚）
-                showErrorNotice(`文件过大: ${file.name}（${formatSourceFileSizeMb(file.size)}MB，上限 10MB）`);
+                showErrorNotice(t('knowledgebase.modal.import.tooLarge', { name: file.name, size: formatSourceFileSizeMb(file.size) }));
                 return;
             }
             try {
@@ -165,7 +181,7 @@ export class ImportBookModal extends Modal {
                 const name = resolveBookNameFromFile(file.name);
                 await this.importBook(name, '', file.name, text);
             } catch (err) {
-                showErrorNotice('读取文件失败');
+                showErrorNotice(t('knowledgebase.modal.import.readFailed'));
             }
         });
         document.body.appendChild(input);
@@ -177,23 +193,23 @@ export class ImportBookModal extends Modal {
         const { contentEl } = this;
 
         new Setting(contentEl)
-            .setName('书名')
-            .addText(t => t
-                .setPlaceholder('请输入书名')
+            .setName(t('knowledgebase.modal.import.nameLabel'))
+            .addText(txt => txt
+                .setPlaceholder(t('knowledgebase.modal.import.namePlaceholder'))
                 .setValue(this.nameValue)
                 .onChange(v => this.nameValue = v));
 
         new Setting(contentEl)
-            .setName('作者')
-            .addText(t => t
-                .setPlaceholder('请输入作者（可选）')
+            .setName(t('knowledgebase.modal.import.authorLabel'))
+            .addText(txt => txt
+                .setPlaceholder(t('knowledgebase.modal.import.authorPlaceholder'))
                 .setValue(this.authorValue)
                 .onChange(v => this.authorValue = v));
 
         const actions = contentEl.createDiv({ cls: 'nw-kb-modal-actions' });
 
         const backBtn = actions.createEl('button', {
-            text: '返回',
+            text: t('knowledgebase.modal.import.back'),
             cls: 'nw-btn nw-btn-secondary'
         });
         backBtn.addEventListener('click', () => {
@@ -202,12 +218,12 @@ export class ImportBookModal extends Modal {
         });
 
         const confirmBtn = actions.createEl('button', {
-            text: '确认导入',
+            text: t('knowledgebase.modal.import.confirm'),
             cls: 'nw-btn nw-btn-primary'
         });
         confirmBtn.addEventListener('click', () => {
             if (!this.nameValue.trim()) {
-                new Notice('请输入书名');
+                new Notice(t('knowledgebase.modal.import.needName'));
                 return;
             }
             this.importBook(this.nameValue.trim(), this.authorValue.trim(), '', '');
@@ -216,7 +232,7 @@ export class ImportBookModal extends Modal {
 
     private async importBook(name: string, author: string, sourcePath: string, content: string): Promise<void> {
         if (!this.kbManager) {
-            new Notice('知识库管理器未初始化');
+            new Notice(t('knowledgebase.modal.import.notReady'));
             return;
         }
         // addBook 在第一个 await 之前就同步写入内存表，重复点击会生成同名副本
@@ -257,7 +273,7 @@ export class ImportBookModal extends Modal {
             this.close();
         } catch (e) {
             log.error('导入失败:', e);
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '导入失败' });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.modal.import.failedTitle') });
         } finally {
             this.importInFlight = false;
         }
@@ -327,36 +343,36 @@ export class EditBookModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h3', { text: '✏️ 编辑书籍信息', cls: 'nw-modal-title' });
+        contentEl.createEl('h3', { text: t('knowledgebase.modal.edit.title'), cls: 'nw-modal-title' });
 
         new Setting(contentEl)
-            .setName('书名')
-            .addText(t => t
+            .setName(t('knowledgebase.modal.edit.nameLabel'))
+            .addText(txt => txt
                 .setValue(this.nameValue)
                 .onChange(v => this.nameValue = v));
 
         new Setting(contentEl)
-            .setName('作者')
-            .addText(t => t
+            .setName(t('knowledgebase.modal.edit.authorLabel'))
+            .addText(txt => txt
                 .setValue(this.authorValue)
                 .onChange(v => this.authorValue = v));
 
         new Setting(contentEl)
-            .setName('简介')
-            .addTextArea(t => t
+            .setName(t('knowledgebase.modal.edit.synopsisLabel'))
+            .addTextArea(txt => txt
                 .setValue(this.synopsisValue)
                 .onChange(v => this.synopsisValue = v)
                 .inputEl.rows = 4);
 
-        contentEl.createEl('h4', { text: '题材分类', cls: 'nw-kb-modal-section-title nw-kb-modal-section-title--spaced' });
+        contentEl.createEl('h4', { text: t('knowledgebase.modal.edit.genreSection'), cls: 'nw-kb-modal-section-title nw-kb-modal-section-title--spaced' });
 
         const channelSetting = new Setting(contentEl)
-            .setName('频道')
+            .setName(t('knowledgebase.modal.edit.channelLabel'))
             .addDropdown(d => {
-                d.addOption('', '请选择');
-                d.addOption('male', '男频');
-                d.addOption('female', '女频');
-                d.addOption('neutral', '中性');
+                d.addOption('', t('knowledgebase.modal.edit.choosePlaceholder'));
+                d.addOption('male', t('knowledgebase.format.channel.male'));
+                d.addOption('female', t('knowledgebase.format.channel.female'));
+                d.addOption('neutral', t('knowledgebase.format.channel.neutral'));
                 d.setValue(this.channelValue);
                 d.onChange(v => {
                     this.channelValue = v as GenreChannelKey | '';
@@ -368,9 +384,9 @@ export class EditBookModal extends Modal {
         void channelSetting;
 
         const genreSetting = new Setting(contentEl)
-            .setName('大类')
+            .setName(t('knowledgebase.modal.edit.majorLabel'))
             .addDropdown(d => {
-                d.addOption('', '请选择');
+                d.addOption('', t('knowledgebase.modal.edit.choosePlaceholder'));
                 if (this.kb && this.channelValue) {
                     this.kb.getGenresByCategory(this.channelValue).forEach(g => {
                         d.addOption(g.id, g.name);
@@ -393,9 +409,9 @@ export class EditBookModal extends Modal {
             const genre = this.kb.getGenre(this.genreValue);
             if (genre?.subGenres && genre.subGenres.length > 0) {
                 const subSetting = new Setting(contentEl)
-                    .setName('细分')
+                    .setName(t('knowledgebase.modal.edit.subLabel'))
                     .addDropdown(d => {
-                        d.addOption('', '请选择');
+                        d.addOption('', t('knowledgebase.modal.edit.choosePlaceholder'));
                         genre.subGenres!.forEach(s => {
                             d.addOption(s.id, s.name);
                         });
@@ -408,7 +424,7 @@ export class EditBookModal extends Modal {
             }
         }
 
-        contentEl.createEl('h4', { text: '自定义标签', cls: 'nw-kb-modal-section-title nw-kb-modal-section-title--spaced' });
+        contentEl.createEl('h4', { text: t('knowledgebase.modal.edit.tagsSection'), cls: 'nw-kb-modal-section-title nw-kb-modal-section-title--spaced' });
 
         const tagsContainer = contentEl.createDiv({ cls: 'nw-kb-modal-tag-list' });
         this.renderCustomTags(tagsContainer);
@@ -417,10 +433,10 @@ export class EditBookModal extends Modal {
         const tagInput = addTagContainer.createEl('input', {
             type: 'text',
             cls: 'nw-kb-modal-input nw-kb-modal-input--md nw-kb-modal-input--flex',
-            attr: { placeholder: '输入标签，按回车添加' }
+            attr: { placeholder: t('knowledgebase.modal.edit.tagPlaceholder') }
         });
         const addTagBtn = addTagContainer.createEl('button', {
-            text: '添加',
+            text: t('knowledgebase.modal.edit.add'),
             cls: 'nw-btn nw-btn-primary nw-btn-sm'
         });
         const addTagHandler = () => {
@@ -440,13 +456,13 @@ export class EditBookModal extends Modal {
         const actions = contentEl.createDiv({ cls: 'nw-kb-modal-actions' });
 
         const cancelBtn = actions.createEl('button', {
-            text: '取消',
+            text: t('knowledgebase.common.cancel'),
             cls: 'nw-btn nw-btn-secondary'
         });
         cancelBtn.addEventListener('click', () => this.close());
 
         const saveBtn = actions.createEl('button', {
-            text: '保存',
+            text: t('knowledgebase.modal.edit.save'),
             cls: 'nw-btn nw-btn-primary'
         });
         saveBtn.addEventListener('click', () => this.save());
@@ -455,7 +471,7 @@ export class EditBookModal extends Modal {
     private renderCustomTags(container: HTMLElement): void {
         container.empty();
         if (this.customTagsList.length === 0) {
-            container.createSpan({ text: '暂无标签', cls: 'nw-kb-modal-tag-empty' });
+            container.createSpan({ text: t('knowledgebase.modal.edit.noTags'), cls: 'nw-kb-modal-tag-empty' });
             return;
         }
         this.customTagsList.forEach((tag, idx) => {
@@ -471,7 +487,7 @@ export class EditBookModal extends Modal {
 
     private save(): void {
         if (!this.kbManager || !isValidBookName(this.nameValue)) {
-            new Notice('请填写书名');
+            new Notice(t('knowledgebase.modal.edit.needName'));
             return;
         }
 
@@ -514,10 +530,10 @@ export class EditBookModal extends Modal {
                 this.onSaved(updated);
             }
             this.close();
-            showSuccessNotice('保存成功');
+            showSuccessNotice(t('knowledgebase.modal.edit.saveSuccess'));
         }).catch((e: unknown) => {
             log.error('[KnowledgeBaseModals] 书籍保存失败:', e);
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存失败', timeout: 8000 });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.modal.edit.saveFailedTitle'), timeout: 8000 });
         });
     }
 
@@ -575,17 +591,17 @@ export class GenreEditModal extends Modal {
         contentEl.empty();
 
         const titleMap = {
-            create: '➕ 新增题材',
-            edit: '✏️ 编辑题材',
-            view: '📖 题材详情',
+            create: t('knowledgebase.modal.genre.titleCreate'),
+            edit: t('knowledgebase.modal.genre.titleEdit'),
+            view: t('knowledgebase.modal.genre.titleView'),
         };
         contentEl.createEl('h3', { text: titleMap[this.mode], cls: 'nw-modal-title' });
 
         this.renderBasicInfo(contentEl);
-        this.renderTagSection(contentEl, '性格标签', 'personalityTags');
-        this.renderTagSection(contentEl, '能力类型', 'abilityTypes');
-        this.renderTagSection(contentEl, '角色定位', 'roleTypes');
-        this.renderTagSection(contentEl, '背景类型', 'backgroundTypes');
+        this.renderTagSection(contentEl, t('knowledgebase.modal.genre.tag.personality'), 'personalityTags');
+        this.renderTagSection(contentEl, t('knowledgebase.modal.genre.tag.ability'), 'abilityTypes');
+        this.renderTagSection(contentEl, t('knowledgebase.modal.genre.tag.role'), 'roleTypes');
+        this.renderTagSection(contentEl, t('knowledgebase.modal.genre.tag.background'), 'backgroundTypes');
         this.renderTechniquesSection(contentEl);
         this.renderSubGenresSection(contentEl);
         this.renderWeightsSection(contentEl);
@@ -594,12 +610,12 @@ export class GenreEditModal extends Modal {
 
     private renderBasicInfo(container: HTMLElement): void {
         const section = container.createDiv({ cls: 'nw-kb-modal-section' });
-        section.createEl('h4', { text: '基本信息', cls: 'nw-kb-modal-section-title nw-kb-modal-section-title--roomy' });
+        section.createEl('h4', { text: t('knowledgebase.modal.genre.basicInfo'), cls: 'nw-kb-modal-section-title nw-kb-modal-section-title--roomy' });
 
         const form = section.createDiv({ cls: 'nw-kb-modal-form' });
 
         const nameRow = form.createDiv({ cls: 'nw-kb-modal-field' });
-        nameRow.createSpan({ text: '名称', cls: 'nw-kb-modal-field-label' });
+        nameRow.createSpan({ text: t('knowledgebase.modal.genre.name'), cls: 'nw-kb-modal-field-label' });
         if (this.isEditable()) {
             const input = nameRow.createEl('input', {
                 type: 'text',
@@ -614,13 +630,13 @@ export class GenreEditModal extends Modal {
         }
 
         const categoryRow = form.createDiv({ cls: 'nw-kb-modal-field' });
-        categoryRow.createSpan({ text: '频道', cls: 'nw-kb-modal-field-label' });
+        categoryRow.createSpan({ text: t('knowledgebase.modal.genre.channel'), cls: 'nw-kb-modal-field-label' });
         if (this.isEditable()) {
             const select = categoryRow.createEl('select', { cls: 'nw-kb-modal-select nw-kb-modal-select--lg' });
             const options = [
-                { value: 'male', label: '男频' },
-                { value: 'female', label: '女频' },
-                { value: 'neutral', label: '中性' },
+                { value: 'male', label: t('knowledgebase.format.channel.male') },
+                { value: 'female', label: t('knowledgebase.format.channel.female') },
+                { value: 'neutral', label: t('knowledgebase.format.channel.neutral') },
             ];
             options.forEach(opt => {
                 const option = select.createEl('option', { value: opt.value, text: opt.label });
@@ -630,19 +646,23 @@ export class GenreEditModal extends Modal {
                 this.tempGenre.category = select.value as 'male' | 'female' | 'neutral';
             });
         } else {
-            const labelMap: Record<string, string> = { male: '男频', female: '女频', neutral: '中性' };
+            const labelMap: Record<string, string> = {
+                male: t('knowledgebase.format.channel.male'),
+                female: t('knowledgebase.format.channel.female'),
+                neutral: t('knowledgebase.format.channel.neutral'),
+            };
             categoryRow.createDiv({ text: labelMap[this.tempGenre.category] || this.tempGenre.category });
         }
 
         const descRow = form.createDiv({ cls: 'nw-kb-modal-field' });
-        descRow.createSpan({ text: '描述', cls: 'nw-kb-modal-field-label' });
+        descRow.createSpan({ text: t('knowledgebase.modal.genre.description'), cls: 'nw-kb-modal-field-label' });
         if (this.isEditable()) {
             const textarea = descRow.createEl('textarea', {
                 value: this.tempGenre.description,
                 cls: 'nw-kb-modal-textarea nw-kb-modal-textarea--lg',
                 attr: {
                     rows: '3',
-                    placeholder: '描述该题材的读者群体、爽点、常见元素等（可选）'
+                    placeholder: t('knowledgebase.modal.genre.descriptionPlaceholder')
                 }
             });
             textarea.addEventListener('input', () => {
@@ -678,10 +698,10 @@ export class GenreEditModal extends Modal {
             const input = inputRow.createEl('input', {
                 type: 'text',
                 cls: 'nw-kb-modal-input nw-kb-modal-input--md nw-kb-modal-input--flex',
-                attr: { placeholder: `添加${label}...` }
+                attr: { placeholder: t('knowledgebase.modal.genre.tagPlaceholder', { label }) }
             });
             const addBtn = inputRow.createEl('button', {
-                text: '添加',
+                text: t('knowledgebase.modal.genre.add'),
                 cls: 'nw-btn nw-btn-secondary nw-btn-xs'
             });
             addBtn.addEventListener('click', () => {
@@ -705,12 +725,12 @@ export class GenreEditModal extends Modal {
     private renderTechniquesSection(container: HTMLElement): void {
         const section = container.createDiv({ cls: 'nw-kb-modal-section' });
         section.createEl('h4', {
-            text: `写作技巧 (${this.tempGenre.techniques.length})`,
+            text: t('knowledgebase.modal.genre.techniques', { count: this.tempGenre.techniques.length }),
             cls: 'nw-kb-modal-section-title'
         });
 
         if (this.tempGenre.techniques.length < 5 && this.isEditable()) {
-            section.createDiv({ text: '⚠️ 至少需要 5 个写作技巧', cls: 'nw-kb-modal-hint-error' });
+            section.createDiv({ text: t('knowledgebase.modal.genre.techniqueHint'), cls: 'nw-kb-modal-hint-error' });
         }
 
         const techniquesList = section.createDiv({ cls: 'nw-kb-modal-list' });
@@ -724,22 +744,14 @@ export class GenreEditModal extends Modal {
                     type: 'text',
                     value: tech.name,
                     cls: 'nw-kb-modal-input nw-kb-modal-input--flex',
-                    attr: { placeholder: '技巧名称' }
+                    attr: { placeholder: t('knowledgebase.modal.genre.techniqueName') }
                 });
                 nameInput.addEventListener('input', () => {
                     this.tempGenre.techniques[idx].name = nameInput.value.trim();
                 });
 
                 const categorySelect = headerRow.createEl('select', { cls: 'nw-kb-modal-select' });
-                const categories = [
-                    { value: 'structure', label: '结构' },
-                    { value: 'cool_point', label: '爽点' },
-                    { value: 'emotion', label: '情感' },
-                    { value: 'rhythm', label: '节奏' },
-                    { value: 'genre', label: '题材' },
-                    { value: 'style', label: '风格' },
-                    { value: 'foreshadow', label: '伏笔' },
-                ];
+                const categories = techniqueCategories();
                 categories.forEach(cat => {
                     const opt = categorySelect.createEl('option', { value: cat.value, text: cat.label });
                     if (tech.category === cat.value) opt.selected = true;
@@ -758,10 +770,9 @@ export class GenreEditModal extends Modal {
                     this.render();
                 });
             } else {
-                const categoryMap: Record<string, string> = {
-                    structure: '结构', cool_point: '爽点', emotion: '情感', rhythm: '节奏',
-                    genre: '题材', style: '风格', foreshadow: '伏笔'
-                };
+                const categoryMap: Record<string, string> = Object.fromEntries(
+                    techniqueCategories().map(cat => [cat.value, cat.label]),
+                );
                 const headerRow = techItem.createDiv({ cls: 'nw-kb-modal-item-head nw-kb-modal-item-head--readonly' });
                 headerRow.createDiv({ text: tech.name, cls: 'nw-kb-modal-item-name' });
                 headerRow.createSpan({
@@ -776,7 +787,7 @@ export class GenreEditModal extends Modal {
                     cls: 'nw-kb-modal-textarea nw-kb-modal-textarea--mb',
                     attr: {
                         rows: '2',
-                        placeholder: '技巧描述'
+                        placeholder: t('knowledgebase.modal.genre.techniqueDesc')
                     }
                 });
                 descInput.addEventListener('input', () => {
@@ -787,7 +798,7 @@ export class GenreEditModal extends Modal {
                     type: 'text',
                     value: tech.keywords.join(', '),
                     cls: 'nw-kb-modal-input nw-kb-modal-input--full',
-                    attr: { placeholder: '关键词（用逗号分隔）' }
+                    attr: { placeholder: t('knowledgebase.modal.genre.keywordsPlaceholder') }
                 });
                 kwInput.addEventListener('input', () => {
                     this.tempGenre.techniques[idx].keywords = kwInput.value.split(',').map(k => k.trim()).filter(k => k);
@@ -805,7 +816,7 @@ export class GenreEditModal extends Modal {
 
         if (this.isEditable()) {
             const addTechBtn = section.createEl('button', {
-                text: '➕ 添加技巧',
+                text: t('knowledgebase.modal.genre.addTechnique'),
                 cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-kb-modal-btn--block',
                 attr: {}
             });
@@ -829,7 +840,7 @@ export class GenreEditModal extends Modal {
         const section = container.createDiv({ cls: 'nw-kb-modal-section' });
         const subGenres = this.tempGenre.subGenres || [];
         section.createEl('h4', {
-            text: `细分题材 (${subGenres.length}) - 可选`,
+            text: t('knowledgebase.modal.genre.subGenres', { count: subGenres.length }),
             cls: 'nw-kb-modal-section-title'
         });
 
@@ -844,7 +855,7 @@ export class GenreEditModal extends Modal {
                         type: 'text',
                         value: sub.name,
                         cls: 'nw-kb-modal-input nw-kb-modal-input--flex',
-                        attr: { placeholder: '子题材名称' }
+                        attr: { placeholder: t('knowledgebase.modal.genre.subGenreName') }
                     });
                     nameInput.addEventListener('input', () => {
                         if (this.tempGenre.subGenres) {
@@ -864,7 +875,7 @@ export class GenreEditModal extends Modal {
                         type: 'text',
                         value: sub.description,
                         cls: 'nw-kb-modal-input nw-kb-modal-input--full',
-                        attr: { placeholder: '描述' }
+                        attr: { placeholder: t('knowledgebase.modal.genre.subGenreDesc') }
                     });
                     descInput.addEventListener('input', () => {
                         if (this.tempGenre.subGenres) {
@@ -880,7 +891,7 @@ export class GenreEditModal extends Modal {
 
         if (this.isEditable()) {
             const addSubBtn = section.createEl('button', {
-                text: '➕ 添加细分题材',
+                text: t('knowledgebase.modal.genre.addSubGenre'),
                 cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-kb-modal-btn--block',
                 attr: {}
             });
@@ -903,17 +914,17 @@ export class GenreEditModal extends Modal {
 
     private renderWeightsSection(container: HTMLElement): void {
         const section = container.createDiv({ cls: 'nw-kb-modal-section' });
-        section.createEl('h4', { text: '权重配置', cls: 'nw-kb-modal-section-title nw-kb-modal-section-title--roomy' });
+        section.createEl('h4', { text: t('knowledgebase.modal.genre.weights'), cls: 'nw-kb-modal-section-title nw-kb-modal-section-title--roomy' });
 
         const weightsGrid = section.createDiv({ cls: 'nw-kb-modal-grid' });
 
         const weightLabels: { key: keyof GenreConfig['weights']; label: string }[] = [
-            { key: 'character', label: '人设' },
-            { key: 'foreshadow', label: '伏笔' },
-            { key: 'technique', label: '技巧' },
-            { key: 'style', label: '风格' },
-            { key: 'rhythm', label: '节奏' },
-            { key: 'structure', label: '结构' },
+            { key: 'character', label: t('knowledgebase.dim.character') },
+            { key: 'foreshadow', label: t('knowledgebase.dim.foreshadow') },
+            { key: 'technique', label: t('knowledgebase.dim.technique') },
+            { key: 'style', label: t('knowledgebase.dim.style') },
+            { key: 'rhythm', label: t('knowledgebase.dim.rhythm') },
+            { key: 'structure', label: t('knowledgebase.dim.structure') },
         ];
 
         weightLabels.forEach(({ key, label }) => {
@@ -953,7 +964,7 @@ export class GenreEditModal extends Modal {
 
         if (this.mode === 'view') {
             const saveAsBtn = actions.createEl('button', {
-                text: '💾 另存为自定义',
+                text: t('knowledgebase.modal.genre.saveAsCustom'),
                 cls: 'nw-btn nw-btn-primary'
             });
             saveAsBtn.addEventListener('click', () => {
@@ -961,29 +972,29 @@ export class GenreEditModal extends Modal {
                     ...JSON.parse(JSON.stringify(this.tempGenre)),
                     id: `custom_${Date.now()}`,
                     isCustom: true,
-                    name: `${this.tempGenre.name} (副本)`,
+                    name: t('knowledgebase.modal.genre.copyName', { name: this.tempGenre.name }),
                 };
                 this.onSave?.(newGenre);
                 this.close();
             });
 
             const closeBtn = actions.createEl('button', {
-                text: '关闭',
+                text: t('knowledgebase.modal.genre.close'),
                 cls: 'nw-btn nw-btn-secondary'
             });
             closeBtn.addEventListener('click', () => this.close());
         } else if (this.mode === 'edit') {
             const deleteBtn = actions.createEl('button', {
-                text: '🗑️ 删除',
+                text: t('knowledgebase.modal.genre.delete'),
                 cls: 'nw-btn nw-btn-danger'
             });
             deleteBtn.addEventListener('click', async () => {
                 const confirmed = await OperationConfirmModal.confirm(this.app, {
-                    title: '删除题材',
-                    description: `确定要删除题材「${this.tempGenre.name}」吗？`,
-                    warning: '此操作不可恢复',
-                    confirmText: '确认删除',
-                    cancelText: '取消',
+                    title: t('knowledgebase.modal.genre.deleteTitle'),
+                    description: t('knowledgebase.modal.genre.deleteDesc', { name: this.tempGenre.name }),
+                    warning: t('knowledgebase.common.irreversible'),
+                    confirmText: t('knowledgebase.common.confirmDelete'),
+                    cancelText: t('knowledgebase.common.cancel'),
                 });
                 if (confirmed) {
                     this.onDelete?.(this.tempGenre.id);
@@ -992,13 +1003,13 @@ export class GenreEditModal extends Modal {
             });
 
             const cancelBtn = actions.createEl('button', {
-                text: '取消',
+                text: t('knowledgebase.common.cancel'),
                 cls: 'nw-btn nw-btn-secondary'
             });
             cancelBtn.addEventListener('click', () => this.close());
 
             const saveBtn = actions.createEl('button', {
-                text: '保存',
+                text: t('knowledgebase.modal.genre.save'),
                 cls: 'nw-btn nw-btn-primary'
             });
             saveBtn.addEventListener('click', () => {
@@ -1010,13 +1021,13 @@ export class GenreEditModal extends Modal {
             });
         } else {
             const cancelBtn = actions.createEl('button', {
-                text: '取消',
+                text: t('knowledgebase.common.cancel'),
                 cls: 'nw-btn nw-btn-secondary'
             });
             cancelBtn.addEventListener('click', () => this.close());
 
             const createBtn = actions.createEl('button', {
-                text: '创建',
+                text: t('knowledgebase.modal.genre.create'),
                 cls: 'nw-btn nw-btn-primary'
             });
             createBtn.addEventListener('click', () => {
@@ -1032,20 +1043,20 @@ export class GenreEditModal extends Modal {
 
     private validate(): boolean {
         if (!this.tempGenre.name.trim()) {
-            new Notice('请输入题材名称');
+            new Notice(t('knowledgebase.modal.genre.needName'));
             return false;
         }
         if (!this.tempGenre.category) {
-            new Notice('请选择频道');
+            new Notice(t('knowledgebase.modal.genre.needChannel'));
             return false;
         }
         if (this.tempGenre.techniques.length < 5) {
-            new Notice('写作技巧至少需要 5 个');
+            new Notice(t('knowledgebase.modal.genre.needTechniques'));
             return false;
         }
         for (let i = 0; i < this.tempGenre.techniques.length; i++) {
             if (!this.tempGenre.techniques[i].name.trim()) {
-                new Notice(`第 ${i + 1} 个技巧名称不能为空`);
+                new Notice(t('knowledgebase.modal.genre.techniqueNameRequired', { count: i + 1 }));
                 return false;
             }
         }
@@ -1108,17 +1119,17 @@ export class BatchOperationsModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h3', { text: '⚙️ 批量操作', cls: 'nw-modal-title' });
+        contentEl.createEl('h3', { text: t('knowledgebase.modal.batch.title'), cls: 'nw-modal-title' });
 
         if (this.loading) {
-            contentEl.createDiv({ text: '加载中...', cls: 'nw-kb-modal-empty' });
+            contentEl.createDiv({ text: t('knowledgebase.modal.batch.loading'), cls: 'nw-kb-modal-empty' });
             return;
         }
 
         const opsRow = contentEl.createDiv({ cls: 'nw-kb-modal-ops' });
 
         const operations: Array<{ key: 'classify'; label: string; desc: string }> = [
-            { key: 'classify', label: '🏷️ 自动分类', desc: '自动识别书籍分类' },
+            { key: 'classify', label: t('knowledgebase.modal.batch.classify'), desc: t('knowledgebase.modal.batch.classifyDesc') },
         ];
 
         operations.forEach(op => {
@@ -1137,14 +1148,14 @@ export class BatchOperationsModal extends Modal {
 
         const selectRow = contentEl.createDiv({ cls: 'nw-kb-modal-row nw-kb-modal-row--between nw-kb-modal-row--mb' });
         selectRow.createSpan({
-            text: `共 ${books.length} 本书籍（未分类 ${uncategorizedCount} 本）`,
+            text: t('knowledgebase.modal.batch.count', { books: books.length, uncategorized: uncategorizedCount }),
             cls: 'nw-kb-modal-count'
         });
 
         const selectBtns = selectRow.createDiv({ cls: 'nw-kb-modal-btn-group' });
 
         const selectAllBtn = selectBtns.createEl('button', {
-            text: '全选',
+            text: t('knowledgebase.modal.batch.selectAll'),
             cls: 'nw-btn nw-btn-secondary nw-btn-xs',
         });
         selectAllBtn.addEventListener('click', () => {
@@ -1153,7 +1164,7 @@ export class BatchOperationsModal extends Modal {
         });
 
         const selectUncategorizedBtn = selectBtns.createEl('button', {
-            text: '选择未分类',
+            text: t('knowledgebase.modal.batch.selectUncategorized'),
             cls: 'nw-btn nw-btn-secondary nw-btn-xs',
         });
         selectUncategorizedBtn.addEventListener('click', () => {
@@ -1163,7 +1174,7 @@ export class BatchOperationsModal extends Modal {
         });
 
         const clearBtn = selectBtns.createEl('button', {
-            text: '清空',
+            text: t('knowledgebase.modal.batch.clear'),
             cls: 'nw-btn nw-btn-secondary nw-btn-xs',
         });
         clearBtn.addEventListener('click', () => {
@@ -1174,7 +1185,7 @@ export class BatchOperationsModal extends Modal {
         const bookList = contentEl.createDiv({ cls: 'nw-kb-modal-file-list' });
 
         if (books.length === 0) {
-            bookList.createDiv({ text: '暂无书籍', cls: 'nw-kb-modal-empty' });
+            bookList.createDiv({ text: t('knowledgebase.modal.batch.empty'), cls: 'nw-kb-modal-empty' });
         } else {
             books.forEach((book) => {
                 const isSelected = this.selectedBooks.has(book.id);
@@ -1194,11 +1205,11 @@ export class BatchOperationsModal extends Modal {
 
                 const info = item.createDiv({ cls: 'nw-kb-modal-book-info' });
                 info.createDiv({ text: book.name, cls: 'nw-kb-modal-book-name' });
-                info.createDiv({ text: book.author || '未知作者', cls: 'nw-kb-modal-meta' });
+                info.createDiv({ text: book.author || t('knowledgebase.card.unknownAuthor'), cls: 'nw-kb-modal-meta' });
 
                 const genreText = book.primaryGenre
                     ? this.getGenreLabel(book.primaryGenre, book.primarySubGenre)
-                    : '未分类';
+                    : t('knowledgebase.modal.batch.uncategorized');
                 item.createSpan({ text: genreText, cls: 'nw-kb-modal-meta nw-kb-modal-meta--shrink' });
             });
         }
@@ -1206,20 +1217,20 @@ export class BatchOperationsModal extends Modal {
         const actions = contentEl.createDiv({ cls: 'nw-kb-modal-row nw-kb-modal-row--between nw-kb-modal-footer' });
 
         actions.createSpan({
-            text: `已选择 ${this.selectedBooks.size} 本`,
+            text: t('knowledgebase.modal.batch.selected', { count: this.selectedBooks.size }),
             cls: 'nw-kb-modal-count'
         });
 
         const btnGroup = actions.createDiv({ cls: 'nw-kb-modal-btn-group' });
 
         const cancelBtn = btnGroup.createEl('button', {
-            text: '取消',
+            text: t('knowledgebase.common.cancel'),
             cls: 'nw-btn nw-btn-secondary',
         });
         cancelBtn.addEventListener('click', () => this.close());
 
         const executeBtn = btnGroup.createEl('button', {
-            text: this.processing ? '处理中...' : '执行',
+            text: this.processing ? t('knowledgebase.modal.batch.processing') : t('knowledgebase.modal.batch.execute'),
             cls: 'nw-btn nw-btn-primary',
             attr: { disabled: this.selectedBooks.size === 0 || this.processing ? 'true' : null }
         });
@@ -1230,15 +1241,15 @@ export class BatchOperationsModal extends Modal {
 
             try {
                 if (this.operation === 'classify') {
-                    new Notice(`正在分类 ${this.selectedBooks.size} 本书籍...`);
+                    new Notice(t('knowledgebase.modal.batch.classifying', { count: this.selectedBooks.size }));
                     await this.kbManager?.classifyBatch(Array.from(this.selectedBooks));
-                    showSuccessNotice('批量分类完成');
+                    showSuccessNotice(t('knowledgebase.modal.batch.classifyDone'));
                 }
                 this.onCompleted();
                 this.close();
             } catch (e) {
                 log.error('批量操作失败:', e);
-                showErrorNotice('批量操作失败');
+                showErrorNotice(t('knowledgebase.modal.batch.failed'));
                 this.processing = false;
                 this.render();
             }

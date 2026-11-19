@@ -202,7 +202,7 @@
     "ui/views/fingerprint-scope-logic.ts": 3,
     "ui/views/kb-config-import-logic.ts": 1,
     "ui/views/kb-detail-actions.ts": 6,
-    "ui/views/knowledge-base-modals.ts": 145,
+    "ui/views/knowledge-base-modals.ts": 6,
     "ui/views/knowledge-base-view.ts": 38,
     "ui/views/knowledge-detail-state.ts": 3,
     "ui/views/memory-graph-view.ts": 23,
@@ -216,7 +216,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 7139,
+  "total": 7000,
   "updatedAt": "2026-11-19",
-  "note": "第33片：characterGen.* 52 键（人物生成弹窗）；215 文件 / 7139 条"
+  "note": "第34片 知识库弹窗（导入/编辑/题材/批量）迁 t()，删 139 条中文字面量"
 }

@@ -2978,3 +2978,45 @@ frontmatter 正则键（姓名/名称/身份/类型/所属势力/所在地点）
 **下一轮候选**：`ui/views/knowledge-base-modals.ts`（1,378 行 / 563 字 / 145 条，四个弹窗，第34片）；
 知识库 D 类两文件（`ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`）按用户裁定随视觉重构；
 散落弹窗 golden-opening 1,982 / novel-tags 1,099 / add-fanfic-setting 973 / ai-builder 864。
+
+
+## 第一百零二轮：i18n 第二期第34片 —— 知识库四个管理弹窗（2026-11-19，DSH）
+
+**范围**：`ui/views/knowledge-base-modals.ts`（1,378 行，`audit-cjk` 判 ui-copy，145 条 / 563 字）——
+`ImportBookModal` / `EditBookModal` / `GenreEditModal` / `BatchOperationsModal` 四个弹窗，
+是知识库视图「导入 / 批量 / 编辑 / 题材」四个按钮的唯一入口；第30~34片把知识库整条链收尾的这一片。
+
+**改动**：1,378 → 1,275 行，**124 处 `t()`**，迁 `knowledgebase.modal.*` **99 键**
+（import 22 / edit 17 / genre 33 + 嵌套 tag 4 / cat 7 / batch 16）。四条实现约定：
+
+- **复用既有键**：`common.{cancel,back,irreversible,confirmDelete}`、`format.channel.*`、
+  `dim.{character,foreshadow,technique,style,rhythm,structure}`（权重配置六项正好覆盖）、`card.unknownAuthor`；
+- **两处 map 合并**：技巧分类的下拉选项（7 项）与只读展示（7 项）原本各写一份中文，
+  合并到 `modal.genre.cat.*` 一组，两个调用点各自 `t()`；
+- **可选数量后缀随语言**：`细分题材 ({count}) - 可选` 整句进资源，不在代码里拼 `- 可选`；
+- **保留中文 = 日志**：`log.warn/error` 五行（自动分类失败 / 导入失败 / 记录分类偏好失败 /
+  书籍保存失败 / 加载书籍列表失败 / 批量操作失败）。
+
+**验收**：`check:i18n` zh/en 各 **4485**（+99）、无法解析键 0、动态键 26 处、
+棘轮 **215 文件 / 7000 条**（7139 → 7000）；`kb-modals-semantic-classes` 4 例改断言
+（四个主弹窗标题不含 CJK、裸 `h3` 只剩文件选择器 `t('knowledgebase.modal.import.selectTitle')`）+
+`kb-modals-logic` 12 例零修改，合跑 16 例绿；`npx tsc --noEmit` EXIT=0、lint 0 error（1037 warning 均存量）；
+实机 7 场景 zh/en（import-select 640×318 / import-form 640×246 / import-file 480×218 /
+genre-view 640×1104 / genre-create 640×1104 / batch 640×270 / edit-book 640×724）零横向溢出，
+en 下 UI 文案 CJK=0，剩余 CJK 全是 vault 数据（书名「将夜」/作者「猫腻」/内置题材名与描述/自定义标签）；
+产物 `D:\nw-dev-vault\_visual-i18n34\{scene}-{zh-CN,en-US}.png`，脚本 `D:\nw-tmp\snap-i18n34.mjs`；
+`check:bundle` main.js **6,101,070**（+9,240，文案外置）、styles.css **799,303**（未变）；
+preflight **EXIT=0**（985 文件 / **10,306 通过 + 3 跳过**），日志 `D:/nw-tmp/preflight-i18n34.log`。
+
+**坑**
+1. **截图前查 `theme`**：开发 vault 插件 `data.json` 残留 `"theme": "dark"` 时
+   `core/theme-manager.ts:236` 把 `--nw-text-primary` 写成 `#f0ece4`，亮色界面下弹窗标题成奶油色，
+   看着像「文案迁移导致标题发灰」的回归——探针读 `getComputedStyle(h3).color` 才定位到。
+   截图脚本前置 `theme !== 'auto'` 就改回 `auto` 再启动。
+2. **四个 Modal 共用一个文件**：类名/键名前缀要按弹窗分组（`modal.import.*` / `modal.genre.*`），
+   否则 `title` / `save` / `cancel` 这类通用词会互相覆盖。
+3. 判定「迁移完成」看非注释 CJK 行数（本片剩 5 行日志），不要看字面量条数——日志行本身也会计入。
+
+**下一轮候选**：散落弹窗 golden-opening（1,982 字）/ novel-tags（1,099）/ add-fanfic-setting（973）/
+ai-builder（864）；知识库 D 类两文件（`ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`）
+按用户裁定（m16938）随视觉重构；第三期补齐 en 并逐面量布局（I18N-06）。
