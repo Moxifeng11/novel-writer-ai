@@ -137,7 +137,7 @@
     "ui/monitor-panel-a.ts": 18,
     "ui/monitor-panel-b.ts": 48,
     "ui/novel-analysis-modal.ts": 25,
-    "ui/novel-tags-modal.ts": 43,
+    "ui/novel-tags-modal.ts": 31,
     "ui/onboarding-modal.ts": 51,
     "ui/outline-expand-modal.ts": 86,
     "ui/panel-resizer.ts": 1,
@@ -227,7 +227,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 8160,
+  "total": 8148,
   "updatedAt": "2026-11-19",
   "note": ""
 }

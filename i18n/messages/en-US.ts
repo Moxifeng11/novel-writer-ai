@@ -392,6 +392,19 @@ export const enUS: MessageTree = {
             k14: "🔴 High priority",
         },
     },
+    novelTags: {
+        title: '🏷️ Work tag analysis',
+        noProject: '❌ Project not found; create a new project first',
+        analyzeBtn: 'Analyze work tags',
+        noVolumeOutline: '❌ Volume outline not found: {path}Volume N_Outline.md',
+        noVolumesParsed: '❌ No volumes parsed from the volume outline',
+        overwriteConfirm: '⚠️ Work tag analysis.md already exists. Overwrite?',
+        noApiKey: '❌ Please configure an API key or local model endpoint first',
+        generating: '⏳ Generating...',
+        analyzing: '⏳ Analyzing work tags...',
+        saveFailed: '❌ Save failed: {msg}',
+        done: '✅ Work tag analysis generated',
+    },
     engineMsg: {
         review: {
             chapterNotFound: '❌ Chapter file not found',

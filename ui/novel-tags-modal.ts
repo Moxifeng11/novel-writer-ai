@@ -1,4 +1,5 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
+import { t } from '@/i18n';
 import { SUBDIR_OUTLINE_ROOT, pjVolumeOutlineDir } from '@/shared/paths';
 
 import NovelWriterPlugin from '@/main';
@@ -36,14 +37,14 @@ export class NovelTagsModal extends Modal {
             wrapper.addClass('nw-modal');
         }
         contentEl.empty();
-        contentEl.createEl('h2', { text: '🏷️ 作品标签分析' });
+        contentEl.createEl('h2', { text: t('novelTags.title') });
 
         const projectSelect = contentEl.createEl('select', { cls: 'nw-select novel-writer-select' });
 
         const populateProjects = async () => {
             const projects = await this.contextManager.detectProjects();
             if (projects.length === 0) {
-                contentEl.createEl('p', { text: '❌ 未找到项目，请先创建新项目' });
+                contentEl.createEl('p', { text: t('novelTags.noProject') });
                 return;
             }
 
@@ -55,7 +56,7 @@ export class NovelTagsModal extends Modal {
             const active = this.plugin.getActiveProject();
             projectSelect.value = active && projects.includes(active) ? active : projects[0];
 
-            this.analyzeButton = contentEl.createEl('button', { text: '分析作品标签', cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
+            this.analyzeButton = contentEl.createEl('button', { text: t('novelTags.analyzeBtn'), cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
             this.analyzeButton.onclick = async () => {
                 await this.analyzeTags(projectSelect.value);
             };
@@ -68,14 +69,14 @@ export class NovelTagsModal extends Modal {
         // v4.0：合并读取 分卷大纲/第N卷_分卷大纲.md（兼容旧单文件）
         const outlineContent = await readMergedVolumeOutline(this.app, project);
         if (!outlineContent || outlineContent.trim().length === 0) {
-            new Notice(`❌ 未找到分卷大纲：${pjVolumeOutlineDir(project)}第N卷_分卷大纲.md`, 5000);
+            new Notice(t('novelTags.noVolumeOutline', { path: pjVolumeOutlineDir(project) }), 5000);
             return;
         }
 
         const { bookSummary, volumes } = this.parseOutline(outlineContent);
 
         if (volumes.length === 0) {
-            new Notice('❌ 分卷大纲中未解析到任何分卷', 5000);
+            new Notice(t('novelTags.noVolumesParsed'), 5000);
             return;
         }
 
@@ -83,21 +84,21 @@ export class NovelTagsModal extends Modal {
         const existingFile = this.app.vault.getAbstractFileByPath(resultPath);
 
         if (existingFile) {
-            const confirm = window.confirm('⚠️ 作品标签分析.md 已存在，是否覆盖？');
+            const confirm = window.confirm(t('novelTags.overwriteConfirm'));
             if (!confirm) return;
         }
 
         if (!this.plugin.hasAiCredentials) {
-            new Notice('❌ 请先配置 API 密钥或本地模型端点', 5000);
+            new Notice(t('novelTags.noApiKey'), 5000);
             return;
         }
 
         if (this.analyzeButton) {
             this.originalButtonText = this.analyzeButton.textContent || '';
             this.analyzeButton.disabled = true;
-            this.analyzeButton.textContent = '⏳ 生成中...';
+            this.analyzeButton.textContent = t('novelTags.generating');
         }
-        const genNotice = new Notice('⏳ 正在分析作品标签...', 0);
+        const genNotice = new Notice(t('novelTags.analyzing'), 0);
 
         try {
             const fullSummary = this.buildFullSummary(volumes);
@@ -221,7 +222,7 @@ ${result.content}
                     await this.app.vault.create(resultPath, content);
                 }
             } catch (e) {
-                new Notice(`❌ 保存失败: ${(e as Error).message}`, 5000);
+                new Notice(t('novelTags.saveFailed', { msg: (e as Error).message }), 5000);
                 return;
             }
 
@@ -230,7 +231,7 @@ ${result.content}
                 await this.plugin.safeOpenFile(savedFile);
             }
 
-            new Notice('✅ 作品标签分析已生成', 6000);
+            new Notice(t('novelTags.done'), 6000);
             this.close();
         } finally {
             genNotice.hide();

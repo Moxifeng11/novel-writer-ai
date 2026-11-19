@@ -395,6 +395,19 @@ export const zhCN: MessageTree = {
             k14: "🔴 高优先级",
         },
     },
+    novelTags: {
+        title: '🏷️ 作品标签分析',
+        noProject: '❌ 未找到项目，请先创建新项目',
+        analyzeBtn: '分析作品标签',
+        noVolumeOutline: '❌ 未找到分卷大纲：{path}第N卷_分卷大纲.md',
+        noVolumesParsed: '❌ 分卷大纲中未解析到任何分卷',
+        overwriteConfirm: '⚠️ 作品标签分析.md 已存在，是否覆盖？',
+        noApiKey: '❌ 请先配置 API 密钥或本地模型端点',
+        generating: '⏳ 生成中...',
+        analyzing: '⏳ 正在分析作品标签...',
+        saveFailed: '❌ 保存失败: {msg}',
+        done: '✅ 作品标签分析已生成',
+    },
     engineMsg: {
         review: {
             chapterNotFound: '❌ 未找到章节文件',
