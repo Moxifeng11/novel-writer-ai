@@ -27,6 +27,8 @@ import { TimeEstimator } from "@/shared/time-estimator";
 import { createLogger } from '@/shared/logger';
 import { resolveCursorPosition } from '@/shared/cursor-position';
 import { BodyWriter } from '@/engine/body-writer';
+import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
+import { isDirtySaveState, saveStateLabel, type SaveState } from '@/ui/co-writing/save-state';
 import { findBodyFileV4 } from '@/engine/chapter-utils';
 import { pjBodyFile } from '@/shared/paths';
 import { volumeNumber } from '@/shared/chapter-target';
@@ -42,9 +44,15 @@ export const VIEW_TYPE_FLOAT_COWRITE = "nw-float-cowrite";
 /**
  * 浮动协同面板。
  */
+/** 自动保存防抖键（与主视图同节拍 2000ms，A-4 统一前的对齐值） */
+const FLOATING_AUTOSAVE_KEY = 'floating-auto-save';
+const FLOATING_AUTOSAVE_DELAY = 2000;
+
 export class CoWriteFloatingPanel extends DraggablePanel {
   // === DOM 容器 ===
   private rightEditor!: HTMLTextAreaElement;
+  /** 输入防抖自动保存（与主视图同节拍，审计 A-3） */
+  private autoSaveDebouncer = new AdaptiveDebounceManager({ debug: false });
   private hintInput!: HTMLTextAreaElement;
   private suggestionContainer!: HTMLElement;
   private ghostSuggestionContainer!: HTMLElement;
@@ -141,7 +149,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     const controlPanel = rightPanel.createDiv({ cls: "nw-cowrite-control-panel" });
     const controlHead = controlPanel.createDiv({ cls: "nw-cowrite-control-head" });
     controlHead.createDiv({ cls: "nw-cowrite-control-title", text: "\u63A7\u5236\u53F0" });
-    this.saveStateDisplay = controlHead.createDiv({ cls: "nw-cowrite-control-state", text: "\u672A\u4FDD\u5B58" });
+    this.saveStateDisplay = controlHead.createDiv({ cls: "nw-cowrite-control-state", text: saveStateLabel('editing') });
 
     this.hintInput = controlPanel.createEl("textarea", {
       cls: "nw-hint-input",
@@ -210,7 +218,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
 
     this.rightEditor.addEventListener("input", () => {
       this.engine.updateSnapshot(this.rightEditor.value);
-      this.updateSaveState("\u7F16\u8F91\u4E2D");
+      this.updateSaveState('editing');
       this.updateWordCount();
     });
 
@@ -267,7 +275,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     }
 
     this.statusBar.setText(`\u270D\uFE0F ${chapterName} \u00B7 ${volume}`);
-    this.updateSaveState("\u5DF2\u52A0\u8F7D");
+    this.updateSaveState('loaded');
     this.updateWordCount();
 
     try {
@@ -289,7 +297,20 @@ export class CoWriteFloatingPanel extends DraggablePanel {
    * 保存正文。
    * @returns 是否成功
    */
+  /**
+   * 输入防抖自动保存（与主视图同节拍）。
+   *
+   * 背景（审计 A-3）：此前悬浮面板编辑同一份协同正文却完全没有自动保存，
+   * 关面板 = 未保存内容丢失；主视图同一编辑器却是 2 秒自动保存。
+   */
+  private scheduleAutoSave(): void {
+    this.autoSaveDebouncer.debounceFixed(FLOATING_AUTOSAVE_KEY, async () => {
+      await this.saveBody();
+    }, FLOATING_AUTOSAVE_DELAY);
+  }
+
   async saveBody(): Promise<boolean> {
+    this.autoSaveDebouncer.cancel(FLOATING_AUTOSAVE_KEY);
     const content = this.rightEditor.value;
     if (!content.trim()) return false;
     const path = this.getBodyPath();
@@ -305,12 +326,12 @@ export class CoWriteFloatingPanel extends DraggablePanel {
         project: this.project,
         writingMode: 'co-writer',
       });
-      this.updateSaveState("\u5DF2\u4FDD\u5B58");
+      this.updateSaveState('saved');
       await this.renderFlowPanel();
       return true;
     } catch (e) {
       log.warn("[CoWriteFloating] \u4FDD\u5B58\u5931\u8D25:", e);
-      this.updateSaveState("\u4FDD\u5B58\u5931\u8D25");
+      this.updateSaveState('saveFailed');
       showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存失败', timeout: 6000 });
       return false;
     }
