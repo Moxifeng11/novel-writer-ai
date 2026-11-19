@@ -3803,6 +3803,6 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 保存按钮统一「💾 保存」：`ui/model-editor-modal.ts:122`、`ui/mcp-server-form-modal.ts:192`。
 - A-17（撤销栈共享化）判定为 P2 性质，未在本批做。
 
-**门禁**：`npx tsc --noEmit` 0 错；`npm run lint` 0 error（1029 warning 存量）；`check:i18n` zh/en 各 6045 条 / 无法解析键 0 / 动态键 29 / 棘轮 205 文件 5445 条（较基线 5456 下降 5 个文件，可收紧）；新增/改动 8 个测试文件全绿（含 `tests/unit/shared|engine|ui` 主要受影响面）。
+**门禁**：`npx tsc --noEmit` 0 错；`npm run lint` 0 error（1029 warning 存量）；`check:i18n` zh/en 各 6045 条 / 无法解析键 0 / 动态键 29 / 棘轮收紧到 205 文件 5445 条；`check:engine-msg` 126 键一致；`npm run preflight` **EXIT=0**（1006 文件 / 10,421 通过 + 3 跳过，日志 `D:\nw-tmp\preflight-p1b.log`）；`check:bundle` 基线上调 main.js 6,224,760 → 6,228,126（+3,366，note 已说明），styles.css 800,112、workers 684,381/108,804 不变。提交 **0b38db00**。
 
 **下一轮**：P2 #14-#20（空态统一 / `showProgress` 统一 / 字符串键收编 / 知识库 baseDir 双口径 / 设置页自动保存徽标 / Esc 语义 / `AIEngine` 收编），以及 #13 遗留的 A-17 撤销栈共享化。
