@@ -205,7 +205,6 @@
     "ui/views/kb-config-import-logic.ts": 1,
     "ui/views/kb-config-panel.ts": 9,
     "ui/views/kb-detail-actions.ts": 13,
-    "ui/views/kb-format.ts": 23,
     "ui/views/kb-panels-logic.ts": 35,
     "ui/views/kb-stats-panel.ts": 12,
     "ui/views/kb-task-panel.ts": 14,
@@ -224,7 +223,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 7345,
+  "total": 7322,
   "updatedAt": "2026-11-19",
-  "note": "i18n 第二期第30片（知识库视图链 knowledgebase.*）：ui/views/knowledge-base-view.ts 迁 244 键，棘轮 7662 -> 7345 条（223 文件不变）"
+  "note": "第31片 kb-format：222 文件 / 7322 条（kb-format.ts 清零移出）"
 }

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-19T01:28:51.281Z",
+  "generatedAt": "2026-11-19T03:54:58.876Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
@@ -44,8 +44,8 @@
     },
     "ui": {
       "files": 302,
-      "exports": 1172,
-      "documented": 1172,
+      "exports": 1171,
+      "documented": 1171,
       "methods": 688,
       "methodsDocumented": 687,
       "incomplete": 0
@@ -6816,8 +6816,8 @@
       "incomplete": 0
     },
     "ui/views/kb-format.ts": {
-      "exports": 10,
-      "documented": 10,
+      "exports": 9,
+      "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0

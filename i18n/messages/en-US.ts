@@ -3087,6 +3087,34 @@ export const enUS: MessageTree = {
             doubao: "Doubao",
             qwen: "Qwen",
         },
+        format: {
+            breakdown: {
+                pending: "Pending",
+                processing: "Breaking down",
+                completed: "Completed",
+                failed: "Failed",
+                interrupted: "Interrupted",
+            },
+            task: {
+                pending: "Waiting",
+                running: "Running",
+                paused: "Paused",
+                completed: "Completed",
+                failed: "Failed",
+                cancelled: "Cancelled",
+            },
+            channel: {
+                male: "Male",
+                female: "Female",
+                neutral: "Neutral",
+            },
+            unknownWordCount: "Unknown",
+            word: "{n} words",
+            wordWan: "{n}k words",
+            durationHm: "{h}h {m}m",
+            durationMs: "{m}m {s}s",
+            durationS: "{s}s",
+        },
     },
     fullwriter: {
         scene: {

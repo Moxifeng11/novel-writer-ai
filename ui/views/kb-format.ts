@@ -11,42 +11,44 @@
  * - `formatTaskStatusLabel`（6 档，含「已暂停」）与 `formatBreakdownStatusLabel`（5 档，含「拆解中断」）
  *   是**两套不同映射**，不可互相复用
  * - 频道只有 male/female/neutral 三值 → 男频/女频/中性（不是 other→综合）
+ *
+ * i18n（第二期第31片）：状态/频道标签与字数、时长单位全部走 `t()`，键在
+ * `knowledgebase.format.*`——中文单位带空格（`9800 字` / `12.3 万字`），
+ * 时长不带空格（`45秒` / `2小时5分`），改动时必须逐字保持既有输出。
  */
 
 import type { BreakdownStatus } from '@/services/knowledge-base-manager';
 import type { TaskStatus } from '@/engine/deconstruction-scheduler';
+import { t } from '@/i18n';
 
-/** 拆解状态 → 中文标签（5 档） */
-const BREAKDOWN_STATUS_LABELS: Record<BreakdownStatus, string> = {
-    pending: '待拆解',
-    processing: '拆解中',
-    completed: '已完成',
-    failed: '失败',
-    interrupted: '拆解中断',
+/** 拆解状态 → 资源键（5 档） */
+const BREAKDOWN_STATUS_KEYS: Record<BreakdownStatus, string> = {
+    pending: 'knowledgebase.format.breakdown.pending',
+    processing: 'knowledgebase.format.breakdown.processing',
+    completed: 'knowledgebase.format.breakdown.completed',
+    failed: 'knowledgebase.format.breakdown.failed',
+    interrupted: 'knowledgebase.format.breakdown.interrupted',
 };
 
-/** 后台任务状态 → 中文标签（6 档，比拆解状态多「已暂停」，语义也不同） */
-const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
-    pending: '等待中',
-    running: '运行中',
-    paused: '已暂停',
-    completed: '已完成',
-    failed: '失败',
-    cancelled: '已取消',
+/** 后台任务状态 → 资源键（6 档，比拆解状态多「已暂停」，语义也不同） */
+const TASK_STATUS_KEYS: Record<TaskStatus, string> = {
+    pending: 'knowledgebase.format.task.pending',
+    running: 'knowledgebase.format.task.running',
+    paused: 'knowledgebase.format.task.paused',
+    completed: 'knowledgebase.format.task.completed',
+    failed: 'knowledgebase.format.task.failed',
+    cancelled: 'knowledgebase.format.task.cancelled',
 };
 
-/** 频道 → 中文标签（3 值） */
-const CHANNEL_LABELS: Record<string, string> = {
-    male: '男频',
-    female: '女频',
-    neutral: '中性',
+/** 频道 → 资源键（3 值） */
+const CHANNEL_KEYS: Record<string, string> = {
+    male: 'knowledgebase.format.channel.male',
+    female: 'knowledgebase.format.channel.female',
+    neutral: 'knowledgebase.format.channel.neutral',
 };
 
 /** 万字换算阈值 */
 export const WORD_COUNT_WAN_THRESHOLD = 10000;
-
-/** 字数未知时的展示文案 */
-export const UNKNOWN_WORD_COUNT_LABEL = '未知';
 
 /** 日期未知/非法时的展示文案 */
 export const INVALID_DATE_LABEL = '-';
@@ -55,33 +57,36 @@ export const INVALID_DATE_LABEL = '-';
  * 拆解状态标签。
  *
  * @param status - 拆解状态
- * @returns 中文标签；未知值原样返回
+ * @returns 本地化标签；未知值原样返回
  *
  * @example
  * formatBreakdownStatusLabel('processing') // => '拆解中'
  */
 export function formatBreakdownStatusLabel(status: BreakdownStatus | string): string {
-    return BREAKDOWN_STATUS_LABELS[status as BreakdownStatus] || status;
+    const key = BREAKDOWN_STATUS_KEYS[status as BreakdownStatus];
+    return key ? t(key) : status;
 }
 
 /**
  * 后台任务状态标签（6 档）。
  *
  * @param status - 任务状态
- * @returns 中文标签；未知值原样返回
+ * @returns 本地化标签；未知值原样返回
  */
 export function formatTaskStatusLabel(status: TaskStatus | string): string {
-    return TASK_STATUS_LABELS[status as TaskStatus] || status;
+    const key = TASK_STATUS_KEYS[status as TaskStatus];
+    return key ? t(key) : status;
 }
 
 /**
  * 频道标签。
  *
  * @param channel - 频道（male/female/neutral）
- * @returns 中文标签；未知值原样返回
+ * @returns 本地化标签；未知值原样返回
  */
 export function formatChannelLabel(channel: string): string {
-    return CHANNEL_LABELS[channel] || channel;
+    const key = CHANNEL_KEYS[channel];
+    return key ? t(key) : channel;
 }
 
 /**
@@ -98,11 +103,11 @@ export function formatChannelLabel(channel: string): string {
  * formatWordCount(0)      // => '未知'
  */
 export function formatWordCount(count?: number): string {
-    if (!count) return UNKNOWN_WORD_COUNT_LABEL;
+    if (!count) return t('knowledgebase.format.unknownWordCount');
     if (count >= WORD_COUNT_WAN_THRESHOLD) {
-        return `${(count / WORD_COUNT_WAN_THRESHOLD).toFixed(1)} 万字`;
+        return t('knowledgebase.format.wordWan', { n: (count / WORD_COUNT_WAN_THRESHOLD).toFixed(1) });
     }
-    return `${count} 字`;
+    return t('knowledgebase.format.word', { n: count });
 }
 
 /**
@@ -140,10 +145,10 @@ export function formatDateTime(timestamp: number): string {
 }
 
 /**
- * 把毫秒时长格式化为中文（小时级不带秒，分钟级不带小时）。
+ * 把毫秒时长格式化（小时级不带秒，分钟级不带小时）。
  *
  * @param ms - 毫秒；`<=0` 或非有限值归「0秒」
- * @returns 形如 `2小时5分` / `3分20秒` / `45秒`
+ * @returns 形如 `2小时5分` / `3分20秒` / `45秒`（en：`2h 5m` / `3m 20s` / `45s`）
  *
  * @example
  * formatDuration(45_000)    // => '45秒'
@@ -151,17 +156,15 @@ export function formatDateTime(timestamp: number): string {
  * formatDuration(7_500_000) // => '2小时5分'
  */
 export function formatDuration(ms: number): string {
-    if (!Number.isFinite(ms) || ms <= 0) return '0秒';
+    if (!Number.isFinite(ms) || ms <= 0) return t('knowledgebase.format.durationS', { s: 0 });
     const seconds = Math.floor(ms / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
     if (hours > 0) {
-        const remainingMinutes = minutes % 60;
-        return `${hours}小时${remainingMinutes}分`;
+        return t('knowledgebase.format.durationHm', { h: hours, m: minutes % 60 });
     }
     if (minutes > 0) {
-        const remainingSeconds = seconds % 60;
-        return `${minutes}分${remainingSeconds}秒`;
+        return t('knowledgebase.format.durationMs', { m: minutes, s: seconds % 60 });
     }
-    return `${seconds}秒`;
+    return t('knowledgebase.format.durationS', { s: seconds });
 }

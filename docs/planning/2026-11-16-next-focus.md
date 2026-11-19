@@ -2875,3 +2875,39 @@ deconstruct 14 + deleteBook 4 + tags 3 + monitor 5 + provider 2）。三个模�
 
 **下一轮候选**：`ui/views/kb-format.ts`（500 字，收尾知识库面）、`ui/generate-character-modal.ts`
 （873 字）、`ui/views/kb-panels-logic.ts`（1,143 字）。
+
+## 第九十九轮：i18n 第二期第31片 —— 知识库卡片格式层（2026-11-19，DSH）
+
+**范围**：`ui/views/kb-format.ts`（167 行 / 23 条 500 字，`audit-cjk` 判 `ui-copy`）。
+选它是第30片刻意留下的尾巴：不迁它，en 界面就是「Completed 徽标 + 374.4 万字」半英半中。
+
+**改动**：迁 `knowledgebase.format.*` **20 键**（breakdown 5 + task 6 + channel 3 + unknownWordCount 1 +
+word/wordWan 2 + durationHm/durationMs/durationS 3）。`BREAKDOWN_STATUS_LABELS` /
+`TASK_STATUS_LABELS` / `CHANNEL_LABELS` 三张中文表改成资源键表（`*_KEYS`），三个 `formatXxxLabel()`
+由 `t(key)` 求值、未知值仍原样返回；**删掉导出常量 `UNKNOWN_WORD_COUNT_LABEL`**
+（`formatWordCount()` 内直接取键）。单位走「同一键按语言换计量单位」（第十片指纹库路数）：
+zh `{n} 字` / `{n} 万字`（数字后**有空格**）、en `{n} words` / `{n}k words`；时长 zh 无空格
+（`2小时5分` / `3分20秒` / `45秒`）、en `2h 5m` / `3m 20s` / `45s`。`INVALID_DATE_LABEL`（`—`）
+与 `WORD_COUNT_WAN_THRESHOLD`（10000）不含文案，保持常量。唯一消费方
+`ui/views/knowledge-base-view.ts:36-42` 的 7 个导入签名零改动，视图代码一行未改。
+
+**坑（已写进 i18n.md §9）**
+1. **PowerShell 没有 `tail`**：`npm run build 2>&1 | tail -4` 整条失败，但紧跟的
+   `dev-vault.mjs sync` 照样「更新 4 个文件」（复制旧产物）——症状是截图与改动前逐像素相同、
+   `grep 新键 main.js` 为 0。「build 没跑」和「改动没生效」长得一样，改完先 `grep` 一次新文案再截图。
+2. **删导出的连锁反应**：`check:jsdoc` 按「已注释导出数」棘轮，删掉一个导出会报
+   `已注释导出从 10 降到 9`；覆盖率没降（100%）时用 `npm run check:jsdoc -- --update-baseline` 收紧。
+3. **en 剩余 CJK 要归因**：本片后 en 剩下的中文全是数据/跨层（题材名、书名、标签、provider、
+   诊断串）或`knowledge-capability.ts` 的横幅计数标签——后者已记 §7 backlog，不要当本片回归。
+
+**验收**：`check:i18n` zh/en 各 **4246**、无法解析键 0、动态键 26 处、棘轮 **222 文件 / 7322 条**；
+`npx vitest run kb-format + i18n-parity + i18n-core` 3 文件 **53 例**；`npx tsc --noEmit` EXIT=0；
+实机 zh/en 各 1096×1330（`D:\nw-dev-vault\_visual-i18n20\kb-{zh-CN,en-US}.png`）——
+zh 与改前逐像素相同（sha `1bd64fa9…`），en 卡片变 `Completed` 徽标 + `猫腻 · 374.4k words`；
+`check:bundle` main.js **6,075,680**（+1,473）、styles.css **799,303**（未变）；preflight **EXIT=0**（984 文件 / **10,301 通过 + 3 跳过**）。
+
+**下一轮候选**：知识库能力横幅计数标签 + 卡片 chrome 合成一片
+（`knowledge-capability.ts` 297 字 / `kb-panels-logic.ts` 216 字 / `kb-detail-actions.ts` 112 字 /
+`kb-card-logic.ts` 51 字 / `kb-stats-panel.ts` 52 字 / `kb-task-panel.ts` 37 字）；之后
+`ui/generate-character-modal.ts`（873 字）。
+

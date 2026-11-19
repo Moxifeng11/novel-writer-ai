@@ -9,12 +9,15 @@
  * - formatDuration 各分支信息量不同（小时不带秒、分钟不带小时）
  * - 拆解状态 5 档 / 任务状态 6 档是两套映射，任务多「已暂停」，拆解多「拆解中断」
  * - 频道只有 male/female/neutral → 男频/女频/中性（不存在 other→综合）
+ *
+ * 第二期第31片起文案走 i18n（`knowledgebase.format.*`）：断言仍锁中文输出（语言默认 zh-CN），
+ * 末尾一段另用 `translate('en-US', …)` 锁英文单位与插值，防止只改一边。
  */
 
 import { describe, expect, it } from 'vitest';
+import { t, translate } from '../../../i18n';
 import {
     WORD_COUNT_WAN_THRESHOLD,
-    UNKNOWN_WORD_COUNT_LABEL,
     INVALID_DATE_LABEL,
     formatBreakdownStatusLabel,
     formatTaskStatusLabel,
@@ -92,9 +95,9 @@ describe('formatWordCount — 字数展示', () => {
     });
 
     it('0 与 undefined 都显示「未知」（沿用原实现，0 视为未统计）', () => {
-        expect(formatWordCount(0)).toBe(UNKNOWN_WORD_COUNT_LABEL);
-        expect(formatWordCount(undefined)).toBe(UNKNOWN_WORD_COUNT_LABEL);
-        expect(UNKNOWN_WORD_COUNT_LABEL).toBe('未知');
+        expect(formatWordCount(0)).toBe(t('knowledgebase.format.unknownWordCount'));
+        expect(formatWordCount(undefined)).toBe(t('knowledgebase.format.unknownWordCount'));
+        expect(t('knowledgebase.format.unknownWordCount')).toBe('未知');
     });
 });
 
@@ -141,5 +144,28 @@ describe('formatDuration — 时长中文', () => {
         expect(formatDuration(-1000)).toBe('0秒');
         expect(formatDuration(Number.NaN)).toBe('0秒');
         expect(formatDuration(Number.POSITIVE_INFINITY)).toBe('0秒');
+    });
+});
+
+describe('i18n 资源（knowledgebase.format.*）', () => {
+    it('中文标签与单位逐字未变', () => {
+        expect(t('knowledgebase.format.breakdown.interrupted')).toBe('拆解中断');
+        expect(t('knowledgebase.format.task.paused')).toBe('已暂停');
+        expect(t('knowledgebase.format.channel.male')).toBe('男频');
+        expect(formatWordCount(9800)).toBe('9800 字');
+        expect(formatWordCount(123400)).toBe('12.3 万字');
+    });
+
+    it('英文标签与单位（万字折算 k words，时长 h/m/s）', () => {
+        expect(translate('en-US', 'knowledgebase.format.breakdown.pending')).toBe('Pending');
+        expect(translate('en-US', 'knowledgebase.format.breakdown.processing')).toBe('Breaking down');
+        expect(translate('en-US', 'knowledgebase.format.task.cancelled')).toBe('Cancelled');
+        expect(translate('en-US', 'knowledgebase.format.channel.neutral')).toBe('Neutral');
+        expect(translate('en-US', 'knowledgebase.format.unknownWordCount')).toBe('Unknown');
+        expect(translate('en-US', 'knowledgebase.format.word', { n: 9800 })).toBe('9800 words');
+        expect(translate('en-US', 'knowledgebase.format.wordWan', { n: '12.3' })).toBe('12.3k words');
+        expect(translate('en-US', 'knowledgebase.format.durationHm', { h: 2, m: 5 })).toBe('2h 5m');
+        expect(translate('en-US', 'knowledgebase.format.durationMs', { m: 3, s: 20 })).toBe('3m 20s');
+        expect(translate('en-US', 'knowledgebase.format.durationS', { s: 45 })).toBe('45s');
     });
 });

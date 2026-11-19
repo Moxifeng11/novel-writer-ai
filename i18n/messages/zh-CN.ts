@@ -3090,6 +3090,34 @@ export const zhCN: MessageTree = {
             doubao: "豆包",
             qwen: "通义千问",
         },
+        format: {
+            breakdown: {
+                pending: "待拆解",
+                processing: "拆解中",
+                completed: "已完成",
+                failed: "失败",
+                interrupted: "拆解中断",
+            },
+            task: {
+                pending: "等待中",
+                running: "运行中",
+                paused: "已暂停",
+                completed: "已完成",
+                failed: "失败",
+                cancelled: "已取消",
+            },
+            channel: {
+                male: "男频",
+                female: "女频",
+                neutral: "中性",
+            },
+            unknownWordCount: "未知",
+            word: "{n} 字",
+            wordWan: "{n} 万字",
+            durationHm: "{h}小时{m}分",
+            durationMs: "{m}分{s}秒",
+            durationS: "{s}秒",
+        },
     },
     fullwriter: {
         scene: {

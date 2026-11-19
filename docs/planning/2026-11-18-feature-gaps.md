@@ -243,7 +243,15 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
   （频道页签、工具栏 + 搜索框 `min-width: 150px`）；实机
   `D:\nw-dev-vault\_visual-i18n20\kb-{zh-CN,en-US}.png`。`ui/views/kb-format.ts` 的
   状态徽标与字数/时长单位留独立切片（en 卡片仍有「已完成 / 374.4 万字」）。
-- 后续：第二期余下（写作主流程深水区：template-vars 340 / scene-outline 231 / wizard 群 /
+- 第二期第31片（2026-11-19，DSH）：知识库卡片格式层 `ui/views/kb-format.ts`
+  （167 行 / 23 条 500 字）——三张状态表改 `BREAKDOWN_STATUS_KEYS` / `TASK_STATUS_KEYS` /
+  `CHANNEL_KEYS` + `t()` 求值，删导出常量 `UNKNOWN_WORD_COUNT_LABEL`，
+  `formatWordCount` / `formatDuration` 单位按语言切换（zh `9800 字`/`12.3 万字`/`2小时5分`，
+  en `9800 words`/`12.3k words`/`2h 5m`），迁 `knowledgebase.format.*` 20 键；zh/en 资源各
+  4246 条；棘轮收紧到 222 文件 / 7322 条；en 卡片实测变 `Completed` / `374.4k words`，zh 逐像素零差异。
+- 后续：第二期余下（知识库能力横幅计数标签与卡片 chrome：`knowledge-capability` 297 字 /
+  `kb-panels-logic` 216 字 / `kb-detail-actions` 112 字 / `kb-card-logic` 51 字 /
+  `kb-stats-panel` 52 字 / `kb-task-panel` 37 字；写作主流程深水区：template-vars 340 / scene-outline 231 / wizard 群 /
   step-render 106 / unit-writer 98；外观页的统计/桌宠块），
   第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 

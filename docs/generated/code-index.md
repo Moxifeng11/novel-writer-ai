@@ -11,7 +11,7 @@
 | `shared/` | 259 | 52201 | 2198 | 1718 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1583 | 88 | 58 | 66% |
-| `ui/` | 304 | 113850 | 1182 | 930 | 79% |
+| `ui/` | 304 | 113853 | 1181 | 930 | 79% |
 
 ## 文件清单
 
@@ -996,7 +996,7 @@
 | `ui/views/kb-config-import-logic.ts` | 98 | 5 | 4 |
 | `ui/views/kb-config-panel.ts` | 215 | 3 | 3 |
 | `ui/views/kb-detail-actions.ts` | 180 | 2 | 2 |
-| `ui/views/kb-format.ts` | 168 | 10 | 7 |
+| `ui/views/kb-format.ts` | 171 | 9 | 7 |
 | `ui/views/kb-import-file-logic.ts` | 73 | 6 | 5 |
 | `ui/views/kb-modals-logic.ts` | 68 | 4 | 2 |
 | `ui/views/kb-panels-logic.ts` | 359 | 21 | 10 |
