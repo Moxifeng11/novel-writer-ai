@@ -1,4 +1,5 @@
 import { copyText } from '@/shared/clipboard';
+import { t } from '@/i18n';
 import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { AIEngine } from '@/engine/ai-engine';
@@ -118,16 +119,16 @@ export class GoldenOpeningModal extends Modal {
         contentEl.empty();
 
         const header = contentEl.createDiv({ cls: 'nw-go-header' });
-        header.createEl('h2', { text: '🌟 黄金开篇工坊' });
+        header.createEl('h2', { text: t("goldenOpening.common.k1") });
 
         const tabs = header.createDiv({ cls: 'nw-go-tabs' });
         const tabDefs = [
-            { id: 'three-chapters', label: '黄金三章', icon: '📖' },
-            { id: 'hooks', label: '开篇钩子', icon: '🪝' },
-            { id: 'rhythm', label: '节奏分析', icon: '⚡' },
-            { id: 'characters', label: '人物登场', icon: '👤' },
-            { id: 'worldbuilding', label: '世界观融入', icon: '🌍' },
-            { id: 'scoring', label: '吸引力评分', icon: '⭐' },
+            { id: 'three-chapters', label: t("goldenOpening.common.k2"), icon: '📖' },
+            { id: 'hooks', label: t("goldenOpening.common.k3"), icon: '🪝' },
+            { id: 'rhythm', label: t("goldenOpening.common.k4"), icon: '⚡' },
+            { id: 'characters', label: t("goldenOpening.common.k5"), icon: '👤' },
+            { id: 'worldbuilding', label: t("goldenOpening.common.k6"), icon: '🌍' },
+            { id: 'scoring', label: t("goldenOpening.common.k7"), icon: '⭐' },
         ];
 
         tabDefs.forEach(tab => {
@@ -168,9 +169,9 @@ export class GoldenOpeningModal extends Modal {
     private renderThreeChaptersTab(container: HTMLElement): void {
         const section = container.createDiv({ cls: 'nw-go-section' });
 
-        section.createEl('h3', { text: '📌 故事基本设定', cls: 'nw-go-section-title' });
+        section.createEl('h3', { text: t("goldenOpening.chapters.k1"), cls: 'nw-go-section-title' });
 
-        section.createEl('label', { text: '核心题材标签（可多选）', cls: 'nw-go-label' });
+        section.createEl('label', { text: t("goldenOpening.chapters.k2"), cls: 'nw-go-label' });
         const tagContainer = section.createDiv({ cls: 'nw-go-tags' });
         GENRE_OPTIONS.forEach(genre => {
             const tag = tagContainer.createEl('button', {
@@ -187,25 +188,25 @@ export class GoldenOpeningModal extends Modal {
             };
         });
 
-        section.createEl('label', { text: '故事核心设定/梗概', cls: 'nw-go-label' });
+        section.createEl('label', { text: t("goldenOpening.chapters.k3"), cls: 'nw-go-label' });
         const premiseInput = section.createEl('textarea', {
             cls: 'nw-textarea nw-go-textarea',
-            attr: { rows: '3', placeholder: '简要描述故事的核心设定、世界观背景、主角身份等...' }
+            attr: { rows: '3', placeholder: t("goldenOpening.chapters.k4") }
         });
         premiseInput.value = this.premiseInput;
         premiseInput.oninput = () => { this.premiseInput = premiseInput.value; };
 
-        section.createEl('label', { text: '主角设定', cls: 'nw-go-label' });
+        section.createEl('label', { text: t("goldenOpening.chapters.k5"), cls: 'nw-go-label' });
         const protagInput = section.createEl('textarea', {
             cls: 'nw-textarea nw-go-textarea',
-            attr: { rows: '2', placeholder: '主角姓名、性格、身份背景、金手指/能力...' }
+            attr: { rows: '2', placeholder: t("goldenOpening.chapters.k6") }
         });
         protagInput.value = this.protagonistInput;
         protagInput.oninput = () => { this.protagonistInput = protagInput.value; };
 
         const btnRow = container.createDiv({ cls: 'nw-go-btn-row' });
         const generateBtn = btnRow.createEl('button', {
-            text: this.isGeneratingChapters ? '⏳ 生成中...' : '🚀 生成黄金三章大纲',
+            text: this.isGeneratingChapters ? t("goldenOpening.chapters.k7") : t("goldenOpening.chapters.k8"),
             cls: 'nw-btn nw-btn-primary'
         });
         generateBtn.disabled = this.isGeneratingChapters;
@@ -219,7 +220,7 @@ export class GoldenOpeningModal extends Modal {
 
         if (this.threeChapters.length > 0) {
             const resultSection = container.createDiv({ cls: 'nw-go-section' });
-            resultSection.createEl('h3', { text: '📖 黄金三章大纲', cls: 'nw-go-section-title' });
+            resultSection.createEl('h3', { text: t("goldenOpening.chapters.k9"), cls: 'nw-go-section-title' });
 
             this.threeChapters.forEach((chapter, idx) => {
                 const chapterCard = resultSection.createDiv({ cls: 'nw-go-chapter-card' });
@@ -232,12 +233,12 @@ export class GoldenOpeningModal extends Modal {
                     itemEl.createSpan({ text: `${i + 1}. ${item}`, cls: 'nw-go-structure-text' });
                 });
 
-                chapterCard.createEl('h4', { text: '本章大纲', cls: 'nw-go-subtitle' });
+                chapterCard.createEl('h4', { text: t("goldenOpening.chapters.k10"), cls: 'nw-go-subtitle' });
                 chapterCard.createEl('p', { text: chapter.outline, cls: 'nw-go-chapter-outline' });
             });
 
             const exportBtn = resultSection.createEl('button', {
-                text: '📝 导出到项目',
+                text: t("goldenOpening.chapters.k11"),
                 cls: 'nw-btn nw-btn-primary nw-go-export-btn'
             });
             exportBtn.onclick = () => this.exportThreeChapters();
@@ -246,19 +247,19 @@ export class GoldenOpeningModal extends Modal {
 
     private renderHooksTab(container: HTMLElement): void {
         const section = container.createDiv({ cls: 'nw-go-section' });
-        section.createEl('h3', { text: '🪝 开篇钩子生成器', cls: 'nw-go-section-title' });
-        section.createEl('p', { text: '根据故事设定自动生成多种类型的开篇钩子', cls: 'nw-go-desc' });
+        section.createEl('h3', { text: t("goldenOpening.hooks.k1"), cls: 'nw-go-section-title' });
+        section.createEl('p', { text: t("goldenOpening.hooks.k2"), cls: 'nw-go-desc' });
 
         const premiseInput = section.createEl('textarea', {
             cls: 'nw-textarea nw-go-textarea',
-            attr: { rows: '3', placeholder: '输入故事核心设定、主角身份、世界观背景...' }
+            attr: { rows: '3', placeholder: t("goldenOpening.hooks.k3") }
         });
         premiseInput.value = this.premiseInput;
         premiseInput.oninput = () => { this.premiseInput = premiseInput.value; };
 
         const btnRow = section.createDiv({ cls: 'nw-go-btn-row' });
         const genHookBtn = btnRow.createEl('button', {
-            text: this.isGeneratingHooks ? '⏳ 生成中...' : '✨ 生成开篇钩子',
+            text: this.isGeneratingHooks ? t("goldenOpening.hooks.k4") : t("goldenOpening.hooks.k5"),
             cls: 'nw-btn nw-btn-primary'
         });
         genHookBtn.disabled = this.isGeneratingHooks;
@@ -272,7 +273,7 @@ export class GoldenOpeningModal extends Modal {
 
         if (this.generatedHooks.length > 0) {
             const hooksSection = container.createDiv({ cls: 'nw-go-section' });
-            hooksSection.createEl('h3', { text: '💡 生成的钩子方案', cls: 'nw-go-section-title' });
+            hooksSection.createEl('h3', { text: t("goldenOpening.hooks.k6"), cls: 'nw-go-section-title' });
 
             const hookTypes = ['悬念式', '疑问式', '反转式', '震撼场景式', '对话式', '动作式'];
             this.generatedHooks.forEach((hook, idx) => {
@@ -281,12 +282,12 @@ export class GoldenOpeningModal extends Modal {
                 hookHeader.createSpan({ text: hookTypes[idx] || `类型${idx + 1}`, cls: 'nw-go-hook-type' });
 
                 const copyBtn = hookHeader.createEl('button', {
-                    text: '复制',
+                    text: t("goldenOpening.hooks.k7"),
                     cls: 'nw-btn nw-btn-secondary nw-go-copy-btn'
                 });
                 copyBtn.onclick = () => {
                     void copyText(hook);
-                    showSuccessNotice('已复制到剪贴板', { timeout: 2000 });
+                    showSuccessNotice(t("goldenOpening.hooks.k8"), { timeout: 2000 });
                 };
 
                 hookCard.createEl('p', { text: hook, cls: 'nw-go-hook-content' });
@@ -294,19 +295,19 @@ export class GoldenOpeningModal extends Modal {
         }
 
         const checkSection = container.createDiv({ cls: 'nw-go-section' });
-        checkSection.createEl('h3', { text: '🔍 钩子检测', cls: 'nw-go-section-title' });
-        checkSection.createEl('p', { text: '粘贴开篇正文（前300字左右），检测是否有有效钩子', cls: 'nw-go-desc' });
+        checkSection.createEl('h3', { text: t("goldenOpening.hooks.k9"), cls: 'nw-go-section-title' });
+        checkSection.createEl('p', { text: t("goldenOpening.hooks.k10"), cls: 'nw-go-desc' });
 
         const textInput = checkSection.createEl('textarea', {
             cls: 'nw-textarea nw-go-textarea',
-            attr: { rows: '6', placeholder: '粘贴你的开篇正文...' }
+            attr: { rows: '6', placeholder: t("goldenOpening.hooks.k11") }
         });
         textInput.value = this.textInput;
         textInput.oninput = () => { this.textInput = textInput.value; };
 
         const checkBtnRow = checkSection.createDiv({ cls: 'nw-go-btn-row' });
         const checkBtn = checkBtnRow.createEl('button', {
-            text: this.isCheckingHooks ? '⏳ 检测中...' : '🔍 检测钩子强度',
+            text: this.isCheckingHooks ? t("goldenOpening.hooks.k12") : t("goldenOpening.hooks.k13"),
             cls: 'nw-btn nw-btn-primary'
         });
         checkBtn.disabled = this.isCheckingHooks;
@@ -320,19 +321,19 @@ export class GoldenOpeningModal extends Modal {
 
         if (this.hookCheckResult) {
             const resultSection = container.createDiv({ cls: 'nw-go-section' });
-            resultSection.createEl('h3', { text: '📊 检测结果', cls: 'nw-go-section-title' });
+            resultSection.createEl('h3', { text: t("goldenOpening.hooks.k14"), cls: 'nw-go-section-title' });
 
             const scoreCard = resultSection.createDiv({ cls: 'nw-go-score-card' });
             scoreCard.createEl('div', { text: `${this.hookCheckResult.overallScore}`, cls: 'nw-go-score-number' });
-            scoreCard.createEl('div', { text: '钩子强度评分', cls: 'nw-go-score-label' });
+            scoreCard.createEl('div', { text: t("goldenOpening.hooks.k15"), cls: 'nw-go-score-label' });
             scoreCard.createEl('div', {
-                text: this.hookCheckResult.overallScore >= 8 ? '优秀' :
+                text: this.hookCheckResult.overallScore >= 8 ? t("goldenOpening.hooks.k16") :
                       this.hookCheckResult.overallScore >= 6 ? '良好' :
                       this.hookCheckResult.overallScore >= 4 ? '一般' : '需加强',
                 cls: 'nw-go-score-grade'
             });
 
-            resultSection.createEl('h4', { text: '检测到的钩子', cls: 'nw-go-subtitle' });
+            resultSection.createEl('h4', { text: t("goldenOpening.hooks.k17"), cls: 'nw-go-subtitle' });
             this.hookCheckResult.hooks.forEach(hook => {
                 const hookItem = resultSection.createDiv({ cls: 'nw-go-hook-detect-item' });
                 const hookItemHeader = hookItem.createDiv({ cls: 'nw-go-hook-detect-header' });
@@ -344,26 +345,26 @@ export class GoldenOpeningModal extends Modal {
                 hookItem.createEl('p', { text: hook.content, cls: 'nw-go-hook-detect-content' });
             });
 
-            resultSection.createEl('h4', { text: '📝 分析与建议', cls: 'nw-go-subtitle' });
+            resultSection.createEl('h4', { text: t("goldenOpening.hooks.k18"), cls: 'nw-go-subtitle' });
             resultSection.createEl('p', { text: this.hookCheckResult.analysis, cls: 'nw-go-analysis-text' });
         }
     }
 
     private renderRhythmTab(container: HTMLElement): void {
         const section = container.createDiv({ cls: 'nw-go-section' });
-        section.createEl('h3', { text: '⚡ 开篇节奏分析', cls: 'nw-go-section-title' });
-        section.createEl('p', { text: '分析开篇的节奏快慢、信息密度，提供段落级调整建议', cls: 'nw-go-desc' });
+        section.createEl('h3', { text: t("goldenOpening.rhythm.k1"), cls: 'nw-go-section-title' });
+        section.createEl('p', { text: t("goldenOpening.rhythm.k2"), cls: 'nw-go-desc' });
 
         const textInput = section.createEl('textarea', {
             cls: 'nw-textarea nw-go-textarea',
-            attr: { rows: '8', placeholder: '粘贴开篇正文（建议1000-3000字）...' }
+            attr: { rows: '8', placeholder: t("goldenOpening.rhythm.k3") }
         });
         textInput.value = this.textInput;
         textInput.oninput = () => { this.textInput = textInput.value; };
 
         const btnRow = section.createDiv({ cls: 'nw-go-btn-row' });
         const analyzeBtn = btnRow.createEl('button', {
-            text: this.isAnalyzingRhythm ? '⏳ 分析中...' : '🔍 分析开篇节奏',
+            text: this.isAnalyzingRhythm ? t("goldenOpening.rhythm.k4") : t("goldenOpening.rhythm.k5"),
             cls: 'nw-btn nw-btn-primary'
         });
         analyzeBtn.disabled = this.isAnalyzingRhythm;
@@ -377,11 +378,11 @@ export class GoldenOpeningModal extends Modal {
 
         if (this.rhythmResult) {
             const resultSection = container.createDiv({ cls: 'nw-go-section' });
-            resultSection.createEl('h3', { text: '📊 分析结果', cls: 'nw-go-section-title' });
+            resultSection.createEl('h3', { text: t("goldenOpening.rhythm.k6"), cls: 'nw-go-section-title' });
 
             const overviewGrid = resultSection.createDiv({ cls: 'nw-go-rhythm-grid' });
             const paceCard = overviewGrid.createDiv({ cls: 'nw-go-rhythm-card' });
-            paceCard.createEl('div', { text: '整体节奏', cls: 'nw-go-rhythm-label' });
+            paceCard.createEl('div', { text: t("goldenOpening.rhythm.k7"), cls: 'nw-go-rhythm-label' });
             paceCard.createEl('div', { text: this.rhythmResult.overallPace, cls: 'nw-go-rhythm-value' });
             const paceBar = paceCard.createDiv({ cls: 'nw-go-rhythm-bar' });
             const paceFill = paceBar.createDiv({ cls: 'nw-go-rhythm-fill' });
@@ -389,14 +390,14 @@ export class GoldenOpeningModal extends Modal {
             paceCard.createEl('div', { text: `${this.rhythmResult.paceScore}/10`, cls: 'nw-go-rhythm-score' });
 
             const densityCard = overviewGrid.createDiv({ cls: 'nw-go-rhythm-card' });
-            densityCard.createEl('div', { text: '信息密度', cls: 'nw-go-rhythm-label' });
+            densityCard.createEl('div', { text: t("goldenOpening.rhythm.k8"), cls: 'nw-go-rhythm-label' });
             densityCard.createEl('div', { text: this.rhythmResult.infoDensity, cls: 'nw-go-rhythm-value' });
             const densityBar = densityCard.createDiv({ cls: 'nw-go-rhythm-bar' });
             const densityFill = densityBar.createDiv({ cls: 'nw-go-rhythm-fill' });
             densityFill.style.width = `${this.rhythmResult.densityScore * 10}%`;
             densityCard.createEl('div', { text: `${this.rhythmResult.densityScore}/10`, cls: 'nw-go-rhythm-score' });
 
-            resultSection.createEl('h4', { text: '📝 段落级分析', cls: 'nw-go-subtitle' });
+            resultSection.createEl('h4', { text: t("goldenOpening.rhythm.k9"), cls: 'nw-go-subtitle' });
             this.rhythmResult.paragraphAnalysis.forEach(item => {
                 const paraItem = resultSection.createDiv({ cls: 'nw-go-para-item' });
                 const paraHeader = paraItem.createDiv({ cls: 'nw-go-para-header' });
@@ -405,7 +406,7 @@ export class GoldenOpeningModal extends Modal {
                 paraItem.createEl('p', { text: item.suggestion, cls: 'nw-go-para-suggestion' });
             });
 
-            resultSection.createEl('h4', { text: '💡 调整建议', cls: 'nw-go-subtitle' });
+            resultSection.createEl('h4', { text: t("goldenOpening.rhythm.k10"), cls: 'nw-go-subtitle' });
             const suggestionsList = resultSection.createDiv({ cls: 'nw-go-suggestions-list' });
             this.rhythmResult.suggestions.forEach((sugg, idx) => {
                 const suggItem = suggestionsList.createDiv({ cls: 'nw-go-suggestion-item' });
@@ -417,26 +418,26 @@ export class GoldenOpeningModal extends Modal {
 
     private renderCharactersTab(container: HTMLElement): void {
         const section = container.createDiv({ cls: 'nw-go-section' });
-        section.createEl('h3', { text: '👤 人物快速登场机制', cls: 'nw-go-section-title' });
-        section.createEl('p', { text: '设计主角快速登场方式、配角登场时机、人物关系快速建立', cls: 'nw-go-desc' });
+        section.createEl('h3', { text: t("goldenOpening.chars.k1"), cls: 'nw-go-section-title' });
+        section.createEl('p', { text: t("goldenOpening.chars.k2"), cls: 'nw-go-desc' });
 
         const premiseInput = section.createEl('textarea', {
             cls: 'nw-textarea nw-go-textarea',
-            attr: { rows: '3', placeholder: '故事核心设定、世界观背景...' }
+            attr: { rows: '3', placeholder: t("goldenOpening.chars.k3") }
         });
         premiseInput.value = this.premiseInput;
         premiseInput.oninput = () => { this.premiseInput = premiseInput.value; };
 
         const protagInput = section.createEl('textarea', {
             cls: 'nw-textarea nw-go-textarea',
-            attr: { rows: '2', placeholder: '主角设定（姓名、性格、身份、能力...）' }
+            attr: { rows: '2', placeholder: t("goldenOpening.chars.k4") }
         });
         protagInput.value = this.protagonistInput;
         protagInput.oninput = () => { this.protagonistInput = protagInput.value; };
 
         const btnRow = section.createDiv({ cls: 'nw-go-btn-row' });
         const generateBtn = btnRow.createEl('button', {
-            text: this.isGeneratingCharIntro ? '⏳ 生成中...' : '✨ 生成人物登场方案',
+            text: this.isGeneratingCharIntro ? t("goldenOpening.chars.k5") : t("goldenOpening.chars.k6"),
             cls: 'nw-btn nw-btn-primary'
         });
         generateBtn.disabled = this.isGeneratingCharIntro;
@@ -450,12 +451,12 @@ export class GoldenOpeningModal extends Modal {
 
         if (this.characterIntroResult) {
             const resultSection = container.createDiv({ cls: 'nw-go-section' });
-            resultSection.createEl('h3', { text: '🎭 人物登场方案', cls: 'nw-go-section-title' });
+            resultSection.createEl('h3', { text: t("goldenOpening.chars.k7"), cls: 'nw-go-section-title' });
 
-            resultSection.createEl('h4', { text: '主角登场模板', cls: 'nw-go-subtitle' });
+            resultSection.createEl('h4', { text: t("goldenOpening.chars.k8"), cls: 'nw-go-subtitle' });
             resultSection.createEl('p', { text: this.characterIntroResult.protagonistIntro, cls: 'nw-go-analysis-text' });
 
-            resultSection.createEl('h4', { text: '配角登场安排', cls: 'nw-go-subtitle' });
+            resultSection.createEl('h4', { text: t("goldenOpening.chars.k9"), cls: 'nw-go-subtitle' });
             this.characterIntroResult.sideCharacters.forEach(char => {
                 const charCard = resultSection.createDiv({ cls: 'nw-go-char-card' });
                 const charHeader = charCard.createDiv({ cls: 'nw-go-char-header' });
@@ -465,26 +466,26 @@ export class GoldenOpeningModal extends Modal {
                 charCard.createEl('p', { text: `与主角关系：${char.relation}`, cls: 'nw-go-char-relation' });
             });
 
-            resultSection.createEl('h4', { text: '人物关系快速建立', cls: 'nw-go-subtitle' });
+            resultSection.createEl('h4', { text: t("goldenOpening.chars.k10"), cls: 'nw-go-subtitle' });
             resultSection.createEl('p', { text: this.characterIntroResult.relationshipSetup, cls: 'nw-go-analysis-text' });
         }
     }
 
     private renderWorldbuildingTab(container: HTMLElement): void {
         const section = container.createDiv({ cls: 'nw-go-section' });
-        section.createEl('h3', { text: '🌍 世界观自然融入设计', cls: 'nw-go-section-title' });
-        section.createEl('p', { text: '检测信息倾倒（信息过载）、提供碎片化融入建议', cls: 'nw-go-desc' });
+        section.createEl('h3', { text: t("goldenOpening.world.k1"), cls: 'nw-go-section-title' });
+        section.createEl('p', { text: t("goldenOpening.world.k2"), cls: 'nw-go-desc' });
 
         const textInput = section.createEl('textarea', {
             cls: 'nw-textarea nw-go-textarea',
-            attr: { rows: '8', placeholder: '粘贴开篇正文（建议1000-3000字）...' }
+            attr: { rows: '8', placeholder: t("goldenOpening.world.k3") }
         });
         textInput.value = this.textInput;
         textInput.oninput = () => { this.textInput = textInput.value; };
 
         const btnRow = section.createDiv({ cls: 'nw-go-btn-row' });
         const analyzeBtn = btnRow.createEl('button', {
-            text: this.isAnalyzingWorldbuilding ? '⏳ 分析中...' : '🔍 检测世界观融入',
+            text: this.isAnalyzingWorldbuilding ? t("goldenOpening.world.k4") : t("goldenOpening.world.k5"),
             cls: 'nw-btn nw-btn-primary'
         });
         analyzeBtn.disabled = this.isAnalyzingWorldbuilding;
@@ -498,12 +499,12 @@ export class GoldenOpeningModal extends Modal {
 
         if (this.worldbuildingResult) {
             const resultSection = container.createDiv({ cls: 'nw-go-section' });
-            resultSection.createEl('h3', { text: '📊 分析结果', cls: 'nw-go-section-title' });
+            resultSection.createEl('h3', { text: t("goldenOpening.world.k6"), cls: 'nw-go-section-title' });
 
             const dumpCard = resultSection.createDiv({ cls: 'nw-go-dump-card' });
             const dumpStatus = dumpCard.createDiv({ cls: 'nw-go-dump-status' });
             dumpStatus.createSpan({
-                text: this.worldbuildingResult.hasInfoDump ? '⚠️ 检测到信息倾倒' : '✅ 信息融入良好',
+                text: this.worldbuildingResult.hasInfoDump ? t("goldenOpening.world.k7") : t("goldenOpening.world.k8"),
                 cls: `nw-go-dump-status-text ${this.worldbuildingResult.hasInfoDump ? 'warning' : 'ok'}`
             });
             const severityBar = dumpCard.createDiv({ cls: 'nw-go-severity-bar' });
@@ -514,7 +515,7 @@ export class GoldenOpeningModal extends Modal {
             dumpCard.createEl('div', { text: `严重程度：${this.worldbuildingResult.dumpSeverity}/10`, cls: 'nw-go-severity-text' });
 
             if (this.worldbuildingResult.dumpLocations.length > 0) {
-                resultSection.createEl('h4', { text: '📍 问题位置', cls: 'nw-go-subtitle' });
+                resultSection.createEl('h4', { text: t("goldenOpening.world.k9"), cls: 'nw-go-subtitle' });
                 this.worldbuildingResult.dumpLocations.forEach((loc, idx) => {
                     const locItem = resultSection.createDiv({ cls: 'nw-go-dump-loc' });
                     locItem.createSpan({ text: `${idx + 1}. `, cls: 'nw-go-dump-loc-num' });
@@ -522,33 +523,33 @@ export class GoldenOpeningModal extends Modal {
                 });
             }
 
-            resultSection.createEl('h4', { text: '💡 碎片化融入建议', cls: 'nw-go-subtitle' });
+            resultSection.createEl('h4', { text: t("goldenOpening.world.k10"), cls: 'nw-go-subtitle' });
             this.worldbuildingResult.fragmentSuggestions.forEach((sugg, idx) => {
                 const suggItem = resultSection.createDiv({ cls: 'nw-go-suggestion-item' });
                 suggItem.createSpan({ text: `${idx + 1}. `, cls: 'nw-go-suggestion-num' });
                 suggItem.createSpan({ text: sugg, cls: 'nw-go-suggestion-text' });
             });
 
-            resultSection.createEl('h4', { text: '⚖️ 信息披露与悬念平衡', cls: 'nw-go-subtitle' });
+            resultSection.createEl('h4', { text: t("goldenOpening.world.k11"), cls: 'nw-go-subtitle' });
             resultSection.createEl('p', { text: this.worldbuildingResult.balanceAdvice, cls: 'nw-go-analysis-text' });
         }
     }
 
     private renderScoringTab(container: HTMLElement): void {
         const section = container.createDiv({ cls: 'nw-go-section' });
-        section.createEl('h3', { text: '⭐ 开篇吸引力综合评分', cls: 'nw-go-section-title' });
-        section.createEl('p', { text: '多维度评估开篇吸引力，提供优先级排序的改进建议', cls: 'nw-go-desc' });
+        section.createEl('h3', { text: t("goldenOpening.scoring.k1"), cls: 'nw-go-section-title' });
+        section.createEl('p', { text: t("goldenOpening.scoring.k2"), cls: 'nw-go-desc' });
 
         const textInput = section.createEl('textarea', {
             cls: 'nw-textarea nw-go-textarea',
-            attr: { rows: '8', placeholder: '粘贴开篇正文（建议前三章或前3000字）...' }
+            attr: { rows: '8', placeholder: t("goldenOpening.scoring.k3") }
         });
         textInput.value = this.textInput;
         textInput.oninput = () => { this.textInput = textInput.value; };
 
         const btnRow = section.createDiv({ cls: 'nw-go-btn-row' });
         const scoreBtn = btnRow.createEl('button', {
-            text: this.isScoring ? '⏳ 评分中...' : '🌟 综合评分',
+            text: this.isScoring ? t("goldenOpening.scoring.k4") : t("goldenOpening.scoring.k5"),
             cls: 'nw-btn nw-btn-primary'
         });
         scoreBtn.disabled = this.isScoring;
@@ -562,23 +563,23 @@ export class GoldenOpeningModal extends Modal {
 
         if (this.openingScoreResult) {
             const resultSection = container.createDiv({ cls: 'nw-go-section' });
-            resultSection.createEl('h3', { text: '🏆 综合评分结果', cls: 'nw-go-section-title' });
+            resultSection.createEl('h3', { text: t("goldenOpening.scoring.k6"), cls: 'nw-go-section-title' });
 
             const overallCard = resultSection.createDiv({ cls: 'nw-go-overall-score' });
             overallCard.createEl('div', { text: `${this.openingScoreResult.overall}`, cls: 'nw-go-overall-number' });
-            overallCard.createEl('div', { text: '综合吸引力指数', cls: 'nw-go-overall-label' });
+            overallCard.createEl('div', { text: t("goldenOpening.scoring.k7"), cls: 'nw-go-overall-label' });
             overallCard.createEl('div', {
-                text: this.openingScoreResult.overall >= 9 ? '惊艳开篇' :
+                text: this.openingScoreResult.overall >= 9 ? t("goldenOpening.scoring.k8") :
                       this.openingScoreResult.overall >= 7 ? '优秀开篇' :
                       this.openingScoreResult.overall >= 5 ? '合格开篇' : '需要打磨',
                 cls: 'nw-go-overall-grade'
             });
 
             const dimensions = [
-                { label: '钩子强度', value: this.openingScoreResult.hookStrength, color: '#ff6b6b', icon: '🪝' },
-                { label: '节奏把控', value: this.openingScoreResult.rhythm, color: '#4ecdc4', icon: '⚡' },
-                { label: '人物魅力', value: this.openingScoreResult.charCharm, color: '#45b7d1', icon: '👤' },
-                { label: '悬念设置', value: this.openingScoreResult.suspense, color: '#f9ca24', icon: '❓' },
+                { label: t("goldenOpening.scoring.k9"), value: this.openingScoreResult.hookStrength, color: '#ff6b6b', icon: '🪝' },
+                { label: t("goldenOpening.scoring.k10"), value: this.openingScoreResult.rhythm, color: '#4ecdc4', icon: '⚡' },
+                { label: t("goldenOpening.scoring.k11"), value: this.openingScoreResult.charCharm, color: '#45b7d1', icon: '👤' },
+                { label: t("goldenOpening.scoring.k12"), value: this.openingScoreResult.suspense, color: '#f9ca24', icon: '❓' },
             ];
 
             const scoreList = resultSection.createDiv({ cls: 'nw-go-score-list' });
@@ -593,12 +594,12 @@ export class GoldenOpeningModal extends Modal {
                 bar.style.background = dim.color;
             });
 
-            resultSection.createEl('h4', { text: '📋 改进建议（按优先级排序）', cls: 'nw-go-subtitle' });
+            resultSection.createEl('h4', { text: t("goldenOpening.scoring.k13"), cls: 'nw-go-subtitle' });
             this.openingScoreResult.improvements.forEach(imp => {
                 const impItem = resultSection.createDiv({ cls: `nw-go-improvement-item priority-${imp.priority}` });
                 const impHeader = impItem.createDiv({ cls: 'nw-go-improvement-header' });
                 const priorityBadge = impHeader.createSpan({
-                    text: imp.priority === 'high' ? '🔴 高优先级' : imp.priority === 'medium' ? '🟡 中优先级' : '🟢 低优先级',
+                    text: imp.priority === 'high' ? t("goldenOpening.scoring.k14") : imp.priority === 'medium' ? '🟡 中优先级' : '🟢 低优先级',
                     cls: 'nw-go-priority-badge'
                 });
                 impItem.createEl('p', { text: imp.content, cls: 'nw-go-improvement-content' });
@@ -672,7 +673,7 @@ export class GoldenOpeningModal extends Modal {
             notice.hide();
 
             if (result.error) {
-                showErrorNotice(result.error, { title: '生成失败', timeout: 5000 });
+                showErrorNotice(result.error, { title: t("goldenOpening.common.k8"), timeout: 5000 });
                 this.isGeneratingChapters = false;
                 this.render();
                 return;
@@ -680,18 +681,18 @@ export class GoldenOpeningModal extends Modal {
 
             const parsed = this.parseThreeChaptersResponse(result.content);
             if (parsed.length === 0) {
-                showErrorNotice('解析失败，请重试', { timeout: 5000 });
+                showErrorNotice(t("goldenOpening.common.k9"), { timeout: 5000 });
                 this.isGeneratingChapters = false;
                 this.render();
                 return;
             }
 
             this.threeChapters = parsed;
-            showSuccessNotice('黄金三章大纲已生成', { timeout: 3000 });
+            showSuccessNotice(t("goldenOpening.common.k10"), { timeout: 3000 });
         } catch (e) {
             notice.hide();
             log.error('[GoldenOpeningModal] 生成三章失败:', e);
-            showErrorNotice('生成出错，请稍后重试', { timeout: 5000 });
+            showErrorNotice(t("goldenOpening.common.k11"), { timeout: 5000 });
         }
 
         this.isGeneratingChapters = false;
@@ -762,7 +763,7 @@ export class GoldenOpeningModal extends Modal {
             notice.hide();
 
             if (result.error) {
-                showErrorNotice(result.error, { title: '生成失败', timeout: 5000 });
+                showErrorNotice(result.error, { title: t("goldenOpening.common.k12"), timeout: 5000 });
                 this.isGeneratingHooks = false;
                 this.render();
                 return;
@@ -770,18 +771,18 @@ export class GoldenOpeningModal extends Modal {
 
             const parsed = this.parseHooksResponse(result.content);
             if (parsed.length === 0) {
-                showErrorNotice('解析失败，请重试', { timeout: 5000 });
+                showErrorNotice(t("goldenOpening.common.k13"), { timeout: 5000 });
                 this.isGeneratingHooks = false;
                 this.render();
                 return;
             }
 
             this.generatedHooks = parsed;
-            showSuccessNotice('开篇钩子已生成', { timeout: 3000 });
+            showSuccessNotice(t("goldenOpening.common.k14"), { timeout: 3000 });
         } catch (e) {
             notice.hide();
             log.error('[GoldenOpeningModal] 生成钩子失败:', e);
-            showErrorNotice('生成出错，请稍后重试', { timeout: 5000 });
+            showErrorNotice(t("goldenOpening.common.k15"), { timeout: 5000 });
         }
 
         this.isGeneratingHooks = false;
@@ -851,7 +852,7 @@ ${this.textInput.slice(0, 1000)}
             notice.hide();
 
             if (result.error) {
-                showErrorNotice(result.error, { title: '检测失败', timeout: 5000 });
+                showErrorNotice(result.error, { title: t("goldenOpening.common.k16"), timeout: 5000 });
                 this.isCheckingHooks = false;
                 this.render();
                 return;
@@ -859,7 +860,7 @@ ${this.textInput.slice(0, 1000)}
 
             const parsed = this.parseHookCheckResponse(result.content);
             if (!parsed) {
-                showErrorNotice('解析失败，请重试', { timeout: 5000 });
+                showErrorNotice(t("goldenOpening.common.k17"), { timeout: 5000 });
                 this.isCheckingHooks = false;
                 this.render();
                 return;
@@ -870,7 +871,7 @@ ${this.textInput.slice(0, 1000)}
         } catch (e) {
             notice.hide();
             log.error('[GoldenOpeningModal] 检测钩子失败:', e);
-            showErrorNotice('检测出错，请稍后重试', { timeout: 5000 });
+            showErrorNotice(t("goldenOpening.common.k18"), { timeout: 5000 });
         }
 
         this.isCheckingHooks = false;
@@ -946,7 +947,7 @@ ${this.textInput}
             notice.hide();
 
             if (result.error) {
-                showErrorNotice(result.error, { title: '分析失败', timeout: 5000 });
+                showErrorNotice(result.error, { title: t("goldenOpening.common.k19"), timeout: 5000 });
                 this.isAnalyzingRhythm = false;
                 this.render();
                 return;
@@ -954,18 +955,18 @@ ${this.textInput}
 
             const parsed = this.parseRhythmResponse(result.content);
             if (!parsed) {
-                showErrorNotice('解析失败，请重试', { timeout: 5000 });
+                showErrorNotice(t("goldenOpening.common.k20"), { timeout: 5000 });
                 this.isAnalyzingRhythm = false;
                 this.render();
                 return;
             }
 
             this.rhythmResult = parsed;
-            showSuccessNotice('节奏分析完成', { timeout: 3000 });
+            showSuccessNotice(t("goldenOpening.common.k21"), { timeout: 3000 });
         } catch (e) {
             notice.hide();
             log.error('[GoldenOpeningModal] 节奏分析失败:', e);
-            showErrorNotice('分析出错，请稍后重试', { timeout: 5000 });
+            showErrorNotice(t("goldenOpening.common.k22"), { timeout: 5000 });
         }
 
         this.isAnalyzingRhythm = false;
@@ -1039,7 +1040,7 @@ ${this.textInput}
             notice.hide();
 
             if (result.error) {
-                showErrorNotice(result.error, { title: '生成失败', timeout: 5000 });
+                showErrorNotice(result.error, { title: t("goldenOpening.common.k23"), timeout: 5000 });
                 this.isGeneratingCharIntro = false;
                 this.render();
                 return;
@@ -1047,18 +1048,18 @@ ${this.textInput}
 
             const parsed = this.parseCharacterIntroResponse(result.content);
             if (!parsed) {
-                showErrorNotice('解析失败，请重试', { timeout: 5000 });
+                showErrorNotice(t("goldenOpening.common.k24"), { timeout: 5000 });
                 this.isGeneratingCharIntro = false;
                 this.render();
                 return;
             }
 
             this.characterIntroResult = parsed;
-            showSuccessNotice('人物登场方案已生成', { timeout: 3000 });
+            showSuccessNotice(t("goldenOpening.common.k25"), { timeout: 3000 });
         } catch (e) {
             notice.hide();
             log.error('[GoldenOpeningModal] 生成人物登场失败:', e);
-            showErrorNotice('生成出错，请稍后重试', { timeout: 5000 });
+            showErrorNotice(t("goldenOpening.common.k26"), { timeout: 5000 });
         }
 
         this.isGeneratingCharIntro = false;
@@ -1131,7 +1132,7 @@ ${this.textInput}
             notice.hide();
 
             if (result.error) {
-                showErrorNotice(result.error, { title: '分析失败', timeout: 5000 });
+                showErrorNotice(result.error, { title: t("goldenOpening.common.k27"), timeout: 5000 });
                 this.isAnalyzingWorldbuilding = false;
                 this.render();
                 return;
@@ -1139,18 +1140,18 @@ ${this.textInput}
 
             const parsed = this.parseWorldbuildingResponse(result.content);
             if (!parsed) {
-                showErrorNotice('解析失败，请重试', { timeout: 5000 });
+                showErrorNotice(t("goldenOpening.common.k28"), { timeout: 5000 });
                 this.isAnalyzingWorldbuilding = false;
                 this.render();
                 return;
             }
 
             this.worldbuildingResult = parsed;
-            showSuccessNotice('世界观融入分析完成', { timeout: 3000 });
+            showSuccessNotice(t("goldenOpening.common.k29"), { timeout: 3000 });
         } catch (e) {
             notice.hide();
             log.error('[GoldenOpeningModal] 世界观分析失败:', e);
-            showErrorNotice('分析出错，请稍后重试', { timeout: 5000 });
+            showErrorNotice(t("goldenOpening.common.k30"), { timeout: 5000 });
         }
 
         this.isAnalyzingWorldbuilding = false;
@@ -1233,7 +1234,7 @@ ${this.textInput}
             notice.hide();
 
             if (result.error) {
-                showErrorNotice(result.error, { title: '评分失败', timeout: 5000 });
+                showErrorNotice(result.error, { title: t("goldenOpening.common.k31"), timeout: 5000 });
                 this.isScoring = false;
                 this.render();
                 return;
@@ -1241,7 +1242,7 @@ ${this.textInput}
 
             const parsed = this.parseScoringResponse(result.content);
             if (!parsed) {
-                showErrorNotice('解析失败，请重试', { timeout: 5000 });
+                showErrorNotice(t("goldenOpening.common.k32"), { timeout: 5000 });
                 this.isScoring = false;
                 this.render();
                 return;
@@ -1252,7 +1253,7 @@ ${this.textInput}
         } catch (e) {
             notice.hide();
             log.error('[GoldenOpeningModal] 综合评分失败:', e);
-            showErrorNotice('评分出错，请稍后重试', { timeout: 5000 });
+            showErrorNotice(t("goldenOpening.common.k33"), { timeout: 5000 });
         }
 
         this.isScoring = false;
@@ -1293,7 +1294,7 @@ ${this.textInput}
 
     private showExportChoice(activeProject: string): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('📁 保存黄金开篇');
+        modal.titleEl.setText(t("goldenOpening.common.k34"));
         const content = modal.contentEl.createDiv({ cls: 'nw-form-stack' });
         content.createEl('p', {
             text: `当前项目：${activeProject}。可以保存到当前项目，或基于这份黄金三章创建新项目。`,
@@ -1308,14 +1309,14 @@ ${this.textInput}
             await this.saveGoldenToProject(activeProject);
         };
         const createNew = content.createEl('button', {
-            text: '创建新项目',
+            text: t("goldenOpening.common.k35"),
             cls: 'nw-btn nw-btn-secondary',
         });
         createNew.onclick = () => {
             modal.close();
             this.openCreateProject();
         };
-        const cancel = content.createEl('button', { text: '取消', cls: 'nw-btn' });
+        const cancel = content.createEl('button', { text: t("goldenOpening.common.k36"), cls: 'nw-btn' });
         cancel.onclick = () => modal.close();
         modal.open();
     }
@@ -1376,7 +1377,7 @@ tags: [黄金开篇, 大纲]
             this.close();
         } catch (e) {
             log.error('[GoldenOpeningModal] 保存黄金开篇失败:', e);
-            showErrorNotice('保存失败，请检查权限', { timeout: 5000 });
+            showErrorNotice(t("goldenOpening.common.k37"), { timeout: 5000 });
         }
     }
 
