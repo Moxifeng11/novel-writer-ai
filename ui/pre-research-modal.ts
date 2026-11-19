@@ -6,6 +6,7 @@
  * 调研结果写入项目内独立的 `00-前期调研/`，与长篇 11 步完全分离。
  */
 import { copyText } from '@/shared/clipboard';
+import { t } from '@/i18n';
 import { App, Modal, Notice } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import {
@@ -75,7 +76,7 @@ export class PreResearchModal extends Modal {
      */
     onOpen(): void {
         this.modalEl.addClass('nw-scope', 'nw-modal', 'nw-pre-research-modal');
-        this.titleEl.setText(this.mode === 'short' ? '📚 短篇前期调研' : '🎬 剧本前期调研');
+        this.titleEl.setText(this.mode === 'short' ? t("preResearch.common.k1") : t("preResearch.common.k2"));
         const { contentEl } = this;
         contentEl.empty();
         contentEl.addClass('nw-pre-research-content');
@@ -83,22 +84,22 @@ export class PreResearchModal extends Modal {
         const intro = contentEl.createDiv({ cls: 'nw-pre-research-intro' });
         intro.createEl('p', {
             text: this.mode === 'short'
-                ? '先完成番茄短篇定位与故事核，再创建项目。调研结果写入独立的 00-前期调研/，不复用长篇 11 步。'
-                : '先完成红果短剧类型、商业钩子与集数规格，再创建项目。调研结果写入独立的 00-前期调研/，不复用长篇 11 步。',
+                ? t("preResearch.common.k3")
+                : t("preResearch.common.k4"),
         });
 
         const aiRow = intro.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-fwr-wrap' });
         const researchBtn = aiRow.createEl('button', {
-            text: '🤖 AI 前期调研',
+            text: t("preResearch.common.k5"),
             cls: 'nw-btn nw-btn-primary',
-            attr: { type: 'button', title: '检索热点/行业素材，结合固化框架与真随机因子生成 3 个候选方向' },
+            attr: { type: 'button', title: t("preResearch.common.k6") },
         });
         const randomBtn = aiRow.createEl('button', {
-            text: '🎲 随机灵感',
+            text: t("preResearch.common.k7"),
             cls: 'nw-btn nw-btn-secondary',
-            attr: { type: 'button', title: '只生成多层真随机因子预览，不调用 AI' },
+            attr: { type: 'button', title: t("preResearch.common.k8") },
         });
-        const aiStatus = aiRow.createDiv({ cls: 'nw-u-fs-12px nw-u-c-text-muted', text: '尚未执行 AI 调研' });
+        const aiStatus = aiRow.createDiv({ cls: 'nw-u-fs-12px nw-u-c-text-muted', text: t("preResearch.common.k9") });
         const aiOutput = intro.createDiv({ cls: 'nw-u-fs-12px' });
         aiOutput.hidden = true;
         this.aiStatusEl = aiStatus;
@@ -112,14 +113,14 @@ export class PreResearchModal extends Modal {
 
         const footer = contentEl.createDiv({ cls: 'nw-modal-footer' });
         const cancel = footer.createEl('button', {
-            text: '取消',
+            text: t("preResearch.common.k10"),
             cls: 'nw-btn nw-btn-secondary',
             attr: { type: 'button' },
         });
         cancel.onclick = () => this.close();
 
         const submit = footer.createEl('button', {
-            text: this.options.project ? '保存调研' : '创建项目并进入',
+            text: this.options.project ? t("preResearch.common.k11") : t("preResearch.common.k12"),
             cls: 'nw-btn nw-btn-primary',
             attr: { type: 'button' },
         });
@@ -210,67 +211,67 @@ export class PreResearchModal extends Modal {
 
     private renderShortFields(body: HTMLElement): void {
         const spec = CREATION_MODE_SPECS.short;
-        const section1 = this.section(body, '一、市场与定位');
-        this.textField(section1, 'name', '项目名称', '请输入短篇名', this.options.name || '');
+        const section1 = this.section(body, t("preResearch.short.k1"));
+        this.textField(section1, 'name', t("preResearch.short.k2"), t("preResearch.short.k3"), this.options.name || '');
         this.selectField(
             section1,
             'primaryCategory',
-            '番茄主分类（必选）',
+            t("preResearch.short.k4"),
             SHORT_STORY_CATEGORIES.map(c => ({ value: c.name, text: `${c.name}（${c.gender}）` })),
             '请选择主分类'
         );
-        this.numberField(section1, 'targetWords', '目标字数', spec.targetWords.default, spec.targetWords.min, spec.targetWords.max, '5–10 万字；建议 8 万字。');
-        this.numberField(section1, 'targetSections', '目标节数', spec.targetUnits.default, spec.targetUnits.min, spec.targetUnits.max, '8–40 节；建议 20 节。');
-        this.textField(section1, 'audience', '目标读者', '例如：25–35 岁女性、婚姻家庭题材读者');
-        this.textField(section1, 'references', '参考作品/资料', '可填写平台作品、榜单、公开资料');
+        this.numberField(section1, 'targetWords', t("preResearch.short.k5"), spec.targetWords.default, spec.targetWords.min, spec.targetWords.max, '5–10 万字；建议 8 万字。');
+        this.numberField(section1, 'targetSections', t("preResearch.short.k6"), spec.targetUnits.default, spec.targetUnits.min, spec.targetUnits.max, '8–40 节；建议 20 节。');
+        this.textField(section1, 'audience', t("preResearch.short.k7"), t("preResearch.short.k8"));
+        this.textField(section1, 'references', t("preResearch.short.k9"), t("preResearch.short.k10"));
 
-        const section2 = this.section(body, '二、故事核心');
-        this.textareaField(section2, 'premise', '一句话故事（必填）', '谁 + 要什么 + 被谁阻止 + 反转 + 情绪承诺', 3);
-        this.textareaField(section2, 'coreConflict', '核心冲突', '主角与对手/规则的核心对撞', 2);
-        this.textField(section2, 'emotionalPromise', '情绪承诺', '例如：先抑后扬的婚姻反击爽感');
-        this.textareaField(section2, 'reversals', '3–5 个反转', '每个反转写：读者以为→实际→代价', 4);
-        this.textareaField(section2, 'endingPayoff', '结尾兑现', '最后一节给读者的具体画面/结果', 2);
+        const section2 = this.section(body, t("preResearch.short.k11"));
+        this.textareaField(section2, 'premise', t("preResearch.short.k12"), t("preResearch.short.k13"), 3);
+        this.textareaField(section2, 'coreConflict', t("preResearch.short.k14"), t("preResearch.short.k15"), 2);
+        this.textField(section2, 'emotionalPromise', t("preResearch.short.k16"), t("preResearch.short.k17"));
+        this.textareaField(section2, 'reversals', t("preResearch.short.k18"), t("preResearch.short.k19"), 4);
+        this.textareaField(section2, 'endingPayoff', t("preResearch.short.k20"), t("preResearch.short.k21"), 2);
 
-        const section3 = this.section(body, '三、五维标签');
-        this.textField(section3, 'plotTags', '情节标签', '例如：家庭关系 / 婆媳矛盾 / 财产争夺');
-        this.textField(section3, 'characterCore', '角色核心', '例如：隐忍儿媳 vs 恶婆婆');
-        this.textField(section3, 'emotionCurve', '情绪曲线', '例如：先抑后扬 / 先虐后爽');
-        this.textField(section3, 'background', '背景', '例如：现代 / 家庭住宅 / 现实');
+        const section3 = this.section(body, t("preResearch.short.k22"));
+        this.textField(section3, 'plotTags', t("preResearch.short.k23"), t("preResearch.short.k24"));
+        this.textField(section3, 'characterCore', t("preResearch.short.k25"), t("preResearch.short.k26"));
+        this.textField(section3, 'emotionCurve', t("preResearch.short.k27"), t("preResearch.short.k28"));
+        this.textField(section3, 'background', t("preResearch.short.k29"), t("preResearch.short.k30"));
 
-        const section4 = this.section(body, '四、补充');
-        this.textareaField(section4, 'notes', '调研备注', '待核实信息、平台规则、风险点', 3);
+        const section4 = this.section(body, t("preResearch.short.k31"));
+        this.textareaField(section4, 'notes', t("preResearch.short.k32"), t("preResearch.short.k33"), 3);
     }
 
     private renderScriptFields(body: HTMLElement): void {
         const spec = CREATION_MODE_SPECS.script;
-        const section1 = this.section(body, '一、项目定位');
-        this.textField(section1, 'name', '剧名', '请输入剧本名', this.options.name || '');
+        const section1 = this.section(body, t("preResearch.script.k1"));
+        this.textField(section1, 'name', t("preResearch.script.k2"), t("preResearch.script.k3"), this.options.name || '');
         this.selectField(
             section1,
             'genre',
-            '红果短剧类型（必选）',
+            t("preResearch.script.k4"),
             SCRIPT_GENRES.map(g => ({ value: g.name, text: `${g.name} · ${g.coreHook}` })),
             '请选择剧本类型'
         );
-        this.numberField(section1, 'targetWords', '目标字数', 60000, spec.targetWords.min, spec.targetWords.max, '5–10 万字。');
-        this.numberField(section1, 'targetEpisodes', '目标集数', spec.targetUnits.default, spec.targetUnits.min, spec.targetUnits.max, '40–120 集；建议 80 集。');
-        this.numberField(section1, 'episodeSeconds', '单集时长（秒）', 90, 60, 120, '60–120 秒。');
-        this.textField(section1, 'audience', '目标受众', '例如：下沉市场、25–45 岁女性');
-        this.textField(section1, 'references', '参考作品/资料', '可填写平台短剧、公开资料');
+        this.numberField(section1, 'targetWords', t("preResearch.script.k5"), 60000, spec.targetWords.min, spec.targetWords.max, '5–10 万字。');
+        this.numberField(section1, 'targetEpisodes', t("preResearch.script.k6"), spec.targetUnits.default, spec.targetUnits.min, spec.targetUnits.max, '40–120 集；建议 80 集。');
+        this.numberField(section1, 'episodeSeconds', t("preResearch.script.k7"), 90, 60, 120, '60–120 秒。');
+        this.textField(section1, 'audience', t("preResearch.script.k8"), t("preResearch.script.k9"));
+        this.textField(section1, 'references', t("preResearch.script.k10"), t("preResearch.script.k11"));
 
-        const section2 = this.section(body, '二、商业钩子');
-        this.textareaField(section2, 'logline', '一句话卖点（必填）', '谁被谁压迫 + 核心反转 + 观众为什么追', 3);
-        this.textareaField(section2, 'hook3s', '前 3 秒钩子', '必须可见：冲突/羞辱/危机/身份错位', 2);
-        this.textareaField(section2, 'coreConflict', '核心冲突', '主角与对手/规则的核心对撞', 2);
-        this.textareaField(section2, 'payoff', '本剧爽点/兑现', '观众最想看到的具体画面', 2);
-        this.numberField(section2, 'paywallEpisode', '付费卡点集数', 12, 1, spec.targetUnits.max, '默认第 10–15 集。');
+        const section2 = this.section(body, t("preResearch.script.k12"));
+        this.textareaField(section2, 'logline', t("preResearch.script.k13"), t("preResearch.script.k14"), 3);
+        this.textareaField(section2, 'hook3s', t("preResearch.script.k15"), t("preResearch.script.k16"), 2);
+        this.textareaField(section2, 'coreConflict', t("preResearch.script.k17"), t("preResearch.script.k18"), 2);
+        this.textareaField(section2, 'payoff', t("preResearch.script.k19"), t("preResearch.script.k20"), 2);
+        this.numberField(section2, 'paywallEpisode', t("preResearch.script.k21"), 12, 1, spec.targetUnits.max, '默认第 10–15 集。');
 
-        const section3 = this.section(body, '三、人物与场景');
-        this.textareaField(section3, 'characters', '主要人物', '主角/对手/关键关系人，写清欲望与阻力', 3);
-        this.textareaField(section3, 'scenes', '主要场景', '2–4 个主场景，控制置景成本', 3);
+        const section3 = this.section(body, t("preResearch.script.k22"));
+        this.textareaField(section3, 'characters', t("preResearch.script.k23"), t("preResearch.script.k24"), 3);
+        this.textareaField(section3, 'scenes', t("preResearch.script.k25"), t("preResearch.script.k26"), 3);
 
-        const section4 = this.section(body, '四、补充');
-        this.textareaField(section4, 'notes', '调研备注', '待核实信息、平台规则、拍摄限制', 3);
+        const section4 = this.section(body, t("preResearch.script.k27"));
+        this.textareaField(section4, 'notes', t("preResearch.script.k28"), t("preResearch.script.k29"), 3);
     }
 
     private categoryOrGenre(): string {
@@ -280,7 +281,7 @@ export class PreResearchModal extends Modal {
     private showRandomPreview(): void {
         this.randomBrief = creativeRandomizer.brief(this.mode);
         this.renderRandomCard();
-        this.aiStatusEl?.setText('已生成真随机因子预览；点击「AI 前期调研」可结合热点生成候选');
+        this.aiStatusEl?.setText(t("preResearch.common.k13"));
     }
 
     private renderRandomCard(): void {
@@ -292,35 +293,35 @@ export class PreResearchModal extends Modal {
         const card = this.aiOutputEl.createDiv({ cls: 'nw-seed-card' });
 
         const head = card.createDiv({ cls: 'nw-seed-card-head' });
-        head.createDiv({ text: '🎲 真随机种子', cls: 'nw-seed-card-title' });
+        head.createDiv({ text: t("preResearch.ui.k1"), cls: 'nw-seed-card-title' });
         const actions = head.createDiv({ cls: 'nw-seed-card-actions' });
         const copyBtn = actions.createEl('button', {
-            text: '复制',
+            text: t("preResearch.ui.k2"),
             cls: 'nw-btn nw-btn-secondary nw-seed-card-btn',
-            attr: { type: 'button', title: '复制随机种子' },
+            attr: { type: 'button', title: t("preResearch.ui.k3") },
         });
         const resetBtn = actions.createEl('button', {
-            text: '重置',
+            text: t("preResearch.ui.k4"),
             cls: 'nw-btn nw-btn-secondary nw-seed-card-btn',
-            attr: { type: 'button', title: '生成新的随机种子与因子' },
+            attr: { type: 'button', title: t("preResearch.ui.k5") },
         });
         copyBtn.onclick = () => { void this.copySeed(brief.seed, copyBtn); };
         resetBtn.onclick = () => {
             this.randomBrief = creativeRandomizer.brief(this.mode);
             this.renderRandomCard();
-            this.aiStatusEl?.setText('已重置随机种子与因子；点击「AI 前期调研」可基于新种子生成候选');
+            this.aiStatusEl?.setText(t("preResearch.ui.k6"));
         };
 
         const seedRow = card.createDiv({ cls: 'nw-seed-card-seed' });
-        seedRow.createSpan({ text: '种子', cls: 'nw-seed-card-label' });
+        seedRow.createSpan({ text: t("preResearch.ui.k7"), cls: 'nw-seed-card-label' });
         seedRow.createSpan({ text: brief.seed, cls: 'nw-seed-card-value' });
 
         const groups: Array<{ title: string; items: string[]; cls: string }> = [
-            { title: '前提层', items: brief.factors.layers.premise, cls: 'nw-seed-group-premise' },
-            { title: '结构层', items: brief.factors.layers.structure, cls: 'nw-seed-group-structure' },
-            { title: '质感层', items: brief.factors.layers.texture, cls: 'nw-seed-group-texture' },
-            { title: '差异化', items: brief.factors.layers.differentiation, cls: 'nw-seed-group-diff' },
-            { title: '禁用套路', items: brief.factors.forbiddenPatterns, cls: 'nw-seed-group-forbidden' },
+            { title: t("preResearch.ui.k8"), items: brief.factors.layers.premise, cls: 'nw-seed-group-premise' },
+            { title: t("preResearch.ui.k9"), items: brief.factors.layers.structure, cls: 'nw-seed-group-structure' },
+            { title: t("preResearch.ui.k10"), items: brief.factors.layers.texture, cls: 'nw-seed-group-texture' },
+            { title: t("preResearch.ui.k11"), items: brief.factors.layers.differentiation, cls: 'nw-seed-group-diff' },
+            { title: t("preResearch.ui.k12"), items: brief.factors.forbiddenPatterns, cls: 'nw-seed-group-forbidden' },
         ];
         const grid = card.createDiv({ cls: 'nw-seed-card-grid' });
         for (const group of groups) {
@@ -347,14 +348,14 @@ export class PreResearchModal extends Modal {
                 textarea.remove();
             }
             const original = button.textContent || '复制';
-            button.setText('已复制');
+            button.setText(t("preResearch.common.k14"));
             button.addClass('is-copied');
             window.setTimeout(() => {
                 button.setText(original);
                 button.removeClass('is-copied');
             }, 1600);
         } catch (e) {
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '复制失败', timeout: 5000 });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t("preResearch.common.k15"), timeout: 5000 });
         }
     }
 
@@ -367,8 +368,8 @@ export class PreResearchModal extends Modal {
         }
         researchBtn.disabled = true;
         randomBtn.disabled = true;
-        researchBtn.setText('⏳ AI 调研中…');
-        this.aiStatusEl?.setText('正在检索热点/行业素材，并结合固化框架与真随机因子生成候选…');
+        researchBtn.setText(t("preResearch.common.k16"));
+        this.aiStatusEl?.setText(t("preResearch.common.k17"));
         try {
             const settings = this.plugin.settings;
             // MCP 通道走的是考据服务的注入能力，调研这里没有等价实现：退回 manual 并提示，
@@ -396,11 +397,11 @@ export class PreResearchModal extends Modal {
             showSuccessNotice(`AI 前期调研完成（${sourceLabel}）`, { timeout: 5000 });
         } catch (e) {
             this.aiStatusEl?.setText(`❌ AI 调研失败：${e instanceof Error ? e.message : String(e)}`);
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: 'AI 前期调研失败', timeout: 8000 });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t("preResearch.common.k18"), timeout: 8000 });
         } finally {
             researchBtn.disabled = false;
             randomBtn.disabled = false;
-            researchBtn.setText('🤖 AI 前期调研');
+            researchBtn.setText(t("preResearch.common.k19"));
         }
     }
 
@@ -488,7 +489,7 @@ export class PreResearchModal extends Modal {
             }
             this.loaded = true;
         } catch (e) {
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '读取前期调研失败', timeout: 6000 });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t("preResearch.common.k20"), timeout: 6000 });
             this.loaded = true;
         }
     }
@@ -666,10 +667,10 @@ export class PreResearchModal extends Modal {
         if (this.options.project) {
             try {
                 await writePreResearchFiles(this.app.vault.adapter, this.options.project, data, this.app);
-                showSuccessNotice('前期调研已保存到 00-前期调研/', { timeout: 5000 });
+                showSuccessNotice(t("preResearch.common.k21"), { timeout: 5000 });
                 this.close();
             } catch (e) {
-                showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存调研失败', timeout: 8000 });
+                showErrorNotice(e instanceof Error ? e.message : String(e), { title: t("preResearch.common.k22"), timeout: 8000 });
             }
             return;
         }
@@ -694,16 +695,16 @@ export class PreResearchModal extends Modal {
                         await this.plugin.openCreationFlow(project);
                     } catch (navError) {
                         log.warn('打开创作流程失败:', navError);
-                        showSuccessNotice('项目已创建，可手动打开「创作流程」继续', { timeout: 6000 });
+                        showSuccessNotice(t("preResearch.common.k23"), { timeout: 6000 });
                     }
                 } catch (e) {
-                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: '调研写入失败', timeout: 8000 });
+                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: t("preResearch.common.k24"), timeout: 8000 });
                 } finally {
                     this.close();
                 }
             },
         }).catch((e) => {
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '创建项目失败', timeout: 8000 });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t("preResearch.common.k25"), timeout: 8000 });
         });
     }
 

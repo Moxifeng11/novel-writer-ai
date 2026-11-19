@@ -148,7 +148,7 @@
     "ui/plot-canvas-modal.ts": 42,
     "ui/plot-canvas-parser.ts": 2,
     "ui/polish-editor.ts": 132,
-    "ui/pre-research-modal.ts": 139,
+    "ui/pre-research-modal.ts": 40,
     "ui/project-health-modal.ts": 37,
     "ui/project-side-panel-view.ts": 54,
     "ui/project-utils.ts": 27,
@@ -227,7 +227,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 8042,
+  "total": 7943,
   "updatedAt": "2026-11-19",
   "note": ""
 }
