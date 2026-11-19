@@ -2835,3 +2835,43 @@ worker 之间不能传对象。回退，留给 12 按域处理时专门设计（
 
 **验收**：preflight EXIT=0（986 文件 / 10337 通过 + 3 跳过）；`check:i18n` zh/en 各 **3411**；
 `check:bundle` main.js → **6036579**（+15,284，54 条资源 + 5 个域常量表，已 note）。
+## 第九十八轮：i18n 第二期第30片 —— 知识库视图链（2026-11-19，DSH）
+
+**范围**：`ui/views/knowledge-base-view.ts`（3,269 行 / 306 行非注释中文 / 2,030 字，
+`node scripts/audit-cjk.mjs` 判 `ui-copy`）。选它的理由：知识库是剩下最大的未迁视图，
+且一文件塞满书架 / 详情 / 任务监控 / 向量对账 / 题材编辑五个面，切一刀比按面切五刀便宜。
+
+**改动**：迁 `knowledgebase.*` **244 键 / 17 组**（common 7 + tab 4 + dim 10 + view 21 + list 34 +
+reconcile 15 + revectorize 4 + detail 23 + batchClassify 7 + genre 26 + tasks 55 + books 10 +
+deconstruct 14 + deleteBook 4 + tags 3 + monitor 5 + provider 2）。三个模块级常量必须改函数
+（模块加载时还没有语言上下文）：`MAIN_TABS` → `mainTabs()`、`BOOK_DETAIL_TABS` → `bookDetailTabs()`、
+`DIMENSION_LABELS` → `bookDimensionLabels()`——注意 :2995 已有局部变量
+`const dimensionLabels = dimensions.map(...)`，函数若同名会遮蔽 `t`，所以取 `bookDimensionLabels`。
+对外 API `getDimensionLabels()` 保留、内部改成每次调用求值（`:626`）。保留中文 = 38 处 `log.*`
+（如 `log.error('[KnowledgeBaseView] 加载书籍列表失败:', e)`）、注释、题材名 / 书名 / 标签数据。
+
+**三个坑（都写进 i18n.md §9）**
+1. **扁平点号键静默失效**：资源写成 `'tab.books': "Books"` 时，`lookup()`（`i18n/index.ts:144`）
+   按 `.` 下钻，`knowledgebase.tab` 不存在 → 整页显示键名；而 `flattenMessages` 拼出的串与扁平键
+   完全相同，`check:i18n` 的「键可解析」全绿。修法是资源一律写嵌套对象，并补
+   `tests/unit/i18n/i18n-core.test.ts` 两条结构守卫（点号键路径必须为空 +
+   `translate(locale,key) === flattenMessages(...)[key]`）。
+2. **bundle 不同步**：`D:\nw-dev-vault` 是独立真实目录，改完必须
+   `node scripts/dev-vault.mjs sync --vault=D:\nw-dev-vault`，否则截图跑的是几天前的旧产物
+   （症状：命令面板已英文、页面仍中文）。`status` 只认默认 vault，别拿它判断 D 盘那份。
+3. **英文比中文长**：4 个频道页签（`Male-oriented`）在窄栏断词、工具栏 5 个按钮把搜索框压到只剩
+   `Search tit`。修法：容器 `flex-wrap: wrap`、页签 `white-space: nowrap`、搜索框
+   `flex: 1 1 150px; min-width: 150px`，并把 en 页签压成 `Male` / `Female`。
+
+**验收**：`check:i18n` zh/en 各 **4226**、无法解析键 0、动态键 25 处、棘轮 **223 文件 / 7345 条**；
+`npx vitest run tests/unit/ui/kb-*` 5 文件 **73 例** + `i18n-core` **26 例**；`npx tsc --noEmit` EXIT=0；
+实机 zh/en 各 1096×1330（`D:\nw-dev-vault\_visual-i18n20\kb-{zh-CN,en-US}.png`），zh 与改前逐像素相同
+（sha `1bd64fa9…`）；`check:bundle` main.js **6,074,207**（+23,714）、styles.css **799,303**（+86）。
+
+**未做（记 backlog）**：`ui/views/kb-format.ts`（23 条 / 500 字：`BREAKDOWN_STATUS_LABELS` 5 档、
+`TASK_STATUS_LABELS` 6 档、`CHANNEL_LABELS`、`UNKNOWN_WORD_COUNT_LABEL`、`formatWordCount`
+`{n} 字`/`{n} 万字`、`formatDuration` `2小时5分`）——单位与复数要按语言重设计，只迁状态表会留下
+「已完成 + 374.4 万字」半英半中，整文件留独立切片。
+
+**下一轮候选**：`ui/views/kb-format.ts`（500 字，收尾知识库面）、`ui/generate-character-modal.ts`
+（873 字）、`ui/views/kb-panels-logic.ts`（1,143 字）。

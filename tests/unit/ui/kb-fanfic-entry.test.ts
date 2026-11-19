@@ -27,10 +27,13 @@ function read(rel: string): string {
 
 describe('知识库「添加同人设定」入口', () => {
     const view = read('ui/views/knowledge-base-view.ts');
+    const zh = read('i18n/messages/zh-CN.ts');
 
     it('知识库视图引入并渲染了入口按钮', () => {
         expect(view).toContain("import { AddFanficSettingModal } from '@/ui/add-fanfic-setting-modal'");
-        expect(view).toContain('添加同人设定');
+        // 文案已 i18n 化（Slice 第十九片），这里锁住键名而不是中文字面量
+        expect(view).toContain("text: t('knowledgebase.view.addFanfic')");
+        expect(zh).toContain('添加同人设定');
         expect(view).toContain('new AddFanficSettingModal(');
     });
 
@@ -40,7 +43,8 @@ describe('知识库「添加同人设定」入口', () => {
     });
 
     it('入口按钮说明里提到「知识库已拆解的内容」（用户可发现新流程）', () => {
-        expect(view).toContain('知识库已拆解');
+        expect(view).toContain("title: t('knowledgebase.view.addFanficTitle')");
+        expect(zh).toContain('知识库已拆解的内容');
     });
 });
 

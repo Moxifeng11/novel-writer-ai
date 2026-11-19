@@ -161,12 +161,14 @@ button.nw-kb-nav-btn:hover {
 
 .nw-kb-channel-tabs {
     display: flex;
+    flex-wrap: wrap;
     border-bottom: 1px solid var(--background-modifier-border);
 }
 
 .nw-kb-channel-tab {
-    flex: 1;
+    flex: 1 1 auto;
     padding: 8px 4px;
+    white-space: nowrap;
     font-size: 12px;
     color: var(--text-muted);
     text-align: center;
@@ -293,6 +295,7 @@ button.nw-kb-nav-btn:hover {
 
 .nw-kb-toolbar-row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px;
 }
@@ -304,9 +307,9 @@ button.nw-kb-nav-btn:hover {
 /* 搜索框：类名的既有定义 (0,1,0) 会被 Obsidian 的 input[type=text] (0,1,1) 压住，
    所以这里带 input 前缀，并复现原本由内联样式给出的取值（保证外观不变）。 */
 input.nw-kb-search-input {
-    flex: 1;
+    flex: 1 1 150px;
     width: 100%;
-    min-width: 0;
+    min-width: 150px;
     padding: 6px 10px;
     font-size: 12px;
     color: var(--text-normal);

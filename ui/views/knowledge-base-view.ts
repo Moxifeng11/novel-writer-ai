@@ -30,6 +30,7 @@ import { computeKnowledgeFlowStatus, renderLinkStatus } from './link-status';
 import { filterDegradationsBySource, getDegradationNotifier } from '@/shared/degradation-notifier';
 import { getSharedEmbeddingProvider } from '@/engine/embedding/embedding-service';
 import { rebuildAllVectorsWithConfirm } from '@/ui/vector-rebuild-action';
+import { t } from '@/i18n';
 import { AddFanficSettingModal } from '@/ui/add-fanfic-setting-modal';
 import {
     formatBreakdownStatusLabel,
@@ -452,36 +453,45 @@ export interface ReadabilityData {
     };
 }
 
-const MAIN_TABS: { key: MainTabKey; label: string; icon: string }[] = [
-    { key: 'books', label: '参考书籍', icon: '📚' },
-    { key: 'config', label: '知识参考库', icon: '⚙️' },
-    { key: 'tasks', label: '拆解任务', icon: '📋' },
-    { key: 'stats', label: '质量统计', icon: '📊' },
-];
+/** 主页签（每次调用取当前语言，语言切换后重建侧栏即生效）。 */
+function mainTabs(): { key: MainTabKey; label: string; icon: string }[] {
+    return [
+        { key: 'books', label: t('knowledgebase.tab.books'), icon: '📚' },
+        { key: 'config', label: t('knowledgebase.tab.config'), icon: '⚙️' },
+        { key: 'tasks', label: t('knowledgebase.tab.tasks'), icon: '📋' },
+        { key: 'stats', label: t('knowledgebase.tab.stats'), icon: '📊' },
+    ];
+}
 
-const BOOK_DETAIL_TABS: Record<BookDetailTabKey, string> = {
-    overview: '概览',
-    style: '风格',
-    rhythm: '节奏',
-    technique: '技巧',
-    structure: '结构',
-    character: '人设',
-    foreshadow: '伏笔',
-    commercial: '商业',
-    readability: '可读性',
-    tags: '标签',
-};
+/** 书籍详情页签（每次调用取当前语言）。 */
+function bookDetailTabs(): Record<BookDetailTabKey, string> {
+    return {
+        overview: t('knowledgebase.dim.overview'),
+        style: t('knowledgebase.dim.style'),
+        rhythm: t('knowledgebase.dim.rhythm'),
+        technique: t('knowledgebase.dim.technique'),
+        structure: t('knowledgebase.dim.structure'),
+        character: t('knowledgebase.dim.character'),
+        foreshadow: t('knowledgebase.dim.foreshadow'),
+        commercial: t('knowledgebase.dim.commercial'),
+        readability: t('knowledgebase.dim.readability'),
+        tags: t('knowledgebase.dim.tags'),
+    };
+}
 
-const DIMENSION_LABELS: Record<BreakdownDimension, string> = {
-    style: '风格',
-    rhythm: '节奏',
-    technique: '技巧',
-    structure: '结构',
-    character: '人设',
-    foreshadow: '伏笔',
-    commercial: '商业',
-    readability: '可读性',
-};
+/** 拆解维度短标签（每次调用取当前语言；调用处已有 dimensionLabels 局部变量，故不取该名）。 */
+function bookDimensionLabels(): Record<BreakdownDimension, string> {
+    return {
+        style: t('knowledgebase.dim.style'),
+        rhythm: t('knowledgebase.dim.rhythm'),
+        technique: t('knowledgebase.dim.technique'),
+        structure: t('knowledgebase.dim.structure'),
+        character: t('knowledgebase.dim.character'),
+        foreshadow: t('knowledgebase.dim.foreshadow'),
+        commercial: t('knowledgebase.dim.commercial'),
+        readability: t('knowledgebase.dim.readability'),
+    };
+}
 
 /**
  * 知识库视图。
@@ -577,7 +587,7 @@ export class KnowledgeBaseView extends ItemView {
      * @returns 名称
      */
     getDisplayText() {
-        return '📚 知识库管理';
+        return t('knowledgebase.view.title');
     }
 
     /**
@@ -623,7 +633,8 @@ export class KnowledgeBaseView extends ItemView {
             getExpandedItems: () => this.expandedItems,
             getForeshadowFilter: () => this.foreshadowFilter,
             setForeshadowFilter: (v) => { this.foreshadowFilter = v; },
-            getDimensionLabels: () => DIMENSION_LABELS,
+            getDimensionLabels: () => bookDimensionLabels(),
+
             onClassifyBook: (book) => this.autoClassifyBook(book),
             onEditBook: (book) => this.openEditModal(book),
             onApplyGenreRecommendation: (book, rec) => this.applyGenreRecommendation(book, rec),
@@ -795,7 +806,7 @@ export class KnowledgeBaseView extends ItemView {
     private async detectEmbeddingAvailability(): Promise<void> {
         const provider = getSharedEmbeddingProvider();
         if (!provider) {
-            this.embeddingSnapshot = { available: false, reason: '嵌入 provider 未初始化' };
+            this.embeddingSnapshot = { available: false, reason: t('knowledgebase.view.embeddingUninitialized') };
             return;
         }
         let providerLabel: string | undefined;
@@ -845,15 +856,15 @@ export class KnowledgeBaseView extends ItemView {
         this.leftSidebar.empty();
 
         const header = this.leftSidebar.createDiv({ cls: 'nw-kb-sidebar-header' });
-        header.createEl('h2', { text: '📚 知识库管理', cls: 'nw-kb-sidebar-title' });
+        header.createEl('h2', { text: t('knowledgebase.view.title'), cls: 'nw-kb-sidebar-title' });
 
         // 界面流转：直达工作台 / 协同写作 / 指纹库
         const navRow = header.createDiv({ cls: 'nw-kb-nav-row' });
-        const backBtn = navRow.createEl('button', { text: '← 工作台', cls: 'nw-kb-nav-btn', attr: { title: '返回完整写作工作台' } });
+        const backBtn = navRow.createEl('button', { text: t('knowledgebase.view.back'), cls: 'nw-kb-nav-btn', attr: { title: t('knowledgebase.view.backTitle') } });
         backBtn.addEventListener('click', () => void this.plugin.openFullWriterView());
-        const coBtn = navRow.createEl('button', { text: '✍️ 协同写作', cls: 'nw-kb-nav-btn', attr: { title: '打开句级协同写作工作台' } });
+        const coBtn = navRow.createEl('button', { text: t('knowledgebase.view.coWrite'), cls: 'nw-kb-nav-btn', attr: { title: t('knowledgebase.view.coWriteTitle') } });
         coBtn.addEventListener('click', () => void this.plugin.openCoWritingFromActiveContext());
-        const fpBtn = navRow.createEl('button', { text: '🔍 指纹库', cls: 'nw-kb-nav-btn', attr: { title: '打开写作指纹库' } });
+        const fpBtn = navRow.createEl('button', { text: t('knowledgebase.view.fingerprint'), cls: 'nw-kb-nav-btn', attr: { title: t('knowledgebase.view.fingerprintTitle') } });
         fpBtn.addEventListener('click', () => this.plugin.executeCommand('novel-writer-fingerprint-library'));
 
         // 2026-10-28: 原右下角状态栏浮窗移除后，模型快速切换装配到知识库侧栏（四个主界面之一）。
@@ -863,7 +874,7 @@ export class KnowledgeBaseView extends ItemView {
 
         const nav = this.leftSidebar.createDiv({ cls: 'nw-kb-sidebar-nav' });
 
-        MAIN_TABS.forEach(tab => {
+        mainTabs().forEach(tab => {
             // 选中态用修饰类（--active），不再拼内联样式
             const active = this.activeMainTab === tab.key;
             const item = nav.createDiv({
@@ -884,10 +895,10 @@ export class KnowledgeBaseView extends ItemView {
         // 而「同人设定」和「参考书籍」是同一件事的两面（一个用来源、一个用拆解素材）。
         const fanficSection = this.leftSidebar.createDiv({ cls: 'nw-kb-fanfic-section' });
         const fanficEntry = fanficSection.createEl('button', {
-            text: '📚 添加同人设定',
+            text: t('knowledgebase.view.addFanfic'),
             cls: 'nw-btn nw-btn-secondary nw-kb-fanfic-btn',
             attr: {
-                title: '检索官方资料，或用知识库已拆解的内容生成同人设定草稿（生成后会联网验证并存入待审核）',
+                title: t('knowledgebase.view.addFanficTitle'),
             },
         });
         fanficEntry.addEventListener('click', () => {
@@ -896,7 +907,7 @@ export class KnowledgeBaseView extends ItemView {
 
         // 注：原来的 nw-text-muted-11 从未在任何样式表中定义（死类），移除后外观不变
         const footer = this.leftSidebar.createDiv({ cls: 'nw-kb-sidebar-footer' });
-        footer.createSpan({ text: `共 ${this.allBooks.length} 本书籍` });
+        footer.createSpan({ text: t('knowledgebase.view.totalBooks', { count: this.allBooks.length }) });
     }
 
     private renderRightPanel(): void {
@@ -934,15 +945,15 @@ export class KnowledgeBaseView extends ItemView {
         const genrePanel = content.createDiv({ cls: 'nw-kb-genre-panel' });
 
         const genreHeader = genrePanel.createDiv({ cls: 'nw-kb-genre-header nw-section-header' });
-        genreHeader.createEl('h3', { text: '题材分类', cls: 'nw-kb-genre-title' });
+        genreHeader.createEl('h3', { text: t('knowledgebase.view.genreTitle'), cls: 'nw-kb-genre-title' });
 
         const channelTabs = genrePanel.createDiv({ cls: 'nw-kb-channel-tabs' });
 
         const channels: { id: ConfigCategoryKey | 'all'; name: string }[] = [
-            { id: 'all', name: '全部' },
-            { id: 'male', name: '男频' },
-            { id: 'female', name: '女频' },
-            { id: 'neutral', name: '中性' },
+            { id: 'all', name: t('knowledgebase.view.genreAll') },
+            { id: 'male', name: t('knowledgebase.view.genreMale') },
+            { id: 'female', name: t('knowledgebase.view.genreFemale') },
+            { id: 'neutral', name: t('knowledgebase.view.genreNeutral') },
         ];
 
         channels.forEach(ch => {
@@ -971,23 +982,23 @@ export class KnowledgeBaseView extends ItemView {
         // 不知道问题出在没配 embedding）
         if (this.embeddingSnapshot && !this.embeddingSnapshot.available) {
             bannerActions.push({
-                label: '⚙️ 配置嵌入模型',
+                label: t('knowledgebase.view.configEmbed'),
                 primary: true,
                 onClick: () => {
                     if (!this.plugin.openPluginSettings()) {
-                        new Notice('请到「设置 → 第三方插件 → 小说工坊 AI → 向量化」配置嵌入模型', 7000);
+                        new Notice(t('knowledgebase.view.configEmbedNotice'), 7000);
                     }
                 },
             });
         }
         bannerActions.push({
-            label: '🔄 重向量化',
+            label: t('knowledgebase.view.revectorize'),
             onClick: () => {
                 void rebuildAllVectorsWithConfirm(this.app, this.plugin);
             },
         });
         renderCapabilityBanner(booksPanel, {
-            title: '知识库能力边界',
+            title: t('knowledgebase.view.capabilityTitle'),
             ...capability,
             actions: bannerActions,
         });
@@ -1004,7 +1015,7 @@ export class KnowledgeBaseView extends ItemView {
         const vectorReconcile = this.vectorReconcile;
         // 审计 #B9：文案单源化——与 agent 诊断共用 summarizeVectorReconcile
         const orphanNote = vectorReconcile
-            ? summarizeVectorReconcile(vectorReconcile, '点「🔗 向量对账」可清理')
+            ? summarizeVectorReconcile(vectorReconcile, t('knowledgebase.view.cleanupHint'))
             : null;
         renderLinkStatus(booksPanel, computeKnowledgeFlowStatus(buildKnowledgeFlowInput(this.allBooks, {
             // DSH-20261112-17：环节级呈现——「检索」的 detail 直接带孤儿数并降为 warn
@@ -1028,7 +1039,7 @@ export class KnowledgeBaseView extends ItemView {
     private renderGenreList(container: HTMLElement): void {
         const allItem = this.createGenreNavItem({
             id: 'all',
-            name: '全部书籍',
+            name: t('knowledgebase.list.allBooks'),
             icon: '📚',
             count: this.getFilteredBooksCount('all'),
             isActive: this.filter.primaryGenre === 'all',
@@ -1044,7 +1055,7 @@ export class KnowledgeBaseView extends ItemView {
 
         const uncategorizedItem = this.createGenreNavItem({
             id: 'uncategorized',
-            name: '未分类',
+            name: t('knowledgebase.list.uncategorized'),
             icon: '📁',
             count: uncategorizedCount,
             isActive: this.filter.primaryGenre === 'uncategorized',
@@ -1134,7 +1145,7 @@ export class KnowledgeBaseView extends ItemView {
 
             const allSubItem = this.createGenreNavItem({
                 id: `sub-all-${genre.id}`,
-                name: '全部子类',
+                name: t('knowledgebase.list.allSubgenres'),
                 icon: '•',
                 count: count,
                 isActive: this.filter.primaryGenre === genre.id && this.filter.subGenre === 'all',
@@ -1200,7 +1211,7 @@ export class KnowledgeBaseView extends ItemView {
         const searchInput = topRow.createEl('input', {
             type: 'text',
             cls: 'nw-kb-search-input',
-            attr: { placeholder: '🔍 搜索书名 / 作者 / 标签...' },
+            attr: { placeholder: t('knowledgebase.list.searchPlaceholder') },
         });
         searchInput.value = this.filter.keyword;
         searchInput.addEventListener('input', () => {
@@ -1211,52 +1222,52 @@ export class KnowledgeBaseView extends ItemView {
         });
 
         const importBtn = topRow.createEl('button', {
-            text: '📥 导入书籍',
+            text: t('knowledgebase.list.import'),
             cls: 'nw-btn nw-btn-primary nw-btn-sm nw-kb-toolbar-action',
-            attr: { title: '导入一本书籍文件（txt / md / epub）' }
+            attr: { title: t('knowledgebase.list.importTitle') }
         });
         importBtn.addEventListener('click', () => this.handleImportBooks());
 
         const batchImportBtn = topRow.createEl('button', {
-            text: '📦 批量导入',
+            text: t('knowledgebase.list.batchImport'),
             cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-kb-toolbar-action',
-            attr: { title: '从文件夹批量导入多本书籍' }
+            attr: { title: t('knowledgebase.list.batchImportTitle') }
         });
         batchImportBtn.addEventListener('click', () => this.handleBatchImport());
 
         const batchBtn = topRow.createEl('button', {
-            text: '⚙️ 批量',
+            text: t('knowledgebase.list.batch'),
             cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-kb-toolbar-action',
-            attr: { title: '批量操作：批量删除 / 重新拆解等' }
+            attr: { title: t('knowledgebase.list.batchTitle') }
         });
         batchBtn.addEventListener('click', () => this.handleBatchOperations());
 
         const classifyBtn = topRow.createEl('button', {
-            text: '🏷️ 批量归类',
+            text: t('knowledgebase.list.batchClassify'),
             cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-kb-toolbar-action',
-            attr: { title: '按本地规则为全部书籍生成维度标签并写入自定义标签（已有标签不重复）' }
+            attr: { title: t('knowledgebase.list.batchClassifyTitle') }
         });
         classifyBtn.addEventListener('click', () => void this.handleBatchClassify());
 
         const reconcileBtn = topRow.createEl('button', {
-            text: '🔗 向量对账',
+            text: t('knowledgebase.list.reconcile'),
             cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-kb-toolbar-action',
-            attr: { title: '索引 ↔ 向量库对账：列出孤儿向量（向量库有、索引没有）与缺失向量；孤儿默认只报告，清理需在此确认' }
+            attr: { title: t('knowledgebase.list.reconcileTitle') }
         });
         reconcileBtn.addEventListener('click', () => void this.handleVectorReconcile());
 
         const filterRow = toolbar.createDiv({ cls: 'nw-kb-toolbar-filters' });
 
         const statusWrap = filterRow.createDiv({ cls: 'nw-kb-filter-group' });
-        statusWrap.createSpan({ text: '状态：', cls: 'nw-kb-filter-label' });
+        statusWrap.createSpan({ text: t('knowledgebase.list.statusLabel'), cls: 'nw-kb-filter-label' });
         const statusSelect = statusWrap.createEl('select', { cls: 'nw-kb-select' });
         const statusOptions: { value: BreakdownStatus | 'all'; label: string }[] = [
-            { value: 'all', label: '全部' },
-            { value: 'pending', label: '待拆解' },
-            { value: 'processing', label: '拆解中' },
-            { value: 'completed', label: '已完成' },
-            { value: 'failed', label: '失败' },
-            { value: 'interrupted', label: '拆解中断' },
+            { value: 'all', label: t('knowledgebase.list.statusAll') },
+            { value: 'pending', label: t('knowledgebase.list.statusPending') },
+            { value: 'processing', label: t('knowledgebase.list.statusProcessing') },
+            { value: 'completed', label: t('knowledgebase.list.statusCompleted') },
+            { value: 'failed', label: t('knowledgebase.list.statusFailed') },
+            { value: 'interrupted', label: t('knowledgebase.list.statusInterrupted') },
         ];
         statusOptions.forEach(opt => {
             const option = statusSelect.createEl('option', { value: opt.value, text: opt.label });
@@ -1268,17 +1279,17 @@ export class KnowledgeBaseView extends ItemView {
         });
 
         const sortWrap = filterRow.createDiv({ cls: 'nw-kb-filter-group' });
-        sortWrap.createSpan({ text: '排序：', cls: 'nw-kb-filter-label' });
+        sortWrap.createSpan({ text: t('knowledgebase.list.sortLabel'), cls: 'nw-kb-filter-label' });
         const sortSelect = sortWrap.createEl('select', { cls: 'nw-kb-select' });
         const sortOptions: { value: string; label: string }[] = [
-            { value: 'createdAt_desc', label: '添加时间 ↓' },
-            { value: 'createdAt_asc', label: '添加时间 ↑' },
-            { value: 'updatedAt_desc', label: '更新时间 ↓' },
-            { value: 'updatedAt_asc', label: '更新时间 ↑' },
-            { value: 'wordCount_desc', label: '字数 ↓' },
-            { value: 'wordCount_asc', label: '字数 ↑' },
-            { value: 'quality_desc', label: '质量评分 ↓' },
-            { value: 'quality_asc', label: '质量评分 ↑' },
+            { value: 'createdAt_desc', label: t('knowledgebase.list.sortCreatedDesc') },
+            { value: 'createdAt_asc', label: t('knowledgebase.list.sortCreatedAsc') },
+            { value: 'updatedAt_desc', label: t('knowledgebase.list.sortUpdatedDesc') },
+            { value: 'updatedAt_asc', label: t('knowledgebase.list.sortUpdatedAsc') },
+            { value: 'wordCount_desc', label: t('knowledgebase.list.sortWordsDesc') },
+            { value: 'wordCount_asc', label: t('knowledgebase.list.sortWordsAsc') },
+            { value: 'quality_desc', label: t('knowledgebase.list.sortQualityDesc') },
+            { value: 'quality_asc', label: t('knowledgebase.list.sortQualityAsc') },
         ];
         sortOptions.forEach(opt => {
             const option = sortSelect.createEl('option', { value: opt.value, text: opt.label });
@@ -1296,9 +1307,9 @@ export class KnowledgeBaseView extends ItemView {
     private renderBooksLoadError(container: HTMLElement): boolean {
         if (!this.booksLoadError) return false;
         const box = container.createDiv({ cls: 'nw-kb-error' });
-        box.createDiv({ text: '⚠️ 书籍列表加载失败', cls: 'nw-kb-error-title' });
+        box.createDiv({ text: t('knowledgebase.list.loadFailed'), cls: 'nw-kb-error-title' });
         box.createDiv({ text: this.booksLoadError, cls: 'nw-kb-error-detail' });
-        const retry = box.createEl('button', { text: '重试', cls: 'nw-btn nw-btn-secondary nw-btn-sm' });
+        const retry = box.createEl('button', { text: t('knowledgebase.common.retry'), cls: 'nw-btn nw-btn-secondary nw-btn-sm' });
         retry.addEventListener('click', () => {
             void this.loadBooks().then(() => {
                 if (this.viewClosed) return;
@@ -1316,7 +1327,7 @@ export class KnowledgeBaseView extends ItemView {
         if (this.renderBooksLoadError(listContainer)) return;
 
         const header = listContainer.createDiv({ cls: 'nw-kb-book-list-header' });
-        header.createSpan({ text: `共 ${books.length} 本书籍`, cls: 'nw-kb-book-list-count' });
+        header.createSpan({ text: t('knowledgebase.view.totalBooks', { count: books.length }), cls: 'nw-kb-book-list-count' });
 
         if (books.length === 0) {
             this.renderBooksEmptyState(listContainer);
@@ -1359,7 +1370,7 @@ export class KnowledgeBaseView extends ItemView {
         const header = containerEl.createDiv({
             cls: 'nw-kb-book-list-header'
         });
-        header.createSpan({ text: `共 ${books.length} 本书籍`, cls: 'nw-kb-book-list-count' });
+        header.createSpan({ text: t('knowledgebase.view.totalBooks', { count: books.length }), cls: 'nw-kb-book-list-count' });
 
         if (books.length === 0) {
             this.renderBooksEmptyState(containerEl);
@@ -1383,8 +1394,8 @@ export class KnowledgeBaseView extends ItemView {
         // NBI-06: 导入入口统一由工具栏提供，空态不再重复渲染同一组按钮
         const emptyState = createEmptyState({
             icon: 'book',
-            title: '暂无书籍',
-            description: '使用上方「📥 导入书籍」或「📦 批量导入」添加你的第一本参考书籍'
+            title: t('knowledgebase.list.emptyTitle'),
+            description: t('knowledgebase.list.emptyDesc')
         });
         container.appendChild(emptyState);
     }
@@ -1447,32 +1458,30 @@ export class KnowledgeBaseView extends ItemView {
         try {
             const store = this.plugin.knowledgeVectorStore;
             if (!store || typeof store.reconcileWithIndex !== 'function') {
-                showErrorNotice('向量库未初始化，无法对账');
+                showErrorNotice(t('knowledgebase.reconcile.notInited'));
                 return;
             }
             // 审计 #A3：出报告前先刷新 allBooks——视图打开期间可能有新书入库，
             // 用陈旧列表判孤儿会误删刚入库书的向量。
             await this.loadBooks();
             const report = await store.reconcileWithIndex(this.allBooks.map(b => b.id));
-            const healthyNote = `正常 ${report.healthy.length} 本`;
-            const missingNote = report.missing.length > 0 ? `缺失 ${report.missing.length} 本` : '';
+            const healthyNote = t('knowledgebase.reconcile.healthy', { count: report.healthy.length });
+            const missingNote = report.missing.length > 0 ? t('knowledgebase.reconcile.missing', { count: report.missing.length }) : '';
             if (report.orphans.length === 0) {
-                showSuccessNotice(`对账完成：${healthyNote}${missingNote ? '，' + missingNote : ''}，没有孤儿向量`, { title: '向量对账' });
+                showSuccessNotice(t('knowledgebase.reconcile.doneNoOrphan', { healthy: healthyNote, missing: missingNote }), { title: t('knowledgebase.reconcile.title') });
                 return;
             }
-            new Notice(`对账：${healthyNote}${missingNote ? '，' + missingNote : ''}；孤儿 ${report.orphans.length} 本`, 6000);
+            new Notice(t('knowledgebase.reconcile.doneOrphan', { healthy: healthyNote, missing: missingNote, count: report.orphans.length }), 6000);
             // 审计 #B7：id 列表截断展示，防止撑爆确认弹窗
-            const shownIds = report.orphans.slice(0, 5).join('、') + (report.orphans.length > 5 ? ` 等 ${report.orphans.length} 本` : '');
+            const shownIds = report.orphans.slice(0, 5).join('、') + (report.orphans.length > 5 ? ' ' + t('knowledgebase.reconcile.orphanList', { count: report.orphans.length }) : '');
             const confirmed = await OperationConfirmModal.confirm(this.app, {
-                title: '清理孤儿向量',
-                description: `向量库里有 ${report.orphans.length} 本书不在知识库索引（${shownIds}）。
-
-可能是你临时移走了书目录；清理后如需检索请重新导入并拆解。确定删除这 ${report.orphans.length} 本的向量吗？`,
-                confirmText: '确认清理',
-                cancelText: '只报告，不清理',
+                title: t('knowledgebase.reconcile.cleanTitle'),
+                description: t('knowledgebase.reconcile.cleanDesc', { count: report.orphans.length, ids: shownIds }),
+                confirmText: t('knowledgebase.reconcile.cleanOk'),
+                cancelText: t('knowledgebase.reconcile.reportOnly'),
             });
             if (!confirmed) {
-                showSuccessNotice('已保留孤儿向量（仅报告，未删除）', { title: '向量对账' });
+                showSuccessNotice(t('knowledgebase.reconcile.kept'), { title: t('knowledgebase.reconcile.title') });
                 return;
             }
             // 审计 #A2：把当前索引 id 一并传给 store，锁外复核孤儿身份——
@@ -1482,16 +1491,16 @@ export class KnowledgeBaseView extends ItemView {
                 kbBookIds: this.allBooks.map(b => b.id),
             });
             if (result.removed.length > 0) {
-                showSuccessNotice(`已清理 ${result.removed.length} 本孤儿向量`, { title: '向量对账' });
+                showSuccessNotice(t('knowledgebase.reconcile.cleaned', { count: result.removed.length }), { title: t('knowledgebase.reconcile.title') });
             }
             if (result.skipped.length > 0) {
-                showWarningNotice(`${result.skipped.length} 本未清理（不在向量库、已在索引或落盘失败）`, { title: '向量对账' });
+                showWarningNotice(t('knowledgebase.reconcile.skipped', { count: result.skipped.length }), { title: t('knowledgebase.reconcile.title') });
             }
             await this.loadBooks();
             this.renderRightPanel();
         } catch (e) {
             // 审计 #B4：void 点击处理器不能留 unhandled rejection
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '向量对账失败' });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.reconcile.failed') });
         } finally {
             this.reconcileInFlight = false;
         }
@@ -1507,16 +1516,16 @@ export class KnowledgeBaseView extends ItemView {
     private async retryVectorizeBook(book: BookBasicInfo): Promise<void> {
         const scheduler = this.deconstructionScheduler;
         if (!scheduler || typeof scheduler.revectorizeBook !== 'function') {
-            new Notice('拆解调度器未初始化，无法重向量化', 6000);
+            new Notice(t('knowledgebase.revectorize.noScheduler'), 6000);
             return;
         }
-        new Notice(`⏳ 正在重算《${book.name}》的向量…`, 4000);
+        new Notice(t('knowledgebase.revectorize.running', { name: book.name }), 4000);
         try {
             await scheduler.revectorizeBook(book.id, book.name);
-            new Notice(`✅ 《${book.name}》向量已重算，可参与检索`, 5000);
+            new Notice(t('knowledgebase.revectorize.done', { name: book.name }), 5000);
         } catch (e) {
             const message = e instanceof Error ? e.message : String(e);
-            showErrorNotice(message, { title: `《${book.name}》重向量化失败`, timeout: 10000 });
+            showErrorNotice(message, { title: t('knowledgebase.revectorize.failed', { name: book.name }), timeout: 10000 });
         } finally {
             // 无论成功失败都刷新：状态徽标与能力横幅需要反映最新结果
             await this.loadBooks();
@@ -1559,7 +1568,7 @@ export class KnowledgeBaseView extends ItemView {
         const detailContainer = (booksPanel as HTMLElement).createDiv({ cls: 'nw-kb-detail-container' });
 
         const backBtn = detailContainer.createEl('button', {
-            text: '← 返回列表',
+            text: t('knowledgebase.detail.backToList'),
             cls: 'nw-btn nw-btn-ghost nw-btn-sm nw-kb-detail-back',
             attr: {},
         });
@@ -1575,12 +1584,12 @@ export class KnowledgeBaseView extends ItemView {
         if (classification.tags.length > 0) {
             const strip = detailContainer.createDiv({ cls: 'nw-kb-class-strip' });
             const stripHead = strip.createDiv({ cls: 'nw-kb-class-strip-head' });
-            stripHead.createSpan({ text: `🏷️ 自动分类：${classification.primary}`, cls: 'nw-kb-class-primary' });
+            stripHead.createSpan({ text: t('knowledgebase.detail.autoClass', { primary: classification.primary }), cls: 'nw-kb-class-primary' });
             stripHead.createSpan({ text: classification.summary, cls: 'nw-kb-class-summary' });
             const applyBtn = stripHead.createEl('button', {
-                text: '写入标签',
+                text: t('knowledgebase.detail.writeTags'),
                 cls: 'nw-btn nw-btn-secondary nw-btn-sm nw-kb-class-apply',
-                attr: { title: '将自动分类结果写入本书自定义标签（分类: 前缀）' }
+                attr: { title: t('knowledgebase.detail.writeTagsTitle') }
             });
             applyBtn.addEventListener('click', () => {
                 void this.handleApplyDimensionTags(book);
@@ -1590,7 +1599,7 @@ export class KnowledgeBaseView extends ItemView {
                 chipWrap.createSpan({
                     text: `${tag.dimension}·${tag.label}`,
                     cls: 'nw-kb-class-tag',
-                    attr: { title: `${tag.reason}（置信度 ${(tag.confidence * 100).toFixed(0)}%）` }
+                    attr: { title: t('knowledgebase.detail.tagReason', { reason: tag.reason, pct: (tag.confidence * 100).toFixed(0) }) }
                 });
             });
         }
@@ -1600,7 +1609,7 @@ export class KnowledgeBaseView extends ItemView {
         const tabKeys: BookDetailTabKey[] = ['overview', 'style', 'rhythm', 'technique', 'structure', 'character', 'foreshadow', 'commercial', 'readability', 'tags'];
         tabKeys.forEach(key => {
             const tab = tabs.createEl('button', {
-                text: BOOK_DETAIL_TABS[key],
+                text: bookDetailTabs()[key],
                 cls: `nw-kb-detail-tab${this.activeBookDetailTab === key ? ' nw-kb-detail-tab--active' : ''}`,
                 attr: { type: 'button' },
             });
@@ -1616,7 +1625,7 @@ export class KnowledgeBaseView extends ItemView {
         });
 
         const loadingEl = tabContent.createDiv({
-            text: '加载中...',
+            text: t('knowledgebase.detail.loading'),
             cls: 'nw-kb-detail-loading'
         });
         void loadingEl;
@@ -1634,9 +1643,9 @@ export class KnowledgeBaseView extends ItemView {
     private renderDetailLoadError(tabContent: HTMLElement): void {
         tabContent.empty();
         const errorBox = tabContent.createDiv({ cls: 'nw-kb-error' });
-        errorBox.createDiv({ text: '⚠️ 书籍详情加载失败', cls: 'nw-kb-error-title' });
+        errorBox.createDiv({ text: t('knowledgebase.detail.loadFailed'), cls: 'nw-kb-error-title' });
         errorBox.createDiv({ text: this.detailLoadError || detailErrorMessage(), cls: 'nw-kb-error-detail' });
-        const retry = errorBox.createEl('button', { text: '重试', cls: 'nw-btn nw-btn-secondary nw-btn-sm' });
+        const retry = errorBox.createEl('button', { text: t('knowledgebase.common.retry'), cls: 'nw-btn nw-btn-secondary nw-btn-sm' });
         retry.addEventListener('click', () => this.retryBookDetailLoad());
     }
 
@@ -1855,40 +1864,40 @@ export class KnowledgeBaseView extends ItemView {
     }
 
     private getGenreName(genreId?: string): string {
-        if (!genreId || !this.kb) return '未分类';
+        if (!genreId || !this.kb) return t('knowledgebase.list.uncategorized');
         const genre = this.kb.getGenre(genreId);
         return genre?.name || genreId;
     }
 
     private async autoClassifyBook(book: BookBasicInfo): Promise<void> {
         if (!this.kbManager) return;
-        new Notice('正在自动分类...');
+        new Notice(t('knowledgebase.detail.classifying'));
         try {
             const result = await this.kbManager.classifyBook(book.id);
             await this.loadBooks();
             await this.refreshBookInfo();
             this.renderBookDetail();
-            showSuccessNotice(`${result.primaryGenre.name} · ${result.primarySubGenre?.name || ''}`, { title: '分类完成' });
+            showSuccessNotice(`${result.primaryGenre.name} · ${result.primarySubGenre?.name || ''}`, { title: t('knowledgebase.detail.classifyDoneTitle') });
         } catch (e) {
             log.error('自动分类失败:', e);
-            showErrorNotice('自动分类失败');
+            showErrorNotice(t('knowledgebase.detail.classifyFailed'));
         }
     }
 
     private async handleApplyDimensionTags(book: BookBasicInfo): Promise<void> {
         if (!this.kbManager) {
-            new Notice('知识库未初始化');
+            new Notice(t('knowledgebase.detail.kbNotInited'));
             return;
         }
         const result = this.classifyBookInfo(book);
         if (result.tags.length === 0) {
-            new Notice('当前书籍信息不足以规则归类，请先补充主题标签或完成拆解');
+            new Notice(t('knowledgebase.detail.insufficient'));
             return;
         }
         const existing = book.customTags || [];
         const merged = mergeClassificationTags(existing, result);
         if (merged.length === existing.length) {
-            new Notice('维度标签已是最新，无需重复写入');
+            new Notice(t('knowledgebase.detail.tagsUpToDate'));
             return;
         }
         try {
@@ -1900,31 +1909,31 @@ export class KnowledgeBaseView extends ItemView {
                 this.renderBookListOnly();
                 this.renderBookDetail();
             }
-            showSuccessNotice(`已写入 ${result.tags.length} 个维度标签：${result.summary}`, { timeout: 4000 });
+            showSuccessNotice(t('knowledgebase.detail.tagsWritten', { count: result.tags.length, summary: result.summary }), { timeout: 4000 });
         } catch (e) {
             log.error('[KnowledgeBaseView] 写入维度标签失败:', e);
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '写入维度标签失败' });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.detail.writeTagsFailedTitle') });
         }
     }
 
     private async handleBatchClassify(): Promise<void> {
         if (!this.kbManager || this.allBooks.length === 0) {
-            new Notice('暂无可归类的书籍');
+            new Notice(t('knowledgebase.detail.noClassifiable'));
             return;
         }
         const total = this.allBooks.length;
         const confirmed = await OperationConfirmModal.confirm(this.app, {
-            title: '批量归类',
-            description: `将按本地规则为 ${total} 本书生成维度标签并写入自定义标签。已有标签不会重复，可随时手动删除。`,
-            confirmText: '开始归类',
-            cancelText: '取消',
+            title: t('knowledgebase.batchClassify.title'),
+            description: t('knowledgebase.batchClassify.desc', { total }),
+            confirmText: t('knowledgebase.batchClassify.ok'),
+            cancelText: t('knowledgebase.common.cancel'),
         });
         if (!confirmed || this.viewClosed) return;
 
         let updated = 0;
         let skipped = 0;
         let processed = 0;
-        const progress = new Notice(`🏷️ 批量归类 0/${total}`, 0);
+        const progress = new Notice(t('knowledgebase.batchClassify.progressZero', { total }), 0);
         try {
             for (const book of [...this.allBooks]) {
                 if (this.viewClosed) break;
@@ -1948,7 +1957,7 @@ export class KnowledgeBaseView extends ItemView {
                     }
                 }
                 if (processed % 20 === 0) {
-                    progress.setMessage(`🏷️ 批量归类 ${processed}/${total}`);
+                    progress.setMessage(t('knowledgebase.batchClassify.progress', { done: processed, total }));
                     await yieldToUI();
                 }
             }
@@ -1959,19 +1968,19 @@ export class KnowledgeBaseView extends ItemView {
         if (this.viewClosed) return;
         this.renderLeftSidebar();
         this.renderBookListOnly();
-        showSuccessNotice(`更新 ${updated} 本，跳过 ${skipped} 本`, { title: '批量归类完成', timeout: 4000 });
+        showSuccessNotice(t('knowledgebase.batchClassify.done', { updated, skipped }), { title: t('knowledgebase.batchClassify.doneTitle'), timeout: 4000 });
     }
 
     private async applyGenreRecommendation(book: BookBasicInfo, rec: { genreId: string; subGenreId?: string; confidence: number }): Promise<void> {
         if (!this.kbManager) return;
-        const genreName = !rec.genreId || !this.kb ? '未分类' : (this.kb.getGenre(rec.genreId)?.name || rec.genreId);
-        const subGenreName = !rec.genreId || !rec.subGenreId || !this.kb ? '未分类' : (this.kb.getSubGenre(rec.genreId, rec.subGenreId)?.name || rec.subGenreId);
+        const genreName = !rec.genreId || !this.kb ? t('knowledgebase.list.uncategorized') : (this.kb.getGenre(rec.genreId)?.name || rec.genreId);
+        const subGenreName = !rec.genreId || !rec.subGenreId || !this.kb ? t('knowledgebase.list.uncategorized') : (this.kb.getSubGenre(rec.genreId, rec.subGenreId)?.name || rec.subGenreId);
         const confirmed = await OperationConfirmModal.confirm(this.app, {
-            title: '应用分类建议',
-            description: `确定要应用分类建议吗？`,
-            steps: [`大类：${genreName}`, `细分：${subGenreName}`],
-            confirmText: '确认应用',
-            cancelText: '取消',
+            title: t('knowledgebase.detail.applyTitle'),
+            description: t('knowledgebase.detail.applyDesc'),
+            steps: [t('knowledgebase.detail.applyStepGenre', { name: genreName }), t('knowledgebase.detail.applyStepSub', { name: subGenreName })],
+            confirmText: t('knowledgebase.detail.applyOk'),
+            cancelText: t('knowledgebase.common.cancel'),
         });
         if (!confirmed) return;
         try {
@@ -1983,10 +1992,10 @@ export class KnowledgeBaseView extends ItemView {
             await this.refreshBookInfo();
             this.renderBookDetail();
             this.renderLeftSidebar();
-            showSuccessNotice('分类已更新');
+            showSuccessNotice(t('knowledgebase.detail.updated'));
         } catch (e) {
             log.error('更新分类失败:', e);
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '更新分类失败' });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.detail.updateFailed') });
         }
     }
 
@@ -2064,7 +2073,7 @@ export class KnowledgeBaseView extends ItemView {
                     this.renderRightPanel();
                 } catch (e) {
                     log.error('保存题材失败:', e);
-                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存失败' });
+                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.genre.saveFailed') });
                 }
             }
         ).open();
@@ -2075,7 +2084,7 @@ export class KnowledgeBaseView extends ItemView {
         try {
             await this.configManager.saveFullCustomGenre(genre);
             this.kb.addCustomGenre(genre);
-            showSuccessNotice(`已保存题材「${genre.name}」`);
+            showSuccessNotice(t('knowledgebase.genre.saved', { name: genre.name }));
         } catch (e) {
             log.error('保存题材失败:', e);
             throw e;
@@ -2088,11 +2097,11 @@ export class KnowledgeBaseView extends ItemView {
         if (!genre) return;
 
         const confirmed = await OperationConfirmModal.confirm(this.app, {
-            title: '删除题材',
-            description: `确定要删除题材「${genre.name}」吗？`,
-            warning: '此操作不可恢复',
-            confirmText: '确认删除',
-            cancelText: '取消',
+            title: t('knowledgebase.genre.deleteTitle'),
+            description: t('knowledgebase.genre.deleteDesc', { name: genre.name }),
+            warning: t('knowledgebase.common.irreversible'),
+            confirmText: t('knowledgebase.common.confirmDelete'),
+            cancelText: t('knowledgebase.common.cancel'),
         });
 
         if (!confirmed) return;
@@ -2104,12 +2113,12 @@ export class KnowledgeBaseView extends ItemView {
                 if (this.selectedGenreId === id) {
                     this.selectedGenreId = null;
                 }
-                showSuccessNotice(`已删除题材「${genre.name}」`);
+                showSuccessNotice(t('knowledgebase.genre.deleted', { name: genre.name }));
                 this.renderRightPanel();
             }
         } catch (e) {
             log.error('删除题材失败:', e);
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '删除失败' });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.common.deleteFailed') });
         }
     }
 
@@ -2125,13 +2134,13 @@ export class KnowledgeBaseView extends ItemView {
                 const text = await file.text();
                 const genres = parseGenreImportPayload(JSON.parse(text));
                 if (genres.length === 0) {
-                    new Notice('文件中没有可导入的题材');
+                    new Notice(t('knowledgebase.genre.noGenresInFile'));
                     return;
                 }
 
                 await this.processImportGenres(genres);
             } catch (err) {
-                showErrorNotice('文件格式错误', { title: '导入失败' });
+                showErrorNotice(t('knowledgebase.genre.badFormat'), { title: t('knowledgebase.genre.importFailed') });
             }
         });
         document.body.appendChild(input);
@@ -2161,16 +2170,16 @@ export class KnowledgeBaseView extends ItemView {
             modal.modalEl.addClass('nw-modal');
             const { contentEl } = modal;
 
-            contentEl.createEl('h3', { text: '⚠️ 发现重复题材', cls: 'nw-modal-title' });
+            contentEl.createEl('h3', { text: t('knowledgebase.genre.dupTitle'), cls: 'nw-modal-title' });
             contentEl.createDiv({
-                text: `检测到 ${conflictCount} 个题材ID已存在，请选择处理方式：`,
+                text: t('knowledgebase.genre.dupDesc', { count: conflictCount }),
                 cls: 'nw-kb-conflict-hint'
             });
 
             const btnContainer = contentEl.createDiv({ cls: 'nw-kb-conflict-actions' });
 
             const overwriteBtn = btnContainer.createEl('button', {
-                text: '覆盖现有题材',
+                text: t('knowledgebase.genre.dupOverwrite'),
                 cls: 'nw-btn nw-btn-secondary'
             });
             overwriteBtn.addEventListener('click', () => {
@@ -2179,7 +2188,7 @@ export class KnowledgeBaseView extends ItemView {
             });
 
             const skipBtn = btnContainer.createEl('button', {
-                text: '跳过重复题材',
+                text: t('knowledgebase.genre.dupSkip'),
                 cls: 'nw-btn nw-btn-secondary'
             });
             skipBtn.addEventListener('click', () => {
@@ -2188,7 +2197,7 @@ export class KnowledgeBaseView extends ItemView {
             });
 
             const renameBtn = btnContainer.createEl('button', {
-                text: '重命名导入（添加后缀）',
+                text: t('knowledgebase.genre.dupRename'),
                 cls: 'nw-btn nw-btn-secondary'
             });
             renameBtn.addEventListener('click', () => {
@@ -2197,7 +2206,7 @@ export class KnowledgeBaseView extends ItemView {
             });
 
             const cancelBtn = btnContainer.createEl('button', {
-                text: '取消导入',
+                text: t('knowledgebase.genre.dupCancel'),
                 cls: 'nw-btn nw-btn-ghost'
             });
             cancelBtn.addEventListener('click', () => {
@@ -2219,11 +2228,11 @@ export class KnowledgeBaseView extends ItemView {
                 this.kb.addCustomGenre(genreWithCustom);
                 count++;
             }
-            showSuccessNotice(`成功导入 ${count} 个题材`);
+            showSuccessNotice(t('knowledgebase.genre.imported', { count }));
             this.renderRightPanel();
         } catch (e) {
             log.error('导入题材失败:', e);
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '导入失败' });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.genre.importFailed') });
             throw e;
         }
     }
@@ -2232,13 +2241,13 @@ export class KnowledgeBaseView extends ItemView {
         if (!this.configManager) return;
         const customGenres = this.configManager.getFullCustomGenres();
         if (customGenres.length === 0) {
-            new Notice('暂无可导出的自定义题材');
+            new Notice(t('knowledgebase.genre.noExportable'));
             return;
         }
         const data = JSON.stringify(customGenres, null, 2);
         await exportTextFile(this.app, 'custom-genres.json', data, {
             mime: 'application/json',
-            successMessage: `📤 已导出 ${customGenres.length} 个自定义题材`,
+            successMessage: t('knowledgebase.genre.exported', { count: customGenres.length }),
         });
     }
 
@@ -2246,11 +2255,11 @@ export class KnowledgeBaseView extends ItemView {
         if (!this.configManager || !this.kb) return;
 
         const confirmed = await OperationConfirmModal.confirm(this.app, {
-            title: '恢复默认配置',
-            description: '确定要恢复默认配置吗？',
-            warning: '所有自定义题材将被删除',
-            confirmText: '确认恢复',
-            cancelText: '取消',
+            title: t('knowledgebase.genre.resetTitle'),
+            description: t('knowledgebase.genre.resetDesc'),
+            warning: t('knowledgebase.genre.resetWarning'),
+            confirmText: t('knowledgebase.genre.resetOk'),
+            cancelText: t('knowledgebase.common.cancel'),
         });
 
         if (!confirmed) return;
@@ -2263,11 +2272,11 @@ export class KnowledgeBaseView extends ItemView {
             }
 
             this.selectedGenreId = null;
-            showSuccessNotice('已恢复默认配置');
+            showSuccessNotice(t('knowledgebase.genre.resetDone'));
             this.renderRightPanel();
         } catch (e) {
             log.error('恢复默认配置失败:', e);
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '恢复失败' });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.genre.resetFailed') });
         }
     }
 
@@ -2289,7 +2298,7 @@ export class KnowledgeBaseView extends ItemView {
                     this.renderRightPanel();
                 } catch (e) {
                     log.error('保存题材失败:', e);
-                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存失败' });
+                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.genre.saveFailed') });
                 }
             },
             async (id) => {
@@ -2297,7 +2306,7 @@ export class KnowledgeBaseView extends ItemView {
                     await this.handleDeleteGenre(id);
                 } catch (e) {
                     log.error('删除题材失败:', e);
-                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: '删除失败' });
+                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.common.deleteFailed') });
                 }
             }
         ).open();
@@ -2315,10 +2324,10 @@ export class KnowledgeBaseView extends ItemView {
         const header = content.createDiv({
             cls: 'nw-kb-tasks-header'
         });
-        header.createEl('h2', { text: '拆解任务监控', cls: 'nw-kb-tasks-title' });
+        header.createEl('h2', { text: t('knowledgebase.tasks.title'), cls: 'nw-kb-tasks-title' });
 
         const filterBar = header.createDiv({ cls: 'nw-kb-tasks-filter-bar' });
-        filterBar.createSpan({ text: '状态筛选：', cls: 'nw-text-sm-muted' });
+        filterBar.createSpan({ text: t('knowledgebase.tasks.filterLabel'), cls: 'nw-text-sm-muted' });
         const statusSelect = filterBar.createEl('select', {
             cls: 'nw-kb-select'
         });
@@ -2341,8 +2350,8 @@ export class KnowledgeBaseView extends ItemView {
         if (filteredTasks.length === 0) {
             const emptyState = createEmptyState({
                 icon: 'chart',
-                title: '暂无任务',
-                description: '在参考书籍中选择书籍开始拆解'
+                title: t('knowledgebase.tasks.noTitle'),
+                description: t('knowledgebase.tasks.noDesc')
             });
             content.appendChild(emptyState);
             return;
@@ -2371,9 +2380,9 @@ export class KnowledgeBaseView extends ItemView {
         const leftTools = toolbar.createDiv({ cls: 'nw-kb-tasks-tool-group' });
 
         const selectAllBtn = leftTools.createEl('button', {
-            text: '☑️ 全选',
+            text: t('knowledgebase.tasks.selectAll'),
             cls: 'nw-btn nw-btn-secondary nw-btn-sm',
-            attr: { title: '全选 / 取消全选当前任务' }
+            attr: { title: t('knowledgebase.tasks.selectAllTitle') }
         });
         selectAllBtn.addEventListener('click', () => {
             if (isAllFilteredSelected(this.selectedTaskIds.size, filteredTasks.length)) {
@@ -2385,9 +2394,9 @@ export class KnowledgeBaseView extends ItemView {
         });
 
         const invertSelectBtn = leftTools.createEl('button', {
-            text: '🔄 反选',
+            text: t('knowledgebase.tasks.invert'),
             cls: 'nw-btn nw-btn-secondary nw-btn-sm',
-            attr: { title: '反选当前任务' }
+            attr: { title: t('knowledgebase.tasks.invertTitle') }
         });
         invertSelectBtn.addEventListener('click', () => {
             filteredTasks.forEach(t => {
@@ -2411,9 +2420,9 @@ export class KnowledgeBaseView extends ItemView {
         // 批量取消：只针对 running | pending（不同于批量删除，见 kb-task-panel 文件头）
         const cancellableSelected = selectSelectedCancellable(filteredTasks, this.selectedTaskIds);
         const batchCancelBtn = rightTools.createEl('button', {
-            text: '✕ 批量取消',
+            text: t('knowledgebase.tasks.batchCancel'),
             cls: 'nw-btn nw-btn-danger nw-btn-sm',
-            attr: { title: '取消选中的进行中 / 待执行任务' }
+            attr: { title: t('knowledgebase.tasks.batchCancelTitle') }
         });
         batchCancelBtn.disabled = cancellableSelected.length === 0;
         batchCancelBtn.style.opacity = disabledOpacity(cancellableSelected.length > 0);
@@ -2427,9 +2436,9 @@ export class KnowledgeBaseView extends ItemView {
         // 批量删除：只针对已终结任务（completed | failed | cancelled）
         const deletableSelected = selectSelectedDeletable(filteredTasks, this.selectedTaskIds);
         const batchDeleteBtn = rightTools.createEl('button', {
-            text: '🗑️ 批量删除',
+            text: t('knowledgebase.tasks.batchDelete'),
             cls: 'nw-btn nw-btn-secondary nw-btn-sm',
-            attr: { title: '删除选中的已完成 / 失败 / 已取消任务' }
+            attr: { title: t('knowledgebase.tasks.batchDeleteTitle') }
         });
         batchDeleteBtn.disabled = deletableSelected.length === 0;
         batchDeleteBtn.style.opacity = disabledOpacity(deletableSelected.length > 0);
@@ -2442,9 +2451,9 @@ export class KnowledgeBaseView extends ItemView {
 
         const activeTasks = selectActiveTasks(allTasks);
         const cancelAllBtn = rightTools.createEl('button', {
-            text: '⚠️ 一键全部取消',
+            text: t('knowledgebase.tasks.cancelAll'),
             cls: 'nw-btn nw-btn-danger nw-btn-sm',
-            attr: { title: '取消全部进行中 / 待执行任务' }
+            attr: { title: t('knowledgebase.tasks.cancelAllTitle') }
         });
         cancelAllBtn.disabled = activeTasks.length === 0;
         cancelAllBtn.style.opacity = disabledOpacity(activeTasks.length > 0);
@@ -2509,14 +2518,14 @@ export class KnowledgeBaseView extends ItemView {
             const infoRow = card.createDiv({
                 cls: 'nw-kb-tasks-info-row'
             });
-            infoRow.createSpan({ text: `创建时间：${this.formatDateTime(task.createdAt)}` });
+            infoRow.createSpan({ text: t('knowledgebase.tasks.createdAt', { time: this.formatDateTime(task.createdAt) }) });
             if (task.startedAt) {
-                infoRow.createSpan({ text: `开始时间：${this.formatDateTime(task.startedAt)}` });
+                infoRow.createSpan({ text: t('knowledgebase.tasks.startedAt', { time: this.formatDateTime(task.startedAt) }) });
             }
             if (task.completedAt) {
-                infoRow.createSpan({ text: `完成时间：${this.formatDateTime(task.completedAt)}` });
+                infoRow.createSpan({ text: t('knowledgebase.tasks.completedAt', { time: this.formatDateTime(task.completedAt) }) });
             }
-            infoRow.createSpan({ text: `维度：${formatTaskDimensions(task.dimensions, DIMENSION_LABELS)}` });
+            infoRow.createSpan({ text: t('knowledgebase.tasks.dimensions', { list: formatTaskDimensions(task.dimensions, bookDimensionLabels()) }) });
 
             const taskProgress = this.deconstructionScheduler?.getAllTasks().find(t => t.id === task.id);
             const emitter = task.id ? this.deconstructionScheduler?.getTaskEmitter(task.id) : undefined;
@@ -2559,7 +2568,7 @@ export class KnowledgeBaseView extends ItemView {
                 if (emitterState.elapsed !== undefined) {
                     const elapsedEl = timeRow.createSpan({ cls: 'nw-kb-tasks-time-item' });
                     elapsedEl.createSpan({ text: '⏱️' });
-                    elapsedEl.createSpan({ text: '已用：' });
+                    elapsedEl.createSpan({ text: t('knowledgebase.tasks.elapsed') });
                     elapsedEl.createSpan({
                         text: this.formatDuration(emitterState.elapsed),
                         cls: 'nw-kb-tasks-time-value'
@@ -2568,7 +2577,7 @@ export class KnowledgeBaseView extends ItemView {
                 if (emitterState.eta !== undefined) {
                     const etaEl = timeRow.createSpan({ cls: 'nw-kb-tasks-time-item' });
                     etaEl.createSpan({ text: '⏳' });
-                    etaEl.createSpan({ text: '剩余：' });
+                    etaEl.createSpan({ text: t('knowledgebase.tasks.eta') });
                     etaEl.createSpan({
                         text: this.formatDuration(emitterState.eta),
                         cls: 'nw-kb-tasks-time-value'
@@ -2580,7 +2589,7 @@ export class KnowledgeBaseView extends ItemView {
                 const errorMsg = card.createDiv({
                     cls: 'nw-kb-tasks-error'
                 });
-                errorMsg.createSpan({ text: '错误信息：', cls: 'nw-kb-tasks-error-label' });
+                errorMsg.createSpan({ text: t('knowledgebase.tasks.error'), cls: 'nw-kb-tasks-error-label' });
                 errorMsg.createSpan({ text: task.error });
             }
 
@@ -2592,9 +2601,9 @@ export class KnowledgeBaseView extends ItemView {
             for (const actionKey of resolveTaskRowActions(task.status)) {
                 if (actionKey === 'retry') {
                     const retryBtn = actions.createEl('button', {
-                        text: '🔄 重试',
+                        text: t('knowledgebase.tasks.retry'),
                         cls: 'nw-btn nw-btn-primary nw-btn-sm',
-                        attr: { title: '重新执行该失败任务' }
+                        attr: { title: t('knowledgebase.tasks.retryTitle') }
                     });
                     retryBtn.addEventListener('click', () => {
                         this.handleRetryTask(task).catch(err => {
@@ -2606,9 +2615,9 @@ export class KnowledgeBaseView extends ItemView {
 
                 if (actionKey === 'cancel') {
                     const cancelBtn = actions.createEl('button', {
-                        text: '✕ 取消',
+                        text: t('knowledgebase.tasks.cancel'),
                         cls: 'nw-btn nw-btn-danger nw-btn-sm',
-                        attr: { title: '取消该任务' }
+                        attr: { title: t('knowledgebase.tasks.cancelTitle') }
                     });
                     cancelBtn.addEventListener('click', () => {
                         this.handleCancelTask(task).catch(err => {
@@ -2620,9 +2629,9 @@ export class KnowledgeBaseView extends ItemView {
 
                 if (actionKey === 'delete') {
                     const deleteBtn = actions.createEl('button', {
-                        text: '🗑️ 删除',
+                        text: t('knowledgebase.tasks.delete'),
                         cls: 'nw-btn nw-btn-secondary nw-btn-sm',
-                        attr: { title: '删除该任务记录' }
+                        attr: { title: t('knowledgebase.tasks.deleteTitle') }
                     });
                     deleteBtn.addEventListener('click', () => {
                         this.handleDeleteTask(task).catch(err => { // silent-ok: handleDeleteTask 内部已有失败 Notice
@@ -2633,9 +2642,9 @@ export class KnowledgeBaseView extends ItemView {
                 }
 
                 const viewBtn = actions.createEl('button', {
-                    text: '📖 查看书籍',
+                    text: t('knowledgebase.tasks.viewBook'),
                     cls: 'nw-btn nw-btn-secondary nw-btn-sm',
-                    attr: { title: '查看该任务对应的书籍' }
+                    attr: { title: t('knowledgebase.tasks.viewBookTitle') }
                 });
                 viewBtn.addEventListener('click', () => {
                     const book = this.allBooks.find(b => b.id === task.bookId);
@@ -2659,39 +2668,39 @@ export class KnowledgeBaseView extends ItemView {
         try {
             const sourceText = await this.kbManager.getSourceText(task.bookId);
             await this.deconstructionScheduler.addTask(task.bookId, sourceText, task.dimensions);
-            showSuccessNotice('已重新加入拆解队列');
+            showSuccessNotice(t('knowledgebase.tasks.requeued'));
             this.renderRightPanel();
         } catch (e) {
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '重试失败' });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.tasks.retryFailed') });
         }
     }
 
     private async handleCancelTask(task: BreakdownTask): Promise<void> {
         const confirmed = await OperationConfirmModal.confirm(this.app, {
-            title: '取消任务',
-            description: `确定要取消《${task.bookName}》的拆解任务吗？`,
-            confirmText: '确认取消',
-            cancelText: '返回',
+            title: t('knowledgebase.tasks.cancelModalTitle'),
+            description: t('knowledgebase.tasks.cancelModalDesc', { name: task.bookName }),
+            confirmText: t('knowledgebase.common.confirmCancel'),
+            cancelText: t('knowledgebase.common.back'),
         });
 
         if (!confirmed) return;
 
         try {
             await this.deconstructionScheduler?.cancelTask(task.id);
-            showSuccessNotice('任务已取消');
+            showSuccessNotice(t('knowledgebase.tasks.cancelled'));
             this.renderRightPanel();
         } catch (e) {
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '取消失败' });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.tasks.cancelFailed') });
         }
     }
 
     private async handleDeleteTask(task: BreakdownTask): Promise<void> {
         const confirmed = await OperationConfirmModal.confirm(this.app, {
-            title: '删除任务',
-            description: `确定要删除《${task.bookName}》的任务记录吗？`,
-            warning: '此操作不可恢复',
-            confirmText: '确认删除',
-            cancelText: '返回',
+            title: t('knowledgebase.tasks.deleteModalTitle'),
+            description: t('knowledgebase.tasks.deleteModalDesc', { name: task.bookName }),
+            warning: t('knowledgebase.common.irreversible'),
+            confirmText: t('knowledgebase.common.confirmDelete'),
+            cancelText: t('knowledgebase.common.back'),
         });
 
         if (!confirmed) return;
@@ -2700,13 +2709,13 @@ export class KnowledgeBaseView extends ItemView {
             const success = await this.deconstructionScheduler?.removeTask(task.id);
             if (success) {
                 this.selectedTaskIds.delete(task.id);
-                showSuccessNotice('任务已删除');
+                showSuccessNotice(t('knowledgebase.tasks.deleted'));
                 this.renderRightPanel();
             } else {
-                showErrorNotice('任务正在进行中', { title: '删除失败' });
+                showErrorNotice(t('knowledgebase.tasks.running'), { title: t('knowledgebase.common.deleteFailed') });
             }
         } catch (e) {
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '删除失败' });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.common.deleteFailed') });
         }
     }
 
@@ -2715,12 +2724,12 @@ export class KnowledgeBaseView extends ItemView {
 
         const taskNames = tasks.map(t => `• 《${t.bookName}》`).join('\n');
         const confirmed = await OperationConfirmModal.confirm(this.app, {
-            title: '批量取消任务',
-            description: `确定要取消以下 ${tasks.length} 个任务吗？`,
+            title: t('knowledgebase.tasks.batchCancelModalTitle'),
+            description: t('knowledgebase.tasks.batchCancelDesc', { count: tasks.length }),
             steps: tasks.length <= 10 ? tasks.map(t => `《${t.bookName}》`) : undefined,
-            warning: '取消后任务将停止执行，已完成的部分不会保留',
-            confirmText: '确认取消',
-            cancelText: '返回',
+            warning: t('knowledgebase.tasks.batchCancelWarning'),
+            confirmText: t('knowledgebase.common.confirmCancel'),
+            cancelText: t('knowledgebase.common.back'),
         });
 
         if (!confirmed) return;
@@ -2736,7 +2745,7 @@ export class KnowledgeBaseView extends ItemView {
         }
 
         this.selectedTaskIds.clear();
-        showSuccessNotice(`已取消 ${successCount}/${tasks.length} 个任务`);
+        showSuccessNotice(t('knowledgebase.tasks.batchCancelled', { done: successCount, total: tasks.length }));
         this.renderRightPanel();
     }
 
@@ -2744,12 +2753,12 @@ export class KnowledgeBaseView extends ItemView {
         if (!this.deconstructionScheduler || tasks.length === 0) return;
 
         const confirmed = await OperationConfirmModal.confirm(this.app, {
-            title: '批量删除任务',
-            description: `确定要删除以下 ${tasks.length} 个任务记录吗？`,
+            title: t('knowledgebase.tasks.batchDeleteModalTitle'),
+            description: t('knowledgebase.tasks.batchDeleteDesc', { count: tasks.length }),
             steps: tasks.length <= 10 ? tasks.map(t => `《${t.bookName}》`) : undefined,
-            warning: '删除后任务记录将无法恢复',
-            confirmText: '确认删除',
-            cancelText: '返回',
+            warning: t('knowledgebase.tasks.batchDeleteWarning'),
+            confirmText: t('knowledgebase.common.confirmDelete'),
+            cancelText: t('knowledgebase.common.back'),
         });
 
         if (!confirmed) return;
@@ -2767,7 +2776,7 @@ export class KnowledgeBaseView extends ItemView {
             }
         }
 
-        showSuccessNotice(`已删除 ${successCount}/${tasks.length} 个任务`);
+        showSuccessNotice(t('knowledgebase.tasks.batchDeleted', { done: successCount, total: tasks.length }));
         this.renderRightPanel();
     }
 
@@ -2775,15 +2784,15 @@ export class KnowledgeBaseView extends ItemView {
         if (!this.deconstructionScheduler || tasks.length === 0) return;
 
         const confirmed = await OperationConfirmModal.confirm(this.app, {
-            title: '一键全部取消',
-            description: `确定要取消所有 ${tasks.length} 个正在进行和等待中的任务吗？`,
+            title: t('knowledgebase.tasks.cancelAllModalTitle'),
+            description: t('knowledgebase.tasks.cancelAllDesc', { count: tasks.length }),
             steps: (() => {
                 const counts = summarizeTaskCounts(tasks);
-                return [`运行中任务：${counts.running} 个`, `等待中任务：${counts.pending} 个`];
+                return [t('knowledgebase.tasks.cancelAllRunning', { count: counts.running }), t('knowledgebase.tasks.cancelAllPending', { count: counts.pending })];
             })(),
-            warning: '此操作将停止所有正在进行的拆解任务',
-            confirmText: '全部取消',
-            cancelText: '返回',
+            warning: t('knowledgebase.tasks.cancelAllWarning'),
+            confirmText: t('knowledgebase.tasks.cancelAllOk'),
+            cancelText: t('knowledgebase.common.back'),
         });
 
         if (!confirmed) return;
@@ -2799,7 +2808,7 @@ export class KnowledgeBaseView extends ItemView {
         }
 
         this.selectedTaskIds.clear();
-        showSuccessNotice(`已取消 ${successCount}/${tasks.length} 个任务`);
+        showSuccessNotice(t('knowledgebase.tasks.batchCancelled', { done: successCount, total: tasks.length }));
         this.renderRightPanel();
     }
 
@@ -2845,17 +2854,17 @@ export class KnowledgeBaseView extends ItemView {
                 await this.loadBooks();
                 this.renderRightPanel();
                 this.renderLeftSidebar();
-                showSuccessNotice('书籍导入成功');
+                showSuccessNotice(t('knowledgebase.books.imported'));
             } catch (e) {
                 log.error('书籍导入后处理失败:', e);
-                showErrorNotice(e instanceof Error ? e.message : String(e), { title: '导入处理失败' });
+                showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.books.importPostFailed') });
             }
         }).open();
     }
 
     private handleBatchImport(): void {
         if (!this.plugin.batchImportManager || !this.plugin.knowledgeTagManager || !this.deconstructionScheduler) {
-            new Notice('⚠️ 批量导入功能未初始化');
+            new Notice(t('knowledgebase.books.batchNotInited'));
             return;
         }
 
@@ -2870,14 +2879,14 @@ export class KnowledgeBaseView extends ItemView {
                     this.renderRightPanel();
                     this.renderLeftSidebar();
                     if (result.success > 0) {
-                        showSuccessNotice(`成功导入 ${result.success} 本书籍`);
+                        showSuccessNotice(t('knowledgebase.books.batchImported', { count: result.success }));
                     }
                     if (result.failed > 0) {
-                        showErrorNotice(`${result.failed} 本书籍导入失败`);
+                        showErrorNotice(t('knowledgebase.books.batchImportFailed', { count: result.failed }));
                     }
                 } catch (e) {
                     log.error('批量导入后处理失败:', e);
-                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: '导入后处理失败' });
+                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.books.batchImportPostFailed') });
                 }
             },
             onViewDetail: (bookId, bookName) => {
@@ -2899,13 +2908,13 @@ export class KnowledgeBaseView extends ItemView {
                         const book = this.allBooks.find(b => b.id === bookId)
                             ?? this.allBooks.find(b => b.name === bookName);
                         if (!book) {
-                            new Notice('未找到该书，请刷新知识库后重试');
+                            new Notice(t('knowledgebase.books.notFound'));
                             return;
                         }
                         await this.openBookDetail(book);
                     } catch (e) {
                         log.error('[KnowledgeBaseView] 查看导入详情失败:', e);
-                        showErrorNotice('打开详情失败，请查看控制台');
+                        showErrorNotice(t('knowledgebase.books.openDetailFailed'));
                     }
                 })();
             },
@@ -2921,7 +2930,7 @@ export class KnowledgeBaseView extends ItemView {
                 this.renderLeftSidebar();
             } catch (e) {
                 log.error('批量操作后处理失败:', e);
-                showErrorNotice(e instanceof Error ? e.message : String(e), { title: '操作后处理失败' });
+                showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.books.opPostFailed') });
             }
         }).open();
     }
@@ -2975,7 +2984,7 @@ export class KnowledgeBaseView extends ItemView {
 
     private async handleStartDeconstruction(book: BookBasicInfo): Promise<void> {
         if (!this.deconstructionScheduler) {
-            new Notice('拆解调度器未初始化');
+            new Notice(t('knowledgebase.deconstruct.schedulerNotInited'));
             return;
         }
 
@@ -2987,12 +2996,12 @@ export class KnowledgeBaseView extends ItemView {
         try {
             const sourceText = await this.kbManager?.getSourceText(book.id);
             if (!sourceText) {
-                new Notice('无法获取书籍源文本');
+                new Notice(t('knowledgebase.deconstruct.noSource'));
                 return;
             }
 
             const dimensions = [...ALL_BREAKDOWN_DIMENSIONS] as BreakdownDimension[];
-            const dimensionLabels = dimensions.map(d => DIMENSION_LABELS[d]);
+            const dimensionLabels = dimensions.map(d => bookDimensionLabels()[d]);
             const wordCount = sourceText.length;
             const vectorEnabled = this.deconstructionScheduler['settingsGetter']
                 ? this.deconstructionScheduler['settingsGetter']().vectorEnhancedDeconstruction ?? false
@@ -3000,13 +3009,13 @@ export class KnowledgeBaseView extends ItemView {
             const estimation = this.deconstructionScheduler.estimateDecompositionTime(wordCount, dimensions, vectorEnabled);
 
             const confirmed = await OperationConfirmModal.confirm(this.app, {
-                title: '开始拆解',
-                description: `即将开始拆解《${book.name}》，将分析以下 ${dimensions.length} 个维度。`,
+                title: t('knowledgebase.deconstruct.startTitle'),
+                description: t('knowledgebase.deconstruct.startDesc', { name: book.name, count: dimensions.length }),
                 etaMin: estimation.etaMin,
                 etaMax: estimation.etaMax,
-                steps: [...dimensionLabels, '向量化'],
-                confirmText: '开始拆解',
-                cancelText: '取消',
+                steps: [...dimensionLabels, t('knowledgebase.deconstruct.vectorStep')],
+                confirmText: t('knowledgebase.deconstruct.startOk'),
+                cancelText: t('knowledgebase.common.cancel'),
                 rememberKey: 'kb-start-deconstruction',
             });
 
@@ -3015,11 +3024,11 @@ export class KnowledgeBaseView extends ItemView {
             }
 
             await this.deconstructionScheduler.addTask(book.id, sourceText);
-            showSuccessNotice(`已开始拆解《${book.name}》`);
+            showSuccessNotice(t('knowledgebase.deconstruct.started', { name: book.name }));
             await this.refreshBookInfo();
         } catch (e) {
             log.error('开始拆解失败:', e);
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '开始拆解失败' });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.deconstruct.startFailed') });
         } finally {
             this.isStartingDeconstruction = false;
             this.refreshDetailActionButtons();
@@ -3028,18 +3037,18 @@ export class KnowledgeBaseView extends ItemView {
 
     private async handleRestartDeconstruction(book: BookBasicInfo): Promise<void> {
         if (!this.deconstructionScheduler) {
-            new Notice('拆解调度器未初始化');
+            new Notice(t('knowledgebase.deconstruct.schedulerNotInited'));
             return;
         }
 
         if (this.isStartingDeconstruction) return;
 
         const confirmed = await OperationConfirmModal.confirm(this.app, {
-            title: '重新拆解',
-            description: `确定要重新拆解《${book.name}》吗？`,
-            warning: '之前的拆解结果将被覆盖',
-            confirmText: '确认重新拆解',
-            cancelText: '取消',
+            title: t('knowledgebase.deconstruct.restartTitle'),
+            description: t('knowledgebase.deconstruct.restartDesc', { name: book.name }),
+            warning: t('knowledgebase.deconstruct.restartWarning'),
+            confirmText: t('knowledgebase.deconstruct.restartOk'),
+            cancelText: t('knowledgebase.common.cancel'),
         });
 
         if (!confirmed) {
@@ -3051,11 +3060,11 @@ export class KnowledgeBaseView extends ItemView {
 
         try {
             await this.deconstructionScheduler.rerunBook(book.id);
-            showSuccessNotice(`已重新开始拆解《${book.name}》`);
+            showSuccessNotice(t('knowledgebase.deconstruct.restarted', { name: book.name }));
             await this.refreshBookInfo();
         } catch (e) {
             log.error('重新拆解失败:', e);
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '重新拆解失败' });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.deconstruct.restartFailed') });
         } finally {
             this.isStartingDeconstruction = false;
             this.refreshDetailActionButtons();
@@ -3064,11 +3073,11 @@ export class KnowledgeBaseView extends ItemView {
 
     private async handleDeleteBook(book: BookBasicInfo): Promise<void> {
         const confirmed = await OperationConfirmModal.confirm(this.app, {
-            title: '删除书籍',
-            description: `确定要删除书籍「${book.name}」吗？`,
-            warning: '此操作不可恢复',
-            confirmText: '确认删除',
-            cancelText: '取消',
+            title: t('knowledgebase.deleteBook.title'),
+            description: t('knowledgebase.deleteBook.desc', { name: book.name }),
+            warning: t('knowledgebase.common.irreversible'),
+            confirmText: t('knowledgebase.common.confirmDelete'),
+            cancelText: t('knowledgebase.common.cancel'),
         });
 
         if (!confirmed) return;
@@ -3077,14 +3086,14 @@ export class KnowledgeBaseView extends ItemView {
             // 先取消在途拆解，避免任务结束后把已删除的书目录/向量重新写回来
             await this.deconstructionScheduler?.cancelByBook(book.id);
             await this.kbManager?.deleteBook(book.id);
-            showSuccessNotice('书籍已删除');
+            showSuccessNotice(t('knowledgebase.deleteBook.done'));
             this.selectedBookId = null;
             await this.loadBooks();
             this.closeBookDetail();
             this.renderLeftSidebar();
         } catch (e) {
             log.error('删除书籍失败:', e);
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '删除失败' });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.common.deleteFailed') });
         }
     }
 
@@ -3097,7 +3106,7 @@ export class KnowledgeBaseView extends ItemView {
                 this.renderLeftSidebar();
             } catch (e) {
                 log.error('编辑书籍后处理失败:', e);
-                showErrorNotice(e instanceof Error ? e.message : String(e), { title: '编辑处理失败' });
+                showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.books.editPostFailed') });
             }
         }).open();
     }
@@ -3105,7 +3114,7 @@ export class KnowledgeBaseView extends ItemView {
     private async handleAddCustomTag(book: BookBasicInfo, tag: string): Promise<void> {
         if (!this.kbManager) return;
         if (book.customTags.includes(tag)) {
-            new Notice('标签已存在');
+            new Notice(t('knowledgebase.tags.exists'));
             return;
         }
         try {
@@ -3116,7 +3125,7 @@ export class KnowledgeBaseView extends ItemView {
             this.renderBookDetail();
         } catch (e) {
             log.error('添加标签失败:', e);
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '添加标签失败' });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.tags.addFailed') });
         }
     }
 
@@ -3130,7 +3139,7 @@ export class KnowledgeBaseView extends ItemView {
             this.renderBookDetail();
         } catch (e) {
             log.error('删除标签失败:', e);
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '删除标签失败' });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.tags.deleteFailed') });
         }
     }
 
@@ -3192,7 +3201,7 @@ export class KnowledgeBaseView extends ItemView {
 
         if (isDeconstructing && this.latestProgress) {
             const progress = this.latestProgress;
-            const dimLabel = progress.currentDimension ? DIMENSION_LABELS[progress.currentDimension] : '';
+            const dimLabel = progress.currentDimension ? bookDimensionLabels()[progress.currentDimension] : '';
             taskStatusEl.createSpan({
                 text: '🔄',
                 cls: 'nw-kb-monitor-icon'
@@ -3212,15 +3221,15 @@ export class KnowledgeBaseView extends ItemView {
             if (pendingCount > 0) {
                 infoEl.createEl('div', {
                     cls: 'nw-kb-monitor-queued',
-                    text: `排队中 ${pendingCount} 个任务`
+                    text: t('knowledgebase.monitor.queuePending', { count: pendingCount })
                 });
             }
         } else if (hasPaused) {
             taskStatusEl.createSpan({ text: '⏸️', cls: 'nw-kb-monitor-icon' });
-            taskStatusEl.createSpan({ text: '拆解已暂停', cls: 'nw-kb-monitor-text' });
+            taskStatusEl.createSpan({ text: t('knowledgebase.monitor.paused'), cls: 'nw-kb-monitor-text' });
         } else {
             taskStatusEl.createSpan({ text: '⏹️', cls: 'nw-kb-monitor-icon' });
-            taskStatusEl.createSpan({ text: '暂无拆解任务', cls: 'nw-kb-monitor-text' });
+            taskStatusEl.createSpan({ text: t('knowledgebase.monitor.noTasks'), cls: 'nw-kb-monitor-text' });
         }
 
         // 中间：模型状态
@@ -3231,8 +3240,8 @@ export class KnowledgeBaseView extends ItemView {
         const providerMap: Record<string, string> = {
             ollama: 'Ollama',
             openai: 'OpenAI',
-            doubao: '豆包',
-            qwen: '通义千问',
+            doubao: t('knowledgebase.provider.doubao'),
+            qwen: t('knowledgebase.provider.qwen'),
         };
         const providerType = (settings as unknown as LegacyVectorSettingsView).vectorProvider || settings.vectorProviderType || 'ollama';
         const providerName = providerMap[providerType] || providerType;
@@ -3254,11 +3263,11 @@ export class KnowledgeBaseView extends ItemView {
 
         // 右侧：设置按钮
         const settingsBtn = this.monitorBarEl.createEl('button', {
-            text: '⚙️ 设置',
+            text: t('knowledgebase.monitor.settings'),
             cls: 'nw-kb-monitor-settings'
         });
         if (isDeconstructing) {
-            settingsBtn.setAttribute('title', '拆解进行中，暂停后可修改设置');
+            settingsBtn.setAttribute('title', t('knowledgebase.monitor.settingsDisabled'));
             settingsBtn.disabled = true;
         } else {
             settingsBtn.onclick = () => {

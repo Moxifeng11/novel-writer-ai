@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-18T12:06:15.877Z",
-  "note": "第61轮 i18n 第二期第四片：规则状态提示 success/warning 改中性底(--background-secondary)+左侧 3px 语义色描边+--text-normal 正文（原绿底绿字实测不可读）",
-  "bytes": 799217,
+  "generatedAt": "2026-11-19T03:17:19.071Z",
+  "note": "棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因\n2026-11-19 i18n 第二期第30片（知识库视图链）：styles.css 799217 -> 799303（+86），仅样式表跟随 bundle 基线；bytes 799303、uniqueClasses 4331、hardcodedHex 192、rgbHsl 223、important 24、otherClasses 92、maxSelectorDepth 4。同期英文布局修三处（.nw-kb-channel-tabs 与 .nw-kb-toolbar-row 加 flex-wrap、.nw-kb-channel-tab 改 flex: 1 1 auto + white-space: nowrap、input.nw-kb-search-input 改 flex: 1 1 150px / min-width: 150px）。",
+  "bytes": 799303,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 223,

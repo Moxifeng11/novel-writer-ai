@@ -237,3 +237,31 @@ describe('资源整形工具', () => {
         expect(getCatalog('en-US')).toBe(enUS);
     });
 });
+
+describe('资源结构：对象键里不允许带点（lookup 按点分段下钻）', () => {
+    /** 找出所有「键名本身含点」的对象键（扁平点号键会让 lookup 直接取不到） */
+    function keysWithDot(tree: unknown, path: string[] = []): string[] {
+        if (!tree || typeof tree !== 'object') return [];
+        const bad: string[] = [];
+        for (const [key, value] of Object.entries(tree as Record<string, unknown>)) {
+            const here = [...path, key];
+            if (key.includes('.')) bad.push(here.join(' > '));
+            bad.push(...keysWithDot(value, here));
+        }
+        return bad;
+    }
+
+    it('zh-CN / en-US 都没有带点的对象键', () => {
+        expect(keysWithDot(getCatalog('zh-CN'))).toEqual([]);
+        expect(keysWithDot(getCatalog('en-US'))).toEqual([]);
+    });
+
+    it('拍平后的每个键都能被 translate 取到原文（点号键与漏译都会在这里露馅）', () => {
+        for (const locale of SUPPORTED_LOCALES) {
+            const flat = flattenMessages(getCatalog(locale));
+            for (const key of Object.keys(flat)) {
+                expect(translate(locale, key), `${locale}:${key}`).toBe(flat[key]);
+            }
+        }
+    });
+});

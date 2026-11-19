@@ -210,7 +210,7 @@
     "ui/views/kb-stats-panel.ts": 12,
     "ui/views/kb-task-panel.ts": 14,
     "ui/views/knowledge-base-modals.ts": 145,
-    "ui/views/knowledge-base-view.ts": 355,
+    "ui/views/knowledge-base-view.ts": 38,
     "ui/views/knowledge-capability.ts": 21,
     "ui/views/knowledge-detail-state.ts": 3,
     "ui/views/memory-graph-view.ts": 23,
@@ -224,7 +224,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 7662,
+  "total": 7345,
   "updatedAt": "2026-11-19",
-  "note": ""
+  "note": "i18n 第二期第30片（知识库视图链 knowledgebase.*）：ui/views/knowledge-base-view.ts 迁 244 键，棘轮 7662 -> 7345 条（223 文件不变）"
 }

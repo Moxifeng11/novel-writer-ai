@@ -96,6 +96,8 @@ v1 只做了第 1 层（看到 `new XxxModal(app, plugin).open()` 就认为可�
 
 现在动会和视觉基线打架，等知识库视觉重构收口后一起做。
 
+**用户裁定（2026-11-19）**：「等视觉重构时一起做」——D1/D2 不单独排 i18n 切片，随知识库视觉重构（视觉切片 A–Y）一起语义化与双语化。
+
 ## 六、里程碑索引（grep 用）
 
 | 编号 | 文件 | 类别 | 状态 |
@@ -111,8 +113,8 @@ v1 只做了第 1 层（看到 `new XxxModal(app, plugin).open()` 就认为可�
 | `RETIRE-B6` | `ui/pre-research-modal.ts` | B 面板可达（四入口） | ✅ 已迁移 `3290aa0c` |
 | `RETIRE-B7` | `ui/batch-chapters-modal.ts` | C 隐藏命令 | ✅ 已删除（2026-11-19） |
 | `RETIRE-B8` | `ui/auto-writer-modal.ts` | C 隐藏命令 | ✅ 已删除（2026-11-19） |
-| `RETIRE-D1` | `ui/knowledge-detail-modal.ts` | D 视觉耦合 | ⏳ 等 Slice A–Y |
-| `RETIRE-D2` | `ui/views/book-detail-renderer.ts` | D 视觉耦合 | ⏳ 等 Slice A–Y |
+| `RETIRE-D1` | `ui/knowledge-detail-modal.ts` | D 视觉耦合 | ⏳ 等 Slice A–Y（用户 2026-11-19：随视觉重构一起做） |
+| `RETIRE-D2` | `ui/views/book-detail-renderer.ts` | D 视觉耦合 | ⏳ 同上 |
 
 ## 七、这批迁移的数字（实测）
 

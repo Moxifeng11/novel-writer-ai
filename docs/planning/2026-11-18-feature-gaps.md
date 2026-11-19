@@ -236,6 +236,13 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
   `ui/cowrite/` 7 模块迁 `cowrite.edit/mem/live/save/iterate/hist.*` 74 键（记忆管理器/迭代指令/
   编辑验证/设定检查实时分析/保存控制器/历史回溯）；`updateControlState` 状态机串行为耦合保留；
   zh/en 资源各 2432 条；棘轮收紧到 231 文件 / 9239 条；新增弹窗双语测试 3 例。
+- 第二期第30片（2026-11-19，DSH）：知识库视图链 `ui/views/knowledge-base-view.ts`
+  （3,269 行 / 2,030 字）迁 `knowledgebase.*` 244 键（17 组）；三个模块级常量改函数
+  `mainTabs()` / `bookDetailTabs()` / `bookDimensionLabels()`；zh/en 资源各 4226 条；棘轮收紧到
+  223 文件 / 7345 条；新增资源结构守卫 2 例（对象键不许带点）；en 实测修两处换行
+  （频道页签、工具栏 + 搜索框 `min-width: 150px`）；实机
+  `D:\nw-dev-vault\_visual-i18n20\kb-{zh-CN,en-US}.png`。`ui/views/kb-format.ts` 的
+  状态徽标与字数/时长单位留独立切片（en 卡片仍有「已完成 / 374.4 万字」）。
 - 后续：第二期余下（写作主流程深水区：template-vars 340 / scene-outline 231 / wizard 群 /
   step-render 106 / unit-writer 98；外观页的统计/桌宠块），
   第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
