@@ -11,7 +11,7 @@
 | `shared/` | 263 | 52896 | 2235 | 1748 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 304 | 113563 | 1182 | 945 | 80% |
+| `ui/` | 306 | 113728 | 1186 | 947 | 80% |
 
 ## 文件清单
 
@@ -896,7 +896,7 @@
 | `ui/mcp-server-form-modal.ts` | 322 | 3 | 3 |
 | `ui/memory-preview.ts` | 158 | 2 | 1 |
 | `ui/metrics-format.ts` | 103 | 6 | 4 |
-| `ui/mini-settings-modal.ts` | 188 | 1 | 0 |
+| `ui/mini-settings-modal.ts` | 190 | 1 | 0 |
 | `ui/mode-document-modal.ts` | 214 | 2 | 2 |
 | `ui/model-editor-modal.ts` | 150 | 2 | 1 |
 | `ui/model-picker-modal.ts` | 290 | 4 | 4 |
@@ -946,15 +946,17 @@
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 482 | 6 | 5 |
-| `ui/settings-tab.ts` | 375 | 1 | 1 |
+| `ui/settings-tab.ts` | 377 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 40 | 1 | 1 |
-| `ui/settings/api-section.ts` | 1698 | 1 | 1 |
+| `ui/settings/api-section.ts` | 1742 | 1 | 1 |
+| `ui/settings/autosave-hint.ts` | 29 | 1 | 1 |
+| `ui/settings/autosave-snapshot.ts` | 85 | 3 | 1 |
 | `ui/settings/deconstruction-section.ts` | 338 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 447 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 294 | 1 | 1 |
 | `ui/settings/general-sections.ts` | 1265 | 5 | 5 |
-| `ui/settings/knowledge-section.ts` | 792 | 1 | 1 |
+| `ui/settings/knowledge-section.ts` | 795 | 1 | 1 |
 | `ui/settings/locale-setting.ts` | 55 | 2 | 2 |
 | `ui/settings/mcp-section.ts` | 76 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 115 | 1 | 1 |

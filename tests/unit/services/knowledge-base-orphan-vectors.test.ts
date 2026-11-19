@@ -22,16 +22,20 @@ class FakeFileSystem {
     async listFiles(): Promise<Array<{ path: string; stat: { size: number } }>> {
         return Array.from(this.files.keys()).map(path => ({ path, stat: { size: (this.files.get(path) || '').length } }));
     }
-    async listFolders(): Promise<Array<{ path: string }>> { return this.folders.map(path => ({ path })); }
+    folderListArgs: Array<string | undefined> = [];
+    async listFolders(dir?: string): Promise<Array<{ path: string }>> {
+        this.folderListArgs.push(dir);
+        return this.folders.map(path => ({ path }));
+    }
     async listAll(): Promise<never[]> { return []; }
     async rename(): Promise<void> {}
     async getFile(): Promise<null> { return null; }
     async getFolder(): Promise<null> { return null; }
 }
 
-const make = (books: Array<{ id: string; name: string }>) => {
+const make = (books: Array<{ id: string; name: string }>, baseDir?: string) => {
     const fs = new FakeFileSystem();
-    const manager = new KnowledgeBaseManager({} as never);
+    const manager = new KnowledgeBaseManager({} as never, baseDir);
     (manager as unknown as { fs: FakeFileSystem }).fs = fs;
     const map = (manager as unknown as { books: Map<string, unknown> }).books;
     for (const book of books) map.set(book.id, book);
@@ -85,5 +89,25 @@ describe('KnowledgeBaseManager.sweepOrphanVectorArtifacts', () => {
         fs.folders = [`${kbKnowledgeBaseDir()}/有效书`];
         const result = await manager.sweepOrphanVectorArtifacts();
         expect(result).toEqual({ removedFiles: 0, removedBooks: 0, bytes: 0 });
+    });
+
+    it('自定义 baseDir：扫描的是管理器自己的书籍目录，不是默认路径', async () => {
+        const custom = '自定义知识库';
+        const { fs, manager } = make([], custom);
+        fs.files.set(`${kbVectorsDir()}/book-a.json`, '{}');
+        fs.folders = [`${custom}/某本书`];
+        await manager.sweepOrphanVectorArtifacts();
+        // 索引为空时只扫一遍；关键是被传进去的是自定义目录
+        expect(fs.folderListArgs).toEqual([custom]);
+        expect(fs.folderListArgs.every(dir => dir !== kbKnowledgeBaseDir())).toBe(true);
+    });
+
+    it('自定义 baseDir 无书且索引为空：照常清理无主向量', async () => {
+        const custom = '自定义知识库';
+        const { fs, manager } = make([], custom);
+        const dir = kbVectorsDir();
+        fs.files.set(`${dir}/book-a.json`, '{}');
+        const result = await manager.sweepOrphanVectorArtifacts();
+        expect(result.removedFiles).toBe(1);
     });
 });

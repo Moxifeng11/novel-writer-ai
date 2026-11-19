@@ -3889,3 +3889,22 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 运行时抽查：`node D:\nw-tmp\snap-p216.mjs zh-CN` 启动开发 vault 无报错（`novel-writer-volume-intro` 命令在无激活项目时返回 false，属 `LONG_ONLY` 守卫，未强行绕过）。
 
 **下一轮**：P2 #17 知识库 baseDir 双口径 → #18 设置页自动保存徽标 → #19 Esc 语义 + 长任务 onClose → #20 AIEngine 收编；另有 #13 遗留的 A-17 撤销栈共享化。
+
+## 第一百二十四轮：C 清单 P2 #17 + #18 —— 知识库 baseDir 口径与设置页自动保存徽标（2026-11-20，DSH）
+
+**#17 知识库 baseDir 双口径（B6）**
+- `services/knowledge-base-manager.ts`：`sweepOrphanVectorArtifacts` 的两处 `fsPort.listFolders(kbKnowledgeBaseDir())`（:602 / :634 分支）改 `kbKnowledgeBaseDir(this.baseDir)` —— 自定义 baseDir 时，孤儿向量扫描原来扫的是默认目录。
+- `ui/settings/knowledge-section.ts`：显示的库路径与「打开文件夹」改用 `this.knowledgeBaseManager?.getBaseDir() ?? kbKnowledgeBaseDir()`（原硬编码 `写作知识库/`）。
+- `tests/unit/services/knowledge-base-orphan-vectors.test.ts`：FakeFileSystem 增 `folderListArgs` 记录入参 + 2 例（自定义 baseDir 传入自定义目录；自定义 baseDir 无书时照常清理），6 例通过。
+
+**#18 设置页自动保存徽标 + 高危字段恢复（A-15）**
+- 新增 `ui/settings/autosave-hint.ts`：`renderAutoSaveHint(container)`，幂等（遍历 `container.children` 去重；**`:scope >` 选择器在 test fake-dom 下不生效**，会叠两条），渲染 `.nw-settings-autosave-badge` + `.nw-settings-autosave-hint`。
+- 新增 `ui/settings/autosave-snapshot.ts`：`AutoSaveSnapshot`（只保留首次值）+ `createRestoreButton()`（`nw-api-restore-btn`，无快照时 `disabled` + `is-disabled`）。
+- 接线：`ui/settings-tab.ts` / `ui/mini-settings-modal.ts` 分区渲染前插徽标；`ui/settings/api-section.ts` 对 Base URL（`endpoint:<id>`）与 API Key（`apiKey:<id>`）建恢复按钮，`change` 时 `capture()` 改动前值，恢复后 `rerender()`（密钥恢复按 `saveSettingsWithOutcome().droppedSecrets` 选提示）。
+- i18n 5 键；样式 4 条规则；`tests/unit/ui/settings-autosave.test.ts` 7 例。
+- 坑：恢复按钮放在 Base URL 的 textarea 字段里会被拉成整行（实测 414px），补 `width: fit-content; align-self: flex-start` 后 87px（en 119px）。
+- 截图入口：Obsidian 的设置弹窗在**独立窗口**打开，CDP 里主窗口 `.modal` 数为 0，必须找到第二个 target（`about:blank`）再截图；脚本 `D:\nw-tmp\snap-p218.mjs <zh-CN|en-US> <tabId>`，tab 用 `api` / `setup`（`general` 不是合法 tab id）。
+
+**门禁**：tsc 0；check:i18n zh/en 各 6069、棘轮 205 / 5365；check:css 基线 801891 字节 / 4338 类（+847 / +5）；check:inline-styles 474 不变；check:utility 46 类 / 137 次；check:bundle main.js 6,229,396 / styles.css 801,891；preflight EXIT=0。
+
+**下一步**：P2 #19（Esc 语义文档化 + 长任务弹窗 onClose 运行态确认）→ #20（AIEngine 绕过 registry 的三处临时实例收编）→ #13 遗留 A-17（撤销栈共享化）。

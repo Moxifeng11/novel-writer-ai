@@ -1902,6 +1902,11 @@ export const zhCN: MessageTree = {
             asyncStale: '数据为加载时快照，可能已过期',
             asyncRefresh: '🔄 刷新',
         },
+
+        autoSave: {
+            badge: '自动保存',
+            hint: '修改后立即生效，没有保存按钮。',
+        },
         search: {
             // 主题词：name 显示在搜索结果里，keywords 供模糊匹配（中英资源合并匹配，见 settings-search.ts）
             topic: {
@@ -2108,7 +2113,10 @@ export const zhCN: MessageTree = {
             restoreAuto: '恢复自动',
             keySaved: '密钥已保存',
             keyNotSaved: '密钥未保存：当前口令未解锁，请先解锁后再保存',
+            keyRestored: '已恢复上一次的密钥',
             keyEyeTitle: '显示/隐藏密钥',
+            restorePrevious: '↩ 恢复上次值',
+            restorePreviousHint: '还原为本次修改前的值（仅本次会话内有效，不写盘）',
             capabilitySection: '渠道能力与高级项',
             thinking: '思考强度',
             thinkingDesc: '{hint}（{target}）；当前：{level}',

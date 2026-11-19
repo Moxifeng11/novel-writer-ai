@@ -169,7 +169,7 @@
     "ui/services/project-create-service.ts": 42,
     "ui/settings/api-section.ts": 1,
     "ui/settings/fingerprint-section.ts": 4,
-    "ui/settings/knowledge-section.ts": 4,
+    "ui/settings/knowledge-section.ts": 3,
     "ui/settings/mode-section.ts": 3,
     "ui/settlement-recovery-modal.ts": 11,
     "ui/sidebar-component.ts": 6,
@@ -206,7 +206,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 5366,
+  "total": 5365,
   "updatedAt": "2026-11-19",
   "note": ""
 }

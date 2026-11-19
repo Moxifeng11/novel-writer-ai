@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-19T20:57:00.050Z",
-  "note": "P2 #14 空态统一（新增 .nw-empty-state--compact / .nw-chart-empty，删除 .nw-float-empty / .nw-empty-center-muted）",
-  "bytes": 801044,
+  "generatedAt": "2026-11-19T22:29:26.083Z",
+  "note": "P2 #18 设置页自动保存徽标与高危字段恢复（.nw-settings-autosave* / .nw-api-restore-btn:disabled）",
+  "bytes": 801888,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 223,
-  "uniqueClasses": 4333,
+  "uniqueClasses": 4337,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

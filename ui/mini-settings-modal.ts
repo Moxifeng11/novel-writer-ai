@@ -21,6 +21,7 @@ import {
     searchSettings,
 } from './settings/settings-search';
 import { t } from '@/i18n';
+import { renderAutoSaveHint } from './settings/autosave-hint';
 
 /** 设置弹窗。 */
 export class MiniSettingsModal extends Modal {
@@ -176,6 +177,7 @@ export class MiniSettingsModal extends Modal {
             panel.createEl('p', { text: t('settings.shell.unknownTab', { tabId: this.activeTab }) });
             return;
         }
+        renderAutoSaveHint(panel);
         if (section.asyncLoad) {
             const bar = panel.createDiv({ cls: 'nw-settings-async-bar' });
             bar.createSpan({ text: t('settings.shell.asyncStale') });

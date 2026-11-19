@@ -76,19 +76,22 @@ export class KnowledgeSection extends SettingsSection {
             await this.loadKnowledgeBooks();
         }
 
+        // 知识库根目录以管理器实例为准（自定义 baseDir 时不再显示默认路径）
+        const kbBaseDir = this.knowledgeBaseManager?.getBaseDir() ?? kbKnowledgeBaseDir();
+
         const toolbar = section.createDiv({ cls: 'nw-st-kb-toolbar' });
 
         new Setting(toolbar)
             .setName(t('settings.knowledge.pathName'))
             .setDesc(t('settings.knowledge.pathDesc'))
             .addText(text => text
-                .setValue('写作知识库/')
+                .setValue(`${kbBaseDir}/`)
                 .setDisabled(true)
             )
             .addButton(btn => btn
                 .setButtonText(t('settings.knowledge.openFolder'))
                 .onClick(() => {
-                    const dirPath = kbKnowledgeBaseDir();
+                    const dirPath = kbBaseDir;
                     const file = this.app.vault.getAbstractFileByPath(dirPath);
                     if (file) {
                         void openKnowledgeFolder(this.app, dirPath);

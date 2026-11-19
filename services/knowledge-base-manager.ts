@@ -599,7 +599,7 @@ export class KnowledgeBaseManager {
         if (indexIds.size === 0) {
             let bookFolders = 0;
             try {
-                const folders = await fsPort.listFolders(kbKnowledgeBaseDir());
+                const folders = await fsPort.listFolders(kbKnowledgeBaseDir(this.baseDir));
                 bookFolders = folders.filter(folder => {
                     const name = String(folder.path || '').replace(/\\/g, '/').split('/').pop() || '';
                     return name && !name.startsWith('_') && !name.startsWith('.');
@@ -631,7 +631,7 @@ export class KnowledgeBaseManager {
         let folderScanOk = true;
         const folderBookIds = new Set<string>();
         try {
-            const folders = await fsPort.listFolders(kbKnowledgeBaseDir());
+            const folders = await fsPort.listFolders(kbKnowledgeBaseDir(this.baseDir));
             for (const folder of folders) {
                 const name = String(folder.path || '').replace(/\\/g, '/').split('/').pop() || '';
                 if (!name || name.startsWith('_') || name.startsWith('.')) continue;

@@ -1899,6 +1899,11 @@ export const enUS: MessageTree = {
             asyncStale: 'Loaded from a snapshot — may be out of date',
             asyncRefresh: '🔄 Refresh',
         },
+
+        autoSave: {
+            badge: 'Auto-saved',
+            hint: 'Changes take effect immediately — there is no save button.',
+        },
         search: {
             // 主题词：name 显示在搜索结果里，keywords 供模糊匹配（中英资源合并匹配，见 settings-search.ts）
             topic: {
@@ -2105,7 +2110,10 @@ export const enUS: MessageTree = {
             restoreAuto: 'Restore auto',
             keySaved: 'Key saved',
             keyNotSaved: 'Key not saved: the passphrase is locked — unlock first and save again',
+            keyRestored: 'Restored the previous key',
             keyEyeTitle: 'Show/hide key',
+            restorePrevious: '↩ Restore previous',
+            restorePreviousHint: 'Revert to the value from before this edit (session-only, not persisted)',
             capabilitySection: 'Channel capabilities & advanced',
             thinking: 'Thinking effort',
             thinkingDesc: '{hint} ({target}); current: {level}',

@@ -28,6 +28,7 @@ import { discoverModels } from '@/services/model-discovery';
 import { ModelPickerModal } from '@/ui/model-picker-modal';
 import { PasswordModal } from '@/ui/password-modal';
 import { describeKeyEncryptionStatus, describeSecretForInput, isStoredCiphertext, SECRET_INPUT_ATTRS } from '@/shared/secret-display';
+import { AutoSaveSnapshot, createRestoreButton } from './autosave-snapshot';
 import { getDetectedModelCapability, lookupModelCapability } from '@/shared/model-capabilities';
 import { testProviderConnectivity } from '@/services/api-connectivity-service';
 import { renderCollapsibleSection } from '@/ui/settings-utils';
@@ -54,6 +55,9 @@ import { OperationConfirmModal } from '@/ui/components/progress';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 import { t } from '@/i18n';
 import { SettingsSection } from './section-base';
+
+/** 高危字段（Base URL / API Key）的「上一次值」会话内快照，键为 `<字段>:<渠道 id>` */
+const apiFieldSnapshots = new AutoSaveSnapshot();
 
 /**
  * ApiSection 类。
@@ -471,6 +475,21 @@ export class ApiSection extends SettingsSection {
                 },
             });
             input.value = raw.endpoint;
+            const urlSnapshotKey = `endpoint:${raw.id}`;
+            createRestoreButton(field, {
+                label: t('settings.api.restorePrevious'),
+                title: t('settings.api.restorePreviousHint'),
+                isAvailable: () => apiFieldSnapshots.get(urlSnapshotKey) !== undefined,
+                onRestore: async () => {
+                    const previous = apiFieldSnapshots.get(urlSnapshotKey);
+                    if (previous === undefined) return;
+                    apiFieldSnapshots.clear(urlSnapshotKey);
+                    this.plugin.updateProvider(raw.id, { endpoint: previous });
+                    await this.plugin.saveSettings();
+                    if (raw.id === this.plugin.getCurrentProviderId()) this.plugin.updateStatusBarText();
+                    rerender();
+                },
+            });
             const autosize = () => {
                 input.addClass('nw-h-auto');
                 input.style.height = `${Math.max(34, input.scrollHeight)}px`;
@@ -483,6 +502,7 @@ export class ApiSection extends SettingsSection {
                     new Notice(t('settings.api.baseUrlEmpty'));
                     return;
                 }
+                if (next !== raw.endpoint) apiFieldSnapshots.capture(urlSnapshotKey, raw.endpoint);
                 input.value = next;
                 autosize();
                 this.plugin.updateProvider(raw.id, { endpoint: next });
@@ -579,10 +599,12 @@ export class ApiSection extends SettingsSection {
                 value: display.value,
                 attr: { ...SECRET_INPUT_ATTRS, placeholder: display.placeholder, title: display.title },
             });
+            const keySnapshotKey = `apiKey:${raw.id}`;
             input.addEventListener('change', async () => {
                 const typed = input.value.trim();
                 // 密文未解锁时输入框是空的：留空失焦不写回，避免把密文清掉
                 if (!typed && isStoredCiphertext(storedKey)) return;
+                apiFieldSnapshots.capture(keySnapshotKey, storedKey);
                 this.plugin.settings.providerKeys = this.plugin.settings.providerKeys || {};
                 this.plugin.settings.providerKeys[raw.id] = typed;
                 // 当前供应商的密钥同时写回全局字段，避免两条读取路径不一致
@@ -606,6 +628,28 @@ export class ApiSection extends SettingsSection {
                 input.type = input.type === 'password' ? 'text' : 'password';
                 eye.setText(input.type === 'password' ? '👁' : '🙈');
             };
+            createRestoreButton(row, {
+                label: t('settings.api.restorePrevious'),
+                title: t('settings.api.restorePreviousHint'),
+                isAvailable: () => apiFieldSnapshots.get(keySnapshotKey) !== undefined,
+                onRestore: async () => {
+                    const previous = apiFieldSnapshots.get(keySnapshotKey);
+                    if (previous === undefined) return;
+                    apiFieldSnapshots.clear(keySnapshotKey);
+                    this.plugin.settings.providerKeys = this.plugin.settings.providerKeys || {};
+                    this.plugin.settings.providerKeys[raw.id] = previous;
+                    if (raw.id === this.plugin.getCurrentProviderId()) {
+                        this.plugin.settings.apiKey = previous;
+                    }
+                    const outcome = await this.plugin.saveSettingsWithOutcome();
+                    if (outcome.droppedSecrets.length > 0) {
+                        showWarningNotice(t('settings.api.keyNotSaved'));
+                    } else {
+                        showSuccessNotice(t('settings.api.keyRestored'));
+                    }
+                    rerender();
+                },
+            });
         });
 
         // 连通性测试已下放到模型列表的每个模型行（见 renderProviderDetail 的 model row）：

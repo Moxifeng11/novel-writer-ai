@@ -19,6 +19,7 @@ import NovelWriterPlugin from '@/main';
 import type { SettingsSection, SettingsSectionHost } from './settings/section-base';
 import { SETTINGS_GROUPS, SETTINGS_TAB_DEFINITIONS, createSettingsSection } from './settings/section-factory';
 import { t } from '@/i18n';
+import { renderAutoSaveHint } from './settings/autosave-hint';
 import {
     buildStaticSearchIndex,
     entryLabel,
@@ -331,6 +332,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
             container.createEl('p', { text: t('settings.shell.unknownTab', { tabId }) });
             return;
         }
+        renderAutoSaveHint(container);
         if (section.asyncLoad) {
             // 统一「数据可能过期」条：异步分区命中缓存时不会自动重拉，用户需要知道能刷新
             const bar = container.createDiv({ cls: 'nw-settings-async-bar' });
