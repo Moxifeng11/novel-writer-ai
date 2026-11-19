@@ -3410,3 +3410,54 @@ ideation（793）/ batch-import（750）/ `ui/agent-workbench-view.ts`（126 条
 
 **下一轮候选**：ideation（793）/ batch-import（750）/ `ui/agent-workbench-view.ts`（730 字）；
 知识库 D 类两文件（`ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`）等视觉重构（用户 m16938）。
+
+## 第一百一十一轮：i18n 第二期第43片 —— 脑洞构思工坊（2026-11-19，DSH）
+
+**触发**：用户 m21482「继续」（第42片之后的候选顺序：ideation → batch-import → agent-workbench-view）。
+
+**范围**：`ui/ideation-modal.ts`（814 行，CRLF，121 行含中文 / 117 行非注释）。文件原本没有 `import { t }`，
+本片迁 59 组 / **75 键** `ideation.*`。
+
+**改动**
+1. 新增 `import { t } from '@/i18n'` 与模块级 `genreLabel(genre)`（14 个 switch 分支 → `ideation.genre.*`，
+   `default: return genre`）。**题材存储值仍是中文**：提示词「类型标签：…」、`CreateProjectModal` 的 genre、
+   收藏的 `selectedGenres` 全部逐字依赖，只在前端渲染处翻译（4 处：输入页标签、卡片、历史标签、详情匹配行）。
+2. 迁移 59 组：标题 / 两个 tab（收藏夹带 `{count}`）/ 三步导航 / 题材输入（关键词与额外要求占位符、
+   14 个题材标签、「🚀 生成10个创意」）/ 创意列表（计数、换一批、返回、冲突/卖点/综合评分）/
+   详情（核心概念、建议项目名、一句话梗概、四维评分、题材匹配、推荐方向、差异化、竞争分析、保存为项目资料）/
+   收藏夹空态与条目操作 / 八条 Notice / 保存脑洞弹窗 / 解析兜底「未命名创意」。
+3. **顺带修两个真 bug**（都是截图才发现的）：
+   - 雷达图 180×180、标签半径 `radius + 15`，左右维度名画出 svg 视口被裁（zh「爽点密度」、en
+     "Satisfaction density" 都只剩半截）→ 改 220×200 画布、`centerX=110`/`centerY=100`、`radius=62`、
+     标签半径 14、字号 10；图内改用短名 `ideation.dim.radar.*`（Market / Innovation / Writability / Hooks，
+     中文与原全名一致），全名保留在下方评分列表；另加 `getComputedTextLength()` 越界兜底。
+   - 详情「推荐方向」原本 `idea.genreMatch.map(g => g.genre).join('、')`，en 下露中文且分隔符错 →
+     `.map(g => genreLabel(g.genre)).join(t('ideation.detail.recommendSeparator'))`（新键 zh「、」/ en「, 」）。
+4. 保留中文：`GENRE_OPTIONS` 与 switch 的 case 值、两段提示词（systemPrompt/userPrompt）、
+   `buildIdeaContent()` 生成的文档正文、文件名 `脑洞构思.md` 与路径 `04-项目总控`、4 条 `log.*`、
+   `|| '玄幻'` 兜底数据、`throw new Error(\`路径已被文件占用：…\`)`。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；新增 `tests/unit/i18n/ideation-flow.test.ts` 6 例（75 键双语可解析 / en 零 CJK /
+  zh 插值逐字 13 条 / 标签类 26 条与源码逐字一致 / 题材显示名与 `GENRE_OPTIONS` 逐字一致 /
+  en 插值无花括号残留），全绿。
+- `check:i18n` zh/en 各 **5142** 条、无法解析键 0、动态键 29、棘轮 **212 文件 / 6525 条**（6578 → 6525，已 --update-baseline）。
+- 实机 `D:\nw-tmp\snap-i18n43.mjs <lang>`：zh/en 各 7 场景（input / favorites-empty / ideas / detail / export /
+  detail-saved / favorites），零横向溢出；en 下 UI 全英文（仍余 CJK 的只有注入的中文假创意与项目名「示例项目」）。
+  截图 `D:\nw-dev-vault\_visual-i18n43\`。
+- `npm run preflight` **EXIT=0**（994 文件 / **10,357 通过 + 3 跳过**，日志 `D:\nw-tmp\preflight-i18n43.log`）；`check:bundle` main.js **6,168,002**（+6,485）、styles.css **800,471**（±0）；`gen:docs` 1,004 文件 / `check:docs` 20 活跃文档通过。
+
+**坑**
+1. **截图定位要避开第一个 `.modal`**：`measure()` 内部 `locator(selector).first()`，传 `'.modal'` 时保存脑洞弹窗
+   会被底层工坊挡住，截出来的高度与 detail 一模一样；该场景改为不传 selector（走 last）。
+2. **SVG 内文字溢出只能靠截图发现**：DOM 探针（rect / style）全绿，标签却被 svg viewport 裁掉；
+   以后凡是 `<svg>` 里画文字都要在 viewport 内留边距，并给长文案准备短名。
+3. 生成页要先把 `p.aiEngine.callAI` 换成返回固定 JSON 的桩，否则真打 AI；顺带 `p._workbenchContext={project:'示例项目'}`
+   才能让 `project` 有值（否则 `t('ideation.export.intro')` 的 `{project}` 是空串）。
+
+**文档**：`docs/modules/i18n.md`（§2 资源 5067 → 5142 + 资源链 +75 + 已迁移面 bullet + 棘轮 6578 → 6525、
+§5 表行、§6 测试 bullet、§7 backlog [x] + 余下重写、§9 两条经验）、`docs/modules/INDEX.md`、`docs/CURRENT.md`、
+`docs/planning/2026-11-18-feature-gaps.md`、本轮记录；基线 `.i18n-baseline.json` / `.bundle-baseline.json`。
+
+**下一轮候选**：`ui/batch-import-modal.ts`（750）/ `ui/agent-workbench-view.ts`（730）/ `ui/novel-tags-modal.ts`（1,099，
+只剩 AI 提示词与解析正则）；知识库 D 类两文件等视觉重构（用户 m16938）。

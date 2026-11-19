@@ -113,7 +113,7 @@
     "ui/generate-worldview-modal.ts": 56,
     "ui/golden-opening-modal.ts": 78,
     "ui/humanize-report-modal.ts": 43,
-    "ui/ideation-modal.ts": 113,
+    "ui/ideation-modal.ts": 60,
     "ui/job-center-modal.ts": 15,
     "ui/knowledge-detail-format.ts": 3,
     "ui/knowledge-detail-modal.ts": 226,
@@ -213,7 +213,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 6578,
+  "total": 6525,
   "updatedAt": "2026-11-19",
   "note": ""
 }

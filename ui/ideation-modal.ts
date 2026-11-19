@@ -6,6 +6,7 @@ import { CreateProjectModal } from './create-project-modal';
 import { pjControlDir } from '@/shared/paths';
 import { STORAGE_KEYS } from '@/shared/storage-keys';
 import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
+import { t } from '@/i18n';
 
 
 const log = createLogger('IdeationModal');
@@ -54,6 +55,31 @@ const GENRE_OPTIONS = [
 ];
 
 /**
+ * 题材标签的显示名。
+ * 存储值仍是 GENRE_OPTIONS 里的中文：提示词「类型标签：…」、CreateProjectModal 的 genre
+ * 与收藏里的 selectedGenres 都以中文为准，所以只在渲染时翻译。
+ */
+function genreLabel(genre: string): string {
+    switch (genre) {
+        case '玄幻': return t('ideation.genre.xuanhuan');
+        case '仙侠': return t('ideation.genre.xianxia');
+        case '都市': return t('ideation.genre.urban');
+        case '科幻': return t('ideation.genre.scifi');
+        case '悬疑': return t('ideation.genre.mystery');
+        case '历史': return t('ideation.genre.history');
+        case '言情': return t('ideation.genre.romance');
+        case '奇幻': return t('ideation.genre.fantasy');
+        case '武侠': return t('ideation.genre.wuxia');
+        case '末世': return t('ideation.genre.apocalypse');
+        case '灵异': return t('ideation.genre.supernatural');
+        case '游戏': return t('ideation.genre.game');
+        case '竞技': return t('ideation.genre.competitive');
+        case '同人': return t('ideation.genre.fanfic');
+        default: return genre;
+    }
+}
+
+/**
  * IdeationModal 类。
  */
 export class IdeationModal extends Modal {
@@ -96,15 +122,15 @@ export class IdeationModal extends Modal {
         contentEl.empty();
 
         const header = contentEl.createDiv({ cls: 'nw-ideation-header' });
-        header.createEl('h2', { text: '💡 脑洞构思工坊' });
+        header.createEl('h2', { text: t('ideation.title') });
 
         const tabs = header.createDiv({ cls: 'nw-ideation-tabs' });
         const ideationTab = tabs.createEl('button', {
-            text: '创意发散',
+            text: t('ideation.tab.ideas'),
             cls: `nw-ideation-tab ${!this.showHistory ? 'active' : ''}`
         });
         const historyTab = tabs.createEl('button', {
-            text: `收藏夹 (${this.savedIdeas.length})`,
+            text: t('ideation.tab.favorites', { count: this.savedIdeas.length }),
             cls: `nw-ideation-tab ${this.showHistory ? 'active' : ''}`
         });
 
@@ -133,9 +159,9 @@ export class IdeationModal extends Modal {
 
     private renderStepNav(container: HTMLElement): void {
         const steps = [
-            { label: '题材输入', icon: '📝' },
-            { label: '创意发散', icon: '✨' },
-            { label: '深度分析', icon: '🎯' }
+            { label: t('ideation.step.input'), icon: '📝' },
+            { label: t('ideation.step.ideas'), icon: '✨' },
+            { label: t('ideation.step.detail'), icon: '🎯' }
         ];
 
         const nav = container.createDiv({ cls: 'nw-ideation-steps' });
@@ -154,20 +180,20 @@ export class IdeationModal extends Modal {
     private renderInputStep(container: HTMLElement): void {
         const section = container.createDiv({ cls: 'nw-ideation-section' });
 
-        section.createEl('h3', { text: '📌 题材关键词', cls: 'nw-ideation-section-title' });
+        section.createEl('h3', { text: t('ideation.input.keywordsTitle'), cls: 'nw-ideation-section-title' });
         const keywordInput = section.createEl('input', {
             type: 'text',
-            placeholder: '输入核心题材关键词，如：重生、修仙、系统、末世...',
+            placeholder: t('ideation.input.keywordsPlaceholder'),
             cls: 'nw-input nw-ideation-input'
         });
         keywordInput.value = this.keywords;
         keywordInput.oninput = () => { this.keywords = keywordInput.value; };
 
-        section.createEl('h3', { text: '🏷️ 类型标签（可多选）', cls: 'nw-ideation-section-title' });
+        section.createEl('h3', { text: t('ideation.input.genresTitle'), cls: 'nw-ideation-section-title' });
         const tagContainer = section.createDiv({ cls: 'nw-ideation-tags' });
         GENRE_OPTIONS.forEach(genre => {
             const tag = tagContainer.createEl('button', {
-                text: genre,
+                text: genreLabel(genre),
                 cls: `nw-ideation-tag ${this.selectedGenres.has(genre) ? 'active' : ''}`
             });
             tag.onclick = () => {
@@ -180,23 +206,23 @@ export class IdeationModal extends Modal {
             };
         });
 
-        section.createEl('h3', { text: '💭 额外要求（可选）', cls: 'nw-ideation-section-title' });
+        section.createEl('h3', { text: t('ideation.input.extraTitle'), cls: 'nw-ideation-section-title' });
         const extraInput = section.createEl('textarea', {
             cls: 'nw-textarea nw-ideation-textarea',
-            attr: { rows: '3', placeholder: '补充创意方向、风格偏好、避免元素等...' }
+            attr: { rows: '3', placeholder: t('ideation.input.extraPlaceholder') }
         });
         extraInput.value = this.extraRequirements;
         extraInput.oninput = () => { this.extraRequirements = extraInput.value; };
 
         const btnContainer = container.createDiv({ cls: 'nw-ideation-btn-row' });
         const generateBtn = btnContainer.createEl('button', {
-            text: '🚀 生成10个创意',
+            text: t('ideation.input.generate'),
             cls: 'nw-btn nw-btn-primary'
         });
         generateBtn.onclick = async () => {
             const keywords = keywordInput.value.trim();
             if (!keywords && this.selectedGenres.size === 0) {
-                new Notice('请输入关键词或选择至少一个类型标签', 3000);
+                new Notice(t('ideation.input.needInput'), 3000);
                 return;
             }
             await this.generateIdeas(keywords, Array.from(this.selectedGenres), extraInput.value.trim());
@@ -207,11 +233,14 @@ export class IdeationModal extends Modal {
         const section = container.createDiv({ cls: 'nw-ideation-section' });
 
         const actionRow = section.createDiv({ cls: 'nw-ideation-action-row' });
-        actionRow.createEl('span', { text: `共 ${this.ideas.length} 个创意方向`, cls: 'nw-ideation-count' });
+        actionRow.createEl('span', {
+            text: t('ideation.list.count', { count: this.ideas.length }),
+            cls: 'nw-ideation-count',
+        });
 
         const actions = actionRow.createDiv({ cls: 'nw-ideation-actions' });
         const refreshBtn = actions.createEl('button', {
-            text: '🔄 换一批',
+            text: t('ideation.list.refresh'),
             cls: 'nw-btn nw-btn-secondary'
         });
         refreshBtn.onclick = async () => {
@@ -223,7 +252,7 @@ export class IdeationModal extends Modal {
         };
 
         const backBtn = actions.createEl('button', {
-            text: '← 返回',
+            text: t('ideation.list.back'),
             cls: 'nw-btn nw-btn-secondary'
         });
         backBtn.onclick = () => {
@@ -248,17 +277,20 @@ export class IdeationModal extends Modal {
             };
 
             card.createEl('h4', { text: idea.coreConcept, cls: 'nw-ideation-card-title' });
-            card.createEl('p', { text: `冲突：${idea.conflictPoint}`, cls: 'nw-ideation-card-desc' });
-            card.createEl('p', { text: `卖点：${idea.sellingPoint}`, cls: 'nw-ideation-card-desc' });
+            card.createEl('p', { text: t('ideation.list.conflict', { text: idea.conflictPoint }), cls: 'nw-ideation-card-desc' });
+            card.createEl('p', { text: t('ideation.list.sellingPoint', { text: idea.sellingPoint }), cls: 'nw-ideation-card-desc' });
 
             const genres = card.createDiv({ cls: 'nw-ideation-card-genres' });
             idea.suitableGenres.forEach(g => {
-                genres.createEl('span', { text: g, cls: 'nw-ideation-card-genre' });
+                genres.createEl('span', { text: genreLabel(g), cls: 'nw-ideation-card-genre' });
             });
 
             const scoreBar = card.createDiv({ cls: 'nw-ideation-score-bar' });
             const avgScore = this.calcAvgScore(idea.scores);
-            scoreBar.createEl('span', { text: `综合评分: ${avgScore}`, cls: 'nw-ideation-score-text' });
+            scoreBar.createEl('span', {
+                text: t('ideation.list.avgScore', { score: avgScore }),
+                cls: 'nw-ideation-score-text',
+            });
 
             card.onclick = () => {
                 this.selectedIdea = idea;
@@ -276,7 +308,7 @@ export class IdeationModal extends Modal {
 
         const headerRow = section.createDiv({ cls: 'nw-ideation-detail-header' });
         const backBtn = headerRow.createEl('button', {
-            text: '← 返回列表',
+            text: t('ideation.detail.back'),
             cls: 'nw-btn nw-btn-secondary'
         });
         backBtn.onclick = () => {
@@ -285,37 +317,37 @@ export class IdeationModal extends Modal {
         };
 
         const favBtn = headerRow.createEl('button', {
-            text: this.isIdeaSaved(idea.id) ? '❤️ 已收藏' : '🤍 收藏',
+            text: this.isIdeaSaved(idea.id) ? t('ideation.detail.saved') : t('ideation.detail.save'),
             cls: 'nw-btn nw-btn-secondary'
         });
         favBtn.onclick = () => {
             this.toggleFavorite(idea);
-            favBtn.setText(this.isIdeaSaved(idea.id) ? '❤️ 已收藏' : '🤍 收藏');
+            favBtn.setText(this.isIdeaSaved(idea.id) ? t('ideation.detail.saved') : t('ideation.detail.save'));
         };
 
-        section.createEl('h3', { text: '🎯 核心概念', cls: 'nw-ideation-section-title' });
+        section.createEl('h3', { text: t('ideation.detail.coreConcept'), cls: 'nw-ideation-section-title' });
         section.createEl('p', { text: idea.coreConcept, cls: 'nw-ideation-detail-text' });
 
         if ((idea.titleCandidates || []).length > 0) {
-            section.createEl('h3', { text: '📚 建议项目名', cls: 'nw-ideation-section-title' });
+            section.createEl('h3', { text: t('ideation.detail.titleCandidates'), cls: 'nw-ideation-section-title' });
             section.createEl('p', { text: (idea.titleCandidates || []).join(' / '), cls: 'nw-ideation-detail-text' });
         }
 
-        section.createEl('h3', { text: '⚡ 一句话梗概 (Elevator Pitch)', cls: 'nw-ideation-section-title' });
+        section.createEl('h3', { text: t('ideation.detail.elevatorPitch'), cls: 'nw-ideation-section-title' });
         section.createEl('p', { text: idea.elevatorPitch, cls: 'nw-ideation-elevator-pitch' });
 
         const analysisRow = section.createDiv({ cls: 'nw-ideation-analysis-row' });
 
         const radarSection = analysisRow.createDiv({ cls: 'nw-ideation-radar-section' });
-        radarSection.createEl('h4', { text: '📊 多维度评分', cls: 'nw-ideation-subtitle' });
+        radarSection.createEl('h4', { text: t('ideation.detail.scores'), cls: 'nw-ideation-subtitle' });
         this.renderRadarChart(radarSection, idea.scores);
 
         const scoreList = radarSection.createDiv({ cls: 'nw-ideation-score-list' });
         const scoreItems = [
-            { label: '市场热度', value: idea.scores.marketHeat, color: '#ff6b6b' },
-            { label: '创新性', value: idea.scores.innovation, color: '#4ecdc4' },
-            { label: '可写性', value: idea.scores.writability, color: '#45b7d1' },
-            { label: '爽点密度', value: idea.scores.satisfactionDensity, color: '#f9ca24' }
+            { label: t('ideation.dim.marketHeat'), value: idea.scores.marketHeat, color: '#ff6b6b' },
+            { label: t('ideation.dim.innovation'), value: idea.scores.innovation, color: '#4ecdc4' },
+            { label: t('ideation.dim.writability'), value: idea.scores.writability, color: '#45b7d1' },
+            { label: t('ideation.dim.satisfaction'), value: idea.scores.satisfactionDensity, color: '#f9ca24' }
         ];
         scoreItems.forEach(item => {
             const row = scoreList.createDiv({ cls: 'nw-ideation-score-item' });
@@ -324,66 +356,73 @@ export class IdeationModal extends Modal {
             const bar = barWrap.createDiv({ cls: 'nw-ideation-score-bar-fill' });
             bar.style.width = `${item.value}%`;
             bar.style.background = item.color;
-            row.createSpan({ text: `${item.value}分`, cls: 'nw-ideation-score-value' });
+            row.createSpan({ text: t('ideation.detail.scoreValue', { value: item.value }), cls: 'nw-ideation-score-value' });
         });
 
         const matchSection = analysisRow.createDiv({ cls: 'nw-ideation-match-section' });
-        matchSection.createEl('h4', { text: '🎭 题材类型匹配', cls: 'nw-ideation-subtitle' });
+        matchSection.createEl('h4', { text: t('ideation.detail.genreMatch'), cls: 'nw-ideation-subtitle' });
         idea.genreMatch.forEach(item => {
             const row = matchSection.createDiv({ cls: 'nw-ideation-match-item' });
-            row.createSpan({ text: item.genre, cls: 'nw-ideation-match-genre' });
+            row.createSpan({ text: genreLabel(item.genre), cls: 'nw-ideation-match-genre' });
             const barWrap = row.createDiv({ cls: 'nw-ideation-match-bar' });
             const bar = barWrap.createDiv({ cls: 'nw-ideation-match-fill' });
             bar.style.width = `${item.match}%`;
             row.createSpan({ text: `${item.match}%`, cls: 'nw-ideation-match-value' });
         });
-        const recommended = idea.genreMatch.slice(0, 3).map(g => g.genre).join('、');
+        const recommended = idea.genreMatch
+            .slice(0, 3)
+            .map(g => genreLabel(g.genre))
+            .join(t('ideation.detail.recommendSeparator'));
         matchSection.createEl('p', {
-            text: `💡 推荐方向：${recommended}`,
+            text: t('ideation.detail.recommend', { genres: recommended }),
             cls: 'nw-ideation-recommend'
         });
 
-        section.createEl('h3', { text: '🔥 冲突点', cls: 'nw-ideation-section-title' });
+        section.createEl('h3', { text: t('ideation.detail.conflict'), cls: 'nw-ideation-section-title' });
         section.createEl('p', { text: idea.conflictPoint, cls: 'nw-ideation-detail-text' });
 
-        section.createEl('h3', { text: '💎 卖点分析', cls: 'nw-ideation-section-title' });
+        section.createEl('h3', { text: t('ideation.detail.sellingPoint'), cls: 'nw-ideation-section-title' });
         section.createEl('p', { text: idea.sellingPoint, cls: 'nw-ideation-detail-text' });
 
-        section.createEl('h3', { text: '🏆 竞品差异化分析', cls: 'nw-ideation-section-title' });
+        section.createEl('h3', { text: t('ideation.detail.differentiation'), cls: 'nw-ideation-section-title' });
         section.createEl('p', { text: idea.differentiation, cls: 'nw-ideation-detail-text' });
 
-        section.createEl('h3', { text: '⭐ 核心竞争力', cls: 'nw-ideation-section-title' });
+        section.createEl('h3', { text: t('ideation.detail.competitive'), cls: 'nw-ideation-section-title' });
         section.createEl('p', { text: idea.coreCompetitive, cls: 'nw-ideation-detail-text' });
 
         const exportBtn = section.createEl('button', {
-            text: '📝 保存为项目资料',
+            text: t('ideation.detail.export'),
             cls: 'nw-btn nw-btn-primary nw-ideation-export-btn'
         });
         exportBtn.onclick = () => this.exportAsProject(idea);
     }
 
     private renderRadarChart(container: HTMLElement, scores: IdeationIdea['scores']): void {
-        const size = 180;
-        const center = size / 2;
-        const radius = size / 2 - 20;
+        // 画布放宽到 220×200：180 正方形时左右两个维度名（英文最长 "Writability"）
+        // 会被 svg 视口裁掉；雷达只放短名，全名在下方评分列表里。
+        const width = 220;
+        const height = 200;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = 62;
         const dimensions = [
-            { label: '市场热度', value: scores.marketHeat, angle: -Math.PI / 2 },
-            { label: '创新性', value: scores.innovation, angle: 0 },
-            { label: '可写性', value: scores.writability, angle: Math.PI / 2 },
-            { label: '爽点密度', value: scores.satisfactionDensity, angle: Math.PI }
+            { label: t('ideation.dim.radar.marketHeat'), value: scores.marketHeat, angle: -Math.PI / 2 },
+            { label: t('ideation.dim.radar.innovation'), value: scores.innovation, angle: 0 },
+            { label: t('ideation.dim.radar.writability'), value: scores.writability, angle: Math.PI / 2 },
+            { label: t('ideation.dim.radar.satisfaction'), value: scores.satisfactionDensity, angle: Math.PI }
         ];
 
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('width', String(size));
-        svg.setAttribute('height', String(size));
+        svg.setAttribute('width', String(width));
+        svg.setAttribute('height', String(height));
         svg.addClass('nw-ideation-radar-svg');
 
         for (let i = 1; i <= 5; i++) {
             const r = (radius * i) / 5;
             const points = dimensions.map((_, idx) => {
                 const angle = -Math.PI / 2 + (idx * Math.PI * 2) / dimensions.length;
-                const x = center + r * Math.cos(angle);
-                const y = center + r * Math.sin(angle);
+                const x = centerX + r * Math.cos(angle);
+                const y = centerY + r * Math.sin(angle);
                 return `${x},${y}`;
             }).join(' ');
             const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
@@ -396,11 +435,11 @@ export class IdeationModal extends Modal {
 
         dimensions.forEach((dim, idx) => {
             const angle = -Math.PI / 2 + (idx * Math.PI * 2) / dimensions.length;
-            const x = center + radius * Math.cos(angle);
-            const y = center + radius * Math.sin(angle);
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
             const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line.setAttribute('x1', String(center));
-            line.setAttribute('y1', String(center));
+            line.setAttribute('x1', String(centerX));
+            line.setAttribute('y1', String(centerY));
             line.setAttribute('x2', String(x));
             line.setAttribute('y2', String(y));
             line.setAttribute('stroke', 'var(--background-modifier-border)');
@@ -411,8 +450,8 @@ export class IdeationModal extends Modal {
         const dataPoints = dimensions.map((dim, idx) => {
             const angle = -Math.PI / 2 + (idx * Math.PI * 2) / dimensions.length;
             const r = (radius * dim.value) / 100;
-            const x = center + r * Math.cos(angle);
-            const y = center + r * Math.sin(angle);
+            const x = centerX + r * Math.cos(angle);
+            const y = centerY + r * Math.sin(angle);
             return `${x},${y}`;
         }).join(' ');
 
@@ -427,8 +466,8 @@ export class IdeationModal extends Modal {
         dimensions.forEach((dim, idx) => {
             const angle = -Math.PI / 2 + (idx * Math.PI * 2) / dimensions.length;
             const r = (radius * dim.value) / 100;
-            const x = center + r * Math.cos(angle);
-            const y = center + r * Math.sin(angle);
+            const x = centerX + r * Math.cos(angle);
+            const y = centerY + r * Math.sin(angle);
             const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             dot.setAttribute('cx', String(x));
             dot.setAttribute('cy', String(y));
@@ -439,18 +478,31 @@ export class IdeationModal extends Modal {
 
         dimensions.forEach((dim, idx) => {
             const angle = -Math.PI / 2 + (idx * Math.PI * 2) / dimensions.length;
-            const labelRadius = radius + 15;
-            const x = center + labelRadius * Math.cos(angle);
-            const y = center + labelRadius * Math.sin(angle);
+            const labelRadius = radius + 14;
+            const x = centerX + labelRadius * Math.cos(angle);
+            const y = centerY + labelRadius * Math.sin(angle);
             const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             text.setAttribute('x', String(x));
             text.setAttribute('y', String(y));
             text.setAttribute('text-anchor', 'middle');
             text.setAttribute('dominant-baseline', 'middle');
-            text.setAttribute('font-size', '11');
+            text.setAttribute('font-size', '10');
             text.setAttribute('fill', 'var(--text-muted)');
             text.textContent = dim.label;
             svg.appendChild(text);
+            // 兜底：真实浏览器里量一次宽度，万一某种语言仍顶到画布边缘就贴边并把锚点翻向内侧。
+            // jsdom 没有 getComputedTextLength，量不到就保留默认居中（测试只断言结构）。
+            try {
+                const labelWidth = text.getComputedTextLength();
+                if (labelWidth > 0 && x - labelWidth / 2 < 2) {
+                    text.setAttribute('x', '2');
+                    text.setAttribute('text-anchor', 'start');
+                } else if (labelWidth > 0 && x + labelWidth / 2 > width - 2) {
+                    text.setAttribute('x', String(width - 2));
+                    text.setAttribute('text-anchor', 'end');
+                }
+            } catch { // silent-ok: jsdom 没有 getComputedTextLength，保留默认居中即可，不影响结构断言
+            }
         });
 
         container.appendChild(svg);
@@ -460,11 +512,14 @@ export class IdeationModal extends Modal {
         const section = container.createDiv({ cls: 'nw-ideation-section' });
 
         if (this.savedIdeas.length === 0) {
-            section.createEl('p', { text: '暂无收藏的创意', cls: 'nw-ideation-empty' });
+            section.createEl('p', { text: t('ideation.history.empty'), cls: 'nw-ideation-empty' });
             return;
         }
 
-        section.createEl('p', { text: `共收藏 ${this.savedIdeas.length} 个创意`, cls: 'nw-ideation-count' });
+        section.createEl('p', {
+            text: t('ideation.history.count', { count: this.savedIdeas.length }),
+            cls: 'nw-ideation-count',
+        });
 
         const list = section.createDiv({ cls: 'nw-ideation-history-list' });
         this.savedIdeas.forEach((saved, idx) => {
@@ -478,11 +533,11 @@ export class IdeationModal extends Modal {
 
             const tags = item.createDiv({ cls: 'nw-ideation-history-tags' });
             saved.selectedGenres.forEach(g => {
-                tags.createEl('span', { text: g, cls: 'nw-ideation-history-tag' });
+                tags.createEl('span', { text: genreLabel(g), cls: 'nw-ideation-history-tag' });
             });
 
             const actions = item.createDiv({ cls: 'nw-ideation-history-actions' });
-            const viewBtn = actions.createEl('button', { text: '查看详情', cls: 'nw-btn nw-btn-secondary' });
+            const viewBtn = actions.createEl('button', { text: t('ideation.history.view'), cls: 'nw-btn nw-btn-secondary' });
             viewBtn.onclick = () => {
                 this.selectedIdea = saved;
                 this.showHistory = false;
@@ -490,7 +545,7 @@ export class IdeationModal extends Modal {
                 this.render();
             };
 
-            const deleteBtn = actions.createEl('button', { text: '删除', cls: 'nw-btn nw-btn-danger' });
+            const deleteBtn = actions.createEl('button', { text: t('ideation.history.delete'), cls: 'nw-btn nw-btn-danger' });
             deleteBtn.onclick = () => {
                 this.removeFavorite(saved.id);
                 this.render();
@@ -504,7 +559,7 @@ export class IdeationModal extends Modal {
         this.keywords = keywords;
         this.extraRequirements = extra || '';
 
-        const notice = new Notice('⏳ 正在生成创意...', 0);
+        const notice = new Notice(t('ideation.notice.generating'), 0);
 
         try {
             const systemPrompt = `你是专业的网文创意策划师，擅长生成具有市场潜力的小说创意。
@@ -543,14 +598,14 @@ export class IdeationModal extends Modal {
             notice.hide();
 
             if (result.error) {
-                showErrorNotice(`生成失败: ${result.error}`, { timeout: 5000 });
+                showErrorNotice(t('ideation.notice.generateFailed', { error: result.error }), { timeout: 5000 });
                 this.isGenerating = false;
                 return;
             }
 
             const parsed = this.parseIdeasResponse(result.content);
             if (parsed.length === 0) {
-                showErrorNotice('解析创意失败，请重试', { timeout: 5000 });
+                showErrorNotice(t('ideation.notice.parseFailed'), { timeout: 5000 });
                 this.isGenerating = false;
                 return;
             }
@@ -558,11 +613,11 @@ export class IdeationModal extends Modal {
             this.ideas = parsed;
             this.currentStep = 1;
             this.render();
-            showSuccessNotice(`已生成 ${parsed.length} 个创意`, { timeout: 3000 });
+            showSuccessNotice(t('ideation.notice.generated', { count: parsed.length }), { timeout: 3000 });
         } catch (e) {
             notice.hide();
             log.error('[IdeationModal] 生成创意失败:', e);
-            showErrorNotice('生成创意出错，请稍后重试', { timeout: 5000 });
+            showErrorNotice(t('ideation.notice.generateError'), { timeout: 5000 });
         }
 
         this.isGenerating = false;
@@ -578,7 +633,7 @@ export class IdeationModal extends Modal {
 
             return (arr as RawIdeationIdea[]).map((item, idx: number) => ({
                 id: `idea_${Date.now()}_${idx}`,
-                coreConcept: item.coreConcept || '未命名创意',
+                coreConcept: item.coreConcept || t('ideation.fallback.unnamed'),
                 conflictPoint: item.conflictPoint || '',
                 sellingPoint: item.sellingPoint || '',
                 suitableGenres: Array.isArray(item.suitableGenres) ? item.suitableGenres as string[] : [],
@@ -628,13 +683,13 @@ export class IdeationModal extends Modal {
         };
         this.savedIdeas.unshift(saved);
         this.persistSavedIdeas();
-        showSuccessNotice('已收藏', { timeout: 2000 });
+        showSuccessNotice(t('ideation.notice.favAdded'), { timeout: 2000 });
     }
 
     private removeFavorite(ideaId: string): void {
         this.savedIdeas = this.savedIdeas.filter(s => s.id !== ideaId);
         this.persistSavedIdeas();
-        showSuccessNotice('已取消收藏', { timeout: 2000 });
+        showSuccessNotice(t('ideation.notice.favRemoved'), { timeout: 2000 });
     }
 
     private loadSavedIdeas(): void {
@@ -668,14 +723,14 @@ export class IdeationModal extends Modal {
 
     private showExportChoice(idea: IdeationIdea, activeProject: string): void {
         const modal = new Modal(this.app);
-        modal.titleEl.setText('📁 保存脑洞');
+        modal.titleEl.setText(t('ideation.export.title'));
         const content = modal.contentEl.createDiv({ cls: 'nw-form-stack' });
         content.createEl('p', {
-            text: `当前项目：${activeProject}。可以保存到当前项目，或基于这个脑洞创建新项目。`,
+            text: t('ideation.export.intro', { project: activeProject }),
             cls: 'setting-item-description',
         });
         const saveCurrent = content.createEl('button', {
-            text: `保存到当前项目「${activeProject}」`,
+            text: t('ideation.export.saveCurrent', { project: activeProject }),
             cls: 'nw-btn nw-btn-primary',
         });
         saveCurrent.onclick = async () => {
@@ -683,14 +738,14 @@ export class IdeationModal extends Modal {
             await this.saveIdeaToProject(activeProject, idea);
         };
         const createNew = content.createEl('button', {
-            text: '基于脑洞创建新项目',
+            text: t('ideation.export.createNew'),
             cls: 'nw-btn nw-btn-secondary',
         });
         createNew.onclick = () => {
             modal.close();
             this.openCreateProject(idea);
         };
-        const cancel = content.createEl('button', { text: '取消', cls: 'nw-btn' });
+        const cancel = content.createEl('button', { text: t('common.cancel'), cls: 'nw-btn' });
         cancel.onclick = () => modal.close();
         modal.open();
     }
@@ -722,7 +777,7 @@ export class IdeationModal extends Modal {
             } else {
                 await this.app.vault.create(filePath, content);
             }
-            showSuccessNotice(`已保存到「${project}/04-项目总控/脑洞构思.md」`, { timeout: 5000 });
+            showSuccessNotice(t('ideation.notice.savedTo', { path: `${project}/04-项目总控/脑洞构思.md` }), { timeout: 5000 });
             const file = this.app.vault.getAbstractFileByPath(filePath);
             if (file instanceof TFile) {
                 const leaf = this.app.workspace.getLeaf('tab');
@@ -731,7 +786,7 @@ export class IdeationModal extends Modal {
             this.close();
         } catch (e) {
             log.error('[IdeationModal] 保存脑洞失败:', e);
-            showErrorNotice('保存失败，请检查权限', { timeout: 5000 });
+            showErrorNotice(t('ideation.notice.saveFailed'), { timeout: 5000 });
         }
     }
 

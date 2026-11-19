@@ -306,8 +306,17 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
   zh/en 资源各 **5067** 条；棘轮收紧到 **212 文件 / 6578 条**；新增 `tests/unit/i18n/polish-editor-flow.test.ts` 5 例；
   实机 zh/en 各 4 场景（编辑器 1072 宽 + 弹窗 560 宽，零横向溢出；en 弹窗 CJK=0，节奏/风格面板剩余 CJK
   为样章正文与 `engine/rhythm-analyzer.ts:200-203` 的建议句）。
+- 第二期第43片（2026-11-19，DSH）：脑洞构思工坊 —— `ui/ideation-modal.ts`（814 行，CRLF）迁 59 组 / **75 键** `ideation.*`
+  （步骤导航、题材输入与 14 个题材标签、创意列表与换一批、详情雷达与四维评分、收藏夹、保存脑洞弹窗、八条 Notice）；
+  题材存储值仍是中文（提示词、`CreateProjectModal` 的 genre、收藏 `selectedGenres` 都逐字依赖），只在前端渲染处走
+  `genreLabel()` switch helper；
+  **顺带修两个真 bug**：雷达图 180×180 视口把「爽点密度 / Satisfaction density」标签裁掉半截 → 220×200 画布、
+  `radius=62`、标签半径 14、font 10 并补 `getComputedTextLength()` 兜底，另加雷达短名 `ideation.dim.radar.*`；
+  推荐方向 `join('、')` 在 en 下露中文且分隔符不对 → 改 `t('ideation.detail.recommendSeparator')`；
+  zh/en 资源各 **5142** 条；棘轮收紧到 **212 文件 / 6525 条**；新增 `tests/unit/i18n/ideation-flow.test.ts` 6 例；
+  实机 zh/en 各 7 场景（640 宽弹窗，零横向溢出；en 下 UI 全英文，残余 CJK 为注入的中文假创意与项目名「示例项目」）。
 - 后续：第二期余下（知识库 D 类两文件 `ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`
-  用户已裁定随视觉重构；散落弹窗 ideation 793 / batch-import 750 / agent-workbench-view 730 /
+  用户已裁定随视觉重构；散落弹窗 batch-import 750 / agent-workbench-view 730 /
   novel-tags 1099（只剩 AI 提示词与解析正则）等），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 
 ---
@@ -316,6 +325,6 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
 
 1 → 2 → 3 → 4 → 5 →（6 可选）→ 7。
 
-进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~38 片（命令面板 → 项目入口三件套）已交付（2026-11-18/19）；下一个候选是 ⑦ 第二期余下（template-vars 228（多为提示词，判据保留）/ 写作设置分区残留等，散落弹窗 golden-opening / novel-tags / add-fanfic-setting / ai-builder 等，知识库 D 类两文件随视觉重构）。
+进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~43 片（命令面板 → 脑洞构思工坊）已交付（2026-11-18/19）；下一个候选是 ⑦ 第二期余下（template-vars 228（多为提示词，判据保留）/ 写作设置分区残留等，散落弹窗 golden-opening / novel-tags / add-fanfic-setting / ai-builder 等，知识库 D 类两文件随视觉重构）。
 
 理由：1 是修「假成功」缺陷；2 是把已交付引擎变成写作时可见的价值；3 是投稿刚需且不依赖 AI；4/5 是低成本体验补洞；6/7 视需要。
