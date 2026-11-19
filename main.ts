@@ -1878,7 +1878,7 @@ export default class NovelWriterPlugin extends Plugin {
      */
     public async generateChapterBySceneLoop(project: string, chapterName: string, dryRun = true) {
         const loop = this.engineRegistry.get(ENGINE_NAMES.SCENE_GENERATION_LOOP);
-        const engine = new AIEngine(this);
+        const engine = this.aiEngine;
         const model = this.settings.proModel || this.settings.defaultModel;
         const constraints = await this.buildConstraintBlocks(project, chapterName);
         const index2 = this._projectIndex ??= new ProjectIndexService(this.app);
@@ -1974,7 +1974,7 @@ export default class NovelWriterPlugin extends Plugin {
             const entry = resolved.match;
             return entry ? (entry.id || entry.path) : null;
         });
-        const engine = new AIEngine(this);
+        const engine = this.aiEngine;
         const revision = new TargetedRevisionService(this.app, {
             callAI: async (system, user) => {
                 const response = await engine.callAI(system, user, this.settings.proModel || this.settings.defaultModel, 0.3, undefined, { isWritingTask: true });
@@ -2056,7 +2056,7 @@ export default class NovelWriterPlugin extends Plugin {
     }
 
     public async runBaselineProbe(project: string, chapterName: string, model?: string) {
-        const engine = new AIEngine(this);
+        const engine = this.aiEngine;
         return new BaselineProbeService(this.app, this, (system, user, targetModel) =>
             engine.callAI(system, user, targetModel, 0.3, 32, { isWritingTask: false, bypassCache: true }))
             .probe(project, chapterName, model);

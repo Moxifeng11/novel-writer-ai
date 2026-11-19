@@ -3931,3 +3931,15 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - `ui/batch-create-modal.ts` 的 `batchCreateAll` 里仍有 `new Notice(..., 0)`（#15 收编时漏掉的裸持久通知），本轮未动，记入 #20 后的小清理。
 
 **下一轮**：P2 #20（`main.ts:1881/1977/2059` 三处临时 `AIEngine` 收编到 registry 单例）→ #13 遗留 A-17（撤销栈共享化）。
+
+## 第一百二十六轮：C 清单 P2 #20 —— AIEngine 临时实例收编（2026-11-20，DSH）
+
+**#20（§2.1 表 #1）**
+- `main.ts` 三处临时引擎统一走 registry 单例：`generateChapterBySceneLoop`（原 :1881）、`autoReviseChapter`（:1977）、`runBaselineProbe`（:2059）的 `const engine = new AIEngine(this);` → `const engine = this.aiEngine;`（`:2875` 的 getter = `engineRegistry.get(ENGINE_NAMES.AI_ENGINE)`）。
+- 全仓 `new AIEngine(` 只剩 `engine/engine-registry.ts:1440` 的 `registerLazy` 与 `tests/unit/engine/ai-engine.test.ts`（单测直接构造被测对象，保留）。
+- 新增 `tests/unit/architecture/single-ai-engine-instance.test.ts` 4 例：main.ts 无 `new AIEngine`、三个方法体里都是 `this.aiEngine`、唯一构造点在懒注册、`ui/full-writer-view.ts` / `ui/co-writing-view.ts` / `engine/co-writer-engine.ts` 不直接构造（源码级棘轮防回潮）。
+- 测试坑：方法体切片长度 400 太短（`autoReviseChapter` 里 `const engine` 在 index/checker 之后约 600 字符处），改 900。
+
+**门禁**：tsc 0；check:bundle main.js 下降；preflight EXIT=0。
+
+**下一轮**：#13 遗留 A-17 撤销栈共享化（协同写作视图有撤销栈，单元写作台没有），P2 全清单至此收口。
