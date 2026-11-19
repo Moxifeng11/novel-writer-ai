@@ -1727,6 +1727,39 @@ export const enUS: MessageTree = {
         refresh: 'Refresh',
         loading: 'Loading…',
     },
+    emptyState: {
+        noProject: {
+            title: 'No project yet',
+            assetDesc: 'The asset overview is per project; create a project first.',
+            backupDesc: 'Versions and backups are organised per project; create a project first.',
+            healthTitle: 'No project to check yet',
+            healthDesc: 'Create or import a project first.',
+        },
+        backupEmpty: {
+            title: 'No versions or backups yet',
+            desc: 'Saving a version, finishing a step or migrating settings will leave a traceable history here.',
+        },
+        jobsEmpty: {
+            title: 'No tasks yet',
+            desc: 'Long-running work such as batch generation, one-click chapter runs and exports shows up here.',
+        },
+        healthOk: {
+            title: 'No obvious issues found',
+            desc: 'Duplicate body text, unsettled chapters, frontmatter problems and orphan files all came back clean.',
+        },
+        standardOk: {
+            title: 'Project structure matches the standard',
+            desc: 'Required folders, files, naming and derived data are all in order.',
+        },
+        usageEmpty: {
+            title: 'No API calls yet',
+            desc: 'Calls made by writing, quality checks and agents will appear here.',
+        },
+        chartEmpty: 'No data yet',
+        radarMin: 'A radar chart needs at least 3 data dimensions',
+        sumZero: 'The total is zero',
+        noEvents: 'No events yet',
+    },
     commands: {
         CreateProject: "New project",
         AgentGuide: "🤖 Guided setup (new / continue project)",

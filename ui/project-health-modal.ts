@@ -17,6 +17,8 @@ import {
     type StandardReport,
 } from '@/services/project-standard-service';
 import { createErrorState } from './components/error-state';
+import { createEmptyState } from './components/empty-state';
+import { t } from '@/i18n';
 
 const STANDARD_LABEL: Record<StandardIssueKind, string> = {
     'missing-dir': '缺目录',
@@ -80,10 +82,11 @@ export class ProjectHealthModal extends Modal {
         this.loading = true;
         this.bodyEl.empty();
         if (!this.project) {
-            const empty = this.bodyEl.createDiv({ cls: 'nw-empty-state' });
-            empty.createDiv({ cls: 'nw-empty-state-icon', text: '📂' });
-            empty.createDiv({ cls: 'nw-empty-state-title', text: '还没有可体检的项目' });
-            empty.createDiv({ cls: 'nw-empty-state-description', text: '先创建或导入一个项目。' });
+            this.bodyEl.appendChild(createEmptyState({
+                icon: 'folder',
+                title: t('emptyState.noProject.healthTitle'),
+                description: t('emptyState.noProject.healthDesc'),
+            }));
             this.loading = false;
             return;
         }
@@ -127,10 +130,11 @@ export class ProjectHealthModal extends Modal {
         }
 
         if (report.issues.length === 0) {
-            const empty = this.bodyEl.createDiv({ cls: 'nw-empty-state' });
-            empty.createDiv({ cls: 'nw-empty-state-icon', text: '✅' });
-            empty.createDiv({ cls: 'nw-empty-state-title', text: '没有发现明显问题' });
-            empty.createDiv({ cls: 'nw-empty-state-description', text: '重复正文、未结算、frontmatter 与孤儿文件均未命中。' });
+            this.bodyEl.appendChild(createEmptyState({
+                icon: 'data',
+                title: t('emptyState.healthOk.title'),
+                description: t('emptyState.healthOk.desc'),
+            }));
             return;
         }
 
@@ -152,10 +156,11 @@ export class ProjectHealthModal extends Modal {
             text: `标准版本 ${report.declaredVersion ?? '未声明'} / 当前 ${report.currentVersion} · 目录 ${report.checkedDirs} 个`,
         });
         if (report.issues.length === 0) {
-            const ok = this.bodyEl.createDiv({ cls: 'nw-empty-state' });
-            ok.createDiv({ cls: 'nw-empty-state-icon', text: '✅' });
-            ok.createDiv({ cls: 'nw-empty-state-title', text: '项目结构符合标准' });
-            ok.createDiv({ cls: 'nw-empty-state-description', text: '必备目录、文件、命名与派生数据均正常。' });
+            this.bodyEl.appendChild(createEmptyState({
+                icon: 'data',
+                title: t('emptyState.standardOk.title'),
+                description: t('emptyState.standardOk.desc'),
+            }));
             return;
         }
         const summary = this.bodyEl.createDiv({ cls: 'nw-project-health-summary' });

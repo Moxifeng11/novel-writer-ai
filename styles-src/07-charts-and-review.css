@@ -133,6 +133,33 @@
   background: var(--interactive-accent-hover);
 }
 
+/*
+ * 紧凑空态（列表/侧栏/详情区内）：无图标、无虚线框，只留一行弱化提示。
+ * 需要同时覆盖 .nw-scope 与裸类两种作用域（弹窗里挂 nw-scope，外层页面不挂）。
+ */
+.nw-empty-state--compact,
+.nw-scope .nw-empty-state--compact {
+  display: block;
+  padding: var(--nw-space-2, 8px) 0;
+  border: none;
+  background: none;
+  text-align: center;
+}
+.nw-empty-state--compact .nw-empty-state-title,
+.nw-scope .nw-empty-state--compact .nw-empty-state-title {
+  font-size: var(--nw-text-xs, 12px);
+  font-weight: normal;
+  color: var(--text-muted);
+  margin: 0;
+}
+.nw-empty-state--compact .nw-empty-state-description,
+.nw-scope .nw-empty-state--compact .nw-empty-state-description {
+  font-size: var(--nw-text-xs, 12px);
+  color: var(--text-faint);
+  margin: 4px 0 0;
+  max-width: none;
+}
+
 /* ==========================================================================
  * 图表交互样式 v7.x（svg-charts.ts Task 6-11 改造配套）
  * ==========================================================================
@@ -147,6 +174,14 @@
 .nw-chart-container {
   width: 100%;
   position: relative;
+}
+
+/* 图表空态：原先四处内联 style="color:var(--text-muted)" 的「暂无数据」，统一走类名（审计 A-8） */
+.nw-chart-empty {
+  padding: var(--nw-space-4, 16px) 0;
+  text-align: center;
+  font-size: var(--nw-text-xs, 12px);
+  color: var(--text-muted);
 }
 
 .nw-chart-container svg.nw-chart-svg {

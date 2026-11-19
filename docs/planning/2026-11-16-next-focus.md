@@ -3806,3 +3806,42 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 **门禁**：`npx tsc --noEmit` 0 错；`npm run lint` 0 error（1029 warning 存量）；`check:i18n` zh/en 各 6045 条 / 无法解析键 0 / 动态键 29 / 棘轮收紧到 205 文件 5445 条；`check:engine-msg` 126 键一致；`npm run preflight` **EXIT=0**（1006 文件 / 10,421 通过 + 3 跳过，日志 `D:\nw-tmp\preflight-p1b.log`）；`check:bundle` 基线上调 main.js 6,224,760 → 6,228,126（+3,366，note 已说明），styles.css 800,112、workers 684,381/108,804 不变。提交 **0b38db00**。
 
 **下一轮**：P2 #14-#20（空态统一 / `showProgress` 统一 / 字符串键收编 / 知识库 baseDir 双口径 / 设置页自动保存徽标 / Esc 语义 / `AIEngine` 收编），以及 #13 遗留的 A-17 撤销栈共享化。
+
+---
+
+## 第一百二十一轮：C 清单 P2 #14 —— 空态统一到 createEmptyState（2026-11-20，DSH）
+
+**范围**：审计 A-8（空态三套渲染 + 图表内联第四套）与 A-18（图表空态内联 style）。
+
+**组件扩展（ui/components/empty-state.ts）**
+- `EmptyStateOptions` 增 `variant?: 'default' | 'compact'`；compact 不渲染图标，类名 `nw-empty-state nw-empty-state--compact`。
+- 新增 `createCompactEmptyState(text: string, description?: string): HTMLElement` —— 一行灰字空态（监控面板/设置页那种）。
+- 新增 `chartEmptyStateHtml(text: string): string` —— 返回 `<div class="nw-chart-container nw-chart-empty">${escapeHtml(text)}</div>`，**无内联 style**（消费方是 innerHTML 字符串，故给 HTML 而非元素）。
+
+**替换面（26 处 + 6 个弹窗）**
+- `ui/svg-charts.ts` 14 处：11 处「暂无数据」→ `chartEmptyStateHtml(t('emptyState.chartEmpty'))`、雷达图维度不足 / 数据总和为 0 / 暂无事件各 1。该文件原本**零 import**，新增 `t` 与组件 import；保留 :710 的百分比 span（数值标签不是空态）。
+- `ui/prompt-manager-settings.ts` 3 处 `nw-empty-center-muted`（pickTemplate / abEmpty / usageEmpty）→ `createCompactEmptyState`。
+- `ui/monitor-panel-a.ts` 4 个默认提示 + `showEmpty(msg)` → compact；`ui/monitor-panel-b.ts` 3 处 → compact。
+- 六个弹窗/视图改 `appendChild(createEmptyState(...))`：`ui/asset-registry-modal.ts`、`ui/backup-center-modal.ts` ×2、`ui/job-center-modal.ts`、`ui/home-view.ts`（复用既有 `home.emptyTitle/emptyDesc`）、`ui/project-health-modal.ts` ×3、`ui/usage-ledger-modal.ts`。
+
+**样式**
+- `styles-src/07-charts-and-review.css` 新增 `.nw-empty-state--compact, .nw-scope .nw-empty-state--compact`（padding 8px 0 / 无边框无底 / 12px / text-muted / 居中）+ title 与 description 子规则；新增 `.nw-chart-empty`。
+- **坑**：只写裸 `.nw-empty-state--compact`（0,1,0）会被弹窗内的 `.nw-scope .nw-empty-state`（0,2,0）压过，compact 仍是 48px 上下留白 —— 必须写双选择器。
+- `styles-src/05-floating-panels-and-settings.css` 删 `.nw-float-empty`（含分组内成员）；`styles-src/06-cowrite-missing-and-dark.css` 删 `.nw-empty-center-muted`；两者已零引用。
+- 保留 06 号文件 :826 的 `.nw-empty-state`（40px 16px / 虚线边框 / background-secondary）不动：六个弹窗原先手写空态就是这套外观，默认变体视觉等价；唯一有意变化是 emoji 图标统一成 64px 内联 SVG。
+
+**资源**：新增顶层组 `emptyState`（zh/en 各 16 条，插在 `common` 后 `commands` 前）：noProject.{title,assetDesc,backupDesc,healthTitle,healthDesc}、backupEmpty.{title,desc}、jobsEmpty.{title,desc}、healthOk.{title,desc}、standardOk.{title,desc}、usageEmpty.{title,desc}、chartEmpty、radarMin、sumZero、noEvents。资源 zh/en 各 **6064** 条。
+
+**验证**
+- `npx tsc --noEmit` 0 错；`npm run build` EXIT=0（styles.css 32,114 行）。
+- 实机（`D:\nw-tmp\snap-p214.mjs zh-CN|en-US`，产物 `D:\nw-dev-vault\_visual-p214\`）：job-center 空态 606×252（图标 + 标题 + 描述，零横向溢出）、project-health 594×270、监控两面板 compact 行各 **33px**；探针 computedStyle = padding 8px 0 / border 0 / transparent / 12px。
+  - **两条坑**：①弹窗只能调插件方法（`openJobCenter / openBackupCenter / openUsageLedger / openAssetRegistry / openProjectHealth`），`app.commands.executeCommandById(...)` 返回 false；②右侧栏面板的元素截图在 CDP 下错位发黑，改记计算样式探针（面板根类名是 `nw-float-monitor-grid`，不是 view type）。
+- 门禁：`npm run preflight` **EXIT=0**（1006 文件 / 10,423 通过 + 3 跳过，日志 `D:\nw-tmp\preflight-p214.log`）；check:css 体积 800,112 → **801,044**（+932，新增规则）、唯一类 4333；check:inline-styles 收紧到 474；check:i18n 棘轮 205 文件 / **5415** 条（−30）；check:engine-msg 126 键一致；check:jsdoc 100% / @example 56/56。
+- **三处门禁连环坑**：①新增的公共导出必须带 `@example`，否则 check:jsdoc 直接失败；②`@example` 里写的 `t('…')` 会被 check:i18n 当真实键校验（我写了不存在的 `monitor.a.waitingChapter` 被拦）；③改了源码注释后必须重跑 `gen:docs`，否则 check:docs 报 `docs/generated/* 漂移`。
+- 基线：.css-baseline.json、.inline-style-baseline.json、.i18n-baseline.json、.bundle-baseline.json（main.js 6,228,171 / styles.css 801,044）均带 note。
+
+**遗留**
+- `ui/monitor-panel-a.ts` 仍是硬编码中文（不在 i18n 第二期清单内，en 下 4 条 compact 文案仍中文）→ backlog，随该文件 i18n 切片处理。
+- 六个弹窗标题（如 `ui/job-center-modal.ts:49`「🧵 任务中心」）同样未迁移，属各自 i18n 切片。
+
+**下一轮**：P2 #15（`showProgress` 统一：裸 `new Notice(...,0)` 30 处 + `ui/outline-expand-modal.ts:912` 私有同名方法改名）→ #16 字符串键收编 → #17 kb baseDir → #18 设置页自动保存徽标 → #19 Esc 语义 → #20 AIEngine 收编；另有 #13 遗留的 A-17 撤销栈共享化。

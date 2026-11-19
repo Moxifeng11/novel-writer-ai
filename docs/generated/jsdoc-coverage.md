@@ -9,7 +9,7 @@
 | `engine/` | 337 | 1925 | 1924 | 100% | 1253 | 1253 | 100% | 0 |
 | `services/` | 65 | 295 | 295 | 100% | 310 | 310 | 100% | 0 |
 | `shared/` | 260 | 2228 | 2227 | 100% | 159 | 159 | 100% | 0 |
-| `ui/` | 302 | 1170 | 1170 | 100% | 682 | 681 | 100% | 0 |
+| `ui/` | 302 | 1172 | 1172 | 100% | 682 | 681 | 100% | 0 |
 
 ## 缺口最大的文件（按未注释导出数）
 
@@ -72,7 +72,7 @@
 | `ui/components/character-review-panel.ts` | 1 | 1 | 100% | — |
 | `ui/components/chart-toolbar.ts` | 1 | 1 | 100% | — |
 | `ui/components/emotion-curve-view.ts` | 1 | 1 | 100% | — |
-| `ui/components/empty-state.ts` | 1 | 1 | 100% | — |
+| `ui/components/empty-state.ts` | 3 | 3 | 100% | — |
 | `ui/components/error-state.ts` | 1 | 1 | 100% | — |
 | `ui/components/modal-dirty-guard.ts` | 1 | 1 | 100% | — |
 | `ui/components/notice-helpers.ts` | 3 | 3 | 100% | — |

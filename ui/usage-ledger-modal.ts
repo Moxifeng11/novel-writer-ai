@@ -7,6 +7,8 @@
 import { App, Modal } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import { dailyTrend, pricingSourceByModel, getUsageLedger, type UsageRecord } from '@/services/usage-ledger';
+import { t } from '@/i18n';
+import { createEmptyState } from './components/empty-state';
 
 function formatTokens(value: number): string {
     if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(2)}M`;
@@ -161,10 +163,11 @@ export class UsageLedgerModal extends Modal {
         }
 
         if (records.length === 0) {
-            const empty = this.bodyEl.createDiv({ cls: 'nw-empty-state' });
-            empty.createDiv({ cls: 'nw-empty-state-icon', text: '💰' });
-            empty.createDiv({ cls: 'nw-empty-state-title', text: '还没有调用记录' });
-            empty.createDiv({ cls: 'nw-empty-state-description', text: '写作、质检、Agent 调用 AI 后会出现在这里。' });
+            this.bodyEl.appendChild(createEmptyState({
+                icon: 'chart',
+                title: t('emptyState.usageEmpty.title'),
+                description: t('emptyState.usageEmpty.desc'),
+            }));
             return;
         }
 

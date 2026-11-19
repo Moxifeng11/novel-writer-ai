@@ -5,6 +5,7 @@
  */
 import { WorkspaceLeaf, Notice } from "obsidian";
 import { t } from '@/i18n';
+import { createEmptyState } from './components/empty-state';
 import NovelWriterPlugin from "@/main";
 import { DraggablePanel } from "./draggable-panel";
 import {
@@ -152,7 +153,7 @@ export class MonitorPanelB extends DraggablePanel {
     });
     expandBtn.addEventListener("click", () => this.toggleCompletionDetail());
     this.completionContent = completionCard.createDiv({ cls: "nw-float-card-body" });
-    this.completionContent.createDiv({ cls: "nw-float-empty", text: t("monitorB.emptyCompletion") });
+    this.completionContent.appendChild(createEmptyState({ title: t("monitorB.emptyCompletion"), variant: "compact" }));
 
     const divergenceCard = container.createDiv({ cls: "nw-float-card nw-monb-card" });
     const divergenceHeader = divergenceCard.createDiv({
@@ -165,7 +166,7 @@ export class MonitorPanelB extends DraggablePanel {
     });
     divExpandBtn.addEventListener("click", () => this.toggleDivergenceDetail());
     this.divergenceContent = divergenceCard.createDiv({ cls: "nw-float-card-body" });
-    this.divergenceContent.createDiv({ cls: "nw-float-empty", text: t("monitorB.emptyDivergence") });
+    this.divergenceContent.appendChild(createEmptyState({ title: t("monitorB.emptyDivergence"), variant: "compact" }));
 
     const qualityCard = container.createDiv({ cls: "nw-float-card nw-monb-card" });
     const qualityHeader = qualityCard.createDiv({
@@ -178,7 +179,7 @@ export class MonitorPanelB extends DraggablePanel {
     });
     qualityExpandBtn.addEventListener("click", () => this.toggleQualityDetail());
     this.qualityContent = qualityCard.createDiv({ cls: "nw-float-card-body" });
-    this.qualityContent.createDiv({ cls: "nw-float-empty", text: t("monitorB.emptyQuality") });
+    this.qualityContent.appendChild(createEmptyState({ title: t("monitorB.emptyQuality"), variant: "compact" }));
 
     const settleCard = container.createDiv({ cls: "nw-float-card" });
     settleCard.createEl("h5", { text: t("monitorB.settleTitle") });

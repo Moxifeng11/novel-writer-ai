@@ -10,6 +10,7 @@ import { RhythmAnalyzer } from "@/engine/rhythm-analyzer";
 import { EmotionCurveView } from "./components/emotion-curve-view";
 import { appendSanitizedHtml } from '@/ui/rendering/safe-html';
 import { CoWriteFacade } from "./services/co-write-facade";
+import { createEmptyState } from "./components/empty-state";
 
 /**
  * VIEW_TYPE_MONITOR_A 常量。
@@ -54,22 +55,10 @@ export class MonitorPanelA extends DraggablePanel {
     this.rhythmAnalyzer = this.facade.createRhythmAnalyzer();
 
     // 默认提示
-    this.rhythmContent.createDiv({
-      cls: "nw-float-empty",
-      text: "打开章节后自动分析",
-    });
-    this.emotionContent.createDiv({
-      cls: "nw-float-empty",
-      text: "打开章节后自动分析",
-    });
-    this.oocContent.createDiv({
-      cls: "nw-float-empty",
-      text: "编辑正文后自动检测OOC",
-    });
-    this.entityContent.createDiv({
-      cls: "nw-float-empty",
-      text: "编辑正文后自动检测实体变更",
-    });
+    this.rhythmContent.appendChild(createEmptyState({ title: "打开章节后自动分析", variant: "compact" }));
+    this.emotionContent.appendChild(createEmptyState({ title: "打开章节后自动分析", variant: "compact" }));
+    this.oocContent.appendChild(createEmptyState({ title: "编辑正文后自动检测OOC", variant: "compact" }));
+    this.entityContent.appendChild(createEmptyState({ title: "编辑正文后自动检测实体变更", variant: "compact" }));
   }
 
   // 子容器引用
@@ -192,7 +181,7 @@ export class MonitorPanelA extends DraggablePanel {
     for (const el of [this.rhythmContent, this.emotionContent, this.oocContent, this.entityContent]) {
       if (el) {
         el.empty();
-        el.createDiv({ cls: "nw-float-empty", text: msg });
+        el.appendChild(createEmptyState({ title: msg, variant: "compact" }));
       }
     }
   }

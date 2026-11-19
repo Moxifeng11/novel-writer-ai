@@ -10,6 +10,8 @@ import { listProjectIds } from '@/shared/project-catalog';
 import { projectDisplayName } from '@/domains/kernel/project-locator';
 import { collectAssetRegistry, type AssetEntry, type AssetKind, type AssetRegistryReport } from '@/engine/asset-registry';
 import { StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
+import { t } from '@/i18n';
+import { createEmptyState } from './components/empty-state';
 
 const KIND_LABEL: Record<AssetKind, string> = {
     rules: '📜 写作规则',
@@ -61,10 +63,11 @@ export class AssetRegistryModal extends Modal {
         this.loading = true;
         this.bodyEl.empty();
         if (!this.project) {
-            const empty = this.bodyEl.createDiv({ cls: 'nw-empty-state' });
-            empty.createDiv({ cls: 'nw-empty-state-icon', text: '🧩' });
-            empty.createDiv({ cls: 'nw-empty-state-title', text: '还没有项目' });
-            empty.createDiv({ cls: 'nw-empty-state-description', text: '资产总览按项目展示生效来源；先创建一个项目。' });
+            this.bodyEl.appendChild(createEmptyState({
+                icon: 'data',
+                title: t('emptyState.noProject.title'),
+                description: t('emptyState.noProject.assetDesc'),
+            }));
             this.loading = false;
             return;
         }

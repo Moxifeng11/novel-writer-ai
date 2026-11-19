@@ -325,7 +325,6 @@
     line-height: 1.55;
 }
 
-.nw-float-empty,
 .nw-float-error,
 .nw-float-ok,
 .nw-float-warn-title,
@@ -337,10 +336,6 @@
 .nw-float-progress {
     margin: 4px 0;
     font-size: 12px;
-}
-
-.nw-float-empty {
-    color: var(--nw-text-muted, var(--text-faint));
 }
 
 .nw-float-error,

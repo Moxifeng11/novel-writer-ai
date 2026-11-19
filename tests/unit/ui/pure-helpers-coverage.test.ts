@@ -2203,7 +2203,7 @@ function fakeDoc() {
     return { createElement: (tag: string) => new FakeUiEl(tag) };
 }
 
-import { createEmptyState } from '@/ui/components/empty-state';
+import { chartEmptyStateHtml, createCompactEmptyState, createEmptyState } from '@/ui/components/empty-state';
 import { createErrorState } from '@/ui/components/error-state';
 import { renderAIDetectionReport } from '@/ui/components/ai-detection-report';
 import { createChartToolbar } from '@/ui/components/chart-toolbar';
@@ -2241,6 +2241,21 @@ describe('empty-state / error-state（fake DOM）', () => {
         expect(el.findByClass('nw-empty-state-description')).toBeNull();
         expect(el.findByClass('nw-empty-state-action')).toBeNull();
         expect(el.findByClass('nw-empty-state-title')?.textContent).toBe('暂无章节');
+    });
+
+    it('createCompactEmptyState：紧凑变体不渲染图标，类名带 --compact', () => {
+        vi.stubGlobal('document', fakeDoc());
+        const el = createCompactEmptyState('暂无数据') as unknown as FakeUiEl;
+        expect(el.className).toBe('nw-empty-state nw-empty-state--compact');
+        expect(el.findByClass('nw-empty-state-icon')).toBeNull();
+        expect(el.findByClass('nw-empty-state-title')?.textContent).toBe('暂无数据');
+        expect(el.findByClass('nw-empty-state-description')).toBeNull();
+    });
+
+    it('chartEmptyStateHtml：图表空态走类名、不写内联 style，且转义用户文本', () => {
+        const html = chartEmptyStateHtml('<b>暂无</b>');
+        expect(html).toBe('<div class="nw-chart-container nw-chart-empty">&lt;b&gt;暂无&lt;/b&gt;</div>');
+        expect(html).not.toContain('style=');
     });
 
     it('createErrorState：标题+详情+动作按钮（primary/secondary 样式与点击回调）', () => {

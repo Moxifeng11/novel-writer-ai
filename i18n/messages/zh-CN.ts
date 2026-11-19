@@ -1730,6 +1730,39 @@ export const zhCN: MessageTree = {
         refresh: '刷新',
         loading: '加载中…',
     },
+    emptyState: {
+        noProject: {
+            title: '还没有项目',
+            assetDesc: '资产总览按项目展示生效来源；先创建一个项目。',
+            backupDesc: '版本与备份按项目组织；先创建一个项目。',
+            healthTitle: '还没有可体检的项目',
+            healthDesc: '先创建或导入一个项目。',
+        },
+        backupEmpty: {
+            title: '暂无版本与备份',
+            desc: '保存版本、跑完步骤或触发设置迁移后，这里会出现可追溯的历史。',
+        },
+        jobsEmpty: {
+            title: '暂无任务',
+            desc: '批量生成、章节一键跑、导出等长任务会出现在这里。',
+        },
+        healthOk: {
+            title: '没有发现明显问题',
+            desc: '重复正文、未结算、frontmatter 与孤儿文件均未命中。',
+        },
+        standardOk: {
+            title: '项目结构符合标准',
+            desc: '必备目录、文件、命名与派生数据均正常。',
+        },
+        usageEmpty: {
+            title: '还没有调用记录',
+            desc: '写作、质检、Agent 调用 AI 后会出现在这里。',
+        },
+        chartEmpty: '暂无数据',
+        radarMin: '雷达图至少需要3个数据维度',
+        sumZero: '数据总和为0',
+        noEvents: '暂无事件',
+    },
     commands: {
         CreateProject: '新建项目',
         AgentGuide: '🤖 对话引导（新建/继续项目）',

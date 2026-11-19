@@ -7,6 +7,8 @@
 import { App, Modal, Notice } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import type { JobRecord, JobStatus } from '@/services/job-service';
+import { t } from '@/i18n';
+import { createEmptyState } from './components/empty-state';
 
 const STATUS_LABEL: Record<JobStatus, string> = {
     queued: '排队中',
@@ -64,13 +66,11 @@ export class JobCenterModal extends Modal {
         this.listEl.empty();
         const jobs = this.plugin.getJobService().list();
         if (jobs.length === 0) {
-            const empty = this.listEl.createDiv({ cls: 'nw-empty-state' });
-            empty.createDiv({ cls: 'nw-empty-state-icon', text: '🧵' });
-            empty.createDiv({ cls: 'nw-empty-state-title', text: '暂无任务' });
-            empty.createDiv({
-                cls: 'nw-empty-state-description',
-                text: '批量生成、章节一键跑、导出等长任务会出现在这里。',
-            });
+            this.listEl.appendChild(createEmptyState({
+                icon: 'data',
+                title: t('emptyState.jobsEmpty.title'),
+                description: t('emptyState.jobsEmpty.desc'),
+            }));
             return;
         }
 

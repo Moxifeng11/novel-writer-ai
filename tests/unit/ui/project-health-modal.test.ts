@@ -5,7 +5,8 @@
  * 环境：node 无 jsdom，用 obsidian 模块级替身 + 极简元素桩。
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { stubDocument } from './support/fake-dom';
 
 /** 极简元素桩 */
 interface FakeEl {
@@ -20,6 +21,7 @@ interface FakeEl {
     addClass: (cls: string) => void;
     setText: (text: string) => void;
     addEventListener: (event: string, handler: () => void) => void;
+    appendChild: (child: unknown) => unknown;
     remove: () => void;
     textContent: string;
     childElementCount: number;
@@ -62,11 +64,22 @@ function makeEl(tag = 'div'): FakeEl {
         addEventListener() {
             // 桩：事件不参与断言
         },
+        appendChild(child: unknown) {
+            // createEmptyState 建的是 fake-dom 的 FakeEl（或 safe-html 替身的 { html }）
+            el.children.push(child as FakeEl);
+            return child;
+        },
         remove() {
             // 桩
         },
         get textContent() {
-            return [el.text, ...el.children.map(c => c.textContent)].filter(Boolean).join(' ');
+            // 递归收集：createEmptyState 挂进来的是 fake-dom 的 FakeEl（文本在它的 children 上，不聚合到父）
+            const collect = (node: unknown): string[] => {
+                const n = node as { text?: string; textContent?: string; children?: unknown[] };
+                const own = typeof n.text === 'string' ? n.text : (typeof n.textContent === 'string' ? n.textContent : '');
+                return [own, ...(n.children ?? []).flatMap(collect)];
+            };
+            return collect(el).filter(Boolean).join(' ');
         },
         get childElementCount() {
             return el.children.length;
@@ -90,7 +103,13 @@ vi.mock('obsidian', () => {
     class NoticeStub {
         constructor(public message: string) {}
     }
-    return { Modal: ModalStub, Notice: NoticeStub, TFile: class {} };
+    return {
+        Modal: ModalStub,
+        Notice: NoticeStub,
+        TFile: class {},
+        // safe-html 的 sanitizeHTMLToDom 替身（空态图标是内联 SVG 字符串）
+        sanitizeHTMLToDom: (html: string) => ({ html }),
+    };
 });
 
 vi.mock('@/shared/project-catalog', () => ({ listProjectIds: () => [] }));
@@ -109,6 +128,10 @@ vi.mock('@/services/project-standard-service', () => ({
 }));
 
 import { ProjectHealthModal } from '@/ui/project-health-modal';
+
+// createEmptyState 走 document.createElement，node 环境需要替身
+beforeEach(() => { stubDocument(); });
+afterEach(() => { delete (globalThis as { document?: unknown }).document; });
 
 describe('ProjectHealthModal · 无项目', () => {
     it('给出空态引导而非渲染空壳', async () => {

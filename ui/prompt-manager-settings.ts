@@ -15,6 +15,7 @@ import { exportTextFile } from '@/shared/export-file';
 import { buildVariantStatRows } from './prompt-manager-logic';
 import { buildPromptImportDiff, type PromptImportMode } from '@/shared/prompt-manager-import';
 import { PromptImportPreviewModal } from './prompt-import-preview-modal';
+import { createCompactEmptyState } from './components/empty-state';
 
 /** A/B 测试状态的标签键（未知状态回落原始值，避免旧数据渲染成空） */
 const STATUS_LABEL_KEYS: Record<string, string> = {
@@ -344,10 +345,7 @@ export class PromptManagerSettings {
 
     private renderTemplateDetail(container: HTMLElement): void {
         if (!this.selectedTemplateId) {
-            container.createDiv({
-                text: t('settings.promptManager.pickTemplate'),
-                cls: 'nw-empty-center-muted'
-            });
+            container.appendChild(createCompactEmptyState(t('settings.promptManager.pickTemplate')));
             return;
         }
 
@@ -502,10 +500,7 @@ export class PromptManagerSettings {
         const tests = this.promptManager.getABTests();
 
         if (tests.length === 0) {
-            container.createDiv({
-                text: t('settings.promptManager.abEmpty'),
-                cls: 'nw-empty-center-muted'
-            });
+            container.appendChild(createCompactEmptyState(t('settings.promptManager.abEmpty')));
         } else {
             const testList = container.createDiv({ cls: 'nw-pm-test-list' });
             for (const test of tests) {
@@ -716,10 +711,7 @@ export class PromptManagerSettings {
         }
 
         if (first.total === 0) {
-            container.createDiv({
-                text: t('settings.promptManager.usageEmpty'),
-                cls: 'nw-empty-center-muted'
-            });
+            container.appendChild(createCompactEmptyState(t('settings.promptManager.usageEmpty')));
             return;
         }
 

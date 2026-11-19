@@ -11,7 +11,7 @@
 | `shared/` | 262 | 52668 | 2224 | 1741 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 304 | 113640 | 1180 | 943 | 80% |
+| `ui/` | 304 | 113691 | 1182 | 945 | 80% |
 
 ## 文件清单
 
@@ -726,8 +726,8 @@
 | `ui/agent-workbench/stage-panel.ts` | 140 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1147 | 1 | 1 |
 | `ui/appearance-settings.ts` | 604 | 3 | 3 |
-| `ui/asset-registry-modal.ts` | 151 | 1 | 1 |
-| `ui/backup-center-modal.ts` | 244 | 1 | 1 |
+| `ui/asset-registry-modal.ts` | 154 | 1 | 1 |
+| `ui/backup-center-modal.ts` | 248 | 1 | 1 |
 | `ui/backup-yuan-modal.ts` | 125 | 1 | 1 |
 | `ui/batch-create-modal.ts` | 522 | 1 | 1 |
 | `ui/batch-import-modal.ts` | 1766 | 1 | 1 |
@@ -786,7 +786,7 @@
 | `ui/components/character-review-panel.ts` | 578 | 2 | 2 |
 | `ui/components/chart-toolbar.ts` | 111 | 2 | 2 |
 | `ui/components/emotion-curve-view.ts` | 131 | 1 | 1 |
-| `ui/components/empty-state.ts` | 147 | 3 | 1 |
+| `ui/components/empty-state.ts` | 196 | 5 | 3 |
 | `ui/components/error-state.ts` | 57 | 3 | 3 |
 | `ui/components/modal-dirty-guard.ts` | 107 | 1 | 1 |
 | `ui/components/notice-helpers.ts` | 160 | 3 | 3 |
@@ -879,7 +879,7 @@
 | `ui/generate-location-modal.ts` | 375 | 1 | 1 |
 | `ui/generate-worldview-modal.ts` | 289 | 1 | 1 |
 | `ui/golden-opening-modal.ts` | 1453 | 1 | 1 |
-| `ui/home-view.ts` | 248 | 2 | 1 |
+| `ui/home-view.ts` | 250 | 2 | 1 |
 | `ui/humanize-report-modal.ts` | 217 | 2 | 2 |
 | `ui/ideation-modal.ts` | 869 | 1 | 1 |
 | `ui/job-center-modal.ts` | 124 | 1 | 1 |
@@ -901,8 +901,8 @@
 | `ui/model-picker-modal.ts` | 290 | 4 | 4 |
 | `ui/model-picker-popover.ts` | 298 | 4 | 3 |
 | `ui/model-quick-switcher.ts` | 321 | 13 | 12 |
-| `ui/monitor-panel-a.ts` | 200 | 2 | 2 |
-| `ui/monitor-panel-b.ts` | 1891 | 2 | 2 |
+| `ui/monitor-panel-a.ts` | 189 | 2 | 2 |
+| `ui/monitor-panel-b.ts` | 1892 | 2 | 2 |
 | `ui/novel-analysis-modal.ts` | 267 | 1 | 1 |
 | `ui/novel-tags-modal.ts` | 341 | 1 | 1 |
 | `ui/onboarding-modal.ts` | 318 | 1 | 1 |
@@ -918,12 +918,12 @@
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
 | `ui/polish-editor.ts` | 926 | 5 | 5 |
 | `ui/pre-research-modal.ts` | 724 | 2 | 2 |
-| `ui/project-health-modal.ts` | 205 | 1 | 1 |
+| `ui/project-health-modal.ts` | 210 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 457 | 5 | 5 |
 | `ui/project-utils.ts` | 366 | 11 | 10 |
 | `ui/prompt-import-preview-modal.ts` | 135 | 2 | 1 |
 | `ui/prompt-manager-logic.ts` | 76 | 4 | 3 |
-| `ui/prompt-manager-settings.ts` | 1372 | 1 | 1 |
+| `ui/prompt-manager-settings.ts` | 1364 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 87 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 504 | 2 | 2 |
 | `ui/quality-loop-modal.ts` | 294 | 1 | 1 |
@@ -971,14 +971,14 @@
 | `ui/story-settings-modal.ts` | 117 | 1 | 1 |
 | `ui/style-distiller-modal.ts` | 486 | 1 | 1 |
 | `ui/support-author-modal.ts` | 43 | 1 | 0 |
-| `ui/svg-charts.ts` | 2356 | 49 | 49 |
+| `ui/svg-charts.ts` | 2359 | 49 | 49 |
 | `ui/template-manager.ts` | 710 | 5 | 2 |
 | `ui/tomato-rank-modal.ts` | 132 | 1 | 1 |
 | `ui/tts/tts-player.ts` | 428 | 4 | 2 |
 | `ui/tts/tts-speech.ts` | 164 | 5 | 1 |
 | `ui/unified-entity-generate-modal.ts` | 865 | 1 | 1 |
 | `ui/unified-entity-manager-modal.ts` | 755 | 1 | 1 |
-| `ui/usage-ledger-modal.ts` | 202 | 1 | 1 |
+| `ui/usage-ledger-modal.ts` | 205 | 1 | 1 |
 | `ui/utils/worldview-utils.ts` | 103 | 1 | 1 |
 | `ui/vector-rebuild-action.ts` | 148 | 1 | 1 |
 | `ui/views/book-detail-logic.ts` | 163 | 10 | 7 |

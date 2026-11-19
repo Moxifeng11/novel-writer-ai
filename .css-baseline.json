@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-19T19:24:49.387Z",
-  "note": "2026-11-20 退役 .nw-float-cowrite-root 四条样式与脏态修饰类（-739B / -2 唯一类）",
-  "bytes": 800112,
+  "generatedAt": "2026-11-19T20:57:00.050Z",
+  "note": "P2 #14 空态统一（新增 .nw-empty-state--compact / .nw-chart-empty，删除 .nw-float-empty / .nw-empty-center-muted）",
+  "bytes": 801044,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 223,

@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-19T19:25:51.804Z",
+  "generatedAt": "2026-11-19T20:57:01.489Z",
   "note": "棘轮基线：每文件只允许下降；新增内联样式需先说明动态原因并显式更新",
-  "total": 488,
-  "static": 424,
+  "total": 474,
+  "static": 410,
   "dynamic": 64,
   "files": {
-    "ui/svg-charts.ts": 64,
+    "ui/svg-charts.ts": 50,
     "ui/knowledge-monitor-modal.ts": 40,
     "ui/fingerprint-blend-modal.ts": 36,
     "ui/components/analysis-report-panel.ts": 32,

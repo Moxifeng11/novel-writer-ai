@@ -14,6 +14,8 @@ import type { ChapterVersionService } from '@/services/chapter-version-service';
 import { ChapterVersionModal } from './chapter-version-modal';
 import { OperationConfirmModal } from './components/progress';
 import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
+import { createEmptyState } from './components/empty-state';
+import { t } from '@/i18n';
 
 const KIND_LABEL: Record<BackupCenterEntry['kind'], string> = {
     version: '🗂 版本快照',
@@ -63,10 +65,11 @@ export class BackupCenterModal extends Modal {
         this.loading = true;
         this.bodyEl.empty();
         if (!this.project) {
-            const empty = this.bodyEl.createDiv({ cls: 'nw-empty-state' });
-            empty.createDiv({ cls: 'nw-empty-state-icon', text: '🗂' });
-            empty.createDiv({ cls: 'nw-empty-state-title', text: '还没有项目' });
-            empty.createDiv({ cls: 'nw-empty-state-description', text: '版本与备份按项目组织；先创建一个项目。' });
+            this.bodyEl.appendChild(createEmptyState({
+                icon: 'folder',
+                title: t('emptyState.noProject.title'),
+                description: t('emptyState.noProject.backupDesc'),
+            }));
             this.loading = false;
             return;
         }
@@ -101,10 +104,11 @@ export class BackupCenterModal extends Modal {
         }
 
         if (report.entries.length === 0) {
-            const empty = this.bodyEl.createDiv({ cls: 'nw-empty-state' });
-            empty.createDiv({ cls: 'nw-empty-state-icon', text: '🗂' });
-            empty.createDiv({ cls: 'nw-empty-state-title', text: '暂无版本与备份' });
-            empty.createDiv({ cls: 'nw-empty-state-description', text: '保存版本、跑完步骤或触发设置迁移后，这里会出现可追溯的历史。' });
+            this.bodyEl.appendChild(createEmptyState({
+                icon: 'folder',
+                title: t('emptyState.backupEmpty.title'),
+                description: t('emptyState.backupEmpty.desc'),
+            }));
             return;
         }
 

@@ -22,6 +22,7 @@
  * ```
  */
 
+import { escapeHtml } from '@/utils/helpers';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
 
 /** 空状态图标类型 */
@@ -39,6 +40,13 @@ export interface EmptyStateOptions {
     actionText?: string;
     /** 操作按钮回调（可选，需配合 actionText） */
     onAction?: () => void;
+    /**
+     * 密度。
+     *
+     * - `default`：图标 + 标题 + 描述 + 可选按钮（整页/整块空态）
+     * - `compact`：无图标、内边距与字号更小（列表/侧栏/详情区内的空态）
+     */
+    variant?: 'default' | 'compact';
 }
 
 /** 内联 SVG 图标集合（64x64，stroke 描边风格） */
@@ -107,16 +115,20 @@ const SVG_ICONS: Record<EmptyStateIcon, string> = {
  * ```
  */
 export function createEmptyState(options: EmptyStateOptions): HTMLElement {
-    const { icon = 'default', title, description, actionText, onAction } = options;
+    const { icon = 'default', title, description, actionText, onAction, variant = 'default' } = options;
 
     const container = document.createElement('div');
-    container.className = 'nw-empty-state';
+    container.className = variant === 'compact'
+        ? 'nw-empty-state nw-empty-state--compact'
+        : 'nw-empty-state';
 
-    // 图标区域
-    const iconWrap = document.createElement('div');
-    iconWrap.className = 'nw-empty-state-icon';
-    setSanitizedHtml(iconWrap, SVG_ICONS[icon]);
-    container.appendChild(iconWrap);
+    // 图标区域（compact 不渲染图标：侧栏/列表里 64px 图标会挤掉内容）
+    if (variant !== 'compact') {
+        const iconWrap = document.createElement('div');
+        iconWrap.className = 'nw-empty-state-icon';
+        setSanitizedHtml(iconWrap, SVG_ICONS[icon]);
+        container.appendChild(iconWrap);
+    }
 
     // 标题
     const titleEl = document.createElement('div');
@@ -143,4 +155,41 @@ export function createEmptyState(options: EmptyStateOptions): HTMLElement {
     }
 
     return container;
+}
+
+/**
+ * 紧凑空态（列表/侧栏/详情区内使用）。
+ *
+ * 等价于 `createEmptyState({ title, variant: 'compact' })`，供只有一行提示的
+ * 老调用点做机械替换（审计 A-8：三套空态渲染统一为一个入口）。
+ * @param text - 提示文案（调用方负责 i18n）
+ * @param description - 补充说明（可选）
+ * @returns 空状态根元素
+ *
+ * @example
+ * ```ts
+ * // 监控面板里替换掉手写的 <div class="nw-float-empty">
+ * panel.appendChild(createCompactEmptyState(t('emptyState.chartEmpty')));
+ * ```
+ */
+export function createCompactEmptyState(text: string, description?: string): HTMLElement {
+    return createEmptyState({ title: text, description, variant: 'compact' });
+}
+
+/**
+ * 图表空态的 HTML 片段（svg-charts 的各个 chart 函数返回 HTML 字符串）。
+ *
+ * 图表 API 的返回类型是 string，无法直接用 DOM 组件；这里给出与
+ * `.nw-empty-state--compact` 同一套视觉的字符串形态，样式全部走类名，
+ * **不再写内联 style**（审计 A-8/A-18）。
+ * @param text - 提示文案（调用方负责 i18n）
+ * @returns HTML 字符串
+ *
+ * @example
+ * ```ts
+ * html += chartEmptyStateHtml(t('emptyState.chartEmpty'));
+ * ```
+ */
+export function chartEmptyStateHtml(text: string): string {
+    return `<div class="nw-chart-container nw-chart-empty">${escapeHtml(text)}</div>`;
 }

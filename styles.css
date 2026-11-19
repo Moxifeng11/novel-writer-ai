@@ -4481,7 +4481,6 @@ select.nw-select {
     line-height: 1.55;
 }
 
-.nw-float-empty,
 .nw-float-error,
 .nw-float-ok,
 .nw-float-warn-title,
@@ -4493,10 +4492,6 @@ select.nw-select {
 .nw-float-progress {
     margin: 4px 0;
     font-size: 12px;
-}
-
-.nw-float-empty {
-    color: var(--nw-text-muted, var(--text-faint));
 }
 
 .nw-float-error,
@@ -5812,7 +5807,6 @@ select.nw-select {
 .nw-modal-footer { padding: 12px 24px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--background-modifier-border); }
 .nw-modal-btn-primary { padding: 6px 16px; cursor: pointer; border: none; border-radius: 6px; background: var(--interactive-accent); color: var(--text-on-accent); }
 .nw-modal-btn-secondary { padding: 6px 16px; cursor: pointer; border: 1px solid var(--background-modifier-border); border-radius: 6px; background: var(--background-secondary); color: var(--text-normal); }
-.nw-empty-center-muted { color: var(--text-muted); text-align: center; padding: 40px; }
 .nw-textarea-code { width: 100%; min-height: 120px; padding: 8px; border: 1px solid var(--background-modifier-border); border-radius: 4px; background: var(--background-primary); color: var(--text-normal); font-family: monospace; font-size: 12px; resize: vertical; }
 .nw-stat-muted-mt { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 .nw-h4-sm { margin: 0 0 8px 0; }
@@ -6427,6 +6421,33 @@ select.nw-select {
   background: var(--interactive-accent-hover);
 }
 
+/*
+ * 紧凑空态（列表/侧栏/详情区内）：无图标、无虚线框，只留一行弱化提示。
+ * 需要同时覆盖 .nw-scope 与裸类两种作用域（弹窗里挂 nw-scope，外层页面不挂）。
+ */
+.nw-empty-state--compact,
+.nw-scope .nw-empty-state--compact {
+  display: block;
+  padding: var(--nw-space-2, 8px) 0;
+  border: none;
+  background: none;
+  text-align: center;
+}
+.nw-empty-state--compact .nw-empty-state-title,
+.nw-scope .nw-empty-state--compact .nw-empty-state-title {
+  font-size: var(--nw-text-xs, 12px);
+  font-weight: normal;
+  color: var(--text-muted);
+  margin: 0;
+}
+.nw-empty-state--compact .nw-empty-state-description,
+.nw-scope .nw-empty-state--compact .nw-empty-state-description {
+  font-size: var(--nw-text-xs, 12px);
+  color: var(--text-faint);
+  margin: 4px 0 0;
+  max-width: none;
+}
+
 /* ==========================================================================
  * 图表交互样式 v7.x（svg-charts.ts Task 6-11 改造配套）
  * ==========================================================================
@@ -6441,6 +6462,14 @@ select.nw-select {
 .nw-chart-container {
   width: 100%;
   position: relative;
+}
+
+/* 图表空态：原先四处内联 style="color:var(--text-muted)" 的「暂无数据」，统一走类名（审计 A-8） */
+.nw-chart-empty {
+  padding: var(--nw-space-4, 16px) 0;
+  text-align: center;
+  font-size: var(--nw-text-xs, 12px);
+  color: var(--text-muted);
 }
 
 .nw-chart-container svg.nw-chart-svg {

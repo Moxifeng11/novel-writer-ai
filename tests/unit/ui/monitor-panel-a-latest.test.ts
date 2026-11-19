@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { stubDocument } from './support/fake-dom';
 
 vi.mock('../../../main', () => ({
     default: class NovelWriterPlugin {},
@@ -40,9 +41,14 @@ function makeSink() {
             state.entries.push(opts?.text ?? '');
             return el;
         },
-        // safe-html 的 sanitizeHTMLToDom 替身返回 { html }：按字符串记录
-        appendChild(child: { html?: string }) {
-            state.entries.push(child?.html ?? '');
+        // 三种 children 形态都要记成字符串：createEmptyState 的 FakeEl（文本在标题子节点）、
+        // safe-html 的 sanitizeHTMLToDom 替身（{ html }）
+        appendChild(child: { html?: string; textContent?: string; children?: Array<{ textContent?: string }> }) {
+            const text = child?.textContent
+                || (child?.children ?? []).map(c => c.textContent ?? '').join('')
+                || child?.html
+                || '';
+            state.entries.push(text);
             return child;
         },
         set innerHTML(value: string) {
@@ -101,6 +107,13 @@ function makeCtx() {
 }
 
 describe('MonitorPanelA.refreshWithBody — 并发分析只保留最新结果', () => {
+    beforeEach(() => {
+        stubDocument();
+    });
+    afterEach(() => {
+        delete (globalThis as unknown as Record<string, unknown>).document;
+    });
+
     it('MA-1: 旧请求晚返回时不覆盖新结果，且不再继续跑节奏分析', async () => {
         const { ctx, emotionCalls, rhythmCalls, emotion } = makeCtx();
 

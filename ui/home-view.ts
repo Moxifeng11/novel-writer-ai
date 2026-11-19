@@ -19,6 +19,7 @@ import { modeFromLibraryPath, projectDisplayName } from '@/domains/kernel/projec
 import { CommandIds } from '@/shared/command-ids';
 import { hasUsableAiCredentials } from '@/shared/ai-credentials';
 import { t } from '@/i18n';
+import { createEmptyState } from './components/empty-state';
 
 /** 主页视图类型。 */
 export const VIEW_TYPE_HOME = 'novel-writer-home';
@@ -214,10 +215,11 @@ export class HomeView extends ItemView {
     private renderRecent(host: HTMLElement, projects: string[]): void {
         host.createEl('h3', { text: t('home.recent'), cls: 'nw-home-section-title' });
         if (projects.length === 0) {
-            const empty = host.createDiv({ cls: 'nw-empty-state' });
-            empty.createDiv({ cls: 'nw-empty-state-icon', text: '📂' });
-            empty.createDiv({ cls: 'nw-empty-state-title', text: t('home.emptyTitle') });
-            empty.createDiv({ cls: 'nw-empty-state-description', text: t('home.emptyDesc') });
+            host.appendChild(createEmptyState({
+                icon: 'folder',
+                title: t('home.emptyTitle'),
+                description: t('home.emptyDesc'),
+            }));
             return;
         }
         const list = host.createDiv({ cls: 'nw-home-recent' });

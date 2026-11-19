@@ -1,3 +1,6 @@
+import { t } from '@/i18n';
+import { chartEmptyStateHtml } from './components/empty-state';
+
 /**
  * 雷达图数据项。
  */
@@ -435,7 +438,7 @@ export function radarChart(data: RadarDataItem[], options: RadarOptions = {}): s
 	const n = data.length;
 
 	if (n < 3) {
-		return `<div class="nw-chart-container" style="width:100%;color:var(--text-muted);">雷达图至少需要3个数据维度</div>`;
+		return `${chartEmptyStateHtml(t('emptyState.radarMin'))}`;
 	}
 
 	const angleStep = (Math.PI * 2) / n;
@@ -539,7 +542,7 @@ export function barChart(data: BarDataItem[], options: BarOptions = {}): string 
 	const horizontal = options.horizontal || false;
 
 	if (data.length === 0) {
-		return `<div class="nw-chart-container" style="width:100%;color:var(--text-muted);">暂无数据</div>`;
+		return `${chartEmptyStateHtml(t('emptyState.chartEmpty'))}`;
 	}
 
 	const maxValue = Math.max(...data.map(d => d.value), 1);
@@ -655,13 +658,13 @@ export function donutChart(data: DonutDataItem[], options: DonutOptions = {}): s
 	const innerRadius = outerRadius * 0.6;
 
 	if (data.length === 0) {
-		return `<div class="nw-chart-container" style="width:100%;color:var(--text-muted);">暂无数据</div>`;
+		return `${chartEmptyStateHtml(t('emptyState.chartEmpty'))}`;
 	}
 
 	const total = data.reduce((sum, d) => sum + d.value, 0);
 
 	if (total === 0) {
-		return `<div class="nw-chart-container" style="width:100%;color:var(--text-muted);">数据总和为0</div>`;
+		return `${chartEmptyStateHtml(t('emptyState.sumZero'))}`;
 	}
 
 	const colors = data.map((d, i) => safeColor(d.color, DEFAULT_COLORS[i % DEFAULT_COLORS.length]));
@@ -823,7 +826,7 @@ export function wordCloud(words: WordCloudItem[], options: WordCloudOptions = {}
 	const title = options.title;
 
 	if (words.length === 0) {
-		return `<div class="nw-chart-container" style="width:100%;color:var(--text-muted);">暂无数据</div>`;
+		return `${chartEmptyStateHtml(t('emptyState.chartEmpty'))}`;
 	}
 
 	const titleHtml = title
@@ -997,7 +1000,7 @@ export function lineChart(series: LineChartSeries[], options: LineChartOptions =
 	const showLegend = options.showLegend !== false;
 
 	if (series.length === 0 || series.every(s => s.data.length === 0)) {
-		return `<div class="nw-chart-container" style="width:100%;color:var(--text-muted);">暂无数据</div>`;
+		return `${chartEmptyStateHtml(t('emptyState.chartEmpty'))}`;
 	}
 
 	const padding = { top: 40, right: 20, bottom: 50, left: 50 };
@@ -1165,7 +1168,7 @@ export function scatterChart(points: ScatterDataPoint[], options: ScatterChartOp
 	const showLegend = options.showLegend !== false;
 
 	if (points.length === 0) {
-		return `<div class="nw-chart-container" style="width:100%;color:var(--text-muted);">暂无数据</div>`;
+		return `${chartEmptyStateHtml(t('emptyState.chartEmpty'))}`;
 	}
 
 	const padding = { top: 40, right: 20, bottom: 50, left: 50 };
@@ -1370,7 +1373,7 @@ export function timelineChart(events: TimelineEvent[], options: TimelineChartOpt
 	const _orientation = options.orientation || 'horizontal';
 
 	if (events.length === 0) {
-		return `<div class="nw-chart-container" style="width:100%;color:var(--text-muted);">暂无事件</div>`;
+		return `${chartEmptyStateHtml(t('emptyState.noEvents'))}`;
 	}
 
 	const padding = { top: 30, right: 20, bottom: 30, left: 20 };
@@ -1549,7 +1552,7 @@ export function heatmap(data: HeatmapCell[], options: HeatmapOptions = {}): stri
 	const height = options.height || 320;
 
 	if (data.length === 0) {
-		return `<div class="nw-chart-container" style="width:100%;color:var(--text-muted);">暂无数据</div>`;
+		return `${chartEmptyStateHtml(t('emptyState.chartEmpty'))}`;
 	}
 
 	const rows = [...new Set(data.map(d => d.row))];
@@ -1673,7 +1676,7 @@ export function treeChart(root: TreeNode, options: TreeOptions = {}): string {
 	const height = options.height || 320;
 
 	if (!root) {
-		return `<div class="nw-chart-container" style="width:100%;color:var(--text-muted);">暂无数据</div>`;
+		return `${chartEmptyStateHtml(t('emptyState.chartEmpty'))}`;
 	}
 
 	const padding = { top: 40, right: 40, bottom: 40, left: 40 };
@@ -1813,7 +1816,7 @@ export function areaChart(series: AreaSeries[], options: AreaOptions = {}): stri
 	const showGrid = options.showGrid !== false;
 
 	if (series.length === 0 || series.every(s => s.points.length === 0)) {
-		return `<div class="nw-chart-container" style="width:100%;color:var(--text-muted);">暂无数据</div>`;
+		return `${chartEmptyStateHtml(t('emptyState.chartEmpty'))}`;
 	}
 
 	const padding = { top: 40, right: 20, bottom: 50, left: 50 };
@@ -1996,7 +1999,7 @@ export function densityHeatmap(points: DensityPoint[], options: DensityHeatmapOp
 	const colorScale = options.colorScale || ['#dbeafe', '#93c5fd', '#60a5fa', '#3b82f6', '#1d4ed8'];
 
 	if (points.length === 0) {
-		return `<div class="nw-chart-container" style="width:100%;color:var(--text-muted);">暂无数据</div>`;
+		return `${chartEmptyStateHtml(t('emptyState.chartEmpty'))}`;
 	}
 
 	const padding = { top: 35, right: 30, bottom: 45, left: 50 };
@@ -2152,7 +2155,7 @@ export function horizontalBarChart(data: HorizontalBarItem[], options: Horizonta
 	const title = options.title;
 
 	if (data.length === 0) {
-		return `<div class="nw-chart-container" style="width:100%;color:var(--text-muted);">暂无数据</div>`;
+		return `${chartEmptyStateHtml(t('emptyState.chartEmpty'))}`;
 	}
 
 	const sortedData = options.sorted !== false
@@ -2238,7 +2241,7 @@ export function violinChart(data: ViolinDataItem[], options: ViolinChartOptions 
 	const showBox = options.showBox !== false;
 
 	if (data.length === 0 || data.every(d => d.values.length === 0)) {
-		return `<div class="nw-chart-container" style="width:100%;color:var(--text-muted);">暂无数据</div>`;
+		return `${chartEmptyStateHtml(t('emptyState.chartEmpty'))}`;
 	}
 
 	const maxLabelLen = Math.max(...data.map(d => d.label.length));
