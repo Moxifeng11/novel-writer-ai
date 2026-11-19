@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146888 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19560 | 296 | 204 | 69% |
-| `shared/` | 259 | 52202 | 2198 | 1718 | 78% |
+| `shared/` | 259 | 52330 | 2209 | 1729 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1583 | 88 | 58 | 66% |
-| `ui/` | 304 | 113944 | 1181 | 935 | 79% |
+| `ui/` | 304 | 113969 | 1181 | 935 | 79% |
 
 ## 文件清单
 
@@ -667,7 +667,7 @@
 | `shared/store/middleware/thunk.ts` | 30 | 1 | 1 |
 | `shared/store/shallow.ts` | 51 | 1 | 1 |
 | `shared/store/types.ts` | 208 | 20 | 20 |
-| `shared/story-structure.ts` | 705 | 23 | 23 |
+| `shared/story-structure.ts` | 833 | 34 | 34 |
 | `shared/support-author.ts` | 44 | 3 | 1 |
 | `shared/support-qr.generated.ts` | 11 | 1 | 0 |
 | `shared/synopsis-spec.ts` | 275 | 15 | 15 |
@@ -964,8 +964,8 @@
 | `ui/states/chapter-state-manager.ts` | 402 | 1 | 1 |
 | `ui/step-result-viewer-modal.ts` | 442 | 1 | 1 |
 | `ui/story-linkage-modal.ts` | 390 | 1 | 1 |
-| `ui/story-settings-form.ts` | 251 | 2 | 2 |
-| `ui/story-settings-modal.ts` | 115 | 1 | 1 |
+| `ui/story-settings-form.ts` | 274 | 2 | 2 |
+| `ui/story-settings-modal.ts` | 117 | 1 | 1 |
 | `ui/style-distiller-modal.ts` | 486 | 1 | 1 |
 | `ui/support-author-modal.ts` | 43 | 1 | 0 |
 | `ui/svg-charts.ts` | 2356 | 49 | 49 |

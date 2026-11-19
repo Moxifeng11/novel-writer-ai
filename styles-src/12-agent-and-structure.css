@@ -365,10 +365,6 @@
     letter-spacing: 0.01em;
 }
 
-.nw-story-structure-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
 .nw-story-structure-card {
     flex-direction: column;
     gap: 5px;
@@ -395,6 +391,20 @@
     font-size: 9.5px;
     line-height: 1.45;
     color: var(--text-faint);
+}
+
+/* 卡片是 <button>：Obsidian 全局 button 规则带 white-space: nowrap 与固定 height，
+   于是「五幕式」这类多阶段摘要既横向冲出卡片（弹窗出现横向滚动条），
+   又在卡片底边之外继续绘制。这里恢复自然换行与自动高度。 */
+.nw-story-structure-card {
+    height: auto;
+}
+
+.nw-story-structure-card .nw-story-structure-name,
+.nw-story-structure-card .nw-story-structure-stages {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .nw-story-active-detail {

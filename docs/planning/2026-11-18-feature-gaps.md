@@ -276,6 +276,10 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
   zh/en 资源各 **4549** 条；棘轮收紧到 **215 文件 / 6932 条**；新增 `tests/unit/ui/create-project-i18n.test.ts` 4 例
   （源码静态扫描替代 DOM），`fanfic-gate-audit` 改为断言键名；实机 zh/en 三场景 640×1288，en 剩余 CJK
   全是题材标签与 `shared/story-structure.ts` 结构数据。
+- 第二期第36片（2026-11-19，DSH）：故事结构表单与弹窗 —— `ui/story-settings-form.ts`（250 → 274 行）+ `ui/story-settings-modal.ts`（115 → 117 行）+ `shared/story-structure.ts`（704 → 833 行）迁 `story.*` **207 键**（5 结构 name/desc、19 阶段 name/purpose/beats、9 组 label/hint、58 选项 label/desc、10 条校验提示、form 15、modal 6）；
+  **数据与显示分离**：`structure.name`、`option.label`、`FIELD_LABELS`、`getStoryOptionLabel()` 仍中文写入 `.project` 与提示词，界面走 11 个显示函数（`storyStructureLabel` / `storyStageBeats` / `storyOptionGroupHint` 等），`hasMessage()` 判空返回 `''`；
+  顺带修两处既有视觉缺陷（删 `12-agent-and-structure.css:368` 的 5 列覆盖、`<button>` 卡片补 `height:auto` 与 `white-space:normal`），640px 弹窗里 `.nw-story-settings` sw 803 → 545、卡片 5×95px → 3×167px；
+  zh/en 资源各 **4756** 条；棘轮收紧到 **215 文件 / 6912 条**；新增 `tests/unit/ui/story-settings-i18n.test.ts` 8 例；实机 zh/en 各 2 场景（面板 546×1197 / 546×1659），en 面板内 CJK=0。
 - 后续：第二期余下（知识库 D 类两文件 `ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`
   用户已裁定随视觉重构；散落弹窗 golden-opening 1982 / novel-tags 1099 / add-fanfic-setting 973 /
   ai-builder 864 等），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
@@ -286,6 +290,6 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
 
 1 → 2 → 3 → 4 → 5 →（6 可选）→ 7。
 
-进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~35 片（命令面板 → 新建长篇小说项目弹窗）已交付（2026-11-18/19）；下一个候选是 ⑦ 第二期余下（散落弹窗 golden-opening / novel-tags / add-fanfic-setting / ai-builder 等，知识库 D 类两文件随视觉重构）。
+进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~36 片（命令面板 → 故事结构表单与弹窗）已交付（2026-11-18/19）；下一个候选是 ⑦ 第二期余下（写作主流程残留 wizard-step-renderers 36 / status-bar 12 / template-vars 228（多为提示词）/ creation-mode 138，散落弹窗 golden-opening / novel-tags / add-fanfic-setting / ai-builder 等，知识库 D 类两文件随视觉重构）。
 
 理由：1 是修「假成功」缺陷；2 是把已交付引擎变成写作时可见的价值；3 是投稿刚需且不依赖 AI；4/5 是低成本体验补洞；6/7 视需要。

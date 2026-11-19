@@ -3074,3 +3074,46 @@ preflight **EXIT=0**（986 文件 / **10,310 通过 + 3 跳过**），日志 `D:
 （本片 en 截图里唯一还在中文的 UI 区域，且可顺手修上面的卡片溢出）；之后散落弹窗 golden-opening（1,982）/
 novel-tags（1,099）/ add-fanfic-setting（973）/ ai-builder（864）；知识库 D 类两文件按用户裁定（m16938）随视觉重构。
 
+
+## 第一百零四轮：i18n 第二期第36片 —— 故事结构表单与弹窗（2026-11-19，DSH）
+
+**范围**：`ui/story-settings-form.ts`（250 行 / 26 行 CJK）、`ui/story-settings-modal.ts`（115 行）、
+`shared/story-structure.ts`（704 行，5 套结构 / 19 阶段 / 9 组 58 个选项 / 10 条校验提示）；
+顺带修第35片截图中暴露的既有视觉缺陷（结构卡片横向溢出）。
+
+**改动**
+1. 资源 `story.*` **207 键**（section 2 / structure 5×name+desc / 阶段 19×(name,purpose,beats) /
+   group 9×(label,hint) / option 58×(label,desc) / warn 10 / form 15 / modal 6），zh/en 各 **4756** 条。
+2. **数据与显示分离**：`structure.name`、`option.label`、`FIELD_LABELS`、`getStoryOptionLabel()` 继续以中文
+   参与 `.project` 持久化（`- 结构: 起承转合`）与提示词拼装，界面只调新增的 11 个显示函数
+   （`storyStructureLabel` / `storyStructureDescription` / `storyStageLabel` / `storyStagePurpose` /
+   `storyStageBeats` / `storyStructureStageSummary` / `storyOptionGroupLabel` / `storyOptionGroupHint` /
+   `storySectionLabel` / `storyOptionLabel` / `storyOptionDescription`）；`getStructureStageSummary` 不动
+   （`story-structure.test.ts:31` 断言含「第一幕」）。
+3. 10 条组合校验提示改 `t('story.warn.*')`；`validateStorySettings` 的中文 id 比较（'科技'/'血脉'/'系统' 等）保留。
+4. CSS：删 `styles-src/12-agent-and-structure.css:368` 的 `repeat(5, minmax(0, 1fr))` 覆盖块（回到 :63
+   `repeat(auto-fit, minmax(150px, 1fr))`）；`.nw-story-structure-card { height: auto; }`；
+   `-name, -stages { min-width: 0; white-space: normal; overflow-wrap: anywhere; }`。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；新增 `tests/unit/ui/story-settings-i18n.test.ts` 8 例；相关 6 文件 42 例通过。
+- `check:i18n` zh/en 各 4756、0 无法解析键、动态键 27、棘轮 **215 文件 / 6912 条**。
+- `check:bundle` main.js **6,127,653**（+19,877）、styles.css **799,735**（+432），两基线均 --update-baseline 并写 note。
+- 实机（1440×1500，`D:\nw-tmp\snap-i18n36.mjs <lang>`）：zh 面板 546×1197、en 546×1659，网格 3×167px，
+  卡片 125/97px，`.nw-story-settings` 无横向溢出；en 面板内 CJK=0；截图
+  `D:\nw-dev-vault\_visual-i18n36\{story-panel,story-grid}-{zh-CN,en-US}.png`。
+
+**坑**
+1. **数据键别跟着 `t()` 走**：数据层与显示层必须分开，否则英文环境建的项目切回中文解析不出结构。
+2. **Obsidian 全局 button 规则**：卡片是 `<button>`，全局 `height` + `white-space: nowrap`，只删列模板不够。
+3. **独立 StorySettingsModal 打不开**：探针里 plugin 没有 `port`/`agentPort`，`storyModalOpen: "no-port"`，
+   该弹窗只有源码级断言，无截图，门禁里不要写它的尺寸。
+4. 截图脚本要 `delete data.json.theme`（暗色残留会让标题发灰，第32/34片同坑）。
+
+**文档**：`docs/modules/i18n.md`（§2 规模 4756 / 组清单 `story` 207 / 第36片 bullet / 未迁移面 6912 / §5 表行 /
+§6 测试 / §7 backlog / §9 三条经验）、`docs/modules/INDEX.md`、`docs/CURRENT.md`、
+`docs/planning/2026-11-18-feature-gaps.md`、本轮记录；基线 `.bundle-baseline.json` / `.css-baseline.json` / `.i18n-baseline.json`。
+
+**下一轮候选**：`ui/full-writer/wizard-step-renderers.ts`（36 非注释行）、`status-bar-controller.ts`（12）、
+`shared/creation-mode.ts`（138）、`ui/full-writer/template-vars-builder.ts`（228 多为提示词）；
+散落弹窗 golden-opening（1,982）/ novel-tags（1,099）/ add-fanfic-setting（973）/ ai-builder（864）。

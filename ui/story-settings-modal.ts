@@ -10,11 +10,13 @@ import { readProjectMeta } from '@/shared/paths';
 import {
     buildStoryStructureGuide,
     parseStorySettingsFromProjectMeta,
+    storyStructureLabel,
     upsertStorySettingsInProjectMeta,
     type LongStorySettings,
 } from '@/shared/story-structure';
 import { buildCreationModeGuide, parseCreationModeMeta } from '@/shared/creation-mode';
 import { StorySettingsEditor } from './story-settings-form';
+import { t } from '@/i18n';
 import { createLogger } from '@/shared/logger';
 import { writeVaultText } from '@/shared/file-system-port';
 
@@ -45,9 +47,9 @@ export class StorySettingsModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
         contentEl.addClass('nw-story-settings-modal-content');
-        contentEl.createEl('h2', { text: '🧬 故事结构设置', cls: 'nw-modal-title' });
+        contentEl.createEl('h2', { text: t('story.modal.title'), cls: 'nw-modal-title' });
         contentEl.createEl('p', {
-            text: `项目：${this.project}。保存后会写入 .project 与系统模板，后续写作提示词立即使用该结构。`,
+            text: t('story.modal.desc', { project: this.project }),
             cls: 'nw-text-12-muted',
         });
 
@@ -56,13 +58,13 @@ export class StorySettingsModal extends Modal {
 
         const footer = contentEl.createDiv({ cls: 'nw-modal-footer' });
         const cancel = footer.createEl('button', {
-            text: '取消',
+            text: t('story.modal.cancel'),
             cls: 'nw-btn nw-btn-secondary',
             attr: { type: 'button' },
         });
         cancel.onclick = () => this.close();
         const save = footer.createEl('button', {
-            text: '保存并应用',
+            text: t('story.modal.save'),
             cls: 'nw-btn nw-btn-primary',
             attr: { type: 'button' },
         });
@@ -103,12 +105,12 @@ export class StorySettingsModal extends Modal {
             const modeMeta = parseCreationModeMeta(nextMeta);
             await writeVaultText(this.app, `${guideDir}/创作模式指南.md`, buildCreationModeGuide(modeMeta));
 
-            new Notice(`✅ 故事结构已保存：${settings.structureId}`, 4000);
+            new Notice(t('story.modal.saved', { name: storyStructureLabel(settings.structureId) }), 4000);
             this.onSaved?.(settings);
             this.close();
         } catch (e) {
             log.error('[StorySettingsModal] 保存故事结构失败:', e);
-            new Notice(`保存故事结构失败：${e instanceof Error ? e.message : String(e)}`, 8000);
+            new Notice(t('story.modal.saveFailed', { error: e instanceof Error ? e.message : String(e) }), 8000);
         }
     }
 }

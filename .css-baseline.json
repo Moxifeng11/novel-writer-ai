@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-19T03:50:12.783Z",
-  "note": "棘轮基线：指标只能下降；新增 UI 类后显式更新并说明原因\n第31片（2026-11-19）：kb-format 迁移未改样式，全指标不变（bytes 799303 / uniqueClasses 4331 / hardcodedHex 192 / rgbHsl 223 / important 24 / otherClasses 92 / maxSelectorDepth 4）",
-  "bytes": 799303,
+  "generatedAt": "2026-11-19T09:53:12.333Z",
+  "note": "Slice36 i18n 第36片：故事结构文案外置（story.* 207 键 ×2 语言 ≈ +19.9KB main.js）；styles.css +432B 新增结构卡片 height/white-space 修复规则",
+  "bytes": 799735,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 223,

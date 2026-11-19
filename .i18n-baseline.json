@@ -181,8 +181,8 @@
     "ui/states/chapter-state-manager.ts": 24,
     "ui/step-result-viewer-modal.ts": 24,
     "ui/story-linkage-modal.ts": 48,
-    "ui/story-settings-form.ts": 15,
-    "ui/story-settings-modal.ts": 12,
+    "ui/story-settings-form.ts": 2,
+    "ui/story-settings-modal.ts": 5,
     "ui/style-distiller-modal.ts": 87,
     "ui/support-author-modal.ts": 1,
     "ui/svg-charts.ts": 21,
@@ -216,7 +216,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 6932,
+  "total": 6912,
   "updatedAt": "2026-11-19",
   "note": ""
 }

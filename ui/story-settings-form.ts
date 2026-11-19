@@ -9,11 +9,22 @@ import {
     createDefaultStorySettings,
     generateRandomStorySettings,
     getStoryStructure,
-    getStructureStageSummary,
+    storyOptionDescription,
+    storyOptionGroupHint,
+    storyOptionGroupLabel,
+    storyOptionLabel,
+    storySectionLabel,
+    storyStageBeats,
+    storyStageLabel,
+    storyStagePurpose,
+    storyStructureDescription,
+    storyStructureLabel,
+    storyStructureStageSummary,
     validateStorySettings,
     type LongStorySettings,
     type StoryOptionCategory,
 } from '@/shared/story-structure';
+import { t } from '@/i18n';
 
 /**
  * StorySettingsEditorOptions 类型定义。
@@ -96,9 +107,9 @@ export class StorySettingsEditor {
 
         const head = root.createDiv({ cls: 'nw-story-settings-head' });
         const titleWrap = head.createDiv();
-        titleWrap.createEl('div', { text: '故事结构', cls: 'nw-story-settings-title' });
+        titleWrap.createEl('div', { text: t('story.form.title'), cls: 'nw-story-settings-title' });
         titleWrap.createEl('div', {
-            text: '先选结构，再配置人物、冲突与力量体系；所有选项都会写入项目提示词。',
+            text: t('story.form.desc'),
             cls: 'nw-story-settings-desc',
         });
 
@@ -109,11 +120,11 @@ export class StorySettingsEditor {
         lockInput.addEventListener('change', () => {
             this.lockStructure = lockInput.checked;
         });
-        lockLabel.createSpan({ text: '锁定当前结构' });
+        lockLabel.createSpan({ text: t('story.form.lock') });
         const randomBtn = randomWrap.createEl('button', {
-            text: '🎲 智能随机',
+            text: t('story.form.random'),
             cls: 'nw-btn nw-btn-secondary nw-story-random-btn',
-            attr: { type: 'button', title: '用 CSPRNG 生成一套自洽的结构与设定组合' },
+            attr: { type: 'button', title: t('story.form.randomTitle') },
         });
         randomBtn.addEventListener('click', () => this.randomize());
 
@@ -122,13 +133,13 @@ export class StorySettingsEditor {
         for (const structure of STORY_STRUCTURES) {
             const card = structureGrid.createEl('button', {
                 cls: 'nw-story-structure-card',
-                attr: { type: 'button', title: structure.description },
+                attr: { type: 'button', title: storyStructureDescription(structure.id) },
             });
             card.dataset.structure = structure.id;
             card.createSpan({ text: structure.icon, cls: 'nw-story-structure-icon' });
             const info = card.createDiv({ cls: 'nw-story-structure-info' });
-            info.createSpan({ text: structure.name, cls: 'nw-story-structure-name' });
-            info.createSpan({ text: getStructureStageSummary(structure.id), cls: 'nw-story-structure-stages' });
+            info.createSpan({ text: storyStructureLabel(structure.id), cls: 'nw-story-structure-name' });
+            info.createSpan({ text: storyStructureStageSummary(structure.id), cls: 'nw-story-structure-stages' });
             card.addEventListener('click', () => {
                 this.settings.structureId = structure.id;
                 this.refreshStructureCards();
@@ -147,7 +158,7 @@ export class StorySettingsEditor {
         const groups = root.createDiv({ cls: 'nw-story-groups' });
         for (const section of ['核心设定', '风格与节奏'] as const) {
             const column = groups.createDiv({ cls: 'nw-story-group-column' });
-            column.createDiv({ text: section, cls: 'nw-story-section-title' });
+            column.createDiv({ text: storySectionLabel(section), cls: 'nw-story-section-title' });
             for (const group of STORY_OPTION_GROUPS.filter(item => item.section === section)) {
                 this.renderGroup(column, group);
             }
@@ -155,11 +166,11 @@ export class StorySettingsEditor {
 
         const storyGroup = root.createDiv({ cls: 'nw-story-option-group' });
         const storyHead = storyGroup.createDiv({ cls: 'nw-story-option-head' });
-        storyHead.createSpan({ text: '一句话故事', cls: 'nw-story-option-label' });
-        storyHead.createSpan({ text: '随机生成后可直接用于简介/大纲；可手动修改', cls: 'nw-story-option-hint' });
+        storyHead.createSpan({ text: t('story.form.onelineLabel'), cls: 'nw-story-option-label' });
+        storyHead.createSpan({ text: t('story.form.onelineHint'), cls: 'nw-story-option-hint' });
         const storyInput = storyGroup.createEl('textarea', {
             cls: 'nw-textarea nw-story-oneline',
-            attr: { rows: '3', placeholder: '例如：一个被逐出师门的落魄弟子，靠听见亡者低语追查师门灭门真相。' },
+            attr: { rows: '3', placeholder: t('story.form.onelinePlaceholder') },
         });
         storyInput.value = this.settings.oneLineStory;
         storyInput.addEventListener('input', () => {
@@ -176,14 +187,15 @@ export class StorySettingsEditor {
     private renderGroup(container: HTMLElement, group: (typeof STORY_OPTION_GROUPS)[number]): void {
         const groupEl = container.createDiv({ cls: 'nw-story-option-group' });
         const groupHead = groupEl.createDiv({ cls: 'nw-story-option-head' });
-        groupHead.createSpan({ text: group.label, cls: 'nw-story-option-label' });
-        groupHead.createSpan({ text: group.hint, cls: 'nw-story-option-hint' });
+        groupHead.createSpan({ text: storyOptionGroupLabel(group.key), cls: 'nw-story-option-label' });
+        groupHead.createSpan({ text: storyOptionGroupHint(group.key), cls: 'nw-story-option-hint' });
         const chips = groupEl.createDiv({ cls: 'nw-story-option-chips' });
         for (const option of group.options) {
+            const label = storyOptionLabel(group.key, option.id);
             const chip = chips.createEl('button', {
-                text: option.label,
+                text: label,
                 cls: 'nw-story-option-chip',
-                attr: { type: 'button', title: option.description || option.label },
+                attr: { type: 'button', title: storyOptionDescription(group.key, option.id) || label },
             });
             chip.dataset.value = option.id;
             chip.addEventListener('click', () => {
@@ -200,18 +212,23 @@ export class StorySettingsEditor {
         if (!this.detailEl) return;
         const structure = getStoryStructure(this.settings.structureId);
         this.detailEl.empty();
-        this.detailEl.createDiv({ text: `${structure.icon} ${structure.name}`, cls: 'nw-story-detail-name' });
-        this.detailEl.createDiv({ text: structure.description, cls: 'nw-story-detail-desc' });
+        this.detailEl.createDiv({ text: `${structure.icon} ${storyStructureLabel(structure.id)}`, cls: 'nw-story-detail-name' });
+        this.detailEl.createDiv({ text: storyStructureDescription(structure.id), cls: 'nw-story-detail-desc' });
         const stages = this.detailEl.createDiv({ cls: 'nw-story-stage-track' });
-        for (const stage of structure.stages) {
+        structure.stages.forEach((stage, index) => {
             const item = stages.createDiv({
                 cls: 'nw-story-stage',
-                attr: { title: `${stage.purpose}；关键节点：${stage.beats.join('、')}` },
+                attr: {
+                    title: t('story.form.stageTitle', {
+                        purpose: storyStagePurpose(structure.id, index),
+                        beats: storyStageBeats(structure.id, index),
+                    }),
+                },
             });
-            item.createSpan({ text: stage.name, cls: 'nw-story-stage-name' });
+            item.createSpan({ text: storyStageLabel(structure.id, index), cls: 'nw-story-stage-name' });
             item.createSpan({ text: `${stage.ratio}%`, cls: 'nw-story-stage-ratio' });
             item.style.setProperty('--nw-stage-ratio', String(stage.ratio));
-        }
+        });
     }
 
     private refreshStructureCards(): void {
@@ -233,14 +250,20 @@ export class StorySettingsEditor {
         const issues = validateStorySettings(this.settings);
         this.warningEl.toggleClass('nw-story-warning-error', issues.length > 0);
         this.warningEl.toggleClass('nw-story-warning-ok', issues.length === 0);
+        const structureId = this.settings.structureId;
         this.warningEl.setText(issues.length > 0
-            ? `⚠️ 当前组合需要调整：${issues.join('；')}`
-            : `✓ 当前组合自洽：${getStoryStructure(this.settings.structureId).name} · ${getStructureStageSummary(this.settings.structureId)}`);
+            ? t('story.form.warnIssues', { issues: issues.join(t('story.form.issueSep')) })
+            : t('story.form.warnOk', {
+                name: storyStructureLabel(structureId),
+                summary: storyStructureStageSummary(structureId),
+            }));
     }
 
     private refreshSeed(): void {
         if (!this.seedEl) return;
-        this.seedEl.setText(this.settings.randomSeed ? `随机种子：${this.settings.randomSeed}` : '随机种子：尚未使用随机组合');
+        this.seedEl.setText(this.settings.randomSeed
+            ? t('story.form.seedUsed', { seed: this.settings.randomSeed })
+            : t('story.form.seedUnused'));
     }
 
     private emitChange(): void {

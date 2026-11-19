@@ -5,6 +5,7 @@
  * 结构定义是确定性的；随机只负责在兼容组合中抽样，避免生成自相矛盾的设定。
  */
 import { trueRandom, type RandomSource } from './true-random';
+import { hasMessage, t } from '@/i18n';
 
 /**
  * 故事结构 id。
@@ -131,6 +132,133 @@ export function getStoryStructure(id: StoryStructureId | string | undefined): St
  */
 export function getStructureStageSummary(id: StoryStructureId | string | undefined): string {
     return getStoryStructure(id).stages.map(stage => `${stage.name} ${stage.ratio}%`).join(' · ');
+}
+
+/**
+ * 结构显示名（界面用；持久化仍写 `structure.name`，保证跨语言可解析）。
+ *
+ * @param id - 结构 id
+ * @returns 当前语言的显示名
+ */
+export function storyStructureLabel(id: StoryStructureId | string | undefined): string {
+    return t(`story.structure.${getStoryStructure(id).id}.name`);
+}
+
+/**
+ * 结构简介（界面用）。
+ *
+ * @param id - 结构 id
+ * @returns 当前语言的简介
+ */
+export function storyStructureDescription(id: StoryStructureId | string | undefined): string {
+    return t(`story.structure.${getStoryStructure(id).id}.desc`);
+}
+
+/**
+ * 结构第 n 个阶段的显示名。
+ *
+ * @param id - 结构 id
+ * @param index - 阶段下标（0 基）
+ * @returns 当前语言的阶段名
+ */
+export function storyStageLabel(id: StoryStructureId | string | undefined, index: number): string {
+    return t(`story.structure.${getStoryStructure(id).id}.stage.${index}.name`);
+}
+
+/**
+ * 结构第 n 个阶段的阶段目标。
+ *
+ * @param id - 结构 id
+ * @param index - 阶段下标（0 基）
+ * @returns 当前语言的目标描述
+ */
+export function storyStagePurpose(id: StoryStructureId | string | undefined, index: number): string {
+    return t(`story.structure.${getStoryStructure(id).id}.stage.${index}.purpose`);
+}
+
+/**
+ * 结构第 n 个阶段的关键节点（已按当前语言连接）。
+ *
+ * @param id - 结构 id
+ * @param index - 阶段下标（0 基）
+ * @returns 当前语言的关键节点串
+ */
+export function storyStageBeats(id: StoryStructureId | string | undefined, index: number): string {
+    return t(`story.structure.${getStoryStructure(id).id}.stage.${index}.beats`);
+}
+
+/**
+ * 结构阶段摘要（界面用，名称与比例本地化）。
+ *
+ * @param id - 结构 id
+ * @returns 例如「Setup 25% · Development 35%」
+ */
+export function storyStructureStageSummary(id: StoryStructureId | string | undefined): string {
+    const structure = getStoryStructure(id);
+    return structure.stages
+        .map((stage, index) => `${storyStageLabel(structure.id, index)} ${stage.ratio}%`)
+        .join(' · ');
+}
+
+/**
+ * 选项组的显示名。
+ *
+ * @param key - 选项分类
+ * @returns 当前语言的组名
+ */
+export function storyOptionGroupLabel(key: StoryOptionCategory): string {
+    return t(`story.group.${key}.label`);
+}
+
+/**
+ * 选项组的提示语。
+ *
+ * @param key - 选项分类
+ * @returns 当前语言的提示
+ */
+export function storyOptionGroupHint(key: StoryOptionCategory): string {
+    return t(`story.group.${key}.hint`);
+}
+
+/**
+ * 配置分区标题（核心设定 / 风格与节奏）。
+ *
+ * @param section - 分区原始键（数据值，保持中文）
+ * @returns 当前语言的分区标题
+ */
+export function storySectionLabel(section: string): string {
+    return section === '核心设定' ? t('story.section.core') : t('story.section.style');
+}
+
+function storyOptionIndex(key: StoryOptionCategory, value: string): number {
+    return getStoryOptionGroup(key).options.findIndex(option => option.id === value || option.label === value);
+}
+
+/**
+ * 选项的显示标签（界面用；持久化仍写 `option.label`）。
+ *
+ * @param key - 选项分类
+ * @param value - 选项 id 或中文标签
+ * @returns 当前语言的标签
+ */
+export function storyOptionLabel(key: StoryOptionCategory, value: string): string {
+    const index = storyOptionIndex(key, value);
+    if (index < 0) return value || t('story.form.unselected');
+    return t(`story.option.${key}.${index}.label`);
+}
+
+/**
+ * 选项的说明文本（没有说明时返回空串）。
+ *
+ * @param key - 选项分类
+ * @param value - 选项 id 或中文标签
+ * @returns 当前语言的说明
+ */
+export function storyOptionDescription(key: StoryOptionCategory, value: string): string {
+    const index = storyOptionIndex(key, value);
+    if (index < 0) return '';
+    const resourceKey = `story.option.${key}.${index}.desc`;
+    return hasMessage(resourceKey) ? t(resourceKey) : '';
 }
 
 /**
@@ -386,7 +514,7 @@ export function validateStorySettings(settings: Partial<LongStorySettings>): str
     const issues: string[] = [];
     const structure = getStoryStructure(settings.structureId);
     if (!STORY_STRUCTURES.some(item => item.id === settings.structureId)) {
-        issues.push('未选择有效的故事结构');
+        issues.push(t('story.warn.noStructure'));
     }
 
     const power = settings.powerSystem || '';
@@ -398,31 +526,31 @@ export function validateStorySettings(settings: Partial<LongStorySettings>): str
     const conflict = settings.coreConflict || '';
 
     if (power === '科技' && finger === '血脉') {
-        issues.push('科技体系与血脉觉醒冲突：请改为科技装置/基因改造，或切换力量体系');
+        issues.push(t('story.warn.techBlood'));
     }
     if (power === '现实' && ['血脉', '系统', '时间回溯', '神秘器物'].includes(finger)) {
-        issues.push('现实体系不应出现超自然金手指：请改为“无金手指”或切换力量体系');
+        issues.push(t('story.warn.realityFinger'));
     }
     if (archetype === '系统流' && finger !== '系统') {
-        issues.push('“系统流”要求金手指为“系统”，或把人物原型改为其他类型');
+        issues.push(t('story.warn.systemArchetype'));
     }
     if (archetype === '天才流' && !['天才', '继承者'].includes(start)) {
-        issues.push('“天才流”与当前起点不匹配：请把主角起点改为天才/继承者，或切换人物原型');
+        issues.push(t('story.warn.geniusStart'));
     }
     if (archetype === '废柴逆袭' && !['落魄者', '普通人', '被放逐者'].includes(start)) {
-        issues.push('“废柴逆袭”需要低谷起点：请改为落魄者/普通人/被放逐者，或切换人物原型');
+        issues.push(t('story.warn.loserStart'));
     }
     if (['黑暗史诗', '悲壮苍凉'].includes(tone) && temperament === '幽默洒脱') {
-        issues.push('悲壮/黑暗基调与幽默洒脱的性格容易互相削弱：建议改为冷静克制/偏执疯批');
+        issues.push(t('story.warn.grimHumor'));
     }
     if (tone === '轻松诙谐' && ['复仇', '争霸', '生存'].includes(conflict)) {
-        issues.push('轻松诙谐基调与复仇/争霸/生存主线冲突：建议改为悬疑冷峻/热血爽文');
+        issues.push(t('story.warn.lightVengeance'));
     }
     if (archetype === '日常流' && ['复仇', '争霸', '生存'].includes(conflict)) {
-        issues.push('日常流不适合复仇/争霸/生存主线：建议改为守护/求真/归乡');
+        issues.push(t('story.warn.dailyVengeance'));
     }
     if (structure.id === 'three_act' && settings.pacing === '慢热铺陈') {
-        issues.push('三幕式要求激励事件尽早出现，慢热铺陈会挤压第一幕；建议改为中速推进');
+        issues.push(t('story.warn.threeActPacing'));
     }
     return issues;
 }

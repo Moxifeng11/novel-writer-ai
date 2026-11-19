@@ -3407,6 +3407,439 @@ export const enUS: MessageTree = {
         windowsReserved: "“{name}” is a reserved Windows name and cannot be used as a project name",
         duplicate: "Project “{name}” already exists, please choose another name",
     },
+    story: {
+        section: {
+            core: "Core setup",
+            style: "Style and pacing",
+        },
+        structure: {
+            qichengzhuanhe: {
+                name: "Four-part arc",
+                desc: "The most common four-part arc: setup, development, turn and resolution — good for steady serialization.",
+                stage: {
+                    '0': {
+                        name: "Setup",
+                        purpose: "Establish the hero, the situation and the core mystery",
+                        beats: "daily life and its gap, the first anomaly, the question that keeps readers going",
+                    },
+                    '1': {
+                        name: "Development",
+                        purpose: "Widen the conflict, stack information and cost",
+                        beats: "the opponent or rules take shape, escalation, one partial payoff",
+                    },
+                    '2': {
+                        name: "Turn",
+                        purpose: "Change the goal or understanding for the biggest reversal",
+                        beats: "the old goal fails, truth or allegiance flips, an irreversible choice",
+                    },
+                    '3': {
+                        name: "Resolution",
+                        purpose: "Deliver the payoff and leave an aftertaste",
+                        beats: "the core conflict closes, the cost lands, a new order or a new question",
+                    },
+                },
+            },
+            three_act: {
+                name: "Three-act",
+                desc: "Classic setup, confrontation and resolution: clear goals and steady pacing, good for commercial and genre fiction.",
+                stage: {
+                    '0': {
+                        name: "Act I: Setup",
+                        purpose: "Show the norm, break it, set the goal",
+                        beats: "opening hook, inciting incident (about 10%–15%), first plot point (about 25%)",
+                    },
+                    '1': {
+                        name: "Act II: Confrontation",
+                        purpose: "Raise the obstacles and make the hero pay",
+                        beats: "trial and error, alliances, midpoint reversal (about 50%), dark night (about 75%)",
+                    },
+                    '2': {
+                        name: "Act III: Resolution",
+                        purpose: "The hero strikes back and completes the change",
+                        beats: "second plot point, climactic showdown, new normal",
+                    },
+                },
+            },
+            five_act: {
+                name: "Five-act",
+                desc: "Setup, development, climax, reversal and ending — good for ensemble casts, power plays and epic scope.",
+                stage: {
+                    '0': {
+                        name: "Act I: Setup",
+                        purpose: "Introduce the world rules and its cracks",
+                        beats: "normal world, a crack appears, the hero is pulled in",
+                    },
+                    '1': {
+                        name: "Act II: Development",
+                        purpose: "Many factions act and conflicts interlock",
+                        beats: "allies and rivals arrive, the first major loss, key information surfaces",
+                    },
+                    '2': {
+                        name: "Act III: Climax",
+                        purpose: "The conflict erupts",
+                        beats: "the plan runs, the largest confrontation, a costly win",
+                    },
+                    '3': {
+                        name: "Act IV: Reversal",
+                        purpose: "The price of victory shows and the goal is rebuilt",
+                        beats: "hidden truth exposed, allies split or betray, the hero chooses again",
+                    },
+                    '4': {
+                        name: "Act V: Ending",
+                        purpose: "Final showdown and a rebuilt order",
+                        beats: "final duel, the cost is paid, a new order settles",
+                    },
+                },
+            },
+            hero_journey: {
+                name: "Hero's journey",
+                desc: "Ordinary world, call, trials and return — good for growth-driven heroes and adventure epics.",
+                stage: {
+                    '0': {
+                        name: "Departure",
+                        purpose: "Ordinary world, the call, crossing the threshold",
+                        beats: "ordinary world and its gap, the call, refusal or mentor, crossing the first threshold",
+                    },
+                    '1': {
+                        name: "Trials",
+                        purpose: "Allies, enemies and a run of tests",
+                        beats: "the road of trials, allies and rivals, approaching the inmost cave",
+                    },
+                    '2': {
+                        name: "Ordeal",
+                        purpose: "Face the deepest fear; the old self dies",
+                        beats: "the abyss ordeal, the reward, a return that carries a cost",
+                    },
+                    '3': {
+                        name: "Return",
+                        purpose: "The final test and a new order brought home",
+                        beats: "the road back is blocked, resurrection or final duel, coming home changed",
+                    },
+                },
+            },
+            kishotenketsu: {
+                name: "Jo-ha-kyu",
+                desc: "The Japanese jo-ha-kyu rhythm: quiet start, gradual build, sudden close — good for mystery and mood-driven stories.",
+                stage: {
+                    '0': {
+                        name: "Jo (intro)",
+                        purpose: "Slowly build the everyday and its undercurrent",
+                        beats: "daily order, a small anomaly, one detail that cannot be ignored",
+                    },
+                    '1': {
+                        name: "Ha (break)",
+                        purpose: "Break the everyday and keep escalating",
+                        beats: "the anomaly grows, rules are tested, understanding flips at the midpoint",
+                    },
+                    '2': {
+                        name: "Kyu (climax)",
+                        purpose: "Tighten fast and close hard",
+                        beats: "rapid acceleration, the biggest crisis, an unexpected but consistent close",
+                    },
+                },
+            },
+        },
+        group: {
+            protagonistStart: {
+                label: "Protagonist start",
+                hint: "Sets the opening situation and how readers identify with the hero",
+            },
+            coreConflict: {
+                label: "Core conflict",
+                hint: "Drives the main line and must carry through to the ending",
+            },
+            powerSystem: {
+                label: "Power system",
+                hint: "Defines the world rules and how fights and problems are solved",
+            },
+            goldenFinger: {
+                label: "Signature edge",
+                hint: "The hero's unique variable — it needs limits or a cost",
+            },
+            archetype: {
+                label: "Archetype",
+                hint: "Sets the hero's narrative role and reader expectations",
+            },
+            temperament: {
+                label: "Hero temperament",
+                hint: "Decides how the hero chooses under pressure",
+            },
+            tone: {
+                label: "Narrative tone",
+                hint: "Sets prose density, emotional promise and the feel of the ending",
+            },
+            romance: {
+                label: "Romance",
+                hint: "Only shifts screen time; never forces the main line",
+            },
+            pacing: {
+                label: "Pacing",
+                hint: "Controls how fast information and conflict escalate",
+            },
+        },
+        option: {
+            protagonistStart: {
+                '0': {
+                    label: "Down-and-out",
+                    desc: "Lost resources or status; starts from the bottom",
+                },
+                '1': {
+                    label: "Ordinary person",
+                    desc: "No special identity; dragged in by events",
+                },
+                '2': {
+                    label: "Prodigy",
+                    desc: "Gifted, but carries higher expectations",
+                },
+                '3': {
+                    label: "Heir",
+                    desc: "Inherits a family or faction — and its debts",
+                },
+                '4': {
+                    label: "Reborn",
+                    desc: "Comes back with memories of a previous life",
+                },
+                '5': {
+                    label: "Transmigrator",
+                    desc: "A variable from another world",
+                },
+                '6': {
+                    label: "Exile",
+                    desc: "Driven out by an order or family; no place to belong",
+                },
+                '7': {
+                    label: "Hidden master",
+                    desc: "Deliberately hides power to stay unseen",
+                },
+            },
+            coreConflict: {
+                '0': {
+                    label: "Revenge",
+                    desc: "Family, sect or clan was destroyed",
+                },
+                '1': {
+                    label: "Protection",
+                    desc: "Protect specific people or a home",
+                },
+                '2': {
+                    label: "Survival",
+                    desc: "Pressure from resources, rules or the environment",
+                },
+                '3': {
+                    label: "Supremacy",
+                    desc: "Power, territory and order",
+                },
+                '4': {
+                    label: "Truth-seeking",
+                    desc: "Mystery, identity and history",
+                },
+                '5': {
+                    label: "Redemption",
+                    desc: "Moral dilemma and self-judgment",
+                },
+                '6': {
+                    label: "Homecoming",
+                    desc: "Belonging, memory and rebuilding",
+                },
+                '7': {
+                    label: "Defying fate",
+                    desc: "Prophecy, system and destiny",
+                },
+            },
+            powerSystem: {
+                '0': {
+                    label: "Cultivation",
+                    desc: "Realms, qi, techniques and resources",
+                },
+                '1': {
+                    label: "Martial arts",
+                    desc: "Body, moves and combat experience",
+                },
+                '2': {
+                    label: "Technology",
+                    desc: "Devices, engineering and information gaps",
+                },
+                '3': {
+                    label: "Powers",
+                    desc: "Awakened abilities and their cost",
+                },
+                '4': {
+                    label: "Mythic",
+                    desc: "Divinity, faith and ancient pacts",
+                },
+                '5': {
+                    label: "Realistic",
+                    desc: "No supernatural force; only human nature and rules",
+                },
+                '6': {
+                    label: "Mixed",
+                    desc: "Two power lines that check each other",
+                },
+            },
+            goldenFinger: {
+                '0': {
+                    label: "System",
+                    desc: "Quests, panels or a rules-based cheat",
+                },
+                '1': {
+                    label: "Past-life memory",
+                    desc: "Knows the future, but the future shifts",
+                },
+                '2': {
+                    label: "Modern knowledge",
+                    desc: "Applying modern knowledge as an edge",
+                },
+                '3': {
+                    label: "Bloodline awakening",
+                    desc: "A hidden bloodline brings power and trouble",
+                },
+                '4': {
+                    label: "Mystic artifact",
+                    desc: "An item that can never be fully controlled",
+                },
+                '5': {
+                    label: "Mind reading",
+                    desc: "Hears others' surface and deeper thoughts",
+                },
+                '6': {
+                    label: "Time rewind",
+                    desc: "A limited number of returns to the past",
+                },
+                '7': {
+                    label: "No edge",
+                    desc: "Only judgment, relationships and costs",
+                },
+            },
+            archetype: {
+                '0': {
+                    label: "Underdog rise",
+                },
+                '1': {
+                    label: "Prodigy path",
+                },
+                '2': {
+                    label: "Broken engagement",
+                },
+                '3': {
+                    label: "System path",
+                },
+                '4': {
+                    label: "Ensemble",
+                },
+                '5': {
+                    label: "Anti-hero",
+                },
+                '6': {
+                    label: "Slice of life",
+                },
+                '7': {
+                    label: "Power struggle",
+                },
+            },
+            temperament: {
+                '0': {
+                    label: "Calm and restrained",
+                },
+                '1': {
+                    label: "Hot-blooded and blunt",
+                },
+                '2': {
+                    label: "Scheming strategist",
+                },
+                '3': {
+                    label: "Gentle but resilient",
+                },
+                '4': {
+                    label: "Obsessive and unhinged",
+                },
+                '5': {
+                    label: "Humorous and free",
+                },
+            },
+            tone: {
+                '0': {
+                    label: "Hot-blooded power fantasy",
+                },
+                '1': {
+                    label: "Suspenseful and cold",
+                },
+                '2': {
+                    label: "Warm and healing",
+                },
+                '3': {
+                    label: "Dark epic",
+                },
+                '4': {
+                    label: "Light and witty",
+                },
+                '5': {
+                    label: "Tragic and desolate",
+                },
+            },
+            romance: {
+                '0': {
+                    label: "None",
+                },
+                '1': {
+                    label: "Weak (accent)",
+                },
+                '2': {
+                    label: "Medium (parallel line)",
+                },
+                '3': {
+                    label: "Strong (core line)",
+                },
+            },
+            pacing: {
+                '0': {
+                    label: "Fast",
+                },
+                '1': {
+                    label: "Steady",
+                },
+                '2': {
+                    label: "Slow burn",
+                },
+            },
+        },
+        warn: {
+            noStructure: "No valid story structure selected",
+            techBlood: "Technology conflicts with bloodline awakening: switch to tech devices or gene modification, or change the power system",
+            realityFinger: "A realistic setting should not have a supernatural edge: pick “No edge” or change the power system",
+            systemArchetype: "The system path requires the System edge, or pick another archetype",
+            geniusStart: "The prodigy path does not match this start: use Prodigy or Heir, or pick another archetype",
+            loserStart: "The underdog rise needs a low start: use Down-and-out, Ordinary person or Exile, or pick another archetype",
+            grimHumor: "A tragic or dark tone with a humorous temperament undercuts both: consider Calm and restrained or Obsessive and unhinged",
+            lightVengeance: "A light tone clashes with revenge, supremacy or survival: consider Suspenseful and cold or Hot-blooded power fantasy",
+            dailyVengeance: "Slice of life does not suit revenge, supremacy or survival: consider Protection, Truth-seeking or Homecoming",
+            threeActPacing: "The three-act structure needs its inciting incident early; a slow burn squeezes Act I. Consider Steady pacing",
+        },
+        form: {
+            title: "Story structure",
+            desc: "Pick a structure first, then configure characters, conflict and power system; every option is written into the project prompt.",
+            lock: "Lock current structure",
+            random: "🎲 Smart random",
+            randomTitle: "Generate a self-consistent structure and settings combo with CSPRNG",
+            onelineLabel: "One-line story",
+            onelineHint: "Generated randomly; ready for the synopsis or outline, and editable",
+            onelinePlaceholder: "e.g. A down-and-out disciple expelled from his sect follows the whispers of the dead to find out who destroyed it.",
+            seedUsed: "Random seed: {seed}",
+            seedUnused: "Random seed: no random combo used yet",
+            warnIssues: "⚠️ This combo needs adjustment: {issues}",
+            warnOk: "✓ Self-consistent: {name} · {summary}",
+            stageTitle: "{purpose} · Key beats: {beats}",
+        issueSep: "; ",
+            unselected: "Not selected",
+        },
+        modal: {
+            title: "🧬 Story structure",
+            desc: "Project: {project}. Saving writes to .project and the system templates; later writing prompts use this structure immediately.",
+            cancel: "Cancel",
+            save: "Save and apply",
+            saved: "✅ Story structure saved: {name}",
+            saveFailed: "Failed to save story structure: {error}",
+        },
+    },
     characterGen: {
         title: "👤 Generate characters",
         manage: "📂 Manage characters",
