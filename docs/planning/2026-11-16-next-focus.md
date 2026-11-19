@@ -3643,3 +3643,53 @@ plan 1 / telemetry 16 / memory 3 / toollog 4）。
 
 **下一轮候选**：`ui/ideation-modal.ts`（793 字）、`ui/batch-import*`（750 字）、`ui/views/agent-workbench-view.ts`（730 字）；
 第三期补齐 en 并逐面量布局；知识库详情大标题字号（渲染器 `createDetailSection` 后的标题偏大）列入视觉 backlog。
+
+## 第一百一十六轮：i18n 第二期第48片 —— 章节大纲树弹窗（2026-11-20，DSH）
+
+**范围**：`ui/chapter-outline-tree-modal.ts`（1,392 行，CRLF，此前 **0 处 `t()`**，`audit-cjk` 记 112 条 / 约 70 处界面文案）。
+选题理由：`ui/ideation-modal.ts`（第43片）、`ui/batch-import-modal.ts`（第44片）、`ui/agent-workbench-view.ts`（第45片）
+已在本期迁完，剩余的 `ui/` 大户里它是唯一「整屏都是弹窗文案、且没有 i18n 前缀」的文件。
+
+**改动**
+- 新建顶层资源组 `outlineTree`（**45 键**）：`title` / `empty` / `range` 7 / `fulltext` 3 / `volume` 5 / `chapter` 6 /
+  `scene` 5 / `emptyNoMatch` / `matchCount` / `footer` 4 / `notice` 19；嵌套对象，不用扁平点号键。
+- `render()` 全量迁移：标题、章号区间搜索（三段装饰片段 + 两个 placeholder + 两个 title）、全文/收起切换、
+  卷行（卷号/卷名/章数/无匹配提示/整体匹配计数）、章节行与场景行的拖拽 title 与上下移 aria、底部四键。
+- 19 条 Notice 全迁：未绑定项目 / 无可用章节 / 画布事件已全存在 / 已生成 N 个（含跳过）/ 生成失败 /
+  冲突已修改 / 场景名已修改 / 已添加场景N / 已删除场景N / 场景与章节顺序已调整 / 场景跨章拒绝 /
+  场景重排 / 章节重排（带卷名与位置）/ 已保存统计 / 保存失败。
+- 保留中文（数据/格式契约）：`第N卷_分卷大纲.md` 与 `第N章_Scene展开.md` 路径、五条解析正则、`| 章号` 表头、
+  默认场景名 `新场景`、`buildSceneContent()` 的 `## 场景N：` 与 `key_scene:`、`collectOutlineChapters()` 的 `volumeLabel`、全部 `log.*`。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；`npx eslint ui/chapter-outline-tree-modal.ts i18n/messages/*.ts` 0 error（4 条存量 unused warning）。
+- `node scripts/check-i18n.mjs`：zh/en 各 **6028** 条、无法解析键 0、动态键 **29 处**（未新增）、棘轮 **206 文件 / 5569 条**（5644 → 5569）。
+- 新增 `tests/unit/i18n/outline-tree-labels.test.ts` **5 例**（键集合 ≥45 且一致 / en 零 CJK / 占位符逐键一致 /
+  zh 逐字 6 条 / 中英插值），与 `tests/unit/ui/outline-tree-modal-contract.test.ts` 合跑 **10 例**通过。
+- 实机 zh/en 各 3 场景（`D:\nw-dev-vault\_visual-i18n48-{before,after}\outline-{default,range,fulltext}-<lang>.png`）：
+  zh before/after **像素 0 差异**（640×364 / 640×356 / 640×728），en 无横向溢出；残余 CJK 全是 vault 数据
+  （书名《雾中山门》、章节标题、章节范围文本）。
+- 截图入口：`plugin.openProjectWizard('示例项目')` → `tab.currentStepIdx = 5` →
+  `await view.wizardController.renderTabContent(tab, true)` → 点「📋 大纲树状预览」。
+- `npm run preflight` **EXIT=0**：**1,000 文件 / 10,395 通过 + 3 跳过**（日志 `D:\nw-tmp\preflight-i18n48b.log`）。
+- `check:bundle`：main.js 6,240,146 → **6,245,434**（含 en 片段修正的 +4）、styles.css **800,684**（±0）；`gen:docs` 1,004 文件。
+
+**坑**
+1. **`t(cond ? 'a' : 'b', …)` 会被记成「非字面量键」**：静态扫描只看第一个实参，三元会把文件拉进动态键告警名单；
+   改成 `const msg = skipped > 0 ? t('…Skipped', {…}) : t('…Created', {…});` 后动态键数维持 29。
+2. **大纲预览按钮只在「全书规划」步已完成/文件已存在时渲染**：向导首屏点 `下一步 →` 不前进（该步未解锁），
+   必须直接设 `currentStepIdx = 5` 再调 `wizardController.renderTabContent(tab, true)`。
+3. **before 图从 stash 取最省事**：只 stash 三个文件 → `npm run build` + `dev-vault sync` → 采 before → `stash pop` →
+   再 build 采 after；脚本带 `--tag=before|after` 落不同目录，diff 只读 PNG。
+4. **`translate(locale, key, params)` 第一参数是 locale**，不是 `translate(key, params)`；误用会 `TypeError: key.split is not a function`。
+5. 打开向导可能在 workspace 就绪前抛 `getFullPath` 的 `startsWith` 错误，`openProjectWizard` 要包一层重试。
+6. **资源值不许是空串**：en 的 `range.toSuffix` 先写成 `''`，`i18n-parity` 的「每条文案 trim 后非空」直接失败；
+   改切为 `Ch. [` / `] – [` / `]`（三段都非空，渲染仍是 `Ch. [3] – [20]`）。
+7. **源码字符串断言会随迁移失效**：`tests/unit/ui/mobile-reorder-contract.test.ts:95` 断言过 `'aria-label': '上移章节'`，
+   迁成 `t('outlineTree.chapter.upAria')` 后要同步改成断言键名。
+
+**文档**：`docs/modules/i18n.md`（§2 资源 6028 + 资源链 + 已迁移面整段、§5 表行、§6 测试、未迁移面条目、§9 三条新坑）、
+`docs/modules/INDEX.md`、`docs/CURRENT.md`、`docs/planning/2026-11-18-feature-gaps.md`、本轮记录；基线 `.i18n-baseline.json` / `.bundle-baseline.json`。
+
+**下一轮候选**：`ui/full-writer/template-vars-builder.ts`（239 字，多为提示词，需甄别式迁移）、`ui/rendering/context-panel.ts`（162 字）、
+`ui/co-write-floating-panel.ts`（113 字）、`ui/batch-create-modal.ts`（104 字）；第三期补齐 en 并逐面量布局。

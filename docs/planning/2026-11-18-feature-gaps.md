@@ -352,6 +352,16 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
   并修掉两处父子键冲突（`arcTypeLine` / `style.senseDim`）与一处占位符错配（`readability.highRiskSection`）；
   zh/en 资源各 **5976** 条；棘轮收紧到 **206 文件 / 5644 条**（5 个文件已无中文移出基线）；新增 `tests/unit/i18n/book-detail-labels.test.ts` 5 例，
   存量 9 个测试文件 82 例通过；实机 zh/en 各 10 页签（右栏 896×1130，无新增溢出）；`check:bundle` main.js 见 §5 记录。
+- 第二期第48片（2026-11-20，DSH）：章节大纲树弹窗 —— `ui/chapter-outline-tree-modal.ts`（1,392 行，此前 0 处 `t()`）
+  迁约 **70 处 / 45 键**（顶层 `outlineTree`：`title`、`empty`、`range` 7、`fulltext` 3、`volume` 5、`chapter` 6、`scene` 5、
+  `emptyNoMatch`、`matchCount`、`footer` 4、`notice` 19）；标题栏、章号区间搜索、全文切换、卷/章/场景行、底部四键
+  与编辑拖拽保存的 19 条 Notice 全部随语言切换。章号区间三段装饰片段按语言拆分（zh 逐字 `【`·`章 ——【`·`章 】`，
+  en 用 `Ch. [`·`] – [`·`]`），所以 zh 视觉零变化、en 读作 `Ch. [3] – [20]`；解析正则、`第N章_Scene展开.md` /
+  `第N卷_分卷大纲.md` 路径、`| 章号`、默认场景名「新场景」、`buildSceneContent()` 与 `volumeLabel` 保持中文（数据契约）；
+  `t(cond ? 'a' : 'b')` 会被静态扫描记成非字面量键，已拆成两条独立调用。zh/en 资源各 **6028** 条；
+  棘轮收紧到 **206 文件 / 5569 条**（5644 → 5569）；新增 `tests/unit/i18n/outline-tree-labels.test.ts` 5 例 +
+  存量 `tests/unit/ui/outline-tree-modal-contract.test.ts` 5 例；实机 zh 三场景 before/after（stash + 重建拿 before）
+  **像素 0 差异**（640×364 / 640×356 / 640×728），en 零横向溢出。
 - 后续：第二期余下（散落弹窗 novel-tags 1099（只剩 AI 提示词与解析正则）、写作设置分区残留等），
   第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 
@@ -361,6 +371,6 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
 
 1 → 2 → 3 → 4 → 5 →（6 可选）→ 7。
 
-进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~47 片（命令面板 → 知识库 D 类两文件）已交付（2026-11-18/19）；下一个候选是 ⑦ 第二期余下（novel-tags 1099（只剩 AI 提示词与解析正则）/ 写作设置分区残留等），以及第三期补齐 en 并逐面量布局。
+进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~48 片（命令面板 → 章节大纲树弹窗）已交付（2026-11-18/19/20）；下一个候选是 ⑦ 第二期余下（novel-tags 1099（只剩 AI 提示词与解析正则）/ 写作设置分区残留等），以及第三期补齐 en 并逐面量布局。
 
 理由：1 是修「假成功」缺陷；2 是把已交付引擎变成写作时可见的价值；3 是投稿刚需且不依赖 AI；4/5 是低成本体验补洞；6/7 视需要。

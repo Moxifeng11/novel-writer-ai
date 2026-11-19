@@ -11,7 +11,7 @@
     "ui/batch-import-modal.ts": 23,
     "ui/batch-novels-modal.ts": 42,
     "ui/changelog-modal.ts": 8,
-    "ui/chapter-outline-tree-modal.ts": 112,
+    "ui/chapter-outline-tree-modal.ts": 37,
     "ui/chapter-settlement-modal.ts": 81,
     "ui/chapter-version-modal.ts": 41,
     "ui/character-recognition-modal.ts": 14,
@@ -207,7 +207,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 5644,
+  "total": 5569,
   "updatedAt": "2026-11-19",
   "note": ""
 }

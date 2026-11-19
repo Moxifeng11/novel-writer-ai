@@ -11,7 +11,7 @@
 | `shared/` | 259 | 52377 | 2212 | 1732 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1583 | 88 | 58 | 66% |
-| `ui/` | 304 | 114420 | 1181 | 944 | 80% |
+| `ui/` | 304 | 114424 | 1181 | 944 | 80% |
 
 ## 文件清单
 
@@ -731,7 +731,7 @@
 | `ui/batch-novels-modal.ts` | 236 | 1 | 1 |
 | `ui/button-busy.ts` | 37 | 1 | 1 |
 | `ui/changelog-modal.ts` | 207 | 1 | 1 |
-| `ui/chapter-outline-tree-modal.ts` | 1392 | 1 | 1 |
+| `ui/chapter-outline-tree-modal.ts` | 1396 | 1 | 1 |
 | `ui/chapter-settlement-modal.ts` | 428 | 1 | 1 |
 | `ui/chapter-version-modal.ts` | 658 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |

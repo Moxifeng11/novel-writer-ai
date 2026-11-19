@@ -92,8 +92,8 @@ describe('接线契约', () => {
         expect(tree).toContain("from '@/shared/array-move'");
         expect(tree).toContain('moveArrayItemToInsert(chap.scenes');
         expect(tree).not.toContain('chap.scenes.splice(draggedSceneIndex, 1)');
-        expect(tree).toContain("aria-label': '上移章节'");
-        expect(tree).toContain("aria-label': '下移场景'");
+        expect(tree).toContain("'aria-label': t('outlineTree.chapter.upAria')");
+        expect(tree).toContain("'aria-label': t('outlineTree.scene.downAria')");
 
         const canvas = read('ui/plot-canvas-modal.ts');
         expect(canvas).toContain("from '@/shared/array-move'");
