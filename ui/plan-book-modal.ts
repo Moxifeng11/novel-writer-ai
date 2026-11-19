@@ -1,4 +1,5 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
+import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { AIEngine, WorldElements } from '@/engine/ai-engine';
 import { ContextManager } from '@/engine/context-manager';
@@ -56,7 +57,7 @@ export class PlanBookModal extends Modal {
         }
 
         contentEl.empty();
-        contentEl.createEl('h2', { text: '📋 AI全书规划' });
+        contentEl.createEl('h2', { text: t('planBook.title') });
 
 
         const projectSelect = contentEl.createEl('select', { cls: 'nw-select novel-writer-select' });
@@ -67,8 +68,8 @@ export class PlanBookModal extends Modal {
                 projects = this.fallbackDetectProjects();
             }
             if (projects.length === 0) {
-                const errorEl = contentEl.createEl('p', { text: '❌ 未找到项目，请先创建新项目' });
-                const retryBtn = contentEl.createEl('button', { text: '🔄 重试', cls: 'nw-btn', attr: { title: '重新加载项目列表' } });
+                const errorEl = contentEl.createEl('p', { text: t('planBook.noProject') });
+                const retryBtn = contentEl.createEl('button', { text: t('planBook.retry'), cls: 'nw-btn', attr: { title: t('planBook.retryTip') } });
                 retryBtn.onclick = () => {
                     errorEl.remove();
                     retryBtn.remove();
@@ -84,69 +85,69 @@ export class PlanBookModal extends Modal {
             if (this.preferredProject && projects.includes(this.preferredProject)) {
                 projectSelect.value = this.preferredProject;
             } else if (this.preferredProject) {
-                new Notice(`⚠️ 未在项目列表中检测到「${this.preferredProject}」，请确认下方目标项目后再生成`, 6000);
+                new Notice(t('planBook.preferredProjectMissing', { name: this.preferredProject }), 6000);
             }
 
             // 基本参数区域
             const paramsSection = contentEl.createDiv({ cls: 'novel-writer-plan-section' });
-            paramsSection.createEl('h4', { text: '📊 基本参数', cls: 'novel-writer-section-title' });
+            paramsSection.createEl('h4', { text: t('planBook.basicParams'), cls: 'novel-writer-section-title' });
 
             const totalCharsRow = paramsSection.createDiv({ cls: 'novel-writer-input-row' });
-            totalCharsRow.createEl('label', { text: '全书总字数：', cls: 'novel-writer-input-label' });
+            totalCharsRow.createEl('label', { text: t('planBook.totalCharsLabel'), cls: 'novel-writer-input-label' });
             // P-16：回填上次用的参数，避免每次重填
             const lastParams = this.plugin.settings?.planBookLastParams;
             const totalCharsInput = totalCharsRow.createEl('input', {
                 type: 'text',
-                placeholder: '如：100万',
+                placeholder: t('planBook.totalCharsPlaceholder'),
                 cls: 'nw-input novel-writer-input',
-                value: lastParams?.totalChars || '100万'
+                value: lastParams?.totalChars || t('planBook.totalCharsDefault')
             });
 
             const volCountRow = paramsSection.createDiv({ cls: 'novel-writer-input-row' });
-            volCountRow.createEl('label', { text: '分卷数：', cls: 'novel-writer-input-label' });
+            volCountRow.createEl('label', { text: t('planBook.volCountLabel'), cls: 'novel-writer-input-label' });
             const volCountInput = volCountRow.createEl('input', {
                 type: 'text',
-                placeholder: '如：3',
+                placeholder: t('planBook.volCountPlaceholder'),
                 cls: 'nw-input novel-writer-input',
                 value: lastParams?.volCount || '3'
             });
 
             const chapWordsRow = paramsSection.createDiv({ cls: 'novel-writer-input-row' });
-            chapWordsRow.createEl('label', { text: '每章字数：', cls: 'novel-writer-input-label' });
+            chapWordsRow.createEl('label', { text: t('planBook.chapWordsLabel'), cls: 'novel-writer-input-label' });
             const chapWordsInput = chapWordsRow.createEl('input', {
                 type: 'text',
-                placeholder: '如：2500',
+                placeholder: t('planBook.chapWordsPlaceholder'),
                 cls: 'nw-input novel-writer-input',
                 value: lastParams?.chapWords || '2500'
             });
 
             // 上下文预览区域
             const contextSection = contentEl.createDiv({ cls: 'novel-writer-plan-section' });
-            contextSection.createEl('h4', { text: '📖 将发送给AI的上下文', cls: 'novel-writer-section-title' });
+            contextSection.createEl('h4', { text: t('planBook.contextSection'), cls: 'novel-writer-section-title' });
             const contextPreview = contextSection.createDiv({ cls: 'novel-writer-context-preview' });
-            contextPreview.createEl('p', { text: '⏳ 正在加载上下文...', cls: 'novel-writer-muted' });
+            contextPreview.createEl('p', { text: t('planBook.loadingContext'), cls: 'novel-writer-muted' });
 
             // 自定义提示词区域
             const promptSection = contentEl.createDiv({ cls: 'novel-writer-plan-section' });
-            promptSection.createEl('h4', { text: '✍️ 自定义提示词（可选）', cls: 'novel-writer-section-title' });
+            promptSection.createEl('h4', { text: t('planBook.customPromptSection'), cls: 'novel-writer-section-title' });
             const customPromptInput = promptSection.createEl('textarea', {
                 cls: 'nw-textarea novel-writer-textarea',
-                attr: { rows: '5', placeholder: '在此输入额外的创作要求，如：\n- 主角性格特点\n- 特殊剧情要求\n- 风格偏好\n- 避免的元素...' }
+                attr: { rows: '5', placeholder: t('planBook.customPromptPlaceholder') }
             });
 
             // 预设提示词（点击即插入）
             const presetSection = promptSection.createDiv({ cls: 'novel-writer-preset-section' });
-            presetSection.createEl('span', { text: '💡 预设质量提示词（点击插入）：', cls: 'novel-writer-muted', attr: { style: 'font-size:12px; margin-right:8px;' } });
+            presetSection.createEl('span', { text: t('planBook.presetSection'), cls: 'novel-writer-muted', attr: { style: 'font-size:12px; margin-right:8px;' } });
 
             const presets = [
-                { label: '结构优化', prompt: '每卷必须有明确的三幕结构：铺垫（30%）→ 冲突升级（50%）→ 高潮与收尾（20%）。每卷结尾设置钩子，驱动读者翻页。' },
-                { label: '节奏控制', prompt: '章节节奏遵循张弛交替：动作章→喘息章→悬念章循环。每3章一个小高潮，每卷末一个反转。避免连续3章以上同一情绪基调。' },
-                { label: '人物弧线', prompt: '主角每卷至少完成一个阶段性成长。配角不能沦为工具人，每个配角必须有独立动机和至少1个高光时刻。反派智商在线，行动有逻辑。' },
-                { label: '冲突层级', prompt: '每卷冲突层层递进：个人冲突→团队冲突→势力冲突→世界观冲突。不要一卷内把所有冲突全部引爆，保留层层揭秘的空间。' },
-                { label: '伏笔密度', prompt: '每卷埋设3-5个伏笔，其中至少2个在本卷内回收。重要伏笔跨卷布局。伏笔必须与主线和人物弧线产生因果关联，不能是无意义的谜语。' },
-                { label: '爽点分布', prompt: '每章至少1个爽点（打脸/突破/获得/反转）。重要爽点间隔不超过2章。爽点类型交替：实力突破→打脸反派→获得宝物→身份揭晓→收服同伴。' },
-                { label: '章末钩子', prompt: '每章结尾必须设置钩子：悬念式（他推开门，看到的是...）、反转式（脑海中响起的声音，竟是自己的）、危机式（一道剑光已到眼前）。禁止平淡收尾。' },
-                { label: '信息控制', prompt: '世界观信息采用"冰山式"逐步释放。每章新设定不超过2个。揭露大设定前必须铺垫至少3章。禁止信息倾泻式的大段设定解说。' },
+                { label: t('planBook.presetStructure'), prompt: '每卷必须有明确的三幕结构：铺垫（30%）→ 冲突升级（50%）→ 高潮与收尾（20%）。每卷结尾设置钩子，驱动读者翻页。' },
+                { label: t('planBook.presetRhythm'), prompt: '章节节奏遵循张弛交替：动作章→喘息章→悬念章循环。每3章一个小高潮，每卷末一个反转。避免连续3章以上同一情绪基调。' },
+                { label: t('planBook.presetCharacterArc'), prompt: '主角每卷至少完成一个阶段性成长。配角不能沦为工具人，每个配角必须有独立动机和至少1个高光时刻。反派智商在线，行动有逻辑。' },
+                { label: t('planBook.presetConflict'), prompt: '每卷冲突层层递进：个人冲突→团队冲突→势力冲突→世界观冲突。不要一卷内把所有冲突全部引爆，保留层层揭秘的空间。' },
+                { label: t('planBook.presetForeshadow'), prompt: '每卷埋设3-5个伏笔，其中至少2个在本卷内回收。重要伏笔跨卷布局。伏笔必须与主线和人物弧线产生因果关联，不能是无意义的谜语。' },
+                { label: t('planBook.presetCoolPoints'), prompt: '每章至少1个爽点（打脸/突破/获得/反转）。重要爽点间隔不超过2章。爽点类型交替：实力突破→打脸反派→获得宝物→身份揭晓→收服同伴。' },
+                { label: t('planBook.presetHook'), prompt: '每章结尾必须设置钩子：悬念式（他推开门，看到的是...）、反转式（脑海中响起的声音，竟是自己的）、危机式（一道剑光已到眼前）。禁止平淡收尾。' },
+                { label: t('planBook.presetInfo'), prompt: '世界观信息采用"冰山式"逐步释放。每章新设定不超过2个。揭露大设定前必须铺垫至少3章。禁止信息倾泻式的大段设定解说。' },
             ];
 
             const presetContainer = promptSection.createDiv({ attr: { style: 'display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;' } });
@@ -173,7 +174,7 @@ export class PlanBookModal extends Modal {
                 this.loadContextPreview(projectSelect.value, contextPreview);
             };
 
-            const planButton = contentEl.createEl('button', { text: '🚀 生成全书规划', cls: 'nw-btn nw-btn-primary novel-writer-primary-button', attr: { title: '生成全书规划（分卷大纲 + 章节分配）' } });
+            const planButton = contentEl.createEl('button', { text: t('planBook.generateBtn'), cls: 'nw-btn nw-btn-primary novel-writer-primary-button', attr: { title: '生成全书规划（分卷大纲 + 章节分配）' } });
             planButton.onclick = async () => {
                 const project = projectSelect.value;
                 const totalChars = totalCharsInput.value;
@@ -190,7 +191,7 @@ export class PlanBookModal extends Modal {
 
     private async generatePlan(project: string, totalChars: string, volumes: number, wordsPerChapter: number, customPrompt?: string): Promise<void> {
         if (!this.plugin.hasAiCredentials) {
-            new Notice('❌ 请先配置 API 密钥或本地模型端点', 5000);
+            new Notice(t('planBook.noApiKey'), 5000);
             return;
         }
 
@@ -204,22 +205,22 @@ export class PlanBookModal extends Modal {
 
         if (!worldView) {
             const confirmGenerate = await OperationConfirmModal.confirm(this.app, {
-                title: '生成世界观',
-                description: '未找到世界观总览，是否先生成世界观？',
-                confirmText: '确认生成',
-                cancelText: '取消',
+                title: t('planBook.genWorldviewTitle'),
+                description: t('planBook.genWorldviewDesc'),
+                confirmText: t('planBook.genWorldviewConfirm'),
+                cancelText: t('planBook.cancel'),
             });
             if (confirmGenerate) {
                 genreInfo = await this.promptForGenre();
                 if (!genreInfo) return;
 
-                const genNotice = new Notice('⏳ 正在生成世界观...', 0);
+                const genNotice = new Notice(t('planBook.generatingWorldview'), 0);
                 // generateWorldview 需要5个参数：世界名称、项目名称、题材、主题、自定义提示词
                 const worldviewResult = await this.aiEngine.generateWorldview(project, project, genreInfo?.genre || '', genreInfo?.theme || '', customPrompt || '');
                 genNotice.hide();
 
                 if (worldviewResult.error) {
-                    showErrorNotice(worldviewResult.error, { title: '世界观生成失败', timeout: 8000 });
+                    showErrorNotice(worldviewResult.error, { title: t('planBook.worldviewFailed'), timeout: 8000 });
                     return;
                 }
 
@@ -240,9 +241,9 @@ ${worldviewResult.content}`;
                         await this.app.vault.create(worldviewPath, worldviewContent);
                     }
                     worldView = worldviewResult.content;
-                    showSuccessNotice('世界观已生成', { timeout: 3000 });
+                    showSuccessNotice(t('planBook.worldviewDone'), { timeout: 3000 });
                 } catch (e) {
-                    showErrorNotice('世界观写入失败', { timeout: 5000 });
+                    showErrorNotice(t('planBook.worldviewWriteFailed'), { timeout: 5000 });
                     return;
                 }
             } else {
@@ -259,13 +260,13 @@ ${worldviewResult.content}`;
             // 此阶段尚无新规划的每卷章节数，先只比较卷数量，避免误报章节不匹配
             const conflict = detectVolumeConflict(existingVolumes, volumes, existingVolumes.chaptersPerVolume);
             if (conflict.conflictType !== 'none') {
-                showWarningNotice(`卷结构冲突：${conflict.message}`, { timeout: 8000 });
+                showWarningNotice(t('planBook.volumeConflict', { msg: conflict.message }), { timeout: 8000 });
             }
         } catch (e) {
             log.warn('[PlanBookModal] 卷冲突检测失败，跳过:', e);
         }
 
-        const genNotice = new Notice(`⏳ Phase 1: 正在规划全局结构...`, 0);
+        const genNotice = new Notice(t('planBook.phase1Planning'), 0);
 
         // 收集项目已有元素传入AI，让大纲规划基于已有世界观
         const existingWorldElements: WorldElements = {
@@ -286,20 +287,20 @@ ${worldviewResult.content}`;
                 genre: genreInfo?.genre || ''
             }, existingWorldElements, customPrompt, (phase: string, current: number, total: number) => {
                 if (phase === 'skeleton' || phase === 'blueprint') {
-                    genNotice.setMessage(`⏳ Phase 1: 正在规划全局结构...`);
+                    genNotice.setMessage(t('planBook.phase1Planning'));
                 } else if (phase === 'volume') {
-                    genNotice.setMessage(`⏳ Phase 2: 正在生成第${current}/${total}卷大纲...`);
+                    genNotice.setMessage(t('planBook.phase2Volume', { current, total }));
                 } else if (phase === 'validation') {
-                    genNotice.setMessage(`⏳ Phase 3: 正在验证跨卷连贯性...`);
+                    genNotice.setMessage(t('planBook.phase3Verify'));
                 } else if (phase === 'repair') {
-                    genNotice.setMessage(`⏳ Phase 4: 正在修复第${current}/${total}轮...`);
+                    genNotice.setMessage(t('planBook.phase4Fix', { current, total }));
                 }
             });
 
             genNotice.hide();
 
             if (result.error) {
-                showErrorNotice(result.error, { title: '全书规划生成失败', timeout: 12000 });
+                showErrorNotice(result.error, { title: t('planBook.planFailed'), timeout: 12000 });
                 return;
             }
 
@@ -310,9 +311,9 @@ ${worldviewResult.content}`;
             const content = result.content || '';
             const hasWarnings = content.includes('验证警告') || content.includes('降级生成提示');
             if (hasWarnings) {
-                showWarningNotice(`大纲已生成（共 ${volCount} 卷），但存在待完善/降级内容，请检查大纲`, { timeout: 8000 });
+                showWarningNotice(t('planBook.planDoneWithWarnings', { count: volCount }), { timeout: 8000 });
             } else {
-                showSuccessNotice(`全书规划已生成（共 ${volCount} 卷分卷大纲）`, { timeout: 3000 });
+                showSuccessNotice(t('planBook.planDone', { count: volCount }), { timeout: 3000 });
             }
 
             // v4.2: 统一使用 ChapterOutlineTreeModal 展示完整的章节冲突预览
@@ -321,8 +322,8 @@ ${worldviewResult.content}`;
             new ChapterOutlineTreeModal(this.app, this.plugin, project).open();
         } catch (error) {
             genNotice.hide();
-            const errorMsg = (error as { message?: string }).message || '生成失败';
-            showErrorNotice(errorMsg, { title: '全书规划生成失败', timeout: 12000 });
+            const errorMsg = (error as { message?: string }).message || t('planBook.genFailedGeneric');
+            showErrorNotice(errorMsg, { title: t('planBook.planFailed'), timeout: 12000 });
             log.error('[小说工坊] 大纲生成异常:', error);
         }
     }
@@ -331,22 +332,22 @@ ${worldviewResult.content}`;
         container.empty();
 
         const files: { name: string; path: string; status: string }[] = [
-            { name: '世界观总览', path: `${project}/${SUBDIR_WORLDVIEW_FILE}`, status: '未找到' },
-            { name: '人物档案', path: `${project}/${SUBDIR_CHARS}`, status: '未找到' },
-            { name: '势力档案', path: `${project}/${SUBDIR_FACTIONS}`, status: '未找到' },
-            { name: '地点档案', path: `${project}/${SUBDIR_LOCS}`, status: '未找到' },
-            { name: '物品功法', path: `${project}/${SUBDIR_ITEMS}`, status: '未找到' },
+            { name: t('planBook.fileWorldview'), path: `${project}/${SUBDIR_WORLDVIEW_FILE}`, status: t('planBook.statusMissing') },
+            { name: t('planBook.fileCharacters'), path: `${project}/${SUBDIR_CHARS}`, status: t('planBook.statusMissing') },
+            { name: t('planBook.fileFactions'), path: `${project}/${SUBDIR_FACTIONS}`, status: t('planBook.statusMissing') },
+            { name: t('planBook.fileLocations'), path: `${project}/${SUBDIR_LOCS}`, status: t('planBook.statusMissing') },
+            { name: t('planBook.fileItems'), path: `${project}/${SUBDIR_ITEMS}`, status: t('planBook.statusMissing') },
         ];
 
         for (const file of files) {
             const abstractFile = this.app.vault.getAbstractFileByPath(file.path);
             if (abstractFile) {
                 if (abstractFile instanceof TFile) {
-                    file.status = '✅ 已找到';
+                    file.status = t('planBook.statusFound');
                 } else {
                     // 是文件夹
                     const filesInFolder = this.app.vault.getFiles().filter(f => f.path.startsWith(file.path));
-                    file.status = `✅ ${filesInFolder.length} 个文件`;
+                    file.status = t('planBook.statusFoundCount', { count: filesInFolder.length });
                 }
             }
         }
@@ -366,8 +367,8 @@ ${worldviewResult.content}`;
 
         // 提示信息
         const tip = container.createEl('p', { cls: 'novel-writer-context-tip' });
-        tip.createEl('strong', { text: '提示：' });
-        tip.createSpan({ text: 'AI将基于世界观总览生成全书规划。如果缺少世界观，会提示您先生成。' });
+        tip.createEl('strong', { text: t('planBook.tipLabel') });
+        tip.createSpan({ text: t('planBook.tipBody') });
     }
 
     private async promptForGenre(): Promise<{ genre: string; theme: string } | null> {
@@ -385,13 +386,13 @@ ${worldviewResult.content}`;
                     this.modalEl.addClass('novel-writer-plan-book-modal');
                     const { contentEl } = this;
                     contentEl.empty();
-                    contentEl.createEl('h3', { text: '请选择题材与主题' });
+                    contentEl.createEl('h3', { text: t('planBook.genreThemeTitle') });
 
-                    contentEl.createEl('p', { text: '题材：', cls: 'novel-writer-muted' });
+                    contentEl.createEl('p', { text: t('planBook.genreLabel'), cls: 'novel-writer-muted' });
                     const genres = ['玄幻', '仙侠', '都市', '科幻', '悬疑', '历史', '言情', '奇幻', '武侠', '末世'];
                     const customInput = contentEl.createEl('input', {
                         type: 'text',
-                        placeholder: '或输入自定义题材',
+                        placeholder: t('planBook.genrePlaceholder'),
                         cls: 'nw-input novel-writer-input'
                     });
 
@@ -403,14 +404,14 @@ ${worldviewResult.content}`;
                         };
                     });
 
-                    contentEl.createEl('p', { text: '主题：', cls: 'novel-writer-muted' });
+                    contentEl.createEl('p', { text: t('planBook.themeLabel'), cls: 'novel-writer-muted' });
                     const themeInput = contentEl.createEl('input', {
                         type: 'text',
-                        placeholder: '如：强者归来、逆天改命、扮猪吃虎',
+                        placeholder: t('planBook.themePlaceholder'),
                         cls: 'nw-input novel-writer-input'
                     });
 
-                    const confirmBtn = contentEl.createEl('button', { text: '确认', cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
+                    const confirmBtn = contentEl.createEl('button', { text: t('planBook.confirmBtn'), cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
                     confirmBtn.onclick = () => {
                         const genreValue = customInput.value.trim();
                         const themeValue = themeInput.value.trim();
