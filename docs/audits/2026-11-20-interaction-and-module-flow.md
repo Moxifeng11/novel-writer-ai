@@ -262,8 +262,13 @@ agent 全量梳理出 15 条；以下 10 条按影响面排序，其余 5 条同
 **B9 短篇/剧本「模式文档」两套路径函数并存**
 \`shared/pre-research.ts:180\` \`preResearchModeDocPath()\`（五维分类/剧本定位）与 \`shared/mode-content.ts:132\` \`modeDocPath()\`（storyCore/outline/bible/storyboard）并存。\`creation-flow-state.ts:110-135\` 读后者判 \`docs.outline/storyboard\`，\`isPreResearchComplete\`（pre-research.ts:450）判前者——**同一「阶段完成」由两个目录两份文件共同决定**，任一侧改文件名即断。
 
-**B10 伏笔库（pjForeshadowDB）多写者锁口径不一致**
-\`settlement-engine.ts\`（:493/1151/1277 等 6 处写，:622 有 \`withWriteLock\`）、\`foreshadow-manager.ts\`（:307-349/:880，全部有锁）、\`analysis-report-engine.ts:1354/:1425\`（**无锁**，仅 journal 留痕）。读者 5+。并发时 analysis-report-engine 与结算/协同存在互相覆盖窗口。
+**B10 伏笔库（pjForeshadowDB）多写者锁口径——【已复核更正：现状已修】**
+初稿引用的扫描结论称 `analysis-report-engine.ts` 两个写点无锁。**交付前逐点复核推翻了它**：
+该文件 :1310 的写点已有 `withWriteLock`（v4.27 的 P1-1 修复，注释明确「伏笔库读-改-写整段进锁」），
+:780 为只读；`settlement-engine.ts` 三处写点（:478/:1433/:1972）全部有锁；
+其余 pjForeshadowDB 引用（cross-volume-integration:285 等）均为只读。
+**教训**：扫描 agent 的行号基于当时快照，且把 journal 留痕误读为无锁写——审计发现进入清单前必须逐点复核；本次 ZC-20261120-28 任务因未先复核而派生后又撤销。
+
 
 **正面样例（供改造参照）**：\`link-status-compute.ts\` 双端共享且文件头注明下沉原因；\`harness-types.ts\` 的 \`MEMORY_SLOT_KEYS\` 白名单单源；\`settlement-table-writer.ts\` 把 4 个 UI 入口的结算表写收敛为单一锁内入口。
 
@@ -359,7 +364,7 @@ graph TD
 | 1 | `withButtonBusy` 接入全部 AI 生成按钮（≥10 处），优先 `plan-book-modal` / `ai-builder-modal`（当前零守卫） | A-1 | 无 | 1 天 | 是（scope: `ui/plan-book-modal.ts, ui/ai-builder-modal.ts, ui/button-busy.ts`） |
 | 2 | 悬浮面板接入 `BodySaveController` 自动保存 + `SaveState` 枚举（同一正文两入口风险策略不同 + en 状态恒中文） | A-3 + A-13 | 无 | 1 天 | 是（scope: `ui/co-write-floating-panel.ts, ui/co-writing/save-state.ts`） |
 | 3 | `confirmDiscardIfDirty` 工具 + 高危 10 个 Modal 接入（42 个可编辑 Modal 关闭即丢，0 个有确认） | A-5 | 无 | 1.5 天 | 是（scope: `ui/components/, ui/*modal*.ts` 高危清单） |
-| 4 | 伏笔库写入统一加锁（`analysis-report-engine` 两个写点无 `withWriteLock`，与结算/协同并发互覆） | B10 | 无 | 0.5 天 | 是（scope: `engine/analysis-report-engine.ts`） |
+| 4 | ~~伏笔库写入统一加锁~~ —— **已撤销**：交付前逐点复核发现 analysis-report-engine:1310 已有锁（v4.27 P1-1），settlement 三处写点全有锁；见 B10 更正 | B10 | — | — | 撤销（任务 ZC-20261120-28 已 fail） |
 
 ### P1（承诺与实际不符 / 明显不一致）
 
