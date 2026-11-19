@@ -1,7 +1,7 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { AIEngine } from '@/engine/ai-engine';
-import { showSuccess, showError } from '@/utils/helpers';
+import { showSuccess, showError, progressHandle } from '@/utils/helpers';
 import {
     pjCharsDir,
     pjPromiseLedger,
@@ -259,7 +259,7 @@ export class VolumeIntroModal extends Modal {
         this.generating = true;
         button.disabled = true;
         button.textContent = '⏳ 生成中...';
-        const notice = new Notice('⏳ 正在生成四版全书简介...', 0);
+        const notice = progressHandle('volume-intro-generate', '⏳ 正在生成四版全书简介...');
         try {
             const ctx = await this.buildContext(this.currentProject);
             const prompts = buildSynopsisPrompts(ctx, this.length);

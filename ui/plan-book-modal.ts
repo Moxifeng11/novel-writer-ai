@@ -5,7 +5,7 @@ import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { AIEngine, WorldElements } from '@/engine/ai-engine';
 import { ContextManager } from '@/engine/context-manager';
-import { writeVolumeOutlines } from '@/utils/helpers';
+import { writeVolumeOutlines, progressHandle } from '@/utils/helpers';
 import { pjWorldview, pjForeshadowDB, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS, SUBDIR_WORLDVIEW_FILE } from '@/shared/paths';
 import { ChapterOutlineTreeModal } from './chapter-outline-tree-modal';
 import { createLogger } from '@/shared/logger';
@@ -223,7 +223,7 @@ export class PlanBookModal extends Modal {
                 genreInfo = await this.promptForGenre();
                 if (!genreInfo) return;
 
-                const genNotice = new Notice(t('planBook.generatingWorldview'), 0);
+                const genNotice = progressHandle('plan-book-worldview', t('planBook.generatingWorldview'));
                 // generateWorldview 需要5个参数：世界名称、项目名称、题材、主题、自定义提示词
                 const worldviewResult = await this.aiEngine.generateWorldview(project, project, genreInfo?.genre || '', genreInfo?.theme || '', customPrompt || '');
                 genNotice.hide();
@@ -275,7 +275,7 @@ ${worldviewResult.content}`;
             log.warn('[PlanBookModal] 卷冲突检测失败，跳过:', e);
         }
 
-        const genNotice = new Notice(t('planBook.phase1Planning'), 0);
+        const genNotice = progressHandle('plan-book-outline', t('planBook.phase1Planning'));
 
         // 收集项目已有元素传入AI，让大纲规划基于已有世界观
         const existingWorldElements: WorldElements = {

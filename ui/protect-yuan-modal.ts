@@ -2,6 +2,7 @@ import { App, Modal, Notice, FileSystemAdapter, Platform } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { createLogger } from '@/shared/logger';
 import { readOnlyManualHint, setPathReadOnly } from '@/shared/desktop-shell';
+import { progressHandle } from '@/utils/helpers';
 
 
 const log = createLogger('ProtectYuanModal');
@@ -57,7 +58,7 @@ export class ProtectYuanModal extends Modal {
         const manualHint = readOnlyManualHint();
 
         // M4（技术审计）：持久进度通知持有引用，所有出口（成功/失败/异常）hide
-        const progressNotice = new Notice('⏳ 正在设置元文件保护...', 0);
+        const progressNotice = progressHandle('protect-yuan', '⏳ 正在设置元文件保护...');
         try {
             // 系统命令收口在 shared/desktop-shell；UI 不再直接 require('child_process')
             const result = await setPathReadOnly(yuanPath);

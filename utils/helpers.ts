@@ -55,6 +55,41 @@ export function showProgress(message: string, key: string = 'default'): void {
     progressNotices.set(key, new Notice(message, 0));
 }
 
+/**
+ * 进度句柄：持久进度通知的「持有 + 可更新 + 可关闭」三件套。
+ *
+ * 审计 A-9/A-10：全仓 30 处 `new Notice(msg, 0)` 各自持有引用，漏 hide 就永久停留；
+ * key 不同还会互相覆盖。这里把「创建」也收进 showProgress 的 key 管理里，
+ * 调用方只需保留一个句柄，`.setMessage()` / `.hide()` 语义保持不变。
+ */
+export interface ProgressHandle {
+    /** 更新进度文案（同一 key 复用同一条通知） */
+    setMessage(message: string): void;
+    /** 关闭进度通知（幂等） */
+    hide(): void;
+}
+
+/**
+ * 打开（或复用）一条指定 key 的持久进度通知。
+ *
+ * @param key - 进度槽位，同 key 并发流程会复用同一条通知
+ * @param message - 初始文案
+ * @returns 进度句柄
+ *
+ * @example
+ * ```ts
+ * const notice = progressHandle('backup-yuan', `⏳ 正在备份元文件 → ${name}...`);
+ * try { await backup(); } finally { notice.hide(); }
+ * ```
+ */
+export function progressHandle(key: string, message: string): ProgressHandle {
+    showProgress(message, key);
+    return {
+        setMessage: (next: string) => { showProgress(next, key); },
+        hide: () => { hideProgress(key); },
+    };
+}
+
 export function hideProgress(key: string = 'default'): void {
     const notice = progressNotices.get(key);
     if (notice) {

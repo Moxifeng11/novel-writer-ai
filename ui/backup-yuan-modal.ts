@@ -2,6 +2,7 @@ import { App, Modal, Notice } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { createLogger } from '@/shared/logger';
 import { writeVaultText } from '@/shared/file-system-port';
+import { progressHandle } from '@/utils/helpers';
 
 
 const log = createLogger('BackupYuanModal');
@@ -44,7 +45,7 @@ export class BackupYuanModal extends Modal {
         const backupName = `元文件_备份_${ts}`;
 
         // M3（技术审计）：持久进度通知必须持有引用并在所有出口 hide，否则永不消失
-        const progressNotice = new Notice(`⏳ 正在备份元文件 → ${backupName}...`, 0);
+        const progressNotice = progressHandle('backup-yuan', `⏳ 正在备份元文件 → ${backupName}...`);
         try {
             const scanDir = async (dir: string): Promise<{ files: string[], dirs: string[] }> => {
                 const result = { files: [] as string[], dirs: [] as string[] };

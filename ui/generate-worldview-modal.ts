@@ -3,7 +3,7 @@ import { OperationConfirmModal } from './components/progress';
 import NovelWriterPlugin from '@/main';
 import { AIEngine } from '@/engine/ai-engine';
 import { ContextManager } from '@/engine/context-manager';
-import { mkdirp, showSuccess, showError, showProgress, hideProgress } from '@/utils/helpers';
+import { mkdirp, showSuccess, showError, showProgress, hideProgress, progressHandle } from '@/utils/helpers';
 import { validateWorldviewOutput } from '@/shared/template-validator';
 import { pjWorldview, pjSettingLib, SUBDIR_WORLD_ARCH } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
@@ -132,7 +132,7 @@ export class GenerateWorldviewModal extends Modal {
             return;
         }
 
-        const genNotice = new Notice('⏳ Phase 1: 正在规划世界观骨架...', 0);
+        const genNotice = progressHandle('worldview-generate', '⏳ Phase 1: 正在规划世界观骨架...');
 
         let completed = false;
         this.timeoutTimer = window.setTimeout(() => {

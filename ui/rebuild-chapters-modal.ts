@@ -3,7 +3,7 @@ import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
 import { AIEngine } from '@/engine/ai-engine';
-import { mkdirp } from '@/utils/helpers';
+import { mkdirp, progressHandle } from '@/utils/helpers';
 import { TemplateService } from '@/engine/template-service';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 import { getChapterFileName, CHAPTER_FILE_TYPES, normalizeChapterFiles, getChapterFile, findChapterFile } from '@/engine/chapter-utils';
@@ -190,7 +190,7 @@ export class RebuildChaptersModal extends Modal {
         });
         if (!confirm) return;
 
-        let mainNotice = new Notice(`⏳ 正在重建章节: 0/${total}`, 0);
+        let mainNotice = progressHandle('rebuild-chapters', `⏳ 正在重建章节: 0/${total}`);
 
         try {
             const chapNames = Array.from({ length: total }, (_, i) => `第${startNum + i}章`);
@@ -225,7 +225,7 @@ export class RebuildChaptersModal extends Modal {
             };
 
             mainNotice.hide();
-            mainNotice = new Notice(`⏳ 正在重建: ${chapName}（${done}/${total}）`, 0);
+            mainNotice = progressHandle('rebuild-chapters', `⏳ 正在重建: ${chapName}（${done}/${total}）`);
 
             try {
                 await mkdirp(this.app, bodyDir);

@@ -8,6 +8,7 @@
 import { App, Notice } from 'obsidian';
 import { getProjectCover } from '@/ui/project-utils';
 import { createLogger } from '@/shared/logger';
+import { progressHandle } from '@/utils/helpers';
 
 
 const log = createLogger('CoverPickerController');
@@ -73,7 +74,7 @@ export class CoverPickerController {
      * 三层联动：数据层(folder create+file write) → 后端(adapter) → 前端(refresh display)
      */
     private async saveCoverAndRefresh(project: string, file: File, coverArea: HTMLElement) {
-        const notice = new Notice('正在保存封面...', 0);
+        const notice = progressHandle('cover-save', '正在保存封面...');
         try {
             const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
             if (!['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {

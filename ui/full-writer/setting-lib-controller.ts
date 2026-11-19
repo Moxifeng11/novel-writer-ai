@@ -7,6 +7,7 @@
  */
 import { App, Notice } from 'obsidian';
 import NovelWriterPlugin from '@/main';
+import { progressHandle } from '@/utils/helpers';
 
 /**
  * SettingLibController 类。
@@ -43,7 +44,7 @@ export class SettingLibController {
             new Notice('AI 引擎未初始化');
             return;
         }
-        const progressNotice = new Notice('⏳ 正在生成设定库...', 0);
+        const progressNotice = progressHandle('setting-lib-generate', '⏳ 正在生成设定库...');
         try {
             const content = await engine.generateSettingLibForProject(this.app, project);
             if (!content || !content.trim()) {

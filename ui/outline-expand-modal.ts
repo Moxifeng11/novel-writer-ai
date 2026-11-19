@@ -662,7 +662,7 @@ export class OutlineExpandModal extends Modal {
     private async runChapterExpansion(): Promise<void> {
         if (this.isExpanding) return;
         this.isExpanding = true;
-        this.showProgress('正在拆分章节为场景...');
+        this.setProgressText('正在拆分章节为场景...');
 
         try {
             const result = await this.expander.expandChapterToScenes(
@@ -692,7 +692,7 @@ export class OutlineExpandModal extends Modal {
             showErrorNotice(e instanceof Error ? e.message : String(e), { title: '扩写出错' });
         } finally {
             this.isExpanding = false;
-            this.hideProgress();
+            this.hideProgressBar();
         }
     }
 
@@ -702,7 +702,7 @@ export class OutlineExpandModal extends Modal {
         if (!scene) return;
 
         this.isExpanding = true;
-        this.showProgress(`正在扩写场景${scene.index}：${scene.name}...`);
+        this.setProgressText(`正在扩写场景${scene.index}：${scene.name}...`);
 
         try {
             const sceneText = `## 场景${scene.index}：${scene.name}\n${scene.summary}`;
@@ -740,7 +740,7 @@ export class OutlineExpandModal extends Modal {
             showErrorNotice(e instanceof Error ? e.message : String(e), { title: '扩写出错' });
         } finally {
             this.isExpanding = false;
-            this.hideProgress();
+            this.hideProgressBar();
         }
     }
 
@@ -755,7 +755,7 @@ export class OutlineExpandModal extends Modal {
 
         for (let i = 0; i < this.scenes.length; i++) {
             const scene = this.scenes[i];
-            this.showProgress(`正在扩写场景 ${i + 1}/${this.scenes.length}：${scene.name}...`);
+            this.setProgressText(`正在扩写场景 ${i + 1}/${this.scenes.length}：${scene.name}...`);
 
             try {
                 const sceneText = `## 场景${scene.index}：${scene.name}\n${scene.summary}`;
@@ -800,7 +800,7 @@ export class OutlineExpandModal extends Modal {
         this.refreshParagraphList();
 
         this.isExpanding = false;
-        this.hideProgress();
+        this.hideProgressBar();
         showSuccessNotice('全部场景扩写完成');
     }
 
@@ -822,7 +822,7 @@ export class OutlineExpandModal extends Modal {
             const para = this.paragraphs[idx];
             if (!para) continue;
 
-            this.showProgress(`正在扩写第 ${i + 1}/${selectedIndices.length} 个段落...`);
+            this.setProgressText(`正在扩写第 ${i + 1}/${selectedIndices.length} 个段落...`);
 
             try {
                 const paraWords = Math.max(200, Math.floor(para.content.length * 2));
@@ -854,7 +854,7 @@ export class OutlineExpandModal extends Modal {
         this.refreshParagraphList();
 
         this.isExpanding = false;
-        this.hideProgress();
+        this.hideProgressBar();
         showSuccessNotice('选中段落扩写完成');
     }
 
@@ -909,14 +909,14 @@ export class OutlineExpandModal extends Modal {
         }
     }
 
-    private showProgress(text: string): void {
+    private setProgressText(text: string): void {
         if (this.progressEl) {
             this.progressEl.removeClass('nw-is-hidden');
             this.progressEl.textContent = text;
         }
     }
 
-    private hideProgress(): void {
+    private hideProgressBar(): void {
         if (this.progressEl) {
             this.progressEl.addClass('nw-is-hidden');
         }

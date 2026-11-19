@@ -30,6 +30,7 @@ import { fanficSettingsFileName, isFanficApproved } from '@/ui/full-writer/fanfi
 import { buildCreationModeMetaSection, type CreationModeMeta } from '@/shared/creation-mode';
 import type { LongStorySettings } from '@/shared/story-structure';
 import { t } from '@/i18n';
+import { progressHandle } from '@/utils/helpers';
 
 const log = createLogger('ProjectCreateService');
 
@@ -169,7 +170,7 @@ export async function createLongNovelProject(
         await new Promise(r => setTimeout(r, 300));
     }
 
-    const notice = new Notice(t('createProject.service.creating', { name: projectName }), 0);
+    const notice = progressHandle('project-create', t('createProject.service.creating', { name: projectName }));
     const projectRootId = projectId;
     let count = 0;
     /** 复制失败的文件（不影响成败，但必须告知用户少了什么） */

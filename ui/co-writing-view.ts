@@ -10,7 +10,7 @@ import { t } from '@/i18n';
 import { isDirtySaveState, saveStateLabel, type SaveState } from './co-writing/save-state';
 import { SUBDIR_STEP_ROOT, pjBodyFile } from '@/shared/paths';
 import { getChaptersForProject, getProjectMeta } from '@/ui/project-utils';
-import { readMergedVolumeOutline } from '@/utils/helpers';
+import { readMergedVolumeOutline, progressHandle } from '@/utils/helpers';
 import { revealLeafCompat } from '@/shared/workspace-reveal';
 import { volumeNumber } from '@/shared/chapter-target';
 import { CHAPTER_FILE_TYPES, findBodyFileV4 } from '@/engine/chapter-utils';
@@ -3786,7 +3786,7 @@ ${text}`;
     const fullText = this.rightEditor.value;
     const target = locateQualityTarget(fullText, issue.locationText);
 
-    const fixingNotice = new Notice(`\uD83D\uDD27 \u6B63\u5728\u4FEE\u590D: ${issue.problem.slice(0, 30)}...`, 0);
+    const fixingNotice = progressHandle('cowrite-quality-fix', `\uD83D\uDD27 \u6B63\u5728\u4FEE\u590D: ${issue.problem.slice(0, 30)}...`);
 
     try {
       const prompt = buildQualityFixPrompt(issue, target);

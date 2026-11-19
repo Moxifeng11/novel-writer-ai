@@ -7,6 +7,7 @@ import { pjControlDir } from '@/shared/paths';
 import { STORAGE_KEYS } from '@/shared/storage-keys';
 import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
 import { t } from '@/i18n';
+import { progressHandle } from '@/utils/helpers';
 
 
 const log = createLogger('IdeationModal');
@@ -559,7 +560,7 @@ export class IdeationModal extends Modal {
         this.keywords = keywords;
         this.extraRequirements = extra || '';
 
-        const notice = new Notice(t('ideation.notice.generating'), 0);
+        const notice = progressHandle('ideation-generate', t('ideation.notice.generating'));
 
         try {
             const systemPrompt = `你是专业的网文创意策划师，擅长生成具有市场潜力的小说创意。

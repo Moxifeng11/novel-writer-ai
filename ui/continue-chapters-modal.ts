@@ -1,7 +1,7 @@
-import { App, Component, MarkdownRenderer, Modal, Notice, TFile, TFolder } from 'obsidian';
+import { App, Component, MarkdownRenderer, Modal, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
-import { mkdirp, showSuccess, showError, stripFrontmatter } from '@/utils/helpers';
+import { mkdirp, showSuccess, showError, stripFrontmatter, progressHandle } from '@/utils/helpers';
 import { getChapterFileName, getChapterFile, findChapterFile, findBodyFileByChapterNum, normalizeChapterFiles, CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
 import { TemplateService } from '@/engine/template-service';
 import { ENGINE_NAMES } from '@/shared/engine-names';
@@ -170,7 +170,7 @@ export class ContinueChaptersModal extends Modal {
             return;
         }
 
-        const notice = new Notice(`⏳ 正在创建章节：0/${targetChapters.length}`, 0);
+        const notice = progressHandle('continue-create', `⏳ 正在创建章节：0/${targetChapters.length}`);
         let done = 0;
 
         // 常驻进度条必须在 finally 里关：旧实现只在成功路径 hide()，
@@ -321,7 +321,7 @@ export class ContinueChaptersModal extends Modal {
                 characters = charLines.join('\n').slice(0, 2000);
             }
 
-            const notice = new Notice(`⏳ 正在生成续写内容：0/${targetChapters.length}`, 0);
+            const notice = progressHandle('continue-generate', `⏳ 正在生成续写内容：0/${targetChapters.length}`);
             let done = 0;
             // 续写输出与正文落盘共用同一份格式契约
             const bodyFormat = await new BodyWriter({ app: this.app }).resolveContract(project);

@@ -5,7 +5,7 @@ import { SUBDIR_OUTLINE_ROOT, pjVolumeOutlineDir } from '@/shared/paths';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
 import { AIEngine } from '@/engine/ai-engine';
-import { readMergedVolumeOutline } from '@/utils/helpers';
+import { readMergedVolumeOutline, progressHandle } from '@/utils/helpers';
 import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
 
 /**
@@ -103,7 +103,7 @@ export class NovelTagsModal extends Modal {
             this.analyzeButton.disabled = true;
             this.analyzeButton.textContent = t('novelTags.generating');
         }
-        const genNotice = new Notice(t('novelTags.analyzing'), 0);
+        const genNotice = progressHandle('novel-tags-analyze', t('novelTags.analyzing'));
 
         try {
             const fullSummary = this.buildFullSummary(volumes);

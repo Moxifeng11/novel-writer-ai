@@ -2,7 +2,7 @@ import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { AIEngine } from '@/engine/ai-engine';
 import { GLOBAL_RANK_DIR, globalRankFile } from '@/shared/paths';
-import { mkdirp } from '@/utils/helpers';
+import { mkdirp, progressHandle } from '@/utils/helpers';
 
 /**
  * TomatoRankModal 类。
@@ -55,7 +55,7 @@ export class TomatoRankModal extends Modal {
             this.analyzeButton.disabled = true;
             this.analyzeButton.textContent = '⏳ 生成中...';
         }
-        const genNotice = new Notice('⏳ 正在分析番茄小说热门榜单...', 0);
+        const genNotice = progressHandle('tomato-rank', '⏳ 正在分析番茄小说热门榜单...');
 
         try {
             const sysPrompt = '你是一个番茄小说榜单分析师。请基于你的知识库，分析当前番茄小说畅销榜和在读榜的热门趋势。';

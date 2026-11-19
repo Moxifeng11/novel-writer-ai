@@ -4,7 +4,7 @@ import { OperationConfirmModal } from '@/ui/components/progress/operation-confir
 import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { AIEngine } from '@/engine/ai-engine';
-import { mkdirp } from '@/utils/helpers';
+import { mkdirp, progressHandle } from '@/utils/helpers';
 import { pjFanficDir, pjFanficPendingDir } from '@/shared/paths';
 import { listFanficSettingCandidates } from '@/shared/fanfic-binding';
 import {
@@ -549,7 +549,7 @@ export class AddFanficSettingModal extends Modal {
             return;
         }
 
-        const notice = new Notice(t("addFanfic.flow.retrievingMaterials"), 0);
+        const notice = progressHandle('fanfic-materials', t("addFanfic.flow.retrievingMaterials"));
         try {
             // 1) 检索知识库：用原作名做查询，覆盖全部已拆解书（不限定参考书范围）
             const retrieval = await retrieve(store, {
@@ -707,7 +707,7 @@ export class AddFanficSettingModal extends Modal {
             this.generateButton.disabled = true;
             this.generateButton.textContent = t("addFanfic.flow.generatingDraft");
         }
-        const genNotice = new Notice(t("addFanfic.flow.generatingFromCanon", { work: workName }), 0);
+        const genNotice = progressHandle('fanfic-generate', t("addFanfic.flow.generatingFromCanon", { work: workName }));
 
         try {
             const skeleton = buildFanficSettingsContent({

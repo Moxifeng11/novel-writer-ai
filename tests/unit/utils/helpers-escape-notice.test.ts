@@ -2,7 +2,7 @@
  * helpers-escape-notice.test.ts — F1/F2/F3 escapeHtml + M8 多流程进度通知
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { escapeHtml, showProgress, hideProgress } from '../../../utils/helpers';
+import { escapeHtml, showProgress, hideProgress, progressHandle } from '../../../utils/helpers';
 import { Notice } from 'obsidian';
 
 
@@ -70,5 +70,56 @@ describe('showProgress/hideProgress（M8 多流程隔离）', () => {
 
     it('hide 未注册 key 是安全空操作', () => {
         expect(() => hideProgress('never-exists')).not.toThrow();
+    });
+});
+
+describe('progressHandle（P2 #15 持久进度句柄）', () => {
+    const hideSpy = vi.fn();
+
+    beforeEach(() => {
+        hideSpy.mockClear();
+        vi.spyOn(Notice.prototype, 'hide').mockImplementation(function (this: Notice) {
+            hideSpy();
+        });
+        vi.spyOn(Notice.prototype, 'setMessage').mockImplementation(function (this: Notice) {
+            return this;
+        });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        hideProgress('handle-a');
+        hideProgress('handle-b');
+    });
+
+    it('创建即登记：句柄 hide 后槽位被关闭', () => {
+        const handle = progressHandle('handle-a', '⏳ 正在处理...');
+        expect(hideSpy).not.toHaveBeenCalled();
+        handle.hide();
+        expect(hideSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('setMessage 复用同一条通知（走 showProgress 的 key 槽位）', () => {
+        const handle = progressHandle('handle-a', '第 1 步');
+        handle.setMessage('第 2 步');
+        expect(Notice.prototype.setMessage).toHaveBeenCalledWith('第 2 步');
+    });
+
+    it('hide 幂等：重复调用只真的关一次', () => {
+        const handle = progressHandle('handle-a', '进行中');
+        handle.hide();
+        handle.hide();
+        expect(hideSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('不同 key 的句柄互不干扰', () => {
+        const a = progressHandle('handle-a', 'A 进行中');
+        const b = progressHandle('handle-b', 'B 进行中');
+        a.hide();
+        expect(hideSpy).toHaveBeenCalledTimes(1);
+        b.setMessage('B 更新');
+        expect(Notice.prototype.setMessage).toHaveBeenCalledWith('B 更新');
+        b.hide();
+        expect(hideSpy).toHaveBeenCalledTimes(2);
     });
 });

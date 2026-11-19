@@ -1,5 +1,6 @@
 import { copyText } from '@/shared/clipboard';
 import { t } from '@/i18n';
+import { progressHandle } from '@/utils/helpers';
 import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { AIEngine } from '@/engine/ai-engine';
@@ -658,7 +659,7 @@ export class GoldenOpeningModal extends Modal {
         this.isGeneratingChapters = true;
         this.render();
 
-        const notice = new Notice(t("goldenOpening.common.k42"), 0);
+        const notice = progressHandle('golden-opening-hook-check', t("goldenOpening.common.k42"));
 
         try {
             const systemPrompt = `你是专业的网文开篇设计师，精通黄金三章设计法则。
@@ -770,7 +771,7 @@ export class GoldenOpeningModal extends Modal {
         this.isGeneratingHooks = true;
         this.render();
 
-        const notice = new Notice(t("goldenOpening.hooks.k23"), 0);
+        const notice = progressHandle('golden-opening-hooks', t("goldenOpening.hooks.k23"));
 
         try {
             const systemPrompt = `你是专业的网文开篇钩子设计师。
@@ -855,7 +856,7 @@ export class GoldenOpeningModal extends Modal {
         this.isCheckingHooks = true;
         this.render();
 
-        const notice = new Notice(t("goldenOpening.common.k46"), 0);
+        const notice = progressHandle('golden-opening-rhythm', t("goldenOpening.common.k46"));
 
         try {
             const systemPrompt = `你是专业的网文编辑，擅长评估开篇钩子的质量。
@@ -950,7 +951,7 @@ ${this.textInput.slice(0, 1000)}
         this.isAnalyzingRhythm = true;
         this.render();
 
-        const notice = new Notice(t("goldenOpening.common.k47"), 0);
+        const notice = progressHandle('golden-opening-chars', t("goldenOpening.common.k47"));
 
         try {
             const systemPrompt = `你是专业的网文节奏分析师。
@@ -1048,7 +1049,7 @@ ${this.textInput}
         this.isGeneratingCharIntro = true;
         this.render();
 
-        const notice = new Notice(t("goldenOpening.common.k48"), 0);
+        const notice = progressHandle('golden-opening-world', t("goldenOpening.common.k48"));
 
         try {
             const systemPrompt = `你是专业的网文人物设计师。
@@ -1139,7 +1140,7 @@ ${this.textInput}
         this.isAnalyzingWorldbuilding = true;
         this.render();
 
-        const notice = new Notice(t("goldenOpening.common.k49"), 0);
+        const notice = progressHandle('golden-opening-scenes', t("goldenOpening.common.k49"));
 
         try {
             const systemPrompt = `你是专业的网文世界观融入设计师。
@@ -1228,7 +1229,7 @@ ${this.textInput}
         this.isScoring = true;
         this.render();
 
-        const notice = new Notice(t("goldenOpening.scoring.k18"), 0);
+        const notice = progressHandle('golden-opening-scoring', t("goldenOpening.scoring.k18"));
 
         try {
             const systemPrompt = `你是专业的网文开篇评估专家。

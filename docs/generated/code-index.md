@@ -11,7 +11,7 @@
 | `shared/` | 262 | 52668 | 2224 | 1741 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 304 | 113691 | 1182 | 945 | 80% |
+| `ui/` | 304 | 113698 | 1182 | 945 | 80% |
 
 ## 文件清单
 
@@ -728,7 +728,7 @@
 | `ui/appearance-settings.ts` | 604 | 3 | 3 |
 | `ui/asset-registry-modal.ts` | 154 | 1 | 1 |
 | `ui/backup-center-modal.ts` | 248 | 1 | 1 |
-| `ui/backup-yuan-modal.ts` | 125 | 1 | 1 |
+| `ui/backup-yuan-modal.ts` | 126 | 1 | 1 |
 | `ui/batch-create-modal.ts` | 522 | 1 | 1 |
 | `ui/batch-import-modal.ts` | 1766 | 1 | 1 |
 | `ui/batch-novels-modal.ts` | 236 | 1 | 1 |
@@ -837,7 +837,7 @@
 | `ui/full-writer/chapter-orchestrator.ts` | 505 | 10 | 9 |
 | `ui/full-writer/checkup-bar-controller.ts` | 287 | 2 | 2 |
 | `ui/full-writer/context-loader-controller.ts` | 275 | 2 | 2 |
-| `ui/full-writer/cover-picker-controller.ts` | 146 | 1 | 1 |
+| `ui/full-writer/cover-picker-controller.ts` | 147 | 1 | 1 |
 | `ui/full-writer/creation-flow-state.ts` | 259 | 5 | 4 |
 | `ui/full-writer/entity-state-controller.ts` | 136 | 2 | 2 |
 | `ui/full-writer/execution-panels.ts` | 391 | 4 | 4 |
@@ -854,7 +854,7 @@
 | `ui/full-writer/recent-projects.ts` | 133 | 6 | 4 |
 | `ui/full-writer/scene-outline-controller.ts` | 1211 | 2 | 1 |
 | `ui/full-writer/scene-outline-format.ts` | 141 | 4 | 4 |
-| `ui/full-writer/setting-lib-controller.ts` | 63 | 1 | 1 |
+| `ui/full-writer/setting-lib-controller.ts` | 64 | 1 | 1 |
 | `ui/full-writer/settings-menu.ts` | 85 | 4 | 3 |
 | `ui/full-writer/status-bar-controller.ts` | 106 | 2 | 2 |
 | `ui/full-writer/step-render-controller.ts` | 685 | 2 | 2 |
@@ -878,10 +878,10 @@
 | `ui/generate-item-modal.ts` | 375 | 1 | 1 |
 | `ui/generate-location-modal.ts` | 375 | 1 | 1 |
 | `ui/generate-worldview-modal.ts` | 289 | 1 | 1 |
-| `ui/golden-opening-modal.ts` | 1453 | 1 | 1 |
+| `ui/golden-opening-modal.ts` | 1454 | 1 | 1 |
 | `ui/home-view.ts` | 250 | 2 | 1 |
 | `ui/humanize-report-modal.ts` | 217 | 2 | 2 |
-| `ui/ideation-modal.ts` | 869 | 1 | 1 |
+| `ui/ideation-modal.ts` | 870 | 1 | 1 |
 | `ui/job-center-modal.ts` | 124 | 1 | 1 |
 | `ui/knowledge-detail-format.ts` | 46 | 4 | 4 |
 | `ui/knowledge-detail-modal.ts` | 1708 | 1 | 1 |
@@ -924,7 +924,7 @@
 | `ui/prompt-import-preview-modal.ts` | 135 | 2 | 1 |
 | `ui/prompt-manager-logic.ts` | 76 | 4 | 3 |
 | `ui/prompt-manager-settings.ts` | 1364 | 1 | 1 |
-| `ui/protect-yuan-modal.ts` | 87 | 1 | 1 |
+| `ui/protect-yuan-modal.ts` | 88 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 504 | 2 | 2 |
 | `ui/quality-loop-modal.ts` | 294 | 1 | 1 |
 | `ui/rebuild-chapters-modal.ts` | 361 | 1 | 1 |
@@ -944,7 +944,7 @@
 | `ui/services/flow-repair-host.ts` | 246 | 8 | 1 |
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
-| `ui/services/project-create-service.ts` | 481 | 6 | 5 |
+| `ui/services/project-create-service.ts` | 482 | 6 | 5 |
 | `ui/settings-tab.ts` | 375 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 40 | 1 | 1 |

@@ -2,7 +2,7 @@ import { App, Modal, Notice, TFolder } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
 import { getChapterFileName, findChapterFile, normalizeChapterFiles, CHAPTER_FILE_TYPES, findBodyFileV4 } from '@/engine/chapter-utils';
-import { readMergedVolumeOutline } from '@/utils/helpers';
+import { readMergedVolumeOutline, progressHandle } from '@/utils/helpers';
 import { pjBodyDir, pjBodyFile, pjStepDir } from '@/shared/paths';
 import { mkdirp } from '@/utils/helpers';
 import { TemplateService } from '@/engine/template-service';
@@ -247,7 +247,7 @@ export class BatchCreateModal extends Modal {
         const mode = this.creationMode;
         const unit = this.modeUnitLabel;
         const total = Math.max(1, this.modeUnitCount);
-        const progress = new Notice(`⏳ 正在创建 ${total} ${unit}骨架...`, 0);
+        const progress = progressHandle('batch-create', `⏳ 正在创建 ${total} ${unit}骨架...`);
         const written: WrittenFile[] = [];
         let created = 0;
         const failures: string[] = [];

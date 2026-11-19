@@ -3,7 +3,7 @@ import NovelWriterPlugin from '@/main';
 import { KnowledgeBaseManager, type BookBasicInfo, type BreakdownStatus } from '@/services/knowledge-base-manager';
 import { WebnovelKnowledgeBase, type GenreConfig } from '@/shared/webnovel-knowledge-base';
 import { KnowledgeBaseConfigManager } from '@/engine/knowledge-base-config';
-import { applyNwScope } from '@/utils/helpers';
+import { applyNwScope, progressHandle } from '@/utils/helpers';
 import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
 import { attachChartInteractions } from '@/ui/svg-charts';
 import { DeconstructionScheduler, ALL_BREAKDOWN_DIMENSIONS, type BreakdownProgress, type BreakdownTask, type BreakdownDimension } from '@/engine/deconstruction-scheduler';
@@ -1933,7 +1933,7 @@ export class KnowledgeBaseView extends ItemView {
         let updated = 0;
         let skipped = 0;
         let processed = 0;
-        const progress = new Notice(t('knowledgebase.batchClassify.progressZero', { total }), 0);
+        const progress = progressHandle('kb-batch-classify', t('knowledgebase.batchClassify.progressZero', { total }));
         try {
             for (const book of [...this.allBooks]) {
                 if (this.viewClosed) break;

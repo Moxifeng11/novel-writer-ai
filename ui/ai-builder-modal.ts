@@ -4,7 +4,7 @@ import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
 import { AIEngine } from '@/engine/ai-engine';
-import { mkdirp } from '@/utils/helpers';
+import { mkdirp, progressHandle, type ProgressHandle } from '@/utils/helpers';
 import { CHARACTER_BODY_SECTIONS } from '@/shared/format-constants';
 import { validateCharacterOutput } from '@/shared/template-validator';
 import { createLogger } from '@/shared/logger';
@@ -519,7 +519,7 @@ export class AiBuilderModal extends Modal {
                 return;
             }
 
-            const genNotice = new Notice(t("aiBuilder.flow.generatingWorldview"), 0);
+            const genNotice = progressHandle('ai-builder-worldview', t("aiBuilder.flow.generatingWorldview"));
             try {
                 // P1-4: generateWorldviewSkeleton 是 AIEngine 公有方法，无需 as any 强转
                 const skeleton = await this.aiEngine.generateWorldviewSkeleton(
@@ -740,7 +740,7 @@ export class AiBuilderModal extends Modal {
         const folder = `${this.selectedProject}/${cfg.folder}`;
         await mkdirp(this.app, folder);
 
-        const genNotice = new Notice(t("aiBuilder.flow.generatingLabel", { label: cfg.label }), 0);
+        const genNotice = progressHandle('ai-builder-generate', t("aiBuilder.flow.generatingLabel", { label: cfg.label }));
 
         try {
             if (cfg.id === 'character' || params.count > 1) {
@@ -762,7 +762,7 @@ export class AiBuilderModal extends Modal {
         }
     }
 
-    private async generateSingle(cfg: EntityTypeConfig, params: GenerateParams, genNotice: Notice): Promise<void> {
+    private async generateSingle(cfg: EntityTypeConfig, params: GenerateParams, genNotice: ProgressHandle): Promise<void> {
         let worldView = this.worldContent || '';
         let settingLib = this.settingLibContent || '';
         if (!worldView) {
@@ -805,7 +805,7 @@ export class AiBuilderModal extends Modal {
         }
     }
 
-    private async generateBatch(cfg: EntityTypeConfig, params: GenerateParams, genNotice: Notice): Promise<void> {
+    private async generateBatch(cfg: EntityTypeConfig, params: GenerateParams, genNotice: ProgressHandle): Promise<void> {
         const n = Math.min(Math.max(params.count || 3, 1), 20);
         let worldView = this.worldContent || '';
         let settingLib = this.settingLibContent || '';

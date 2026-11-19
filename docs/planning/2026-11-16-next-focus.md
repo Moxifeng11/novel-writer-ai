@@ -3845,3 +3845,24 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 六个弹窗标题（如 `ui/job-center-modal.ts:49`「🧵 任务中心」）同样未迁移，属各自 i18n 切片。
 
 **下一轮**：P2 #15（`showProgress` 统一：裸 `new Notice(...,0)` 30 处 + `ui/outline-expand-modal.ts:912` 私有同名方法改名）→ #16 字符串键收编 → #17 kb baseDir → #18 设置页自动保存徽标 → #19 Esc 语义 → #20 AIEngine 收编；另有 #13 遗留的 A-17 撤销栈共享化。
+
+## 第一百二十二轮：C 清单 P2 #15 —— 持久进度统一（progressHandle，2026-11-20，DSH）
+
+**背景（审计 A-9 + A-10）**：`utils/helpers.ts:49` 的 `showProgress`（Notice 槽位 + setMessage 原地更新，47 处调用）与裸 `new Notice(msg, 0)`（**30 处**）并存；`ui/outline-expand-modal.ts` 还有一个同名私有 `showProgress`（弹窗内 DOM 进度），三套语义搅在一起。**审计把路径写成 `ui/utils/helpers.ts:49`，实际在仓根 `utils/`**（同 ZC-28 的教训：别人的结论也要复核）。
+
+**改动**
+- `utils/helpers.ts` 新增 `export interface ProgressHandle { setMessage(message: string): void; hide(): void; }` 与 `export function progressHandle(key: string, message: string): ProgressHandle` —— 内部复用既有 `showProgress(message, key)` / `hideProgress(key)` 的 key 槽位，返回句柄；调用方原有的 `.setMessage(...)` / `.hide()` 语义完全不变（最小 diff）。
+- **30 处** `new Notice(msg, 0)` 全替换为 `progressHandle('<key>', msg)`，key 逐流程分配：setting-lib-generate / backup-yuan / protect-yuan / tomato-rank / worldview-generate / cover-save / continue-create / continue-generate / kb-batch-classify / project-create / golden-opening-{hook-check,hooks,rhythm,chars,world,scenes,scoring} / ideation-generate / plan-book-worldview / plan-book-outline / batch-create / cowrite-quality-fix / ai-builder-worldview / ai-builder-generate / fanfic-materials / fanfic-generate / novel-tags-analyze / volume-intro-generate / rebuild-chapters（:193 与 :228 共用同一 key，原「先 hide 再新建」改由 `setMessage` 原地更新）。
+- `ui/ai-builder-modal.ts`：`generateSingle` / `generateBatch` 形参类型 `Notice` → `ProgressHandle`。
+- `ui/outline-expand-modal.ts`：私有 DOM 进度方法改名 `setProgressText` / `hideProgressBar`（4+4 个调用同步改），消除与共享 helper 的同名异物。
+- 测试：`tests/unit/utils/helpers-escape-notice.test.ts` 新增 4 例（创建即登记 / setMessage 复用同 key 槽位 / hide 幂等只关一次 / 不同 key 隔离），该文件共 10 例通过。
+
+**坑（重要）**
+- 批量插 import 时按文件深度算相对路径，生成了 `'../utils/helpers'` / `'../../utils/helpers'` → `tests/unit/shared/path-alias.test.ts`「运行时代码不再使用 ../ 跨目录引用」直接失败。**运行时代码一律用 `'@/utils/helpers'`**（tsconfig / esbuild / vitest 三处都配了 @ 别名）。
+
+**门禁**
+- `npx tsc --noEmit` 0 错；`npm run lint` 0 error（1029 warning 存量）；`npm run build` EXIT=0。
+- `npm run preflight` **EXIT=0**：1006 文件 / **10,427 通过 + 3 跳过**（日志 `D:\nw-tmp\preflight-p215b.log`）；check:jsdoc 100% / @example 56/56；check:engine-msg 126 键一致。
+- `.bundle-baseline.json`：main.js **6,228,536**（+365）、styles.css 801,044，note「P2 #15 持久进度通知收编」；dev-vault sync 更新 4 文件。
+
+**下一轮**：P2 #16 字符串键收编 → #17 kb baseDir 双口径 → #18 设置页自动保存徽标 → #19 Esc 语义 + 长任务 onClose → #20 AIEngine 收编；另有 #13 遗留的 A-17 撤销栈共享化。
