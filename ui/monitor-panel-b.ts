@@ -4,6 +4,7 @@
  * （情节牵引由协同写作主视图的「🎯 情节牵引」卡展示，面板不再重复创建引擎）
  */
 import { WorkspaceLeaf, Notice } from "obsidian";
+import { t } from '@/i18n';
 import NovelWriterPlugin from "@/main";
 import { DraggablePanel } from "./draggable-panel";
 import {
@@ -132,7 +133,7 @@ export class MonitorPanelB extends DraggablePanel {
   private readonly QUALITY_PERSIST_INTERVAL = 30_000;
 
   constructor(leaf: WorkspaceLeaf, plugin: NovelWriterPlugin) {
-    super(leaf, plugin, "monitor-b", "监控面板B · 完成度/偏离/质量/结算", "layers");
+    super(leaf, plugin, "monitor-b", t("monitorB.viewTitle"), "layers");
     this.facade = new CoWriteFacade({ plugin });
   }
 
@@ -143,47 +144,47 @@ export class MonitorPanelB extends DraggablePanel {
     const completionHeader = completionCard.createDiv({
       cls: "nw-monb-card-header"
     });
-    completionHeader.createEl("h5", { text: "📊 剧情完成度", cls: "nw-monb-card-title" });
+    completionHeader.createEl("h5", { text: t("monitorB.completionTitle"), cls: "nw-monb-card-title" });
     const expandBtn = completionHeader.createEl("button", {
-      text: "展开",
+      text: t("monitorB.expand"),
       cls: "nw-float-btn nw-monb-header-btn",
     });
     expandBtn.addEventListener("click", () => this.toggleCompletionDetail());
     this.completionContent = completionCard.createDiv({ cls: "nw-float-card-body" });
-    this.completionContent.createDiv({ cls: "nw-float-empty", text: "开始写作后自动评估" });
+    this.completionContent.createDiv({ cls: "nw-float-empty", text: t("monitorB.emptyCompletion") });
 
     const divergenceCard = container.createDiv({ cls: "nw-float-card nw-monb-card" });
     const divergenceHeader = divergenceCard.createDiv({
       cls: "nw-monb-card-header"
     });
-    divergenceHeader.createEl("h5", { text: "⚠️ 偏离预警", cls: "nw-monb-card-title" });
+    divergenceHeader.createEl("h5", { text: t("monitorB.divergenceTitle"), cls: "nw-monb-card-title" });
     const divExpandBtn = divergenceHeader.createEl("button", {
-      text: "展开",
+      text: t("monitorB.expand"),
       cls: "nw-float-btn nw-monb-header-btn",
     });
     divExpandBtn.addEventListener("click", () => this.toggleDivergenceDetail());
     this.divergenceContent = divergenceCard.createDiv({ cls: "nw-float-card-body" });
-    this.divergenceContent.createDiv({ cls: "nw-float-empty", text: "开始写作后自动检测" });
+    this.divergenceContent.createDiv({ cls: "nw-float-empty", text: t("monitorB.emptyDivergence") });
 
     const qualityCard = container.createDiv({ cls: "nw-float-card nw-monb-card" });
     const qualityHeader = qualityCard.createDiv({
       cls: "nw-monb-card-header"
     });
-    qualityHeader.createEl("h5", { text: "✨ 写作质量", cls: "nw-monb-card-title" });
+    qualityHeader.createEl("h5", { text: t("monitorB.qualityTitle"), cls: "nw-monb-card-title" });
     const qualityExpandBtn = qualityHeader.createEl("button", {
-      text: "展开",
+      text: t("monitorB.expand"),
       cls: "nw-float-btn nw-monb-header-btn",
     });
     qualityExpandBtn.addEventListener("click", () => this.toggleQualityDetail());
     this.qualityContent = qualityCard.createDiv({ cls: "nw-float-card-body" });
-    this.qualityContent.createDiv({ cls: "nw-float-empty", text: "开始写作后自动评估" });
+    this.qualityContent.createDiv({ cls: "nw-float-empty", text: t("monitorB.emptyQuality") });
 
     const settleCard = container.createDiv({ cls: "nw-float-card" });
-    settleCard.createEl("h5", { text: "💰 章节结算(G1)" });
+    settleCard.createEl("h5", { text: t("monitorB.settleTitle") });
     const settleContent = settleCard.createDiv({ cls: "nw-float-card-body" });
     const settleBtn = settleContent.createEl("button", {
       cls: "nw-float-btn nw-monb-settle-btn",
-      text: "📊 执行结算",
+      text: t("monitorB.runSettle"),
     });
     settleBtn.addEventListener("click", () => {
       // M3-4：走插件命令入口（registry 优先），不再裸调 app.commands 私有派发
@@ -299,8 +300,8 @@ export class MonitorPanelB extends DraggablePanel {
       if (this.completionContent) {
         this.renderEvalFailure(
           this.completionContent,
-          "综合完成度 --",
-          "本次评估失败，结果未更新（原因见开发者日志）",
+          t("monitorB.completionFailedTitle"),
+          t("monitorB.evalFailedBody"),
           16
         );
       }
@@ -309,8 +310,8 @@ export class MonitorPanelB extends DraggablePanel {
         if (this.completionDetailPanel) {
           this.renderEvalFailure(
             this.completionDetailPanel,
-            "完成度详情 --",
-            "本次评估失败，暂无完成度详情",
+            t("monitorB.completionDetailFailed"),
+            t("monitorB.completionDetailFailedBody"),
             11
           );
         }
@@ -349,8 +350,8 @@ export class MonitorPanelB extends DraggablePanel {
       if (this.divergenceContent) {
         this.renderEvalFailure(
           this.divergenceContent,
-          "整体偏离度 --",
-          "本次评估失败，结果未更新（原因见开发者日志）",
+          t("monitorB.divergenceFailedTitle"),
+          t("monitorB.evalFailedBody"),
           16
         );
       }
@@ -359,8 +360,8 @@ export class MonitorPanelB extends DraggablePanel {
         if (this.divergenceDetailPanel) {
           this.renderEvalFailure(
             this.divergenceDetailPanel,
-            "偏离详情 --",
-            "本次评估失败，暂无偏离详情",
+            t("monitorB.divergenceDetailFailed"),
+            t("monitorB.divergenceDetailFailedBody"),
             11
           );
         }
@@ -431,7 +432,7 @@ export class MonitorPanelB extends DraggablePanel {
       cls: "nw-monb-overall"
     });
     overallRow.createSpan({
-      text: "整体偏离度",
+      text: t("monitorB.overallDivergence"),
       cls: "nw-monb-overall-label"
     });
     const overallValueEl = overallRow.createSpan({
@@ -448,11 +449,11 @@ export class MonitorPanelB extends DraggablePanel {
     overallFillEl.style.setProperty('--nw-monb-tone', getDivergenceLevelColor(level));
 
     const dimensions = [
-      { key: 'mainline', label: '主线', score: result.mainlineDivergence.score, icon: '🧭' },
-      { key: 'character', label: '角色', score: result.characterDivergence.score, icon: '👤' },
-      { key: 'rhythm', label: '节奏', score: result.rhythmDivergence.score, icon: '🎵' },
-      { key: 'foreshadow', label: '伏笔', score: result.foreshadowDivergence.score, icon: '🔮' },
-      { key: 'setting', label: '设定', score: result.settingDivergence.score, icon: '🌍' },
+      { key: 'mainline', label: t('monitorB.dim.mainline'), score: result.mainlineDivergence.score, icon: '🧭' },
+      { key: 'character', label: t('monitorB.dim.character'), score: result.characterDivergence.score, icon: '👤' },
+      { key: 'rhythm', label: t('monitorB.dim.rhythm'), score: result.rhythmDivergence.score, icon: '🎵' },
+      { key: 'foreshadow', label: t('monitorB.dim.foreshadow'), score: result.foreshadowDivergence.score, icon: '🔮' },
+      { key: 'setting', label: t('monitorB.dim.setting'), score: result.settingDivergence.score, icon: '🌍' },
     ];
 
     for (const dim of dimensions) {
@@ -488,7 +489,7 @@ export class MonitorPanelB extends DraggablePanel {
         cls: 'nw-monb-sep nw-monb-sep--compact'
       });
       issueRow.createDiv({
-        text: `🚨 ${allIssues.length}个问题`,
+        text: t("monitorB.issueCount", { count: allIssues.length }),
         cls: 'nw-monb-sub-title nw-monb-sub-title--danger'
       });
       for (const issue of allIssues.slice(0, 2)) {
@@ -502,7 +503,7 @@ export class MonitorPanelB extends DraggablePanel {
     const metaRow = this.divergenceContent.createDiv({
       cls: 'nw-monb-meta'
     });
-    metaRow.createSpan({ text: `${result.wordCount}字` });
+    metaRow.createSpan({ text: t("monitorB.wordCount", { count: result.wordCount }) });
 
     if (this.divergenceExpanded) this.ensureDivergenceDetailPanel();
   }
@@ -512,11 +513,11 @@ export class MonitorPanelB extends DraggablePanel {
     if (this.divergenceContent) {
       this.divergenceContent.empty();
       this.divergenceContent.createDiv({
-        text: "整体偏离度 --",
+        text: t("monitorB.divergenceFailedTitle"),
         cls: 'nw-monb-nodata-title'
       });
       this.divergenceContent.createDiv({
-        text: `正文不足 ${DEVIATION_MIN_EVALUABLE_CHARS} 字，暂不检测（当前 ${wordCount} 字）`,
+        text: t("monitorB.bodyTooShortNoCheck", { min: DEVIATION_MIN_EVALUABLE_CHARS, current: wordCount }),
         cls: 'nw-monb-note'
       });
     }
@@ -525,7 +526,7 @@ export class MonitorPanelB extends DraggablePanel {
       if (this.divergenceDetailPanel) {
         this.divergenceDetailPanel.empty();
         this.divergenceDetailPanel.createDiv({
-          text: "正文过短，暂无偏离详情",
+          text: t("monitorB.shortBodyNoDivergence"),
           cls: 'nw-monb-note'
         });
       }
@@ -580,7 +581,7 @@ export class MonitorPanelB extends DraggablePanel {
     if (result.wordCount < DEVIATION_MIN_EVALUABLE_CHARS) {
       this.divergenceDetailPanel.empty();
       this.divergenceDetailPanel.createDiv({
-        text: "正文过短，暂无偏离详情",
+        text: t("monitorB.shortBodyNoDivergence"),
         cls: 'nw-monb-note'
       });
       return;
@@ -589,11 +590,11 @@ export class MonitorPanelB extends DraggablePanel {
     this.divergenceDetailPanel.empty();
 
     const sections: Array<{ label: string; dim: typeof result.mainlineDivergence; icon: string }> = [
-      { label: '🧭 主线偏离', dim: result.mainlineDivergence, icon: '🧭' },
-      { label: '👤 角色偏离', dim: result.characterDivergence, icon: '👤' },
-      { label: '🎵 节奏偏离', dim: result.rhythmDivergence, icon: '🎵' },
-      { label: '🔮 伏笔偏离', dim: result.foreshadowDivergence, icon: '🔮' },
-      { label: '🌍 设定偏离', dim: result.settingDivergence, icon: '🌍' },
+      { label: t('monitorB.dim.mainlineDev'), dim: result.mainlineDivergence, icon: '🧭' },
+      { label: t('monitorB.dim.characterDev'), dim: result.characterDivergence, icon: '👤' },
+      { label: t('monitorB.dim.rhythmDev'), dim: result.rhythmDivergence, icon: '🎵' },
+      { label: t('monitorB.dim.foreshadowDev'), dim: result.foreshadowDivergence, icon: '🔮' },
+      { label: t('monitorB.dim.settingDev'), dim: result.settingDivergence, icon: '🌍' },
     ];
 
     for (const section of sections) {
@@ -659,7 +660,7 @@ export class MonitorPanelB extends DraggablePanel {
         cls: "nw-monb-sep"
       });
       historySection.createDiv({
-        text: "📈 偏离趋势（最近10次）",
+        text: t("monitorB.divergenceTrend"),
         cls: "nw-monb-sep-title"
       });
 
@@ -734,7 +735,7 @@ export class MonitorPanelB extends DraggablePanel {
   private showDivergenceAlert(reason: string): void {
     // 此前用 (this.app as any).notice?.addNotice?.()：Obsidian 没有该 API，
     // 可选链让调用恒为 undefined，预警只写进了日志，用户从未看到过提示。
-    new Notice(`⚠️ 剧情偏离预警：${reason}`, 5000);
+    new Notice(t("monitorB.divergenceAlert", { reason }), 5000);
   }
 
   private getDivergenceLevelFromScore(score: number): DivergenceLevel {
@@ -744,31 +745,31 @@ export class MonitorPanelB extends DraggablePanel {
 
   private formatDivergenceDetailKey(key: string): string {
     const labels: Record<string, string> = {
-      outlineMatched: '大纲匹配',
-      outlineTotal: '大纲总数',
-      outlineMatchRate: '大纲匹配率',
-      mainlineMatched: '主线匹配',
-      mainlineCoverage: '主线覆盖率',
-      conflictIndicators: '冲突信号',
-      charactersAnalyzed: '分析角色数',
-      avgConsistency: '平均一致性',
-      avgSentenceLen: '平均句长',
-      actionDensity: '动作密度',
-      dialogueRatio: '对话占比',
-      descriptionDensity: '描写密度',
-      actualPace: '实际节奏',
-      expectedPace: '预期节奏',
-      sceneShifts: '场景切换',
-      recoverySignals: '回收信号',
-      plantSignals: '埋设信号',
-      toRecover: '待回收',
-      recovered: '已回收',
-      activeForeshadows: '活跃伏笔',
-      mentionedActive: '提及活跃',
-      detectedSettings: '检测到设定',
-      settingCoverage: '设定覆盖率',
-      settingMatched: '设定匹配',
-      note: '备注',
+      outlineMatched: t('monitorB.metric.outlineMatched'),
+      outlineTotal: t('monitorB.metric.outlineTotal'),
+      outlineMatchRate: t('monitorB.metric.outlineMatchRate'),
+      mainlineMatched: t('monitorB.metric.mainlineMatched'),
+      mainlineCoverage: t('monitorB.metric.mainlineCoverage'),
+      conflictIndicators: t('monitorB.metric.conflictIndicators'),
+      charactersAnalyzed: t('monitorB.metric.charactersAnalyzed'),
+      avgConsistency: t('monitorB.metric.avgConsistency'),
+      avgSentenceLen: t('monitorB.metric.avgSentenceLen'),
+      actionDensity: t('monitorB.metric.actionDensity'),
+      dialogueRatio: t('monitorB.metric.dialogueRatio'),
+      descriptionDensity: t('monitorB.metric.descriptionDensity'),
+      actualPace: t('monitorB.metric.actualPace'),
+      expectedPace: t('monitorB.metric.expectedPace'),
+      sceneShifts: t('monitorB.metric.sceneShifts'),
+      recoverySignals: t('monitorB.metric.recoverySignals'),
+      plantSignals: t('monitorB.metric.plantSignals'),
+      toRecover: t('monitorB.metric.toRecover'),
+      recovered: t('monitorB.metric.recovered'),
+      activeForeshadows: t('monitorB.metric.activeForeshadows'),
+      mentionedActive: t('monitorB.metric.mentionedActive'),
+      detectedSettings: t('monitorB.metric.detectedSettings'),
+      settingCoverage: t('monitorB.metric.settingCoverage'),
+      settingMatched: t('monitorB.metric.settingMatched'),
+      note: t('monitorB.metric.note'),
     };
     return labels[key] || key;
   }
@@ -812,12 +813,12 @@ export class MonitorPanelB extends DraggablePanel {
       cls: "nw-monb-overall"
     });
     overallRow.createSpan({
-      text: "综合完成度",
+      text: t("monitorB.overallCompletion"),
       cls: "nw-monb-overall-label"
     });
     overallRow.createSpan({
       cls: `nw-monb-overall-value ${colorCls}`,
-      text: `${overallScore}分 · ${label}`
+      text: t("monitorB.scoreWithLabel", { score: overallScore, label })
     });
 
     const progressBar = this.completionContent.createDiv({
@@ -828,12 +829,12 @@ export class MonitorPanelB extends DraggablePanel {
     progressFill.style.setProperty('--nw-monb-tone', this.getScoreColor(overallScore));
 
     const dimensions = [
-      { key: 'scene', label: '场景', score: result.sceneCompletion.score, icon: '🏔️' },
-      { key: 'goal', label: '目标', score: result.goalCompletion.score, icon: '🎯' },
-      { key: 'character', label: '人物', score: result.characterEngagement.score, icon: '👤' },
-      { key: 'foreshadow', label: '伏笔', score: result.foreshadowProgress.score, icon: '🔮' },
-      { key: 'emotion', label: '情绪弧', score: result.emotionArcProgress.score, icon: '💭' },
-      { key: 'traction', label: '牵引', score: result.plotTraction.score, icon: '🧭' },
+      { key: 'scene', label: t('monitorB.dim.scene'), score: result.sceneCompletion.score, icon: '🏔️' },
+      { key: 'goal', label: t('monitorB.dim.goal'), score: result.goalCompletion.score, icon: '🎯' },
+      { key: 'character', label: t('monitorB.dim.characterComp'), score: result.characterEngagement.score, icon: '👤' },
+      { key: 'foreshadow', label: t('monitorB.dim.foreshadow'), score: result.foreshadowProgress.score, icon: '🔮' },
+      { key: 'emotion', label: t('monitorB.dim.emotionArc'), score: result.emotionArcProgress.score, icon: '💭' },
+      { key: 'traction', label: t('monitorB.dim.traction'), score: result.plotTraction.score, icon: '🧭' },
     ];
 
     for (const dim of dimensions) {
@@ -860,8 +861,8 @@ export class MonitorPanelB extends DraggablePanel {
     const metaRow = this.completionContent.createDiv({
       cls: 'nw-monb-meta nw-monb-meta--loose'
     });
-    metaRow.createSpan({ text: `${result.wordCount}字` });
-    metaRow.createSpan({ text: `${result.overallCompletion.details.paragraphs || 0}段` });
+    metaRow.createSpan({ text: t("monitorB.wordCount", { count: result.wordCount }) });
+    metaRow.createSpan({ text: t("monitorB.paragraphCount", { count: result.overallCompletion.details.paragraphs || 0 }) });
     metaRow.createSpan({ text: `${Math.round(result.overallCompletion.details.evalTimeMs as number || 0)}ms` });
 
     if (this.completionExpanded) this.ensureCompletionDetailPanel();
@@ -872,11 +873,11 @@ export class MonitorPanelB extends DraggablePanel {
     if (this.completionContent) {
       this.completionContent.empty();
       this.completionContent.createDiv({
-        text: "综合完成度 --",
+        text: t("monitorB.completionFailedTitle"),
         cls: 'nw-monb-nodata-title'
       });
       this.completionContent.createDiv({
-        text: `正文不足 ${PLOT_COMPLETION_MIN_EVALUABLE_CHARS} 字，暂不评估（当前 ${wordCount} 字）`,
+        text: t("monitorB.bodyTooShortNoEval", { min: PLOT_COMPLETION_MIN_EVALUABLE_CHARS, current: wordCount }),
         cls: 'nw-monb-note'
       });
     }
@@ -885,7 +886,7 @@ export class MonitorPanelB extends DraggablePanel {
       if (this.completionDetailPanel) {
         this.completionDetailPanel.empty();
         this.completionDetailPanel.createDiv({
-          text: "正文过短，暂无完成度详情",
+          text: t("monitorB.shortBodyNoCompletion"),
           cls: 'nw-monb-note'
         });
       }
@@ -940,7 +941,7 @@ export class MonitorPanelB extends DraggablePanel {
     if (result.wordCount < PLOT_COMPLETION_MIN_EVALUABLE_CHARS) {
       this.completionDetailPanel.empty();
       this.completionDetailPanel.createDiv({
-        text: "正文过短，暂无完成度详情",
+        text: t("monitorB.shortBodyNoCompletion"),
         cls: 'nw-monb-note'
       });
       return;
@@ -949,12 +950,12 @@ export class MonitorPanelB extends DraggablePanel {
     this.completionDetailPanel.empty();
 
     const sections: Array<{ label: string; dim: typeof result.sceneCompletion; icon: string }> = [
-      { label: '🏔️ 场景完成度', dim: result.sceneCompletion, icon: '🏔️' },
-      { label: '🎯 目标完成度', dim: result.goalCompletion, icon: '🎯' },
-      { label: '👤 人物参与度', dim: result.characterEngagement, icon: '👤' },
-      { label: '🔮 伏笔进度', dim: result.foreshadowProgress, icon: '🔮' },
-      { label: '💭 情绪弧进度', dim: result.emotionArcProgress, icon: '💭' },
-      { label: '🧭 情节牵引', dim: result.plotTraction, icon: '🧭' },
+      { label: t('monitorB.dim.sceneFull'), dim: result.sceneCompletion, icon: '🏔️' },
+      { label: t('monitorB.dim.goalFull'), dim: result.goalCompletion, icon: '🎯' },
+      { label: t('monitorB.dim.characterFull'), dim: result.characterEngagement, icon: '👤' },
+      { label: t('monitorB.dim.foreshadowFull'), dim: result.foreshadowProgress, icon: '🔮' },
+      { label: t('monitorB.dim.emotionArcFull'), dim: result.emotionArcProgress, icon: '💭' },
+      { label: t('monitorB.dim.tractionFull'), dim: result.plotTraction, icon: '🧭' },
     ];
 
     for (const section of sections) {
@@ -971,7 +972,7 @@ export class MonitorPanelB extends DraggablePanel {
       });
       secHeader.createSpan({
         cls: `nw-monb-section-score ${getScoreColorClass(section.dim.score)}`,
-        text: `${section.dim.score}分 · ${getScoreLabel(section.dim.score)}`
+        text: t("monitorB.scoreWithLabel", { score: section.dim.score, label: getScoreLabel(section.dim.score) })
       });
 
       const detailsRow = secDiv.createDiv({
@@ -1000,7 +1001,7 @@ export class MonitorPanelB extends DraggablePanel {
         cls: "nw-monb-sep"
       });
       historySection.createDiv({
-        text: "📈 写作进度曲线",
+        text: t("monitorB.progressCurve"),
         cls: "nw-monb-sep-title"
       });
 
@@ -1059,32 +1060,32 @@ export class MonitorPanelB extends DraggablePanel {
     const historyMeta = container.createDiv({
       cls: 'nw-monb-chart-meta'
     });
-    historyMeta.createSpan({ text: `起点: ${scores[0]}分` });
-    historyMeta.createSpan({ text: `当前: ${scores[scores.length - 1]}分` });
+    historyMeta.createSpan({ text: t("monitorB.historyStart", { score: scores[0] }) });
+    historyMeta.createSpan({ text: t("monitorB.historyCurrent", { score: scores[scores.length - 1] }) });
     historyMeta.createSpan({ text: `Δ${scores[scores.length - 1] - scores[0] >= 0 ? '+' : ''}${scores[scores.length - 1] - scores[0]}` });
   }
 
   private formatDetailKey(key: string): string {
     const labels: Record<string, string> = {
-      locationMentions: '地点',
-      timeMentions: '时间',
+      locationMentions: t('monitorB.metric.locationMentions'),
+      timeMentions: t('monitorB.metric.timeMentions'),
       envMentions: '环境',
       atmosphereMentions: '氛围',
       goalIndicators: '目标信号',
       obstacleIndicators: '阻碍信号',
       resultIndicators: '结果信号',
-      outlineMatchRate: '大纲匹配',
-      characterMentions: '角色提及',
-      dialogRatio: '对话占比',
-      actionDensity: '动作密度',
-      uniqueCharacters: '角色数',
-      detectedForeshadows: '埋设信号',
-      detectedReveals: '回收信号',
+      outlineMatchRate: t('monitorB.metric.outlineMatched'),
+      characterMentions: t('monitorB.metric.characterMentions'),
+      dialogRatio: t('monitorB.metric.dialogueRatio'),
+      actionDensity: t('monitorB.metric.actionDensity'),
+      uniqueCharacters: t('monitorB.metric.uniqueCharacters'),
+      detectedForeshadows: t('monitorB.metric.plantSignals'),
+      detectedReveals: t('monitorB.metric.recoverySignals'),
       arcCompleteness: '弧完整度',
       intensity: '情绪强度',
       emotionShifts: '情绪起伏',
-      mainlineKeywordMatches: '主线匹配',
-      conflictIndicators: '冲突信号',
+      mainlineKeywordMatches: t('monitorB.metric.mainlineMatched'),
+      conflictIndicators: t('monitorB.metric.conflictIndicators'),
       forwardIndicators: '前瞻信号',
       wordCount: '字数',
       paragraphs: '段落',
@@ -1200,7 +1201,7 @@ export class MonitorPanelB extends DraggablePanel {
         this.renderEvalFailure(
           this.qualityContent,
           "综合质量 --",
-          "本次评估失败，结果未更新（原因见开发者日志）",
+          t("monitorB.evalFailedBody"),
           20
         );
       }
@@ -1375,8 +1376,8 @@ export class MonitorPanelB extends DraggablePanel {
 
     const dimensions = [
       { key: 'language', label: '语言', score: result.languageQuality.score, icon: '📝' },
-      { key: 'rhythm', label: '节奏', score: result.rhythmQuality.score, icon: '🎵' },
-      { key: 'character', label: '人物', score: result.characterQuality.score, icon: '👤' },
+      { key: 'rhythm', label: t('monitorB.dim.rhythm'), score: result.rhythmQuality.score, icon: '🎵' },
+      { key: 'character', label: t('monitorB.dim.characterComp'), score: result.characterQuality.score, icon: '👤' },
       { key: 'plot', label: '情节', score: result.plotQuality.score, icon: '📖' },
       { key: 'atmosphere', label: '氛围', score: result.atmosphereQuality.score, icon: '🌫️' },
       { key: 'structure', label: '结构', score: result.structureQuality.score, icon: '🏗️' },
@@ -1429,7 +1430,7 @@ export class MonitorPanelB extends DraggablePanel {
     const metaRow = this.qualityContent.createDiv({
       cls: 'nw-monb-meta nw-monb-meta--faint'
     });
-    metaRow.createSpan({ text: `${result.wordCount}字` });
+    metaRow.createSpan({ text: t("monitorB.wordCount", { count: result.wordCount }) });
     metaRow.createSpan({ text: `${result.evalTimeMs}ms` });
     if (result.comparedToAverage !== 0) {
       const diffText = result.comparedToAverage > 0 ? `+${result.comparedToAverage}` : result.comparedToAverage;
@@ -1581,11 +1582,11 @@ export class MonitorPanelB extends DraggablePanel {
 
     const sections: Array<{ label: string; dim: typeof result.languageQuality; icon: string; key: string }> = [
       { label: '📝 语言质量', dim: result.languageQuality, icon: '📝', key: 'language' },
-      { label: '🎵 节奏质量', dim: result.rhythmQuality, icon: '🎵', key: 'rhythm' },
-      { label: '👤 人物质量', dim: result.characterQuality, icon: '👤', key: 'character' },
-      { label: '📖 情节质量', dim: result.plotQuality, icon: '📖', key: 'plot' },
-      { label: '🌫️ 氛围质量', dim: result.atmosphereQuality, icon: '🌫️', key: 'atmosphere' },
-      { label: '🏗️ 结构质量', dim: result.structureQuality, icon: '🏗️', key: 'structure' },
+      { label: t('monitorB.dim.rhythmQ'), dim: result.rhythmQuality, icon: '🎵', key: 'rhythm' },
+      { label: t('monitorB.dim.characterQ'), dim: result.characterQuality, icon: '👤', key: 'character' },
+      { label: t('monitorB.dim.plotQ'), dim: result.plotQuality, icon: '📖', key: 'plot' },
+      { label: t('monitorB.dim.atmosphereQ'), dim: result.atmosphereQuality, icon: '🌫️', key: 'atmosphere' },
+      { label: t('monitorB.dim.structureQ'), dim: result.structureQuality, icon: '🏗️', key: 'structure' },
     ];
 
     for (const section of sections) {
@@ -1602,7 +1603,7 @@ export class MonitorPanelB extends DraggablePanel {
       });
       const secScoreEl = secHeader.createSpan({
         cls: 'nw-monb-section-score nw-monb-section-score--tone',
-        text: `${section.dim.score}分`
+        text: t("monitorB.scoreSuffix", { score: section.dim.score })
       });
       secScoreEl.style.setProperty('--nw-monb-tone', this.getQualityScoreColor(section.dim.score));
 
@@ -1639,7 +1640,7 @@ export class MonitorPanelB extends DraggablePanel {
         cls: "nw-monb-sep"
       });
       historySection.createDiv({
-        text: "📈 质量趋势（最近10次）",
+        text: t("monitorB.qualityTrend"),
         cls: "nw-monb-sep-title"
       });
 
@@ -1665,7 +1666,7 @@ export class MonitorPanelB extends DraggablePanel {
         cls: "nw-monb-sep"
       });
       allSugSection.createDiv({
-        text: "📋 全部改进建议",
+        text: t("monitorB.allSuggestions"),
         cls: "nw-monb-sep-title"
       });
       for (const sug of allSuggestions) {
@@ -1700,11 +1701,11 @@ export class MonitorPanelB extends DraggablePanel {
     const tips: string[] = [];
 
     if (this.lastResult && this.lastResult.overallCompletion.score > 70 && result.overallScore < 50) {
-      tips.push("⚠️ 完成度较高但质量偏低，建议放慢节奏打磨内容质量");
+      tips.push(t("monitorB.tipHighCompletionLowQuality"));
     }
 
     if (this.lastDivergenceResult && this.lastDivergenceResult.overallDivergence > 50 && result.plotQuality.score < 50) {
-      tips.push("🔗 剧情偏离度较高，可能是导致情节质量偏低的原因");
+      tips.push(t("monitorB.tipHighDivergence"));
     }
 
     if (tips.length > 0) {
@@ -1712,7 +1713,7 @@ export class MonitorPanelB extends DraggablePanel {
         cls: "nw-monb-sep"
       });
       linkSection.createDiv({
-        text: "🔗 联动分析",
+        text: t("monitorB.crossAnalysis"),
         cls: "nw-monb-sep-title"
       });
       for (const tip of tips) {
@@ -1797,12 +1798,12 @@ export class MonitorPanelB extends DraggablePanel {
     if (now - this.lastQualityAlertTime < this.QUALITY_ALERT_COOLDOWN) return;
 
     this.lastQualityAlertTime = now;
-    new Notice(`💡 当前质量分 ${result.overallScore}（${result.grade}），建议关注 Top 改进建议`, 4000);
+    new Notice(t("monitorB.qualityTip", { score: result.overallScore, grade: result.grade }), 4000);
   }
 
   /** 显示里程碑通知 */
   private showMilestoneNotice(milestone: string, score: number): void {
-    new Notice(`🎉 达成${milestone}！当前质量分：${score}分`, 3000);
+    new Notice(t("monitorB.milestoneReached", { milestone, score }), 3000);
   }
 
   private getQualityScoreColor(score: number): string {
@@ -1811,39 +1812,39 @@ export class MonitorPanelB extends DraggablePanel {
 
   private formatQualityDetailKey(key: string): string {
     const labels: Record<string, string> = {
-      uniqueChars: '字汇量',
-      vocabRichness: '词汇丰富度',
-      avgSentenceLen: '平均句长',
-      sentenceVariety: '句式变化',
-      rhetoricCount: '修辞数',
-      typoIssues: '用字问题',
-      repetitionCount: '重复次数',
-      actionDensity: '动作密度',
-      dialogueRatio: '对话占比',
-      descriptionDensity: '描写密度',
-      paceVariety: '节奏变化',
-      sceneShifts: '场景切换',
-      characterMentions: '角色提及',
-      actionDescriptions: '动作描写',
-      uniqueCharacters: '角色数',
-      characterDepth: '角色立体度',
-      dialoguePersonality: '对话辨识度',
-      suspenseIndicators: '悬念信号',
-      coolMoments: '爽点数量',
-      conflictIndicators: '冲突信号',
-      causalityIndicators: '因果信号',
-      foreshadowCount: '伏笔数量',
-      environmentMentions: '环境描写',
-      positiveEmotions: '正面情绪',
-      negativeEmotions: '负面情绪',
-      senseDescriptions: '感官描写',
-      immersion: '代入感',
-      openingAttraction: '开头吸引力',
-      middleRichness: '中段饱满度',
-      endingStrength: '结尾力道',
-      structureBalance: '结构均衡',
-      note: '备注',
-      estimation: '估算方式',
+      uniqueChars: t('monitorB.metric.uniqueChars'),
+      vocabRichness: t('monitorB.metric.vocabRichness'),
+      avgSentenceLen: t('monitorB.metric.avgSentenceLen'),
+      sentenceVariety: t('monitorB.metric.sentenceVariety'),
+      rhetoricCount: t('monitorB.metric.rhetoricCount'),
+      typoIssues: t('monitorB.metric.typoIssues'),
+      repetitionCount: t('monitorB.metric.repetitionCount'),
+      actionDensity: t('monitorB.metric.actionDensity'),
+      dialogueRatio: t('monitorB.metric.dialogueRatio'),
+      descriptionDensity: t('monitorB.metric.descriptionDensity'),
+      paceVariety: t('monitorB.metric.paceVariety'),
+      sceneShifts: t('monitorB.metric.sceneShifts'),
+      characterMentions: t('monitorB.metric.characterMentions'),
+      actionDescriptions: t('monitorB.metric.actionDescriptions'),
+      uniqueCharacters: t('monitorB.metric.uniqueCharacters'),
+      characterDepth: t('monitorB.metric.characterDepth'),
+      dialoguePersonality: t('monitorB.metric.dialoguePersonality'),
+      suspenseIndicators: t('monitorB.metric.suspenseIndicators'),
+      coolMoments: t('monitorB.metric.coolMoments'),
+      conflictIndicators: t('monitorB.metric.conflictIndicators'),
+      causalityIndicators: t('monitorB.metric.causalityIndicators'),
+      foreshadowCount: t('monitorB.metric.foreshadowCount'),
+      environmentMentions: t('monitorB.metric.environmentMentions'),
+      positiveEmotions: t('monitorB.metric.positiveEmotions'),
+      negativeEmotions: t('monitorB.metric.negativeEmotions'),
+      senseDescriptions: t('monitorB.metric.senseDescriptions'),
+      immersion: t('monitorB.metric.immersion'),
+      openingAttraction: t('monitorB.metric.openingAttraction'),
+      middleRichness: t('monitorB.metric.middleRichness'),
+      endingStrength: t('monitorB.metric.endingStrength'),
+      structureBalance: t('monitorB.metric.structureBalance'),
+      note: t('monitorB.metric.note'),
+      estimation: t('monitorB.metric.estimation'),
     };
     return labels[key] || key;
   }
