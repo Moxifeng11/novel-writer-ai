@@ -3597,3 +3597,49 @@ plan 1 / telemetry 16 / memory 3 / toollog 4）。
 
 **下一轮候选**：`ui/novel-tags-modal.ts`（1,099 字，只剩 AI 提示词与解析正则，可选）；知识库 D 类两文件
 （`ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`，用户 m16938 裁定随视觉重构）；第三期补齐 en 并逐面量布局。
+
+## 第一百一十五轮：i18n 第二期第47片 —— 知识库 D 类两文件（2026-11-20，DSH）
+
+**触发**：用户 m16938 早前裁定「知识库 D 类两文件随视觉重构一起做」，视觉重构 Slice A–P 已完成，本轮把它补上；
+同时清掉第 33/34 片遗留的 `knowledgebase.*` 之外的详情面文案。
+
+**范围（7 个文件、547 键）**：
+- `ui/knowledge-detail-modal.ts`：详情弹窗外壳与 10 个页签的内容（`knowledgeDetail` 组 182 键）；
+- `ui/views/book-detail-renderer.ts`：详情渲染器（`bookDetail` 组 365 键），本次把全部 `createEl({ text })` 走 `t()`；
+- 逻辑助手 `ui/views/book-detail-metrics.ts` / `book-detail-logic.ts` / `book-emotion-logic.ts` /
+  `book-foreshadow-logic.ts` / `book-style-logic.ts`：常量表改函数（`emotionArcTypeMap()` / `foreshadowTypeLabels()` /
+  `senseNameMap()` 等），避免模块加载时把语言固化。
+
+**改动要点**
+- 三个模块级常量（`STYLE_DIMENSIONS`、维度键表、页签表）改函数或「中文数据键 + `styleDimensionLabel()` 显示层翻译」：
+  落盘/比对用的键必须保持中文（老数据兼容），只翻显示名。
+- 枚举键（情绪键 anger/joy…、伏笔类型 item/setting…、句式 declarative…）同样是数据键，key 留英文、只迁值。
+- 保留中文：`起承转合` 颜色映射的键、6 条 `log.*`、`STYLE_DIMENSIONS` 里的数据键。
+- 字数文案不再各写一份，统一复用 `ui/views/kb-format.ts` 的 `formatWordCount`（`12.3 万字` / `374k chars`），
+  删掉 zh/en 的 `knowledgeDetail.word.*` 两条，`formatWordCount()` 方法体只剩一行转发。
+- 资源一律嵌套对象（`knowledgeDetail.*` / `bookDetail.*`），不用扁平点号键。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；`node scripts/check-i18n.mjs` zh/en 各 **5976** 条、无法解析键 0、棘轮 **206 文件 / 5644 条**。
+- 新增 `tests/unit/i18n/book-detail-labels.test.ts` **5 例** 与 `knowledge-detail-labels.test.ts` **4 例**
+  （键集合一致 / en 子树零 CJK / 占位符逐键一致 / 中英文案抽检）；
+  存量三个逻辑助手测试（`book-emotion-logic` / `book-foreshadow-logic` / `book-style-logic`）改为断言函数返回值。
+- 实机 zh/en 各 10 个页签（`D:\nw-dev-vault\_visual-i18n47\<tab>-<lang>.png`，896×1130）：
+  en 全英文、无溢出；残余 CJK 全是 vault 数据（书名「将夜」、作者、题材树、简介、标签）。
+- `npm run preflight` **EXIT=0**：**999 文件 / 10,390 通过 + 3 跳过**。
+- `check:bundle`：main.js 6,190,342 → **6,240,146**（+45,843 → 补 @returns 后再 +33）、styles.css **800,684**（±0）。
+
+**坑**
+1. **en 资源块整块抄成了中文**：`i18n-parity.test.ts` 报 en 174 条 CJK 才发现。`check:i18n` 只查键不查值语言，
+   每片迁完必须跑 `npx vitest run tests/unit/i18n`；资源块要一次性全量生成，别分批补。
+2. **常量表改函数后 JSDoc 掉了 `@returns`**：`check:jsdoc` 报「不完整 JSDoc 从 0 增到 3/2/4」，
+   9 个函数补 `@returns` 后通过；补注释会让 main.js +33 字节，需同步 `--update-baseline --note`。
+3. **`zh-CN.ts` 该区域是混合 EOL**：按整块 eol 拼接会 miss，改用 `split('\n')`（保留行尾 `\r`）后按行区间 splice。
+4. 测试里 `setLocale('auto')` 编译不过（签名是 `setLocale(locale: Locale)`），一律 `setLocale('zh-CN')`。
+5. 详情页签横向滚动是既有设计（`styles-src/27-knowledge-base.css:738-750`），zh/en 都滚，不是溢出 bug。
+
+**文档**：`docs/modules/i18n.md`（§2 资源 5976、资源链、已迁移面整段、§5 表行、§6 测试、§7 backlog、§9 三条新坑）、
+`docs/modules/INDEX.md`、`docs/CURRENT.md`、`docs/planning/2026-11-18-feature-gaps.md`、本轮记录；基线 `.i18n-baseline.json` / `.bundle-baseline.json`。
+
+**下一轮候选**：`ui/ideation-modal.ts`（793 字）、`ui/batch-import*`（750 字）、`ui/views/agent-workbench-view.ts`（730 字）；
+第三期补齐 en 并逐面量布局；知识库详情大标题字号（渲染器 `createDetailSection` 后的标题偏大）列入视觉 backlog。

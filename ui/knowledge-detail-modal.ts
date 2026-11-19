@@ -21,6 +21,8 @@ import { radarChart, barChart, donutChart, lineChart, scatterChart, timelineChar
 import { RefillModal } from './refill-modal';
 import { KnowledgeMonitorModal } from './knowledge-monitor-modal';
 import { createLogger } from '@/shared/logger';
+import { t } from '@/i18n';
+import { formatWordCount as formatWordCountText } from './views/kb-format';
 import { normalizeDetailNumber } from './knowledge-detail-format';
 import { openKnowledgeFolder } from './knowledge-folder-navigation';
 import { escapeHtml } from '@/utils/helpers';
@@ -30,21 +32,74 @@ import type NovelWriterPlugin from '@/main';
 const log = createLogger('KnowledgeDetailModal');
 type TabKey = 'overview' | 'style' | 'rhythm' | 'technique' | 'structure' | 'character' | 'foreshadow';
 
-const TAB_LABELS: Record<TabKey, string> = {
-    overview: '概览',
-    style: '风格',
-    rhythm: '节奏',
-    technique: '技巧',
-    structure: '结构',
-    character: '人设',
-    foreshadow: '伏笔',
-};
+/** Tab 名随语言变化，必须渲染时取（模块级常量会在加载时冻结语言） */
+function tabLabels(): Record<TabKey, string> {
+    return {
+        overview: t('knowledgebase.dim.overview'),
+        style: t('knowledgebase.dim.style'),
+        rhythm: t('knowledgebase.dim.rhythm'),
+        technique: t('knowledgebase.dim.technique'),
+        structure: t('knowledgebase.dim.structure'),
+        character: t('knowledgebase.dim.character'),
+        foreshadow: t('knowledgebase.dim.foreshadow'),
+    };
+}
 
-const DIMENSION_LABELS = ['风格', '节奏', '技巧', '结构', '人设', '伏笔'];
+/** 完成度环图的六个维度，顺序与颜色数组一致 */
+function dimensionLabelList(): string[] {
+    return [
+        t('knowledgebase.dim.style'),
+        t('knowledgebase.dim.rhythm'),
+        t('knowledgebase.dim.technique'),
+        t('knowledgebase.dim.structure'),
+        t('knowledgebase.dim.character'),
+        t('knowledgebase.dim.foreshadow'),
+    ];
+}
 
+/** 风格七维在拆解文件里是中文字面数据键，这里只映射显示名 */
 const STYLE_DIMENSIONS = [
     '句式节奏', '用词偏好', '叙事特点', '修辞手法', '对话风格', '段落结构', '整体文风'
 ];
+
+function styleDimensionLabel(name: string): string {
+    switch (name) {
+        case '句式节奏': return t('knowledgeDetail.styleDim.sentenceRhythm');
+        case '用词偏好': return t('knowledgeDetail.styleDim.diction');
+        case '叙事特点': return t('knowledgeDetail.styleDim.narrative');
+        case '修辞手法': return t('knowledgeDetail.styleDim.rhetoric');
+        case '对话风格': return t('knowledgeDetail.styleDim.dialogue');
+        case '段落结构': return t('knowledgeDetail.styleDim.paragraph');
+        case '整体文风': return t('knowledgeDetail.styleDim.overall');
+        default: return name;
+    }
+}
+
+/** 技巧分类同样是中文字面数据键 */
+function techniqueCategoryLabel(name: string): string {
+    switch (name) {
+        case '情感': return t('knowledgeDetail.techCat.emotion');
+        case '结构': return t('knowledgeDetail.techCat.structure');
+        case '爽点': return t('knowledgeDetail.techCat.coolPoint');
+        case '人物': return t('knowledgeDetail.techCat.character');
+        case '设定': return t('knowledgeDetail.techCat.setting');
+        case '对话': return t('knowledgeDetail.techCat.dialogue');
+        case '描写': return t('knowledgeDetail.techCat.description');
+        default: return name;
+    }
+}
+
+/** 伏笔分类：数据里存中文，显示走 t() */
+function foreshadowCategoryLabel(name: string): string {
+    switch (name) {
+        case '物品': return t('knowledgeDetail.fs.catItem');
+        case '功法': return t('knowledgeDetail.fs.catSkill');
+        case '人物': return t('knowledgeDetail.fs.catPerson');
+        case '设定': return t('knowledgeDetail.fs.catSetting');
+        case '事件': return t('knowledgeDetail.fs.catEvent');
+        default: return name;
+    }
+}
 
 interface StyleData {
     avgSentenceLength?: number;
@@ -273,7 +328,7 @@ export class KnowledgeDetailModal extends Modal {
         contentEl.addClass('nw-modal-content-88');
 
         if (!this.bookInfo) {
-            contentEl.createDiv({ text: '书籍不存在或已被删除', cls: 'nw-kd-missing' });
+            contentEl.createDiv({ text: t('knowledgeDetail.missing'), cls: 'nw-kd-missing' });
             return;
         }
 
@@ -297,7 +352,7 @@ export class KnowledgeDetailModal extends Modal {
         const plugin = this.getPlugin();
         if (!plugin) return;
 
-        const bookName = this.bookInfo?.name || '未知书籍';
+        const bookName = this.bookInfo?.name || t('knowledgeDetail.unknownBook');
         const isRef = this.isReferenceBook();
 
         if (!Array.isArray(plugin.referenceBookIds)) {
@@ -306,18 +361,18 @@ export class KnowledgeDetailModal extends Modal {
 
         if (isRef) {
             plugin.referenceBookIds = plugin.referenceBookIds.filter((id: string) => id !== this.bookId);
-            showSuccessNotice(`已取消《${bookName}》的参考`);
+            showSuccessNotice(t('knowledgeDetail.ref.removed', { book: bookName }));
         } else {
             if (!plugin.referenceBookIds.includes(this.bookId)) {
                 plugin.referenceBookIds.push(this.bookId);
             }
-            showSuccessNotice(`已添加《${bookName}》为参考书籍`);
+            showSuccessNotice(t('knowledgeDetail.ref.added', { book: bookName }));
         }
 
         // 只改内存镜像的话重启就回退：必须同时写 settings 并落盘
         plugin.settings.referenceBookIds = [...plugin.referenceBookIds];
         void plugin.saveSettings().catch((e: unknown) => {
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '参考书籍保存失败', timeout: 6000 });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgeDetail.ref.saveFailed'), timeout: 6000 });
         });
 
         this.render();
@@ -326,7 +381,7 @@ export class KnowledgeDetailModal extends Modal {
     private async onConvertToFingerprint(buttonEl: HTMLButtonElement): Promise<void> {
         try {
             if (!this.bookInfo) {
-                new Notice('书籍信息不存在');
+                new Notice(t('knowledgeDetail.fp.noBook'));
                 return;
             }
 
@@ -334,7 +389,7 @@ export class KnowledgeDetailModal extends Modal {
             const adapter = this.app.vault.adapter as { exists(p: string): Promise<boolean> };
             const exists = await adapter.exists(stylePath);
             if (!exists) {
-                new Notice('风格维度拆解缺失，无法转换指纹，请先完成风格维度拆解');
+                new Notice(t('knowledgeDetail.fp.noStyle'));
                 return;
             }
 
@@ -345,19 +400,19 @@ export class KnowledgeDetailModal extends Modal {
             // settings 上没有 activeProject 字段；唯一真源是 getActiveProject()（活动文件 / 工作台上下文）
             const activeProject = plugin?.getActiveProject();
             if (!activeProject) {
-                new Notice('请先打开一个项目');
+                new Notice(t('knowledgeDetail.fp.noProject'));
                 return;
             }
 
             const library = StyleFingerprintLibrary.get(this.app, activeProject);
             await library.addFromKnowledge(fingerprint);
 
-            showSuccessNotice(`已将《${this.bookInfo.name}》拆解结果转为项目写作指纹`);
-            buttonEl.setText('✅ 已转为指纹');
+            showSuccessNotice(t('knowledgeDetail.fp.done', { book: this.bookInfo.name }));
+            buttonEl.setText(t('knowledgeDetail.fp.doneLabel'));
             buttonEl.disabled = true;
         } catch (e) {
             log.error('[KnowledgeDetailModal] 转换指纹失败:', e);
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '转换失败' });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgeDetail.fp.failed') });
         }
     }
 
@@ -370,7 +425,7 @@ export class KnowledgeDetailModal extends Modal {
 
         const isRef = this.isReferenceBook();
         const refBtn = titleWrap.createEl('button', {
-            text: isRef ? '⭐ 取消参考' : '⭐ 设为参考书籍',
+            text: isRef ? t('knowledgeDetail.ref.remove') : t('knowledgeDetail.ref.add'),
             attr: { type: 'button' },
             cls: `nw-kd-ref-btn${isRef ? ' nw-kd-ref-btn--on' : ''}`,
         });
@@ -392,7 +447,7 @@ export class KnowledgeDetailModal extends Modal {
         const tabKeys: TabKey[] = ['overview', 'style', 'rhythm', 'technique', 'structure', 'character', 'foreshadow'];
         for (const key of tabKeys) {
             const tab = tabsContainer.createEl('button', {
-                text: TAB_LABELS[key],
+                text: tabLabels()[key],
                 attr: { type: 'button' },
                 cls: `nw-kd-tab${this.activeTab === key ? ' nw-kd-tab--active' : ''}`,
             });
@@ -436,21 +491,21 @@ export class KnowledgeDetailModal extends Modal {
         const infoCard = container.createDiv({
             cls: 'nw-kd-info-card'
         });
-        infoCard.createEl('div', { text: '基本信息', cls: 'nw-kd-section-title' });
+        infoCard.createEl('div', { text: t('knowledgeDetail.info.title'), cls: 'nw-kd-section-title' });
 
         const grid = infoCard.createDiv({ cls: 'nw-kd-info-grid' });
-        this.renderInfoRow(grid, '书名', book.name);
-        this.renderInfoRow(grid, '作者', book.author || '未知');
-        this.renderInfoRow(grid, '题材标签', book.themeTags.length ? book.themeTags.join('、') : '暂无');
-        this.renderInfoRow(grid, '字数', book.wordCount ? this.formatWordCount(book.wordCount) : '未知');
-        this.renderInfoRow(grid, '更新时间', this.formatDateTime(book.updatedAt));
-        this.renderInfoRow(grid, '拆解状态', this.getStatusText(book.breakdownStatus));
-        this.renderInfoRow(grid, '向量状态', this.getVectorStatusText(book.vectorStatus, book.vectorError));
+        this.renderInfoRow(grid, t('knowledgeDetail.info.bookName'), book.name);
+        this.renderInfoRow(grid, t('knowledgeDetail.info.author'), book.author || t('knowledgeDetail.common.unknown'));
+        this.renderInfoRow(grid, t('knowledgeDetail.info.themeTags'), book.themeTags.length ? book.themeTags.join(t('knowledgeDetail.common.listSep')) : t('knowledgeDetail.common.none'));
+        this.renderInfoRow(grid, t('knowledgeDetail.info.wordCount'), book.wordCount ? this.formatWordCount(book.wordCount) : t('knowledgeDetail.common.unknown'));
+        this.renderInfoRow(grid, t('knowledgeDetail.info.updatedAt'), this.formatDateTime(book.updatedAt));
+        this.renderInfoRow(grid, t('knowledgeDetail.info.breakdownStatus'), this.getStatusText(book.breakdownStatus));
+        this.renderInfoRow(grid, t('knowledgeDetail.info.vectorStatus'), this.getVectorStatusText(book.vectorStatus, book.vectorError));
 
         const chartSection = container.createDiv({ cls: 'nw-kd-section' });
-        chartSection.createEl('div', { text: '拆解完成度', cls: 'nw-kd-section-title' });
+        chartSection.createEl('div', { text: t('knowledgeDetail.info.completeness'), cls: 'nw-kd-section-title' });
 
-        const donutData = DIMENSION_LABELS.map((label, i) => ({
+        const donutData = dimensionLabelList().map((label, i) => ({
             label,
             value: this.getDimensionProgress(i),
             color: ['#7c3aed', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444'][i]
@@ -462,12 +517,12 @@ export class KnowledgeDetailModal extends Modal {
         appendSanitizedHtml(donutCard, donutChart(donutData, { size: 300 }));
 
         const actionsSection = container.createDiv({ cls: 'nw-kd-section' });
-        actionsSection.createEl('div', { text: '快速操作', cls: 'nw-kd-section-title' });
+        actionsSection.createEl('div', { text: t('knowledgeDetail.actions.title'), cls: 'nw-kd-section-title' });
 
         const btnRow = actionsSection.createDiv({ cls: 'nw-kd-actions' });
 
         const reanalyzeBtn = btnRow.createEl('button', {
-            text: '🔄 重新拆解',
+            text: t('knowledgeDetail.actions.rerun'),
             attr: { type: 'button' },
             cls: 'nw-kd-btn',
         });
@@ -483,7 +538,7 @@ export class KnowledgeDetailModal extends Modal {
         });
 
         const convertFingerprintBtn = btnRow.createEl('button', {
-            text: '🎨 转为写作指纹',
+            text: t('knowledgeDetail.actions.toFingerprint'),
             attr: { type: 'button' },
             cls: 'nw-kd-btn',
         });
@@ -492,31 +547,31 @@ export class KnowledgeDetailModal extends Modal {
         // A5: 向量化失败时给出唯一可恢复入口，复用 revectorizeBook，不必重新拆解
         if (book.vectorStatus === 'failed') {
             const retryVectorBtn = btnRow.createEl('button', {
-                text: '🧠 重试向量化',
-                attr: { type: 'button', title: book.vectorError || '按当前 embedding 模型重新生成向量' },
+                text: t('knowledgeDetail.actions.retryVector'),
+                attr: { type: 'button', title: book.vectorError || t('knowledgeDetail.actions.retryVectorTip') },
                 cls: 'nw-kd-btn',
             });
             retryVectorBtn.addEventListener('click', async () => {
                 const scheduler = this.ensureScheduler();
                 if (!scheduler) return;
                 retryVectorBtn.disabled = true;
-                retryVectorBtn.textContent = '⏳ 向量化中…';
+                retryVectorBtn.textContent = t('knowledgeDetail.actions.vectorizing');
                 try {
                     await scheduler.revectorizeBook(book.id, book.name);
-                    showSuccessNotice(`《${book.name}》重向量化完成`);
+                    showSuccessNotice(t('knowledgeDetail.actions.revectorDone', { book: book.name }));
                     this.bookInfo = (await this.knowledgeManager.getBook(this.bookId)) ?? this.bookInfo;
                     this.render();
                 } catch (e) {
                     const message = e instanceof Error ? e.message : String(e);
-                    showErrorNotice(message, { title: `《${book.name}》重向量化失败`, timeout: 8000 });
+                    showErrorNotice(message, { title: t('knowledgeDetail.actions.revectorFailed', { book: book.name }), timeout: 8000 });
                     retryVectorBtn.disabled = false;
-                    retryVectorBtn.textContent = '🧠 重试向量化';
+                    retryVectorBtn.textContent = t('knowledgeDetail.actions.retryVector');
                 }
             });
         }
 
         const openFolderBtn = btnRow.createEl('button', {
-            text: '📁 打开文件夹',
+            text: t('knowledgeDetail.actions.openFolder'),
             attr: { type: 'button' },
             cls: 'nw-kd-btn',
         });
@@ -527,35 +582,35 @@ export class KnowledgeDetailModal extends Modal {
         });
 
         const deleteBtn = btnRow.createEl('button', {
-            text: '🗑 删除',
+            text: t('knowledgeDetail.actions.delete'),
             attr: { type: 'button' },
             cls: 'nw-kd-btn nw-kd-btn--danger',
         });
         deleteBtn.addEventListener('click', async () => {
             const confirmed = await OperationConfirmModal.confirm(this.app, {
-                title: '删除书籍',
-                description: `确定要删除书籍「${book.name}」吗？`,
-                warning: '此操作不可恢复',
-                confirmText: '确认删除',
-                cancelText: '取消',
+                title: t('knowledgeDetail.delete.title'),
+                description: t('knowledgeDetail.delete.desc', { book: book.name }),
+                warning: t('knowledgebase.common.irreversible'),
+                confirmText: t('knowledgebase.common.confirmDelete'),
+                cancelText: t('knowledgebase.common.cancel'),
             });
             if (!confirmed) return;
             try {
                 // 先取消在途拆解，避免任务结束后把已删除的书目录/向量重新写回来
                 await this.deconstructionScheduler?.cancelByBook(this.bookId);
                 await this.knowledgeManager.deleteBook(this.bookId);
-                showSuccessNotice('书籍已删除');
+                showSuccessNotice(t('knowledgeDetail.delete.done'));
                 this.close();
             } catch (e) {
                 log.error('[KnowledgeDetailModal] 删除书籍失败:', e);
-                showErrorNotice(e instanceof Error ? e.message : String(e), { title: '删除失败' });
+                showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgeDetail.delete.failed') });
             }
         });
 
         const descSection = container.createDiv({
             cls: 'nw-kd-synopsis'
         });
-        descSection.textContent = book.synopsis || '暂无书籍简介。点击各 Tab 查看详细拆解数据。';
+        descSection.textContent = book.synopsis || t('knowledgeDetail.overview.noSynopsis');
     }
 
     private getDimensionProgress(index: number): number {
@@ -570,32 +625,52 @@ export class KnowledgeDetailModal extends Modal {
         const data = this.styleData;
 
         if (!data) {
-            this.renderEmptyState(container, '风格分析数据', 'style');
+            this.renderEmptyState(container, t('knowledgeDetail.style.name'), 'style');
             return;
         }
 
         const radarSection = container.createDiv({ cls: 'nw-kd-section' });
-        radarSection.createEl('div', { text: '风格维度雷达图', cls: 'nw-kd-section-title' });
+        radarSection.createEl('div', { text: t('knowledgeDetail.style.radar'), cls: 'nw-kd-section-title' });
 
         const radarCard = radarSection.createDiv({
             cls: 'nw-kd-card nw-kd-card--center'
         });
 
-        const radarData = STYLE_DIMENSIONS.map(label => ({
-            label,
-            value: this.estimateFeatureScore(data.features?.[label] || '')
+        const radarData = STYLE_DIMENSIONS.map(name => ({
+            label: styleDimensionLabel(name),
+            value: this.estimateFeatureScore(data.features?.[name] || '')
         }));
         appendSanitizedHtml(radarCard, radarChart(radarData, { size: 320 }));
 
         const statsSection = container.createDiv({ cls: 'nw-kd-section' });
-        statsSection.createEl('div', { text: '统计数据', cls: 'nw-kd-section-title' });
+        statsSection.createEl('div', { text: t('knowledgeDetail.style.stats'), cls: 'nw-kd-section-title' });
 
         const statsGrid = statsSection.createDiv({ cls: 'nw-kd-grid-4' });
         const statItems = [
-            { label: '平均句长', value: data.avgSentenceLength ? `${data.avgSentenceLength} 字` : '待分析' },
-            { label: '平均段长', value: data.avgParagraphLength ? `${data.avgParagraphLength} 字` : '待分析' },
-            { label: '对话占比', value: data.dialogueRatio !== undefined ? `${Math.round(data.dialogueRatio * 100)}%` : '待分析' },
-            { label: '描写占比', value: data.descriptionRatio !== undefined ? `${Math.round(data.descriptionRatio * 100)}%` : '待分析' },
+            {
+                label: t('knowledgeDetail.style.avgSentence'),
+                value: data.avgSentenceLength
+                    ? t('knowledgeDetail.common.chars', { count: data.avgSentenceLength })
+                    : t('knowledgeDetail.style.pending'),
+            },
+            {
+                label: t('knowledgeDetail.style.avgParagraph'),
+                value: data.avgParagraphLength
+                    ? t('knowledgeDetail.common.chars', { count: data.avgParagraphLength })
+                    : t('knowledgeDetail.style.pending'),
+            },
+            {
+                label: t('knowledgeDetail.style.dialogueRatio'),
+                value: data.dialogueRatio !== undefined
+                    ? `${Math.round(data.dialogueRatio * 100)}%`
+                    : t('knowledgeDetail.style.pending'),
+            },
+            {
+                label: t('knowledgeDetail.style.descriptionRatio'),
+                value: data.descriptionRatio !== undefined
+                    ? `${Math.round(data.descriptionRatio * 100)}%`
+                    : t('knowledgeDetail.style.pending'),
+            },
         ];
         for (const stat of statItems) {
             const card = statsGrid.createDiv({
@@ -606,7 +681,7 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const descSection = container.createDiv({ cls: 'nw-kd-section' });
-        descSection.createEl('div', { text: '风格特征描述', cls: 'nw-kd-section-title' });
+        descSection.createEl('div', { text: t('knowledgeDetail.style.features'), cls: 'nw-kd-section-title' });
 
         const descCard = descSection.createDiv({
             cls: 'nw-kd-card nw-kd-card--text'
@@ -619,11 +694,11 @@ export class KnowledgeDetailModal extends Modal {
             if (featureTexts.length > 0) {
                 for (const [key, value] of featureTexts) {
                     const item = descCard.createDiv({ cls: 'nw-kd-feature-row' });
-                    item.createEl('span', { text: `${key}：`, cls: 'nw-kd-strong' });
-                    item.createEl('span', { text: value || '暂无数据', cls: 'nw-kd-muted' });
+                    item.createEl('span', { text: t('knowledgeDetail.styleDimLine', { label: styleDimensionLabel(key) }), cls: 'nw-kd-strong' });
+                    item.createEl('span', { text: value || t('knowledgeDetail.common.noData'), cls: 'nw-kd-muted' });
                 }
             } else {
-                descCard.createDiv({ text: '暂无详细风格特征描述', cls: 'nw-kd-muted' });
+                descCard.createDiv({ text: t('knowledgeDetail.style.noFeatures'), cls: 'nw-kd-muted' });
             }
         }
     }
@@ -641,12 +716,12 @@ export class KnowledgeDetailModal extends Modal {
         const data = this.rhythmData;
 
         if (!data) {
-            this.renderEmptyState(container, '节奏分析数据', 'rhythm');
+            this.renderEmptyState(container, t('knowledgeDetail.rhythm.name'), 'rhythm');
             return;
         }
 
         const curveSection = container.createDiv({ cls: 'nw-kd-section' });
-        curveSection.createEl('div', { text: '情绪强度曲线', cls: 'nw-kd-section-title' });
+        curveSection.createEl('div', { text: t('knowledgeDetail.rhythm.curve'), cls: 'nw-kd-section-title' });
 
         const curveCard = curveSection.createDiv({
             cls: 'nw-kd-card nw-kd-card--scroll'
@@ -655,17 +730,17 @@ export class KnowledgeDetailModal extends Modal {
         const curveData = data.emotionCurve;
         if (curveData && curveData.length > 0) {
             const series = [
-                { name: '情绪强度', data: curveData.map(d => ({ label: d.label, value: d.emotion })), color: '#ef4444', smooth: true },
-                { name: '事件密度', data: curveData.map(d => ({ label: d.label, value: d.density })), color: '#3b82f6', smooth: true },
-                { name: '综合节奏', data: curveData.map(d => ({ label: d.label, value: d.overall })), color: '#10b981', smooth: true },
+                { name: t('knowledgeDetail.rhythm.seriesEmotion'), data: curveData.map(d => ({ label: d.label, value: d.emotion })), color: '#ef4444', smooth: true },
+                { name: t('knowledgeDetail.rhythm.seriesDensity'), data: curveData.map(d => ({ label: d.label, value: d.density })), color: '#3b82f6', smooth: true },
+                { name: t('knowledgeDetail.rhythm.seriesOverall'), data: curveData.map(d => ({ label: d.label, value: d.overall })), color: '#10b981', smooth: true },
             ];
             appendSanitizedHtml(curveCard, lineChart(series, { width: 600, height: 280 }));
         } else {
-            curveCard.createDiv({ text: '暂无情绪曲线数据', cls: 'nw-kd-empty' });
+            curveCard.createDiv({ text: t('knowledgeDetail.rhythm.noCurve'), cls: 'nw-kd-empty' });
         }
 
         const scatterSection = container.createDiv({ cls: 'nw-kd-section' });
-        scatterSection.createEl('div', { text: '爽点分布', cls: 'nw-kd-section-title' });
+        scatterSection.createEl('div', { text: t('knowledgeDetail.rhythm.cool'), cls: 'nw-kd-section-title' });
 
         const scatterCard = scatterSection.createDiv({
             cls: 'nw-kd-card nw-kd-card--scroll'
@@ -673,13 +748,13 @@ export class KnowledgeDetailModal extends Modal {
 
         const scatterPoints = data.coolPoints;
         if (scatterPoints && scatterPoints.length > 0) {
-            appendSanitizedHtml(scatterCard, scatterChart(scatterPoints, { width: 600, height: 250, xAxisLabel: '章节进度', yAxisLabel: '爽感强度' }));
+            appendSanitizedHtml(scatterCard, scatterChart(scatterPoints, { width: 600, height: 250, xAxisLabel: t('knowledgeDetail.rhythm.axisChapter'), yAxisLabel: t('knowledgeDetail.rhythm.axisCool') }));
         } else {
-            scatterCard.createDiv({ text: '暂无爽点数据', cls: 'nw-kd-empty' });
+            scatterCard.createDiv({ text: t('knowledgeDetail.rhythm.noCool'), cls: 'nw-kd-empty' });
         }
 
         const structureSection = container.createDiv({ cls: 'nw-kd-section' });
-        structureSection.createEl('div', { text: '结构理论匹配度', cls: 'nw-kd-section-title' });
+        structureSection.createEl('div', { text: t('knowledgeDetail.rhythm.match'), cls: 'nw-kd-section-title' });
 
         const structureCard = structureSection.createDiv({
             cls: 'nw-kd-card nw-kd-card--scroll'
@@ -689,11 +764,11 @@ export class KnowledgeDetailModal extends Modal {
         if (matchData && matchData.length > 0) {
             appendSanitizedHtml(structureCard, barChart(matchData, { width: 500, height: 220, horizontal: true }));
         } else {
-            structureCard.createDiv({ text: '暂无结构匹配数据', cls: 'nw-kd-empty' });
+            structureCard.createDiv({ text: t('knowledgeDetail.rhythm.noMatch'), cls: 'nw-kd-empty' });
         }
 
         const keyPointsSection = container.createDiv({ cls: 'nw-kd-section' });
-        keyPointsSection.createEl('div', { text: '关键情绪点', cls: 'nw-kd-section-title' });
+        keyPointsSection.createEl('div', { text: t('knowledgeDetail.rhythm.keyPoints'), cls: 'nw-kd-section-title' });
 
         const keyPointsCard = keyPointsSection.createDiv({
             cls: 'nw-kd-panel'
@@ -709,7 +784,7 @@ export class KnowledgeDetailModal extends Modal {
                 item.createEl('span', { text: point.description, cls: 'nw-kd-desc-flex' });
             }
         } else {
-            keyPointsCard.createDiv({ text: '暂无关键情绪点数据', cls: 'nw-kd-empty nw-kd-empty--tight' });
+            keyPointsCard.createDiv({ text: t('knowledgeDetail.rhythm.noKeyPoints'), cls: 'nw-kd-empty nw-kd-empty--tight' });
         }
     }
 
@@ -720,12 +795,12 @@ export class KnowledgeDetailModal extends Modal {
         const data = this.techniqueData;
 
         if (!data) {
-            this.renderEmptyState(container, '写作技巧数据', 'technique');
+            this.renderEmptyState(container, t('knowledgeDetail.technique.name'), 'technique');
             return;
         }
 
         const categorySection = container.createDiv({ cls: 'nw-kd-section' });
-        categorySection.createEl('div', { text: '技巧分类分布', cls: 'nw-kd-section-title' });
+        categorySection.createEl('div', { text: t('knowledgeDetail.technique.categories'), cls: 'nw-kd-section-title' });
 
         const categoryCard = categorySection.createDiv({
             cls: 'nw-kd-card nw-kd-card--scroll'
@@ -733,14 +808,14 @@ export class KnowledgeDetailModal extends Modal {
 
         const categories = data.categories;
         if (categories && Object.keys(categories).length > 0) {
-            const barData = Object.entries(categories).map(([label, value]) => ({ label, value }));
+            const barData = Object.entries(categories).map(([label, value]) => ({ label: techniqueCategoryLabel(label), value }));
             appendSanitizedHtml(categoryCard, barChart(barData, { width: 500, height: 220 }));
         } else {
-            categoryCard.createDiv({ text: '暂无技巧分类数据', cls: 'nw-kd-empty' });
+            categoryCard.createDiv({ text: t('knowledgeDetail.technique.noCategories'), cls: 'nw-kd-empty' });
         }
 
         const top10Section = container.createDiv({ cls: 'nw-kd-section' });
-        top10Section.createEl('div', { text: 'Top 10 技巧排行', cls: 'nw-kd-section-title' });
+        top10Section.createEl('div', { text: t('knowledgeDetail.technique.top'), cls: 'nw-kd-section-title' });
 
         const top10Card = top10Section.createDiv({
             cls: 'nw-kd-panel nw-kd-panel--wide'
@@ -757,14 +832,14 @@ export class KnowledgeDetailModal extends Modal {
                     cls: `nw-kd-rank-badge${i < 3 ? ' nw-kd-rank-badge--top' : ''}`,
                 });
                 item.createEl('span', { text: top10[i].name, cls: 'nw-kd-name-flex' });
-                item.createEl('span', { text: `${top10[i].count} 次`, cls: 'nw-kd-count' });
+                item.createEl('span', { text: t('knowledgeDetail.common.times', { count: top10[i].count }), cls: 'nw-kd-count' });
             }
         } else {
-            top10Card.createDiv({ text: '暂无技巧排行数据', cls: 'nw-kd-empty nw-kd-empty--tight' });
+            top10Card.createDiv({ text: t('knowledgeDetail.technique.noTop'), cls: 'nw-kd-empty nw-kd-empty--tight' });
         }
 
         const listSection = container.createDiv({ cls: 'nw-kd-section' });
-        listSection.createEl('div', { text: '技巧详情', cls: 'nw-kd-section-title' });
+        listSection.createEl('div', { text: t('knowledgeDetail.technique.details'), cls: 'nw-kd-section-title' });
 
         const techniques = data.techniques;
         if (techniques && techniques.length > 0) {
@@ -812,7 +887,7 @@ export class KnowledgeDetailModal extends Modal {
                     const body = item.createDiv({
                         cls: 'nw-kd-tech-body'
                     });
-                    body.createEl('div', { text: '示例片段：', cls: 'nw-kd-body-title' });
+                    body.createEl('div', { text: t('knowledgeDetail.technique.sample'), cls: 'nw-kd-body-title' });
                     for (const example of tech.examples) {
                         body.createDiv({
                             text: `• ${example}`,
@@ -823,7 +898,7 @@ export class KnowledgeDetailModal extends Modal {
             }
         }
         } else {
-            listSection.createDiv({ text: '暂无技巧详情数据', cls: 'nw-kd-empty' });
+            listSection.createDiv({ text: t('knowledgeDetail.technique.noDetails'), cls: 'nw-kd-empty' });
         }
     }
 
@@ -832,12 +907,12 @@ export class KnowledgeDetailModal extends Modal {
         const data = this.structureData;
 
         if (!data) {
-            this.renderEmptyState(container, '结构拆解数据', 'structure');
+            this.renderEmptyState(container, t('knowledgeDetail.structure.name'), 'structure');
             return;
         }
 
         const timelineSection = container.createDiv({ cls: 'nw-kd-section' });
-        timelineSection.createEl('div', { text: '起承转合时间线', cls: 'nw-kd-section-title' });
+        timelineSection.createEl('div', { text: t('knowledgeDetail.structure.timeline'), cls: 'nw-kd-section-title' });
 
         const timelineCard = timelineSection.createDiv({
             cls: 'nw-kd-card nw-kd-card--scroll'
@@ -847,11 +922,11 @@ export class KnowledgeDetailModal extends Modal {
         if (timelineEvents && timelineEvents.length > 0) {
             appendSanitizedHtml(timelineCard, timelineChart(timelineEvents, { width: 650, height: 140 }));
         } else {
-            timelineCard.createDiv({ text: '暂无起承转合数据', cls: 'nw-kd-empty' });
+            timelineCard.createDiv({ text: t('knowledgeDetail.structure.noTimeline'), cls: 'nw-kd-empty' });
         }
 
         const threeLinesSection = container.createDiv({ cls: 'nw-kd-section' });
-        threeLinesSection.createEl('div', { text: '三线并行示意', cls: 'nw-kd-section-title' });
+        threeLinesSection.createEl('div', { text: t('knowledgeDetail.structure.threeLines'), cls: 'nw-kd-section-title' });
 
         const threeLinesCard = threeLinesSection.createDiv({
             cls: 'nw-kd-card'
@@ -860,9 +935,9 @@ export class KnowledgeDetailModal extends Modal {
         const threeLines = data.threeLines;
         if (threeLines) {
             const lineDefs = [
-                { label: '主线', value: threeLines.main, tone: 'nw-kd-fill--danger' },
-                { label: '副线', value: threeLines.sub, tone: 'nw-kd-fill--info' },
-                { label: '感情线', value: threeLines.romance, tone: 'nw-kd-fill--rose' },
+                { label: t('knowledgeDetail.structure.mainLine'), value: threeLines.main, tone: 'nw-kd-fill--danger' },
+                { label: t('knowledgeDetail.structure.subLine'), value: threeLines.sub, tone: 'nw-kd-fill--info' },
+                { label: t('knowledgeDetail.structure.romanceLine'), value: threeLines.romance, tone: 'nw-kd-fill--rose' },
             ];
 
             for (const line of lineDefs) {
@@ -877,11 +952,11 @@ export class KnowledgeDetailModal extends Modal {
                 fill.style.setProperty('--nw-kd-pct', `${line.value}%`);
             }
         } else {
-            threeLinesCard.createDiv({ text: '暂无三线并行数据', cls: 'nw-kd-empty' });
+            threeLinesCard.createDiv({ text: t('knowledgeDetail.structure.noThreeLines'), cls: 'nw-kd-empty' });
         }
 
         const rhythmSection = container.createDiv({ cls: 'nw-kd-section' });
-        rhythmSection.createEl('div', { text: '节奏单元', cls: 'nw-kd-section-title' });
+        rhythmSection.createEl('div', { text: t('knowledgeDetail.structure.rhythmUnits'), cls: 'nw-kd-section-title' });
 
         const rhythmCard = rhythmSection.createDiv({
             cls: 'nw-kd-scroll nw-kd-scroll--pad'
@@ -927,11 +1002,11 @@ export class KnowledgeDetailModal extends Modal {
             }
         }
         } else {
-            rhythmCard.createDiv({ text: '暂无节奏单元数据', cls: 'nw-kd-empty' });
+            rhythmCard.createDiv({ text: t('knowledgeDetail.structure.noRhythmUnits'), cls: 'nw-kd-empty' });
         }
 
         const typeSection = container.createDiv({ cls: 'nw-kd-section' });
-        typeSection.createEl('div', { text: '结构类型说明', cls: 'nw-kd-section-title' });
+        typeSection.createEl('div', { text: t('knowledgeDetail.structure.type'), cls: 'nw-kd-section-title' });
 
         const typeCard = typeSection.createDiv({
             cls: 'nw-kd-card nw-kd-card--text'
@@ -941,7 +1016,7 @@ export class KnowledgeDetailModal extends Modal {
             typeCard.createEl('div', { text: data.structureType, cls: 'nw-kd-type-name' });
         }
         // 不能给 typeCard 赋 textContent：那会清空上面刚创建的 structureType 节点
-        typeCard.createEl('div', { text: data.structureDescription || '暂无结构类型说明' });
+        typeCard.createEl('div', { text: data.structureDescription || t('knowledgeDetail.structure.noType') });
     }
 
     // ============== Tab 6: 人设 ==============
@@ -949,12 +1024,12 @@ export class KnowledgeDetailModal extends Modal {
         const data = this.characterData;
 
         if (!data) {
-            this.renderEmptyState(container, '人设提取数据', 'character');
+            this.renderEmptyState(container, t('knowledgeDetail.character.name'), 'character');
             return;
         }
 
         const mainSection = container.createDiv({ cls: 'nw-kd-section' });
-        mainSection.createEl('div', { text: '主要人物', cls: 'nw-kd-section-title' });
+        mainSection.createEl('div', { text: t('knowledgeDetail.character.main'), cls: 'nw-kd-section-title' });
 
         const mainChars = data.mainCharacters;
         if (mainChars && mainChars.length > 0) {
@@ -992,11 +1067,11 @@ export class KnowledgeDetailModal extends Modal {
             }
         }
         } else {
-            mainSection.createDiv({ text: '暂无主要人物数据', cls: 'nw-kd-empty' });
+            mainSection.createDiv({ text: t('knowledgeDetail.character.noMain'), cls: 'nw-kd-empty' });
         }
 
         const relationSection = container.createDiv({ cls: 'nw-kd-section' });
-        relationSection.createEl('div', { text: '人物关系网络', cls: 'nw-kd-section-title' });
+        relationSection.createEl('div', { text: t('knowledgeDetail.character.relations'), cls: 'nw-kd-section-title' });
 
         const relationCard = relationSection.createDiv({
             cls: 'nw-kd-card nw-kd-card--center nw-kd-card--roomy'
@@ -1006,13 +1081,13 @@ export class KnowledgeDetailModal extends Modal {
         const searchSection = container.createDiv({ cls: 'nw-kd-toolbar' });
         const searchInput = searchSection.createEl('input', {
             type: 'text',
-            placeholder: '搜索人物...',
+            placeholder: t('knowledgeDetail.character.search'),
             cls: 'nw-kd-search'
         });
         searchInput.value = this.characterFilter;
 
         const allSection = container.createDiv({ cls: 'nw-kd-section' });
-        allSection.createEl('div', { text: '全部人物', cls: 'nw-kd-section-title' });
+        allSection.createEl('div', { text: t('knowledgeDetail.character.all'), cls: 'nw-kd-section-title' });
 
         const allCard = allSection.createDiv({
             cls: 'nw-kd-scroll'
@@ -1024,7 +1099,7 @@ export class KnowledgeDetailModal extends Modal {
             allCard.empty();
             const allChars = data.allCharacters;
             if (!allChars || allChars.length === 0) {
-                allCard.createDiv({ text: '暂无全部人物数据', cls: 'nw-kd-empty' });
+                allCard.createDiv({ text: t('knowledgeDetail.character.noAll'), cls: 'nw-kd-empty' });
                 return;
             }
 
@@ -1035,7 +1110,7 @@ export class KnowledgeDetailModal extends Modal {
 
             if (filtered.length === 0) {
                 allCard.createDiv({
-                    text: '没有找到匹配的人物',
+                    text: t('knowledgeDetail.character.noMatch'),
                     cls: 'nw-kd-empty-mini'
                 });
                 return;
@@ -1075,7 +1150,7 @@ export class KnowledgeDetailModal extends Modal {
 
     private renderRelationshipGraph(relationships: Array<{ from: string; to: string; type: string }>, mainChars: Array<{ name: string }>): string {
         if (!mainChars || mainChars.length === 0) {
-            return '<div class="nw-kd-empty">暂无人物关系数据</div>';
+            return `<div class="nw-kd-empty">${t('knowledgeDetail.character.noRelations')}</div>`;
         }
         const width = 400;
         const height = 300;
@@ -1121,12 +1196,12 @@ export class KnowledgeDetailModal extends Modal {
         const data = this.foreshadowData;
 
         if (!data) {
-            this.renderEmptyState(container, '伏笔数据', 'foreshadow');
+            this.renderEmptyState(container, t('knowledgeDetail.fs.name'), 'foreshadow');
             return;
         }
 
         const statsSection = container.createDiv({ cls: 'nw-kd-section' });
-        statsSection.createEl('div', { text: '伏笔统计', cls: 'nw-kd-section-title' });
+        statsSection.createEl('div', { text: t('knowledgeDetail.fs.stats'), cls: 'nw-kd-section-title' });
 
         const statsGrid = statsSection.createDiv({ cls: 'nw-kd-grid-4' });
 
@@ -1140,33 +1215,33 @@ export class KnowledgeDetailModal extends Modal {
                 cls: 'nw-kd-stat-card'
             });
             totalCard.createEl('div', { text: String(total), cls: 'nw-kd-stat-num' });
-            totalCard.createEl('div', { text: '伏笔总数', cls: 'nw-kd-muted-sm' });
+            totalCard.createEl('div', { text: t('knowledgeDetail.fs.total'), cls: 'nw-kd-muted-sm' });
 
             const resolvedCard = statsGrid.createDiv({
                 cls: 'nw-kd-stat-card'
             });
             resolvedCard.createEl('div', { text: String(resolved), cls: 'nw-kd-stat-num nw-kd-stat-num--success' });
-            resolvedCard.createEl('div', { text: '已回收', cls: 'nw-kd-muted-sm' });
+            resolvedCard.createEl('div', { text: t('knowledgeDetail.fs.resolved'), cls: 'nw-kd-muted-sm' });
 
             const unresolvedCard = statsGrid.createDiv({
                 cls: 'nw-kd-stat-card'
             });
             unresolvedCard.createEl('div', { text: String(unresolved), cls: 'nw-kd-stat-num nw-kd-stat-num--warning' });
-            unresolvedCard.createEl('div', { text: '待回收', cls: 'nw-kd-muted-sm' });
+            unresolvedCard.createEl('div', { text: t('knowledgeDetail.fs.unresolved'), cls: 'nw-kd-muted-sm' });
 
             const forgottenCount = data.unresolvedTracker?.forgottenForeshadows?.length || 0;
             const forgottenCard = statsGrid.createDiv({
                 cls: 'nw-kd-stat-card'
             });
             forgottenCard.createEl('div', { text: forgottenCount.toString(), cls: 'nw-kd-stat-num nw-kd-stat-num--error' });
-            forgottenCard.createEl('div', { text: '疑似遗忘', cls: 'nw-kd-muted-sm' });
+            forgottenCard.createEl('div', { text: t('knowledgeDetail.fs.forgotten'), cls: 'nw-kd-muted-sm' });
         } else {
-            statsSection.createDiv({ text: '暂无伏笔统计数据', cls: 'nw-kd-empty' });
+            statsSection.createDiv({ text: t('knowledgeDetail.fs.noStats'), cls: 'nw-kd-empty' });
         }
 
         if (data.resolutionQualityStats) {
             const qualitySection = container.createDiv({ cls: 'nw-kd-section' });
-            qualitySection.createEl('div', { text: '回收质量统计', cls: 'nw-kd-section-title' });
+            qualitySection.createEl('div', { text: t('knowledgeDetail.fs.quality'), cls: 'nw-kd-section-title' });
 
             const qualityCard = qualitySection.createDiv({
                 cls: 'nw-kd-card'
@@ -1176,21 +1251,21 @@ export class KnowledgeDetailModal extends Modal {
                 cls: 'nw-kd-quality-grid'
             });
 
-            qualityGrid.createEl('div', { text: '平均质量', cls: 'nw-kd-label' });
+            qualityGrid.createEl('div', { text: t('knowledgeDetail.fs.avgQuality'), cls: 'nw-kd-label' });
             const avgQualityBar = qualityGrid.createDiv({ cls: 'nw-kd-bar-row' });
             const avgTrack = avgQualityBar.createEl('div', {
                 cls: 'nw-kd-track nw-kd-track--8 nw-kd-track--grow'
             });
             const avgFill = avgTrack.createEl('div', { cls: 'nw-kd-fill nw-kd-fill--gradient' });
             avgFill.style.setProperty('--nw-kd-pct', `${data.resolutionQualityStats.avgQuality}%`);
-            avgQualityBar.createEl('span', { text: `${data.resolutionQualityStats.avgQuality}分`, cls: 'nw-kd-quality-value' });
+            avgQualityBar.createEl('span', { text: t('knowledgeDetail.common.scoreUnit', { score: data.resolutionQualityStats.avgQuality }), cls: 'nw-kd-quality-value' });
 
             const qd = data.resolutionQualityStats.qualityDistribution;
             const qualityBars = [
-                { label: '优秀', value: qd.excellent, tone: 'nw-kd-fill--success' },
-                { label: '良好', value: qd.good, tone: 'nw-kd-fill--info' },
-                { label: '一般', value: qd.fair, tone: 'nw-kd-fill--warning' },
-                { label: '低质', value: qd.poor, tone: 'nw-kd-fill--danger' },
+                { label: t('knowledgeDetail.fs.qExcellent'), value: qd.excellent, tone: 'nw-kd-fill--success' },
+                { label: t('knowledgeDetail.fs.qGood'), value: qd.good, tone: 'nw-kd-fill--info' },
+                { label: t('knowledgeDetail.fs.qFair'), value: qd.fair, tone: 'nw-kd-fill--warning' },
+                { label: t('knowledgeDetail.fs.qPoor'), value: qd.poor, tone: 'nw-kd-fill--danger' },
             ];
             for (const q of qualityBars) {
                 qualityGrid.createEl('div', { text: q.label, cls: 'nw-kd-muted-sm' });
@@ -1200,12 +1275,12 @@ export class KnowledgeDetailModal extends Modal {
                 });
                 const qFill = qTrack.createEl('div', { cls: `nw-kd-fill ${q.tone}` });
                 qFill.style.setProperty('--nw-kd-pct', `${Math.min(100, q.value * 10)}%`);
-                barWrapper.createEl('span', { text: `${q.value}个`, cls: 'nw-kd-quality-count' });
+                barWrapper.createEl('span', { text: t('knowledgeDetail.common.countUnit', { count: q.value }), cls: 'nw-kd-quality-count' });
             }
         }
 
         const donutSection = container.createDiv({ cls: 'nw-kd-section' });
-        donutSection.createEl('div', { text: '回收进度', cls: 'nw-kd-section-title' });
+        donutSection.createEl('div', { text: t('knowledgeDetail.fs.donut'), cls: 'nw-kd-section-title' });
 
         const donutCard = donutSection.createDiv({
             cls: 'nw-kd-card'
@@ -1213,32 +1288,32 @@ export class KnowledgeDetailModal extends Modal {
 
         if (stats) {
             const donutData = [
-                { label: '已回收', value: normalizeDetailNumber(stats.resolved), color: '#10b981' },
-                { label: '待回收', value: normalizeDetailNumber(stats.unresolved), color: '#f59e0b' },
+                { label: t('knowledgeDetail.fs.resolved'), value: normalizeDetailNumber(stats.resolved), color: '#10b981' },
+                { label: t('knowledgeDetail.fs.unresolved'), value: normalizeDetailNumber(stats.unresolved), color: '#f59e0b' },
             ];
             appendSanitizedHtml(donutCard, donutChart(donutData, { size: 220 }));
         }
 
         if (data.networkAnalysis?.densityByChapter) {
             const densitySection = container.createDiv({ cls: 'nw-kd-section' });
-            densitySection.createEl('div', { text: '伏笔密度趋势', cls: 'nw-kd-section-title' });
+            densitySection.createEl('div', { text: t('knowledgeDetail.fs.density'), cls: 'nw-kd-section-title' });
 
             const densityCard = densitySection.createDiv({
                 cls: 'nw-kd-card nw-kd-card--scroll'
             });
 
             const setupData = data.networkAnalysis.densityByChapter.map(d => ({
-                label: `第${d.chapter}段`,
+                label: t('knowledgeDetail.fs.segment', { chapter: d.chapter }),
                 value: d.setupCount,
             }));
             const payoffData = data.networkAnalysis.densityByChapter.map(d => ({
-                label: `第${d.chapter}段`,
+                label: t('knowledgeDetail.fs.segment', { chapter: d.chapter }),
                 value: d.payoffCount,
             }));
 
             appendSanitizedHtml(densityCard, lineChart([
-                { name: '埋设', data: setupData, color: '#3b82f6' },
-                { name: '回收', data: payoffData, color: '#10b981' },
+                { name: t('knowledgeDetail.fs.setup'), data: setupData, color: '#3b82f6' },
+                { name: t('knowledgeDetail.fs.payoff'), data: payoffData, color: '#10b981' },
             ], {
                 width: 650,
                 height: 180,
@@ -1247,7 +1322,7 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const timelineSection = container.createDiv({ cls: 'nw-kd-section' });
-        timelineSection.createEl('div', { text: '伏笔出现时间线', cls: 'nw-kd-section-title' });
+        timelineSection.createEl('div', { text: t('knowledgeDetail.fs.timeline'), cls: 'nw-kd-section-title' });
 
         const timelineCard = timelineSection.createDiv({
             cls: 'nw-kd-card nw-kd-card--scroll'
@@ -1257,12 +1332,12 @@ export class KnowledgeDetailModal extends Modal {
         if (timelineEvents && timelineEvents.length > 0) {
             appendSanitizedHtml(timelineCard, timelineChart(timelineEvents, { width: 650, height: 160 }));
         } else {
-            timelineCard.createDiv({ text: '暂无伏笔时间线数据', cls: 'nw-kd-empty' });
+            timelineCard.createDiv({ text: t('knowledgeDetail.fs.noTimeline'), cls: 'nw-kd-empty' });
         }
 
         if (data.networkAnalysis) {
             const networkSection = container.createDiv({ cls: 'nw-kd-section' });
-            networkSection.createEl('div', { text: '伏笔网络分析', cls: 'nw-kd-section-title' });
+            networkSection.createEl('div', { text: t('knowledgeDetail.fs.network'), cls: 'nw-kd-section-title' });
 
             const networkCard = networkSection.createDiv({
                 cls: 'nw-kd-card'
@@ -1278,16 +1353,16 @@ export class KnowledgeDetailModal extends Modal {
 
             const netItem1 = netGrid.createDiv({ cls: 'nw-kd-center' });
             netItem1.createEl('div', { text: mainlineCount.toString(), cls: 'nw-kd-net-num nw-kd-net-num--accent' });
-            netItem1.createEl('div', { text: '主线伏笔', cls: 'nw-kd-faint' });
+            netItem1.createEl('div', { text: t('knowledgeDetail.fs.mainNet'), cls: 'nw-kd-faint' });
 
             const netItem2 = netGrid.createDiv({ cls: 'nw-kd-center' });
             netItem2.createEl('div', { text: sidelineCount.toString(), cls: 'nw-kd-net-num nw-kd-net-num--muted' });
-            netItem2.createEl('div', { text: '支线伏笔', cls: 'nw-kd-faint' });
+            netItem2.createEl('div', { text: t('knowledgeDetail.fs.subNet'), cls: 'nw-kd-faint' });
 
             if (rhythmBalance) {
                 const rhythmDiv = networkCard.createDiv({ cls: 'nw-kd-balance' });
                 rhythmDiv.createEl('div', {
-                    text: `节奏平衡度：${rhythmBalance.balanceScore}% ${rhythmBalance.isBalanced ? '✅ 平衡' : '⚠️ 需调整'}`,
+                    text: t('knowledgeDetail.fs.balance', { score: rhythmBalance.balanceScore, state: rhythmBalance.isBalanced ? t('knowledgeDetail.fs.balanced') : t('knowledgeDetail.fs.unbalanced') }),
                     cls: 'nw-kd-balance-note'
                 });
                 const balanceTrack = rhythmDiv.createEl('div', { cls: 'nw-kd-track nw-kd-track--6' });
@@ -1300,16 +1375,16 @@ export class KnowledgeDetailModal extends Modal {
 
         if (data.pairs && data.pairs.length > 0) {
             const pairSection = container.createDiv({ cls: 'nw-kd-section' });
-            pairSection.createEl('div', { text: '伏笔-回收配对', cls: 'nw-kd-section-title' });
+            pairSection.createEl('div', { text: t('knowledgeDetail.fs.pairs'), cls: 'nw-kd-section-title' });
 
             const pairCard = pairSection.createDiv({
                 cls: 'nw-kd-scroll'
             });
 
             const pairTypeLabels: Record<string, string> = {
-                'one-to-one': '一对一',
-                'one-to-many': '一对多',
-                'many-to-one': '多对一'
+                'one-to-one': t('knowledgeDetail.fs.pairOneToOne'),
+                'one-to-many': t('knowledgeDetail.fs.pairOneToMany'),
+                'many-to-one': t('knowledgeDetail.fs.pairManyToOne')
             };
 
             for (const pair of data.pairs.slice(0, 15)) {
@@ -1332,11 +1407,13 @@ export class KnowledgeDetailModal extends Modal {
 
                 const info = header.createDiv({ cls: 'nw-kd-flex-fill' });
                 info.createEl('div', {
-                    text: `${pair.setupForeshadowName} → ${pair.payoffForeshadowName || '未知'}`,
+                    text: `${pair.setupForeshadowName} → ${pair.payoffForeshadowName || t('knowledgeDetail.common.unknown')}`,
                     cls: 'nw-kd-pair-title'
                 });
                 info.createEl('div', {
-                    text: `${pairTypeLabels[pair.pairType] || pair.pairType}${pair.qualityScore ? ` · 回收质量：${pair.qualityScore}分` : ''}`,
+                    text: pair.qualityScore
+                        ? t('knowledgeDetail.fs.pairQuality', { type: pairTypeLabels[pair.pairType] || pair.pairType, score: pair.qualityScore })
+                        : (pairTypeLabels[pair.pairType] || pair.pairType),
                     cls: 'nw-kd-pair-meta'
                 });
 
@@ -1356,10 +1433,10 @@ export class KnowledgeDetailModal extends Modal {
                     });
 
                     const dims = [
-                        { label: '实体关联', value: pair.matchDimensions.entityMatch },
-                        { label: '语义关联', value: pair.matchDimensions.semanticMatch },
-                        { label: '时间顺序', value: pair.matchDimensions.temporalMatch },
-                        { label: '类型匹配', value: pair.matchDimensions.typeMatch },
+                        { label: t('knowledgeDetail.fs.dimEntity'), value: pair.matchDimensions.entityMatch },
+                        { label: t('knowledgeDetail.fs.dimSemantic'), value: pair.matchDimensions.semanticMatch },
+                        { label: t('knowledgeDetail.fs.dimTemporal'), value: pair.matchDimensions.temporalMatch },
+                        { label: t('knowledgeDetail.fs.dimType'), value: pair.matchDimensions.typeMatch },
                     ];
 
                     for (const dim of dims) {
@@ -1378,7 +1455,7 @@ export class KnowledgeDetailModal extends Modal {
 
         if (data.unresolvedTracker && data.unresolvedTracker.totalUnresolved > 0) {
             const unresolvedSection = container.createDiv({ cls: 'nw-kd-section' });
-            unresolvedSection.createEl('div', { text: '未回收伏笔追踪', cls: 'nw-kd-section-title' });
+            unresolvedSection.createEl('div', { text: t('knowledgeDetail.fs.unresolvedTitle'), cls: 'nw-kd-section-title' });
 
             const unresolvedCard = unresolvedSection.createDiv({
                 cls: 'nw-kd-card'
@@ -1389,7 +1466,7 @@ export class KnowledgeDetailModal extends Modal {
                     cls: 'nw-kd-warn'
                 });
                 warnDiv.createEl('div', {
-                    text: `⚠️ 发现 ${data.unresolvedTracker.forgottenForeshadows.length} 个疑似被遗忘的伏笔`,
+                    text: t('knowledgeDetail.fs.forgottenWarning', { count: data.unresolvedTracker.forgottenForeshadows.length }),
                     cls: 'nw-kd-warn-title'
                 });
                 const names = data.unresolvedTracker.forgottenForeshadows.slice(0, 3).map(f => f.name).join('、');
@@ -1400,17 +1477,17 @@ export class KnowledgeDetailModal extends Modal {
             }
 
             if (data.unresolvedTracker.recallSuggestions && data.unresolvedTracker.recallSuggestions.length > 0) {
-                unresolvedCard.createEl('div', { text: '回收建议', cls: 'nw-kd-suggest-title' });
+                unresolvedCard.createEl('div', { text: t('knowledgeDetail.fs.suggestions'), cls: 'nw-kd-suggest-title' });
                 for (const s of data.unresolvedTracker.recallSuggestions.slice(0, 3)) {
                     const sDiv = unresolvedCard.createDiv({
                         cls: 'nw-kd-suggest'
                     });
                     sDiv.createEl('div', {
-                        text: `📌 第${s.chapter}章附近：${s.reason}`,
+                        text: t('knowledgeDetail.fs.suggestLine', { chapter: s.chapter, reason: s.reason }),
                         cls: 'nw-kd-suggest-head'
                     });
                     sDiv.createEl('div', {
-                        text: s.foreshadows.join('、'),
+                        text: s.foreshadows.join(t('knowledgeDetail.common.listSep')),
                         cls: 'nw-kd-muted-xs'
                     });
                 }
@@ -1420,12 +1497,12 @@ export class KnowledgeDetailModal extends Modal {
         const filterSection = container.createDiv({ cls: 'nw-kd-filter' });
         const categories = ['all', '物品', '功法', '人物', '设定', '事件'];
         const categoryLabels: Record<string, string> = {
-            all: '全部',
-            '物品': '物品',
-            '功法': '功法',
-            '人物': '人物',
-            '设定': '设定',
-            '事件': '事件',
+            all: t('knowledgeDetail.fs.catAll'),
+            '物品': t('knowledgeDetail.fs.catItem'),
+            '功法': t('knowledgeDetail.fs.catSkill'),
+            '人物': t('knowledgeDetail.fs.catPerson'),
+            '设定': t('knowledgeDetail.fs.catSetting'),
+            '事件': t('knowledgeDetail.fs.catEvent'),
         };
 
         for (const cat of categories) {
@@ -1441,7 +1518,7 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const listSection = container.createDiv({ cls: 'nw-kd-section' });
-        listSection.createEl('div', { text: '伏笔详情', cls: 'nw-kd-section-title' });
+        listSection.createEl('div', { text: t('knowledgeDetail.fs.details'), cls: 'nw-kd-section-title' });
 
         const items = data.items;
         if (items && items.length > 0) {
@@ -1454,7 +1531,7 @@ export class KnowledgeDetailModal extends Modal {
 
         if (filtered.length === 0) {
             listCard.createDiv({
-                text: '该分类下暂无伏笔',
+                text: t('knowledgeDetail.fs.emptyCategory'),
                 cls: 'nw-kd-empty-mini'
             });
         } else {
@@ -1478,7 +1555,7 @@ export class KnowledgeDetailModal extends Modal {
                 const info = header.createDiv({ cls: 'nw-kd-flex-fill' });
                 info.createEl('div', { text: item.name, cls: 'nw-kd-name' });
                 info.createEl('div', {
-                    text: `${item.category} · 首次出现：${item.firstAppearance}`,
+                    text: t('knowledgeDetail.fs.itemMeta', { category: foreshadowCategoryLabel(item.category), chapter: item.firstAppearance }),
                     cls: 'nw-kd-meta'
                 });
 
@@ -1497,26 +1574,26 @@ export class KnowledgeDetailModal extends Modal {
                         cls: 'nw-kd-item-body'
                     });
 
-                    body.createEl('div', { text: '首次出现', cls: 'nw-kd-field-title' });
+                    body.createEl('div', { text: t('knowledgeDetail.fs.firstAppearance'), cls: 'nw-kd-field-title' });
                     body.createEl('div', { text: item.firstAppearance, cls: 'nw-kd-body-text' });
 
-                    body.createEl('div', { text: '重要呼应', cls: 'nw-kd-field-title' });
+                    body.createEl('div', { text: t('knowledgeDetail.fs.echo'), cls: 'nw-kd-field-title' });
                     for (const echo of item.echoes) {
                         body.createDiv({ text: `• ${echo}`, cls: 'nw-kd-body-echo' });
                     }
 
                     body.createEl('div', {
-                        text: '回收情况',
+                        text: t('knowledgeDetail.fs.payoffState'),
                         cls: 'nw-kd-field-title nw-kd-field-title--mt'
                     });
                     if (item.resolved) {
                         body.createEl('div', {
-                            text: `已回收：${item.resolution || '已回收'}`,
+                            text: t('knowledgeDetail.fs.resolvedLine', { detail: item.resolution || t('knowledgeDetail.fs.resolved') }),
                             cls: 'nw-kd-state nw-kd-state--resolved'
                         });
                     } else {
                         body.createEl('div', {
-                            text: '待回收',
+                            text: t('knowledgeDetail.fs.unresolved'),
                             cls: 'nw-kd-state nw-kd-state--pending'
                         });
                     }
@@ -1524,7 +1601,7 @@ export class KnowledgeDetailModal extends Modal {
             }
         }
         } else {
-            listSection.createDiv({ text: '暂无伏笔详情数据', cls: 'nw-kd-empty' });
+            listSection.createDiv({ text: t('knowledgeDetail.fs.noDetails'), cls: 'nw-kd-empty' });
         }
     }
 
@@ -1534,14 +1611,14 @@ export class KnowledgeDetailModal extends Modal {
             cls: 'nw-kd-empty-card'
         });
         card.createEl('div', { text: '📭', cls: 'nw-kd-empty-icon' });
-        card.createEl('div', { text: `暂无${dataName}`, cls: 'nw-kd-empty-title' });
+        card.createEl('div', { text: t('knowledgeDetail.empty.title', { name: dataName }), cls: 'nw-kd-empty-title' });
         card.createEl('div', {
-            text: '该维度数据待拆解，请先运行书籍拆解功能。',
+            text: t('knowledgeDetail.empty.desc'),
             cls: 'nw-kd-muted-sm'
         });
 
         const btn = card.createEl('button', {
-            text: '🔄 开始拆解',
+            text: t('knowledgeDetail.empty.start'),
             attr: { type: 'button' },
             cls: 'nw-kd-start-btn',
         });
@@ -1549,16 +1626,16 @@ export class KnowledgeDetailModal extends Modal {
             if (this.deconstructionScheduler) {
                 try {
                     await this.deconstructionScheduler.rerunBook(this.bookId);
-                    new Notice('已开始拆解，正在跳转到监控面板...');
+                    new Notice(t('knowledgeDetail.empty.started'));
                     this.close();
                     new KnowledgeMonitorModal(this.app, this.deconstructionScheduler, this.knowledgeManager).open();
                 } catch (e) {
                     // 源文本缺失/调度器拒绝时旧实现照样提示「已开始」并关窗
                     log.error('[KnowledgeDetailModal] 启动拆解失败:', e);
-                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: '开始拆解失败' });
+                    showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgeDetail.empty.startFailed') });
                 }
             } else {
-                new Notice('拆解功能请在知识库监控面板中使用');
+                new Notice(t('knowledgeDetail.empty.useMonitor'));
             }
         });
     }
@@ -1570,10 +1647,7 @@ export class KnowledgeDetailModal extends Modal {
     }
 
     private formatWordCount(count: number): string {
-        if (count >= 10000) {
-            return (count / 10000).toFixed(1) + ' 万字';
-        }
-        return count.toLocaleString() + ' 字';
+        return formatWordCountText(count);
     }
 
     private formatDateTime(timestamp: number): string {
@@ -1588,20 +1662,20 @@ export class KnowledgeDetailModal extends Modal {
 
     private getStatusText(status: string): string {
         const map: Record<string, string> = {
-            pending: '⏳ 待拆解',
-            processing: '⚙️ 拆解中',
-            completed: '✅ 已完成',
-            failed: '❌ 失败',
+            pending: t('knowledgeDetail.status.pending'),
+            processing: t('knowledgeDetail.status.processing'),
+            completed: t('knowledgeDetail.status.completed'),
+            failed: t('knowledgeDetail.status.failed'),
         };
         return map[status] || status;
     }
 
     /** A5: 向量状态与拆解状态分开显示，失败原因直接挂在值里 */
     private getVectorStatusText(status?: string, error?: string): string {
-        if (status === 'failed') return `⚠️ 向量化失败${error ? `（${error}）` : ''}`;
-        if (status === 'done') return '✅ 已向量化';
-        if (status === 'pending') return '⏳ 待向量化';
-        return '— 未记录';
+        if (status === 'failed') return `${t('knowledgeDetail.vector.failed')}${error ? t('knowledgeDetail.vector.failedDetail', { error }) : ''}`;
+        if (status === 'done') return t('knowledgeDetail.vector.done');
+        if (status === 'pending') return t('knowledgeDetail.vector.pending');
+        return t('knowledgeDetail.vector.none');
     }
 
     /** 详情页与「重新拆解」共用同一个调度器实例；缺依赖时提示并返回 null */
@@ -1610,7 +1684,7 @@ export class KnowledgeDetailModal extends Modal {
         try {
             const plugin = this.plugin;
             if (!plugin) {
-                new Notice('无法获取拆解调度器，请在设置中先加载知识库');
+                new Notice(t('knowledgeDetail.empty.noScheduler'));
                 return null;
             }
             const embeddingProvider = EmbeddingProviderFactory.fromSettings(plugin.settings);
@@ -1626,7 +1700,7 @@ export class KnowledgeDetailModal extends Modal {
             return this.deconstructionScheduler;
         } catch (e) {
             log.warn('[KnowledgeDetailModal] 创建 deconstructionScheduler 失败:', e);
-            new Notice('无法获取拆解调度器，请在设置中先加载知识库');
+            new Notice(t('knowledgeDetail.empty.noScheduler'));
             return null;
         }
     }

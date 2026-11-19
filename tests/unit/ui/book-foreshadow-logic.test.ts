@@ -9,9 +9,9 @@ import {
     buildForeshadowDonutData,
     buildForeshadowQualityItems,
     buildForeshadowStatItems,
-    FORESHADOW_FILTER_OPTIONS,
+    foreshadowFilterOptions,
     FORESHADOW_IMPORTANCE_STYLES,
-    FORESHADOW_TYPE_LABELS,
+    foreshadowTypeLabels,
     foreshadowImportanceTier,
     resolveForeshadowTypeLabel,
 } from '../../../ui/views/book-foreshadow-logic';
@@ -27,7 +27,7 @@ describe('resolveForeshadowTypeLabel', () => {
     });
 
     it('标签表正好五键（分布与列表共用单源）', () => {
-        expect(Object.keys(FORESHADOW_TYPE_LABELS)).toHaveLength(5);
+        expect(Object.keys(foreshadowTypeLabels())).toHaveLength(5);
     });
 });
 
@@ -94,9 +94,9 @@ describe('foreshadowImportanceTier', () => {
     });
 });
 
-describe('FORESHADOW_FILTER_OPTIONS', () => {
+describe('foreshadowFilterOptions', () => {
     it('三档顺序固定，all 在前', () => {
-        expect(FORESHADOW_FILTER_OPTIONS.map(o => o.value)).toEqual(['all', 'resolved', 'unresolved']);
-        expect(FORESHADOW_FILTER_OPTIONS.map(o => o.label)).toEqual(['全部', '已回收', '未回收']);
+        expect(foreshadowFilterOptions().map((o: { value: string }) => o.value)).toEqual(['all', 'resolved', 'unresolved']);
+        expect(foreshadowFilterOptions().map((o: { label: string }) => o.label)).toEqual(['全部', '已回收', '未回收']);
     });
 });

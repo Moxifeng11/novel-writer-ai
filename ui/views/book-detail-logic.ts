@@ -8,6 +8,8 @@
  * 约定：不 import obsidian、不碰 DOM、不读全局状态；视图只负责把返回值画出来。
  */
 
+import { t } from '@/i18n';
+
 /** 质量评分（与 BookBasicInfo.qualityScores 的结构兼容） */
 export interface QualityScoreLike {
     character: number;
@@ -44,14 +46,14 @@ export interface ScoreRow {
  */
 export function buildQualityRadarData(qs: QualityScoreLike): ChartPoint[] {
     return [
-        { label: '人设', value: qs.character },
-        { label: '伏笔', value: qs.foreshadow },
-        { label: '技巧', value: qs.technique },
-        { label: '风格', value: qs.style },
-        { label: '节奏', value: qs.rhythm },
-        { label: '结构', value: qs.structure },
-        { label: '商业', value: qs.commercial ?? 0 },
-        { label: '可读', value: qs.readability ?? 0 },
+        { label: t('bookDetail.qdim.character'), value: qs.character },
+        { label: t('bookDetail.qdim.foreshadow'), value: qs.foreshadow },
+        { label: t('bookDetail.qdim.technique'), value: qs.technique },
+        { label: t('bookDetail.qdim.style'), value: qs.style },
+        { label: t('bookDetail.qdim.rhythm'), value: qs.rhythm },
+        { label: t('bookDetail.qdim.structure'), value: qs.structure },
+        { label: t('bookDetail.qdim.commercial'), value: qs.commercial ?? 0 },
+        { label: t('bookDetail.qdim.readability'), value: qs.readability ?? 0 },
     ];
 }
 
@@ -63,14 +65,14 @@ export function buildQualityRadarData(qs: QualityScoreLike): ChartPoint[] {
  */
 export function buildQualityScoreRows(qs: QualityScoreLike): ScoreRow[] {
     return [
-        { name: '人设', value: qs.character },
-        { name: '伏笔', value: qs.foreshadow },
-        { name: '技巧', value: qs.technique },
-        { name: '风格', value: qs.style },
-        { name: '节奏', value: qs.rhythm },
-        { name: '结构', value: qs.structure },
-        { name: '商业', value: qs.commercial, optional: true },
-        { name: '可读', value: qs.readability, optional: true },
+        { name: t('bookDetail.qdim.character'), value: qs.character },
+        { name: t('bookDetail.qdim.foreshadow'), value: qs.foreshadow },
+        { name: t('bookDetail.qdim.technique'), value: qs.technique },
+        { name: t('bookDetail.qdim.style'), value: qs.style },
+        { name: t('bookDetail.qdim.rhythm'), value: qs.rhythm },
+        { name: t('bookDetail.qdim.structure'), value: qs.structure },
+        { name: t('bookDetail.qdim.commercial'), value: qs.commercial, optional: true },
+        { name: t('bookDetail.qdim.readability'), value: qs.readability, optional: true },
     ];
 }
 

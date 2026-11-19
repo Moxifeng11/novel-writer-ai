@@ -6,10 +6,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-    PARAGRAPH_LENGTH_NAME_MAP,
-    SENSE_NAME_MAP,
-    SENTENCE_LENGTH_NAME_MAP,
-    SENTENCE_TYPE_NAME_MAP,
+    paragraphLengthNameMap,
+    senseNameMap,
+    sentenceLengthNameMap,
+    sentenceTypeNameMap,
     buildFiveSensesRadarData,
     buildParagraphLengthBarData,
     buildSentenceLengthBarData,
@@ -41,8 +41,8 @@ describe('buildFiveSensesRadarData', () => {
     });
 
     it('映射表正好五感且无重复', () => {
-        expect(Object.keys(SENSE_NAME_MAP)).toHaveLength(5);
-        expect(new Set(Object.values(SENSE_NAME_MAP)).size).toBe(5);
+        expect(Object.keys(senseNameMap())).toHaveLength(5);
+        expect(new Set(Object.values(senseNameMap())).size).toBe(5);
     });
 });
 
@@ -67,7 +67,7 @@ describe('buildSentenceTypeDonutData', () => {
     });
 
     it('句式映射四键齐全', () => {
-        expect(Object.keys(SENTENCE_TYPE_NAME_MAP).sort()).toEqual(
+        expect(Object.keys(sentenceTypeNameMap()).sort()).toEqual(
             ['declarative', 'elliptical', 'exclamatory', 'interrogative'],
         );
     });
@@ -85,9 +85,9 @@ describe('buildSentenceLengthBarData', () => {
     });
 
     it('句长三档与段长四档不混用（段长多 veryLong）', () => {
-        expect(Object.keys(SENTENCE_LENGTH_NAME_MAP)).toHaveLength(3);
-        expect(Object.keys(PARAGRAPH_LENGTH_NAME_MAP)).toHaveLength(4);
-        expect(PARAGRAPH_LENGTH_NAME_MAP.veryLong).toBe('超长段');
+        expect(Object.keys(sentenceLengthNameMap())).toHaveLength(3);
+        expect(Object.keys(paragraphLengthNameMap())).toHaveLength(4);
+        expect(paragraphLengthNameMap().veryLong).toBe('超长段');
     });
 });
 

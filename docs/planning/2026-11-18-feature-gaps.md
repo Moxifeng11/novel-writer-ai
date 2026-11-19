@@ -343,8 +343,16 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
   存量 `agent-harness`/`harness-context-fit`/`deviation-detector`/`quality-score-engine` 195 例零修改；
   实机 zh/en 各 2 场景（工作台 1156×992 + chat 区 556×733，零横向溢出，en 气泡与 chip 全英文、zh 逐字不变）；
   `check:bundle` main.js 6,190,342 → **6,194,270**（+3,928）。
-- 后续：第二期余下（知识库 D 类两文件 `ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`
-  用户已裁定随视觉重构；散落弹窗 novel-tags 1099（只剩 AI 提示词与解析正则）），
+- 第二期第47片（2026-11-19，DSH）：知识库 D 类（书籍详情弹窗 + 详情渲染器）—— `ui/knowledge-detail-modal.ts`（1,634 行）+
+  `ui/views/book-detail-renderer.ts`（2,206 行）+ 五个 `book-detail-*` 逻辑助手（metrics / logic / emotion / foreshadow / style）
+  合迁 **547 键**（`knowledgeDetail` 182：七页签/环形图/十六组面板/枚举映射；`bookDetail` 365：11 个维度渲染块与图例表头）；
+  三个模块级常量改函数（`tabLabels()` / `dimensionLabelList()` / `bookDetailTabs()`），`STYLE_DIMENSIONS` 保留中文数据键、
+  显示名走 `styleDimensionLabel()`；枚举一律「键留中文、值走 t()」（技巧分类/伏笔类型与筛选/六种情绪弧线/三档等级/六个弧线类型/七个技术类目）；
+  保留中文只剩「起承转合」颜色 map 的 key 与 6 条 `log.*`；`bookDetail.*` 资源改为一次性整块生成（`D:\nw-tmp\res-bd.json` 攒 spec），
+  并修掉两处父子键冲突（`arcTypeLine` / `style.senseDim`）与一处占位符错配（`readability.highRiskSection`）；
+  zh/en 资源各 **5976** 条；棘轮收紧到 **206 文件 / 5644 条**（5 个文件已无中文移出基线）；新增 `tests/unit/i18n/book-detail-labels.test.ts` 5 例，
+  存量 9 个测试文件 82 例通过；实机 zh/en 各 10 页签（右栏 896×1130，无新增溢出）；`check:bundle` main.js 见 §5 记录。
+- 后续：第二期余下（散落弹窗 novel-tags 1099（只剩 AI 提示词与解析正则）、写作设置分区残留等），
   第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 
 ---
@@ -353,6 +361,6 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
 
 1 → 2 → 3 → 4 → 5 →（6 可选）→ 7。
 
-进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~46 片（命令面板 → 引擎层运行时文案）已交付（2026-11-18/19）；下一个候选是 ⑦ 第二期余下（novel-tags 1099（只剩 AI 提示词与解析正则）/ 写作设置分区残留等，知识库 D 类两文件随视觉重构），以及第三期补齐 en 并逐面量布局。
+进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~47 片（命令面板 → 知识库 D 类两文件）已交付（2026-11-18/19）；下一个候选是 ⑦ 第二期余下（novel-tags 1099（只剩 AI 提示词与解析正则）/ 写作设置分区残留等），以及第三期补齐 en 并逐面量布局。
 
 理由：1 是修「假成功」缺陷；2 是把已交付引擎变成写作时可见的价值；3 是投稿刚需且不依赖 AI；4/5 是低成本体验补洞；6/7 视需要。

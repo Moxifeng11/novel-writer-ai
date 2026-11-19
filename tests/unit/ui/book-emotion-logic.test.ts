@@ -7,13 +7,13 @@
 import { describe, expect, it } from 'vitest';
 import {
     buildNrcEmotionRadarData,
-    EMOTION_ARC_TYPE_MAP,
-    NRC_EMOTION_NAME_MAP,
+    emotionArcTypeMap,
+    nrcEmotionNameMap,
     resolveEmotionArcLabel,
     resolveSeverityColor,
     resolveSeverityLabel,
     SEVERITY_COLORS,
-    SEVERITY_LABELS,
+    severityLabels,
 } from '../../../ui/views/book-emotion-logic';
 
 describe('buildNrcEmotionRadarData', () => {
@@ -43,8 +43,8 @@ describe('buildNrcEmotionRadarData', () => {
     });
 
     it('NRC 恰好八维且无重复中文名', () => {
-        expect(Object.keys(NRC_EMOTION_NAME_MAP)).toHaveLength(8);
-        expect(new Set(Object.values(NRC_EMOTION_NAME_MAP)).size).toBe(8);
+        expect(Object.keys(nrcEmotionNameMap())).toHaveLength(8);
+        expect(new Set(Object.values(nrcEmotionNameMap())).size).toBe(8);
     });
 });
 
@@ -66,7 +66,7 @@ describe('resolveEmotionArcLabel', () => {
     });
 
     it('映射表正好八键', () => {
-        expect(Object.keys(EMOTION_ARC_TYPE_MAP)).toHaveLength(8);
+        expect(Object.keys(emotionArcTypeMap())).toHaveLength(8);
     });
 });
 
@@ -87,7 +87,7 @@ describe('严重度徽标（商业/可读性页签共用）', () => {
 
     it('映射表三键且颜色无重复', () => {
         expect(Object.keys(SEVERITY_COLORS)).toHaveLength(3);
-        expect(Object.keys(SEVERITY_LABELS)).toHaveLength(3);
+        expect(Object.keys(severityLabels())).toHaveLength(3);
         expect(new Set(Object.values(SEVERITY_COLORS)).size).toBe(3);
     });
 });

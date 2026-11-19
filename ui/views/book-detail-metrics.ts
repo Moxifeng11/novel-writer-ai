@@ -9,6 +9,8 @@
  * 输出是图表/列表可直接消费的纯数据。视图侧只保留 createElement 与事件绑定。
  */
 
+import { t } from '@/i18n';
+
 import type { StyleData, StructureData, ForeshadowData, TechniqueData } from './knowledge-base-view';
 
 /** 雷达图/柱状图数据项（与 ui/svg-charts 的入参形态一致） */
@@ -104,23 +106,23 @@ export function buildStyleRadarItems(data: StyleData | null | undefined): ChartI
     const { sentenceRhythm, paragraphStructure, narrativeStyle, wordPreference } = data;
 
     if (sentenceRhythm?.avgSentenceLength !== undefined) {
-        items.push({ label: '平均句长', value: normalizeSentenceLength(sentenceRhythm.avgSentenceLength) });
+        items.push({ label: t('bookDetail.style.avgSentence'), value: normalizeSentenceLength(sentenceRhythm.avgSentenceLength) });
     }
     if (paragraphStructure?.avgParagraphLength !== undefined) {
-        items.push({ label: '平均段长', value: normalizeParagraphLength(paragraphStructure.avgParagraphLength) });
+        items.push({ label: t('bookDetail.style.avgParagraph'), value: normalizeParagraphLength(paragraphStructure.avgParagraphLength) });
     }
     if (narrativeStyle?.dialogueRatio !== undefined) {
-        items.push({ label: '对白占比', value: narrativeStyle.dialogueRatio * 100 });
+        items.push({ label: t('bookDetail.style.dialogueRatio'), value: narrativeStyle.dialogueRatio * 100 });
     }
     if (narrativeStyle?.descriptionRatio?.total !== undefined) {
-        items.push({ label: '描写占比', value: narrativeStyle.descriptionRatio.total * 100 });
+        items.push({ label: t('bookDetail.style.descriptionRatio'), value: narrativeStyle.descriptionRatio.total * 100 });
     }
     if (wordPreference?.colloquialismLevel !== undefined) {
-        items.push({ label: '口语化程度', value: wordPreference.colloquialismLevel * 100 });
+        items.push({ label: t('bookDetail.style.colloquial'), value: wordPreference.colloquialismLevel * 100 });
     }
     if (wordPreference?.idiomDensity !== undefined) {
         // 原实现即 `Math.min(100, x / 100 * 100)`，等价于按 100 截断；保留原口径避免改变显示
-        items.push({ label: '成语密度', value: Math.min(100, wordPreference.idiomDensity) });
+        items.push({ label: t('bookDetail.style.idiomDensity'), value: Math.min(100, wordPreference.idiomDensity) });
     }
     return items;
 }
@@ -134,12 +136,12 @@ export function buildStyleRadarItems(data: StyleData | null | undefined): ChartI
 export function buildRhetoricBarData(rhetoric: StyleData['rhetoric'] | undefined): ChartItem[] {
     if (!rhetoric) return [];
     return [
-        { label: '比喻', value: rhetoric.metaphor },
-        { label: '拟人', value: rhetoric.personification },
-        { label: '排比', value: rhetoric.parallelism },
-        { label: '反问', value: rhetoric.rhetoricalQuestion },
-        { label: '夸张', value: rhetoric.hyperbole },
-        { label: '对偶', value: rhetoric.antithesis },
+        { label: t('bookDetail.style.rhetoricItem.metaphor'), value: rhetoric.metaphor },
+        { label: t('bookDetail.style.rhetoricItem.personification'), value: rhetoric.personification },
+        { label: t('bookDetail.style.rhetoricItem.parallelism'), value: rhetoric.parallelism },
+        { label: t('bookDetail.style.rhetoricItem.rhetoricalQuestion'), value: rhetoric.rhetoricalQuestion },
+        { label: t('bookDetail.style.rhetoricItem.hyperbole'), value: rhetoric.hyperbole },
+        { label: t('bookDetail.style.rhetoricItem.antithesis'), value: rhetoric.antithesis },
     ];
 }
 
@@ -224,24 +226,28 @@ export function buildTechniqueBarData(
     return rankTechniquesTop(techniques, limit).map(item => ({ label: item.name, value: item.count }));
 }
 
-/** 角色层级 → 中文标签（未知值原样返回） */
-const TIER_LABELS: Record<string, string> = {
-    protagonist: '主角',
-    core_supporting: '核心配角',
-    important_supporting: '重要配角',
-    minor_supporting: '次要配角',
-    extra: '路人角色',
-};
+/** 角色层级 → 显示标签（未知值原样返回） */
+function tierLabels(): Record<string, string> {
+    return {
+        protagonist: t('bookDetail.character.grade.protagonist'),
+        core_supporting: t('bookDetail.character.grade.coreSupporting'),
+        important_supporting: t('bookDetail.character.grade.importantSupporting'),
+        minor_supporting: t('bookDetail.character.grade.minorSupporting'),
+        extra: t('bookDetail.character.grade.extra'),
+    };
+}
 
-/** 角色弧线类型 → 中文标签（未知值原样返回） */
-const ARC_TYPE_LABELS: Record<string, string> = {
-    growth: '成长型',
-    fall: '堕落型',
-    awakening: '觉醒型',
-    darkening: '黑化型',
-    return: '回归型',
-    stable: '稳定型',
-};
+/** 角色弧线类型 → 显示标签（未知值原样返回） */
+function arcTypeLabels(): Record<string, string> {
+    return {
+        growth: t('bookDetail.character.arcType.growth'),
+        fall: t('bookDetail.character.arcType.fall'),
+        awakening: t('bookDetail.character.arcType.awakening'),
+        darkening: t('bookDetail.character.arcType.darkening'),
+        return: t('bookDetail.character.arcType.return'),
+        stable: t('bookDetail.character.arcType.stable'),
+    };
+}
 
 /** 时间线事件类型 → 图标 */
 const TIMELINE_ICONS: Record<string, string> = {
@@ -259,7 +265,7 @@ const TIMELINE_ICONS: Record<string, string> = {
  * @returns 中文标签
  */
 export function resolveTierLabel(tier?: string): string {
-    return TIER_LABELS[tier || 'extra'] || tier || '';
+    return tierLabels()[tier || 'extra'] || tier || '';
 }
 
 /**
@@ -269,7 +275,7 @@ export function resolveTierLabel(tier?: string): string {
  * @returns 中文标签；未知值原样返回
  */
 export function resolveArcTypeLabel(type: string): string {
-    return ARC_TYPE_LABELS[type] || type;
+    return arcTypeLabels()[type] || type;
 }
 
 /**
@@ -304,10 +310,10 @@ export function joinRoleParts(parts: Array<string | undefined | null | false>): 
 export function buildForeshadowStatItems(stats: ForeshadowData['stats']): ChartItem[] {
     if (!stats) return [];
     return [
-        { label: '伏笔总数', value: stats.totalForeshadows },
-        { label: '已回收', value: stats.resolvedCount },
-        { label: '未回收', value: stats.unresolvedCount },
-        { label: '平均重要性', value: stats.avgImportance },
+        { label: t('bookDetail.foreshadow.total'), value: stats.totalForeshadows },
+        { label: t('bookDetail.foreshadow.filter.resolved'), value: stats.resolvedCount },
+        { label: t('bookDetail.foreshadow.filter.unresolved'), value: stats.unresolvedCount },
+        { label: t('bookDetail.foreshadow.avgImportance'), value: stats.avgImportance },
     ];
 }
 
@@ -320,9 +326,9 @@ export function buildForeshadowStatItems(stats: ForeshadowData['stats']): ChartI
 export function buildTechniqueQualityItems(qualityScore: TechniqueData['qualityScore']): ChartItem[] {
     if (!qualityScore) return [];
     return [
-        { label: '总分', value: qualityScore.totalScore },
-        { label: '多样性', value: qualityScore.diversityScore },
-        { label: '覆盖度', value: qualityScore.coverageScore },
+        { label: t('bookDetail.technique.total'), value: qualityScore.totalScore },
+        { label: t('bookDetail.technique.diversity'), value: qualityScore.diversityScore },
+        { label: t('bookDetail.technique.coverage'), value: qualityScore.coverageScore },
     ];
 }
 
@@ -355,9 +361,9 @@ export function resolveScoreTone(score: number | undefined): QualityTone {
  * @returns 中文标签与色调
  */
 export function resolveQualityLevelMeta(level: string | undefined): { label: string; tone: QualityTone } {
-    if (level === 'high') return { label: '优秀', tone: 'green' };
-    if (level === 'medium') return { label: '一般', tone: 'orange' };
-    return { label: '较差', tone: 'red' };
+    if (level === 'high') return { label: t('bookDetail.tone.high'), tone: 'green' };
+    if (level === 'medium') return { label: t('bookDetail.tone.medium'), tone: 'orange' };
+    return { label: t('bookDetail.tone.low'), tone: 'red' };
 }
 
 /**
@@ -367,9 +373,9 @@ export function resolveQualityLevelMeta(level: string | undefined): { label: str
  * @returns 中文标签
  */
 export function resolveUsedLevelLabel(usedLevel: string | undefined): string {
-    if (usedLevel === 'fast') return '快速';
-    if (usedLevel === 'standard') return '标准';
-    return '深度';
+    if (usedLevel === 'fast') return t('bookDetail.usedLevel.fast');
+    if (usedLevel === 'standard') return t('bookDetail.usedLevel.standard');
+    return t('bookDetail.usedLevel.deep');
 }
 
 /**
@@ -384,8 +390,8 @@ export function buildQualityScoreItems(
     if (!qualityScore) return [];
     const pick = (value: number | undefined): number => (Number.isFinite(Number(value)) ? Number(value) : 0);
     return [
-        { label: '完整性', value: pick(qualityScore.completeness), tone: resolveScoreTone(qualityScore.completeness) },
-        { label: '一致性', value: pick(qualityScore.consistency), tone: resolveScoreTone(qualityScore.consistency) },
-        { label: '置信度', value: pick(qualityScore.confidence), tone: resolveScoreTone(qualityScore.confidence) },
+        { label: t('bookDetail.quality.completeness'), value: pick(qualityScore.completeness), tone: resolveScoreTone(qualityScore.completeness) },
+        { label: t('bookDetail.quality.consistency'), value: pick(qualityScore.consistency), tone: resolveScoreTone(qualityScore.consistency) },
+        { label: t('bookDetail.quality.confidence'), value: pick(qualityScore.confidence), tone: resolveScoreTone(qualityScore.confidence) },
     ];
 }

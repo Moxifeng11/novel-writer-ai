@@ -11,7 +11,7 @@
 | `shared/` | 259 | 52377 | 2212 | 1732 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1583 | 88 | 58 | 66% |
-| `ui/` | 304 | 114285 | 1181 | 935 | 79% |
+| `ui/` | 304 | 114420 | 1181 | 944 | 80% |
 
 ## 文件清单
 
@@ -881,7 +881,7 @@
 | `ui/ideation-modal.ts` | 869 | 1 | 1 |
 | `ui/job-center-modal.ts` | 124 | 1 | 1 |
 | `ui/knowledge-detail-format.ts` | 46 | 4 | 4 |
-| `ui/knowledge-detail-modal.ts` | 1634 | 1 | 1 |
+| `ui/knowledge-detail-modal.ts` | 1708 | 1 | 1 |
 | `ui/knowledge-folder-navigation.ts` | 15 | 1 | 1 |
 | `ui/knowledge-monitor-modal.ts` | 500 | 1 | 1 |
 | `ui/knowledge-rebuild-action.ts` | 48 | 1 | 1 |
@@ -978,12 +978,12 @@
 | `ui/usage-ledger-modal.ts` | 202 | 1 | 1 |
 | `ui/utils/worldview-utils.ts` | 103 | 1 | 1 |
 | `ui/vector-rebuild-action.ts` | 148 | 1 | 1 |
-| `ui/views/book-detail-logic.ts` | 161 | 10 | 7 |
-| `ui/views/book-detail-metrics.ts` | 392 | 29 | 21 |
-| `ui/views/book-detail-renderer.ts` | 2206 | 2 | 2 |
-| `ui/views/book-emotion-logic.ts` | 107 | 9 | 4 |
-| `ui/views/book-foreshadow-logic.ts` | 142 | 13 | 5 |
-| `ui/views/book-style-logic.ts` | 145 | 11 | 6 |
+| `ui/views/book-detail-logic.ts` | 163 | 10 | 7 |
+| `ui/views/book-detail-metrics.ts` | 398 | 29 | 21 |
+| `ui/views/book-detail-renderer.ts` | 2207 | 2 | 2 |
+| `ui/views/book-emotion-logic.ts` | 125 | 9 | 7 |
+| `ui/views/book-foreshadow-logic.ts` | 154 | 13 | 7 |
+| `ui/views/book-style-logic.ts` | 167 | 11 | 10 |
 | `ui/views/capability-banner.ts` | 90 | 5 | 1 |
 | `ui/views/fingerprint-capability.ts` | 106 | 3 | 1 |
 | `ui/views/fingerprint-detail-logic.ts` | 96 | 8 | 4 |

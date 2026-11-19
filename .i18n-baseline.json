@@ -115,7 +115,7 @@
     "ui/ideation-modal.ts": 60,
     "ui/job-center-modal.ts": 15,
     "ui/knowledge-detail-format.ts": 3,
-    "ui/knowledge-detail-modal.ts": 226,
+    "ui/knowledge-detail-modal.ts": 40,
     "ui/knowledge-monitor-modal.ts": 43,
     "ui/knowledge-rebuild-action.ts": 9,
     "ui/manage-providers-modal.ts": 82,
@@ -189,12 +189,7 @@
     "ui/usage-ledger-modal.ts": 34,
     "ui/utils/worldview-utils.ts": 54,
     "ui/vector-rebuild-action.ts": 22,
-    "ui/views/book-detail-logic.ts": 16,
-    "ui/views/book-detail-metrics.ts": 39,
-    "ui/views/book-detail-renderer.ts": 324,
-    "ui/views/book-emotion-logic.ts": 19,
-    "ui/views/book-foreshadow-logic.ts": 20,
-    "ui/views/book-style-logic.ts": 16,
+    "ui/views/book-detail-renderer.ts": 5,
     "ui/views/fingerprint-scope-logic.ts": 3,
     "ui/views/kb-config-import-logic.ts": 1,
     "ui/views/kb-detail-actions.ts": 6,
@@ -212,7 +207,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 6259,
+  "total": 5644,
   "updatedAt": "2026-11-19",
   "note": ""
 }

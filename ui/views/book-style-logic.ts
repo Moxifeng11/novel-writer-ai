@@ -8,37 +8,59 @@
  * 约定：不 import obsidian、不碰 DOM；英文键缺失时回落原文键（与抽取前一致）。
  */
 
-/** 五感英文键 → 中文名 */
-export const SENSE_NAME_MAP: Record<string, string> = {
-    visual: '视觉',
-    auditory: '听觉',
-    olfactory: '嗅觉',
-    gustatory: '味觉',
-    tactile: '触觉',
-};
+import { t } from '@/i18n';
 
-/** 句式类型英文键 → 中文名 */
-export const SENTENCE_TYPE_NAME_MAP: Record<string, string> = {
-    declarative: '陈述句',
-    interrogative: '疑问句',
-    exclamatory: '感叹句',
-    elliptical: '省略句',
-};
+/**
+ * 五感英文键 → 显示名。
+ * @returns 五感键到本地化显示名的映射
+ */
+export function senseNameMap(): Record<string, string> {
+    return {
+        visual: t('bookDetail.style.senseDim.visual'),
+        auditory: t('bookDetail.style.senseDim.auditory'),
+        olfactory: t('bookDetail.style.senseDim.olfactory'),
+        gustatory: t('bookDetail.style.senseDim.gustatory'),
+        tactile: t('bookDetail.style.senseDim.tactile'),
+    };
+}
 
-/** 句长分档 → 中文名 */
-export const SENTENCE_LENGTH_NAME_MAP: Record<string, string> = {
-    short: '短句',
-    medium: '中句',
-    long: '长句',
-};
+/**
+ * 句式类型英文键 → 显示名。
+ * @returns 句式键到本地化显示名的映射
+ */
+export function sentenceTypeNameMap(): Record<string, string> {
+    return {
+        declarative: t('bookDetail.style.sentenceType.declarative'),
+        interrogative: t('bookDetail.style.sentenceType.interrogative'),
+        exclamatory: t('bookDetail.style.sentenceType.exclamatory'),
+        elliptical: t('bookDetail.style.sentenceType.elliptical'),
+    };
+}
 
-/** 段落长度分档 → 中文名（多一档「超长段」） */
-export const PARAGRAPH_LENGTH_NAME_MAP: Record<string, string> = {
-    short: '短段',
-    medium: '中段',
-    long: '长段',
-    veryLong: '超长段',
-};
+/**
+ * 句长分档 → 显示名。
+ * @returns 句长分档键到本地化显示名的映射
+ */
+export function sentenceLengthNameMap(): Record<string, string> {
+    return {
+        short: t('bookDetail.style.length.short'),
+        medium: t('bookDetail.style.length.medium'),
+        long: t('bookDetail.style.length.long'),
+    };
+}
+
+/**
+ * 段落长度分档 → 显示名（多一档「超长段」）。
+ * @returns 段落长度分档键到本地化显示名的映射
+ */
+export function paragraphLengthNameMap(): Record<string, string> {
+    return {
+        short: t('bookDetail.style.paraLength.short'),
+        medium: t('bookDetail.style.paraLength.medium'),
+        long: t('bookDetail.style.paraLength.long'),
+        veryLong: t('bookDetail.style.paraLength.veryLong'),
+    };
+}
 
 /** 雷达图数据点 */
 export interface ChartPoint {
@@ -63,7 +85,7 @@ export function buildFiveSensesRadarData(
     const entries = Object.entries(fs.distribution);
     if (entries.length < 3) return [];
     return entries.map(([k, v]) => ({
-        label: SENSE_NAME_MAP[k] || k,
+        label: senseNameMap()[k] || k,
         value: Math.min(100, v * 100),
     }));
 }
@@ -75,7 +97,7 @@ export function buildFiveSensesRadarData(
  * @returns 中文名
  */
 export function resolveSenseLabel(sense: string | undefined): string {
-    return SENSE_NAME_MAP[sense ?? ''] || (sense ?? '');
+    return senseNameMap()[sense ?? ''] || (sense ?? '');
 }
 
 /**
@@ -89,7 +111,7 @@ export function buildSentenceTypeDonutData(
 ): ChartPoint[] {
     if (!std) return [];
     return Object.entries(std).map(([k, v]) => ({
-        label: SENTENCE_TYPE_NAME_MAP[k] || k,
+        label: sentenceTypeNameMap()[k] || k,
         value: v,
     }));
 }
@@ -105,7 +127,7 @@ export function buildSentenceLengthBarData(
 ): ChartPoint[] {
     if (!sld) return [];
     return Object.entries(sld).map(([k, v]) => ({
-        label: SENTENCE_LENGTH_NAME_MAP[k] || k,
+        label: sentenceLengthNameMap()[k] || k,
         value: v,
     }));
 }
@@ -121,7 +143,7 @@ export function buildParagraphLengthBarData(
 ): ChartPoint[] {
     if (!pld) return [];
     return Object.entries(pld).map(([k, v]) => ({
-        label: PARAGRAPH_LENGTH_NAME_MAP[k] || k,
+        label: paragraphLengthNameMap()[k] || k,
         value: v,
     }));
 }

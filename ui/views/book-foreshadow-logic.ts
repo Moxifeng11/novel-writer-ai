@@ -9,21 +9,33 @@
  * 约定：不 import obsidian、不碰 DOM；颜色串属于视图层语义，这里按抽取前原样保留。
  */
 
-/** 伏笔类型英文键 → 中文名（类型分布与列表共用一份） */
-export const FORESHADOW_TYPE_LABELS: Record<string, string> = {
-    item: '物品伏笔',
-    skill: '功法伏笔',
-    character: '人物伏笔',
-    setting: '设定伏笔',
-    event: '事件伏笔',
-};
+import { t } from '@/i18n';
 
-/** 筛选按钮组（顺序即渲染顺序） */
-export const FORESHADOW_FILTER_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
-    { value: 'all', label: '全部' },
-    { value: 'resolved', label: '已回收' },
-    { value: 'unresolved', label: '未回收' },
-];
+/**
+ * 伏笔类型英文键 → 显示名（类型分布与列表共用一份）。
+ * @returns 伏笔类型键到本地化显示名的映射
+ */
+export function foreshadowTypeLabels(): Record<string, string> {
+    return {
+        item: t('bookDetail.foreshadow.type.item'),
+        skill: t('bookDetail.foreshadow.type.skill'),
+        character: t('bookDetail.foreshadow.type.character'),
+        setting: t('bookDetail.foreshadow.type.setting'),
+        event: t('bookDetail.foreshadow.type.event'),
+    };
+}
+
+/**
+ * 筛选按钮组（顺序即渲染顺序）。
+ * @returns 筛选项列表，每项含 value 与本地化 label
+ */
+export function foreshadowFilterOptions(): ReadonlyArray<{ value: string; label: string }> {
+    return [
+        { value: 'all', label: t('bookDetail.foreshadow.filter.all') },
+        { value: 'resolved', label: t('bookDetail.foreshadow.filter.resolved') },
+        { value: 'unresolved', label: t('bookDetail.foreshadow.filter.unresolved') },
+    ];
+}
 
 /** 伏笔质量评分（与 ForeshadowData.qualityScore 结构兼容） */
 export interface ForeshadowQualityScoreLike {
@@ -65,11 +77,11 @@ export interface DonutPoint {
  */
 export function buildForeshadowQualityItems(q: ForeshadowQualityScoreLike | undefined): ColoredStatItem[] {
     return [
-        { label: '综合评分', value: q?.totalScore !== undefined ? `${q.totalScore}分` : '-', color: 'var(--interactive-accent)' },
-        { label: '类型多样性', value: q?.diversityScore !== undefined ? `${q.diversityScore}%` : '-', color: '#2ecc71' },
-        { label: '回收率', value: q?.resolutionRate !== undefined ? `${q.resolutionRate}%` : '-', color: '#f59e0b' },
-        { label: '信噪比', value: q?.signalNoiseRatio !== undefined ? `${q.signalNoiseRatio}%` : '-', color: '#9b59b6' },
-        { label: '覆盖度', value: q?.coverageScore !== undefined ? `${q.coverageScore}%` : '-', color: '#3b82f6' },
+        { label: t('bookDetail.foreshadow.qOverall'), value: q?.totalScore !== undefined ? t('bookDetail.common.score', { value: q.totalScore }) : '-', color: 'var(--interactive-accent)' },
+        { label: t('bookDetail.foreshadow.qDiversity'), value: q?.diversityScore !== undefined ? `${q.diversityScore}%` : '-', color: '#2ecc71' },
+        { label: t('bookDetail.foreshadow.qResolution'), value: q?.resolutionRate !== undefined ? `${q.resolutionRate}%` : '-', color: '#f59e0b' },
+        { label: t('bookDetail.foreshadow.qRatio'), value: q?.signalNoiseRatio !== undefined ? `${q.signalNoiseRatio}%` : '-', color: '#9b59b6' },
+        { label: t('bookDetail.foreshadow.qCoverage'), value: q?.coverageScore !== undefined ? `${q.coverageScore}%` : '-', color: '#3b82f6' },
     ];
 }
 
@@ -81,8 +93,8 @@ export function buildForeshadowQualityItems(q: ForeshadowQualityScoreLike | unde
  */
 export function buildForeshadowDonutData(stats: ForeshadowStatsLike | undefined): DonutPoint[] {
     return [
-        { label: '已回收', value: stats?.resolvedCount ?? 0, color: '#2ecc71' },
-        { label: '未回收', value: stats?.unresolvedCount ?? 0, color: '#f59e0b' },
+        { label: t('bookDetail.foreshadow.filter.resolved'), value: stats?.resolvedCount ?? 0, color: '#2ecc71' },
+        { label: t('bookDetail.foreshadow.filter.unresolved'), value: stats?.unresolvedCount ?? 0, color: '#f59e0b' },
     ];
 }
 
@@ -98,10 +110,10 @@ export function buildForeshadowStatItems(
     formatPercent: (v: number) => string,
 ): ColoredStatItem[] {
     return [
-        { label: '总伏笔数', value: String(stats?.totalForeshadows ?? '-'), color: 'var(--interactive-accent)' },
-        { label: '已回收', value: String(stats?.resolvedCount ?? '-'), color: '#2ecc71' },
-        { label: '未回收', value: String(stats?.unresolvedCount ?? '-'), color: '#f59e0b' },
-        { label: '平均重要度', value: stats?.avgImportance !== undefined ? formatPercent(stats.avgImportance) : '-', color: '#9b59b6' },
+        { label: t('bookDetail.foreshadow.totalAlt'), value: String(stats?.totalForeshadows ?? '-'), color: 'var(--interactive-accent)' },
+        { label: t('bookDetail.foreshadow.filter.resolved'), value: String(stats?.resolvedCount ?? '-'), color: '#2ecc71' },
+        { label: t('bookDetail.foreshadow.filter.unresolved'), value: String(stats?.unresolvedCount ?? '-'), color: '#f59e0b' },
+        { label: t('bookDetail.foreshadow.avgImportanceAlt'), value: stats?.avgImportance !== undefined ? formatPercent(stats.avgImportance) : '-', color: '#9b59b6' },
     ];
 }
 
@@ -112,7 +124,7 @@ export function buildForeshadowStatItems(
  * @returns 中文名
  */
 export function resolveForeshadowTypeLabel(type: string): string {
-    return FORESHADOW_TYPE_LABELS[type] || type;
+    return foreshadowTypeLabels()[type] || type;
 }
 
 /** 重要度档位：≥0.7 高、≥0.4 中、其余默认 */
