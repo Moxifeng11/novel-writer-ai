@@ -126,7 +126,7 @@ export class AddFanficSettingModal extends Modal {
             const workType = typeInput.value.trim();
             const author = authorInput.value.trim();
             if (!workName) {
-                new Notice('❌ 请输入作品名称', 5000);
+                new Notice(t("addFanfic.flow.needWorkName"), 5000);
                 return;
             }
             await this.generateFanficSetting(workName, workType, author);
@@ -137,8 +137,7 @@ export class AddFanficSettingModal extends Modal {
             text: t("addFanfic.common.k7"),
             cls: 'nw-btn nw-btn-secondary',
             attr: {
-                title: '用知识库里已拆解的参考书内容生成设定草稿，再用联网检索来源逐条核对；'
-                    + '结论会写进草稿的审核 meta，之后仍要在审核页人工通过',
+                title: t("addFanfic.flow.knowledgeButtonHint"),
             },
         });
         knowledgeButton.onclick = async () => {
@@ -146,7 +145,7 @@ export class AddFanficSettingModal extends Modal {
             const workType = typeInput.value.trim();
             const author = authorInput.value.trim();
             if (!workName) {
-                new Notice('❌ 请输入作品名称', 5000);
+                new Notice(t("addFanfic.flow.needWorkName"), 5000);
                 return;
             }
             await this.generateFromKnowledgeAndVerify(workName, workType, author);
@@ -202,7 +201,7 @@ export class AddFanficSettingModal extends Modal {
         addBtn.onclick = async () => {
             const url = urlInput.value.trim();
             if (!url) {
-                new Notice('请输入官方资料 URL', 4000);
+                new Notice(t("addFanfic.flow.needUrl"), 4000);
                 return;
             }
             addBtn.disabled = true;
@@ -215,7 +214,7 @@ export class AddFanficSettingModal extends Modal {
                 const chosenTier = tierSelect.value as CanonSourceTier | 'auto';
                 if (chosenTier !== 'auto') source.tier = chosenTier;
                 if (this.sources.some(item => item.url === source.url)) {
-                    new Notice('该来源已存在', 3000);
+                    new Notice(t("addFanfic.flow.sourceExists"), 3000);
                     return;
                 }
                 this.sources.push({ ...source, id: `S${this.sources.length + 1}` });
@@ -234,15 +233,15 @@ export class AddFanficSettingModal extends Modal {
         searchBtn.onclick = async () => {
             const workName = nameInput.value.trim();
             if (!workName) {
-                new Notice('请先填写作品名称', 4000);
+                new Notice(t("addFanfic.flow.needWorkNameForSearch"), 4000);
                 return;
             }
             if (!this.project) {
-                new Notice('请先打开一个项目，检索结果需要缓存到项目同人设定库', 5000);
+                new Notice(t("addFanfic.flow.needProjectForResearch"), 5000);
                 return;
             }
             searchBtn.disabled = true;
-            searchBtn.textContent = '⏳ 检索中...';
+            searchBtn.textContent = t("addFanfic.flow.searching");
             try {
                 const result = await this.sourceService.research(workName, {
                     project: this.project,
@@ -259,7 +258,7 @@ export class AddFanficSettingModal extends Modal {
                 showErrorNotice(error instanceof Error ? error.message : String(error), { title: t("addFanfic.ui.k14"), timeout: 8000 });
             } finally {
                 searchBtn.disabled = false;
-                searchBtn.textContent = '🌐 联网检索官方资料';
+                searchBtn.textContent = t("addFanfic.ui.k12");
             }
         };
 
@@ -284,7 +283,10 @@ export class AddFanficSettingModal extends Modal {
         const authoritative = selectAuthoritativeSources(this.sources);
         const validation = validateCanonSources(this.sources);
         this.sourceStatusEl.setText(
-            `已导入 ${this.sources.length} 条来源，其中官方可用 ${authoritative.length} 条。` +
+            t("addFanfic.flow.sourceSummary", {
+                total: this.sources.length,
+                official: authoritative.length,
+            }) +
             (validation.errors.length > 0 ? ` ${validation.errors.join('；')}` : '')
         );
         if (this.sources.length === 0) {
@@ -327,7 +329,7 @@ export class AddFanficSettingModal extends Modal {
             const workName = nameInput.value.trim() || '新同人设定';
             try {
                 const path = await createFanficDraftFromTemplate(this.app, this.project, workName);
-                showSuccessNotice(`已从模板创建待审核草稿：${path}`, { timeout: 6000 });
+                showSuccessNotice(t("addFanfic.flow.templateDraftCreated", { path }), { timeout: 6000 });
                 new FanficReviewModal(this.app, this.plugin, this.project, path).open();
                 this.close();
             } catch (error) {
@@ -342,7 +344,7 @@ export class AddFanficSettingModal extends Modal {
             if (!this.project) return;
             try {
                 const path = await ensureFanficTemplate(this.app, this.project);
-                showSuccessNotice(`已确保模板存在：${path}`, { timeout: 5000 });
+                showSuccessNotice(t("addFanfic.flow.templateEnsured", { path }), { timeout: 5000 });
             } catch (error) {
                 showErrorNotice(error instanceof Error ? error.message : String(error), { title: t("addFanfic.ui.k22"), timeout: 8000 });
             }
@@ -357,7 +359,7 @@ export class AddFanficSettingModal extends Modal {
             .filter(file => file.path.startsWith(`${dir}/`) && file.extension === 'md');
         if (files.length === 0) return;
 
-        contentEl.createEl('h3', { text: `📝 待审核草稿（${files.length}）` });
+        contentEl.createEl('h3', { text: t("addFanfic.flow.pendingTitle", { count: files.length }) });
         const hint = contentEl.createEl('p', { text: t("addFanfic.ui.k23") });
         hint.classList.add('setting-item-description');
         for (const file of files) {
@@ -366,7 +368,7 @@ export class AddFanficSettingModal extends Modal {
             const review = row.createEl('button', { text: t("addFanfic.ui.k24"), cls: 'nw-btn nw-btn-primary' });
             review.onclick = () => {
                 new FanficReviewModal(this.app, this.plugin, this.project!, file.path, (approvedPath) => {
-                    showSuccessNotice(`已通过审核：${approvedPath}`, { timeout: 5000 });
+                    showSuccessNotice(t("addFanfic.flow.approvedTo", { path: approvedPath }), { timeout: 5000 });
                 }).open();
                 this.close();
             };
@@ -398,7 +400,10 @@ export class AddFanficSettingModal extends Modal {
         const closeList = () => {
             listEl?.remove();
             listEl = null;
-            trigger.setText(selectedPath ? `${selectedPath.split('/').pop()?.replace(/\.md$/i, '') || '已选择'}` : '选择设定文件');
+            const selectedName = selectedPath
+                ? selectedPath.split('/').pop()?.replace(/\.md$/i, '') || t("addFanfic.flow.selected")
+                : t("addFanfic.ui.k27");
+            trigger.setText(selectedName);
             trigger.setAttribute('aria-expanded', 'false');
         };
         trigger.onclick = () => {
@@ -424,7 +429,7 @@ export class AddFanficSettingModal extends Modal {
         const bindButton = contentEl.createEl('button', { text: t("addFanfic.ui.k28"), cls: 'nw-btn novel-writer-secondary-button' });
         bindButton.onclick = async () => {
             if (!selectedPath) {
-                new Notice('请先选择设定文件', 4000);
+                new Notice(t("addFanfic.flow.needSettingFile"), 4000);
                 return;
             }
             const file = this.app.vault.getAbstractFileByPath(selectedPath);
@@ -440,7 +445,7 @@ export class AddFanficSettingModal extends Modal {
                 return;
             }
             if (!content.trim()) {
-                new Notice('❌ 设定文件为空，无法绑定', 6000);
+                new Notice(t("addFanfic.flow.emptySettingFile"), 6000);
                 return;
             }
             try {
@@ -451,9 +456,12 @@ export class AddFanficSettingModal extends Modal {
             }
             const check = isFanficSettingsContentValidEnough(content);
             if (check.valid) {
-                showSuccessNotice(`已绑定「${file.basename}」到项目「${project}」`, { timeout: 6000 });
+                showSuccessNotice(t("addFanfic.flow.boundToProject", { file: file.basename, project }), { timeout: 6000 });
             } else {
-                showWarningNotice(`已绑定「${file.basename}」，但缺少：${check.missingFields.slice(0, 5).join('、')}。建议补全后重新审核。`, { timeout: 10000 });
+                showWarningNotice(t("addFanfic.flow.boundMissing", {
+                    file: file.basename,
+                    fields: check.missingFields.slice(0, 5).join('、'),
+                }), { timeout: 10000 });
             }
             this.close();
         };
@@ -467,7 +475,6 @@ export class AddFanficSettingModal extends Modal {
      */
     private async refreshLinkStatus(): Promise<void> {
         if (!this.linkStatusEl) return;
-        this.linkStatusEl.empty();
 
         let settingExists = false;
         let reviewStatus: 'approved' | 'pending' | 'rejected' | 'legacy' | 'none' = 'none';
@@ -489,6 +496,9 @@ export class AddFanficSettingModal extends Modal {
             }
         }
 
+        // 清空放在 await 之后：onOpen 与 renderSourceList 都会触发刷新，
+        // 两次调用会在 await 处交错，若在开头清空就会各追加一条横幅。
+        this.linkStatusEl.empty();
         renderLinkStatus(this.linkStatusEl, computeConstraintFlowStatus({
             sourceCount: this.sources.length,
             settingExists,
@@ -515,20 +525,20 @@ export class AddFanficSettingModal extends Modal {
      */
     private async generateFromKnowledgeAndVerify(workName: string, workType: string, author: string): Promise<void> {
         if (!this.project) {
-            new Notice('请先打开一个项目；生成草稿必须进入项目待审核目录', 6000);
+            new Notice(t("addFanfic.flow.needProject"), 6000);
             return;
         }
         if (!this.plugin.hasAiCredentials) {
-            new Notice('❌ 请先配置 API 密钥或本地模型端点', 5000);
+            new Notice(t("addFanfic.flow.needCredentials"), 5000);
             return;
         }
         const store = this.plugin.knowledgeVectorStore;
         if (!store) {
-            new Notice('❌ 知识库未初始化：请先在知识库拆解至少一本书，再回来生成', 8000);
+            new Notice(t("addFanfic.flow.kbNotReady"), 8000);
             return;
         }
 
-        const notice = new Notice('⏳ 正在检索知识库素材…', 0);
+        const notice = new Notice(t("addFanfic.flow.retrievingMaterials"), 0);
         try {
             // 1) 检索知识库：用原作名做查询，覆盖全部已拆解书（不限定参考书范围）
             const retrieval = await retrieve(store, {
@@ -545,15 +555,15 @@ export class AddFanficSettingModal extends Modal {
             if (materials.length === 0) {
                 notice.hide();
                 showWarningNotice(
-                    '知识库里没有检索到可用素材。请先在知识库拆解与这部作品相关的参考书'
-                    + (retrieval.error ? `（检索错误：${retrieval.error}）` : ''),
+                    t("addFanfic.flow.noMaterials")
+                    + (retrieval.error ? t("addFanfic.flow.retrievalErrorSuffix", { error: retrieval.error }) : ''),
                     { timeout: 10000 },
                 );
                 return;
             }
 
             // 2) 用素材生成草稿
-            notice.setMessage(`⏳ 已取到 ${materials.length} 条素材，正在生成草稿…`);
+            notice.setMessage(t("addFanfic.flow.materialsReady", { count: materials.length }));
             const skeleton = buildFanficSettingsContent({
                 workName,
                 workType: workType || '（待补充）',
@@ -579,7 +589,7 @@ export class AddFanficSettingModal extends Modal {
             }
 
             // 3) 联网检索来源用于验证（失败不阻断：只跳过验证环节）
-            notice.setMessage('⏳ 草稿已生成，正在联网检索来源做验证…');
+            notice.setMessage(t("addFanfic.flow.verifyingSources"));
             let sources = this.sources;
             let sourceError = '';
             try {
@@ -598,7 +608,7 @@ export class AddFanficSettingModal extends Modal {
             }
 
             // 4) 逐条核对
-            notice.setMessage('⏳ 正在用来源逐条核对草稿…');
+            notice.setMessage(t("addFanfic.flow.crossChecking"));
             const canonBlock = formatCanonSourcesForPrompt(sources);
             const verifyPrompt = buildVerificationPrompt(draftResult.content, canonBlock);
             const verifyResult = await this.aiEngine.callAI(verifyPrompt.system, verifyPrompt.user, undefined, 0.1, 4096);
@@ -618,7 +628,7 @@ export class AddFanficSettingModal extends Modal {
             const filePath = `${targetDir}/${fanficSettingsFileName(workName)}`;
             const existing = this.app.vault.getAbstractFileByPath(filePath);
             if (existing) {
-                const overwrite = window.confirm(`「${filePath}」已存在，覆盖待审核草稿？`);
+                const overwrite = window.confirm(t("addFanfic.flow.overwriteConfirm", { path: filePath }));
                 if (!overwrite) {
                     notice.hide();
                     return;
@@ -629,17 +639,17 @@ export class AddFanficSettingModal extends Modal {
 
             const lines = [
                 verificationVerdictLabel(verdict),
-                `素材 ${materials.length} 条（来自知识库拆解）`,
-                `验证来源 ${sources.length} 条`,
+                t("addFanfic.flow.reportMaterials", { count: materials.length }),
+                t("addFanfic.flow.reportSources", { count: sources.length }),
             ];
             if (report.contradicted.length > 0) {
-                lines.push(`矛盾：${report.contradicted.slice(0, 3).join('；')}`);
+                lines.push(t("addFanfic.flow.reportContradicted", { items: report.contradicted.slice(0, 3).join('；') }));
             }
             if (report.unverified.length > 0) {
-                lines.push(`存疑：${report.unverified.slice(0, 3).join('；')}`);
+                lines.push(t("addFanfic.flow.reportUnverified", { items: report.unverified.slice(0, 3).join('；') }));
             }
-            if (sourceError) lines.push(`联网检索失败：${sourceError}（本次未做验证）`);
-            lines.push('草稿已存入「_待审核」，请到审核页人工确认后通过。');
+            if (sourceError) lines.push(t("addFanfic.flow.reportSourceFailed", { error: sourceError }));
+            lines.push(t("addFanfic.flow.reportSavedPending"));
 
             if (verdict === 'fail') {
                 showWarningNotice(lines.join('\n'), { timeout: 15000 });
@@ -664,25 +674,25 @@ export class AddFanficSettingModal extends Modal {
      */
     private async generateFanficSetting(workName: string, workType: string, author: string): Promise<void> {
         if (!this.project) {
-            new Notice('请先打开一个项目；生成草稿必须进入项目待审核目录', 6000);
+            new Notice(t("addFanfic.flow.needProject"), 6000);
             return;
         }
         if (!this.plugin.hasAiCredentials) {
-            new Notice('❌ 请先配置 API 密钥或本地模型端点', 5000);
+            new Notice(t("addFanfic.flow.needCredentials"), 5000);
             return;
         }
         const sourceCheck = validateCanonSources(this.sources);
         if (!sourceCheck.valid) {
-            new Notice(`❌ ${sourceCheck.errors.join('；')}。请先导入官方来源，不能凭模型记忆生成。`, 10000);
+            new Notice(t("addFanfic.flow.needCanonSources", { errors: sourceCheck.errors.join('；') }), 10000);
             return;
         }
 
         if (this.generateButton) {
             this.originalButtonText = this.generateButton.textContent || '';
             this.generateButton.disabled = true;
-            this.generateButton.textContent = '⏳ 生成草稿中...';
+            this.generateButton.textContent = t("addFanfic.flow.generatingDraft");
         }
-        const genNotice = new Notice(`⏳ 正在依据官方来源生成《${workName}》草稿...`, 0);
+        const genNotice = new Notice(t("addFanfic.flow.generatingFromCanon", { work: workName }), 0);
 
         try {
             const skeleton = buildFanficSettingsContent({
@@ -734,7 +744,7 @@ ${formatCanonSourcesForPrompt(selectAuthoritativeSources(this.sources))}`;
             const filePath = `${targetDir}/${fanficSettingsFileName(workName)}`;
             const existing = this.app.vault.getAbstractFileByPath(filePath);
             if (existing) {
-                const overwrite = window.confirm(`「${filePath}」已存在，覆盖待审核草稿？`);
+                const overwrite = window.confirm(t("addFanfic.flow.overwriteConfirm", { path: filePath }));
                 if (!overwrite) return;
             }
             await saveFanficSettingFile(this.app, filePath, pendingContent);
@@ -742,7 +752,9 @@ ${formatCanonSourcesForPrompt(selectAuthoritativeSources(this.sources))}`;
 
             if (audit.overall === 'fail') {
                 showWarningNotice(
-                    `草稿已保存，但规则审核发现阻断问题：${audit.issues.filter(i => i.severity === 'error').slice(0, 3).map(i => i.message).join('；')}`,
+                    t("addFanfic.flow.auditBlocked", {
+                        issues: audit.issues.filter(i => i.severity === 'error').slice(0, 3).map(i => i.message).join('；'),
+                    }),
                     { timeout: 12000 },
                 );
             } else {

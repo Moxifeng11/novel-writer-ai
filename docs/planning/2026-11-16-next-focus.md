@@ -3254,3 +3254,66 @@ systemPrompt/userPrompt、`buildGoldenContent()` 生成的 `# 黄金三章大纲
 **下一轮候选**：散落弹窗 novel-tags（1,099）/ add-fanfic-setting（973）/ ai-builder（864）/
 `ui/agent-workbench-view.ts`（126 条 / 730 字）；`D:\nw-tmp\audit-cjk.mjs --json` 给出的下一档仍是
 `ui/batch-create-modal.ts` 104 条 / 583 字。
+
+## 第一百零八轮：i18n 第二期第40片 —— 同人设定弹窗残留 + 两处样式修复（2026-11-19，DSH）
+
+**触发**：用户 m20511「继续」。按「散落弹窗」候选顺序，golden-opening 已完成（第39片），
+novel-tags 读码后跳过（UI 已全迁，余 1,099 字全是两段 AI 提示词、生成文档正文与解析正则键），
+本片做实机确认过的 `ui/add-fanfic-setting-modal.ts`（772 行，CRLF，973 中文字）。
+
+**改动**：迁 36 处 / **37 键** `addFanfic.flow.*`——Notice（needWorkName / needUrl / sourceExists /
+needProjectForResearch / needProject / needCredentials / kbNotReady / needCanonSources）、
+确认框（overwriteConfirm）、按钮态（searching / retrievingMaterials / materialsReady / verifyingSources /
+crossChecking / generatingDraft / generatingFromCanon / selected）、导入统计（sourceSummary）、
+待审核标题（pendingTitle）、模板两条（templateDraftCreated / templateEnsured / approvedTo）、
+绑定三条（needSettingFile / emptySettingFile / boundToProject / boundMissing）与报告五行
+（reportMaterials / reportSources / reportContradicted / reportUnverified / reportSourceFailed /
+reportSavedPending / auditBlocked）。
+文件原本已有 65 处 `t()` 用机械命名 `addFanfic.common.k1-k13` + `addFanfic.ui.k1-k31`（44 条）——
+**不重命名旧键**（65 处调用零改动），新键只加语义子组；`ui.k12`（🌐 联网检索官方资料）与
+`ui.k27`（选择设定文件）直接复用。
+
+**保留中文（数据与显示分离）**：题材默认值 `value: '玄幻'`、落盘文件名 `'新同人设定'`、
+vault 路径 `元文件/05-同人设定库`、检索关键词、四处占位数据（（待补充）/未知/
+（待核实：知识库素材未覆盖）/（待核实：未找到可靠原作来源））、审核 meta 键名（审核状态/来源数量/
+来源哈希/生成时间）、两段 AI 提示词、`log.*` 与注释。
+
+**顺带修三处既有缺陷（截图校正发现）**
+1. **表单控件被压扁裁切**：contentEl 同时是 `.modal-content`（flex 列 + `max-height`）与 `.nw-form-stack`，
+   子项默认 `flex-shrink:1` → 三个 `.nw-card` 被压到 221/93/18px，内容再被 `.nw-card{overflow:hidden}`
+   裁掉，「原作资料来源」卡里只剩标题与说明段。修法：`styles-src/09-rev184-192.css` 加
+   `.nw-form-stack > * { flex: 0 0 auto; }`（影响同用该类的 10 个弹窗，语义都是「内容超高时不再被裁」）。
+2. **degraded 胶囊红底红字**：`.nw-is-degraded .nw-capability-stage` 的 `color: var(--text-error)`
+   在暗色主题下等于隐形，改 `var(--text-normal)`（同时影响知识库与写作指纹库能力横幅）。
+3. **重复「约束流状态」横幅**：`refreshLinkStatus()` 开头 `empty()`、await 后 append，onOpen 与
+   `renderSourceList()` 同时触发时在 `await readFanficRules(...)` 处交错 → 两条相同横幅。
+   修法：清空挪到 await 之后、紧贴 `renderLinkStatus(...)`。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；`npx vitest run tests/unit/i18n/add-fanfic-flow.test.ts` 4 例通过（新增文件）。
+- `check:i18n` zh/en 各 **4959**、0 无法解析键、动态键 29、棘轮 **212 文件 / 6701 条**（已 --update-baseline）。
+- `check:bundle` main.js **6,149,434**、styles.css **800,471**（+451，两处 CSS 修复）。
+  `check:css` bytes 800471 / uniqueClasses 4334 / important 24 / hardcodedHex 192 / rgbHsl 223。
+- 实机（`D:\nw-tmp\snap-i18n40.mjs <lang>`）：zh/en 各 1 场景（强约束弹窗 680×900，零横向溢出），
+  en 下 UI 文案 CJK=0（余 45 字是 `DeviationDetector 条件分析器未注入: rhythmAnalyzer` 运行时串）；
+  修复后来源卡表单完整可见、右侧出现滚动条。截图 `D:\nw-dev-vault\_visual-i18n40\modal-{zh-CN,en-US}.png`。
+- `npm run preflight` **EXIT=0**（991 文件 / **10,340 通过 + 3 跳过**，日志 `D:\nw-tmp\preflight-i18n40.log`）。
+
+**坑**
+1. **弹窗截图入口避开 `checkCallback`**：`app.commands.executeCommandById('novel-writer-add-fanfic')` 返回 false，
+   要用 `plugin.commandUiPort.executeCommand(id, {})`（`shared/command-ui-port.ts:36`）；但
+   `ui/command-ui-executor.ts` 的 ADD_FANFIC 分支只读 `getActiveProject()`、忽略 payload.project，
+   CDP 下需临时 `p.getActiveProject = () => '示例项目'`。
+2. **探针脚本必须 .mjs**：从 snap 脚本复制 boilerplate 时写成 `.cjs` 会报
+   「Cannot use import statement outside a module」。
+3. **连续跑两个语言会撞 vault 锁**：zh 那次曾整批输出 `{"missing":true}`，单独重跑即好。
+4. **`check-bundle` 的脚本名是 `scripts/check-bundle.mjs`**；`check:css` 才是 `scripts/check-css.js`。
+
+**文档**：`docs/modules/i18n.md`（§2 资源 4959 + 资源链 +37 + 已迁移面 bullet + 棘轮 6755 → 6701、§5 表行、
+§6 测试、§7 backlog、§9 三条经验）、`docs/modules/INDEX.md`、`docs/CURRENT.md`、
+`docs/planning/2026-11-18-feature-gaps.md`、本轮记录；基线 `.bundle-baseline.json` / `.css-baseline.json` /
+`.i18n-baseline.json`。
+
+**下一轮候选**：散落弹窗 novel-tags（1,099，UI 已迁完则跳过）/ ai-builder（864）/ polish-editor（823）/
+ideation（793）/ batch-import（750）/ `ui/agent-workbench-view.ts`（126 条 / 730 字）；
+知识库 D 类两文件（`ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`）等视觉重构（用户 m16938）。

@@ -288,9 +288,13 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
   zh/en 资源各 **4882** 条；棘轮收紧到 **212 文件 / 6773 条**；新增 `tests/unit/i18n/project-entry-resources.test.ts` 7 例；实机 zh/en 各 3 场景（主页 1096×992 / 前期调研 640×634 / 模式文档 640×650），en 主页 CJK=12（项目名 + 别的模块状态栏「今日 0 字」）、前期调研 CJK=142（番茄主分类选项与 vault 目录名，数据层）、模式文档 CJK=20（保存路径数据）。
 - 第二期第39片（2026-11-19，DSH）：黄金开篇工坊补漏 —— `ui/golden-opening-modal.ts`（1,452 行）补 40 处正文文案，迁 `goldenOpening.labels.*` 26 + `.genre.*` 14（题材标签 / 钩子类型 / 评分与段落标签 / 三条 Notice / 保存段四条）；两个 switch helper `genreLabel(genre)` 与 `hookTypeLabel(index)`，键写成 switch 分支字面量；`GENRE_OPTIONS` 与 case 值仍中文（提示词 `题材标签：…` 与 frontmatter `genre:` 依赖），七段 systemPrompt、`buildGoldenContent()` 正文、文件名 `黄金开篇.md` 与日志保留；
   主体 111 键由 ZCode（5ba4ad66 + 948248e2）已迁，本片是补漏片；zh/en 资源各 **4922** 条；棘轮收紧到 **212 文件 / 6755 条**；新增 `tests/unit/i18n/golden-opening-labels.test.ts` 6 例；实机 zh/en 各 3 场景（en 三场景 CJK=0，英文题材标签换行使 chapters 弹窗 758 → 793）；preflight **EXIT=0**（990 文件 / **10,336 通过 + 3 跳过**）。
+- 第二期第40片（2026-11-19，DSH）：同人设定弹窗残留 —— `ui/add-fanfic-setting-modal.ts`（772 行）迁 36 处 / **37 键** `addFanfic.flow.*`（needWorkName / knowledgeButtonHint / sourceSummary / pendingTitle / boundToProject / boundMissing / materialsReady / reportMaterials…reportSavedPending / auditBlocked）；旧机械命名 `addFanfic.common.k1-k13` + `ui.k1-k31` 44 条**不重命名**（65 处调用零改动），新键只加语义子组，`ui.k12`/`ui.k27` 复用；
+  保留中文：题材默认值 `'玄幻'`、落盘文件名 `'新同人设定'`、vault 路径 `元文件/05-同人设定库`、检索关键词、四处占位数据、审核 meta 键名、两段 AI 提示词、日志与注释；
+  顺带修三处既有缺陷：`refreshLinkStatus()` 并发渲染导致**重复「约束流状态」横幅**（清空挪到 await 之后）、`.nw-modal-form` 里 `.nw-form-stack > *` 被 `flex-shrink:1` 压扁再被 `.nw-card{overflow:hidden}` 裁掉（来源卡表单控件全不可见）→ 加 `flex: 0 0 auto`（影响同用该类的 10 个弹窗）、`.nw-is-degraded .nw-capability-stage` 暗色下红底红字改 `color: var(--text-normal)`；
+  zh/en 资源各 **4959** 条；棘轮收紧到 **212 文件 / 6701 条**；新增 `tests/unit/i18n/add-fanfic-flow.test.ts` 4 例；实机 zh/en 各 1 场景（680×900，en 下 UI 文案 CJK=0，余 45 字为 `DeviationDetector 条件分析器未注入: rhythmAnalyzer` 运行时串）；preflight **EXIT=0**（991 文件 / **10,340 通过 + 3 跳过**）。
 - 后续：第二期余下（知识库 D 类两文件 `ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`
-  用户已裁定随视觉重构；散落弹窗 novel-tags 1099 / add-fanfic-setting 973 /
-  ai-builder 864 等），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
+  用户已裁定随视觉重构；散落弹窗 novel-tags 1099 / ai-builder 864 / polish-editor 823 /
+  ideation 793 / batch-import 750 等），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 
 ---
 

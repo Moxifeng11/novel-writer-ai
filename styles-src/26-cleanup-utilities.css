@@ -167,7 +167,11 @@
     font-size: 10px;
 }
 .nw-is-ready .nw-capability-stage { background: var(--background-modifier-success); color: var(--text-success); }
-.nw-is-degraded .nw-capability-stage { background: var(--background-modifier-error); color: var(--text-error); }
+.nw-is-degraded .nw-capability-stage {
+    background: var(--background-modifier-error);
+    /* 红底红字在暗色主题下等于隐形（截图校正 2026-11-19 发现），文字改用正文色 */
+    color: var(--text-normal);
+}
 .nw-is-accumulating .nw-capability-stage { background: var(--background-modifier-warning); color: var(--text-warning); }
 .nw-capability-metrics {
     display: flex;

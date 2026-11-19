@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-19T10:20:23.192Z",
-  "note": "i18n 第二期第37片：状态栏上下文占用色改修饰类（--muted/--warn/--hot，+3 类 +285B），文案外置 28 键 ×2 语言",
-  "bytes": 800020,
+  "generatedAt": "2026-11-19T12:15:29.863Z",
+  "note": "Slice i18n 第40片：.nw-form-stack 子项 flex:0 0 auto 修表单卡片被压扁裁切；degraded 胶囊改正文色",
+  "bytes": 800471,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 223,

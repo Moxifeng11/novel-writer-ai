@@ -80,6 +80,12 @@
     gap: 12px;
     padding: 18px 20px 20px;
 }
+/* contentEl 同时是 .nw-form-stack 与 .modal-content（flex 列 + max-height）：
+   子项默认 flex-shrink:1 会被压扁，再被卡片自己的 overflow:hidden 裁掉，
+   于是「填不完的表单内容」在滚动区里直接消失。让子项按自身高度排布。 */
+.nw-form-stack > * {
+    flex: 0 0 auto;
+}
 
 /* .modal-content 的 padding:0 会压掉上面的内边距，需同带 */
 .modal.nw-scope.nw-modal-form .modal-content.nw-form-stack,
