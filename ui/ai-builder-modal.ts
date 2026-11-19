@@ -1,4 +1,5 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
+import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
 import { AIEngine } from '@/engine/ai-engine';
@@ -43,15 +44,15 @@ interface EntityTypeConfig {
 // 本仪表盘只保留世界观与角色创作入口（底部提供跳转按钮）。
 const ENTITY_TYPES: EntityTypeConfig[] = [
     {
-        id: 'worldview', label: '世界观总览', icon: '🌍', folder: '',
+        id: 'worldview', label: t("aiBuilder.common.k1"), icon: '🌍', folder: '',
         template: '世界观总览模板.md', isFile: true, needName: false,
-        description: '为项目创建世界观总览骨架/详细设定',
+        description: t("aiBuilder.common.k2"),
         sections: [], engineMethod: 'generateItem', // 世界观走独立流程
     },
     {
-        id: 'character', label: '人物', icon: '👤', folder: SUBDIR_CHARS,
+        id: 'character', label: t("aiBuilder.common.k3"), icon: '👤', folder: SUBDIR_CHARS,
         template: '人物模板.md', isFile: false, needName: false,
-        description: '批量生成角色卡（姓名/身份/动机/技能等）',
+        description: t("aiBuilder.common.k4"),
         sections: CHARACTER_BODY_SECTIONS, engineMethod: 'generateCharacters',
     },
 ];
@@ -146,12 +147,12 @@ export class AiBuilderModal extends Modal {
     private renderEmptyState(): void {
         const { contentEl } = this;
         contentEl.empty();
-        contentEl.createEl('h2', { text: '✨ AI世界元素生成器' });
+        contentEl.createEl('h2', { text: t("aiBuilder.ui.k1") });
         const empty = contentEl.createDiv({ cls: 'novel-writer-ai-builder-empty' });
         empty.createEl('div', { text: '📂', cls: 'novel-writer-ai-builder-empty-icon' });
-        empty.createEl('p', { text: '尚未创建任何项目', cls: 'novel-writer-ai-builder-empty-text' });
+        empty.createEl('p', { text: t("aiBuilder.ui.k2"), cls: 'novel-writer-ai-builder-empty-text' });
         empty.createEl('p', {
-            text: '请先在「完整工作台」中创建小说项目。',
+            text: t("aiBuilder.ui.k3"),
             cls: 'novel-writer-ai-builder-empty-hint',
         });
     }
@@ -162,9 +163,9 @@ export class AiBuilderModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h2', { text: '✨ AI世界元素生成器' });
+        contentEl.createEl('h2', { text: t("aiBuilder.ui.k4") });
         contentEl.createEl('p', {
-            text: '选择项目进入世界元素管理，或直接在卡片上快速操作。',
+            text: t("aiBuilder.ui.k5"),
             cls: 'novel-writer-ai-builder-subtitle',
         });
 
@@ -196,11 +197,11 @@ export class AiBuilderModal extends Modal {
             // 统计区：5 个实体类型的视觉化计数
             const statsArea = card.createDiv({ cls: 'novel-writer-ai-builder-bigcard-stats' });
             const statDefs = [
-                { key: 'worldview', icon: '🌍', label: '世界观', count: stats.worldview },
-                { key: 'characters', icon: '👤', label: '人物', count: stats.characters },
-                { key: 'factions', icon: '🏰', label: '势力', count: stats.factions },
-                { key: 'locations', icon: '📍', label: '地点', count: stats.locations },
-                { key: 'items', icon: '⚔️', label: '物品', count: stats.items },
+                { key: 'worldview', icon: '🌍', label: t("aiBuilder.ui.k6"), count: stats.worldview },
+                { key: 'characters', icon: '👤', label: t("aiBuilder.ui.k7"), count: stats.characters },
+                { key: 'factions', icon: '🏰', label: t("aiBuilder.ui.k8"), count: stats.factions },
+                { key: 'locations', icon: '📍', label: t("aiBuilder.ui.k9"), count: stats.locations },
+                { key: 'items', icon: '⚔️', label: t("aiBuilder.ui.k10"), count: stats.items },
             ];
             for (const sd of statDefs) {
                 const box = statsArea.createDiv({ cls: 'novel-writer-ai-builder-bigcard-statbox' });
@@ -215,7 +216,7 @@ export class AiBuilderModal extends Modal {
 
             // 进入按钮（主操作）
             const enterBtn = actions.createEl('button', {
-                text: '进入项目 →',
+                text: t("aiBuilder.ui.k11"),
                 cls: 'novel-writer-ai-builder-bigcard-btn primary',
             });
             enterBtn.onclick = () => {
@@ -226,7 +227,7 @@ export class AiBuilderModal extends Modal {
             // 快速操作：如果没有世界观，显示生成世界观
             if (!hasWorldview) {
                 const quickBtn = actions.createEl('button', {
-                    text: '🌍 生成世界观',
+                    text: t("aiBuilder.ui.k12"),
                     cls: 'novel-writer-ai-builder-bigcard-btn',
                 });
                 quickBtn.onclick = async () => {
@@ -237,7 +238,7 @@ export class AiBuilderModal extends Modal {
                 };
             } else if (totalEntities === 0) {
                 const quickBtn = actions.createEl('button', {
-                    text: '👤 批量生成人物',
+                    text: t("aiBuilder.ui.k13"),
                     cls: 'novel-writer-ai-builder-bigcard-btn',
                 });
                 quickBtn.onclick = async () => {
@@ -303,7 +304,7 @@ export class AiBuilderModal extends Modal {
         // Rev 192：只有多项目时「切换项目」才可达；单项目下该按钮点了等于没反应
         if (this.projectCount > 1) {
             const backBtn = breadcrumb.createEl('button', {
-                text: '← 切换项目',
+                text: t("aiBuilder.ui.k14"),
                 cls: 'novel-writer-ai-builder-back-btn',
             });
             backBtn.onclick = async () => {
@@ -340,7 +341,7 @@ export class AiBuilderModal extends Modal {
             const info = cardHeader.createDiv({ cls: 'novel-writer-ai-builder-card-info' });
             info.createDiv({ text: cfg.label, cls: 'novel-writer-ai-builder-card-title' });
             info.createDiv({
-                text: count > 0 ? `已有 ${count} 个` : '尚未生成',
+                text: count > 0 ? `已有 ${count} 个` : t("aiBuilder.ui.k15"),
                 cls: `novel-writer-ai-builder-card-count ${count > 0 ? 'has-content' : ''}`,
             });
 
@@ -353,14 +354,14 @@ export class AiBuilderModal extends Modal {
             if (cfg.id === 'worldview') {
                 if (count > 0) {
                     actions.createEl('button', {
-                        text: '重新生成',
+                        text: t("aiBuilder.ui.k16"),
                         cls: 'novel-writer-ai-builder-action-btn warning',
                     }).onclick = (e) => {
                         e.stopPropagation();
                         this.openGenerationPanel(cfg);
                     };
                     actions.createEl('button', {
-                        text: '打开文件',
+                        text: t("aiBuilder.ui.k17"),
                         cls: 'novel-writer-ai-builder-action-btn',
                     }).onclick = async (e) => {
                         e.stopPropagation();
@@ -371,7 +372,7 @@ export class AiBuilderModal extends Modal {
                     };
                 } else {
                     actions.createEl('button', {
-                        text: '生成世界观',
+                        text: t("aiBuilder.ui.k18"),
                         cls: 'novel-writer-ai-builder-action-btn primary',
                     }).onclick = (e) => {
                         e.stopPropagation();
@@ -380,14 +381,14 @@ export class AiBuilderModal extends Modal {
                 }
             } else {
                 actions.createEl('button', {
-                    text: '单个生成',
+                    text: t("aiBuilder.ui.k19"),
                     cls: 'novel-writer-ai-builder-action-btn primary',
                 }).onclick = (e) => {
                     e.stopPropagation();
                     this.openGenerationPanel(cfg, 'single');
                 };
                 actions.createEl('button', {
-                    text: '批量生成',
+                    text: t("aiBuilder.ui.k20"),
                     cls: 'novel-writer-ai-builder-action-btn',
                 }).onclick = (e) => {
                     e.stopPropagation();
@@ -405,10 +406,10 @@ export class AiBuilderModal extends Modal {
         // 批次 4：势力 / 地点 / 物品功法已统一到独立实体生成器，这里只保留跳转入口
         const unifiedHint = contentEl.createDiv({
             cls: 'novel-writer-ai-builder-worldview-hint',
-            text: '势力 / 地点 / 物品功法已统一到「实体生成器」，需要生成请前往：',
+            text: t("aiBuilder.ui.k21"),
         });
         const unifiedBtn = unifiedHint.createEl('button', {
-            text: '🏰 打开统一实体生成器',
+            text: t("aiBuilder.ui.k22"),
             cls: 'novel-writer-ai-builder-action-btn primary',
         });
         unifiedBtn.onclick = () => {
@@ -422,12 +423,12 @@ export class AiBuilderModal extends Modal {
         const statusBar = container.createDiv({ cls: 'novel-writer-ai-builder-worldview-status' });
         if (this.worldContent) {
             statusBar.addClass('has-worldview');
-            statusBar.createSpan({ text: '✅ 世界观已就绪' });
-            statusBar.createSpan({ text: ' — 生成实体将自动引用世界观设定', cls: 'novel-writer-ai-builder-worldview-hint' });
+            statusBar.createSpan({ text: t("aiBuilder.ui.k23") });
+            statusBar.createSpan({ text: t("aiBuilder.ui.k24"), cls: 'novel-writer-ai-builder-worldview-hint' });
         } else {
             statusBar.addClass('no-worldview');
-            statusBar.createSpan({ text: '⚠️ 尚未设定世界观' });
-            statusBar.createSpan({ text: ' — 建议先生成世界观，以获得更连贯的实体设定', cls: 'novel-writer-ai-builder-worldview-hint' });
+            statusBar.createSpan({ text: t("aiBuilder.ui.k25") });
+            statusBar.createSpan({ text: t("aiBuilder.ui.k26"), cls: 'novel-writer-ai-builder-worldview-hint' });
         }
     }
 
@@ -443,7 +444,7 @@ export class AiBuilderModal extends Modal {
         // 面包屑
         const breadcrumb = contentEl.createDiv({ cls: 'novel-writer-ai-builder-breadcrumb' });
         const backBtn = breadcrumb.createEl('button', {
-            text: '← 返回仪表盘',
+            text: t("aiBuilder.common.k5"),
             cls: 'novel-writer-ai-builder-back-btn',
         });
         backBtn.onclick = () => this.loadWorldContent(this.selectedProject).then(() => this.renderDashboard());
@@ -468,40 +469,40 @@ export class AiBuilderModal extends Modal {
         const form = container.createDiv({ cls: 'novel-writer-ai-builder-form' });
 
         // 世界名称
-        form.createEl('label', { text: '世界名称', cls: 'novel-writer-ai-builder-label' });
+        form.createEl('label', { text: t("aiBuilder.ui.k27"), cls: 'novel-writer-ai-builder-label' });
         const worldNameInput = form.createEl('input', {
             type: 'text',
-            placeholder: '如：九州大陆、星海纪元',
+            placeholder: t("aiBuilder.ui.k28"),
             cls: 'nw-input novel-writer-input',
             value: this.selectedProject,
         });
 
         // 题材
-        form.createEl('label', { text: '题材倾向', cls: 'novel-writer-ai-builder-label' });
+        form.createEl('label', { text: t("aiBuilder.ui.k29"), cls: 'novel-writer-ai-builder-label' });
         const genreInput = form.createEl('input', {
             type: 'text',
-            placeholder: '如：玄幻、仙侠、科幻',
+            placeholder: t("aiBuilder.ui.k30"),
             cls: 'nw-input novel-writer-input',
         });
 
         // 主题
-        form.createEl('label', { text: '核心主题（可选）', cls: 'novel-writer-ai-builder-label' });
+        form.createEl('label', { text: t("aiBuilder.ui.k31"), cls: 'novel-writer-ai-builder-label' });
         const themeInput = form.createEl('input', {
             type: 'text',
-            placeholder: '如：废柴逆袭、群雄争霸',
+            placeholder: t("aiBuilder.ui.k32"),
             cls: 'nw-input novel-writer-input',
         });
 
         // 自定义需求
-        form.createEl('label', { text: '特殊需求（可选）', cls: 'novel-writer-ai-builder-label' });
+        form.createEl('label', { text: t("aiBuilder.ui.k33"), cls: 'novel-writer-ai-builder-label' });
         const customInput = form.createEl('textarea', {
-            placeholder: '对世界观的特殊要求...',
+            placeholder: t("aiBuilder.ui.k34"),
             cls: 'nw-textarea novel-writer-textarea',
         });
 
         // 生成按钮
         const generateBtn = form.createEl('button', {
-            text: '🚀 生成世界观',
+            text: t("aiBuilder.ui.k35"),
             cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
         });
         generateBtn.onclick = async () => {
@@ -523,7 +524,7 @@ export class AiBuilderModal extends Modal {
                 );
                 if (!skeleton || skeleton.error) {
                     genNotice.hide();
-                    showErrorNotice(skeleton?.error || '未知错误', { title: '世界观生成失败', timeout: 8000 });
+                    showErrorNotice(skeleton?.error || '未知错误', { title: t("aiBuilder.ui.k36"), timeout: 8000 });
                     return;
                 }
                 const content = skeleton.content || '';
@@ -568,13 +569,13 @@ export class AiBuilderModal extends Modal {
                             this.selectedProject = result.newProject;
                         } catch (renameErr) {
                             log.warn('[小说工坊] 项目重命名失败:', renameErr);
-                            showSuccessNotice('世界观已生成！项目名保持不变', { timeout: 5000 });
+                            showSuccessNotice(t("aiBuilder.ui.k37"), { timeout: 5000 });
                         }
                     } else {
-                        showSuccessNotice('世界观已生成！', { timeout: 5000 });
+                        showSuccessNotice(t("aiBuilder.ui.k38"), { timeout: 5000 });
                     }
                 } else {
-                    showSuccessNotice('世界观已生成！', { timeout: 5000 });
+                    showSuccessNotice(t("aiBuilder.ui.k39"), { timeout: 5000 });
                 }
 
                 // 刷新并返回仪表盘
@@ -589,7 +590,7 @@ export class AiBuilderModal extends Modal {
                 }
             } catch (e) {
                 genNotice.hide();
-                showErrorNotice((e as { message?: string }).message || '未知错误', { title: '生成失败', timeout: 8000 });
+                showErrorNotice((e as { message?: string }).message || '未知错误', { title: t("aiBuilder.ui.k40"), timeout: 8000 });
             }
         };
     }
@@ -606,24 +607,24 @@ export class AiBuilderModal extends Modal {
         });
 
         if (cfg.id === 'character') {
-            form.createEl('label', { text: '数量', cls: 'novel-writer-ai-builder-label' });
+            form.createEl('label', { text: t("aiBuilder.ui.k41"), cls: 'novel-writer-ai-builder-label' });
             const countInput = form.createEl('input', {
                 type: 'number',
-                placeholder: '人物数量',
+                placeholder: t("aiBuilder.ui.k42"),
                 cls: 'nw-input novel-writer-input',
                 value: '5',
             });
             (countInput as HTMLInputElement).min = '1';
             (countInput as HTMLInputElement).max = '20';
 
-            form.createEl('label', { text: '人物描述提示词（可选）', cls: 'novel-writer-ai-builder-label' });
+            form.createEl('label', { text: t("aiBuilder.ui.k43"), cls: 'novel-writer-ai-builder-label' });
             const promptInput = form.createEl('textarea', {
                 placeholder: '告诉AI你想要什么样的人物，如：主角是一个冷酷的杀手，有一个温柔的妹妹；反派是曾经的恩师...',
                 cls: 'nw-textarea novel-writer-textarea',
             });
 
             const generateBtn = form.createEl('button', {
-                text: '👤 生成人物',
+                text: t("aiBuilder.ui.k44"),
                 cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
             });
             generateBtn.onclick = async () => {
@@ -632,7 +633,7 @@ export class AiBuilderModal extends Modal {
                 await this.doGenerateEntities(cfg, { count, prompt, name: '' });
             };
         } else {
-            form.createEl('label', { text: '描述/定位（可选）', cls: 'novel-writer-ai-builder-label' });
+            form.createEl('label', { text: t("aiBuilder.ui.k45"), cls: 'novel-writer-ai-builder-label' });
             const descInput = form.createEl('textarea', {
                 placeholder: `描述该${cfg.label}在故事中的作用/定位`,
                 cls: 'nw-textarea novel-writer-textarea',
@@ -658,17 +659,17 @@ export class AiBuilderModal extends Modal {
     private renderBatchForm(container: HTMLElement, cfg: EntityTypeConfig): void {
         const form = container.createDiv({ cls: 'novel-writer-ai-builder-form' });
 
-        form.createEl('label', { text: '生成数量', cls: 'novel-writer-ai-builder-label' });
+        form.createEl('label', { text: t("aiBuilder.ui.k46"), cls: 'novel-writer-ai-builder-label' });
         const countInput = form.createEl('input', {
             type: 'number',
-            placeholder: '数量',
+            placeholder: t("aiBuilder.ui.k47"),
             cls: 'nw-input novel-writer-input',
             value: '3',
         });
         (countInput as HTMLInputElement).min = '1';
         (countInput as HTMLInputElement).max = '20';
 
-        form.createEl('label', { text: '共同特征/要求（可选）', cls: 'novel-writer-ai-builder-label' });
+        form.createEl('label', { text: t("aiBuilder.ui.k48"), cls: 'novel-writer-ai-builder-label' });
         const batchPromptInput = form.createEl('textarea', {
             placeholder: cfg.id === 'character'
                 ? '这批人物的共同特征，如：都是宗门弟子、都是反派势力成员...'
@@ -677,17 +678,17 @@ export class AiBuilderModal extends Modal {
         });
 
         if (!this.worldContent) {
-            form.createEl('label', { text: '题材倾向', cls: 'novel-writer-ai-builder-label' });
+            form.createEl('label', { text: t("aiBuilder.ui.k49"), cls: 'novel-writer-ai-builder-label' });
             const genreInput = form.createEl('input', {
                 type: 'text',
-                placeholder: '如：玄幻、仙侠',
+                placeholder: t("aiBuilder.ui.k50"),
                 cls: 'nw-input novel-writer-input',
             });
 
-            form.createEl('label', { text: '故事逻辑方针', cls: 'novel-writer-ai-builder-label' });
+            form.createEl('label', { text: t("aiBuilder.ui.k51"), cls: 'novel-writer-ai-builder-label' });
             const logicInput = form.createEl('input', {
                 type: 'text',
-                placeholder: '如：硬核设定',
+                placeholder: t("aiBuilder.ui.k52"),
                 cls: 'nw-input novel-writer-input',
             });
 
@@ -845,7 +846,7 @@ export class AiBuilderModal extends Modal {
         const kind = ENTITY_KIND_BY_ID[cfg.id];
         if (!kind) {
             genNotice.hide();
-            showErrorNotice(`不支持的实体类型：${cfg.label}`, { title: '生成失败', timeout: 6000 });
+            showErrorNotice(`不支持的实体类型：${cfg.label}`, { title: t("aiBuilder.common.k6"), timeout: 6000 });
             return;
         }
         await mkdirp(this.app, ENTITY_DIR_BY_KIND[kind](this.selectedProject));
@@ -902,7 +903,7 @@ export class AiBuilderModal extends Modal {
             const nameList = savedNames.join('、');
             showSuccessNotice(`批量完成：${saved}/${n} 个 → ${this.selectedProject}\n${nameList}`, { timeout: 6000 });
         } else {
-            showErrorNotice(`未能生成任何${cfg.label}`, { title: '批量生成失败', timeout: 6000 });
+            showErrorNotice(`未能生成任何${cfg.label}`, { title: t("aiBuilder.common.k7"), timeout: 6000 });
         }
     }
 
@@ -910,7 +911,7 @@ export class AiBuilderModal extends Modal {
     private async saveSingleContent(cfg: EntityTypeConfig, name: string, content: string): Promise<void> {
         const kind = ENTITY_KIND_BY_ID[cfg.id];
         if (!kind) {
-            showErrorNotice(`不支持的实体类型：${cfg.label}`, { title: '保存失败', timeout: 6000 });
+            showErrorNotice(`不支持的实体类型：${cfg.label}`, { title: t("aiBuilder.common.k8"), timeout: 6000 });
             return;
         }
         await mkdirp(this.app, ENTITY_DIR_BY_KIND[kind](this.selectedProject));
@@ -922,7 +923,7 @@ export class AiBuilderModal extends Modal {
         if (!integrity.valid) {
             showErrorNotice(
                 `「${name}」未通过完整性校验，未保存。缺少：${integrity.missingFields.slice(0, 5).join('、')}`,
-                { title: '完整性校验失败', timeout: 8000 },
+                { title: t("aiBuilder.common.k9"), timeout: 8000 },
             );
             return;
         }
@@ -954,7 +955,7 @@ export class AiBuilderModal extends Modal {
             // 人物批量：按 frontmatter 分割
             const blocks = content.split(/^(?=---\s*$)/m).filter(b => b.trim());
             if (blocks.length === 0) {
-                showErrorNotice('未解析到任何角色卡（生成结果为空或不完整），未保存', { timeout: 6000 });
+                showErrorNotice(t("aiBuilder.common.k10"), { timeout: 6000 });
                 return;
             }
             let saved = 0;

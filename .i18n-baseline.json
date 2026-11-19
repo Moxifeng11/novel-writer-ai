@@ -4,7 +4,7 @@
     "ui/advanced-maintenance-modal.ts": 39,
     "ui/agent-workbench-view.ts": 126,
     "ui/agent-workbench/stage-panel.ts": 5,
-    "ui/ai-builder-modal.ts": 160,
+    "ui/ai-builder-modal.ts": 98,
     "ui/asset-registry-modal.ts": 16,
     "ui/auto-writer-modal.ts": 31,
     "ui/backup-center-modal.ts": 34,
@@ -227,7 +227,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 8148,
+  "total": 8086,
   "updatedAt": "2026-11-19",
   "note": ""
 }
