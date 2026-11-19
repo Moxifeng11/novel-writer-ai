@@ -33,6 +33,11 @@ vi.mock('@/ui/components/progress/operation-confirm-modal', () => ({
     },
 }));
 
+/** 让 then/catch/finally 链跑完（最少 3 个微任务） */
+async function flushMicrotasks(): Promise<void> {
+    for (let i = 0; i < 4; i += 1) await Promise.resolve();
+}
+
 beforeEach(() => {
     mockConfirm.mockReset();
     // 默认实现：返回「同意丢弃」，个别用例再覆盖
@@ -64,17 +69,41 @@ describe('ModalDirtyGuard（审计 A-5 / C#3）', () => {
         guard.attach(modal as never, fakeApp);
         guard.markDirty();
 
+        // 用可控 Promise 锁住确认框：验证「确认前不关、确认后才关」的真实时序
+        let resolveConfirm!: (value: boolean) => void;
+        mockConfirm.mockImplementationOnce(() => new Promise<boolean>((resolve) => {
+            resolveConfirm = resolve;
+        }));
+
         modal.close();
-        // 拦截：未关闭，弹了确认
         expect(modal.closed).toBe(false);
         expect(mockConfirm).toHaveBeenCalledTimes(1);
 
-        // 用户同意丢弃
-        mockConfirm.mockResolvedValueOnce(true);
-        // 再触发一次 close（同一次拦截内的确认流程已走完则真关；此处模拟确认回调后再关）
-        guard.markClean();
-        modal.close();
+        resolveConfirm(true);
+        await flushMicrotasks();
         expect(modal.closed).toBe(true);
+        expect(guard.isDirty).toBe(false);
+    });
+
+    it('确认框开着时再按 Esc 不叠加第二个确认框', async () => {
+        const guard = new ModalDirtyGuard();
+        const modal = makeFakeModal();
+        guard.attach(modal as never, fakeApp);
+        guard.markDirty();
+
+        let resolveConfirm!: (value: boolean) => void;
+        mockConfirm.mockImplementationOnce(() => new Promise<boolean>((resolve) => {
+            resolveConfirm = resolve;
+        }));
+
+        modal.close();
+        modal.close(); // 连按 Esc / 点外部
+        expect(mockConfirm).toHaveBeenCalledTimes(1);
+
+        resolveConfirm(false);
+        await flushMicrotasks();
+        expect(modal.closed).toBe(false);
+        expect(guard.isDirty).toBe(true);
     });
 
     it('用户选择留下：Modal 不关闭且保持 dirty（可继续编辑/保存）', async () => {

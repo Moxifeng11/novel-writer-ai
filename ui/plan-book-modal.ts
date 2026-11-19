@@ -327,6 +327,8 @@ ${worldviewResult.content}`;
 
             // v4.2: 统一使用 ChapterOutlineTreeModal 展示完整的章节冲突预览
             // 替换旧版 renderOutlineTree（只能解析 #### 第X章 格式，不兼容 v4.0 表格格式）
+            // 生成已落盘 = 本次编辑已产出结果，先解除脏标记，避免成功后被问「丢弃修改」
+            this.dirtyGuard.markClean();
             this.close();
             new ChapterOutlineTreeModal(this.app, this.plugin, project).open();
         } catch (error) {

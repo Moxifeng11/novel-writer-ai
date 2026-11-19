@@ -42,6 +42,8 @@ import { t } from '@/i18n';
 export class ModalDirtyGuard {
     private dirty = false;
     private closeIntercepted = false;
+    /** 确认框是否已弹出：防 Esc 连按叠加出第二个确认框 */
+    private confirming = false;
 
     /** 有任何输入/变更时调用 */
     markDirty(): void {
@@ -75,6 +77,9 @@ export class ModalDirtyGuard {
                 originalClose();
                 return;
             }
+            // 确认框已经开着：忽略重复的 Esc / 点外部，避免叠加第二个确认框
+            if (this.confirming) return;
+            this.confirming = true;
             void OperationConfirmModal.confirm(app, {
                 title: t('modalGuard.title'),
                 description: t('modalGuard.description'),
@@ -86,6 +91,10 @@ export class ModalDirtyGuard {
                     originalClose();
                 }
                 // 用户选择留下：什么都不做，Modal 保持打开，可继续编辑/保存
+            }).catch(() => { /* silent-ok: 确认框自身异常时保持弹窗打开，宁可让用户再关一次也不静默丢内容 */
+                // 关闭已取消，保持 dirty 与打开状态
+            }).finally(() => {
+                this.confirming = false;
             });
         };
         modal.close = guarded as typeof modal.close;

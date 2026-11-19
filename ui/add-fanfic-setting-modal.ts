@@ -335,10 +335,9 @@ export class AddFanficSettingModal extends Modal {
                 const path = await createFanficDraftFromTemplate(this.app, this.project, workName);
                 showSuccessNotice(t("addFanfic.flow.templateDraftCreated", { path }), { timeout: 6000 });
                 new FanficReviewModal(this.app, this.plugin, this.project, path).open();
-        this.dirtyGuard.markClean();
-        this.dirtyGuard.markClean();
-            this.dirtyGuard.markClean();
-            this.close();
+                // 草稿已生成并交给审核弹窗，本次编辑已产出结果，不再问「丢弃修改」
+                this.dirtyGuard.markClean();
+                this.close();
             } catch (error) {
                 showErrorNotice(error instanceof Error ? error.message : String(error), { title: t("addFanfic.ui.k20"), timeout: 8000 });
             }
@@ -377,6 +376,8 @@ export class AddFanficSettingModal extends Modal {
                 new FanficReviewModal(this.app, this.plugin, this.project!, file.path, (approvedPath) => {
                     showSuccessNotice(t("addFanfic.flow.approvedTo", { path: approvedPath }), { timeout: 5000 });
                 }).open();
+                // 转入审核弹窗是用户主动动作：关闭本弹窗不再二次询问
+                this.dirtyGuard.markClean();
                 this.close();
             };
         }
@@ -470,6 +471,8 @@ export class AddFanficSettingModal extends Modal {
                     fields: check.missingFields.slice(0, 5).join('、'),
                 }), { timeout: 10000 });
             }
+            // 绑定已生效（用户主动完成动作），关闭不再二次询问
+            this.dirtyGuard.markClean();
             this.close();
         };
     }
@@ -771,6 +774,8 @@ ${formatCanonSourcesForPrompt(selectAuthoritativeSources(this.sources))}`;
             const file = this.app.vault.getAbstractFileByPath(filePath);
             if (file instanceof TFile) await this.plugin.safeOpenFile(file);
             new FanficReviewModal(this.app, this.plugin, this.project, filePath).open();
+            // 设定已生成并落盘，交给审核弹窗；关闭主弹窗不再问「丢弃修改」
+            this.dirtyGuard.markClean();
             this.close();
         } finally {
             genNotice.hide();

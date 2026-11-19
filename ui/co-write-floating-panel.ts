@@ -226,6 +226,7 @@ export class CoWriteFloatingPanel extends DraggablePanel {
       this.engine.updateSnapshot(this.rightEditor.value);
       this.updateSaveState('editing');
       this.updateWordCount();
+      this.scheduleAutoSave();
     });
 
     this.hintInput.addEventListener("keydown", (event: KeyboardEvent) => {
@@ -706,8 +707,17 @@ export class CoWriteFloatingPanel extends DraggablePanel {
     this.wordCountDisplay.setText(String(count));
   }
 
-  private updateSaveState(state: string): void {
-    this.saveStateDisplay.setText(state);
+  /**
+   * 更新保存状态展示。
+   *
+   * 入参是枚举而非文案：展示由 saveStateLabel() 求值（切语言不会让比较失效），
+   * 脏态样式按 isDirtySaveState() 判定。
+   *
+   * @param state - 保存状态枚举
+   */
+  private updateSaveState(state: SaveState): void {
+    this.saveStateDisplay.setText(saveStateLabel(state));
+    this.saveStateDisplay.toggleClass('nw-cowrite-control-state--dirty', isDirtySaveState(state));
   }
 
   private async renderFlowPanel(): Promise<void> {

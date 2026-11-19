@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-19T14:49:18.432Z",
-  "note": "Slice i18n 第45片（Agent 创作工作台 106 键；快捷按钮 min-width/换行 +213 字节）",
-  "bytes": 800684,
+  "generatedAt": "2026-11-19T19:08:21.767Z",
+  "note": "2026-11-20 ZC 复核修复：悬浮面板脏态修饰类 .nw-cowrite-control-state--dirty（+167 字节 / +1 唯一类）",
+  "bytes": 800851,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 223,
-  "uniqueClasses": 4334,
+  "uniqueClasses": 4335,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

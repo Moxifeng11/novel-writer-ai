@@ -3693,3 +3693,31 @@ plan 1 / telemetry 16 / memory 3 / toollog 4）。
 
 **下一轮候选**：`ui/full-writer/template-vars-builder.ts`（239 字，多为提示词，需甄别式迁移）、`ui/rendering/context-panel.ts`（162 字）、
 `ui/co-write-floating-panel.ts`（113 字）、`ui/batch-create-modal.ts`（104 字）；第三期补齐 en 并逐面量布局。
+
+## 第一百一十七轮：ZCode P0 三条复核与修复（2026-11-20，DSH）
+
+**背景**：用户要求「查看 ZCode 回复内容，进行完整判断」。ZCode 依据 `docs/audits/2026-11-20-interaction-and-module-flow.md` 落地了三条 P0：
+ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保存）、ZC-27 `8f300d44`（ModalDirtyGuard）。
+
+**复核结论**：一条通过、两条打回。
+
+- **ZC-25 通过**：6 处生成按钮（plan-book 1 + ai-builder 5）真接上了 `withButtonBusy`，`button.disabled` 闸门与 `finally` 复原有保证。
+- **ZC-26 打回**：`scheduleAutoSave()` 定义了但**没有任何调用点**（input 监听只更新状态/字数），P0 丢内容问题仍在；`updateSaveState(state: string)` 仍 `setText(state)`，调用方已改传 `'editing'/'saved'/'saveFailed'` → 用户看到英文枚举键；`isDirtySaveState`/`SaveState` 导入未使用（lint 3 warning），声明的脏态样式类不存在。
+- **ZC-27 打回**：组件可用（覆写实例 `close()`、复用 `OperationConfirmModal.confirm`），但接线漏 4 处 —— plan-book 生成成功关闭前无 `markClean`（成功后被问丢弃，确认框浮在紧随其后打开的大纲树之上）；add-fanfic 的「绑定已有设定 / AI 生成后 / 进入审核」三处 close 均无 `markClean`，模板草稿那处还被重复插了三行；测试第 3 例未 await 确认 Promise（手动 `markClean` 再 close），主路径未断言；确认框无重入闸门、Promise 无 catch。
+
+**修复**：
+1. `ui/co-write-floating-panel.ts` input 监听补 `this.scheduleAutoSave()`；`updateSaveState(state: SaveState)` 改 `setText(saveStateLabel(state))` + `toggleClass('nw-cowrite-control-state--dirty', isDirtySaveState(state))`。
+2. `styles-src/04-workspace-layers.css:615` 新增 `.nw-cowrite-control-state.nw-cowrite-control-state--dirty { color: var(--text-warning); }`。
+3. `ui/plan-book-modal.ts` 写盘成功后 `this.close()` 前补 `markClean()`。
+4. `ui/add-fanfic-setting-modal.ts` 三处 close 补 `markClean()`，删掉重复插桩并修正缩进。
+5. `ui/components/modal-dirty-guard.ts` 加 `confirming` 闸门（Esc 连按不叠加第二个确认框）与 `catch`（silent-ok：确认框异常时保持弹窗打开）。
+6. 测试：`tests/unit/ui/modal-dirty-guard.test.ts` 改可控 Promise 断言「确认前不关、确认后才关」（7 例）；新增 `tests/unit/ui/modal-guard-wiring.test.ts`（6 例源码级不变量：自动保存必须被调用、状态必须走 `saveStateLabel`、每个 close 前恰好一个 `markClean`）。
+
+**新发现（待用户裁定）**：`VIEW_TYPE_FLOAT_COWRITE` 只注册、全仓无 `setViewState` 与命令入口；`ui/workspace-manager.ts:65` 注释称「主写作区统一使用句级协同写作视图，避免双入口分裂」→ 悬浮面板在现网不可达，A-3 的「两个入口」前提不成立。建议按 2026-11-19 旧正文写入链口径退役（这是用户可见功能删除，需确认）；确认前保留修复。
+
+**门禁**：`tsc` 0 错、eslint 0 error；`vitest` 1002 文件 / 10,408 通过 + 3 跳过；`preflight` 首跑卡在 CSS 预算（+167B / +1 唯一类），更新 `check:css` + `check:bundle` 基线与 `gen:docs` 后 **EXIT=0**；`check:css` 800,851 bytes / 4,335 唯一类；`check:bundle` main.js 6,247,851（+264）/ styles.css 800,851（+167）；`check:i18n` 6034 条、棘轮 206 文件 / 5,564 条（已收紧）。
+
+**文档**：`docs/audits/2026-11-20-interaction-and-module-flow.md` 新增「五、DSH 复核」（5.1–5.5：逐条判断、修复清单、悬浮面板不可达、四条方法教训）；本轮记录即此节。
+
+**下一轮候选**：等用户裁定悬浮面板退役；ZC 审计 P1×9 / P2×7 是否按同模式继续；DSH i18n 第二期第 49 片（`ui/rendering/context-panel.ts` 162 字 / `ui/co-write-floating-panel.ts` 113 字 / `ui/batch-create-modal.ts` 104 字）。
+

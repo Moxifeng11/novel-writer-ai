@@ -406,3 +406,55 @@ graph TD
 2. **改造时沿用仓内正面样例**：确认框以 `knowledge-base-view.ts:1449` 为参照（A-19）；单源常量以 `MEMORY_SLOT_KEYS` 为参照（§2.1 #22）。
 3. **每条改造必须带回归测试**——尤其 #1（双击防护）、#3（关闭确认）、#4（写锁），这三个是行为变更，不是文案变更。
 4. 本文档的证据行号基于 `32bc1657` 之后的 master；阶段二动工前若有大合并，先 `grep` 复核关键证据仍在。
+
+## 五、DSH 复核（2026-11-20，针对 e0a772a3 / 0e15c2a5 / 8f300d44）
+
+结论：**三条 P0 里一条通过、两条打回**，其中一条修的是现网不可达的界面。以下问题已由 DSH 直接修复并补了源码级不变量测试（提交见本节末）。
+
+### 5.1 ZC-25 / e0a772a3（withButtonBusy 接入）——通过
+
+- 6 处生成按钮（plan-book 1 + ai-builder 5）确实包进 `withButtonBusy`，early-return 语义未变；`ui/button-busy.ts:24` 的 `button.disabled` 闸门能挡住第二次点击，`finally` 复原文案与禁用态。
+- 提醒：`withButtonBusy` 返回 promise，接入点内部已有 try/catch，不会产生未处理的拒绝。
+
+### 5.2 ZC-26 / 0e15c2a5（悬浮面板自动保存）——不通过，已修
+
+提交信息描述的三件事，都能在「新函数存在」层面成立，但调用层面全部缺失：
+
+1. **自动保存没有接上**：`ui/co-write-floating-panel.ts` 的 `scheduleAutoSave()` 从未被调用——input 监听只更新状态与字数，A-3 描述的丢内容问题实际仍在。
+2. **状态展示出现用户可见回归**：`updateSaveState(state: string)` 仍是字符串签名、方法体是 `setText(state)`；而调用方已改传 `'editing' / 'saved' / 'saveFailed'`，等于把英文枚举键直接显示给用户（中英界面都错）。
+3. **脏态类未接**：`isDirtySaveState`、`SaveState` 两个导入未被使用（lint 三条 unused 警告），提交里说的「附带接上脏态样式类」不存在；`styles-src/04-workspace-layers.css` 也没有对应规则。
+
+修复：
+- input 监听末尾补 `this.scheduleAutoSave()`（防抖键 `floating-auto-save`、2000ms，与主视图同节拍）；`saveBody()` 首行 `cancel`，避免手动保存后防抖再写一次。
+- `updateSaveState(state: SaveState)` 改为 `setText(saveStateLabel(state))` + `toggleClass('nw-cowrite-control-state--dirty', isDirtySaveState(state))`；新增 `.nw-cowrite-control-state.nw-cowrite-control-state--dirty { color: var(--text-warning); }`（与主视图辅助栏脏态同语义）。
+
+### 5.3 ZC-27 / 8f300d44（ModalDirtyGuard）——组件通过，接线与测试打回，已修
+
+组件本身（`ui/components/modal-dirty-guard.ts`）的拦截时机（覆写实例 `close()`，Esc 与点外都走它）和确认框复用（`OperationConfirmModal.confirm`，签名与 options 逐项匹配）是对的，问题在接线和测试：
+
+1. **plan-book 生成成功后被问「丢弃修改」**：`ui/plan-book-modal.ts` 写盘成功后直接 `this.close()`，没有 `markClean()`。结果：生成成功 → 弹「有未保存的修改」；且下一行已 `new ChapterOutlineTreeModal(...).open()`，确认框浮在大纲树之上，选「留在此页」会留下一个孤儿规划弹窗。
+2. **add-fanfic 五个 close 里四个缺 markClean**：只有模板草稿那处在（且被重复插了三行、缩进错乱）；绑定已有设定、AI 生成后、进入审核三处都缺——用户完成动作关闭时被追问丢弃。
+3. **测试没覆盖真实时序**：原第 3 例 `modal.close()` 后没 await 确认 Promise，而是手动 `markClean()` 再 close，等于只验证了自己写的 markClean；「确认 → 真关」主路径没有断言。
+4. **健壮性缺口**：确认框打开期间再按 Esc 会叠加第二个确认框；确认 Promise 没有 `catch`。
+
+修复：plan-book 成功关闭前 `markClean()`；add-fanfic 四处补齐并删掉重复插桩；guard 增加 `confirming` 闸门（同一时刻只允许一个确认框）与 `catch`（silent-ok：确认框自身异常时保持弹窗打开，不静默丢内容）；测试改为可控 Promise，断言「确认前不关、确认后才关」。
+
+新增 `tests/unit/ui/modal-guard-wiring.test.ts`（6 例，源码级不变量）：悬浮面板必须真的调用 `scheduleAutoSave`、状态必须走 `saveStateLabel`、plan-book 成功关闭前必须 `markClean`、add-fanfic 每个 `this.close()` 前必须有 `markClean` 且不许重复插桩。这类「组件写了但没接上」只能靠接线断言兜住。
+
+### 5.4 新发现：悬浮面板在现网不可达（A-3 前提不成立）
+
+`VIEW_TYPE_FLOAT_COWRITE`（`ui/workspace-manager.ts:9,17,42`）只注册了视图，**全仓没有任何 `setViewState` 或命令打开它**；`ui/workspace-manager.ts:65` 的注释写明「主写作区统一使用句级协同写作视图，避免『写作控制面板』和『协同写作面板』双入口分裂」。也就是说：
+
+- 新用户无法打开悬浮面板，只有从旧版布局恢复的 leaf 才会实例化；
+- A-3 的「同一正文两个入口」在现网只剩一个入口，P0 #2 修的是**几乎不可达的界面**；
+- 真正该决策的是**退役还是补回入口**：要么按旧模态口径删除视图类 + 注册 + 测试 + CSS，要么明确给它一个入口（等于恢复双入口，与上述注释冲突）。
+
+DSH 建议：**退役**（与 2026-11-19「旧正文写入链」同一处理口径），但这是用户可见功能删除，需用户确认；确认前保留本次修复（布局恢复的用户仍受益）。
+
+### 5.5 方法教训
+
+1. **「函数存在」≠「功能接上」**：提交信息里的能力必须按「调用点 → 渲染路径 → 用户可见」验证一遍。ZC-26 三条描述在调用层面全部不成立。
+2. **测试要 await 异步主路径**：mock 掉确认框后不 await，等于把被测链路从测试里剪掉；用可控 Promise 才能锁时序。
+3. **机械插桩必须查重复与缩进**：三行 `markClean` 是脚本重复命中的痕迹，lint 不报错、测试不覆盖，只能靠「每个 close 前恰好一个」的不变量断言兜住。
+4. **审计结论也要复核可达性**：A-3 把「注册了视图」当成「有入口」。写审计时每个入口都应给出「用户从哪点到」的路径证据，而不只是文件存在。
+

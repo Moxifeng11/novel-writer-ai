@@ -3433,6 +3433,8 @@ select.nw-select {
 }
 .nw-cowrite-control-title { font-size: 12px; font-weight: 600; color: var(--nw-text-primary, var(--text-normal)); }
 .nw-cowrite-control-state { font-size: 10px; color: var(--nw-text-muted, var(--text-faint)); white-space: nowrap; }
+/* 未保存/保存失败时提亮，与主视图辅助栏脏态同语义 */
+.nw-cowrite-control-state.nw-cowrite-control-state--dirty { color: var(--text-warning); }
 /* NBI-04: 临时指令「已应用」状态标识（与保存状态同排，默认隐藏） */
 .nw-hint-state {
     margin-left: auto;

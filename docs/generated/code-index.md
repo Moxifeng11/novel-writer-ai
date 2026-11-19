@@ -11,7 +11,7 @@
 | `shared/` | 259 | 52377 | 2212 | 1732 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1583 | 88 | 58 | 66% |
-| `ui/` | 305 | 114573 | 1182 | 945 | 80% |
+| `ui/` | 305 | 114599 | 1182 | 945 | 80% |
 
 ## 文件清单
 
@@ -717,7 +717,7 @@
 | `shared/writing-rules.ts` | 105 | 2 | 1 |
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
-| `ui/add-fanfic-setting-modal.ts` | 791 | 1 | 1 |
+| `ui/add-fanfic-setting-modal.ts` | 796 | 1 | 1 |
 | `ui/advanced-maintenance-modal.ts` | 222 | 1 | 1 |
 | `ui/agent-workbench-view.ts` | 1847 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 140 | 6 | 6 |
@@ -735,7 +735,7 @@
 | `ui/chapter-settlement-modal.ts` | 428 | 1 | 1 |
 | `ui/chapter-version-modal.ts` | 658 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
-| `ui/co-write-floating-panel.ts` | 1048 | 2 | 2 |
+| `ui/co-write-floating-panel.ts` | 1058 | 2 | 2 |
 | `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |
 | `ui/co-writing-view.ts` | 3972 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 167 | 7 | 5 |
@@ -786,7 +786,7 @@
 | `ui/components/emotion-curve-view.ts` | 131 | 1 | 1 |
 | `ui/components/empty-state.ts` | 147 | 3 | 1 |
 | `ui/components/error-state.ts` | 57 | 3 | 3 |
-| `ui/components/modal-dirty-guard.ts` | 98 | 1 | 1 |
+| `ui/components/modal-dirty-guard.ts` | 107 | 1 | 1 |
 | `ui/components/notice-helpers.ts` | 156 | 3 | 3 |
 | `ui/components/progress/index.ts` | 28 | 4 | 0 |
 | `ui/components/progress/loading-overlay.ts` | 205 | 2 | 2 |
@@ -908,7 +908,7 @@
 | `ui/panel-resizer.ts` | 260 | 4 | 3 |
 | `ui/password-modal.ts` | 152 | 1 | 1 |
 | `ui/pet-image-settings.ts` | 466 | 3 | 3 |
-| `ui/plan-book-modal.ts` | 570 | 1 | 1 |
+| `ui/plan-book-modal.ts` | 572 | 1 | 1 |
 | `ui/planning/canvas-link.ts` | 108 | 3 | 2 |
 | `ui/planning/canvas-tools.ts` | 99 | 8 | 5 |
 | `ui/planning/outline-bridge.ts` | 128 | 5 | 3 |
