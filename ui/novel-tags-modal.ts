@@ -6,6 +6,7 @@ import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
 import { AIEngine } from '@/engine/ai-engine';
 import { readMergedVolumeOutline } from '@/utils/helpers';
+import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
 
 /**
  * NovelTagsModal 类。
@@ -84,7 +85,11 @@ export class NovelTagsModal extends Modal {
         const existingFile = this.app.vault.getAbstractFileByPath(resultPath);
 
         if (existingFile) {
-            const confirm = window.confirm(t('novelTags.overwriteConfirm'));
+            const confirm = await OperationConfirmModal.confirm(this.app, {
+                title: t('common.confirmTitle'),
+                description: t('novelTags.overwriteConfirm'),
+                cancelText: t('common.cancel'),
+            });
             if (!confirm) return;
         }
 

@@ -1,5 +1,6 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
 import { ModalDirtyGuard } from '@/ui/components/modal-dirty-guard';
+import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
 import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { AIEngine } from '@/engine/ai-engine';
@@ -638,7 +639,11 @@ export class AddFanficSettingModal extends Modal {
             const filePath = `${targetDir}/${fanficSettingsFileName(workName)}`;
             const existing = this.app.vault.getAbstractFileByPath(filePath);
             if (existing) {
-                const overwrite = window.confirm(t("addFanfic.flow.overwriteConfirm", { path: filePath }));
+                const overwrite = await OperationConfirmModal.confirm(this.app, {
+                    title: t('common.confirmTitle'),
+                    description: t("addFanfic.flow.overwriteConfirm", { path: filePath }),
+                    cancelText: t('common.cancel'),
+                });
                 if (!overwrite) {
                     notice.hide();
                     return;
@@ -754,7 +759,11 @@ ${formatCanonSourcesForPrompt(selectAuthoritativeSources(this.sources))}`;
             const filePath = `${targetDir}/${fanficSettingsFileName(workName)}`;
             const existing = this.app.vault.getAbstractFileByPath(filePath);
             if (existing) {
-                const overwrite = window.confirm(t("addFanfic.flow.overwriteConfirm", { path: filePath }));
+                const overwrite = await OperationConfirmModal.confirm(this.app, {
+                    title: t('common.confirmTitle'),
+                    description: t("addFanfic.flow.overwriteConfirm", { path: filePath }),
+                    cancelText: t('common.cancel'),
+                });
                 if (!overwrite) return;
             }
             await saveFanficSettingFile(this.app, filePath, pendingContent);

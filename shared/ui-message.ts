@@ -27,11 +27,17 @@
  * 这样改造可以**一个文件一个文件地推进**，不需要一次性全改。
  */
 import { hasMessage, t } from '@/i18n';
+import type { EngineMsgCode } from '@/shared/engine-msg-codes';
 
 /** 领域层发给界面的消息（结构化，可双语） */
 export interface UiMessage {
-    /** 资源键（`engineMsg.<域>.<slug>`） */
-    code: string;
+    /**
+     * 资源键（`engineMsg.<域>.<slug>`）。
+     *
+     * 类型来自自动生成的 `ENGINE_MSG_CODES`（审计 B7 / C 清单 #12）：
+     * 拼错键名是编译错，而不是运行时静默退化成中文兜底。
+     */
+    code: EngineMsgCode;
     /** 插值参数 */
     params?: Record<string, string | number>;
     /**
@@ -78,7 +84,7 @@ export function resolveUiMessage(message: UiMessageLike): string {
  * ```
  */
 export function uiMessage(
-    code: string,
+    code: EngineMsgCode,
     fallback: string,
     params?: Record<string, string | number>,
 ): UiMessage {

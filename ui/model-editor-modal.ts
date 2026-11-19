@@ -119,7 +119,7 @@ export class ModelEditorModal extends Modal {
         const footer = contentEl.createDiv({ cls: 'nw-model-editor-footer' });
         const cancel = footer.createEl('button', { text: '取消', attr: { type: 'button' } });
         cancel.addEventListener('click', () => this.close());
-        const save = footer.createEl('button', { text: '保存', cls: 'mod-cta', attr: { type: 'button' } });
+        const save = footer.createEl('button', { text: '💾 保存', cls: 'mod-cta', attr: { type: 'button' } });
         save.addEventListener('click', () => {
             if (!this.draft.id.trim()) {
                 new Notice('请输入模型 ID');

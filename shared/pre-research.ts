@@ -172,14 +172,27 @@ export function preResearchReportPath(project: string): string {
 }
 
 /**
- * preResearchModeDocPath 函数。
+ * 前期调研定位稿文件名（按模式）。
+ *
+ * 注意它不是 `shared/mode-content.ts` 的 `MODE_DOC_SPECS` 那一套结构文档：
+ * 定位稿是**调研产物**（写给人看、可被人工改写），不参与任何阶段完成判定；
+ * 阶段完成只看 `调研数据.json` 的字段（`isPreResearchComplete`）与结构文档
+ * （`modeDocKinds`）。两边别混用（审计 B9 / C 清单 #11 的口径澄清）。
+ */
+export const PRE_RESEARCH_MODE_DOC_FILES = {
+    long: '长篇定位.md',
+    short: '五维分类.md',
+    script: '剧本定位.md',
+} as const satisfies Record<CreationMode, string>;
+
+/**
+ * 前期调研定位稿路径。
  * @param project - 项目（路径或对象）
  * @param mode - 模式
  * @returns 文本结果
  */
 export function preResearchModeDocPath(project: string, mode: CreationMode): string {
-    const fileName = mode === 'script' ? '剧本定位.md' : mode === 'short' ? '五维分类.md' : '长篇定位.md';
-    return `${preResearchDir(project)}/${fileName}`;
+    return `${preResearchDir(project)}/${PRE_RESEARCH_MODE_DOC_FILES[mode]}`;
 }
 
 function yamlValue(value: string): string {

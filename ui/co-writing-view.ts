@@ -1073,6 +1073,9 @@ export class CoWritingView extends ItemView {
    */
   bindEvents() {
     this.rightEditor.addEventListener("keydown", (event: KeyboardEvent) => this.handleEditorKeydown(event));
+    // Ctrl+S 兜底（审计 A-2）：焦点在工具条按钮/侧栏控件时事件不会到编辑器，
+    // 挂在视图容器上保证「视图内按 Ctrl+S 就保存」的承诺成立（编辑器层已处理的不重复）。
+    this.contentEl.addEventListener("keydown", (event: KeyboardEvent) => this.handleViewSaveShortcut(event));
     // E-10：光标移动/选区变化也要刷新行列与选中字数
     this.rightEditor.addEventListener("keyup", () => this.refreshCursorInfo());
     this.rightEditor.addEventListener("mouseup", () => this.refreshCursorInfo());
@@ -1721,6 +1724,32 @@ export class CoWritingView extends ItemView {
   }
 
   /**
+   * 视图级 Ctrl+S 兜底：焦点不在正文编辑器时也要保存。
+   *
+   * @param event - 键盘事件
+   */
+  private handleViewSaveShortcut(event: KeyboardEvent): void {
+    if (event.defaultPrevented) return;
+    if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+    if (event.key.toLowerCase() !== 's') return;
+    if (isImeComposingEvent(event)) return;
+    if (event.target === this.rightEditor) return; // 编辑器层已处理（还要走建议/联想等状态机）
+    event.preventDefault();
+    void this.saveFromShortcut();
+  }
+
+  /**
+   * Ctrl+S 的统一动作：先存撤销快照，再落盘。
+   *
+   * 协同视图的撤销栈是自己维护的（不是浏览器 textarea 原生栈），
+   * 所以这里比单元写作台多一步快照；两者共用的是「提示文案 + 时长」。
+   */
+  private async saveFromShortcut(): Promise<void> {
+    this.pushHistorySnapshot(true);
+    await this.saveBody(true);
+  }
+
+  /**
    * 处理编辑器快捷键（Tab 建议/格式命令）。
    *
    * @param event - 事件
@@ -1759,8 +1788,7 @@ export class CoWritingView extends ItemView {
         this.handleRewriteSelection();
         return;
       case 'save':
-        this.pushHistorySnapshot(true);
-        await this.saveBody(true);
+        await this.saveFromShortcut();
         return;
       case 'focus-hint':
         this.hintInput.focus();

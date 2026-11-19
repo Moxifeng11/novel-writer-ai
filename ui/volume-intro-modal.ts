@@ -24,6 +24,8 @@ import {
 } from '@/shared/synopsis-spec';
 import { SynopsisStore, SynopsisSnapshot } from '@/services/synopsis-store';
 import { createLogger } from '@/shared/logger';
+import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
+import { t } from '@/i18n';
 
 const log = createLogger('VolumeIntroModal');
 
@@ -158,7 +160,14 @@ export class VolumeIntroModal extends Modal {
             };
             const del = row.createEl('button', { text: '删除', cls: 'nw-btn nw-btn-danger' });
             del.onclick = async () => {
-                if (!window.confirm(`删除版本 ${version.id}？`)) return;
+                const confirmed = await OperationConfirmModal.confirm(this.app, {
+                    title: t('common.confirmTexts.deleteVolumeVersion.title', { id: version.id }),
+                    description: t('common.confirmTexts.deleteVolumeVersion.desc'),
+                    warning: t('common.confirmTexts.deleteVolumeVersion.warning'),
+                    confirmText: t('common.confirm'),
+                    cancelText: t('common.cancel'),
+                });
+                if (!confirmed) return;
                 await this.store.deleteVersion(this.currentProject, version.id);
                 this.snapshot = await this.store.load(this.currentProject);
                 this.render();

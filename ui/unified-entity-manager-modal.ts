@@ -13,6 +13,7 @@ import { ensureEntityIntegrity } from '@/shared/entity-integrity';
 import { auditEntityFiles, overwriteEntityIfComplete, readProjectWorldview } from '@/shared/entity-audit';
 import { createLogger } from '@/shared/logger';
 import { createEmptyState } from './components/empty-state';
+import { OperationConfirmModal } from './components/progress/operation-confirm-modal';
 
 const log = createLogger('UnifiedEntityManagerModal');
 import {
@@ -201,10 +202,10 @@ export class UnifiedEntityManagerModal extends Modal {
             const preview = items.slice(0, 8)
                 .map(i => `${i.name}（缺 ${i.missingFields.length} 项）`)
                 .join('、');
-            const confirmed = window.confirm(
-                `发现 ${items.length} 个不完整实体：\n${preview}${items.length > 8 ? ' 等' : ''}\n\n` +
-                '将逐条调用 AI 补全，复检通过后原地覆写；仍不完整的保持原文件不变。是否继续？'
-            );
+            const confirmed = await OperationConfirmModal.confirm(this.app, {
+                title: `发现 ${items.length} 个不完整实体，是否补全？`,
+                description: `${preview}${items.length > 8 ? ' 等' : ''}\n\n将逐条调用 AI 补全，复检通过后原地覆写；仍不完整的保持原文件不变。`,
+            });
             if (!confirmed) return;
 
             const worldview = await readProjectWorldview(this.app, this.project);

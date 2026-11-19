@@ -30,6 +30,7 @@ import { ENGINE_NAMES } from '@/shared/engine-names';
 import { StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
 import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
+import { SAVE_FEEDBACK_MS } from '@/shared/interaction-timing';
 import { createLogger } from '@/shared/logger';
 import { pushUsageScope } from '@/services/usage-ledger';
 import type { WriterTab } from './full-writer-store';
@@ -267,13 +268,15 @@ export class UnitWriterController {
             this.setSaveState(t('fullwriter.uw.stateEditing'));
             this.scheduleSave();
         });
-        this.editorEl.addEventListener('keydown', (event: KeyboardEvent) => {
-            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
-                event.preventDefault();
-                void this.flushSave().then(ok => {
-                    if (ok) showSuccessNotice(t('fullwriter.uw.savedNotice'), { timeout: 1500 });
-                });
-            }
+        // Ctrl+S 绑在单元容器上而不是 textarea 上（审计 A-2）：焦点落在工具条按钮/标题框时
+        // 事件不会到 textarea，快捷键就落回 Obsidian，而工具条 tip 承诺的是「保存正文」。
+        main.addEventListener('keydown', (event: KeyboardEvent) => {
+            if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+            if (event.key.toLowerCase() !== 's') return;
+            event.preventDefault();
+            void this.flushSave().then(ok => {
+                if (ok) showSuccessNotice(t('common.bodySaved'), { timeout: SAVE_FEEDBACK_MS });
+            });
         });
 
         this.toolbarEl = main.createDiv({ cls: 'nw-unit-toolbar' });

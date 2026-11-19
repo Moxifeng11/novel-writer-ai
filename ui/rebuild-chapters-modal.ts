@@ -11,6 +11,8 @@ import { readMergedVolumeOutline } from '@/utils/helpers';
 import { pjBodyDir, pjBodyFile, pjStepDir, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjForeshadowDB, pjTimelineBoard } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
 import { showSuccessNotice, showWarningNotice } from './components/notice-helpers';
+import { OperationConfirmModal } from './components/progress/operation-confirm-modal';
+import { t } from '@/i18n';
 
 
 import { ObsidianFrontmatter } from '@/shared/file-system-port';
@@ -179,7 +181,13 @@ export class RebuildChaptersModal extends Modal {
         const volN = parseInt(volume.match(/\d+/)?.[0] || '0');
         const total = endNum - startNum + 1;
 
-        const confirm = window.confirm(`将重建第${startNum}-${endNum}章（共${total}章）。\n✅ 保留已有正文、分析报告与已填写的信息规划/大纲\n🔄 只重建空/占位骨架\n🗂 清理台账行前会先备份到 _versions/rebuild\n确认？`);
+        const confirm = await OperationConfirmModal.confirm(this.app, {
+            title: t('common.confirmTexts.rebuildChapters.title', { start: startNum, end: endNum, total }),
+            description: t('common.confirmTexts.rebuildChapters.desc'),
+            warning: t('common.confirmTexts.rebuildChapters.warning'),
+            confirmText: t('common.confirm'),
+            cancelText: t('common.cancel'),
+        });
         if (!confirm) return;
 
         let mainNotice = new Notice(`⏳ 正在重建章节: 0/${total}`, 0);

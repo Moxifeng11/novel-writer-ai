@@ -24,6 +24,7 @@
 | `npm run check:css` | CSS 预算与命名棘轮 |
 | `npm run check:deps` | 分层依赖与循环依赖（棘轮） |
 | `npm run check:docs` | 文档索引/链接/版本/编码检查 |
+| `npm run check:engine-msg` | — |
 | `npm run check:hotpaths` | 热路径全库扫描检查 |
 | `npm run check:i18n` | — |
 | `npm run check:inline-styles` | 内联样式基线棘轮 |
@@ -55,6 +56,7 @@
 | `npm run eval:quality` | 质量基准评估 |
 | `npm run eval:rag` | RAG 检索评估 |
 | `npm run gen:docs` | 生成 docs/generated/* |
+| `npm run gen:engine-msg` | — |
 | `npm run gen:support-qr` | — |
 | `npm run gen:templates` | 把 assets/template-scaffold 嵌入 shared/template-scaffold-assets.generated.ts |
 | `npm run gen:workers-inline` | — |
@@ -103,14 +105,15 @@
 23. npm run check:view-tests
 24. npm run check:test-standard
 25. npm run check:i18n
-26. npm run check:cjk-keep
-27. npm run check:changelog
-28. npm run check:docs
-29. npm run check:support-qr
-30. npm run check:workers-inline
-31. npm run build
-32. npm run check:bundle
-33. npm run check:release
+26. npm run check:engine-msg
+27. npm run check:cjk-keep
+28. npm run check:changelog
+29. npm run check:docs
+30. npm run check:support-qr
+31. npm run check:workers-inline
+32. npm run build
+33. npm run check:bundle
+34. npm run check:release
 ```
 
 ## 说明

@@ -3773,3 +3773,36 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 **门禁**：`tsc` 0 错、eslint 0 error；`vitest` 1002 文件 / 10,405 通过 + 3 跳过（首跑被分层测试拦下，修完重跑全绿）；`check:i18n` 6034 条 / 无法解析键 0 / 棘轮 205 文件 5,456 条不变；`check:bundle` main.js 6,224,760（较 6,224,663 +97，常量对象与 re-export 的净开销）、styles.css 800,112 不变；`preflight` EXIT=0。
 
 **下一轮**：P1 余下五条 —— #5 Ctrl+S 三处行为统一、#6 `window.confirm` 11 处换 `OperationConfirmModal`、#11 模式文档路径二合一、#12 `ENGINE_MSG_CODES` 编译期校验、#13 保存状态/按钮文案/Notice 时长三个小统一。
+
+## 第一百二十轮：C 清单 P1 余下五条（#5 #6 #11 #12 #13，2026-11-20，DSH）
+
+审计 `docs/audits/2026-11-20-interaction-and-module-flow.md` §三 P1 全九条到此全部落地（#5/#6/#7/#8/#9/#10/#11/#12 完成，#13 部分完成、A-17 留给 P2）。
+
+**#5 Ctrl+S 行为统一（A-2）**
+- `shared/interaction-timing.ts` 新增 `SAVE_FEEDBACK_MS = 1500`（原协同 3000 / 单元 1500 两套）；i18n `common.bodySaved`（zh「✅ 正文已保存」/ en「✅ Body text saved」）。
+- `ui/cowrite/body-save-controller.ts` 成功分支改用该键与常量；`ui/full-writer/unit-writer-controller.ts` 的 keydown 从 **正文编辑器** 改绑 **单元容器**（`main`），守卫 `ctrl/meta`、排除 `alt`、`event.key === 's'`、`preventDefault`；`ui/co-writing-view.ts` 追加视图级 `keydown` → `handleViewSaveShortcut`（跳过 `defaultPrevented` / IME / `event.target === rightEditor`），`saveFromShortcut()` = `pushHistorySnapshot(true)` + `saveBody(true)`，编辑器快捷键 `case 'save'` 复用它。
+- 新增 `tests/unit/ui/editor-save-shortcut.test.ts`（4 例源码级不变量）。
+
+**#6 `window.confirm` 11 处全量下线（A-6/A-19/A-7）**
+- 全部改走 `OperationConfirmModal.confirm(app, { title, description, warning?, cancelText? })`；两处中文文案（重建章节、删除版本、结算恢复）新增 `common.confirmTexts.*` 9 键。新增 `tests/unit/ui/no-window-confirm.test.ts`（源码棘轮 + 三个中文站点校验）。
+- 坑：`ui/full-writer/wizard-controller.ts` 没有 `this.app`，只有 `this.view.app`（`WizardViewAccess`）；`git grep` 无命中退出码 1，`execFileSync` 会抛错，测试里必须放行 `status === 1`。
+
+**#11 模式文档路径（B9，口径修正）**
+- 「两个函数合并」不成立：`preResearchModeDocPath` 指 `00-前期调研/` 下的调研定位稿，`modeDocPath` 指 `短篇创作/` `剧本创作/` 下的结构文档，合会改掉既有 vault 路径。真正的问题是**路径知识与「哪些文档决定阶段完成」各写一份**。
+- 改法：`shared/mode-content.ts` 新增 `MODE_DOC_SPECS`（short 2 份 / script 3 份，含 dir+file）、`modeDocKinds(mode)`（长篇返回空）、`ModeDocKind`；`modeDocPath` 改查表（未知组合回落 outline，输出逐字不变）。`ui/full-writer/creation-flow-state.ts:110` 的手写 kinds 三元组删除、改 `for (const kind of modeDocKinds(mode))`。`shared/pre-research.ts` 新增 `PRE_RESEARCH_MODE_DOC_FILES` 表，并注明定位稿**不参与阶段完成判定**（判定只看 `调研数据.json` 字段 + 结构文档）。
+- 新增 `tests/unit/shared/mode-doc-specs.test.ts`（5 例）：路径与表逐条一致 / kinds 覆盖 / 未知回落 / 两套产物不撞路径 / 源码不再手写三元组。
+
+**#12 `ENGINE_MSG_CODES` 编译期校验（B7）**
+- 新增 `scripts/gen-engine-msg-codes.mjs`：`ts.transpileModule` + `new Function` 加载 `i18n/messages/zh-CN.ts`（同 `scripts/check-i18n.mjs` 的 `loadCatalog`），拍平取 `engineMsg.` 前缀 → 生成 `shared/engine-msg-codes.ts`（126 键 + `EngineMsgCode` 联合类型）；`--check` 做漂移校验。
+- `package.json` 增 `gen:engine-msg` / `check:engine-msg`，preflight 链插在 `check:i18n` 之后；`shared/ui-message.ts` 的 `UiMessage.code` 与 `uiMessage()` 首参改类型。
+- 生产端 126 处 code 全部原本合法（改造零改动）；测试 3 处故意越界处加 `as unknown as EngineMsgCode`。新增 `tests/unit/i18n/engine-msg-codes.test.ts`（4 例）。
+- 坑：生成器的头注释若写在模板字符串里、内含反引号，会把外层模板串截断（`SyntaxError: Unexpected identifier 'engineMsg'`）→ 改数组 `.join('\n')`。
+
+**#13 三个小统一（A-11/A-12 完成，A-17 待）**
+- `NOTICE_MS = { short: 2000, normal: 4000, long: 8000, sticky: 0 }`；`ui/components/notice-helpers.ts` 的 `showStructuredNotice` 增加 `defaultTimeout` 形参，错误 8000 / 成功与告警 4000，调用方显式 `timeout` 仍优先；`tests/unit/ui/pure-helpers-coverage.test.ts:570` 断言从「undefined」改为 `[8000, 4000, 4000]`。
+- 保存按钮统一「💾 保存」：`ui/model-editor-modal.ts:122`、`ui/mcp-server-form-modal.ts:192`。
+- A-17（撤销栈共享化）判定为 P2 性质，未在本批做。
+
+**门禁**：`npx tsc --noEmit` 0 错；`npm run lint` 0 error（1029 warning 存量）；`check:i18n` zh/en 各 6045 条 / 无法解析键 0 / 动态键 29 / 棘轮 205 文件 5445 条（较基线 5456 下降 5 个文件，可收紧）；新增/改动 8 个测试文件全绿（含 `tests/unit/shared|engine|ui` 主要受影响面）。
+
+**下一轮**：P2 #14-#20（空态统一 / `showProgress` 统一 / 字符串键收编 / 知识库 baseDir 双口径 / 设置页自动保存徽标 / Esc 语义 / `AIEngine` 收编），以及 #13 遗留的 A-17 撤销栈共享化。

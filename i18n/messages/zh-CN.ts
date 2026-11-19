@@ -1707,6 +1707,25 @@ export const zhCN: MessageTree = {
     common: {
         cancel: '取消',
         confirm: '确定',
+        confirmTitle: '请确认',
+        confirmTexts: {
+            rebuildChapters: {
+                title: '将重建第{start}-{end}章（共{total}章）？',
+                desc: '✅ 保留已有正文、分析报告与已填写的信息规划/大纲；🔄 只重建空/占位骨架。',
+                warning: '🗂 清理台账行前会先备份到 _versions/rebuild。',
+            },
+            recoverSettlement: {
+                title: '确认恢复？',
+                descChapter: '确认恢复「{chapter}」？将按日志回滚结算写入的改动。',
+                descAll: '确认恢复全部 {count} 个章节？将按日志回滚结算写入的改动。',
+            },
+            deleteVolumeVersion: {
+                title: '删除版本 {id}？',
+                desc: '删除后不可恢复；已写过的正文不受影响。',
+                warning: '如需留档，请先把当前版本「采用」后再删除旧版本。',
+            },
+        },
+        bodySaved: '✅ 正文已保存',
         close: '关闭',
         refresh: '刷新',
         loading: '加载中…',

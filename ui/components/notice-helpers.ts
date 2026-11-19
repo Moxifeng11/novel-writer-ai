@@ -11,6 +11,7 @@
  * 本文件内部不写 console。
  */
 import { Notice } from 'obsidian';
+import { NOTICE_MS } from '@/shared/interaction-timing';
 
 /** 错误提示的默认标题 */
 const ERROR_DEFAULT_TITLE = '操作失败';
@@ -76,18 +77,21 @@ function buildNoticeFragment(
 function showStructuredNotice(
     emoji: string,
     defaultTitle: string,
+    defaultTimeout: number,
     message: string,
     options?: { title?: string; detail?: string; timeout?: number },
 ): void {
     const title = options?.title ?? defaultTitle;
+    // 时长默认值按类别分档（审计 A-11）：成功=normal、告警=normal、错误=long。
+    const timeout = options?.timeout ?? defaultTimeout;
     const fragment = buildNoticeFragment(emoji, title, message, options?.detail);
     if (fragment) {
-        new Notice(fragment, options?.timeout);
+        new Notice(fragment, timeout);
         return;
     }
     const lines = [`${emoji} ${title}`, message];
     if (options?.detail) lines.push(options.detail);
-    new Notice(lines.join('\n'), options?.timeout);
+    new Notice(lines.join('\n'), timeout);
 }
 
 /**
@@ -109,7 +113,7 @@ export function showErrorNotice(
     message: string,
     options?: { title?: string; detail?: string; timeout?: number },
 ): void {
-    showStructuredNotice('❌', ERROR_DEFAULT_TITLE, message, options);
+    showStructuredNotice('❌', ERROR_DEFAULT_TITLE, NOTICE_MS.long, message, options);
 }
 
 /**
@@ -130,7 +134,7 @@ export function showSuccessNotice(
     message: string,
     options?: { title?: string; timeout?: number },
 ): void {
-    showStructuredNotice('✅', SUCCESS_DEFAULT_TITLE, message, options);
+    showStructuredNotice('✅', SUCCESS_DEFAULT_TITLE, NOTICE_MS.normal, message, options);
 }
 
 /**
@@ -151,5 +155,5 @@ export function showWarningNotice(
     message: string,
     options?: { title?: string; timeout?: number },
 ): void {
-    showStructuredNotice('⚠️', WARNING_DEFAULT_TITLE, message, options);
+    showStructuredNotice('⚠️', WARNING_DEFAULT_TITLE, NOTICE_MS.normal, message, options);
 }

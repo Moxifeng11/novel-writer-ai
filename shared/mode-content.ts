@@ -123,22 +123,70 @@ export function modeUnitDisplay(number: number, mode: CreationMode): string {
 }
 
 /**
- * modeDocPath 函数。
+ * 短篇 / 剧本的结构文档种类。
+ *
+ * 与 `CreationFlowDocFacts` 的键一一对应；新增种类时改这张表即可，
+ * 路径与「哪些文档决定阶段完成」都从 `MODE_DOC_SPECS` 派生（审计 B9 / C 清单 #11）。
+ */
+export type ModeDocKind = 'storyCore' | 'outline' | 'bible' | 'storyboard';
+
+/**
+ * 结构文档规格：目录 + 文件名。
+ */
+export interface ModeDocSpec {
+    /** 文档种类 */
+    kind: ModeDocKind;
+    /** 相对项目根的目录 */
+    dir: string;
+    /** 文件名 */
+    file: string;
+}
+
+/**
+ * 短篇 / 剧本结构文档的**单一真源**。
+ *
+ * 审计 B9（C 清单 #11）之前，同一份「模式 → 文档路径」知识散在两处：
+ * 本文件的 if 链，以及 `ui/full-writer/creation-flow-state.ts` 里手写的
+ * kinds 三元组；任一侧改名就静默判定「阶段未完成」。现在两边都读这张表。
+ */
+export const MODE_DOC_SPECS = {
+    short: [
+        { kind: 'storyCore', dir: `${SHORT_CONTENT_ROOT}/${SHORT_DIRS.storyCore}`, file: '故事核.md' },
+        { kind: 'outline', dir: `${SHORT_CONTENT_ROOT}/${SHORT_DIRS.outline}`, file: '分节大纲.md' },
+    ],
+    script: [
+        { kind: 'bible', dir: `${SCRIPT_CONTENT_ROOT}/${SCRIPT_DIRS.bible}`, file: '场景圣经.md' },
+        { kind: 'outline', dir: `${SCRIPT_CONTENT_ROOT}/${SCRIPT_DIRS.outline}`, file: '分集大纲.md' },
+        { kind: 'storyboard', dir: `${SCRIPT_CONTENT_ROOT}/${SCRIPT_DIRS.storyboard}`, file: '分镜表.md' },
+    ],
+} as const satisfies Record<'short' | 'script', readonly ModeDocSpec[]>;
+
+/**
+ * 某模式下决定阶段完成的文档种类（顺序即创建顺序）。
+ *
+ * 长篇没有这类文档，返回空数组（调用方不必再写 mode === 'long' 分支）。
+ * @param mode - 创作模式
+ * @returns 文档种类列表
+ */
+export function modeDocKinds(mode: CreationMode): readonly ModeDocKind[] {
+    if (mode === 'long') return [];
+    return MODE_DOC_SPECS[mode].map(spec => spec.kind);
+}
+
+/**
+ * 结构文档路径。
+ *
+ * 未知组合（如长篇传入 outline）回落到该模式的 outline 文档，保持历史行为。
  * @param project - 项目（路径或对象）
  * @param mode - 模式
  * @param doc - 文档
  * @returns 文本结果
  */
-export function modeDocPath(project: string, mode: CreationMode, doc: 'storyCore' | 'outline' | 'bible' | 'storyboard'): string {
-    if (mode === 'short') {
-        if (doc === 'storyCore') return `${project}/${SHORT_CONTENT_ROOT}/${SHORT_DIRS.storyCore}/故事核.md`;
-        if (doc === 'outline') return `${project}/${SHORT_CONTENT_ROOT}/${SHORT_DIRS.outline}/分节大纲.md`;
-        return `${project}/${SHORT_CONTENT_ROOT}/${SHORT_DIRS.outline}/分节大纲.md`;
-    }
-    if (doc === 'bible') return `${project}/${SCRIPT_CONTENT_ROOT}/${SCRIPT_DIRS.bible}/场景圣经.md`;
-    if (doc === 'outline') return `${project}/${SCRIPT_CONTENT_ROOT}/${SCRIPT_DIRS.outline}/分集大纲.md`;
-    if (doc === 'storyboard') return `${project}/${SCRIPT_CONTENT_ROOT}/${SCRIPT_DIRS.storyboard}/分镜表.md`;
-    return `${project}/${SCRIPT_CONTENT_ROOT}/${SCRIPT_DIRS.outline}/分集大纲.md`;
+export function modeDocPath(project: string, mode: CreationMode, doc: ModeDocKind): string {
+    const specs = MODE_DOC_SPECS[mode === 'long' ? 'script' : mode];
+    const spec = specs.find(item => item.kind === doc) ?? specs.find(item => item.kind === 'outline');
+    if (!spec) throw new Error(`modeDocPath: ${mode} 模式没有 outline 文档规格`);
+    return `${project}/${spec.dir}/${spec.file}`;
 }
 
 /**

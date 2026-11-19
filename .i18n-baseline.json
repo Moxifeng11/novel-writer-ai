@@ -1,7 +1,7 @@
 {
   "files": {
     "ui/add-fanfic-setting-modal.ts": 33,
-    "ui/advanced-maintenance-modal.ts": 39,
+    "ui/advanced-maintenance-modal.ts": 37,
     "ui/agent-workbench-view.ts": 7,
     "ui/ai-builder-modal.ts": 40,
     "ui/asset-registry-modal.ts": 16,
@@ -149,8 +149,8 @@
     "ui/prompt-manager-logic.ts": 5,
     "ui/protect-yuan-modal.ts": 12,
     "ui/quality-dashboard-modal.ts": 33,
-    "ui/quality-loop-modal.ts": 53,
-    "ui/rebuild-chapters-modal.ts": 44,
+    "ui/quality-loop-modal.ts": 52,
+    "ui/rebuild-chapters-modal.ts": 41,
     "ui/refill-modal.ts": 73,
     "ui/rename-project-modal.ts": 11,
     "ui/rendering/context-panel.ts": 162,
@@ -171,7 +171,7 @@
     "ui/settings/fingerprint-section.ts": 4,
     "ui/settings/knowledge-section.ts": 4,
     "ui/settings/mode-section.ts": 3,
-    "ui/settlement-recovery-modal.ts": 15,
+    "ui/settlement-recovery-modal.ts": 11,
     "ui/sidebar-component.ts": 6,
     "ui/states/chapter-state-manager.ts": 24,
     "ui/step-result-viewer-modal.ts": 24,
@@ -198,7 +198,7 @@
     "ui/views/memory-graph-view.ts": 23,
     "ui/views/planning-canvas-view.ts": 52,
     "ui/views/writing-fingerprint-view.ts": 26,
-    "ui/volume-intro-modal.ts": 74,
+    "ui/volume-intro-modal.ts": 73,
     "ui/welcome-modal.ts": 27,
     "ui/wizard-checker.ts": 95,
     "ui/writing-stats-modal.ts": 33,
@@ -206,7 +206,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 5456,
+  "total": 5445,
   "updatedAt": "2026-11-19",
   "note": ""
 }

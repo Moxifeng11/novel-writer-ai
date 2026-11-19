@@ -189,7 +189,7 @@ export class McpServerFormModal extends Modal {
                 .setDisabled(this.testing)
                 .onClick(() => void this.runProbe()))
             .addButton(button => button
-                .setButtonText('保存')
+                .setButtonText('💾 保存')
                 .setCta()
                 .onClick(() => void this.save()));
     }

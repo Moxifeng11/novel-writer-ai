@@ -1704,6 +1704,25 @@ export const enUS: MessageTree = {
     common: {
         cancel: 'Cancel',
         confirm: 'OK',
+        confirmTitle: 'Please confirm',
+        confirmTexts: {
+            rebuildChapters: {
+                title: 'Rebuild chapters {start}-{end} ({total} in total)?',
+                desc: '✅ Existing body text, analysis reports and filled plans/outlines are kept; 🔄 only empty/placeholder skeletons are rebuilt.',
+                warning: '🗂 Ledger rows are backed up to _versions/rebuild before cleanup.',
+            },
+            recoverSettlement: {
+                title: 'Recover now?',
+                descChapter: 'Recover "{chapter}"? Changes written by settlement will be rolled back from the journal.',
+                descAll: 'Recover all {count} chapter(s)? Changes written by settlement will be rolled back from the journal.',
+            },
+            deleteVolumeVersion: {
+                title: 'Delete version {id}?',
+                desc: 'This cannot be undone; body text already written is not affected.',
+                warning: 'To keep a copy, apply the current version before deleting older ones.',
+            },
+        },
+        bodySaved: '✅ Body text saved',
         close: 'Close',
         refresh: 'Refresh',
         loading: 'Loading…',

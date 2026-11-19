@@ -15,6 +15,7 @@ import type NovelWriterPlugin from '@/main';
 import { getChaptersForProject } from '@/ui/project-utils';
 import { listProjectIds } from '@/shared/project-catalog';
 import { describeMissingChapter, summarizeMaintenanceResult } from '@/shared/maintenance-model';
+import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
 
 /** 当前运行中的动作 */
 type BusyAction = '' | 'sync' | 'assertions' | 'probe' | 'scene';
@@ -193,18 +194,17 @@ export class AdvancedMaintenanceModal extends Modal {
                 .setButtonText('执行并落盘')
                 .setWarning()
                 .setDisabled(disabled)
-                .onClick(() => {
+                .onClick(async () => {
                     const missing = describeMissingChapter('场景循环生成', this.chapter);
                     if (missing) {
                         new Notice(missing, 5000);
                         return;
                     }
-                    const confirmed = window.confirm(
-                        `确认用「场景循环」重新生成并覆盖「${this.chapter}」的正文？\n\n`
-                        + '· 会调用 AI 逐场生成，然后合并写入正文\n'
-                        + '· 覆盖前会走备份，失败场景不会写入\n'
-                        + '· 建议先用「预览」确认场景数量与人物解析',
-                    );
+                    const confirmed = await OperationConfirmModal.confirm(this.app, {
+                        title: `用「场景循环」重新生成「${this.chapter}」？`,
+                        description: '会调用 AI 逐场生成，然后合并写入正文；覆盖前会走备份，失败场景不会写入。',
+                        warning: '建议先用「预览」确认场景数量与人物解析。',
+                    });
                     if (!confirmed) return;
                     void this.run('scene', () => this.plugin.generateChapterBySceneLoop(this.project, this.chapter, false));
                 }));

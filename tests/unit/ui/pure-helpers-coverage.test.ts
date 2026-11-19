@@ -567,7 +567,8 @@ describe('notice-helpers（notice-helpers.ts）', () => {
         expect(() => showWarningNotice('care')).not.toThrow();
 
         expect(noticeCalls.map(c => c.message)).toEqual(['❌ 操作失败\nboom', '✅ 完成\ndone', '⚠️ 注意\ncare']);
-        expect(noticeCalls.every(c => c.timeout === undefined)).toBe(true);
+        // 时长默认值按类别分档（审计 A-11）：错误 8000、成功/告警 4000
+        expect(noticeCalls.map(c => c.timeout)).toEqual([8000, 4000, 4000]);
     });
 
     it('自定义 title/detail/timeout 逐行拼入纯文本并透传 timeout', () => {

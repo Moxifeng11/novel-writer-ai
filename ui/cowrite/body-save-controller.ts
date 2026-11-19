@@ -3,6 +3,7 @@ import { t } from '@/i18n';
 import type { SaveState } from '@/ui/co-writing/save-state';
 import { BodyWriter } from '@/engine/body-writer';
 import { createLogger } from '@/shared/logger';
+import { SAVE_FEEDBACK_MS } from '@/shared/interaction-timing';
 
 const log = createLogger('BodySaveController');
 
@@ -190,8 +191,8 @@ export class BodySaveController {
             if (!this.host.isSameChapterIdentity(identity)) return true;
             this.host.updateControlState('saved');
             this.host.onSaved();
-            if (showNotice)
-                new Notice(t("cowrite.save.savedNotice"), 3e3);
+            // 与单元写作台同一口径（审计 A-2）：同一条「已保存」提示、同一时长
+            if (showNotice) new Notice(t('common.bodySaved'), SAVE_FEEDBACK_MS);
             return true;
         } catch (e) {
             log.warn("[CoWritingView] 保存失败:", e);

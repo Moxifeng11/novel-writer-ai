@@ -12,6 +12,8 @@
 import { Modal, Notice, Setting } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import { listProjectIds } from '@/shared/project-catalog';
+import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
+import { t } from '@/i18n';
 import {
     describeSettlementOutcome,
     describeSettlementPreview,
@@ -80,9 +82,15 @@ export class SettlementRecoveryModal extends Modal {
             return;
         }
         const summary = chapterName
-            ? `确认恢复「${chapterName}」？将按日志回滚结算写入的改动。`
-            : `确认恢复全部 ${preview.length} 个章节？将按日志回滚结算写入的改动。`;
-        if (!window.confirm(summary)) return;
+            ? t('common.confirmTexts.recoverSettlement.descChapter', { chapter: chapterName })
+            : t('common.confirmTexts.recoverSettlement.descAll', { count: preview.length });
+        const confirmed = await OperationConfirmModal.confirm(this.app, {
+            title: t('common.confirmTexts.recoverSettlement.title'),
+            description: summary,
+            confirmText: t('common.confirm'),
+            cancelText: t('common.cancel'),
+        });
+        if (!confirmed) return;
         this.busy = true;
         this.render();
         try {

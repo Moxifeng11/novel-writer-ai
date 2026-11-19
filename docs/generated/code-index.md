@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146934 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19560 | 296 | 204 | 69% |
-| `shared/` | 261 | 52428 | 2215 | 1733 | 78% |
+| `shared/` | 262 | 52668 | 2224 | 1741 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 304 | 113556 | 1180 | 943 | 80% |
+| `ui/` | 304 | 113640 | 1180 | 943 | 80% |
 
 ## 文件清单
 
@@ -510,6 +510,7 @@
 | `shared/embedding-provider.ts` | 43 | 4 | 4 |
 | `shared/emotion-plan-parse.ts` | 78 | 2 | 2 |
 | `shared/endpoint-key.ts` | 30 | 1 | 1 |
+| `shared/engine-msg-codes.ts` | 142 | 2 | 1 |
 | `shared/engine-names.ts` | 57 | 1 | 1 |
 | `shared/entity-audit.ts` | 96 | 4 | 4 |
 | `shared/entity-field-mappings.ts` | 223 | 10 | 10 |
@@ -554,7 +555,7 @@
 | `shared/info-debt.ts` | 70 | 3 | 3 |
 | `shared/info-plan-fields.ts` | 167 | 3 | 3 |
 | `shared/injection-ledger.ts` | 345 | 12 | 9 |
-| `shared/interaction-timing.ts` | 17 | 1 | 0 |
+| `shared/interaction-timing.ts` | 48 | 3 | 2 |
 | `shared/internal-registry.ts` | 44 | 1 | 1 |
 | `shared/iterative-refine.ts` | 165 | 6 | 6 |
 | `shared/keyboard.ts` | 29 | 1 | 1 |
@@ -574,7 +575,7 @@
 | `shared/mcp-file-browse.ts` | 183 | 7 | 5 |
 | `shared/mcp-launch.ts` | 173 | 8 | 5 |
 | `shared/memory-rank.ts` | 104 | 4 | 4 |
-| `shared/mode-content.ts` | 448 | 19 | 19 |
+| `shared/mode-content.ts` | 496 | 23 | 23 |
 | `shared/mode-unit-outline.ts` | 87 | 2 | 2 |
 | `shared/model-capabilities.ts` | 168 | 11 | 9 |
 | `shared/model-pricing.ts` | 266 | 10 | 6 |
@@ -599,7 +600,7 @@
 | `shared/plugin-leaves.ts` | 34 | 2 | 1 |
 | `shared/plugin-worker-url.ts` | 239 | 9 | 6 |
 | `shared/post-generation-check-model.ts` | 102 | 7 | 3 |
-| `shared/pre-research.ts` | 464 | 17 | 17 |
+| `shared/pre-research.ts` | 477 | 18 | 18 |
 | `shared/prereq-check.ts` | 51 | 3 | 2 |
 | `shared/preview-kind.ts` | 37 | 2 | 2 |
 | `shared/preview-scroll.ts` | 59 | 4 | 3 |
@@ -691,7 +692,7 @@
 | `shared/true-random.ts` | 134 | 3 | 3 |
 | `shared/tts-text.ts` | 262 | 10 | 6 |
 | `shared/types.ts` | 729 | 48 | 11 |
-| `shared/ui-message.ts` | 123 | 6 | 4 |
+| `shared/ui-message.ts` | 129 | 6 | 4 |
 | `shared/unit-card-model.ts` | 306 | 13 | 9 |
 | `shared/unit-context-prompt.ts` | 119 | 4 | 4 |
 | `shared/unload-barrier.ts` | 72 | 1 | 0 |
@@ -719,11 +720,11 @@
 | `shared/writing-rules.ts` | 105 | 2 | 1 |
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
-| `ui/add-fanfic-setting-modal.ts` | 796 | 1 | 1 |
+| `ui/add-fanfic-setting-modal.ts` | 805 | 1 | 1 |
 | `ui/advanced-maintenance-modal.ts` | 222 | 1 | 1 |
 | `ui/agent-workbench-view.ts` | 1847 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 140 | 6 | 6 |
-| `ui/ai-builder-modal.ts` | 1142 | 1 | 1 |
+| `ui/ai-builder-modal.ts` | 1147 | 1 | 1 |
 | `ui/appearance-settings.ts` | 604 | 3 | 3 |
 | `ui/asset-registry-modal.ts` | 151 | 1 | 1 |
 | `ui/backup-center-modal.ts` | 244 | 1 | 1 |
@@ -738,7 +739,7 @@
 | `ui/chapter-version-modal.ts` | 658 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |
-| `ui/co-writing-view.ts` | 3973 | 3 | 2 |
+| `ui/co-writing-view.ts` | 4001 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 167 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 248 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
@@ -788,7 +789,7 @@
 | `ui/components/empty-state.ts` | 147 | 3 | 1 |
 | `ui/components/error-state.ts` | 57 | 3 | 3 |
 | `ui/components/modal-dirty-guard.ts` | 107 | 1 | 1 |
-| `ui/components/notice-helpers.ts` | 156 | 3 | 3 |
+| `ui/components/notice-helpers.ts` | 160 | 3 | 3 |
 | `ui/components/progress/index.ts` | 28 | 4 | 0 |
 | `ui/components/progress/loading-overlay.ts` | 205 | 2 | 2 |
 | `ui/components/progress/operation-confirm-modal.ts` | 323 | 2 | 2 |
@@ -801,7 +802,7 @@
 | `ui/context-injector-modal.ts` | 210 | 1 | 1 |
 | `ui/context-metrics-modal.ts` | 82 | 1 | 1 |
 | `ui/continue-chapters-modal.ts` | 567 | 1 | 1 |
-| `ui/cowrite/body-save-controller.ts` | 283 | 3 | 2 |
+| `ui/cowrite/body-save-controller.ts` | 284 | 3 | 2 |
 | `ui/cowrite/cowrite-mappers.ts` | 111 | 6 | 6 |
 | `ui/cowrite/history-modal.ts` | 56 | 1 | 1 |
 | `ui/cowrite/insert-range.ts` | 86 | 4 | 4 |
@@ -837,7 +838,7 @@
 | `ui/full-writer/checkup-bar-controller.ts` | 287 | 2 | 2 |
 | `ui/full-writer/context-loader-controller.ts` | 275 | 2 | 2 |
 | `ui/full-writer/cover-picker-controller.ts` | 146 | 1 | 1 |
-| `ui/full-writer/creation-flow-state.ts` | 262 | 5 | 4 |
+| `ui/full-writer/creation-flow-state.ts` | 259 | 5 | 4 |
 | `ui/full-writer/entity-state-controller.ts` | 136 | 2 | 2 |
 | `ui/full-writer/execution-panels.ts` | 391 | 4 | 4 |
 | `ui/full-writer/execution-run-store.ts` | 280 | 5 | 5 |
@@ -863,8 +864,8 @@
 | `ui/full-writer/title-bar-controller.ts` | 196 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |
-| `ui/full-writer/unit-writer-controller.ts` | 797 | 2 | 2 |
-| `ui/full-writer/wizard-controller.ts` | 421 | 1 | 1 |
+| `ui/full-writer/unit-writer-controller.ts` | 800 | 2 | 2 |
+| `ui/full-writer/wizard-controller.ts` | 427 | 1 | 1 |
 | `ui/full-writer/wizard-results-store.ts` | 81 | 1 | 1 |
 | `ui/full-writer/wizard-step-executors.ts` | 374 | 1 | 1 |
 | `ui/full-writer/wizard-step-logic.ts` | 78 | 6 | 5 |
@@ -903,7 +904,7 @@
 | `ui/monitor-panel-a.ts` | 200 | 2 | 2 |
 | `ui/monitor-panel-b.ts` | 1891 | 2 | 2 |
 | `ui/novel-analysis-modal.ts` | 267 | 1 | 1 |
-| `ui/novel-tags-modal.ts` | 336 | 1 | 1 |
+| `ui/novel-tags-modal.ts` | 341 | 1 | 1 |
 | `ui/onboarding-modal.ts` | 318 | 1 | 1 |
 | `ui/outline-expand-modal.ts` | 990 | 2 | 1 |
 | `ui/panel-resizer.ts` | 260 | 4 | 3 |
@@ -926,7 +927,7 @@
 | `ui/protect-yuan-modal.ts` | 87 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 504 | 2 | 2 |
 | `ui/quality-loop-modal.ts` | 294 | 1 | 1 |
-| `ui/rebuild-chapters-modal.ts` | 353 | 1 | 1 |
+| `ui/rebuild-chapters-modal.ts` | 361 | 1 | 1 |
 | `ui/refill-modal.ts` | 650 | 1 | 1 |
 | `ui/rename-project-modal.ts` | 105 | 1 | 1 |
 | `ui/rendering/context-panel.ts` | 957 | 1 | 1 |
@@ -961,7 +962,7 @@
 | `ui/settings/settings-search.ts` | 289 | 10 | 6 |
 | `ui/settings/setup-section.ts` | 136 | 1 | 1 |
 | `ui/settings/writing-sections.ts` | 852 | 6 | 6 |
-| `ui/settlement-recovery-modal.ts` | 141 | 1 | 1 |
+| `ui/settlement-recovery-modal.ts` | 149 | 1 | 1 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 403 | 1 | 1 |
 | `ui/step-result-viewer-modal.ts` | 442 | 1 | 1 |
@@ -976,7 +977,7 @@
 | `ui/tts/tts-player.ts` | 428 | 4 | 2 |
 | `ui/tts/tts-speech.ts` | 164 | 5 | 1 |
 | `ui/unified-entity-generate-modal.ts` | 865 | 1 | 1 |
-| `ui/unified-entity-manager-modal.ts` | 754 | 1 | 1 |
+| `ui/unified-entity-manager-modal.ts` | 755 | 1 | 1 |
 | `ui/usage-ledger-modal.ts` | 202 | 1 | 1 |
 | `ui/utils/worldview-utils.ts` | 103 | 1 | 1 |
 | `ui/vector-rebuild-action.ts` | 148 | 1 | 1 |
@@ -1013,7 +1014,7 @@
 | `ui/views/memory-graph-view.ts` | 289 | 3 | 2 |
 | `ui/views/planning-canvas-view.ts` | 954 | 4 | 3 |
 | `ui/views/writing-fingerprint-view.ts` | 2019 | 3 | 3 |
-| `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
+| `ui/volume-intro-modal.ts` | 514 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |
 | `ui/workspace-manager.ts` | 139 | 2 | 2 |

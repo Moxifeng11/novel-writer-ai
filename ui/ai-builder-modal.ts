@@ -24,6 +24,7 @@ import { mergeFanficRequirement } from '@/shared/fanfic-rules';
 import { readFanficPromptBlockWithNotice } from './fanfic-prompt-notice';
 import { UnifiedEntityGenerateModal } from './unified-entity-generate-modal';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
+import { OperationConfirmModal } from './components/progress/operation-confirm-modal';
 
 // ── 实体类型配置 ──
 interface EntityTypeConfig {
@@ -535,7 +536,11 @@ export class AiBuilderModal extends Modal {
                 const savePath = pjWorldview(this.selectedProject);
                 const existingFile = this.app.vault.getAbstractFileByPath(savePath);
                 if (existingFile) {
-                    const ok = window.confirm(t("aiBuilder.flow.worldviewOverwriteConfirm"));
+                    const ok = await OperationConfirmModal.confirm(this.app, {
+                        title: t('common.confirmTitle'),
+                        description: t("aiBuilder.flow.worldviewOverwriteConfirm"),
+                        cancelText: t('common.cancel'),
+                    });
                     if (!ok) { genNotice.hide(); return; }
                 }
 

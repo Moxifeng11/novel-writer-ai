@@ -12,6 +12,7 @@ import { CREATION_MODE_SPECS, parseCreationModeMeta } from '@/shared/creation-mo
 import { readProjectMeta } from '@/shared/paths';
 import {
     listModeUnits,
+    modeDocKinds,
     modeDocPath,
     modeDocStarter,
     SCRIPT_CONTENT_ROOT,
@@ -108,14 +109,10 @@ function hasWizardResults(results: Record<string, string>): boolean {
 }
 
 async function readDocFacts(app: App, project: string, mode: CreationMode): Promise<CreationFlowDocFacts> {
-    const kinds: Array<'storyCore' | 'outline' | 'bible' | 'storyboard'> = mode === 'script'
-        ? ['bible', 'outline', 'storyboard']
-        : mode === 'short'
-            ? ['storyCore', 'outline']
-            : [];
-
+    // 文档清单来自 shared/mode-content 的 MODE_DOC_SPECS（单一真源，审计 B9 / C 清单 #11），
+    // 不再在这里手写三元组：改名漏改一处就会静默判定「阶段未完成」。
     const facts: CreationFlowDocFacts = {};
-    for (const kind of kinds) {
+    for (const kind of modeDocKinds(mode)) {
         const path = modeDocPath(project, mode, kind);
         try {
             if (!(await app.vault.adapter.exists(path))) {

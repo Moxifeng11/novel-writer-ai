@@ -11,6 +11,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { setLocale } from '../../../i18n';
 import { isUiMessage, resolveUiMessage, uiMessage, type UiMessage } from '../../../shared/ui-message';
+import type { EngineMsgCode } from '../../../shared/engine-msg-codes';
 import { ReviewAgent } from '../../../engine/review-agent';
 import { resolveUiMessage as resolveAgain } from '../../../shared/ui-message';
 
@@ -35,7 +36,8 @@ describe('UiMessage 契约（i18n engine 分层①）', () => {
 
     it('未知 code 回落 fallback，且不抛错', () => {
         setLocale('en-US');
-        const msg = uiMessage('engineMsg.doesNotExist.nope', '兜底文案');
+        // 故意越界：验证「缺键不抛错」这条兜底契约，所以绕开类型（拼错在正常代码里是编译错）
+        const msg = uiMessage('engineMsg.doesNotExist.nope' as unknown as EngineMsgCode, '兜底文案');
         expect(() => resolveUiMessage(msg)).not.toThrow();
         expect(resolveUiMessage(msg)).toBe('兜底文案');
     });
@@ -46,7 +48,7 @@ describe('UiMessage 契约（i18n engine 分层①）', () => {
         const msg: UiMessage = { code: 'engineMsg.review.chapterNotFound', fallback: 'x' };
         expect(resolveUiMessage(msg)).toBeTruthy();
         // 参数透传（缺键时 params 不影响 fallback）
-        const withParams = uiMessage('engineMsg.doesNotExist.nope', '数量 {count}', { count: 3 });
+        const withParams = uiMessage('engineMsg.doesNotExist.nope' as unknown as EngineMsgCode, '数量 {count}', { count: 3 });
         expect(resolveUiMessage(withParams)).toBe('数量 {count}');
     });
 
@@ -58,7 +60,7 @@ describe('UiMessage 契约（i18n engine 分层①）', () => {
 
     it('isUiMessage 区分两种形态', () => {
         expect(isUiMessage('纯文本')).toBe(false);
-        expect(isUiMessage(uiMessage('a.b', 'x'))).toBe(true);
+        expect(isUiMessage(uiMessage('a.b' as unknown as EngineMsgCode, 'x'))).toBe(true);
     });
 
     it('fingerprint 进度消息：zh/en 都有对应文案', () => {

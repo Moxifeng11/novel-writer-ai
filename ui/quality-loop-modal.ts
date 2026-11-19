@@ -11,6 +11,7 @@ import { Modal, Notice, Setting } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import { getChaptersForProject } from '@/ui/project-utils';
 import { listProjectIds } from '@/shared/project-catalog';
+import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
 import type { QualityPanelView } from '@/services/quality-panel-service';
 import type { PostGenerationCheckReport } from '@/shared/post-generation-check-model';
 import {
@@ -129,12 +130,11 @@ export class QualityLoopModal extends Modal {
             new Notice('定向修订需要可用的 AI 凭据：请先在「连接与模型」里配置并解锁 API key', 8000);
             return;
         }
-        const confirmed = window.confirm(
-            `对「${this.chapter}」做定向修订？\n\n`
-            + `· 最多 ${this.maxRounds} 轮，每轮只改校验报告里的问题处\n`
-            + `· 修订稿通过长度/内容守卫才落盘（否则保留原稿）\n`
-            + `· 会消耗 ${this.maxRounds} 次以内的正文调用额度`,
-        );
+        const confirmed = await OperationConfirmModal.confirm(this.app, {
+            title: `对「${this.chapter}」做定向修订？`,
+            description: `最多 ${this.maxRounds} 轮，每轮只改校验报告里的问题处；修订稿通过长度/内容守卫才落盘（否则保留原稿）。`,
+            warning: `会消耗 ${this.maxRounds} 次以内的正文调用额度。`,
+        });
         if (!confirmed) return;
         this.busy = 'revise';
         this.render();

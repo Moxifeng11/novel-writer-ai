@@ -11,6 +11,7 @@ import { isFanficSettingsContentValidEnough } from './fanfic-settings-utils';
 import { parseProjectMeta } from '@/shared/fanfic-rules';
 import { validateWizardStepContent } from './wizard-step-validators';
 import { parseStorySettingsFromProjectMeta } from '@/shared/story-structure';
+import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
 
 /**
  * WizardController — 向导子系统控制器
@@ -379,8 +380,13 @@ export class WizardController {
             const retryBtn = rightGroup.createEl('button', { text: t('cowrite.wiz.regenerate'), cls: 'nw-wizard-nav-btn-primary' });
             retryBtn.addEventListener('click', () => this.stepExecutors.executeWizardStep(tab, step));
             const skipBtn = rightGroup.createEl('button', { text: t('cowrite.wiz.skipStepBtn'), cls: 'nw-wizard-nav-btn-warning' });
-            skipBtn.addEventListener('click', () => {
-                const ok = window.confirm(t('cowrite.wiz.skipConfirm', { step: step.label }));
+            skipBtn.addEventListener('click', async () => {
+                const ok = await OperationConfirmModal.confirm(this.view.app, {
+                    title: t('common.confirmTitle'),
+                    description: t('cowrite.wiz.skipConfirm', { step: step.label }),
+                    confirmText: t('cowrite.wiz.skipStepBtn'),
+                    cancelText: t('common.cancel'),
+                });
                 if (ok) this.skipStep(tab, step);
             });
         }
