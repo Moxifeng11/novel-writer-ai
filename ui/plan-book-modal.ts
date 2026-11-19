@@ -1,4 +1,5 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
+import { ModalDirtyGuard } from '@/ui/components/modal-dirty-guard';
 import { withButtonBusy } from '@/ui/button-busy';
 import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
@@ -23,6 +24,8 @@ const MAX_ENTITY_SUMMARY_LENGTH = 400;
  * 计划书籍弹窗。
  */
 export class PlanBookModal extends Modal {
+    /** 未保存修改守卫（审计 A-5 / C#3）：自定义提示词与三参数此前 Esc 直接丢 */
+    private dirtyGuard = new ModalDirtyGuard();
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
     private contextManager: ContextManager;
@@ -103,6 +106,7 @@ export class PlanBookModal extends Modal {
                 cls: 'nw-input novel-writer-input',
                 value: lastParams?.totalChars || t('planBook.totalCharsDefault')
             });
+            totalCharsInput.addEventListener('input', () => this.dirtyGuard.markDirty());
 
             const volCountRow = paramsSection.createDiv({ cls: 'novel-writer-input-row' });
             volCountRow.createEl('label', { text: t('planBook.volCountLabel'), cls: 'novel-writer-input-label' });
@@ -112,6 +116,7 @@ export class PlanBookModal extends Modal {
                 cls: 'nw-input novel-writer-input',
                 value: lastParams?.volCount || '3'
             });
+            volCountInput.addEventListener('input', () => this.dirtyGuard.markDirty());
 
             const chapWordsRow = paramsSection.createDiv({ cls: 'novel-writer-input-row' });
             chapWordsRow.createEl('label', { text: t('planBook.chapWordsLabel'), cls: 'novel-writer-input-label' });
@@ -121,6 +126,7 @@ export class PlanBookModal extends Modal {
                 cls: 'nw-input novel-writer-input',
                 value: lastParams?.chapWords || '2500'
             });
+            chapWordsInput.addEventListener('input', () => this.dirtyGuard.markDirty());
 
             // 上下文预览区域
             const contextSection = contentEl.createDiv({ cls: 'novel-writer-plan-section' });
@@ -135,6 +141,7 @@ export class PlanBookModal extends Modal {
                 cls: 'nw-textarea novel-writer-textarea',
                 attr: { rows: '5', placeholder: t('planBook.customPromptPlaceholder') }
             });
+            customPromptInput.addEventListener('input', () => this.dirtyGuard.markDirty());
 
             // 预设提示词（点击即插入）
             const presetSection = promptSection.createDiv({ cls: 'novel-writer-preset-section' });
@@ -176,6 +183,7 @@ export class PlanBookModal extends Modal {
             };
 
             const planButton = contentEl.createEl('button', { text: t('planBook.generateBtn'), cls: 'nw-btn nw-btn-primary novel-writer-primary-button', attr: { title: '生成全书规划（分卷大纲 + 章节分配）' } });
+            this.dirtyGuard.attach(this, this.app);
             planButton.onclick = () => withButtonBusy(planButton, t("planBook.generating"), async () => {
                 const project = projectSelect.value;
                 const totalChars = totalCharsInput.value;

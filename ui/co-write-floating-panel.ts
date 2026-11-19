@@ -36,6 +36,10 @@ import { isImeComposing } from '@/shared/keyboard';
 
 
 const log = createLogger('CoWriteFloatingPanel');
+/** 自动保存防抖键（与主视图同节拍 2000ms，A-4 统一前的对齐值） */
+const FLOATING_AUTOSAVE_KEY = 'floating-auto-save';
+const FLOATING_AUTOSAVE_DELAY = 2000;
+
 /**
  * 浮动协同面板视图类型。
  */
@@ -44,10 +48,6 @@ export const VIEW_TYPE_FLOAT_COWRITE = "nw-float-cowrite";
 /**
  * 浮动协同面板。
  */
-/** 自动保存防抖键（与主视图同节拍 2000ms，A-4 统一前的对齐值） */
-const FLOATING_AUTOSAVE_KEY = 'floating-auto-save';
-const FLOATING_AUTOSAVE_DELAY = 2000;
-
 export class CoWriteFloatingPanel extends DraggablePanel {
   // === DOM 容器 ===
   private rightEditor!: HTMLTextAreaElement;
@@ -94,6 +94,12 @@ export class CoWriteFloatingPanel extends DraggablePanel {
   private suggestBtn: HTMLButtonElement | null = null;
   private actionButtons: HTMLButtonElement[] = [];
 
+  /**
+   * 构造浮动协同面板。
+   *
+   * @param leaf - 工作区叶子
+   * @param plugin - 插件实例
+   */
   constructor(leaf: WorkspaceLeaf, plugin: NovelWriterPlugin) {
     super(leaf, plugin, "cowrite", "\u270D\uFE0F \u534F\u540C\u5199\u4F5C\u6D6E\u7A97", "pen-nib");
     this.engine = plugin.coWriterEngine;

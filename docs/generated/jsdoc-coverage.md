@@ -9,7 +9,7 @@
 | `engine/` | 337 | 1925 | 1924 | 100% | 1253 | 1253 | 100% | 0 |
 | `services/` | 65 | 295 | 295 | 100% | 310 | 310 | 100% | 0 |
 | `shared/` | 257 | 2216 | 2215 | 100% | 159 | 159 | 100% | 0 |
-| `ui/` | 302 | 1171 | 1171 | 100% | 688 | 687 | 100% | 0 |
+| `ui/` | 303 | 1172 | 1172 | 100% | 691 | 689 | 100% | 0 |
 
 ## 缺口最大的文件（按未注释导出数）
 
@@ -17,6 +17,7 @@
 |---|---:|---:|---:|---:|
 | `engine/co-writer/local-model-utils.ts` | 9 | 1 | 0 | 0 |
 | `shared/degradation-notifier.ts` | 11 | 1 | 7 | 0 |
+| `ui/co-write-floating-panel.ts` | 2 | 0 | 9 | 1 |
 | `ui/settings-tab.ts` | 1 | 0 | 4 | 1 |
 | `engine/agent/agent-types.ts` | 23 | 0 | 0 | 0 |
 | `engine/agent/conversation-engine.ts` | 1 | 0 | 5 | 0 |
@@ -44,7 +45,6 @@
 | `engine/agent/harness/repair-tools.ts` | 11 | 0 | 0 | 0 |
 | `engine/agent/harness/session-log.ts` | 1 | 0 | 10 | 0 |
 | `engine/agent/harness/session-snapshot.ts` | 11 | 0 | 0 | 0 |
-| `engine/agent/harness/skill-tools.ts` | 1 | 0 | 0 | 0 |
 
 ## @example 覆盖（公共入口）
 
@@ -74,6 +74,7 @@
 | `ui/components/emotion-curve-view.ts` | 1 | 1 | 100% | — |
 | `ui/components/empty-state.ts` | 1 | 1 | 100% | — |
 | `ui/components/error-state.ts` | 1 | 1 | 100% | — |
+| `ui/components/modal-dirty-guard.ts` | 1 | 1 | 100% | — |
 | `ui/components/notice-helpers.ts` | 3 | 3 | 100% | — |
 | `ui/components/progress/loading-overlay.ts` | 1 | 1 | 100% | — |
 | `ui/components/progress/operation-confirm-modal.ts` | 1 | 1 | 100% | — |

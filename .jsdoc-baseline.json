@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-19T03:54:58.876Z",
+  "generatedAt": "2026-11-19T18:43:30.697Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
@@ -20,8 +20,8 @@
     },
     "shared": {
       "files": 257,
-      "exports": 2202,
-      "documented": 2201,
+      "exports": 2216,
+      "documented": 2215,
       "methods": 159,
       "methodsDocumented": 159,
       "incomplete": 0
@@ -43,11 +43,11 @@
       "incomplete": 0
     },
     "ui": {
-      "files": 302,
-      "exports": 1171,
-      "documented": 1171,
-      "methods": 688,
-      "methodsDocumented": 687,
+      "files": 303,
+      "exports": 1172,
+      "documented": 1172,
+      "methods": 691,
+      "methodsDocumented": 689,
       "incomplete": 0
     }
   },
@@ -3163,8 +3163,8 @@
       "incomplete": 0
     },
     "shared/creation-mode.ts": {
-      "exports": 22,
-      "documented": 22,
+      "exports": 25,
+      "documented": 25,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -4344,8 +4344,8 @@
       "incomplete": 0
     },
     "shared/story-structure.ts": {
-      "exports": 23,
-      "documented": 23,
+      "exports": 34,
+      "documented": 34,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -4981,7 +4981,7 @@
       "exports": 2,
       "documented": 2,
       "methods": 9,
-      "methodsDocumented": 9,
+      "methodsDocumented": 8,
       "incomplete": 0
     },
     "ui/co-writing/asset-status.ts": {
@@ -5339,6 +5339,15 @@
       "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
+    },
+    "ui/components/modal-dirty-guard.ts": {
+      "exports": 1,
+      "documented": 1,
+      "methods": 3,
+      "methodsDocumented": 3,
       "incomplete": 0,
       "exampleTargets": 1,
       "examplesDocumented": 1

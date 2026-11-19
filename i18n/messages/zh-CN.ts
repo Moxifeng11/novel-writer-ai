@@ -1070,6 +1070,12 @@ export const zhCN: MessageTree = {
             projectCreated: '项目已创建：{project}。下一步在「创作流程」里写大纲与正文',
         },
     },
+    modalGuard: {
+            title: '有未保存的修改',
+            description: '关闭将丢失本次编辑的内容。确定丢弃并关闭吗？',
+            discard: '丢弃并关闭',
+            keep: '留在此页继续编辑',
+    },
     engineMsg: {
         review: {
             chapterNotFound: '❌ 未找到章节文件',

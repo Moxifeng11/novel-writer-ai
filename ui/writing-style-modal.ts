@@ -1,4 +1,5 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
+import { ModalDirtyGuard } from '@/ui/components/modal-dirty-guard';
 import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { ensureWritingStyleFolder, findWritingStyleFile, getWritingStyleWritePath } from './writing-style-paths';
@@ -32,6 +33,8 @@ const WS_SECTIONS = [
  * WritingStyleModal 类。
  */
 export class WritingStyleModal extends Modal {
+    /** 未保存修改守卫（审计 A-5 / C#3）：42 个可编辑 Modal 关闭即丢的问题，本弹窗表单八节内容最重 */
+    private dirtyGuard = new ModalDirtyGuard();
     private plugin: NovelWriterPlugin;
     private project: string;
     private onSaved?: () => void;
@@ -48,6 +51,7 @@ export class WritingStyleModal extends Modal {
      * onOpen 方法。
      */
     onOpen(): void {
+        this.dirtyGuard.attach(this, this.app);
     this.modalEl.addClass('nw-scope');
         const { contentEl } = this;
 
@@ -200,6 +204,7 @@ export class WritingStyleModal extends Modal {
                 style: 'width:100%; min-height:160px; resize:vertical; font-size:0.85em; border-radius:4px;',
             },
         });
+        sampleArea.addEventListener('input', () => this.dirtyGuard.markDirty());
         this.inputs.set('sample', sampleArea);
 
         for (const sec of WS_SECTIONS) {
@@ -213,6 +218,7 @@ export class WritingStyleModal extends Modal {
                     style: `width:100%; min-height:${sec.rows * 28}px; resize:vertical; font-size:0.85em; border-radius:4px;`,
                 },
             });
+            textarea.addEventListener('input', () => this.dirtyGuard.markDirty());
             this.inputs.set(sec.key, textarea);
         }
 
@@ -226,7 +232,7 @@ export class WritingStyleModal extends Modal {
             text: t('writingStyle.cancel'),
             attr: { style: 'padding:8px 16px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); border-radius:4px; cursor:pointer;' },
         });
-        cancelBtn.addEventListener('click', () => this.close());
+        cancelBtn.addEventListener('click', () => { this.dirtyGuard.markClean(); this.close(); });
 
         const saveBtn = btnRow.createEl('button', {
             text: t('writingStyle.save'),
@@ -518,6 +524,7 @@ ${description ? `风格补充说明：${description}` : ''}
                 await this.app.vault.create(wsPath, markdown);
             }
             new Notice(t('writingStyle.saved'), 3000);
+            this.dirtyGuard.markClean();
         } catch (e) {
             new Notice(t('writingStyle.saveFailed', { msg: (e as Error).message }), 5000);
         }

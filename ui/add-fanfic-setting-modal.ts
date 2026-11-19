@@ -1,4 +1,5 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
+import { ModalDirtyGuard } from '@/ui/components/modal-dirty-guard';
 import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { AIEngine } from '@/engine/ai-engine';
@@ -49,6 +50,8 @@ const log = createLogger('AddFanficSettingModal');
  * AddFanficSettingModal 类。
  */
 export class AddFanficSettingModal extends Modal {
+    /** 未保存修改守卫（审计 A-5 / C#3）：作品名/来源摘录等输入在 Esc 时此前直接丢弃 */
+    private dirtyGuard = new ModalDirtyGuard();
     private plugin: NovelWriterPlugin;
     private aiEngine: AIEngine;
     private generateButton: HTMLButtonElement | null = null;
@@ -195,6 +198,7 @@ export class AddFanficSettingModal extends Modal {
             cls: 'nw-textarea nw-u-minh-48px',
             attr: { rows: '3', placeholder: t("addFanfic.ui.k9") },
         });
+        excerptInput.addEventListener('input', () => this.dirtyGuard.markDirty());
 
         const row = form.createDiv({ cls: 'nw-flex-gap10-wrap' });
         const addBtn = row.createEl('button', { text: t("addFanfic.ui.k10"), cls: 'nw-btn nw-btn-secondary' });
@@ -331,7 +335,10 @@ export class AddFanficSettingModal extends Modal {
                 const path = await createFanficDraftFromTemplate(this.app, this.project, workName);
                 showSuccessNotice(t("addFanfic.flow.templateDraftCreated", { path }), { timeout: 6000 });
                 new FanficReviewModal(this.app, this.plugin, this.project, path).open();
-                this.close();
+        this.dirtyGuard.markClean();
+        this.dirtyGuard.markClean();
+            this.dirtyGuard.markClean();
+            this.close();
             } catch (error) {
                 showErrorNotice(error instanceof Error ? error.message : String(error), { title: t("addFanfic.ui.k20"), timeout: 8000 });
             }

@@ -1067,6 +1067,12 @@ export const enUS: MessageTree = {
             projectCreated: "Project created: {project}. Next, write the outline and prose in the writing flow",
         },
     },
+    modalGuard: {
+            title: 'Unsaved changes',
+            description: 'Closing will discard your edits. Discard and close?',
+            discard: 'Discard and close',
+            keep: 'Keep editing',
+    },
     engineMsg: {
         review: {
             chapterNotFound: '❌ Chapter file not found',
