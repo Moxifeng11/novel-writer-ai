@@ -11,7 +11,7 @@
 | `shared/` | 259 | 52201 | 2198 | 1718 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1583 | 88 | 58 | 66% |
-| `ui/` | 304 | 113915 | 1181 | 935 | 79% |
+| `ui/` | 304 | 113924 | 1181 | 935 | 79% |
 
 ## 文件清单
 
@@ -870,7 +870,7 @@
 | `ui/full-writer/wizard-step-validators.ts` | 151 | 2 | 2 |
 | `ui/full-writer/wizard-types.ts` | 77 | 5 | 3 |
 | `ui/full-writer/wizard-view-access.ts` | 45 | 2 | 2 |
-| `ui/generate-character-modal.ts` | 628 | 1 | 1 |
+| `ui/generate-character-modal.ts` | 637 | 1 | 1 |
 | `ui/generate-faction-modal.ts` | 375 | 1 | 1 |
 | `ui/generate-item-modal.ts` | 375 | 1 | 1 |
 | `ui/generate-location-modal.ts` | 375 | 1 | 1 |

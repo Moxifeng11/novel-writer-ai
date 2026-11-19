@@ -256,8 +256,13 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
   一律改 getter（模块级 `t()` 会锁语言）；`capability-banner.ts` 渲染器零改动；zh/en 资源各 4334 条；
   棘轮收紧到 215 文件 / 7208 条；实机 en 横幅 `1 Books / 1 Broken down / 0 Vectors ready / 1 Pending/failed`，
   zh 逐像素零差异。
-- 后续：第二期余下（知识库弹窗链 `ui/views/knowledge-base-modals.ts` 563 字；`ui/generate-character-modal.ts`
-  873 字；知识库 D 类两文件 `ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`
+- 第二期第33片（2026-11-19，DSH）：人物生成弹窗 —— `ui/generate-character-modal.ts`（119 条 / 873 字）
+  迁 `characterGen.*` 52 键（表单与下拉 13 / 进度与失败 9 / 结果管理 20 / 完整性提示 6 / 入口与实体标签 4）；
+  三条重复文案（`🚀 批量生成人物` 3 处、`✏️ 改名` 5 处、`📝 编辑` 3 处）收敛为单键；缺失字段分隔符
+  按语言走 `joinFields()`（zh `、` / en `, `）；保留 `EARLY_STAGE_HINT`、补全重试提示词、frontmatter 正则键、
+  `content.includes('身份：主角')` 与 `log.*`；zh/en 资源各 **4386** 条；棘轮收紧到 **215 文件 / 7139 条**；
+  新增 `tests/unit/i18n/character-gen-resources.test.ts` 5 例；实机 zh/en 均 647×528（英文未撑开弹窗）。
+- 后续：第二期余下（知识库弹窗链 `ui/views/knowledge-base-modals.ts` 563 字；知识库 D 类两文件 `ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`
   用户已裁定随视觉重构；散落弹窗 golden-opening 1982 / novel-tags 1099 / add-fanfic-setting 973 /
   ai-builder 864 等），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 

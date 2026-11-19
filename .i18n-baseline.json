@@ -107,7 +107,7 @@
     "ui/full-writer/wizard-step-renderers.ts": 24,
     "ui/full-writer/wizard-step-validators.ts": 12,
     "ui/full-writer/wizard-types.ts": 25,
-    "ui/generate-character-modal.ts": 111,
+    "ui/generate-character-modal.ts": 42,
     "ui/generate-faction-modal.ts": 58,
     "ui/generate-item-modal.ts": 58,
     "ui/generate-location-modal.ts": 58,
@@ -216,7 +216,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 7208,
+  "total": 7139,
   "updatedAt": "2026-11-19",
-  "note": ""
+  "note": "第33片：characterGen.* 52 键（人物生成弹窗）；215 文件 / 7139 条"
 }

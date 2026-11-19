@@ -2943,3 +2943,38 @@ kb-modals-logic 12）；`npx tsc --noEmit` EXIT=0、lint 0 error（1037 warning 
 
 **下一轮候选**：`ui/views/knowledge-base-modals.ts`（1,378 行 / 563 字 / 145 条，四个弹窗，第34片）、
 `ui/generate-character-modal.ts`（873 字，第33片）；知识库 D 类两文件按用户裁定随视觉重构。
+
+## 第一百零一轮：i18n 第二期第33片 —— 人物生成弹窗（2026-11-19，DSH）
+
+**范围**：`ui/generate-character-modal.ts`（627 行，`audit-cjk` 判 ui-copy，119 条 / 873 字）。
+选它是因为它是快捷工具「👤 生成人物」的唯一入口，英文界面下面板全英文、弹窗却整块中文。
+
+**改动**：迁 `characterGen.*` **52 键**（表单与下拉 13 / 进度与失败提示 9 / 结果管理 20 /
+完整性提示 6 / 入口与实体标签 4）。同一条文案重复多次的先收敛：
+
+- `🚀 批量生成人物` 3 处（初始按钮 + 生成中 setText + 重试后 setText）→ `characterGen.generate`；
+- `✏️ 改名` 5 处（1 处 `text:` + 4 处 `setText()`）、`📝 编辑` 3 处 → 单键；
+- 新增模块级 `joinFields(fields)`：zh 用 `、`、en 用 `, `，供三处完整性警告/降级 reason 拼字段列表。
+
+**保留中文（数据 / 模型输入）**：`EARLY_STAGE_HINT` 前期内容提示、补全重试提示词
+（「不要用待补充」）、`collectExistingEntities` 的四个目录标签（只用于拼 AI 摘要）、
+frontmatter 正则键（姓名/名称/身份/类型/所属势力/所在地点）、`content.includes('身份：主角')`、
+`/身份[：:]\s*/`、摘要格式串、全部 `log.*`。迁移后该文件非注释 CJK 只剩这 40 行。
+
+**验收**：`check:i18n` zh/en 各 **4386**、无法解析键 0、动态键 26 处、棘轮 **215 文件 / 7139 条**；
+新增 `tests/unit/i18n/character-gen-resources.test.ts` 5 例（zh 逐字含 emoji、en 插值/多行/完整性提示），
+与 `i18n-parity` 合跑 **2 文件 12 例**；`npx tsc --noEmit` EXIT=0、lint 0 error（15 warning 均存量）；
+实机 zh/en 弹窗包围盒均 **647×528**（英文文案较长但标签自身换行，容器高度未变，无需改 CSS），
+产物 `D:\nw-dev-vault\_visual-i18n33\{zh-CN,en-US}.png`，脚本 `D:\nw-tmp\snap-cg.mjs`；
+`check:bundle` main.js **6,091,830**（+5,425）、styles.css **799,303**（未变）。
+
+**坑**
+1. `text:` 与 `setText()` 是两种形态，替换脚本按 `text:` 计数会把 4 处 `setText('✏️ 改名')` 漏掉——
+   先 grep 全量再按形态替换。
+2. 模块级常量（这里是 `entityLabel` 的默认值）不能写 `t()`，改由调用点
+   `this._renderManagementPanel(t('characterGen.entityLabel'))` 传参。
+3. 中英弹窗高度一致，别预设「英文一定更长要加 CSS」——先截图再决定。
+
+**下一轮候选**：`ui/views/knowledge-base-modals.ts`（1,378 行 / 563 字 / 145 条，四个弹窗，第34片）；
+知识库 D 类两文件（`ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`）按用户裁定随视觉重构；
+散落弹窗 golden-opening 1,982 / novel-tags 1,099 / add-fanfic-setting 973 / ai-builder 864。

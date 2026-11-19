@@ -18,9 +18,15 @@ import { createLogger } from '@/shared/logger';
 import { nextFrame } from '@/shared/yield';
 import { isImeComposing } from '@/shared/keyboard';
 import { showErrorNotice, showWarningNotice } from '@/ui/components/notice-helpers';
+import { getLocale, t } from '@/i18n';
 
 
 const log = createLogger('GenerateCharacterModal');
+
+/** 缺失字段列表：中文用顿号，英文用逗号。 */
+function joinFields(fields: string[]): string {
+    return fields.join(getLocale() === 'en-US' ? ', ' : '、');
+}
 interface ManagedEntity {
     entity: BatchEntityResult;
     deleted: boolean;
@@ -90,22 +96,22 @@ export class GenerateCharacterModal extends Modal {
         contentEl.empty();
 
         const titleBar = contentEl.createDiv({ cls: 'nw-gen-modal-titlebar' });
-        titleBar.createEl('h2', { text: '👤 生成人物' });
-        const manageBtn = titleBar.createEl('button', { text: '📂 管理人物', cls: 'nw-gen-modal-manage-btn' });
+        titleBar.createEl('h2', { text: t('characterGen.title') });
+        const manageBtn = titleBar.createEl('button', { text: t('characterGen.manage'), cls: 'nw-gen-modal-manage-btn' });
 
         const projectSelect = contentEl.createEl('select', { cls: 'nw-select novel-writer-select' });
 
         manageBtn.onclick = () => {
             const project = projectSelect.value || this._currentProject;
-            if (!project) { new Notice('⚠️ 请先选择项目', 3000); return; }
+            if (!project) { new Notice(t('characterGen.selectProjectFirst'), 3000); return; }
             this.close();
-            new ExistingEntityManagerModal(this.app, this.plugin, project, SUBDIR_CHARS, '👤 人物').open();
+            new ExistingEntityManagerModal(this.app, this.plugin, project, SUBDIR_CHARS, t('characterGen.manageLabel')).open();
         };
 
         const populate = async () => {
             const projects = await this.contextManager.detectProjects();
             if (projects.length === 0) {
-                contentEl.createEl('p', { text: '❌ 未找到项目，请先创建新项目' });
+                contentEl.createEl('p', { text: t('characterGen.noProjects') });
                 return;
             }
             projects.forEach(p => projectSelect.createEl('option', { value: p, text: p }));
@@ -118,20 +124,20 @@ export class GenerateCharacterModal extends Modal {
             }
 
             const nameLabel = contentEl.createEl('label', {
-                text: '实体名称（逗号分隔，留空由 AI 自动命名）：',
+                text: t('characterGen.nameLabel'),
                 cls: 'nw-gen-modal-name-label'
             });
             const nameInput = contentEl.createEl('input', {
                 type: 'text',
-                placeholder: '如：张三, 李四, 王五',
+                placeholder: t('characterGen.namePlaceholder'),
                 cls: 'nw-input novel-writer-input'
             });
 
             const countRow = contentEl.createDiv({ cls: 'nw-gen-modal-count-row' });
-            countRow.createEl('label', { text: '生成数量：' });
+            countRow.createEl('label', { text: t('characterGen.countLabel') });
             const countInput = countRow.createEl('input', { type: 'number', value: '5', cls: 'nw-input nw-gen-modal-count-input' });
             countInput.setAttr('min', '1'); countInput.setAttr('max', '20');
-            const countHint = countRow.createEl('span', { text: '（AI 自动命名，1-20 个）', cls: 'nw-gen-modal-count-hint' });
+            const countHint = countRow.createEl('span', { text: t('characterGen.countHint'), cls: 'nw-gen-modal-count-hint' });
 
             nameInput.oninput = () => {
                 const rawNames = nameInput.value.trim();
@@ -139,19 +145,19 @@ export class GenerateCharacterModal extends Modal {
                 if (nameList.length > 0) {
                     countInput.value = String(nameList.length);
                     countInput.disabled = true;
-                    countHint.setText(`已指定 ${nameList.length} 个名称`);
+                    countHint.setText(t('characterGen.countSpecified', { count: nameList.length }));
                 } else {
                     countInput.disabled = false;
-                    countHint.setText('（AI 自动命名，1-20 个）');
+                    countHint.setText(t('characterGen.countHint'));
                 }
             };
 
             const promptLabel = contentEl.createEl('label', {
-                text: '✍️ 提示词（描述你想要的人物特点，AI 将据此生成名字和设定）',
+                text: t('characterGen.promptLabel'),
                 cls: 'nw-gen-modal-prompt-label'
             });
             const promptInput = contentEl.createEl('textarea', {
-                placeholder: '例如：\n- 主角是一个冷酷的杀手，有一个温柔的妹妹\n- 反派是曾经的恩师，因理念分歧走向对立\n- 需要 2 个主角的队友，性格互补\n- 所有人物都要符合都市悬疑风格\n\n留空则由 AI 根据世界观自由发挥',
+                placeholder: t('characterGen.promptPlaceholder'),
                 cls: 'nw-textarea novel-writer-textarea nw-gen-modal-prompt-textarea'
             });
 
@@ -162,7 +168,7 @@ export class GenerateCharacterModal extends Modal {
             const progressBarFill = progressBarTrack.createDiv({ cls: 'nw-gen-modal-progress-fill' });
 
             const generateButton = contentEl.createEl('button', {
-                text: '🚀 批量生成人物', cls: 'nw-btn nw-btn-primary novel-writer-primary-button'
+                text: t('characterGen.generate'), cls: 'nw-btn nw-btn-primary novel-writer-primary-button'
             });
 
             generateButton.onclick = async () => {
@@ -173,7 +179,7 @@ export class GenerateCharacterModal extends Modal {
                 const count = nameList.length > 0 ? nameList.length : (parseInt(countInput.value, 10) || 5);
                 const prompt = promptInput.value.trim();
 
-                if (!this.plugin.hasAiCredentials) { new Notice('❌ 请先配置 API 密钥或本地模型端点', 5000); return; }
+                if (!this.plugin.hasAiCredentials) { new Notice(t('characterGen.needCredentials'), 5000); return; }
 
                 const ctx = this.plugin._pendingEntityContext;
                 const isEarlyStage = ctx?.isEarlyStage && ctx.project === project;
@@ -204,9 +210,9 @@ export class GenerateCharacterModal extends Modal {
                 // 立即显示进度反馈，消除黑盒感
                 generateButton.disabled = true;
                 const modelName = this.plugin.settings.flashModel || this.plugin.settings.defaultModel || 'AI';
-                generateButton.setText(`⏳ 正在生成 ${count} 个人物（模型：${modelName}）...`);
+                generateButton.setText(t('characterGen.generating', { count, model: modelName }));
                 progressLabel.removeClass('nw-u-d-none');
-                progressLabel.setText(`⏳ 准备中...（模型：${modelName}）`);
+                progressLabel.setText(t('characterGen.preparing', { model: modelName }));
                 progressBarTrack.removeClass('nw-u-d-none');
                 progressBarFill.addClass('nw-progress-anim');
                 // 等一帧让进度条先渲染（后台窗口由 nextFrame 内部超时兜底，见 P0-2）
@@ -218,7 +224,7 @@ export class GenerateCharacterModal extends Modal {
                     if (wf instanceof TFile) worldView = await this.app.vault.read(wf);
                 } catch (e) { log.warn('[小说工坊] 操作异常:', e instanceof Error ? e.message : e); }
 
-                if (!worldView) { new Notice('⚠️ 未找到世界观总览，建议先生成世界观', 5000); }
+                if (!worldView) { new Notice(t('characterGen.noWorldview'), 5000); }
 
                 // 读取设定库
                 let settingLib = '';
@@ -237,7 +243,7 @@ export class GenerateCharacterModal extends Modal {
                 const existingEntities = await this.collectExistingEntities(project);
 
                 // 更新进度文字为生成中
-                progressLabel.setText(`⏳ AI 正在批量创作中...（模型：${modelName}）`);
+                progressLabel.setText(t('characterGen.creating', { model: modelName }));
 
                 let isFirstCharacter = false;
                 try {
@@ -263,17 +269,17 @@ export class GenerateCharacterModal extends Modal {
                 try {
                     result = await this.aiEngine.generateCharacters(worldView, count, effectivePrompt, undefined, isFirstCharacter, nameList, settingLib, signal, existingEntities);
                 } catch (e) {
-                    showErrorNotice(`AI调用失败: ${(e as { message?: string })?.message || e}`, { timeout: 8000 });
+                    showErrorNotice(t('characterGen.aiFailed', { message: (e as { message?: string })?.message || String(e) }), { timeout: 8000 });
                     log.error('[生成人物] AI异常:', e);
-                    generateButton.disabled = false; generateButton.setText('🚀 批量生成人物'); progressLabel.addClass('nw-u-d-none'); progressBarTrack.addClass('nw-u-d-none'); progressBarFill.removeClass('nw-progress-anim');
+                    generateButton.disabled = false; generateButton.setText(t('characterGen.generate')); progressLabel.addClass('nw-u-d-none'); progressBarTrack.addClass('nw-u-d-none'); progressBarFill.removeClass('nw-progress-anim');
                     return;
                 }
 
                 if (signal.aborted) { log.info('[小说工坊] 生成已取消，跳过后续处理'); return; }
 
                 if (result.error) {
-                    showErrorNotice(`人物生成失败: ${result.error}`, { timeout: 8000 });
-                    generateButton.disabled = false; generateButton.setText('🚀 批量生成人物'); progressLabel.addClass('nw-u-d-none'); progressBarTrack.addClass('nw-u-d-none'); progressBarFill.removeClass('nw-progress-anim');
+                    showErrorNotice(t('characterGen.generateFailed', { message: result.error }), { timeout: 8000 });
+                    generateButton.disabled = false; generateButton.setText(t('characterGen.generate')); progressLabel.addClass('nw-u-d-none'); progressBarTrack.addClass('nw-u-d-none'); progressBarFill.removeClass('nw-progress-anim');
                     return;
                 }
 
@@ -287,7 +293,7 @@ export class GenerateCharacterModal extends Modal {
                     if (missingCount <= 0) break;
                     if (signal.aborted) { break; }
                     log.info(`[小说工坊] 人物补全第${retry + 1}轮：已有 ${characters.length}/${count}，还需 ${missingCount} 个`);
-                    new Notice(`⏳ 正在补全 ${missingCount} 个不完整人物...`, 2000);
+                    new Notice(t('characterGen.retrying', { count: missingCount }), 2000);
                     try {
                         const retryResult = await this.aiEngine.generateCharacters(
                             worldView, missingCount,
@@ -315,11 +321,14 @@ export class GenerateCharacterModal extends Modal {
                 this._abortController = null;
                 if (this._integrityFailures.length > 0) {
                     showWarningNotice(
-                        `${this._integrityFailures.length} 个人物未通过完整性校验，已丢弃（不落盘）：\n${this._integrityFailures.slice(0, 5).join('\n')}${this._integrityFailures.length > 5 ? '\n…' : ''}`,
+                        t('characterGen.integrityDropped', {
+                            count: this._integrityFailures.length,
+                            list: `${this._integrityFailures.slice(0, 5).join('\n')}${this._integrityFailures.length > 5 ? '\n…' : ''}`,
+                        }),
                         { timeout: 12000 }
                     );
                 }
-                this._renderManagementPanel('人物');
+                this._renderManagementPanel(t('characterGen.entityLabel'));
             };
         };
         populate();
@@ -330,11 +339,11 @@ export class GenerateCharacterModal extends Modal {
         contentEl.empty();
 
         const header = contentEl.createDiv({ cls: 'nw-gen-modal-mgmt-header' });
-        header.createEl('h3', { text: '📋 生成结果管理' });
+        header.createEl('h3', { text: t('characterGen.managementTitle') });
         const activeCount = this._pendingResults.filter(r => !r.deleted).length;
         const deletedCount = this._pendingResults.filter(r => r.deleted).length;
         header.createEl('span', {
-            text: `${activeCount} 待保存${deletedCount > 0 ? ` / ${deletedCount} 已删除` : ''}`,
+            text: t('characterGen.pendingSave', { active: activeCount }) + (deletedCount > 0 ? t('characterGen.deletedSuffix', { count: deletedCount }) : ''),
             cls: 'nw-gen-modal-mgmt-count'
         });
 
@@ -346,32 +355,32 @@ export class GenerateCharacterModal extends Modal {
             const titleRow = card.createDiv({ cls: 'nw-gen-modal-title-row' });
 
             if (managed.deleted) {
-                titleRow.createEl('span', { text: `🗑️ ${managed.entity.name}`, cls: 'nw-gen-modal-deleted-name' });
+                titleRow.createEl('span', { text: t('characterGen.deletedName', { name: managed.entity.name }), cls: 'nw-gen-modal-deleted-name' });
             } else {
-                const nameSpan = titleRow.createEl('span', { text: `👤 ${managed.entity.name}`, cls: 'nw-gen-modal-entity-name' });
-                const renameBtn = titleRow.createEl('button', { text: '✏️ 改名', cls: 'nw-gen-modal-sm-btn' });
+                const nameSpan = titleRow.createEl('span', { text: t('characterGen.entityName', { name: managed.entity.name }), cls: 'nw-gen-modal-entity-name' });
+                const renameBtn = titleRow.createEl('button', { text: t('characterGen.rename'), cls: 'nw-gen-modal-sm-btn' });
                 renameBtn.onclick = () => {
                     const existing = card.querySelector('.rename-inline');
-                    if (existing) { existing.remove(); renameBtn.setText('✏️ 改名'); return; }
-                    renameBtn.setText('✏️ 收起');
+                    if (existing) { existing.remove(); renameBtn.setText(t('characterGen.rename')); return; }
+                    renameBtn.setText(t('characterGen.renameCollapse'));
                     const inline = card.createDiv({ cls: 'rename-inline' });
                     inline.addClass('nw-gen-modal-inline-row');
                     const input = inline.createEl('input', { type: 'text', value: managed.entity.name });
                     input.addClass('nw-gen-modal-inline-input');
-                    const confirmBtn = inline.createEl('button', { text: '✅ 确认' });
+                    const confirmBtn = inline.createEl('button', { text: t('characterGen.confirm') });
                     confirmBtn.addClass('nw-gen-modal-inline-btn', 'nw-gen-modal-inline-btn-primary');
                     confirmBtn.onclick = () => {
                         const nm = input.value;
-                        if (!nm || !nm.trim()) { inline.remove(); renameBtn.setText('✏️ 改名'); return; }
+                        if (!nm || !nm.trim()) { inline.remove(); renameBtn.setText(t('characterGen.rename')); return; }
                         managed.entity.name = nm.trim();
                         managed.modified = true;
-                        nameSpan.setText(`👤 ${managed.entity.name}`);
+                        nameSpan.setText(t('characterGen.entityName', { name: managed.entity.name }));
                         inline.remove();
-                        renameBtn.setText('✏️ 改名');
+                        renameBtn.setText(t('characterGen.rename'));
                     };
-                    const cancelBtn = inline.createEl('button', { text: '取消' });
+                    const cancelBtn = inline.createEl('button', { text: t('characterGen.cancel') });
                     cancelBtn.addClass('nw-gen-modal-inline-btn');
-                    cancelBtn.onclick = () => { inline.remove(); renameBtn.setText('✏️ 改名'); };
+                    cancelBtn.onclick = () => { inline.remove(); renameBtn.setText(t('characterGen.rename')); };
                     input.addEventListener('keydown', (e) => {
                         if (isImeComposing(e)) return;
                         if (e.key === 'Enter') confirmBtn.click();
@@ -385,15 +394,15 @@ export class GenerateCharacterModal extends Modal {
             const previewText = managed.entity.content
                 ? managed.entity.content.replace(/^---[\s\S]*?---/, '').trim().slice(0, 300)
                 : '';
-            contentPreview.createEl('pre', { text: previewText || '(空)' });
+            contentPreview.createEl('pre', { text: previewText || t('characterGen.empty') });
 
             const actionRow = card.createDiv({ cls: 'nw-gen-modal-action-row' });
             if (!managed.deleted) {
-                const editBtn = actionRow.createEl('button', { text: '✏️ 编辑', cls: 'nw-gen-modal-sm-btn' });
+                const editBtn = actionRow.createEl('button', { text: t('characterGen.edit'), cls: 'nw-gen-modal-sm-btn' });
                 editBtn.onclick = () => {
                     const exist = card.querySelector('.entity-editor');
-                    if (exist) { exist.remove(); editBtn.setText('📝 编辑'); return; }
-                    editBtn.setText('📝 收起');
+                    if (exist) { exist.remove(); editBtn.setText(t('characterGen.editIdle')); return; }
+                    editBtn.setText(t('characterGen.editCollapse'));
                     const ed = card.createDiv({ cls: 'entity-editor' });
                     ed.addClass('nw-gen-modal-editor');
                     const ta = ed.createEl('textarea');
@@ -401,26 +410,26 @@ export class GenerateCharacterModal extends Modal {
                     ta.addClass('nw-gen-modal-editor-textarea');
                     const br = ed.createDiv();
                     br.addClass('nw-gen-modal-editor-actions');
-                    const sb = br.createEl('button', { text: '💾 暂存修改' });
+                    const sb = br.createEl('button', { text: t('characterGen.stageSave') });
                     sb.addClass('nw-gen-modal-editor-btn');
                     sb.onclick = () => {
                         managed.entity.content = ta.value;
                         managed.modified = true;
                         contentPreview.querySelector('pre')!.textContent = ta.value.replace(/^---[\s\S]*?---/, '').trim().slice(0, 300);
                         ed.remove();
-                        editBtn.setText('📝 编辑');
+                        editBtn.setText(t('characterGen.editIdle'));
                     };
-                    const cb = br.createEl('button', { text: '取消' });
+                    const cb = br.createEl('button', { text: t('characterGen.cancel') });
                     cb.addClass('nw-gen-modal-editor-btn');
-                    cb.onclick = () => { ed.remove(); editBtn.setText('📝 编辑'); };
+                    cb.onclick = () => { ed.remove(); editBtn.setText(t('characterGen.editIdle')); };
                 };
-                const delBtn = actionRow.createEl('button', { text: '🗑️ 删除', cls: 'nw-gen-modal-sm-btn nw-gen-modal-del-btn' });
+                const delBtn = actionRow.createEl('button', { text: t('characterGen.delete'), cls: 'nw-gen-modal-sm-btn nw-gen-modal-del-btn' });
                 delBtn.onclick = () => {
                     managed.deleted = true;
                     this._renderManagementPanel(entityLabel);
                 };
             } else {
-                const restoreBtn = actionRow.createEl('button', { text: '↩️ 恢复', cls: 'nw-gen-modal-sm-btn' });
+                const restoreBtn = actionRow.createEl('button', { text: t('characterGen.restore'), cls: 'nw-gen-modal-sm-btn' });
                 restoreBtn.onclick = () => {
                     managed.deleted = false;
                     this._renderManagementPanel(entityLabel);
@@ -430,20 +439,20 @@ export class GenerateCharacterModal extends Modal {
 
         const footer = contentEl.createDiv({ cls: 'nw-gen-modal-footer' });
         const saveBtn = footer.createEl('button', {
-            text: `💾 保存 ${activeCount} 个${entityLabel}`,
+            text: t('characterGen.saveCount', { count: activeCount, label: entityLabel }),
             cls: 'nw-btn nw-btn-primary novel-writer-primary-button'
         });
         saveBtn.onclick = async () => this._saveAllEntities(entityLabel);
 
         const backBtn = footer.createEl('button', {
-            text: '← 返回继续生成', cls: 'nw-btn'
+            text: t('characterGen.back'), cls: 'nw-btn'
         });
         backBtn.onclick = () => this._renderInputForm();
     }
 
     private async _saveAllEntities(entityLabel: string): Promise<void> {
         const toSave = this._pendingResults.filter(r => !r.deleted);
-        if (toSave.length === 0) { new Notice('⚠️ 没有可保存的实体', 3000); return; }
+        if (toSave.length === 0) { new Notice(t('characterGen.noSavable'), 3000); return; }
 
         await mkdirp(this.app, entityDir(this._currentProject, 'characters'));
         const outcome = await saveEntities(
@@ -463,14 +472,14 @@ export class GenerateCharacterModal extends Modal {
         const successDiv = contentEl.createDiv({ cls: 'nw-gen-modal-success' });
         successDiv.addClass('nw-gen-modal-success');
         successDiv.createEl('div', { text: '✅', cls: 'nw-gen-modal-success-icon' });
-        successDiv.createEl('h3', { text: `已保存 ${createdCount} 个${entityLabel}`, cls: 'nw-gen-modal-success-title' });
-        successDiv.createEl('p', { text: '实体已保存到磁盘，关闭窗口后将在向导中自动标记为已完成。', cls: 'nw-gen-modal-success-desc' });
+        successDiv.createEl('h3', { text: t('characterGen.savedCount', { count: createdCount, label: entityLabel }), cls: 'nw-gen-modal-success-title' });
+        successDiv.createEl('p', { text: t('characterGen.savedDesc'), cls: 'nw-gen-modal-success-desc' });
         
         const btnBar = successDiv.createDiv({ cls: 'nw-gen-modal-success-actions' });
-        const nextBtn = btnBar.createEl('button', { text: '下一步 →' });
+        const nextBtn = btnBar.createEl('button', { text: t('characterGen.next') });
         nextBtn.addClass('nw-gen-modal-next-btn');
         nextBtn.onclick = () => this.close();
-        const closeBtn = btnBar.createEl('button', { text: '关闭' });
+        const closeBtn = btnBar.createEl('button', { text: t('characterGen.close') });
         closeBtn.addClass('nw-gen-modal-close-btn');
         closeBtn.onclick = () => this.close();
     }
@@ -551,16 +560,16 @@ export class GenerateCharacterModal extends Modal {
                             continue;
                         } else {
                             log.warn(`[小说工坊] 角色卡 ${name} 补全后仍不完整: ${reValidation.missingFields.join('、')}`);
-                            this._integrityFailures.push(`${name}（补全后仍缺：${reValidation.missingFields.slice(0, 4).join('、')}）`);
-                            showWarningNotice(`角色「${name}」补全后仍不完整，已丢弃（不落盘）`, { timeout: 5000 });
-                            getDegradationNotifier().notify({ source: 'llm', from: 'full', to: 'partial', reason: `角色「${name}」补全后仍缺失字段：${reValidation.missingFields.join('、')}`, severity: 'warning', recoverable: true });
+                            this._integrityFailures.push(t('characterGen.droppedAfterComplete', { name, fields: joinFields(reValidation.missingFields.slice(0, 4)) }));
+                            showWarningNotice(t('characterGen.incompleteAfterComplete', { name }), { timeout: 5000 });
+                            getDegradationNotifier().notify({ source: 'llm', from: 'full', to: 'partial', reason: t('characterGen.degradationIncomplete', { name, fields: joinFields(reValidation.missingFields) }), severity: 'warning', recoverable: true });
                             continue;
                         }
                     } catch (e) {
                         log.warn(`[小说工坊] 角色卡 ${name} 补全失败:`, e instanceof Error ? e.message : e);
-                        this._integrityFailures.push(`${name}（补全失败：${e instanceof Error ? e.message : String(e)}）`);
-                        showWarningNotice(`角色「${name}」补全失败，已丢弃（不落盘）`, { timeout: 5000 });
-                        getDegradationNotifier().notify({ source: 'llm', from: 'full', to: 'partial', reason: `角色「${name}」补全异常，缺失字段：${validation.missingFields.join('、')}`, severity: 'warning', recoverable: true });
+                        this._integrityFailures.push(t('characterGen.droppedCompleteFailed', { name, message: e instanceof Error ? e.message : String(e) }));
+                        showWarningNotice(t('characterGen.completeFailed', { name }), { timeout: 5000 });
+                        getDegradationNotifier().notify({ source: 'llm', from: 'full', to: 'partial', reason: t('characterGen.degradationFailed', { name, fields: joinFields(validation.missingFields) }), severity: 'warning', recoverable: true });
                         continue;
                     }
                 }
