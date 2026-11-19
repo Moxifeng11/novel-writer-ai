@@ -283,6 +283,9 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
 - 第二期第37片（2026-11-19，DSH）：向导步骤正文与写作台状态栏 —— `ui/full-writer/status-bar-controller.ts`（原 0 处 `t()`）+ `ui/full-writer/wizard-step-renderers.ts` 残留 12 处，迁 `cowrite.wiz.*` 12 + `fullwriter.statusBar.*` 16 共 **28 键**；
   步骤名按 `labelKey && hasMessage(labelKey) ? t(...) : label` 回退（与 `step-render-controller.ts:137` 同款），叙事结构下拉改用 `storyStructureLabel(structure.id)`（原来直接渲染中文 `structure.name`），状态栏最后一处内联色改 `.novel-writer-fw-status-item--muted|--warn|--hot` 修饰类；`addField` 的数据键、vault 路径、正则保持中文；
   zh/en 资源各 **4784** 条；棘轮收紧到 **214 文件 / 6882 条**；新增 `tests/unit/ui/full-writer-status-i18n.test.ts` 5 例；实机 zh/en 各 5 场景（状态栏 1523×36、完成步骤、设定库/文笔风格/世界观三步），en 状态栏 CJK=0、概览表 CJK=4（仅项目名）。
+- 第二期第38片（2026-11-19，DSH）：项目入口三件套 —— `ui/home-view.ts`（235 行全量）+ `ui/mode-document-modal.ts`（200 行，`TITLES`/`DESCRIPTIONS` 模块常量改 `modeTitle()`/`modeDescription()` 函数）+ `ui/pre-research-modal.ts` 残留 27 处，迁 `home.*` 36 + `modeDoc.*` 27 + `creationMode.*` 9 + `preResearch.hint.*` 8 / `.msg.*` 19 共 **99 键**；
+  `shared/creation-mode.ts` 新增三个**界面**显示函数（`creationModeDisplayName` / `creationModeDisplayDescription` / `creationUnitDisplayLabel`），`getCreationModeLabel()` 原样保留（它喂 `template-vars-builder` 的 `vars["creationModeLabel"]` 提示词与 agent 文本）；
+  zh/en 资源各 **4882** 条；棘轮收紧到 **212 文件 / 6773 条**；新增 `tests/unit/i18n/project-entry-resources.test.ts` 7 例；实机 zh/en 各 3 场景（主页 1096×992 / 前期调研 640×634 / 模式文档 640×650），en 主页 CJK=12（项目名 + 别的模块状态栏「今日 0 字」）、前期调研 CJK=142（番茄主分类选项与 vault 目录名，数据层）、模式文档 CJK=20（保存路径数据）。
 - 后续：第二期余下（知识库 D 类两文件 `ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`
   用户已裁定随视觉重构；散落弹窗 golden-opening 1982 / novel-tags 1099 / add-fanfic-setting 973 /
   ai-builder 864 等），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
@@ -293,6 +296,6 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
 
 1 → 2 → 3 → 4 → 5 →（6 可选）→ 7。
 
-进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~37 片（命令面板 → 向导步骤正文与写作台状态栏）已交付（2026-11-18/19）；下一个候选是 ⑦ 第二期余下（template-vars 228（多为提示词）/ creation-mode 138 / 写作设置分区残留等，散落弹窗 golden-opening / novel-tags / add-fanfic-setting / ai-builder 等，知识库 D 类两文件随视觉重构）。
+进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~38 片（命令面板 → 项目入口三件套）已交付（2026-11-18/19）；下一个候选是 ⑦ 第二期余下（template-vars 228（多为提示词，判据保留）/ 写作设置分区残留等，散落弹窗 golden-opening / novel-tags / add-fanfic-setting / ai-builder 等，知识库 D 类两文件随视觉重构）。
 
 理由：1 是修「假成功」缺陷；2 是把已交付引擎变成写作时可见的价值；3 是投稿刚需且不依赖 AI；4/5 是低成本体验补洞；6/7 视需要。

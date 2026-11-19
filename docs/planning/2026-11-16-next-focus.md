@@ -3160,3 +3160,50 @@ novel-tags（1,099）/ add-fanfic-setting（973）/ ai-builder（864）；知识
 散落弹窗 golden-opening（1,982）/ novel-tags（1,099）/ add-fanfic-setting（973）/ ai-builder（864）；
 知识库 D 类两文件仍等视觉重构。
 
+
+## 第一百零六轮：i18n 第二期第38片 —— 项目入口三件套（2026-11-19，DSH）
+
+**范围**：`ui/home-view.ts`（235 行，38 条 / 227 字）、`ui/mode-document-modal.ts`（200 行，32 条 / 281 字）、
+`ui/pre-research-modal.ts` 残留（半迁状态，27 处）；顺带在 `shared/creation-mode.ts` 加三个界面显示函数。
+
+**改动**
+1. 资源 **99 键**：`home.*` 36 + `modeDoc.*` 27 + `creationMode.*` 9 + `preResearch.hint.*` 8 / `.msg.*` 19，
+   zh/en 各 **4882** 条。
+2. `ui/mode-document-modal.ts` 的模块常量 `TITLES`/`DESCRIPTIONS` 改 `modeTitle(mode, kind)` /
+   `modeDescription(...)` / `modeFallbackTitle()` 函数（`switch` 分支里写 `t('字面量键')`）；
+   报错句从 `getCreationModeLabel` 换成 `creationModeDisplayName`。
+3. `shared/creation-mode.ts` 新增 `creationModeDisplayName` / `creationModeDisplayDescription` /
+   `creationUnitDisplayLabel`；**`getCreationModeLabel` 与 `getCreationUnitLabel` 一行不改**——前者喂
+   `ui/full-writer/template-vars-builder.ts` 的 `vars["creationModeLabel"]` 提示词与 agent 文本，
+   后者参与落盘口径。
+4. 保持中文：注释、`log.*`、`localeCompare(..., 'zh-Hans-CN')` 的排序 locale 参数、vault 路径与数据键。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；`npx vitest run tests/unit/i18n/project-entry-resources.test.ts`（新增 7 例）全绿。
+- `check:i18n` zh/en 各 **4882**、0 无法解析键、动态键 29、棘轮 **212 文件 / 6773 条**（已 --update-baseline）。
+- `check:bundle` main.js **6,140,578**（+10,184，99 键×2 语言进包）、styles.css **800,020**（±0）。
+- `npm run preflight` **EXIT=0**（989 文件 / **10,330 通过 + 3 跳过**；活跃文档 20 个；日志 `D:\nw-tmp\preflight-i18n38.log`）。
+- 实机（1440 宽，`D:\nw-tmp\snap-i18n38.mjs <lang>`）：主页 1096×992、前期调研 640×634、模式文档 640×650；
+  en 下主页 CJK=12（`示例项目`/`短篇示例` 项目名 + 别的模块状态栏「今日 0 字」）、前期调研 CJK=142
+  （番茄主分类 24 个选项与 `00-前期调研/` 目录名，数据层）、模式文档 CJK=20（保存路径里的项目路径）。
+  截图 `D:\nw-dev-vault\_visual-i18n38\{home,pre-research,mode-doc}-{zh-CN,en-US}.png`。
+
+**坑**
+1. **模式文档弹窗截图要传带库前缀的项目路径**：`SHORT_STORY_CORE`/`SHORT_OUTLINE` 走 SHORT_ONLY
+   守卫，而 `resolveProjectMode()` 靠路径前缀 `短篇小说/` 判模式，兜底 `'long'`；传裸项目名会被
+   `command-ui-executor.ts:217 isBlockedByMode()` 静默拦掉（只弹 Notice）。正解
+   `plugin.setWorkbenchContext({ project: '短篇小说/短篇示例' })`。
+2. **行尾**：资源两份与 `home-view.ts`/`pre-research-modal.ts` 是 CRLF，`mode-document-modal.ts` /
+   `creation-mode.ts` 是 LF；多行锚点按 `\n` 拼会报 `missing: import {`。
+3. **`shared/workers-inline.generated.ts` 的 git 差异是构建环境漂移**：同一环境连跑两次
+   `node scripts/generate-worker-inline.mjs` SHA256 一致（`A706FD34…`），保留重生成产物即可。
+4. en 主页两处措辞在截图后微调（`· unit: “section”`、`, and {count} task(s) running`），改完要
+   `npm run build` + `dev-vault.mjs sync --vault=D:\nw-dev-vault` 再重拍。
+
+**文档**：`docs/modules/i18n.md`（§2 已迁移面 bullet + 资源 +99 + 棘轮 6882 → 6773 / 212 文件、§5 表行、
+§6 测试、§7 backlog、§9 三条经验）、`docs/modules/INDEX.md`、`docs/CURRENT.md`、
+`docs/planning/2026-11-18-feature-gaps.md`、本轮记录；基线 `.bundle-baseline.json` / `.i18n-baseline.json`。
+
+**下一轮候选**：散落弹窗 golden-opening（1,982）/ novel-tags（1,099）/ add-fanfic-setting（973）/
+ai-builder（864）/ `ui/agent-workbench-view.ts`（126 条 / 730 字）；种子已由 `D:\nw-tmp\audit-cjk.mjs`
+`--json` 给出（`ui/home-view.ts` 已迁完，下一档从 `ui/batch-create-modal.ts` 104 条 / 583 字起）。

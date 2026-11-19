@@ -12,6 +12,7 @@ import { App, Modal, Notice } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import {
     CREATION_MODE_SPECS,
+    creationModeDisplayName,
     SCRIPT_GENRES,
     SHORT_STORY_CATEGORIES,
     type CreationMode,
@@ -219,10 +220,10 @@ export class PreResearchModal extends Modal {
             'primaryCategory',
             t("preResearch.short.k4"),
             SHORT_STORY_CATEGORIES.map(c => ({ value: c.name, text: `${c.name}（${c.gender}）` })),
-            '请选择主分类'
+            t('preResearch.hint.categoryPlaceholder')
         );
-        this.numberField(section1, 'targetWords', t("preResearch.short.k5"), spec.targetWords.default, spec.targetWords.min, spec.targetWords.max, '5–10 万字；建议 8 万字。');
-        this.numberField(section1, 'targetSections', t("preResearch.short.k6"), spec.targetUnits.default, spec.targetUnits.min, spec.targetUnits.max, '8–40 节；建议 20 节。');
+        this.numberField(section1, 'targetWords', t("preResearch.short.k5"), spec.targetWords.default, spec.targetWords.min, spec.targetWords.max, t('preResearch.hint.targetWordsShort'));
+        this.numberField(section1, 'targetSections', t("preResearch.short.k6"), spec.targetUnits.default, spec.targetUnits.min, spec.targetUnits.max, t('preResearch.hint.targetSectionsShort'));
         this.textField(section1, 'audience', t("preResearch.short.k7"), t("preResearch.short.k8"));
         this.textField(section1, 'references', t("preResearch.short.k9"), t("preResearch.short.k10"));
 
@@ -252,11 +253,11 @@ export class PreResearchModal extends Modal {
             'genre',
             t("preResearch.script.k4"),
             SCRIPT_GENRES.map(g => ({ value: g.name, text: `${g.name} · ${g.coreHook}` })),
-            '请选择剧本类型'
+            t('preResearch.hint.genrePlaceholder')
         );
-        this.numberField(section1, 'targetWords', t("preResearch.script.k5"), 60000, spec.targetWords.min, spec.targetWords.max, '5–10 万字。');
-        this.numberField(section1, 'targetEpisodes', t("preResearch.script.k6"), spec.targetUnits.default, spec.targetUnits.min, spec.targetUnits.max, '40–120 集；建议 80 集。');
-        this.numberField(section1, 'episodeSeconds', t("preResearch.script.k7"), 90, 60, 120, '60–120 秒。');
+        this.numberField(section1, 'targetWords', t("preResearch.script.k5"), 60000, spec.targetWords.min, spec.targetWords.max, t('preResearch.hint.targetWordsScript'));
+        this.numberField(section1, 'targetEpisodes', t("preResearch.script.k6"), spec.targetUnits.default, spec.targetUnits.min, spec.targetUnits.max, t('preResearch.hint.targetEpisodesScript'));
+        this.numberField(section1, 'episodeSeconds', t("preResearch.script.k7"), 90, 60, 120, t('preResearch.hint.episodeSecondsScript'));
         this.textField(section1, 'audience', t("preResearch.script.k8"), t("preResearch.script.k9"));
         this.textField(section1, 'references', t("preResearch.script.k10"), t("preResearch.script.k11"));
 
@@ -265,7 +266,7 @@ export class PreResearchModal extends Modal {
         this.textareaField(section2, 'hook3s', t("preResearch.script.k15"), t("preResearch.script.k16"), 2);
         this.textareaField(section2, 'coreConflict', t("preResearch.script.k17"), t("preResearch.script.k18"), 2);
         this.textareaField(section2, 'payoff', t("preResearch.script.k19"), t("preResearch.script.k20"), 2);
-        this.numberField(section2, 'paywallEpisode', t("preResearch.script.k21"), 12, 1, spec.targetUnits.max, '默认第 10–15 集。');
+        this.numberField(section2, 'paywallEpisode', t("preResearch.script.k21"), 12, 1, spec.targetUnits.max, t('preResearch.hint.paywallEpisodeScript'));
 
         const section3 = this.section(body, t("preResearch.script.k22"));
         this.textareaField(section3, 'characters', t("preResearch.script.k23"), t("preResearch.script.k24"), 3);
@@ -348,7 +349,7 @@ export class PreResearchModal extends Modal {
                 document.execCommand('copy');
                 textarea.remove();
             }
-            const original = button.textContent || '复制';
+            const original = button.textContent || t('preResearch.ui.k2');
             button.setText(t("preResearch.common.k14"));
             button.addClass('is-copied');
             window.setTimeout(() => {
@@ -364,7 +365,7 @@ export class PreResearchModal extends Modal {
         if (researchBtn.disabled) return;
         const categoryOrGenre = this.categoryOrGenre();
         if (!categoryOrGenre) {
-            new Notice('❌ 请先选择主分类/短剧类型，再执行 AI 调研', 5000);
+            new Notice(t('preResearch.msg.needCategoryBeforeResearch'), 5000);
             return;
         }
         researchBtn.disabled = true;
@@ -393,11 +394,15 @@ export class PreResearchModal extends Modal {
             });
             this.aiResult = result;
             this.applyAiResult(result);
-            const sourceLabel = result.trend.verified ? '实时来源' : '模型调研草稿（未经实时核实）';
-            this.aiStatusEl?.setText(`✅ AI 调研完成：${sourceLabel}，来源 ${result.trend.sources.length} 条，候选 ${result.suggestions.length} 个`);
-            showSuccessNotice(`AI 前期调研完成（${sourceLabel}）`, { timeout: 5000 });
+            const sourceLabel = result.trend.verified ? t('preResearch.msg.sourceVerified') : t('preResearch.msg.sourceDraft');
+            this.aiStatusEl?.setText(t('preResearch.msg.researchDone', {
+                source: sourceLabel,
+                count: result.trend.sources.length,
+                n: result.suggestions.length,
+            }));
+            showSuccessNotice(t('preResearch.msg.researchDoneNotice', { source: sourceLabel }), { timeout: 5000 });
         } catch (e) {
-            this.aiStatusEl?.setText(`❌ AI 调研失败：${e instanceof Error ? e.message : String(e)}`);
+            this.aiStatusEl?.setText(t('preResearch.msg.researchFailed', { message: e instanceof Error ? e.message : String(e) }));
             showErrorNotice(e instanceof Error ? e.message : String(e), { title: t("preResearch.common.k18"), timeout: 8000 });
         } finally {
             researchBtn.disabled = false;
@@ -436,12 +441,12 @@ export class PreResearchModal extends Modal {
                 this.setValueIfPresent('characters', item.characters);
                 this.setValueIfPresent('scenes', item.scenes);
             }
-            this.aiStatusEl?.setText(`已应用候选 ${index + 1}：${item.name}`);
+            this.aiStatusEl?.setText(t('preResearch.msg.appliedCandidate', { n: index + 1, name: item.name }));
         };
         this.aiOutputEl.createEl('div', { cls: 'nw-u-d-flex nw-u-gap-8px nw-u-fwr-wrap nw-u-margintop-8px' }, (row) => {
             suggestions.forEach((item, index) => {
                 const button = row.createEl('button', {
-                    text: `应用候选 ${index + 1}`,
+                    text: t('preResearch.msg.applyCandidate', { n: index + 1 }),
                     cls: 'nw-btn nw-btn-secondary',
                     attr: { type: 'button', title: item.logline || item.name },
                 });
@@ -464,7 +469,7 @@ export class PreResearchModal extends Modal {
         try {
             const meta = await getProjectMeta(this.app, project);
             if (meta.creationMode !== this.mode) {
-                new Notice(`该项目不是${this.mode === 'short' ? '短篇' : '剧本'}项目，无法使用对应前期调研`, 6000);
+                new Notice(t('preResearch.msg.wrongMode', { mode: creationModeDisplayName(this.mode) }), 6000);
                 this.close();
                 return;
             }
@@ -570,24 +575,24 @@ export class PreResearchModal extends Modal {
         if (!this.loaded) return null;
         const name = this.value('name');
         if (!name) {
-            new Notice('❌ 请填写项目名称', 4000);
+            new Notice(t('preResearch.msg.needProjectName'), 4000);
             return null;
         }
         if (this.mode === 'short') {
             const category = this.value('primaryCategory');
             if (!category) {
-                new Notice('❌ 请选择番茄短篇主分类', 5000);
+                new Notice(t('preResearch.msg.needShortCategory'), 5000);
                 return null;
             }
             const targetWords = this.number('targetWords', 80000);
             const targetSections = this.number('targetSections', 20);
             const spec = CREATION_MODE_SPECS.short;
             if (targetWords < spec.targetWords.min || targetWords > spec.targetWords.max) {
-                new Notice(`❌ 目标字数必须在 ${spec.targetWords.min}–${spec.targetWords.max} 字之间`, 6000);
+                new Notice(t('preResearch.msg.wordsRange', { min: spec.targetWords.min, max: spec.targetWords.max }), 6000);
                 return null;
             }
             if (targetSections < spec.targetUnits.min || targetSections > spec.targetUnits.max) {
-                new Notice(`❌ 目标节数必须在 ${spec.targetUnits.min}–${spec.targetUnits.max} 节之间`, 6000);
+                new Notice(t('preResearch.msg.sectionsRange', { min: spec.targetUnits.min, max: spec.targetUnits.max }), 6000);
                 return null;
             }
             const data: ShortPreResearch = {
@@ -615,7 +620,7 @@ export class PreResearchModal extends Modal {
 
         const genre = this.value('genre');
         if (!genre) {
-            new Notice('❌ 请选择红果短剧类型', 5000);
+            new Notice(t('preResearch.msg.needScriptGenre'), 5000);
             return null;
         }
         const spec = CREATION_MODE_SPECS.script;
@@ -624,19 +629,19 @@ export class PreResearchModal extends Modal {
         const episodeSeconds = this.number('episodeSeconds', 90);
         const paywallEpisode = this.number('paywallEpisode', 12);
         if (targetWords < spec.targetWords.min || targetWords > spec.targetWords.max) {
-            new Notice(`❌ 目标字数必须在 ${spec.targetWords.min}–${spec.targetWords.max} 字之间`, 6000);
+            new Notice(t('preResearch.msg.wordsRange', { min: spec.targetWords.min, max: spec.targetWords.max }), 6000);
             return null;
         }
         if (targetEpisodes < spec.targetUnits.min || targetEpisodes > spec.targetUnits.max) {
-            new Notice(`❌ 目标集数必须在 ${spec.targetUnits.min}–${spec.targetUnits.max} 集之间`, 6000);
+            new Notice(t('preResearch.msg.episodesRange', { min: spec.targetUnits.min, max: spec.targetUnits.max }), 6000);
             return null;
         }
         if (episodeSeconds < 60 || episodeSeconds > 120) {
-            new Notice('❌ 单集时长必须在 60–120 秒之间', 6000);
+            new Notice(t('preResearch.msg.secondsRange', { min: 60, max: 120 }), 6000);
             return null;
         }
         if (paywallEpisode < 1 || paywallEpisode > targetEpisodes) {
-            new Notice('❌ 付费卡点集数必须落在总集数范围内', 6000);
+            new Notice(t('preResearch.msg.paywallRange'), 6000);
             return null;
         }
         const data: ScriptPreResearch = {
@@ -688,7 +693,7 @@ export class PreResearchModal extends Modal {
             onCreated: async (project) => {
                 try {
                     await writePreResearchFiles(this.app.vault.adapter, project, data, this.app);
-                    showSuccessNotice(`项目已创建：${project}。下一步在「创作流程」里写大纲与正文`, { timeout: 6000 });
+                    showSuccessNotice(t('preResearch.msg.projectCreated', { project }), { timeout: 6000 });
                     await this.options.onCreated?.(project);
                     // 创建即断头是旧流程最大的问题：写完调研必须把用户送到下一步。
                     // 导航失败只降级为提示，不能反过来把「项目已创建」报成失败。

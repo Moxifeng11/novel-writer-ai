@@ -6,8 +6,7 @@
  */
 import { App, Modal } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
-import type { CreationMode } from '@/shared/creation-mode';
-import { getCreationModeLabel } from '@/shared/creation-mode';
+import { creationModeDisplayName, type CreationMode } from '@/shared/creation-mode';
 import { modeDocPath, modeDocStarter } from '@/shared/mode-content';
 import { resolveProjectMode } from '@/shared/project-mode';
 import { writeVaultText } from '@/shared/file-system-port';
@@ -15,6 +14,7 @@ import { generateModeDocument } from '@/engine/mode-document-writer';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 import { StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
 import { pushUsageScope } from '@/services/usage-ledger';
+import { t } from '@/i18n';
 import { OperationConfirmModal } from './components/progress';
 import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
 
@@ -23,25 +23,23 @@ import { showErrorNotice, showSuccessNotice } from './components/notice-helpers'
  */
 export type ModeDocumentKind = 'storyCore' | 'outline' | 'bible' | 'storyboard';
 
-const TITLES: Record<CreationMode, Partial<Record<ModeDocumentKind, string>>> = {
-    long: {},
-    short: {
-        storyCore: '📖 故事核',
-        outline: '📋 分节大纲',
-    },
-    script: {
-        bible: '🎭 场景圣经',
-        outline: '📋 分集大纲',
-        storyboard: '🎬 分镜表',
-    },
-};
+/** 文档标题键：分集/分节大纲按模式分叉，其余按文档类型。 */
+function docTitleKey(mode: CreationMode, kind: ModeDocumentKind): string {
+    if (kind === 'storyCore') return 'modeDoc.titleStoryCore';
+    if (kind === 'bible') return 'modeDoc.titleBible';
+    if (kind === 'storyboard') return 'modeDoc.titleStoryboard';
+    return mode === 'short' ? 'modeDoc.titleOutlineShort' : 'modeDoc.titleOutlineScript';
+}
 
-const DESCRIPTIONS: Record<ModeDocumentKind, string> = {
-    storyCore: '锁定主角、目标、阻力、反转与情绪承诺；后续分节与正文都以此为准。',
-    outline: '短篇按节、剧本按集规划：每单元写清目标、冲突、信息增量、反转与结尾钩子。',
-    bible: '剧本主场景与人物调度；控制场景数量，记录光线、道具、环境声和拍摄限制。',
-    storyboard: '按镜号组织画面、景别、运镜、动作、台词与音效；用于拍摄/剪辑。',
-};
+/** 文档说明键。 */
+function docDescriptionKey(kind: ModeDocumentKind): string {
+    switch (kind) {
+        case 'storyCore': return 'modeDoc.descStoryCore';
+        case 'bible': return 'modeDoc.descBible';
+        case 'storyboard': return 'modeDoc.descStoryboard';
+        default: return 'modeDoc.descOutline';
+    }
+}
 
 /**
  * ModeDocumentModal 类。
@@ -62,12 +60,12 @@ export class ModeDocumentModal extends Modal {
      */
     async onOpen(): Promise<void> {
         this.modalEl.addClass('nw-scope', 'nw-modal');
-        this.titleEl.setText(TITLES[this.mode]?.[this.kind] || '模式文档');
+        this.titleEl.setText(this.mode === 'long' ? t('modeDoc.fallbackTitle') : t(docTitleKey(this.mode, this.kind)));
         const { contentEl } = this;
         contentEl.empty();
 
         if (this.mode === 'long' || !this.project) {
-            contentEl.createEl('p', { text: '该文档仅适用于短篇或剧本项目。' });
+            contentEl.createEl('p', { text: t('modeDoc.contentUnsupported') });
             return;
         }
 
@@ -75,23 +73,26 @@ export class ModeDocumentModal extends Modal {
         const projectMode = await resolveProjectMode(this.app, this.project);
         if (projectMode !== this.mode) {
             contentEl.createEl('p', {
-                text: `该项目是${getCreationModeLabel(projectMode)}项目，不能保存${getCreationModeLabel(this.mode)}文档。请从项目的「创作流程」重新进入。`,
+                text: t('modeDoc.modeMismatch', {
+                    projectMode: creationModeDisplayName(projectMode),
+                    saveMode: creationModeDisplayName(this.mode),
+                }),
             });
             return;
         }
 
         contentEl.createEl('p', {
             cls: 'nw-text-12-muted',
-            text: DESCRIPTIONS[this.kind],
+            text: t(docDescriptionKey(this.kind)),
         });
         contentEl.createEl('p', {
             cls: 'nw-text-12-muted',
-            text: `保存位置：${modeDocPath(this.project, this.mode, this.kind)}`,
+            text: t('modeDoc.savePath', { path: modeDocPath(this.project, this.mode, this.kind) }),
         });
 
         const textarea = contentEl.createEl('textarea', {
             cls: 'nw-textarea nw-form-textarea nw-mode-doc-editor',
-            attr: { rows: '18', placeholder: '在此填写…' },
+            attr: { rows: '18', placeholder: t('modeDoc.placeholder') },
         });
         textarea.value = modeDocStarter(this.project, this.mode, this.kind);
         void this.load(textarea);
@@ -99,17 +100,29 @@ export class ModeDocumentModal extends Modal {
         const aiRow = contentEl.createDiv({ cls: 'nw-mode-doc-ai-row' });
         const instruction = aiRow.createEl('input', {
             cls: 'nw-input nw-mode-doc-instruction',
-            attr: { type: 'text', placeholder: '可选：例如更偏悬疑、每集 2 分钟、加强结尾钩子' },
+            attr: { type: 'text', placeholder: t('modeDoc.instructionPlaceholder') },
         });
-        const aiBtn = aiRow.createEl('button', { text: '🤖 AI 生成', cls: 'nw-btn nw-btn-secondary', attr: { type: 'button' } });
+        const aiBtn = aiRow.createEl('button', {
+            text: t('modeDoc.generate'),
+            cls: 'nw-btn nw-btn-secondary',
+            attr: { type: 'button' },
+        });
         aiBtn.onclick = () => {
             void this.generateWithAI(textarea, instruction.value, aiBtn);
         };
 
         const footer = contentEl.createDiv({ cls: 'nw-modal-footer' });
-        const cancel = footer.createEl('button', { text: '取消', cls: 'nw-btn nw-btn-secondary', attr: { type: 'button' } });
+        const cancel = footer.createEl('button', {
+            text: t('common.cancel'),
+            cls: 'nw-btn nw-btn-secondary',
+            attr: { type: 'button' },
+        });
         cancel.onclick = () => this.close();
-        const save = footer.createEl('button', { text: '保存', cls: 'nw-btn nw-btn-primary', attr: { type: 'button' } });
+        const save = footer.createEl('button', {
+            text: t('modeDoc.save'),
+            cls: 'nw-btn nw-btn-primary',
+            attr: { type: 'button' },
+        });
         save.onclick = () => { void this.save(textarea.value); };
     }
 
@@ -121,7 +134,7 @@ export class ModeDocumentModal extends Modal {
                 textarea.value = await this.app.vault.adapter.read(path);
             }
         } catch (e) {
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '读取文档失败', timeout: 5000 });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('modeDoc.readFailedTitle'), timeout: 5000 });
         }
     }
 
@@ -134,16 +147,16 @@ export class ModeDocumentModal extends Modal {
         const existing = textarea.value.trim();
         if (existing.length > 80) {
             const confirmed = await OperationConfirmModal.confirm(this.app, {
-                title: '覆盖编辑区内容？',
-                description: 'AI 生成会替换当前编辑区内容（尚未保存）。',
-                warning: '如需保留，请先取消并保存现有版本。',
-                confirmText: '继续生成',
-                cancelText: '取消',
+                title: t('modeDoc.overwriteTitle'),
+                description: t('modeDoc.overwriteDesc'),
+                warning: t('modeDoc.overwriteWarning'),
+                confirmText: t('modeDoc.overwriteConfirm'),
+                cancelText: t('common.cancel'),
             });
             if (!confirmed) return;
         }
         button.disabled = true;
-        button.setText('生成中…');
+        button.setText(t('modeDoc.generating'));
         try {
             // 归因到用量账本：本次 AI 调用记在 document / doc:<kind> 名下
             const exitUsage = pushUsageScope({ source: 'document', project: this.project, stepKey: `doc:${this.kind}` });
@@ -167,15 +180,15 @@ export class ModeDocumentModal extends Modal {
                     },
                 );
                 textarea.value = text;
-                showSuccessNotice('已生成，请检查后点击保存', { timeout: 5000 });
+                showSuccessNotice(t('modeDoc.generatedNotice'), { timeout: 5000 });
             } finally {
                 exitUsage();
             }
         } catch (e) {
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: 'AI 生成失败', timeout: 8000 });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('modeDoc.generateFailedTitle'), timeout: 8000 });
         } finally {
             button.disabled = false;
-            button.setText('🤖 AI 生成');
+            button.setText(t('modeDoc.generate'));
         }
     }
 
@@ -184,10 +197,10 @@ export class ModeDocumentModal extends Modal {
         try {
             const path = modeDocPath(this.project, this.mode, this.kind);
             await writeVaultText(this.app, path, content);
-            showSuccessNotice('已保存', { timeout: 3000 });
+            showSuccessNotice(t('modeDoc.savedNotice'), { timeout: 3000 });
             this.close();
         } catch (e) {
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '保存失败', timeout: 6000 });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('modeDoc.saveFailedTitle'), timeout: 6000 });
         }
     }
 

@@ -112,7 +112,6 @@
     "ui/generate-location-modal.ts": 58,
     "ui/generate-worldview-modal.ts": 56,
     "ui/golden-opening-modal.ts": 96,
-    "ui/home-view.ts": 38,
     "ui/humanize-report-modal.ts": 43,
     "ui/ideation-modal.ts": 113,
     "ui/job-center-modal.ts": 15,
@@ -126,7 +125,6 @@
     "ui/mcp-manager-modal.ts": 44,
     "ui/mcp-server-form-modal.ts": 44,
     "ui/memory-preview.ts": 16,
-    "ui/mode-document-modal.ts": 32,
     "ui/model-editor-modal.ts": 20,
     "ui/model-picker-modal.ts": 12,
     "ui/model-picker-popover.ts": 11,
@@ -145,7 +143,7 @@
     "ui/plot-canvas-modal.ts": 42,
     "ui/plot-canvas-parser.ts": 2,
     "ui/polish-editor.ts": 132,
-    "ui/pre-research-modal.ts": 40,
+    "ui/pre-research-modal.ts": 1,
     "ui/project-health-modal.ts": 37,
     "ui/project-side-panel-view.ts": 54,
     "ui/project-utils.ts": 27,
@@ -215,7 +213,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 6882,
+  "total": 6773,
   "updatedAt": "2026-11-19",
   "note": ""
 }

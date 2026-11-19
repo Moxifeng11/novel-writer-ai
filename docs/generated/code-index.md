@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146888 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19560 | 296 | 204 | 69% |
-| `shared/` | 259 | 52330 | 2209 | 1729 | 78% |
+| `shared/` | 259 | 52377 | 2212 | 1732 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1583 | 88 | 58 | 66% |
-| `ui/` | 304 | 113985 | 1181 | 935 | 79% |
+| `ui/` | 304 | 114015 | 1181 | 935 | 79% |
 
 ## 文件清单
 
@@ -498,7 +498,7 @@
 | `shared/contrast-library.ts` | 104 | 4 | 4 |
 | `shared/cowrite-delta-model.ts` | 111 | 6 | 4 |
 | `shared/creation-flow.ts` | 650 | 13 | 13 |
-| `shared/creation-mode.ts` | 441 | 22 | 18 |
+| `shared/creation-mode.ts` | 488 | 25 | 21 |
 | `shared/cursor-position.ts` | 31 | 2 | 2 |
 | `shared/deconstruction-settings.ts` | 108 | 8 | 7 |
 | `shared/degradation-notifier.ts` | 286 | 11 | 5 |
@@ -876,7 +876,7 @@
 | `ui/generate-location-modal.ts` | 375 | 1 | 1 |
 | `ui/generate-worldview-modal.ts` | 289 | 1 | 1 |
 | `ui/golden-opening-modal.ts` | 1407 | 1 | 1 |
-| `ui/home-view.ts` | 236 | 2 | 1 |
+| `ui/home-view.ts` | 248 | 2 | 1 |
 | `ui/humanize-report-modal.ts` | 217 | 2 | 2 |
 | `ui/ideation-modal.ts` | 814 | 1 | 1 |
 | `ui/job-center-modal.ts` | 124 | 1 | 1 |
@@ -893,7 +893,7 @@
 | `ui/memory-preview.ts` | 158 | 2 | 1 |
 | `ui/metrics-format.ts` | 103 | 6 | 4 |
 | `ui/mini-settings-modal.ts` | 188 | 1 | 0 |
-| `ui/mode-document-modal.ts` | 201 | 2 | 2 |
+| `ui/mode-document-modal.ts` | 214 | 2 | 2 |
 | `ui/model-editor-modal.ts` | 150 | 2 | 1 |
 | `ui/model-picker-modal.ts` | 290 | 4 | 4 |
 | `ui/model-picker-popover.ts` | 298 | 4 | 3 |
@@ -914,7 +914,7 @@
 | `ui/plot-canvas-modal.ts` | 366 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
 | `ui/polish-editor.ts` | 830 | 5 | 5 |
-| `ui/pre-research-modal.ts` | 719 | 2 | 2 |
+| `ui/pre-research-modal.ts` | 724 | 2 | 2 |
 | `ui/project-health-modal.ts` | 205 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 457 | 5 | 5 |
 | `ui/project-utils.ts` | 366 | 11 | 10 |

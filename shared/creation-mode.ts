@@ -30,6 +30,8 @@ import {
     type StoryStructureId,
 } from './story-structure';
 
+import { t } from '@/i18n';
+
 /**
  * 创作模式规格。
  */
@@ -221,6 +223,51 @@ export function getCreationModeLabel(mode: CreationMode): string {
 export function getCreationUnitLabel(mode: CreationMode, count?: number): string {
     const spec = CREATION_MODE_SPECS[mode] || CREATION_MODE_SPECS.long;
     return count === 1 ? spec.unitLabel : spec.unitPlural;
+}
+
+/**
+ * 模式显示名（界面用，随语言切换）。
+ *
+ * 与 `getCreationModeLabel` 的区别：那个是落盘/提示词口径的中文常量，
+ * 会进入模板变量与 agent 文本；界面渲染必须走本函数。
+ *
+ * @param mode - 模式
+ * @returns 显示名
+ */
+export function creationModeDisplayName(mode: CreationMode): string {
+    switch (mode) {
+        case 'short': return t('creationMode.label.short');
+        case 'script': return t('creationMode.label.script');
+        default: return t('creationMode.label.long');
+    }
+}
+
+/**
+ * 模式说明（界面用，随语言切换）。
+ *
+ * @param mode - 模式
+ * @returns 说明
+ */
+export function creationModeDisplayDescription(mode: CreationMode): string {
+    switch (mode) {
+        case 'short': return t('creationMode.desc.short');
+        case 'script': return t('creationMode.desc.script');
+        default: return t('creationMode.desc.long');
+    }
+}
+
+/**
+ * 模式单元名（章 / 节 / 集，界面用）。
+ *
+ * @param mode - 模式
+ * @returns 单元名
+ */
+export function creationUnitDisplayLabel(mode: CreationMode): string {
+    switch (mode) {
+        case 'short': return t('creationMode.unit.short');
+        case 'script': return t('creationMode.unit.script');
+        default: return t('creationMode.unit.long');
+    }
 }
 
 /**

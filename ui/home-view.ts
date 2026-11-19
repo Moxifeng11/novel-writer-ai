@@ -7,11 +7,18 @@
  */
 import { ItemView, WorkspaceLeaf } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
-import { CREATION_MODE_SPECS, type CreationMode } from '@/shared/creation-mode';
+import {
+    CREATION_MODE_SPECS,
+    creationModeDisplayDescription,
+    creationModeDisplayName,
+    creationUnitDisplayLabel,
+    type CreationMode,
+} from '@/shared/creation-mode';
 import { listProjectIds } from '@/shared/project-catalog';
 import { modeFromLibraryPath, projectDisplayName } from '@/domains/kernel/project-locator';
 import { CommandIds } from '@/shared/command-ids';
 import { hasUsableAiCredentials } from '@/shared/ai-credentials';
+import { t } from '@/i18n';
 
 /** 主页视图类型。 */
 export const VIEW_TYPE_HOME = 'novel-writer-home';
@@ -47,7 +54,7 @@ export class HomeView extends ItemView {
      *
      * @returns 显示标题
      */
-    getDisplayText(): string { return '小说工坊 · 创作主页'; }
+    getDisplayText(): string { return t('home.viewTitle'); }
 
     /**
      * 获取视图图标。
@@ -99,56 +106,62 @@ export class HomeView extends ItemView {
     private renderHero(host: HTMLElement, projectCount: number, running: number): void {
         const hero = host.createDiv({ cls: 'nw-home-hero' });
         const text = hero.createDiv({ cls: 'nw-home-hero-text' });
-        text.createEl('h2', { text: '📖 创作主页' });
+        text.createEl('h2', { text: t('home.heroTitle') });
         text.createEl('p', {
             text: projectCount > 0
-                ? `已有 ${projectCount} 个项目${running > 0 ? `，${running} 个任务进行中` : ''}。`
-                : '从长篇、短篇或剧本开始；所有数据都在你的 vault 里。',
+                ? t('home.heroWithProjects', {
+                    count: projectCount,
+                    extra: running > 0 ? t('home.heroRunning', { count: running }) : '',
+                })
+                : t('home.heroEmpty'),
         });
         const actions = hero.createDiv({ cls: 'nw-home-hero-actions' });
-        this.actionButton(actions, running > 0 ? `🧵 任务中心（${running}）` : '🧵 任务中心', 'nw-btn-secondary', () => {
+        this.actionButton(actions, running > 0 ? t('home.jobCenterCount', { count: running }) : t('home.jobCenter'), 'nw-btn-secondary', () => {
             this.plugin.openJobCenter();
         });
-        this.actionButton(actions, '🩺 项目体检', 'nw-btn-secondary', () => {
+        this.actionButton(actions, t('home.projectHealth'), 'nw-btn-secondary', () => {
             this.plugin.openProjectHealth();
         });
-        this.actionButton(actions, '🧩 资产总览', 'nw-btn-secondary', () => {
+        this.actionButton(actions, t('home.assetRegistry'), 'nw-btn-secondary', () => {
             this.plugin.openAssetRegistry();
         });
-        this.actionButton(actions, '🗺 规划画布', 'nw-btn-secondary', () => {
+        this.actionButton(actions, t('home.planningCanvas'), 'nw-btn-secondary', () => {
             void this.plugin.openPlanningCanvas();
         });
-        this.actionButton(actions, '🕸 设定实体图', 'nw-btn-secondary', () => {
+        this.actionButton(actions, t('home.memoryGraph'), 'nw-btn-secondary', () => {
             void this.plugin.openMemoryGraph();
         });
-        this.actionButton(actions, '💰 用量账本', 'nw-btn-secondary', () => {
+        this.actionButton(actions, t('home.usageLedger'), 'nw-btn-secondary', () => {
             this.plugin.openUsageLedger();
         });
-        this.actionButton(actions, '🗂 备份中心', 'nw-btn-secondary', () => {
+        this.actionButton(actions, t('home.backupCenter'), 'nw-btn-secondary', () => {
             this.plugin.openBackupCenter();
         });
-        this.actionButton(actions, '🚀 首启引导', 'nw-btn-secondary', () => {
+        this.actionButton(actions, t('home.onboarding'), 'nw-btn-secondary', () => {
             this.plugin.openOnboarding();
         });
     }
 
     private renderModes(host: HTMLElement, projects: string[]): void {
-        host.createEl('h3', { text: '开始创作', cls: 'nw-home-section-title' });
+        host.createEl('h3', { text: t('home.start'), cls: 'nw-home-section-title' });
         const grid = host.createDiv({ cls: 'nw-home-mode-grid' });
         for (const mode of MODE_ORDER) {
             const spec = CREATION_MODE_SPECS[mode];
+            const modeName = creationModeDisplayName(mode);
             const count = projects.filter(project => modeFromLibraryPath(project) === mode).length;
             const card = grid.createDiv({ cls: 'nw-home-mode-card' });
             card.createDiv({ cls: 'nw-home-mode-icon', text: spec.icon });
-            card.createEl('h4', { text: spec.label });
-            card.createEl('p', { text: spec.description });
+            card.createEl('h4', { text: modeName });
+            card.createEl('p', { text: creationModeDisplayDescription(mode) });
             card.createEl('div', {
                 cls: 'nw-home-mode-meta',
-                text: count > 0 ? `${count} 个项目 · 单元「${spec.unitLabel}」` : `还没有${spec.label}项目`,
+                text: count > 0
+                    ? t('home.modeMeta', { count, unit: creationUnitDisplayLabel(mode) })
+                    : t('home.modeMetaEmpty', { mode: modeName }),
             });
             const button = card.createEl('button', {
                 cls: 'nw-btn nw-btn-primary',
-                text: count > 0 ? `进入${spec.label}` : `新建${spec.label}`,
+                text: count > 0 ? t('home.enterMode', { mode: modeName }) : t('home.createMode', { mode: modeName }),
             });
             button.addEventListener('click', () => {
                 if (mode === 'long') {
@@ -163,48 +176,48 @@ export class HomeView extends ItemView {
     }
 
     private renderNextStep(host: HTMLElement, projects: string[], activeProject: string | null): void {
-        host.createEl('h3', { text: '下一步', cls: 'nw-home-section-title' });
+        host.createEl('h3', { text: t('home.nextStep'), cls: 'nw-home-section-title' });
         const card = host.createDiv({ cls: 'nw-home-next' });
         const hasKey = hasUsableAiCredentials(this.plugin.settings);
 
         if (!hasKey) {
-            card.createEl('h4', { text: '先配置 API key' });
-            card.createEl('p', { text: '写作、质检、结算都需要模型；key 会加密保存在插件数据里。' });
-            this.actionButton(card, '⚙️ 去配置', 'nw-btn-primary', () => this.plugin.openPluginSettings());
+            card.createEl('h4', { text: t('home.needKeyTitle') });
+            card.createEl('p', { text: t('home.needKeyDesc') });
+            this.actionButton(card, t('home.goSettings'), 'nw-btn-primary', () => this.plugin.openPluginSettings());
             return;
         }
         if (projects.length === 0) {
-            card.createEl('h4', { text: '还没有项目' });
-            card.createEl('p', { text: '可以新建项目，或先导入一个 1 卷 3 章的示例项目看看流程。' });
+            card.createEl('h4', { text: t('home.noProjectTitle') });
+            card.createEl('p', { text: t('home.noProjectDesc') });
             const actions = card.createDiv({ cls: 'nw-home-next-actions' });
-            this.actionButton(actions, '✨ 导入示例项目', 'nw-btn-primary', () => {
+            this.actionButton(actions, t('home.importExample'), 'nw-btn-primary', () => {
                 void this.plugin.commandUiPort?.executeCommand(CommandIds.IMPORT_EXAMPLE);
             });
-            this.actionButton(actions, '新建长篇', 'nw-btn-secondary', () => {
+            this.actionButton(actions, t('home.newLong'), 'nw-btn-secondary', () => {
                 void this.plugin.openFullWriterHome();
             });
             return;
         }
 
         const target = activeProject && projects.includes(activeProject) ? activeProject : projects[0];
-        card.createEl('h4', { text: `继续《${projectDisplayName(target)}》` });
-        card.createEl('p', { text: '打开创作流程，查看阶段进度与下一件该做的事。' });
+        card.createEl('h4', { text: t('home.continueTitle', { name: projectDisplayName(target) }) });
+        card.createEl('p', { text: t('home.continueDesc') });
         const actions = card.createDiv({ cls: 'nw-home-next-actions' });
-        this.actionButton(actions, '🧭 打开创作流程', 'nw-btn-primary', () => {
+        this.actionButton(actions, t('home.openFlow'), 'nw-btn-primary', () => {
             void this.plugin.openCreationFlow(target);
         });
-        this.actionButton(actions, '🤖 交给 Agent', 'nw-btn-secondary', () => {
+        this.actionButton(actions, t('home.handToAgent'), 'nw-btn-secondary', () => {
             void this.plugin.openAgentWorkbench();
         });
     }
 
     private renderRecent(host: HTMLElement, projects: string[]): void {
-        host.createEl('h3', { text: '最近项目', cls: 'nw-home-section-title' });
+        host.createEl('h3', { text: t('home.recent'), cls: 'nw-home-section-title' });
         if (projects.length === 0) {
             const empty = host.createDiv({ cls: 'nw-empty-state' });
             empty.createDiv({ cls: 'nw-empty-state-icon', text: '📂' });
-            empty.createDiv({ cls: 'nw-empty-state-title', text: '还没有项目' });
-            empty.createDiv({ cls: 'nw-empty-state-description', text: '从上方三种模式开始，或导入示例项目。' });
+            empty.createDiv({ cls: 'nw-empty-state-title', text: t('home.emptyTitle') });
+            empty.createDiv({ cls: 'nw-empty-state-description', text: t('home.emptyDesc') });
             return;
         }
         const list = host.createDiv({ cls: 'nw-home-recent' });
@@ -216,12 +229,11 @@ export class HomeView extends ItemView {
         }).slice(0, 6);
         for (const project of ordered) {
             const mode = modeFromLibraryPath(project);
-            const spec = mode ? CREATION_MODE_SPECS[mode] : null;
             const row = list.createDiv({ cls: 'nw-home-recent-row' });
-            row.createSpan({ cls: 'nw-home-recent-mode', text: spec?.icon ?? '📁' });
+            row.createSpan({ cls: 'nw-home-recent-mode', text: mode ? CREATION_MODE_SPECS[mode].icon : '📁' });
             row.createSpan({ cls: 'nw-home-recent-name', text: projectDisplayName(project) });
-            row.createSpan({ cls: 'nw-home-recent-type', text: spec?.label ?? '旧版项目' });
-            const open = row.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: '打开' });
+            row.createSpan({ cls: 'nw-home-recent-type', text: mode ? creationModeDisplayName(mode) : t('home.legacyProject') });
+            const open = row.createEl('button', { cls: 'nw-btn nw-btn-secondary', text: t('home.open') });
             open.addEventListener('click', () => {
                 void this.plugin.openCreationFlow(project);
             });
