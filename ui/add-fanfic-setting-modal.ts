@@ -1,4 +1,5 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
+import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { AIEngine } from '@/engine/ai-engine';
 import { mkdirp } from '@/utils/helpers';
@@ -83,7 +84,7 @@ export class AddFanficSettingModal extends Modal {
         contentEl.addClass('nw-entity-scope');
         contentEl.addClass('nw-form-stack');
         contentEl.empty();
-        contentEl.createEl('h2', { text: '📚 添加同人设定', attr: { style: 'margin:0; font-size:18px;' } });
+        contentEl.createEl('h2', { text: t("addFanfic.common.k1"), attr: { style: 'margin:0; font-size:18px;' } });
 
         // 阶段 A4：约束流链路状态（考据 → 设定 → 审核 → 绑定 → 注入）。
         // 先占位，异步探测后填入——用户一进来就能看到「这条链路现在断在哪」。
@@ -92,32 +93,32 @@ export class AddFanficSettingModal extends Modal {
 
         if (!this.project) {
             contentEl.createEl('p', {
-                text: '⚠️ 未检测到当前项目。请先从项目卡片或工作台进入，生成后的草稿才能进入人工审核并绑定。',
+                text: t("addFanfic.common.k2"),
                 cls: 'setting-item-description',
             });
         }
 
         const nameInput = contentEl.createEl('input', {
             type: 'text',
-            placeholder: '作品名称（如：遮天、斗破苍穹）',
+            placeholder: t("addFanfic.common.k3"),
             cls: 'nw-input novel-writer-input',
         });
         const typeInput = contentEl.createEl('input', {
             type: 'text',
-            placeholder: '作品类型（如：玄幻、仙侠、奇幻、科幻、都市）',
+            placeholder: t("addFanfic.common.k4"),
             value: '玄幻',
             cls: 'nw-input novel-writer-input',
         });
         const authorInput = contentEl.createEl('input', {
             type: 'text',
-            placeholder: '作者（用于检索官方资料）',
+            placeholder: t("addFanfic.common.k5"),
             cls: 'nw-input novel-writer-input',
         });
 
         this.renderCanonSources(contentEl, nameInput, typeInput, authorInput);
 
         this.generateButton = contentEl.createEl('button', {
-            text: '生成同人设定草稿',
+            text: t("addFanfic.common.k6"),
             cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
         });
         this.generateButton.onclick = async () => {
@@ -133,7 +134,7 @@ export class AddFanficSettingModal extends Modal {
 
         // v4.83.1 新流程：知识库拆解素材 → 生成草稿 → 联网验证 → 写入 _待审核
         const knowledgeButton = contentEl.createEl('button', {
-            text: '🧠 从知识库生成并联网验证',
+            text: t("addFanfic.common.k7"),
             cls: 'nw-btn nw-btn-secondary',
             attr: {
                 title: '用知识库里已拆解的参考书内容生成设定草稿，再用联网检索来源逐条核对；'
@@ -169,35 +170,35 @@ export class AddFanficSettingModal extends Modal {
     ): void {
         const section = contentEl.createDiv({ cls: 'nw-card' });
         section.addClass('nw-form-stack');
-        section.createEl('h3', { text: '📚 原作资料来源（必须为官方/原著）' });
+        section.createEl('h3', { text: t("addFanfic.ui.k1") });
         section.createEl('p', {
-            text: '同人设定只参考原著/官方资料，不参考同人、改编、外传等衍生作品。没有来源的字段会写成“待核实”，不会让 AI 凭记忆编造。',
+            text: t("addFanfic.ui.k2"),
             cls: 'nw-text-12-muted',
         });
 
         const form = section;
         const urlInput = form.createEl('input', {
             type: 'text',
-            placeholder: '官方资料 URL（作者/出版方/官方 Wiki）',
+            placeholder: t("addFanfic.ui.k3"),
             cls: 'nw-input',
         });
         const titleInput = form.createEl('input', {
             type: 'text',
-            placeholder: '来源标题（可选）',
+            placeholder: t("addFanfic.ui.k4"),
             cls: 'nw-input',
         });
         const tierSelect = form.createEl('select', { cls: 'nw-select' });
-        tierSelect.createEl('option', { value: 'auto', text: '来源类型：自动识别' });
-        tierSelect.createEl('option', { value: 'official', text: '来源类型：官方原著（作者/出版方/授权文本）' });
-        tierSelect.createEl('option', { value: 'official-wiki', text: '来源类型：官方 Wiki' });
-        tierSelect.createEl('option', { value: 'reference', text: '来源类型：参考资料（不能单独作为事实依据）' });
+        tierSelect.createEl('option', { value: 'auto', text: t("addFanfic.ui.k5") });
+        tierSelect.createEl('option', { value: 'official', text: t("addFanfic.ui.k6") });
+        tierSelect.createEl('option', { value: 'official-wiki', text: t("addFanfic.ui.k7") });
+        tierSelect.createEl('option', { value: 'reference', text: t("addFanfic.ui.k8") });
         const excerptInput = form.createEl('textarea', {
             cls: 'nw-textarea nw-u-minh-48px',
-            attr: { rows: '3', placeholder: '可选：粘贴官方原文短摘录（不填则尝试抓取页面）' },
+            attr: { rows: '3', placeholder: t("addFanfic.ui.k9") },
         });
 
         const row = form.createDiv({ cls: 'nw-flex-gap10-wrap' });
-        const addBtn = row.createEl('button', { text: '➕ 添加官方来源', cls: 'nw-btn nw-btn-secondary' });
+        const addBtn = row.createEl('button', { text: t("addFanfic.ui.k10"), cls: 'nw-btn nw-btn-secondary' });
         addBtn.onclick = async () => {
             const url = urlInput.value.trim();
             if (!url) {
@@ -223,13 +224,13 @@ export class AddFanficSettingModal extends Modal {
                 excerptInput.value = '';
                 this.renderSourceList();
             } catch (error) {
-                showErrorNotice(error instanceof Error ? error.message : String(error), { title: '添加来源失败', timeout: 8000 });
+                showErrorNotice(error instanceof Error ? error.message : String(error), { title: t("addFanfic.ui.k11"), timeout: 8000 });
             } finally {
                 addBtn.disabled = false;
             }
         };
 
-        const searchBtn = row.createEl('button', { text: '🌐 联网检索官方资料', cls: 'nw-btn nw-btn-secondary' });
+        const searchBtn = row.createEl('button', { text: t("addFanfic.ui.k12"), cls: 'nw-btn nw-btn-secondary' });
         searchBtn.onclick = async () => {
             const workName = nameInput.value.trim();
             if (!workName) {
@@ -252,10 +253,10 @@ export class AddFanficSettingModal extends Modal {
                 this.renderSourceList();
                 for (const warning of result.warnings) showWarningNotice(warning, { timeout: 6000 });
                 if (result.sources.length === 0) {
-                    showWarningNotice('没有检索到可用官方来源；请手动添加官方 URL 或原文摘录', { timeout: 7000 });
+                    showWarningNotice(t("addFanfic.ui.k13"), { timeout: 7000 });
                 }
             } catch (error) {
-                showErrorNotice(error instanceof Error ? error.message : String(error), { title: '检索失败', timeout: 8000 });
+                showErrorNotice(error instanceof Error ? error.message : String(error), { title: t("addFanfic.ui.k14"), timeout: 8000 });
             } finally {
                 searchBtn.disabled = false;
                 searchBtn.textContent = '🌐 联网检索官方资料';
@@ -287,7 +288,7 @@ export class AddFanficSettingModal extends Modal {
             (validation.errors.length > 0 ? ` ${validation.errors.join('；')}` : '')
         );
         if (this.sources.length === 0) {
-            this.sourceListEl.createEl('p', { text: '尚未导入来源。' });
+            this.sourceListEl.createEl('p', { text: t("addFanfic.ui.k15") });
             return;
         }
         for (const source of this.sources) {
@@ -298,7 +299,7 @@ export class AddFanficSettingModal extends Modal {
                 text: `[${source.id}] ${source.title} · ${tier}`,
                 cls: source.tier === 'derivative' ? 'nw-text-error' : 'nw-text-12-muted',
             });
-            const remove = row.createEl('button', { text: '移除', cls: 'nw-btn nw-btn-secondary' });
+            const remove = row.createEl('button', { text: t("addFanfic.ui.k16"), cls: 'nw-btn nw-btn-secondary' });
             remove.onclick = () => {
                 this.sources = this.sources.filter(item => item.id !== source.id)
                     .map((item, index) => ({ ...item, id: `S${index + 1}` }));
@@ -311,14 +312,14 @@ export class AddFanficSettingModal extends Modal {
     private renderTemplateSection(contentEl: HTMLElement, nameInput: HTMLInputElement): void {
         const section = contentEl.createDiv({ cls: 'nw-card' });
         section.addClass('nw-form-stack');
-        section.createEl('h3', { text: '📄 同人设定模板' });
+        section.createEl('h3', { text: t("addFanfic.ui.k17") });
         section.createEl('p', {
-            text: '项目内会保留一份模板；模板丢失时用「从模板新建」自动恢复，不需要重新配置。',
+            text: t("addFanfic.ui.k18"),
             cls: 'nw-text-12-muted',
         });
         const row = section.createDiv({ cls: 'nw-flex-gap10-wrap' });
         const createBtn = row.createEl('button', {
-            text: '📄 从模板新建空白设定',
+            text: t("addFanfic.ui.k19"),
             cls: 'nw-btn nw-btn-secondary',
         });
         createBtn.onclick = async () => {
@@ -330,11 +331,11 @@ export class AddFanficSettingModal extends Modal {
                 new FanficReviewModal(this.app, this.plugin, this.project, path).open();
                 this.close();
             } catch (error) {
-                showErrorNotice(error instanceof Error ? error.message : String(error), { title: '创建模板草稿失败', timeout: 8000 });
+                showErrorNotice(error instanceof Error ? error.message : String(error), { title: t("addFanfic.ui.k20"), timeout: 8000 });
             }
         };
         const restoreBtn = row.createEl('button', {
-            text: '♻️ 恢复项目模板',
+            text: t("addFanfic.ui.k21"),
             cls: 'nw-btn nw-btn-secondary',
         });
         restoreBtn.onclick = async () => {
@@ -343,7 +344,7 @@ export class AddFanficSettingModal extends Modal {
                 const path = await ensureFanficTemplate(this.app, this.project);
                 showSuccessNotice(`已确保模板存在：${path}`, { timeout: 5000 });
             } catch (error) {
-                showErrorNotice(error instanceof Error ? error.message : String(error), { title: '恢复模板失败', timeout: 8000 });
+                showErrorNotice(error instanceof Error ? error.message : String(error), { title: t("addFanfic.ui.k22"), timeout: 8000 });
             }
         };
     }
@@ -357,12 +358,12 @@ export class AddFanficSettingModal extends Modal {
         if (files.length === 0) return;
 
         contentEl.createEl('h3', { text: `📝 待审核草稿（${files.length}）` });
-        const hint = contentEl.createEl('p', { text: '生成后的设定必须先通过人工审核，才能绑定到项目。' });
+        const hint = contentEl.createEl('p', { text: t("addFanfic.ui.k23") });
         hint.classList.add('setting-item-description');
         for (const file of files) {
             const row = contentEl.createDiv({ cls: 'nw-flex-row-sm' });
             row.createSpan({ text: file.basename, cls: 'nw-text-13-normal-flex' });
-            const review = row.createEl('button', { text: '审核', cls: 'nw-btn nw-btn-primary' });
+            const review = row.createEl('button', { text: t("addFanfic.ui.k24"), cls: 'nw-btn nw-btn-primary' });
             review.onclick = () => {
                 new FanficReviewModal(this.app, this.plugin, this.project!, file.path, (approvedPath) => {
                     showSuccessNotice(`已通过审核：${approvedPath}`, { timeout: 5000 });
@@ -382,14 +383,14 @@ export class AddFanficSettingModal extends Modal {
         );
         if (candidates.length === 0) return;
 
-        contentEl.createEl('h3', { text: '🔗 使用已有设定文件' });
-        const hint = contentEl.createEl('p', { text: '只允许绑定已通过人工审核的设定文件。', cls: 'nw-text-12-muted' });
+        contentEl.createEl('h3', { text: t("addFanfic.ui.k25") });
+        const hint = contentEl.createEl('p', { text: t("addFanfic.ui.k26"), cls: 'nw-text-12-muted' });
 
         let selectedPath = '';
         const picker = contentEl.createDiv({ cls: 'nw-card' });
         picker.addClass('nw-form-stack');
         const trigger = picker.createEl('button', {
-            text: '选择设定文件',
+            text: t("addFanfic.ui.k27"),
             cls: 'nw-input nw-u-w-100',
             attr: { type: 'button', 'aria-expanded': 'false' },
         });
@@ -420,7 +421,7 @@ export class AddFanficSettingModal extends Modal {
             }
         };
 
-        const bindButton = contentEl.createEl('button', { text: '绑定所选文件', cls: 'nw-btn novel-writer-secondary-button' });
+        const bindButton = contentEl.createEl('button', { text: t("addFanfic.ui.k28"), cls: 'nw-btn novel-writer-secondary-button' });
         bindButton.onclick = async () => {
             if (!selectedPath) {
                 new Notice('请先选择设定文件', 4000);
@@ -428,14 +429,14 @@ export class AddFanficSettingModal extends Modal {
             }
             const file = this.app.vault.getAbstractFileByPath(selectedPath);
             if (!(file instanceof TFile)) {
-                showErrorNotice('文件不存在，可能已被移动或删除', { timeout: 6000 });
+                showErrorNotice(t("addFanfic.ui.k29"), { timeout: 6000 });
                 return;
             }
             let content = '';
             try {
                 content = await this.app.vault.read(file);
             } catch {
-                showErrorNotice('读取设定文件失败', { timeout: 6000 });
+                showErrorNotice(t("addFanfic.ui.k30"), { timeout: 6000 });
                 return;
             }
             if (!content.trim()) {
@@ -445,7 +446,7 @@ export class AddFanficSettingModal extends Modal {
             try {
                 await attachFanficPathToProject(this.app, project, selectedPath);
             } catch (error) {
-                showErrorNotice(error instanceof Error ? error.message : String(error), { title: '绑定失败', timeout: 8000 });
+                showErrorNotice(error instanceof Error ? error.message : String(error), { title: t("addFanfic.ui.k31"), timeout: 8000 });
                 return;
             }
             const check = isFanficSettingsContentValidEnough(content);
@@ -568,12 +569,12 @@ export class AddFanficSettingModal extends Modal {
             const draftResult = await this.aiEngine.callAI(draftPrompt.system, draftPrompt.user, undefined, 0.3, 8192);
             if (draftResult.error) {
                 notice.hide();
-                showErrorNotice(draftResult.error, { title: '生成失败', timeout: 12000 });
+                showErrorNotice(draftResult.error, { title: t("addFanfic.common.k8"), timeout: 12000 });
                 return;
             }
             if (!draftResult.content.trim()) {
                 notice.hide();
-                showErrorNotice('模型没有返回内容，未保存', { timeout: 8000 });
+                showErrorNotice(t("addFanfic.common.k9"), { timeout: 8000 });
                 return;
             }
 
@@ -648,7 +649,7 @@ export class AddFanficSettingModal extends Modal {
         } catch (error) {
             notice.hide();
             showErrorNotice(error instanceof Error ? error.message : String(error), {
-                title: '从知识库生成失败',
+                title: t("addFanfic.common.k10"),
                 timeout: 12000,
             });
         }
@@ -712,11 +713,11 @@ ${formatCanonSourcesForPrompt(selectAuthoritativeSources(this.sources))}`;
             const userContent = `请为《${workName}》生成同人设定草稿。\n\n【文件骨架】\n${skeleton}`;
             const result = await this.aiEngine.callAI(systemPrompt, userContent, undefined, 0.4, 8192);
             if (result.error) {
-                showErrorNotice(result.error, { title: '生成失败', timeout: 12000 });
+                showErrorNotice(result.error, { title: t("addFanfic.common.k11"), timeout: 12000 });
                 return;
             }
             if (!result.content.trim()) {
-                showErrorNotice('模型没有返回内容，未保存', { timeout: 8000 });
+                showErrorNotice(t("addFanfic.common.k12"), { timeout: 8000 });
                 return;
             }
 
@@ -745,7 +746,7 @@ ${formatCanonSourcesForPrompt(selectAuthoritativeSources(this.sources))}`;
                     { timeout: 12000 },
                 );
             } else {
-                showSuccessNotice('草稿已保存到「_待审核」，请在审核页逐项核对后通过', { timeout: 8000 });
+                showSuccessNotice(t("addFanfic.common.k13"), { timeout: 8000 });
             }
 
             const file = this.app.vault.getAbstractFileByPath(filePath);
