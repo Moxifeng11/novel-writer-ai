@@ -3207,3 +3207,50 @@ novel-tags（1,099）/ add-fanfic-setting（973）/ ai-builder（864）；知识
 **下一轮候选**：散落弹窗 golden-opening（1,982）/ novel-tags（1,099）/ add-fanfic-setting（973）/
 ai-builder（864）/ `ui/agent-workbench-view.ts`（126 条 / 730 字）；种子已由 `D:\nw-tmp\audit-cjk.mjs`
 `--json` 给出（`ui/home-view.ts` 已迁完，下一档从 `ui/batch-create-modal.ts` 104 条 / 583 字起）。
+
+## 第一百零七轮：i18n 第二期第39片 —— 黄金开篇工坊补漏（2026-11-19，DSH）
+
+**触发**：用户 m20285「继续」，按「散落弹窗」候选顺序做 golden-opening。读码后发现主体 111 键已被
+ZCode 迁完（5ba4ad66 + 948248e2，`goldenOpening.{common,chapters,hooks,rhythm,chars,world,scoring}`），
+本片降级为补漏片——只剩题材标签、钩子类型、评分/段落标签与保存段 40 处。
+
+**改动**：`ui/golden-opening-modal.ts`（1,452 行，CRLF）加两个模块级 helper：
+`genreLabel(genre)`（14 个 case → `goldenOpening.labels.genre.*`，default 原样返回）与
+`hookTypeLabel(index)`（6 个 case + `hookTypeFallback`，替掉原来的 `hookTypes` 数组）；
+迁移点包括 tag 文案、章节标题（`chapterTitle` 插值）、`strengthScore` / `paraLabel` /
+`charRole` / `charRelation` / `severityLine` / 两级优先级、解析兜底六处、三条 Notice
+（`hookCheckDone` / `scoringDone`）与保存段四条（`exportIntro` / `exportSaveCurrent` /
+`savedTo` / `pathOccupied`）。
+
+**保留中文（数据与显示分离）**：`GENRE_OPTIONS` 与 switch 的 case 值（提示词
+`题材标签：${genres.join('、') || '不限'}` 与 frontmatter `genre:` 逐字依赖）、七段
+systemPrompt/userPrompt、`buildGoldenContent()` 生成的 `# 黄金三章大纲` 正文与
+`tags: [黄金开篇, 大纲]`、文件名 `黄金开篇.md`、15 条 `log.*`。
+
+**资源**：`goldenOpening.labels.*` 26 键 + `.genre.*` 14 键（`xuanhuan`/…/`competitive`/`fanfic`），
+插在 `goldenOpening.scoring` 之后、`novelTags` 之前；两份资源都是 CRLF，锚点必须用 `\r\n` 拼。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；`npx vitest run tests/unit/i18n/golden-opening-labels.test.ts tests/unit/ui/golden-opening-modal-dom.test.ts`（新增 6 例 + 原有 5 例）全绿。
+- `check:i18n` zh/en 各 **4922**、0 无法解析键、动态键 29、棘轮 **212 文件 / 6755 条**（已 --update-baseline）。
+- `check:bundle` main.js **6,144,654**（+4,076，40 键×2 语言进包）、styles.css **800,020**（±0）。
+- `npm run build` + `node scripts/dev-vault.mjs sync --vault=D:\nw-dev-vault`（更新 4 文件）。
+- 实机（`D:\nw-tmp\snap-i18n39.mjs <lang>`）：zh chapters 640×605 / cjk 95、hooks cjk 93、scoring cjk 67
+  （全是题材数据与提示文字）；en **三场景 cjk 全 0**，题材标签全英文，仅因英文更长由两行变三行使
+  chapters 弹窗 758 → 793（预期）。截图 `D:\nw-dev-vault\_visual-i18n39\{golden-chapters,golden-hooks,golden-scoring}-{zh-CN,en-US}.png`。
+- `npm run preflight` **EXIT=0**（990 文件 / **10,336 通过 + 3 跳过**；日志 `D:\nw-tmp\preflight-i18n39.log`）。
+
+**坑**
+1. **页签不能按文案点**：en 下是 "🪝 Opening hooks" 而不是 "Hooks"，按文案匹配会停在第一页；
+   改按索引 `document.querySelectorAll('.nw-go-tabs button')[1]` / `[5]`。
+2. **键名与代码要一次对齐**：代码写 `genre.sports`、资源写 `competitive` 时 `check:i18n` 直接报
+   「t() 引用了资源里不存在的键」，改代码对齐成本最低。
+3. **动工前先 grep 已迁范围**：`grep "t('goldenOpening"` 一眼看出主体已迁，避免整片重做。
+
+**文档**：`docs/modules/i18n.md`（§2 已迁移面 bullet + 资源 +40 + 棘轮 6773 → 6755 / 212 文件、§5 表行、
+§6 测试、§7 backlog、§9 三条经验）、`docs/modules/INDEX.md`、`docs/CURRENT.md`、
+`docs/planning/2026-11-18-feature-gaps.md`、本轮记录；基线 `.bundle-baseline.json` / `.i18n-baseline.json`。
+
+**下一轮候选**：散落弹窗 novel-tags（1,099）/ add-fanfic-setting（973）/ ai-builder（864）/
+`ui/agent-workbench-view.ts`（126 条 / 730 字）；`D:\nw-tmp\audit-cjk.mjs --json` 给出的下一档仍是
+`ui/batch-create-modal.ts` 104 条 / 583 字。

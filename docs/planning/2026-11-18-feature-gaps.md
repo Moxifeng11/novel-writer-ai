@@ -286,8 +286,10 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
 - 第二期第38片（2026-11-19，DSH）：项目入口三件套 —— `ui/home-view.ts`（235 行全量）+ `ui/mode-document-modal.ts`（200 行，`TITLES`/`DESCRIPTIONS` 模块常量改 `modeTitle()`/`modeDescription()` 函数）+ `ui/pre-research-modal.ts` 残留 27 处，迁 `home.*` 36 + `modeDoc.*` 27 + `creationMode.*` 9 + `preResearch.hint.*` 8 / `.msg.*` 19 共 **99 键**；
   `shared/creation-mode.ts` 新增三个**界面**显示函数（`creationModeDisplayName` / `creationModeDisplayDescription` / `creationUnitDisplayLabel`），`getCreationModeLabel()` 原样保留（它喂 `template-vars-builder` 的 `vars["creationModeLabel"]` 提示词与 agent 文本）；
   zh/en 资源各 **4882** 条；棘轮收紧到 **212 文件 / 6773 条**；新增 `tests/unit/i18n/project-entry-resources.test.ts` 7 例；实机 zh/en 各 3 场景（主页 1096×992 / 前期调研 640×634 / 模式文档 640×650），en 主页 CJK=12（项目名 + 别的模块状态栏「今日 0 字」）、前期调研 CJK=142（番茄主分类选项与 vault 目录名，数据层）、模式文档 CJK=20（保存路径数据）。
+- 第二期第39片（2026-11-19，DSH）：黄金开篇工坊补漏 —— `ui/golden-opening-modal.ts`（1,452 行）补 40 处正文文案，迁 `goldenOpening.labels.*` 26 + `.genre.*` 14（题材标签 / 钩子类型 / 评分与段落标签 / 三条 Notice / 保存段四条）；两个 switch helper `genreLabel(genre)` 与 `hookTypeLabel(index)`，键写成 switch 分支字面量；`GENRE_OPTIONS` 与 case 值仍中文（提示词 `题材标签：…` 与 frontmatter `genre:` 依赖），七段 systemPrompt、`buildGoldenContent()` 正文、文件名 `黄金开篇.md` 与日志保留；
+  主体 111 键由 ZCode（5ba4ad66 + 948248e2）已迁，本片是补漏片；zh/en 资源各 **4922** 条；棘轮收紧到 **212 文件 / 6755 条**；新增 `tests/unit/i18n/golden-opening-labels.test.ts` 6 例；实机 zh/en 各 3 场景（en 三场景 CJK=0，英文题材标签换行使 chapters 弹窗 758 → 793）；preflight **EXIT=0**（990 文件 / **10,336 通过 + 3 跳过**）。
 - 后续：第二期余下（知识库 D 类两文件 `ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`
-  用户已裁定随视觉重构；散落弹窗 golden-opening 1982 / novel-tags 1099 / add-fanfic-setting 973 /
+  用户已裁定随视觉重构；散落弹窗 novel-tags 1099 / add-fanfic-setting 973 /
   ai-builder 864 等），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 
 ---
