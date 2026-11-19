@@ -9,9 +9,10 @@
 import { describe, expect, it } from 'vitest';
 import type { ClassificationResult, ClassificationTag } from '../../../shared/content-classifier';
 import type { GenreConfig } from '../../../shared/webnovel-knowledge-base';
+import { translate } from '../../../i18n';
 import {
-    KB_CONFIG_CATEGORIES,
-    KB_GENRE_STAT_LABELS,
+    getKbConfigCategories,
+    getKbGenreStatLabels,
     CLASSIFICATION_PREVIEW_LIMIT,
     CUSTOM_TAG_PREVIEW_LIMIT,
     SUB_GENRE_PREVIEW_LIMIT,
@@ -192,7 +193,7 @@ describe('buildGenreStatItems — 题材统计行', () => {
             abilityTypes: ['x'],
             techniques: [{}, {}, {}] as GenreConfig['techniques'],
         }));
-        expect(items.map(i => i.label)).toEqual([...KB_GENRE_STAT_LABELS]);
+        expect(items.map(i => i.label)).toEqual([...getKbGenreStatLabels()]);
         expect(items.map(i => i.value)).toEqual([2, 1, 3]);
     });
 });
@@ -220,8 +221,12 @@ describe('selectSubGenrePreview — 细分题材预览与溢出', () => {
 
 describe('固定清单与文案', () => {
     it('频道分类三项顺序与图标固定', () => {
-        expect(KB_CONFIG_CATEGORIES.map(c => c.key)).toEqual(['male', 'female', 'neutral']);
-        expect(KB_CONFIG_CATEGORIES.map(c => c.label)).toEqual(['男频', '女频', '中性']);
+        const categories = getKbConfigCategories();
+        expect(categories.map(c => c.key)).toEqual(['male', 'female', 'neutral']);
+        expect(categories.map(c => c.label)).toEqual(['男频', '女频', '中性']);
+        // i18n：英文资源下同一函数必须给出英文标签（文案在调用时求值）
+        expect(translate('en-US', 'knowledgebase.format.channel.male')).toBe('Male');
+        expect(translate('en-US', 'knowledgebase.card.genreStat.personality')).toBe('Personality tags');
     });
 
     it('细分题材区块标题带总数', () => {

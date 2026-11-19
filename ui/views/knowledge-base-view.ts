@@ -49,7 +49,7 @@ import {
     countBooksBySubGenre,
 } from './kb-book-filter';
 import {
-    TASK_FILTER_OPTIONS,
+    getTaskFilterOptions,
     filterAndSortTasks,
     computeTaskStats,
     selectSelectedCancellable,
@@ -2332,7 +2332,7 @@ export class KnowledgeBaseView extends ItemView {
             cls: 'nw-kb-select'
         });
         type TaskFilterType = 'all' | 'running' | 'pending' | 'completed' | 'failed' | 'cancelled';
-        const filterOptions = TASK_FILTER_OPTIONS;
+        const filterOptions = getTaskFilterOptions();
         filterOptions.forEach(opt => {
             const option = statusSelect.createEl('option', { value: opt.value, text: opt.label });
             if (this.taskFilter === opt.value) option.selected = true;

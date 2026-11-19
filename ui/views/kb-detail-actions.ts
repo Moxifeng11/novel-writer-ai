@@ -10,6 +10,7 @@
  */
 
 import { Notice, type App } from 'obsidian';
+import { t } from '@/i18n';
 import type { BookBasicInfo, KnowledgeBaseManager } from '@/services/knowledge-base-manager';
 import type { DeconstructionScheduler } from '@/engine/deconstruction-scheduler';
 import { OperationConfirmModal } from '@/ui/components/progress';
@@ -85,10 +86,10 @@ export function buildKbDetailActionButtons(book: BookBasicInfo, actionsEl: HTMLE
             btn.onclick = async () => {
                 try {
                     const confirmed = await OperationConfirmModal.confirm(host.app, {
-                        title: '强制取消拆解',
-                        description: '强制取消将中断当前拆解任务。已完成的维度会保留，但未完成的维度需要重新拆解。\n\n确定要强制取消吗？',
-                        confirmText: '强制取消',
-                        cancelText: '不取消',
+                        title: t('knowledgebase.detailAction.forceCancelTitle'),
+                        description: t('knowledgebase.detailAction.forceCancelDesc'),
+                        confirmText: t('knowledgebase.detailAction.forceCancelConfirm'),
+                        cancelText: t('knowledgebase.detailAction.forceCancelCancel'),
                         rememberKey: 'force-cancel-deconstruction'
                     });
                     if (confirmed) {
@@ -103,7 +104,7 @@ export function buildKbDetailActionButtons(book: BookBasicInfo, actionsEl: HTMLE
                     }
                 } catch (e) {
                     log.error('强制取消拆解失败:', e);
-                    new Notice(`强制取消失败: ${e instanceof Error ? e.message : String(e)}`);
+                    new Notice(t('knowledgebase.detailAction.forceCancelFailed', { message: e instanceof Error ? e.message : String(e) }));
                 }
             };
             continue;
@@ -117,7 +118,7 @@ export function buildKbDetailActionButtons(book: BookBasicInfo, actionsEl: HTMLE
                     await host.startDeconstruction(book);
                 } catch (e) {
                     log.error('恢复拆解失败:', e);
-                    new Notice(`恢复拆解失败: ${e instanceof Error ? e.message : String(e)}`);
+                    new Notice(t('knowledgebase.detailAction.resumeFailed', { message: e instanceof Error ? e.message : String(e) }));
                 }
             };
             continue;
@@ -133,7 +134,7 @@ export function buildKbDetailActionButtons(book: BookBasicInfo, actionsEl: HTMLE
                     host.refreshDetailIfSelected(book);
                 } catch (e) {
                     log.error('清除状态失败:', e);
-                    new Notice(`清除状态失败: ${e instanceof Error ? e.message : String(e)}`);
+                    new Notice(t('knowledgebase.detailAction.clearFailed', { message: e instanceof Error ? e.message : String(e) }));
                 }
             };
             continue;

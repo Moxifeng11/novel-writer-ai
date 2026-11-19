@@ -9,6 +9,7 @@
  * 视图侧仍持有具体样式表，这里只回答「是哪个档位 / 显示几条 / 显不显示」。
  */
 
+import { t } from '@/i18n';
 import type { BookBasicInfo } from '@/services/knowledge-base-manager';
 import type { ClassificationResult, ClassificationTag } from '@/shared/content-classifier';
 import type { GenreConfig, SubGenreConfig } from '@/shared/webnovel-knowledge-base';
@@ -16,15 +17,33 @@ import type { GenreConfig, SubGenreConfig } from '@/shared/webnovel-knowledge-ba
 /** 拆解状态徽标的语义档位（视图据此选配色） */
 export type KbStatusTone = 'success' | 'info' | 'danger' | 'warning' | 'muted';
 
-/** 题材配置面板的频道分类（顺序固定） */
-export const KB_CONFIG_CATEGORIES: Array<{ key: GenreConfig['category']; label: string; icon: string }> = [
-    { key: 'male', label: '男频', icon: '♂️' },
-    { key: 'female', label: '女频', icon: '♀️' },
-    { key: 'neutral', label: '中性', icon: '⚧️' },
-];
+/**
+ * 题材配置面板的频道分类（顺序固定）。
+ *
+ * i18n：文案必须在调用时求值，模块加载期求值会把语言固定成首次加载的语言。
+ *
+ * @returns 频道 key、本地化标签与图标
+ */
+export function getKbConfigCategories(): Array<{ key: GenreConfig['category']; label: string; icon: string }> {
+    return [
+        { key: 'male', label: t('knowledgebase.format.channel.male'), icon: '♂️' },
+        { key: 'female', label: t('knowledgebase.format.channel.female'), icon: '♀️' },
+        { key: 'neutral', label: t('knowledgebase.format.channel.neutral'), icon: '⚧️' },
+    ];
+}
 
-/** 题材卡统计行标签（顺序固定） */
-export const KB_GENRE_STAT_LABELS = ['性格标签', '能力类型', '写作技巧'] as const;
+/**
+ * 题材卡统计行标签（顺序固定，调用时求值）。
+ *
+ * @returns 性格标签 / 能力类型 / 写作技巧 的本地化文案
+ */
+export function getKbGenreStatLabels(): readonly string[] {
+    return [
+        t('knowledgebase.card.genreStat.personality'),
+        t('knowledgebase.card.genreStat.ability'),
+        t('knowledgebase.card.genreStat.technique'),
+    ];
+}
 
 /** 分类标签最多展示条数 */
 export const CLASSIFICATION_PREVIEW_LIMIT = 3;
@@ -76,7 +95,7 @@ export function shouldShowVectorWarning(book: Pick<BookBasicInfo, 'vectorStatus'
  * @returns 错误详情；无详情时给出兜底指引
  */
 export function resolveVectorWarningTitle(book: Pick<BookBasicInfo, 'vectorError'> | undefined): string {
-    return book?.vectorError || '检索不可用，请到详情页重试向量化';
+    return book?.vectorError || t('knowledgebase.card.vectorUnavailableTitle');
 }
 
 /**
@@ -101,7 +120,9 @@ export function formatBreakdownProgressLabel(
     book: Pick<BookBasicInfo, 'breakdownProgress'> | undefined,
 ): string {
     const value = book?.breakdownProgress;
-    return value === undefined ? '拆解中' : `拆解中 ${value}%`;
+    return value === undefined
+        ? t('knowledgebase.card.breakdown')
+        : t('knowledgebase.card.breakdownPct', { percent: value });
 }
 
 /**
@@ -128,7 +149,11 @@ export function selectClassificationPreview(
  * @returns 悬停说明
  */
 export function formatClassificationTagTitle(tag: ClassificationTag): string {
-    return `${tag.dimension} · ${tag.reason}（置信度 ${(tag.confidence * 100).toFixed(0)}%）`;
+    return t('knowledgebase.card.classificationTitle', {
+        dimension: tag.dimension,
+        reason: tag.reason,
+        confidence: (tag.confidence * 100).toFixed(0),
+    });
 }
 
 /**
@@ -161,7 +186,7 @@ export function formatQualityBadge(
     scores: Pick<BookBasicInfo['qualityScores'] & object, 'overall'> | null | undefined,
 ): string | null {
     if (!scores || typeof scores.overall !== 'number' || !Number.isFinite(scores.overall)) return null;
-    return `⭐ ${scores.overall.toFixed(0)}分`;
+    return t('knowledgebase.card.qualityBadge', { score: scores.overall.toFixed(0) });
 }
 
 /**
@@ -171,7 +196,7 @@ export function formatQualityBadge(
  * @returns 展示用作者名
  */
 export function formatAuthorName(author?: string): string {
-    return author && author.trim() ? author : '未知作者';
+    return author && author.trim() ? author : t('knowledgebase.card.unknownAuthor');
 }
 
 /**
@@ -192,13 +217,14 @@ export function isCustomGenre(
  * 题材卡统计行数据（性格标签 / 能力类型 / 写作技巧 的数量）。
  *
  * @param genre - 题材配置
- * @returns 统计项（顺序与 KB_GENRE_STAT_LABELS 一致）
+ * @returns 统计项（顺序与 getKbGenreStatLabels 一致）
  */
 export function buildGenreStatItems(genre: Pick<GenreConfig, 'personalityTags' | 'abilityTypes' | 'techniques'>): Array<{ label: string; value: number }> {
+    const labels = getKbGenreStatLabels();
     return [
-        { label: KB_GENRE_STAT_LABELS[0], value: genre.personalityTags.length },
-        { label: KB_GENRE_STAT_LABELS[1], value: genre.abilityTypes.length },
-        { label: KB_GENRE_STAT_LABELS[2], value: genre.techniques.length },
+        { label: labels[0], value: genre.personalityTags.length },
+        { label: labels[1], value: genre.abilityTypes.length },
+        { label: labels[2], value: genre.techniques.length },
     ];
 }
 
@@ -228,5 +254,5 @@ export function selectSubGenrePreview(
  * @returns 形如「细分题材 (7)」
  */
 export function formatSubGenreSectionTitle(total: number): string {
-    return `细分题材 (${total})`;
+    return t('knowledgebase.card.subGenreTitle', { count: total });
 }

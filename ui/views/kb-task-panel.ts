@@ -11,20 +11,29 @@
  * - 任务状态是 **6 档**（多「已暂停 paused」），与书籍拆解状态的 **5 档** 不是同一套映射，勿混用
  */
 
+import { t } from '@/i18n';
 import type { BreakdownTask, TaskStatus, BreakdownDimension } from '@/engine/deconstruction-scheduler';
 
 /** 任务筛选值（`all` 表示不筛） */
 export type TaskFilterType = 'all' | TaskStatus;
 
-/** 状态筛选下拉选项（顺序即渲染顺序） */
-export const TASK_FILTER_OPTIONS: Array<{ value: TaskFilterType; label: string }> = [
-    { value: 'all', label: '全部' },
-    { value: 'running', label: '运行中' },
-    { value: 'pending', label: '等待中' },
-    { value: 'completed', label: '已完成' },
-    { value: 'failed', label: '失败' },
-    { value: 'cancelled', label: '已取消' },
-];
+/**
+ * 状态筛选下拉选项（顺序即渲染顺序）。
+ *
+ * i18n：文案在调用时求值，模块加载期求值会把语言固定成首次加载的语言。
+ *
+ * @returns 筛选值与本地下拉标签
+ */
+export function getTaskFilterOptions(): Array<{ value: TaskFilterType; label: string }> {
+    return [
+        { value: 'all', label: t('knowledgebase.tasks.filterAll') },
+        { value: 'running', label: t('knowledgebase.format.task.running') },
+        { value: 'pending', label: t('knowledgebase.format.task.pending') },
+        { value: 'completed', label: t('knowledgebase.format.task.completed') },
+        { value: 'failed', label: t('knowledgebase.format.task.failed') },
+        { value: 'cancelled', label: t('knowledgebase.format.task.cancelled') },
+    ];
+}
 
 /** 任务状态徽标的语义档位（视图据此选配色） */
 export type TaskStatusTone = 'success' | 'info' | 'danger' | 'warning' | 'muted';
@@ -112,12 +121,12 @@ export function filterAndSortTasks(tasks: BreakdownTask[], filter: TaskFilterTyp
 export function computeTaskStats(tasks: BreakdownTask[]): TaskStatItem[] {
     const countBy = (status: TaskStatus): number => tasks.filter(task => task.status === status).length;
     return [
-        { label: '总任务数', value: tasks.length, tone: 'accent' },
-        { label: '运行中', value: countBy('running'), tone: 'info' },
-        { label: '等待中', value: countBy('pending'), tone: 'warning' },
-        { label: '已完成', value: countBy('completed'), tone: 'success' },
-        { label: '失败', value: countBy('failed'), tone: 'danger' },
-        { label: '已取消', value: countBy('cancelled'), tone: 'muted' },
+        { label: t('knowledgebase.tasks.statsTotal'), value: tasks.length, tone: 'accent' },
+        { label: t('knowledgebase.tasks.statsRunning'), value: countBy('running'), tone: 'info' },
+        { label: t('knowledgebase.tasks.statsPending'), value: countBy('pending'), tone: 'warning' },
+        { label: t('knowledgebase.tasks.statsCompleted'), value: countBy('completed'), tone: 'success' },
+        { label: t('knowledgebase.tasks.statsFailed'), value: countBy('failed'), tone: 'danger' },
+        { label: t('knowledgebase.tasks.statsCancelled'), value: countBy('cancelled'), tone: 'muted' },
     ];
 }
 
@@ -176,7 +185,7 @@ export function isAllFilteredSelected(selectedSize: number, filteredSize: number
  * @returns 形如「已选 2 / 5 项」
  */
 export function formatSelectionLabel(selectedSize: number, filteredSize: number): string {
-    return `已选 ${selectedSize} / ${filteredSize} 项`;
+    return t('knowledgebase.tasks.selected', { selected: selectedSize, total: filteredSize });
 }
 
 /**

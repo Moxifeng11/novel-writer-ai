@@ -9,9 +9,10 @@
  *    KbConfigPanelHost 回调宿主（KnowledgeBaseView），保证与抽取前行为完全一致
  */
 
+import { t } from '@/i18n';
 import type { GenreConfig, WebnovelKnowledgeBase } from '@/shared/webnovel-knowledge-base';
 import {
-    KB_CONFIG_CATEGORIES,
+    getKbConfigCategories,
     isCustomGenre as isCustomGenreUi,
     buildGenreStatItems,
     selectSubGenrePreview,
@@ -78,9 +79,9 @@ export function buildKbConfigPanel(rightContentEl: HTMLElement, host: KbConfigPa
     const categoryHeader = categoryPanel.createDiv({
         cls: 'nw-kb-config-category-header'
     });
-    categoryHeader.createEl('h3', { text: '频道分类', cls: 'nw-kb-config-category-title' });
+    categoryHeader.createEl('h3', { text: t('knowledgebase.config.categoryTitle'), cls: 'nw-kb-config-category-title' });
 
-    const categories = KB_CONFIG_CATEGORIES;
+    const categories = getKbConfigCategories();
 
     categories.forEach(cat => {
         const item = categoryPanel.createDiv({
@@ -101,26 +102,26 @@ export function buildKbConfigPanel(rightContentEl: HTMLElement, host: KbConfigPa
     const toolbar = mainContent.createDiv({
         cls: "nw-kb-config-toolbar", attr: {}
     });
-    toolbar.createEl('h3', { text: `${host.getChannelLabel(host.configCategory)}题材配置`, cls: 'nw-kb-config-title' });
+    toolbar.createEl('h3', { text: t('knowledgebase.config.genreConfigTitle', { channel: host.getChannelLabel(host.configCategory) }), cls: 'nw-kb-config-title' });
 
     const actions = toolbar.createDiv({ cls: 'nw-kb-config-actions' });
     const addGenreBtn = actions.createEl('button', {
-        text: '➕ 新增题材',
+        text: t('knowledgebase.config.addGenre'),
         cls: 'nw-btn nw-btn-primary nw-btn-sm'
     });
     addGenreBtn.addEventListener('click', () => host.addGenre());
     const importBtn = actions.createEl('button', {
-        text: '📥 导入',
+        text: t('knowledgebase.config.import'),
         cls: 'nw-btn nw-btn-secondary nw-btn-sm'
     });
     importBtn.addEventListener('click', () => host.importConfig());
     const exportBtn = actions.createEl('button', {
-        text: '📤 导出',
+        text: t('knowledgebase.config.export'),
         cls: 'nw-btn nw-btn-secondary nw-btn-sm'
     });
     exportBtn.addEventListener('click', () => { void host.exportConfig(); });
     const resetBtn = actions.createEl('button', {
-        text: '↺ 恢复默认',
+        text: t('knowledgebase.config.reset'),
         cls: 'nw-btn nw-btn-secondary nw-btn-sm'
     });
     resetBtn.addEventListener('click', () => host.resetConfig());
@@ -135,7 +136,7 @@ export function buildKbConfigPanel(rightContentEl: HTMLElement, host: KbConfigPa
     if (genres.length === 0) {
         configContent.createDiv({
             cls: 'nw-kb-config-empty'
-        }).createSpan({ text: '暂无题材配置' });
+        }).createSpan({ text: t('knowledgebase.config.empty') });
         return;
     }
 
@@ -157,7 +158,7 @@ export function buildKbConfigPanel(rightContentEl: HTMLElement, host: KbConfigPa
         titleRow.createDiv({ text: genre.name, cls: 'nw-kb-config-card-name' });
         if (isCustom) {
             titleRow.createSpan({
-                text: '自定义',
+                text: t('knowledgebase.config.customBadge'),
                 cls: 'nw-kb-config-badge'
             });
         }
@@ -167,7 +168,7 @@ export function buildKbConfigPanel(rightContentEl: HTMLElement, host: KbConfigPa
             const deleteIcon = actions.createSpan({
                 text: '🗑️',
                 cls: 'nw-kb-config-delete',
-                attr: { 'aria-label': '删除这个题材', role: 'button', tabindex: '0' }
+                attr: { 'aria-label': t('knowledgebase.config.deleteGenre'), role: 'button', tabindex: '0' }
             });
             deleteIcon.addEventListener('click', (e) => {
                 e.stopPropagation();

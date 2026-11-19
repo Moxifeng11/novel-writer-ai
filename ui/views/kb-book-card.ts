@@ -7,6 +7,7 @@
  *    回调宿主（KnowledgeBaseView），保证与抽取前行为完全一致
  */
 
+import { t } from '@/i18n';
 import type { BookBasicInfo } from '@/services/knowledge-base-manager';
 import { isClassificationTag, type ClassificationResult } from '@/shared/content-classifier';
 import {
@@ -78,16 +79,16 @@ export function buildKbBookCard(book: BookBasicInfo, host: KbBookCardHost): HTML
     // A5: 拆解完成但向量化失败时，检索实际不可用，列表必须能看出来
     if (shouldShowVectorWarning(book)) {
         const warning = header.createSpan({
-            text: '⚠️ 向量化失败',
+            text: t('knowledgebase.card.vectorFailed'),
             cls: 'nw-kb-book-card-warning',
             attr: { title: resolveVectorWarningTitle(book) },
         });
         // v4.83.1：单本重试入口。此前失败的书只能到设置页做「全部重向量化」，粒度太粗。
         if (host.onRetryVectorize) {
             const retry = warning.createEl('button', {
-                text: '重试',
+                text: t('knowledgebase.card.retry'),
                 cls: 'nw-btn nw-btn-secondary nw-btn-sm',
-                attr: { title: '按当前嵌入模型重新计算这本书的向量（不重新拆解、不调用 AI）' },
+                attr: { title: t('knowledgebase.card.retryTitle') },
             });
             retry.addEventListener('click', (event) => {
                 // 卡片本身有「打开详情」点击；重试不能顺带把详情页也打开

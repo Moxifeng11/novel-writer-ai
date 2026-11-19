@@ -249,11 +249,17 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
   `formatWordCount` / `formatDuration` 单位按语言切换（zh `9800 字`/`12.3 万字`/`2小时5分`，
   en `9800 words`/`12.3k words`/`2h 5m`），迁 `knowledgebase.format.*` 20 键；zh/en 资源各
   4246 条；棘轮收紧到 222 文件 / 7322 条；en 卡片实测变 `Completed` / `374.4k words`，zh 逐像素零差异。
-- 后续：第二期余下（知识库能力横幅计数标签与卡片 chrome：`knowledge-capability` 297 字 /
-  `kb-panels-logic` 216 字 / `kb-detail-actions` 112 字 / `kb-card-logic` 51 字 /
-  `kb-stats-panel` 52 字 / `kb-task-panel` 37 字；写作主流程深水区：template-vars 340 / scene-outline 231 / wizard 群 /
-  step-render 106 / unit-writer 98；外观页的统计/桌宠块），
-  第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
+- 第二期第32片（2026-11-19，DSH）：知识库能力横幅 + 卡片/面板 chrome —— 8 个视图文件一次迁完
+  （`knowledge-capability` 17 键 / `kb-panels-logic` 24 / `kb-stats-panel` 10 / `kb-card-logic` 13 /
+  `kb-config-panel` 9 / `kb-detail-actions` 7 / `kb-task-panel` 8，共 88 键）；`KB_CONFIG_CATEGORIES`、
+  `KB_GENRE_STAT_LABELS`、`KB_QUALITY_DIMENSIONS`、`KB_STATUS_STYLES`、`TASK_FILTER_OPTIONS` 五个导出常量
+  一律改 getter（模块级 `t()` 会锁语言）；`capability-banner.ts` 渲染器零改动；zh/en 资源各 4334 条；
+  棘轮收紧到 215 文件 / 7208 条；实机 en 横幅 `1 Books / 1 Broken down / 0 Vectors ready / 1 Pending/failed`，
+  zh 逐像素零差异。
+- 后续：第二期余下（知识库弹窗链 `ui/views/knowledge-base-modals.ts` 563 字；`ui/generate-character-modal.ts`
+  873 字；知识库 D 类两文件 `ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`
+  用户已裁定随视觉重构；散落弹窗 golden-opening 1982 / novel-tags 1099 / add-fanfic-setting 973 /
+  ai-builder 864 等），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 
 ---
 

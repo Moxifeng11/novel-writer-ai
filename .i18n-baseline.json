@@ -200,17 +200,10 @@
     "ui/views/book-foreshadow-logic.ts": 20,
     "ui/views/book-style-logic.ts": 16,
     "ui/views/fingerprint-scope-logic.ts": 3,
-    "ui/views/kb-book-card.ts": 3,
-    "ui/views/kb-card-logic.ts": 13,
     "ui/views/kb-config-import-logic.ts": 1,
-    "ui/views/kb-config-panel.ts": 9,
-    "ui/views/kb-detail-actions.ts": 13,
-    "ui/views/kb-panels-logic.ts": 35,
-    "ui/views/kb-stats-panel.ts": 12,
-    "ui/views/kb-task-panel.ts": 14,
+    "ui/views/kb-detail-actions.ts": 6,
     "ui/views/knowledge-base-modals.ts": 145,
     "ui/views/knowledge-base-view.ts": 38,
-    "ui/views/knowledge-capability.ts": 21,
     "ui/views/knowledge-detail-state.ts": 3,
     "ui/views/memory-graph-view.ts": 23,
     "ui/views/planning-canvas-view.ts": 52,
@@ -223,7 +216,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 7322,
+  "total": 7208,
   "updatedAt": "2026-11-19",
-  "note": "第31片 kb-format：222 文件 / 7322 条（kb-format.ts 清零移出）"
+  "note": ""
 }

@@ -4,6 +4,7 @@
  * 「拆解完成」不等于「检索可用」：只有拆解完成且向量就绪的书才能进入检索注入。
  * 这里把书籍状态汇总成 UI 可直接展示的阶段与说明，避免视图各写一套判断。
  */
+import { t } from '@/i18n';
 import type { BookBasicInfo } from '@/services/knowledge-base-manager';
 import type { CapabilityMetric, CapabilityStage } from './capability-banner';
 
@@ -43,10 +44,10 @@ export function computeKnowledgeCapability(
     const vectorPending = books.filter(book => book.breakdownStatus === 'completed' && book.vectorStatus !== 'done' && book.vectorStatus !== 'failed').length;
 
     const metrics: CapabilityMetric[] = [
-        { label: '书籍', value: total },
-        { label: '已拆解', value: completed },
-        { label: '向量就绪', value: vectorDone },
-        { label: '待处理/失败', value: vectorPending + vectorFailed },
+        { label: t('knowledgebase.capability.metrics.books'), value: total },
+        { label: t('knowledgebase.capability.metrics.brokenDown'), value: completed },
+        { label: t('knowledgebase.capability.metrics.vectorReady'), value: vectorDone },
+        { label: t('knowledgebase.capability.metrics.pendingFailed'), value: vectorPending + vectorFailed },
     ];
 
     /**
@@ -57,12 +58,12 @@ export function computeKnowledgeCapability(
      */
     const embeddingNotes: string[] = [];
     if (embedding && !embedding.available) {
-        const label = embedding.providerLabel ? `（当前：${embedding.providerLabel}）` : '';
+        const unavailable = embedding.providerLabel
+            ? t('knowledgebase.capability.unavailableWithProvider', { provider: embedding.providerLabel })
+            : t('knowledgebase.capability.unavailable');
         embeddingNotes.push(
-            `未检测到可用的嵌入模型${label}：拆解结果无法生成向量，语义检索不可用。`
-            + (embedding.reason ? `原因：${embedding.reason}` : ''),
-            '请到 设置 → 向量化 配置嵌入模型（本地 Ollama 或云端 OpenAI/Doubao/Qwen）；'
-            + '未配置时检索已退化为关键词匹配，仍可命中专有名词但语义召回较弱。',
+            unavailable + (embedding.reason ? t('knowledgebase.capability.reasonSuffix', { reason: embedding.reason }) : ''),
+            t('knowledgebase.capability.configureHint'),
         );
     }
     const withEmbedding = (notes: string[]): string[] => [...embeddingNotes, ...notes];
@@ -71,14 +72,16 @@ export function computeKnowledgeCapability(
         return {
             stage: 'empty',
             metrics,
-            notes: withEmbedding(['导入书籍并完成拆解后，知识库才会参与检索注入；空库不会影响普通写作，但精准模式无从参考。']),
+            notes: withEmbedding([t('knowledgebase.capability.empty')]),
         };
     }
     if (completed === 0) {
         return {
             stage: 'accumulating',
             metrics,
-            notes: withEmbedding([`${processing > 0 ? '拆解进行中。' : ''}完成至少 1 本书的拆解后，才可进入检索注入。`]),
+            notes: withEmbedding([
+                processing > 0 ? t('knowledgebase.capability.accumulatingInProgress') : t('knowledgebase.capability.accumulating'),
+            ]),
         };
     }
     if (vectorDone === 0) {
@@ -86,8 +89,8 @@ export function computeKnowledgeCapability(
             stage: 'degraded',
             metrics,
             notes: withEmbedding([
-                '拆解结果可查看/统计，但语义检索尚不可用。',
-                '请配置 embedding 并在知识库中重建向量；向量失败的书不会参与检索。',
+                t('knowledgebase.capability.degraded1'),
+                t('knowledgebase.capability.degraded2'),
             ]),
         };
     }
@@ -96,8 +99,8 @@ export function computeKnowledgeCapability(
             stage: 'accumulating',
             metrics,
             notes: withEmbedding([
-                `已有 ${vectorDone} 本书可检索，${completed - vectorDone} 本尚未就绪。`,
-                '增加已拆解且向量就绪的书籍，会提升检索覆盖；失败的向量需要重建。',
+                t('knowledgebase.capability.partial', { ready: vectorDone, missing: completed - vectorDone }),
+                t('knowledgebase.capability.partialHint'),
             ]),
         };
     }
@@ -105,8 +108,8 @@ export function computeKnowledgeCapability(
         stage: 'ready',
         metrics,
         notes: withEmbedding([
-            '知识库已参与上下文检索注入（普通/精准模式都会使用）。',
-            '精准模式的风格相似度评分依赖知识库中的 style 维度向量；没有 style 样本时会直接放行。',
+            t('knowledgebase.capability.ready1'),
+            t('knowledgebase.capability.ready2'),
         ]),
     };
 }

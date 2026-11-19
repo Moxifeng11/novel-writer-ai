@@ -8,9 +8,10 @@
 
 import { describe, expect, it } from 'vitest';
 import type { BookBasicInfo, QualityScores } from '../../../services/knowledge-base-manager';
+import { translate } from '../../../i18n';
 import {
-    KB_QUALITY_DIMENSIONS,
-    KB_STATUS_STYLES,
+    getKbQualityDimensions,
+    getKbStatusStyles,
     resolveDetailActionButtons,
     selectCompletedBooks,
     computeAverageQuality,
@@ -157,7 +158,9 @@ describe('computeAverageQuality / buildStatsOverviewCards', () => {
 
 describe('computeDimensionAverages — 六维均分', () => {
     it('维度数量与顺序固定', () => {
-        expect(KB_QUALITY_DIMENSIONS.map(d => d.label)).toEqual(['人设', '伏笔', '技巧', '风格', '节奏', '结构']);
+        const dimensions = getKbQualityDimensions();
+        expect(dimensions.map(d => d.label)).toEqual(['人设', '伏笔', '技巧', '风格', '节奏', '结构']);
+        expect(translate('en-US', 'knowledgebase.dim.character')).toBe('Characters');
     });
 
     it('逐维求平均', () => {
@@ -229,7 +232,8 @@ describe('computeStatusCounts / 状态分布', () => {
     });
 
     it('配色与顺序固定', () => {
-        expect(KB_STATUS_STYLES.map(s => s.label)).toEqual(['待拆解', '拆解中', '已完成', '失败', '拆解中断']);
-        expect(KB_STATUS_STYLES.map(s => s.color)).toEqual(['#f59e0b', '#3b82f6', '#2ecc71', '#e74c3c', '#f97316']);
+        const styles = getKbStatusStyles();
+        expect(styles.map(s => s.label)).toEqual(['待拆解', '拆解中', '已完成', '失败', '拆解中断']);
+        expect(styles.map(s => s.color)).toEqual(['#f59e0b', '#3b82f6', '#2ecc71', '#e74c3c', '#f97316']);
     });
 });

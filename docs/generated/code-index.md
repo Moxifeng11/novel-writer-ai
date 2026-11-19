@@ -11,7 +11,7 @@
 | `shared/` | 259 | 52201 | 2198 | 1718 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1583 | 88 | 58 | 66% |
-| `ui/` | 304 | 113853 | 1181 | 930 | 79% |
+| `ui/` | 304 | 113915 | 1181 | 935 | 79% |
 
 ## 文件清单
 
@@ -990,22 +990,22 @@
 | `ui/views/fingerprint-scope-logic.ts` | 114 | 10 | 5 |
 | `ui/views/fingerprint-v2-detail.ts` | 128 | 4 | 2 |
 | `ui/views/fingerprint-view-logic.ts` | 121 | 7 | 6 |
-| `ui/views/kb-book-card.ts` | 167 | 2 | 2 |
+| `ui/views/kb-book-card.ts` | 168 | 2 | 2 |
 | `ui/views/kb-book-filter.ts` | 190 | 11 | 7 |
-| `ui/views/kb-card-logic.ts` | 233 | 20 | 14 |
+| `ui/views/kb-card-logic.ts` | 259 | 20 | 16 |
 | `ui/views/kb-config-import-logic.ts` | 98 | 5 | 4 |
-| `ui/views/kb-config-panel.ts` | 215 | 3 | 3 |
-| `ui/views/kb-detail-actions.ts` | 180 | 2 | 2 |
+| `ui/views/kb-config-panel.ts` | 216 | 3 | 3 |
+| `ui/views/kb-detail-actions.ts` | 181 | 2 | 2 |
 | `ui/views/kb-format.ts` | 171 | 9 | 7 |
 | `ui/views/kb-import-file-logic.ts` | 73 | 6 | 5 |
 | `ui/views/kb-modals-logic.ts` | 68 | 4 | 2 |
-| `ui/views/kb-panels-logic.ts` | 359 | 21 | 10 |
-| `ui/views/kb-stats-panel.ts` | 157 | 2 | 2 |
-| `ui/views/kb-task-panel.ts` | 296 | 25 | 19 |
+| `ui/views/kb-panels-logic.ts` | 379 | 21 | 12 |
+| `ui/views/kb-stats-panel.ts` | 158 | 2 | 2 |
+| `ui/views/kb-task-panel.ts` | 305 | 25 | 20 |
 | `ui/views/kb-view-logic.ts` | 117 | 7 | 4 |
 | `ui/views/knowledge-base-modals.ts` | 1265 | 4 | 4 |
 | `ui/views/knowledge-base-view.ts` | 3279 | 10 | 10 |
-| `ui/views/knowledge-capability.ts` | 113 | 3 | 1 |
+| `ui/views/knowledge-capability.ts` | 116 | 3 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/link-status.ts` | 130 | 2 | 1 |
 | `ui/views/memory-graph-view.ts` | 289 | 3 | 2 |

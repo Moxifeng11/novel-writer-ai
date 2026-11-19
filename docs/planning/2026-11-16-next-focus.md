@@ -2911,3 +2911,35 @@ zh 与改前逐像素相同（sha `1bd64fa9…`），en 卡片变 `Completed` �
 `kb-card-logic.ts` 51 字 / `kb-stats-panel.ts` 52 字 / `kb-task-panel.ts` 37 字）；之后
 `ui/generate-character-modal.ts`（873 字）。
 
+## 第一百轮：i18n 第二期第32片 —— 知识库能力横幅 + 卡片/面板 chrome（2026-11-19，DSH）
+
+**范围**：一次收掉知识库面的最后 8 个视图文件（合计约 765 字，`audit-cjk` 判 `ui-copy`）：
+`ui/views/knowledge-capability.ts`（横幅 metrics 四标签 + 六种阶段说明）、`kb-card-logic.ts`、
+`kb-panels-logic.ts`、`kb-stats-panel.ts`、`kb-task-panel.ts`、`kb-detail-actions.ts`、
+`kb-config-panel.ts`、`kb-book-card.ts`。选整片是因为它们共享同一个 en 破绽：能力横幅显示
+「1 书籍 / 1 已拆解 / 0 向量就绪 / 1 待处理/失败」，卡片显示「未知作者」，统计面板与任务面板同理。
+
+**改动**：迁 `knowledgebase.*` 下 `capability` 17 + `panels` 24 + `stats` 10 + `card` 13 + `config` 9 +
+`detailAction` 7，`tasks` 组补 `filterAll`/`stats×6`/`selected` 8，共 **+88 键**（4246 → 4334）。
+五个导出常量一律改 getter——`KB_CONFIG_CATEGORIES`→`getKbConfigCategories()`、
+`KB_GENRE_STAT_LABELS`→`getKbGenreStatLabels()`、`KB_QUALITY_DIMENSIONS`→`getKbQualityDimensions()`、
+`KB_STATUS_STYLES`→`getKbStatusStyles()`、`TASK_FILTER_OPTIONS`→`getTaskFilterOptions()`；
+维度短标签复用 `knowledgebase.dim.*`、拆解状态复用 `format.breakdown.*`、频道复用 `format.channel.*`。
+**渲染器 `capability-banner.ts` 零改动**（阶段徽标早已走 `fingerprint.cap.stage*`，其余由调用方传入）。
+
+**坑（已写进 i18n.md §9）**
+1. **导出常量 = 锁语言**：`export const` 数组里写 `t()` 会在 import 期定格语言，必须换 getter；
+   改完 grep 单测里的直接 import，会一起报 TS2724。
+2. **en 值要断言真实字符串**：`knowledgebase.dim.character` 的 en 是 `Characters`（复数），
+   按直觉写 `Character` 会失败——先 `translate('en-US', key)` 打印再落断言。
+3. **计数标签不做复数**：en 横幅是 `1 Books` / `1 book(s) in total`，属 ICU plural backlog，不是 bug。
+
+**验收**：`check:i18n` zh/en 各 **4334**、无法解析键 0、动态键 26 处、棘轮 **215 文件 / 7208 条**；
+单测 9 文件 **151 例**（kb-card-logic 24 / kb-panels-logic 22 / kb-task-panel 33 / kb-stats-panel 11 /
+kb-book-card 17 / kb-config-panel-render 16 / knowledge-capability 5 / knowledge-capability-embedding 11 /
+kb-modals-logic 12）；`npx tsc --noEmit` EXIT=0、lint 0 error（1037 warning 均存量）、
+8 个文件非注释 CJK 归零；实机 zh 逐像素零差异（sha `1bd64fa9…`）、en 横幅与卡片全英文；
+`check:bundle` main.js **6,086,405**（+10,725）、styles.css **799,303**（未变）；preflight **EXIT=0**（984 文件 / **10,301 通过 + 3 跳过**）。
+
+**下一轮候选**：`ui/views/knowledge-base-modals.ts`（1,378 行 / 563 字 / 145 条，四个弹窗，第34片）、
+`ui/generate-character-modal.ts`（873 字，第33片）；知识库 D 类两文件按用户裁定随视觉重构。

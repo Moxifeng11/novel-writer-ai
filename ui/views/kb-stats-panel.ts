@@ -9,11 +9,12 @@
  *    回调宿主（KnowledgeBaseView），保证与抽取前行为完全一致
  */
 
+import { t } from '@/i18n';
 import type { BookBasicInfo } from '@/services/knowledge-base-manager';
 import { radarChart, barChart, donutChart } from '@/ui/svg-charts';
 import type { KbStatusKey } from './kb-panels-logic';
 import {
-    KB_QUALITY_DIMENSIONS,
+    getKbQualityDimensions,
     selectCompletedBooks,
     buildStatsOverviewCards,
     computeDimensionAverages,
@@ -58,7 +59,7 @@ export function buildKbStatsPanel(rightContentEl: HTMLElement, host: KbStatsPane
     rightContentEl.empty();
     const content = rightContentEl.createDiv({ cls: 'nw-ks-panel' });
 
-    content.createEl('h2', { text: '质量统计', cls: 'nw-ks-title' });
+    content.createEl('h2', { text: t('knowledgebase.stats.title'), cls: 'nw-ks-title' });
 
     const completedBooks = selectCompletedBooks(host.allBooks);
 
@@ -76,16 +77,16 @@ export function buildKbStatsPanel(rightContentEl: HTMLElement, host: KbStatsPane
 
     if (completedBooks.length > 0) {
         const qualitySection = content.createDiv({ cls: 'nw-ks-section' });
-        qualitySection.createEl('h3', { text: '各维度质量分布', cls: 'nw-ks-section-title' });
+        qualitySection.createEl('h3', { text: t('knowledgebase.stats.dimensions'), cls: 'nw-ks-section-title' });
 
-        const dimensions = KB_QUALITY_DIMENSIONS;
+        const dimensions = getKbQualityDimensions();
 
         const chartWrap = qualitySection.createDiv({ cls: 'nw-ks-chart-row' });
 
         const dimensionAverages = computeDimensionAverages(completedBooks);
         const radarData = dimensionAverages.map(d => ({ label: d.label, value: d.avg }));
         const radarCard = chartWrap.createDiv({ cls: 'nw-ks-chart-card nw-ks-chart-card--radar' });
-        host.renderChart(radarCard, radarChart(radarData, { size: 280, title: '平均质量雷达图' }));
+        host.renderChart(radarCard, radarChart(radarData, { size: 280, title: t('knowledgebase.stats.radarTitle') }));
 
         const avgCard = chartWrap.createDiv({ cls: 'nw-ks-chart-card' });
         dimensionAverages.forEach(d => {
@@ -93,7 +94,7 @@ export function buildKbStatsPanel(rightContentEl: HTMLElement, host: KbStatsPane
             const item = avgCard.createDiv({ cls: 'nw-ks-avg-item' });
             const top = item.createDiv({ cls: 'nw-ks-avg-top' });
             top.createSpan({ text: d.label, cls: 'nw-ks-avg-label' });
-            top.createSpan({ text: avg.toFixed(1) + '分', cls: 'nw-ks-avg-score' });
+            top.createSpan({ text: t('knowledgebase.stats.score', { score: avg.toFixed(1) }), cls: 'nw-ks-avg-score' });
             const bar = item.createDiv({ cls: 'nw-ks-bar' });
             const fill = bar.createDiv({ cls: 'nw-ks-bar-fill' });
             fill.style.setProperty('--nw-ks-pct', `${avg}%`);
@@ -101,19 +102,19 @@ export function buildKbStatsPanel(rightContentEl: HTMLElement, host: KbStatsPane
     }
 
     const genreSection = content.createDiv({ cls: 'nw-ks-section' });
-    genreSection.createEl('h3', { text: '题材分布', cls: 'nw-ks-section-title' });
+    genreSection.createEl('h3', { text: t('knowledgebase.stats.genreTitle'), cls: 'nw-ks-section-title' });
 
     const genreData = buildGenreBarData(host.allBooks, id => host.getGenreName(id));
 
     if (genreData.length > 0) {
         const chartCard = genreSection.createDiv({ cls: 'nw-ks-bar-chart' });
-        host.renderChart(chartCard, barChart(genreData, { width: 500, height: 300, title: 'Top 10 题材分布' }));
+        host.renderChart(chartCard, barChart(genreData, { width: 500, height: 300, title: t('knowledgebase.stats.genreChartTitle') }));
     } else {
-        genreSection.createDiv({ text: '暂无题材数据', cls: 'nw-ks-empty' });
+        genreSection.createDiv({ text: t('knowledgebase.stats.genreEmpty'), cls: 'nw-ks-empty' });
     }
 
     const statusSection = content.createDiv({ cls: 'nw-ks-section' });
-    statusSection.createEl('h3', { text: '拆解状态分布', cls: 'nw-ks-section-title' });
+    statusSection.createEl('h3', { text: t('knowledgebase.stats.statusTitle'), cls: 'nw-ks-section-title' });
 
     const statusCounts = computeStatusCounts(host.allBooks);
 
@@ -123,7 +124,7 @@ export function buildKbStatsPanel(rightContentEl: HTMLElement, host: KbStatsPane
 
     if (donutData.length > 0) {
         const donutCard = statusWrap.createDiv({ cls: 'nw-ks-chart-card nw-ks-chart-card--centered' });
-        host.renderChart(donutCard, donutChart(donutData, { size: 220, title: '状态分布' }));
+        host.renderChart(donutCard, donutChart(donutData, { size: 220, title: t('knowledgebase.stats.donutTitle') }));
     }
 
     const statusList = statusWrap.createDiv({ cls: 'nw-ks-chart-card' });
@@ -145,7 +146,7 @@ export function buildKbStatsPanel(rightContentEl: HTMLElement, host: KbStatsPane
         const activate = () => onStatusClick(status);
         row.setAttribute('role', 'button');
         row.setAttribute('tabindex', '0');
-        row.setAttribute('title', `在书架中查看「${item.label}」的 ${item.value} 本书`);
+        row.setAttribute('title', t('knowledgebase.stats.rowTitle', { label: item.label, value: item.value }));
         row.addEventListener('click', activate);
         row.addEventListener('keydown', (event: KeyboardEvent) => {
             if (event.key !== 'Enter' && event.key !== ' ') return;

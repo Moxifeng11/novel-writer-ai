@@ -9,6 +9,7 @@
  * 视图侧只负责把结果渲染成 DOM 并绑定 handler（样式与类名仍在视图内保持原样）。
  */
 
+import { t } from '@/i18n';
 import type { BookBasicInfo, QualityScores } from '@/services/knowledge-base-manager';
 
 /** 柱状图/环图数据项（与 ui/svg-charts 入参一致） */
@@ -74,24 +75,40 @@ export interface KbDimensionAverage {
     avg: number;
 }
 
-/** 质量维度清单（顺序与视图一致） */
-export const KB_QUALITY_DIMENSIONS: Array<{ key: Exclude<keyof QualityScores, 'overall' | 'vectorEnabled'>; label: string }> = [
-    { key: 'character', label: '人设' },
-    { key: 'foreshadow', label: '伏笔' },
-    { key: 'technique', label: '技巧' },
-    { key: 'style', label: '风格' },
-    { key: 'rhythm', label: '节奏' },
-    { key: 'structure', label: '结构' },
-];
+/**
+ * 质量维度清单（顺序与视图一致）。
+ *
+ * i18n：文案在调用时求值，避免模块加载期把语言固定成首次加载的语言。
+ *
+ * @returns 维度 key 与本地化标签
+ */
+export function getKbQualityDimensions(): Array<{ key: Exclude<keyof QualityScores, 'overall' | 'vectorEnabled'>; label: string }> {
+    return [
+        { key: 'character', label: t('knowledgebase.dim.character') },
+        { key: 'foreshadow', label: t('knowledgebase.dim.foreshadow') },
+        { key: 'technique', label: t('knowledgebase.dim.technique') },
+        { key: 'style', label: t('knowledgebase.dim.style') },
+        { key: 'rhythm', label: t('knowledgebase.dim.rhythm') },
+        { key: 'structure', label: t('knowledgebase.dim.structure') },
+    ];
+}
 
-/** 拆解状态在环图/图例中的固定配色与文案（顺序固定） */
-export const KB_STATUS_STYLES: Array<{ status: KbStatusKey; label: string; color: string }> = [
-    { status: 'pending', label: '待拆解', color: '#f59e0b' },
-    { status: 'processing', label: '拆解中', color: '#3b82f6' },
-    { status: 'completed', label: '已完成', color: '#2ecc71' },
-    { status: 'failed', label: '失败', color: '#e74c3c' },
-    { status: 'interrupted', label: '拆解中断', color: '#f97316' },
-];
+/**
+ * 拆解状态在环图/图例中的固定配色与文案（顺序固定）。
+ *
+ * 文案走 i18n；颜色仍留在逻辑层——环图 SVG 由逻辑层直接消费、不经过 CSS。
+ *
+ * @returns 状态、本地化标签与色值
+ */
+export function getKbStatusStyles(): Array<{ status: KbStatusKey; label: string; color: string }> {
+    return [
+        { status: 'pending', label: t('knowledgebase.format.breakdown.pending'), color: '#f59e0b' },
+        { status: 'processing', label: t('knowledgebase.format.breakdown.processing'), color: '#3b82f6' },
+        { status: 'completed', label: t('knowledgebase.format.breakdown.completed'), color: '#2ecc71' },
+        { status: 'failed', label: t('knowledgebase.format.breakdown.failed'), color: '#e74c3c' },
+        { status: 'interrupted', label: t('knowledgebase.format.breakdown.interrupted'), color: '#f97316' },
+    ];
+}
 
 /** 按钮样式档位 */
 const BTN_PRIMARY = 'nw-btn nw-btn-primary nw-btn-sm';
@@ -100,7 +117,9 @@ const BTN_WARNING = 'nw-btn nw-btn-warning nw-btn-sm';
 const BTN_DANGER = 'nw-btn nw-btn-danger nw-btn-sm';
 
 /** 拆解进行中的统一文案（按钮禁用时的占位） */
-const BUSY_LABEL = '⏳ 准备中...';
+function busyLabel(): string {
+    return t('knowledgebase.panels.busy');
+}
 
 /**
  * 按书籍拆解状态解析详情页顶部操作按钮。
@@ -126,59 +145,60 @@ const BUSY_LABEL = '⏳ 准备中...';
 export function resolveDetailActionButtons(status: string, isStarting: boolean): KbDetailActionButton[] {
     const buttons: KbDetailActionButton[] = [];
     const busy = isStarting;
+    const busyText = busy ? busyLabel() : '';
 
     if (status === 'pending') {
         buttons.push({
             key: 'start-deconstruction',
-            text: busy ? BUSY_LABEL : '🚀 开始拆解',
+            text: busy ? busyText : t('knowledgebase.panels.action.start'),
             cls: BTN_PRIMARY,
-            title: '拆解本书：分段 + 统计 + 向量增强，提取多维度写作特征',
+            title: t('knowledgebase.panels.action.startTitle'),
             disabled: busy,
         });
     } else if (status === 'failed') {
         buttons.push({
             key: 'restart-deconstruction',
-            text: busy ? BUSY_LABEL : '🔄 重新拆解',
+            text: busy ? busyText : t('knowledgebase.panels.action.restartFailed'),
             cls: BTN_PRIMARY,
-            title: '上次拆解失败，重新开始拆解',
+            title: t('knowledgebase.panels.action.restartFailedTitle'),
             disabled: busy,
         });
     } else if (status === 'completed') {
         buttons.push({
             key: 'restart-deconstruction',
-            text: busy ? BUSY_LABEL : '🔄 重新拆解',
+            text: busy ? busyText : t('knowledgebase.panels.action.restartCompleted'),
             cls: BTN_SECONDARY,
-            title: '清除已有拆解结果，重新拆解',
+            title: t('knowledgebase.panels.action.restartCompletedTitle'),
             disabled: busy,
         });
     } else if (status === 'processing') {
         buttons.push({
             key: 'processing-indicator',
-            text: '⏳ 拆解中...',
+            text: t('knowledgebase.panels.action.processing'),
             cls: BTN_SECONDARY,
             title: '',
             disabled: true,
         });
         buttons.push({
             key: 'force-cancel',
-            text: '⚠️ 强制取消',
+            text: t('knowledgebase.panels.action.forceCancel'),
             cls: 'nw-btn nw-btn-sm',
-            title: '中断当前拆解任务（已完成维度保留）',
+            title: t('knowledgebase.panels.action.forceCancelTitle'),
             disabled: false,
         });
     } else if (status === 'interrupted') {
         buttons.push({
             key: 'resume-deconstruction',
-            text: '🔄 恢复拆解',
+            text: t('knowledgebase.panels.action.resume'),
             cls: BTN_WARNING,
-            title: '从上次中断处继续拆解（已完成的段不再重跑）',
+            title: t('knowledgebase.panels.action.resumeTitle'),
             disabled: false,
         });
         buttons.push({
             key: 'clear-status',
-            text: '🗑️ 清除状态',
+            text: t('knowledgebase.panels.action.clearStatus'),
             cls: BTN_SECONDARY,
-            title: '清除拆解状态与进度（不删除书籍）',
+            title: t('knowledgebase.panels.action.clearStatusTitle'),
             disabled: false,
         });
     }
@@ -187,23 +207,23 @@ export function resolveDetailActionButtons(status: string, isStarting: boolean):
     buttons.push(
         {
             key: 'dimension-tags',
-            text: '🏷️ 维度归类',
+            text: t('knowledgebase.panels.action.dimensionTags'),
             cls: BTN_SECONDARY,
-            title: '按本地规则生成题材/节奏/情绪等维度标签并写入自定义标签',
+            title: t('knowledgebase.panels.action.dimensionTagsTitle'),
             disabled: false,
         },
         {
             key: 'edit',
-            text: '✏️ 编辑',
+            text: t('knowledgebase.panels.action.edit'),
             cls: BTN_SECONDARY,
-            title: '编辑书籍信息',
+            title: t('knowledgebase.panels.action.editTitle'),
             disabled: false,
         },
         {
             key: 'delete',
-            text: '🗑️ 删除',
+            text: t('knowledgebase.panels.action.delete'),
             cls: BTN_DANGER,
-            title: '删除该书籍及其拆解数据',
+            title: t('knowledgebase.panels.action.deleteTitle'),
             disabled: false,
         },
     );
@@ -252,10 +272,10 @@ export function buildStatsOverviewCards(books: BookBasicInfo[] | undefined): KbS
     const completed = selectCompletedBooks(all);
     const processing = all.filter(book => book.breakdownStatus === 'processing').length;
     return [
-        { label: '书籍总数', value: String(all.length), icon: '📚', tone: 'accent' },
-        { label: '已拆解', value: String(completed.length), icon: '✅', tone: 'success' },
-        { label: '拆解中', value: String(processing), icon: '⏳', tone: 'info' },
-        { label: '平均质量分', value: computeAverageQuality(completed), icon: '⭐', tone: 'warning' },
+        { label: t('knowledgebase.panels.overview.totalBooks'), value: String(all.length), icon: '📚', tone: 'accent' },
+        { label: t('knowledgebase.panels.overview.brokenDown'), value: String(completed.length), icon: '✅', tone: 'success' },
+        { label: t('knowledgebase.panels.overview.processing'), value: String(processing), icon: '⏳', tone: 'info' },
+        { label: t('knowledgebase.panels.overview.avgQuality'), value: computeAverageQuality(completed), icon: '⭐', tone: 'warning' },
     ];
 }
 
@@ -267,7 +287,7 @@ export function buildStatsOverviewCards(books: BookBasicInfo[] | undefined): KbS
  */
 export function computeDimensionAverages(books: BookBasicInfo[] | undefined): KbDimensionAverage[] {
     const list = books || [];
-    return KB_QUALITY_DIMENSIONS.map(dimension => {
+    return getKbQualityDimensions().map(dimension => {
         if (list.length === 0) return { ...dimension, avg: 0 };
         const sum = list.reduce((acc, book) => acc + (book.qualityScores?.[dimension.key] ?? 0), 0);
         return { ...dimension, avg: sum / list.length };
@@ -335,7 +355,7 @@ export function computeStatusCounts(books: BookBasicInfo[] | undefined): Record<
 export function buildStatusDonutData(
     counts: Record<'pending' | 'processing' | 'completed' | 'failed' | 'interrupted', number>,
 ): KbDonutItem[] {
-    return KB_STATUS_STYLES
+    return getKbStatusStyles()
         .map(style => ({ label: style.label, value: counts[style.status], color: style.color }))
         .filter(item => item.value > 0);
 }
@@ -349,7 +369,7 @@ export function buildStatusDonutData(
 export function buildStatusLegendData(
     counts: Record<KbStatusKey, number>,
 ): KbStatusLegendItem[] {
-    return KB_STATUS_STYLES.map(style => ({
+    return getKbStatusStyles().map(style => ({
         label: style.label,
         value: counts[style.status],
         color: style.color,

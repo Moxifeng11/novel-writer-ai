@@ -14,8 +14,9 @@
 
 import { describe, expect, it } from 'vitest';
 import type { BreakdownTask } from '../../../engine/deconstruction-scheduler';
+import { translate } from '../../../i18n';
 import {
-    TASK_FILTER_OPTIONS,
+    getTaskFilterOptions,
     resolveTaskStatusTone,
     filterTasks,
     sortTasksByCreatedDesc,
@@ -64,8 +65,10 @@ describe('任务筛选', () => {
     ];
 
     it('下拉选项 6 项且不含「已暂停」（视图不提供该筛选入口）', () => {
-        expect(TASK_FILTER_OPTIONS.map(o => o.value)).toEqual(['all', 'running', 'pending', 'completed', 'failed', 'cancelled']);
-        expect(TASK_FILTER_OPTIONS.map(o => o.label)).toEqual(['全部', '运行中', '等待中', '已完成', '失败', '已取消']);
+        const options = getTaskFilterOptions();
+        expect(options.map(o => o.value)).toEqual(['all', 'running', 'pending', 'completed', 'failed', 'cancelled']);
+        expect(options.map(o => o.label)).toEqual(['全部', '运行中', '等待中', '已完成', '失败', '已取消']);
+        expect(translate('en-US', 'knowledgebase.tasks.filterAll')).toBe('All');
     });
 
     it('all 返回全部（含 paused）', () => {
