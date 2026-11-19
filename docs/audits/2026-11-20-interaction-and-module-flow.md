@@ -156,13 +156,14 @@
 - **建议**：随 A-7 统一时清理注释。
 - **预估**：并入 A-7。
 
-### A-17 撤销/重做自建栈仅协同视图有（P2，交互不一致）
+### A-17 撤销/重做自建栈仅协同视图有（P2，交互不一致） —— ✅ 已修（2026-11-20）
 
 - **现象**：协同编辑器拦截 Ctrl+Z/Ctrl+Y 走自建撤销栈（E-04）；全文写作台编辑器无对应实现——同为正文编辑，一个能撤销 AI 改写，一个不能。
 - **证据**：`co-writing-view.ts:1543-1551`（注释 E-04）；`unit-writer-controller.ts` 无撤销栈实现。
 - **影响**：用户在全文写作台误删段落无撤销；两编辑面能力不对等。
 - **建议**：评估把协同的撤销栈抽成共享件接入单元写作（工作量需评估，先列 P2）。
 - **预估**：2 天（若共享化）。
+- **状态（2026-11-20，DSH）**：已修。`ui/co-writing/edit-history.ts` 移到 `shared/edit-history.ts`（纯数据结构），协同视图与单元写作台共用 `ChapterHistoryStore`；`ui/full-writer/unit-writer-controller.ts` 接入栈键「项目|单元号」、800ms 节流快照（输入 / 失焦 / AI 落笔 / 一键排版都提交）、Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y 仅在正文编辑器内接管（标题框保持原生撤销）、头部右侧撤销/重做按钮按 `canUndoRedo` 启停。实机验证：切到第 2 节再切回第 1 节，撤销栈仍在。
 
 ### A-18 图表空态带内联 style，与内联样式基线冲突（P2）
 
@@ -378,7 +379,7 @@ graph TD
 | 10 | ✅ **已修（2026-11-20）** `.project` 写入收敛到 `writeProjectMeta()`（两处补失败抛错，写锁改用 `pjProjectMeta()` 键） | B5 | 无 | 0.5 天 | 已由 DSH 直接完成 |
 | 11 | ✅ **已修（2026-11-20，口径修正后）** 结论先说：两个函数指的**不是同一份文件**（调研定位稿在 `00-前期调研/`，结构文档在 `短篇创作/` `剧本创作/`），强行合并会改掉既有 vault 路径，所以「二合一」改为**单一真源 + 口径澄清**：`shared/mode-content.ts` 新增 `MODE_DOC_SPECS`（目录+文件名表）/ `modeDocKinds(mode)` / `ModeDocKind`，`modeDocPath` 改为查表（未知组合回落 outline，行为不变）；`ui/full-writer/creation-flow-state.ts:110` 的手写 kinds 三元组删除、改读 `modeDocKinds(mode)`；`shared/pre-research.ts` 新增 `PRE_RESEARCH_MODE_DOC_FILES` 表并注明定位稿**不参与阶段完成判定**（判定只看 `调研数据.json` 字段与结构文档）。新增 `tests/unit/shared/mode-doc-specs.test.ts`（5 例：路径与表逐条一致 / kinds 覆盖 / 回落 / 两套产物不撞路径 / 源码不再手写三元组） | B9 | 无 | 1 天 | 已由 DSH 直接完成 |
 | 12 | ✅ **已修（2026-11-20）** 新增 `scripts/gen-engine-msg-codes.mjs`（`npm run gen:engine-msg` / `--check` 漂移校验，已接进 preflight 链）生成 `shared/engine-msg-codes.ts`：`ENGINE_MSG_CODES`（**126 键**）与 `EngineMsgCode` 联合类型；`UiMessage.code` 与 `uiMessage()` 首参改为该类型 —— 拼错即编译错。生产端 126 处 code 全部本来就是合法字面量（改造零改动）；只有 `tests/unit/shared/ui-message-i18n.test.ts` 3 处**故意越界**验证「缺键回落 fallback」的用例加了 `as unknown as EngineMsgCode`。新增 `tests/unit/i18n/engine-msg-codes.test.ts`（4 例：与 zh/en 键集合双向相等、无重复、每条双语可解析且 en 无中文）。坑：生成器里用模板字符串拼代码时，头注释含反引号会截断外层模板串（`SyntaxError: Unexpected identifier 'engineMsg'`），改用数组 `.join('\n')` | B7 | 依赖 19 已完成的 engineMsg 资源 | 0.5 天 | 已由 DSH 直接完成 |
-| 13 | 🟡 **部分已修（2026-11-20）** A-11 时长：`shared/interaction-timing.ts` 新增 `NOTICE_MS`（short 2000 / normal 4000 / long 8000 / sticky 0），`ui/components/notice-helpers.ts` 的 `showStructuredNotice` 增加 `defaultTimeout` 参数，错误/成功/告警三类助手各取一档（既有 `timeout` 仍优先）。A-12 按钮：`ui/model-editor-modal.ts:122`、`ui/mcp-server-form-modal.ts:192` 统一为「💾 保存」。A-17（撤销栈共享化）未做，性质属 P2，留待 P2 批次 | A-11/12/17 | 无 | 1 天 | 已由 DSH 直接完成（A-17 待做） |
+| 13 | 🟡 **部分已修（2026-11-20）** A-11 时长：`shared/interaction-timing.ts` 新增 `NOTICE_MS`（short 2000 / normal 4000 / long 8000 / sticky 0），`ui/components/notice-helpers.ts` 的 `showStructuredNotice` 增加 `defaultTimeout` 参数，错误/成功/告警三类助手各取一档（既有 `timeout` 仍优先）。A-12 按钮：`ui/model-editor-modal.ts:122`、`ui/mcp-server-form-modal.ts:192` 统一为「💾 保存」。A-17（撤销栈共享化）已在 2026-11-20 单列完成 —— 撤销栈移到 `shared/edit-history.ts`，单元写作台接入同一套栈（见 A-17 状态） | A-11/12/17 | 无 | 1 天 | 已由 DSH 直接完成 |
 
 ### P2（风格统一 / 可维护性）
 
@@ -395,6 +396,7 @@ graph TD
 ### 清单说明
 
 - **合计 20 条**：P0×4、P1×9、P2×7。预估总量约 **16.75 天**（单人）。
+- **收口状态（2026-11-20）**：P1×9 与 P2×7 已全部完成（P0×4 见 §5.1–5.3 复核结论与后续修复），#13 的 A-17 遗留项单列完成。
 - **全部需另派任务**（本任务为阶段一，不改代码）；建议 scope 已按「写范围锁粒度」给出。
 - **依赖关系**：3 → 19（dirty 基建）；12 → 19 的 engineMsg 资源（已存在）；8 → 16（同属字符串键治理，先做键常量再做收编）；其余可并行。
 - **收益最高的前三条**：#1（防重复扣费）、#3（防数据丢失）、#2（同正文两入口风险不一致）——都是用户可感知的正确性问题，不是风格问题。

@@ -10,7 +10,7 @@ import {
     pushHistory,
     redoHistory,
     undoHistory,
-} from '../../../ui/co-writing/edit-history';
+} from '../../../shared/edit-history';
 
 describe('pushHistory / undo / redo', () => {
     it('初始不可撤销不可重做', () => {

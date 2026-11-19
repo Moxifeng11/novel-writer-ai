@@ -15357,6 +15357,20 @@ body.nw-panel-resizing .nw-awb-center iframe {
     padding: 0 6px;
     border-radius: var(--nw-radius-full);
     background: var(--nw-bg-muted);
+    white-space: nowrap;
+    flex: none;
+}
+
+.nw-unit-history {
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+.nw-unit-history-btn {
+    padding: 1px 8px;
+    font-size: var(--nw-font-size-xs);
+    line-height: 1.6;
 }
 
 .nw-unit-editor {

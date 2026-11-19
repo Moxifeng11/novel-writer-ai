@@ -3943,3 +3943,18 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 **门禁**：tsc 0；check:bundle main.js 下降；preflight EXIT=0。
 
 **下一轮**：#13 遗留 A-17 撤销栈共享化（协同写作视图有撤销栈，单元写作台没有），P2 全清单至此收口。
+
+## 第一百二十七轮：C 清单 #13 遗留 A-17 —— 单元写作台撤销栈共享化（2026-11-20，DSH）
+
+**A-17**
+- 撤销栈从 `ui/co-writing/edit-history.ts` 移到 **`shared/edit-history.ts`**（纯数据结构，无 DOM / obsidian 依赖），协同视图与单元写作台共用同一套「项目|单元」多栈语义；旧文件删除，`ui/co-writing-view.ts` 与 `tests/unit/ui/co-writing-edit-history.test.ts` 的 import 改路径。
+- `ui/full-writer/unit-writer-controller.ts`：新增 `ChapterHistoryStore` 实例、`undoBtn`/`redoBtn`/`historyBarEl` 三字段；栈键 `unitHistoryKey() = 项目|单元号`；`seedHistory()` 渲染时用当前正文播种（切回单元保留原栈）；`pushHistorySnapshot(force)` 800ms 节流；`undoEdit()` / `redoEdit()` / `applyHistoryText()`（写回后按 dirty 走自动保存）/ `refreshHistoryButtons()`（按 `canUndoRedo` 启停）。
+- 提交点四处：输入监听（节流）、`blur`（强制）、`setBody()`（AI 结果 / 一键排版）、AI 生成分支两处裸赋值（成功与失败回滚）。
+- 快捷键：`main` 容器 keydown 内 `event.target === this.editorEl` 时接管 Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y，其它焦点不拦（标题框仍走原生撤销）。
+- UI：撤销/重做按钮放头部第三行（右对齐）。**不能挂 `headerMetaEl` 里** —— `updateHeaderMeta()` 用 `setText` 会清空子节点，且 224px 窄列下首版把「第1节 · 20 字 · 待写」折两行、「已保存」竖排成 3 行。
+- i18n 4 键 `fullwriter.uw.undoBtn|undoTip|redoBtn|redoTip`（提示复用 `cowrite.undoEarliest` / `cowrite.redoEmpty`）→ 资源 zh/en 各 **6077**；样式 `styles-src/15-late-fixes.css` 新增 `.nw-unit-history` / `.nw-unit-history-btn`，`.nw-unit-save-state` 加 `white-space: nowrap; flex: none`。
+- 实机（`D:\nw-tmp\snap-a17.mjs <lang>`，dev vault「短篇小说/短篇示例」）：初始两按钮 disabled；输入 + blur 后撤销可用；撤销逐字恢复原文、重做恢复新文本；切第 2 节两按钮 disabled（独立栈）；切回第 1 节撤销仍可用（栈持久）；zh/en 头部 224×96 零溢出。
+- 测试 `tests/unit/ui/unit-writer-undo.test.ts` 7 例（模块位置 / 栈键隔离 / 三个提交点 / 快捷键 target 守卫 / 按钮态与键 / 两种提示 / 双语资源）。
+- 已知遗留：en 下 `第1节 · 20 chars`、`Complete this 节` 仍混中文（`modeUnitLabel` 返回中文单位名插入英文模板），属 i18n 未迁移面。
+
+**下一轮**：C 清单 P0×4 / P1×9 / P2×7 全部收口，等用户指定方向（视觉 / 功能 / i18n 余下 ideation 793 → batch-import 750 → agent-workbench-view 730）。

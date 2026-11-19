@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-19T22:43:28.539Z",
+  "generatedAt": "2026-11-19T23:18:27.648Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
@@ -19,11 +19,11 @@
       "incomplete": 0
     },
     "shared": {
-      "files": 261,
-      "exports": 2239,
-      "documented": 2238,
-      "methods": 159,
-      "methodsDocumented": 159,
+      "files": 262,
+      "exports": 2247,
+      "documented": 2246,
+      "methods": 163,
+      "methodsDocumented": 163,
       "incomplete": 0
     },
     "core": {
@@ -43,11 +43,11 @@
       "incomplete": 0
     },
     "ui": {
-      "files": 305,
-      "exports": 1177,
-      "documented": 1177,
-      "methods": 686,
-      "methodsDocumented": 685,
+      "files": 304,
+      "exports": 1169,
+      "documented": 1169,
+      "methods": 682,
+      "methodsDocumented": 681,
       "incomplete": 0
     }
   },
@@ -3225,6 +3225,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "shared/edit-history.ts": {
+      "exports": 8,
+      "documented": 8,
+      "methods": 4,
+      "methodsDocumented": 4,
+      "incomplete": 0
+    },
     "shared/embedding-provider.ts": {
       "exports": 4,
       "documented": 4,
@@ -5052,13 +5059,6 @@
       "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
-      "incomplete": 0
-    },
-    "ui/co-writing/edit-history.ts": {
-      "exports": 8,
-      "documented": 8,
-      "methods": 4,
-      "methodsDocumented": 4,
       "incomplete": 0
     },
     "ui/co-writing/editor-aux.ts": {

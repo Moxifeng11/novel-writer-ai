@@ -180,7 +180,7 @@
 
 | 模块 | 职责 |
 | --- | --- |
-| `ui/co-writing/edit-history.ts` | 多章撤销栈：`ChapterHistoryStore` 按「项目|章节」保留历史，切章再回来仍可撤销；上限 60 步 |
+| `shared/edit-history.ts` | 多章撤销栈：`ChapterHistoryStore` 按「项目|章节」保留历史，切换后回来仍可撤销；上限 60 步。2026-11-20 从 `ui/co-writing/` 移到 `shared/`，单元写作台（`ui/full-writer/unit-writer-controller.ts`）共用同一套栈 |
 | `ui/co-writing/text-diff.ts` | 行级 LCS 差异（先剥公共前后缀），输出 +/-/空格行与统计 |
 | `ui/co-writing/editor-display.ts` | 字号/行距取值归一化、三/四层同步应用、光标行列与选中字数文案 |
 | `ui/co-writing/markdown-highlight.ts` | Markdown 着色（标题/引用/列表/分隔线/加粗/斜体/标记符）+ 镜像层 DOM 渲染 + 盒模型复制 + 滚动同步 |

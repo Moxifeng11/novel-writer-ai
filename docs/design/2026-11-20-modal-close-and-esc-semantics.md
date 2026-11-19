@@ -48,5 +48,5 @@ Esc / 点遮罩按**上下文**分四层，越靠上越「轻」：
 ## 六、backlog
 
 - L4 真取消：四个任务接入 AbortSignal，确认框增加第三选项「停止任务」。
-- L1 撤销栈：协同写作视图有撤销栈（`ui/co-writing-view.ts`），单元写作台没有（A-17）。
+- ~~L1 撤销栈~~：已做（2026-11-20，A-17）—— 撤销栈移到 `shared/edit-history.ts`，协同视图与单元写作台共用同一套栈，见 `docs/audits/2026-11-20-interaction-and-module-flow.md` A-17 状态。
 - 其余高危表单弹窗按 DirtyGuard 同模式接入（审计 C#3 剩余 7 个）。

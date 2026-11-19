@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146933 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19560 | 296 | 204 | 69% |
-| `shared/` | 263 | 52896 | 2235 | 1748 | 78% |
+| `shared/` | 264 | 53051 | 2243 | 1754 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 307 | 113858 | 1187 | 948 | 80% |
+| `ui/` | 306 | 113825 | 1179 | 942 | 80% |
 
 ## 文件清单
 
@@ -507,6 +507,7 @@
 | `shared/divergence-trend.ts` | 44 | 2 | 2 |
 | `shared/document-scopes.ts` | 51 | 4 | 4 |
 | `shared/dom-window.ts` | 77 | 4 | 3 |
+| `shared/edit-history.ts` | 155 | 8 | 6 |
 | `shared/embedding-provider.ts` | 43 | 4 | 4 |
 | `shared/emotion-plan-parse.ts` | 78 | 2 | 2 |
 | `shared/endpoint-key.ts` | 30 | 1 | 1 |
@@ -748,7 +749,6 @@
 | `ui/co-writing/chapter-nav.ts` | 157 | 6 | 3 |
 | `ui/co-writing/control-panel.ts` | 410 | 14 | 8 |
 | `ui/co-writing/dashboard-status.ts` | 191 | 9 | 7 |
-| `ui/co-writing/edit-history.ts` | 152 | 8 | 6 |
 | `ui/co-writing/editor-aux.ts` | 169 | 5 | 3 |
 | `ui/co-writing/editor-display.ts` | 128 | 10 | 6 |
 | `ui/co-writing/editor-shortcuts.ts` | 87 | 4 | 2 |
@@ -866,7 +866,7 @@
 | `ui/full-writer/title-bar-controller.ts` | 196 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |
-| `ui/full-writer/unit-writer-controller.ts` | 800 | 2 | 2 |
+| `ui/full-writer/unit-writer-controller.ts` | 919 | 2 | 2 |
 | `ui/full-writer/wizard-controller.ts` | 428 | 1 | 1 |
 | `ui/full-writer/wizard-results-store.ts` | 81 | 1 | 1 |
 | `ui/full-writer/wizard-step-executors.ts` | 374 | 1 | 1 |

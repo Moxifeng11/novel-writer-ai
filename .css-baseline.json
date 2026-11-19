@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-19T22:29:26.083Z",
-  "note": "P2 #18 设置页自动保存徽标与高危字段恢复（.nw-settings-autosave* / .nw-api-restore-btn:disabled）",
-  "bytes": 801888,
+  "generatedAt": "2026-11-19T23:15:53.281Z",
+  "note": "A-17 单元写作台撤销/重做（.nw-unit-history / -btn、save-state nowrap）",
+  "bytes": 802124,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 223,
-  "uniqueClasses": 4337,
+  "uniqueClasses": 4339,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

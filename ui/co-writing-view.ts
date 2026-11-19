@@ -142,7 +142,7 @@ import {
 } from '@/ui/co-writing/find-replace';
 import { parseChapterNumber, renderChapterNav, type NavChapter } from '@/ui/co-writing/chapter-nav';
 import { describeWordGoalSource, resolveChapterWordGoal, type ChapterWordGoal } from '@/ui/co-writing/word-goal';
-import { canUndoRedo, ChapterHistoryStore, pushHistory, redoHistory, undoHistory } from '@/ui/co-writing/edit-history';
+import { canUndoRedo, ChapterHistoryStore, pushHistory, redoHistory, undoHistory } from '@/shared/edit-history';
 import { applyEditorMetrics, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, formatCursorInfo, normalizeFontSize, normalizeLineHeight } from '@/ui/co-writing/editor-display';
 import { copyEditorBoxStyles, renderHighlightDom, syncHighlightScroll } from '@/ui/co-writing/markdown-highlight';
 import { renderEditorAux, syncHistoryButtons, syncToggleButton, type EditorAuxHandles } from '@/ui/co-writing/editor-aux';

@@ -30,6 +30,7 @@ import { ENGINE_NAMES } from '@/shared/engine-names';
 import { StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
 import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
+import { canUndoRedo, ChapterHistoryStore, pushHistory, redoHistory, undoHistory } from '@/shared/edit-history';
 import { SAVE_FEEDBACK_MS } from '@/shared/interaction-timing';
 import { createLogger } from '@/shared/logger';
 import { pushUsageScope } from '@/services/usage-ledger';
@@ -86,6 +87,12 @@ export class UnitWriterController {
     private abortController: AbortController | null = null;
     private pendingRewrite: RewriteSelection | null = null;
     private destroyed = false;
+
+    private readonly editHistory = new ChapterHistoryStore();
+    private lastHistoryPushAt = 0;
+    private undoBtn: HTMLButtonElement | null = null;
+    private redoBtn: HTMLButtonElement | null = null;
+    private historyBarEl: HTMLElement | null = null;
 
     constructor(private readonly deps: UnitWriterDeps) {
         this.port = createObsidianUnitFilePort(deps.app);
@@ -252,6 +259,19 @@ export class UnitWriterController {
 
         this.headerMetaEl = header.createDiv({ cls: 'nw-unit-header-meta' });
         this.saveStateEl = this.headerMetaEl.createSpan({ cls: 'nw-unit-save-state', text: t('fullwriter.uw.stateSaved') });
+        this.historyBarEl = header.createDiv({ cls: 'nw-unit-history' });
+        this.undoBtn = this.historyBarEl.createEl('button', {
+            cls: 'nw-btn nw-btn-secondary nw-unit-history-btn',
+            text: t('fullwriter.uw.undoBtn'),
+            attr: { type: 'button', title: t('fullwriter.uw.undoTip'), 'aria-label': t('fullwriter.uw.undoBtn') },
+        });
+        this.undoBtn.onclick = () => this.undoEdit();
+        this.redoBtn = this.historyBarEl.createEl('button', {
+            cls: 'nw-btn nw-btn-secondary nw-unit-history-btn',
+            text: t('fullwriter.uw.redoBtn'),
+            attr: { type: 'button', title: t('fullwriter.uw.redoTip'), 'aria-label': t('fullwriter.uw.redoBtn') },
+        });
+        this.redoBtn.onclick = () => this.redoEdit();
         this.updateHeaderMeta();
 
         this.editorEl = main.createEl('textarea', {
@@ -262,17 +282,30 @@ export class UnitWriterController {
             },
         });
         this.editorEl.value = this.ctx.existingBody.replace(/^\n+/, '');
+        this.lastHistoryPushAt = 0;
+        this.seedHistory();
         this.editorEl.addEventListener('input', () => {
             this.dirty = true;
             this.updateHeaderMeta();
             this.setSaveState(t('fullwriter.uw.stateEditing'));
             this.scheduleSave();
+            this.pushHistorySnapshot();
         });
+        // 失焦时补一版：800ms 节流可能吞掉最后一段输入，切走后就找不回来了
+        this.editorEl.addEventListener('blur', () => this.pushHistorySnapshot(true));
         // Ctrl+S 绑在单元容器上而不是 textarea 上（审计 A-2）：焦点落在工具条按钮/标题框时
         // 事件不会到 textarea，快捷键就落回 Obsidian，而工具条 tip 承诺的是「保存正文」。
         main.addEventListener('keydown', (event: KeyboardEvent) => {
             if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
-            if (event.key.toLowerCase() !== 's') return;
+            const key = event.key.toLowerCase();
+            // 撤销/重做走自建栈（A-17）：textarea 原生栈在切单元/重开页签后不可用
+            if (event.target === this.editorEl && (key === 'z' || key === 'y')) {
+                event.preventDefault();
+                if (key === 'y' || event.shiftKey) this.redoEdit();
+                else this.undoEdit();
+                return;
+            }
+            if (key !== 's') return;
             event.preventDefault();
             void this.flushSave().then(ok => {
                 if (ok) showSuccessNotice(t('common.bodySaved'), { timeout: SAVE_FEEDBACK_MS });
@@ -377,6 +410,8 @@ export class UnitWriterController {
         this.editorEl.value = text;
         this.dirty = true;
         this.updateHeaderMeta();
+        // AI 结果 / 一键排版也是可撤销的一步
+        this.pushHistorySnapshot(true);
     }
 
     private updateHeaderMeta(): void {
@@ -388,6 +423,88 @@ export class UnitWriterController {
             t('fullwriter.uw.summaryLine', { unit: this.ctx.unitName, words, state: written ? t('fullwriter.uw.written') : t('fullwriter.uw.pendingWrite') }),
         );
         if (this.saveStateEl) this.headerMetaEl.appendChild(this.saveStateEl);
+    }
+
+    /** 撤销栈键：按「项目|单元」隔离，切换单元再回来仍然可撤销 */
+    private unitHistoryKey(): string {
+        return (this.ctx?.project ?? '') + '|' + (this.ctx?.unitNumber ?? 0);
+    }
+
+    /** 用当前正文初始化该单元的撤销栈（已有栈则只补当前值） */
+    private seedHistory(): void {
+        if (!this.editorEl) return;
+        const history = this.editHistory.get(this.unitHistoryKey(), this.editorEl.value);
+        pushHistory(history, this.editorEl.value);
+        this.refreshHistoryButtons();
+    }
+
+    /**
+     * 提交一次撤销快照。
+     *
+     * @param force - 跳过节流（关键操作 / 失焦时用）
+     */
+    private pushHistorySnapshot(force = false): void {
+        if (!this.editorEl) return;
+        const now = Date.now();
+        // 800ms 节流：连续打字不会产生几十个快照，但仍能按段撤销
+        if (!force && now - this.lastHistoryPushAt < 800) return;
+        this.lastHistoryPushAt = now;
+        const history = this.editHistory.get(this.unitHistoryKey(), this.editorEl.value);
+        pushHistory(history, this.editorEl.value);
+        this.refreshHistoryButtons();
+    }
+
+    /** 执行撤销 */
+    private undoEdit(): void {
+        const editor = this.editorEl;
+        if (!editor) return;
+        const history = this.editHistory.get(this.unitHistoryKey(), editor.value);
+        // 先把当前内容补进栈，避免「输入后立刻撤销」丢掉最新一版
+        pushHistory(history, editor.value);
+        const previous = undoHistory(history);
+        if (previous === null) {
+            showWarningNotice(t('cowrite.undoEarliest'), { timeout: 2000 });
+            this.refreshHistoryButtons();
+            return;
+        }
+        this.applyHistoryText(previous);
+    }
+
+    /** 执行重做 */
+    private redoEdit(): void {
+        const editor = this.editorEl;
+        if (!editor) return;
+        const history = this.editHistory.get(this.unitHistoryKey(), editor.value);
+        const next = redoHistory(history);
+        if (next === null) {
+            showWarningNotice(t('cowrite.redoEmpty'), { timeout: 2000 });
+            this.refreshHistoryButtons();
+            return;
+        }
+        this.applyHistoryText(next);
+    }
+
+    /** 把历史状态写回编辑器并排入保存（不动撤销指针） */
+    private applyHistoryText(text: string): void {
+        const editor = this.editorEl;
+        if (!editor) return;
+        editor.value = text;
+        editor.selectionStart = text.length;
+        editor.selectionEnd = text.length;
+        this.dirty = true;
+        this.updateHeaderMeta();
+        this.setSaveState(t('fullwriter.uw.stateEditing'));
+        this.scheduleSave();
+        this.refreshHistoryButtons();
+    }
+
+    /** 刷新撤销/重做按钮禁用态 */
+    private refreshHistoryButtons(): void {
+        if (!this.undoBtn || !this.redoBtn) return;
+        const history = this.editHistory.get(this.unitHistoryKey(), this.editorEl?.value ?? '');
+        const state = canUndoRedo(history);
+        this.undoBtn.disabled = !state.canUndo;
+        this.redoBtn.disabled = !state.canRedo;
     }
 
     private setSaveState(text: string): void {
@@ -586,6 +703,7 @@ export class UnitWriterController {
             } else {
                 this.editorEl.value = buffer || originalBody;
                 this.dirty = true;
+                this.pushHistorySnapshot(true);
             }
 
             this.pendingRewrite = null;
@@ -596,6 +714,7 @@ export class UnitWriterController {
         } catch (e) {
             const name = (e as { name?: string })?.name;
             this.editorEl.value = originalBody;
+            this.pushHistorySnapshot(true);
             // 生成前手写的内容可能还没到自动保存时间；取消/失败时也要落盘
             this.dirty = true;
             void this.flushSave();
