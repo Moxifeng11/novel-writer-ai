@@ -321,9 +321,19 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
   顺带改 `formatWordCount()` 按语言分档：en 走 k/M 且 ≥100 才去尾 `.0`（原 `3460.0k words` → `3.5M words`），zh 走万/字；
   zh/en 资源各 **5278** 条；棘轮收紧到 **212 文件 / 6383 条**；新增 `tests/unit/i18n/batch-import-flow.test.ts` 6 例；
   实机 zh/en 各 9 场景（640 宽弹窗 + 480 宽 picker，零横向溢出；en 下 UI 全英文，残余 CJK 为注入的假书名与预设名）。
+- 第二期第45片（2026-11-19，DSH）：Agent 创作工作台 —— `ui/agent-workbench-view.ts`（1,837 行）+ `ui/agent-workbench/stage-panel.ts`（134 行）
+  迁 **106 键** `agentWorkbench.*`（title / mode / header / nav / resize / panel / quick / stage / project / model /
+  composer / file / preview / notice / guard / approval / notes / intent / chip / plan / telemetry / memory / toollog）；
+  `TYPE_SECTIONS` 常量改 `typeSections()`（label 走 `creationModeDisplayName`）、删文件末尾 `MODE_LIBRARY_GROUP_LOOKUP`、
+  `openProjectChipMenu` 按 `typeSections()` 分桶；发给 Agent 的话术（`我要操作项目「{project}」`、`继续「{stage}」：{cta}`）一并本地化；
+  保留 `MODE_LIBRARY_ROOTS`（vault 目录名）、`元文件` 路径与 3 条日志；顺带修英文快捷按钮撑破左栏（`.nw-awb-quick-btn` 加 `min-width:0` + 换行）；
+  zh/en 资源各 **5384** 条；棘轮收紧到 **211 文件 / 6259 条**；新增 `tests/unit/i18n/agent-workbench-labels.test.ts` 7 例；
+  实机 zh/en 各 1 场景（1500×1100，零横向溢出；en 下 UI 全英文，残余 CJK 为 vault 项目名/文件名与引擎层
+  `harness-engine.ts:632` 的「AI 助手暂时不可用」提示——后者已记 backlog）；
+  新 backlog：引擎层文案（`engine/agent/harness/harness-engine.ts:632/634`）需单独一片。
 - 后续：第二期余下（知识库 D 类两文件 `ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`
-  用户已裁定随视觉重构；散落弹窗 agent-workbench-view 730 /
-  novel-tags 1099（只剩 AI 提示词与解析正则）等），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
+  用户已裁定随视觉重构；散落弹窗 novel-tags 1099（只剩 AI 提示词与解析正则）；引擎层文案），
+  第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 
 ---
 
@@ -331,6 +341,6 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
 
 1 → 2 → 3 → 4 → 5 →（6 可选）→ 7。
 
-进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~44 片（命令面板 → 批量导入五步向导）已交付（2026-11-18/19）；下一个候选是 ⑦ 第二期余下（agent-workbench-view 730 / novel-tags 1099（只剩 AI 提示词与解析正则）/ 写作设置分区残留等，知识库 D 类两文件随视觉重构），以及第三期补齐 en 并逐面量布局。
+进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~45 片（命令面板 → Agent 创作工作台）已交付（2026-11-18/19）；下一个候选是 ⑦ 第二期余下（novel-tags 1099（只剩 AI 提示词与解析正则）/ 引擎层文案 / 写作设置分区残留等，知识库 D 类两文件随视觉重构），以及第三期补齐 en 并逐面量布局。
 
 理由：1 是修「假成功」缺陷；2 是把已交付引擎变成写作时可见的价值；3 是投稿刚需且不依赖 AI；4/5 是低成本体验补洞；6/7 视需要。

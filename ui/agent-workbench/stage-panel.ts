@@ -4,7 +4,8 @@
  * 阶段定义的唯一来源是 `shared/creation-flow.ts`；本模块只把快照投影为
  * 可渲染条目与预填话术，不复制任何阶段常量，也不读取 Obsidian。
  */
-import { getCreationModeLabel } from '@/shared/creation-mode';
+import { creationModeDisplayName } from '@/shared/creation-mode';
+import { t } from '@/i18n';
 import type { CreationFlowSnapshot, CreationFlowStageStatus } from '@/shared/creation-flow';
 
 /**
@@ -48,8 +49,10 @@ export interface StagePanelModel {
  * buildStagePrompt({ label: '章节写作', ctaLabel: '继续写第 6 章', state: 'active' } as CreationFlowStageStatus)
  */
 export function buildStagePrompt(stage: CreationFlowStageStatus): string {
-    const blocked = stage.state === 'blocked' && stage.blockedReason ? `（${stage.blockedReason}）` : '';
-    return `继续「${stage.label}」：${stage.ctaLabel}${blocked}`;
+    const blocked = stage.state === 'blocked' && stage.blockedReason
+        ? t('agentWorkbench.stage.promptBlocked', { reason: stage.blockedReason })
+        : '';
+    return t('agentWorkbench.stage.prompt', { stage: stage.label, cta: stage.ctaLabel, blocked });
 }
 
 /**
@@ -106,8 +109,8 @@ export function buildStagePanelModel(
             nextLabel: '',
             items: [],
             emptyText: project
-                ? '阶段读取失败：切换项目或重新打开工作台后重试'
-                : '未选择项目：选择或新建项目后显示真实阶段进度',
+                ? t('agentWorkbench.stage.emptyFailed')
+                : t('agentWorkbench.stage.emptyNoProject'),
         };
     }
     const items: StagePanelItem[] = flow.stages.map(stage => ({
@@ -116,17 +119,20 @@ export function buildStagePanelModel(
         state: stage.state,
         ratioPercent: Math.round(Math.max(0, Math.min(1, stage.ratio)) * 100),
         progressText: stage.state === 'blocked' && stage.blockedReason
-            ? `${stage.progressText}（${stage.blockedReason}）`
+            ? t('agentWorkbench.stage.progressBlocked', { progress: stage.progressText, reason: stage.blockedReason })
             : stage.progressText,
         prompt: buildStagePrompt(stage),
-        tooltip: `${stage.progressText}${stage.blockedReason ? `；${stage.blockedReason}` : ''}；点击预填下一步指令`,
+        tooltip: t('agentWorkbench.stage.tooltip', {
+            progress: stage.progressText,
+            reason: stage.blockedReason ? t('agentWorkbench.stage.tooltipReason', { reason: stage.blockedReason }) : '',
+        }),
     }));
     const next = flow.stages.find(stage => stage.id === flow.nextStageId);
     return {
         project,
-        modeLabel: getCreationModeLabel(flow.mode),
+        modeLabel: creationModeDisplayName(flow.mode),
         percent: Math.round(Math.max(0, Math.min(1, flow.overallRatio)) * 100),
-        nextLabel: next ? next.label : '全部阶段已完成',
+        nextLabel: next ? next.label : t('agentWorkbench.stage.completed'),
         items,
         emptyText: '',
     };

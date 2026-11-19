@@ -15,6 +15,7 @@ import { resolveToolKind } from '@/shared/action-contract';
 import { ItemView, MarkdownRenderer, Menu, Notice, TFile, TFolder, WorkspaceLeaf } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { applyNwScope } from '@/utils/helpers';
+import { t } from '@/i18n';
 import { createPanelResizer, type PanelResizerHandle } from './panel-resizer';
 import { Platform } from 'obsidian';
 import { OperationConfirmModal } from './components/progress';
@@ -48,7 +49,7 @@ import { createAgentPort, getAgentContext } from './services/agent-port';
 import { listProjectIds } from '@/shared/project-catalog';
 import { pluginRootDirPath } from '@/shared/paths';
 import { shouldAutoApproveNewFile } from '@/shared/file-path-guard';
-import type { CreationMode } from '@/shared/creation-mode';
+import { creationModeDisplayName, type CreationMode } from '@/shared/creation-mode';
 import { resolveProjectMode as resolveModeFromShared } from '@/shared/project-mode';
 import { openModelPickerPopover, formatWorkbenchModelBadge, closeExistingPopovers } from './model-picker-popover';
 import { VIEW_TYPE_AGENT_WORKBENCH } from '@/shared/view-types';
@@ -80,11 +81,18 @@ import { createLogger } from '@/shared/logger';
 
 const log = createLogger('AgentWorkbench');
 
-const TYPE_SECTIONS: Array<{ mode: CreationMode; label: string }> = [
-    { mode: 'long', label: '长篇小说' },
-    { mode: 'short', label: '短篇小说' },
-    { mode: 'script', label: '剧本' },
-];
+/**
+ * 左栏类型分组（label 随语言变化，故每次调用求值）。
+ *
+ * @returns 三个类型分组
+ */
+function typeSections(): Array<{ mode: CreationMode; label: string }> {
+    return [
+        { mode: 'long', label: creationModeDisplayName('long') },
+        { mode: 'short', label: creationModeDisplayName('short') },
+        { mode: 'script', label: creationModeDisplayName('script') },
+    ];
+}
 
 const MODE_LIBRARY_ROOTS = ['长篇小说', '短篇小说', '剧本'];
 
@@ -211,7 +219,7 @@ export class AgentWorkbenchView extends ItemView {
      * @returns 文本结果
      */
     getDisplayText(): string {
-        return '🤖 Agent 创作工作台';
+        return t('agentWorkbench.title');
     }
 
     /**
@@ -285,7 +293,7 @@ export class AgentWorkbenchView extends ItemView {
             value: this.plugin.settings.agentWorkbenchLeftWidth ?? DEFAULT_LEFT,
             defaultValue: DEFAULT_LEFT,
             className: 'nw-awb-resizer nw-awb-resizer-left',
-            ariaLabel: '拖动调整左栏宽度（方向键微调，双击复位）',
+            ariaLabel: t('agentWorkbench.resize.leftAria'),
             onCommit: (width) => {
                 this.plugin.settings.agentWorkbenchLeftWidth = width;
                 void this.plugin.saveSettings();
@@ -302,7 +310,7 @@ export class AgentWorkbenchView extends ItemView {
             value: this.plugin.settings.agentWorkbenchRightWidth ?? DEFAULT_RIGHT,
             defaultValue: DEFAULT_RIGHT,
             className: 'nw-awb-resizer nw-awb-resizer-right',
-            ariaLabel: '拖动调整右栏宽度（方向键微调，双击复位）',
+            ariaLabel: t('agentWorkbench.resize.rightAria'),
             onCommit: (width) => {
                 this.plugin.settings.agentWorkbenchRightWidth = width;
                 void this.plugin.saveSettings();
@@ -372,19 +380,19 @@ export class AgentWorkbenchView extends ItemView {
     private renderHeader(): void {
         const header = this.contentEl.createDiv({ cls: 'nw-awb-header' });
         const title = header.createDiv({ cls: 'nw-awb-header-title' });
-        title.createSpan({ text: '🤖 Agent 创作工作台' });
-        this.modeBadgeEl = title.createSpan({ cls: 'nw-awb-mode-badge', text: '启动中…' });
+        title.createSpan({ text: t('agentWorkbench.title') });
+        this.modeBadgeEl = title.createSpan({ cls: 'nw-awb-mode-badge', text: t('agentWorkbench.mode.starting') });
         // 会话标题（首条用户消息前 30 字；恢复的旧会话也能看出在聊什么）
         this.sessionTitleEl = title.createSpan({ cls: 'nw-awb-session-title' });
 
         const nav = header.createDiv({ cls: 'nw-awb-header-nav' });
         const newSessionBtn = nav.createEl('button', {
-            text: '🆕 新会话',
+            text: t('agentWorkbench.header.newSession'),
             cls: 'nw-awb-nav-btn',
-            attr: { title: '清空当前项目的会话存档，重新开始（spill 存档保留 7 天）' },
+            attr: { title: t('agentWorkbench.header.newSessionTip') },
         });
         newSessionBtn.addEventListener('click', () => void this.startNewSession());
-        const collapseLeft = nav.createEl('button', { text: '⇤', cls: 'nw-awb-nav-btn nw-awb-collapse-btn', attr: { title: '折叠/展开左栏（项目导航）' } });
+        const collapseLeft = nav.createEl('button', { text: '⇤', cls: 'nw-awb-nav-btn nw-awb-collapse-btn', attr: { title: t('agentWorkbench.header.collapseLeftTip') } });
         collapseLeft.addEventListener('click', () => {
             const collapsed = this.layoutEl?.hasClass('nw-awb-left-collapsed');
             this.layoutEl?.toggleClass('nw-awb-left-collapsed', !collapsed);
@@ -392,7 +400,7 @@ export class AgentWorkbenchView extends ItemView {
             void this.plugin.saveSettings();
             collapseLeft.setText(collapsed ? '⇤' : '⇥');
         });
-        const collapseRight = nav.createEl('button', { text: '⇥', cls: 'nw-awb-nav-btn nw-awb-collapse-btn', attr: { title: '折叠/展开右栏（文件预览）' } });
+        const collapseRight = nav.createEl('button', { text: '⇥', cls: 'nw-awb-nav-btn nw-awb-collapse-btn', attr: { title: t('agentWorkbench.header.collapseRightTip') } });
         collapseRight.addEventListener('click', () => {
             const collapsed = this.layoutEl?.hasClass('nw-awb-right-collapsed');
             this.layoutEl?.toggleClass('nw-awb-right-collapsed', !collapsed);
@@ -401,10 +409,10 @@ export class AgentWorkbenchView extends ItemView {
             collapseRight.setText(collapsed ? '⇥' : '⇤');
         });
         const navBtns: Array<[string, string, () => void]> = [
-            ['📖 工作台', '项目与章节', () => void this.plugin.openFullWriterView()],
-            ['✍️ 协同写作', '句级协同', () => void this.plugin.openCoWritingFromActiveContext()],
-            ['📚 知识库', '资料库', () => void this.plugin.openKnowledgeBaseView()],
-            ['🔍 指纹库', '风格指纹', () => this.plugin.executeCommand('novel-writer-fingerprint-library')],
+            [t('agentWorkbench.nav.workbench'), t('agentWorkbench.nav.workbenchTip'), () => void this.plugin.openFullWriterView()],
+            [t('agentWorkbench.nav.cowrite'), t('agentWorkbench.nav.cowriteTip'), () => void this.plugin.openCoWritingFromActiveContext()],
+            [t('agentWorkbench.nav.knowledge'), t('agentWorkbench.nav.knowledgeTip'), () => void this.plugin.openKnowledgeBaseView()],
+            [t('agentWorkbench.nav.fingerprint'), t('agentWorkbench.nav.fingerprintTip'), () => this.plugin.executeCommand('novel-writer-fingerprint-library')],
         ];
         for (const [label, tip, onClick] of navBtns) {
             const btn = nav.createEl('button', { text: label, cls: 'nw-awb-nav-btn' });
@@ -416,25 +424,25 @@ export class AgentWorkbenchView extends ItemView {
     // ─── 左栏：两级项目分类 ─────────────────────────────────
 
     private async renderLeftPanel(container: HTMLElement): Promise<void> {
-        container.createEl('h4', { text: '项目', cls: 'nw-awb-panel-title' });
+        container.createEl('h4', { text: t('agentWorkbench.panel.projects'), cls: 'nw-awb-panel-title' });
         this.projectListEl = container.createDiv({ cls: 'nw-awb-project-list' });
         await this.refreshProjectList();
 
-        container.createEl('h4', { text: '创作计划', cls: 'nw-awb-panel-title' });
+        container.createEl('h4', { text: t('agentWorkbench.panel.plan'), cls: 'nw-awb-panel-title' });
         this.planEl = container.createDiv({ cls: 'nw-awb-plan' });
         this.renderPlan();
 
-        container.createEl('h4', { text: '创作阶段', cls: 'nw-awb-panel-title' });
+        container.createEl('h4', { text: t('agentWorkbench.panel.stages'), cls: 'nw-awb-panel-title' });
         this.stagesEl = container.createDiv({ cls: 'nw-awb-stages' });
         await this.refreshStagePanel();
 
-        container.createEl('h4', { text: '界面直达', cls: 'nw-awb-panel-title' });
+        container.createEl('h4', { text: t('agentWorkbench.panel.quick'), cls: 'nw-awb-panel-title' });
         const quick = container.createDiv({ cls: 'nw-awb-quick' });
         const quickBtns: Array<[string, () => void]> = [
-            ['⚙️ 设置', () => { this.plugin.openPluginSettings(); }],
-            ['🧬 故事结构', () => this.openStorySettingsForActive()],
-            ['📊 质量看板', () => this.plugin.executeCommand('novel-writer-quality-dashboard')],
-            ['📦 导出成稿', () => this.plugin.executeCommand('novel-writer-export-manuscript')],
+            [t('agentWorkbench.quick.settings'), () => { this.plugin.openPluginSettings(); }],
+            [t('agentWorkbench.quick.story'), () => this.openStorySettingsForActive()],
+            [t('agentWorkbench.quick.quality'), () => this.plugin.executeCommand('novel-writer-quality-dashboard')],
+            [t('agentWorkbench.quick.export'), () => this.plugin.executeCommand('novel-writer-export-manuscript')],
         ];
         for (const [label, onClick] of quickBtns) {
             const btn = quick.createEl('button', { text: label, cls: 'nw-awb-quick-btn' });
@@ -462,7 +470,7 @@ export class AgentWorkbenchView extends ItemView {
         }
         const summary = this.stagesEl.createDiv({ cls: 'nw-awb-stage' });
         summary.createSpan({ cls: 'nw-awb-stage-label', text: `${model.modeLabel} · ${model.percent}%` });
-        summary.createSpan({ cls: 'nw-awb-stage-hint', text: `下一步：${model.nextLabel}` });
+        summary.createSpan({ cls: 'nw-awb-stage-hint', text: t('agentWorkbench.stage.next', { label: model.nextLabel }) });
         for (const item of model.items) {
             const row = this.stagesEl.createDiv({ cls: 'nw-awb-stage' });
             row.setAttr('role', 'button');
@@ -505,7 +513,7 @@ export class AgentWorkbenchView extends ItemView {
         if (active) {
             this.port.openStorySettings(active);
         } else {
-            new Notice('先选择或创建一个项目，再调整故事结构', 4000);
+            new Notice(t('agentWorkbench.notice.noProjectForStory'), 4000);
         }
     }
 
@@ -548,7 +556,7 @@ export class AgentWorkbenchView extends ItemView {
 
         this.projectListEl.empty();
         let hasAny = false;
-        for (const section of TYPE_SECTIONS) {
+        for (const section of typeSections()) {
             const list = grouped[section.mode];
             const collapsed = this.collapsedGroups.has(section.mode);
             const typeEl = this.projectListEl.createDiv({ cls: 'nw-awb-type' });
@@ -561,7 +569,7 @@ export class AgentWorkbenchView extends ItemView {
             if (list.length === 0) {
                 // 全空时由底部统一提示，避免三栏各写一遍「暂无项目」
                 if (projects.length > 0) {
-                    cards.createDiv({ cls: 'nw-awb-project-empty', text: '暂无项目' });
+                    cards.createDiv({ cls: 'nw-awb-project-empty', text: t('agentWorkbench.project.groupEmpty') });
                 }
                 continue;
             }
@@ -580,28 +588,28 @@ export class AgentWorkbenchView extends ItemView {
                     cls: 'nw-awb-project-card' + (project === this.activeProject ? ' is-active' : ''),
                 });
                 card.createSpan({ cls: 'nw-awb-project-name', text: name });
-                card.setAttr('title', `${project}（点击告知 Agent 切换到该项目）`);
+                card.setAttr('title', t('agentWorkbench.project.cardTip', { project }));
                 card.addEventListener('click', () => {
                     this.setActiveProject(project);
-                    void this.submit(`我要操作项目「${project}」`, 'project');
+                    void this.submit(t('agentWorkbench.project.askAgent', { project }), 'project');
                 });
             }
         }
         if (fallback.length > 0) {
             const typeEl = this.projectListEl.createDiv({ cls: 'nw-awb-type' });
-            typeEl.createDiv({ cls: 'nw-awb-type-header is-static' }).createSpan({ cls: 'nw-awb-type-label', text: '其他位置' });
+            typeEl.createDiv({ cls: 'nw-awb-type-header is-static' }).createSpan({ cls: 'nw-awb-type-label', text: t('agentWorkbench.project.otherGroup') });
             const cards = typeEl.createDiv({ cls: 'nw-awb-type-cards' });
             hasAny = true;
             for (const project of fallback) {
                 const card = cards.createDiv({ cls: 'nw-awb-project-card', text: project });
                 card.addEventListener('click', () => {
                     this.setActiveProject(project);
-                    void this.submit(`我要操作项目「${project}」`, 'project');
+                    void this.submit(t('agentWorkbench.project.askAgent', { project }), 'project');
                 });
             }
         }
         if (!hasAny && projects.length === 0) {
-            this.projectListEl.createDiv({ cls: 'nw-awb-project-empty', text: '还没有项目，对 Agent 说「新建长篇」开始' });
+            this.projectListEl.createDiv({ cls: 'nw-awb-project-empty', text: t('agentWorkbench.project.emptyAll') });
         }
         this.projectListEl.scrollTop = scrollTop;
         void this.refreshStagePanel();
@@ -632,7 +640,7 @@ export class AgentWorkbenchView extends ItemView {
             this.previewedPath = '';
             this.previewSeq++;
             this.previewEl?.empty();
-            this.previewEl?.createDiv({ cls: 'nw-awb-preview-empty', text: '从右侧文件树选择文件预览' });
+            this.previewEl?.createDiv({ cls: 'nw-awb-preview-empty', text: t('agentWorkbench.file.fromTree') });
         }
         this.refreshProjectList();
         this.refreshProjectChip();
@@ -649,13 +657,13 @@ export class AgentWorkbenchView extends ItemView {
         // 输入条上方的工具行：项目切换 chip + 模型选择徽章（参考图 2/3 的输入框细节）
         const toolbar = container.createDiv({ cls: 'nw-awb-input-toolbar' });
         this.projectChipEl = toolbar.createDiv({ cls: 'nw-awb-chip-project' });
-        this.projectChipEl.setAttr('title', '切换 Agent 当前操作的项目');
+        this.projectChipEl.setAttr('title', t('agentWorkbench.project.chipTip'));
         this.projectChipEl.addEventListener('click', (event) => {
             this.openProjectChipMenu(event);
         });
         this.modelBadgeEl = toolbar.createEl('button', {
             cls: 'nw-awb-chip-model',
-            attr: { title: '选择 API 供应商与模型（两级菜单）；滑杆调节思考强度' },
+            attr: { title: t('agentWorkbench.model.chipTip') },
         });
         this.modelBadgeEl.addEventListener('click', () => {
             if (!this.modelBadgeEl) return;
@@ -673,7 +681,7 @@ export class AgentWorkbenchView extends ItemView {
         const attachBtn = inputRow.createEl('button', {
             text: '🖼',
             cls: 'nw-awb-attach',
-            attr: { type: 'button', title: '添加图片（PNG/JPEG/WebP/GIF）' },
+            attr: { type: 'button', title: t('agentWorkbench.composer.attachTip') },
         });
         this.attachmentInputEl = inputRow.createEl('input', {
             type: 'file',
@@ -694,7 +702,7 @@ export class AgentWorkbenchView extends ItemView {
             cls: 'nw-awb-input',
             attr: {
                 rows: '2',
-                placeholder: '对 Agent 说点什么…（@ 引用文件，Enter 发送，Shift+Enter 换行）',
+                placeholder: t('agentWorkbench.composer.placeholder'),
             },
         });
         this.inputEl.addEventListener('input', () => {
@@ -727,7 +735,7 @@ export class AgentWorkbenchView extends ItemView {
             ev.preventDefault();
             void this.addAttachmentFiles(files);
         });
-        const sendBtn = inputRow.createEl('button', { text: '↑', cls: 'nw-awb-send', attr: { title: '发送' } });
+        const sendBtn = inputRow.createEl('button', { text: '↑', cls: 'nw-awb-send', attr: { title: t('agentWorkbench.composer.send') } });
         sendBtn.addEventListener('click', () => void this.submit(this.inputEl?.value || ''));
         // 首次渲染也要按内容给足高度，不能停在 rows=2 的默认值
         this.autoGrowInput();
@@ -739,13 +747,13 @@ export class AgentWorkbenchView extends ItemView {
         const accepted: AgentAttachment[] = [];
         for (const file of files) {
             if (!isSupportedImage(file)) {
-                new Notice('只支持 10MB 以内的 PNG/JPEG/WebP/GIF 图片', 3500);
+                new Notice(t('agentWorkbench.notice.imageUnsupported'), 3500);
                 continue;
             }
             try {
                 accepted.push(await saveAgentAttachment(this.app, this.resolveActiveProject(), file));
             } catch (e) {
-                new Notice(e instanceof Error ? e.message : '图片保存失败', 3500);
+                new Notice(e instanceof Error ? e.message : t('agentWorkbench.notice.imageSaveFailed'), 3500);
             }
         }
         if (accepted.length === 0) return;
@@ -771,7 +779,7 @@ export class AgentWorkbenchView extends ItemView {
             const remove = chip.createEl('button', {
                 text: '✕',
                 cls: 'nw-awb-attachment-remove',
-                attr: { type: 'button', title: '移除图片' },
+                attr: { type: 'button', title: t('agentWorkbench.composer.removeImageTip') },
             });
             remove.addEventListener('click', () => {
                 this.pendingAttachments = this.pendingAttachments.filter(entry => entry.path !== item.path);
@@ -922,7 +930,7 @@ export class AgentWorkbenchView extends ItemView {
         const preview = this.quote.text.length > 160 ? `${this.quote.text.slice(0, 160)}…` : this.quote.text;
         this.quoteBarEl.createSpan({ cls: 'nw-awb-quote-mark', text: '❝' });
         this.quoteBarEl.createSpan({ cls: 'nw-awb-quote-text', text: preview });
-        const clear = this.quoteBarEl.createEl('button', { text: '×', cls: 'nw-awb-quote-clear', attr: { title: '取消引用' } });
+        const clear = this.quoteBarEl.createEl('button', { text: '×', cls: 'nw-awb-quote-clear', attr: { title: t('agentWorkbench.composer.quoteClearTip') } });
         clear.addEventListener('click', () => this.setQuote(null));
         this.inputEl?.focus();
     }
@@ -931,7 +939,7 @@ export class AgentWorkbenchView extends ItemView {
     private refreshProjectChip(): void {
         if (!this.projectChipEl) return;
         const current = this.resolveActiveProject();
-        const name = current ? (current.split('/').pop() || current) : '未选择项目';
+        const name = current ? (current.split('/').pop() || current) : t('agentWorkbench.project.none');
         this.projectChipEl.empty();
         this.projectChipEl.createSpan({ cls: 'nw-awb-chip-project-icon', text: '📋' });
         this.projectChipEl.createSpan({ cls: 'nw-awb-chip-project-label', text: name });
@@ -947,17 +955,22 @@ export class AgentWorkbenchView extends ItemView {
     private openProjectChipMenu(event: MouseEvent): void {
         const menu = new Menu();
         const projects = listProjectIds(this.app);
-        const groups: Record<string, string[]> = { 长篇小说: [], 短篇小说: [], 剧本: [], 其他: [] };
+        const sections = typeSections();
+        const groups = new Map<string, string[]>(sections.map(section => [section.label, []]));
+        const others: string[] = [];
         for (const project of projects) {
             const prefix = project.split('/')[0];
-            const cached = this.projectTypeCache.get(project);
-            const bucket = MODE_LIBRARY_GROUP_LOOKUP[prefix]
-                || (cached === 'short' ? '短篇小说'
-                    : cached === 'script' ? '剧本'
-                        : cached === 'long' ? '长篇小说' : '其他');
-            groups[bucket].push(project);
+            const rootIndex = MODE_LIBRARY_ROOTS.indexOf(prefix);
+            const mode = rootIndex >= 0 ? sections[rootIndex].mode : this.projectTypeCache.get(project);
+            const label = mode ? sections.find(section => section.mode === mode)?.label : undefined;
+            if (label) groups.get(label)?.push(project);
+            else others.push(project);
         }
-        for (const [group, list] of Object.entries(groups)) {
+        const grouped: Array<[string, string[]]> = [
+            ...groups.entries(),
+            [t('agentWorkbench.project.otherGroup'), others],
+        ];
+        for (const [group, list] of grouped) {
             if (list.length === 0) continue;
             menu.addItem(item => {
                 item.setTitle(`— ${group} —`).setDisabled(true);
@@ -965,7 +978,7 @@ export class AgentWorkbenchView extends ItemView {
             for (const project of list) {
                 menu.addItem(item => item.setTitle(`${project === this.activeProject ? '✓ ' : ''}${project}`).onClick(() => {
                     this.setActiveProject(project);
-                    void this.submit(`我要操作项目「${project}」`, 'project');
+                    void this.submit(t('agentWorkbench.project.askAgent', { project }), 'project');
                 }));
             }
         }
@@ -975,23 +988,23 @@ export class AgentWorkbenchView extends ItemView {
     // ─── 右栏：文件树 + 预览 ─────────────────────────────────
 
     private renderRightPanel(container: HTMLElement): void {
-        container.createEl('h4', { text: '文件', cls: 'nw-awb-panel-title' });
+        container.createEl('h4', { text: t('agentWorkbench.file.title'), cls: 'nw-awb-panel-title' });
         const fileRoot = container.createDiv({ cls: 'nw-awb-file-root' });
         const toolbar = fileRoot.createDiv({ cls: 'nw-awb-file-toolbar' });
         this.previewPathEl = toolbar.createDiv({ cls: 'nw-awb-file-rootpath', text: this.fileTreeRootLabel() });
-        const reloadBtn = toolbar.createEl('button', { text: '⟳', cls: 'nw-awb-file-reload', attr: { title: '刷新文件树' } });
+        const reloadBtn = toolbar.createEl('button', { text: '⟳', cls: 'nw-awb-file-reload', attr: { title: t('agentWorkbench.file.reloadTip') } });
         reloadBtn.addEventListener('click', () => this.refreshFileTree());
 
         const fileSplit = fileRoot.createDiv({ cls: 'nw-awb-file-split' });
         this.fileTreeEl = fileSplit.createDiv({ cls: 'nw-awb-file-tree' });
         const previewWrap = fileSplit.createDiv({ cls: 'nw-awb-preview' });
-        previewWrap.createDiv({ cls: 'nw-awb-preview-title', text: '预览' });
+        previewWrap.createDiv({ cls: 'nw-awb-preview-title', text: t('agentWorkbench.file.preview') });
         this.previewEl = previewWrap.createDiv({ cls: 'nw-awb-preview-body' });
-        this.previewEl.createDiv({ cls: 'nw-awb-preview-empty', text: '从目录中选择一个文件' });
+        this.previewEl.createDiv({ cls: 'nw-awb-preview-empty', text: t('agentWorkbench.file.pick') });
 
         // 遥测与记忆：折叠区（右栏以文件预览为主）
         const telemetryDetails = container.createEl('details', { cls: 'nw-awb-telemetry-details' });
-        telemetryDetails.createEl('summary', { text: '会话遥测与记忆' });
+        telemetryDetails.createEl('summary', { text: t('agentWorkbench.telemetry.summary') });
         this.telemetryEl = telemetryDetails.createDiv({ cls: 'nw-awb-telemetry' });
         const grid = this.telemetryEl.createDiv({ cls: 'nw-awb-telemetry-grid' });
         grid.setAttr('data-nw-awb-telemetry-grid', '1');
@@ -1007,7 +1020,7 @@ export class AgentWorkbenchView extends ItemView {
 
     private fileTreeRootLabel(): string {
         const root = this.fileTreeRoot();
-        return root || '（未选择项目）';
+        return root || t('agentWorkbench.file.noProject');
     }
 
     /** 刷新文件树：根 = 当前聚焦项目；无项目时显示模式库根目录 */
@@ -1019,7 +1032,7 @@ export class AgentWorkbenchView extends ItemView {
         const scrollTop = this.fileTreeEl.scrollTop;
         this.fileTreeEl.empty();
         const root = this.fileTreeRoot();
-        this.previewPathEl.setText(root || '（未选择项目）');
+        this.previewPathEl.setText(root || t('agentWorkbench.file.noProject'));
 
         if (root) {
             const abstract = this.app.vault.getAbstractFileByPath(root);
@@ -1028,7 +1041,7 @@ export class AgentWorkbenchView extends ItemView {
                 this.fileTreeEl.scrollTop = scrollTop;
                 return;
             }
-            this.fileTreeEl.createDiv({ cls: 'nw-awb-file-missing', text: `项目目录不存在：${root}` });
+            this.fileTreeEl.createDiv({ cls: 'nw-awb-file-missing', text: t('agentWorkbench.file.projectMissing', { root }) });
             this.fileTreeEl.scrollTop = scrollTop;
             return;
         }
@@ -1044,7 +1057,7 @@ export class AgentWorkbenchView extends ItemView {
         if (meta instanceof TFolder) this.renderTreeRow(this.fileTreeEl, meta, false);
         // renderTreeRow 的参数类型经 instanceof 收窄后已是 TFolder | TFile
         if (this.fileTreeEl.children.length === 0) {
-            this.fileTreeEl.createDiv({ cls: 'nw-awb-file-missing', text: 'vault 中还没有项目目录' });
+            this.fileTreeEl.createDiv({ cls: 'nw-awb-file-missing', text: t('agentWorkbench.file.noProjects') });
         }
         this.fileTreeEl.scrollTop = scrollTop;
     }
@@ -1060,7 +1073,7 @@ export class AgentWorkbenchView extends ItemView {
             return a.name.localeCompare(b.name, 'zh-Hans-CN');
         });
         if (entries.length === 0) {
-            container.createDiv({ cls: 'nw-awb-file-empty', text: '（空目录）' });
+            container.createDiv({ cls: 'nw-awb-file-empty', text: t('agentWorkbench.file.emptyDir') });
             return;
         }
         for (const entry of entries) {
@@ -1147,12 +1160,12 @@ export class AgentWorkbenchView extends ItemView {
             }
             this.previewEl.createDiv({
                 cls: 'nw-awb-preview-empty',
-                text: `暂不支持预览 .${file.extension} 文件（${file.path}）`,
+                text: t('agentWorkbench.preview.unsupported', { ext: file.extension, path: file.path }),
             });
         } catch (e) {
             this.previewEl.createDiv({
                 cls: 'nw-awb-preview-empty',
-                text: `读取失败：${e instanceof Error ? e.message : String(e)}`,
+                text: t('agentWorkbench.preview.readFailed', { error: e instanceof Error ? e.message : String(e) }),
             });
         }
     }
@@ -1167,7 +1180,7 @@ export class AgentWorkbenchView extends ItemView {
                 decision,
                 new Promise<boolean>(resolve => {
                     timer = setTimeout(() => {
-                        new Notice(`⏱️ ${label}超过 10 分钟未响应，已默认拒绝`, 8000);
+                        new Notice(t('agentWorkbench.notice.approvalTimeout', { label }), 8000);
                         resolve(false);
                     }, 10 * 60_000);
                 }),
@@ -1207,7 +1220,7 @@ export class AgentWorkbenchView extends ItemView {
             this.mcpClients = mcp.clients;
             this.mcpToolsCache = mcp.tools;
             if (mcp.failures.length > 0) {
-                showWarningNotice(`MCP：${mcp.failures.length} 个服务连接失败（${mcp.failures.map(f => f.id).join('、')}）`, { timeout: 6000 });
+                showWarningNotice(t('agentWorkbench.notice.mcpFailed', { count: mcp.failures.length, ids: mcp.failures.map(f => f.id).join('、') }), { timeout: 6000 });
             }
             const harness = new AgentHarnessEngine({
                 ctx,
@@ -1257,7 +1270,7 @@ export class AgentWorkbenchView extends ItemView {
                     if (this.plugin.settings.readOnlyMode !== true) return null;
                     const kind = resolveToolKind(tool, args);
                     if (kind === 'read') return null;
-                    return `🔒 只读模式已开启：Agent 工具「${tool.name}」会修改作品（${kind}），已阻止。可在设置中关闭只读模式。`;
+                    return t('agentWorkbench.guard.readOnly', { tool: tool.name, kind });
                 },
                 // 默认 ask：覆盖已有文件前确认；显式 allow 才自动放行（用户可在设置中改）
                 writeApproval: this.plugin.settings.agentWriteApproval === 'allow' ? 'allow' : 'ask',
@@ -1278,10 +1291,10 @@ export class AgentWorkbenchView extends ItemView {
                     if (!confirm) return false;
                     return this.withApprovalTimeout(
                         confirm.call(this.port, {
-                            title: `Agent 请求执行「${request.tool}」`,
+                            title: t('agentWorkbench.approval.title', { tool: request.tool }),
                             detail: request.reason,
                         }),
-                        `Agent 审批「${request.tool}」`,
+                        t('agentWorkbench.notice.approvalLabel', { tool: request.tool }),
                     );
                 },
                 // 会话压缩（dsh compaction 思路）：30 轮触发，保留最近 12 轮
@@ -1324,7 +1337,7 @@ export class AgentWorkbenchView extends ItemView {
                 if (session !== this.sessionSeq) return;
                 log.warn('Harness 启动失败，回退规则引擎:', e);
                 this.harnessEngine = null;
-                showWarningNotice('AI 引导启动失败，已切换到离线逐步引导', { timeout: 5000 });
+                showWarningNotice(t('agentWorkbench.notice.harnessFallback'), { timeout: 5000 });
             }
         }
         if (session !== this.sessionSeq) return;
@@ -1349,10 +1362,10 @@ export class AgentWorkbenchView extends ItemView {
     private setModeBadge(aiMode: boolean | null): void {
         if (!this.modeBadgeEl) return;
         if (aiMode === null) {
-            this.modeBadgeEl.setText('启动中…');
+            this.modeBadgeEl.setText(t('agentWorkbench.mode.starting'));
             return;
         }
-        this.modeBadgeEl.setText(aiMode ? '🤖 AI 驱动' : '🧭 离线引导');
+        this.modeBadgeEl.setText(aiMode ? t('agentWorkbench.mode.ai') : t('agentWorkbench.mode.rule'));
         this.modeBadgeEl.toggleClass('is-ai', aiMode);
     }
 
@@ -1372,14 +1385,14 @@ export class AgentWorkbenchView extends ItemView {
             if (item.role === 'user') this.renderUserBubble(item.text);
             else this.renderMessage({ role: 'agent', text: item.text });
         }
-        this.appendSystemNote(`已恢复上次会话（${history.length} 条消息）。点「🆕 新会话」可清空重来。`);
+        this.appendSystemNote(t('agentWorkbench.notes.restored', { count: history.length }));
         this.scrollToEnd();
     }
 
     /** 「新会话」：清空本项目存档并重建引擎（spill 存档不在此列） */
     private async startNewSession(): Promise<void> {
         if (this.busy) {
-            new Notice('当前回合仍在执行，请稍后再开新会话', 3000);
+            new Notice(t('agentWorkbench.notice.busyNewSession'), 3000);
             return;
         }
         await this.sessionStore?.clear();
@@ -1431,9 +1444,9 @@ export class AgentWorkbenchView extends ItemView {
             if (accepted) {
                 if (source === 'input' && this.inputEl) this.resetComposer();
                 this.pushUser(payload);
-                this.appendSystemNote('已插入当前回合，模型下一步会看到');
+                this.appendSystemNote(t('agentWorkbench.notes.steered'));
             } else {
-                new Notice('当前回合仍在执行，请稍后再发', 2500);
+                new Notice(t('agentWorkbench.notice.busySend'), 2500);
             }
             return;
         }
@@ -1460,10 +1473,10 @@ export class AgentWorkbenchView extends ItemView {
     /** 「重试」：重放上一条用户消息，不重复渲染用户气泡 */
     private async retryLastTurn(): Promise<void> {
         if (!this.lastUserText) {
-            new Notice('没有可重试的消息', 3000);
+            new Notice(t('agentWorkbench.notice.noRetry'), 3000);
             return;
         }
-        this.appendSystemNote('已重试上一条消息');
+        this.appendSystemNote(t('agentWorkbench.notes.retried'));
         await this.runTurn(this.lastUserText);
     }
 
@@ -1498,7 +1511,7 @@ export class AgentWorkbenchView extends ItemView {
             if (session !== this.sessionSeq) return;
             this.hideTyping();
             log.error('处理输入失败:', e);
-            showErrorNotice(e instanceof Error ? e.message : String(e), { title: '对话处理失败', timeout: 6000 });
+            showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('agentWorkbench.notice.turnFailedTitle'), timeout: 6000 });
         } finally {
             if (session === this.sessionSeq) this.busy = false;
         }
@@ -1511,14 +1524,14 @@ export class AgentWorkbenchView extends ItemView {
                 const outcome = await this.port.createProject(intent.params);
                 this.renderTurn(this.ruleEngine.reportAction('create_project', {
                     ok: outcome.created,
-                    detail: outcome.created ? `${outcome.fileCount} 个文件` : outcome.reason,
+                    detail: outcome.created ? t('agentWorkbench.intent.createdFiles', { count: outcome.fileCount }) : outcome.reason,
                     projectId: outcome.projectId,
                 }));
                 break;
             }
             case 'open_wizard': {
                 const ok = await this.port.openWizard(intent.project);
-                this.renderTurn(this.ruleEngine.reportAction('open_wizard', { ok, detail: ok ? undefined : '请先在项目与章节页手动点击「向导」' }));
+                this.renderTurn(this.ruleEngine.reportAction('open_wizard', { ok, detail: ok ? undefined : t('agentWorkbench.intent.wizardManual') }));
                 break;
             }
             case 'open_flow': {
@@ -1540,7 +1553,7 @@ export class AgentWorkbenchView extends ItemView {
                 const outcome = await this.port.createShortProject?.(intent.params);
                 this.renderTurn(this.ruleEngine.reportAction('create_short_project', {
                     ok: Boolean(outcome?.created),
-                    detail: outcome?.created ? '已写入前期调研' : outcome?.reason,
+                    detail: outcome?.created ? t('agentWorkbench.intent.preResearchWritten') : outcome?.reason,
                     projectId: outcome?.projectId,
                 }));
                 break;
@@ -1549,7 +1562,7 @@ export class AgentWorkbenchView extends ItemView {
                 const outcome = await this.port.createScriptProject?.(intent.params);
                 this.renderTurn(this.ruleEngine.reportAction('create_script_project', {
                     ok: Boolean(outcome?.created),
-                    detail: outcome?.created ? '已写入前期调研' : outcome?.reason,
+                    detail: outcome?.created ? t('agentWorkbench.intent.preResearchWritten') : outcome?.reason,
                     projectId: outcome?.projectId,
                 }));
                 break;
@@ -1651,7 +1664,7 @@ export class AgentWorkbenchView extends ItemView {
         const quoteBtn = row.createEl('button', {
             text: '❝',
             cls: 'nw-awb-quote-btn',
-            attr: { title: '引用这条消息（发送时作为引文前置）' },
+            attr: { title: t('agentWorkbench.composer.quoteTip') },
         });
         quoteBtn.addEventListener('click', () => this.setQuote(message.text));
     }
@@ -1694,9 +1707,9 @@ export class AgentWorkbenchView extends ItemView {
                 btn.createSpan({ text: chip.label, cls: 'nw-agent-choice-label' });
                 if (chip.description) btn.createSpan({ text: chip.description, cls: 'nw-agent-choice-desc' });
                 const meta = [
-                    chip.bestFor ? `适用：${chip.bestFor}` : '',
-                    chip.preview ? `预览：${chip.preview}` : '',
-                    chip.risk ? `风险：${chip.risk}` : '',
+                    chip.bestFor ? t('agentWorkbench.chip.bestFor', { text: chip.bestFor }) : '',
+                    chip.preview ? t('agentWorkbench.chip.preview', { text: chip.preview }) : '',
+                    chip.risk ? t('agentWorkbench.chip.risk', { text: chip.risk }) : '',
                 ].filter(Boolean);
                 if (meta.length > 0) {
                     btn.createSpan({ text: meta.join(' · '), cls: 'nw-agent-choice-meta' });
@@ -1717,7 +1730,7 @@ export class AgentWorkbenchView extends ItemView {
         this.planEl.empty();
         const steps = this.harnessEngine?.getPlan() || [];
         if (steps.length === 0) {
-            this.planEl.createDiv({ cls: 'nw-awb-plan-empty', text: 'Agent 建立计划后在此显示' });
+            this.planEl.createDiv({ cls: 'nw-awb-plan-empty', text: t('agentWorkbench.plan.empty') });
             return;
         }
         for (const step of steps) {
@@ -1757,20 +1770,20 @@ export class AgentWorkbenchView extends ItemView {
         if (grid) {
             grid.empty();
             const cells: Array<[string, string]> = [
-                ['轮次', String(telemetry.turns)],
-                ['模型调用', String(telemetry.modelCalls)],
-                ['模型步数', String(telemetry.modelSteps)],
-                ['工具调用', `${telemetry.toolOk}/${telemetry.toolCalls}`],
-                ['失败', String(telemetry.toolFail)],
-                ['工具耗时', telemetry.toolMs > 0 ? `${(telemetry.toolMs / 1000).toFixed(1)}s` : '0'],
-                ['裁剪', telemetry.trimmedTurns > 0 ? `${telemetry.trimmedTurns} 轮` : '0'],
+                [t('agentWorkbench.telemetry.turns'), String(telemetry.turns)],
+                [t('agentWorkbench.telemetry.modelCalls'), String(telemetry.modelCalls)],
+                [t('agentWorkbench.telemetry.modelSteps'), String(telemetry.modelSteps)],
+                [t('agentWorkbench.telemetry.toolCalls'), `${telemetry.toolOk}/${telemetry.toolCalls}`],
+                [t('agentWorkbench.telemetry.fail'), String(telemetry.toolFail)],
+                [t('agentWorkbench.telemetry.toolMs'), telemetry.toolMs > 0 ? `${(telemetry.toolMs / 1000).toFixed(1)}s` : '0'],
+                [t('agentWorkbench.telemetry.trimmed'), telemetry.trimmedTurns > 0 ? t('agentWorkbench.telemetry.trimmedTurns', { count: telemetry.trimmedTurns }) : '0'],
                 // dsh token-meter / pruner 的可观测化：裁剪与压缩省下的上下文
-                ['省字符', telemetry.prunedChars > 0 ? `${Math.round(telemetry.prunedChars / 1000)}k` : '0'],
-                ['压缩', telemetry.compactionCalls > 0 ? `${telemetry.compactions}（${telemetry.compactionCalls} 次）` : String(telemetry.compactions)],
+                [t('agentWorkbench.telemetry.prunedChars'), telemetry.prunedChars > 0 ? `${Math.round(telemetry.prunedChars / 1000)}k` : '0'],
+                [t('agentWorkbench.telemetry.compaction'), telemetry.compactionCalls > 0 ? t('agentWorkbench.telemetry.compactionValue', { compactions: telemetry.compactions, calls: telemetry.compactionCalls }) : String(telemetry.compactions)],
                 // v4.20 dsh token-meter：会话上下文规模与窗口占用
-                ['上下文', telemetry.contextTokens > 0 ? `~${Math.round(telemetry.contextTokens / 1000)}k` : '0'],
-                ['窗口', telemetry.windowUsage > 0 ? `${Math.round(telemetry.windowUsage * 100)}%` : '—'],
-                ['落盘', telemetry.spilledResults > 0 ? `${telemetry.spilledResults} 条 / 省 ${Math.round(telemetry.spilledChars / 1000)}k` : '0'],
+                [t('agentWorkbench.telemetry.context'), telemetry.contextTokens > 0 ? `~${Math.round(telemetry.contextTokens / 1000)}k` : '0'],
+                [t('agentWorkbench.telemetry.window'), telemetry.windowUsage > 0 ? `${Math.round(telemetry.windowUsage * 100)}%` : '—'],
+                [t('agentWorkbench.telemetry.spilled'), telemetry.spilledResults > 0 ? t('agentWorkbench.telemetry.spilledValue', { count: telemetry.spilledResults, chars: Math.round(telemetry.spilledChars / 1000) }) : '0'],
             ];
             for (const [label, value] of cells) {
                 const cell = grid.createDiv({ cls: 'nw-awb-telemetry-cell' });
@@ -1783,9 +1796,9 @@ export class AgentWorkbenchView extends ItemView {
         const slots = this.harnessEngine?.getSlots() || {};
         const keys = Object.keys(slots).filter(key => slots[key] !== undefined && slots[key] !== '');
         if (keys.length === 0) {
-            this.memoryEl.createDiv({ cls: 'nw-awb-memory-empty', text: 'Agent 还没有记录信息' });
+            this.memoryEl.createDiv({ cls: 'nw-awb-memory-empty', text: t('agentWorkbench.memory.empty') });
         } else {
-            const memoryTitle = this.memoryEl.createDiv({ cls: 'nw-awb-toollog-title', text: '记忆槽位' });
+            const memoryTitle = this.memoryEl.createDiv({ cls: 'nw-awb-toollog-title', text: t('agentWorkbench.memory.title') });
             void memoryTitle;
             for (const key of keys.slice(0, 14)) {
                 const row = this.memoryEl.createDiv({ cls: 'nw-awb-memory-row' });
@@ -1793,15 +1806,15 @@ export class AgentWorkbenchView extends ItemView {
                 row.createSpan({ cls: 'nw-awb-memory-value', text: String(slots[key]).slice(0, 40) });
             }
             if (keys.length > 14) {
-                this.memoryEl.createDiv({ cls: 'nw-awb-memory-empty', text: `…共 ${keys.length} 项` });
+                this.memoryEl.createDiv({ cls: 'nw-awb-memory-empty', text: t('agentWorkbench.memory.more', { count: keys.length }) });
             }
         }
 
         this.toolLogEl.empty();
         if (telemetry.lastToolCalls.length === 0) {
-            this.toolLogEl.createDiv({ cls: 'nw-awb-memory-empty', text: '暂无工具调用' });
+            this.toolLogEl.createDiv({ cls: 'nw-awb-memory-empty', text: t('agentWorkbench.toollog.empty') });
         } else {
-            const toolTitle = this.toolLogEl.createDiv({ cls: 'nw-awb-toollog-title', text: '最近工具调用' });
+            const toolTitle = this.toolLogEl.createDiv({ cls: 'nw-awb-toollog-title', text: t('agentWorkbench.toollog.title') });
             void toolTitle;
             for (const call of telemetry.lastToolCalls) {
                 const row = this.toolLogEl.createDiv({ cls: 'nw-awb-toollog-row' + (call.ok ? '' : ' is-fail') });
@@ -1814,11 +1827,11 @@ export class AgentWorkbenchView extends ItemView {
         // 阶段 E 深化③：修复记录（agent 可自证修过什么）——只在有记录时出现
         const repairSummary = summarizeRepairs(telemetry.repairs ?? []);
         if (repairSummary.attempts > 0) {
-            const title = this.toolLogEl.createDiv({ cls: 'nw-awb-toollog-title', text: '修复记录' });
+            const title = this.toolLogEl.createDiv({ cls: 'nw-awb-toollog-title', text: t('agentWorkbench.toollog.repairs') });
             void title;
             const head = this.toolLogEl.createDiv({ cls: 'nw-awb-toollog-row' });
             head.createSpan({ cls: 'nw-awb-toollog-icon', text: repairSummary.failed > 0 ? '!' : '✓' });
-            head.createSpan({ cls: 'nw-awb-toollog-name', text: `${repairSummary.ok}/${repairSummary.attempts} 成功` });
+            head.createSpan({ cls: 'nw-awb-toollog-name', text: t('agentWorkbench.toollog.repairSummary', { ok: repairSummary.ok, attempts: repairSummary.attempts }) });
             head.createSpan({ cls: 'nw-awb-toollog-summary', text: repairSummary.latest ?? '' });
         }
     }
@@ -1830,8 +1843,4 @@ export class AgentWorkbenchView extends ItemView {
     }
 }
 
-const MODE_LIBRARY_GROUP_LOOKUP: Record<string, string> = {
-    长篇小说: '长篇小说',
-    短篇小说: '短篇小说',
-    剧本: '剧本',
-};
+

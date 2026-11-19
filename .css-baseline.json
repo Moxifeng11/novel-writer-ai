@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-19T12:15:29.863Z",
-  "note": "Slice i18n 第40片：.nw-form-stack 子项 flex:0 0 auto 修表单卡片被压扁裁切；degraded 胶囊改正文色",
-  "bytes": 800471,
+  "generatedAt": "2026-11-19T14:49:18.432Z",
+  "note": "Slice i18n 第45片（Agent 创作工作台 106 键；快捷按钮 min-width/换行 +213 字节）",
+  "bytes": 800684,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 223,

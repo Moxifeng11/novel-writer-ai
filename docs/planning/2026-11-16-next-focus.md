@@ -3489,3 +3489,57 @@ ideation（793）/ batch-import（750）/ `ui/agent-workbench-view.ts`（126 条
 
 **下一轮候选**：`ui/agent-workbench-view.ts`（730）/ `ui/novel-tags-modal.ts`（1,099，只剩 AI 提示词与解析正则）；知识库 D 类两文件等视觉重构（用户 m16938）。
 
+
+## 第一百一十三轮：i18n 第二期第45片 —— Agent 创作工作台（2026-11-19，DSH）
+
+**触发**：用户 m22212「继续」（第44片之后的候选顺序：agent-workbench-view → novel-tags）。
+
+**范围**：`ui/agent-workbench-view.ts`（1,837 行）+ `ui/agent-workbench/stage-panel.ts`（134 行，本片一并纳入，它的 5 处中文是阶段面板 UI），
+合迁 **106 键** `agentWorkbench.*`（23 个子组：title / mode 3 / header 4 / nav 8 / resize 2 / panel 4 / quick 4 / stage 9 /
+project 7 / model 1 / composer 6 / file 9 / preview 2 / notice 11 / guard 1 / approval 1 / notes 3 / intent 3 / chip 3 /
+plan 1 / telemetry 16 / memory 3 / toollog 4）。
+
+**改动**
+1. 两文件新增 `import { t } from '@/i18n'`；`ui/agent-workbench-view.ts` 83 处、`stage-panel.ts` 7 处全部换键。
+2. 模块级常量分两类：`TYPE_SECTIONS` 带 label → 改 `function typeSections()`，label 走 `creationModeDisplayName(mode)`；
+   `MODE_LIBRARY_GROUP_LOOKUP`（prefix→中文名）整块删除，`openProjectChipMenu` 改成
+   `const rootIndex = MODE_LIBRARY_ROOTS.indexOf(prefix); const mode = rootIndex >= 0 ? sections[rootIndex].mode : this.projectTypeCache.get(project);`
+   分桶；`MODE_LIBRARY_ROOTS = ['长篇小说','短篇小说','剧本']` 是 vault 目录名，**保留中文**。
+3. 阶段面板：`buildStagePrompt` → `t('agentWorkbench.stage.prompt', { stage, cta, blocked })`，
+   blocked 段走 `stage.promptBlocked`；`emptyFailed` / `emptyNoProject` / `tooltip` / `tooltipReason` / `progressBlocked` / `completed` 各自成键。
+   阶段名本身来自 `shared/creation-flow.ts` 的 `stageLabel()`（已 i18n），本片不动。
+4. **发给 Agent 的话术一并本地化**：`我要操作项目「{project}」`（`project.askAgent`）、`继续「{stage}」：{cta}`（`stage.prompt`）——
+   先例是 creationFlow 的 cta 同样喂 prefill；语言只影响显示与预填文本，落盘不受影响。
+5. 保留中文：`MODE_LIBRARY_ROOTS`、`getAbstractFileByPath('元文件')`、三条 `log.*`。两文件非注释中文 111 → 5 行且全为上述保留项。
+6. **顺带修英文标签撑破左栏**：`.nw-awb-quick-btn`（`styles-src/13-agent-workspace.css:61`）加
+   `min-width:0; white-space:normal; overflow-wrap:anywhere; line-height:1.35`，长标签在 2 列 grid 内换行；
+   修复前 en 下「📊 Quality dashboard / 📦 Export manuscript」把格子撑到 108px 压到中栏（探针 overflow 2 → 5），修复后回到 2。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；`npx eslint` 两文件 0 error（10 条 warning 全是存量）；`npx vitest run tests/unit/ui/agent-stage-panel.test.ts` 22 通过（该测试断言中文串，默认 zh 下 t() 仍返回中文，故零修改）。
+- 新增 `tests/unit/i18n/agent-workbench-labels.test.ts`（7 例）：106 键双语可解析、en 零 CJK、zh 逐字三组、en 下阶段名全英文、en 占位与完成态、en 插值无花括号残留。
+- `check:i18n` zh/en 各 **5384** 条、无法解析键 0、动态键 29、棘轮 **211 文件 / 6259 条**（6383 → 6259，已 `--update-baseline`）。
+- 实机 `D:\nw-tmp\snap-i18n45.mjs --lang=zh-CN|en-US`：改 dev vault 插件 `data.json` 的 `language` 后启动 Obsidian（结束恢复原文），
+  CDP 信任仓库 → `p.openAgentWorkbench()` → 点第一张项目卡 → 展开遥测折叠区 → 截 1500×1100。
+  zh 视图 1156×992、文案全中文；en 关键标签全英文（Projects / Writing plan / Writing stages / Jump to / Files /
+  Session telemetry and memory / Turns…Spilled / New session / Workbench / Co-writing / Knowledge base / Fingerprints），
+  横向溢出探针 zh/en 均为 2（两个 resizer 元素，属基线）。en 残余 CJK 116 = vault 数据（项目名「示例项目」「短片示例」、
+  文件名「01-世界架构」）与引擎层 `engine/agent/harness/harness-engine.ts:632` 的「⚠️ AI 助手暂时不可用」+ `:634` 的「🔄 切换到离线引导」chip（已记 backlog）。
+- `npm run preflight` **EXIT=0**（996 文件 / **10,370 通过 + 3 跳过**，日志 `D:\nw-tmp\preflight-i18n45.log`）；
+  `check:bundle` main.js **6,190,342**（6,179,754 → +10,588）、styles.css **800,684**（+213）；`check:css` 同步上调字节基线；
+  `gen:docs` 1,004 文件 / `check:docs` 20 活跃文档通过。
+
+**坑**
+1. **工作台截图要清掉「信任仓库作者」弹窗**：它在 `openAgentWorkbench()` 之后才弹出，压住视图且让标题看起来发灰（容易误判成颜色回归）。
+   循环点「信任仓库作者」/ `.modal-close-button` 再按 `Escape`，之后 `.nw-awb` 的 rect 应稳定为 `x=344 y=108 1156×992`。
+2. **模块级常量混排要逐个判**：同一个文件里 `TYPE_SECTIONS`（展示，必须改函数）与 `MODE_LIBRARY_ROOTS`（vault 目录，必须保留）；
+   判据是「这个字符串会不会被测试断言/被落盘」。
+3. **替换脚本先断言命中数**：本片一次性 83 处替换，脚本对每处 `count` 断言，曾把 `agentWorkbench` 写成 `agentWorkBench`（3 处）
+   与 `creationMode.long.name`（真键 `creationMode.label.long`），靠 `check:i18n` 的「引用不存在的键」立刻发现。
+
+**文档**：`docs/modules/i18n.md`（§2 资源 5278 → 5384 + 资源链 +106 + 第45片已迁移面 bullet + 未迁移面 6383 → 6259、§5 表行、
+§6 测试 bullet、§7 backlog [x] 与余下重写、§9 两条新坑）、`docs/modules/INDEX.md`、`docs/CURRENT.md`、
+`docs/planning/2026-11-18-feature-gaps.md`、本轮记录；基线 `.i18n-baseline.json` / `.bundle-baseline.json` / `.css-baseline.json`。
+
+**下一轮候选**：`ui/novel-tags-modal.ts`（1,099，只剩 AI 提示词与解析正则，可选）；引擎层文案
+（`engine/agent/harness/harness-engine.ts:632/634`，en 界面下露中文的不可用提示与离线引导 chip）；知识库 D 类两文件等视觉重构（用户 m16938）。

@@ -2,8 +2,7 @@
   "files": {
     "ui/add-fanfic-setting-modal.ts": 33,
     "ui/advanced-maintenance-modal.ts": 39,
-    "ui/agent-workbench-view.ts": 126,
-    "ui/agent-workbench/stage-panel.ts": 5,
+    "ui/agent-workbench-view.ts": 7,
     "ui/ai-builder-modal.ts": 40,
     "ui/asset-registry-modal.ts": 16,
     "ui/backup-center-modal.ts": 34,
@@ -213,7 +212,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 6383,
+  "total": 6259,
   "updatedAt": "2026-11-19",
   "note": ""
 }
