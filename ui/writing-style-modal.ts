@@ -1,4 +1,5 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
+import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { ensureWritingStyleFolder, findWritingStyleFile, getWritingStyleWritePath } from './writing-style-paths';
 import {
@@ -14,17 +15,17 @@ import { createLogger } from '@/shared/logger';
 
 const log = createLogger('WritingStyleModal');
 const WS_SECTIONS = [
-    { key: 'narrative', label: '一、叙事视角', hint: '第一人称/第三人称/多视角？是否限知？', rows: 2 },
-    { key: 'overall', label: '二、文笔特征 — 总体风格', hint: '简洁/华丽/幽默/冷峻/热血？', rows: 2 },
-    { key: 'syntax', label: '二、文笔特征 — 句式特征', hint: '短句为主/长句铺陈？修辞习惯？', rows: 2 },
-    { key: 'diction', label: '二、文笔特征 — 用语习惯', hint: '口语化/文雅？现代/古风？特定用词偏好？', rows: 2 },
-    { key: 'dialogue', label: '三、对话风格', hint: '对话占比、角色说话风格差异、口头禅模式', rows: 3 },
-    { key: 'description', label: '四、描写风格', hint: '描写占比上限、侧重环境/动作/心理', rows: 3 },
-    { key: 'rhythm', label: '五、叙事节奏', hint: '紧张情节段落节奏、舒缓情节段落节奏', rows: 2 },
-    { key: 'emotion', label: '六、情感表达方式', hint: '直接描写心理 vs 通过动作/对话暗示', rows: 2 },
-    { key: 'forbidden', label: '七、禁用/慎用', hint: '禁用词汇、禁用标点、禁用的修辞手法', rows: 3 },
-    { key: 'reference', label: '八、参考作品', hint: '风格参考的作者/小说', rows: 2 },
-    { key: 'platform', label: '九、番茄小说格式要求', hint: '每段开头缩进、对话独立成段、标题格式等', rows: 2 },
+    { key: 'narrative', label: t('writingStyle.sectionNarrative'), hint: t('writingStyle.hintNarrative'), rows: 2 },
+    { key: 'overall', label: t('writingStyle.sectionOverall'), hint: t('writingStyle.hintOverall'), rows: 2 },
+    { key: 'syntax', label: t('writingStyle.sectionSyntax'), hint: t('writingStyle.hintSyntax'), rows: 2 },
+    { key: 'diction', label: t('writingStyle.sectionDiction'), hint: t('writingStyle.hintDiction'), rows: 2 },
+    { key: 'dialogue', label: t('writingStyle.sectionDialogue'), hint: t('writingStyle.hintDialogue'), rows: 3 },
+    { key: 'description', label: t('writingStyle.sectionDescription'), hint: t('writingStyle.hintDescription'), rows: 3 },
+    { key: 'rhythm', label: t('writingStyle.sectionRhythm'), hint: t('writingStyle.hintRhythm'), rows: 2 },
+    { key: 'emotion', label: t('writingStyle.sectionEmotion'), hint: t('writingStyle.hintEmotion'), rows: 2 },
+    { key: 'forbidden', label: t('writingStyle.sectionForbidden'), hint: t('writingStyle.hintForbidden'), rows: 3 },
+    { key: 'reference', label: t('writingStyle.sectionReference'), hint: t('writingStyle.hintReference'), rows: 2 },
+    { key: 'platform', label: t('writingStyle.sectionPlatform'), hint: t('writingStyle.hintPlatform'), rows: 2 },
 ];
 
 /**
@@ -59,19 +60,19 @@ export class WritingStyleModal extends Modal {
         contentEl.empty();
         contentEl.addClass('novel-writer-writing-style-modal');
 
-        contentEl.createEl('h2', { text: '✍️ 文笔风格设定' });
-        contentEl.createEl('p', { text: `项目: ${this.project}`, attr: { style: 'color:var(--text-muted); font-size:0.85em; margin-bottom:12px;' } });
+        contentEl.createEl('h2', { text: t('writingStyle.title') });
+        contentEl.createEl('p', { text: t('writingStyle.projectLine', { project: this.project }), attr: { style: 'color:var(--text-muted); font-size:0.85em; margin-bottom:12px;' } });
 
         const presetRow = contentEl.createDiv({ attr: { style: 'display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;' } });
-        presetRow.createEl('span', { text: '文笔风格预设：', attr: { style: 'font-weight:600; font-size:0.9em;' } });
+        presetRow.createEl('span', { text: t('writingStyle.presetLabel'), attr: { style: 'font-weight:600; font-size:0.9em;' } });
         const presetSelect = presetRow.createEl('select', { attr: { style: 'flex:1; min-width:220px;' } });
-        presetSelect.createEl('option', { value: '', text: '（不套用预设，手动填写）' });
+        presetSelect.createEl('option', { value: '', text: t('writingStyle.noPresetOption') });
         const applyPresetBtn = presetRow.createEl('button', {
-            text: '应用预设',
+            text: t('writingStyle.applyPreset'),
             attr: { style: 'padding:6px 14px; background:var(--text-accent); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85em;' },
         });
         const newPresetBtn = presetRow.createEl('button', {
-            text: '➕ 新增预设',
+            text: t('writingStyle.newPreset'),
             attr: { style: 'padding:6px 14px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); border-radius:4px; cursor:pointer; font-size:0.85em;' },
         });
         const presetHint = contentEl.createEl('p', {
@@ -83,26 +84,26 @@ export class WritingStyleModal extends Modal {
         const newPresetPanel = contentEl.createDiv({
             attr: { style: 'display:none; gap:8px; flex-direction:column; padding:12px; margin-bottom:12px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); border-radius:6px;' },
         });
-        newPresetPanel.createEl('div', { text: '新建文笔风格预设', attr: { style: 'font-weight:600; font-size:0.9em;' } });
+        newPresetPanel.createEl('div', { text: t('writingStyle.newPresetPanel'), attr: { style: 'font-weight:600; font-size:0.9em;' } });
         const presetNameInput = newPresetPanel.createEl('input', {
             type: 'text',
-            attr: { placeholder: '预设名称（必填，如：冷硬派刑侦）', style: 'width:100%; padding:6px 8px; border-radius:4px; border:1px solid var(--background-modifier-border);' },
+            attr: { placeholder: t('writingStyle.presetNamePlaceholder'), style: 'width:100%; padding:6px 8px; border-radius:4px; border:1px solid var(--background-modifier-border);' },
         });
         const presetDescInput = newPresetPanel.createEl('input', {
             type: 'text',
-            attr: { placeholder: '一句话风格描述（可选，AI 会参考）', style: 'width:100%; padding:6px 8px; border-radius:4px; border:1px solid var(--background-modifier-border);' },
+            attr: { placeholder: t('writingStyle.presetDescPlaceholder'), style: 'width:100%; padding:6px 8px; border-radius:4px; border:1px solid var(--background-modifier-border);' },
         });
         const presetActionRow = newPresetPanel.createDiv({ attr: { style: 'display:flex; gap:8px; flex-wrap:wrap;' } });
         const aiGenerateBtn = presetActionRow.createEl('button', {
-            text: '🪄 AI 生成内容',
+            text: t('writingStyle.aiGenerate'),
             attr: { style: 'padding:6px 14px; background:var(--text-accent); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85em;' },
         });
         const saveAsPresetBtn = presetActionRow.createEl('button', {
-            text: '💾 保存为新预设',
+            text: t('writingStyle.saveAsPreset'),
             attr: { style: 'padding:6px 14px; background:var(--background-primary); border:1px solid var(--text-accent); color:var(--text-accent); border-radius:4px; cursor:pointer; font-size:0.85em;' },
         });
         const presetStatus = newPresetPanel.createEl('span', {
-            text: '填写名称后点击「AI 生成内容」，生成结果会填入下方表单，可继续修改。',
+            text: t('writingStyle.newPresetHint'),
             attr: { style: 'color:var(--text-muted); font-size:0.78em;' },
         });
 
@@ -115,7 +116,7 @@ export class WritingStyleModal extends Modal {
         void loadStylePresets(this.app).then(list => {
             presets = list;
             if (list.length === 0) {
-                presetHint.setText(`未找到预设文件；可在「${STYLE_PRESET_DIR}」中新增 .md 预设。`);
+                presetHint.setText(t('writingStyle.noPresetFile', { dir: STYLE_PRESET_DIR }));
                 return;
             }
             for (const preset of list) {
@@ -124,13 +125,13 @@ export class WritingStyleModal extends Modal {
                     text: `${preset.name}${preset.description ? ` — ${preset.description}` : ''}`,
                 });
             }
-            presetHint.setText(`共 ${list.length} 套预设；应用后仍可继续手工修改。也可在「${STYLE_PRESET_DIR}」新增自定义预设。`);
+            presetHint.setText(t('writingStyle.presetCount', { count: list.length, dir: STYLE_PRESET_DIR }));
         });
 
         applyPresetBtn.addEventListener('click', () => {
             const preset = presets.find(p => p.id === presetSelect.value);
             if (!preset) {
-                new Notice('⚠️ 请先选择一个预设', 3000);
+                new Notice(t('writingStyle.selectPresetFirst'), 3000);
                 return;
             }
             this.applyPreset(preset);
@@ -139,33 +140,33 @@ export class WritingStyleModal extends Modal {
         aiGenerateBtn.addEventListener('click', async () => {
             const name = presetNameInput.value.trim();
             if (!name) {
-                new Notice('⚠️ 请先填写预设名称', 3000);
+                new Notice(t('writingStyle.fillPresetName'), 3000);
                 presetNameInput.focus();
                 return;
             }
             aiGenerateBtn.disabled = true;
-            aiGenerateBtn.setText('⏳ 生成中...');
-            presetStatus.setText(`AI 正在生成「${name}」的文笔设定...`);
+            aiGenerateBtn.setText(t('writingStyle.generating'));
+            presetStatus.setText(t('writingStyle.generatingNamed', { name }));
             try {
                 const generated = await this.generatePresetWithAI(name, presetDescInput.value.trim());
                 if (!generated) {
-                    presetStatus.setText('❌ 生成失败：请检查模型配置，或稍后重试');
+                    presetStatus.setText(t('writingStyle.genFailedCheckModel'));
                     return;
                 }
                 this.fillFromGenerated(generated);
-                presetStatus.setText('✅ 已填入下方表单；可直接保存到项目，或点「保存为新预设」沉淀为预设');
+                presetStatus.setText(t('writingStyle.genFilled'));
             } catch (e) {
-                presetStatus.setText(`❌ 生成失败：${e instanceof Error ? e.message : String(e)}`);
+                presetStatus.setText(t('writingStyle.genFailedDetail', { msg: e instanceof Error ? e.message : String(e) }));
             } finally {
                 aiGenerateBtn.disabled = false;
-                aiGenerateBtn.setText('🪄 AI 生成内容');
+                aiGenerateBtn.setText(t('writingStyle.aiGenerate'));
             }
         });
 
         saveAsPresetBtn.addEventListener('click', async () => {
             const name = presetNameInput.value.trim();
             if (!name) {
-                new Notice('⚠️ 请先填写预设名称', 3000);
+                new Notice(t('writingStyle.fillPresetName'), 3000);
                 presetNameInput.focus();
                 return;
             }
@@ -181,8 +182,8 @@ export class WritingStyleModal extends Modal {
                 const raw = await this.app.vault.adapter.read(path);
                 presets.push(parseStylePreset(id, raw));
                 presetSelect.createEl('option', { value: id, text: name });
-                presetHint.setText(`共 ${presets.length} 套预设；新增预设已写入「${STYLE_PRESET_DIR}」。`);
-                new Notice(`✅ 预设「${name}」已保存：${path}`, 5000);
+                presetHint.setText(t('writingStyle.presetSavedHint', { count: presets.length, dir: STYLE_PRESET_DIR }));
+                new Notice(t('writingStyle.presetSaved', { name, path }), 5000);
             } catch (e) {
                 new Notice(`❌ ${e instanceof Error ? e.message : String(e)}`, 6000);
             }
@@ -191,11 +192,11 @@ export class WritingStyleModal extends Modal {
         const formEl = contentEl.createDiv({ attr: { style: 'max-height: 60vh; overflow-y: auto; padding-right: 8px;' } });
 
         const sampleGroup = formEl.createDiv({ attr: { style: 'margin-bottom: 14px;' } });
-        sampleGroup.createEl('label', { text: '零、参考样本（可直接粘贴想模仿的原文片段）', attr: { style: 'display:block; font-weight:600; margin-bottom:4px; font-size:0.9em;' } });
-        sampleGroup.createEl('span', { text: '样本是 AI 的"语音教练"；请使用你拥有合法使用权的文本。', attr: { style: 'display:block; color:var(--text-muted); font-size:0.75em; margin-bottom:4px;' } });
+        sampleGroup.createEl('label', { text: t('writingStyle.sampleLabel'), attr: { style: 'display:block; font-weight:600; margin-bottom:4px; font-size:0.9em;' } });
+        sampleGroup.createEl('span', { text: t('writingStyle.sampleHint'), attr: { style: 'display:block; color:var(--text-muted); font-size:0.75em; margin-bottom:4px;' } });
         const sampleArea = sampleGroup.createEl('textarea', {
             attr: {
-                placeholder: '### 战斗/冲突场景样本\n（在此粘贴样本）\n\n### 日常/对话场景样本\n（在此粘贴样本）\n\n### 情绪/心理场景样本\n（在此粘贴样本）',
+                placeholder: t('writingStyle.samplePlaceholder'),
                 style: 'width:100%; min-height:160px; resize:vertical; font-size:0.85em; border-radius:4px;',
             },
         });
@@ -222,13 +223,13 @@ export class WritingStyleModal extends Modal {
         const btnRow = contentEl.createDiv({ attr: { style: 'display:flex; gap:8px; justify-content:flex-end; margin-top:16px; padding-top:12px; border-top:1px solid var(--background-modifier-border);' } });
 
         const cancelBtn = btnRow.createEl('button', {
-            text: '取消',
+            text: t('writingStyle.cancel'),
             attr: { style: 'padding:8px 16px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); border-radius:4px; cursor:pointer;' },
         });
         cancelBtn.addEventListener('click', () => this.close());
 
         const saveBtn = btnRow.createEl('button', {
-            text: '💾 保存',
+            text: t('writingStyle.save'),
             attr: { style: 'padding:8px 20px; background:var(--text-accent); color:white; border:none; border-radius:4px; cursor:pointer; font-weight:600;' },
         });
         saveBtn.addEventListener('click', async () => {
@@ -262,7 +263,7 @@ export class WritingStyleModal extends Modal {
         const sample = this.inputs.get('sample');
         if (sample && preset.reference) sample.value = preset.reference;
 
-        new Notice(`✅ 已应用预设「${preset.name}」，可继续修改后保存`, 4000);
+        new Notice(t('writingStyle.presetApplied', { name: preset.name }), 4000);
     }
 
     /** 表单字段 → 预设章节标题 */
@@ -488,7 +489,7 @@ ${description ? `风格补充说明：${description}` : ''}
         // 检查是否至少填写了基本内容
         const hasBasicContent = values['narrative'] || values['overall'];
         if (!hasBasicContent) {
-            new Notice('⚠️ 请至少填写叙事视角和总体风格', 4000);
+            new Notice(t('writingStyle.requireTwoSections'), 4000);
             return;
         }
 
@@ -516,9 +517,9 @@ ${description ? `风格补充说明：${description}` : ''}
             } else {
                 await this.app.vault.create(wsPath, markdown);
             }
-            new Notice('✅ 文笔风格已保存', 3000);
+            new Notice(t('writingStyle.saved'), 3000);
         } catch (e) {
-            new Notice(`❌ 保存失败: ${(e as Error).message}`, 5000);
+            new Notice(t('writingStyle.saveFailed', { msg: (e as Error).message }), 5000);
         }
     }
 
