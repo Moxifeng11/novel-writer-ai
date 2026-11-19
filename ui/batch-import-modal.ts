@@ -1,4 +1,5 @@
 import { App, Modal, Notice, TFolder, TFile } from 'obsidian';
+import { getLocale, t } from '@/i18n';
 import { KnowledgeBaseManager, MAX_SOURCE_FILE_SIZE } from '@/services/knowledge-base-manager';
 import { DeconstructionScheduler, type BreakdownDimension } from '@/engine/deconstruction-scheduler';
 import { KnowledgeTagManager } from '@/engine/knowledge-tags';
@@ -10,6 +11,7 @@ import { createLogger } from '@/shared/logger';
 import { isImeComposing } from '@/shared/keyboard';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
+import { dimensionLabel } from '@/shared/deconstruction-settings';
 
 
 const log = createLogger('BatchImportModal');
@@ -34,25 +36,49 @@ interface BatchImportModalOptions {
 
 type ImportStep = 1 | 2 | 3 | 4 | 5;
 
-const STEP_LABELS: Record<ImportStep, string> = {
-    1: '文件选择',
-    2: '智能预览',
-    3: '批量设置',
-    4: '导入进度',
-    5: '结果与历史',
-};
-
+// 分类名是数据键（tagManager.getTagsByType 的入参），只在按钮文案处翻译
 const THEME_CATEGORIES = ['男频', '女频', '短篇', '衍生'];
 const TECHNIQUE_CATEGORIES = ['结构类', '爽点类', '情绪类', '节奏类', '流派类'];
 
-const DIMENSION_OPTIONS: { key: BreakdownDimension; label: string; icon: string }[] = [
-    { key: 'style', label: '风格分析', icon: '🎨' },
-    { key: 'rhythm', label: '节奏分析', icon: '📈' },
-    { key: 'technique', label: '写作技巧', icon: '✍️' },
-    { key: 'structure', label: '结构拆解', icon: '🏗️' },
-    { key: 'character', label: '人设提取', icon: '👤' },
-    { key: 'foreshadow', label: '伏笔梳理', icon: '🔮' },
+const DIMENSION_OPTIONS: { key: BreakdownDimension; icon: string }[] = [
+    { key: 'style', icon: '🎨' },
+    { key: 'rhythm', icon: '📈' },
+    { key: 'technique', icon: '✍️' },
+    { key: 'structure', icon: '🏗️' },
+    { key: 'character', icon: '👤' },
+    { key: 'foreshadow', icon: '🔮' },
 ];
+
+function stepLabel(step: ImportStep): string {
+    switch (step) {
+        case 1: return t('batchImport.steps.select');
+        case 2: return t('batchImport.steps.preview');
+        case 3: return t('batchImport.steps.settings');
+        case 4: return t('batchImport.steps.progress');
+        default: return t('batchImport.steps.result');
+    }
+}
+
+function themeCategoryLabel(category: string): string {
+    switch (category) {
+        case '男频': return t('batchImport.themeCategory.male');
+        case '女频': return t('batchImport.themeCategory.female');
+        case '短篇': return t('batchImport.themeCategory.short');
+        case '衍生': return t('batchImport.themeCategory.derivative');
+        default: return category;
+    }
+}
+
+function techniqueCategoryLabel(category: string): string {
+    switch (category) {
+        case '结构类': return t('batchImport.techniqueCategory.structure');
+        case '爽点类': return t('batchImport.techniqueCategory.hook');
+        case '情绪类': return t('batchImport.techniqueCategory.emotion');
+        case '节奏类': return t('batchImport.techniqueCategory.rhythm');
+        case '流派类': return t('batchImport.techniqueCategory.genre');
+        default: return category;
+    }
+}
 
 function generateId(): string {
     return 'import_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
@@ -174,9 +200,9 @@ export class BatchImportModal extends Modal {
                 bookId: t.bookId!,
                 bookName: t.bookName,
             })),
-            failedItems: tasks.filter(t => t.status === 'failed').map(t => ({
-                filename: t.bookName,
-                error: t.error || '未知错误',
+            failedItems: tasks.filter(task => task.status === 'failed').map(task => ({
+                filename: task.bookName,
+                error: task.error || t('batchImport.result.unknownError'),
             })),
         };
         if (!this.options.onComplete) return;
@@ -191,7 +217,7 @@ export class BatchImportModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        contentEl.createEl('h3', { text: '📚 批量导入书籍', cls: 'nw-modal-title' });
+        contentEl.createEl('h3', { text: t('batchImport.title'), cls: 'nw-modal-title' });
 
         this.renderStepIndicator();
 
@@ -224,7 +250,7 @@ export class BatchImportModal extends Modal {
         const steps: ImportStep[] = [1, 2, 3, 4, 5];
         steps.forEach((step, index) => {
             const stepEl = stepsDiv.createEl('span', {
-                text: `${step}. ${STEP_LABELS[step]}`,
+                text: `${step}. ${stepLabel(step)}`,
                 cls: 'nw-bi-step'
             });
             stepEl.addClass(
@@ -246,14 +272,14 @@ export class BatchImportModal extends Modal {
 
     private renderStep1(container: HTMLElement): void {
         container.createEl('div', {
-            text: '选择要导入的小说文件（支持 .txt、.md 格式）',
+            text: t('batchImport.select.intro'),
             cls: 'nw-bi-intro'
         });
 
         const btnRow = container.createDiv({ cls: 'nw-bi-toolbar' });
 
         const selectFileBtn = btnRow.createEl('button', {
-            text: '📁 选择本地文件',
+            text: t('batchImport.select.localFile'),
             cls: 'nw-btn nw-btn-secondary nw-btn-sm',
         });
         // 隐藏 input 必须挂在容器上，不能挂在按钮里：
@@ -269,7 +295,7 @@ export class BatchImportModal extends Modal {
         });
 
         const selectFolderBtn = btnRow.createEl('button', {
-            text: '📂 选择文件夹',
+            text: t('batchImport.select.folder'),
             cls: 'nw-btn nw-btn-secondary nw-btn-sm',
         });
         selectFolderBtn.addEventListener('click', () => {
@@ -277,7 +303,7 @@ export class BatchImportModal extends Modal {
         });
 
         const selectVaultBtn = btnRow.createEl('button', {
-            text: '📝 从库内选择',
+            text: t('batchImport.select.vault'),
             cls: 'nw-btn nw-btn-secondary nw-btn-sm',
         });
         selectVaultBtn.addEventListener('click', () => {
@@ -285,7 +311,7 @@ export class BatchImportModal extends Modal {
         });
 
         const historyBtn = btnRow.createEl('button', {
-            text: '📜 导入历史',
+            text: t('batchImport.select.history'),
             cls: 'nw-btn nw-btn-ghost nw-btn-sm nw-bi-toolbar-end'
         });
         historyBtn.addEventListener('click', () => {
@@ -297,11 +323,11 @@ export class BatchImportModal extends Modal {
             cls: 'nw-bi-drop'
         });
         dropArea.createEl('div', {
-            text: '📥 拖拽文件到此处',
+            text: t('batchImport.select.dropTitle'),
             cls: 'nw-bi-drop-title'
         });
         dropArea.createEl('div', {
-            text: '支持 .txt、.md、.epub 格式',
+            text: t('batchImport.select.dropHint'),
             cls: 'nw-bi-drop-hint'
         });
 
@@ -325,14 +351,14 @@ export class BatchImportModal extends Modal {
             cls: 'nw-bi-list-header'
         });
         listHeader.createEl('span', {
-            text: `已选文件 (${previews.length})`,
+            text: t('batchImport.select.selectedCount', { count: previews.length }),
             cls: 'nw-bi-list-title'
         });
 
         const actionBtns = listHeader.createDiv({ cls: 'nw-bi-list-actions' });
 
         const selectAllBtn = actionBtns.createEl('button', {
-            text: '全选',
+            text: t('batchImport.select.selectAll'),
             cls: 'nw-btn nw-btn-ghost nw-btn-xs',
         });
         selectAllBtn.addEventListener('click', () => {
@@ -341,7 +367,7 @@ export class BatchImportModal extends Modal {
         });
 
         const deselectAllBtn = actionBtns.createEl('button', {
-            text: '取消全选',
+            text: t('batchImport.select.deselectAll'),
             cls: 'nw-btn nw-btn-ghost nw-btn-xs',
         });
         deselectAllBtn.addEventListener('click', () => {
@@ -350,7 +376,7 @@ export class BatchImportModal extends Modal {
         });
 
         const clearBtn = actionBtns.createEl('button', {
-            text: '清空',
+            text: t('batchImport.select.clear'),
             cls: 'nw-btn nw-btn-ghost nw-btn-xs nw-bi-btn-danger-text'
         });
         clearBtn.addEventListener('click', () => {
@@ -362,7 +388,7 @@ export class BatchImportModal extends Modal {
 
         if (previews.length === 0) {
             fileListContainer.createDiv({ cls: 'nw-bi-empty nw-bi-empty--sm' })
-                .createEl('span', { text: '暂无文件，请添加要导入的小说文件' });
+                .createEl('span', { text: t('batchImport.select.empty') });
         } else {
             previews.forEach(preview => {
                 const row = fileListContainer.createDiv({ cls: 'nw-bi-file' });
@@ -395,8 +421,8 @@ export class BatchImportModal extends Modal {
                 );
 
                 const metaRow = infoWrap.createDiv({ cls: 'nw-bi-file-meta' });
-                metaRow.createEl('span', { text: `📖 ${preview.recognition.chapterCount} 章` });
-                metaRow.createEl('span', { text: `📝 ${this.formatWordCount(preview.recognition.wordCount)}` });
+                metaRow.createEl('span', { text: t('batchImport.select.metaChapters', { count: preview.recognition.chapterCount }) });
+                metaRow.createEl('span', { text: t('batchImport.select.metaWords', { words: this.formatWordCount(preview.recognition.wordCount) }) });
                 metaRow.createEl('span', { text: `🎯 ${Math.round(preview.recognition.confidence * 100)}%` });
 
                 const deleteBtn = row.createEl('button', {
@@ -415,13 +441,13 @@ export class BatchImportModal extends Modal {
         const previews = this.batchManager.getSelectedPreviews();
 
         container.createEl('div', {
-            text: `智能识别预览（共 ${previews.length} 本）`,
+            text: t('batchImport.preview.intro', { count: previews.length }),
             cls: 'nw-bi-intro'
         });
 
         if (previews.length === 0) {
             container.createDiv({ cls: 'nw-bi-empty' })
-                .createEl('span', { text: '没有选中的文件，请返回上一步选择' });
+                .createEl('span', { text: t('batchImport.preview.empty') });
             return;
         }
 
@@ -458,19 +484,19 @@ export class BatchImportModal extends Modal {
 
             const metaGrid = card.createDiv({ cls: 'nw-bi-meta-grid' });
 
-            this.addMetaItem(metaGrid, '作者', preview.recognition.author || '未识别', true, (val) => {
+            this.addMetaItem(metaGrid, t('batchImport.preview.author'), preview.recognition.author || t('batchImport.preview.unknownAuthor'), true, (val) => {
                 this.batchManager.updatePreview(preview.id, {
                     overrides: { ...preview.overrides, author: val }
                 });
             });
-            this.addMetaItem(metaGrid, '字数', this.formatWordCount(preview.recognition.wordCount));
-            this.addMetaItem(metaGrid, '章节数', preview.recognition.chapterCount.toString());
-            this.addMetaItem(metaGrid, '格式', preview.recognition.format.toUpperCase());
+            this.addMetaItem(metaGrid, t('batchImport.preview.wordCount'), this.formatWordCount(preview.recognition.wordCount));
+            this.addMetaItem(metaGrid, t('batchImport.preview.chapterCount'), preview.recognition.chapterCount.toString());
+            this.addMetaItem(metaGrid, t('batchImport.preview.format'), preview.recognition.format.toUpperCase());
 
             if (preview.recognition.chapters.length > 0) {
                 const chapterPreview = card.createDiv({ cls: 'nw-bi-chapters' });
                 chapterPreview.createEl('div', {
-                    text: '章节预览（前3章）',
+                    text: t('batchImport.preview.chapterPreview'),
                     cls: 'nw-bi-chapters-title'
                 });
                 preview.recognition.chapters.slice(0, 3).forEach(ch => {
@@ -480,7 +506,7 @@ export class BatchImportModal extends Modal {
                 });
                 if (preview.recognition.chapters.length > 3) {
                     chapterPreview.createEl('div', {
-                        text: `... 还有 ${preview.recognition.chapters.length - 3} 章`,
+                        text: t('batchImport.preview.moreChapters', { count: preview.recognition.chapters.length - 3 }),
                         cls: 'nw-bi-chapters-more'
                     });
                 }
@@ -505,15 +531,15 @@ export class BatchImportModal extends Modal {
 
     private renderStep3(container: HTMLElement): void {
         container.createEl('div', {
-            text: '为所有导入的书籍统一设置',
+            text: t('batchImport.setting.intro'),
             cls: 'nw-bi-intro nw-bi-intro--spaced'
         });
 
         const presetRow = container.createDiv({ cls: 'nw-bi-card nw-bi-card--spaced' });
         const presetHeader = presetRow.createDiv({ cls: 'nw-bi-list-header' });
-        presetHeader.createEl('span', { text: '📋 预设方案', cls: 'nw-bi-list-title' });
+        presetHeader.createEl('span', { text: t('batchImport.setting.presets'), cls: 'nw-bi-list-title' });
         const toggleBtn = presetHeader.createEl('button', {
-            text: this.showPresets ? '收起' : '展开',
+            text: this.showPresets ? t('batchImport.setting.collapse') : t('batchImport.setting.expand'),
             cls: 'nw-btn nw-btn-ghost nw-btn-xs',
         });
         toggleBtn.addEventListener('click', () => {
@@ -525,7 +551,7 @@ export class BatchImportModal extends Modal {
             const presets = this.batchManager.getPresets();
             const presetList = presetRow.createDiv({ cls: 'nw-bi-preset-list' });
             if (presets.length === 0) {
-                presetList.createEl('span', { text: '暂无预设', cls: 'nw-bi-hint' });
+                presetList.createEl('span', { text: t('batchImport.setting.noPresets'), cls: 'nw-bi-hint' });
             } else {
                 presets.forEach(preset => {
                     const presetEl = presetList.createEl('span', {
@@ -542,7 +568,7 @@ export class BatchImportModal extends Modal {
             const savePresetRow = presetRow.createDiv({ cls: 'nw-bi-inline-row' });
             const presetInput = savePresetRow.createEl('input', {
                 type: 'text',
-                placeholder: '预设名称',
+                placeholder: t('batchImport.setting.presetName'),
                 value: this.presetNameInput,
                 cls: 'nw-bi-input nw-bi-input--grow nw-bi-input--sm'
             });
@@ -550,7 +576,7 @@ export class BatchImportModal extends Modal {
                 this.presetNameInput = (e.target as HTMLInputElement).value;
             });
             const savePresetBtn = savePresetRow.createEl('button', {
-                text: '保存为预设',
+                text: t('batchImport.setting.savePreset'),
                 cls: 'nw-btn nw-btn-secondary nw-btn-sm',
             });
             savePresetBtn.addEventListener('click', () => {
@@ -560,14 +586,14 @@ export class BatchImportModal extends Modal {
 
         const dimensionsSection = container.createDiv({ cls: 'nw-bi-section' });
         dimensionsSection.createEl('div', {
-            text: '🔍 拆解维度',
+            text: t('batchImport.setting.dimensions'),
             cls: 'nw-bi-section-title'
         });
         const dimContainer = dimensionsSection.createDiv({ cls: 'nw-bi-dim-box' });
         DIMENSION_OPTIONS.forEach(dim => {
             const isSelected = this.selectedDimensions.includes(dim.key);
             const dimEl = dimContainer.createEl('span', {
-                text: `${dim.icon} ${dim.label}`,
+                text: `${dim.icon} ${dimensionLabel(dim.key)}`,
                 cls: 'nw-bi-chip'
             });
             if (isSelected) dimEl.addClass('nw-bi-chip--selected');
@@ -584,7 +610,7 @@ export class BatchImportModal extends Modal {
         const optionsGrid = container.createDiv({ cls: 'nw-bi-options-grid' });
 
         const concurrencyItem = optionsGrid.createDiv({ cls: 'nw-bi-card' });
-        concurrencyItem.createEl('div', { text: '⚡ 并发数', cls: 'nw-bi-field-label' });
+        concurrencyItem.createEl('div', { text: t('batchImport.setting.concurrency'), cls: 'nw-bi-field-label' });
         const concurrencyInput = concurrencyItem.createEl('input', {
             type: 'number',
             value: this.concurrency.toString(),
@@ -596,14 +622,14 @@ export class BatchImportModal extends Modal {
         });
 
         const priorityItem = optionsGrid.createDiv({ cls: 'nw-bi-card' });
-        priorityItem.createEl('div', { text: '⭐ 优先级', cls: 'nw-bi-field-label' });
+        priorityItem.createEl('div', { text: t('batchImport.setting.priority'), cls: 'nw-bi-field-label' });
         const prioritySelect = priorityItem.createEl('select', { cls: 'nw-bi-input nw-bi-input--block' });
         const priorityOptions = [
-            { value: '2', label: '高优先级' },
-            { value: '1', label: '较高优先级' },
-            { value: '0', label: '普通优先级' },
-            { value: '-1', label: '较低优先级' },
-            { value: '-2', label: '低优先级' },
+            { value: '2', label: t('batchImport.setting.priorityHigh') },
+            { value: '1', label: t('batchImport.setting.priorityHigher') },
+            { value: '0', label: t('batchImport.setting.priorityNormal') },
+            { value: '-1', label: t('batchImport.setting.priorityLower') },
+            { value: '-2', label: t('batchImport.setting.priorityLow') },
         ];
         priorityOptions.forEach(opt => {
             const option = prioritySelect.createEl('option', { value: opt.value, text: opt.label });
@@ -615,14 +641,14 @@ export class BatchImportModal extends Modal {
 
         const togglesSection = container.createDiv({ cls: 'nw-bi-section' });
         togglesSection.createEl('div', {
-            text: '⚙️ 其他选项',
+            text: t('batchImport.setting.otherOptions'),
             cls: 'nw-bi-section-title'
         });
 
         const toggleList = togglesSection.createDiv({ cls: 'nw-bi-toggle-box' });
 
         const autoStartRow = toggleList.createDiv({ cls: 'nw-bi-toggle-row' });
-        autoStartRow.createEl('span', { text: '导入后自动开始拆解', cls: 'nw-bi-toggle-label' });
+        autoStartRow.createEl('span', { text: t('batchImport.setting.autoStart'), cls: 'nw-bi-toggle-label' });
         const autoStartToggle = autoStartRow.createEl('input', {
             type: 'checkbox',
             cls: 'nw-bi-check'
@@ -633,7 +659,7 @@ export class BatchImportModal extends Modal {
         });
 
         const autoClassifyRow = toggleList.createDiv({ cls: 'nw-bi-toggle-row' });
-        autoClassifyRow.createEl('span', { text: '自动识别题材分类', cls: 'nw-bi-toggle-label' });
+        autoClassifyRow.createEl('span', { text: t('batchImport.setting.autoClassify'), cls: 'nw-bi-toggle-label' });
         const autoClassifyToggle = autoClassifyRow.createEl('input', {
             type: 'checkbox',
             cls: 'nw-bi-check'
@@ -645,14 +671,14 @@ export class BatchImportModal extends Modal {
 
         const tagsSection = container.createDiv({ cls: 'nw-bi-section nw-bi-section--tight' });
         tagsSection.createEl('div', {
-            text: '🏷️ 标签设置',
+            text: t('batchImport.setting.tags'),
             cls: 'nw-bi-section-title'
         });
 
         const themeCategoryRow = tagsSection.createDiv({ cls: 'nw-bi-cat-row' });
         THEME_CATEGORIES.forEach(cat => {
             const btn = themeCategoryRow.createEl('button', {
-                text: cat,
+                text: themeCategoryLabel(cat),
                 cls: `nw-btn nw-btn-xs ${this.themeCategory === cat ? 'nw-btn-primary' : 'nw-btn-secondary'}`,
             });
             btn.addEventListener('click', () => {
@@ -664,7 +690,7 @@ export class BatchImportModal extends Modal {
         const themeTags = this.options.tagManager.getTagsByType(this.themeCategory).filter(t => t.parentId);
         const themeTagContainer = tagsSection.createDiv({ cls: 'nw-bi-tag-box nw-bi-tag-box--spaced' });
         if (themeTags.length === 0) {
-            themeTagContainer.createEl('span', { text: '暂无题材标签', cls: 'nw-bi-hint' });
+            themeTagContainer.createEl('span', { text: t('batchImport.setting.noThemeTags'), cls: 'nw-bi-hint' });
         } else {
             themeTags.forEach(tag => {
                 const isSelected = this.selectedThemeTagIds.includes(tag.id);
@@ -687,7 +713,7 @@ export class BatchImportModal extends Modal {
         const techniqueCategoryRow = tagsSection.createDiv({ cls: 'nw-bi-cat-row' });
         TECHNIQUE_CATEGORIES.forEach(cat => {
             const btn = techniqueCategoryRow.createEl('button', {
-                text: cat,
+                text: techniqueCategoryLabel(cat),
                 cls: `nw-btn nw-btn-xs ${this.techniqueCategory === cat ? 'nw-btn-primary' : 'nw-btn-secondary'}`,
             });
             btn.addEventListener('click', () => {
@@ -699,7 +725,7 @@ export class BatchImportModal extends Modal {
         const techniqueTags = this.options.tagManager.getTagsByType(this.techniqueCategory).filter(t => t.parentId);
         const techniqueTagContainer = tagsSection.createDiv({ cls: 'nw-bi-tag-box nw-bi-tag-box--spaced' });
         if (techniqueTags.length === 0) {
-            techniqueTagContainer.createEl('span', { text: '暂无技巧标签', cls: 'nw-bi-hint' });
+            techniqueTagContainer.createEl('span', { text: t('batchImport.setting.noTechniqueTags'), cls: 'nw-bi-hint' });
         } else {
             techniqueTags.forEach(tag => {
                 const isSelected = this.selectedTechniqueTagIds.includes(tag.id);
@@ -722,7 +748,7 @@ export class BatchImportModal extends Modal {
         const customInputRow = tagsSection.createDiv({ cls: 'nw-bi-inline-row nw-bi-inline-row--mb' });
         const customInput = customInputRow.createEl('input', {
             type: 'text',
-            placeholder: '输入自定义标签名',
+            placeholder: t('batchImport.setting.customTagPlaceholder'),
             value: this.customTagInput,
             cls: 'nw-bi-input nw-bi-input--grow nw-bi-input--sm'
         });
@@ -730,7 +756,7 @@ export class BatchImportModal extends Modal {
             this.customTagInput = (e.target as HTMLInputElement).value;
         });
         const addCustomBtn = customInputRow.createEl('button', {
-            text: '添加',
+            text: t('batchImport.setting.add'),
             cls: 'nw-btn nw-btn-secondary nw-btn-sm',
         });
         addCustomBtn.addEventListener('click', () => this.addCustomTag());
@@ -744,7 +770,7 @@ export class BatchImportModal extends Modal {
 
         const customTagsContainer = tagsSection.createDiv({ cls: 'nw-bi-tag-box' });
         if (this.customTags.length === 0) {
-            customTagsContainer.createEl('span', { text: '暂无自定义标签', cls: 'nw-bi-hint' });
+            customTagsContainer.createEl('span', { text: t('batchImport.setting.noCustomTags'), cls: 'nw-bi-hint' });
         } else {
             this.customTags.forEach(tag => {
                 const tagEl = customTagsContainer.createEl('span', {
@@ -768,13 +794,13 @@ export class BatchImportModal extends Modal {
         const allTasks = this.batchManager.getAllTasks();
 
         container.createEl('div', {
-            text: '正在导入书籍，请稍候...',
+            text: t('batchImport.progress.importing'),
             cls: 'nw-bi-intro nw-bi-intro--spaced'
         });
 
         this.totalProgressEl = container.createDiv({ cls: 'nw-bi-progress' });
         const totalHeader = this.totalProgressEl.createDiv({ cls: 'nw-bi-list-header' });
-        totalHeader.createEl('span', { text: '总体进度', cls: 'nw-bi-list-title' });
+        totalHeader.createEl('span', { text: t('batchImport.progress.total'), cls: 'nw-bi-list-title' });
         this.totalProgressTextEl = totalHeader.createEl('span', {
             text: `${progress.completedTasks}/${progress.totalTasks} (${progress.overallProgress}%)`,
             cls: 'nw-bi-hint'
@@ -784,24 +810,24 @@ export class BatchImportModal extends Modal {
         this.totalProgressBarEl.style.setProperty('--nw-bi-pct', `${progress.overallProgress}%`);
 
         const statsRow = container.createDiv({ cls: 'nw-bi-stats' });
-        this.addStatCard(statsRow, '总计', progress.totalTasks.toString(), 'muted');
-        this.addStatCard(statsRow, '进行中', progress.activeTasks.toString(), 'accent');
-        this.addStatCard(statsRow, '已完成', progress.completedTasks.toString(), 'success');
-        this.addStatCard(statsRow, '失败', progress.failedTasks.toString(), 'error');
+        this.addStatCard(statsRow, t('batchImport.progress.statTotal'), progress.totalTasks.toString(), 'muted');
+        this.addStatCard(statsRow, t('batchImport.progress.statActive'), progress.activeTasks.toString(), 'accent');
+        this.addStatCard(statsRow, t('batchImport.progress.statDone'), progress.completedTasks.toString(), 'success');
+        this.addStatCard(statsRow, t('batchImport.progress.statFailed'), progress.failedTasks.toString(), 'error');
 
         const taskListHeader = container.createDiv({ cls: 'nw-bi-list-header' });
-        taskListHeader.createEl('span', { text: '任务列表', cls: 'nw-bi-list-title' });
+        taskListHeader.createEl('span', { text: t('batchImport.progress.taskList'), cls: 'nw-bi-list-title' });
 
         const actionBtns = taskListHeader.createDiv({ cls: 'nw-bi-list-actions' });
         const pauseAllBtn = actionBtns.createEl('button', {
-            text: '⏸ 全部暂停',
+            text: t('batchImport.progress.pauseAll'),
             cls: 'nw-btn nw-btn-ghost nw-btn-xs',
         });
         pauseAllBtn.addEventListener('click', () => {
             allTasks.filter(t => t.status === 'queued').forEach(t => this.batchManager.pauseTask(t.id));
         });
         const resumeAllBtn = actionBtns.createEl('button', {
-            text: '▶ 全部继续',
+            text: t('batchImport.progress.resumeAll'),
             cls: 'nw-btn nw-btn-ghost nw-btn-xs',
         });
         resumeAllBtn.addEventListener('click', () => {
@@ -813,9 +839,9 @@ export class BatchImportModal extends Modal {
         this.updateTaskList();
 
         const logHeader = container.createDiv({ cls: 'nw-bi-log-header' });
-        logHeader.createEl('span', { text: '📋 导入日志' });
+        logHeader.createEl('span', { text: t('batchImport.progress.logTitle') });
         const clearLogBtn = logHeader.createEl('button', {
-            text: '清空',
+            text: t('batchImport.progress.logClear'),
             cls: 'nw-btn nw-btn-ghost nw-btn-xs',
         });
         clearLogBtn.addEventListener('click', () => {
@@ -824,7 +850,7 @@ export class BatchImportModal extends Modal {
 
         this.logEl = container.createDiv({ cls: 'nw-bi-log' });
 
-        this.appendLog(`开始导入，共 ${progress.totalTasks} 本书籍`);
+        this.appendLog(t('batchImport.progress.logStart', { count: progress.totalTasks }));
     }
 
     private addStatCard(
@@ -853,7 +879,7 @@ export class BatchImportModal extends Modal {
         if (!this.taskListEl) return;
         const tasks = this.batchManager.getAllTasks();
         if (tasks.length === 0) {
-            setSanitizedHtml(this.taskListEl, '<div class="nw-bi-empty">暂无任务</div>');
+            setSanitizedHtml(this.taskListEl, `<div class="nw-bi-empty">${t('batchImport.progress.noTasks')}</div>`);
             return;
         }
 
@@ -897,7 +923,7 @@ export class BatchImportModal extends Modal {
 
             const metaRow = row.createDiv({ cls: 'nw-bi-task-meta' });
             metaRow.createEl('span', {
-                text: `重试 ${task.retryCount}/${task.maxRetries}`,
+                text: t('batchImport.progress.retry', { count: task.retryCount, max: task.maxRetries }),
                 cls: 'nw-bi-task-retry'
             });
 
@@ -934,15 +960,15 @@ export class BatchImportModal extends Modal {
     }
 
     private getTaskStatusLabel(status: string): string {
-        const labels: Record<string, string> = {
-            queued: '排队中',
-            pending: '已暂停',
-            processing: '处理中',
-            completed: '已完成',
-            failed: '失败',
-            cancelled: '已取消',
-        };
-        return labels[status] || status;
+        switch (status) {
+            case 'queued': return t('batchImport.status.queued');
+            case 'pending': return t('batchImport.status.pending');
+            case 'processing': return t('batchImport.status.processing');
+            case 'completed': return t('batchImport.status.completed');
+            case 'failed': return t('batchImport.status.failed');
+            case 'cancelled': return t('batchImport.status.cancelled');
+            default: return status;
+        }
     }
 
     private getStatusTone(status: string): string {
@@ -964,7 +990,7 @@ export class BatchImportModal extends Modal {
         const tabs = container.createDiv({ cls: 'nw-bi-tabs' });
 
         const recentTab = tabs.createEl('button', {
-            text: '本次结果',
+            text: t('batchImport.result.tabRecent'),
             cls: 'nw-bi-tab'
         });
         recentTab.addClass(this.historyTab === 'recent' ? 'nw-bi-tab--active' : 'nw-bi-tab--idle');
@@ -974,7 +1000,7 @@ export class BatchImportModal extends Modal {
         });
 
         const allTab = tabs.createEl('button', {
-            text: '历史记录',
+            text: t('batchImport.result.tabHistory'),
             cls: 'nw-bi-tab'
         });
         allTab.addClass(this.historyTab === 'all' ? 'nw-bi-tab--active' : 'nw-bi-tab--idle');
@@ -996,7 +1022,7 @@ export class BatchImportModal extends Modal {
 
         if (tasks.length === 0) {
             container.createDiv({ cls: 'nw-bi-empty' })
-                .createEl('span', { text: '还没有导入记录，返回第一步开始导入吧' });
+                .createEl('span', { text: t('batchImport.result.emptyRecent') });
             return;
         }
 
@@ -1009,7 +1035,7 @@ export class BatchImportModal extends Modal {
             text: progress.completedTasks.toString(),
             cls: 'nw-bi-result-number nw-bi-result-number--success'
         });
-        successCard.createEl('div', { text: '✅ 成功', cls: 'nw-bi-hint' });
+        successCard.createEl('div', { text: t('batchImport.result.statSuccess'), cls: 'nw-bi-hint' });
 
         const failedCard = statsRow.createDiv({
             cls: 'nw-bi-result-card nw-bi-result-card--failed'
@@ -1018,20 +1044,20 @@ export class BatchImportModal extends Modal {
             text: progress.failedTasks.toString(),
             cls: 'nw-bi-result-number nw-bi-result-number--error'
         });
-        failedCard.createEl('div', { text: '❌ 失败', cls: 'nw-bi-hint' });
+        failedCard.createEl('div', { text: t('batchImport.result.statFailed'), cls: 'nw-bi-hint' });
 
         const totalCard = statsRow.createDiv({ cls: 'nw-bi-result-card nw-bi-result-card--total' });
         totalCard.createEl('div', {
             text: progress.totalTasks.toString(),
             cls: 'nw-bi-result-number nw-bi-result-number--muted'
         });
-        totalCard.createEl('div', { text: '📚 总计', cls: 'nw-bi-hint' });
+        totalCard.createEl('div', { text: t('batchImport.result.statTotal'), cls: 'nw-bi-hint' });
 
         const successTasks = tasks.filter(t => t.status === 'completed');
         if (successTasks.length > 0) {
             const successSection = container.createDiv({ cls: 'nw-bi-section' });
             successSection.createEl('div', {
-                text: '成功列表',
+                text: t('batchImport.result.successList'),
                 cls: 'nw-bi-section-title'
             });
             const successList = successSection.createDiv({ cls: 'nw-bi-success-list' });
@@ -1039,7 +1065,7 @@ export class BatchImportModal extends Modal {
                 const row = successList.createDiv({ cls: 'nw-bi-success-row' });
                 row.createEl('span', { text: `✅ ${task.bookName}`, cls: 'nw-bi-success-name' });
                 const detailBtn = row.createEl('button', {
-                    text: '查看详情',
+                    text: t('batchImport.result.viewDetail'),
                     cls: 'nw-btn nw-btn-ghost nw-btn-xs',
                 });
                 detailBtn.addEventListener('click', () => {
@@ -1058,7 +1084,7 @@ export class BatchImportModal extends Modal {
         if (failedTasks.length > 0) {
             const failedSection = container.createDiv({ cls: 'nw-bi-section' });
             failedSection.createEl('div', {
-                text: '失败列表',
+                text: t('batchImport.result.failedList'),
                 cls: 'nw-bi-section-title'
             });
             const failedList = failedSection.createDiv({ cls: 'nw-bi-failed-list' });
@@ -1069,11 +1095,11 @@ export class BatchImportModal extends Modal {
                     cls: 'nw-bi-failed-name'
                 });
                 row.createEl('div', {
-                    text: task.error || '未知错误',
+                    text: task.error || t('batchImport.result.unknownError'),
                     cls: 'nw-bi-failed-error'
                 });
                 const retryBtn = row.createEl('button', {
-                    text: '🔄 重新导入',
+                    text: t('batchImport.result.reimport'),
                     cls: 'nw-btn nw-btn-secondary nw-btn-xs',
                 });
                 retryBtn.addEventListener('click', () => {
@@ -1090,7 +1116,7 @@ export class BatchImportModal extends Modal {
 
         if (history.length === 0) {
             container.createDiv({ cls: 'nw-bi-empty' })
-                .createEl('span', { text: '暂无导入历史记录' });
+                .createEl('span', { text: t('batchImport.result.emptyHistory') });
             return;
         }
 
@@ -1116,9 +1142,9 @@ export class BatchImportModal extends Modal {
             });
 
             const metaRow = card.createDiv({ cls: 'nw-bi-history-meta' });
-            metaRow.createEl('span', { text: `总计 ${item.totalCount} 本` });
+            metaRow.createEl('span', { text: t('batchImport.result.historyTotal', { count: item.totalCount }) });
             metaRow.createEl('span', {
-                text: `拆解维度: ${item.settings.dimensions.length} 个`
+                text: t('batchImport.result.historyDimensions', { count: item.settings.dimensions.length })
             });
 
             card.addEventListener('click', () => {
@@ -1136,7 +1162,7 @@ export class BatchImportModal extends Modal {
                     bookRow.createEl('span', { text: `${statusIcon} ${book.bookName}` });
                     if (book.status === 'failed') {
                         bookRow.createEl('span', {
-                            text: book.error || '失败',
+                            text: book.error || t('batchImport.status.failed'),
                             cls: 'nw-bi-book-error'
                         });
                     }
@@ -1145,7 +1171,7 @@ export class BatchImportModal extends Modal {
                 const btnRow = detail.createDiv({ cls: 'nw-bi-history-actions' });
                 if (item.failedCount > 0) {
                     const retryBtn = btnRow.createEl('button', {
-                        text: '🔄 重试失败项',
+                        text: t('batchImport.result.retryFailed'),
                         cls: 'nw-btn nw-btn-secondary nw-btn-sm',
                     });
                     retryBtn.addEventListener('click', (e) => {
@@ -1154,11 +1180,11 @@ export class BatchImportModal extends Modal {
                         // 任务已不存在，不得静默空转让用户白等。
                         const { retried, missing } = this.batchManager.retryFailedFromHistory(item.id);
                         if (retried === 0 && missing.length > 0) {
-                            showWarningNotice('任务记录已过期，请重新添加文件导入', { timeout: 5000 });
+                            showWarningNotice(t('batchImport.result.expired'), { timeout: 5000 });
                             return;
                         }
                         if (missing.length > 0) {
-                            showWarningNotice(`已重试 ${retried} 项；${missing.length} 项任务记录已过期`, { timeout: 5000 });
+                            showWarningNotice(t('batchImport.result.partialRetry', { retried, missing: missing.length }), { timeout: 5000 });
                         }
                         this.currentStep = 4;
                         this.render();
@@ -1176,53 +1202,53 @@ export class BatchImportModal extends Modal {
 
         if (this.currentStep === 1) {
             rightBtns.createEl('button', {
-                text: '取消',
+                text: t('batchImport.footer.cancel'),
                 cls: 'nw-btn nw-btn-secondary',
             }).addEventListener('click', () => this.close());
 
             const nextBtn = rightBtns.createEl('button', {
-                text: '下一步 →',
+                text: t('batchImport.footer.next'),
                 cls: 'nw-btn nw-btn-primary',
             });
             nextBtn.addEventListener('click', () => this.goToStep(2));
 
         } else if (this.currentStep === 2) {
             leftBtns.createEl('button', {
-                text: '← 上一步',
+                text: t('batchImport.footer.prev'),
                 cls: 'nw-btn nw-btn-secondary',
             }).addEventListener('click', () => this.goToStep(1));
 
             rightBtns.createEl('button', {
-                text: '取消',
+                text: t('batchImport.footer.cancel'),
                 cls: 'nw-btn nw-btn-secondary',
             }).addEventListener('click', () => this.close());
 
             const nextBtn = rightBtns.createEl('button', {
-                text: '下一步 →',
+                text: t('batchImport.footer.next'),
                 cls: 'nw-btn nw-btn-primary',
             });
             nextBtn.addEventListener('click', () => this.goToStep(3));
 
         } else if (this.currentStep === 3) {
             leftBtns.createEl('button', {
-                text: '← 上一步',
+                text: t('batchImport.footer.prev'),
                 cls: 'nw-btn nw-btn-secondary',
             }).addEventListener('click', () => this.goToStep(2));
 
             rightBtns.createEl('button', {
-                text: '取消',
+                text: t('batchImport.footer.cancel'),
                 cls: 'nw-btn nw-btn-secondary',
             }).addEventListener('click', () => this.close());
 
             const startBtn = rightBtns.createEl('button', {
-                text: '🚀 开始导入',
+                text: t('batchImport.footer.start'),
                 cls: 'nw-btn nw-btn-primary',
             });
             startBtn.addEventListener('click', () => this.startImport());
 
         } else if (this.currentStep === 4) {
             const cancelBtn = rightBtns.createEl('button', {
-                text: '取消全部',
+                text: t('batchImport.footer.cancelAll'),
                 cls: 'nw-btn nw-btn-danger',
             });
             cancelBtn.addEventListener('click', () => {
@@ -1235,7 +1261,7 @@ export class BatchImportModal extends Modal {
             });
 
             const doneBtn = rightBtns.createEl('button', {
-                text: '查看结果 →',
+                text: t('batchImport.footer.viewResults'),
                 cls: 'nw-btn nw-btn-primary',
             });
             doneBtn.addEventListener('click', () => {
@@ -1246,7 +1272,7 @@ export class BatchImportModal extends Modal {
 
         } else if (this.currentStep === 5) {
             const continueBtn = leftBtns.createEl('button', {
-                text: '📂 继续导入',
+                text: t('batchImport.footer.continueImport'),
                 cls: 'nw-btn nw-btn-secondary',
             });
             continueBtn.addEventListener('click', () => {
@@ -1256,7 +1282,7 @@ export class BatchImportModal extends Modal {
             });
 
             const doneBtn = rightBtns.createEl('button', {
-                text: '完成',
+                text: t('batchImport.footer.done'),
                 cls: 'nw-btn nw-btn-primary',
             });
             doneBtn.addEventListener('click', async () => {
@@ -1271,7 +1297,7 @@ export class BatchImportModal extends Modal {
         if (step === 2) {
             const selected = this.batchManager.getSelectedPreviews();
             if (selected.length === 0) {
-                new Notice('❌ 请至少选择一个文件');
+                new Notice(t('batchImport.notice.needFile'));
                 return;
             }
         }
@@ -1289,7 +1315,7 @@ export class BatchImportModal extends Modal {
             if (!validExtensions.includes(ext)) return;
             // SEC-7：读前硬限，避免超大文件全量读入拖垮内存
             if (file.size > MAX_SOURCE_FILE_SIZE) {
-                showWarningNotice(`文件过大已跳过: ${file.name}（${Math.round(file.size / 1024 / 1024)}MB，上限 10MB）`);
+                showWarningNotice(t('batchImport.notice.tooLarge', { name: file.name, size: Math.round(file.size / 1024 / 1024) }));
                 return;
             }
 
@@ -1307,7 +1333,7 @@ export class BatchImportModal extends Modal {
                         });
                         addedCount++;
                     } else {
-                        showWarningNotice('EPUB 格式暂不支持，已跳过');
+                        showWarningNotice(t('batchImport.notice.epubSkipped'));
                     }
                     resolve();
                 };
@@ -1320,7 +1346,7 @@ export class BatchImportModal extends Modal {
         void Promise.all(jobs).then(() => {
             if (addedCount > 0) {
                 this.render();
-                showSuccessNotice(`已添加 ${addedCount} 个文件`);
+                showSuccessNotice(t('batchImport.notice.added', { count: addedCount }));
             }
         });
     }
@@ -1331,21 +1357,21 @@ export class BatchImportModal extends Modal {
         );
 
         if (allFiles.length === 0) {
-            new Notice('⚠️ 库中没有找到 .txt 或 .md 文件');
+            new Notice(t('batchImport.notice.vaultNoFiles'));
             return;
         }
 
         const pickerModal = new Modal(this.app);
         pickerModal.modalEl.addClass('nw-scope');
         pickerModal.modalEl.addClass('nw-modal-sm');
-        pickerModal.titleEl.setText('从库内选择文件');
+        pickerModal.titleEl.setText(t('batchImport.picker.fileTitle'));
 
         const content = pickerModal.contentEl;
         content.addClass('nw-bi-picker-body');
 
         const searchInput = content.createEl('input', {
             type: 'text',
-            placeholder: '搜索文件...',
+            placeholder: t('batchImport.picker.searchFiles'),
             cls: 'nw-bi-search'
         });
 
@@ -1364,7 +1390,7 @@ export class BatchImportModal extends Modal {
 
             if (filtered.length === 0) {
                 fileList.createDiv({
-                    text: '没有找到匹配的文件',
+                    text: t('batchImport.picker.noMatchFiles'),
                     cls: 'nw-bi-picker-empty'
                 });
                 return;
@@ -1419,18 +1445,18 @@ export class BatchImportModal extends Modal {
         const btnRow = content.createDiv({ cls: 'nw-bi-picker-actions' });
 
         const cancelBtn = btnRow.createEl('button', {
-            text: '取消',
+            text: t('common.cancel'),
             cls: 'nw-btn nw-btn-secondary',
         });
         cancelBtn.addEventListener('click', () => pickerModal.close());
 
         const confirmBtn = btnRow.createEl('button', {
-            text: '确认添加',
+            text: t('batchImport.picker.confirmAdd'),
             cls: 'nw-btn nw-btn-primary',
         });
         confirmBtn.addEventListener('click', async () => {
             if (selectedPaths.size === 0) {
-                new Notice('⚠️ 请至少选择一个文件');
+                new Notice(t('batchImport.notice.needSelectFile'));
                 return;
             }
 
@@ -1457,7 +1483,7 @@ export class BatchImportModal extends Modal {
             this.render();
 
             if (addedCount > 0) {
-                showSuccessNotice(`已添加 ${addedCount} 个文件`);
+                showSuccessNotice(t('batchImport.notice.added', { count: addedCount }));
             }
         });
 
@@ -1493,21 +1519,21 @@ export class BatchImportModal extends Modal {
         foldersWithFiles.sort((a, b) => a.folder.path.localeCompare(b.folder.path));
 
         if (foldersWithFiles.length === 0) {
-            new Notice('⚠️ 库中没有找到包含 .txt 或 .md 文件的文件夹');
+            new Notice(t('batchImport.notice.vaultNoFolderFiles'));
             return;
         }
 
         const pickerModal = new Modal(this.app);
         pickerModal.modalEl.addClass('nw-scope');
         pickerModal.modalEl.addClass('nw-modal-sm');
-        pickerModal.titleEl.setText('从库内选择文件夹');
+        pickerModal.titleEl.setText(t('batchImport.picker.folderTitle'));
 
         const content = pickerModal.contentEl;
         content.addClass('nw-bi-picker-body');
 
         const searchInput = content.createEl('input', {
             type: 'text',
-            placeholder: '搜索文件夹...',
+            placeholder: t('batchImport.picker.searchFolders'),
             cls: 'nw-bi-search'
         });
 
@@ -1526,7 +1552,7 @@ export class BatchImportModal extends Modal {
 
             if (filtered.length === 0) {
                 folderList.createDiv({
-                    text: '没有找到匹配的文件夹',
+                    text: t('batchImport.picker.noMatchFolders'),
                     cls: 'nw-bi-picker-empty'
                 });
                 return;
@@ -1541,11 +1567,11 @@ export class BatchImportModal extends Modal {
 
                 row.createEl('span', { text: '📁', cls: 'nw-bi-picker-icon' });
                 row.createEl('span', {
-                    text: item.folder.path || '(根目录)',
+                    text: item.folder.path || t('batchImport.picker.root'),
                     cls: 'nw-bi-picker-name'
                 });
                 row.createEl('span', {
-                    text: `${item.fileCount} 个文件`,
+                    text: t('batchImport.picker.fileCount', { count: item.fileCount }),
                     cls: 'nw-bi-picker-path'
                 });
 
@@ -1565,24 +1591,24 @@ export class BatchImportModal extends Modal {
         const btnRow = content.createDiv({ cls: 'nw-bi-picker-actions' });
 
         const cancelBtn = btnRow.createEl('button', {
-            text: '取消',
+            text: t('common.cancel'),
             cls: 'nw-btn nw-btn-secondary',
         });
         cancelBtn.addEventListener('click', () => pickerModal.close());
 
         const confirmBtn = btnRow.createEl('button', {
-            text: '确认导入',
+            text: t('batchImport.picker.confirmImport'),
             cls: 'nw-btn nw-btn-primary',
         });
         confirmBtn.addEventListener('click', async () => {
             if (!selectedFolderPath) {
-                new Notice('⚠️ 请选择一个文件夹');
+                new Notice(t('batchImport.notice.needSelectFolder'));
                 return;
             }
 
             const abstractFile = this.app.vault.getAbstractFileByPath(selectedFolderPath);
             if (!abstractFile || !(abstractFile instanceof TFolder)) {
-                showErrorNotice('文件夹不存在');
+                showErrorNotice(t('batchImport.picker.folderMissing'));
                 return;
             }
 
@@ -1608,9 +1634,9 @@ export class BatchImportModal extends Modal {
             this.render();
 
             if (addedCount > 0) {
-                showSuccessNotice(`已从文件夹添加 ${addedCount} 个文件`);
+                showSuccessNotice(t('batchImport.notice.addedFromFolder', { count: addedCount }));
             } else {
-                new Notice('⚠️ 没有新增文件（可能已存在）');
+                new Notice(t('batchImport.notice.noNewFiles'));
             }
         });
 
@@ -1621,7 +1647,7 @@ export class BatchImportModal extends Modal {
         const tag = this.customTagInput.trim();
         if (!tag) return;
         if (this.customTags.includes(tag)) {
-            new Notice('⚠️ 该标签已存在');
+            new Notice(t('batchImport.notice.tagExists'));
             return;
         }
         this.customTags.push(tag);
@@ -1638,14 +1664,14 @@ export class BatchImportModal extends Modal {
         this.priority = s.priority;
         this.concurrency = s.concurrency;
         this.customTags = [...s.customTags];
-        showSuccessNotice(`已应用预设：${preset.name}`);
+        showSuccessNotice(t('batchImport.notice.presetApplied', { name: preset.name }));
         this.render();
     }
 
     private saveCurrentAsPreset(): void {
         const name = this.presetNameInput.trim();
         if (!name) {
-            new Notice('⚠️ 请输入预设名称');
+            new Notice(t('batchImport.notice.needPresetName'));
             return;
         }
 
@@ -1662,14 +1688,14 @@ export class BatchImportModal extends Modal {
 
         this.batchManager.savePreset(name, settings);
         this.presetNameInput = '';
-        showSuccessNotice(`预设已保存：${name}`);
+        showSuccessNotice(t('batchImport.notice.presetSaved', { name }));
         this.render();
     }
 
     private startImport(): void {
         const selected = this.batchManager.getSelectedPreviews();
         if (selected.length === 0) {
-            new Notice('❌ 没有选中的文件');
+            new Notice(t('batchImport.notice.noneSelected'));
             return;
         }
 
@@ -1711,10 +1737,24 @@ export class BatchImportModal extends Modal {
 
     private formatWordCount(count?: number): string {
         if (!count) return '0';
-        if (count >= 10000) {
-            return (count / 10000).toFixed(1) + '万字';
+        // 英文按 1k / 1M 记，中文按 1 万记：4 位数以上才压缩
+        if (getLocale() === 'en-US') {
+            const trim = (value: number): string => {
+                const text = value.toFixed(1);
+                // 只有三位数以上才去掉末尾的 .0（532.0k → 532k），
+                // 小数值保留一位小数，免得 2.98k 显示成 3k 与邻近条目不一致
+                return value >= 100 && text.endsWith('.0') ? text.slice(0, -2) : text;
+            };
+            if (count >= 1_000_000) {
+                return t('batchImport.wordCount.million', { n: trim(count / 1_000_000) });
+            }
+            if (count >= 1_000) {
+                return t('batchImport.wordCount.wan', { n: trim(count / 1_000) });
+            }
+        } else if (count >= 10_000) {
+            return t('batchImport.wordCount.wan', { n: (count / 10_000).toFixed(1) });
         }
-        return count.toLocaleString() + '字';
+        return t('batchImport.wordCount.chars', { n: count.toLocaleString() });
     }
 
     private formatDateTime(timestamp: number): string {

@@ -315,8 +315,14 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
   推荐方向 `join('、')` 在 en 下露中文且分隔符不对 → 改 `t('ideation.detail.recommendSeparator')`；
   zh/en 资源各 **5142** 条；棘轮收紧到 **212 文件 / 6525 条**；新增 `tests/unit/i18n/ideation-flow.test.ts` 6 例；
   实机 zh/en 各 7 场景（640 宽弹窗，零横向溢出；en 下 UI 全英文，残余 CJK 为注入的中文假创意与项目名「示例项目」）。
+- 第二期第44片（2026-11-19，DSH）：批量导入五步向导 —— `ui/batch-import-modal.ts`（1,765 行）迁 118 组 / **136 键** `batchImport.*`
+  （文件选择与库内选择器 / 智能预览 / 批量设置含预设与标签 / 导入进度与任务列表 / 结果与历史 / `notice` 组 14 键）；
+  三个 switch helper 取代中文常量表（步骤名 `stepLabel()`、题材与技巧分类标签），拆解维度复用 `dimensionLabel()`，题材与标签数据保持中文；
+  顺带改 `formatWordCount()` 按语言分档：en 走 k/M 且 ≥100 才去尾 `.0`（原 `3460.0k words` → `3.5M words`），zh 走万/字；
+  zh/en 资源各 **5278** 条；棘轮收紧到 **212 文件 / 6383 条**；新增 `tests/unit/i18n/batch-import-flow.test.ts` 6 例；
+  实机 zh/en 各 9 场景（640 宽弹窗 + 480 宽 picker，零横向溢出；en 下 UI 全英文，残余 CJK 为注入的假书名与预设名）。
 - 后续：第二期余下（知识库 D 类两文件 `ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`
-  用户已裁定随视觉重构；散落弹窗 batch-import 750 / agent-workbench-view 730 /
+  用户已裁定随视觉重构；散落弹窗 agent-workbench-view 730 /
   novel-tags 1099（只剩 AI 提示词与解析正则）等），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 
 ---
@@ -325,6 +331,6 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
 
 1 → 2 → 3 → 4 → 5 →（6 可选）→ 7。
 
-进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~43 片（命令面板 → 脑洞构思工坊）已交付（2026-11-18/19）；下一个候选是 ⑦ 第二期余下（template-vars 228（多为提示词，判据保留）/ 写作设置分区残留等，散落弹窗 golden-opening / novel-tags / add-fanfic-setting / ai-builder 等，知识库 D 类两文件随视觉重构）。
+进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~44 片（命令面板 → 批量导入五步向导）已交付（2026-11-18/19）；下一个候选是 ⑦ 第二期余下（agent-workbench-view 730 / novel-tags 1099（只剩 AI 提示词与解析正则）/ 写作设置分区残留等，知识库 D 类两文件随视觉重构），以及第三期补齐 en 并逐面量布局。
 
 理由：1 是修「假成功」缺陷；2 是把已交付引擎变成写作时可见的价值；3 是投稿刚需且不依赖 AI；4/5 是低成本体验补洞；6/7 视需要。

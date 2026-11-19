@@ -9,7 +9,7 @@
     "ui/backup-center-modal.ts": 34,
     "ui/backup-yuan-modal.ts": 17,
     "ui/batch-create-modal.ts": 104,
-    "ui/batch-import-modal.ts": 165,
+    "ui/batch-import-modal.ts": 23,
     "ui/batch-novels-modal.ts": 42,
     "ui/changelog-modal.ts": 8,
     "ui/chapter-outline-tree-modal.ts": 112,
@@ -213,7 +213,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 6525,
+  "total": 6383,
   "updatedAt": "2026-11-19",
   "note": ""
 }

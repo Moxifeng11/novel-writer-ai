@@ -3459,5 +3459,33 @@ ideation（793）/ batch-import（750）/ `ui/agent-workbench-view.ts`（126 条
 §5 表行、§6 测试 bullet、§7 backlog [x] + 余下重写、§9 两条经验）、`docs/modules/INDEX.md`、`docs/CURRENT.md`、
 `docs/planning/2026-11-18-feature-gaps.md`、本轮记录；基线 `.i18n-baseline.json` / `.bundle-baseline.json`。
 
-**下一轮候选**：`ui/batch-import-modal.ts`（750）/ `ui/agent-workbench-view.ts`（730）/ `ui/novel-tags-modal.ts`（1,099，
-只剩 AI 提示词与解析正则）；知识库 D 类两文件等视觉重构（用户 m16938）。
+**下一轮候选**：`ui/agent-workbench-view.ts`（730）/ `ui/novel-tags-modal.ts`（1,099，只剩 AI 提示词与解析正则）；
+知识库 D 类两文件等视觉重构（用户 m16938）。
+
+## 第一百一十二轮：i18n 第二期第44片 —— 批量导入五步向导（2026-11-19，DSH）
+
+**触发**：用户 m21482「继续」（第43片之后的候选顺序：ideation → batch-import → agent-workbench-view）。
+
+**范围**：`ui/batch-import-modal.ts`（1,765 行，CRLF）。文件原本没有 `import { t }`，本片迁 118 组 / **136 键** `batchImport.*`。
+
+**改动**
+1. 新增 `import { t }`（与 `getLocale` 一起）；三个 switch helper 取代中文常量表 —— `stepLabel(step)`（五步导航）、`themeCategoryLabel(category)`、`techniqueCategoryLabel(category)`（后两者入参是 `tagManager.getTagsByType()` 的数据键，`THEME_CATEGORIES` / `TECHNIQUE_CATEGORIES` 数组仍存中文值）；拆解维度改复用 `shared/deconstruction-settings.ts` 的 `dimensionLabel()`（与原字面量逐字一致）。**题材、标签、预设名等数据保持中文**（落盘与提示词逐字依赖）。
+2. 迁移面：文件选择（三种来源、拖拽区、已选文件表、全选/取消全选/清空）、智能预览（书名/作者/字数/章节数/置信度、批量勾选）、批量设置（预设区、六维开关、并发与优先级、其它选项、题材/技巧/自定义标签三段）、导入进度（总进度 1/3 (66%)、四格统计、任务列表含 pause/resume/retry/delete、导入日志）、结果与历史（成功/失败明细、重跑、清空历史）、两个库内选择器（480 宽）、`notice` 组 14 键。
+3. **顺带改字数分档**（截图才发现）：en 原本一律按 1000 折算，出现 `3460.0k words` —— 改为 `trim()` 只在 ≥100 时去尾 `.0`，≥1e6 走 `million`（zh「百万字」/ en「M words」），≥1e3 走 `wan`（zh「万字」/ en「k words」），其余落 `chars`；zh 仍 10,000 以上才折万。新增资源 `batchImport.wordCount.million`。
+4. 保留中文：注释、11 条 `log.*`、AI 提示词、`buildPreview()` 里的解析正则、vault 路径。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；新增 `tests/unit/i18n/batch-import-flow.test.ts` 6 例（136 键双语可解析 / en 零 CJK / zh 插值与源码逐字 11 条 / 步骤与状态标签逐字 / 字数分档 zh 万·字、en k·M 四档 / 自定义标签输入回车添加），全绿。
+- `check:i18n` zh/en 各 **5278** 条、无法解析键 0、动态键 29、棘轮 **212 文件 / 6383 条**（6525 → 6383，已 --update-baseline）。
+- 实机 `D:\nw-tmp\snap-i18n44.mjs <lang>`：zh/en 各 9 场景（step1-empty / step1-selected / step2-preview / step3-settings / step3-presets / step4-progress / step5-result / step5-history + 两个 480 宽 picker），**零横向溢出**；en 下 UI 全英文，残余 CJK 仅为注入的假书名「斗破苍穹 / 将夜 / 未命名稿件」、预设名「玄幻长篇默认」、注入错误串与 vault 路径。截图 `D:\nw-dev-vault\_visual-i18n44\`。
+- `npm run preflight` **EXIT=0**（995 文件 / **10,363 通过 + 3 跳过**，日志 `D:\nw-tmp\preflight-i18n44.log`）；`check:bundle` main.js **6,179,754**（+11,752）、styles.css **800,471**（±0）；`gen:docs` 1,004 文件 / `check:docs` 20 活跃文档通过。
+
+**坑**
+1. **第五步标签 640 宽下换行到第二行**：zh 与 en 表现一致，属既有布局，按「先保视觉」不动（要改也是视觉切片的事）。
+2. **截图要 monkeypatch `batchManager`**：`window.__nwBi`（`ui/batch-import-modal.ts:169` 的既有截图钩子，注释写「提交前删除」但一直留着）拿到实例后，直接给 `m.batchManager` 的 `getPreviews / getProgress / getAllTasks / getHistory / getPresets` 打桩注入三本假书（completed / failed / processing），否则弹窗停在空态。
+3. **改文案后必须重跑 build + `dev-vault.mjs sync --vault=D:\nw-dev-vault` 再截图**，dev vault 是 junction 指回本仓，只 sync 产物（4 个文件）。
+
+**文档**：`docs/modules/i18n.md`（§2 资源 5142 → 5278 + 资源链 +136 + 已迁移面 bullet + 未迁移面 6525 → 6383、§5 表行、§6 测试 bullet、§7 backlog [x] + 余下重写）、`docs/modules/INDEX.md`、`docs/CURRENT.md`、`docs/planning/2026-11-18-feature-gaps.md`、本轮记录；基线 `.i18n-baseline.json` / `.bundle-baseline.json`。
+
+**下一轮候选**：`ui/agent-workbench-view.ts`（730）/ `ui/novel-tags-modal.ts`（1,099，只剩 AI 提示词与解析正则）；知识库 D 类两文件等视觉重构（用户 m16938）。
+
