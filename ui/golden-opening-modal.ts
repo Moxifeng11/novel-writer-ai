@@ -212,7 +212,7 @@ export class GoldenOpeningModal extends Modal {
         generateBtn.disabled = this.isGeneratingChapters;
         generateBtn.onclick = async () => {
             if (!this.premiseInput.trim() && this.selectedGenres.size === 0) {
-                new Notice('请输入故事设定或选择至少一个题材标签', 3000);
+                new Notice(t("goldenOpening.common.k38"), 3000);
                 return;
             }
             await this.generateThreeChapters();
@@ -265,7 +265,7 @@ export class GoldenOpeningModal extends Modal {
         genHookBtn.disabled = this.isGeneratingHooks;
         genHookBtn.onclick = async () => {
             if (!this.premiseInput.trim()) {
-                new Notice('请输入故事设定', 3000);
+                new Notice(t("goldenOpening.common.k39"), 3000);
                 return;
             }
             await this.generateHooks();
@@ -313,7 +313,7 @@ export class GoldenOpeningModal extends Modal {
         checkBtn.disabled = this.isCheckingHooks;
         checkBtn.onclick = async () => {
             if (!this.textInput.trim()) {
-                new Notice('请粘贴开篇正文', 3000);
+                new Notice(t("goldenOpening.common.k40"), 3000);
                 return;
             }
             await this.checkHooks();
@@ -328,8 +328,8 @@ export class GoldenOpeningModal extends Modal {
             scoreCard.createEl('div', { text: t("goldenOpening.hooks.k15"), cls: 'nw-go-score-label' });
             scoreCard.createEl('div', {
                 text: this.hookCheckResult.overallScore >= 8 ? t("goldenOpening.hooks.k16") :
-                      this.hookCheckResult.overallScore >= 6 ? '良好' :
-                      this.hookCheckResult.overallScore >= 4 ? '一般' : '需加强',
+                      this.hookCheckResult.overallScore >= 6 ? t("goldenOpening.hooks.k20") :
+                      this.hookCheckResult.overallScore >= 4 ? t("goldenOpening.hooks.k21") : t("goldenOpening.hooks.k22"),
                 cls: 'nw-go-score-grade'
             });
 
@@ -370,7 +370,7 @@ export class GoldenOpeningModal extends Modal {
         analyzeBtn.disabled = this.isAnalyzingRhythm;
         analyzeBtn.onclick = async () => {
             if (!this.textInput.trim()) {
-                new Notice('请粘贴开篇正文', 3000);
+                new Notice(t("goldenOpening.common.k40"), 3000);
                 return;
             }
             await this.analyzeRhythm();
@@ -443,7 +443,7 @@ export class GoldenOpeningModal extends Modal {
         generateBtn.disabled = this.isGeneratingCharIntro;
         generateBtn.onclick = async () => {
             if (!this.premiseInput.trim() || !this.protagonistInput.trim()) {
-                new Notice('请输入故事设定和主角设定', 3000);
+                new Notice(t("goldenOpening.common.k41"), 3000);
                 return;
             }
             await this.generateCharacterIntro();
@@ -491,7 +491,7 @@ export class GoldenOpeningModal extends Modal {
         analyzeBtn.disabled = this.isAnalyzingWorldbuilding;
         analyzeBtn.onclick = async () => {
             if (!this.textInput.trim()) {
-                new Notice('请粘贴开篇正文', 3000);
+                new Notice(t("goldenOpening.common.k40"), 3000);
                 return;
             }
             await this.analyzeWorldbuilding();
@@ -555,7 +555,7 @@ export class GoldenOpeningModal extends Modal {
         scoreBtn.disabled = this.isScoring;
         scoreBtn.onclick = async () => {
             if (!this.textInput.trim()) {
-                new Notice('请粘贴开篇正文', 3000);
+                new Notice(t("goldenOpening.common.k40"), 3000);
                 return;
             }
             await this.scoreOpening();
@@ -570,8 +570,8 @@ export class GoldenOpeningModal extends Modal {
             overallCard.createEl('div', { text: t("goldenOpening.scoring.k7"), cls: 'nw-go-overall-label' });
             overallCard.createEl('div', {
                 text: this.openingScoreResult.overall >= 9 ? t("goldenOpening.scoring.k8") :
-                      this.openingScoreResult.overall >= 7 ? '优秀开篇' :
-                      this.openingScoreResult.overall >= 5 ? '合格开篇' : '需要打磨',
+                      this.openingScoreResult.overall >= 7 ? t("goldenOpening.scoring.k15") :
+                      this.openingScoreResult.overall >= 5 ? t("goldenOpening.scoring.k16") : t("goldenOpening.scoring.k17"),
                 cls: 'nw-go-overall-grade'
             });
 
@@ -612,7 +612,7 @@ export class GoldenOpeningModal extends Modal {
         this.isGeneratingChapters = true;
         this.render();
 
-        const notice = new Notice('⏳ 正在生成黄金三章大纲...', 0);
+        const notice = new Notice(t("goldenOpening.common.k42"), 0);
 
         try {
             const systemPrompt = `你是专业的网文开篇设计师，精通黄金三章设计法则。
@@ -724,7 +724,7 @@ export class GoldenOpeningModal extends Modal {
         this.isGeneratingHooks = true;
         this.render();
 
-        const notice = new Notice('⏳ 正在生成开篇钩子...', 0);
+        const notice = new Notice(t("goldenOpening.hooks.k23"), 0);
 
         try {
             const systemPrompt = `你是专业的网文开篇钩子设计师。
@@ -809,7 +809,7 @@ export class GoldenOpeningModal extends Modal {
         this.isCheckingHooks = true;
         this.render();
 
-        const notice = new Notice('⏳ 正在检测钩子强度...', 0);
+        const notice = new Notice(t("goldenOpening.common.k46"), 0);
 
         try {
             const systemPrompt = `你是专业的网文编辑，擅长评估开篇钩子的质量。
@@ -904,7 +904,7 @@ ${this.textInput.slice(0, 1000)}
         this.isAnalyzingRhythm = true;
         this.render();
 
-        const notice = new Notice('⏳ 正在分析开篇节奏...', 0);
+        const notice = new Notice(t("goldenOpening.common.k47"), 0);
 
         try {
             const systemPrompt = `你是专业的网文节奏分析师。
@@ -1002,7 +1002,7 @@ ${this.textInput}
         this.isGeneratingCharIntro = true;
         this.render();
 
-        const notice = new Notice('⏳ 正在生成人物登场方案...', 0);
+        const notice = new Notice(t("goldenOpening.common.k48"), 0);
 
         try {
             const systemPrompt = `你是专业的网文人物设计师。
@@ -1093,7 +1093,7 @@ ${this.textInput}
         this.isAnalyzingWorldbuilding = true;
         this.render();
 
-        const notice = new Notice('⏳ 正在检测世界观融入...', 0);
+        const notice = new Notice(t("goldenOpening.common.k49"), 0);
 
         try {
             const systemPrompt = `你是专业的网文世界观融入设计师。
@@ -1182,7 +1182,7 @@ ${this.textInput}
         this.isScoring = true;
         this.render();
 
-        const notice = new Notice('⏳ 正在进行综合评分...', 0);
+        const notice = new Notice(t("goldenOpening.scoring.k18"), 0);
 
         try {
             const systemPrompt = `你是专业的网文开篇评估专家。
