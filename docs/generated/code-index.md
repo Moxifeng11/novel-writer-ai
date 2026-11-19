@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146888 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19560 | 296 | 204 | 69% |
-| `shared/` | 259 | 52201 | 2198 | 1718 | 78% |
+| `shared/` | 259 | 52202 | 2198 | 1718 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1583 | 88 | 58 | 66% |
-| `ui/` | 304 | 113935 | 1181 | 935 | 79% |
+| `ui/` | 304 | 113944 | 1181 | 935 | 79% |
 
 ## 文件清单
 
@@ -608,7 +608,7 @@
 | `shared/project-catalog.ts` | 183 | 7 | 7 |
 | `shared/project-index-model.ts` | 488 | 21 | 12 |
 | `shared/project-mode.ts` | 86 | 5 | 5 |
-| `shared/project-name.ts` | 119 | 6 | 6 |
+| `shared/project-name.ts` | 120 | 6 | 6 |
 | `shared/project-root.ts` | 48 | 2 | 2 |
 | `shared/project-standard.ts` | 28 | 1 | 0 |
 | `shared/prompt-budget.ts` | 575 | 19 | 17 |
@@ -808,7 +808,7 @@
 | `ui/cowrite/memory-manager-modal.ts` | 156 | 1 | 1 |
 | `ui/cowrite/suggestion-edit-modal.ts` | 161 | 1 | 1 |
 | `ui/cowrite/suggestion-history-store.ts` | 111 | 1 | 1 |
-| `ui/create-project-modal.ts` | 490 | 2 | 2 |
+| `ui/create-project-modal.ts` | 491 | 2 | 2 |
 | `ui/cross-volume-state-modal.ts` | 235 | 1 | 1 |
 | `ui/diagnose-writer-modal.ts` | 363 | 1 | 1 |
 | `ui/draggable-panel.ts` | 379 | 2 | 2 |
@@ -941,7 +941,7 @@
 | `ui/services/flow-repair-host.ts` | 246 | 8 | 1 |
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
-| `ui/services/project-create-service.ts` | 473 | 6 | 5 |
+| `ui/services/project-create-service.ts` | 481 | 6 | 5 |
 | `ui/settings-tab.ts` | 375 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 40 | 1 | 1 |

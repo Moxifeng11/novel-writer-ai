@@ -268,6 +268,14 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
   技巧分类两处 7 项 map 合并为一组键；保留 `log.warn/error` 五行；zh/en 资源各 **4485** 条；
   棘轮收紧到 **215 文件 / 7000 条**；`kb-modals-semantic-classes` 4 例改断言（标题不含 CJK）+
   `kb-modals-logic` 12 例零修改；实机 7 场景 zh/en 零横向溢出、en UI 文案 CJK=0。
+- 第二期第35片（2026-11-19，DSH）：新建长篇小说项目弹窗 + 创建服务 + 项目名校验 ——
+  `ui/create-project-modal.ts`（490 行 / 55 条）+ `ui/services/project-create-service.ts`（473 行 / 42 条）+
+  `shared/project-name.ts`（119 行）迁 `createProject.*` 45 + `createProject.service.*` 12 + `projectName.*` 7
+  共 **64 键**（AI 随机构思 / 题材 / 原创与同人 / 设定库导入 / 覆盖确认 / 五个 reason / 创建完成 Notice /
+  七条名称校验）；列表分隔符走 `listSep`（zh `、` / en `, `）；保留 AI 提示词、五组素材数组、题材标签、`\.project` 正则；
+  zh/en 资源各 **4549** 条；棘轮收紧到 **215 文件 / 6932 条**；新增 `tests/unit/ui/create-project-i18n.test.ts` 4 例
+  （源码静态扫描替代 DOM），`fanfic-gate-audit` 改为断言键名；实机 zh/en 三场景 640×1288，en 剩余 CJK
+  全是题材标签与 `shared/story-structure.ts` 结构数据。
 - 后续：第二期余下（知识库 D 类两文件 `ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`
   用户已裁定随视觉重构；散落弹窗 golden-opening 1982 / novel-tags 1099 / add-fanfic-setting 973 /
   ai-builder 864 等），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
@@ -278,6 +286,6 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
 
 1 → 2 → 3 → 4 → 5 →（6 可选）→ 7。
 
-进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~34 片（命令面板 → 知识库四个管理弹窗）已交付（2026-11-18/19）；下一个候选是 ⑦ 第二期余下（散落弹窗 golden-opening / novel-tags / add-fanfic-setting / ai-builder 等，知识库 D 类两文件随视觉重构）。
+进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~35 片（命令面板 → 新建长篇小说项目弹窗）已交付（2026-11-18/19）；下一个候选是 ⑦ 第二期余下（散落弹窗 golden-opening / novel-tags / add-fanfic-setting / ai-builder 等，知识库 D 类两文件随视觉重构）。
 
 理由：1 是修「假成功」缺陷；2 是把已交付引擎变成写作时可见的价值；3 是投稿刚需且不依赖 AI；4/5 是低成本体验补洞；6/7 视需要。

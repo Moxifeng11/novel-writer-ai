@@ -58,7 +58,7 @@
     "ui/cowrite/cowrite-mappers.ts": 20,
     "ui/cowrite/live-analysis-controller.ts": 7,
     "ui/cowrite/suggestion-history-store.ts": 5,
-    "ui/create-project-modal.ts": 108,
+    "ui/create-project-modal.ts": 55,
     "ui/cross-volume-state-modal.ts": 44,
     "ui/diagnose-writer-modal.ts": 61,
     "ui/draggable-panel.ts": 2,
@@ -171,7 +171,7 @@
     "ui/services/flow-repair-host.ts": 13,
     "ui/services/human-sample-loader.ts": 5,
     "ui/services/humanness-scorer.ts": 2,
-    "ui/services/project-create-service.ts": 57,
+    "ui/services/project-create-service.ts": 42,
     "ui/settings/api-section.ts": 1,
     "ui/settings/fingerprint-section.ts": 4,
     "ui/settings/knowledge-section.ts": 4,
@@ -216,7 +216,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 7000,
+  "total": 6932,
   "updatedAt": "2026-11-19",
-  "note": "第34片 知识库弹窗（导入/编辑/题材/批量）迁 t()，删 139 条中文字面量"
+  "note": ""
 }

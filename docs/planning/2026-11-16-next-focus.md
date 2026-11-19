@@ -3020,3 +3020,57 @@ preflight **EXIT=0**（985 文件 / **10,306 通过 + 3 跳过**），日志 `D:
 **下一轮候选**：散落弹窗 golden-opening（1,982 字）/ novel-tags（1,099）/ add-fanfic-setting（973）/
 ai-builder（864）；知识库 D 类两文件（`ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`）
 按用户裁定（m16938）随视觉重构；第三期补齐 en 并逐面量布局（I18N-06）。
+
+
+## 第一百零三轮：i18n 第二期第35片 —— 新建长篇小说项目弹窗 + 创建服务 + 项目名校验（2026-11-19，DSH）
+
+**范围**：`ui/create-project-modal.ts`（490 行 / 55 条含中文）、`ui/services/project-create-service.ts`
+（473 行 / 42 条）、`shared/project-name.ts`（119 行）。用户 m18689「开始下一步」后按顺序取的第一片；
+新建入口是「长篇小说」模式唯一的建项入口，服务层与 shared 校验都被它直接显示。
+
+**改动**：迁 **64 键** —— `createProject.*` 45（标题/名称/AI 随机构思 + 五种失败提示/题材与标签/
+创作类型/项目类型原创与同人/设定库导入六态/简介/取消与创建/覆盖确认）、`createProject.service.*` 12
+（创建中 Notice、五个 `reason`、模板与结构初始化失败、复制失败清单、`listSep`、创建完成 Notice）、
+`projectName.*` 7（空/太短/太长/非法字符/保留目录/Windows 保留名/重名）。四条约定：
+
+- **服务层也迁**：五个 `reason` 是弹窗直接显示的错误文案，留在 service 里会把语言定格在调用时刻；
+  分批完成的 `warnings` 与复制失败清单同理（`listSep` 让 `.join()` 分隔符随语言）。
+- **shared 允许 `t()`**：`project-name.ts` 被四个弹窗共用（新建/改名/AI 构建/世界观生成），
+  七条提示写进函数体内（不是模块级常量），每次校验时求值。
+- **保留中文**：AI systemPrompt/userPrompt、五组素材数组、题材标签值（玄幻…末世）、`.project` 解析正则
+  `/作品名称:\s*(.+)/`、模板名过滤 `模板`、模板路径与 frontmatter 段名。
+- **`fanfic-gate-audit` 改断言**：原本硬断言 service 源码含「所选同人设定尚未通过人工审核」，
+  改成断言键名 `createProject.service.denyNotApproved`（仍锁「service 里出现这条文案的键」）。
+
+**验收**：`check:i18n` zh/en 各 **4549**（+64）、无法解析键 0、动态键 26 处、
+棘轮 **215 文件 / 6932 条**（7000 → 6932；两文件仍在基线，保留 AI 提示词与日志）；
+新增 `tests/unit/ui/create-project-i18n.test.ts` 4 例（源码静态扫描：`text|placeholder|title:` 后无 CJK、
+service 的 `reason:`/`warnings.push('`/`new Notice(` 后无 CJK、代码用到的每个 `t()` 键中英都能解析、
+七条 `projectName.*` 齐全且插值保留书名）；`npx tsc --noEmit` EXIT=0、lint 0 error（1037 warning 均存量）；
+实机 zh/en 三场景（`D:\nw-dev-vault\_visual-i18n35\{create-original,create-fanfic,create-picker}-{zh-CN,en-US}.png`，
+640×1288，脚本 `D:\nw-tmp\snap-i18n35.mjs`）——en 标题 `New long-form novel project`、`Project name` /
+`Genre` / `Creation type` / `Project type` / `Source work` / `AI brainstorm` / `Original` / `Fan fiction` /
+`Cancel` / `Create project`，剩余 CJK 全是题材标签与 `shared/story-structure.ts` 的结构数据；
+`check:bundle` main.js **6,107,776**（+6,706，文案外置）、styles.css **799,303**（未变）；
+preflight **EXIT=0**（986 文件 / **10,310 通过 + 3 跳过**），日志 `D:/nw-tmp/preflight-i18n35.log`。
+
+**坑**
+1. **「只有新弹窗是中文」= 产物没同步**：en 下命令名、知识库视图全英文，唯独新建项目弹窗整块中文，
+   一度怀疑 `setLocale()` 时序（`main.ts:1112` / `engine-registry.ts:1285` / `locale-setting.ts:37` 三处调用点全查过）。
+   实为开发 vault 插件目录是**真实目录**，里面 `main.js` 还是第34片那次构建的旧包；`node scripts/dev-vault.mjs
+   sync --vault=D:\nw-dev-vault`（更新 4 个文件）后即正确。判据：`grep -c 'createProject.randomBtn' main.js` 为 0。
+2. **`shared/` 迁移不减棘轮**：`check-i18n` 只扫 `ui/**`，`project-name.ts` 迁完文件数与条数都不变，
+   别误以为门禁没生效。
+3. **en 资源里别写 vault 目录名**：`createProject.service.denyNoTemplates` 初稿写成
+   `No template files found under the 元文件 folder`，被 `i18n-parity` 拦下（英文资源不许有 CJK，只放行语言自称项）；
+   改成 `in the template folder`。目录名是数据，不该进 en 文案。
+4. **onOpen 重的弹窗别硬搭 DOM**：`onOpen` 里有 AI 按钮、设定库下拉与 `StorySettingsEditor`，
+   源码静态断言比渲染桩更稳也更敏感。
+5. **既有视觉问题（非本片回归）**：弹窗内 `.nw-story-settings` 横向溢出（sw 663 > cw 545，底部出现横向滚动条），
+   `.nw-story-structure-grid` 在 `styles-src/12-agent-and-structure.css:368` 是 `repeat(5, minmax(0, 1fr))`，
+   卡片约 95px 宽，舞台百分比文字溢出卡片；旧包同样数值，记 backlog。
+
+**下一轮候选**：`ui/story-settings-form.ts`（227 行 / 26 行 CJK）+ `shared/story-structure.ts` 的故事结构文案
+（本片 en 截图里唯一还在中文的 UI 区域，且可顺手修上面的卡片溢出）；之后散落弹窗 golden-opening（1,982）/
+novel-tags（1,099）/ add-fanfic-setting（973）/ ai-builder（864）；知识库 D 类两文件按用户裁定（m16938）随视觉重构。
+

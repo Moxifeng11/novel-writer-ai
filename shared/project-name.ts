@@ -12,6 +12,7 @@ export interface ProjectNameValidation {
 }
 
 import { MODE_LIBRARY_ROOT_LIST } from './creation-mode';
+import { t } from '@/i18n';
 
 const RESERVED_NAMES = new Set([
     '元文件',
@@ -61,20 +62,20 @@ export function sanitizeProjectName(raw: string): string {
  */
 export function validateProjectName(raw: string, existing: string[] = []): ProjectNameValidation {
     const normalized = normalizeProjectName(raw);
-    if (!normalized) return { valid: false, normalized, error: '项目名不能为空' };
-    if (normalized.length < 2) return { valid: false, normalized, error: '项目名至少 2 个字符' };
-    if (normalized.length > 20) return { valid: false, normalized, error: '项目名最多 20 个字符' };
+    if (!normalized) return { valid: false, normalized, error: t('projectName.empty') };
+    if (normalized.length < 2) return { valid: false, normalized, error: t('projectName.tooShort') };
+    if (normalized.length > 20) return { valid: false, normalized, error: t('projectName.tooLong') };
     if (!ALLOWED_RE.test(normalized)) {
-        return { valid: false, normalized, error: '项目名只能包含中文、字母、数字、下划线、连字符' };
+        return { valid: false, normalized, error: t('projectName.invalidChars') };
     }
     if (RESERVED_NAMES.has(normalized)) {
-        return { valid: false, normalized, error: `「${normalized}」是系统保留目录，不能作为项目名` };
+        return { valid: false, normalized, error: t('projectName.reservedDir', { name: normalized }) };
     }
     if (WINDOWS_RESERVED.test(normalized)) {
-        return { valid: false, normalized, error: `「${normalized}」是 Windows 保留名，不能作为项目名` };
+        return { valid: false, normalized, error: t('projectName.windowsReserved', { name: normalized }) };
     }
     if (existing.some(name => name === normalized)) {
-        return { valid: false, normalized, error: `项目「${normalized}」已存在，请换一个名称` };
+        return { valid: false, normalized, error: t('projectName.duplicate', { name: normalized }) };
     }
     return { valid: true, normalized };
 }

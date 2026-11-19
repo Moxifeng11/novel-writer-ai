@@ -61,7 +61,8 @@ describe('B4-2：创建项目时复制设定', () => {
         expect(copyIndex).toBeGreaterThan(-1);
         // 闸门在复制之前
         expect(gateIndex).toBeLessThan(copyIndex);
-        expect(service).toContain('所选同人设定尚未通过人工审核');
+        // 拒绝原因走 i18n 键（第二期第35片）：key 在 = 仍向用户说明「未过审」
+        expect(service).toContain("t('createProject.service.denyNotApproved')");
     });
 });
 

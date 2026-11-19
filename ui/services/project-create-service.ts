@@ -29,6 +29,7 @@ import { removeProjectDirectory } from '@/shared/project-catalog';
 import { fanficSettingsFileName, isFanficApproved } from '@/ui/full-writer/fanfic-settings-utils';
 import { buildCreationModeMetaSection, type CreationModeMeta } from '@/shared/creation-mode';
 import type { LongStorySettings } from '@/shared/story-structure';
+import { t } from '@/i18n';
 
 const log = createLogger('ProjectCreateService');
 
@@ -138,12 +139,12 @@ export async function createLongNovelProject(
             if (selected instanceof TFile) {
                 const content = await app.vault.read(selected);
                 if (!isFanficApproved(content)) {
-                    return { created: false, projectId: '', fileCount: 0, reason: '所选同人设定尚未通过人工审核' };
+                    return { created: false, projectId: '', fileCount: 0, reason: t('createProject.service.denyNotApproved') };
                 }
             }
         } catch (e) {
             log.warn('[ProjectCreate] 校验同人设定审核状态失败:', e);
-            return { created: false, projectId: '', fileCount: 0, reason: '无法读取所选同人设定' };
+            return { created: false, projectId: '', fileCount: 0, reason: t('createProject.service.denyUnreadable') };
         }
     }
 
@@ -155,11 +156,11 @@ export async function createLongNovelProject(
     const exists = await adapter.exists(projectId);
     if (exists) {
         if (!params.confirmOverwrite) {
-            return { created: false, projectId, fileCount: 0, reason: '项目已存在，需要确认是否覆盖' };
+            return { created: false, projectId, fileCount: 0, reason: t('createProject.service.denyExists') };
         }
         const overwrite = await params.confirmOverwrite();
         if (!overwrite) {
-            return { created: false, projectId, fileCount: 0, reason: '用户取消覆盖已有项目' };
+            return { created: false, projectId, fileCount: 0, reason: t('createProject.service.denyCancelled') };
         }
 
         // 覆盖前必须真的删干净：删不掉就中止，否则「新」项目里混着旧内容，
@@ -168,7 +169,7 @@ export async function createLongNovelProject(
         await new Promise(r => setTimeout(r, 300));
     }
 
-    const notice = new Notice(`正在创建项目「${projectName}」...`, 0);
+    const notice = new Notice(t('createProject.service.creating', { name: projectName }), 0);
     const projectRootId = projectId;
     let count = 0;
     /** 复制失败的文件（不影响成败，但必须告知用户少了什么） */
@@ -215,7 +216,7 @@ export async function createLongNovelProject(
         const source = await scanDir('元文件');
         if (source.files.length === 0) {
             notice.hide();
-            return { created: false, projectId: projectRootId, fileCount: 0, reason: '未找到「元文件」下的模板文件' };
+            return { created: false, projectId: projectRootId, fileCount: 0, reason: t('createProject.service.denyNoTemplates') };
         }
 
         const dirsToCreate = new Set<string>();
@@ -392,11 +393,11 @@ ${description ? `## 描述\n${description}\n\n` : ''}${buildCreationModeMetaSect
         }
 
         if (!(await writeCreationModeGuideFile(app, projectRootId, creationMeta))) {
-            warnings.push('创作模式指南写入失败（不影响项目结构）');
+            warnings.push(t('createProject.service.guideModeFailed'));
         }
         if (creationMeta.storySettings
             && !(await writeStoryStructureGuideFile(app, projectRootId, creationMeta.storySettings))) {
-            warnings.push('故事结构指南写入失败（不影响项目结构）');
+            warnings.push(t('createProject.service.guideStructureFailed'));
         }
 
         try {
@@ -443,12 +444,19 @@ ${description ? `## 描述\n${description}\n\n` : ''}${buildCreationModeMetaSect
         notice.hide();
         // DSH-20261113-27：部分失败不再静默——提示里写清少了什么
         if (failedCopies.length > 0) {
-            warnings.push(`复制失败 ${failedCopies.length} 个文件：${failedCopies.slice(0, 5).join('、')}`);
+            warnings.push(t('createProject.service.copyFailedList', {
+                count: failedCopies.length,
+                files: failedCopies.slice(0, 5).join(t('createProject.service.listSep')),
+            }));
         }
         const warnText = failedCopies.length > 0
-            ? `；警告：${failedCopies.length} 个文件复制失败（${failedCopies.slice(0, 3).join('、')}` + (failedCopies.length > 3 ? '…' : '') + ')'
+            ? t('createProject.service.copyWarn', {
+                count: failedCopies.length,
+                files: failedCopies.slice(0, 3).join(t('createProject.service.listSep'))
+                    + (failedCopies.length > 3 ? '…' : ''),
+            })
             : '';
-        new Notice(`✅ 项目「${projectName}」创建完成（${count} 个文件）${warnText}`, failedCopies.length > 0 ? 12000 : 5000);
+        new Notice(t('createProject.service.created', { name: projectName, count }) + warnText, failedCopies.length > 0 ? 12000 : 5000);
 
         try {
             if (typeof plugin.openFullWriterView === 'function') {

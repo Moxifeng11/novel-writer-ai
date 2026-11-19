@@ -1,4 +1,5 @@
 import { App, Modal, Notice, DataAdapter, TFile } from 'obsidian';
+import { t } from '@/i18n';
 import { OperationConfirmModal } from './components/progress';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 import NovelWriterPlugin from '@/main';
@@ -70,29 +71,29 @@ export class CreateProjectModal extends Modal {
         const headerEl = contentEl.createDiv({ cls: 'nw-modal-header' });
         headerEl.createEl('span', { cls: 'nw-modal-icon', text: '📖' });
         const titleWrap = headerEl.createDiv({ cls: 'nw-modal-title-wrap' });
-        titleWrap.createEl('h2', { cls: 'nw-modal-title', text: '新建长篇小说项目' });
+        titleWrap.createEl('h2', { cls: 'nw-modal-title', text: t('createProject.title') });
 
         const bodyEl = contentEl.createDiv({ cls: 'nw-modal-body' });
 
         const projectNameGroup = bodyEl.createDiv({ cls: 'nw-form-group' });
-        projectNameGroup.createEl('label', { cls: 'nw-form-label nw-form-label-required', text: '项目名称' });
+        projectNameGroup.createEl('label', { cls: 'nw-form-label nw-form-label-required', text: t('createProject.nameLabel') });
         const projectNameInput = projectNameGroup.createEl('input', {
             type: 'text',
-            placeholder: '请输入项目名称（中文小说名）',
+            placeholder: t('createProject.namePlaceholder'),
             cls: 'nw-input nw-form-input'
         });
 
         // AI 随机构思：一次生成书名 / 题材 / 简介，避免用户从空白开始
         const aiRandomBtn = projectNameGroup.createEl('button', {
-            text: '🎲 AI 随机构思',
+            text: t('createProject.randomBtn'),
             cls: 'nw-btn nw-btn-secondary nw-random-project-btn',
-            attr: { type: 'button', title: '根据题材随机生成书名、题材与项目简介' }
+            attr: { type: 'button', title: t('createProject.randomTitle') }
         });
         aiRandomBtn.onclick = async () => {
             if (aiRandomBtn.disabled) return;
             aiRandomBtn.disabled = true;
             const originalText = aiRandomBtn.textContent || '';
-            aiRandomBtn.textContent = '⏳ 构思中...';
+            aiRandomBtn.textContent = t('createProject.randomBusy');
             try {
                 const preferredGenre = genreInput.value.trim();
                 // 每次点击都换一组随机维度与随机种子：仅靠 temperature 无法避免
@@ -130,12 +131,12 @@ ${preferredGenre
                     { bypassCache: true }
                 );
                 if (result.error) {
-                    showErrorNotice(`AI 构思失败：${result.error}`, { timeout: 8000 });
+                    showErrorNotice(t('createProject.randomFailed', { error: result.error }), { timeout: 8000 });
                     return;
                 }
                 const matched = result.content.replace(/```json|```/g, '').match(/\{[\s\S]*\}/);
                 if (!matched) {
-                    showErrorNotice('AI 返回格式异常，请重试', { timeout: 6000 });
+                    showErrorNotice(t('createProject.randomBadFormat'), { timeout: 6000 });
                     return;
                 }
                 const data = JSON.parse(matched[0]) as { name?: string; genre?: string; description?: string };
@@ -148,10 +149,10 @@ ${preferredGenre
                     storyEditor.setGenre(genreInput.value);
                 }
                 if (data.description) descriptionInput.value = String(data.description).trim();
-                showSuccessNotice('已生成随机项目构思', { timeout: 3000 });
+                showSuccessNotice(t('createProject.randomDone'), { timeout: 3000 });
             } catch (e) {
                 log.warn('[CreateProject] AI 随机构思失败:', e);
-                showErrorNotice('AI 构思失败，请检查网络或模型配置', { timeout: 8000 });
+                showErrorNotice(t('createProject.randomNetwork'), { timeout: 8000 });
             } finally {
                 aiRandomBtn.disabled = false;
                 aiRandomBtn.textContent = originalText;
@@ -159,7 +160,7 @@ ${preferredGenre
         };
 
         const genreGroup = bodyEl.createDiv({ cls: 'nw-form-group' });
-        genreGroup.createEl('label', { cls: 'nw-form-label nw-form-label-required', text: '题材' });
+        genreGroup.createEl('label', { cls: 'nw-form-label nw-form-label-required', text: t('createProject.genreLabel') });
         const genreTags = ['玄幻', '仙侠', '都市', '科幻', '悬疑', '历史', '言情', '奇幻', '武侠', '末世'];
         const tagContainer = genreGroup.createEl('div', { cls: 'nw-genre-tags' });
 
@@ -175,7 +176,7 @@ ${preferredGenre
 
         const genreInput = genreGroup.createEl('input', {
             type: 'text',
-            placeholder: '输入题材（或点击上方标签）',
+            placeholder: t('createProject.genrePlaceholder'),
             cls: 'nw-input nw-form-input'
         });
 
@@ -187,44 +188,44 @@ ${preferredGenre
         const modeGroup = bodyEl.createDiv({ cls: 'nw-form-group' });
         modeGroup.createEl('label', {
             cls: 'nw-form-label nw-form-label-required',
-            text: '创作类型',
+            text: t('createProject.modeLabel'),
         });
         modeGroup.createEl('p', {
             cls: 'nw-text-12-muted',
-            text: '本入口仅创建长篇小说。短篇与剧本请使用各自的独立入口。',
+            text: t('createProject.modeHint'),
         });
 
         const typeGroup = bodyEl.createDiv({ cls: 'nw-form-group' });
-        typeGroup.createEl('label', { cls: 'nw-form-label', text: '项目类型' });
+        typeGroup.createEl('label', { cls: 'nw-form-label', text: t('createProject.typeLabel') });
         const typeToggle = typeGroup.createDiv({ cls: 'nw-project-type-toggle' });
 
         let projectType: 'original' | 'fanfic' = 'original';
 
-        const originalBtn = typeToggle.createEl('button', { text: '🎨 原创', cls: 'nw-type-btn active', attr: { type: 'button', title: '原创小说项目' } });
-        const fanficBtn = typeToggle.createEl('button', { text: '📖 同人', cls: 'nw-type-btn', attr: { type: 'button', title: '同人小说项目（需填原作信息）' } });
+        const originalBtn = typeToggle.createEl('button', { text: t('createProject.typeOriginal'), cls: 'nw-type-btn active', attr: { type: 'button', title: t('createProject.typeOriginalTitle') } });
+        const fanficBtn = typeToggle.createEl('button', { text: t('createProject.typeFanfic'), cls: 'nw-type-btn', attr: { type: 'button', title: t('createProject.typeFanficTitle') } });
 
         const fanficFields = bodyEl.createDiv({ cls: 'nw-fanfic-fields' });
 
         const sourceGroup = fanficFields.createDiv({ cls: 'nw-form-group' });
-        sourceGroup.createEl('label', { cls: 'nw-form-label', text: '原作名称' });
+        sourceGroup.createEl('label', { cls: 'nw-form-label', text: t('createProject.sourceLabel') });
         const sourceInput = sourceGroup.createEl('input', { type: 'text', cls: 'nw-input nw-form-input' });
 
         const sourceWorldGroup = fanficFields.createDiv({ cls: 'nw-form-group' });
-        sourceWorldGroup.createEl('label', { cls: 'nw-form-label', text: '原作世界观简述（可选，辅助AI理解）' });
+        sourceWorldGroup.createEl('label', { cls: 'nw-form-label', text: t('createProject.worldLabel') });
         const sourceWorldInput = sourceWorldGroup.createEl('textarea', { cls: 'nw-textarea nw-form-textarea' });
 
         const settingsGroup = fanficFields.createDiv({ cls: 'nw-form-group nw-settings-import' });
-        settingsGroup.createEl('label', { cls: 'nw-form-label', text: '从设定库导入（可选）' });
+        settingsGroup.createEl('label', { cls: 'nw-form-label', text: t('createProject.importLabel') });
 
         const settingsSelector = settingsGroup.createDiv({ cls: 'nw-fanfic-selector' });
         const settingsTrigger = settingsSelector.createEl('button', {
-            text: '选择设定库',
+            text: t('createProject.importTrigger'),
             cls: 'nw-btn nw-btn-secondary nw-fanfic-selector-trigger',
-            attr: { title: '从已有设定库导入同人设定' }
+            attr: { title: t('createProject.importTriggerTitle') }
         });
         settingsTrigger.type = 'button';
         const settingsValue = settingsSelector.createDiv({ cls: 'nw-fanfic-selector-value' });
-        settingsValue.setText('当前：手动输入');
+        settingsValue.setText(t('createProject.importCurrentManual'));
         const settingsList = settingsSelector.createDiv({ cls: 'nw-fanfic-selector-list' });
 
         let settingEntries: Array<{ path: string; name: string }> = [];
@@ -243,15 +244,15 @@ ${preferredGenre
 
         const applySetting = async (selectedPath: string, selectedName: string) => {
             this.selectedFanficSettingPath = selectedPath;
-            settingsTrigger.setText(selectedName || '手动输入');
+            settingsTrigger.setText(selectedName || t('createProject.importManual'));
             if (!selectedPath) {
-                settingsValue.setText('当前：手动输入');
+                settingsValue.setText(t('createProject.importCurrentManual'));
                 sourceWorldInput.disabled = false;
                 sourceWorldInput.value = '';
                 return;
             }
 
-            settingsValue.setText(`当前：${selectedName}`);
+            settingsValue.setText(t('createProject.importCurrent', { name: selectedName }));
             try {
                 const file = this.app.vault.getAbstractFileByPath(selectedPath);
                 if (file instanceof TFile) {
@@ -261,7 +262,7 @@ ${preferredGenre
                         const fmText = fmMatch[1];
                         const nameMatch = fmText.match(/作品名称:\s*(.+)/);
                         if (nameMatch) sourceInput.value = nameMatch[1].trim();
-                        sourceWorldInput.value = `已从设定库导入：${selectedName}\n请查看 ${file.path} 获取完整设定`;
+                        sourceWorldInput.value = t('createProject.importImported', { name: selectedName, path: file.path });
                         sourceWorldInput.disabled = true;
                     }
                 }
@@ -293,12 +294,12 @@ ${preferredGenre
                 : settingEntries;
 
             if (!q) {
-                itemsContainer.createEl('div', { text: '选择设定库条目', cls: 'nw-fanfic-selector-hint' });
-                addSettingOption(itemsContainer, '手动输入', '', '手动输入');
+                itemsContainer.createEl('div', { text: t('createProject.importHint'), cls: 'nw-fanfic-selector-hint' });
+                addSettingOption(itemsContainer, t('createProject.importManual'), '', t('createProject.importManual'));
             }
 
             if (filtered.length === 0) {
-                itemsContainer.createEl('div', { text: q ? '没有匹配的设定' : '暂无可用设定', cls: 'nw-fanfic-selector-empty' });
+                itemsContainer.createEl('div', { text: q ? t('createProject.importNoMatch') : t('createProject.importEmpty'), cls: 'nw-fanfic-selector-empty' });
                 return;
             }
 
@@ -323,7 +324,7 @@ ${preferredGenre
 
                 const searchInput = settingsList.createEl('input', {
                     type: 'text',
-                    placeholder: '搜索设定...',
+                    placeholder: t('createProject.importSearchPlaceholder'),
                     cls: 'nw-input nw-fanfic-selector-search'
                 });
                 searchInput.addEventListener('input', () => renderFilteredItems(searchInput.value));
@@ -367,9 +368,9 @@ ${preferredGenre
         });
 
         const descGroup = bodyEl.createDiv({ cls: 'nw-form-group' });
-        descGroup.createEl('label', { cls: 'nw-form-label', text: '项目描述（可选）' });
+        descGroup.createEl('label', { cls: 'nw-form-label', text: t('createProject.descLabel') });
         const descriptionInput = descGroup.createEl('textarea', {
-            placeholder: '简要描述你的项目...',
+            placeholder: t('createProject.descPlaceholder'),
             cls: 'nw-textarea nw-form-textarea'
         });
 
@@ -388,12 +389,12 @@ ${preferredGenre
         }
 
         const footerEl = contentEl.createDiv({ cls: 'nw-modal-footer' });
-        const cancelBtn = footerEl.createEl('button', { text: '取消', cls: 'nw-btn nw-btn-secondary', attr: { type: 'button', title: '取消创建项目' } });
+        const cancelBtn = footerEl.createEl('button', { text: t('common.cancel'), cls: 'nw-btn nw-btn-secondary', attr: { type: 'button', title: t('createProject.cancelTitle') } });
         cancelBtn.onclick = () => this.close();
         const createButton = footerEl.createEl('button', {
-            text: '创建项目',
+            text: t('createProject.create'),
             cls: 'nw-btn nw-btn-primary',
-            attr: { type: 'button', title: '创建项目并复制元文件模板' },
+            attr: { type: 'button', title: t('createProject.createTitle') },
         });
         createButton.onclick = async () => {
             const projectName = projectNameInput.value.trim();
@@ -403,7 +404,7 @@ ${preferredGenre
             if (createButton.disabled) return;
 
             if (!genre) {
-                new Notice('❌ 请输入或选择题材', 3000);
+                new Notice(t('createProject.noGenre'), 3000);
                 return;
             }
 
@@ -430,16 +431,16 @@ ${preferredGenre
             };
             void creationMeta;
             createButton.disabled = true;
-            createButton.setText('创建中…');
+            createButton.setText(t('createProject.creating'));
             try {
                 await this.createProject(validation.normalized, genre, descriptionInput.value.trim(), projectType, sourceInput.value.trim(), sourceWorldInput.value.trim(), creationMeta);
             } catch (e) {
                 const errMsg = e instanceof Error ? e.message : String(e);
                 log.error('[小说工坊] 创建项目失败:', e);
-                showErrorNotice(`创建项目失败: ${errMsg}`, { timeout: 8000 });
+                showErrorNotice(t('createProject.createFailed', { error: errMsg }), { timeout: 8000 });
             } finally {
                 createButton.disabled = false;
-                createButton.setText('创建项目');
+                createButton.setText(t('createProject.create'));
             }
         };
     }
@@ -455,21 +456,21 @@ ${preferredGenre
             fanficSettingPath: this.selectedFanficSettingPath || undefined,
             creationMeta,
             confirmOverwrite: () => OperationConfirmModal.confirm(this.app, {
-                title: '覆盖项目',
-                description: `「${projectName}」已存在，覆盖？`,
-                confirmText: '确认覆盖',
-                cancelText: '取消',
+                title: t('createProject.overwriteTitle'),
+                description: t('createProject.overwriteDesc', { name: projectName }),
+                confirmText: t('createProject.overwriteConfirm'),
+                cancelText: t('common.cancel'),
             }),
         });
         if (!result.created) {
-            if (result.reason) showErrorNotice(`未创建项目：${result.reason}`, { timeout: 6000 });
+            if (result.reason) showErrorNotice(t('createProject.notCreated', { reason: result.reason }), { timeout: 6000 });
             return;
         }
         try {
             await this.prefill?.onCreated?.(result.projectId);
         } catch (e) {
             log.warn('[小说工坊] 预填项目创建后回调失败:', e);
-            showWarningNotice('项目已创建，但后续写入创意资料失败；请手动保存', { timeout: 8000 });
+            showWarningNotice(t('createProject.prefillFailed'), { timeout: 8000 });
         }
         this.close();
     }
