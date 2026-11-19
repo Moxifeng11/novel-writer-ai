@@ -11,7 +11,7 @@
 | `shared/` | 263 | 52896 | 2235 | 1748 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 306 | 113728 | 1186 | 947 | 80% |
+| `ui/` | 307 | 113858 | 1187 | 948 | 80% |
 
 ## 文件清单
 
@@ -729,8 +729,8 @@
 | `ui/appearance-settings.ts` | 604 | 3 | 3 |
 | `ui/asset-registry-modal.ts` | 154 | 1 | 1 |
 | `ui/backup-center-modal.ts` | 248 | 1 | 1 |
-| `ui/backup-yuan-modal.ts` | 126 | 1 | 1 |
-| `ui/batch-create-modal.ts` | 522 | 1 | 1 |
+| `ui/backup-yuan-modal.ts` | 134 | 1 | 1 |
+| `ui/batch-create-modal.ts` | 534 | 1 | 1 |
 | `ui/batch-import-modal.ts` | 1766 | 1 | 1 |
 | `ui/batch-novels-modal.ts` | 236 | 1 | 1 |
 | `ui/button-busy.ts` | 37 | 1 | 1 |
@@ -790,6 +790,7 @@
 | `ui/components/empty-state.ts` | 196 | 5 | 3 |
 | `ui/components/error-state.ts` | 57 | 3 | 3 |
 | `ui/components/modal-dirty-guard.ts` | 107 | 1 | 1 |
+| `ui/components/modal-running-guard.ts` | 91 | 1 | 1 |
 | `ui/components/notice-helpers.ts` | 160 | 3 | 3 |
 | `ui/components/progress/index.ts` | 28 | 4 | 0 |
 | `ui/components/progress/loading-overlay.ts` | 205 | 2 | 2 |
@@ -802,7 +803,7 @@
 | `ui/consistency-audit-modal.ts` | 282 | 2 | 1 |
 | `ui/context-injector-modal.ts` | 210 | 1 | 1 |
 | `ui/context-metrics-modal.ts` | 82 | 1 | 1 |
-| `ui/continue-chapters-modal.ts` | 568 | 1 | 1 |
+| `ui/continue-chapters-modal.ts` | 579 | 1 | 1 |
 | `ui/cowrite/body-save-controller.ts` | 284 | 3 | 2 |
 | `ui/cowrite/cowrite-mappers.ts` | 111 | 6 | 6 |
 | `ui/cowrite/history-modal.ts` | 56 | 1 | 1 |
@@ -928,7 +929,7 @@
 | `ui/protect-yuan-modal.ts` | 88 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 504 | 2 | 2 |
 | `ui/quality-loop-modal.ts` | 294 | 1 | 1 |
-| `ui/rebuild-chapters-modal.ts` | 362 | 1 | 1 |
+| `ui/rebuild-chapters-modal.ts` | 370 | 1 | 1 |
 | `ui/refill-modal.ts` | 650 | 1 | 1 |
 | `ui/rename-project-modal.ts` | 105 | 1 | 1 |
 | `ui/rendering/context-panel.ts` | 957 | 1 | 1 |

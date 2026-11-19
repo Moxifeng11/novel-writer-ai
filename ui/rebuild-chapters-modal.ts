@@ -14,6 +14,7 @@ import { createLogger } from '@/shared/logger';
 import { showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 import { OperationConfirmModal } from './components/progress/operation-confirm-modal';
 import { t } from '@/i18n';
+import { ModalRunningGuard } from './components/modal-running-guard';
 
 
 import { ObsidianFrontmatter } from '@/shared/file-system-port';
@@ -26,6 +27,9 @@ export class RebuildChaptersModal extends Modal {
     private plugin: NovelWriterPlugin;
     private contextManager: ContextManager;
     private aiEngine: AIEngine;
+    /** 长任务运行态：仅运行中才拦截关闭（审计 A-14） */
+    private running = false;
+    private runningGuard = new ModalRunningGuard(() => this.running);
 
     constructor(app: App, plugin: NovelWriterPlugin) {
         super(app);
@@ -39,6 +43,7 @@ export class RebuildChaptersModal extends Modal {
      */
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
+        this.runningGuard.attach(this, this.app);
         const { contentEl } = this;
 
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
@@ -192,6 +197,7 @@ export class RebuildChaptersModal extends Modal {
         if (!confirm) return;
 
         let mainNotice = progressHandle('rebuild-chapters', `⏳ 正在重建章节: 0/${total}`);
+        this.running = true;
 
         try {
             const chapNames = Array.from({ length: total }, (_, i) => `第${startNum + i}章`);
@@ -316,6 +322,7 @@ export class RebuildChaptersModal extends Modal {
             }
         }
 
+        this.running = false;
         mainNotice.hide();
         // U7：失败项汇总反馈（截取前 5 个避免 Notice 过长，完整原因见控制台日志）
         if (failures.length > 0) {
@@ -355,6 +362,7 @@ export class RebuildChaptersModal extends Modal {
      * onClose 方法。
      */
     onClose(): void {
+        this.running = false;
         const { contentEl } = this;
         contentEl.empty();
     }

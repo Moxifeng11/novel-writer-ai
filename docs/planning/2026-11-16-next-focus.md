@@ -3908,3 +3908,26 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 **门禁**：tsc 0；check:i18n zh/en 各 6069、棘轮 205 / 5365；check:css 基线 801891 字节 / 4338 类（+847 / +5）；check:inline-styles 474 不变；check:utility 46 类 / 137 次；check:bundle main.js 6,229,396 / styles.css 801,891；preflight EXIT=0。
 
 **下一步**：P2 #19（Esc 语义文档化 + 长任务弹窗 onClose 运行态确认）→ #20（AIEngine 绕过 registry 的三处临时实例收编）→ #13 遗留 A-17（撤销栈共享化）。
+
+## 第一百二十五轮：C 清单 P2 #19 —— Esc 语义文档化 + 长任务弹窗运行态确认（2026-11-20，DSH）
+
+**#19 长任务运行态守卫（A-14）**
+- 新增 `ui/components/modal-running-guard.ts`：`ModalRunningGuard`（构造传 `isRunning` 探针，`attach(modal, app)` 覆写实例 `close()`，`confirming` 闸门防 Esc 连按叠加确认框，`catch` 保持弹窗打开）。与 `modal-dirty-guard` 同拦截时机——Esc / 点遮罩 / 代码 `this.close()` 都经过覆写的 `close()`，放 `onClose` 里已经关完了。
+- **语义边界**：确认 = 「关闭弹窗，任务继续在后台跑（进度条仍在）」，不做「关闭即取消」——重建章节 / 继续创建 / 批量建章 / 备份元文件四个任务都没有 AbortSignal 基建，假装取消会造成更危险的误解。
+- 接入四个弹窗，任务开始置 `running = true`、结束/finally 复位、`onClose` 兜底重置：
+  - `ui/rebuild-chapters-modal.ts`（`rebuild()` 起循环前 / `mainNotice.hide()` 前）
+  - `ui/continue-chapters-modal.ts`（创建章节与生成续写两条路径，finally + catch 复位，共 3 处）
+  - `ui/batch-create-modal.ts`（短篇/剧本建单元 / 按全书规划建章两条路径）
+  - `ui/backup-yuan-modal.ts`（`backup()` 的 finally）
+- i18n 4 键 `modalRunningGuard.title|description|background|stay`，资源 zh/en 各 **6073**。
+- Esc 分层口径写成独立文档 `docs/design/2026-11-20-modal-close-and-esc-semantics.md`：L1 编辑面（收辅助、自动保存）/ L2 搜索（清词、关查找条）/ L3 表单弹窗（DirtyGuard 询问）/ L4 长任务（RunningGuard 问任务命运），外加两条硬规则（关弹窗 ≠ 停任务；非脏非运行不拦）与 backlog（AbortSignal 真取消、L1 撤销栈、剩余 DirtyGuard 接线）。
+
+**测试**
+- `tests/unit/ui/modal-running-guard.test.ts` 7 例：非运行放行 / 确认前不关 / 选「关闭，任务继续」才关且运行态仍 true / 选留不关 / 连按不叠加 / 任务结束后不再询问 / attach 幂等 + 解除还原。
+- `tests/unit/ui/modal-running-guard-wiring.test.ts` 15 例（源码级不变量）：四个弹窗都导入并挂载、都有 true/false、`onClose` 都兜底；backup 在 finally 里复位、rebuild 在 `mainNotice.hide()` 前复位、continue 至少 3 处复位。
+
+**坑**
+- 四个 modal 都是 **CRLF**，`String.replace` 的锚点若只写 `\n` 会静默 MISS：首轮 patch 只插进去 `running = true`，字段 / attach / onClose 全缺，tsc 报 6 处 `TS2339: Property 'running' does not exist`。修法是把整文件 `\r\n` → `\n` 归一后 patch，再整体还原 `\r\n`（整文件同构才安全）。
+- `ui/batch-create-modal.ts` 的 `batchCreateAll` 里仍有 `new Notice(..., 0)`（#15 收编时漏掉的裸持久通知），本轮未动，记入 #20 后的小清理。
+
+**下一轮**：P2 #20（`main.ts:1881/1977/2059` 三处临时 `AIEngine` 收编到 registry 单例）→ #13 遗留 A-17（撤销栈共享化）。

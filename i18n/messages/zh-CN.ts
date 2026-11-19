@@ -1076,6 +1076,12 @@ export const zhCN: MessageTree = {
             discard: '丢弃并关闭',
             keep: '留在此页继续编辑',
     },
+    modalRunningGuard: {
+            title: '任务正在运行',
+            description: '关闭弹窗不会中断任务，任务会继续在后台执行（进度条仍在）。要现在关闭吗？',
+            background: '关闭，任务继续',
+            stay: '留在弹窗',
+    },
     engineMsg: {
         review: {
             chapterNotFound: '❌ 未找到章节文件',

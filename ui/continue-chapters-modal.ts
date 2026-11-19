@@ -14,6 +14,7 @@ import { describeBodyFormat } from '@/shared/body-format';
 import { listFolderFiles } from '@/shared/vault-tree';
 import { createLogger } from '@/shared/logger';
 import { showErrorNotice } from './components/notice-helpers';
+import { ModalRunningGuard } from './components/modal-running-guard';
 
 
 const log = createLogger('ContinueChaptersModal');
@@ -26,6 +27,9 @@ export class ContinueChaptersModal extends Modal {
     private contextManager: ContextManager;
     /** Markdown 渲染宿主：Modal 不是 Component，必须自管 load/unload */
     private renderHost = new Component();
+    /** 长任务运行态：仅运行中才拦截关闭（审计 A-14） */
+    private running = false;
+    private runningGuard = new ModalRunningGuard(() => this.running);
 
     constructor(app: App, plugin: NovelWriterPlugin) {
         super(app);
@@ -39,6 +43,7 @@ export class ContinueChaptersModal extends Modal {
     onOpen(): void {
         this.renderHost.load();
         this.modalEl.addClass('nw-scope');
+        this.runningGuard.attach(this, this.app);
         const { contentEl } = this;
 
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
@@ -172,6 +177,7 @@ export class ContinueChaptersModal extends Modal {
         }
 
         const notice = progressHandle('continue-create', `⏳ 正在创建章节：0/${targetChapters.length}`);
+        this.running = true;
         let done = 0;
 
         // 常驻进度条必须在 finally 里关：旧实现只在成功路径 hide()，
@@ -240,6 +246,7 @@ export class ContinueChaptersModal extends Modal {
             );
             return;
         } finally {
+            this.running = false;
             notice.hide();
         }
 
@@ -323,6 +330,7 @@ export class ContinueChaptersModal extends Modal {
             }
 
             const notice = progressHandle('continue-generate', `⏳ 正在生成续写内容：0/${targetChapters.length}`);
+            this.running = true;
             let done = 0;
             // 续写输出与正文落盘共用同一份格式契约
             const bodyFormat = await new BodyWriter({ app: this.app }).resolveContract(project);
@@ -417,9 +425,11 @@ ${describeBodyFormat({ ...bodyFormat, allowTitle: true })}`;
                 notice.setMessage(`⏳ 正在生成续写内容：${done}/${targetChapters.length}`);
             }
 
+            this.running = false;
             notice.hide();
             showSuccess(`续写内容生成完成：${done}/${targetChapters.length} 章`);
         } catch (e) {
+            this.running = false;
             log.error('[小说工坊] 自动生成续写内容失败:', e);
             showError(`生成失败：${e instanceof Error ? e.message : String(e)}`);
         }
@@ -554,6 +564,7 @@ ${describeBodyFormat({ ...bodyFormat, allowTitle: true })}`;
      * onClose 方法。
      */
     onClose(): void {
+        this.running = false;
         this.renderHost.unload();
         const { contentEl } = this;
         contentEl.empty();

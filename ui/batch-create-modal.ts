@@ -23,6 +23,8 @@ import {
 } from '@/shared/mode-content';
 
 
+import { ModalRunningGuard } from './components/modal-running-guard';
+
 const log = createLogger('BatchCreateModal');
 
 /** 每章骨架文件（与 11 步流水线保持一致） */
@@ -53,6 +55,9 @@ export class BatchCreateModal extends Modal {
     private modeUnitCount = 20;
     private modeUnitLabel = '章';
     private preferredProject?: string;
+    /** 长任务运行态：仅运行中才拦截关闭（审计 A-14） */
+    private running = false;
+    private runningGuard = new ModalRunningGuard(() => this.running);
 
     constructor(app: App, plugin: NovelWriterPlugin, preferredProject?: string) {
         super(app);
@@ -66,6 +71,7 @@ export class BatchCreateModal extends Modal {
      */
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
+        this.runningGuard.attach(this, this.app);
         const { contentEl } = this;
 
         // ═══ v3.4.8: 两层CSS规则 — 见 docs/CSS变量注入与两层规则_全插件避坑指南.md ═══
@@ -248,6 +254,7 @@ export class BatchCreateModal extends Modal {
         const unit = this.modeUnitLabel;
         const total = Math.max(1, this.modeUnitCount);
         const progress = progressHandle('batch-create', `⏳ 正在创建 ${total} ${unit}骨架...`);
+        this.running = true;
         const written: WrittenFile[] = [];
         let created = 0;
         const failures: string[] = [];
@@ -276,6 +283,7 @@ export class BatchCreateModal extends Modal {
                 if (n % 10 === 0) progress.setMessage(`⏳ 批量建${unit} ${n}/${total} ${unit}...`);
             }
         } finally {
+            this.running = false;
             progress.hide();
         }
 
@@ -291,6 +299,7 @@ export class BatchCreateModal extends Modal {
             isLong: false,
         });
 
+        this.running = false;
         if (failures.length === 0 && invalid.length === 0) {
             showSuccessNotice(`已创建 ${total - failures.length} ${unit}骨架（${created} 个新文件），落盘校验通过`, { timeout: 6000 });
             this.close();
@@ -315,6 +324,7 @@ export class BatchCreateModal extends Modal {
             0
         );
 
+        this.running = true;
         const failures: string[] = [];
         const writtenFiles: WrittenFile[] = [];
         let createdChapters = 0;
@@ -404,6 +414,7 @@ export class BatchCreateModal extends Modal {
             isLong,
         });
 
+        this.running = false;
         if (!hasProblem) {
             showSuccessNotice(
                 isLong
@@ -510,6 +521,7 @@ export class BatchCreateModal extends Modal {
      * onClose 方法。
      */
     onClose(): void {
+        this.running = false;
         this._plan = null;
         const { contentEl } = this;
         contentEl.empty();

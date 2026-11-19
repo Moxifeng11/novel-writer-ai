@@ -9,7 +9,7 @@
 | `engine/` | 337 | 1925 | 1924 | 100% | 1253 | 1253 | 100% | 0 |
 | `services/` | 65 | 295 | 295 | 100% | 310 | 310 | 100% | 0 |
 | `shared/` | 261 | 2239 | 2238 | 100% | 159 | 159 | 100% | 0 |
-| `ui/` | 304 | 1176 | 1176 | 100% | 685 | 684 | 100% | 0 |
+| `ui/` | 305 | 1177 | 1177 | 100% | 686 | 685 | 100% | 0 |
 
 ## 缺口最大的文件（按未注释导出数）
 
@@ -75,6 +75,7 @@
 | `ui/components/empty-state.ts` | 3 | 3 | 100% | — |
 | `ui/components/error-state.ts` | 1 | 1 | 100% | — |
 | `ui/components/modal-dirty-guard.ts` | 1 | 1 | 100% | — |
+| `ui/components/modal-running-guard.ts` | 1 | 1 | 100% | — |
 | `ui/components/notice-helpers.ts` | 3 | 3 | 100% | — |
 | `ui/components/progress/loading-overlay.ts` | 1 | 1 | 100% | — |
 | `ui/components/progress/operation-confirm-modal.ts` | 1 | 1 | 100% | — |

@@ -1073,6 +1073,12 @@ export const enUS: MessageTree = {
             discard: 'Discard and close',
             keep: 'Keep editing',
     },
+    modalRunningGuard: {
+            title: 'Task still running',
+            description: 'Closing this window does not stop the task — it keeps running in the background (the progress bar stays). Close anyway?',
+            background: 'Close and keep running',
+            stay: 'Stay here',
+    },
     engineMsg: {
         review: {
             chapterNotFound: '❌ Chapter file not found',
