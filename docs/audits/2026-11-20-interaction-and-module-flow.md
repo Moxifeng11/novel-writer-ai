@@ -451,6 +451,8 @@ graph TD
 
 DSH 建议：**退役**（与 2026-11-19「旧正文写入链」同一处理口径），但这是用户可见功能删除，需用户确认；确认前保留本次修复（布局恢复的用户仍受益）。
 
+**用户裁定（m24178，2026-11-20）**：「判断旧入口退役。同时，直接在dsh修改，暂时不派给zcode」。已执行 `RETIRE-V1`：删除 `ui/co-write-floating-panel.ts` 与契约测试、移除 `workspace-manager.ts` 的 import/`FLOAT_VIEW_TYPES` 成员/`registerView`、删除 `.nw-float-cowrite-root` 四条样式与只为它新增的脏态修饰类、清掉 `scripts/audit-cjk.mjs` 的待迁登记；清单见 `docs/planning/2026-11-19-legacy-modal-retirement.md` §九。
+
 ### 5.5 方法教训
 
 1. **「函数存在」≠「功能接上」**：提交信息里的能力必须按「调用点 → 渲染路径 → 用户可见」验证一遍。ZC-26 三条描述在调用层面全部不成立。

@@ -88,7 +88,7 @@ graph TD
 **协同相关三个目录的区分**（名字相近，勿混）：
 - `ui/co-writing/`（30 文件）— `co-writing-view.ts` 的切片模块（控制面板 / 布局装配 / markdown 工具栏 / 指标面板 / KB 面板等）
 - `ui/cowrite/`（9 文件）— 协同写作的弹窗与控制器（正文保存控制器 / 历史弹窗 / 建议编辑与历史 / 实时分析控制器等）
-- `ui/co-write/`（1 文件）— `logic-check-format.ts`（人物逻辑检查的展示映射，自 `co-write-floating-panel` 抽出）
+- `ui/co-write/`（1 文件）— `logic-check-format.ts`（人物逻辑检查的展示映射，自 `co-write-floating-panel` 抽出；该浮窗 2026-11-20 已退役）
 
 **`ui/full-writer/` 子目录** — 工作台控制器集合：
 | 文件 | 功能 |

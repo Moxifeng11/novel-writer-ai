@@ -11,7 +11,7 @@
 | `shared/` | 259 | 52377 | 2212 | 1732 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1583 | 88 | 58 | 66% |
-| `ui/` | 305 | 114599 | 1182 | 945 | 80% |
+| `ui/` | 304 | 113536 | 1180 | 943 | 80% |
 
 ## 文件清单
 
@@ -735,7 +735,6 @@
 | `ui/chapter-settlement-modal.ts` | 428 | 1 | 1 |
 | `ui/chapter-version-modal.ts` | 658 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
-| `ui/co-write-floating-panel.ts` | 1058 | 2 | 2 |
 | `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |
 | `ui/co-writing-view.ts` | 3972 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 167 | 7 | 5 |
@@ -1015,7 +1014,7 @@
 | `ui/volume-intro-modal.ts` | 505 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |
-| `ui/workspace-manager.ts` | 144 | 2 | 2 |
+| `ui/workspace-manager.ts` | 139 | 2 | 2 |
 | `ui/writing-pet.ts` | 662 | 10 | 8 |
 | `ui/writing-stats-modal.ts` | 245 | 1 | 1 |
 | `ui/writing-stats-settings.ts` | 74 | 1 | 1 |

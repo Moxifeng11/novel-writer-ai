@@ -6,7 +6,6 @@ import type NovelWriterPlugin from "@/main";
 import { revealLeafCompat } from '@/shared/workspace-reveal';
 import { MonitorPanelA, VIEW_TYPE_MONITOR_A } from "./monitor-panel-a";
 import { MonitorPanelB, VIEW_TYPE_MONITOR_B } from "./monitor-panel-b";
-import { CoWriteFloatingPanel, VIEW_TYPE_FLOAT_COWRITE } from "./co-write-floating-panel";
 import { CoWritingView, VIEW_TYPE_CO_WRITE } from "./co-writing-view";
 
 /**
@@ -14,7 +13,6 @@ import { CoWritingView, VIEW_TYPE_CO_WRITE } from "./co-writing-view";
  */
 export const FLOAT_VIEW_TYPES = [
   VIEW_TYPE_CO_WRITE,
-  VIEW_TYPE_FLOAT_COWRITE,
   VIEW_TYPE_MONITOR_A,
   VIEW_TYPE_MONITOR_B,
 ];
@@ -39,10 +37,6 @@ export class FloatWorkspaceManager {
       VIEW_TYPE_MONITOR_B,
       (leaf) => new MonitorPanelB(leaf, this.plugin)
     );
-    this.plugin.registerView(
-      VIEW_TYPE_FLOAT_COWRITE,
-      (leaf) => new CoWriteFloatingPanel(leaf, this.plugin)
-    );
   }
 
   /**
@@ -63,6 +57,7 @@ export class FloatWorkspaceManager {
     );
 
     // 主写作区统一使用句级协同写作视图，避免“写作控制面板”和“协同写作面板”双入口分裂。
+    // 2026-11-20：旧悬浮面板（nw-float-cowrite）没有任何入口、现网不可达，已按用户裁定退役。
     let coWritingLeaf = workspace.getLeavesOfType(VIEW_TYPE_CO_WRITE)[0];
     if (!openTypes.has(VIEW_TYPE_CO_WRITE) || !coWritingLeaf) {
       coWritingLeaf = workspace.getLeaf("tab");

@@ -161,3 +161,26 @@ ui 中文棘轮：**8,564 → 7,943 条**（−621，含三元表达式与短串
 
 **教训**：源码文本契约测试（`read('ui/xxx.ts')`）会在删除文件时集体爆红，删文件前先 `grep` 一遍
 `read('<file>')` 与裸文件名，比删完再修便宜。
+
+## 九、常驻视图退役：协同写作悬浮面板（2026-11-20，用户裁定）
+
+里程碑 `RETIRE-V1`。
+
+| 文件 | 注册点 | 判断 | 结局 |
+| --- | --- | --- | --- |
+| `ui/co-write-floating-panel.ts`（1058 行，`VIEW_TYPE_FLOAT_COWRITE = "nw-float-cowrite"`） | `ui/workspace-manager.ts:9/17/42`（`registerView`） | 只注册、无 `setViewState`、无命令、无目录入口；`workspace-manager.ts:65` 注释写明主写作区统一用协同写作视图避免双入口 | **2026-11-20 删除**（视图类 + 注册 + 样式 + 契约测试 + i18n 待迁登记） |
+
+为什么按「视图」而不是「弹窗」判断：它不走命令面板，唯一的可达路径是 Obsidian 恢复旧工作区布局里的 leaf。`getLeavesOfType(VIEW_TYPE_FLOAT_COWRITE)` 全仓零处，等于连自动化入口都没有。
+
+退役面（本批已清）：
+
+1. `ui/co-write-floating-panel.ts` 与 `tests/unit/ui/co-write-floating-panel-contract.test.ts` 删除。
+2. `ui/workspace-manager.ts`：import、`FLOAT_VIEW_TYPES` 成员、`registerView` 片段移除（`FLOAT_VIEW_TYPES` 仍用于 `closeAll`）。
+3. `styles-src/05-floating-panels-and-settings.css` 的 `.nw-float-cowrite-root` 四条规则删除；`styles-src/04-workspace-layers.css` 里只为它加的 `.nw-cowrite-control-state--dirty` 修饰类删除（基类 `.nw-cowrite-control-state` 由主视图 metrics/control panel 使用，保留）。
+4. `scripts/audit-cjk.mjs` 的 MANUAL 待迁登记移除；`tests/unit/ui/modal-guard-wiring.test.ts` 里针对该文件的接线断言随文件删除（plan-book / add-fanfic 两条保留）。
+5. 文档：`docs/modules/co-writing.md`（代码入口与 E-13）、`docs/audits/2026-11-20-interaction-and-module-flow.md` §5.4、本轮 next-focus 记录。
+
+**用户裁定原文（m24178）**：「判断旧入口退役。同时，直接在dsh修改，暂时不派给zcode」。
+
+**对已交付 P0 #2 的处理**：ZC-26 在该文件上做的自动保存与 `SaveState` 接入随文件一并删除；`SaveState` / `saveStateLabel` / `isDirtySaveState` 仍被主视图（`ui/co-writing-view.ts:3358-3363`、`ui/co-writing/dashboard-status.ts:98`）使用，不删。
+

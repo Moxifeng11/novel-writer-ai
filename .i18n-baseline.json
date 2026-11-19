@@ -15,7 +15,6 @@
     "ui/chapter-settlement-modal.ts": 81,
     "ui/chapter-version-modal.ts": 41,
     "ui/character-recognition-modal.ts": 14,
-    "ui/co-write-floating-panel.ts": 108,
     "ui/co-write/logic-check-format.ts": 8,
     "ui/co-writing-view.ts": 77,
     "ui/co-writing/chapter-context.ts": 6,
@@ -207,7 +206,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 5564,
+  "total": 5456,
   "updatedAt": "2026-11-19",
   "note": ""
 }

@@ -293,10 +293,6 @@ function measure(file) {
 // 项目配置并被再次读回」这种语义，人工核实过的结论必须能覆盖机器判断。
 // ---------------------------------------------------------------------------
 const MANUAL = {
-    'ui/co-write-floating-panel.ts': {
-        category: 'ui-copy',
-        conclusion: '待迁：113 条为浮窗控制台文案，另有 4 处状态串（编辑中/已加载/已保存/保存失败）应复用 save-state 枚举',
-    },
     'ui/co-writing-view.ts': {
         category: 'ui-copy',
         conclusion: '待迁：77 条为主视图残留（章节流转、结算提示、快捷键帮助）',

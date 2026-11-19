@@ -3713,11 +3713,32 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 5. `ui/components/modal-dirty-guard.ts` 加 `confirming` 闸门（Esc 连按不叠加第二个确认框）与 `catch`（silent-ok：确认框异常时保持弹窗打开）。
 6. 测试：`tests/unit/ui/modal-dirty-guard.test.ts` 改可控 Promise 断言「确认前不关、确认后才关」（7 例）；新增 `tests/unit/ui/modal-guard-wiring.test.ts`（6 例源码级不变量：自动保存必须被调用、状态必须走 `saveStateLabel`、每个 close 前恰好一个 `markClean`）。
 
-**新发现（待用户裁定）**：`VIEW_TYPE_FLOAT_COWRITE` 只注册、全仓无 `setViewState` 与命令入口；`ui/workspace-manager.ts:65` 注释称「主写作区统一使用句级协同写作视图，避免双入口分裂」→ 悬浮面板在现网不可达，A-3 的「两个入口」前提不成立。建议按 2026-11-19 旧正文写入链口径退役（这是用户可见功能删除，需确认）；确认前保留修复。
+**新发现（已裁定）**：`VIEW_TYPE_FLOAT_COWRITE` 只注册、全仓无 `setViewState` 与命令入口；`ui/workspace-manager.ts:65` 注释称「主写作区统一使用句级协同写作视图，避免双入口分裂」→ 悬浮面板在现网不可达，A-3 的「两个入口」前提不成立。用户 m24178 裁定退役，见第一百一十八轮。
 
 **门禁**：`tsc` 0 错、eslint 0 error；`vitest` 1002 文件 / 10,408 通过 + 3 跳过；`preflight` 首跑卡在 CSS 预算（+167B / +1 唯一类），更新 `check:css` + `check:bundle` 基线与 `gen:docs` 后 **EXIT=0**；`check:css` 800,851 bytes / 4,335 唯一类；`check:bundle` main.js 6,247,851（+264）/ styles.css 800,851（+167）；`check:i18n` 6034 条、棘轮 206 文件 / 5,564 条（已收紧）。
 
 **文档**：`docs/audits/2026-11-20-interaction-and-module-flow.md` 新增「五、DSH 复核」（5.1–5.5：逐条判断、修复清单、悬浮面板不可达、四条方法教训）；本轮记录即此节。
 
-**下一轮候选**：等用户裁定悬浮面板退役；ZC 审计 P1×9 / P2×7 是否按同模式继续；DSH i18n 第二期第 49 片（`ui/rendering/context-panel.ts` 162 字 / `ui/co-write-floating-panel.ts` 113 字 / `ui/batch-create-modal.ts` 104 字）。
+**下一轮**：用户 m24178 裁定悬浮面板退役并由 DSH 直接改（见第一百一十八轮）；C 清单 P1×9 / P2×7 也由 DSH 自己做、暂不派 ZCode；i18n 第 49 片候选（`ui/rendering/context-panel.ts` 162 字 / `ui/batch-create-modal.ts` 104 字）。
+
+
+## 第一百一十八轮：退役协同写作悬浮面板（RETIRE-V1，2026-11-20，DSH）
+
+**用户裁定（m24178）**：「判断旧入口退役。同时，直接在dsh修改，暂时不派给zcode」。
+
+**为什么退役**：`VIEW_TYPE_FLOAT_COWRITE`（`ui/co-write-floating-panel.ts:46`，`nw-float-cowrite`）只在 `ui/workspace-manager.ts:9/17/42` 注册，全仓没有 `setViewState`、没有命令、没有快捷工具目录条目；`getLeavesOfType(VIEW_TYPE_FLOAT_COWRITE)` 零处。唯一可能实例化它的路径是 Obsidian 恢复旧工作区布局。`workspace-manager.ts:65` 的注释也写明主写作区统一用协同写作视图、避免双入口分裂。
+
+**删除面**：
+
+1. `ui/co-write-floating-panel.ts`（1058 行）与 `tests/unit/ui/co-write-floating-panel-contract.test.ts`。
+2. `ui/workspace-manager.ts`：import 行、`FLOAT_VIEW_TYPES` 成员、`registerView(VIEW_TYPE_FLOAT_COWRITE, …)` 片段；在统一入口注释下补一行退役说明。`FLOAT_VIEW_TYPES` 本身保留（`closeAll` 仍遍历）。
+3. `styles-src/05-floating-panels-and-settings.css`：`.nw-float-cowrite-root` 四条规则（含注释块）删除；`styles-src/04-workspace-layers.css` 里上一轮只为它加的 `.nw-cowrite-control-state--dirty` 删除（基类 `.nw-cowrite-control-state` 由 `ui/co-writing/metrics-panel.ts` 与 `ui/co-writing/control-panel.ts` 使用，保留）。
+4. `scripts/audit-cjk.mjs` 的 MANUAL 待迁登记（113 字）移除；`tests/unit/ui/modal-guard-wiring.test.ts` 删除悬浮面板 describe（plan-book / add-fanfic 两条不变量保留，文件从 6 例降为 3 例）。
+5. 文档：`docs/modules/co-writing.md`（代码入口行与 E-13 标注退役）、`docs/planning/2026-11-19-legacy-modal-retirement.md` 新增 §九（`RETIRE-V1`）、`docs/audits/2026-11-20-interaction-and-module-flow.md` §5.4 追加用户裁定与执行清单。
+
+**未动的部分**：`ui/co-writing/save-state.ts` 的 `SaveState` / `saveStateLabel` / `isDirtySaveState` 仍被主视图与 dashboard 使用，保留；`ui/co-write/logic-check-format.ts`（从旧浮窗抽出）保留，仅更新派生来源说明不需要。
+
+**门禁**：`tsc` 0 错；受影响 23 个测试文件 132 例通过；`build` 后 styles.css 32,085 行；基线收紧 —— jsdoc 982 文件（移除已删文件）、view-tests 75 个文件、i18n 205 文件 / 5,456 条、utility 46/137、css 800,112 bytes / 4,333 唯一类、bundle main.js 6,224,663（−23,188）/ styles.css 800,112（−739）。
+
+**下一轮**：C 清单 P1（用户要求由 DSH 直接做，暂不派 ZCode），按审计 §三 顺序：Ctrl+S 三处行为统一、确认框统一、步骤键常量化等 9 条。
 

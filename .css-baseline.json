@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-19T19:08:21.767Z",
-  "note": "2026-11-20 ZC 复核修复：悬浮面板脏态修饰类 .nw-cowrite-control-state--dirty（+167 字节 / +1 唯一类）",
-  "bytes": 800851,
+  "generatedAt": "2026-11-19T19:24:49.387Z",
+  "note": "2026-11-20 退役 .nw-float-cowrite-root 四条样式与脏态修饰类（-739B / -2 唯一类）",
+  "bytes": 800112,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 223,
-  "uniqueClasses": 4335,
+  "uniqueClasses": 4333,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

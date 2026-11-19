@@ -3433,8 +3433,6 @@ select.nw-select {
 }
 .nw-cowrite-control-title { font-size: 12px; font-weight: 600; color: var(--nw-text-primary, var(--text-normal)); }
 .nw-cowrite-control-state { font-size: 10px; color: var(--nw-text-muted, var(--text-faint)); white-space: nowrap; }
-/* 未保存/保存失败时提亮，与主视图辅助栏脏态同语义 */
-.nw-cowrite-control-state.nw-cowrite-control-state--dirty { color: var(--text-warning); }
 /* NBI-04: 临时指令「已应用」状态标识（与保存状态同排，默认隐藏） */
 .nw-hint-state {
     margin-left: auto;
@@ -4581,33 +4579,6 @@ select.nw-select {
 
 .nw-memory-collapsible summary:hover {
     color: var(--text-accent);
-}
-
-/* === V2 Phase 3: 协同写作浮窗 === */
-/* 浮窗模式下的 cowrite 三栏自适应 */
-.nw-float-cowrite-root {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 400px;
-    overflow: hidden;
-}
-
-/* 浮窗模式下压缩控制台按钮间距 */
-.nw-float-cowrite-root .nw-cowrite-control-actions {
-    flex-wrap: wrap;
-    gap: 4px;
-}
-
-.nw-float-cowrite-root .nw-cowrite-main {
-    flex: 1 1 auto;
-    min-height: 250px;
-    overflow: hidden;
-}
-
-.nw-float-cowrite-root .nw-cowrite-right {
-    min-width: 140px;
-    max-width: 200px;
 }
 
 @media (max-width: 720px) {

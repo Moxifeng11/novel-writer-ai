@@ -1,7 +1,8 @@
 # 正文编辑器 / 协同写作（co-writing）
 
 > 状态：**稳定**（2026-11-16 全量自检通过；P0/P1/P2 补齐 + 11 项真实缺陷修复）
-> 代码入口：`ui/co-writing-view.ts`（3118 行）、`ui/co-writing/*.ts`（30+ 模块）、`engine/co-writer-engine.ts`（3101 行）、`engine/co-writer/*`、旧浮窗 `ui/co-write-floating-panel.ts`（913 行）
+> 代码入口：`ui/co-writing-view.ts`（3118 行）、`ui/co-writing/*.ts`（30+ 模块）、`engine/co-writer-engine.ts`（3101 行）、`engine/co-writer/*`
+> 历史：旧浮窗 `ui/co-write-floating-panel.ts`（1058 行）已于 2026-11-20 退役（`RETIRE-V1`，现网无入口，用户裁定删除）
 > 目标（INDEX）：输入体验、上下文提示、保存可靠性
 
 ## 1. 现状盘点
@@ -83,7 +84,7 @@
 | E-10 | 无光标所在段落/章节位置提示，无选中字数 |
 | E-11 | 编辑器无 Markdown 语法高亮（预览只读、在左栏） |
 | E-12 | 顶栏/控制台部分按钮无 title 说明，图标语义需猜 |
-| E-13 | 旧浮窗 `ui/co-write-floating-panel.ts`（913 行）与新视图功能重叠，维护双份 |
+| E-13 | ~~旧浮窗 `ui/co-write-floating-panel.ts`（913 行）与新视图功能重叠，维护双份~~ **已退役**（2026-11-20，`RETIRE-V1`，现网无入口） |
 
 ## 4. Brief（待确认）
 
