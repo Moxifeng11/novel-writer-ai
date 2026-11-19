@@ -1,0 +1,403 @@
+# 交互/界面审计 + 模块生产消费关系（2026-11-20）
+
+> 状态：活跃 · 2026-11-20
+>
+> 任务：ZC-20261120-24（阶段一：只产出结论，不动 `ui/` 代码——避免与在跑的 i18n 切片抢写锁）。
+> 执行：ZCode。方法：双通道收集（定向 grep + 全量扫描交叉验证），全部证据为代码事实（文件:行）。
+> 值得记录的一次自我修正：初版审计认为「Ctrl+S 快捷键不存在」（grep 模式漏了
+> `editor-shortcuts.ts` 的抽象映射层），交叉验证后发现快捷键存在但行为三处不一致、
+> 且仅编辑器焦点内生效——**最终版按修正后的事实写**（见 A-2）。
+> 阶段二（按 §三 C 清单逐项改造）另行派单。
+
+## 〇、范围与方法
+
+覆盖面：full-writer 工作台、知识库视图、监控面板（A/B）、写作指纹库、设置页、弹窗层（40+ Modal）、悬浮面板。
+优先级定义：**P0** 数据丢失/重复扣费/功能不可用；**P1** 承诺与实际不符/明显不一致/易触发；**P2** 风格不统一/可维护性。
+
+一个贯穿性的背景事实：仓库**自己承认**了多处不一致——
+`ui/button-busy.ts:1-8` 自述「各面板手写 disabled=true 模式不一致，连点会叠开 Modal」、
+`ui/mini-settings-modal.ts:5` 自述「与 settings-tab 双份维护，字段校验与保存语义经常漂移」、
+`ui/co-writing/save-state.ts:1-8` 记录了中文状态串导致的历史 bug。
+**审计发现不是新闻，是这些自述的系统性展开。**
+
+---
+
+## 一、A：交互与前端界面审计（20 条）
+
+### A-1 重型 AI 生成弹窗无防重复提交（P0）
+
+- **现象**：`plan-book-modal`（全书规划）与 `ai-builder-modal`（批量实体生成）生成期间按钮不禁用、无 `isGenerating` 守卫、文案不变——双击 = 两次完整 AI 调用。
+- **证据**：两文件 `disabled` 出现 **0** 次、`isGenerating|pending` **0** 次、「生成中」文案 **0** 次。对照：`golden-opening-modal` 有 `isGenerating*` 守卫（全仓 35 处）+ 7 处 disabled；仓库有现成统一助手 `ui/button-busy.ts`（`withButtonBusy`，文件头自述动机），但手写 `disabled` 全库仍有 **171 处**。
+- **影响**：全书规划单次调用上万 token，双击直接双倍费用；两个响应竞态写 `分卷大纲/第N卷_分卷大纲.md`。
+- **建议**：`withButtonBusy` 已存在，接入即可；优先接入 5 个无守卫的重型生成弹窗。
+- **预估**：0.5 天工具推广 + 0.5 天接入验证。
+
+### A-2 Ctrl+S 三处行为不一致，且仅编辑器焦点内生效（P1，交互不一致）
+
+- **现象**：同一个 Ctrl+S，三个编辑面三种行为；且绑定都在编辑器元素上，焦点在 UI 控件时失效（按钮 tooltip 却承诺了它）。
+- **证据**：
+  - 绑定层：`ui/co-writing/editor-shortcuts.ts:81`（`mod+s → {kind:'save'}`，挂在 `co-writing-view.ts:1074` 的 `rightEditor` keydown）；`ui/co-write-floating-panel.ts:204`；`ui/full-writer/unit-writer-controller.ts:271`
+  - 行为差异：协同视图 = 推撤销快照 + 成功 Notice（`co-writing-view.ts:1744-1747`）；全文写作台 = 仅 flush + Notice，**不推快照**；悬浮面板 = **静默**（仅状态字变化，`:308`）
+  - 承诺：`ui/co-writing/control-panel.ts:22` tooltip「立即保存当前正文（Ctrl+S）」（资源 `cowrite.panel.tipSave`）——按钮在编辑器**外**，焦点不在编辑器时 Ctrl+S 落到 Obsidian 全局
+  - Obsidian 命令体系：全仓 `hotkeys:` 注册 **0** 处
+- **影响**：用户按 tooltip 提示在非编辑器焦点按 Ctrl+S，实际触发 Obsidian 自身保存；三个界面学到的肌肉记忆互相打架（协同推快照 → 悬浮面板静默，用户以为没保存）。
+- **建议**：①统一三处行为（是否推快照、是否有成功反馈）；②tooltip 承诺的快捷键要么全局接管（`registerDomEvent(document, 'keydown')` + 视图激活判断）要么文案去掉。
+- **预估**：1 天。
+
+### A-3 同一协同正文，两个入口的丢失风险策略不同（P0/P1，交互不一致）
+
+- **现象**：主视图编辑器 2 秒防抖自动保存；**悬浮面板编辑同一正文却完全没有自动保存**——输入后只把状态字改成「编辑中」，之后全靠用户手动点 💡 保存或按 Ctrl+S（且静默）。
+- **证据**：主视图 `ui/co-writing-view.ts:1095`（input → `scheduleAutoSave()`，`:3469-3474` `debounceFixed("auto-save", …, 2000)`）；悬浮面板 `ui/co-write-floating-panel.ts:210-214`（input 仅 `updateSnapshot/updateSaveState("编辑中")`），全文件无 debounce/autoSave 实现。
+- **影响**：用户从悬浮面板快速记笔记，关面板 = 未保存内容丢失；而同样操作在主视图是安全的。**同一份正文，丢失风险取决于从哪个入口编辑。**
+- **建议**：悬浮面板接入同一 `BodySaveController`（或至少同一防抖保存）。
+- **预估**：0.5 天（控制器已抽好，接 host 接口即可）。
+
+### A-4 正文自动保存节拍三套并存（P2，交互不一致）
+
+- **现象**：三个正文编辑面三种防抖时长、三种实现机制。
+- **证据**：协同主视图 **2000ms**（`co-writing-view.ts:3469`，`debounceFixed`）；全文写作台单元写作 **800ms**（`unit-writer-controller.ts:40` `AUTOSAVE_DELAY_MS`）；场景大纲 **1000ms**（`scene-outline-controller.ts:1005-1011`，裸 `window.setTimeout`）。
+- **影响**：用户感知不一致（哪个界面「改完等多久才存」不同）；三套实现维护三倍。
+- **建议**：统一常量 + 统一 debounce 实现（协同的 `debounceFixed` 已是标准件）。
+- **预估**：0.5 天。
+
+### A-5 42 个含编辑区的 Modal，关闭时无一确认未保存（P0/P1）
+
+- **现象**：Esc/点外部关闭 Modal 直接丢弃输入；全库 `onClose` 中检查 dirty/未保存的为 **0**。唯一对未保存内容有反应的是 `existing-entity-manager.ts:72-77`——但它也只是弹 Notice「已丢弃」后照丢，**无确认机会**。
+- **证据**：`grep -rln onClose ui/` → 106 文件；含 dirty 检查 → 0。含 `createEl('textarea')` 的 Modal → 42 个（`writing-style-modal` 八节表单、`add-fanfic-setting-modal`、`plan-book-modal` 自定义提示词、`golden-opening-modal` 六个输入区等）。静默丢弃代表：`template-manager.ts:567`、`fingerprint-intensity-modal.ts:97`、`rebuild-chapters-modal.ts:348`、`batch-create-modal.ts:511`、`mini-settings-modal.ts:103`。
+- **影响**：弹窗表单写了大段内容，误触 Esc 全丢且不可恢复（`writing-style-modal` 的表单保存到项目文件，丢失即重打）。
+- **建议**：统一 `confirmDiscardIfDirty` 钩子（跟踪 form dirty），先接入高危 10 个。
+- **预估**：1 天工具 + 0.5 天接入。
+
+### A-6 确认框四套机制并存（P1，交互不一致）
+
+- **现象**：`window.confirm`（11 处/8 文件，全部在 `ui/`）、自研 `OperationConfirmModal`（35 文件引用，支持「不再提示」rememberKey）、两个一次性专用 Modal（`RollbackConfirmModal` 仅回滚、`SceneConfirmModal` 仅场景确认）。
+- **证据**：`window.confirm` 全清单：`add-fanfic-setting-modal.ts:631,747`、`ai-builder-modal.ts:537`、`advanced-maintenance-modal.ts:202`、`novel-tags-modal.ts:87`、`rebuild-chapters-modal.ts:182`、`quality-loop-modal.ts:132`、`settlement-recovery-modal.ts:85`、`volume-intro-modal.ts:161`、`full-writer/wizard-controller.ts:383`、`unified-entity-manager-modal.ts:204`。
+- **影响**：原生 confirm 阻塞主线程、样式割裂、绕过 i18n 样式体系、无法「不再提示」。
+- **建议**：`window.confirm` 11 处机械替换到 `OperationConfirmModal`；两个专用 Modal 评估是否值得并入（场景确认有特殊交互，可保留）。
+- **预估**：0.5 天。
+
+### A-7 同类「删除」操作按入口分裂确认强度（P1，交互不一致）
+
+- **现象**：删项目 = 两步专用确认弹窗；删渠道/预设/提示词 = `OperationConfirmModal`；删版本 = 原生 `window.confirm`；回滚版本 = 专用 `RollbackConfirmModal`。
+- **证据**：`project-selector-controller.ts:1099-1124`（showDeleteProjectModal）；`settings/api-section.ts:437-442`；`volume-intro-modal.ts:161`（原生）；`chapter-version-modal.ts:531`（专用）——**同样是「版本历史里的破坏性操作」，卷简介用原生框、章节版本用自定义框**。
+- **影响**：破坏性操作的防误触强度与操作风险不成比例；i18n 覆盖断裂（原生框不可翻译）。
+- **建议**：按风险分级统一——不可恢复用「输入名称确认」型，可恢复用普通确认；全部走 `OperationConfirmModal`。
+- **预估**：0.5 天。
+
+### A-8 空态三套渲染 + 图表内联第四套（P2，交互不一致）
+
+- **现象**：统一组件 `createEmptyState`（支持操作按钮，`ui/components/empty-state.ts:109`）仅 8 文件采纳；大量手写纯文字空态；悬浮面板用第三个类 `nw-float-empty`；图表组件把空态写死成内联 HTML 字符串。
+- **证据**：手写无按钮代表 `asset-registry-modal.ts:64-67`（写「先创建一个项目。」却不给创建按钮）、`backup-center-modal.ts:66-69`、`job-center-modal.ts:67-72`、`home-view.ts:217-220`；自造类名 `prompt-manager-settings.ts:349`（`nw-empty-center-muted`）；`nw-float-empty` 见 `monitor-panel-a/b.ts`；`svg-charts.ts` 8 处内联「暂无数据」（:542,658,826,1000,1168,1373,1552,1676，带内联 style）。
+- **影响**：新用户看到「暂无」不知去哪；组件化空态的「行动出口」能力没被复用。
+- **建议**：`createEmptyState` 设为唯一入口，手写 10+ 处机械替换；图表空态接同一组件。
+- **预估**：1 天。
+
+### A-9 持久进度两套做法 + 第三套同名异物（P2，交互不一致）
+
+- **现象**：`utils/helpers.ts:49` 的 `showProgress`（Notice 槽位 + setMessage 更新，47 处调用）与裸 `new Notice(..., 0)`（**30 处**绕过）并存；`outline-expand-modal.ts:912` 还有第三个同名私有 `showProgress`（弹窗内进度 DOM）。
+- **证据**：裸写代表：`golden-opening-modal.ts` 7 处（:661,773,858,953,1051,1142,1231）、`ai-builder-modal.ts:520,737`、`plan-book-modal.ts:217,269`、`rebuild-chapters-modal.ts:185,220`；`full-writer/context-loader-controller.ts:76` 两者混用。
+- **影响**：长任务有的能看阶段推进，有的只有一个不动的小黑条；同名函数语义不同易误用。
+- **建议**：裸 Notice(…,0) 30 处机械替换到 `showProgress`；outline-expand 的私有方法改名避免混淆。
+- **预估**：0.5 天。
+
+### A-10 生成中反馈三套并存：Notice 推进 / 骨架屏 / 按钮文案（P2，交互不一致）
+
+- **现象**：骨架屏仅 2 处（协同联想卡、Agent 工作台）；其余用持久 Notice 或弹窗内文本；按钮禁用后有无进度条也不一（`generate-character-modal` 有 `nw-progress-anim` 进度条，golden-opening 无）。
+- **证据**：骨架屏 `ui/co-writing/suggestion-cards.ts:242`、`agent-workbench-view.ts:1743`；文本占位 `asset-registry-modal.ts:69`（'正在收集资产…'）。
+- **影响**：同是「等 AI」，三种视觉语言；无法统一展示已耗时/可取消。
+- **建议**：长任务统一 `showProgress` + 可取消（AbortSignal 基建已有，见 A-14）；短任务用 `withButtonBusy`。
+- **预估**：1 天。
+
+### A-11 Notice 时长 8 种取值无规范（P2）
+
+- **现象**：`new Notice(..., duration)` 时长散布 8 种：5000×46、4000×23、6000×21、3000×19、8000×13、0×12、2000×5、10000×3。同类消息（「保存成功」）在不同视图时长不同。
+- **证据**：全库 grep 计数（见左）。
+- **影响**：节奏不可感知统一；i18n 后英文更长，读不完就消失的风险不可控。
+- **建议**：常量表 `{short:2000, normal:4000, long:8000, sticky:0}`，新代码强制引用，存量按语义映射。
+- **预估**：0.5 天。
+
+### A-12 保存按钮文案与图标三种（P2，交互不一致）
+
+- **现象**：「💡 保存」（悬浮面板，灯泡）/「💾 保存」（模板管理、指纹强度弹窗，软盘）/「保存」（MCP 表单，无图标）。
+- **证据**：`co-write-floating-panel.ts:159`、`template-manager.ts:473`、`fingerprint-intensity-modal.ts:453`、`mcp-server-form-modal.ts:192`。
+- **影响**：小但显眼——保存是最常用的动作，图标语义（灯泡 vs 软盘）混乱。
+- **建议**：统一「💾 保存」；并入 i18n 资源时用同一键。
+- **预估**：0.25 天。
+
+### A-13 保存状态文案双轨：枚举 i18n vs 硬编码中文（P1，交互不一致）
+
+- **现象**：协同主视图已把保存状态重构为 `SaveState` 枚举 + i18n（ZC-20261120-05，修过 en 下脏标记常亮的真 bug）；**悬浮面板仍硬编码中文状态串流转**——en 界面下面板状态恒为中文。
+- **证据**：`ui/co-writing/save-state.ts:1-8`（文件头自述动机）+ `:14` 枚举；`co-write-floating-panel.ts:144,213,270,308,313` 硬编码 "未保存/编辑中/已加载/已保存/保存失败"。
+- **影响**：en 用户在悬浮面板看到中文状态；与主视图同功能两套实现（正是 save-state.ts 注释警告的模式在另一个文件重演）。
+- **建议**：悬浮面板接入 `SaveState` 枚举与 `saveStateLabel()`（与 A-3 一起改，同文件）。
+- **预估**：0.25 天。
+
+### A-14 Esc 语义按上下文分裂；长任务弹窗中途关闭不询问（P1/P2，交互不一致）
+
+- **现象**：Esc 在编辑面 = 取消建议（有提示）、在设置搜索 = 清空、在行内编辑 = 模拟取消按钮（保留内存）、在其余 Modal = 静默丢弃；长任务弹窗（重建章节/批量生成/备份）运行中关闭**不询问任务命运**。
+- **证据**：`editor-shortcuts.ts:83`（escape → 清建议，`co-writing-view.ts:1565` 渲染「已取消当前建议」）；`settings-tab.ts:183`（清搜索）；`chapter-outline-tree-modal.ts:902,945`（模拟取消按钮）；长任务弹窗 `rebuild-chapters-modal.ts:348-351`、`continue-chapters-modal.ts:555`、`batch-create-modal.ts:511-514`、`backup-yuan-modal.ts:121-124`——对照 `knowledge-base-view.ts:1449` 有明确的「孤儿确认后才删」设计。
+- **影响**：Esc 的肌肉记忆不可迁移；长任务关弹窗后任务是被中断还是继续，UI 不说。
+- **建议**：Esc 分层文档化（编辑面/表单/浏览）；长任务弹窗 onClose 检查运行态并确认。
+- **预估**：1 天。
+
+### A-15 设置页「即时生效」与弹窗「显式保存」两套模型无标记（P2，交互不一致）
+
+- **现象**：设置页 onChange 立即落盘（无保存按钮、无撤销）；弹窗表单必须点保存、Esc 丢（见 A-5）；桌宠拖动位置也即时落盘。两套模型切换时无任何 UI 提示。
+- **证据**：`settings/general-sections.ts:52-54`、`writing-sections.ts:98-100,166-168`（onChange → saveSettings）；`writing-pet.ts:536,647`（拖动即存）；`mini-settings-modal.ts:5` 自述双份维护漂移。
+- **影响**：在设置页学到的「改了就存」心智到弹窗失效（反之亦然）；`mini-settings-modal` 与 `settings-tab` 的字段校验已经实际漂移（自述）。
+- **建议**：自动保存区域统一标注「自动保存」徽标；高危设置（API/路径）加改动前快照 + 「恢复上次值」。
+- **预估**：1 天。
+
+### A-16 删除项目确认弹窗的旧实现注释仍在（P2）
+
+- **现象**：删除项目已升级为两步确认，但代码注释自述「旧实现要求手输名字」——新旧实现在同一函数里演进，注释未清。
+- **证据**：`full-writer/project-selector-controller.ts:1099-1124`。
+- **影响**：轻微（可维护性）；但它是「确认强度分级」演进过程的活标本，改造 A-7 时可参考。
+- **建议**：随 A-7 统一时清理注释。
+- **预估**：并入 A-7。
+
+### A-17 撤销/重做自建栈仅协同视图有（P2，交互不一致）
+
+- **现象**：协同编辑器拦截 Ctrl+Z/Ctrl+Y 走自建撤销栈（E-04）；全文写作台编辑器无对应实现——同为正文编辑，一个能撤销 AI 改写，一个不能。
+- **证据**：`co-writing-view.ts:1543-1551`（注释 E-04）；`unit-writer-controller.ts` 无撤销栈实现。
+- **影响**：用户在全文写作台误删段落无撤销；两编辑面能力不对等。
+- **建议**：评估把协同的撤销栈抽成共享件接入单元写作（工作量需评估，先列 P2）。
+- **预估**：2 天（若共享化）。
+
+### A-18 图表空态带内联 style，与内联样式基线冲突（P2）
+
+- **现象**：`svg-charts.ts` 8 处空态 HTML 字符串带 `style="width:100%;color:var(--text-muted);"`——项目有 `.inline-style-baseline.json` 管理目标，这是历史痕迹。
+- **证据**：`svg-charts.ts:542,658,826,1000,1168,1373,1552,1676`。
+- **影响**：内联样式账本外的漏网点；空态样式不可主题化。
+- **建议**：随 A-8 空态统一时改用类名。
+- **预估**：并入 A-8。
+
+### A-19 删除确认弹窗与被删对象的上下文展示不一致（P2）
+
+- **现象**：`OperationConfirmModal` 支持传 body 内容，但各调用点有的显示被删对象名、有的只显示泛化警告「确定删除吗」。
+- **证据**：`OperationConfirmModal` 35 文件调用（`ui/components/progress/operation-confirm-modal.ts:35`），body 传参不齐（grep 各调用点 body 参数）。
+- **影响**：用户在「删哪个」不明确的确认框上做决定。
+- **建议**：`OperationConfirmModal` 调用规范——body 必须含被操作对象标识。
+- **预估**：0.5 天。
+
+### A-20 知识库侧的确认设计与全库不一致（反而是正面样本）（P2）
+
+- **现象**：知识库视图是全库唯一「破坏性操作前显式确认 + 孤儿检测」完整实现的地方。
+- **证据**：`ui/views/knowledge-base-view.ts:1449-1450`（孤儿存在时弹确认框，用户明确确认才删除）。
+- **影响**：正面——说明库内已有正确范本；A-7/A-10 的统一应以它为基准而不是另起炉灶。
+- **建议**：把 `knowledge-base-view` 的确认模式提炼为 A-7 统一方案的参照实现。
+- **预估**：并入 A-7。
+
+（A 部分合计 20 条；其中交互不一致类：A-2/3/4/6/7/8/9/10/12/13/14/15/17 ≥5 ✓）
+
+
+---
+
+## 二、B：模块生产消费关系
+
+### 2.0 两个前置更正
+
+1. **`chapter-orchestrator.ts` / `batch-pipeline-runner.ts` 实际位于 `ui/full-writer/`**，不在 `engine/`——它们是 UI 层编排器，落盘全部委托 `StepRunner`/`StepResultSaver`。审计清单按层归位时曾写错位置。
+2. `engine/ai-engine.ts` 的 `APIResponse` 类型同时从本体与 `@/shared/api-types` 两个入口 re-export（`engine/ai-engine.ts:28`）——别名双入口，改名时两处都要动。
+
+### 2.1 模块生产消费表（24 个模块）
+
+「生产」= 写盘路径或内存产物；「消费」= import 的关键依赖。缩写：KB=knowledge-base-manager、AI=ai-engine。
+
+| # | 模块 | 生产（落盘/内存产物） | 触发方 | 消费（关键依赖） | 键/路径耦合 |
+|---|---|---|---|---|---|
+| 1 | `engine/ai-engine.ts` | 生成结果（内存）；落盘委托各 generator 与 BodyWriter | main.ts:1881/1977/2059 三处 `new AIEngine(this)`（**绕过 registry 的临时实例**）、engine-registry:141、27 个文件 | prompt-builder、api-client、body-writer、rules-service、knowledge-injector、prompt-budget | `plugin.settings` 型上帝接口（见耦合 C1） |
+| 2 | `ui/full-writer/chapter-orchestrator.ts` | 单章编排；不落盘 | full-writer-view.ts:366/451 | step-definitions、step-runner、batch-targets | 步骤键序列（耦合 B1） |
+| 3 | `ui/full-writer/batch-pipeline-runner.ts` | 每章步骤结果、结算工件、章节状态快照、`叙事总览.md`（:494） | batch-novels-modal.ts:126 | step-runner、settlement-engine、file-tx 等 11 模块 | 步骤键 + pjStepDir 口径 |
+| 4 | `engine/co-writer-engine.ts` | 流式正文/建议（内存）；「关系变更待确认队列」(:3079)；**不直接写正文**（UI BodySaveController 落盘） | co-writing-view、floating-panel、co-write-facade | 40+ 模块：ai-engine、context-manager、knowledge-injector、relationship-engine、checkers | frontmatter `['身份']`（:3149）；注释声称共享 `stepResults` 内存、实际靠磁盘（耦合 B1） |
+| 5 | `engine/fingerprint-extractor.ts` | StyleFingerprint（内存，调用方入库） | fingerprint-library-modal、novel-analysis-modal 等 5 处 | ai-engine、embedding、ui-message | uiMessage code 键（耦合 B7） |
+| 6 | `engine/style-fingerprint-library.ts` | 三库 JSON：template（vault 内）/global（**插件数据目录**）/project + `.bak` 迁移备份；经 SerializedWriter | 19 个文件（co-writer-engine:37、step-runner:29 等） | file-system-port、paths、vector-store、embedding | 同类数据两个文件系统通道（vault 内/外）（耦合 B4） |
+| 7 | `engine/deconstructors/*`（8 个） | 每书维度报告 md（structure/style/character/…），`writeVaultText` | deconstruction-worker-manager（worker 线程）← scheduler ← batch-import 等 UI | vector-enhancer、writeVaultText | 报告 baseDir 由 UI 逐层透传，与 KB 管理器自己的 baseDir 是两份来源（耦合 B6） |
+| 8 | `engine/knowledge-injector.ts` | prompt 注入段（outline/emotion/scene/body/polish 五种）+ RagSource 回调；不写盘 | ai-engine:20、co-writer-engine:45、step-runner:21 | KB、vector-store、rag/retrieval-service、prompt-budget | RagSource → step-runner ragSink → `fm['rag_sources']`（耦合 B3） |
+| 9 | `engine/context-manager.ts` | GatheredContext（内存聚合）；纯读 | main.ts:1482、co-writer-engine:33、20+ UI | chapter-utils、format-constants、entity-index、fact-store | 读分卷大纲走 `readMergedVolumeOutline`（:1724），口径与写方靠约定 |
+| 10 | `engine/step-runner.ts` + `step-definitions.ts` | 步骤结果 md（`03-大纲与章节/步骤结果/`）、正文（pjBodyFile）、`fm['rag_sources']`、`fm['章']`、执行台账 | full-writer-view.ts:634、batch-pipeline-runner.ts:112、intervention 等 7 处 | file-tx、knowledge-injector、body-writer、paths、prompt-resolver | 步骤键字面量散布 7 文件（耦合 B1）；命令 id 字面量（:1967，耦合 B2） |
+| 11 | `services/knowledge-base-manager.ts` | KB 索引 `kbIndexFile()`（tmp+rename 原子写）、书目目录、导入历史 | main.ts:117、30 个文件 | file-system-port、paths、serialized-writer、webnovel-knowledge-base、write-lock | baseDir 双口径（:249 用 this.baseDir，:602 用缺省）（耦合 B6） |
+| 12 | `services/prompt-manager.ts` | 配置对象归一化；**不写文件**（持久化搭 data.json） | main.ts:112、prompt-manager-settings | prompt-manager-types、templates-default | 分类 id 与 UI label 表两处约定 |
+| 13 | `shared/file-system-port.ts` | `writeVaultText`（全仓 58 个非测试调用点的唯一索引写网关） | core/engine/ui/shared 广泛 | obsidian | `// write-entry-allow:` 豁免靠人工注释不靠工具（21 处） |
+| 14 | `shared/paths.ts` | 纯函数路径常量；`writeProjectMeta()`（.project 唯一封装写入口 :78-90） | 全仓 | 无（纯函数） | `FIELD_VOLUME_NAME` 是零消费死常量；full-writer-view 两处绕过封装直写 .project（耦合 B5） |
+| 15 | `shared/creation-flow.ts` | CreationFlowSnapshot（纯函数） | creation-flow-state、next-step、agent-port 等 7 处 | creation-mode、mode-content | 阶段 id 在 STAGE_LABELS 与 evaluateStage switch 双份字符串 |
+| 16 | `shared/link-status-compute.ts` | 三链路 LinkStatus + agent 文本 | agent harness（diagnose/repair）+ ui/views/link-status | i18n | 键 `'linkStatus.stage.*'` 与资源表两处对齐；`AGENT_LOCALE='zh-CN'` 固定 agent 语言 |
+| 17 | `core/settings-service.ts` | data.json + `.bak`（所有子系统状态共居一文件） | main.ts:156、engine-registry:120 | migrator、crypto-service、provider-manager | data.json 同时承载 20+ 子系统状态 |
+| 18 | `core/command-registry.ts` | 命令注册/路由（不落盘） | main.ts:155、面板、monitor-panel-b 经 `executeCommand` | command-ids、command-mode-rules | `CommandIds` 常量存在但 `'novel-writer-chapter-settlement'` 5 处裸写（耦合 B2） |
+| 19 | `ui/co-writing-view.ts` | 正文保存（BodySaveController→BodyWriter）、结算、监控推送（:3898 panelB.updateCompletion） | main.ts:55、workspace-manager、agent-port | 90+ imports（co-writer-engine、BodyWriter、ending-traction 等） | 章键必须经 `buildQualityChapterKey`（:3892）否则质量历史一章拆两章——契约只靠调用纪律（耦合 B8） |
+| 20 | `ui/full-writer-view.ts` | 项目创建三份模板拷贝、`.project`（**两处绕过封装直写** :338/:1748） | main.ts:48、chapter-settlement-modal | 20+ 引擎模块 | `.project` 双写通道（耦合 B5）；正文文件定位规则与 StepResultSaver 若不一致会分叉出两种章文件名（step-result-saver.ts:187-192 注释实录） |
+| 21 | `ui/monitor-panel-b.ts` | 质量历史 JSON（`pjControlDir/质量历史.json`，corrupt 备份 :170-176） | co-writing-view 推送 + workspace-manager:39 | 三个质量引擎、quality-history-store、CoWriteFacade | 命令 id 字面量（:191，耦合 B2）；依赖 co-writing-view 先 `setActiveProject`（耦合 B8） |
+| 22 | `engine/agent/harness/*` | 会话快照/日志、spill 大结果（`.sessions/spill/`）；`hostTools.writeFile` 端口（engine 定义端口、**ui 实现** agent-port.ts:581） | agent-workbench-view.ts:1225、diagnose/repair 命令 | link-status-compute、file-path-guard、p2-tools | `MEMORY_SLOT_KEYS` 白名单单源（**正面样例**）；writeFile 跨层契约 |
+| 23 | `shared/ui-message.ts` | UiMessage 结构 + resolveUiMessage | fingerprint-extractor、review-agent、step-definitions 等 9 文件 | i18n | code 键 `'engineMsg.<域>.<slug>'` 纯字符串约定，**无编译期校验**——拼错不报错、只永远显示中文兜底（耦合 B7） |
+| 24 | `shared/pre-research.ts` | `00-前期调研/调研数据.json`（adapter.write :404）、`调研报告.md`+分类 md（writeVaultText :406-407）、覆盖前自动备份 | pre-research-modal、agent-port、creation-flow-state 等 5 处 | project-root、file-system-port、creation-mode | 与 `mode-content.ts:132` `modeDocPath()` 是**两套并存的模式文档路径函数**（耦合 B9） |
+
+### 2.2 隐式耦合清单（10 条精选，每条带 文件:行）
+
+agent 全量梳理出 15 条；以下 10 条按影响面排序，其余 5 条同模式（`'rag_sources'` 双端字面量、正文 frontmatter `'卷'/'章'` 双键名兼容、结算表命名三处拼装、monitor 面板与协同视图的运行时契约、`_分卷大纲.md` 后缀 6 处字面量）一并列入 §三改造项 C-14。
+
+**B1 `'bodyGeneration'` 步骤键：常量在数组里当值、字面量散布 7 个文件**
+唯一定义是 `engine/step-definitions.ts:184`（它是运行时值不是编译期 token），其余全是字面量：`body-writer.ts:420`、`step-modal-controller.ts:128/316/576/645`、`planning-step-advance.ts:22`、`step-prompt-assembly.ts:179/188`、`step-result-saver.ts:210/233/287/361`。更微妙：`co-writer-engine.ts:16-20` 注释声称「共享 stepResults['bodyGeneration'] 内存存储」，但该引擎内**无任何** stepResults 写入——实际共享靠磁盘正文文件 + `chapter-state-manager.ts:283` 从磁盘回填。**注释描述的机制不存在。**
+
+**B2 命令 id `'novel-writer-chapter-settlement'`：常量存在却 5 处裸写**
+`shared/command-ids.ts:43` 定义了 `CHAPTER_SETTLEMENT`，但 `engine/step-runner.ts:1967`、`ui/monitor-panel-b.ts:191`、`ui/full-writer/project-selector-controller.ts:741`、`ui/chapter-settlement-modal.ts:182`、`domains/long/tool-catalog.ts:60/:94` 全部未 import 常量。改 id 会**静默**断掉 agent 工具目录与监控面板按钮。
+
+**B3 `'卷名'`：死常量 + 三套独立解析器**
+`shared/format-constants.ts:20` 定义 `FIELD_VOLUME_NAME = '卷名'`，全仓零消费者。生产方 `ai-outline-generator.ts:872` 用字面量数组生成；解析方一 `shared/volume-plan.ts:50` 自带正则；解析方二/三 `volume-intro-modal.ts:458-479` 与 `novel-tags-modal.ts:265-301` 各自实现第三套解析。同一文件格式由 4 处字面量维持——常量反而死了。
+
+**B4 指纹库同一类数据落两个文件系统通道**
+`style-fingerprint-library.ts` 的 template 库落 vault 内（:585）、global 库落**插件数据目录**（:698，vault 索引外）、project 库又回 vault 内（:982）。备份/迁移/同步策略对两种通道必须分别处理，而调用方（19 个文件）只看到统一 API。
+
+**B5 `.project` 双写通道绕过唯一封装**
+`shared/paths.ts:78-90` \`writeProjectMeta()\` 注释明确「只有 adapter 一条正路」；\`fanfic-settings-utils.ts:256/261\` 正确走它；但 \`full-writer-view.ts:338\`（结构切换）与 \`:1748\`（建项目）直接 \`adapter.write\` 写同一路径——三处写同一文件、两种风格、无锁。
+
+**B6 知识库 baseDir 双口径**
+\`knowledge-base-manager.ts:249/348/413\` 用 \`kbKnowledgeBaseDir(this.baseDir)\`，同文件 \`:602/:634\` 却用无参 \`kbKnowledgeBaseDir()\`（默认 \`'写作知识库'\`）列目录；拆解报告的 baseDir 另由 UI 逐层透传（\`knowledge-detail-modal.ts:218/249\`）。自定义库目录时，「索引写入的目录」与「扫描/拆解落盘的目录」可能分叉成两棵树。
+
+**B7 \`ui-message\` 的 code 键无编译期校验，拼错静默退化为中文**
+\`shared/ui-message.ts:17-22\` 约定 \`'engineMsg.<域>.<slug>'\`，生产端与 i18n 资源表两处维护同名键；缺键靠 \`fallback\` 中文兜底（\`resolveUiMessage\` :62-66）——code 拼错**不会报错**，只永远显示中文兜底，双语能力静默失效。check:i18n 的静态校验覆盖不到（code 是运行时字符串）。
+
+**B8 monitor 面板与协同视图的隐式运行时契约**
+\`co-writing-view.ts:3888-3896\` 注释自证：panelB 依赖视图主动 \`setActiveProject()\` + \`buildQualityChapterKey()\`（\`shared/quality-history.ts:172\`）推送，否则「整章不恢复历史」；\`monitor-panel-b.ts:41\` 另有 \`normalizeChapterKey\` 兜底归一。新增入口直接调 \`updateCompletion\` 而不先 \`setActiveProject\` 时，面板**静默**拿不到项目——契约无类型约束。
+
+**B9 短篇/剧本「模式文档」两套路径函数并存**
+\`shared/pre-research.ts:180\` \`preResearchModeDocPath()\`（五维分类/剧本定位）与 \`shared/mode-content.ts:132\` \`modeDocPath()\`（storyCore/outline/bible/storyboard）并存。\`creation-flow-state.ts:110-135\` 读后者判 \`docs.outline/storyboard\`，\`isPreResearchComplete\`（pre-research.ts:450）判前者——**同一「阶段完成」由两个目录两份文件共同决定**，任一侧改文件名即断。
+
+**B10 伏笔库（pjForeshadowDB）多写者锁口径不一致**
+\`settlement-engine.ts\`（:493/1151/1277 等 6 处写，:622 有 \`withWriteLock\`）、\`foreshadow-manager.ts\`（:307-349/:880，全部有锁）、\`analysis-report-engine.ts:1354/:1425\`（**无锁**，仅 journal 留痕）。读者 5+。并发时 analysis-report-engine 与结算/协同存在互相覆盖窗口。
+
+**正面样例（供改造参照）**：\`link-status-compute.ts\` 双端共享且文件头注明下沉原因；\`harness-types.ts\` 的 \`MEMORY_SLOT_KEYS\` 白名单单源；\`settlement-table-writer.ts\` 把 4 个 UI 入口的结算表写收敛为单一锁内入口。
+
+### 2.3 生产 → 消费依赖图
+
+```mermaid
+graph TD
+    subgraph 入口层
+        main[main.ts 组合根]
+        cmd[command-registry 命令路由]
+    end
+    subgraph 视图层
+        cowrite[co-writing-view]
+        fw[full-writer-view]
+        orch[chapter-orchestrator / batch-pipeline-runner]
+        panelB[monitor-panel-b]
+        modals[40+ Modal]
+    end
+    subgraph 引擎层
+        ai[ai-engine]
+        cwe[co-writer-engine]
+        step[step-runner + step-definitions]
+        body[body-writer]
+        inject[knowledge-injector]
+        fplib[style-fingerprint-library]
+        decon[deconstructors x8]
+        outline[ai-outline-generator]
+    end
+    subgraph 服务与网关
+        kb[knowledge-base-manager]
+        prompt[prompt-manager]
+        filetx[FileTx 事务层]
+        gw[file-system-port writeVaultText]
+        paths[paths.ts 路径常量]
+    end
+    vault[(vault: 大纲/正文/KB/伏笔库)]
+    pdir[(插件数据目录: data.json + global 指纹库)]
+
+    main --> ai
+    main --> cwe
+    main --> kb
+    main --> step
+    cmd --> modals
+    cowrite --> cwe
+    cowrite --> body
+    cowrite --> panelB
+    fw --> orch
+    fw --> step
+    fw --> ai
+    orch --> step
+    modals --> ai
+    modals --> fplib
+    modals --> decon
+    step --> inject
+    step --> body
+    step --> filetx
+    body --> filetx
+    cwe --> inject
+    cwe --> fplib
+    cwe --> kb
+    ai --> inject
+    ai --> outline
+    ai --> prompt
+    decon --> gw
+    decon --> kb
+    fplib --> gw
+    kb --> gw
+    inject --> fplib
+    inject --> kb
+    filetx --> gw
+    gw --> vault
+    paths --> gw
+    paths --> kb
+    paths --> fplib
+    gw -.索引外通道.-> pdir
+    cowrite -.B8 运行时推送.-> panelB
+    step -.B2 裸命令 id.-> cmd
+```
+
+实线 = import 依赖；虚线 = 运行时隐式契约或索引外通道。**`paths.ts` 是唯一无依赖的纯函数层**——所有落盘路径口径都应经它，但 §2.2 显示多处绕行。
+
+
+---
+
+## 三、C：改造清单（≤20 条可执行项）
+
+从 A 20 条 + B 10 条合成。每条标注优先级、来源（A-*/B-*）、依赖顺序；标注「需另派任务」的给出建议 scope。
+
+### P0（数据丢失 / 重复扣费，最先做）
+
+| # | 事项 | 来源 | 依赖 | 预估 | 需另派任务？ |
+|---|---|---|---|---|---|
+| 1 | `withButtonBusy` 接入全部 AI 生成按钮（≥10 处），优先 `plan-book-modal` / `ai-builder-modal`（当前零守卫） | A-1 | 无 | 1 天 | 是（scope: `ui/plan-book-modal.ts, ui/ai-builder-modal.ts, ui/button-busy.ts`） |
+| 2 | 悬浮面板接入 `BodySaveController` 自动保存 + `SaveState` 枚举（同一正文两入口风险策略不同 + en 状态恒中文） | A-3 + A-13 | 无 | 1 天 | 是（scope: `ui/co-write-floating-panel.ts, ui/co-writing/save-state.ts`） |
+| 3 | `confirmDiscardIfDirty` 工具 + 高危 10 个 Modal 接入（42 个可编辑 Modal 关闭即丢，0 个有确认） | A-5 | 无 | 1.5 天 | 是（scope: `ui/components/, ui/*modal*.ts` 高危清单） |
+| 4 | 伏笔库写入统一加锁（`analysis-report-engine` 两个写点无 `withWriteLock`，与结算/协同并发互覆） | B10 | 无 | 0.5 天 | 是（scope: `engine/analysis-report-engine.ts`） |
+
+### P1（承诺与实际不符 / 明显不一致）
+
+| # | 事项 | 来源 | 依赖 | 预估 | 需另派任务？ |
+|---|---|---|---|---|---|
+| 5 | Ctrl+S 三处行为统一（推快照与否、成功反馈）+ tooltip 承诺修正（全局接管或改文案） | A-2 | 无 | 1 天 | 是（scope: `ui/co-writing/editor-shortcuts.ts, ui/co-writing-view.ts, ui/co-write-floating-panel.ts, ui/full-writer/unit-writer-controller.ts, i18n/messages`） |
+| 6 | `window.confirm` 11 处 → `OperationConfirmModal`（含 cancelText 统一、body 必须含被操作对象） | A-6 + A-19 参照 + A-7 分级 | 无 | 1 天 | 是（scope: 8 个 modal 文件 + `operation-confirm-modal.ts`） |
+| 7 | 自动保存节拍统一（2000/800/1000ms 三套 → 一套常量） | A-4 | 无 | 0.5 天 | 是（scope: 三个 controller 文件） |
+| 8 | 步骤键单一真源：`step-definitions.ts` 导出 `STEP_KEYS` 常量对象，7 文件字面量替换；**同时更正 `co-writer-engine.ts:16-20` 描述不存在机制的注释** | B1 | 无 | 1 天 | 是（scope: `engine/step-definitions.ts` + 7 个消费文件） |
+| 9 | 命令 id 常量化：5 处裸写 `'novel-writer-chapter-settlement'` 改 import `CommandIds.CHAPTER_SETTLEMENT` | B2 | 无 | 0.5 天 | 是（scope: 5 个文件 + `shared/command-ids.ts`） |
+| 10 | `.project` 写入收敛到 `writeProjectMeta()`（full-writer-view 两处绕过封装） | B5 | 无 | 0.5 天 | 是（scope: `ui/full-writer-view.ts, shared/paths.ts`） |
+| 11 | 模式文档路径二合一：`preResearchModeDocPath` 与 `modeDocPath` 合并为单一函数（含「阶段完成」判定口径统一） | B9 | 无 | 1 天 | 是（scope: `shared/pre-research.ts, shared/mode-content.ts, ui/full-writer/creation-flow-state.ts`） |
+| 12 | `ui-message` code 键编译期校验：从 i18n 资源生成 `ENGINE_MSG_CODES` 类型/常量，code 拼错变编译错 | B7 | 依赖 19 已完成的 engineMsg 资源 | 0.5 天 | 是（scope: `shared/ui-message.ts, scripts/check-i18n.mjs`） |
+| 13 | 保存状态/按钮文案/Notice 时长三个小统一（A-12 三种保存按钮、A-11 八种时长、A-17 错误双通道） | A-11/12/17 | 无 | 1 天 | 是（scope: `ui/utils/helpers.ts` + 机械替换） |
+
+### P2（风格统一 / 可维护性）
+
+| # | 事项 | 来源 | 依赖 | 预估 | 需另派任务？ |
+|---|---|---|---|---|---|
+| 14 | 空态统一到 `createEmptyState`（手写 10+ 处 + `nw-float-empty` + `svg-charts` 8 处内联） | A-8 + A-18 | 无 | 1 天 | 是（scope: `ui/components/empty-state.ts` + 消费文件） |
+| 15 | 持久进度统一到 `showProgress`（裸 Notice(…,0) 30 处；`outline-expand-modal` 私有同名改名） | A-9 + A-10 | 无 | 1 天 | 是（scope: `ui/utils/helpers.ts` + 30 处消费文件） |
+| 16 | 字符串键常量收编：`_分卷大纲.md` 后缀（6 模块）、`sections['卷名']` 等（`FIELD_VOLUME_NAME` 死常量复活或删除）、`OUTLINE_REQUIRED_KEYS` 采纳到 novel-tags/volume-intro 两处复制解析器 | B3 + 补充 | 依赖 8（同属字符串键治理） | 1 天 | 是（scope: `shared/format-constants.ts` + 8 个消费文件） |
+| 17 | 知识库 baseDir 双口径修复（kb-manager :602/:634 改用 this.baseDir） | B6 | 无 | 0.5 天 | 是（scope: `services/knowledge-base-manager.ts`） |
+| 18 | 设置页自动保存徽标 + 高危设置快照（A-15 两套模型无标记） | A-15 | 无 | 1 天 | 是（scope: `ui/settings/`） |
+| 19 | Esc 语义文档化 + 长任务弹窗 onClose 运行态确认 | A-14 | 依赖 3（dirty 跟踪基建） | 1 天 | 是（scope: 4 个长任务 modal + 文档） |
+| 20 | `AIEngine` 绕过 registry 的 3 处临时实例收编（main.ts:1881/1977/2059 → registry 单例） | §2.1 表 #1 | 无 | 0.5 天 | 是（scope: `main.ts, engine/engine-registry.ts`） |
+
+### 清单说明
+
+- **合计 20 条**：P0×4、P1×9、P2×7。预估总量约 **16.75 天**（单人）。
+- **全部需另派任务**（本任务为阶段一，不改代码）；建议 scope 已按「写范围锁粒度」给出。
+- **依赖关系**：3 → 19（dirty 基建）；12 → 19 的 engineMsg 资源（已存在）；8 → 16（同属字符串键治理，先做键常量再做收编）；其余可并行。
+- **收益最高的前三条**：#1（防重复扣费）、#3（防数据丢失）、#2（同正文两入口风险不一致）——都是用户可感知的正确性问题，不是风格问题。
+- **B 部分未列入清单的 5 条**（`'rag_sources'` 双端字面量、正文 frontmatter 双键名兼容、结算表命名三处拼装、`_分卷大纲.md` 后缀、monitor 运行时契约）并入 #16 的字符串键治理一并处理。
+
+## 四、给阶段二的执行提醒
+
+1. **先做 P0 的四条**——它们与 i18n 切片无耦合，可并行派单；但 #1/#2/#3 都动 `ui/`，注意与在跑的 i18n 片段的写范围锁冲突（建议 i18n 第 49 片避开 plan-book / floating-panel / 高危 Modal 文件）。
+2. **改造时沿用仓内正面样例**：确认框以 `knowledge-base-view.ts:1449` 为参照（A-19）；单源常量以 `MEMORY_SLOT_KEYS` 为参照（§2.1 #22）。
+3. **每条改造必须带回归测试**——尤其 #1（双击防护）、#3（关闭确认）、#4（写锁），这三个是行为变更，不是文案变更。
+4. 本文档的证据行号基于 `32bc1657` 之后的 master；阶段二动工前若有大合并，先 `grep` 复核关键证据仍在。
