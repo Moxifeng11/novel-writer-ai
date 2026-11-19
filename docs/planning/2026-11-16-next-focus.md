@@ -3742,3 +3742,34 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 
 **下一轮**：C 清单 P1（用户要求由 DSH 直接做，暂不派 ZCode），按审计 §三 顺序：Ctrl+S 三处行为统一、确认框统一、步骤键常量化等 9 条。
 
+## 第一百一十九轮：C 清单 P1 前四项（#7 #8 #9 #10，2026-11-20，DSH）
+
+**用户裁定（m24178）**：P1×9 / P2×7 由 DSH 直接做、暂不派 ZCode。本轮按审计 §三 C 清单顺序先做四项：自动保存节拍、命令 id、项目元写入、步骤键单一真源。
+
+**#7 自动保存节拍统一（A-4）**
+- 新增 `shared/interaction-timing.ts`：`export const AUTOSAVE_DELAY_MS = 1000;`，注释写明三套历史的来历（协同 2000 / 单元 800 / 场景细纲 1000）与取 1000 的理由（协同 2s 切章前迟钝、800 偏频繁、1000 行为变化面最小）。
+- 三个消费方引用常量、删掉各自数字：`ui/co-writing-view.ts`（debounceFixed('auto-save')）、`ui/full-writer/unit-writer-controller.ts`（删本地常量改 import）、`ui/full-writer/scene-outline-controller.ts`（markDirty 里的 setTimeout）。
+- 顺带更正三处过时注释：`ui/full-writer/scene-outline-controller.ts` 头注释与 `ui/cowrite/body-save-controller.ts:64` 不再写死「2s / 1 秒」。
+- 新增 `tests/unit/shared/interaction-timing.test.ts`（3 例）：常量值、三个消费方必须 import 且不允许本地再定义、常量只在一处定义。
+
+**#8 步骤键单一真源（B1）**
+- 新增 `shared/step-keys.ts`：`STEP_KEYS`（infoPlan / plotDistill / characterSoul / outline / emotionPlan / sceneExpand / bodyGeneration / qualityControl / analysisReport / settlement）+ `StepKey` 类型；`engine/step-definitions.ts` re-export 保持旧路径可用。
+- 替换面：**22 个文件约 143 处**字面量（审计预估 7 文件，实际更广），消费方一律 `STEP_KEYS.XXX`。
+- 注释更正：`engine/co-writer-engine.ts` 的「共享 stepResults['bodyGeneration'] 存储」改为实情——协同引擎只落盘正文，内存槽由 `ui/states/chapter-state-manager.ts:283` 加载章节时从磁盘回填；`engine/step-definitions.ts` 架构说明同步。
+- `'settlement'` 故意不并入字符串键收编（同时是 creation-flow 阶段 id / job 分类），留给 P2 #16。
+
+**#9 命令 id 常量化（B2）**
+- `domains/long/tool-catalog.ts`：35 个按钮 commandId + 10 条快捷工具 id 全改 `CommandIds.*`；另 4 处裸写（`ui/chapter-settlement-modal.ts`、`ui/full-writer/project-selector-controller.ts`、`ui/monitor-panel-b.ts`、`engine/step-runner.ts`）替换。
+- `'novel-writer-chapter-settlement-light'` 不是注册命令、只是账本动作标签，保留字面量并加注释。
+
+**#10 .project 写入收敛（B5）**
+- `ui/full-writer-view.ts` 两处改走 `writeProjectMeta()`（唯一封装，`shared/paths.ts:78-90`），失败统一抛 `fullwriter.sr.saveFailedWith`；结构切换那处写锁键从模板串改 `pjProjectMeta()`。
+
+**三个坑（都当场踩到并修好）**
+1. **循环 import 的 TDZ**：`engine/step-definitions.ts` import `validateStepResult`（来自 step-validator），step-validator 反过来 import `STEP_KEYS` → 模块初始化时 `STEP_KEYS` 是 undefined，53 个测试文件全挂（`Cannot read properties of undefined (reading 'QUALITY_CONTROL')`）。正确做法是把常量放 `shared/step-keys.ts`，让反向引用不经过 engine。
+2. **对象字面量键**：机械替换把 `'bodyGeneration': x` 换成 `STEP_KEYS.BODY_GENERATION: x`（语法错），要写 `[STEP_KEYS.BODY_GENERATION]: x`；共 6 处。
+3. **分层规则**：第一版把常量放 engine 后，`shared/prompt-template-catalog.ts` 与 `shared/task-model.ts` 出现 `shared/ → engine/` 违规（`tests/unit/architecture/ui-internal-boundaries.test.ts` 直接红），于是常量迁 `shared/step-keys.ts`。
+
+**门禁**：`tsc` 0 错、eslint 0 error；`vitest` 1002 文件 / 10,405 通过 + 3 跳过（首跑被分层测试拦下，修完重跑全绿）；`check:i18n` 6034 条 / 无法解析键 0 / 棘轮 205 文件 5,456 条不变；`check:bundle` main.js 6,224,760（较 6,224,663 +97，常量对象与 re-export 的净开销）、styles.css 800,112 不变；`preflight` EXIT=0。
+
+**下一轮**：P1 余下五条 —— #5 Ctrl+S 三处行为统一、#6 `window.confirm` 11 处换 `OperationConfirmModal`、#11 模式文档路径二合一、#12 `ENGINE_MSG_CODES` 编译期校验、#13 保存状态/按钮文案/Notice 时长三个小统一。

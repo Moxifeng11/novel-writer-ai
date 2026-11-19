@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 354 | 146893 | 1951 | 1545 | 79% |
+| `engine/` | 354 | 146934 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19560 | 296 | 204 | 69% |
-| `shared/` | 259 | 52377 | 2212 | 1732 | 78% |
+| `shared/` | 261 | 52428 | 2215 | 1733 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
-| `domains/` | 15 | 1583 | 88 | 58 | 66% |
-| `ui/` | 304 | 113536 | 1180 | 943 | 80% |
+| `domains/` | 15 | 1584 | 88 | 58 | 66% |
+| `ui/` | 304 | 113556 | 1180 | 943 | 80% |
 
 ## 文件清单
 
@@ -30,7 +30,7 @@
 | `domains/kernel/tool-catalog-aggregator.ts` | 139 | 9 | 8 |
 | `domains/kernel/tool-catalog-types.ts` | 24 | 2 | 0 |
 | `domains/long/harness-profile.ts` | 44 | 1 | 1 |
-| `domains/long/tool-catalog.ts` | 118 | 4 | 3 |
+| `domains/long/tool-catalog.ts` | 119 | 4 | 3 |
 | `domains/memory/history.ts` | 128 | 9 | 6 |
 | `domains/memory/model.ts` | 247 | 19 | 11 |
 | `domains/memory/patch.ts` | 34 | 3 | 2 |
@@ -91,7 +91,7 @@
 | `engine/bases-generator.ts` | 325 | 9 | 7 |
 | `engine/batch-import-manager.ts` | 907 | 9 | 9 |
 | `engine/beat-verifier.ts` | 70 | 3 | 1 |
-| `engine/body-writer.ts` | 558 | 8 | 8 |
+| `engine/body-writer.ts` | 559 | 8 | 8 |
 | `engine/cache/index.ts` | 24 | 3 | 0 |
 | `engine/cache/preload-manager.ts` | 670 | 6 | 6 |
 | `engine/canon-vector-indexer.ts` | 132 | 8 | 5 |
@@ -106,7 +106,7 @@
 | `engine/character-context.ts` | 46 | 1 | 1 |
 | `engine/character-recognition-pipeline.ts` | 452 | 1 | 1 |
 | `engine/character-soul.ts` | 268 | 10 | 7 |
-| `engine/co-writer-engine.ts` | 3352 | 4 | 2 |
+| `engine/co-writer-engine.ts` | 3355 | 4 | 2 |
 | `engine/co-writer-state-sync.ts` | 53 | 1 | 1 |
 | `engine/co-writer/ai-response-parse.ts` | 186 | 4 | 4 |
 | `engine/co-writer/co-write-options.ts` | 313 | 11 | 11 |
@@ -255,7 +255,7 @@
 | `engine/outline-contract.ts` | 737 | 21 | 20 |
 | `engine/outline-to-text-expander.ts` | 672 | 8 | 8 |
 | `engine/planning-combined.ts` | 242 | 9 | 7 |
-| `engine/planning-step-advance.ts` | 57 | 5 | 2 |
+| `engine/planning-step-advance.ts` | 58 | 5 | 2 |
 | `engine/plot-completion-engine.ts` | 806 | 6 | 6 |
 | `engine/plot-divergence-engine.ts` | 954 | 8 | 8 |
 | `engine/plot-redundancy-checker.ts` | 128 | 4 | 4 |
@@ -277,10 +277,10 @@
 | `engine/prompts/human-voice.ts` | 104 | 5 | 5 |
 | `engine/prompts/index.ts` | 67 | 2 | 0 |
 | `engine/prompts/memory-prompts.ts` | 66 | 3 | 3 |
-| `engine/prompts/prompt-registry.ts` | 209 | 8 | 8 |
+| `engine/prompts/prompt-registry.ts` | 210 | 8 | 8 |
 | `engine/prompts/soul-driven-prompts.ts` | 189 | 3 | 3 |
 | `engine/prompts/style-exemplars.ts` | 134 | 8 | 7 |
-| `engine/prompts/template-utils.ts` | 176 | 4 | 4 |
+| `engine/prompts/template-utils.ts` | 177 | 4 | 4 |
 | `engine/prompts/writing-rules-format.ts` | 48 | 3 | 3 |
 | `engine/prompts/writing-rules.ts` | 9 | 0 | 0 |
 | `engine/quality-gate.ts` | 206 | 5 | 4 |
@@ -348,17 +348,17 @@
 | `engine/settlement/settlement-journal.ts` | 273 | 6 | 6 |
 | `engine/settlement/settlement-table-writer.ts` | 79 | 3 | 2 |
 | `engine/settlement/settlement-types.ts` | 46 | 2 | 1 |
-| `engine/step-definitions.ts` | 291 | 13 | 11 |
-| `engine/step-modal-controller.ts` | 660 | 2 | 2 |
-| `engine/step-prompt-assembly.ts` | 318 | 5 | 4 |
-| `engine/step-result-saver.ts` | 574 | 5 | 4 |
+| `engine/step-definitions.ts` | 297 | 13 | 11 |
+| `engine/step-modal-controller.ts` | 661 | 2 | 2 |
+| `engine/step-prompt-assembly.ts` | 334 | 5 | 4 |
+| `engine/step-result-saver.ts` | 575 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 227 | 6 | 5 |
-| `engine/step-runner.ts` | 2380 | 2 | 1 |
+| `engine/step-runner.ts` | 2382 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
-| `engine/step-settlement.ts` | 220 | 3 | 3 |
+| `engine/step-settlement.ts` | 221 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |
-| `engine/step-validator.ts` | 809 | 7 | 7 |
+| `engine/step-validator.ts` | 816 | 7 | 7 |
 | `engine/story-beat-extractor.ts` | 73 | 1 | 1 |
 | `engine/story-linkage-writer.ts` | 161 | 5 | 5 |
 | `engine/story-linkage.ts` | 416 | 14 | 12 |
@@ -554,6 +554,7 @@
 | `shared/info-debt.ts` | 70 | 3 | 3 |
 | `shared/info-plan-fields.ts` | 167 | 3 | 3 |
 | `shared/injection-ledger.ts` | 345 | 12 | 9 |
+| `shared/interaction-timing.ts` | 17 | 1 | 0 |
 | `shared/internal-registry.ts` | 44 | 1 | 1 |
 | `shared/iterative-refine.ts` | 165 | 6 | 6 |
 | `shared/keyboard.ts` | 29 | 1 | 1 |
@@ -614,7 +615,7 @@
 | `shared/prompt-budget.ts` | 575 | 19 | 17 |
 | `shared/prompt-manager-import.ts` | 208 | 6 | 3 |
 | `shared/prompt-manager-types.ts` | 139 | 11 | 11 |
-| `shared/prompt-template-catalog.ts` | 50 | 3 | 0 |
+| `shared/prompt-template-catalog.ts` | 51 | 3 | 0 |
 | `shared/prose-metrics.ts` | 574 | 10 | 10 |
 | `shared/prose-naturalizer.ts` | 238 | 3 | 3 |
 | `shared/protagonist.ts` | 40 | 2 | 2 |
@@ -657,6 +658,7 @@
 | `shared/settlement-recovery-model.ts` | 92 | 5 | 4 |
 | `shared/skill-model.ts` | 118 | 6 | 4 |
 | `shared/step-frontmatter.ts` | 154 | 5 | 4 |
+| `shared/step-keys.ts` | 32 | 2 | 1 |
 | `shared/storage-keys.ts` | 50 | 5 | 2 |
 | `shared/store/compose.ts` | 64 | 2 | 2 |
 | `shared/store/createStore.ts` | 152 | 2 | 2 |
@@ -674,7 +676,7 @@
 | `shared/tag-taxonomy.ts` | 171 | 8 | 6 |
 | `shared/targeted-revision-model.ts` | 94 | 4 | 2 |
 | `shared/task-budget-engine.ts` | 292 | 13 | 11 |
-| `shared/task-model.ts` | 381 | 19 | 18 |
+| `shared/task-model.ts` | 382 | 19 | 18 |
 | `shared/template-scaffold.ts` | 139 | 3 | 3 |
 | `shared/template-validator.ts` | 967 | 26 | 23 |
 | `shared/text-patch.ts` | 62 | 3 | 2 |
@@ -726,17 +728,17 @@
 | `ui/asset-registry-modal.ts` | 151 | 1 | 1 |
 | `ui/backup-center-modal.ts` | 244 | 1 | 1 |
 | `ui/backup-yuan-modal.ts` | 125 | 1 | 1 |
-| `ui/batch-create-modal.ts` | 521 | 1 | 1 |
+| `ui/batch-create-modal.ts` | 522 | 1 | 1 |
 | `ui/batch-import-modal.ts` | 1766 | 1 | 1 |
 | `ui/batch-novels-modal.ts` | 236 | 1 | 1 |
 | `ui/button-busy.ts` | 37 | 1 | 1 |
 | `ui/changelog-modal.ts` | 207 | 1 | 1 |
 | `ui/chapter-outline-tree-modal.ts` | 1396 | 1 | 1 |
-| `ui/chapter-settlement-modal.ts` | 428 | 1 | 1 |
+| `ui/chapter-settlement-modal.ts` | 430 | 1 | 1 |
 | `ui/chapter-version-modal.ts` | 658 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |
-| `ui/co-writing-view.ts` | 3972 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3973 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 167 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 248 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
@@ -827,11 +829,11 @@
 | `ui/fingerprint-library-modal.ts` | 307 | 1 | 1 |
 | `ui/fingerprint-utils.ts` | 231 | 13 | 13 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |
-| `ui/full-writer-view.ts` | 2773 | 2 | 2 |
-| `ui/full-writer/batch-pipeline-runner.ts` | 503 | 5 | 4 |
+| `ui/full-writer-view.ts` | 2779 | 2 | 2 |
+| `ui/full-writer/batch-pipeline-runner.ts` | 504 | 5 | 4 |
 | `ui/full-writer/batch-step-retry.ts` | 26 | 2 | 1 |
-| `ui/full-writer/batch-targets.ts` | 68 | 4 | 4 |
-| `ui/full-writer/chapter-orchestrator.ts` | 504 | 10 | 9 |
+| `ui/full-writer/batch-targets.ts` | 69 | 4 | 4 |
+| `ui/full-writer/chapter-orchestrator.ts` | 505 | 10 | 9 |
 | `ui/full-writer/checkup-bar-controller.ts` | 287 | 2 | 2 |
 | `ui/full-writer/context-loader-controller.ts` | 275 | 2 | 2 |
 | `ui/full-writer/cover-picker-controller.ts` | 146 | 1 | 1 |
@@ -844,24 +846,24 @@
 | `ui/full-writer/flow-tab.ts` | 59 | 3 | 3 |
 | `ui/full-writer/full-writer-store.ts` | 401 | 5 | 5 |
 | `ui/full-writer/full-writer-utils.ts` | 115 | 6 | 6 |
-| `ui/full-writer/intervention-controller.ts` | 413 | 3 | 3 |
+| `ui/full-writer/intervention-controller.ts` | 414 | 3 | 3 |
 | `ui/full-writer/next-step.ts` | 152 | 2 | 1 |
-| `ui/full-writer/project-selector-controller.ts` | 1145 | 3 | 3 |
+| `ui/full-writer/project-selector-controller.ts` | 1146 | 3 | 3 |
 | `ui/full-writer/quick-tools-panel.ts` | 152 | 3 | 3 |
 | `ui/full-writer/recent-projects.ts` | 133 | 6 | 4 |
-| `ui/full-writer/scene-outline-controller.ts` | 1210 | 2 | 1 |
+| `ui/full-writer/scene-outline-controller.ts` | 1211 | 2 | 1 |
 | `ui/full-writer/scene-outline-format.ts` | 141 | 4 | 4 |
 | `ui/full-writer/setting-lib-controller.ts` | 63 | 1 | 1 |
 | `ui/full-writer/settings-menu.ts` | 85 | 4 | 3 |
 | `ui/full-writer/status-bar-controller.ts` | 106 | 2 | 2 |
-| `ui/full-writer/step-render-controller.ts` | 684 | 2 | 2 |
-| `ui/full-writer/streamlined-nav-presenter.ts` | 273 | 12 | 12 |
+| `ui/full-writer/step-render-controller.ts` | 685 | 2 | 2 |
+| `ui/full-writer/streamlined-nav-presenter.ts` | 274 | 12 | 12 |
 | `ui/full-writer/tab-controller.ts` | 381 | 2 | 2 |
 | `ui/full-writer/template-vars-builder.ts` | 1229 | 7 | 7 |
 | `ui/full-writer/title-bar-controller.ts` | 196 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |
-| `ui/full-writer/unit-writer-controller.ts` | 798 | 2 | 2 |
+| `ui/full-writer/unit-writer-controller.ts` | 797 | 2 | 2 |
 | `ui/full-writer/wizard-controller.ts` | 421 | 1 | 1 |
 | `ui/full-writer/wizard-results-store.ts` | 81 | 1 | 1 |
 | `ui/full-writer/wizard-step-executors.ts` | 374 | 1 | 1 |
@@ -899,7 +901,7 @@
 | `ui/model-picker-popover.ts` | 298 | 4 | 3 |
 | `ui/model-quick-switcher.ts` | 321 | 13 | 12 |
 | `ui/monitor-panel-a.ts` | 200 | 2 | 2 |
-| `ui/monitor-panel-b.ts` | 1890 | 2 | 2 |
+| `ui/monitor-panel-b.ts` | 1891 | 2 | 2 |
 | `ui/novel-analysis-modal.ts` | 267 | 1 | 1 |
 | `ui/novel-tags-modal.ts` | 336 | 1 | 1 |
 | `ui/onboarding-modal.ts` | 318 | 1 | 1 |
@@ -913,7 +915,7 @@
 | `ui/planning/outline-bridge.ts` | 128 | 5 | 3 |
 | `ui/plot-canvas-modal.ts` | 366 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
-| `ui/polish-editor.ts` | 925 | 5 | 5 |
+| `ui/polish-editor.ts` | 926 | 5 | 5 |
 | `ui/pre-research-modal.ts` | 724 | 2 | 2 |
 | `ui/project-health-modal.ts` | 205 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 457 | 5 | 5 |
@@ -961,7 +963,7 @@
 | `ui/settings/writing-sections.ts` | 852 | 6 | 6 |
 | `ui/settlement-recovery-modal.ts` | 141 | 1 | 1 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
-| `ui/states/chapter-state-manager.ts` | 402 | 1 | 1 |
+| `ui/states/chapter-state-manager.ts` | 403 | 1 | 1 |
 | `ui/step-result-viewer-modal.ts` | 442 | 1 | 1 |
 | `ui/story-linkage-modal.ts` | 390 | 1 | 1 |
 | `ui/story-settings-form.ts` | 274 | 2 | 2 |

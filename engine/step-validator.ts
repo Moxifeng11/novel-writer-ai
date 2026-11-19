@@ -13,6 +13,7 @@
 
 import { validateEmotionPlan } from './emotion-planner';
 import { validateSceneExpansion } from './scene-expander';
+import { STEP_KEYS } from '@/shared/step-keys';
 
 /**
  * 对话描写引号集合：中文弯引号“”/单引号‘’/直角引号「」『』/ASCII 双引号。
@@ -764,10 +765,16 @@ export function validateStepResult(stepKey: string, content: string): StepValida
     return validator(normalized);
 }
 
-/** 需要做 Markdown 结构规范化的步骤（正文类步骤不做，避免影响字数/引号判定） */
-const STRUCTURAL_STEPS = new Set([
+/**
+ * 需要做 Markdown 结构规范化的步骤（正文类步骤不做，避免影响字数/引号判定）。
+ *
+ * 注意：本文件与 step-definitions.ts 互相 import（后者需要 validateStepResult），
+ * 所以模块级只能用 shared/step-keys.ts 的常量——不能 import step-definitions 自己，
+ * 否则加载期 STEP_KEYS 还是 undefined（2026-11-20 实测踩到）。
+ */
+const STRUCTURAL_STEPS = new Set<string>([
     'infoPlan', 'plotDistill', 'outline', 'characterSoul',
-    'emotionPlan', 'sceneExpand', 'qualityControl', 'analysisReport',
+    'emotionPlan', 'sceneExpand', STEP_KEYS.QUALITY_CONTROL, STEP_KEYS.ANALYSIS_REPORT,
 ]);
 
 /**

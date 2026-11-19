@@ -6,6 +6,7 @@ import { parseEmotionIntensities } from '@/shared/emotion-plan-parse';
 import { detectRhythmDeviations, renderRhythmReport } from '@/shared/rhythm-baseline-model';
 import { renderVoiceSampleSection, selectVoiceSamples } from '@/shared/voice-sample-model';
 import { isChapterSettledText } from '@/shared/chapter-status';
+import { CommandIds } from '@/shared/command-ids';
 import { AIEngine, APIResponse } from './ai-engine';
 import { DEAI_CHECK_SYSTEM_PROMPT, DEAI_CHECK_USER_TEMPLATE, DEAI_REWRITE_SYSTEM_PROMPT, DEAI_REWRITE_USER_TEMPLATE, SELF_CHECK_PROMPTS } from './prompt-templates';
 import { findChapterFile, findBodyFileByChapterNum, getChapterFileName, CHAPTER_FILE_TYPES } from './chapter-utils';
@@ -267,7 +268,7 @@ export class StepRunner {
             const text = [
                 ctx.stepResults['infoPlan'] || '',
                 ctx.stepResults['sceneExpand'] || '',
-                (ctx.stepResults['bodyGeneration'] || '').slice(-1200),
+                (ctx.stepResults[STEP_KEYS.BODY_GENERATION] || '').slice(-1200),
             ].filter(Boolean).join('\n').slice(0, 4000);
             const bundle = await resolveAssociations({
                 app: this.app,
@@ -433,12 +434,12 @@ export class StepRunner {
 
     private async loadAssociationContext(ctx: StepRunCtx, stepKey: string): Promise<{ text: string; tokens: number; skipped?: string }> {
         try {
-            const task = stepKey === 'analysisReport' ? 'analysis' : stepKey === 'qualityControl' ? 'quality' : 'body';
+            const task = stepKey === STEP_KEYS.ANALYSIS_REPORT ? 'analysis' : stepKey === STEP_KEYS.QUALITY_CONTROL ? 'quality' : 'body';
             const text = [
                 ctx.stepResults['infoPlan'] || '',
                 ctx.stepResults['sceneExpand'] || '',
                 ctx.stepResults['outline'] || '',
-                (ctx.stepResults['bodyGeneration'] || '').slice(-1600),
+                (ctx.stepResults[STEP_KEYS.BODY_GENERATION] || '').slice(-1600),
                 ctx.vars['chapPlan'] || '',
             ].filter(Boolean).join('\n').slice(0, 6000);
             const alreadyInjected = [
@@ -475,7 +476,7 @@ export class StepRunner {
             await library.loadIntensityConfigs();
             const enabled = await library.getEnabledFingerprints();
             const query = [
-                (ctx.stepResults['bodyGeneration'] || '').slice(-800),
+                (ctx.stepResults[STEP_KEYS.BODY_GENERATION] || '').slice(-800),
                 ctx.stepResults['outline'] || '',
                 (ctx.stepResults['sceneExpand'] || '').slice(0, 1200),
             ].filter(Boolean).join('\n');
@@ -806,7 +807,7 @@ export class StepRunner {
             templateHash: captured?.templateHash || '',
             rulesVersion,
             rulesHash,
-            voiceMode: stepKey === 'bodyGeneration' ? voiceMode : '',
+            voiceMode: stepKey === STEP_KEYS.BODY_GENERATION ? voiceMode : '',
             experimentGroup: String(settings.experimentGroup || ''),
         };
     }
@@ -932,12 +933,12 @@ export class StepRunner {
         stepCompleted: Set<string>,
         lockedNames?: string[],
     ): Promise<void> {
-        const body = stepResults['bodyGeneration'] || '';
+        const body = stepResults[STEP_KEYS.BODY_GENERATION] || '';
         if (!body.trim()) {
             this.callbacks.showError('没有正文可修订');
             return;
         }
-        const allIssues = parseQualityControlReport(stepResults['qualityControl'] || '');
+        const allIssues = parseQualityControlReport(stepResults[STEP_KEYS.QUALITY_CONTROL] || '');
         if (allIssues.length === 0) {
             this.callbacks.showError('没有可执行的结构化质量问题：请先完成「质量控制」步骤');
             return;
@@ -1010,13 +1011,13 @@ export class StepRunner {
             .filter(item => item.changed)
             .map(item => item.dimension)
             .join('、');
-        stepResults['bodyGeneration'] = nextBody;
-        await this.saveStepResult('bodyGeneration', nextBody, chapDir, chapterName, volume, {
+        stepResults[STEP_KEYS.BODY_GENERATION] = nextBody;
+        await this.saveStepResult(STEP_KEYS.BODY_GENERATION, nextBody, chapDir, chapterName, volume, {
             model: config.model,
             finishReason: 'stop',
             truncated: false,
         });
-        const invalidated = ['qualityControl', 'analysisReport', 'settlement'];
+        const invalidated = [STEP_KEYS.QUALITY_CONTROL, STEP_KEYS.ANALYSIS_REPORT, 'settlement'];
         for (const key of invalidated) stepCompleted.delete(key);
         this.callbacks.invalidateSteps?.(invalidated, true);
 
@@ -1266,8 +1267,8 @@ ${userPrompt}`),
             }
 
             // analysisReport 特例：正文变动提示
-            if (stepKey === 'analysisReport') {
-                if (!ctx.stepCompleted.has('analysisReport') && ctx.stepResults['analysisReport']) {
+            if (stepKey === STEP_KEYS.ANALYSIS_REPORT) {
+                if (!ctx.stepCompleted.has(STEP_KEYS.ANALYSIS_REPORT) && ctx.stepResults[STEP_KEYS.ANALYSIS_REPORT]) {
                     this.callbacks.showNotice('⚠️ 正文内容已变动，分析报告将基于最新正文重新生成', NOTICE_CRITICAL);
                 }
             }
@@ -1424,7 +1425,7 @@ ${userPrompt}`),
             const aiStartedAt = Date.now();
             let result: APIResponse | null = null;
             // A1：正文步逐场场景循环（开关默认关；失败/空结果自动回退整章单次）
-            const useSceneLoop = stepKey === 'bodyGeneration'
+            const useSceneLoop = stepKey === STEP_KEYS.BODY_GENERATION
                 && this.plugin.settings?.sceneLoopBodyGeneration === true
                 && String(ctx.stepResults['sceneExpand'] ?? '').trim().length > 0
                 && typeof this.plugin.generateChapterBySceneLoop === 'function';
@@ -1439,7 +1440,7 @@ ${userPrompt}`),
                     log.warn('[StepRunner] A1 逐场生成失败，回退整章单次:', error);
                 }
             }
-            if (!result && stepKey === 'bodyGeneration') {
+            if (!result && stepKey === STEP_KEYS.BODY_GENERATION) {
                 result = await this.callAIStreamWithRetry(
                     effectiveSystemPrompt,
                     effectiveUserPrompt,
@@ -1570,9 +1571,9 @@ ${userPrompt}`),
             }
 
             // qualityControl 情绪审计
-            if (stepKey === 'qualityControl' && ctx.stepResults['bodyGeneration']) {
+            if (stepKey === STEP_KEYS.QUALITY_CONTROL && ctx.stepResults[STEP_KEYS.BODY_GENERATION]) {
                 try {
-                    const bodyText = stripFrontmatter(ctx.stepResults['bodyGeneration']);
+                    const bodyText = stripFrontmatter(ctx.stepResults[STEP_KEYS.BODY_GENERATION]);
                     const audit = auditEmotions(bodyText);
                     const auditLines: string[] = [];
                     if (!audit.emotionChange.passed) auditLines.push(`⚠️ 情绪变化: ${audit.emotionChange.detail}`);
@@ -1595,25 +1596,25 @@ ${userPrompt}`),
             // fix / finalFix 产出修正后的正文 → 同步更新 bodyGeneration
             // 截断的修正稿不能覆盖内存中的完整正文，否则后续质量/结算会基于半章继续。
             if (!truncated && (stepKey === 'fix' || stepKey === 'finalFix')) {
-                ctx.stepResults['bodyGeneration'] = finalContent;
+                ctx.stepResults[STEP_KEYS.BODY_GENERATION] = finalContent;
             }
 
             // 规划变更 → 已生成正文与下游全部失效（正文未生成时不标脏）
-            const hasBody = ctx.stepCompleted.has('bodyGeneration')
-                || Boolean((ctx.stepResults['bodyGeneration'] || '').trim());
+            const hasBody = ctx.stepCompleted.has(STEP_KEYS.BODY_GENERATION)
+                || Boolean((ctx.stepResults[STEP_KEYS.BODY_GENERATION] || '').trim());
             this.invalidateSteps(ctx, downstreamStepsAfterPlanningChange(stepKey, hasBody));
 
             // 正文或修正变更 → 标记质量控制/分析/结算失效
-            if (['fix', 'finalFix', 'bodyGeneration'].includes(stepKey)) {
-                this.invalidateSteps(ctx, ['qualityControl', 'analysisReport', 'settlement']);
+            if (['fix', 'finalFix', STEP_KEYS.BODY_GENERATION].includes(stepKey)) {
+                this.invalidateSteps(ctx, [STEP_KEYS.QUALITY_CONTROL, STEP_KEYS.ANALYSIS_REPORT, 'settlement']);
             }
 
             // qualityControl 完成 → 标脏 fix
-            if (stepKey === 'qualityControl') {
+            if (stepKey === STEP_KEYS.QUALITY_CONTROL) {
                 this.invalidateSteps(ctx, ['fix']);
             }
             // analysisReport 完成 → 标脏 settlement
-            if (stepKey === 'analysisReport') {
+            if (stepKey === STEP_KEYS.ANALYSIS_REPORT) {
                 this.invalidateSteps(ctx, ['settlement']);
             }
 
@@ -1634,7 +1635,7 @@ ${userPrompt}`),
                 }
                 // v4.25：正文保存后跑三层质量验收（第一/二层零 AI）。此前 QualityGate
                 // 注册后全仓零调用；结果只进时间线与登记表，不阻断流程。
-                if (stepKey === 'bodyGeneration' && verdict.level === 'complete') {
+                if (stepKey === STEP_KEYS.BODY_GENERATION && verdict.level === 'complete') {
                     try {
                         const gate = new QualityGate();
                         const beats = buildGateBeatsFromVars(ctx.vars);
@@ -1685,7 +1686,7 @@ ${userPrompt}`),
                     // v4.25 记忆写侧自动化：分析报告完成后，把报告里的实体事实
                     // （[[人名]]/《地名》/【剧情节点】）程序性提取进待确认队列——
                     // 确认仍由用户在质量面板点击（读侧只读 confirmed，防污染不变）。
-                    if (stepKey === 'analysisReport') {
+                    if (stepKey === STEP_KEYS.ANALYSIS_REPORT) {
                         try {
                             const registry = (this.plugin as unknown as {
                                 engineRegistry?: {
@@ -1713,7 +1714,7 @@ ${userPrompt}`),
 
                     // v4.25 修订闭环：质量控制完成后可按设置自动跑一次定向修订。
                     // 只有 QC 结构完整才触发；修订失败/未采纳会保留原稿，不影响后续步骤。
-                    if (stepKey === 'qualityControl' && this.plugin.settings.autoRevisionAfterQC) {
+                    if (stepKey === STEP_KEYS.QUALITY_CONTROL && this.plugin.settings.autoRevisionAfterQC) {
                         try {
                             await this.executeTargetedRevision(
                                 ctx.stepResults,
@@ -1778,7 +1779,7 @@ ${userPrompt}`),
             }
 
             // analysisReport 成功落盘后记录会话快照（供分析历史/对比）
-            if (stepKey === 'analysisReport' && saved) {
+            if (stepKey === STEP_KEYS.ANALYSIS_REPORT && saved) {
                 await this.recordAnalysisSession(ctx, finalContent);
             }
 
@@ -1828,7 +1829,7 @@ ${userPrompt}`),
                 metadata: {
                     wordCount: content.length,
                     characterCount: 0,
-                    layersUsed: ['analysisReport'],
+                    layersUsed: [STEP_KEYS.ANALYSIS_REPORT],
                     durationMs: 0,
                 },
             });
@@ -1959,12 +1960,12 @@ ${userPrompt}`),
         tabContent: HTMLElement,
         options: { force?: boolean },
     ): Promise<void> {
-        // 内存里的 stepResults['bodyGeneration'] 是剥掉 frontmatter 的纯正文，
+        // 内存里的 stepResults[STEP_KEYS.BODY_GENERATION] 是剥掉 frontmatter 的纯正文，
         // 因此 step-settlement 里那条「status: settled」守卫永远不成立。
         // 这里直接读磁盘正文的 frontmatter 判断，避免对已结算章节重复追加。
         const ledger = getExecutionLedger();
         const runId = ledger.begin({
-            commandId: 'novel-writer-chapter-settlement',
+            commandId: CommandIds.CHAPTER_SETTLEMENT,
             project,
             source: 'ui',
             label: `${chapterName} 结算`,
@@ -2033,7 +2034,7 @@ ${userPrompt}`),
                         project,
                         chapterNum,
                         chapterName,
-                        bodyText: stepResults['bodyGeneration'] || '',
+                        bodyText: stepResults[STEP_KEYS.BODY_GENERATION] || '',
                         sceneExpansion: stepResults['sceneExpand'] || '',
                         updatedChars: result.chars,
                     });
@@ -2327,8 +2328,8 @@ ${userPrompt}`),
 
             // 合并规划与单步路径共用同一条失效传播：规划内容变了，
             // 已生成的正文/质量/分析/结算都必须降级，避免旧正文被当成有效结果。
-            const hasBody = ctx.stepCompleted.has('bodyGeneration')
-                || Boolean((ctx.stepResults['bodyGeneration'] || '').trim());
+            const hasBody = ctx.stepCompleted.has(STEP_KEYS.BODY_GENERATION)
+                || Boolean((ctx.stepResults[STEP_KEYS.BODY_GENERATION] || '').trim());
             for (const generatedKey of evaluation.generated) {
                 this.invalidateSteps(ctx, downstreamStepsAfterPlanningChange(generatedKey, hasBody));
             }
@@ -2377,3 +2378,4 @@ ${userPrompt}`),
 
 }
 import { projectIdFromPath } from '@/shared/paths';
+import { STEP_KEYS } from '@/shared/step-keys';

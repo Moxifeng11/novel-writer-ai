@@ -372,10 +372,10 @@ graph TD
 |---|---|---|---|---|---|
 | 5 | Ctrl+S 三处行为统一（推快照与否、成功反馈）+ tooltip 承诺修正（全局接管或改文案） | A-2 | 无 | 1 天 | 是（scope: `ui/co-writing/editor-shortcuts.ts, ui/co-writing-view.ts, ui/co-write-floating-panel.ts, ui/full-writer/unit-writer-controller.ts, i18n/messages`） |
 | 6 | `window.confirm` 11 处 → `OperationConfirmModal`（含 cancelText 统一、body 必须含被操作对象） | A-6 + A-19 参照 + A-7 分级 | 无 | 1 天 | 是（scope: 8 个 modal 文件 + `operation-confirm-modal.ts`） |
-| 7 | 自动保存节拍统一（2000/800/1000ms 三套 → 一套常量） | A-4 | 无 | 0.5 天 | 是（scope: 三个 controller 文件） |
-| 8 | 步骤键单一真源：`step-definitions.ts` 导出 `STEP_KEYS` 常量对象，7 文件字面量替换；**同时更正 `co-writer-engine.ts:16-20` 描述不存在机制的注释** | B1 | 无 | 1 天 | 是（scope: `engine/step-definitions.ts` + 7 个消费文件） |
-| 9 | 命令 id 常量化：5 处裸写 `'novel-writer-chapter-settlement'` 改 import `CommandIds.CHAPTER_SETTLEMENT` | B2 | 无 | 0.5 天 | 是（scope: 5 个文件 + `shared/command-ids.ts`） |
-| 10 | `.project` 写入收敛到 `writeProjectMeta()`（full-writer-view 两处绕过封装） | B5 | 无 | 0.5 天 | 是（scope: `ui/full-writer-view.ts, shared/paths.ts`） |
+| 7 | ✅ **已修（2026-11-20）** 自动保存节拍统一（2000/800/1000ms 三套 → 一套常量）——新增 `shared/interaction-timing.ts` 的 `AUTOSAVE_DELAY_MS = 1000`，三处消费方改为引用；附源码级断言测试 | A-4 | 无 | 0.5 天 | 已由 DSH 直接完成 |
+| 8 | ✅ **已修（2026-11-20）** 步骤键单一真源：`step-definitions.ts` 导出 `STEP_KEYS` / `StepKey`，**22 个文件**约 143 处字面量替换（原估 7 文件，实际面更广）；注释更正见 `engine/co-writer-engine.ts:16-28` 与 `engine/step-definitions.ts:24-31`。坑：对象字面量键要写 `[STEP_KEYS.X]:`；`step-validator` 与 `step-definitions` 循环引用，模块级集合只能用字面量 | B1 | 无 | 1 天 | 已由 DSH 直接完成 |
+| 9 | ✅ **已修（2026-11-20）** 命令 id 常量化：`domains/long/tool-catalog.ts` 35 个按钮 + 10 条快捷工具 id 全部改 `CommandIds.*`，另 4 处裸写替换；`'novel-writer-chapter-settlement-light'` 非注册命令，保留字面量并加注释 | B2 | 无 | 0.5 天 | 已由 DSH 直接完成 |
+| 10 | ✅ **已修（2026-11-20）** `.project` 写入收敛到 `writeProjectMeta()`（两处补失败抛错，写锁改用 `pjProjectMeta()` 键） | B5 | 无 | 0.5 天 | 已由 DSH 直接完成 |
 | 11 | 模式文档路径二合一：`preResearchModeDocPath` 与 `modeDocPath` 合并为单一函数（含「阶段完成」判定口径统一） | B9 | 无 | 1 天 | 是（scope: `shared/pre-research.ts, shared/mode-content.ts, ui/full-writer/creation-flow-state.ts`） |
 | 12 | `ui-message` code 键编译期校验：从 i18n 资源生成 `ENGINE_MSG_CODES` 类型/常量，code 拼错变编译错 | B7 | 依赖 19 已完成的 engineMsg 资源 | 0.5 天 | 是（scope: `shared/ui-message.ts, scripts/check-i18n.mjs`） |
 | 13 | 保存状态/按钮文案/Notice 时长三个小统一（A-12 三种保存按钮、A-11 八种时长、A-17 错误双通道） | A-11/12/17 | 无 | 1 天 | 是（scope: `ui/utils/helpers.ts` + 机械替换） |

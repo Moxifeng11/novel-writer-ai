@@ -28,6 +28,7 @@ import { createLogger } from '@/shared/logger';
 
 
 import { projectIdFromPath } from '@/shared/project-catalog';
+import { STEP_KEYS } from '@/shared/step-keys';
 const log = createLogger('StepModalController');
 /**
  * 步骤弹窗依赖列表结构定义。
@@ -125,7 +126,7 @@ export class StepModalController {
         volume: string,
         stepCompleted: Set<string>,
     ): Promise<void> {
-        const bodyText = stepResults['bodyGeneration'];
+        const bodyText = stepResults[STEP_KEYS.BODY_GENERATION];
         if (!bodyText) {
             this.deps.callbacks.showError(resolveUiMessage(STEP_MODAL_MSG.noBody));
             return;
@@ -313,8 +314,8 @@ export class StepModalController {
             if (!finalText.trim()) { this.deps.callbacks.showError(resolveUiMessage(STEP_MODAL_MSG.emptyRewrite)); return; }
             try {
                 log.warn('[StepModalController] AI消痕接受: chapDir=', chapDir, 'len=', finalText.length);
-                stepResults['bodyGeneration'] = finalText;
-                await this.deps.saveStepResult('bodyGeneration', finalText, chapDir, chapterName, volume);
+                stepResults[STEP_KEYS.BODY_GENERATION] = finalText;
+                await this.deps.saveStepResult(STEP_KEYS.BODY_GENERATION, finalText, chapDir, chapterName, volume);
                 this.invalidateAfterBodyChange(stepCompleted);
                 this.deps.callbacks.showSuccess('已接受改写版本，后续步骤已重置');
                 overlay.remove();
@@ -391,7 +392,7 @@ export class StepModalController {
         volume?: string,
         stepCompleted?: Set<string>,
     ): Promise<void> {
-        const bodyText = stepResults['bodyGeneration'];
+        const bodyText = stepResults[STEP_KEYS.BODY_GENERATION];
         if (!bodyText) {
             this.deps.callbacks.showError('没有正文可迭代');
             return;
@@ -573,8 +574,8 @@ export class StepModalController {
             if (!finalBody.trim()) { this.deps.callbacks.showError('内容不能为空'); return; }
             try {
                 log.warn('[StepModalController] 迭代精修接受: chapDir=', chapDir, 'len=', finalBody.length);
-                stepResults['bodyGeneration'] = finalBody;
-                await this.deps.saveStepResult('bodyGeneration', finalBody, chapDir ?? '', chapterName ?? '', volume ?? '');
+                stepResults[STEP_KEYS.BODY_GENERATION] = finalBody;
+                await this.deps.saveStepResult(STEP_KEYS.BODY_GENERATION, finalBody, chapDir ?? '', chapterName ?? '', volume ?? '');
                 this.invalidateAfterBodyChange(stepCompleted);
                 this.deps.callbacks.showSuccess('已接受精修版本，后续步骤已重置');
                 overlay.remove();
@@ -642,8 +643,8 @@ export class StepModalController {
             const idx = i;
             useBtn.onclick = async () => {
                 try {
-                    stepResults['bodyGeneration'] = result.roundBodies[idx];
-                    await this.deps.saveStepResult('bodyGeneration', result.roundBodies[idx], chapDir ?? '', chapterName ?? '', volume ?? '');
+                    stepResults[STEP_KEYS.BODY_GENERATION] = result.roundBodies[idx];
+                    await this.deps.saveStepResult(STEP_KEYS.BODY_GENERATION, result.roundBodies[idx], chapDir ?? '', chapterName ?? '', volume ?? '');
                     this.invalidateAfterBodyChange(stepCompleted);
                     this.deps.callbacks.showSuccess(`已使用${labels[idx]}，后续步骤已重置`);
                     overlay.remove();

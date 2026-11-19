@@ -37,6 +37,7 @@ import {
 import { createPlotDivergenceEngine, createWritingQualityEngine } from "@/engine/quality/quality-engine-factory";
 import { AdaptiveDebounceManager } from "@/shared/adaptive-debounce-manager";
 import { divergenceLevelFromScore, qualityScoreColor } from "@/shared/quality-grade";
+import { CommandIds } from '@/shared/command-ids';
 import { loadQualityHistory, appendQualityHistory } from "@/services/quality-history-store";
 import { aggregateQualityHistoryByChapter, computeChapterTrend, mergeQualityHistory, normalizeChapterKey, type QualityHistoryRecord } from "@/shared/quality-history";
 import {
@@ -188,7 +189,7 @@ export class MonitorPanelB extends DraggablePanel {
     });
     settleBtn.addEventListener("click", () => {
       // M3-4：走插件命令入口（registry 优先），不再裸调 app.commands 私有派发
-      this.plugin.executeCommand('novel-writer-chapter-settlement');
+      this.plugin.executeCommand(CommandIds.CHAPTER_SETTLEMENT);
     });
 
     try {

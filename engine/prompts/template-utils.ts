@@ -35,6 +35,7 @@ import {
 } from './body-v4-prompts';
 import { MEMORY_GENERATION_PROMPTS } from './memory-prompts';
 import { COUNTABLE_HUMAN_HINTS } from './human-countable-hints';
+import { STEP_KEYS } from '@/shared/step-keys';
 import {
     CHARACTER_SOUL_PROMPTS,
     EMOTION_PLAN_PROMPTS,
@@ -124,10 +125,10 @@ export function getStepTemplateAuto(key: string, vars?: Record<string, string>):
         }
     }
     let template: PromptTemplate | null = null;
-    if (key === 'bodyGeneration' && vars) {
+    if (key === STEP_KEYS.BODY_GENERATION && vars) {
         // 实验/设置可强制正文变体（v1/v2/v3/v4）；留空按灵魂层自动路由。
         const forced = (vars._bodyVariant || '').trim().toLowerCase();
-        const forcedKey = forced === 'v1' ? 'bodyGeneration'
+        const forcedKey = forced === 'v1' ? STEP_KEYS.BODY_GENERATION
             : forced === 'v2' ? 'bodyGenerationV2'
             : forced === 'v3' ? 'bodyGenerationV3'
             : forced === 'v4' ? 'bodyGenerationV4'
@@ -146,7 +147,7 @@ export function getStepTemplateAuto(key: string, vars?: Record<string, string>):
     if (!template) return null;
 
     // 可数硬指标（实验 C9 的组成部分，默认关闭）：只在正文步骤追加，且放在 system 末尾。
-    if (key === 'bodyGeneration' && vars?._countableHints === '1') {
+    if (key === STEP_KEYS.BODY_GENERATION && vars?._countableHints === '1') {
         template = { ...template, systemPrompt: `${template.systemPrompt}\n\n${COUNTABLE_HUMAN_HINTS}` };
     }
 

@@ -10,6 +10,7 @@ import { isChapterSettledText } from '@/shared/chapter-status';
 import type { SettlementEngine, SettlementResult } from './settlement-engine';
 import { NOTICE_ERROR } from '@/shared/thresholds';
 import { createLogger } from '@/shared/logger';
+import { STEP_KEYS } from '@/shared/step-keys';
 
 const log = createLogger('StepSettlement');
 
@@ -118,7 +119,7 @@ export async function executeSettlement(
     if (!chapDir) return null;
 
     // v1.3.0: 从内存读取分析报告，如果为空则尝试从磁盘文件恢复（P0修复）
-    let reportContent = stepResults['analysisReport'] || '';
+    let reportContent = stepResults[STEP_KEYS.ANALYSIS_REPORT] || '';
     if (!reportContent) {
         // 回退：从磁盘读取分析报告文件（重启后内存丢失但文件仍存在）
         const reportPath = `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.analysisReport)}`;
@@ -127,7 +128,7 @@ export async function executeSettlement(
             if (loaded !== null) {
                 reportContent = loaded;
                 // 将读取到的内容也恢复到内存 stepResults 中
-                stepResults['analysisReport'] = reportContent;
+                stepResults[STEP_KEYS.ANALYSIS_REPORT] = reportContent;
             }
         } catch (e) {
             const errMsg = e instanceof Error ? e.message : String(e);
@@ -145,7 +146,7 @@ export async function executeSettlement(
 
     host.showProgress('⏳ 执行章节结算...');
 
-    const bodyText = stepResults['bodyGeneration'] || '';
+    const bodyText = stepResults[STEP_KEYS.BODY_GENERATION] || '';
     const chapName = chapterName;
 
     // 结算写入是追加语义（伏笔/关系/时间线），重复结算会产生重复行。

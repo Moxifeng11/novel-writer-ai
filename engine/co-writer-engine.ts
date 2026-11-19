@@ -16,9 +16,12 @@
  * 本引擎是正文生成的推荐路径，与 StepRunner 中的旧 bodyGeneration 步骤
  * （AI 一次性整章生成）是两条平行的正文生成路径。
  *
- * 数据兼容性：
- * - 共享同一正文文件和 stepResults['bodyGeneration'] 存储
- * - 共享同一套 frontmatter 元数据格式（status / entityNames 等）
+ * 数据兼容性（2026-11-20 更正，审计 B1）：
+ * - 共享同一正文文件与 frontmatter 元数据格式（status / entityNames 等）
+ * - **本引擎不写 `stepResults[STEP_KEYS.BODY_GENERATION]` 内存槽**：它直接把正文落盘，
+ *   内存里的步骤结果由 `ui/states/chapter-state-manager.ts:283` 在加载章节时
+ *   从磁盘正文回填（level 不为 empty 且非模板骨架时写入）。旧注释声称「共享
+ *   stepResults 存储」，代码里从来没有写点，属描述与实现不符。
  * - 后续步骤（qualityControl / analysisReport / settlement）均无需区分来源
  * - 用户可随时在两条路径间切换，不会丢失数据
  *

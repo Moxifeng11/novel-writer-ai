@@ -23,6 +23,7 @@ import { createLogger } from '@/shared/logger';
 import { resolveNodeWindow } from '@/shared/dom-window';
 import { escapeHtml as escapeHtmlText } from '@/utils/helpers';
 import { t } from '@/i18n';
+import { STEP_KEYS } from '@/shared/step-keys';
 
 /**
  * HTML 实体转义（兼容旧导出；实现统一在 utils/helpers，覆盖 & < > " '）。
@@ -168,7 +169,7 @@ export class PolishEditor {
         volume: string,
         onSaved?: () => void,
     ): Promise<void> {
-        const bodyText = stepResults['bodyGeneration'];
+        const bodyText = stepResults[STEP_KEYS.BODY_GENERATION];
         if (!bodyText || !project) {
             log.warn('[小说工坊] PolishEditor.render: 跳过 (bodyText=%s, project=%s)', !!bodyText, project || '(空)');
             return;
@@ -274,7 +275,7 @@ export class PolishEditor {
                         statusSpan.setText(t('polishEditor.statusTooShort'));
                         return;
                     }
-                    stepResults['bodyGeneration'] = plainText;
+                    stepResults[STEP_KEYS.BODY_GENERATION] = plainText;
                     await this.stepRunner.writeFixToBody(plainText, chapDir, chapterName, volume);
                     statusSpan.setText(t('polishEditor.statusSavedAt', { time: new Date().toLocaleTimeString() }));
                     // A7: 正文已实际改动 → 下游审查/分析/结算必须失效（落盘成功后再失效，失败不误伤）

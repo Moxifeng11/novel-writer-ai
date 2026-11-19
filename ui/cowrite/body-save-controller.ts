@@ -61,7 +61,7 @@ export interface BodySaveHost {
      * @returns 是否成功
      */
     takePendingAutoSave(): boolean;
-    /** 排一次自动保存（视图负责 2s 防抖） */
+    /** 排一次自动保存（视图负责防抖，节拍见 shared/interaction-timing.ts） */
     scheduleAutoSave(): void;
     /** 项目已被删除：视图清空章节绑定，避免自动保存反复写回并重建目录 */
     onProjectMissing?(): void;

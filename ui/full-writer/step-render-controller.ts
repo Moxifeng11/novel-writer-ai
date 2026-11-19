@@ -37,6 +37,7 @@ import { SceneOutlineController } from './scene-outline-controller';
 import { openSceneConfirmWizard } from '@/ui/scene-confirm-modal';
 import { AnalysisReportPanel } from '@/ui/components/analysis-report-panel';
 import { createLogger } from '@/shared/logger';
+import { STEP_KEYS } from '@/shared/step-keys';
 
 
 const log = createLogger('StepRenderController');
@@ -337,8 +338,8 @@ export class StepRenderController {
      * 规划步骤变更后失效已生成的正文与下游；正文未生成时不动，避免把空正文标成待重做。
      */
     private invalidateBodyAfterPlanningChange(cs: ChapterStateManager, stepKey: string): void {
-        const hasBody = cs.stepCompleted.has('bodyGeneration')
-            || Boolean((cs.stepResults['bodyGeneration'] || '').trim());
+        const hasBody = cs.stepCompleted.has(STEP_KEYS.BODY_GENERATION)
+            || Boolean((cs.stepResults[STEP_KEYS.BODY_GENERATION] || '').trim());
         const downstream = downstreamStepsAfterPlanningChange(stepKey, hasBody);
         if (downstream.length > 0) cs.invalidateSteps(downstream);
     }
@@ -353,7 +354,7 @@ export class StepRenderController {
         const candidates: string[] = [];
         const type = (STEP_FILE_TYPES as Record<string, string>)[stepKey];
         if (type) candidates.push(`${chapDir}/${getChapterFileName(chapterName, type)}`);
-        if (stepKey === 'bodyGeneration') {
+        if (stepKey === STEP_KEYS.BODY_GENERATION) {
             const match = chapDir.match(/^(.+?)\/03-大纲与章节\/步骤结果\/第(\d+)卷\/第(\d+)章$/);
             if (match) {
                 candidates.push(pjBodyFile(match[1], parseInt(match[2], 10), parseInt(match[3], 10)));
@@ -458,12 +459,12 @@ export class StepRenderController {
                     cs.updateStepState(stepKey, newContent);
                     // v3.4.8: fix/finalFix 步骤保存时同步覆写正文文件
                     if (stepKey === 'fix' || stepKey === 'finalFix') {
-                        cs.stepResults['bodyGeneration'] = newContent;
-                        cs.updateStepState('bodyGeneration', newContent);
+                        cs.stepResults[STEP_KEYS.BODY_GENERATION] = newContent;
+                        cs.updateStepState(STEP_KEYS.BODY_GENERATION, newContent);
                         await d.stepRunner.writeFixToBody(newContent, d.getChapDir(), d.getChapterName(), d.getVolume());
                     }
                     // 正文或修正变更 → 统一失效后续步骤（completed / levels / stale 同步）
-                    if (stepKey === 'bodyGeneration' || stepKey === 'fix' || stepKey === 'finalFix') {
+                    if (stepKey === STEP_KEYS.BODY_GENERATION || stepKey === 'fix' || stepKey === 'finalFix') {
                         cs.invalidateSteps([...BODY_CHANGE_INVALIDATED_STEPS]);
                     }
                     // 规划变更 → 已生成正文与下游失效
@@ -484,7 +485,7 @@ export class StepRenderController {
             };
 
             // analysisReport：按需运行 v6.0 结构化增强分析（实体/伏笔/时间线/情绪）
-            if (stepKey === 'analysisReport') {
+            if (stepKey === STEP_KEYS.ANALYSIS_REPORT) {
                 const extra = resultContainer.createDiv({ attr: { style: 'margin-top:10px;' } });
                 const btn = extra.createEl('button', {
                     text: t('fullwriter.sr.enhancedAnalysisBtn'),
@@ -494,7 +495,7 @@ export class StepRenderController {
                 });
                 const host = extra.createDiv();
                 btn.onclick = async () => {
-                    const bodyText = cs.stepResults['bodyGeneration'] || '';
+                    const bodyText = cs.stepResults[STEP_KEYS.BODY_GENERATION] || '';
                     if (!bodyText.trim()) {
                         showError(t('fullwriter.sr.needBodyForAnalysis'));
                         return;
@@ -510,7 +511,7 @@ export class StepRenderController {
                             d.getChapterName(),
                             numMatch ? parseInt(numMatch[0], 10) : 0,
                             d.getVolume(),
-                            cs.stepResults['analysisReport'] || '',
+                            cs.stepResults[STEP_KEYS.ANALYSIS_REPORT] || '',
                         );
                         const applyBtn = host.createEl('button', {
                             text: t('fullwriter.sr.applyChangesBtn'),

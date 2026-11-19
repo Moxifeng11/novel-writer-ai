@@ -34,10 +34,9 @@ import { createLogger } from '@/shared/logger';
 import { pushUsageScope } from '@/services/usage-ledger';
 import type { WriterTab } from './full-writer-store';
 import type { FlowDocKind } from './flow-panel-controller';
+import { AUTOSAVE_DELAY_MS } from '@/shared/interaction-timing';
 
 const log = createLogger('UnitWriterController');
-
-const AUTOSAVE_DELAY_MS = 800;
 
 /**
  * UnitWriterDeps 类型定义。

@@ -18,6 +18,7 @@ import { CreateProjectModal } from '@/ui/create-project-modal';
 import { PreResearchModal } from '@/ui/pre-research-modal';
 import { ModeDocumentModal } from '@/ui/mode-document-modal';
 import { getToolCatalogForMode, getToolGroupsForMode, getModeToolTitle } from '@/domains/kernel/tool-catalog-aggregator';
+import { CommandIds } from '@/shared/command-ids';
 import type { CreationMode } from '@/shared/creation-mode';
 import { collectCreationFlowState } from './creation-flow-state';
 import { buildNextStepPlan, type NextStepPlan } from './next-step';
@@ -738,7 +739,7 @@ export class ProjectSelectorController {
                 return;
             }
             case 'settle':
-                this.deps.executeCommand('novel-writer-chapter-settlement');
+                this.deps.executeCommand(CommandIds.CHAPTER_SETTLEMENT);
                 return;
             case 'export':
                 this.deps.executeCommand('novel-writer-export-manuscript');

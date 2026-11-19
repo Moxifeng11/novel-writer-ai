@@ -3,6 +3,7 @@ import { getChapterFile, CHAPTER_FILE_TYPES, normalizeChapterFiles, findBodyFile
 import { ALL_FULL_STEPS, migrateStepIndex } from '@/engine/step-definitions';
 import { validateStepResult, isTemplateSkeleton, StepLevel } from '@/engine/step-validator';
 import { createLogger } from '@/shared/logger';
+import { STEP_KEYS } from '@/shared/step-keys';
 
 
 const log = createLogger('ChapterStateManager');
@@ -153,14 +154,14 @@ export class ChapterStateManager {
         const stepFileMap: Record<string, keyof typeof CHAPTER_FILE_TYPES> = {
             'infoPlan': 'infoPlan',
             'outline': 'outline',
-            'bodyGeneration': 'body',
+            [STEP_KEYS.BODY_GENERATION]: 'body',
             'continuityCheck': 'continuityReview',
-            'analysisReport': 'analysisReport',
+            [STEP_KEYS.ANALYSIS_REPORT]: STEP_KEYS.ANALYSIS_REPORT,
             'selfCheck': 'selfCheck',
             'fix': 'fix',
             'finalFix': 'finalFix',
             'plotDistill': 'plotDistill',
-            'qualityControl': 'qualityControl',
+            [STEP_KEYS.QUALITY_CONTROL]: STEP_KEYS.QUALITY_CONTROL,
             'emotionPlan': 'emotionPlan',       // V2
             'sceneExpand': 'sceneExpand',       // V2
             'characterSoul': 'characterSoul',   // V2
@@ -170,7 +171,7 @@ export class ChapterStateManager {
         for (const [stepKey, fileTypeKey] of Object.entries(stepFileMap)) {
             const chineseType = CHAPTER_FILE_TYPES[fileTypeKey];
             // v4.0: 正文走分离目录定位；其余步骤文件仍在步骤结果目录内。
-            const file = stepKey === 'bodyGeneration'
+            const file = stepKey === STEP_KEYS.BODY_GENERATION
                 ? resolveBodyFile()
                 : getChapterFile(chapFolder, chineseType);
             if (!file) {
@@ -240,7 +241,7 @@ export class ChapterStateManager {
             }
 
             // v4.0: 正文 status 字段判断
-            if (stepKey === 'bodyGeneration') {
+            if (stepKey === STEP_KEYS.BODY_GENERATION) {
                 const bodyCache = this.app.metadataCache.getFileCache(file);
                 let bodyStatus = bodyCache?.frontmatter?.['status'];
                 log.warn('[ChapterStateManager] bodyGeneration: bodyPureLen=', pureBody.length, 'bodyStatus(cache)=', bodyCache?.frontmatter?.['status']);
@@ -315,7 +316,7 @@ export class ChapterStateManager {
                     // v6.0: selfCheck / continuityReview 已合并入 qualityControl
                     // 依赖正文内容的步骤，正文更新后它们过期
                     const dependsOnBody: (keyof typeof CHAPTER_FILE_TYPES)[] = [
-                        'fix', 'qualityControl', 'analysisReport'
+                        'fix', STEP_KEYS.QUALITY_CONTROL, STEP_KEYS.ANALYSIS_REPORT
                     ];
                     for (const fileTypeKey of dependsOnBody) {
                         const chineseType = CHAPTER_FILE_TYPES[fileTypeKey as keyof typeof CHAPTER_FILE_TYPES];

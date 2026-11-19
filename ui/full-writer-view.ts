@@ -78,7 +78,7 @@ import { CrossVolumeIntegrator } from '@/engine/cross-volume-integration';
 import { ContextPanel } from './rendering/context-panel';
 import { RE_VOLUME_RANGE, FIELD_TOTAL_WORDS, FIELD_TOTAL_CHAPTERS, chapterOutlineSection, CHAPTER_STATUS } from '@/shared/format-constants';
 import { validateWorldviewOutput, validateOutlineOutput, validateFanficSettings } from '@/shared/template-validator';
-import { getWorldviewPath, getSettingLibPath, pjVolumeOutlineDir, readProjectMeta, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, SUBDIR_OUTLINE_ROOT, SUBDIR_TIMELINE, SUBDIR_CONTROL, SUBDIR_FANFIC, SUBDIR_VOLUME_OUTLINE } from '@/shared/paths';
+import { getWorldviewPath, getSettingLibPath, pjVolumeOutlineDir, pjProjectMeta, readProjectMeta, writeProjectMeta, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, SUBDIR_OUTLINE_ROOT, SUBDIR_TIMELINE, SUBDIR_CONTROL, SUBDIR_FANFIC, SUBDIR_VOLUME_OUTLINE } from '@/shared/paths';
 import { PlanBookModal } from './plan-book-modal';
 import { BatchCreateModal } from './batch-create-modal';
 import { WritingStyleModal } from './writing-style-modal';
@@ -97,6 +97,7 @@ import { ensureTemplateScaffold } from '@/shared/template-scaffold';
 
 
 import { withWriteLock } from '@/shared/write-lock';
+import { STEP_KEYS } from '@/shared/step-keys';
 const log = createLogger('FullWriterView');
 /**
  * 视图类型常量。
@@ -326,12 +327,15 @@ export class FullWriterView extends ItemView {
         }
         const structure = getStoryStructure(id);
         try {
-            const saved = await withWriteLock(`${this.project}/.project`, async () => {
+            const saved = await withWriteLock(pjProjectMeta(this.project), async () => {
                 const meta = await readProjectMeta(this.app, this.project) || '';
                 const mergedSettings = parseStorySettingsFromProjectMeta(meta) || createDefaultStorySettings(id);
                 mergedSettings.structureId = id;
                 const mergedMeta = upsertStorySettingsInProjectMeta(meta, mergedSettings);
-                await this.app.vault.adapter.write(`${this.project}/.project`, mergedMeta);
+                // 走唯一封装写入口（shared/paths.ts#writeProjectMeta），不再直写 adapter
+                if (!await writeProjectMeta(this.app, this.project, mergedMeta)) {
+                    throw new Error(t('fullwriter.sr.saveFailedWith', { msg: pjProjectMeta(this.project) }));
+                }
                 return { settings: mergedSettings, nextMeta: mergedMeta };
             });
             const settings = saved.settings;
@@ -854,8 +858,8 @@ export class FullWriterView extends ItemView {
             runChapterOneClick: (mode) => { void this.runChapterOneClick(mode); },
             getRemainingChapterActions: () => countRemainingChapterActions(
                 this.stepCompleted,
-                this.stepResults['bodyGeneration'] || '',
-                this.stepResults['analysisReport'] || '',
+                this.stepResults[STEP_KEYS.BODY_GENERATION] || '',
+                this.stepResults[STEP_KEYS.ANALYSIS_REPORT] || '',
             ),
         });
 
@@ -1384,11 +1388,11 @@ export class FullWriterView extends ItemView {
 
                 // 只在 Step 4（正文生成）完成后触发状态检测
                 // v3.4.8 B7: 扩展 onStepComplete 触发——fix/finalFix 改写正文后也需重新检测实体状态
-                if ((stepKey === 'bodyGeneration' || stepKey === 'fix' || stepKey === 'finalFix') && this.project && this.chapterNum) {
+                if ((stepKey === STEP_KEYS.BODY_GENERATION || stepKey === 'fix' || stepKey === 'finalFix') && this.project && this.chapterNum) {
                     await this.detectAndUpdateEntityStates(content);
                 }
                 // 正文变动后重算体检（情节进度依赖当前章节号，不读正文）
-                if (stepKey === 'bodyGeneration' || stepKey === 'fix' || stepKey === 'finalFix') {
+                if (stepKey === STEP_KEYS.BODY_GENERATION || stepKey === 'fix' || stepKey === 'finalFix') {
                     void this.checkupController.refresh(true);
                 }
             },
@@ -1735,9 +1739,11 @@ export class FullWriterView extends ItemView {
                 }
             }
 
-            // 创建 .project 文件
+            // 创建 .project 文件（唯一封装写入口：shared/paths.ts#writeProjectMeta）
             const projectContent = `# ${projectName}\n\n## 类型\n${projectType}\n\n`;
-            await adapter.write(`${projectName}/.project`, projectContent);
+            if (!await writeProjectMeta(this.app, projectName, projectContent)) {
+                throw new Error(t('fullwriter.sr.saveFailedWith', { msg: pjProjectMeta(projectName) }));
+            }
 
             // 构建向导步骤
             const steps = this.buildWizardSteps(projectType);
@@ -2075,7 +2081,7 @@ export class FullWriterView extends ItemView {
             if (key === 'infoPlan') this.renderPlanningQuickStart(region);
         });
         this.replaceStepRegion(area, 'review', region => {
-            if (key === 'qualityControl' || key === 'analysisReport') this.renderReviewPhaseTabs(region, key);
+            if (key === STEP_KEYS.QUALITY_CONTROL || key === STEP_KEYS.ANALYSIS_REPORT) this.renderReviewPhaseTabs(region, key);
         });
         this.replaceStepRegion(area, 'result', region => this.renderResultArea(region, key));
         this.replaceStepRegion(area, 'extras', region => this.renderStepExtras(region, step, key));
@@ -2171,7 +2177,7 @@ export class FullWriterView extends ItemView {
         }
 
         const reviewRegion = this.stepRegion(area, 'review');
-        if (stepKey === 'qualityControl' || stepKey === 'analysisReport') {
+        if (stepKey === STEP_KEYS.QUALITY_CONTROL || stepKey === STEP_KEYS.ANALYSIS_REPORT) {
             this.renderReviewPhaseTabs(reviewRegion, stepKey);
         }
 
@@ -2192,7 +2198,7 @@ export class FullWriterView extends ItemView {
     private renderStepExtras(area: HTMLElement, currentStep: FullStep, stepKey: string): void {
         // 正文完成后：在正文及其后的质控/分析/结算步骤都保留消痕与迭代入口
         // （旧实现只在当前步骤正好是 bodyGeneration 时显示，自动推进后按钮立刻消失）
-        if (currentStep.index >= 7 && this.stepCompleted.has('bodyGeneration')) {
+        if (currentStep.index >= 7 && this.stepCompleted.has(STEP_KEYS.BODY_GENERATION)) {
             const deaiBtnRow = area.createDiv({ cls: 'novel-writer-fw-btn-row' });
             
             const deaiBtn = deaiBtnRow.createEl('button', {
@@ -2268,7 +2274,7 @@ export class FullWriterView extends ItemView {
                 cls: 'novel-writer-fw-btn novel-writer-fw-btn-secondary',
             });
             humanizeBtn.onclick = () => {
-                const bodyText = this.stepResults['bodyGeneration'] || '';
+                const bodyText = this.stepResults[STEP_KEYS.BODY_GENERATION] || '';
                 if (!bodyText.trim()) {
                     new Notice(t('fullwriter.needBodyFirst'));
                     return;
@@ -2277,9 +2283,9 @@ export class FullWriterView extends ItemView {
                     new HumanizeReportModal(this.app, {
                         bodyText,
                         onApply: async (nextText) => {
-                            this.stepResults['bodyGeneration'] = nextText;
+                            this.stepResults[STEP_KEYS.BODY_GENERATION] = nextText;
                             const saved = await this.stepRunner.saveStepResult(
-                                'bodyGeneration',
+                                STEP_KEYS.BODY_GENERATION,
                                 nextText,
                                 this.chapDir,
                                 this.chapterName,
@@ -2315,14 +2321,14 @@ export class FullWriterView extends ItemView {
         try {
             // 打开已结算章节时，内存里可能没有 bodyGeneration：从正文文件回填，
             // 否则 PolishEditor 会静默 return，用户看到的就是「润色完全失效」。
-            if (!this.stepResults['bodyGeneration'] && this.project) {
+            if (!this.stepResults[STEP_KEYS.BODY_GENERATION] && this.project) {
                 const volN = parseInt(this.volume.match(/\d+/)?.[0] || '0', 10);
                 const bodyFile = findBodyFileV4(this.app, this.project, volN, this.chapterNum);
                 if (bodyFile instanceof TFile) {
-                    this.stepResults['bodyGeneration'] = await this.app.vault.read(bodyFile);
+                    this.stepResults[STEP_KEYS.BODY_GENERATION] = await this.app.vault.read(bodyFile);
                 }
             }
-            if (!this.stepResults['bodyGeneration']) {
+            if (!this.stepResults[STEP_KEYS.BODY_GENERATION]) {
                 area.createEl('p', {
                     text: t('fullwriter.polishNoBody'),
                     cls: 'novel-writer-fw-error-text',
@@ -2383,7 +2389,7 @@ export class FullWriterView extends ItemView {
             void this.stepRunner.executeCurrentStep(this._makeStepRunCtx());
         };
 
-        if (stepKey === 'bodyGeneration') {
+        if (stepKey === STEP_KEYS.BODY_GENERATION) {
             const cowriteBtn = actions.createEl('button', {
                 text: t('fullwriter.enterCoWriteBtn'),
                 cls: 'nw-step-action nw-step-action-cowrite',
@@ -2515,8 +2521,8 @@ export class FullWriterView extends ItemView {
 
     private renderReviewPhaseTabs(area: HTMLElement, activeStep: string): void {
         const tabs = [
-            { key: 'qualityControl', label: t('fullwriter.stepQualityControl'), index: 8 },
-            { key: 'analysisReport', label: t('fullwriter.stepAnalysisReport'), index: 9 },
+            { key: STEP_KEYS.QUALITY_CONTROL, label: t('fullwriter.stepQualityControl'), index: 8 },
+            { key: STEP_KEYS.ANALYSIS_REPORT, label: t('fullwriter.stepAnalysisReport'), index: 9 },
         ];
 
         const tabBar = area.createDiv({ cls: 'novel-writer-fw-review-tabs' });

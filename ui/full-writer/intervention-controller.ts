@@ -14,6 +14,7 @@ import { StepRunner, ALL_FULL_STEPS } from '@/engine/step-runner';
 import type { StepRunCtx } from '@/engine/step-runner';
 import { showProgress, hideProgress, showError } from '@/utils/helpers';
 import { createLogger } from '@/shared/logger';
+import { STEP_KEYS } from '@/shared/step-keys';
 
 /** 语音识别结果事件（只声明本文件用到的字段） */
 interface SpeechResultEvent {
@@ -173,7 +174,7 @@ export class InterventionController {
             'infoPlan': '信息规划',
             'plotDistill': '情节蒸馏',
             'outline': '大纲摘要',
-            'bodyGeneration': '正文生成',
+            [STEP_KEYS.BODY_GENERATION]: '正文生成',
             'selfCheck': 'AI自检',
             'continuityCheck': '连贯性检查',
         };

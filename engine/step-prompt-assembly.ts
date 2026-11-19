@@ -11,9 +11,25 @@ import { getBusinessThreshold } from '@/shared/thresholds';
 import { withActiveInputBudget } from '@/shared/context-budget-policy';
 import { createLogger } from '@/shared/logger';
 import { ContextOverflowError, recoverOverflow, type ContextCompressionMode } from './context/overflow-recovery';
-import type { StepRunCtx } from './step-definitions';
+import { STEP_KEYS, type StepRunCtx } from './step-definitions';
 
 const log = createLogger('StepPromptAssembly');
+
+/**
+ * 需要注入「关联上下文 / 关联索引 / 场景精确上下文」尾部、且不做截断的步骤。
+ * 类型放宽为 string，因为运行时 stepKey 是普通字符串（步骤表之外的键也会走到这里）。
+ */
+const BODY_CONTEXT_STEPS: readonly string[] = [
+    STEP_KEYS.BODY_GENERATION,
+    STEP_KEYS.QUALITY_CONTROL,
+    STEP_KEYS.ANALYSIS_REPORT,
+];
+
+/** 质控/分析两步：一致性约束尾部与节奏报告尾部只对它们注入 */
+const QC_CONTEXT_STEPS: readonly string[] = [
+    STEP_KEYS.QUALITY_CONTROL,
+    STEP_KEYS.ANALYSIS_REPORT,
+];
 
 /**
  * 从模板变量提取在场人物/场景关键词（抽取压缩的保留优先级）。
@@ -176,7 +192,7 @@ export async function assembleStepPrompt(
         let linkageMissing: boolean | undefined;
         if (stepKey === 'outline') {
             extraTail = await host.loadOutlineKnowledge(ctx);
-        } else if (stepKey === 'bodyGeneration') {
+        } else if (stepKey === STEP_KEYS.BODY_GENERATION) {
             if (host.loadBodyKnowledgeParts) {
                 const parts = await host.loadBodyKnowledgeParts(ctx);
                 extraTail = parts.extra;
@@ -185,7 +201,7 @@ export async function assembleStepPrompt(
                 extraTail = await host.loadBodyKnowledge(ctx);
             }
         }
-        if (host.loadAssociationContext && ['bodyGeneration', 'qualityControl', 'analysisReport'].includes(stepKey)) {
+        if (host.loadAssociationContext && BODY_CONTEXT_STEPS.includes(stepKey)) {
             const association = await host.loadAssociationContext(ctx, stepKey);
             associationText = association.text;
             associationTokens = association.tokens;
@@ -197,7 +213,7 @@ export async function assembleStepPrompt(
         // 本章关联索引尾部（DSH-20261114-06）：与关联查询同三步、同「可丢弃增强尾部」
         // 预算语义——缺了不阻断，有则提升伏笔到期/时间线/设定命中的可见性
         //（audit §四-4：旧单章弹窗一直注入，一键链路此前从不注入）。
-        if (host.loadStoryLinkageTail && ['bodyGeneration', 'qualityControl', 'analysisReport'].includes(stepKey)) {
+        if (host.loadStoryLinkageTail && BODY_CONTEXT_STEPS.includes(stepKey)) {
             const linkage = await host.loadStoryLinkageTail(ctx, stepKey);
             linkageText = linkage.text;
             linkageMissing = linkage.missing;
@@ -207,21 +223,21 @@ export async function assembleStepPrompt(
         }
         // 场景级精确上下文尾部（M5）：与关联查询/关联索引同为「可丢弃增强尾部」，
         // 有则按当前场景在场 ID 注入精确事实，缺了不阻断
-        if (host.loadSceneContextTail && ['bodyGeneration', 'qualityControl', 'analysisReport'].includes(stepKey)) {
+        if (host.loadSceneContextTail && BODY_CONTEXT_STEPS.includes(stepKey)) {
             const sceneTail = await host.loadSceneContextTail(ctx, stepKey);
             if (sceneTail.text) {
                 extraTail = [extraTail, sceneTail.text].filter(Boolean).join('\n\n');
             }
         }
         // 一致性约束尾部（M6）：质控/分析步按在场实体筛断言，全量分批，不设条数
-        if (host.loadAssertionConstraintTail && ['qualityControl', 'analysisReport'].includes(stepKey)) {
+        if (host.loadAssertionConstraintTail && QC_CONTEXT_STEPS.includes(stepKey)) {
             const assertionTail = await host.loadAssertionConstraintTail(ctx, stepKey);
             if (assertionTail.text) {
                 extraTail = [extraTail, assertionTail.text].filter(Boolean).join('\n\n');
             }
         }
         // 节奏报告尾部（M10）：质控/分析步检查平铺/突增/骤降
-        if (host.loadRhythmTail && ['qualityControl', 'analysisReport'].includes(stepKey)) {
+        if (host.loadRhythmTail && QC_CONTEXT_STEPS.includes(stepKey)) {
             const rhythmTail = await host.loadRhythmTail(ctx, stepKey);
             if (rhythmTail.text) {
                 extraTail = [extraTail, rhythmTail.text].filter(Boolean).join('\n\n');
@@ -236,7 +252,7 @@ export async function assembleStepPrompt(
         let effectiveUserPrompt = userPrompt;
         let effectiveExtraTail = extraTail;
         let contextBudgetReport = '';
-        const strictNoTruncation = ['bodyGeneration', 'qualityControl', 'analysisReport'].includes(stepKey);
+        const strictNoTruncation = BODY_CONTEXT_STEPS.includes(stepKey);
         const inputBudget = stepLimits.maxInputTokens
             ?? Math.max(512, stepLimits.maxContext - stepLimits.maxOutput);
         const estimatedTotal = estimateTokens(effectiveSystemPrompt, stepModel)

@@ -10,6 +10,7 @@ import { t } from '@/i18n';
 import type { StepRunCtx } from '@/engine/step-definitions';
 import { isBodySettled } from './batch-targets';
 import type { ChapterRunMode } from '@/shared/chapter-run';
+import { STEP_KEYS } from '@/shared/step-keys';
 
 export type { ChapterRunMode } from '@/shared/chapter-run';
 
@@ -128,9 +129,9 @@ export function buildChapterRunPlan(
     const missingPlanning = CHAPTER_PLANNING_KEYS.filter(k => !completed.has(k));
     const useCombinedPlanning = mode === 'recommended'
         && missingPlanning.length === CHAPTER_PLANNING_KEYS.length;
-    const runBody = !completed.has('bodyGeneration');
-    const runQuality = options.includeQuality !== false && !completed.has('qualityControl');
-    const runAnalysis = options.includeAnalysis !== false && !completed.has('analysisReport');
+    const runBody = !completed.has(STEP_KEYS.BODY_GENERATION);
+    const runQuality = options.includeQuality !== false && !completed.has(STEP_KEYS.QUALITY_CONTROL);
+    const runAnalysis = options.includeAnalysis !== false && !completed.has(STEP_KEYS.ANALYSIS_REPORT);
     const analysisHasDirectives = SETTLEMENT_DIRECTIVE_RE.test(analysisReport || '');
     const runSettlement = options.includeSettlement !== false
         && !isBodySettled(bodyText || '')
@@ -264,8 +265,8 @@ export class ChapterOrchestrator {
 
             let plan = buildChapterRunPlan(
                 state.stepCompleted,
-                state.stepResults['bodyGeneration'] || '',
-                state.stepResults['analysisReport'] || '',
+                state.stepResults[STEP_KEYS.BODY_GENERATION] || '',
+                state.stepResults[STEP_KEYS.ANALYSIS_REPORT] || '',
                 options,
             );
             const total = 11;
@@ -327,51 +328,51 @@ export class ChapterOrchestrator {
 
             plan = buildChapterRunPlan(
                 state.stepCompleted,
-                state.stepResults['bodyGeneration'] || '',
-                state.stepResults['analysisReport'] || '',
+                state.stepResults[STEP_KEYS.BODY_GENERATION] || '',
+                state.stepResults[STEP_KEYS.ANALYSIS_REPORT] || '',
                 options,
             );
 
             // 3) 正文
             if (plan.runBody) {
-                currentStepKey = 'bodyGeneration';
+                currentStepKey = STEP_KEYS.BODY_GENERATION;
                 await beforeAction('body', t('fullwriter.co.generateBody'));
                 aiCalls += 1;
-                await this.runOneStep('bodyGeneration', ctx, tabContent);
+                await this.runOneStep(STEP_KEYS.BODY_GENERATION, ctx, tabContent);
                 await this.afterAction();
                 if (signal.aborted) return this.finish('cancelled', aiCalls);
             }
 
             plan = buildChapterRunPlan(
                 state.stepCompleted,
-                state.stepResults['bodyGeneration'] || '',
-                state.stepResults['analysisReport'] || '',
+                state.stepResults[STEP_KEYS.BODY_GENERATION] || '',
+                state.stepResults[STEP_KEYS.ANALYSIS_REPORT] || '',
                 options,
             );
 
             // 4) 质量控制
             if (plan.runQuality) {
-                currentStepKey = 'qualityControl';
+                currentStepKey = STEP_KEYS.QUALITY_CONTROL;
                 await beforeAction('quality', t('fullwriter.co.qualityControl'));
                 aiCalls += 1;
-                await this.runOneStep('qualityControl', ctx, tabContent);
+                await this.runOneStep(STEP_KEYS.QUALITY_CONTROL, ctx, tabContent);
                 await this.afterAction();
                 if (signal.aborted) return this.finish('cancelled', aiCalls);
             }
 
             plan = buildChapterRunPlan(
                 state.stepCompleted,
-                state.stepResults['bodyGeneration'] || '',
-                state.stepResults['analysisReport'] || '',
+                state.stepResults[STEP_KEYS.BODY_GENERATION] || '',
+                state.stepResults[STEP_KEYS.ANALYSIS_REPORT] || '',
                 options,
             );
 
             // 5) 分析报告
             if (plan.runAnalysis) {
-                currentStepKey = 'analysisReport';
+                currentStepKey = STEP_KEYS.ANALYSIS_REPORT;
                 await beforeAction('analysis', t('fullwriter.co.analysisReport'));
                 aiCalls += 1;
-                await this.runOneStep('analysisReport', ctx, tabContent);
+                await this.runOneStep(STEP_KEYS.ANALYSIS_REPORT, ctx, tabContent);
                 await this.afterAction();
                 if (signal.aborted) return this.finish('cancelled', aiCalls);
             }
@@ -379,8 +380,8 @@ export class ChapterOrchestrator {
             // 6) 结算（无 AI；守卫防重复追加）
             plan = buildChapterRunPlan(
                 state.stepCompleted,
-                state.stepResults['bodyGeneration'] || '',
-                state.stepResults['analysisReport'] || '',
+                state.stepResults[STEP_KEYS.BODY_GENERATION] || '',
+                state.stepResults[STEP_KEYS.ANALYSIS_REPORT] || '',
                 options,
             );
             if (plan.runSettlement) {

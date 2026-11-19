@@ -4,6 +4,7 @@ import { buildSettlementTable } from '@/engine/settlement/settlement-artifacts';
 import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjNarrativeOverview } from '@/shared/paths';
 import { ObsidianFrontmatter, writeVaultText, ObsidianFileSystem } from '@/shared/file-system-port';
 import { withWriteLock } from '@/shared/write-lock';
+import { CommandIds } from '@/shared/command-ids';
 import { writeSettlementTableFile } from '@/engine/settlement/settlement-table-writer';
 import { settlementArtifactNotice, writeSettlementArtifacts } from '@/engine/settlement/settlement-coordinator';
 
@@ -179,7 +180,7 @@ export class ChapterSettlementModal extends Modal {
         const report = await this.app.vault.read(reportFile);
         const ledger = getExecutionLedger();
         const runId = ledger.begin({
-            commandId: 'novel-writer-chapter-settlement',
+            commandId: CommandIds.CHAPTER_SETTLEMENT,
             project: target.project,
             source: 'ui',
             label: `${target.chapName} 结算`,
@@ -259,6 +260,7 @@ export class ChapterSettlementModal extends Modal {
             bodyText
         );
         getExecutionLedger().recordCompleted({
+            // 轻结算不是独立命令，只是执行账本里的动作标签，故不复用 CommandIds
             commandId: 'novel-writer-chapter-settlement-light',
             project: target.project,
             source: 'ui',

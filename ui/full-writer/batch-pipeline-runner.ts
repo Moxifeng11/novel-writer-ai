@@ -34,6 +34,7 @@ import {
     type BatchChapterTarget,
 } from './batch-targets';
 import { shouldRetryBatchStep } from './batch-step-retry';
+import { STEP_KEYS } from '@/shared/step-keys';
 
 export { BATCH_STEP_KEYS, buildBatchTargets };
 export type { BatchChapterTarget };
@@ -184,7 +185,7 @@ export class BatchPipelineRunner {
 
         // 已结算章节：结算的伏笔/关系/时间线写入都是追加语义，重跑会写出重复行。
         // 断点续跑时整章跳过；resume=false（用户显式强制重跑）才允许再走一遍。
-        const settled = isBodySettled(ctx.stepResults['bodyGeneration']);
+        const settled = isBodySettled(ctx.stepResults[STEP_KEYS.BODY_GENERATION]);
         const allStepsCompleted = BATCH_STEP_KEYS.every(key => ctx.stepCompleted.has(key));
         if (options.resume !== false && settled && allStepsCompleted) {
             log.info(`[BatchPipeline] ${target.chapterName} 已结算，跳过`);
@@ -438,7 +439,7 @@ export class BatchPipelineRunner {
         }
         if (bodyFile) {
             try {
-                results['bodyGeneration'] = await this.app.vault.read(bodyFile);
+                results[STEP_KEYS.BODY_GENERATION] = await this.app.vault.read(bodyFile);
             } catch (e) {
                 this.stepReadFailures.push(bodyFile.path);
                 log.warn('[BatchPipeline] 读取正文失败:', bodyFile.path, e);
@@ -448,8 +449,8 @@ export class BatchPipelineRunner {
     }
 
     private async settle(project: string, ctx: StepRunCtx, target: BatchChapterTarget): Promise<void> {
-        const analysisReport = ctx.stepResults['analysisReport'] || '';
-        const bodyText = stripFrontmatter(ctx.stepResults['bodyGeneration'] || '');
+        const analysisReport = ctx.stepResults[STEP_KEYS.ANALYSIS_REPORT] || '';
+        const bodyText = stripFrontmatter(ctx.stepResults[STEP_KEYS.BODY_GENERATION] || '');
         if (!analysisReport.trim() || !bodyText.trim()) {
             throw new Error(t('fullwriter.bp.settleMissingInput'));
         }
@@ -483,7 +484,7 @@ export class BatchPipelineRunner {
                     project,
                     chapterNum: target.chapterNum,
                     chapterName: target.chapterName,
-                    bodyText: ctx.stepResults['bodyGeneration'] || '',
+                    bodyText: ctx.stepResults[STEP_KEYS.BODY_GENERATION] || '',
                     sceneExpansion: ctx.stepResults['sceneExpand'] || '',
                     updatedChars: result.chars,
                 });

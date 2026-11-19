@@ -34,6 +34,7 @@ import { validateStepResult } from './step-validator';
 import { withWriteLock } from '@/shared/write-lock';
 import { ChapterVersionService } from '@/services/chapter-version-service';
 import { createLogger } from '@/shared/logger';
+import { STEP_KEYS } from '@/shared/step-keys';
 
 const log = createLogger('BodyWriter');
 
@@ -417,7 +418,7 @@ ${fmRaw}
         fm['writing_mode'] = ctx.writingMode;
         fm['word_count'] = ctx.body.length;
 
-        const level = validateStepResult('bodyGeneration', ctx.contentForValidation).level;
+        const level = validateStepResult(STEP_KEYS.BODY_GENERATION, ctx.contentForValidation).level;
         if (ctx.truncated) {
             // 截断内容即使字数/结尾恰好过关，也不能当完整正文：
             // 保住旧 status（settled 不降级），但正文只能是 draft。

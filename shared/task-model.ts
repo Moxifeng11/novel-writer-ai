@@ -12,6 +12,7 @@
 import { resolveProviderSourceType } from './model-source';
 
 import { planTaskBudget, TASK_CATEGORY, type BudgetTier } from './task-budget-engine';
+import { STEP_KEYS } from '@/shared/step-keys';
 
 /**
  * AI 任务类型。
@@ -206,11 +207,11 @@ const PLANNING_STEPS = new Set([
   * @returns AiTask 实例
  */
 export function resolveTaskForStep(stepKey: string, modelStrategy?: string): AiTask {
-    if (stepKey === 'bodyGeneration' || stepKey === 'fix' || stepKey === 'finalFix') {
+    if (stepKey === STEP_KEYS.BODY_GENERATION || stepKey === 'fix' || stepKey === 'finalFix') {
         return 'body';
     }
-    if (stepKey === 'qualityControl') return 'quality';
-    if (stepKey === 'analysisReport') return 'analysis';
+    if (stepKey === STEP_KEYS.QUALITY_CONTROL) return 'quality';
+    if (stepKey === STEP_KEYS.ANALYSIS_REPORT) return 'analysis';
     if (PLANNING_STEPS.has(stepKey)) return 'planning';
     if (modelStrategy === 'pro') return 'body';
     if (modelStrategy === 'flash') return 'planning';

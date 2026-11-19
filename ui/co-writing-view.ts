@@ -37,6 +37,7 @@ import { LiveAnalysisController } from './cowrite/live-analysis-controller';
 import type { PlotEvalGateState } from '@/shared/plot-eval-throttle';
 import { captureScrollSnapshot, resolveRestoredScrollTop } from '@/shared/preview-scroll';
 import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
+import { AUTOSAVE_DELAY_MS } from '@/shared/interaction-timing';
 import { onNodeDoc, resolveNodeDoc } from '@/shared/dom-window';
 import { getCustomFontFamilies, registerAllCustomFonts } from '@/services/font-manager';
 import { FontManagerModal } from './font-manager-modal';
@@ -3469,7 +3470,7 @@ ${text}`;
   private scheduleAutoSave(): void {
     this.autoSaveDebouncer.debounceFixed("auto-save", () => {
       void this.saveBody(false);
-    }, 2000);
+    }, AUTOSAVE_DELAY_MS);
   }
 
   /**

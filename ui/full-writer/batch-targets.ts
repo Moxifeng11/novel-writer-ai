@@ -4,6 +4,7 @@
  * 单独拆出以便单元测试：不引入 main / UI 依赖，避免测试链条触达 main.js。
  */
 import { isChapterSettledText } from '@/shared/chapter-status';
+import { STEP_KEYS } from '@/shared/step-keys';
 
 
 /**
@@ -17,8 +18,8 @@ export const BATCH_STEP_KEYS = [
     'outline',
     'emotionPlan',
     'sceneExpand',
-    'bodyGeneration',
-    'analysisReport',
+    STEP_KEYS.BODY_GENERATION,
+    STEP_KEYS.ANALYSIS_REPORT,
 ] as const;
 
 /**

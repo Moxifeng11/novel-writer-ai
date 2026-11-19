@@ -5,7 +5,7 @@
  * - 左侧场景卡片列表（可拖拽排序）
  * - 右侧场景详情编辑器（Tab 分组）
  * - 场景操作：新增/删除/复制/上移/下移/拆分/合并/一键生成
- * - 自动保存（防抖 1s）
+ * - 自动保存（防抖 AUTOSAVE_DELAY_MS，默认 1s）
  * - 字数统计与完成度标记
  *
  * 集成方式：挂载到 FullWriterView 侧边栏
@@ -24,6 +24,7 @@ import { AIApiClient } from '@/engine/ai-api-client';
 import { ContextManager } from '@/engine/context-manager';
 import { stripFrontmatter } from '@/utils/helpers';
 import { appendScenesToContent, serializeScenes } from '@/ui/full-writer/scene-outline-format';
+import { AUTOSAVE_DELAY_MS } from '@/shared/interaction-timing';
 
 
 const log = createLogger('SceneOutlineController');
@@ -999,7 +1000,7 @@ export class SceneOutlineController {
     /** 标记脏数据，触发防抖保存 */
     private markDirty(): void {
         this.isDirty = true;
-        // 记下这次编辑属于哪一章：1 秒后定时器触发时用户可能已经切章，
+        // 记下这次编辑属于哪一章：防抖定时器触发时用户可能已经切章，
         // 旧实现用「当前」project/chapter 拼路径，会把旧章的场景写进新章文件。
         this.pendingSaveTarget = this.resolveSaveTarget();
         if (this.saveTimer) {
@@ -1008,7 +1009,7 @@ export class SceneOutlineController {
         this.saveTimer = window.setTimeout(() => {
             this.saveTimer = null;
             this.saveScenes();
-        }, 1000);
+        }, AUTOSAVE_DELAY_MS);
     }
 
     /** 当前章节对应的保存目标（项目 + 卷号 + 章号） */

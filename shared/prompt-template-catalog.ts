@@ -5,6 +5,7 @@
  * 所以把清单下沉到 shared，UI 侧保留 re-export 兼容。
  */
 import { PJ_PROMPT_TEMPLATE_DIR } from './paths';
+import { STEP_KEYS } from '@/shared/step-keys';
 
 /** 模板分类。 */
 export type TemplateCategory = 'step' | 'worldview' | 'entity' | 'deai';
@@ -28,12 +29,12 @@ export const ALL_TEMPLATE_DEFS: TemplateCatalogEntry[] = [
     { key: 'emotionPlan', name: '情绪规划', category: 'step', categoryName: '步骤模板', systemPath: `${PJ_PROMPT_TEMPLATE_DIR}/emotionPlan-system.md`, userPath: `${PJ_PROMPT_TEMPLATE_DIR}/emotionPlan-user.md` },
     { key: 'sceneExpand', name: 'Scene展开', category: 'step', categoryName: '步骤模板', systemPath: `${PJ_PROMPT_TEMPLATE_DIR}/sceneExpand-system.md`, userPath: `${PJ_PROMPT_TEMPLATE_DIR}/sceneExpand-user.md` },
     { key: 'characterSoul', name: '角色灵魂', category: 'step', categoryName: '步骤模板', systemPath: `${PJ_PROMPT_TEMPLATE_DIR}/characterSoul-system.md`, userPath: `${PJ_PROMPT_TEMPLATE_DIR}/characterSoul-user.md` },
-    { key: 'qualityControl', name: '质量控制', category: 'step', categoryName: '步骤模板', systemPath: `${PJ_PROMPT_TEMPLATE_DIR}/qualityControl-system.md`, userPath: `${PJ_PROMPT_TEMPLATE_DIR}/qualityControl-user.md` },
+    { key: STEP_KEYS.QUALITY_CONTROL, name: '质量控制', category: 'step', categoryName: '步骤模板', systemPath: `${PJ_PROMPT_TEMPLATE_DIR}/qualityControl-system.md`, userPath: `${PJ_PROMPT_TEMPLATE_DIR}/qualityControl-user.md` },
     { key: 'selfCheck', name: 'AI自检', category: 'step', categoryName: '步骤模板', systemPath: `${PJ_PROMPT_TEMPLATE_DIR}/selfCheck-system.md`, userPath: `${PJ_PROMPT_TEMPLATE_DIR}/selfCheck-user.md` },
     { key: 'fix', name: '修正优化', category: 'step', categoryName: '步骤模板', systemPath: `${PJ_PROMPT_TEMPLATE_DIR}/fix-system.md`, userPath: `${PJ_PROMPT_TEMPLATE_DIR}/fix-user.md` },
     { key: 'finalFix', name: '最终修正', category: 'step', categoryName: '步骤模板', systemPath: `${PJ_PROMPT_TEMPLATE_DIR}/finalFix-system.md`, userPath: `${PJ_PROMPT_TEMPLATE_DIR}/finalFix-user.md` },
     { key: 'continuityCheck', name: '连贯性审查', category: 'step', categoryName: '步骤模板', systemPath: `${PJ_PROMPT_TEMPLATE_DIR}/continuityCheck-system.md`, userPath: `${PJ_PROMPT_TEMPLATE_DIR}/continuityCheck-user.md` },
-    { key: 'analysisReport', name: '分析报告', category: 'step', categoryName: '步骤模板', systemPath: `${PJ_PROMPT_TEMPLATE_DIR}/analysisReport-system.md`, userPath: `${PJ_PROMPT_TEMPLATE_DIR}/analysisReport-user.md` },
+    { key: STEP_KEYS.ANALYSIS_REPORT, name: '分析报告', category: 'step', categoryName: '步骤模板', systemPath: `${PJ_PROMPT_TEMPLATE_DIR}/analysisReport-system.md`, userPath: `${PJ_PROMPT_TEMPLATE_DIR}/analysisReport-user.md` },
     // 世界观/实体模板
     { key: 'worldviewSkeleton', name: '世界观骨架', category: 'worldview', categoryName: '世界观模板', systemPath: `${PJ_PROMPT_TEMPLATE_DIR}/worldviewSkeleton-system.md`, userPath: `${PJ_PROMPT_TEMPLATE_DIR}/worldviewSkeleton-user.md` },
     { key: 'worldviewModule', name: '世界观模块', category: 'worldview', categoryName: '世界观模板', systemPath: `${PJ_PROMPT_TEMPLATE_DIR}/worldviewModule-system.md`, userPath: `${PJ_PROMPT_TEMPLATE_DIR}/worldviewModule-user.md` },

@@ -25,12 +25,14 @@
  *   - 正文文件路径：完全一致，均写入同一正文 .md 文件
  *   - 落盘入口：统一为 engine/body-writer.ts（frontmatter 保留、标题统一、按契约规整）
  *   - 格式契约：统一来自项目「写作规则.md」（shared/body-format.ts）
- *   - 步骤状态：均更新 stepResults['bodyGeneration'] 和 stepCompleted
+ *   - 步骤状态：StepRunner 写 stepResults['bodyGeneration'] + stepCompleted；CoWriter 只落盘正文，
+ *     内存槽由 chapter-state-manager 加载章节时从磁盘回填（2026-11-20 更正，审计 B1）
  *   - 后续步骤：qualityControl / analysisReport / settlement 均基于同一正文
  *   - 结论：两条路径可随时切换，不存在「新旧模式」之分
  * ============================================================
  */
 
+import { STEP_KEYS } from '@/shared/step-keys';
 import { validateStepResult } from './step-validator';
 import { resolveUiMessage, uiMessage, withParams } from '@/shared/ui-message';
 import { getBusinessThreshold } from '@/shared/thresholds';
@@ -56,15 +58,19 @@ const STEP_MSG = {
     wordCountSlightlyLow: uiMessage('engineMsg.step.wordCountSlightlyLow', '⚠️ 字数略低：输出 {output} 字，目标 {target} 字。如果内容完整可以接受。'),
 } as const;
 
+// 步骤键单一真源在 shared/step-keys.ts（shared/ 不能 import engine/，分层规则见
+// tests/unit/architecture/ui-internal-boundaries.test.ts）；这里 re-export 保持旧导入路径可用。
+export { STEP_KEYS, type StepKey } from '@/shared/step-keys';
+
 /**
  * 正文变更后需要失效的后续步骤（改正文 → 这些结果不再可信）。
  */
 export const BODY_CHANGE_INVALIDATED_STEPS = [
     'selfCheck',
     'continuityCheck',
-    'qualityControl',
-    'analysisReport',
-    'settlement',
+    STEP_KEYS.QUALITY_CONTROL,
+    STEP_KEYS.ANALYSIS_REPORT,
+    STEP_KEYS.SETTLEMENT,
 ] as const;
 
 // ============================================================
@@ -102,11 +108,11 @@ export type PostValidationFn = (content: string, ctx: StepRunCtx) => PostValidat
  * 质控前置检查。
  */
 export const preCheckQualityControl: PreValidationFn = (ctx) => {
-    const qcContent = ctx.stepResults['qualityControl'];
+    const qcContent = ctx.stepResults[STEP_KEYS.QUALITY_CONTROL];
     if (!qcContent) {
         return { passed: false, error: resolveUiMessage(STEP_MSG.needQualityControl) };
     }
-    const qcValidation = validateStepResult('qualityControl', qcContent);
+    const qcValidation = validateStepResult(STEP_KEYS.QUALITY_CONTROL, qcContent);
     if (qcValidation.level !== 'complete') {
         return { passed: true, warning: resolveUiMessage(withParams(STEP_MSG.qcIncomplete, { missing: qcValidation.missing.join('、') })) };
     }
@@ -114,12 +120,12 @@ export const preCheckQualityControl: PreValidationFn = (ctx) => {
 };
 
 const preCheckBodyGeneration: PreValidationFn = (ctx) => {
-    if (!ctx.stepCompleted.has('bodyGeneration')) {
+    if (!ctx.stepCompleted.has(STEP_KEYS.BODY_GENERATION)) {
         return { passed: false, error: resolveUiMessage(STEP_MSG.needBodyGeneration) };
     }
-    const bodyContent = ctx.stepResults['bodyGeneration'];
+    const bodyContent = ctx.stepResults[STEP_KEYS.BODY_GENERATION];
     if (bodyContent) {
-        const bodyValidation = validateStepResult('bodyGeneration', bodyContent);
+        const bodyValidation = validateStepResult(STEP_KEYS.BODY_GENERATION, bodyContent);
         if (bodyValidation.level !== 'complete') {
             return { passed: true, warning: resolveUiMessage(withParams(STEP_MSG.bodyIncomplete, { missing: bodyValidation.missing.join('、') })) };
         }
@@ -181,9 +187,9 @@ export const ALL_FULL_STEPS: FullStep[] = [
      * - 有角色灵魂/Scene 规划时自动使用 V2 小说家模板（见 getStepTemplateAuto）
      * - 落盘统一走 engine/body-writer.ts，格式契约来自项目「写作规则.md」
      */
-    { index: 7,  key: 'bodyGeneration', label: '✍️ 正文生成',   labelKey: 'engineMsg.stepName.bodyGeneration',       required: true,  canSkip: false, auto: false, modelStrategy: 'pro',     preValidation: null, postValidation: postCheckWordCount },
-    { index: 8,  key: 'qualityControl', label: '🎯 质量控制',   labelKey: 'engineMsg.stepName.qualityControl',       required: false, canSkip: true,  auto: false, modelStrategy: 'pro',     preValidation: null, postValidation: null },
-    { index: 9,  key: 'analysisReport', label: '📊 分析报告',   labelKey: 'engineMsg.stepName.analysisReport',       required: false, canSkip: true,  auto: false, modelStrategy: 'flash',   preValidation: preCheckBodyGeneration, postValidation: null },
+    { index: 7,  key: STEP_KEYS.BODY_GENERATION, label: '✍️ 正文生成',   labelKey: 'engineMsg.stepName.bodyGeneration',       required: true,  canSkip: false, auto: false, modelStrategy: 'pro',     preValidation: null, postValidation: postCheckWordCount },
+    { index: 8,  key: STEP_KEYS.QUALITY_CONTROL, label: '🎯 质量控制',   labelKey: 'engineMsg.stepName.qualityControl',       required: false, canSkip: true,  auto: false, modelStrategy: 'pro',     preValidation: null, postValidation: null },
+    { index: 9,  key: STEP_KEYS.ANALYSIS_REPORT, label: '📊 分析报告',   labelKey: 'engineMsg.stepName.analysisReport',       required: false, canSkip: true,  auto: false, modelStrategy: 'flash',   preValidation: preCheckBodyGeneration, postValidation: null },
     { index: 10, key: '',               label: '💾 章节结算',   labelKey: 'engineMsg.stepName.settlement',       required: true,  canSkip: false, auto: true,  modelStrategy: 'default', preValidation: null, postValidation: null },
 ];
 

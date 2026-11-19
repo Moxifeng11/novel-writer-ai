@@ -23,6 +23,7 @@ import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
 import { validateStepResult } from './step-validator';
 import { createLogger } from '@/shared/logger';
 import { projectIdFromPath } from '@/shared/paths';
+import { STEP_KEYS } from '@/shared/step-keys';
 
 
 const log = createLogger('StepResultSaver');
@@ -41,7 +42,7 @@ const STEP_TAGS: Record<string, string> = {
 };
 
 /** 需要写「章」属性的步骤 */
-const STEP_CHAPTER_KEYS = new Set(['infoPlan', 'outline', 'selfCheck', 'fix', 'finalFix', 'plotDistill', 'qualityControl']);
+const STEP_CHAPTER_KEYS = new Set(['infoPlan', 'outline', 'selfCheck', 'fix', 'finalFix', 'plotDistill', STEP_KEYS.QUALITY_CONTROL]);
 /**
  * 实体名称列表结构定义。
  */
@@ -207,14 +208,14 @@ export class StepResultSaver {
         const fileMap: Record<string, string> = {
             'infoPlan': `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.infoPlan)}`,
             'outline': `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.outline)}`,
-            'bodyGeneration': bodyDefaultPath,
-            'analysisReport': `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.analysisReport)}`,
+            [STEP_KEYS.BODY_GENERATION]: bodyDefaultPath,
+            [STEP_KEYS.ANALYSIS_REPORT]: `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.analysisReport)}`,
             'continuityCheck': `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.continuityReview)}`,
             'selfCheck': `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.selfCheck)}`,
             'fix': `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.fix)}`,
             'finalFix': `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.finalFix)}`,
             'plotDistill': `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.plotDistill)}`,
-            'qualityControl': `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.qualityControl)}`,
+            [STEP_KEYS.QUALITY_CONTROL]: `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.qualityControl)}`,
             'emotionPlan': `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.emotionPlan)}`,
             'sceneExpand': `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.sceneExpand)}`,
             'characterSoul': `${chapDir}/${getChapterFileName(chapterName, CHAPTER_FILE_TYPES.characterSoul)}`,
@@ -230,7 +231,7 @@ export class StepResultSaver {
                 await fs.mkdir(chapDir);
             }
             // v4.0: 写正文前确保正文目录存在
-            if (stepKey === 'bodyGeneration' && v4Match) {
+            if (stepKey === STEP_KEYS.BODY_GENERATION && v4Match) {
                 const bodyDir = pjBodyDir(v4Project, v4VolN);
                 if (!vaultMeta.getAbstractFileByPath(bodyDir)) {
                     await fs.mkdir(bodyDir);
@@ -241,7 +242,7 @@ export class StepResultSaver {
             const chapName = chapterName;
             let actualTargetPath = targetPath;
 
-            if (stepKey === 'bodyGeneration') {
+            if (stepKey === STEP_KEYS.BODY_GENERATION) {
                 // P0-3 修复: v4 项目正文路径由卷号+章号唯一确定，直接使用 bodyDefaultPath，
                 // 避免 findChapterFile 在卷目录下按 frontmatter 模糊匹配到错误章节（多章项目正文错位）
                 if (v4Match) {
@@ -284,7 +285,7 @@ export class StepResultSaver {
                         );
                         return true;
                     }
-                    if (existing !== null && validateStepResult('bodyGeneration', existing).level === 'complete') {
+                    if (existing !== null && validateStepResult(STEP_KEYS.BODY_GENERATION, existing).level === 'complete') {
                         const draftPath = actualTargetPath.replace(/\.md$/i, '_截断草稿.md');
                         await fs.write(draftPath, content);
                         log.warn(`[StepResultSaver] 正文截断，已保留完整正文并写入草稿 → ${draftPath}`);
@@ -335,7 +336,7 @@ export class StepResultSaver {
                 fileContent = content;
             } else if (stepKey === 'outline') {
                 fileContent = content;
-            } else if (stepKey === 'analysisReport') {
+            } else if (stepKey === STEP_KEYS.ANALYSIS_REPORT) {
                 // 模型可能自带完整 YAML frontmatter。旧实现只删开头 `---`，
                 // 会把 `key: value` 和结尾 `---` 留在报告正文里。
                 fileContent = content.replace(/^---\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/, '');
@@ -349,7 +350,7 @@ export class StepResultSaver {
                 fileContent = content;
             } else if (stepKey === 'plotDistill') {
                 fileContent = content;
-            } else if (stepKey === 'qualityControl') {
+            } else if (stepKey === STEP_KEYS.QUALITY_CONTROL) {
                 fileContent = `# ${chapName}_质量控制\n\n${content}`;
             } else {
                 fileContent = content;
@@ -358,7 +359,7 @@ export class StepResultSaver {
             await this.getFS().write(targetPath, fileContent);
 
             // 通过 processFrontMatter 设置元数据（非正文步骤）
-            if (stepKey !== 'bodyGeneration') {
+            if (stepKey !== STEP_KEYS.BODY_GENERATION) {
                 const targetFile = await this.getFS().getFile(targetPath);
                 if (targetFile) {
                     // A4：step_status 必须由内容结构决定，不能无条件写成 generated。

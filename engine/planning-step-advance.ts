@@ -4,6 +4,7 @@
  * 与 StepRunner 解耦，便于单测；避免「规划已生成但停留在旧步骤」的流转卡死。
  */
 import { ALL_FULL_STEPS } from './step-definitions';
+import { STEP_KEYS } from '@/shared/step-keys';
 
 /** 章节规划阶段的 5 个步骤（顺序与 UI 一致） */
 export const PLANNING_STEP_KEYS = [
@@ -19,9 +20,9 @@ export const BODY_GENERATION_STEP_INDEX = 7;
 
 /** 正文及其下游：规划变更后必须失效的步骤 */
 export const BODY_DOWNSTREAM_STEP_KEYS = [
-    'bodyGeneration',
-    'qualityControl',
-    'analysisReport',
+    STEP_KEYS.BODY_GENERATION,
+    STEP_KEYS.QUALITY_CONTROL,
+    STEP_KEYS.ANALYSIS_REPORT,
     'settlement',
 ] as const;
 

@@ -24,6 +24,7 @@ import { BODY_GENERATION_SYSTEM_PROMPT_V3, BODY_GENERATION_USER_TEMPLATE_V3 } fr
 import { BODY_GENERATION_SYSTEM_PROMPT_V4, BODY_GENERATION_USER_TEMPLATE_V4 } from './body-v4-prompts';
 import { HUMAN_VOICE_BLOCK, HUMAN_VOICE_WEAK_RULES } from './human-voice';
 import { DEAI_REWRITE_SYSTEM_PROMPT } from './deai-prompts';
+import { STEP_KEYS } from '@/shared/step-keys';
 
 /**
  * 人味模式（样文/配额）。
@@ -183,7 +184,7 @@ export function renderMetaOf(
     stepKey: string,
     options: { vars?: Record<string, string>; voiceMode?: HumanVoiceMode; forceBodyVariant?: 'v1' | 'v2' | 'v3' | 'v4' } = {},
 ): PromptRenderMeta | null {
-    const base = stepKey === 'bodyGeneration'
+    const base = stepKey === STEP_KEYS.BODY_GENERATION
         ? resolveBodyVariant(options.vars, options.forceBodyVariant)
         : promptVariantOf(stepKey);
     if (!base) return null;

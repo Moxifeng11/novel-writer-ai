@@ -2,6 +2,7 @@ import { ALL_FULL_STEPS, FullStep } from '@/engine/step-definitions';
 import { t } from '@/i18n';
 import { StepLevel } from '@/engine/step-validator';
 import { createLogger } from '@/shared/logger';
+import { STEP_KEYS } from '@/shared/step-keys';
 
 const log = createLogger('StreamlinedNav');
 
@@ -50,8 +51,8 @@ interface PhaseDefinition {
 const PHASE_DEFINITIONS: PhaseDefinition[] = [
     { key: 'context', label: '上下文加载', icon: '🔄', colorClass: null, stepKeys: ['context', 'characterSoul'] },
     { key: 'planning', label: t('fullwriter.nav.phasePlanning'), icon: '📋', colorClass: 'novel-writer-fw-step-soul', stepKeys: ['infoPlan', 'plotDistill', 'outline', 'emotionPlan', 'sceneExpand'] },
-    { key: 'writing', label: t('fullwriter.nav.phaseWriting'), icon: '✍️', colorClass: 'novel-writer-fw-step-creative', stepKeys: ['bodyGeneration'] },
-    { key: 'review', label: t('fullwriter.nav.phaseReview'), icon: '🎯', colorClass: 'novel-writer-fw-step-audit', stepKeys: ['qualityControl', 'analysisReport'] },
+    { key: 'writing', label: t('fullwriter.nav.phaseWriting'), icon: '✍️', colorClass: 'novel-writer-fw-step-creative', stepKeys: [STEP_KEYS.BODY_GENERATION] },
+    { key: 'review', label: t('fullwriter.nav.phaseReview'), icon: '🎯', colorClass: 'novel-writer-fw-step-audit', stepKeys: [STEP_KEYS.QUALITY_CONTROL, STEP_KEYS.ANALYSIS_REPORT] },
     { key: 'settlement', label: t('fullwriter.fp.settlement'), icon: '💾', colorClass: null, stepKeys: ['settlement'] },
 ];
 

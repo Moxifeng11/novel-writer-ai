@@ -13,6 +13,7 @@ import { writeVaultText } from '@/shared/file-system-port';
 import { getProjectMeta } from './project-utils';
 import { showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 import { getCreationModeLabel, type CreationMode } from '@/shared/creation-mode';
+import { STEP_KEYS } from '@/shared/step-keys';
 import {
     buildScriptUnitSkeleton,
     buildShortUnitSkeleton,
@@ -32,8 +33,8 @@ const STEP_FILE_TYPES: Array<{ type: string; templateKey: string }> = [
     { type: CHAPTER_FILE_TYPES.emotionPlan, templateKey: 'emotionPlan' },
     { type: CHAPTER_FILE_TYPES.sceneExpand, templateKey: 'sceneExpand' },
     { type: CHAPTER_FILE_TYPES.characterSoul, templateKey: 'characterSoul' },
-    { type: CHAPTER_FILE_TYPES.qualityControl, templateKey: 'qualityControl' },
-    { type: CHAPTER_FILE_TYPES.analysisReport, templateKey: 'analysisReport' },
+    { type: CHAPTER_FILE_TYPES.qualityControl, templateKey: STEP_KEYS.QUALITY_CONTROL },
+    { type: CHAPTER_FILE_TYPES.analysisReport, templateKey: STEP_KEYS.ANALYSIS_REPORT },
 ];
 
 interface WrittenFile {
