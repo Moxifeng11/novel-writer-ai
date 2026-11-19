@@ -3359,3 +3359,54 @@ ideation（793）/ batch-import（750）/ `ui/agent-workbench-view.ts`（126 条
 
 **下一轮候选**：polish-editor（823）/ ideation（793）/ batch-import（750）/ `ui/agent-workbench-view.ts`（730 字）；
 知识库 D 类两文件（`ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`）等视觉重构（用户 m16938）。
+
+## 第一百一十轮：i18n 第二期第42片 —— 文笔润色编辑器与 AI 润色弹窗（2026-11-19，DSH）
+
+**触发**：用户 m21171「继续」（第41片之后的候选顺序：polish-editor → ideation → batch-import）。
+
+**范围**：`ui/polish-editor.ts`（829 行，**纯 LF，文件里没有 CRLF**）。文件原本没有 `import { t }`，
+105 行含中文；本片迁 54 组 / **70 键** `polishEditor.*`。
+
+**改动**
+1. 迁 54 组：编辑器标题与三个按钮（✨ AI润色 / 📊 节奏分析 / 🎨 风格指南）、四个实体图例、
+   自动保存四态（💾 已保存 / 保存中… / 内容过短 / 💾 已保存 {time} / 保存失败）、八条 Notice、
+   节奏面板（整体节奏 / 段落数 / 拖沓段 / 紧张段 / 建议 / 段落详情 / 密度与张力）、风格指南面板
+   （标题 / 空态 / 偏好风格 / 避免风格）、弹窗五段（润色范围 / 润色风格 / 写作指纹开关 / 进度 / 结果对比）、
+   结果三按钮（应用 / 重试 / 取消）。
+2. 新增 6 个 switch helper：`polishScopeLabel` / `polishStyleLabel` / `entityTypeLabel` /
+   `entityLegendLabel` / `paceLabel`（medium 与 balanced 共用 `pace.medium`）/ `segmentTypeLabel`，
+   键写成 switch 分支字面量（避免 check:i18n 记动态键）；`paceLabels` 与段落 `typeLabels` 两个
+   模块级 Record 删除。
+3. **顺带修真 bug**：弹窗原本用 `this.selection` 存选中文本，与 Obsidian `Modal` 基类 `open()` 写入的
+   同名对象属性冲突 → `renderInputForm` 里 `this.selection.trim()` 抛
+   `TypeError: this.selection.trim is not a function`，弹窗只渲染出「润色范围」一段（实测 560×176，
+   按钮只有「全文润色 / 选中段落润色」两个）。改名为 `selectedText`（8 处），弹窗恢复 560×490（zh）/ 560×521（en）。
+4. 保留中文：`PolishScope`/`PolishStyle` 联合类型的值、`POLISH_STYLE_HINTS`、systemPrompt/userPrompt、
+   指纹附录分项名、`偏好风格：`/`避免风格：` 解析前缀、全部 `log.*` 与注释。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；新增 `tests/unit/i18n/polish-editor-flow.test.ts` 5 例（70 键双语可解析 / en 零 CJK /
+  zh 逐字插值 10 条 / 18 条标签与源码逐字一致 / en 插值无花括号残留），
+  `tests/unit/ui/polish-editor-project-d6.test.ts` 补 2 例（选中文本落在 `selectedText`、基类写 `selection` 后不受影响），
+  两文件合跑 **9 例绿**。
+- `check:i18n` zh/en 各 **5067** 条、无法解析键 0、动态键 29、棘轮 **212 文件 / 6578 条**（6643 → 6578，已 --update-baseline）。
+- 实机 `D:\nw-tmp\snap-i18n42.mjs <lang>`：zh/en 各 4 场景（editor 1072×398 / modal-input 560×490 / rhythm 1072×692 /
+  style 1072×781），零横向溢出；en 弹窗 CJK=0，编辑器与节奏面板剩余 CJK 全是样章正文与
+  `engine/rhythm-analyzer.ts:200-203` 的建议句（引擎层不在 `ui/**` 棘轮内）。截图 `D:\nw-dev-vault\_visual-i18n42\`。
+- `npm run preflight` **EXIT=0**（993 文件 / **10,351 通过 + 3 跳过**，日志 `D:\nw-tmp\preflight-i18n42.log`）；
+  `check:bundle` main.js **6,161,517**（+6,787）、styles.css **800,471**（±0）；`gen:docs` 1,004 文件 / `check:docs` 20 活跃文档通过。
+
+**坑**
+1. **不要用 `selection` 当弹窗字段名**：Obsidian `Modal` 基类在 `open()` 写同名对象属性，覆盖构造函数赋值；
+   症状是「弹窗只渲染前半截」，定位法是给字段打一条 `typeof this.xxx`（构造时 string、open 后 object）。
+2. **润色弹窗没有命令入口**：只由 `ui/full-writer-view.ts:2314 renderPolishEditor` 渲染，截图必须挂视图
+   （取 leaf 的 view → 设项目/卷/章与 `stepResults['bodyGeneration']` → 造容器挂 `view.contentEl` →
+   `await view.renderPolishEditor(容器)` → 点 `.nw-pe-btn`）。
+3. **rebuild 后必须 `dev-vault sync`**：只 build 不同步的话开发 vault 仍跑旧 main.js，排查 bug 时日志不出来会误导。
+
+**文档**：`docs/modules/i18n.md`（§2 资源 4997 → 5067 + 资源链 +70 + 已迁移面 bullet + 棘轮 6643 → 6578、§5 表行、
+§6 测试 bullet、§7 backlog、§9 两条经验）、`docs/modules/INDEX.md`、`docs/CURRENT.md`、
+`docs/planning/2026-11-18-feature-gaps.md`、本轮记录；基线 `.i18n-baseline.json` / `.bundle-baseline.json`。
+
+**下一轮候选**：ideation（793）/ batch-import（750）/ `ui/agent-workbench-view.ts`（730 字）；
+知识库 D 类两文件（`ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`）等视觉重构（用户 m16938）。

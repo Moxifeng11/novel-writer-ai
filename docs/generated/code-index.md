@@ -11,7 +11,7 @@
 | `shared/` | 259 | 52377 | 2212 | 1732 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1583 | 88 | 58 | 66% |
-| `ui/` | 304 | 114080 | 1181 | 935 | 79% |
+| `ui/` | 304 | 114175 | 1181 | 935 | 79% |
 
 ## 文件清单
 
@@ -913,7 +913,7 @@
 | `ui/planning/outline-bridge.ts` | 128 | 5 | 3 |
 | `ui/plot-canvas-modal.ts` | 366 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
-| `ui/polish-editor.ts` | 830 | 5 | 5 |
+| `ui/polish-editor.ts` | 925 | 5 | 5 |
 | `ui/pre-research-modal.ts` | 724 | 2 | 2 |
 | `ui/project-health-modal.ts` | 205 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 457 | 5 | 5 |

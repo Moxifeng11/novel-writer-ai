@@ -142,7 +142,7 @@
     "ui/planning/outline-bridge.ts": 7,
     "ui/plot-canvas-modal.ts": 42,
     "ui/plot-canvas-parser.ts": 2,
-    "ui/polish-editor.ts": 132,
+    "ui/polish-editor.ts": 67,
     "ui/pre-research-modal.ts": 1,
     "ui/project-health-modal.ts": 37,
     "ui/project-side-panel-view.ts": 54,
@@ -213,7 +213,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 6643,
+  "total": 6578,
   "updatedAt": "2026-11-19",
   "note": ""
 }

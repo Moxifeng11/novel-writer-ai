@@ -63,3 +63,42 @@ describe('D6 PolishAIPolishModal — 项目显式传递', () => {
         expect(plugin.getActiveProject).not.toHaveBeenCalled();
     });
 });
+
+/**
+ * Obsidian 的 Modal 基类在 open() 时会给实例写入一个 selection 对象（DOM 选中相关），
+ * 如果弹窗自己把选中文本也存成 this.selection，构造函数的赋值会被覆盖，
+ * renderInputForm 里调用 this.selection.trim() 直接抛
+ * "TypeError: this.selection.trim is not a function"，弹窗只渲染出「润色范围」一段。
+ * 字段改名为 selectedText 后，基类写入同名属性不再影响选中文本。
+ */
+describe('PolishAIPolishModal — 选中文本不占用 Modal 基类的 selection 属性', () => {
+    it('构造时把选中文本存到 selectedText', () => {
+        const modal = new PolishAIPolishModal(
+            {} as never,
+            makePlugin() as never,
+            '整章正文',
+            '选中段落内容',
+            () => {},
+            '当前书',
+        );
+
+        const fields = modal as unknown as { selectedText: string; fullText: string };
+        expect(fields.selectedText).toBe('选中段落内容');
+        expect(fields.fullText).toBe('整章正文');
+    });
+
+    it('基类写入 selection 对象后 selectedText 不受影响', () => {
+        const modal = new PolishAIPolishModal(
+            {} as never,
+            makePlugin() as never,
+            '整章正文',
+            '选中段落内容',
+            () => {},
+            '当前书',
+        );
+
+        const mutable = modal as unknown as { selection?: unknown; selectedText: string };
+        mutable.selection = { anchorNode: null };
+        expect(mutable.selectedText).toBe('选中段落内容');
+    });
+});

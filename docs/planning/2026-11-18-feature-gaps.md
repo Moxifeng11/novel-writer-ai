@@ -296,8 +296,18 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
   顺带修真实 bug：`ENTITY_TYPES` 是模块级常量、加载时求值 `t()`，切语言后卡片 label/description 不刷新 → 改 `entityTypes()` 函数（`wvCfg`/`charCfg`/批量三处调用点同步）；
   保留中文：两段角色修补提示词（repairSystem / repairPrompt）、模板文件名、项目名与三个姓名提取正则、AI 需求片段（题材倾向 / 故事逻辑方针 / 批量生成要求）、校验器契约串（正文分节 / YAML frontmatter 未闭合）、日志；
   zh/en 资源各 **4997** 条；棘轮收紧到 **212 文件 / 6643 条**；新增 `tests/unit/i18n/ai-builder-flow.test.ts` 4 例；实机 zh/en 各 5 场景（1300×900，零横向溢出，en 下三张生成页 CJK=0，dashboard/project 的 12/16 字为 vault 项目名）。
+- 第二期第42片（2026-11-19，DSH）：文笔润色编辑器 —— `ui/polish-editor.ts`（829 行）迁 54 组 / **70 键** `polishEditor.*`
+  （标题与三个按钮、实体图例、节奏/风格面板、弹窗五段、结果对比、八条 Notice、自动保存四态）；
+  `PolishScope`/`PolishStyle` 联合类型的值、`POLISH_STYLE_HINTS`、润色提示词、指纹附录分项名与
+  `偏好风格：`/`避免风格：` 解析前缀、日志保留中文，显示名走 6 个 switch helper；
+  **顺带修真 bug**：`PolishAIPolishModal` 用 `this.selection` 存选中文本，撞 Obsidian `Modal` 基类
+  `open()` 写入的同名对象属性 → `this.selection.trim is not a function`，弹窗只渲染出「润色范围」
+  （560×176）；改名 `selectedText` 后 560×490，并补 2 例回归测试；
+  zh/en 资源各 **5067** 条；棘轮收紧到 **212 文件 / 6578 条**；新增 `tests/unit/i18n/polish-editor-flow.test.ts` 5 例；
+  实机 zh/en 各 4 场景（编辑器 1072 宽 + 弹窗 560 宽，零横向溢出；en 弹窗 CJK=0，节奏/风格面板剩余 CJK
+  为样章正文与 `engine/rhythm-analyzer.ts:200-203` 的建议句）。
 - 后续：第二期余下（知识库 D 类两文件 `ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`
-  用户已裁定随视觉重构；散落弹窗 polish-editor 823 / ideation 793 / batch-import 750 /
+  用户已裁定随视觉重构；散落弹窗 ideation 793 / batch-import 750 / agent-workbench-view 730 /
   novel-tags 1099（只剩 AI 提示词与解析正则）等），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 
 ---
