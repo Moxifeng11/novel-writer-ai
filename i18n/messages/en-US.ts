@@ -117,6 +117,7 @@ export const enUS: MessageTree = {
         presetHook: 'Chapter-end hooks',
         presetInfo: 'Information control',
         generateBtn: '🚀 Generate book plan',
+        generating: '⏳ Generating, please wait…',
         noApiKey: '❌ Please configure an API key or local model endpoint first',
         genWorldviewTitle: 'Generate worldview',
         genWorldviewDesc: 'No worldview overview found. Generate one first?',
@@ -548,6 +549,7 @@ export const enUS: MessageTree = {
             k10: "No character cards parsed (result empty or incomplete); nothing saved",
         },
         ui: {
+            busy: '⏳ Generating, please wait…',
             k1: "✨ AI world-element generator",
             k2: "No projects yet",
             k3: "Create a novel project in the Full Workbench first.",

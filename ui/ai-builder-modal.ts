@@ -1,4 +1,5 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
+import { withButtonBusy } from '@/ui/button-busy';
 import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
@@ -506,7 +507,7 @@ export class AiBuilderModal extends Modal {
             text: t("aiBuilder.ui.k35"),
             cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
         });
-        generateBtn.onclick = async () => {
+        generateBtn.onclick = () => withButtonBusy(generateBtn, t("aiBuilder.ui.busy"), async () => {
             const worldName = worldNameInput.value.trim() || this.selectedProject;
             const genre = genreInput.value.trim();
             const theme = themeInput.value.trim();
@@ -593,7 +594,7 @@ export class AiBuilderModal extends Modal {
                 genNotice.hide();
                 showErrorNotice((e as { message?: string }).message || t("aiBuilder.flow.unknownError"), { title: t("aiBuilder.ui.k40"), timeout: 8000 });
             }
-        };
+        });
     }
 
     // ─────── 单个实体生成表单 ───────
@@ -628,11 +629,11 @@ export class AiBuilderModal extends Modal {
                 text: t("aiBuilder.ui.k44"),
                 cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
             });
-            generateBtn.onclick = async () => {
+            generateBtn.onclick = () => withButtonBusy(generateBtn, t("aiBuilder.ui.busy"), async () => {
                 const count = parseInt((countInput as HTMLInputElement).value) || 5;
                 const prompt = (promptInput as HTMLTextAreaElement).value.trim();
                 await this.doGenerateEntities(cfg, { count, prompt, name: '' });
-            };
+            });
         } else {
             form.createEl('label', { text: t("aiBuilder.ui.k45"), cls: 'novel-writer-ai-builder-label' });
             const descInput = form.createEl('textarea', {
@@ -644,7 +645,7 @@ export class AiBuilderModal extends Modal {
                 text: t("aiBuilder.flow.generationTitle", { icon: cfg.icon, label: cfg.label }),
                 cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
             });
-            generateBtn.onclick = async () => {
+            generateBtn.onclick = () => withButtonBusy(generateBtn, t("aiBuilder.ui.busy"), async () => {
                 const name = (nameInput as HTMLInputElement).value.trim();
                 if (!name) {
                     new Notice(t("aiBuilder.flow.needName", { label: cfg.label }), 3000);
@@ -652,7 +653,7 @@ export class AiBuilderModal extends Modal {
                 }
                 const desc = (descInput as HTMLTextAreaElement).value.trim();
                 await this.doGenerateEntities(cfg, { count: 1, prompt: desc, name });
-            };
+            });
         }
     }
 
@@ -697,7 +698,7 @@ export class AiBuilderModal extends Modal {
                 text: t("aiBuilder.flow.batchGenerationTitle", { icon: cfg.icon, label: cfg.label }),
                 cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
             });
-            generateBtn.onclick = async () => {
+            generateBtn.onclick = () => withButtonBusy(generateBtn, t("aiBuilder.ui.busy"), async () => {
                 const count = parseInt((countInput as HTMLInputElement).value) || 3;
                 const batchPrompt = (batchPromptInput as HTMLTextAreaElement).value.trim();
                 const genre = (genreInput as HTMLInputElement).value.trim();
@@ -707,17 +708,17 @@ export class AiBuilderModal extends Modal {
                 if (logic) parts.push(`故事逻辑方针：${logic}`);
                 if (batchPrompt) parts.push(`批量生成要求：${batchPrompt}`);
                 await this.doGenerateEntities(cfg, { count, prompt: parts.join('\n'), name: '' });
-            };
+            });
         } else {
             const generateBtn = form.createEl('button', {
                 text: t("aiBuilder.flow.batchGenerationTitle", { icon: cfg.icon, label: cfg.label }),
                 cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
             });
-            generateBtn.onclick = async () => {
+            generateBtn.onclick = () => withButtonBusy(generateBtn, t("aiBuilder.ui.busy"), async () => {
                 const count = parseInt((countInput as HTMLInputElement).value) || 3;
                 const batchPrompt = (batchPromptInput as HTMLTextAreaElement).value.trim();
                 await this.doGenerateEntities(cfg, { count, prompt: batchPrompt ? `批量生成要求：${batchPrompt}` : '', name: '' });
-            };
+            });
         }
     }
 

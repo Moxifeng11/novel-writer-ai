@@ -1,4 +1,5 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
+import { withButtonBusy } from '@/ui/button-busy';
 import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { AIEngine, WorldElements } from '@/engine/ai-engine';
@@ -175,7 +176,7 @@ export class PlanBookModal extends Modal {
             };
 
             const planButton = contentEl.createEl('button', { text: t('planBook.generateBtn'), cls: 'nw-btn nw-btn-primary novel-writer-primary-button', attr: { title: '生成全书规划（分卷大纲 + 章节分配）' } });
-            planButton.onclick = async () => {
+            planButton.onclick = () => withButtonBusy(planButton, t("planBook.generating"), async () => {
                 const project = projectSelect.value;
                 const totalChars = totalCharsInput.value;
                 const volCount = parseInt(volCountInput.value) || 3;
@@ -183,7 +184,7 @@ export class PlanBookModal extends Modal {
                 const customPrompt = customPromptInput.value.trim();
 
                 await this.generatePlan(project, totalChars, volCount, chapWords, customPrompt);
-            };
+            });
         };
 
         populateProjects();

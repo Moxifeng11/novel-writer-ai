@@ -120,6 +120,7 @@ export const zhCN: MessageTree = {
         presetHook: '章末钩子',
         presetInfo: '信息控制',
         generateBtn: '🚀 生成全书规划',
+        generating: '⏳ 生成中，请稍候…',
         noApiKey: '❌ 请先配置 API 密钥或本地模型端点',
         genWorldviewTitle: '生成世界观',
         genWorldviewDesc: '未找到世界观总览，是否先生成世界观？',
@@ -551,6 +552,7 @@ export const zhCN: MessageTree = {
             k10: "未解析到任何角色卡（生成结果为空或不完整），未保存",
         },
         ui: {
+            busy: '⏳ 生成中，请稍候…',
             k1: "✨ AI世界元素生成器",
             k2: "尚未创建任何项目",
             k3: "请先在「完整工作台」中创建小说项目。",
