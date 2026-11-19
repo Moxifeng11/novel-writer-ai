@@ -27,26 +27,6 @@ describe('G6-8 伏笔刷新只刷当前项目且防抖', () => {
     });
 });
 
-describe('G6-9 写章前文摘要一次快照 + 窗口上限', () => {
-    const src = read('ui/write-chapter-modal.ts');
-
-    it('循环外只取一次文件快照', () => {
-        expect(src).toContain('const allFiles = app.vault.getFiles();');
-        expect(src).toContain('for (let n = summaryStart; n < chapNum; n++)');
-        expect(src).toContain('PREV_SUMMARY_WINDOW = 40');
-    });
-
-    it('循环内使用快照而不是重复全库扫描', () => {
-        expect(src).toContain("findChapterFile(allFiles, prevDir, '大纲摘要')");
-        expect(src).toContain("findChapterFile(allFiles, prevDir, '分析报告')");
-        expect(src).toContain('prevBody = allFiles.find(');
-    });
-
-    it('摘要总预算有上限', () => {
-        expect(src).toContain('prevChaptersSummary.length > 12000');
-    });
-});
-
 describe('G6-10 拆解监控局部更新', () => {
     const src = read('ui/knowledge-monitor-modal.ts');
 

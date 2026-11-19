@@ -88,13 +88,12 @@ describe('D3-7 接线契约', () => {
         expect(src).toContain("this.markPostStepFailure(ctx, '角色弧线')");
     });
 
-    it('五个调用方都按 partialFailure 判失败', () => {
+    it('四个调用方都按 partialFailure 判失败', () => {
         for (const rel of [
             'engine/step-settlement.ts',
             'engine/step-runner.ts',
             'ui/chapter-settlement-modal.ts',
             'ui/full-writer/batch-pipeline-runner.ts',
-            'ui/write-chapter-modal.ts',
         ]) {
             expect(read(rel)).toContain('partialFailure?.length');
         }

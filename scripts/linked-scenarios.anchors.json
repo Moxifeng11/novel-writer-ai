@@ -1,7 +1,7 @@
 {
   "$comment": "联动场景锚点清单（check:linked-scenarios 的数据源）。本文件与检查脚本分离，防止「删锚点即删检查」的自证循环。修改时请同步 docs/regression/LINKED-SCENARIOS.md。",
   "schemaVersion": 1,
-  "floor": 35,
+  "floor": 34,
   "doc": "docs/regression/LINKED-SCENARIOS.md",
   "chains": {
     "链 1 · 生成→质控→修订→结算→导出": [
@@ -9,11 +9,6 @@
         "file": "shared/command-ids.ts",
         "text": "'novel-writer-batch-novels'",
         "why": "批量生成命令（现行入口）"
-      },
-      {
-        "file": "shared/command-ids.ts",
-        "text": "'novel-writer-batch-chapters'",
-        "why": "批量生成命令（兼容入口）"
       },
       {
         "file": "shared/command-ids.ts",

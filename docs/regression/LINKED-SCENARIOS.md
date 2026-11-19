@@ -23,7 +23,7 @@
 
 | 环节 | 入口 | 产物 | 自动化覆盖 |
 |---|---|---|---|
-| 生成 | 工作台逐步 / `novel-writer-batch-chapters` | `步骤结果/第N卷/第N章/第N章_*.md`、`正文/第N卷/第N章_正文.md` | `step-result-saver*`、`batch-pipeline-*`、E2E「完整写作工作台」 |
+| 生成 | 工作台逐步 / `novel-writer-batch-novels`（批量） | `步骤结果/第N卷/第N章/第N章_*.md`、`正文/第N卷/第N章_正文.md` | `step-result-saver*`、`batch-pipeline-*`、E2E「完整写作工作台」 |
 | 质控 | 质量控制步骤 | `第N章_质量控制.md` | `step-*`、`quality-*` 单测 |
 | 修订 | 定向修订 / `第N章_修正记录.md` | 修正稿回写正文 | `settlement-engine-behavior`、`writeFixToBody` |
 | 结算 | `novel-writer-chapter-settlement` | 实体/关系/伏笔/时间线更新，正文 `status: settled`，`settlement_mode` | `settlement-engine-behavior`（成功/幂等/回滚）、`settlement-mode`、`settlement-journal` |

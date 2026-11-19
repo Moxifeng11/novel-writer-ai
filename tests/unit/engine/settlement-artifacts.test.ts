@@ -69,18 +69,11 @@ describe('countSettlementChanges', () => {
     });
 });
 
-describe('源码约束：两个入口共用同一生成器', () => {
+describe('源码约束：结算入口共用同一生成器', () => {
     const root = path.resolve(__dirname, '../../..');
     const read = (rel: string): string => fs.readFileSync(path.join(root, rel), 'utf8');
 
-    it('章节结算弹窗与一键成文都引用 buildSettlementTable', () => {
+    it('章节结算弹窗引用 buildSettlementTable', () => {
         expect(read('ui/chapter-settlement-modal.ts')).toContain('buildSettlementTable({');
-        expect(read('ui/write-chapter-modal.ts')).toContain('buildSettlementTable({');
-    });
-
-    it('一键成文不再保留自己的结算表模板', () => {
-        const source = read('ui/write-chapter-modal.ts');
-        expect(source).not.toContain('const settleFm = buildStepFrontmatter');
-        expect(source).not.toContain('# 第${chapName}章 结算表');
     });
 });

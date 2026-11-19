@@ -16,7 +16,7 @@ import { setLocale } from '../../../i18n';
  * 非 UI 命令仍留在 core 执行」，避免搬迁时漏注册或把业务命令一起搬走。
  */
 
-/** 重构前 registerInternalCommands 注册的全部命令 id（65 项） */
+/** 重构前 registerInternalCommands 注册的全部命令 id（61 项；旧写入链 4 条已于 v4.96.x 删除） */
 const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.CREATE_PROJECT,
     CommandIds.AGENT_GUIDE,
@@ -33,10 +33,8 @@ const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.MCP_MANAGER,
     CommandIds.PLAN_BOOK,
     CommandIds.VOLUME_INTRO,
-    CommandIds.BATCH_CHAPTERS,
     CommandIds.BATCH_NOVELS,
     CommandIds.CONTINUE_CHAPTERS,
-    CommandIds.AUTO_WRITER,
     CommandIds.DIAGNOSE,
     CommandIds.TOMATO_RANK,
     CommandIds.REBUILD_CHAPTERS,
@@ -45,8 +43,6 @@ const EXPECTED_REGISTERED_IDS: string[] = [
     CommandIds.TAGS_ANALYSIS,
     CommandIds.AI_BUILDER,
     CommandIds.ADD_FANFIC,
-    CommandIds.WRITE_CHAPTER,
-    CommandIds.WRITE_CHAPTER_AUTO,
     CommandIds.REVIEW_CHAPTER,
     CommandIds.TARGETED_REVISION,
     CommandIds.QUALITY_DASHBOARD,

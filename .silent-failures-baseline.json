@@ -1,7 +1,7 @@
 {
-  "total": 188,
+  "total": 185,
   "generatedAt": "2026-11-17",
-  "note": "Slice R：general-sections.ts 三处装饰性 catch（缓存统计 / 更新横幅 / 版本信息）加 silent-ok 显式豁免，基线 191 → 189。",
+  "note": "Slice R：general-sections.ts 三处装饰性 catch 加 silent-ok 豁免；2026-11-19 删除旧写入链后移出 ui/write-chapter-modal.ts（3 处），188 → 185。",
   "files": {
     "engine/deconstruction-scheduler.ts": 13,
     "services/knowledge-base-manager.ts": 10,
@@ -23,7 +23,6 @@
     "ui/generate-item-modal.ts": 3,
     "ui/generate-location-modal.ts": 3,
     "ui/services/agent-session-store.ts": 3,
-    "ui/write-chapter-modal.ts": 3,
     "engine/agent/harness/harness-engine.ts": 2,
     "engine/cache/preload-manager.ts": 2,
     "engine/chapter-state-snapshot-service.ts": 2,

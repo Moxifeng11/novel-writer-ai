@@ -35,19 +35,6 @@ export const TOOL_GROUPS: ToolGroup[] = [
         ],
     },
     {
-        // C1（2026-11-16）：旧批量生成工具默认收起。
-        // 它们与「协同写作工作台」职责重叠，平铺在首屏会让新用户误点旧流程；
-        // 需要时展开仍可用（命令本身未删）。
-        label: '📦 旧版工具',
-        labelKey: 'toolCatalog.long.group.legacyTools',
-        defaultCollapsed: true,
-        buttons: [
-            { label: '整章生成（旧）', labelKey: 'toolCatalog.long.tool.writeChapter', desc: '辅助生成整章草稿；正式入口请用协同写作工作台', descKey: 'toolCatalog.long.tool.writeChapterDesc', icon: '✍️', commandId: 'novel-writer-write-chapter' },
-            { label: '自动写作器（旧）', labelKey: 'toolCatalog.long.tool.autoWriter', desc: '辅助连续生成草稿；不替代协同写作工作台', descKey: 'toolCatalog.long.tool.autoWriterDesc', icon: '🤖', commandId: 'novel-writer-auto-writer' },
-            { label: '批量写正文（旧）', labelKey: 'toolCatalog.long.tool.batchChapters', desc: '批量生成草稿；后续需进入协同写作检查与结算', descKey: 'toolCatalog.long.tool.batchChaptersDesc', icon: '📝', commandId: 'novel-writer-batch-chapters' },
-        ],
-    },
-    {
         label: '🌍 设定与实体',
         labelKey: 'toolCatalog.long.group.settingsEntities',
         defaultCollapsed: true,

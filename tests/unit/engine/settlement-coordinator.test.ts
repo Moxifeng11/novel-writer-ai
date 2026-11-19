@@ -127,8 +127,7 @@ describe('源码约束：入口不再各自写产物', () => {
     const root = path.resolve(__dirname, '../../..');
     const read = (rel: string): string => fs.readFileSync(path.join(root, rel), 'utf8');
 
-    it('一键成文与步骤路径都走协调器', () => {
-        expect(read('ui/write-chapter-modal.ts')).toContain('writeSettlementArtifacts({');
+    it('步骤路径走协调器', () => {
         expect(read('engine/step-runner.ts')).toContain('writeSettlementArtifacts({');
     });
 

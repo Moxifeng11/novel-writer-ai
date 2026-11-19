@@ -8,16 +8,16 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 354 | 146888 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19560 | 296 | 204 | 69% |
-| `shared/` | 259 | 52210 | 2198 | 1718 | 78% |
-| `core/` | 7 | 3404 | 35 | 20 | 57% |
-| `domains/` | 15 | 1596 | 88 | 58 | 66% |
-| `ui/` | 307 | 115297 | 1185 | 933 | 79% |
+| `shared/` | 259 | 52201 | 2198 | 1718 | 78% |
+| `core/` | 7 | 3395 | 35 | 20 | 57% |
+| `domains/` | 15 | 1583 | 88 | 58 | 66% |
+| `ui/` | 304 | 113841 | 1182 | 930 | 79% |
 
 ## 文件清单
 
 | 文件 | 行数 | 导出 | 有 JSDoc |
 |---|---:|---:|---:|
-| `core/command-registry.ts` | 830 | 9 | 5 |
+| `core/command-registry.ts` | 821 | 9 | 5 |
 | `core/crypto-service.ts` | 447 | 5 | 3 |
 | `core/example-project-service.ts` | 331 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
@@ -30,7 +30,7 @@
 | `domains/kernel/tool-catalog-aggregator.ts` | 139 | 9 | 8 |
 | `domains/kernel/tool-catalog-types.ts` | 24 | 2 | 0 |
 | `domains/long/harness-profile.ts` | 44 | 1 | 1 |
-| `domains/long/tool-catalog.ts` | 131 | 4 | 3 |
+| `domains/long/tool-catalog.ts` | 118 | 4 | 3 |
 | `domains/memory/history.ts` | 128 | 9 | 6 |
 | `domains/memory/model.ts` | 247 | 19 | 11 |
 | `domains/memory/patch.ts` | 34 | 3 | 2 |
@@ -485,8 +485,8 @@
 | `shared/character-rules.ts` | 180 | 10 | 6 |
 | `shared/clipboard.ts` | 40 | 1 | 1 |
 | `shared/co-writer-types.ts` | 113 | 0 | 0 |
-| `shared/command-ids.ts` | 147 | 2 | 2 |
-| `shared/command-mode-rules.ts` | 145 | 8 | 5 |
+| `shared/command-ids.ts` | 143 | 2 | 2 |
+| `shared/command-mode-rules.ts` | 140 | 8 | 5 |
 | `shared/command-ui-port.ts` | 48 | 4 | 2 |
 | `shared/constraint-block-model.ts` | 109 | 7 | 3 |
 | `shared/content-classifier.ts` | 248 | 11 | 11 |
@@ -724,10 +724,8 @@
 | `ui/ai-builder-modal.ts` | 1134 | 1 | 1 |
 | `ui/appearance-settings.ts` | 604 | 3 | 3 |
 | `ui/asset-registry-modal.ts` | 151 | 1 | 1 |
-| `ui/auto-writer-modal.ts` | 236 | 1 | 1 |
 | `ui/backup-center-modal.ts` | 244 | 1 | 1 |
 | `ui/backup-yuan-modal.ts` | 125 | 1 | 1 |
-| `ui/batch-chapters-modal.ts` | 340 | 1 | 1 |
 | `ui/batch-create-modal.ts` | 521 | 1 | 1 |
 | `ui/batch-import-modal.ts` | 1726 | 1 | 1 |
 | `ui/batch-novels-modal.ts` | 236 | 1 | 1 |
@@ -779,7 +777,7 @@
 | `ui/co-writing/text-diff.ts` | 135 | 5 | 2 |
 | `ui/co-writing/word-goal.ts` | 116 | 5 | 3 |
 | `ui/co-writing/writing-advice.ts` | 185 | 3 | 3 |
-| `ui/command-ui-executor.ts` | 785 | 2 | 2 |
+| `ui/command-ui-executor.ts` | 756 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 105 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
 | `ui/components/categorization-review-panel.ts` | 449 | 2 | 2 |
@@ -1017,7 +1015,6 @@
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 575 | 2 | 1 |
 | `ui/workspace-manager.ts` | 144 | 2 | 2 |
-| `ui/write-chapter-modal.ts` | 851 | 1 | 1 |
 | `ui/writing-pet.ts` | 662 | 10 | 8 |
 | `ui/writing-stats-modal.ts` | 245 | 1 | 1 |
 | `ui/writing-stats-settings.ts` | 74 | 1 | 1 |

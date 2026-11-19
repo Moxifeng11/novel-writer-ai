@@ -788,7 +788,7 @@ const result = await contentIterator.next();
 - `AIEngine.generateChapterStream()` 负责完整章节流式生成。
 - `StepRunner` 的 `bodyGeneration` 通过相同的流式回调持续刷新正文。
 - 响应因 `finishReason: 'length'` 截断时，最多自动续写 3 次，并携带已生成内容尾部避免断层。
-- `WriteChapterModal` 和 `FullWriterView` 均向底层传递 `AbortSignal`；关闭视图或主动取消会终止请求。
+- `FullWriterView`（含工作台正文写入链）向底层传递 `AbortSignal`；关闭视图或主动取消会终止请求。
 - 最终回调以 `done: true` 返回合并后的完整正文，持久化仍只在完整结果确认后执行。
 
 定向回归命令：
@@ -1029,12 +1029,12 @@ const outcome = await saveEntities(app, project, kind, [{ name, content: integri
 - **所有正文类 prompt 必须走契约**，不得硬编码分段/缩进：
   - 整章草稿：`engine/ai-prompt-builder.ts`（`AIEngine.generateChapter / generateChapterStream` 用 `BodyWriter.resolveContract(context.project)` 解析后传入）；
   - 步骤流水线：`engine/prompts/chapter-pipeline-prompts.ts`（V1）与 `body-v2-prompts.ts`（V2）使用 `${bodyFormat}` 模板变量，由 `ui/full-writer/template-vars-builder.ts` 注入（整章模板 `allowTitle: true`）；
-  - 批量 / 自动 / 续写 / 场景扩写 / 场景正文：`batch-chapters-modal`、`auto-writer-modal`、`continue-chapters-modal`、`outline-to-text-expander`、`ai-scene-expander`、`scene-body-generator` 均调用 `describeBodyFormat()`。
+  - 续写 / 场景扩写 / 场景正文：`continue-chapters-modal`、`outline-to-text-expander`、`ai-scene-expander`、`scene-body-generator` 均调用 `describeBodyFormat()`。
 - 扩写结果的分段解析必须与 prompt 契约一致：`outline-to-text-expander.ts#splitParagraphsByContract(content, separator)`。`\n` 契约下每个非空行一段，`\n\n` 契约下空行分段；禁止写死只认空行的解析器。
 - 正文类展示容器（建议卡、历史、流式、浮动面板）必须声明 `white-space: pre-wrap`：卡片用单个文本节点写入 `\n`，默认 `normal` 会把换行折叠成空格，表现为「生成时分段、完成瞬间变一行」。
 - 工作台步骤状态只有一套失效传播：`ChapterStateManager.invalidateSteps(keys)` 同步维护 `stepCompleted / stepLevels / staleSteps`。禁止只删 `stepCompleted` 或在别处手写 delete 列表。正文/修正被改写时（工作台保存、润色自动保存、消痕/精修/逐轮选择）统一传 `BODY_CHANGE_INVALIDATED_STEPS`（`engine/step-definitions.ts`），不得各写一份下游列表。
 - **步骤完成度只有一个判定入口**：`validateStepResult(stepKey, content).valid`；需要排除模板骨架的场景（断点续跑、磁盘恢复）用 `isStepResultComplete(stepKey, content)`。落盘 `step_status` 只有 `complete` 才写 `generated`，其余写 `partial`。禁止再出现「文件非空即完成」「手动保存强制 complete」「`generated` 直接判完成」三种旁路；恢复时只有人工审阅过的 `reviewed` 可信。
-- **批量取消必须真正停止写入**：`BatchChaptersModal` 持有 `AbortController`，`onClose` 必须 `abort()`；每章/每步/每次 `callAI` 与正文落盘前都要检查取消状态。`StepRunner.executeCurrentStep` 在 `finishReason === 'aborted'` 或 signal 已取消时必须直接返回，不保存、不标记完成；调用方不得只判 `result.error`（abort 没有 `error`）。
+- **批量取消必须真正停止写入**：`BatchNovelsModal` 经 `ui/full-writer/batch-pipeline-runner.ts` 持有的 `AbortController` 传入每章上下文，取消必须 `abort()`；每章/每步/每次 `callAI` 与正文落盘前都要检查取消状态。`StepRunner.executeCurrentStep` 在 `finishReason === 'aborted'` 或 signal 已取消时必须直接返回，不保存、不标记完成；调用方不得只判 `result.error`（abort 没有 `error`）。
 - 规划类步骤（`infoPlan / plotDistill / outline / emotionPlan / sceneExpand`）变更时，必须通过 `downstreamStepsAfterPlanningChange(stepKey, hasBody)` 失效 `bodyGeneration / qualityControl / analysisReport / settlement`；正文尚未生成时该函数返回空数组，避免把空正文标成「待重做」。AI 完成路径在 `StepRunner` 内统一调用，手动保存路径（通用结果区与 Scene 编辑器）各自调用。
 - 阶段导航表由 `ALL_FULL_STEPS` 派生（`streamlined-nav-presenter.ts`），禁止手写 index；模块加载时会检查是否有步骤未被任何阶段覆盖。阶段点击定位「第一个未完成步骤」，不是最后一个已完成步骤。**阶段完成口径**：阶段内 `required` 步骤全部完成即算完成，可选步骤不阻塞（title 显示「可选 x/y」）；全可选阶段（质量审查）做过任意一步即完成。步骤级状态（✅/◐/○/⚠️ + 必做标记）由 `step-render-controller` 逐条渲染，子项只在阶段可点击时绑定跳转。
 - **章节创作 prompt 必须吃向导产物**：INFO_PLAN / PLOT_DISTILL / OUTLINE / 合并规划 / 正文 V1/V2 都要从 `template-vars-builder` 取 `worldView` / `settingLib` / `writingStyleContent`，不得出现「向导生成了但章节步骤读不到」。新增占位符必须同时在 `buildTemplateVars` 末尾做空串兜底，否则上下文缺失时 `${...}` 会以字面量漏进 prompt。

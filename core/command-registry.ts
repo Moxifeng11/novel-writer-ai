@@ -109,13 +109,8 @@ const COMMAND_DEFINITIONS: CommandDefinition[] = [
     { id: CommandIds.NARRATIVE_OVERVIEW, name: '叙事总览', group: CommandGroup.ProjectManagement, description: '查看叙事总览' },
 
     // ─── 写作辅助类 ───
-    // 以下 4 个旧版正文生成命令已废弃（正文统一走 CoWriterEngine），标记 internalOnly 以从公开命令收敛
-    { id: CommandIds.WRITE_CHAPTER, name: 'AI写正文〔旧〕', group: CommandGroup.WritingAssistant, description: '使用 AI 撰写章节正文（旧版）', internalOnly: true },
-    { id: CommandIds.WRITE_CHAPTER_AUTO, name: '后台AI写正文〔旧〕', group: CommandGroup.WritingAssistant, description: '后台自动撰写章节正文（旧版）', internalOnly: true },
-    { id: CommandIds.BATCH_CHAPTERS, name: '批量写正文〔旧〕', group: CommandGroup.WritingAssistant, description: '批量撰写章节正文（旧版）', internalOnly: true },
     { id: CommandIds.BATCH_NOVELS, name: '📚 批量生成章节（正式流程）', group: CommandGroup.WritingAssistant, description: '按 7 步批量流程逐章生成规划、正文与分析报告，并执行结算' },
     { id: CommandIds.CONTINUE_CHAPTERS, name: '续写规划', group: CommandGroup.WritingAssistant, description: '规划后续章节内容' },
-    { id: CommandIds.AUTO_WRITER, name: '自动写作器〔旧〕', group: CommandGroup.WritingAssistant, description: '自动写作器（旧版）', internalOnly: true },
     { id: CommandIds.REVIEW_CHAPTER, name: '连贯性审查', group: CommandGroup.WritingAssistant, description: '审查章节连贯性' },
     { id: CommandIds.TARGETED_REVISION, name: '定向修订（当前章）', group: CommandGroup.WritingAssistant, description: '按质控报告定向修订当前章正文（闸门+自动备份+复检）' },
     { id: CommandIds.QUALITY_DASHBOARD, name: '📊 质量仪表盘', group: CommandGroup.WritingAssistant, description: '六维质量评分 + 问题定位 + 事实确认' },
@@ -339,10 +334,8 @@ export class CommandRegistry {
             CommandIds.SCRIPT_STORYBOARD,
             CommandIds.PLAN_BOOK,
             CommandIds.VOLUME_INTRO,
-            CommandIds.BATCH_CHAPTERS,
             CommandIds.BATCH_NOVELS,
             CommandIds.CONTINUE_CHAPTERS,
-            CommandIds.AUTO_WRITER,
             CommandIds.DIAGNOSE,
             CommandIds.TOMATO_RANK,
             CommandIds.REBUILD_CHAPTERS,
@@ -351,8 +344,6 @@ export class CommandRegistry {
             CommandIds.TAGS_ANALYSIS,
             CommandIds.AI_BUILDER,
             CommandIds.ADD_FANFIC,
-            CommandIds.WRITE_CHAPTER,
-            CommandIds.WRITE_CHAPTER_AUTO,
             CommandIds.REVIEW_CHAPTER,
             CommandIds.TARGETED_REVISION,
             CommandIds.QUALITY_DASHBOARD,

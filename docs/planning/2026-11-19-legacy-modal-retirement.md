@@ -55,16 +55,16 @@ v1 只做了第 1 层（看到 `new XxxModal(app, plugin).open()` 就认为可�
 3. `CHANGELOG` 写明破坏性变更
 4. **用户明确同意**（不是 DSH 或 ZCode 能决定的）
 
-## 四、C 类：`internalOnly` 隐藏命令，**不迁，删除候选**（3 个弹窗 / 4 条命令）
+## 四、C 类：`internalOnly` 隐藏命令，**已删除**（3 个弹窗 / 4 条命令）
 
-`core/command-registry.ts:113-116` + `:288` 过滤 + `command-ui-executor.ts:346/356/394/398` 的
-`warnLegacyCommand` 共同证明：这些命令**不在面板**，用户点不到。
+`core/command-registry.ts:112-118`（原定义）+ `getPublicCommands()` 过滤 + `command-ui-executor.ts` 的
+`warnLegacyCommand` 共同证明：这些命令**不在面板**，用户点不到。2026-11-19 用户明确同意（第 4 条前置条件）后已整链删除。
 
 | 文件 | 命令 id | 判定依据 | 里程碑 |
 | --- | --- | --- | --- |
-| `ui/write-chapter-modal.ts` | `WRITE_CHAPTER` / `WRITE_CHAPTER_AUTO` | `internalOnly: true`；注释写明「正文统一走 CoWriterEngine」 | `RETIRE-B2` **隐藏命令·删除候选，不迁** |
-| `ui/batch-chapters-modal.ts` | `BATCH_CHAPTERS` | `internalOnly: true`；公开的正式流程是 `BATCH_NOVELS` | `RETIRE-B7` **隐藏命令·删除候选，不迁** |
-| `ui/auto-writer-modal.ts` | `AUTO_WRITER` | `internalOnly: true`；`warnLegacyCommand('自动写作器〔旧〕')` | `RETIRE-B8` **隐藏命令·删除候选，不迁** |
+| `ui/write-chapter-modal.ts` | `WRITE_CHAPTER` / `WRITE_CHAPTER_AUTO` | `internalOnly: true`；注释写明「正文统一走 CoWriterEngine」 | `RETIRE-B2` ✅ **已删除**（2026-11-19） |
+| `ui/batch-chapters-modal.ts` | `BATCH_CHAPTERS` | `internalOnly: true`；公开的正式流程是 `BATCH_NOVELS` | `RETIRE-B7` ✅ **已删除**（2026-11-19） |
+| `ui/auto-writer-modal.ts` | `AUTO_WRITER` | `internalOnly: true`；`warnLegacyCommand('自动写作器〔旧〕')` | `RETIRE-B8` ✅ **已删除**（2026-11-19） |
 
 **`RETIRE-B7` / `RETIRE-B8` 是 v2 新增**：v1 与 DSH 的第二轮派单都只处理了 `write-chapter` 一个。
 按同一条判据（`internalOnly` → 不可达 → 删除候选），这三个文件性质完全相同，
@@ -81,6 +81,11 @@ v1 只做了第 1 层（看到 `new XxxModal(app, plugin).open()` 就认为可�
 ### C 类删除的前置条件
 
 同 B 类四条，但第 1 条更容易（命令已经不可达，无需摘除）。
+
+**2026-11-19 已满足**：用户明确同意（m16614）→ 整链删除：
+`shared/command-ids.ts` 4 个 id、`core/command-registry.ts` 4 条定义 + `uiCommandIds` 4 项、
+`shared/command-mode-rules.ts` 4 条 `LONG_ONLY` + 1 条可读名、`ui/command-ui-executor.ts` 3 个 import /
+4 个 `case` / `warnLegacyCommand` 与 `legacyCommandWarned` 字段、`main.ts` 3 个死 import，三个模态文件 `git rm`。
 
 ## 五、D 类：与知识库视觉重构耦合（2 个文件）
 
@@ -99,13 +104,13 @@ v1 只做了第 1 层（看到 `new XxxModal(app, plugin).open()` 就认为可�
 | `RETIRE-A2` | `ui/writing-style-modal.ts` | A 现行实现 | ✅ 已迁移 `be319378` |
 | `RETIRE-A3` | `ui/monitor-panel-b.ts` | A 常驻视图 | ✅ 已迁移 `65103acd` |
 | `RETIRE-B1` | `ui/golden-opening-modal.ts` | B 面板可达 | ✅ 已迁移 `5ba4ad66` |
-| `RETIRE-B2` | `ui/write-chapter-modal.ts` | C 隐藏命令 | ⏳ 删除候选，不迁 |
+| `RETIRE-B2` | `ui/write-chapter-modal.ts` | C 隐藏命令 | ✅ 已删除（2026-11-19） |
 | `RETIRE-B3` | `ui/novel-tags-modal.ts` | B 面板可达 | ✅ 已迁移 `676990e4` |
 | `RETIRE-B4` | `ui/ai-builder-modal.ts` | B 面板可达 | ✅ 已迁移 `efab8126` |
 | `RETIRE-B5` | `ui/add-fanfic-setting-modal.ts` | B 面板可达 | ✅ 已迁移 `073ebfe1` |
 | `RETIRE-B6` | `ui/pre-research-modal.ts` | B 面板可达（四入口） | ✅ 已迁移 `3290aa0c` |
-| `RETIRE-B7` | `ui/batch-chapters-modal.ts` | C 隐藏命令 | ⏳ 删除候选，不迁（v2 新增） |
-| `RETIRE-B8` | `ui/auto-writer-modal.ts` | C 隐藏命令 | ⏳ 删除候选，不迁（v2 新增） |
+| `RETIRE-B7` | `ui/batch-chapters-modal.ts` | C 隐藏命令 | ✅ 已删除（2026-11-19） |
+| `RETIRE-B8` | `ui/auto-writer-modal.ts` | C 隐藏命令 | ✅ 已删除（2026-11-19） |
 | `RETIRE-D1` | `ui/knowledge-detail-modal.ts` | D 视觉耦合 | ⏳ 等 Slice A–Y |
 | `RETIRE-D2` | `ui/views/book-detail-renderer.ts` | D 视觉耦合 | ⏳ 等 Slice A–Y |
 
@@ -125,3 +130,32 @@ v1 只做了第 1 层（看到 `new XxxModal(app, plugin).open()` 就认为可�
 
 ui 中文棘轮：**8,564 → 7,943 条**（−621，含三元表达式与短串的连带收益）。
 资源：zh/en 各 **3,411 → 3,972 条**（+561）。
+
+## 八、C 类删除记录（2026-11-19）
+
+用户明确同意（m16614）后按「整链删除」执行，不留半套：
+
+| 层 | 改动 |
+| --- | --- |
+| 命令 id | `shared/command-ids.ts` 删 `WRITE_CHAPTER` / `WRITE_CHAPTER_AUTO` / `BATCH_CHAPTERS` / `AUTO_WRITER` |
+| 定义表 | `core/command-registry.ts` 删 4 条 `internalOnly` 定义（含「以下 4 个旧版正文生成命令」注释）与 `uiCommandIds` 4 项 |
+| 模式规则 | `shared/command-mode-rules.ts` 删 4 条 `LONG_ONLY` 与 `COMMAND_MODE_LABELS` 的「批量写正文」 |
+| 执行器 | `ui/command-ui-executor.ts` 删 3 个 import、4 个 `case`、`warnLegacyCommand()` 与 `legacyCommandWarned` 字段（删完即孤儿） |
+| 入口 | `main.ts` 删 3 个死 import |
+| 文件 | `git rm` 三个模态（851 / 340 / 236 行） |
+| 快捷工具目录 | `domains/long/tool-catalog.ts` 删「📦 旧版工具」整组（3 个按钮指向已删命令，点了无执行体）；`tool-catalog-contract.test.ts` 的「每个 commandId 都有后端定义」因此才恢复通过；`workbench-home-wiring.test.ts` 的 C1 断言改为「整组已删除」 |
+| i18n 资源 | 删 `toolCatalog.long.group.legacyTools` 与 `toolCatalog.long.tool.{writeChapter,autoWriter,batchChapters}(Desc)?` 共 7 键 × 2 语言 |
+| 契约测试 | `command-registry.test.ts` 期望集合 65→61；`command-ui-executor-guards.test.ts` 去掉去重用例；`chapter-generation-unify.test.ts`、`write-chapter-settlement-status.test.ts` 整文件删除；`perf-contracts` / `settlement-artifacts` / `settlement-coordinator` / `settlement-partial-failure` / `data-consistency-r3d` 里读取这三个源码的断言改为只断言存活入口 |
+
+**实机复核**（2026-11-19）：开发 vault 打开工作台右栏快捷工具，分组为「✍️ Core writing / 📋 Project planning / 📝 Chapter generation / 🌍 Settings & entities / 🔍 Review & optimization / 🔧 Tools & maintenance」六组，
+「📦 旧版工具」整组消失、页面无「（旧）」字样，截图 `D:\nw-dev-vault\_visual-qt\quick-tools.png`（未入库），脚本 `D:\nw-tmp\snap-qt.mjs`。
+
+**复核口径**：删的是「命令是否注册」这一层，不是「代码好不好」；`BATCH_NOVELS`（📚 批量生成章节（正式流程））
+与协同写作工作台分别承接批量与单章正文，功能面无缺口。
+
+**教训（第二批）**：preflight 首跑只剩 `tool-catalog-contract` 一处失败——「命令不在 Ctrl+P 面板 = 用户点不到」这个判据
+漏了**快捷工具目录**这一层：目录里的按钮是独立于命令注册的用户可见入口。删命令时必须同时扫
+`commandId` 的消费方（tool-catalog、快捷键、向导步骤、自动化脚本），否则删完就是死按钮。
+
+**教训**：源码文本契约测试（`read('ui/xxx.ts')`）会在删除文件时集体爆红，删文件前先 `grep` 一遍
+`read('<file>')` 与裸文件名，比删完再修便宜。

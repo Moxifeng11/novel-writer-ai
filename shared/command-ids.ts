@@ -29,12 +29,8 @@ export const CommandIds = {
     NARRATIVE_OVERVIEW: 'novel-writer-narrative-overview',
 
     // ─── 写作辅助类 ───
-    WRITE_CHAPTER: 'novel-writer-write-chapter',
-    WRITE_CHAPTER_AUTO: 'novel-writer-write-chapter-auto',
-    BATCH_CHAPTERS: 'novel-writer-batch-chapters',
     BATCH_NOVELS: 'novel-writer-batch-novels',
     CONTINUE_CHAPTERS: 'novel-writer-continue-chapters',
-    AUTO_WRITER: 'novel-writer-auto-writer',
     REVIEW_CHAPTER: 'novel-writer-review-chapter',
     TARGETED_REVISION: 'novel-writer-targeted-revision',
     QUALITY_DASHBOARD: 'novel-writer-quality-dashboard',

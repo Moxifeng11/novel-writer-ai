@@ -75,20 +75,24 @@ describe('E1 卡片动作收纳', () => {
     });
 });
 
-describe('C1 旧版工具折叠', () => {
+describe('C1 旧版工具折叠（2026-11-19 起改为整组删除）', () => {
     const catalog = read('domains/long/tool-catalog.ts');
 
-    it('旧版工具独立成组并默认折叠', () => {
-        expect(catalog).toContain('📦 旧版工具');
-        const groupIdx = catalog.indexOf('📦 旧版工具');
-        const after = catalog.slice(groupIdx, groupIdx + 200);
-        expect(after).toContain('defaultCollapsed: true');
+    it('旧版工具组已随命令一并删除，目录里不再有「（旧）」入口', () => {
+        // C1 最初把三个旧生成工具折进默认收起的分组；4 条 internalOnly 命令删除后，
+        // 分组里的按钮已无执行体，整组删除（见 docs/planning/2026-11-19-legacy-modal-retirement.md §八）。
+        expect(catalog).not.toContain('📦 旧版工具');
+        expect(catalog).not.toContain('（旧）');
+        expect(catalog).not.toContain('novel-writer-write-chapter');
+        expect(catalog).not.toContain('novel-writer-auto-writer');
+        expect(catalog).not.toContain('novel-writer-batch-chapters');
     });
 
-    it('章节生成组不再包含旧版工具', () => {
+    it('章节生成组只保留批量建章', () => {
         const chapterGroupIdx = catalog.indexOf("label: '📝 章节生成'");
-        const nextGroupIdx = catalog.indexOf('📦 旧版工具');
+        const nextGroupIdx = catalog.indexOf("label: '🌍 设定与实体'");
         const chapterGroup = catalog.slice(chapterGroupIdx, nextGroupIdx);
+        expect(chapterGroup).toContain('批量建章');
         expect(chapterGroup).not.toContain('（旧）');
     });
 });

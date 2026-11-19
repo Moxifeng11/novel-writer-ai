@@ -40,11 +40,10 @@ describe('writeInfoDebtBoard — 路径锁内覆盖写', () => {
     });
 });
 
-describe('D3-17 三写点接线', () => {
-    it('结算/批量/伏笔管理器都走共享写入器，且不再 delete 看板', () => {
+describe('D3-17 双写点接线', () => {
+    it('结算/伏笔管理器都走共享写入器，且不再 delete 看板', () => {
         for (const rel of [
             'engine/settlement-engine.ts',
-            'ui/batch-chapters-modal.ts',
             'engine/foreshadow-manager.ts',
         ]) {
             expect(read(rel)).toContain('writeInfoDebtBoard');

@@ -33,7 +33,6 @@ import { FactStoreModal } from './fact-store-modal';
 
 import { runGraphValidation } from '@/engine/graph/graph-validation-trigger';
 import { PlanBookModal } from './plan-book-modal';
-import { WriteChapterModal } from './write-chapter-modal';
 import { ReviewChapterModal } from './review-chapter-modal';
 import { QualityDashboardModal } from './quality-dashboard-modal';
 import { StoryLinkageModal } from './story-linkage-modal';
@@ -54,9 +53,7 @@ import { IdeationModal } from './ideation-modal';
 import { GoldenOpeningModal } from './golden-opening-modal';
 import { StepResultViewerModal } from './step-result-viewer-modal';
 import { VolumeIntroModal } from './volume-intro-modal';
-import { BatchChaptersModal } from './batch-chapters-modal';
 import { ContinueChaptersModal } from './continue-chapters-modal';
-import { AutoWriterModal } from './auto-writer-modal';
 import { DiagnoseWriterModal } from './diagnose-writer-modal';
 import { TomatoRankModal } from './tomato-rank-modal';
 import { RebuildChaptersModal } from './rebuild-chapters-modal';
@@ -95,8 +92,6 @@ export interface CommandUiExecutorDeps {
  * CommandUiExecutor 类。
  */
 export class CommandUiExecutor implements CommandUiPort {
-    private readonly legacyCommandWarned = new Set<string>();
-
     constructor(private readonly deps: CommandUiExecutorDeps) {}
 
     /**
@@ -342,19 +337,11 @@ export class CommandUiExecutor implements CommandUiPort {
             case CommandIds.VOLUME_INTRO:
                 new VolumeIntroModal(app, plugin, plugin.getActiveProject() || undefined).open();
                 return true;
-            case CommandIds.BATCH_CHAPTERS:
-                this.warnLegacyCommand('批量写正文〔旧〕');
-                new BatchChaptersModal(app, plugin).open();
-                return true;
             case CommandIds.BATCH_NOVELS:
                 new BatchNovelsModal(app, plugin).open();
                 return true;
             case CommandIds.CONTINUE_CHAPTERS:
                 new ContinueChaptersModal(app, plugin).open();
-                return true;
-            case CommandIds.AUTO_WRITER:
-                this.warnLegacyCommand('自动写作器〔旧〕');
-                new AutoWriterModal(app, plugin).open();
                 return true;
             case CommandIds.DIAGNOSE:
                 new DiagnoseWriterModal(app, plugin).open();
@@ -390,14 +377,6 @@ export class CommandUiExecutor implements CommandUiPort {
             }
 
             // ── 写作辅助类 ──
-            case CommandIds.WRITE_CHAPTER:
-                this.warnLegacyCommand('AI写正文〔旧〕');
-                new WriteChapterModal(app, plugin).open();
-                return true;
-            case CommandIds.WRITE_CHAPTER_AUTO:
-                this.warnLegacyCommand('后台AI写正文〔旧〕');
-                WriteChapterModal.runBackground(app, plugin);
-                return true;
             case CommandIds.REVIEW_CHAPTER:
                 new ReviewChapterModal(app, plugin).open();
                 return true;
@@ -758,14 +737,6 @@ export class CommandUiExecutor implements CommandUiPort {
             return;
         }
         new RewriteSuggestionModal(this.deps.app, this.deps.plugin, activeEditor, activeEditor.getSelection()).open();
-    }
-
-    /** 旧版正文命令弃用提示：保留至 v5.0.0，届时删除实现（见 docs/DEVELOPMENT.md） */
-    private warnLegacyCommand(name: string): void {
-        log.warn(`[小说工坊] 旧版正文命令被调用：${name}（计划于 v5.0.0 移除）`);
-        if (this.legacyCommandWarned.has(name)) return;
-        this.legacyCommandWarned.add(name);
-        showWarningNotice(`「${name}」属于旧版正文链路，计划于 v5.0.0 移除；请改用协同写作工作台`, { title: '旧版命令弃用', timeout: 6000 });
     }
 
     /**
