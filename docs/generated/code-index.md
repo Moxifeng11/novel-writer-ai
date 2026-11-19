@@ -11,7 +11,7 @@
 | `shared/` | 259 | 52210 | 2198 | 1718 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1596 | 88 | 58 | 66% |
-| `ui/` | 307 | 115288 | 1185 | 933 | 79% |
+| `ui/` | 307 | 115296 | 1185 | 933 | 79% |
 
 ## 文件清单
 
@@ -717,11 +717,11 @@
 | `shared/writing-rules.ts` | 105 | 2 | 1 |
 | `shared/writing-stats.ts` | 454 | 25 | 25 |
 | `shared/yield.ts` | 43 | 2 | 2 |
-| `ui/add-fanfic-setting-modal.ts` | 771 | 1 | 1 |
+| `ui/add-fanfic-setting-modal.ts` | 772 | 1 | 1 |
 | `ui/advanced-maintenance-modal.ts` | 222 | 1 | 1 |
 | `ui/agent-workbench-view.ts` | 1838 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
-| `ui/ai-builder-modal.ts` | 1133 | 1 | 1 |
+| `ui/ai-builder-modal.ts` | 1134 | 1 | 1 |
 | `ui/appearance-settings.ts` | 604 | 3 | 3 |
 | `ui/asset-registry-modal.ts` | 151 | 1 | 1 |
 | `ui/auto-writer-modal.ts` | 236 | 1 | 1 |
@@ -877,7 +877,7 @@
 | `ui/generate-item-modal.ts` | 375 | 1 | 1 |
 | `ui/generate-location-modal.ts` | 375 | 1 | 1 |
 | `ui/generate-worldview-modal.ts` | 289 | 1 | 1 |
-| `ui/golden-opening-modal.ts` | 1406 | 1 | 1 |
+| `ui/golden-opening-modal.ts` | 1407 | 1 | 1 |
 | `ui/home-view.ts` | 236 | 2 | 1 |
 | `ui/humanize-report-modal.ts` | 217 | 2 | 2 |
 | `ui/ideation-modal.ts` | 814 | 1 | 1 |
@@ -901,22 +901,22 @@
 | `ui/model-picker-popover.ts` | 298 | 4 | 3 |
 | `ui/model-quick-switcher.ts` | 321 | 13 | 12 |
 | `ui/monitor-panel-a.ts` | 200 | 2 | 2 |
-| `ui/monitor-panel-b.ts` | 1889 | 2 | 2 |
+| `ui/monitor-panel-b.ts` | 1890 | 2 | 2 |
 | `ui/novel-analysis-modal.ts` | 267 | 1 | 1 |
-| `ui/novel-tags-modal.ts` | 335 | 1 | 1 |
+| `ui/novel-tags-modal.ts` | 336 | 1 | 1 |
 | `ui/onboarding-modal.ts` | 318 | 1 | 1 |
 | `ui/outline-expand-modal.ts` | 990 | 2 | 1 |
 | `ui/panel-resizer.ts` | 260 | 4 | 3 |
 | `ui/password-modal.ts` | 152 | 1 | 1 |
 | `ui/pet-image-settings.ts` | 466 | 3 | 3 |
-| `ui/plan-book-modal.ts` | 560 | 1 | 1 |
+| `ui/plan-book-modal.ts` | 561 | 1 | 1 |
 | `ui/planning/canvas-link.ts` | 108 | 3 | 2 |
 | `ui/planning/canvas-tools.ts` | 99 | 8 | 5 |
 | `ui/planning/outline-bridge.ts` | 128 | 5 | 3 |
 | `ui/plot-canvas-modal.ts` | 366 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
 | `ui/polish-editor.ts` | 830 | 5 | 5 |
-| `ui/pre-research-modal.ts` | 717 | 2 | 2 |
+| `ui/pre-research-modal.ts` | 718 | 2 | 2 |
 | `ui/project-health-modal.ts` | 205 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 457 | 5 | 5 |
 | `ui/project-utils.ts` | 366 | 11 | 10 |
@@ -1021,6 +1021,6 @@
 | `ui/writing-pet.ts` | 662 | 10 | 8 |
 | `ui/writing-stats-modal.ts` | 245 | 1 | 1 |
 | `ui/writing-stats-settings.ts` | 74 | 1 | 1 |
-| `ui/writing-style-modal.ts` | 589 | 1 | 1 |
+| `ui/writing-style-modal.ts` | 590 | 1 | 1 |
 | `ui/writing-style-paths.ts` | 89 | 6 | 6 |
 | `ui/writing-style-presets.ts` | 248 | 8 | 7 |

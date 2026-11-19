@@ -139,7 +139,30 @@ node scripts/handoff.mjs --from zcode --stage "…" --delivered "…" --doing "�
 
 做完一片再领下一片；不要在同一片里顺手改别的分区（写范围锁 + review 成本）。
 
-## 4.3 两条硬规矩（2026-11-19 踩过才写）
+### 4.2.1 第三批：旧弹窗（ZC-20261120-13..20，2026-11-19 已交付）
+
+第二批收口后，精灵审计指出 `ui-copy` 里还剩 11 个「旧弹窗」。**先甄别再动手**，
+甄别结论见 [2026-11-19-legacy-modal-retirement.md](2026-11-19-legacy-modal-retirement.md)：
+
+| 顺序 | 任务 | 文件 | 键数 |
+| --- | --- | --- | --- |
+| 1 | ZC-20261120-13 | `plan-book-modal` + `writing-style-modal` | 61 + 54 |
+| 2 | ZC-20261120-14 | `monitor-panel-b`（常驻面板，只迁文案） | 126 |
+| 3 | ZC-20261120-15 | `golden-opening-modal` + `novel-tags-modal` | 111 + 11 |
+| 4 | ZC-20261120-17 | `ai-builder-modal` + `add-fanfic-setting-modal`（只迁 chrome） | 62 + 44 |
+| 5 | ZC-20261120-19 | `pre-research-modal`（短篇/剧本双模式） | 99 |
+| 6 | ZC-20261120-20 | 文档：退役清单 v2 + 判据 v2 + 本队列 | — |
+
+**甄别的关键教训**：判断「用户能不能用到」必须查命令注册表的三层
+（注册 → 公开 `!internalOnly` → 在面板），只看 `new XxxModal()` 调用点会误判。
+这一批因此发现 3 个 `internalOnly` 隐藏命令（`write-chapter` / `batch-chapters` / `auto-writer`）
+应归「删除候选」而非「迁移」，以及 5 个面板可达的必须迁。
+
+**双消费者拆分首次落地**：`writing-style-modal` 的章节标题同
+时是表单 label（人看）和 `PRESET_SECTION_MAP` 的落盘锚点（机器读）——
+拆成两套而不是二选一。判据见 i18n.md §8 第 ⑤ 条。
+
+## 4.3 三条硬规矩（2026-11-19 踩过才写）
 
 1. **迁移脚本必须先 dry-run，命中率 100% 才写盘。** 只有「先 `writeFileSync` 再 `process.exit(1)`」
    的写法会留下半套改动：调用点和 import 改了、实现体没改，tsc 与单测全绿，实机才暴露
@@ -148,6 +171,17 @@ node scripts/handoff.mjs --from zcode --stage "…" --delivered "…" --doing "�
 2. **`dev-vault.mjs sync` 的盘符会被 shell 吃掉。** Git Bash / MSYS 下 `--vault=D:\nw-dev-vault`
    可能变成相对路径，产物同步进仓内 `nw-dev-vault/`，脚本仍报「同步成功」，实机跑的旧 bundle。
    统一写正斜杠 `D:/nw-dev-vault`，并在截图前 `md5sum` 比对仓内与 vault 内 `main.js`。
+3. **批量改写时，「标识分配」与「文本替换」必须确认遍历顺序语义一致。**
+   golden-opening 第一版：收集按 `start` 正序 push，但生成 key 用「从后往前遍历 + `unshift`
+   + counter 递增」—— counter 的递增方向与源码位置相反，`k1` 落到了文件最后一个字面量上。
+   症状是**全部文案错位**（标题位置显示「保存失败，请检查权限」），
+   靠 DOM 测试报「expected to contain '🌟 黄金开篇工坊'」才发现。
+   安全写法：key 分配只看正序位置，替换倒序只为偏移安全，两者**解耦**。
+   这与第 1 条是同类问题 —— 都是没把「遍历顺序」当成正确性的一部分。
+4. **用前缀正则批量改键名时，必须限定作用域。**
+   `dim([A-Z]\w*):` 本意只改 `monitor-panel-b` 的 `dimXxx:`，
+   却误伤了资源里已有的 `dimSamplesLabel:` 和 `dimPendingDesc:`。
+   `check:i18n` 立刻报「引用了不存在的键」，但需要 `git stash` 对比基线才能确认是自己引入的。
 
 ## 5. 明确不要做的事
 
