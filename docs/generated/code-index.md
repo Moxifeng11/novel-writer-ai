@@ -11,7 +11,7 @@
 | `shared/` | 259 | 52210 | 2198 | 1718 | 78% |
 | `core/` | 7 | 3404 | 35 | 20 | 57% |
 | `domains/` | 15 | 1596 | 88 | 58 | 66% |
-| `ui/` | 307 | 115296 | 1185 | 933 | 79% |
+| `ui/` | 307 | 115297 | 1185 | 933 | 79% |
 
 ## 文件清单
 
@@ -916,7 +916,7 @@
 | `ui/plot-canvas-modal.ts` | 366 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
 | `ui/polish-editor.ts` | 830 | 5 | 5 |
-| `ui/pre-research-modal.ts` | 718 | 2 | 2 |
+| `ui/pre-research-modal.ts` | 719 | 2 | 2 |
 | `ui/project-health-modal.ts` | 205 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 457 | 5 | 5 |
 | `ui/project-utils.ts` | 366 | 11 | 10 |

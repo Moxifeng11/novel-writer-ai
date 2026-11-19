@@ -6,6 +6,7 @@
  * 调研结果写入项目内独立的 `00-前期调研/`，与长篇 11 步完全分离。
  */
 import { copyText } from '@/shared/clipboard';
+import { PRE_RESEARCH_DIR } from '@/shared/pre-research';
 import { t } from '@/i18n';
 import { App, Modal, Notice } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
@@ -84,8 +85,8 @@ export class PreResearchModal extends Modal {
         const intro = contentEl.createDiv({ cls: 'nw-pre-research-intro' });
         intro.createEl('p', {
             text: this.mode === 'short'
-                ? t("preResearch.common.k3")
-                : t("preResearch.common.k4"),
+                ? t("preResearch.common.k3", { dir: PRE_RESEARCH_DIR })
+                : t("preResearch.common.k4", { dir: PRE_RESEARCH_DIR }),
         });
 
         const aiRow = intro.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-fwr-wrap' });
@@ -667,7 +668,7 @@ export class PreResearchModal extends Modal {
         if (this.options.project) {
             try {
                 await writePreResearchFiles(this.app.vault.adapter, this.options.project, data, this.app);
-                showSuccessNotice(t("preResearch.common.k21"), { timeout: 5000 });
+                showSuccessNotice(t("preResearch.common.k21", { dir: PRE_RESEARCH_DIR }), { timeout: 5000 });
                 this.close();
             } catch (e) {
                 showErrorNotice(e instanceof Error ? e.message : String(e), { title: t("preResearch.common.k22"), timeout: 8000 });
