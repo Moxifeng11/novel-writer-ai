@@ -1,4 +1,5 @@
 import { shouldPreserveExisting } from '@/shared/rebuild-guard';
+import { isVolumeOutlineFileName } from '@/shared/paths';
 import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';

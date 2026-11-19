@@ -5,6 +5,7 @@
  * 用于阻止用户在内容不完整时直接进入下一步。
  */
 import { App, TFile } from 'obsidian';
+import { isVolumeOutlineFileName } from '@/shared/paths';
 import {
     getSettingLibPath,
     getWorldviewPath,
@@ -132,7 +133,7 @@ export async function validateWizardStepContent(
         }
         case 'outline': {
             const hasVolumeFiles = app.vault.getFiles().some(f =>
-                f.path.startsWith(`${pjVolumeOutlineDir(project)}/`) && f.name.endsWith('_分卷大纲.md')
+                f.path.startsWith(`${pjVolumeOutlineDir(project)}/`) && isVolumeOutlineFileName(f.name)
             );
             const legacyPath = `${project}/${SUBDIR_OUTLINE_ROOT}/分卷大纲.md`;
             const content = hasVolumeFiles || app.vault.getAbstractFileByPath(legacyPath)

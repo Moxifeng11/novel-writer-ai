@@ -1,4 +1,5 @@
 import { App, Component, MarkdownRenderer, Modal, TFile, TFolder } from 'obsidian';
+import { isVolumeOutlineFileName } from '@/shared/paths';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
 import { mkdirp, showSuccess, showError, stripFrontmatter, progressHandle } from '@/utils/helpers';
@@ -542,7 +543,7 @@ ${describeBodyFormat({ ...bodyFormat, allowTitle: true })}`;
         // 按卷归档：扫描 03-大纲与章节/分卷大纲/*.md
         const volOutlineDir = `${pjVolumeOutlineDir(project)}`;
         for (const f of listFolderFiles<TFile>(this.app.vault, pjVolumeOutlineDir(project))) {
-            if (f.name.endsWith('_分卷大纲.md')) {
+            if (isVolumeOutlineFileName(f.name)) {
                 try { parts.push(await this.app.vault.read(f)); } catch (e) { log.warn('[小说工坊] 读取分卷大纲失败:', f.path, e); }
             }
         }

@@ -1,5 +1,6 @@
 
 import { TFile, TFolder } from 'obsidian';
+import { isVolumeOutlineFileName } from '@/shared/paths';
 import NovelWriterPlugin from '@/main';
 import { OUTLINE_TABLE_HEADER } from '@/shared/format-constants';
 import { WORLDVIEW_SLICE } from '@/shared/thresholds';
@@ -295,7 +296,7 @@ ${previousSummaries}
                 const volumesDir = this.plugin.app.vault.getAbstractFileByPath(volumesPath);
                 if (volumesDir instanceof TFolder) {
                     const volumeFiles = volumesDir.children.filter(
-                        (child): child is TFile => child instanceof TFile && child.name.endsWith('_分卷大纲.md'),
+                        (child): child is TFile => child instanceof TFile && isVolumeOutlineFileName(child.name),
                     );
                     // 重新生成前先备份旧大纲；备份失败时保留旧文件，避免 AI 失败后旧规划直接消失。
                     // writeVolumeOutlines 会在新内容成功生成后清理残留旧卷，因此保留文件不会污染最终结果。
@@ -323,7 +324,7 @@ ${await this.plugin.app.vault.read(file)}`);
                         // 旧实现删除该目录**全部** children（含用户自建笔记），
                         // 而备份只含大纲文件——非大纲文件会被永久删除且无备份。
                         for (const child of volumesDir.children) {
-                            if (child instanceof TFile && child.name.endsWith('_分卷大纲.md')) {
+                            if (child instanceof TFile && isVolumeOutlineFileName(child.name)) {
                                 await this.plugin.app.vault.delete(child, true);
                             }
                         }

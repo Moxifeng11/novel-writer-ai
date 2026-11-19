@@ -1,4 +1,5 @@
 import { App, TFile, Notice, Modal } from 'obsidian';
+import { isVolumeOutlineFileName } from '@/shared/paths';
 import { t } from '@/i18n';
 import { pjVolumeOutlineDir, getSettingLibPath, getWorldviewPath, readProjectMeta, SUBDIR_BODY_ROOT, SUBDIR_OUTLINE_ROOT } from '@/shared/paths';
 import { WizardTab, WizardStep, buildWizardSteps as buildWizardStepsExternal } from './wizard-types';
@@ -349,7 +350,7 @@ export class WizardController {
                 (step.id === 'writing_style' && getWritingStyleCandidatePaths(tab.project).some(p => !!this.view.app.vault.getAbstractFileByPath(p))) ||
                 (step.id === 'outline' && (
                     this.view.app.vault.getFiles().some(f =>
-                        f.path.startsWith(`${pjVolumeOutlineDir(tab.project)}/`) && f.name.endsWith('_分卷大纲.md'))
+                        f.path.startsWith(`${pjVolumeOutlineDir(tab.project)}/`) && isVolumeOutlineFileName(f.name))
                     || !!this.view.app.vault.getAbstractFileByPath(`${tab.project}/${SUBDIR_OUTLINE_ROOT}/分卷大纲.md`)
                 )) ||
                 (step.id === 'chapters' && this.view.app.vault.getFiles().some(f =>

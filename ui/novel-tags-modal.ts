@@ -6,6 +6,7 @@ import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
 import { AIEngine } from '@/engine/ai-engine';
 import { readMergedVolumeOutline, progressHandle } from '@/utils/helpers';
+import { formatVolumePromptSummary, parseVolumeSummary } from '@/shared/volume-summary';
 import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
 
 /**
@@ -74,7 +75,7 @@ export class NovelTagsModal extends Modal {
             return;
         }
 
-        const { bookSummary, volumes } = this.parseOutline(outlineContent);
+        const { bookSummary, volumes } = parseVolumeSummary(outlineContent);
 
         if (volumes.length === 0) {
             new Notice(t('novelTags.noVolumesParsed'), 5000);
@@ -106,7 +107,7 @@ export class NovelTagsModal extends Modal {
         const genNotice = progressHandle('novel-tags-analyze', t('novelTags.analyzing'));
 
         try {
-            const fullSummary = this.buildFullSummary(volumes);
+            const fullSummary = formatVolumePromptSummary(volumes, { conflictLabel: '冲突示例' });
 
             const sysPrompt = `你是一位资深网络小说平台编辑，精通番茄小说和起点中文网的标签分类体系。
 
@@ -247,77 +248,6 @@ ${result.content}
         }
     }
 
-    private parseOutline(content: string): { bookSummary: BookSummary; volumes: VolumeData[] } {
-        const lines = content.split('\n');
-
-        const bookSummary: BookSummary = { totalChapters: '', totalWords: '', totalVolumes: '' };
-        for (const line of lines) {
-            const wm = line.match(/总字数目标[：:]\s*(\S+)/);
-            if (wm) bookSummary.totalWords = wm[1];
-            const cm = line.match(/总章节数[：:]\s*(\S+)/);
-            if (cm) bookSummary.totalChapters = cm[1];
-            const vm = line.match(/分卷数[：:]\s*(\S+)/);
-            if (vm) bookSummary.totalVolumes = vm[1];
-        }
-
-        const volumes: VolumeData[] = [];
-        let currentVol: VolumeData | null = null;
-
-        for (const line of lines) {
-            const volMatch = line.match(/^###\s+(第\d+卷)/);
-            if (volMatch) {
-                if (currentVol) volumes.push(currentVol);
-                currentVol = { name: volMatch[1], sections: {}, chapters: [] };
-                continue;
-            }
-            if (!currentVol) continue;
-
-            const keyMatch = line.match(/^-\s*\*\*(.*?)\*\*[：:]\s*(.*)/);
-            if (keyMatch) {
-                const key = keyMatch[1].trim();
-                const val = keyMatch[2].trim();
-                currentVol.sections[key] = val;
-                continue;
-            }
-
-            const chapMatch = line.match(/^\|\s*(\d+)\s*\|(.+)\|/);
-            if (chapMatch && currentVol.sections['章节范围']) {
-                currentVol.chapters.push({
-                    num: parseInt(chapMatch[1]),
-                    conflict: chapMatch[2].trim()
-                });
-            }
-        }
-        if (currentVol) volumes.push(currentVol);
-
-        return { bookSummary, volumes };
-    }
-
-    private buildFullSummary(volumes: VolumeData[]): string {
-        const parts: string[] = [];
-
-        for (const vol of volumes) {
-            parts.push(`\n=== ${vol.name}：${vol.sections['卷名'] || '未命名'} ===`);
-
-            if (vol.sections['章节范围']) parts.push(`章节：${vol.sections['章节范围']}`);
-            if (vol.sections['核心剧情']) parts.push(`剧情：${vol.sections['核心剧情']}`);
-            if (vol.sections['主线推进']) parts.push(`主线：${vol.sections['主线推进']}`);
-            if (vol.sections['本卷高潮']) parts.push(`高潮：${vol.sections['本卷高潮']}`);
-            if (vol.sections['结尾过渡']) parts.push(`结尾：${vol.sections['结尾过渡']}`);
-
-            if (vol.chapters.length > 0) {
-                const first3 = vol.chapters.slice(0, 3);
-                const last3 = vol.chapters.slice(-3);
-                const hints: string[] = [];
-                for (const c of first3) hints.push(c.conflict);
-                for (const c of last3) hints.push(c.conflict);
-                parts.push(`冲突示例：${hints.join(' / ')}`);
-            }
-        }
-
-        return parts.join('\n');
-    }
-
     /**
      * onClose 方法。
      */
@@ -325,16 +255,4 @@ ${result.content}
         const { contentEl } = this;
         contentEl.empty();
     }
-}
-
-interface BookSummary {
-    totalChapters: string;
-    totalWords: string;
-    totalVolumes: string;
-}
-
-interface VolumeData {
-    name: string;
-    sections: Record<string, string>;
-    chapters: { num: number; conflict: string }[];
 }

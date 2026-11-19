@@ -3866,3 +3866,26 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - `.bundle-baseline.json`：main.js **6,228,536**（+365）、styles.css 801,044，note「P2 #15 持久进度通知收编」；dev-vault sync 更新 4 文件。
 
 **下一轮**：P2 #16 字符串键收编 → #17 kb baseDir 双口径 → #18 设置页自动保存徽标 → #19 Esc 语义 + 长任务 onClose → #20 AIEngine 收编；另有 #13 遗留的 A-17 撤销栈共享化。
+
+## 第一百二十三轮：C 清单 P2 #16 —— 字符串键收编（2026-11-20，DSH）
+
+**背景（审计 B3 + 补充）**：`_分卷大纲.md` 后缀在 10 个运行时模块里各写一遍；`sections['卷名']` 裸字符串与 `FIELD_VOLUME_NAME`（零消费死常量）并存；`ui/novel-tags-modal.ts` 与 `ui/volume-intro-modal.ts` 各有一份几乎逐行相同的分卷大纲解析器（卷头 / KV / 章节表三段正则 + 摘要拼装）。
+
+**改动**
+- `shared/paths.ts`：新增 `VOLUME_OUTLINE_SUFFIX`、`isVolumeOutlineFileName(name)`、`volumeNumberFromOutlineName(name)`；`pjVolumeOutlineFile()` 改由常量拼装（路径输出逐字不变）。
+- 后缀判断替换（**10 处**）：`engine/ai-outline-generator.ts`（两处 endsWith）、`engine/long-term-memory.ts`（原 `/^第(\d+)卷_分卷大纲\.md$/` 正则 → 谓词 + 卷号函数）、`ui/chapter-outline-tree-modal.ts`、`ui/continue-chapters-modal.ts`、`ui/full-writer/wizard-controller.ts`、`ui/full-writer/wizard-step-validators.ts`、`ui/plot-canvas-modal.ts`、`ui/rebuild-chapters-modal.ts`、`ui/volume-intro-modal.ts`、`utils/helpers.ts`（残留文件清理 + 合并读取 + 卷号排序）。
+- `shared/format-constants.ts`：新增 `RE_OUTLINE_KEY_LINE`（任意 KV 行）与 `RE_OUTLINE_SUMMARY_FIELD(field)`（全书总览字段）。
+  - **顺手修掉一个既存 bug**：模板与 plan-book 写出的都是 `- **总字数目标**：120万`（字段名带加粗），旧正则只认 `总字数目标：`，两个弹窗因此长期取到空值、AI 提示词里永远显示「未设定」。新正则吃掉可选 `**`。
+- 新增 `shared/volume-summary.ts`：
+  - `parseVolumeSummary(content)` → `{ bookSummary, volumes }`（类型 `VolumeBookSummary` / `VolumeEntry`）；
+  - `formatVolumePromptSummary(volumes, options)`（`conflictLabel` / `maxChars` / `bookSummary` 兜底 / `unnamedVolumeLabel`），保住两侧原有口径：novel-tags 用「冲突示例」且不截断，volume-intro 用「关键冲突示例」且 `slice(0, 6000)` 并带总览兜底。
+- 两个弹窗删掉各自的私有解析器/摘要器与 `BookSummary`/`VolumeData` 接口；`sections['卷名']` 改 `sections[FIELD_VOLUME_NAME]`（死常量复活）。
+- 新增 `tests/unit/shared/volume-summary.test.ts`（14 例）：总览三字段、切卷与 KV、只有带「章节范围」的卷才收章节行、无卷空数组、默认/自定义冲突前缀、`maxChars` 截断、未命名占位、总览兜底、文件名谓词与卷号、以及「两个弹窗不再自写正则」「运行时代码不再就地 endsWith」的源码级不变量。
+
+**门禁**
+- `npx tsc --noEmit` 0 错；`npm run lint` 0 error（1030 warning 存量）；`npm run build` EXIT=0。
+- `check:jsdoc` 100% / @example 56/56（986 文件）；`check:cjk-keep` 通过；`check:i18n` 通过，UI 中文棘轮 **205 文件 / 5,366 条**（原 5,415，删重复解析器里的中文键名后下降 49，已 `--update-baseline` 收紧）；`check:engine-msg` 126 键一致。
+- `.bundle-baseline.json`：main.js **6,227,024**（−1,512，去重收益）、styles.css 801,044；dev-vault sync 更新 4 文件。
+- 运行时抽查：`node D:\nw-tmp\snap-p216.mjs zh-CN` 启动开发 vault 无报错（`novel-writer-volume-intro` 命令在无激活项目时返回 false，属 `LONG_ONLY` 守卫，未强行绕过）。
+
+**下一轮**：P2 #17 知识库 baseDir 双口径 → #18 设置页自动保存徽标 → #19 Esc 语义 + 长任务 onClose → #20 AIEngine 收编；另有 #13 遗留的 A-17 撤销栈共享化。

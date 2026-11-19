@@ -1,5 +1,5 @@
 import { App, Notice, TFile, TFolder } from 'obsidian';
-import { pjVolumeOutlineDir, pjVolumeOutlineFile } from '../shared/paths';
+import { isVolumeOutlineFileName, pjVolumeOutlineDir, pjVolumeOutlineFile, volumeNumberFromOutlineName } from '../shared/paths';
 import { ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
 import type { FileSystemPort, VaultMetaPort } from '../shared/file-system-port';
 import { createLogger } from '../shared/logger';
@@ -314,7 +314,7 @@ export async function writeVolumeOutlines(app: App, project: string, outlineBody
     const dirFile = app.vault.getAbstractFileByPath(dir);
     if (dirFile instanceof TFolder) {
         for (const child of dirFile.children) {
-            if (!child.name || !child.name.endsWith('_分卷大纲.md')) continue;
+            if (!child.name || !isVolumeOutlineFileName(child.name)) continue;
             const volMatch = child.name.match(/第(\d+)卷/);
             if (volMatch) {
                 const oldVolN = parseInt(volMatch[1]);
@@ -366,12 +366,8 @@ export async function readMergedVolumeOutline(app: App, project: string, fs?: Fi
     // 合并两者会产生重复卷号，批量建章的一致性校验会直接阻断。
     const dir = pjVolumeOutlineDir(project);
     const volFiles = allFiles
-        .filter(f => f.path.startsWith(`${dir}/`) && f.name.endsWith('_分卷大纲.md'))
-        .sort((a, b) => {
-            const na = parseInt(a.name.match(/第(\d+)卷/)?.[1] || '0');
-            const nb = parseInt(b.name.match(/第(\d+)卷/)?.[1] || '0');
-            return na - nb;
-        });
+        .filter(f => f.path.startsWith(`${dir}/`) && isVolumeOutlineFileName(f.name))
+        .sort((a, b) => volumeNumberFromOutlineName(a.name) - volumeNumberFromOutlineName(b.name));
     for (const f of volFiles) {
         try { parts.push(await fileSystem.read(f.path)); } catch (e) { log.warn('[小说工坊] 读取分卷大纲失败:', f.path, e); }
     }

@@ -291,6 +291,27 @@ export const OUTLINE_TABLE_HEADER = '| 章号 | 核心冲突 |';
 /** 分卷大纲 KV 正则生成器 */
 export const RE_OUTLINE_KV = (key: string) => new RegExp(`- \\*\\*${key}\\*\\*[：:]\\s*(.+)`);
 
+/**
+ * 分卷大纲任意 KV 行：`- **键**：值`（键名不固定，故不带参数）。
+ * 用于把整卷字段收进 `sections` 记录，键名再按 {@link FIELD_VOLUME_NAME} 等常量读取。
+ */
+export const RE_OUTLINE_KEY_LINE = /^-\s*\*\*(.*?)\*\*[：:]\s*(.*)/;
+
+/**
+ * 全书总览字段行（宽松匹配：允许 `- **字段**：值` 与裸 `字段：值` 两种写法）。
+ * 用于取「总字数目标 / 总章节数 / 分卷数」这类不带卷归属的全局字段。
+ *
+ * 注意：模板与 plan-book 写出的都是 `- **总字数目标**：120万`（加粗），
+ * 旧实现只接受 `总字数目标：`（中间无 `**`），两个弹窗因此长期取到空值、
+ * 提示词里永远显示「未设定」——这里显式吃掉可选 `**`。
+ *
+ * @param field - 字段名常量（如 {@link FIELD_TOTAL_WORDS}）
+ * @returns 捕获第一组的正则
+ * @example
+ * RE_OUTLINE_SUMMARY_FIELD(FIELD_TOTAL_WORDS).exec('- **总字数目标**：120万')?.[1]; // '120万'
+ */
+export const RE_OUTLINE_SUMMARY_FIELD = (field: string) => new RegExp(`${field}(?:\\*\\*)?[：:]\\s*(\\S+)`);
+
 /** 时间线看板表头正则 */
 export const RE_TIMELINE_BOARD_SECTION = /##\s+纪元\s*\/\s*时间轴/;
 

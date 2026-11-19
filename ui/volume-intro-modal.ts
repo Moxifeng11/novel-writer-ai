@@ -2,6 +2,8 @@ import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { AIEngine } from '@/engine/ai-engine';
 import { showSuccess, showError, progressHandle } from '@/utils/helpers';
+import { isVolumeOutlineFileName } from '@/shared/paths';
+import { parseVolumeSummary, formatVolumePromptSummary, type VolumeBookSummary, type VolumeEntry } from '@/shared/volume-summary';
 import {
     pjCharsDir,
     pjPromiseLedger,
@@ -28,18 +30,6 @@ import { OperationConfirmModal } from '@/ui/components/progress/operation-confir
 import { t } from '@/i18n';
 
 const log = createLogger('VolumeIntroModal');
-
-interface BookSummary {
-    totalChapters: string;
-    totalWords: string;
-    totalVolumes: string;
-}
-
-interface VolumeData {
-    name: string;
-    sections: Record<string, string>;
-    chapters: { num: number; conflict: string }[];
-}
 
 /**
  * VolumeIntroModal 类。
@@ -439,69 +429,20 @@ export class VolumeIntroModal extends Modal {
         }
     }
 
-    private async readVolumes(project: string): Promise<{ bookSummary: BookSummary; volumes: VolumeData[] }> {
+    private async readVolumes(project: string): Promise<{ bookSummary: VolumeBookSummary; volumes: VolumeEntry[] }> {
         const volumeDir = pjVolumeOutlineDir(project);
         const volumeFiles = this.app.vault.getFiles()
-            .filter(f => f.path.startsWith(`${volumeDir}/`) && f.name.endsWith('_分卷大纲.md'))
+            .filter(f => f.path.startsWith(`${volumeDir}/`) && isVolumeOutlineFileName(f.name))
             .sort((a, b) => a.path.localeCompare(b.path, 'zh-Hans-CN'));
         const parts: string[] = [];
         for (const file of volumeFiles) {
             try { parts.push(await this.app.vault.read(file)); } catch (e) { log.warn('[VolumeIntroModal] 读取失败:', file.path, e); }
         }
-        const outlineContent = parts.join('\n\n');
-        const bookSummary: BookSummary = { totalChapters: '', totalWords: '', totalVolumes: '' };
-        for (const line of outlineContent.split('\n')) {
-            const wm = line.match(/总字数目标[：:]\s*(\S+)/);
-            if (wm) bookSummary.totalWords = wm[1];
-            const cm = line.match(/总章节数[：:]\s*(\S+)/);
-            if (cm) bookSummary.totalChapters = cm[1];
-            const vm = line.match(/分卷数[：:]\s*(\S+)/);
-            if (vm) bookSummary.totalVolumes = vm[1];
-        }
-        const volumes: VolumeData[] = [];
-        let currentVol: VolumeData | null = null;
-        for (const line of outlineContent.split('\n')) {
-            const volMatch = line.match(/^###\s+(第\d+卷)/);
-            if (volMatch) {
-                if (currentVol) volumes.push(currentVol);
-                currentVol = { name: volMatch[1], sections: {}, chapters: [] };
-                continue;
-            }
-            if (!currentVol) continue;
-            const keyMatch = line.match(/^-\s*\*\*(.*?)\*\*[：:]\s*(.*)/);
-            if (keyMatch) {
-                currentVol.sections[keyMatch[1].trim()] = keyMatch[2].trim();
-                continue;
-            }
-            const chapMatch = line.match(/^\|\s*(\d+)\s*\|(.+)\|/);
-            if (chapMatch && currentVol.sections['章节范围']) {
-                currentVol.chapters.push({ num: parseInt(chapMatch[1]), conflict: chapMatch[2].trim() });
-            }
-        }
-        if (currentVol) volumes.push(currentVol);
-        return { bookSummary, volumes };
+        return parseVolumeSummary(parts.join('\n\n'));
     }
 
-    private buildFullSummary(bookSummary: BookSummary, volumes: VolumeData[]): string {
-        const parts: string[] = [];
-        for (const vol of volumes) {
-            parts.push(`\n=== ${vol.name}：${vol.sections['卷名'] || '未命名'} ===`);
-            if (vol.sections['章节范围']) parts.push(`章节：${vol.sections['章节范围']}`);
-            if (vol.sections['核心剧情']) parts.push(`剧情：${vol.sections['核心剧情']}`);
-            if (vol.sections['主线推进']) parts.push(`主线：${vol.sections['主线推进']}`);
-            if (vol.sections['本卷高潮']) parts.push(`高潮：${vol.sections['本卷高潮']}`);
-            if (vol.sections['结尾过渡']) parts.push(`结尾：${vol.sections['结尾过渡']}`);
-            if (vol.chapters.length > 0) {
-                const hints = [...vol.chapters.slice(0, 3), ...vol.chapters.slice(-3)].map(c => c.conflict);
-                parts.push(`关键冲突示例：${hints.join(' / ')}`);
-            }
-        }
-        if (parts.length === 0) {
-            parts.push(`总字数目标：${bookSummary.totalWords || '未设定'}`);
-            parts.push(`总章节数：${bookSummary.totalChapters || '未设定'}`);
-            parts.push(`分卷数：${bookSummary.totalVolumes || '未设定'}`);
-        }
-        return parts.join('\n').slice(0, 6000);
+    private buildFullSummary(bookSummary: VolumeBookSummary, volumes: VolumeEntry[]): string {
+        return formatVolumePromptSummary(volumes, { bookSummary, maxChars: 6000 });
     }
 
     /**

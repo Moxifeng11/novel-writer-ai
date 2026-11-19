@@ -9,7 +9,7 @@
 
 import type { TFile } from 'obsidian';
 import type { FileSystemPort } from '@/shared/file-system-port';
-import { pjVolumeOutlineDir } from '@/shared/paths';
+import { pjVolumeOutlineDir, volumeNumberFromOutlineName } from '@/shared/paths';
 import { projectFactIndexPath, VaultFactStorage } from './fact-index-vault';
 import type { ConfirmedFact, FactCategory } from './fact-index-manager';
 import { VolumeOutlineSummarizer, type VolumeSummary } from './volume-outline-summarizer';
@@ -104,10 +104,8 @@ export async function loadVolumeSummaries(
     const summaries: VolumeSummary[] = [];
 
     for (const file of files) {
-        const match = file.name.match(/^第(\d+)卷_分卷大纲\.md$/);
-        if (!match) continue;
-        const volumeNumber = parseInt(match[1], 10);
-        if (!Number.isFinite(volumeNumber)) continue;
+        const volumeNumber = volumeNumberFromOutlineName(file.name);
+        if (!volumeNumber) continue;
         if (options?.beforeVolume && volumeNumber >= options.beforeVolume) continue;
         try {
             const content = await fs.read(file.path);

@@ -342,13 +342,60 @@ export function pjStepFile(project: string, volN: number, chapN: number, stepTyp
  * @param project - 项目（路径或对象）
  */
 export function pjVolumeOutlineDir(project: string) { return `${project}/03-大纲与章节/分卷大纲`; }
+
+/**
+ * 按卷归档的分卷大纲文件名后缀（v4.0：`第N卷_分卷大纲.md`）。
+ *
+ * 全仓只此一处定义；扫描卷文件时统一用 {@link isVolumeOutlineFileName}，
+ * 不要再各写 `name.endsWith('_分卷大纲.md')`。
+ *
+ * @example
+ * ```ts
+ * pjVolumeOutlineFile('《示例》', 2).endsWith(VOLUME_OUTLINE_SUFFIX); // true
+ * ```
+ */
+export const VOLUME_OUTLINE_SUFFIX = '_分卷大纲.md';
+
+/**
+ * 判断文件名是否为分卷大纲卷文件（只看文件名，不判断所在目录）。
+ *
+ * @param name - 文件名（TFile.name）
+ * @returns 是分卷大纲卷文件返回 true
+ *
+ * @example
+ * ```ts
+ * isVolumeOutlineFileName('第2卷_分卷大纲.md'); // true
+ * isVolumeOutlineFileName('分卷大纲.md');        // false（旧版单文件）
+ * ```
+ */
+export function isVolumeOutlineFileName(name: string): boolean { return name.endsWith(VOLUME_OUTLINE_SUFFIX); }
+
+/**
+ * 从分卷大纲文件名解析卷号（`第N卷_分卷大纲.md` → N）。
+ *
+ * @param name - 文件名（TFile.name）
+ * @returns 卷号；不是卷文件或无法解析时返回 0
+ *
+ * @example
+ * ```ts
+ * volumeNumberFromOutlineName('第3卷_分卷大纲.md'); // 3
+ * volumeNumberFromOutlineName('第3卷_正文.md');     // 0
+ * ```
+ */
+export function volumeNumberFromOutlineName(name: string): number {
+    if (!isVolumeOutlineFileName(name)) return 0;
+    const m = name.match(/^第(\d+)卷/);
+    const n = m ? parseInt(m[1], 10) : 0;
+    return Number.isFinite(n) ? n : 0;
+}
+
 /**
  * 某卷分卷大纲文件
  *
  * @param project - 项目（路径或对象）
  * @param volN - 卷编号
  */
-export function pjVolumeOutlineFile(project: string, volN: number) { return `${project}/03-大纲与章节/分卷大纲/第${volN}卷_分卷大纲.md`; }
+export function pjVolumeOutlineFile(project: string, volN: number) { return `${pjVolumeOutlineDir(project)}/第${volN}卷${VOLUME_OUTLINE_SUFFIX}`; }
 
 /**
  * 卷目录（正文+步骤结果的父级概念，用于扫描）

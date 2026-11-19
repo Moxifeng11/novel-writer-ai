@@ -11,6 +11,7 @@
  */
 
 import { copyText } from '@/shared/clipboard';
+import { isVolumeOutlineFileName } from '@/shared/paths';
 import { App, Modal, Notice, TFile } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import { pjVolumeOutlineDir, pjStepDir } from '@/shared/paths';
@@ -143,7 +144,7 @@ export class PlotCanvasModal extends Modal {
             this.sources = [];
             const dir = pjVolumeOutlineDir(this.project);
             const volFiles = this.app.vault.getFiles()
-                .filter(f => f.path.startsWith(`${dir}/`) && f.name.endsWith('_分卷大纲.md'))
+                .filter(f => f.path.startsWith(`${dir}/`) && isVolumeOutlineFileName(f.name))
                 .sort((a, b) => {
                     const na = parseInt(a.name.match(/第(\d+)卷/)?.[1] || '0');
                     const nb = parseInt(b.name.match(/第(\d+)卷/)?.[1] || '0');

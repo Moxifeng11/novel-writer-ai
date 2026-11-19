@@ -1,4 +1,5 @@
 import { App, Modal, TFile } from 'obsidian';
+import { isVolumeOutlineFileName } from '@/shared/paths';
 import type NovelWriterAI from '@/main';
 import { pjVolumeOutlineDir, pjStepDir } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
@@ -158,7 +159,7 @@ export class ChapterOutlineTreeModal extends Modal {
                 // v4.0：按卷归档，逐卷文件加载（卷号升序），各文件独立行模型
                 const dir = pjVolumeOutlineDir(this.project);
                 const volFiles = this.app.vault.getFiles()
-                    .filter(f => f.path.startsWith(`${dir}/`) && f.name.endsWith('_分卷大纲.md'))
+                    .filter(f => f.path.startsWith(`${dir}/`) && isVolumeOutlineFileName(f.name))
                     .sort((a, b) => {
                         const na = parseInt(a.name.match(/第(\d+)卷/)?.[1] || '0');
                         const nb = parseInt(b.name.match(/第(\d+)卷/)?.[1] || '0');
