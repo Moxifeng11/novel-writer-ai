@@ -3317,3 +3317,45 @@ vault 路径 `元文件/05-同人设定库`、检索关键词、四处占位数�
 **下一轮候选**：散落弹窗 novel-tags（1,099，UI 已迁完则跳过）/ ai-builder（864）/ polish-editor（823）/
 ideation（793）/ batch-import（750）/ `ui/agent-workbench-view.ts`（126 条 / 730 字）；
 知识库 D 类两文件（`ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`）等视觉重构（用户 m16938）。
+
+## 第一百零九轮：i18n 第二期第41片 —— AI 世界元素生成器（2026-11-19，DSH）
+
+**触发**：用户 m20900「那就按顺序进行」（第40片之后的候选顺序：ai-builder → polish-editor → ideation → batch-import）。
+
+**范围**：`ui/ai-builder-modal.ts`（1,133 行，CRLF）。文件原已有 65 处 `t()` 用机械命名 `aiBuilder.common.k1-k10` + `aiBuilder.ui.k1-k52`（62 条），
+本片补剩下的 30 处界面文案，新键走语义子组 `aiBuilder.flow.*`（38 键），旧键不重命名。
+
+**改动**
+1. 迁 30 处：仪表盘标题与「已有 N 个」、生成页标题与副标题、单条/批量表单的 label 与 placeholder、
+   「❌ 请输入 X 名称」与「❌ 请先配置 API 密钥…」、生成进度（`⏳ 正在生成角色 (1-10/20)...`）、批次失败汇总、
+   完整性校验与保存结果（`「X」未通过完整性校验，未保存。缺少：…` / `人物已保存：2 个 → 项目`）、
+   世界观保存后的自动改名三种分支（成功改名 / 已自动命名 / 名称不可用保留原名）、覆盖确认 `window.confirm`。
+2. **顺带修真实 bug**：`const ENTITY_TYPES: EntityTypeConfig[]` 是模块级常量，`label/description` 里调用 `t()`，
+   只在模块加载时求值一次 → 切换语言后卡片标题/描述仍是旧语言。改成 `const entityTypes = (): EntityTypeConfig[] => [`，
+   三处调用点（`wvCfg` / `charCfg` / `for (const cfg of entityTypes())`）同步。
+3. 保留中文：两段角色修补提示词（`repairSystem` / `repairPrompt`）、模板文件名 `世界观总览模板.md` / `人物模板.md`、
+   项目名正则与三个姓名提取正则、AI 需求片段（题材倾向 / 故事逻辑方针 / 批量生成要求）、
+   校验器契约串（正文分节 / YAML frontmatter 未闭合）、全部 `log.*` 与注释。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；新增 `tests/unit/i18n/ai-builder-flow.test.ts` 4 例（38 键双语可解析 / en 零 CJK / zh 逐字插值 9 条 / en 插值 11 条），
+  与既有 `tests/unit/ui/ai-builder-modal-dom.test.ts` 3 例合跑 7 例绿。
+- `check:i18n` zh/en 各 **4997** 条、无法解析键 0、动态键 29、棘轮 **212 文件 / 6643 条**（已 --update-baseline）。
+- 实机 `D:\nw-tmp\snap-i18n41.mjs <lang>`：zh/en 各 5 场景（dashboard / project / worldview / char-single / char-batch，1300×900），
+  零横向溢出；en 下三张生成页 CJK=0，dashboard 12 字与 project 16 字全是 vault 项目名（短篇小说/短篇示例 / 示例项目）。
+  截图 `D:\nw-dev-vault\_visual-i18n41\{scene}-{zh-CN,en-US}.png`。
+- `npm run preflight` **EXIT=0**（992 文件 / **10,344 通过 + 3 跳过**，日志 `D:\nw-tmp\preflight-i18n41.log`）；`check:bundle` main.js **6,154,730**（+5,296）、styles.css **800,471**（±0）；`gen:docs` 1,004 文件 / `check:docs` 20 活跃文档通过。
+
+**坑**
+1. **资源块插错父级会静默错位**：插入脚本把 `flow: {` 塞在 `ui` 收尾的 `},` 之前，键的真实路径变成 `aiBuilder.ui.flow.nameLabel`，
+   `check:i18n` 只在尾部列出「t() 引用了资源里不存在的键」，不提示父级。锚点要取「`ui` 的收尾 `},` 之后」。
+2. **多视图弹窗截图要按路由回退**：AI 生成器每次切视图都 `contentEl.empty()` 重渲染，进入世界观生成页后实体卡消失，
+   人物单条/批量必须先点 `.novel-writer-ai-builder-back-btn`（← 返回仪表盘）再点第二张卡。
+3. **表格锚点别只取分隔行**：一个文档里有多张表，用「表头 + 分隔行」两行一起做锚点才唯一。
+
+**文档**：`docs/modules/i18n.md`（§2 资源 4959 → 4997 + 资源链 +38 + 已迁移面 bullet + 棘轮 6701 → 6643、§5 表行、
+§6 测试 bullet、§7 backlog、§9 三条经验）、`docs/modules/INDEX.md`、`docs/CURRENT.md`、
+`docs/planning/2026-11-18-feature-gaps.md`、本轮记录；基线 `.i18n-baseline.json` / `.bundle-baseline.json`。
+
+**下一轮候选**：polish-editor（823）/ ideation（793）/ batch-import（750）/ `ui/agent-workbench-view.ts`（730 字）；
+知识库 D 类两文件（`ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`）等视觉重构（用户 m16938）。

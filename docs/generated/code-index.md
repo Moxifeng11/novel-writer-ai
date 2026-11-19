@@ -11,7 +11,7 @@
 | `shared/` | 259 | 52377 | 2212 | 1732 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1583 | 88 | 58 | 66% |
-| `ui/` | 304 | 114073 | 1181 | 935 | 79% |
+| `ui/` | 304 | 114080 | 1181 | 935 | 79% |
 
 ## 文件清单
 
@@ -721,7 +721,7 @@
 | `ui/advanced-maintenance-modal.ts` | 222 | 1 | 1 |
 | `ui/agent-workbench-view.ts` | 1838 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 134 | 6 | 6 |
-| `ui/ai-builder-modal.ts` | 1134 | 1 | 1 |
+| `ui/ai-builder-modal.ts` | 1141 | 1 | 1 |
 | `ui/appearance-settings.ts` | 604 | 3 | 3 |
 | `ui/asset-registry-modal.ts` | 151 | 1 | 1 |
 | `ui/backup-center-modal.ts` | 244 | 1 | 1 |

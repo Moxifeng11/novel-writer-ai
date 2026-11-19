@@ -292,9 +292,13 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
   保留中文：题材默认值 `'玄幻'`、落盘文件名 `'新同人设定'`、vault 路径 `元文件/05-同人设定库`、检索关键词、四处占位数据、审核 meta 键名、两段 AI 提示词、日志与注释；
   顺带修三处既有缺陷：`refreshLinkStatus()` 并发渲染导致**重复「约束流状态」横幅**（清空挪到 await 之后）、`.nw-modal-form` 里 `.nw-form-stack > *` 被 `flex-shrink:1` 压扁再被 `.nw-card{overflow:hidden}` 裁掉（来源卡表单控件全不可见）→ 加 `flex: 0 0 auto`（影响同用该类的 10 个弹窗）、`.nw-is-degraded .nw-capability-stage` 暗色下红底红字改 `color: var(--text-normal)`；
   zh/en 资源各 **4959** 条；棘轮收紧到 **212 文件 / 6701 条**；新增 `tests/unit/i18n/add-fanfic-flow.test.ts` 4 例；实机 zh/en 各 1 场景（680×900，en 下 UI 文案 CJK=0，余 45 字为 `DeviationDetector 条件分析器未注入: rhythmAnalyzer` 运行时串）；preflight **EXIT=0**（991 文件 / **10,340 通过 + 3 跳过**）。
+- 第二期第41片（2026-11-19，DSH）：AI 世界元素生成器 —— `ui/ai-builder-modal.ts`（1,133 行）迁 30 处 / **38 键** `aiBuilder.flow.*`（仪表盘与生成页标题、单条/批量表单标签与占位符、生成进度与失败提示、完整性校验与保存结果、项目自动改名提示）；旧机械命名 `aiBuilder.common.k1-k10` + `ui.k1-k52` 62 条**不重命名**，沿用第40片口径；
+  顺带修真实 bug：`ENTITY_TYPES` 是模块级常量、加载时求值 `t()`，切语言后卡片 label/description 不刷新 → 改 `entityTypes()` 函数（`wvCfg`/`charCfg`/批量三处调用点同步）；
+  保留中文：两段角色修补提示词（repairSystem / repairPrompt）、模板文件名、项目名与三个姓名提取正则、AI 需求片段（题材倾向 / 故事逻辑方针 / 批量生成要求）、校验器契约串（正文分节 / YAML frontmatter 未闭合）、日志；
+  zh/en 资源各 **4997** 条；棘轮收紧到 **212 文件 / 6643 条**；新增 `tests/unit/i18n/ai-builder-flow.test.ts` 4 例；实机 zh/en 各 5 场景（1300×900，零横向溢出，en 下三张生成页 CJK=0，dashboard/project 的 12/16 字为 vault 项目名）。
 - 后续：第二期余下（知识库 D 类两文件 `ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`
-  用户已裁定随视觉重构；散落弹窗 novel-tags 1099 / ai-builder 864 / polish-editor 823 /
-  ideation 793 / batch-import 750 等），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
+  用户已裁定随视觉重构；散落弹窗 polish-editor 823 / ideation 793 / batch-import 750 /
+  novel-tags 1099（只剩 AI 提示词与解析正则）等），第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 
 ---
 

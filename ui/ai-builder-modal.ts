@@ -42,7 +42,8 @@ interface EntityTypeConfig {
 
 // 批次 4：势力 / 地点 / 物品功法生成已统一到 unified-entity-generate-modal，
 // 本仪表盘只保留世界观与角色创作入口（底部提供跳转按钮）。
-const ENTITY_TYPES: EntityTypeConfig[] = [
+// 渲染时求值：t() 是渲染时求值的，模块级常量会冻结成启动时的语言
+const entityTypes = (): EntityTypeConfig[] => [
     {
         id: 'worldview', label: t("aiBuilder.common.k1"), icon: '🌍', folder: '',
         template: '世界观总览模板.md', isFile: true, needName: false,
@@ -233,7 +234,7 @@ export class AiBuilderModal extends Modal {
                 quickBtn.onclick = async () => {
                     this.selectedProject = project;
                     await this.loadWorldContent(project);
-                    const wvCfg = ENTITY_TYPES.find(c => c.id === 'worldview');
+                    const wvCfg = entityTypes().find(c => c.id === 'worldview');
                     if (wvCfg) this.openGenerationPanel(wvCfg);
                 };
             } else if (totalEntities === 0) {
@@ -244,7 +245,7 @@ export class AiBuilderModal extends Modal {
                 quickBtn.onclick = async () => {
                     this.selectedProject = project;
                     await this.loadWorldContent(project);
-                    const charCfg = ENTITY_TYPES.find(c => c.id === 'character');
+                    const charCfg = entityTypes().find(c => c.id === 'character');
                     if (charCfg) this.openGenerationPanel(charCfg, 'batch');
                 };
             }
@@ -313,7 +314,7 @@ export class AiBuilderModal extends Modal {
                 if (projects.length > 1) {
                     this.renderProjectMatrix(projects);
                 } else {
-                    new Notice('当前只有一个项目', 3000);
+                    new Notice(t("aiBuilder.flow.onlyOneProject"), 3000);
                 }
             };
         }
@@ -322,7 +323,7 @@ export class AiBuilderModal extends Modal {
 
         // 标题区
         const header = contentEl.createDiv({ cls: 'novel-writer-ai-builder-header' });
-        header.createEl('h2', { text: `✨ ${this.selectedProject} — 世界元素` });
+        header.createEl('h2', { text: t("aiBuilder.flow.dashboardTitle", { project: this.selectedProject }) });
 
         // 世界观状态提示
         this.renderWorldviewStatus(contentEl);
@@ -330,7 +331,7 @@ export class AiBuilderModal extends Modal {
         // 实体类型卡片网格
         const cardGrid = contentEl.createDiv({ cls: 'novel-writer-ai-builder-card-grid' });
 
-        for (const cfg of ENTITY_TYPES) {
+        for (const cfg of entityTypes()) {
             const count = this.existingCounts[cfg.id === 'worldview' ? 'worldview' : 'characters'] || 0;
 
             const card = cardGrid.createDiv({ cls: 'novel-writer-ai-builder-entity-card' });
@@ -341,7 +342,7 @@ export class AiBuilderModal extends Modal {
             const info = cardHeader.createDiv({ cls: 'novel-writer-ai-builder-card-info' });
             info.createDiv({ text: cfg.label, cls: 'novel-writer-ai-builder-card-title' });
             info.createDiv({
-                text: count > 0 ? `已有 ${count} 个` : t("aiBuilder.ui.k15"),
+                text: count > 0 ? t("aiBuilder.flow.existingCount", { count }) : t("aiBuilder.ui.k15"),
                 cls: `novel-writer-ai-builder-card-count ${count > 0 ? 'has-content' : ''}`,
             });
 
@@ -452,7 +453,7 @@ export class AiBuilderModal extends Modal {
         breadcrumb.createSpan({ text: `▸ ${cfg.icon} ${cfg.label}`, cls: 'novel-writer-ai-builder-current' });
 
         // 标题
-        contentEl.createEl('h2', { text: `${cfg.icon} 生成${cfg.label}` });
+        contentEl.createEl('h2', { text: t("aiBuilder.flow.generationTitle", { icon: cfg.icon, label: cfg.label }) });
         contentEl.createEl('p', { text: cfg.description, cls: 'novel-writer-ai-builder-subtitle' });
 
         if (cfg.id === 'worldview') {
@@ -512,11 +513,11 @@ export class AiBuilderModal extends Modal {
             const custom = customInput.value.trim();
 
             if (!this.plugin.hasAiCredentials) {
-                new Notice('❌ 请先配置 API 密钥或本地模型端点', 5000);
+                new Notice(t("aiBuilder.flow.needCredentials"), 5000);
                 return;
             }
 
-            const genNotice = new Notice('⏳ 正在生成世界观总览...', 0);
+            const genNotice = new Notice(t("aiBuilder.flow.generatingWorldview"), 0);
             try {
                 // P1-4: generateWorldviewSkeleton 是 AIEngine 公有方法，无需 as any 强转
                 const skeleton = await this.aiEngine.generateWorldviewSkeleton(
@@ -524,7 +525,7 @@ export class AiBuilderModal extends Modal {
                 );
                 if (!skeleton || skeleton.error) {
                     genNotice.hide();
-                    showErrorNotice(skeleton?.error || '未知错误', { title: t("aiBuilder.ui.k36"), timeout: 8000 });
+                    showErrorNotice(skeleton?.error || t("aiBuilder.flow.unknownError"), { title: t("aiBuilder.ui.k36"), timeout: 8000 });
                     return;
                 }
                 const content = skeleton.content || '';
@@ -533,7 +534,7 @@ export class AiBuilderModal extends Modal {
                 const savePath = pjWorldview(this.selectedProject);
                 const existingFile = this.app.vault.getAbstractFileByPath(savePath);
                 if (existingFile) {
-                    const ok = window.confirm('世界观总览已存在，是否覆盖？');
+                    const ok = window.confirm(t("aiBuilder.flow.worldviewOverwriteConfirm"));
                     if (!ok) { genNotice.hide(); return; }
                 }
 
@@ -557,14 +558,14 @@ export class AiBuilderModal extends Modal {
                     const oldProjectPath = this.selectedProject;
                     const validation = validateProjectName(novelName, [oldProjectPath]);
                     if (!validation.valid) {
-                        showWarningNotice(`AI 建议的项目名不可用：${validation.error}。保留原项目名「${oldProjectPath}」`, { timeout: 6000 });
+                        showWarningNotice(t("aiBuilder.flow.renameUnavailable", { error: validation.error ?? '', old: oldProjectPath }), { timeout: 6000 });
                     } else if (validation.normalized !== oldProjectPath) {
                         try {
                             const result = await new ProjectRenameService(this.app).rename(oldProjectPath, validation.normalized);
                             if (result.warnings.length > 0) {
-                                showSuccessNotice(`世界观已生成！项目已重命名；${result.warnings.join('；')}`, { timeout: 10000 });
+                                showSuccessNotice(t("aiBuilder.flow.worldviewDoneRenamed", { warnings: result.warnings.join('；') }), { timeout: 10000 });
                             } else {
-                                showSuccessNotice(`世界观已生成！项目已自动命名为「${validation.normalized}」`, { timeout: 5000 });
+                                showSuccessNotice(t("aiBuilder.flow.worldviewDoneNamed", { name: validation.normalized }), { timeout: 5000 });
                             }
                             this.selectedProject = result.newProject;
                         } catch (renameErr) {
@@ -590,7 +591,7 @@ export class AiBuilderModal extends Modal {
                 }
             } catch (e) {
                 genNotice.hide();
-                showErrorNotice((e as { message?: string }).message || '未知错误', { title: t("aiBuilder.ui.k40"), timeout: 8000 });
+                showErrorNotice((e as { message?: string }).message || t("aiBuilder.flow.unknownError"), { title: t("aiBuilder.ui.k40"), timeout: 8000 });
             }
         };
     }
@@ -599,10 +600,10 @@ export class AiBuilderModal extends Modal {
     private renderSingleForm(container: HTMLElement, cfg: EntityTypeConfig): void {
         const form = container.createDiv({ cls: 'novel-writer-ai-builder-form' });
 
-        form.createEl('label', { text: `${cfg.label}名称`, cls: 'novel-writer-ai-builder-label' });
+        form.createEl('label', { text: t("aiBuilder.flow.nameLabel", { label: cfg.label }), cls: 'novel-writer-ai-builder-label' });
         const nameInput = form.createEl('input', {
             type: 'text',
-            placeholder: `输入${cfg.label}名称`,
+            placeholder: t("aiBuilder.flow.namePlaceholder", { label: cfg.label }),
             cls: 'nw-input novel-writer-input',
         });
 
@@ -619,7 +620,7 @@ export class AiBuilderModal extends Modal {
 
             form.createEl('label', { text: t("aiBuilder.ui.k43"), cls: 'novel-writer-ai-builder-label' });
             const promptInput = form.createEl('textarea', {
-                placeholder: '告诉AI你想要什么样的人物，如：主角是一个冷酷的杀手，有一个温柔的妹妹；反派是曾经的恩师...',
+                placeholder: t("aiBuilder.flow.characterPromptPlaceholder"),
                 cls: 'nw-textarea novel-writer-textarea',
             });
 
@@ -635,18 +636,18 @@ export class AiBuilderModal extends Modal {
         } else {
             form.createEl('label', { text: t("aiBuilder.ui.k45"), cls: 'novel-writer-ai-builder-label' });
             const descInput = form.createEl('textarea', {
-                placeholder: `描述该${cfg.label}在故事中的作用/定位`,
+                placeholder: t("aiBuilder.flow.rolePlaceholder", { label: cfg.label }),
                 cls: 'nw-textarea novel-writer-textarea',
             });
 
             const generateBtn = form.createEl('button', {
-                text: `${cfg.icon} 生成${cfg.label}`,
+                text: t("aiBuilder.flow.generationTitle", { icon: cfg.icon, label: cfg.label }),
                 cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
             });
             generateBtn.onclick = async () => {
                 const name = (nameInput as HTMLInputElement).value.trim();
                 if (!name) {
-                    new Notice(`❌ 请输入${cfg.label}名称`, 3000);
+                    new Notice(t("aiBuilder.flow.needName", { label: cfg.label }), 3000);
                     return;
                 }
                 const desc = (descInput as HTMLTextAreaElement).value.trim();
@@ -672,8 +673,8 @@ export class AiBuilderModal extends Modal {
         form.createEl('label', { text: t("aiBuilder.ui.k48"), cls: 'novel-writer-ai-builder-label' });
         const batchPromptInput = form.createEl('textarea', {
             placeholder: cfg.id === 'character'
-                ? '这批人物的共同特征，如：都是宗门弟子、都是反派势力成员...'
-                : `这批${cfg.label}的共同特征...`,
+                ? t("aiBuilder.flow.batchCharacterPlaceholder")
+                : t("aiBuilder.flow.batchPromptPlaceholder", { label: cfg.label }),
             cls: 'nw-textarea novel-writer-textarea',
         });
 
@@ -693,7 +694,7 @@ export class AiBuilderModal extends Modal {
             });
 
             const generateBtn = form.createEl('button', {
-                text: `${cfg.icon} 批量生成${cfg.label}`,
+                text: t("aiBuilder.flow.batchGenerationTitle", { icon: cfg.icon, label: cfg.label }),
                 cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
             });
             generateBtn.onclick = async () => {
@@ -709,7 +710,7 @@ export class AiBuilderModal extends Modal {
             };
         } else {
             const generateBtn = form.createEl('button', {
-                text: `${cfg.icon} 批量生成${cfg.label}`,
+                text: t("aiBuilder.flow.batchGenerationTitle", { icon: cfg.icon, label: cfg.label }),
                 cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
             });
             generateBtn.onclick = async () => {
@@ -726,14 +727,14 @@ export class AiBuilderModal extends Modal {
 
     private async doGenerateEntities(cfg: EntityTypeConfig, params: GenerateParams): Promise<void> {
         if (!this.plugin.hasAiCredentials) {
-            new Notice('❌ 请先配置 API 密钥或本地模型端点', 5000);
+            new Notice(t("aiBuilder.flow.needCredentials"), 5000);
             return;
         }
 
         const folder = `${this.selectedProject}/${cfg.folder}`;
         await mkdirp(this.app, folder);
 
-        const genNotice = new Notice(`⏳ 正在生成${cfg.label}...`, 0);
+        const genNotice = new Notice(t("aiBuilder.flow.generatingLabel", { label: cfg.label }), 0);
 
         try {
             if (cfg.id === 'character' || params.count > 1) {
@@ -750,7 +751,7 @@ export class AiBuilderModal extends Modal {
             this.renderDashboard();
         } catch (e) {
             genNotice.hide();
-            showErrorNotice((e as { message?: string }).message || '未知错误', { title: `${cfg.label}生成失败`, timeout: 8000 });
+            showErrorNotice((e as { message?: string }).message || t("aiBuilder.flow.unknownError"), { title: t("aiBuilder.flow.generationFailedTitle", { label: cfg.label }), timeout: 8000 });
             log.error(`[小说工坊] ${cfg.label}生成失败:`, e);
         }
     }
@@ -814,7 +815,7 @@ export class AiBuilderModal extends Modal {
             let failedBatches = 0;
             while (generated < n) {
                 const batchSize = Math.min(2, n - generated);
-                genNotice.setMessage(`⏳ 正在生成角色 (${generated + 1}-${generated + batchSize}/${n})...`);
+                genNotice.setMessage(t("aiBuilder.flow.charactersProgress", { from: generated + 1, to: generated + batchSize, total: n }));
                 const result = await this.aiEngine.generateCharacters(worldView, batchSize, requirement(params.prompt) || undefined, undefined, undefined, undefined, settingLib);
                 if (result.error) {
                     log.warn(`[小说工坊] 第${generated + 1}批角色生成失败:`, result.error);
@@ -826,12 +827,12 @@ export class AiBuilderModal extends Modal {
                 generated += batchSize;
             }
             if (!allContent.trim()) {
-                showErrorNotice(`${failedBatches} 个批次均未返回内容，详见控制台`, { title: `${cfg.label}生成失败`, timeout: 6000 });
+                showErrorNotice(t("aiBuilder.flow.batchNoneReturned", { count: failedBatches }), { title: t("aiBuilder.flow.generationFailedTitle", { label: cfg.label }), timeout: 6000 });
                 return;
             }
             await this.saveGeneratedContent(cfg, allContent, true);
             if (failedBatches > 0) {
-                showWarningNotice(`${failedBatches} 个批次生成失败，其余结果已保存`, { timeout: 6000 });
+                showWarningNotice(t("aiBuilder.flow.batchPartialFail", { count: failedBatches }), { timeout: 6000 });
             }
             return;
         }
@@ -846,13 +847,13 @@ export class AiBuilderModal extends Modal {
         const kind = ENTITY_KIND_BY_ID[cfg.id];
         if (!kind) {
             genNotice.hide();
-            showErrorNotice(`不支持的实体类型：${cfg.label}`, { title: t("aiBuilder.common.k6"), timeout: 6000 });
+            showErrorNotice(t("aiBuilder.flow.unsupportedEntity", { label: cfg.label }), { title: t("aiBuilder.common.k6"), timeout: 6000 });
             return;
         }
         await mkdirp(this.app, ENTITY_DIR_BY_KIND[kind](this.selectedProject));
 
         for (let i = 0; i < n; i++) {
-            genNotice.setMessage(`⏳ 正在生成${cfg.label} (${i + 1}/${n})...`);
+            genNotice.setMessage(t("aiBuilder.flow.generatingProgress", { label: cfg.label, index: i + 1, total: n }));
 
             // 生成一个唯一的临时名称作为种子
             const seedName = `${cfg.label}${i + 1}_${Date.now()}`;
@@ -874,7 +875,7 @@ export class AiBuilderModal extends Modal {
 
             if (result.error) {
                 log.warn(`[小说工坊] 批量第${i + 1}个${cfg.label}失败:`, result.error);
-                failures.push(`第${i + 1}个（生成失败）`);
+                failures.push(t("aiBuilder.flow.itemFailedGen", { index: i + 1 }));
                 continue;
             }
 
@@ -888,7 +889,7 @@ export class AiBuilderModal extends Modal {
             const savedAs = outcome.renamed[0]?.savedAs ?? realName;
             if (outcome.failed.length > 0) {
                 log.warn(`[小说工坊] 保存${cfg.label}失败:`, outcome.failed[0].error);
-                failures.push(`第${i + 1}个（${outcome.failed[0].error}）`);
+                failures.push(t("aiBuilder.flow.itemFailed", { index: i + 1, error: outcome.failed[0].error }));
             } else {
                 saved++;
                 savedNames.push(savedAs);
@@ -898,12 +899,18 @@ export class AiBuilderModal extends Modal {
         genNotice.hide();
         // U7：失败项汇总反馈（截取前 5 个避免 Notice 过长，完整原因见控制台日志）
         if (failures.length > 0) {
-            showWarningNotice(`批量完成：成功 ${saved}/${n} 个，失败 ${failures.length} 个（${failures.slice(0, 5).join('、')}${failures.length > 5 ? ' 等' : ''}），原因详见控制台`, { timeout: 10000 });
+            showWarningNotice(t("aiBuilder.flow.batchDoneFailures", {
+                saved,
+                total: n,
+                failed: failures.length,
+                items: failures.slice(0, 5).join('、'),
+                more: failures.length > 5 ? t("aiBuilder.flow.moreSuffix") : '',
+            }), { timeout: 10000 });
         } else if (saved > 0) {
             const nameList = savedNames.join('、');
-            showSuccessNotice(`批量完成：${saved}/${n} 个 → ${this.selectedProject}\n${nameList}`, { timeout: 6000 });
+            showSuccessNotice(t("aiBuilder.flow.batchDone", { saved, total: n, project: this.selectedProject, names: nameList }), { timeout: 6000 });
         } else {
-            showErrorNotice(`未能生成任何${cfg.label}`, { title: t("aiBuilder.common.k7"), timeout: 6000 });
+            showErrorNotice(t("aiBuilder.flow.nothingGenerated", { label: cfg.label }), { title: t("aiBuilder.common.k7"), timeout: 6000 });
         }
     }
 
@@ -911,7 +918,7 @@ export class AiBuilderModal extends Modal {
     private async saveSingleContent(cfg: EntityTypeConfig, name: string, content: string): Promise<void> {
         const kind = ENTITY_KIND_BY_ID[cfg.id];
         if (!kind) {
-            showErrorNotice(`不支持的实体类型：${cfg.label}`, { title: t("aiBuilder.common.k8"), timeout: 6000 });
+            showErrorNotice(t("aiBuilder.flow.unsupportedEntity", { label: cfg.label }), { title: t("aiBuilder.common.k8"), timeout: 6000 });
             return;
         }
         await mkdirp(this.app, ENTITY_DIR_BY_KIND[kind](this.selectedProject));
@@ -922,7 +929,7 @@ export class AiBuilderModal extends Modal {
         );
         if (!integrity.valid) {
             showErrorNotice(
-                `「${name}」未通过完整性校验，未保存。缺少：${integrity.missingFields.slice(0, 5).join('、')}`,
+                t("aiBuilder.flow.integrityFailed", { name, fields: integrity.missingFields.slice(0, 5).join('、') }),
                 { title: t("aiBuilder.common.k9"), timeout: 8000 },
             );
             return;
@@ -930,13 +937,13 @@ export class AiBuilderModal extends Modal {
 
         const outcome = await saveEntities(this.app, this.selectedProject, kind, [{ name, content: integrity.content }]);
         if (outcome.failed.length > 0) {
-            showErrorNotice(`「${name}」保存失败：${outcome.failed[0].error}`, { timeout: 6000 });
+            showErrorNotice(t("aiBuilder.flow.saveFailedDetail", { name, error: outcome.failed[0].error }), { timeout: 6000 });
             return;
         }
 
         const savedAs = outcome.renamed[0]?.savedAs ?? name;
-        const renamedHint = outcome.renamed.length > 0 ? `（同名已另存为「${savedAs}」）` : '';
-        showSuccessNotice(`「${savedAs}」已保存到 ${this.selectedProject}${renamedHint}`);
+        const renamedHint = outcome.renamed.length > 0 ? t("aiBuilder.flow.renamedHint", { name: savedAs }) : '';
+        showSuccessNotice(t("aiBuilder.flow.savedTo", { name: savedAs, project: this.selectedProject, hint: renamedHint }));
 
         // 自动打开文件
         const file = this.app.vault.getAbstractFileByPath(`${this.selectedProject}/${cfg.folder}/${savedAs}.md`);
@@ -992,9 +999,9 @@ export class AiBuilderModal extends Modal {
                     saved++;
                 }
             }
-            const msg = `人物已保存：${saved} 个 → ${this.selectedProject}`;
+            const msg = t("aiBuilder.flow.charactersSaved", { count: saved, project: this.selectedProject });
             if (skipped > 0) {
-                showWarningNotice(`${msg}；${skipped} 个角色不完整未输出（请重新生成）`, { timeout: 6000 });
+                showWarningNotice(t("aiBuilder.flow.charactersSavedSkipped", { base: msg, skipped }), { timeout: 6000 });
             } else {
                 showSuccessNotice(msg, { timeout: 6000 });
             }
