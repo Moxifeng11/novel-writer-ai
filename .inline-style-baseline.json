@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-11-19T01:28:48.754Z",
+  "generatedAt": "2026-11-19T10:28:11.458Z",
   "note": "棘轮基线：每文件只允许下降；新增内联样式需先说明动态原因并显式更新",
-  "total": 519,
-  "static": 450,
-  "dynamic": 69,
+  "total": 515,
+  "static": 447,
+  "dynamic": 68,
   "files": {
     "ui/svg-charts.ts": 64,
     "ui/knowledge-monitor-modal.ts": 40,
@@ -33,8 +33,6 @@
     "ui/plan-book-modal.ts": 2,
     "ui/refill-modal.ts": 2,
     "ui/settings/foreshadow-section.ts": 2,
-    "ui/views/knowledge-base-modals.ts": 2,
-    "ui/views/knowledge-base-view.ts": 2,
     "ui/add-fanfic-setting-modal.ts": 1,
     "ui/co-writing/chapter-match.ts": 1,
     "ui/co-writing/human-rate.ts": 1,
@@ -42,13 +40,13 @@
     "ui/components/smart-chart.ts": 1,
     "ui/cowrite/cowrite-mappers.ts": 1,
     "ui/diagnose-writer-modal.ts": 1,
-    "ui/full-writer/status-bar-controller.ts": 1,
     "ui/full-writer/title-bar-controller.ts": 1,
     "ui/knowledge-detail-modal.ts": 1,
     "ui/plot-canvas-modal.ts": 1,
     "ui/settings-utils.ts": 1,
     "ui/settings/deconstruction-section.ts": 1,
     "ui/settings/fingerprint-section.ts": 1,
-    "ui/sidebar-component.ts": 1
+    "ui/sidebar-component.ts": 1,
+    "ui/views/knowledge-base-modals.ts": 1
   }
 }

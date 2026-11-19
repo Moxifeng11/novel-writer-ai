@@ -1402,6 +1402,10 @@ select.nw-select {
 .novel-writer-fw-status-item {
     flex-shrink: 0;
 }
+/* 上下文占用率分档：正常/偏高/告警（原为内联 style 的 color） */
+.novel-writer-fw-status-item--muted { color: var(--text-muted); }
+.novel-writer-fw-status-item--warn { color: var(--text-warning); }
+.novel-writer-fw-status-item--hot { color: var(--text-error); }
 .novel-writer-fw-status-sep {
     color: var(--text-faint);
     flex-shrink: 0;

@@ -94,7 +94,6 @@
     "ui/full-writer/scene-outline-format.ts": 14,
     "ui/full-writer/setting-lib-controller.ts": 6,
     "ui/full-writer/settings-menu.ts": 1,
-    "ui/full-writer/status-bar-controller.ts": 16,
     "ui/full-writer/step-render-controller.ts": 2,
     "ui/full-writer/streamlined-nav-presenter.ts": 2,
     "ui/full-writer/tab-controller.ts": 2,
@@ -104,7 +103,7 @@
     "ui/full-writer/wizard-controller.ts": 3,
     "ui/full-writer/wizard-results-store.ts": 4,
     "ui/full-writer/wizard-step-executors.ts": 10,
-    "ui/full-writer/wizard-step-renderers.ts": 24,
+    "ui/full-writer/wizard-step-renderers.ts": 10,
     "ui/full-writer/wizard-step-validators.ts": 12,
     "ui/full-writer/wizard-types.ts": 25,
     "ui/generate-character-modal.ts": 42,
@@ -216,7 +215,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 6912,
+  "total": 6882,
   "updatedAt": "2026-11-19",
   "note": ""
 }

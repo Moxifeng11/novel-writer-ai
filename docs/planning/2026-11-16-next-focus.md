@@ -3117,3 +3117,46 @@ novel-tags（1,099）/ add-fanfic-setting（973）/ ai-builder（864）；知识
 **下一轮候选**：`ui/full-writer/wizard-step-renderers.ts`（36 非注释行）、`status-bar-controller.ts`（12）、
 `shared/creation-mode.ts`（138）、`ui/full-writer/template-vars-builder.ts`（228 多为提示词）；
 散落弹窗 golden-opening（1,982）/ novel-tags（1,099）/ add-fanfic-setting（973）/ ai-builder（864）。
+
+## 第一百零五轮：i18n 第二期第37片 —— 向导步骤正文与写作台状态栏（2026-11-19，DSH）
+
+**范围**：`ui/full-writer/status-bar-controller.ts`（全量，原 0 处 `t()`）、
+`ui/full-writer/wizard-step-renderers.ts`（残留 12 处：设定库/文笔风格/世界观三步的标题、提示段、项目名行与七条统计标签）。
+
+**改动**
+1. 资源 28 键：`cowrite.wiz.*` 12 + `fullwriter.statusBar.*` 16，zh/en 各 **4784** 条。
+2. 步骤名按 `currentStep.labelKey && hasMessage(currentStep.labelKey) ? t(...) : currentStep.label` 回退
+   （与 `ui/full-writer/step-render-controller.ts:137` 同款），未运行时 `'—'`；持此 `check:i18n` 动态键 27 → 28。
+3. 叙事结构下拉改 ``${structure.icon} ${storyStructureLabel(structure.id)}``（第36片产物），
+   原先直接渲染中文 `structure.name`，en 下必漏中文。
+4. 状态栏最后一处内联 style（上下文占用百分比色）删除，改修饰类
+   `.novel-writer-fw-status-item--muted|--warn|--hot`（`styles-src/02-full-writer-view.css`），
+   阈值 >70% / >50% / 其余，默认 `--muted` 对齐旧内联的 `var(--text-muted)`。
+5. 保持中文：注释、日志、`addField(t(...), '作品名称')` 的数据键、vault 路径 `'元文件/05-同人设定库'`、正则。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；新增 `tests/unit/ui/full-writer-status-i18n.test.ts` 5 例，连跑 wizard/css 动画 2 文件共 25 例绿。
+- `check:i18n` zh/en 各 4784、0 无法解析键、动态键 28、棘轮 **214 文件 / 6882 条**（已 --update-baseline）。
+- `check:bundle` main.js **6,130,394**（+2,741）、styles.css **800,020**（+285）；`.css-baseline.json` bytes 800020、uniqueClasses 4334（+3 为新增修饰类），note 用 node 直写。
+- `npm run preflight` **EXIT=0**（988 文件 / **10,323 通过 + 3 跳过**）；内联样式基线 519 → 515（去掉 status-bar 1、knowledge-base-view 2、knowledge-base-modals 2→1）。
+- 实机（1440 宽，`D:\nw-tmp\snap-i18n37.mjs <lang>`）：en 状态栏 "🟢 Context loaded / Step: 📋 Plan information / Progress: 1/8 / Body tokens: ~1,400 / Context: ~84t (0%) / 💬 Dialogue · Natural rhythm / 🧬 Narrative structure" + 五个结构选项全英文；概览表 CJK=4（仅项目名）；zh 与旧版逐字一致。截图 `D:\nw-dev-vault\_visual-i18n37\{status-bar,overview,settinglib,style,worldview}-{zh-CN,en-US}.png`。
+
+**坑**
+1. **dev vault 插件目录是真实目录**（不是 junction）：`npm run build` 只更新仓库，必须
+   `node scripts/dev-vault.mjs sync --vault=D:\nw-dev-vault` 再截图，否则 Obsidian 跑旧包——
+   症状是 en 下新文案回落中文、旧文案仍是英文，极易误判成迁移没生效。
+2. 判断是否加载到新包：`view.wizardStepRenderers.renderWizardCompleteStep.toString()` 里能直接看到是否还有
+   `项目名称: ${e.project}` 硬编码。
+3. 渲染向导各步必须传**真实 tab**（`(view.tabs||[]).find(x=>x.project==='示例项目')`），伪造 `{project}` 会
+   `TypeError: Cannot read properties of undefined`；完成步骤只有全流程结束才出现，靠直接调 `renderWizardCompleteStep` 拿统计表。
+4. 等插件就绪要判 `plugin && plugin.settings`，只等 plugin 会在同步后拿到 undefined settings。
+5. 世界观模板的九个模块名（世界层级体系 / 力量体系 …）是数据层内容，英文界面里仍显示中文，已记入 i18n backlog。
+
+**文档**：`docs/modules/i18n.md`（§2 已迁移面 bullet + 棘轮 6912 → 6882 + 资源组 +28）、`docs/modules/INDEX.md`、
+`docs/CURRENT.md`、`docs/planning/2026-11-18-feature-gaps.md`、本轮记录；基线 `.bundle-baseline.json` /
+`.css-baseline.json` / `.i18n-baseline.json`。
+
+**下一轮候选**：`shared/creation-mode.ts`（138）、`ui/full-writer/template-vars-builder.ts`（228 多为提示词）；
+散落弹窗 golden-opening（1,982）/ novel-tags（1,099）/ add-fanfic-setting（973）/ ai-builder（864）；
+知识库 D 类两文件仍等视觉重构。
+

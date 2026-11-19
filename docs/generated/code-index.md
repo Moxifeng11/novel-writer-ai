@@ -11,7 +11,7 @@
 | `shared/` | 259 | 52330 | 2209 | 1729 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1583 | 88 | 58 | 66% |
-| `ui/` | 304 | 113969 | 1181 | 935 | 79% |
+| `ui/` | 304 | 113985 | 1181 | 935 | 79% |
 
 ## 文件清单
 
@@ -853,7 +853,7 @@
 | `ui/full-writer/scene-outline-format.ts` | 141 | 4 | 4 |
 | `ui/full-writer/setting-lib-controller.ts` | 63 | 1 | 1 |
 | `ui/full-writer/settings-menu.ts` | 85 | 4 | 3 |
-| `ui/full-writer/status-bar-controller.ts` | 90 | 2 | 2 |
+| `ui/full-writer/status-bar-controller.ts` | 106 | 2 | 2 |
 | `ui/full-writer/step-render-controller.ts` | 684 | 2 | 2 |
 | `ui/full-writer/streamlined-nav-presenter.ts` | 273 | 12 | 12 |
 | `ui/full-writer/tab-controller.ts` | 381 | 2 | 2 |

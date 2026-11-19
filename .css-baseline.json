@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-19T09:53:12.333Z",
-  "note": "Slice36 i18n 第36片：故事结构文案外置（story.* 207 键 ×2 语言 ≈ +19.9KB main.js）；styles.css +432B 新增结构卡片 height/white-space 修复规则",
-  "bytes": 799735,
+  "generatedAt": "2026-11-19T10:20:23.192Z",
+  "note": "i18n 第二期第37片：状态栏上下文占用色改修饰类（--muted/--warn/--hot，+3 类 +285B），文案外置 28 键 ×2 语言",
+  "bytes": 800020,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 223,
-  "uniqueClasses": 4331,
+  "uniqueClasses": 4334,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

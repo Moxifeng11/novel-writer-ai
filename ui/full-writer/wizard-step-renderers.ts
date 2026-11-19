@@ -341,7 +341,7 @@ export class WizardStepRenderers {
             } catch (e) { /* 忽略 */ }
         }
         
-        container.createEl('p', { text: '从已生成的世界观中提炼结构化的设定库，供后续写作快速查阅。', cls: 'nw-wizard-note' });
+        container.createEl('p', { text: t('cowrite.wiz.settingLibIntro'), cls: 'nw-wizard-note' });
         
         // 动态检测设定库文件中的模块：扫描 ## 一、xxx 格式的标题行
         const slFile = this.app.vault.getAbstractFileByPath(getSettingLibPath(tab.project));
@@ -392,7 +392,7 @@ export class WizardStepRenderers {
                 cls: 'nw-wizard-file-btn'
             });
             viewBtn.addEventListener('click', () => {
-                this.showFileContentInline(container, getSettingLibPath(tab.project), '设定库');
+                this.showFileContentInline(container, getSettingLibPath(tab.project), t('cowrite.wiz.settingLibTitle'));
             });
             return viewBtn;
         };
@@ -477,7 +477,7 @@ export class WizardStepRenderers {
                 cls: 'nw-wizard-file-btn' 
             });
             viewBtn.addEventListener('click', () => {
-                this.showFileContentInline(container, wsPath, '文笔风格');
+                this.showFileContentInline(container, wsPath, t('cowrite.wiz.styleTitle'));
             });
             const regenBtn = container.createEl('button', { 
                 text: t('cowrite.wiz.resetStyleBtn'), 
@@ -494,7 +494,7 @@ export class WizardStepRenderers {
                 cls: 'nw-wizard-file-btn'
             });
             viewBtn.addEventListener('click', () => {
-                this.showFileContentInline(container, wsPath, '文笔风格');
+                this.showFileContentInline(container, wsPath, t('cowrite.wiz.styleTitle'));
             });
             const editBtn = container.createEl('button', {
                 text: t('cowrite.wiz.setStyleBtn'),
@@ -622,7 +622,7 @@ export class WizardStepRenderers {
         container.empty();
         
         container.createEl('h3', { text: t('cowrite.wiz.doneTitle') });
-        container.createEl('p', { text: `项目名称: ${tab.project}`, cls: 'nw-wizard-project-name' });
+        container.createEl('p', { text: t('cowrite.wiz.projectNameLine', { name: tab.project }), cls: 'nw-wizard-project-name' });
         
         const summary = container.createDiv({ cls: 'nw-wizard-summary-panel' });
         summary.createEl('h4', { text: t('cowrite.wiz.statsTitle'), cls: 'nw-wizard-summary-title' });
@@ -632,7 +632,7 @@ export class WizardStepRenderers {
         
         // 世界观
         const worldviewExists = await adapter.exists(getWorldviewPath(tab.project));
-        stats.push({ label: '世界观', status: resolveSetupStatusIcon(resolveExistsStatus(worldviewExists)), detail: worldviewExists ? t('cowrite.wiz.stGenerated') : t('cowrite.wiz.stNotGenerated') });
+        stats.push({ label: t('cowrite.wiz.statWorldview'), status: resolveSetupStatusIcon(resolveExistsStatus(worldviewExists)), detail: worldviewExists ? t('cowrite.wiz.stGenerated') : t('cowrite.wiz.stNotGenerated') });
         
         // 实体统计
         const countFiles = async (subDir: string): Promise<number> => {
@@ -647,16 +647,16 @@ export class WizardStepRenderers {
         const factionCount = await countFiles(SUBDIR_FACTIONS);
         const itemCount = await countFiles(SUBDIR_ITEMS);
         
-        stats.push({ label: '人物', status: resolveSetupStatusIcon(resolveCountStatus(charCount)), detail: t('cowrite.wiz.stCount', { count: charCount }) });
-        stats.push({ label: '地点', status: resolveSetupStatusIcon(resolveCountStatus(locCount)), detail: t('cowrite.wiz.stCount', { count: locCount }) });
-        stats.push({ label: '势力', status: resolveSetupStatusIcon(resolveCountStatus(factionCount)), detail: t('cowrite.wiz.stCount', { count: factionCount }) });
-        stats.push({ label: '物品功法', status: resolveSetupStatusIcon(resolveCountStatus(itemCount)), detail: t('cowrite.wiz.stCount', { count: itemCount }) });
+        stats.push({ label: t('cowrite.wiz.statCharacters'), status: resolveSetupStatusIcon(resolveCountStatus(charCount)), detail: t('cowrite.wiz.stCount', { count: charCount }) });
+        stats.push({ label: t('cowrite.wiz.statLocations'), status: resolveSetupStatusIcon(resolveCountStatus(locCount)), detail: t('cowrite.wiz.stCount', { count: locCount }) });
+        stats.push({ label: t('cowrite.wiz.statFactions'), status: resolveSetupStatusIcon(resolveCountStatus(factionCount)), detail: t('cowrite.wiz.stCount', { count: factionCount }) });
+        stats.push({ label: t('cowrite.wiz.statItems'), status: resolveSetupStatusIcon(resolveCountStatus(itemCount)), detail: t('cowrite.wiz.stCount', { count: itemCount }) });
         
         // 分卷大纲（v4.0：按卷归档，合并读取后统计卷数）
         const outlineContent = await readMergedVolumeOutline(this.app, tab.project);
         const outlineExists = outlineContent.trim().length > 0;
         const volumeCount = outlineExists ? countVolumeHeadings(outlineContent) : 0;
-        stats.push({ label: '分卷大纲', status: outlineExists ? '✅' : '❌', detail: outlineExists ? t('cowrite.wiz.stVolumes', { count: volumeCount }) : t('cowrite.wiz.stNotGenerated') });
+        stats.push({ label: t('cowrite.wiz.statVolumes'), status: outlineExists ? '✅' : '❌', detail: outlineExists ? t('cowrite.wiz.stVolumes', { count: volumeCount }) : t('cowrite.wiz.stNotGenerated') });
         
         const baseDir = `${tab.project}/${SUBDIR_BODY_ROOT}`;
         let chapterCount = 0;
@@ -668,7 +668,7 @@ export class WizardStepRenderers {
                 chapterCount += volList.files.filter(f => /\/第\d+章[^/]*_正文\.md$/.test(f)).length;
             }
         }
-        stats.push({ label: '章节', status: chapterCount > 0 ? '✅' : '❌', detail: t('cowrite.wiz.stChapters', { count: chapterCount }) });
+        stats.push({ label: t('cowrite.wiz.statChapters'), status: chapterCount > 0 ? '✅' : '❌', detail: t('cowrite.wiz.stChapters', { count: chapterCount }) });
         
         const table = summary.createEl('table', { cls: 'nw-wizard-stats-table' });
         for (const s of stats) {
@@ -910,7 +910,7 @@ export class WizardStepRenderers {
                 cls: 'nw-wizard-file-btn nw-wizard-file-btn--start' 
             });
             viewBtn.addEventListener('click', () => {
-                this.showFileContentInline(container, getWorldviewPath(tab.project), '世界观设定');
+                this.showFileContentInline(container, getWorldviewPath(tab.project), t('cowrite.wiz.worldviewTitle'));
             });
             
             // Show module summary (only if we have content)
@@ -933,7 +933,7 @@ export class WizardStepRenderers {
                     cls: 'nw-wizard-file-btn'
                 });
                 viewBtn.addEventListener('click', () => {
-                    this.showFileContentInline(container, getWorldviewPath(tab.project), '世界观设定');
+                    this.showFileContentInline(container, getWorldviewPath(tab.project), t('cowrite.wiz.worldviewTitle'));
                 });
                 const regenBtn = container.createEl('button', {
                     text: t('cowrite.wiz.regenerateWorldview'),
