@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 354 | 146888 | 1951 | 1545 | 79% |
+| `engine/` | 354 | 146893 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19560 | 296 | 204 | 69% |
 | `shared/` | 259 | 52377 | 2212 | 1732 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
@@ -42,14 +42,14 @@
 | `engine/agent/agent-types.ts` | 382 | 23 | 17 |
 | `engine/agent/conversation-engine.ts` | 1267 | 1 | 1 |
 | `engine/agent/harness/agent-adapter.ts` | 83 | 2 | 1 |
-| `engine/agent/harness/agent-loop.ts` | 640 | 6 | 6 |
+| `engine/agent/harness/agent-loop.ts` | 643 | 6 | 6 |
 | `engine/agent/harness/attachment-tools.ts` | 50 | 1 | 1 |
 | `engine/agent/harness/context-fit.ts` | 137 | 6 | 6 |
 | `engine/agent/harness/context-tools.ts` | 75 | 1 | 1 |
 | `engine/agent/harness/creation-plan.ts` | 73 | 6 | 6 |
 | `engine/agent/harness/diagnose-tools.ts` | 122 | 3 | 1 |
 | `engine/agent/harness/goal-tools.ts` | 94 | 2 | 2 |
-| `engine/agent/harness/harness-engine.ts` | 688 | 7 | 4 |
+| `engine/agent/harness/harness-engine.ts` | 689 | 7 | 4 |
 | `engine/agent/harness/harness-types.ts` | 249 | 17 | 14 |
 | `engine/agent/harness/host-tools.ts` | 1041 | 5 | 5 |
 | `engine/agent/harness/mcp-client.ts` | 164 | 6 | 3 |
@@ -331,7 +331,7 @@
 | `engine/revision/revision-prompts.ts` | 99 | 2 | 2 |
 | `engine/revision/revision-types.ts` | 68 | 7 | 7 |
 | `engine/revision/targeted-revision.ts` | 212 | 4 | 4 |
-| `engine/rhythm-analyzer.ts` | 245 | 1 | 1 |
+| `engine/rhythm-analyzer.ts` | 246 | 1 | 1 |
 | `engine/scene-body-generator.ts` | 196 | 5 | 3 |
 | `engine/scene-expander.ts` | 460 | 11 | 7 |
 | `engine/scene-generation-loop.ts` | 256 | 7 | 4 |

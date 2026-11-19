@@ -7,6 +7,7 @@
  
 import { RhythmSegment, RhythmAnalysis } from '@/shared/co-writer-types';
 import { createLogger } from '@/shared/logger';
+import { t } from '@/i18n';
 
 
 const log = createLogger('RhythmAnalyzer');
@@ -136,16 +137,16 @@ export class RhythmAnalyzer {
          const issues: string[] = [];
          
          if (type === 'description' && text.length > 300) {
-             issues.push('描写过长，可能拖慢节奏');
+             issues.push(t('engineMsg.rhythm.issue.longDescription'));
          }
          if (pace === 'slow' && density < 30) {
-             issues.push('节奏缓慢且信息密度低，建议压缩');
+             issues.push(t('engineMsg.rhythm.issue.slowDense'));
          }
          if (type === 'introspection' && text.length > 200) {
-             issues.push('内心独白过长，建议穿插动作');
+             issues.push(t('engineMsg.rhythm.issue.longMonologue'));
          }
          if (density > 85) {
-             issues.push('信息密度过高，读者可能疲劳');
+             issues.push(t('engineMsg.rhythm.issue.highDensity'));
          }
          
          return issues;
@@ -194,13 +195,13 @@ export class RhythmAnalyzer {
          const total = segments.length;
          
          if (slowCount > total * 0.5) {
-             suggestions.push('整体节奏偏慢，建议增加动作或对话场景');
+             suggestions.push(t('engineMsg.rhythm.suggest.slowOverall'));
          }
          if (fastCount > total * 0.5) {
-             suggestions.push('整体节奏偏快，建议穿插描写或内心戏调节');
+             suggestions.push(t('engineMsg.rhythm.suggest.fastOverall'));
          }
          if (segments.some(s => s.issues.length > 0)) {
-             suggestions.push('部分段落存在问题，建议查看详情');
+             suggestions.push(t('engineMsg.rhythm.suggest.problems'));
          }
          
          // 检查连续同类型段落
@@ -210,7 +211,7 @@ export class RhythmAnalyzer {
                  sameTypeCount++;
              } else {
                  if (sameTypeCount >= 4) {
-                     suggestions.push(`连续 ${sameTypeCount} 个${this.typeToLabel(segments[i-1].type)}，建议变换节奏`);
+                     suggestions.push(t('engineMsg.rhythm.suggest.sameTypeRun', { count: sameTypeCount, type: this.typeToLabel(segments[i - 1].type) }));
                  }
                  sameTypeCount = 1;
              }
@@ -221,10 +222,10 @@ export class RhythmAnalyzer {
      
      private typeToLabel(type: string): string {
          const labels: Record<string, string> = {
-             action: '动作场景',
-             dialogue: '对话场景',
-             description: '描写场景',
-             introspection: '内心戏'
+             action: t('engineMsg.rhythm.type.action'),
+             dialogue: t('engineMsg.rhythm.type.dialogue'),
+             description: t('engineMsg.rhythm.type.description'),
+             introspection: t('engineMsg.rhythm.type.introspection'),
          };
          return labels[type] || type;
      }

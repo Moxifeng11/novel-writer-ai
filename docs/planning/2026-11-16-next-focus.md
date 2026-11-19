@@ -3543,3 +3543,57 @@ plan 1 / telemetry 16 / memory 3 / toollog 4）。
 
 **下一轮候选**：`ui/novel-tags-modal.ts`（1,099，只剩 AI 提示词与解析正则，可选）；引擎层文案
 （`engine/agent/harness/harness-engine.ts:632/634`，en 界面下露中文的不可用提示与离线引导 chip）；知识库 D 类两文件等视觉重构（用户 m16938）。
+
+## 第一百一十四轮：i18n 第二期第46片 —— 引擎层用户可见运行时文案（2026-11-19，DSH）
+
+**触发**：用户 m22598「继续」。第45片 backlog 明确挂着「en 下工作台兜底气泡与润色节奏建议仍是中文」，本轮清掉。
+
+**范围**：三个文件、37 键。这一片是**第一次把 `t()` 用到 `ui/**` 之外**，所以先证伪了两个前提：
+- `i18n/index.ts` 只 import 两个 messages 文件，不依赖 Obsidian → 引擎层 import 安全；
+- 这三个文件都不在任何 worker 入口里（worker 各自 build 自己的入口）→ 不会把 i18n 拖进 worker 包。
+- `engine/agent/harness/harness-engine.ts`（21 行 CJK）：:330 空输入提示、:561 审批框标题、:632 降级气泡
+  （`outcome.failReason || t('engineMsg.agent.failFallback')`）、:634/:645 两个 chip、:644 中断提示、:657 工具行
+  （`🛠`/`⚠️` 图标留代码里，成功/失败拆两个键）、:387 压缩摘要；
+- `engine/agent/harness/agent-loop.ts`（21 行）：两处 `failReason = '用户取消'`、:443 超预算、:470 模型失败、
+  :495 工具占位、:582 工具未执行，以及 `summarizeToolArgs` 六类摘要（`记录 N 项信息` / `写入 path` / `删除 path` /
+  `删除项目 X` / `未指定项目（将拒绝执行）` / `打开界面` / 键名列表 + `等`）；
+- `engine/rhythm-analyzer.ts`（18 行）：4 条 issue + 4 条 suggestion + `typeToLabel` 的四个值
+  （键名 action/dialogue/description/introspection 是枚举值，只迁值）。
+
+**改动要点**
+- 新增顶层组 `engineMsg.agent` **25 键** + `engineMsg.rhythm` **12 键**（复用既有 `engineMsg` 父级，不新建 `engine`）。
+- **拼接串迁移的坑**：旧代码是 `keys.slice(0,3).join('、') + (keys.length>3 ? ' 等' : '')`，导语里带了前导空格。
+  资源改成 `moreItems = '{items} 等'` / en `'{items} and more'`，调用时传 `items: ''` 复刻那个空格；
+  分隔符单独成键 `listSep`（zh `、` / en `", "`）。
+- **保留中文**（进模型上下文或落盘契约，见 §8 保留判据）：会话开场与压缩提示词、`【用户】`/`【助手】`/`【当前时间】`、
+  `session-snapshot.ts` 默认标题「新会话」、`（用户在你执行过程中补充）`、`重复调用已被阻止`、`【系统提醒】`、
+  `用户未批准执行「…」`、全部 `log.*` 与注释；`scripts/cjk-keep-allowlist.json` 里 harness-engine 的 ai-prompt 声明不动。
+
+**验收**
+- `npx tsc --noEmit` EXIT=0；`node scripts/check-i18n.mjs` zh/en 各 **5421**、无法解析键 0、动态键 29、
+  棘轮 **211 文件 / 6259 条**（引擎层不在 UI 口径，数字不变）。
+- 新增 `tests/unit/i18n/engine-runtime-labels.test.ts` **11 例**（37 键双语可解析 / en 零 CJK / 占位符集合一致 /
+  zh 逐字五组 / en 行为三条含 `failReason === 'Cancelled by user'` / 默认 zh 零回归）。
+  存量 `agent-harness`(29) + `harness-context-fit`(13) + `deviation-detector`(101) + `quality-score-engine`(52)
+  合跑 **195 例零修改**通过（两处中文断言在 zh 下仍成立）。
+- `npm run build` + `node scripts/dev-vault.mjs sync --vault=D:\nw-dev-vault`；实机 `D:\nw-tmp\snap-i18n46.mjs --lang=...`：
+  zh/en 各 2 场景（工作台 1156×992、chat 区 556×733），en 气泡
+  `⚠️ The AI assistant is unavailable (Model call failed).` + 第二行引导语，zh 与迁移前逐字一致；两张 chat 图同尺寸、无溢出。
+- `check:bundle` main.js 6,190,342 → **6,194,270**（+3,928）、styles.css **800,684**（±0）。
+
+**坑**
+1. **单测里的 `AgentContext` 用 `activeProject: null`**：`activeProject: undefined` 会撞 `TS2322`
+   （类型是 `string | null`），preflight 的 typecheck 阶段才暴露。
+2. **`new AgentHarnessEngine({ ctx, adapter })` 会崩**在 `createHostTools({ port: options.portDeps.port })`，
+   构造测试必须补 `portDeps: { port: {} as GuideAgentPort, ctx }`。
+3. **en 零 CJK 断言的插值样本要全 ASCII**：`deleteProject` 的 `project: '长篇/旧稿'` 会让断言失败，
+   改 `'long/old-draft'`。
+4. **同一句中文在同一文件出现多次时先断言命中数**：`'用户取消'` 在 agent-loop 出现 2 次，
+   替换脚本按 `split().length-1` 校验后再替换，否则要么漏改要么中断。
+
+**文档**：`docs/modules/i18n.md`（§2 资源 5384 → 5421 + 资源链 +37 + 第46片已迁移面整段、§5 表行、§6 测试 bullet、
+§7 backlog [x] 与「新 backlog：喂模型的提示词不迁」、§9 三条新坑）、`docs/modules/INDEX.md`、`docs/CURRENT.md`、
+`docs/planning/2026-11-18-feature-gaps.md`、本轮记录；基线 `.bundle-baseline.json`。
+
+**下一轮候选**：`ui/novel-tags-modal.ts`（1,099 字，只剩 AI 提示词与解析正则，可选）；知识库 D 类两文件
+（`ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`，用户 m16938 裁定随视觉重构）；第三期补齐 en 并逐面量布局。

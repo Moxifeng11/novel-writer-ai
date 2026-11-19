@@ -35,6 +35,7 @@ import type { DerivedTurn } from './harness-types';
 
 import { createLogger } from '@/shared/logger';
 import { wrapUntrustedContent } from '@/shared/untrusted-content';
+import { t } from '@/i18n';
 
 const logger = createLogger('AgentHarness');
 
@@ -327,7 +328,7 @@ export class AgentHarnessEngine {
         this.maybeAppendTimeContext();
         if (!raw) {
             return {
-                messages: [{ role: 'agent', text: '没有收到内容，请再输入一次，或点下面的选项。' }],
+                messages: [{ role: 'agent', text: t('engineMsg.agent.emptyInput') }],
                 chips: [],
                 done: false,
                 usedAi: false,
@@ -384,7 +385,7 @@ export class AgentHarnessEngine {
                 this.telemetry.compactedEvents += removed;
                 this.log.append({
                     type: 'system_message',
-                    text: `[compaction] 已把较早的 ${removed} 条历史压缩为摘要节点`,
+                    text: t('engineMsg.agent.compacted', { count: removed }),
                 });
             }
         } catch (e) {
@@ -558,7 +559,7 @@ export class AgentHarnessEngine {
         const port = this.options.portDeps?.port;
         if (!port?.confirmDangerousAction) return undefined;
         return async (request) => port.confirmDangerousAction!({
-            title: `Agent 请求执行「${request.tool}」`,
+            title: t('engineMsg.agent.approvalTitle', { tool: request.tool }),
             detail: request.reason,
         });
     }
@@ -629,9 +630,9 @@ export class AgentHarnessEngine {
             return {
                 messages: [{
                     role: 'agent',
-                    text: `⚠️ AI 助手暂时不可用（${outcome.failReason || '调用失败'}）。\n可以切换到离线逐步引导，或稍后重试。`,
+                    text: t('engineMsg.agent.unavailable', { reason: outcome.failReason || t('engineMsg.agent.failFallback') }),
                 }],
-                chips: [{ label: '🔄 切换到离线引导', value: '__fallback_rule__' }],
+                chips: [{ label: t('engineMsg.agent.chipOffline'), value: '__fallback_rule__' }],
                 done: false,
                 usedAi: false,
                 degraded: true,
@@ -641,8 +642,8 @@ export class AgentHarnessEngine {
         if (outcome.failed && outcome.usedAi) {
             // 模型已工作但中途失败（如步数超限）：把已有回复或兜底文本给用户
             return {
-                messages: [{ role: 'agent', text: outcome.reply || `本轮对话中断：${outcome.failReason || '未知原因'}。可以重新描述你的需求。` }],
-                chips: [{ label: '🔄 重试', value: '__retry__' }, { label: '🔄 切换到离线引导', value: '__fallback_rule__' }],
+                messages: [{ role: 'agent', text: outcome.reply || t('engineMsg.agent.interrupted', { reason: outcome.failReason || t('engineMsg.agent.unknownReason') }) }],
+                chips: [{ label: t('engineMsg.agent.chipRetry'), value: '__retry__' }, { label: t('engineMsg.agent.chipOffline'), value: '__fallback_rule__' }],
                 done: false,
                 usedAi: true,
                 degraded: false,
@@ -654,7 +655,7 @@ export class AgentHarnessEngine {
         for (const call of outcome.toolCalls) {
             messages.push({
                 role: 'system',
-                text: `${call.ok ? '🛠' : '⚠️'} ${call.tool} → ${call.ok ? '成功' : '失败'}：${call.summary}`,
+                text: `${call.ok ? '🛠' : '⚠️'} ${call.ok ? t('engineMsg.agent.toolOk', { tool: call.tool, summary: call.summary }) : t('engineMsg.agent.toolFail', { tool: call.tool, summary: call.summary })}`,
             });
         }
         if (outcome.reply) {

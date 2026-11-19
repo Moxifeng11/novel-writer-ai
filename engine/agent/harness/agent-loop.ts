@@ -33,6 +33,7 @@ import {
 import { pushUsageScope } from '@/services/usage-ledger';
 
 import { createLogger } from '@/shared/logger';
+import { t } from '@/i18n';
 
 const logger = createLogger('AgentHarnessLoop');
 
@@ -303,7 +304,7 @@ function summarizeToolArgs(name: string, args: Record<string, unknown>): string 
     const keys = Object.keys(args);
     const text = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
     const clip = (value: string, max = 80): string => (value.length > max ? `${value.slice(0, max - 1)}…` : value);
-    if (name === 'update_memory') return `记录 ${keys.length} 项信息`;
+    if (name === 'update_memory') return t('engineMsg.agent.memoryRecorded', { count: keys.length });
     const projectName = typeof args.projectName === 'string' ? args.projectName : '';
     if (projectName) return projectName;
 
@@ -317,11 +318,11 @@ function summarizeToolArgs(name: string, args: Record<string, unknown>): string 
     }
     if (name === 'write_file') {
         const path = text(args.path);
-        if (path) return clip(`写入 ${path}`);
+        if (path) return clip(t('engineMsg.agent.writePath', { path }));
     }
     if (name === 'delete_file') {
         const path = text(args.path);
-        if (path) return clip(`删除 ${path}`);
+        if (path) return clip(t('engineMsg.agent.deletePath', { path }));
     }
     if (name === 'move_file') {
         const from = text(args.from);
@@ -331,7 +332,7 @@ function summarizeToolArgs(name: string, args: Record<string, unknown>): string 
     if (name === 'delete_project') {
         const project = text(args.project);
         // D3-19：目标缺失时明确提示，绝不回退到「执行完成」
-        return clip(project ? `删除项目 ${project}` : '未指定项目（将拒绝执行）');
+        return clip(project ? t('engineMsg.agent.deleteProject', { project }) : t('engineMsg.agent.noProjectTarget'));
     }
 
     // 单个短字符串参数直接展示值（如 echo 的消息、open 的目标）
@@ -341,9 +342,11 @@ function summarizeToolArgs(name: string, args: Record<string, unknown>): string 
     }
     if (name.startsWith('open_')) {
         const target = args.project || args.mode || '';
-        return target ? String(target) : '打开界面';
+        return target ? String(target) : t('engineMsg.agent.openUi');
     }
-    return keys.length > 0 ? `${keys.slice(0, 3).join('、')}${keys.length > 3 ? ' 等' : ''}` : '执行完成';
+    if (keys.length === 0) return t('engineMsg.agent.done');
+    const listed = keys.slice(0, 3).join(t('engineMsg.agent.listSep'));
+    return keys.length > 3 ? `${listed}${t('engineMsg.agent.moreItems', { items: '' })}` : listed;
 }
 
 /**
@@ -416,7 +419,7 @@ async function runHarnessTurnInner(options: HarnessLoopOptions): Promise<Harness
     for (let step = 0; step < maxSteps; step++) {
         if (signal?.aborted) {
             result.failed = true;
-            result.failReason = '用户取消';
+            result.failReason = t('engineMsg.agent.cancelled');
             return result;
         }
         // 回合内补充：每步调模型前把 inbox 里的用户消息写进日志
@@ -440,7 +443,7 @@ async function runHarnessTurnInner(options: HarnessLoopOptions): Promise<Harness
         result.trimmedTurns += fitted.trimmedTurns + fitted.droppedTurns;
         if (fitted.overBudget) {
             result.failed = true;
-            result.failReason = `上下文超预算（约 ${fitted.estimatedTokens} token，预算 ${budgetTokens}）。请缩短本章参考或清理会话后重试。`;
+            result.failReason = t('engineMsg.agent.contextOverBudget', { tokens: fitted.estimatedTokens, budget: String(budgetTokens) });
             return result;
         }
         const turns = fitted.turns;
@@ -467,7 +470,7 @@ async function runHarnessTurnInner(options: HarnessLoopOptions): Promise<Harness
         }
         if (!assistant) {
             result.failed = true;
-            result.failReason = '模型调用失败';
+            result.failReason = t('engineMsg.agent.modelFailed');
             return result;
         }
         result.usedAi = true;
@@ -492,13 +495,13 @@ async function runHarnessTurnInner(options: HarnessLoopOptions): Promise<Harness
         }
 
         // 工具回合：记录 assistant + tool_call → 执行 → tool_result 写回日志 → 下一步
-        log.append({ type: 'assistant_message', text: reply || `（调用工具 ${tool.name}）` });
+        log.append({ type: 'assistant_message', text: reply || t('engineMsg.agent.toolCallPlaceholder', { tool: tool.name }) });
         const callId = log.nextCallId(tool.name);
         log.append({ type: 'tool_call', callId, tool: tool.name, args: tool.args });
 
         if (signal?.aborted) {
             result.failed = true;
-            result.failReason = '用户取消';
+            result.failReason = t('engineMsg.agent.cancelled');
             return result;
         }
 
@@ -579,7 +582,7 @@ async function runHarnessTurnInner(options: HarnessLoopOptions): Promise<Harness
                 result.toolMs += toolDurationMs;
             }
         }
-        const finalToolResult = toolResult ?? { ok: false, content: '工具未执行' };
+        const finalToolResult = toolResult ?? { ok: false, content: t('engineMsg.agent.toolNotRun') };
         // 大结果落盘（dsh spill）：原文进 .sessions，日志只留定位符 + 头尾摘要。
         // 写盘失败时保留原文（宁可多花 token，也不能丢结果）。
         let resultContent = finalToolResult.content;

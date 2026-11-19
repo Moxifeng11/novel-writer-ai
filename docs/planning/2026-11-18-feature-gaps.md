@@ -331,8 +331,20 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
   实机 zh/en 各 1 场景（1500×1100，零横向溢出；en 下 UI 全英文，残余 CJK 为 vault 项目名/文件名与引擎层
   `harness-engine.ts:632` 的「AI 助手暂时不可用」提示——后者已记 backlog）；
   新 backlog：引擎层文案（`engine/agent/harness/harness-engine.ts:632/634`）需单独一片。
+- 第二期第46片（2026-11-19，DSH）：引擎层用户可见运行时文案 —— `engine/agent/harness/harness-engine.ts`（21 行 CJK）+
+  `engine/agent/harness/agent-loop.ts`（21 行）+ `engine/rhythm-analyzer.ts`（18 行）迁 **37 键**
+  （`engineMsg.agent` 25：空输入/降级气泡与两个 chip/中断/审批标题/工具行/压缩摘要/取消/超预算/模型失败/
+  工具未执行/`summarizeToolArgs` 六类参数摘要与 `listSep`、`moreItems` 拼接；`engineMsg.rhythm` 12：
+  4 条 issue + 4 条 suggestion + 4 个段落类型）；
+  超出 `ui/**` 的第一片——`i18n/index.ts` 只依赖两个 messages 文件、不碰 Obsidian、不进 worker 入口，引擎可直接 `import { t }`；
+  进模型上下文的会话开场与压缩提示词、`【用户】`/`【助手】`/`【当前时间】`、默认标题「新会话」、全部 `log.*` 保留中文，
+  `scripts/cjk-keep-allowlist.json` 的 ai-prompt 声明继续有效；
+  zh/en 资源各 **5421** 条；棘轮不变（**211 文件 / 6259 条**，引擎层不在 UI 口径）；新增 `tests/unit/i18n/engine-runtime-labels.test.ts` 11 例；
+  存量 `agent-harness`/`harness-context-fit`/`deviation-detector`/`quality-score-engine` 195 例零修改；
+  实机 zh/en 各 2 场景（工作台 1156×992 + chat 区 556×733，零横向溢出，en 气泡与 chip 全英文、zh 逐字不变）；
+  `check:bundle` main.js 6,190,342 → **6,194,270**（+3,928）。
 - 后续：第二期余下（知识库 D 类两文件 `ui/knowledge-detail-modal.ts` / `ui/views/book-detail-renderer.ts`
-  用户已裁定随视觉重构；散落弹窗 novel-tags 1099（只剩 AI 提示词与解析正则）；引擎层文案），
+  用户已裁定随视觉重构；散落弹窗 novel-tags 1099（只剩 AI 提示词与解析正则）），
   第三期补齐 en 并逐面量布局；详见 `docs/modules/i18n.md`。
 
 ---
@@ -341,6 +353,6 @@ w-dev-vault_visual-i18n13modes-{zh,en}.png`
 
 1 → 2 → 3 → 4 → 5 →（6 可选）→ 7。
 
-进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~45 片（命令面板 → Agent 创作工作台）已交付（2026-11-18/19）；下一个候选是 ⑦ 第二期余下（novel-tags 1099（只剩 AI 提示词与解析正则）/ 引擎层文案 / 写作设置分区残留等，知识库 D 类两文件随视觉重构），以及第三期补齐 en 并逐面量布局。
+进度：①②③④⑤⑥ 已交付、⑦ 第一期 + 第二期第 1~46 片（命令面板 → 引擎层运行时文案）已交付（2026-11-18/19）；下一个候选是 ⑦ 第二期余下（novel-tags 1099（只剩 AI 提示词与解析正则）/ 写作设置分区残留等，知识库 D 类两文件随视觉重构），以及第三期补齐 en 并逐面量布局。
 
 理由：1 是修「假成功」缺陷；2 是把已交付引擎变成写作时可见的价值；3 是投稿刚需且不依赖 AI；4/5 是低成本体验补洞；6/7 视需要。
