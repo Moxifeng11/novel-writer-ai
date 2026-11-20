@@ -4155,3 +4155,12 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 顺带核实发布资产额外文件（zip / SHA256SUMS.txt / versions.json）在记分卡里属 `info:` 级
   「Release contains extra unsupported files —— All other files will not be downloaded by Obsidian.」，不阻断。
 - 文档：`docs/releases/community-submission.md` §四之二 补复审后的判定命令与三项判据。
+
+## 第一百三十五轮：审核四段与本地命令对照 + manifest URL / README / LICENSE 门禁
+
+- `scripts/check-release.mjs` 新增：manifest 的 `authorUrl`/`fundingUrl` 必须是 https 地址；
+  仓库根 `README.md` 必须存在且有标题（正文过短给提示）；`LICENSE` 必须存在且不是模板占位（`<year>` 等）。
+- `docs/releases/community-submission.md` §四之二 新增「审核四段 ↔ 本地命令对照」表：
+  Manifest / Releases / Source code / Build verification / 上架结果 各有对应命令，并写明
+  「公开记分卡 Risks 档 == 扫描器 error 级」的判据口径（对照 dataview 的 Risks 386 条仍在市场里）。
+- 实测：`node scripts/check-release.mjs` EXIT=0（README/LICENSE 均合格）；上架三项判据仍未达标（页面 4.97.1、清单未收录）。

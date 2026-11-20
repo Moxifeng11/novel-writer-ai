@@ -118,6 +118,20 @@ node scripts/check-published.mjs --expect 4.97.3   # 未上架则 exit 1，可�
 
 三项判据必须同时满足：插件页 `Current version` == manifest.version、客户端市场清单 `community-plugins.json` 收录该 id、RSS feed 出现该版本。**只满足其一不算上架**（历史上「页面显示新版本」曾被误当成上架成功）。
 
+#### 审核四段 ↔ 本地命令对照
+
+官方 Review 分四段，每一段都能在本地或远端复现，不用等审核结果猜：
+
+| 审核段 | 官方检查什么 | 本地对应命令 |
+| --- | --- | --- |
+| Manifest | `id` 唯一且不含 `obsidian`、`name`/`description` 只用 Basic Latin、描述 ≤250 字符且以句号结尾、`isDesktopOnly` 布尔、README/LICENSE 存在、manifest 内 URL 为 https | `node scripts/check-release.mjs` |
+| Releases | tag 与 `manifest.version` 完全一致、非 draft/prerelease、`main.js`/`manifest.json`/`styles.css` 齐全、artifact attestation | `node scripts/check-release.mjs --remote` |
+| Source code | `eslint-plugin-obsidianmd` 全仓扫描，**只有 error 级阻断**（warn/info 只进公开记分卡） | `npm run check:obsidian-review` |
+| Build verification | 用 `build` 脚本从源码重建并与发布资产比对 | 干净检出后 `npm ci && npm run build`（4.97.3 起逐字节一致） |
+| 上架结果 | 目录侧是否真的放出该版本 | `npm run check:published` |
+
+记住两条判据口径：公开记分卡的 `Risks` 档 == 扫描器 error 级（阻断），`medium`/`info` 只影响质量画像；对照 `dataview`（`Risks` 386 条仍在市场里）即可确认。
+
 ## 四之一二、公开记分卡（Scorecard）——不用登录也能看审核扫描结果
 
 社区目录的插件页有 `#scorecard` 锚点（右侧 `Health / Review / Risks` 三条进度条点进去），它把每次扫描的结果公开列出，**不需要登录账号**：

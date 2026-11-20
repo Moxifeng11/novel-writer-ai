@@ -135,6 +135,36 @@ if (manifest.main !== undefined && manifest.main !== 'main.js') {
 if (!manifest.minAppVersion) {
     errors.push('manifest.minAppVersion 缺失');
 }
+// 2.1 官方 Submission requirements：manifest 里的 URL 字段必须是合法 https 地址
+for (const field of ['authorUrl', 'fundingUrl']) {
+    const value = manifest[field];
+    if (value === undefined) continue;
+    const urls = typeof value === 'string' ? [value] : Object.values(value || {});
+    for (const url of urls) {
+        if (typeof url !== 'string' || !/^https:\/\/[^\s]+$/.test(url)) {
+            errors.push(`manifest.${field} 含非法链接（必须是 https 地址）: ${String(url)}`);
+        }
+    }
+}
+
+// 2.2 官方 Submission requirements：仓库根必须有 README.md（说明用途与用法）与 LICENSE
+const readme = requireFile('README.md', 200);
+if (readme) {
+    const text = fs.readFileSync(path.join(rootDir, 'README.md'), 'utf8');
+    if (!/^#{1,2}\s+\S/m.test(text)) {
+        errors.push('README.md 缺少标题（社区目录会摘录正文到插件页）');
+    }
+    if (text.trim().length < 400) {
+        notes.push(`README.md 正文偏短（${text.trim().length} 字符），社区目录摘录可能信息不足`);
+    }
+}
+const license = requireFile('LICENSE', 100);
+if (license) {
+    const text = fs.readFileSync(path.join(rootDir, 'LICENSE'), 'utf8');
+    if (/<year>|<name of author>|\[year\]|\[fullname\]/i.test(text)) {
+        errors.push('LICENSE 仍是模板占位（未填年份/作者）');
+    }
+}
 
 // 3. 发布三资产
 const assets = {
