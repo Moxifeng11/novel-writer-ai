@@ -1152,8 +1152,18 @@
     background: var(--interactive-accent);
 }
 
+/* 开关 + 文字的组合：开关轨道固定 36px，文字做同级兄弟，避免被轨道压住 */
+.nw-api-switch-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
 .nw-api-switch-text {
     font-size: 12px;
+    white-space: nowrap;
     color: var(--text-muted);
 }
 

@@ -42,18 +42,37 @@ export interface PhaseStatusDescriptor {
 
 interface PhaseDefinition {
     key: StreamlinedPhaseKey;
-    label: string;
     icon: string;
     colorClass: string | null;
     stepKeys: string[];
 }
 
+/**
+ * 取阶段显示名。
+ *
+ * 不用模块级 `t()` 常量：模块加载时语言还没应用（main.ts 的 applyLocaleSetting 在插件
+ * onload 里才执行），常量会把中文烤进阶段表，切到英文后阶段导航仍是中文（验收 F-06）。
+ * 这里每次取用时现算，且键写成字面量以便 check:i18n 静态校验。
+ *
+ * @param key - 阶段键
+ * @returns 当前语言的阶段名
+ */
+function phaseLabel(key: StreamlinedPhaseKey): string {
+    switch (key) {
+        case 'context': return t('fullwriter.nav.phaseContext');
+        case 'planning': return t('fullwriter.nav.phasePlanning');
+        case 'writing': return t('fullwriter.nav.phaseWriting');
+        case 'review': return t('fullwriter.nav.phaseReview');
+        case 'settlement': return t('fullwriter.fp.settlement');
+    }
+}
+
 const PHASE_DEFINITIONS: PhaseDefinition[] = [
-    { key: 'context', label: '上下文加载', icon: '🔄', colorClass: null, stepKeys: ['context', 'characterSoul'] },
-    { key: 'planning', label: t('fullwriter.nav.phasePlanning'), icon: '📋', colorClass: 'novel-writer-fw-step-soul', stepKeys: ['infoPlan', 'plotDistill', 'outline', 'emotionPlan', 'sceneExpand'] },
-    { key: 'writing', label: t('fullwriter.nav.phaseWriting'), icon: '✍️', colorClass: 'novel-writer-fw-step-creative', stepKeys: [STEP_KEYS.BODY_GENERATION] },
-    { key: 'review', label: t('fullwriter.nav.phaseReview'), icon: '🎯', colorClass: 'novel-writer-fw-step-audit', stepKeys: [STEP_KEYS.QUALITY_CONTROL, STEP_KEYS.ANALYSIS_REPORT] },
-    { key: 'settlement', label: t('fullwriter.fp.settlement'), icon: '💾', colorClass: null, stepKeys: ['settlement'] },
+    { key: 'context', icon: '🔄', colorClass: null, stepKeys: ['context', 'characterSoul'] },
+    { key: 'planning', icon: '📋', colorClass: 'novel-writer-fw-step-soul', stepKeys: ['infoPlan', 'plotDistill', 'outline', 'emotionPlan', 'sceneExpand'] },
+    { key: 'writing', icon: '✍️', colorClass: 'novel-writer-fw-step-creative', stepKeys: [STEP_KEYS.BODY_GENERATION] },
+    { key: 'review', icon: '🎯', colorClass: 'novel-writer-fw-step-audit', stepKeys: [STEP_KEYS.QUALITY_CONTROL, STEP_KEYS.ANALYSIS_REPORT] },
+    { key: 'settlement', icon: '💾', colorClass: null, stepKeys: ['settlement'] },
 ];
 
 /**
@@ -78,7 +97,7 @@ const STREAMLINED_PHASES: StreamlinedPhase[] = PHASE_DEFINITIONS.map((def) => {
         .filter((s): s is FullStep => !!s);
     return {
         key: def.key,
-        label: def.label,
+        label: phaseLabel(def.key),
         icon: def.icon,
         colorClass: def.colorClass,
         steps: members.map(navStepKey),
@@ -99,7 +118,8 @@ if (uncoveredSteps.length > 0) {
  * @returns 结果数组
  */
 export function getStreamlinedPhases(): StreamlinedPhase[] {
-    return STREAMLINED_PHASES;
+    // label 每次现算：语言切换后无需重建阶段表（见 phaseLabel 注释）
+    return STREAMLINED_PHASES.map((phase) => ({ ...phase, label: phaseLabel(phase.key) }));
 }
 
 /**

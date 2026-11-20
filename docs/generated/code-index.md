@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 354 | 146933 | 1951 | 1545 | 79% |
+| `engine/` | 354 | 146958 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19560 | 296 | 204 | 69% |
 | `shared/` | 264 | 53051 | 2243 | 1754 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 307 | 113877 | 1181 | 944 | 80% |
+| `ui/` | 307 | 113939 | 1182 | 945 | 80% |
 
 ## 文件清单
 
@@ -85,7 +85,7 @@
 | `engine/ai-types.ts` | 87 | 6 | 6 |
 | `engine/ai-worldview-generator.ts` | 735 | 2 | 1 |
 | `engine/analysis-report-engine.ts` | 1454 | 1 | 1 |
-| `engine/analysis-session-manager.ts` | 755 | 2 | 2 |
+| `engine/analysis-session-manager.ts` | 760 | 2 | 2 |
 | `engine/anti-ai-detector.ts` | 454 | 6 | 6 |
 | `engine/asset-registry.ts` | 238 | 6 | 1 |
 | `engine/bases-generator.ts` | 325 | 9 | 7 |
@@ -183,7 +183,7 @@
 | `engine/emotion-auditor.ts` | 280 | 3 | 3 |
 | `engine/emotion-curve-analyzer.ts` | 220 | 1 | 1 |
 | `engine/emotion-planner.ts` | 212 | 7 | 4 |
-| `engine/ending-traction-engine.ts` | 418 | 1 | 1 |
+| `engine/ending-traction-engine.ts` | 435 | 1 | 1 |
 | `engine/engine-registry.ts` | 1527 | 13 | 3 |
 | `engine/entity-context-engine.ts` | 1098 | 10 | 2 |
 | `engine/entity-graph.ts` | 198 | 6 | 6 |
@@ -221,7 +221,7 @@
 | `engine/harness/tool-registry.ts` | 153 | 6 | 6 |
 | `engine/harness/trend-research-service.ts` | 328 | 9 | 9 |
 | `engine/harness/true-random.ts` | 8 | 0 | 0 |
-| `engine/heavy-task-worker-manager.ts` | 312 | 2 | 2 |
+| `engine/heavy-task-worker-manager.ts` | 314 | 2 | 2 |
 | `engine/incremental-result-aggregator.ts` | 1707 | 3 | 3 |
 | `engine/knowledge-base-config.ts` | 522 | 5 | 5 |
 | `engine/knowledge-injector.ts` | 2213 | 13 | 7 |
@@ -289,7 +289,7 @@
 | `engine/quality/gate-snapshot.ts` | 131 | 3 | 3 |
 | `engine/quality/quality-engine-factory.ts` | 113 | 5 | 4 |
 | `engine/quality/quality-score-engine.ts` | 2037 | 15 | 12 |
-| `engine/quality/quality-worker.ts` | 86 | 0 | 0 |
+| `engine/quality/quality-worker.ts` | 87 | 0 | 0 |
 | `engine/quality/realtime-monitor.ts` | 550 | 7 | 7 |
 | `engine/quality/rewrite-prompts.ts` | 258 | 6 | 6 |
 | `engine/quality/rewrite-suggestion-engine.ts` | 611 | 2 | 2 |
@@ -837,7 +837,7 @@
 | `ui/full-writer/batch-step-retry.ts` | 26 | 2 | 1 |
 | `ui/full-writer/batch-targets.ts` | 69 | 4 | 4 |
 | `ui/full-writer/chapter-orchestrator.ts` | 505 | 10 | 9 |
-| `ui/full-writer/checkup-bar-controller.ts` | 287 | 2 | 2 |
+| `ui/full-writer/checkup-bar-controller.ts` | 327 | 3 | 3 |
 | `ui/full-writer/context-loader-controller.ts` | 275 | 2 | 2 |
 | `ui/full-writer/cover-picker-controller.ts` | 147 | 1 | 1 |
 | `ui/full-writer/creation-flow-state.ts` | 259 | 5 | 4 |
@@ -860,7 +860,7 @@
 | `ui/full-writer/settings-menu.ts` | 85 | 4 | 3 |
 | `ui/full-writer/status-bar-controller.ts` | 106 | 2 | 2 |
 | `ui/full-writer/step-render-controller.ts` | 685 | 2 | 2 |
-| `ui/full-writer/streamlined-nav-presenter.ts` | 274 | 12 | 12 |
+| `ui/full-writer/streamlined-nav-presenter.ts` | 294 | 12 | 12 |
 | `ui/full-writer/tab-controller.ts` | 381 | 2 | 2 |
 | `ui/full-writer/template-vars-builder.ts` | 1229 | 7 | 7 |
 | `ui/full-writer/title-bar-controller.ts` | 196 | 2 | 2 |
@@ -950,7 +950,7 @@
 | `ui/settings-tab.ts` | 377 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 40 | 1 | 1 |
-| `ui/settings/api-section.ts` | 1742 | 1 | 1 |
+| `ui/settings/api-section.ts` | 1744 | 1 | 1 |
 | `ui/settings/autosave-hint.ts` | 29 | 1 | 1 |
 | `ui/settings/autosave-snapshot.ts` | 85 | 3 | 1 |
 | `ui/settings/deconstruction-section.ts` | 338 | 1 | 1 |

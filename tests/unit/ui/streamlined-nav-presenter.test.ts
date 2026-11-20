@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
+import { applyLocaleSetting } from '../../../i18n';
 import {
     getStreamlinedPhases,
     getPhaseStatusDescriptor,
@@ -101,5 +102,35 @@ describe('getPhaseStatusDescriptor — 必做完成即可', () => {
         );
 
         expect(status.status).toBe('active');
+    });
+});
+describe('阶段名随语言切换（验收 F-06）', () => {
+    afterEach(() => {
+        applyLocaleSetting('zh-CN');
+    });
+
+    it('切到英文后 getStreamlinedPhases 返回英文，不残留模块加载时的中文', () => {
+        applyLocaleSetting('en-US');
+
+        expect(getStreamlinedPhases().map((p) => p.label)).toEqual([
+            'Context loading',
+            'Chapter planning',
+            'Body writing',
+            'Quality review',
+            'Chapter settlement',
+        ]);
+    });
+
+    it('切回中文后立即恢复中文，无需重建阶段表', () => {
+        applyLocaleSetting('en-US');
+        applyLocaleSetting('zh-CN');
+
+        expect(getStreamlinedPhases().map((p) => p.label)).toEqual([
+            '上下文加载',
+            '章节规划',
+            '正文写作',
+            '质量审查',
+            '章节结算',
+        ]);
     });
 });

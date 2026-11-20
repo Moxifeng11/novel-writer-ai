@@ -128,11 +128,14 @@
     transform: translateY(-1px);
 }
 .novel-writer-fw-step-item.active { box-shadow: inset 3px 0 0 var(--nw-accent, var(--interactive-accent)); }
-.novel-writer-fw-step-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 验收 F-06：标签换行而不是省略号截断——阶段名是用户判断进度的主要线索，
+   截成 "Chapt…" 等于信息丢失。允许两行内自然换行，英文长词按需断词。 */
+.novel-writer-fw-step-label { white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
 
 /* 阶段内的步骤级状态：只显示必做/已完成/部分完成/未执行，避免阶段级「全部完成才算」看不出进度 */
 .novel-writer-fw-substep {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 6px;
     min-height: 20px;
@@ -152,7 +155,10 @@
     background: var(--background-modifier-hover);
     box-shadow: inset 2px 0 0 var(--nw-accent, var(--interactive-accent));
 }
-.novel-writer-fw-substep-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 验收 F-06：子步骤标签同样换行而不是省略号——英文 "Extra ..."/"Distill ..." 被截断后
+   用户无法区分是哪个可选步骤。flex-basis 60px 给出最小可读宽度（否则被 "必做" 徽标挤成
+   一字一行），徽标放不下时换到下一行，由行的 flex-wrap 兜住。 */
+.novel-writer-fw-substep-label { flex: 1 1 60px; min-width: 60px; white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
 .novel-writer-fw-substep-mark {
     margin-left: auto;
     font-size: 9px;
@@ -285,6 +291,27 @@
         overflow-x: hidden;
         align-items: stretch;
     }
+    /* 验收 F-07：单列 + 窄高时标题栏换行、三栏又各有最小高度，总高会超过面板高度；
+       容器原本 overflow:hidden，会把底部状态栏顶到容器之外裁掉
+       （900×600 实测状态栏底边 631 > 容器底边 568）。
+       让容器自己纵向滚动，状态栏吸附底部，保证任何尺寸下都看得到。
+       注意：这三条不能写进 @container nw-fw —— 查询容器
+       .novel-writer-fw-layout-host 在这三个节点内部，容器查询无法给外层节点上样式。 */
+    .novel-writer-fw-container {
+        overflow-y: auto;
+    }
+
+    .novel-writer-fw-titlebar {
+        max-height: 40vh;
+        overflow-y: auto;
+    }
+
+    .novel-writer-fw-status-bar {
+        position: sticky;
+        bottom: 0;
+        z-index: 3;
+    }
+
     /* 步骤导航固定一段高度并内部滚动；其余段按内容高度展开，交给外层滚动条。
        max-height 交给 900px 断点统一给值（200px），此处只负责 flex 行为，
        避免同一属性在两个断点互相覆盖。 */

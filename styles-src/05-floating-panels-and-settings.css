@@ -141,13 +141,17 @@
     color: var(--nw-text-primary, var(--text-normal));
     border-bottom-color: var(--nw-accent, var(--interactive-accent));
 }
+/* 「高级设置」是同类页签里的一个开关，不是输入控件：
+   只保留底部虚线做「可切换」暗示，四边虚线会变成一圈虚线框（验收 F-05）。 */
 .nw-settings-tab-advanced-toggle {
     margin-left: auto;
-    border-style: dashed;
+    border: none;
+    border-bottom: 2px dashed var(--background-modifier-border);
     color: var(--text-muted);
 }
 .nw-settings-tab-advanced-toggle:hover {
     color: var(--text-normal);
+    border-bottom-color: var(--nw-accent, var(--interactive-accent));
 }
 
 .nw-settings-tab-content {

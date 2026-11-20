@@ -4881,6 +4881,10 @@ export const enUS: MessageTree = {
             idleHint: 'Checkup runs automatically after opening a chapter',
             checking: 'Checking…',
             checkFailed: 'Checkup failed: {msg}',
+            checkUnavailable: 'Checkup unavailable: {msg}',
+            errorAuth: 'The API key is invalid or missing, so AI parsing cannot run. Check it under Settings → Novel Workshop → API configuration.',
+            errorNoticeTitle: 'Writing checkup failed',
+            errorNotice: 'Writing checkup failed: {msg}',
             riskValue: 'Deviation {level}',
             stableTip: 'Plot threads are stable; keep the current pace.',
             lastChecked: 'Last {time}',
@@ -5144,6 +5148,7 @@ export const enUS: MessageTree = {
             settlement: 'Chapter settlement',
         },
         nav: {
+            phaseContext: 'Context loading',
             phasePlanning: 'Chapter planning',
             phaseWriting: 'Body writing',
             phaseReview: 'Quality review',

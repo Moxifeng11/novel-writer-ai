@@ -984,8 +984,10 @@ select.nw-select {
 
 .novel-writer-fw-workspace > .novel-writer-fw-step-nav {
     flex: 0 0 auto;
-    width: var(--nw-panel-nav, 140px);
-    min-width: 100px;
+    /* 验收 F-06：固定 140px 在英文/长标签下只能靠省略号截断（"Chapter planning" → "Chapt…"）。
+       改为随容器伸缩的区间值，窄面板取 140px、宽面板最多 208px。 */
+    width: clamp(140px, 16%, 208px);
+    min-width: 120px;
 }
 
 .novel-writer-fw-workspace > .novel-writer-fw-prompt-area {
@@ -1042,9 +1044,11 @@ select.nw-select {
 }
 .novel-writer-fw-step-label {
     flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 0;
+    /* 验收 F-06：换行替省略号，见 04-workspace-layers.css 同名规则注释 */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
 }
 
 /* ===== 中间提示词区 ===== */
@@ -2959,11 +2963,14 @@ select.nw-select {
     transform: translateY(-1px);
 }
 .novel-writer-fw-step-item.active { box-shadow: inset 3px 0 0 var(--nw-accent, var(--interactive-accent)); }
-.novel-writer-fw-step-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 验收 F-06：标签换行而不是省略号截断——阶段名是用户判断进度的主要线索，
+   截成 "Chapt…" 等于信息丢失。允许两行内自然换行，英文长词按需断词。 */
+.novel-writer-fw-step-label { white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
 
 /* 阶段内的步骤级状态：只显示必做/已完成/部分完成/未执行，避免阶段级「全部完成才算」看不出进度 */
 .novel-writer-fw-substep {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 6px;
     min-height: 20px;
@@ -2983,7 +2990,10 @@ select.nw-select {
     background: var(--background-modifier-hover);
     box-shadow: inset 2px 0 0 var(--nw-accent, var(--interactive-accent));
 }
-.novel-writer-fw-substep-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 验收 F-06：子步骤标签同样换行而不是省略号——英文 "Extra ..."/"Distill ..." 被截断后
+   用户无法区分是哪个可选步骤。flex-basis 60px 给出最小可读宽度（否则被 "必做" 徽标挤成
+   一字一行），徽标放不下时换到下一行，由行的 flex-wrap 兜住。 */
+.novel-writer-fw-substep-label { flex: 1 1 60px; min-width: 60px; white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
 .novel-writer-fw-substep-mark {
     margin-left: auto;
     font-size: 9px;
@@ -3116,6 +3126,27 @@ select.nw-select {
         overflow-x: hidden;
         align-items: stretch;
     }
+    /* 验收 F-07：单列 + 窄高时标题栏换行、三栏又各有最小高度，总高会超过面板高度；
+       容器原本 overflow:hidden，会把底部状态栏顶到容器之外裁掉
+       （900×600 实测状态栏底边 631 > 容器底边 568）。
+       让容器自己纵向滚动，状态栏吸附底部，保证任何尺寸下都看得到。
+       注意：这三条不能写进 @container nw-fw —— 查询容器
+       .novel-writer-fw-layout-host 在这三个节点内部，容器查询无法给外层节点上样式。 */
+    .novel-writer-fw-container {
+        overflow-y: auto;
+    }
+
+    .novel-writer-fw-titlebar {
+        max-height: 40vh;
+        overflow-y: auto;
+    }
+
+    .novel-writer-fw-status-bar {
+        position: sticky;
+        bottom: 0;
+        z-index: 3;
+    }
+
     /* 步骤导航固定一段高度并内部滚动；其余段按内容高度展开，交给外层滚动条。
        max-height 交给 900px 断点统一给值（200px），此处只负责 flex 行为，
        避免同一属性在两个断点互相覆盖。 */
@@ -4309,13 +4340,17 @@ select.nw-select {
     color: var(--nw-text-primary, var(--text-normal));
     border-bottom-color: var(--nw-accent, var(--interactive-accent));
 }
+/* 「高级设置」是同类页签里的一个开关，不是输入控件：
+   只保留底部虚线做「可切换」暗示，四边虚线会变成一圈虚线框（验收 F-05）。 */
 .nw-settings-tab-advanced-toggle {
     margin-left: auto;
-    border-style: dashed;
+    border: none;
+    border-bottom: 2px dashed var(--background-modifier-border);
     color: var(--text-muted);
 }
 .nw-settings-tab-advanced-toggle:hover {
     color: var(--text-normal);
+    border-bottom-color: var(--nw-accent, var(--interactive-accent));
 }
 
 .nw-settings-tab-content {
@@ -14499,8 +14534,18 @@ body.nw-panel-resizing .nw-awb-center iframe {
     background: var(--interactive-accent);
 }
 
+/* 开关 + 文字的组合：开关轨道固定 36px，文字做同级兄弟，避免被轨道压住 */
+.nw-api-switch-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
 .nw-api-switch-text {
     font-size: 12px;
+    white-space: nowrap;
     color: var(--text-muted);
 }
 
@@ -15995,11 +16040,16 @@ body.nw-panel-resizing .nw-awb-center iframe {
 
 /* 写作工作台：步骤导航 → 提示词区 → 上下文面板 自上而下 */
 @container nw-fw (max-width: 760px) {
+    /* 验收 F-07：标题栏、状态栏与容器都在查询容器（.novel-writer-fw-layout-host）
+       之外，@container 只能改容器内部的规则，这三条放在这里不会生效——
+       对应的媒体查询见 04-workspace-layers.css 的 @media (max-width: 1100px)。 */
     .novel-writer-fw-workspace {
         flex-direction: column;
         gap: 0;
         overflow-x: hidden;
         overflow-y: auto;
+        /* 不能让它被 flex 压成 0：压成 0 后子栏会溢出到状态栏位置上互相重叠 */
+        min-height: 320px;
     }
 
     .novel-writer-fw-workspace > .novel-writer-fw-step-nav {

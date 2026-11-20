@@ -3,12 +3,26 @@ import { t } from '@/i18n';
 import type NovelWriterPlugin from '@/main';
 import type { EndingTractionEngine, EndingTractionState, PlotThread } from '@/engine/ending-traction-engine';
 import { CoWriteFacade } from '@/ui/services/co-write-facade';
+import { showErrorNotice } from '@/ui/components/notice-helpers';
 import { createLogger } from '@/shared/logger';
 
 const log = createLogger('FullWriterCheckup');
 
 /** 自动体检最小间隔（毫秒）。checkTraction 每次读分卷大纲，避免频繁 IO。 */
 const MIN_INTERVAL_MS = 20_000;
+
+/**
+ * 把底层 AI 错误翻成用户能行动的一句话。
+ * 密钥 / 鉴权类统一指向设置页，其余原样透出，避免又变成「看不懂的技术细节」。
+ * @param raw - 引擎记录的原始错误信息
+ * @returns 面向用户的错误文案
+ */
+export function checkupErrorText(raw: string): string {
+    if (/401|403|authenticat|unauthor|api[\s_-]?key|invalid key/i.test(raw)) {
+        return t('fullwriter.ck.errorAuth');
+    }
+    return raw;
+}
 
 const RISK_LABEL: Record<EndingTractionState['divergenceRisk'], string> = {
     low: t('fullwriter.ck.riskLow'),
@@ -52,12 +66,17 @@ export interface FullWriterCheckupDeps {
 /**
  * 全屏写作视图的「写作体检」条。
  *
- * 复用 EndingTractionEngine.checkTraction（纯正则解析分卷大纲，无 AI 调用），
+ * 复用 EndingTractionEngine.checkTraction（先正则解析分卷大纲，规则没命中才回退 AI），
  * 展示整体进度 / 偏离风险 / 首要建议，可展开看全部情节线与建议。
+ * AI 回退失败时引擎会记录原因，这里把原因显式画出来并给一次性 Notice，
+ * 避免「密钥无效」被显示成「未解析到情节线」。
  * 与协同写作的 LiveAnalysisController 解耦：那边强依赖 CoWritingView 的编辑器与面板。
  */
 export class FullWriterCheckupController {
     private readonly deps: FullWriterCheckupDeps;
+
+    /** 已弹过 Notice 的「项目|原因」组合，避免每次切章都重复提示 */
+    private readonly notifiedErrors = new Set<string>();
 
     private rootEl: HTMLElement | null = null;
     private progressEl: HTMLElement | null = null;
@@ -141,6 +160,7 @@ export class FullWriterCheckupController {
             if (token !== this.seq) return;
             this.lastAt = Date.now();
             this.applyState(state);
+            this.reportPlotParseFailure(engine, state);
         } catch (e) {
             if (token !== this.seq) return;
             const message = e instanceof Error ? e.message : String(e);
@@ -189,6 +209,26 @@ export class FullWriterCheckupController {
         // 统一走 CoWriteFacade.createEndingTractionEngine（唯一构造点，同 monitor-panel-a/b）。
         const facade = new CoWriteFacade({ plugin: this.deps.plugin });
         return facade.createEndingTractionEngine(project);
+    }
+
+    /**
+     * 情节线为空且引擎记录了 AI 解析失败时，把真实原因写进提示并给一次性 Notice。
+     * 只有「确实尝试过 AI 但失败」才改写，纯大纲缺失仍走引擎自带的建议文案。
+     * @param engine - 当前项目的情节线引擎
+     * @param state - 本次体检结果
+     */
+    private reportPlotParseFailure(engine: EndingTractionEngine, state: EndingTractionState): void {
+        if (state.threads.length > 0) return;
+        const raw = typeof engine.getPlotThreadError === 'function' ? engine.getPlotThreadError() : null;
+        if (!raw) return;
+        const message = checkupErrorText(raw);
+        this.paintTip(t('fullwriter.ck.checkUnavailable', { msg: message }), true);
+        const key = `${this.engineProject}|${message}`;
+        if (this.notifiedErrors.has(key)) return;
+        this.notifiedErrors.add(key);
+        showErrorNotice(t('fullwriter.ck.errorNotice', { msg: message }), {
+            title: t('fullwriter.ck.errorNoticeTitle'),
+        });
     }
 
     private applyState(state: EndingTractionState): void {

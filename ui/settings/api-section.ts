@@ -408,11 +408,13 @@ export class ApiSection extends SettingsSection {
         }
 
         const visible = this.plugin.isProviderEnabled(providerId);
-        const visibleLabel = head.createEl('label', { cls: 'nw-api-switch', attr: { title: t('settings.api.visibleTitle') } });
+        // 文字必须和开关轨道同级：塞进 36px 的 .nw-api-switch 里会被轨道压住（验收 F-04）
+        const visibleField = head.createEl('label', { cls: 'nw-api-switch-field', attr: { title: t('settings.api.visibleTitle') } });
+        const visibleLabel = visibleField.createSpan({ cls: 'nw-api-switch' });
         const visibleToggle = visibleLabel.createEl('input', { type: 'checkbox' });
         visibleToggle.checked = visible;
         visibleLabel.toggleClass('nw-is-active', visible);
-        visibleLabel.createSpan({ cls: 'nw-api-switch-text', text: t('settings.api.visibleLabel') });
+        visibleField.createSpan({ cls: 'nw-api-switch-text', text: t('settings.api.visibleLabel') });
         visibleToggle.addEventListener('change', async () => {
             visibleLabel.toggleClass('nw-is-active', visibleToggle.checked);
             this.plugin.setProviderEnabled(providerId, visibleToggle.checked);

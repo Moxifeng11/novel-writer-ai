@@ -748,7 +748,12 @@ export async function listAnalysisSessionFiles(
         }
         return files;
     } catch (err) {
-        log.warn('列举分析会话文件失败（按空目录处理）:', err);
+        // 会话目录尚未创建是正常状态（首次使用、或用户清空过数据），不该按异常告警（验收 F-08）
+        if ((err as { code?: string })?.code === 'ENOENT') {
+            log.debug('分析会话目录尚不存在，按空目录处理');
+        } else {
+            log.warn('列举分析会话文件失败（按空目录处理）:', err);
+        }
         return [];
     }
 }

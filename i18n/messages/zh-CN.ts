@@ -4884,6 +4884,10 @@ export const zhCN: MessageTree = {
             idleHint: '打开章节后自动体检',
             checking: '体检中…',
             checkFailed: '体检失败：{msg}',
+            checkUnavailable: '体检不可用：{msg}',
+            errorAuth: 'API 密钥无效或未配置，AI 解析无法运行；请到 设置 → Novel Workshop 的「API 配置」检查密钥。',
+            errorNoticeTitle: '写作体检失败',
+            errorNotice: '写作体检失败：{msg}',
             riskValue: '偏离 {level}',
             stableTip: '情节线走势平稳，保持当前节奏。',
             lastChecked: '最近 {time}',
@@ -5147,6 +5151,7 @@ export const zhCN: MessageTree = {
             settlement: '章节结算',
         },
         nav: {
+            phaseContext: '上下文加载',
             phasePlanning: '章节规划',
             phaseWriting: '正文写作',
             phaseReview: '质量审查',

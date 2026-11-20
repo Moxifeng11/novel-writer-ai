@@ -3977,3 +3977,17 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 未修（已登记）：F-03 打开第 1 章即触发一次 AI 调用，key 无效时只有控制台 401 与体检条「0%」，界面无提示；F-04 设置页「使用中」开关压字；F-05 高级设置页签虚线焦点框；F-06 约 900px 宽阶段导航截断；F-07 800px 高状态栏第二行被裁；F-08 启动 3 条 warning。
 
 **下一轮**：F-03（错误可见性，P1）优先，其后 F-04/F-05 属设置页观感。
+
+## 第一百二十九轮：真实点击验收 F-03..F-08 修复（2026-11-20，DSH）
+
+**背景**：m26750「那就按顺序修复」——按 `docs/audits/2026-11-20-ui-real-click-acceptance.md` §六 的 F-03 → F-08 顺序逐条修。
+
+- **F-03 体检静默 401**：`engine/ending-traction-engine.ts` 新增 `plotThreadError` + `getPlotThreadError()`，AI 回退 catch 与「无模型」分支记录原因；`ui/full-writer/checkup-bar-controller.ts` 新增 `checkupErrorText()`（401/403/认证/key → 「API 密钥无效或未配置…」）与 `reportPlotParseFailure()`：体检条「体检不可用：<原因>」+ 按「项目+原因」去重的一次性错误 Notice。单测 12 条通过（新增 4 例）。
+- **F-04 开关压字**：`ui/settings/api-section.ts` 外层 `label.nw-api-switch` → `label.nw-api-switch-field`（inline-flex/gap 6px/flex-shrink 0），轨道与文字并列；`.nw-api-switch-text` 加 nowrap。实测 field 126×20、轨道 36×20、文字 84×16，零重叠。
+- **F-05 四边虚线**：`styles-src/05-floating-panels-and-settings.css` 的 `.nw-settings-tab-advanced-toggle` 由只写 `border-style: dashed` 改 `border: none; border-bottom: 2px dashed …`；实测 top/left/right = 0px none。
+- **F-06 导航截断 + 英文阶段名**：`ui/full-writer/streamlined-nav-presenter.ts` 去掉模块级 `t()` 常量，改 `phaseLabel(key)` 懒取（switch + 字面量键），`getStreamlinedPhases()` 每次现算 label；导航宽 `clamp(140px, 16%, 208px)`；`.novel-writer-fw-step-label` / `.novel-writer-fw-substep-label` 改换行（子步骤行 `flex-wrap: wrap`、标签 `flex: 1 1 60px`）。en 1280 下五阶段全英文、11 个子步骤 `trunc:false`。新增 2 条语言切换回归测试（共 10 条通过）。
+- **F-07 状态栏被裁**：`styles-src/04-workspace-layers.css` 的 `@media (max-width: 1100px)` 内加容器 `overflow-y: auto`、标题栏 `max-height: 40vh; overflow-y: auto`、状态栏 `position: sticky; bottom: 0`；`15-late-fixes.css` 窄容器查询里只留 workspace `min-height: 320px`。**坑**：`.novel-writer-fw-layout-host` 才是 `@container nw-fw` 的查询容器，标题栏/状态栏/容器都在它外面，写进 `@container` 不生效。900×600 与 1100×680 复验 `barInside=true`、无横向溢出。
+- **F-08 启动 3 条 warning**：`engine/heavy-task-worker-manager.ts` 与 `engine/quality/quality-worker.ts` 的缺失清单去掉按设计不注入的 `rhythmAnalyzer`；`engine/analysis-session-manager.ts` 对 `ENOENT` 降为 `log.debug`。复验控制台原 3 条 warning 全消失，只剩真·无效 key 的 401（由 FIX-03 给提示）。
+- **新发现 F-10（P3，待处理）**：设置页供应商列表在 250px 窄列里名称截成「本地 OIl…」「D… deepseek-v4-flash」，建议 ellipsis + title 全名。
+- 门禁：check:i18n 205 文件 / 5359 条（基线已收紧）、check:css 805679 / 4340 类（基线已上调并写 note）、check:bundle main.js 6237361 + styles.css 805679、check:inline-styles / check:view-tests / check:silent-failures 通过；全量 preflight 见下方。
+- 复验脚本（仓外，勿提交）：`D:\nw-tmp\probe-f67f.mjs`（en/zh 三档尺寸布局）、`D:\nw-tmp\probe-f08.mjs`（启动控制台）、`D:\nw-tmp\probe-f45.mjs`（设置页开关与页签边框）。

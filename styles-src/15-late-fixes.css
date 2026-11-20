@@ -1349,11 +1349,16 @@
 
 /* 写作工作台：步骤导航 → 提示词区 → 上下文面板 自上而下 */
 @container nw-fw (max-width: 760px) {
+    /* 验收 F-07：标题栏、状态栏与容器都在查询容器（.novel-writer-fw-layout-host）
+       之外，@container 只能改容器内部的规则，这三条放在这里不会生效——
+       对应的媒体查询见 04-workspace-layers.css 的 @media (max-width: 1100px)。 */
     .novel-writer-fw-workspace {
         flex-direction: column;
         gap: 0;
         overflow-x: hidden;
         overflow-y: auto;
+        /* 不能让它被 flex 压成 0：压成 0 后子栏会溢出到状态栏位置上互相重叠 */
+        min-height: 320px;
     }
 
     .novel-writer-fw-workspace > .novel-writer-fw-step-nav {

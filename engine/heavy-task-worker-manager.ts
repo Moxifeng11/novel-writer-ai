@@ -97,7 +97,9 @@ export class HeavyTaskWorkerManager {
     /** 检查 DeviationDetector 的条件分析器注入状态 */
     private checkDeviationDetectorInjection(): void {
         const dd = this.deviationDetector as any;
-        const ddMissing = ['plotDivergenceEngine', 'characterChecker', 'rhythmAnalyzer'].filter((k) => !dd[k]);
+        // rhythmAnalyzer 依赖主线程 AI 能力，按设计就不注入（见 initMainThreadEngines 的 C1 注释），
+        // 不列入缺失项——否则每次启动都会误报「相关维度使用内置规则」并触发一次降级通知（验收 F-08）。
+        const ddMissing = ['plotDivergenceEngine', 'characterChecker'].filter((k) => !dd[k]);
         if (ddMissing.length > 0) {
             log.warn(
                 `[偏离检测引擎] 条件分析器未注入: ${ddMissing.join(', ')}（依赖主线程 AI 能力），相关维度使用内置规则`

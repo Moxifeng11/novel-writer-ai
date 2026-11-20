@@ -76,6 +76,8 @@ export class EndingTractionEngine {
     private aiEngine: AIEngine;
     private plugin: NovelWriterSettingsAPI;
      private threads: Map<string, PlotThread> = new Map();
+     /** 最近一次情节线解析失败的原因（AI 401 / 未配置模型等），供 UI 区分「大纲缺失」与「解析失败」 */
+     private plotThreadError: string | null = null;
      private project: string = '';
      private fs: FileSystemPort | null = null;
      private vaultMeta: VaultMetaPort | null = null;
@@ -110,6 +112,17 @@ export class EndingTractionEngine {
      getThreadCount(): number {
          return this.threads.size;
      }
+
+     /**
+      * 最近一次情节线解析失败的原因。
+      *
+      * 规则解析没命中时会回退 AI 解析；AI 调用失败（密钥无效、401、模型未配置）
+      * 过去只写日志，UI 只能看到「未解析到情节线」，把配置问题误报成大纲问题。
+      * @returns 失败原因；解析成功或尚未尝试 AI 解析时为 null
+      */
+     getPlotThreadError(): string | null {
+         return this.plotThreadError;
+     }
      
      /**
       * 初始化牵引引擎
@@ -118,6 +131,7 @@ export class EndingTractionEngine {
      async initialize(project: string): Promise<void> {
          this.project = project;
          this.threads.clear();
+         this.plotThreadError = null;
          
          try {
              const outlineContents = await this.loadVolumeOutlineContents(project);
@@ -235,6 +249,8 @@ export class EndingTractionEngine {
                  const aiThreads = await this.parseThreadsWithAI(content);
                  threads.push(...aiThreads);
              } catch (e) {
+                 // 记下来给 UI：不要让 AI 失败伪装成「大纲里没有情节线」
+                 this.plotThreadError = e instanceof Error ? e.message : String(e);
                  log.warn('[EndingTractionEngine] AI 解析情节线失败:', e);
              }
          }
@@ -266,6 +282,7 @@ export class EndingTractionEngine {
          if (!model) {
              // 之前回退到字面量 'flash'，云端会返回 400「unsupported model」并刷错误日志
              log.warn('[EndingTractionEngine] 未配置可用模型，跳过 AI 情节线解析');
+             this.plotThreadError = '未配置可用模型';
              return [];
          }
 

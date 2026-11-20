@@ -217,8 +217,10 @@
 
 .novel-writer-fw-workspace > .novel-writer-fw-step-nav {
     flex: 0 0 auto;
-    width: var(--nw-panel-nav, 140px);
-    min-width: 100px;
+    /* 验收 F-06：固定 140px 在英文/长标签下只能靠省略号截断（"Chapter planning" → "Chapt…"）。
+       改为随容器伸缩的区间值，窄面板取 140px、宽面板最多 208px。 */
+    width: clamp(140px, 16%, 208px);
+    min-width: 120px;
 }
 
 .novel-writer-fw-workspace > .novel-writer-fw-prompt-area {
@@ -275,9 +277,11 @@
 }
 .novel-writer-fw-step-label {
     flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 0;
+    /* 验收 F-06：换行替省略号，见 04-workspace-layers.css 同名规则注释 */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
 }
 
 /* ===== 中间提示词区 ===== */

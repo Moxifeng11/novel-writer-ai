@@ -9,6 +9,14 @@ import { FakeEl, stubCreateDiv, stubDocument } from './support/fake-dom';
 
 vi.mock('@/main', () => ({ default: class NovelWriterPlugin {} }));
 
+/** showErrorNotice 的调用记录：用来断言「同一原因只弹一次」 */
+const errorNotices: { message: string; title?: string }[] = [];
+vi.mock('../../../ui/components/notice-helpers', () => ({
+    showErrorNotice: (message: string, options?: { title?: string }): void => {
+        errorNotices.push({ message, title: options?.title });
+    },
+}));
+
 import { FullWriterCheckupController } from '../../../ui/full-writer/checkup-bar-controller';
 
 const flush = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));
@@ -19,6 +27,8 @@ interface StubDeps {
     chapterNum?: number;
     state?: Record<string, unknown>;
     fail?: Error;
+    /** 引擎记录的情节线解析失败原因（AI 401 / 未配置模型） */
+    plotThreadError?: string;
 }
 
 function makeController(overrides: StubDeps = {}): {
@@ -45,7 +55,10 @@ function makeController(overrides: StubDeps = {}): {
             recommendations: ['主线进度落后于卷进度，建议在近三章推进星门线索'],
         };
     });
-    const createEngine = vi.fn(async () => ({ checkTraction }));
+    const createEngine = vi.fn(async () => ({
+        checkTraction,
+        getPlotThreadError: (): string | null => overrides.plotThreadError ?? null,
+    }));
     const ctrl = new FullWriterCheckupController({
         app: {} as never,
         plugin: { aiEngine: {} } as never,
@@ -62,6 +75,7 @@ function makeController(overrides: StubDeps = {}): {
 beforeEach(() => {
     stubCreateDiv();
     stubDocument();
+    errorNotices.length = 0;
 });
 
 describe('FullWriterCheckupController', () => {
@@ -148,6 +162,52 @@ describe('FullWriterCheckupController', () => {
         await ctrl.refresh(true);
         expect(createEngine).toHaveBeenCalledTimes(1);
         expect(createEngine).toHaveBeenCalledWith('长篇小说/晨星外传');
+    });
+
+    it('AI 解析失败时把真实原因画进体检条，而不是只报「未解析到情节线」', async () => {
+        const { root } = makeController({
+            state: { threads: [], overallProgress: 0, divergenceRisk: 'medium', recommendations: [] },
+            plotThreadError: 'AI响应错误 - 状态码: 401, 内容: {"error":{"message":"Authentication Fails"}}',
+        });
+        await flush();
+        const tip = root.findAll('nw-fw-checkup-tip')[0];
+        expect(tip.allText()).toContain('体检不可用');
+        // 密钥类错误翻成可行动文案，不透出原始英文 JSON
+        expect(tip.allText()).toContain('API 密钥无效或未配置');
+        expect(tip.className).toContain('nw-fw-checkup-tip--error');
+        expect(errorNotices).toHaveLength(1);
+        expect(errorNotices[0].title).toBe('写作体检失败');
+    });
+
+    it('同一项目同一原因只弹一次 Notice，切项目才重新提示', async () => {
+        const { ctrl } = makeController({
+            state: { threads: [], overallProgress: 0, divergenceRisk: 'medium', recommendations: [] },
+            plotThreadError: '未配置可用模型',
+        });
+        await flush();
+        expect(errorNotices).toHaveLength(1);
+        await ctrl.refresh(true);
+        expect(errorNotices).toHaveLength(1);
+    });
+
+    it('非密钥类错误原样透出', async () => {
+        const { root } = makeController({
+            state: { threads: [], overallProgress: 0, divergenceRisk: 'medium', recommendations: [] },
+            plotThreadError: '网络连接超时',
+        });
+        await flush();
+        expect(root.findAll('nw-fw-checkup-tip')[0].allText()).toContain('体检不可用：网络连接超时');
+    });
+
+    it('情节线为空但没有解析失败时保持原建议文案', async () => {
+        const { root } = makeController({
+            state: { threads: [], overallProgress: 0, divergenceRisk: 'medium', recommendations: [] },
+        });
+        await flush();
+        const tip = root.findAll('nw-fw-checkup-tip')[0];
+        expect(tip.allText()).toContain('情节线走势平稳');
+        expect(tip.className).not.toContain('--error');
+        expect(errorNotices).toHaveLength(0);
     });
 
     it('dispose 后再刷新不产生新调用', async () => {

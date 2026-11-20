@@ -38,7 +38,8 @@ function ensureEngines(): void {
             characterChecker: new CharacterConsistencyChecker(),
         });
         const dd = deviationDetector as any;
-        const ddMissing = ['plotDivergenceEngine', 'characterChecker', 'rhythmAnalyzer'].filter((k) => !dd[k]);
+        // rhythmAnalyzer 按设计保持未注入（见上方注释），不列入缺失项，避免 worker 每次启动都报 INJECTION_PARTIAL（验收 F-08）
+        const ddMissing = ['plotDivergenceEngine', 'characterChecker'].filter((k) => !dd[k]);
         if (ddMissing.length > 0) {
             log.warn(
                 `[偏离检测引擎] 条件分析器未注入: ${ddMissing.join(', ')}（依赖主线程 AI 能力），相关维度使用内置规则`
