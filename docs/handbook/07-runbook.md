@@ -54,15 +54,16 @@
 
 密钥安全：不要打印 Key；脱敏逻辑见 `shared/secret-redaction.ts`；E2E 临时 vault 不复制 `data.json`。
 
-## 5. dsh 后端
+## 5. Agent 后端（仅内置 Harness）
+
+外部 dsh 后端已于 6c8d79b7 移除（含 `engine/agent/dsh/`、`check:dsh-isolation` 门禁与设置字段）。
+Agent 只跑内置 Harness；排障看会话日志与工具审批，不涉及外部进程。
 
 | 症状 | 诊断 | 处理 |
 |---|---|---|
-| 健康检查失败 | `npx @deepseek-ai/dsh --version`；Node 20+；Windows 需 ComSpec | 设 `dshCommand`/安装 dsh；看设置页提示 |
-| 启动失败（Windows） | `spawn` shim/环境变量 | v4.23.1 起已走 ComSpec 并补平台 env；确认版本 |
-| 写入被拒 | sandbox `read-only` | 只读是默认；需整会话 `workspace-write` 并在启动前确认 |
-| 进程崩溃/无响应 | 协议无 cancel | 关闭/重启工作台即 kill；会话由 `DSH_HOME` 持久化 |
-| 隔离门禁失败 | 非 dsh 目录出现 `child_process` | 改走 `shared/desktop-shell.ts` 的窄接口（见该文件注释） |
+| 工具不可用 | 工具目录未注册 / 项目未选 | 重新打开 Agent 工作台；确认工具目录与项目上下文 |
+| 写入被拒 | 审批未通过 | 在审批卡片里确认；只读会话不落盘 |
+| 会话中断 | 模型错误 / 取消 | 重启工作台会话；历史保留在插件数据目录 |
 
 ## 6. 构建与发布
 

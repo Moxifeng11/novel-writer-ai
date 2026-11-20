@@ -16,8 +16,6 @@
 
 **Local data.** Settings, API keys (optionally encrypted with a session passphrase), prompt cache, knowledge-base index and session logs are stored in the plugin's own data folder under your vault's configuration directory (`.obsidian/plugins/novel-writer-ai/`). They are never uploaded by the plugin. `.gitignore` and an explicit `check:secrets` gate keep keys out of this repository.
 
-**Desktop-only optional backend.** On desktop you may opt in to a DeepSeek "dsh" backend. When enabled, the plugin starts an external process (`npx @deepseek-ai/dsh@<pinned version>`) in the vault directory. It is off by default and unavailable on mobile; the built-in Agent works without it.
-
 **No self-update.** The plugin only checks for a newer GitHub release and shows a link; it never downloads or installs updates.
 
 **License.** MIT. See [LICENSE](LICENSE).

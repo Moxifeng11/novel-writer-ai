@@ -54,7 +54,6 @@ jobs:
           npm run check:silent-failures
           npm run check:hotpaths
           npm run check:linked-scenarios
-          npm run check:dsh-isolation
 
       - name: 内联样式基线检查
         run: npm run check:inline-styles

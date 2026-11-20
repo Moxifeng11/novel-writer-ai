@@ -90,7 +90,7 @@
 
 - AI 端点、模型能力、协议（OpenAI/Anthropic/DeepSeek）在 `engine/ai-api-client.ts` 与 `shared/model-*` 收口。
 - 新增供应商/协议必须补请求契约测试（参考 `tests/unit/engine/embedding-provider-contract.test.ts`）。
-- dsh 协议事实以 `docs/research/deepseek-harness/` 为准；代码改动需过 `check:dsh-isolation`。
+- 外部 dsh 后端已于 v4.96 前移除（6c8d79b7），Agent 只跑内置 Harness；历史 dsh 协议资料在 `docs/research/deepseek-harness/`，仅作参考，不再有对应门禁。
 
 ---
 

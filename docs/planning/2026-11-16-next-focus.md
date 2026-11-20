@@ -4061,3 +4061,12 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - `docs/releases/4.97.0.md`（发版说明 + 功能清查表 + 验证 + 未完成项）；CHANGELOG 4.97.0 条目；`shared/changelog-data.ts` 4.97.0 条目。
 - `docs/CURRENT.md` 版本 4.97.0 / 2026-11-20，§4 标注「①–⑦全部交付」、§6 增旧写入链与悬浮面板退役。
 - `docs/progress/program-status.json` baseline 4.97.0 / 1013 文件 / 10503 用例。
+
+## 补记（同轮）：CI / Release 工作流断链修复
+
+打 tag 后发现 `gh run list` 里 CI 连续红：verify job 报 `npm error Missing script: "check:dsh-isolation"`。
+根因是 6c8d79b7（2026-11-15）删掉 `scripts/check-dsh-isolation.mjs` 与对应 npm 脚本时，`.github/workflows/ci.yml`（105-106 行）、`.github/workflows/release.yml`（57 行）没同步删——从那天起每次 push 的 CI 都必红，tag 触发的 Release 也在同一 job 失败（run 44663955232 1m18s 失败）。
+
+处理：删两处残留步骤；README 去掉「Desktop-only optional backend（dsh）」整段；`docs/handbook/04-interface-contracts.md` §2.9 与 `docs/handbook/07-runbook.md` §5 改写为「Agent 只跑内置 Harness」并给出新的排障表；CHANGELOG 4.97.0 与 `docs/releases/4.97.0.md` 验证表各加一行。
+
+教训：**删脚本/删功能时要扫工作流**。`check:docs`、preflight 都不会校验 workflow 引用的 npm 脚本是否存在，所以本地全绿不代表 CI 能跑；改 package.json scripts 后应 grep `.github/workflows/`。

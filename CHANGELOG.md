@@ -12,6 +12,7 @@
 - **交互与稳定性**：AI 生成按钮接入 `withButtonBusy`（防重复扣费）；`ModalDirtyGuard` 覆盖 8 个高危弹窗；撤销栈共享化，单元写作台获得撤销/重做；真实点击验收 F-01–F-14 全部修复（含写作台溢出、窄高窗口状态栏被裁、设置页开关压字、体检静默 401、供应商侧栏截断）。
 - **启动噪音清理**：按设计不注入的分析器不再报警、缺失 `.sessions` 目录降为 debug；干净启动仅剩「API key 无效」这一条真实告警。
 - **破坏性下线**：旧正文写入链（`WRITE_CHAPTER` / `WRITE_CHAPTER_AUTO` / `BATCH_CHAPTERS` / `AUTO_WRITER` + 三个隐藏弹窗）与协同写作悬浮面板已退役；正文统一走协同写作工作台 / 完整写作工作台 / 「批量生成章节」。
+- **CI 修复**：删除 CI / Release 工作流里已随外部 dsh 后端退役的 `check:dsh-isolation` 步骤（6c8d79b7 起脚本已不存在，每次 CI 必红），并同步清理 README 与 handbook 里对该后端的描述。
 - **门禁**：preflight EXIT=0，1013 个测试文件 / 10,503 通过 + 3 跳过；`check:release --tag 4.97.0` 通过。
 
 ## 4.96.1（2026-11-17）
