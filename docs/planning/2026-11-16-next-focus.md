@@ -4164,3 +4164,15 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
   Manifest / Releases / Source code / Build verification / 上架结果 各有对应命令，并写明
   「公开记分卡 Risks 档 == 扫描器 error 级」的判据口径（对照 dataview 的 Risks 386 条仍在市场里）。
 - 实测：`node scripts/check-release.mjs` EXIT=0（README/LICENSE 均合格）；上架三项判据仍未达标（页面 4.97.1、清单未收录）。
+
+## 第一百三十六轮：Release 资产 manifest 与仓库 HEAD 一致性门禁
+
+- 关键口径：社区目录展示的版本读默认分支 HEAD 的 manifest.json，客户端安装则下 Release 资产；
+  两者版本不一致时会出现「页面版本与可安装版本对不上」。
+- scripts/check-release.mjs --remote 新增：下载 Release 的 manifest.json，与本地（HEAD）内容比对
+  （去掉行尾差异后逐字节比较），不一致直接报错。
+- 实测 4.97.3：一致（info 行「Release 的 manifest.json 与仓库 HEAD 逐字节一致」）；
+  styles.css attestation 通过，main.js 该次因 gh release download 临时失败降级为提示（非代码问题）。
+- 记分卡 medium 项复核：「Unexpected browser feature」实际指 styles.css 里的 CSS 特性
+  css-scrollbar（12 处）与 multicolumn（2 处）在 Obsidian 1.4.5 只被部分支持，属 medium、
+  不阻断；Risks 档（阻断级）仍只有已修的 require-description 一类。

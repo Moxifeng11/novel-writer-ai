@@ -307,6 +307,25 @@ if (argv.includes('--remote')) {
                 }
             }
         }
+        // 目录侧读默认分支 HEAD 的 manifest.json 来展示版本；发布资产里的 manifest.json 必须与之逐字节一致，
+        // 否则会出现「页面版本与可安装版本对不上」。已知体积相同仍可能内容不同，所以下载后做字节比对。
+        const tmpManifest = fs.mkdtempSync(path.join(process.env.TEMP || '/tmp', 'nw-manifest-'));
+        try {
+            execFileSync('gh', ['release', 'download', pkg.version, '--repo', repoSlug, '--pattern', 'manifest.json', '--dir', tmpManifest, '--clobber'], { cwd: rootDir, stdio: ['ignore', 'pipe', 'pipe'] });
+            const remoteManifestText = fs.readFileSync(path.join(tmpManifest, 'manifest.json'), 'utf8');
+            const localManifestText = fs.readFileSync(path.join(rootDir, 'manifest.json'), 'utf8');
+            const normalize = (text) => text.replace(/\r\n/g, '\n').trim();
+            if (normalize(remoteManifestText) !== normalize(localManifestText)) {
+                errors.push('Release 资产 manifest.json 与仓库 HEAD 的 manifest.json 内容不一致（目录侧读 HEAD，客户端装 Release，二者必须同一版本）');
+            } else {
+                notes.push('Release 的 manifest.json 与仓库 HEAD 逐字节一致（去掉行尾差异后比较）');
+            }
+        } catch (e) {
+            notes.push(`manifest.json 字节比对跳过：${e instanceof Error ? String(e.message).split('\n')[0] : String(e)}`);
+        } finally {
+            fs.rmSync(tmpManifest, { recursive: true, force: true });
+        }
+
         const strayWorkers = [...byName.keys()].filter((n) => n.startsWith('workers/'));
         if (strayWorkers.length > 0) {
             notes.push(`Release 里存在独立 worker 资产（社区目录会标为额外文件）: ${strayWorkers.join(', ')}`);
