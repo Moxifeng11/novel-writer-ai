@@ -34,12 +34,29 @@ async function getText(url) {
     return res.text();
 }
 
-const facts = { siteVersion: null, siteEntries: [], inMarketList: null, feedVersions: [], errors: [] };
+const facts = {
+    siteVersion: null,
+    lastUpdatedTitle: null,
+    lastUpdatedRelative: null,
+    downloads: null,
+    siteEntries: [],
+    inMarketList: null,
+    feedVersions: [],
+    errors: [],
+};
 
 try {
     const html = await getText(SITE_URL);
     const versionMatch = html.match(/Current version<\/div><div[^>]*>([^<]+)</);
     if (versionMatch) facts.siteVersion = versionMatch[1].trim();
+    // 「目录上次检查时间」决定该等周期检查还是去点 Check for new releases
+    const updatedMatch = html.match(/Last updated<\/div><div title="([^"]*)">([^<]*)</);
+    if (updatedMatch) {
+        facts.lastUpdatedTitle = updatedMatch[1].trim();
+        facts.lastUpdatedRelative = updatedMatch[2].trim();
+    }
+    const downloadsMatch = html.match(/Downloads<\/div><div[^>]*>([^<]+)</);
+    if (downloadsMatch) facts.downloads = downloadsMatch[1].trim();
     // 记分卡顶部会列最近发布版本号，用来判断目录侧最新可见版本
     facts.siteEntries = [...new Set((html.match(/\d+\.\d+\.\d+/g) || []))].slice(0, 8);
 } catch (e) {
@@ -83,6 +100,9 @@ const checks = [
 ];
 
 console.log(`[check:published] ${pluginId}（manifest ${version}）`);
+if (facts.lastUpdatedRelative) {
+    console.log(`  目录上次检查：${facts.lastUpdatedRelative}（${facts.lastUpdatedTitle ?? '日期未知'}）${facts.downloads ? ' · 下载 ' + facts.downloads : ''}`);
+}
 for (const c of checks) {
     console.log(`  ${c.pass ? '✓' : '·'} ${c.label} —— ${c.detail}`);
 }

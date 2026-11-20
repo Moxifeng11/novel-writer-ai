@@ -4176,3 +4176,13 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 记分卡 medium 项复核：「Unexpected browser feature」实际指 styles.css 里的 CSS 特性
   css-scrollbar（12 处）与 multicolumn（2 处）在 Obsidian 1.4.5 只被部分支持，属 medium、
   不阻断；Risks 档（阻断级）仍只有已修的 require-description 一类。
+
+## 第一百三十七轮：上架自查增加「目录上次检查时间」，区分「未扫」与「被判失败」
+
+- 官方 Manage your plugin：目录在**每次发版后**扫描 manifest / 发布资产 / 源码并校验构建；
+  若发布未被反映，通常是**周期检查还没跑到**，可在 ··· 菜单点 Check for new releases 立即检查；
+  要强制立刻重查点 Request review；想发版前预演点 Review branch（可填 branch/tag/SHA）。
+- scripts/check-published.mjs 新增解析插件页 `Last updated`（相对时间 + title 日期）与 Downloads，
+  输出「目录上次检查：N hours ago（日期）」——用来判断当前是「目录还没扫」还是「扫了但失败」。
+- 实测：目录上次检查 4 hours ago（Nov 20, 2026），早于 4.97.2 / 4.97.3 的发布，
+  因此三项判据未达标是「尚未扫描」而非「4.97.3 被判失败」。
