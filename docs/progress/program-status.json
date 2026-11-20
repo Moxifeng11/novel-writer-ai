@@ -3,10 +3,10 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-17",
   "baseline": {
-    "version": "4.96.1",
+    "version": "4.97.0",
     "tests": {
-      "files": 956,
-      "cases": 10101
+      "files": 1013,
+      "cases": 10503
     },
     "e2e": 0,
     "e2eNote": "E2E 通过总数 42（2026-11-09 实测）：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 26 + review-fixes 3（右栏折叠展开 + 两个 Modal 连续开关）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑",
@@ -19,7 +19,7 @@
       "check:write-entry"
     ],
     "localCommitsAhead": 0,
-    "localCommitsAheadNote": "2026-11-17 更新测试基线：实测 956 测试文件 / 10089 用例通过（3 skip），preflight EXIT=0；原台账 879/9494 已漂移。",
+    "localCommitsAheadNote": "2026-11-20 发版 4.97.0 更新测试基线：preflight EXIT=0，1013 测试文件 / 10503 用例通过（3 skip）。",
     "ahead": 0
   },
   "groups": [

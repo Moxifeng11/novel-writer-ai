@@ -4035,3 +4035,29 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 **门禁**：tsc 0；`modal-guard-wiring`（12）+ `kb-modals-logic` + `golden-opening-modal-dom` + `modal-dirty-guard` 共 27 例通过；build 成功；preflight EXIT=0（1013 测试文件 / 10503 通过 + 3 跳过）；bundle main.js 6239011（+1602）、styles.css 805893 未变；gen:docs 1012 个源文件、check:docs 20 个活跃文档。
 
 **下一轮候选**：剩余 20 个含编辑区弹窗按同模式分批接关闭确认（ai-builder / create-project / existing-entity-manager / cowrite 两个 / fanfic-review / fingerprint-library / generate-* 五个 / ideation / manage-providers / mode-document / novel-analysis / outline-expand / pre-research / unified-entity-generate / volume-intro）。
+
+## 第一百三十二轮：版本功能清查与 4.97.0 发版（2026-11-20）
+
+用户 m27825：「进行最后一轮版本功能清查，并且打tag发版」。
+
+**清查（先复核再下结论）**
+- INDEX 与模块页抬头对齐真值：「设定 / 人物卡」doing → stable（Slice A–G + P）；质量闭环 / 统计 / 导出 三个 todo → stable（功能已交付，未单独做模块打磨）；「市场 / 插件」→ 未实施（M5 决策）。`docs/modules/knowledge-base.md` 抬头「G 弹窗待做」与正文 §3.10 矛盾，一并改为 stable。
+- 命令真值：`addCommand` 90 条唯一 + `r.register` 22 条唯一，`command-ids.ts` 97 个 id，`internalOnly` 3 条；抽查 QUALITY_LOOP / QUALITY_DASHBOARD / EXPORT_MANUSCRIPT / WRITING_STATS 三处接线齐备。
+- i18n 6087 条 ×2 语言，棘轮 205 文件 / 5359 条；内联样式 474（静态 410 / 动态 64）；工具类 46 个 / 137 次引用。
+
+**发版路径与踩坑**
+- 版本 4.96.1 → 4.97.0（minor：双语 + 文面体检 + TTS + 视觉 Slice A–Y + 交互修复）。tag **必须不带 v 前缀**（`scripts/check-release.mjs:72-74`），且 `docs/releases/<tag>.md` 必须存在。
+- `shared/changelog-data.ts` 内置更新日志有两条硬闸：首条必须是当前 package 版本、条目 ≤12 且总字节 ≤12000 —— 新增 4.97.0 后必须删最旧的 4.86.0。
+- `check:cjk-keep` 灰区按字数设上限：内置更新日志新增中文会把灰区推高（34546 → 34574）。正确做法不是抬基线，而是在 `scripts/cjk-keep-allowlist.json` 的 keep 段声明 `shared/changelog-data.ts`（属发布记录数据），灰区随即回落到 33160。
+- `check:docs` 会校验 7 个活跃文档的版本戳（README / docs/README / ARCHITECTURE / DEVELOPMENT / API / PLAN / CODE-INDEX），bump 后必须同步；README 里「界面仅中文」也随双语改为「界面中英双语」。
+- `package-lock.json` 版本戳不同步会被 `check:automation` 拦下。
+- `program-status.json` 改 baseline 后必须 `npm run program:render`，否则 `--check` 报「台账不同步」。
+
+**门禁**
+- `npm run preflight` **EXIT=0**：1013 测试文件 / **10503 通过 + 3 跳过**（日志 `D:\nw-tmp\preflight-4.97.0e.log`）。
+- `check:release --tag 4.97.0` 通过；`check:bundle` main.js 6239510（+499，内置更新日志新增条目并裁剪最旧条目，note 已写）、styles.css 805893；`check:changelog` 顶部 4.97.0 唯一。
+
+**交付物**
+- `docs/releases/4.97.0.md`（发版说明 + 功能清查表 + 验证 + 未完成项）；CHANGELOG 4.97.0 条目；`shared/changelog-data.ts` 4.97.0 条目。
+- `docs/CURRENT.md` 版本 4.97.0 / 2026-11-20，§4 标注「①–⑦全部交付」、§6 增旧写入链与悬浮面板退役。
+- `docs/progress/program-status.json` baseline 4.97.0 / 1013 文件 / 10503 用例。

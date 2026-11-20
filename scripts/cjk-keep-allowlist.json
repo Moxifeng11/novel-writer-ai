@@ -2,7 +2,7 @@
   "$schema": "internal",
   "description": "CJK 保留声明（closed set）。audit-cjk.mjs --check 时：ui-copy-in-engine 类的条目若未在此声明，一律算待迁并要求 --check 非零退出。每条必须写 reason，且 reason 会被 review 看见——这就是『不允许口头豁免』的机制。",
   "version": 1,
-  "updatedAt": "2026-11-19",
+  "updatedAt": "2026-11-20",
   "note": "按文件声明，不按字面量逐条声明：逐条声明会让文件膨胀到无法 review，且中文文案本来就会随迭代变动。粒度为『这个文件为什么整体保留』。",
   "policy": "ui-copy-in-engine 是唯一必须声明的类别（漏到下层的界面文案）。其余类别（corpus/ai-prompt/on-disk-template/enum-value/parse-key/sink-contract/long-text/log-message/disk-path）由机检分类直接判定，不需声明。",
   "keep": [
@@ -110,6 +110,11 @@
       "path": "services/constraint-block-service.ts",
       "reason": "assemble() 组装的是喂给 LLM 的本章约束块（人物卡/伏笔/节奏要求），是 prompt 内容不是界面文案",
       "reclassifiedAs": "ai-prompt"
+    },
+    {
+      "path": "shared/changelog-data.ts",
+      "reason": "内置更新日志条目（历史发布记录），属文档数据；随发版新增条目，界面外壳已双语",
+      "reclassifiedAs": "cross-layer"
     }
   ],
   "triage": [

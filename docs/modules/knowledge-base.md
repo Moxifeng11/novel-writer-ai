@@ -1,6 +1,6 @@
 # 知识库 / 设定（视觉重构）
 
-> 模块页（Module Page）。状态：**doing（视觉重构 Slice A–F 完成 2026-11-17；G 弹窗待做）**
+> 模块页（Module Page）。状态：**stable（视觉重构 Slice A–G 完成 2026-11-17；主视图 Slice P 同日完成）**
 > 规范：[视觉重构规范](../design/2026-11-16-visual-refactor-standard.md)
 > 基线：[`docs/quality/visual-baseline/kb-books.json`](../quality/visual-baseline/kb-books.json)
 

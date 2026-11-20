@@ -1,16 +1,16 @@
 # Novel Writer AI（小说工坊 AI）
 
-**Novel Writer AI** is an end-to-end AI writing workspace for Chinese web novels, short stories, and scripts: project setup, outlines, world-building, chapter drafting, co-writing, quality checks, continuity tracking, knowledge-base deconstruction, and manuscript export (Markdown/TXT/HTML/EPUB/DOCX). The plugin UI is Chinese-only. No telemetry is collected; network access is limited to the AI endpoints you configure. MIT licensed.
+**Novel Writer AI** is an end-to-end AI writing workspace for Chinese web novels, short stories, and scripts: project setup, outlines, world-building, chapter drafting, co-writing, quality checks, continuity tracking, knowledge-base deconstruction, and manuscript export (Markdown/TXT/HTML/EPUB/DOCX). The plugin UI is available in Chinese and English. No telemetry is collected; network access is limited to the AI endpoints you configure. MIT licensed.
 
 > 全流程 AI 长篇小说创作系统 —— 在 Obsidian 内完成从构思、大纲、设定管理到正文生成与质量复盘的全链路。
 
-**当前版本**：4.96.1 · **最低 Obsidian**：1.4.4 · **平台**：桌面端 / 移动端（界面仅中文；系统级文件保护仅桌面端）
+**当前版本**：4.97.0 · **最低 Obsidian**：1.4.4 · **平台**：桌面端 / 移动端（界面中英双语；系统级文件保护仅桌面端）
 
 ---
 
 ## English summary (for marketplace review)
 
-**Novel Writer AI** is an end-to-end AI writing workspace for Chinese web novels, short stories, and scripts. It covers project setup, outlines, world-building, chapter drafting, co-writing, quality checks, settlement/continuity tracking, knowledge-base deconstruction, and manuscript export (Markdown/TXT/HTML/EPUB/DOCX). The plugin UI is Chinese-only.
+**Novel Writer AI** is an end-to-end AI writing workspace for Chinese web novels, short stories, and scripts. It covers project setup, outlines, world-building, chapter drafting, co-writing, quality checks, settlement/continuity tracking, knowledge-base deconstruction, and manuscript export (Markdown/TXT/HTML/EPUB/DOCX). The plugin UI is available in Chinese and English.
 
 **Network use (disclosed per Developer policies).** The plugin only contacts endpoints you configure. It sends your prompts and the selected context to the AI provider you choose (OpenAI-compatible endpoint, or a local model such as Ollama). Optional features make additional requests: update check (GitHub Releases API), model discovery / connectivity tests (your configured provider), and optional "trend research"/"canon research" (fixed public search endpoints or URLs you provide). No telemetry is collected, and nothing is sent anywhere by default.
 

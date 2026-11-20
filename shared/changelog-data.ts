@@ -21,6 +21,20 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.97.0',
+        date: '2026-11-20',
+        title: '双语界面 + 文面体检 + 视觉收口',
+        sections: [
+            { type: 'added', label: '🌐 双语界面', items: ['命令面板、设置页、写作主流程、知识库与全部弹窗支持中/英切换（各 6087 条文案）', '语言切换即时生效，命令名重载插件后生效'] },
+            { type: 'added', label: '🔤 发布前文面体检', items: ['7 条规则检查错别字/标点/重复/全半角/空格/引号/单位', '问题列表可定位、一键跳转正文；接入导出前置检查'] },
+            { type: 'added', label: '🔊 章节朗读', items: ['逐句朗读 + 当前句高亮 + 语速/音色切换 + 播放条'] },
+            { type: 'added', label: '✍️ 写作辅助', items: ['全屏写作体检条实时提示', '大纲扩写结果真正写回正文', '质量统计状态可筛选'] },
+            { type: 'improved', label: '🎨 界面', items: ['25 个视觉切片完成语义化，暗色主题下按钮配色恢复', '真实点击验收 14 条缺陷全部修复'] },
+            { type: 'fixed', label: '🛡 稳定性', items: ['AI 生成按钮防重复扣费', '8 个弹窗关闭前确认，避免误丢改动', '单元写作台支持撤销/重做'] },
+            { type: 'breaking', label: '⚠️ 破坏性变更', items: ['旧正文写入链 4 条命令与 3 个隐藏弹窗移除', '协同写作悬浮面板退役（正文走协同写作工作台）'] },
+        ],
+    },
+    {
         version: '4.96.1',
         date: '2026-11-17',
         title: '解锁口令重复弹框修复',
@@ -253,29 +267,6 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
                     '原子写 rename 覆盖已存在文件抛错，导致第二次起写入全失败',
                     '字数统计台账同款问题，导致统计永不持久化',
                     '命令执行体缺失静默失效；新增门禁 check:command-handlers 防复发',
-                ],
-            },
-        ],
-    },
-    {
-        version: '4.86.0',
-        date: '2026-11-13',
-        title: '静默失败门禁 + 生产环境测试闭环',
-        sections: [
-            {
-                type: 'fixed',
-                label: '🔴 AI 调用',
-                items: [
-                    'AI 调用全线失败修复（high）：密钥在 providerKeys 而 apiKey 为空时，所有调用返回「API密钥未配置」；统一回退取值（非流式/流式/迭代器）',
-                    '项目创建关键写入失败不再谎报成功：.project 写入 / 覆盖删除 / 同人设定复制失败改为中止创建',
-                ],
-            },
-            {
-                type: 'added',
-                label: '🛡️ 门禁与测试',
-                items: [
-                    '新增门禁 check:silent-failures：识别「读失败当没有 / 写失败当成功」，基线 191 处只降不升（检测先剥注释与字符串，消除 121 处假阳性）',
-                    '新增 npm run check:prod：真实 Obsidian + 真实 AI 一键冒烟（6 步，含版本一致性与流式调用）',
                 ],
             },
         ],
