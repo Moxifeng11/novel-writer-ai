@@ -4138,3 +4138,10 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 对照：dataview 记分卡同为 Risks（386 issues）却照常上架；	emplater-obsidian 为 Satisfactory（8 issues）。结论：Review: Risks 不阻断上架，阻断的是账号页 Reviews 四段的 error（即 check:obsidian-review 覆盖的规则）。
 - 文档：docs/releases/community-submission.md 新增 §四之一二（记分卡读法、对照证据、无登录监控命令），并在 §四表格补交叉验证一句。
 - 结论：4.97.2/4.97.3 已修掉记分卡上唯一的 Risks 档问题；剩等目录侧扫到 4.97.3（页面仍显示 4.97.1）。
+## 第一百三十三轮：发布核验自动化（check:release --remote）
+
+- `scripts/check-release.mjs` 新增两项与审核判据对齐的校验：
+  1. Manifest 段：`description` ≤250 字符、以句号结尾、Basic Latin 无 emoji、不以 "This is a plugin" 开头；`isDesktopOnly` 必须是布尔值。
+  2. `--remote`（新脚本 `npm run check:release:remote`）：`gh release view <version>` 断言 tagName == manifest.version、非 draft/prerelease、main.js / manifest.json / styles.css / versions.json 四资产齐全且体积与本地构建一致；再 `gh release download` + `gh attestation verify` 核对 main.js / styles.css 的 artifact attestation（对应记分卡 Passed 段那两条）。
+- 实测 4.97.3：本地与远程均 EXIT=0，输出「Release 4.97.3 资产齐全且体积与本地一致」+「main.js / styles.css 的 GitHub artifact attestation 校验通过」。
+- 文档：`docs/releases/community-submission.md` §四之二 补「打 tag 之后、点复审之前」的核验命令。

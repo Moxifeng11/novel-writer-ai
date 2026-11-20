@@ -59,7 +59,7 @@ function loadCatalog(file) {
         fileName: file,
     });
     const module = { exports: {} };
-    // eslint-disable-next-line no-new-func
+    // eslint-disable-next-line no-new-func -- 需要执行资源里的 JS 表达式来解析动态键，输入来自本仓资源文件
     new Function('exports', 'module', outputText)(module.exports, module);
     const exported = Object.values(module.exports);
     const tree = exported.find(value => value && typeof value === 'object');

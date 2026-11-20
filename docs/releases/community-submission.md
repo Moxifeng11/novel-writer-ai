@@ -99,6 +99,16 @@ npm run check:obsidian-review        # 只打印 error 级（= 会被打回）�
 
 也可在账号页用 `Review branch` 对分支做预览扫描（不发版）；正式复审要点 `Check for new releases`（只扫最新 Release）。
 
+**打 tag 之后、点复审之前**，用远程核验代替人工比对（覆盖 Releases 段 + 记分卡的 attestation 判据）：
+
+```powershell
+npm run check:release:remote
+# 断言：tagName == manifest.version、非 draft/prerelease、
+#      main.js / manifest.json / styles.css / versions.json 四资产齐全且体积与本地构建逐一致、
+#      main.js 与 styles.css 的 GitHub artifact attestation 可通过 gh attestation verify
+```
+（本地无 `gh`、或 `gh` 版本不支持 attestation 时只降级为提示，不会误报失败。）
+
 ## 四之一二、公开记分卡（Scorecard）——不用登录也能看审核扫描结果
 
 社区目录的插件页有 `#scorecard` 锚点（右侧 `Health / Review / Risks` 三条进度条点进去），它把每次扫描的结果公开列出，**不需要登录账号**：

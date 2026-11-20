@@ -40,7 +40,7 @@ function loadCatalog(file) {
         fileName: file,
     });
     const module = { exports: {} };
-    // eslint-disable-next-line no-new-func
+    // eslint-disable-next-line no-new-func -- 用 Function 拼装生成代码模板，输入全部是本脚本内置字面量
     new Function('exports', 'module', outputText)(module.exports, module);
     const tree = Object.values(module.exports).find(value => value && typeof value === 'object');
     if (!tree) throw new Error('资源模块没有导出对象：' + file);

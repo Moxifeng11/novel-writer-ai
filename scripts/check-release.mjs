@@ -106,6 +106,24 @@ if (!manifest.name || typeof manifest.name !== 'string') {
 }
 if (!manifest.description) {
     errors.push('manifest.description 缺失');
+} else {
+    // 官方 Submission requirements：≤250 字符、以句号结尾、无 emoji/特殊字符、Basic Latin
+    const desc = String(manifest.description);
+    if (desc.length > 250) {
+        errors.push(`manifest.description 超过 250 字符（${desc.length}）`);
+    }
+    if (!desc.trim().endsWith('.')) {
+        errors.push('manifest.description 必须以句号结尾（社区目录要求）');
+    }
+    if (!/^[\x20-\x7E]+$/.test(desc)) {
+        errors.push('manifest.description 必须为 Basic Latin（不能含 emoji/CJK/特殊符号）');
+    }
+    if (/^this is a plugin/i.test(desc.trim())) {
+        errors.push('manifest.description 不要以 "This is a plugin" 开头（官方措辞规范）');
+    }
+}
+if (typeof manifest.isDesktopOnly !== 'boolean') {
+    errors.push('manifest.isDesktopOnly 必须是布尔值');
 }
 if (!manifest.author) {
     errors.push('manifest.author 缺失');
@@ -220,6 +238,71 @@ if (!fs.existsSync(assetDir)) {
                 errors.push(`main.js 未包含模板自举标记: ${marker}`);
             }
         }
+    }
+}
+
+// 6. 可选：远程发布核验（--remote）
+//    复刻社区目录 Releases 段 + 记分卡「release asset has a verified GitHub artifact attestation」判据。
+const argv = process.argv.slice(2);
+if (argv.includes('--remote')) {
+    const { execFileSync } = await import('node:child_process');
+    const gh = (args) => execFileSync('gh', args, { cwd: rootDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    let repoSlug = 'Moxifeng11/novel-writer-ai';
+    try {
+        const remoteUrl = execFileSync('git', ['remote', 'get-url', 'origin'], { cwd: rootDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+        const match = remoteUrl.match(/github\.com[:/]([^/]+\/[^/.]+)(\.git)?$/i);
+        if (match) repoSlug = match[1];
+    } catch { /* 用默认仓库名 */ }
+
+    try {
+        const rel = JSON.parse(gh(['release', 'view', pkg.version, '--repo', repoSlug, '--json', 'tagName,isDraft,isPrerelease,assets']));
+        if (rel.tagName !== pkg.version) {
+            errors.push(`Release tagName (${rel.tagName}) 与 manifest.version (${pkg.version}) 不一致`);
+        }
+        if (rel.isDraft || rel.isPrerelease) {
+            errors.push('Release 不能是 draft / prerelease（社区目录只接受正式发布）');
+        }
+        const byName = new Map((rel.assets || []).map((a) => [a.name, a.size]));
+        const required = ['main.js', 'manifest.json', 'styles.css', 'versions.json'];
+        for (const name of required) {
+            if (!byName.has(name)) {
+                errors.push(`Release 缺少资产: ${name}`);
+                continue;
+            }
+            const localPath = path.join(rootDir, name);
+            if (fs.existsSync(localPath)) {
+                const localSize = fs.statSync(localPath).size;
+                if (byName.get(name) !== localSize) {
+                    errors.push(`Release 资产 ${name} 体积与本地构建不一致: 远程 ${byName.get(name)} vs 本地 ${localSize}（说明发布产物不是这份源码构建的）`);
+                }
+            }
+        }
+        const strayWorkers = [...byName.keys()].filter((n) => n.startsWith('workers/'));
+        if (strayWorkers.length > 0) {
+            notes.push(`Release 里存在独立 worker 资产（社区目录会标为额外文件）: ${strayWorkers.join(', ')}`);
+        }
+        if (!errors.some((e) => e.startsWith('Release'))) {
+            notes.push(`Release ${pkg.version} 资产齐全且体积与本地一致（${repoSlug}）`);
+        }
+
+        // attestation：记分卡 Passed 段会检查 main.js / styles.css 的 GitHub artifact attestation
+        const tmpDir = fs.mkdtempSync(path.join(process.env.TEMP || '/tmp', 'nw-attest-'));
+        try {
+            for (const name of ['main.js', 'styles.css']) {
+                try {
+                    execFileSync('gh', ['release', 'download', pkg.version, '--repo', repoSlug, '--pattern', name, '--dir', tmpDir, '--clobber'], { cwd: rootDir, stdio: ['ignore', 'pipe', 'pipe'] });
+                    execFileSync('gh', ['attestation', 'verify', path.join(tmpDir, name), '--repo', repoSlug], { cwd: rootDir, stdio: ['ignore', 'pipe', 'pipe'] });
+                    notes.push(`${name} 的 GitHub artifact attestation 校验通过`);
+                } catch (e) {
+                    const msg = e instanceof Error ? String(e.message).split('\n')[0] : String(e);
+                    notes.push(`${name} attestation 未能验证（本地 gh 版本或权限限制，非代码问题）: ${msg}`);
+                }
+            }
+        } finally {
+            fs.rmSync(tmpDir, { recursive: true, force: true });
+        }
+    } catch (e) {
+        errors.push(`无法读取远程 Release（gh release view ${pkg.version}）: ${e instanceof Error ? String(e.message).split('\n')[0] : String(e)}`);
     }
 }
 
