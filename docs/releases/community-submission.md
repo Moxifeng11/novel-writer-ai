@@ -75,7 +75,7 @@ Obsidian 已**不再**接受 `obsidianmd/obsidian-releases` 的 `community-plugi
 | 未在 `onunload` 释放资源 | 有 `check:hotpaths` 与 e2e 生命周期用例 |
 | 给命令设默认快捷键 | 零命中：`addCommand` 的定义表里没有任何 `hotkeys` 字段（`core/command-registry.ts` 与 `ui/` 全仓 grep `hotkeys` = 0） |
 | 动态代码执行（`eval` / `new Function`） | 零命中：`engine/`、`ui/`、`shared/`、`core/` 全仓 grep = 0 |
-| `eslint` 指令缺说明（`eslint-comments/require-description`） | 2026-11-20 命中 2 处（`engine/agent/harness/mcp-stdio-transport.ts:31`、`services/chapter-version-service.ts:57`），已补 `-- 说明`；`check:obsidian-review` 兜住 |
+| `eslint` 指令缺说明（`eslint-comments/require-description`） | 2026-11-20 命中 2 处（`engine/agent/harness/mcp-stdio-transport.ts:31`、`services/chapter-version-service.ts:57`），已补 `-- 说明`；`check:obsidian-review` 兜住。**公开记分卡已交叉验证**：4.97.1 的 `Risks` 档唯一一类就是这两条（见 §四之一二） |
 | 未清洗的 `innerHTML` | 只有 `ui/rendering/safe-html.ts` 一处集中清洗（`no-unsanitized` 规则要求的单一关闭点），其余命中全是注释 |
 | 桌面端用原生 `fetch` 而非 `requestUrl` | **唯一风险点**：`shared/http-transport.ts:136 fetchOnDesktop` → `:188`/`:224`，桌面端用 `fetch` 以保留取消语义与 SSE 流式（移动端仍走 `requestUrl`）。若审核要求改回 `requestUrl`，代价是放弃流式取消；README 已披露网络行为 |
 
@@ -98,6 +98,29 @@ npm run check:obsidian-review        # 只打印 error 级（= 会被打回）�
 实测：全量 1,037 个文件约 52 秒；2026-11-20 修复后 **EXIT=0**。另一份全量 recommended 配置跑出的 1,721 条 error 里，绝大多数（`prefer-create-el` 682、`no-unused-vars` 569、`no-deprecated` 255…）在扫描器里只是 warn，不阻断——**别再用「本地 lint 全绿」代替这项检查**。
 
 也可在账号页用 `Review branch` 对分支做预览扫描（不发版）；正式复审要点 `Check for new releases`（只扫最新 Release）。
+
+## 四之一二、公开记分卡（Scorecard）——不用登录也能看审核扫描结果
+
+社区目录的插件页有 `#scorecard` 锚点（右侧 `Health / Review / Risks` 三条进度条点进去），它把每次扫描的结果公开列出，**不需要登录账号**：
+
+- `Health`：Hygiene（README/LICENSE/CONTRIBUTING/描述齐全）、Maintenance（最近提交、近一年提交数、最近发版）、Responsiveness（有无 issue）、Adoption（安装数）。
+- `Review`：`N issues found by automated scans of the latest release.` + 分档明细（`Passed` / `Disclosures` / `Risks`，每条可展开看文件链接，链接形如 `https://github.com/<owner>/<repo>/blob/<commit>/<file>#L<line>`）。
+- 判定标签：0–数十条 → `Satisfactory`（绿），数百条以上 → `Risks`（红）。
+
+**2026-11-20 实测（4.97.1，commit 2a18bca）**：`Risks`，`3457 issues`。分档里 **`Risks` 档只有 1 类（2 处）**，就是 `Unexpected undescribed directive comment.` → `engine/agent/harness/mcp-stdio-transport.ts#L31`、`services/chapter-version-service.ts#L57`，与本地 `check:obsidian-review` 判定的唯二阻断项完全一致；其余全是 `medium`（4 类，含 2 处 `Unexpected browser feature`）与 `info`（数千条，绝大多数是 `no-unused-vars` 之类的未使用变量）。也就是说 **公开记分卡反过来验证了 4.97.2 的诊断**。
+
+**对照证据（重要，别被红条吓住）**：`dataview` 的记分卡是 `Risks` + `386 issues`，它照样在客户端市场里；`templater-obsidian` 是 `Satisfactory` + `8 issues`。所以：
+
+- `Review: Risks` 是**公开质量画像，不构成上架阻断**；
+- 真正决定能不能上架的是账号页 `Reviews` 四段（Manifest / Releases / Source code / Build verification）里的 **error**，也就是 `check:obsidian-review` 覆盖的那批规则。
+
+**监控方式**（都不需要登录）：
+
+```powershell
+Invoke-WebRequest https://community.obsidian.md/plugins/novel-writer-ai -OutFile page.html -UseBasicParsing
+# 当前版本：搜 'Current version' 后紧跟的版本号
+# 审核扫描：搜 'issues found by automated scans' 与倒数第一段 '"children":"Risks"|"Satisfactory"'
+```
 
 ## 四之三、构建可复现（4.97.3 起）
 

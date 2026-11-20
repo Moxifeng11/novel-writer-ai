@@ -4131,3 +4131,10 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 
 - **4.97.3 收尾实证**：Release `main.js`（CI Node 20）与本机构建（Node 24）SHA256 一致 `11472CB4…381A`，4.97.2 时代则是 `B4B4FF16…` vs `CB43DB80…` → 跨环境可复现已被证实，审核 Build verification 不会再因平台差异对不上。
 - **待用户动作**：账号页点 `Check for new releases`（或 `Request review`）触发 4.97.3 扫描；结果出来前不要继续猜测式改代码。
+
+## 第一百三十二轮：审核扫描结果公开化 —— 记分卡交叉验证
+
+- 发现：社区目录插件页 #scorecard 公开列出扫描结果（Health / Review / Risks），不需要登录账号；4.97.1 显示 Risks，3457 issues，其中 Risks 档唯一一类（2 处）正是 Unexpected undescribed directive comment 指向 ngine/agent/harness/mcp-stdio-transport.ts#L31、services/chapter-version-service.ts#L57 —— 与 4.97.2 的诊断逐字对上。
+- 对照：dataview 记分卡同为 Risks（386 issues）却照常上架；	emplater-obsidian 为 Satisfactory（8 issues）。结论：Review: Risks 不阻断上架，阻断的是账号页 Reviews 四段的 error（即 check:obsidian-review 覆盖的规则）。
+- 文档：docs/releases/community-submission.md 新增 §四之一二（记分卡读法、对照证据、无登录监控命令），并在 §四表格补交叉验证一句。
+- 结论：4.97.2/4.97.3 已修掉记分卡上唯一的 Risks 档问题；剩等目录侧扫到 4.97.3（页面仍显示 4.97.1）。
