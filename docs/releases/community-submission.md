@@ -109,6 +109,15 @@ npm run check:release:remote
 ```
 （本地无 `gh`、或 `gh` 版本不支持 attestation 时只降级为提示，不会误报失败。）
 
+复审之后，用一条命令判断「是否真的上架成功」，不要靠页面观感：
+
+```powershell
+npm run check:published              # 报告三项状态
+node scripts/check-published.mjs --expect 4.97.3   # 未上架则 exit 1，可用于轮询
+```
+
+三项判据必须同时满足：插件页 `Current version` == manifest.version、客户端市场清单 `community-plugins.json` 收录该 id、RSS feed 出现该版本。**只满足其一不算上架**（历史上「页面显示新版本」曾被误当成上架成功）。
+
 ## 四之一二、公开记分卡（Scorecard）——不用登录也能看审核扫描结果
 
 社区目录的插件页有 `#scorecard` 锚点（右侧 `Health / Review / Risks` 三条进度条点进去），它把每次扫描的结果公开列出，**不需要登录账号**：

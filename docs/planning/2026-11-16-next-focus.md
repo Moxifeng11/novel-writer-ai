@@ -4145,3 +4145,13 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
   2. `--remote`（新脚本 `npm run check:release:remote`）：`gh release view <version>` 断言 tagName == manifest.version、非 draft/prerelease、main.js / manifest.json / styles.css / versions.json 四资产齐全且体积与本地构建一致；再 `gh release download` + `gh attestation verify` 核对 main.js / styles.css 的 artifact attestation（对应记分卡 Passed 段那两条）。
 - 实测 4.97.3：本地与远程均 EXIT=0，输出「Release 4.97.3 资产齐全且体积与本地一致」+「main.js / styles.css 的 GitHub artifact attestation 校验通过」。
 - 文档：`docs/releases/community-submission.md` §四之二 补「打 tag 之后、点复审之前」的核验命令。
+
+## 第一百三十四轮：上架状态自查脚本（check:published）
+
+- 新增 `scripts/check-published.mjs` + `npm run check:published`：一次性核对三项判据 ——
+  插件页当前版本、`community-plugins.json` 是否收录 id、RSS 是否出现该版本；
+  `--expect <version>` 时未达标 exit 1，便于轮询。
+- 实测 4.97.3：三项全部未达标（页面 4.97.1、清单未收录、RSS 最新 4.97.1），与「审核未通过」判断一致。
+- 顺带核实发布资产额外文件（zip / SHA256SUMS.txt / versions.json）在记分卡里属 `info:` 级
+  「Release contains extra unsupported files —— All other files will not be downloaded by Obsidian.」，不阻断。
+- 文档：`docs/releases/community-submission.md` §四之二 补复审后的判定命令与三项判据。
