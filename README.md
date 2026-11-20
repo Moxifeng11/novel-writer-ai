@@ -4,7 +4,7 @@
 
 > 全流程 AI 长篇小说创作系统 —— 在 Obsidian 内完成从构思、大纲、设定管理到正文生成与质量复盘的全链路。
 
-**当前版本**：4.97.0 · **最低 Obsidian**：1.4.4 · **平台**：桌面端 / 移动端（界面中英双语；系统级文件保护仅桌面端）
+**当前版本**：4.97.1 · **最低 Obsidian**：1.4.4 · **平台**：桌面端（界面中英双语）
 
 ---
 
@@ -13,6 +13,8 @@
 **Novel Writer AI** is an end-to-end AI writing workspace for Chinese web novels, short stories, and scripts. It covers project setup, outlines, world-building, chapter drafting, co-writing, quality checks, settlement/continuity tracking, knowledge-base deconstruction, and manuscript export (Markdown/TXT/HTML/EPUB/DOCX). The plugin UI is available in Chinese and English.
 
 **Network use (disclosed per Developer policies).** The plugin only contacts endpoints you configure. It sends your prompts and the selected context to the AI provider you choose (OpenAI-compatible endpoint, or a local model such as Ollama). Optional features make additional requests: update check (GitHub Releases API), model discovery / connectivity tests (your configured provider), and optional "trend research"/"canon research" (fixed public search endpoints or URLs you provide). No telemetry is collected, and nothing is sent anywhere by default.
+
+**Local file access (disclosed per Developer policies).** Two desktop-only features touch files outside the vault: the MCP program picker lists directories you navigate to (to locate an MCP server executable), and "protect meta files" runs a single OS command (`attrib` on Windows, `chmod` on macOS/Linux) to mark the plugin's own `元文件` folder read-only. Nothing is scanned automatically and nothing is uploaded.
 
 **Local data.** Settings, API keys (optionally encrypted with a session passphrase), prompt cache, knowledge-base index and session logs are stored in the plugin's own data folder under your vault's configuration directory (`.obsidian/plugins/novel-writer-ai/`). They are never uploaded by the plugin. `.gitignore` and an explicit `check:secrets` gate keep keys out of this repository.
 
@@ -167,6 +169,15 @@ npm run build          # 产出 main.js（版本号自动同步到 manifest.json
 
 实体保存走统一落盘层：四类实体（人物/势力/地点/物品）都会补齐 frontmatter；保存时遇到同名但内容不同的实体不会覆盖，而是另存为「名称（2）」，便于区分同名分身等设定。
 
+### 外部文件访问（仅桌面端）
+
+两处功能会触及 vault 之外的文件，README 按 Obsidian 开发者政策显式披露：
+
+- **MCP 程序选择器**：为定位 MCP 服务器可执行文件，会列举你在选择器里逐级进入的目录（只读目录项与文件大小，不扫描、不上传）。
+- **保护元文件**：对插件自己生成的 `元文件/` 目录执行一条系统命令（Windows `attrib` / macOS、Linux `chmod`）设置只读，防止误改。
+
+其余所有读写都走 Obsidian 的 vault API。
+
 ### 卸载与数据保留
 
 - 停用或删除插件**不会**删除项目目录与 `元文件`，正文与设定仍在 vault 中。
@@ -217,7 +228,7 @@ npm run build          # 产出 main.js（版本号自动同步到 manifest.json
 
 ### 5. 移动端能用吗？
 
-可以打开项目、编辑 Markdown 与执行大部分 AI 流程。但「保护元文件」依赖 Windows 文件属性或 macOS/Linux 权限位，移动端会明确提示不支持；移动端也没有本地 Worker 文件系统能力，重任务可能降级到主线程。
+暂不支持。插件使用 Node/Electron API（后台 Worker、系统级文件保护、MCP 本地文件与 stdio 传输），按 Obsidian 的上架要求必须声明为桌面端专用（`isDesktopOnly: true`）。把这些路径改成纯 vault API 后可以恢复移动端支持，已列入后续计划。
 
 ### 6. 旧版写作命令为什么看不到了？
 
@@ -302,11 +313,11 @@ styles.css      插件样式（nw- 命名空间 + token 变量）
 
 ## 兼容性与版本
 
-- Obsidian **1.4.4+**（桌面端与移动端）。
-- **界面语言**：目前仅提供简体中文界面，未接入 i18n 层；如需其他语言需先抽离文案 key，暂不在当前版本计划内。
+- Obsidian **1.4.4+**（桌面端）。
+- **界面语言**：简体中文 / English 双语，设置页可切换（命令面板名称重载插件后生效）。
 - **平台差异**：
-  - 桌面端：完整功能，包括 Worker 后台线程与「保护元文件」系统级保护。
-  - 移动端：可读写项目与执行大部分 AI 流程；Worker 缺失时自动降级到主线程，「保护元文件」明确不支持。
+  - 桌面端：完整功能，包括 Worker 后台线程、MCP 本地文件与 stdio 传输、系统级「保护元文件」。
+  - 移动端：本版不支持（见 FAQ 第 5 条）。
   - 系统级文件保护按平台分支实现：Windows 使用文件属性，macOS / Linux 使用权限位。
 - 旧项目数据、旧版报告与既有设置键名保持向后兼容。
 - 旧版正文生成命令保留至 **v5.0.0**，之后移除；当前仅从公开命令面板收敛并给出弃用提示。

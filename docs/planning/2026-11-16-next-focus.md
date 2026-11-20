@@ -4070,3 +4070,18 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 处理：删两处残留步骤；README 去掉「Desktop-only optional backend（dsh）」整段；`docs/handbook/04-interface-contracts.md` §2.9 与 `docs/handbook/07-runbook.md` §5 改写为「Agent 只跑内置 Harness」并给出新的排障表；CHANGELOG 4.97.0 与 `docs/releases/4.97.0.md` 验证表各加一行。
 
 教训：**删脚本/删功能时要扫工作流**。`check:docs`、preflight 都不会校验 workflow 引用的 npm 脚本是否存在，所以本地全绿不代表 CI 能跑；改 package.json scripts 后应 grep `.github/workflows/`。
+
+## 第一百三十三轮：社区插件目录上架准备（4.97.1）
+
+发版 4.97.0 后用户要求同步到 Obsidian 社区。查官方文档发现提交渠道已变：不再走 `obsidian-releases` 的 `community-plugins.json` PR，而是 [community.obsidian.md](https://community.obsidian.md) 用 Obsidian 账号登录 + 关联 GitHub 后提交（全量目录当时 10616 个插件，`novel-writer-ai` 不在其中，属首次上架）。
+
+对照（Submission requirements for plugins）后改了两处硬要求：
+
+- **`isDesktopOnly` 改 `true`**：插件有三处 Node/Electron 调用——`shared/desktop-shell.ts`（动态 import `node:child_process`，保护元文件）、`shared/mcp-file-browse.ts`（`require('node:fs')`，MCP 程序选择器）、`engine/agent/harness/mcp-stdio-transport.ts`（`require('node:child_process')`）。虽然移动端都有降级，但目录规则是「用到就必须声明」，因此本版起移动端不可安装；恢复路径写进 `docs/releases/community-submission.md` 遗留事项。
+- **描述改写**：原 204 字符名词短语 → 219 字符动作句「Write, plan, and polish … and export.」（≤250、句末句号、无 emoji）。
+
+顺带修掉的过期说法：README「界面仅简体中文」（4.97.0 已双语）、README 平台说明三处、`shared/desktop-shell.ts` 注释里已删除的 `check-dsh-isolation` 门禁。新增 README「外部文件访问（仅桌面端）」与英文 `Local file access` 披露段（开发者政策要求 vault 外文件访问必须披露）。
+
+新增文档 `docs/releases/community-submission.md`：现状流程五步、16 条上架清单及证据、可直接用的描述文案与分类建议、常见打回点自查表。
+
+门禁：`npm run build` / `check:release --tag 4.97.1` / `check:changelog`（顶部 4.97.1 唯一、128 个节点）/ `npm run preflight` **EXIT=0**（1013 文件 / 10503 通过 + 3 跳过）。坑：`cmd /c "npm ... & echo EXIT=%ERRORLEVEL%"` 的 %ERRORLEVEL% 会提前展开，得出假 EXIT=0——pwsh 里应写 `npm run preflight *> log; "EXIT=$LASTEXITCODE"`。

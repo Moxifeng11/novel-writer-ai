@@ -21,6 +21,14 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.97.1',
+        date: '2026-11-20',
+        title: '社区目录上架准备',
+        sections: [
+            { type: 'improved', label: '📦 上架合规', items: ['manifest 声明为桌面端专用（使用 Node/Electron API），描述按目录要求改写为 219 字符动作句', 'README 平台/语言说明与 FAQ 同步修正'] },
+        ],
+    },
+    {
         version: '4.97.0',
         date: '2026-11-20',
         title: '双语界面 + 文面体检 + 视觉收口',
@@ -240,33 +248,6 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
                 items: [
                     'rename 覆盖类问题全仓排查（4 处），含知识库索引第二次起写不进去',
                     '修正 3 处「测试锁住错误行为」的旧断言',
-                ],
-            },
-        ],
-    },
-    {
-        version: '4.87.0',
-        date: '2026-11-13',
-        title: '跨章一致性审核：从"写得好不好"到"前后对不对"',
-        sections: [
-            {
-                type: 'added',
-                label: '🔍 一致性审核',
-                items: [
-                    '跨章检测 9 类矛盾（命名混淆/数量不符/外貌不符/绝对时间/时长/同时性/无因之果/因果违规/废弃情节）',
-                    '每条问题带双侧原文引文与正文字符位置，可一键跳到正文',
-                    '规则层零 token 全量跑，仅疑似项交模型复核（默认上限 10 对）',
-                    '风险定位：中段加权 + 字符熵 + 罕见字密度，只挑高风险段',
-                    'CED 指标（每万字符错误数）用于跨版本比较',
-                ],
-            },
-            {
-                type: 'fixed',
-                label: '🛠️ 修复',
-                items: [
-                    '原子写 rename 覆盖已存在文件抛错，导致第二次起写入全失败',
-                    '字数统计台账同款问题，导致统计永不持久化',
-                    '命令执行体缺失静默失效；新增门禁 check:command-handlers 防复发',
                 ],
             },
         ],

@@ -3,7 +3,7 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-17",
   "baseline": {
-    "version": "4.97.0",
+    "version": "4.97.1",
     "tests": {
       "files": 1013,
       "cases": 10503
@@ -19,7 +19,7 @@
       "check:write-entry"
     ],
     "localCommitsAhead": 0,
-    "localCommitsAheadNote": "2026-11-20 发版 4.97.0 更新测试基线：preflight EXIT=0，1013 测试文件 / 10503 用例通过（3 skip）。",
+    "localCommitsAheadNote": "2026-11-20 上架准备 4.97.1：仅 manifest/文档调整，测试基线沿用 1013 文件 / 10503 用例。",
     "ahead": 0
   },
   "groups": [

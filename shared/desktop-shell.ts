@@ -9,8 +9,8 @@
  * - `node:child_process` 只在函数内动态 import，移动端/默认路径不会加载；
  * - 使用 execFile（参数数组），不经过 shell，避免路径拼进命令串。
  *
- * 隔离门禁：`scripts/check-dsh-isolation.mjs` 把本文件与 `engine/agent/dsh/**`
- * 列为 child_process 的显式例外；新增例外必须在脚本里写明理由。
+ * 上架声明：因使用 `node:child_process`，manifest 的 `isDesktopOnly` 为 `true`
+ * （见 `docs/releases/community-submission.md`）。新增系统命令调用必须先改这一处接口。
  *
  * 使用方式：
  * ```ts

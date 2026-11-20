@@ -2,6 +2,14 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## 4.97.1（2026-11-20）
+
+社区插件目录上架准备（不改变功能）：
+
+- `manifest.json`：`isDesktopOnly` 改为 `true` —— 插件使用 Node/Electron API（Worker 线程、系统级文件保护、MCP 本地文件与 stdio 传输），按 Obsidian 上架要求必须声明为桌面端专用；移动端本版不再可安装。
+- `manifest.json`：描述改为以动作开头的 219 字符短句（上架要求 ≤250 字符、句末带句号、不用 emoji），并去掉与实际能力不符的措辞。
+- 文档：README 平台/语言说明与 FAQ 第 5 条按「桌面端专用」修正；新增 `docs/releases/community-submission.md` 记录上架清单与合规自检结果。
+
 ## 4.97.0（2026-11-20）
 
 - **双语界面全量落地**（功能缺口 ⑦）：`t()` 运行时 + zh-CN / en-US 各 **6087** 条资源；命令面板命令名与分组名、设置页全部分区、写作主流程、知识库、Agent 工作台、全部弹窗；语言切换即时生效（命令名需重载插件）。
