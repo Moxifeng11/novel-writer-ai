@@ -4128,3 +4128,6 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - **验证**：生成器连跑 3 次（含换 TMP/TEMP）哈希均为 `5A2AC542…63C6`；`npm run build` 连跑 2 次 `main.js` 均为 `11472CB4…381A`（6,241,484 字节）；worker 内联 6 例 + plugin-worker-url 10 例通过；tsc 0；check:obsidian-review EXIT=0。
 - **发版**：4.97.3（changelog 删最旧 4.89.0 保持 12 条上限）；bundle 基线上调 6,238,913 → 6,241,484（note 写明原因）；新增 `docs/releases/4.97.3.md`，`docs/releases/community-submission.md` 增「构建可复现」一节。
 - **遗留**：审核结果仍然未知——需要用户在账号页点 `Check for new releases`；若再 Failed，下一轮必须抓 Reviews 各段具体条目，不再靠猜。
+
+- **4.97.3 收尾实证**：Release `main.js`（CI Node 20）与本机构建（Node 24）SHA256 一致 `11472CB4…381A`，4.97.2 时代则是 `B4B4FF16…` vs `CB43DB80…` → 跨环境可复现已被证实，审核 Build verification 不会再因平台差异对不上。
+- **待用户动作**：账号页点 `Check for new releases`（或 `Request review`）触发 4.97.3 扫描；结果出来前不要继续猜测式改代码。
