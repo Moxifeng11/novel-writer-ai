@@ -41,6 +41,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # 社区目录审核扫描器判据（eslint-plugin-obsidianmd，审核方同款严重度）：
+      # 只有安全类与最新层 API/备注规则是 error；退出码 = 「这版会不会被审核打回」。
+      - name: 社区审核扫描门禁
+        run: npm run check:obsidian-review
+
       - name: CSS 预算与命名检查
         run: npm run check:css
 
