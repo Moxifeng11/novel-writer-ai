@@ -28,10 +28,23 @@ const SITE_URL = `https://community.obsidian.md/plugins/${pluginId}`;
 const LIST_URL = 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/community-plugins.json';
 const FEED_URL = `https://community.obsidian.md/plugins/${pluginId}/feed.xml`;
 
-async function getText(url) {
-    const res = await fetch(url, { headers: { 'user-agent': 'novel-writer-ai-release-check' } });
-    if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-    return res.text();
+async function getText(url, attempts = 3) {
+    let lastError = null;
+    for (let i = 0; i < attempts; i++) {
+        try {
+            // community-plugins.json 有 3MB+，弱网下默认超时容易中途断开（terminated），这里放宽并重试
+            const res = await fetch(url, {
+                headers: { 'user-agent': 'novel-writer-ai-release-check' },
+                signal: AbortSignal.timeout(60_000),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+            return await res.text();
+        } catch (e) {
+            lastError = e;
+            if (i < attempts - 1) await new Promise((resolve) => setTimeout(resolve, 1500 * (i + 1)));
+        }
+    }
+    throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
 const facts = {
