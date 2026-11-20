@@ -9,6 +9,7 @@
  */
 
 import { ItemView, Notice, type WorkspaceLeaf } from 'obsidian';
+import { t } from '@/i18n';
 import type NovelWriterPlugin from '@/main';
 import {
     addEdge,
@@ -136,7 +137,7 @@ export class PlanningCanvasView extends ItemView {
      *
      * @returns 显示名
      */
-    getDisplayText(): string { return '规划画布'; }
+    getDisplayText(): string { return t('shellView.planning'); }
 
     /**
      * 标签页图标。

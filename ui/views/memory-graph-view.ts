@@ -9,6 +9,7 @@
  */
 
 import { ItemView, Notice, type WorkspaceLeaf } from 'obsidian';
+import { t } from '@/i18n';
 import type NovelWriterPlugin from '@/main';
 import {
     addEdge,
@@ -90,7 +91,7 @@ export class MemoryGraphView extends ItemView {
      *
      * @returns 显示名
      */
-    getDisplayText(): string { return '设定实体图'; }
+    getDisplayText(): string { return t('shellView.memoryGraph'); }
 
     /**
      * 标签页图标。

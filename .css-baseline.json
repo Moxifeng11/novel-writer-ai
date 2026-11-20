@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-19T23:15:53.281Z",
-  "note": "A-17 单元写作台撤销/重做（.nw-unit-history / -btn、save-state nowrap）",
-  "bytes": 802124,
+  "generatedAt": "2026-11-20T00:22:52.394Z",
+  "note": "2026-11-20 真实点击验收：写作台标题栏/次级栏/快捷工具行换行（+810 bytes）",
+  "bytes": 802934,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 223,

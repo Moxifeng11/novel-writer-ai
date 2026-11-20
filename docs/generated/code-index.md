@@ -11,7 +11,7 @@
 | `shared/` | 264 | 53051 | 2243 | 1754 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 306 | 113825 | 1179 | 942 | 80% |
+| `ui/` | 307 | 113877 | 1181 | 944 | 80% |
 
 ## 文件清单
 
@@ -903,7 +903,7 @@
 | `ui/model-picker-modal.ts` | 290 | 4 | 4 |
 | `ui/model-picker-popover.ts` | 298 | 4 | 3 |
 | `ui/model-quick-switcher.ts` | 321 | 13 | 12 |
-| `ui/monitor-panel-a.ts` | 189 | 2 | 2 |
+| `ui/monitor-panel-a.ts` | 190 | 2 | 2 |
 | `ui/monitor-panel-b.ts` | 1892 | 2 | 2 |
 | `ui/novel-analysis-modal.ts` | 267 | 1 | 1 |
 | `ui/novel-tags-modal.ts` | 259 | 1 | 1 |
@@ -921,7 +921,7 @@
 | `ui/polish-editor.ts` | 926 | 5 | 5 |
 | `ui/pre-research-modal.ts` | 724 | 2 | 2 |
 | `ui/project-health-modal.ts` | 210 | 1 | 1 |
-| `ui/project-side-panel-view.ts` | 457 | 5 | 5 |
+| `ui/project-side-panel-view.ts` | 458 | 5 | 5 |
 | `ui/project-utils.ts` | 366 | 11 | 10 |
 | `ui/prompt-import-preview-modal.ts` | 135 | 2 | 1 |
 | `ui/prompt-manager-logic.ts` | 76 | 4 | 3 |
@@ -985,6 +985,7 @@
 | `ui/usage-ledger-modal.ts` | 205 | 1 | 1 |
 | `ui/utils/worldview-utils.ts` | 103 | 1 | 1 |
 | `ui/vector-rebuild-action.ts` | 148 | 1 | 1 |
+| `ui/view-tab-titles.ts` | 48 | 2 | 2 |
 | `ui/views/book-detail-logic.ts` | 163 | 10 | 7 |
 | `ui/views/book-detail-metrics.ts` | 398 | 29 | 21 |
 | `ui/views/book-detail-renderer.ts` | 2207 | 2 | 2 |
@@ -1015,8 +1016,8 @@
 | `ui/views/knowledge-capability.ts` | 116 | 3 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |
 | `ui/views/link-status.ts` | 130 | 2 | 1 |
-| `ui/views/memory-graph-view.ts` | 289 | 3 | 2 |
-| `ui/views/planning-canvas-view.ts` | 954 | 4 | 3 |
+| `ui/views/memory-graph-view.ts` | 290 | 3 | 2 |
+| `ui/views/planning-canvas-view.ts` | 955 | 4 | 3 |
 | `ui/views/writing-fingerprint-view.ts` | 2019 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 455 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |

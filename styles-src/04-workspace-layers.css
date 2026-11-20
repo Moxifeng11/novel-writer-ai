@@ -47,8 +47,10 @@
 /* Task 8.1: 标题栏次要控件容器基础样式 */
 .novel-writer-fw-title-secondary {
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
     align-items: center;
+    min-width: 0;
 }
 
 /* Task 8.1: 标题栏响应式 - 窄屏次要控件换行 */

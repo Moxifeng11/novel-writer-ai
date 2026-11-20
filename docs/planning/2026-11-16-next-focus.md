@@ -3958,3 +3958,22 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 已知遗留：en 下 `第1节 · 20 chars`、`Complete this 节` 仍混中文（`modeUnitLabel` 返回中文单位名插入英文模板），属 i18n 未迁移面。
 
 **下一轮**：C 清单 P0×4 / P1×9 / P2×7 全部收口，等用户指定方向（视觉 / 功能 / i18n 余下 ideation 793 → batch-import 750 → agent-workbench-view 730）。
+
+## 第一百二十八轮：真实点击验收 —— 写作台横向溢出 + 页签标题补写（2026-11-20，DSH）
+
+**背景**：用户要求「不用脚本触发，真实点击验证插件界面可用性，排查 Obsidian 开发者面板错误，给验收标准」。
+
+- 环境坑：Obsidian 1.14.5 把设置窗口与命令面板开在**第二个 window**，抢走 activeWindow 后插件 Modal 也弹到那个窗口 —— 主窗口截图里表现为「点了没反应」。脚本必须先关闭多余 page（`for (p of ctx.pages()) if (p !== main) await p.close()`）。据此复核：主页「进入短篇小说」**不是 bug**（干净单窗口下正常弹出「📥 短篇前期调研」Modal）。
+- **FIX-01 写作台横向溢出（P0）**：1440×900 下 .novel-writer-fw-container clientWidth 1072 / scrollWidth 1391，右栏「上下文监控」x=1517 完全在屏外。罪魁 .novel-writer-fw-title-row w=1350 + .novel-writer-fw-titlebar 1371（flex-shrink: 0、行内不换行 → 容器最小内容宽被顶到 1350）。
+  - 修法：styles-src/02-full-writer-view.css:167 的 .novel-writer-fw-title-row 加 flex-wrap: wrap; min-width: 0; + 新增 .novel-writer-fw-title-row > * { min-width: 0; }；styles-src/04-workspace-layers.css:48 的 .novel-writer-fw-title-secondary 加 flex-wrap: wrap; min-width: 0;；styles-src/08-workbench-v7-v8.css:1195 的 .novel-writer-fw-quick-tools-row 加 min-width: 0;。
+  - 复验：1440 cw=sw=1072、ctx x=1198 可见、titleRow 90px；1280 cw=sw=912、ctx x=1038；docOverflow 0。
+- **FIX-02 页签标题（P1）**：重启后 Obsidian 的 DeferredView 让未实例化视图的页签显示视图类型 id（20 个页签里 19 个是 novel-writer-*），点一下才变中文。
+  - 新文件 ui/view-tab-titles.ts：pluginViewTabTitle(viewType) / pluginViewTypes()，11 个视图类型 → t(...) 标题。
+  - main.ts 新增 _scheduleDeferredTabTitlesFix()（onLayoutReady + 0/300/1000/2500ms 重试 + workspace.on('layout-change')）与 _fixDeferredTabTitles()（iterateAllLeaves，仅当 tabHeaderInnerTitleEl 文本等于视图 id 时改写）。**只调一次没用**：那时页签 DOM 还没渲染。
+- **i18n**：页签标题模块带来 5 条中文字面量，棘轮会涨 —— 选择把 4 个视图标题真正迁进资源（shellView.planning|memoryGraph|sidePanel、cowrite.view.title、monitorA.viewTitle），而不是上调基线。资源 zh/en 各 **6082**；棘轮 **205 文件 / 5360 条**。
+- 测试：tests/unit/ui/view-tab-titles.test.ts 4 例（注意相对路径是 ../../../ui/...）。
+- 文档：新增 docs/audits/2026-11-20-ui-real-click-acceptance.md（验收标准 A–F、实测表、FIX-01/02、缺陷清单 F-03..F-09、回归命令）。
+- 门禁：tsc 0、lint 0 error（1030 warning）、check:i18n / check:jsdoc / check:inline-styles / check:utility 通过；基线 .bundle-baseline.json main.js **6235714** / styles.css **802934**、.css-baseline.json bytes 802934。
+- 未修（已登记）：F-03 打开第 1 章即触发一次 AI 调用，key 无效时只有控制台 401 与体检条「0%」，界面无提示；F-04 设置页「使用中」开关压字；F-05 高级设置页签虚线焦点框；F-06 约 900px 宽阶段导航截断；F-07 800px 高状态栏第二行被裁；F-08 启动 3 条 warning。
+
+**下一轮**：F-03（错误可见性，P1）优先，其后 F-04/F-05 属设置页观感。

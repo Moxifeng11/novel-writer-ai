@@ -450,7 +450,7 @@ export class CoWritingView extends ItemView {
    * @returns 显示名
    */
   getDisplayText() {
-    return "\u270D\uFE0F \u53E5\u7EA7\u534F\u540C\u5199\u4F5C";
+    return t('cowrite.view.title');
   }
   /**
    * 视图图标。

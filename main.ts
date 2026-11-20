@@ -106,6 +106,7 @@ import { ContextSessionService } from './services/context-session-service';
 import type { SessionPresetPayload } from '@/shared/session-preset-model';
 import { PlanningCanvasView, PLANNING_CANVAS_VIEW_TYPE } from './ui/views/planning-canvas-view';
 import { MemoryGraphView, MEMORY_GRAPH_VIEW_TYPE } from './ui/views/memory-graph-view';
+import { pluginViewTabTitle } from './ui/view-tab-titles';
 import { BackupCenterModal } from './ui/backup-center-modal';
 import { ChangelogModal } from './ui/changelog-modal';
 import { compareVersions, isMajorUpdate } from './services/update-checker';
@@ -1297,6 +1298,7 @@ export default class NovelWriterPlugin extends Plugin {
 
             // 审计 P2：会话落点统一保留策略 —— 启动后台修剪一次（按数量上限）
             this._scheduleSessionRetentionPrune();
+        this._scheduleDeferredTabTitlesFix();
 
             log.info('[小说工坊] 插件加载完成！');
         } catch (error) {
@@ -1383,6 +1385,65 @@ export default class NovelWriterPlugin extends Plugin {
                 log.warn('[小说工坊] 孤儿向量清理失败（不影响启动）:', e);
             }
         }
+    }
+
+    /**
+     * 启动期补写被 DeferredView 冲掉的页签标题（2026-11-20 真实点击验收修复）
+     *
+     * Obsidian 1.7.2+ 把后台页签存成 DeferredView，其 getDisplayText() 返回视图类型 id，
+     * 保存布局时把这个 id 写进 workspace.json，于是重启后页签显示 novel-writer-knowledge-base
+     * 这样的原始 id，必须手点一次才恢复中文。这里在布局就绪后只改页签文字，
+     * 不实例化视图（不触发各视图的加载与 AI 调用）。
+     */
+    private _scheduleDeferredTabTitlesFix(): void {
+        this.app.workspace.onLayoutReady(() => {
+            if (this._isUnloaded) return;
+            // 页签 DOM 在布局就绪后才渲染出来，单次调用会因 tabHeaderInnerTitleEl 尚未生成而空跑；
+            // 用几次延迟重试覆盖渲染时机，之后靠 layout-change 兜住新开的页签。
+            for (const delay of [0, 300, 1000, 2500]) {
+                const timer = window.setTimeout(() => {
+                    if (this._isUnloaded) return;
+                    try {
+                        this._fixDeferredTabTitles();
+                    } catch (e) {
+                        log.warn('[小说工坊] 页签标题补写失败（不影响启动）:', e);
+                    }
+                }, delay);
+                this.register(() => window.clearTimeout(timer));
+            }
+            this.registerEvent(
+                this.app.workspace.on('layout-change', () => {
+                    if (this._isUnloaded) return;
+                    try {
+                        this._fixDeferredTabTitles();
+                    } catch { // silent-ok: 布局变化频繁（拖页签即触发），补写失败不影响使用
+                    }
+                })
+            );
+        });
+    }
+
+    /** 遍历全部叶子，把仍显示视图类型 id 的插件页签改回中文名 */
+    private _fixDeferredTabTitles(): void {
+        const workspace = this.app.workspace as unknown as {
+            iterateAllLeaves?: (cb: (leaf: unknown) => void) => void;
+        };
+        if (typeof workspace.iterateAllLeaves !== 'function') return;
+        workspace.iterateAllLeaves((rawLeaf) => {
+            const leaf = rawLeaf as {
+                getViewState?: () => { type?: string } | undefined;
+                tabHeaderInnerTitleEl?: HTMLElement;
+            };
+            const viewType = leaf.getViewState?.()?.type;
+            if (!viewType) return;
+            const title = pluginViewTabTitle(viewType);
+            if (!title) return;
+            const titleEl = leaf.tabHeaderInnerTitleEl;
+            if (!titleEl) return;
+            // 只在其显示的正是视图类型 id 时才改写，避免覆盖已正常加载的视图标题
+            if ((titleEl.textContent || '').trim() !== viewType) return;
+            titleEl.setText(title);
+        });
     }
 
     private _scheduleSessionRetentionPrune(): void {

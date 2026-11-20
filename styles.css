@@ -931,10 +931,20 @@ select.nw-select {
     margin: auto;
 }
 
+/* 标题栏允许换行（2026-11-20 真实点击验收发现）：
+   工具栏「知识库管理 / 指纹库 / 设置 / 版本」加项目/章节下拉，最小内容宽约 1350px。
+   1440px 窗口且左侧栏展开时内容区只有约 1070px，不换行会把右栏「上下文监控」
+   整块挤出可视区，并让容器冒出横向滚动条（正文区被裁）。 */
 .novel-writer-fw-title-row {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 6px;
+    min-width: 0;
+}
+/* flex 子项的 min-width 默认是 auto，会把自己的内容宽度当最小宽度顶出去；清零后才让换行生效 */
+.novel-writer-fw-title-row > * {
+    min-width: 0;
 }
 .novel-writer-fw-title-spacer {
     flex: 1;
@@ -2868,8 +2878,10 @@ select.nw-select {
 /* Task 8.1: 标题栏次要控件容器基础样式 */
 .novel-writer-fw-title-secondary {
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
     align-items: center;
+    min-width: 0;
 }
 
 /* Task 8.1: 标题栏响应式 - 窄屏次要控件换行 */
@@ -8846,10 +8858,12 @@ button.nw-btn-icon {
     white-space: nowrap;
 }
 
-/* 章节页常驻工具条 */
+/* 章节页常驻工具条（chips 自身换行；这里给 flex 子项补 min-width: 0，
+   否则标题栏计算最小宽度时会被整条工具条的固有宽度顶大） */
 .novel-writer-fw-quick-tools-row {
     display: flex;
     align-items: center;
+    min-width: 0;
     margin-top: 8px;
     padding-top: 8px;
     border-top: 1px dashed var(--nw-divider, var(--background-modifier-border-hover));

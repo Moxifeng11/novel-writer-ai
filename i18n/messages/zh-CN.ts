@@ -212,6 +212,9 @@ export const zhCN: MessageTree = {
         sectionPlatform: '九、番茄小说格式要求',
         hintPlatform: '每段开头缩进、对话独立成段、标题格式等',
     },
+    monitorA: {
+        viewTitle: '监控面板A · 节奏/情绪/OOC/实体',
+    },
     monitorB: {
         viewTitle: '监控面板B · 完成度/偏离/质量/结算',
         completionTitle: '📊 剧情完成度',
@@ -5325,6 +5328,9 @@ export const zhCN: MessageTree = {
         unknownError: '未知错误',
     },
     cowrite: {
+        view: {
+            title: '✍️ 句级协同写作',
+        },
         panel: {
             tipHistory: '查看本章的正文版本历史，可回滚',
             tipMemory: '打开写作记忆管理（人物/情节记忆条目）',
@@ -7025,6 +7031,11 @@ export const zhCN: MessageTree = {
             wan: '{n} 万字',
             chars: '{n} 字',
         },
+    },
+    shellView: {
+        planning: '规划画布',
+        memoryGraph: '设定实体图',
+        sidePanel: '小说工坊 · 项目速览',
     },
     tts: {
         title: '🎧 听校',

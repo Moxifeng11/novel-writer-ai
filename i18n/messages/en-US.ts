@@ -209,6 +209,9 @@ export const enUS: MessageTree = {
         sectionPlatform: '9. Fanqie format requirements',
         hintPlatform: 'Paragraph indent, dialogue on its own line, heading format, etc.',
     },
+    monitorA: {
+        viewTitle: 'Monitor A · Rhythm / Emotion / OOC / Entities',
+    },
     monitorB: {
         viewTitle: 'Monitor B · Completion / Divergence / Quality / Settlement',
         completionTitle: '📊 Plot completion',
@@ -5322,6 +5325,9 @@ export const enUS: MessageTree = {
         unknownError: 'unknown error',
     },
     cowrite: {
+        view: {
+            title: '✍️ Sentence-level co-writing',
+        },
         panel: {
             tipHistory: 'View this chapter\'s body-text version history; rollback supported',
             tipMemory: 'Open writing memory management (character/plot memory entries)',
@@ -7022,6 +7028,11 @@ export const enUS: MessageTree = {
             wan: '{n}k words',
             chars: '{n} words',
         },
+    },
+    shellView: {
+        planning: 'Planning canvas',
+        memoryGraph: 'Entity graph',
+        sidePanel: 'Novel Workshop · Project overview',
     },
     tts: {
         title: '🎧 Listen & proofread',

@@ -11,6 +11,7 @@
  */
 import { copyText } from '@/shared/clipboard';
 import { ItemView, Notice, TFile, WorkspaceLeaf, setIcon } from 'obsidian';
+import { t } from '@/i18n';
 import type NovelWriterPlugin from '@/main';
 import { STORAGE_KEYS } from '@/shared/storage-keys';
 import {
@@ -130,7 +131,7 @@ export class ProjectSidePanelView extends ItemView {
      * @returns 文本结果
      */
     getDisplayText(): string {
-        return '小说工坊 · 项目速览';
+        return t('shellView.sidePanel');
     }
 
     /**

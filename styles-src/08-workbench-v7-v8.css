@@ -1191,10 +1191,12 @@ button.nw-btn-icon {
     white-space: nowrap;
 }
 
-/* 章节页常驻工具条 */
+/* 章节页常驻工具条（chips 自身换行；这里给 flex 子项补 min-width: 0，
+   否则标题栏计算最小宽度时会被整条工具条的固有宽度顶大） */
 .novel-writer-fw-quick-tools-row {
     display: flex;
     align-items: center;
+    min-width: 0;
     margin-top: 8px;
     padding-top: 8px;
     border-top: 1px dashed var(--nw-divider, var(--background-modifier-border-hover));

@@ -10,6 +10,7 @@ import { RhythmAnalyzer } from "@/engine/rhythm-analyzer";
 import { EmotionCurveView } from "./components/emotion-curve-view";
 import { appendSanitizedHtml } from '@/ui/rendering/safe-html';
 import { CoWriteFacade } from "./services/co-write-facade";
+import { t } from '@/i18n';
 import { createEmptyState } from "./components/empty-state";
 
 /**
@@ -26,7 +27,7 @@ export class MonitorPanelA extends DraggablePanel {
   protected facade: CoWriteFacade;
 
   constructor(leaf: WorkspaceLeaf, plugin: NovelWriterPlugin) {
-    super(leaf, plugin, "monitor-a", "监控面板A · 节奏/情绪/OOC/实体", "bar-chart");
+    super(leaf, plugin, "monitor-a", t('monitorA.viewTitle'), "bar-chart");
     this.facade = new CoWriteFacade({ plugin });
   }
 
