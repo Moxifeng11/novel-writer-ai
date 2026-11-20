@@ -4010,3 +4010,28 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 ### 门禁与交付
 - tsc 0 错；`npx vitest run tests/unit/ui/api-section-dom.test.ts` 12 通过；build + `dev-vault sync`（4 文件）。
 - 文档：`docs/audits/2026-11-20-ui-real-click-acceptance.md` 新增 FIX-10 / FIX-11 两节、§六 表 F-10 改已修复并新增 F-11 行、§八 回归步骤加 `probe-f10.mjs`。
+
+## 第一百三十一轮：复核 C 清单落地 + 中文面板排版实测（2026-11-20）
+
+用户（m27378）：「下一步需要继续，但需要复核。同时需要验证排版问题，使用中文面板」。
+
+**复核发现（按「调用点 → 渲染路径 → 用户可见」逐条核，不看 disabled 计数）**
+- 审计 C 清单在文档上标了全修，实体只落了一部分。
+- A-1 防重复：只有 `ui/generate-worldview-modal.ts:110` 真无守卫；其余生成弹窗都有各自闸门（generate-character 系列同步置 disabled 后 await、pre-research 的 `if (researchBtn.disabled) return`、unified-entity 的 `_generating`、expand-text 首行换掉按钮等）。
+- A-5 关闭确认：`ModalDirtyGuard` 只接了 3 个 Modal；实测 `ui/` 下 `extends Modal` 且含 textarea 的 27 个。
+
+**本轮改动**
+- `ui/generate-worldview-modal.ts`：生成按钮包 `withButtonBusy(generateButton, t('planBook.generating'), ...)`，校验留在忙碌态外。
+- 补 5 个弹窗的关闭确认：`ui/golden-opening-modal.ts`、`ui/style-distiller-modal.ts`、`ui/template-manager.ts`（TemplateEditModal）、`ui/views/knowledge-base-modals.ts`（EditBookModal / GenreEditModal）；统一 input/change 即脏、成功路径 `markClean`。
+- `tests/unit/ui/modal-guard-wiring.test.ts`：12 例源码级接线不变量（新增 4 组：golden-opening / kb-modals / template-manager / style-distiller 必须含 guard + attach + markClean；世界观必须用 withButtonBusy 且无裸调用）。
+
+**中文面板排版实测**（`D:\nw-tmp\probe-layout131.mjs`，真机点击）
+- 写作台 短篇/长篇 × 1440×900 / 1280×800 / 900×680 六档：`clipped` 全空、`docOverflowX` 0、状态栏 `barInside` true（900×680 换行成 62px 仍完整）。
+- 知识库 `.nw-kb-view` 1396×830、黄金开篇 640×616、世界观 680×739、文笔蒸馏 640×370：零裁切、零横向溢出。
+- 关闭保护实机可用：文笔蒸馏输入后按 Esc → 「留在此页继续编辑 / 丢弃并关闭」，选前者输入仍在。
+
+**脚本坑（已写进脚本注释）**：命令 id 必须带插件前缀；WORLDVIEW/STYLE_DISTILLER 注册为 LONG_ONLY，短篇项目下只弹 Notice；进写作台必须先点项目卡再点「继续写作」。
+
+**门禁**：tsc 0；`modal-guard-wiring`（12）+ `kb-modals-logic` + `golden-opening-modal-dom` + `modal-dirty-guard` 共 27 例通过；build 成功；preflight EXIT=0（1013 测试文件 / 10503 通过 + 3 跳过）；bundle main.js 6239011（+1602）、styles.css 805893 未变；gen:docs 1012 个源文件、check:docs 20 个活跃文档。
+
+**下一轮候选**：剩余 20 个含编辑区弹窗按同模式分批接关闭确认（ai-builder / create-project / existing-entity-manager / cowrite 两个 / fanfic-review / fingerprint-library / generate-* 五个 / ideation / manage-providers / mode-document / novel-analysis / outline-expand / pre-research / unified-entity-generate / volume-intro）。

@@ -44,3 +44,56 @@ describe('add-fanfic 关闭路径逐条 markClean', () => {
         expect(src).not.toMatch(/markClean\(\);\s*\n\s*markClean\(\);/);
     });
 });
+
+/** 逐个文件断言：装了 guard 且真的 attach 到本 Modal（漏 attach = 装了没用）。 */
+const GUARDED_FILES = [
+    'ui/golden-opening-modal.ts',
+    'ui/views/knowledge-base-modals.ts',
+    'ui/template-manager.ts',
+    'ui/style-distiller-modal.ts',
+];
+
+describe('高危表单弹窗的 ModalDirtyGuard 接线（第一百三十一轮）', () => {
+    for (const file of GUARDED_FILES) {
+        const src = stripComments(source(file));
+        it(`${file} 安装并 attach guard，且至少一处 markClean`, () => {
+            expect(src).toContain('new ModalDirtyGuard()');
+            expect(src).toMatch(/dirtyGuard\.attach\(this, this\.app\)/);
+            expect(src).toContain('dirtyGuard.markClean()');
+        });
+    }
+
+    it('知识库两个编辑弹窗的成功/取消出口都有 markClean（≥8 处）', () => {
+        const src = stripComments(source('ui/views/knowledge-base-modals.ts'));
+        const count = src.match(/markClean\(\)/g)?.length ?? 0;
+        expect(count).toBeGreaterThanOrEqual(8);
+        // 两个 Modal 各一份 guard
+        expect(src.match(/new ModalDirtyGuard\(\)/g)?.length).toBe(2);
+    });
+
+    it('文笔蒸馏三个出口（自动存库 / 写入项目 / 存入风格库）都不再询问', () => {
+        const src = stripComments(source('ui/style-distiller-modal.ts'));
+        expect(src.match(/markClean\(\)/g)?.length).toBeGreaterThanOrEqual(3);
+        expect(src).toMatch(/saveToProject[\s\S]{0,200}markClean\(\);\s*\n\s*this\.close\(\);/);
+        expect(src).toMatch(/saveToStyleLib[\s\S]{0,200}markClean\(\);\s*\n\s*this\.close\(\);/);
+    });
+
+    it('模板编辑弹窗取消与保存/删除都 markClean（保留弹窗仍可正常关闭）', () => {
+        const src = stripComments(source('ui/template-manager.ts'));
+        expect(src.match(/markClean\(\)/g)?.length).toBeGreaterThanOrEqual(3);
+    });
+});
+
+describe('世界观生成按钮防重复提交（A-1 复核补漏）', () => {
+    const src = stripComments(source('ui/generate-worldview-modal.ts'));
+
+    it('用 withButtonBusy 包裹 generateWorldview，忙碌文案复用 planBook.generating', () => {
+        expect(src).toContain('withButtonBusy');
+        expect(src).toMatch(/withButtonBusy\(\s*generateButton,\s*t\('planBook\.generating'\)/);
+        expect(src).toMatch(/withButtonBusy\([\s\S]{0,300}generateWorldview\(/);
+    });
+
+    it('不再存在裸的 onclick 直接 await generateWorldview', () => {
+        expect(src).not.toMatch(/onclick = async \(\) => \{\s*\n\s*await this\.generateWorldview\(/);
+    });
+});

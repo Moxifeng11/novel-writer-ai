@@ -13,6 +13,7 @@ import { createLogger } from '@/shared/logger';
 import { exportTextFile } from '@/shared/export-file';
 import { OperationConfirmModal } from './components/progress';
 import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
+import { ModalDirtyGuard } from './components/modal-dirty-guard';
 
 
 const log = createLogger('TemplateManager');
@@ -399,6 +400,8 @@ export class TemplateManager {
 class TemplateEditModal extends Modal {
     private template: TemplateInfo;
     private refreshCallback?: () => void;
+    /** 误触 Esc / 点外部时确认未保存的提示词编辑（审计 A-5 / C#3） */
+    private dirtyGuard = new ModalDirtyGuard();
 
     constructor(app: App, template: TemplateInfo, refreshCallback?: () => void) {
         super(app);
@@ -408,7 +411,9 @@ class TemplateEditModal extends Modal {
 
     onOpen(): void {
     this.modalEl.addClass('nw-scope');
-        this.loadAndShowContent();
+        this.dirtyGuard.attach(this, this.app);
+        this.contentEl.addEventListener('input', () => this.dirtyGuard.markDirty());
+        void this.loadAndShowContent();
     }
 
     private async loadAndShowContent(): Promise<void> {
@@ -462,7 +467,10 @@ class TemplateEditModal extends Modal {
 
         const cancelBtn = btnRow.createEl('button', { text: '取消' });
         cancelBtn.addClass('nw-tpl-btn');
-        cancelBtn.onclick = () => this.close();
+        cancelBtn.onclick = () => {
+            this.dirtyGuard.markClean();
+            this.close();
+        };
 
         const deleteBtn = btnRow.createEl('button', { text: '🗑 删除' });
         deleteBtn.addClass('nw-tpl-btn', 'nw-tpl-btn-danger');
@@ -516,6 +524,7 @@ class TemplateEditModal extends Modal {
                 await this.app.vault.delete(existingUser, true);
             }
 
+            this.dirtyGuard.markClean();
             showSuccessNotice(`已保存 ${this.template.name} 模板`);
             this.close();
             if (this.refreshCallback) {
@@ -553,6 +562,7 @@ class TemplateEditModal extends Modal {
                 }
             }
 
+            this.dirtyGuard.markClean();
             showSuccessNotice(`已删除 ${this.template.name} 的 ${count} 个自定义模板`);
             this.close();
             if (this.refreshCallback) {

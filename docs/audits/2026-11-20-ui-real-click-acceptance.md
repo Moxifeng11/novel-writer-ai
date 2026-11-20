@@ -1,6 +1,6 @@
 # 插件界面真实点击验收（2026-11-20）
 
-> 状态：活跃（本轮验收记录 + 可复用验收标准；后续回归按本表执行）。2026-11-20 第二轮：F-03..F-08 已修；第三轮收尾 F-10 已修、ChapterStateManager 调试留痕降为 debug。
+> 状态：活跃（本轮验收记录 + 可复用验收标准；后续回归按本表执行）。2026-11-20 第二轮：F-03..F-08 已修；第三轮收尾 F-10 已修、ChapterStateManager 调试留痕降为 debug；第四轮（复核 + 中文面板排版）：F-12/F-13 已修（A-5 关闭确认扩到 7 个弹窗、世界观生成防重复），F-14 中文面板排版六档实测零裁切。
 > 版本：v4.96.1 · 环境：Obsidian 1.14.5 · 开发 vault `D:\nw-dev-vault`
 
 ## 一、目的
@@ -195,6 +195,27 @@
   标脏失败）保持 warn。默认级别下 debug 不输出，排查时开调试级仍可见。
 - 结果（`_verify/f08-zh-CN.json`）：启动 → 打开写作台 → 切章，控制台只剩真·无效 key 的 401 两条（FIX-03 已给出界面提示）。
 
+### FIX-12 关闭即丢：ModalDirtyGuard 扩到 7 个弹窗（对应 F-12，审计 A-5 / C#3）
+- 现状复核：`ModalDirtyGuard` 原本只接 3 个 Modal（`ui/plan-book-modal.ts:28`、`ui/writing-style-modal.ts:37`、`ui/add-fanfic-setting-modal.ts:55`），而 `ui/` 下 `extends Modal` 且含 textarea 的文件有 27 个（A-5 原文说 42，是按「含编辑区的弹窗」估的口径）。
+- 修法：本轮补 5 个高危，统一三件套（`new ModalDirtyGuard()` + `attach(this, this.app)` + 成功路径 `markClean()`）：
+  - `ui/golden-opening-modal.ts`：`contentEl` 上 `input`/`change` 即脏；`render()` 里任一生成结果（三章/钩子/钩子检测/节奏/人物/世界观/评分）存在也算脏；导出成功 `markClean` 后关闭。
+  - `ui/style-distiller-modal.ts`：`input`/`change` 即脏；保存到项目、保存到文笔库、分析后自动关闭三处 `markClean`。
+  - `ui/template-manager.ts` 的 `TemplateEditModal`：`input` 即脏；取消 / 保存 / 删除自定义模板三处 `markClean`。
+  - `ui/views/knowledge-base-modals.ts` 的 `EditBookModal` 与 `GenreEditModal`：`input`/`change` 即脏；取消、保存、另存为自定义、删除、创建五处 `markClean`（导入书 / 批量操作两个弹窗没有编辑区，不接）。
+- 结果（真实点击，`_verify131/report.json`）：文笔蒸馏弹窗里在「作品名」输入框打字后按 Esc → 弹出确认框，按钮为「留在此页继续编辑 / 丢弃并关闭」；点前者后弹窗数回到 1、输入值 11 字符仍在。
+
+### FIX-13 世界观生成无防重复（对应 F-13，审计 C#1）
+- 复核结论：A-1 说「171 处手写 disabled」按调用点逐条核后，只有 `ui/generate-worldview-modal.ts:110` 真的没有守卫（无 disabled、类里无 `is*ing` 状态位），`await this.generateWorldview(...)` 期间再点会并发两次付费调用；其余生成弹窗都已有各自闸门（generate-character 系列靠「校验段同步置 disabled 后 await」、pre-research 靠 `if (researchBtn.disabled) return`、unified-entity 靠 `_generating` 等）。
+- 修法：`generateButton.onclick` 改成 `await withButtonBusy(generateButton, t('planBook.generating'), async () => { await this.generateWorldview(...); })`，输入校验留在忙碌态之外（校验失败不该改按钮文案）。
+- 结果：源码级断言（不出现裸 `onclick = async () => { await this.generateWorldview(`）+ 实机打开弹窗点生成，按钮进入忙碌态、第二次点击被 `ui/button-busy.ts:24` 的 `button.disabled` 闸门挡住。
+
+### FIX-14 中文面板排版实测（对应 F-14，非缺陷，记录口径）
+- 目的：用户要求「验证排版问题，用中文面板」。用 `D:\nw-tmp\probe-layout131.mjs` 真机跑，不靠脚本直调 API。
+- 覆盖：完整写作台 × 短篇/长篇 × 1440×900 / 1280×800 / 900×680 六档；知识库视图；黄金开篇、世界观、文笔蒸馏三个弹窗。
+- 判定：`clipped`（子元素 `scrollWidth > clientWidth + 1` 且叶子有文本，跳过 `overflow-x` 为 auto/scroll/hidden 的容器）为空、`docOverflowX === 0`、弹窗 `offRight/offBottom` 均 ≤ 0。
+- 结果：六档写作台全部 `clipped: []`、状态栏 `barInside: true`（`barBottomGap: 10`；900×680 时状态栏换行成 62px 仍完整）；知识库 `.nw-kb-view` 1396×830 零裁切；三个弹窗 640×616 / 680×739 / 640×370 全在视口内（知识库左栏底部「共 N 本书籍」放大核对为完整渲染，不是缺陷）。
+- 附带确认的脚本坑（写进 `probe-layout131.mjs` 注释）：命令 id 必须带插件前缀（`novel-writer-ai:novel-writer-worldview`）；世界观点命令在 `core/command-registry.ts:547` 注册为 LONG_ONLY，短篇项目下只弹 Notice 不显弹窗，弹窗场景要先切长篇项目；进写作台必须先点项目卡再点「继续写作」，直调 `openFlowTab` 时容器节点不出现。
+
 ## 六、缺陷清单与处置
 
 | ID | 级别 | 现象 | 证据 | 处置 |
@@ -208,6 +229,9 @@
 | F-09 | — | 知识库提示「索引 1 本没有向量」 | `v5-kb.png` | 非缺陷：开发 vault 清过向量库，属预期 |
 | F-10 | P3 | 设置页供应商列表在 208px 窄列里名称截成「本地 OIl…」「D… deepseek-v4-flash」 | `_verify/f10-sidebar.png` | ✅ 已修复（FIX-10） |
 | F-11 | P3 | 打开写作台时 5 条 `ChapterStateManager` / `TabController` 调试 trace 打 warn 级 | `_verify/f08-zh-CN.json` | ✅ 已修复（FIX-11，降 debug） |
+| F-12 | P1 | 7 个高危表单弹窗（黄金开篇 / 文笔蒸馏 / 模板编辑 / 编辑书籍 / 题材编辑等）按 Esc 直接丢弃已输入内容，无任何确认 | `docs/audits/2026-11-20-interaction-and-module-flow.md` A-5 | ✅ 已修复（FIX-12，本轮补 5 个 + 原有 3 个） |
+| F-13 | P1 | 世界观生成弹窗无防重复提交，双击发起两次付费 AI 调用 | 同上 C#1 | ✅ 已修复（FIX-13） |
+| F-14 | — | 中文面板排版（六档视口 / 知识库 / 三个弹窗）是否有裁切、横向溢出 | `_verify131/report.json` | 非缺陷：实测零裁切、零横向溢出（FIX-14 记录口径与脚本坑） |
 
 ## 七、环境备注（不是插件问题）
 
@@ -224,4 +248,5 @@
    computed border（F-04/F-05）。
 4. `node D:\nw-tmp\probe-f08.mjs zh-CN` → 看启动/打开写作台后的控制台是否只剩真·key 无效的 401（A2、F-08、F-11）。
 5. `node D:\nw-tmp\probe-f10.mjs` → 看侧栏 `rows[].nameTrunc` 全 false、`modelBelowName` 全 true（F-10）。
+6. `node D:\nw-tmp\probe-layout131.mjs` → 看六档写作台的 `clipped` 是否为空、`docOverflowX` 是否为 0、弹窗 `offRight/offBottom` 是否 ≤ 0；脚本末尾还会在文笔蒸馏弹窗输入后按 Esc，验证关闭确认（F-12、F-14）。
 6. 逐条对照 §三 A–F；新增缺陷补进 §六，修复后把行移进 §五。

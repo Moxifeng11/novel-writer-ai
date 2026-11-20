@@ -8,6 +8,7 @@ import { OperationConfirmModal } from '@/ui/components/progress';
 import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
 import { isImeComposing } from '@/shared/keyboard';
 import { t } from '@/i18n';
+import { ModalDirtyGuard } from '@/ui/components/modal-dirty-guard';
 import { detectGenreChanges, isValidBookName } from './kb-modals-logic';
 
 const log = createLogger('KnowledgeBaseModals');
@@ -304,6 +305,8 @@ export class EditBookModal extends Modal {
     private subGenreValue: string;
     private customTagsList: string[];
     private customTagsInputValue: string = '';
+    /** 误触 Esc / 点外部时确认未保存的编辑（审计 A-5 / C#3） */
+    private dirtyGuard = new ModalDirtyGuard();
 
     constructor(
         app: App,
@@ -332,6 +335,9 @@ export class EditBookModal extends Modal {
     onOpen(): void {
         this.modalEl.addClass('nw-scope');
         this.modalEl.addClass('nw-modal');
+        this.dirtyGuard.attach(this, this.app);
+        this.contentEl.addEventListener('input', () => this.dirtyGuard.markDirty());
+        this.contentEl.addEventListener('change', () => this.dirtyGuard.markDirty());
         this.renderContent();
     }
 
@@ -459,7 +465,10 @@ export class EditBookModal extends Modal {
             text: t('knowledgebase.common.cancel'),
             cls: 'nw-btn nw-btn-secondary'
         });
-        cancelBtn.addEventListener('click', () => this.close());
+        cancelBtn.addEventListener('click', () => {
+            this.dirtyGuard.markClean();
+            this.close();
+        });
 
         const saveBtn = actions.createEl('button', {
             text: t('knowledgebase.modal.edit.save'),
@@ -529,6 +538,7 @@ export class EditBookModal extends Modal {
             if (updated) {
                 this.onSaved(updated);
             }
+            this.dirtyGuard.markClean();
             this.close();
             showSuccessNotice(t('knowledgebase.modal.edit.saveSuccess'));
         }).catch((e: unknown) => {
@@ -556,6 +566,8 @@ export class GenreEditModal extends Modal {
 
     private tempGenre: GenreConfig;
     private newTagInput: HTMLInputElement | null = null;
+    /** 误触 Esc / 点外部时确认未保存的编辑（审计 A-5 / C#3） */
+    private dirtyGuard = new ModalDirtyGuard();
 
     constructor(
         app: App,
@@ -579,6 +591,9 @@ export class GenreEditModal extends Modal {
         this.modalEl.addClass('nw-scope');
         this.modalEl.addClass('nw-modal');
         this.modalEl.addClass('nw-modal-85');
+        this.dirtyGuard.attach(this, this.app);
+        this.contentEl.addEventListener('input', () => this.dirtyGuard.markDirty());
+        this.contentEl.addEventListener('change', () => this.dirtyGuard.markDirty());
         this.render();
     }
 
@@ -975,6 +990,7 @@ export class GenreEditModal extends Modal {
                     name: t('knowledgebase.modal.genre.copyName', { name: this.tempGenre.name }),
                 };
                 this.onSave?.(newGenre);
+                this.dirtyGuard.markClean();
                 this.close();
             });
 
@@ -998,6 +1014,7 @@ export class GenreEditModal extends Modal {
                 });
                 if (confirmed) {
                     this.onDelete?.(this.tempGenre.id);
+                    this.dirtyGuard.markClean();
                     this.close();
                 }
             });
@@ -1006,7 +1023,10 @@ export class GenreEditModal extends Modal {
                 text: t('knowledgebase.common.cancel'),
                 cls: 'nw-btn nw-btn-secondary'
             });
-            cancelBtn.addEventListener('click', () => this.close());
+            cancelBtn.addEventListener('click', () => {
+                this.dirtyGuard.markClean();
+                this.close();
+            });
 
             const saveBtn = actions.createEl('button', {
                 text: t('knowledgebase.modal.genre.save'),
@@ -1016,6 +1036,7 @@ export class GenreEditModal extends Modal {
                 if (this.validate()) {
                     this.tempGenre.isCustom = true;
                     this.onSave?.(this.tempGenre);
+                    this.dirtyGuard.markClean();
                     this.close();
                 }
             });
@@ -1024,7 +1045,10 @@ export class GenreEditModal extends Modal {
                 text: t('knowledgebase.common.cancel'),
                 cls: 'nw-btn nw-btn-secondary'
             });
-            cancelBtn.addEventListener('click', () => this.close());
+            cancelBtn.addEventListener('click', () => {
+                this.dirtyGuard.markClean();
+                this.close();
+            });
 
             const createBtn = actions.createEl('button', {
                 text: t('knowledgebase.modal.genre.create'),
@@ -1035,6 +1059,7 @@ export class GenreEditModal extends Modal {
                     this.tempGenre.id = `custom_${Date.now()}`;
                     this.tempGenre.isCustom = true;
                     this.onSave?.(this.tempGenre);
+                    this.dirtyGuard.markClean();
                     this.close();
                 }
             });

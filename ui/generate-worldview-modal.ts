@@ -13,6 +13,8 @@ import { validateProjectName } from '@/shared/project-name';
 
 const log = createLogger('GenerateWorldviewModal');
 import { showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
+import { withButtonBusy } from '@/ui/button-busy';
+import { t } from '@/i18n';
 /**
  * 生成世界观弹窗。
  */
@@ -108,7 +110,9 @@ export class GenerateWorldviewModal extends Modal {
 
             const generateButton = contentEl.createEl('button', { text: '生成世界观', cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
             generateButton.onclick = async () => {
-                let project = projectSelect.value;
+                // 防重复提交：AI 生成是付费调用，双击会并发发起两次（审计 C#1）。
+                // 输入校验放在忙碌态之外，校验失败不改按钮文案。
+                const project = projectSelect.value;
                 const worldName = worldNameInput.value.trim() || project;
                 const genre = genreInput.value.trim();
                 const theme = themeInput.value.trim();
@@ -119,7 +123,9 @@ export class GenerateWorldviewModal extends Modal {
                     return;
                 }
 
-                await this.generateWorldview(project, worldName, genre, theme, customPrompt);
+                await withButtonBusy(generateButton, t('planBook.generating'), async () => {
+                    await this.generateWorldview(project, worldName, genre, theme, customPrompt);
+                });
             };
         };
 

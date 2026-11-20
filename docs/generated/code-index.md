@@ -11,7 +11,7 @@
 | `shared/` | 264 | 53051 | 2243 | 1754 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 307 | 113939 | 1182 | 945 | 80% |
+| `ui/` | 307 | 114002 | 1182 | 945 | 80% |
 
 ## 文件清单
 
@@ -879,8 +879,8 @@
 | `ui/generate-faction-modal.ts` | 375 | 1 | 1 |
 | `ui/generate-item-modal.ts` | 375 | 1 | 1 |
 | `ui/generate-location-modal.ts` | 375 | 1 | 1 |
-| `ui/generate-worldview-modal.ts` | 289 | 1 | 1 |
-| `ui/golden-opening-modal.ts` | 1454 | 1 | 1 |
+| `ui/generate-worldview-modal.ts` | 295 | 1 | 1 |
+| `ui/golden-opening-modal.ts` | 1467 | 1 | 1 |
 | `ui/home-view.ts` | 250 | 2 | 1 |
 | `ui/humanize-report-modal.ts` | 217 | 2 | 2 |
 | `ui/ideation-modal.ts` | 870 | 1 | 1 |
@@ -973,10 +973,10 @@
 | `ui/story-linkage-modal.ts` | 390 | 1 | 1 |
 | `ui/story-settings-form.ts` | 274 | 2 | 2 |
 | `ui/story-settings-modal.ts` | 117 | 1 | 1 |
-| `ui/style-distiller-modal.ts` | 486 | 1 | 1 |
+| `ui/style-distiller-modal.ts` | 495 | 1 | 1 |
 | `ui/support-author-modal.ts` | 43 | 1 | 0 |
 | `ui/svg-charts.ts` | 2359 | 49 | 49 |
-| `ui/template-manager.ts` | 710 | 5 | 2 |
+| `ui/template-manager.ts` | 720 | 5 | 2 |
 | `ui/tomato-rank-modal.ts` | 132 | 1 | 1 |
 | `ui/tts/tts-player.ts` | 428 | 4 | 2 |
 | `ui/tts/tts-speech.ts` | 164 | 5 | 1 |
@@ -1011,7 +1011,7 @@
 | `ui/views/kb-stats-panel.ts` | 158 | 2 | 2 |
 | `ui/views/kb-task-panel.ts` | 305 | 25 | 20 |
 | `ui/views/kb-view-logic.ts` | 117 | 7 | 4 |
-| `ui/views/knowledge-base-modals.ts` | 1276 | 4 | 4 |
+| `ui/views/knowledge-base-modals.ts` | 1301 | 4 | 4 |
 | `ui/views/knowledge-base-view.ts` | 3279 | 10 | 10 |
 | `ui/views/knowledge-capability.ts` | 116 | 3 | 1 |
 | `ui/views/knowledge-detail-state.ts` | 80 | 6 | 5 |

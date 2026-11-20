@@ -1,5 +1,6 @@
 import { copyText } from '@/shared/clipboard';
 import { t } from '@/i18n';
+import { ModalDirtyGuard } from '@/ui/components/modal-dirty-guard';
 import { progressHandle } from '@/utils/helpers';
 import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '@/main';
@@ -136,6 +137,9 @@ export class GoldenOpeningModal extends Modal {
     private openingScoreResult: OpeningScore | null = null;
     private isScoring: boolean = false;
 
+    /** 误触 Esc / 点外部时确认未保存的输入与生成结果（审计 A-5 / C#3） */
+    private dirtyGuard = new ModalDirtyGuard();
+
     private selectedGenres: Set<string> = new Set();
     private premiseInput: string = '';
     private protagonistInput: string = '';
@@ -158,6 +162,10 @@ export class GoldenOpeningModal extends Modal {
             wrapper.addClass('nw-modal');
         }
         contentEl.empty();
+        // 关闭确认：输入/选择即脏；生成结果在导出前同样算未保存
+        this.dirtyGuard.attach(this, this.app);
+        contentEl.addEventListener('input', () => this.dirtyGuard.markDirty());
+        contentEl.addEventListener('change', () => this.dirtyGuard.markDirty());
 
         this.render();
     }
@@ -165,6 +173,10 @@ export class GoldenOpeningModal extends Modal {
     private render(): void {
         const { contentEl } = this;
         contentEl.empty();
+        if (this.threeChapters.length > 0 || this.generatedHooks.length > 0 || this.hookCheckResult
+            || this.rhythmResult || this.characterIntroResult || this.worldbuildingResult || this.openingScoreResult) {
+            this.dirtyGuard.markDirty();
+        }
 
         const header = contentEl.createDiv({ cls: 'nw-go-header' });
         header.createEl('h2', { text: t("goldenOpening.common.k1") });
@@ -1415,6 +1427,7 @@ tags: [黄金开篇, 大纲]
             } else {
                 await this.app.vault.create(filePath, content);
             }
+            this.dirtyGuard.markClean();
             showSuccessNotice(t('goldenOpening.labels.savedTo', { path: `${pjControlDir(project)}/黄金开篇.md` }), { timeout: 5000 });
             const file = this.app.vault.getAbstractFileByPath(filePath);
             if (file instanceof TFile) {

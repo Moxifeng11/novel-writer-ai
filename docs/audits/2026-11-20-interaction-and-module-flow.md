@@ -462,3 +462,21 @@ DSH 建议：**退役**（与 2026-11-19「旧正文写入链」同一处理口�
 3. **机械插桩必须查重复与缩进**：三行 `markClean` 是脚本重复命中的痕迹，lint 不报错、测试不覆盖，只能靠「每个 close 前恰好一个」的不变量断言兜住。
 4. **审计结论也要复核可达性**：A-3 把「注册了视图」当成「有入口」。写审计时每个入口都应给出「用户从哪点到」的路径证据，而不只是文件存在。
 
+### 5.6 第二轮复核（2026-11-20 下午，用户要求「继续但需复核」）
+
+复核口径：C 清单每条按 5.5 教训 1 走「调用点 → 渲染路径 → 用户可见」，**不看 `disabled = true` 的计数**。结论：C 清单在文档上标了全修，实体只落地了一部分。
+
+1. **A-1 防重复提交没有「171 处裸写」那么严重**。逐文件核后，只有 `ui/generate-worldview-modal.ts:110` 真无守卫：按钮无 disabled、类里无 `is*ing` 状态位，`await this.generateWorldview(...)` 期间再点会并发两次付费调用。其余候选都已有各自守卫——`ui/generate-character-modal.ts:211` 校验段同步置 disabled 后 await（同步段无 yield，双击安全；faction/item/location 同款）、`ui/pre-research-modal.ts:365` 的 `if (researchBtn.disabled) return`、`ui/unified-entity-generate-modal.ts:474` 的 `if (this._generating) return`、`ui/rewrite-suggestion-modal.ts:133` 的 `if (this.generating || !this.resultEl) return`、`ui/expand-text-modal.ts:121` 首行 `renderLoading()` 直接换掉按钮、ideation / style-distiller / outline-expand / refill 都有 `is*` 状态位，fingerprint-blend 无 AI 调用。已修：包 `withButtonBusy(generateButton, t('planBook.generating'), ...)`，校验段留在忙碌态之外。
+
+2. **A-5 关闭确认当前只接了 3 个 Modal**（`ui/plan-book-modal.ts:28`、`ui/writing-style-modal.ts:37`、`ui/add-fanfic-setting-modal.ts:55`）。实测 `ui/` 下 `extends Modal` 且含 textarea 的文件 **27 个**（另有 appearance-settings / settings/general-sections / full-writer/scene-outline-controller 三个非 Modal 文件）。本轮补 5 个高危（全部沿用 `ModalDirtyGuard` + 输入即脏 + 成功路径 `markClean`）：
+   - `ui/golden-opening-modal.ts`：contentEl 上 `input`/`change` 即脏；`render()` 里任一生成结果（三章/钩子/钩子检测/节奏/人物/世界观/评分）存在也算脏；导出成功 `markClean` 后关闭。
+   - `ui/style-distiller-modal.ts`：`input`/`change` 即脏；保存到项目、保存到文笔库、自动关闭三处 `markClean`。
+   - `ui/template-manager.ts` 的 `TemplateEditModal`：`input` 即脏；取消 / 保存 / 删除自定义模板三处 `markClean`。
+   - `ui/views/knowledge-base-modals.ts` 的 `EditBookModal` 与 `GenreEditModal`：`input`/`change` 即脏；取消、保存、另存为自定义、删除、创建五处 `markClean`（`ImportBookModal`/`BatchOperationsModal` 无编辑区，不接）。
+
+   剩余 20 个候选（同模式分批，不要一次全上）：ai-builder、create-project、existing-entity-manager、cowrite/iterate-instruction、cowrite/memory-manager、fanfic-review、fingerprint-library、generate-faction、generate-character、generate-item、generate-worldview、generate-location、ideation、manage-providers、mode-document、novel-analysis、outline-expand、pre-research、unified-entity-generate、volume-intro。
+
+3. **排版实测**（用户要求「用中文面板验证排版问题」）见 `docs/audits/2026-11-20-ui-real-click-acceptance.md` 的 FIX-14：短篇/长篇 × 1440×900 / 1280×800 / 900×680 六档 + 知识库 + 黄金开篇/世界观/文笔蒸馏三个弹窗全部零裁切、零横向溢出；关闭保护在文笔蒸馏弹窗上真实点击验证通过。
+
+4. 新增 `tests/unit/ui/modal-guard-wiring.test.ts` 的 4 组接线断言（golden-opening / knowledge-base-modals / template-manager / style-distiller 必须含 `new ModalDirtyGuard()`、`attach(this, this.app)`、`markClean()`；世界观必须用 `withButtonBusy` 且不存在裸 `onclick = async () => { await this.generateWorldview(`）。教训 1 的对策是把「接线」本身变成可断言的不变量。
+

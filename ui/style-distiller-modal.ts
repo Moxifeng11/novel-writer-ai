@@ -7,6 +7,7 @@ import { LoadingOverlayComponent } from './components/progress/loading-overlay';
 import { ProgressEmitter } from '@/shared/progress-emitter';
 import { isImeComposing } from '@/shared/keyboard';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
+import { ModalDirtyGuard } from '@/ui/components/modal-dirty-guard';
 import {
     analyzeStyleFromSource,
     StyleDistillInput,
@@ -36,6 +37,8 @@ export class StyleDistillerModal extends Modal {
     private sampleText = '';
     private nameText = '';
     private selectedProjectPath = '';
+    /** 误触 Esc / 点外部时确认未保存的样本与分析结果（审计 A-5 / C#3） */
+    private dirtyGuard = new ModalDirtyGuard();
 
     constructor(app: App, plugin: NovelWriterPlugin) {
         super(app);
@@ -57,6 +60,9 @@ export class StyleDistillerModal extends Modal {
         contentEl.addClass('nw-pos-relative');
 
         contentEl.empty();
+        this.dirtyGuard.attach(this, this.app);
+        contentEl.addEventListener('input', () => this.dirtyGuard.markDirty());
+        contentEl.addEventListener('change', () => this.dirtyGuard.markDirty());
         contentEl.addClass('nw-form-stack');
         contentEl.createEl('h2', { text: '🎨 文笔风格蒸馏' });
         contentEl.createEl('p', {
@@ -270,6 +276,7 @@ export class StyleDistillerModal extends Modal {
                     this.hideLoadingOverlay();
                     this.setButtonLoading(false);
                     this.isAnalyzing = false;
+                    this.dirtyGuard.markClean();
                     this.close();
                 }, 800);
             }
@@ -399,6 +406,7 @@ ${analysis}
         projectBtn.onclick = async () => {
             modal.close();
             await this.saveToProject(activeProject, preview.value);
+            this.dirtyGuard.markClean();
             this.close();
         };
         const libBtn = btnRow.createEl('button', {
@@ -408,6 +416,7 @@ ${analysis}
         libBtn.onclick = async () => {
             modal.close();
             await this.saveToStyleLib(novelName, preview.value);
+            this.dirtyGuard.markClean();
             this.close();
         };
         modal.open();
