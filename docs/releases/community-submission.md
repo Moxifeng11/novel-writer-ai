@@ -110,6 +110,7 @@ npm run check:obsidian-review        # 只打印 error 级（= 会被打回）�
 - **验证口径**：`node scripts/generate-worker-inline.mjs` 连跑两次 + 换 `TMP`/`TEMP` 再跑一次，`shared/workers-inline.generated.ts` 哈希必须相同；`npm run build` 连跑两次，`main.js` 哈希必须相同（4.97.3 实测 `11472CB43488581D10E76A665A9517DA7B6DCAFCD90EAA60323688D893EC381A`）。
 - **其他生成物**本来就确定：`generate-template-assets.mjs` 统一 CRLF→LF 并按 key 排序、`build-styles.mjs` 按固定顺序拼接、`build.js` 用锁定版本的 esbuild。
 - **跨环境实证**（4.97.3）：CI（Node 20）产出的 Release `main.js` 与本机（Node 24）构建**哈希一致**（`11472CB4…381A`）；4.97.2 时代两者不同（`B4B4FF16…` vs `CB43DB80…`）。
+- **发版前可自查的等价命令**（模拟审核方）：`gh repo clone Moxifeng11/novel-writer-ai /tmp/clean -- --depth 1 --branch <tag>` → `npm ci && npm run build` → `sha256sum main.js` 与 Release 资产比对；同一目录再跑 `npm run check:obsidian-review`。
 - 若将来引入新的「构建期生成二进制资源」，同样要固定 mtime/压缩参数，否则会悄悄破坏这一条。
 
 ## 五、后续
