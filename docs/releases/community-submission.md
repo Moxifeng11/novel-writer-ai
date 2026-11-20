@@ -2,17 +2,30 @@
 
 > 目标版本 4.97.1 · 记录时间 2026-11-20 · 维护：DSH
 
-## 一、现在的提交流程（重要）
+## 一、当前状态：已上架，无需再提交
 
-Obsidian 已经**不再**接受 `obsidianmd/obsidian-releases` 的 `community-plugins.json` PR。当前流程（[官方文档](https://docs.obsidian.md/Plugins/Releasing/Submit%20your%20plugin)）：
+目录条目：<https://community.obsidian.md/plugins/novel-writer-ai>（2026-11-20 复核：**62 次下载**，账号页 `Your entries` 里显示作者本人认领）。
 
-1. 打开 [community.obsidian.md](https://community.obsidian.md) 并用 **Obsidian 账号**登录（不是 GitHub 账号）。
+最新版本是**自动收录**的。2026-11-20 实测：`4.97.1` 的 Release 在 03:43Z 发布，约 15 分钟后目录页「当前版本」已变成 `4.97.1`，并带上了该版 README 的平台说明「桌面端（界面中英双语）」，全程没有人工点提交。
+
+> 换言之，本仓从 v4.93 起就在社区目录里；`Add a plugin` 只用于**全新仓库**，对已认领的仓库再点会报「已存在 / 已被认领」。
+
+## 一之二、提交流程（官方文档口径）
+
+Obsidian 已**不再**接受 `obsidianmd/obsidian-releases` 的 `community-plugins.json` PR。当前流程（[官方文档](https://docs.obsidian.md/Plugins/Releasing/Submit%20your%20plugin)）：
+
+1. 打开 [community.obsidian.md](https://community.obsidian.md)，用 **Obsidian 账号**登录（不是 GitHub 账号）。
 2. 在个人资料里**关联 GitHub 账号**，目录用它验证仓库归属。
-3. 在目录里「Add a plugin」，填仓库 `Moxifeng11/novel-writer-ai`，目录会读取默认分支 HEAD 的 `manifest.json`。
-4. 提交后走自动审核，目录会列出需要改的点；按提示更新仓库并**发一个版本号更高的 Release**。
-5. 通过后即可在 Obsidian 内直接安装（下载的就是匹配 `version` 的那个 GitHub Release 的 `main.js` / `manifest.json` / `styles.css`）。
+3. 全新仓库才需要「Add a plugin」，填仓库 `Moxifeng11/novel-writer-ai`，目录读默认分支 HEAD 的 `manifest.json`。
+4. 提交后走自动审核；目录列出需要改的点，按提示更新仓库并**发一个版本号更高的 Release**。
+5. 通过后即可在 Obsidian 内安装（下载的是匹配 `version` 的那个 GitHub Release 的 `main.js` / `manifest.json` / `styles.css`）。
 
-> 也就是说：最后一步（登录 + 点提交）只能由仓库所有者本人在浏览器完成，这里不做代替。
+**日常发版不需要再碰目录**：只要 tag 与 `manifest.version` 一致、Release 资产齐全（本仓 `release.yml` 已保证），目录会自动跟进。
+
+### 两个已知细节
+
+- 目录只显示**最新的过审版本**：4.97.0 发布后一小时页面仍停在 4.96.1，随后直接跳到 4.97.1，中间版本不单独出现在页面与 RSS 里，属正常现象。
+- 目录条目的**短描述**（显示在 Obsidian 插件浏览器里）仍是上架时那句 157 字符英文 `End-to-end AI writing workspace for Chinese web novels, short stories and scripts: planning, drafting, co-writing, quality checks and knowledge-base deconstruction.`，与 manifest 里 219 字符的新描述不同；想统一需在账号页编辑条目，属可选项。
 
 ## 二、提交前清单（按官方要求逐条对照）
 
@@ -52,11 +65,12 @@ Obsidian 已经**不再**接受 `obsidianmd/obsidian-releases` 的 `community-pl
 | 硬编码中文字符串进 UI（非 i18n） | i18n 棘轮 205 文件 / 5359 条；剩余为分批迁移中的弹窗 |
 | 未在 `onunload` 释放资源 | 有 `check:hotpaths` 与 e2e 生命周期用例 |
 
-## 五、提交后
+## 五、后续
 
-1. 自动审核结果会出现在目录条目里；按提示改 → **必须发更高版本 Release**（目录只认 `manifest.version` 对应的 tag）。
-2. 通过后在 [Share & showcase](https://forum.obsidian.md/c/share-showcase/9) 发帖、Discord `#updates` 通告（需要 `developer` 角色）。
-3. 之后每次发版：只要 tag 与 manifest 版本一致、Release 资产齐全，用户端就能直接更新，不需要再走目录。
+1. 每次发版：tag 与 `manifest.version` 一致、Release 资产齐全（`main.js` / `manifest.json` / `styles.css`），目录与客户端自动跟进，不需要人工提交。
+2. 若目录给出审核打回意见：按提示改代码 → **发更高版本 Release**（目录只认 `manifest.version` 对应的 tag）。
+3. 可选宣传：[Share & showcase](https://forum.obsidian.md/c/share-showcase/9) 发帖、Discord `#updates` 通告（需要 `developer` 角色）。
+4. 可选优化：把目录条目短描述改成与 manifest 一致；恢复移动端（改掉三处 Node 调用后把 `isDesktopOnly` 改回 `false`）需要发新版本才生效。
 
 ## 六、遗留事项
 

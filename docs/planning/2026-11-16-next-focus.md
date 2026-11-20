@@ -4085,3 +4085,15 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 新增文档 `docs/releases/community-submission.md`：现状流程五步、16 条上架清单及证据、可直接用的描述文案与分类建议、常见打回点自查表。
 
 门禁：`npm run build` / `check:release --tag 4.97.1` / `check:changelog`（顶部 4.97.1 唯一、128 个节点）/ `npm run preflight` **EXIT=0**（1013 文件 / 10503 通过 + 3 跳过）。坑：`cmd /c "npm ... & echo EXIT=%ERRORLEVEL%"` 的 %ERRORLEVEL% 会提前展开，得出假 EXIT=0——pwsh 里应写 `npm run preflight *> log; "EXIT=$LASTEXITCODE"`。
+
+## 补记（同轮）：上架状态复核 —— 已在目录里，4.97.1 自动收录
+
+用户登录 community.obsidian.md 后让 DSH 代为提交。查证发现**无需提交**：
+
+- 目录条目 <https://community.obsidian.md/plugins/novel-writer-ai> 早已存在（2026-11-20 复核 **62 次下载**），账号页 `Your entries` 显示 `Novel Writer AI (you)` 即作者本人已认领；目录 `community-plugins.json`（gh api 拉全量 3,294,579 字节）仍无该 id，说明新目录已不依赖那个文件。
+- 首次抓取时页面的「当前版本」还是 `4.96.1`（README 也是旧文案），约 15 分钟后复抓已变成 `4.97.1` 且平台行变成「桌面端（界面中英双语）」——新版本由目录自动索引，不需要人工点「Add a plugin」；4.97.0 从未单独出现在页面/RSS，目录只展示最新的过审版本。
+- 对已认领仓库再点 Add a plugin 会报「已存在」，所以没有执行提交。
+
+文档同步：`docs/releases/community-submission.md` 由「待提交」改为「已上架 + 自动跟随发版」，保留清单作为未来打回时的对照，并记下两个细节（只显示最新过审版本；目录短描述仍是上架时那句 157 字符，与 manifest 219 字符不同，可在账号页编辑，属可选）。
+
+门禁：`gen:docs` 1012 源文件、`check:docs` 通过（版本 4.97.1、20 个活跃文档）、`check-release --tag 4.97.1` 通过。
