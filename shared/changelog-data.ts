@@ -21,6 +21,14 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.97.3',
+        date: '2026-11-20',
+        title: '构建可复现',
+        sections: [
+            { type: 'fixed', label: '🛡 上架', items: ['内联 worker 的 gzip 头改为固定 mtime=0，并改用纯 JS 压缩（fflate）——同一份源码在不同 Node 版本/不同机器上构建出字节一致的 main.js，满足社区审核的构建校验', '此前每次构建的 main.js 哈希都不同，发布资产与审核方重建结果无法比对'] },
+        ],
+    },
+    {
         version: '4.97.2',
         date: '2026-11-20',
         title: '通过社区审核',
@@ -208,30 +216,6 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
                 label: '🛠️ 可靠性',
                 items: [
                     '损坏时拒绝写入；失败不影响结算；不可用时降级',
-                ],
-            },
-        ],
-    },
-    {
-        version: '4.89.0',
-        date: '2026-11-13',
-        title: '知识库事实层：让正则功能有"第二意见"',
-        sections: [
-            {
-                type: 'added',
-                label: '📚 知识库事实层',
-                items: [
-                    'LLM 拆解正文为结构化事实（主体·谓词·值·有效区间·原文引文），落盘可人工修正',
-                    '时间线/实体状态/伏笔三类功能改为「正则找候选 → 查事实库定结论」',
-                    '低置信矛盾交 LLM 语义判定，判定失败保留规则结果不丢矛盾',
-                ],
-            },
-            {
-                type: 'fixed',
-                label: '🛠️ 修复',
-                items: [
-                    '无章节摘要的项目此前 0 产出，现按正文目录枚举并显式告警',
-                    '新增 check:command-handlers 门禁，拦「命令执行但无反应」',
                 ],
             },
         ],

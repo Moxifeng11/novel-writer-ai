@@ -2,6 +2,15 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## 4.97.3（2026-11-20）
+
+构建可复现（不改变功能、不改变运行时行为）：
+
+- `scripts/generate-worker-inline.mjs`：内联 worker 的 gzip 压缩从 `node:zlib` 换成纯 JS `fflate`，并固定 `mtime: 0`。此前 gzip 头写构建时刻、deflate 输出随 Node 内置 zlib 版本变化，导致同一份源码在不同机器/Node 版本构建出的 `main.js` 字节不同（本机 Node 24 与 CI Node 20 字节数相同、内容不同），社区审核的 Build verification 无法比对。
+- 新增 devDependency `fflate@^0.8.3`（仅构建期使用，不进包）；`INLINE_WORKER_COMPRESSION` 仍为 `gzip+base64`，运行时仍用 `DecompressionStream('gzip')` 解压。
+- 验证：生成器连跑三次（含切换 `TMP`/`TEMP`）与 `npm run build` 连跑两次，产物哈希均一致。
+- 文档：`docs/releases/4.97.3.md`；`docs/releases/community-submission.md` 增加「构建可复现」一节。
+
 ## 4.97.2（2026-11-20）
 
 社区审核阻断项修复（不改变功能）：

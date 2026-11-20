@@ -1,6 +1,6 @@
 # 上架 Obsidian 社区插件目录
 
-> 目标版本 4.97.2 · 记录时间 2026-11-20 · 维护：DSH
+> 目标版本 4.97.3 · 记录时间 2026-11-20 · 维护：DSH
 
 ## 一、当前状态：每版审核都是 Failed（2026-11-20 定位并修复）
 
@@ -16,6 +16,8 @@
 站点页面（服务端渲染）在审核期就会显示「当前版本 4.97.x」与新 README 文案，容易误判成已发布——**那一页只能证明提交进了系统，不能证明市场已放出**（2026-11-20 的误判记录，别再复用「页面显示新版本 = 已上架」这个推论）。
 
 **4.97.2 已定位并修复唯一阻断项**：审核扫描器把 `eslint-comments/require-description` 保持为 error，而本仓有两条 `eslint-disable-next-line` 没写 `-- 说明`（`engine/agent/harness/mcp-stdio-transport.ts:31`、`services/chapter-version-service.ts:57`）。复现方法与判据见 §四之二。
+
+**4.97.3 补掉第二个自检项：构建可复现**（2026-11-20）。审核的 Build verification 会重新构建并与发布资产比对，而本仓此前每次构建出的 `main.js` 哈希都不同——`scripts/generate-worker-inline.mjs` 用 `node:zlib` 压缩两个 worker，gzip 头写着构建时刻的 mtime，且 deflate 输出随 Node 内置 zlib 版本变化（本机 Node 24 与 CI Node 20 产出的字节就不一致）。改法：换成纯 JS 的 `fflate`（devDependency）并固定 `mtime: 0`。实测连跑三次、换 `TMP`/`TEMP` 目录，`shared/workers-inline.generated.ts` 与 `main.js` 哈希均一致（`11472CB4…381A`、6,241,484 字节）。细节见 §四之三。
 
 ## 一之二、提交流程（官方文档口径）
 
@@ -40,7 +42,7 @@ Obsidian 已**不再**接受 `obsidianmd/obsidian-releases` 的 `community-plugi
 |---|---|---|
 | 根目录有 `README.md`（说明用途与用法） | ✅ | README 含英文 marketplace 摘要、功能、安装、配置、FAQ、数据与安全 |
 | 根目录有 `LICENSE` | ✅ | `LICENSE`（MIT） |
-| 根目录有 `manifest.json`，且与 HEAD 一致 | ✅ | 4.97.2，`id` = `novel-writer-ai` |
+| 根目录有 `manifest.json`，且与 HEAD 一致 | ✅ | 4.97.3，`id` = `novel-writer-ai` |
 | `id` 全局唯一、不含 `obsidian` | ✅ | id `novel-writer-ai` 不含 `obsidian`；客户端市场清单（10616 条）里尚无同 id |
 | `name` 不含 "Obsidian" / "Plugin" 字样 | ✅ | `Novel Writer AI` |
 | `description` ≤250 字符、句号结尾、无 emoji、动作句开头 | ✅ | 219 字符，`Write, plan, and polish … and export.` |
@@ -52,7 +54,7 @@ Obsidian 已**不再**接受 `obsidianmd/obsidian-releases` 的 `community-plugi
 | 网络使用在 README 中披露 | ✅ | README「Network use (disclosed per Developer policies)」段 |
 | vault 外文件访问在 README 中披露 | ✅ | 新增「外部文件访问（仅桌面端）」段 + 英文 `Local file access` 段 |
 | 无客户端遥测 | ✅ | 无上报代码；`check:secrets` 防密钥入仓 |
-| Release 资产齐全、tag 与版本一致 | ✅ | `4.97.2` Release 含 `main.js` / `manifest.json` / `styles.css` / `versions.json` / zip / SHA256SUMS |
+| Release 资产齐全、tag 与版本一致 | ✅ | `4.97.3` Release 含 `main.js` / `manifest.json` / `styles.css` / `versions.json` / zip / SHA256SUMS |
 
 ## 三、提交时可以直接用的文案
 
@@ -97,9 +99,21 @@ npm run check:obsidian-review        # 只打印 error 级（= 会被打回）�
 
 也可在账号页用 `Review branch` 对分支做预览扫描（不发版）；正式复审要点 `Check for new releases`（只扫最新 Release）。
 
+## 四之三、构建可复现（4.97.3 起）
+
+审核的 Build verification 段会重新构建仓库并与发布资产比对，所以「同一份源码 → 同一个 main.js」是硬要求。本仓踩过的坑与现在的约束：
+
+- **坑**：`scripts/generate-worker-inline.mjs` 把两个 worker 打包产物 gzip+base64 内联进 `shared/workers-inline.generated.ts`。旧实现用 `node:zlib`：
+  1. gzip 头里的 MTIME 是构建时刻 → 同一台机器连跑两次哈希都不同；
+  2. deflate 输出随内置 zlib 版本变化 → 本机 Node 24 与 CI Node 20 的字节不同（字节数相同、首个差异偏移 1,835,905，全落在 base64 里）。
+- **现在**：压缩改用纯 JS 的 `fflate`（devDependency，只参与构建，不进包）并固定 `mtime: 0`；`INLINE_WORKER_COMPRESSION` 仍是 `gzip+base64`，运行时仍用 `DecompressionStream('gzip')` 解压，行为不变。
+- **验证口径**：`node scripts/generate-worker-inline.mjs` 连跑两次 + 换 `TMP`/`TEMP` 再跑一次，`shared/workers-inline.generated.ts` 哈希必须相同；`npm run build` 连跑两次，`main.js` 哈希必须相同（4.97.3 实测 `11472CB43488581D10E76A665A9517DA7B6DCAFCD90EAA60323688D893EC381A`）。
+- **其他生成物**本来就确定：`generate-template-assets.mjs` 统一 CRLF→LF 并按 key 排序、`build-styles.mjs` 按固定顺序拼接、`build.js` 用锁定版本的 esbuild。
+- 若将来引入新的「构建期生成二进制资源」，同样要固定 mtime/压缩参数，否则会悄悄破坏这一条。
+
 ## 五、后续
 
-1. 4.97.2 发布后在账号页点 `Check for new releases` 触发复审；通过后账号页状态变为通过、客户端插件浏览器可搜到并可安装该版本 → 才算上架成功。
+1. 4.97.3 发布后在账号页点 `Check for new releases` 触发复审；通过后账号页状态变为通过、客户端插件浏览器可搜到并可安装该版本 → 才算上架成功。
 2. 若收到打回意见：按提示改代码 → **发更高版本 Release**（目录只认 `manifest.version` 对应的 tag），不要在下架/待审状态反复重发同号版本。
 3. 日常发版：tag 与 `manifest.version` 一致、Release 资产齐全（本仓 `release.yml` 已保证），提交后同样进入审核队列。
 4. 可选宣传：[Share & showcase](https://forum.obsidian.md/c/share-showcase/9) 发帖、Discord `#updates` 通告（需要 `developer` 角色）。

@@ -4119,3 +4119,12 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 「社区目录页面显示当前版本 = 已上架」是错的：审核期页面同样显示最新 tag 与 README。唯一可信信号是账号页 Reviews 状态与客户端 `community-plugins.json`。
 - 发布前的本地门禁必须复刻**审核方的严重度**，否则会一直拿「本地全绿」安慰自己；这类判据要固化成脚本，而不是写在文档里靠人记。
 - 反例取证：`eslint --config` 单独跑 `validate-manifest` / `validate-license` 需要 json/LICENSE 语言映射，手工配置必报 `Parsing error`，别再试。
+
+## 第一百三十一轮：4.97.3 构建可复现（内联 worker gzip 不确定）
+
+- **触发**：4.97.2 修掉 eslint 阻断项后，复核审核的 Build verification 段（「重新构建并与发布资产比对」），发现本仓 `main.js` 每次构建哈希都不同。
+- **定位**：`scripts/generate-worker-inline.mjs` 用 `node:zlib.gzipSync` 内联两个 worker。两处不确定：①gzip 头 MTIME = 构建时刻（连跑两次即不同）②deflate 输出随 Node 内置 zlib 版本变化（本机 Node 24 的 `CB43DB80…` vs CI Node 20 的 `B4B4FF16…`，字节数相同、首个差异 offset 1,835,905，全在 base64 内）。
+- **改法**：换纯 JS `fflate.gzipSync(buf, { level: 9, mtime: 0 })`（devDependency，不进包）；`INLINE_WORKER_COMPRESSION` 与运行时 `DecompressionStream('gzip')` 路径不变。生成物 350,569 字节（旧 347,743，+2.8KB 换确定性）。
+- **验证**：生成器连跑 3 次（含换 TMP/TEMP）哈希均为 `5A2AC542…63C6`；`npm run build` 连跑 2 次 `main.js` 均为 `11472CB4…381A`（6,241,484 字节）；worker 内联 6 例 + plugin-worker-url 10 例通过；tsc 0；check:obsidian-review EXIT=0。
+- **发版**：4.97.3（changelog 删最旧 4.89.0 保持 12 条上限）；bundle 基线上调 6,238,913 → 6,241,484（note 写明原因）；新增 `docs/releases/4.97.3.md`，`docs/releases/community-submission.md` 增「构建可复现」一节。
+- **遗留**：审核结果仍然未知——需要用户在账号页点 `Check for new releases`；若再 Failed，下一轮必须抓 Reviews 各段具体条目，不再靠猜。

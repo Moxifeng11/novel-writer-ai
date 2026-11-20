@@ -17,7 +17,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import zlib from 'node:zlib';
+import { gzipSync } from 'fflate';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 
@@ -74,7 +74,16 @@ async function bundleWorkers() {
 function buildModuleText(sources) {
     const compressed = {};
     for (const [file, source] of Object.entries(sources)) {
-        compressed[file] = zlib.gzipSync(Buffer.from(source, 'utf8'), { level: 9 }).toString('base64');
+        // 用 fflate（纯 JS）而不是 node:zlib：zlib 的 deflate 输出随其原生库版本变化，
+        // 同一份源码在 Node 20 / 22 / 24 上会产出不同字节，导致 main.js 哈希不可复现
+        // （社区审核的 Build verification 会重新构建并比对发布资产）。
+        // fflate 固定 gzip 头（mtime=0）且算法与运行环境无关，保证跨平台/跨 Node 版本字节一致。
+        // mtime 必须固定为 0：fflate 默认把当前时间写进 gzip 头，会让同一份源码每次构建都不同
+        compressed[file] = Buffer.from(
+            gzipSync(new Uint8Array(Buffer.from(source, 'utf8')), { level: 9, mtime: 0 }),
+        ).toString(
+            'base64',
+        );
     }
     const lines = [
         '/**',
@@ -85,7 +94,9 @@ function buildModuleText(sources) {
         ' * 用途：社区目录只下发 3 个文件，没有 workers/ 目录；主包用这些字符串创建 Blob Worker，',
         ' * 保证 3 文件安装也能后台执行重活（仓库安装仍优先用磁盘上的 workers/*.js）。',
         ' *',
-        ' * 体积：内容为 gzip 压缩后再 base64（未压缩时 855KB → 约 409KB）；',
+        ' * 体积：内容为 gzip 压缩后再 base64（未压缩时 855KB → 约 340KB）；',
+        ' * 压缩用 fflate（纯 JS，固定 gzip 头）而不是 node:zlib —— 后者随 Node 内置 zlib 版本变化，',
+        ' * 会让同一份源码在不同 Node 版本产出不同字节，破坏构建可复现性（社区审核会重建比对）。',
         ' * 运行时用 DecompressionStream 解压（warmInlineWorkerUrls），不支持时退回主线程。',
         ' */',
         '/** 内联 Worker 源码的压缩方式（固定为 gzip+base64，运行时用 DecompressionStream 解压） */',

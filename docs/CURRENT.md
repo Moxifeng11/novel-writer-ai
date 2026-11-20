@@ -1,7 +1,7 @@
 # 现状卡（CURRENT）
 
 > 状态：活跃（唯一「现在是什么样」的权威入口）
-> 版本：v4.97.2 · 更新：2026-11-20
+> 版本：v4.97.3 · 更新：2026-11-20
 > 维护规则：**发版或结构变化时必须同步本文**；本文不抄数字，数字只引用真相源。
 > 读完本文再读别的文档；其他文档与本文冲突时，以本文 + 代码 + 生成物为准。
 
@@ -26,7 +26,7 @@ Obsidian 插件「小说工坊 AI」：长篇 / 短篇 / 剧本三域创作 + �
 | `types/` `utils/` `workers/` | 类型声明、工具函数、Worker 源码 |
 | `styles-src/` | 样式源文件，拼接为根目录 `styles.css`（`npm run build:styles`） |
 | `tests/` | unit / integration / e2e / benchmark |
-| `scripts/` | 门禁、生成器、开发脚本（`check:obsidian-review` 复刻社区审核扫描器判据，配置在根目录 `eslint.obsidian-review.mjs`） |
+| `scripts/` | 门禁、生成器、开发脚本（`check:obsidian-review` 复刻社区审核扫描器判据，配置在根目录 `eslint.obsidian-review.mjs`；`generate-worker-inline.mjs` 用 fflate + `mtime: 0` 保证 `main.js` 构建可复现） |
 
 **没有 `src/`**。看到文档写 `src/...` 就是过时描述。
 

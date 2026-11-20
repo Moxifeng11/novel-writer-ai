@@ -1,6 +1,6 @@
 {
   "name": "novel-writer-ai",
-  "version": "4.97.2",
+  "version": "4.97.3",
   "description": "End-to-end AI writing workspace for Chinese web novels, short stories and scripts: planning, drafting, co-writing, quality checks and knowledge-base deconstruction.",
   "main": "main.js",
   "scripts": {
@@ -100,6 +100,7 @@
     "eslint": "^9.39.5",
     "eslint-plugin-no-unsanitized": "4.1.5",
     "eslint-plugin-obsidianmd": "^0.4.2",
+    "fflate": "^0.8.3",
     "obsidian": "^1.14.4",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.72.1",

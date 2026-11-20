@@ -3,7 +3,7 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-17",
   "baseline": {
-    "version": "4.97.2",
+    "version": "4.97.3",
     "tests": {
       "files": 1013,
       "cases": 10503
@@ -990,5 +990,6 @@
       "summary": "G7-4d：知识库详情状态机抽纯模块 + 9 条回归（换书清空/错误文案/列表守卫）",
       "evidence": "knowledge-detail-state.ts + test"
     }
-  ]
+  ],
+  "version": "4.97.3"
 }
