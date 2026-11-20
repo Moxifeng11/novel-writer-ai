@@ -21,6 +21,14 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.97.2',
+        date: '2026-11-20',
+        title: '通过社区审核',
+        sections: [
+            { type: 'fixed', label: '🛡 上架', items: ['两条 eslint 指令补说明——审核扫描器把 eslint-comments/require-description 保持为 error，缺说明会导致整版判 Failed', '新增本地审核扫描门禁 check:obsidian-review 并接入 preflight，退出码等价于「会不会被打回」'] },
+        ],
+    },
+    {
         version: '4.97.1',
         date: '2026-11-20',
         title: '社区目录上架准备',
@@ -224,30 +232,6 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
                 items: [
                     '无章节摘要的项目此前 0 产出，现按正文目录枚举并显式告警',
                     '新增 check:command-handlers 门禁，拦「命令执行但无反应」',
-                ],
-            },
-        ],
-    },
-    {
-        version: '4.88.0',
-        date: '2026-11-13',
-        title: '一致性审核闭环：19 子类全覆盖 + 结算自动兜底',
-        sections: [
-            {
-                type: 'added',
-                label: '🔍 一致性审核',
-                items: [
-                    '19/19 子类全覆盖：新增记忆矛盾、核心规则违规、视角混乱等 10 类',
-                    '结算后自动跑规则层（零 token），有疑似项才启 AI 识别（封顶 3 对）',
-                    '发现跨章矛盾主动提示，不必再去点命令',
-                ],
-            },
-            {
-                type: 'fixed',
-                label: '🛠️ 修复',
-                items: [
-                    'rename 覆盖类问题全仓排查（4 处），含知识库索引第二次起写不进去',
-                    '修正 3 处「测试锁住错误行为」的旧断言',
                 ],
             },
         ],

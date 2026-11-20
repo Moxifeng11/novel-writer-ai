@@ -4097,3 +4097,25 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 文档同步：`docs/releases/community-submission.md` 由「待提交」改为「已上架 + 自动跟随发版」，保留清单作为未来打回时的对照，并记下两个细节（只显示最新过审版本；目录短描述仍是上架时那句 157 字符，与 manifest 219 字符不同，可在账号页编辑，属可选）。
 
 门禁：`gen:docs` 1012 源文件、`check:docs` 通过（版本 4.97.1、20 个活跃文档）、`check-release --tag 4.97.1` 通过。
+## 第一百三十轮：社区审核失败定位与 4.97.2 修复（2026-11-20）
+
+**触发**：用户发来账号页截图 —— Reviews 区 4.83.1 / 4.85.0 / 4.95.0 / 4.96.0 / 4.97.1 **全部 Failed**，红条「failed one or more automated checks」。此前一直误以为「在排队等审核」。
+
+**判据研究**（`eslint-plugin-obsidianmd` docs/configuration.md §Community plugin scanner configuration）
+- 扫描器把绝大多数规则降级为 warn，只有安全类（`no-eval`、`no-unsanitized/*`、`regex-lookbehind`、`no-forbidden-elements`、`no-new-func`、`no-implied-eval`）、最新层 API 规则（`settings-tab/*`、`no-static-styles-assignment`、`no-unsupported-api`、`platform`、`detach-leaves` 等）与 `eslint-comments/*` 保持 error。
+- 扫描器关闭 `no-undef`、`@typescript-eslint/no-unsafe-*`、`restrict-template-expressions`、`no-base-to-string`、`import/no-unresolved`、`validate-manifest`、`validate-license`、`commands/no-*-in-command-id`；忽略 `i18n/`、`docs/`、`scripts/`、`tests/`、`*.mjs`、`*.test.*`。
+- 因此「本地 lint 全绿」与「审核通过」是两套判据：全量 recommended 跑出 1,721 条 error，其中 1,719 条在扫描器里只是 warn。
+
+**定位结果**：扫描器等价配置下唯一阻断项 = `eslint-comments/require-description` 2 处 —— `engine/agent/harness/mcp-stdio-transport.ts:31`（`no-require-imports`）与 `services/chapter-version-service.ts:57`（`no-control-regex`）缺 `-- 说明`。
+
+**改动**
+- 两处指令补 `-- 说明`（`-- 只在桌面端运行时按需加载 child_process；移动端没有该模块，由下方 catch 降级为 null` / `-- 必须显式匹配控制字符区间才能拦下伪造的 contentKey`）。
+- 新增 `eslint.obsidian-review.mjs`：blocking 规则 error、扫描器降级规则 warn、扫描器关闭规则 off，并沿用扫描器的 ignores；新增脚本 `check:obsidian-review`（`--quiet`，只打印 error）并接进 `preflight`（紧跟 `lint`）。实测 52 秒 / 1,037 文件，修复后 **EXIT=0**。
+- devDependency `eslint-plugin-obsidianmd@^0.4.2`。
+- 版本 4.97.2：`package.json` / `manifest.json` / `versions.json` / `package-lock.json` / `CHANGELOG.md` / `shared/changelog-data.ts` / `docs/releases/4.97.2.md` / 六处文档版本戳 / `docs/progress/program-status.json`。
+- `docs/releases/community-submission.md`：§一 重写为「每版审核都是 Failed」并写清判定标准与误判教训，新增 §四之二「本地复现审核扫描」，§四 表格加 `require-description` 行。
+
+**教训**
+- 「社区目录页面显示当前版本 = 已上架」是错的：审核期页面同样显示最新 tag 与 README。唯一可信信号是账号页 Reviews 状态与客户端 `community-plugins.json`。
+- 发布前的本地门禁必须复刻**审核方的严重度**，否则会一直拿「本地全绿」安慰自己；这类判据要固化成脚本，而不是写在文档里靠人记。
+- 反例取证：`eslint --config` 单独跑 `validate-manifest` / `validate-license` 需要 json/LICENSE 语言映射，手工配置必报 `Parsing error`，别再试。

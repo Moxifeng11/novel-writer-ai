@@ -56,7 +56,7 @@ function syncVersion() {
         return;
     }
     versions[version] = minAppVersion;
-    fs.writeFileSync(versionsPath, JSON.stringify(versions, null, 4) + '\n', 'utf8');
+    fs.writeFileSync(versionsPath, JSON.stringify(versions, null, 2) + '\n', 'utf8');
     console.log(`[sync-version] versions.json 已更新：${version} → ${minAppVersion}`);
 }
 

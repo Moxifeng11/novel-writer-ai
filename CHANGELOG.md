@@ -2,6 +2,15 @@
 
 > 历史未发布批次（v8.x / 4.10.x）已归档到 [docs/changelog/archive-unreleased.md](docs/changelog/archive-unreleased.md)。
 
+## 4.97.2（2026-11-20）
+
+社区审核阻断项修复（不改变功能）：
+
+- `engine/agent/harness/mcp-stdio-transport.ts` 与 `services/chapter-version-service.ts` 的两条 `eslint-disable-next-line` 补上 `-- 说明`：审核扫描器把 `eslint-comments/require-description` 保持为 error 级，缺说明即整版判 Failed（4.83.1 起每版都没过，这是复查后的唯一阻断项）。
+- 新增 `eslint.obsidian-review.mjs`（复刻审核扫描器判据：只有安全类与最新层 API/备注规则为 error，其余按扫描器降级或关闭）与脚本 `check:obsidian-review`，并接入 `preflight`；`npm run check:obsidian-review` 退出码即「会不会被审核打回」。
+- 新增 devDependency `eslint-plugin-obsidianmd@^0.4.2`（审核方同款规则集）。
+- 文档：`docs/releases/4.97.2.md`；`docs/releases/community-submission.md` 增加「本地复现审核扫描」一节。
+
 ## 4.97.1（2026-11-20）
 
 社区插件目录上架准备（不改变功能）：

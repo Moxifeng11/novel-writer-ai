@@ -54,7 +54,7 @@ export interface SaveVersionOptions {
 export function isSafeContentKey(contentKey: string): boolean {
     const key = String(contentKey || '');
     if (!key || key.includes('/') || key.includes('\\') || key.includes('..')) return false;
-    // eslint-disable-next-line no-control-regex
+    // eslint-disable-next-line no-control-regex -- 必须显式匹配控制字符区间才能拦下伪造的 contentKey
     if (/[\u0000-\u001f]/.test(key)) return false;
     return sanitizeName(key) === key;
 }

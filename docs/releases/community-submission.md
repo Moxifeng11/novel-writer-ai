@@ -1,21 +1,21 @@
 # 上架 Obsidian 社区插件目录
 
-> 目标版本 4.97.1 · 记录时间 2026-11-20 · 维护：DSH
+> 目标版本 4.97.2 · 记录时间 2026-11-20 · 维护：DSH
 
-## 一、当前状态：条目已存在，但版本仍在审核（不算上架成功）
+## 一、当前状态：每版审核都是 Failed（2026-11-20 定位并修复）
 
 插件条目：<https://community.obsidian.md/plugins/novel-writer-ai>（2026-11-20 复核：`62 downloads`、有 4.93–4.96 的版本历史、作者本人认领）。
 
-但**条目存在 ≠ 已上架市场**。判定标准是两条，缺一条都不算成功：
+**账号页的 Reviews 区显示 4.83.1 / 4.85.0 / 4.95.0 / 4.96.0 / 4.97.1 全部 `Failed`**，红条写着「The latest release of this entry failed one or more automated checks」。也就是说：从 4.83 起每一版都没通过自动扫描，插件因此一直没进客户端市场清单（`community-plugins.json` 10,616 条里没有 `novel-writer-ai`）。这不是「正在排队等审核」，是「一直被打回」。
+
+判定上架成功的两条标准，缺一条都不算：
 
 1. 账号页里该版本状态变成「通过 / 已发布」；
 2. Obsidian 客户端「设置 → 第三方插件 → 浏览」里能搜到并装到该版本。
 
-2026-11-20 复核第 2 条：客户端读的市场清单 `community-plugins.json`（拉取 3,294,579 字节、**10616 条**）里**没有 `novel-writer-ai`** → 市场侧尚未放出；账号页显示的 4.97.1 处于待审状态。
+站点页面（服务端渲染）在审核期就会显示「当前版本 4.97.x」与新 README 文案，容易误判成已发布——**那一页只能证明提交进了系统，不能证明市场已放出**（2026-11-20 的误判记录，别再复用「页面显示新版本 = 已上架」这个推论）。
 
-站点页面（服务端渲染）在审核期就会显示「当前版本 4.97.1」与新 README 文案，容易误判成已发布——**那一页只能证明提交进了系统，不能证明市场已放出**（本条是 2026-11-20 的误判记录，别再复用「页面显示新版本 = 已上架」这个推论）。
-
-审核由 Obsidian 侧执行，代码仓无法推进；能做的是把可能被打回的点先自查掉（见 §四）。
+**4.97.2 已定位并修复唯一阻断项**：审核扫描器把 `eslint-comments/require-description` 保持为 error，而本仓有两条 `eslint-disable-next-line` 没写 `-- 说明`（`engine/agent/harness/mcp-stdio-transport.ts:31`、`services/chapter-version-service.ts:57`）。复现方法与判据见 §四之二。
 
 ## 一之二、提交流程（官方文档口径）
 
@@ -40,7 +40,7 @@ Obsidian 已**不再**接受 `obsidianmd/obsidian-releases` 的 `community-plugi
 |---|---|---|
 | 根目录有 `README.md`（说明用途与用法） | ✅ | README 含英文 marketplace 摘要、功能、安装、配置、FAQ、数据与安全 |
 | 根目录有 `LICENSE` | ✅ | `LICENSE`（MIT） |
-| 根目录有 `manifest.json`，且与 HEAD 一致 | ✅ | 4.97.1，`id` = `novel-writer-ai` |
+| 根目录有 `manifest.json`，且与 HEAD 一致 | ✅ | 4.97.2，`id` = `novel-writer-ai` |
 | `id` 全局唯一、不含 `obsidian` | ✅ | id `novel-writer-ai` 不含 `obsidian`；客户端市场清单（10616 条）里尚无同 id |
 | `name` 不含 "Obsidian" / "Plugin" 字样 | ✅ | `Novel Writer AI` |
 | `description` ≤250 字符、句号结尾、无 emoji、动作句开头 | ✅ | 219 字符，`Write, plan, and polish … and export.` |
@@ -52,7 +52,7 @@ Obsidian 已**不再**接受 `obsidianmd/obsidian-releases` 的 `community-plugi
 | 网络使用在 README 中披露 | ✅ | README「Network use (disclosed per Developer policies)」段 |
 | vault 外文件访问在 README 中披露 | ✅ | 新增「外部文件访问（仅桌面端）」段 + 英文 `Local file access` 段 |
 | 无客户端遥测 | ✅ | 无上报代码；`check:secrets` 防密钥入仓 |
-| Release 资产齐全、tag 与版本一致 | ✅ | `4.97.1` Release 含 `main.js` / `manifest.json` / `styles.css` / `versions.json` / zip / SHA256SUMS |
+| Release 资产齐全、tag 与版本一致 | ✅ | `4.97.2` Release 含 `main.js` / `manifest.json` / `styles.css` / `versions.json` / zip / SHA256SUMS |
 
 ## 三、提交时可以直接用的文案
 
@@ -73,12 +73,33 @@ Obsidian 已**不再**接受 `obsidianmd/obsidian-releases` 的 `community-plugi
 | 未在 `onunload` 释放资源 | 有 `check:hotpaths` 与 e2e 生命周期用例 |
 | 给命令设默认快捷键 | 零命中：`addCommand` 的定义表里没有任何 `hotkeys` 字段（`core/command-registry.ts` 与 `ui/` 全仓 grep `hotkeys` = 0） |
 | 动态代码执行（`eval` / `new Function`） | 零命中：`engine/`、`ui/`、`shared/`、`core/` 全仓 grep = 0 |
+| `eslint` 指令缺说明（`eslint-comments/require-description`） | 2026-11-20 命中 2 处（`engine/agent/harness/mcp-stdio-transport.ts:31`、`services/chapter-version-service.ts:57`），已补 `-- 说明`；`check:obsidian-review` 兜住 |
 | 未清洗的 `innerHTML` | 只有 `ui/rendering/safe-html.ts` 一处集中清洗（`no-unsanitized` 规则要求的单一关闭点），其余命中全是注释 |
 | 桌面端用原生 `fetch` 而非 `requestUrl` | **唯一风险点**：`shared/http-transport.ts:136 fetchOnDesktop` → `:188`/`:224`，桌面端用 `fetch` 以保留取消语义与 SSE 流式（移动端仍走 `requestUrl`）。若审核要求改回 `requestUrl`，代价是放弃流式取消；README 已披露网络行为 |
 
+## 四之二、本地复现审核扫描（4.97.2 起）
+
+审核扫描器就是 `eslint-plugin-obsidianmd`，但**规则严重度与本地 lint 完全不同**：它把绝大多数规则降级为 `warn`，只有下面这些保持 `error`（error 才阻断发布）：
+
+- 安全类：`no-eval`、`no-unsanitized/method`、`no-unsanitized/property`、`obsidianmd/regex-lookbehind`、`obsidianmd/no-forbidden-elements`、`no-new-func`、`no-implied-eval`（TS 侧为 `@typescript-eslint/no-implied-eval`）；
+- 最新提交层额外收紧：`obsidianmd/settings-tab/no-manual-html-headings`、`settings-tab/no-problematic-settings-headings`、`sample-names`、`no-sample-code`、`platform`、`no-plugin-as-component`、`detach-leaves`、`no-static-styles-assignment`、`no-view-references-in-plugin`、`no-unsupported-api`；
+- 备注类：`eslint-comments/no-unlimited-disable`、`require-description`、`disable-enable-pair`、`no-restricted-disable`。
+
+扫描器还会**关闭** `no-undef`、`@typescript-eslint/no-unsafe-*`、`restrict-template-expressions`、`no-base-to-string`、`import/no-unresolved`、`validate-manifest`、`validate-license`、`commands/no-command-in-command-id`、`commands/no-plugin-id-in-command-id`，并忽略 `i18n/`、`docs/`、`scripts/`、`tests/`、`*.mjs` 等目录与文件（所以 i18n 里的中文字面量不会被审核）。
+
+本仓已把这套判据固化成 `eslint.obsidian-review.mjs` + `npm run check:obsidian-review`（已进 `preflight`）：
+
+```powershell
+npm run check:obsidian-review        # 只打印 error 级（= 会被打回）的项；EXIT=0 才算这版能过扫描
+```
+
+实测：全量 1,037 个文件约 52 秒；2026-11-20 修复后 **EXIT=0**。另一份全量 recommended 配置跑出的 1,721 条 error 里，绝大多数（`prefer-create-el` 682、`no-unused-vars` 569、`no-deprecated` 255…）在扫描器里只是 warn，不阻断——**别再用「本地 lint 全绿」代替这项检查**。
+
+也可在账号页用 `Review branch` 对分支做预览扫描（不发版）；正式复审要点 `Check for new releases`（只扫最新 Release）。
+
 ## 五、后续
 
-1. 审核通过后：账号页状态变为通过、客户端插件浏览器可搜到并可安装该版本 → 才算上架成功；此时再确认 4.97.1 是市场里的当前版本。
+1. 4.97.2 发布后在账号页点 `Check for new releases` 触发复审；通过后账号页状态变为通过、客户端插件浏览器可搜到并可安装该版本 → 才算上架成功。
 2. 若收到打回意见：按提示改代码 → **发更高版本 Release**（目录只认 `manifest.version` 对应的 tag），不要在下架/待审状态反复重发同号版本。
 3. 日常发版：tag 与 `manifest.version` 一致、Release 资产齐全（本仓 `release.yml` 已保证），提交后同样进入审核队列。
 4. 可选宣传：[Share & showcase](https://forum.obsidian.md/c/share-showcase/9) 发帖、Discord `#updates` 通告（需要 `developer` 角色）。
