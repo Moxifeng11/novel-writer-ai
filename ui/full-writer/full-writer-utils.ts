@@ -16,7 +16,7 @@ export function calcResumeStepIndex(stepCompleted: Set<string>): number {
         if (step.index === 0 || step.auto) continue;
         const sk = step.key;
         if (sk && !stepCompleted.has(sk)) {
-            log.warn('[小说工坊] calcResumeStepIndex: 第一个未完成 =', step.label, 'stepCompleted=', [...stepCompleted]);
+            log.debug('[小说工坊] calcResumeStepIndex: 第一个未完成 =', step.label, 'stepCompleted=', [...stepCompleted]);
             return step.index;
         }
     }

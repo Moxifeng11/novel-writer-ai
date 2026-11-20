@@ -115,7 +115,7 @@ export class ChapterStateManager {
         const chapFolder = this.app.vault.getAbstractFileByPath(chapDir);
         if (!(chapFolder instanceof TFolder)) { log.warn('[ChapterStateManager] restoreChapterState: chapDir 不是文件夹', chapDir); return; }
 
-        log.info('[ChapterStateManager] restoreChapterState: 开始恢复', chapDir);
+        log.debug('[ChapterStateManager] restoreChapterState: 开始恢复', chapDir);
 
         // 【规范化】将旧格式文件统一迁移为标准格式
         const chapterName = chapDir.split('/').pop() || '';
@@ -222,7 +222,7 @@ export class ChapterStateManager {
                 new Notice('ChapterState：数据读取异常，部分功能可能受限');
             }
 
-            log.warn('[ChapterStateManager] restoreChapterState 步骤检查:', stepKey, '文件=', file.name, '长度=', pureBody.length, 'source=', fmSource);
+            log.debug('[ChapterStateManager] restoreChapterState 步骤检查:', stepKey, '文件=', file.name, '长度=', pureBody.length, 'source=', fmSource);
 
             // v6.0: 模板骨架检测
             const isTmplSkeleton = isTemplateSkeleton(pureBody, stepKey);
@@ -244,7 +244,7 @@ export class ChapterStateManager {
             if (stepKey === STEP_KEYS.BODY_GENERATION) {
                 const bodyCache = this.app.metadataCache.getFileCache(file);
                 let bodyStatus = bodyCache?.frontmatter?.['status'];
-                log.warn('[ChapterStateManager] bodyGeneration: bodyPureLen=', pureBody.length, 'bodyStatus(cache)=', bodyCache?.frontmatter?.['status']);
+                log.debug('[ChapterStateManager] bodyGeneration: bodyPureLen=', pureBody.length, 'bodyStatus(cache)=', bodyCache?.frontmatter?.['status']);
                 if (!bodyStatus) {
                     try {
                         const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
@@ -333,7 +333,7 @@ export class ChapterStateManager {
                         }
                     }
                 } else {
-                    log.info('[ChapterStateManager] 正文 status=已完稿，跳过 mtime 标脏');
+                    log.debug('[ChapterStateManager] 正文 status=已完稿，跳过 mtime 标脏');
                 }
             }
 
@@ -382,7 +382,7 @@ export class ChapterStateManager {
         // 按「输入完整性」写入（Rev 185）。旧实现在这里无条件标 complete，
         // 会让加载失败/必做输入缺失的章节也显示「上下文已完成」。
         this.currentStepIndex = this.stepCompleted.size > 0 ? 1 : 0;
-        log.warn('[ChapterStateManager] restoreChapterState 完成: stepCompleted=', [...this.stepCompleted], 'staleSteps=', [...this.staleSteps], 'stepLevels=', this.stepLevels);
+        log.debug('[ChapterStateManager] restoreChapterState 完成: stepCompleted=', [...this.stepCompleted], 'staleSteps=', [...this.staleSteps], 'stepLevels=', this.stepLevels);
     }
 
     /**

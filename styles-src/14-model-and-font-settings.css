@@ -664,7 +664,10 @@
 .nw-api-sidebar-row {
     display: flex;
     align-items: center;
+    /* F-10：窄列里名称与模型挤在一行会把两边都截断，模型摘要换到第二行 */
+    flex-wrap: wrap;
     gap: 8px;
+    row-gap: 2px;
     padding: 7px 10px;
     border-radius: 8px;
     color: var(--text-muted);
@@ -1213,8 +1216,11 @@
 
 /* ── API 供应商侧栏卡片补充：模型摘要 / 隐藏标记 ── */
 .nw-api-sidebar-model {
-    margin-left: auto;
-    max-width: 120px;
+    flex: 1 1 100%;
+    order: 5;
+    margin-left: 20px;
+    margin-right: auto;
+    max-width: calc(100% - 20px);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

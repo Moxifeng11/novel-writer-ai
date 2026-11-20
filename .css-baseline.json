@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-20T01:06:59.166Z",
-  "note": "验收 F-04/F-06/F-07 修复：新增 .nw-api-switch-field（开关与文字并排，+1 类）、导航宽度 clamp 208、子步骤标签换行、单列布局滚动与标题栏限高",
-  "bytes": 805679,
+  "generatedAt": "2026-11-20T01:28:47.417Z",
+  "note": "第一百三十轮：供应商侧栏两行布局（F-10）",
+  "bytes": 805893,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 223,

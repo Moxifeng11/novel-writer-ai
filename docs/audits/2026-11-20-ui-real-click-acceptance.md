@@ -1,6 +1,6 @@
 # 插件界面真实点击验收（2026-11-20）
 
-> 状态：活跃（本轮验收记录 + 可复用验收标准；后续回归按本表执行）。2026-11-20 第二轮：F-03..F-08 已修，F-10 新增待处理。
+> 状态：活跃（本轮验收记录 + 可复用验收标准；后续回归按本表执行）。2026-11-20 第二轮：F-03..F-08 已修；第三轮收尾 F-10 已修、ChapterStateManager 调试留痕降为 debug。
 > 版本：v4.96.1 · 环境：Obsidian 1.14.5 · 开发 vault `D:\nw-dev-vault`
 
 ## 一、目的
@@ -177,6 +177,24 @@
 - 结果：同样的「起 Obsidian → 打开写作台」流程，控制台原 3 条 warning 全部消失（`_verify/f08-zh-CN.json`）；
   剩下的 401 是真·无效 key 场景，由 FIX-03 给出可见提示。
 
+### FIX-10 供应商列表名称截断（对应 F-10）
+- 根因：侧栏固定 208px，`.nw-api-sidebar-row` 单行 flex，名称 `flex: 1; min-width: 0` 与模型摘要
+  `.nw-api-sidebar-model { max-width: 120px; margin-left: auto; }` 抢同一行 → 两侧一起被省略号截断
+  （「本地 OIl…」「D… deepseek-v4-flash」）。名称本身已有 `text-overflow: ellipsis`，缺的是空间。
+- 修法：`styles-src/14-model-and-font-settings.css` 的 `.nw-api-sidebar-row` 加 `flex-wrap: wrap; row-gap: 2px;`；
+  `.nw-api-sidebar-model` 改 `flex: 1 1 100%; order: 5; margin-left: 20px; margin-right: auto; max-width: calc(100% - 20px);`
+  （模型摘要独占第二行、与名称左对齐）；`ui/settings/api-section.ts` 两处名称 span 加 `title` 全名。
+- 结果（`_verify/f10.json`、`_verify/f10-sidebar.png`）：5 个供应商名称宽 131px、`nameTrunc=false`、`modelBelowName=true`、
+  行高 47px；只有 `gemini-3.1-pro-preview-search` 这类超长模型名仍省略（有 `title`，属预期）。
+
+### FIX-11 调试留痕降级（对应 F-08 余项）
+- 现象：F-03..F-08 修完后控制台仍剩 5 条 warn 级 trace（`ChapterStateManager` 的「开始恢复 / 步骤检查 / bodyGeneration /
+  跳过 mtime 标脏 / 恢复完成」，另有 `tab-controller.ts` 的 renderTabContent 参数与 `full-writer-utils.ts` 的
+  calcResumeStepIndex 结果）。
+- 修法：这 7 处 `log.warn/info` → `log.debug`；真正的异常分支（chapDir 为空/不是文件夹、读文件失败、状态读取失败、
+  标脏失败）保持 warn。默认级别下 debug 不输出，排查时开调试级仍可见。
+- 结果（`_verify/f08-zh-CN.json`）：启动 → 打开写作台 → 切章，控制台只剩真·无效 key 的 401 两条（FIX-03 已给出界面提示）。
+
 ## 六、缺陷清单与处置
 
 | ID | 级别 | 现象 | 证据 | 处置 |
@@ -188,10 +206,8 @@
 | F-07 | P2 | 800px 高 + 工具栏换行后底部状态栏被裁 | `v7-fw-1280.png` | ✅ 已修复（FIX-07） |
 | F-08 | P3 | 启动 3 条 warning（rhythmAnalyzer 未注入 ×2、.sessions ENOENT） | `_verify/v4.json` | ✅ 已修复（FIX-08） |
 | F-09 | — | 知识库提示「索引 1 本没有向量」 | `v5-kb.png` | 非缺陷：开发 vault 清过向量库，属预期 |
-| F-10 | P3 | 设置页供应商列表在 250px 窄列里名称截成「本地 OIl…」「D… deepseek-v4-flash」 | `_verify/f45-settings-api.png` | 待处理（建议：名称加 `text-overflow: ellipsis` + `title` 全名，或列宽 clamp） |
-
-修复后仍存在的已知噪声（不算缺陷）：打开写作台时 `ChapterStateManager` 会以 warn 级打印 6 条
-「restoreChapterState 步骤检查」，属调试留痕，级别可后续降为 debug。
+| F-10 | P3 | 设置页供应商列表在 208px 窄列里名称截成「本地 OIl…」「D… deepseek-v4-flash」 | `_verify/f10-sidebar.png` | ✅ 已修复（FIX-10） |
+| F-11 | P3 | 打开写作台时 5 条 `ChapterStateManager` / `TabController` 调试 trace 打 warn 级 | `_verify/f08-zh-CN.json` | ✅ 已修复（FIX-11，降 debug） |
 
 ## 七、环境备注（不是插件问题）
 
@@ -206,5 +222,6 @@
    `containerCH/SH`、`phaseLabels`、`subLabels[].trunc`、`barInside`、`docOverflowX`（D1–D4、F2）。
 3. `node D:\nw-tmp\probe-f45.mjs` → 看设置页 `.nw-api-switch-field` 是否重叠、`.nw-settings-tab-advanced-toggle` 的
    computed border（F-04/F-05）。
-4. `node D:\nw-tmp\probe-f08.mjs zh-CN` → 看启动/打开写作台后的控制台是否只剩真·key 无效的 401（A2、F-08）。
-5. 逐条对照 §三 A–F；新增缺陷补进 §六，修复后把行移进 §五。
+4. `node D:\nw-tmp\probe-f08.mjs zh-CN` → 看启动/打开写作台后的控制台是否只剩真·key 无效的 401（A2、F-08、F-11）。
+5. `node D:\nw-tmp\probe-f10.mjs` → 看侧栏 `rows[].nameTrunc` 全 false、`modelBelowName` 全 true（F-10）。
+6. 逐条对照 §三 A–F；新增缺陷补进 §六，修复后把行移进 §五。

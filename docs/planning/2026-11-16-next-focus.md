@@ -3988,6 +3988,25 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - **F-06 导航截断 + 英文阶段名**：`ui/full-writer/streamlined-nav-presenter.ts` 去掉模块级 `t()` 常量，改 `phaseLabel(key)` 懒取（switch + 字面量键），`getStreamlinedPhases()` 每次现算 label；导航宽 `clamp(140px, 16%, 208px)`；`.novel-writer-fw-step-label` / `.novel-writer-fw-substep-label` 改换行（子步骤行 `flex-wrap: wrap`、标签 `flex: 1 1 60px`）。en 1280 下五阶段全英文、11 个子步骤 `trunc:false`。新增 2 条语言切换回归测试（共 10 条通过）。
 - **F-07 状态栏被裁**：`styles-src/04-workspace-layers.css` 的 `@media (max-width: 1100px)` 内加容器 `overflow-y: auto`、标题栏 `max-height: 40vh; overflow-y: auto`、状态栏 `position: sticky; bottom: 0`；`15-late-fixes.css` 窄容器查询里只留 workspace `min-height: 320px`。**坑**：`.novel-writer-fw-layout-host` 才是 `@container nw-fw` 的查询容器，标题栏/状态栏/容器都在它外面，写进 `@container` 不生效。900×600 与 1100×680 复验 `barInside=true`、无横向溢出。
 - **F-08 启动 3 条 warning**：`engine/heavy-task-worker-manager.ts` 与 `engine/quality/quality-worker.ts` 的缺失清单去掉按设计不注入的 `rhythmAnalyzer`；`engine/analysis-session-manager.ts` 对 `ENOENT` 降为 `log.debug`。复验控制台原 3 条 warning 全消失，只剩真·无效 key 的 401（由 FIX-03 给提示）。
-- **新发现 F-10（P3，待处理）**：设置页供应商列表在 250px 窄列里名称截成「本地 OIl…」「D… deepseek-v4-flash」，建议 ellipsis + title 全名。
+- **新发现 F-10（P3）**：设置页供应商列表在 250px 窄列里名称截成「本地 OIl…」「D… deepseek-v4-flash」——已在第一百三十轮修复（侧栏改两行 + title）。
 - 门禁：check:i18n 205 文件 / 5359 条（基线已收紧）、check:css 805679 / 4340 类（基线已上调并写 note）、check:bundle main.js 6237361 + styles.css 805679、check:inline-styles / check:view-tests / check:silent-failures 通过；全量 preflight 见下方。
 - 复验脚本（仓外，勿提交）：`D:\nw-tmp\probe-f67f.mjs`（en/zh 三档尺寸布局）、`D:\nw-tmp\probe-f08.mjs`（启动控制台）、`D:\nw-tmp\probe-f45.mjs`（设置页开关与页签边框）。
+
+## 第一百三十轮：真实点击验收收尾（F-10 + F-11 调试留痕）
+
+用户 m27210「将下一步候选都修掉」，把验收文档里最后两条待处理清掉。
+
+### F-10 设置页供应商列表名称截断（208px 侧栏）
+- 根因：`.nw-api-sidebar-row` 单行 flex，名称（`flex:1; min-width:0`）与 `.nw-api-sidebar-model`（`max-width:120px; margin-left:auto`）抢同一行，两侧一起省略号。
+- 修法：`styles-src/14-model-and-font-settings.css` 行加 `flex-wrap: wrap; row-gap: 2px`；模型摘要改 `flex: 1 1 100%; order: 5; margin-left: 20px; margin-right: auto; max-width: calc(100% - 20px)`（独占第二行、与名称左对齐）；`ui/settings/api-section.ts` 两处名称 span 加 `title` 全名。
+- 复验 `D:/nw-tmp/probe-f10.mjs`：5 家供应商 `nameW=131 / nameTrunc=false / modelBelowName=true`、行高 47px；超长模型名（gemini-3.1-pro-preview-search）仍省略但带 title。截图 `_verify/f10-sidebar.png`（208×631）。
+- 回归测试：`tests/unit/ui/api-section-dom.test.ts` 新增「F-10：侧栏名称整行显示并带 title，模型摘要换到第二行」（名称 attr 与 styles.css 两条规则断言），12 例通过。
+
+### F-11 调试留痕降级（7 处）
+- `ui/states/chapter-state-manager.ts`：开始恢复（info）、步骤检查（warn）、bodyGeneration 参数（warn）、正文 status=已完稿跳过标脏（info）、restoreChapterState 完成（warn）→ `log.debug`；异常分支（chapDir 为空/非文件夹、读文件失败、状态读取失败、analysisReport 读失败、标脏失败、P2-5 索引迁移）保持 warn。
+- `ui/full-writer/tab-controller.ts` 的 chapDir 重建与 renderTabContent 参数、`ui/full-writer/full-writer-utils.ts` 的 calcResumeStepIndex 结果同样降 debug。
+- 复验 `D:/nw-tmp/probe-f08.mjs zh-CN`：控制台只剩真·无效 key 的 401 两条（FIX-03 已有界面提示），零 warning。
+
+### 门禁与交付
+- tsc 0 错；`npx vitest run tests/unit/ui/api-section-dom.test.ts` 12 通过；build + `dev-vault sync`（4 文件）。
+- 文档：`docs/audits/2026-11-20-ui-real-click-acceptance.md` 新增 FIX-10 / FIX-11 两节、§六 表 F-10 改已修复并新增 F-11 行、§八 回归步骤加 `probe-f10.mjs`。

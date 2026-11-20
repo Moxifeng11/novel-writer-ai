@@ -208,7 +208,7 @@ export class ApiSection extends SettingsSection {
                     cls: 'nw-api-sidebar-icon',
                     text: provider.sourceType === 'local' ? '💻' : '☁️',
                 });
-                row.createSpan({ cls: 'nw-api-sidebar-name', text: provider.name });
+                row.createSpan({ cls: 'nw-api-sidebar-name', text: provider.name, attr: { title: provider.name } });
                 const isCurrent = provider.id === currentId;
                 const assignment = this.plugin.getProviderAssignment(provider.id);
                 if (assignment.defaultModel) {
@@ -243,7 +243,7 @@ export class ApiSection extends SettingsSection {
                     cls: 'nw-api-sidebar-icon',
                     text: provider.sourceType === 'local' ? '💻' : '☁️',
                 });
-                row.createSpan({ cls: 'nw-api-sidebar-name', text: provider.name });
+                row.createSpan({ cls: 'nw-api-sidebar-name', text: provider.name, attr: { title: provider.name } });
                 const restore = row.createEl('button', {
                     cls: 'nw-api-ghost-btn',
                     text: t('settings.api.restoreShow'),

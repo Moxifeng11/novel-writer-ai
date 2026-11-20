@@ -7,6 +7,8 @@
  * - 有供应商 → 侧栏两条、详情头显示当前供应商名、设为当前按钮语义
  * - 头部按钮（恢复默认 / 添加供应商）存在
  */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeEl, stubCreateDiv, stubDocument } from './support/fake-dom';
 import { ApiSection } from '../../../ui/settings/api-section';
@@ -227,6 +229,22 @@ describe('ApiSection.render', () => {
         expect(text).toContain('已隐藏（1）');
         expect(text).toContain('被隐藏的渠道');
         expect(text).toContain('恢复显示');
+    });
+
+    // F-10（真实点击验收第二轮）：250px 窄列下供应商名与模型摘要互相挤断
+    // 修法 = 名称整行 + 模型摘要换到第二行，且名称带 title 便于悬停看全名
+    it('F-10：侧栏名称整行显示并带 title，模型摘要换到第二行', () => {
+        const root = renderApi(makeHost({ providers: PROVIDERS, currentId: 'p1' }));
+        const names = root.findAll('nw-api-sidebar-name');
+        expect(names.length).toBeGreaterThan(0);
+        for (const name of names) {
+            expect(name.getAttribute('title')).toBe(name.textContent.trim());
+        }
+        // CSS：行允许换行、模型独占一行（否则窄列两侧都被截断）
+        const css = readFileSync(join(process.cwd(), 'styles.css'), 'utf8');
+        expect(css).toContain('.nw-api-sidebar-row {');
+        expect(css).toMatch(/\.nw-api-sidebar-row \{[^}]*flex-wrap: wrap;/);
+        expect(css).toMatch(/\.nw-api-sidebar-model \{[^}]*flex: 1 1 100%;/);
     });
 });
 /** 缺口⑦ 第二期第三片：分区文案全部走 i18n（settings.api.*），这里只锁「切到英文后不再出中文」 */

@@ -214,9 +214,9 @@ export class TabController {
                 const chapDir = this.deps.rebuildChapDirIfNeeded(project, chapterName, volume, chapterNum);
                 activeTab.chapDir = chapDir;
                 this.deps.state.chapDir = chapDir;
-                log.warn('[小说工坊] chapDir 为空，从上下文重建 (v4.0 步骤结果路径):', chapDir);
+                log.debug('[小说工坊] chapDir 为空，从上下文重建 (v4.0 步骤结果路径):', chapDir);
             }
-            log.warn('[小说工坊] renderTabContent: chapDir=', this.deps.state.chapDir,
+            log.debug('[小说工坊] renderTabContent: chapDir=', this.deps.state.chapDir,
                 'project=', project, 'volume=', volume, 'chapterName=', chapterName);
 
             this.deps.getChapterStateManager().currentStepIndex = 0;
