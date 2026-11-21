@@ -436,6 +436,21 @@ export class App {
     metadataCache: MetadataCache = new MetadataCache();
     fileManager: FileManager = new FileManager();
     workspace: Workspace = new Workspace();
+    /**
+     * App 级存储（真实实现是 vault 命名的 localStorage 命名空间，见 Obsidian 1.8.7+）
+     * 测试里用内存 Map 代替，`saveLocalStorage(key, null)` 语义等同删除。
+     */
+    private readonly _localStorage = new Map<string, unknown>();
+    loadLocalStorage(key: string): unknown | null {
+        return this._localStorage.has(key) ? this._localStorage.get(key) : null;
+    }
+    saveLocalStorage(key: string, data: unknown | null): void {
+        if (data === null) {
+            this._localStorage.delete(key);
+            return;
+        }
+        this._localStorage.set(key, data);
+    }
 }
 
 export class Workspace {

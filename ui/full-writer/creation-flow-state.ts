@@ -10,6 +10,7 @@ import type { App } from 'obsidian';
 import type { CreationMode } from '@/shared/creation-mode';
 import { CREATION_MODE_SPECS, parseCreationModeMeta } from '@/shared/creation-mode';
 import { readProjectMeta } from '@/shared/paths';
+import { vaultLoad, vaultSave } from '@/shared/local-storage';
 import {
     listModeUnits,
     modeDocKinds,
@@ -79,7 +80,7 @@ const REQUIRED_WIZARD_KEYS = ['worldview', 'setting_lib'];
 export function markFlowExported(project: string): void {
     if (!project) return;
     try {
-        localStorage.setItem(`${STORAGE_KEY_PREFIXES.flowExport}${project}`, String(Date.now()));
+        vaultSave(`${STORAGE_KEY_PREFIXES.flowExport}${project}`, String(Date.now()));
     } catch { // silent-ok: localStorage 不可用时只是无法标记导出完成
         // localStorage 不可用时只是无法标记导出完成，不影响导出本身
     }
@@ -87,7 +88,7 @@ export function markFlowExported(project: string): void {
 
 function readExportFlag(project: string): boolean {
     try {
-        return !!localStorage.getItem(`${STORAGE_KEY_PREFIXES.flowExport}${project}`);
+        return !!vaultLoad(`${STORAGE_KEY_PREFIXES.flowExport}${project}`);
     } catch { // silent-ok: 只读检查导出目录，失败按未导出处理
         return false;
     }
@@ -95,7 +96,7 @@ function readExportFlag(project: string): boolean {
 
 function readWizardResultsFromStorage(project: string): Record<string, string> {
     try {
-        const raw = localStorage.getItem(projectScopedKey(STORAGE_KEY_PREFIXES.wizardResults, project));
+        const raw = vaultLoad(projectScopedKey(STORAGE_KEY_PREFIXES.wizardResults, project));
         if (!raw) return {};
         const parsed = JSON.parse(raw) as unknown;
         return parsed && typeof parsed === 'object' ? parsed as Record<string, string> : {};

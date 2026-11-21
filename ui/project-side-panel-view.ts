@@ -14,6 +14,7 @@ import { ItemView, Notice, TFile, WorkspaceLeaf, setIcon } from 'obsidian';
 import { t } from '@/i18n';
 import type NovelWriterPlugin from '@/main';
 import { STORAGE_KEYS } from '@/shared/storage-keys';
+import { vaultLoad, vaultSave } from '@/shared/local-storage';
 import {
     FILE_KIND_LABELS,
     FRONTMATTER_SCHEMAS,
@@ -160,7 +161,7 @@ export class ProjectSidePanelView extends ItemView {
 
     private loadCollapsed(): void {
         try {
-            const raw = localStorage.getItem(STORAGE_KEYS.sidePanelCollapsed);
+            const raw = vaultLoad(STORAGE_KEYS.sidePanelCollapsed, this.app);
             if (raw) this.collapsed = new Set(JSON.parse(raw) as string[]);
         } catch {
             this.collapsed = new Set();
@@ -169,7 +170,7 @@ export class ProjectSidePanelView extends ItemView {
 
     private saveCollapsed(): void {
         try {
-            localStorage.setItem(STORAGE_KEYS.sidePanelCollapsed, JSON.stringify([...this.collapsed]));
+            vaultSave(STORAGE_KEYS.sidePanelCollapsed, JSON.stringify([...this.collapsed]), this.app);
         } catch {
             // 忽略：折叠状态只是体验优化
         }

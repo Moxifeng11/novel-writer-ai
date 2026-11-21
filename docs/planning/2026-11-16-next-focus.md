@@ -4308,3 +4308,18 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 下一步候选：第 8b 批（`localStorage` 19 条，需带旧键迁移，属行为变更）或第 10 批产品决策项（`sentence-case` 51 / `prefer-file-manager-trash-file` 25，需用户确认口径）。
 
 - 附带修复：`tests/unit/engine/asset-registry.test.ts` 的 `fakeLibrary()` 把同步的 `listProject/listGlobal` 写成 `async`（与 `StyleFingerprintLibrary` 真实签名不符），去掉 `await` 后暴露为 0 条指纹；已把 fake 改成同步返回，`npx vitest run tests/unit/engine/asset-registry.test.ts` 通过。
+
+## 第一百四十九轮：warn 第 8b 批 —— vault 级存储迁移（834 → 816，minAppVersion 提到 1.8.7）
+
+- 起点：`no-restricted-globals` 19 条（18 处裸 `localStorage` + 1 处 `shared/http-transport.ts` 的桌面端 `fetch`）。
+- 关键约束（决定方案）：`App#loadLocalStorage` / `saveLocalStorage` 自 **Obsidian 1.8.7** 提供（obsidian.d.ts `@since 1.8.7`），审核的 `obsidianmd/no-unsupported-api` 是 **error 级**且按符号判版本、不认运行时特性检测；`no-restricted-globals` **禁止 disable**（实测触发 `eslint-comments/no-restricted-disable` error）。因此只能提 `minAppVersion` 或永久留 warn。用户裁定：提版本、做迁移。
+- 用户口径（原话）：「那就8b批次，之后再做第10批」；选项确认「把 minAppVersion 提到 1.8.7，完成迁移（推荐）」。
+- 新增 `shared/local-storage.ts`：`registerVaultStorageHost(app)` + `vaultLoad` / `vaultSave` / `vaultClear`；读时 App 存储优先、旧全局键回退并一次性迁入（旧键不删），无宿主回退旧全局键，写失败不冒泡。宿主类型用 `Pick<App, 'loadLocalStorage' | 'saveLocalStorage'>`（测试可注入 mock）。
+- 替换 16 处：`ui/full-writer/wizard-results-store.ts`、`ui/full-writer/creation-flow-state.ts`、`ui/ideation-modal.ts`、`ui/project-side-panel-view.ts`、`ui/components/progress/operation-confirm-modal.ts`、`shared/time-estimator.ts`；`main.ts` 两处旧键清理改 `window.localStorage.removeItem`（成员访问不被规则命中，且 App 存储无删除其他命名空间键的 API）。
+- 版本：4.97.3 → **4.97.4**，`manifest.minAppVersion` 1.4.4 → **1.8.7**，`versions.json` 记 `"4.97.4": "1.8.7"`。
+- 门禁：`minAppVersion` 断言（`tests/unit/architecture/official-review-rules.test.ts:61-63`）与 `scripts/check-obsidian-api.mjs` 描述文案同步到 1.8.7；`tests/__mocks__/obsidian.ts` 的 `App` 补内存版 `loadLocalStorage` / `saveLocalStorage`（`null` 即删除）；新增 `tests/unit/shared/local-storage.test.ts` 6 例。
+- 结果：warn **834 → 816**（`no-restricted-globals` 19 → 1，只剩 `http-transport.ts` 的 fetch 有意例外），error 0；tsc 0 错。
+- 文档：`docs/releases/4.97.4.md`（破坏性变更 + 迁移语义 + 回滚办法）；`docs/handbook/11-dependency-and-platform-compatibility.md`、`docs/handbook/06-gates-and-release.md`、`docs/handbook/01-environment.md` 的 1.4.4 表述改 1.8.7；`docs/DEVELOPMENT.md` 新增「第 8b 批 vault 级存储口径」；`CHANGELOG.md` 与 `shared/changelog-data.ts` 加 4.97.4（裁掉最旧 4.90.0 保持 12 条）；版本戳 8 处改 4.97.4；`program-status.json` 的 version 与 baseline.version 改 4.97.4。
+- 待用户确认：tag `4.97.4` 与 GitHub Release；之后 `npm run check:published -- --expect 4.97.4` 复核上架。
+
+下一步：第 10 批（`sentence-case` 51 / `prefer-file-manager-trash-file` 25，产品决策口径需先定）。

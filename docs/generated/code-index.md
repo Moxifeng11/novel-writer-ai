@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 355 | 146872 | 1953 | 1547 | 79% |
 | `services/` | 65 | 19530 | 296 | 204 | 69% |
-| `shared/` | 265 | 52996 | 2246 | 1757 | 78% |
+| `shared/` | 266 | 53099 | 2251 | 1761 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 307 | 113873 | 1182 | 945 | 80% |
+| `ui/` | 307 | 113878 | 1182 | 945 | 80% |
 
 ## 文件清单
 
@@ -475,7 +475,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 375 | 21 | 20 |
-| `shared/changelog-data.ts` | 246 | 3 | 3 |
+| `shared/changelog-data.ts` | 232 | 3 | 3 |
 | `shared/chapter-progress.ts` | 142 | 7 | 6 |
 | `shared/chapter-ref.ts` | 205 | 7 | 5 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
@@ -569,6 +569,7 @@
 | `shared/ledger-migration-model.ts` | 94 | 3 | 2 |
 | `shared/link-status-compute.ts` | 467 | 18 | 12 |
 | `shared/local-ai-queue.ts` | 89 | 2 | 1 |
+| `shared/local-storage.ts` | 120 | 5 | 4 |
 | `shared/logger.ts` | 101 | 5 | 5 |
 | `shared/lru-cache.ts` | 221 | 2 | 2 |
 | `shared/maintenance-model.ts` | 80 | 2 | 2 |
@@ -689,7 +690,7 @@
 | `shared/theme-gallery.ts` | 205 | 12 | 11 |
 | `shared/thresholds.ts` | 914 | 125 | 97 |
 | `shared/time-context.ts` | 44 | 3 | 3 |
-| `shared/time-estimator.ts` | 468 | 6 | 2 |
+| `shared/time-estimator.ts` | 465 | 6 | 2 |
 | `shared/timeline-events-format.ts` | 59 | 2 | 2 |
 | `shared/token-estimator.ts` | 187 | 8 | 8 |
 | `shared/true-random.ts` | 134 | 3 | 3 |
@@ -796,7 +797,7 @@
 | `ui/components/notice-helpers.ts` | 160 | 3 | 3 |
 | `ui/components/progress/index.ts` | 28 | 4 | 0 |
 | `ui/components/progress/loading-overlay.ts` | 205 | 2 | 2 |
-| `ui/components/progress/operation-confirm-modal.ts` | 323 | 2 | 2 |
+| `ui/components/progress/operation-confirm-modal.ts` | 324 | 2 | 2 |
 | `ui/components/progress/progress-bar.ts` | 131 | 2 | 2 |
 | `ui/components/progress/step-list.ts` | 223 | 1 | 1 |
 | `ui/components/progress/task-card.ts` | 273 | 2 | 2 |
@@ -842,7 +843,7 @@
 | `ui/full-writer/checkup-bar-controller.ts` | 327 | 3 | 3 |
 | `ui/full-writer/context-loader-controller.ts` | 275 | 2 | 2 |
 | `ui/full-writer/cover-picker-controller.ts` | 147 | 1 | 1 |
-| `ui/full-writer/creation-flow-state.ts` | 259 | 5 | 4 |
+| `ui/full-writer/creation-flow-state.ts` | 260 | 5 | 4 |
 | `ui/full-writer/entity-state-controller.ts` | 136 | 2 | 2 |
 | `ui/full-writer/execution-panels.ts` | 391 | 4 | 4 |
 | `ui/full-writer/execution-run-store.ts` | 280 | 5 | 5 |
@@ -870,7 +871,7 @@
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |
 | `ui/full-writer/unit-writer-controller.ts` | 919 | 2 | 2 |
 | `ui/full-writer/wizard-controller.ts` | 428 | 1 | 1 |
-| `ui/full-writer/wizard-results-store.ts` | 81 | 1 | 1 |
+| `ui/full-writer/wizard-results-store.ts` | 82 | 1 | 1 |
 | `ui/full-writer/wizard-step-executors.ts` | 369 | 1 | 1 |
 | `ui/full-writer/wizard-step-logic.ts` | 78 | 6 | 5 |
 | `ui/full-writer/wizard-step-renderers.ts` | 947 | 1 | 1 |
@@ -885,7 +886,7 @@
 | `ui/golden-opening-modal.ts` | 1467 | 1 | 1 |
 | `ui/home-view.ts` | 250 | 2 | 1 |
 | `ui/humanize-report-modal.ts` | 217 | 2 | 2 |
-| `ui/ideation-modal.ts` | 870 | 1 | 1 |
+| `ui/ideation-modal.ts` | 871 | 1 | 1 |
 | `ui/job-center-modal.ts` | 124 | 1 | 1 |
 | `ui/knowledge-detail-format.ts` | 46 | 4 | 4 |
 | `ui/knowledge-detail-modal.ts` | 1708 | 1 | 1 |
@@ -923,7 +924,7 @@
 | `ui/polish-editor.ts` | 926 | 5 | 5 |
 | `ui/pre-research-modal.ts` | 714 | 2 | 2 |
 | `ui/project-health-modal.ts` | 210 | 1 | 1 |
-| `ui/project-side-panel-view.ts` | 458 | 5 | 5 |
+| `ui/project-side-panel-view.ts` | 459 | 5 | 5 |
 | `ui/project-utils.ts` | 366 | 11 | 10 |
 | `ui/prompt-import-preview-modal.ts` | 135 | 2 | 1 |
 | `ui/prompt-manager-logic.ts` | 76 | 4 | 3 |

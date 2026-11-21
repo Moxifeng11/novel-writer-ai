@@ -45,7 +45,7 @@
 | 6 | `no-deprecated` 非 V1 部分 258 → 232（`setDynamicTooltip` 11、`execCommand` 4、`substr` 3、`SettingsTab.display` 1、preset 兼容入口 4、`keyCode`/`createElement` 各 1）。**保留例外**：V1 类型 193（第 10 批）、旧提示词常量 13 与旧模板路径 22（只读兼容，无替代 API）、`setWarning` 7（替代 `setDestructive()` 需 Obsidian 1.13，而 minAppVersion 为 1.4.4） | ✅ 76ea34ec | 1,259 → 1,232 |
 | 7 | Promise 语义 319 → 0（`no-floating-promises` 144 前置 `void`；`no-misused-promises` 163 用 AST 定位回调改 `() => { void (async () => {...})(); }`；`Modal.onClose` / `Plugin.onunload` 的 void 契约拆私有异步体） | ✅ f6933f2b | 1,232 → 913 |
 | 8 | `no-redundant-type-constituents` 31 → 0 + `no-control-regex` 12 → 0 + `obsidianmd/no-global-this` 12 → 0（接口属性名 `global` 是规则误判，加引号规避；谨慎写法见 DEVELOPMENT） | ✅ 1f8f3d23 | 913 → 859 |
-| 8b | `no-restricted-globals` 19（全是 `localStorage`，建议迁 `App#saveLocalStorage` / `loadLocalStorage`；`shared/http-transport.ts` 的 `fetch` 是桌面端保留取消/SSE 的有意例外） | ⏳ 待做（需存储迁移，避免丢草稿） | — |
+| 8b | `no-restricted-globals` 19 → 1：16 处 vault 级 `localStorage` 迁 `App#loadLocalStorage` / `saveLocalStorage`（统一入口 `shared/local-storage.ts`，含旧键一次性迁移），2 处旧全局键清理改 `window.localStorage.removeItem`。**代价：`minAppVersion` 1.4.4 → 1.8.7**（App 存储 API 自 1.8.7 提供，`no-unsupported-api` 不允许特性检测绕过）。保留 1 处：`shared/http-transport.ts` 桌面端 `fetch`（有意例外） | ✅ 本批 | 834 → 816 |
 | 9 | 剩余机械项：`no-this-alias` 5、`await-thenable` 4、`no-empty-object-type` 2、`no-case-declarations` 2、`no-useless-catch` 2、`no-irregular-whitespace` 1、`no-misleading-character-class` 6、`no-require-imports` 2、`hardcoded-config-path` 1 | ✅ b7aeebe4 | 859 → 834 |
 | 10 | 产品决策项：`sentence-case` 51（i18n 文案）、`prefer-file-manager-trash-file` 25（删除改回收站语义） | 待用户确认 | — |
 | 11 | StyleFingerprint V1 → V2 迁移（≈230 条 + `ai-chapter-helpers.ts` 旧提示词） | 独立重构切片 | — |
@@ -70,3 +70,4 @@
 | 2026-11-21 | 7 | 1,232 → 913（Promise 语义 319 → 0） | f6933f2b |
 | 2026-11-21 | 8 | 913 → 859（`no-redundant-type-constituents` / `no-control-regex` / `no-global-this` 清零） | 1f8f3d23 |
 | 2026-11-21 | 9 | 859 → 834（剩余机械项清零） | b7aeebe4 |
+| 2026-11-21 | 8b | 834 → 816（localStorage → App 存储，minAppVersion 提到 1.8.7） | 本批 |

@@ -1,6 +1,7 @@
 import { Notice } from 'obsidian';
 import { createLogger } from '@/shared/logger';
 import { STORAGE_KEY_PREFIXES, projectScopedKey } from '@/shared/storage-keys';
+import { vaultLoad, vaultSave } from '@/shared/local-storage';
 
 
 const log = createLogger('WizardResultsStore');
@@ -28,7 +29,7 @@ export function createPersistentWizardResults(
         loadedKey = key;
         bucket = {};
         try {
-            const saved = localStorage.getItem(key);
+            const saved = vaultLoad(key);
             if (saved) bucket = JSON.parse(saved) as Record<string, string>;
         } catch (e) {
             log.warn('[FullWriter] 存储失败:', e);
@@ -41,7 +42,7 @@ export function createPersistentWizardResults(
 
     const persist = (): void => {
         try {
-            localStorage.setItem(storageKey(), JSON.stringify(bucket));
+            vaultSave(storageKey(), JSON.stringify(bucket));
         } catch (e) {
             log.warn('[FullWriter] 存储失败:', e);
             new Notice('FullWriter：数据读取异常，部分功能可能受限');

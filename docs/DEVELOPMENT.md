@@ -1,6 +1,6 @@
 # 开发指南
 
-> **版本**: v4.97.3
+> **版本**: v4.97.4
 > **最后更新**: 2026-11-02  
 > **状态**: 活跃可信 · 协同写作建议链路运行时验收通过（云端 32–72s / 本地 192s 返回 3 条，面板可见）
 >
@@ -1335,6 +1335,15 @@ npm run check:release  # 发布前资产与版本一致性校验
 - **字符类里的 emoji**（`no-misleading-character-class`）：emoji 含代理对 / 变体选择符，放进字符类会被拆开；改成非捕获分组 `(?:❌|⚠️)`，需要按码点遍历时加 `u` 标志。
 - **`require` 引入 Node 内置模块**（`no-require-imports`）：桌面端按需加载是刻意的，保留 `require` 并补 `// eslint-disable-next-line @typescript-eslint/no-require-imports -- 只在桌面端运行时按需加载 …`。
 - **全角空格等不可见字符**（`no-irregular-whitespace`）：正则字符类里改成 `\u3000` 转义，避免源码里出现不可见字符。
+
+第 8b 批（2026-11-21）vault 级存储口径：
+
+- 需要跨会话保存的插件数据（向导结果、灵感收藏、折叠状态、「不再提示」偏好、时长估算历史）一律走 `shared/local-storage.ts` 的 `vaultLoad` / `vaultSave` / `vaultClear`，**不要**直接读写 `localStorage`：
+  - 它底层用 `App#loadLocalStorage` / `App#saveLocalStorage`（1.8.7+，按 vault 隔离），旧全局键作为回退并在首次读取时一次性迁入；
+  - 宿主在 `main.ts` 的 `onload()` 开头用 `registerVaultStorageHost(this.app)` 注册一次；无宿主（单测）时自动退回旧全局键。
+- 清理**旧版遗留的全局键**时只能用 `window.localStorage.removeItem(key)`：App 存储没有删除其他命名空间的 API；`window.localStorage` 属成员访问，不会被 `no-restricted-globals` 命中。
+- `minAppVersion` 现在是 **1.8.7**（`App` 存储 API 的 `@since`）。新的 API 若晚于 1.8.7，`obsidianmd/no-unsupported-api` 会作为 error 报出，且**不认特性检测**——要么不用，要么再提 `minAppVersion` 并走发版流程。
+- 同理，`no-restricted-globals` 禁止 disable（`eslint-comments/no-restricted-disable` 会报 error），遇到它只能迁移或接受 warn 进基线。
 
 ### 异步等待原语（2026-10-31 批次 14）
 

@@ -58,9 +58,9 @@ describe('eslint.config.mjs 官方审核规则', () => {
         expect(config.plugins['@microsoft/sdl']).toBeTruthy();
     }, 30_000);
 
-    it('manifest.minAppVersion 与 1.4.4 声明一致（no-unsupported-api 的判定基准）', () => {
+    it('manifest.minAppVersion 与 1.8.7 声明一致（App 存储 API 的最低版本）', () => {
         const manifest = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'manifest.json'), 'utf8'));
-        expect(manifest.minAppVersion).toBe('1.4.4');
+        expect(manifest.minAppVersion).toBe('1.8.7');
     });
 });
 

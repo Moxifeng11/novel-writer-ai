@@ -1,5 +1,6 @@
 import { App, Modal } from 'obsidian';
 import { STORAGE_KEY_PREFIXES } from '@/shared/storage-keys';
+import { vaultClear, vaultLoad, vaultSave } from '@/shared/local-storage';
 
 /**
  * 操作确认弹窗配置选项
@@ -64,7 +65,7 @@ export class OperationConfirmModal extends Modal {
 	 */
 	static confirm(app: App, options: OperationConfirmOptions): Promise<boolean> {
 		if (options.rememberKey) {
-			const stored = localStorage.getItem(STORAGE_KEY_PREFIXES.operationConfirm + options.rememberKey);
+			const stored = vaultLoad(STORAGE_KEY_PREFIXES.operationConfirm + options.rememberKey, app);
 			if (stored === '1') {
 				return Promise.resolve(true);
 			}
@@ -78,7 +79,7 @@ export class OperationConfirmModal extends Modal {
 	 * @param rememberKey - 记忆键
 	 */
 	static resetRemember(rememberKey: string): void {
-		localStorage.removeItem(STORAGE_KEY_PREFIXES.operationConfirm + rememberKey);
+		vaultClear(STORAGE_KEY_PREFIXES.operationConfirm + rememberKey);
 	}
 
 	/**
@@ -303,7 +304,7 @@ export class OperationConfirmModal extends Modal {
 
 	private handleConfirm(): void {
 		if (this.rememberChecked && this.options.rememberKey) {
-			localStorage.setItem(STORAGE_KEY_PREFIXES.operationConfirm + this.options.rememberKey, '1');
+			vaultSave(STORAGE_KEY_PREFIXES.operationConfirm + this.options.rememberKey, '1', this.app);
 		}
 		if (this.resolve) {
 			this.resolve(true);

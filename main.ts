@@ -11,6 +11,7 @@
  */
 import { rebuildAssertionsForProject } from './engine/consistency/consistency-audit-wiring';
 import { InternalRegistry } from './shared/internal-registry';
+import { registerVaultStorageHost } from './shared/local-storage';
 import { Plugin, Notice, Platform, TFile, TFolder, WorkspaceLeaf } from 'obsidian';
 import { AIEngine } from './engine/ai-engine';
 import { indexCanonSources as indexCanonSourcesImpl } from './engine/canon-vector-indexer';
@@ -985,6 +986,8 @@ export default class NovelWriterPlugin extends Plugin {
      */
     async onload() {
         log.info(`[小说工坊] 开始加载插件 v${PLUGIN_VERSION}...`);
+        // vault 级键值存储（1.8.7+）：先注册宿主，后面各模块的读写才会走按 vault 隔离的命名空间。
+        registerVaultStorageHost(this.app);
         const startupBegin = typeof performance !== 'undefined' ? performance.now() : Date.now();
         const mark = (name: string): void => {
             this._startupTimings[name] = Math.round((typeof performance !== 'undefined' ? performance.now() : Date.now()) - startupBegin);
@@ -1264,7 +1267,7 @@ export default class NovelWriterPlugin extends Plugin {
             //
             // 彻底清理旧实现遗留的 localStorage 键（跨会话污染），
             // 一次性交接只走 sessionStorage。
-            for (const key of LEGACY_STORAGE_KEYS) localStorage.removeItem(key);
+            for (const key of LEGACY_STORAGE_KEYS) window.localStorage.removeItem(key);
             const restoredReloadState = consumePendingReloadState();
             if (restoredReloadState) {
                 this._pendingReloadState = restoredReloadState;
@@ -3423,7 +3426,7 @@ export default class NovelWriterPlugin extends Plugin {
         // 热重载交接由按钮 handler 写入 sessionStorage（10 分钟 TTL、读取即删），
         // 新实例 onload 消费一次；Obsidian 正常关闭→启动时 sessionStorage 已随窗口清空，
         // 因此不会有跨会话残留，工作台默认不打开。
-        for (const key of LEGACY_STORAGE_KEYS) localStorage.removeItem(key);
+        for (const key of LEGACY_STORAGE_KEYS) window.localStorage.removeItem(key);
         // v5.5: 卸载时关闭分离式浮窗（监控面板A/B + 协同写作视图叶子），避免残留空叶子。
         this.workspaceManager?.closeAll();
         // v4.79.0（交叉审计）：主视图 leaf 同样摘除。此前只处理浮窗，禁用/热重载后

@@ -4,7 +4,7 @@
 
 > 全流程 AI 长篇小说创作系统 —— 在 Obsidian 内完成从构思、大纲、设定管理到正文生成与质量复盘的全链路。
 
-**当前版本**：4.97.3 · **最低 Obsidian**：1.4.4 · **平台**：桌面端（界面中英双语）
+**当前版本**：4.97.4 · **最低 Obsidian**：1.8.7 · **平台**：桌面端（界面中英双语）
 
 ---
 
@@ -302,7 +302,7 @@ styles.css      插件样式（nw- 命名空间 + token 变量）
 | [CODE-INDEX.md](docs/CODE-INDEX.md) | 文件与模块索引（清单见生成物） |
 | [PERFORMANCE.md](docs/PERFORMANCE.md) | 性能基线与优化记录 |
 | [CHANGELOG.md](CHANGELOG.md) | 完整变更历史 |
-| [4.97.3 发布说明](docs/releases/4.97.3.md) | 当前版本发布说明（历史版本见 CHANGELOG 与 docs/releases/） |
+| [4.97.4 发布说明](docs/releases/4.97.4.md) | 当前版本发布说明（历史版本见 CHANGELOG 与 docs/releases/） |
 | [v4.17.0 效率审计](docs/analysis/v4.17-pipeline-efficiency.html) | 11 步调用流、点击账单、协同写作调用审计（交互式 HTML） |
 | [v4.18 快捷工具健康度](docs/audits/v4.18-quick-tools-health.md) | 工具可用性、假项目/丢稿修复与待审计清单 |
 | [v4.18.0 验证报告](docs/audits/v4.18.0-verification-report.md) | 版本一致性、功能验证、高危问题与修改清单 |
@@ -313,7 +313,7 @@ styles.css      插件样式（nw- 命名空间 + token 变量）
 
 ## 兼容性与版本
 
-- Obsidian **1.4.4+**（桌面端）。
+- Obsidian **1.8.7+**（桌面端）。
 - **界面语言**：简体中文 / English 双语，设置页可切换（命令面板名称重载插件后生效）。
 - **平台差异**：
   - 桌面端：完整功能，包括 Worker 后台线程、MCP 本地文件与 stdio 传输、系统级「保护元文件」。

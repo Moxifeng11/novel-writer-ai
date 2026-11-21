@@ -1,7 +1,7 @@
 # 插件结构化规划（PLAN）
 
 > 状态：参考 · 2026-11-17
-> 版本：v4.97.3 · 更新：2026-11-20
+> 版本：v4.97.4 · 更新：2026-11-20
 > 定位：**本文件是插件仓的唯一结构性规划入口**。代码是最终真相源；本文件只回答「有哪些模块、边界在哪、下一轮做什么」。
 > 历史文档：`docs/audits/`（各轮取证）、`docs/releases/`（各版本交付）、`CHANGELOG.md`（变更流水）。
 > **全系统优化专项**（16 板块 / 7 任务组 / 排期与验收）：[`docs/PROGRAM.md`](PROGRAM.md) · 进度报告：[`docs/progress/PROGRAM-STATUS.md`](progress/PROGRAM-STATUS.md)。

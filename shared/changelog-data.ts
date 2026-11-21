@@ -21,6 +21,15 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.97.4',
+        date: '2026-11-21',
+        title: '按 vault 隔离存储',
+        sections: [
+            { type: 'breaking', label: '⚠ 兼容性', items: ['最低 Obsidian 版本从 1.4.4 提到 1.8.7（App 级存储 API 自 1.8.7 提供）', 'Obsidian 1.8.7 以下的客户端将无法启用本插件'] },
+            { type: 'improved', label: '🔧 存储', items: ['向导结果、灵感收藏、侧栏折叠、时长估算历史、操作确认偏好改存 vault 命名空间，不再跨 vault 串数据', '首次读取会自动把旧全局键的值迁进新存储，旧草稿不丢，回滚旧版仍可读'] },
+        ],
+    },
+    {
         version: '4.97.3',
         date: '2026-11-20',
         title: '构建可复现',
@@ -193,29 +202,6 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
                 label: '🛠️ 修复',
                 items: [
                     'R1 年龄谓词改前缀锚定：补变体漏报，排除回溯限定谓词假矛盾',
-                ],
-            },
-        ],
-    },
-    {
-        version: '4.90.0',
-        date: '2026-11-13',
-        title: '事实库自动化：自动维护 + 可视化 + 扩面',
-        sections: [
-            {
-                type: 'added',
-                label: '📚 知识库事实库',
-                items: [
-                    '结算后自动增量拆解入库（已拆章的跳过）',
-                    '新增「知识库事实库」命令：按主体浏览事实与引文',
-                    '地点冲突接入第二意见（合理换场不再误报）',
-                ],
-            },
-            {
-                type: 'fixed',
-                label: '🛠️ 可靠性',
-                items: [
-                    '损坏时拒绝写入；失败不影响结算；不可用时降级',
                 ],
             },
         ],

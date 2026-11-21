@@ -86,7 +86,7 @@
 
 | 约束 | 正确写法 | 为什么 |
 |---|---|---|
-| 最低版本 | `manifest.minAppVersion = 1.4.4`，`versions.json` 同步 | `FileManager.processFrontMatter` 自 1.4.4 起可用 |
+| 最低版本 | `manifest.minAppVersion = 1.8.7`，`versions.json` 同步 | `App#loadLocalStorage` / `saveLocalStorage` 自 1.8.7 起可用；vault 级存储必须走它们 |
 | leaf 前台化 | `shared/workspace-reveal.ts::revealLeafCompat(workspace, leaf, { side })` | `Workspace.revealLeaf` 自 1.7.2 才定型；兼容实现用 `setActiveLeaf` + `expand()` |
 | HTML 字符串落 DOM | `setSanitizedHtml` / `appendSanitizedHtml`（`ui/rendering/safe-html.ts`） | `innerHTML`/`outerHTML`/`insertAdjacentHTML` 均为审核 Error；`no-unsanitized` 只认 `sanitizeHTMLToDom` |
 | 需要可编辑语义 | 用 `createElement`/`createTextNode` 构建 DOM（参考 `buildEntityMarkedFragment`） | `sanitizeHTMLToDom` 会剥离 `contenteditable` 等属性 |

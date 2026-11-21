@@ -5,6 +5,7 @@ import { createLogger } from '@/shared/logger';
 import { CreateProjectModal } from './create-project-modal';
 import { pjControlDir } from '@/shared/paths';
 import { STORAGE_KEYS } from '@/shared/storage-keys';
+import { vaultLoad, vaultSave } from '@/shared/local-storage';
 import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
 import { t } from '@/i18n';
 import { progressHandle } from '@/utils/helpers';
@@ -695,7 +696,7 @@ export class IdeationModal extends Modal {
 
     private loadSavedIdeas(): void {
         try {
-            const data = localStorage.getItem(STORAGE_KEYS.ideationFavorites);
+            const data = vaultLoad(STORAGE_KEYS.ideationFavorites, this.app);
             if (data) {
                 this.savedIdeas = JSON.parse(data);
             }
@@ -707,7 +708,7 @@ export class IdeationModal extends Modal {
 
     private persistSavedIdeas(): void {
         try {
-            localStorage.setItem(STORAGE_KEYS.ideationFavorites, JSON.stringify(this.savedIdeas));
+            vaultSave(STORAGE_KEYS.ideationFavorites, JSON.stringify(this.savedIdeas), this.app);
         } catch (e) {
             log.warn('[IdeationModal] 保存收藏失败:', e);
         }

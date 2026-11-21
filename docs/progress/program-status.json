@@ -3,7 +3,7 @@
   "rev": "v5-plan-1",
   "updatedAt": "2026-11-17",
   "baseline": {
-    "version": "4.97.3",
+    "version": "4.97.4",
     "tests": {
       "files": 1013,
       "cases": 10503
@@ -991,5 +991,5 @@
       "evidence": "knowledge-detail-state.ts + test"
     }
   ],
-  "version": "4.97.3"
+  "version": "4.97.4"
 }

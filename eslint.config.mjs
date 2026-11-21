@@ -7,7 +7,7 @@
  * @typescript-eslint 插件，保证 no-unused-vars / no-explicit-any 真正执行。
  *
  * 2026-11-09（4.81.0 社区审核）：与官方审核对齐——
- * - `no-unsupported-api` 需要类型信息，读取 manifest.minAppVersion（现 1.4.4），
+ * - `no-unsupported-api` 需要类型信息，读取 manifest.minAppVersion（现 1.8.7），
  *   越界 API（如 1.7.2 revealLeaf）直接 error；
  * - `no-plugin-as-component` / `no-static-styles-assignment` / `no-forbidden-elements` 提到 error；
  * - 官方审核同时使用 `no-unsanitized/property|method` 与 `@microsoft/sdl/no-inner-html`，
@@ -65,7 +65,7 @@ export default [
         },
         rules: {
             ...obsidianRecommended,
-            // 本插件 minAppVersion 1.4.4：声明式设置 API（1.13+）不可用，保留 imperative display()
+            // 本插件 minAppVersion 1.8.7：声明式设置 API（1.13+）不可用，保留 imperative display()
             'obsidianmd/settings-tab/prefer-setting-definitions': 'off',
             'obsidianmd/settings-tab/no-deprecated-display': 'off',
             // 官方审核 Error 规则：越界 API / 插件当组件 / 静态内联样式 / 禁用元素

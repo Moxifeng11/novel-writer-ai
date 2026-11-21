@@ -1,5 +1,6 @@
 import { createLogger } from './logger';
 import { STORAGE_KEYS } from './storage-keys';
+import { vaultLoad, vaultSave } from './local-storage';
 
 const log = createLogger('TimeEstimator');
 /**
@@ -186,9 +187,7 @@ export class TimeEstimator {
      */
     async loadHistory(): Promise<void> {
         try {
-            const raw = typeof localStorage !== 'undefined'
-                ? localStorage.getItem(this.storageKey)
-                : null;
+            const raw = vaultLoad(this.storageKey);
 
             if (!raw) return;
 
@@ -205,14 +204,12 @@ export class TimeEstimator {
      */
     async saveHistory(): Promise<void> {
         try {
-            if (typeof localStorage === 'undefined') return;
-
             const obj: Record<string, HistoryRecord[]> = {};
             this.history.forEach((records, key) => {
                 obj[key] = records;
             });
 
-            localStorage.setItem(this.storageKey, JSON.stringify(obj));
+            vaultSave(this.storageKey, JSON.stringify(obj));
         } catch (e) {
             log.warn('[TimeEstimator] 保存历史数据失败:', e);
         }
