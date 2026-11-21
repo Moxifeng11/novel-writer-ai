@@ -214,12 +214,12 @@ export async function loadPetImageFromDisk(app: App): Promise<PetImageConfig | n
 export async function clearPetImageFromDisk(app: App): Promise<boolean> {
     const adapter = (app?.vault?.adapter ?? null) as PetImageStoreAdapter | null;
     if (!adapter || typeof adapter.write !== 'function') return false;
-    const remove = (adapter as unknown as { remove?(path: string): Promise<void> }).remove;
-    if (typeof remove !== 'function') return false;
+    const removable = adapter as unknown as { remove?(path: string): Promise<void> };
+    if (typeof removable.remove !== 'function') return false;
     try {
         for (const path of [petImageFilePath(), petImageMetaPath()]) {
             try {
-                await remove.call(adapter, path);
+                await removable.remove(path);
             } catch { // silent-ok: 文件不存在时忽略
             }
         }

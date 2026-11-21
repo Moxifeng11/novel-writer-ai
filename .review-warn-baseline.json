@@ -1,7 +1,7 @@
 {
   "updatedAt": "2026-11-21",
-  "note": "清 warn 第二批（escape 35 / create-el 收尾 / 未使用 catch 与死代码）：1568 → 1420",
-  "total": 1420,
+  "note": "第三批：no-empty 18 + unbound-method 9 清零",
+  "total": 1393,
   "byRule": {
     "@typescript-eslint/no-unnecessary-type-assertion": 357,
     "@typescript-eslint/no-deprecated": 255,
@@ -14,10 +14,8 @@
     "@typescript-eslint/no-redundant-type-constituents": 31,
     "obsidianmd/prefer-file-manager-trash-file": 25,
     "no-restricted-globals": 19,
-    "no-empty": 18,
     "obsidianmd/no-global-this": 12,
     "no-control-regex": 12,
-    "@typescript-eslint/unbound-method": 9,
     "@typescript-eslint/prefer-promise-reject-errors": 7,
     "no-misleading-character-class": 6,
     "@typescript-eslint/no-this-alias": 5,

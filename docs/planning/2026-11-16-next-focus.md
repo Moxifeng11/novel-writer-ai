@@ -4232,3 +4232,14 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 口径已写进 `docs/DEVELOPMENT.md`「社区审核扫描器 warn 清理口径」的「第二批落地手法」四条；`.review-warn-baseline.json` 收紧到 1,420，`.bundle-baseline.json` 收紧到 main.js 6,238,968。
 - 门禁：tsc EXIT=0；check:obsidian-review EXIT=0（error 0）；check:review-warn 通过（1420 / 31 类）；preflight EXIT=0（1,013 文件 / 10,503 通过 + 3 跳过）。
 - 后续候选：`no-unnecessary-type-assertion` 357（规则在本项目类型信息下判定不可靠，需人工逐条）、`no-deprecated` 255（StyleFingerprint V1 → V2 迁移属重构）、`no-misused-promises` 162 / `no-floating-promises` 147（需语义判断）。
+
+## 第一百四十二轮：建立质量持续优化车道 + 第三批（no-empty / unbound-method）
+
+- **用户指令（m30035）**：「建立持续建立优化方案，继续推进」→ 把 warn 清理做成可长期跑的排期，而不是每批等指示。
+- **新增路线图** `docs/planning/2026-11-21-quality-optimization-roadmap.md`：7 步运转机制、硬约束、第 1–10 批排期（含「不追 no-unnecessary-type-assertion」的判断）、验收与停止条件、进度日志。
+- **第三批范围与结果**：warn **1,420 → 1,393**（−27）。
+  - `no-empty` 18 → 0：全部是空 catch，逐条写 `// silent-ok: 理由`（catch 行本身，同时满足 no-empty 与 check:silent-failures）；分布在 engine/ai-api-stream.ts、engine/co-writer-engine.ts、engine/deconstruction-scheduler.ts、engine/streaming/stream-parser.ts、engine/style-vector-store.ts、services/chapter-version-service.ts、services/checkpoint-manager.ts、services/worldview-cache-service.ts、shared/file-cache.ts。
+  - `unbound-method` 9 → 0：改成通过宿主调用（conversation-engine 的 port.aiParse、knowledge-injector / prompt-builder 的 library.searchSimilarStylesV2、step-prompt-assembly 的 host.retrieveOverflowContext、step-runner 的 callbacks.invalidateSteps、pet-image-store 的 removable.remove、agent-workbench-view 的 getProjectStatus / confirmDangerousAction、pet-image-settings 的 deps.onError）。
+- **连带修正**：`tests/unit/ui/agent-stage-panel.test.ts` 的源码契约断言随实现更新（原来是 `fetchStagePanelModel(project, this.port.getProjectStatus)`）。
+- **门禁**：tsc EXIT=0；定向测试 27 文件 / 333 用例通过；`check:obsidian-review` EXIT=0；`check:review-warn` 基线收紧到 1,393；preflight EXIT=0。
+- **下一批**：`no-tfile-tfolder-cast` 38（`instanceof TFile` 收窄；`shared/file-system-port.ts` 的 4 处适配层假对象保留）。

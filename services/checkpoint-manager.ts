@@ -177,7 +177,7 @@ export class CheckpointManager {
         const path = this.getCheckpointPath(bookId);
         try {
             await this.fs.delete(path);
-        } catch {
+        } catch { // silent-ok: 检查点文件不存在时视为已删除
         }
     }
 
@@ -209,7 +209,7 @@ export class CheckpointManager {
                     }
                 }
             }
-        } catch {
+        } catch { // silent-ok: 目录列举失败时返回已清理数量
         }
 
         return cleanedCount;

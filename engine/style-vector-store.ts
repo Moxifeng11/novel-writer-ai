@@ -228,7 +228,7 @@ export class StyleVectorStore {
                     log.warn(`[StyleVectorStore] 加载风格向量文件失败: ${file.path}`, e);
                 }
             }
-        } catch {
+        } catch { // silent-ok: 向量目录不可读时按空库继续，重新提取即可重建
         }
         if (this.modelMismatches.length > 0) {
             log.info(`[StyleVectorStore] 跳过 ${this.modelMismatches.length} 个 embedding 模型/维度不一致的 V1 风格向量，重新提取指纹即可按当前模型重建`);
@@ -253,7 +253,7 @@ export class StyleVectorStore {
         if (!data) {
             try {
                 await fs.delete(filePath);
-            } catch {
+            } catch { // silent-ok: 文件已不存在时删除会抛错，忽略即可
             }
             return;
         }

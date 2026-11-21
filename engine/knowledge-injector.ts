@@ -1450,12 +1450,13 @@ export class KnowledgeInjector {
         // B4：11 步与协同共用同一选择器，避免启用 10 个指纹时 system 线性膨胀。
         // 检索失败回退「前 N 个」而不是全量：这里没有协同那样的宽松预算。
         const library = this.fingerprintLibrary;
-        const searcher = library.searchSimilarStylesV2;
+        // 方法必须通过 library 调用（不能先解构再 call，否则 this 绑定容易被改动打断）
+        const searchV2 = typeof library.searchSimilarStylesV2 === 'function'
+            ? (q: string, opts?: Parameters<typeof library.searchSimilarStylesV2>[1]) => library.searchSimilarStylesV2(q, opts)
+            : undefined;
         return selectFingerprintsForInjection(active, {
             query,
-            searchV2: typeof searcher === 'function'
-                ? (q, opts) => searcher.call(library, q, opts)
-                : undefined,
+            searchV2,
             fallback: 'firstN',
             onFallback: reason => getDegradationNotifier().notify({
                 source: 'vector',

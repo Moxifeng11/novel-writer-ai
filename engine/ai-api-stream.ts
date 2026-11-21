@@ -831,7 +831,8 @@ async function* nativeStreamIterator(
                         armIdleTimer();
 
                         if (externalSignal?.aborted) {
-                            try { reader.releaseLock(); } catch { }
+                            try { reader.releaseLock(); } catch { // silent-ok: 提前返回时释放读锁失败不影响已累积的正文
+                            }
                             return { content: accumulatedContent, error: 'aborted' };
                         }
 
@@ -858,7 +859,7 @@ async function* nativeStreamIterator(
                                         isStreamDone = true;
                                         break;
                                     }
-                                } catch {
+                                } catch { // silent-ok: 流式分片可能是半行 JSON，等下一片补齐再解析
                                 }
                                 continue;
                             }
@@ -899,7 +900,7 @@ async function* nativeStreamIterator(
                                     isStreamDone = true;
                                     break;
                                 }
-                            } catch {
+                            } catch { // silent-ok: 增量字段解析失败只丢这一片，后续分片仍可继续
                             }
                         }
                     }

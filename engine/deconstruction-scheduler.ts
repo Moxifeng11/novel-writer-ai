@@ -1350,7 +1350,7 @@ export class DeconstructionScheduler {
                     }),
                     task.vectorStatus === 'failed' ? 10000 : 6000,
                 );
-            } catch {
+            } catch { // silent-ok: 通知构造失败不能把已完成的任务改成失败
             }
         } catch (error) {
             this.stopHeartbeat(taskId);
@@ -2713,7 +2713,7 @@ export class DeconstructionScheduler {
             try {
                 const json = JSON.parse(content);
                 textContent = JSON.stringify(json, null, 2);
-            } catch {
+            } catch { // silent-ok: 不是 JSON 时按原始文本分段
             }
 
             const paragraphs = this.extractParagraphs(textContent, 5);

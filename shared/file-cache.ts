@@ -179,7 +179,7 @@ export class FileCache {
         try {
             const filePath = this.keyToPath(key);
             await this.fs.delete(filePath);
-        } catch {
+        } catch { // silent-ok: 缓存文件已不存在时索引仍需同步移除
         }
 
         this.persistIndex();
@@ -215,7 +215,7 @@ export class FileCache {
             try {
                 const filePath = this.keyToPath(key);
                 await this.fs.delete(filePath);
-            } catch {
+            } catch { // silent-ok: 单个缓存文件删除失败不阻塞整体清空
             }
         }
         this.index.clear();

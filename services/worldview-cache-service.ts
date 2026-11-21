@@ -95,7 +95,7 @@ export class WorldviewCacheService {
         if (parsedData) {
             try {
                 size += JSON.stringify(parsedData).length * 2;
-            } catch {
+            } catch { // silent-ok: 循环引用无法序列化时按已统计的长度返回
             }
         }
         return size;
@@ -441,7 +441,7 @@ export class WorldviewCacheService {
                     loaded++;
                     totalSize += result.rawText.length * 2;
                 }
-            } catch {
+            } catch { // silent-ok: 单个设定文件损坏时跳过，继续预热其余文件
             }
         }
 
@@ -531,7 +531,7 @@ export class WorldviewCacheService {
                     const name = file.basename || file.name.replace(/\.md$/, '');
                     results.push({ name, content: result.rawText, fromCache: result.fromCache });
                 }
-            } catch {
+            } catch { // silent-ok: 单个实体读取失败时跳过，避免整批设定读取中断
             }
         }
 

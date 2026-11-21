@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 354 | 146729 | 1951 | 1545 | 79% |
+| `engine/` | 354 | 146734 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19531 | 296 | 204 | 69% |
 | `shared/` | 265 | 52990 | 2246 | 1757 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 307 | 113880 | 1182 | 945 | 80% |
+| `ui/` | 307 | 113882 | 1182 | 945 | 80% |
 
 ## 文件清单
 
@@ -71,7 +71,7 @@
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
 | `engine/ai-api-client-shared.ts` | 86 | 6 | 5 |
 | `engine/ai-api-client.ts` | 1048 | 2 | 2 |
-| `engine/ai-api-stream.ts` | 1034 | 3 | 2 |
+| `engine/ai-api-stream.ts` | 1035 | 3 | 2 |
 | `engine/ai-batch-entity-generator.ts` | 578 | 1 | 1 |
 | `engine/ai-chapter-helpers.ts` | 339 | 1 | 1 |
 | `engine/ai-character-generator.ts` | 426 | 1 | 1 |
@@ -224,7 +224,7 @@
 | `engine/heavy-task-worker-manager.ts` | 314 | 2 | 2 |
 | `engine/incremental-result-aggregator.ts` | 1707 | 3 | 3 |
 | `engine/knowledge-base-config.ts` | 522 | 5 | 5 |
-| `engine/knowledge-injector.ts` | 2213 | 13 | 7 |
+| `engine/knowledge-injector.ts` | 2214 | 13 | 7 |
 | `engine/knowledge-tags.ts` | 629 | 2 | 2 |
 | `engine/knowledge-to-fingerprint-converter.ts` | 345 | 1 | 1 |
 | `engine/knowledge-usage.ts` | 132 | 4 | 4 |
@@ -262,7 +262,7 @@
 | `engine/preference-memory.ts` | 291 | 0 | 0 |
 | `engine/project-migration-service.ts` | 227 | 5 | 5 |
 | `engine/promise-ledger.ts` | 222 | 11 | 11 |
-| `engine/prompt-builder.ts` | 1478 | 2 | 1 |
+| `engine/prompt-builder.ts` | 1479 | 2 | 1 |
 | `engine/prompt-cache.ts` | 81 | 3 | 2 |
 | `engine/prompt-hash.ts` | 51 | 1 | 1 |
 | `engine/prompt-resolver.ts` | 164 | 4 | 2 |
@@ -350,11 +350,11 @@
 | `engine/settlement/settlement-types.ts` | 46 | 2 | 1 |
 | `engine/step-definitions.ts` | 297 | 13 | 11 |
 | `engine/step-modal-controller.ts` | 661 | 2 | 2 |
-| `engine/step-prompt-assembly.ts` | 334 | 5 | 4 |
+| `engine/step-prompt-assembly.ts` | 335 | 5 | 4 |
 | `engine/step-result-saver.ts` | 575 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 227 | 6 | 5 |
-| `engine/step-runner.ts` | 2382 | 2 | 1 |
+| `engine/step-runner.ts` | 2383 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 221 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |
@@ -725,7 +725,7 @@
 | `shared/yield.ts` | 47 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 805 | 1 | 1 |
 | `ui/advanced-maintenance-modal.ts` | 222 | 1 | 1 |
-| `ui/agent-workbench-view.ts` | 1847 | 1 | 1 |
+| `ui/agent-workbench-view.ts` | 1846 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 140 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1147 | 1 | 1 |
 | `ui/appearance-settings.ts` | 604 | 3 | 3 |
@@ -912,7 +912,7 @@
 | `ui/outline-expand-modal.ts` | 984 | 2 | 1 |
 | `ui/panel-resizer.ts` | 260 | 4 | 3 |
 | `ui/password-modal.ts` | 152 | 1 | 1 |
-| `ui/pet-image-settings.ts` | 466 | 3 | 3 |
+| `ui/pet-image-settings.ts` | 469 | 3 | 3 |
 | `ui/plan-book-modal.ts` | 572 | 1 | 1 |
 | `ui/planning/canvas-link.ts` | 108 | 3 | 2 |
 | `ui/planning/canvas-tools.ts` | 99 | 8 | 5 |

@@ -175,7 +175,7 @@ export function detectStreamFormat(firstChunk: string): StreamFormat {
         if ('response' in parsed || ('model' in parsed && 'done' in parsed)) {
             return 'ollama';
         }
-    } catch {
+    } catch { // silent-ok: 探测失败按默认 OpenAI SSE 处理
     }
 
     return 'openai-sse';
@@ -359,7 +359,7 @@ export async function* parseReadableStream(
     } finally {
         try {
             reader.releaseLock();
-        } catch {
+        } catch { // silent-ok: finally 里释放读锁失败无副作用
         }
     }
 }

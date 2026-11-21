@@ -305,7 +305,10 @@ export function pickLocalImage(
     // （用户表现：点「选择电脑图片」完全没反应）。
     const active = typeof activeDocument !== 'undefined' && activeDocument ? activeDocument : null;
     const doc = deps.doc ?? active ?? (typeof document !== 'undefined' ? document : null);
-    const notify = deps.onError ?? ((message: string) => new Notice(message));
+    const notify = (message: string): void => {
+        if (deps.onError) deps.onError(message);
+        else new Notice(message);
+    };
     if (!doc) {
         notify(t('fullwriter.pet.noFilePicker'));
         return;

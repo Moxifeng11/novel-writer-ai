@@ -310,7 +310,7 @@ describe('工作台刷新接线（源码契约）', () => {
 
     it('晚到结果按 activeProject 丢弃，避免串项目', () => {
         const view = read('ui/agent-workbench-view.ts');
-        expect(view).toContain('fetchStagePanelModel(project, this.port.getProjectStatus)');
+        expect(view).toContain('fetchStagePanelModel(project, (p) => this.port.getProjectStatus!(p))');
         expect(view).toContain('this.activeProject !== project');
     });
 

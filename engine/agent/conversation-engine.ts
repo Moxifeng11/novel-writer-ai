@@ -813,10 +813,10 @@ export class GuideAgentEngine {
     }
 
     private async tryAiParse(raw: string): Promise<boolean> {
-        const aiParse = this.port?.aiParse;
-        if (!aiParse) return false;
+        const port = this.port;
+        if (!port?.aiParse) return false;
         try {
-            const parsed = await aiParse(raw, this.ctx, this.pending);
+            const parsed = await port.aiParse(raw, this.ctx, this.pending);
             if (!parsed) return false;
             let applied = false;
             for (const key of [...this.pending]) {

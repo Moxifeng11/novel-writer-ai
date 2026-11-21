@@ -612,7 +612,8 @@ export class StepRunner {
             getPlugin: () => this.plugin,
             saveStepResult: (k, c, d, n, v) => this.saveStepResult(k, c, d, n, v),
             callbacks: this.callbacks,
-            invalidateSteps: this.callbacks.invalidateSteps,
+            invalidateSteps: (stepKeys: string[], markStale?: boolean) =>
+                this.callbacks.invalidateSteps?.(stepKeys, markStale),
         });
     }
 

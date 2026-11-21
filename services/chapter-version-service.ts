@@ -661,7 +661,7 @@ export class ChapterVersionService {
 
         try {
             await this.deleteFile(version.versionPath);
-        } catch {
+        } catch { // silent-ok: 版本文件可能已被手工删除，索引仍需更新
         }
 
         index.versions.splice(versionIdx, 1);

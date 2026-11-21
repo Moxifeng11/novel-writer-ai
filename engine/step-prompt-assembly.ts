@@ -259,7 +259,10 @@ export async function assembleStepPrompt(
             + estimateTokens(userPrompt, stepModel)
             + estimateTokens(extraTail, stepModel);
         if (estimatedTotal > inputBudget) {
-            const retrieve = host.retrieveOverflowContext;
+            // 通过 host 调用而非先解构方法，保持 this 绑定
+            const retrieve = host.retrieveOverflowContext
+                ? (deficit: number) => host.retrieveOverflowContext!(ctx, deficit, focusTerms)
+                : undefined;
             const recovered = await recoverOverflow({
                 system: effectiveSystemPrompt,
                 user: userPrompt,
@@ -268,9 +271,7 @@ export async function assembleStepPrompt(
                 focusTerms,
                 modelId: stepModel,
                 mode: host.compressionMode,
-                retrieve: retrieve
-                    ? (deficit) => retrieve(ctx, deficit, focusTerms)
-                    : undefined,
+                retrieve,
             });
             effectiveUserPrompt = recovered.user;
             effectiveExtraTail = recovered.extraTail;

@@ -1536,7 +1536,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
             try {
                 const { PRECISION_MODE_SYSTEM_APPEND } = await import('./prompts/co-write-prompts');
                 prompt.system += PRECISION_MODE_SYSTEM_APPEND;
-            } catch {
+            } catch { // silent-ok: 取不到精确模式附加提示词时按普通模式继续生成
             }
         }
 

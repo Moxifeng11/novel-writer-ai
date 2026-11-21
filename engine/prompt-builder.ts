@@ -363,12 +363,13 @@ export class PromptBuilder {
         query: string,
     ): Promise<StyleFingerprint[]> {
         const library = this.fingerprintLibrary;
-        const searcher = library?.searchSimilarStylesV2;
+        // 方法必须通过 library 调用（不能先解构再 call，否则 this 绑定容易被改动打断）
+        const searchV2 = library && typeof library.searchSimilarStylesV2 === 'function'
+            ? (q: string, opts?: Parameters<typeof library.searchSimilarStylesV2>[1]) => library.searchSimilarStylesV2(q, opts)
+            : undefined;
         return selectFingerprintsForInjection(enabled, {
             query,
-            searchV2: typeof searcher === 'function'
-                ? (q, opts) => searcher.call(library, q, opts)
-                : undefined,
+            searchV2,
             // 协同写作宁可回退全量也不能丢风格约束；11 步用 'firstN' 守住预算上限
             fallback: 'all',
             onFallback: reason => this.notifyFingerprintFallback(reason),

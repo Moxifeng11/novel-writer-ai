@@ -456,7 +456,7 @@ export class AgentWorkbenchView extends ItemView {
     private async refreshStagePanel(): Promise<void> {
         if (!this.stagesEl) return;
         const project = this.activeProject;
-        const model = await fetchStagePanelModel(project, this.port.getProjectStatus);
+        const model = await fetchStagePanelModel(project, (p) => this.port.getProjectStatus!(p));
         // 快速切换项目时旧请求可能晚到：结果已过期则丢弃，避免把上一个项目的阶段
         // 显示到新项目上（此时 activeProject 已不是请求时的 project）
         if (!this.stagesEl || this.activeProject !== project) return;
@@ -1287,10 +1287,9 @@ export class AgentWorkbenchView extends ItemView {
                             this.resolveActiveProject(),
                         )) return true;
                     }
-                    const confirm = this.port.confirmDangerousAction;
-                    if (!confirm) return false;
+                    if (!this.port.confirmDangerousAction) return false;
                     return this.withApprovalTimeout(
-                        confirm.call(this.port, {
+                        this.port.confirmDangerousAction({
                             title: t('agentWorkbench.approval.title', { tool: request.tool }),
                             detail: request.reason,
                         }),
