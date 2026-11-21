@@ -4351,3 +4351,12 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 远端核验：`tag_name=4.97.4`、`draft=false`、`prerelease=false`、`target_commitish=master`；资产 `main.js` 6,241,845（`070ADD60…03B8`）、`styles.css` 805,893（`B682C61F…EBB2`）、`manifest.json` 467（`ADC5E831…6CD2`）、`versions.json` 1,977、zip 2,496,980、`SHA256SUMS.txt` 595，SHA256 与本地逐一致。
 - 坑：`npm run check:release:remote` 会卡在 `gh attestation verify`（本机网络），单次调用被 600s 掐断；改用 `gh api .../releases/tags/4.97.4` 的资产 `digest` 与本地 `Get-FileHash` 比对作为等价证据。另：`gh release view -q` 偶发输出为空，改为落盘 JSON 再解析。
 - 市场状态：`npm run check:published -- --expect 4.97.4` 三项里清单已收录（4.97.3），插件页与 RSS 仍为 4.97.3（目录 Last updated = Nov 20，尚未扫到 4.97.4）；需目录周期扫描或账号页点 `Check for new releases`。
+
+
+## 第一百五十三轮：4.97.4 上架成功（内嵌浏览器面板 + UIA 触发复审）
+
+- 起点：目录周期检查滞后（21:45 首查仍是 4.97.3），用户确认登录态在 **DSH 桌面应用的内嵌浏览器面板**里（Electron，`D:\deepseek harness\DeepSeek Harness.exe`），不是 Edge 也不是另起的 Chromium。
+- 手法：不用 CDP，改用 **Windows UI Automation**。顶层窗口 `插件优化。 — DeepSeek Harness`（class `Chrome_WidgetWin_1`）→ 第二个 `Document` 是网页（账号页时名为 `Novel Writer AI - Obsidian Plugin`，含 `Log out` 即已登录）→ 子树里 `Check for new releases` 是 Hyperlink 且支持 `InvokePattern` → `Invoke()`。
+- 站点回应：「A scan has already been run for this release and results are available on your dashboard.」——Reviews 第一行当时已是 `4.97.4 … Pending`（commit `1c49c03`），说明扫描已自动排队，不必反复触发。
+- 结果（22:55）：`npm run check:published -- --expect 4.97.4` 三项全绿——页面 `Current version = 4.97.4`（目录检查 2 hours ago · 下载 78）、清单已收录、RSS 最新 4.97.4。4.97.4 可在客户端直接安装（破坏性：最低 Obsidian 1.8.7、删除改走回收站，`versions.json` 已卡住老客户端）。
+- 结论：审核触发链路、上架判据、触发手法三者都已固化；`Pending` ≠ 未触发，判据只看 `check:published` 三项。

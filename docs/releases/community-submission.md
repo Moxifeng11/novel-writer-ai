@@ -1,8 +1,23 @@
 # 上架 Obsidian 社区插件目录
 
-> 已上架版本 4.97.3 · 记录时间 2026-11-21 · 维护：DSH
+> 已上架版本 4.97.4 · 记录时间 2026-11-21 · 维护：DSH
 
-## 〇、结果：4.97.3 已上架（2026-11-21 复核通过）
+## 〇、结果：4.97.4 已上架（2026-11-21 22:55 复核通过）
+
+`npm run check:published -- --expect 4.97.4` 三项判据全部通过：
+
+```text
+[check:published] novel-writer-ai（manifest 4.97.4）
+  目录上次检查：2 hours ago（Nov 21, 2026） · 下载 78
+  ✓ 插件页 Current version = 4.97.4 —— 实际 4.97.4
+  ✓ 客户端市场清单包含 novel-writer-ai —— 已收录
+  ✓ RSS 出现 4.97.4 —— 最新 4.97.4
+[check:published] 已上架：4.97.4 可通过 Obsidian 客户端安装
+```
+
+这一版是破坏性升级（最低 Obsidian **1.8.7**、用户可见删除改走回收站），`versions.json` 已按版本记录客户端下限，老客户端会按规则停在 4.97.3。
+
+## 〇之一、上一版：4.97.3 上架记录（2026-11-21 复核通过）
 
 `npm run check:published` 三项判据全部通过：
 
@@ -24,12 +39,24 @@
 
 关键时间线：4.97.2 修掉唯一阻断项（两条 eslint 指令缺描述）→ 4.97.3 修掉构建不可复现（fflate + mtime:0）→ 目录周期扫描覆盖 4.97.3 后放行。此前「页面停在 4.97.1」是目录尚未扫描（`Last updated` 早于发版），并非被拒。
 
-## 〇之二、4.97.4 发版与待复审（2026-11-21）
+## 〇之二、4.97.4 发版 → 审核 → 上架（2026-11-21）
 
 - tag `4.97.4` 已推、Release workflow **success**；资产 `main.js` 6,241,845（SHA256 `070ADD60…03B8`，与干净检出构建逐字节一致）、`styles.css` 805,893、`manifest.json` 467、zip 2,496,980、`SHA256SUMS.txt` 595。
 - 破坏性声明（Release notes 与 `docs/releases/4.97.4.md` 都已写）：最低 Obsidian **1.8.7**、用户可见删除改走回收站。
-- 发版后 `npm run check:published -- --expect 4.97.4`：插件页与 RSS 仍为 4.97.3（目录尚未扫描 4.97.4），`community-plugins.json` 那次读取失败（网络，重试即可）。
-- 通过判据只有一条：三项全绿（页面 Current version = 4.97.4、清单收录、RSS 出现 4.97.4）。若目录未自动扫描，账号页点 `Check for new releases` 立即触发。
+- 发版后 21:45 首查仍是 4.97.3（目录周期检查未覆盖新版）；22:40 账号页 Reviews 里已出现 `4.97.4 … Pending`，22:52 点 `Check for new releases` 返回「A scan has already been run for this release and results are available on your dashboard.」；22:55 复查三项全绿。
+- 经验：**目录周期检查（`Last updated`）滞后于审核结果**，`Pending` 条目出现后不要急着反复点触发；判据只看 `check:published` 三项。
+
+### 〇之二之一、在没有浏览器会话的机器上怎么点这一下
+
+审核触发必须登录 Obsidian 账号。本机登录态在 **DSH 桌面应用的内嵌浏览器面板**里（Electron，`D:\deepseek harness\DeepSeek Harness.exe`），不是系统 Edge、也不是另起的 Chromium——那两者的 profile 里没有会话。
+
+该面板可被 **Windows UI Automation** 定位并点击（无需 CDP）：
+
+1. 顶层窗口名 `插件优化。 — DeepSeek Harness`（class `Chrome_WidgetWin_1`）；
+2. 其下有两个 `Document`，第二个是网页内容（名字随页面标题变，账号页时是 `Novel Writer AI - Obsidian Plugin`），含 `Log out` 即可确认已登录；
+3. 里面 `Check for new releases` 是 `ControlType.Hyperlink`，`InvokePattern` 可用，`Invoke()` 等价于点击。
+
+脚本口径：`Add-Type -AssemblyName UIAutomationClient,UIAutomationTypes` → `AutomationElement.RootElement.FindFirst(Children, NameProperty)` → 在第二个 Document 子树里 `FindFirst(Descendants, NameProperty='Check for new releases')` → `TryGetCurrentPattern(InvokePattern)` → `Invoke()`。注意 PowerShell 脚本里 `param()` 必须位于第一行，否则报 `"(" 后应为表达式`。
 
 ## 一、历史：每版审核都是 Failed（2026-11-20 定位并修复）
 
