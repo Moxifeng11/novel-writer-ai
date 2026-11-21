@@ -108,12 +108,13 @@ P3（提示词增量，已落地）：
 | P2 ✅ | 统一新建入口：`extractWithAnalysis` → `add*(fp, analysis)`，一次抽取合并 AI 文案与本地 12 维 | P1 | 中：抽取弹窗多花一次本地分析（实测 <100ms，无感知） |
 | P2 ✅ | 加载期回填：`backfillV2Dimensions` 每作用域一次，原文优先、样章兜底、`.v2backfill.bak` 备份 | P1 | 中：首次加载多一次读+分析（只在有待补条目时） |
 | P3 ✅ | V2 5 维进入全局层注入（默认开启，受强度配置约束） | P2 ✅ | 中：改变注入内容会改变生成风格，需按模块文档复核 |
-| 后续 | 内存模型直接持 V2（去掉「加载即降级」），V1 只在拼提示词时投影 | P2 ✅ | 高：改动面覆盖所有 `list*/get*` 消费方 |
+| P4 ✅ | 内存模型直接持 V2（去掉「加载即降级」），V1 只在拼提示词时投影 | P2 ✅ | 高：改动面覆盖所有 `list*/get*` 消费方 |
 
 ## 7. 回滚
 
 - P1 是纯写盘形态变更：回滚只需恢复 `toPersistedFingerprint` 旧实现；已写出的 V2 文件可被旧代码读取（`migrateFingerprintV1toV2` 兼容），无数据丢失。
 - P2/P3 每阶段独立开关；P3 的注入开关默认关闭即可退回当前行为。
+- P4 只改内存表达，不改磁盘格式：回滚即恢复 `load*` 里「`migrateFingerprintV1toV2` → 直接塞表」的旧写法；磁盘上的 V2 条目旧代码本来就能读。
 
 ## 8. 明确不做
 
@@ -142,3 +143,17 @@ P3（提示词增量，已落地）：
 | 读取接口 | `getV2FeaturesMap(ids)`；`engine/prompt-builder.ts:339` 用 `typeof ... === 'function'` 守卫后传入（兼容旧测试桩） |
 | 测试 | `tests/unit/engine/style/fingerprint-analysis-merge.test.ts`（6 例：P2a 落盘 12 维 / P2b 回填 + 备份 / P3 注入段与强度联动）；`fingerprint-v2-canonical-write.test.ts`（3 例 P1） |
 | 实机 | 开发 vault 写指纹库首次加载：`fp_demo_partial` / `fp_demo_legacy` 由 5 维 pending → 全 complete，生成 `global-fingerprints.json.v2backfill.bak`（18,687 字节） |
+## 11. 落地记录（P4 内存直接持 V2，2026-11-22）
+
+目标：去掉「加载即降级」——加载不再把磁盘 V2 压成 V1 表当唯一真相，V1 只是 V2 的投影。
+
+| 项 | 实现 |
+| --- | --- |
+| 投影入口 | `engine/style-fingerprint-library.ts`：`projectV2ToV1(v2)`（7 维文案来自 `extractV1FeaturesFromV2`）+ `refreshScopeProjection(scope)`（三张 V1 表**唯一**写入口） |
+| 合并入口 | `ensureV2FromEntry(fp, scope)`：有同作用域缓存走 `syncV1DescriptionsIntoV2`，否则 `migrateV1ToV2`；元数据（name/source/enabled/tags/stats/samples/extractedAt/sourceText）以调用方为准 |
+| 加载 | `loadTemplate/loadGlobal/loadProject`：`collectV2Fingerprints` → 非 v2 条目现场迁移进 `v2Fingerprints` → `refreshScopeProjection`；不再直接 `new Map(migrated…)` |
+| 写 | `add*/update*`：`ensureV2FromEntry` + `refreshScopeProjection`（enable/disable 复用 update*）；保存仍走 `toPersistedFingerprint`，从投影同步 7 维文案后写 V2 |
+| 复制/同步 | `copyFingerprint` 先把 `v2Copy` 登记进缓存再走 `add*`（否则 save 会现场迁移出 5 维 pending）；`syncFromTemplate` 更新分支改 `ensureV2FromEntry` + refresh |
+| 验收 | `tests/unit/engine/style/fingerprint-v2-inmemory.test.ts` 5 例：加载后投影与 V2 一致 / update 改名+改文案不丢新维 / 启停不动维度 / copy 到项目层仍完整 / syncFromTemplate 只换 7 维文案 |
+
+结果：内存中 V2 是唯一真相，三张 V1 表由 V2 派生；不再存在「V1 表被改写、V2 没跟上」或「重载把 12 维丢弃」的分叉。磁盘格式与提示词注入顺序均未变。

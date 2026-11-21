@@ -496,9 +496,14 @@ export class StyleFingerprintLibrary {
         if (!parsed) return Array.from(this.templateFingerprints.values());
 
         const items = parsed as (StyleFingerprint | V1StyleFingerprint | V2Fingerprint)[];
-        const migrated = items.map(fp => this.migrateFingerprintV1toV2(fp, 'template'));
         this.collectV2Fingerprints(items, 'template');
-        this.templateFingerprints = new Map(migrated.map(fp => [fp.id, fp]));
+        for (const item of items) {
+            const maybeV2 = item as Partial<V2Fingerprint>;
+            if (maybeV2.version === 'v2' && maybeV2.id && maybeV2.features) continue;
+            const v1 = this.migrateFingerprintV1toV2(item, 'template');
+            if (!this.v2Fingerprints.has(v1.id)) this.v2Fingerprints.set(v1.id, migrateV1ToV2(v1, 'template'));
+        }
+        this.refreshScopeProjection('template');
         this.markFingerprintFileLoaded(path, decision.signature);
         return Array.from(this.templateFingerprints.values());
     }
@@ -511,7 +516,8 @@ export class StyleFingerprintLibrary {
      */
     async addTemplate(fp: StyleFingerprint, analysis?: StyleAnalysisResultV2): Promise<void> {
         if (analysis) this.registerAnalysis(fp, analysis, 'template');
-        this.templateFingerprints.set(fp.id, fp);
+        this.ensureV2FromEntry(fp, 'template');
+        this.refreshScopeProjection('template');
         await this.saveTemplate();
         await vectorizeFingerprintSamples(this.app, fp, this.project);
     }
@@ -523,7 +529,8 @@ export class StyleFingerprintLibrary {
      */
     async updateTemplate(fp: StyleFingerprint): Promise<void> {
         if (!this.templateFingerprints.has(fp.id)) return;
-        this.templateFingerprints.set(fp.id, fp);
+        this.ensureV2FromEntry(fp, 'template');
+        this.refreshScopeProjection('template');
         await this.saveTemplate();
         await vectorizeFingerprintSamples(this.app, fp, this.project);
     }
@@ -639,9 +646,14 @@ export class StyleFingerprintLibrary {
         if (!parsed) return Array.from(this.globalFingerprints.values());
 
         const items = parsed as (StyleFingerprint | V1StyleFingerprint | V2Fingerprint)[];
-        const migrated = items.map(fp => this.migrateFingerprintV1toV2(fp, 'global'));
         this.collectV2Fingerprints(items, 'global');
-        this.globalFingerprints = new Map(migrated.map(fp => [fp.id, fp]));
+        for (const item of items) {
+            const maybeV2 = item as Partial<V2Fingerprint>;
+            if (maybeV2.version === 'v2' && maybeV2.id && maybeV2.features) continue;
+            const v1 = this.migrateFingerprintV1toV2(item, 'global');
+            if (!this.v2Fingerprints.has(v1.id)) this.v2Fingerprints.set(v1.id, migrateV1ToV2(v1, 'global'));
+        }
+        this.refreshScopeProjection('global');
         this.markFingerprintFileLoaded(path, decision.signature);
         return Array.from(this.globalFingerprints.values());
     }
@@ -654,7 +666,8 @@ export class StyleFingerprintLibrary {
      */
     async addGlobal(fp: StyleFingerprint, analysis?: StyleAnalysisResultV2): Promise<void> {
         if (analysis) this.registerAnalysis(fp, analysis, 'global');
-        this.globalFingerprints.set(fp.id, fp);
+        this.ensureV2FromEntry(fp, 'global');
+        this.refreshScopeProjection('global');
         await this.saveGlobal();
         await vectorizeFingerprintSamples(this.app, fp, this.project);
     }
@@ -666,7 +679,8 @@ export class StyleFingerprintLibrary {
      */
     async updateGlobal(fp: StyleFingerprint): Promise<void> {
         if (!this.globalFingerprints.has(fp.id)) return;
-        this.globalFingerprints.set(fp.id, fp);
+        this.ensureV2FromEntry(fp, 'global');
+        this.refreshScopeProjection('global');
         await this.saveGlobal();
         await vectorizeFingerprintSamples(this.app, fp, this.project);
     }
@@ -755,9 +769,14 @@ export class StyleFingerprintLibrary {
         if (!parsed) return Array.from(this.projectFingerprints.values());
 
         const items = parsed as (StyleFingerprint | V1StyleFingerprint | V2Fingerprint)[];
-        const migrated = items.map(fp => this.migrateFingerprintV1toV2(fp, 'project'));
         this.collectV2Fingerprints(items, 'project');
-        this.projectFingerprints = new Map(migrated.map(fp => [fp.id, fp]));
+        for (const item of items) {
+            const maybeV2 = item as Partial<V2Fingerprint>;
+            if (maybeV2.version === 'v2' && maybeV2.id && maybeV2.features) continue;
+            const v1 = this.migrateFingerprintV1toV2(item, 'project');
+            if (!this.v2Fingerprints.has(v1.id)) this.v2Fingerprints.set(v1.id, migrateV1ToV2(v1, 'project'));
+        }
+        this.refreshScopeProjection('project');
         this.markFingerprintFileLoaded(path, decision.signature);
         return Array.from(this.projectFingerprints.values());
     }
@@ -771,7 +790,8 @@ export class StyleFingerprintLibrary {
     async addProject(fp: StyleFingerprint, analysis?: StyleAnalysisResultV2): Promise<void> {
         if (!this.project) return;
         if (analysis) this.registerAnalysis(fp, analysis, 'project');
-        this.projectFingerprints.set(fp.id, fp);
+        this.ensureV2FromEntry(fp, 'project');
+        this.refreshScopeProjection('project');
         await this.saveProject();
         await vectorizeFingerprintSamples(this.app, fp, this.project);
     }
@@ -942,7 +962,8 @@ export class StyleFingerprintLibrary {
      */
     async updateProject(fp: StyleFingerprint): Promise<void> {
         if (!this.project || !this.projectFingerprints.has(fp.id)) return;
-        this.projectFingerprints.set(fp.id, fp);
+        this.ensureV2FromEntry(fp, 'project');
+        this.refreshScopeProjection('project');
         await this.saveProject();
         await vectorizeFingerprintSamples(this.app, fp, this.project);
     }
@@ -1497,23 +1518,12 @@ export class StyleFingerprintLibrary {
             return newFp;
         }
 
-        switch (targetScope) {
-            case 'template':
-                this.templateFingerprints.set(newFp.id, newFp);
-                await this.saveTemplate();
-                break;
-            case 'global':
-                this.globalFingerprints.set(newFp.id, newFp);
-                await this.saveGlobal();
-                break;
-            case 'project':
-                this.projectFingerprints.set(newFp.id, newFp);
-                await this.saveProject();
-                break;
-        }
-
+        // 先登记 V2 副本再落盘：add* 的 save 走 toPersistedFingerprint，
+        // 缓存里没有这条时才会现场迁移（5 维 pending 降级）。
         if (v2Copy) this.v2Fingerprints.set(newFp.id, v2Copy);
-        await vectorizeFingerprintSamples(this.app, newFp, effectiveTargetProject);
+        if (targetScope === 'template') await this.addTemplate(newFp);
+        else if (targetScope === 'global') await this.addGlobal(newFp);
+        else await this.addProject(newFp);
 
         return newFp;
     }
@@ -1567,7 +1577,8 @@ export class StyleFingerprintLibrary {
                     extractedAt: tplFp.extractedAt,
                     sourceText: tplFp.sourceText,
                 };
-                this.projectFingerprints.set(existing.id, updatedFp);
+                this.ensureV2FromEntry(updatedFp, 'project');
+                this.refreshScopeProjection('project');
                 updated.push(existing.id);
             }
         }
@@ -1958,6 +1969,83 @@ export class StyleFingerprintLibrary {
             if (!fp || fp.version !== 'v2' || !fp.id || !fp.features) continue;
             this.v2Fingerprints.set(fp.id, fp as V2Fingerprint);
         }
+    }
+
+    /**
+     * V2 规范条目 → V1 投影条目（提示词/旧 UI 仍读 V1 七维）。
+     *
+     * 投影不落盘、不反向覆盖 V2：任何字段丢失都只可能是 V2 里没有，
+     * 而不是「加载时把 V2 降级成 V1 再写回」。
+     */
+    private projectV2ToV1(v2: V2Fingerprint): StyleFingerprint {
+        return {
+            id: v2.id,
+            name: v2.name,
+            source: v2.source,
+            scope: v2.scope,
+            enabled: v2.enabled ?? true,
+            tags: [...(v2.tags ?? [])],
+            stats: { ...v2.stats },
+            features: this.extractV1FeaturesFromV2(v2.features),
+            samples: [...(v2.samples ?? [])],
+            extractedAt: v2.extractedAt,
+            ...(v2.sourceText ? { sourceText: v2.sourceText } : {}),
+        };
+    }
+
+    private setScopeMap(scope: 'template' | 'global' | 'project', map: Map<string, StyleFingerprint>): void {
+        if (scope === 'template') this.templateFingerprints = map;
+        else if (scope === 'global') this.globalFingerprints = map;
+        else this.projectFingerprints = map;
+    }
+
+    /**
+     * 用 V2 缓存重建某作用域的 V1 投影表。
+     *
+     * 这是三张 V1 表的唯一写入口：内存里 V2 是规范模型，V1 只是投影，
+     * 因此不存在「改了 V1 副本、V2 没跟上」或「重载后 12 维丢失」的分叉。
+     *
+     * @param scope - 作用域
+     */
+    private refreshScopeProjection(scope: 'template' | 'global' | 'project'): void {
+        const map = new Map<string, StyleFingerprint>();
+        for (const v2 of this.v2Fingerprints.values()) {
+            if ((v2.scope ?? scope) === scope) map.set(v2.id, this.projectV2ToV1(v2));
+        }
+        this.setScopeMap(scope, map);
+    }
+
+    /**
+     * 把 V1 投影条目的元数据与 7 维文案合并进 V2 规范条目（没有则现场迁移）。
+     *
+     * add* / update* 都走这里：先写 V2，再由 refreshScopeProjection 重建投影，
+     * 避免「V1 表里是新值、V2 缓存里是旧值」。
+     *
+     * @param fp - V1 投影条目（调用方提供的字段）
+     * @param scope - 作用域
+     * @returns 合并后的 V2 条目
+     */
+    private ensureV2FromEntry(fp: StyleFingerprint, scope: 'template' | 'global' | 'project'): V2Fingerprint {
+        const cached = this.v2Fingerprints.get(fp.id);
+        let v2: V2Fingerprint;
+        if (cached && cached.scope === scope) {
+            v2 = this.syncV1DescriptionsIntoV2(cached, fp);
+        } else {
+            v2 = migrateV1ToV2(fp, scope);
+        }
+        v2 = {
+            ...v2,
+            name: fp.name,
+            source: fp.source,
+            enabled: fp.enabled ?? true,
+            tags: [...(fp.tags ?? [])],
+            stats: fp.stats ?? v2.stats,
+            samples: [...(fp.samples ?? [])],
+            extractedAt: fp.extractedAt ?? v2.extractedAt,
+        };
+        if (fp.sourceText) v2.sourceText = fp.sourceText;
+        this.v2Fingerprints.set(fp.id, v2);
+        return v2;
     }
 
     /**

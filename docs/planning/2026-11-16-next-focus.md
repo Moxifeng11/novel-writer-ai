@@ -4437,3 +4437,15 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - `npm run preflight` EXIT=0：1,017 文件 / 10,522 通过 + 3 跳过。
 - 文档：ADR §2 R1/R3 改写、§5 P2/P3 验收、§6 工作项全 ✅、§7 回滚、§8 边界、§9 用户裁定、新增 §10 落地记录；`docs/modules/writing-fingerprint.md` backlog 改「已定稿并落地」+ 新增 §7.1 实现对照表。
 - 提交「feat(style): V2 规范模型 P2/P3 —— 抽取统一 + 加载回填 + 提示词增量」。
+
+## 第一百五十七轮：V2 规范模型 P4 —— 内存直接持 V2（2026-11-22）
+
+- 目标：去掉「加载即降级」——加载不再把磁盘 V2 压成 V1 表当唯一真相，V1 只作投影（ADR §6 后续项）。
+- 实现（`engine/style-fingerprint-library.ts`）：
+  - `projectV2ToV1(v2)` 用 `extractV1FeaturesFromV2` 现算 7 维文案；`refreshScopeProjection(scope)` 是三张 V1 表的唯一写入口。
+  - `ensureV2FromEntry(fp, scope)`：有同作用域缓存走 `syncV1DescriptionsIntoV2`，否则 `migrateV1ToV2`；元数据以调用方为准。
+  - `loadTemplate/loadGlobal/loadProject` 改为「`collectV2Fingerprints` → 非 v2 条目现场迁移 → refresh」，不再 `new Map(migrated…)`。
+  - `add*/update*` 走 ensure + refresh；`copyFingerprint` 先把 `v2Copy` 登记进缓存再 `add*`（否则 save 会现场迁移出 5 维 pending）；`syncFromTemplate` 更新分支同样走 ensure + refresh。
+- 测试：新增 `tests/unit/engine/style/fingerprint-v2-inmemory.test.ts` 5 例；定向 `tests/unit/engine/style`（30 文件 / 508 例）与 `tests/unit/ui/fingerprint*`（11 文件 / 72 例）全通过。
+- 文档：ADR 新增 §11 落地记录、§6 P4 行标 ✅、§7 补回滚口径；`docs/modules/writing-fingerprint.md` 新增 §7.2 与 backlog 更新。
+- 门禁：tsc EXIT=0；preflight EXIT=0（1,018 文件 / 10,527 通过 + 3 跳过）；main.js 6,249,543（基线上调 +1,418）、styles.css 805,893；warn 558 不变。

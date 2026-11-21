@@ -125,7 +125,7 @@ view-project-nosample（无样本 → 黄条 + 空态）、modal-detail、modal-
   - P3（已落地）：V2 独有的 5 维（sentencePattern / emotion / tension / infoDensity / description）在全局层 7 段之后
     追加「V2 深化特征（量化）：」，**默认开启**，只受强度配置约束（`globalIntensity: 0` 时整段消失、描述长度按 `descriptionLength` 截断）。
   - 相关类型标注已由 `@deprecated` 改为 `@legacy`（warn 第 11 批），不要再按「清弃用」的思路去删 V1 类型。
-  - 仍未做（ADR §6 后续）：内存模型直接持 V2（去掉「加载即降级」），改动面覆盖所有 `list*/get*` 消费方。
+  - P4（已落地，2026-11-22）：内存直接持 V2 —— `load*` 先构建 `v2Fingerprints` 再 `refreshScopeProjection`，三张 V1 表成为派生投影（唯一写入口 `refreshScopeProjection`），`add*/update*` 走 `ensureV2FromEntry`，`copyFingerprint`/`syncFromTemplate` 也不再产生 5 维 pending。旧口径「加载即降级」已废弃。
 
 
 ## 7.1 P2/P3 实现对照（2026-11-22）
@@ -139,6 +139,18 @@ view-project-nosample（无样本 → 黄条 + 空态）、modal-detail、modal-
 | 重抽 | `refillFingerprint` | 重新提取 7 维后再跑分析器并 `registerAnalysis` |
 | 注入 | `engine/style/dynamic-injection-engine.ts#build(..., v2Features?)` | 只追加 `V2_NEW_DIMENSIONS` 且 `status==='complete'` 的维度；`summarizeV2Dimension` 产「倒装 1.2/千字 · 设问 3%」这类定量短句 |
 | 取数 | `getV2FeaturesMap(ids)` | `engine/prompt-builder.ts:339` 以 `typeof ... === 'function'` 守卫调用（兼容旧测试桩） |
+
+## 7.2 P4 内存投影（2026-11-22）
+
+| 环节 | 入口 | 关键点 |
+| --- | --- | --- |
+| 投影 | `projectV2ToV1(v2)` + `refreshScopeProjection(scope)` | V1 七维文案由 `extractV1FeaturesFromV2` 现算；三张 V1 表只读不写 |
+| 合并 | `ensureV2FromEntry(fp, scope)` | 有缓存则 `syncV1DescriptionsIntoV2`，否则 `migrateV1ToV2`；元数据以调用方为准 |
+| 加载 | `loadTemplate/loadGlobal/loadProject` | `collectV2Fingerprints` → 非 v2 条目现场迁移进 V2 缓存 → refresh |
+| 写 | `add*/update*` | `ensureV2FromEntry` + refresh；enable/disable 复用 update* |
+| 复制/同步 | `copyFingerprint`、`syncFromTemplate` | 先登记 V2 副本再 `add*`；更新分支 ensure + refresh |
+
+验收证据：`tests/unit/engine/style/fingerprint-v2-inmemory.test.ts` 5 例（加载后投影与 V2 一致 / update 改名改文案不丢新维 / 启停不动维度 / copy 到项目层仍完整 / syncFromTemplate 只换 7 维文案）。
 
 验收证据：`tests/unit/engine/style/fingerprint-analysis-merge.test.ts` 6 例（P2a 落盘 12 维全 complete、P2b 回填只补待补项并留备份、P3 有/无 map 与强度 0 三种注入形态）；
 开发 vault 实机：`fp_demo_partial`、`fp_demo_legacy` 首次加载后由 5 维 pending 变为全 complete，生成 `global-fingerprints.json.v2backfill.bak`（18,687 字节）。

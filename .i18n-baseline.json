@@ -197,7 +197,7 @@
     "ui/views/knowledge-detail-state.ts": 3,
     "ui/views/memory-graph-view.ts": 22,
     "ui/views/planning-canvas-view.ts": 51,
-    "ui/views/writing-fingerprint-view.ts": 26,
+    "ui/views/writing-fingerprint-view.ts": 25,
     "ui/volume-intro-modal.ts": 47,
     "ui/welcome-modal.ts": 27,
     "ui/wizard-checker.ts": 95,
@@ -206,7 +206,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 5359,
-  "updatedAt": "2026-11-20",
+  "total": 5358,
+  "updatedAt": "2026-11-21",
   "note": ""
 }

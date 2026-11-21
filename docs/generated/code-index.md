@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 355 | 147298 | 1954 | 1548 | 79% |
+| `engine/` | 355 | 147386 | 1954 | 1548 | 79% |
 | `services/` | 65 | 19535 | 296 | 204 | 69% |
 | `shared/` | 267 | 53188 | 2255 | 1763 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
@@ -366,7 +366,7 @@
 | `engine/stream-text-reader.ts` | 320 | 3 | 3 |
 | `engine/streaming/simulated-stream.ts` | 183 | 2 | 2 |
 | `engine/streaming/stream-parser.ts` | 367 | 8 | 8 |
-| `engine/style-fingerprint-library.ts` | 3018 | 7 | 7 |
+| `engine/style-fingerprint-library.ts` | 3106 | 7 | 7 |
 | `engine/style-learner.ts` | 346 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 193 | 2 | 2 |
 | `engine/style-vector-store.ts` | 705 | 11 | 10 |
