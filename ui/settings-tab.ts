@@ -66,7 +66,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
 
     /** 分区回调：整页重开（清缓存 + 重绘 tab 栏与内容） */
     reopen(): void {
-        this.display();
+        this.renderAll();
     }
 
     /**
@@ -132,6 +132,11 @@ export class NovelWriterSettingTab extends PluginSettingTab {
     }
 
     display(): void {
+        this.renderAll();
+    }
+
+    /** 整页渲染实现：display 与 reopen 共用（display 已由宿主基类标记废弃） */
+    private renderAll(): void {
         const { containerEl } = this;
 
         containerEl.empty();

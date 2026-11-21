@@ -837,7 +837,7 @@ export class GenreEditModal extends Modal {
             });
             addTechBtn.addEventListener('click', () => {
                 const newTech: TechniqueDef = {
-                    id: `tech_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    id: `tech_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
                     name: '',
                     category: 'structure',
                     description: '',
@@ -915,7 +915,7 @@ export class GenreEditModal extends Modal {
                     this.tempGenre.subGenres = [];
                 }
                 const newSub: SubGenreConfig = {
-                    id: `sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    id: `sub_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
                     name: '',
                     description: '',
                     keywords: [],

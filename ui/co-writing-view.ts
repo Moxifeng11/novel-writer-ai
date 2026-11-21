@@ -1477,17 +1477,9 @@ export class CoWritingView extends ItemView {
       return;
     }
     editor.focus();
-    let applied = false;
-    try {
-      editor.setSelectionRange(0, editor.value.length);
-      applied = document.execCommand('insertText', false, edit.text);
-    } catch {
-      applied = false;
-    }
-    if (!applied) {
-      editor.value = edit.text;
-      editor.dispatchEvent(new Event('input', { bubbles: true }));
-    }
+    // 用 setRangeText 替换整段：既保留原生撤销栈，又不依赖已废弃的 document.execCommand('insertText')
+    editor.setRangeText(edit.text, 0, editor.value.length, 'end');
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
     const start = Math.min(edit.selectionStart, editor.value.length);
     const end = Math.min(edit.selectionEnd, editor.value.length);
     editor.setSelectionRange(start, end);

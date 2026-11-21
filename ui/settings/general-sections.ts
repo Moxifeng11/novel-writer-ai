@@ -1062,7 +1062,6 @@ export class RecognitionSection extends SettingsSection {
                 .addSlider(slider => {
                     slider.setLimits(0, 1, 0.01);
                     slider.setValue(vectorLayer.semanticFilterThreshold);
-                    slider.setDynamicTooltip();
                     slider.onChange(async (value) => {
                         this.plugin.settings.vectorLayer = {
                             ...this.plugin.settings.vectorLayer!,
@@ -1078,7 +1077,6 @@ export class RecognitionSection extends SettingsSection {
                 .addSlider(slider => {
                     slider.setLimits(0, 1, 0.01);
                     slider.setValue(vectorLayer.mergeSimilarityThreshold);
-                    slider.setDynamicTooltip();
                     slider.onChange(async (value) => {
                         this.plugin.settings.vectorLayer = {
                             ...this.plugin.settings.vectorLayer!,
@@ -1162,7 +1160,6 @@ export class RecognitionSection extends SettingsSection {
                 .addSlider(slider => {
                     slider.setLimits(0, 1, 0.01);
                     slider.setValue(llmLayer.minConfidence);
-                    slider.setDynamicTooltip();
                     slider.onChange(async (value) => {
                         this.plugin.settings.llmLayer = {
                             ...this.plugin.settings.llmLayer!,
@@ -1221,7 +1218,6 @@ export class SuggestionsSection extends SettingsSection {
                 .addSlider(slider => {
                     slider.setLimits(0.5, 1, 0.01);
                     slider.setValue(suggestions.autoAdoptThreshold);
-                    slider.setDynamicTooltip();
                     slider.onChange(async (value) => {
                         this.plugin.settings.suggestions = {
                             ...this.plugin.settings.suggestions!,
@@ -1251,7 +1247,6 @@ export class SuggestionsSection extends SettingsSection {
             .addSlider(slider => {
                 slider.setLimits(0.5, 1, 0.01);
                 slider.setValue(suggestions.batchAdoptThreshold);
-                slider.setDynamicTooltip();
                 slider.onChange(async (value) => {
                     this.plugin.settings.suggestions = {
                         ...this.plugin.settings.suggestions!,

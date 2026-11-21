@@ -1269,7 +1269,7 @@ npm run check:release  # 发布前资产与版本一致性校验
 
 单测环境是 node（`vitest.config.ts` 的 `environment: 'node'`），而代码改用了 Obsidian 注入的全局 `createEl/createDiv/createSpan` 与 `window.setTimeout`。`tests/setup.ts` 负责垫片：`window` 缺省指向 `globalThis`；`createEl/createDiv/createSpan/createFragment` 缺省用 `tests/unit/ui/support/fake-dom.ts` 的 `FakeEl`，若测试已用 `stubDocument()` 注入 `document.createElement` 则优先用该工厂（保证断言拿到的元素类型一致）。新增垫片时不要覆盖测试已有的定义。
 
-当前存量（2026-11-21，`eslint.obsidian-review.mjs` 口径）：warn 2,732 → **1,259**，error 0。`npm run check:review-warn` 用 `.review-warn-baseline.json` 按规则设预算，任何一类上涨即失败（已在 preflight 里）。`no-explicit-any` 已清零；剩余大头 `no-unnecessary-type-assertion` 346（规则不可靠，不追）、`no-deprecated` 258（多为 StyleFingerprint V1 → V2 重构）、`no-misused-promises` 163、`no-unused-vars` 148（全部是 assigned-but-never-used 的 DOM 创建，有副作用，暂不动）、`no-floating-promises` 147；`no-tfile-tfolder-cast` 已从 38 降到 4（只剩 `shared/file-system-port.ts` 适配层的假对象，故意保留）。
+当前存量（2026-11-21，`eslint.obsidian-review.mjs` 口径）：warn 2,732 → **1,232**，error 0。`npm run check:review-warn` 用 `.review-warn-baseline.json` 按规则设预算，任何一类上涨即失败（已在 preflight 里）。`no-explicit-any` 已清零；剩余大头 `no-unnecessary-type-assertion` 346（规则不可靠，不追）、`no-deprecated` 232（StyleFingerprint V1 类型 193 + 旧提示词/模板路径 31 + `setWarning` 7 等兼容保留）、`no-misused-promises` 163、`no-unused-vars` 148（全部是 assigned-but-never-used 的 DOM 创建，有副作用，暂不动）、`no-floating-promises` 147；`no-tfile-tfolder-cast` 已从 38 降到 4（只剩 `shared/file-system-port.ts` 适配层的假对象，故意保留）。
 
 批次排期、风险分级与验收口径见 `docs/planning/2026-11-21-quality-optimization-roadmap.md`；新增批次先在那里登记，再按本节的约束执行。
 
@@ -1300,6 +1300,15 @@ npm run check:release  # 发布前资产与版本一致性校验
 - 拆分参数化的类要**先看方法可见性**：`FingerprintExtractor.extractFeatures/selectSamples` 是 private，直接标成具体类型会报 TS2341，正确做法是参数声明 `unknown`、在方法内用局部结构类型断言（`extractorApi` / `vectorStoreApi`）并在注释里写明为什么要调分步方法。
 - `types/obsidian-augment.d.ts` 的事件回调改 `=> void`、`ctx` / 私有 API 返回值改 `unknown` 后，调用方本来就带 `as` 断言，tsc 不受影响；这 19 条 warn 属声明层，可一次性收口。
 - 跨窗口拿编辑器实例不要 `(view as any).editor`，用 `(view as { editor?: Editor }).editor`（`Editor` 从 `obsidian` 以 `type` 导入）。
+
+第六批（2026-11-21）落地手法：
+
+- `no-deprecated` 先分「可机械替换」与「兼容保留」：`setDynamicTooltip()` 直接删（Obsidian 新版已把数值内联显示）、`substr(2, 9)` → `slice(2, 11)`、`SettingsTab.display()` 的内部调用抽成私有 `renderAll()` 让 `reopen()` 不再碰废弃方法。
+- `setWarning()` **不要**换 `setDestructive()`：后者要求 Obsidian 1.13，而 manifest 的 `minAppVersion` 是 1.4.4，`obsidianmd/no-unsupported-api` 会直接报 error（实测 7 条全变 error）。这类「废弃但仍是唯一兼容 API」的点位保留 warn。
+- `document.execCommand` 分两种处理：剪贴板降级（`shared/clipboard.ts`）用结构类型 `document as unknown as { execCommand?: ... }` 保留老上下文通道；协同编辑器替换文本改用 `textarea.setRangeText(text, 0, len, 'end')`，既保留原生撤销栈又不碰废弃 API。
+- IME 的 `keyCode === 229` 仍要保留（部分输入法 compositionend 后只给 229），同样用结构类型读取，避免规则告警。
+- `main.ts` 里的 `hidePreset/restorePreset/restoreAllPresets/savePresetOverride` 是 plugin-api 的兼容入口，方法名不动、实现改走 `setHidden` / `restoreDefaultProviders` / `updateProvider`。
+- 旧提示词常量（`SELF_CHECK_PROMPTS` 等）与 `shared/paths.ts` 的 `pj*Template` 只读兼容路径没有替代 API，不强行去掉 `@deprecated`，保留在预算里。
 
 ### 异步等待原语（2026-10-31 批次 14）
 

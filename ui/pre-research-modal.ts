@@ -338,17 +338,7 @@ export class PreResearchModal extends Modal {
 
     private async copySeed(seed: string, button: HTMLButtonElement): Promise<void> {
         try {
-            if (true) {
-                await copyText(seed);
-            } else {
-                const textarea = createEl('textarea');
-                textarea.value = seed;
-                textarea.addClass('nw-offscreen-input');
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                textarea.remove();
-            }
+            await copyText(seed);
             const original = button.textContent || t('preResearch.ui.k2');
             button.setText(t("preResearch.common.k14"));
             button.addClass('is-copied');

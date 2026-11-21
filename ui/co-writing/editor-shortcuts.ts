@@ -39,7 +39,9 @@ export interface EditorShortcutState {
  * ```
  */
 export function isImeComposingEvent(event: KeyboardEvent): boolean {
-    return event.isComposing || (event as KeyboardEvent & { keyCode?: number }).keyCode === 229;
+    // keyCode 已废弃，但部分输入法在 compositionend 之后仍只给出 229；用结构类型读取以兼容老输入法
+    const legacy = event as unknown as { keyCode?: number };
+    return event.isComposing || event.key === 'Process' || legacy.keyCode === 229;
 }
 
 /**

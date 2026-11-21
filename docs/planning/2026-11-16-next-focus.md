@@ -4259,3 +4259,12 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 关键坑：①`FingerprintExtractor.extractFeatures/selectSamples` 是 private，`refillFingerprint` 不能把参数标成具体类，要声明 `unknown` 再在方法内做局部结构断言；②`normalizeImportance` 只收 string，`typeof x === 'string' ? x : undefined` 仍报 TS2345，要回落 `''`；③`PersistStorage<CoWritingSessionState>` 与 `PersistStorage<PersistedCoWritingState>` 不兼容，要用 `ReturnType<typeof partializeCoWritingState>`；④删死字段 `deconstruction-worker.ts` 的 `vectorEnhancerConfig` 全仓无消费，可直接删。
 - 基线：`.review-warn-baseline.json` 1,259 条 / 28 类；`.bundle-baseline.json` main.js 6,239,854（+460）。
 - 后续：第 6 批 `no-deprecated` 非 V1 部分（`setDynamicTooltip` 11、`setWarning` 7、`execCommand` 4、`substr` 3 等），第 7 批 Promise 语义 310。
+## 第一百四十五轮：清社区审核扫描器 warn 第六批（no-deprecated 非 V1 部分，258 → 232）
+
+- 范围：`@typescript-eslint/no-deprecated` 中可机械替换的部分。共改 26 处，warn 1,259 → **1,232**（error 0），deprecated 258 → **232**。
+- 替换：`.setDynamicTooltip()` 11 处删除（新版已内联数值）；`.substr(2, 9)` → `.slice(2, 11)` 3 处；`SettingsTab.display()` 内部调用抽私有 `renderAll()`（`reopen()` 不再调用废弃方法）；`main.ts` 的 `hidePreset/restorePreset/restoreAllPresets/savePresetOverride` 兼容入口改走 `setHidden` / `restoreDefaultProviders` / `updateProvider`；`pre-research-modal.ts` 删除 `if (true)` 死分支里的 `execCommand`；剪贴板降级与 IME 229 改结构类型读取。
+- 行为修正：协同编辑器替换文本从 `document.execCommand('insertText')` 改为 `textarea.setRangeText(text, 0, len, 'end')`，保留原生撤销栈；`engine/step-validator.ts` 的 `validateBodyGeneration` 去掉 `@deprecated`（它仍被 `bodyGeneration` 步骤使用，两条路径共享规则）。
+- 保留例外（不强行去废弃）：StyleFingerprint V1 类型 193（第 10 批重构）、旧提示词常量 13 + 旧模板路径 22（只读兼容，无替代 API）、`setWarning` 7（`setDestructive` 需 Obsidian 1.13，minAppVersion 1.4.4 会触发 `no-unsupported-api` error）。
+- 门禁：tsc 0；preflight EXIT=0（1,013 文件 / 10,503 通过 + 3 跳过）；`.review-warn-baseline.json` 收为 1,232 条 / 27 类；`.bundle-baseline.json` main.js 6,239,638。
+- 教训：废弃 API 的替代项可能要求更高的 `minAppVersion`——先查 `obsidianmd/no-unsupported-api` 再换。
+

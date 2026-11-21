@@ -162,7 +162,6 @@ export class CoWriteSection extends SettingsSection {
             .addSlider(slider => {
                 slider.setLimits(0, 2, 0.05);
                 slider.setValue(this.plugin.settings.coWriteTemperature ?? 0.7);
-                slider.setDynamicTooltip();
                 slider.onChange(async (value) => {
                     this.plugin.settings.coWriteTemperature = value;
                     await this.plugin.saveSettings();

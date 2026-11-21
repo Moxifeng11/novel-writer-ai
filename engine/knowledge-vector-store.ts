@@ -158,7 +158,7 @@ export class KnowledgeVectorStore {
     }
 
     private generateId(): string {
-        return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+        return Date.now().toString(36) + Math.random().toString(36).slice(2, 11);
     }
 
     /** 当前 embedding 指纹（provider:model@baseUrlHash） */

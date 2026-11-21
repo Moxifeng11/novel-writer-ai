@@ -41,7 +41,7 @@ function buildNoticeFragment(
 ): DocumentFragment | null {
     if (typeof document === 'undefined') return null;
     if (typeof document.createDocumentFragment !== 'function') return null;
-    if (typeof document.createElement !== 'function') return null;
+    if (typeof (document as unknown as { createElement?: unknown }).createElement !== 'function') return null;
     try {
         const fragment = createFragment();
         const titleEl = createDiv();

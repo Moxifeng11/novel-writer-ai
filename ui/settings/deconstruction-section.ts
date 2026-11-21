@@ -196,7 +196,6 @@ export class DeconstructionSection extends SettingsSection {
             .addSlider(slider => {
                 slider.setLimits(100, 50000, 100);
                 slider.setValue(cfg.vectorCacheSize);
-                slider.setDynamicTooltip();
                 slider.onChange(async (value) => {
                     await this.ensureDeconstructionEngineSettingsPersists(s => {
                         s.vectorCacheSize = value;
@@ -212,7 +211,6 @@ export class DeconstructionSection extends SettingsSection {
             .addSlider(slider => {
                 slider.setLimits(1, 256, 1);
                 slider.setValue(cfg.vectorBatchSize);
-                slider.setDynamicTooltip();
                 slider.onChange(async (value) => {
                     await this.ensureDeconstructionEngineSettingsPersists(s => {
                         s.vectorBatchSize = value;
@@ -271,7 +269,6 @@ export class DeconstructionSection extends SettingsSection {
             .addSlider(slider => {
                 slider.setLimits(1, 8, 1);
                 slider.setValue(cfg.maxConcurrency);
-                slider.setDynamicTooltip();
                 slider.onChange(async (value) => {
                     await this.ensureDeconstructionEngineSettingsPersists(s => {
                         s.maxConcurrency = value;

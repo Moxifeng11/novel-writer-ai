@@ -2914,11 +2914,12 @@ export default class NovelWriterPlugin extends Plugin {
     }
     public restoreDefaultProviders(): void { this._providerManager.restoreDefaultProviders(); }
     public updateProvider(id: string, updates: Partial<CustomProvider>): boolean { return this._providerManager.updateProvider(id, updates); }
-    public hidePreset(presetId: string): boolean { return this._providerManager.hidePreset(presetId); }
-    public restorePreset(presetId: string): boolean { return this._providerManager.restorePreset(presetId); }
-    public restoreAllPresets(): void { this._providerManager.restoreAllPresets(); }
+    // 以下四个是 plugin-api 的兼容入口（外部脚本可能仍在调用），内部直接走非废弃实现。
+    public hidePreset(presetId: string): boolean { return this._providerManager.setHidden(presetId, true); }
+    public restorePreset(presetId: string): boolean { return this._providerManager.setHidden(presetId, false); }
+    public restoreAllPresets(): void { this._providerManager.restoreDefaultProviders(); }
     public savePresetOverride(presetId: string, name: string, endpoint: string, models: string[], maxContext: number, maxOutput: number): boolean {
-        return this._providerManager.savePresetOverride(presetId, name, endpoint, models, maxContext, maxOutput);
+        return this._providerManager.updateProvider(presetId, { name, endpoint, models: [...models], maxContext, maxOutput });
     }
 
     /**

@@ -1244,7 +1244,6 @@ export class PromptManagerSettings {
             .addSlider(slider => slider
                 .setLimits(10, 90, 5)
                 .setValue(50)
-                .setDynamicTooltip()
                 .onChange(v => {
                     splitA = v;
                     splitB = 100 - v;

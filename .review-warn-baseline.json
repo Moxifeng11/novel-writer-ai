@@ -1,10 +1,10 @@
 {
   "updatedAt": "2026-11-21",
-  "note": "warn 第五批：no-explicit-any 93 → 0（1,343 → 1,259）",
-  "total": 1259,
+  "note": "",
+  "total": 1232,
   "byRule": {
     "@typescript-eslint/no-unnecessary-type-assertion": 346,
-    "@typescript-eslint/no-deprecated": 258,
+    "@typescript-eslint/no-deprecated": 232,
     "@typescript-eslint/no-misused-promises": 163,
     "@typescript-eslint/no-unused-vars": 148,
     "@typescript-eslint/no-floating-promises": 147,
@@ -29,7 +29,6 @@
     "no-irregular-whitespace": 1,
     "no-alert": 1,
     "obsidianmd/prefer-create-el": 1,
-    "no-constant-condition": 1,
     "obsidianmd/settings-tab/prefer-setting-definitions": 1
   }
 }

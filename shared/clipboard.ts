@@ -30,7 +30,10 @@ export async function copyText(text: string): Promise<boolean> {
         area.className = 'nw-clipboard-probe';
         document.body.appendChild(area);
         area.select();
-        const ok = typeof document.execCommand === 'function' && document.execCommand('copy');
+        // execCommand 已废弃，但仍是老 Obsidian / 受限安全上下文里唯一可用的同步复制通道；
+        // 通过结构类型访问，避免把废弃 API 直接挂在 Document 上触发类型告警。
+        const legacyDocument = document as unknown as { execCommand?: (command: string) => boolean };
+        const ok = typeof legacyDocument.execCommand === 'function' && legacyDocument.execCommand('copy');
         document.body.removeChild(area);
         return Boolean(ok);
     } catch { // silent-ok: 降级也失败时由调用方给出「复制失败」提示

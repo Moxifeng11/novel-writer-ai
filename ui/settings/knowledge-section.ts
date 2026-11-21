@@ -472,7 +472,6 @@ export class KnowledgeSection extends SettingsSection {
             .addSlider(slider => {
                 slider.setLimits(0.1, 0.9, 0.05);
                 slider.setValue(this.plugin.settings.vectorDeconstructionThreshold ?? 0.3);
-                slider.setDynamicTooltip();
                 slider.onChange(async (value) => {
                     this.plugin.settings.vectorDeconstructionThreshold = value;
                     const descEl = slider.sliderEl.closest('.setting-item')?.querySelector('.setting-item-description');

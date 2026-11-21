@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 355 | 146869 | 1953 | 1547 | 79% |
+| `engine/` | 355 | 146868 | 1953 | 1547 | 79% |
 | `services/` | 65 | 19531 | 296 | 204 | 69% |
-| `shared/` | 265 | 52990 | 2246 | 1757 | 78% |
+| `shared/` | 265 | 52993 | 2246 | 1757 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 307 | 113885 | 1182 | 945 | 80% |
+| `ui/` | 307 | 113863 | 1182 | 945 | 80% |
 
 ## 文件清单
 
@@ -358,7 +358,7 @@
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 221 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |
-| `engine/step-validator.ts` | 816 | 7 | 7 |
+| `engine/step-validator.ts` | 815 | 7 | 7 |
 | `engine/story-beat-extractor.ts` | 73 | 1 | 1 |
 | `engine/story-linkage-writer.ts` | 161 | 5 | 5 |
 | `engine/story-linkage.ts` | 416 | 14 | 12 |
@@ -484,7 +484,7 @@
 | `shared/chapter-target.ts` | 118 | 5 | 5 |
 | `shared/chapter-version-port.ts` | 23 | 1 | 1 |
 | `shared/character-rules.ts` | 180 | 10 | 6 |
-| `shared/clipboard.ts` | 40 | 1 | 1 |
+| `shared/clipboard.ts` | 43 | 1 | 1 |
 | `shared/co-writer-types.ts` | 113 | 0 | 0 |
 | `shared/command-ids.ts` | 143 | 2 | 2 |
 | `shared/command-mode-rules.ts` | 140 | 8 | 5 |
@@ -743,7 +743,7 @@
 | `ui/chapter-version-modal.ts` | 651 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |
-| `ui/co-writing-view.ts` | 3995 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3987 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 167 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 248 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
@@ -753,7 +753,7 @@
 | `ui/co-writing/dashboard-status.ts` | 191 | 9 | 7 |
 | `ui/co-writing/editor-aux.ts` | 169 | 5 | 3 |
 | `ui/co-writing/editor-display.ts` | 128 | 10 | 6 |
-| `ui/co-writing/editor-shortcuts.ts` | 87 | 4 | 2 |
+| `ui/co-writing/editor-shortcuts.ts` | 89 | 4 | 2 |
 | `ui/co-writing/find-replace.ts` | 271 | 11 | 6 |
 | `ui/co-writing/friendly-error.ts` | 52 | 1 | 1 |
 | `ui/co-writing/ghost-association.ts` | 93 | 4 | 2 |
@@ -921,13 +921,13 @@
 | `ui/plot-canvas-modal.ts` | 367 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
 | `ui/polish-editor.ts` | 926 | 5 | 5 |
-| `ui/pre-research-modal.ts` | 724 | 2 | 2 |
+| `ui/pre-research-modal.ts` | 714 | 2 | 2 |
 | `ui/project-health-modal.ts` | 210 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 458 | 5 | 5 |
 | `ui/project-utils.ts` | 366 | 11 | 10 |
 | `ui/prompt-import-preview-modal.ts` | 135 | 2 | 1 |
 | `ui/prompt-manager-logic.ts` | 76 | 4 | 3 |
-| `ui/prompt-manager-settings.ts` | 1364 | 1 | 1 |
+| `ui/prompt-manager-settings.ts` | 1363 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 88 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 506 | 2 | 2 |
 | `ui/quality-loop-modal.ts` | 294 | 1 | 1 |
@@ -949,17 +949,17 @@
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 482 | 6 | 5 |
-| `ui/settings-tab.ts` | 377 | 1 | 1 |
+| `ui/settings-tab.ts` | 382 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 40 | 1 | 1 |
 | `ui/settings/api-section.ts` | 1744 | 1 | 1 |
 | `ui/settings/autosave-hint.ts` | 29 | 1 | 1 |
 | `ui/settings/autosave-snapshot.ts` | 85 | 3 | 1 |
-| `ui/settings/deconstruction-section.ts` | 338 | 1 | 1 |
+| `ui/settings/deconstruction-section.ts` | 335 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 447 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 294 | 1 | 1 |
-| `ui/settings/general-sections.ts` | 1265 | 5 | 5 |
-| `ui/settings/knowledge-section.ts` | 795 | 1 | 1 |
+| `ui/settings/general-sections.ts` | 1260 | 5 | 5 |
+| `ui/settings/knowledge-section.ts` | 794 | 1 | 1 |
 | `ui/settings/locale-setting.ts` | 55 | 2 | 2 |
 | `ui/settings/mcp-section.ts` | 76 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 115 | 1 | 1 |
@@ -967,7 +967,7 @@
 | `ui/settings/section-factory.ts` | 125 | 4 | 1 |
 | `ui/settings/settings-search.ts` | 289 | 10 | 6 |
 | `ui/settings/setup-section.ts` | 136 | 1 | 1 |
-| `ui/settings/writing-sections.ts` | 852 | 6 | 6 |
+| `ui/settings/writing-sections.ts` | 851 | 6 | 6 |
 | `ui/settlement-recovery-modal.ts` | 149 | 1 | 1 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 403 | 1 | 1 |
