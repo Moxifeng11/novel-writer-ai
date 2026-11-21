@@ -24,6 +24,13 @@
 
 关键时间线：4.97.2 修掉唯一阻断项（两条 eslint 指令缺描述）→ 4.97.3 修掉构建不可复现（fflate + mtime:0）→ 目录周期扫描覆盖 4.97.3 后放行。此前「页面停在 4.97.1」是目录尚未扫描（`Last updated` 早于发版），并非被拒。
 
+## 〇之二、4.97.4 发版与待复审（2026-11-21）
+
+- tag `4.97.4` 已推、Release workflow **success**；资产 `main.js` 6,241,845（SHA256 `070ADD60…03B8`，与干净检出构建逐字节一致）、`styles.css` 805,893、`manifest.json` 467、zip 2,496,980、`SHA256SUMS.txt` 595。
+- 破坏性声明（Release notes 与 `docs/releases/4.97.4.md` 都已写）：最低 Obsidian **1.8.7**、用户可见删除改走回收站。
+- 发版后 `npm run check:published -- --expect 4.97.4`：插件页与 RSS 仍为 4.97.3（目录尚未扫描 4.97.4），`community-plugins.json` 那次读取失败（网络，重试即可）。
+- 通过判据只有一条：三项全绿（页面 Current version = 4.97.4、清单收录、RSS 出现 4.97.4）。若目录未自动扫描，账号页点 `Check for new releases` 立即触发。
+
 ## 一、历史：每版审核都是 Failed（2026-11-20 定位并修复）
 
 插件条目：<https://community.obsidian.md/plugins/novel-writer-ai>（2026-11-20 复核：`62 downloads`、有 4.93–4.96 的版本历史、作者本人认领）。

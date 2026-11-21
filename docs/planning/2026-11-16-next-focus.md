@@ -4344,3 +4344,10 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 结果：`main.js` 两端均 `070ADD600BCE9E8EB05DCB2D2D5CB772B5AE95B29A59BC7CC10853B4F46803B8`（6,241,845 字节），`styles.css` 均 `B682C61F931E4A7669D875C05F6C7585DFDF55CF021EC44811B50EB109A9EBB2`；三个门禁 EXIT=0。
 - 坑：`gh repo clone` 连续失败（本机残留 git 进程锁住 `.git/objects/pack`，`Remove-Item` 报「文件被另一进程使用」）→ 先 `Get-Process git | Stop-Process -Force` 再删目录；网络不稳时改用 `git clone file:///D:/.../novel-writer-ai` 做等价干净检出。
 - 结论：具备打 tag 条件；tag `4.97.4` 与 Release 等用户确认破坏性声明（最低 Obsidian 1.8.7、删除改走回收站）后执行。
+
+## 第一百五十二轮：4.97.4 发版（tag + Release）与远端核验
+
+- 用户确认破坏性声明（最低 Obsidian 1.8.7、删除走回收站）后执行：`git tag -a 4.97.4` → push tag → Release workflow **success**（run 44907583552），master CI **success**（run 44907271756）。
+- 远端核验：`tag_name=4.97.4`、`draft=false`、`prerelease=false`、`target_commitish=master`；资产 `main.js` 6,241,845（`070ADD60…03B8`）、`styles.css` 805,893（`B682C61F…EBB2`）、`manifest.json` 467（`ADC5E831…6CD2`）、`versions.json` 1,977、zip 2,496,980、`SHA256SUMS.txt` 595，SHA256 与本地逐一致。
+- 坑：`npm run check:release:remote` 会卡在 `gh attestation verify`（本机网络），单次调用被 600s 掐断；改用 `gh api .../releases/tags/4.97.4` 的资产 `digest` 与本地 `Get-FileHash` 比对作为等价证据。另：`gh release view -q` 偶发输出为空，改为落盘 JSON 再解析。
+- 市场状态：`npm run check:published -- --expect 4.97.4` 三项里清单已收录（4.97.3），插件页与 RSS 仍为 4.97.3（目录 Last updated = Nov 20，尚未扫到 4.97.4）；需目录周期扫描或账号页点 `Check for new releases`。
