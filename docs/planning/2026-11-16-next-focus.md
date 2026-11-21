@@ -4336,3 +4336,11 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - `sentence-case` 51 条逐条核对后判定为**误报、不追**：规则把中文界面里的品牌名/缩写按英文句子大小写处理（`MCP`→`mcp`、`PNG`→`png`、`DeepSeek`→`deepseek`、`HTTP://`→`http://`、`SK-...` 占位符、`#4Caf50` 色值），照改会降低界面质量；已写进路线图第 10b 行。
 
 下一步：4.97.4 发版条件（等用户确认打 tag + Release，再跑 `check:published --expect 4.97.4`）。
+
+## 第一百五十一轮：4.97.4 发版前干净检出验证
+
+- 目标：按社区审核 Manifest / Source code / Build verification 三段预演 4.97.4，确认可打 tag。
+- 做法：`git clone --depth 1 --branch master`（提交 `06da4b2a`）到 `D:/nw-tmp/clean-4974` → `npm ci` → `npm run build` → 与本机产物逐字节比对 → `check:obsidian-review` / `generate-worker-inline --check` / `check-release`。
+- 结果：`main.js` 两端均 `070ADD600BCE9E8EB05DCB2D2D5CB772B5AE95B29A59BC7CC10853B4F46803B8`（6,241,845 字节），`styles.css` 均 `B682C61F931E4A7669D875C05F6C7585DFDF55CF021EC44811B50EB109A9EBB2`；三个门禁 EXIT=0。
+- 坑：`gh repo clone` 连续失败（本机残留 git 进程锁住 `.git/objects/pack`，`Remove-Item` 报「文件被另一进程使用」）→ 先 `Get-Process git | Stop-Process -Force` 再删目录；网络不稳时改用 `git clone file:///D:/.../novel-writer-ai` 做等价干净检出。
+- 结论：具备打 tag 条件；tag `4.97.4` 与 Release 等用户确认破坏性声明（最低 Obsidian 1.8.7、删除改走回收站）后执行。
