@@ -329,7 +329,7 @@ export class TtsPlayer {
         const select = parent.createEl('select', {
             cls: 'nw-tts-select nw-tts-rate',
             attr: { 'aria-label': t('tts.rate'), title: t('tts.rate') },
-        }) as unknown as HTMLSelectElement;
+        });
         for (const rate of TTS_RATE_OPTIONS) {
             select.createEl('option', { text: rate + '×', attr: { value: String(rate) } });
         }
@@ -346,7 +346,7 @@ export class TtsPlayer {
         const select = parent.createEl('select', {
             cls: 'nw-tts-select nw-tts-voice',
             attr: { 'aria-label': t('tts.voice'), title: t('tts.voice') },
-        }) as unknown as HTMLSelectElement;
+        });
         select.addEventListener('change', () => {
             this.plugin.settings.ttsVoice = select.value;
             void this.plugin.saveSettings?.();

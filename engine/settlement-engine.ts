@@ -637,7 +637,7 @@ export class SettlementEngine {
                         const file = this.getVaultMeta().getAbstractFileByPath(path);
                         if (!(file instanceof TFile)) return;
                         await this.getFrontmatter().processFrontmatter(file, (fm: FrontMatter) => {
-                            fm[field] = value as FrontMatter[string];
+                            fm[field] = value;
                         });
                     }),
                 };
@@ -812,7 +812,7 @@ export class SettlementEngine {
         const CONSISTENCY_SETTLEMENT_MAX_PAIRS = 3;
         const plugin = (this.app as unknown as {
             plugins?: { plugins?: Record<string, unknown> };
-        }).plugins?.plugins?.['novel-writer-ai'] as unknown;
+        }).plugins?.plugins?.['novel-writer-ai'];
         if (!plugin) return;
         void (async () => {
             try {
@@ -941,7 +941,7 @@ export class SettlementEngine {
             try {
                 await withWriteLock(filePath, () => this.getFrontmatter().processFrontmatter(file, (fm: FrontMatter) => {
                     for (const [field, value] of fields) {
-                        fm[field] = value as FrontMatter[string];
+                        fm[field] = value;
                     }
                 }));
             } catch (e) {
@@ -1746,7 +1746,7 @@ ${ni.description || '暂无描述'}
                         const file = this.getVaultMeta().getAbstractFileByPath(path);
                         if (!(file instanceof TFile)) return;
                         await this.getFrontmatter().processFrontmatter(file, (fm: FrontMatter) => {
-                            fm[field] = value as FrontMatter[string];
+                            fm[field] = value;
                         });
                     }),
                 };
@@ -2091,11 +2091,6 @@ ${ni.description || '暂无描述'}
             if (unrevealed <= 5) debtEmoji = '🟢'.repeat(Math.max(1, debtLevel)) + '🔴'.repeat(15 - debtLevel);
             else if (unrevealed <= 10) debtEmoji = '🟡'.repeat(Math.max(1, debtLevel)) + '🔴'.repeat(15 - debtLevel);
             else debtEmoji = '🔴'.repeat(Math.max(1, debtLevel)) + '🟢'.repeat(15 - debtLevel);
-
-            let healthNote = '';
-            if (unrevealed <= 5) healthNote = '🟢 健康';
-            else if (unrevealed <= 10) healthNote = '🟡 需注意';
-            else healthNote = '🔴 信息债过高';
 
             const now = new Date().toLocaleString('zh-CN');
 

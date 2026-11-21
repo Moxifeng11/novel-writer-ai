@@ -81,7 +81,7 @@ export class Faction extends BaseEntity {
             ...this._props,
             ...this._factionProps,
             entityStatus: status,
-        } as FactionProps);
+        });
     }
 
     /**
@@ -94,7 +94,7 @@ export class Faction extends BaseEntity {
             ...this._props,
             ...this._factionProps,
             name,
-        } as FactionProps);
+        });
     }
 
     /**
@@ -108,7 +108,7 @@ export class Faction extends BaseEntity {
             ...this._factionProps,
             leader,
             lastChangedAt: new Date().toISOString(),
-        } as FactionProps);
+        });
     }
 
     /**

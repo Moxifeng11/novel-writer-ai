@@ -1,8 +1,8 @@
 import { App, MarkdownRenderer, TFile, Component } from 'obsidian';
 import { GatheredContext, CharacterData, ForeshadowData, TimelineEvent, MarkdownContent } from '@/engine/context-manager';
-import { CompressedContext } from '@/engine/context-compressor';
+
 import '@/shared/types';
-import { TimelineRow, FanficRules } from '@/shared/template-validator';
+import { TimelineRow } from '@/shared/template-validator';
 import { getWritingStylePath } from '@/shared/paths';
 import { findWritingStyleFile } from '@/ui/writing-style-paths';
 import { readMergedVolumeOutline } from '@/utils/helpers';
@@ -117,14 +117,14 @@ export class ContextPanel {
         const d = ctx.data;
 
         // ✅ v1.6.0: 显示失败的模块提示
-        const failedModules = d['_failedModules'] as string[] | undefined;
+        const failedModules = d['_failedModules'];
         if (failedModules && failedModules.length > 0) {
             const warnEl = panel.createDiv({ cls: 'novel-writer-fw-warning nw-cp-alert nw-cp-alert--error' });
             warnEl.createSpan({ text: `⚠️ 以下模块加载失败：${failedModules.join('、')}（已跳过）` });
         }
 
         // ✅ 上下文压缩截断警告
-        const compressed = d.compressed as CompressedContext | undefined;
+        const compressed = d.compressed;
         if (compressed?.truncationApplied) {
             let detailsExpanded = false;
 
@@ -444,7 +444,7 @@ export class ContextPanel {
 
                 if (!sceneExpansion || !sceneExpansion.raw || sceneExpansion.raw.trim() === '') {
                     body.createEl('p', { text: '暂无场景数据', cls: 'novel-writer-fw-muted' });
-                    const tip = body.createEl('p', {
+                    body.createEl('p', {
                         text: '💡 在步骤6「Scene展开」中生成场景后可在此查看',
                         cls: 'nw-cp-tip'
                      });
@@ -516,7 +516,7 @@ export class ContextPanel {
         })(); }, true);
 
         this.renderCollapsibleCard(panel, '🔮 伏笔库', (body) => {
-            const foreshadows = d.foreshadows as ForeshadowData | undefined;
+            const foreshadows = d.foreshadows;
             if (!foreshadows || foreshadows.unrevealed.length === 0) {
                 body.createEl('p', { text: '无未揭示伏笔', cls: 'novel-writer-fw-muted' });
                 return;
@@ -642,7 +642,7 @@ export class ContextPanel {
         });
 
         // ===== 同人：原作剧情时间线（canon）=====
-        if (d.fanfic_canon_timeline && (d.fanfic_canon_timeline as TimelineRow[]).length > 0) {
+        if (d.fanfic_canon_timeline && (d.fanfic_canon_timeline).length > 0) {
             this.renderCollapsibleCard(panel, '📜 原作剧情时间线', (body) => {
                 const canonRows = d.fanfic_canon_timeline as TimelineRow[];
                 const table = body.createEl('table', { cls: 'nw-context-fanfic-canon novel-writer-fw-context-table' });
@@ -667,7 +667,7 @@ export class ContextPanel {
         }
 
         // ===== 同人：故事背景时间线（fan）=====
-        if (d.fanfic_fan_timeline && (d.fanfic_fan_timeline as TimelineRow[]).length > 0) {
+        if (d.fanfic_fan_timeline && (d.fanfic_fan_timeline).length > 0) {
             this.renderCollapsibleCard(panel, '📖 故事背景时间线', (body) => {
                 const fanRows = d.fanfic_fan_timeline as TimelineRow[];
                 const table = body.createEl('table', { cls: 'nw-context-fanfic-fan novel-writer-fw-context-table' });
@@ -692,7 +692,7 @@ export class ContextPanel {
 
         // ===== 同人：OOC 规则 =====
         if (d.fanfic_rules) {
-            const rules = d.fanfic_rules as FanficRules;
+            const rules = d.fanfic_rules;
             if (rules.mustFollow?.length > 0 || rules.redlines?.length > 0) {
                 this.renderCollapsibleCard(panel, '⚠️ OOC 防护规则', (body) => {
                     const warnBox = body.createDiv({ cls: 'nw-cp-warn-box' });
@@ -927,7 +927,7 @@ export class ContextPanel {
         const container = panel.createDiv({ cls: 'nw-context-bar__collapsible-card' });
 
         const header = container.createDiv({ cls: 'nw-context-bar__collapsible-header' });
-        const titleEl = header.createSpan({ cls: 'nw-context-bar__collapsible-title', text: title });
+        header.createSpan({ cls: 'nw-context-bar__collapsible-title', text: title });
         const iconEl = header.createSpan({ cls: 'nw-context-bar__collapsible-icon' });
 
         const body = container.createDiv({ cls: 'nw-context-bar__collapsible-body nw-cp-card-body' });

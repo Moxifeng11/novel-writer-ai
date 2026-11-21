@@ -143,7 +143,7 @@ export class FileCache {
             size,
         };
 
-        this.index.set(key, entry as FileCacheEntry<unknown>);
+        this.index.set(key, entry);
         this.heapInsert(key, entry.accessedAt);
 
         const writePromise = this.doWrite(key, content);

@@ -123,7 +123,7 @@ export class GenerateCharacterModal extends Modal {
                 projectSelect.value = this._currentProject;
             }
 
-            const nameLabel = contentEl.createEl('label', {
+            contentEl.createEl('label', {
                 text: t('characterGen.nameLabel'),
                 cls: 'nw-gen-modal-name-label'
             });
@@ -152,7 +152,7 @@ export class GenerateCharacterModal extends Modal {
                 }
             };
 
-            const promptLabel = contentEl.createEl('label', {
+            contentEl.createEl('label', {
                 text: t('characterGen.promptLabel'),
                 cls: 'nw-gen-modal-prompt-label'
             });
@@ -285,7 +285,7 @@ export class GenerateCharacterModal extends Modal {
 
                 let characters = await this.parseCharacters(result.content, count, signal);
                 if (signal.aborted) { log.info('[小说工坊] 生成已取消，跳过后续处理'); return; }
-                const allBlocks = this.splitCharacterBlocks(result.content, count);
+                this.splitCharacterBlocks(result.content, count);
 
                 const MAX_RETRIES = 2;
                 for (let retry = 0; retry < MAX_RETRIES && characters.length < count; retry++) {

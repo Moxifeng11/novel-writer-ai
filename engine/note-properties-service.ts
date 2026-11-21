@@ -103,7 +103,7 @@ export function planTagMigrationForFile(
 export function scanTagMigration(app: App, project: string): TagMigrationChange[] {
     const changes: TagMigrationChange[] = [];
     for (const file of listProjectNotes(app, project).files) {
-        const fm = app.metadataCache.getFileCache(file)?.frontmatter as Record<string, unknown> | undefined;
+        const fm = app.metadataCache.getFileCache(file)?.frontmatter;
         const plan = planTagMigrationForFile(file.path, fm);
         if (plan) changes.push(plan);
     }
@@ -142,7 +142,7 @@ export function planPropertyCompletionForFile(
 export function scanPropertyCompletion(app: App, project: string): PropertyCompletionChange[] {
     const changes: PropertyCompletionChange[] = [];
     for (const file of listProjectNotes(app, project).files) {
-        const fm = app.metadataCache.getFileCache(file)?.frontmatter as Record<string, unknown> | undefined;
+        const fm = app.metadataCache.getFileCache(file)?.frontmatter;
         const plan = planPropertyCompletionForFile(file.path, fm);
         if (plan) changes.push(plan);
     }

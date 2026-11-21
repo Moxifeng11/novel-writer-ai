@@ -797,7 +797,7 @@ export class StyleFeaturesAnalyzerV2 {
     }
 
     private calculateWordLengthDistribution(text: string): { len1: number; len2: number; len3: number; len4plus: number } {
-        let len1 = 0, len2 = 0, len3 = 0, len4plus = 0;
+        let len1 = 0, len2 = 0;
         let total = 0;
         // 简化：按字符序列统计
         for (let i = 0; i < text.length; i++) {
@@ -911,11 +911,6 @@ export class StyleFeaturesAnalyzerV2 {
 
     private detectSynesthesia(text: string): number {
         // 通感：感官词与不同感官词或情感词共现
-        const sensoryWords = [
-            ...VISUAL_WORDS.slice(0, 10),
-            ...AUDITORY_WORDS.slice(0, 10),
-            ...TACTILE_WORDS.slice(0, 10),
-        ];
         let count = 0;
         // 简化检测：匹配"听起来...看..."或"声音...颜色"等模式
         const patterns = [

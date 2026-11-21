@@ -54,13 +54,14 @@ export const VIEW_TYPE_WRITING_FINGERPRINT = 'novel-writer-writing-fingerprint';
 
 type FingerprintScope = 'template' | 'global' | 'project';
 
+const { SCOPE_ICONS } = scopeLogic;
+
 interface FilterState {
     searchQuery: string;
     selectedTag: string | null;
     activeScope: FingerprintScope;
 }
 
-const { SCOPE_LABELS, SCOPE_ICONS } = scopeLogic;
 
 /**
  * 写作指纹视图。
@@ -442,7 +443,7 @@ export class WritingFingerprintView extends ItemView {
         const extractChapterBtn = this.createToolbarButton(t('fingerprint.view.tbExtractChapters'), () => { void this.handleExtractFromChapters(); }, false, t('fingerprint.view.tbExtractChaptersTip'));
         const importBtn = this.createToolbarButton(t('fingerprint.view.tbImportKb'), () => { void this.handleImportFromKnowledge(); }, false, t('fingerprint.view.tbImportKbTip'));
         const blendBtn = this.createToolbarButton(t('fingerprint.view.tbBlend'), () => this.handleBlendFingerprints(), false, t('fingerprint.view.tbBlendTip'));
-        const fillSamplesBtn = this.createToolbarButton(t('fingerprint.view.tbFillSamples'), () => { void this.handleBatchFillSamples(); }, false, t('fingerprint.view.tbFillSamplesTip'));
+        this.createToolbarButton(t('fingerprint.view.tbFillSamples'), () => { void this.handleBatchFillSamples(); }, false, t('fingerprint.view.tbFillSamplesTip'));
         const migrateBtn = this.createToolbarButton(t('fingerprint.view.tbMigrateV2'), () => { void this.handleMigrateToV2(); }, false, t('fingerprint.view.tbMigrateV2Tip'));
         const deleteBtn = this.createToolbarButton(t('fingerprint.view.tbDelete'), () => { void this.handleDeleteFingerprint(); }, true, t('fingerprint.view.tbDeleteTip'));
         const toggleBtn = this.createToolbarButton(t('fingerprint.view.tbToggle'), () => { void this.handleToggleEnabled(); }, false, t('fingerprint.view.tbToggleTip'));
@@ -638,7 +639,7 @@ export class WritingFingerprintView extends ItemView {
 
             item.addEventListener('click', () => {
                 this.selectedFingerprintId = fp.id;
-                this.selectedFingerprintScope = fp.scope as FingerprintScope;
+                this.selectedFingerprintScope = fp.scope;
                 this.renderFingerprintList();
                 this.renderDetailPanel();
             });
@@ -693,7 +694,7 @@ export class WritingFingerprintView extends ItemView {
         });
 
         const effectiveEnabled = this.isEffectivelyEnabled(fp);
-        const statusBadge = titleRow.createSpan({
+        titleRow.createSpan({
             text: effectiveEnabled ? t('fingerprint.view.statusOn') : t('fingerprint.view.statusOff'),
             cls: effectiveEnabled ? 'nw-fp-status-badge nw-fp-status-badge--on' : 'nw-fp-status-badge nw-fp-status-badge--off',
         });
@@ -702,7 +703,7 @@ export class WritingFingerprintView extends ItemView {
             cls: 'nw-fp-meta-row'
         });
 
-        metaRow.createSpan({ text: scopeLabel(fp.scope as FingerprintScope) });
+        metaRow.createSpan({ text: scopeLabel(fp.scope) });
         metaRow.createSpan({ text: t('fingerprint.view.metaSource', { source: fp.source || t('fingerprint.view.unknown') }) });
         metaRow.createSpan({ text: t('fingerprint.view.metaExtractedAt', { time: new Date(fp.extractedAt).toLocaleString() }) });
         metaRow.createSpan({ text: t('fingerprint.view.metaWordCount', { count: formatDetailCount(fp.stats?.wordCount) }) });
@@ -1162,7 +1163,7 @@ export class WritingFingerprintView extends ItemView {
     private async afterFingerprintSaved(fp: StyleFingerprint, successMessage: string): Promise<void> {
         await this.loadAllFingerprints();
         this.selectedFingerprintId = fp.id;
-        this.selectedFingerprintScope = fp.scope as FingerprintScope;
+        this.selectedFingerprintScope = fp.scope;
         this.renderSearchAndFilter();
         this.renderFingerprintList();
         this.renderDetailPanel();
@@ -1573,7 +1574,7 @@ export class WritingFingerprintView extends ItemView {
             return;
         }
         const result = await this.fingerprintLibrary.copyFingerprint(
-            fp.scope as FingerprintScope,
+            fp.scope,
             'project',
             fp.id,
             project

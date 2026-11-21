@@ -104,7 +104,7 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
             this.cachedDimensions = embedding.length;
         }
 
-        return embedding as number[];
+        return embedding;
     }
 
     /**

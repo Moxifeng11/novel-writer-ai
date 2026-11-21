@@ -246,7 +246,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
             const structureId: StoryStructureId = (structureArg
                 || random?.structureId
                 || (readSlot(toolCtx.memory, 'structureId') as StoryStructureId)
-                || 'qichengzhuanhe') as StoryStructureId;
+                || 'qichengzhuanhe');
             if (!STORY_STRUCTURES.some(s => s.id === structureId)) {
                 return { ok: false, content: `故事结构 ${structureId} 无效，可用：${STORY_STRUCTURES.map(s => s.id).join('/')}` };
             }
@@ -449,7 +449,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
         required: [],
         sideEffect: 'none', timeoutMs: 10_000,
         execute: async (args, toolCtx) => {
-            const mem = toolCtx.memory as unknown as HarnessMemoryState;
+            const mem = toolCtx.memory;
             const project = resolveProject(args, mem, ctx);
             if (!project) return { ok: false, content: '项目不存在或未指定；先向用户确认要打开哪个项目' };
             const projectStatus = port.getProjectStatus ? await port.getProjectStatus(project) : null;
@@ -474,7 +474,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
         required: [],
         sideEffect: 'none', timeoutMs: 10_000,
         execute: async (args, toolCtx) => {
-            const mem = toolCtx.memory as unknown as HarnessMemoryState;
+            const mem = toolCtx.memory;
             const project = resolveProject(args, mem, ctx);
             if (!port.openFlow) return { ok: false, content: '当前环境不支持打开创作流程' };
             const ok = await port.openFlow(project || undefined);
@@ -489,7 +489,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
         required: [],
         sideEffect: 'none', timeoutMs: 10_000,
         execute: async (args, toolCtx) => {
-            const mem = toolCtx.memory as unknown as HarnessMemoryState;
+            const mem = toolCtx.memory;
             const project = resolveProject(args, mem, ctx);
             // 项目参数必须真的生效：旧实现端口丢弃参数，打开的是「当前活动项目」，
             // 新建项目后调用会把用户带到旧项目，后续写作/批量命令也作用在旧项目上。
@@ -505,7 +505,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
         required: [],
         sideEffect: 'none',
         execute: async (args, toolCtx) => {
-            const mem = toolCtx.memory as unknown as HarnessMemoryState;
+            const mem = toolCtx.memory;
             const project = resolveProject(args, mem, ctx);
             if (!project) return { ok: false, content: '没有指定项目；先向用户确认' };
             const ok = port.openStorySettings(project);
@@ -523,7 +523,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
         required: ['mode'],
         sideEffect: 'none',
         execute: async (args, toolCtx) => {
-            const mem = toolCtx.memory as unknown as HarnessMemoryState;
+            const mem = toolCtx.memory;
             const mode = String(args.mode) === 'script' ? 'script' : 'short';
             const project = resolveProject(args, mem, ctx);
             const ok = port.openPreResearch(mode, project || undefined);
@@ -553,7 +553,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
         required: [],
         sideEffect: 'none', timeoutMs: 15_000,
         execute: async (args, toolCtx) => {
-            const mem = toolCtx.memory as unknown as HarnessMemoryState;
+            const mem = toolCtx.memory;
             const project = resolveProject(args, mem, ctx);
             if (!project) return { ok: false, content: '没有指定项目，也没有已选中的项目' };
             if (!port.listChapters) return { ok: false, content: '当前环境不支持读取章节' };
@@ -593,7 +593,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
         required: ['chapter'],
         sideEffect: 'none', timeoutMs: 10_000,
         execute: async (args, toolCtx) => {
-            const mem = toolCtx.memory as unknown as HarnessMemoryState;
+            const mem = toolCtx.memory;
             const project = resolveProject(args, mem, ctx);
             const chapter = String(args.chapter || '').trim();
             if (!project || !chapter) return { ok: false, content: '需要项目与章节名' };
@@ -610,7 +610,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
         required: [],
         sideEffect: 'none', timeoutMs: 15_000,
         execute: async (args, toolCtx) => {
-            const mem = toolCtx.memory as unknown as HarnessMemoryState;
+            const mem = toolCtx.memory;
             const project = resolveProject(args, mem, ctx);
             if (!project) return { ok: false, content: '没有指定项目，也没有已选中的项目' };
             if (!port.getProjectStatus) return { ok: false, content: '当前环境不支持读取项目状态' };
@@ -801,7 +801,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
         sideEffect: 'dangerous', timeoutMs: 60_000,
         execute: async (args, toolCtx) => {
             if (!port.deleteProject) return { ok: false, content: '当前环境不支持删除项目' };
-            const mem = toolCtx.memory as unknown as HarnessMemoryState;
+            const mem = toolCtx.memory;
             const requested = typeof args.project === 'string' ? args.project.trim() : '';
             if (!requested) {
                 return { ok: false, content: '必须明确指定要删除的项目（如 长篇小说/旧项目），不支持留空' };
@@ -840,7 +840,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
         execute: async (args, toolCtx) => {
             if (!port.getExecutionLedger) return { ok: false, content: '当前环境不支持读取执行记录' };
             const limit = clampInt(args.limit, 1, 20, 5);
-            const mem = toolCtx.memory as unknown as HarnessMemoryState;
+            const mem = toolCtx.memory;
             const project = typeof args.project === 'string' && args.project.trim()
                 ? resolveProject(args, mem, ctx)
                 : '';
@@ -929,7 +929,7 @@ export function createHostTools(deps: HostToolDeps): HarnessTool[] {
             }
             // S3-7（安全 r3）：显式指定的项目必须真实存在，不能把模型给的字符串
             // 直接当命令目标（否则确认框显示 A、命令实际作用在界面上的 B）。
-            const mem = toolCtx.memory as unknown as HarnessMemoryState;
+            const mem = toolCtx.memory;
             const requestedProject = typeof args.project === 'string' ? args.project.trim() : '';
             const targetProject = resolveProject(args, mem, ctx);
             if (requestedProject && !targetProject) {

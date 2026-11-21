@@ -81,7 +81,7 @@ export function rareCharDensity(text: string): number {
     const counts = new Map<string, number>();
     for (const ch of chars) counts.set(ch, (counts.get(ch) ?? 0) + 1);
     let rare = 0;
-    for (const [ch, count] of counts) {
+    for (const [, count] of counts) {
         if (count <= 2) rare += count;
     }
     return rare / chars.length;

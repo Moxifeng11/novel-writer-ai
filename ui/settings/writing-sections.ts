@@ -40,7 +40,6 @@ export class CoWriteSection extends SettingsSection {
         });
 
         let localModelDropdown: DropdownComponent | null = null;
-        let cloudProviderDropdown: DropdownComponent | null = null;
         let cloudModelDropdown: DropdownComponent | null = null;
         let localModelSetting: Setting | null = null;
         let cloudProviderSetting: Setting | null = null;
@@ -129,7 +128,6 @@ export class CoWriteSection extends SettingsSection {
             .setName(t('settings.writing.cowriteProviderName'))
             .setDesc(t('settings.writing.cowriteProviderDesc'))
             .addDropdown(dropdown => {
-                cloudProviderDropdown = dropdown;
                 dropdown.addOption('', t('settings.writing.cowriteProviderNone'));
                 const allProviders = this.plugin.getAllProviders();
                 for (const p of allProviders) {
@@ -325,7 +323,7 @@ export class WritingSection extends SettingsSection {
                 .addOption('v2', t('settings.writing.bodyTemplateV2'))
                 .addOption('v3', t('settings.writing.bodyTemplateV3'))
                 .addOption('v4', t('settings.writing.bodyTemplateV4'))
-                .setValue((this.plugin.settings.activeBodyTemplate || 'auto') as string)
+                .setValue((this.plugin.settings.activeBodyTemplate || 'auto'))
                 .onChange(async (value) => {
                     this.plugin.settings.activeBodyTemplate = (value || 'auto') as 'auto' | 'v1' | 'v2' | 'v3' | 'v4';
                     await this.plugin.saveSettings();

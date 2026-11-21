@@ -290,7 +290,7 @@ export function extractRelationshipChanges(reportContent: string): RelationshipC
                 push({
                     charA: charA.trim(),
                     charB: charB.trim(),
-                    dimension: item.dimension as RelationDimension,
+                    dimension: item.dimension,
                     delta: item.delta,
                     reason: `${relType.trim()}: ${desc.trim()}`,
                     source: 'qualitative',
@@ -308,7 +308,7 @@ export function extractRelationshipChanges(reportContent: string): RelationshipC
             push({
                 charA: char.trim(),
                 charB: relChange[1].trim(),
-                dimension: relChange[2].toLowerCase() as RelationDimension,
+                dimension: relChange[2].toLowerCase(),
                 delta: Number.parseInt(relChange[3], 10),
                 reason: desc.trim(),
                 source: 'explicit',

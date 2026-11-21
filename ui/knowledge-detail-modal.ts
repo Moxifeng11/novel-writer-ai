@@ -275,27 +275,27 @@ export class KnowledgeDetailModal extends Modal {
         // 与其余维度统一走 loadMarkdownFrontmatter。
         this.styleData = await this.loadMarkdownFrontmatter(
             kbBookStyleFingerprintFile(this.bookInfo.name, this.baseDir)
-        ) as StyleData | null;
+        );
 
         this.rhythmData = await this.loadMarkdownFrontmatter(
             kbBookRhythmAnalysisFile(this.bookInfo.name, this.baseDir)
-        ) as RhythmData | null;
+        );
 
         this.techniqueData = await this.loadMarkdownFrontmatter(
             kbBookWritingTechniquesFile(this.bookInfo.name, this.baseDir)
-        ) as TechniqueData | null;
+        );
 
         this.structureData = await this.loadMarkdownFrontmatter(
             kbBookStructureBreakdownFile(this.bookInfo.name, this.baseDir)
-        ) as StructureData | null;
+        );
 
         this.characterData = await this.loadMarkdownFrontmatter(
             kbBookCharacterExtractionFile(this.bookInfo.name, this.baseDir)
-        ) as CharacterKnowledgeData | null;
+        );
 
         this.foreshadowData = await this.loadMarkdownFrontmatter(
             kbBookForeshadowDBFile(this.bookInfo.name, this.baseDir)
-        ) as ForeshadowData | null;
+        );
     }
 
     private async loadMarkdownFrontmatter(path: string): Promise<Record<string, unknown> | null> {
@@ -827,7 +827,7 @@ export class KnowledgeDetailModal extends Modal {
                 const item = top10Card.createDiv({
                     cls: 'nw-kd-rank-item'
                 });
-                const rank = item.createSpan({
+                item.createSpan({
                     text: `${i + 1}`,
                     cls: `nw-kd-rank-badge${i < 3 ? ' nw-kd-rank-badge--top' : ''}`,
                 });

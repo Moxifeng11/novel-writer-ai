@@ -137,7 +137,7 @@ async function requestJson(request: RequestUrlFn, options: Parameters<RequestUrl
 export class TrendResearchService {
     constructor(
         private readonly config: TrendResearchConfig,
-        private readonly request: RequestUrlFn = requestUrl as unknown as RequestUrlFn,
+        private readonly request: RequestUrlFn = requestUrl,
     ) {}
 
     /**

@@ -77,7 +77,7 @@ export function filterBooks(books: BookBasicInfo[], filter: BookFilterState): Bo
     } else if (filter.primaryGenre !== 'all') {
         result = result.filter(book =>
             book.primaryGenre === filter.primaryGenre
-            || Boolean(book.secondaryGenres?.includes(filter.primaryGenre as string)),
+            || Boolean(book.secondaryGenres?.includes(filter.primaryGenre)),
         );
         // 子题材只在「已选定具体题材」时有意义（原实现的嵌套语义，勿外提）
         if (filter.subGenre !== 'all') {

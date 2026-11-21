@@ -4,7 +4,7 @@ import { StepListComponent } from './step-list';
 import { createLogger } from '@/shared/logger';
 
 
-const log = createLogger('LoadingOverlay');
+createLogger('LoadingOverlay');
 /**
  * 加载遮罩组件选项
  */

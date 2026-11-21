@@ -204,8 +204,8 @@ export class PlotCanvasModal extends Modal {
                 const card = flow.createDiv({ cls: 'nw-plot-chapter', attr: { draggable: 'true' } });
                 card.style.setProperty('--nw-plot-accent', `var(${colorVar}, var(--interactive-accent))`);
 
-                const num = card.createDiv({ cls: 'nw-plot-chap-num', text: `#${chap.chapNum}` });
-                const conflict = card.createDiv({ cls: 'nw-plot-chap-conflict', text: chap.conflict || '（无冲突描述）' });
+                card.createDiv({ cls: 'nw-plot-chap-num', text: `#${chap.chapNum}` });
+                card.createDiv({ cls: 'nw-plot-chap-conflict', text: chap.conflict || '（无冲突描述）' });
                 if (chap.keySceneCount > 0) {
                     card.createDiv({ cls: 'nw-plot-chap-key', text: `⭐ ${chap.keySceneCount} 个名场面` });
                 }

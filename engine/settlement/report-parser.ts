@@ -197,7 +197,7 @@ export function parseFrontmatterFromText(content: string): Record<string, string
  */
 export function parseFmList(value: string | undefined): string[] {
     if (!value) return [];
-    if (Array.isArray(value)) return value as unknown as string[];
+    if (Array.isArray(value)) return value;
     if (typeof value === 'string') {
         if (value.startsWith('[') && value.endsWith(']')) {
             try {

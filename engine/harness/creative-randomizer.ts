@@ -44,21 +44,6 @@ const PREMISE_FACTORS: Record<'shared' | 'short' | 'script', string[][]> = {
     ],
 };
 
-const STRUCTURE_FACTORS: Record<'shared' | 'short' | 'script', string[][]> = {
-    shared: [
-        ['反转类型：身份揭示', '反转类型：信息错位', '反转类型：立场互换', '反转类型：目标重构', '反转类型：假败真胜'],
-        ['情绪曲线：先抑后扬', '情绪曲线：先扬后抑再扬', '情绪曲线：持续高压后释放', '情绪曲线：层层递进'],
-        ['升级方式：资源反杀', '升级方式：规则漏洞', '升级方式：盟友倒戈', '升级方式：公开对峙', '升级方式：证据链反转'],
-    ],
-    short: [
-        ['推进器：财产证据', '推进器：证人开口', '推进器：一次意外重逢', '推进器：亲属反水'],
-        ['兑现节奏：每 3 节小兑现', '兑现节奏：每 4 节大反转'],
-    ],
-    script: [
-        ['集节奏：每集 1 次羞辱 + 1 次反击', '集节奏：2 集压迫 + 1 集强兑现'],
-        ['场景策略：室内对峙为主', '场景策略：公共场合打脸', '场景策略：封闭空间反转'],
-    ],
-};
 
 const TEXTURE_FACTORS: string[][] = [
     ['对白风格：短句压迫', '对白风格：冷幽默', '对白风格：方言口语', '对白风格：克制潜台词'],
@@ -108,8 +93,8 @@ export class CreativeRandomizer {
         return {
             seed: this.random.uuid(),
             layers: {
-                premise: pickLayer('shared').concat(pickLayer(scope as 'short' | 'script' | 'shared')),
-                structure: pickLayer('shared').concat(pickLayer(scope as 'short' | 'script' | 'shared')),
+                premise: pickLayer('shared').concat(pickLayer(scope)),
+                structure: pickLayer('shared').concat(pickLayer(scope)),
                 texture: [this.random.pick(TEXTURE_FACTORS[0]), this.random.pick(TEXTURE_FACTORS[1]), this.random.pick(TEXTURE_FACTORS[2])],
                 differentiation: this.random.pickMany(DIFFERENTIATION_FACTORS[0], 2)
                     .concat(this.random.pick(DIFFERENTIATION_FACTORS[1]))

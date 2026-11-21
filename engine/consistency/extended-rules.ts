@@ -185,7 +185,7 @@ export function pairExtended(
         // 先扫原始 facts 文本（生产验证发现：违规句往往不构成断言，只看断言会漏报）
         const factHit = factTexts.find(fact => fact.chapterKey !== rule.chapterKey
             && fact.chapterNum !== null && rule.chapterNum !== null
-            && (fact.chapterNum as number) > (rule.chapterNum as number)
+            && (fact.chapterNum) > (rule.chapterNum)
             && fact.text.includes(rule.value)
             && !fact.text.includes(`不能${rule.value}`)
             && !fact.text.includes(`无法${rule.value}`));
@@ -209,7 +209,7 @@ export function pairExtended(
         }
         const violated = assertions.find(other => other.chapterKey !== rule.chapterKey
             && other.chapterNum !== null && rule.chapterNum !== null
-            && (other.chapterNum as number) > (rule.chapterNum as number)
+            && (other.chapterNum) > (rule.chapterNum)
             && other.quote.includes(rule.value)
             && !other.quote.includes(`不能${rule.value}`)
             && !other.quote.includes(`无法${rule.value}`));

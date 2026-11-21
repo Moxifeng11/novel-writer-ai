@@ -157,7 +157,7 @@ export class WorkerManager {
                 taskType,
                 input,
                 onProgress,
-                resolve: resolve as (value: R) => void,
+                resolve: resolve,
                 reject,
                 cancelled: false,
             };

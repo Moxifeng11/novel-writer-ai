@@ -275,7 +275,7 @@ export function persist<T extends State, PersistedState extends State = T>(
             version = 0,
             migrate,
             merge = (persistedState: PersistedState, currentState: T): T =>
-                ({ ...currentState, ...persistedState } as T),
+                ({ ...currentState, ...persistedState }),
             onRehydrateStorage,
         } = options;
 
@@ -309,7 +309,7 @@ export function persist<T extends State, PersistedState extends State = T>(
                         if (migrate && value.version !== undefined && value.version !== version) {
                             persistedState = await migrate(value.state, value.version);
                         } else {
-                            persistedState = value.state as PersistedState;
+                            persistedState = value.state;
                         }
 
                         const mergedState = merge(persistedState, store.getState());

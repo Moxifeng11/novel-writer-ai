@@ -339,7 +339,6 @@ export class WritingStatsService {
         if (fromFrontmatter !== null) return fromFrontmatter;
         // frontmatter 里没有（旧章/手工文件）：读一次正文兜底
         try {
-            const path = file.path;
             const content = await this.readFile(file);
             if (content === null) return null;
             return countBodyChars(content);

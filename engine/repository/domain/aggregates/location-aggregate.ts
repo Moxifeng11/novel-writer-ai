@@ -85,7 +85,7 @@ export class Location extends BaseEntity {
             ...this._props,
             ...this._locationProps,
             entityStatus: status,
-        } as LocationProps);
+        });
     }
 
     /**
@@ -98,7 +98,7 @@ export class Location extends BaseEntity {
             ...this._props,
             ...this._locationProps,
             name,
-        } as LocationProps);
+        });
     }
 
     /**

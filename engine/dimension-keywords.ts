@@ -419,7 +419,7 @@ export const NARRATIVE_TEMPORALITY_WORDS = {
 export function getKeywordsForDimension(dimension: string): Record<string, string[]> {
   switch (dimension) {
     case 'emotion':
-      return EMOTION_WORDS as unknown as Record<string, string[]>;
+      return EMOTION_WORDS;
     case 'hook':
       return HOOK_WORDS;
     case 'showTell':

@@ -703,13 +703,13 @@ export function entityFromFrontmatter(
 ): AnyEntityDomainModel {
     switch (category) {
         case 'character':
-            return characterFromFrontmatter(fm as CharacterFrontmatter, rawContent, filePath);
+            return characterFromFrontmatter(fm, rawContent, filePath);
         case 'faction':
-            return factionFromFrontmatter(fm as FactionFrontmatter, rawContent, filePath);
+            return factionFromFrontmatter(fm, rawContent, filePath);
         case 'location':
-            return locationFromFrontmatter(fm as LocationFrontmatter, rawContent, filePath);
+            return locationFromFrontmatter(fm, rawContent, filePath);
         case 'item':
-            return itemFromFrontmatter(fm as ItemFrontmatter, rawContent, filePath);
+            return itemFromFrontmatter(fm, rawContent, filePath);
     }
 }
 

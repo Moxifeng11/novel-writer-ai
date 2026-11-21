@@ -173,7 +173,7 @@ export class OperationConfirmModal extends Modal {
 		}
 
 		if (this.options.steps && this.options.steps.length > 0) {
-			const stepsLabel = body.createDiv({
+			body.createDiv({
 				text: '将执行以下步骤：',
 				attr: {
 					style: 'font-size: 13px; font-weight: 600; color: var(--text-normal); margin-bottom: 10px;',

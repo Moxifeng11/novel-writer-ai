@@ -283,7 +283,7 @@ export class TabController {
             });
         }
 
-        const spacer = tabBar.createDiv({ cls: 'novel-writer-fw-tab-spacer' });
+        tabBar.createDiv({ cls: 'novel-writer-fw-tab-spacer' });
 
         // 2026-10-28: 原右下角状态栏浮窗移除后，模型快速切换装配到 Tab 栏（四个主界面之一）。
         this.modelSwitcher = renderModelQuickSwitcher(tabBar, this.deps.plugin);

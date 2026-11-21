@@ -980,7 +980,7 @@ export class PromptBuilder {
             {
                 key: 'brief',
                 priority: 95,
-                text: hasBrief ? briefParts!.join('\n') : '',
+                text: hasBrief ? briefParts.join('\n') : '',
             },
             {
                 key: 'knowledgeInjection',

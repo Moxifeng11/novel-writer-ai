@@ -33,17 +33,6 @@ export interface QualityHistoryFile {
     entries: QualityHistoryRecord[];
 }
 
-const NUMERIC_FIELDS = [
-    'timestamp',
-    'wordCount',
-    'overallScore',
-    'languageScore',
-    'rhythmScore',
-    'characterScore',
-    'plotScore',
-    'atmosphereScore',
-    'structureScore',
-] as const;
 
 function toFiniteNumber(value: unknown): number {
     const n = typeof value === 'number' ? value : Number(value);

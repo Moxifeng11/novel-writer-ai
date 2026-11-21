@@ -95,7 +95,7 @@ function entitySummary(app: App, project: string): string {
         lines.push(`【${ENTITY_KIND_LABEL[kind]}】`);
         for (const file of files) {
             // listEntityFiles 返回 TFile；读取失败时跳过单个实体，不影响整块上下文
-            const cached = app.metadataCache.getFileCache(file)?.frontmatter as Record<string, unknown> | undefined;
+            const cached = app.metadataCache.getFileCache(file)?.frontmatter;
             const name = String(cached?.['姓名'] || cached?.['名称'] || file.basename).trim();
             const status = String(cached?.['entity_status'] || cached?.['当前状态'] || '').trim();
             const location = String(cached?.['当前位置'] || '').trim();

@@ -68,7 +68,7 @@ export class WelcomeModal extends Modal {
             attr: { style: 'color:rgba(255,255,255,0.85);font-size:14px;' }
         });
 
-        const subtitle = contentEl.createEl('p', {
+        contentEl.createEl('p', {
             text: this.options.isNewInstall
                 ? '欢迎使用全流程 AI 长篇小说创作系统！'
                 : '插件已更新到最新版本！',
@@ -150,7 +150,7 @@ export class WelcomeModal extends Modal {
             }
         });
         skipBtn.addEventListener('click', () => {
-            if ((checkbox as HTMLInputElement).checked) {
+            if ((checkbox).checked) {
                 this.options.onDontShowAgain?.();
             }
             this.close();

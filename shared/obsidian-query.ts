@@ -53,7 +53,7 @@ function projectMarkdownFiles(app: App, project: string, excludeFolders: string[
  * @returns frontmatter
  */
 function frontmatterOf(app: App, file: TFile): Record<string, unknown> {
-    return (app.metadataCache.getFileCache(file)?.frontmatter ?? {}) as Record<string, unknown>;
+    return (app.metadataCache.getFileCache(file)?.frontmatter ?? {});
 }
 
 /**

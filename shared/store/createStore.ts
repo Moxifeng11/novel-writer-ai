@@ -27,7 +27,7 @@ export function createStore<T extends State>(
     initialState: T | (() => T),
 ): StoreApi<T> {
     let state: T = typeof initialState === 'function'
-        ? (initialState as () => T)()
+        ? (initialState)()
         : initialState;
 
     const listeners = new Set<StateListener<T>>();
@@ -36,12 +36,12 @@ export function createStore<T extends State>(
 
     const setState: StoreApi<T>['setState'] = (partial, replace) => {
         const nextPartial = typeof partial === 'function'
-            ? (partial as (state: T) => Partial<T>)(state)
+            ? (partial)(state)
             : partial;
 
         const nextState: T = replace
             ? (nextPartial as T)
-            : ({ ...state, ...nextPartial } as T);
+            : ({ ...state, ...nextPartial });
 
         if (shallow(state, nextState)) return;
 
@@ -104,7 +104,7 @@ export function subscribeWithSelector<T extends State>(
         maybeOptions?: { equalityFn?: EqualityChecker<unknown>; fireImmediately?: boolean },
     ): (() => void) => {
         if (typeof selectorOrListener === 'function' && listenerOrOptions === undefined) {
-            return originalSubscribe(selectorOrListener as StateListener<T>);
+            return originalSubscribe(selectorOrListener);
         }
 
         const selector = selectorOrListener as StateSelector<T, unknown>;

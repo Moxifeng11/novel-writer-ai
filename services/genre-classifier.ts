@@ -413,14 +413,12 @@ export class GenreClassifier {
 
   private calculateCharacterScore(text: string, genre: GenreConfig): number {
     let score = 0;
-    let totalRoles = 0;
 
     for (const role of genre.roleTypes) {
       const regex = new RegExp(role.toLowerCase(), 'g');
       const matches = text.match(regex);
       if (matches) {
         score += matches.length;
-        totalRoles += matches.length;
       }
     }
 

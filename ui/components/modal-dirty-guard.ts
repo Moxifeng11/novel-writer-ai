@@ -97,7 +97,7 @@ export class ModalDirtyGuard {
                 this.confirming = false;
             });
         };
-        modal.close = guarded as typeof modal.close;
+        modal.close = guarded;
         return () => {
             modal.close = originalClose;
             this.closeIntercepted = false;

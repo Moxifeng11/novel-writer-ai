@@ -889,7 +889,7 @@ export class CoWritingView extends ItemView {
     // v7.0: 建议窗口移到编辑器区域右侧，作为独立一栏
     this.suggestionContainer = centerPanel.createDiv({ cls: "nw-cowrite-suggestions-panel" });
     const suggestionHeader = this.suggestionContainer.createDiv({ cls: "nw-cowrite-suggestions-header" });
-    const suggestionTitle = suggestionHeader.createDiv({ cls: "nw-cowrite-suggestions-title", text: t("cowrite.suggestionsTitle") });
+    suggestionHeader.createDiv({ cls: "nw-cowrite-suggestions-title", text: t("cowrite.suggestionsTitle") });
     this.suggestionStatusText = suggestionHeader.createDiv({ cls: "nw-cowrite-suggestions-status", text: t("cowrite.waitingForGen") });
     const suggestionCloseBtn = suggestionHeader.createEl("button", { text: "✕", cls: "nw-cowrite-suggestions-close" });
     suggestionCloseBtn.addEventListener("click", () => {
@@ -3969,7 +3969,7 @@ ${text}`;
         new Notice(t('cowrite.kbNotInitWait'));
         return;
       }
-      const books = this.facade.knowledgeBaseManager.getAllBooks().then(allBooks => {
+      this.facade.knowledgeBaseManager.getAllBooks().then(allBooks => {
         const incompleteBook = allBooks.find(b => b.breakdownStatus !== 'completed');
         if (incompleteBook) {
           new RefillModal(this.app, {

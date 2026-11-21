@@ -49,7 +49,7 @@ export function createPersistentWizardResults(
         }
     };
 
-    return new Proxy({} as Record<string, string>, {
+    return new Proxy({}, {
         get(_target, prop) {
             const data = current();
             if (prop === 'toJSON') return () => ({ ...data });

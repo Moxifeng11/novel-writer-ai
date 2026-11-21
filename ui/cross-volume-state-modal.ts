@@ -110,15 +110,6 @@ export class CrossVolumeStateModal extends Modal {
 
         const lastChap = chapNums[0] || 0;
 
-        let volumeContext = '';
-        for (let n = 1; n <= lastChap; n++) {
-            const cf = chapFiles.find(f => f.name.includes(`第${n}章`));
-            if (cf) {
-                const c = await this.app.vault.read(cf);
-                volumeContext += `\n[第${n}章]${c.slice(-200)}`;
-            }
-        }
-
         let allChars = '';
         for (const f of listFolderFiles<TFile>(this.app.vault, entityDir(project, 'characters'))) {
             if (f.name !== '人物模板.md') {

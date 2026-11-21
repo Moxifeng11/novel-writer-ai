@@ -44,7 +44,7 @@ export class MemoryPreview {
         this.container.empty();
         this.container.addClass('novel-writer-memory-preview');
 
-        const title = this.container.createDiv({
+        this.container.createDiv({
             text: '🧩 记忆碎片',
             cls: 'novel-writer-section-title',
         });

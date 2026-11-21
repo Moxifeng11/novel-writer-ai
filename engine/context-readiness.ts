@@ -12,14 +12,10 @@
 import type {
     GatheredContext,
     CharacterData,
-    ForeshadowData,
     TimelineEvent,
-    PreviousChapterData,
-    WritingRules,
     MarkdownContent,
 } from './context/context-types';
 import type { CharacterSoul } from './character-soul';
-import type { StoryLinkage } from './story-linkage';
 
 /**
  * 上下文输入条目结构定义。
@@ -136,7 +132,7 @@ export function assessContextReadiness(
             : '未加载（能力/物品/地理可能越界）',
     });
 
-    const prev = data?.previous_chapter as PreviousChapterData | null | undefined;
+    const prev = data?.previous_chapter;
     const prevChars = [prev?.ending, prev?.bodySummary, prev?.content, prev?.outline]
         .filter((v): v is string => typeof v === 'string')
         .reduce((sum, v) => sum + v.length, 0);
@@ -161,7 +157,7 @@ export function assessContextReadiness(
     items.push(countItem('factions', '势力', asArray(data?.factions).length, false));
     items.push(countItem('items', '物品功法', asArray(data?.items).length, false));
 
-    const foreshadows = data?.foreshadows as ForeshadowData | undefined;
+    const foreshadows = data?.foreshadows;
     const unrevealed = foreshadows?.unrevealed?.length ?? 0;
     const revealed = foreshadows?.revealed?.length ?? 0;
     items.push(countItem('foreshadows', '伏笔库', unrevealed + revealed, false,
@@ -170,7 +166,7 @@ export function assessContextReadiness(
     items.push(countItem('timeline', '时间线', asArray<TimelineEvent>(data?.timeline).length, false));
 
     // Rev 186：时间线/伏笔与设定库、全书规划的关联索引（可选，缺失不阻塞）
-    const linkage = data?.story_linkage as StoryLinkage | null | undefined;
+    const linkage = data?.story_linkage;
     const linkageActive = Boolean(linkage && (
         linkage.due.length + linkage.overdue.length + linkage.upcoming.length
         + linkage.timeline.length + linkage.settingHits.length + linkage.planningRefs.length > 0
@@ -191,7 +187,7 @@ export function assessContextReadiness(
     const styleChars = markdownChars(data?.writing_style);
     items.push(docItem('writing_style', '文笔风格', styleChars, false));
 
-    const rules = data?.writing_rules as WritingRules | null | undefined;
+    const rules = data?.writing_rules;
     const ruleCount = rules?.mandatory?.length ?? 0;
     items.push(countItem('writing_rules', '写作规则', ruleCount, false,
         ruleCount > 0 ? `${ruleCount} 条硬规则` : '未加载'));

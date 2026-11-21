@@ -1502,8 +1502,6 @@ export class ApiSection extends SettingsSection {
                 ?? thinkingLevelFromMode(this.plugin.settings.thinkingMode);
             const initialIntensity = this.plugin.settings.thinkingIntensity
                 ?? thinkingIntensityFromMode(this.plugin.settings.thinkingMode);
-            let currentLevel: ThinkingLevel = initialLevel;
-
             const levelRow = globalCard.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-fwr-wrap nw-u-margintop-8px' });
             const levelButtons = new Map<ThinkingLevel, HTMLButtonElement>();
             const levelDesc = globalCard.createDiv({ cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-margintop-6px' });
@@ -1515,7 +1513,6 @@ export class ApiSection extends SettingsSection {
             const percentEl = sliderRow.createSpan({ cls: 'nw-u-fs-12px nw-u-c-text-normal' });
 
             const refreshLevelUi = (level: ThinkingLevel, intensity: number): void => {
-                currentLevel = level;
                 for (const [key, button] of levelButtons) {
                     const active = key === level;
                     button.classList.toggle('nw-btn-primary', active);

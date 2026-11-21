@@ -187,7 +187,7 @@ export class ContextManager {
 
         if ('plugin' in optionsOrPlugin || 'capabilities' in optionsOrPlugin) {
             // 新式构造：ContextManagerOptions
-            const options = optionsOrPlugin as ContextManagerOptions;
+            const options = optionsOrPlugin;
             this.notifier = options.notifier || NOOP_NOTIFIER;
             if (options.plugin) {
                 this.plugin = options.plugin;
@@ -975,7 +975,7 @@ export class ContextManager {
 
                 if (!fm || Object.keys(fm).length === 0) {
                     const content = await this.app.vault.cachedRead(file);
-                    fm = parseFm(content) as Record<string, unknown>;
+                    fm = parseFm(content);
                 }
 
                 if (!fm || !Object.keys(fm).length) continue;
@@ -1055,7 +1055,7 @@ export class ContextManager {
                 if (cache) {
                     const cached = cache.getEntry(project, file.path);
                     if (cached && cached.mtime === mtime && mtime > 0) {
-                        data = cached.frontmatter as CharacterData;
+                        data = cached.frontmatter;
                     }
                 }
 
@@ -1065,11 +1065,11 @@ export class ContextManager {
 
                 if (!data || Object.keys(data).length === 0) {
                     const content = await this.app.vault.cachedRead(file);
-                    data = parseFm(content) as CharacterData;
+                    data = parseFm(content);
                 }
 
                 if (cache && mtime > 0) {
-                    cache.updateEntry(project, file.path, mtime, data as Record<string, unknown>, 'character');
+                    cache.updateEntry(project, file.path, mtime, data, 'character');
                 }
 
                 data.fileName = file.name;
@@ -1128,7 +1128,7 @@ export class ContextManager {
         let totalFiles = 0;
         try {
             const app = this.getApp();
-            const fs = this.getFS();
+            this.getFS();
             const vaultMeta = this.getVaultMeta();
             const memDir = pjMemoryShardsDir(project);
 
@@ -1140,7 +1140,7 @@ export class ContextManager {
                 if (child instanceof TFile && child.name.endsWith('_记忆碎片.md')) {
                     totalFiles++;
                     try {
-                        const content = await this.app.vault.cachedRead(child);
+                        await this.app.vault.cachedRead(child);
                         const charName = child.name.replace(/_记忆碎片\.md$/, '');
                         const { loadCharacterMemories } = await import('./memory-trigger');
                         const shards = await loadCharacterMemories(app, project, charName);
@@ -2287,7 +2287,7 @@ export class ContextManager {
             tasks.push(this.readRawMd(getSettingLibPath(project)).then(v => settingLib = v));
         }
         if (opts.includeCharacters) {
-            tasks.push(this.gatherCharacterState(project).then(r => { characters = (r.character_state || []) as CharacterData[]; }));
+            tasks.push(this.gatherCharacterState(project).then(r => { characters = (r.character_state || []); }));
         }
         if (opts.includeEntities) {
             tasks.push(this.gatherEntityRecords(project, 'locations').then(r => locations = r));
@@ -2295,7 +2295,7 @@ export class ContextManager {
             tasks.push(this.gatherEntityRecords(project, 'items').then(r => items = r));
         }
         if (opts.includeTimeline) {
-            tasks.push(this.gatherTimeline(project).then(r => { timeline = (r.timeline || []) as TimelineEvent[]; }));
+            tasks.push(this.gatherTimeline(project).then(r => { timeline = (r.timeline || []); }));
         }
 
         // 同人流程：加载同人时间线与规则

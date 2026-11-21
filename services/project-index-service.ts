@@ -169,7 +169,7 @@ export class ProjectIndexService {
     private readFields(file: TFile): FileSummary['fields'] {
         try {
             const cache = this.app.metadataCache.getFileCache(file);
-            const fields = extractIndexFields(cache?.frontmatter as Record<string, unknown> | undefined, file.path);
+            const fields = extractIndexFields(cache?.frontmatter, file.path);
             const resolved = this.app.metadataCache.resolvedLinks?.[file.path] ?? {};
             const links = Object.keys(resolved).filter(Boolean);
             return { ...fields, ...(links.length > 0 ? { links } : {}) };

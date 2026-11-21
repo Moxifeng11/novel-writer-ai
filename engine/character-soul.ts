@@ -45,7 +45,7 @@ function parseCharacterCore(content: string): Partial<CharacterSoul> {
 
     // 提取 YAML frontmatter 区块
     const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
-    if (!fmMatch) return soul as Partial<CharacterSoul>;
+    if (!fmMatch) return soul;
 
     const fm = fmMatch[1];
 
@@ -68,7 +68,7 @@ function parseCharacterCore(content: string): Partial<CharacterSoul> {
         }
     }
 
-    return soul as Partial<CharacterSoul>;
+    return soul;
 }
 
 /** 灵魂字段的占位值（模板骨架常见写法，不能算「已提取」） */

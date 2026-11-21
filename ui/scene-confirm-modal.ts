@@ -154,15 +154,15 @@ export async function openSceneConfirmWizard(opts: SceneConfirmWizardOptions): P
             worldview: data.world_view?.raw ?? '',
             characters: ContextManager.formatCharacters(data.character_state ?? []),
             locations: ContextManager.formatEntities(
-                (data.locations ?? []) as unknown as Record<string, string>[], 'location'),
+                data.locations ?? [], 'location'),
             factions: ContextManager.formatEntities(
-                (data.factions ?? []) as unknown as Record<string, string>[], 'faction'),
+                data.factions ?? [], 'faction'),
             items: ContextManager.formatEntities(
-                (data.items ?? []) as unknown as Record<string, string>[], 'item'),
+                data.items ?? [], 'item'),
             powerSystem: data.setting_lib?.raw ?? '',
             // 主角名只从人物列表解析（frontmatter「身份」字段），
             // 不要再读 `_workbenchState`：该字段无写入方，只会退化成「主角」占位
-            protagonistName: findProtagonistName(data.character_state as Array<Record<string, unknown>>)
+            protagonistName: findProtagonistName(data.character_state)
                 || '主角',
             emotionPlan: data.emotion_plan?.raw ?? '',
         });

@@ -2095,10 +2095,10 @@ export class StyleFingerprintLibrary {
                 id: v2.id,
                 name: v2.name,
                 source: v2.source,
-                scope: (v2.scope as StyleFingerprint['scope']) ?? scope,
+                scope: (v2.scope) ?? scope,
                 enabled: v2.enabled,
                 tags: v2.tags ?? [],
-                stats: v2.stats as StyleFingerprintStats,
+                stats: v2.stats,
                 features: v1Features,
                 samples: v2.samples ?? [],
                 extractedAt: v2.extractedAt,
@@ -2117,7 +2117,7 @@ export class StyleFingerprintLibrary {
             ...v1,
             tags: hasTags ? v1.tags! : [],
             scope: hasScope ? (v1.scope as StyleFingerprint['scope']) : scope,
-        } as StyleFingerprint;
+        };
     }
 
     /**
@@ -2743,7 +2743,7 @@ export class StyleFingerprintLibrary {
 
         for (const fp of v2List) {
             current++;
-            const scope = (fp.scope ?? 'global') as 'template' | 'global' | 'project';
+            const scope = (fp.scope ?? 'global');
             onProgress?.(current, v2List.length, fp.id, scope);
             try {
                 const result = await this.buildV2VectorsForFingerprint(fp.id, scope);
@@ -2761,7 +2761,7 @@ export class StyleFingerprintLibrary {
     private buildQueryFromFeatures(features: StyleFingerprintFeatures): string {
         const parts: string[] = [];
         for (const dim of STYLE_DIMENSIONS) {
-            const desc = features[dim as keyof StyleFingerprintFeatures];
+            const desc = features[dim];
             if (desc) {
                 parts.push(desc);
             }
@@ -2814,13 +2814,13 @@ export class StyleFingerprintLibrary {
         for (const dim of STYLE_DIMENSIONS) {
             const parts: string[] = [];
             fps.forEach(fp => {
-                const desc = fp.features[dim as keyof StyleFingerprintFeatures];
+                const desc = fp.features[dim];
                 const w = (weights[fp.id] ?? 1) / totalWeight;
                 if (desc && w > 0.1) {
                     parts.push(desc);
                 }
             });
-            blended[dim as keyof StyleFingerprintFeatures] = parts.join('；');
+            blended[dim] = parts.join('；');
         }
 
         return blended as StyleFingerprintFeatures;
@@ -2871,7 +2871,7 @@ export class StyleFingerprintLibrary {
 
         const lines: string[] = ['【融合风格指南】'];
         for (const dim of STYLE_DIMENSIONS) {
-            const desc = blendedFeatures[dim as keyof StyleFingerprintFeatures];
+            const desc = blendedFeatures[dim];
             if (desc) {
                 lines.push(`${dimLabels[dim]}：${desc}`);
             }

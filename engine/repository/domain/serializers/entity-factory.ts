@@ -396,7 +396,7 @@ export class EntityFactory {
         const status = ChapterStatus.from(typeof statusRaw === 'string' ? statusRaw : undefined);
         const writingModeRaw = fm['writing_mode'] ?? fm['写作模式'];
         const writingMode = typeof writingModeRaw === 'string' ? (writingModeRaw as WritingMode) : undefined;
-        const wordCount = WordCount.create(
+        WordCount.create(
             parseInt(String(fm['word_count'] || fm['字数'] || '0'), 10),
             parseInt(String(fm['total_words'] || '0'), 10),
             0,
@@ -492,7 +492,7 @@ export class EntityFactory {
      */
     static projectFromMarkdown(content: string, filePath: string = ''): Project {
         const fm = parseFrontmatter(content);
-        const body = content.replace(/^---\n[\s\S]*?\n---\n?/, '').trim();
+        content.replace(/^---\n[\s\S]*?\n---\n?/, '').trim();
 
         const name = fm['name'] || fm['项目名'] || '未命名项目';
         const id = filePath ? filePath.replace(/\/\.project$/, '').split(/[\\/]/).pop() || name : name;

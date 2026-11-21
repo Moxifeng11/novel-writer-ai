@@ -403,7 +403,7 @@ export async function runStreamSuggestion(host: SuggestionFlowHost, directionInd
             if (signal.aborted) return;
 
             if (result.done) {
-                finalSuggestion = result.value as SuggestionRecord | null;
+                finalSuggestion = result.value;
                 break;
             }
 

@@ -50,7 +50,8 @@
 | 10 | 删除语义统一：`prefer-file-manager-trash-file` 25 → 0。新增 `shared/file-removal.ts`（`trashVaultEntry` 走 `FileManager.trashFile` 尊重用户删除偏好；`hardDeleteVaultPath` 只给「显式永久删除」与内部临时文件）。**行为变化**：模板/封面/实体/版本快照/备份等删除改为进回收站（可恢复），事务日志与结算日志仍硬删不进回收站 | ✅ 本批 | 816 → 790 |
 | 10b | `sentence-case` 51：**判定为误报，不追**。规则把中文界面里的品牌名/缩写当英文句子大小写处理（`MCP`→`mcp`、`PNG`→`png`、`DeepSeek`→`deepseek`、`HTTP://`→`http://`、`SK-...` 占位符、`#4Caf50` 色值），照改会降低界面质量。已逐条核对，保留在基线里 | ⏸ 不追（文档化） | 51 保留 |
 | 11 | `no-deprecated` 232 → 0：**不做数据模型迁移**（V1/V2 是并存投影，见 DEVELOPMENT 第 11 批口径）。7 处 `setWarning` 抽 `ui/components/button-compat.ts` 兼容层；`StyleFingerprint` / `StyleFingerprintFeatures` / V1 迁移类型 / 旧提示词常量 / `pj*Template` 的标注由 `@deprecated` 改 `@legacy` 并写明保留理由。全量 V2 规范模型列为 backlog（前置：提示词与 UI 一起改的产品决策） | ✅ 3362da19 | 790 → 558 |
-| 不追 | `no-unnecessary-type-assertion` 357 | 规则在本项目类型判定下不可靠，逐条人工成本高；保留为 review 信号 | — |
+| 12 | `no-unused-vars` 149 → 0（`--fix` 先扫掉可安全自动修的断言 117 文件，再人工清未使用导入 / 死常量 / 死累加器；`co-writer-engine` 的 `structuredConstraints` 不是删而是接进 `shared`，修掉「算了不用」的缺陷）+ `no-empty` 1 → 0。**保留**：`no-unnecessary-type-assertion` 56（`--fix` 判不安全，规则不可靠不追）、`sentence-case` 51（误报）、`file-system-port` 4 处假对象、`http-transport` 1 处桌面端 `fetch`、logger 3 处 `console`（唯一出口）、`hardcoded-config-path` 2 处兜底值 | ✅ 本批 | 558 → 120 |
+| 不追 | `no-unnecessary-type-assertion` 56（`--fix` 判不安全的部分） | 规则在本项目类型判定下不可靠，逐条人工成本高；保留为 review 信号 | — |
 
 ## 五、验收与停止条件
 
@@ -74,3 +75,4 @@
 | 2026-11-21 | 8b | 834 → 816（localStorage → App 存储，minAppVersion 提到 1.8.7） | 本批 |
 | 2026-11-21 | 10 | 816 → 790（删除统一走 FileManager.trashFile） | 本批 |
 | 2026-11-21 | 11 | 790 → 558（`no-deprecated` 232 → 0；弃用标注改 `@legacy` + `setWarning` 兼容层） | 3362da19 |
+| 2026-11-21 | 12 | 558 → 120（`no-unused-vars` 清零；剩 56 断言 + 51 误报 + 13 处有意保留） | 本批 |

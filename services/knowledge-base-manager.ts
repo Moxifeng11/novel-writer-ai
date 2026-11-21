@@ -383,7 +383,7 @@ export class KnowledgeBaseManager {
 
                     const content = await fs.read(basicInfoPath);
                     const fm = this.parseFrontmatter(content);
-                    const bookData = fm as Record<string, unknown>;
+                    const bookData = fm;
 
                     // v6.3 加固：仅接纳带有效「书名」的条目。历史/损坏的基本信息可能缺少 name
                     // （例如旧版本遗留的 `写作知识库/undefined/基本信息.md`），一旦被接纳，
@@ -629,7 +629,6 @@ export class KnowledgeBaseManager {
             }
             return { removedFiles: removed, removedBooks: 0, bytes: freed };
         }
-        let folderScanOk = true;
         const folderBookIds = new Set<string>();
         try {
             const folders = await fsPort.listFolders(kbKnowledgeBaseDir(this.baseDir));
@@ -640,7 +639,6 @@ export class KnowledgeBaseManager {
                 if (book) folderBookIds.add(book.id);
             }
         } catch (e) {
-            folderScanOk = false;
             log.warn('[KnowledgeBaseManager] 扫描书籍目录失败，本次跳过孤儿清理:', e);
             return { removedFiles: 0, removedBooks: 0, bytes: 0 };
         }
@@ -1353,7 +1351,6 @@ export class KnowledgeBaseManager {
 
         const scores: Record<string, number> = {};
         let maxScore = 0;
-        let totalMatches = 0;
 
         for (const [genreId, keywords] of Object.entries(genreKeywords)) {
             let score = 0;
@@ -1365,7 +1362,6 @@ export class KnowledgeBaseManager {
                 }
             }
             scores[genreId] = score;
-            totalMatches += score;
             if (score > maxScore) {
                 maxScore = score;
             }

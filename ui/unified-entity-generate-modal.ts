@@ -178,7 +178,7 @@ export class UnifiedEntityGenerateModal extends Modal {
             { key: 'confirm', label: '完成保存', num: 5 },
         ];
 
-        const stepKeys = new Set(steps.map((s) => s.key));
+        new Set(steps.map((s) => s.key));
         const allSteps = steps;
         let currentIdx = allSteps.findIndex((s) => s.key === this._currentStep);
         if (currentIdx < 0) currentIdx = 0;
@@ -336,7 +336,7 @@ export class UnifiedEntityGenerateModal extends Modal {
             cls: 'nw-ue-muted',
         });
 
-        const nameLabel = container.createEl('label', {
+        container.createEl('label', {
             text: `${config.label}名称（逗号分隔，留空由 AI 自动命名）：`,
             cls: 'nw-ue-label',
         });
@@ -351,7 +351,7 @@ export class UnifiedEntityGenerateModal extends Modal {
             this._entityNames = nameInput.value;
         };
 
-        const descLabel = container.createEl('label', {
+        container.createEl('label', {
             text: '✍️ 提示词（描述你想要的特点，AI 将据此生成）：',
             cls: 'nw-ue-label',
         });

@@ -153,12 +153,12 @@ export class ChangelogModal extends Modal {
             });
         }
 
-        const title = header.createSpan({
+        header.createSpan({
             text: entry.title,
             attr: { style: 'font-size:13px;color:var(--text-muted);flex:1;text-align:right;margin-right:12px;' }
         });
 
-        const arrow = header.createSpan({
+        header.createSpan({
             text: isExpanded ? '▼' : '▶',
             attr: { style: 'font-size:10px;color:var(--text-muted);' }
         });

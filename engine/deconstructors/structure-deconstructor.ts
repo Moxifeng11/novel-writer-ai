@@ -609,9 +609,6 @@ export class StructureDeconstructor {
 
         chapterQCCHScores.sort((a, b) => a.position - b.position);
 
-        const qiThreshold = 0.3;
-        const chengThreshold = 0.3;
-        const zhuanThreshold = 0.35;
 
         let qiEnd = baseResult.qcchSegments[0].endPosition;
         let chengEnd = baseResult.qcchSegments[1].endPosition;
@@ -846,7 +843,6 @@ export class StructureDeconstructor {
         const units: RhythmUnit[] = [];
         let match;
         let index = 0;
-        let lastEndIndex = 0;
 
         const matches: { startIndex: number; endIndex: number; title: string }[] = [];
         while ((match = pattern.exec(text)) !== null) {
@@ -907,8 +903,6 @@ export class StructureDeconstructor {
         const firstQuarterAvg = rhythmValues.slice(0, Math.floor(rhythmValues.length * 0.25))
             .reduce((a, b) => a + b, 0) / Math.floor(rhythmValues.length * 0.25);
         const midAvg = rhythmValues.slice(Math.floor(rhythmValues.length * 0.25), Math.floor(rhythmValues.length * 0.5))
-            .reduce((a, b) => a + b, 0) / Math.floor(rhythmValues.length * 0.25);
-        const thirdQuarterAvg = rhythmValues.slice(Math.floor(rhythmValues.length * 0.5), Math.floor(rhythmValues.length * 0.75))
             .reduce((a, b) => a + b, 0) / Math.floor(rhythmValues.length * 0.25);
 
         const peakThreshold = mean + std * 0.5;

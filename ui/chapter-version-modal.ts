@@ -205,11 +205,11 @@ export class ChapterVersionModal extends Modal {
             });
 
             const mainInfo = item.createDiv({ cls: 'nw-version-item-main' });
-            const versionBadge = mainInfo.createSpan({
+            mainInfo.createSpan({
                 cls: 'nw-version-badge',
                 text: `v${version.version}`,
             });
-            const typeBadge = mainInfo.createSpan({
+            mainInfo.createSpan({
                 cls: `nw-version-type-badge type-${version.type}`,
                 text: VERSION_TYPE_LABELS[version.type] || version.type,
             });

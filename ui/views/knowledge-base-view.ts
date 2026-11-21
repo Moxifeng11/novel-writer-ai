@@ -962,7 +962,7 @@ export class KnowledgeBaseView extends ItemView {
             });
             tab.textContent = ch.name;
             tab.addEventListener('click', () => {
-                this.filter.channel = ch.id as ConfigCategoryKey | 'all';
+                this.filter.channel = ch.id;
                 this.filter.primaryGenre = 'all';
                 this.filter.subGenre = 'all';
                 this.renderRightPanel();
@@ -1633,7 +1633,7 @@ export class KnowledgeBaseView extends ItemView {
         await this.loadBookDetailData(book.id);
         if (this.loadToken !== myToken || this.viewClosed) return;
         if (this.detailLoadError) {
-            this.renderDetailLoadError(tabContent as HTMLElement);
+            this.renderDetailLoadError(tabContent);
             return;
         }
         this.renderBookDetail();
@@ -1794,37 +1794,37 @@ export class KnowledgeBaseView extends ItemView {
         if (stale()) return;
         this.rhythmData = await this.loadMarkdownFrontmatter(
             kbBookRhythmAnalysisFile(book.name, baseDir)
-        ) as RhythmData | null;
+        );
 
         if (stale()) return;
         this.techniqueData = await this.loadMarkdownFrontmatter(
             kbBookWritingTechniquesFile(book.name, baseDir)
-        ) as TechniqueData | null;
+        );
 
         if (stale()) return;
         this.structureData = await this.loadMarkdownFrontmatter(
             kbBookStructureBreakdownFile(book.name, baseDir)
-        ) as StructureData | null;
+        );
 
         if (stale()) return;
         this.characterData = await this.loadMarkdownFrontmatter(
             kbBookCharacterExtractionFile(book.name, baseDir)
-        ) as CharacterKnowledgeData | null;
+        );
 
         if (stale()) return;
         this.foreshadowData = await this.loadMarkdownFrontmatter(
             kbBookForeshadowDBFile(book.name, baseDir)
-        ) as ForeshadowData | null;
+        );
 
         if (stale()) return;
         this.commercialData = await this.loadMarkdownFrontmatter(
             kbBookCommercialAnalysisFile(book.name, baseDir)
-        ) as CommercialData | null;
+        );
 
         if (stale()) return;
         this.readabilityData = await this.loadMarkdownFrontmatter(
             kbBookReadabilityAnalysisFile(book.name, baseDir)
-        ) as ReadabilityData | null;
+        );
     }
 
     private async loadMarkdownFrontmatter(path: string): Promise<Record<string, unknown> | null> {
@@ -2527,7 +2527,7 @@ export class KnowledgeBaseView extends ItemView {
             }
             infoRow.createSpan({ text: t('knowledgebase.tasks.dimensions', { list: formatTaskDimensions(task.dimensions, bookDimensionLabels()) }) });
 
-            const taskProgress = this.deconstructionScheduler?.getAllTasks().find(t => t.id === task.id);
+            this.deconstructionScheduler?.getAllTasks().find(t => t.id === task.id);
             const emitter = task.id ? this.deconstructionScheduler?.getTaskEmitter(task.id) : undefined;
             const emitterState = emitter?.getState();
 
@@ -2722,7 +2722,7 @@ export class KnowledgeBaseView extends ItemView {
     private async handleBatchCancel(tasks: BreakdownTask[]): Promise<void> {
         if (!this.deconstructionScheduler || tasks.length === 0) return;
 
-        const taskNames = tasks.map(t => `• 《${t.bookName}》`).join('\n');
+        tasks.map(t => `• 《${t.bookName}》`).join('\n');
         const confirmed = await OperationConfirmModal.confirm(this.app, {
             title: t('knowledgebase.tasks.batchCancelModalTitle'),
             description: t('knowledgebase.tasks.batchCancelDesc', { count: tasks.length }),

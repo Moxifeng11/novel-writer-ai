@@ -726,7 +726,7 @@ export class ProjectSelectorController {
                         : plan.stageId === 'outline'
                             ? 'outline'
                             : (mode === 'short' ? 'storyCore' : 'bible');
-                new ModeDocumentModal(this.app, this.plugin, mode === 'long' ? 'short' : mode, kind as 'storyCore' | 'bible' | 'outline' | 'storyboard', project).open();
+                new ModeDocumentModal(this.app, this.plugin, mode === 'long' ? 'short' : mode, kind, project).open();
                 return;
             }
             case 'create-units':

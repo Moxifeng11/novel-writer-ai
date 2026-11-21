@@ -319,7 +319,7 @@ export class ChapterStateManager {
                         'fix', STEP_KEYS.QUALITY_CONTROL, STEP_KEYS.ANALYSIS_REPORT
                     ];
                     for (const fileTypeKey of dependsOnBody) {
-                        const chineseType = CHAPTER_FILE_TYPES[fileTypeKey as keyof typeof CHAPTER_FILE_TYPES];
+                        const chineseType = CHAPTER_FILE_TYPES[fileTypeKey];
                         const reviewFile = getChapterFile(chapFolder, chineseType);
                         if (!reviewFile) continue;
                         const reviewMtime = reviewFile.stat?.mtime || 0;

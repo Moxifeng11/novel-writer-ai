@@ -233,7 +233,7 @@ ${userInput}
                 actions: [{ type: 'modify', target: '全文', content: userInput, confidence: 0.5 }],
                 affectsBody: true,
                 warnings: [t('fullwriter.iv.formatAnomaly')]
-            } as InterventionReport;
+            };
         }
     }
 
@@ -249,7 +249,7 @@ ${userInput}
             attr: { style: 'margin: 0 0 8px 0; font-size: 0.85em; color: var(--text-accent);' }
         });
 
-        const summary = this.reportEl.createEl('p', {
+        this.reportEl.createEl('p', {
             text: report.summary || t('fullwriter.iv.defaultSummary'),
             attr: { style: 'color: var(--text-accent); font-weight: 600; font-size: 0.85em; margin: 0 0 8px 0;' }
         });

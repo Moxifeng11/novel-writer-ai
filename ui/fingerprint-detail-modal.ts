@@ -219,7 +219,7 @@ export class FingerprintDetailModal extends Modal {
                 return typeof obj.commonWordRatio === 'number' ? obj.commonWordRatio : undefined;
             case 'rhetoric':
                 return typeof obj.metaphorDensity === 'number'
-                    ? Math.min(1, (obj.metaphorDensity as number) / 10)
+                    ? Math.min(1, (obj.metaphorDensity) / 10)
                     : undefined;
             case 'perspective':
                 return typeof obj.personDistribution === 'object' && obj.personDistribution !== null
@@ -231,11 +231,11 @@ export class FingerprintDetailModal extends Modal {
             }
             case 'tension':
                 return typeof obj.suspenseDensity === 'number'
-                    ? Math.min(1, (obj.suspenseDensity as number) / 10)
+                    ? Math.min(1, (obj.suspenseDensity) / 10)
                     : undefined;
             case 'infoDensity':
                 return typeof obj.infoDensity === 'number'
-                    ? Math.min(1, (obj.infoDensity as number) / 10)
+                    ? Math.min(1, (obj.infoDensity) / 10)
                     : undefined;
             case 'dialogue':
                 return typeof obj.dialogueRatio === 'number' ? obj.dialogueRatio : undefined;
@@ -245,13 +245,13 @@ export class FingerprintDetailModal extends Modal {
                     : undefined;
             case 'narration':
                 return typeof obj.narrationSpeed === 'number'
-                    ? Math.min(1, (obj.narrationSpeed as number) / 10)
+                    ? Math.min(1, (obj.narrationSpeed) / 10)
                     : undefined;
             case 'languageTexture':
                 return typeof obj.writtenLevel === 'number' ? obj.writtenLevel : undefined;
             case 'sentencePattern':
                 return typeof obj.parallelismDensity === 'number'
-                    ? Math.min(1, (obj.parallelismDensity as number) / 10)
+                    ? Math.min(1, (obj.parallelismDensity) / 10)
                     : undefined;
             default:
                 return undefined;
@@ -479,7 +479,7 @@ export class FingerprintDetailModal extends Modal {
             const sampleEl = samplesList.createDiv({
                 cls: 'nw-fp-sample'
             });
-            const idxLabel = sampleEl.createDiv({
+            sampleEl.createDiv({
                 text: t('fingerprint.detail.sampleLabel', { n: idx + 1 }),
                 cls: 'nw-fp-sample-label'
             });

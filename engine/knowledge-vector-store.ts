@@ -589,7 +589,6 @@ export class KnowledgeVectorStore {
             } catch (e) {
                 // DSH-20261112-14 审计 #A5：删除失败必须让调用方知道（否则清理谎报成功，
                 // 重启后幽灵向量回归）。文件不存在按成功处理。
-                const msg = e instanceof Error ? e.message : String(e);
                 log.warn(`[KnowledgeVectorStore] 删除向量文件失败: ${filePath}`, e);
                 const exists = await (async () => { try { return await fs.exists(filePath); } catch { return true; } })();
                 return !exists;

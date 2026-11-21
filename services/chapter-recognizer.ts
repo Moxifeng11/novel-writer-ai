@@ -40,11 +40,6 @@ const CHAPTER_PATTERNS = [
     /^第[一二三四五六七八九十百千万零〇两\d０-９]+卷/,
 ];
 
-const MARKDOWN_HEADING_PATTERNS = [
-    /^#{1,3}\s+.+/,
-    /^.+\n=+\s*$/,
-    /^.+\n-+\s*$/,
-];
 
 const AUTHOR_PATTERNS = [
     /^作者[:：]\s*(.+)$/m,

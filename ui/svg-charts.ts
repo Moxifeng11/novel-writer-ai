@@ -1370,7 +1370,6 @@ export function timelineChart(events: TimelineEvent[], options: TimelineChartOpt
 	const height = options.height || 140;
 	const title = options.title;
 	const showLabels = options.showLabels !== false;
-	const _orientation = options.orientation || 'horizontal';
 
 	if (events.length === 0) {
 		return `${chartEmptyStateHtml(t('emptyState.noEvents'))}`;

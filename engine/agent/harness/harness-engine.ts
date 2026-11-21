@@ -506,7 +506,7 @@ export class AgentHarnessEngine {
         if (picked && !this.options.ctx.projects.includes(picked)) {
             delete restoredSlots.pickedProject;
         }
-        this.memory.slots = restoredSlots as typeof this.memory.slots;
+        this.memory.slots = restoredSlots;
         this.plan.steps = snapshot.plan.map(step => ({ ...step }));
         this.restored = true;
         this.done = false;

@@ -231,7 +231,7 @@ export function normalizeRegistry(raw: unknown): IdRegistry {
             .filter((entry): entry is IdRegistryEntry => Boolean(entry && typeof entry === 'object' && typeof entry.id === 'string'))
             .map(entry => ({
                 id: entry.id,
-                type: (entry.type ?? 'other') as EntityType,
+                type: (entry.type ?? 'other'),
                 path: String(entry.path ?? ''),
                 createdAt: Number(entry.createdAt) || 0,
                 ...(entry.retired ? { retired: true } : {}),

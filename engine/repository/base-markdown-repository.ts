@@ -263,7 +263,7 @@ export abstract class BaseMarkdownRepository<T, TId = string>
      */
     async saveAll(entities: T[]): Promise<BulkResult<T>> {
         const success: T[] = [];
-        const failures: BulkFailure<T>[] = [];
+        const failures: BulkFailure[] = [];
 
         for (let i = 0; i < entities.length; i++) {
             const entity = entities[i];
@@ -295,7 +295,7 @@ export abstract class BaseMarkdownRepository<T, TId = string>
      */
     async deleteAll(ids: TId[]): Promise<BulkResult<TId>> {
         const success: TId[] = [];
-        const failures: BulkFailure<TId>[] = [];
+        const failures: BulkFailure[] = [];
 
         for (let i = 0; i < ids.length; i++) {
             const id = ids[i];

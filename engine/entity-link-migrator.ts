@@ -103,7 +103,7 @@ export function planEntityLinkChanges(
   * @returns EntityLinkMigrationPlan 实例
  */
 export function scanEntityLinkMigration(app: App, project: string): EntityLinkMigrationPlan {
-    const vaultMeta = new ObsidianVaultMeta(app);
+    new ObsidianVaultMeta(app);
     const plan: EntityLinkMigrationPlan = { scanned: 0, changes: [] };
 
     for (const { category, dir } of CATEGORY_DIRS) {
@@ -111,7 +111,7 @@ export function scanEntityLinkMigration(app: App, project: string): EntityLinkMi
         for (const file of app.vault.getFiles()) {
             if (!file.path.startsWith(`${dirPath}/`) || !file.path.endsWith('.md')) continue;
             plan.scanned++;
-            const fm = app.metadataCache.getFileCache(file)?.frontmatter as Record<string, unknown> | undefined;
+            const fm = app.metadataCache.getFileCache(file)?.frontmatter;
             if (!fm) continue;
             for (const change of planEntityLinkChanges(category, fm)) {
                 plan.changes.push({ path: file.path, entity: file.basename, category, ...change });

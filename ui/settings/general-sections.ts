@@ -179,7 +179,7 @@ export class PerformanceSection extends SettingsSection {
                     text: this.formatDuration(op.duration),
                     cls: 'nw-st-duration'
                 });
-                const bottom = item.createDiv({
+                item.createDiv({
                     text: t('settings.general.perfSlowMeta', {
                         category: op.category,
                         time: new Date(op.timestamp).toLocaleString(),
@@ -747,7 +747,7 @@ export class AboutSection extends SettingsSection {
                 })
             );
 
-        const updateSourceSetting = new Setting(section)
+        new Setting(section)
             .setName(t('settings.general.aboutSourceName'))
             .setDesc(t('settings.general.aboutSourceDesc'))
             .addDropdown(dropdown => {

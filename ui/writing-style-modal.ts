@@ -397,7 +397,7 @@ ${description ? `风格补充说明：${description}` : ''}
     }
 
     private async loadExistingContent(): Promise<void> {
-        const wsPath = getWritingStyleWritePath(this.project);
+        getWritingStyleWritePath(this.project);
         const wsFile = await findWritingStyleFile(this.app, this.project);
         if (!(wsFile instanceof TFile)) return;
 

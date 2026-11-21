@@ -115,7 +115,7 @@ export class ToolRegistry {
      */
     async execute<Output = unknown>(id: string, input: unknown, ctx: ToolContext = {}): Promise<ToolResult<Output>> {
         const started = Date.now();
-        const tool = this.tools.get(id) as HarnessTool | undefined;
+        const tool = this.tools.get(id);
         if (!tool) {
             return { ok: false, toolId: id, error: `未注册工具：${id}`, durationMs: Date.now() - started };
         }

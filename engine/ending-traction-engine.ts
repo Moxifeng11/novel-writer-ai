@@ -424,7 +424,7 @@ export class EndingTractionEngine {
             }
         };
 
-        const outlineRoot = pjOutlineDir(project);
+        pjOutlineDir(project);
 
         // v4.0：扫描 分卷大纲/ 目录下所有按卷归档文件
         const volumeDir = pjVolumeOutlineDir(project);

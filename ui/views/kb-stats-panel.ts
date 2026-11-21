@@ -79,7 +79,7 @@ export function buildKbStatsPanel(rightContentEl: HTMLElement, host: KbStatsPane
         const qualitySection = content.createDiv({ cls: 'nw-ks-section' });
         qualitySection.createEl('h3', { text: t('knowledgebase.stats.dimensions'), cls: 'nw-ks-section-title' });
 
-        const dimensions = getKbQualityDimensions();
+        getKbQualityDimensions();
 
         const chartWrap = qualitySection.createDiv({ cls: 'nw-ks-chart-row' });
 

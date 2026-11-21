@@ -268,7 +268,7 @@ function buildHeaders(config: ApiConnectivityConfig, format: ApiFormat): Record<
  */
 export async function testProviderConnectivity(
     config: ApiConnectivityConfig,
-    request: RequestUrlFn = requestUrl as unknown as RequestUrlFn
+    request: RequestUrlFn = requestUrl
 ): Promise<ApiConnectivityResult> {
     const started = Date.now();
     const testedAt = started;

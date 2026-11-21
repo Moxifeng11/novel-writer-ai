@@ -38,7 +38,7 @@ export function resolveNodeDoc(anchor: DocAnchor | null | undefined): Document |
  * @returns 所属窗口；取不到时回退全局 window
  */
 export function resolveNodeWindow(anchor: DocAnchor | null | undefined): Window {
-    const candidate = anchor as (DocAnchor & { win?: Window }) | null | undefined;
+    const candidate = anchor;
     // 取不到 el.win / defaultView 时退回当前全局 window（插件只在有 window 的宿主里运行，
     // 测试环境由 tests/setup.ts 提供 window 垫片）
     return candidate?.win ?? resolveNodeDoc(anchor)?.defaultView ?? window;

@@ -1562,10 +1562,10 @@ export class ForeshadowDeconstructor {
                     const cat = categoryReferenceTexts[j];
                     const cv = categoryVectors[j];
                     const score = this.vectorEnhancer.cosineSimilarity(fv, cv);
-                    categoryScores[cat.id as ForeshadowType] = score;
+                    categoryScores[cat.id] = score;
                     if (score > maxScore) {
                         maxScore = score;
-                        bestType = cat.id as ForeshadowType;
+                        bestType = cat.id;
                     }
                 }
 
@@ -1673,7 +1673,7 @@ export class ForeshadowDeconstructor {
             }
 
             await yieldToUI();
-            const similarPairs = await this.vectorEnhancer!.findSimilarPairs(
+            const similarPairs = await this.vectorEnhancer.findSimilarPairs(
                 sampledForeshadows,
                 sampledPayoffs2,
                 0.7,
@@ -3073,7 +3073,7 @@ export class ForeshadowDeconstructor {
             setupMap.get(pair.setupForeshadowId)!.push(pair);
         }
 
-        for (const [setupId, setupPairs] of setupMap) {
+        for (const [, setupPairs] of setupMap) {
             if (setupPairs.length > 1) {
                 for (const pair of setupPairs) {
                     pair.pairType = 'one-to-many';
@@ -3092,7 +3092,7 @@ export class ForeshadowDeconstructor {
             payoffMap.get(pair.payoffForeshadowId)!.push(pair);
         }
 
-        for (const [payoffId, payoffPairs] of payoffMap) {
+        for (const [, payoffPairs] of payoffMap) {
             if (payoffPairs.length > 1) {
                 for (const pair of payoffPairs) {
                     pair.pairType = pair.pairType === 'one-to-many' ? 'one-to-many' : 'many-to-one';
@@ -3245,7 +3245,6 @@ export class ForeshadowDeconstructor {
 
         const setupPos = setup.firstAppearance.position;
         const payoffPos = payoff.resolution.position;
-        const midpoint = (setupPos + payoffPos) / 2;
 
         let midMentions = 0;
         for (const app of setup.importantAppearances) {
@@ -3932,7 +3931,7 @@ export class ForeshadowDeconstructor {
         const avg = (arr: SettingDensitySegment[]) =>
             arr.length > 0 ? arr.reduce((s, x) => s + x.density, 0) / arr.length : 0;
         const firstAvg = avg(segments.slice(0, third));
-        const midAvg = avg(segments.slice(third, third * 2));
+        avg(segments.slice(third, third * 2));
         const lastAvg = avg(segments.slice(third * 2));
         const diff = lastAvg - firstAvg;
         const threshold = Math.max(0.5, firstAvg * 0.15);

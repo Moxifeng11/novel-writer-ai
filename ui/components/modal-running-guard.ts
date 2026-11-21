@@ -81,7 +81,7 @@ export class ModalRunningGuard {
                     this.confirming = false;
                 });
         };
-        modal.close = guarded as typeof modal.close;
+        modal.close = guarded;
         return () => {
             modal.close = originalClose;
             this.intercepted = false;

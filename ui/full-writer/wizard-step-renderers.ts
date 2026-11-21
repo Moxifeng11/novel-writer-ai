@@ -853,7 +853,7 @@ export class WizardStepRenderers {
         
         container.createEl('p', { text: t('cowrite.wiz.skipHint'), cls: 'nw-wizard-hint nw-wizard-hint--lg' });
 
-        const tip = container.createEl('p', { 
+        container.createEl('p', {
             text: t('cowrite.wiz.manageGeneratedHint'),
             cls: 'nw-wizard-tip'
         });

@@ -1,6 +1,6 @@
 import { createLogger } from '@/shared/logger';
 
-const log = createLogger('Index');
+createLogger('Index');
 /**
  * store/index.ts — 状态管理主入口
  *

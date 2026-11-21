@@ -345,10 +345,10 @@ export class StepResultViewerModal extends Modal {
         });
 
         const status = info.frontmatter?.step_status || 'unknown';
-        const statusInfo = STATUS_COLORS[status as StepStatus | 'unknown'] || STATUS_COLORS.unknown;
-        const statusLabel = STATUS_LABELS[status as StepStatus | 'unknown'] || STATUS_LABELS.unknown;
+        const statusInfo = STATUS_COLORS[status] || STATUS_COLORS.unknown;
+        const statusLabel = STATUS_LABELS[status] || STATUS_LABELS.unknown;
 
-        const badge = row.createSpan({
+        row.createSpan({
             text: statusLabel,
             attr: {
                 style: `padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; flex-shrink: 0; background: ${statusInfo.bg}; color: ${statusInfo.text};`,
@@ -356,7 +356,7 @@ export class StepResultViewerModal extends Modal {
         });
 
         const model = info.frontmatter?.step_model || '未知模型';
-        const modelEl = row.createSpan({
+        row.createSpan({
             text: model,
             cls: 'nw-step-viewer-meta',
             attr: {
@@ -366,7 +366,7 @@ export class StepResultViewerModal extends Modal {
 
         const timestamp = info.frontmatter?.step_timestamp;
         const timeStr = timestamp ? this.formatTimestamp(timestamp) : '未知时间';
-        const timeEl = row.createSpan({
+        row.createSpan({
             text: timeStr,
             cls: 'nw-step-viewer-meta',
             attr: {
@@ -379,7 +379,7 @@ export class StepResultViewerModal extends Modal {
         if (!this.infoBarEl) return;
         this.infoBarEl.empty();
 
-        const countSpan = this.infoBarEl.createSpan({
+        this.infoBarEl.createSpan({
             text: `共 ${this.stepFiles.length} 个步骤结果文件`,
             attr: { style: 'font-size: 12px; color: var(--text-muted);' },
         });

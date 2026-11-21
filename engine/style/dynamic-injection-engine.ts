@@ -182,16 +182,6 @@ const DIRECTION_TO_SCENE: Record<SuggestionDirection, SceneType> = {
 /**
  * sceneType → 段落功能映射（用于在 TieredInjectionBuilder 中选择示例风格）
  */
-const SCENE_TO_PARAGRAPH: Record<Exclude<SceneType, 'unknown'>, ParagraphFunction> = {
-    action: 'description',
-    emotion: 'lyrical',
-    dialogue: 'dialogue',
-    description: 'description',
-    foreshadow: 'narration',
-    conflict: 'description',
-    resolution: 'lyrical',
-    surprise: 'narration',
-};
 
 // ============================================================
 // 三、ContextAnalyzer 类

@@ -199,7 +199,7 @@ export class StorySettingsEditor {
             });
             chip.dataset.value = option.id;
             chip.addEventListener('click', () => {
-                (this.settings[group.key] as string) = option.id;
+                (this.settings[group.key]) = option.id;
                 this.refreshChips(groupEl, group.key);
                 this.refreshWarning();
                 this.emitChange();

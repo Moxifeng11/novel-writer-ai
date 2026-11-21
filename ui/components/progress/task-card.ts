@@ -3,7 +3,7 @@ import { ProgressBarComponent } from './progress-bar';
 import { createLogger } from '@/shared/logger';
 
 
-const log = createLogger('TaskCard');
+createLogger('TaskCard');
 /**
  * 任务卡片组件选项
  */

@@ -220,7 +220,7 @@ export class ProjectSidePanelView extends ItemView {
         }
 
         const cache = this.app.metadataCache.getFileCache(file);
-        const frontmatter = (cache?.frontmatter as Record<string, unknown> | undefined) || {};
+        const frontmatter = (cache?.frontmatter) || {};
         const kind = resolveFileKind(frontmatter, file.path);
 
         const meta = container.createDiv({ cls: 'nw-side-panel-file' });

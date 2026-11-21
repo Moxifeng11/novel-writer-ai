@@ -572,7 +572,7 @@ export class PerformanceMonitor {
             r.avgDuration = r.count > 0 ? r.totalDuration / r.count : 0;
         }
 
-        return result as Record<PerformanceCategory, { count: number; totalDuration: number; avgDuration: number }>;
+        return result;
     }
 
     /**

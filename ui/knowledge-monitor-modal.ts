@@ -435,7 +435,7 @@ export class KnowledgeMonitorModal extends Modal {
             });
         }
 
-        const dims = task.dimensions.map(d => DIMENSION_LABELS[d as BreakdownDimension] || d).join('、');
+        const dims = task.dimensions.map(d => DIMENSION_LABELS[d] || d).join('、');
         item.createDiv({
             text: `维度：${dims}`,
             attr: { style: 'font-size:12px;color:var(--text-muted);margin-top:6px;' }
@@ -456,7 +456,7 @@ export class KnowledgeMonitorModal extends Modal {
 
     private async retryTask(task: BreakdownTask): Promise<void> {
         try {
-            await this.scheduler.addTask(task.bookId, task.sourceText, task.dimensions as BreakdownDimension[]);
+            await this.scheduler.addTask(task.bookId, task.sourceText, task.dimensions);
             new Notice(`已重新提交《${task.bookName}》的拆解任务`);
             this.activeTab = 'current';
             this.render();

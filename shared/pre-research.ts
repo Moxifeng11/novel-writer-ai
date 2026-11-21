@@ -442,10 +442,10 @@ export async function readPreResearchData(
         const raw = JSON.parse(await adapter.read(path)) as Partial<PreResearchData>;
         if (raw.mode === 'script') {
             const base = createDefaultPreResearch('script', String(raw.name || project)) as ScriptPreResearch;
-            return { ...base, ...raw, mode: 'script' } as ScriptPreResearch;
+            return { ...base, ...raw, mode: 'script' };
         }
         const base = createDefaultPreResearch('short', String(raw.name || project)) as ShortPreResearch;
-        return { ...base, ...raw, mode: 'short' } as ShortPreResearch;
+        return { ...base, ...raw, mode: 'short' };
     } catch {
         return null;
     }

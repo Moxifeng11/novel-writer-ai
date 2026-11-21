@@ -2454,7 +2454,6 @@ export class CharacterDeconstructor {
     private extractKeyRelationEvents(text: string, nameA: string, nameB: string, totalLength: number): string[] {
         const events: string[] = [];
         const contextWindow = 150;
-        const windowSize = 300;
 
         let idx = 0;
         while ((idx = text.indexOf(nameA, idx)) !== -1 && events.length < 5) {
@@ -3680,7 +3679,7 @@ export class CharacterDeconstructor {
             let bestScore = 0;
 
             for (let j = 0; j < RELATION_TYPE_REFERENCES.length; j++) {
-                const score = this.vectorEnhancer!.cosineSimilarity(contextVec, refVectors[j]);
+                const score = this.vectorEnhancer.cosineSimilarity(contextVec, refVectors[j]);
                 if (score > bestScore && score > this.vectorThreshold) {
                     bestScore = score;
                     bestType = RELATION_TYPE_REFERENCES[j].type;

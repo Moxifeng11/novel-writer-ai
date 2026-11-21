@@ -106,7 +106,7 @@ export class BookDetailRenderer {
 
         this.renderQualityScoreCard(container, data as unknown as Record<string, unknown>);
 
-        const { sentenceRhythm, paragraphStructure, narrativeStyle, overallStyle, wordPreference, rhetoric, dialogueStyle } = data;
+        const { sentenceRhythm, paragraphStructure, narrativeStyle, overallStyle, wordPreference, rhetoric } = data;
 
         const book = this.deps.getCurrentBook();
         if (book) {
@@ -764,7 +764,7 @@ export class BookDetailRenderer {
         const currentStepName = emitterState?.currentStep;
 
         dimensions.forEach(dim => {
-            const isCurrentStep = currentStepName === this.deps.getDimensionLabels()[dim.key as BreakdownDimension];
+            const isCurrentStep = currentStepName === this.deps.getDimensionLabels()[dim.key];
             // 三态：已完成 / 进行中 / 未开始 —— 状态走修饰类，不再拼内联样式
             const state = dim.data ? 'done' : isCurrentStep ? 'active' : 'pending';
             const item = dimGrid.createDiv({ cls: `nw-kb-detail-dim nw-kb-detail-dim--${state}` });
@@ -1247,9 +1247,6 @@ export class BookDetailRenderer {
             data.relationDetails.slice(0, 8).forEach((rd, idx) => {
                 const relKey = `rel_detail_${idx}`;
                 const isExpanded = this.deps.getExpandedItems()[relKey] ?? false;
-                const fromChar = data.allCharacters?.find(c => c.name === (data.mainCharacters?.find(m => m.name)?.name)) ||
-                    { name: rd.fromId };
-                const toChar = { name: rd.toId };
                 const fromName = data.mainCharacters?.find(m => m.name === rd.fromId)?.name ||
                     data.allCharacters?.find(c => c.name === rd.fromId)?.name || rd.fromId;
                 const toName = data.mainCharacters?.find(m => m.name === rd.toId)?.name ||

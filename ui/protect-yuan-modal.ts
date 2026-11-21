@@ -53,7 +53,7 @@ export class ProtectYuanModal extends Modal {
             return;
         }
 
-        const vaultPath = (adapter as FileSystemAdapter).getBasePath();
+        const vaultPath = (adapter).getBasePath();
         const yuanPath = `${vaultPath}/元文件`;
         const manualHint = readOnlyManualHint();
 

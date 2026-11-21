@@ -210,7 +210,7 @@ export class StepListComponent {
             const nameSpan = labelEl.createSpan({ cls: 'nw-step-name' });
             nameSpan.setText(stepName);
 
-            const messageSpan = labelEl.createSpan({ cls: 'nw-step-message' });
+            labelEl.createSpan({ cls: 'nw-step-message' });
 
             const progressBar = contentEl.createDiv({ cls: 'nw-step-progress-bar' });
             this.stepProgressBars.push(progressBar);

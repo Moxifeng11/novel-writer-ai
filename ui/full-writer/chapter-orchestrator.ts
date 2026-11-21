@@ -107,7 +107,7 @@ export interface ChapterRunPlan {
     plannedActions: number;
 }
 
-const PLANNING_SET = new Set<string>(CHAPTER_PLANNING_KEYS);
+new Set<string>(CHAPTER_PLANNING_KEYS);
 const SETTLEMENT_DIRECTIVE_RE = /(UPDATE_|NEW_|RELATION:|GROWTH:|EMOTION:|PROMISE_|ARC:)/;
 
 /**

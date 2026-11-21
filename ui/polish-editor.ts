@@ -254,7 +254,7 @@ export class PolishEditor {
         const editorDiv = editorWrapper.createDiv({
             cls: 'novel-writer-polish-editor nw-pe-editor',
             attr: { contenteditable: 'true' }
-        }) as HTMLDivElement;
+        });
 
         // 将正文转换为带实体标记的 fragment（DOM 构建，不走 innerHTML）
         editorDiv.appendChild(buildEntityMarkedFragment(

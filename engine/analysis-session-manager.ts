@@ -22,7 +22,7 @@ import type {
     SuggestionStats,
     SessionMetadata,
 } from './types/analysis-session';
-import type { AnalysisSuggestion, SuggestionStatus } from './types/analysis-suggestion';
+import type { AnalysisSuggestion} from './types/analysis-suggestion';
 import { SuggestionManager } from './suggestion-manager';
 
 const log = createLogger('AnalysisSessionManager');
@@ -573,7 +573,7 @@ export class AnalysisSessionManager {
         };
 
         for (const sug of suggestions) {
-            const status = sug.status as SuggestionStatus;
+            const status = sug.status;
             if (status in stats) {
                 stats[status]++;
             }

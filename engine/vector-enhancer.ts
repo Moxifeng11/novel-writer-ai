@@ -74,9 +74,9 @@ export class VectorEnhancer {
         options: { batchSize?: number; rateLimiter?: TokenBucketRateLimiter; maxCacheSize?: number } = {}
     ) {
         if ('isAvailable' in embeddingClient && 'getProviderInfo' in embeddingClient) {
-            this.provider = embeddingClient as EmbeddingProvider;
+            this.provider = embeddingClient;
         } else {
-            this.legacyClient = embeddingClient as LegacyEmbeddingClient;
+            this.legacyClient = embeddingClient;
         }
         this.batchSize = options.batchSize ?? 50;
         this.rateLimiter = options.rateLimiter ?? null;

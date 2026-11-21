@@ -61,11 +61,11 @@ export function createFlowDiagnosisDeps(host: CollectorHost): FlowDiagnosisDeps 
 
     return {
         async collectKnowledge() {
-            const project = activeProject();
+            activeProject();
             let books: Array<{ breakdownStatus?: string; vectorStatus?: string }> = [];
             try {
                 const manager = plugin.knowledgeBaseManager;
-                if (manager) books = await manager.getAllBooks() as typeof books;
+                if (manager) books = await manager.getAllBooks();
             } catch (e) {
                 log.warn('[FlowDiagnosis] 读取知识库书籍失败:', e);
             }

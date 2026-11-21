@@ -12,7 +12,7 @@ import { Notice } from 'obsidian';
 import { resolveNodeDoc } from '@/shared/dom-window';
 import type NovelWriterPlugin from '@/main';
 import { ManageProvidersModal } from './manage-providers-modal';
-import { applyModelChoice, resolveProviderDisplayName, type ModelSwitcherPluginLike } from './model-quick-switcher';
+import { applyModelChoice, resolveProviderDisplayName } from './model-quick-switcher';
 import { nearestThinkingLevel, THINKING_LEVELS, clampThinkingIntensity, thinkingLevelSpec } from '@/shared/task-model';
 
 /**
@@ -127,14 +127,14 @@ export function openModelPickerPopover(
                         new Notice(`「${provider.name}」没有配置模型`, 4000);
                         return;
                     }
-                    await applyModelChoice(plugin as unknown as ModelSwitcherPluginLike, provider, model);
+                    await applyModelChoice(plugin, provider, model);
                     onApplied?.();
                     pane = 'root';
                     render();
                 },
                 onManage: () => {
                     close();
-                    const manageModal = new ManageProvidersModal(plugin.app, plugin as never, () => onApplied?.());
+                    const manageModal = new ManageProvidersModal(plugin.app, plugin, () => onApplied?.());
                     manageModal.open();
                 },
             });
@@ -146,7 +146,7 @@ export function openModelPickerPopover(
                         close();
                         return;
                     }
-                    await applyModelChoice(plugin as unknown as ModelSwitcherPluginLike, current, model);
+                    await applyModelChoice(plugin, current, model);
                     onApplied?.();
                     close();
                 },
@@ -201,7 +201,7 @@ function renderRootPane(
     },
 ): void {
     const settings = plugin.settings;
-    const providerName = current ? current.name : resolveProviderDisplayName(plugin as unknown as ModelSwitcherPluginLike, plugin.getCurrentProviderId());
+    const providerName = current ? current.name : resolveProviderDisplayName(plugin, plugin.getCurrentProviderId());
     const sourceTag = current?.sourceType === 'local' ? '本地' : 'API';
 
     // 供应商头（钻取）
@@ -291,7 +291,7 @@ function renderProviderPane(
  */
 export function formatWorkbenchModelBadge(plugin: NovelWriterPlugin): string {
     const settings = plugin.settings;
-    const providerName = resolveProviderDisplayName(plugin as unknown as ModelSwitcherPluginLike, plugin.getCurrentProviderId());
+    const providerName = resolveProviderDisplayName(plugin, plugin.getCurrentProviderId());
     const spec = thinkingLevelSpec(nearestThinkingIntensityLevel(clampThinkingIntensity(settings.thinkingIntensity ?? 35)));
     return `${providerName} · ${settings.defaultModel || '未配置'} · ${spec.label}`;
 }

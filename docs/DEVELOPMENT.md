@@ -1269,7 +1269,7 @@ npm run check:release  # 发布前资产与版本一致性校验
 
 单测环境是 node（`vitest.config.ts` 的 `environment: 'node'`），而代码改用了 Obsidian 注入的全局 `createEl/createDiv/createSpan` 与 `window.setTimeout`。`tests/setup.ts` 负责垫片：`window` 缺省指向 `globalThis`；`createEl/createDiv/createSpan/createFragment` 缺省用 `tests/unit/ui/support/fake-dom.ts` 的 `FakeEl`，若测试已用 `stubDocument()` 注入 `document.createElement` 则优先用该工厂（保证断言拿到的元素类型一致）。新增垫片时不要覆盖测试已有的定义。
 
-当前存量（2026-11-21，`eslint.obsidian-review.mjs` 口径）：warn 2,732 → **558**，error 0。`npm run check:review-warn` 用 `.review-warn-baseline.json` 按规则设预算，任何一类上涨即失败（已在 preflight 里）。`no-explicit-any`、`no-deprecated`、`no-misused-promises`、`no-floating-promises`、`no-restricted-globals`（剩 1 处桌面端 `fetch`）均已清零或收口；剩余大头 `no-unnecessary-type-assertion` 345（规则不可靠，不追）、`no-unused-vars` 149（全部是 assigned-but-never-used 的 DOM 创建，有副作用，暂不动）、`ui/sentence-case` 51（判定误报，第 10b 批不追）、`no-tfile-tfolder-cast` 4（`shared/file-system-port.ts` 适配层假对象）、其余 `rule-custom-message` 3 / `hardcoded-config-path` 2 / 其余各 1；`no-misused-promises` 与 `no-floating-promises` 已全部清零（第七批）；`no-tfile-tfolder-cast` 已从 38 降到 4（只剩 `shared/file-system-port.ts` 适配层的假对象，故意保留）。
+当前存量（2026-11-21 第 12 批后，`eslint.obsidian-review.mjs` 口径）：warn 2,732 → **120**，error 0。`npm run check:review-warn` 用 `.review-warn-baseline.json` 按规则设预算，任何一类上涨即失败（已在 preflight 里）。剩余全部是**有意保留**：`no-unnecessary-type-assertion` 56（`--fix` 判不安全，规则在本项目类型判定下不可靠，不追）、`ui/sentence-case` 51（判定误报，第 10b 批不追）、`no-tfile-tfolder-cast` 4（`shared/file-system-port.ts` 适配层假对象）、`obsidianmd/rule-custom-message` 3（`shared/logger.ts` 与 store logger 是 console 的唯一出口）、`hardcoded-config-path` 2（`shared/paths.ts` 的插件根目录兜底值、`shared/project-name.ts` 的保留名 `.obsidian`）、`no-restricted-globals` 1（`shared/http-transport.ts` 桌面端 `fetch`，保留取消与 SSE）、`no-alert` 1（`ui/components/character-review-panel.ts` 的 `prompt()`，待换 Modal）、`prefer-create-el` 1（`ui/polish-editor.ts` 的 `createDocumentFragment()` 无扩展方法）、`settings-tab/prefer-setting-definitions` 1（需 Obsidian 1.13 声明式设置 API，当前下限 1.8.7）。`no-unused-vars`、`no-empty`、`no-explicit-any`、`no-deprecated`、`no-misused-promises`、`no-floating-promises`、`no-useless-escape`、`prefer-window-timers` 均已清零。
 
 批次排期、风险分级与验收口径见 `docs/planning/2026-11-21-quality-optimization-roadmap.md`；新增批次先在那里登记，再按本节的约束执行。
 
@@ -1356,6 +1356,14 @@ npm run check:release  # 发布前资产与版本一致性校验
 - **别把「版本不同步」误判成迁移任务**：`StyleFingerprint`（V1，7 维字符串、直接拼进提示词）与 `V2Fingerprint`（12 维定量、按 id 另存）是**并存投影**——`engine/style-fingerprint-library.ts` 的 `toPersistedFingerprint` 只在两份一致时回写 V2，内存与全部消费方仍是 V1。要换成 V2 规范模型得连提示词与 UI 一起改（产品决策 + 额外 AI 成本），不是清 warn 能覆盖的。
 - **替代 API 的 `@since` 晚于 `minAppVersion` 时不要直接换**（`setWarning` → `setDestructive` 要求 1.13，我们下限 1.8.7，`no-unsupported-api` 是 error 级且不认特性检测）：抽一个窄接口兼容层，用结构化类型调旧成员，调用点只碰新函数。本批新增 `ui/components/button-compat.ts` 的 `withWarningStyle(btn)`，链式写法是 `withWarningStyle(btn.setButtonText(...)).setDisabled(...)`，等下限提到 1.13 只改这一个文件。
 - 顺手核对「旧」路径是不是真没人用：`shared/paths.ts` 的 `pj*Template` 看着像遗留，实际由 `engine/template-service.ts` 的 `TEMPLATE_PATH_MAP` 定位全部内置模板，删了会静默退回默认模板。
+
+第 12 批（2026-11-21）落地手法：
+
+- 这一批只剩 `no-unused-vars` 等人工项，`eslint --fix` 会顺手改断言（`no-unnecessary-type-assertion`）——先只开目标规则修完，再对全仓跑 `--fix` 处理可自动修的部分；剩下 56 条是 `--fix` 判「删掉会改类型」的安全项，不要硬删。
+- 删未使用 import 不要用「按名字删一个就 break」的正则：一条 `import { A, B, C }` 里删 B 后如果不重新拼接整行，会留下 `import { A C }` 这类语法损坏（本轮修了 6 处）。正确做法是按 `import` 语句整行解析，删名字后重新渲染。
+- 死累加器（只 `+=` 从不读）直接连同自增语句一起删；但**注意同名变量在相邻逻辑里被复用**（`technique-deconstructor` 的 `paraRhythm` 用的是 `dialogueMatches` 而不是 `dialogueCount`）。
+- 遇到「声明了却从没被消费」的开关产物（`engine/co-writer-engine.ts` 的 `structuredConstraints`），先看是不是漏了接线：把它加进 `shared` 对象后 `composeKnowledgeParts(shared)` 才会真正用它——这是修缺陷，不是清 warn。
+- 不要为了消 `no-unused-vars` 删掉仍被使用的解构成员：ESLint 只报当前作用域未读，删除后 tsc 会以 `TS2304` 在大片代码里炸开（`book-detail-renderer` 的 7 维解构、`review-agent` 的 `selectedChapters`、`writing-fingerprint-view` 的 `SCOPE_ICONS` 本轮都踩过）。改前先 `Select-String` 全文件确认引用点。
 
 
 ### 异步等待原语（2026-10-31 批次 14）

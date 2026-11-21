@@ -333,7 +333,7 @@ export class FingerprintBlendModal extends Modal {
                 return typeof obj.commonWordRatio === 'number' ? obj.commonWordRatio : undefined;
             case 'rhetoric':
                 return typeof obj.metaphorDensity === 'number'
-                    ? Math.min(1, (obj.metaphorDensity as number) / 10)
+                    ? Math.min(1, (obj.metaphorDensity) / 10)
                     : undefined;
             case 'perspective':
                 return typeof obj.personDistribution === 'object' && obj.personDistribution !== null
@@ -345,11 +345,11 @@ export class FingerprintBlendModal extends Modal {
             }
             case 'tension':
                 return typeof obj.suspenseDensity === 'number'
-                    ? Math.min(1, (obj.suspenseDensity as number) / 10)
+                    ? Math.min(1, (obj.suspenseDensity) / 10)
                     : undefined;
             case 'infoDensity':
                 return typeof obj.infoDensity === 'number'
-                    ? Math.min(1, (obj.infoDensity as number) / 10)
+                    ? Math.min(1, (obj.infoDensity) / 10)
                     : undefined;
             case 'dialogue':
                 return typeof obj.dialogueRatio === 'number' ? obj.dialogueRatio : undefined;
@@ -359,13 +359,13 @@ export class FingerprintBlendModal extends Modal {
                     : undefined;
             case 'narration':
                 return typeof obj.narrationSpeed === 'number'
-                    ? Math.min(1, (obj.narrationSpeed as number) / 10)
+                    ? Math.min(1, (obj.narrationSpeed) / 10)
                     : undefined;
             case 'languageTexture':
                 return typeof obj.writtenLevel === 'number' ? obj.writtenLevel : undefined;
             case 'sentencePattern':
                 return typeof obj.parallelismDensity === 'number'
-                    ? Math.min(1, (obj.parallelismDensity as number) / 10)
+                    ? Math.min(1, (obj.parallelismDensity) / 10)
                     : undefined;
             default:
                 return undefined;
@@ -403,7 +403,7 @@ export class FingerprintBlendModal extends Modal {
         const oldEl = descEl as HTMLElement;
         const newEl = parent.createDiv({ attr: { style: 'display:none;' } });
         parent.replaceChild(newEl, oldEl);
-        this.renderBlendDescription(parent as HTMLElement);
+        this.renderBlendDescription(parent);
         const placeholder = parent.querySelector('.nw-blend-description[style*="display:none"]');
         if (placeholder) placeholder.remove();
     }

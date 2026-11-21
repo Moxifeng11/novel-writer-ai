@@ -299,7 +299,6 @@ export class CharacterRecognitionPipeline {
      * @param source 来源层级
      */
     private generateSuggestions(candidates: CharacterCandidate[], source: 'rule' | 'vector' | 'llm'): AnalysisSuggestion[] {
-        const suggestions: AnalysisSuggestion[] = [];
 
         for (const candidate of candidates) {
             this.suggestionManager.addSuggestion({

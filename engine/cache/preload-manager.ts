@@ -375,7 +375,7 @@ export class PreloadManager {
         const results = await Promise.all(
             entityIds.map(id => this.lazyLoadEntity<T>(entityType, id))
         );
-        return results.filter((e): e is Awaited<T> => e !== null) as T[];
+        return results.filter((e): e is Awaited<T> => e !== null);
     }
 
     /**
@@ -485,11 +485,11 @@ export class PreloadManager {
                     // 静默失败
                 })
                 .finally(() => {
-                    this.idleTimer = window.setTimeout(processNext, 50) as unknown as number;
+                    this.idleTimer = window.setTimeout(processNext, 50);
                 });
         };
 
-        this.idleTimer = window.setTimeout(processNext, 100) as unknown as number;
+        this.idleTimer = window.setTimeout(processNext, 100);
     }
 
     private stopIdleProcessor(): void {

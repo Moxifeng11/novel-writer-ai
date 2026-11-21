@@ -161,7 +161,7 @@ export class CategorizationReviewPanel {
 
         const leftSection = mainRow.createDiv('nw-cat-item-left');
         const characterName = suggestion.payload.characterName || '未知角色';
-        const nameEl = leftSection.createSpan({
+        leftSection.createSpan({
             text: characterName,
             cls: 'nw-cat-item-name'
         });
@@ -255,12 +255,12 @@ export class CategorizationReviewPanel {
                 this.update();
             };
         } else if (suggestion.status === 'adopted') {
-            const statusBadge = actions.createSpan({
+            actions.createSpan({
                 text: '✓ 已采纳',
                 cls: 'nw-cat-status-badge nw-cat-status-adopted'
             });
         } else if (suggestion.status === 'rejected') {
-            const statusBadge = actions.createSpan({
+            actions.createSpan({
                 text: '✕ 已拒绝',
                 cls: 'nw-cat-status-badge nw-cat-status-rejected'
             });

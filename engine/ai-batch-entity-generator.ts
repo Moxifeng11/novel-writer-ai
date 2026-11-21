@@ -411,7 +411,6 @@ ${description ? `【补充要求】\n${description}` : ''}
         let i = 0;
         while (i + 1 < dashPositions.length) {
             const openIdx = dashPositions[i];
-            const closeIdx = dashPositions[i + 1];
 
             let endLine = normalized.length;
             if (i + 2 < dashPositions.length) {

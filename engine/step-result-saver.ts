@@ -378,7 +378,7 @@ export class StepResultSaver {
                             else delete fm['step_usage'];
                             if (meta?.maxTokens) fm['step_max_tokens'] = meta.maxTokens;
                             if (meta?.contextBudget) fm['context_budget'] = meta.contextBudget;
-                            this.appendVersionFields(fm as Record<string, unknown>, stepKey, meta);
+                            this.appendVersionFields(fm, stepKey, meta);
                             fm['step_timestamp'] = new Date().toISOString();
                             this.setStepTags(fm, stepKey, chapName);
                         });

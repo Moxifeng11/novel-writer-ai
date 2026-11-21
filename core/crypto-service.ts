@@ -213,7 +213,7 @@ export class CryptoService {
                 const password = await ask();
                 if (!password) return null;
                 if (mustUseExisting) {
-                    const ok = await this.verifyPasswordAgainst(password, existingCipher!);
+                    const ok = await this.verifyPasswordAgainst(password, existingCipher);
                     if (!ok) {
                         new Notice('小说工坊：口令与已保存的密钥不匹配，请重新输入（不是设置新口令）');
                         continue;
@@ -292,7 +292,7 @@ export class CryptoService {
         const binary = atob(base64);
         const bytes = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-        return bytes as unknown as Uint8Array<ArrayBuffer>;
+        return bytes;
     }
 
     // ─── 对外 API ───

@@ -155,11 +155,11 @@ export class KnowledgeToFingerprintConverter {
         const enhanced = { ...features };
 
         for (const dim of STYLE_DIMENSIONS) {
-            const key = dim as keyof StyleFingerprintFeatures;
+            const key = dim;
             const desc = enhanced[key];
             if (!desc || desc.length < 20) {
                 const label = STYLE_DIMENSION_LABELS[dim];
-                enhanced[key] = `${label}特征：${desc || '未检测到明显特征'}` as typeof enhanced[typeof key];
+                enhanced[key] = `${label}特征：${desc || '未检测到明显特征'}`;
             }
         }
 

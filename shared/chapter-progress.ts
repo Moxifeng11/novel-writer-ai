@@ -17,9 +17,9 @@ import { isChapterWrittenRecord, SKELETON_BYTE_THRESHOLD as CANONICAL_SKELETON_B
 /** 骨架文件体量上限（字节）。模板骨架约 287 字节，真实章节普遍 > 2KB */
 export const SKELETON_BYTE_THRESHOLD = CANONICAL_SKELETON_BYTE_THRESHOLD;
 
-const WRITTEN_STATUSES = new Set(['written', 'settled']);
+new Set(['written', 'settled']);
 /** 显式占位状态：明确标记未写，即便文件被撑大也不算完成 */
-const PLACEHOLDER_STATUSES = new Set(['pending', 'draft']);
+new Set(['pending', 'draft']);
 
 /**
  * ChapterProgressInput 类型定义。

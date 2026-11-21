@@ -1,10 +1,9 @@
 {
   "updatedAt": "2026-11-21",
-  "note": "第 11 批（StyleFingerprint V1/V2 并存澄清 + setWarning 兼容层）",
-  "total": 558,
+  "note": "第 12 批：no-unused-vars 149 → 0 + no-empty 1 → 0；剩 56 断言（不可靠不追）+ 51 sentence-case（误报）+ 13 处有意保留",
+  "total": 120,
   "byRule": {
-    "@typescript-eslint/no-unnecessary-type-assertion": 345,
-    "@typescript-eslint/no-unused-vars": 149,
+    "@typescript-eslint/no-unnecessary-type-assertion": 56,
     "obsidianmd/ui/sentence-case": 51,
     "obsidianmd/no-tfile-tfolder-cast": 4,
     "obsidianmd/rule-custom-message": 3,

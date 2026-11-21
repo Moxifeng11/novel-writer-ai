@@ -81,7 +81,7 @@ export class Item extends BaseEntity {
             ...this._props,
             ...this._itemProps,
             entityStatus: status,
-        } as ItemProps);
+        });
     }
 
     /**
@@ -94,7 +94,7 @@ export class Item extends BaseEntity {
             ...this._props,
             ...this._itemProps,
             name,
-        } as ItemProps);
+        });
     }
 
     /**
@@ -108,7 +108,7 @@ export class Item extends BaseEntity {
             ...this._itemProps,
             owner,
             lastChangedAt: new Date().toISOString(),
-        } as ItemProps);
+        });
     }
 
     /**

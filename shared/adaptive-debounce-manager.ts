@@ -128,8 +128,8 @@ export class AdaptiveDebounceManager {
 
             try {
                 const result = entry.fn();
-                if (result && typeof (result as Promise<void>).catch === 'function') {
-                    (result as Promise<void>).catch(e =>
+                if (result && typeof (result).catch === 'function') {
+                    (result).catch(e =>
                         log.warn(`[AdaptiveDebounce] flush '${key}' error:`, e)
                     );
                 }
@@ -143,7 +143,7 @@ export class AdaptiveDebounceManager {
      * 取消所有防抖
      */
     cancelAll(): void {
-        for (const [key, entry] of this.timers) {
+        for (const [, entry] of this.timers) {
             window.clearTimeout(entry.timer);
         }
         this.timers.clear();
@@ -164,8 +164,8 @@ export class AdaptiveDebounceManager {
             window.clearTimeout(entry.timer);
             try {
                 const result = entry.fn();
-                if (result && typeof (result as Promise<void>).catch === 'function') {
-                    (result as Promise<void>).catch(e =>
+                if (result && typeof (result).catch === 'function') {
+                    (result).catch(e =>
                         log.warn(`[AdaptiveDebounce] flushAll '${key}' error:`, e)
                     );
                 }
@@ -233,8 +233,8 @@ export class AdaptiveDebounceManager {
 
             try {
                 const result = fn();
-                if (result && typeof (result as Promise<void>).catch === 'function') {
-                    (result as Promise<void>).catch(e =>
+                if (result && typeof (result).catch === 'function') {
+                    (result).catch(e =>
                         log.warn(`[AdaptiveDebounce] '${key}' error:`, e)
                     );
                 }

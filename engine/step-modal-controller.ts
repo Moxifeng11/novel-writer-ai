@@ -103,7 +103,7 @@ export class StepModalController {
             const plugin = this.deps.getPlugin();
             this.templateService = plugin.engineRegistry.get(ENGINE_NAMES.TEMPLATE_SERVICE) as TemplateService;
         }
-        return this.templateService!;
+        return this.templateService;
     }
 
     /**
@@ -147,7 +147,7 @@ export class StepModalController {
         ]);
 
         const deaiCheckSystemPrompt = deaiCheckTemplate.system;
-        const deaiCheckUserPrompt = deaiCheckTemplate.user.replace('${bodyText}', bodyText);
+        deaiCheckTemplate.user.replace('${bodyText}', bodyText);
         const deaiRewriteSystemPrompt = deaiRewriteTemplate.system;
         const deaiRewriteUserTemplate = deaiRewriteTemplate.user;
 

@@ -324,7 +324,7 @@ ${preferredGenre
                 searchInput.addEventListener('input', () => renderFilteredItems(searchInput.value));
                 searchInput.addEventListener('click', (ev) => ev.stopPropagation());
 
-                const itemsContainer = settingsList.createDiv({ cls: 'nw-fanfic-selector-items' });
+                settingsList.createDiv({ cls: 'nw-fanfic-selector-items' });
                 renderFilteredItems('');
             } catch (e) {
                 log.warn('Failed to load fanfic settings lib:', e);

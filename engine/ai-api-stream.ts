@@ -137,7 +137,6 @@ export async function callAIStream(
             // 事件（60s 去重：长流程 11 步逐步夹紧不刷屏；事件池/诊断可查，不弹 Notice）
             notifyMaxTokensClamp(maxTokens, safeMaxTokens, effectiveModel);
         }
-        const finalMaxTokens = safeMaxTokens;
 
         const releaseSemaphore = await host.acquireStreamSlot(effectiveModel, externalSignal);
 
@@ -534,7 +533,7 @@ export async function* callAIAsyncIterator(
         const effectiveModel = model || host.plugin.settings.defaultModel || 'gpt-3.5-turbo';
         const endpoint = options?.endpoint || host.plugin.settings.apiEndpoint;
         const apiFormat = host.resolveApiFormat(endpoint);
-        const requestEndpoint = host.resolveRequestEndpoint(endpoint, apiFormat);
+        host.resolveRequestEndpoint(endpoint, apiFormat);
         const externalSignal = options?.signal;
 
         if (externalSignal?.aborted) {

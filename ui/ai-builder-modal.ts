@@ -621,8 +621,8 @@ export class AiBuilderModal extends Modal {
                 cls: 'nw-input novel-writer-input',
                 value: '5',
             });
-            (countInput as HTMLInputElement).min = '1';
-            (countInput as HTMLInputElement).max = '20';
+            (countInput).min = '1';
+            (countInput).max = '20';
 
             form.createEl('label', { text: t("aiBuilder.ui.k43"), cls: 'novel-writer-ai-builder-label' });
             const promptInput = form.createEl('textarea', {
@@ -635,8 +635,8 @@ export class AiBuilderModal extends Modal {
                 cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
             });
             generateBtn.onclick = () => withButtonBusy(generateBtn, t("aiBuilder.ui.busy"), async () => {
-                const count = parseInt((countInput as HTMLInputElement).value) || 5;
-                const prompt = (promptInput as HTMLTextAreaElement).value.trim();
+                const count = parseInt((countInput).value) || 5;
+                const prompt = (promptInput).value.trim();
                 await this.doGenerateEntities(cfg, { count, prompt, name: '' });
             });
         } else {
@@ -651,12 +651,12 @@ export class AiBuilderModal extends Modal {
                 cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
             });
             generateBtn.onclick = () => withButtonBusy(generateBtn, t("aiBuilder.ui.busy"), async () => {
-                const name = (nameInput as HTMLInputElement).value.trim();
+                const name = (nameInput).value.trim();
                 if (!name) {
                     new Notice(t("aiBuilder.flow.needName", { label: cfg.label }), 3000);
                     return;
                 }
-                const desc = (descInput as HTMLTextAreaElement).value.trim();
+                const desc = (descInput).value.trim();
                 await this.doGenerateEntities(cfg, { count: 1, prompt: desc, name });
             });
         }
@@ -673,8 +673,8 @@ export class AiBuilderModal extends Modal {
             cls: 'nw-input novel-writer-input',
             value: '3',
         });
-        (countInput as HTMLInputElement).min = '1';
-        (countInput as HTMLInputElement).max = '20';
+        (countInput).min = '1';
+        (countInput).max = '20';
 
         form.createEl('label', { text: t("aiBuilder.ui.k48"), cls: 'novel-writer-ai-builder-label' });
         const batchPromptInput = form.createEl('textarea', {
@@ -704,10 +704,10 @@ export class AiBuilderModal extends Modal {
                 cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
             });
             generateBtn.onclick = () => withButtonBusy(generateBtn, t("aiBuilder.ui.busy"), async () => {
-                const count = parseInt((countInput as HTMLInputElement).value) || 3;
-                const batchPrompt = (batchPromptInput as HTMLTextAreaElement).value.trim();
-                const genre = (genreInput as HTMLInputElement).value.trim();
-                const logic = (logicInput as HTMLInputElement).value.trim();
+                const count = parseInt((countInput).value) || 3;
+                const batchPrompt = (batchPromptInput).value.trim();
+                const genre = (genreInput).value.trim();
+                const logic = (logicInput).value.trim();
                 const parts: string[] = [];
                 if (genre) parts.push(`题材倾向：${genre}`);
                 if (logic) parts.push(`故事逻辑方针：${logic}`);
@@ -720,8 +720,8 @@ export class AiBuilderModal extends Modal {
                 cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
             });
             generateBtn.onclick = () => withButtonBusy(generateBtn, t("aiBuilder.ui.busy"), async () => {
-                const count = parseInt((countInput as HTMLInputElement).value) || 3;
-                const batchPrompt = (batchPromptInput as HTMLTextAreaElement).value.trim();
+                const count = parseInt((countInput).value) || 3;
+                const batchPrompt = (batchPromptInput).value.trim();
                 await this.doGenerateEntities(cfg, { count, prompt: batchPrompt ? `批量生成要求：${batchPrompt}` : '', name: '' });
             });
         }

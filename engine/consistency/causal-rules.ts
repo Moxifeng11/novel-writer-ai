@@ -118,7 +118,7 @@ export function pairCausal(assertions: readonly FactAssertion[]): ConsistencyCon
         const causeEvent = assertions.find(other => other !== item
             && other.subject === item.value
             && other.chapterNum !== null
-            && (other.chapterNum as number) > (item.chapterNum as number));
+            && (other.chapterNum) > (item.chapterNum as number));
         if (!causeEvent) continue;
         emit(build(item.subject, item, causeEvent, 'causeless-effect',
             `「${item.subject}」在第 ${item.chapterNum} 章已经发生并归因于「${item.value}」，`

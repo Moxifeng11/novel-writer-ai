@@ -104,7 +104,7 @@ export class GenerateLocationModal extends Modal {
                 projectSelect.value = this._currentProject;
             }
 
-            const nameLabel = contentEl.createEl('label', {
+            contentEl.createEl('label', {
                 text: '实体名称（逗号分隔，留空由 AI 自动命名）：',
                 cls: 'nw-gen-modal-name-label'
             });
@@ -133,7 +133,7 @@ export class GenerateLocationModal extends Modal {
                 }
             };
 
-            const promptLabel = contentEl.createEl('label', {
+            contentEl.createEl('label', {
                 text: '✍️ 提示词（描述你想要的地点特点，AI 将据此生成名字和设定）',
                 cls: 'nw-gen-modal-prompt-label'
             });

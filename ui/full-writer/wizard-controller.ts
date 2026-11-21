@@ -72,17 +72,7 @@ export class WizardController {
         const adapter = this.view.app.vault.adapter;
         let startIdx = 0;
 
-        const isPopulated = (val: string | undefined): boolean => {
-            if (!val || val === '' || val === '""' || val === '—' || val === '-') return false;
-            return !/^\{\{.*\}\}$/.test(val);
-        };
 
-        const extractFMField = (content: string, fieldName: string): string | undefined => {
-            const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-            if (!fmMatch) return undefined;
-            const m = fmMatch[1].match(new RegExp(`^${fieldName}:\\s*(.+)$`, 'm'));
-            return m ? m[1].trim().replace(/^["']|["']$/g, '') : undefined;
-        };
 
         let projectMetaContent: string | null = null;
         try { projectMetaContent = await readProjectMeta(this.view.app, project); } catch { /* ignore */ }

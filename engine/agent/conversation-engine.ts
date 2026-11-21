@@ -874,7 +874,7 @@ export class GuideAgentEngine {
     private confirmTurn(): AgentTurnResult {
         const lines = ['信息收集完毕，请确认：', ''];
         if (this.flow === 'create_long_original') {
-            const structure = getStoryStructure(this.slots.structureId!);
+            const structure = getStoryStructure(this.slots.structureId);
             lines.push(
                 `· 类型：长篇原创 · ${this.slots.channel || '未选频道'}`,
                 `· 项目名：${this.slots.projectName}`,
@@ -884,7 +884,7 @@ export class GuideAgentEngine {
                 `· 金手指：${this.slots.goldenFinger || '默认'}`,
             );
         } else if (this.flow === 'create_long_fanfic') {
-            const structure = getStoryStructure(this.slots.structureId!);
+            const structure = getStoryStructure(this.slots.structureId);
             lines.push(
                 `· 类型：长篇同人 · 原作《${this.slots.sourceWork}》`,
                 `· 项目名：${this.slots.projectName}`,
@@ -926,7 +926,7 @@ export class GuideAgentEngine {
 
     private buildIntent(): AgentIntent {
         if (this.flow === 'create_long_original' || this.flow === 'create_long_fanfic') {
-            const base = createDefaultStorySettings(this.slots.structureId!);
+            const base = createDefaultStorySettings(this.slots.structureId);
             if (this.slots.tone) base.tone = this.slots.tone;
             if (this.slots.goldenFinger) base.goldenFinger = this.slots.goldenFinger;
             base.randomSeed = this.slots.useSmartRandom ? trueRandom.uuid() : '';

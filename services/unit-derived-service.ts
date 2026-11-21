@@ -58,7 +58,7 @@ export class UnitDerivedService {
      * @returns 结果
      */
     async generate(project: string, mode: 'short' | 'script', dryRun = true): Promise<UnitDerivedResult> {
-        const derivedPath = modeDocPath(project, mode as CreationMode, 'outline');
+        const derivedPath = modeDocPath(project, mode, 'outline');
         const files = this.listUnits(project, mode);
         const failures: UnitDerivedResult['failures'] = [];
         let content = '';
@@ -122,7 +122,7 @@ export class UnitDerivedService {
 
     /** 列出单元文件（按文件名排序） */
     private listUnits(project: string, mode: 'short' | 'script'): TFile[] {
-        const dir = modeBodyDir(project, mode as CreationMode);
+        const dir = modeBodyDir(project, mode);
         const folder = this.app.vault.getAbstractFileByPath(dir);
         if (!(folder instanceof TFolder)) return [];
         return folder.children

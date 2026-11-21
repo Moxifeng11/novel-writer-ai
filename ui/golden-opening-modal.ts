@@ -657,7 +657,7 @@ export class GoldenOpeningModal extends Modal {
             this.openingScoreResult.improvements.forEach(imp => {
                 const impItem = resultSection.createDiv({ cls: `nw-go-improvement-item priority-${imp.priority}` });
                 const impHeader = impItem.createDiv({ cls: 'nw-go-improvement-header' });
-                const priorityBadge = impHeader.createSpan({
+                impHeader.createSpan({
                     text: imp.priority === 'high' ? t("goldenOpening.scoring.k14") : imp.priority === 'medium' ? t('goldenOpening.labels.priorityMedium') : t('goldenOpening.labels.priorityLow'),
                     cls: 'nw-go-priority-badge'
                 });

@@ -470,7 +470,6 @@ export class AnalysisReportEngine {
         const factions = this.analyzeFactionEntities(project, chapterText);
         const items = this.analyzeItemEntities(project, chapterText);
 
-        const totalCount = characters.length + locations.length + factions.length + items.length;
         const summary = `检测到 ${characters.length} 个人物，${locations.length} 个地点，${factions.length} 个势力，${items.length} 个物品`;
 
         return { characters, locations, factions, items, summary };
@@ -896,7 +895,7 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
 
         for (let i = 0; i < paragraphs.length; i++) {
             const para = paragraphs[i];
-            for (const { pattern, category } of patterns) {
+            for (const { pattern } of patterns) {
                 let match;
                 while ((match = pattern.exec(para)) !== null) {
                     const content = match[0];

@@ -211,18 +211,18 @@ export class SettingsService {
         }
 
         if (migratedData && typeof migratedData === 'object') {
-            if (typeof (migratedData as Record<string, unknown>).coWriteLayout === 'string') {
-                settings.coWriteLayout = (migratedData as Record<string, unknown>).coWriteLayout as 'split' | 'stacked';
+            if (typeof (migratedData).coWriteLayout === 'string') {
+                settings.coWriteLayout = (migratedData).coWriteLayout as 'split' | 'stacked';
             }
-            if (typeof (migratedData as Record<string, unknown>).coWriteEditorWidthRatio === 'number') {
-                const ratio = (migratedData as Record<string, unknown>).coWriteEditorWidthRatio as number;
+            if (typeof (migratedData).coWriteEditorWidthRatio === 'number') {
+                const ratio = (migratedData).coWriteEditorWidthRatio;
                 settings.coWriteEditorWidthRatio = Math.max(0.4, Math.min(0.85, ratio));
             }
-            if (typeof (migratedData as Record<string, unknown>).coWriteSuggestionPanelVisible === 'boolean') {
-                settings.coWriteSuggestionPanelVisible = (migratedData as Record<string, unknown>).coWriteSuggestionPanelVisible as boolean;
+            if (typeof (migratedData).coWriteSuggestionPanelVisible === 'boolean') {
+                settings.coWriteSuggestionPanelVisible = (migratedData).coWriteSuggestionPanelVisible;
             }
-            if (typeof (migratedData as Record<string, unknown>).coWriteShowAdvanced === 'boolean') {
-                settings.coWriteShowAdvanced = (migratedData as Record<string, unknown>).coWriteShowAdvanced as boolean;
+            if (typeof (migratedData).coWriteShowAdvanced === 'boolean') {
+                settings.coWriteShowAdvanced = (migratedData).coWriteShowAdvanced;
             }
         }
         this.deps.setSettings(settings);

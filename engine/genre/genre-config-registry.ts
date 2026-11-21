@@ -35,7 +35,7 @@ const BUILTIN_PRESETS: GenreConfig[] = [
     fantasyPreset,
     urbanPreset,
     genericPreset,
-].map(p => ({ ...p }) as unknown as GenreConfig);
+].map(p => ({ ...p }));
 
 /**
  * 自定义配置加载器结构定义。

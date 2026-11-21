@@ -50,7 +50,7 @@ export class ForeshadowSection extends SettingsSection {
         types.forEach(type => {
             const typeRow = typeList.createDiv({ cls: 'nw-foreshadow-type-row' });
             
-            const colorDot = typeRow.createDiv({ 
+            typeRow.createDiv({
                 cls: 'nw-foreshadow-color-dot',
                 attr: { style: `background-color: ${type.color || '#999'}` }
             });

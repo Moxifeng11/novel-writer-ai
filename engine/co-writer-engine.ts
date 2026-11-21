@@ -35,7 +35,7 @@ import { AIEngine } from './ai-engine';
 import { ContextManager } from './context-manager';
 import { StyleLearner } from './style-learner';
 import { PreferenceMemory } from './preference-memory';
-import { PromptBuilder, type PromptSnapshot } from './prompt-builder';
+import { PromptBuilder } from './prompt-builder';
 import { StyleFingerprintLibrary } from './style-fingerprint-library';
 import { EmbeddingProviderFactory } from './embedding/provider-factory';
 import { getSharedEmbeddingProvider } from './embedding/embedding-service';
@@ -758,7 +758,7 @@ export class CoWriterEngine {
             // 装配 PromptBuilder：此前仅声明字段从未实例化，导致 A2/A3/A4/D2/E1/E3
             // 所有注入片段在协同写作中被 ?. 短路成空数组（注入逻辑长期静默失效）。
             this.promptBuilder = new PromptBuilder(
-                () => this.snapshot as unknown as PromptSnapshot | null,
+                () => this.snapshot,
                 this.styleLearner,
                 this.preferenceMemory,
                 this.fingerprintLibrary,
@@ -1023,6 +1023,7 @@ export class CoWriterEngine {
             knowledgeInjection,
             kbDeepInjection,
             associationText,
+            structuredConstraints,
             recentSentences,
             signal,
             settings,
@@ -3176,7 +3177,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
         
         // 获取光标前后的上下文
         const beforeCursor = fullText.slice(Math.max(0, cursorPosition - 500), cursorPosition);
-        const afterCursor = fullText.slice(cursorPosition, cursorPosition + 200);
+        fullText.slice(cursorPosition, cursorPosition + 200);
         
         // 分析可能的联想方向
         const hints = await this.analyzeAssociationContext(beforeCursor);

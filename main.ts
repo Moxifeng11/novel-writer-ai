@@ -1007,7 +1007,7 @@ export default class NovelWriterPlugin extends Plugin {
                     .replace(/\/+$/, '');
                 if (legacyRoot !== pluginRootDirPath()) {
                     const migrated = await migrateLegacyPluginData(
-                        this.app.vault.adapter as never,
+                        this.app.vault.adapter,
                         legacyRoot,
                         pluginRootDirPath(),
                     );
@@ -1106,7 +1106,7 @@ export default class NovelWriterPlugin extends Plugin {
                         ...DEFAULT_PROMPT_MANAGER_CONFIG,
                         ...this.settings.promptManagerConfig,
                         ...config,
-                    } as PromptManagerConfig;
+                    };
                     await this.saveSettings();
                 },
             });
@@ -3102,7 +3102,7 @@ export default class NovelWriterPlugin extends Plugin {
             if (!pathMatch) return;
 
             const project = pathMatch[1];
-            const volN = parseInt(pathMatch[2], 10);
+            parseInt(pathMatch[2], 10);
             const chapN = parseInt(pathMatch[3], 10);
 
             const content = await this.app.vault.read(file);

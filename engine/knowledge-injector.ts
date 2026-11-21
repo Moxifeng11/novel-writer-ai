@@ -1877,7 +1877,7 @@ export class KnowledgeInjector {
             const byBook = this.groupResultsByBook(results);
 
             for (const [bookName, bookResults] of Object.entries(byBook)) {
-                const bookConfig = this.referenceBooks.find(rb => rb.bookName === bookName);
+                this.referenceBooks.find(rb => rb.bookName === bookName);
                 if (strength >= 0.5) {
                     lines.push(`【${bookName}】设定参考（结构拆解）：`);
                     for (let i = 0; i < Math.min(bookResults.length, 2); i++) {

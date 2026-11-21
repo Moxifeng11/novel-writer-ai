@@ -336,7 +336,7 @@ export class RealtimeMonitor {
         if (!context.skipDeviations) {
             tasks.push(
                 this.deviationDetector
-                    .detect(text, context.deviationContext || ({} as DeviationContext), internalAbort.signal)
+                    .detect(text, context.deviationContext || ({}), internalAbort.signal)
                     .then(report => {
                         deviations = report;
                     })

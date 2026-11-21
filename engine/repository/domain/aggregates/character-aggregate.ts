@@ -131,7 +131,7 @@ export class Character extends BaseEntity {
             ...this._props,
             ...this._characterProps,
             entityStatus: status,
-        } as CharacterProps);
+        });
     }
 
     /**
@@ -144,7 +144,7 @@ export class Character extends BaseEntity {
             ...this._props,
             ...this._characterProps,
             name,
-        } as CharacterProps);
+        });
     }
 
     /**
@@ -158,7 +158,7 @@ export class Character extends BaseEntity {
             ...this._characterProps,
             soul: soul ? { ...soul } : null,
             lastChangedAt: new Date().toISOString(),
-        } as CharacterProps);
+        });
     }
 
     /**
@@ -172,7 +172,7 @@ export class Character extends BaseEntity {
             ...this._characterProps,
             relations: [...this._characterProps.relations, relation],
             lastChangedAt: new Date().toISOString(),
-        } as CharacterProps);
+        });
     }
 
     /**
@@ -186,7 +186,7 @@ export class Character extends BaseEntity {
             ...this._characterProps,
             relations: this._characterProps.relations.filter(r => r.toName !== toName),
             lastChangedAt: new Date().toISOString(),
-        } as CharacterProps);
+        });
     }
 
     /**

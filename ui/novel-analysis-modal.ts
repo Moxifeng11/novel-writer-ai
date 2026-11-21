@@ -258,7 +258,7 @@ export class NovelAnalysisModal extends Modal {
         window.setTimeout(() => {
             const textarea = modal.contentEl.querySelector('textarea');
             if (textarea) {
-                (textarea as HTMLTextAreaElement).value = text;
+                (textarea).value = text;
                 modal.textValue = text;
             }
         }, 100);

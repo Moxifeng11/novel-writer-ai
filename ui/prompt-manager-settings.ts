@@ -394,7 +394,7 @@ export class PromptManagerSettings {
             };
         }
 
-        const desc = container.createDiv({
+        container.createDiv({
             text: template.description,
             cls: 'nw-pm-detail-desc'
         });
@@ -443,13 +443,13 @@ export class PromptManagerSettings {
     private renderPromptPreview(container: HTMLElement, version: PromptTemplateVersion): void {
         const section = container.createDiv({ cls: 'nw-pm-section' });
         section.createEl('h4', { text: t('settings.promptManager.systemPromptTitle'), cls: 'nw-h4-sm' });
-        const systemBox = section.createEl('pre', {
+        section.createEl('pre', {
             text: version.systemPrompt,
             cls: 'nw-pm-prompt-box'
         });
 
         section.createEl('h4', { text: t('settings.promptManager.userPromptTitle'), cls: 'nw-pm-subheading-gap' });
-        const userBox = section.createEl('pre', {
+        section.createEl('pre', {
             text: version.userPrompt,
             cls: 'nw-pm-prompt-box'
         });
@@ -536,7 +536,7 @@ export class PromptManagerSettings {
             cls: 'nw-stat-muted-mt'
         });
 
-        const statusBadge = header.createSpan({
+        header.createSpan({
             text: this.getStatusLabel(test.status),
             cls: `nw-pm-status ${this.getStatusClass(test.status)}`
         });

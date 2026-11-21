@@ -2,7 +2,7 @@ import { App, TFile } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import type { AIEngine } from './ai-engine';
 import { findChapterFile, getChapterFileName, CHAPTER_FILE_TYPES } from './chapter-utils';
-import { pjBodyDir, pjStepDir, pjStepFile, pjSettingLib, pjWorldview, pjForeshadowDB, isInCharsDir } from '@/shared/paths';
+import { pjBodyDir, pjStepDir, pjStepFile, pjSettingLib, pjWorldview, isInCharsDir } from '@/shared/paths';
 import type { Notifier } from '@/shared/types';
 import { NOOP_NOTIFIER } from '@/shared/types';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
@@ -107,12 +107,6 @@ export class ReviewAgent {
             if (sf instanceof TFile) settingLib = await this.getFS().read(pjSettingLib(project));
         } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
 
-        let worldView = '';
-        try {
-            const wf = this.getVaultMeta().getAbstractFileByPath(pjWorldview(project));
-            if (wf instanceof TFile) worldView = await this.getFS().read(pjWorldview(project));
-        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
-
         let allChars = '';
         for (const f of this.getVaultMeta().getFiles()) {
             if (isInCharsDir(project, f.path) && f.name !== '人物模板.md') {
@@ -129,16 +123,6 @@ export class ReviewAgent {
                 } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
             }
         }
-
-        let foreshadows = '';
-        try {
-            const ff = this.getVaultMeta().getAbstractFileByPath(pjForeshadowDB(project));
-            if (ff instanceof TFile) {
-                const fc = await this.getFS().read(pjForeshadowDB(project));
-                const unrevealedSection = fc.match(/## 未回收伏笔[\s\S]*?(?=##|$)/)?.[0] || fc;
-                foreshadows = unrevealedSection.slice(0, 2000);
-            }
-        } catch (e) { log.warn('[小说工坊] 操作失败:', e); }
 
         let previousChapter = '';
         try {
@@ -328,7 +312,7 @@ ${result.content}
             this.notifier.showNotice(resolveUiMessage(withParams(REVIEW_MSG.volumePartialRead, { failed: readFailed, total: chapterFiles.length })), NOTICE_CRITICAL);
         }
 
-        const { selected: selectedChapters, skipped: skippedChapters, isSampled: chapterSampled } = this.selectVolumeChapters(chapterContents);
+        const { selected: selectedChapters, isSampled: chapterSampled } = this.selectVolumeChapters(chapterContents);
         if (chapterSampled) {
             this.notifier.showNotice(resolveUiMessage(withParams(REVIEW_MSG.volumeSampled, { total: chapterContents.length, sampled: selectedChapters.length })), NOTICE_WARNING);
         }

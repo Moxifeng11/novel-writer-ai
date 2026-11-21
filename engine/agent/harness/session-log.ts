@@ -67,7 +67,7 @@ export class AgentSessionLog {
 
     private stamp(event: AgentSessionEvent): AgentSessionEvent {
         this.eventSeq += 1;
-        return { ...event, seq: event.seq ?? this.eventSeq, ts: event.ts ?? Date.now() } as AgentSessionEvent;
+        return { ...event, seq: event.seq ?? this.eventSeq, ts: event.ts ?? Date.now() };
     }
 
     /**

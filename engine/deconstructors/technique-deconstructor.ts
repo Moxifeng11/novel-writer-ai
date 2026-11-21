@@ -526,7 +526,7 @@ export class TechniqueDeconstructor {
         }
 
         for (const techDef of genre.techniques) {
-            const category = (techDef.category === 'foreshadow' ? 'structure' : techDef.category) as TechniqueCategory;
+            const category = (techDef.category === 'foreshadow' ? 'structure' : techDef.category);
             if (mergedPatterns.has(techDef.id)) {
                 const existing = mergedPatterns.get(techDef.id)!;
                 const keywordSet = new Set<string>();
@@ -854,7 +854,6 @@ export class TechniqueDeconstructor {
             if (avgConfidence < this.confidenceFloor) continue;
             if (data.count < this.minKeywordHits) continue;
 
-            const avgDensity = data.count > 0 ? data.keywordDensitySum / data.count : 0;
             const avgContextRule = data.contextRuleSum !== undefined && data.count > 0
                 ? data.contextRuleSum / data.count : 1.0;
             const selectedExamples = this.selectRepresentativeExamples(data.examples);
@@ -1244,9 +1243,6 @@ export class TechniqueDeconstructor {
         let totalSentences = 0;
         let shortSentences = 0;
         let longSentences = 0;
-        let dialogueCount = 0;
-        let actionCount = 0;
-        let descriptionCount = 0;
 
         const rhythmValues: number[] = [];
 
@@ -1261,17 +1257,6 @@ export class TechniqueDeconstructor {
             longSentences += paraLong;
 
             const dialogueMatches = para.match(/[「『"“‘][^」』"”’]*[」』"”’]/g);
-            if (dialogueMatches) dialogueCount += dialogueMatches.length;
-
-            const actionWords = ['冲', '打', '杀', '跑', '跳', '击', '攻', '防', '躲', '闪'];
-            for (const word of actionWords) {
-                actionCount += (para.match(new RegExp(word, 'g')) || []).length;
-            }
-
-            const descWords = ['的', '了', '着', '是', '有', '在', '像', '如', '似'];
-            for (const word of descWords) {
-                descriptionCount += (para.match(new RegExp(word, 'g')) || []).length;
-            }
 
             const paraRhythm = sentences.length > 0
                 ? (paraShort / sentences.length) * 0.5 + (dialogueMatches ? dialogueMatches.length / sentences.length : 0) * 0.3 + 0.2

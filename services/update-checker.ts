@@ -465,7 +465,7 @@ export class UpdateChecker {
 
     /** 把 401/403/429 的 GitHub 响应翻译成可执行提示 */
     private describeGitHubError(response: RequestUrlResponse, safeRepo: string): string {
-        const headers = (response.headers || {}) as Record<string, string>;
+        const headers = (response.headers || {});
         const remaining = headers['x-ratelimit-remaining'];
         const resetSeconds = Number(headers['x-ratelimit-reset']);
         const retryAfter = headers['retry-after'];

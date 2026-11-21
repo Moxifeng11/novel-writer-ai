@@ -1580,10 +1580,10 @@ export class AgentWorkbenchView extends ItemView {
 
     private renderOutcome(outcome: HarnessTurnOutcome): void {
         for (const message of outcome.messages) {
-            this.renderMessage(message as AgentMessage);
+            this.renderMessage(message);
         }
         const last = outcome.messages[outcome.messages.length - 1];
-        this.renderChips((last?.chips as AgentChip[] | undefined) || outcome.chips.map(chip => ({ ...chip })));
+        this.renderChips((last?.chips) || outcome.chips.map(chip => ({ ...chip })));
         this.renderTelemetry();
         this.renderPlan();
         this.refreshSessionTitle();

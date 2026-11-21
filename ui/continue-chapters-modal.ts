@@ -551,7 +551,6 @@ ${describeBodyFormat({ ...bodyFormat, allowTitle: true })}`;
         const legacy = this.app.vault.getAbstractFileByPath(`${pjVolumeOutlineFile(project, 0)}`);
         if (legacy instanceof TFile) parts.push(await this.app.vault.read(legacy));
         // 按卷归档：扫描 03-大纲与章节/分卷大纲/*.md
-        const volOutlineDir = `${pjVolumeOutlineDir(project)}`;
         for (const f of listFolderFiles<TFile>(this.app.vault, pjVolumeOutlineDir(project))) {
             if (isVolumeOutlineFileName(f.name)) {
                 try { parts.push(await this.app.vault.read(f)); } catch (e) { log.warn('[小说工坊] 读取分卷大纲失败:', f.path, e); }

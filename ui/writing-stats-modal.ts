@@ -192,7 +192,7 @@ export class WritingStatsModal extends Modal {
         if (!project) return;
         let usage;
         try {
-            usage = await collectKnowledgeUsage(this.app as never, project, { recentLimit: 5 });
+            usage = await collectKnowledgeUsage(this.app, project, { recentLimit: 5 });
         } catch {
             return;
         }

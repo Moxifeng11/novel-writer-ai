@@ -74,7 +74,7 @@ export interface BulkResult<T> {
     /** 成功执行的实体列表 */
     success: T[];
     /** 失败的条目，包含错误信息 */
-    failures: BulkFailure<T>[];
+    failures: BulkFailure[];
     /** 总成功数 */
     successCount: number;
     /** 总失败数 */
@@ -84,7 +84,7 @@ export interface BulkResult<T> {
 /**
  * 批量操作失败条目
  */
-export interface BulkFailure<T> {
+export interface BulkFailure {
     /** 导致失败的实体或 ID */
     item: unknown;
     /** 错误信息 */

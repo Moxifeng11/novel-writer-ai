@@ -1362,7 +1362,7 @@ ${userPrompt}`),
                     });
                 }
                 const ledger = buildInjectionLedger(ctx.vars, {
-                    extra: [...(baseLedger?.entries || []) as InjectionLedgerEntry[], ...extras],
+                    extra: [...(baseLedger?.entries || []), ...extras],
                 });
                 // 本步成本（v4.21 成本观测）：模型 1 次调用 + 实际发生的嵌入调用（缓存未命中数）
                 // + 输入 token 估算。嵌入是长记忆维护之外的第二大隐性成本，必须可见。
@@ -1703,7 +1703,7 @@ ${userPrompt}`),
                                 const existing = new Set(manager.listPending().map((f) => f.id));
                                 const facts = (manager.extractNewFacts(finalContent, `analysis:${ctx.chapterName}`) as Array<{ id: string }>)
                                     .filter((fact) => !existing.has(fact.id));
-                                await manager.enqueue(facts as never);
+                                await manager.enqueue(facts);
                                 if (facts.length > 0) {
                                     log.info(`[StepRunner] 分析报告新增 ${facts.length} 条待确认事实`);
                                 }
@@ -1885,8 +1885,6 @@ ${userPrompt}`),
     async moveToNextStep(ctx: StepRunCtx): Promise<void> {
         // P2-5: 按 index 字段查找当前步骤，再从 ALL_FULL_STEPS 顺序中取下一个
         const orderIdx = ALL_FULL_STEPS.findIndex(s => s.index === ctx.currentStepIndex);
-        const currentStep = orderIdx >= 0 ? ALL_FULL_STEPS[orderIdx] : undefined;
-        const stepKey = currentStep?.key;
         const nextStep = orderIdx >= 0 ? ALL_FULL_STEPS[orderIdx + 1] : undefined;
         const nextIndex = nextStep?.index ?? -1;
 

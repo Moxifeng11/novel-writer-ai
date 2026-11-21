@@ -583,7 +583,7 @@ export class DeconstructionWorkerManager {
                 taskType,
                 extraAiWords.length > 0 ? { text, antiAiWords: extraAiWords } : { text },
                 onProgress
-            ) as CancelablePromise<T>;
+            );
         }
 
         return this.executeMainThreadTask<T>(taskType, text, onProgress);

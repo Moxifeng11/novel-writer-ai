@@ -936,7 +936,6 @@ ${newRow}
 
         const lines = content.split('\n');
         let inTable = false;
-        let headerIdx = -1;
         const colMap: Record<string, number> = {};
 
         for (let i = 0; i < lines.length; i++) {
@@ -951,7 +950,6 @@ ${newRow}
                 const hasStatus = lowerCols.some(c => c.includes('状态') || c === 'status');
                 if (hasContent && hasStatus) {
                     inTable = true;
-                    headerIdx = i;
                     for (let j = 0; j < cols.length; j++) {
                         const col = lowerCols[j];
                         if (col === '#' || col === 'id' || col === '编号') colMap['id'] = j;

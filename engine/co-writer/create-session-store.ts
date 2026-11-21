@@ -1,6 +1,6 @@
 import { createLogger } from '@/shared/logger';
 
-const log = createLogger('CreateSessionStore');
+createLogger('CreateSessionStore');
 /**
  * engine/co-writer/create-session-store.ts — 协同写作会话 Store 工厂
  *
@@ -170,9 +170,7 @@ export function createCoWritingSessionStore(
                     storage: persistStorage,
                     version: persistVersion,
                     partialize: partializeCoWritingState,
-                }) as unknown as (
-                    store: StoreApi<CoWritingSessionState>
-                ) => StoreApi<CoWritingSessionState>,
+                }),
             );
         }
     }
@@ -183,7 +181,7 @@ export function createCoWritingSessionStore(
 
     const enhancedStore = compose<CoWritingSessionState>(
         ...middlewares,
-    )(storeWithSelector as StoreApi<CoWritingSessionState>);
+    )(storeWithSelector);
 
     const thunkActions = createThunkActions(deps);
 

@@ -602,7 +602,7 @@ export class StyleVectorStore {
                     }
                 }
             });
-            blended[dim as keyof StyleFingerprintFeatures] = parts.join('；');
+            blended[dim] = parts.join('；');
         }
 
         return blended as StyleFingerprintFeatures;

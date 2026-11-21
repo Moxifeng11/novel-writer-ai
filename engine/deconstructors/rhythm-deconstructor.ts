@@ -737,7 +737,6 @@ export class RhythmDeconstructor {
         const exclamationMarkCount = (text.match(/[！!]/g) || []).length;
         const punctuationScore = Math.min(1, (questionMarkCount * 2 + exclamationMarkCount) / Math.max(wordCount * 0.03, 1));
 
-        const textLength = text.length;
         let contextWeight = 0.5;
 
         if (type === 'climax') {
@@ -1360,7 +1359,7 @@ export class RhythmDeconstructor {
         }
 
         try {
-            const available = await this.vectorEnhancer!.isAvailable();
+            const available = await this.vectorEnhancer.isAvailable();
             if (!available) {
                 return baseResult;
             }

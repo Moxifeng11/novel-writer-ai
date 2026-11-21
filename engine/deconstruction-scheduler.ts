@@ -997,7 +997,6 @@ export class DeconstructionScheduler {
         this.abortControllers.set(taskId, controller);
 
         const qualityLevel = this.getQualityLevel();
-        const vectorEnabled = this.isVectorEnhancementEnabled() && qualityLevel !== 'fast';
         const vectorDimensions: BreakdownDimension[] = [];
         const degradedDimensions: BreakdownDimension[] = [];
         const degradationReasons: Array<{ dimension: string; reason: string }> = [];
@@ -1071,7 +1070,7 @@ export class DeconstructionScheduler {
             const processDimension = async (dimension: BreakdownDimension) => {
                 if (controller.signal.aborted || aborted) return;
 
-                const currentStatus = task.status as TaskStatus;
+                const currentStatus = task.status;
                 if (currentStatus === 'paused') {
                     try {
                         await this.waitForResume(taskId, controller.signal);

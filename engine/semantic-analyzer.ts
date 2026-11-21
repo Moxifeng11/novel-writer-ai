@@ -12,7 +12,7 @@
 
 import { createLogger } from '@/shared/logger';
 
-const log = createLogger('SemanticAnalyzer');
+createLogger('SemanticAnalyzer');
 
 /**
  * 词语类型结构定义。
@@ -1194,7 +1194,6 @@ export class SemanticAnalyzer {
                 }
                 
                 if (word.length > 4) {
-                    let foundGoodPrefix = false;
                     for (const suffix of MULTI_CHAR_SUFFIXES) {
                         if (word.endsWith(suffix)) {
                             const prefix = word.substring(0, word.length - suffix.length);

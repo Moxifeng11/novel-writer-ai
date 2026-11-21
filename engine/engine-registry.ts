@@ -155,7 +155,7 @@ import { AIApiClient } from './ai-api-client';
 import { StyleLearner } from './style-learner';
 import { WorldviewCacheService } from '@/services/worldview-cache-service';
 import { UpdateChecker } from '@/services/update-checker';
-import { WritingStatsService, type StatsFileLike, type WritingStatsAppLike } from '@/services/writing-stats-service';
+import { WritingStatsService, type StatsFileLike } from '@/services/writing-stats-service';
 import { isChapterBodyPath, listChapterBodyFiles } from '@/shared/body-path';
 import { ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
 import { pjFactIndexFile, pluginRootDirPath } from '@/shared/paths';
@@ -391,9 +391,9 @@ export class EngineRegistry {
         const scope = options?.scope ?? EngineScope.Singleton;
         if (scope === EngineScope.Transient) {
             // Transient 懒加载走独立存储
-            this.transientFactories.set(name, factory as () => unknown);
+            this.transientFactories.set(name, factory);
         } else {
-            this.lazyFactories.set(name, factory as () => unknown);
+            this.lazyFactories.set(name, factory);
             this.lazyStates.set(name, 'pending');
         }
         if (options?.onInit) {
@@ -749,7 +749,7 @@ export class EngineRegistry {
             const instance = projectMap.get(name);
             try {
                 if (this.isDisposable(instance)) {
-                    await Promise.resolve((instance as Disposable).dispose());
+                    await Promise.resolve((instance).dispose());
                 }
             } catch (e) {
                 log.warn(`[EngineRegistry] disposeProject "${name}" 失败:`, e);
@@ -1501,7 +1501,7 @@ export class EngineRegistry {
             cacheManager,
             {
                 enabled: plugin.settings.autoCheckUpdates ?? false,
-                source: (plugin.settings.updateSource as 'github' | 'custom') || 'github',
+                source: (plugin.settings.updateSource) || 'github',
                 githubRepo: plugin.settings.updateGithubRepo || GITHUB_REPO_SLUG,
                 githubToken: plugin.settings.updateGithubToken || '',
                 customUrl: plugin.settings.updateCustomUrl || '',
@@ -1514,7 +1514,7 @@ export class EngineRegistry {
         log.info('[EngineRegistry] Phase 10: 初始化写作统计...');
         const pluginDir = pluginRootDirPath();
         const writingStats = new WritingStatsService({
-            app: plugin.app as unknown as WritingStatsAppLike,
+            app: plugin.app,
             ledgerPath: `${pluginDir}/data/writing-stats.json`,
             // 判定放在 shared：services 不依赖 ui/engine
             isBodyPath: (path: string) => isChapterBodyPath(path),

@@ -184,7 +184,7 @@ export function readFact(node: StoryContextNode): FactMetadata | null {
     const raw = fact as Partial<FactMetadata>;
     if (!raw.subject || !raw.predicate || raw.value === undefined) return null;
     return {
-        type: (raw.type ?? 'knowledge') as DecomposeType,
+        type: (raw.type ?? 'knowledge'),
         subject: raw.subject,
         predicate: raw.predicate,
         value: String(raw.value),

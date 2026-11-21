@@ -6,7 +6,6 @@
  */
 
 import type { CoverageRequirement } from './context-session-model';
-import type { ContextKind } from './context-session-model';
 import { resolveEntity, type ProjectIndexEntry } from './project-index-model';
 
 /** 场景卡（从 Scene 展开文本解析） */
@@ -114,7 +113,7 @@ export function buildSceneRequirements(
 ): CoverageRequirement[] {
     const requirements: CoverageRequirement[] = [];
     if (resolved.ids.length > 0) {
-        requirements.push({ kind: 'entity' as ContextKind, ids: [...resolved.ids] });
+        requirements.push({ kind: 'entity', ids: [...resolved.ids] });
     }
     // 关系卡：路径里同时包含两个在场 ID 的关系文件
     const relationIds = entries
@@ -122,7 +121,7 @@ export function buildSceneRequirements(
         .filter(entry => resolved.ids.filter(id => entry.path.includes(id)).length >= 2)
         .map(entry => entry.id as string);
     if (relationIds.length > 0) {
-        requirements.push({ kind: 'relation' as ContextKind, ids: relationIds });
+        requirements.push({ kind: 'relation', ids: relationIds });
     }
     void scene;
     return requirements;

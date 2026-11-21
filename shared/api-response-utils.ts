@@ -26,7 +26,7 @@ export function extractResponseContent(
 ): string {
     if (!response) return fallback;
     if (typeof response === 'string') return response;
-    return (response as APIResponse).content ?? fallback;
+    return (response).content ?? fallback;
 }
 
 /**

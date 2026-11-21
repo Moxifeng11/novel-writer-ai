@@ -484,18 +484,10 @@ export class ChapterVersionService {
         const { lineDiffs } = await this.compareVersionWithCurrent(targetVersion, currentContent);
 
         const targetToCurrentMap = new Map<number, number>();
-        let targetLine = 0;
-        let currentLine = 0;
 
         for (const diff of lineDiffs) {
             if (diff.op === 'equal' || diff.op === 'replace') {
                 targetToCurrentMap.set(diff.oldLine, diff.newLine);
-                targetLine++;
-                currentLine++;
-            } else if (diff.op === 'delete') {
-                targetLine++;
-            } else if (diff.op === 'insert') {
-                currentLine++;
             }
         }
 

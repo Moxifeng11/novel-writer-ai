@@ -862,7 +862,7 @@ export class AIApiClient {
                     } : undefined;
 
                     const contentLen = content.length;
-                    const contentPreview = content.slice(0, 200);
+                    content.slice(0, 200);
                     log.debug(`[小说工坊] API响应: ${currentModel} | ${contentLen}字 | tok=${usage?.total || '?'}`);
 
                     if (data.usage) {

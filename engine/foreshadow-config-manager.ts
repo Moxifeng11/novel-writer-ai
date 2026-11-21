@@ -6,7 +6,7 @@ import {
     type ForeshadowTypeConfig,
 } from '@/shared/foreshadow-config';
 
-const log = createLogger('ForeshadowConfigManager');
+createLogger('ForeshadowConfigManager');
 
 // 配置类型与默认值已下沉到 shared/foreshadow-config.ts（core 生成 DEFAULT_SETTINGS 需要）
 export type { ForeshadowConfig, ForeshadowTypeConfig };

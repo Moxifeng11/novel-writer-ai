@@ -482,7 +482,7 @@ export class KnowledgeSection extends SettingsSection {
                 });
             });
 
-        const providerSetting = new Setting(vectorSection)
+        new Setting(vectorSection)
             .setName(t('settings.knowledge.providerName'))
             .setDesc(t('settings.knowledge.providerDesc'))
             .addDropdown(dropdown => {
@@ -747,7 +747,7 @@ export class KnowledgeSection extends SettingsSection {
                         try {
                             const { EmbeddingProviderFactory } = await import('@/engine/embedding/provider-factory');
                             const provider = EmbeddingProviderFactory.create({
-                                vectorProviderType: this.plugin.settings.vectorProviderType as 'ollama' | 'openai' | 'doubao' | 'qwen',
+                                vectorProviderType: this.plugin.settings.vectorProviderType,
                                 vectorOllamaBaseUrl: this.plugin.settings.vectorOllamaBaseUrl,
                                 vectorOllamaModel: this.plugin.settings.vectorOllamaModel,
                                 vectorOpenaiBaseUrl: this.plugin.settings.vectorOpenaiBaseUrl,

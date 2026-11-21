@@ -90,7 +90,7 @@ const migrations: Array<{ from: number; to: number; migrate: MigrationFn }> = [ 
             // 加固：数组也满足 typeof === 'object'，但 { ...[] } 会产出索引键对象（{0:..}）污染结构，
             // 故显式排除数组；非对象/数组一律视为「无覆盖」。
             if (oldOverrides && typeof oldOverrides === 'object' && !Array.isArray(oldOverrides)) {
-                const endpoint = (data as Record<string, unknown>).apiEndpoint as string || '';
+                const endpoint = (data).apiEndpoint as string || '';
                 if (endpoint) {
                     newOverrides[endpoint] = { ...oldOverrides };
                 }

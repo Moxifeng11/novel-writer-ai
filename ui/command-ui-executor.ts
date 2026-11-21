@@ -70,7 +70,7 @@ import { RewriteSuggestionModal } from './rewrite-suggestion-modal';
 import { VIEW_TYPE_WRITING_FINGERPRINT } from './views/writing-fingerprint-view';
 import { VIEW_TYPE_KNOWLEDGE_BASE } from './views/knowledge-base-view';
 
-const log = createLogger('CommandUiExecutor');
+createLogger('CommandUiExecutor');
 
 
 

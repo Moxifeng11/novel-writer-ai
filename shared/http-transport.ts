@@ -185,7 +185,7 @@ export async function requestJson(
     options: HttpTransportOptions = {},
 ): Promise<TransportResponse> {
     if (isMobile()) return requestViaUrl(url, options);
-    return await fetchOnDesktop(url, options) as unknown as TransportResponse;
+    return await fetchOnDesktop(url, options);
 }
 
 function createOneShotReader(text: string): ByteReader {
@@ -221,7 +221,7 @@ export async function openStreamResponse(
     options: HttpTransportOptions = {},
 ): Promise<StreamTransportResponse> {
     if (!isMobile()) {
-        return await fetchOnDesktop(url, options) as unknown as StreamTransportResponse;
+        return await fetchOnDesktop(url, options);
     }
     const buffered = await requestViaUrl(url, options);
     const text = await buffered.text();

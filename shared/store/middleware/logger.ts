@@ -27,7 +27,7 @@ export function logger<T extends State>(
             const prevState = store.getState();
 
             const nextState = typeof partial === 'function'
-                ? (partial as (state: T) => Partial<T>)(prevState)
+                ? (partial)(prevState)
                 : partial;
 
             const action = typeof partial === 'function'

@@ -4449,3 +4449,12 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 测试：新增 `tests/unit/engine/style/fingerprint-v2-inmemory.test.ts` 5 例；定向 `tests/unit/engine/style`（30 文件 / 508 例）与 `tests/unit/ui/fingerprint*`（11 文件 / 72 例）全通过。
 - 文档：ADR 新增 §11 落地记录、§6 P4 行标 ✅、§7 补回滚口径；`docs/modules/writing-fingerprint.md` 新增 §7.2 与 backlog 更新。
 - 门禁：tsc EXIT=0；preflight EXIT=0（1,018 文件 / 10,527 通过 + 3 跳过）；main.js 6,249,543（基线上调 +1,418）、styles.css 805,893；warn 558 不变。
+
+## 第一百五十八轮：warn 第 12 批 —— no-unused-vars 149 → 0（warn 558 → 120）
+
+- 做法：先 `eslint --fix` 自动扫掉可安全修的断言（117 文件，warn 558 → 283），tsc 报 2 文件（`engine/character-recognition-pipeline.ts`、`shared/story-structure.ts:708`）→ 整文件回退；再人工清 `no-unused-vars` 171 → 0（未使用导入 21 处、死常量/死函数 10 处、死累加器 13 处）与 `no-empty` 1 处。
+- 修缺陷而非删代码：`engine/co-writer-engine.ts` 的 `structuredConstraints` 声明后从未进入 `shared`，`composeKnowledgeParts(shared)` 拿不到 A4 结构化约束；本批把它接进 `shared`，开关真正生效。
+- 关键坑：删除「未使用」的解构成员会连带炸掉使用处（`ui/views/book-detail-renderer.ts` 7 维解构、`engine/review-agent.ts` 的 `selectedChapters`、`ui/views/writing-fingerprint-view.ts` 的 `SCOPE_ICONS`），tsc 会报 TS2304 一大片；删前必须全文件 grep。
+- 结果：warn **558 → 120**（规则 9 类），error 0；`check:review-warn` 基线收紧到 120 条。剩余全部有意保留：断言 56（规则不可靠）、sentence-case 51（误报）、file-system-port 4、logger console 3、hardcoded-config-path 2、http fetch 1、prompt 1、createDocumentFragment 1、setting-definitions 1。
+- 定向测试 19 文件 / 296 用例通过；tsc EXIT=0；`npm run build` EXIT=0（main.js 6,246,912 / styles.css 805,893，bundle 基线已更新）。
+- 文档：`docs/DEVELOPMENT.md` 存量数字重写 + 新增「第 12 批落地手法」五条；`docs/planning/2026-11-21-quality-optimization-roadmap.md` 批次表新增第 12 行、进度日志新增一行。

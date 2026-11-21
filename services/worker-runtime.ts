@@ -44,7 +44,7 @@ interface WorkerScope {
 
 /** 惰性读取 self：主线程/Node 环境 import 本模块时不触发 worker 全局。 */
 function getWorkerScope(): WorkerScope {
-    return self as unknown as WorkerScope;
+    return self;
 }
 
 function postMessageToMain(type: WorkerMessageType, taskId?: string, payload?: unknown, error?: string): void {

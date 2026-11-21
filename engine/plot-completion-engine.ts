@@ -250,8 +250,6 @@ export class PlotCompletionEngine {
     const envScore = Math.min(100, envCount * 8);
     const atmosphereScore = Math.min(100, atmosphereCount * 12);
 
-    const locationDensity = locationCount / Math.max(1, totalParagraphs);
-    const envDensity = envCount / Math.max(1, totalParagraphs);
 
     let distributionScore = 0;
     if (totalParagraphs >= 3) {

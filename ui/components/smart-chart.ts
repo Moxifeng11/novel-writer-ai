@@ -364,14 +364,14 @@ export class SmartChart {
 					x: p.x,
 					y: p.y,
 					value: 1
-				})) as DensityPoint[];
+				}));
 
 			case 'bar':
 			case 'histogram':
 				return scatterToHistogram(data, { bins: 10 });
 
 			default:
-				return data as ChartData;
+				return data;
 		}
 	}
 

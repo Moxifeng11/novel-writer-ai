@@ -262,7 +262,7 @@ export class EntityContextEngine {
 
             // 3. 场景地点相关
             if (sceneLocation && entity.category === 'location') {
-                const locEntity = entity as LocationDomainModel;
+                const locEntity = entity;
                 if (locEntity.name === sceneLocation ||
                     locEntity.alias?.includes(sceneLocation) ||
                     sceneLocation.includes(locEntity.name)) {
@@ -277,7 +277,7 @@ export class EntityContextEngine {
 
             // 4. 场景势力相关
             if (sceneFactions.length > 0 && entity.category === 'faction') {
-                const facEntity = entity as FactionDomainModel;
+                const facEntity = entity;
                 if (sceneFactions.some(f =>
                     f === facEntity.name ||
                     facEntity.alias?.includes(f) ||
@@ -294,7 +294,7 @@ export class EntityContextEngine {
             // 5. 角色重要度（仅人物）
             let importanceLevel: CharacterImportance | null = null;
             if (entity.category === 'character') {
-                importanceLevel = this.determineCharacterImportance(entity as CharacterDomainModel, sceneCharacters);
+                importanceLevel = this.determineCharacterImportance(entity, sceneCharacters);
                 const importanceWeight = SCORE_WEIGHTS.characterImportant[importanceLevel];
                 if (importanceWeight > 0) {
                     reasons.push({
@@ -336,7 +336,7 @@ export class EntityContextEngine {
             // 8. 关系链传播（仅人物，基于关系表）
             if (entity.category === 'character' && relations && relations.length > 0 && sceneCharacters.length > 0) {
                 const relationScore = this.calculateRelationChainScore(
-                    entity as CharacterDomainModel,
+                    entity,
                     sceneCharacters,
                     relations,
                 );
@@ -607,7 +607,7 @@ export class EntityContextEngine {
         }
 
         if (entity.category === 'character') {
-            const charEntity = entity as CharacterDomainModel;
+            const charEntity = entity;
             if (charEntity.identity && textLower.includes(charEntity.identity.toLowerCase())) {
                 score += 0.5;
             }
@@ -737,7 +737,7 @@ export class EntityContextEngine {
         if (entity.entityStatus) {
             statusLabel = this.getStatusLabel(entity.entityStatus);
         } else if (entity.category === 'character') {
-            statusLabel = (entity as CharacterDomainModel).currentStatus;
+            statusLabel = (entity).currentStatus;
         }
 
         let detailLevel: 'full' | 'core' | 'brief' | 'minimal' = 'brief';
@@ -792,16 +792,16 @@ export class EntityContextEngine {
 
         switch (entity.category) {
             case 'character':
-                summary = this.buildCharacterSummary(entity as CharacterDomainModel, detailLevel);
+                summary = this.buildCharacterSummary(entity, detailLevel);
                 break;
             case 'location':
-                summary = this.buildLocationSummary(entity as LocationDomainModel, detailLevel);
+                summary = this.buildLocationSummary(entity, detailLevel);
                 break;
             case 'faction':
-                summary = this.buildFactionSummary(entity as FactionDomainModel, detailLevel);
+                summary = this.buildFactionSummary(entity, detailLevel);
                 break;
             case 'item':
-                summary = this.buildItemSummary(entity as ItemDomainModel, detailLevel);
+                summary = this.buildItemSummary(entity, detailLevel);
                 break;
         }
 
@@ -997,15 +997,13 @@ export class EntityContextEngine {
     private getEntityAliases(entity: AnyEntityDomainModel): string[] {
         const names: string[] = [entity.name];
 
-        if (entity.category === 'character') {
-            const char = entity as CharacterDomainModel;
-        } else if (entity.category === 'faction') {
-            const fac = entity as FactionDomainModel;
+        if (entity.category === 'faction') {
+            const fac = entity;
             if (fac.alias) {
                 names.push(...fac.alias.split(/[,、]/).map(s => s.trim()).filter(Boolean));
             }
         } else if (entity.category === 'location') {
-            const loc = entity as LocationDomainModel;
+            const loc = entity;
             if (loc.alias) {
                 names.push(...loc.alias.split(/[,、]/).map(s => s.trim()).filter(Boolean));
             }

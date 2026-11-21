@@ -191,14 +191,14 @@ export class TemplateManager {
         // 状态标签
         const statusDiv = left.createDiv({ attr: { style: 'display:flex;gap:4px;' } });
         if (template.hasSystem) {
-            const tag = statusDiv.createSpan({ text: 'System ✓', attr: { style: 'padding:2px 6px;background:var(--interactive-accent);color:var(--text-on-accent);border-radius:3px;font-size:10px;' } });
+            statusDiv.createSpan({ text: 'System ✓', attr: { style: 'padding:2px 6px;background:var(--interactive-accent);color:var(--text-on-accent);border-radius:3px;font-size:10px;' } });
         } else {
-            const tag = statusDiv.createSpan({ text: 'System', attr: { style: 'padding:2px 6px;background:var(--background-modifier-border);color:var(--text-muted);border-radius:3px;font-size:10px;' } });
+            statusDiv.createSpan({ text: 'System', attr: { style: 'padding:2px 6px;background:var(--background-modifier-border);color:var(--text-muted);border-radius:3px;font-size:10px;' } });
         }
         if (template.hasUser) {
-            const tag = statusDiv.createSpan({ text: 'User ✓', attr: { style: 'padding:2px 6px;background:var(--interactive-accent);color:var(--text-on-accent);border-radius:3px;font-size:10px;' } });
+            statusDiv.createSpan({ text: 'User ✓', attr: { style: 'padding:2px 6px;background:var(--interactive-accent);color:var(--text-on-accent);border-radius:3px;font-size:10px;' } });
         } else {
-            const tag = statusDiv.createSpan({ text: 'User', attr: { style: 'padding:2px 6px;background:var(--background-modifier-border);color:var(--text-muted);border-radius:3px;font-size:10px;' } });
+            statusDiv.createSpan({ text: 'User', attr: { style: 'padding:2px 6px;background:var(--background-modifier-border);color:var(--text-muted);border-radius:3px;font-size:10px;' } });
         }
 
         // 右侧：操作按钮
@@ -596,7 +596,7 @@ class TemplateImportModal extends Modal {
 
         contentEl.createEl('h3', { text: '📥 导入模板' });
 
-        const desc = contentEl.createEl('p', {
+        contentEl.createEl('p', {
             text: '导入从本插件导出的模板文件（.md 格式）。\n导入将覆盖同名模板。',
             attr: { style: 'margin:12px 0;' }
         });

@@ -395,7 +395,7 @@ export class AddFanficSettingModal extends Modal {
         if (candidates.length === 0) return;
 
         contentEl.createEl('h3', { text: t("addFanfic.ui.k25") });
-        const hint = contentEl.createEl('p', { text: t("addFanfic.ui.k26"), cls: 'nw-text-12-muted' });
+        contentEl.createEl('p', { text: t("addFanfic.ui.k26"), cls: 'nw-text-12-muted' });
 
         let selectedPath = '';
         const picker = contentEl.createDiv({ cls: 'nw-card' });

@@ -137,7 +137,7 @@ export async function registerFont(plugin: NovelWriterPlugin, file: TFile): Prom
         registeredFonts.set(family, font);
         const list = plugin.settings.customFonts || [];
         if (!list.some(entry => entry.path === file.path)) {
-            plugin.settings.customFonts = [...list, { family, path: file.path } as never];
+            plugin.settings.customFonts = [...list, { family, path: file.path }];
             await plugin.saveSettings();
         }
         log.info(`[FontManager] 字体已注册: ${family} (${file.path})`);

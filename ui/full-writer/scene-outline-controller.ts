@@ -560,7 +560,7 @@ export class SceneOutlineController {
         footer.createSpan({ text: t('fullwriter.scene.progress', { done: completed, total: this.scenes.length }) });
 
         if (this.isDirty) {
-            const saveIndicator = footer.createSpan({
+            footer.createSpan({
                 text: t('fullwriter.scene.autosaving'),
                 cls: 'nw-so-save-hint'
             });
@@ -840,11 +840,11 @@ export class SceneOutlineController {
                 worldview: data.world_view?.raw ?? '',
                 characters: ContextManager.formatCharacters(data.character_state ?? []),
                 locations: ContextManager.formatEntities(
-                    (data.locations ?? []) as unknown as Record<string, string>[], 'location'),
+                    data.locations ?? [], 'location'),
                 factions: ContextManager.formatEntities(
-                    (data.factions ?? []) as unknown as Record<string, string>[], 'faction'),
+                    data.factions ?? [], 'faction'),
                 items: ContextManager.formatEntities(
-                    (data.items ?? []) as unknown as Record<string, string>[], 'item'),
+                    data.items ?? [], 'item'),
             });
             if (response.error) {
                 new Notice(t('fullwriter.scene.genFailedWith', { msg: response.error }), 5000);
@@ -1141,7 +1141,7 @@ export class SceneOutlineController {
         }
         const container = document.querySelector('.nw-scene-outline-container');
         if (container && container.parentElement) {
-            void this.render(container.parentElement as HTMLElement);
+            void this.render(container.parentElement);
         }
     }
 

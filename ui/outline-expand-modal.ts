@@ -215,7 +215,7 @@ export class OutlineExpandModal extends Modal {
 
         const right = header.createDiv({ cls: 'nw-oe-header-right' });
 
-        const strategyLabel = right.createSpan({ text: '策略：', cls: "nw-oe-label", attr: {} });
+        right.createSpan({ text: '策略：', cls: "nw-oe-label", attr: {} });
         const strategySelect = right.createEl('select', {
             cls: 'nw-oe-select',
         }) as HTMLSelectElement;

@@ -72,7 +72,6 @@ const DURATION_UNITS = new Set(['分钟', '小时', '日', '天', '月', '年', 
 const AGE_PREDICATE = '年龄';
 
 /** 视为「当前年龄」的谓词前缀（顺序无关；限定词在前的不算，如「被提亲起始年龄」） */
-const AGE_PREDICATE_PREFIXES = ['年龄', '年纪', '岁数'];
 /** 化名断言的谓语名 */
 const ALIAS_PREDICATE = '又名';
 /** 章节时长断言的谓语名（每章一条，自身不参与跨章比较） */

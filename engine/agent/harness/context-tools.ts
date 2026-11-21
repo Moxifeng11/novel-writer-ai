@@ -59,7 +59,7 @@ export function createContextTools(
                 const body = ids
                     .map(id => next.loaded[`${request.kind}:${id}`])
                     .filter(Boolean)
-                    .map(item => `【${item!.title}】\n${item!.text}`)
+                    .map(item => `【${item.title}】\n${item.text}`)
                     .join('\n\n');
                 return {
                     ok: true,

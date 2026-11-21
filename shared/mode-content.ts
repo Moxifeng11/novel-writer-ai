@@ -448,7 +448,7 @@ export function listModeUnits(app: App, project: string, mode: CreationMode, fil
                 words: Number(cache?.frontmatter?.['word_count'] || 0) || 0,
                 file,
                 legacy: true,
-            } as ModeUnitInfo;
+            };
         })
         .filter((item): item is ModeUnitInfo => !!item);
 

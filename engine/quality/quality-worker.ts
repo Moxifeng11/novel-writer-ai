@@ -1,7 +1,7 @@
 import { registerTaskHandler, startWorkerRuntime } from '@/services/worker-runtime';
-import { QualityScoreEngine, QualityScore, EvaluationContext } from './quality-score-engine';
+import { QualityScoreEngine, EvaluationContext } from './quality-score-engine';
 import { getScopedPlotDivergenceEngine, getScopedWritingQualityEngine } from './quality-engine-factory';
-import { DeviationDetector, DeviationReport, DeviationContext } from './deviation-detector';
+import { DeviationDetector, DeviationContext } from './deviation-detector';
 import { CharacterConsistencyChecker } from '@/engine/character-consistency-checker';
 import { createLogger } from '@/shared/logger';
 
@@ -57,7 +57,7 @@ registerTaskHandler('quality:evaluate', async (input: QualityEvaluateInput, cont
     ensureEngines();
     const result = await qualityScoreEngine!.evaluate(input.text, input.context);
     context.onProgress(100, '质量评分完成');
-    return result as QualityScore;
+    return result;
 });
 
 registerTaskHandler('quality:evaluate:realtime', async (input: QualityEvaluateInput, context) => {
@@ -65,7 +65,7 @@ registerTaskHandler('quality:evaluate:realtime', async (input: QualityEvaluateIn
     ensureEngines();
     const result = await qualityScoreEngine!.evaluate(input.text, input.context);
     context.onProgress(100, '实时质量评分完成');
-    return result as QualityScore;
+    return result;
 });
 
 registerTaskHandler('deviation:detect', async (input: DeviationDetectInput, context) => {
@@ -73,7 +73,7 @@ registerTaskHandler('deviation:detect', async (input: DeviationDetectInput, cont
     ensureEngines();
     const result = await deviationDetector!.detect(input.text, input.context);
     context.onProgress(100, '偏离检测完成');
-    return result as DeviationReport;
+    return result;
 });
 
 registerTaskHandler('deviation:detect:realtime', async (input: DeviationDetectInput, context) => {
@@ -81,7 +81,7 @@ registerTaskHandler('deviation:detect:realtime', async (input: DeviationDetectIn
     ensureEngines();
     const result = await deviationDetector!.detect(input.text, input.context);
     context.onProgress(100, '实时偏离检测完成');
-    return result as DeviationReport;
+    return result;
 });
 
 startWorkerRuntime();

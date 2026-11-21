@@ -282,7 +282,7 @@ export class AnalysisReportPanel {
         const bar = barContainer.createDiv({
             attr: { style: 'width: 100%; height: 8px; background: var(--background-primary); border-radius: 4px; margin-top: 4px; overflow: hidden;' }
         });
-        const fill = bar.createDiv({
+        bar.createDiv({
             attr: { style: `width: ${report.emotionCurve.avgIntensity}%; height: 100%; background: linear-gradient(90deg, #22c55e, #e11d48); border-radius: 4px;` }
         });
 

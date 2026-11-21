@@ -340,7 +340,7 @@ export function computeStatusCounts(books: BookBasicInfo[] | undefined): Record<
     const all = books || [];
     const counts = { pending: 0, processing: 0, completed: 0, failed: 0, interrupted: 0 };
     for (const book of all) {
-        const status = book.breakdownStatus as keyof typeof counts;
+        const status = book.breakdownStatus;
         if (status in counts) counts[status] += 1;
     }
     return counts;

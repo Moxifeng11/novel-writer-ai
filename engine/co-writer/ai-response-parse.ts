@@ -15,7 +15,7 @@
 import { extractJsonObject, stripCodeFence, stripThinkingBlock } from '@/shared/api-response-utils';
 import { EDIT_VALIDATION_PASS_SCORE } from '@/shared/thresholds';
 import { createLogger } from '@/shared/logger';
-import type { EditValidation, PlotCompletionMetrics, SuggestionDirection } from '@/shared/types';
+import type { EditValidation, PlotCompletionMetrics} from '@/shared/types';
 
 const log = createLogger('CoWriterEngine');
 
@@ -174,7 +174,7 @@ export function parseEvaluationResponse(raw: string): PlotCompletionMetrics {
             overallCompletion,
             suggestionAdvice: json.suggestionAdvice || '',
             nextDirectionHints: Array.isArray(json.nextDirectionHints)
-                ? json.nextDirectionHints as SuggestionDirection[]
+                ? json.nextDirectionHints
                 : ['action', 'emotion', 'dialogue'],
             evaluatedAt: Date.now()
         };

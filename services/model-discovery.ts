@@ -351,7 +351,7 @@ export async function discoverModels(
     endpoint: string,
     format: ApiFormat,
     apiKey: string,
-    request: DiscoverRequestUrlFn = requestUrl as unknown as DiscoverRequestUrlFn,
+    request: DiscoverRequestUrlFn = requestUrl,
     headers?: Record<string, string>,
 ): Promise<DiscoveryResult> {
     // S3-4（安全 r3）：锁定态密文不得当凭据发送
@@ -405,7 +405,6 @@ export async function discoverModels(
         if (!response) {
             return { kind: 'error', message: describeStatus(lastStatus || 404), url: usedUrl };
         }
-        const urlResolved = usedUrl;
 
         const text = boundedText(response.text);
         let payload: unknown = response.json;

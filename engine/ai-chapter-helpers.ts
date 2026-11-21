@@ -276,7 +276,6 @@ TIMELINE: 时间点 | 事件描述`;
         let currentBody = bodyText;
         const diffs: string[] = [];
         const roundBodies: string[] = [bodyText];
-        let lastIssues = '';
         const ctxBlock = contextPrompt ? `\n\n【上下文/设定】\n${contextPrompt.slice(0, 3000)}` : '';
         
         for (let round = 0; round < maxRounds; round++) {
@@ -294,12 +293,9 @@ TIMELINE: 时间点 | 事件描述`;
             
             const hasIssues = checkResult.content.includes('❌');
             if (!hasIssues) {
-                lastIssues = checkResult.content;
                 onProgress?.('✅ 审查通过');
                 break;
             }
-            
-            lastIssues = checkResult.content;
             
             onProgress?.(`🔧 第${round + 1}轮修复...`);
             const fixPrompt = FIX_PROMPTS.userPrompt
