@@ -519,12 +519,13 @@ export class SettlementEngine {
             }
         } else {
             const chapFolder = this.getVaultMeta().getAbstractFileByPath(chapDir);
-            bodyFile = chapFolder instanceof TFolder ? (getChapterFile(chapFolder, '正文') as TFile | null) : null;
+            const bodyCandidate = chapFolder instanceof TFolder ? getChapterFile(chapFolder, '正文') : null;
+            bodyFile = bodyCandidate instanceof TFile ? bodyCandidate : null;
         }
         if (bodyFile) {
             try {
                 await withWriteLock(bodyFile.path, () =>
-                    this.getFrontmatter().processFrontmatter(bodyFile as TFile, (fmObj: FrontMatter) => {
+                    this.getFrontmatter().processFrontmatter(bodyFile, (fmObj: FrontMatter) => {
                         fmObj['status'] = 'settled';
                         if (uniqueChars.length > 0 && !fmObj['涉及人物']) {
                             fmObj['涉及人物'] = uniqueChars;
@@ -936,9 +937,9 @@ export class SettlementEngine {
     private async restoreSnapshots(ctx: SettleContext): Promise<void> {
         for (const [filePath, fields] of ctx.snapshots) {
             const file = this.getVaultMeta().getAbstractFileByPath(filePath);
-            if (!file) continue;
+            if (!(file instanceof TFile)) continue;
             try {
-                await withWriteLock(filePath, () => this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
+                await withWriteLock(filePath, () => this.getFrontmatter().processFrontmatter(file, (fm: FrontMatter) => {
                     for (const [field, value] of fields) {
                         fm[field] = value as FrontMatter[string];
                     }
@@ -997,12 +998,12 @@ export class SettlementEngine {
             // P1-3（v4.27）：快照读必须与写入同锁。processFrontmatter 会写盘，
             // 若在锁外先读旧值，锁内写入前原值可能已被其他写入者改掉，回滚会写回过期值。
             await withWriteLock(fp, async () => {
-                await this.snapshotField(ctx, file as TFile, field);
+                await this.snapshotField(ctx, file, field);
                 // F3：写字段时总会顺带改这两个溯源字段；不快照的话回滚后
                 // 「最后变更章/时间」会指向一个已被回滚的章节。
-                await this.snapshotField(ctx, file as TFile, 'entity_last_changed_at');
-                await this.snapshotField(ctx, file as TFile, 'entity_last_changed_chapter');
-                await this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
+                await this.snapshotField(ctx, file, 'entity_last_changed_at');
+                await this.snapshotField(ctx, file, 'entity_last_changed_chapter');
+                await this.getFrontmatter().processFrontmatter(file, (fm: FrontMatter) => {
                     if (CONTINUITY_APPEND_FIELDS.has(field)) {
                         // v4.25 连续性账本：已知信息/伤势/持有物品 追加语义 + 来源章，
                         // 覆盖语义会丢历史（上一章知道的事不会因为本章更新而消失）
@@ -1563,7 +1564,7 @@ ${ni.description || '暂无描述'}
             try {
                 const fp = pjCharFile(ctx.project, e.name);
                 const file = this.getVaultMeta().getAbstractFileByPath(fp);
-                if (!file) {
+                if (!(file instanceof TFile)) {
                     // DSH-20261113-23 ③：情绪更新因人物卡缺失落空——可见。
                     ctx.result.missingEntities.push({ category: '人物', name: e.name, field: '当前情绪' });
                     continue;
@@ -1573,12 +1574,12 @@ ${ni.description || '暂无描述'}
                 // item6-a（同日审计）：entity_last_changed_at 统一 ISO 语义，
                 // 章名写入 entity_last_changed_chapter（与 §4 主路径 800-801 行对齐）。
                 await withWriteLock(fp, async () => {
-                    await this.snapshotField(ctx, file as TFile, '当前情绪');
-                    await this.snapshotField(ctx, file as TFile, 'entity_status');
-                    await this.snapshotField(ctx, file as TFile, 'entity_last_changed_at');
-                    await this.snapshotField(ctx, file as TFile, 'entity_last_changed_chapter');
-                    await this.snapshotField(ctx, file as TFile, 'entity_last_changed_reason');
-                    await this.getFrontmatter().processFrontmatter(file as TFile, (fm: FrontMatter) => {
+                    await this.snapshotField(ctx, file, '当前情绪');
+                    await this.snapshotField(ctx, file, 'entity_status');
+                    await this.snapshotField(ctx, file, 'entity_last_changed_at');
+                    await this.snapshotField(ctx, file, 'entity_last_changed_chapter');
+                    await this.snapshotField(ctx, file, 'entity_last_changed_reason');
+                    await this.getFrontmatter().processFrontmatter(file, (fm: FrontMatter) => {
                         fm['当前情绪'] = e.emotion;
                         // v4.0: 实体状态追踪
                         if (fm['entity_status'] == null || fm['entity_status'] === '') fm['entity_status'] = 'active';
@@ -1632,7 +1633,8 @@ ${ni.description || '暂无描述'}
         } else {
             // 回退到旧逻辑（兼容仍以章节目录传入的调用方）
             const chapFolder = this.getVaultMeta().getAbstractFileByPath(ctx.chapDir);
-            bodyFile = chapFolder instanceof TFolder ? (getChapterFile(chapFolder, '正文') as TFile | null) : null;
+            const bodyCandidate = chapFolder instanceof TFolder ? getChapterFile(chapFolder, '正文') : null;
+            bodyFile = bodyCandidate instanceof TFile ? bodyCandidate : null;
         }
         if (!bodyFile) return;
         try {
@@ -1660,7 +1662,7 @@ ${ni.description || '暂无描述'}
                     }
                 }
 
-                await this.getFrontmatter().processFrontmatter(bodyFile as TFile, (fm: FrontMatter) => {
+                await this.getFrontmatter().processFrontmatter(bodyFile, (fm: FrontMatter) => {
                     // v4.0: 结算完成 → settled（旧值 '已完稿' 保留兼容）
                     fm['status'] = 'settled';
                     if (allCharNames.length > 0) {
@@ -1909,7 +1911,7 @@ ${ni.description || '暂无描述'}
         const results: TFile[] = [];
         for (const fp of checks) {
             const file = this.getVaultMeta().getAbstractFileByPath(fp);
-            if (file) results.push(file as TFile);
+            if (file instanceof TFile) results.push(file);
         }
         return results;
     }

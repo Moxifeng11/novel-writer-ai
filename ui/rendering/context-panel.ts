@@ -810,7 +810,7 @@ export class ContextPanel {
                 editLink.addEventListener('click', async () => {
                     const wsFile = await findWritingStyleFile(this.app, project, { allowPlaceholder: true });
                     if (wsFile) {
-                        await plugin.safeOpenFile(wsFile as TFile);
+                        await plugin.safeOpenFile(wsFile);
                     }
                 });
             } else if (project) {
@@ -824,13 +824,13 @@ export class ContextPanel {
                     if (!this.app.vault.getAbstractFileByPath(folderPath)) await this.app.vault.createFolder(folderPath);
                     if (!this.app.vault.getAbstractFileByPath(targetPath)) {
                         const tplFile = this.app.vault.getAbstractFileByPath(templatePath);
-                        if (tplFile) {
-                            const tplContent = await this.app.vault.read(tplFile as TFile);
+                        if (tplFile instanceof TFile) {
+                            const tplContent = await this.app.vault.read(tplFile);
                             await this.app.vault.create(targetPath, tplContent);
                         }
                     }
                     const wsFile = this.app.vault.getAbstractFileByPath(targetPath);
-                    if (wsFile) await plugin.safeOpenFile(wsFile as TFile);
+                    if (wsFile instanceof TFile) await plugin.safeOpenFile(wsFile);
                 });
             }
         });

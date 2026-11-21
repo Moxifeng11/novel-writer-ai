@@ -433,10 +433,10 @@ ${analysis}
                 const backupPath = getWritingStyleBackupPath(projectName, dateStr);
                 const bakFile = this.app.vault.getAbstractFileByPath(backupPath);
                 if (bakFile) await this.app.vault.delete(bakFile);
-                const oldContent = await this.app.vault.read(existingFile as TFile);
+                const oldContent = await this.app.vault.read(existingFile);
                 await this.app.vault.create(backupPath, oldContent);
                 if (existingFile.path === wsPath) {
-                    await this.app.vault.modify(existingFile as TFile, styleContent);
+                    await this.app.vault.modify(existingFile, styleContent);
                 } else {
                     await this.app.vault.create(wsPath, styleContent);
                     showSuccessNotice('已迁移文笔风格到标准路径', { timeout: 3000 });
@@ -446,7 +446,7 @@ ${analysis}
             }
             showSuccessNotice(`文笔风格已写入「${projectName}」`, { timeout: 5000 });
             const wsFile = this.app.vault.getAbstractFileByPath(wsPath);
-            if (wsFile) await this.plugin.safeOpenFile(wsFile as TFile);
+            if (wsFile instanceof TFile) await this.plugin.safeOpenFile(wsFile);
         } catch (e) {
             showErrorNotice((e as Error).message, { title: '写入项目失败', timeout: 5000 });
         }

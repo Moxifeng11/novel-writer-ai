@@ -1455,9 +1455,9 @@ export class BatchImportModal extends Modal {
             let addedCount = 0;
             for (const path of selectedPaths) {
                 const abstractFile = this.app.vault.getAbstractFileByPath(path);
-                if (abstractFile) {
+                if (abstractFile instanceof TFile) {
                     try {
-                        const content = await this.app.vault.cachedRead(abstractFile as TFile);
+                        const content = await this.app.vault.cachedRead(abstractFile);
                         this.batchManager.addPreview({
                             filename: abstractFile.name,
                             content,
@@ -1489,8 +1489,8 @@ export class BatchImportModal extends Modal {
         for (const child of folder.children) {
             if (child instanceof TFolder) {
                 result.push(...this.getFilesInFolder(child));
-            } else if (validExtensions.includes((child as TFile).extension?.toLowerCase())) {
-                result.push(child as TFile);
+            } else if (child instanceof TFile && validExtensions.includes(child.extension.toLowerCase())) {
+                result.push(child);
             }
         }
 

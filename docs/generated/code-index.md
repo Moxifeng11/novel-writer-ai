@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 354 | 146734 | 1951 | 1545 | 79% |
+| `engine/` | 354 | 146736 | 1951 | 1545 | 79% |
 | `services/` | 65 | 19531 | 296 | 204 | 69% |
 | `shared/` | 265 | 52990 | 2246 | 1757 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 307 | 113882 | 1182 | 945 | 80% |
+| `ui/` | 307 | 113884 | 1182 | 945 | 80% |
 
 ## 文件清单
 
@@ -339,7 +339,7 @@
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1343 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |
-| `engine/settlement-engine.ts` | 2282 | 3 | 3 |
+| `engine/settlement-engine.ts` | 2284 | 3 | 3 |
 | `engine/settlement/markdown-table-utils.ts` | 125 | 6 | 6 |
 | `engine/settlement/report-parser.ts` | 214 | 4 | 4 |
 | `engine/settlement/settle-context.ts` | 137 | 2 | 2 |
@@ -928,7 +928,7 @@
 | `ui/prompt-manager-logic.ts` | 76 | 4 | 3 |
 | `ui/prompt-manager-settings.ts` | 1364 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 88 | 1 | 1 |
-| `ui/quality-dashboard-modal.ts` | 504 | 2 | 2 |
+| `ui/quality-dashboard-modal.ts` | 506 | 2 | 2 |
 | `ui/quality-loop-modal.ts` | 294 | 1 | 1 |
 | `ui/rebuild-chapters-modal.ts` | 370 | 1 | 1 |
 | `ui/refill-modal.ts` | 650 | 1 | 1 |

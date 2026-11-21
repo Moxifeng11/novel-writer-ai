@@ -4243,3 +4243,11 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - **连带修正**：`tests/unit/ui/agent-stage-panel.test.ts` 的源码契约断言随实现更新（原来是 `fetchStagePanelModel(project, this.port.getProjectStatus)`）。
 - **门禁**：tsc EXIT=0；定向测试 27 文件 / 333 用例通过；`check:obsidian-review` EXIT=0；`check:review-warn` 基线收紧到 1,393；preflight EXIT=0。
 - **下一批**：`no-tfile-tfolder-cast` 38（`instanceof TFile` 收窄；`shared/file-system-port.ts` 的 4 处适配层假对象保留）。
+
+## 第一百四十三轮：warn 第四批（no-tfile-tfolder-cast 38 → 4）
+
+- 范围：`no-tfile-tfolder-cast` 38 条。34 处按 `instanceof` 收窄后删 cast，4 处（`shared/file-system-port.ts:358/366/580/584`）是适配层假对象，保留。
+- 手法：多数点位类型本来就够（`findWritingStyleFile` → `TFile | null`、`listEntityFiles` → `TFile[]`、`fs.getFile` → `TFile | null`），直接删 cast；只有 `getAbstractFileByPath` 补守卫。`quality-dashboard-modal.ts` 的 `.filter(c => c.file instanceof TFile)` 不会收窄，改 `flatMap` 返回 `[]` 或单元素数组。`settlement-engine.ts` 两处三元里的 `getChapterFile(...) as TFile | null` 拆成 `bodyCandidate` 局部变量 + `instanceof`。
+- 门禁：tsc EXIT=0；定向 20 文件 / 148 用例通过；warn 1,393 → **1,343**（`no-unnecessary-type-assertion` 357 → 341 顺带下降）；`.review-warn-baseline.json` 收紧到 1,343 / 29 类；`.bundle-baseline.json` main.js 6,239,072 → 6,239,394（+322，instanceof/结构拆分）。
+- 文档：`docs/DEVELOPMENT.md` 存量与「第四批落地手法」；`docs/planning/2026-11-21-quality-optimization-roadmap.md` 批次表与进度日志。
+- 下一批：第 5 批 `no-explicit-any` 93（先 engine 后 ui）。

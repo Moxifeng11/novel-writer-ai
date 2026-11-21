@@ -1269,7 +1269,7 @@ npm run check:release  # 发布前资产与版本一致性校验
 
 单测环境是 node（`vitest.config.ts` 的 `environment: 'node'`），而代码改用了 Obsidian 注入的全局 `createEl/createDiv/createSpan` 与 `window.setTimeout`。`tests/setup.ts` 负责垫片：`window` 缺省指向 `globalThis`；`createEl/createDiv/createSpan/createFragment` 缺省用 `tests/unit/ui/support/fake-dom.ts` 的 `FakeEl`，若测试已用 `stubDocument()` 注入 `document.createElement` 则优先用该工厂（保证断言拿到的元素类型一致）。新增垫片时不要覆盖测试已有的定义。
 
-当前存量（2026-11-21，`eslint.obsidian-review.mjs` 口径）：warn 2,732 → **1,393**，error 0。`npm run check:review-warn` 用 `.review-warn-baseline.json` 按规则设预算，任何一类上涨即失败（已在 preflight 里）。剩余大头 `no-unnecessary-type-assertion` 357（规则不可靠，不追）、`no-deprecated` 255（多为 StyleFingerprint V1 → V2 重构）、`no-misused-promises` 162、`no-unused-vars` 148（全部是 assigned-but-never-used 的 DOM 创建，有副作用，暂不动）、`no-floating-promises` 147。
+当前存量（2026-11-21，`eslint.obsidian-review.mjs` 口径）：warn 2,732 → **1,343**，error 0。`npm run check:review-warn` 用 `.review-warn-baseline.json` 按规则设预算，任何一类上涨即失败（已在 preflight 里）。剩余大头 `no-unnecessary-type-assertion` 341（规则不可靠，不追）、`no-deprecated` 255（多为 StyleFingerprint V1 → V2 重构）、`no-misused-promises` 162、`no-unused-vars` 148（全部是 assigned-but-never-used 的 DOM 创建，有副作用，暂不动）、`no-floating-promises` 147；`no-tfile-tfolder-cast` 已从 38 降到 4（只剩 `shared/file-system-port.ts` 适配层的假对象，故意保留）。
 
 批次排期、风险分级与验收口径见 `docs/planning/2026-11-21-quality-optimization-roadmap.md`；新增批次先在那里登记，再按本节的约束执行。
 
@@ -1285,6 +1285,13 @@ npm run check:release  # 发布前资产与版本一致性校验
 - `no-empty` 的空 `catch` 与 `check:silent-failures` 是同一批点位：在 **catch 行**写 `// silent-ok: 理由` 一处同时满足两条门禁（写进 catch 体内不算豁免，那条 catch 仍会被判静默失败）。
 - `unbound-method` 的根因是先把方法解构成局部变量再 `.call(host)`：改成 `host.method(...)`（保留可选链 `host.method?.(...)`）或用箭头函数包一层；`host.method` 的属性收窄在闭包里会丢失，必要时用 `!` 断言。
 - 改完源码若推翻了测试里的「源码契约」字符串断言（如 `tests/unit/ui/agent-stage-panel.test.ts` 直接 `toContain` 源码行），必须同步改断言，否则测试会以「实现没改」的方式挂掉。
+
+第四批（2026-11-21）落地手法：
+
+- `no-tfile-tfolder-cast` 的多数点位其实**类型本来就够**：`findWritingStyleFile()` 返回 `TFile | null`、`listEntityFiles()` 返回 `TFile[]`、`fs.getFile()` 返回 `TFile | null`，直接删掉 `as TFile` 即可；只有 `getAbstractFileByPath()`（`TAbstractFile | null`）才需要补 `instanceof TFile` 收窄。
+- 收窄要落在**守卫条件**上，不要写 `x instanceof TFile ? x : null` 再转一手：`if (!(file instanceof TFile)) continue;` / `if (f instanceof TFile) { ... }`，后续同一作用域里的 cast 全部可删。
+- `.filter((c) => c.file instanceof TFile)` **不会**让 TypeScript 把 `c.file` 收窄（filter 没有类型谓词），但下游 map 仍写成 `c.file as TFile` 就会被规则判 cast。要么把 filter 写成类型谓词，要么改 `flatMap`（`if (!(c.file instanceof TFile)) return []; return [{ ..., file: c.file }];`）——后者不需要额外 import。
+- `shared/file-system-port.ts` 的 `as unknown as TFile` 是测试适配层的假对象，**不要改**，保留 4 条 warn 在预算里。
 
 ### 异步等待原语（2026-10-31 批次 14）
 

@@ -160,14 +160,16 @@ export class QualityDashboardModal extends Modal {
     private scanChapters(): ChapterEntry[] {
         const list = getChaptersForProject(this.app, this.project);
         return list
-            .filter((c) => c.file instanceof TFile)
-            .map((c) => ({
-                chapter: c.chapter,
-                volume: c.volume,
-                chapterNum: parseInt(c.chapter.match(/\d+/)?.[0] || '0', 10),
-                title: c.title,
-                file: c.file as TFile,
-            }))
+            .flatMap((c) => {
+                if (!(c.file instanceof TFile)) return [];
+                return [{
+                    chapter: c.chapter,
+                    volume: c.volume,
+                    chapterNum: parseInt(c.chapter.match(/\d+/)?.[0] || '0', 10),
+                    title: c.title,
+                    file: c.file,
+                }];
+            })
             .filter((c) => c.chapterNum > 0)
             .sort((a, b) => a.chapterNum - b.chapterNum);
     }

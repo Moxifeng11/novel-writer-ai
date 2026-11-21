@@ -552,8 +552,8 @@ export class RulesSection extends SettingsSection {
             openBtn.addEventListener('click', async () => {
                 const { VAULT_RULES_PATH } = await import('@/services/rules-registry');
                 const file = this.app.vault.getAbstractFileByPath(VAULT_RULES_PATH);
-                if (file) {
-                    await this.app.workspace.getLeaf('tab').openFile(file as TFile);
+                if (file instanceof TFile) {
+                    await this.app.workspace.getLeaf('tab').openFile(file);
                 } else {
                     showWarningNotice(t('settings.general.rulesMissingWarn'), { timeout: 4000 });
                 }

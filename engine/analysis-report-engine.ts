@@ -494,7 +494,7 @@ export class AnalysisReportEngine {
             charNames.push(name);
             charStates[name] = {
                 oldStatus: fm['当前状态'] || undefined,
-                file: f as TFile
+                file: f
             };
         }
 
@@ -1247,7 +1247,7 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
                 if (!fm) continue;
                 const name = fm['姓名'] || fm['名称'] || fm['name'] || '';
                 if (name === change.name) {
-                    targetFile = f as TFile;
+                    targetFile = f;
                     break;
                 }
             }

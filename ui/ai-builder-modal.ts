@@ -276,7 +276,7 @@ export class AiBuilderModal extends Modal {
         try {
             const woPath = pjWorldview(project);
             const woFile = this.app.vault.getAbstractFileByPath(woPath);
-            if (woFile) this.worldContent = await this.app.vault.read(woFile as TFile);
+            if (woFile instanceof TFile) this.worldContent = await this.app.vault.read(woFile);
         } catch { /* ignore */ }
         // 读取设定库
         try {
@@ -369,8 +369,8 @@ export class AiBuilderModal extends Modal {
                     }).onclick = async (e) => {
                         e.stopPropagation();
                         const f = this.app.vault.getAbstractFileByPath(pjWorldview(this.selectedProject));
-                        if (f) {
-                            await this.plugin.safeOpenFile(f as TFile);
+                        if (f instanceof TFile) {
+                            await this.plugin.safeOpenFile(f);
                         }
                     };
                 } else {
@@ -592,8 +592,8 @@ export class AiBuilderModal extends Modal {
                 // 打开文件（使用重命名后的路径）
                 const openPath = pjWorldview(this.selectedProject);
                 const file = this.app.vault.getAbstractFileByPath(openPath);
-                if (file) {
-                    await this.plugin.safeOpenFile(file as TFile);
+                if (file instanceof TFile) {
+                    await this.plugin.safeOpenFile(file);
                 }
             } catch (e) {
                 genNotice.hide();
@@ -953,8 +953,8 @@ export class AiBuilderModal extends Modal {
 
         // 自动打开文件
         const file = this.app.vault.getAbstractFileByPath(`${this.selectedProject}/${cfg.folder}/${savedAs}.md`);
-        if (file) {
-            await this.plugin.safeOpenFile(file as TFile);
+        if (file instanceof TFile) {
+            await this.plugin.safeOpenFile(file);
         }
     }
 

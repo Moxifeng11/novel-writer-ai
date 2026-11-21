@@ -128,7 +128,7 @@ export async function updateWritingStyleTemplate(app: App, projectName: string):
         return;
     }
 
-    const wsContent = await app.vault.read(wsFile as TFile);
+    const wsContent = await app.vault.read(wsFile);
     if (wsContent.includes('## 零、参考样本')) {
         new Notice('ℹ️ 文笔风格已包含参考样本，无需更新', 3000);
         return;
@@ -153,7 +153,7 @@ export async function updateWritingStyleTemplate(app: App, projectName: string):
     if (insertPos === -1) insertPos = afterMarker;
 
     const newContent = wsContent.slice(0, insertPos + 1) + '\n' + sampleMatch[0] + '\n\n' + wsContent.slice(insertPos + 1);
-    await app.vault.modify(wsFile as TFile, newContent);
+    await app.vault.modify(wsFile, newContent);
     showSuccessNotice(`已为「${projectName}」添加参考样本章节`, { timeout: 4000 });
 }
 

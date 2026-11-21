@@ -17,7 +17,7 @@
  *   4. `status` 不降级：已 settled 的章节不会被写回 written / draft
  */
 import { FileTxService } from '@/services/file-tx';
-import { App, TFile } from 'obsidian';
+import { App } from 'obsidian';
 import { parseFrontmatter } from '@/shared/frontmatter';
 import {
     FileSystemPort, FrontmatterPort, ObsidianFileSystem, ObsidianFrontmatter,
@@ -360,7 +360,7 @@ ${fmRaw}
             );
         } else {
             try {
-                await this.getFrontmatter().processFrontmatter(file as TFile, (fm) => {
+                await this.getFrontmatter().processFrontmatter(file, (fm) => {
                     this.applyInvariants(fm, {
                         title, chapterName, volume: req.volume,
                         writingMode: req.writingMode, body,
