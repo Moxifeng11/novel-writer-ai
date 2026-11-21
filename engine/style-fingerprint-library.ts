@@ -32,9 +32,10 @@ import { getSharedEmbeddingProvider } from './embedding/embedding-service';
 import { vectorizeFingerprintSamples, vectorizeFingerprintSamplesBatch, deleteFingerprintSamples } from './style/style-sample-service';
 import {
     migrateFileV1ToV2,
+    migrateV1ToV2,
     needsV1ToV2Migration,
 } from './style/fingerprint-migrator';
-import type { V2Fingerprint, StyleDimensionKeyV2 } from './style/style-dimensions-v2';
+import type { V2Fingerprint, StyleDimensionKeyV2, StyleFingerprintFeaturesV2 } from './style/style-dimensions-v2';
 import type { StyleAnalysisResultV2 } from './style/style-features-v2';
 import {
     StyleVectorStoreV2,
@@ -1645,33 +1646,97 @@ export class StyleFingerprintLibrary {
     /**
      * 保存时决定该条目落盘的形态。
      *
-     * 内存里的三张表只持有 V1 投影（7 维字符串），直接写盘会把磁盘上
-     * 已有的 V2 12 维特征、逐维样本、量化值全部抹掉——每次 enable/disable
-     * 都降级一次。这里在「V2 仍与当前 V1 一致」时写回原 V2 对象，
-     * 只让 V1 的可变字段（name/enabled/tags/...）覆盖过去。
+     * 规范模型口径（2026-11-21 决策，见
+     * docs/design/2026-11-21-style-fingerprint-v2-canonical.md）：
+     * **磁盘上只写 V2**。内存里的三张表仍只持有 V1 投影（7 维字符串），
+     * 所以写盘前必须把条目提升成 V2：
+     * 1. 已有 V2 缓存：同步 7 维投影的 description（重新提取/编辑后的新文案），
+     *    保留 5 个 V2 新增维度的统计值与样本，避免「保存一次降级一次」；
+     * 2. 无 V2 缓存：用 migrateV1ToV2 现场生成（7 维 complete + 5 维 pending），
+     *    并登记进缓存，下次保存即走路径 1。
      *
-     * 若 V1 特征已被重新提取（与 V2 的 7 维投影不一致），说明 V2 过期，
-     * 就写 V1，等下次加载重新迁移。
+     * 不再回写 V1：任何保存动作都不得把 12 维特征抹成 7 维字符串。
      */
     private toPersistedFingerprint(
         fp: StyleFingerprint,
         scope: 'template' | 'global' | 'project',
-    ): StyleFingerprint | V2Fingerprint {
-        const v2 = this.v2Fingerprints.get(fp.id);
-        if (!v2 || v2.scope !== scope) return fp;
-
-        const projected = this.extractV1FeaturesFromV2(v2.features);
-        const same = (Object.keys(projected) as Array<keyof StyleFingerprintFeatures>)
-            .every(key => (projected[key] ?? '') === (fp.features?.[key] ?? ''));
-        if (!same) return fp;
+    ): V2Fingerprint {
+        const cached = this.v2Fingerprints.get(fp.id);
+        const v2 = cached && cached.scope === scope
+            ? this.syncV1DescriptionsIntoV2(cached, fp)
+            : this.createV2FromV1(fp, scope);
 
         return {
             ...v2,
-            ...fp,
+            name: fp.name,
+            source: fp.source,
+            enabled: fp.enabled ?? true,
+            tags: fp.tags ?? [],
+            stats: fp.stats ?? v2.stats,
+            samples: fp.samples ?? v2.samples,
+            extractedAt: fp.extractedAt ?? v2.extractedAt,
+            ...(fp.sourceText ? { sourceText: fp.sourceText } : {}),
             version: 'v2',
             // V1 的 7 维字符串不能覆盖 V2 的 12 维结构
             features: v2.features,
-        } as unknown as V2Fingerprint;
+        };
+    }
+
+    /**
+     * 用 V1 条目现场生成 V2 规范对象，并登记进 V2 缓存。
+     *
+     * 5 个 V2 新增维度此时没有原文可算，保持 pending；后续
+     * refill/重蒸馏写入 V2 特征时会走 updateV2FingerprintFeatures 补全。
+     */
+    private createV2FromV1(
+        fp: StyleFingerprint,
+        scope: 'template' | 'global' | 'project',
+    ): V2Fingerprint {
+        const v2 = migrateV1ToV2(fp, scope);
+        this.v2Fingerprints.set(fp.id, v2);
+        return v2;
+    }
+
+    /**
+     * 把 V1 投影上最新的 7 维文案同步进已有 V2 条目。
+     *
+     * 只改这 7 维的 description，保留其余 5 维与全部量化字段/样本；
+     * 若投影本来就一致则原样返回（enable/disable 这类保存不产生写入放大）。
+     */
+    private syncV1DescriptionsIntoV2(v2: V2Fingerprint, fp: StyleFingerprint): V2Fingerprint {
+        const projected = this.extractV1FeaturesFromV2(v2.features);
+        const newFeatures = fp.features ?? ({} as StyleFingerprintFeatures);
+        const changed = (Object.keys(projected) as Array<keyof StyleFingerprintFeatures>)
+            .some(key => (projected[key] ?? '') !== (newFeatures[key] ?? ''));
+        if (!changed) return v2;
+
+        const v2ToV1Map: Record<string, keyof StyleFingerprintFeatures> = {
+            rhythm: 'sentenceRhythm',
+            wordChoice: 'wordPreference',
+            perspective: 'narrativeStyle',
+            rhetoric: 'rhetoric',
+            dialogue: 'dialogueStyle',
+            narration: 'paragraphStructure',
+            languageTexture: 'overallTone',
+        };
+        const features: StyleFingerprintFeaturesV2 = { ...v2.features };
+        for (const [v2Key, v1Key] of Object.entries(v2ToV1Map)) {
+            const dim = features[v2Key as StyleDimensionKeyV2] as { description?: string; status?: string };
+            if (!dim || typeof dim !== 'object') continue;
+            const description = newFeatures[v1Key] ?? '';
+            features[v2Key as StyleDimensionKeyV2] = {
+                ...dim,
+                description,
+                status: description ? 'complete' : dim.status,
+            } as never;
+        }
+        v2.features = features;
+        v2.v1Backup = {
+            features: this.extractV1FeaturesFromV2(features) as unknown as Record<string, string>,
+            extractedAt: v2.extractedAt,
+            migratedAt: v2.v1Backup?.migratedAt ?? Date.now(),
+        };
+        return v2;
     }
 
     private collectV2Fingerprints(items: unknown[], scope?: 'template' | 'global' | 'project'): void {

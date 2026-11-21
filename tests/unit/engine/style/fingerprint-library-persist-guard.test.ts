@@ -5,7 +5,8 @@
  * 1. `extractV1FeaturesFromV2` 的映射方向（曾经把 V1 字段名当 V2 键去查，
  *    恒为 undefined → 投影恒为空 → 保存时判定「V2 已过期」→ 每次启停都把
  *    磁盘上的 12 维结构降级成 7 维字符串）。
- * 2. `save*` 只允许覆盖 V1 可变字段（enabled/name/tags），V2 结构原样回写。
+ * 2. `save*` 只允许覆盖 V1 可变字段（enabled/name/tags）；V1 投影变了就把它
+ *    同步进 V2 的对应 description，**磁盘始终是 V2**（不再回写 V1）。
  * 3. `load*` / `delete*` 必须清理同作用域的 V2 缓存，否则删除后的指纹
  *    仍会被 12 维检索命中。
  * 4. `computeFingerprintSignature` 走 `getFileStamp`：全局指纹文件在配置目录，
@@ -133,7 +134,7 @@ describe('StyleFingerprintLibrary — 保存不得降级 V2', () => {
         expect(b.enabled).toBe(true);
     });
 
-    it('V1 特征被重新提取后不再回写陈旧 V2', async () => {
+    it('V1 特征被重新提取后同步进 V2，仍以 12 维落盘', async () => {
         const fp = library.getGlobal('fp-b')!;
         fp.features.sentenceRhythm = '重新提取后的节奏描述';
         await library.updateGlobal(fp);
@@ -141,8 +142,18 @@ describe('StyleFingerprintLibrary — 保存不得降级 V2', () => {
         const onDisk = await readGlobalFile(vault);
         const b = onDisk.find(item => item.id === 'fp-b');
 
-        expect(b.version).toBeUndefined();
-        expect(b.features.sentenceRhythm).toBe('重新提取后的节奏描述');
+        // 规范模型：磁盘只写 V2，V1 重新提取只改对应维度的 description
+        expect(b.version).toBe('v2');
+        expect(b.features.rhythm.description).toBe('重新提取后的节奏描述');
+        expect(b.v1Backup.features.sentenceRhythm).toBe('重新提取后的节奏描述');
+        expect(Object.keys(b.features)).toHaveLength(STYLE_DIMENSION_KEYS_V2.length);
+        // 其余 11 维（含 V2 独有的 5 维）必须原样保留
+        expect(b.features.emotion).toEqual({
+            description: '乙-emotion 的结构化描述',
+            samples: ['乙-emotion-示例'],
+            status: 'complete',
+        });
+        expect(b.features.wordChoice.description).toBe('乙-wordChoice 的结构化描述');
     });
 
     it('deleteGlobal 同步清理 V2 缓存', async () => {

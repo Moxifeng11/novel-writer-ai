@@ -4387,3 +4387,29 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 `docs/modules/writing-fingerprint.md` backlog 新增 V1/V2 并存边界（不要按「清弃用」去删 V1 类型）。
 
 **backlog**：V2 规范模型（提示词 + 详情/编辑弹窗 + 迁移脚本一起改），前置是产品决策。
+
+## 第一百五十五轮：V2 规范模型产品决策做实（ADR + 磁盘只写 V2）
+
+**背景**：warn 第 11 批把 V1 类型从 `@deprecated` 改成 `@legacy` 后，留下一个未决问题——V1/V2 到底是「新旧世代」还是「两个视图」？用户 2026-11-21 指示「先把 V2 规范模型这个产品决策做实」。
+
+**读码结论（写进 ADR）**
+- V2 12 维可完全本地算出来：`engine/style/style-features-v2.ts:459` 的 `StyleFeaturesAnalyzerV2.analyze()` 纯统计、无 AI。
+- 提示词只读 V1 七维字符串（`engine/style/dynamic-injection-engine.ts:557` 写死 featureKeys），V2 独有的 5 维（sentencePattern/emotion/tension/infoDensity/description）从未进提示词。
+- 磁盘是双写：`addV2Fingerprint`（`engine/style-fingerprint-library.ts:772`）能直存 V2，但 AI 抽取入口走 `addTemplate/addGlobal/addProject`，`toPersistedFingerprint`（`:1656`）在无 V2 缓存或投影不一致时回写 V1 → 下次加载才迁移，迁移时 5 维永远 pending（`engine/style/fingerprint-migrator.ts:294`）。
+- 结论：V1/V2 是「一份数据的两种视图」，却被实现成两条可写链路。
+
+**决策（ADR）**：新增 `docs/design/2026-11-21-style-fingerprint-v2-canonical.md` —— V2 为规范模型（single source of truth），V1 七维降级为提示词投影（只读、可重算）。含 R1 写路径只产生 V2、R2 磁盘不存在 V1 条目、R3 提示词投影优先（V2 增量暂停）、R4 UI 以 V2 为主视图、R5 迁移有原文才补齐；以及不选另两条路的理由、P1/P2/P3 工作项、验收标准、回滚、遗留三问。
+
+**P1 已落地（`engine/style-fingerprint-library.ts`）**
+- `toPersistedFingerprint` 返回类型改为 `V2Fingerprint`，**始终写 V2**：有 V2 缓存 → 新增 `syncV1DescriptionsIntoV2`（只同步 7 维 description + 刷新 v1Backup，保留 5 维统计与样本）；无缓存 → 新增 `createV2FromV1`（`migrateV1ToV2` 现场生成并登记缓存）。
+- 不再有「V1 投影不一致就回写 V1」的分支。
+
+**测试**
+- 新增 `tests/unit/engine/style/fingerprint-v2-canonical-write.test.ts`（3 例）：V1 入口新增即落盘 V2（7 complete + 5 pending）、重复保存不降级、文件内不允许 V1/V2 混写。
+- `tests/unit/engine/style/fingerprint-library-persist-guard.test.ts` 的「V1 重新提取」用例改为「同步进 V2、仍以 12 维落盘」，并断言其余 11 维原样保留。
+- 定向 28 文件 / 490 用例通过；`npx tsc --noEmit` EXIT=0；`check:review-warn` 仍 558 条（新增代码零新 warn）。
+
+**待办**
+- P2：统一新建入口（抽取后跑本地 12 维分析再 `addV2Fingerprint`，无原文用 samples 拼接并标 sampleProxy）；加载期对有 sourceText 的旧指纹回填 12 维。
+- P3：V2 5 维是否进提示词（会改变生成风格，需单独验收）。
+- 三个遗留问题见 ADR §9，等用户确认。
