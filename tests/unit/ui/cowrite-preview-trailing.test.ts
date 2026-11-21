@@ -41,7 +41,7 @@ function makeCtx(value: string): PreviewCtx {
         scrollTop: 0,
         scrollHeight: 100,
         clientHeight: 50,
-        ownerDocument: { createElement: () => ({ firstChild: null }) },
+        ownerDocument: { createElement: () => ({ firstChild: null }), createDiv: () => ({ firstChild: null }) },
         empty: vi.fn(),
         appendChild: vi.fn(),
         createDiv: vi.fn(),

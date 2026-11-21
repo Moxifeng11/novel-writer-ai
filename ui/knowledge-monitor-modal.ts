@@ -5,16 +5,6 @@ import { createLogger } from '@/shared/logger';
 
 
 const log = createLogger('KnowledgeMonitorModal');
-interface TaskRecord {
-    id: string;
-    bookId: string;
-    bookName: string;
-    status: 'completed' | 'failed' | 'cancelled';
-    startTime: number;
-    endTime: number;
-    error?: string;
-    dimensions: string[];
-}
 
 const DIMENSION_LABELS: Record<BreakdownDimension, string> = {
     style: '风格分析',

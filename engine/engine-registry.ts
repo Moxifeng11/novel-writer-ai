@@ -1345,7 +1345,7 @@ export class EngineRegistry {
                     setSharedEmbeddingProvider(best);
                     log.info('[EngineRegistry] embedding provider 已在后台探测后替换');
                 }
-            } catch (e) {
+            } catch {
                 // 探测失败保持默认 Ollama；首次实际 embed 时会自然降级
                 log.info('[EngineRegistry] embedding 后台探测完成（保留默认 provider）');
             }

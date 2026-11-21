@@ -49,8 +49,7 @@ class FakeParent {
     }
 }
 
-const makeDoc = (input: FakeInput, parent: FakeParent) => ({
-    createElement: (tag: string) => {
+const makeElement = (input: FakeInput) => (tag: string) => {
         if (tag === 'input') return input;
         if (tag === 'canvas') {
             return {
@@ -61,10 +60,17 @@ const makeDoc = (input: FakeInput, parent: FakeParent) => ({
             };
         }
         return { tagName: tag };
-    },
-    body: parent,
-    documentElement: parent,
-});
+};
+
+const makeDoc = (input: FakeInput, parent: FakeParent) => {
+    const createElement = makeElement(input);
+    return {
+        createElement,
+        createEl: createElement,
+        body: parent,
+        documentElement: parent,
+    };
+};
 
 const makeFile = (): File => ({ name: 'pet.png', type: 'image/png', size: 10 } as unknown as File);
 

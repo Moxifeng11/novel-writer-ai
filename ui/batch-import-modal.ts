@@ -80,10 +80,6 @@ function techniqueCategoryLabel(category: string): string {
     }
 }
 
-function generateId(): string {
-    return 'import_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
-}
-
 /**
  * BatchImportModal 类。
  */

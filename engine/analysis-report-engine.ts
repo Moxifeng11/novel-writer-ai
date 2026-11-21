@@ -623,7 +623,7 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
                 return [];
             }
             const text = (response.content || '').trim();
-            const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || text.match(/([\[{][\s\S]*)/);
+            const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || text.match(/([[{][\s\S]*)/);
             const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
             const parsed = JSON.parse(jsonStr);
             const changes = Array.isArray(parsed) ? parsed : (parsed.changes || []);
@@ -968,7 +968,7 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
                 return this.extractTimelineByRule(chapterText, chapterNum);
             }
             const text = (response.content || '').trim();
-            const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || text.match(/([\[{][\s\S]*)/);
+            const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || text.match(/([[{][\s\S]*)/);
             const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
             const parsed = JSON.parse(jsonStr);
             const events = Array.isArray(parsed) ? parsed : (parsed.events || []);

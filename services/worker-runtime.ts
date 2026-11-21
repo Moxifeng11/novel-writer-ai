@@ -13,7 +13,6 @@ import type {
     TaskStartPayload,
     TaskProgressPayload,
     TaskCompletePayload,
-    WorkerErrorPayload,
 } from './worker-protocol';
 
 /**
@@ -65,14 +64,6 @@ function sendComplete(taskId: string, result: unknown): void {
 
 function sendTaskError(taskId: string, error: Error): void {
     postMessageToMain('task:error', taskId, undefined, error.message);
-}
-
-function sendWorkerError(error: Error): void {
-    const payload: WorkerErrorPayload = {
-        message: error.message,
-        stack: error.stack,
-    };
-    postMessageToMain('worker:error', undefined, payload);
 }
 
 async function handleTaskStart(payload: TaskStartPayload): Promise<void> {

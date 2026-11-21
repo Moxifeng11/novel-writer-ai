@@ -94,9 +94,9 @@ export class ConsistencyAuditModal extends Modal {
         });
 
         this.renderToolbar(contentEl);
-        this.summaryEl = contentEl.createEl('div', { cls: 'nw-consistency-summary' });
-        this.statusEl = contentEl.createEl('div', { cls: 'nw-consistency-status' });
-        this.listEl = contentEl.createEl('div', { cls: 'nw-consistency-list' });
+        this.summaryEl = contentEl.createDiv({ cls: 'nw-consistency-summary' });
+        this.statusEl = contentEl.createDiv({ cls: 'nw-consistency-status' });
+        this.listEl = contentEl.createDiv({ cls: 'nw-consistency-list' });
 
         if (this.options.autoRun !== false) void this.runAudit();
     }
@@ -114,7 +114,7 @@ export class ConsistencyAuditModal extends Modal {
      * @param parent - 容器
      */
     private renderToolbar(parent: HTMLElement): void {
-        const bar = parent.createEl('div', { cls: 'nw-consistency-toolbar' });
+        const bar = parent.createDiv({ cls: 'nw-consistency-toolbar' });
 
         const runBtn = bar.createEl('button', { text: '重新检查', cls: 'mod-cta' });
         runBtn.addEventListener('click', () => { void this.runAudit(); });
@@ -124,7 +124,7 @@ export class ConsistencyAuditModal extends Modal {
         checkbox.type = 'checkbox';
         checkbox.checked = this.useLlm;
         checkbox.addEventListener('change', () => { this.useLlm = checkbox.checked; });
-        label.createEl('span', { text: '疑似项交模型复核（会产生少量费用）' });
+        label.createSpan({ text: '疑似项交模型复核（会产生少量费用）' });
     }
 
     /**
@@ -159,11 +159,11 @@ export class ConsistencyAuditModal extends Modal {
         if (!this.summaryEl) return;
         this.summaryEl.empty();
         for (const line of formatReportSummary(report)) {
-            this.summaryEl.createEl('div', { text: line });
+            this.summaryEl.createDiv({ text: line });
         }
         // 数据源读失败必须显式提示：否则用户会以为「没问题」，实际是「没检查全」
         for (const warning of warnings) {
-            this.summaryEl.createEl('div', { cls: 'nw-consistency-warning', text: `⚠️ ${warning}` });
+            this.summaryEl.createDiv({ cls: 'nw-consistency-warning', text: `⚠️ ${warning}` });
         }
     }
 
@@ -176,9 +176,9 @@ export class ConsistencyAuditModal extends Modal {
         if (!this.listEl) return;
         this.listEl.empty();
         if (report.contradictions.length === 0) {
-            const empty = this.listEl.createEl('div', { cls: 'nw-consistency-empty' });
-            empty.createEl('div', { text: '未发现跨章一致性矛盾。' });
-            empty.createEl('div', {
+            const empty = this.listEl.createDiv({ cls: 'nw-consistency-empty' });
+            empty.createDiv({ text: '未发现跨章一致性矛盾。' });
+            empty.createDiv({
                 cls: 'nw-consistency-hint',
                 text: buildEmptyStateHint(),
             });
@@ -197,16 +197,16 @@ export class ConsistencyAuditModal extends Modal {
      */
     private renderCard(parent: HTMLElement, c: ConsistencyContradiction): void {
         const meta = formatKindBadge(c.kind);
-        const card = parent.createEl('div', { cls: `nw-consistency-card nw-consistency-${meta.severity}` });
+        const card = parent.createDiv({ cls: `nw-consistency-card nw-consistency-${meta.severity}` });
 
-        const head = card.createEl('div', { cls: 'nw-consistency-card-head' });
-        head.createEl('span', { cls: `nw-consistency-badge nw-consistency-badge-${meta.severity}`, text: meta.label });
-        head.createEl('span', { cls: 'nw-consistency-subject', text: `${c.subject} · ${c.predicate}` });
-        head.createEl('span', { cls: 'nw-consistency-meta', text: formatMetaLine(c) });
+        const head = card.createDiv({ cls: 'nw-consistency-card-head' });
+        head.createSpan({ cls: `nw-consistency-badge nw-consistency-badge-${meta.severity}`, text: meta.label });
+        head.createSpan({ cls: 'nw-consistency-subject', text: `${c.subject} · ${c.predicate}` });
+        head.createSpan({ cls: 'nw-consistency-meta', text: formatMetaLine(c) });
 
-        card.createEl('div', { cls: 'nw-consistency-reason', text: c.reasoning });
+        card.createDiv({ cls: 'nw-consistency-reason', text: c.reasoning });
 
-        const ev = card.createEl('div', { cls: 'nw-consistency-evidence' });
+        const ev = card.createDiv({ cls: 'nw-consistency-evidence' });
         this.renderEvidence(ev, 'A', c.evidenceA);
         this.renderEvidence(ev, 'B', c.evidenceB);
     }
@@ -219,10 +219,10 @@ export class ConsistencyAuditModal extends Modal {
      * @param evidence - 证据
      */
     private renderEvidence(parent: HTMLElement, side: string, evidence: ConsistencyEvidence): void {
-        const row = parent.createEl('div', { cls: 'nw-consistency-evidence-row' });
-        row.createEl('span', { cls: 'nw-consistency-side', text: side });
-        row.createEl('span', { cls: 'nw-consistency-chapter', text: formatEvidenceChapter(evidence) });
-        const quote = row.createEl('span', { cls: 'nw-consistency-quote', text: `「${evidence.quote}」` });
+        const row = parent.createDiv({ cls: 'nw-consistency-evidence-row' });
+        row.createSpan({ cls: 'nw-consistency-side', text: side });
+        row.createSpan({ cls: 'nw-consistency-chapter', text: formatEvidenceChapter(evidence) });
+        const quote = row.createSpan({ cls: 'nw-consistency-quote', text: `「${evidence.quote}」` });
         quote.title = formatEvidenceTitle(evidence);
 
         if (!canJumpToEvidence(evidence)) return;

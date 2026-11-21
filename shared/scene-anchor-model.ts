@@ -64,7 +64,7 @@ export function extractNames(body: string): string[] {
         if (!FIELD_KEYS.some(item => key.includes(item))) continue;
         const value = match[2];
         for (const name of value.split(/[、，,;；/／|]+/)) {
-            const cleaned = name.replace(/[《》【】\[\]（）()]/g, '').trim();
+            const cleaned = name.replace(/[《》【】[\]（）()]/g, '').trim();
             if (cleaned && cleaned.length <= 12) names.add(cleaned);
         }
     }

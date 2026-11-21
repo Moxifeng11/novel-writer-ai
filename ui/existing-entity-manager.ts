@@ -130,7 +130,7 @@ export class ExistingEntityManagerModal extends Modal {
         if (h1 && !/^未命名/.test(h1)) return h1;
         const body = content.replace(/^---\s*\n[\s\S]*?\n---\s*\n?/, '').trim();
         const firstLine = body.split('\n').find(l => l.trim().length > 0) || '';
-        const cleaned = firstLine.replace(/^[#\-\*\s>]+/, '').trim();
+        const cleaned = firstLine.replace(/^[#\-*\s>]+/, '').trim();
         if (cleaned && cleaned.length <= 30 && !/^未命名/.test(cleaned)) return cleaned;
         return '';
     }

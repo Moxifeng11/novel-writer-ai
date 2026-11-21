@@ -93,7 +93,7 @@ export class MonitorPanelA extends DraggablePanel {
         this.emotionContent.empty();
         const view = new EmotionCurveView();
         appendSanitizedHtml(this.emotionContent, view.render(curve));
-      } catch (e) {
+      } catch {
         if (token !== this.analysisSeq) return;
         this.emotionContent.empty();
         this.emotionContent.createDiv({ cls: "nw-float-error", text: "分析失败" });
@@ -122,7 +122,7 @@ export class MonitorPanelA extends DraggablePanel {
             });
           }
         }
-      } catch (e) {
+      } catch {
         if (token !== this.analysisSeq) return;
         this.rhythmContent.empty();
         this.rhythmContent.createDiv({ cls: "nw-float-error", text: "分析失败" });

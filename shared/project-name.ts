@@ -50,7 +50,7 @@ export function normalizeProjectName(raw: string): string {
  */
 export function sanitizeProjectName(raw: string): string {
     return normalizeProjectName(raw)
-        .replace(/[\/:*?"<>|，。！？、；：“”‘’（）【】《》!?.,;:'"\s]/g, '')
+        .replace(/[/:*?"<>|，。！？、；：“”‘’（）【】《》!?.,;:'"\s]/g, '')
         .slice(0, 20);
 }
 

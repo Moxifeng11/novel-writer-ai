@@ -46,9 +46,22 @@ function fakeEditor(text: string, selection = ''): Editor & { setSelection: Retu
     } as unknown as Editor & { setSelection: ReturnType<typeof vi.fn>; scrollIntoView: ReturnType<typeof vi.fn> };
 }
 
-/** 假 document：只需要 body + createElement */
-function fakeDoc(): { body: FakeEl; createElement: (tag: string) => FakeEl } {
-    return { body: new FakeEl('body'), createElement: (tag: string) => new FakeEl(tag) };
+/** 假 document：只需要 body + createElement / createEl / createDiv / createSpan */
+function fakeDoc(): {
+    body: FakeEl;
+    createElement: (tag: string) => FakeEl;
+    createEl: (tag: string) => FakeEl;
+    createDiv: () => FakeEl;
+    createSpan: () => FakeEl;
+} {
+    const make = (tag: string) => new FakeEl(tag);
+    return {
+        body: new FakeEl('body'),
+        createElement: make,
+        createEl: make,
+        createDiv: () => new FakeEl('div'),
+        createSpan: () => new FakeEl('span'),
+    };
 }
 
 interface Harness {

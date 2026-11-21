@@ -59,7 +59,7 @@ function stripIndent(line: string, indent: string): string {
 }
 
 function readableLength(text: string): number {
-    return text.replace(/[\s，。！？!?…；：、“”‘’"'—\-（）()《》〈〉【】\[\]]/g, '').length;
+    return text.replace(/[\s，。！？!?…；：、“”‘’"'—\-（）()《》〈〉【】[\]]/g, '').length;
 }
 
 function hasDialogue(text: string): boolean {
@@ -71,10 +71,6 @@ function isDialogueOnly(text: string): boolean {
     DIALOGUE_RE.lastIndex = 0;
     const withoutDialogue = text.replace(DIALOGUE_RE, '');
     return hasDialogue(text) && readableLength(withoutDialogue) <= 4;
-}
-
-function startsWithDialogue(text: string): boolean {
-    return /^[“『「"]/.test(text.trim());
 }
 
 function isTransition(text: string): boolean {

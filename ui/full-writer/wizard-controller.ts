@@ -65,7 +65,7 @@ export class WizardController {
                     projectType = 'fanfic';
                 }
             }
-        } catch (e) { /* 默认为原创 */ }
+        } catch { /* 默认为原创 */ }
 
         const steps = this.buildWizardSteps(projectType);
 
@@ -85,7 +85,7 @@ export class WizardController {
         };
 
         let projectMetaContent: string | null = null;
-        try { projectMetaContent = await readProjectMeta(this.view.app, project); } catch (e) { /* ignore */ }
+        try { projectMetaContent = await readProjectMeta(this.view.app, project); } catch { /* ignore */ }
 
         const storyStructureStep = steps.find(s => s.id === 'story_structure');
         if (storyStructureStep && projectMetaContent && parseStorySettingsFromProjectMeta(projectMetaContent)) {

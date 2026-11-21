@@ -131,15 +131,15 @@ export class QualityDashboardModal extends Modal {
         this.renderToolbar(contentEl);
 
         // 4. 渲染图表区（雷达图 + 维度横条 + 问题列表）
-        const grid = contentEl.createEl('div', { cls: 'nw-qd-layout' });
+        const grid = contentEl.createDiv({ cls: 'nw-qd-layout' });
 
-        const leftCard = grid.createEl('div');
-        this.radarEl = leftCard.createEl('div', { cls: 'nw-qd-chart' });
-        this.dimListEl = leftCard.createEl('div', { cls: 'nw-qd-dim-list' });
+        const leftCard = grid.createDiv();
+        this.radarEl = leftCard.createDiv({ cls: 'nw-qd-chart' });
+        this.dimListEl = leftCard.createDiv({ cls: 'nw-qd-dim-list' });
 
-        const rightCard = grid.createEl('div');
+        const rightCard = grid.createDiv();
         this.issuesTitleEl = rightCard.createEl('h3');
-        this.issuesEl = rightCard.createEl('div', { cls: 'nw-qd-issues' });
+        this.issuesEl = rightCard.createDiv({ cls: 'nw-qd-issues' });
 
         // 5. 首次加载 + 事实面板
         void this.refreshData().then(() => this.renderFactPanel(contentEl));
@@ -173,8 +173,8 @@ export class QualityDashboardModal extends Modal {
     }
 
     private renderToolbar(contentEl: HTMLElement): void {
-        const bar = contentEl.createEl('div', { cls: 'nw-qd-toolbar' });
-        bar.createEl('span', { text: '📅 时间范围：', cls: 'nw-qd-toolbar-label' });
+        const bar = contentEl.createDiv({ cls: 'nw-qd-toolbar' });
+        bar.createSpan({ text: '📅 时间范围：', cls: 'nw-qd-toolbar-label' });
         const select = bar.createEl('select', { cls: 'dropdown' });
         (['current', 'recent3', 'recent5', 'all'] as ChapterRange[]).forEach((r) => {
             select.createEl('option', { value: r, text: RANGE_LABELS[r] });
@@ -320,15 +320,15 @@ export class QualityDashboardModal extends Modal {
         if (dimListEl) {
             dimListEl.empty();
             aggDims.forEach((a) => {
-                const row = dimListEl.createEl('div', {
+                const row = dimListEl.createDiv({
                     cls: 'nw-qd-dim-row' + (this.activeDimension === a.dim ? ' nw-qd-dim-row-active' : ''),
                 });
-                row.createEl('span', { text: DIMENSION_LABELS[a.dim], cls: 'nw-qd-dim-name' });
-                const track = row.createEl('div', { cls: 'nw-qd-dim-track' });
-                const bar = track.createEl('div', { cls: 'nw-qd-dim-bar' });
+                row.createSpan({ text: DIMENSION_LABELS[a.dim], cls: 'nw-qd-dim-name' });
+                const track = row.createDiv({ cls: 'nw-qd-dim-track' });
+                const bar = track.createDiv({ cls: 'nw-qd-dim-bar' });
                 // R2：仅保留运行时宽度参数，其余静态样式由 .nw-qd-dim-bar 接管
                 bar.style.width = `${a.avg}%`;
-                row.createEl('span', { text: String(a.avg), cls: 'nw-qd-dim-score' });
+                row.createSpan({ text: String(a.avg), cls: 'nw-qd-dim-score' });
                 row.addEventListener('click', () => {
                     this.activeDimension = this.activeDimension === a.dim ? null : a.dim;
                     this.renderCharts(scores);
@@ -358,9 +358,9 @@ export class QualityDashboardModal extends Modal {
                 const line = issue.location?.line;
                 const pos = line !== undefined ? `（第 ${line} 行）` : '';
                 const sev = issue.severity === 'high' ? '🔴' : issue.severity === 'medium' ? '🟡' : '🟢';
-                const row = this.issuesEl.createEl('div', { cls: 'nw-qd-issue nw-qd-issue-clickable' });
-                row.createEl('span', { text: `${sev} [${DIMENSION_LABELS[issue.dimension]}] ${chapter} ` });
-                row.createEl('span', { text: `${issue.description}${pos}` });
+                const row = this.issuesEl.createDiv({ cls: 'nw-qd-issue nw-qd-issue-clickable' });
+                row.createSpan({ text: `${sev} [${DIMENSION_LABELS[issue.dimension]}] ${chapter} ` });
+                row.createSpan({ text: `${issue.description}${pos}` });
                 row.setAttribute('title', '点击定位到正文');
                 row.addEventListener('click', () => {
                     void openFileAtLine(this.app, file, line).then((ok) => {
@@ -435,12 +435,12 @@ export class QualityDashboardModal extends Modal {
         const pending = factIndex.listPending();
         if (pending.length === 0) return;
 
-        const panel = contentEl.createEl('div', { cls: 'nw-qd-facts' });
+        const panel = contentEl.createDiv({ cls: 'nw-qd-facts' });
         panel.createEl('h3', { text: `📋 待确认事实（${pending.length}）` });
 
         for (const fact of pending) {
-            const row = panel.createEl('div', { cls: 'nw-qd-fact' });
-            row.createEl('div', {
+            const row = panel.createDiv({ cls: 'nw-qd-fact' });
+            row.createDiv({
                 text: `【${fact.category}】${fact.name}：${fact.content}（来源：${fact.source}）`,
             });
 

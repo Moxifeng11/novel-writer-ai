@@ -2139,7 +2139,7 @@ export class KnowledgeBaseView extends ItemView {
                 }
 
                 await this.processImportGenres(genres);
-            } catch (err) {
+            } catch {
                 showErrorNotice(t('knowledgebase.genre.badFormat'), { title: t('knowledgebase.genre.importFailed') });
             }
         });

@@ -117,7 +117,7 @@ function stripHeadingNumbering(line: string): string {
  */
 function stripHeadingDecoration(text: string): string {
     return stripNumberingPrefix(text)
-        .replace(/^[\s【\[（(]+/, '')
+        .replace(/^[\s【[（(]+/, '')
         .replace(/[\s】\]）)]+$/, '')
         .trim();
 }

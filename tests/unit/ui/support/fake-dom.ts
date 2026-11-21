@@ -260,14 +260,20 @@ export function stubCreateDiv(): void {
 }
 
 /**
- * 把最小 `document` 补到 globalThis（只需要 createElement）。
+ * 把最小 `document` 补到 globalThis（createElement + Obsidian 注入的 createEl/createDiv/createSpan）。
  *
  * 图表交互（svg-charts.createTooltip）等运行时路径会裸调 `document.createElement`；
- * 返回 FakeEl 使其落入假元素树，可被 querySelector 找到。
+ * 跨窗口渲染路径（co-writing-view / polish-editor / tts-player）改用 `doc.createDiv()` 等
+ * Obsidian 扩展方法，因此这里一并提供，返回 FakeEl 使其落入假元素树，可被 querySelector 找到。
  */
 export function stubDocument(): void {
+    const make = (tag: string) => new FakeEl(tag);
     (globalThis as unknown as Record<string, unknown>).document = {
-        createElement: (tag: string) => new FakeEl(tag),
+        createElement: make,
+        createEl: make,
+        createDiv: () => new FakeEl('div'),
+        createSpan: () => new FakeEl('span'),
+        createDocumentFragment: () => new FakeEl('fragment'),
     };
 }
 

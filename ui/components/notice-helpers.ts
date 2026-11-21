@@ -43,18 +43,18 @@ function buildNoticeFragment(
     if (typeof document.createDocumentFragment !== 'function') return null;
     if (typeof document.createElement !== 'function') return null;
     try {
-        const fragment = document.createDocumentFragment();
-        const titleEl = document.createElement('div');
+        const fragment = createFragment();
+        const titleEl = createDiv();
         titleEl.className = 'nw-u-fwt-600';
         titleEl.textContent = `${emoji} ${title}`;
         fragment.appendChild(titleEl);
 
-        const messageEl = document.createElement('div');
+        const messageEl = createDiv();
         messageEl.textContent = message;
         fragment.appendChild(messageEl);
 
         if (detail) {
-            const detailEl = document.createElement('div');
+            const detailEl = createDiv();
             detailEl.className = 'nw-text-12-muted';
             detailEl.textContent = detail;
             fragment.appendChild(detailEl);

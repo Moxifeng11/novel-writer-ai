@@ -16,7 +16,7 @@ import {
     readTagList,
     type NotebookFileKind,
 } from '@/shared/frontmatter-schema';
-import { formatTagArray, missingNamespaceTags, withNamespaceTags } from '@/shared/tag-taxonomy';
+import { missingNamespaceTags, withNamespaceTags } from '@/shared/tag-taxonomy';
 import { BASE_DIR, baseFilePath, buildProjectBases } from './bases-generator';
 import { withWriteLock } from '@/shared/write-lock';
 import { createLogger } from '@/shared/logger';
@@ -153,39 +153,6 @@ function processFrontmatter(app: App, file: TFile, mutate: (fm: Record<string, u
     // 唯一 frontmatter 入口：重复键自愈（旧实现直接 fileManager.processFrontMatter，
     // 历史文件有重复顶层键时会抛 Map keys must be unique，属性补齐整体失败）。
     return new ObsidianFrontmatter(app).processFrontmatter(file, mutate);
-}
-
-/**
- * 无 fileManager 时的文本级兜底：只在已有 frontmatter 上改 `tags`/简单标量
- *
- * @param raw - 原始
- * @param mutate - 变更函数
- * @returns 文本结果
- */
-function applyFrontmatterTextPatch(raw: string, mutate: (fm: Record<string, unknown>) => Record<string, unknown>): string {
-    const matched = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-    if (!matched) return raw;
-    const fm: Record<string, unknown> = {};
-    for (const line of matched[1].split(/\r?\n/)) {
-        const pair = line.match(/^([^:]+):\s*(.*)$/);
-        if (!pair) continue;
-        const key = pair[1].trim();
-        const value = pair[2].trim();
-        if (!key) continue;
-        if (value.startsWith('[') && value.endsWith(']')) {
-            fm[key] = value.slice(1, -1).split(',').map((item) => item.trim()).filter(Boolean);
-        } else {
-            fm[key] = value;
-        }
-    }
-    const next = mutate(fm);
-    const lines: string[] = [];
-    for (const [key, value] of Object.entries(next)) {
-        if (Array.isArray(value)) lines.push(`${key}: ${formatTagArray(value.map(String))}`);
-        else if (typeof value === 'number') lines.push(`${key}: ${value}`);
-        else lines.push(`${key}: ${String(value)}`);
-    }
-    return raw.replace(/^---\r?\n[\s\S]*?\r?\n---/, `---\n${lines.join('\n')}\n---`);
 }
 
 /**

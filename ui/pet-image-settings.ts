@@ -310,7 +310,7 @@ export function pickLocalImage(
         notify(t('fullwriter.pet.noFilePicker'));
         return;
     }
-    const input = doc.createElement('input');
+    const input = doc.createEl('input');
     input.type = 'file';
     input.accept = 'image/png,image/jpeg,image/webp,image/gif';
     // 用 CSS 类隐藏（仓库禁止内联 style）；类名见 styles-src/16-writing-stats-pet.css
@@ -432,7 +432,7 @@ function downscaleToDataUrl(image: HTMLImageElement, doc?: Document): string {
     const width = Math.max(1, Math.round(image.width * scale));
     const height = Math.max(1, Math.round(image.height * scale));
     const targetDoc = doc ?? document;
-    const canvas = targetDoc.createElement('canvas');
+    const canvas = targetDoc.createEl('canvas');
     canvas.width = width;
     canvas.height = height;
     const context = canvas.getContext('2d');

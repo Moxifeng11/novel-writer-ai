@@ -497,7 +497,7 @@ export class FingerprintBlenderV2 {
 
     /** 句子归一化（用于去重比较，去掉标点和空格） */
     private normalizeSentence(s: string): string {
-        return s.replace(/[\s，。！？、,.!?;:""''（）()【】\[\]]/g, '').toLowerCase();
+        return s.replace(/[\s，。！？、,.!?;:""''（）()【】[\]]/g, '').toLowerCase();
     }
 
     /**

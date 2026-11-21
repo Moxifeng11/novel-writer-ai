@@ -279,7 +279,7 @@ export class TtsPlayer {
 
     private buildBar(): void {
         if (this.root) return;
-        const root = this.doc.createElement('div');
+        const root = this.doc.createDiv();
         root.className = 'nw-tts-bar nw-scope';
         root.setAttribute('role', 'region');
         root.setAttribute('aria-label', t('tts.title'));

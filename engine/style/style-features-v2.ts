@@ -529,7 +529,7 @@ export class StyleFeaturesAnalyzerV2 {
         const lengthDistribution = v1Rhythm.lengthDistribution;
 
         // 新增：标点密度（每千字标点数）
-        const punctuationCount = (text.match(/[，。！？、；：…—""''「」『』（）·\-]/g) || []).length;
+        const punctuationCount = (text.match(/[，。！？、；：…—""''「」『』（）·-]/g) || []).length;
         const punctuationDensity = this.perThousand(punctuationCount, totalChars);
 
         // 新增：段落密度（每千字段落数）

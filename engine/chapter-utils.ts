@@ -142,7 +142,7 @@ export async function migrateLegacyFile(
                 if (tagsMatch) {
                     const tags = tagsMatch[1].split('\n').map(t => t.trim().replace(/^-\s*/, '')).filter(Boolean);
                     for (const tag of tags) {
-                        const cleanTag = tag.replace(/[\[\]"']/g, '');
+                        const cleanTag = tag.replace(/[[\]"']/g, '');
                         if (allTypes.includes(cleanTag)) {
                             detectedType = cleanTag;
                             break;

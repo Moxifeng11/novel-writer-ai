@@ -46,7 +46,7 @@ function normalizeName(name: string): string {
     // 只剥 ASCII 引号会让计划名与结算指令永远对不上（实测误报 missing）。
     // 用 \u 转义写引号，避免源码编码差异把正则里的引号吃掉。
     return String(name || '')
-        .replace(/[\s【】\[\]«»《》“”‘’「」『』"]/g, '')
+        .replace(/[\s【】[\]«»《》“”‘’「」『』"]/g, '')
         .replace(/[\u201c\u201d\u2018\u2019\u300c\u300d\u300e\u300f"']/g, '')
         .toLowerCase();
 }

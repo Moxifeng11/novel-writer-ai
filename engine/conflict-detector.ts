@@ -299,7 +299,7 @@ export class ConflictDetector {
         if (body.includes(target)) return true;
 
         const parts = target
-            .split(/[，,。.；;、\s（）()【】\[\]]+/)
+            .split(/[，,。.；;、\s（）()【】[\]]+/)
             .map((p) => p.trim())
             .filter((p) => p.length >= 2);
 

@@ -263,7 +263,7 @@ export class GenerateCharacterModal extends Modal {
                         }
                         isFirstCharacter = !hasProtagonist;
                     }
-                } catch (e) { isFirstCharacter = false; }
+                } catch { isFirstCharacter = false; }
 
                 let result;
                 try {

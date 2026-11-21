@@ -94,7 +94,7 @@ export class BatchCreateModal extends Modal {
         modeLabel.addClass('nw-form-label');
         const modeCountInput = modeBox.createEl('input', { type: 'number', cls: 'nw-input' });
         const modeHint = modeBox.createEl('p', { cls: 'nw-text-12-muted' });
-        const planBox = contentEl.createEl('div', {
+        const planBox = contentEl.createDiv({
             cls: 'nw-batch-plan-box',
             attr: { style: 'margin:12px 0;padding:10px 12px;border-radius:8px;background:var(--background-secondary);font-size:0.9em;line-height:1.7;' },
         });
@@ -136,7 +136,7 @@ export class BatchCreateModal extends Modal {
             const content = await readMergedVolumeOutline(this.app, project);
             if (!content || content.trim().length === 0) {
                 planBox.empty();
-                planBox.createEl('div', {
+                planBox.createDiv({
                     text: '❌ 未找到全书规划（分卷大纲）。请先在上一步执行「AI 全书规划」，再回来批量建章。',
                     attr: { style: 'color:var(--text-error);font-weight:600;' },
                 });
@@ -149,12 +149,12 @@ export class BatchCreateModal extends Modal {
 
             if (plan.volumes.length > 0) {
                 const total = countPlannedChapters(plan);
-                planBox.createEl('div', {
+                planBox.createDiv({
                     text: `✅ 检测到 ${plan.volumes.length} 卷 / ${total} 章`,
                     attr: { style: 'font-weight:600;margin-bottom:4px;' },
                 });
                 for (const volume of [...plan.volumes].sort((a, b) => a.volumeNumber - b.volumeNumber)) {
-                    planBox.createEl('div', {
+                    planBox.createDiv({
                         text: `第${volume.volumeNumber}卷 · ${volume.volumeName}（第${volume.startChapter}-${volume.endChapter}章，共 ${volume.chapterNumbers.length} 章）`,
                     });
                 }
@@ -163,14 +163,14 @@ export class BatchCreateModal extends Modal {
             const errors = plan.issues.filter(i => i.level === 'error');
             const warnings = plan.issues.filter(i => i.level === 'warning');
             if (warnings.length > 0) {
-                const warnEl = planBox.createEl('div', { attr: { style: 'color:#b8860b;margin-top:6px;' } });
-                warnEl.createEl('div', { text: '⚠️ 提示：' });
-                for (const issue of warnings) warnEl.createEl('div', { text: `· ${issue.message}` });
+                const warnEl = planBox.createDiv({ attr: { style: 'color:#b8860b;margin-top:6px;' } });
+                warnEl.createDiv({ text: '⚠️ 提示：' });
+                for (const issue of warnings) warnEl.createDiv({ text: `· ${issue.message}` });
             }
             if (errors.length > 0) {
-                const errEl = planBox.createEl('div', { attr: { style: 'color:var(--text-error);margin-top:6px;' } });
-                errEl.createEl('div', { text: '❌ 大纲校验未通过，已阻止建章：' });
-                for (const issue of errors) errEl.createEl('div', { text: `· ${issue.message}` });
+                const errEl = planBox.createDiv({ attr: { style: 'color:var(--text-error);margin-top:6px;' } });
+                errEl.createDiv({ text: '❌ 大纲校验未通过，已阻止建章：' });
+                for (const issue of errors) errEl.createDiv({ text: `· ${issue.message}` });
             }
 
             createButton.disabled = plan.volumes.length === 0 || hasBlockingIssues(plan);
@@ -469,7 +469,7 @@ export class BatchCreateModal extends Modal {
     ): void {
         planBox.empty();
         const ok = result.failures.length === 0 && result.invalidFiles.length === 0;
-        planBox.createEl('div', {
+        planBox.createDiv({
             text: `${ok ? '✅' : '⚠️'} 结果：${
                 result.isLong
                     ? `${result.volumes} 卷 / ${result.createdChapters}/${result.totalChapters} 章`
@@ -479,21 +479,21 @@ export class BatchCreateModal extends Modal {
         });
 
         if (result.failures.length > 0) {
-            planBox.createEl('div', { text: `❌ 创建失败 ${result.failures.length} 项：`, attr: { style: 'color:var(--text-error);margin-top:6px;' } });
+            planBox.createDiv({ text: `❌ 创建失败 ${result.failures.length} 项：`, attr: { style: 'color:var(--text-error);margin-top:6px;' } });
             for (const failure of result.failures.slice(0, 30)) {
-                planBox.createEl('div', { text: `· ${failure}` });
+                planBox.createDiv({ text: `· ${failure}` });
             }
         }
 
         if (result.invalidFiles.length > 0) {
-            planBox.createEl('div', { text: `❌ 落盘校验异常 ${result.invalidFiles.length} 项：`, attr: { style: 'color:var(--text-error);margin-top:6px;' } });
+            planBox.createDiv({ text: `❌ 落盘校验异常 ${result.invalidFiles.length} 项：`, attr: { style: 'color:var(--text-error);margin-top:6px;' } });
             for (const invalid of result.invalidFiles.slice(0, 30)) {
-                planBox.createEl('div', { text: `· ${invalid}` });
+                planBox.createDiv({ text: `· ${invalid}` });
             }
         }
 
         if (!ok) {
-            planBox.createEl('div', {
+            planBox.createDiv({
                 text: '修复后可直接再次点击「批量创建全部卷章节」，已存在的文件会自动跳过。',
                 attr: { style: 'color:var(--text-muted);margin-top:6px;' },
             });

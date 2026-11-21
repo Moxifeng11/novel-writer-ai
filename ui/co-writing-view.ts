@@ -2109,7 +2109,7 @@ export class CoWritingView extends ItemView {
         this.currentRecord.suggestions = this.currentSuggestions;
       this.renderSuggestionCards(this.currentSuggestions);
       this.showKnowledgeInjectionNotice();
-    } catch (e) {
+    } catch {
       if (signal.aborted || !this.isCurrentSuggestionEpoch(epoch)) return;
       showErrorNotice("\u8FED\u4EE3\u5931\u8D25\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002", { timeout: 2500 });
     } finally {
@@ -2578,7 +2578,7 @@ ${text}`;
     // v4.76.0：`MarkdownRenderer.renderMarkdown` 自 1.4 起弃用（官方审查会报），
     // 换成新签名 render(app, markdown, el, sourcePath, component)；异步语义不变，
     // 仍先渲染到 detached 容器，代次匹配才整体搬运。
-    const staging = this.previewContent.ownerDocument.createElement('div');
+    const staging = this.previewContent.ownerDocument.createDiv();
     await MarkdownRenderer.render(this.app, content, staging, this.getBodyPath(), this);
     if (token !== this.previewSeq) return;
     this.previewContent.empty();

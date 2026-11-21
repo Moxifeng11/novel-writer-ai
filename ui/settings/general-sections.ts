@@ -669,7 +669,7 @@ export class AboutSection extends SettingsSection {
                         showSuccessNotice(t('settings.general.aboutUpToDate'), { timeout: 2000 });
                     }
                 }
-            } catch (e) {
+            } catch {
                 showErrorNotice(t('settings.general.aboutUpdateFailed'), { timeout: 2000 });
             }
             checkBtn.disabled = false;

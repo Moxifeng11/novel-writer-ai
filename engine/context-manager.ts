@@ -557,7 +557,7 @@ export class ContextManager {
         if (filePath.startsWith(stepDir)) return true;
         if (filePath.startsWith(bodyDir)) return true;
         if (filePath.startsWith(chapterStateSnapshotDir)) return true;
-        if (filePath.startsWith(fanficPath.replace(/\/[^\/]*$/, '/'))) return true;
+        if (filePath.startsWith(fanficPath.replace(/\/[^/]*$/, '/'))) return true;
 
         return false;
     }

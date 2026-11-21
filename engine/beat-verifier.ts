@@ -60,7 +60,7 @@ export class BeatVerifier {
         if (body.includes(desc)) return true;
 
         const phrases = desc
-            .split(/[，,。.；;、\s（）()【】\[\]]+/)
+            .split(/[，,。.；;、\s（）()【】[\]]+/)
             .map((p) => p.trim())
             .filter((p) => p.length >= 2);
 

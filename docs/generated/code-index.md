@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 354 | 146818 | 1951 | 1545 | 79% |
-| `services/` | 65 | 19540 | 296 | 204 | 69% |
-| `shared/` | 265 | 53019 | 2246 | 1757 | 78% |
+| `engine/` | 354 | 146729 | 1951 | 1545 | 79% |
+| `services/` | 65 | 19531 | 296 | 204 | 69% |
+| `shared/` | 265 | 52990 | 2246 | 1757 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 307 | 113898 | 1182 | 945 | 80% |
+| `ui/` | 307 | 113880 | 1182 | 945 | 80% |
 
 ## 文件清单
 
@@ -158,7 +158,7 @@
 | `engine/context/story-context-types.ts` | 223 | 13 | 13 |
 | `engine/craft-constraints.ts` | 84 | 5 | 5 |
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
-| `engine/cross-volume-outline-validator.ts` | 673 | 16 | 14 |
+| `engine/cross-volume-outline-validator.ts` | 638 | 16 | 14 |
 | `engine/deconstruction-scheduler.ts` | 2951 | 11 | 9 |
 | `engine/deconstruction-worker-manager.ts` | 688 | 3 | 3 |
 | `engine/deconstructors/character-deconstructor.ts` | 4063 | 14 | 14 |
@@ -250,7 +250,7 @@
 | `engine/mode-unit-quality.ts` | 242 | 5 | 2 |
 | `engine/mode-unit-settlement.ts` | 105 | 2 | 1 |
 | `engine/mode-unit-writer.ts` | 600 | 17 | 17 |
-| `engine/note-properties-service.ts` | 293 | 12 | 12 |
+| `engine/note-properties-service.ts` | 260 | 12 | 12 |
 | `engine/novel-analyzer.ts` | 427 | 2 | 2 |
 | `engine/outline-contract.ts` | 737 | 21 | 20 |
 | `engine/outline-to-text-expander.ts` | 672 | 8 | 8 |
@@ -370,7 +370,7 @@
 | `engine/style-learner.ts` | 346 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 193 | 2 | 2 |
 | `engine/style-vector-store.ts` | 705 | 11 | 10 |
-| `engine/style/dynamic-injection-engine.ts` | 786 | 10 | 5 |
+| `engine/style/dynamic-injection-engine.ts` | 765 | 10 | 5 |
 | `engine/style/fingerprint-blender-v2.ts` | 645 | 6 | 1 |
 | `engine/style/fingerprint-migrator.ts` | 637 | 13 | 13 |
 | `engine/style/fingerprint-selection.ts` | 101 | 5 | 5 |
@@ -453,7 +453,7 @@
 | `services/vector-rebuild-service.ts` | 141 | 8 | 8 |
 | `services/worker-manager.ts` | 569 | 1 | 1 |
 | `services/worker-protocol.ts` | 121 | 12 | 12 |
-| `services/worker-runtime.ts` | 278 | 8 | 8 |
+| `services/worker-runtime.ts` | 269 | 8 | 8 |
 | `services/worldview-cache-service.ts` | 627 | 4 | 4 |
 | `services/writeback-audit-service.ts` | 97 | 2 | 1 |
 | `services/writeback-review-service.ts` | 79 | 2 | 1 |
@@ -542,7 +542,7 @@
 | `shared/foreshadow-status.ts` | 61 | 3 | 2 |
 | `shared/format-constants.ts` | 524 | 67 | 15 |
 | `shared/frontmatter-schema.ts` | 468 | 14 | 10 |
-| `shared/frontmatter.ts` | 178 | 6 | 5 |
+| `shared/frontmatter.ts` | 168 | 6 | 5 |
 | `shared/ghost-trigger.ts` | 26 | 1 | 1 |
 | `shared/github-repo.ts` | 81 | 11 | 11 |
 | `shared/goal-model.ts` | 177 | 12 | 7 |
@@ -550,7 +550,7 @@
 | `shared/http-request.ts` | 124 | 7 | 3 |
 | `shared/http-transport.ts` | 235 | 6 | 2 |
 | `shared/human-feature-rubric.ts` | 180 | 7 | 6 |
-| `shared/human-similarity.ts` | 333 | 11 | 11 |
+| `shared/human-similarity.ts` | 318 | 11 | 11 |
 | `shared/id-migration-model.ts` | 113 | 6 | 4 |
 | `shared/id-registry-model.ts` | 254 | 17 | 11 |
 | `shared/info-debt-board.ts` | 26 | 1 | 1 |
@@ -620,7 +620,7 @@
 | `shared/prompt-manager-types.ts` | 139 | 11 | 11 |
 | `shared/prompt-template-catalog.ts` | 51 | 3 | 0 |
 | `shared/prose-metrics.ts` | 574 | 10 | 10 |
-| `shared/prose-naturalizer.ts` | 238 | 3 | 3 |
+| `shared/prose-naturalizer.ts` | 234 | 3 | 3 |
 | `shared/protagonist.ts` | 40 | 2 | 2 |
 | `shared/provider-detection.ts` | 240 | 4 | 4 |
 | `shared/provider-settings-maintenance.ts` | 125 | 4 | 2 |
@@ -733,7 +733,7 @@
 | `ui/backup-center-modal.ts` | 248 | 1 | 1 |
 | `ui/backup-yuan-modal.ts` | 134 | 1 | 1 |
 | `ui/batch-create-modal.ts` | 534 | 1 | 1 |
-| `ui/batch-import-modal.ts` | 1762 | 1 | 1 |
+| `ui/batch-import-modal.ts` | 1758 | 1 | 1 |
 | `ui/batch-novels-modal.ts` | 236 | 1 | 1 |
 | `ui/button-busy.ts` | 37 | 1 | 1 |
 | `ui/changelog-modal.ts` | 207 | 1 | 1 |
@@ -889,7 +889,7 @@
 | `ui/knowledge-detail-format.ts` | 46 | 4 | 4 |
 | `ui/knowledge-detail-modal.ts` | 1708 | 1 | 1 |
 | `ui/knowledge-folder-navigation.ts` | 15 | 1 | 1 |
-| `ui/knowledge-monitor-modal.ts` | 500 | 1 | 1 |
+| `ui/knowledge-monitor-modal.ts` | 490 | 1 | 1 |
 | `ui/knowledge-rebuild-action.ts` | 48 | 1 | 1 |
 | `ui/manage-providers-modal.ts` | 647 | 1 | 1 |
 | `ui/manuscript-precheck-modal.ts` | 199 | 2 | 2 |
@@ -939,7 +939,7 @@
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
 | `ui/services/agent-attachment-store.ts` | 171 | 10 | 6 |
-| `ui/services/agent-port.ts` | 779 | 3 | 3 |
+| `ui/services/agent-port.ts` | 775 | 3 | 3 |
 | `ui/services/agent-session-store.ts` | 211 | 5 | 5 |
 | `ui/services/agent-spill-store.ts` | 142 | 4 | 3 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |

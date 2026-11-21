@@ -23,6 +23,7 @@ interface FakeEl {
     text: string;
     createEl: (tag: string, opts?: { text?: string; cls?: string; type?: string }) => FakeEl;
     createDiv: (opts?: { text?: string; cls?: string }) => FakeEl;
+    createSpan: (opts?: { text?: string; cls?: string }) => FakeEl;
     empty: () => void;
     addClass: (cls: string) => void;
     setText: (text: string) => void;
@@ -56,6 +57,9 @@ function makeEl(tag = 'div'): FakeEl {
         },
         createDiv(opts?: { text?: string; cls?: string }) {
             return el.createEl('div', opts);
+        },
+        createSpan(opts?: { text?: string; cls?: string }) {
+            return el.createEl('span', opts);
         },
         empty() {
             el.children = [];

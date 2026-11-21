@@ -340,7 +340,7 @@ export class RewriteSuggestionEngine {
     }
 
     // 检测是否有对话 → 人物校准
-    if (/[\"\'\「\『].*?[\"\'\」\』]/s.test(t)) {
+    if (/["'「『].*?["'」』]/s.test(t)) {
       return 'character';
     }
 

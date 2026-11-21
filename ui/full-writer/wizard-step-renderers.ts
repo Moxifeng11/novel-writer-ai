@@ -327,7 +327,7 @@ export class WizardStepRenderers {
                     if (slContent.trim().length > 0) {
                         this.wizardStepResults['setting_lib'] = slContent;
                     }
-                } catch (e) { /* 忽略 */ }
+                } catch { /* 忽略 */ }
             }
         }
 
@@ -338,7 +338,7 @@ export class WizardStepRenderers {
                 if (wvContent.trim().length > 0) {
                     this.wizardStepResults['worldview'] = wvContent;
                 }
-            } catch (e) { /* 忽略 */ }
+            } catch { /* 忽略 */ }
         }
         
         container.createEl('p', { text: t('cowrite.wiz.settingLibIntro'), cls: 'nw-wizard-note' });
@@ -705,7 +705,7 @@ export class WizardStepRenderers {
                     if (wvContent.trim().length > 0) {
                         this.wizardStepResults['worldview'] = wvContent;
                     }
-                } catch (e) { /* 忽略 */ }
+                } catch { /* 忽略 */ }
             }
         }
         if (!this.wizardStepResults['setting_lib']) {
@@ -716,7 +716,7 @@ export class WizardStepRenderers {
                     if (slContent.trim().replace(/<!--[\s\S]*?-->/g, '').trim().length > 0) {
                         this.wizardStepResults['setting_lib'] = slContent;
                     }
-                } catch (e) { /* 忽略 */ }
+                } catch { /* 忽略 */ }
             }
         }
 
@@ -893,7 +893,7 @@ export class WizardStepRenderers {
                 try {
                     const wvFile = this.app.vault.getAbstractFileByPath(getWorldviewPath(tab.project));
                     if (wvFile instanceof TFile) { worldviewContent = await this.app.vault.read(wvFile); this.wizardStepResults['worldview'] = worldviewContent; }
-                } catch (e) { /* 忽略 */ }
+                } catch { /* 忽略 */ }
             }
             
             container.createEl('p', { text: t('cowrite.wiz.wvDone'), cls: 'nw-wizard-status nw-wizard-status--success' });

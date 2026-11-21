@@ -251,7 +251,7 @@ ${worldviewResult.content}`;
                     }
                     worldView = worldviewResult.content;
                     showSuccessNotice(t('planBook.worldviewDone'), { timeout: 3000 });
-                } catch (e) {
+                } catch {
                     showErrorNotice(t('planBook.worldviewWriteFailed'), { timeout: 5000 });
                     return;
                 }

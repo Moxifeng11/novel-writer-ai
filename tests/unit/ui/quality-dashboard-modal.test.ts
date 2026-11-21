@@ -44,6 +44,14 @@ class MockHTMLElement {
         }
     }
 
+    createDiv(opts?: { cls?: string; text?: string }): MockHTMLElement {
+        return this.createEl('div', opts);
+    }
+
+    createSpan(opts?: { cls?: string; text?: string }): MockHTMLElement {
+        return this.createEl('span', opts);
+    }
+
     createEl(tag: string, opts?: { cls?: string; text?: string }): MockHTMLElement {
         const el = new MockHTMLElement(tag);
         if (opts?.cls) el.className = opts.cls;

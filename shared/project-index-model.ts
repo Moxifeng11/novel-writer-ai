@@ -437,7 +437,7 @@ export function normalizeLookup(value: unknown): string {
     if (typeof value !== 'string') return '';
     return value
         .replace(/\[\[(.+?)\]\]/g, '$1')
-        .replace(/[［【\[](.+?)[］】\]]/g, '$1')
+        .replace(/[［【[](.+?)[］】\]]/g, '$1')
         .replace(/[|｜].*$/, '')
         .replace(/[\s\u3000]+/g, '')
         .replace(/[！-～]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))

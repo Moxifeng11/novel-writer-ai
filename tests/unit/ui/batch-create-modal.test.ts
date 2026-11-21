@@ -68,12 +68,20 @@ function makeVolume(volumeNumber: number, startChapter: number, endChapter: numb
     };
 }
 
-/** 结果面板的最小 DOM 桩（renderResult 仅用 empty / createEl） */
-function makePlanBox(): HTMLElement {
-    return {
+/** 结果面板的最小 DOM 桩（renderResult 用 empty / createEl 与 Obsidian 的 createDiv/createSpan 糖） */
+function makePlanEl(): Record<string, unknown> {
+    const el: Record<string, unknown> = {
         empty: vi.fn(),
-        createEl: vi.fn(() => ({ createEl: vi.fn(), setText: vi.fn() })),
-    } as unknown as HTMLElement;
+        setText: vi.fn(),
+    };
+    el.createEl = vi.fn(() => makePlanEl());
+    el.createDiv = (opts?: unknown) => (el.createEl as (tag: string, opts?: unknown) => unknown)('div', opts);
+    el.createSpan = (opts?: unknown) => (el.createEl as (tag: string, opts?: unknown) => unknown)('span', opts);
+    return el;
+}
+
+function makePlanBox(): HTMLElement {
+    return makePlanEl() as unknown as HTMLElement;
 }
 
 type BatchCreateAll = (project: string, volumes: VolumePlan[], planBox: HTMLElement) => Promise<void>;

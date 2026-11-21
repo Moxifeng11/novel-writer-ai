@@ -212,7 +212,7 @@ export class EntityStateManager {
             }
             const text = (response.content || '').trim();
             // 提取 JSON（可能被 ```json ... ``` 包裹）
-            const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || text.match(/([\[{][\s\S]*)/);
+            const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || text.match(/([[{][\s\S]*)/);
             const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
             const parsed = JSON.parse(jsonStr);
             const changes: EntityStateChange[] = Array.isArray(parsed) ? parsed : (parsed.changes || []);

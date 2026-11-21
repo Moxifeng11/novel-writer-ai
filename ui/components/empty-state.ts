@@ -117,28 +117,28 @@ const SVG_ICONS: Record<EmptyStateIcon, string> = {
 export function createEmptyState(options: EmptyStateOptions): HTMLElement {
     const { icon = 'default', title, description, actionText, onAction, variant = 'default' } = options;
 
-    const container = document.createElement('div');
+    const container = createDiv();
     container.className = variant === 'compact'
         ? 'nw-empty-state nw-empty-state--compact'
         : 'nw-empty-state';
 
     // 图标区域（compact 不渲染图标：侧栏/列表里 64px 图标会挤掉内容）
     if (variant !== 'compact') {
-        const iconWrap = document.createElement('div');
+        const iconWrap = createDiv();
         iconWrap.className = 'nw-empty-state-icon';
         setSanitizedHtml(iconWrap, SVG_ICONS[icon]);
         container.appendChild(iconWrap);
     }
 
     // 标题
-    const titleEl = document.createElement('div');
+    const titleEl = createDiv();
     titleEl.className = 'nw-empty-state-title';
     titleEl.textContent = title;
     container.appendChild(titleEl);
 
     // 描述
     if (description) {
-        const descEl = document.createElement('div');
+        const descEl = createDiv();
         descEl.className = 'nw-empty-state-description';
         descEl.textContent = description;
         container.appendChild(descEl);
@@ -146,7 +146,7 @@ export function createEmptyState(options: EmptyStateOptions): HTMLElement {
 
     // 操作按钮（需要同时提供 actionText 和 onAction）
     if (actionText && onAction) {
-        const btn = document.createElement('button');
+        const btn = createEl('button');
         btn.className = 'nw-empty-state-action';
         btn.type = 'button';
         btn.textContent = actionText;

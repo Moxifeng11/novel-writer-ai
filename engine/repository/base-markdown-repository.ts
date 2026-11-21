@@ -151,7 +151,7 @@ export abstract class BaseMarkdownRepository<T, TId = string>
             }
 
             return entity;
-        } catch (e) {
+        } catch {
             return null;
         }
     }
@@ -230,7 +230,7 @@ export abstract class BaseMarkdownRepository<T, TId = string>
             }
 
             return true;
-        } catch (e) {
+        } catch {
             return false;
         }
     }

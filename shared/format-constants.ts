@@ -29,7 +29,7 @@ export const FIELD_CHAPTER_RANGE = '章节范围';
 export const RE_CHAPTER_RANGE = /第(\d+)章\s*-\s*第(\d+)章/;
 
 /** 章节范围解析（数字提取，兼容 - ~ 至） */
-export const RE_RANGE_NUMBERS = /(\d+)[\-~至](\d+)/;
+export const RE_RANGE_NUMBERS = /(\d+)[-~至](\d+)/;
 
 /** 表格行：| 章号 | 核心冲突 | */
 export const RE_OUTLINE_TABLE_ROW = /^\|\s*(\d+)\s*\|(.+)\|/;

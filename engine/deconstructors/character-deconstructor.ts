@@ -525,7 +525,7 @@ export class CharacterDeconstructor {
     private loadDefaultAdaptiveConfig(): AdaptiveGenreConfig {
         try {
             return GenreConfigRegistry.getInstance().getGenreConfig('generic');
-        } catch (e) {
+        } catch {
             // 注册表未初始化时返回最小兜底配置，避免构造失败
             return {
                 genreId: 'generic',

@@ -77,18 +77,6 @@ export interface SelectedSample {
     reason: string;
 }
 
-/** 分级注入片段 */
-interface TieredInjectionParts {
-    /** 全局层：整体风格指引 */
-    globalTier: string[];
-    /** 段落层：匹配当前段落功能的示例 */
-    paragraphTier: string[];
-    /** 句子层：特殊句式/修辞提示（可空） */
-    sentenceTier: string[];
-    /** 总长度（字符数） */
-    totalLength: number;
-}
-
 // ============================================================
 // 二、关键词词典
 // ============================================================
@@ -773,13 +761,4 @@ export function createDynamicInjectionEngine(): {
         selector: new DynamicSampleSelector(),
         builder: new TieredInjectionBuilder(),
     };
-}
-
-/**
- * 获取默认强度配置（用于未传入 intensityConfigs 时的兜底）
- *
-  * @returns StyleIntensityConfig 实例
- */
-function getDefaultIntensityConfig(): StyleIntensityConfig {
-    return { ...DEFAULT_INTENSITY_CONFIG };
 }

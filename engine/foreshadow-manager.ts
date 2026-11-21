@@ -680,7 +680,7 @@ ${newRow}
                 candidate.vector = candidateVec;
                 candidate.confidence = Math.min(0.95, candidate.confidence + maxSim * 0.2);
                 result.push(candidate);
-            } catch (e) {
+            } catch {
                 result.push(candidate);
             }
         }

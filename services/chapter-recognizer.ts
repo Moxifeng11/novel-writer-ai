@@ -49,14 +49,14 @@ const MARKDOWN_HEADING_PATTERNS = [
 const AUTHOR_PATTERNS = [
     /^作者[:：]\s*(.+)$/m,
     /^作\s*者[:：]\s*(.+)$/m,
-    /^[【\[]作者[】\]]\s*(.+)$/m,
+    /^[【[]作者[】\]]\s*(.+)$/m,
     /^著者[:：]\s*(.+)$/m,
 ];
 
 const TITLE_FROM_CONTENT_PATTERNS = [
     /^《(.+?)》/,
     /^书名[:：]\s*(.+)$/m,
-    /^[【\[]书名[】\]]\s*(.+)$/m,
+    /^[【[]书名[】\]]\s*(.+)$/m,
 ];
 
 function detectFormat(filename: string, content: string): 'txt' | 'md' | 'unknown' {

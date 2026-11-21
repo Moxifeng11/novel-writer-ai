@@ -4220,3 +4220,15 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 结果：tsc EXIT=0；全量测试 1013 文件 / 10503 通过 + 3 跳过；check:obsidian-review EXIT=0（error 0）；npm run lint 0 error；warn 库存 2732 → 1570（334+ 文件）。main.js 6,239,513（比基线小 1,971 字节）；deconstruction worker 684,461（+80，host-timers 引入），bundle 基线已带 note 上调。
 - 新增门禁 `npm run check:review-warn`（scripts/check-review-warn.mjs + .review-warn-baseline.json）：跑一次非 --quiet 的扫描，按规则统计 warn，任何一类上涨即失败；已接进 preflight（紧跟 check:obsidian-review）。
 - 下一批候选：no-useless-escape 35（可安全自动修）、unused-vars 余量 188、no-deprecated 255（逐条判断）、floating/misused promises 309（需人工区分场景）。
+
+## 第一百四十一轮：清社区审核扫描器 warn 第二批（1,568 → 1,420）
+
+- 背景：用户要求继续清扫描器 warn（第一批见第一百四十轮）。第二批只碰「语义可判定、无运行时行为变化」的几类。
+- 结果：warn 1,568 → 1,420（72 文件改动，+221 / −315 行），error 仍为 0；main.js 6,239,513 → 6,238,968（删除死代码与转义后自然下降）。
+- `no-useless-escape` 35 → 0（23 文件）：ESLint 对该规则不带 fixer，脚本按 `eslint -f json` 的 `line/column`、同一行从右到左删除多余反斜杠；tsc EXIT=0，受影响的 29 个测试文件 403 用例全过。
+- `obsidianmd/prefer-create-el` 74 → 1：补全测试假元素（`batch-create-modal.test.ts` 的 makePlanEl、`quality-dashboard-modal.test.ts` 的 MockHTMLElement、`consistency-audit-modal.test.ts` 的 FakeEl）后，用只开该规则的临时配置修 8 文件 / 69 处；跨窗口 7 处改为 `doc.createDiv()` / `doc.createEl()` / `doc.createSpan()`（`Document` 继承被 Obsidian 增强过的 `Node`，tsc 能过；`Window` 没有这些方法，规则建议的 `doc.win.createDiv()` 不成立）。剩 1 条：`ui/polish-editor.ts:65` 的 `doc.createDocumentFragment()` 无对应扩展方法。
+- `@typescript-eslint/no-unused-vars` 188 → 148：25 个未使用的 `catch (e|err)` 改可选绑定 `catch {`；删 11 个零引用函数、3 个未使用接口/泛型参数与 2 个连带空转 import（删 `applyFrontmatterTextPatch` 后 `formatTagArray` 失效、删 `sendWorkerError` 后 `WorkerErrorPayload` 失效）。剩 148 条均为 assigned-but-never-used 的 DOM 创建，有副作用，未动。
+- 关键坑：把 `doc.createElement` 换成 `doc.createDiv` 后，4 个测试文件的假 document 只实现 `createElement` 而挂 25 例；修法是在 `tests/unit/ui/support/fake-dom.ts` 的 `stubDocument()` 补 `createEl/createDiv/createSpan/createDocumentFragment`，并在 `pet-image-settings-picker.test.ts`（makeDoc）、`tts-player.test.ts`（fakeDoc）、`cowrite-preview-latest.test.ts` / `cowrite-preview-trailing.test.ts`（ownerDocument）各补 `createDiv/createEl`。
+- 口径已写进 `docs/DEVELOPMENT.md`「社区审核扫描器 warn 清理口径」的「第二批落地手法」四条；`.review-warn-baseline.json` 收紧到 1,420，`.bundle-baseline.json` 收紧到 main.js 6,238,968。
+- 门禁：tsc EXIT=0；check:obsidian-review EXIT=0（error 0）；check:review-warn 通过（1420 / 31 类）；preflight EXIT=0（1,013 文件 / 10,503 通过 + 3 跳过）。
+- 后续候选：`no-unnecessary-type-assertion` 357（规则在本项目类型信息下判定不可靠，需人工逐条）、`no-deprecated` 255（StyleFingerprint V1 → V2 迁移属重构）、`no-misused-promises` 162 / `no-floating-promises` 147（需语义判断）。

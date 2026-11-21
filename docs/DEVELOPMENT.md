@@ -1269,7 +1269,14 @@ npm run check:release  # 发布前资产与版本一致性校验
 
 单测环境是 node（`vitest.config.ts` 的 `environment: 'node'`），而代码改用了 Obsidian 注入的全局 `createEl/createDiv/createSpan` 与 `window.setTimeout`。`tests/setup.ts` 负责垫片：`window` 缺省指向 `globalThis`；`createEl/createDiv/createSpan/createFragment` 缺省用 `tests/unit/ui/support/fake-dom.ts` 的 `FakeEl`，若测试已用 `stubDocument()` 注入 `document.createElement` 则优先用该工厂（保证断言拿到的元素类型一致）。新增垫片时不要覆盖测试已有的定义。
 
-当前存量（2026-11-21，`eslint.obsidian-review.mjs` 口径）：warn 2,732 → 1,568，error 0。`npm run check:review-warn` 用 `.review-warn-baseline.json` 按规则设预算，任何一类上涨即失败（已在 preflight 里）。剩余大头 `no-unnecessary-type-assertion` 359、`no-deprecated` 255、`no-unused-vars` 188、`no-misused-promises` 162、`no-floating-promises` 147。
+当前存量（2026-11-21，`eslint.obsidian-review.mjs` 口径）：warn 2,732 → **1,420**，error 0。`npm run check:review-warn` 用 `.review-warn-baseline.json` 按规则设预算，任何一类上涨即失败（已在 preflight 里）。剩余大头 `no-unnecessary-type-assertion` 357、`no-deprecated` 255、`no-misused-promises` 162、`no-floating-promises` 147、`no-unused-vars` 148（全部是 assigned-but-never-used 的 DOM 创建，有副作用，暂不动）。
+
+第二批（2026-11-21）落地手法，供后续批次复用：
+
+- `no-useless-escape` 没有 fixer：用 `eslint -f json` 拿到每条告警的 `line/column`，按「同一行从右到左」删除多余反斜杠，删完必跑 tsc。
+- 跨窗口创建元素：Obsidian 的 `Document` 继承被增强过的 `Node`，所以 `doc.createDiv()` / `doc.createEl()` / `doc.createSpan()` 能过 tsc；但 `Window` 没有这些方法，规则建议的 `doc.win.createDiv()` 不成立，`createDocumentFragment` 也没有对应方法（`ui/polish-editor.ts` 保留 1 条 warn）。
+- 未使用的 `catch (e)`：可选捕获绑定 `catch {` 在 tsc 下直接通过，可批量替换（25 处）。
+- 删除死函数/死接口时必须连带删掉上方 JSDoc，并复查它唯一的引用点：删掉 `applyFrontmatterTextPatch` 后 `formatTagArray` 变成未使用 import，删掉 `sendWorkerError` 后 `WorkerErrorPayload` 变成未使用 import。
 
 ### 异步等待原语（2026-10-31 批次 14）
 

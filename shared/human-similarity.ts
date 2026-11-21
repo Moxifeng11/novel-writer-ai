@@ -152,21 +152,6 @@ function cosineSimilarity(
 }
 
 /**
- * 标量相似度：按参照值归一化，避免「越接近 0 越好」的线性误判
- *
- * @param actual - 实际
- * @param reference - 参考文本
- * @returns 数值结果
- */
-function ratioSimilarity(actual: number, reference: number): number {
-    if (reference <= 0 && actual <= 0) return 1;
-    // 下限 0.01：分号/破折号这类千分之几的标点，相对误差会被放大到失真
-    const base = Math.max(reference, 0.01);
-    const relative = Math.abs(actual - base) / base;
-    return Math.max(0, 1 - Math.min(1, relative));
-}
-
-/**
  * 带容差带的比值相似度：相对误差在 ±tolerance 内记满分，之外线性衰减。
  *
  * 400 字短样文的占比噪声很大（一段对话就能把对话占比从 0.1 抬到 0.3），

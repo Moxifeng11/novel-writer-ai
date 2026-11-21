@@ -277,7 +277,7 @@ export class AiBuilderModal extends Modal {
             const woPath = pjWorldview(project);
             const woFile = this.app.vault.getAbstractFileByPath(woPath);
             if (woFile) this.worldContent = await this.app.vault.read(woFile as TFile);
-        } catch (e) { /* ignore */ }
+        } catch { /* ignore */ }
         // 读取设定库
         try {
             const sf = this.app.vault.getAbstractFileByPath(pjSettingLib(project));
@@ -288,7 +288,7 @@ export class AiBuilderModal extends Modal {
                     this.settingLibContent = raw;
                 }
             }
-        } catch (e) { /* ignore */ }
+        } catch { /* ignore */ }
         // 刷新统计数据
         this.existingCounts = await this.getProjectEntityStats(project);
     }

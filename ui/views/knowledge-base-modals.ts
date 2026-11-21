@@ -160,7 +160,7 @@ export class ImportBookModal extends Modal {
                 await this.importBook(file.basename, '', file.path, content);
             });
             modal.open();
-        } catch (e) {
+        } catch {
             showErrorNotice(t('knowledgebase.modal.import.selectFailed'));
         }
     }
@@ -181,7 +181,7 @@ export class ImportBookModal extends Modal {
                 const text = await file.text();
                 const name = resolveBookNameFromFile(file.name);
                 await this.importBook(name, '', file.name, text);
-            } catch (err) {
+            } catch {
                 showErrorNotice(t('knowledgebase.modal.import.readFailed'));
             }
         });

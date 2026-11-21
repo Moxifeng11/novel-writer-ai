@@ -2080,7 +2080,7 @@ ${ni.description || '暂无描述'}
                     const c = await this.getFS().read(f.path);
                     const fm = c.match(/^---\n([\s\S]*?)\n---/);
                     if (fm && fm[1].includes('当前状态:')) charStateOk++; else charStateMissing++;
-                } catch (e) { charStateMissing++; }
+                } catch { charStateMissing++; }
             }
 
             // 4. 健康度

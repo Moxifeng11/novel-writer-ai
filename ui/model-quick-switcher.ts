@@ -286,13 +286,13 @@ export function renderModelQuickSwitcher(
     container: HTMLElement,
     plugin: ModelSwitcherPluginLike,
 ): ModelQuickSwitcherHandle {
-    const button = document.createElement('button');
+    const button = createEl('button');
     button.className = 'nw-model-switch';
     button.setAttribute(
         'title',
         '切换 API 供应商与模型（两级菜单）：先选供应商，再选模型；选中的模型将用于规划与正文全部任务',
     );
-    const label = document.createElement('span');
+    const label = createSpan();
     label.className = 'nw-model-switch-label';
     button.appendChild(label);
     container.appendChild(button);

@@ -68,7 +68,7 @@ export function calculateHumanRate(text: string): HumanRateScores {
         const punctTypes = new Set<string>();
         let totalPunct = 0;
         for (const s of recent5) {
-            const matches = s.match(/[，。！？、；：""''《》…—,\.!\?;:'"\-]/g);
+            const matches = s.match(/[，。！？、；：""''《》…—,.!?;:'"-]/g);
             if (matches) {
                 totalPunct += matches.length;
                 matches.forEach(m => punctTypes.add(m));

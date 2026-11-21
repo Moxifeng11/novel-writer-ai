@@ -37,7 +37,7 @@ export type FingerprintSearchV2 = (
 /**
  * 指纹选区选项列表结构定义。
  */
-export interface FingerprintSelectionOptions<F extends FingerprintRef> {
+export interface FingerprintSelectionOptions {
     query: string;
     /** V2 12 维相似度检索；不可用时直接走 fallback */
     searchV2?: FingerprintSearchV2;
@@ -60,7 +60,7 @@ export interface FingerprintSelectionOptions<F extends FingerprintRef> {
  */
 export async function selectFingerprintsForInjection<F extends FingerprintRef>(
     enabled: F[],
-    options: FingerprintSelectionOptions<F>,
+    options: FingerprintSelectionOptions,
 ): Promise<F[]> {
     const limit = options.limit ?? MAX_INJECTED_STYLE_FINGERPRINTS;
     const fallbackMode = options.fallback ?? 'all';

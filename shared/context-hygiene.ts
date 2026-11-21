@@ -68,7 +68,7 @@ const MIN_DUPLICATE_CHARS = 200;
 const DUPLICATE_RATIO = 0.85;
 
 function normalize(text: string): string {
-    return String(text || '').replace(/[\s\u3000]+/g, '').replace(/[，。！？；：“”「」『』、（）()【】\[\]—-]/g, '');
+    return String(text || '').replace(/[\s\u3000]+/g, '').replace(/[，。！？；：“”「」『』、（）()【】[\]—-]/g, '');
 }
 
 /**

@@ -208,7 +208,7 @@ ${result.content}`;
                     await this.app.vault.create(worldviewPath, worldviewContent);
                 }
                 showSuccess('世界观已生成');
-            } catch (e) {
+            } catch {
                 showError('世界观写入失败');
                 return;
             }

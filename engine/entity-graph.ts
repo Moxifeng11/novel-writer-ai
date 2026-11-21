@@ -55,7 +55,7 @@ function readFrontmatter(app: App, file: TFile): Record<string, unknown> | null 
 }
 
 function normalizeName(name: string): string {
-    return String(name || '').replace(/[\s【】\[\]]/g, '');
+    return String(name || '').replace(/[\s【】[\]]/g, '');
 }
 
 function nameMatches(owner: string, charName: string): boolean {

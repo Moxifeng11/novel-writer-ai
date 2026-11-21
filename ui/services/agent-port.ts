@@ -56,10 +56,6 @@ export function getAgentContext(app: App, plugin: NovelWriterPlugin): AgentConte
 
 void CoWritingView;
 
-function parseChapterNumber(chapter: string): number {
-    return parseInt(chapter.match(/\d+/)?.[0] || '0', 10) || 0;
-}
-
 /**
  * 章节条目 → Agent 摘要（截断字段，控制 token）
  *

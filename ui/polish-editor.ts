@@ -84,7 +84,7 @@ export function buildEntityMarkedFragment(
             fragment.appendChild(doc.createTextNode(name));
         } else {
             const typeLabel = typeLabels[info.type] || info.type;
-            const span = doc.createElement('span');
+            const span = doc.createSpan();
             span.className = `nw-entity-tag nw-entity-${info.type}`;
             span.contentEditable = 'false';
             span.dataset.entityType = info.type;

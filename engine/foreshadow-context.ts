@@ -38,7 +38,7 @@ export function parsePlannedRevealChapter(value: string | undefined | null): num
 }
 
 function normalizeForeshadowName(value: string): string {
-    return (value || '').replace(/[\s「」『』《》"'“”‘’（）()【】[\]]、，,。；;：:！!？?—\-·]/g, '');
+    return (value || '').replace(/[\s「」『』《》"'“”‘’（）()【】[\]]、，,。；;：:！!？?—-·]/g, '');
 }
 
 /**
@@ -103,7 +103,7 @@ export function extractForeshadowKeywords(content: string): string[] {
     const keywords = new Set<string>();
     if (normalized.length >= 4 && normalized.length <= 12) keywords.add(normalized);
 
-    const parts = normalized.split(/[\s，,、。；;：:！!？?（）()「」【】《》"'“”‘’—\-]+/);
+    const parts = normalized.split(/[\s，,、。；;：:！!？?（）()「」【】《》"'“”‘’—-]+/);
     for (const part of parts) {
         const piece = part.trim();
         if (piece.length >= 4 && piece.length <= 16) keywords.add(piece);

@@ -1,15 +1,5 @@
 /** Frontmatter 解析工具 — 被 ui/ 和 engine/ 共享 */
 
-/**
- * HTML 净化（在 shared 层独立实现，避免循环依赖 helpers.ts）
- *
- * @param html - HTML
- * @returns 文本结果
- */
-function stripHtml(html: string): string {
-    return html.replace(/<[^>]*>/g, '');
-}
-
 /** Markdown 内容结构（带章节层级信息） */
 export interface MarkdownContent {
     raw: string;

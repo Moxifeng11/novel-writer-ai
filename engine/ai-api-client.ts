@@ -758,7 +758,7 @@ export class AIApiClient {
                     let data: AIApiJsonResponse;
                     try {
                         data = JSON.parse(responseText) as AIApiJsonResponse;
-                    } catch (jsonError) {
+                    } catch {
                         log.error(`[小说工坊] API 返回非 JSON 响应（模型: ${currentModel}）:`, responseText.slice(0, 500));
                         const isHtml = responseText.includes('<html') || responseText.includes('<!DOCTYPE');
                         const isGateway = responseText.includes('502') || responseText.includes('504') || responseText.includes('Bad Gateway');

@@ -148,7 +148,7 @@ export class CategorizationReviewPanel {
     }
 
     private renderSuggestionItem(suggestion: AnalysisSuggestion, index: number): HTMLElement {
-        const item = (this.container.doc ?? document).createElement('div');
+        const item = (this.container.doc ?? document).createDiv();
         item.className = 'nw-cat-item';
         item.dataset.id = suggestion.id;
         item.dataset.status = suggestion.status;

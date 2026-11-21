@@ -285,41 +285,6 @@ function extractCharacterStates(text: string): Map<string, string[]> {
     return map;
 }
 
-function extractForeshadowReveals(text: string): string[] {
-    const reveals: string[] = [];
-    const re = /(?:回收|揭晓|揭露|解开|揭开|真相大白)\s*(?:["「『])?(.+?)(?:["」』])?(?=\s|，|。|！|？|$|\n)/g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(text)) !== null) {
-        const name = m[1].trim();
-        if (name.length > 0 && name.length < 20) reveals.push(name);
-    }
-    return reveals;
-}
-
-function extractFactionEvents(text: string): Map<string, string[]> {
-    const map = new Map<string, string[]>();
-    const re = /([^\s，。！？\n【】（）]{1,10})(?:势力|宗门|家族|帮派|组织)?\s*(崛起|兴盛|壮大|称霸|登顶|覆灭|灭亡|衰落|瓦解|被灭|衰败|转型)/g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(text)) !== null) {
-        const name = m[1].trim();
-        const event = m[2].trim();
-        if (!map.has(name)) map.set(name, []);
-        map.get(name)!.push(event);
-    }
-    return map;
-}
-
-function extractTurningPointMentions(text: string): string[] {
-    const mentions: string[] = [];
-    // 提取 ## 或 ### 下的关键事件标题
-    const re = /#{2,3}\s*(.+?)(?:\n|$)/g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(text)) !== null) {
-        mentions.push(m[1].trim());
-    }
-    return mentions;
-}
-
 function hasSubplot(text: string): boolean {
     return SUBLINE_MARKERS.some(marker => text.includes(marker));
 }
