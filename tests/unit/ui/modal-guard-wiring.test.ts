@@ -56,6 +56,13 @@ const GUARDED_FILES = [
     'ui/outline-expand-modal.ts',
     'ui/unified-entity-generate-modal.ts',
     'ui/pre-research-modal.ts',
+    'ui/fingerprint-library-modal.ts',
+    'ui/ideation-modal.ts',
+    'ui/generate-worldview-modal.ts',
+    'ui/generate-character-modal.ts',
+    'ui/generate-faction-modal.ts',
+    'ui/generate-item-modal.ts',
+    'ui/generate-location-modal.ts',
 ];
 
 describe('高危表单弹窗的 ModalDirtyGuard 接线（第一百三十一轮 + A-5 扩面）', () => {
@@ -103,6 +110,41 @@ describe('高危表单弹窗的 ModalDirtyGuard 接线（第一百三十一轮 +
         const src = stripComments(source('ui/pre-research-modal.ts'));
         expect(src).toMatch(/cancel\.onclick = \(\) => \{\s*\n\s*this\.dirtyGuard\.markClean\(\);/);
         expect(src.match(/markClean\(\)/g)?.length).toBeGreaterThanOrEqual(4);
+    });
+
+    it('添加指纹：取消与提取成功都先 markClean 再 close', () => {
+        const src = stripComments(source('ui/fingerprint-library-modal.ts'));
+        expect(src).toMatch(/addEventListener\('click', \(\) => \{\s*\n\s*this\.dirtyGuard\.markClean\(\);\s*\n\s*this\.close\(\);/);
+        expect(src).toMatch(/指纹提取完成[\s\S]{0,120}markClean\(\);[\s\n]*this\.close\(\);/);
+    });
+
+    it('脑洞构思：保存到项目成功后 markClean（弹窗只有成功出口会关闭）', () => {
+        const src = stripComments(source('ui/ideation-modal.ts'));
+        expect(src).toMatch(/markClean\(\);\s*\n\s*this\.close\(\);/);
+    });
+
+    it('生成世界观：写入完成后先 markClean 再 close', () => {
+        const src = stripComments(source('ui/generate-worldview-modal.ts'));
+        expect(src).toMatch(/markClean\(\);\s*\n\s*this\.close\(\);/);
+    });
+
+    for (const [file, label] of [
+        ['ui/generate-faction-modal.ts', 'factions'],
+        ['ui/generate-item-modal.ts', 'items'],
+        ['ui/generate-location-modal.ts', 'locations'],
+    ] as const) {
+        it(`${file}：保存成功与管理入口都不再询问`, () => {
+            const src = stripComments(source(file));
+            // 这些文件是 CRLF，按 \r?\n 匹配，否则静默不命中
+            expect(src).toMatch(new RegExp(`markClean\\(\\);\\r?\\n\\s*showSuccess\\(formatSaveOutcome\\(outcome, '${label}'\\)\\)`));
+            expect(src).toMatch(/markClean\(\);\s*\n\s*this\.close\(\);\s*\n\s*new ExistingEntityManagerModal/);
+        });
+    }
+
+    it('生成角色：保存成功页出现前 markClean，管理入口跳转也不询问', () => {
+        const src = stripComments(source('ui/generate-character-modal.ts'));
+        expect(src).toMatch(/markClean\(\);\s*\n\s*await this\.ensureProtagonistMarked/);
+        expect(src).toMatch(/markClean\(\);\s*\n\s*this\.close\(\);\s*\n\s*new ExistingEntityManagerModal/);
     });
 
     it('全书简介弹窗不需要 guard：onClose 先落草稿再清空，关闭不丢内容', () => {

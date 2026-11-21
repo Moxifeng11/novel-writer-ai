@@ -19,6 +19,7 @@ import { nextFrame } from '@/shared/yield';
 import { isImeComposing } from '@/shared/keyboard';
 import { showErrorNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 import { getLocale, t } from '@/i18n';
+import { ModalDirtyGuard } from './components/modal-dirty-guard';
 
 
 const log = createLogger('GenerateCharacterModal');
@@ -45,6 +46,8 @@ export class GenerateCharacterModal extends Modal {
     private _integrityFailures: string[] = [];
     private _currentProject: string = '';
     private _abortController: AbortController | null = null;
+    /** 未保存修改的关闭确认（审计 A-5） */
+    private dirtyGuard = new ModalDirtyGuard();
 
     constructor(app: App, plugin: NovelWriterPlugin) {
         super(app);
@@ -68,6 +71,9 @@ export class GenerateCharacterModal extends Modal {
         contentEl.addClass('nw-form-stack');
 
         contentEl.empty();
+        this.dirtyGuard.attach(this, this.app);
+        contentEl.addEventListener('input', () => this.dirtyGuard.markDirty());
+        contentEl.addEventListener('change', () => this.dirtyGuard.markDirty());
         this._pendingResults = [];
         this._renderInputForm();
     }
@@ -104,6 +110,7 @@ export class GenerateCharacterModal extends Modal {
         manageBtn.onclick = () => {
             const project = projectSelect.value || this._currentProject;
             if (!project) { new Notice(t('characterGen.selectProjectFirst'), 3000); return; }
+            this.dirtyGuard.markClean();
             this.close();
             new ExistingEntityManagerModal(this.app, this.plugin, project, SUBDIR_CHARS, t('characterGen.manageLabel')).open();
         };
@@ -464,6 +471,8 @@ export class GenerateCharacterModal extends Modal {
         const createdCount = outcome.saved.length + outcome.renamed.length;
 
         showSuccess(formatSaveOutcome(outcome, 'characters'));
+        // 已落盘：关窗不再提示丢弃（成功页上的继续/关闭按钮直接关闭）
+        this.dirtyGuard.markClean();
         await this.ensureProtagonistMarked(this._currentProject);
 
         // 保存成功后显示引导，不立即关闭

@@ -9,6 +9,7 @@ import { vaultLoad, vaultSave } from '@/shared/local-storage';
 import { showErrorNotice, showSuccessNotice } from '@/ui/components/notice-helpers';
 import { t } from '@/i18n';
 import { progressHandle } from '@/utils/helpers';
+import { ModalDirtyGuard } from './components/modal-dirty-guard';
 
 
 const log = createLogger('IdeationModal');
@@ -96,6 +97,8 @@ export class IdeationModal extends Modal {
     private isGenerating: boolean = false;
     private keywords: string = '';
     private extraRequirements: string = '';
+    /** 未保存修改的关闭确认（审计 A-5） */
+    private dirtyGuard = new ModalDirtyGuard();
 
     constructor(app: App, plugin: NovelWriterPlugin) {
         super(app);
@@ -115,6 +118,9 @@ export class IdeationModal extends Modal {
             wrapper.addClass('nw-modal');
         }
         contentEl.empty();
+        this.dirtyGuard.attach(this, this.app);
+        contentEl.addEventListener('input', () => this.dirtyGuard.markDirty());
+        contentEl.addEventListener('change', () => this.dirtyGuard.markDirty());
 
         this.render();
     }
@@ -785,6 +791,7 @@ export class IdeationModal extends Modal {
                 const leaf = this.app.workspace.getLeaf('tab');
                 await leaf.openFile(file);
             }
+            this.dirtyGuard.markClean();
             this.close();
         } catch (e) {
             log.error('[IdeationModal] 保存脑洞失败:', e);

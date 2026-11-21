@@ -14,6 +14,7 @@ import { validateProjectName } from '@/shared/project-name';
 const log = createLogger('GenerateWorldviewModal');
 import { showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
 import { withButtonBusy } from '@/ui/button-busy';
+import { ModalDirtyGuard } from './components/modal-dirty-guard';
 import { t } from '@/i18n';
 /**
  * 生成世界观弹窗。
@@ -23,6 +24,8 @@ export class GenerateWorldviewModal extends Modal {
     private aiEngine: AIEngine;
     private contextManager: ContextManager;
     private timeoutTimer: number | null = null;
+    /** 未保存修改的关闭确认（审计 A-5） */
+    private dirtyGuard = new ModalDirtyGuard();
 
     constructor(app: App, plugin: NovelWriterPlugin) {
         super(app);
@@ -47,6 +50,9 @@ export class GenerateWorldviewModal extends Modal {
         contentEl.addClass('nw-form-stack');
 
         contentEl.empty();
+        this.dirtyGuard.attach(this, this.app);
+        contentEl.addEventListener('input', () => this.dirtyGuard.markDirty());
+        contentEl.addEventListener('change', () => this.dirtyGuard.markDirty());
         contentEl.createEl('h2', { text: '🌍 生成世界观', cls: 'nw-gen-modal-heading' });
 
         const projectSelect = contentEl.createEl('select', { cls: 'nw-select novel-writer-select' });
@@ -274,6 +280,7 @@ ${result.content}`;
                 } catch (e) { log.warn('[小说工坊] 自动填充设定库失败:', e); }
             }
 
+            this.dirtyGuard.markClean();
             this.close();
         } catch (error) {
             completed = true;

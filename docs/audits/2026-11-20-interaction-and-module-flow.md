@@ -480,7 +480,11 @@ DSH 建议：**退役**（与 2026-11-19「旧正文写入链」同一处理口�
 
    **有意不接 `ui/volume-intro-modal.ts`**：它的 `onClose()` 先 `flushDraftAndClear()` 落草稿再清空，关闭本身不丢内容，加拦截只会让用户多点一次确认。`tests/unit/ui/modal-guard-wiring.test.ts` 用断言锁住这条理由（必须含 `flushDraftAndClear` 且不得出现 `new ModalDirtyGuard()`）。
 
-   剩余候选 15 个：existing-entity-manager、cowrite/iterate-instruction、cowrite/memory-manager、fanfic-review、fingerprint-library、generate-faction、generate-character、generate-item、generate-worldview、generate-location、ideation、manage-providers、mode-document、novel-analysis、volume-intro（不接）。
+   **第六批扩面（2026-11-22，A-5 第四轮）**：再接入 7 个——`ui/fingerprint-library-modal.ts`（添加指纹：取消 + 提取成功）、`ui/ideation-modal.ts`（保存到项目成功）、`ui/generate-worldview-modal.ts`（写盘完成）、`ui/generate-character-modal.ts` / `generate-faction-modal.ts` / `generate-item-modal.ts` / `generate-location-modal.ts`（保存成功 + 管理入口跳转）。已接 guard 的 Modal 合计 **20 个**。
+
+   四个生成类弹窗的共同点：生成的实体先存在 `_pendingResults` 内存里，误关即整批丢失，收益最高；成功落盘后 `markClean()`（角色弹窗在展示成功页之前），点「📂 管理…」跳转到 `ExistingEntityManagerModal` 属显式导航，同样 `markClean()` 后再关闭。
+
+   剩余候选 8 个：existing-entity-manager、cowrite/iterate-instruction、cowrite/memory-manager、fanfic-review、manage-providers、mode-document、novel-analysis、volume-intro（不接）。
 
 3. **排版实测**（用户要求「用中文面板验证排版问题」）见 `docs/audits/2026-11-20-ui-real-click-acceptance.md` 的 FIX-14：短篇/长篇 × 1440×900 / 1280×800 / 900×680 六档 + 知识库 + 黄金开篇/世界观/文笔蒸馏三个弹窗全部零裁切、零横向溢出；关闭保护在文笔蒸馏弹窗上真实点击验证通过。
 

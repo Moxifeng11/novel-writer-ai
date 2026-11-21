@@ -11,7 +11,7 @@
 | `shared/` | 267 | 53176 | 2255 | 1763 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 308 | 113961 | 1183 | 946 | 80% |
+| `ui/` | 308 | 114018 | 1183 | 946 | 80% |
 
 ## 文件清单
 
@@ -834,7 +834,7 @@
 | `ui/fingerprint-detail-modal.ts` | 577 | 1 | 1 |
 | `ui/fingerprint-embedding.ts` | 32 | 1 | 1 |
 | `ui/fingerprint-intensity-modal.ts` | 498 | 2 | 2 |
-| `ui/fingerprint-library-modal.ts` | 309 | 1 | 1 |
+| `ui/fingerprint-library-modal.ts` | 319 | 1 | 1 |
 | `ui/fingerprint-utils.ts` | 231 | 13 | 13 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |
 | `ui/full-writer-view.ts` | 2777 | 2 | 2 |
@@ -880,15 +880,15 @@
 | `ui/full-writer/wizard-step-validators.ts` | 152 | 2 | 2 |
 | `ui/full-writer/wizard-types.ts` | 77 | 5 | 3 |
 | `ui/full-writer/wizard-view-access.ts` | 45 | 2 | 2 |
-| `ui/generate-character-modal.ts` | 637 | 1 | 1 |
-| `ui/generate-faction-modal.ts` | 375 | 1 | 1 |
-| `ui/generate-item-modal.ts` | 375 | 1 | 1 |
-| `ui/generate-location-modal.ts` | 375 | 1 | 1 |
-| `ui/generate-worldview-modal.ts` | 295 | 1 | 1 |
+| `ui/generate-character-modal.ts` | 646 | 1 | 1 |
+| `ui/generate-faction-modal.ts` | 383 | 1 | 1 |
+| `ui/generate-item-modal.ts` | 383 | 1 | 1 |
+| `ui/generate-location-modal.ts` | 383 | 1 | 1 |
+| `ui/generate-worldview-modal.ts` | 302 | 1 | 1 |
 | `ui/golden-opening-modal.ts` | 1467 | 1 | 1 |
 | `ui/home-view.ts` | 250 | 2 | 1 |
 | `ui/humanize-report-modal.ts` | 217 | 2 | 2 |
-| `ui/ideation-modal.ts` | 871 | 1 | 1 |
+| `ui/ideation-modal.ts` | 878 | 1 | 1 |
 | `ui/job-center-modal.ts` | 124 | 1 | 1 |
 | `ui/knowledge-detail-format.ts` | 46 | 4 | 4 |
 | `ui/knowledge-detail-modal.ts` | 1708 | 1 | 1 |

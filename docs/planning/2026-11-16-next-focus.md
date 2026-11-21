@@ -4468,3 +4468,13 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 测试：`tests/unit/ui/modal-guard-wiring.test.ts` 从 4 个文件扩到 9 个，并新增创建项目/大纲扩写/预研的逐出口断言与「全书简介不接 guard」的反向断言（21 例全过）；`modal-dirty-guard.test.ts` 7 例不变。
 - 验证：tsc EXIT=0；相关 5 个测试文件 22 例通过；preflight EXIT=0。
 
+
+## 第一百六十轮：A-5 第六批 —— 7 个生成/表单弹窗接入关闭确认（2026-11-22）
+
+- 范围：`ui/fingerprint-library-modal.ts`、`ui/ideation-modal.ts`、`ui/generate-worldview-modal.ts`、`ui/generate-character-modal.ts`、`ui/generate-faction-modal.ts`、`ui/generate-item-modal.ts`、`ui/generate-location-modal.ts`；已接 guard 的 Modal 累计 20 个。
+- 口径：`onOpen()` 在 `contentEl.empty()` 之后 `dirtyGuard.attach(this, this.app)` 并挂 `input`/`change`；保存/写盘成功后 `markClean()` 再关闭；「📂 管理…」跳转 `ExistingEntityManagerModal` 属显式导航，同样先 `markClean()`。
+- 四个 generate-* 的关键收益：生成结果先存 `_pendingResults` 内存，误关即整批丢失。角色弹窗在展示成功页之前 markClean（成功页上的继续/关闭按钮直接 close）。
+- 有意不接不变：`volume-intro`（onClose 落草稿）、`existing-entity-manager`（自带确认）、`manage-providers`（即时保存）。剩余 8 个候选见审计 §5.6。
+- 测试：`tests/unit/ui/modal-guard-wiring.test.ts` GUARDED_FILES 9 → 16，新增 7 条逐出口断言（35 例通过）；坑：generate-* 文件是 CRLF，正则必须用 `\r?\n`，否则静默不命中（已写进注释）。
+- 门禁：tsc EXIT=0；preflight **EXIT=0**（1,018 文件 / 10,550 通过 + 3 跳过，日志 D:/nw-tmp/preflight-ui-a5d.log）；main.js 6,250,104（基线已上调）。
+- 实机（D:/nw-tmp/probe-a5g.mjs，CDP + 开发 vault，命令面板同路径 executeCommandById）：脑洞构思输入后 Esc → 弹「有未保存的修改」；点「留在此页继续编辑」→ 弹窗仍在、文本保留；再 Esc 点「丢弃并关闭」→ 弹窗关闭。截图 D:/nw-dev-vault/_verify/a5c-ideation-esc.png。坑：Obsidian 会在打开弹窗前再开第二个窗口，Modal 可能落在那儿，脚本需关掉后置 activeDocument 并等 `.nw-ideation-textarea` 为 attached。

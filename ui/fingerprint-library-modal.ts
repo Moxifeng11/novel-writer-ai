@@ -4,6 +4,7 @@ import type { StyleAnalysisResultV2 } from '@/engine/style/style-features-v2';
 import { StyleFingerprint } from '@/engine/style-fingerprint-library';
 import { createLogger } from '@/shared/logger';
 import { resolveUiMessage } from '@/shared/ui-message';
+import { ModalDirtyGuard } from './components/modal-dirty-guard';
 
 
 const log = createLogger('FingerprintLibraryModal');
@@ -37,6 +38,8 @@ export class AddFingerprintModal extends Modal {
     private progressBarEl!: HTMLElement;
     private progressTextEl!: HTMLElement;
     private phaseTextEl!: HTMLElement;
+    /** 未保存修改的关闭确认（审计 A-5） */
+    private dirtyGuard = new ModalDirtyGuard();
 
     constructor(app: App, options: AddFingerprintModalOptions) {
         super(app);
@@ -48,6 +51,9 @@ export class AddFingerprintModal extends Modal {
      */
     onOpen() {
         this.modalEl.addClass('nw-scope');
+        this.dirtyGuard.attach(this, this.app);
+        this.contentEl.addEventListener('input', () => this.dirtyGuard.markDirty());
+        this.contentEl.addEventListener('change', () => this.dirtyGuard.markDirty());
         this.render();
     }
 
@@ -197,7 +203,10 @@ export class AddFingerprintModal extends Modal {
             btnRow.createEl('button', {
                 text: '取消',
                 attr: { style: 'padding:6px 16px;cursor:pointer;' }
-            }).addEventListener('click', () => this.close());
+            }).addEventListener('click', () => {
+                this.dirtyGuard.markClean();
+                this.close();
+            });
 
             const extractBtn = btnRow.createEl('button', {
                 text: '🔍 提取指纹',
@@ -279,6 +288,7 @@ export class AddFingerprintModal extends Modal {
                 log.error('[AddFingerprintModal] onCompleted callback failed:', callbackError);
             }
             new Notice('✅ 指纹提取完成');
+            this.dirtyGuard.markClean();
             this.close();
         } catch (e) {
             if ((e as { name?: string }).name === 'AbortError' || (e as { message?: string }).message === '提取已取消') {

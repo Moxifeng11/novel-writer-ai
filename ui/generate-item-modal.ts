@@ -13,6 +13,7 @@ import { saveEntities, formatSaveOutcome } from '@/shared/entity-persistence';
 import { createLogger } from '@/shared/logger';
 import { nextFrame } from '@/shared/yield';
 import { isImeComposing } from '@/shared/keyboard';
+import { ModalDirtyGuard } from './components/modal-dirty-guard';
 
 
 const log = createLogger('GenerateItemModal');
@@ -32,6 +33,8 @@ export class GenerateItemModal extends Modal {
     private contextManager: ContextManager;
     private _pendingResults: ManagedEntity[] = [];
     private _currentProject: string = '';
+    /** 未保存修改的关闭确认（审计 A-5） */
+    private dirtyGuard = new ModalDirtyGuard();
 
     constructor(app: App, plugin: NovelWriterPlugin) {
         super(app);
@@ -55,6 +58,9 @@ export class GenerateItemModal extends Modal {
         contentEl.addClass('nw-form-stack');
 
         contentEl.empty();
+        this.dirtyGuard.attach(this, this.app);
+        contentEl.addEventListener('input', () => this.dirtyGuard.markDirty());
+        contentEl.addEventListener('change', () => this.dirtyGuard.markDirty());
         this._pendingResults = [];
         this._renderInputForm();
     }
@@ -85,6 +91,7 @@ export class GenerateItemModal extends Modal {
         manageBtn.onclick = () => {
             const project = projectSelect.value || this._currentProject;
             if (!project) { new Notice('⚠️ 请先选择项目', 3000); return; }
+            this.dirtyGuard.markClean();
             this.close();
             new ExistingEntityManagerModal(this.app, this.plugin, project, SUBDIR_ITEMS, '⚔️ 物品功法').open();
         };
@@ -368,6 +375,7 @@ export class GenerateItemModal extends Modal {
             toSave.map(managed => ({ name: managed.entity.name, content: managed.entity.content }))
         );
 
+        this.dirtyGuard.markClean();
         showSuccess(formatSaveOutcome(outcome, 'items'));
         this.close();
     }
