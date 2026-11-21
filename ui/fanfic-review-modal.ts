@@ -25,6 +25,7 @@ import { createLogger } from '@/shared/logger';
 
 import { writeVaultText } from '@/shared/file-system-port';
 import { trashVaultEntry } from '@/shared/file-removal';
+import { ModalDirtyGuard } from './components/modal-dirty-guard';
 const log = createLogger('FanficReviewModal');
 
 const REQUIRED_CHECKS = [
@@ -48,6 +49,8 @@ export class FanficReviewModal extends Modal {
     private busy = false;
     private completionPreview = '';
     private aiAuditText = '';
+    /** 未保存修改的关闭确认（审计 A-5） */
+    private dirtyGuard = new ModalDirtyGuard();
 
     constructor(
         app: App,
@@ -68,6 +71,9 @@ export class FanficReviewModal extends Modal {
         const { contentEl } = this;
         contentEl.empty();
         contentEl.addClass('nw-form-stack');
+        this.dirtyGuard.attach(this, this.app);
+        contentEl.addEventListener('input', () => this.dirtyGuard.markDirty());
+        contentEl.addEventListener('change', () => this.dirtyGuard.markDirty());
         await this.load();
     }
 
@@ -248,7 +254,10 @@ export class FanficReviewModal extends Modal {
     private renderActions(): void {
         const actions = contentDiv(this.contentEl, 'nw-modal-footer');
         const cancel = actions.createEl('button', { text: '取消', cls: 'nw-btn' });
-        cancel.onclick = () => this.close();
+        cancel.onclick = () => {
+            this.dirtyGuard.markClean();
+            this.close();
+        };
 
         const edit = actions.createEl('button', { text: '✏️ 打开文件编辑', cls: 'nw-btn nw-btn-secondary' });
         edit.onclick = async () => {
@@ -333,6 +342,7 @@ export class FanficReviewModal extends Modal {
             this.content = updated;
             this.audit = auditFanficSettings(this.content, this.sources, { requireApproved: false });
             showSuccessNotice('已保存补全草稿；请重新审核', { timeout: 5000 });
+            this.dirtyGuard.markClean();
             this.render();
         } catch (error) {
             showErrorNotice(error instanceof Error ? error.message : String(error), { title: '保存失败', timeout: 8000 });
@@ -344,6 +354,7 @@ export class FanficReviewModal extends Modal {
         try {
             await saveFanficSettingFile(this.app, this.filePath, updated);
             showSuccessNotice('已退回；文件保留在待审核目录', { timeout: 5000 });
+            this.dirtyGuard.markClean();
             this.close();
         } catch (error) {
             showErrorNotice(error instanceof Error ? error.message : String(error), { title: '退回失败', timeout: 8000 });
@@ -375,6 +386,7 @@ export class FanficReviewModal extends Modal {
             }
             showSuccessNotice(`已通过审核并绑定：${approvedPath}`, { timeout: 6000 });
             this.onApproved?.(approvedPath);
+            this.dirtyGuard.markClean();
             this.close();
         } catch (error) {
             log.error('[FanficReviewModal] 审核通过失败:', error);

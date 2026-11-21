@@ -63,6 +63,10 @@ const GUARDED_FILES = [
     'ui/generate-faction-modal.ts',
     'ui/generate-item-modal.ts',
     'ui/generate-location-modal.ts',
+    'ui/cowrite/iterate-instruction-modal.ts',
+    'ui/cowrite/memory-manager-modal.ts',
+    'ui/mode-document-modal.ts',
+    'ui/fanfic-review-modal.ts',
 ];
 
 describe('高危表单弹窗的 ModalDirtyGuard 接线（第一百三十一轮 + A-5 扩面）', () => {
@@ -145,6 +149,26 @@ describe('高危表单弹窗的 ModalDirtyGuard 接线（第一百三十一轮 +
         const src = stripComments(source('ui/generate-character-modal.ts'));
         expect(src).toMatch(/markClean\(\);\s*\n\s*await this\.ensureProtagonistMarked/);
         expect(src).toMatch(/markClean\(\);\s*\n\s*this\.close\(\);\s*\n\s*new ExistingEntityManagerModal/);
+    });
+
+    it('迭代指令：取消与提交都不再询问', () => {
+        const src = stripComments(source('ui/cowrite/iterate-instruction-modal.ts'));
+        expect(src.match(/markClean\(\)/g)?.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('记忆管理：新增偏好成功落库后 markClean', () => {
+        const src = stripComments(source('ui/cowrite/memory-manager-modal.ts'));
+        expect(src).toMatch(/onAddPreference\([\s\S]{0,120}markClean\(\);\s*\n\s*this\.close\(\)/);
+    });
+
+    it('模式文档：取消与保存成功都 markClean', () => {
+        const src = stripComments(source('ui/mode-document-modal.ts'));
+        expect(src.match(/markClean\(\)/g)?.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('同人审核：取消/补全草稿/退回/通过四个出口都 markClean', () => {
+        const src = stripComments(source('ui/fanfic-review-modal.ts'));
+        expect(src.match(/markClean\(\)/g)?.length).toBeGreaterThanOrEqual(4);
     });
 
     it('全书简介弹窗不需要 guard：onClose 先落草稿再清空，关闭不丢内容', () => {

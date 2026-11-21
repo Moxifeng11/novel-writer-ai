@@ -1,5 +1,6 @@
-﻿import { Modal, Setting, Notice, type App } from 'obsidian';
+import { Modal, Setting, Notice, type App } from 'obsidian';
 import { t } from '@/i18n';
+import { ModalDirtyGuard } from '@/ui/components/modal-dirty-guard';
 
 // E1/E3: 风格自学习 / 偏好记忆管理弹窗
 // 以下只读视图由 engine 快照投影而来，只列本弹窗实际读取的字段，避免 UI 反向依赖 engine 内部类型
@@ -34,6 +35,8 @@ type AddPreferenceHandler = (category: PreferenceCategory, key: string, value: s
 export class MemoryManagerModal extends Modal {
     private snapshot: MemorySnapshotView;
     private onAddPreference: AddPreferenceHandler;
+    /** 未保存修改的关闭确认（审计 A-5） */
+    private dirtyGuard = new ModalDirtyGuard();
 
     constructor(app: App, snapshot: MemorySnapshotView, onAddPreference: AddPreferenceHandler) {
         super(app);
@@ -49,6 +52,9 @@ export class MemoryManagerModal extends Modal {
         this.titleEl.setText(t('cowrite.mem.title'));
         const { contentEl } = this;
         contentEl.empty();
+        this.dirtyGuard.attach(this, this.app);
+        contentEl.addEventListener('input', () => this.dirtyGuard.markDirty());
+        contentEl.addEventListener('change', () => this.dirtyGuard.markDirty());
         contentEl.addClass('novel-writer-memory-modal');
 
         contentEl.createDiv({ cls: 'novel-writer-cowrite-modal-hint', text: t('cowrite.mem.hint') });
@@ -137,6 +143,7 @@ export class MemoryManagerModal extends Modal {
             addBtn.disabled = true;
             try {
                 await this.onAddPreference(categorySelect.value as PreferenceCategory, key, value);
+                this.dirtyGuard.markClean();
                 this.close();
             } catch (e) {
                 // 弹窗保持打开，方便用户改完重试；失败必须可见

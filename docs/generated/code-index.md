@@ -11,7 +11,7 @@
 | `shared/` | 267 | 53176 | 2255 | 1763 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 308 | 114018 | 1183 | 946 | 80% |
+| `ui/` | 308 | 114056 | 1183 | 946 | 80% |
 
 ## 文件清单
 
@@ -813,9 +813,9 @@
 | `ui/cowrite/cowrite-mappers.ts` | 111 | 6 | 6 |
 | `ui/cowrite/history-modal.ts` | 56 | 1 | 1 |
 | `ui/cowrite/insert-range.ts` | 86 | 4 | 4 |
-| `ui/cowrite/iterate-instruction-modal.ts` | 55 | 1 | 1 |
+| `ui/cowrite/iterate-instruction-modal.ts` | 64 | 1 | 1 |
 | `ui/cowrite/live-analysis-controller.ts` | 306 | 2 | 1 |
-| `ui/cowrite/memory-manager-modal.ts` | 156 | 1 | 1 |
+| `ui/cowrite/memory-manager-modal.ts` | 163 | 1 | 1 |
 | `ui/cowrite/suggestion-edit-modal.ts` | 161 | 1 | 1 |
 | `ui/cowrite/suggestion-history-store.ts` | 111 | 1 | 1 |
 | `ui/create-project-modal.ts` | 495 | 2 | 2 |
@@ -829,7 +829,7 @@
 | `ui/fact-store-format.ts` | 121 | 8 | 7 |
 | `ui/fact-store-modal.ts` | 247 | 1 | 1 |
 | `ui/fanfic-prompt-notice.ts` | 20 | 1 | 1 |
-| `ui/fanfic-review-modal.ts` | 420 | 1 | 1 |
+| `ui/fanfic-review-modal.ts` | 432 | 1 | 1 |
 | `ui/fingerprint-blend-modal.ts` | 615 | 2 | 2 |
 | `ui/fingerprint-detail-modal.ts` | 577 | 1 | 1 |
 | `ui/fingerprint-embedding.ts` | 32 | 1 | 1 |
@@ -903,7 +903,7 @@
 | `ui/memory-preview.ts` | 158 | 2 | 1 |
 | `ui/metrics-format.ts` | 103 | 6 | 4 |
 | `ui/mini-settings-modal.ts` | 190 | 1 | 0 |
-| `ui/mode-document-modal.ts` | 214 | 2 | 2 |
+| `ui/mode-document-modal.ts` | 224 | 2 | 2 |
 | `ui/model-editor-modal.ts` | 150 | 2 | 1 |
 | `ui/model-picker-modal.ts` | 290 | 4 | 4 |
 | `ui/model-picker-popover.ts` | 298 | 4 | 3 |

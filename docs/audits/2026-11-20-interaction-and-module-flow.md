@@ -484,7 +484,9 @@ DSH 建议：**退役**（与 2026-11-19「旧正文写入链」同一处理口�
 
    四个生成类弹窗的共同点：生成的实体先存在 `_pendingResults` 内存里，误关即整批丢失，收益最高；成功落盘后 `markClean()`（角色弹窗在展示成功页之前），点「📂 管理…」跳转到 `ExistingEntityManagerModal` 属显式导航，同样 `markClean()` 后再关闭。
 
-   剩余候选 8 个：existing-entity-manager、cowrite/iterate-instruction、cowrite/memory-manager、fanfic-review、manage-providers、mode-document、novel-analysis、volume-intro（不接）。
+   **第七批扩面（2026-11-22，A-5 第五轮）**：再接入 4 个——`ui/cowrite/iterate-instruction-modal.ts`（取消/提交）、`ui/cowrite/memory-manager-modal.ts`（新增偏好落库后）、`ui/mode-document-modal.ts`（取消/保存成功）、`ui/fanfic-review-modal.ts`（取消/补全草稿/退回/通过四个出口）。已接 guard 的 Modal 合计 **24 个**。
+
+   剩余候选 4 个：`existing-entity-manager`（自带未应用变更确认）、`manage-providers`（字段即时保存）、`novel-analysis`（纯展示分析结果，无用户输入）、`volume-intro`（onClose 落草稿）——判定**不接**。A-5 的 Modal 关闭确认到此收口。
 
 3. **排版实测**（用户要求「用中文面板验证排版问题」）见 `docs/audits/2026-11-20-ui-real-click-acceptance.md` 的 FIX-14：短篇/长篇 × 1440×900 / 1280×800 / 900×680 六档 + 知识库 + 黄金开篇/世界观/文笔蒸馏三个弹窗全部零裁切、零横向溢出；关闭保护在文笔蒸馏弹窗上真实点击验证通过。
 

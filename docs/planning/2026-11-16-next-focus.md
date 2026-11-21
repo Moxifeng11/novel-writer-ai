@@ -4478,3 +4478,11 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 测试：`tests/unit/ui/modal-guard-wiring.test.ts` GUARDED_FILES 9 → 16，新增 7 条逐出口断言（35 例通过）；坑：generate-* 文件是 CRLF，正则必须用 `\r?\n`，否则静默不命中（已写进注释）。
 - 门禁：tsc EXIT=0；preflight **EXIT=0**（1,018 文件 / 10,550 通过 + 3 跳过，日志 D:/nw-tmp/preflight-ui-a5d.log）；main.js 6,250,104（基线已上调）。
 - 实机（D:/nw-tmp/probe-a5g.mjs，CDP + 开发 vault，命令面板同路径 executeCommandById）：脑洞构思输入后 Esc → 弹「有未保存的修改」；点「留在此页继续编辑」→ 弹窗仍在、文本保留；再 Esc 点「丢弃并关闭」→ 弹窗关闭。截图 D:/nw-dev-vault/_verify/a5c-ideation-esc.png。坑：Obsidian 会在打开弹窗前再开第二个窗口，Modal 可能落在那儿，脚本需关掉后置 activeDocument 并等 `.nw-ideation-textarea` 为 attached。
+
+## 第一百六十一轮：A-5 第七批 —— 4 个写作流程弹窗接入关闭确认并收口（2026-11-22）
+
+- 范围：`ui/cowrite/iterate-instruction-modal.ts`、`ui/cowrite/memory-manager-modal.ts`、`ui/mode-document-modal.ts`、`ui/fanfic-review-modal.ts`；累计 **24 个**弹窗有「未保存修改」关闭确认。
+- 出口口径：迭代指令取消/提交各 markClean；记忆管理新增偏好落库后 markClean；模式文档取消与保存成功；同人审核取消/补全草稿/退回/通过四处。
+- 剩余 4 个判定不接并写进审计 §5.6：existing-entity-manager（自带确认）、manage-providers（即时保存）、novel-analysis（纯展示）、volume-intro（onClose 落草稿）。A-5 关闭确认收口。
+- 测试：wiring 断言 16 → 20 个文件（43 例通过）；定向 `tests/unit/cowrite` + `tests/unit/ui` 230 文件 / 2,087 例通过。
+- 门禁：tsc EXIT=0；main.js 6,250,968（基线已上调）；preflight 见下轮。

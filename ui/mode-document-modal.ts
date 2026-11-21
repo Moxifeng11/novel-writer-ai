@@ -17,6 +17,7 @@ import { pushUsageScope } from '@/services/usage-ledger';
 import { t } from '@/i18n';
 import { OperationConfirmModal } from './components/progress';
 import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
+import { ModalDirtyGuard } from './components/modal-dirty-guard';
 
 /**
  * ModeDocumentKind 类型定义。
@@ -45,6 +46,9 @@ function docDescriptionKey(kind: ModeDocumentKind): string {
  * ModeDocumentModal 类。
  */
 export class ModeDocumentModal extends Modal {
+    /** 未保存修改的关闭确认（审计 A-5） */
+    private dirtyGuard = new ModalDirtyGuard();
+
     constructor(
         app: App,
         private readonly plugin: NovelWriterPlugin,
@@ -63,6 +67,8 @@ export class ModeDocumentModal extends Modal {
         this.titleEl.setText(this.mode === 'long' ? t('modeDoc.fallbackTitle') : t(docTitleKey(this.mode, this.kind)));
         const { contentEl } = this;
         contentEl.empty();
+        this.dirtyGuard.attach(this, this.app);
+        contentEl.addEventListener('input', () => this.dirtyGuard.markDirty());
 
         if (this.mode === 'long' || !this.project) {
             contentEl.createEl('p', { text: t('modeDoc.contentUnsupported') });
@@ -117,7 +123,10 @@ export class ModeDocumentModal extends Modal {
             cls: 'nw-btn nw-btn-secondary',
             attr: { type: 'button' },
         });
-        cancel.onclick = () => this.close();
+        cancel.onclick = () => {
+            this.dirtyGuard.markClean();
+            this.close();
+        };
         const save = footer.createEl('button', {
             text: t('modeDoc.save'),
             cls: 'nw-btn nw-btn-primary',
@@ -198,6 +207,7 @@ export class ModeDocumentModal extends Modal {
             const path = modeDocPath(this.project, this.mode, this.kind);
             await writeVaultText(this.app, path, content);
             showSuccessNotice(t('modeDoc.savedNotice'), { timeout: 3000 });
+            this.dirtyGuard.markClean();
             this.close();
         } catch (e) {
             showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('modeDoc.saveFailedTitle'), timeout: 6000 });
