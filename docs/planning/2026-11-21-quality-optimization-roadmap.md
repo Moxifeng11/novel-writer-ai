@@ -46,7 +46,7 @@
 | 7 | Promise 语义 319 → 0（`no-floating-promises` 144 前置 `void`；`no-misused-promises` 163 用 AST 定位回调改 `() => { void (async () => {...})(); }`；`Modal.onClose` / `Plugin.onunload` 的 void 契约拆私有异步体） | ✅ f6933f2b | 1,232 → 913 |
 | 8 | `no-redundant-type-constituents` 31 → 0 + `no-control-regex` 12 → 0 + `obsidianmd/no-global-this` 12 → 0（接口属性名 `global` 是规则误判，加引号规避；谨慎写法见 DEVELOPMENT） | ✅ 1f8f3d23 | 913 → 859 |
 | 8b | `no-restricted-globals` 19（全是 `localStorage`，建议迁 `App#saveLocalStorage` / `loadLocalStorage`；`shared/http-transport.ts` 的 `fetch` 是桌面端保留取消/SSE 的有意例外） | ⏳ 待做（需存储迁移，避免丢草稿） | — |
-| 9 | 剩余机械项：`no-this-alias` 5、`await-thenable` 4、`no-empty-object-type` 2、`no-case-declarations` 2、`no-useless-catch` 2、`no-irregular-whitespace` 1、`no-misleading-character-class` 6、`no-require-imports` 2、`hardcoded-config-path` 1 | ✅ 本批 | 859 → 834 |
+| 9 | 剩余机械项：`no-this-alias` 5、`await-thenable` 4、`no-empty-object-type` 2、`no-case-declarations` 2、`no-useless-catch` 2、`no-irregular-whitespace` 1、`no-misleading-character-class` 6、`no-require-imports` 2、`hardcoded-config-path` 1 | ✅ b7aeebe4 | 859 → 834 |
 | 10 | 产品决策项：`sentence-case` 51（i18n 文案）、`prefer-file-manager-trash-file` 25（删除改回收站语义） | 待用户确认 | — |
 | 11 | StyleFingerprint V1 → V2 迁移（≈230 条 + `ai-chapter-helpers.ts` 旧提示词） | 独立重构切片 | — |
 | 不追 | `no-unnecessary-type-assertion` 357 | 规则在本项目类型判定下不可靠，逐条人工成本高；保留为 review 信号 | — |
@@ -69,4 +69,4 @@
 | 2026-11-21 | 6 | 1,259 → 1,232（`no-deprecated` 258 → 232，可替换的机械项清零） | 76ea34ec |
 | 2026-11-21 | 7 | 1,232 → 913（Promise 语义 319 → 0） | f6933f2b |
 | 2026-11-21 | 8 | 913 → 859（`no-redundant-type-constituents` / `no-control-regex` / `no-global-this` 清零） | 1f8f3d23 |
-| 2026-11-21 | 9 | 859 → 834（剩余机械项清零） | 本批 |
+| 2026-11-21 | 9 | 859 → 834（剩余机械项清零） | b7aeebe4 |
