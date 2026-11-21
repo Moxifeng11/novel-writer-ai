@@ -1,5 +1,6 @@
 import { App, Modal, Setting, Notice } from 'obsidian';
 import { FingerprintExtractor, ExtractionProgress } from '@/engine/fingerprint-extractor';
+import type { StyleAnalysisResultV2 } from '@/engine/style/style-features-v2';
 import { StyleFingerprint } from '@/engine/style-fingerprint-library';
 import { createLogger } from '@/shared/logger';
 import { resolveUiMessage } from '@/shared/ui-message';
@@ -9,7 +10,8 @@ const log = createLogger('FingerprintLibraryModal');
 interface AddFingerprintModalOptions {
     scope: 'template' | 'global' | 'project';
     extractor: FingerprintExtractor;
-    onCompleted: (fingerprint: StyleFingerprint) => void;
+    /** 提取完成回调；analysis 为本地十二维分析（失败时为 undefined） */
+    onCompleted: (fingerprint: StyleFingerprint, analysis?: StyleAnalysisResultV2) => void;
 }
 
 const PHASE_LABELS: Record<string, string> = {
@@ -258,7 +260,7 @@ export class AddFingerprintModal extends Modal {
         this.render();
 
         try {
-            const fingerprint = await this.options.extractor.extract(
+            const { fingerprint, analysis } = await this.options.extractor.extractWithAnalysis(
                 this.textValue,
                 {
                     name: this.nameValue.trim(),
@@ -272,7 +274,7 @@ export class AddFingerprintModal extends Modal {
             );
 
             try {
-                this.options.onCompleted(fingerprint);
+                this.options.onCompleted(fingerprint, analysis ?? undefined);
             } catch (callbackError) {
                 log.error('[AddFingerprintModal] onCompleted callback failed:', callbackError);
             }

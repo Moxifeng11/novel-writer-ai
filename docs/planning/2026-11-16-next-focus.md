@@ -4413,3 +4413,27 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - P2：统一新建入口（抽取后跑本地 12 维分析再 `addV2Fingerprint`，无原文用 samples 拼接并标 sampleProxy）；加载期对有 sourceText 的旧指纹回填 12 维。
 - P3：V2 5 维是否进提示词（会改变生成风格，需单独验收）。
 - 三个遗留问题见 ADR §9，等用户确认。
+
+## 第一百五十六轮：V2 规范模型 P2 + P3（抽取统一 / 加载回填 / 提示词增量）
+
+用户 2026-11-22：「p2 和 p3 那就按最好的效果搞，暂时不考虑成本」→ ADR §9 三问全部取「效果最好」，P2 与 P3 同时落地。
+
+**P2 写路径统一**
+- `engine/fingerprint-extractor.ts`：新增 `export interface FingerprintExtractionResult { fingerprint: StyleFingerprint; analysis: StyleAnalysisResultV2 | null }` 与 `extractWithAnalysis(text, options)`；`extract()` 退化为 `const { fingerprint } = await this.extractWithAnalysis(...)`；新增私有 `analyzeV2(text)`（`new StyleFeaturesAnalyzerV2().analyze`），失败 `// silent-ok` + warning，回退「先写投影、之后回填」。
+- `engine/style-fingerprint-library.ts`：模块级 `V2_TO_V1_DESCRIPTION_MAP`、`hasPendingV2Dimensions`；私有 `mergeAnalysisIntoFeatures`（基底本地 12 维、7 维 description 用 AI 文案并置 complete）、`buildStatsFromAnalysis`、`applyAnalysisToV2`、`registerAnalysis`；公开 `getV2FeaturesMap(ids)`、`backfillV2Dimensions(scope)`（原文优先、样章兜底、`.v2backfill.bak`、每作用域每进程一次）；`addTemplate/addGlobal/addProject` 增 `analysis?` 参数首行注册；`migrateV1ToV2Dimensions` 每作用域末尾回填；`refillFingerprint` 重抽后补 12 维。
+- UI 六入口统一：`ui/fingerprint-library-modal.ts` 的 `onCompleted(fp, analysis?)` + `extractWithAnalysis`；`ui/views/writing-fingerprint-view.ts`（`saveExtractedFingerprint` 三处 add*、`saveExtractedFingerprintWithLocalV2` 优先用 provided）、`ui/settings/fingerprint-section.ts` 三处、`ui/novel-analysis-modal.ts` 回调签名。
+
+**P3 提示词增量**
+- `engine/style/dynamic-injection-engine.ts`：`v2Pct` 与 `summarizeV2Dimension`（5 新维各自的定量短句），`build(..., v2Features?)` 第 7 参，`buildGlobalTier` 在 7 段后追加「V2 深化特征（量化）：」，只输出 `V2_NEW_DIMENSIONS` 中 `status === 'complete'` 的维度，沿用 `truncateTo` 与强度 disabled 过滤。
+- `engine/prompt-builder.ts:339`：`typeof this.fingerprintLibrary.getV2FeaturesMap === 'function'` 守卫后取 map 传入（兼容旧测试桩）。
+
+**测试与实机**
+- 新增 `tests/unit/engine/style/fingerprint-analysis-merge.test.ts` 6 例：P2a 落盘 12 维全 complete 且 7 维文案等于 AI 文案（stats 沿用调用方 3000）；P2b 回填只补 pending 项并生成 `.v2backfill.bak`；P3 有 map 出「V2 深化特征（量化）：」+ 5 行、无 map 不出、`globalIntensity: 0` 时整段消失。
+- 定向：`tests/unit/engine/style` + prompt-builder 三文件 + 指纹视图两份测试，共 32 文件 / 535 例通过；`npx tsc --noEmit` EXIT=0。
+- 实机（`D:/nw-tmp/probe-v2p2.mjs`，CDP + 开发 vault，`getLeaf('tab').setViewState({type:'novel-writer-writing-fingerprint'})`）：回填前 global `fp_demo_partial`/`fp_demo_legacy` 各 5 维 pending、project `fp_proj_legacy` 5 维 pending；加载后两条 global 全 complete（`emotionTone` 均「平淡」、`tension` 0），磁盘 `data/global-fingerprints.json` 三条 pending 全空并生成 18,687 字节备份。截图 `_verify/v2p2-view.png`。
+
+**门禁**
+- warn 558 不变（`.review-warn-baseline.json` 无需调整）；`.bundle-baseline.json` main.js 6,242,764 → 6,248,125（+5,361，P2 合并/回填 + P3 摘要器），styles.css 805,893。
+- `npm run preflight` EXIT=0：1,017 文件 / 10,522 通过 + 3 跳过。
+- 文档：ADR §2 R1/R3 改写、§5 P2/P3 验收、§6 工作项全 ✅、§7 回滚、§8 边界、§9 用户裁定、新增 §10 落地记录；`docs/modules/writing-fingerprint.md` backlog 改「已定稿并落地」+ 新增 §7.1 实现对照表。
+- 提交「feat(style): V2 规范模型 P2/P3 —— 抽取统一 + 加载回填 + 提示词增量」。

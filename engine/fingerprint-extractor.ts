@@ -10,6 +10,7 @@ import type { EmbeddingProvider } from './embedding/embedding-provider';
 import type { VectorStore, StyleFingerprint, StyleFingerprintStats, StyleFingerprintFeatures } from './style-fingerprint-library';
 import { calculateRhythmStats, calculatePerspectiveStats } from './style/v2-quantitative-extractor';
 import type { RhythmStats, PerspectiveStats } from './style/style-dimensions-v2';
+import { StyleFeaturesAnalyzerV2, type StyleAnalysisResultV2 } from './style/style-features-v2';
 import { extractResponseText } from '@/shared/api-response-utils';
 import { resolveTaskModelConfig } from '@/shared/task-model';
 import { resolveProviderSourceType } from '@/shared/model-source';
@@ -24,6 +25,18 @@ const log = createLogger('FingerprintExtractor');
  * ExtractionPhase 类型定义。
  */
 export type ExtractionPhase = 'preprocessing' | 'feature-extraction' | 'sample-selection' | 'vectorization' | 'complete';
+
+/**
+ * 一次完整抽取的产物：AI 七维指纹 + 本地十二维分析。
+ *
+ * 十二维分析是 V2 规范模型的写入依据（见 docs/design/2026-11-21-style-fingerprint-v2-canonical.md）：
+ * AI 负责 7 维自然语言描述，本地分析器补齐 12 维定量统计与 5 个新增维度。
+ * 分析失败不阻断抽取（analysis 为 null），调用方回退到「先写 V1 投影、之后回填」。
+ */
+export interface FingerprintExtractionResult {
+    fingerprint: StyleFingerprint;
+    analysis: StyleAnalysisResultV2 | null;
+}
 
 /**
  * ExtractionProgress 类型定义。
@@ -78,6 +91,29 @@ export class FingerprintExtractor {
       * @returns StyleFingerprint 实例
      */
     async extract(text: string, options: ExtractionOptions): Promise<StyleFingerprint> {
+        const { fingerprint } = await this.extractWithAnalysis(text, options);
+        return fingerprint;
+    }
+
+    /**
+     * 抽取指纹，并同时产出本地十二维分析结果。
+     *
+     * 与 `extract` 的唯一区别是返回 `{ fingerprint, analysis }`：V2 规范模型要求
+     * 任何新建指纹都带完整 12 维，AI 只负责 7 维文案，定量统计与 5 个新增维度
+     * 由 `StyleFeaturesAnalyzerV2` 在本地算（不额外调用模型）。
+     * 分析失败时 analysis 为 null，抽取结果照常返回。
+     *
+     * @param text - 文本内容
+     * @param options - 配置项
+     * @returns 指纹与十二维分析
+     *
+     * @example
+     * ```ts
+     * const { fingerprint, analysis } = await extractor.extractWithAnalysis(text, { name, source, scope });
+     * await library.addGlobal(fingerprint, analysis ?? undefined);
+     * ```
+     */
+    async extractWithAnalysis(text: string, options: ExtractionOptions): Promise<FingerprintExtractionResult> {
         const { name, source, scope, signal, onProgress } = options;
 
         const fingerprintId = `fp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -105,13 +141,29 @@ export class FingerprintExtractor {
             extractedAt: Date.now(),
         };
 
+        const analysis = await this.analyzeV2(text);
+
         onProgress?.({
             phase: 'complete',
             percent: 100,
             message: uiMessage('engineMsg.fp.complete', '指纹提取完成'),
         });
 
-        return fingerprint;
+        return { fingerprint, analysis };
+    }
+
+    /**
+     * 本地十二维分析（纯统计，不调 AI）。
+     * 失败时返回 null —— V2 定量数据缺失不应让整次抽取失败。
+     */
+    private async analyzeV2(text: string): Promise<StyleAnalysisResultV2 | null> {
+        try {
+            return await new StyleFeaturesAnalyzerV2().analyze(text);
+        } catch (e) {
+            // silent-ok: 十二维分析是增强项，失败时回退为「先写 V1 投影、之后回填」
+            log.warn('[FingerprintExtractor] 十二维分析失败，回退 V1 投影:', e);
+            return null;
+        }
     }
 
     /**

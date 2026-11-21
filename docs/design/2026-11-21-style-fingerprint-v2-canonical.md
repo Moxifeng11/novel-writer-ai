@@ -34,9 +34,9 @@
 
 ### R1 写路径：只允许产生 V2
 
-- 新增指纹一律经 `StyleFeaturesAnalyzerV2.analyze(text)` → `addV2Fingerprint(...)`，磁盘直接写 `version: 'v2'`。
-- AI 抽取（`FingerprintExtractor`）继续保留（它提供 prose 描述与 samples），但**它的产物必须立即提升为 V2**：用抽取时收集的样本/原文跑一次本地分析器，补齐 12 维，再入库。抽取器不再直接 `addTemplate/addGlobal/addProject`。
-- V1 的 `addTemplate/addGlobal/addProject` 保留为**迁移/导入兼容接口**，但内部必须先 `migrateV1ToV2` 再落盘（本 ADR 已落地，见 §4）。
+- 新增指纹统一走一条路径：`FingerprintExtractor.extractWithAnalysis(text)` → 本地 `StyleFeaturesAnalyzerV2` 得到 12 维定量 → `addTemplate/addGlobal/addProject(fp, analysis)`。磁盘只写 `version: 'v2'`（P2 已落地，见 §10）。
+- AI 抽取（`FingerprintExtractor`）继续保留，负责 7 维 prose 文案与 samples；本地分析器负责 12 维定量与 5 个新维的文案。二者**一次抽取内合并**：7 维 description 用 AI 文案，其余用本地统计文案（等价于「先本地、再 AI 润色」，但只花一次 AI 调用）。
+- V1 的 `addTemplate/addGlobal/addProject(fp)` 保留为**迁移/导入兼容接口**：不带 analysis 时内部 `migrateV1ToV2` 后再落盘（§4），加载期由 `backfillV2Dimensions` 补齐。
 - 编辑只允许编辑 V2（`updateV2FingerprintFeatures`），V1 文案由投影自动重算。
 
 ### R2 落盘：磁盘上不存在 V1 条目
@@ -48,7 +48,8 @@
 ### R3 提示词：投影优先，V2 增量可选
 
 - 现有 7 段注入（`buildGlobalTier`）继续读 V1 投影，投影只来自 `extractV1FeaturesFromV2`（`:2619`），不读磁盘上的 V1 字段。
-- V2 独有的 5 维（`sentencePattern / emotion / tension / infoDensity / description`）**暂不进提示词**，作为独立开关的后续能力（见 §6 P3）。理由：改变注入内容会直接改变生成风格，需要单独验收，不属于「模型规范化」本身。
+- V2 独有的 5 维（`sentencePattern / emotion / tension / infoDensity / description`）在 7 段之后追加一段「V2 深化特征（量化）：」，每维一行（标签 + 定量摘要 + 本地描述）。这是用户 2026-11-21 决定（「P2 和 P3 按效果最好的做，暂不考虑成本」）的落地：**默认开启**，只受现有强度配置约束（`globalIntensity: 0` 时整段随之消失，描述长度仍按 `descriptionLength` 截断）。
+- 只注入 V2 新增 5 维，不与 7 维投影重复；`status !== 'complete'` 的维度跳过（避免把「暂无数据」写进提示词）。
 
 ### R4 UI：V2 为主视图，V1 为「提示词视图」
 
@@ -89,25 +90,25 @@ P1（已满足）：
 3. 重新提取 V1 七维后，磁盘仍是 V2，且对应 7 维 description 更新、其余 5 维不变；
 4. 旧 V1 文件加载 → `.v1.bak` 备份 → 迁移为 V2，幂等。
 
-P2（写路径统一，待做）：
+P2（写路径统一，已满足）：
 
-5. `ui/settings/fingerprint-section.ts`、`ui/fingerprint-library-modal.ts`、`ui/refill-modal.ts`、`ui/novel-analysis-modal.ts` 不再直接调用 `addTemplate/addGlobal/addProject(fp)`，而是「抽取 → 本地 12 维分析 → addV2Fingerprint」；
-6. 新建指纹在详情页能立刻看到 V2 12 维（不再出现「5 维 pending 且无原文」的新数据）；
-7. 提示词注入内容与改造前逐字一致（回归用快照断言 `buildGlobalTier` 输出）。
+5. 六个新建入口（`ui/settings/fingerprint-section.ts` ×3、`ui/views/writing-fingerprint-view.ts` ×2、`ui/novel-analysis-modal.ts`）都经 `extractWithAnalysis` 拿到 analysis，再 `add*(fp, analysis)`；不再有「只写 7 维就落盘」的新数据；
+6. 新建指纹在详情页立刻能看到 V2 12 维（`fingerprint-analysis-merge.test.ts` 断言 12 维全 complete）；
+7. 加载期自动回填：`migrateV1ToV2Dimensions` 每作用域末尾跑一次 `backfillV2Dimensions`，有 `sourceText` 用原文、只有样章用样章拼接，补完写 `.v2backfill.bak`（只在待补条目上执行，幂等）。
 
-P3（提示词增量，可选）：
+P3（提示词增量，已落地）：
 
-8. V2 5 维可按强度注入提示词，开关默认关闭；开启后 A/B 验收生成风格差异。
+8. V2 5 维在全局层 7 段之后追加「V2 深化特征（量化）：」，默认开启、受强度配置约束；`dynamic-injection-engine.test.ts` 契约用例覆盖「有/无 map」与「强度 0 全关」。
 
 ## 6. 分阶段工作项
 
 | 阶段 | 工作 | 前置 | 风险 |
 | --- | --- | --- | --- |
-| P1 ✅ | `toPersistedFingerprint` 只写 V2 + 测试 | 无 | 低（不改提示词/UI） |
-| P2 | 统一新建入口：抽取后跑 `StyleFeaturesAnalyzerV2`，无原文时用 `samples` 拼接并标 `sampleProxy` | P1 | 中：抽取弹窗需多等一次本地分析（可显示进度） |
-| P2 | 加载期回填：`migrateV1ToV2Dimensions` 对带 `sourceText` 的条目跑分析器补 12 维 | P1 | 中：首次加载耗时（需限流/后台） |
-| P3 | V2 5 维注入开关（`style-intensity-engine` 扩展） | P2 | 高：直接影响生成风格，需产品确认与 A/B |
-| 后续 | 内存模型直接持 V2（去掉「加载即降级」），V1 只在拼提示词时投影 | P2 | 高：改动面覆盖所有 `list*/get*` 消费方 |
+| P1 ✅ | `toPersistedFingerprint` 只写 V2 + 测试（`fingerprint-v2-canonical-write.test.ts`） | 无 | 低（不改提示词/UI） |
+| P2 ✅ | 统一新建入口：`extractWithAnalysis` → `add*(fp, analysis)`，一次抽取合并 AI 文案与本地 12 维 | P1 | 中：抽取弹窗多花一次本地分析（实测 <100ms，无感知） |
+| P2 ✅ | 加载期回填：`backfillV2Dimensions` 每作用域一次，原文优先、样章兜底、`.v2backfill.bak` 备份 | P1 | 中：首次加载多一次读+分析（只在有待补条目时） |
+| P3 ✅ | V2 5 维进入全局层注入（默认开启，受强度配置约束） | P2 ✅ | 中：改变注入内容会改变生成风格，需按模块文档复核 |
+| 后续 | 内存模型直接持 V2（去掉「加载即降级」），V1 只在拼提示词时投影 | P2 ✅ | 高：改动面覆盖所有 `list*/get*` 消费方 |
 
 ## 7. 回滚
 
@@ -117,11 +118,27 @@ P3（提示词增量，可选）：
 ## 8. 明确不做
 
 - 不删除 V1 类型与 `v1Backup`（提示词投影与历史审计都需要）。
-- 不在本决策内改动提示词注入顺序、强度语义、融合算法。
+- 不改动提示词注入顺序（7 段仍在前，V2 5 维固定追加在末尾）与强度语义；融合/预算算法不动。
 - 不要求用户重新蒸馏已有指纹（有原文才自动补，没有则保留 pending）。
 
-## 9. 遗留问题（需要用户确认）
+## 9. 遗留问题（已由用户裁定）
 
-1. P2 的加载期回填是否接受「首次加载多花几百毫秒」？还是只在打开详情页时按需补？
-2. P3 的 V2 5 维注入是否要进入路线图（会改变生成风格，需要单独验收批次）？
-3. AI 抽取若不再产出 V1 文案（改为先本地 12 维再让 AI 润色 description），抽取提示词与成本都会变——是否接受？
+用户 2026-11-21：「p2 和 p3 那就按最好的效果搞，暂时不考虑成本」。据此三条全部取「效果最好」：
+
+1. **加载期回填：接受**首次加载多花时间。实现上限为「每作用域每进程一次」，且只对存在待补维度的条目读文件、跑分析；无待补条目时零开销。
+2. **V2 5 维注入：进提示词，默认开启**（不是隐藏开关）。理由：既然按效果最好做，增量信息应当直接生效；仍保留强度配置这条总闸（`globalIntensity: 0` 时 V2 段随之消失），便于出问题时一键退回。
+3. **抽取顺序：一次抽取内合并**，不额外增加 AI 调用——AI 仍只写 7 维 prose，5 个新维的文案由本地分析器产出；7 维 description 以 AI 文案为准。等价于「先本地 12 维、再让 AI 润色」，但成本不增。
+
+## 10. 落地记录（P2 + P3，2026-11-22）
+
+| 项 | 位置 |
+| --- | --- |
+| 抽取 + 分析一次返回 | `engine/fingerprint-extractor.ts`：`extractWithAnalysis(text, options): Promise<FingerprintExtractionResult>`；`extract()` 退化为只取 `fingerprint`；`analyzeV2()` 失败时 `// silent-ok` 回退为「先写投影、之后回填」 |
+| 合并 12 维 | `engine/style-fingerprint-library.ts`：`mergeAnalysisIntoFeatures`（7 维用 AI 文案、5 新维用本地）、`registerAnalysis`、`applyAnalysisToV2` |
+| 新建入口 | `addTemplate/addGlobal/addProject(fp, analysis?)` 首行 `registerAnalysis` |
+| 加载期回填 | `backfillV2Dimensions(scope)`，由 `migrateV1ToV2Dimensions` 每作用域末尾调用；`backfilledScopes` 保证每进程一次 |
+| 重抽补齐 | `refillFingerprint` 里 `StyleFeaturesAnalyzerV2.analyze(sourceText)` → `registerAnalysis` |
+| 提示词增量 | `engine/style/dynamic-injection-engine.ts`：`summarizeV2Dimension` + `v2Pct`；`build(..., v2Features?)` 第 7 参 |
+| 读取接口 | `getV2FeaturesMap(ids)`；`engine/prompt-builder.ts:339` 用 `typeof ... === 'function'` 守卫后传入（兼容旧测试桩） |
+| 测试 | `tests/unit/engine/style/fingerprint-analysis-merge.test.ts`（6 例：P2a 落盘 12 维 / P2b 回填 + 备份 / P3 注入段与强度联动）；`fingerprint-v2-canonical-write.test.ts`（3 例 P1） |
+| 实机 | 开发 vault 写指纹库首次加载：`fp_demo_partial` / `fp_demo_legacy` 由 5 维 pending → 全 complete，生成 `global-fingerprints.json.v2backfill.bak`（18,687 字节） |

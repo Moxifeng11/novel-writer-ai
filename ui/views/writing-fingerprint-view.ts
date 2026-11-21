@@ -1055,7 +1055,7 @@ export class WritingFingerprintView extends ItemView {
         const modal = new AddFingerprintModal(this.app, {
             scope: this.filter.activeScope,
             extractor: this.extractor,
-            onCompleted: (fp) => { void this.saveExtractedFingerprint(fp, t('fingerprint.view.fpAdded')); }
+            onCompleted: (fp, analysis) => { void this.saveExtractedFingerprint(fp, t('fingerprint.view.fpAdded'), analysis); }
         });
         modal.open();
     }
@@ -1090,14 +1090,18 @@ export class WritingFingerprintView extends ItemView {
         const modal = new AddFingerprintModal(this.app, {
             scope: this.filter.activeScope,
             extractor: this.extractor,
-            onCompleted: (fp) => void this.saveExtractedFingerprintWithLocalV2(fp, selectedText)
+            onCompleted: (fp, analysis) => void this.saveExtractedFingerprintWithLocalV2(fp, selectedText, analysis)
         });
         modal.textValue = selectedText;
         modal.open();
     }
 
     /** 提取结果落库：Modal 已关闭，写失败必须兜住并提示，不能静默丢数据 */
-    private async saveExtractedFingerprint(fp: StyleFingerprint, successMessage: string): Promise<void> {
+    private async saveExtractedFingerprint(
+        fp: StyleFingerprint,
+        successMessage: string,
+        analysis?: StyleAnalysisResultV2,
+    ): Promise<void> {
         if (!this.fingerprintLibrary) {
             showWarningNotice(t('fingerprint.view.libNotInitNoSave'), { timeout: 8000 });
             return;
@@ -1105,13 +1109,13 @@ export class WritingFingerprintView extends ItemView {
         try {
             switch (fp.scope) {
                 case 'template':
-                    await this.fingerprintLibrary.addTemplate(fp);
+                    await this.fingerprintLibrary.addTemplate(fp, analysis);
                     break;
                 case 'global':
-                    await this.fingerprintLibrary.addGlobal(fp);
+                    await this.fingerprintLibrary.addGlobal(fp, analysis);
                     break;
                 case 'project':
-                    await this.fingerprintLibrary.addProject(fp);
+                    await this.fingerprintLibrary.addProject(fp, analysis);
                     break;
             }
         } catch (e) {
@@ -1130,37 +1134,28 @@ export class WritingFingerprintView extends ItemView {
     private async saveExtractedFingerprintWithLocalV2(
         fp: StyleFingerprint,
         sampleText: string,
+        provided?: StyleAnalysisResultV2,
     ): Promise<void> {
         if (!this.fingerprintLibrary) {
             showWarningNotice(t('fingerprint.view.libNotInitNoSave'), { timeout: 8000 });
             return;
         }
-        let analysis: StyleAnalysisResultV2 | null = null;
-        try {
-            analysis = await new StyleFeaturesAnalyzerV2().analyze(sampleText);
-        } catch (e) {
-            log.warn('[FingerprintView] 本地十二维统计失败，按 V1 通道保存:', e);
-            showWarningNotice(t('fingerprint.view.v2StatsFailed'), { timeout: 6000 });
-        }
-        if (analysis) {
+        // P2a：弹窗里的抽取流程已经算过十二维（与 AI 七维文案同一份原文），直接用；
+        // 没有时（旧调用方/其他入口）再按样本文本补算一次。
+        let analysis: StyleAnalysisResultV2 | null = provided ?? null;
+        if (!analysis) {
             try {
-                const saved = await this.fingerprintLibrary.addV2Fingerprint({
-                    scope: fp.scope,
-                    name: fp.name,
-                    source: fp.source,
-                    tags: fp.tags,
-                    samples: fp.samples,
-                    sourceText: fp.sourceText ?? sampleText,
-                    analysis,
-                });
-                await this.afterFingerprintSaved(saved, t('fingerprint.view.fpExtractedV2'));
-                return;
+                analysis = await new StyleFeaturesAnalyzerV2().analyze(sampleText);
             } catch (e) {
-                log.warn('[FingerprintView] V2 直存失败，回落 V1 通道:', e);
-                showWarningNotice(t('fingerprint.view.v2SaveFailed'), { timeout: 6000 });
+                log.warn('[FingerprintView] 本地十二维统计失败，按 V1 通道保存:', e);
+                showWarningNotice(t('fingerprint.view.v2StatsFailed'), { timeout: 6000 });
             }
         }
-        await this.saveExtractedFingerprint(fp, t('fingerprint.view.fpExtracted'));
+        await this.saveExtractedFingerprint(
+            fp,
+            analysis ? t('fingerprint.view.fpExtractedV2') : t('fingerprint.view.fpExtracted'),
+            analysis ?? undefined,
+        );
     }
 
     /** 保存成功后的公共收尾：刷新缓存、选中新指纹并重绘三块区域。 */

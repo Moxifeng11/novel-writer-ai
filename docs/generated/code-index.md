@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 355 | 146940 | 1953 | 1547 | 79% |
+| `engine/` | 355 | 147298 | 1954 | 1548 | 79% |
 | `services/` | 65 | 19535 | 296 | 204 | 69% |
 | `shared/` | 267 | 53188 | 2255 | 1763 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 308 | 113922 | 1183 | 946 | 80% |
+| `ui/` | 308 | 113919 | 1183 | 946 | 80% |
 
 ## 文件清单
 
@@ -196,7 +196,7 @@
 | `engine/export/zip-writer.ts` | 157 | 4 | 4 |
 | `engine/fact-index-manager.ts` | 217 | 9 | 2 |
 | `engine/fact-index-vault.ts` | 119 | 3 | 2 |
-| `engine/fingerprint-extractor.ts` | 547 | 4 | 4 |
+| `engine/fingerprint-extractor.ts` | 599 | 5 | 5 |
 | `engine/fingerprint-stats.ts` | 127 | 4 | 4 |
 | `engine/foreshadow-config-manager.ts` | 310 | 2 | 1 |
 | `engine/foreshadow-context.ts` | 154 | 6 | 4 |
@@ -262,7 +262,7 @@
 | `engine/preference-memory.ts` | 291 | 0 | 0 |
 | `engine/project-migration-service.ts` | 227 | 5 | 5 |
 | `engine/promise-ledger.ts` | 222 | 11 | 11 |
-| `engine/prompt-builder.ts` | 1486 | 2 | 1 |
+| `engine/prompt-builder.ts` | 1491 | 2 | 1 |
 | `engine/prompt-cache.ts` | 81 | 3 | 2 |
 | `engine/prompt-hash.ts` | 51 | 1 | 1 |
 | `engine/prompt-resolver.ts` | 164 | 4 | 2 |
@@ -366,11 +366,11 @@
 | `engine/stream-text-reader.ts` | 320 | 3 | 3 |
 | `engine/streaming/simulated-stream.ts` | 183 | 2 | 2 |
 | `engine/streaming/stream-parser.ts` | 367 | 8 | 8 |
-| `engine/style-fingerprint-library.ts` | 2800 | 7 | 7 |
+| `engine/style-fingerprint-library.ts` | 3018 | 7 | 7 |
 | `engine/style-learner.ts` | 346 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 193 | 2 | 2 |
 | `engine/style-vector-store.ts` | 705 | 11 | 10 |
-| `engine/style/dynamic-injection-engine.ts` | 765 | 10 | 5 |
+| `engine/style/dynamic-injection-engine.ts` | 848 | 10 | 5 |
 | `engine/style/fingerprint-blender-v2.ts` | 645 | 6 | 1 |
 | `engine/style/fingerprint-migrator.ts` | 637 | 13 | 13 |
 | `engine/style/fingerprint-selection.ts` | 101 | 5 | 5 |
@@ -834,7 +834,7 @@
 | `ui/fingerprint-detail-modal.ts` | 577 | 1 | 1 |
 | `ui/fingerprint-embedding.ts` | 32 | 1 | 1 |
 | `ui/fingerprint-intensity-modal.ts` | 498 | 2 | 2 |
-| `ui/fingerprint-library-modal.ts` | 307 | 1 | 1 |
+| `ui/fingerprint-library-modal.ts` | 309 | 1 | 1 |
 | `ui/fingerprint-utils.ts` | 231 | 13 | 13 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |
 | `ui/full-writer-view.ts` | 2777 | 2 | 2 |
@@ -1023,7 +1023,7 @@
 | `ui/views/link-status.ts` | 130 | 2 | 1 |
 | `ui/views/memory-graph-view.ts` | 290 | 3 | 2 |
 | `ui/views/planning-canvas-view.ts` | 955 | 4 | 3 |
-| `ui/views/writing-fingerprint-view.ts` | 2019 | 3 | 3 |
+| `ui/views/writing-fingerprint-view.ts` | 2014 | 3 | 3 |
 | `ui/volume-intro-modal.ts` | 453 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 572 | 2 | 1 |

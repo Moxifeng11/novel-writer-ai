@@ -35,8 +35,8 @@ import {
     migrateV1ToV2,
     needsV1ToV2Migration,
 } from './style/fingerprint-migrator';
-import type { V2Fingerprint, StyleDimensionKeyV2, StyleFingerprintFeaturesV2 } from './style/style-dimensions-v2';
-import type { StyleAnalysisResultV2 } from './style/style-features-v2';
+import { V2_NEW_DIMENSIONS, type V2Fingerprint, type StyleDimensionKeyV2, type StyleFingerprintFeaturesV2 } from './style/style-dimensions-v2';
+import { StyleFeaturesAnalyzerV2, type StyleAnalysisResultV2 } from './style/style-features-v2';
 import {
     StyleVectorStoreV2,
     type StyleFingerprintVectorsV2,
@@ -165,6 +165,32 @@ function generateId(): string {
 }
 
 /**
+ * V2 维度 ← V1 投影字段（这 7 维的 description 由 AI 抽取写，本地分析器的规则文案要让位）。
+ */
+const V2_TO_V1_DESCRIPTION_MAP: Record<string, keyof StyleFingerprintFeatures> = {
+    rhythm: 'sentenceRhythm',
+    wordChoice: 'wordPreference',
+    perspective: 'narrativeStyle',
+    rhetoric: 'rhetoric',
+    dialogue: 'dialogueStyle',
+    narration: 'paragraphStructure',
+    languageTexture: 'overallTone',
+};
+
+/**
+ * 判断 V2 条目是否缺 V2 新增维度（格式异常也视为缺）。
+ * @param v2 - V2 指纹
+ * @returns 是否有未补齐的维度
+ */
+function hasPendingV2Dimensions(v2: Partial<V2Fingerprint>): boolean {
+    for (const key of V2_NEW_DIMENSIONS) {
+        const dim = v2.features?.[key] as { status?: string; description?: string } | undefined;
+        if (!dim || dim.status !== 'complete' || !dim.description) return true;
+    }
+    return false;
+}
+
+/**
  * StyleFingerprintLibrary 类。
  */
 export class StyleFingerprintLibrary {
@@ -194,6 +220,8 @@ export class StyleFingerprintLibrary {
      * 导致 12 维特征在内存中直接丢失；这里单独保留一份，供 V2 向量/检索使用。
      */
     private v2Fingerprints: Map<string, V2Fingerprint> = new Map();
+    /** 本次会话已完成十二维回填的作用域（避免每次 load 都整文件重算） */
+    private backfilledScopes: Set<'template' | 'global' | 'project'> = new Set();
     private embeddingClient?: EmbeddingProvider;
     /** V2 多指纹融合引擎（懒加载） */
     private fingerprintBlenderV2?: FingerprintBlenderV2;
@@ -442,7 +470,7 @@ export class StyleFingerprintLibrary {
                 return parsed.filter(item => !!item && typeof item === 'object');
             }
             return parsed && typeof parsed === 'object' ? [parsed] : [];
-        } catch (e) {
+        } catch (e) { // silent-ok: 读取失败已留档为 .corrupt 备份并返回 null，调用方按「文件损坏」处理，不是当成空列表
             const exists = await fs.exists(path).catch(() => true);
             if (!exists) return [];
             await fs.rename(path, `${path}.corrupt-${Date.now()}.bak`).catch(() => undefined);
@@ -479,8 +507,10 @@ export class StyleFingerprintLibrary {
      * 新增模板指纹。
      *
      * @param fp - 文风指纹
+     * @param analysis - 本地十二维分析（有则一并落成 V2 完整条目）
      */
-    async addTemplate(fp: StyleFingerprint): Promise<void> {
+    async addTemplate(fp: StyleFingerprint, analysis?: StyleAnalysisResultV2): Promise<void> {
+        if (analysis) this.registerAnalysis(fp, analysis, 'template');
         this.templateFingerprints.set(fp.id, fp);
         await this.saveTemplate();
         await vectorizeFingerprintSamples(this.app, fp, this.project);
@@ -620,8 +650,10 @@ export class StyleFingerprintLibrary {
      * 新增全局指纹。
      *
      * @param fp - 文风指纹
+     * @param analysis - 本地十二维分析（有则一并落成 V2 完整条目）
      */
-    async addGlobal(fp: StyleFingerprint): Promise<void> {
+    async addGlobal(fp: StyleFingerprint, analysis?: StyleAnalysisResultV2): Promise<void> {
+        if (analysis) this.registerAnalysis(fp, analysis, 'global');
         this.globalFingerprints.set(fp.id, fp);
         await this.saveGlobal();
         await vectorizeFingerprintSamples(this.app, fp, this.project);
@@ -734,9 +766,11 @@ export class StyleFingerprintLibrary {
      * 新增项目指纹。
      *
      * @param fp - 文风指纹
+     * @param analysis - 本地十二维分析（有则一并落成 V2 完整条目）
      */
-    async addProject(fp: StyleFingerprint): Promise<void> {
+    async addProject(fp: StyleFingerprint, analysis?: StyleAnalysisResultV2): Promise<void> {
         if (!this.project) return;
+        if (analysis) this.registerAnalysis(fp, analysis, 'project');
         this.projectFingerprints.set(fp.id, fp);
         await this.saveProject();
         await vectorizeFingerprintSamples(this.app, fp, this.project);
@@ -1162,7 +1196,7 @@ export class StyleFingerprintLibrary {
             this.intensityConfigs.set(targetProject, configs);
             this.intensityLoadFailures.delete(targetProject);
             return configs;
-        } catch (e) {
+        } catch (e) { // silent-ok: 读失败沿用内存里已加载的强度配置，绝不回退成空对象
             // 读失败不能当成「没有强度配置」：
             // 旧实现会缓存空对象，随后 setIntensityConfig 以空对象为基线整体保存，
             // 把其他指纹已保存的强度/禁用状态永久抹掉。
@@ -1710,17 +1744,8 @@ export class StyleFingerprintLibrary {
             .some(key => (projected[key] ?? '') !== (newFeatures[key] ?? ''));
         if (!changed) return v2;
 
-        const v2ToV1Map: Record<string, keyof StyleFingerprintFeatures> = {
-            rhythm: 'sentenceRhythm',
-            wordChoice: 'wordPreference',
-            perspective: 'narrativeStyle',
-            rhetoric: 'rhetoric',
-            dialogue: 'dialogueStyle',
-            narration: 'paragraphStructure',
-            languageTexture: 'overallTone',
-        };
         const features: StyleFingerprintFeaturesV2 = { ...v2.features };
-        for (const [v2Key, v1Key] of Object.entries(v2ToV1Map)) {
+        for (const [v2Key, v1Key] of Object.entries(V2_TO_V1_DESCRIPTION_MAP)) {
             const dim = features[v2Key as StyleDimensionKeyV2] as { description?: string; status?: string };
             if (!dim || typeof dim !== 'object') continue;
             const description = newFeatures[v1Key] ?? '';
@@ -1737,6 +1762,186 @@ export class StyleFingerprintLibrary {
             migratedAt: v2.v1Backup?.migratedAt ?? Date.now(),
         };
         return v2;
+    }
+
+    /**
+     * 把本地十二维分析合成到指纹的 V2 特征里。
+     *
+     * AI 抽取负责 7 维自然语言描述（比本地规则文案更贴合作品），本地分析器负责
+     * 全部定量统计与 5 个新增维度。两者合起来才是「12 维完整」的规范条目：
+     * - 7 维：分析器的定量字段 + AI 文案（status=complete）
+     * - 5 维：分析器整维产出（status=complete）
+     *
+     * @param fp - V1 投影条目（提供 AI 文案与基础统计）
+     * @param analysis - StyleFeaturesAnalyzerV2.analyze 的产物
+     * @returns 合并后的十二维特征
+     */
+    private mergeAnalysisIntoFeatures(
+        fp: StyleFingerprint,
+        analysis: StyleAnalysisResultV2,
+    ): StyleFingerprintFeaturesV2 {
+        const features: StyleFingerprintFeaturesV2 = { ...analysis.features };
+        for (const [v2Key, v1Key] of Object.entries(V2_TO_V1_DESCRIPTION_MAP)) {
+            const prose = fp.features?.[v1Key];
+            if (!prose) continue;
+            const dim = features[v2Key as StyleDimensionKeyV2] as { description?: string; status?: string };
+            if (!dim || typeof dim !== 'object') continue;
+            features[v2Key as StyleDimensionKeyV2] = {
+                ...dim,
+                description: prose,
+                status: 'complete',
+            } as never;
+        }
+        return features;
+    }
+
+    /** 由十二维分析结果重建 V2 条目的基础统计（与 addV2Fingerprint 同口径）。 */
+    private buildStatsFromAnalysis(
+        fp: StyleFingerprint,
+        analysis: StyleAnalysisResultV2,
+    ): V2Fingerprint['stats'] {
+        const features = analysis.features;
+        const { totalChars, totalParagraphs } = analysis.stats;
+        return {
+            avgSentenceLength: features.rhythm.avgSentenceLength,
+            avgParagraphLength: totalParagraphs > 0 ? totalChars / totalParagraphs : 0,
+            dialogueRatio: features.dialogue.dialogueRatio,
+            descriptionRatio: features.description.environmentDescriptionRatio,
+            wordCount: totalChars || fp.stats?.wordCount || 0,
+        };
+    }
+
+    /**
+     * 用分析结果覆盖/补齐某个 V2 条目的特征与备份。
+     * 原地修改并返回同一条目（调用方负责登记进缓存与落盘）。
+     */
+    private applyAnalysisToV2(
+        v2: V2Fingerprint,
+        fp: StyleFingerprint,
+        analysis: StyleAnalysisResultV2,
+    ): V2Fingerprint {
+        const features = this.mergeAnalysisIntoFeatures(fp, analysis);
+        v2.features = features;
+        v2.stats = this.buildStatsFromAnalysis(fp, analysis);
+        v2.v1Backup = {
+            features: this.extractV1FeaturesFromV2(features) as unknown as Record<string, string>,
+            extractedAt: v2.extractedAt,
+            migratedAt: Date.now(),
+        };
+        return v2;
+    }
+
+    /**
+     * 新建/重抽指纹时登记十二维分析（落盘走 toPersistedFingerprint，仍是 V2）。
+     *
+     * @param fp - V1 投影条目
+     * @param analysis - 本地十二维分析
+     * @param scope - 作用域
+     */
+    private registerAnalysis(
+        fp: StyleFingerprint,
+        analysis: StyleAnalysisResultV2,
+        scope: 'template' | 'global' | 'project',
+    ): void {
+        const cached = this.v2Fingerprints.get(fp.id);
+        const base = cached && cached.scope === scope ? cached : migrateV1ToV2(fp, scope);
+        this.v2Fingerprints.set(fp.id, this.applyAnalysisToV2(base, fp, analysis));
+    }
+
+    /**
+     * 取若干指纹的十二维特征（供提示词注入 V2 独有 5 维）。
+     *
+     * @param ids - 指纹 id 列表
+     * @returns id → 十二维特征；缺失的 id 不出现在结果里
+     *
+     * @example
+     * ```ts
+     * const v2 = library.getV2FeaturesMap(fingerprints.map(fp => fp.id));
+     * ```
+     */
+    getV2FeaturesMap(ids: string[]): Map<string, StyleFingerprintFeaturesV2> {
+        const map = new Map<string, StyleFingerprintFeaturesV2>();
+        for (const id of ids) {
+            const v2 = this.v2Fingerprints.get(id);
+            if (v2?.features) map.set(id, v2.features);
+        }
+        return map;
+    }
+
+    /**
+     * 加载期回填：对磁盘上「有原文/样本但缺 5 个新增维度」的 V2 条目补算十二维。
+     *
+     * 用于 P2b（ADR R5）：旧版本写出的 V2 条目 5 维永远是 pending，
+     * 只有在有正文时才补；没有正文但有样章时用样章拼接近似（会记 warn 便于排查）。
+     * 每作用域每进程只跑一次，避免每次 load 都整文件重算。
+     *
+     * @param scope - 作用域
+     * @returns 回填统计
+     */
+    async backfillV2Dimensions(
+        scope: 'template' | 'global' | 'project',
+    ): Promise<{ success: boolean; filled: number; error?: string }> {
+        if (this.backfilledScopes.has(scope)) return { success: true, filled: 0 };
+        this.backfilledScopes.add(scope);
+
+        let filePath: string;
+        if (scope === 'template') filePath = templateFingerprintsFile();
+        else if (scope === 'global') filePath = globalFingerprintsFile();
+        else {
+            if (!this.project) return { success: true, filled: 0 };
+            filePath = projectFingerprintsFile(this.project);
+        }
+
+        const fs = this.getFS();
+        try {
+            if (!(await fs.exists(filePath))) return { success: true, filled: 0 };
+            const raw = await fs.read(filePath);
+            const parsed: unknown = JSON.parse(raw);
+            const items = Array.isArray(parsed) ? parsed : [parsed];
+            let filled = 0;
+
+            for (const item of items) {
+                const v2 = item as Partial<V2Fingerprint>;
+                if (!v2 || v2.version !== 'v2' || !v2.id || !v2.features) continue;
+                if (!hasPendingV2Dimensions(v2)) continue;
+
+                const sourceText = typeof v2.sourceText === 'string' ? v2.sourceText : '';
+                const sampleText = Array.isArray(v2.samples) ? v2.samples.join('\n\n') : '';
+                const text = sourceText.trim().length > 0 ? sourceText : sampleText;
+                if (text.trim().length === 0) continue;
+
+                const analysis = await new StyleFeaturesAnalyzerV2().analyze(text);
+                const pseudoFp: StyleFingerprint = {
+                    id: v2.id,
+                    name: v2.name ?? '',
+                    source: v2.source ?? '',
+                    scope: (v2.scope as StyleFingerprint['scope']) ?? scope,
+                    enabled: v2.enabled ?? true,
+                    tags: v2.tags ?? [],
+                    stats: (v2.stats ?? {}) as StyleFingerprintStats,
+                    features: (v2.v1Backup?.features ?? {}) as unknown as StyleFingerprintFeatures,
+                    samples: v2.samples ?? [],
+                    extractedAt: v2.extractedAt ?? Date.now(),
+                };
+                this.applyAnalysisToV2(v2 as V2Fingerprint, pseudoFp, analysis);
+                this.v2Fingerprints.set(v2.id, v2 as V2Fingerprint);
+                filled++;
+                if (!sourceText.trim()) {
+                    log.debug('[StyleFingerprintLibrary] 无原文，用样章近似回填十二维:', v2.id);
+                }
+            }
+
+            if (filled > 0) {
+                await fs.write(filePath + '.v2backfill.bak', raw).catch(() => undefined);
+                await fs.write(filePath, JSON.stringify(items, null, 2));
+                this.invalidateFingerprintFile(filePath);
+                log.info(`[StyleFingerprintLibrary] ${scope} 指纹十二维回填完成: ${filled}/${items.length}`);
+            }
+            return { success: true, filled };
+        } catch (e) {
+            log.warn(`[StyleFingerprintLibrary] ${scope} 指纹十二维回填失败:`, e);
+            return { success: false, filled: 0, error: e instanceof Error ? e.message : String(e) };
+        }
     }
 
     private collectV2Fingerprints(items: unknown[], scope?: 'template' | 'global' | 'project'): void {
@@ -1867,14 +2072,15 @@ export class StyleFingerprintLibrary {
                 const parsed = JSON.parse(raw);
                 const arr = Array.isArray(parsed) ? parsed : [parsed];
                 const needsMigration = arr.some((item: unknown) => needsV1ToV2Migration(item));
-                if (!needsMigration) continue;
 
                 // 执行文件级迁移
-                const result = await migrateFileV1ToV2(fs, filePath, s);
-                if (result.success) {
-                    totalMigrated += Array.isArray(parsed) ? parsed.length : 1;
-                } else {
-                    return { success: false, migrated: totalMigrated, error: result.error };
+                if (needsMigration) {
+                    const result = await migrateFileV1ToV2(fs, filePath, s);
+                    if (result.success) {
+                        totalMigrated += Array.isArray(parsed) ? parsed.length : 1;
+                    } else {
+                        return { success: false, migrated: totalMigrated, error: result.error };
+                    }
                 }
             } catch (e) {
                 // DSH-20261113-22 ③：迁移失败不得返回 success:true——汇总进返回值，
@@ -1886,6 +2092,9 @@ export class StyleFingerprintLibrary {
                     error: `${s} 指纹 V1→V2 维度迁移失败: ${e instanceof Error ? e.message : String(e)}`,
                 };
             }
+
+            // P2b：迁移后顺手补齐 5 个 V2 新增维度（有原文/样章才补；失败不阻断加载）
+            await this.backfillV2Dimensions(s).catch(() => undefined);
         }
 
         return { success: true, migrated: totalMigrated };
@@ -1912,7 +2121,7 @@ export class StyleFingerprintLibrary {
                     await fs.write(templatePath, JSON.stringify(migrated, null, 2));
                     log.info('[StyleFingerprintLibrary] 模板指纹 v1→v2 迁移完成');
                 }
-            } catch (e) {
+            } catch (e) { // silent-ok: 迁移失败保留原文件，下次加载会再次尝试，不影响当前读取
                 log.warn('[StyleFingerprintLibrary] 模板指纹迁移失败:', e);
             }
         }
@@ -1945,7 +2154,7 @@ export class StyleFingerprintLibrary {
                         await fs.write(projectPath, JSON.stringify(migrated, null, 2));
                         log.info('[StyleFingerprintLibrary] 项目指纹 v1→v2 迁移完成');
                     }
-                } catch (e) {
+                } catch (e) { // silent-ok: 迁移失败保留原文件，下次加载会再次尝试，不影响当前读取
                     log.warn('[StyleFingerprintLibrary] 项目指纹迁移失败:', e);
                 }
             }
@@ -2016,6 +2225,15 @@ export class StyleFingerprintLibrary {
             const samples = await extractorApi.selectSamples(sourceText, onProgress);
             fp.samples = samples;
             onProgress?.({ phase: 'sample-selection', percent: 65, message: '采样完成' });
+        }
+
+        // P2b：重抽时同步补齐十二维（纯本地统计，不额外调 AI）
+        onProgress?.({ phase: 'feature-extraction', percent: 68, message: '正在补齐十二维统计...' });
+        try {
+            const analysis = await new StyleFeaturesAnalyzerV2().analyze(sourceText);
+            this.registerAnalysis(fp, analysis, scope);
+        } catch (e) { // silent-ok: 十二维是增强项，失败时保留已有特征，重抽的七维文案仍然生效
+            log.warn('[StyleFingerprintLibrary] 重抽十二维分析失败，保留原有 V2 特征:', e);
         }
 
         if (reVectorize) {

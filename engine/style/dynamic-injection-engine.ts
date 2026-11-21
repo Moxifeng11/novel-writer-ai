@@ -23,6 +23,16 @@ import type { SuggestionDirection } from '@/shared/types';
 import type { StyleFingerprint } from '@/engine/style-fingerprint-library';
 import type { StyleIntensityConfig } from './style-intensity-engine';
 import { DEFAULT_INTENSITY_CONFIG, getStyleIntensityEngine } from './style-intensity-engine';
+import type {
+    DescriptionStats,
+    EmotionStats,
+    InfoDensityStats,
+    SentencePatternStats,
+    StyleDimensionKeyV2,
+    StyleFingerprintFeaturesV2,
+    TensionStats,
+} from './style-dimensions-v2';
+import { STYLE_DIMENSION_LABELS_V2, V2_NEW_DIMENSIONS } from './style-dimensions-v2';
 
 /** 强度映射是纯函数，模块级共享一个实例即可 */
 const intensityEngine = getStyleIntensityEngine();
@@ -439,6 +449,51 @@ const TIER_LENGTH_BUDGET = {
  *   - 本引擎的输出也由 getMemoryPromptParts 注入，两者**串联**而非冲突
  *   - 全局层仅包含指纹特征描述，不包含 styleLearner 的内容
  */
+/** 把 0-1 的比例格式化为整数百分比 */
+function v2Pct(ratio: number): string {
+    return `${Math.round(ratio * 100)}%`;
+}
+
+/**
+ * 把 V2 新增维度的定量字段压成一句摘要（供提示词注入）。
+ *
+ * 只处理 V2 独有的 5 维；V1 已有的 7 维仍走原有文案，避免同一维度说两遍。
+ *
+ * @param key - V2 维度键（限 V2_NEW_DIMENSIONS）
+ * @param dim - 该维度的特征
+ * @returns 定量摘要
+ */
+function summarizeV2Dimension(
+    key: StyleDimensionKeyV2,
+    dim: StyleFingerprintFeaturesV2[StyleDimensionKeyV2],
+): string {
+    switch (key) {
+        case 'sentencePattern': {
+            const d = dim as SentencePatternStats;
+            return `倒装 ${d.inversionDensity.toFixed(1)}/千字 · 省略 ${d.ellipsisDensity.toFixed(1)}/千字 · 排比 ${d.parallelismDensity.toFixed(1)}/千字 · 设问 ${v2Pct(d.rhetoricalQuestionRatio)} · 嵌套 ${d.clauseNestingDepth.toFixed(1)} 层`;
+        }
+        case 'emotion': {
+            const d = dim as EmotionStats;
+            return `基调 ${d.emotionalTone || '未判定'} · 波动 ${d.emotionalFluctuationFrequency.toFixed(1)}/千字 · 强度 低${v2Pct(d.emotionalIntensityDistribution.low)}/中${v2Pct(d.emotionalIntensityDistribution.medium)}/高${v2Pct(d.emotionalIntensityDistribution.high)} · 取向 正${v2Pct(d.valenceRatio.positive)}/负${v2Pct(d.valenceRatio.negative)}`;
+        }
+        case 'tension': {
+            const d = dim as TensionStats;
+            return `悬念 ${d.suspenseDensity.toFixed(1)}/千字 · 冲突 ${d.conflictFrequency.toFixed(1)}/千字 · 转折 ${d.turningPointDensity.toFixed(1)}/千字 · 伏笔 ${d.foreshadowingMarkerCount.toFixed(1)}/千字 · 高潮 前${v2Pct(d.climaxDistribution.early)}/中${v2Pct(d.climaxDistribution.middle)}/后${v2Pct(d.climaxDistribution.late)}`;
+        }
+        case 'infoDensity': {
+            const d = dim as InfoDensityStats;
+            return `信息密度 ${d.infoDensity.toFixed(1)}/百字 · 专名 ${d.properNounDensity.toFixed(1)}/千字 · 设定植入 ${d.settingInjectionFrequency.toFixed(1)}/千字 · 新概念 ${d.conceptIntroductionRhythm.toFixed(1)}/千字`;
+        }
+        case 'description': {
+            const d = dim as DescriptionStats;
+            const s = d.sensoryDistribution;
+            return `环境描写 ${v2Pct(d.environmentDescriptionRatio)} · 细节密度 ${d.detailDensity.toFixed(1)}/百字 · 感官 视${v2Pct(s.visual)}/听${v2Pct(s.auditory)}/触${v2Pct(s.tactile)}/嗅${v2Pct(s.olfactory)}/味${v2Pct(s.gustatory)}`;
+        }
+        default:
+            return '';
+    }
+}
+
 /** v4.20 注入溯源：单次分层拼装的统计（prompt-ledger 消费） */
 export interface TieredBuildStats {
     budget: number;
@@ -466,6 +521,7 @@ export class TieredInjectionBuilder {
      * @param intensityConfigs 可选的强度配置（按 fpId 索引）
      * @param maxTotalLength 总长度上限（默认 2000；v4.20 起可由设置 fingerprintInjectionBudget 调整）
      * @param statsOut 可选：填充注入统计（prompt-ledger 消费）
+     * @param v2Features 可选：指纹 id → V2 十二维特征（ADR R3：V2 独有 5 维按强度注入）
      * @returns 结果数组
      */
     build(
@@ -475,6 +531,7 @@ export class TieredInjectionBuilder {
         intensityConfigs?: Map<string, StyleIntensityConfig>,
         maxTotalLength: number = DEFAULT_MAX_TOTAL_LENGTH,
         statsOut?: TieredBuildStats,
+        v2Features?: Map<string, StyleFingerprintFeaturesV2>,
     ): string[] {
         if (fingerprints.length === 0 && samples.length === 0) {
             if (statsOut) {
@@ -494,7 +551,7 @@ export class TieredInjectionBuilder {
         const budget = this.distributeBudget(maxTotalLength, samples.length === 0);
 
         // 1. 全局层：特征描述
-        const globalTier = this.buildGlobalTier(fingerprints, intensityConfigs, budget.globalTier);
+        const globalTier = this.buildGlobalTier(fingerprints, intensityConfigs, budget.globalTier, v2Features);
 
         // 2. 段落层：示例片段
         const paragraphTier = this.buildParagraphTier(samples, context, budget.paragraphTier, intensityConfigs);
@@ -558,6 +615,7 @@ export class TieredInjectionBuilder {
         fingerprints: StyleFingerprint[],
         intensityConfigs: Map<string, StyleIntensityConfig> | undefined,
         budget: number,
+        v2Features?: Map<string, StyleFingerprintFeaturesV2>,
     ): string[] {
         const result: string[] = ['【写作风格指纹】'];
 
@@ -610,6 +668,31 @@ export class TieredInjectionBuilder {
         if (featureLines.length > 0) {
             result.push('风格特征：');
             result.push(...featureLines);
+        }
+
+        // V2 独有 5 维（句式/情绪/张力/信息量/描写）：定量摘要 + 分析器文案。
+        // 只补 V1 没有的维度，避免与上面的 7 维重复；强度为 0 的指纹已在 activeFps 里被过滤。
+        if (v2Features && v2Features.size > 0) {
+            const v2Lines: string[] = [];
+            for (const key of V2_NEW_DIMENSIONS) {
+                const values = activeFps
+                    .map(fp => {
+                        const dim = v2Features.get(fp.id)?.[key];
+                        if (!dim || dim.status !== 'complete') return '';
+                        const len = limits.get(fp.id)!.descriptionLength;
+                        const summary = summarizeV2Dimension(key, dim);
+                        const desc = dim.description && len > 0 ? dim.description.slice(0, len) : '';
+                        return [summary, desc].filter(Boolean).join('；');
+                    })
+                    .filter(Boolean);
+                if (values.length > 0) {
+                    v2Lines.push(`- ${STYLE_DIMENSION_LABELS_V2[key]}：${values.join('；')}`);
+                }
+            }
+            if (v2Lines.length > 0) {
+                result.push('V2 深化特征（量化）：');
+                result.push(...v2Lines);
+            }
         }
 
         const truncated = this.truncateTo(result, budget);

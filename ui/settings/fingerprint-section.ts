@@ -311,9 +311,9 @@ export class FingerprintSection extends SettingsSection {
         new AddFingerprintModal(this.app, {
             scope: 'template',
             extractor,
-            onCompleted: (fingerprint) => { void (async () => {
+            onCompleted: (fingerprint, analysis) => { void (async () => {
                 if (!this.fingerprintLibrary) return;
-                await this.fingerprintLibrary.addTemplate(fingerprint);
+                await this.fingerprintLibrary.addTemplate(fingerprint, analysis);
                 await this.loadTemplateFingerprints();
                 this.refresh();
             })(); }
@@ -381,9 +381,9 @@ export class FingerprintSection extends SettingsSection {
         new AddFingerprintModal(this.app, {
             scope: 'global',
             extractor,
-            onCompleted: (fingerprint) => { void (async () => {
+            onCompleted: (fingerprint, analysis) => { void (async () => {
                 if (!this.fingerprintLibrary) return;
-                await this.fingerprintLibrary.addGlobal(fingerprint);
+                await this.fingerprintLibrary.addGlobal(fingerprint, analysis);
                 await this.loadGlobalFingerprints();
                 this.refresh();
             })(); }
@@ -404,9 +404,9 @@ export class FingerprintSection extends SettingsSection {
         new AddFingerprintModal(this.app, {
             scope: 'project',
             extractor,
-            onCompleted: (fingerprint) => { void (async () => {
+            onCompleted: (fingerprint, analysis) => { void (async () => {
                 if (!this.fingerprintLibrary) return;
-                await this.fingerprintLibrary.addProject(fingerprint);
+                await this.fingerprintLibrary.addProject(fingerprint, analysis);
                 await this.loadProjectFingerprints();
                 this.refresh();
             })(); }

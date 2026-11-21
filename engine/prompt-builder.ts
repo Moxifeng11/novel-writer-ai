@@ -336,6 +336,10 @@ export class PromptBuilder {
                 globalChars: 0, paragraphChars: 0, sentenceChars: 0,
                 totalChars: 0, droppedSentence: false, truncatedParagraph: false,
             };
+            // V2 独有 5 维随全局层注入（ADR R3）；没有 V2 条目的指纹自动跳过
+            const v2Features = typeof this.fingerprintLibrary.getV2FeaturesMap === 'function'
+                ? this.fingerprintLibrary.getV2FeaturesMap(fingerprintsForInjection.map(fp => fp.id))
+                : undefined;
             const result = this.tieredInjectionBuilder.build(
                 fingerprintsForInjection,
                 selectedSamples,
@@ -343,6 +347,7 @@ export class PromptBuilder {
                 intensityConfigs,
                 this.fingerprintBudget,
                 stats,
+                v2Features,
             );
             this.lastFingerprintStats = stats;
 

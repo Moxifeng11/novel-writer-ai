@@ -116,14 +116,32 @@ view-project-nosample（无样本 → 黄条 + 空态）、modal-detail、modal-
   `ui/fingerprint/edit-modal.ts` 等；拆分时注意 `ExtractFromChaptersModal` 被命令面板直接引用。
 - [ ] `nw-fingerprint-*` 外壳类与 `nw-fp-*` 内构件两套前缀并存，后续可统一（E2E 选择器需同步）。
 - [ ] 列表与详情的空态文案仍是硬编码中文，未走 i18n（全仓同现状）。
-- [x] **V2 规范模型已定稿**（2026-11-21，ADR：`docs/design/2026-11-21-style-fingerprint-v2-canonical.md`）：
-  决策是「V2 为规范模型、V1 七维降为提示词投影（只读、可重算）」。P1 已落地 —— `toPersistedFingerprint`
-  不再回写 V1（有 V2 缓存则同步 7 维 description，无缓存则 `migrateV1ToV2` 现场生成），磁盘上只存在 V2 条目。
-  - 待做 P2：统一新建入口（AI 抽取后跑本地 `StyleFeaturesAnalyzerV2` 再 `addV2Fingerprint`，无原文时用 `samples` 拼接并标 `sampleProxy`）；
-    加载期对带 `sourceText` 的旧指纹回填 12 维（见 ADR §6）。
-  - 待确认 P3：V2 独有的 5 维（sentencePattern / emotion / tension / infoDensity / description）是否进提示词 —— 会改变生成风格，需单独验收。
+- [x] **V2 规范模型已定稿并落地**（2026-11-21 决策，2026-11-22 P2/P3 落地；ADR：`docs/design/2026-11-21-style-fingerprint-v2-canonical.md`）：
+  决策是「V2 为规范模型、V1 七维降为提示词投影（只读、可重算）」。
+  - P1（已落地）：`toPersistedFingerprint` 不再回写 V1（有 V2 缓存则同步 7 维 description，无缓存则 `migrateV1ToV2` 现场生成），磁盘上只存在 V2 条目。
+  - P2（已落地）：新建指纹统一走 `FingerprintExtractor.extractWithAnalysis()` —— 同一次抽取里 AI 写 7 维 prose、本地
+    `StyleFeaturesAnalyzerV2` 产 12 维定量与 5 个新维文案，合并后 `add*(fp, analysis)` 落盘；加载期由
+    `backfillV2Dimensions(scope)` 对「有 pending 维」的旧条目补 12 维（原文优先，无原文用样章拼接，写 `.v2backfill.bak`，每作用域每进程一次）；重抽（`refillFingerprint`）也会顺手补齐。
+  - P3（已落地）：V2 独有的 5 维（sentencePattern / emotion / tension / infoDensity / description）在全局层 7 段之后
+    追加「V2 深化特征（量化）：」，**默认开启**，只受强度配置约束（`globalIntensity: 0` 时整段消失、描述长度按 `descriptionLength` 截断）。
   - 相关类型标注已由 `@deprecated` 改为 `@legacy`（warn 第 11 批），不要再按「清弃用」的思路去删 V1 类型。
+  - 仍未做（ADR §6 后续）：内存模型直接持 V2（去掉「加载即降级」），改动面覆盖所有 `list*/get*` 消费方。
 
+
+## 7.1 P2/P3 实现对照（2026-11-22）
+
+| 环节 | 入口 | 关键点 |
+| --- | --- | --- |
+| 抽取 | `engine/fingerprint-extractor.ts#extractWithAnalysis` | 返回 `{ fingerprint, analysis }`；`analyzeV2()` 失败只 warning（`// silent-ok`），回退成「先写投影、之后回填」 |
+| 合并 | `engine/style-fingerprint-library.ts#mergeAnalysisIntoFeatures` | 以本地 12 维为基底，7 维 description 覆盖为 AI 文案并置 `complete` |
+| 入库 | `addTemplate/addGlobal/addProject(fp, analysis?)` | 首行 `registerAnalysis`；无 analysis 的老调用仍可用（迁移兼容） |
+| 回填 | `backfillV2Dimensions(scope)` | 由 `migrateV1ToV2Dimensions` 每作用域末尾调用；`backfilledScopes` 保证每进程一次；备份后缀 `.v2backfill.bak` |
+| 重抽 | `refillFingerprint` | 重新提取 7 维后再跑分析器并 `registerAnalysis` |
+| 注入 | `engine/style/dynamic-injection-engine.ts#build(..., v2Features?)` | 只追加 `V2_NEW_DIMENSIONS` 且 `status==='complete'` 的维度；`summarizeV2Dimension` 产「倒装 1.2/千字 · 设问 3%」这类定量短句 |
+| 取数 | `getV2FeaturesMap(ids)` | `engine/prompt-builder.ts:339` 以 `typeof ... === 'function'` 守卫调用（兼容旧测试桩） |
+
+验收证据：`tests/unit/engine/style/fingerprint-analysis-merge.test.ts` 6 例（P2a 落盘 12 维全 complete、P2b 回填只补待补项并留备份、P3 有/无 map 与强度 0 三种注入形态）；
+开发 vault 实机：`fp_demo_partial`、`fp_demo_legacy` 首次加载后由 5 维 pending 变为全 complete，生成 `global-fingerprints.json.v2backfill.bak`（18,687 字节）。
 
 ## 8. 交接备注
 
