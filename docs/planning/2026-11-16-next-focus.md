@@ -4503,3 +4503,5 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - tsc EXIT=0；`check:css` / `check:i18n`（棘轮收紧到 205 文件 / 5,338 条）/ `check:review-warn`（120 条不变）通过；三份基线已 --update-baseline（css 804,584 / 4,331、bundle main.js 6,250,282、i18n 5,338）。
 
 **结论**：A-7 与 A-16 均标 ✅；全仓 `window.confirm` 保持 0，破坏性操作确认收敛到三档。
+
+**门禁与提交**：preflight **EXIT=0**（1,019 文件 / 10,563 通过 + 3 跳过，日志 `D:/nw-tmp/preflight-a7c.log`）；`check:view-tests` 因新测试已静态引用两个弹窗而收紧基线（73 个文件）；提交 **edfafbb8**「feat(ui): A-7 破坏性确认统一 —— 回滚并入 OperationConfirmModal」（16 files / +316 / −332）。
