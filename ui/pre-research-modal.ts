@@ -30,6 +30,7 @@ import { getProjectMeta } from './project-utils';
 import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
 import { AiAssistedPremiseService, type AiPremiseResult } from '@/engine/harness/ai-assisted-premise-service';
 import { creativeRandomizer } from '@/engine/harness/creative-randomizer';
+import { ModalDirtyGuard } from './components/modal-dirty-guard';
 
 import { createLogger } from '@/shared/logger';
 
@@ -61,6 +62,8 @@ export class PreResearchModal extends Modal {
     private aiOutputEl: HTMLElement | null = null;
     private aiResult: AiPremiseResult | null = null;
     private randomBrief: ReturnType<typeof creativeRandomizer.brief> | null = null;
+    /** 未保存修改的关闭确认（审计 A-5） */
+    private dirtyGuard = new ModalDirtyGuard();
 
     constructor(
         app: App,
@@ -81,6 +84,9 @@ export class PreResearchModal extends Modal {
         this.titleEl.setText(this.mode === 'short' ? t("preResearch.common.k1") : t("preResearch.common.k2"));
         const { contentEl } = this;
         contentEl.empty();
+        this.dirtyGuard.attach(this, this.app);
+        contentEl.addEventListener('input', () => this.dirtyGuard.markDirty());
+        contentEl.addEventListener('change', () => this.dirtyGuard.markDirty());
         contentEl.addClass('nw-pre-research-content');
 
         const intro = contentEl.createDiv({ cls: 'nw-pre-research-intro' });
@@ -119,7 +125,10 @@ export class PreResearchModal extends Modal {
             cls: 'nw-btn nw-btn-secondary',
             attr: { type: 'button' },
         });
-        cancel.onclick = () => this.close();
+        cancel.onclick = () => {
+            this.dirtyGuard.markClean();
+            this.close();
+        };
 
         const submit = footer.createEl('button', {
             text: this.options.project ? t("preResearch.common.k11") : t("preResearch.common.k12"),
@@ -460,6 +469,7 @@ export class PreResearchModal extends Modal {
             const meta = await getProjectMeta(this.app, project);
             if (meta.creationMode !== this.mode) {
                 new Notice(t('preResearch.msg.wrongMode', { mode: creationModeDisplayName(this.mode) }), 6000);
+                this.dirtyGuard.markClean();
                 this.close();
                 return;
             }
@@ -664,6 +674,7 @@ export class PreResearchModal extends Modal {
             try {
                 await writePreResearchFiles(this.app.vault.adapter, this.options.project, data, this.app);
                 showSuccessNotice(t("preResearch.common.k21", { dir: PRE_RESEARCH_DIR }), { timeout: 5000 });
+                this.dirtyGuard.markClean();
                 this.close();
             } catch (e) {
                 showErrorNotice(e instanceof Error ? e.message : String(e), { title: t("preResearch.common.k22"), timeout: 8000 });
@@ -696,6 +707,7 @@ export class PreResearchModal extends Modal {
                 } catch (e) {
                     showErrorNotice(e instanceof Error ? e.message : String(e), { title: t("preResearch.common.k24"), timeout: 8000 });
                 } finally {
+                    this.dirtyGuard.markClean();
                     this.close();
                 }
             },

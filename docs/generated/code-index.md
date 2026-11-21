@@ -11,7 +11,7 @@
 | `shared/` | 267 | 53176 | 2255 | 1763 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 308 | 113891 | 1183 | 946 | 80% |
+| `ui/` | 308 | 113961 | 1183 | 946 | 80% |
 
 ## 文件清单
 
@@ -730,7 +730,7 @@
 | `ui/advanced-maintenance-modal.ts` | 222 | 1 | 1 |
 | `ui/agent-workbench-view.ts` | 1846 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 140 | 6 | 6 |
-| `ui/ai-builder-modal.ts` | 1147 | 1 | 1 |
+| `ui/ai-builder-modal.ts` | 1157 | 1 | 1 |
 | `ui/appearance-settings.ts` | 605 | 3 | 3 |
 | `ui/asset-registry-modal.ts` | 154 | 1 | 1 |
 | `ui/backup-center-modal.ts` | 248 | 1 | 1 |
@@ -818,7 +818,7 @@
 | `ui/cowrite/memory-manager-modal.ts` | 156 | 1 | 1 |
 | `ui/cowrite/suggestion-edit-modal.ts` | 161 | 1 | 1 |
 | `ui/cowrite/suggestion-history-store.ts` | 111 | 1 | 1 |
-| `ui/create-project-modal.ts` | 485 | 2 | 2 |
+| `ui/create-project-modal.ts` | 495 | 2 | 2 |
 | `ui/cross-volume-state-modal.ts` | 226 | 1 | 1 |
 | `ui/diagnose-writer-modal.ts` | 363 | 1 | 1 |
 | `ui/draggable-panel.ts` | 379 | 2 | 2 |
@@ -913,7 +913,7 @@
 | `ui/novel-analysis-modal.ts` | 267 | 1 | 1 |
 | `ui/novel-tags-modal.ts` | 259 | 1 | 1 |
 | `ui/onboarding-modal.ts` | 318 | 1 | 1 |
-| `ui/outline-expand-modal.ts` | 984 | 2 | 1 |
+| `ui/outline-expand-modal.ts` | 998 | 2 | 1 |
 | `ui/panel-resizer.ts` | 260 | 4 | 3 |
 | `ui/password-modal.ts` | 152 | 1 | 1 |
 | `ui/pet-image-settings.ts` | 469 | 3 | 3 |
@@ -924,7 +924,7 @@
 | `ui/plot-canvas-modal.ts` | 367 | 2 | 2 |
 | `ui/plot-canvas-parser.ts` | 91 | 4 | 2 |
 | `ui/polish-editor.ts` | 926 | 5 | 5 |
-| `ui/pre-research-modal.ts` | 714 | 2 | 2 |
+| `ui/pre-research-modal.ts` | 726 | 2 | 2 |
 | `ui/project-health-modal.ts` | 210 | 1 | 1 |
 | `ui/project-side-panel-view.ts` | 459 | 5 | 5 |
 | `ui/project-utils.ts` | 366 | 11 | 10 |
@@ -985,7 +985,7 @@
 | `ui/tomato-rank-modal.ts` | 132 | 1 | 1 |
 | `ui/tts/tts-player.ts` | 428 | 4 | 2 |
 | `ui/tts/tts-speech.ts` | 164 | 5 | 1 |
-| `ui/unified-entity-generate-modal.ts` | 866 | 1 | 1 |
+| `ui/unified-entity-generate-modal.ts` | 890 | 1 | 1 |
 | `ui/unified-entity-manager-modal.ts` | 755 | 1 | 1 |
 | `ui/usage-ledger-modal.ts` | 205 | 1 | 1 |
 | `ui/utils/worldview-utils.ts` | 103 | 1 | 1 |

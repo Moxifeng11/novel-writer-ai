@@ -18,6 +18,7 @@ import { BodyWriter } from '@/engine/body-writer';
 import { DEFAULT_BODY_FORMAT, type BodyFormatContract } from '@/shared/body-format';
 import { splitSceneSections } from '@/engine/scene-expander';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
+import { ModalDirtyGuard } from './components/modal-dirty-guard';
 
 
 const log = createLogger('OutlineExpandModal');
@@ -58,6 +59,8 @@ export class OutlineExpandModal extends Modal {
     private sceneExpansions = new Map<number, { text: string; adopted: boolean }>();
     private selectedSceneIndex: number = -1;
     private paragraphs: ParagraphOutline[] = [];
+    /** 未保存修改的关闭确认（审计 A-5） */
+    private dirtyGuard = new ModalDirtyGuard();
     private selectedParagraphIndices: Set<number> = new Set();
 
     private originalText: string = '';
@@ -127,6 +130,9 @@ export class OutlineExpandModal extends Modal {
 
         const { contentEl } = this;
         contentEl.empty();
+        this.dirtyGuard.attach(this, this.app);
+        contentEl.addEventListener('input', () => this.dirtyGuard.markDirty());
+        contentEl.addEventListener('change', () => this.dirtyGuard.markDirty());
         contentEl.addClass('nw-oe-content');
 
         this.renderHeader(contentEl);
@@ -250,7 +256,10 @@ export class OutlineExpandModal extends Modal {
             text: '✕',
             cls: "nw-btn nw-oe-close",
             attr: {}
-        }).onclick = () => this.close();
+        }).onclick = () => {
+            this.dirtyGuard.markClean();
+            this.close();
+        };
     }
 
     private renderMainContent(container: HTMLElement): void {
@@ -461,7 +470,10 @@ export class OutlineExpandModal extends Modal {
         rightActions.createEl('button', {
             text: '取消',
             cls: 'nw-btn',
-        }).onclick = () => this.close();
+        }).onclick = () => {
+            this.dirtyGuard.markClean();
+            this.close();
+        };
 
         // 按钮文案跟着写回能力走：没有写回目标就别承诺「应用」，改说「复制」
         rightActions.createEl('button', {
@@ -937,6 +949,7 @@ export class OutlineExpandModal extends Modal {
                 showWarningNotice('当前入口不支持写回，且复制到剪贴板失败，请手动复制右侧内容');
                 return;
             }
+            this.dirtyGuard.markClean();
             this.close();
             return;
         }
@@ -951,6 +964,7 @@ export class OutlineExpandModal extends Modal {
             return;
         }
         showSuccessNotice('已写入正文（Ctrl+Z 可撤销）');
+        this.dirtyGuard.markClean();
         this.close();
     }
 

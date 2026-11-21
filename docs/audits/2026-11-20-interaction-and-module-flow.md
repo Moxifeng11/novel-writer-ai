@@ -476,6 +476,12 @@ DSH 建议：**退役**（与 2026-11-19「旧正文写入链」同一处理口�
 
    剩余 20 个候选（同模式分批，不要一次全上）：ai-builder、create-project、existing-entity-manager、cowrite/iterate-instruction、cowrite/memory-manager、fanfic-review、fingerprint-library、generate-faction、generate-character、generate-item、generate-worldview、generate-location、ideation、manage-providers、mode-document、novel-analysis、outline-expand、pre-research、unified-entity-generate、volume-intro。
 
+   **第五批扩面（2026-11-22，A-5 第三轮）**：再接入 5 个——`ui/create-project-modal.ts`、`ui/ai-builder-modal.ts`、`ui/outline-expand-modal.ts`、`ui/unified-entity-generate-modal.ts`、`ui/pre-research-modal.ts`，已接 guard 的 Modal 合计 **13 个**。接线口径统一为：`contentEl` 上 `input`/`change` 即脏；显式取消按钮先 `markClean()` 再 `close()`；生成/保存/写盘/创建成功后各 `markClean()` 再关闭（AI 构建器 4 处、大纲扩写 4 处、预研 4 处、创建项目 2 处）。
+
+   **有意不接 `ui/volume-intro-modal.ts`**：它的 `onClose()` 先 `flushDraftAndClear()` 落草稿再清空，关闭本身不丢内容，加拦截只会让用户多点一次确认。`tests/unit/ui/modal-guard-wiring.test.ts` 用断言锁住这条理由（必须含 `flushDraftAndClear` 且不得出现 `new ModalDirtyGuard()`）。
+
+   剩余候选 15 个：existing-entity-manager、cowrite/iterate-instruction、cowrite/memory-manager、fanfic-review、fingerprint-library、generate-faction、generate-character、generate-item、generate-worldview、generate-location、ideation、manage-providers、mode-document、novel-analysis、volume-intro（不接）。
+
 3. **排版实测**（用户要求「用中文面板验证排版问题」）见 `docs/audits/2026-11-20-ui-real-click-acceptance.md` 的 FIX-14：短篇/长篇 × 1440×900 / 1280×800 / 900×680 六档 + 知识库 + 黄金开篇/世界观/文笔蒸馏三个弹窗全部零裁切、零横向溢出；关闭保护在文笔蒸馏弹窗上真实点击验证通过。
 
 4. 新增 `tests/unit/ui/modal-guard-wiring.test.ts` 的 4 组接线断言（golden-opening / knowledge-base-modals / template-manager / style-distiller 必须含 `new ModalDirtyGuard()`、`attach(this, this.app)`、`markClean()`；世界观必须用 `withButtonBusy` 且不存在裸 `onclick = async () => { await this.generateWorldview(`）。教训 1 的对策是把「接线」本身变成可断言的不变量。

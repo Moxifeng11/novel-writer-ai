@@ -25,6 +25,7 @@ import { readFanficPromptBlockWithNotice } from './fanfic-prompt-notice';
 import { UnifiedEntityGenerateModal } from './unified-entity-generate-modal';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 import { OperationConfirmModal } from './components/progress/operation-confirm-modal';
+import { ModalDirtyGuard } from './components/modal-dirty-guard';
 
 // ── 实体类型配置 ──
 interface EntityTypeConfig {
@@ -100,6 +101,8 @@ export class AiBuilderModal extends Modal {
     private existingCounts: Record<string, number> = {};
     /** 项目数量：仅多项目时展示「← 切换项目」入口 */
     private projectCount = 0;
+    /** 未保存修改的关闭确认（审计 A-5） */
+    private dirtyGuard = new ModalDirtyGuard();
 
     constructor(app: App, plugin: NovelWriterPlugin) {
         super(app);
@@ -120,6 +123,9 @@ export class AiBuilderModal extends Modal {
             wrapper.addClass('nw-modal');
         }
         contentEl.empty();
+        this.dirtyGuard.attach(this, this.app);
+        contentEl.addEventListener('input', () => this.dirtyGuard.markDirty());
+        contentEl.addEventListener('change', () => this.dirtyGuard.markDirty());
         contentEl.addClass('novel-writer-modal');
         contentEl.addClass('novel-writer-ai-builder-modal');
         contentEl.addClass('nw-entity-scope');
@@ -584,6 +590,7 @@ export class AiBuilderModal extends Modal {
                 } else {
                     showSuccessNotice(t("aiBuilder.ui.k39"), { timeout: 5000 });
                 }
+                this.dirtyGuard.markClean();
 
                 // 刷新并返回仪表盘
                 await this.loadWorldContent(this.selectedProject);
@@ -918,6 +925,7 @@ export class AiBuilderModal extends Modal {
         } else {
             showErrorNotice(t("aiBuilder.flow.nothingGenerated", { label: cfg.label }), { title: t("aiBuilder.common.k7"), timeout: 6000 });
         }
+        if (saved > 0) this.dirtyGuard.markClean();
     }
 
     // ─────── 保存单个实体 ───────
@@ -950,6 +958,7 @@ export class AiBuilderModal extends Modal {
         const savedAs = outcome.renamed[0]?.savedAs ?? name;
         const renamedHint = outcome.renamed.length > 0 ? t("aiBuilder.flow.renamedHint", { name: savedAs }) : '';
         showSuccessNotice(t("aiBuilder.flow.savedTo", { name: savedAs, project: this.selectedProject, hint: renamedHint }));
+        this.dirtyGuard.markClean();
 
         // 自动打开文件
         const file = this.app.vault.getAbstractFileByPath(`${this.selectedProject}/${cfg.folder}/${savedAs}.md`);
@@ -1011,6 +1020,7 @@ export class AiBuilderModal extends Modal {
             } else {
                 showSuccessNotice(msg, { timeout: 6000 });
             }
+            if (saved > 0) this.dirtyGuard.markClean();
         }
     }
 

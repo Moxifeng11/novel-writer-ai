@@ -17,6 +17,7 @@ import '@/shared/story-structure';
 import { StorySettingsEditor } from './story-settings-form';
 import { createLongNovelProject } from './services/project-create-service';
 import { onNodeDoc } from '@/shared/dom-window';
+import { ModalDirtyGuard } from './components/modal-dirty-guard';
 
 
 const log = createLogger('CreateProjectModal');
@@ -46,6 +47,8 @@ export class CreateProjectModal extends Modal {
     private fanficSettingsOutsideClickHandler?: (ev: MouseEvent) => void;
     /** 监听绑在宿主所属 document（popout 安全），disposer 用同一 doc 解绑 */
     private fanficOutsideDisposer: (() => void) | null = null;
+    /** 未保存修改的关闭确认（审计 A-5） */
+    private dirtyGuard = new ModalDirtyGuard();
 
     constructor(app: App, plugin: NovelWriterPlugin, private readonly prefill?: CreateProjectPrefill) {
         super(app);
@@ -61,6 +64,9 @@ export class CreateProjectModal extends Modal {
         const { contentEl } = this;
 
         contentEl.empty();
+        this.dirtyGuard.attach(this, this.app);
+        contentEl.addEventListener('input', () => this.dirtyGuard.markDirty());
+        contentEl.addEventListener('change', () => this.dirtyGuard.markDirty());
 
         const headerEl = contentEl.createDiv({ cls: 'nw-modal-header' });
         headerEl.createSpan({ cls: 'nw-modal-icon', text: '📖' });
@@ -384,7 +390,10 @@ ${preferredGenre
 
         const footerEl = contentEl.createDiv({ cls: 'nw-modal-footer' });
         const cancelBtn = footerEl.createEl('button', { text: t('common.cancel'), cls: 'nw-btn nw-btn-secondary', attr: { type: 'button', title: t('createProject.cancelTitle') } });
-        cancelBtn.onclick = () => this.close();
+        cancelBtn.onclick = () => {
+            this.dirtyGuard.markClean();
+            this.close();
+        };
         const createButton = footerEl.createEl('button', {
             text: t('createProject.create'),
             cls: 'nw-btn nw-btn-primary',
@@ -466,6 +475,7 @@ ${preferredGenre
             log.warn('[小说工坊] 预填项目创建后回调失败:', e);
             showWarningNotice(t('createProject.prefillFailed'), { timeout: 8000 });
         }
+        this.dirtyGuard.markClean();
         this.close();
     }
 

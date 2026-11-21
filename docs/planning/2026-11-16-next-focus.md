@@ -4458,3 +4458,13 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 结果：warn **558 → 120**（规则 9 类），error 0；`check:review-warn` 基线收紧到 120 条。剩余全部有意保留：断言 56（规则不可靠）、sentence-case 51（误报）、file-system-port 4、logger console 3、hardcoded-config-path 2、http fetch 1、prompt 1、createDocumentFragment 1、setting-definitions 1。
 - 定向测试 19 文件 / 296 用例通过；tsc EXIT=0；`npm run build` EXIT=0（main.js 6,246,912 / styles.css 805,893，bundle 基线已更新）。
 - 文档：`docs/DEVELOPMENT.md` 存量数字重写 + 新增「第 12 批落地手法」五条；`docs/planning/2026-11-21-quality-optimization-roadmap.md` 批次表新增第 12 行、进度日志新增一行。
+
+
+## 第一百五十九轮：UI/交互优化 —— 关闭确认扩面到 13 个弹窗（2026-11-22）
+
+- 承接 ZC-27 的 ModalDirtyGuard 基建（8 个弹窗），本轮再接入 5 个高价值表单弹窗：`ui/create-project-modal.ts`、`ui/ai-builder-modal.ts`、`ui/outline-expand-modal.ts`、`ui/unified-entity-generate-modal.ts`、`ui/pre-research-modal.ts`。
+- 接线口径统一：contentEl 的 input/change 即脏；显式取消先 markClean 再 close；生成/保存/写盘/创建成功后 markClean 再关闭。AI 构建器补齐 4 处成功出口（世界观写盘、批量生成、单个保存、角色批量保存），大纲扩写补齐 4 处（头部关闭、底部取消、复制成功、写回成功），预研补齐 4 处（取消、错模式、写盘成功、创建项目收尾）。
+- 有意不接 `ui/volume-intro-modal.ts`：其 onClose 先 flushDraftAndClear 落草稿，关闭不丢内容，加拦截只增加一次无意义确认；测试用断言锁住这条理由。
+- 测试：`tests/unit/ui/modal-guard-wiring.test.ts` 从 4 个文件扩到 9 个，并新增创建项目/大纲扩写/预研的逐出口断言与「全书简介不接 guard」的反向断言（21 例全过）；`modal-dirty-guard.test.ts` 7 例不变。
+- 验证：tsc EXIT=0；相关 5 个测试文件 22 例通过；preflight EXIT=0。
+

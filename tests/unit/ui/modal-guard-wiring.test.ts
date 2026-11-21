@@ -51,9 +51,14 @@ const GUARDED_FILES = [
     'ui/views/knowledge-base-modals.ts',
     'ui/template-manager.ts',
     'ui/style-distiller-modal.ts',
+    'ui/create-project-modal.ts',
+    'ui/ai-builder-modal.ts',
+    'ui/outline-expand-modal.ts',
+    'ui/unified-entity-generate-modal.ts',
+    'ui/pre-research-modal.ts',
 ];
 
-describe('高危表单弹窗的 ModalDirtyGuard 接线（第一百三十一轮）', () => {
+describe('高危表单弹窗的 ModalDirtyGuard 接线（第一百三十一轮 + A-5 扩面）', () => {
     for (const file of GUARDED_FILES) {
         const src = stripComments(source(file));
         it(`${file} 安装并 attach guard，且至少一处 markClean`, () => {
@@ -81,6 +86,29 @@ describe('高危表单弹窗的 ModalDirtyGuard 接线（第一百三十一轮�
     it('模板编辑弹窗取消与保存/删除都 markClean（保留弹窗仍可正常关闭）', () => {
         const src = stripComments(source('ui/template-manager.ts'));
         expect(src.match(/markClean\(\)/g)?.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('创建项目：取消与创建成功都先 markClean 再 close', () => {
+        const src = stripComments(source('ui/create-project-modal.ts'));
+        expect(src).toMatch(/cancelBtn\.onclick = \(\) => \{\s*\n\s*this\.dirtyGuard\.markClean\(\);\s*\n\s*this\.close\(\);/);
+        expect(src).toMatch(/showWarningNotice\(t\('createProject\.prefillFailed'\)[\s\S]{0,200}markClean\(\);\s*\n\s*this\.close\(\);/);
+    });
+
+    it('大纲扩写：头部关闭、底部取消、写入/复制成功后都 markClean', () => {
+        const src = stripComments(source('ui/outline-expand-modal.ts'));
+        expect(src.match(/markClean\(\)/g)?.length).toBeGreaterThanOrEqual(4);
+    });
+
+    it('预研：取消、写盘成功、创建项目收尾都 markClean', () => {
+        const src = stripComments(source('ui/pre-research-modal.ts'));
+        expect(src).toMatch(/cancel\.onclick = \(\) => \{\s*\n\s*this\.dirtyGuard\.markClean\(\);/);
+        expect(src.match(/markClean\(\)/g)?.length).toBeGreaterThanOrEqual(4);
+    });
+
+    it('全书简介弹窗不需要 guard：onClose 先落草稿再清空，关闭不丢内容', () => {
+        const src = stripComments(source('ui/volume-intro-modal.ts'));
+        expect(src).toMatch(/onClose\(\): void \{\s*\n\s*void this\.flushDraftAndClear\(\);/);
+        expect(src).not.toContain('new ModalDirtyGuard()');
     });
 });
 

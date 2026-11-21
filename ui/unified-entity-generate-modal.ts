@@ -19,6 +19,7 @@ import { ensureEntityIntegrity } from '@/shared/entity-integrity';
 import { mergeFanficRequirement } from '@/shared/fanfic-rules';
 import { readFanficPromptBlockWithNotice } from './fanfic-prompt-notice';
 import { createLogger } from '@/shared/logger';
+import { ModalDirtyGuard } from './components/modal-dirty-guard';
 
 
 const log = createLogger('UnifiedEntityGenerateModal');
@@ -55,6 +56,8 @@ export class UnifiedEntityGenerateModal extends Modal {
 
     private _stepIndicatorEl!: HTMLElement;
     private _contentAreaEl!: HTMLElement;
+    /** 未保存修改的关闭确认（审计 A-5） */
+    private dirtyGuard = new ModalDirtyGuard();
 
     private categoryConfig: Record<ModelCategory, {
         subdir: string;
@@ -137,6 +140,9 @@ export class UnifiedEntityGenerateModal extends Modal {
         contentEl.addClass('nw-form-stack');
 
         contentEl.empty();
+        this.dirtyGuard.attach(this, this.app);
+        contentEl.addEventListener('input', () => this.dirtyGuard.markDirty());
+        contentEl.addEventListener('change', () => this.dirtyGuard.markDirty());
         this._pendingResults = [];
 
         this._renderStepIndicator();
@@ -297,7 +303,10 @@ export class UnifiedEntityGenerateModal extends Modal {
             text: '取消',
             cls: 'nw-btn nw-gen-modal-cancel-btn',
         });
-        cancelBtn.onclick = () => this.close();
+        cancelBtn.onclick = () => {
+            this.dirtyGuard.markClean();
+            this.close();
+        };
 
         const nextBtn = btnRow.createEl('button', {
             text: '下一步 →',
@@ -379,7 +388,10 @@ export class UnifiedEntityGenerateModal extends Modal {
             text: '取消',
             cls: 'nw-btn nw-gen-modal-cancel-btn',
         });
-        cancelBtn.onclick = () => this.close();
+        cancelBtn.onclick = () => {
+            this.dirtyGuard.markClean();
+            this.close();
+        };
 
         const nextBtn = rightBtns.createEl('button', {
             text: '下一步 →',
@@ -461,7 +473,10 @@ export class UnifiedEntityGenerateModal extends Modal {
             text: '取消',
             cls: 'nw-btn nw-gen-modal-cancel-btn',
         });
-        cancelBtn.onclick = () => this.close();
+        cancelBtn.onclick = () => {
+            this.dirtyGuard.markClean();
+            this.close();
+        };
 
         const generateBtn = rightBtns.createEl('button', {
             text: '🚀 开始生成',
@@ -687,7 +702,10 @@ export class UnifiedEntityGenerateModal extends Modal {
             text: '取消',
             cls: 'nw-btn nw-gen-modal-cancel-btn',
         });
-        cancelBtn.onclick = () => this.close();
+        cancelBtn.onclick = () => {
+            this.dirtyGuard.markClean();
+            this.close();
+        };
 
         const saveBtn = rightBtns.createEl('button', {
             text: '💾 确认保存',
@@ -804,6 +822,7 @@ export class UnifiedEntityGenerateModal extends Modal {
                 })));
             }
             showSuccess(`✅ ${formatSaveOutcome(outcome, kind)}`);
+            this.dirtyGuard.markClean();
             this._goToStep('confirm');
         } catch (e) {
             hideProgress();
@@ -836,6 +855,7 @@ export class UnifiedEntityGenerateModal extends Modal {
             cls: 'nw-btn nw-btn-primary novel-writer-primary-button',
         });
         manageBtn.onclick = () => {
+            this.dirtyGuard.markClean();
             this.close();
             this.plugin.openEntityManagerModal(this._currentProject);
         };
@@ -846,6 +866,7 @@ export class UnifiedEntityGenerateModal extends Modal {
         });
         fileMgrBtn.addClass('nw-ue-file-btn');
         fileMgrBtn.onclick = () => {
+            this.dirtyGuard.markClean();
             this.close();
             new ExistingEntityManagerModal(
                 this.app,
@@ -860,6 +881,9 @@ export class UnifiedEntityGenerateModal extends Modal {
             text: '关闭',
             cls: 'nw-btn nw-gen-modal-cancel-btn',
         });
-        closeBtn.onclick = () => this.close();
+        closeBtn.onclick = () => {
+            this.dirtyGuard.markClean();
+            this.close();
+        };
     }
 }
