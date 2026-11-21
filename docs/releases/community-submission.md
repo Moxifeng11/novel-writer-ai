@@ -56,6 +56,12 @@
 2. 其下有两个 `Document`，第二个是网页内容（名字随页面标题变，账号页时是 `Novel Writer AI - Obsidian Plugin`），含 `Log out` 即可确认已登录；
 3. 里面 `Check for new releases` 是 `ControlType.Hyperlink`，`InvokePattern` 可用，`Invoke()` 等价于点击。
 
+**读面板前必须先刷新（硬规则，2026-11-21 踩过）**：内嵌面板的服务端渲染页面**不会自己更新**，UIA 读到的是上次加载时的 DOM——直接用旧快照判断状态会误判。工具栏在同一窗口里有 `后退`(1217,103)、`前进`(1257,103)、`刷新`(1297,103) 三个 `Button`（都支持 `InvokePattern`），地址栏是 `Edit`「输入 HTTP(S) 地址」（`ValuePattern` 可 `SetValue` + `{ENTER}` 跳转），右侧 `在系统浏览器中打开` 会用默认浏览器另开（那里没有登录态，只能看公开页）。
+
+实测差异：同一 URL 未刷新时 Reviews 第一行是 `4.97.4 … Pending`，点一次 `刷新` 后变成 `4.97.4 … Completed`——`Pending` 快照若被当成结论，就会得出「还在审」的错误判断。
+
+结论口径：**面板只当点击面，事实一律用 HTTP 判据**（`npm run check:published`、RSS、`community-plugins.json`）；必须读面板时先 `刷新` 再枚举，并且把「刷新后仍不变」当作可复现证据而不是首次读数。
+
 脚本口径：`Add-Type -AssemblyName UIAutomationClient,UIAutomationTypes` → `AutomationElement.RootElement.FindFirst(Children, NameProperty)` → 在第二个 Document 子树里 `FindFirst(Descendants, NameProperty='Check for new releases')` → `TryGetCurrentPattern(InvokePattern)` → `Invoke()`。注意 PowerShell 脚本里 `param()` 必须位于第一行，否则报 `"(" 后应为表达式`。
 
 ## 一、历史：每版审核都是 Failed（2026-11-20 定位并修复）
