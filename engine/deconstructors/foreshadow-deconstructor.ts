@@ -15,6 +15,7 @@ import { LLMEnhancer } from '@/engine/llm-enhancer';
 import { createLogger } from '@/shared/logger';
 import { ForeshadowConfigManager, ForeshadowTypeConfig } from '@/engine/foreshadow-config-manager';
 import { writeVaultText } from '@/shared/file-system-port';
+import type { VectorEnhancerPort } from '@/engine/types/vector-enhancer-port';
 
 
 const log = createLogger('ForeshadowDeconstructor');
@@ -1264,7 +1265,7 @@ export class ForeshadowDeconstructor {
     private emphasisPatternSet: Set<string>;
     private resolutionPatternSet: Set<string>;
     private surnameSet: Set<string>;
-    private vectorEnhancer?: any;
+    private vectorEnhancer?: VectorEnhancerPort;
     private genreId: string;
     private knowledgeBase: WebnovelKnowledgeBase;
     private foreshadowCategoryDefs: ForeshadowCategoryDef[];
@@ -1273,7 +1274,7 @@ export class ForeshadowDeconstructor {
     private llmEnhancer?: LLMEnhancer;
     private configManager?: ForeshadowConfigManager;
 
-    constructor(vectorEnhancer?: any, genreId?: string, genreConfig?: GenreConfig, configManager?: ForeshadowConfigManager) {
+    constructor(vectorEnhancer?: VectorEnhancerPort, genreId?: string, genreConfig?: GenreConfig, configManager?: ForeshadowConfigManager) {
         this.itemSuffixSet = new Set(ITEM_SUFFIXES);
         this.skillSuffixSet = new Set(SKILL_SUFFIXES);
         this.settingKeywordSet = new Set(SETTING_KEYWORDS);
@@ -1672,7 +1673,7 @@ export class ForeshadowDeconstructor {
             }
 
             await yieldToUI();
-            const similarPairs = await this.vectorEnhancer.findSimilarPairs(
+            const similarPairs = await this.vectorEnhancer!.findSimilarPairs(
                 sampledForeshadows,
                 sampledPayoffs2,
                 0.7,
@@ -1682,8 +1683,8 @@ export class ForeshadowDeconstructor {
             );
 
             const semanticPairs: SemanticForeshadowPair[] = similarPairs
-                .filter((pair: any) => pair.score > 0.75)
-                .map((pair: any) => ({
+                .filter((pair) => pair.score > 0.75)
+                .map((pair) => ({
                     setupParagraph: pair.itemA.text,
                     payoffParagraph: pair.itemB.text,
                     setupParagraphIndex: pair.itemA.index,

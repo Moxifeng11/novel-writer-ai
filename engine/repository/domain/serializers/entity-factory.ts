@@ -456,7 +456,7 @@ export class EntityFactory {
      * @returns Markdown
      */
     static chapterToMarkdown(chapter: Chapter): string {
-        const fm: Record<string, any> = {
+        const fm: Record<string, unknown> = {
             '卷': chapter.volume,
             '章': chapter.chapterNum,
             '标题': chapter.title,

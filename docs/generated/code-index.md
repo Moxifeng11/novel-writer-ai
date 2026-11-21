@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 354 | 146736 | 1951 | 1545 | 79% |
+| `engine/` | 355 | 146869 | 1953 | 1547 | 79% |
 | `services/` | 65 | 19531 | 296 | 204 | 69% |
 | `shared/` | 265 | 52990 | 2246 | 1757 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 307 | 113884 | 1182 | 945 | 80% |
+| `ui/` | 307 | 113885 | 1182 | 945 | 80% |
 
 ## 文件清单
 
@@ -75,16 +75,16 @@
 | `engine/ai-batch-entity-generator.ts` | 578 | 1 | 1 |
 | `engine/ai-chapter-helpers.ts` | 339 | 1 | 1 |
 | `engine/ai-character-generator.ts` | 426 | 1 | 1 |
-| `engine/ai-engine.ts` | 764 | 4 | 2 |
+| `engine/ai-engine.ts` | 765 | 4 | 2 |
 | `engine/ai-entity-generator.ts` | 227 | 1 | 1 |
 | `engine/ai-lexicon.ts` | 97 | 3 | 3 |
 | `engine/ai-outline-generator.ts` | 1415 | 1 | 1 |
 | `engine/ai-prompt-builder.ts` | 227 | 5 | 5 |
 | `engine/ai-scene-expander.ts` | 286 | 2 | 2 |
-| `engine/ai-scene-generator.ts` | 289 | 2 | 2 |
+| `engine/ai-scene-generator.ts` | 302 | 2 | 2 |
 | `engine/ai-types.ts` | 87 | 6 | 6 |
 | `engine/ai-worldview-generator.ts` | 735 | 2 | 1 |
-| `engine/analysis-report-engine.ts` | 1446 | 1 | 1 |
+| `engine/analysis-report-engine.ts` | 1457 | 1 | 1 |
 | `engine/analysis-session-manager.ts` | 760 | 2 | 2 |
 | `engine/anti-ai-detector.ts` | 454 | 6 | 6 |
 | `engine/asset-registry.ts` | 238 | 6 | 1 |
@@ -145,7 +145,7 @@
 | `engine/context-manager.ts` | 2660 | 3 | 3 |
 | `engine/context-readiness.ts` | 243 | 3 | 3 |
 | `engine/context/association-resolver.ts` | 286 | 6 | 2 |
-| `engine/context/context-diff-detector.ts` | 403 | 5 | 4 |
+| `engine/context/context-diff-detector.ts` | 405 | 5 | 4 |
 | `engine/context/context-types.ts` | 302 | 16 | 15 |
 | `engine/context/fact-view.ts` | 116 | 3 | 3 |
 | `engine/context/incremental-updater.ts` | 302 | 6 | 1 |
@@ -163,10 +163,10 @@
 | `engine/deconstruction-worker-manager.ts` | 688 | 3 | 3 |
 | `engine/deconstructors/character-deconstructor.ts` | 4063 | 14 | 14 |
 | `engine/deconstructors/commercial-deconstructor.ts` | 2052 | 6 | 6 |
-| `engine/deconstructors/deconstruction-worker.ts` | 205 | 0 | 0 |
-| `engine/deconstructors/foreshadow-deconstructor.ts` | 3994 | 17 | 17 |
+| `engine/deconstructors/deconstruction-worker.ts` | 204 | 0 | 0 |
+| `engine/deconstructors/foreshadow-deconstructor.ts` | 3995 | 17 | 17 |
 | `engine/deconstructors/readability-deconstructor.ts` | 999 | 7 | 7 |
-| `engine/deconstructors/rhythm-deconstructor.ts` | 2885 | 21 | 21 |
+| `engine/deconstructors/rhythm-deconstructor.ts` | 2888 | 21 | 21 |
 | `engine/deconstructors/structure-deconstructor.ts` | 1864 | 12 | 12 |
 | `engine/deconstructors/style-deconstructor.ts` | 2320 | 14 | 14 |
 | `engine/deconstructors/technique-deconstructor.ts` | 1822 | 5 | 5 |
@@ -183,20 +183,20 @@
 | `engine/emotion-auditor.ts` | 280 | 3 | 3 |
 | `engine/emotion-curve-analyzer.ts` | 220 | 1 | 1 |
 | `engine/emotion-planner.ts` | 212 | 7 | 4 |
-| `engine/ending-traction-engine.ts` | 435 | 1 | 1 |
-| `engine/engine-registry.ts` | 1527 | 13 | 3 |
+| `engine/ending-traction-engine.ts` | 441 | 1 | 1 |
+| `engine/engine-registry.ts` | 1528 | 13 | 3 |
 | `engine/entity-context-engine.ts` | 1098 | 10 | 2 |
 | `engine/entity-graph.ts` | 198 | 6 | 6 |
 | `engine/entity-link-migrator.ts` | 168 | 5 | 5 |
 | `engine/entity-scorer.ts` | 197 | 6 | 5 |
-| `engine/entity-state-manager.ts` | 529 | 4 | 3 |
+| `engine/entity-state-manager.ts` | 530 | 4 | 3 |
 | `engine/export/docx-builder.ts` | 231 | 1 | 1 |
 | `engine/export/epub-builder.ts` | 419 | 7 | 7 |
 | `engine/export/manuscript-compiler.ts` | 288 | 12 | 12 |
 | `engine/export/zip-writer.ts` | 157 | 4 | 4 |
 | `engine/fact-index-manager.ts` | 217 | 9 | 2 |
 | `engine/fact-index-vault.ts` | 119 | 3 | 2 |
-| `engine/fingerprint-extractor.ts` | 545 | 4 | 4 |
+| `engine/fingerprint-extractor.ts` | 547 | 4 | 4 |
 | `engine/fingerprint-stats.ts` | 127 | 4 | 4 |
 | `engine/foreshadow-config-manager.ts` | 310 | 2 | 1 |
 | `engine/foreshadow-context.ts` | 154 | 6 | 4 |
@@ -221,9 +221,9 @@
 | `engine/harness/tool-registry.ts` | 153 | 6 | 6 |
 | `engine/harness/trend-research-service.ts` | 328 | 9 | 9 |
 | `engine/harness/true-random.ts` | 8 | 0 | 0 |
-| `engine/heavy-task-worker-manager.ts` | 314 | 2 | 2 |
+| `engine/heavy-task-worker-manager.ts` | 315 | 2 | 2 |
 | `engine/incremental-result-aggregator.ts` | 1707 | 3 | 3 |
-| `engine/knowledge-base-config.ts` | 522 | 5 | 5 |
+| `engine/knowledge-base-config.ts` | 524 | 5 | 5 |
 | `engine/knowledge-injector.ts` | 2214 | 13 | 7 |
 | `engine/knowledge-tags.ts` | 629 | 2 | 2 |
 | `engine/knowledge-to-fingerprint-converter.ts` | 345 | 1 | 1 |
@@ -262,7 +262,7 @@
 | `engine/preference-memory.ts` | 291 | 0 | 0 |
 | `engine/project-migration-service.ts` | 227 | 5 | 5 |
 | `engine/promise-ledger.ts` | 222 | 11 | 11 |
-| `engine/prompt-builder.ts` | 1479 | 2 | 1 |
+| `engine/prompt-builder.ts` | 1486 | 2 | 1 |
 | `engine/prompt-cache.ts` | 81 | 3 | 2 |
 | `engine/prompt-hash.ts` | 51 | 1 | 1 |
 | `engine/prompt-resolver.ts` | 164 | 4 | 2 |
@@ -349,11 +349,11 @@
 | `engine/settlement/settlement-table-writer.ts` | 79 | 3 | 2 |
 | `engine/settlement/settlement-types.ts` | 46 | 2 | 1 |
 | `engine/step-definitions.ts` | 297 | 13 | 11 |
-| `engine/step-modal-controller.ts` | 661 | 2 | 2 |
+| `engine/step-modal-controller.ts` | 662 | 2 | 2 |
 | `engine/step-prompt-assembly.ts` | 335 | 5 | 4 |
 | `engine/step-result-saver.ts` | 575 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
-| `engine/step-runner-retry.ts` | 227 | 6 | 5 |
+| `engine/step-runner-retry.ts` | 228 | 6 | 5 |
 | `engine/step-runner.ts` | 2383 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 221 | 3 | 3 |
@@ -366,7 +366,7 @@
 | `engine/stream-text-reader.ts` | 320 | 3 | 3 |
 | `engine/streaming/simulated-stream.ts` | 183 | 2 | 2 |
 | `engine/streaming/stream-parser.ts` | 366 | 8 | 8 |
-| `engine/style-fingerprint-library.ts` | 2717 | 7 | 7 |
+| `engine/style-fingerprint-library.ts` | 2733 | 7 | 7 |
 | `engine/style-learner.ts` | 346 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 193 | 2 | 2 |
 | `engine/style-vector-store.ts` | 705 | 11 | 10 |
@@ -386,8 +386,9 @@
 | `engine/text-segmenter.ts` | 509 | 10 | 10 |
 | `engine/token-bucket-rate-limiter.ts` | 285 | 3 | 3 |
 | `engine/types/analysis-session.ts` | 126 | 9 | 9 |
-| `engine/types/analysis-suggestion.ts` | 95 | 8 | 8 |
+| `engine/types/analysis-suggestion.ts` | 112 | 9 | 9 |
 | `engine/types/chart-config.ts` | 84 | 6 | 6 |
+| `engine/types/vector-enhancer-port.ts` | 48 | 1 | 1 |
 | `engine/vector-enhancer.ts` | 901 | 5 | 5 |
 | `engine/volume-outline-summarizer.ts` | 197 | 2 | 2 |
 | `engine/world-state-snapshot.ts` | 199 | 6 | 6 |
@@ -785,7 +786,7 @@
 | `ui/components/ai-detection-report.ts` | 105 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
 | `ui/components/categorization-review-panel.ts` | 449 | 2 | 2 |
-| `ui/components/character-review-panel.ts` | 578 | 2 | 2 |
+| `ui/components/character-review-panel.ts` | 579 | 2 | 2 |
 | `ui/components/chart-toolbar.ts` | 111 | 2 | 2 |
 | `ui/components/emotion-curve-view.ts` | 131 | 1 | 1 |
 | `ui/components/empty-state.ts` | 196 | 5 | 3 |

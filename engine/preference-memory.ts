@@ -21,7 +21,7 @@ const log = createLogger('PreferenceMemory');
      id: string;
      category: 'character' | 'plot' | 'style' | 'pacing' | 'dialogue' | 'description';
      key: string;
-     value: any;
+     value: unknown;
      confidence: number;
      source: 'explicit' | 'learned' | 'inferred';
      lastUpdated: number;
@@ -78,7 +78,7 @@ const log = createLogger('PreferenceMemory');
      async recordPreference(
          category: UserPreference['category'],
          key: string,
-         value: any,
+         value: unknown,
          source: UserPreference['source'] = 'learned'
      ): Promise<void> {
          const id = `${category}:${key}`;

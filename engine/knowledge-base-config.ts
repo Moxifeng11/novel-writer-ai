@@ -71,8 +71,10 @@ const DEFAULT_GENRE_WEIGHTS = {
     structure: 0.1,
 };
 
-function isLegacyCustomGenre(genre: any): genre is LegacyCustomGenre {
-    return genre && !genre.personalityTags && !genre.abilityTypes && !genre.roleTypes && !genre.backgroundTypes && !genre.techniques && !genre.weights;
+function isLegacyCustomGenre(genre: unknown): genre is LegacyCustomGenre {
+    if (!genre || typeof genre !== 'object') return false;
+    const g = genre as Record<string, unknown>;
+    return !g.personalityTags && !g.abilityTypes && !g.roleTypes && !g.backgroundTypes && !g.techniques && !g.weights;
 }
 
 function convertLegacyToFull(legacy: LegacyCustomGenre): CustomGenre {
@@ -172,12 +174,12 @@ export class KnowledgeBaseConfigManager {
         return this.config;
     }
 
-    private normalizeCustomGenres(genres: any[]): CustomGenre[] {
+    private normalizeCustomGenres(genres: unknown[]): CustomGenre[] {
         return genres.map(genre => {
             if (isLegacyCustomGenre(genre)) {
                 return convertLegacyToFull(genre);
             }
-            return { ...genre, isCustom: true };
+            return { ...(genre as CustomGenre), isCustom: true };
         });
     }
 

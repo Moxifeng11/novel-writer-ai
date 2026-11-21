@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, Notice, Modal, App, Setting } from 'obsidian';
+import { ItemView, WorkspaceLeaf, Notice, Modal, App, Setting, type Editor } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { StyleFingerprintLibrary, StyleFingerprint } from '@/engine/style-fingerprint-library';
 import { StyleFeaturesAnalyzerV2, type StyleAnalysisResultV2 } from '@/engine/style/style-features-v2';
@@ -1066,7 +1066,7 @@ export class WritingFingerprintView extends ItemView {
         let selectedText = '';
 
         if (activeView) {
-            const editor = (activeView as any).editor;
+            const editor = (activeView as { editor?: Editor }).editor;
             if (editor && typeof editor.getSelection === 'function') {
                 selectedText = editor.getSelection();
             }

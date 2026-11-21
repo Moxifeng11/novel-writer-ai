@@ -2,6 +2,7 @@ import NovelWriterPlugin from '@/main';
 import { AIApiClient } from './ai-api-client';
 import type { APIResponse } from './ai-engine';
 import type { Notifier } from '@/shared/types';
+import type { ForeshadowRef } from '@/shared/types';
 import { NOOP_NOTIFIER, SceneNode, SceneType } from '@/shared/types';
 import { createLogger } from '@/shared/logger';
 
@@ -171,29 +172,41 @@ ${context.foreshadows || '无'}
             }
 
             const jsonStr = jsonMatch[0];
-            const data = JSON.parse(jsonStr);
+            const data = JSON.parse(jsonStr) as {
+                scenes?: Array<Record<string, unknown>>;
+            };
 
-            if (data.scenes && Array.isArray(data.scenes)) {
-                data.scenes.forEach((sceneData: any, index: number) => {
+            if (Array.isArray(data.scenes)) {
+                const asString = (value: unknown): string =>
+                    typeof value === 'string' ? value : '';
+                const asNumber = (value: unknown): number | undefined =>
+                    typeof value === 'number' ? value : undefined;
+                const asStringArray = (value: unknown): string[] =>
+                    Array.isArray(value)
+                        ? value.filter((item): item is string => typeof item === 'string')
+                        : [];
+                data.scenes.forEach((sceneData, index) => {
                     const scene: SceneNode = {
-                        id: sceneData.id || `scene-${Date.now()}-${index}`,
-                        order: sceneData.order || index + 1,
-                        title: sceneData.title || `场景${index + 1}`,
+                        id: asString(sceneData.id) || `scene-${Date.now()}-${index}`,
+                        order: asNumber(sceneData.order) || index + 1,
+                        title: asString(sceneData.title) || `场景${index + 1}`,
                         type: this.validateSceneType(sceneData.type),
-                        status: sceneData.status || 'not_started',
-                        summary: sceneData.summary || '',
-                        characters: Array.isArray(sceneData.characters) ? sceneData.characters : [],
-                        locations: Array.isArray(sceneData.locations) ? sceneData.locations : [],
-                        factions: Array.isArray(sceneData.factions) ? sceneData.factions : [],
-                        items: Array.isArray(sceneData.items) ? sceneData.items : [],
-                        foreshadowRefs: Array.isArray(sceneData.foreshadowRefs) ? sceneData.foreshadowRefs : [],
-                        wordCountPlan: sceneData.wordCountPlan || 300,
-                        wordCountActual: sceneData.wordCountActual || 0,
-                        objective: sceneData.objective || '',
-                        obstacle: sceneData.obstacle || '',
-                        outcome: sceneData.outcome || '',
-                        emotionArc: sceneData.emotionArc || '',
-                        keyDialogues: Array.isArray(sceneData.keyDialogues) ? sceneData.keyDialogues : [],
+                        status: (sceneData.status as SceneNode['status']) || 'not_started',
+                        summary: asString(sceneData.summary),
+                        characters: asStringArray(sceneData.characters),
+                        locations: asStringArray(sceneData.locations),
+                        factions: asStringArray(sceneData.factions),
+                        items: asStringArray(sceneData.items),
+                        foreshadowRefs: Array.isArray(sceneData.foreshadowRefs)
+                            ? (sceneData.foreshadowRefs as ForeshadowRef[])
+                            : [],
+                        wordCountPlan: asNumber(sceneData.wordCountPlan) || 300,
+                        wordCountActual: asNumber(sceneData.wordCountActual) || 0,
+                        objective: asString(sceneData.objective),
+                        obstacle: asString(sceneData.obstacle),
+                        outcome: asString(sceneData.outcome),
+                        emotionArc: asString(sceneData.emotionArc),
+                        keyDialogues: asStringArray(sceneData.keyDialogues),
                     };
                     result.push(scene);
                 });
@@ -206,9 +219,9 @@ ${context.foreshadows || '无'}
         return result;
     }
 
-    private validateSceneType(type: any): SceneType {
+    private validateSceneType(type: unknown): SceneType {
         const validTypes: SceneType[] = ['action', 'dialogue', 'emotion', 'description', 'transition', 'climax', 'foreshadow', 'resolution'];
-        return validTypes.includes(type) ? type : 'dialogue';
+        return validTypes.includes(type as SceneType) ? (type as SceneType) : 'dialogue';
     }
 
     private fallbackParse(content: string): SceneNode[] {

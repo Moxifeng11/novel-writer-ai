@@ -40,7 +40,7 @@ export interface ChartConfig {
  * SmartChartOptions 类型定义。
  */
 export interface SmartChartOptions {
-    data: any;
+    data: unknown;
     preferredType?: ChartType;
     availableTypes?: ChartType[];
     config?: Partial<ChartConfig>;

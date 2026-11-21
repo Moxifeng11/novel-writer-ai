@@ -115,7 +115,7 @@ export class Item extends BaseEntity {
      * 转换为JSON。
      * @returns 映射结果
      */
-    toJSON(): Record<string, any> {
+    toJSON(): Record<string, unknown> {
         return {
             ...super.toJSON(),
             ...this._itemProps,

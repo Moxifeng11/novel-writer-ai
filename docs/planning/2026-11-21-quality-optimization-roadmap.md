@@ -40,8 +40,8 @@
 | 1 | `prefer-create-el` + `prefer-window-timers` + 未使用 import | ✅ 66bb6336 | 2,732 → 2,110 |
 | 2 | `no-useless-escape` 35 → 0、`prefer-create-el` 74 → 1、`no-unused-vars` 188 → 148 | ✅ 4fc8f969 | 1,568 → 1,420 |
 | 3 | `no-empty` 18 → 0、`unbound-method` 9 → 0 | ✅ 8d6fbf83 | 1,420 → 1,393 |
-| 4 | `no-tfile-tfolder-cast` 38 → 4（`instanceof TFile` 收窄；`shared/file-system-port.ts` 适配层 4 处保留） | ✅ 本批 | 1,393 → 1,343 |
-| 5 | `no-explicit-any` 93（先 engine、后 ui 两小批，用真实类型或 `unknown` + 收窄） | 待做 | — |
+| 4 | `no-tfile-tfolder-cast` 38 → 4（`instanceof TFile` 收窄；`shared/file-system-port.ts` 适配层 4 处保留） | ✅ 1ae2b9a0 | 1,393 → 1,343 |
+| 5 | `no-explicit-any` 93 → 0（用真实类型 / `unknown` + 收窄；`types/obsidian-augment.d.ts` 同步收口；`check:any` AST 口径 74 → 0） | ✅ 本批 | 1,343 → 1,259 |
 | 6 | `no-deprecated` 非 V1 部分（`setDynamicTooltip` 11、`setWarning` 7、`execCommand` 4、`substr` 3 等） | 待做 | — |
 | 7 | Promise 语义 309（`no-misused-promises` 162 + `no-floating-promises` 147，按 engine / ui / shared 三小批） | 待做 | — |
 | 8 | `no-restricted-globals` 19（`fetch` 是有意例外保留）+ `no-control-regex` 12 + `no-redundant-type-constituents` 31 | 待做 | — |
@@ -62,4 +62,5 @@
 | 2026-11-21 | 1 | 2,732 → 2,110 | 66bb6336 |
 | 2026-11-21 | 2 | 1,568 → 1,420 | 4fc8f969 |
 | 2026-11-21 | 3 | 1,420 → 1,393 | 8d6fbf83 |
-| 2026-11-21 | 4 | 1,393 → 1,343 | 本批 |
+| 2026-11-21 | 4 | 1,393 → 1,343 | 1ae2b9a0 |
+| 2026-11-21 | 5 | 1,343 → 1,259（`no-explicit-any` 93 → 0） | 本批 |

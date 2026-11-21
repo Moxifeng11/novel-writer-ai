@@ -96,7 +96,7 @@ export class HeavyTaskWorkerManager {
 
     /** 检查 DeviationDetector 的条件分析器注入状态 */
     private checkDeviationDetectorInjection(): void {
-        const dd = this.deviationDetector as any;
+        const dd = this.deviationDetector as unknown as Record<string, unknown>;
         // rhythmAnalyzer 依赖主线程 AI 能力，按设计就不注入（见 initMainThreadEngines 的 C1 注释），
         // 不列入缺失项——否则每次启动都会误报「相关维度使用内置规则」并触发一次降级通知（验收 F-08）。
         const ddMissing = ['plotDivergenceEngine', 'characterChecker'].filter((k) => !dd[k]);
@@ -212,7 +212,7 @@ export class HeavyTaskWorkerManager {
 
     private executeTask<T>(
         taskType: string,
-        input: any,
+        input: Record<string, unknown>,
         onProgress?: (progress: number, message?: string) => void
     ): CancelablePromise<T> {
         if (this.destroyed) {
@@ -230,18 +230,19 @@ export class HeavyTaskWorkerManager {
 
     private executeMainThreadTask<T>(
         taskType: string,
-        input: any,
+        input: Record<string, unknown>,
         onProgress?: (progress: number, message?: string) => void
     ): CancelablePromise<T> {
         let cancelled = false;
 
         const promise = new Promise<T>(async (resolve, reject) => {
             try {
-                const taskMap: Record<string, () => any> = {
-                    'style:analyze': () => this.styleDeconstructor!.analyze(input.text),
-                    'style:analyze:vector': () => this.styleDeconstructor!.analyzeWithVector(input.text),
-                    'quality:evaluate': () => this.qualityScoreEngine!.evaluate(input.text, input.context),
-                    'deviation:detect': () => this.deviationDetector!.detect(input.text, input.context),
+                const payload = input as { text: string; context?: unknown };
+                const taskMap: Record<string, () => unknown> = {
+                    'style:analyze': () => this.styleDeconstructor!.analyze(payload.text),
+                    'style:analyze:vector': () => this.styleDeconstructor!.analyzeWithVector(payload.text),
+                    'quality:evaluate': () => this.qualityScoreEngine!.evaluate(payload.text, payload.context as EvaluationContext | undefined),
+                    'deviation:detect': () => this.deviationDetector!.detect(payload.text, payload.context as DeviationContext | undefined),
                 };
 
                 const fn = taskMap[taskType];

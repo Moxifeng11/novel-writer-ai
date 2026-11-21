@@ -433,7 +433,7 @@ export function factionFromFrontmatter(
     rawContent: string = '',
     filePath: string = '',
 ): FactionDomainModel {
-    const name = fm['名称'] || fm.name || '未知势力';
+    const name = String(fm['名称'] || fm.name || '未知势力');
     const base = buildBaseEntity(fm, name, rawContent, filePath);
 
     return {
@@ -501,7 +501,7 @@ export function locationFromFrontmatter(
     rawContent: string = '',
     filePath: string = '',
 ): LocationDomainModel {
-    const name = fm['名称'] || fm.name || '未知地点';
+    const name = String(fm['名称'] || fm.name || '未知地点');
     const base = buildBaseEntity(fm, name, rawContent, filePath);
 
     return {
@@ -573,7 +573,7 @@ export function itemFromFrontmatter(
     rawContent: string = '',
     filePath: string = '',
 ): ItemDomainModel {
-    const name = fm['名称'] || fm.name || '未知物品';
+    const name = String(fm['名称'] || fm.name || '未知物品');
     const base = buildBaseEntity(fm, name, rawContent, filePath);
 
     return {

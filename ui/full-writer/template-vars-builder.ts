@@ -231,7 +231,7 @@ export async function buildEntityVars(deps: TemplateVarsDeps, vars: Record<strin
   }
   const factions = d.factions || [];
   for (const f of factions) {
-    const name = f.name || f.名称 || f.fileName || "?";
+    const name = String(f.name || f.名称 || f.fileName || "?");
     const fields: Record<string, string> = {};
     for (const [k, v] of Object.entries(f)) {
       if (["name", "名称", "fileName", "filePath"].includes(k))
@@ -265,7 +265,7 @@ export async function buildEntityVars(deps: TemplateVarsDeps, vars: Record<strin
   }
   const locations = d.locations || [];
   for (const l of locations) {
-    const name = l.name || l.名称 || l.fileName || "?";
+    const name = String(l.name || l.名称 || l.fileName || "?");
     const fields: Record<string, string> = {};
     for (const [k, v] of Object.entries(l)) {
       if (["name", "名称", "fileName", "filePath"].includes(k))
@@ -303,7 +303,7 @@ export async function buildEntityVars(deps: TemplateVarsDeps, vars: Record<strin
   }
   const items = d.items || [];
   for (const i of items) {
-    const name = i.name || i.名称 || i.fileName || "?";
+    const name = String(i.name || i.名称 || i.fileName || "?");
     const fields: Record<string, string> = {};
     for (const [k, v] of Object.entries(i)) {
       if (["name", "名称", "fileName", "filePath"].includes(k))

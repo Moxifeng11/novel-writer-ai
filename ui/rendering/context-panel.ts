@@ -364,7 +364,7 @@ export class ContextPanel {
             }
             const list = body.createEl('ul', { cls: 'novel-writer-fw-entity-list' });
             for (const l of locs) {
-                const name = l.名称 || l.name || l.fileName || '?';
+                const name = String(l.名称 || l.name || l.fileName || '?');
                 // ✅ P0修复#2：compact 模式下只显示涉及地点
                 if (plugin.settings.contextScope === 'compact' && involvedLocs.size > 0 && !involvedLocs.has(name)) {
                     continue;
@@ -391,7 +391,7 @@ export class ContextPanel {
             }
             const list = body.createEl('ul', { cls: 'novel-writer-fw-entity-list' });
             for (const f of factions) {
-                const name = f.名称 || f.name || f.fileName || '?';
+                const name = String(f.名称 || f.name || f.fileName || '?');
                 // ✅ P0修复#2：compact 模式下只显示涉及势力
                 if (plugin.settings.contextScope === 'compact' && involvedFactions.size > 0 && !involvedFactions.has(name)) {
                     continue;
@@ -419,7 +419,7 @@ export class ContextPanel {
             }
             const list = body.createEl('ul', { cls: 'novel-writer-fw-entity-list' });
             for (const i of items) {
-                const name = i.名称 || i.name || i.fileName || '?';
+                const name = String(i.名称 || i.name || i.fileName || '?');
                 // ✅ P0修复#2：compact 模式下只显示涉及物品
                 if (plugin.settings.contextScope === 'compact' && involvedItems.size > 0 && !involvedItems.has(name)) {
                     continue;

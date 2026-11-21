@@ -37,7 +37,7 @@ function ensureEngines(): void {
             plotDivergenceEngine: getScopedPlotDivergenceEngine('quality-worker'),
             characterChecker: new CharacterConsistencyChecker(),
         });
-        const dd = deviationDetector as any;
+        const dd = deviationDetector as unknown as Record<string, unknown>;
         // rhythmAnalyzer 按设计保持未注入（见上方注释），不列入缺失项，避免 worker 每次启动都报 INJECTION_PARTIAL（验收 F-08）
         const ddMissing = ['plotDivergenceEngine', 'characterChecker'].filter((k) => !dd[k]);
         if (ddMissing.length > 0) {

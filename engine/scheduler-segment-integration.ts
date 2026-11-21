@@ -238,7 +238,7 @@ export class SchedulerSegmentIntegration {
         dimension: DeconstructDimension,
         useVector: boolean
     ): ((segment: TextSegment, onProgress: (p: number) => void) => Promise<T>) | null {
-        const map: Record<DeconstructDimension, (text: string, onProgress?: (p: number, m?: string) => void) => any> = {
+        const map: Record<DeconstructDimension, (text: string, onProgress?: (p: number, m?: string) => void) => unknown> = {
             style: useVector ? this.workerManager.analyzeStyleWithVector.bind(this.workerManager) : this.workerManager.analyzeStyle.bind(this.workerManager),
             rhythm: useVector ? this.workerManager.analyzeRhythmWithVector.bind(this.workerManager) : this.workerManager.analyzeRhythm.bind(this.workerManager),
             technique: useVector ? this.workerManager.analyzeTechniqueWithVector.bind(this.workerManager) : this.workerManager.analyzeTechniqueWithVector.bind(this.workerManager),
@@ -253,7 +253,7 @@ export class SchedulerSegmentIntegration {
         if (!fn) return null;
 
         return async (segment, onProgress) => {
-            return await fn(segment.text, onProgress);
+            return (await fn(segment.text, onProgress)) as T;
         };
     }
 

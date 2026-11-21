@@ -1606,7 +1606,7 @@ export class TechniqueDeconstructor {
     }
 
     private buildFrontmatter(result: TechniqueAnalysisResult): string {
-        const data: any = {
+        const data: Record<string, unknown> = {
             techniques: result.techniques.map(t => ({
                 id: t.id,
                 name: t.name,

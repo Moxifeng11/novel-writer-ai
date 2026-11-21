@@ -59,8 +59,8 @@ declare module 'obsidian' {
         // ─── project 域 ───
         on(
             name: 'novel-writer:project-created',
-            callback: (data: NovelWriterProjectCreatedPayload) => any,
-            ctx?: any,
+            callback: (data: NovelWriterProjectCreatedPayload) => void,
+            ctx?: unknown,
         ): EventRef;
         trigger(
             name: 'novel-writer:project-created',
@@ -69,8 +69,8 @@ declare module 'obsidian' {
 
         on(
             name: 'novel-writer:project-switched',
-            callback: (data: NovelWriterProjectSwitchedPayload) => any,
-            ctx?: any,
+            callback: (data: NovelWriterProjectSwitchedPayload) => void,
+            ctx?: unknown,
         ): EventRef;
         trigger(
             name: 'novel-writer:project-switched',
@@ -80,8 +80,8 @@ declare module 'obsidian' {
         // ─── settings 域 ───
         on(
             name: 'novel-writer:settings-changed',
-            callback: (data: NovelWriterSettingsChangedPayload) => any,
-            ctx?: any,
+            callback: (data: NovelWriterSettingsChangedPayload) => void,
+            ctx?: unknown,
         ): EventRef;
         trigger(
             name: 'novel-writer:settings-changed',
@@ -90,8 +90,8 @@ declare module 'obsidian' {
 
         on(
             name: 'novel-writer:context-scope-changed',
-            callback: (data: NovelWriterContextScopeChangedPayload) => any,
-            ctx?: any,
+            callback: (data: NovelWriterContextScopeChangedPayload) => void,
+            ctx?: unknown,
         ): EventRef;
         trigger(
             name: 'novel-writer:context-scope-changed',
@@ -101,8 +101,8 @@ declare module 'obsidian' {
         // ─── context 域 ───
         on(
             name: 'novel-writer:involved-entities-changed',
-            callback: (data: NovelWriterInvolvedEntitiesChangedPayload) => any,
-            ctx?: any,
+            callback: (data: NovelWriterInvolvedEntitiesChangedPayload) => void,
+            ctx?: unknown,
         ): EventRef;
         trigger(
             name: 'novel-writer:involved-entities-changed',
@@ -111,8 +111,8 @@ declare module 'obsidian' {
 
         on(
             name: 'novel-writer:refresh-context-panel',
-            callback: (data: NovelWriterRefreshContextPanelPayload) => any,
-            ctx?: any,
+            callback: (data: NovelWriterRefreshContextPanelPayload) => void,
+            ctx?: unknown,
         ): EventRef;
         trigger(
             name: 'novel-writer:refresh-context-panel',
@@ -121,8 +121,8 @@ declare module 'obsidian' {
 
         on(
             name: 'novel-writer:run-targeted-revision',
-            callback: (data: Record<string, never>) => any,
-            ctx?: any,
+            callback: (data: Record<string, never>) => void,
+            ctx?: unknown,
         ): EventRef;
         trigger(
             name: 'novel-writer:run-targeted-revision',
@@ -132,8 +132,8 @@ declare module 'obsidian' {
         // ─── body 域 ───
         on(
             name: 'novel-writer:body-written',
-            callback: (data: NovelWriterBodyWrittenPayload) => any,
-            ctx?: any,
+            callback: (data: NovelWriterBodyWrittenPayload) => void,
+            ctx?: unknown,
         ): EventRef;
         trigger(
             name: 'novel-writer:body-written',
@@ -145,16 +145,16 @@ declare module 'obsidian' {
     interface Plugins {
         disablePlugin(id: string): void;
         enablePlugin(id: string): Promise<void>;
-        getPlugin(id: string): any;
+        getPlugin(id: string): unknown;
     }
 
     interface App {
         plugins: Plugins;
         /** Obsidian 内部 Commands API — 未暴露在官方类型定义中 */
         commands: {
-            listCommands(): Array<{ id: string; name: string; [key: string]: any }>;
+            listCommands(): Array<{ id: string; name: string; [key: string]: unknown }>;
             executeCommandById(id: string): boolean;
-            [key: string]: any;
+            [key: string]: unknown;
         };
         /** Obsidian 内部：在系统文件管理器中打开文件夹（未暴露在官方类型） */
         showInFolder?(path: string): void;

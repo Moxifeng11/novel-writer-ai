@@ -598,7 +598,7 @@ export class DeconstructionWorkerManager {
 
         const promise = new Promise<T>(async (resolve, reject) => {
             try {
-                const taskMap: Record<string, () => any> = {
+                const taskMap: Record<string, () => unknown> = {
                     'deconstruct:style': () => this.styleDeconstructor!.analyze(text),
                     'deconstruct:style:vector': () => this.styleDeconstructor!.analyzeWithVector(text),
                     'deconstruct:rhythm': () => this.rhythmDeconstructor!.analyze(text),

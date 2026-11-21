@@ -15,6 +15,7 @@ import { LLMEnhancer, LLM_DEGRADED } from '@/engine/llm-enhancer';
 import { GenreDetector, GenreConfigRegistry, GenreConfig, TensionKeywords } from '@/engine/genre';
 import { createLogger } from '@/shared/logger';
 import { writeVaultText } from '@/shared/file-system-port';
+import type { VectorEnhancerPort } from '@/engine/types/vector-enhancer-port';
 
 
 const log = createLogger('RhythmDeconstructor');
@@ -357,7 +358,7 @@ export class RhythmDeconstructor {
     private positiveSet: Set<string>;
     private negativeSet: Set<string>;
     private actionSet: Set<string>;
-    private vectorEnhancer: any;
+    private vectorEnhancer: VectorEnhancerPort | undefined;
     private llmEnhancer?: LLMEnhancer;
 
     private suspenseSet: Set<string>;
@@ -373,7 +374,7 @@ export class RhythmDeconstructor {
     private nrcNegativeSet: Set<string>;
     private emotionAllSet: Set<string>;
 
-    constructor(vectorEnhancer?: any) {
+    constructor(vectorEnhancer?: VectorEnhancerPort) {
         this.positiveSet = new Set(POSITIVE_EMOTION_WORDS);
         this.negativeSet = new Set(NEGATIVE_EMOTION_WORDS);
         this.actionSet = new Set(ACTION_VERBS);
@@ -1359,7 +1360,7 @@ export class RhythmDeconstructor {
         }
 
         try {
-            const available = await this.vectorEnhancer.isAvailable();
+            const available = await this.vectorEnhancer!.isAvailable();
             if (!available) {
                 return baseResult;
             }
@@ -1392,7 +1393,8 @@ export class RhythmDeconstructor {
         result: RhythmAnalysisResult
     ): Promise<RhythmAnalysisResult> {
         const curve = result.emotionCurve;
-        if (curve.length < 3) return result;
+        const enhancer = this.vectorEnhancer;
+        if (!enhancer || curve.length < 3) return result;
 
         const paragraphs = this.splitParagraphs(text);
         if (paragraphs.length === 0) return result;
@@ -1431,7 +1433,7 @@ export class RhythmDeconstructor {
         if (validSampleTexts.length === 0) return result;
 
         const allTexts = [POSITIVE_EMOTION_REFERENCE, NEGATIVE_EMOTION_REFERENCE, ...validSampleTexts];
-        const allVectors = await this.vectorEnhancer.embedTexts(allTexts);
+        const allVectors = await enhancer.embedTexts(allTexts);
 
         const posVector = allVectors[0];
         const negVector = allVectors[1];
@@ -1442,8 +1444,8 @@ export class RhythmDeconstructor {
         let maxScore = -Infinity;
 
         for (let i = 0; i < validSampleIndices.length; i++) {
-            const posSim = this.vectorEnhancer.cosineSimilarity(sampleVectors[i], posVector);
-            const negSim = this.vectorEnhancer.cosineSimilarity(sampleVectors[i], negVector);
+            const posSim = enhancer.cosineSimilarity(sampleVectors[i], posVector);
+            const negSim = enhancer.cosineSimilarity(sampleVectors[i], negVector);
             const rawScore = Math.abs(posSim - negSim);
             minScore = Math.min(minScore, rawScore);
             maxScore = Math.max(maxScore, rawScore);
@@ -1492,13 +1494,14 @@ export class RhythmDeconstructor {
     private async enhanceEmotionPoints(
         result: RhythmAnalysisResult
     ): Promise<RhythmAnalysisResult> {
-        if (result.emotionPoints.length === 0) return result;
+        const enhancer = this.vectorEnhancer;
+        if (!enhancer || result.emotionPoints.length === 0) return result;
 
         const refTexts = EMOTION_POINT_TYPE_REFERENCES.map(r => r.text);
         const pointExcerpts = result.emotionPoints.map(p => p.excerpt || '');
 
         const allTexts = [...refTexts, ...pointExcerpts];
-        const allVectors = await this.vectorEnhancer.embedTexts(allTexts);
+        const allVectors = await enhancer.embedTexts(allTexts);
 
         const refVectors = allVectors.slice(0, refTexts.length);
         const pointVectors = allVectors.slice(refTexts.length);
@@ -1512,7 +1515,7 @@ export class RhythmDeconstructor {
             let bestScore = -1;
 
             for (let i = 0; i < EMOTION_POINT_TYPE_REFERENCES.length; i++) {
-                const score = this.vectorEnhancer.cosineSimilarity(pointVec, refVectors[i]);
+                const score = enhancer.cosineSimilarity(pointVec, refVectors[i]);
                 if (score > bestScore) {
                     bestScore = score;
                     bestType = EMOTION_POINT_TYPE_REFERENCES[i].type;
@@ -1639,7 +1642,7 @@ export class RhythmDeconstructor {
             try {
                 const contextText = LLMEnhancer.buildContextForDimension('rhythm', text, paragraphs);
                 const enhanced = await this.llmEnhancer.enhanceResult(result, contextText, 'rhythm');
-                if ((enhanced as any)[LLM_DEGRADED]) {
+                if ((enhanced as unknown as Record<symbol, unknown>)[LLM_DEGRADED]) {
                     log.warn('[RhythmDeconstructor] LLM 增强降级，使用纯统计结果');
                 }
                 return enhanced;

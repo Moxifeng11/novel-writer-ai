@@ -86,7 +86,7 @@ export interface EngineRegisterOptions {
     /** 版本号 */
     version?: string;
     /** 实例创建后的初始化钩子（仅懒加载场景） */
-    onInit?: (instance: any) => void | Promise<void>;
+    onInit?: (instance: unknown) => void | Promise<void>;
 }
 
 /** listEngines 的筛选条件 */
@@ -292,7 +292,7 @@ export class EngineRegistry {
     /** 懒加载状态追踪 */
     private lazyStates = new Map<string, LazyState>();
     /** onInit 钩子表（仅懒加载场景使用） */
-    private onInitHooks = new Map<string, (instance: any) => void | Promise<void>>();
+    private onInitHooks = new Map<string, (instance: unknown) => void | Promise<void>>();
     /** 项目级实例存储：projectKey -> (instanceKey -> instance) */
     private projectInstances = new Map<string, Map<string, unknown>>();
     /** 瞬态工厂表：每次 getTransient 创建新实例 */
@@ -673,7 +673,7 @@ export class EngineRegistry {
     private isDisposable(instance: unknown): instance is Disposable {
         return instance !== null
             && typeof instance === 'object'
-            && typeof (instance as any)?.dispose === 'function';
+            && typeof (instance as { dispose?: unknown }).dispose === 'function';
     }
 
     /** 释放单个引擎实例
@@ -1494,7 +1494,8 @@ export class EngineRegistry {
 
         // ─── Phase 9: 更新检查器 ───
         log.info('[EngineRegistry] Phase 9: 初始化更新检查器...');
-        const manifestVersion = (plugin as any).manifest?.version || PLUGIN_VERSION || '4.5.1';
+        const manifestVersion =
+            (plugin as { manifest?: { version?: string } }).manifest?.version || PLUGIN_VERSION || '4.5.1';
         const updateChecker = new UpdateChecker(
             manifestVersion,
             cacheManager,

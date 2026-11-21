@@ -257,12 +257,14 @@ export class ContextDiffDetector {
     private extractAffectedIds(section: string, oldValue: unknown, newValue: unknown): string[] {
         // 对于数组类型（character_state, locations 等），提取 name 字段差异
         if (Array.isArray(oldValue) && Array.isArray(newValue)) {
-            const oldNames = new Set(
-                oldValue.map((item: any) => item?.name || item?.姓名 || item?.名称 || '').filter(Boolean),
-            );
-            const newNames = new Set(
-                newValue.map((item: any) => item?.name || item?.姓名 || item?.名称 || '').filter(Boolean),
-            );
+            const entityNameOf = (item: unknown): string => {
+                if (!item || typeof item !== 'object') return '';
+                const record = item as { name?: unknown; 姓名?: unknown; 名称?: unknown };
+                const value = record.name ?? record.姓名 ?? record.名称;
+                return typeof value === 'string' ? value : '';
+            };
+            const oldNames = new Set(oldValue.map(entityNameOf).filter(Boolean));
+            const newNames = new Set(newValue.map(entityNameOf).filter(Boolean));
 
             const added = Array.from(newNames).filter(n => !oldNames.has(n));
             const removed = Array.from(oldNames).filter(n => !newNames.has(n));

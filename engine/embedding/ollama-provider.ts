@@ -90,8 +90,8 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
             }
 
             return embedding as number[];
-        } catch (error: any) {
-            if (error.name === 'AbortError') {
+        } catch (error) {
+            if (error instanceof Error && error.name === 'AbortError') {
                 throw new Error('Ollama embedding 请求超时（30秒），请检查 Ollama 服务是否正常');
             }
             throw error;

@@ -726,8 +726,15 @@ export class PromptBuilder {
         const picked = scored.filter(x => x.hit > 0).slice(0, 3);
         const use = picked.length ? picked : scored.slice(0, 2);
         const lines = use.map(({ r }) => {
-            const st: any = r.state || {};
-            const desc = (st.status || '').toString().trim();
+            const st = (r.state || {}) as {
+                status?: unknown;
+                trust?: unknown;
+                attraction?: unknown;
+                fear?: unknown;
+                resentment?: unknown;
+                dependence?: unknown;
+            };
+            const desc = typeof st.status === 'string' ? st.status.trim() : '';
             const nums = `信任${st.trust ?? '-'}/吸引${st.attraction ?? '-'}/恐惧${st.fear ?? '-'}/怨恨${st.resentment ?? '-'}/依赖${st.dependence ?? '-'}`;
             return `- ${r.charA} ↔ ${r.charB}：${desc ? desc + '，' : ''}${nums}`;
         });

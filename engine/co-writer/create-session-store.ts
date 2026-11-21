@@ -155,7 +155,7 @@ export function createCoWritingSessionStore(
     }
 
     if (plugin || storage) {
-        let persistStorage: any;
+        let persistStorage: PersistStorage<ReturnType<typeof partializeCoWritingState>> | undefined;
 
         if (storage) {
             persistStorage = storage;

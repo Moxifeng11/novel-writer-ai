@@ -207,7 +207,7 @@ export abstract class BaseEntity {
      * 转换为普通对象（用于序列化）
      * @returns 映射结果
      */
-    toJSON(): Record<string, any> {
+    toJSON(): Record<string, unknown> {
         return {
             id: this._props.id,
             name: this._props.name,

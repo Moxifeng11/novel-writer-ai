@@ -55,7 +55,7 @@ export interface UserBehavior {
     /** 停留时长（毫秒） */
     durationMs?: number;
     /** 额外元数据 */
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 /**
@@ -117,8 +117,8 @@ const DEFAULT_OPTIONS: Required<PreloadManagerOptions> = {
 export class PreloadManager {
     private options: Required<PreloadManagerOptions>;
     private chapterCache: LruCache<string, Chapter>;
-    private entityCaches: Map<string, LruCache<string, any>> = new Map();
-    private entityLoaders: Map<string, LazyEntityLoader<any>> = new Map();
+    private entityCaches: Map<string, LruCache<string, unknown>> = new Map();
+    private entityLoaders: Map<string, LazyEntityLoader<unknown>> = new Map();
     private idleQueue: IdleTask[] = [];
     private idleTimer: number | null = null;
     private behaviorHistory: UserBehavior[] = [];
@@ -324,7 +324,7 @@ export class PreloadManager {
         this.entityLoaders.set(entityType, loader);
         this.entityCaches.set(
             entityType,
-            new LruCache<string, T>({ maxSize: cacheSize || this.options.entityCacheSize })
+            new LruCache<string, unknown>({ maxSize: cacheSize || this.options.entityCacheSize })
         );
     }
 
@@ -337,7 +337,7 @@ export class PreloadManager {
     async lazyLoadEntity<T>(entityType: string, entityId: string): Promise<T | null> {
         if (!this.options.enabled) {
             const loader = this.entityLoaders.get(entityType);
-            return loader ? loader(entityId) : null;
+            return loader ? (loader(entityId) as Promise<T | null>) : null;
         }
 
         const cache = this.entityCaches.get(entityType);
@@ -359,7 +359,7 @@ export class PreloadManager {
             if (entity && cache) {
                 cache.set(entityId, entity);
             }
-            return entity;
+            return entity as T | null;
         } catch {
             return null;
         }

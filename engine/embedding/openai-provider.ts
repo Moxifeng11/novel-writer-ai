@@ -141,9 +141,9 @@ export class OpenAIEmbeddingProvider implements EmbeddingProvider {
             throw new Error('Invalid embedding response format');
         }
 
-        const sortedEmbeddings = embeddings
-            .sort((a: any, b: any) => a.index - b.index)
-            .map((item: any) => item.embedding as number[]);
+        const sortedEmbeddings = (embeddings as Array<{ index?: number; embedding: number[] }>)
+            .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+            .map((item) => item.embedding);
 
         if (this.cachedDimensions === null && sortedEmbeddings[0]?.length) {
             this.cachedDimensions = sortedEmbeddings[0].length;

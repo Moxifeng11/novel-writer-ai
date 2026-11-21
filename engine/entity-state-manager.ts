@@ -413,17 +413,18 @@ ${bodyContent.slice(0, 6000)}
         const charData = char.toJSON();
         
         // 更新 frontmatter 中的字段
-        if (charData.frontmatter) {
-            charData.frontmatter['当前状态'] = change.newStatus;
+        const fmPatch = charData.frontmatter as Record<string, unknown> | undefined;
+        if (fmPatch) {
+            fmPatch['当前状态'] = change.newStatus;
             // item6-a：ISO 语义统一；章名入 entity_last_changed_chapter
-            charData.frontmatter['entity_last_changed_at'] = new Date().toISOString();
-            charData.frontmatter['entity_last_changed_chapter'] = chapterName || `第${chapterNum}章`;
-            charData.frontmatter['entity_last_changed_reason'] = change.reason;
-            if (!charData.frontmatter['entity_status']) {
-                charData.frontmatter['entity_status'] = 'active';
+            fmPatch['entity_last_changed_at'] = new Date().toISOString();
+            fmPatch['entity_last_changed_chapter'] = chapterName || `第${chapterNum}章`;
+            fmPatch['entity_last_changed_reason'] = change.reason;
+            if (!fmPatch['entity_status']) {
+                fmPatch['entity_status'] = 'active';
             }
-            if (!charData.frontmatter['entity_created_at']) {
-                charData.frontmatter['entity_created_at'] = new Date().toISOString();
+            if (!fmPatch['entity_created_at']) {
+                fmPatch['entity_created_at'] = new Date().toISOString();
             }
         }
 

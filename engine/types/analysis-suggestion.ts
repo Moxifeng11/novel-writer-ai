@@ -1,3 +1,5 @@
+import type { Character } from '@/engine/deconstructors/character-deconstructor';
+
 /**
  * 建议类型。
  */
@@ -22,6 +24,20 @@ export type SuggestionStatus = 'pending' | 'adopted' | 'rejected' | 'modified';
 export type SuggestionSource = 'rule' | 'vector' | 'llm';
 
 /**
+ * 建议载荷：常见字段显式声明，其余按建议类型自行约定。
+ */
+export interface SuggestionPayload {
+    characterName?: string;
+    category?: string;
+    name?: string;
+    aliases?: string[];
+    sourceName?: string;
+    targetName?: string;
+    reason?: string;
+    [key: string]: unknown;
+}
+
+/**
  * 分析建议。
  */
 export interface AnalysisSuggestion {
@@ -30,8 +46,9 @@ export interface AnalysisSuggestion {
     status: SuggestionStatus;
     confidence: number;
     source: SuggestionSource;
-    payload: Record<string, any>;
-    originalPayload?: Record<string, any>;
+    /** 建议载荷：常见字段显式声明，其余按建议类型自行约定 */
+    payload: SuggestionPayload;
+    originalPayload?: SuggestionPayload;
     createdAt: number;
     adoptedAt?: number;
     reason?: string;
@@ -82,7 +99,7 @@ export interface CharacterRecognitionResult {
     ruleCandidates: CharacterCandidate[];
     vectorFiltered: CharacterCandidate[];
     llmVerified: CharacterCandidate[];
-    finalCharacters: any[];
+    finalCharacters: Character[];
     suggestions: AnalysisSuggestion[];
     mergeSuggestions: AnalysisSuggestion[];
     layerStatus: {

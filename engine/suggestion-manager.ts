@@ -80,7 +80,7 @@ export class SuggestionManager {
      * @param modifiedPayload 可选，修改后的 payload（如有则状态变为 modified）
      * @returns 是否成功
      */
-    adopt(suggestionId: string, modifiedPayload?: Record<string, any>): boolean {
+    adopt(suggestionId: string, modifiedPayload?: Record<string, unknown>): boolean {
         const suggestion = this.suggestions.get(suggestionId);
         if (!suggestion) return false;
 

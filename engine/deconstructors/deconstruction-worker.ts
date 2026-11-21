@@ -31,7 +31,6 @@ let vectorEnhancer: VectorEnhancer | null = null;
 
 interface DeconstructInput {
     text: string;
-    vectorEnhancerConfig?: any;
     /** R2: 主线程下发的用户扩充 AI 味词表（Worker 独立模块实例，需显式同步） */
     antiAiWords?: string[];
 }

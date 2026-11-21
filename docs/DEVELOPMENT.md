@@ -1269,7 +1269,7 @@ npm run check:release  # 发布前资产与版本一致性校验
 
 单测环境是 node（`vitest.config.ts` 的 `environment: 'node'`），而代码改用了 Obsidian 注入的全局 `createEl/createDiv/createSpan` 与 `window.setTimeout`。`tests/setup.ts` 负责垫片：`window` 缺省指向 `globalThis`；`createEl/createDiv/createSpan/createFragment` 缺省用 `tests/unit/ui/support/fake-dom.ts` 的 `FakeEl`，若测试已用 `stubDocument()` 注入 `document.createElement` 则优先用该工厂（保证断言拿到的元素类型一致）。新增垫片时不要覆盖测试已有的定义。
 
-当前存量（2026-11-21，`eslint.obsidian-review.mjs` 口径）：warn 2,732 → **1,343**，error 0。`npm run check:review-warn` 用 `.review-warn-baseline.json` 按规则设预算，任何一类上涨即失败（已在 preflight 里）。剩余大头 `no-unnecessary-type-assertion` 341（规则不可靠，不追）、`no-deprecated` 255（多为 StyleFingerprint V1 → V2 重构）、`no-misused-promises` 162、`no-unused-vars` 148（全部是 assigned-but-never-used 的 DOM 创建，有副作用，暂不动）、`no-floating-promises` 147；`no-tfile-tfolder-cast` 已从 38 降到 4（只剩 `shared/file-system-port.ts` 适配层的假对象，故意保留）。
+当前存量（2026-11-21，`eslint.obsidian-review.mjs` 口径）：warn 2,732 → **1,259**，error 0。`npm run check:review-warn` 用 `.review-warn-baseline.json` 按规则设预算，任何一类上涨即失败（已在 preflight 里）。`no-explicit-any` 已清零；剩余大头 `no-unnecessary-type-assertion` 346（规则不可靠，不追）、`no-deprecated` 258（多为 StyleFingerprint V1 → V2 重构）、`no-misused-promises` 163、`no-unused-vars` 148（全部是 assigned-but-never-used 的 DOM 创建，有副作用，暂不动）、`no-floating-promises` 147；`no-tfile-tfolder-cast` 已从 38 降到 4（只剩 `shared/file-system-port.ts` 适配层的假对象，故意保留）。
 
 批次排期、风险分级与验收口径见 `docs/planning/2026-11-21-quality-optimization-roadmap.md`；新增批次先在那里登记，再按本节的约束执行。
 
@@ -1292,6 +1292,14 @@ npm run check:release  # 发布前资产与版本一致性校验
 - 收窄要落在**守卫条件**上，不要写 `x instanceof TFile ? x : null` 再转一手：`if (!(file instanceof TFile)) continue;` / `if (f instanceof TFile) { ... }`，后续同一作用域里的 cast 全部可删。
 - `.filter((c) => c.file instanceof TFile)` **不会**让 TypeScript 把 `c.file` 收窄（filter 没有类型谓词），但下游 map 仍写成 `c.file as TFile` 就会被规则判 cast。要么把 filter 写成类型谓词，要么改 `flatMap`（`if (!(c.file instanceof TFile)) return []; return [{ ..., file: c.file }];`）——后者不需要额外 import。
 - `shared/file-system-port.ts` 的 `as unknown as TFile` 是测试适配层的假对象，**不要改**，保留 4 条 warn 在预算里。
+
+第五批（2026-11-21）落地手法：
+
+- `no-explicit-any` 优先换成**真实类型**；模型输出、跨层载荷这类「形状未知」的位置换 `unknown` + 逐字段 `typeof`/`Array.isArray` 收窄，不要图省事写 `Record<string, any>`。
+- 序列化边界（`toJSON(): Record<string, unknown>`、frontmatter 索引签名）改 unknown 会连带出 `TS7053`：在消费点先落一个 `const fmPatch = x as Record<string, unknown> | undefined;` 再逐键取值，比全链路加泛型便宜。
+- 拆分参数化的类要**先看方法可见性**：`FingerprintExtractor.extractFeatures/selectSamples` 是 private，直接标成具体类型会报 TS2341，正确做法是参数声明 `unknown`、在方法内用局部结构类型断言（`extractorApi` / `vectorStoreApi`）并在注释里写明为什么要调分步方法。
+- `types/obsidian-augment.d.ts` 的事件回调改 `=> void`、`ctx` / 私有 API 返回值改 `unknown` 后，调用方本来就带 `as` 断言，tsc 不受影响；这 19 条 warn 属声明层，可一次性收口。
+- 跨窗口拿编辑器实例不要 `(view as any).editor`，用 `(view as { editor?: Editor }).editor`（`Editor` 从 `obsidian` 以 `type` 导入）。
 
 ### 异步等待原语（2026-10-31 批次 14）
 

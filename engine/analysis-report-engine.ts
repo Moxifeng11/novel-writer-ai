@@ -625,15 +625,20 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
             const text = (response.content || '').trim();
             const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || text.match(/([[{][\s\S]*)/);
             const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
-            const parsed = JSON.parse(jsonStr);
-            const changes = Array.isArray(parsed) ? parsed : (parsed.changes || []);
+            const parsed = JSON.parse(jsonStr) as unknown;
+            const changes: Array<Record<string, unknown>> = Array.isArray(parsed)
+                ? parsed
+                : ((parsed as { changes?: Array<Record<string, unknown>> }).changes || []);
             return changes
-                .filter((c: any) => c.entityName && c.newStatus && charNames.includes(c.entityName))
-                .map((c: any) => ({
-                    entityName: c.entityName,
-                    newStatus: c.newStatus,
-                    reason: c.reason || '',
-                    confidence: c.confidence || 0.8
+                .filter((c) => {
+                    const name = c.entityName;
+                    return typeof name === 'string' && !!c.newStatus && charNames.includes(name);
+                })
+                .map((c) => ({
+                    entityName: String(c.entityName),
+                    newStatus: String(c.newStatus),
+                    reason: typeof c.reason === 'string' ? c.reason : '',
+                    confidence: typeof c.confidence === 'number' ? c.confidence : 0.8
                 }));
         } catch (e) {
             log.warn('[AnalysisReportEngine] AI状态检测失败:', e);
@@ -970,19 +975,25 @@ ${chapterText.slice(0, ANALYSIS_BODY_SLICE)}
             const text = (response.content || '').trim();
             const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || text.match(/([[{][\s\S]*)/);
             const jsonStr = jsonMatch ? jsonMatch[1] || jsonMatch[0] : text;
-            const parsed = JSON.parse(jsonStr);
-            const events = Array.isArray(parsed) ? parsed : (parsed.events || []);
+            const parsed = JSON.parse(jsonStr) as unknown;
+            const events: Array<Record<string, unknown>> = Array.isArray(parsed)
+                ? parsed
+                : ((parsed as { events?: Array<Record<string, unknown>> }).events || []);
 
             return events
-                .filter((e: any) => e.event)
-                .map((e: any, idx: number) => ({
+                .filter((e) => !!e.event)
+                .map((e, idx) => ({
                     chapter: chapterNum,
-                    order: e.order || idx + 1,
-                    event: e.event,
-                    time: e.time || undefined,
-                    location: e.location || undefined,
-                    involvedEntities: e.involvedEntities || [],
-                    importance: this.normalizeImportance(e.importance)
+                    order: typeof e.order === 'number' ? e.order : idx + 1,
+                    event: String(e.event),
+                    time: typeof e.time === 'string' ? e.time : undefined,
+                    location: typeof e.location === 'string' ? e.location : undefined,
+                    involvedEntities: Array.isArray(e.involvedEntities)
+                        ? e.involvedEntities.filter((item): item is string => typeof item === 'string')
+                        : [],
+                    importance: this.normalizeImportance(
+                        typeof e.importance === 'string' ? e.importance : ''
+                    )
                 }));
         } catch (e) {
             log.warn('[AnalysisReportEngine] AI时间线提取失败:', e);

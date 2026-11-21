@@ -318,7 +318,8 @@ export class AIEngine {
             // DSH-20261113-20 缺陷：缺失的 finishReason 不得兜成 'stop'——
             // undefined 只在流被截断/异常时出现，兜底会让续写逻辑失效、
             // 半截正文被当作完整章节落盘。保持 undefined，循环按非 length 收尾。
-            finalFinishReason = (result as any).finishReason;
+            finalFinishReason = (result as { finishReason?: 'length' | 'error' | 'stop' | 'aborted' })
+                .finishReason;
 
             if (result.usage) {
                 totalUsage.prompt += result.usage.prompt;

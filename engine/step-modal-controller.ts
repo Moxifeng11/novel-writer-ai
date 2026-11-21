@@ -28,6 +28,7 @@ import { createLogger } from '@/shared/logger';
 
 
 import { projectIdFromPath } from '@/shared/project-catalog';
+import type { NovelWriterPluginAPI } from '@/plugin-api';
 import { STEP_KEYS } from '@/shared/step-keys';
 const log = createLogger('StepModalController');
 /**
@@ -35,7 +36,7 @@ const log = createLogger('StepModalController');
  */
 export interface StepModalDeps {
     getAIEngine: () => AIEngine;
-    getPlugin: () => any;
+    getPlugin: () => NovelWriterPluginAPI;
     saveStepResult: (stepKey: string, content: string, chapDir: string, chapterName: string, volume: string) => Promise<boolean>;
     callbacks: StepRunnerCallbacks;
     fs?: FileSystemPort;

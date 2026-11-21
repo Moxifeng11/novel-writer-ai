@@ -103,7 +103,7 @@ export interface ChapterFrontmatter {
     涉及物品功法?: string[];
     审查时间?: string;
     scenes?: SceneNode[];             // v6.0 新增：场景列表
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 // ============================================================
@@ -137,7 +137,7 @@ export interface CharacterFrontmatter extends EntityMeta {
     当前目标?: string;
     fileName?: string;
     filePath?: string;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 // ============================================================
@@ -176,7 +176,7 @@ export interface FactionFrontmatter extends EntityMeta {
     描述?: string;
     领袖?: string;
     '地位/排名'?: string;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 // ============================================================
@@ -196,7 +196,7 @@ export interface LocationFrontmatter extends EntityMeta {
     地理特征?: string;
     '主要居民/势力'?: string;
     '所在世界/区域'?: string;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 // ============================================================
@@ -215,7 +215,7 @@ export interface ItemFrontmatter extends EntityMeta {
     效果?: string;
     '所属/归属'?: string;
     当前状态?: string;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 // ============================================================
@@ -229,7 +229,7 @@ export interface AnalysisFrontmatter extends StepFileMeta {
     tags?: string | string[];
     卷?: string;
     章?: string;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 // ============================================================

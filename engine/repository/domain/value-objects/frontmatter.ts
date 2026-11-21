@@ -180,7 +180,7 @@ export class Frontmatter {
      * 转换为JSON。
      * @returns 映射结果
      */
-    toJSON(): Record<string, any> {
+    toJSON(): Record<string, unknown> {
         return { ...this.data };
     }
 }

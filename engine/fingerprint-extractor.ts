@@ -342,7 +342,9 @@ export class FingerprintExtractor {
         };
     }
 
-    private parseFeatureResponse(response: any): StyleFingerprintFeatures {
+    private parseFeatureResponse(
+        response: Parameters<typeof extractResponseText>[0]
+    ): StyleFingerprintFeatures {
         const content = extractResponseText(response);
 
         try {

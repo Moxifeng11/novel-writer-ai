@@ -292,10 +292,11 @@ export class CharacterReviewPanel {
                 cls: 'nw-character-name',
             });
 
-            if (suggestion.payload?.aliases?.length > 0) {
-                const aliases = suggestion.payload.aliases.slice(0, 3).join(' / ');
+            const payloadAliases = suggestion.payload?.aliases ?? [];
+            if (payloadAliases.length > 0) {
+                const aliases = payloadAliases.slice(0, 3).join(' / ');
                 title.createSpan({
-                    text: ` (${aliases}${suggestion.payload.aliases.length > 3 ? '...' : ''})`,
+                    text: ` (${aliases}${payloadAliases.length > 3 ? '...' : ''})`,
                     cls: 'nw-character-aliases',
                 });
             }

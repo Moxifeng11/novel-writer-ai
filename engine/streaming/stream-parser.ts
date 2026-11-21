@@ -10,7 +10,7 @@ export type StreamFormat = 'openai-sse' | 'ollama' | 'auto';
 export interface StreamParseResult {
     content: string;
     done: boolean;
-    raw?: any;
+    raw?: unknown;
     usage?: {
         prompt_tokens?: number;
         completion_tokens?: number;

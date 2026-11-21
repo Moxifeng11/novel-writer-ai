@@ -4251,3 +4251,11 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 门禁：tsc EXIT=0；定向 20 文件 / 148 用例通过；warn 1,393 → **1,343**（`no-unnecessary-type-assertion` 357 → 341 顺带下降）；`.review-warn-baseline.json` 收紧到 1,343 / 29 类；`.bundle-baseline.json` main.js 6,239,072 → 6,239,394（+322，instanceof/结构拆分）。
 - 文档：`docs/DEVELOPMENT.md` 存量与「第四批落地手法」；`docs/planning/2026-11-21-quality-optimization-roadmap.md` 批次表与进度日志。
 - 下一批：第 5 批 `no-explicit-any` 93（先 engine 后 ui）。
+
+## 第一百四十四轮：清社区审核扫描器 warn 第五批（`no-explicit-any` 93 → 0）
+
+- 结果：warn **1,343 → 1,259**（`no-explicit-any` 清零），error 0；tsc EXIT=0；全量单测 1,013 文件 / 10,503 通过 + 3 跳过。
+- 改法：序列化/聚合根 `toJSON()` 与 frontmatter 索引签名改 `Record<string, unknown>`；模型输出（AI 场景/拆解/报告解析）走 `unknown` + 逐字段收窄；新增 `engine/types/vector-enhancer-port.ts`（四个方法必需的端口接口），伏笔/节奏拆解不再 `as any`；`shared/types.ts` 六处索引签名改 unknown 后 15 个消费点用 `String(...)` 显式化；`types/obsidian-augment.d.ts` 事件回调改 `=> void`、`ctx` 与私有 API 返回改 `unknown`（19 条）。
+- 关键坑：①`FingerprintExtractor.extractFeatures/selectSamples` 是 private，`refillFingerprint` 不能把参数标成具体类，要声明 `unknown` 再在方法内做局部结构断言；②`normalizeImportance` 只收 string，`typeof x === 'string' ? x : undefined` 仍报 TS2345，要回落 `''`；③`PersistStorage<CoWritingSessionState>` 与 `PersistStorage<PersistedCoWritingState>` 不兼容，要用 `ReturnType<typeof partializeCoWritingState>`；④删死字段 `deconstruction-worker.ts` 的 `vectorEnhancerConfig` 全仓无消费，可直接删。
+- 基线：`.review-warn-baseline.json` 1,259 条 / 28 类；`.bundle-baseline.json` main.js 6,239,854（+460）。
+- 后续：第 6 批 `no-deprecated` 非 V1 部分（`setDynamicTooltip` 11、`setWarning` 7、`execCommand` 4、`substr` 3 等），第 7 批 Promise 语义 310。

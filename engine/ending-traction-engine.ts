@@ -303,13 +303,19 @@ export class EndingTractionEngine {
          if (!jsonText) return [];
          
          try {
-             const parsed = JSON.parse(jsonText);
-             return parsed.map((p: any, i: number) => ({
+             const parsed = JSON.parse(jsonText) as Array<Record<string, unknown>>;
+             return parsed.map((p, i) => ({
                  id: `ai-${i}`,
-                 name: p.name || `情节线${i + 1}`,
-                 type: p.type || 'subplot',
-                 startPoint: { volume: p.startVolume || 1, chapter: 1 },
-                 targetEnd: { volume: p.targetVolume || 10, chapter: 100 },
+                 name: typeof p.name === 'string' ? p.name : `情节线${i + 1}`,
+                 type: (typeof p.type === 'string' ? p.type : 'subplot') as PlotThread['type'],
+                 startPoint: {
+                     volume: typeof p.startVolume === 'number' ? p.startVolume : 1,
+                     chapter: 1
+                 },
+                 targetEnd: {
+                     volume: typeof p.targetVolume === 'number' ? p.targetVolume : 10,
+                     chapter: 100
+                 },
                  currentProgress: 0,
                  keyNodes: [],
                  status: 'active' as const

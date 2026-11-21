@@ -175,7 +175,8 @@ export async function callAIStreamWithRetry(
 
         const chunkContent = result.content || '';
         fullContent += chunkContent;
-        finalFinishReason = (result as any).finishReason || 'stop';
+        finalFinishReason =
+                    (result as { finishReason?: 'length' | 'error' | 'stop' | 'aborted' }).finishReason || 'stop';
         if (result.actualModel) actualModel = result.actualModel;
 
         if (result.usage) {

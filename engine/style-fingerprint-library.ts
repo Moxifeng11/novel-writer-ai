@@ -1906,11 +1906,27 @@ export class StyleFingerprintLibrary {
         scope: 'template' | 'global' | 'project',
         options: RefillFingerprintOptions,
         sourceText: string,
-        extractor: any,
-        vectorStore: any,
+        extractor: unknown,
+        vectorStore: unknown,
         onProgress?: (progress: { phase: string; percent: number; message: string }) => void
     ): Promise<void> {
         const { refillFeatures = true, refillSamples = true, reVectorize = true } = options;
+
+        // 重新提取需要分别控制特征/采样两步，因此直接调用抽取器的内部分步方法（类上标注 private，仅类型层面限制）。
+        const extractorApi = extractor as {
+            extractFeatures: (
+                text: string,
+                onProgress?: (progress: { phase: string; percent: number; message: string }) => void
+            ) => Promise<StyleFingerprintFeatures>;
+            selectSamples: (
+                text: string,
+                onProgress?: (progress: { phase: string; percent: number; message: string }) => void
+            ) => Promise<string[]>;
+        };
+        const vectorStoreApi = vectorStore as {
+            delete: (id: string) => Promise<void> | void;
+            add: (id: string, samples: string[]) => Promise<void> | void;
+        };
 
         const fp = this.getFingerprint(fpId, scope);
         if (!fp) {
@@ -1922,7 +1938,7 @@ export class StyleFingerprintLibrary {
         if (refillFeatures) {
             onProgress?.({ phase: 'feature-extraction', percent: 10, message: '正在重新提取特征...' });
             
-            const features = await extractor.extractFeatures(sourceText, onProgress);
+            const features = await extractorApi.extractFeatures(sourceText, onProgress);
             fp.features = features;
             onProgress?.({ phase: 'feature-extraction', percent: 40, message: '特征提取完成' });
         }
@@ -1930,7 +1946,7 @@ export class StyleFingerprintLibrary {
         if (refillSamples) {
             onProgress?.({ phase: 'sample-selection', percent: 45, message: '正在重新采样...' });
             
-            const samples = await extractor.selectSamples(sourceText, onProgress);
+            const samples = await extractorApi.selectSamples(sourceText, onProgress);
             fp.samples = samples;
             onProgress?.({ phase: 'sample-selection', percent: 65, message: '采样完成' });
         }
@@ -1938,11 +1954,11 @@ export class StyleFingerprintLibrary {
         if (reVectorize) {
             onProgress?.({ phase: 'vectorization', percent: 70, message: '正在重新向量化...' });
             
-            await vectorStore.delete(fpId);
+            await vectorStoreApi.delete(fpId);
             
             if (fp.samples.length > 0) {
                 for (let i = 0; i < fp.samples.length; i++) {
-                    await vectorStore.add(fpId, [fp.samples[i]]);
+                    await vectorStoreApi.add(fpId, [fp.samples[i]]);
                     const percent = 70 + Math.round(((i + 1) / fp.samples.length) * 25);
                     onProgress?.({ 
                         phase: 'vectorization', 
@@ -2431,7 +2447,7 @@ export class StyleFingerprintLibrary {
                     parts.push(desc);
                 }
             });
-            (blended as any)[dim] = parts.join('；');
+            blended[dim as keyof StyleFingerprintFeatures] = parts.join('；');
         }
 
         return blended as StyleFingerprintFeatures;

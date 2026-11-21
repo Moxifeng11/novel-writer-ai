@@ -185,9 +185,9 @@ export class DomainValidator {
     static validateCharacter(character: Character): ValidationResult {
         const result = this.validateBaseEntity(character);
 
-        const soul = (character as any).soul;
+        const soul = character.soul;
         if (soul) {
-            const requiredFields = ['desire', 'fear', 'obsession'];
+            const requiredFields = ['desire', 'fear', 'obsession'] as const;
             for (const field of requiredFields) {
                 if (!soul[field]) {
                     addWarning(result, `soul.${field}`, `灵魂层字段 ${field} 为空`);
@@ -195,7 +195,7 @@ export class DomainValidator {
             }
         }
 
-        const relations = (character as any).relations;
+        const relations = character.relations;
         if (relations && relations.length > 0) {
             for (let i = 0; i < relations.length; i++) {
                 const rel = relations[i];
