@@ -183,7 +183,7 @@ export class StoryLinkageModal extends Modal {
 
         const rows: Array<{ entry: ChapterListEntry; el: HTMLElement }> = [];
         for (const entry of this.chapters) {
-            const item = list.createEl('div', {
+            const item = list.createDiv({
                 cls: 'novel-writer-linkage-chapter-item',
                 text: this.chapterLabel(entry),
                 attr: { role: 'option' },

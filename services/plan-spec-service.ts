@@ -5,7 +5,7 @@
  * 每次写入走 FileTxService（原子），保留最新一份 README 指针便于 Agent 读取。
  */
 
-import { App, TFile, TFolder } from 'obsidian';
+import { App, TFile } from 'obsidian';
 import { createLogger } from '@/shared/logger';
 import { pjPlanDir, pjSpecDir } from '@/shared/paths';
 import type { FileTxService } from './file-tx';

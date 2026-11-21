@@ -209,7 +209,7 @@ export class HarnessToolRegistry {
             }
         }
         const timer = budget > 0
-            ? setTimeout(() => {
+            ? window.setTimeout(() => {
                 timedOut = true;
                 controller.abort(TOOL_TIMEOUT_CODE);
             }, budget)
@@ -239,7 +239,7 @@ export class HarnessToolRegistry {
             }
             return result;
         } finally {
-            if (timer) clearTimeout(timer);
+            if (timer) window.clearTimeout(timer);
             upstream?.removeEventListener('abort', onUpstreamAbort);
         }
     }

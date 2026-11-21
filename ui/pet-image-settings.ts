@@ -18,7 +18,7 @@ import {
     PET_IMAGE_MOOD_ORDER,
     type PetImageConfig,
 } from '@/shared/pet-image-model';
-import { clearPetImageFromDisk, savePetImageToDisk } from '@/shared/pet-image-store';
+import '@/shared/pet-image-store';
 
 /**
  * 图片选择器：列出 vault 内的图片文件。

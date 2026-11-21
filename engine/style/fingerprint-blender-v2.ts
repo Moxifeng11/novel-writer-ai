@@ -20,14 +20,7 @@
  *   - 性能：单次融合计算 < 100ms（不含 embedding，纯算术）
  */
 
-import {
-    StyleFingerprintFeaturesV2,
-    StyleDimensionKeyV2,
-    STYLE_DIMENSION_KEYS_V2,
-    STYLE_DIMENSION_LABELS_V2,
-    DimensionStatus,
-    V2Fingerprint,
-} from './style-dimensions-v2';
+import { StyleFingerprintFeaturesV2, StyleDimensionKeyV2, STYLE_DIMENSION_KEYS_V2, DimensionStatus, V2Fingerprint } from './style-dimensions-v2';
 import type { StyleFingerprintVectorsV2 } from './style-vector-store-v2';
 
 // ============================================================

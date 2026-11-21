@@ -1,6 +1,6 @@
 import { Modal, App, Notice, Setting, TFile } from 'obsidian';
 import { KnowledgeBaseManager, MAX_SOURCE_FILE_SIZE, type BookBasicInfo } from '@/services/knowledge-base-manager';
-import { filterBookFiles, formatSourceFileSizeMb, isBlankBookName, isSourceFileTooLarge, resolveBookNameFromFile } from './kb-import-file-logic';
+import { filterBookFiles, formatSourceFileSizeMb, isSourceFileTooLarge, resolveBookNameFromFile } from './kb-import-file-logic';
 import { WebnovelKnowledgeBase, type GenreConfig, type SubGenreConfig, type TechniqueDef } from '@/shared/webnovel-knowledge-base';
 import { kbBookDir, kbBookSourceFile } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';

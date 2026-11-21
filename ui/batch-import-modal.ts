@@ -3,8 +3,8 @@ import { getLocale, t } from '@/i18n';
 import { KnowledgeBaseManager, MAX_SOURCE_FILE_SIZE } from '@/services/knowledge-base-manager';
 import { DeconstructionScheduler, type BreakdownDimension } from '@/engine/deconstruction-scheduler';
 import { KnowledgeTagManager } from '@/engine/knowledge-tags';
-import { BatchImportManager, type ImportBookPreview, type ImportHistoryItem, type ImportBatchSettings, type ImportPreset, type BatchImportProgress, type ImportTask } from '@/engine/batch-import-manager';
-import { type BookRecognitionResult } from '@/services/chapter-recognizer';
+import { BatchImportManager, type ImportBatchSettings, type ImportPreset } from '@/engine/batch-import-manager';
+import '@/services/chapter-recognizer';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 import type { EngineRegistry } from '@/engine/engine-registry';
 import { createLogger } from '@/shared/logger';
@@ -249,7 +249,7 @@ export class BatchImportModal extends Modal {
 
         const steps: ImportStep[] = [1, 2, 3, 4, 5];
         steps.forEach((step, index) => {
-            const stepEl = stepsDiv.createEl('span', {
+            const stepEl = stepsDiv.createSpan({
                 text: `${step}. ${stepLabel(step)}`,
                 cls: 'nw-bi-step'
             });
@@ -262,7 +262,7 @@ export class BatchImportModal extends Modal {
             );
 
             if (index < steps.length - 1) {
-                stepsDiv.createEl('span', {
+                stepsDiv.createSpan({
                     text: '→',
                     cls: 'nw-bi-step-arrow'
                 });
@@ -271,7 +271,7 @@ export class BatchImportModal extends Modal {
     }
 
     private renderStep1(container: HTMLElement): void {
-        container.createEl('div', {
+        container.createDiv({
             text: t('batchImport.select.intro'),
             cls: 'nw-bi-intro'
         });
@@ -322,11 +322,11 @@ export class BatchImportModal extends Modal {
         const dropArea = container.createDiv({
             cls: 'nw-bi-drop'
         });
-        dropArea.createEl('div', {
+        dropArea.createDiv({
             text: t('batchImport.select.dropTitle'),
             cls: 'nw-bi-drop-title'
         });
-        dropArea.createEl('div', {
+        dropArea.createDiv({
             text: t('batchImport.select.dropHint'),
             cls: 'nw-bi-drop-hint'
         });
@@ -350,7 +350,7 @@ export class BatchImportModal extends Modal {
         const listHeader = container.createDiv({
             cls: 'nw-bi-list-header'
         });
-        listHeader.createEl('span', {
+        listHeader.createSpan({
             text: t('batchImport.select.selectedCount', { count: previews.length }),
             cls: 'nw-bi-list-title'
         });
@@ -387,8 +387,7 @@ export class BatchImportModal extends Modal {
         const fileListContainer = container.createDiv({ cls: 'nw-bi-file-list' });
 
         if (previews.length === 0) {
-            fileListContainer.createDiv({ cls: 'nw-bi-empty nw-bi-empty--sm' })
-                .createEl('span', { text: t('batchImport.select.empty') });
+            fileListContainer.createDiv({ cls: 'nw-bi-empty nw-bi-empty--sm' }).createSpan({ text: t('batchImport.select.empty') });
         } else {
             previews.forEach(preview => {
                 const row = fileListContainer.createDiv({ cls: 'nw-bi-file' });
@@ -404,11 +403,11 @@ export class BatchImportModal extends Modal {
 
                 const infoWrap = row.createDiv({ cls: 'nw-bi-file-info' });
                 const nameRow = infoWrap.createDiv({ cls: 'nw-bi-file-head' });
-                nameRow.createEl('span', {
+                nameRow.createSpan({
                     text: preview.filename,
                     cls: 'nw-bi-file-name'
                 });
-                const formatBadge = nameRow.createEl('span', {
+                const formatBadge = nameRow.createSpan({
                     text: preview.recognition.format.toUpperCase(),
                     cls: 'nw-bi-file-badge'
                 });
@@ -421,9 +420,9 @@ export class BatchImportModal extends Modal {
                 );
 
                 const metaRow = infoWrap.createDiv({ cls: 'nw-bi-file-meta' });
-                metaRow.createEl('span', { text: t('batchImport.select.metaChapters', { count: preview.recognition.chapterCount }) });
-                metaRow.createEl('span', { text: t('batchImport.select.metaWords', { words: this.formatWordCount(preview.recognition.wordCount) }) });
-                metaRow.createEl('span', { text: `🎯 ${Math.round(preview.recognition.confidence * 100)}%` });
+                metaRow.createSpan({ text: t('batchImport.select.metaChapters', { count: preview.recognition.chapterCount }) });
+                metaRow.createSpan({ text: t('batchImport.select.metaWords', { words: this.formatWordCount(preview.recognition.wordCount) }) });
+                metaRow.createSpan({ text: `🎯 ${Math.round(preview.recognition.confidence * 100)}%` });
 
                 const deleteBtn = row.createEl('button', {
                     text: '✕',
@@ -440,14 +439,13 @@ export class BatchImportModal extends Modal {
     private renderStep2(container: HTMLElement): void {
         const previews = this.batchManager.getSelectedPreviews();
 
-        container.createEl('div', {
+        container.createDiv({
             text: t('batchImport.preview.intro', { count: previews.length }),
             cls: 'nw-bi-intro'
         });
 
         if (previews.length === 0) {
-            container.createDiv({ cls: 'nw-bi-empty' })
-                .createEl('span', { text: t('batchImport.preview.empty') });
+            container.createDiv({ cls: 'nw-bi-empty' }).createSpan({ text: t('batchImport.preview.empty') });
             return;
         }
 
@@ -470,7 +468,7 @@ export class BatchImportModal extends Modal {
                 });
             });
 
-            const confBadge = header.createEl('span', {
+            const confBadge = header.createSpan({
                 text: `${Math.round(preview.recognition.confidence * 100)}%`,
                 cls: 'nw-bi-badge'
             });
@@ -495,17 +493,17 @@ export class BatchImportModal extends Modal {
 
             if (preview.recognition.chapters.length > 0) {
                 const chapterPreview = card.createDiv({ cls: 'nw-bi-chapters' });
-                chapterPreview.createEl('div', {
+                chapterPreview.createDiv({
                     text: t('batchImport.preview.chapterPreview'),
                     cls: 'nw-bi-chapters-title'
                 });
                 preview.recognition.chapters.slice(0, 3).forEach(ch => {
                     const chRow = chapterPreview.createDiv({ cls: 'nw-bi-chapter-row' });
-                    chRow.createEl('span', { text: ch.title, cls: 'nw-bi-chapter-name' });
-                    chRow.createEl('span', { text: this.formatWordCount(ch.wordCount), cls: 'nw-bi-chapter-count' });
+                    chRow.createSpan({ text: ch.title, cls: 'nw-bi-chapter-name' });
+                    chRow.createSpan({ text: this.formatWordCount(ch.wordCount), cls: 'nw-bi-chapter-count' });
                 });
                 if (preview.recognition.chapters.length > 3) {
-                    chapterPreview.createEl('div', {
+                    chapterPreview.createDiv({
                         text: t('batchImport.preview.moreChapters', { count: preview.recognition.chapters.length - 3 }),
                         cls: 'nw-bi-chapters-more'
                     });
@@ -516,7 +514,7 @@ export class BatchImportModal extends Modal {
 
     private addMetaItem(container: HTMLElement, label: string, value: string, editable?: boolean, onChange?: (val: string) => void): void {
         const item = container.createDiv({ cls: 'nw-bi-meta' });
-        item.createEl('div', { text: label, cls: 'nw-bi-meta-label' });
+        item.createDiv({ text: label, cls: 'nw-bi-meta-label' });
         if (editable && onChange) {
             const input = item.createEl('input', {
                 type: 'text',
@@ -525,19 +523,19 @@ export class BatchImportModal extends Modal {
             });
             input.addEventListener('input', (e) => onChange((e.target as HTMLInputElement).value));
         } else {
-            item.createEl('div', { text: value, cls: 'nw-bi-meta-value' });
+            item.createDiv({ text: value, cls: 'nw-bi-meta-value' });
         }
     }
 
     private renderStep3(container: HTMLElement): void {
-        container.createEl('div', {
+        container.createDiv({
             text: t('batchImport.setting.intro'),
             cls: 'nw-bi-intro nw-bi-intro--spaced'
         });
 
         const presetRow = container.createDiv({ cls: 'nw-bi-card nw-bi-card--spaced' });
         const presetHeader = presetRow.createDiv({ cls: 'nw-bi-list-header' });
-        presetHeader.createEl('span', { text: t('batchImport.setting.presets'), cls: 'nw-bi-list-title' });
+        presetHeader.createSpan({ text: t('batchImport.setting.presets'), cls: 'nw-bi-list-title' });
         const toggleBtn = presetHeader.createEl('button', {
             text: this.showPresets ? t('batchImport.setting.collapse') : t('batchImport.setting.expand'),
             cls: 'nw-btn nw-btn-ghost nw-btn-xs',
@@ -551,10 +549,10 @@ export class BatchImportModal extends Modal {
             const presets = this.batchManager.getPresets();
             const presetList = presetRow.createDiv({ cls: 'nw-bi-preset-list' });
             if (presets.length === 0) {
-                presetList.createEl('span', { text: t('batchImport.setting.noPresets'), cls: 'nw-bi-hint' });
+                presetList.createSpan({ text: t('batchImport.setting.noPresets'), cls: 'nw-bi-hint' });
             } else {
                 presets.forEach(preset => {
-                    const presetEl = presetList.createEl('span', {
+                    const presetEl = presetList.createSpan({
                         text: preset.name,
                         cls: 'nw-bi-pill'
                     });
@@ -585,14 +583,14 @@ export class BatchImportModal extends Modal {
         }
 
         const dimensionsSection = container.createDiv({ cls: 'nw-bi-section' });
-        dimensionsSection.createEl('div', {
+        dimensionsSection.createDiv({
             text: t('batchImport.setting.dimensions'),
             cls: 'nw-bi-section-title'
         });
         const dimContainer = dimensionsSection.createDiv({ cls: 'nw-bi-dim-box' });
         DIMENSION_OPTIONS.forEach(dim => {
             const isSelected = this.selectedDimensions.includes(dim.key);
-            const dimEl = dimContainer.createEl('span', {
+            const dimEl = dimContainer.createSpan({
                 text: `${dim.icon} ${dimensionLabel(dim.key)}`,
                 cls: 'nw-bi-chip'
             });
@@ -610,7 +608,7 @@ export class BatchImportModal extends Modal {
         const optionsGrid = container.createDiv({ cls: 'nw-bi-options-grid' });
 
         const concurrencyItem = optionsGrid.createDiv({ cls: 'nw-bi-card' });
-        concurrencyItem.createEl('div', { text: t('batchImport.setting.concurrency'), cls: 'nw-bi-field-label' });
+        concurrencyItem.createDiv({ text: t('batchImport.setting.concurrency'), cls: 'nw-bi-field-label' });
         const concurrencyInput = concurrencyItem.createEl('input', {
             type: 'number',
             value: this.concurrency.toString(),
@@ -622,7 +620,7 @@ export class BatchImportModal extends Modal {
         });
 
         const priorityItem = optionsGrid.createDiv({ cls: 'nw-bi-card' });
-        priorityItem.createEl('div', { text: t('batchImport.setting.priority'), cls: 'nw-bi-field-label' });
+        priorityItem.createDiv({ text: t('batchImport.setting.priority'), cls: 'nw-bi-field-label' });
         const prioritySelect = priorityItem.createEl('select', { cls: 'nw-bi-input nw-bi-input--block' });
         const priorityOptions = [
             { value: '2', label: t('batchImport.setting.priorityHigh') },
@@ -640,7 +638,7 @@ export class BatchImportModal extends Modal {
         });
 
         const togglesSection = container.createDiv({ cls: 'nw-bi-section' });
-        togglesSection.createEl('div', {
+        togglesSection.createDiv({
             text: t('batchImport.setting.otherOptions'),
             cls: 'nw-bi-section-title'
         });
@@ -648,7 +646,7 @@ export class BatchImportModal extends Modal {
         const toggleList = togglesSection.createDiv({ cls: 'nw-bi-toggle-box' });
 
         const autoStartRow = toggleList.createDiv({ cls: 'nw-bi-toggle-row' });
-        autoStartRow.createEl('span', { text: t('batchImport.setting.autoStart'), cls: 'nw-bi-toggle-label' });
+        autoStartRow.createSpan({ text: t('batchImport.setting.autoStart'), cls: 'nw-bi-toggle-label' });
         const autoStartToggle = autoStartRow.createEl('input', {
             type: 'checkbox',
             cls: 'nw-bi-check'
@@ -659,7 +657,7 @@ export class BatchImportModal extends Modal {
         });
 
         const autoClassifyRow = toggleList.createDiv({ cls: 'nw-bi-toggle-row' });
-        autoClassifyRow.createEl('span', { text: t('batchImport.setting.autoClassify'), cls: 'nw-bi-toggle-label' });
+        autoClassifyRow.createSpan({ text: t('batchImport.setting.autoClassify'), cls: 'nw-bi-toggle-label' });
         const autoClassifyToggle = autoClassifyRow.createEl('input', {
             type: 'checkbox',
             cls: 'nw-bi-check'
@@ -670,7 +668,7 @@ export class BatchImportModal extends Modal {
         });
 
         const tagsSection = container.createDiv({ cls: 'nw-bi-section nw-bi-section--tight' });
-        tagsSection.createEl('div', {
+        tagsSection.createDiv({
             text: t('batchImport.setting.tags'),
             cls: 'nw-bi-section-title'
         });
@@ -690,11 +688,11 @@ export class BatchImportModal extends Modal {
         const themeTags = this.options.tagManager.getTagsByType(this.themeCategory).filter(t => t.parentId);
         const themeTagContainer = tagsSection.createDiv({ cls: 'nw-bi-tag-box nw-bi-tag-box--spaced' });
         if (themeTags.length === 0) {
-            themeTagContainer.createEl('span', { text: t('batchImport.setting.noThemeTags'), cls: 'nw-bi-hint' });
+            themeTagContainer.createSpan({ text: t('batchImport.setting.noThemeTags'), cls: 'nw-bi-hint' });
         } else {
             themeTags.forEach(tag => {
                 const isSelected = this.selectedThemeTagIds.includes(tag.id);
-                const tagEl = themeTagContainer.createEl('span', {
+                const tagEl = themeTagContainer.createSpan({
                     text: tag.name,
                     cls: 'nw-bi-tag'
                 });
@@ -725,11 +723,11 @@ export class BatchImportModal extends Modal {
         const techniqueTags = this.options.tagManager.getTagsByType(this.techniqueCategory).filter(t => t.parentId);
         const techniqueTagContainer = tagsSection.createDiv({ cls: 'nw-bi-tag-box nw-bi-tag-box--spaced' });
         if (techniqueTags.length === 0) {
-            techniqueTagContainer.createEl('span', { text: t('batchImport.setting.noTechniqueTags'), cls: 'nw-bi-hint' });
+            techniqueTagContainer.createSpan({ text: t('batchImport.setting.noTechniqueTags'), cls: 'nw-bi-hint' });
         } else {
             techniqueTags.forEach(tag => {
                 const isSelected = this.selectedTechniqueTagIds.includes(tag.id);
-                const tagEl = techniqueTagContainer.createEl('span', {
+                const tagEl = techniqueTagContainer.createSpan({
                     text: tag.name,
                     cls: 'nw-bi-tag'
                 });
@@ -770,14 +768,14 @@ export class BatchImportModal extends Modal {
 
         const customTagsContainer = tagsSection.createDiv({ cls: 'nw-bi-tag-box' });
         if (this.customTags.length === 0) {
-            customTagsContainer.createEl('span', { text: t('batchImport.setting.noCustomTags'), cls: 'nw-bi-hint' });
+            customTagsContainer.createSpan({ text: t('batchImport.setting.noCustomTags'), cls: 'nw-bi-hint' });
         } else {
             this.customTags.forEach(tag => {
-                const tagEl = customTagsContainer.createEl('span', {
+                const tagEl = customTagsContainer.createSpan({
                     text: tag,
                     cls: 'nw-bi-tag nw-bi-tag--removable'
                 });
-                const removeBtn = tagEl.createEl('span', {
+                const removeBtn = tagEl.createSpan({
                     text: '×',
                     cls: 'nw-bi-tag-close'
                 });
@@ -793,15 +791,15 @@ export class BatchImportModal extends Modal {
         const progress = this.batchManager.getProgress();
         const allTasks = this.batchManager.getAllTasks();
 
-        container.createEl('div', {
+        container.createDiv({
             text: t('batchImport.progress.importing'),
             cls: 'nw-bi-intro nw-bi-intro--spaced'
         });
 
         this.totalProgressEl = container.createDiv({ cls: 'nw-bi-progress' });
         const totalHeader = this.totalProgressEl.createDiv({ cls: 'nw-bi-list-header' });
-        totalHeader.createEl('span', { text: t('batchImport.progress.total'), cls: 'nw-bi-list-title' });
-        this.totalProgressTextEl = totalHeader.createEl('span', {
+        totalHeader.createSpan({ text: t('batchImport.progress.total'), cls: 'nw-bi-list-title' });
+        this.totalProgressTextEl = totalHeader.createSpan({
             text: `${progress.completedTasks}/${progress.totalTasks} (${progress.overallProgress}%)`,
             cls: 'nw-bi-hint'
         });
@@ -816,7 +814,7 @@ export class BatchImportModal extends Modal {
         this.addStatCard(statsRow, t('batchImport.progress.statFailed'), progress.failedTasks.toString(), 'error');
 
         const taskListHeader = container.createDiv({ cls: 'nw-bi-list-header' });
-        taskListHeader.createEl('span', { text: t('batchImport.progress.taskList'), cls: 'nw-bi-list-title' });
+        taskListHeader.createSpan({ text: t('batchImport.progress.taskList'), cls: 'nw-bi-list-title' });
 
         const actionBtns = taskListHeader.createDiv({ cls: 'nw-bi-list-actions' });
         const pauseAllBtn = actionBtns.createEl('button', {
@@ -839,7 +837,7 @@ export class BatchImportModal extends Modal {
         this.updateTaskList();
 
         const logHeader = container.createDiv({ cls: 'nw-bi-log-header' });
-        logHeader.createEl('span', { text: t('batchImport.progress.logTitle') });
+        logHeader.createSpan({ text: t('batchImport.progress.logTitle') });
         const clearLogBtn = logHeader.createEl('button', {
             text: t('batchImport.progress.logClear'),
             cls: 'nw-btn nw-btn-ghost nw-btn-xs',
@@ -860,9 +858,9 @@ export class BatchImportModal extends Modal {
         tone: 'muted' | 'accent' | 'success' | 'error'
     ): void {
         const card = container.createDiv({ cls: 'nw-bi-stat' });
-        const valueEl = card.createEl('div', { text: value, cls: 'nw-bi-stat-value' });
+        const valueEl = card.createDiv({ text: value, cls: 'nw-bi-stat-value' });
         valueEl.addClass(`nw-bi-stat-value--${tone}`);
-        card.createEl('div', { text: label, cls: 'nw-bi-stat-label' });
+        card.createDiv({ text: label, cls: 'nw-bi-stat-label' });
     }
 
     private updateProgressView(): void {
@@ -890,15 +888,15 @@ export class BatchImportModal extends Modal {
             const header = row.createDiv({ cls: 'nw-bi-task-head' });
             const titleWrap = header.createDiv({ cls: 'nw-bi-task-title-wrap' });
 
-            const statusDot = titleWrap.createEl('span', { cls: 'nw-bi-status-dot' });
+            const statusDot = titleWrap.createSpan({ cls: 'nw-bi-status-dot' });
             statusDot.addClass(`nw-bi-status-dot--${this.getStatusTone(task.status)}`);
 
-            titleWrap.createEl('span', {
+            titleWrap.createSpan({
                 text: task.bookName,
                 cls: 'nw-bi-task-name'
             });
 
-            const statusBadge = header.createEl('span', {
+            const statusBadge = header.createSpan({
                 text: this.getTaskStatusLabel(task.status),
                 cls: 'nw-bi-task-badge'
             });
@@ -915,14 +913,14 @@ export class BatchImportModal extends Modal {
             }
 
             if (task.error) {
-                row.createEl('div', {
+                row.createDiv({
                     text: task.error,
                     cls: 'nw-bi-task-error'
                 });
             }
 
             const metaRow = row.createDiv({ cls: 'nw-bi-task-meta' });
-            metaRow.createEl('span', {
+            metaRow.createSpan({
                 text: t('batchImport.progress.retry', { count: task.retryCount, max: task.maxRetries }),
                 cls: 'nw-bi-task-retry'
             });
@@ -1021,8 +1019,7 @@ export class BatchImportModal extends Modal {
         const tasks = this.batchManager.getAllTasks();
 
         if (tasks.length === 0) {
-            container.createDiv({ cls: 'nw-bi-empty' })
-                .createEl('span', { text: t('batchImport.result.emptyRecent') });
+            container.createDiv({ cls: 'nw-bi-empty' }).createSpan({ text: t('batchImport.result.emptyRecent') });
             return;
         }
 
@@ -1031,39 +1028,39 @@ export class BatchImportModal extends Modal {
         const successCard = statsRow.createDiv({
             cls: 'nw-bi-result-card nw-bi-result-card--success'
         });
-        successCard.createEl('div', {
+        successCard.createDiv({
             text: progress.completedTasks.toString(),
             cls: 'nw-bi-result-number nw-bi-result-number--success'
         });
-        successCard.createEl('div', { text: t('batchImport.result.statSuccess'), cls: 'nw-bi-hint' });
+        successCard.createDiv({ text: t('batchImport.result.statSuccess'), cls: 'nw-bi-hint' });
 
         const failedCard = statsRow.createDiv({
             cls: 'nw-bi-result-card nw-bi-result-card--failed'
         });
-        failedCard.createEl('div', {
+        failedCard.createDiv({
             text: progress.failedTasks.toString(),
             cls: 'nw-bi-result-number nw-bi-result-number--error'
         });
-        failedCard.createEl('div', { text: t('batchImport.result.statFailed'), cls: 'nw-bi-hint' });
+        failedCard.createDiv({ text: t('batchImport.result.statFailed'), cls: 'nw-bi-hint' });
 
         const totalCard = statsRow.createDiv({ cls: 'nw-bi-result-card nw-bi-result-card--total' });
-        totalCard.createEl('div', {
+        totalCard.createDiv({
             text: progress.totalTasks.toString(),
             cls: 'nw-bi-result-number nw-bi-result-number--muted'
         });
-        totalCard.createEl('div', { text: t('batchImport.result.statTotal'), cls: 'nw-bi-hint' });
+        totalCard.createDiv({ text: t('batchImport.result.statTotal'), cls: 'nw-bi-hint' });
 
         const successTasks = tasks.filter(t => t.status === 'completed');
         if (successTasks.length > 0) {
             const successSection = container.createDiv({ cls: 'nw-bi-section' });
-            successSection.createEl('div', {
+            successSection.createDiv({
                 text: t('batchImport.result.successList'),
                 cls: 'nw-bi-section-title'
             });
             const successList = successSection.createDiv({ cls: 'nw-bi-success-list' });
             successTasks.forEach(task => {
                 const row = successList.createDiv({ cls: 'nw-bi-success-row' });
-                row.createEl('span', { text: `✅ ${task.bookName}`, cls: 'nw-bi-success-name' });
+                row.createSpan({ text: `✅ ${task.bookName}`, cls: 'nw-bi-success-name' });
                 const detailBtn = row.createEl('button', {
                     text: t('batchImport.result.viewDetail'),
                     cls: 'nw-btn nw-btn-ghost nw-btn-xs',
@@ -1083,18 +1080,18 @@ export class BatchImportModal extends Modal {
         const failedTasks = tasks.filter(t => t.status === 'failed');
         if (failedTasks.length > 0) {
             const failedSection = container.createDiv({ cls: 'nw-bi-section' });
-            failedSection.createEl('div', {
+            failedSection.createDiv({
                 text: t('batchImport.result.failedList'),
                 cls: 'nw-bi-section-title'
             });
             const failedList = failedSection.createDiv({ cls: 'nw-bi-failed-list' });
             failedTasks.forEach(task => {
                 const row = failedList.createDiv({ cls: 'nw-bi-failed-row' });
-                row.createEl('div', {
+                row.createDiv({
                     text: `❌ ${task.bookName}`,
                     cls: 'nw-bi-failed-name'
                 });
-                row.createEl('div', {
+                row.createDiv({
                     text: task.error || t('batchImport.result.unknownError'),
                     cls: 'nw-bi-failed-error'
                 });
@@ -1115,8 +1112,7 @@ export class BatchImportModal extends Modal {
         const history = this.batchManager.getHistory();
 
         if (history.length === 0) {
-            container.createDiv({ cls: 'nw-bi-empty' })
-                .createEl('span', { text: t('batchImport.result.emptyHistory') });
+            container.createDiv({ cls: 'nw-bi-empty' }).createSpan({ text: t('batchImport.result.emptyHistory') });
             return;
         }
 
@@ -1127,23 +1123,23 @@ export class BatchImportModal extends Modal {
             if (this.selectedHistoryId === item.id) card.addClass('nw-bi-history--selected');
 
             const header = card.createDiv({ cls: 'nw-bi-history-head' });
-            header.createEl('span', {
+            header.createSpan({
                 text: this.formatDateTime(item.importTime),
                 cls: 'nw-bi-history-time'
             });
             const statsWrap = header.createDiv({ cls: 'nw-bi-history-stats' });
-            statsWrap.createEl('span', {
+            statsWrap.createSpan({
                 text: `✅ ${item.successCount}`,
                 cls: 'nw-bi-ok-count'
             });
-            statsWrap.createEl('span', {
+            statsWrap.createSpan({
                 text: `❌ ${item.failedCount}`,
                 cls: 'nw-bi-fail-count'
             });
 
             const metaRow = card.createDiv({ cls: 'nw-bi-history-meta' });
-            metaRow.createEl('span', { text: t('batchImport.result.historyTotal', { count: item.totalCount }) });
-            metaRow.createEl('span', {
+            metaRow.createSpan({ text: t('batchImport.result.historyTotal', { count: item.totalCount }) });
+            metaRow.createSpan({
                 text: t('batchImport.result.historyDimensions', { count: item.settings.dimensions.length })
             });
 
@@ -1159,9 +1155,9 @@ export class BatchImportModal extends Modal {
                 item.books.forEach(book => {
                     const bookRow = bookList.createDiv({ cls: 'nw-bi-book-row' });
                     const statusIcon = book.status === 'success' ? '✅' : book.status === 'failed' ? '❌' : '⏭️';
-                    bookRow.createEl('span', { text: `${statusIcon} ${book.bookName}` });
+                    bookRow.createSpan({ text: `${statusIcon} ${book.bookName}` });
                     if (book.status === 'failed') {
-                        bookRow.createEl('span', {
+                        bookRow.createSpan({
                             text: book.error || t('batchImport.status.failed'),
                             cls: 'nw-bi-book-error'
                         });
@@ -1414,11 +1410,11 @@ export class BatchImportModal extends Modal {
                     }
                 });
 
-                row.createEl('span', {
+                row.createSpan({
                     text: `📄 ${file.name}`,
                     cls: 'nw-bi-picker-name'
                 });
-                row.createEl('span', {
+                row.createSpan({
                     text: file.parent?.path || '',
                     cls: 'nw-bi-picker-path'
                 });
@@ -1565,12 +1561,12 @@ export class BatchImportModal extends Modal {
 
                 row.toggleClass('nw-bi-picker-row--selected', selectedFolderPath === item.folder.path);
 
-                row.createEl('span', { text: '📁', cls: 'nw-bi-picker-icon' });
-                row.createEl('span', {
+                row.createSpan({ text: '📁', cls: 'nw-bi-picker-icon' });
+                row.createSpan({
                     text: item.folder.path || t('batchImport.picker.root'),
                     cls: 'nw-bi-picker-name'
                 });
-                row.createEl('span', {
+                row.createSpan({
                     text: t('batchImport.picker.fileCount', { count: item.fileCount }),
                     cls: 'nw-bi-picker-path'
                 });
@@ -1727,7 +1723,7 @@ export class BatchImportModal extends Modal {
 
     private appendLog(message: string): void {
         if (!this.logEl) return;
-        const logLine = this.logEl.createEl('div', {
+        const logLine = this.logEl.createDiv({
             text: `[${new Date().toLocaleTimeString()}] ${message}`,
             cls: 'nw-bi-log-line'
         });

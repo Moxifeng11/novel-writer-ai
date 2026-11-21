@@ -51,10 +51,10 @@ export function applyQualityHighlights(
             const before = text.slice(0, idx);
             const match = text.slice(idx, idx + issue.locationText.length);
             const after = text.slice(idx + issue.locationText.length);
-            const frag = document.createDocumentFragment();
+            const frag = createFragment();
             if (before) frag.appendChild(document.createTextNode(before));
             const hColor = issue.priority === 'high' ? '#ff4444' : issue.priority === 'medium' ? '#ffaa00' : '#88ccff';
-            const mark = document.createElement('mark');
+            const mark = createEl('mark');
             mark.className = 'nw-quality-highlight';
             mark.textContent = match;
             mark.style.cssText = `background:${hColor}33; border-bottom:2px solid ${hColor}; cursor:pointer; border-radius:2px; padding:0 1px;`;

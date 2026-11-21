@@ -15,7 +15,7 @@ import {
 } from '@/engine/export/manuscript-compiler';
 import { buildEpub } from '@/engine/export/epub-builder';
 import { buildDocx } from '@/engine/export/docx-builder';
-import type { BuiltBook, BookBuildOptions } from '@/engine/export/epub-builder';
+import type { BookBuildOptions } from '@/engine/export/epub-builder';
 import { exportBinaryFile, exportTextFile } from '@/shared/export-file';
 import { createLogger } from '@/shared/logger';
 import { pjStepDir } from '@/shared/paths';

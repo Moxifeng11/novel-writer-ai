@@ -41,7 +41,7 @@ export class KnowledgeSection extends SettingsSection {
     private knowledgeSearchKeyword = '';
     private knowledgeStatusFilter: string = 'all';
     /** 搜索框重建节流句柄：整分区 refresh 会销毁输入框，必须防抖 + 恢复焦点 */
-    private knowledgeSearchTimer: ReturnType<typeof setTimeout> | null = null;
+    private knowledgeSearchTimer: number | null = null;
 
     /**
      * 渲染。
@@ -162,8 +162,8 @@ export class KnowledgeSection extends SettingsSection {
             this.knowledgeSearchKeyword = (e.target as HTMLInputElement).value;
             // 宿主 refresh() 会清空并重建整个分区 → 每敲一个字符输入框就失焦。
             // 防抖到停顿后再重建，并在重建后把焦点/光标放回搜索框。
-            if (this.knowledgeSearchTimer) clearTimeout(this.knowledgeSearchTimer);
-            this.knowledgeSearchTimer = setTimeout(() => {
+            if (this.knowledgeSearchTimer) window.clearTimeout(this.knowledgeSearchTimer);
+            this.knowledgeSearchTimer = window.setTimeout(() => {
                 this.knowledgeSearchTimer = null;
                 const caret = this.knowledgeSearchKeyword.length;
                 this.refresh();
@@ -197,10 +197,10 @@ export class KnowledgeSection extends SettingsSection {
         const tagFilterRow = filterBar.createDiv({ cls: 'nw-st-kb-tag-row' });
 
         const themeFilterDiv = tagFilterRow.createDiv({ cls: 'nw-st-kb-tag-filter' });
-        themeFilterDiv.createEl('span', { text: t('settings.knowledge.themeFilter'), cls: 'nw-st-kb-tag-label' });
+        themeFilterDiv.createSpan({ text: t('settings.knowledge.themeFilter'), cls: 'nw-st-kb-tag-label' });
 
         const techniqueFilterDiv = tagFilterRow.createDiv({ cls: 'nw-st-kb-tag-filter' });
-        techniqueFilterDiv.createEl('span', { text: t('settings.knowledge.techniqueFilter'), cls: 'nw-st-kb-tag-label' });
+        techniqueFilterDiv.createSpan({ text: t('settings.knowledge.techniqueFilter'), cls: 'nw-st-kb-tag-label' });
 
         const filteredBooks = this.filterKnowledgeBooks();
 
@@ -208,11 +208,11 @@ export class KnowledgeSection extends SettingsSection {
             const emptyState = section.createDiv({
                 cls: 'nw-st-kb-empty'
             });
-            emptyState.createEl('div', {
+            emptyState.createDiv({
                 text: '📚',
                 cls: 'nw-st-kb-empty-icon'
             });
-            emptyState.createEl('div', {
+            emptyState.createDiv({
                 text: this.knowledgeBooks.length === 0
                     ? t('settings.knowledge.emptyNone')
                     : t('settings.knowledge.emptyFiltered'),
@@ -232,7 +232,7 @@ export class KnowledgeSection extends SettingsSection {
         }
 
         const countRow = section.createDiv({ cls: 'nw-status-row' });
-        countRow.createEl('span', {
+        countRow.createSpan({
             text: t('settings.knowledge.count', { count: filteredBooks.length }),
             cls: 'nw-st-kb-count'
         });
@@ -331,13 +331,13 @@ export class KnowledgeSection extends SettingsSection {
         });
 
         const titleRow = card.createDiv({ cls: 'nw-st-kb-card-title-row' });
-        titleRow.createEl('div', {
+        titleRow.createDiv({
             text: book.name,
             cls: 'nw-st-kb-card-name'
         });
 
         if (book.author) {
-            titleRow.createEl('div', {
+            titleRow.createDiv({
                 text: book.author,
                 cls: 'nw-st-kb-card-author'
             });
@@ -353,13 +353,13 @@ export class KnowledgeSection extends SettingsSection {
             });
             const displayTags = allTags.slice(0, 3);
             displayTags.forEach(tag => {
-                tagRow.createEl('span', {
+                tagRow.createSpan({
                     text: tag,
                     cls: 'nw-st-kb-tag'
                 });
             });
             if (allTags.length > 3) {
-                tagRow.createEl('span', {
+                tagRow.createSpan({
                     text: `+${allTags.length - 3}`,
                     cls: 'nw-st-kb-tag nw-st-kb-tag--more'
                 });
@@ -371,11 +371,11 @@ export class KnowledgeSection extends SettingsSection {
         });
 
         if (book.wordCount) {
-            metaRow.createEl('span', { text: `📝 ${this.formatKbWordCount(book.wordCount)}` });
+            metaRow.createSpan({ text: `📝 ${this.formatKbWordCount(book.wordCount)}` });
         }
 
         const dateStr = new Date(book.updatedAt).toLocaleDateString(getLocale() === 'en-US' ? 'en-US' : 'zh-CN');
-        metaRow.createEl('span', { text: `🕐 ${dateStr}` });
+        metaRow.createSpan({ text: `🕐 ${dateStr}` });
     }
 
     private getStatusBadge(status: string): HTMLElement {

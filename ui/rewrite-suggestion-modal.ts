@@ -80,7 +80,7 @@ export class RewriteSuggestionModal extends Modal {
             return;
         }
 
-        contentEl.createEl('div', {
+        contentEl.createDiv({
             text: this.originalText,
             cls: 'nw-rewrite-preview',
         });
@@ -186,13 +186,13 @@ export class RewriteSuggestionModal extends Modal {
 
         const header = card.createDiv({ cls: 'nw-rewrite-card-header' });
         header.createEl('strong', { text: suggestion.title });
-        header.createEl('span', {
+        header.createSpan({
             cls: 'nw-rewrite-confidence',
             text: `置信度 ${Math.round(suggestion.confidence * 100)}%`,
         });
 
-        card.createEl('div', { cls: 'nw-rewrite-desc', text: suggestion.description });
-        card.createEl('div', {
+        card.createDiv({ cls: 'nw-rewrite-desc', text: suggestion.description });
+        card.createDiv({
             cls: 'nw-rewrite-card-text',
             text: suggestion.rewrittenText,
         });

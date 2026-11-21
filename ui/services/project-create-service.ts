@@ -167,7 +167,7 @@ export async function createLongNovelProject(
         // 覆盖前必须真的删干净：删不掉就中止，否则「新」项目里混着旧内容，
         // 后续写作/统计/结算都作用在残留数据上（DSH-20261113-27 A 档）。
         await removeProjectDirectory(app, projectId);
-        await new Promise(r => setTimeout(r, 300));
+        await new Promise(r => window.setTimeout(r, 300));
     }
 
     const notice = progressHandle('project-create', t('createProject.service.creating', { name: projectName }));

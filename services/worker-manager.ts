@@ -241,12 +241,12 @@ export class WorkerManager {
                 };
 
                 let settled = false;
-                let initTimer: ReturnType<typeof setTimeout> | undefined;
+                let initTimer: number | undefined;
 
                 const cleanupHandshake = () => {
                     worker.removeEventListener('message', handleMessage);
                     worker.removeEventListener('error', handleEarlyError);
-                    if (initTimer) clearTimeout(initTimer);
+                    if (initTimer) window.clearTimeout(initTimer);
                 };
 
                 const handleMessage = (event: MessageEvent<WorkerMessage>) => {
@@ -274,7 +274,7 @@ export class WorkerManager {
                 worker.addEventListener('message', handleMessage);
                 worker.addEventListener('error', handleEarlyError);
 
-                initTimer = setTimeout(() => {
+                initTimer = window.setTimeout(() => {
                     if (settled) return;
                     settled = true;
                     cleanupHandshake();
@@ -465,7 +465,7 @@ export class WorkerManager {
         const abortController = new AbortController();
         task.abortController = abortController;
 
-        setTimeout(async () => {
+        window.setTimeout(async () => {
             if (task.cancelled) return;
 
             try {

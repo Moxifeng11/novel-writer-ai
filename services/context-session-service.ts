@@ -8,18 +8,7 @@
 import { App, TFile } from 'obsidian';
 import { createLogger } from '@/shared/logger';
 import type { ProjectIndexService } from './project-index-service';
-import {
-    addBatch,
-    checkCoverage,
-    contextKey,
-    createContextSession,
-    pendingRequests,
-    type ContextItem,
-    type ContextKind,
-    type ContextSession,
-    type CoverageReport,
-    type CoverageRequirement,
-} from '@/shared/context-session-model';
+import { addBatch, checkCoverage, createContextSession, pendingRequests, type ContextItem, type ContextKind, type ContextSession, type CoverageReport, type CoverageRequirement } from '@/shared/context-session-model';
 
 const log = createLogger('ContextSession');
 

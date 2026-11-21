@@ -47,11 +47,11 @@ export function createChartToolbar(container: HTMLElement, options: ChartToolbar
 	container.empty();
 	container.className = 'nw-chart-toolbar';
 
-	const typeGroup = document.createElement('div');
+	const typeGroup = createDiv();
 	typeGroup.className = 'nw-chart-toolbar-type-group';
 
 	options.availableTypes.forEach(type => {
-		const btn = document.createElement('button');
+		const btn = createEl('button');
 		btn.className = 'nw-chart-toolbar-btn';
 		if (type === options.currentType) {
 			btn.classList.add('active');
@@ -64,11 +64,11 @@ export function createChartToolbar(container: HTMLElement, options: ChartToolbar
 		typeGroup.appendChild(btn);
 	});
 
-	const densityGroup = document.createElement('div');
+	const densityGroup = createDiv();
 	densityGroup.className = 'nw-chart-toolbar-density-group';
 
 	(['compact', 'normal', 'spacious'] as ChartDensity[]).forEach(density => {
-		const btn = document.createElement('button');
+		const btn = createEl('button');
 		btn.className = 'nw-chart-toolbar-btn nw-chart-toolbar-icon-btn';
 		if (density === options.currentDensity) {
 			btn.classList.add('active');
@@ -85,7 +85,7 @@ export function createChartToolbar(container: HTMLElement, options: ChartToolbar
 	container.appendChild(densityGroup);
 
 	if (options.showSortToggle && options.onSortChange) {
-		const sortGroup = document.createElement('div');
+		const sortGroup = createDiv();
 		sortGroup.className = 'nw-chart-toolbar-sort-group';
 
 		const sortOrders: Array<{ order: 'asc' | 'desc' | 'none'; label: string; icon: string }> = [
@@ -95,7 +95,7 @@ export function createChartToolbar(container: HTMLElement, options: ChartToolbar
 		];
 
 		sortOrders.forEach(({ order, label, icon }) => {
-			const btn = document.createElement('button');
+			const btn = createEl('button');
 			btn.className = 'nw-chart-toolbar-btn nw-chart-toolbar-icon-btn';
 			setSanitizedHtml(btn, icon);
 			btn.title = label;

@@ -24,15 +24,7 @@ import {
     buildParagraphLengthBarData,
     buildStyleScoreLines,
 } from './book-style-logic';
-import {
-    buildForeshadowDonutData,
-    buildForeshadowQualityItems,
-    buildForeshadowStatItems,
-    foreshadowFilterOptions,
-    foreshadowImportanceTier,
-    FORESHADOW_IMPORTANCE_STYLES,
-    resolveForeshadowTypeLabel,
-} from './book-foreshadow-logic';
+import { buildForeshadowDonutData, buildForeshadowQualityItems, buildForeshadowStatItems, foreshadowFilterOptions, resolveForeshadowTypeLabel } from './book-foreshadow-logic';
 import {
     buildNrcEmotionRadarData,
     resolveEmotionArcLabel,
@@ -52,23 +44,7 @@ import type {
 } from './knowledge-base-view';
 import { isImeComposing } from '@/shared/keyboard';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
-import {
-    buildStyleRadarItems,
-    buildRhetoricBarData,
-    buildWordCloudItems,
-    buildTimelineEvents,
-    filterForeshadows,
-    rankTechniquesTop,
-    resolveTierLabel,
-    resolveArcTypeLabel,
-    resolveTimelineIcon,
-    joinRoleParts,
-    normalizeSentenceLength,
-    normalizeParagraphLength,
-    resolveQualityLevelMeta,
-    resolveUsedLevelLabel,
-    buildQualityScoreItems,
-} from './book-detail-metrics';
+import { buildStyleRadarItems, buildRhetoricBarData, buildWordCloudItems, buildTimelineEvents, filterForeshadows, rankTechniquesTop, resolveTierLabel, resolveArcTypeLabel, resolveTimelineIcon, joinRoleParts, resolveQualityLevelMeta, resolveUsedLevelLabel, buildQualityScoreItems } from './book-detail-metrics';
 
 const log = createLogger('BookDetailRenderer');
 
@@ -206,21 +182,21 @@ export class BookDetailRenderer {
             const styleCard = grid.createDiv({
                 cls: 'nw-kb-detail-card--lg'
             });
-            styleCard.createEl('div', { text: t('bookDetail.style.mainStyle'), cls: 'nw-kb-detail-note nw-kb-detail-mb-4' });
-            styleCard.createEl('div', { text: overallStyle.primaryStyle, cls: 'nw-kb-detail-primary-style' });
+            styleCard.createDiv({ text: t('bookDetail.style.mainStyle'), cls: 'nw-kb-detail-note nw-kb-detail-mb-4' });
+            styleCard.createDiv({ text: overallStyle.primaryStyle, cls: 'nw-kb-detail-primary-style' });
             if (overallStyle.secondaryStyle) {
-                styleCard.createEl('div', { text: t('bookDetail.style.secondary', { value: overallStyle.secondaryStyle }), cls: 'nw-kb-detail-note nw-kb-detail-mt-4' });
+                styleCard.createDiv({ text: t('bookDetail.style.secondary', { value: overallStyle.secondaryStyle }), cls: 'nw-kb-detail-note nw-kb-detail-mt-4' });
             }
-            styleCard.createEl('div', { text: t('bookDetail.style.confidence', { value: formatDetailPercent(overallStyle.confidence) }), cls: 'nw-kb-detail-note nw-kb-detail-mt-4' });
+            styleCard.createDiv({ text: t('bookDetail.style.confidence', { value: formatDetailPercent(overallStyle.confidence) }), cls: 'nw-kb-detail-note nw-kb-detail-mt-4' });
 
             if (overallStyle.styleScores) {
                 const scoresCard = grid.createDiv({
                     cls: 'nw-kb-detail-card--lg'
                 });
-                scoresCard.createEl('div', { text: t('bookDetail.style.scores'), cls: 'nw-kb-detail-note nw-kb-detail-mb-8' });
+                scoresCard.createDiv({ text: t('bookDetail.style.scores'), cls: 'nw-kb-detail-note nw-kb-detail-mb-8' });
                 const scoreList = scoresCard.createDiv({ cls: 'nw-kb-detail-stack nw-kb-detail-stack--gap-4' });
                 buildStyleScoreLines(overallStyle.styleScores, score => formatDetailPercent(score)).forEach(line => {
-                    scoreList.createEl('div', {
+                    scoreList.createDiv({
                         text: line,
                         cls: 'nw-kb-detail-fine'
                     });
@@ -455,11 +431,11 @@ export class BookDetailRenderer {
                 const card = grid.createDiv({
                     cls: 'nw-kb-detail-peak-tile'
                 });
-                card.createEl('div', {
+                card.createDiv({
                     text: t('bookDetail.rhythm.coolLine', { category: p.category || t('bookDetail.common.uncategorized'), position: formatDetailNumber(p.x, 1, '%') }),
                     cls: 'nw-kb-detail-peak-title'
                 });
-                card.createEl('div', { text: p.label, cls: 'nw-kb-detail-muted' });
+                card.createDiv({ text: p.label, cls: 'nw-kb-detail-muted' });
             });
         }
 
@@ -470,7 +446,7 @@ export class BookDetailRenderer {
             data.plotStages.forEach(p => {
                 wrap.createDiv({
                     cls: 'nw-kb-detail-phase'
-                }).createEl('div', {
+                }).createDiv({
                     text: `${p.name} (${p.start}% - ${p.end}%)`,
                     cls: 'nw-kb-detail-text--strong'
                 });
@@ -633,18 +609,18 @@ export class BookDetailRenderer {
                 const row = list.createDiv({
                     cls: 'nw-kb-detail-tile-row'
                 });
-                const typeEl = row.createEl('div', {
+                const typeEl = row.createDiv({
                     text: seg.type,
                     cls: 'nw-kb-detail-qcch-badge'
                 });
                 typeEl.style.setProperty('--nw-detail-tone', qcchColors[seg.type] || '#6b7280');
                 const content = row.createDiv({ cls: 'nw-kb-detail-fill' });
-                content.createEl('div', {
+                content.createDiv({
                     text: t('bookDetail.structure.positionLine', { start: formatDetailPercent(seg.startPosition), end: formatDetailPercent(seg.endPosition) }),
                     cls: 'nw-kb-detail-text--strong nw-kb-detail-mb-2'
                 });
                 if (seg.chapterRange && seg.chapterRange.length === 2) {
-                    content.createEl('div', {
+                    content.createDiv({
                         text: t('bookDetail.structure.rangeLine', { start: seg.chapterRange[0]+1, end: seg.chapterRange[1]+1 }),
                         cls: 'nw-kb-detail-note'
                     });
@@ -1734,11 +1710,11 @@ export class BookDetailRenderer {
                     const item = list.createDiv({
                         cls: 'nw-kb-detail-card--inset nw-kb-detail-fine'
                     });
-                    item.createEl('div', {
+                    item.createDiv({
                         text: t('bookDetail.commercial.violationLine', { index: i + 1, type: typeLabels[v.type] || v.type, start: v.startChapter, end: v.endChapter }),
                         cls: 'nw-kb-detail-violation-title'
                     });
-                    item.createEl('div', {
+                    item.createDiv({
                         text: t('bookDetail.commercial.gap', { gap: v.gap, threshold: v.threshold }),
                         cls: 'nw-kb-detail-muted'
                     });

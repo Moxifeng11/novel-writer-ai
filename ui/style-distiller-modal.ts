@@ -272,7 +272,7 @@ export class StyleDistillerModal extends Modal {
                 await this.saveToStyleLib(input.label, styleContent);
                 this.progressEmitter.setStepProgress(100, '保存完成');
                 this.progressEmitter.complete();
-                setTimeout(() => {
+                window.setTimeout(() => {
                     this.hideLoadingOverlay();
                     this.setButtonLoading(false);
                     this.isAnalyzing = false;
@@ -374,12 +374,12 @@ ${analysis}
 
     private hideLoadingOverlay(): void {
         if (this.loadingOverlay) {
-            setTimeout(() => { this.loadingOverlay?.hide(); }, 500);
+            window.setTimeout(() => { this.loadingOverlay?.hide(); }, 500);
         }
     }
 
     private delay(ms: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        return new Promise(resolve => window.setTimeout(resolve, ms));
     }
 
     private getActiveProject(): string | null {

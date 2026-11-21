@@ -1,5 +1,5 @@
 import { kbBookReadabilityAnalysisFile } from '@/shared/paths';
-import { isChineseChar, splitParagraphs, splitSentences } from '@/shared/text-utils';
+import { isChineseChar, splitParagraphs } from '@/shared/text-utils';
 import { VectorEnhancer } from '@/engine/vector-enhancer';
 import { yieldToUI } from '@/shared/yield';
 import { SHOW_TELL_WORDS, EMOTION_WORDS } from '@/engine/dimension-keywords';

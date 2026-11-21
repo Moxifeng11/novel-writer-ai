@@ -145,7 +145,7 @@ export class OperationConfirmModal extends Modal {
 					style: 'padding: 12px 14px; background: rgba(249, 115, 22, 0.1); border: 1px solid rgba(249, 115, 22, 0.3); border-radius: 6px; margin-bottom: 16px;',
 				},
 			});
-			warningBox.createEl('div', {
+			warningBox.createDiv({
 				text: '⚠️ ' + this.options.warning,
 				attr: {
 					style: 'font-size: 13px; line-height: 1.5; color: var(--text-warning, #f97316); font-weight: 500;',
@@ -159,11 +159,11 @@ export class OperationConfirmModal extends Modal {
 					style: 'display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--background-secondary); border-radius: 6px; margin-bottom: 16px;',
 				},
 			});
-			etaBox.createEl('span', {
+			etaBox.createSpan({
 				text: '⏱️',
 				attr: { style: 'font-size: 16px;' },
 			});
-			etaBox.createEl('span', {
+			etaBox.createSpan({
 				text: '预估时间：' + this.formatEta(),
 				attr: {
 					style: 'font-size: 13px; color: var(--text-muted); font-weight: 500;',
@@ -172,7 +172,7 @@ export class OperationConfirmModal extends Modal {
 		}
 
 		if (this.options.steps && this.options.steps.length > 0) {
-			const stepsLabel = body.createEl('div', {
+			const stepsLabel = body.createDiv({
 				text: '将执行以下步骤：',
 				attr: {
 					style: 'font-size: 13px; font-weight: 600; color: var(--text-normal); margin-bottom: 10px;',
@@ -191,13 +191,13 @@ export class OperationConfirmModal extends Modal {
 						style: 'display: flex; align-items: flex-start; gap: 10px; font-size: 13px; line-height: 1.5; color: var(--text-muted);',
 					},
 				});
-				stepItem.createEl('span', {
+				stepItem.createSpan({
 					text: String(index + 1),
 					attr: {
 						style: 'display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: var(--background-modifier-border); color: var(--text-muted); font-size: 11px; font-weight: 600; flex-shrink: 0; margin-top: 1px;',
 					},
 				});
-				stepItem.createEl('span', { text: step });
+				stepItem.createSpan({ text: step });
 			});
 		}
 

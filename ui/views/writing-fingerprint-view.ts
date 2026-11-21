@@ -1,8 +1,8 @@
-import { ItemView, WorkspaceLeaf, Notice, Modal, App, Setting, TFile } from 'obsidian';
+import { ItemView, WorkspaceLeaf, Notice, Modal, App, Setting } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { StyleFingerprintLibrary, StyleFingerprint } from '@/engine/style-fingerprint-library';
 import { StyleFeaturesAnalyzerV2, type StyleAnalysisResultV2 } from '@/engine/style/style-features-v2';
-import { FingerprintExtractor, ExtractionProgress } from '@/engine/fingerprint-extractor';
+import { FingerprintExtractor } from '@/engine/fingerprint-extractor';
 import { applyNwScope } from '@/utils/helpers';
 import { AddFingerprintModal } from '@/ui/fingerprint-library-modal';
 import { createEmptyState } from '@/ui/components/empty-state';
@@ -22,7 +22,7 @@ import { classifyFingerprint, mergeClassificationTags } from '@/shared/content-c
 import type { BookBasicInfo } from '@/services/knowledge-base-manager';
 import { createLogger } from '@/shared/logger';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from '@/ui/model-quick-switcher';
-import { formatDetailCount, formatDetailNumber, formatDetailPercent } from '@/ui/knowledge-detail-format';
+import { formatDetailCount } from '@/ui/knowledge-detail-format';
 import * as scopeLogic from './fingerprint-scope-logic';
 import { scopeLabel } from './fingerprint-scope-logic';
 import { t } from '@/i18n';
@@ -460,7 +460,7 @@ export class WritingFingerprintView extends ItemView {
     }
 
     private createToolbarButton(text: string, onClick: () => void, isDanger = false, title = ''): HTMLElement {
-        const btn = document.createElement('button');
+        const btn = createEl('button');
         btn.textContent = text;
         btn.className = 'nw-fingerprint-toolbar-btn';
         if (title) btn.setAttribute('title', title);
@@ -523,7 +523,7 @@ export class WritingFingerprintView extends ItemView {
     }
 
     private createTagChip(tag: string, isActive: boolean): HTMLElement {
-        const el = document.createElement('span');
+        const el = createSpan();
         el.textContent = tag;
         el.className = 'nw-fingerprint-tag-chip';
         el.toggleClass('nw-is-active', isActive);
@@ -596,18 +596,18 @@ export class WritingFingerprintView extends ItemView {
             });
 
             if (!fp.enabled) {
-                nameRow.createEl('span', {
+                nameRow.createSpan({
                     text: '🔇',
                     cls: 'nw-fp-item-mute'
                 });
             }
 
-            nameRow.createEl('span', {
+            nameRow.createSpan({
                 text: fp.name,
                 cls: `nw-fp-item-name${!fp.enabled ? ' nw-fp-item-name--muted' : ''}`,
             });
 
-            header.createEl('span', {
+            header.createSpan({
                 text: SCOPE_ICONS[fp.scope],
                 cls: 'nw-fp-item-scope-icon'
             });
@@ -629,7 +629,7 @@ export class WritingFingerprintView extends ItemView {
                     cls: 'nw-fp-item-tags'
                 });
                 fp.tags.slice(0, 3).forEach(tag => {
-                    tagsRow.createEl('span', {
+                    tagsRow.createSpan({
                         text: tag,
                         cls: 'nw-fp-item-tag'
                     });
@@ -693,7 +693,7 @@ export class WritingFingerprintView extends ItemView {
         });
 
         const effectiveEnabled = this.isEffectivelyEnabled(fp);
-        const statusBadge = titleRow.createEl('span', {
+        const statusBadge = titleRow.createSpan({
             text: effectiveEnabled ? t('fingerprint.view.statusOn') : t('fingerprint.view.statusOff'),
             cls: effectiveEnabled ? 'nw-fp-status-badge nw-fp-status-badge--on' : 'nw-fp-status-badge nw-fp-status-badge--off',
         });
@@ -702,18 +702,18 @@ export class WritingFingerprintView extends ItemView {
             cls: 'nw-fp-meta-row'
         });
 
-        metaRow.createEl('span', { text: scopeLabel(fp.scope as FingerprintScope) });
-        metaRow.createEl('span', { text: t('fingerprint.view.metaSource', { source: fp.source || t('fingerprint.view.unknown') }) });
-        metaRow.createEl('span', { text: t('fingerprint.view.metaExtractedAt', { time: new Date(fp.extractedAt).toLocaleString() }) });
-        metaRow.createEl('span', { text: t('fingerprint.view.metaWordCount', { count: formatDetailCount(fp.stats?.wordCount) }) });
-        metaRow.createEl('span', { text: t('fingerprint.view.metaSamples', { count: (fp.samples || []).length }) });
+        metaRow.createSpan({ text: scopeLabel(fp.scope as FingerprintScope) });
+        metaRow.createSpan({ text: t('fingerprint.view.metaSource', { source: fp.source || t('fingerprint.view.unknown') }) });
+        metaRow.createSpan({ text: t('fingerprint.view.metaExtractedAt', { time: new Date(fp.extractedAt).toLocaleString() }) });
+        metaRow.createSpan({ text: t('fingerprint.view.metaWordCount', { count: formatDetailCount(fp.stats?.wordCount) }) });
+        metaRow.createSpan({ text: t('fingerprint.view.metaSamples', { count: (fp.samples || []).length }) });
 
         if (fp.tags.length > 0) {
             const tagsSection = header.createDiv({
                 cls: 'nw-fp-meta-tags'
             });
             fp.tags.forEach(tag => {
-                tagsSection.createEl('span', {
+                tagsSection.createSpan({
                     text: tag,
                     cls: 'nw-fp-meta-tag'
                 });
@@ -747,9 +747,9 @@ export class WritingFingerprintView extends ItemView {
 
         const sampleCount = (fp.samples || []).length;
         const rows = card.createDiv({ cls: 'nw-fp-inject-rows' });
-        rows.createEl('span', { text: t('fingerprint.view.injectSamples', { count: sampleCount }) });
-        rows.createEl('span', { text: t('fingerprint.view.injectLayers') });
-        rows.createEl('span', { text: t('fingerprint.view.injectBudget', { budget: this.injectionBudget() }) });
+        rows.createSpan({ text: t('fingerprint.view.injectSamples', { count: sampleCount }) });
+        rows.createSpan({ text: t('fingerprint.view.injectLayers') });
+        rows.createSpan({ text: t('fingerprint.view.injectBudget', { budget: this.injectionBudget() }) });
         if (sampleCount === 0) {
             const warn = card.createDiv({
                 cls: 'nw-fingerprint-sample-warn nw-fp-inject-warn'
@@ -786,7 +786,7 @@ export class WritingFingerprintView extends ItemView {
             text: t('fingerprint.view.classTitle'),
             cls: 'nw-fp-section-h4 nw-fp-section-title'
         });
-        titleRow.createEl('span', {
+        titleRow.createSpan({
             text: classification.primary,
             cls: 'nw-fingerprint-class-primary'
         });
@@ -835,11 +835,11 @@ export class WritingFingerprintView extends ItemView {
             const card = statsGrid.createDiv({
                 cls: 'nw-fp-stat-card'
             });
-            card.createEl('div', {
+            card.createDiv({
                 text: item.value,
                 cls: 'nw-fp-stat-value'
             });
-            card.createEl('div', {
+            card.createDiv({
                 text: item.label,
                 cls: 'nw-fp-stat-label'
             });
@@ -870,11 +870,11 @@ export class WritingFingerprintView extends ItemView {
             const row = section.createDiv({
                 cls: 'nw-fp-feature'
             });
-            row.createEl('div', {
+            row.createDiv({
                 text: f.label,
                 cls: 'nw-fp-feature-label'
             });
-            row.createEl('div', {
+            row.createDiv({
                 text: f.value,
                 cls: 'nw-fp-feature-value'
             });
@@ -892,7 +892,7 @@ export class WritingFingerprintView extends ItemView {
         });
 
         if (fp.samples.length === 0) {
-            section.createEl('div', {
+            section.createDiv({
                 text: t('fingerprint.view.samplesEmpty'),
                 cls: 'nw-fp-samples-empty'
             });
@@ -903,11 +903,11 @@ export class WritingFingerprintView extends ItemView {
             const sampleEl = section.createDiv({
                 cls: 'nw-fp-sample-card'
             });
-            sampleEl.createEl('div', {
+            sampleEl.createDiv({
                 text: t('fingerprint.view.sampleIndex', { n: index + 1 }),
                 cls: 'nw-fp-sample-index'
             });
-            sampleEl.createEl('div', {
+            sampleEl.createDiv({
                 text: sample,
                 cls: 'nw-fp-sample-text'
             });
@@ -932,7 +932,7 @@ export class WritingFingerprintView extends ItemView {
         const sourceOnly = isSourceOnlyFingerprintScope(fp.scope);
 
         if (sourceOnly) {
-            section.createEl('div', {
+            section.createDiv({
                 text: t('fingerprint.view.templateNote'),
                 cls: 'nw-fp-actions-note'
             });
@@ -1037,7 +1037,7 @@ export class WritingFingerprintView extends ItemView {
     }
 
     private createActionButton(text: string, onClick: () => void, isDanger = false, title = ''): HTMLElement {
-        const btn = document.createElement('button');
+        const btn = createEl('button');
         btn.textContent = text;
         btn.className = 'nw-fingerprint-action-btn';
         if (title) btn.setAttribute('title', title);
@@ -1901,7 +1901,7 @@ export class ExtractFromChaptersModal extends Modal {
                     cls: 'nw-fp-chapter-row'
                 });
 
-                const checkbox = document.createElement('input');
+                const checkbox = createEl('input');
                 checkbox.type = 'checkbox';
                 checkbox.checked = this.selectedChapters.has(chapterPath);
 
@@ -1916,7 +1916,7 @@ export class ExtractFromChaptersModal extends Modal {
                 checkbox.addEventListener('change', () => setSelected(checkbox.checked));
                 item.appendChild(checkbox);
 
-                const nameEl = document.createElement('span');
+                const nameEl = createSpan();
                 nameEl.textContent = fileName;
                 nameEl.addClass('nw-fp-chapter-name');
                 item.appendChild(nameEl);
@@ -1987,17 +1987,17 @@ class KnowledgeBookPickerModal extends Modal {
         contentEl.empty();
         contentEl.createEl('h3', { text: t('fingerprint.view.kbModalTitle') });
 
-        const list = contentEl.createEl('div');
+        const list = contentEl.createDiv();
         list.addClass('nw-kb-picker-list');
 
         for (const book of this.books) {
-            const row = list.createEl('div');
+            const row = list.createDiv();
             row.addClass('nw-kb-picker-row');
 
-            const info = row.createEl('div');
-            info.createEl('div', { text: book.name });
+            const info = row.createDiv();
+            info.createDiv({ text: book.name });
             if (book.author) {
-                const author = info.createEl('div', { text: book.author });
+                const author = info.createDiv({ text: book.author });
                 author.addClass('nw-kb-picker-author');
             }
 

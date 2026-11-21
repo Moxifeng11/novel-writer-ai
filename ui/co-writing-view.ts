@@ -20,9 +20,9 @@ import { CoWriterEngine, resolveCoWriteLocalModel } from '@/engine/co-writer-eng
 import type { ChapterBriefInput } from '@/engine/chapter-brief';
 import { CoWriteFacade } from './services/co-write-facade';
 import type { BookBasicInfo } from '@/services/knowledge-base-manager';
-import { WebnovelKnowledgeBase } from '@/shared/webnovel-knowledge-base';
+import '@/shared/webnovel-knowledge-base';
 import { EndingTractionEngine } from '@/engine/ending-traction-engine';
-import { EmotionCurveView } from './components/emotion-curve-view';
+import './components/emotion-curve-view';
 import { renderAIDetectionReport } from './components/ai-detection-report';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 import { ChapterSettlementModal } from './chapter-settlement-modal';
@@ -39,7 +39,7 @@ import { captureScrollSnapshot, resolveRestoredScrollTop } from '@/shared/previe
 import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
 import { AUTOSAVE_DELAY_MS } from '@/shared/interaction-timing';
 import { onNodeDoc, resolveNodeDoc } from '@/shared/dom-window';
-import { getCustomFontFamilies, registerAllCustomFonts } from '@/services/font-manager';
+import { getCustomFontFamilies } from '@/services/font-manager';
 import { FontManagerModal } from './font-manager-modal';
 import { renderModelQuickSwitcher, type ModelQuickSwitcherHandle } from './model-quick-switcher';
 import { SuggestionHistoryStore } from './cowrite/suggestion-history-store';
@@ -94,14 +94,8 @@ import { NovelAnalysisModal } from './novel-analysis-modal';
 import { BatchImportModal } from './batch-import-modal';
 import { KnowledgeMonitorModal } from './knowledge-monitor-modal';
 import { UnifiedEntityManagerModal } from './unified-entity-manager-modal';
-import {
-    SuggestionRecord,
-    SuggestionDirection,
-    EditValidation,
-    PlotCompletionMetrics,
-    SentenceEditRecord
-} from '@/shared/types';
-import { VIEW_TYPE_MONITOR_B } from './monitor-panel-b';
+import { SuggestionRecord, EditValidation, PlotCompletionMetrics, SentenceEditRecord } from '@/shared/types';
+import './monitor-panel-b';
 import { AssociationSuggestion } from '@/shared/co-writer-types';
 import { ProgressEmitter, type ProgressState } from '@/shared/progress-emitter';
 import { StepListComponent } from './components/progress/step-list';
@@ -109,7 +103,7 @@ import { TimeEstimator } from '@/shared/time-estimator';
 import { createLogger } from '@/shared/logger';
 import { calculateHumanRate, renderHumanRate, type HumanRateScores } from '@/ui/co-writing/human-rate';
 import { getAssetStatus, getCompletenessIcon, renderAssetStatusBar } from '@/ui/co-writing/asset-status';
-import { getFriendlyErrorMessage } from '@/ui/co-writing/friendly-error';
+import '@/ui/co-writing/friendly-error';
 import {
     buildBodyDir,
     buildStepFilePath,
@@ -143,10 +137,10 @@ import {
 import { parseChapterNumber, renderChapterNav, type NavChapter } from '@/ui/co-writing/chapter-nav';
 import { describeWordGoalSource, resolveChapterWordGoal, type ChapterWordGoal } from '@/ui/co-writing/word-goal';
 import { canUndoRedo, ChapterHistoryStore, pushHistory, redoHistory, undoHistory } from '@/shared/edit-history';
-import { applyEditorMetrics, DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, formatCursorInfo, normalizeFontSize, normalizeLineHeight } from '@/ui/co-writing/editor-display';
+import { applyEditorMetrics, formatCursorInfo, normalizeFontSize, normalizeLineHeight } from '@/ui/co-writing/editor-display';
 import { copyEditorBoxStyles, renderHighlightDom, syncHighlightScroll } from '@/ui/co-writing/markdown-highlight';
 import { renderEditorAux, syncHistoryButtons, syncToggleButton, type EditorAuxHandles } from '@/ui/co-writing/editor-aux';
-import { describeDiff, diffLines, type TextDiffResult } from '@/ui/co-writing/text-diff';
+import { diffLines } from '@/ui/co-writing/text-diff';
 import { addChapterEventNode } from '@/ui/planning/canvas-link';
 import { applyQualityHighlights } from '@/ui/co-writing/quality-highlight';
 import {
@@ -324,7 +318,7 @@ export class CoWritingView extends ItemView {
   /** 预览渲染代次：MarkdownRenderer 是异步的，旧渲染不得把内容写进新一章/新一轮 */
   private previewSeq = 0;
   /** 预览节流的尾随渲染定时器（窗口内被节流的刷新不能直接丢弃） */
-  private previewTimer: ReturnType<typeof setTimeout> | null = null;
+  private previewTimer: number | null = null;
   /** 上次剧情完成度 AI 评估的章节身份 / 正文签名 / 时间，用于跳过无意义的重复请求 */
   private lastPlotEval: PlotEvalGateState | null = null;
   lastTractionAt = 0;
@@ -784,11 +778,11 @@ export class CoWritingView extends ItemView {
     });
     host.insertBefore(banner, host.firstChild);
     banner.createEl('strong', { text: t('cowrite.prereqBannerTitle') });
-    banner.createEl('span', { text: t('cowrite.prereqBannerDetail', { missing: missing.join('、') }) });
+    banner.createSpan({ text: t('cowrite.prereqBannerDetail', { missing: missing.join('、') }) });
     // 8 秒后淡出并移除节点（只把 opacity 设 0 会留下不可见但仍占位的元素）
-    setTimeout(() => {
+    window.setTimeout(() => {
       banner.addClass('nw-fade-out');
-      setTimeout(() => banner.remove(), 1100);
+      window.setTimeout(() => banner.remove(), 1100);
     }, 8000);
     log.warn(`[CoWritingView] 前置规划检查 — 缺失: ${missing.join(', ')}`);
   }
@@ -1858,9 +1852,9 @@ export class CoWritingView extends ItemView {
 
   private async simulateStepDelay(ms: number, signal: AbortSignal): Promise<void> {
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => resolve(), ms);
+      const timer = window.setTimeout(() => resolve(), ms);
       signal.addEventListener('abort', () => {
-        clearTimeout(timer);
+        window.clearTimeout(timer);
         reject(new DOMException('Aborted', 'AbortError'));
       }, { once: true });
     });
@@ -2544,14 +2538,14 @@ ${text}`;
   /** 取消已排队的尾随渲染（强制刷新会立即渲染，视图关闭时也不能留定时器） */
   private clearPreviewTimer(): void {
     if (this.previewTimer !== null) {
-      clearTimeout(this.previewTimer);
+      window.clearTimeout(this.previewTimer);
       this.previewTimer = null;
     }
   }
   /** 在节流窗口剩余时间后补一次渲染（连续输入只保留最后一次） */
   private schedulePreviewFlush(delay: number): void {
     this.clearPreviewTimer();
-    this.previewTimer = setTimeout(() => {
+    this.previewTimer = window.setTimeout(() => {
       this.previewTimer = null;
       void this.refreshPreview(false);
     }, delay);
@@ -3687,7 +3681,7 @@ ${text}`;
   async handleOpenQualityCheck() {
     await this.saveBody(true);
     await this.plugin.openFullWriterView?.();
-    setTimeout(() => {
+    window.setTimeout(() => {
       const leaves = this.app.workspace.getLeavesOfType('novel-writer-full-writer');
       if (leaves.length > 0) {
         const view = leaves[0].view as unknown as {

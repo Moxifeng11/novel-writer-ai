@@ -2,7 +2,7 @@ import NovelWriterPlugin from '@/main';
 import { AIApiClient } from './ai-api-client';
 import type { APIResponse } from './ai-engine';
 import type { Notifier } from '@/shared/types';
-import { NOOP_NOTIFIER, SceneNode, SceneType, SceneStatus } from '@/shared/types';
+import { NOOP_NOTIFIER, SceneNode, SceneType } from '@/shared/types';
 import { createLogger } from '@/shared/logger';
 
 

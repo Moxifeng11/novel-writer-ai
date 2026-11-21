@@ -94,7 +94,7 @@ export class ProgressEmitter {
 
     private abortController: AbortController;
 
-    private throttleTimer: ReturnType<typeof setTimeout> | null = null;
+    private throttleTimer: number | null = null;
     private pendingState: ProgressState | null = null;
     private lastEmitTime: number = 0;
 
@@ -449,7 +449,7 @@ export class ProgressEmitter {
         if (this.throttleTimer) return;
 
         const remaining = this.throttleInterval - timeSinceLastEmit;
-        this.throttleTimer = setTimeout(() => {
+        this.throttleTimer = window.setTimeout(() => {
             this.throttleTimer = null;
             this.flushPending();
         }, remaining);
@@ -460,7 +460,7 @@ export class ProgressEmitter {
      */
     private flushPending(): void {
         if (this.throttleTimer) {
-            clearTimeout(this.throttleTimer);
+            window.clearTimeout(this.throttleTimer);
             this.throttleTimer = null;
         }
 

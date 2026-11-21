@@ -32,7 +32,6 @@
 import { App, TFile } from 'obsidian';
 import { entityDir } from '@/shared/entity-reader';
 import { AIEngine } from './ai-engine';
-import NovelWriterPlugin from '@/main';
 import { ContextManager } from './context-manager';
 import { StyleLearner } from './style-learner';
 import { PreferenceMemory } from './preference-memory';
@@ -59,7 +58,7 @@ import type { SceneCardFields } from '@/shared/scene-card';
 import { entityStateChangesToFacts } from './co-writer-state-sync';
 import { appendRelationshipChanges, entityChangesToRelationshipChanges } from './relationship-change-queue';
 import { resolveAssociations } from './context/association-resolver';
-import { CharacterPairRelation, loadRelationshipStates } from './relationship-engine';
+import { loadRelationshipStates } from './relationship-engine';
 import { buildEntityRelationsBlock } from './entity-graph';
 import { formatInjectionLedger } from '@/shared/injection-ledger';
 import { CrossVolumeIntegrator } from './cross-volume-integration';
@@ -82,17 +81,9 @@ import {
     type ChapterBrief,
     type ChapterBriefInput,
 } from './chapter-brief';
-import { 
-     CharacterSoul, 
-     CharacterSoulSummary, 
-     gatherAllCharacterCores, 
-     buildCharacterSoulSummary, 
-     formatSoulForPrompt, 
-     getProtagonistSoulDetail,
-     extractCharacterCoreFromContent
- } from './character-soul';
+import { CharacterSoul, CharacterSoulSummary, gatherAllCharacterCores, buildCharacterSoulSummary, getProtagonistSoulDetail, extractCharacterCoreFromContent } from './character-soul';
  import { EntityStateManager, EntityStateChange } from './entity-state-manager';
- import { OOCCheckResult, EmotionCurve, RhythmAnalysis, AssociationSuggestion } from '@/shared/co-writer-types';
+ import { OOCCheckResult, AssociationSuggestion } from '@/shared/co-writer-types';
 import {
     SuggestionRecord,
     SuggestionDirection,
@@ -130,14 +121,7 @@ export type {
     ContextSnapshot,
     SettingGuardReport,
 } from './co-writer/co-writer-types';
-import type {
-    WritingMode,
-    PlotNode,
-    PlotProgress,
-    Suggestion,
-    ContextSnapshot,
-    SettingGuardReport,
-} from './co-writer/co-writer-types';
+import type { WritingMode, PlotNode, PlotProgress, ContextSnapshot, SettingGuardReport } from './co-writer/co-writer-types';
 import { buildSnapshot as buildSnapshotFromContext } from './co-writer/snapshot-builder';
 import {
     buildCoWriteOptions,
@@ -3340,7 +3324,7 @@ import { buildDirectionalPrompt as buildDirectionalPromptFromSlice } from './co-
 // 本地模型工具（已抽到 engine/co-writer/local-model-utils.ts）
 // ============================================================
 
-import { resolveCoWriteLocalModel } from './co-writer/local-model-utils';
+import './co-writer/local-model-utils';
 
 export {
     isLocalProviderEndpoint,

@@ -1,4 +1,4 @@
-import { App, Notice, Modal, Setting, TextComponent } from 'obsidian';
+import { App, Notice, Modal, Setting } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import { PromptManager, promptCategoryLabel, PROMPT_CATEGORY_IDS } from '@/services/prompt-manager';
 import { t } from '@/i18n';
@@ -269,7 +269,7 @@ export class PromptManagerSettings {
                 cls: 'nw-pm-template-desc'
             });
             if (tpl.isCustom) {
-                item.createEl('span', {
+                item.createSpan({
                     text: t('settings.promptManager.customBadge'),
                     cls: 'nw-pm-badge nw-pm-badge--custom'
                 });
@@ -358,7 +358,7 @@ export class PromptManagerSettings {
         const header = container.createDiv({ cls: 'nw-pm-detail-header' });
         const titleArea = header.createDiv();
         titleArea.createEl('h3', { text: template.name, cls: 'nw-pm-detail-title' });
-        titleArea.createEl('div', {
+        titleArea.createDiv({
             text: `${promptCategoryLabel(template.category)} · v${this.promptManager.getActiveVersion(template)?.version || '?'}`,
             cls: 'nw-pm-detail-meta'
         });
@@ -418,7 +418,7 @@ export class PromptManagerSettings {
         const versionList = section.createDiv({ cls: 'nw-pm-version-list' });
 
         for (const ver of template.versions) {
-            const badge = versionList.createEl('span', {
+            const badge = versionList.createSpan({
                 text: `v${ver.version}${ver.isActive ? ' ✓' : ''}`,
                 cls: `nw-pm-version-badge${ver.isActive ? ' nw-pm-version-badge--active' : ''}`
             });
@@ -472,7 +472,7 @@ export class PromptManagerSettings {
                 cls: 'nw-pm-var-desc'
             });
             if (v.required) {
-                item.createEl('span', {
+                item.createSpan({
                     text: t('settings.promptManager.requiredBadge'),
                     cls: 'nw-pm-badge nw-pm-badge--required'
                 });
@@ -536,7 +536,7 @@ export class PromptManagerSettings {
             cls: 'nw-stat-muted-mt'
         });
 
-        const statusBadge = header.createEl('span', {
+        const statusBadge = header.createSpan({
             text: this.getStatusLabel(test.status),
             cls: `nw-pm-status ${this.getStatusClass(test.status)}`
         });
@@ -730,7 +730,7 @@ export class PromptManagerSettings {
                 cls: 'nw-pm-usage-version'
             });
             if (record.abTestId) {
-                left.createEl('span', {
+                left.createSpan({
                     text: `A/B ${record.abVariant?.toUpperCase()}`,
                     cls: 'nw-pm-badge nw-pm-badge--ab'
                 });

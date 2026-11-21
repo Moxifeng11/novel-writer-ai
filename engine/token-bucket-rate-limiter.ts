@@ -230,7 +230,7 @@ export class TokenBucketRateLimiter {
         }
 
         this.isProcessingQueue = true;
-        setTimeout(() => this.processQueue(), 0);
+        window.setTimeout(() => this.processQueue(), 0);
     }
 
     private processQueue(): void {
@@ -270,7 +270,7 @@ export class TokenBucketRateLimiter {
             const waitTime = (tokensNeeded / this.tokensPerSecond) * 1000;
 
             if (isFinite(waitTime) && waitTime > 0 && waitTime < 60000) {
-                setTimeout(() => this.processQueue(), Math.min(waitTime, 1000));
+                window.setTimeout(() => this.processQueue(), Math.min(waitTime, 1000));
             }
         }
     }

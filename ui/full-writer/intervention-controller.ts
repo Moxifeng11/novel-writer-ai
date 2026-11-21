@@ -94,7 +94,7 @@ export class InterventionController {
         });
         this.container = box;
 
-        box.createEl('div', {
+        box.createDiv({
             text: t('fullwriter.iv.title'),
             attr: { style: 'margin: 0 0 6px 0; font-size: 0.8em; font-weight: 600; color: var(--text-muted);' }
         });
@@ -273,7 +273,7 @@ ${userInput}
             });
             warnBox.createEl('strong', { text: t('fullwriter.iv.warnPrefix') });
             for (const w of report.warnings) {
-                warnBox.createEl('div', { text: `• ${w}` });
+                warnBox.createDiv({ text: `• ${w}` });
             }
         }
 

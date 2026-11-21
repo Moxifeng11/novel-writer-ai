@@ -9,20 +9,13 @@
  * - 回滚到指定版本
  */
 import { FileTxService } from '@/services/file-tx';
-import { Modal, Setting, Notice, ButtonComponent } from 'obsidian';
+import { Modal, Setting, Notice } from 'obsidian';
 import type { App } from 'obsidian';
 import { ChapterVersionService } from '@/services/chapter-version-service';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 import type { EngineRegistry } from '@/engine/engine-registry';
 import type { VersionMeta, ContentType, DiffStats, LineDiff } from '@/shared/version-types';
-import {
-    formatVersionTime,
-    VERSION_TYPE_LABELS,
-    CONTENT_TYPE_LABELS,
-    lineDiff,
-    computeDiffStats,
-    charDiff,
-} from '@/shared/diff-utils';
+import { formatVersionTime, VERSION_TYPE_LABELS, lineDiff, computeDiffStats, charDiff } from '@/shared/diff-utils';
 import { createEmptyState } from './components/empty-state';
 
 type DiffViewMode = 'side-by-side' | 'inline';
@@ -570,7 +563,7 @@ class RollbackConfirmModal extends Modal {
             .createSpan({ text: `版本类型: ` })
             .appendChild(
                 (() => {
-                    const s = document.createElement('span');
+                    const s = createSpan();
                     s.className = 'nw-rollback-info-value';
                     s.textContent = VERSION_TYPE_LABELS[this.version.type] || this.version.type;
                     return s;
@@ -580,7 +573,7 @@ class RollbackConfirmModal extends Modal {
             .createSpan({ text: `创建时间: ` })
             .appendChild(
                 (() => {
-                    const s = document.createElement('span');
+                    const s = createSpan();
                     s.className = 'nw-rollback-info-value';
                     s.textContent = formatVersionTime(this.version.createdAt);
                     return s;
@@ -590,7 +583,7 @@ class RollbackConfirmModal extends Modal {
             .createSpan({ text: `字数: ` })
             .appendChild(
                 (() => {
-                    const s = document.createElement('span');
+                    const s = createSpan();
                     s.className = 'nw-rollback-info-value';
                     s.textContent = `${this.version.wordCount} 字`;
                     return s;
@@ -602,7 +595,7 @@ class RollbackConfirmModal extends Modal {
                 .createSpan({ text: `备注: ` })
                 .appendChild(
                     (() => {
-                        const s = document.createElement('span');
+                        const s = createSpan();
                         s.className = 'nw-rollback-info-value';
                         s.textContent = this.version.note;
                         return s;

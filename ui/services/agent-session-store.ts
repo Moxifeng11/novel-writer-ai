@@ -127,7 +127,7 @@ async function ensureFolder(app: App, folder: string): Promise<void> {
   * @returns AgentSessionStore 实例
  */
 export function createAgentSessionStore(app: App, scope: () => string): AgentSessionStore {
-    let timer: ReturnType<typeof setTimeout> | null = null;
+    let timer: number | null = null;
     let pending: HarnessSessionSnapshot | null = null;
     let writing: Promise<void> = Promise.resolve();
 
@@ -163,7 +163,7 @@ export function createAgentSessionStore(app: App, scope: () => string): AgentSes
 
     const schedule = (): void => {
         if (timer) return;
-        timer = setTimeout(() => {
+        timer = window.setTimeout(() => {
             timer = null;
             writing = writing.then(doFlush, doFlush);
         }, SAVE_THROTTLE_MS);
@@ -188,7 +188,7 @@ export function createAgentSessionStore(app: App, scope: () => string): AgentSes
         },
         flush: async () => {
             if (timer) {
-                clearTimeout(timer);
+                window.clearTimeout(timer);
                 timer = null;
             }
             writing = writing.then(doFlush, doFlush);
@@ -196,7 +196,7 @@ export function createAgentSessionStore(app: App, scope: () => string): AgentSes
         },
         clear: async () => {
             if (timer) {
-                clearTimeout(timer);
+                window.clearTimeout(timer);
                 timer = null;
             }
             pending = null;

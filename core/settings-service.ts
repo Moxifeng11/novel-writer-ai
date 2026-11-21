@@ -5,7 +5,7 @@
  * 从 main.ts 拆分而来
  */
 
-import type { NovelWriterSettings, CustomProvider } from '@/main';
+import type { NovelWriterSettings } from '@/main';
 import { DEFAULT_PROVIDERS } from '@/main';
 import { migrateSettingsWithStatus, withCurrentVersion, CURRENT_SCHEMA_VERSION, DEFAULT_UPDATE_GITHUB_REPO, normalizeUpdateGithubRepo } from '@/shared/settings-migrator';
 import type { CryptoService } from './crypto-service';

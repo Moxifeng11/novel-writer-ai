@@ -25,13 +25,7 @@ import { pjBodyFile } from '@/shared/paths';
 import { normalizeRagSources, summarizeRagSources, type RagSource } from '@/shared/rag-sources';
 import type { GatheredContext } from '@/engine/context-manager';
 import { ChapterStateManager } from '@/ui/states/chapter-state-manager';
-import {
-    getStreamlinedPhases,
-    getPhaseStatusDescriptor,
-    isPhaseClickable,
-    mapStreamlinedPhaseToStepIndex,
-    StreamlinedPhase,
-} from './streamlined-nav-presenter';
+import { getStreamlinedPhases, getPhaseStatusDescriptor, isPhaseClickable, mapStreamlinedPhaseToStepIndex } from './streamlined-nav-presenter';
 import { showError, showSuccess, showWarning } from '@/utils/helpers';
 import { SceneOutlineController } from './scene-outline-controller';
 import { openSceneConfirmWizard } from '@/ui/scene-confirm-modal';

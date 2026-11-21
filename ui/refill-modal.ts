@@ -1,5 +1,5 @@
 import { App, Modal, Notice } from 'obsidian';
-import { KnowledgeBaseManager, BookBasicInfo } from '@/services/knowledge-base-manager';
+import { KnowledgeBaseManager } from '@/services/knowledge-base-manager';
 import { DeconstructionScheduler, BreakdownDimension, BreakdownProgress } from '@/engine/deconstruction-scheduler';
 import { StyleFingerprint, StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
 import { FingerprintExtractor } from '@/engine/fingerprint-extractor';
@@ -220,7 +220,7 @@ export class RefillModal extends Modal {
         const completenessRow = contentEl.createDiv({
             cls: 'nw-rf-completeness-row'
         });
-        completenessRow.createEl('div', {
+        completenessRow.createDiv({
             text: '当前完整度',
             cls: 'nw-rf-field-label'
         });
@@ -229,7 +229,7 @@ export class RefillModal extends Modal {
         const optionsSection = contentEl.createDiv({
             cls: 'nw-rf-section'
         });
-        optionsSection.createEl('div', {
+        optionsSection.createDiv({
             text: '补全选项',
             cls: 'nw-rf-section-title'
         });
@@ -261,11 +261,11 @@ export class RefillModal extends Modal {
             });
 
             const info = row.createDiv({ cls: 'nw-rf-flex1' });
-            info.createEl('div', {
+            info.createDiv({
                 text: `${opt.icon} ${opt.label}`,
                 cls: 'nw-rf-option-label'
             });
-            info.createEl('div', {
+            info.createDiv({
                 text: opt.desc,
                 cls: 'nw-rf-option-desc'
             });
@@ -276,7 +276,7 @@ export class RefillModal extends Modal {
                 cls: 'nw-rf-progress'
             });
 
-            progressSection.createEl('div', {
+            progressSection.createDiv({
                 text: this.progressMessage || '重新提取中...',
                 cls: 'nw-rf-progress-message'
             });
@@ -330,7 +330,7 @@ export class RefillModal extends Modal {
         const modeSection = contentEl.createDiv({
             cls: 'nw-rf-section'
         });
-        modeSection.createEl('div', {
+        modeSection.createDiv({
             text: '拆解模式',
             cls: 'nw-rf-section-title'
         });
@@ -364,11 +364,11 @@ export class RefillModal extends Modal {
             });
 
             const label = row.createDiv();
-            label.createEl('div', {
+            label.createDiv({
                 text: mode.label,
                 cls: 'nw-rf-option-label'
             });
-            label.createEl('div', {
+            label.createDiv({
                 text: mode.desc,
                 cls: 'nw-rf-option-desc'
             });
@@ -377,7 +377,7 @@ export class RefillModal extends Modal {
         const dimSection = contentEl.createDiv({
             cls: 'nw-rf-dim-section'
         });
-        dimSection.createEl('div', {
+        dimSection.createDiv({
             text: '选择维度',
             cls: 'nw-rf-section-title'
         });
@@ -417,13 +417,13 @@ export class RefillModal extends Modal {
             this.dimensionCheckboxes!.set(dim.key, checkbox);
 
             const info = checkboxEl.createDiv({ cls: 'nw-rf-flex1' });
-            info.createEl('div', {
+            info.createDiv({
                 text: `${dim.icon} ${dim.label}`,
                 cls: 'nw-rf-dim-label'
             });
 
             const statusText = status === 'completed' ? '✓ 已完成' : status === 'failed' ? '✗ 失败' : '○ 缺失';
-            info.createEl('div', {
+            info.createDiv({
                 text: statusText,
                 cls: `nw-rf-dim-status nw-rf-dim-status--${status}`
             });
@@ -432,11 +432,11 @@ export class RefillModal extends Modal {
         const timeSection = contentEl.createDiv({
             cls: 'nw-rf-section nw-rf-section--alt'
         });
-        timeSection.createEl('div', {
+        timeSection.createDiv({
             text: `⏱️ 预估时间：${this.formatTime(this.getEstimatedTime())}（每维度约30秒）`,
             cls: 'nw-rf-time-line'
         });
-        timeSection.createEl('div', {
+        timeSection.createDiv({
             text: `📋 已选择 ${this.selectedDimensions.size} / 6 个维度`,
             cls: 'nw-rf-time-sub'
         });
@@ -446,13 +446,13 @@ export class RefillModal extends Modal {
                 cls: 'nw-rf-progress'
             });
 
-            progressSection.createEl('div', {
+            progressSection.createDiv({
                 text: this.progressMessage || '拆解中...',
                 cls: 'nw-rf-progress-message'
             });
 
             if (this.currentDimension) {
-                progressSection.createEl('div', {
+                progressSection.createDiv({
                     text: `当前：${this.currentDimension}`,
                     cls: 'nw-rf-progress-dim'
                 });

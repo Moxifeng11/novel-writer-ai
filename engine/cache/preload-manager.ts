@@ -485,16 +485,16 @@ export class PreloadManager {
                     // 静默失败
                 })
                 .finally(() => {
-                    this.idleTimer = setTimeout(processNext, 50) as unknown as number;
+                    this.idleTimer = window.setTimeout(processNext, 50) as unknown as number;
                 });
         };
 
-        this.idleTimer = setTimeout(processNext, 100) as unknown as number;
+        this.idleTimer = window.setTimeout(processNext, 100) as unknown as number;
     }
 
     private stopIdleProcessor(): void {
         if (this.idleTimer !== null) {
-            clearTimeout(this.idleTimer);
+            window.clearTimeout(this.idleTimer);
             this.idleTimer = null;
         }
     }

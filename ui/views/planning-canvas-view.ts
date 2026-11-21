@@ -256,7 +256,7 @@ export class PlanningCanvasView extends ItemView {
         // 平移：中键拖动空白处（左键保留给选择/拖动节点，双击新建）
         this.bindPan(canvasEl);
 
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        const svg = createSvg('svg');
         svg.addClass('nw-planning-edges');
         zoomEl.appendChild(svg);
         this.edgeLayer = svg;
@@ -648,7 +648,7 @@ export class PlanningCanvasView extends ItemView {
             const from = byId.get(edge.from);
             const to = byId.get(edge.to);
             if (!from || !to) continue;
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            const line = createSvg('line');
             const geometry = planningEdgeLine(from.position, to.position);
             line.setAttribute('x1', String(geometry.x1));
             line.setAttribute('y1', String(geometry.y1));

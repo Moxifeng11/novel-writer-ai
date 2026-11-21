@@ -28,7 +28,7 @@ import {
     subscribePetActivity,
     type PetActivityKind,
 } from '@/shared/pet-activity';
-import { clampPetPoint, PET_DEFAULT_SNAP_EDGES, petViewportOf, snapPetPoint, type PetViewport, type PetSnapEdges } from '@/shared/pet-geometry';
+import '@/shared/pet-geometry';
 import { onNodeDoc } from '@/shared/dom-window';
 
 /**
@@ -204,7 +204,7 @@ export class WritingPet {
     private moved = false;
     private dragStart = { x: 0, y: 0 };
     private origin = { x: 0, y: 0 };
-    private pulseTimer: ReturnType<typeof setTimeout> | null = null;
+    private pulseTimer: number | null = null;
     /** 快捷摘要自动刷新定时器（60s；文档隐藏时跳过） */
     private refreshTimer: number | null = null;
     /** 运行时活动订阅（写作/AI 思考/完成/出错 → 切对应帧） */
@@ -465,8 +465,8 @@ export class WritingPet {
         if (!this.isMounted || delta <= 0) return;
         this.update();
         this.root?.addClass('nw-is-pulse');
-        if (this.pulseTimer) clearTimeout(this.pulseTimer);
-        this.pulseTimer = setTimeout(() => {
+        if (this.pulseTimer) window.clearTimeout(this.pulseTimer);
+        this.pulseTimer = window.setTimeout(() => {
             this.pulseTimer = null;
             this.root?.removeClass('nw-is-pulse');
         }, 1200);
@@ -477,7 +477,7 @@ export class WritingPet {
      */
     destroy(): void {
         if (this.pulseTimer) {
-            clearTimeout(this.pulseTimer);
+            window.clearTimeout(this.pulseTimer);
             this.pulseTimer = null;
         }
         this.disposeActivities();
@@ -646,7 +646,7 @@ export class WritingPet {
         settings.petPosition = { x: Math.round(rect.left), y: Math.round(rect.top) };
         void this.deps.plugin.saveSettings();
         // 拖动结束后的那次 click 不应再触发展开
-        setTimeout(() => { this.moved = false; }, 0);
+        window.setTimeout(() => { this.moved = false; }, 0);
     }
 
     private placeAt(x: number, y: number): void {

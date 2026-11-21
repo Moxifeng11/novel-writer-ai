@@ -9,23 +9,10 @@ import { extractKeywordTokens, keywordOverlapRatio } from '@/shared/keyword-toke
 import { truncateTextToTokens } from '@/shared/prompt-budget';
 import { parseSceneCardFields, parseSceneField, type SceneCardFields } from '@/shared/scene-card';
 import type { StoryLinkage } from '@/engine/story-linkage';
-import type { GatheredContext } from './context-types';
+
 import { linkFactsToEntities } from './knowledge-fact-nodes';
 import { activeContextQuotas } from '@/shared/context-budget-policy';
-import type {
-    StoryContextBundle,
-    StoryContextGraph,
-    StoryContextKind,
-    StoryContextKindTelemetry,
-    StoryContextLink,
-    StoryContextMode,
-    StoryContextNode,
-    StoryContextProfile,
-    StoryContextRequest,
-    StoryContextSource,
-    StoryContextTier,
-    StoryContextTelemetry,
-} from './story-context-types';
+import type { StoryContextBundle, StoryContextGraph, StoryContextKind, StoryContextKindTelemetry, StoryContextLink, StoryContextNode, StoryContextProfile, StoryContextRequest, StoryContextSource, StoryContextTier, StoryContextTelemetry } from './story-context-types';
 
 const ALL_KINDS: StoryContextKind[] = [
     'worldview', 'setting', 'character', 'faction', 'location', 'item',

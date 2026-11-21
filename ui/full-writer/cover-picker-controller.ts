@@ -46,7 +46,7 @@ export class CoverPickerController {
         input.addClass('nw-u-d-none');
 
         // 60秒安全清理定时器（防止用户取消对话框后 input 残留）
-        const cleanupTimer = setTimeout(() => {
+        const cleanupTimer = window.setTimeout(() => {
             clearActive();
             try { if (document.body.contains(input)) input.remove(); } catch (e) {
                 // P1-2: input 节点清理失败仅记录，不影响后续流程
@@ -55,7 +55,7 @@ export class CoverPickerController {
         }, 60000);
 
         input.onchange = async () => {
-            clearTimeout(cleanupTimer);
+            window.clearTimeout(cleanupTimer);
             const file = input.files?.[0];
             try { input.remove(); } catch (e) {
                 // P1-2: input 节点已可能在 cleanup 中移除，忽略但记录

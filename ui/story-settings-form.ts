@@ -107,8 +107,8 @@ export class StorySettingsEditor {
 
         const head = root.createDiv({ cls: 'nw-story-settings-head' });
         const titleWrap = head.createDiv();
-        titleWrap.createEl('div', { text: t('story.form.title'), cls: 'nw-story-settings-title' });
-        titleWrap.createEl('div', {
+        titleWrap.createDiv({ text: t('story.form.title'), cls: 'nw-story-settings-title' });
+        titleWrap.createDiv({
             text: t('story.form.desc'),
             cls: 'nw-story-settings-desc',
         });

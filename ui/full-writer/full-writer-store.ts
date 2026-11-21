@@ -366,7 +366,7 @@ export class FullWriterStoreImpl implements FullWriterStore {
     private scheduleNotify(): void {
         if (this._notificationPending) return;
         this._notificationPending = true;
-        requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
             this._notificationPending = false;
             this.notify();
         });

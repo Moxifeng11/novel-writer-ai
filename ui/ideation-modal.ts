@@ -234,7 +234,7 @@ export class IdeationModal extends Modal {
         const section = container.createDiv({ cls: 'nw-ideation-section' });
 
         const actionRow = section.createDiv({ cls: 'nw-ideation-action-row' });
-        actionRow.createEl('span', {
+        actionRow.createSpan({
             text: t('ideation.list.count', { count: this.ideas.length }),
             cls: 'nw-ideation-count',
         });
@@ -265,7 +265,7 @@ export class IdeationModal extends Modal {
         this.ideas.forEach((idea, idx) => {
             const card = grid.createDiv({ cls: 'nw-ideation-card' });
             const cardHeader = card.createDiv({ cls: 'nw-ideation-card-header' });
-            cardHeader.createEl('span', { text: `#${idx + 1}`, cls: 'nw-ideation-card-num' });
+            cardHeader.createSpan({ text: `#${idx + 1}`, cls: 'nw-ideation-card-num' });
 
             const favoriteBtn = cardHeader.createEl('button', {
                 text: this.isIdeaSaved(idea.id) ? '❤️' : '🤍',
@@ -283,12 +283,12 @@ export class IdeationModal extends Modal {
 
             const genres = card.createDiv({ cls: 'nw-ideation-card-genres' });
             idea.suitableGenres.forEach(g => {
-                genres.createEl('span', { text: genreLabel(g), cls: 'nw-ideation-card-genre' });
+                genres.createSpan({ text: genreLabel(g), cls: 'nw-ideation-card-genre' });
             });
 
             const scoreBar = card.createDiv({ cls: 'nw-ideation-score-bar' });
             const avgScore = this.calcAvgScore(idea.scores);
-            scoreBar.createEl('span', {
+            scoreBar.createSpan({
                 text: t('ideation.list.avgScore', { score: avgScore }),
                 cls: 'nw-ideation-score-text',
             });
@@ -413,7 +413,7 @@ export class IdeationModal extends Modal {
             { label: t('ideation.dim.radar.satisfaction'), value: scores.satisfactionDensity, angle: Math.PI }
         ];
 
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        const svg = createSvg('svg');
         svg.setAttribute('width', String(width));
         svg.setAttribute('height', String(height));
         svg.addClass('nw-ideation-radar-svg');
@@ -426,7 +426,7 @@ export class IdeationModal extends Modal {
                 const y = centerY + r * Math.sin(angle);
                 return `${x},${y}`;
             }).join(' ');
-            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            const polygon = createSvg('polygon');
             polygon.setAttribute('points', points);
             polygon.setAttribute('fill', 'none');
             polygon.setAttribute('stroke', 'var(--background-modifier-border)');
@@ -438,7 +438,7 @@ export class IdeationModal extends Modal {
             const angle = -Math.PI / 2 + (idx * Math.PI * 2) / dimensions.length;
             const x = centerX + radius * Math.cos(angle);
             const y = centerY + radius * Math.sin(angle);
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            const line = createSvg('line');
             line.setAttribute('x1', String(centerX));
             line.setAttribute('y1', String(centerY));
             line.setAttribute('x2', String(x));
@@ -456,7 +456,7 @@ export class IdeationModal extends Modal {
             return `${x},${y}`;
         }).join(' ');
 
-        const dataPolygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        const dataPolygon = createSvg('polygon');
         dataPolygon.setAttribute('points', dataPoints);
         dataPolygon.setAttribute('fill', 'var(--interactive-accent)');
         dataPolygon.setAttribute('fill-opacity', '0.3');
@@ -469,7 +469,7 @@ export class IdeationModal extends Modal {
             const r = (radius * dim.value) / 100;
             const x = centerX + r * Math.cos(angle);
             const y = centerY + r * Math.sin(angle);
-            const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            const dot = createSvg('circle');
             dot.setAttribute('cx', String(x));
             dot.setAttribute('cy', String(y));
             dot.setAttribute('r', '4');
@@ -482,7 +482,7 @@ export class IdeationModal extends Modal {
             const labelRadius = radius + 14;
             const x = centerX + labelRadius * Math.cos(angle);
             const y = centerY + labelRadius * Math.sin(angle);
-            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            const text = createSvg('text');
             text.setAttribute('x', String(x));
             text.setAttribute('y', String(y));
             text.setAttribute('text-anchor', 'middle');
@@ -526,15 +526,15 @@ export class IdeationModal extends Modal {
         this.savedIdeas.forEach((saved, idx) => {
             const item = list.createDiv({ cls: 'nw-ideation-history-item' });
             const itemHeader = item.createDiv({ cls: 'nw-ideation-history-header' });
-            itemHeader.createEl('span', { text: `#${idx + 1} ${saved.coreConcept}`, cls: 'nw-ideation-history-title' });
+            itemHeader.createSpan({ text: `#${idx + 1} ${saved.coreConcept}`, cls: 'nw-ideation-history-title' });
             const dateStr = new Date(saved.savedAt).toLocaleDateString();
-            itemHeader.createEl('span', { text: dateStr, cls: 'nw-ideation-history-date' });
+            itemHeader.createSpan({ text: dateStr, cls: 'nw-ideation-history-date' });
 
             item.createEl('p', { text: saved.elevatorPitch, cls: 'nw-ideation-history-pitch' });
 
             const tags = item.createDiv({ cls: 'nw-ideation-history-tags' });
             saved.selectedGenres.forEach(g => {
-                tags.createEl('span', { text: genreLabel(g), cls: 'nw-ideation-history-tag' });
+                tags.createSpan({ text: genreLabel(g), cls: 'nw-ideation-history-tag' });
             });
 
             const actions = item.createDiv({ cls: 'nw-ideation-history-actions' });

@@ -9,7 +9,7 @@
  */
 
 import type { App } from 'obsidian';
-import { TriggeredMemory, MemoryShard, getCharacterMemoryPath, loadCharacterMemories, markMemoryRevealed } from '@/engine/memory-trigger';
+import { TriggeredMemory, MemoryShard, markMemoryRevealed } from '@/engine/memory-trigger';
 
 /** 记忆预览宿主：仅需 app 即可标记已揭示 */
 export interface MemoryPreviewHost {
@@ -44,13 +44,13 @@ export class MemoryPreview {
         this.container.empty();
         this.container.addClass('novel-writer-memory-preview');
 
-        const title = this.container.createEl('div', {
+        const title = this.container.createDiv({
             text: '🧩 记忆碎片',
             cls: 'novel-writer-section-title',
         });
 
         if (allShards.length === 0) {
-            this.container.createEl('div', {
+            this.container.createDiv({
                 text: '暂无记忆碎片。请先生成角色记忆。',
                 attr: { style: 'color: var(--text-muted); font-size: 0.82em; margin-top: 4px;' },
             });
@@ -60,20 +60,20 @@ export class MemoryPreview {
         // 全量统计
         const unrevealed = allShards.filter(s => !s.revealed);
         const revealed = allShards.filter(s => s.revealed);
-        const stats = this.container.createEl('div', {
+        const stats = this.container.createDiv({
             attr: { style: 'font-size: 0.78em; color: var(--text-muted); margin-bottom: 6px;' },
         });
-        stats.createEl('span', { text: `共 ${allShards.length} 条（` });
-        stats.createEl('span', {
+        stats.createSpan({ text: `共 ${allShards.length} 条（` });
+        stats.createSpan({
             text: `${unrevealed.length} 未揭示`,
             attr: { style: 'color: var(--text-accent); font-weight: 600;' },
         });
-        stats.createEl('span', { text: ` | ${revealed.length} 已揭示）` });
+        stats.createSpan({ text: ` | ${revealed.length} 已揭示）` });
 
         // 触发记忆（如果有）
         if (triggered.length > 0) {
-            const triggerSection = this.container.createEl('div', { cls: 'nw-memory-triggered' });
-            triggerSection.createEl('div', {
+            const triggerSection = this.container.createDiv({ cls: 'nw-memory-triggered' });
+            triggerSection.createDiv({
                 text: `⚡ 当前触发了 ${triggered.length} 条记忆`,
                 attr: { style: 'font-size: 0.82em; font-weight: 600; color: var(--text-accent); margin-bottom: 4px;' },
             });
@@ -91,15 +91,15 @@ export class MemoryPreview {
                 attr: { style: 'cursor: pointer; font-size: 0.82em; font-weight: 600; margin: 8px 0;' },
             });
 
-            const list = unrevealedSection.createEl('div', { cls: 'nw-memory-list' });
+            const list = unrevealedSection.createDiv({ cls: 'nw-memory-list' });
             for (const s of unrevealed.slice(0, 10)) {
-                list.createEl('div', {
+                list.createDiv({
                     text: `${s.id}: ${s.title} — ${s.characterName} (重要度: ${s.importance})`,
                     attr: { style: 'font-size: 0.76em; color: var(--text-muted); padding: 2px 0; padding-left: 8px; border-left: 2px solid var(--text-faint);' },
                 });
             }
             if (unrevealed.length > 10) {
-                list.createEl('div', {
+                list.createDiv({
                     text: `... 还有 ${unrevealed.length - 10} 条`,
                     attr: { style: 'font-size: 0.73em; color: var(--text-faint); padding-left: 8px;' },
                 });
@@ -115,26 +115,26 @@ export class MemoryPreview {
         project: string,
         currentChapter?: string,
     ): void {
-        const card = parent.createEl('div', {
+        const card = parent.createDiv({
             cls: 'nw-memory-card',
             attr: { style: 'border-left: 3px solid var(--text-accent); padding: 4px 8px; margin: 4px 0; font-size: 0.78em; background: var(--background-secondary); border-radius: 4px;' },
         });
 
-        const header = card.createEl('div', {
+        const header = card.createDiv({
             text: `${shard.id} ${shard.title}`,
             attr: { style: 'font-weight: 600;' },
         });
-        header.createEl('span', {
+        header.createSpan({
             text: ` 匹配: ${(score * 100).toFixed(0)}%`,
             attr: { style: 'color: var(--text-accent); font-size: 0.85em;' },
         });
 
-        card.createEl('div', {
+        card.createDiv({
             text: `📌 ${shard.characterName} · ${shard.timeContext} · ${shard.emotions.join('、')}`,
             attr: { style: 'color: var(--text-muted); margin: 2px 0;' },
         });
 
-        card.createEl('div', {
+        card.createDiv({
             text: `触发: ${reason}`,
             attr: { style: 'color: var(--text-faint); font-size: 0.88em;' },
         });

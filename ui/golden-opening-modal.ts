@@ -285,7 +285,7 @@ export class GoldenOpeningModal extends Modal {
             this.threeChapters.forEach((chapter, idx) => {
                 const chapterCard = resultSection.createDiv({ cls: 'nw-go-chapter-card' });
                 const chHeader = chapterCard.createDiv({ cls: 'nw-go-chapter-header' });
-                chHeader.createEl('span', { text: t('goldenOpening.labels.chapterTitle', { chapter: chapter.chapterNum, title: chapter.title }), cls: 'nw-go-chapter-title' });
+                chHeader.createSpan({ text: t('goldenOpening.labels.chapterTitle', { chapter: chapter.chapterNum, title: chapter.title }), cls: 'nw-go-chapter-title' });
 
                 const structureList = chapterCard.createDiv({ cls: 'nw-go-structure-list' });
                 chapter.structure.forEach((item, i) => {
@@ -383,9 +383,9 @@ export class GoldenOpeningModal extends Modal {
             resultSection.createEl('h3', { text: t("goldenOpening.hooks.k14"), cls: 'nw-go-section-title' });
 
             const scoreCard = resultSection.createDiv({ cls: 'nw-go-score-card' });
-            scoreCard.createEl('div', { text: `${this.hookCheckResult.overallScore}`, cls: 'nw-go-score-number' });
-            scoreCard.createEl('div', { text: t("goldenOpening.hooks.k15"), cls: 'nw-go-score-label' });
-            scoreCard.createEl('div', {
+            scoreCard.createDiv({ text: `${this.hookCheckResult.overallScore}`, cls: 'nw-go-score-number' });
+            scoreCard.createDiv({ text: t("goldenOpening.hooks.k15"), cls: 'nw-go-score-label' });
+            scoreCard.createDiv({
                 text: this.hookCheckResult.overallScore >= 8 ? t("goldenOpening.hooks.k16") :
                       this.hookCheckResult.overallScore >= 6 ? t("goldenOpening.hooks.k20") :
                       this.hookCheckResult.overallScore >= 4 ? t("goldenOpening.hooks.k21") : t("goldenOpening.hooks.k22"),
@@ -441,20 +441,20 @@ export class GoldenOpeningModal extends Modal {
 
             const overviewGrid = resultSection.createDiv({ cls: 'nw-go-rhythm-grid' });
             const paceCard = overviewGrid.createDiv({ cls: 'nw-go-rhythm-card' });
-            paceCard.createEl('div', { text: t("goldenOpening.rhythm.k7"), cls: 'nw-go-rhythm-label' });
-            paceCard.createEl('div', { text: this.rhythmResult.overallPace, cls: 'nw-go-rhythm-value' });
+            paceCard.createDiv({ text: t("goldenOpening.rhythm.k7"), cls: 'nw-go-rhythm-label' });
+            paceCard.createDiv({ text: this.rhythmResult.overallPace, cls: 'nw-go-rhythm-value' });
             const paceBar = paceCard.createDiv({ cls: 'nw-go-rhythm-bar' });
             const paceFill = paceBar.createDiv({ cls: 'nw-go-rhythm-fill' });
             paceFill.style.width = `${this.rhythmResult.paceScore * 10}%`;
-            paceCard.createEl('div', { text: `${this.rhythmResult.paceScore}/10`, cls: 'nw-go-rhythm-score' });
+            paceCard.createDiv({ text: `${this.rhythmResult.paceScore}/10`, cls: 'nw-go-rhythm-score' });
 
             const densityCard = overviewGrid.createDiv({ cls: 'nw-go-rhythm-card' });
-            densityCard.createEl('div', { text: t("goldenOpening.rhythm.k8"), cls: 'nw-go-rhythm-label' });
-            densityCard.createEl('div', { text: this.rhythmResult.infoDensity, cls: 'nw-go-rhythm-value' });
+            densityCard.createDiv({ text: t("goldenOpening.rhythm.k8"), cls: 'nw-go-rhythm-label' });
+            densityCard.createDiv({ text: this.rhythmResult.infoDensity, cls: 'nw-go-rhythm-value' });
             const densityBar = densityCard.createDiv({ cls: 'nw-go-rhythm-bar' });
             const densityFill = densityBar.createDiv({ cls: 'nw-go-rhythm-fill' });
             densityFill.style.width = `${this.rhythmResult.densityScore * 10}%`;
-            densityCard.createEl('div', { text: `${this.rhythmResult.densityScore}/10`, cls: 'nw-go-rhythm-score' });
+            densityCard.createDiv({ text: `${this.rhythmResult.densityScore}/10`, cls: 'nw-go-rhythm-score' });
 
             resultSection.createEl('h4', { text: t("goldenOpening.rhythm.k9"), cls: 'nw-go-subtitle' });
             this.rhythmResult.paragraphAnalysis.forEach(item => {
@@ -571,7 +571,7 @@ export class GoldenOpeningModal extends Modal {
             severityFill.style.width = `${this.worldbuildingResult.dumpSeverity * 10}%`;
             severityFill.style.background = this.worldbuildingResult.dumpSeverity >= 7 ? '#ff6b6b' :
                                              this.worldbuildingResult.dumpSeverity >= 4 ? '#f9ca24' : '#4ecdc4';
-            dumpCard.createEl('div', { text: t('goldenOpening.labels.severityLine', { score: this.worldbuildingResult.dumpSeverity }), cls: 'nw-go-severity-text' });
+            dumpCard.createDiv({ text: t('goldenOpening.labels.severityLine', { score: this.worldbuildingResult.dumpSeverity }), cls: 'nw-go-severity-text' });
 
             if (this.worldbuildingResult.dumpLocations.length > 0) {
                 resultSection.createEl('h4', { text: t("goldenOpening.world.k9"), cls: 'nw-go-subtitle' });
@@ -625,9 +625,9 @@ export class GoldenOpeningModal extends Modal {
             resultSection.createEl('h3', { text: t("goldenOpening.scoring.k6"), cls: 'nw-go-section-title' });
 
             const overallCard = resultSection.createDiv({ cls: 'nw-go-overall-score' });
-            overallCard.createEl('div', { text: `${this.openingScoreResult.overall}`, cls: 'nw-go-overall-number' });
-            overallCard.createEl('div', { text: t("goldenOpening.scoring.k7"), cls: 'nw-go-overall-label' });
-            overallCard.createEl('div', {
+            overallCard.createDiv({ text: `${this.openingScoreResult.overall}`, cls: 'nw-go-overall-number' });
+            overallCard.createDiv({ text: t("goldenOpening.scoring.k7"), cls: 'nw-go-overall-label' });
+            overallCard.createDiv({
                 text: this.openingScoreResult.overall >= 9 ? t("goldenOpening.scoring.k8") :
                       this.openingScoreResult.overall >= 7 ? t("goldenOpening.scoring.k15") :
                       this.openingScoreResult.overall >= 5 ? t("goldenOpening.scoring.k16") : t("goldenOpening.scoring.k17"),

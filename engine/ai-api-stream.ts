@@ -230,7 +230,7 @@ export async function callAIStream(
                 const maxRetries = host.resolveMaxRetries(endpoint);
             for (let attempt = 0; attempt < maxRetries; attempt++) {
                     let ac: AbortController | null = null;
-                    let timer: ReturnType<typeof setTimeout> | null = null;
+                    let timer: number | null = null;
 
                     // v6.3: 取消联动覆盖到响应体读取结束（finally 解绑），与 callAI 保持一致
                     const onExternalAbort = () => ac?.abort();
@@ -239,7 +239,7 @@ export async function callAIStream(
                     }
                     try {
                         ac = new AbortController();
-                        timer = setTimeout(() => ac!.abort(), host.resolveTimeout(currentModel, endpoint));
+                        timer = window.setTimeout(() => ac!.abort(), host.resolveTimeout(currentModel, endpoint));
 
                         const isOllamaNative = requestEndpoint.includes('/api/generate');
 
@@ -278,8 +278,8 @@ export async function callAIStream(
 
                         // 同 nativeStreamIterator：头部到达后保留空闲超时看门狗，避免读流永久挂起
                         const armIdleTimer = () => {
-                            if (timer) clearTimeout(timer);
-                            timer = setTimeout(() => ac?.abort(), host.resolveTimeout(currentModel, endpoint));
+                            if (timer) window.clearTimeout(timer);
+                            timer = window.setTimeout(() => ac?.abort(), host.resolveTimeout(currentModel, endpoint));
                         };
                         armIdleTimer();
 
@@ -486,7 +486,7 @@ export async function callAIStream(
                             const base = AI_RETRY_BACKOFF_MS * Math.pow(2, attempt);
                             const backoff = Math.min(base, 30_000);
                             const jitter = Math.random() * backoff * 0.5;
-                            await new Promise(r => setTimeout(r, backoff + jitter));
+                            await new Promise(r => window.setTimeout(r, backoff + jitter));
                         } else {
                             lastError = errorMessage(error) || '网络错误(流式)';
                         }
@@ -494,7 +494,7 @@ export async function callAIStream(
                         // v6.3: 解绑放在 finally，保证取消联动覆盖整个请求生命周期（含响应体读取）
                         if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort);
                         if (timer) {
-                            clearTimeout(timer);
+                            window.clearTimeout(timer);
                             timer = null;
                         }
                     }
@@ -741,7 +741,7 @@ async function* nativeStreamIterator(
             let hasYielded = false;
             for (let attempt = 0; attempt < maxRetries; attempt++) {
                 let ac: AbortController | null = null;
-                let timer: ReturnType<typeof setTimeout> | null = null;
+                let timer: number | null = null;
 
                 // v6.3: 取消联动覆盖到响应体读取结束（finally 解绑），与 callAI 保持一致
                 const onExternalAbort = () => ac?.abort();
@@ -750,7 +750,7 @@ async function* nativeStreamIterator(
                 }
                 try {
                     ac = new AbortController();
-                    timer = setTimeout(() => ac!.abort(), host.resolveTimeout(currentModel, endpoint));
+                    timer = window.setTimeout(() => ac!.abort(), host.resolveTimeout(currentModel, endpoint));
 
                     const isOllamaNative = requestEndpoint.includes('/api/generate');
 
@@ -785,8 +785,8 @@ async function* nativeStreamIterator(
                     // 旧实现头部一到就 clearTimeout，若服务端保持连接却不再产出，
                     // reader.read() 会永久挂起（本地 Ollama 排队/卡死时表现为一直「生成中」）。
                     const armIdleTimer = () => {
-                        if (timer) clearTimeout(timer);
-                        timer = setTimeout(() => ac?.abort(), host.resolveTimeout(currentModel, endpoint));
+                        if (timer) window.clearTimeout(timer);
+                        timer = window.setTimeout(() => ac?.abort(), host.resolveTimeout(currentModel, endpoint));
                     };
                     armIdleTimer();
 
@@ -945,7 +945,7 @@ async function* nativeStreamIterator(
                     return { content: accumulatedContent, finishReason: streamFinishReason };
                 } catch (error: unknown) {
                     if (externalSignal?.aborted) {
-                        if (timer) { clearTimeout(timer); timer = null; }
+                        if (timer) { window.clearTimeout(timer); timer = null; }
                         return { content: '', error: 'aborted' };
                     }
 
@@ -953,7 +953,7 @@ async function* nativeStreamIterator(
                     // 的分片——任何内部重试都会从零重发，消费者累加后出现重复正文。
                     // 必须把错误如实抛给消费方（单元写作回退一次性调用 / 报错路径）。
                     if (hasYielded) {
-                        if (timer) { clearTimeout(timer); timer = null; }
+                        if (timer) { window.clearTimeout(timer); timer = null; }
                         throw error;
                     }
 
@@ -977,7 +977,7 @@ async function* nativeStreamIterator(
                         const base = AI_RETRY_BACKOFF_MS * Math.pow(2, attempt);
                         const backoff = Math.min(base, 30_000);
                         const jitter = Math.random() * backoff * 0.5;
-                        await new Promise(r => setTimeout(r, backoff + jitter));
+                        await new Promise(r => window.setTimeout(r, backoff + jitter));
                     } else {
                         lastError = error instanceof Error ? error.message : String(error);
                     }
@@ -985,7 +985,7 @@ async function* nativeStreamIterator(
                     // v6.3: 解绑放在 finally，保证取消联动覆盖整个请求生命周期（含响应体读取）
                     if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort);
                     if (timer) {
-                        clearTimeout(timer);
+                        window.clearTimeout(timer);
                         timer = null;
                     }
                     ac = null;

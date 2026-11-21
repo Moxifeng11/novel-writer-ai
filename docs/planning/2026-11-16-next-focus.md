@@ -4204,3 +4204,19 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
   目录周期扫描覆盖 4.97.3 后放行。此前「页面停在 4.97.1」是目录尚未扫描（Last updated 早于发版），非被拒。
 - 文档：docs/releases/community-submission.md 顶部改「〇、结果：4.97.3 已上架」；docs/releases/4.97.3.md
   新增「上架结果（2026-11-21）」并把「未完成」收敛为长期清理项。
+
+## 第一百四十轮：清社区审核扫描器 warn 第一批（2,732 → 1,570）
+
+- 目标：用户 m29302「接着清这些 warn」。扫描器 warn 不阻断上架，但数千条噪音会掩盖真问题。
+- 批量修复口径（写进 docs/DEVELOPMENT.md「社区审核扫描器 warn 清理口径」）：
+  - 三条规则禁止 eslint-disable（no-restricted-disable 会报 error）：prefer-create-el / prefer-window-timers / no-global-this。
+  - 禁止全仓 eslint --fix（会顺手改 no-unnecessary-type-assertion，首次尝试产生 244 个 tsc 错误，已整体回退）；用临时配置只开目标规则。
+- 第一批改动：
+  - create-el 92 文件 / +680 −684：x.createEl('div', opts) → x.createDiv(opts)。7 个测试假元素只实现 createEl 的组件保持 HEAD（batch-create-modal / consistency-audit-modal / quality-dashboard-modal / model-quick-switcher / empty-state / notice-helpers / svg-charts）。
+  - unused import 122 文件 / 381 条（codemod 只动 is defined but never used 的 import specifier，跳过有副作用 init 与 11 个函数声明）；engine/co-writer-engine.ts 的 import '@/main' 手工删除（否则 2 个测试套件 Cannot find module 'obsidian'）。
+  - prefer-window-timers 176 条：setTimeout 等改 window.*，相关字段类型统一 number（不要用 ReturnType<typeof setTimeout>，Node 下解析成 Timeout）。
+  - worker 安全：新增 shared/host-timers.ts（主线程 window / worker self），shared/yield.ts 与 engine/genre/genre-detector.ts:181 改用它；构建后 grep 两个 workers/*.js 无 window.* 计时器。
+  - tests/setup.ts 增加垫片：window=globalThis、全局 createEl/createDiv/createSpan/createFragment（优先复用 stubDocument 的工厂）。
+- 结果：tsc EXIT=0；全量测试 1013 文件 / 10503 通过 + 3 跳过；check:obsidian-review EXIT=0（error 0）；npm run lint 0 error；warn 库存 2732 → 1570（334+ 文件）。main.js 6,239,513（比基线小 1,971 字节）；deconstruction worker 684,461（+80，host-timers 引入），bundle 基线已带 note 上调。
+- 新增门禁 `npm run check:review-warn`（scripts/check-review-warn.mjs + .review-warn-baseline.json）：跑一次非 --quiet 的扫描，按规则统计 warn，任何一类上涨即失败；已接进 preflight（紧跟 check:obsidian-review）。
+- 下一批候选：no-useless-escape 35（可安全自动修）、unused-vars 余量 188、no-deprecated 255（逐条判断）、floating/misused promises 309（需人工区分场景）。

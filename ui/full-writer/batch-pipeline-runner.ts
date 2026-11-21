@@ -16,7 +16,7 @@ import { ALL_FULL_STEPS, StepRunner } from '@/engine/step-runner';
 import type { StepRunCtx } from '@/engine/step-definitions';
 import { resolveStepPrompt } from '@/engine/prompt-resolver';
 import { CHAPTER_FILE_TYPES, findChapterFile } from '@/engine/chapter-utils';
-import { SettlementEngine } from '@/engine/settlement-engine';
+import '@/engine/settlement-engine';
 import { writeChapterStateSnapshot } from '@/engine/chapter-state-snapshot-service';
 import { ENGINE_NAMES } from '@/engine/engine-registry';
 import { pjStepDir, pjNarrativeOverview } from '@/shared/paths';
@@ -79,19 +79,19 @@ export interface BatchPipelineOptions {
 const BATCH_STEP_TIMEOUT_MS = 8 * 60_000;
 
 async function withBatchStepTimeout<T>(promise: Promise<T>, controller?: AbortController, label = t('fullwriter.bp.defaultStepLabel')): Promise<T> {
-    let timer: ReturnType<typeof setTimeout> | null = null;
+    let timer: number | null = null;
     try {
         return await Promise.race([
             promise,
             new Promise<T>((_, reject) => {
-                timer = setTimeout(() => {
+                timer = window.setTimeout(() => {
                     controller?.abort();
                     reject(new Error(t('fullwriter.bp.stepTimeout', { label, minutes: Math.round(BATCH_STEP_TIMEOUT_MS / 60000) })));
                 }, BATCH_STEP_TIMEOUT_MS);
             }),
         ]);
     } finally {
-        if (timer !== null) clearTimeout(timer);
+        if (timer !== null) window.clearTimeout(timer);
     }
 }
 
@@ -333,10 +333,10 @@ export class BatchPipelineRunner {
                 Object.keys(stepResults).filter(key => isStepResultComplete(key, stepResults[key]))
             );
 
-        const tabContent = document.createElement('div');
-        const systemPromptEl = document.createElement('textarea');
-        const userPromptEl = document.createElement('textarea');
-        const temperatureSlider = document.createElement('input');
+        const tabContent = createDiv();
+        const systemPromptEl = createEl('textarea');
+        const userPromptEl = createEl('textarea');
+        const temperatureSlider = createEl('input');
         temperatureSlider.type = 'range';
         temperatureSlider.value = '1.4';
 

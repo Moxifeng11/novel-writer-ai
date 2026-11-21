@@ -61,7 +61,7 @@ export async function connectMcpServers(servers: unknown): Promise<McpConnectRes
                 }
                 if (attempt < maxAttempts) {
                     log.warn(`MCP 服务连接失败，重试中：${config.id}`, lastReason);
-                    await new Promise(resolve => setTimeout(resolve, 300));
+                    await new Promise(resolve => window.setTimeout(resolve, 300));
                 }
             }
         }

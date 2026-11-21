@@ -44,7 +44,7 @@ import { countTotalChars } from './text-segmenter';
 import { ProgressEmitter } from '@/shared/progress-emitter';
 import { getDegradationNotifier } from '@/shared/degradation-notifier';
 import { resolvePluginWorkerUrl } from '@/shared/plugin-worker-url';
-import { TimeEstimator, refineEstimate } from '@/shared/time-estimator';
+import { TimeEstimator } from '@/shared/time-estimator';
 import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
 import { QualityScorer, QualityScoringInput } from './quality-scorer';
 import { yieldToUI } from '@/shared/yield';
@@ -300,9 +300,9 @@ export class DeconstructionScheduler {
     private taskEmitters = new Map<string, ProgressEmitter>();
     private timeEstimator: TimeEstimator;
     private dimensionStartTimes = new Map<string, number>();
-    private heartbeatTimers = new Map<string, ReturnType<typeof setInterval>>();
+    private heartbeatTimers = new Map<string, number>();
 
-    private watchdogTimers = new Map<string, ReturnType<typeof setInterval>>();
+    private watchdogTimers = new Map<string, number>();
     private lastSeenAlive = new Map<string, number>();
     private static readonly WATCHDOG_INTERVAL = 30000; // 30秒检查一次
     private static readonly WATCHDOG_TIMEOUT = 120000; // 120秒无心跳判定为中断
@@ -2389,7 +2389,7 @@ export class DeconstructionScheduler {
     }
 
     private delay(ms: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        return new Promise(resolve => window.setTimeout(resolve, ms));
     }
 
     private startHeartbeat(taskId: string, minProgress: number, maxProgress: number, message: string, isStepProgress = false): void {
@@ -2404,7 +2404,7 @@ export class DeconstructionScheduler {
         const incrementPerStep = range / steps;
         let currentProgress = minProgress;
 
-        const timer = setInterval(() => {
+        const timer = window.setInterval(() => {
             currentProgress = Math.min(currentProgress + incrementPerStep, maxProgress - 0.5);
             if (isStepProgress) {
                 emitter.setStepProgress(currentProgress, message);
@@ -2419,7 +2419,7 @@ export class DeconstructionScheduler {
     private stopHeartbeat(taskId: string): void {
         const timer = this.heartbeatTimers.get(taskId);
         if (timer) {
-            clearInterval(timer);
+            window.clearInterval(timer);
             this.heartbeatTimers.delete(taskId);
         }
     }
@@ -2427,7 +2427,7 @@ export class DeconstructionScheduler {
     private startWatchdog(taskId: string, bookId: string): void {
         this.stopWatchdog(taskId);
         this.lastSeenAlive.set(taskId, Date.now());
-        const timer = setInterval(() => {
+        const timer = window.setInterval(() => {
             const lastAlive = this.lastSeenAlive.get(taskId);
             if (!lastAlive) return;
             const elapsed = Date.now() - lastAlive;
@@ -2442,7 +2442,7 @@ export class DeconstructionScheduler {
     private stopWatchdog(taskId: string): void {
         const timer = this.watchdogTimers.get(taskId);
         if (timer) {
-            clearInterval(timer);
+            window.clearInterval(timer);
             this.watchdogTimers.delete(taskId);
         }
         this.lastSeenAlive.delete(taskId);
@@ -2912,12 +2912,12 @@ export class DeconstructionScheduler {
      */
     destroy(): void {
         for (const timer of this.heartbeatTimers.values()) {
-            clearInterval(timer);
+            window.clearInterval(timer);
         }
         this.heartbeatTimers.clear();
 
         for (const timer of this.watchdogTimers.values()) {
-            clearInterval(timer);
+            window.clearInterval(timer);
         }
         this.watchdogTimers.clear();
         this.lastSeenAlive.clear();

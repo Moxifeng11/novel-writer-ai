@@ -89,24 +89,24 @@ export function renderFingerprintList(
 
         const info = item.createDiv({ attr: { style: 'flex:1;min-width:0;' } });
         const nameRow = info.createDiv({ attr: { style: 'display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;' } });
-        nameRow.createEl('span', {
+        nameRow.createSpan({
             text: `🔍 ${fp.name}`,
             attr: { style: 'font-weight:600;font-size:14px;' }
         });
-        nameRow.createEl('span', {
+        nameRow.createSpan({
             text: fp.source,
             attr: { style: 'font-size:12px;color:var(--text-muted);' }
         });
 
         const metaRow = info.createDiv({ attr: { style: 'display:flex;gap:12px;font-size:11px;color:var(--text-faint);' } });
-        metaRow.createEl('span', { text: formatWordCount(fp.stats.wordCount) });
-        metaRow.createEl('span', { text: formatDateTime(fp.extractedAt) });
+        metaRow.createSpan({ text: formatWordCount(fp.stats.wordCount) });
+        metaRow.createSpan({ text: formatDateTime(fp.extractedAt) });
 
         const actions = item.createDiv({ attr: { style: 'display:flex;gap:6px;flex-shrink:0;align-items:center;' } });
 
         if (isSourceOnlyFingerprintScope(fp.scope)) {
             // 模板层不参与注入：给提示而不是给一个无效开关
-            actions.createEl('span', {
+            actions.createSpan({
                 text: t('settings.fingerprint.templateBadge'),
                 attr: {
                     title: t('settings.fingerprint.templateBadgeTitle'),

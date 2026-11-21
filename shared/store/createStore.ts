@@ -5,15 +5,7 @@
  * 支持：getState / setState / subscribe / destroy / 选择器订阅
  */
 
-import type {
-    State,
-    PartialState,
-    StoreApi,
-    StateListener,
-    StateSelector,
-    EqualityChecker,
-    SubscribeWithSelector,
-} from './types';
+import type { State, StoreApi, StateListener, StateSelector, EqualityChecker, SubscribeWithSelector } from './types';
 import { shallow } from './shallow';
 
 /**

@@ -1,7 +1,7 @@
 import { App, Modal, TFile, TFolder } from 'obsidian';
 import { isChapterSettledText } from '@/shared/chapter-status';
 import { buildSettlementTable } from '@/engine/settlement/settlement-artifacts';
-import { SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, pjNarrativeOverview } from '@/shared/paths';
+import { SUBDIR_STEP_ROOT, pjNarrativeOverview } from '@/shared/paths';
 import { ObsidianFrontmatter, writeVaultText, ObsidianFileSystem } from '@/shared/file-system-port';
 import { withWriteLock } from '@/shared/write-lock';
 import { CommandIds } from '@/shared/command-ids';
@@ -9,7 +9,7 @@ import { writeSettlementTableFile } from '@/engine/settlement/settlement-table-w
 import { settlementArtifactNotice, writeSettlementArtifacts } from '@/engine/settlement/settlement-coordinator';
 
 import NovelWriterPlugin from '@/main';
-import { getChapterFileName, CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
+import '@/engine/chapter-utils';
 import { FullWriterView, VIEW_TYPE as FULL_WRITER_VIEW_TYPE } from './full-writer-view';
 import { SettlementEngine } from '@/engine/settlement-engine';
 import { writeChapterStateSnapshot } from '@/engine/chapter-state-snapshot-service';

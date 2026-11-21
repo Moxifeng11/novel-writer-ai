@@ -1259,6 +1259,18 @@ npm run check:release  # 发布前资产与版本一致性校验
 
 产物是 CJS（`format: 'cjs'`，`external: ['obsidian']`），压缩后仍需保留 `module.exports` 与版本字面量；构建后用 `node --check main.js` 与 `npm run check:release` 验证。
 
+### 社区审核扫描器 warn 清理口径（2026-11-21）
+
+社区目录的自动扫描器（`eslint-plugin-obsidianmd`）与本地 `npm run lint` 是**两套严重度**：绝大多数规则在扫描器里只算 warn、不阻断上架，真正阻断的是 `npm run check:obsidian-review` 覆盖的那批 error 级规则。清理 warn 时守三条：
+
+1. **三条规则禁止用 `eslint-disable` 压掉**（扫描器会报 `eslint-comments/no-restricted-disable` error）：`obsidianmd/prefer-create-el`、`obsidianmd/prefer-window-timers`、`obsidianmd/no-global-this`。只能改代码满足规则，或接受 warn。
+2. **不要直接对全仓跑 `eslint --fix`**：`--fix` 会顺手修掉未打开规则的告警（典型是 `no-unnecessary-type-assertion`，本项目会因此产生上百个 tsc 错误）。做法是临时配置把库存里除目标规则外的 ruleId 全部设 off，修完删除临时配置再跑 tsc + 全量测试。
+3. **worker 产物里不能出现 `window.*`**：拆解 / 质检 worker 没有 `window`。计时器统一走 `shared/host-timers.ts`（`hostSetTimeout` / `hostClearTimeout` / `hostRequestAnimationFrame`，主线程用 `window`、worker 用 `self`）；构建后用 `node -e` 在两个 `workers/*.js` 里 grep `window\.(setTimeout|setInterval|clearTimeout|clearInterval|requestAnimationFrame)` 必须无命中。
+
+单测环境是 node（`vitest.config.ts` 的 `environment: 'node'`），而代码改用了 Obsidian 注入的全局 `createEl/createDiv/createSpan` 与 `window.setTimeout`。`tests/setup.ts` 负责垫片：`window` 缺省指向 `globalThis`；`createEl/createDiv/createSpan/createFragment` 缺省用 `tests/unit/ui/support/fake-dom.ts` 的 `FakeEl`，若测试已用 `stubDocument()` 注入 `document.createElement` 则优先用该工厂（保证断言拿到的元素类型一致）。新增垫片时不要覆盖测试已有的定义。
+
+当前存量（2026-11-21，`eslint.obsidian-review.mjs` 口径）：warn 2,732 → 1,568，error 0。`npm run check:review-warn` 用 `.review-warn-baseline.json` 按规则设预算，任何一类上涨即失败（已在 preflight 里）。剩余大头 `no-unnecessary-type-assertion` 359、`no-deprecated` 255、`no-unused-vars` 188、`no-misused-promises` 162、`no-floating-promises` 147。
+
 ### 异步等待原语（2026-10-31 批次 14）
 
 `shared/yield.ts` 是唯一的等待原语来源，业务代码里**禁止裸写 `await new Promise(r => setTimeout(r, 0|16))`**：

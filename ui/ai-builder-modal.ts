@@ -152,7 +152,7 @@ export class AiBuilderModal extends Modal {
         contentEl.empty();
         contentEl.createEl('h2', { text: t("aiBuilder.ui.k1") });
         const empty = contentEl.createDiv({ cls: 'novel-writer-ai-builder-empty' });
-        empty.createEl('div', { text: '📂', cls: 'novel-writer-ai-builder-empty-icon' });
+        empty.createDiv({ text: '📂', cls: 'novel-writer-ai-builder-empty-icon' });
         empty.createEl('p', { text: t("aiBuilder.ui.k2"), cls: 'novel-writer-ai-builder-empty-text' });
         empty.createEl('p', {
             text: t("aiBuilder.ui.k3"),

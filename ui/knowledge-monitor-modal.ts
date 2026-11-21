@@ -124,7 +124,7 @@ export class KnowledgeMonitorModal extends Modal {
 
     private stopRefreshTimer(): void {
         if (this.refreshTimer !== null) {
-            clearInterval(this.refreshTimer);
+            window.clearInterval(this.refreshTimer);
             this.refreshTimer = null;
         }
     }
@@ -211,7 +211,7 @@ export class KnowledgeMonitorModal extends Modal {
             }
         });
 
-        taskCard.createEl('div', {
+        taskCard.createDiv({
             text: `📖 ${currentTask.bookName}`,
             attr: { style: 'font-size:15px;font-weight:600;margin-bottom:12px;' }
         });
@@ -220,8 +220,8 @@ export class KnowledgeMonitorModal extends Modal {
         const totalHeader = taskCard.createDiv({
             attr: { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;' }
         });
-        totalHeader.createEl('span', { text: '总进度', attr: { style: 'font-size:13px;font-weight:500;' } });
-        totalHeader.createEl('span', {
+        totalHeader.createSpan({ text: '总进度', attr: { style: 'font-size:13px;font-weight:500;' } });
+        totalHeader.createSpan({
             text: `${totalProgress}%`,
             attr: { style: 'font-size:12px;color:var(--text-muted);', 'data-nw-progress': 'total-text' },
         });
@@ -247,11 +247,11 @@ export class KnowledgeMonitorModal extends Modal {
             const dimHeader = taskCard.createDiv({
                 attr: { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;' }
             });
-            dimHeader.createEl('span', {
+            dimHeader.createSpan({
                 text: `当前维度：${dimLabel}`,
                 attr: { style: 'font-size:13px;font-weight:500;', 'data-nw-progress': 'dim-label' }
             });
-            dimHeader.createEl('span', {
+            dimHeader.createSpan({
                 text: `${dimensionProgress}%`,
                 attr: { style: 'font-size:12px;color:var(--text-muted);', 'data-nw-progress': 'dim-text' },
             });
@@ -266,17 +266,17 @@ export class KnowledgeMonitorModal extends Modal {
                 }
             });
 
-            taskCard.createEl('div', {
+            taskCard.createDiv({
                 text: message,
                 attr: { style: 'font-size:12px;color:var(--text-muted);margin-bottom:16px;', 'data-nw-progress': 'message' }
             });
         } else if (currentTask.status === 'pending') {
-            taskCard.createEl('div', {
+            taskCard.createDiv({
                 text: '⏳ 排队中，等待执行...',
                 attr: { style: 'font-size:13px;color:var(--text-muted);margin-bottom:16px;' }
             });
         } else if (currentTask.status === 'paused') {
-            taskCard.createEl('div', {
+            taskCard.createDiv({
                 text: '⏸️ 任务已暂停',
                 attr: { style: 'font-size:13px;color:var(--text-muted);margin-bottom:16px;' }
             });
@@ -404,8 +404,8 @@ export class KnowledgeMonitorModal extends Modal {
         const leftInfo = headerRow.createDiv({ attr: { style: 'flex:1;min-width:0;' } });
 
         const titleRow = leftInfo.createDiv({ attr: { style: 'display:flex;align-items:center;gap:8px;margin-bottom:4px;' } });
-        titleRow.createEl('span', { text: icon, attr: { style: 'font-size:16px;' } });
-        titleRow.createEl('span', {
+        titleRow.createSpan({ text: icon, attr: { style: 'font-size:16px;' } });
+        titleRow.createSpan({
             text: task.bookName,
             attr: { style: `font-size:14px;font-weight:500;${isFailed ? 'color:var(--text-error);' : ''}` }
         });
@@ -413,8 +413,8 @@ export class KnowledgeMonitorModal extends Modal {
         const metaRow = leftInfo.createDiv({
             attr: { style: 'font-size:12px;color:var(--text-muted);display:flex;gap:12px;flex-wrap:wrap;' }
         });
-        metaRow.createEl('span', { text: `耗时：${duration}` });
-        metaRow.createEl('span', { text: `完成：${finishTime}` });
+        metaRow.createSpan({ text: `耗时：${duration}` });
+        metaRow.createSpan({ text: `完成：${finishTime}` });
 
         const actionBtns = headerRow.createDiv({ attr: { style: 'display:flex;gap:6px;flex-shrink:0;' } });
 
@@ -439,14 +439,14 @@ export class KnowledgeMonitorModal extends Modal {
         }
 
         if (isFailed && task.error) {
-            item.createEl('div', {
+            item.createDiv({
                 text: `错误：${task.error}`,
                 attr: { style: 'font-size:12px;color:var(--text-error);margin-top:8px;padding-top:8px;border-top:1px solid var(--background-modifier-error);' }
             });
         }
 
         const dims = task.dimensions.map(d => DIMENSION_LABELS[d as BreakdownDimension] || d).join('、');
-        item.createEl('div', {
+        item.createDiv({
             text: `维度：${dims}`,
             attr: { style: 'font-size:12px;color:var(--text-muted);margin-top:6px;' }
         });

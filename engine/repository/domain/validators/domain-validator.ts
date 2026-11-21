@@ -5,7 +5,7 @@
  */
 
 import { BaseEntity, Project, Chapter, Character, Faction, Location, Item } from '@/engine/repository/domain/aggregates';
-import type { EntityCategory } from '@/engine/repository/domain/aggregates';
+
 
 /**
  * 验证结果

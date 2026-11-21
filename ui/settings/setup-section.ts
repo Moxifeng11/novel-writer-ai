@@ -49,7 +49,7 @@ export class SetupSection extends SettingsSection {
                 const li = table.createEl('li', { cls: `nw-readiness-item is-${item.status}` });
                 li.createSpan({ text: t('settings.setup.itemLine', { icon: STATUS_ICON[item.status], label: item.label }) });
                 li.createSpan({ text: item.detail });
-                if (item.fix) li.createEl('div', { cls: 'setting-item-description', text: t('settings.setup.fixLine', { fix: item.fix }) });
+                if (item.fix) li.createDiv({ cls: 'setting-item-description', text: t('settings.setup.fixLine', { fix: item.fix }) });
             }
         };
 

@@ -272,7 +272,7 @@ export class SceneConfirmModal extends Modal {
             contentEl.empty();
             contentEl.createEl('h3', { text: '已确认完成场景的正文（可复制取用，断点保留）' });
             for (const c of doneCps) {
-                const sec = contentEl.createEl('div');
+                const sec = contentEl.createDiv();
                 sec.createEl('strong', { text: `场景 ${c.sceneNum}` });
                 sec.createEl('pre', { text: c.content, cls: 'nw-sc-body' });
             }
@@ -335,25 +335,25 @@ export class SceneConfirmModal extends Modal {
             contentEl.empty();
 
             // —— AI 生成内容区（AI 建议） ——
-            const aiSection = contentEl.createEl('div', { cls: 'nw-sc-ai' });
+            const aiSection = contentEl.createDiv({ cls: 'nw-sc-ai' });
             aiSection.createEl('h3', { text: `🤖 场景 ${item.task.num}${item.task.name ? `：${item.task.name}` : ''}` });
             aiSection.createEl('pre', { text: item.body, cls: 'nw-sc-body' });
 
             if (item.conflicts.length > 0) {
-                aiSection.createEl('div', {
+                aiSection.createDiv({
                     text: `⚠️ 冲突提示：${item.conflicts.map((c) => c.message).join('；')}`,
                     cls: 'nw-sc-warn',
                 });
             }
             if (!item.beatVerify.passed) {
-                aiSection.createEl('div', {
+                aiSection.createDiv({
                     text: `⚠️ 必做剧情未覆盖：${item.beatVerify.missingRequired.join('、') || '有缺失'}`,
                     cls: 'nw-sc-warn',
                 });
             }
 
             // —— 用户决策区（视觉分离） ——
-            const decision = contentEl.createEl('div', { cls: 'nw-sc-decision' });
+            const decision = contentEl.createDiv({ cls: 'nw-sc-decision' });
             decision.createEl('h4', { text: '你的决定' });
 
             const confirmBtn = decision.createEl('button', { text: '✅ 确认，继续下一场景', cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
@@ -384,7 +384,7 @@ export class SceneConfirmModal extends Modal {
         contentEl.createEl('p', { text: `已完成 ${result.scenes.length} 个场景` });
 
         if (result.failedScenes.length > 0) {
-            const failSection = contentEl.createEl('div', { cls: 'nw-sc-failed' });
+            const failSection = contentEl.createDiv({ cls: 'nw-sc-failed' });
             failSection.createEl('h3', { text: `失败场景（${result.failedScenes.length}）` });
 
             // 断点落盘：记录失败现场，供恢复/放弃（TR-10.3）
@@ -405,7 +405,7 @@ export class SceneConfirmModal extends Modal {
             }
 
             for (const f of result.failedScenes) {
-                failSection.createEl('div', { text: `场景 ${f.task.num}${f.task.name ? `（${f.task.name}）` : ''}：${f.error}` });
+                failSection.createDiv({ text: `场景 ${f.task.num}${f.task.name ? `（${f.task.name}）` : ''}：${f.error}` });
             }
 
             if (checkpointSaved) {

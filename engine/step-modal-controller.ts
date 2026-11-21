@@ -6,11 +6,11 @@
  * 从 step-runner.ts 拆分而来，原代码约 550 行。
  */
 
-import { TFile } from 'obsidian';
+import 'obsidian';
 import { uiMessage, resolveUiMessage } from '@/shared/ui-message';
 import { AIEngine } from './ai-engine';
 import { LongNovelSingleCallTasks } from './harness/long-novel-tasks';
-import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
+import { StepRunnerCallbacks } from './step-runner-callbacks';
 import { FileSystemPort, ObsidianFileSystem } from '@/shared/file-system-port';
 import { TemplateService } from './template-service';
 import { ENGINE_NAMES } from '@/shared/engine-names';

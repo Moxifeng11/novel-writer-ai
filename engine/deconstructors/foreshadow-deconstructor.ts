@@ -6,7 +6,7 @@
  */
 
 import { kbBookForeshadowDBFile } from '@/shared/paths';
-import { isChineseChar, splitParagraphs, splitSentences } from '@/shared/text-utils';
+import { isChineseChar, splitParagraphs } from '@/shared/text-utils';
 import { WebnovelKnowledgeBase, ForeshadowCategoryDef } from '@/shared/webnovel-knowledge-base';
 import { yieldToUI } from '@/shared/yield';
 import { WORLDVIEW_WORDS } from '@/engine/dimension-keywords';

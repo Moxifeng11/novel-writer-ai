@@ -117,7 +117,7 @@ export async function* createSimulatedStream(
             ? randomDelay(opts.minDelayMs, opts.maxDelayMs)
             : opts.chunkDelayMs;
 
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise(resolve => window.setTimeout(resolve, delay));
 
         yield chunk;
     }
@@ -160,13 +160,13 @@ export async function* createSimulatedStreamWithSignal(
             : opts.chunkDelayMs;
 
         await new Promise<void>((resolve, reject) => {
-            const timer = setTimeout(() => {
+            const timer = window.setTimeout(() => {
                 signal?.removeEventListener('abort', onAbort);
                 resolve();
             }, delay);
 
             const onAbort = () => {
-                clearTimeout(timer);
+                window.clearTimeout(timer);
                 reject(new DOMException('Aborted', 'AbortError'));
             };
 

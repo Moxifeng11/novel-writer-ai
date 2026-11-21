@@ -97,7 +97,7 @@ export class DeconstructionSection extends SettingsSection {
             cls: 'nw-st-dc-card'
         });
         dimCard.createEl('h4', { text: t('settings.deconstruction.dimensionTitle'), cls: 'nw-st-dc-card-title' });
-        dimCard.createEl('div', {
+        dimCard.createDiv({
             text: t('settings.deconstruction.dimensionNote'),
             cls: 'nw-st-dc-note'
         });
@@ -229,7 +229,7 @@ export class DeconstructionSection extends SettingsSection {
             text: t('settings.deconstruction.llmTitle'),
             cls: 'nw-st-dc-card-title'
         });
-        llmCard.createEl('div', {
+        llmCard.createDiv({
             text: t('settings.deconstruction.llmWarning'),
             cls: 'nw-st-dc-note nw-st-dc-note--warning'
         });

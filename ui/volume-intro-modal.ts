@@ -4,13 +4,7 @@ import { AIEngine } from '@/engine/ai-engine';
 import { showSuccess, showError, progressHandle } from '@/utils/helpers';
 import { isVolumeOutlineFileName } from '@/shared/paths';
 import { parseVolumeSummary, formatVolumePromptSummary, type VolumeBookSummary, type VolumeEntry } from '@/shared/volume-summary';
-import {
-    pjCharsDir,
-    pjPromiseLedger,
-    pjVolumeOutlineDir,
-    pjWorldview,
-    readProjectMeta,
-} from '@/shared/paths';
+import { pjPromiseLedger, pjVolumeOutlineDir, pjWorldview, readProjectMeta } from '@/shared/paths';
 import { parsePromiseLedger, formatOpenPromisesForPrompt } from '@/engine/promise-ledger';
 import { resolveTaskModelConfig } from '@/shared/task-model';
 import { entityDir } from '@/shared/entity-reader';
@@ -45,7 +39,7 @@ export class VolumeIntroModal extends Modal {
     private length: SynopsisLength = 'standard';
     private generating = false;
     private draftDirty = false;
-    private draftTimer: ReturnType<typeof setTimeout> | null = null;
+    private draftTimer: number | null = null;
 
     constructor(
         app: App,
@@ -352,13 +346,13 @@ export class VolumeIntroModal extends Modal {
     }
 
     private scheduleDraftSave(): void {
-        if (this.draftTimer) clearTimeout(this.draftTimer);
-        this.draftTimer = setTimeout(() => { void this.flushDraft(); }, 800);
+        if (this.draftTimer) window.clearTimeout(this.draftTimer);
+        this.draftTimer = window.setTimeout(() => { void this.flushDraft(); }, 800);
     }
 
     private async flushDraft(): Promise<void> {
         if (this.draftTimer) {
-            clearTimeout(this.draftTimer);
+            window.clearTimeout(this.draftTimer);
             this.draftTimer = null;
         }
         if (!this.draftDirty || !this.currentProject) return;

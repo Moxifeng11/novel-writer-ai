@@ -2,15 +2,15 @@ import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { AIEngine, BatchEntityResult } from '@/engine/ai-engine';
 import { ContextManager } from '@/engine/context-manager';
-import { mkdirp, showSuccess, showWarning, showError, showProgress, hideProgress } from '@/utils/helpers';
+import { mkdirp, showSuccess } from '@/utils/helpers';
 import { validateCharacterOutput } from '@/shared/template-validator';
 import { entityDir, listEntityFiles, type EntityKind } from '@/shared/entity-reader';
 import { mergeFanficRequirement } from '@/shared/fanfic-rules';
 import { readFanficPromptBlockWithNotice } from './fanfic-prompt-notice';
 import { ExistingEntityManagerModal } from './existing-entity-manager';
-import { pjCharsDir, pjWorldview, pjSettingLib, pjFactionsDir, pjLocsDir, pjItemsDir, SUBDIR_CHARS } from '@/shared/paths';
+import { pjWorldview, pjSettingLib, SUBDIR_CHARS } from '@/shared/paths';
 import { saveEntities, formatSaveOutcome } from '@/shared/entity-persistence';
-import { CharacterGenerator } from '@/engine/ai-character-generator';
+import '@/engine/ai-character-generator';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 import { CharacterRawData as CharacterData } from '@/shared/types';
 import { getDegradationNotifier } from '@/shared/degradation-notifier';
@@ -137,7 +137,7 @@ export class GenerateCharacterModal extends Modal {
             countRow.createEl('label', { text: t('characterGen.countLabel') });
             const countInput = countRow.createEl('input', { type: 'number', value: '5', cls: 'nw-input nw-gen-modal-count-input' });
             countInput.setAttr('min', '1'); countInput.setAttr('max', '20');
-            const countHint = countRow.createEl('span', { text: t('characterGen.countHint'), cls: 'nw-gen-modal-count-hint' });
+            const countHint = countRow.createSpan({ text: t('characterGen.countHint'), cls: 'nw-gen-modal-count-hint' });
 
             nameInput.oninput = () => {
                 const rawNames = nameInput.value.trim();
@@ -342,7 +342,7 @@ export class GenerateCharacterModal extends Modal {
         header.createEl('h3', { text: t('characterGen.managementTitle') });
         const activeCount = this._pendingResults.filter(r => !r.deleted).length;
         const deletedCount = this._pendingResults.filter(r => r.deleted).length;
-        header.createEl('span', {
+        header.createSpan({
             text: t('characterGen.pendingSave', { active: activeCount }) + (deletedCount > 0 ? t('characterGen.deletedSuffix', { count: deletedCount }) : ''),
             cls: 'nw-gen-modal-mgmt-count'
         });
@@ -355,9 +355,9 @@ export class GenerateCharacterModal extends Modal {
             const titleRow = card.createDiv({ cls: 'nw-gen-modal-title-row' });
 
             if (managed.deleted) {
-                titleRow.createEl('span', { text: t('characterGen.deletedName', { name: managed.entity.name }), cls: 'nw-gen-modal-deleted-name' });
+                titleRow.createSpan({ text: t('characterGen.deletedName', { name: managed.entity.name }), cls: 'nw-gen-modal-deleted-name' });
             } else {
-                const nameSpan = titleRow.createEl('span', { text: t('characterGen.entityName', { name: managed.entity.name }), cls: 'nw-gen-modal-entity-name' });
+                const nameSpan = titleRow.createSpan({ text: t('characterGen.entityName', { name: managed.entity.name }), cls: 'nw-gen-modal-entity-name' });
                 const renameBtn = titleRow.createEl('button', { text: t('characterGen.rename'), cls: 'nw-gen-modal-sm-btn' });
                 renameBtn.onclick = () => {
                     const existing = card.querySelector('.rename-inline');
@@ -471,7 +471,7 @@ export class GenerateCharacterModal extends Modal {
         contentEl.empty();
         const successDiv = contentEl.createDiv({ cls: 'nw-gen-modal-success' });
         successDiv.addClass('nw-gen-modal-success');
-        successDiv.createEl('div', { text: '✅', cls: 'nw-gen-modal-success-icon' });
+        successDiv.createDiv({ text: '✅', cls: 'nw-gen-modal-success-icon' });
         successDiv.createEl('h3', { text: t('characterGen.savedCount', { count: createdCount, label: entityLabel }), cls: 'nw-gen-modal-success-title' });
         successDiv.createEl('p', { text: t('characterGen.savedDesc'), cls: 'nw-gen-modal-success-desc' });
         

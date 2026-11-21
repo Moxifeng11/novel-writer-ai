@@ -39,6 +39,7 @@
 | `npm run check:relationship-authority` | 关系数据权威源契约检查 |
 | `npm run check:release` | 发布资产/版本/tag/worker/模板嵌入一致性校验 |
 | `npm run check:release:remote` | — |
+| `npm run check:review-warn` | — |
 | `npm run check:secrets` | — |
 | `npm run check:silent-failures` | 用户操作型静默失败检查 |
 | `npm run check:styles` | 校验 styles.css 与 styles-src 一致 |
@@ -86,38 +87,39 @@
 01. npm run typecheck
 02. npm run lint
 03. npm run check:obsidian-review
-04. npm run test
-05. npm run check:templates
-06. npm run check:styles
-07. npm run check:css
-08. npm run check:inline-styles
-09. npm run check:utility
-10. npm run check:obsidian-api
-11. npm run check:secrets
-12. npm run check:deps -- --baseline .arch-baseline.json --require-baseline
-13. npm run check-engines
-14. npm run check:program
-15. npm run check:relationship-authority
-16. npm run check:silent-failures
-17. npm run check:hotpaths
-18. npm run check:write-entry
-19. npm run check:linked-scenarios
-20. npm run check:automation
-21. npm run check:jsdoc
-22. npm run check:any
-23. npm run check:command-handlers
-24. npm run check:view-tests
-25. npm run check:test-standard
-26. npm run check:i18n
-27. npm run check:engine-msg
-28. npm run check:cjk-keep
-29. npm run check:changelog
-30. npm run check:docs
-31. npm run check:support-qr
-32. npm run check:workers-inline
-33. npm run build
-34. npm run check:bundle
-35. npm run check:release
+04. npm run check:review-warn
+05. npm run test
+06. npm run check:templates
+07. npm run check:styles
+08. npm run check:css
+09. npm run check:inline-styles
+10. npm run check:utility
+11. npm run check:obsidian-api
+12. npm run check:secrets
+13. npm run check:deps -- --baseline .arch-baseline.json --require-baseline
+14. npm run check-engines
+15. npm run check:program
+16. npm run check:relationship-authority
+17. npm run check:silent-failures
+18. npm run check:hotpaths
+19. npm run check:write-entry
+20. npm run check:linked-scenarios
+21. npm run check:automation
+22. npm run check:jsdoc
+23. npm run check:any
+24. npm run check:command-handlers
+25. npm run check:view-tests
+26. npm run check:test-standard
+27. npm run check:i18n
+28. npm run check:engine-msg
+29. npm run check:cjk-keep
+30. npm run check:changelog
+31. npm run check:docs
+32. npm run check:support-qr
+33. npm run check:workers-inline
+34. npm run build
+35. npm run check:bundle
+36. npm run check:release
 ```
 
 ## 说明

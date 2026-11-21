@@ -17,14 +17,14 @@ import { WritingStyleModal } from '@/ui/writing-style-modal';
 import { CreateProjectModal } from '@/ui/create-project-modal';
 import { PreResearchModal } from '@/ui/pre-research-modal';
 import { ModeDocumentModal } from '@/ui/mode-document-modal';
-import { getToolCatalogForMode, getToolGroupsForMode, getModeToolTitle } from '@/domains/kernel/tool-catalog-aggregator';
+import { getToolCatalogForMode, getModeToolTitle } from '@/domains/kernel/tool-catalog-aggregator';
 import { CommandIds } from '@/shared/command-ids';
 import type { CreationMode } from '@/shared/creation-mode';
 import { collectCreationFlowState } from './creation-flow-state';
 import { buildNextStepPlan, type NextStepPlan } from './next-step';
 import { formatRecentLabel, pruneMissingProjects, recordProjectOpened, sortProjectsByRecent } from './recent-projects';
 import type { CreationFlowSnapshot } from '@/shared/creation-flow';
-import { findNextModeUnit, listModeUnits, modeUnitLabel } from '@/shared/mode-content';
+import { listModeUnits, modeUnitLabel } from '@/shared/mode-content';
 import { projectDisplayName } from '@/domains/kernel/project-locator';
 import { RenameProjectModal } from '@/ui/rename-project-modal';
 import { OperationConfirmModal } from '@/ui/components/progress';
@@ -124,7 +124,7 @@ export class ProjectSelectorController {
         if (this.highlightedProject && maxRetries > 0) {
             const hasProject = this.projectGrid?.querySelector(`[data-project="${this.highlightedProject}"]`);
             if (!hasProject) {
-                await new Promise(r => setTimeout(r, 200));
+                await new Promise(r => window.setTimeout(r, 200));
                 await this.render(this.container);
             }
         }
@@ -139,12 +139,12 @@ export class ProjectSelectorController {
         if (this.container) {
             await this.render(this.container);
         }
-        requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
             const card = this.projectGrid?.querySelector(`[data-project="${projectName}"]`);
-            if (card && card instanceof HTMLElement) {
+            if (card && card.instanceOf(HTMLElement)) {
                 card.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 card.classList.add('novel-writer-fw-project-card-highlight');
-                setTimeout(() => {
+                window.setTimeout(() => {
                     card.classList.remove('novel-writer-fw-project-card-highlight');
                 }, 2000);
             }

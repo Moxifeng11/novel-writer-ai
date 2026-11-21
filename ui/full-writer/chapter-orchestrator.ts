@@ -189,7 +189,7 @@ export class ChapterOrchestrator {
     private abortController: AbortController | null = null;
     private pauseRequested = false;
     private resumeResolver: (() => void) | null = null;
-    private resumeTimer: ReturnType<typeof setTimeout> | null = null;
+    private resumeTimer: number | null = null;
     private running = false;
     private _retriedThisRun = false;
 
@@ -212,7 +212,7 @@ export class ChapterOrchestrator {
     resume(): void {
         this.pauseRequested = false;
         if (this.resumeTimer !== null) {
-            clearTimeout(this.resumeTimer);
+            window.clearTimeout(this.resumeTimer);
             this.resumeTimer = null;
         }
         const resolver = this.resumeResolver;
@@ -406,7 +406,7 @@ export class ChapterOrchestrator {
             if (retryable) {
                 this._retriedThisRun = true;
                 this.deps.showNotice?.(t('fullwriter.co.autoRetry', { msg: message }), 6000);
-                await new Promise(resolve => setTimeout(resolve, this.deps.retryDelayMs ?? 3000));
+                await new Promise(resolve => window.setTimeout(resolve, this.deps.retryDelayMs ?? 3000));
                 if (signal.aborted) return this.finish('cancelled', aiCalls);
                 // 递归重跑前必须先释放运行锁：外层 finally 还没执行，running 仍为 true，
                 // 不释放会让 run() 命中「已有任务在运行」守卫，重试必然瞬时失败。
@@ -440,10 +440,10 @@ export class ChapterOrchestrator {
         await this.activateStep(stepKey, ctx);
         // 单步看门狗：网络/模型无响应时不再无限停留，超时主动取消并抛可重试错误。
         const timeoutMs = this.deps.stepTimeoutMs ?? 8 * 60_000;
-        let timer: ReturnType<typeof setTimeout> | null = null;
+        let timer: number | null = null;
         const work = this.deps.stepRunner.executeStepsSequential([stepKey], ctx);
         const timeout = new Promise<never>((_, reject) => {
-            timer = setTimeout(() => {
+            timer = window.setTimeout(() => {
                 this.abortController?.abort();
                 reject(new Error(t('fullwriter.co.stepTimeout', { step: stepKey, minutes: Math.round(timeoutMs / 60000) })));
             }, timeoutMs);
@@ -451,7 +451,7 @@ export class ChapterOrchestrator {
         try {
             await Promise.race([work, timeout]);
         } finally {
-            if (timer) clearTimeout(timer);
+            if (timer) window.clearTimeout(timer);
         }
         await this.deps.render(tabContent);
         if (!this.deps.state.stepCompleted.has(stepKey)) {
@@ -480,7 +480,7 @@ export class ChapterOrchestrator {
         this.deps.showNotice(t('fullwriter.co.pausedNotice'), 6000);
         await new Promise<void>(resolve => {
             this.resumeResolver = resolve;
-            this.resumeTimer = setTimeout(() => {
+            this.resumeTimer = window.setTimeout(() => {
                 this.resumeTimer = null;
                 this.pauseRequested = false;
                 this.resumeResolver = null;

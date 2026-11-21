@@ -6,7 +6,7 @@
  * dry-run 只返回计划，不写盘。
  */
 
-import { App, TFile, TFolder } from 'obsidian';
+import { App, TFile } from 'obsidian';
 import { createLogger } from '@/shared/logger';
 import { assignLedgerIds, planLedgerMigration, type LedgerMigrationPlan } from '@/shared/ledger-migration-model';
 import type { ForeshadowCard, TimelineEventCard } from '@/shared/ledger-card-model';

@@ -77,7 +77,7 @@ export function bridgeMcpTool(client: McpClient, config: McpServerConfig, info: 
                     lastError = error instanceof Error ? error.message : String(error);
                 }
                 // 只读工具失败重试一次；写类不重试，避免重复写入
-                if (attempt < attempts) await new Promise(resolve => setTimeout(resolve, 250));
+                if (attempt < attempts) await new Promise(resolve => window.setTimeout(resolve, 250));
             }
             recordMcpCall(config.id, false, lastError);
             return { ok: false, content: lastError || '（MCP 工具调用失败）' };

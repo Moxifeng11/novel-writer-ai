@@ -5,7 +5,7 @@ import { getChapterFileName, findChapterFile, normalizeChapterFiles, CHAPTER_FIL
 import { readMergedVolumeOutline, progressHandle } from '@/utils/helpers';
 import { pjBodyDir, pjBodyFile, pjStepDir } from '@/shared/paths';
 import { mkdirp } from '@/utils/helpers';
-import { TemplateService } from '@/engine/template-service';
+import '@/engine/template-service';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 import { countPlannedChapters, hasBlockingIssues, parseVolumePlan, VolumePlan, VolumePlanParseResult } from '@/shared/volume-plan';
 import { createLogger } from '@/shared/logger';

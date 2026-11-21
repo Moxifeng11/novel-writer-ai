@@ -3,23 +3,17 @@ import { t } from '@/i18n';
 import { OperationConfirmModal } from './components/progress';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 import NovelWriterPlugin from '@/main';
-import { ContextManager } from '@/engine/context-manager';
-import { WritingProfileManager } from '@/engine/writing-profile';
-import { ENGINE_NAMES } from '@/shared/engine-names';
-import { SUBDIR_SETTING_LIB_FILE, SUBDIR_WRITING_STYLE_FILE, SUBDIR_WORLD_ARCH, PJ_FANFIC_DIR, PJ_WORLD_ARCH_DIR, PJ_TEMPLATE_DIR, PJ_OUTLINE_DIR, pjFanficDir, pjProjectMeta, templateFingerprintsFile, projectFingerprintsFile, projectFingerprintLibraryDir } from '@/shared/paths';
+import '@/engine/context-manager';
+import '@/engine/writing-profile';
+import '@/shared/engine-names';
+import { PJ_FANFIC_DIR } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
-import { ensureTemplateScaffold } from '@/shared/template-scaffold';
-import { newProjectPath } from '@/domains/kernel/project-locator';
-import { fanficSettingsFileName, isFanficApproved } from './full-writer/fanfic-settings-utils';
+import '@/shared/template-scaffold';
+import '@/domains/kernel/project-locator';
+import './full-writer/fanfic-settings-utils';
 import { suggestProjectName, validateProjectName } from '@/shared/project-name';
-import {
-    CREATION_MODE_SPECS,
-    buildCreationModeGuide,
-    buildCreationModeMetaSection,
-    type CreationMode,
-    type CreationModeMeta,
-} from '@/shared/creation-mode';
-import { buildStoryStructureGuide } from '@/shared/story-structure';
+import { CREATION_MODE_SPECS, type CreationMode, type CreationModeMeta } from '@/shared/creation-mode';
+import '@/shared/story-structure';
 import { StorySettingsEditor } from './story-settings-form';
 import { createLongNovelProject } from './services/project-create-service';
 import { onNodeDoc } from '@/shared/dom-window';
@@ -69,7 +63,7 @@ export class CreateProjectModal extends Modal {
         contentEl.empty();
 
         const headerEl = contentEl.createDiv({ cls: 'nw-modal-header' });
-        headerEl.createEl('span', { cls: 'nw-modal-icon', text: '📖' });
+        headerEl.createSpan({ cls: 'nw-modal-icon', text: '📖' });
         const titleWrap = headerEl.createDiv({ cls: 'nw-modal-title-wrap' });
         titleWrap.createEl('h2', { cls: 'nw-modal-title', text: t('createProject.title') });
 
@@ -162,7 +156,7 @@ ${preferredGenre
         const genreGroup = bodyEl.createDiv({ cls: 'nw-form-group' });
         genreGroup.createEl('label', { cls: 'nw-form-label nw-form-label-required', text: t('createProject.genreLabel') });
         const genreTags = ['玄幻', '仙侠', '都市', '科幻', '悬疑', '历史', '言情', '奇幻', '武侠', '末世'];
-        const tagContainer = genreGroup.createEl('div', { cls: 'nw-genre-tags' });
+        const tagContainer = genreGroup.createDiv({ cls: 'nw-genre-tags' });
 
         genreTags.forEach(genre => {
             const tag = tagContainer.createEl('button', { text: genre, cls: 'nw-genre-tag', attr: { type: 'button' } });
@@ -294,12 +288,12 @@ ${preferredGenre
                 : settingEntries;
 
             if (!q) {
-                itemsContainer.createEl('div', { text: t('createProject.importHint'), cls: 'nw-fanfic-selector-hint' });
+                itemsContainer.createDiv({ text: t('createProject.importHint'), cls: 'nw-fanfic-selector-hint' });
                 addSettingOption(itemsContainer, t('createProject.importManual'), '', t('createProject.importManual'));
             }
 
             if (filtered.length === 0) {
-                itemsContainer.createEl('div', { text: q ? t('createProject.importNoMatch') : t('createProject.importEmpty'), cls: 'nw-fanfic-selector-empty' });
+                itemsContainer.createDiv({ text: q ? t('createProject.importNoMatch') : t('createProject.importEmpty'), cls: 'nw-fanfic-selector-empty' });
                 return;
             }
 

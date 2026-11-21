@@ -1,7 +1,7 @@
 import { App, TFile, parseFrontMatterStringArray } from 'obsidian';
 import { splitTableCells } from '@/shared/chapter-table';
 import { isForeshadowRevealed } from '@/shared/foreshadow-status';
-import { ChapterFrontmatter } from '@/shared/types';
+import '@/shared/types';
 
 /**
  * 从章节正文文件的 frontmatter 中提取涉及人物、地点、势力、物品功法列表

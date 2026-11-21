@@ -1,4 +1,4 @@
-import { App, Notice, TFile, Modal } from 'obsidian';
+import { App, Notice, TFile } from 'obsidian';
 import { t } from '@/i18n';
 import { FullWriterStore, WriterTab } from './full-writer-store';
 import { WizardTab } from './wizard-types';

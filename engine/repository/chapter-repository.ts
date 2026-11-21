@@ -11,7 +11,7 @@ import { BaseMarkdownRepository } from './base-markdown-repository';
 import type { BaseMarkdownRepositoryOptions } from './base-markdown-repository';
 import { Chapter } from './domain/aggregates';
 import { EntityFactory } from './domain/serializers';
-import { ChapterStatus } from './domain/value-objects';
+import './domain/value-objects';
 
 /**
  * 解析章节 ID

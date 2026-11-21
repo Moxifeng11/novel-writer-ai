@@ -8,14 +8,18 @@
  * 等待样式变更被解析且布局绘制完成，替代散落的 `setTimeout(fn, 16)`。
  *
  * 原理：Promise + setTimeout(0) 将后续代码推到下一个事件循环 tick 执行。
+ *
+ * 定时器统一走 host-timers：本模块也被拆解 Web Worker 复用，worker 里没有 window。
  */
+
+import { hostRequestAnimationFrame, hostSetTimeout } from './host-timers';
 
 /**
  * 让出主线程控制权，允许浏览器处理 UI 事件
  * @returns Promise<void> 在下一个事件循环 tick 时 resolve
  */
 export function yieldToUI(): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, 0));
+    return new Promise(resolve => hostSetTimeout(resolve, 0));
 }
 
 /**
@@ -33,10 +37,10 @@ export function yieldToUI(): Promise<void> {
  */
 export function nextFrame(): Promise<void> {
     if (typeof requestAnimationFrame === 'undefined') {
-        return new Promise(resolve => setTimeout(resolve, 16));
+        return new Promise(resolve => hostSetTimeout(resolve, 16));
     }
     return Promise.race([
-        new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
-        new Promise<void>(resolve => setTimeout(resolve, 50)),
+        new Promise<void>(resolve => hostRequestAnimationFrame(() => hostRequestAnimationFrame(() => resolve()))),
+        new Promise<void>(resolve => hostSetTimeout(resolve, 50)),
     ]);
 }

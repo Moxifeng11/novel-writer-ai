@@ -11,14 +11,10 @@
 
 import { App, Modal, Notice, TFile } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
-import { listProjectIds } from '@/shared/project-catalog';
+import '@/shared/project-catalog';
 import { runAuditForProject } from '@/engine/consistency/consistency-audit-wiring';
 import { formatReportSummary, type AuditReport } from '@/engine/consistency/audit-pipeline';
-import {
-    ASSERTION_KIND_META,
-    type ConsistencyContradiction,
-    type ConsistencyEvidence,
-} from '@/engine/consistency/assertion-model';
+import { type ConsistencyContradiction, type ConsistencyEvidence } from '@/engine/consistency/assertion-model';
 import { chapterNumOf } from '@/engine/consistency/consistency-audit-wiring';
 import {
     buildEmptyStateHint,

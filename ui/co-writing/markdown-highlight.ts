@@ -249,7 +249,7 @@ export function renderHighlightDom(backdrop: HTMLElement, text: string): void {
             backdrop.appendChild(document.createTextNode(segment.text));
             continue;
         }
-        const span = document.createElement('span');
+        const span = createSpan();
         span.className = `nw-md-${segment.kind}`;
         span.textContent = segment.text;
         backdrop.appendChild(span);

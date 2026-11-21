@@ -16,7 +16,7 @@ import {
     type TrendResearchConfig,
     type TrendResearchResult,
 } from './trend-research-service';
-import type { CreationMode } from '@/shared/creation-mode';
+
 import { wrapUntrustedContent } from '@/shared/untrusted-content';
 
 /**

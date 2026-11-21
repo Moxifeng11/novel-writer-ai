@@ -11,7 +11,7 @@
  * - hasPartialFailure / rollbackFailed 是 boolean，因不在 step 内做局部读后写回，
  *   故必须以 ctx 对象字段形式存储而非裸 boolean 参数
  */
-import type { TFile } from 'obsidian';
+
 import type { Instructions } from './settlement-types';
 import type { SettlementOptions, SettlementResult } from '@/engine/settlement-engine';
 import { SettlementJournal } from './settlement-journal';

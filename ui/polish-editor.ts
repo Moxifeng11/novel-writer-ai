@@ -15,7 +15,7 @@ import { StepRunner } from '@/engine/step-runner';
 import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
 import NovelWriterPlugin from '@/main';
 import { RhythmAnalyzer } from '@/engine/rhythm-analyzer';
-import { StyleLearner } from '@/engine/style-learner';
+import '@/engine/style-learner';
 import type { RhythmAnalysis } from '@/shared/co-writer-types';
 import { StyleFingerprintLibrary, StyleFingerprint } from '@/engine/style-fingerprint-library';
 import { getStyleIntensityEngine } from '@/engine/style/style-intensity-engine';
@@ -403,16 +403,16 @@ export class PolishEditor {
         // 建议
         if (result.suggestions.length > 0) {
             const sugSection = panel.createDiv({ cls: 'nw-pe-block' });
-            sugSection.createEl('div', { text: t('polishEditor.rhythm.suggestions'), cls: 'nw-pe-subtitle' });
+            sugSection.createDiv({ text: t('polishEditor.rhythm.suggestions'), cls: 'nw-pe-subtitle' });
             for (const sug of result.suggestions) {
-                sugSection.createEl('div', { text: `• ${sug}`, cls: 'nw-pe-suggestion' });
+                sugSection.createDiv({ text: `• ${sug}`, cls: 'nw-pe-suggestion' });
             }
         }
 
         // 段落详情
         if (result.segments.length > 0) {
             const detailSection = panel.createDiv({ cls: 'nw-pe-detail' });
-            detailSection.createEl('div', { text: t('polishEditor.rhythm.detail'), cls: 'nw-pe-subtitle' });
+            detailSection.createDiv({ text: t('polishEditor.rhythm.detail'), cls: 'nw-pe-subtitle' });
 
             const paceIcon: Record<string, string> = { fast: '⚡', medium: '➡️', slow: '🐌' };
 
@@ -462,15 +462,15 @@ export class PolishEditor {
 
         for (const line of lines) {
             if (line.startsWith('【')) {
-                contentDiv.createEl('div', { text: line, cls: 'nw-pe-style-heading' });
+                contentDiv.createDiv({ text: line, cls: 'nw-pe-style-heading' });
             } else if (line.startsWith('偏好风格：')) {
-                contentDiv.createEl('div', { text: t('polishEditor.stylePref'), cls: 'nw-pe-style-pref' });
+                contentDiv.createDiv({ text: t('polishEditor.stylePref'), cls: 'nw-pe-style-pref' });
             } else if (line.startsWith('避免风格：')) {
-                contentDiv.createEl('div', { text: t('polishEditor.styleAvoid'), cls: 'nw-pe-style-avoid' });
+                contentDiv.createDiv({ text: t('polishEditor.styleAvoid'), cls: 'nw-pe-style-avoid' });
             } else if (line.startsWith('- ')) {
-                contentDiv.createEl('div', { text: line, cls: 'nw-pe-style-item' });
+                contentDiv.createDiv({ text: line, cls: 'nw-pe-style-item' });
             } else if (line.trim()) {
-                contentDiv.createEl('div', { text: line, cls: 'nw-pe-style-line' });
+                contentDiv.createDiv({ text: line, cls: 'nw-pe-style-line' });
             }
         }
     }
@@ -704,7 +704,7 @@ export class PolishAIPolishModal extends Modal {
             checkbox.addEventListener('change', () => {
                 this.applyFingerprint = checkbox.checked;
             });
-            fingerprintToggle.createEl('span', {
+            fingerprintToggle.createSpan({
                 text: t('polishEditor.fingerprintToggle'),
                 cls: 'nw-pe-toggle-label'
             }).addEventListener('click', () => {
@@ -877,7 +877,7 @@ ${targetText}
         const origCol = compare.createDiv();
         origCol.addClass('nw-cols-280');
         origCol.createEl('h4', { text: t('polishEditor.colOriginal') });
-        const origBox = origCol.createEl('div');
+        const origBox = origCol.createDiv();
         const origDisplay = this.polishScope === '选中段落润色' ? this.selectedText : this.fullText;
         origBox.setText(origDisplay);
         origBox.addClass('nw-preview-box', 'nw-preview-box-lg');
@@ -885,7 +885,7 @@ ${targetText}
         const newCol = compare.createDiv();
         newCol.addClass('nw-cols-280');
         newCol.createEl('h4', { text: t('polishEditor.colPolished') });
-        const newBox = newCol.createEl('div');
+        const newBox = newCol.createDiv();
         newBox.setText(this.resultText);
         newBox.addClass('nw-preview-box', 'nw-preview-box-lg', 'nw-preview-box-accent');
 

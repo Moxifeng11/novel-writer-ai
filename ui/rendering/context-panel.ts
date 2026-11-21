@@ -1,11 +1,11 @@
 import { App, MarkdownRenderer, TFile, Component } from 'obsidian';
 import { GatheredContext, CharacterData, ForeshadowData, TimelineEvent, MarkdownContent } from '@/engine/context-manager';
 import { CompressedContext } from '@/engine/context-compressor';
-import { LocationFrontmatter, FactionFrontmatter, ItemFrontmatter } from '@/shared/types';
+import '@/shared/types';
 import { TimelineRow, FanficRules } from '@/shared/template-validator';
-import { getWritingStylePath, getLegacyWritingStylePath } from '@/shared/paths';
-import { findWritingStyleFile, getWritingStyleCandidatePaths } from '@/ui/writing-style-paths';
-import { mkdirp, readMergedVolumeOutline } from '@/utils/helpers';
+import { getWritingStylePath } from '@/shared/paths';
+import { findWritingStyleFile } from '@/ui/writing-style-paths';
+import { readMergedVolumeOutline } from '@/utils/helpers';
 import type { NovelWriterPluginAPI } from '@/plugin-api';
 import { parseSceneHeadings } from '@/engine/scene-expander';
 import { createLogger } from '@/shared/logger';
@@ -73,7 +73,7 @@ export class ContextPanel {
 
         // 上下文模式状态提示 + token 估算
         const modeHint = plugin.settings.contextScope === 'full' ? '（完整遍历所有实体）' : '（仅注入本章涉及实体）';
-        panel.createEl('div', { text: `当前：${modeHint}`, cls: 'novel-writer-context-mode-hint' });
+        panel.createDiv({ text: `当前：${modeHint}`, cls: 'novel-writer-context-mode-hint' });
 
         // v3.5.0: token 预算（从 vars 读取，运行时由 FullWriterView 注入到 plugin 上）
         const fwView = (plugin as unknown as { fullWriterView?: { vars?: Record<string, string> } }).fullWriterView;
@@ -82,13 +82,13 @@ export class ContextPanel {
         if (ctxTokens > 0) {
             const pct = Math.round(ctxTokens / maxCtx * 100);
             const tone = pct > 70 ? ' nw-cp-token-hint--danger' : pct > 50 ? ' nw-cp-token-hint--warn' : '';
-            panel.createEl('div', { text: `Token 预算: ${ctxTokens.toLocaleString()} / ${(maxCtx/1000).toFixed(0)}K (${pct}%)`, cls: `novel-writer-context-mode-hint nw-cp-token-hint${tone}` });
+            panel.createDiv({ text: `Token 预算: ${ctxTokens.toLocaleString()} / ${(maxCtx/1000).toFixed(0)}K (${pct}%)`, cls: `novel-writer-context-mode-hint nw-cp-token-hint${tone}` });
         }
 
         // 上下文切换按钮行
-        const scopeBtnRow = panel.createEl('div', { cls: 'novel-writer-context-scope-row' });
+        const scopeBtnRow = panel.createDiv({ cls: 'novel-writer-context-scope-row' });
         const labelText = plugin.settings.contextScope === 'full' ? '🔍 上下文：完整模式' : '📌 上下文：紧凑模式';
-        const scopeLabel = scopeBtnRow.createEl('span', { text: labelText, cls: 'novel-writer-scope-label' });
+        const scopeLabel = scopeBtnRow.createSpan({ text: labelText, cls: 'novel-writer-scope-label' });
 
 
         scopeLabel.addEventListener('click', async () => {
@@ -751,9 +751,9 @@ export class ContextPanel {
                 sectionDiv.createEl('strong', { text: '📜 强制规则:', cls: 'nw-cp-rule-heading' });
                 for (const r of wr.mandatory.slice(0, 5)) {
                     const ruleDiv = sectionDiv.createDiv({ cls: 'nw-cp-rule-card' });
-                    ruleDiv.createEl('div', { text: `▸ ${r.title}`, cls: 'nw-cp-rule-title' });
+                    ruleDiv.createDiv({ text: `▸ ${r.title}`, cls: 'nw-cp-rule-title' });
                     if (r.description && r.description.trim()) {
-                        ruleDiv.createEl('div', { text: r.description.slice(0, 150), cls: 'nw-cp-rule-desc' });
+                        ruleDiv.createDiv({ text: r.description.slice(0, 150), cls: 'nw-cp-rule-desc' });
                     }
                     if (r.points && r.points.length > 0) {
                         const ptsList = ruleDiv.createEl('ul', { cls: 'nw-cp-rule-points' });
@@ -772,7 +772,7 @@ export class ContextPanel {
                     chkList.createEl('li', { text: item, cls: 'nw-cp-check-item' });
                 }
                 if (wr.checklist.length > 8) {
-                    chkDiv.createEl('span', { text: `...还有${wr.checklist.length - 8}项`, cls: 'nw-cp-more-note' });
+                    chkDiv.createSpan({ text: `...还有${wr.checklist.length - 8}项`, cls: 'nw-cp-more-note' });
                 }
             }
             // 文风参考

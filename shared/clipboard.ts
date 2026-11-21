@@ -23,7 +23,7 @@ export async function copyText(text: string): Promise<boolean> {
     }
     try {
         if (typeof document === 'undefined') return false;
-        const area = document.createElement('textarea');
+        const area = createEl('textarea');
         area.value = value;
         area.setAttribute('readonly', 'true');
         // 样式走 CSS 类（仓库禁止内联 style）

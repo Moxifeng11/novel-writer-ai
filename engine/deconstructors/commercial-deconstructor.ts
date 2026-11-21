@@ -1,5 +1,5 @@
 import { kbBookCommercialAnalysisFile } from '@/shared/paths';
-import { isChineseChar } from '@/shared/text-utils';
+import '@/shared/text-utils';
 import { countCjkWordsAndNumbers } from '@/shared/word-count';
 import { yieldToUI } from '@/shared/yield';
 import { HOOK_WORDS, GOLDEN_FINGER_WORDS, WORLDVIEW_WORDS } from '@/engine/dimension-keywords';

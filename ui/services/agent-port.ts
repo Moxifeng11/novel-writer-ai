@@ -8,16 +8,7 @@
 import { App, Notice, TFile, TFolder } from 'obsidian';
 import { listObsidianCommands } from '@/shared/obsidian-internal-bridge';
 import NovelWriterPlugin from '@/main';
-import type {
-    AgentChapterSummary,
-    AgentCommandRunRecord,
-    AgentCommandSummary,
-    AgentContext,
-    AgentFileReadResult,
-    AgentProjectStatus,
-    AgentVaultSearchHit,
-    GuideAgentPort,
-} from '@/engine/agent/agent-types';
+import type { AgentChapterSummary, AgentCommandRunRecord, AgentContext, AgentFileReadResult, AgentProjectStatus, AgentVaultSearchHit, GuideAgentPort } from '@/engine/agent/agent-types';
 import { extractLineWindow, sanitizeVaultPath, summarizeHitLine } from '@/shared/file-path-guard';
 import { withWriteLock } from '@/shared/write-lock';
 import { getExecutionLedger } from '@/services/execution-ledger';

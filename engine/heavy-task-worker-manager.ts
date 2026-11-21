@@ -2,7 +2,7 @@ import { WorkerManager } from '@/services/worker-manager';
 import { createLogger } from '@/shared/logger';
 import { getDegradationNotifier } from '@/shared/degradation-notifier';
 import { notifyWorkerUnavailable } from '@/shared/plugin-worker-url';
-import { VectorEnhancer } from './vector-enhancer';
+import './vector-enhancer';
 import { StyleDeconstructor, StyleAnalysisResult } from './deconstructors/style-deconstructor';
 import { QualityScoreEngine, QualityScore, EvaluationContext } from './quality/quality-score-engine';
 import { getScopedPlotDivergenceEngine, getScopedWritingQualityEngine } from './quality/quality-engine-factory';

@@ -21,7 +21,7 @@ import type {
     HarnessTurnOutcome,
 } from './harness-types';
 import type { AgentContext, AgentIntent } from '@/engine/agent/agent-types';
-import { formatPlanForPrompt, type PlanStep } from './creation-plan';
+import { type PlanStep } from './creation-plan';
 import type { SpillPolicy, SpillSink } from './spill-store';
 import {
     buildSessionSnapshot,

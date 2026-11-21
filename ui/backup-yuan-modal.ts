@@ -109,7 +109,7 @@ export class BackupYuanModal extends Modal {
                 }
             }
 
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => window.setTimeout(r, 300));
 
             if (failed > 0) {
                 new Notice(`⚠️ 备份不完整：${count} 个成功，${failed} 个失败（详见控制台）`, 10000);

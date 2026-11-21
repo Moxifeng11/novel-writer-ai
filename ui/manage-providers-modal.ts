@@ -347,7 +347,7 @@ export class ManageProvidersModal extends Modal {
         // 模型列表
         const modelsBlock = container.createDiv({ cls: 'nw-api-field' });
         const modelsHead = modelsBlock.createDiv({ cls: 'nw-api-models-head' });
-        modelsHead.createEl('span', { cls: 'nw-api-label', text: '模型列表' });
+        modelsHead.createSpan({ cls: 'nw-api-label', text: '模型列表' });
         const modelsActions = modelsHead.createDiv({ cls: 'nw-api-models-actions' });
 
         const fetchBtn = modelsActions.createEl('button', {
@@ -467,9 +467,9 @@ export class ManageProvidersModal extends Modal {
         hint?: string,
     ): void {
         const field = container.createDiv({ cls: 'nw-api-field' });
-        field.createEl('span', { cls: 'nw-api-label', text: label });
+        field.createSpan({ cls: 'nw-api-label', text: label });
         build(field);
-        if (hint) field.createEl('span', { cls: 'nw-api-hint', text: hint });
+        if (hint) field.createSpan({ cls: 'nw-api-hint', text: hint });
     }
 
     private syncAvailable(providerId: string): void {

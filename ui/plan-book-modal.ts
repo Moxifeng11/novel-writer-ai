@@ -145,7 +145,7 @@ export class PlanBookModal extends Modal {
 
             // 预设提示词（点击即插入）
             const presetSection = promptSection.createDiv({ cls: 'novel-writer-preset-section' });
-            presetSection.createEl('span', { text: t('planBook.presetSection'), cls: 'novel-writer-muted', attr: { style: 'font-size:12px; margin-right:8px;' } });
+            presetSection.createSpan({ text: t('planBook.presetSection'), cls: 'novel-writer-muted', attr: { style: 'font-size:12px; margin-right:8px;' } });
 
             const presets = [
                 { label: t('planBook.presetStructure'), prompt: '每卷必须有明确的三幕结构：铺垫（30%）→ 冲突升级（50%）→ 高潮与收尾（20%）。每卷结尾设置钩子，驱动读者翻页。' },

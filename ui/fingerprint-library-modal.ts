@@ -118,7 +118,7 @@ export class AddFingerprintModal extends Modal {
 
         if (this.inputMode === 'paste') {
             const textareaWrap = formDiv.createDiv({ attr: { style: 'margin-top:8px;' } });
-            textareaWrap.createEl('div', {
+            textareaWrap.createDiv({
                 text: '粘贴文本内容',
                 attr: { style: 'font-size:12px;color:var(--text-muted);margin-bottom:4px;' }
             });
@@ -134,7 +134,7 @@ export class AddFingerprintModal extends Modal {
             });
         } else {
             const uploadWrap = formDiv.createDiv({ attr: { style: 'margin-top:8px;' } });
-            uploadWrap.createEl('div', {
+            uploadWrap.createDiv({
                 text: '上传 .md 或 .txt 文件',
                 attr: { style: 'font-size:12px;color:var(--text-muted);margin-bottom:4px;' }
             });
@@ -142,12 +142,12 @@ export class AddFingerprintModal extends Modal {
                 cls: 'nw-drop-area-lg',
                 attr: {}
             });
-            dropArea.createEl('div', {
+            dropArea.createDiv({
                 text: this.textValue ? '已选择文件，点击重新选择' : '点击选择文件或拖拽到此处',
                 attr: { style: 'font-size:13px;color:var(--text-muted);margin-bottom:8px;' }
             });
             if (this.textValue) {
-                dropArea.createEl('div', {
+                dropArea.createDiv({
                     text: `文本长度：${this.textValue.length} 字`,
                     attr: { style: 'font-size:12px;color:var(--text-accent);' }
                 });
@@ -220,11 +220,11 @@ export class AddFingerprintModal extends Modal {
         const progressHeader = this.progressEl.createDiv({
             attr: { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;' }
         });
-        this.phaseTextEl = progressHeader.createEl('span', {
+        this.phaseTextEl = progressHeader.createSpan({
             text: '准备中...',
             attr: { style: 'font-size:13px;font-weight:500;' }
         });
-        this.progressTextEl = progressHeader.createEl('span', {
+        this.progressTextEl = progressHeader.createSpan({
             text: '0%',
             attr: { style: 'font-size:12px;color:var(--text-muted);' }
         });

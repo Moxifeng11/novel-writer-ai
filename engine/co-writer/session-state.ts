@@ -506,7 +506,7 @@ export interface ThunkDependencies {
 // 十二、异步 Thunk Action Creators
 // ============================================================
 
-import type { StoreApi, PartialState } from '@/shared/store/types';
+import type { StoreApi } from '@/shared/store/types';
 import { createLogger } from '@/shared/logger';
 
 

@@ -154,7 +154,7 @@ export class HomeView extends ItemView {
             card.createDiv({ cls: 'nw-home-mode-icon', text: spec.icon });
             card.createEl('h4', { text: modeName });
             card.createEl('p', { text: creationModeDisplayDescription(mode) });
-            card.createEl('div', {
+            card.createDiv({
                 cls: 'nw-home-mode-meta',
                 text: count > 0
                     ? t('home.modeMeta', { count, unit: creationUnitDisplayLabel(mode) })

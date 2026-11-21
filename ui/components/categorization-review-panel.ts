@@ -161,7 +161,7 @@ export class CategorizationReviewPanel {
 
         const leftSection = mainRow.createDiv('nw-cat-item-left');
         const characterName = suggestion.payload.characterName || '未知角色';
-        const nameEl = leftSection.createEl('span', {
+        const nameEl = leftSection.createSpan({
             text: characterName,
             cls: 'nw-cat-item-name'
         });
@@ -288,7 +288,7 @@ export class CategorizationReviewPanel {
         }
 
         const popup = anchor.createDiv('nw-cat-selector-popup');
-        popup.createEl('div', { text: '选择分类', cls: 'nw-cat-selector-title' });
+        popup.createDiv({ text: '选择分类', cls: 'nw-cat-selector-title' });
 
         const selector = popup.createDiv('nw-cat-selector');
         const currentCategory = suggestion.payload.category || '';

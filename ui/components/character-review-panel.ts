@@ -248,7 +248,7 @@ export class CharacterReviewPanel {
     }
 
     private renderSuggestionCard(suggestion: AnalysisSuggestion, index: number): HTMLElement {
-        const card = document.createElement('div');
+        const card = createDiv();
         card.className = `nw-suggestion-card ${suggestion.status}`;
         card.dataset.suggestionId = suggestion.id;
 
@@ -450,7 +450,7 @@ export class CharacterReviewPanel {
         const oldSection = card.querySelector('.nw-evidence-section');
         if (!oldSection) return;
 
-        const tempContainer = document.createElement('div');
+        const tempContainer = createDiv();
         this.renderEvidenceSection(tempContainer, suggestion);
         const newSection = tempContainer.firstElementChild;
         if (newSection) {

@@ -56,10 +56,10 @@ export class ForeshadowSection extends SettingsSection {
             });
             
             const infoDiv = typeRow.createDiv({ cls: 'nw-foreshadow-type-info' });
-            infoDiv.createEl('span', { cls: 'nw-foreshadow-type-name', text: type.name });
-            infoDiv.createEl('span', { cls: 'nw-foreshadow-type-desc', text: type.description });
+            infoDiv.createSpan({ cls: 'nw-foreshadow-type-name', text: type.name });
+            infoDiv.createSpan({ cls: 'nw-foreshadow-type-desc', text: type.description });
             
-            const keywordsBadge = infoDiv.createEl('span', { cls: 'nw-foreshadow-keywords-count' });
+            const keywordsBadge = infoDiv.createSpan({ cls: 'nw-foreshadow-keywords-count' });
             keywordsBadge.setText(t('settings.foreshadow.keywordsCount', { count: type.keywords.length }));
 
             const actionsDiv = typeRow.createDiv({ cls: 'nw-foreshadow-type-actions' });

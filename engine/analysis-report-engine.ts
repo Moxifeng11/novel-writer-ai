@@ -1,6 +1,6 @@
 import { App, TFile } from 'obsidian';
 import { splitTableCells } from '@/shared/chapter-table';
-import { isForeshadowRevealed } from '@/shared/foreshadow-status';
+import '@/shared/foreshadow-status';
 import { listEntityFiles } from '@/shared/entity-reader';
 import { AIEngine } from './ai-engine';
 import { ContextManager } from './context-manager';
@@ -11,15 +11,7 @@ import {
     TimelineEvent, 
     EmotionCurvePoint 
 } from '@/shared/types';
-import {
-    pjCharsDir,
-    pjLocsDir,
-    pjFactionsDir,
-    pjItemsDir,
-    pjForeshadowDB,
-    pjTimelineBoard,
-    pjTimelineDir
-} from '@/shared/paths';
+import { pjForeshadowDB, pjTimelineBoard, pjTimelineDir } from '@/shared/paths';
 import { SettlementJournal } from './settlement/settlement-journal';
 import { CharacterConsistencyChecker, ConsistencyCheckResult } from './character-consistency-checker';
 import { withWriteLock } from '@/shared/write-lock';

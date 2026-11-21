@@ -312,10 +312,10 @@ export async function testProviderConnectivity(
         return { ...base, level: 'error', status: 'auth_failed', message: resolveUiMessage(CONN_MSG.noKey), latencyMs: 0 };
     }
 
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    let timer: number | undefined;
     try {
         const timeout = new Promise<never>((_, reject) => {
-            timer = setTimeout(() => reject(new Error('timeout')), TIMEOUT_MS);
+            timer = window.setTimeout(() => reject(new Error('timeout')), TIMEOUT_MS);
         });
         const response = await Promise.race([
             request({
@@ -431,6 +431,6 @@ export async function testProviderConnectivity(
             latencyMs,
         };
     } finally {
-        if (timer) clearTimeout(timer);
+        if (timer) window.clearTimeout(timer);
     }
 }

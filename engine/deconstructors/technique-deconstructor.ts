@@ -7,10 +7,10 @@
  */
 
 import { kbBookWritingTechniquesFile } from '@/shared/paths';
-import { isChineseChar } from '@/shared/text-utils';
+import '@/shared/text-utils';
 import { countCjkWordsAndNumbers } from '@/shared/word-count';
 import { VectorEnhancer } from '@/engine/vector-enhancer';
-import { WebnovelKnowledgeBase, TechniqueDef, GenreConfig } from '@/shared/webnovel-knowledge-base';
+import { WebnovelKnowledgeBase, GenreConfig } from '@/shared/webnovel-knowledge-base';
 import { GenreDetector, GenreConfigRegistry } from '@/engine/genre';
 import type { GenreConfig as FrameworkGenreConfig } from '@/engine/genre';
 import { yieldToUI } from '@/shared/yield';

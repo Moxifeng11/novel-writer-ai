@@ -9,16 +9,7 @@
 import { App, TFile } from 'obsidian';
 import { createLogger } from '@/shared/logger';
 import { pjSessionPresetDir } from '@/shared/paths';
-import {
-    createSnapshot,
-    diffPreset,
-    parseSnapshot,
-    SESSION_PRESET_VERSION,
-    sessionPresetFileName,
-    snapshotApplies,
-    type SessionPresetPayload,
-    type SessionPresetSnapshot,
-} from '@/shared/session-preset-model';
+import { createSnapshot, diffPreset, parseSnapshot, sessionPresetFileName, snapshotApplies, type SessionPresetPayload, type SessionPresetSnapshot } from '@/shared/session-preset-model';
 import type { FileTxService } from './file-tx';
 
 const log = createLogger('SessionPreset');

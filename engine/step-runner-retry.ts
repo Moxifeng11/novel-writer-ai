@@ -66,7 +66,7 @@ export async function callAIWithRetry(
             if (attempt > 1) {
                 const delay = STEP_RUNNER_RETRY_DELAY_MS * Math.pow(2, attempt - 2);
                 host.showProgress(`⏳ ${stepLabel} 重试中 (${attempt}/${maxRetries})，等待 ${delay}ms...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
+                await new Promise(resolve => window.setTimeout(resolve, delay));
                 if (signal?.aborted) {
                     return { content: '', error: '已取消', finishReason: 'aborted' };
                 }

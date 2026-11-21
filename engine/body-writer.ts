@@ -351,7 +351,7 @@ ${fmRaw}
         // 旧实现只有 if (file)，拿不到时 status/tags/word_count 整段静默丢弃。
         let file = await fs.getFile(req.path);
         for (let attempt = 0; !file && attempt < 3; attempt++) {
-            await new Promise(r => setTimeout(r, 120));
+            await new Promise(r => window.setTimeout(r, 120));
             file = await fs.getFile(req.path);
         }
         if (!file) {

@@ -84,7 +84,7 @@ export class PerformanceSection extends SettingsSection {
             );
 
         if (!performanceMonitor.isEnabled()) {
-            section.createEl('div', {
+            section.createDiv({
                 text: t('settings.general.perfDisabled'),
                 cls: 'nw-empty-info-card nw-st-card-spaced'
             });
@@ -112,7 +112,7 @@ export class PerformanceSection extends SettingsSection {
 
         section.createEl('h4', { text: t('settings.general.perfOverview'), cls: 'nw-h4-section' });
 
-        const statsGrid = section.createEl('div', {
+        const statsGrid = section.createDiv({
             cls: 'nw-st-stat-grid'
         });
 
@@ -161,25 +161,25 @@ export class PerformanceSection extends SettingsSection {
         section.createEl('h4', { text: t('settings.general.perfSlowTitle'), cls: 'nw-h4-section' });
 
         if (slowOps.length === 0) {
-            section.createEl('div', {
+            section.createDiv({
                 text: t('settings.general.perfNoSlow'),
                 cls: 'nw-empty-info-card'
             });
         } else {
-            const slowList = section.createEl('div', {
+            const slowList = section.createDiv({
                 cls: 'nw-st-scroll-box'
             });
             for (const op of slowOps.slice(0, 20)) {
-                const item = slowList.createEl('div', {
+                const item = slowList.createDiv({
                     cls: 'nw-st-scroll-item'
                 });
-                const top = item.createEl('div', { cls: 'nw-st-row' });
-                top.createEl('span', { text: op.name, cls: 'nw-st-strong' });
-                top.createEl('span', {
+                const top = item.createDiv({ cls: 'nw-st-row' });
+                top.createSpan({ text: op.name, cls: 'nw-st-strong' });
+                top.createSpan({
                     text: this.formatDuration(op.duration),
                     cls: 'nw-st-duration'
                 });
-                const bottom = item.createEl('div', {
+                const bottom = item.createDiv({
                     text: t('settings.general.perfSlowMeta', {
                         category: op.category,
                         time: new Date(op.timestamp).toLocaleString(),
@@ -193,21 +193,21 @@ export class PerformanceSection extends SettingsSection {
         section.createEl('h4', { text: t('settings.general.perfLogTitle'), cls: 'nw-h4-section' });
 
         if (log.length === 0) {
-            section.createEl('div', {
+            section.createDiv({
                 text: t('settings.general.perfNoData'),
                 cls: 'nw-empty-info-card'
             });
         } else {
-            const logContainer = section.createEl('div', {
+            const logContainer = section.createDiv({
                 cls: 'nw-st-scroll-box nw-st-scroll-box--tall nw-st-scroll-box--mono'
             });
             for (const entry of log.slice(0, 50)) {
-                const item = logContainer.createEl('div', {
+                const item = logContainer.createDiv({
                     cls: 'nw-st-log-item'
                 });
-                const left = item.createEl('span');
+                const left = item.createSpan();
                 left.textContent = `[${entry.category}] ${entry.name}`;
-                const right = item.createEl('span', {
+                const right = item.createSpan({
                     cls: 'nw-st-muted-nowrap'
                 });
                 right.textContent = this.formatDuration(entry.duration);
@@ -216,7 +216,7 @@ export class PerformanceSection extends SettingsSection {
 
         section.createEl('h4', { text: t('settings.general.perfActions'), cls: 'nw-h4-section' });
 
-        const btnRow = section.createEl('div', {
+        const btnRow = section.createDiv({
             cls: 'nw-st-btn-row'
         });
 
@@ -274,14 +274,14 @@ export class PerformanceSection extends SettingsSection {
     }
 
     private addStatCard(container: HTMLElement, label: string, value: string): void {
-        const card = container.createEl('div', {
+        const card = container.createDiv({
             cls: 'nw-st-stat-card'
         });
-        card.createEl('div', {
+        card.createDiv({
             text: label,
             cls: 'nw-st-stat-label'
         });
-        card.createEl('div', {
+        card.createDiv({
             text: value,
             cls: 'nw-st-stat-value'
         });
@@ -299,7 +299,7 @@ export class PerformanceSection extends SettingsSection {
             attr: { readonly: 'readonly' }
         });
         textarea.value = report;
-        const btnRow = contentEl.createEl('div', {
+        const btnRow = contentEl.createDiv({
             cls: 'nw-st-btn-row nw-st-btn-row--end'
         });
         const copyBtn = btnRow.createEl('button', {
@@ -358,11 +358,11 @@ export class PerformanceSection extends SettingsSection {
             });
 
             const left = banner.createDiv({ cls: 'nw-st-update-left' });
-            left.createEl('div', {
+            left.createDiv({
                 text: t('settings.general.bannerFound', { version: latestVersion }),
                 cls: 'nw-st-update-title'
             });
-            left.createEl('div', {
+            left.createDiv({
                 text: lastResult.releaseNotes
                     ? lastResult.releaseNotes.substring(0, 80) + (lastResult.releaseNotes.length > 80 ? '...' : '')
                     : t('settings.general.bannerHint'),
@@ -599,11 +599,11 @@ export class AboutSection extends SettingsSection {
             cls: 'nw-st-card nw-st-card--center'
         });
 
-        versionCard.createEl('div', {
+        versionCard.createDiv({
             text: t('settings.general.aboutCurrentVersion'),
             cls: 'nw-st-label'
         });
-        versionCard.createEl('div', {
+        versionCard.createDiv({
             text: `v${currentVersion}`,
             cls: 'nw-st-version'
         });
@@ -866,19 +866,19 @@ export class AboutSection extends SettingsSection {
             cls: 'nw-st-about-p'
         });
 
-        aboutCard.createEl('div', { text: t('settings.general.aboutAuthor'), cls: 'nw-st-about-line' });
-        aboutCard.createEl('div', { text: t('settings.general.aboutLicense'), cls: 'nw-st-about-line' });
+        aboutCard.createDiv({ text: t('settings.general.aboutAuthor'), cls: 'nw-st-about-line' });
+        aboutCard.createDiv({ text: t('settings.general.aboutLicense'), cls: 'nw-st-about-line' });
     }
 
     private renderInfoItem(container: HTMLElement, label: string, value: string): void {
         const item = container.createDiv({
             cls: 'nw-st-info-item'
         });
-        item.createEl('div', {
+        item.createDiv({
             text: label,
             cls: 'nw-st-info-label'
         });
-        item.createEl('div', {
+        item.createDiv({
             text: value,
             cls: 'nw-st-info-value'
         });

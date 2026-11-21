@@ -8,9 +8,9 @@ import { renderVoiceSampleSection, selectVoiceSamples } from '@/shared/voice-sam
 import { isChapterSettledText } from '@/shared/chapter-status';
 import { CommandIds } from '@/shared/command-ids';
 import { AIEngine, APIResponse } from './ai-engine';
-import { DEAI_CHECK_SYSTEM_PROMPT, DEAI_CHECK_USER_TEMPLATE, DEAI_REWRITE_SYSTEM_PROMPT, DEAI_REWRITE_USER_TEMPLATE, SELF_CHECK_PROMPTS } from './prompt-templates';
+import './prompt-templates';
 import { findChapterFile, findBodyFileByChapterNum, getChapterFileName, CHAPTER_FILE_TYPES } from './chapter-utils';
-import { mkdirp, stripFrontmatter } from '@/utils/helpers';
+import { stripFrontmatter } from '@/utils/helpers';
 import { SettlementEngine } from './settlement-engine';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 import { getDegradationNotifier } from '@/shared/degradation-notifier';
@@ -19,10 +19,10 @@ import { NOTICE_WARNING, NOTICE_CRITICAL, getBusinessThreshold } from '@/shared/
 import { fitPromptToContext } from '@/shared/prompt-budget';
 import { resolveTaskForStep, resolveTaskModelConfig, type ThinkingMode } from '@/shared/task-model';
 import { auditEmotions } from './emotion-auditor';
-import { KnowledgeInjector } from './knowledge-injector';
+import './knowledge-injector';
 import { buildInjectionLedger, formatInjectionLedger, type InjectionLedgerEntry } from '@/shared/injection-ledger';
-import { WritingProfileManager } from './writing-profile';
-import { pjBodyFile, pjBodyDir, pjCharsDir, pjFactionsDir, pjLocsDir, pjItemsDir, pluginRootDirPath } from '@/shared/paths';
+import './writing-profile';
+import { pjBodyFile, pjBodyDir, pluginRootDirPath } from '@/shared/paths';
 import { StepRunnerCallbacks, NOOP_CALLBACKS } from './step-runner-callbacks';
 import { StepResultSaver, type StepSaveMeta } from './step-result-saver';
 import { StepModalController } from './step-modal-controller';
@@ -35,7 +35,7 @@ import { writeSettlementArtifacts } from './settlement/settlement-coordinator';
 import { writeSettlementTableFile } from './settlement/settlement-table-writer';
 import { pjNarrativeOverview } from '@/shared/paths';
 import { parseQualityControlReport } from './revision/quality-issue-parser';
-import { runTargetedRevision } from './revision/targeted-revision';
+import './revision/targeted-revision';
 import { evaluateRevision, extractCharacterNames, recheckRevision } from './revision/revision-guard';
 import { ChapterVersionService } from '@/services/chapter-version-service';
 import { LongNovelSingleCallTasks } from './harness/long-novel-tasks';
@@ -76,7 +76,7 @@ import { createLogger } from '@/shared/logger';
 import { getExecutionLedger, summarizeSettlement } from '@/services/execution-ledger';
 import { pushUsageScope } from '@/services/usage-ledger';
 import { QualityGate } from './quality-gate';
-import { createStateAdvisor } from './context/state-advice-wiring';
+import './context/state-advice-wiring';
 import { buildGateBeatsFromVars, buildGateSnapshotFromVars } from './quality/gate-snapshot';
 import { runProjectCharacterConsistency, writeConsistencyReport } from './character-consistency-service';
 import { createStepFailure, type StepFailureKind } from '@/shared/execution-events';
@@ -2105,9 +2105,9 @@ ${userPrompt}`),
                 executeStep: (ctx: StepRunCtx) => this.executeCurrentStep(ctx),
                 prepareStepInputs: (stepKey, ctx) => this.prepareStepInputs(stepKey, ctx),
                 createStepInputs: () => {
-                    const systemPromptEl = document.createElement('textarea');
-                    const userPromptEl = document.createElement('textarea');
-                    const temperatureSlider = document.createElement('input');
+                    const systemPromptEl = createEl('textarea');
+                    const userPromptEl = createEl('textarea');
+                    const temperatureSlider = createEl('input');
                     temperatureSlider.type = 'range';
                     temperatureSlider.value = '1.4';
                     return { systemPromptEl, userPromptEl, temperatureSlider };
@@ -2342,7 +2342,7 @@ ${userPrompt}`),
                 } else {
                     this.callbacks.showProgress('✅ 全章规划生成完成');
                 }
-                setTimeout(() => this.callbacks.hideProgress(), 1500);
+                window.setTimeout(() => this.callbacks.hideProgress(), 1500);
                 return { success: true };
             }
 

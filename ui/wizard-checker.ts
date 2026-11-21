@@ -17,12 +17,9 @@
 
 import { App, TFile, Notice } from 'obsidian';
 import { findChapterFile, findBodyFileV4, CHAPTER_FILE_TYPES } from '@/engine/chapter-utils';
-import { extractWorldviewMeta } from './utils/worldview-utils';
+import './utils/worldview-utils';
 import { findWritingStyleFile } from './writing-style-paths';
-import {
-    pjWorldview, pjSettingLib, pjOutlineDir,
-    pjVolumeOutlineFile, pjCharsDir, pjLocsDir, pjFactionsDir, pjItemsDir,
-} from '@/shared/paths';
+import { pjWorldview, pjSettingLib, pjOutlineDir, pjVolumeOutlineFile } from '@/shared/paths';
 import {
     NOTICE_INFO, NOTICE_ERROR, CHAPTER_SPOT_CHECK_MAX,
 } from '@/shared/thresholds';

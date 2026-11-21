@@ -27,7 +27,7 @@ export function renderCollapsibleSection(
         cls: 'nw-settings-section-header',
     });
     const leftPart = header.createDiv({ cls: 'nw-settings-section-header-left' });
-    const arrowEl = leftPart.createEl('span', {
+    const arrowEl = leftPart.createSpan({
         cls: 'nw-settings-section-arrow',
         text: defaultOpen ? '▼' : '▶',
     });

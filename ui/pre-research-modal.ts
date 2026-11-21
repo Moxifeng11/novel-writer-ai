@@ -341,7 +341,7 @@ export class PreResearchModal extends Modal {
             if (true) {
                 await copyText(seed);
             } else {
-                const textarea = document.createElement('textarea');
+                const textarea = createEl('textarea');
                 textarea.value = seed;
                 textarea.addClass('nw-offscreen-input');
                 document.body.appendChild(textarea);
@@ -443,7 +443,7 @@ export class PreResearchModal extends Modal {
             }
             this.aiStatusEl?.setText(t('preResearch.msg.appliedCandidate', { n: index + 1, name: item.name }));
         };
-        this.aiOutputEl.createEl('div', { cls: 'nw-u-d-flex nw-u-gap-8px nw-u-fwr-wrap nw-u-margintop-8px' }, (row) => {
+        this.aiOutputEl.createDiv({ cls: 'nw-u-d-flex nw-u-gap-8px nw-u-fwr-wrap nw-u-margintop-8px' }, (row) => {
             suggestions.forEach((item, index) => {
                 const button = row.createEl('button', {
                     text: t('preResearch.msg.applyCandidate', { n: index + 1 }),

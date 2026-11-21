@@ -206,10 +206,10 @@ export class SmartChart {
 
 		this.container.classList.add('nw-smart-chart');
 
-		this.toolbarContainer = document.createElement('div');
+		this.toolbarContainer = createDiv();
 		this.toolbarContainer.className = 'nw-smart-chart-toolbar-wrapper';
 
-		this.chartContainer = document.createElement('div');
+		this.chartContainer = createDiv();
 		this.chartContainer.className = 'nw-smart-chart-content';
 
 		this.container.appendChild(this.toolbarContainer);

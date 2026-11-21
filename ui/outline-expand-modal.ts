@@ -10,13 +10,7 @@
 
 import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '@/main';
-import {
-    OutlineToTextExpander,
-    type ExpansionStrategy,
-    type SceneOutline,
-    type ParagraphOutline,
-    type ExpansionResult,
-} from '@/engine/outline-to-text-expander';
+import { OutlineToTextExpander, type ExpansionStrategy, type SceneOutline, type ParagraphOutline } from '@/engine/outline-to-text-expander';
 import { lineDiff, countWords } from '@/shared/diff-utils';
 import { createLogger } from '@/shared/logger';
 import { pjStepFile } from '@/shared/paths';

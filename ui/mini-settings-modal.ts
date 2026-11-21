@@ -84,7 +84,7 @@ export class MiniSettingsModal extends Modal {
                     row.onclick = () => {
                         this.switchTab(hit.entry.tabId);
                         if (label && this.panel) {
-                            setTimeout(() => this.panel && highlightSettingItem(this.panel, label), 260);
+                            window.setTimeout(() => this.panel && highlightSettingItem(this.panel, label), 260);
                         }
                         results.toggleClass('nw-u-d-none', true);
                         if (this.searchInput) this.searchInput.value = '';

@@ -20,6 +20,7 @@ import type { GenreConfig, GenreDetectionResult } from './types';
 import { GenreConfigRegistry } from './genre-config-registry';
 import { LLMEnhancer, type LLMCaller } from '@/engine/llm-enhancer';
 import { createLogger } from '@/shared/logger';
+import { hostSetTimeout } from '@/shared/host-timers';
 
 
 const log = createLogger('GenreDetector');
@@ -176,7 +177,8 @@ export class GenreDetector {
             try {
                 if (attempt > 0) {
                     // 重试前等待 500ms 退避
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    // 该检测器也会被打包进拆解 Web Worker，worker 里没有 window，故走 host-timers
+            await new Promise(resolve => hostSetTimeout(resolve, 500));
                 }
 
                 const result = await enhancer.enhanceWithLLM<LLMGenreIdentificationResult>({

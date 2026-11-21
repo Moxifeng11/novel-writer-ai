@@ -59,7 +59,7 @@ export class GenrePreferenceMemory {
     private data: GenrePreferenceData;
     private saveCallback?: (data: GenrePreferenceData) => Promise<void>;
     private dirty: boolean = false;
-    private saveTimer: ReturnType<typeof setTimeout> | null = null;
+    private saveTimer: number | null = null;
 
     constructor(
         savedData?: GenrePreferenceData | null,
@@ -338,11 +338,11 @@ export class GenrePreferenceMemory {
         if (!this.saveCallback) return;
 
         if (this.saveTimer) {
-            clearTimeout(this.saveTimer);
+            window.clearTimeout(this.saveTimer);
         }
 
         return new Promise((resolve) => {
-            this.saveTimer = setTimeout(async () => {
+            this.saveTimer = window.setTimeout(async () => {
                 if (this.dirty && this.saveCallback) {
                     try {
                         await this.saveCallback(this.data);
@@ -361,7 +361,7 @@ export class GenrePreferenceMemory {
      */
     async flush(): Promise<void> {
         if (this.saveTimer) {
-            clearTimeout(this.saveTimer);
+            window.clearTimeout(this.saveTimer);
             this.saveTimer = null;
         }
         if (this.dirty && this.saveCallback) {

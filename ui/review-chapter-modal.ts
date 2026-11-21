@@ -1,4 +1,4 @@
-import { App, Modal, Notice } from 'obsidian';
+import { App, Modal } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { ReviewAgent } from '@/engine/review-agent';
 

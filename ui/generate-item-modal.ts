@@ -2,8 +2,8 @@ import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { AIEngine, BatchEntityResult } from '@/engine/ai-engine';
 import { ContextManager } from '@/engine/context-manager';
-import { mkdirp, showSuccess, showWarning, showError, showProgress, hideProgress } from '@/utils/helpers';
-import { validateItemOutput } from '@/shared/template-validator';
+import { mkdirp, showSuccess, showProgress, hideProgress } from '@/utils/helpers';
+import '@/shared/template-validator';
 import { entityDir } from '@/shared/entity-reader';
 import { mergeFanficRequirement } from '@/shared/fanfic-rules';
 import { readFanficPromptBlockWithNotice } from './fanfic-prompt-notice';
@@ -118,7 +118,7 @@ export class GenerateItemModal extends Modal {
             countRow.createEl('label', { text: '生成数量：' });
             const countInput = countRow.createEl('input', { type: 'number', value: '3', cls: 'nw-gen-modal-count-input' });
             countInput.setAttr('min', '1'); countInput.setAttr('max', '20');
-            const countHint = countRow.createEl('span', { text: '（AI 自动命名，1-20 个）', cls: 'nw-gen-modal-count-hint' });
+            const countHint = countRow.createSpan({ text: '（AI 自动命名，1-20 个）', cls: 'nw-gen-modal-count-hint' });
 
             nameInput.oninput = () => {
                 const rawNames = nameInput.value.trim();
@@ -248,7 +248,7 @@ export class GenerateItemModal extends Modal {
         header.createEl('h3', { text: '📋 生成结果管理' });
         const activeCount = this._pendingResults.filter(r => !r.deleted).length;
         const deletedCount = this._pendingResults.filter(r => r.deleted).length;
-        header.createEl('span', {
+        header.createSpan({
             text: `${activeCount} 待保存${deletedCount > 0 ? ` / ${deletedCount} 已删除` : ''}`,
             cls: 'nw-gen-modal-mgmt-count'
         });
@@ -261,9 +261,9 @@ export class GenerateItemModal extends Modal {
             const titleRow = card.createDiv({ cls: 'nw-gen-modal-title-row' });
 
             if (managed.deleted) {
-                titleRow.createEl('span', { text: `🗑️ ${managed.entity.name}`, cls: 'nw-gen-modal-deleted-name' });
+                titleRow.createSpan({ text: `🗑️ ${managed.entity.name}`, cls: 'nw-gen-modal-deleted-name' });
             } else {
-                const nameSpan = titleRow.createEl('span', { text: `⚔️ ${managed.entity.name}`, cls: 'nw-gen-modal-entity-name' });
+                const nameSpan = titleRow.createSpan({ text: `⚔️ ${managed.entity.name}`, cls: 'nw-gen-modal-entity-name' });
                 const renameBtn = titleRow.createEl('button', { text: '✏️ 改名', cls: 'nw-gen-modal-sm-btn' });
                 renameBtn.onclick = () => {
                     const existing = card.querySelector('.rename-inline');

@@ -4,7 +4,7 @@
  * 提供版本保存、查询、对比、回滚等核心功能
  * 版本存储在项目目录下的 _versions/ 文件夹中
  */
-import { App, TFile, TFolder, Notice } from 'obsidian';
+import { App, TFile, TFolder } from 'obsidian';
 import { writeVaultText } from '@/shared/file-system-port';
 import type {
     VersionMeta,
@@ -54,7 +54,7 @@ export interface SaveVersionOptions {
 export function isSafeContentKey(contentKey: string): boolean {
     const key = String(contentKey || '');
     if (!key || key.includes('/') || key.includes('\\') || key.includes('..')) return false;
-    // eslint-disable-next-line no-control-regex -- 必须显式匹配控制字符区间才能拦下伪造的 contentKey
+     
     if (/[\u0000-\u001f]/.test(key)) return false;
     return sanitizeName(key) === key;
 }

@@ -8,7 +8,7 @@
  */
 
 import { kbBookStyleFingerprintFile } from '@/shared/paths';
-import { isChineseChar, splitParagraphs, splitSentences } from '@/shared/text-utils';
+import { isChineseChar, splitParagraphs } from '@/shared/text-utils';
 import { VectorEnhancer } from '@/engine/vector-enhancer';
 import { yieldToUI } from '@/shared/yield';
 import { FIVE_SENSES_WORDS } from '@/engine/dimension-keywords';

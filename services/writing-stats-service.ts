@@ -101,7 +101,7 @@ export class WritingStatsService {
     private data: WritingStatsData = createEmptyWritingStats();
     private loaded = false;
     private scanning = false;
-    private persistTimer: ReturnType<typeof setTimeout> | null = null;
+    private persistTimer: number | null = null;
     private dirty = false;
     /** 每次排程 +1：写盘期间又有新变更时，不能把 dirty 清掉（否则新数据永远不落盘） */
     private persistVersion = 0;
@@ -297,7 +297,7 @@ export class WritingStatsService {
      */
     dispose(): void {
         if (this.persistTimer) {
-            clearTimeout(this.persistTimer);
+            window.clearTimeout(this.persistTimer);
             this.persistTimer = null;
         }
         if (this.dirty) void this.persistNow();
@@ -376,7 +376,7 @@ export class WritingStatsService {
         this.dirty = true;
         this.persistVersion++;
         if (this.persistTimer) return;
-        this.persistTimer = setTimeout(() => {
+        this.persistTimer = window.setTimeout(() => {
             this.persistTimer = null;
             void this.persistNow();
         }, 1500);

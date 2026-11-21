@@ -36,7 +36,7 @@ export interface DebounceOptions {
 }
 
 interface TimerEntry {
-    timer: ReturnType<typeof setTimeout>;
+    timer: number;
     fn: () => void | Promise<void>;
     lastAccessed: number;
 }
@@ -104,7 +104,7 @@ export class AdaptiveDebounceManager {
     cancel(key: string): void {
         const entry = this.timers.get(key);
         if (entry) {
-            clearTimeout(entry.timer);
+            window.clearTimeout(entry.timer);
             this.timers.delete(key);
             if (this.debug) {
                 log.info(`[AdaptiveDebounce] cancel '${key}'`);
@@ -119,7 +119,7 @@ export class AdaptiveDebounceManager {
     flush(key: string): void {
         const entry = this.timers.get(key);
         if (entry) {
-            clearTimeout(entry.timer);
+            window.clearTimeout(entry.timer);
             this.timers.delete(key);
 
             if (this.debug) {
@@ -144,7 +144,7 @@ export class AdaptiveDebounceManager {
      */
     cancelAll(): void {
         for (const [key, entry] of this.timers) {
-            clearTimeout(entry.timer);
+            window.clearTimeout(entry.timer);
         }
         this.timers.clear();
 
@@ -161,7 +161,7 @@ export class AdaptiveDebounceManager {
         this.timers.clear();
 
         for (const [key, entry] of entries) {
-            clearTimeout(entry.timer);
+            window.clearTimeout(entry.timer);
             try {
                 const result = entry.fn();
                 if (result && typeof (result as Promise<void>).catch === 'function') {
@@ -215,7 +215,7 @@ export class AdaptiveDebounceManager {
         // 清除旧的 timer
         const existing = this.timers.get(key);
         if (existing) {
-            clearTimeout(existing.timer);
+            window.clearTimeout(existing.timer);
         }
 
         // 检查 key 数量，超过则清理一半旧的
@@ -224,7 +224,7 @@ export class AdaptiveDebounceManager {
         }
 
         // 设置新的 timer
-        const timer = setTimeout(() => {
+        const timer = window.setTimeout(() => {
             this.timers.delete(key);
 
             if (this.debug) {
@@ -302,7 +302,7 @@ export class AdaptiveDebounceManager {
         const toRemove = Math.floor(entries.length / 2);
         for (let i = 0; i < toRemove; i++) {
             const [key, entry] = entries[i];
-            clearTimeout(entry.timer);
+            window.clearTimeout(entry.timer);
             this.timers.delete(key);
             this.callHistory.delete(key);
         }

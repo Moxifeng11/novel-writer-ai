@@ -3,7 +3,7 @@ import { OperationConfirmModal } from './components/progress';
 import NovelWriterPlugin from '@/main';
 import { AIEngine } from '@/engine/ai-engine';
 import { ContextManager } from '@/engine/context-manager';
-import { mkdirp, showSuccess, showError, showProgress, hideProgress, progressHandle } from '@/utils/helpers';
+import { mkdirp, showSuccess, showError, progressHandle } from '@/utils/helpers';
 import { validateWorldviewOutput } from '@/shared/template-validator';
 import { pjWorldview, pjSettingLib, SUBDIR_WORLD_ARCH } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
@@ -77,7 +77,7 @@ export class GenerateWorldviewModal extends Modal {
             };
 
             const genreTags = ['玄幻', '仙侠', '都市', '科幻', '悬疑', '历史', '言情', '奇幻', '武侠', '末世'];
-            const tagContainer = contentEl.createEl('div', { cls: 'novel-writer-tag-container' });
+            const tagContainer = contentEl.createDiv({ cls: 'novel-writer-tag-container' });
             tagContainer.createEl('p', { text: '快捷标签（点击选择）：' });
 
             const genreInput = contentEl.createEl('input', {
@@ -160,7 +160,7 @@ export class GenerateWorldviewModal extends Modal {
             );
             completed = true;
 
-            if (this.timeoutTimer) clearTimeout(this.timeoutTimer);
+            if (this.timeoutTimer) window.clearTimeout(this.timeoutTimer);
             genNotice.hide();
 
             if (result.error) {
@@ -277,7 +277,7 @@ ${result.content}`;
             this.close();
         } catch (error) {
             completed = true;
-            if (this.timeoutTimer) clearTimeout(this.timeoutTimer);
+            if (this.timeoutTimer) window.clearTimeout(this.timeoutTimer);
             genNotice.hide();
             showError(`世界观生成异常: ${(error as { message?: string }).message || '未知错误'}`);
         }
@@ -289,6 +289,6 @@ ${result.content}`;
     onClose(): void {
         const { contentEl } = this;
         contentEl.empty();
-        if (this.timeoutTimer) clearTimeout(this.timeoutTimer);
+        if (this.timeoutTimer) window.clearTimeout(this.timeoutTimer);
     }
 }

@@ -158,7 +158,7 @@ export class ManuscriptPrecheckModal extends Modal {
     /** 渲染单条问题（点击跳转） */
     private renderIssue(parent: HTMLElement, chapter: PrecheckChapterResult, issue: PrecheckIssue): void {
         const row = parent.createDiv({ cls: 'nw-precheck-issue' });
-        row.createEl('span', {
+        row.createSpan({
             cls: 'nw-precheck-badge nw-precheck-badge--' + issue.severity,
             text: SEVERITY_LABEL[issue.severity],
         });

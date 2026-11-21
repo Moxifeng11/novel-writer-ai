@@ -153,14 +153,14 @@ export async function exportBinaryFile(
  */
 function downloadBlob(blob: Blob, safeName: string, options?: ExportFileOptions): ExportFileResult {
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = createEl('a');
     a.href = url;
     a.download = safeName;
     a.className = 'nw-u-d-none';
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
     if (options?.successMessage) {
         new Notice(options.successMessage, 5000);
     }

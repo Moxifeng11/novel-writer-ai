@@ -124,7 +124,7 @@ export async function probeOllamaModelCapability(
 
     const task = (async (): Promise<ModelCapability | null> => {
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), options?.timeoutMs ?? LOCAL_PROBE_TIMEOUT_MS);
+        const timer = window.setTimeout(() => controller.abort(), options?.timeoutMs ?? LOCAL_PROBE_TIMEOUT_MS);
         try {
             const response = await requestJson(`${base}/api/show`, {
                 headers: { 'Content-Type': 'application/json' },
@@ -151,7 +151,7 @@ export async function probeOllamaModelCapability(
             log.debug(`[LocalModelProbe] ${modelId} 能力探测失败: ${String(e)}`);
             return null;
         } finally {
-            clearTimeout(timer);
+            window.clearTimeout(timer);
             inflight.delete(key);
         }
     })();

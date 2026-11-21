@@ -114,12 +114,12 @@ export class SerializedWriter {
         // 等待当前队列处理完毕（带超时）
         await Promise.race([
             this.queue,
-            new Promise<void>(resolve => setTimeout(resolve, Math.max(0, timeoutMs))),
+            new Promise<void>(resolve => window.setTimeout(resolve, Math.max(0, timeoutMs))),
         ]);
 
         // 额外等待确保所有 pendingCount 归零
         while (this.pendingCount > 0 && Date.now() < deadline) {
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await new Promise(resolve => window.setTimeout(resolve, 10));
         }
 
         if (this.pendingCount > 0) {

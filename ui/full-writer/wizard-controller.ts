@@ -1,4 +1,4 @@
-import { App, TFile, Notice, Modal } from 'obsidian';
+import { Notice } from 'obsidian';
 import { isVolumeOutlineFileName } from '@/shared/paths';
 import { t } from '@/i18n';
 import { pjVolumeOutlineDir, getSettingLibPath, getWorldviewPath, readProjectMeta, SUBDIR_BODY_ROOT, SUBDIR_OUTLINE_ROOT } from '@/shared/paths';
@@ -243,7 +243,7 @@ export class WizardController {
         contentArea.createEl('h3', { text: `${step.icon} ${step.label}` });
         
         if (step.id === 'complete' && step.status === 'done') {
-            contentArea.createEl('div', { text: t('cowrite.wiz.projectComplete'), attr: { style: 'font-size:1.1em; font-weight:600; color:var(--text-success); margin-bottom:16px; padding:12px; background:var(--background-secondary); border-radius:8px; text-align:center;' } });
+            contentArea.createDiv({ text: t('cowrite.wiz.projectComplete'), attr: { style: 'font-size:1.1em; font-weight:600; color:var(--text-success); margin-bottom:16px; padding:12px; background:var(--background-secondary); border-radius:8px; text-align:center;' } });
         }
         
         const stepContent = contentArea.createDiv({ attr: { style: `flex: 1; min-height: var(--nw-step-min-h);` } });

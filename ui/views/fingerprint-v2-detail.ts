@@ -85,7 +85,7 @@ export function renderV2FeaturesSection(container: HTMLElement, v2: V2Fingerprin
         text: t('fingerprint.v2.sectionTitle'),
         cls: 'nw-fp-section-h4 nw-fp-section-title'
     });
-    titleRow.createEl('span', {
+    titleRow.createSpan({
         text: t('fingerprint.v2.kindBadge'),
         cls: 'nw-fp-v2-kind'
     });
@@ -96,12 +96,12 @@ export function renderV2FeaturesSection(container: HTMLElement, v2: V2Fingerprin
         const head = block.createDiv({
             cls: 'nw-fp-v2-dim-head'
         });
-        head.createEl('span', {
+        head.createSpan({
             text: row.label,
             cls: 'nw-fp-v2-dim-label'
         });
         if (row.status !== 'complete') {
-            head.createEl('span', {
+            head.createSpan({
                 text: t('fingerprint.v2.sampleInsufficient'),
                 cls: 'nw-fp-v2-dim-pending'
             });

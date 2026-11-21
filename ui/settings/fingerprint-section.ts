@@ -142,7 +142,7 @@ export class FingerprintSection extends SettingsSection {
         const groupLabel = scope === 'project' && activeProject
             ? t('settings.fingerprint.groupTitleWithProject', { title, count: fingerprints.length, project: activeProject })
             : t('settings.fingerprint.groupTitle', { title, count: fingerprints.length });
-        headerRow.createEl('span', { text: groupLabel, cls: 'nw-u-fwt-600 nw-u-fs-13px' });
+        headerRow.createSpan({ text: groupLabel, cls: 'nw-u-fwt-600 nw-u-fs-13px' });
 
         const isProjectWithoutProject = scope === 'project' && !activeProject;
         const headerRight = scope === 'project' && activeProject

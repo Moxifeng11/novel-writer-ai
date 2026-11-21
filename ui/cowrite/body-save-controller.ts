@@ -106,16 +106,16 @@ export class BodySaveController {
     }
 
     private async withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-        let timer: ReturnType<typeof setTimeout> | null = null;
+        let timer: number | null = null;
         try {
             return await Promise.race([
                 promise,
                 new Promise<T>((_, reject) => {
-                    timer = setTimeout(() => reject(new Error(t('cowrite.save.timeout', { label, seconds: Math.round(ms / 1000) }))), ms);
+                    timer = window.setTimeout(() => reject(new Error(t('cowrite.save.timeout', { label, seconds: Math.round(ms / 1000) }))), ms);
                 }),
             ]);
         } finally {
-            if (timer !== null) clearTimeout(timer);
+            if (timer !== null) window.clearTimeout(timer);
         }
     }
 

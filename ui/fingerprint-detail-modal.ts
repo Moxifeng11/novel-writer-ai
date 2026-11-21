@@ -1,11 +1,11 @@
-import { App, Modal, Notice } from 'obsidian';
+import { App, Modal } from 'obsidian';
 import { t } from '@/i18n';
 import { appendSanitizedHtml } from '@/ui/rendering/safe-html';
 import { OperationConfirmModal } from './components/progress';
 import { StyleFingerprint, StyleFingerprintLibrary } from '@/engine/style-fingerprint-library';
 import { migrateV1ToV2 } from '@/engine/style/fingerprint-migrator';
-import { V2Fingerprint, StyleDimensionKeyV2, DimensionStatus } from '@/engine/style/style-dimensions-v2';
-import { formatWordCount, formatDateTime, FEATURE_DIMENSIONS, FEATURE_DIMENSIONS_V2, dimensionNameV2, dimensionDescV2, dimensionStatusLabel, getDimensionScore } from './fingerprint-utils';
+import { V2Fingerprint, StyleDimensionKeyV2 } from '@/engine/style/style-dimensions-v2';
+import { formatWordCount, formatDateTime, FEATURE_DIMENSIONS, FEATURE_DIMENSIONS_V2, dimensionNameV2, dimensionStatusLabel, getDimensionScore } from './fingerprint-utils';
 import { radarChart, barChart, donutChart } from './svg-charts';
 
 interface FingerprintDetailModalOptions {
@@ -121,7 +121,7 @@ export class FingerprintDetailModal extends Modal {
 
     private renderBasicInfo(container: HTMLElement, fp: StyleFingerprint): void {
         const section = container.createDiv({ cls: 'nw-fp-info-section' });
-        section.createEl('div', { text: t('fingerprint.detail.basicInfo'), cls: 'nw-fp-section-heading' });
+        section.createDiv({ text: t('fingerprint.detail.basicInfo'), cls: 'nw-fp-section-heading' });
 
         const grid = section.createDiv({ cls: 'nw-fp-info-grid' });
 
@@ -136,13 +136,13 @@ export class FingerprintDetailModal extends Modal {
 
     private renderInfoRow(container: HTMLElement, label: string, value: string): void {
         const row = container.createDiv({ cls: 'nw-fp-info-row' });
-        row.createEl('span', { text: `${label}:`, cls: 'nw-fp-info-label' });
-        row.createEl('span', { text: value, cls: 'nw-fp-info-value' });
+        row.createSpan({ text: `${label}:`, cls: 'nw-fp-info-label' });
+        row.createSpan({ text: value, cls: 'nw-fp-info-value' });
     }
 
     private renderStats(container: HTMLElement, fp: StyleFingerprint): void {
         const section = container.createDiv({ cls: 'nw-fp-detail-section' });
-        section.createEl('div', { text: t('fingerprint.detail.statsTitle'), cls: 'nw-fp-section-heading nw-fp-section-heading--spaced' });
+        section.createDiv({ text: t('fingerprint.detail.statsTitle'), cls: 'nw-fp-section-heading nw-fp-section-heading--spaced' });
 
         const statsGrid = section.createDiv({ cls: 'nw-fp-pair-grid' });
 
@@ -157,8 +157,8 @@ export class FingerprintDetailModal extends Modal {
             const card = statsGrid.createDiv({
                 cls: 'nw-fp-stat-tile'
             });
-            card.createEl('span', { text: stat.label, cls: 'nw-fp-stat-tile-label' });
-            card.createEl('span', { text: stat.value, cls: 'nw-fp-stat-tile-value' });
+            card.createSpan({ text: stat.label, cls: 'nw-fp-stat-tile-label' });
+            card.createSpan({ text: stat.value, cls: 'nw-fp-stat-tile-value' });
         }
 
         const chartsRow = section.createDiv({ cls: 'nw-fp-pair-grid' });
@@ -167,7 +167,7 @@ export class FingerprintDetailModal extends Modal {
         const radarCard = chartsRow.createDiv({
             cls: 'nw-fp-chart-card nw-fp-chart-card--center'
         });
-        radarCard.createEl('div', { text: t('fingerprint.detail.radarTitle'), cls: 'nw-fp-chart-title' });
+        radarCard.createDiv({ text: t('fingerprint.detail.radarTitle'), cls: 'nw-fp-chart-title' });
 
         const v2 = this.getV2();
         const radarData = FEATURE_DIMENSIONS_V2.map(dim => {
@@ -182,7 +182,7 @@ export class FingerprintDetailModal extends Modal {
         const donutCard = chartsRow.createDiv({
             cls: 'nw-fp-chart-card'
         });
-        donutCard.createEl('div', { text: t('fingerprint.detail.donutTitle'), cls: 'nw-fp-chart-title' });
+        donutCard.createDiv({ text: t('fingerprint.detail.donutTitle'), cls: 'nw-fp-chart-title' });
 
         const narrationRatio = Math.max(0, 1 - fp.stats.dialogueRatio - fp.stats.descriptionRatio);
         const donutData = [
@@ -195,7 +195,7 @@ export class FingerprintDetailModal extends Modal {
         const barCard = section.createDiv({
             cls: 'nw-fp-chart-card'
         });
-        barCard.createEl('div', { text: t('fingerprint.detail.barTitle'), cls: 'nw-fp-chart-title' });
+        barCard.createDiv({ text: t('fingerprint.detail.barTitle'), cls: 'nw-fp-chart-title' });
 
         const barData = [
             { label: t('fingerprint.detail.avgSentenceLen'), value: fp.stats.avgSentenceLength },
@@ -260,13 +260,13 @@ export class FingerprintDetailModal extends Modal {
 
     private renderStatRow(container: HTMLElement, label: string, value: string): void {
         const row = container.createDiv({ cls: 'nw-fp-stat-row' });
-        row.createEl('span', { text: label, cls: 'nw-fp-stat-row-label' });
-        row.createEl('span', { text: value, cls: 'nw-fp-stat-row-value' });
+        row.createSpan({ text: label, cls: 'nw-fp-stat-row-label' });
+        row.createSpan({ text: value, cls: 'nw-fp-stat-row-value' });
     }
 
     private renderV2Features(container: HTMLElement): void {
         const section = container.createDiv({ cls: 'nw-fp-detail-section' });
-        section.createEl('div', {
+        section.createDiv({
             text: t('fingerprint.detail.featuresTitle'),
             cls: 'nw-fp-section-heading'
         });
@@ -286,24 +286,24 @@ export class FingerprintDetailModal extends Modal {
             const headerLeft = header.createDiv({
                 cls: 'nw-fp-dim-head-main'
             });
-            headerLeft.createEl('span', {
+            headerLeft.createSpan({
                 text: dimensionNameV2(dim.key),
                 cls: 'nw-fp-dim-name'
             });
             // 数据状态徽章
-            headerLeft.createEl('span', {
+            headerLeft.createSpan({
                 text: dimensionStatusLabel(dimData.status),
                 cls: `nw-fp-dim-status nw-fp-dim-status--${dimData.status}`,
             });
             // V1 来源标记
             if (!dim.fromV1) {
-                headerLeft.createEl('span', {
+                headerLeft.createSpan({
                     text: '🆕',
                     cls: 'nw-fp-dim-new',
                     attr: { title: t('fingerprint.detail.newDimTitle') }
                 });
             }
-            header.createEl('span', {
+            header.createSpan({
                 text: this.expandedFeatures[dim.key] ? '▼' : '▶',
                 cls: 'nw-fp-dim-caret'
             });
@@ -319,7 +319,7 @@ export class FingerprintDetailModal extends Modal {
                 });
 
                 // 描述
-                body.createEl('div', {
+                body.createDiv({
                     text: dimData.description || t('fingerprint.detail.noDesc'),
                     cls: 'nw-fp-dim-desc'
                 });
@@ -333,17 +333,17 @@ export class FingerprintDetailModal extends Modal {
                     const row = metricsGrid.createDiv({
                         cls: 'nw-fp-metric'
                     });
-                    row.createEl('div', {
+                    row.createDiv({
                         text: metric.label,
                         cls: 'nw-fp-metric-label'
                     });
-                    row.createEl('div', {
+                    row.createDiv({
                         text: metric.value,
                         cls: 'nw-fp-metric-value'
                     });
                 }
                 if (metrics.length === 0) {
-                    body.createEl('div', {
+                    body.createDiv({
                         text: t('fingerprint.detail.noMetrics'),
                         cls: 'nw-fp-metric-empty'
                     });
@@ -351,12 +351,12 @@ export class FingerprintDetailModal extends Modal {
 
                 // 代表性示例
                 if (dimData.samples && dimData.samples.length > 0) {
-                    body.createEl('div', {
+                    body.createDiv({
                         text: t('fingerprint.detail.dimSamplesLabel'),
                         cls: 'nw-fp-dim-samples-label'
                     });
                     dimData.samples.forEach((sample, idx) => {
-                        body.createEl('div', {
+                        body.createDiv({
                             text: sample,
                             cls: 'nw-fp-dim-sample'
                         });
@@ -460,8 +460,8 @@ export class FingerprintDetailModal extends Modal {
     private renderSamples(container: HTMLElement, fp: StyleFingerprint): void {
         const section = container.createDiv({ cls: 'nw-fp-detail-section' });
         const header = section.createDiv({ cls: 'nw-fp-samples-head' });
-        header.createEl('span', { text: t('fingerprint.detail.samplesTitle'), cls: 'nw-fp-samples-title' });
-        header.createEl('span', { text: t('fingerprint.detail.samplesCount', { count: fp.samples.length }), cls: 'nw-fp-samples-count' });
+        header.createSpan({ text: t('fingerprint.detail.samplesTitle'), cls: 'nw-fp-samples-title' });
+        header.createSpan({ text: t('fingerprint.detail.samplesCount', { count: fp.samples.length }), cls: 'nw-fp-samples-count' });
 
         const samplesList = section.createDiv({
             cls: 'nw-fp-samples-list'
@@ -479,11 +479,11 @@ export class FingerprintDetailModal extends Modal {
             const sampleEl = samplesList.createDiv({
                 cls: 'nw-fp-sample'
             });
-            const idxLabel = sampleEl.createEl('div', {
+            const idxLabel = sampleEl.createDiv({
                 text: t('fingerprint.detail.sampleLabel', { n: idx + 1 }),
                 cls: 'nw-fp-sample-label'
             });
-            const textEl = sampleEl.createEl('div', {
+            const textEl = sampleEl.createDiv({
                 cls: 'nw-fp-sample-body'
             });
             textEl.textContent = sample;

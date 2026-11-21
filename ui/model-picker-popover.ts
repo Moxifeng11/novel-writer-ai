@@ -12,7 +12,7 @@ import { Notice } from 'obsidian';
 import { resolveNodeDoc } from '@/shared/dom-window';
 import type NovelWriterPlugin from '@/main';
 import { ManageProvidersModal } from './manage-providers-modal';
-import { applyModelChoice, formatModelSwitcherLabel, resolveProviderDisplayName, type ModelSwitcherPluginLike } from './model-quick-switcher';
+import { applyModelChoice, resolveProviderDisplayName, type ModelSwitcherPluginLike } from './model-quick-switcher';
 import { nearestThinkingLevel, THINKING_LEVELS, clampThinkingIntensity, thinkingLevelSpec } from '@/shared/task-model';
 
 /**
@@ -83,7 +83,7 @@ export function openModelPickerPopover(
         const rect = anchor.getBoundingClientRect();
         root.addClass('nw-hidden-visibility');
         root.classList.remove('nw-model-picker-hidden');
-        requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
             const height = root.offsetHeight;
             const width = root.offsetWidth;
             let top = rect.top - height - 8;

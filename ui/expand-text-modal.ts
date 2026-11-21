@@ -58,7 +58,7 @@ export class ExpandTextModal extends Modal {
         // 选中文本预览
         const previewSection = contentEl.createDiv();
         previewSection.createEl('h4', { text: '选中文本预览' });
-        const previewBox = previewSection.createEl('div');
+        const previewBox = previewSection.createDiv();
         previewBox.setText(this.selectedText);
         previewBox.addClass('nw-preview-box');
 
@@ -175,14 +175,14 @@ ${this.selectedText}
         const origCol = compare.createDiv();
         origCol.addClass('nw-cols-280');
         origCol.createEl('h4', { text: '原文' });
-        const origBox = origCol.createEl('div');
+        const origBox = origCol.createDiv();
         origBox.setText(this.selectedText);
         origBox.addClass('nw-preview-box', 'nw-preview-box-lg');
 
         const newCol = compare.createDiv();
         newCol.addClass('nw-cols-280');
         newCol.createEl('h4', { text: '扩写后' });
-        const newBox = newCol.createEl('div');
+        const newBox = newCol.createDiv();
         newBox.setText(this.resultText);
         newBox.addClass('nw-preview-box', 'nw-preview-box-lg', 'nw-preview-box-accent');
 

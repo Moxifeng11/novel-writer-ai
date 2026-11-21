@@ -416,7 +416,7 @@ export async function runStreamSuggestion(host: SuggestionFlowHost, directionInd
                         cursorEl.remove();
                     }
                     textEl.textContent = currentText;
-                    const newCursor = document.createElement("span");
+                    const newCursor = createSpan();
                     newCursor.className = "nw-streaming-cursor";
                     newCursor.textContent = "▋";
                     textEl.appendChild(newCursor);

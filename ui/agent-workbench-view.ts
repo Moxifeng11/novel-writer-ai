@@ -17,8 +17,8 @@ import NovelWriterPlugin from '@/main';
 import { applyNwScope } from '@/utils/helpers';
 import { t } from '@/i18n';
 import { createPanelResizer, type PanelResizerHandle } from './panel-resizer';
-import { Platform } from 'obsidian';
-import { OperationConfirmModal } from './components/progress';
+import 'obsidian';
+import './components/progress';
 import { showErrorNotice, showWarningNotice } from './components/notice-helpers';
 import { GuideAgentEngine } from '@/engine/agent/conversation-engine';
 import { createFlowDiagnosisDeps } from './services/flow-diagnosis-collectors';
@@ -47,7 +47,7 @@ import { fetchStagePanelModel } from './agent-workbench/stage-panel';
 import type { HarnessTurnOutcome } from '@/engine/agent/harness/harness-types';
 import { createAgentPort, getAgentContext } from './services/agent-port';
 import { listProjectIds } from '@/shared/project-catalog';
-import { pluginRootDirPath } from '@/shared/paths';
+import '@/shared/paths';
 import { shouldAutoApproveNewFile } from '@/shared/file-path-guard';
 import { creationModeDisplayName, type CreationMode } from '@/shared/creation-mode';
 import { resolveProjectMode as resolveModeFromShared } from '@/shared/project-mode';
@@ -131,7 +131,7 @@ export class AgentWorkbenchView extends ItemView {
     /** 当前 Agent 上下文（项目列表变化时同步，供 list_projects 等工具使用） */
     private agentCtx: AgentContext | null = null;
     /** 项目目录增删改后的刷新防抖 */
-    private projectRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+    private projectRefreshTimer: number | null = null;
     /** vault 事件只绑定一次（restart 会重复 onOpen） */
     private projectEventsBound = false;
     /** 项目 → 创作类型缓存 */
@@ -339,7 +339,7 @@ export class AgentWorkbenchView extends ItemView {
     async onClose(): Promise<void> {
         this.destroyLayoutResizers();
         if (this.projectRefreshTimer !== null) {
-            clearTimeout(this.projectRefreshTimer);
+            window.clearTimeout(this.projectRefreshTimer);
             this.projectRefreshTimer = null;
         }
         closeExistingPopovers();
@@ -519,8 +519,8 @@ export class AgentWorkbenchView extends ItemView {
 
     /** 延迟刷新项目列表/文件树（vault 批量删除会连发多个事件） */
     private scheduleProjectRefresh(): void {
-        if (this.projectRefreshTimer !== null) clearTimeout(this.projectRefreshTimer);
-        this.projectRefreshTimer = setTimeout(() => {
+        if (this.projectRefreshTimer !== null) window.clearTimeout(this.projectRefreshTimer);
+        this.projectRefreshTimer = window.setTimeout(() => {
             this.projectRefreshTimer = null;
             void this.refreshProjectList();
             this.refreshProjectChip();
@@ -1174,19 +1174,19 @@ export class AgentWorkbenchView extends ItemView {
 
     /** 审批弹窗 10 分钟无响应默认拒绝，避免整个 Agent 回合永久挂起 */
     private async withApprovalTimeout(decision: Promise<boolean>, label: string): Promise<boolean> {
-        let timer: ReturnType<typeof setTimeout> | null = null;
+        let timer: number | null = null;
         try {
             return await Promise.race([
                 decision,
                 new Promise<boolean>(resolve => {
-                    timer = setTimeout(() => {
+                    timer = window.setTimeout(() => {
                         new Notice(t('agentWorkbench.notice.approvalTimeout', { label }), 8000);
                         resolve(false);
                     }, 10 * 60_000);
                 }),
             ]);
         } finally {
-            if (timer !== null) clearTimeout(timer);
+            if (timer !== null) window.clearTimeout(timer);
         }
     }
 
@@ -1837,7 +1837,7 @@ export class AgentWorkbenchView extends ItemView {
     }
 
     private scrollToEnd(): void {
-        requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
             if (this.messagesEl) this.messagesEl.scrollTop = this.messagesEl.scrollHeight;
         });
     }

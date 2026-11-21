@@ -11,7 +11,7 @@
  *   剧本：前期调研 → 分集大纲 → 分镜表 → 分集写作 → 导出
  */
 import type { CreationMode } from './creation-mode';
-import { modeUnitLabel } from './mode-content';
+import './mode-content';
 import { hasMessage, t } from '@/i18n';
 
 /**

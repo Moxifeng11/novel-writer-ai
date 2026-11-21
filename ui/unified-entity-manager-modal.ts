@@ -609,7 +609,7 @@ export class UnifiedEntityManagerModal extends Modal {
             const tagsRow = header.createDiv({ cls: 'nw-uem-tags' });
             tagsRow.createSpan({ text: '🏷️', cls: 'nw-uem-tags-icon' });
             for (const tag of entity.model.tags) {
-                tagsRow.createEl('span', { text: tag, cls: 'nw-uem-tag-chip' });
+                tagsRow.createSpan({ text: tag, cls: 'nw-uem-tag-chip' });
             }
         }
 

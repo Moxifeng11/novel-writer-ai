@@ -4,13 +4,7 @@
 import { App, TFile } from 'obsidian';
 import { ObsidianFileSystem } from '@/shared/file-system-port';
 import { entityDir } from '@/shared/entity-reader';
-import {
-    pjCharsDir,
-    pjForeshadowDB,
-    pjChapterStateSnapshot,
-    pjChapterStateSnapshotDir,
-    pjPromiseLedger,
-} from '@/shared/paths';
+import { pjForeshadowDB, pjChapterStateSnapshot, pjChapterStateSnapshotDir, pjPromiseLedger } from '@/shared/paths';
 import { loadRelationshipStates, type CharacterPairRelation } from './relationship-engine';
 import { parseSceneBlocks, type SceneTask } from './scene-generation-loop';
 import {

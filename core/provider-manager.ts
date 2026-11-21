@@ -752,7 +752,7 @@ export class ProviderManager {
     /** 卸载时取消待写盘定时器，避免插件停用后仍回调 saveSettings */
     dispose(): void {
         if (this._saveTimer) {
-            clearTimeout(this._saveTimer);
+            window.clearTimeout(this._saveTimer);
             this._saveTimer = null;
         }
     }
@@ -789,10 +789,10 @@ export class ProviderManager {
         }
     }
 
-    private _saveTimer: ReturnType<typeof setTimeout> | null = null;
+    private _saveTimer: number | null = null;
     private scheduleSave(): void {
-        if (this._saveTimer) clearTimeout(this._saveTimer);
-        this._saveTimer = setTimeout(() => {
+        if (this._saveTimer) window.clearTimeout(this._saveTimer);
+        this._saveTimer = window.setTimeout(() => {
             this.cb.saveSettings().catch(e => log.warn('[小说工坊] 模型覆盖保存失败:', e));
         }, 500);
     }

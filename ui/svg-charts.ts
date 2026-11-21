@@ -397,7 +397,7 @@ export function attachChartInteractions(container: HTMLElement): void {
 }
 
 function createTooltip(container: HTMLElement): HTMLElement {
-	const tip = document.createElement('div');
+	const tip = createDiv();
 	tip.className = 'nw-chart-tooltip';
 	tip.setAttribute('role', 'tooltip');
 	tip.setAttribute('aria-hidden', 'true');

@@ -31,11 +31,7 @@ import {
     INTENSITY_PRESET_LABELS,
     DEFAULT_INTENSITY_CONFIG,
 } from '@/engine/style/style-intensity-engine';
-import {
-    StyleDimensionKeyV2,
-    STYLE_DIMENSIONS_V2,
-    STYLE_DIMENSION_LABELS_V2,
-} from '@/engine/style/style-dimensions-v2';
+import { STYLE_DIMENSIONS_V2 } from '@/engine/style/style-dimensions-v2';
 
 /**
  * FingerprintIntensityModalOptions 类型定义。
@@ -108,7 +104,7 @@ export class FingerprintIntensityModal extends Modal {
             text: `🎚 风格强度调节`,
             attr: { style: 'margin-top:0;margin-bottom:8px;' }
         });
-        contentEl.createEl('div', {
+        contentEl.createDiv({
             text: `目标指纹：${fp.name}`,
             attr: { style: 'color:var(--text-muted);font-size:12px;margin-bottom:16px;' }
         });
@@ -142,7 +138,7 @@ export class FingerprintIntensityModal extends Modal {
                 style: 'margin-bottom:16px;padding:12px;background:var(--background-secondary);border-radius:6px;'
             }
         });
-        section.createEl('div', {
+        section.createDiv({
             text: '作用范围',
             attr: { style: 'font-weight:600;font-size:13px;margin-bottom:8px;' }
         });
@@ -161,11 +157,11 @@ export class FingerprintIntensityModal extends Modal {
                 this.render();
             });
             const textWrap = row.createDiv({ attr: { style: 'flex:1;min-width:0;' } });
-            textWrap.createEl('div', {
+            textWrap.createDiv({
                 text: label,
                 attr: { style: 'font-size:12px;font-weight:500;' }
             });
-            textWrap.createEl('div', {
+            textWrap.createDiv({
                 text: hint,
                 attr: { style: 'font-size:11px;color:var(--text-muted);line-height:1.4;' }
             });
@@ -208,7 +204,7 @@ export class FingerprintIntensityModal extends Modal {
                 style: 'margin-bottom:16px;padding:12px;background:var(--background-secondary);border-radius:6px;'
             }
         });
-        section.createEl('div', {
+        section.createDiv({
             text: '全局强度',
             attr: { style: 'font-weight:600;font-size:13px;margin-bottom:10px;' }
         });
@@ -228,7 +224,7 @@ export class FingerprintIntensityModal extends Modal {
             }
         });
 
-        const valueLabel = sliderRow.createEl('span', {
+        const valueLabel = sliderRow.createSpan({
             text: `${Math.round(this.currentConfig.globalIntensity * 100)}%`,
             attr: {
                 style: 'min-width:50px;text-align:right;font-weight:600;font-size:13px;color:var(--interactive-accent);'
@@ -334,8 +330,8 @@ export class FingerprintIntensityModal extends Modal {
 
     private appendPreviewRow(container: HTMLElement, label: string, value: string): void {
         const row = container.createDiv({ cls: 'nw-intensity-preview-row' });
-        row.createEl('span', { cls: 'nw-intensity-preview-label', text: `${label}:` });
-        row.createEl('span', { cls: 'nw-intensity-preview-value', text: value });
+        row.createSpan({ cls: 'nw-intensity-preview-label', text: `${label}:` });
+        row.createSpan({ cls: 'nw-intensity-preview-value', text: value });
     }
 
     /** 仅更新预览区块（避免重新渲染滑动条） */
@@ -370,7 +366,7 @@ export class FingerprintIntensityModal extends Modal {
             this.advancedMode = checkbox.checked;
             this.render();
         });
-        row.createEl('span', {
+        row.createSpan({
             text: '高级模式：12 维度独立强度调节',
             attr: { style: 'font-size:13px;cursor:pointer;' }
         });
@@ -383,7 +379,7 @@ export class FingerprintIntensityModal extends Modal {
                 style: 'margin-bottom:16px;padding:12px;background:var(--background-secondary);border-radius:6px;'
             }
         });
-        section.createEl('div', {
+        section.createDiv({
             text: '12 维度独立强度',
             attr: { style: 'font-weight:600;font-size:13px;margin-bottom:10px;' }
         });
@@ -398,11 +394,11 @@ export class FingerprintIntensityModal extends Modal {
             const header = row.createDiv({
                 attr: { style: 'display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;' }
             });
-            header.createEl('span', {
+            header.createSpan({
                 text: `${dim.name}`,
                 attr: { style: 'color:var(--text-normal);' }
             });
-            const valueLabel = header.createEl('span', {
+            const valueLabel = header.createSpan({
                 text: `${Math.round(value * 100)}%`,
                 attr: { style: 'color:var(--interactive-accent);font-weight:600;' }
             });

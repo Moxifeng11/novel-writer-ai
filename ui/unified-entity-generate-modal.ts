@@ -3,7 +3,7 @@ import NovelWriterPlugin from '@/main';
 import { AIEngine, BatchEntityResult } from '@/engine/ai-engine';
 import { ContextManager } from '@/engine/context-manager';
 import { mkdirp, showSuccess, showError, showProgress, hideProgress } from '@/utils/helpers';
-import { ENTITY_CATEGORIES } from '@/shared/entity-registry';
+import '@/shared/entity-registry';
 import {
     SUBDIR_CHARS,
     SUBDIR_LOCS,
@@ -189,12 +189,12 @@ export class UnifiedEntityGenerateModal extends Modal {
             const stepState = i < currentIdx ? 'done' : i === currentIdx ? 'current' : 'pending';
             stepItem.addClass(`nw-is-${stepState}`);
 
-            stepItem.createEl('div', {
+            stepItem.createDiv({
                 text: String(step.num),
                 cls: 'nw-ue-step-circle',
             });
 
-            stepItem.createEl('span', {
+            stepItem.createSpan({
                 text: step.label,
                 cls: 'nw-ue-step-label',
             });
@@ -284,9 +284,9 @@ export class UnifiedEntityGenerateModal extends Modal {
                 this._updateAllTypeCards(categories);
             };
 
-            card.createEl('div', { text: cat.icon, cls: 'nw-ue-type-icon' });
-            card.createEl('div', { text: cat.label, cls: 'nw-ue-type-name' });
-            card.createEl('div', { text: cat.desc, cls: 'nw-ue-muted-sm' });
+            card.createDiv({ text: cat.icon, cls: 'nw-ue-type-icon' });
+            card.createDiv({ text: cat.label, cls: 'nw-ue-type-name' });
+            card.createDiv({ text: cat.desc, cls: 'nw-ue-muted-sm' });
 
             (card as CategoryCardElement)._catKey = cat.key;
         }
@@ -421,14 +421,14 @@ export class UnifiedEntityGenerateModal extends Modal {
             countInput.disabled = true;
             this._count = nameList.length;
             countInput.value = String(nameList.length);
-            countRow.createEl('span', {
+            countRow.createSpan({
                 text: `（已指定 ${nameList.length} 个名称）`,
                 cls: 'nw-ue-muted-sm',
             });
         }
 
         const summary = container.createDiv({ cls: 'nw-ue-summary' });
-        summary.createEl('div', { text: '📋 生成摘要', cls: 'nw-ue-summary-title' });
+        summary.createDiv({ text: '📋 生成摘要', cls: 'nw-ue-summary-title' });
         const summaryGrid = summary.createDiv({ cls: 'nw-ue-summary-grid' });
         summaryGrid.createSpan({ text: '实体类型：', cls: 'nw-ue-muted' });
         summaryGrid.createSpan({ text: `${config.icon} ${config.label}` });
@@ -632,7 +632,7 @@ export class UnifiedEntityGenerateModal extends Modal {
             const card = listEl.createDiv({ cls: 'nw-ue-result-card' });
             const titleRow = card.createDiv({ cls: 'nw-ue-result-title' });
 
-            titleRow.createEl('span', {
+            titleRow.createSpan({
                 text: `${idx + 1}. ${item.entity.name}`,
                 cls: 'nw-ue-result-name',
             });
@@ -818,12 +818,12 @@ export class UnifiedEntityGenerateModal extends Modal {
         container.createEl('h2', { text: '🎉 生成完成！', cls: 'nw-ue-heading-lg' });
 
         const resultBox = container.createDiv({ cls: 'nw-ue-confirm-box' });
-        resultBox.createEl('div', { text: config.icon, cls: 'nw-ue-confirm-icon' });
-        resultBox.createEl('div', {
+        resultBox.createDiv({ text: config.icon, cls: 'nw-ue-confirm-icon' });
+        resultBox.createDiv({
             text: `成功生成 ${saved.length} 个${config.label}`,
             cls: 'nw-ue-confirm-title',
         });
-        resultBox.createEl('div', {
+        resultBox.createDiv({
             text: `已保存到：${this._currentProject}/${config.subdir}`,
             cls: 'nw-ue-confirm-desc',
         });

@@ -10,7 +10,7 @@ import { DeconstructionScheduler, ALL_BREAKDOWN_DIMENSIONS, type BreakdownProgre
 import { BatchImportModal } from '@/ui/batch-import-modal';
 import { MiniSettingsModal } from '@/ui/mini-settings-modal';
 import { summarizeVectorReconcile } from '@/engine/knowledge-vector-reconcile';
-import { OperationConfirmModal, TaskCardComponent } from '@/ui/components/progress';
+import { OperationConfirmModal } from '@/ui/components/progress';
 import { createEmptyState } from '@/ui/components/empty-state';
 import { createViewOpenGuard } from '@/shared/view-open-guard';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from '@/ui/components/notice-helpers';
@@ -563,7 +563,7 @@ export class KnowledgeBaseView extends ItemView {
     private detailLoadError: string | null = null;
 
     private completeRefreshPending = false;
-    private completeRefreshTimer?: ReturnType<typeof setTimeout>;
+    private completeRefreshTimer?: number;
 
     private progressRafPending = false;
     private progressRafId?: number;
@@ -677,7 +677,7 @@ export class KnowledgeBaseView extends ItemView {
             this.completeUnsubscribe = undefined;
         }
         if (this.completeRefreshTimer) {
-            clearTimeout(this.completeRefreshTimer);
+            window.clearTimeout(this.completeRefreshTimer);
             this.completeRefreshTimer = undefined;
         }
         if (this.progressRafId !== undefined) {
@@ -707,7 +707,7 @@ export class KnowledgeBaseView extends ItemView {
             this.latestProgress = progress;
             if (this.progressRafPending) return;
             this.progressRafPending = true;
-            this.progressRafId = requestAnimationFrame(() => {
+            this.progressRafId = window.requestAnimationFrame(() => {
                 this.progressRafPending = false;
                 this.progressRafId = undefined;
                 this.handleProgressUpdate();
@@ -718,7 +718,7 @@ export class KnowledgeBaseView extends ItemView {
             if (this.viewClosed) return;
             if (this.completeRefreshPending) return;
             this.completeRefreshPending = true;
-            this.completeRefreshTimer = setTimeout(() => {
+            this.completeRefreshTimer = window.setTimeout(() => {
                 this.completeRefreshPending = false;
                 this.completeRefreshTimer = undefined;
                 this.handleCompleteRefresh();
@@ -3209,7 +3209,7 @@ export class KnowledgeBaseView extends ItemView {
             const infoEl = taskStatusEl.createDiv({
                 cls: 'nw-kb-monitor-info'
             });
-            infoEl.createEl('div', {
+            infoEl.createDiv({
                 cls: 'nw-kb-monitor-book',
                 text: `${progress.bookName}${dimLabel ? ' · ' + dimLabel : ''}`
             });
@@ -3219,7 +3219,7 @@ export class KnowledgeBaseView extends ItemView {
             const barFill = barContainer.createDiv({ cls: 'nw-kb-monitor-progress-fill' });
             barFill.style.setProperty('--nw-kb-pct', `${progress.totalProgress}%`);
             if (pendingCount > 0) {
-                infoEl.createEl('div', {
+                infoEl.createDiv({
                     cls: 'nw-kb-monitor-queued',
                     text: t('knowledgebase.monitor.queuePending', { count: pendingCount })
                 });
@@ -3253,7 +3253,7 @@ export class KnowledgeBaseView extends ItemView {
             : connStatus === 'disconnected'
                 ? 'disconnected'
                 : 'idle';
-        modelStatusEl.createEl('span', {
+        modelStatusEl.createSpan({
             cls: `nw-kb-monitor-dot nw-kb-monitor-dot--${connTone}`
         });
         modelStatusEl.createSpan({

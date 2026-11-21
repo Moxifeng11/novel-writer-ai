@@ -248,7 +248,7 @@ export class QualityLoopModal extends Modal {
         for (const item of report.items.slice(0, 30)) {
             const tag = item.severity === 'error' ? '❌' : item.severity === 'warn' ? '⚠️' : 'ℹ️';
             const li = list.createEl('li', { text: `${tag} ${item.message}` });
-            if (item.suggestion) li.createEl('div', { cls: 'setting-item-description', text: `建议：${item.suggestion}` });
+            if (item.suggestion) li.createDiv({ cls: 'setting-item-description', text: `建议：${item.suggestion}` });
         }
         if (report.items.length > 30) {
             this.reportEl.createEl('p', { text: `另有 ${report.items.length - 30} 条未展示`, cls: 'setting-item-description' });

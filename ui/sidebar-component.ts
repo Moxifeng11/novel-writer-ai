@@ -1,4 +1,4 @@
-import { Notice } from 'obsidian';
+import 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { PlanBookModal } from './plan-book-modal';
 import { CreateProjectModal } from './create-project-modal';
@@ -17,7 +17,7 @@ export class SidebarComponent {
      */
     render(panel: HTMLElement) {
         panel.empty();
-        panel.createEl('div', { text: '⚙️ 核心操作', cls: 'novel-workspace-section-title' });
+        panel.createDiv({ text: '⚙️ 核心操作', cls: 'novel-workspace-section-title' });
         
         const actions = [
             { label: '✍️ 协同写作', action: () => this.plugin.executeCommand('novel-writer-co-writing') },

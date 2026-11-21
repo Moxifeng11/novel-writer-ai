@@ -491,7 +491,7 @@ export class KnowledgeDetailModal extends Modal {
         const infoCard = container.createDiv({
             cls: 'nw-kd-info-card'
         });
-        infoCard.createEl('div', { text: t('knowledgeDetail.info.title'), cls: 'nw-kd-section-title' });
+        infoCard.createDiv({ text: t('knowledgeDetail.info.title'), cls: 'nw-kd-section-title' });
 
         const grid = infoCard.createDiv({ cls: 'nw-kd-info-grid' });
         this.renderInfoRow(grid, t('knowledgeDetail.info.bookName'), book.name);
@@ -503,7 +503,7 @@ export class KnowledgeDetailModal extends Modal {
         this.renderInfoRow(grid, t('knowledgeDetail.info.vectorStatus'), this.getVectorStatusText(book.vectorStatus, book.vectorError));
 
         const chartSection = container.createDiv({ cls: 'nw-kd-section' });
-        chartSection.createEl('div', { text: t('knowledgeDetail.info.completeness'), cls: 'nw-kd-section-title' });
+        chartSection.createDiv({ text: t('knowledgeDetail.info.completeness'), cls: 'nw-kd-section-title' });
 
         const donutData = dimensionLabelList().map((label, i) => ({
             label,
@@ -517,7 +517,7 @@ export class KnowledgeDetailModal extends Modal {
         appendSanitizedHtml(donutCard, donutChart(donutData, { size: 300 }));
 
         const actionsSection = container.createDiv({ cls: 'nw-kd-section' });
-        actionsSection.createEl('div', { text: t('knowledgeDetail.actions.title'), cls: 'nw-kd-section-title' });
+        actionsSection.createDiv({ text: t('knowledgeDetail.actions.title'), cls: 'nw-kd-section-title' });
 
         const btnRow = actionsSection.createDiv({ cls: 'nw-kd-actions' });
 
@@ -630,7 +630,7 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const radarSection = container.createDiv({ cls: 'nw-kd-section' });
-        radarSection.createEl('div', { text: t('knowledgeDetail.style.radar'), cls: 'nw-kd-section-title' });
+        radarSection.createDiv({ text: t('knowledgeDetail.style.radar'), cls: 'nw-kd-section-title' });
 
         const radarCard = radarSection.createDiv({
             cls: 'nw-kd-card nw-kd-card--center'
@@ -643,7 +643,7 @@ export class KnowledgeDetailModal extends Modal {
         appendSanitizedHtml(radarCard, radarChart(radarData, { size: 320 }));
 
         const statsSection = container.createDiv({ cls: 'nw-kd-section' });
-        statsSection.createEl('div', { text: t('knowledgeDetail.style.stats'), cls: 'nw-kd-section-title' });
+        statsSection.createDiv({ text: t('knowledgeDetail.style.stats'), cls: 'nw-kd-section-title' });
 
         const statsGrid = statsSection.createDiv({ cls: 'nw-kd-grid-4' });
         const statItems = [
@@ -676,12 +676,12 @@ export class KnowledgeDetailModal extends Modal {
             const card = statsGrid.createDiv({
                 cls: 'nw-kd-mini-card'
             });
-            card.createEl('div', { text: stat.value, cls: 'nw-kd-stat-value' });
-            card.createEl('div', { text: stat.label, cls: 'nw-kd-muted-sm' });
+            card.createDiv({ text: stat.value, cls: 'nw-kd-stat-value' });
+            card.createDiv({ text: stat.label, cls: 'nw-kd-muted-sm' });
         }
 
         const descSection = container.createDiv({ cls: 'nw-kd-section' });
-        descSection.createEl('div', { text: t('knowledgeDetail.style.features'), cls: 'nw-kd-section-title' });
+        descSection.createDiv({ text: t('knowledgeDetail.style.features'), cls: 'nw-kd-section-title' });
 
         const descCard = descSection.createDiv({
             cls: 'nw-kd-card nw-kd-card--text'
@@ -694,8 +694,8 @@ export class KnowledgeDetailModal extends Modal {
             if (featureTexts.length > 0) {
                 for (const [key, value] of featureTexts) {
                     const item = descCard.createDiv({ cls: 'nw-kd-feature-row' });
-                    item.createEl('span', { text: t('knowledgeDetail.styleDimLine', { label: styleDimensionLabel(key) }), cls: 'nw-kd-strong' });
-                    item.createEl('span', { text: value || t('knowledgeDetail.common.noData'), cls: 'nw-kd-muted' });
+                    item.createSpan({ text: t('knowledgeDetail.styleDimLine', { label: styleDimensionLabel(key) }), cls: 'nw-kd-strong' });
+                    item.createSpan({ text: value || t('knowledgeDetail.common.noData'), cls: 'nw-kd-muted' });
                 }
             } else {
                 descCard.createDiv({ text: t('knowledgeDetail.style.noFeatures'), cls: 'nw-kd-muted' });
@@ -721,7 +721,7 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const curveSection = container.createDiv({ cls: 'nw-kd-section' });
-        curveSection.createEl('div', { text: t('knowledgeDetail.rhythm.curve'), cls: 'nw-kd-section-title' });
+        curveSection.createDiv({ text: t('knowledgeDetail.rhythm.curve'), cls: 'nw-kd-section-title' });
 
         const curveCard = curveSection.createDiv({
             cls: 'nw-kd-card nw-kd-card--scroll'
@@ -740,7 +740,7 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const scatterSection = container.createDiv({ cls: 'nw-kd-section' });
-        scatterSection.createEl('div', { text: t('knowledgeDetail.rhythm.cool'), cls: 'nw-kd-section-title' });
+        scatterSection.createDiv({ text: t('knowledgeDetail.rhythm.cool'), cls: 'nw-kd-section-title' });
 
         const scatterCard = scatterSection.createDiv({
             cls: 'nw-kd-card nw-kd-card--scroll'
@@ -754,7 +754,7 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const structureSection = container.createDiv({ cls: 'nw-kd-section' });
-        structureSection.createEl('div', { text: t('knowledgeDetail.rhythm.match'), cls: 'nw-kd-section-title' });
+        structureSection.createDiv({ text: t('knowledgeDetail.rhythm.match'), cls: 'nw-kd-section-title' });
 
         const structureCard = structureSection.createDiv({
             cls: 'nw-kd-card nw-kd-card--scroll'
@@ -768,7 +768,7 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const keyPointsSection = container.createDiv({ cls: 'nw-kd-section' });
-        keyPointsSection.createEl('div', { text: t('knowledgeDetail.rhythm.keyPoints'), cls: 'nw-kd-section-title' });
+        keyPointsSection.createDiv({ text: t('knowledgeDetail.rhythm.keyPoints'), cls: 'nw-kd-section-title' });
 
         const keyPointsCard = keyPointsSection.createDiv({
             cls: 'nw-kd-panel'
@@ -780,8 +780,8 @@ export class KnowledgeDetailModal extends Modal {
                 const item = keyPointsCard.createDiv({
                     cls: 'nw-kd-kp-item'
                 });
-                item.createEl('span', { text: point.position, cls: 'nw-kd-kp-pos' });
-                item.createEl('span', { text: point.description, cls: 'nw-kd-desc-flex' });
+                item.createSpan({ text: point.position, cls: 'nw-kd-kp-pos' });
+                item.createSpan({ text: point.description, cls: 'nw-kd-desc-flex' });
             }
         } else {
             keyPointsCard.createDiv({ text: t('knowledgeDetail.rhythm.noKeyPoints'), cls: 'nw-kd-empty nw-kd-empty--tight' });
@@ -800,7 +800,7 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const categorySection = container.createDiv({ cls: 'nw-kd-section' });
-        categorySection.createEl('div', { text: t('knowledgeDetail.technique.categories'), cls: 'nw-kd-section-title' });
+        categorySection.createDiv({ text: t('knowledgeDetail.technique.categories'), cls: 'nw-kd-section-title' });
 
         const categoryCard = categorySection.createDiv({
             cls: 'nw-kd-card nw-kd-card--scroll'
@@ -815,7 +815,7 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const top10Section = container.createDiv({ cls: 'nw-kd-section' });
-        top10Section.createEl('div', { text: t('knowledgeDetail.technique.top'), cls: 'nw-kd-section-title' });
+        top10Section.createDiv({ text: t('knowledgeDetail.technique.top'), cls: 'nw-kd-section-title' });
 
         const top10Card = top10Section.createDiv({
             cls: 'nw-kd-panel nw-kd-panel--wide'
@@ -827,19 +827,19 @@ export class KnowledgeDetailModal extends Modal {
                 const item = top10Card.createDiv({
                     cls: 'nw-kd-rank-item'
                 });
-                const rank = item.createEl('span', {
+                const rank = item.createSpan({
                     text: `${i + 1}`,
                     cls: `nw-kd-rank-badge${i < 3 ? ' nw-kd-rank-badge--top' : ''}`,
                 });
-                item.createEl('span', { text: top10[i].name, cls: 'nw-kd-name-flex' });
-                item.createEl('span', { text: t('knowledgeDetail.common.times', { count: top10[i].count }), cls: 'nw-kd-count' });
+                item.createSpan({ text: top10[i].name, cls: 'nw-kd-name-flex' });
+                item.createSpan({ text: t('knowledgeDetail.common.times', { count: top10[i].count }), cls: 'nw-kd-count' });
             }
         } else {
             top10Card.createDiv({ text: t('knowledgeDetail.technique.noTop'), cls: 'nw-kd-empty nw-kd-empty--tight' });
         }
 
         const listSection = container.createDiv({ cls: 'nw-kd-section' });
-        listSection.createEl('div', { text: t('knowledgeDetail.technique.details'), cls: 'nw-kd-section-title' });
+        listSection.createDiv({ text: t('knowledgeDetail.technique.details'), cls: 'nw-kd-section-title' });
 
         const techniques = data.techniques;
         if (techniques && techniques.length > 0) {
@@ -872,8 +872,8 @@ export class KnowledgeDetailModal extends Modal {
                 const itemHeader = item.createDiv({
                     cls: 'nw-kd-tech-head'
                 });
-                itemHeader.createEl('span', { text: tech.name, cls: 'nw-kd-tech-name' });
-                itemHeader.createEl('span', {
+                itemHeader.createSpan({ text: tech.name, cls: 'nw-kd-tech-name' });
+                itemHeader.createSpan({
                     text: isExpanded ? '▼' : '▶',
                     cls: 'nw-kd-muted-xs'
                 });
@@ -887,7 +887,7 @@ export class KnowledgeDetailModal extends Modal {
                     const body = item.createDiv({
                         cls: 'nw-kd-tech-body'
                     });
-                    body.createEl('div', { text: t('knowledgeDetail.technique.sample'), cls: 'nw-kd-body-title' });
+                    body.createDiv({ text: t('knowledgeDetail.technique.sample'), cls: 'nw-kd-body-title' });
                     for (const example of tech.examples) {
                         body.createDiv({
                             text: `• ${example}`,
@@ -912,7 +912,7 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const timelineSection = container.createDiv({ cls: 'nw-kd-section' });
-        timelineSection.createEl('div', { text: t('knowledgeDetail.structure.timeline'), cls: 'nw-kd-section-title' });
+        timelineSection.createDiv({ text: t('knowledgeDetail.structure.timeline'), cls: 'nw-kd-section-title' });
 
         const timelineCard = timelineSection.createDiv({
             cls: 'nw-kd-card nw-kd-card--scroll'
@@ -926,7 +926,7 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const threeLinesSection = container.createDiv({ cls: 'nw-kd-section' });
-        threeLinesSection.createEl('div', { text: t('knowledgeDetail.structure.threeLines'), cls: 'nw-kd-section-title' });
+        threeLinesSection.createDiv({ text: t('knowledgeDetail.structure.threeLines'), cls: 'nw-kd-section-title' });
 
         const threeLinesCard = threeLinesSection.createDiv({
             cls: 'nw-kd-card'
@@ -943,8 +943,8 @@ export class KnowledgeDetailModal extends Modal {
             for (const line of lineDefs) {
                 const row = threeLinesCard.createDiv({ cls: 'nw-kd-line' });
                 const labelRow = row.createDiv({ cls: 'nw-kd-line-label' });
-                labelRow.createEl('span', { text: line.label, cls: 'nw-kd-strong' });
-                labelRow.createEl('span', { text: `${line.value}%`, cls: 'nw-kd-muted' });
+                labelRow.createSpan({ text: line.label, cls: 'nw-kd-strong' });
+                labelRow.createSpan({ text: `${line.value}%`, cls: 'nw-kd-muted' });
                 const barBg = row.createDiv({
                     cls: 'nw-kd-track nw-kd-track--8'
                 });
@@ -956,7 +956,7 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const rhythmSection = container.createDiv({ cls: 'nw-kd-section' });
-        rhythmSection.createEl('div', { text: t('knowledgeDetail.structure.rhythmUnits'), cls: 'nw-kd-section-title' });
+        rhythmSection.createDiv({ text: t('knowledgeDetail.structure.rhythmUnits'), cls: 'nw-kd-section-title' });
 
         const rhythmCard = rhythmSection.createDiv({
             cls: 'nw-kd-scroll nw-kd-scroll--pad'
@@ -976,12 +976,12 @@ export class KnowledgeDetailModal extends Modal {
             const header = item.createDiv({
                 cls: 'nw-kd-unit-head'
             });
-            header.createEl('span', {
+            header.createSpan({
                 text: unit.level,
                 cls: 'nw-kd-level'
             });
-            header.createEl('span', { text: unit.name, cls: 'nw-kd-name-flex nw-kd-strong' });
-            header.createEl('span', {
+            header.createSpan({ text: unit.name, cls: 'nw-kd-name-flex nw-kd-strong' });
+            header.createSpan({
                 text: isExpanded ? '▼' : '▶',
                 cls: 'nw-kd-muted-xs'
             });
@@ -1006,17 +1006,17 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const typeSection = container.createDiv({ cls: 'nw-kd-section' });
-        typeSection.createEl('div', { text: t('knowledgeDetail.structure.type'), cls: 'nw-kd-section-title' });
+        typeSection.createDiv({ text: t('knowledgeDetail.structure.type'), cls: 'nw-kd-section-title' });
 
         const typeCard = typeSection.createDiv({
             cls: 'nw-kd-card nw-kd-card--text'
         });
 
         if (data.structureType) {
-            typeCard.createEl('div', { text: data.structureType, cls: 'nw-kd-type-name' });
+            typeCard.createDiv({ text: data.structureType, cls: 'nw-kd-type-name' });
         }
         // 不能给 typeCard 赋 textContent：那会清空上面刚创建的 structureType 节点
-        typeCard.createEl('div', { text: data.structureDescription || t('knowledgeDetail.structure.noType') });
+        typeCard.createDiv({ text: data.structureDescription || t('knowledgeDetail.structure.noType') });
     }
 
     // ============== Tab 6: 人设 ==============
@@ -1029,7 +1029,7 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const mainSection = container.createDiv({ cls: 'nw-kd-section' });
-        mainSection.createEl('div', { text: t('knowledgeDetail.character.main'), cls: 'nw-kd-section-title' });
+        mainSection.createDiv({ text: t('knowledgeDetail.character.main'), cls: 'nw-kd-section-title' });
 
         const mainChars = data.mainCharacters;
         if (mainChars && mainChars.length > 0) {
@@ -1048,19 +1048,19 @@ export class KnowledgeDetailModal extends Modal {
             });
             avatar.textContent = char.name.charAt(0);
 
-            card.createEl('div', { text: char.name, cls: 'nw-kd-char-name' });
-            card.createEl('div', { text: char.role, cls: 'nw-kd-char-role' });
+            card.createDiv({ text: char.name, cls: 'nw-kd-char-name' });
+            card.createDiv({ text: char.role, cls: 'nw-kd-char-role' });
 
             const tagsContainer = card.createDiv({ cls: 'nw-kd-tag-row' });
             for (const tag of char.tags) {
-                tagsContainer.createEl('span', {
+                tagsContainer.createSpan({
                     text: tag,
                     cls: 'nw-kd-tag'
                 });
             }
 
             if (char.growth) {
-                card.createEl('div', {
+                card.createDiv({
                     text: char.growth,
                     cls: 'nw-kd-char-growth'
                 });
@@ -1071,7 +1071,7 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const relationSection = container.createDiv({ cls: 'nw-kd-section' });
-        relationSection.createEl('div', { text: t('knowledgeDetail.character.relations'), cls: 'nw-kd-section-title' });
+        relationSection.createDiv({ text: t('knowledgeDetail.character.relations'), cls: 'nw-kd-section-title' });
 
         const relationCard = relationSection.createDiv({
             cls: 'nw-kd-card nw-kd-card--center nw-kd-card--roomy'
@@ -1087,7 +1087,7 @@ export class KnowledgeDetailModal extends Modal {
         searchInput.value = this.characterFilter;
 
         const allSection = container.createDiv({ cls: 'nw-kd-section' });
-        allSection.createEl('div', { text: t('knowledgeDetail.character.all'), cls: 'nw-kd-section-title' });
+        allSection.createDiv({ text: t('knowledgeDetail.character.all'), cls: 'nw-kd-section-title' });
 
         const allCard = allSection.createDiv({
             cls: 'nw-kd-scroll'
@@ -1127,12 +1127,12 @@ export class KnowledgeDetailModal extends Modal {
                 miniAvatar.textContent = char.name.charAt(0);
 
                 const info = item.createDiv({ cls: 'nw-kd-flex-fill' });
-                info.createEl('div', { text: char.name, cls: 'nw-kd-name' });
-                info.createEl('div', { text: char.role, cls: 'nw-kd-faint' });
+                info.createDiv({ text: char.name, cls: 'nw-kd-name' });
+                info.createDiv({ text: char.role, cls: 'nw-kd-faint' });
 
                 const tags = item.createDiv({ cls: 'nw-kd-tags' });
                 for (const tag of char.tags.slice(0, 2)) {
-                    tags.createEl('span', {
+                    tags.createSpan({
                         text: tag,
                         cls: 'nw-kd-tag nw-kd-tag--sm'
                     });
@@ -1201,7 +1201,7 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const statsSection = container.createDiv({ cls: 'nw-kd-section' });
-        statsSection.createEl('div', { text: t('knowledgeDetail.fs.stats'), cls: 'nw-kd-section-title' });
+        statsSection.createDiv({ text: t('knowledgeDetail.fs.stats'), cls: 'nw-kd-section-title' });
 
         const statsGrid = statsSection.createDiv({ cls: 'nw-kd-grid-4' });
 
@@ -1214,34 +1214,34 @@ export class KnowledgeDetailModal extends Modal {
             const totalCard = statsGrid.createDiv({
                 cls: 'nw-kd-stat-card'
             });
-            totalCard.createEl('div', { text: String(total), cls: 'nw-kd-stat-num' });
-            totalCard.createEl('div', { text: t('knowledgeDetail.fs.total'), cls: 'nw-kd-muted-sm' });
+            totalCard.createDiv({ text: String(total), cls: 'nw-kd-stat-num' });
+            totalCard.createDiv({ text: t('knowledgeDetail.fs.total'), cls: 'nw-kd-muted-sm' });
 
             const resolvedCard = statsGrid.createDiv({
                 cls: 'nw-kd-stat-card'
             });
-            resolvedCard.createEl('div', { text: String(resolved), cls: 'nw-kd-stat-num nw-kd-stat-num--success' });
-            resolvedCard.createEl('div', { text: t('knowledgeDetail.fs.resolved'), cls: 'nw-kd-muted-sm' });
+            resolvedCard.createDiv({ text: String(resolved), cls: 'nw-kd-stat-num nw-kd-stat-num--success' });
+            resolvedCard.createDiv({ text: t('knowledgeDetail.fs.resolved'), cls: 'nw-kd-muted-sm' });
 
             const unresolvedCard = statsGrid.createDiv({
                 cls: 'nw-kd-stat-card'
             });
-            unresolvedCard.createEl('div', { text: String(unresolved), cls: 'nw-kd-stat-num nw-kd-stat-num--warning' });
-            unresolvedCard.createEl('div', { text: t('knowledgeDetail.fs.unresolved'), cls: 'nw-kd-muted-sm' });
+            unresolvedCard.createDiv({ text: String(unresolved), cls: 'nw-kd-stat-num nw-kd-stat-num--warning' });
+            unresolvedCard.createDiv({ text: t('knowledgeDetail.fs.unresolved'), cls: 'nw-kd-muted-sm' });
 
             const forgottenCount = data.unresolvedTracker?.forgottenForeshadows?.length || 0;
             const forgottenCard = statsGrid.createDiv({
                 cls: 'nw-kd-stat-card'
             });
-            forgottenCard.createEl('div', { text: forgottenCount.toString(), cls: 'nw-kd-stat-num nw-kd-stat-num--error' });
-            forgottenCard.createEl('div', { text: t('knowledgeDetail.fs.forgotten'), cls: 'nw-kd-muted-sm' });
+            forgottenCard.createDiv({ text: forgottenCount.toString(), cls: 'nw-kd-stat-num nw-kd-stat-num--error' });
+            forgottenCard.createDiv({ text: t('knowledgeDetail.fs.forgotten'), cls: 'nw-kd-muted-sm' });
         } else {
             statsSection.createDiv({ text: t('knowledgeDetail.fs.noStats'), cls: 'nw-kd-empty' });
         }
 
         if (data.resolutionQualityStats) {
             const qualitySection = container.createDiv({ cls: 'nw-kd-section' });
-            qualitySection.createEl('div', { text: t('knowledgeDetail.fs.quality'), cls: 'nw-kd-section-title' });
+            qualitySection.createDiv({ text: t('knowledgeDetail.fs.quality'), cls: 'nw-kd-section-title' });
 
             const qualityCard = qualitySection.createDiv({
                 cls: 'nw-kd-card'
@@ -1251,14 +1251,14 @@ export class KnowledgeDetailModal extends Modal {
                 cls: 'nw-kd-quality-grid'
             });
 
-            qualityGrid.createEl('div', { text: t('knowledgeDetail.fs.avgQuality'), cls: 'nw-kd-label' });
+            qualityGrid.createDiv({ text: t('knowledgeDetail.fs.avgQuality'), cls: 'nw-kd-label' });
             const avgQualityBar = qualityGrid.createDiv({ cls: 'nw-kd-bar-row' });
-            const avgTrack = avgQualityBar.createEl('div', {
+            const avgTrack = avgQualityBar.createDiv({
                 cls: 'nw-kd-track nw-kd-track--8 nw-kd-track--grow'
             });
-            const avgFill = avgTrack.createEl('div', { cls: 'nw-kd-fill nw-kd-fill--gradient' });
+            const avgFill = avgTrack.createDiv({ cls: 'nw-kd-fill nw-kd-fill--gradient' });
             avgFill.style.setProperty('--nw-kd-pct', `${data.resolutionQualityStats.avgQuality}%`);
-            avgQualityBar.createEl('span', { text: t('knowledgeDetail.common.scoreUnit', { score: data.resolutionQualityStats.avgQuality }), cls: 'nw-kd-quality-value' });
+            avgQualityBar.createSpan({ text: t('knowledgeDetail.common.scoreUnit', { score: data.resolutionQualityStats.avgQuality }), cls: 'nw-kd-quality-value' });
 
             const qd = data.resolutionQualityStats.qualityDistribution;
             const qualityBars = [
@@ -1268,19 +1268,19 @@ export class KnowledgeDetailModal extends Modal {
                 { label: t('knowledgeDetail.fs.qPoor'), value: qd.poor, tone: 'nw-kd-fill--danger' },
             ];
             for (const q of qualityBars) {
-                qualityGrid.createEl('div', { text: q.label, cls: 'nw-kd-muted-sm' });
+                qualityGrid.createDiv({ text: q.label, cls: 'nw-kd-muted-sm' });
                 const barWrapper = qualityGrid.createDiv({ cls: 'nw-kd-bar-row' });
-                const qTrack = barWrapper.createEl('div', {
+                const qTrack = barWrapper.createDiv({
                     cls: 'nw-kd-track nw-kd-track--6 nw-kd-track--grow'
                 });
-                const qFill = qTrack.createEl('div', { cls: `nw-kd-fill ${q.tone}` });
+                const qFill = qTrack.createDiv({ cls: `nw-kd-fill ${q.tone}` });
                 qFill.style.setProperty('--nw-kd-pct', `${Math.min(100, q.value * 10)}%`);
-                barWrapper.createEl('span', { text: t('knowledgeDetail.common.countUnit', { count: q.value }), cls: 'nw-kd-quality-count' });
+                barWrapper.createSpan({ text: t('knowledgeDetail.common.countUnit', { count: q.value }), cls: 'nw-kd-quality-count' });
             }
         }
 
         const donutSection = container.createDiv({ cls: 'nw-kd-section' });
-        donutSection.createEl('div', { text: t('knowledgeDetail.fs.donut'), cls: 'nw-kd-section-title' });
+        donutSection.createDiv({ text: t('knowledgeDetail.fs.donut'), cls: 'nw-kd-section-title' });
 
         const donutCard = donutSection.createDiv({
             cls: 'nw-kd-card'
@@ -1296,7 +1296,7 @@ export class KnowledgeDetailModal extends Modal {
 
         if (data.networkAnalysis?.densityByChapter) {
             const densitySection = container.createDiv({ cls: 'nw-kd-section' });
-            densitySection.createEl('div', { text: t('knowledgeDetail.fs.density'), cls: 'nw-kd-section-title' });
+            densitySection.createDiv({ text: t('knowledgeDetail.fs.density'), cls: 'nw-kd-section-title' });
 
             const densityCard = densitySection.createDiv({
                 cls: 'nw-kd-card nw-kd-card--scroll'
@@ -1322,7 +1322,7 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const timelineSection = container.createDiv({ cls: 'nw-kd-section' });
-        timelineSection.createEl('div', { text: t('knowledgeDetail.fs.timeline'), cls: 'nw-kd-section-title' });
+        timelineSection.createDiv({ text: t('knowledgeDetail.fs.timeline'), cls: 'nw-kd-section-title' });
 
         const timelineCard = timelineSection.createDiv({
             cls: 'nw-kd-card nw-kd-card--scroll'
@@ -1337,7 +1337,7 @@ export class KnowledgeDetailModal extends Modal {
 
         if (data.networkAnalysis) {
             const networkSection = container.createDiv({ cls: 'nw-kd-section' });
-            networkSection.createEl('div', { text: t('knowledgeDetail.fs.network'), cls: 'nw-kd-section-title' });
+            networkSection.createDiv({ text: t('knowledgeDetail.fs.network'), cls: 'nw-kd-section-title' });
 
             const networkCard = networkSection.createDiv({
                 cls: 'nw-kd-card'
@@ -1352,21 +1352,21 @@ export class KnowledgeDetailModal extends Modal {
             const rhythmBalance = data.networkAnalysis.rhythmBalance;
 
             const netItem1 = netGrid.createDiv({ cls: 'nw-kd-center' });
-            netItem1.createEl('div', { text: mainlineCount.toString(), cls: 'nw-kd-net-num nw-kd-net-num--accent' });
-            netItem1.createEl('div', { text: t('knowledgeDetail.fs.mainNet'), cls: 'nw-kd-faint' });
+            netItem1.createDiv({ text: mainlineCount.toString(), cls: 'nw-kd-net-num nw-kd-net-num--accent' });
+            netItem1.createDiv({ text: t('knowledgeDetail.fs.mainNet'), cls: 'nw-kd-faint' });
 
             const netItem2 = netGrid.createDiv({ cls: 'nw-kd-center' });
-            netItem2.createEl('div', { text: sidelineCount.toString(), cls: 'nw-kd-net-num nw-kd-net-num--muted' });
-            netItem2.createEl('div', { text: t('knowledgeDetail.fs.subNet'), cls: 'nw-kd-faint' });
+            netItem2.createDiv({ text: sidelineCount.toString(), cls: 'nw-kd-net-num nw-kd-net-num--muted' });
+            netItem2.createDiv({ text: t('knowledgeDetail.fs.subNet'), cls: 'nw-kd-faint' });
 
             if (rhythmBalance) {
                 const rhythmDiv = networkCard.createDiv({ cls: 'nw-kd-balance' });
-                rhythmDiv.createEl('div', {
+                rhythmDiv.createDiv({
                     text: t('knowledgeDetail.fs.balance', { score: rhythmBalance.balanceScore, state: rhythmBalance.isBalanced ? t('knowledgeDetail.fs.balanced') : t('knowledgeDetail.fs.unbalanced') }),
                     cls: 'nw-kd-balance-note'
                 });
-                const balanceTrack = rhythmDiv.createEl('div', { cls: 'nw-kd-track nw-kd-track--6' });
-                const balanceFill = balanceTrack.createEl('div', {
+                const balanceTrack = rhythmDiv.createDiv({ cls: 'nw-kd-track nw-kd-track--6' });
+                const balanceFill = balanceTrack.createDiv({
                     cls: `nw-kd-fill ${rhythmBalance.isBalanced ? 'nw-kd-fill--success' : 'nw-kd-fill--warning'}`
                 });
                 balanceFill.style.setProperty('--nw-kd-pct', `${rhythmBalance.balanceScore}%`);
@@ -1375,7 +1375,7 @@ export class KnowledgeDetailModal extends Modal {
 
         if (data.pairs && data.pairs.length > 0) {
             const pairSection = container.createDiv({ cls: 'nw-kd-section' });
-            pairSection.createEl('div', { text: t('knowledgeDetail.fs.pairs'), cls: 'nw-kd-section-title' });
+            pairSection.createDiv({ text: t('knowledgeDetail.fs.pairs'), cls: 'nw-kd-section-title' });
 
             const pairCard = pairSection.createDiv({
                 cls: 'nw-kd-scroll'
@@ -1400,24 +1400,24 @@ export class KnowledgeDetailModal extends Modal {
                 });
 
                 const confidenceTone = pair.confidence >= 70 ? 'high' : pair.confidence >= 50 ? 'mid' : 'low';
-                header.createEl('span', {
+                header.createSpan({
                     text: `${pair.confidence}%`,
                     cls: `nw-kd-confidence nw-kd-confidence--${confidenceTone}`,
                 });
 
                 const info = header.createDiv({ cls: 'nw-kd-flex-fill' });
-                info.createEl('div', {
+                info.createDiv({
                     text: `${pair.setupForeshadowName} → ${pair.payoffForeshadowName || t('knowledgeDetail.common.unknown')}`,
                     cls: 'nw-kd-pair-title'
                 });
-                info.createEl('div', {
+                info.createDiv({
                     text: pair.qualityScore
                         ? t('knowledgeDetail.fs.pairQuality', { type: pairTypeLabels[pair.pairType] || pair.pairType, score: pair.qualityScore })
                         : (pairTypeLabels[pair.pairType] || pair.pairType),
                     cls: 'nw-kd-pair-meta'
                 });
 
-                header.createEl('span', {
+                header.createSpan({
                     text: isExpanded ? '▼' : '▶',
                     cls: 'nw-kd-muted-10'
                 });
@@ -1441,13 +1441,13 @@ export class KnowledgeDetailModal extends Modal {
 
                     for (const dim of dims) {
                         const dimRow = body.createDiv({ cls: 'nw-kd-bar-row' });
-                        dimRow.createEl('span', { text: dim.label, cls: 'nw-kd-dim-label' });
-                        const bar = dimRow.createEl('div', {
+                        dimRow.createSpan({ text: dim.label, cls: 'nw-kd-dim-label' });
+                        const bar = dimRow.createDiv({
                             cls: 'nw-kd-track nw-kd-track--4 nw-kd-track--grow'
                         });
-                        const dimFill = bar.createEl('div', { cls: 'nw-kd-fill' });
+                        const dimFill = bar.createDiv({ cls: 'nw-kd-fill' });
                         dimFill.style.setProperty('--nw-kd-pct', `${dim.value}%`);
-                        dimRow.createEl('span', { text: `${dim.value}%`, cls: 'nw-kd-dim-value' });
+                        dimRow.createSpan({ text: `${dim.value}%`, cls: 'nw-kd-dim-value' });
                     }
                 }
             }
@@ -1455,7 +1455,7 @@ export class KnowledgeDetailModal extends Modal {
 
         if (data.unresolvedTracker && data.unresolvedTracker.totalUnresolved > 0) {
             const unresolvedSection = container.createDiv({ cls: 'nw-kd-section' });
-            unresolvedSection.createEl('div', { text: t('knowledgeDetail.fs.unresolvedTitle'), cls: 'nw-kd-section-title' });
+            unresolvedSection.createDiv({ text: t('knowledgeDetail.fs.unresolvedTitle'), cls: 'nw-kd-section-title' });
 
             const unresolvedCard = unresolvedSection.createDiv({
                 cls: 'nw-kd-card'
@@ -1465,28 +1465,28 @@ export class KnowledgeDetailModal extends Modal {
                 const warnDiv = unresolvedCard.createDiv({
                     cls: 'nw-kd-warn'
                 });
-                warnDiv.createEl('div', {
+                warnDiv.createDiv({
                     text: t('knowledgeDetail.fs.forgottenWarning', { count: data.unresolvedTracker.forgottenForeshadows.length }),
                     cls: 'nw-kd-warn-title'
                 });
                 const names = data.unresolvedTracker.forgottenForeshadows.slice(0, 3).map(f => f.name).join('、');
-                warnDiv.createEl('div', {
+                warnDiv.createDiv({
                     text: names + (data.unresolvedTracker.forgottenForeshadows.length > 3 ? '...' : ''),
                     cls: 'nw-kd-warn-names'
                 });
             }
 
             if (data.unresolvedTracker.recallSuggestions && data.unresolvedTracker.recallSuggestions.length > 0) {
-                unresolvedCard.createEl('div', { text: t('knowledgeDetail.fs.suggestions'), cls: 'nw-kd-suggest-title' });
+                unresolvedCard.createDiv({ text: t('knowledgeDetail.fs.suggestions'), cls: 'nw-kd-suggest-title' });
                 for (const s of data.unresolvedTracker.recallSuggestions.slice(0, 3)) {
                     const sDiv = unresolvedCard.createDiv({
                         cls: 'nw-kd-suggest'
                     });
-                    sDiv.createEl('div', {
+                    sDiv.createDiv({
                         text: t('knowledgeDetail.fs.suggestLine', { chapter: s.chapter, reason: s.reason }),
                         cls: 'nw-kd-suggest-head'
                     });
-                    sDiv.createEl('div', {
+                    sDiv.createDiv({
                         text: s.foreshadows.join(t('knowledgeDetail.common.listSep')),
                         cls: 'nw-kd-muted-xs'
                     });
@@ -1518,7 +1518,7 @@ export class KnowledgeDetailModal extends Modal {
         }
 
         const listSection = container.createDiv({ cls: 'nw-kd-section' });
-        listSection.createEl('div', { text: t('knowledgeDetail.fs.details'), cls: 'nw-kd-section-title' });
+        listSection.createDiv({ text: t('knowledgeDetail.fs.details'), cls: 'nw-kd-section-title' });
 
         const items = data.items;
         if (items && items.length > 0) {
@@ -1547,19 +1547,19 @@ export class KnowledgeDetailModal extends Modal {
                     cls: 'nw-kd-item-head nw-kd-item-head--main'
                 });
 
-                header.createEl('span', {
+                header.createSpan({
                     text: item.resolved ? '✓' : '○',
                     cls: item.resolved ? 'nw-kd-status nw-kd-status--resolved' : 'nw-kd-status',
                 });
 
                 const info = header.createDiv({ cls: 'nw-kd-flex-fill' });
-                info.createEl('div', { text: item.name, cls: 'nw-kd-name' });
-                info.createEl('div', {
+                info.createDiv({ text: item.name, cls: 'nw-kd-name' });
+                info.createDiv({
                     text: t('knowledgeDetail.fs.itemMeta', { category: foreshadowCategoryLabel(item.category), chapter: item.firstAppearance }),
                     cls: 'nw-kd-meta'
                 });
 
-                header.createEl('span', {
+                header.createSpan({
                     text: isExpanded ? '▼' : '▶',
                     cls: 'nw-kd-muted-10'
                 });
@@ -1574,25 +1574,25 @@ export class KnowledgeDetailModal extends Modal {
                         cls: 'nw-kd-item-body'
                     });
 
-                    body.createEl('div', { text: t('knowledgeDetail.fs.firstAppearance'), cls: 'nw-kd-field-title' });
-                    body.createEl('div', { text: item.firstAppearance, cls: 'nw-kd-body-text' });
+                    body.createDiv({ text: t('knowledgeDetail.fs.firstAppearance'), cls: 'nw-kd-field-title' });
+                    body.createDiv({ text: item.firstAppearance, cls: 'nw-kd-body-text' });
 
-                    body.createEl('div', { text: t('knowledgeDetail.fs.echo'), cls: 'nw-kd-field-title' });
+                    body.createDiv({ text: t('knowledgeDetail.fs.echo'), cls: 'nw-kd-field-title' });
                     for (const echo of item.echoes) {
                         body.createDiv({ text: `• ${echo}`, cls: 'nw-kd-body-echo' });
                     }
 
-                    body.createEl('div', {
+                    body.createDiv({
                         text: t('knowledgeDetail.fs.payoffState'),
                         cls: 'nw-kd-field-title nw-kd-field-title--mt'
                     });
                     if (item.resolved) {
-                        body.createEl('div', {
+                        body.createDiv({
                             text: t('knowledgeDetail.fs.resolvedLine', { detail: item.resolution || t('knowledgeDetail.fs.resolved') }),
                             cls: 'nw-kd-state nw-kd-state--resolved'
                         });
                     } else {
-                        body.createEl('div', {
+                        body.createDiv({
                             text: t('knowledgeDetail.fs.unresolved'),
                             cls: 'nw-kd-state nw-kd-state--pending'
                         });
@@ -1610,9 +1610,9 @@ export class KnowledgeDetailModal extends Modal {
         const card = container.createDiv({
             cls: 'nw-kd-empty-card'
         });
-        card.createEl('div', { text: '📭', cls: 'nw-kd-empty-icon' });
-        card.createEl('div', { text: t('knowledgeDetail.empty.title', { name: dataName }), cls: 'nw-kd-empty-title' });
-        card.createEl('div', {
+        card.createDiv({ text: '📭', cls: 'nw-kd-empty-icon' });
+        card.createDiv({ text: t('knowledgeDetail.empty.title', { name: dataName }), cls: 'nw-kd-empty-title' });
+        card.createDiv({
             text: t('knowledgeDetail.empty.desc'),
             cls: 'nw-kd-muted-sm'
         });
@@ -1642,8 +1642,8 @@ export class KnowledgeDetailModal extends Modal {
 
     private renderInfoRow(container: HTMLElement, label: string, value: string): void {
         const row = container.createDiv({ cls: 'nw-kd-info-row' });
-        row.createEl('span', { text: `${label}:`, cls: 'nw-kd-info-label' });
-        row.createEl('span', { text: value, cls: 'nw-kd-info-value' });
+        row.createSpan({ text: `${label}:`, cls: 'nw-kd-info-label' });
+        row.createSpan({ text: value, cls: 'nw-kd-info-value' });
     }
 
     private formatWordCount(count: number): string {

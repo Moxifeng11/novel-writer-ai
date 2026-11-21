@@ -283,6 +283,6 @@ export function highlightSettingItem(root: HTMLElement, itemName: string): boole
     (found as HTMLElement & { scrollIntoView?: (options?: ScrollIntoViewOptions) => void })
         .scrollIntoView?.({ block: 'center', behavior: 'smooth' });
     found.addClass('nw-settings-item-highlight');
-    setTimeout(() => found?.removeClass('nw-settings-item-highlight'), 2200);
+    window.setTimeout(() => found?.removeClass('nw-settings-item-highlight'), 2200);
     return true;
 }

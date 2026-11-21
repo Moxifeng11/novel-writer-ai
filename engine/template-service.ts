@@ -1,30 +1,6 @@
 import { App, TFile } from 'obsidian';
-import {
-    pjBodyTemplate,
-    pjInfoPlanTemplate,
-    pjPlotDistillTemplate,
-    pjOutlineTemplate,
-    pjVolumeOutlineTemplate,
-    pjWorldviewTemplate,
-    pjAnalysisTemplate,
-    pjSettlementTemplate,
-    pjCharTemplate,
-    pjLocTemplate,
-    pjFactionTemplate,
-    pjItemTemplate,
-    pjContinuityReviewTemplate,
-    pjSelfCheckTemplate,
-    pjFixTemplate,
-    pjFinalFixTemplate,
-    pjQualityControlTemplate,
-    pjEmotionPlanTemplate,
-    pjSceneExpandTemplate,
-    pjCharacterSoulTemplate,
-    pjPromptSystemTemplate,
-    pjPromptUserTemplate,
-    pjWritingRulesPromptTemplate,
-} from '@/shared/paths';
-import { CHAPTER_FILE_TYPES } from './chapter-utils';
+import { pjBodyTemplate, pjInfoPlanTemplate, pjPlotDistillTemplate, pjOutlineTemplate, pjVolumeOutlineTemplate, pjWorldviewTemplate, pjAnalysisTemplate, pjSettlementTemplate, pjCharTemplate, pjLocTemplate, pjFactionTemplate, pjItemTemplate, pjContinuityReviewTemplate, pjSelfCheckTemplate, pjFixTemplate, pjFinalFixTemplate, pjQualityControlTemplate, pjEmotionPlanTemplate, pjSceneExpandTemplate, pjCharacterSoulTemplate, pjPromptSystemTemplate, pjPromptUserTemplate } from '@/shared/paths';
+import './chapter-utils';
 import {
     getStepTemplate,
     type PromptTemplate,

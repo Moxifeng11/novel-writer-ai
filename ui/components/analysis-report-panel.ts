@@ -189,8 +189,8 @@ export class AnalysisReportPanel {
         card.createEl('h4', { text: '👤 实体分析' });
 
         const stats = card.createDiv({ attr: { style: 'display: flex; gap: 16px; margin: 12px 0;' } });
-        stats.createEl('span', { text: `人物: ${report.entities.characters.length}` });
-        stats.createEl('span', { text: `地点: ${report.entities.locations.length}` });
+        stats.createSpan({ text: `人物: ${report.entities.characters.length}` });
+        stats.createSpan({ text: `地点: ${report.entities.locations.length}` });
 
         if (report.entities.characters.length > 0) {
             const list = card.createDiv({ attr: { style: 'margin-top: 8px;' } });
@@ -222,8 +222,8 @@ export class AnalysisReportPanel {
         card.createEl('h4', { text: '🔮 伏笔分析' });
 
         const stats = card.createDiv({ attr: { style: 'display: flex; gap: 16px; margin: 12px 0;' } });
-        stats.createEl('span', { text: `埋入: ${report.foreshadows.planted.length}` });
-        stats.createEl('span', { text: `回收: ${report.foreshadows.recovered.length}` });
+        stats.createSpan({ text: `埋入: ${report.foreshadows.planted.length}` });
+        stats.createSpan({ text: `回收: ${report.foreshadows.recovered.length}` });
 
         if (report.foreshadows.recovered.length > 0) {
             const list = card.createDiv({ attr: { style: 'margin-top: 8px;' } });
@@ -254,7 +254,7 @@ export class AnalysisReportPanel {
                     attr: { style: 'padding: 6px 8px; margin: 4px 0; background: var(--background-primary); border-radius: 4px; font-size: 13px;' }
                 });
                 const importanceColor = event.importance === 'high' ? '#e11d48' : event.importance === 'medium' ? '#f59e0b' : '#6b7280';
-                item.createEl('span', {
+                item.createSpan({
                     text: `${event.order}. `,
                     attr: { style: `color: ${importanceColor}; font-weight: 600;` }
                 });
@@ -278,7 +278,7 @@ export class AnalysisReportPanel {
 
         // 平均情绪强度条
         const barContainer = stats.createDiv({ attr: { style: 'margin: 8px 0;' } });
-        barContainer.createEl('span', { text: `平均强度: ${report.emotionCurve.avgIntensity}%` });
+        barContainer.createSpan({ text: `平均强度: ${report.emotionCurve.avgIntensity}%` });
         const bar = barContainer.createDiv({
             attr: { style: 'width: 100%; height: 8px; background: var(--background-primary); border-radius: 4px; margin-top: 4px; overflow: hidden;' }
         });

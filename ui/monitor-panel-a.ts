@@ -2,7 +2,7 @@
  * monitor-panel-a.ts — v5.5 监控面板A
  * 节奏(C2) + 情绪曲线(F3) + OOC警告(A1) + 实体追踪(D1)
  */
-import { WorkspaceLeaf, Notice } from "obsidian";
+import { WorkspaceLeaf } from "obsidian";
 import NovelWriterPlugin from "@/main";
 import { DraggablePanel } from "./draggable-panel";
 import { EmotionCurveAnalyzer } from "@/engine/emotion-curve-analyzer";

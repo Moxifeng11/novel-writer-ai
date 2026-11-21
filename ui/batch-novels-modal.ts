@@ -180,7 +180,7 @@ export class BatchNovelsModal extends Modal {
 
     private appendProgress(text: string): void {
         if (!this.progressEl) return;
-        this.progressEl.createEl('div', { text: `· ${text}`, cls: 'setting-item-description' });
+        this.progressEl.createDiv({ text: `· ${text}`, cls: 'setting-item-description' });
     }
 
     private renderSummary(results: BatchChapterResult[]): void {
@@ -192,7 +192,7 @@ export class BatchNovelsModal extends Modal {
         const skippedText = skipped > 0 ? `，跳过 ${skipped} 章（已结算）` : '';
         summary.createEl('h3', { text: `完成 ${done}/${results.length} 章${skippedText}` });
         for (const item of failed) {
-            summary.createEl('div', {
+            summary.createDiv({
                 text: `❌ ${item.target.chapterName}${item.failedStep ? `（${item.failedStep}）` : ''}：${item.error || '未知错误'}`,
             });
         }

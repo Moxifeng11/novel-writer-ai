@@ -68,7 +68,7 @@ export class WritingStyleModal extends Modal {
         contentEl.createEl('p', { text: t('writingStyle.projectLine', { project: this.project }), attr: { style: 'color:var(--text-muted); font-size:0.85em; margin-bottom:12px;' } });
 
         const presetRow = contentEl.createDiv({ attr: { style: 'display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;' } });
-        presetRow.createEl('span', { text: t('writingStyle.presetLabel'), attr: { style: 'font-weight:600; font-size:0.9em;' } });
+        presetRow.createSpan({ text: t('writingStyle.presetLabel'), attr: { style: 'font-weight:600; font-size:0.9em;' } });
         const presetSelect = presetRow.createEl('select', { attr: { style: 'flex:1; min-width:220px;' } });
         presetSelect.createEl('option', { value: '', text: t('writingStyle.noPresetOption') });
         const applyPresetBtn = presetRow.createEl('button', {
@@ -88,7 +88,7 @@ export class WritingStyleModal extends Modal {
         const newPresetPanel = contentEl.createDiv({
             attr: { style: 'display:none; gap:8px; flex-direction:column; padding:12px; margin-bottom:12px; background:var(--background-secondary); border:1px solid var(--background-modifier-border); border-radius:6px;' },
         });
-        newPresetPanel.createEl('div', { text: t('writingStyle.newPresetPanel'), attr: { style: 'font-weight:600; font-size:0.9em;' } });
+        newPresetPanel.createDiv({ text: t('writingStyle.newPresetPanel'), attr: { style: 'font-weight:600; font-size:0.9em;' } });
         const presetNameInput = newPresetPanel.createEl('input', {
             type: 'text',
             attr: { placeholder: t('writingStyle.presetNamePlaceholder'), style: 'width:100%; padding:6px 8px; border-radius:4px; border:1px solid var(--background-modifier-border);' },
@@ -106,7 +106,7 @@ export class WritingStyleModal extends Modal {
             text: t('writingStyle.saveAsPreset'),
             attr: { style: 'padding:6px 14px; background:var(--background-primary); border:1px solid var(--text-accent); color:var(--text-accent); border-radius:4px; cursor:pointer; font-size:0.85em;' },
         });
-        const presetStatus = newPresetPanel.createEl('span', {
+        const presetStatus = newPresetPanel.createSpan({
             text: t('writingStyle.newPresetHint'),
             attr: { style: 'color:var(--text-muted); font-size:0.78em;' },
         });
@@ -197,7 +197,7 @@ export class WritingStyleModal extends Modal {
 
         const sampleGroup = formEl.createDiv({ attr: { style: 'margin-bottom: 14px;' } });
         sampleGroup.createEl('label', { text: t('writingStyle.sampleLabel'), attr: { style: 'display:block; font-weight:600; margin-bottom:4px; font-size:0.9em;' } });
-        sampleGroup.createEl('span', { text: t('writingStyle.sampleHint'), attr: { style: 'display:block; color:var(--text-muted); font-size:0.75em; margin-bottom:4px;' } });
+        sampleGroup.createSpan({ text: t('writingStyle.sampleHint'), attr: { style: 'display:block; color:var(--text-muted); font-size:0.75em; margin-bottom:4px;' } });
         const sampleArea = sampleGroup.createEl('textarea', {
             attr: {
                 placeholder: t('writingStyle.samplePlaceholder'),
@@ -210,7 +210,7 @@ export class WritingStyleModal extends Modal {
         for (const sec of WS_SECTIONS) {
             const group = formEl.createDiv({ attr: { style: 'margin-bottom: 14px;' } });
             group.createEl('label', { text: sec.label, attr: { style: 'display:block; font-weight:600; margin-bottom:4px; font-size:0.9em;' } });
-            group.createEl('span', { text: sec.hint, attr: { style: 'display:block; color:var(--text-muted); font-size:0.75em; margin-bottom:4px;' } });
+            group.createSpan({ text: sec.hint, attr: { style: 'display:block; color:var(--text-muted); font-size:0.75em; margin-bottom:4px;' } });
 
             const textarea = group.createEl('textarea', {
                 attr: {

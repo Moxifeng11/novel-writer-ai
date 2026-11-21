@@ -336,7 +336,7 @@ export function persist<T extends State, PersistedState extends State = T>(
             },
         };
 
-        let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+        let saveTimeout: number | null = null;
         let pendingSave = false;
 
         const scheduleSave = () => {
@@ -346,7 +346,7 @@ export function persist<T extends State, PersistedState extends State = T>(
 
             if (saveTimeout) return;
 
-            saveTimeout = setTimeout(() => {
+            saveTimeout = window.setTimeout(() => {
                 saveTimeout = null;
                 if (pendingSave) {
                     pendingSave = false;
@@ -378,7 +378,7 @@ export function persist<T extends State, PersistedState extends State = T>(
         const destroy: StoreApi<T>['destroy'] = () => {
             unsubscribe();
             if (saveTimeout) {
-                clearTimeout(saveTimeout);
+                window.clearTimeout(saveTimeout);
                 saveTimeout = null;
             }
             if (pendingSave) {
@@ -387,7 +387,7 @@ export function persist<T extends State, PersistedState extends State = T>(
             originalDestroy();
         };
 
-        setTimeout(() => {
+        window.setTimeout(() => {
             persistApi.rehydrate();
         }, 0);
 

@@ -56,7 +56,7 @@ export class UnloadBarrier {
             const batch = [...this.pending];
             const allSettled = Promise.all(batch).then(() => true);
             const timeout = new Promise<false>((resolve) => {
-                setTimeout(() => resolve(false), remaining);
+                window.setTimeout(() => resolve(false), remaining);
             });
             const finished = await Promise.race([allSettled, timeout]);
             if (!finished) return false;

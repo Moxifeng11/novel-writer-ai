@@ -11,7 +11,7 @@ import { validateProjectGraph, writeGraphValidationReport, type GraphValidationR
 
 const log = createLogger('GraphValidation');
 
-const timers = new Map<string, ReturnType<typeof setTimeout>>();
+const timers = new Map<string, number>();
 
 /**
  * 清空全部待执行的图谱校验定时器（插件 onunload 调用）。
@@ -21,7 +21,7 @@ const timers = new Map<string, ReturnType<typeof setTimeout>>();
  */
 export function cancelScheduledGraphValidations(): void {
     for (const timer of timers.values()) {
-        clearTimeout(timer);
+        window.clearTimeout(timer);
     }
     timers.clear();
 }
@@ -48,8 +48,8 @@ export async function runGraphValidation(app: App, project: string): Promise<Gra
  */
 export function scheduleGraphValidation(app: App, project: string, delayMs = 5000): void {
     const existing = timers.get(project);
-    if (existing) clearTimeout(existing);
-    const timer = setTimeout(() => {
+    if (existing) window.clearTimeout(existing);
+    const timer = window.setTimeout(() => {
         timers.delete(project);
         void runGraphValidation(app, project).catch((e) => {
             log.warn('[GraphValidation] 自动校验失败（不影响结算）:', e);

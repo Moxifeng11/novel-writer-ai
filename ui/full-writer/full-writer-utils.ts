@@ -1,4 +1,4 @@
-import { TFile } from 'obsidian';
+import 'obsidian';
 import { ALL_FULL_STEPS, FullStep } from '@/engine/step-runner';
 import type { GatheredContext } from '@/engine/context-manager';
 import { parseChapterLocation, pjStepDir, projectIdFromPath } from '@/shared/paths';

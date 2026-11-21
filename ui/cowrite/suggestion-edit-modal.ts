@@ -78,8 +78,8 @@ export class SuggestionEditModal {
         this.submitBtn = submitBtn;
 
         // 滑入动画：先挂载（translateX(100%) 由 CSS 默认值提供），下一帧添加 is-open
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => drawer.classList.add('is-open'));
+        window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => drawer.classList.add('is-open'));
         });
     }
 
@@ -131,7 +131,7 @@ export class SuggestionEditModal {
         this.validationPanel.removeClass('nw-u-d-none');
         this.validationPanel.empty();
         const loading = this.validationPanel.createDiv({ cls: 'nw-suggestion-drawer-validation-loading' });
-        loading.createEl('span', { text: '⏳' });
+        loading.createSpan({ text: '⏳' });
         loading.createSpan({ text: t('cowrite.edit.validatingHint') });
     }
 

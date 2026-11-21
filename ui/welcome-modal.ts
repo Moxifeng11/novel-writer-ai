@@ -1,4 +1,4 @@
-import { App, Modal, Notice } from 'obsidian';
+import { App, Modal } from 'obsidian';
 
 interface WelcomeModalOptions {
     currentVersion: string;
@@ -53,7 +53,7 @@ export class WelcomeModal extends Modal {
             }
         });
 
-        hero.createEl('div', {
+        hero.createDiv({
             text: '📖',
             attr: { style: 'font-size:48px;margin-bottom:8px;' }
         });
@@ -63,7 +63,7 @@ export class WelcomeModal extends Modal {
             attr: { style: 'margin:0 0 4px 0;color:white;font-size:24px;' }
         });
 
-        hero.createEl('div', {
+        hero.createDiv({
             text: `v${this.options.currentVersion}`,
             attr: { style: 'color:rgba(255,255,255,0.85);font-size:14px;' }
         });
@@ -176,17 +176,17 @@ export class WelcomeModal extends Modal {
                 }
             });
 
-            card.createEl('div', {
+            card.createDiv({
                 text: feat.icon,
                 attr: { style: 'font-size:24px;margin-bottom:6px;' }
             });
 
-            card.createEl('div', {
+            card.createDiv({
                 text: feat.title,
                 attr: { style: 'font-weight:600;font-size:13px;margin-bottom:4px;color:var(--text-normal);' }
             });
 
-            card.createEl('div', {
+            card.createDiv({
                 text: feat.desc,
                 attr: { style: 'font-size:11px;color:var(--text-muted);line-height:1.5;' }
             });
@@ -213,7 +213,7 @@ export class WelcomeModal extends Modal {
             }
         });
 
-        guideBox.createEl('div', {
+        guideBox.createDiv({
             text: this.options.isNewInstall ? '📋 快速开始' : '📌 升级后建议',
             attr: { style: 'font-weight:600;font-size:14px;margin-bottom:10px;color:var(--text-normal);' }
         });

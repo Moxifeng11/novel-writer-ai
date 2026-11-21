@@ -10,7 +10,7 @@
  */
 
 import type { ProjectHealthIssueKind } from './project-health-service';
-import type { StandardReport as LibStandardReport } from '@/scripts/lib/project-standard-lib.mjs';
+
 
 export {
     validateProjectStandard,

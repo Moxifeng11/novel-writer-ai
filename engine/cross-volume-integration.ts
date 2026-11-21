@@ -3,7 +3,7 @@ import { splitTableCells } from '@/shared/chapter-table';
 import { listEntityFiles } from '@/shared/entity-reader';
 import { RE_VOLUME_HEADER, RE_CHAPTER_RANGE } from '@/shared/format-constants';
 import { readMergedVolumeOutline } from '@/utils/helpers';
-import { pjForeshadowDB, pjTimelineBoard, pjControlDir, pjVolumeOutlineDir } from '@/shared/paths';
+import { pjForeshadowDB, pjTimelineBoard, pjControlDir } from '@/shared/paths';
 import type { Notifier } from '@/shared/types';
 import { NOOP_NOTIFIER } from '@/shared/types';
 import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';

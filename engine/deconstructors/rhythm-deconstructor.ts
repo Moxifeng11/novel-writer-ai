@@ -7,7 +7,7 @@
  */
 
 import { kbBookRhythmAnalysisFile } from '@/shared/paths';
-import { isChineseChar, splitParagraphs, splitSentences } from '@/shared/text-utils';
+import '@/shared/text-utils';
 import { countCjkWordsAndNumbers } from '@/shared/word-count';
 import { yieldToUI } from '@/shared/yield';
 import { EMOTION_WORDS, HOOK_WORDS } from '@/engine/dimension-keywords';

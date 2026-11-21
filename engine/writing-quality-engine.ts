@@ -6,7 +6,7 @@
  * 不依赖 AI 调用，保证实时性（< 100ms / 万字）
  */
 
-import { splitParagraphs, splitSentences } from '@/shared/text-utils';
+import { splitSentences } from '@/shared/text-utils';
 import {
   gradeFromScore,
   qualityGradeColor,

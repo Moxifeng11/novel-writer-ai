@@ -53,7 +53,7 @@ export class ExecutionRunStore {
     private nextId = 1;
     private listeners = new Set<(change: ExecutionStoreChange) => void>();
     private status: { message: string; current?: number; total?: number; aiCalls?: number } | null = null;
-    private statusTimer: ReturnType<typeof setTimeout> | null = null;
+    private statusTimer: number | null = null;
 
     /**
      * 订阅执行账本变化。
@@ -248,7 +248,7 @@ export class ExecutionRunStore {
 
     private scheduleStatusNotify(): void {
         if (this.statusTimer) return;
-        this.statusTimer = setTimeout(() => {
+        this.statusTimer = window.setTimeout(() => {
             this.statusTimer = null;
             this.notify('status');
         }, 120);

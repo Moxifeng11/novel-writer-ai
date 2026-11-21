@@ -555,7 +555,7 @@ export class ApiSection extends SettingsSection {
                 },
             });
             input.value = override;
-            const hint = field.createEl('div', { cls: 'nw-api-hint' });
+            const hint = field.createDiv({ cls: 'nw-api-hint' });
             const syncHint = (): void => {
                 const effective = resolveEffectiveRequestUrl(raw.endpoint, format, override);
                 hint.setText(override
@@ -665,7 +665,7 @@ export class ApiSection extends SettingsSection {
         // ── 模型列表 ──
         const modelsBlock = container.createDiv({ cls: 'nw-api-field' });
         const modelsHead = modelsBlock.createDiv({ cls: 'nw-api-models-head' });
-        modelsHead.createEl('span', { cls: 'nw-api-label', text: t('settings.api.modelsTitle') });
+        modelsHead.createSpan({ cls: 'nw-api-label', text: t('settings.api.modelsTitle') });
         const modelsActions = modelsHead.createDiv({ cls: 'nw-api-models-actions' });
 
         const fetchBtn = modelsActions.createEl('button', {
@@ -970,9 +970,9 @@ export class ApiSection extends SettingsSection {
         hint?: string,
     ): void {
         const field = container.createDiv({ cls: 'nw-api-field' });
-        field.createEl('span', { cls: 'nw-api-label', text: label });
+        field.createSpan({ cls: 'nw-api-label', text: label });
         build(field);
-        if (hint) field.createEl('span', { cls: 'nw-api-hint', text: hint });
+        if (hint) field.createSpan({ cls: 'nw-api-hint', text: hint });
     }
 
     /** 把供应商的启用模型同步到全局 availableModels，并修正失效的默认/规划/正文模型 */
@@ -1260,7 +1260,7 @@ export class ApiSection extends SettingsSection {
     private renderCanonResearchRows(section: HTMLElement): void {
         const card = section.createDiv({ cls: 'nw-u-margintop-20px' });
         card.createEl('h4', { text: '📚 ' + t('settings.api.canonTitle'), cls: 'nw-u-m-0-0-6px nw-u-fs-14px' });
-        card.createEl('div', {
+        card.createDiv({
             text: t('settings.api.canonIntro'),
             cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-8px',
         });
@@ -1475,7 +1475,7 @@ export class ApiSection extends SettingsSection {
         const currentId = this.plugin.getCurrentProviderId();
         const isCurrentProvider = !providerId || providerId === currentId;
         if (!isCurrentProvider) {
-            card.createEl('div', {
+            card.createDiv({
                 cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-8px',
                 text: t('settings.api.budgetNonCurrentChannel', {
                     name: this.plugin.getAllProviders().find(item => item.id === providerId)?.name || providerId,
@@ -1483,7 +1483,7 @@ export class ApiSection extends SettingsSection {
             });
         }
         card.createEl('h4', { text: '🧠 ' + t('settings.api.budgetTitle'), cls: 'nw-u-m-0-0-6px nw-u-fs-14px' });
-        card.createEl('div', {
+        card.createDiv({
             text: t('settings.api.budgetIntro'),
             cls: 'nw-u-fs-12px nw-u-c-text-muted nw-u-marginbottom-8px',
         });
@@ -1610,7 +1610,7 @@ export class ApiSection extends SettingsSection {
 
 
         } else {
-            card.createEl('div', {
+            card.createDiv({
                 cls: 'nw-card nw-text-12-muted',
                 text: t('settings.api.globalOnlyCurrent'),
             });

@@ -6,7 +6,7 @@ import {
     ENTITY_BODY_SECTIONS,
 } from '@/shared/format-constants';
 import { AIApiClient } from './ai-api-client';
-import type { APIResponse, BatchEntityResult } from './ai-engine';
+import type { BatchEntityResult } from './ai-engine';
 import { stripCodeFence } from '@/shared/api-response-utils';
 import { buildEntityTemplateBlock } from '@/shared/entity-templates';
 import {

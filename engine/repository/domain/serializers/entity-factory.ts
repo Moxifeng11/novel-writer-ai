@@ -24,14 +24,7 @@ import type {
 } from '@/shared/entity-models';
 
 import { Character, Faction, Location, Item, Chapter, Project } from '@/engine/repository/domain/aggregates';
-import type {
-    CharacterProps,
-    FactionProps,
-    LocationProps,
-    ItemProps,
-    ChapterProps,
-    ProjectProps,
-} from '@/engine/repository/domain/aggregates';
+import type { CharacterProps, FactionProps, LocationProps, ItemProps, ChapterProps } from '@/engine/repository/domain/aggregates';
 import { FrontmatterSerializer } from './frontmatter-serializer';
 import { EntityStatus, Frontmatter, ChapterStatus, WordCount } from '@/engine/repository/domain/value-objects';
 import type { WritingMode } from '@/shared/types';

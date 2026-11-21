@@ -32,12 +32,7 @@ import {
     BlendResult,
     BlendedFingerprint,
 } from '@/engine/style/fingerprint-blender-v2';
-import {
-    V2Fingerprint,
-    StyleDimensionKeyV2,
-    STYLE_DIMENSIONS_V2,
-    STYLE_DIMENSION_LABELS_V2,
-} from '@/engine/style/style-dimensions-v2';
+import { StyleDimensionKeyV2, STYLE_DIMENSIONS_V2 } from '@/engine/style/style-dimensions-v2';
 import {
     StyleIntensityConfig,
     INTENSITY_PRESETS,
@@ -122,7 +117,7 @@ export class FingerprintBlendModal extends Modal {
             text: '🎨 多指纹融合预览',
             attr: { style: 'margin-top:0;margin-bottom:8px;' }
         });
-        contentEl.createEl('div', {
+        contentEl.createDiv({
             text: `作用域：${this.scopeLabel()} · 最多选择 3 个指纹加权融合`,
             attr: { style: 'color:var(--text-muted);font-size:12px;margin-bottom:16px;' }
         });
@@ -150,7 +145,7 @@ export class FingerprintBlendModal extends Modal {
                 style: 'margin-bottom:16px;padding:12px;background:var(--background-secondary);border-radius:6px;'
             }
         });
-        section.createEl('div', {
+        section.createDiv({
             text: `已选指纹（${this.selected.length}/3）`,
             attr: { style: 'font-weight:600;font-size:13px;margin-bottom:10px;' }
         });
@@ -163,7 +158,7 @@ export class FingerprintBlendModal extends Modal {
             const header = row.createDiv({
                 attr: { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;' }
             });
-            header.createEl('span', {
+            header.createSpan({
                 text: `${idx + 1}. ${src.fingerprint.name}`,
                 attr: { style: 'font-weight:500;font-size:12px;' }
             });
@@ -183,7 +178,7 @@ export class FingerprintBlendModal extends Modal {
             const sliderRow = row.createDiv({
                 attr: { style: 'display:flex;align-items:center;gap:8px;' }
             });
-            sliderRow.createEl('span', {
+            sliderRow.createSpan({
                 text: '权重:',
                 attr: { style: 'font-size:11px;color:var(--text-muted);min-width:36px;' }
             });
@@ -197,7 +192,7 @@ export class FingerprintBlendModal extends Modal {
                     style: 'flex:1;cursor:pointer;'
                 }
             });
-            const valueLabel = sliderRow.createEl('span', {
+            const valueLabel = sliderRow.createSpan({
                 text: `${Math.round(src.weight * 100)}%`,
                 attr: { style: 'min-width:40px;text-align:right;font-size:11px;color:var(--interactive-accent);font-weight:600;' }
             });
@@ -261,7 +256,7 @@ export class FingerprintBlendModal extends Modal {
                 cls: 'nw-blend-radar-preview'
             }
         });
-        section.createEl('div', {
+        section.createDiv({
             text: '融合结果雷达图预览',
             attr: { style: 'font-weight:600;font-size:13px;margin-bottom:10px;' }
         });
@@ -294,7 +289,7 @@ export class FingerprintBlendModal extends Modal {
 
         // 旧实现往 parent 末尾追加一个隐藏占位再整段重渲染，留下空 div 并把
         // 雷达区块挪到按钮下面。改成在游离容器里渲染，再原位替换。
-        const staging = document.createElement('div');
+        const staging = createDiv();
         this.renderRadarPreview(staging);
         const nextEl = staging.querySelector<HTMLElement>('.nw-blend-radar-preview');
         if (nextEl) parent.replaceChild(nextEl, oldEl);
@@ -385,13 +380,13 @@ export class FingerprintBlendModal extends Modal {
                 cls: 'nw-blend-description'
             }
         });
-        section.createEl('div', {
+        section.createDiv({
             text: '融合结果描述',
             attr: { style: 'font-weight:600;font-size:13px;margin-bottom:8px;' }
         });
 
         const desc = this.computeBlendDescription();
-        section.createEl('div', {
+        section.createDiv({
             text: desc,
             attr: { style: 'font-size:12px;line-height:1.6;color:var(--text-normal);' }
         });
@@ -453,7 +448,7 @@ export class FingerprintBlendModal extends Modal {
                 style: 'margin-bottom:16px;padding:12px;background:var(--background-secondary);border-radius:6px;'
             }
         });
-        section.createEl('div', {
+        section.createDiv({
             text: '风格迁移强度',
             attr: { style: 'font-weight:600;font-size:13px;margin-bottom:10px;' }
         });
@@ -488,7 +483,7 @@ export class FingerprintBlendModal extends Modal {
         const sliderRow = section.createDiv({
             attr: { style: 'display:flex;align-items:center;gap:8px;' }
         });
-        sliderRow.createEl('span', {
+        sliderRow.createSpan({
             text: '强度:',
             attr: { style: 'font-size:12px;color:var(--text-muted);min-width:36px;' }
         });
@@ -502,7 +497,7 @@ export class FingerprintBlendModal extends Modal {
                 style: 'flex:1;cursor:pointer;'
             }
         });
-        const valueLabel = sliderRow.createEl('span', {
+        const valueLabel = sliderRow.createSpan({
             text: `${Math.round(this.intensityConfig.globalIntensity * 100)}%`,
             attr: { style: 'min-width:40px;text-align:right;font-size:12px;color:var(--interactive-accent);font-weight:600;' }
         });
@@ -529,7 +524,7 @@ export class FingerprintBlendModal extends Modal {
                 style: 'margin-bottom:16px;padding:12px;background:var(--background-secondary);border-radius:6px;'
             }
         });
-        section.createEl('div', {
+        section.createDiv({
             text: '融合指纹名称',
             attr: { style: 'font-weight:600;font-size:13px;margin-bottom:6px;' }
         });

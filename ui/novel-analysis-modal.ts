@@ -255,7 +255,7 @@ export class NovelAnalysisModal extends Modal {
 
         modal.open();
 
-        setTimeout(() => {
+        window.setTimeout(() => {
             const textarea = modal.contentEl.querySelector('textarea');
             if (textarea) {
                 (textarea as HTMLTextAreaElement).value = text;

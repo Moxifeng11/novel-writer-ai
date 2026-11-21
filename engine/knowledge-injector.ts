@@ -5,7 +5,7 @@ import type { ChapterStateSnapshot, StoryBeat } from './story-state-types';
 import type { StyleFingerprintLibrary, StyleFingerprint, StyleFingerprintFeatures } from './style-fingerprint-library';
 import type { ForeshadowManager, ForeshadowItem } from './foreshadow-manager';
 import type { VectorEnhancer } from './vector-enhancer';
-import type { KnowledgeBaseManager, BookBasicInfo } from '@/services/knowledge-base-manager';
+import type { KnowledgeBaseManager } from '@/services/knowledge-base-manager';
 import type { KnowledgeVectorStore, KnowledgeSearchResult } from './knowledge-vector-store';
 import { assemblePromptWithinBudget } from '@/shared/prompt-budget';
 import { recordBudgetSnapshot } from '@/shared/budget-telemetry';

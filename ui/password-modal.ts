@@ -92,9 +92,9 @@ export class PasswordModal extends Modal {
             confirmEl.setAttribute('data-lpignore', 'true');
         }
 
-        const errorEl = contentEl.createEl('div', { cls: 'nw-password-error' });
+        const errorEl = contentEl.createDiv({ cls: 'nw-password-error' });
 
-        const buttonRow = contentEl.createEl('div', { cls: 'nw-password-button-row' });
+        const buttonRow = contentEl.createDiv({ cls: 'nw-password-button-row' });
         const cancelButton = buttonRow.createEl('button', { text: '取消', cls: 'nw-btn' });
         const okButton = buttonRow.createEl('button', { text: this.mode === 'set' ? '设置口令' : '解锁', cls: 'nw-btn nw-btn-primary' });
 

@@ -1,9 +1,9 @@
-import { SidebarComponent } from './sidebar-component';
+import './sidebar-component';
 import { createPanelResizer, type PanelResizerHandle } from './panel-resizer';
-import { App, ItemView, WorkspaceLeaf, TFile, TFolder, Modal, Notice } from 'obsidian';
+import { ItemView, WorkspaceLeaf, TFile, Notice } from 'obsidian';
 import { showErrorNotice, showSuccessNotice, showWarningNotice } from './components/notice-helpers';
 import { AddFanficSettingModal } from './add-fanfic-setting-modal';
-import { WizardTab, WizardStep, buildWizardSteps as buildWizardStepsExternal } from './full-writer/wizard-types';
+import { WizardTab, WizardStep } from './full-writer/wizard-types';
 import { buildTemplateVars as buildTemplateVarsExternal } from './full-writer/template-vars-builder';
 import { extractCharacterNames } from '@/engine/revision/revision-guard';
 import { FullWriterStoreImpl, type WriterTab } from './full-writer/full-writer-store';
@@ -44,23 +44,23 @@ import type { WizardViewAccess } from './full-writer/wizard-view-access';
 import { WizardStepRenderers } from './full-writer/wizard-step-renderers';
 import { WizardStepExecutors } from './full-writer/wizard-step-executors';
 import NovelWriterPlugin from '@/main';
-import { AIEngine, APIResponse } from '@/engine/ai-engine';
-import { ContextManager, GatheredContext, CharacterData, ForeshadowData, TimelineEvent, MarkdownContent } from '@/engine/context-manager';
-import { ExistingEntityManagerModal } from './existing-entity-manager';
-import { showProgress, hideProgress, showSuccess, showError, mkdirp, stripFrontmatter, applyNwScope } from '@/utils/helpers';
+import { AIEngine } from '@/engine/ai-engine';
+import { ContextManager, GatheredContext } from '@/engine/context-manager';
+import './existing-entity-manager';
+import { applyNwScope } from '@/utils/helpers';
 import { resolveStepPrompt } from '@/engine/prompt-resolver';
-import { TemplateService } from '@/engine/template-service';
-import { getForeshadowWarnings } from '@/engine/foreshadow-manager';
-import { filterForeshadowsByChapter, getInvolvedEntities, getEntityStatusLine } from '@/engine/chapter-context-builder';
-import { scoreAndFilterEntities, ScoredEntity } from '@/engine/entity-scorer';
-import { buildCharacterSoulSummary, getProtagonistSoulDetail } from '@/engine/character-soul';  // V2 P0-1
-import { getChapterFile, getChapterFileName, findBodyFileV4 } from '@/engine/chapter-utils';
-import { MiniSettingsModal } from './mini-settings-modal';
-import { EntityStateManager } from '@/engine/entity-state-manager';
+import '@/engine/template-service';
+import '@/engine/foreshadow-manager';
+import '@/engine/chapter-context-builder';
+import '@/engine/entity-scorer';
+import '@/engine/character-soul';  // V2 P0-1
+import { findBodyFileV4 } from '@/engine/chapter-utils';
+import './mini-settings-modal';
+import '@/engine/entity-state-manager';
 import { SettlementEngine } from '@/engine/settlement-engine';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 import { ChapterStateManager } from './states/chapter-state-manager';
-import { extractWorldviewMeta } from './utils/worldview-utils';
+import './utils/worldview-utils';
 import { StepRunner, ALL_FULL_STEPS, FullStep, StepRunCtx } from '@/engine/step-runner';
 import { BODY_CHANGE_INVALIDATED_STEPS } from '@/engine/step-definitions';
 import { buildCreationModeGuide, parseCreationModeMeta } from '@/shared/creation-mode';
@@ -74,23 +74,21 @@ import {
     type StoryStructureId,
 } from '@/shared/story-structure';
 
-import { CrossVolumeIntegrator } from '@/engine/cross-volume-integration';
+import '@/engine/cross-volume-integration';
 import { ContextPanel } from './rendering/context-panel';
-import { RE_VOLUME_RANGE, FIELD_TOTAL_WORDS, FIELD_TOTAL_CHAPTERS, chapterOutlineSection, CHAPTER_STATUS } from '@/shared/format-constants';
-import { validateWorldviewOutput, validateOutlineOutput, validateFanficSettings } from '@/shared/template-validator';
-import { getWorldviewPath, getSettingLibPath, pjVolumeOutlineDir, pjProjectMeta, readProjectMeta, writeProjectMeta, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, SUBDIR_OUTLINE_ROOT, SUBDIR_TIMELINE, SUBDIR_CONTROL, SUBDIR_FANFIC, SUBDIR_VOLUME_OUTLINE } from '@/shared/paths';
-import { PlanBookModal } from './plan-book-modal';
+import '@/shared/format-constants';
+import '@/shared/template-validator';
+import { pjProjectMeta, readProjectMeta, writeProjectMeta, SUBDIR_BODY_ROOT, SUBDIR_STEP_ROOT, SUBDIR_OUTLINE_ROOT, SUBDIR_TIMELINE, SUBDIR_CONTROL, SUBDIR_FANFIC, SUBDIR_VOLUME_OUTLINE } from '@/shared/paths';
+import './plan-book-modal';
 import { BatchCreateModal } from './batch-create-modal';
-import { WritingStyleModal } from './writing-style-modal';
+import './writing-style-modal';
 import { ChapterOutlineTreeModal } from './chapter-outline-tree-modal';
 import { PolishEditor } from './polish-editor';
 import { WizardChecker } from './wizard-checker';
-import { pjSettingLib, pjWritingStyle, pjStepDir,
-    SUBDIR_WORLD_ARCH, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS,
-    SUBDIR_WORLDVIEW_FILE, SUBDIR_SETTING_LIB_FILE, SUBDIR_WRITING_STYLE_FILE } from '@/shared/paths';
-import { getWritingStyleCandidatePaths } from './writing-style-paths';
+import { pjStepDir, SUBDIR_WORLD_ARCH, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS, SUBDIR_WORLDVIEW_FILE, SUBDIR_SETTING_LIB_FILE, SUBDIR_WRITING_STYLE_FILE } from '@/shared/paths';
+import './writing-style-paths';
 import { sortChaptersByNumber, getNextChapter, getProjectCover, getChaptersForProject, deleteProject, updateWritingStyleTemplate, getProjectMeta, type ChapterListEntry } from './project-utils';
-import { CHAR_TO_TOKEN_RATIO, getInfoDebtMax, INFO_DEBT_WARN_CRITICAL, INFO_DEBT_WARN_HIGH } from '@/shared/thresholds';
+import '@/shared/thresholds';
 import { t } from '@/i18n';
 import { createLogger } from '@/shared/logger';
 import { ensureTemplateScaffold } from '@/shared/template-scaffold';
@@ -171,9 +169,9 @@ export class FullWriterView extends ItemView {
     private timelinePanel: ExecutionTimelinePanel | null = null;
     private logPanel: ExecutionLogPanel | null = null;
     private lastRunProgressMessage = '';
-    private failureRenderTimer: ReturnType<typeof setTimeout> | null = null;
+    private failureRenderTimer: number | null = null;
     /** 项目创建后的延迟刷新：视图在 150ms 内关闭时必须取消，否则会往已销毁容器渲染 */
-    private projectRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+    private projectRefreshTimer: number | null = null;
     /** L3-1：onOpen 代次；onClose 作废，await 续体不再注册监听/渲染 */
     private readonly openGuard = createViewOpenGuard();
 
@@ -269,8 +267,8 @@ export class FullWriterView extends ItemView {
         const current = ALL_FULL_STEPS.find(s => s.index === this.currentStepIndex);
         const currentKey = current?.index === 0 ? 'context' : current?.index === 10 ? 'settlement' : current?.key;
         if (currentKey !== stepKey) return;
-        if (this.failureRenderTimer) clearTimeout(this.failureRenderTimer);
-        this.failureRenderTimer = setTimeout(() => {
+        if (this.failureRenderTimer) window.clearTimeout(this.failureRenderTimer);
+        this.failureRenderTimer = window.setTimeout(() => {
             this.failureRenderTimer = null;
             if (this.tabContent) void this.renderInContainer(this.tabContent);
         }, 30);
@@ -1061,8 +1059,8 @@ export class FullWriterView extends ItemView {
                 }
                 // 2. 直接调用 renderProjectSelectorInTab 强制重渲染（不依赖 refresh/container）
                 //    延迟 150ms 确保 vault.create 已完成
-                if (this.projectRefreshTimer) clearTimeout(this.projectRefreshTimer);
-                this.projectRefreshTimer = setTimeout(async () => {
+                if (this.projectRefreshTimer) window.clearTimeout(this.projectRefreshTimer);
+                this.projectRefreshTimer = window.setTimeout(async () => {
                     this.projectRefreshTimer = null;
                     // 视图已关闭时 contentEl 已脱离 DOM，继续渲染只会写进空容器
                     if (!contentEl.isConnected) return;
@@ -1151,11 +1149,11 @@ export class FullWriterView extends ItemView {
         this.logPanel?.destroy();
         this.logPanel = null;
         if (this.failureRenderTimer) {
-            clearTimeout(this.failureRenderTimer);
+            window.clearTimeout(this.failureRenderTimer);
             this.failureRenderTimer = null;
         }
         if (this.projectRefreshTimer) {
-            clearTimeout(this.projectRefreshTimer);
+            window.clearTimeout(this.projectRefreshTimer);
             this.projectRefreshTimer = null;
         }
         this.flowPanelController?.dispose();
@@ -1951,7 +1949,7 @@ export class FullWriterView extends ItemView {
         } catch (e: unknown) {
             const errMsg = e instanceof Error ? e.message : String(e);
             log.error('[小说工坊] 渲染失败:', errMsg);
-            container.createEl('div', {
+            container.createDiv({
                 text: t('fullwriter.renderFailed', { msg: errMsg }),
                 cls: 'novel-writer-fw-empty'
             });

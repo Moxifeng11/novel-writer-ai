@@ -11,12 +11,7 @@ import { t } from '@/i18n';
 import NovelWriterPlugin from '@/main';
 import { AIEngine } from '@/engine/ai-engine';
 import { WizardTab, WizardStep } from './wizard-types';
-import {
-    validateFanficSettings,
-    validateOutlineOutput,
-    validateSettingLibOutput,
-    validateWorldviewOutput,
-} from '@/shared/template-validator';
+import { validateOutlineOutput, validateSettingLibOutput, validateWorldviewOutput } from '@/shared/template-validator';
 import { validateWizardStepContent } from './wizard-step-validators';
 import { readMergedVolumeOutline } from '@/utils/helpers';
 import { WritingStyleModal } from '@/ui/writing-style-modal';

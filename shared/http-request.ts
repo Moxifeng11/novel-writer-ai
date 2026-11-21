@@ -57,7 +57,7 @@ export interface HttpRequestParams {
 }
 
 function delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 function withTimeout<T>(
@@ -66,14 +66,14 @@ function withTimeout<T>(
     timeoutMs: number,
 ): Promise<T> {
     return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new HttpRequestTimeoutError(url, timeoutMs)), timeoutMs);
+        const timer = window.setTimeout(() => reject(new HttpRequestTimeoutError(url, timeoutMs)), timeoutMs);
         pending.then(
             (value) => {
-                clearTimeout(timer);
+                window.clearTimeout(timer);
                 resolve(value);
             },
             (error) => {
-                clearTimeout(timer);
+                window.clearTimeout(timer);
                 reject(error);
             },
         );

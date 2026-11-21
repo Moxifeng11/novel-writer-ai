@@ -26,10 +26,10 @@ export function createHttpTransport(config: McpServerConfig): McpTransport {
         request: async (payload, timeoutMs) => {
             if (closed) throw new McpError('MCP 连接已关闭');
             // 走 Obsidian requestUrl（移动端有 CORS 豁免；与插件其它 HTTP 调用口径一致）
-            const timer = setTimeout(() => undefined, 0);
-            clearTimeout(timer);
+            const timer = window.setTimeout(() => undefined, 0);
+            window.clearTimeout(timer);
             const timeout = new Promise<never>((_, reject) => {
-                setTimeout(() => reject(new McpError(`MCP HTTP 请求超时（${timeoutMs}ms）`)), timeoutMs);
+                window.setTimeout(() => reject(new McpError(`MCP HTTP 请求超时（${timeoutMs}ms）`)), timeoutMs);
             });
             try {
                 const response = await Promise.race([

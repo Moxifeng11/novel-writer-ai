@@ -423,7 +423,7 @@ export class SceneOutlineController {
         });
 
         const conflictTypeWrap = typeRow.createDiv({ cls: 'nw-so-flex-1' });
-        conflictTypeWrap.createEl('div', {
+        conflictTypeWrap.createDiv({
             text: t('fullwriter.scene.conflictTypeLabel'),
             cls: 'nw-so-field-label'
         });
@@ -444,7 +444,7 @@ export class SceneOutlineController {
         };
 
         const pleasureWrap = typeRow.createDiv({ cls: 'nw-so-flex-1' });
-        pleasureWrap.createEl('div', {
+        pleasureWrap.createDiv({
             text: t('fullwriter.scene.pleasureTypeLabel'),
             cls: 'nw-so-field-label'
         });
@@ -475,7 +475,7 @@ export class SceneOutlineController {
         const statsRow = container.createDiv({
             cls: 'nw-so-stats'
         });
-        statsRow.createEl('div', {
+        statsRow.createDiv({
             text: t('fullwriter.scene.statsTitle'),
             cls: 'nw-so-stats-title'
         });
@@ -507,7 +507,7 @@ export class SceneOutlineController {
     /** 创建单行文本输入 */
     private createTextInput(container: HTMLElement, label: string, fieldKey: SceneTextFieldKey, scene: ExtendedSceneData): void {
         const wrap = container.createDiv({ cls: 'nw-so-field' });
-        wrap.createEl('div', {
+        wrap.createDiv({
             text: label,
             cls: 'nw-so-field-label'
         });
@@ -534,7 +534,7 @@ export class SceneOutlineController {
     /** 创建多行文本域 */
     private createTextArea(container: HTMLElement, label: string, fieldKey: SceneTextFieldKey, scene: ExtendedSceneData): void {
         const wrap = container.createDiv({ cls: 'nw-so-field' });
-        wrap.createEl('div', {
+        wrap.createDiv({
             text: label,
             cls: 'nw-so-field-label'
         });
@@ -891,7 +891,7 @@ export class SceneOutlineController {
         // 切章前先把上一章未落盘的编辑写回它自己的文件：
         // 定时器可能还没触发，直接清空会让这次编辑丢失；而继续等定时器则会写错章。
         if (this.saveTimer) {
-            clearTimeout(this.saveTimer);
+            window.clearTimeout(this.saveTimer);
             this.saveTimer = null;
         }
         if (this.isDirty) {
@@ -1004,7 +1004,7 @@ export class SceneOutlineController {
         // 旧实现用「当前」project/chapter 拼路径，会把旧章的场景写进新章文件。
         this.pendingSaveTarget = this.resolveSaveTarget();
         if (this.saveTimer) {
-            clearTimeout(this.saveTimer);
+            window.clearTimeout(this.saveTimer);
         }
         this.saveTimer = window.setTimeout(() => {
             this.saveTimer = null;

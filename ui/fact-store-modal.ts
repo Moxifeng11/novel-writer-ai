@@ -19,14 +19,7 @@ import { pjFactStoreFile } from '@/shared/paths';
 import { createFactStore, loadFactStore, saveFactStore, type FactStore } from '@/engine/consistency/fact-store';
 import { listProjectIds } from '@/shared/project-catalog';
 import type { FactMetadata } from '@/engine/context/knowledge-fact-nodes';
-import {
-    activeFacts,
-    removeFact,
-    setIgnored,
-    summarizeEditState,
-    updateFact,
-    validateFactList,
-} from './fact-store-edit';
+import { removeFact, setIgnored, summarizeEditState, updateFact, validateFactList } from './fact-store-edit';
 import {
     emptyStateHint,
     formatFactLine,
@@ -177,7 +170,7 @@ export class FactStoreModal extends Modal {
         });
 
         if (fact.quote) {
-            li.createEl('div', { text: `「${fact.quote.slice(0, 60)}」`, cls: 'nw-fact-quote' });
+            li.createDiv({ text: `「${fact.quote.slice(0, 60)}」`, cls: 'nw-fact-quote' });
         }
     }
 

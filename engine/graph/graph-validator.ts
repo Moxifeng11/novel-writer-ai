@@ -12,9 +12,9 @@
  * 只输出报告，绝不修改任何实体/台账文件。
  */
 import type { App } from 'obsidian';
-import { EntityIndex, normalizeEntityName, type EntityRecord, type IndexedEntityKind } from '@/shared/entity-index';
+import { EntityIndex, normalizeEntityName, type IndexedEntityKind } from '@/shared/entity-index';
 import { queryProjectNotes } from '@/shared/obsidian-query';
-import { readTagList, resolveFileKind } from '@/shared/frontmatter-schema';
+import { resolveFileKind } from '@/shared/frontmatter-schema';
 import { getLinkPolicy, parseLinkValue } from '@/shared/entity-links';
 import { loadRelationshipStates } from '@/engine/relationship-engine';
 import { loadStoryLedger } from '@/engine/ledger/ledger-io';

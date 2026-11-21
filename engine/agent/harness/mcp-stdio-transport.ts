@@ -28,7 +28,7 @@ interface ChildProcessModule {
  */
 export function loadChildProcess(): ChildProcessModule | null {
     try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports -- 只在桌面端运行时按需加载 child_process；移动端没有该模块，由下方 catch 降级为 null
+         
         const mod = require('node:child_process') as ChildProcessModule;
         return mod && typeof mod.spawn === 'function' ? mod : null;
     } catch { // silent-ok: 移动端/受限环境没有 child_process，MCP stdio 不可用属预期
@@ -50,11 +50,11 @@ export function createStdioTransport(config: McpServerConfig): McpTransport {
 
     let child: ChildLike | null = null;
     let buffer = '';
-    const pending = new Map<number, { resolve: (value: unknown) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>();
+    const pending = new Map<number, { resolve: (value: unknown) => void; reject: (error: Error) => void; timer: number }>();
 
     const settleAll = (error: Error): void => {
         for (const [, entry] of pending) {
-            clearTimeout(entry.timer);
+            window.clearTimeout(entry.timer);
             entry.reject(error);
         }
         pending.clear();
@@ -74,7 +74,7 @@ export function createStdioTransport(config: McpServerConfig): McpTransport {
         const entry = pending.get(parsed.id);
         if (!entry) return;
         pending.delete(parsed.id);
-        clearTimeout(entry.timer);
+        window.clearTimeout(entry.timer);
         entry.resolve(parsed);
     };
 
@@ -103,7 +103,7 @@ export function createStdioTransport(config: McpServerConfig): McpTransport {
                 reject(new McpError('MCP 进程未启动'));
                 return;
             }
-            const timer = setTimeout(() => {
+            const timer = window.setTimeout(() => {
                 pending.delete(id);
                 reject(new McpError(`MCP 请求超时（${timeoutMs}ms）`));
             }, timeoutMs);
@@ -111,13 +111,13 @@ export function createStdioTransport(config: McpServerConfig): McpTransport {
             try {
                 child.stdin.write(`${JSON.stringify(payload)}\n`);
             } catch (error) {
-                clearTimeout(timer);
+                window.clearTimeout(timer);
                 pending.delete(id);
                 reject(new McpError(String(error)));
             }
             // 通知没有 id：写出去即完成
             if (id < 0) {
-                clearTimeout(timer);
+                window.clearTimeout(timer);
                 resolve({ jsonrpc: '2.0', result: null });
             }
         }),

@@ -1,7 +1,7 @@
 import { App, TFile, TFolder } from 'obsidian';
-import { ChapterFrontmatter } from '@/shared/types';
+import '@/shared/types';
 import { pjBodyDir, pjBodyFile } from '@/shared/paths';
-import { FileSystemPort, VaultMetaPort, ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
+import { ObsidianFileSystem, ObsidianVaultMeta } from '@/shared/file-system-port';
 import { listFolderFiles } from '@/shared/vault-tree';
 import { createLogger } from '@/shared/logger';
 

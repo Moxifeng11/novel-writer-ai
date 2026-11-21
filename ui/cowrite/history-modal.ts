@@ -1,4 +1,4 @@
-﻿import { Modal, Setting, Notice, type App } from 'obsidian';
+﻿import { Modal, Setting, type App } from 'obsidian';
 import { SentenceEditRecord } from '@/shared/types';
 import { t } from '@/i18n';
 

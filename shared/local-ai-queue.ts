@@ -53,13 +53,13 @@ export function acquireLocalAiSlot(signal?: AbortSignal, timeoutMs = 300_000): P
         return Promise.resolve(createRelease());
     }
     return new Promise<() => void>((resolve, reject) => {
-        let timer: ReturnType<typeof setTimeout> | null = null;
+        let timer: number | null = null;
         const waiter: Waiter = {
             resolve,
             reject,
             cleanup: () => {
                 if (signal) signal.removeEventListener('abort', onAbort);
-                if (timer) clearTimeout(timer);
+                if (timer) window.clearTimeout(timer);
             },
         };
         const remove = () => {
@@ -73,7 +73,7 @@ export function acquireLocalAiSlot(signal?: AbortSignal, timeoutMs = 300_000): P
         };
         if (signal) signal.addEventListener('abort', onAbort, { once: true });
         if (timeoutMs > 0) {
-            timer = setTimeout(() => {
+            timer = window.setTimeout(() => {
                 remove();
                 reject(new Error('本地 AI 队列等待超时'));
             }, timeoutMs);

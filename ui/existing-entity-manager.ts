@@ -1,6 +1,6 @@
 import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '@/main';
-import { showSuccess, showError, showWarning } from '@/utils/helpers';
+import { showSuccess, showWarning } from '@/utils/helpers';
 import { createLogger } from '@/shared/logger';
 import { OperationConfirmModal } from './components/progress';
 import { isImeComposing } from '@/shared/keyboard';
@@ -227,26 +227,26 @@ export class ExistingEntityManagerModal extends Modal {
         head.addClass('nw-ee-head');
 
         const displayName = isRenamed ? this.renameMap.get(ent.path)! : ent.fileName;
-        const titleSpan = head.createEl('span', {
+        const titleSpan = head.createSpan({
             text: `${ent.isUnnamed ? '🚨' : '📄'} ${displayName}`,
         });
         titleSpan.addClass('nw-ee-title');
         titleSpan.toggleClass('nw-is-deleted', isDeleted);
 
         if (isDeleted) {
-            const b = head.createEl('span', { text: '已删除' });
+            const b = head.createSpan({ text: '已删除' });
             b.addClass('nw-ee-badge', 'nw-ee-badge-error');
         } else {
             if (isRenamed) {
-                const b = head.createEl('span', { text: `已改名← ${ent.fileName}` });
+                const b = head.createSpan({ text: `已改名← ${ent.fileName}` });
                 b.addClass('nw-ee-badge', 'nw-ee-badge-accent');
             }
             if (isModified) {
-                const b = head.createEl('span', { text: '已修改' });
+                const b = head.createSpan({ text: '已修改' });
                 b.addClass('nw-ee-badge', 'nw-ee-badge-warning');
             }
             if (ent.isUnnamed && !isRenamed) {
-                const b = head.createEl('span', { text: '需要改名' });
+                const b = head.createSpan({ text: '需要改名' });
                 b.addClass('nw-ee-badge', 'nw-ee-badge-error-text');
             }
         }
@@ -344,7 +344,7 @@ export class ExistingEntityManagerModal extends Modal {
                 const cb = br.createEl('button', { text: '取消' });
                 cb.addClass('nw-gen-modal-editor-btn');
                 cb.onclick = () => this._loadAndRender();
-                const tip = ed.createEl('span', { text: '⚠️ 暂存后点底部"应用变更"才会写入磁盘' });
+                const tip = ed.createSpan({ text: '⚠️ 暂存后点底部"应用变更"才会写入磁盘' });
                 tip.addClass('nw-ee-editor-tip');
             };
 

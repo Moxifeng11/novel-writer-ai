@@ -60,11 +60,11 @@ export class ChangelogModal extends Modal {
                     style: 'padding:16px;background:var(--background-modifier-success);border-radius:8px;margin-bottom:16px;border:1px solid var(--background-modifier-success-hover);'
                 }
             });
-            welcomeBox.createEl('div', {
+            welcomeBox.createDiv({
                 text: '🎉 欢迎使用小说工坊 AI！',
                 attr: { style: 'font-weight:600;font-size:16px;margin-bottom:6px;' }
             });
-            welcomeBox.createEl('div', {
+            welcomeBox.createDiv({
                 text: '全流程 AI 长篇小说创作系统 — 协同写作工作台 + 多模型智能引擎 + 数据安全架构',
                 attr: { style: 'font-size:13px;color:var(--text-muted);line-height:1.6;' }
             });
@@ -80,7 +80,7 @@ export class ChangelogModal extends Modal {
         const footerLeft = footer.createDiv({
             cls: 'nw-u-d-flex nw-u-ai-center nw-u-gap-12px'
         });
-        footerLeft.createEl('span', {
+        footerLeft.createSpan({
             text: `显示最近 ${BUILTIN_CHANGELOG.length} 个版本`,
             cls: 'nw-u-fs-12px nw-u-c-text-muted'
         });
@@ -136,29 +136,29 @@ export class ChangelogModal extends Modal {
             attr: { style: 'display:flex;align-items:center;gap:10px;' }
         });
 
-        left.createEl('span', {
+        left.createSpan({
             text: `v${entry.version}`,
             attr: { style: 'font-weight:600;font-size:15px;color:var(--text-normal);' }
         });
 
-        left.createEl('span', {
+        left.createSpan({
             text: entry.date,
             attr: { style: 'font-size:12px;color:var(--text-muted);' }
         });
 
         if (isHighlight) {
-            left.createEl('span', {
+            left.createSpan({
                 text: '最新',
                 attr: { style: 'padding:2px 8px;background:var(--interactive-accent);color:var(--text-on-accent);border-radius:10px;font-size:11px;font-weight:500;' }
             });
         }
 
-        const title = header.createEl('span', {
+        const title = header.createSpan({
             text: entry.title,
             attr: { style: 'font-size:13px;color:var(--text-muted);flex:1;text-align:right;margin-right:12px;' }
         });
 
-        const arrow = header.createEl('span', {
+        const arrow = header.createSpan({
             text: isExpanded ? '▼' : '▶',
             attr: { style: 'font-size:10px;color:var(--text-muted);' }
         });
@@ -188,7 +188,7 @@ export class ChangelogModal extends Modal {
             attr: { style: 'margin-bottom:12px;&:last-child{margin-bottom:0;}' }
         });
 
-        sectionEl.createEl('div', {
+        sectionEl.createDiv({
             text: section.label,
             attr: { style: 'font-weight:600;font-size:13px;margin-bottom:6px;color:var(--text-normal);' }
         });

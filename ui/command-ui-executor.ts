@@ -10,7 +10,7 @@
 import { App, Editor, MarkdownView, Notice } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import { CommandIds } from '@/shared/command-ids';
-import type { CreationMode } from '@/shared/creation-mode';
+
 import { getCreationModeLabel } from '@/shared/creation-mode';
 import { COMMAND_MODE_LABELS, commandAllowedModes } from '@/shared/command-mode-rules';
 import { resolveProjectMode } from '@/shared/project-mode';

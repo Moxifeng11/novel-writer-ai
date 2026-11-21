@@ -163,7 +163,7 @@ function extractString(text: string, key: string): string {
 function extractMultiline(text: string, key: string): string {
     const re = new RegExp(`${key}:\\s*\\|?\\s*\\n((?:  .+\\n?)*)`);
     const m = text.match(re);
-    return m ? m[1].replace(/^  /gm, '').trim() : '';
+    return m ? m[1].replace(/^ {2}/gm, '').trim() : '';
 }
 
 /**

@@ -16,7 +16,7 @@ import {
     resolveExistsStatus,
     resolveSetupStatusIcon,
 } from './wizard-step-logic';
-import { getWorldviewPath, getSettingLibPath, getWritingStylePath, pjProjectMeta, pjFanficDir, readProjectMeta, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS, SUBDIR_BODY_ROOT } from '@/shared/paths';
+import { getWorldviewPath, getSettingLibPath, getWritingStylePath, pjFanficDir, readProjectMeta, SUBDIR_CHARS, SUBDIR_LOCS, SUBDIR_FACTIONS, SUBDIR_ITEMS, SUBDIR_BODY_ROOT } from '@/shared/paths';
 import { findWritingStyleFile } from '@/ui/writing-style-paths';
 import { ChapterOutlineTreeModal } from '@/ui/chapter-outline-tree-modal';
 import { openPlotCanvas } from '@/ui/plot-canvas-modal';
@@ -95,7 +95,7 @@ export class WizardStepRenderers {
             const structure = getStoryStructure(settings.structureId);
             const head = card.createDiv({ cls: 'nw-wizard-story-head' });
             head.createEl('h4', { text: `${structure.icon} ${structure.name}` });
-            head.createEl('span', { text: getStructureStageSummary(structure.id), cls: 'nw-wizard-story-stages' });
+            head.createSpan({ text: getStructureStageSummary(structure.id), cls: 'nw-wizard-story-stages' });
             card.createEl('p', { text: structure.description, cls: 'nw-text-12-muted' });
             const grid = card.createDiv({ cls: 'nw-wizard-story-settings' });
             const fields: Array<[string, string]> = [
@@ -747,7 +747,7 @@ export class WizardStepRenderers {
             const row = container.createDiv({ cls: isDone ? 'nw-wizard-entity-row nw-wizard-entity-row--done' : 'nw-wizard-entity-row' });
             const info = row.createDiv({ cls: 'nw-wizard-entity-info' });
             info.createSpan({ text: `${cfg.icon} ${cfg.label}`, cls: 'nw-wizard-entity-name' });
-            info.createEl('span', { text: ` — ${cfg.desc}`, cls: 'nw-wizard-entity-desc' });
+            info.createSpan({ text: ` — ${cfg.desc}`, cls: 'nw-wizard-entity-desc' });
             
             const actions = row.createDiv({ cls: 'nw-wizard-entity-actions' });
             
@@ -880,7 +880,7 @@ export class WizardStepRenderers {
         
         if (isExecuting && progress) {
             const progressEl = container.createDiv({ cls: 'nw-wizard-progress-panel' });
-            progressEl.createEl('span', { text: `⏳ ${progress}`, cls: 'nw-wizard-progress-text', attr: { 'data-wv-progress': '' } });
+            progressEl.createSpan({ text: `⏳ ${progress}`, cls: 'nw-wizard-progress-text', attr: { 'data-wv-progress': '' } });
             const progBar = progressEl.createDiv({ cls: 'nw-wizard-progress-track' });
             progBar.createDiv({ cls: 'nw-wizard-progress-bar nw-wizard-progress-bar--slow' });
         }

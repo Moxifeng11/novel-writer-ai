@@ -49,12 +49,12 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
 
         // 创建超时 AbortController
         const timeoutController = new AbortController();
-        const timeoutId = setTimeout(() => timeoutController.abort(), 30000); // 30秒超时
+        const timeoutId = window.setTimeout(() => timeoutController.abort(), 30000); // 30秒超时
 
         // 如果有外部 signal，监听它并转发到 timeoutController
         if (options?.signal) {
             if (options.signal.aborted) {
-                clearTimeout(timeoutId);
+                window.clearTimeout(timeoutId);
                 throw new Error('Embedding 已取消');
             }
             options.signal.addEventListener('abort', () => timeoutController.abort());
@@ -96,7 +96,7 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
             }
             throw error;
         } finally {
-            clearTimeout(timeoutId);
+            window.clearTimeout(timeoutId);
         }
     }
 

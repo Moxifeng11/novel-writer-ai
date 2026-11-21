@@ -1,6 +1,6 @@
 import { TFile } from 'obsidian';
 import { FileSystemPort, VaultMetaPort } from '@/shared/file-system-port';
-import { getWorldviewPath, getSettingLibPath, pjItemsDir } from '@/shared/paths';
+import { getWorldviewPath, getSettingLibPath } from '@/shared/paths';
 import { entityDir } from '@/shared/entity-reader';
 import { performanceMonitor } from './performance-monitor';
 import { createLogger } from '@/shared/logger';

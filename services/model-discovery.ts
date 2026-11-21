@@ -367,7 +367,7 @@ export async function discoverModels(
         return { kind: 'error', message: 'Base URL 不是合法地址', url };
     }
 
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    let timer: number | undefined;
     try {
         // 各渠道把 /models 挂在不同路径下：按候选序列逐个尝试，
         // 只有 404（路径不对）才继续下一个；401/429/5xx 说明地址已对，直接报原因。
@@ -387,7 +387,7 @@ export async function discoverModels(
                     throw: false,
                 }),
                 new Promise<never>((_, reject) => {
-                    timer = setTimeout(() => reject(new Error('timeout')), TIMEOUT_MS);
+                    timer = window.setTimeout(() => reject(new Error('timeout')), TIMEOUT_MS);
                 }),
             ]);
             lastStatus = attempt.status;
@@ -431,6 +431,6 @@ export async function discoverModels(
         log.warn('[ModelDiscovery] 异常', message);
         return { kind: 'error', message: `无法获取模型列表：${message}`, url };
     } finally {
-        if (timer) clearTimeout(timer);
+        if (timer) window.clearTimeout(timer);
     }
 }

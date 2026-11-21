@@ -1,11 +1,11 @@
-import { shouldPreserveExisting } from '@/shared/rebuild-guard';
-import { isVolumeOutlineFileName } from '@/shared/paths';
+import '@/shared/rebuild-guard';
+import '@/shared/paths';
 import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { ContextManager } from '@/engine/context-manager';
 import { AIEngine } from '@/engine/ai-engine';
 import { mkdirp, progressHandle } from '@/utils/helpers';
-import { TemplateService } from '@/engine/template-service';
+import '@/engine/template-service';
 import { ENGINE_NAMES } from '@/shared/engine-names';
 import { getChapterFileName, CHAPTER_FILE_TYPES, normalizeChapterFiles, getChapterFile, findChapterFile } from '@/engine/chapter-utils';
 import { readMergedVolumeOutline } from '@/utils/helpers';

@@ -7,7 +7,7 @@
  */
 
 import { kbBookStructureBreakdownFile } from '@/shared/paths';
-import { isChineseChar, splitParagraphs, splitSentences } from '@/shared/text-utils';
+import { splitParagraphs } from '@/shared/text-utils';
 import { countCjkWordsAndNumbers } from '@/shared/word-count';
 import { VectorEnhancer } from '@/engine/vector-enhancer';
 import { yieldToUI } from '@/shared/yield';

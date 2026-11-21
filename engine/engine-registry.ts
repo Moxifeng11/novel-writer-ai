@@ -131,7 +131,7 @@ import { TokenBucketRateLimiter } from './token-bucket-rate-limiter';
 import { EmbeddingProviderFactory } from './embedding/provider-factory';
 import { setSharedEmbeddingProvider, getSharedEmbeddingProvider } from './embedding/embedding-service';
 import { GITHUB_REPO_SLUG } from '@/shared/github-repo';
-import type { EmbeddingProvider } from './embedding/embedding-provider';
+
 import { DeconstructionScheduler } from './deconstruction-scheduler';
 import { BatchImportManager } from './batch-import-manager';
 import { HeavyTaskWorkerManager } from './heavy-task-worker-manager';

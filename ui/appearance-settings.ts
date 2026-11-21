@@ -54,7 +54,7 @@ function renderThemePreview(parent: HTMLElement, compact: boolean): void {
         sample.createDiv({ cls: 'nw-theme-preview-cover' });
         const body = sample.createDiv({ cls: 'nw-theme-preview-body' });
         body.createEl('strong', { text: t('settings.appearance.preview.sampleTitle') });
-        body.createEl('span', { text: t('settings.appearance.preview.sampleText') });
+        body.createSpan({ text: t('settings.appearance.preview.sampleText') });
     }
 }
 
@@ -78,10 +78,10 @@ export function renderAppearanceSettings(
     // 取色是高频交互：只重注入 CSS 变量并防抖落盘。
     // 旧实现每次 onChange 都 await saveSettings() + rerender()，
     // 拖动取色器时会连续触发磁盘写入与整块 DOM 重建。
-    let saveTimer: ReturnType<typeof setTimeout> | null = null;
+    let saveTimer: number | null = null;
     const scheduleSave = () => {
-        if (saveTimer) clearTimeout(saveTimer);
-        saveTimer = setTimeout(() => {
+        if (saveTimer) window.clearTimeout(saveTimer);
+        saveTimer = window.setTimeout(() => {
             saveTimer = null;
             void plugin.saveSettings();
         }, 300);
@@ -94,7 +94,7 @@ export function renderAppearanceSettings(
     /** 需要同步刷新控件状态（如重置）时使用 */
     const apply = async () => {
         if (saveTimer) {
-            clearTimeout(saveTimer);
+            window.clearTimeout(saveTimer);
             saveTimer = null;
         }
         await plugin.saveSettings();

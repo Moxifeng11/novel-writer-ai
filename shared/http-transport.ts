@@ -70,11 +70,11 @@ function abortable<T>(
 ): Promise<T> {
     return new Promise<T>((resolve, reject) => {
         let settled = false;
-        let timer: ReturnType<typeof setTimeout> | null = null;
+        let timer: number | null = null;
 
         const cleanup = (): void => {
             if (timer) {
-                clearTimeout(timer);
+                window.clearTimeout(timer);
                 timer = null;
             }
             signal?.removeEventListener('abort', onAbort);
@@ -93,7 +93,7 @@ function abortable<T>(
         }
         signal?.addEventListener('abort', onAbort, { once: true });
         if (timeoutMs && timeoutMs > 0) {
-            timer = setTimeout(
+            timer = window.setTimeout(
                 () => finish(() => reject(new HttpRequestTimeoutError(url, timeoutMs))),
                 timeoutMs,
             );
@@ -137,7 +137,7 @@ async function fetchOnDesktop(url: string, options: HttpTransportOptions): Promi
     const controller = new AbortController();
     let timedOut = false;
     const timer = options.timeoutMs && options.timeoutMs > 0
-        ? setTimeout(() => {
+        ? window.setTimeout(() => {
             timedOut = true;
             controller.abort();
         }, options.timeoutMs)
@@ -159,7 +159,7 @@ async function fetchOnDesktop(url: string, options: HttpTransportOptions): Promi
         if (timedOut && options.timeoutMs) throw new HttpRequestTimeoutError(url, options.timeoutMs);
         throw error;
     } finally {
-        if (timer) clearTimeout(timer);
+        if (timer) window.clearTimeout(timer);
         options.signal?.removeEventListener('abort', onAbort);
     }
 }

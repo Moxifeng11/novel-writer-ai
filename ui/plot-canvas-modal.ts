@@ -18,7 +18,7 @@ import { pjVolumeOutlineDir, pjStepDir } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
 import { writeVaultText } from '@/shared/file-system-port';
 import { moveArrayItem, moveArrayItemToInsert } from '@/shared/array-move';
-import { parseVolumeOutline, type VolumeNode, type ChapterNode } from './plot-canvas-parser';
+import { parseVolumeOutline, type VolumeNode } from './plot-canvas-parser';
 
 const log = createLogger('PlotCanvasModal');
 

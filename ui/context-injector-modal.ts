@@ -1,7 +1,7 @@
 import { App, Modal, Notice, TFile } from 'obsidian';
 import NovelWriterPlugin from '@/main';
 import { getInvolvedEntities } from '@/engine/chapter-context-builder';
-import { pjCharsDir, pjLocsDir, pjFactionsDir, pjItemsDir, SUBDIR_TIMELINE } from '@/shared/paths';
+import { SUBDIR_TIMELINE } from '@/shared/paths';
 import { entityDir } from '@/shared/entity-reader';
 import { upsertAutoContext } from '@/shared/auto-context-block';
 import { createLogger } from '@/shared/logger';

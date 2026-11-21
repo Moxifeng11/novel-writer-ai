@@ -6,7 +6,7 @@
  * - 支持查看/编辑/导出/导入/重置模板
  */
 
-import { App, Modal, Notice, TFile, Menu } from 'obsidian';
+import { App, Modal, Notice, TFile } from 'obsidian';
 import { PJ_PROMPT_TEMPLATE_DIR } from '@/shared/paths';
 import { getStepTemplate } from '@/engine/prompt-templates';
 import { createLogger } from '@/shared/logger';
@@ -170,7 +170,7 @@ export class TemplateManager {
         }, {} as Record<string, TemplateInfo[]>);
 
         for (const [categoryName, items] of Object.entries(grouped)) {
-            const section = container.createEl('div', { attr: { style: 'margin:16px 0;' } });
+            const section = container.createDiv({ attr: { style: 'margin:16px 0;' } });
             section.createEl('h4', { text: categoryName, attr: { style: 'margin-bottom:8px;color:var(--text-muted);font-size:12px;text-transform:uppercase;' } });
 
             for (const template of items) {
@@ -185,19 +185,19 @@ export class TemplateManager {
 
         // 左侧：名称和状态
         const left = item.createDiv({ attr: { style: 'display:flex;align-items:center;gap:10px;flex-shrink:1;min-width:0;' } });
-        left.createEl('span', { text: template.name, attr: { style: 'font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' } });
+        left.createSpan({ text: template.name, attr: { style: 'font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' } });
 
         // 状态标签
         const statusDiv = left.createDiv({ attr: { style: 'display:flex;gap:4px;' } });
         if (template.hasSystem) {
-            const tag = statusDiv.createEl('span', { text: 'System ✓', attr: { style: 'padding:2px 6px;background:var(--interactive-accent);color:var(--text-on-accent);border-radius:3px;font-size:10px;' } });
+            const tag = statusDiv.createSpan({ text: 'System ✓', attr: { style: 'padding:2px 6px;background:var(--interactive-accent);color:var(--text-on-accent);border-radius:3px;font-size:10px;' } });
         } else {
-            const tag = statusDiv.createEl('span', { text: 'System', attr: { style: 'padding:2px 6px;background:var(--background-modifier-border);color:var(--text-muted);border-radius:3px;font-size:10px;' } });
+            const tag = statusDiv.createSpan({ text: 'System', attr: { style: 'padding:2px 6px;background:var(--background-modifier-border);color:var(--text-muted);border-radius:3px;font-size:10px;' } });
         }
         if (template.hasUser) {
-            const tag = statusDiv.createEl('span', { text: 'User ✓', attr: { style: 'padding:2px 6px;background:var(--interactive-accent);color:var(--text-on-accent);border-radius:3px;font-size:10px;' } });
+            const tag = statusDiv.createSpan({ text: 'User ✓', attr: { style: 'padding:2px 6px;background:var(--interactive-accent);color:var(--text-on-accent);border-radius:3px;font-size:10px;' } });
         } else {
-            const tag = statusDiv.createEl('span', { text: 'User', attr: { style: 'padding:2px 6px;background:var(--background-modifier-border);color:var(--text-muted);border-radius:3px;font-size:10px;' } });
+            const tag = statusDiv.createSpan({ text: 'User', attr: { style: 'padding:2px 6px;background:var(--background-modifier-border);color:var(--text-muted);border-radius:3px;font-size:10px;' } });
         }
 
         // 右侧：操作按钮
@@ -700,7 +700,7 @@ class TemplateImportModal extends Modal {
             statusDiv.setText(`✅ 已导入 ${count} 个模板文件`);
             showSuccessNotice(`已导入 ${count} 个模板`);
 
-            setTimeout(() => {
+            window.setTimeout(() => {
                 this.close();
                 if (this.refreshCallback) {
                     this.refreshCallback();

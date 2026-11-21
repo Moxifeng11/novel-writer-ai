@@ -2,17 +2,7 @@
 import type NovelWriterPlugin from '@/main';
 import { computePromptHash } from './prompt-hash';
 import { getPromptCache } from './prompt-cache';
-import {
-    AI_RETRY_BACKOFF_MS,
-    AI_RATE_LIMIT_WAIT_MS,
-    STREAM_SEMAPHORE_POLL_MS,
-    ZAI_MAX_TOKENS,
-    NOTICE_ERROR,
-    NOTICE_WARNING,
-    NOTICE_CRITICAL,
-    NOTICE_SUCCESS,
-    getTimeoutForModel,
-} from '@/shared/thresholds';
+import { AI_RETRY_BACKOFF_MS, AI_RATE_LIMIT_WAIT_MS, STREAM_SEMAPHORE_POLL_MS, ZAI_MAX_TOKENS, NOTICE_ERROR, NOTICE_CRITICAL, getTimeoutForModel } from '@/shared/thresholds';
 import { calculateTokenBudget, getModelContextWindow, getModelMaxOutput } from '@/shared/token-estimator';
 import { resolveProviderSourceType } from '@/shared/model-source';
 import { resolveProviderHeaders, resolveThinkingCapability } from '@/shared/provider-ui-model';
@@ -27,28 +17,12 @@ import { ensureLocalModelCapability } from '@/services/local-model-probe';
 import { recordBudgetSnapshot } from '@/shared/budget-telemetry';
 import { currentUsageScope, getUsageLedger } from '@/services/usage-ledger';
 import { estimateCostYuan, lookupModelPricingWithSource } from '@/shared/model-pricing';
-import {
-    buildAuthHeaders,
-    buildChatRequestBody,
-    normalizeApiFormat,
-    parseChatResponse,
-    parseSseFrame,
-    resolveRequestUrl,
-    usesDoneSentinel,
-    type ApiFormat,
-} from '@/shared/api-format';
+import { buildAuthHeaders, buildChatRequestBody, normalizeApiFormat, parseChatResponse, resolveRequestUrl, type ApiFormat } from '@/shared/api-format';
 import { createLogger } from '@/shared/logger';
 import { resolveProviderApiKey } from '@/shared/ai-credentials';
 import { clearPetActivity, markPetActivity } from '@/shared/pet-activity';
 import { requestJson } from '@/shared/http-transport';
-import {
-    AIAuthError,
-    errorMessage,
-    isEncryptedSecret,
-    isAuthErrorMessage,
-    type AIApiJsonResponse,
-    resolveEndpointSource,
-} from './ai-api-client-shared';
+import { errorMessage, isEncryptedSecret, type AIApiJsonResponse, resolveEndpointSource } from './ai-api-client-shared';
 import {
     callAIStream as runCallAIStream,
     callAIAsyncIterator as runCallAIAsyncIterator,
@@ -238,7 +212,7 @@ export class AIApiClient {
         temperature: number,
         maxTokens: number,
         stream: boolean,
-        numCtx?: number | undefined,
+        numCtx?: number  ,
         endpoint?: string,
         thinkingMode?: ThinkingMode,
         thinkingBudget?: number,
@@ -331,7 +305,7 @@ export class AIApiClient {
             log.info(`[小说工坊] ${currentModel} 被限流，跳过到下一个模型`);
             return 'break';
         }
-        await new Promise(r => setTimeout(r, AI_RATE_LIMIT_WAIT_MS));
+        await new Promise(r => window.setTimeout(r, AI_RATE_LIMIT_WAIT_MS));
         return 'continue';
     }
 
@@ -707,7 +681,7 @@ export class AIApiClient {
             let truncationExtraAttempts = 0;
             for (let attempt = 0; attempt < maxRetries + truncationExtraAttempts + thinkingExtraAttempts; attempt++) {
                 let ac: AbortController | null = null;
-                let timer: ReturnType<typeof setTimeout> | null = null;
+                let timer: number | null = null;
                 // v6.3: 外部 abort（用户连按 Tab）联动内部 abort，真正中断 fetch。
                 // 监听必须存活到响应体读完之后（见下方 finally 解绑），否则「生成中取消」
                 // 只能中断建连阶段，无法中断正在读取的响应体。
@@ -717,7 +691,7 @@ export class AIApiClient {
                 }
                 try {
                     ac = new AbortController();
-                    timer = setTimeout(() => ac!.abort(), this.resolveTimeout(currentModel, endpoint));
+                    timer = window.setTimeout(() => ac!.abort(), this.resolveTimeout(currentModel, endpoint));
 
                     const isOllamaNative = requestEndpoint.includes('/api/generate');
 
@@ -751,7 +725,7 @@ export class AIApiClient {
                     });
                     performanceMonitor.end(perfFetchId, { status: response.status });
 
-                    clearTimeout(timer);
+                    window.clearTimeout(timer);
                     timer = null;
 
                     if (response.status === 429) {
@@ -929,7 +903,7 @@ export class AIApiClient {
                         const base = AI_RETRY_BACKOFF_MS * Math.pow(2, attempt);
                         const backoff = Math.min(base, 30_000);
                         const jitter = Math.random() * backoff * 0.5;
-                        await new Promise(r => setTimeout(r, backoff + jitter));
+                        await new Promise(r => window.setTimeout(r, backoff + jitter));
                     } else {
                         lastError = errorMessage(error) || '网络错误';
                     }
@@ -937,7 +911,7 @@ export class AIApiClient {
                     // v6.3: 解绑放在 finally，保证取消联动覆盖整个请求生命周期（含响应体读取）
                     if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort);
                     if (timer) {
-                        clearTimeout(timer);
+                        window.clearTimeout(timer);
                         timer = null;
                     }
                     ac = null;
@@ -957,7 +931,7 @@ export class AIApiClient {
         const maxConcurrent = AIApiClient.getMaxConcurrent(modelId);
         while (AIApiClient.activeStreams >= maxConcurrent) {
             if (signal?.aborted) throw new Error('aborted');
-            await new Promise(r => setTimeout(r, STREAM_SEMAPHORE_POLL_MS));
+            await new Promise(r => window.setTimeout(r, STREAM_SEMAPHORE_POLL_MS));
         }
         if (signal?.aborted) throw new Error('aborted');
         AIApiClient.activeStreams++;

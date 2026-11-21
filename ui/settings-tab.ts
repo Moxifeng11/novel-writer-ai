@@ -88,7 +88,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         this.renderActiveTab(false);
         if (itemName) {
             // 异步分区（知识库等）要等内容渲染完才能定位
-            setTimeout(() => {
+            window.setTimeout(() => {
                 const panel = this.panelCache.get(tabId);
                 if (panel) highlightSettingItem(panel, itemName);
             }, 320);
@@ -312,7 +312,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
 
         let panel = this.panelCache.get(this.activeTab);
         if (!panel) {
-            panel = document.createElement('div');
+            panel = createDiv();
             panel.className = 'nw-settings-panel';
             this.panelCache.set(this.activeTab, panel);
             this.renderSection(this.activeTab, panel);
@@ -342,7 +342,7 @@ export class NovelWriterSettingTab extends PluginSettingTab {
         }
         void section.render(container);
         // 动态索引：把该分区真实设置项名并入搜索索引（静态索引只覆盖主题词）
-        setTimeout(() => {
+        window.setTimeout(() => {
             const group = SETTINGS_GROUPS.find(item => item.tabs.includes(tabId));
             const tab = SETTINGS_TAB_DEFINITIONS.find(item => item.id === tabId);
             if (!group || !tab) return;
