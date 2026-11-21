@@ -121,7 +121,7 @@ export const STORY_STRUCTURES: StoryStructureSpec[] = [
  * @param id - 标识
   * @returns StoryStructureSpec 实例
  */
-export function getStoryStructure(id: StoryStructureId | string | undefined): StoryStructureSpec {
+export function getStoryStructure(id: StoryStructureId | (string & {}) | undefined): StoryStructureSpec {
     return STORY_STRUCTURES.find(item => item.id === id) || STORY_STRUCTURES[0];
 }
 
@@ -130,7 +130,7 @@ export function getStoryStructure(id: StoryStructureId | string | undefined): St
  * @param id - 标识
  * @returns 文本结果
  */
-export function getStructureStageSummary(id: StoryStructureId | string | undefined): string {
+export function getStructureStageSummary(id: StoryStructureId | (string & {}) | undefined): string {
     return getStoryStructure(id).stages.map(stage => `${stage.name} ${stage.ratio}%`).join(' · ');
 }
 
@@ -140,7 +140,7 @@ export function getStructureStageSummary(id: StoryStructureId | string | undefin
  * @param id - 结构 id
  * @returns 当前语言的显示名
  */
-export function storyStructureLabel(id: StoryStructureId | string | undefined): string {
+export function storyStructureLabel(id: StoryStructureId | (string & {}) | undefined): string {
     return t(`story.structure.${getStoryStructure(id).id}.name`);
 }
 
@@ -150,7 +150,7 @@ export function storyStructureLabel(id: StoryStructureId | string | undefined): 
  * @param id - 结构 id
  * @returns 当前语言的简介
  */
-export function storyStructureDescription(id: StoryStructureId | string | undefined): string {
+export function storyStructureDescription(id: StoryStructureId | (string & {}) | undefined): string {
     return t(`story.structure.${getStoryStructure(id).id}.desc`);
 }
 
@@ -161,7 +161,7 @@ export function storyStructureDescription(id: StoryStructureId | string | undefi
  * @param index - 阶段下标（0 基）
  * @returns 当前语言的阶段名
  */
-export function storyStageLabel(id: StoryStructureId | string | undefined, index: number): string {
+export function storyStageLabel(id: StoryStructureId | (string & {}) | undefined, index: number): string {
     return t(`story.structure.${getStoryStructure(id).id}.stage.${index}.name`);
 }
 
@@ -172,7 +172,7 @@ export function storyStageLabel(id: StoryStructureId | string | undefined, index
  * @param index - 阶段下标（0 基）
  * @returns 当前语言的目标描述
  */
-export function storyStagePurpose(id: StoryStructureId | string | undefined, index: number): string {
+export function storyStagePurpose(id: StoryStructureId | (string & {}) | undefined, index: number): string {
     return t(`story.structure.${getStoryStructure(id).id}.stage.${index}.purpose`);
 }
 
@@ -183,7 +183,7 @@ export function storyStagePurpose(id: StoryStructureId | string | undefined, ind
  * @param index - 阶段下标（0 基）
  * @returns 当前语言的关键节点串
  */
-export function storyStageBeats(id: StoryStructureId | string | undefined, index: number): string {
+export function storyStageBeats(id: StoryStructureId | (string & {}) | undefined, index: number): string {
     return t(`story.structure.${getStoryStructure(id).id}.stage.${index}.beats`);
 }
 
@@ -193,7 +193,7 @@ export function storyStageBeats(id: StoryStructureId | string | undefined, index
  * @param id - 结构 id
  * @returns 例如「Setup 25% · Development 35%」
  */
-export function storyStructureStageSummary(id: StoryStructureId | string | undefined): string {
+export function storyStructureStageSummary(id: StoryStructureId | (string & {}) | undefined): string {
     const structure = getStoryStructure(id);
     return structure.stages
         .map((stage, index) => `${storyStageLabel(structure.id, index)} ${stage.ratio}%`)

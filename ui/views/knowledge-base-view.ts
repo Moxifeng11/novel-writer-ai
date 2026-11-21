@@ -119,8 +119,8 @@ type ConfigCategoryKey = 'male' | 'female' | 'neutral';
 
 interface FilterState {
     channel: ConfigCategoryKey | 'all';
-    primaryGenre: string | 'all' | 'uncategorized';
-    subGenre: string | 'all';
+    primaryGenre: 'all' | 'uncategorized' | (string & {});
+    subGenre: 'all' | (string & {});
     keyword: string;
     status: BreakdownStatus | 'all';
     sortBy: 'createdAt' | 'updatedAt' | 'wordCount' | 'quality';

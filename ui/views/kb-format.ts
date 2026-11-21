@@ -62,7 +62,7 @@ export const INVALID_DATE_LABEL = '-';
  * @example
  * formatBreakdownStatusLabel('processing') // => '拆解中'
  */
-export function formatBreakdownStatusLabel(status: BreakdownStatus | string): string {
+export function formatBreakdownStatusLabel(status: BreakdownStatus | (string & {})): string {
     const key = BREAKDOWN_STATUS_KEYS[status as BreakdownStatus];
     return key ? t(key) : status;
 }
@@ -73,7 +73,7 @@ export function formatBreakdownStatusLabel(status: BreakdownStatus | string): st
  * @param status - 任务状态
  * @returns 本地化标签；未知值原样返回
  */
-export function formatTaskStatusLabel(status: TaskStatus | string): string {
+export function formatTaskStatusLabel(status: TaskStatus | (string & {})): string {
     const key = TASK_STATUS_KEYS[status as TaskStatus];
     return key ? t(key) : status;
 }

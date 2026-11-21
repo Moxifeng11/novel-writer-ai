@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 355 | 146868 | 1953 | 1547 | 79% |
-| `services/` | 65 | 19532 | 296 | 204 | 69% |
-| `shared/` | 265 | 52993 | 2246 | 1757 | 78% |
+| `engine/` | 355 | 146873 | 1953 | 1547 | 79% |
+| `services/` | 65 | 19534 | 296 | 204 | 69% |
+| `shared/` | 265 | 52999 | 2246 | 1757 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 307 | 113869 | 1182 | 945 | 80% |
+| `ui/` | 307 | 113870 | 1182 | 945 | 80% |
 
 ## 文件清单
 
@@ -62,7 +62,7 @@
 | `engine/agent/harness/plan-spec-tools.ts` | 101 | 1 | 1 |
 | `engine/agent/harness/prompt-sections.ts` | 170 | 2 | 2 |
 | `engine/agent/harness/repair-telemetry.ts` | 140 | 10 | 4 |
-| `engine/agent/harness/repair-tools.ts` | 409 | 11 | 2 |
+| `engine/agent/harness/repair-tools.ts` | 410 | 11 | 2 |
 | `engine/agent/harness/session-log.ts` | 269 | 1 | 1 |
 | `engine/agent/harness/session-snapshot.ts` | 249 | 11 | 10 |
 | `engine/agent/harness/skill-tools.ts` | 64 | 1 | 1 |
@@ -190,8 +190,8 @@
 | `engine/entity-link-migrator.ts` | 168 | 5 | 5 |
 | `engine/entity-scorer.ts` | 197 | 6 | 5 |
 | `engine/entity-state-manager.ts` | 530 | 4 | 3 |
-| `engine/export/docx-builder.ts` | 231 | 1 | 1 |
-| `engine/export/epub-builder.ts` | 419 | 7 | 7 |
+| `engine/export/docx-builder.ts` | 232 | 1 | 1 |
+| `engine/export/epub-builder.ts` | 420 | 7 | 7 |
 | `engine/export/manuscript-compiler.ts` | 288 | 12 | 12 |
 | `engine/export/zip-writer.ts` | 157 | 4 | 4 |
 | `engine/fact-index-manager.ts` | 217 | 9 | 2 |
@@ -377,13 +377,13 @@
 | `engine/style/style-dimensions-v2.ts` | 574 | 26 | 12 |
 | `engine/style/style-distill-service.ts` | 146 | 6 | 6 |
 | `engine/style/style-features-v2.ts` | 2090 | 3 | 3 |
-| `engine/style/style-intensity-engine.ts` | 364 | 9 | 3 |
+| `engine/style/style-intensity-engine.ts` | 365 | 9 | 3 |
 | `engine/style/style-sample-service.ts` | 227 | 8 | 7 |
 | `engine/style/style-vector-store-v2.ts` | 1085 | 6 | 1 |
 | `engine/style/v2-quantitative-extractor.ts` | 171 | 2 | 2 |
 | `engine/suggestion-manager.ts` | 285 | 1 | 1 |
 | `engine/template-service.ts` | 795 | 2 | 2 |
-| `engine/text-segmenter.ts` | 509 | 10 | 10 |
+| `engine/text-segmenter.ts` | 510 | 10 | 10 |
 | `engine/token-bucket-rate-limiter.ts` | 285 | 3 | 3 |
 | `engine/types/analysis-session.ts` | 126 | 9 | 9 |
 | `engine/types/analysis-suggestion.ts` | 112 | 9 | 9 |
@@ -401,7 +401,7 @@
 | `services/baseline-probe-service.ts` | 226 | 4 | 1 |
 | `services/canon-research-service.ts` | 876 | 12 | 10 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
-| `services/chapter-version-service.ts` | 755 | 4 | 4 |
+| `services/chapter-version-service.ts` | 756 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
 | `services/constraint-block-service.ts` | 172 | 5 | 2 |
 | `services/context-metrics-service.ts` | 179 | 2 | 1 |
@@ -417,7 +417,7 @@
 | `services/id-migration-service.ts` | 123 | 2 | 1 |
 | `services/id-registry-service.ts` | 138 | 1 | 1 |
 | `services/job-service.ts` | 364 | 9 | 1 |
-| `services/knowledge-base-manager.ts` | 1724 | 6 | 4 |
+| `services/knowledge-base-manager.ts` | 1725 | 6 | 4 |
 | `services/knowledge-migration-service.ts` | 222 | 4 | 1 |
 | `services/knowledge-original-chunker.ts` | 119 | 3 | 3 |
 | `services/ledger-migration-service.ts` | 248 | 4 | 1 |
@@ -534,7 +534,7 @@
 | `shared/fanfic-rules.ts` | 749 | 25 | 20 |
 | `shared/file-cache.ts` | 492 | 3 | 3 |
 | `shared/file-mention.ts` | 211 | 10 | 10 |
-| `shared/file-path-guard.ts` | 236 | 12 | 12 |
+| `shared/file-path-guard.ts` | 237 | 12 | 12 |
 | `shared/file-system-port.ts` | 797 | 8 | 8 |
 | `shared/file-tx-model.ts` | 138 | 12 | 7 |
 | `shared/first-run-guide.ts` | 43 | 2 | 1 |
@@ -589,7 +589,7 @@
 | `shared/obsidian-internal-bridge.ts` | 86 | 3 | 3 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1886 | 224 | 218 |
+| `shared/paths.ts` | 1888 | 224 | 218 |
 | `shared/pet-activity.ts` | 131 | 8 | 5 |
 | `shared/pet-geometry.ts` | 118 | 9 | 3 |
 | `shared/pet-image-model.ts` | 192 | 11 | 7 |
@@ -613,7 +613,7 @@
 | `shared/project-catalog.ts` | 183 | 7 | 7 |
 | `shared/project-index-model.ts` | 488 | 21 | 12 |
 | `shared/project-mode.ts` | 86 | 5 | 5 |
-| `shared/project-name.ts` | 120 | 6 | 6 |
+| `shared/project-name.ts` | 122 | 6 | 6 |
 | `shared/project-root.ts` | 48 | 2 | 2 |
 | `shared/project-standard.ts` | 28 | 1 | 0 |
 | `shared/prompt-budget.ts` | 575 | 19 | 17 |
@@ -722,7 +722,7 @@
 | `shared/writing-rules-mode-addons.ts` | 78 | 5 | 2 |
 | `shared/writing-rules-variants.ts` | 193 | 5 | 2 |
 | `shared/writing-rules.ts` | 105 | 2 | 1 |
-| `shared/writing-stats.ts` | 454 | 25 | 25 |
+| `shared/writing-stats.ts` | 455 | 25 | 25 |
 | `shared/yield.ts` | 47 | 2 | 2 |
 | `ui/add-fanfic-setting-modal.ts` | 805 | 1 | 1 |
 | `ui/advanced-maintenance-modal.ts` | 222 | 1 | 1 |
@@ -945,7 +945,7 @@
 | `ui/services/agent-spill-store.ts` | 142 | 4 | 3 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |
 | `ui/services/flow-diagnosis-collectors.ts` | 209 | 1 | 1 |
-| `ui/services/flow-repair-host.ts` | 246 | 8 | 1 |
+| `ui/services/flow-repair-host.ts` | 247 | 8 | 1 |
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
 | `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 482 | 6 | 5 |

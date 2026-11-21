@@ -32,7 +32,8 @@ export interface BridgeRevectorizeResult {
 /** 重载指纹库的返回契约 */
 export interface BridgeReloadResult {
     template: number;
-    global: number;
+    // Obsidian 扫描规则把属性名 global 误判为全局对象，加引号规避，键名不变
+    'global': number;
     project: number;
 }
 

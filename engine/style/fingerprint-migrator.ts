@@ -70,7 +70,7 @@ export interface V1StyleFingerprint {
     id: string;
     name: string;
     source: string;
-    scope?: 'template' | 'global' | 'project' | string;
+    scope?: 'template' | 'global' | 'project' | (string & {});
     enabled?: boolean;
     tags?: string[];
     stats: {

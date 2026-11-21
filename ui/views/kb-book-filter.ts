@@ -16,7 +16,7 @@ import type { BookBasicInfo, BreakdownStatus } from '@/services/knowledge-base-m
 export type BookChannelFilter = 'male' | 'female' | 'neutral' | 'all';
 
 /** 主题材筛选值：具体题材 id / 全部 / 未分类 */
-export type BookGenreFilter = string | 'all' | 'uncategorized';
+export type BookGenreFilter = 'all' | 'uncategorized' | (string & {});
 
 /** 排序字段 */
 export type BookSortBy = 'createdAt' | 'updatedAt' | 'wordCount' | 'quality';
@@ -30,7 +30,7 @@ export type BookSortOrder = 'asc' | 'desc';
 export interface BookFilterState {
     channel: BookChannelFilter;
     primaryGenre: BookGenreFilter;
-    subGenre: string | 'all';
+    subGenre: 'all' | (string & {});
     keyword: string;
     status: BreakdownStatus | 'all';
     sortBy: BookSortBy;

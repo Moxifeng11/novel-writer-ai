@@ -45,6 +45,7 @@ export function sanitizeVaultPath(raw: string, options: VaultPathGuardOptions = 
     if (!text) return { ok: false, reason: '路径为空' };
     if (text.startsWith('/')) return { ok: false, reason: '只接受库内相对路径，不接受绝对路径' };
     if (/^[a-zA-Z]:/.test(text)) return { ok: false, reason: '只接受库内相对路径，不接受盘符路径' };
+    // eslint-disable-next-line no-control-regex -- 路径校验必须拒绝控制字符
     if (/[\u0000-\u001f]/.test(text)) return { ok: false, reason: '路径包含控制字符' };
     const segments = text.split('/').filter(segment => segment !== '');
     if (segments.length === 0) return { ok: false, reason: '路径为空' };

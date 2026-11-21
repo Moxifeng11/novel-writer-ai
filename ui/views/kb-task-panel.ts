@@ -69,7 +69,7 @@ const DELETABLE_STATUSES: ReadonlyArray<TaskStatus> = ['completed', 'failed', 'c
  * resolveTaskStatusTone('running')  // => 'info'
  * resolveTaskStatusTone('cancelled') // => 'muted'
  */
-export function resolveTaskStatusTone(status: TaskStatus | string): TaskStatusTone {
+export function resolveTaskStatusTone(status: TaskStatus | (string & {})): TaskStatusTone {
     switch (status) {
         case 'completed': return 'success';
         case 'running': return 'info';
@@ -205,7 +205,7 @@ export function formatSelectionLabel(selectedSize: number, filteredSize: number)
  * resolveTaskRowActions('running')   // => ['cancel', 'view-book']
  * resolveTaskRowActions('cancelled') // => ['delete', 'view-book']
  */
-export function resolveTaskRowActions(status: TaskStatus | string): TaskRowActionKey[] {
+export function resolveTaskRowActions(status: TaskStatus | (string & {})): TaskRowActionKey[] {
     const actions: TaskRowActionKey[] = [];
     if (status === 'failed') actions.push('retry');
     if (status === 'running' || status === 'pending') actions.push('cancel');
@@ -221,7 +221,7 @@ export function resolveTaskRowActions(status: TaskStatus | string): TaskRowActio
  * @param hasEmitterState - 是否取到 emitter 状态
  * @returns 是否展示
  */
-export function shouldShowTaskProgress(status: TaskStatus | string, hasEmitterState: boolean): boolean {
+export function shouldShowTaskProgress(status: TaskStatus | (string & {}), hasEmitterState: boolean): boolean {
     return (status === 'running' || status === 'pending') && hasEmitterState;
 }
 
@@ -232,7 +232,7 @@ export function shouldShowTaskProgress(status: TaskStatus | string, hasEmitterSt
  * @param message - emitter 消息
  * @returns 是否展示
  */
-export function shouldShowTaskMessage(status: TaskStatus | string, message?: string): boolean {
+export function shouldShowTaskMessage(status: TaskStatus | (string & {}), message?: string): boolean {
     return Boolean(message) && (status === 'running' || status === 'pending');
 }
 
@@ -243,7 +243,7 @@ export function shouldShowTaskMessage(status: TaskStatus | string, message?: str
  * @param hasEmitterState - 是否取到 emitter 状态
  * @returns 是否展示
  */
-export function shouldShowTaskTiming(status: TaskStatus | string, hasEmitterState: boolean): boolean {
+export function shouldShowTaskTiming(status: TaskStatus | (string & {}), hasEmitterState: boolean): boolean {
     return status === 'running' && hasEmitterState;
 }
 
@@ -254,7 +254,7 @@ export function shouldShowTaskTiming(status: TaskStatus | string, hasEmitterStat
  * @param error - 错误信息
  * @returns 是否展示
  */
-export function shouldShowTaskError(status: TaskStatus | string, error?: string): boolean {
+export function shouldShowTaskError(status: TaskStatus | (string & {}), error?: string): boolean {
     return status === 'failed' && Boolean(error);
 }
 

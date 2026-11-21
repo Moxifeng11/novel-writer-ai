@@ -39,9 +39,9 @@ export function resolveNodeDoc(anchor: DocAnchor | null | undefined): Document |
  */
 export function resolveNodeWindow(anchor: DocAnchor | null | undefined): Window {
     const candidate = anchor as (DocAnchor & { win?: Window }) | null | undefined;
-    // 浏览器/Electron 里 globalThis 就是 window；Node 测试环境没有 window，退到 globalThis
-    const fallback = typeof window !== 'undefined' ? window : (globalThis as unknown as Window);
-    return candidate?.win ?? resolveNodeDoc(anchor)?.defaultView ?? fallback;
+    // 取不到 el.win / defaultView 时退回当前全局 window（插件只在有 window 的宿主里运行，
+    // 测试环境由 tests/setup.ts 提供 window 垫片）
+    return candidate?.win ?? resolveNodeDoc(anchor)?.defaultView ?? window;
 }
 
 /**

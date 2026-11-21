@@ -219,6 +219,7 @@ export function pjCharacterArcTable(project: string) { return `${project}/${SUBD
  */
 export function sanitizeName(name: string): string {
     const cleaned = name
+        // eslint-disable-next-line no-control-regex -- 文件名清理必须移除控制字符
         .replace(/[\u0000-\u001f\u007f]/g, '')
         .replace(/[\\/:*?"<>|]/g, '_')
         .trim()
@@ -1231,6 +1232,7 @@ function isSafeVaultRelativeDir(dir: string): boolean {
     if (/^[a-zA-Z]:/.test(dir)) return false;
     if (dir.startsWith('/')) return false;
     if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(dir)) return false;
+    // eslint-disable-next-line no-control-regex -- 目录校验必须拒绝控制字符
     if (/[\u0000-\u001f\u007f]/.test(dir)) return false;
     for (const segment of dir.split('/')) {
         if (!segment || segment === '.' || segment === '..') return false;

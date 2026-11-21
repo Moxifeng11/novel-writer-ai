@@ -51,7 +51,7 @@ export const SCRIPT_MODE_ADDON = `
  * @param mode - 创作模式
  * @returns 模式附录文本（含前导分隔线）
  */
-export function getWritingRulesModeAddon(mode: CreationMode | string | undefined): string {
+export function getWritingRulesModeAddon(mode: CreationMode | (string & {}) | undefined): string {
     switch (mode) {
         case 'short':
             return SHORT_MODE_ADDON;
@@ -71,7 +71,7 @@ export function getWritingRulesModeAddon(mode: CreationMode | string | undefined
  * @param mode - 创作模式
  * @returns 组合后的完整规则文本
  */
-export function composeWritingRules(baseRules: string, mode: CreationMode | string | undefined): string {
+export function composeWritingRules(baseRules: string, mode: CreationMode | (string & {}) | undefined): string {
     const base = String(baseRules || '').trimEnd();
     return `${base}\n${getWritingRulesModeAddon(mode)}`;
 }

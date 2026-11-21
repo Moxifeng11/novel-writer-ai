@@ -86,7 +86,7 @@ export interface BulkResult<T> {
  */
 export interface BulkFailure<T> {
     /** 导致失败的实体或 ID */
-    item: T | unknown;
+    item: unknown;
     /** 错误信息 */
     error: Error;
     /** 在批量数组中的索引位置 */

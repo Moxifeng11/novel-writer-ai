@@ -135,6 +135,7 @@ function isSafeBookId(value: unknown): value is string {
     if (typeof value !== 'string' || value.trim().length === 0) return false;
     if (value === '.' || value === '..' || value.startsWith('.')) return false;
     if (/[\\/]/.test(value) || value.includes('..')) return false;
+    // eslint-disable-next-line no-control-regex -- 文件名校验必须拒绝控制字符
     return !/[\u0000-\u001f]/.test(value);
 }
 

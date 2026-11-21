@@ -76,6 +76,7 @@ export function normalizeText(text: string): string {
 
     let normalized = text.replace(/\r\n?/g, '\n');
     normalized = normalized.replace(/[\u200B\uFEFF]/g, '');
+    // eslint-disable-next-line no-control-regex -- 必须匹配控制字符才能清理导出文本里的不可见字符
     normalized = normalized.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
     normalized = normalized.replace(/[\u3000\u00A0]/g, ' ');
     normalized = normalized.replace(/[ \t]+\n/g, '\n');

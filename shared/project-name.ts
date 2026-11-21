@@ -37,6 +37,7 @@ const ALLOWED_RE = /^[\u4e00-\u9fa5a-zA-Z0-9_-]+$/;
 export function normalizeProjectName(raw: string): string {
     return (raw || '')
         .normalize('NFKC')
+        // eslint-disable-next-line no-control-regex -- 项目名清理必须移除控制字符
         .replace(/[\u0000-\u001f\u007f]/g, '')
         .trim()
         .replace(/^[.\s]+/, '')
@@ -97,6 +98,7 @@ export function validateProjectName(raw: string, existing: string[] = []): Proje
 export function isSafeProjectFolderName(raw: string): boolean {
     const value = String(raw || '').normalize('NFKC').trim();
     if (!value || value.length > 40) return false;
+    // eslint-disable-next-line no-control-regex -- 项目名校验必须拒绝控制字符
     if (/[\u0000-\u001f\u007f]/.test(value)) return false;
     if (/[\\/:*?"<>|]/.test(value)) return false;
     if (value.startsWith('.')) return false;

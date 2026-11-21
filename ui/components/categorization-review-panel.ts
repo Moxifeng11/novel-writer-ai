@@ -36,7 +36,7 @@ const CATEGORIZATION_TYPES: SuggestionType[] = ['character_role'];
 export class CategorizationReviewPanel {
     private container: HTMLElement;
     private options: CategorizationReviewPanelOptions;
-    private filterCategory: string | 'all' = 'all';
+    private filterCategory: 'all' | (string & {}) = 'all';
     private expandedItems: Set<string> = new Set();
     /** 分类下拉的外部点击监听解绑器（绑在面板所属窗口，destroy 时释放） */
     private popupDisposer: (() => void) | null = null;

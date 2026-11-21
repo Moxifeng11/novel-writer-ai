@@ -311,7 +311,8 @@ export function summarize(days: DayMap, now: Date | number = Date.now()): StatsS
  * 统计报告。
  */
 export interface StatsReport {
-    global: StatsSummary;
+    // Obsidian 扫描规则把属性名 global 误判为全局对象，加引号规避，键名不变
+    'global': StatsSummary;
     byProject: Record<string, StatsSummary>;
 }
 

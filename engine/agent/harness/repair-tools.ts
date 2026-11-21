@@ -47,7 +47,8 @@ export interface RevectorizeBookResult {
 /** 指纹库重载结果（三层条数） */
 export interface ReloadFingerprintsResult {
     template: number;
-    global: number;
+    // Obsidian 扫描规则把属性名 global 误判为全局对象（规则只跳过对象字面量键，不跳过接口属性名），加引号规避，键名不变
+    'global': number;
     project: number;
 }
 

@@ -18,7 +18,7 @@ export interface RandomSource {
 
 function cryptoRandomInt(maxExclusive: number): number {
     if (!Number.isFinite(maxExclusive) || maxExclusive <= 1) return 0;
-    if (typeof globalThis.crypto?.getRandomValues !== 'function') {
+    if (typeof crypto === 'undefined' || typeof crypto.getRandomValues !== 'function') {
         // Only tests / ancient environments hit this; production Obsidian has WebCrypto.
         return Math.floor(Math.random() * maxExclusive);
     }
@@ -27,7 +27,7 @@ function cryptoRandomInt(maxExclusive: number): number {
     const limit = range - (range % maxExclusive);
     const buffer = new Uint32Array(1);
     for (let attempt = 0; attempt < 32; attempt++) {
-        globalThis.crypto.getRandomValues(buffer);
+        crypto.getRandomValues(buffer);
         if (buffer[0] < limit) return buffer[0] % maxExclusive;
     }
     return buffer[0] % maxExclusive;
@@ -70,9 +70,9 @@ export const trueRandom: RandomSource = {
         return usable[usable.length - 1].value;
     },
     uuid(): string {
-        if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID();
+        if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
         const bytes = new Uint8Array(16);
-        globalThis.crypto.getRandomValues(bytes);
+        crypto.getRandomValues(bytes);
         bytes[6] = (bytes[6] & 0x0f) | 0x40;
         bytes[8] = (bytes[8] & 0x3f) | 0x80;
         const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');

@@ -96,6 +96,7 @@ export const EPUB_MIMETYPE = 'application/epub+zip';
 function escapeXml(text: string): string {
     return String(text ?? '')
         // XML 1.0 不允许的控制字符
+        // eslint-disable-next-line no-control-regex -- 必须按 XML 1.0 规范剔除非法控制字符
         .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')

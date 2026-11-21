@@ -78,7 +78,8 @@ export interface StyleIntensityEffect {
 /** 强度预览结果 */
 export interface StyleIntensityPreview {
     /** 全局效果 */
-    global: StyleIntensityEffect;
+    // Obsidian 扫描规则把属性名 global 误判为全局对象，加引号规避，键名不变
+    'global': StyleIntensityEffect;
     /** 12 维各自效果 */
     dimensions: Record<StyleDimensionKeyV2, StyleIntensityEffect>;
     /** 是否完全禁用（globalIntensity === 0） */

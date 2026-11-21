@@ -107,7 +107,7 @@ export interface BodyWriterOptions {
 }
 
 const FRONTMATTER_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
-const CHAPTER_TITLE_INLINE = /^#{0,6}[ 	]*第[0-9一二三四五六七八九十百千]+章[ 	：:]+《?(.+?)》?[ 	]*$/m;
+const CHAPTER_TITLE_INLINE = /^#{0,6}[ \t]*第[0-9一二三四五六七八九十百千]+章[ \t：:]+《?(.+?)》?[ \t]*$/m;
 const CHAPTER_NUM_FROM_NAME = /第([0-9一二三四五六七八九十百千]+)章/;
 
 function stripFrontmatterBlock(content: string): { fmRaw: string; body: string } {

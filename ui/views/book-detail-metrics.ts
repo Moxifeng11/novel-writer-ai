@@ -189,7 +189,7 @@ export function buildTimelineEvents(segments: StructureData['qcchSegments']): Ti
  */
 export function filterForeshadows<T extends { hasResolution: boolean }>(
     items: T[] | undefined,
-    filter: ForeshadowFilter | string,
+    filter: ForeshadowFilter | (string & {}),
 ): T[] {
     if (!items || items.length === 0) return [];
     if (filter === 'all') return [...items];

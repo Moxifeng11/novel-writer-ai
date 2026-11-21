@@ -869,7 +869,7 @@ export const PROMPT_CATEGORY_IDS: readonly PromptCategory[] = [
  * @example
  * promptCategoryLabel('character'); // '👤 人设生成'（en-US 下为 '👤 Character design'）
  */
-export function promptCategoryLabel(category: PromptCategory | string): string {
+export function promptCategoryLabel(category: PromptCategory | (string & {})): string {
     const key = `prompt.category.${category}`;
     return hasMessage(key) ? t(key) : category;
 }

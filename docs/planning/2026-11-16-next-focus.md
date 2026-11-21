@@ -4281,3 +4281,17 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 **结果**：扫描器 warn 1,232 → **913**（Promise 两类规则双零）；`.review-warn-baseline.json` 收为 913 / 23 类；`.bundle-baseline.json` main.js 6,241,070（+1,432，大量 `void` 包裹与 IIFE）。tsc 0，全量单测 1,013 文件 / 10,503 通过 + 3 跳过。
 
 **文档**：`docs/DEVELOPMENT.md` 存量与「第七批落地手法」五条；`docs/planning/2026-11-21-quality-optimization-roadmap.md` 第 6/7 批状态与进度日志。
+## 第一百四十七轮：清社区审核扫描器 warn 第八批（913 → 859）
+
+**范围**：`no-redundant-type-constituents` 31 + `no-control-regex` 12 + `obsidianmd/no-global-this` 12。
+
+**改法**
+- 冗余联合：裸 `string` 换品牌化 `(string & {})`（仍接受任意字符串、保留字面量补全），`T | unknown` 直接 `unknown`。涉及 `shared/story-structure.ts`（8 个查询函数）、`ui/views/kb-task-panel.ts`（6）、`ui/views/kb-format.ts`、`ui/views/kb-book-filter.ts`、`ui/views/knowledge-base-view.ts`、`shared/writing-rules-mode-addons.ts`、`services/prompt-manager.ts`、`engine/style/fingerprint-migrator.ts`、`ui/views/book-detail-metrics.ts`、`ui/components/categorization-review-panel.ts`。
+- 控制字符正则：`engine/body-writer.ts:110`、`engine/step-validator.ts:564` 把字面 TAB 改成 `\t`；其余 10 处（docx/epub 清洗、路径/文件名/项目名/contentKey 校验）加带说明的 `eslint-disable-next-line no-control-regex -- …`。
+- `no-global-this`：真引用改 `window`（`ui/tts/tts-speech.ts`、`shared/dom-window.ts`）与全局 `crypto`（`shared/true-random.ts`）；接口属性名 `global` 是规则误判，写成 `'global': …` 保留键名（`engine/agent/harness/repair-tools.ts`、`engine/style/style-intensity-engine.ts`、`shared/writing-stats.ts`、`ui/services/flow-repair-host.ts`）。**该规则禁止禁用（`obsidianmd/*` 在 `no-restricted-disable` 里）**。
+
+**结果**：warn 913 → **859**，上述三类规则清零；tsc 0；定向 11 文件 / 259 用例通过。
+
+**未做**：`no-restricted-globals` 19 全是 `localStorage`，迁 `App#saveLocalStorage` 会改变草稿存储位置，需带旧键迁移，单列第 8b 批；`shared/http-transport.ts:152` 的 `fetch` 仍是桌面端保留取消/SSE 的有意例外。
+
+**文档**：`docs/planning/2026-11-21-quality-optimization-roadmap.md` 第 7/8 批状态与新增 8b 行；`docs/DEVELOPMENT.md` 存量 859 与「第八批落地手法」四条。

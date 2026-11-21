@@ -53,7 +53,7 @@ export interface TtsSpeechEngine {
 /** 取 speechSynthesis（浏览器 / Electron 注入到 window 上） */
 function getSynth(): SpeechSynthesis | null {
     try {
-        const synth = (globalThis as unknown as { speechSynthesis?: SpeechSynthesis }).speechSynthesis;
+        const synth = (window as unknown as { speechSynthesis?: SpeechSynthesis }).speechSynthesis;
         return synth ?? null;
     } catch {
         return null;
@@ -63,7 +63,7 @@ function getSynth(): SpeechSynthesis | null {
 /** 取 SpeechSynthesisUtterance 构造器 */
 function getUtteranceCtor(): (new (text: string) => SpeechSynthesisUtterance) | null {
     try {
-        const ctor = (globalThis as unknown as { SpeechSynthesisUtterance?: new (text: string) => SpeechSynthesisUtterance }).SpeechSynthesisUtterance;
+        const ctor = (window as unknown as { SpeechSynthesisUtterance?: new (text: string) => SpeechSynthesisUtterance }).SpeechSynthesisUtterance;
         return ctor ?? null;
     } catch { // silent-ok: 取不到构造器等于平台不支持朗读，由 isSupported() 统一给出降级提示
         return null;
