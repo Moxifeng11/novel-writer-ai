@@ -28,7 +28,7 @@ interface ChildProcessModule {
  */
 export function loadChildProcess(): ChildProcessModule | null {
     try {
-         
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- 只在桌面端运行时按需加载 child_process；移动端没有该模块，由下方 catch 降级为 null
         const mod = require('node:child_process') as ChildProcessModule;
         return mod && typeof mod.spawn === 'function' ? mod : null;
     } catch { // silent-ok: 移动端/受限环境没有 child_process，MCP stdio 不可用属预期

@@ -4264,7 +4264,7 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 范围：`@typescript-eslint/no-deprecated` 中可机械替换的部分。共改 26 处，warn 1,259 → **1,232**（error 0），deprecated 258 → **232**。
 - 替换：`.setDynamicTooltip()` 11 处删除（新版已内联数值）；`.substr(2, 9)` → `.slice(2, 11)` 3 处；`SettingsTab.display()` 内部调用抽私有 `renderAll()`（`reopen()` 不再调用废弃方法）；`main.ts` 的 `hidePreset/restorePreset/restoreAllPresets/savePresetOverride` 兼容入口改走 `setHidden` / `restoreDefaultProviders` / `updateProvider`；`pre-research-modal.ts` 删除 `if (true)` 死分支里的 `execCommand`；剪贴板降级与 IME 229 改结构类型读取。
 - 行为修正：协同编辑器替换文本从 `document.execCommand('insertText')` 改为 `textarea.setRangeText(text, 0, len, 'end')`，保留原生撤销栈；`engine/step-validator.ts` 的 `validateBodyGeneration` 去掉 `@deprecated`（它仍被 `bodyGeneration` 步骤使用，两条路径共享规则）。
-- 保留例外（不强行去废弃）：StyleFingerprint V1 类型 193（第 10 批重构）、旧提示词常量 13 + 旧模板路径 22（只读兼容，无替代 API）、`setWarning` 7（`setDestructive` 需 Obsidian 1.13，minAppVersion 1.4.4 会触发 `no-unsupported-api` error）。
+- 保留例外（不强行去废弃）：StyleFingerprint V1 类型 193（第 11 批重构）、旧提示词常量 13 + 旧模板路径 22（只读兼容，无替代 API）、`setWarning` 7（`setDestructive` 需 Obsidian 1.13，minAppVersion 1.4.4 会触发 `no-unsupported-api` error）。
 - 门禁：tsc 0；preflight EXIT=0（1,013 文件 / 10,503 通过 + 3 跳过）；`.review-warn-baseline.json` 收为 1,232 条 / 27 类；`.bundle-baseline.json` main.js 6,239,638。
 - 教训：废弃 API 的替代项可能要求更高的 `minAppVersion`——先查 `obsidianmd/no-unsupported-api` 再换。
 
@@ -4295,3 +4295,16 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 **未做**：`no-restricted-globals` 19 全是 `localStorage`，迁 `App#saveLocalStorage` 会改变草稿存储位置，需带旧键迁移，单列第 8b 批；`shared/http-transport.ts:152` 的 `fetch` 仍是桌面端保留取消/SSE 的有意例外。
 
 **文档**：`docs/planning/2026-11-21-quality-optimization-roadmap.md` 第 7/8 批状态与新增 8b 行；`docs/DEVELOPMENT.md` 存量 859 与「第八批落地手法」四条。
+## 第一百四十八轮：清社区审核扫描器 warn 第九批（859 → 834）
+
+- 目标：把剩余机械项清零（都是无行为变更的语法级修复）。
+- 改动：`no-this-alias` 5（`ui/co-writing-view.ts` 四处 `const view = this;` 加带说明的 disable，`ui/prompt-manager-settings.ts` 的内嵌函数改箭头函数并删 `this_2`）、`await-thenable` 4（`engine/asset-registry.ts` 去 `await Promise.all([同步,同步])`、`ui/batch-import-modal.ts:206` 与 `ui/context-injector-modal.ts:71` 去 `await`）、`no-empty-object-type` 2（doubao/qwen provider 的 `interface extends` 改 `type` 别名）、`no-case-declarations` 2（`engine/streaming/stream-parser.ts` 的 `case 'retry':` 与 `ui/unified-entity-generate-modal.ts` 的 `case 'character':` 加块级花括号）、`no-useless-catch` 2（`services/knowledge-base-manager.ts` 的 writeJsonAtomic、`shared/serialized-writer.ts` 的 enqueueAutoClean 删掉只 throw 的 try/catch）、`no-irregular-whitespace` 1（`engine/plot-redundancy-checker.ts:38` 全角空格改 `\u3000`）、`no-misleading-character-class` 6（四处 emoji 字符类改非捕获分组 + `u` 标志）、`no-require-imports` 2（两个桌面端按需 `require` 补带理由的 disable）、`hardcoded-config-path` 1（`ui/cross-volume-state-modal.ts:44` 的 `.obsidian` 改 `this.app.vault.configDir`）。
+- 校验：`npx tsc --noEmit` EXIT=0；定向 eslint（19 文件）0 error；定向测试 stream-parser 34 例、serialized-writer + mcp-file-browse 6 例、step-validator 33 例通过。
+- 全量口径：warn **859 → 834**，error 0。剩下 `no-unnecessary-type-assertion` 346（不追）、`no-deprecated` 232（V1 类型 193 属第 11 批）、`no-unused-vars` 149（DOM 创建有副作用）、`sentence-case` 51 与 `prefer-file-manager-trash-file` 25（第 10 批产品决策）、`no-restricted-globals` 19（第 8b 批 localStorage 迁移）。
+- 文档：`docs/planning/2026-11-21-quality-optimization-roadmap.md` 批次表重排（新增第 9 批，产品决策改为第 10 批、StyleFingerprint 改为第 11 批）、进度日志补第 7/8/9 行；`docs/DEVELOPMENT.md` 存量改 834 并新增「第九批落地手法」八条。
+- 教训：①改 case 加花括号要确认后面还有下一 case/default，否则会把 switch 提前闭合；②按 `
+` 读写文件时所有 `edit` 匹配串必须做 EOL 归一，否则静默 MISS（本轮 `ui/co-writing-view.ts` 首次补 disable 就是 0 命中）；③`obsidianmd/hardcoded-config-path` 只认 `app.vault.configDir`，常量兜底（`shared/paths.ts`）与保留名列表（`shared/project-name.ts`）是有意保留。
+
+下一步候选：第 8b 批（`localStorage` 19 条，需带旧键迁移，属行为变更）或第 10 批产品决策项（`sentence-case` 51 / `prefer-file-manager-trash-file` 25，需用户确认口径）。
+
+- 附带修复：`tests/unit/engine/asset-registry.test.ts` 的 `fakeLibrary()` 把同步的 `listProject/listGlobal` 写成 `async`（与 `StyleFingerprintLibrary` 真实签名不符），去掉 `await` 后暴露为 0 条指纹；已把 fake 改成同步返回，`npx vitest run tests/unit/engine/asset-registry.test.ts` 通过。

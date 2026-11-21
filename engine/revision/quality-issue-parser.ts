@@ -32,7 +32,7 @@ function detectLocation(line: string): string | undefined {
 function stripMarkers(line: string): string {
     return line
         .replace(/^[\s>*-]+/, '')
-        .replace(/^[❌⚠️✅]+\s*/, '')
+        .replace(/^(?:[❌✅]|⚠️)+\s*/u, '')
         .replace(/^\[[^\]]+\]\s*/, '')
         .trim();
 }

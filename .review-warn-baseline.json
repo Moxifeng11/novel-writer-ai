@@ -1,7 +1,7 @@
 {
   "updatedAt": "2026-11-21",
   "note": "",
-  "total": 859,
+  "total": 834,
   "byRule": {
     "@typescript-eslint/no-unnecessary-type-assertion": 346,
     "@typescript-eslint/no-deprecated": 232,
@@ -9,17 +9,9 @@
     "obsidianmd/ui/sentence-case": 51,
     "obsidianmd/prefer-file-manager-trash-file": 25,
     "no-restricted-globals": 19,
-    "no-misleading-character-class": 6,
-    "@typescript-eslint/no-this-alias": 5,
-    "@typescript-eslint/await-thenable": 4,
     "obsidianmd/no-tfile-tfolder-cast": 4,
     "obsidianmd/rule-custom-message": 3,
-    "obsidianmd/hardcoded-config-path": 3,
-    "@typescript-eslint/no-require-imports": 2,
-    "@typescript-eslint/no-empty-object-type": 2,
-    "no-case-declarations": 2,
-    "no-useless-catch": 2,
-    "no-irregular-whitespace": 1,
+    "obsidianmd/hardcoded-config-path": 2,
     "no-alert": 1,
     "obsidianmd/prefer-create-el": 1,
     "obsidianmd/settings-tab/prefer-setting-definitions": 1

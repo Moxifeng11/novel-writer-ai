@@ -27,15 +27,15 @@ function fingerprint(id: string, name: string, scope: 'project' | 'global', enab
 
 function fakeLibrary(): {
     getEnabledFingerprints(project?: string): Promise<StyleFingerprint[]>;
-    listProject(): Promise<StyleFingerprint[]>;
-    listGlobal(): Promise<StyleFingerprint[]>;
+    listProject(): StyleFingerprint[];
+    listGlobal(): StyleFingerprint[];
 } {
     const project = [fingerprint('fp_p1', '项目指纹', 'project', true)];
     const global = [fingerprint('fp_g1', '全局指纹', 'global', true), fingerprint('fp_g2', '全局停用', 'global', false)];
     return {
         async getEnabledFingerprints() { return [...project, global[0]]; },
-        async listProject() { return project; },
-        async listGlobal() { return global; },
+        listProject() { return project; },
+        listGlobal() { return global; },
     };
 }
 

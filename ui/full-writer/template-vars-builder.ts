@@ -989,7 +989,7 @@ ${vars["allItems"]}`);
   vars["issues"] = vars["issues"] || "";
   const qualityReport = deps.stepResults["qualityControl"] || "";
   vars["qualityIssues"] = qualityReport
-    ? qualityReport.split('\n').filter(line => /^\s*[❌⚠️]/.test(line)).slice(0, 20).join('\n').slice(0, 2500)
+    ? qualityReport.split('\n').filter(line => /^\s*(?:❌|⚠️)/u.test(line)).slice(0, 20).join('\n').slice(0, 2500)
     : "";
   vars["foreshadows"] = vars["unrevealedForeshadow"] || "";
   try {

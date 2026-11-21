@@ -644,7 +644,7 @@ function validateQualityControlMerged(content: string): StepValidationResult {
         { key: '语言质感', check: () => sectionContentValid(content, new RegExp('##' + deco + '(语言质感|语言|文笔)'), 20) },
     ];
     const hasSuggestions = /(修改建议|建议汇总|改进建议)[：:].{10,}/.test(content) || sectionContentValid(content, /##\s*(修改建议|改进建议)/, 20);
-    const hasCheckmarks = /[✅❌⚠️]/.test(content) || /(通过|问题|待改进)[：:]/.test(content);
+    const hasCheckmarks = /(?:[✅❌]|⚠️)/u.test(content) || /(通过|问题|待改进)[：:]/.test(content);
 
     // v4.26：新六块为准；旧三块（写作技法/连贯性/质量评估）齐全时按 legacy 通过，
     // 缺失项的 missing 文案沿用旧名，避免旧项目报出「镜头一致性」这类看不懂的键。

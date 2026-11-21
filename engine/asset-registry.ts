@@ -151,7 +151,7 @@ async function collectFingerprints(app: App, project: string, deps: AssetRegistr
             impact: `文笔风格注入 · ${fp.scope === 'project' ? '项目级' : '全局启用'}`,
         }));
         // 未启用的指纹也列出来，便于用户理解“为什么没生效”
-        const [projectAll, globalAll] = await Promise.all([library.listProject(), library.listGlobal()]);
+        const [projectAll, globalAll] = [library.listProject(), library.listGlobal()];
         const enabledIds = new Set(enabled.map(fp => fp.id));
         for (const fp of [...projectAll, ...globalAll]) {
             if (enabledIds.has(fp.id)) continue;

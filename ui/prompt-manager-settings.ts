@@ -1212,8 +1212,8 @@ export class PromptManagerSettings {
         const versionASetting = new Setting(content).setName(t('settings.promptManager.versionALabel'));
         const versionBSetting = new Setting(content).setName(t('settings.promptManager.versionBLabel'));
 
-        function renderVersionDropdowns() {
-            const tpl = templateId ? this_2.promptManager.getTemplateById(templateId) : null;
+        const renderVersionDropdowns = () => {
+            const tpl = templateId ? this.promptManager.getTemplateById(templateId) : null;
             versionASetting.clear();
             versionBSetting.clear();
             if (tpl) {
@@ -1235,9 +1235,7 @@ export class PromptManagerSettings {
                 versionASetting.setDesc(t('settings.promptManager.pickTemplateFirst'));
                 versionBSetting.setDesc(t('settings.promptManager.pickTemplateFirst'));
             }
-        }
-
-        const this_2 = this;
+        };
 
         new Setting(content)
             .setName(t('settings.promptManager.trafficALabel'))

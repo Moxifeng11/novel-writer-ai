@@ -46,6 +46,7 @@ export async function loadNodeFs(): Promise<FsLike | null> {
     //    Obsidian 渲染进程无法加载 node: 内建模块（实测浏览器里返回失败）；
     // 2) 再 await import —— vitest 等 ESM 环境没有 require，退回动态导入。
     try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- 只在桌面端运行时按需加载 node:fs；ESM 环境与移动端由下方 catch 退回动态导入
         const mod = require('node:fs') as FsLike;
         if (typeof (mod as unknown as { readdirSync?: unknown }).readdirSync === 'function') return mod;
     } catch { // silent-ok: ESM 环境（测试）没有 require，走下面的动态导入

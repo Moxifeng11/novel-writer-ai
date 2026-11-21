@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 355 | 146873 | 1953 | 1547 | 79% |
-| `services/` | 65 | 19534 | 296 | 204 | 69% |
-| `shared/` | 265 | 52999 | 2246 | 1757 | 78% |
+| `engine/` | 355 | 146872 | 1953 | 1547 | 79% |
+| `services/` | 65 | 19530 | 296 | 204 | 69% |
+| `shared/` | 265 | 52996 | 2246 | 1757 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 307 | 113870 | 1182 | 945 | 80% |
+| `ui/` | 307 | 113873 | 1182 | 945 | 80% |
 
 ## 文件清单
 
@@ -171,7 +171,7 @@
 | `engine/deconstructors/style-deconstructor.ts` | 2320 | 14 | 14 |
 | `engine/deconstructors/technique-deconstructor.ts` | 1822 | 5 | 5 |
 | `engine/dimension-keywords.ts` | 458 | 9 | 9 |
-| `engine/embedding/doubao-provider.ts` | 51 | 2 | 2 |
+| `engine/embedding/doubao-provider.ts` | 50 | 2 | 2 |
 | `engine/embedding/embedding-fingerprint.ts` | 129 | 7 | 7 |
 | `engine/embedding/embedding-provider.ts` | 13 | 1 | 1 |
 | `engine/embedding/embedding-service.ts` | 53 | 4 | 4 |
@@ -179,7 +179,7 @@
 | `engine/embedding/ollama-provider.ts` | 219 | 2 | 2 |
 | `engine/embedding/openai-provider.ts` | 241 | 2 | 2 |
 | `engine/embedding/provider-factory.ts` | 211 | 4 | 4 |
-| `engine/embedding/qwen-provider.ts` | 51 | 2 | 2 |
+| `engine/embedding/qwen-provider.ts` | 50 | 2 | 2 |
 | `engine/emotion-auditor.ts` | 280 | 3 | 3 |
 | `engine/emotion-curve-analyzer.ts` | 220 | 1 | 1 |
 | `engine/emotion-planner.ts` | 212 | 7 | 4 |
@@ -365,7 +365,7 @@
 | `engine/story-state-types.ts` | 61 | 5 | 1 |
 | `engine/stream-text-reader.ts` | 320 | 3 | 3 |
 | `engine/streaming/simulated-stream.ts` | 183 | 2 | 2 |
-| `engine/streaming/stream-parser.ts` | 366 | 8 | 8 |
+| `engine/streaming/stream-parser.ts` | 367 | 8 | 8 |
 | `engine/style-fingerprint-library.ts` | 2733 | 7 | 7 |
 | `engine/style-learner.ts` | 346 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 193 | 2 | 2 |
@@ -417,7 +417,7 @@
 | `services/id-migration-service.ts` | 123 | 2 | 1 |
 | `services/id-registry-service.ts` | 138 | 1 | 1 |
 | `services/job-service.ts` | 364 | 9 | 1 |
-| `services/knowledge-base-manager.ts` | 1725 | 6 | 4 |
+| `services/knowledge-base-manager.ts` | 1721 | 6 | 4 |
 | `services/knowledge-migration-service.ts` | 222 | 4 | 1 |
 | `services/knowledge-original-chunker.ts` | 119 | 3 | 3 |
 | `services/ledger-migration-service.ts` | 248 | 4 | 1 |
@@ -575,7 +575,7 @@
 | `shared/manuscript-precheck.ts` | 430 | 12 | 9 |
 | `shared/mcp-config.ts` | 125 | 9 | 5 |
 | `shared/mcp-example-server.ts` | 123 | 2 | 1 |
-| `shared/mcp-file-browse.ts` | 183 | 7 | 5 |
+| `shared/mcp-file-browse.ts` | 184 | 7 | 5 |
 | `shared/mcp-launch.ts` | 173 | 8 | 5 |
 | `shared/memory-rank.ts` | 104 | 4 | 4 |
 | `shared/mode-content.ts` | 496 | 23 | 23 |
@@ -654,7 +654,7 @@
 | `shared/secret-redaction.ts` | 156 | 6 | 5 |
 | `shared/secret-value.ts` | 31 | 2 | 2 |
 | `shared/semantic-keywords.ts` | 124 | 11 | 3 |
-| `shared/serialized-writer.ts` | 199 | 3 | 3 |
+| `shared/serialized-writer.ts` | 195 | 3 | 3 |
 | `shared/session-preset-model.ts` | 144 | 9 | 6 |
 | `shared/session-retention.ts` | 186 | 6 | 6 |
 | `shared/settings-migrator.ts` | 303 | 7 | 7 |
@@ -743,7 +743,7 @@
 | `ui/chapter-version-modal.ts` | 653 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |
-| `ui/co-writing-view.ts` | 3987 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3991 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 167 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 248 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
@@ -927,7 +927,7 @@
 | `ui/project-utils.ts` | 366 | 11 | 10 |
 | `ui/prompt-import-preview-modal.ts` | 135 | 2 | 1 |
 | `ui/prompt-manager-logic.ts` | 76 | 4 | 3 |
-| `ui/prompt-manager-settings.ts` | 1363 | 1 | 1 |
+| `ui/prompt-manager-settings.ts` | 1361 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 88 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 506 | 2 | 2 |
 | `ui/quality-loop-modal.ts` | 294 | 1 | 1 |
@@ -982,7 +982,7 @@
 | `ui/tomato-rank-modal.ts` | 132 | 1 | 1 |
 | `ui/tts/tts-player.ts` | 428 | 4 | 2 |
 | `ui/tts/tts-speech.ts` | 164 | 5 | 1 |
-| `ui/unified-entity-generate-modal.ts` | 865 | 1 | 1 |
+| `ui/unified-entity-generate-modal.ts` | 866 | 1 | 1 |
 | `ui/unified-entity-manager-modal.ts` | 755 | 1 | 1 |
 | `ui/usage-ledger-modal.ts` | 205 | 1 | 1 |
 | `ui/utils/worldview-utils.ts` | 103 | 1 | 1 |

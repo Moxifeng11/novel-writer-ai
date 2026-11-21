@@ -789,18 +789,14 @@ export class KnowledgeBaseManager {
         const fs = this.getFS();
         // 目标已存在时不能走 rename：Obsidian 的 adapter.rename 在目标存在时抛
         // `Destination file already exists!`（本仓已在断言库/字数台账各踩一次）。
-        try {
-            const exists = await fs.exists(path);
-            if (exists) {
-                await fs.write(path, JSON.stringify(data, null, 2));
-                return;
-            }
-            const tmpPath = `${path}.tmp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-            await fs.write(tmpPath, JSON.stringify(data, null, 2));
-            await fs.rename(tmpPath, path);
-        } catch (e) {
-            throw e;
+        const exists = await fs.exists(path);
+        if (exists) {
+            await fs.write(path, JSON.stringify(data, null, 2));
+            return;
         }
+        const tmpPath = `${path}.tmp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        await fs.write(tmpPath, JSON.stringify(data, null, 2));
+        await fs.rename(tmpPath, path);
     }
 
     /**

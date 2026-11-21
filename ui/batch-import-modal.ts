@@ -203,7 +203,7 @@ export class BatchImportModal extends Modal {
         };
         if (!this.options.onComplete) return;
         try {
-            await this.options.onComplete(result);
+            this.options.onComplete(result);
         } catch (error) {
             log.error('[BatchImportModal] onComplete callback failed:', error);
         }

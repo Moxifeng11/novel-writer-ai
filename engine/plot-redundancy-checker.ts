@@ -35,7 +35,7 @@ const SCENE_WORDS = ['破庙', '山洞', '街道', '院子', '客栈', '密室',
 const CONFLICT_WORDS = ['争吵', '追杀', '背叛', '误会', '试探', '威胁', '逃亡', '对峙', '审问', '突袭'];
 
 function normalize(text: string): string {
-    return (text || '').replace(/[\s　，。、！？；“”‘’（）—…]/g, '').trim();
+    return (text || '').replace(/[\s\u3000，。、！？；“”‘’（）—…]/g, '').trim();
 }
 
 function topRepeatedPhrases(current: string, previous: string): PlotRedundancyIssue[] {

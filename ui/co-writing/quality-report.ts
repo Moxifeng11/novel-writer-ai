@@ -110,7 +110,7 @@ export function parseQualityReport(content: string): QualityIssue[] {
                 const hasPriority = trimmed.includes('🔴') || trimmed.includes('🟡') || trimmed.includes('🟢');
                 if (!hasPriority) continue;
                 const priority: 'high' | 'medium' | 'low' = trimmed.includes('🔴') ? 'high' : trimmed.includes('🟡') ? 'medium' : 'low';
-                const text = trimmed.replace(/^-\s*/, '').replace(/[🔴🟡🟢]/g, '').trim();
+                const text = trimmed.replace(/^-\s*/, '').replace(/[🔴🟡🟢]/gu, '').trim();
                 if (text.length < 5) continue;
                 issues.push({
                     id: `qc_sum_${issues.length + 1}`,

@@ -516,7 +516,7 @@ export class UnifiedEntityGenerateModal extends Modal {
             const description = mergeFanficRequirement(fanficBlock, this._description);
 
             switch (this._selectedCategory) {
-                case 'character':
+                case 'character': {
                     const charRes = await this.aiEngine.generateCharacters(
                         worldview,
                         this._count,
@@ -531,6 +531,7 @@ export class UnifiedEntityGenerateModal extends Modal {
                         results = this._parseCharacterResults(charRes.content);
                     }
                     break;
+                }
 
                 case 'faction':
                     results = await this.aiEngine.generateFactionsBatch(

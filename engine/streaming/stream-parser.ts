@@ -79,12 +79,13 @@ export function parseSSERaw(buffer: string): { events: SSEEvent[]; remaining: st
             case 'id':
                 currentEvent.id = value;
                 break;
-            case 'retry':
+            case 'retry': {
                 const retryNum = parseInt(value, 10);
                 if (!isNaN(retryNum)) {
                     currentEvent.retry = retryNum;
                 }
                 break;
+            }
         }
     }
 

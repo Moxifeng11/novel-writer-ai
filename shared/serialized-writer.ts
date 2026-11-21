@@ -165,14 +165,10 @@ export class SerializedWriter {
      */
     enqueueAutoClean<T>(operation: () => Promise<T>): Promise<T> {
         return this.enqueue(async () => {
-            try {
-                const result = await operation();
-                this._isDirty = false;
-                return result;
-            } catch (error) {
-                // 错误时不清除脏标记，保留重试机会
-                throw error;
-            }
+            // 失败时不清除脏标记，保留重试机会
+            const result = await operation();
+            this._isDirty = false;
+            return result;
         });
     }
 }

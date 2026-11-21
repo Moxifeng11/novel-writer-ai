@@ -68,7 +68,7 @@ export class ContextInjectorModal extends Modal {
         new Notice(`🔍 在 ${projectRoot} 下检索关联...`);
 
         const { chars: charLinks, locs: locLinks, factions: factionLinks, items: itemLinks } =
-            await getInvolvedEntities(this.app, bodyFile);
+            getInvolvedEntities(this.app, bodyFile);
 
         if (charLinks.length === 0 && locLinks.length === 0 && factionLinks.length === 0 && itemLinks.length === 0) {
             new Notice('⚠️ frontmatter 中未声明涉及人物、地点、势力或物品功法');

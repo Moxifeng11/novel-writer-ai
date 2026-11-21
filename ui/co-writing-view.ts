@@ -1797,6 +1797,7 @@ export class CoWritingView extends ItemView {
 
   /** 建议流程宿主：状态通过 getter/setter 与视图字段同步。 */
   private suggestionFlowHost(): SuggestionFlowHost {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- 宿主对象用 getter 实时读视图字段，必须闭包捕获视图实例，不能改成箭头函数
     const view = this;
     return {
       get project() { return view.project; },
@@ -2604,6 +2605,7 @@ ${text}`;
   }
   /** 指标刷新宿主：状态读写经 getter/setter 转发，编排逻辑在 metrics-refresh。 */
   private metricsRefreshHost(): MetricsRefreshHost {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- 宿主对象用 getter 实时读视图字段，必须闭包捕获视图实例，不能改成箭头函数
     const view = this;
     return {
       getProject: () => view.project,
@@ -2626,6 +2628,7 @@ ${text}`;
   }
   /** 指标渲染宿主：字段通过 getter 实时读取。 */
   private metricsHost(): MetricsRenderHost {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- 宿主对象用 getter 实时读视图字段，必须闭包捕获视图实例，不能改成箭头函数
     const view = this;
     return {
       get metricsContainer() { return view.metricsContainer; },
@@ -3538,6 +3541,7 @@ ${text}`;
 
   /** 结算动作宿主：文件/弹窗/指标通过 getter 实时读取。 */
   private settlementHost(): SettlementActionsHost {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- 宿主对象用 getter 实时读视图字段，必须闭包捕获视图实例，不能改成箭头函数
     const view = this;
     return {
       get app() { return view.app; },

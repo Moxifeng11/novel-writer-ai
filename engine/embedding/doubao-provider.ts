@@ -4,8 +4,7 @@ import type { EmbeddingAvailability, ProviderInfo } from './embedding-provider';
 /**
  * 豆包向量提供方选项。
  */
-export interface DoubaoProviderOptions extends OpenAIProviderOptions {
-}
+export type DoubaoProviderOptions = OpenAIProviderOptions;
 
 const DOUBAO_DEFAULT_BASE_URL = 'https://ark.cn-beijing.volces.com/api/v3';
 const DOUBAO_DEFAULT_MODEL = 'doubao-embedding-text-240915';

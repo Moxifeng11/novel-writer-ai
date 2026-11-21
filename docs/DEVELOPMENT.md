@@ -1269,7 +1269,7 @@ npm run check:release  # 发布前资产与版本一致性校验
 
 单测环境是 node（`vitest.config.ts` 的 `environment: 'node'`），而代码改用了 Obsidian 注入的全局 `createEl/createDiv/createSpan` 与 `window.setTimeout`。`tests/setup.ts` 负责垫片：`window` 缺省指向 `globalThis`；`createEl/createDiv/createSpan/createFragment` 缺省用 `tests/unit/ui/support/fake-dom.ts` 的 `FakeEl`，若测试已用 `stubDocument()` 注入 `document.createElement` 则优先用该工厂（保证断言拿到的元素类型一致）。新增垫片时不要覆盖测试已有的定义。
 
-当前存量（2026-11-21，`eslint.obsidian-review.mjs` 口径）：warn 2,732 → **859**，error 0。`npm run check:review-warn` 用 `.review-warn-baseline.json` 按规则设预算，任何一类上涨即失败（已在 preflight 里）。`no-explicit-any` 已清零；剩余大头 `no-unnecessary-type-assertion` 346（规则不可靠，不追）、`no-deprecated` 232（StyleFingerprint V1 类型 193 + 旧提示词/模板路径 31 + `setWarning` 7 等兼容保留）、`no-restricted-globals` 19（全是 `localStorage`，迁移 `App#saveLocalStorage` 属行为变更，单列第 8b 批）、`no-unused-vars` 148（全部是 assigned-but-never-used 的 DOM 创建，有副作用，暂不动）、`ui/sentence-case` 51；`no-misused-promises` 与 `no-floating-promises` 已全部清零（第七批）；`no-tfile-tfolder-cast` 已从 38 降到 4（只剩 `shared/file-system-port.ts` 适配层的假对象，故意保留）。
+当前存量（2026-11-21，`eslint.obsidian-review.mjs` 口径）：warn 2,732 → **834**，error 0。`npm run check:review-warn` 用 `.review-warn-baseline.json` 按规则设预算，任何一类上涨即失败（已在 preflight 里）。`no-explicit-any` 已清零；剩余大头 `no-unnecessary-type-assertion` 346（规则不可靠，不追）、`no-deprecated` 232（StyleFingerprint V1 类型 193 + 旧提示词/模板路径 31 + `setWarning` 7 等兼容保留）、`no-restricted-globals` 19（全是 `localStorage`，迁移 `App#saveLocalStorage` 属行为变更，单列第 8b 批）、`no-unused-vars` 148（全部是 assigned-but-never-used 的 DOM 创建，有副作用，暂不动）、`ui/sentence-case` 51（产品决策项，第 10 批）；`no-misused-promises` 与 `no-floating-promises` 已全部清零（第七批）；`no-tfile-tfolder-cast` 已从 38 降到 4（只剩 `shared/file-system-port.ts` 适配层的假对象，故意保留）。
 
 批次排期、风险分级与验收口径见 `docs/planning/2026-11-21-quality-optimization-roadmap.md`；新增批次先在那里登记，再按本节的约束执行。
 
@@ -1324,6 +1324,17 @@ npm run check:release  # 发布前资产与版本一致性校验
 - `no-control-regex`：正则里**字面控制字符**（`[<TAB>]`）直接改写成 `\t` 消除；确实要匹配控制字符区间做清洗/校验的地方，加 `// eslint-disable-next-line no-control-regex -- 必须显式匹配控制字符，才能…`（该规则允许带说明的禁用）。
 - `obsidianmd/no-global-this` 禁用是**被禁止**的（`obsidianmd/*` 整体在 `no-restricted-disable` 里），只能改代码：真·全局引用用 `window` / 全局 `crypto` 替换 `globalThis`；接口属性名 `global`（如 `StatsReport.global`、`IntensityPreview.global`）属规则误判（它只跳过对象字面量键，不跳过 `PropertySignature`），写成带引号的 `'global': ...` 即可，键名与访问方式都不变。
 - `localStorage` 直用不要顺手改：`ui/full-writer/wizard-results-store.ts`、`ui/ideation-modal.ts` 等存的是用户草稿，迁 `App#saveLocalStorage` 必须带旧键读取迁移，单独立批。
+
+第九批（2026-11-21）落地手法：
+
+- **闭包需要视图实例**（`no-this-alias`，`const view = this;`）：这类代码多在宿主对象 getter 里用箭头函数实时读字段，改成箭头函数会丢 `this`；加 `// eslint-disable-next-line @typescript-eslint/no-this-alias -- 宿主对象用 getter 实时读视图字段，必须闭包捕获视图实例`（该规则允许带说明的禁用）。能提取局部字段/传参时优先重构。
+- **`await` 一个同步值**（`await-thenable`）：先看被调方签名；同步返回值直接去掉 `await`（`Promise.all([syncA(), syncB()])` 改数组字面量），`void` 回调也不要 await。改动只删 `await` 关键字，保留 try/catch。
+- **`interface X extends Y {}` 空接口**（`no-empty-object-type`）：改 `export type X = Y;`，调用方不变。
+- **`case` 里声明块级常量**（`no-case-declarations`）：给该 case 加花括号 `case 'x': { ... break; }`，只包需要声明的那一个分支，其余 case 不动。
+- **只有 `throw` 的 catch**（`no-useless-catch`）：删掉 try/catch，让异常直接冒泡；注释里说明的语义（如「失败不清脏标记」）移到第一行业务语句上方。
+- **字符类里的 emoji**（`no-misleading-character-class`）：emoji 含代理对 / 变体选择符，放进字符类会被拆开；改成非捕获分组 `(?:❌|⚠️)`，需要按码点遍历时加 `u` 标志。
+- **`require` 引入 Node 内置模块**（`no-require-imports`）：桌面端按需加载是刻意的，保留 `require` 并补 `// eslint-disable-next-line @typescript-eslint/no-require-imports -- 只在桌面端运行时按需加载 …`。
+- **全角空格等不可见字符**（`no-irregular-whitespace`）：正则字符类里改成 `\u3000` 转义，避免源码里出现不可见字符。
 
 ### 异步等待原语（2026-10-31 批次 14）
 
