@@ -11,7 +11,7 @@
 | `shared/` | 267 | 53176 | 2255 | 1763 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 308 | 114056 | 1183 | 946 | 80% |
+| `ui/` | 308 | 113945 | 1183 | 946 | 80% |
 
 ## 文件清单
 
@@ -742,7 +742,7 @@
 | `ui/changelog-modal.ts` | 207 | 1 | 1 |
 | `ui/chapter-outline-tree-modal.ts` | 1397 | 1 | 1 |
 | `ui/chapter-settlement-modal.ts` | 430 | 1 | 1 |
-| `ui/chapter-version-modal.ts` | 653 | 2 | 2 |
+| `ui/chapter-version-modal.ts` | 542 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |
 | `ui/co-writing-view.ts` | 3991 | 3 | 2 |

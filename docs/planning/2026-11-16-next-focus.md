@@ -4486,3 +4486,20 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 剩余 4 个判定不接并写进审计 §5.6：existing-entity-manager（自带确认）、manage-providers（即时保存）、novel-analysis（纯展示）、volume-intro（onClose 落草稿）。A-5 关闭确认收口。
 - 测试：wiring 断言 16 → 20 个文件（43 例通过）；定向 `tests/unit/cowrite` + `tests/unit/ui` 230 文件 / 2,087 例通过。
 - 门禁：tsc EXIT=0；main.js 6,250,968（基线已上调）；preflight 见下轮。
+
+## 第一百六十二轮：A-7 破坏性确认统一（回滚并入 OperationConfirmModal，2026-11-22）
+
+**背景**：审计 A-7 指出「同类删除操作按入口分裂确认强度」，其中最后剩下的不一致是章节版本「回滚」用自建 `RollbackConfirmModal`，而删除卷简介版本已走 `OperationConfirmModal`。
+
+**改动**
+- `ui/chapter-version-modal.ts`：`confirmRollback` 改走 `OperationConfirmModal.confirm`，确认内容拼装 repository 信息 —— 版本类型 / 创建时间 / 字数 / 备注（有值才出）/ 预计变化（+x 行 / -y 行 / ~z 行），warning 给出「回滚前会自动保存当前版本作为备份」；确认后调 `onRollback` 并 `new Notice(t('versionModal.rollback.done'))`。自建 `RollbackConfirmModal` 类（约 128 行）与 `withWarningStyle` 导入一并删除。
+- `styles-src/06-cowrite-missing-and-dark.css`：删除 `nw-rollback-*` 9 个样式类（-1,295 bytes），styles.css 805,893 → **804,584**、唯一类 4,340 → 4,331、rgb/hsl 223 → 221。
+- i18n：新增 `versionModal.rollback.{title,desc,note,stats,backup,confirm,done}` 7 键（原整段硬编码中文），资源 6,087 → **6,094**。
+- `ui/full-writer/project-selector-controller.ts`：A-16 的过时注释（叙述「旧实现要求输入项目名」）改为描述现状（不可恢复 → 两步确认 → 都走 `OperationConfirmModal`）。
+- 口径写进 `docs/design/2026-11-20-modal-close-and-esc-semantics.md` §六：三档（不可恢复两步确认 / 可恢复单次确认 / 画布两步点击），硬规则「只用一套确认组件、文案必须可翻译、不要求输入名称、回滚必须展示可恢复依据」。
+
+**验证**
+- 新增 `tests/unit/ui/chapter-version-rollback-confirm.test.ts` 5 例：源码无 `RollbackConfirmModal`/`nw-rollback-`、确认框内容与 warning、备注条件出现、取消不触发回滚/确认回滚一次并关闭、7 键中英可解析且英文零 CJK。
+- tsc EXIT=0；`check:css` / `check:i18n`（棘轮收紧到 205 文件 / 5,338 条）/ `check:review-warn`（120 条不变）通过；三份基线已 --update-baseline（css 804,584 / 4,331、bundle main.js 6,250,282、i18n 5,338）。
+
+**结论**：A-7 与 A-16 均标 ✅；全仓 `window.confirm` 保持 0，破坏性操作确认收敛到三档。

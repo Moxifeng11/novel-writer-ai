@@ -5422,68 +5422,6 @@ select.nw-select {
     text-align: center;
 }
 
-/* 回滚确认对话框 */
-.nw-rollback-warning {
-    padding: 16px;
-    background: rgba(255, 152, 0, 0.1);
-    border: 1px solid rgba(255, 152, 0, 0.3);
-    border-radius: 8px;
-    margin-bottom: 16px;
-}
-
-.nw-rollback-warning-title {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--nw-text-primary, var(--text-normal));
-    margin-bottom: 6px;
-}
-
-.nw-rollback-warning-desc {
-    font-size: 13px;
-    color: var(--nw-text-secondary, var(--text-muted));
-    line-height: 1.5;
-}
-
-.nw-rollback-info {
-    margin-bottom: 16px;
-}
-
-.nw-rollback-info-row {
-    font-size: 13px;
-    padding: 6px 0;
-    border-bottom: 1px solid var(--nw-divider, var(--background-modifier-border));
-    color: var(--nw-text-secondary, var(--text-muted));
-}
-
-.nw-rollback-info-row:last-child {
-    border-bottom: none;
-}
-
-.nw-rollback-info-value {
-    color: var(--nw-text-primary, var(--text-normal));
-    font-weight: 500;
-}
-
-.nw-rollback-stats {
-    padding: 12px;
-    background: var(--nw-bg-muted, var(--background-secondary));
-    border-radius: 6px;
-    margin-bottom: 16px;
-}
-
-.nw-rollback-stats-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--nw-text-secondary, var(--text-muted));
-    margin-bottom: 8px;
-}
-
-.nw-rollback-stats-row {
-    display: flex;
-    gap: 16px;
-    font-size: 13px;
-}
-
 /* ==========================================================================
    暗色适配 (Dark Theme Adaptation)
    确保各面板在深色背景下有足够的对比度与舒适观感

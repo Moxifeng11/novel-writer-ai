@@ -1099,8 +1099,8 @@ export class ProjectSelectorController {
     /**
      * 显示删除项目确认弹窗。
      *
-     * 旧实现要求用户手动输入项目名；改为两步确认（继续删除 → 最终确认），
-     * 降低误触成本，同时不再让用户复制/输入项目名。
+     * 删除项目不可恢复，采用两步确认：先确认影响范围，再最终确认；
+     * 两步都走通用 OperationConfirmModal，不要求用户输入项目名。
      *
      * @param projectName - 项目名
      */

@@ -13,7 +13,8 @@ import { Modal, Setting, Notice } from 'obsidian';
 import type { App } from 'obsidian';
 import { ChapterVersionService } from '@/services/chapter-version-service';
 import { ENGINE_NAMES } from '@/shared/engine-names';
-import { withWarningStyle } from '@/ui/components/button-compat';
+import { OperationConfirmModal } from './components/progress/operation-confirm-modal';
+import { t } from '@/i18n';
 import type { EngineRegistry } from '@/engine/engine-registry';
 import type { VersionMeta, ContentType, DiffStats, LineDiff } from '@/shared/version-types';
 import { formatVersionTime, VERSION_TYPE_LABELS, lineDiff, computeDiffStats, charDiff } from '@/shared/diff-utils';
@@ -473,16 +474,34 @@ export class ChapterVersionModal extends Modal {
     // ============================================================
 
     private async confirmRollback(version: VersionMeta): Promise<void> {
-        const confirmModal = new RollbackConfirmModal(this.app, version, this.diffStats, (confirmed) => { void (async () => {
-            if (confirmed) {
-                if (this.options.onRollback) {
-                    await this.options.onRollback(version);
-                    new Notice(`✅ 已回滚到 v${version.version}`);
-                    this.close();
-                }
-            }
-        })(); });
-        confirmModal.open();
+        const parts = [
+            t('versionModal.rollback.desc', {
+                type: VERSION_TYPE_LABELS[version.type] || version.type,
+                time: formatVersionTime(version.createdAt),
+                words: String(version.wordCount),
+            }),
+        ];
+        if (version.note) {
+            parts.push(t('versionModal.rollback.note', { note: version.note }));
+        }
+        if (this.diffStats) {
+            parts.push(t('versionModal.rollback.stats', {
+                added: String(this.diffStats.addedLines),
+                deleted: String(this.diffStats.deletedLines),
+                modified: String(this.diffStats.modifiedLines),
+            }));
+        }
+        const confirmed = await OperationConfirmModal.confirm(this.app, {
+            title: t('versionModal.rollback.title', { version: String(version.version) }),
+            description: parts.join('；'),
+            warning: t('versionModal.rollback.backup'),
+            confirmText: t('versionModal.rollback.confirm'),
+            cancelText: t('common.cancel'),
+        });
+        if (!confirmed || !this.options.onRollback) return;
+        await this.options.onRollback(version);
+        new Notice(t('versionModal.rollback.done', { version: String(version.version) }));
+        this.close();
     }
 
     // ============================================================
@@ -511,136 +530,6 @@ export class ChapterVersionModal extends Modal {
                 }
                 : undefined,
         }));
-    }
-
-    /**
-     * onClose 方法。
-     */
-    onClose(): void {
-        this.contentEl.empty();
-    }
-}
-
-/**
- * 回滚确认对话框
- */
-class RollbackConfirmModal extends Modal {
-    private version: VersionMeta;
-    private stats: DiffStats | null;
-    private onConfirm: (confirmed: boolean) => void;
-
-    constructor(
-        app: App,
-        version: VersionMeta,
-        stats: DiffStats | null,
-        onConfirm: (confirmed: boolean) => void,
-    ) {
-        super(app);
-        this.version = version;
-        this.stats = stats;
-        this.onConfirm = onConfirm;
-    }
-
-    /**
-     * onOpen 方法。
-     */
-    onOpen(): void {
-        this.modalEl.addClass('nw-scope');
-        this.titleEl.setText('⚠️ 确认回滚');
-
-        const { contentEl } = this;
-        contentEl.empty();
-
-        const warningBox = contentEl.createDiv({ cls: 'nw-rollback-warning' });
-        warningBox.createDiv({
-            cls: 'nw-rollback-warning-title',
-            text: `确定要回滚到 v${this.version.version} 吗？`,
-        });
-        warningBox.createDiv({
-            cls: 'nw-rollback-warning-desc',
-            text: '回滚前会自动保存当前版本作为备份，您可以随时从版本历史中恢复。',
-        });
-
-        const infoBox = contentEl.createDiv({ cls: 'nw-rollback-info' });
-        infoBox.createDiv({ cls: 'nw-rollback-info-row' })
-            .createSpan({ text: `版本类型: ` })
-            .appendChild(
-                (() => {
-                    const s = createSpan();
-                    s.className = 'nw-rollback-info-value';
-                    s.textContent = VERSION_TYPE_LABELS[this.version.type] || this.version.type;
-                    return s;
-                })()
-            );
-        infoBox.createDiv({ cls: 'nw-rollback-info-row' })
-            .createSpan({ text: `创建时间: ` })
-            .appendChild(
-                (() => {
-                    const s = createSpan();
-                    s.className = 'nw-rollback-info-value';
-                    s.textContent = formatVersionTime(this.version.createdAt);
-                    return s;
-                })()
-            );
-        infoBox.createDiv({ cls: 'nw-rollback-info-row' })
-            .createSpan({ text: `字数: ` })
-            .appendChild(
-                (() => {
-                    const s = createSpan();
-                    s.className = 'nw-rollback-info-value';
-                    s.textContent = `${this.version.wordCount} 字`;
-                    return s;
-                })()
-            );
-
-        if (this.version.note) {
-            infoBox.createDiv({ cls: 'nw-rollback-info-row' })
-                .createSpan({ text: `备注: ` })
-                .appendChild(
-                    (() => {
-                        const s = createSpan();
-                        s.className = 'nw-rollback-info-value';
-                        s.textContent = this.version.note;
-                        return s;
-                    })()
-                );
-        }
-
-        if (this.stats) {
-            const statsBox = contentEl.createDiv({ cls: 'nw-rollback-stats' });
-            statsBox.createDiv({ cls: 'nw-rollback-stats-title', text: '预计变化：' });
-            const statsRow = statsBox.createDiv({ cls: 'nw-rollback-stats-row' });
-            statsRow.createSpan({
-                cls: 'nw-stat-item stat-add',
-                text: `+${this.stats.addedLines} 行`,
-            });
-            statsRow.createSpan({
-                cls: 'nw-stat-item stat-del',
-                text: `-${this.stats.deletedLines} 行`,
-            });
-            statsRow.createSpan({
-                cls: 'nw-stat-item stat-mod',
-                text: `~${this.stats.modifiedLines} 行`,
-            });
-        }
-
-        new Setting(contentEl)
-            .addButton(btn => {
-                btn
-                    .setButtonText('取消')
-                    .onClick(() => {
-                        this.close();
-                        this.onConfirm(false);
-                    });
-            })
-            .addButton(btn => {
-                withWarningStyle(btn
-                    .setButtonText('✅ 确认回滚'))
-                    .onClick(() => {
-                        this.close();
-                        this.onConfirm(true);
-                    });
-            });
     }
 
     /**

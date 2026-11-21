@@ -1713,6 +1713,17 @@ export const zhCN: MessageTree = {
         generateFailedTitle: 'AI 生成失败',
         saveFailedTitle: '保存失败',
     },
+    versionModal: {
+        rollback: {
+            title: '确认回滚到 v{version}？',
+            desc: '版本类型：{type} · 创建时间：{time} · 字数：{words} 字',
+            note: '备注：{note}',
+            stats: '预计变化：+{added} 行 / -{deleted} 行 / ~{modified} 行',
+            backup: '回滚前会自动保存当前版本作为备份，您可以随时从版本历史中恢复。',
+            confirm: '确认回滚',
+            done: '✅ 已回滚到 v{version}',
+        },
+    },
     common: {
         cancel: '取消',
         confirm: '确定',

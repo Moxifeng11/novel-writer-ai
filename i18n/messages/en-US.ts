@@ -1710,6 +1710,17 @@ export const enUS: MessageTree = {
         generateFailedTitle: "AI generation failed",
         saveFailedTitle: "Save failed",
     },
+    versionModal: {
+        rollback: {
+            title: 'Roll back to v{version}?',
+            desc: 'Type: {type} · Created: {time} · Words: {words}',
+            note: 'Note: {note}',
+            stats: 'Expected change: +{added} lines / -{deleted} lines / ~{modified} lines',
+            backup: 'The current version is saved automatically as a backup before rolling back, so you can restore it from the version history at any time.',
+            confirm: 'Roll back',
+            done: '✅ Rolled back to v{version}',
+        },
+    },
     common: {
         cancel: 'Cancel',
         confirm: 'OK',

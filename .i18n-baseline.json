@@ -13,7 +13,7 @@
     "ui/changelog-modal.ts": 8,
     "ui/chapter-outline-tree-modal.ts": 36,
     "ui/chapter-settlement-modal.ts": 81,
-    "ui/chapter-version-modal.ts": 41,
+    "ui/chapter-version-modal.ts": 25,
     "ui/character-recognition-modal.ts": 14,
     "ui/co-write/logic-check-format.ts": 8,
     "ui/co-writing-view.ts": 76,
@@ -206,7 +206,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 5354,
+  "total": 5338,
   "updatedAt": "2026-11-21",
   "note": ""
 }

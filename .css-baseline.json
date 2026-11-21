@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-20T01:28:47.417Z",
-  "note": "第一百三十轮：供应商侧栏两行布局（F-10）",
-  "bytes": 805893,
+  "generatedAt": "2026-11-21T20:28:47.373Z",
+  "note": "A-7：回滚确认并入 OperationConfirmModal，删除 nw-rollback-* 9 个类（-1309 bytes）",
+  "bytes": 804584,
   "important": 24,
   "hardcodedHex": 192,
-  "rgbHsl": 223,
-  "uniqueClasses": 4340,
+  "rgbHsl": 221,
+  "uniqueClasses": 4331,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

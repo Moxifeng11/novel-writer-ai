@@ -45,8 +45,28 @@ Esc / 点遮罩按**上下文**分四层，越靠上越「轻」：
 - `tests/unit/ui/modal-running-guard-wiring.test.ts`：四个弹窗的挂载 / 置位 / 复位 / onClose 兜底。
 - `tests/unit/ui/modal-dirty-guard.test.ts`、`tests/unit/ui/modal-guard-wiring.test.ts`：脏态一侧。
 
-## 六、backlog
+## 六、破坏性操作确认分级（A-7，2026-11-22）
+
+与 Esc 分层正交的一条规则：**同一类破坏性操作，不论从哪个入口触发，确认强度只由「能否恢复」决定**。
+
+| 档位 | 判定 | 形态 | 现有入口 |
+| --- | --- | --- | --- |
+| 不可恢复 | 删除后无法从界面找回（项目、整书） | **两步确认**（先讲影响面，再最终确认），两步都走 `OperationConfirmModal` | 删除项目（`ui/full-writer/project-selector-controller.ts` 的 `confirmDeleteProject`） |
+| 可恢复 | 有备份 / 有版本历史 / 可重建 | 单次 `OperationConfirmModal` | 章节版本回滚、删除卷简介版本、删渠道 / 预设 / 提示词等 |
+| 画布内轻删 | 单节点、可撤销或二次点击即恢复 | 按钮文案变「再点一次确认删除」，3 秒复位 | 规划画布节点删除 |
+
+硬规则：
+
+1. **只用一套确认组件**。不再新增专用确认 Modal，也不用 `window.confirm`（全仓 0，由 `tests/unit/ui/no-window-confirm.test.ts` 锁定）。
+2. **确认文案必须能翻译**（`t()` + 双语资源），原生 confirm 之所以被下线就是因为它不可翻译。
+3. **「不要求输入名称」**：两步确认已经足够防误触，输入项目名对中文用户反而是负担；这条在 A-7 里推翻审计原建议。
+4. 回滚类确认必须展示**可恢复依据**（如「回滚前会自动保存当前版本作为备份」），否则用户无法判断风险。
+
+落地：`ui/chapter-version-modal.ts` 的 `confirmRollback` 改走 `OperationConfirmModal`，自建 `RollbackConfirmModal` 与 `nw-rollback-*` 9 个样式类删除；文案键 `versionModal.rollback.{title,desc,note,stats,backup,confirm,done}`。回归：`tests/unit/ui/chapter-version-rollback-confirm.test.ts`。
+
+## 七、backlog
 
 - L4 真取消：四个任务接入 AbortSignal，确认框增加第三选项「停止任务」。
 - ~~L1 撤销栈~~：已做（2026-11-20，A-17）—— 撤销栈移到 `shared/edit-history.ts`，协同视图与单元写作台共用同一套栈，见 `docs/audits/2026-11-20-interaction-and-module-flow.md` A-17 状态。
 - 其余高危表单弹窗按 DirtyGuard 同模式接入（审计 C#3 剩余 7 个）。
+
