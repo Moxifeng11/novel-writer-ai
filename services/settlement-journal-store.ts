@@ -12,6 +12,7 @@
 
 import { App, TFile } from 'obsidian';
 import type { JournalEntry } from '@/engine/settlement/settlement-journal';
+import { hardDeleteVaultPath } from '@/shared/file-removal';
 
 /** 落盘载荷 */
 export interface SettlementJournalPayload {
@@ -63,7 +64,7 @@ export class SettlementJournalStore {
     async clear(chapterName: string): Promise<void> {
         const path = this.pathOf(chapterName);
         const file = this.app.vault.getAbstractFileByPath(path);
-        if (file instanceof TFile) await this.app.vault.delete(file).catch(() => undefined); // silent-ok: 删除失败不影响结算结果
+        if (file instanceof TFile) await hardDeleteVaultPath(this.app, file.path).catch(() => undefined); // silent-ok: 删除失败不影响结算结果
     }
 
     /**

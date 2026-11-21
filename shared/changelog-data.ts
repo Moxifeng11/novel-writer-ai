@@ -23,10 +23,11 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
         version: '4.97.4',
         date: '2026-11-21',
-        title: '按 vault 隔离存储',
+        title: '按 vault 隔离存储与回收站删除',
         sections: [
             { type: 'breaking', label: '⚠ 兼容性', items: ['最低 Obsidian 版本从 1.4.4 提到 1.8.7（App 级存储 API 自 1.8.7 提供）', 'Obsidian 1.8.7 以下的客户端将无法启用本插件'] },
             { type: 'improved', label: '🔧 存储', items: ['向导结果、灵感收藏、侧栏折叠、时长估算历史、操作确认偏好改存 vault 命名空间，不再跨 vault 串数据', '首次读取会自动把旧全局键的值迁进新存储，旧草稿不丢，回滚旧版仍可读'] },
+            { type: 'improved', label: '🗑 删除', items: ['模板、封面、实体卡、版本快照等删除改走回收站，按你的删除偏好处理，误删可恢复', '事务日志等内部临时文件仍直接删除，不会把回收站刷满'] },
         ],
     },
     {

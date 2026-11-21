@@ -27,6 +27,7 @@
 
 import { TFile, TFolder } from 'obsidian';
 import { dedupeFrontmatterKeys } from './frontmatter';
+import { trashVaultEntry } from './file-removal';
 
 /**
  * 文件系统操作接口
@@ -418,9 +419,9 @@ export class ObsidianFileSystem implements FileSystemPort {
         const file = this.app.vault.getAbstractFileByPath(path);
         if (file) {
             if (file instanceof TFolder) {
-                await this.app.vault.delete(file, true);
+                await trashVaultEntry(this.app, file);
             } else {
-                await this.app.vault.delete(file);
+                await trashVaultEntry(this.app, file);
             }
             return;
         }

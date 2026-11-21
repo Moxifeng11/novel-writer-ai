@@ -16,7 +16,7 @@ const embeddingProvider = {
 };
 
 function makeStore(vault: Vault): LocalVectorStore {
-    return new LocalVectorStore({ vault } as any, 'project', embeddingProvider as any, PROJECT);
+    return new LocalVectorStore({ vault, fileManager: { trashFile: (f: any) => vault.delete(f) } } as any, 'project', embeddingProvider as any, PROJECT);
 }
 
 describe('LocalVectorStore 跨实例刷新', () => {

@@ -24,6 +24,7 @@ import { pjFanficApprovedFile, pjFanficAuditDir } from '@/shared/paths';
 import { createLogger } from '@/shared/logger';
 
 import { writeVaultText } from '@/shared/file-system-port';
+import { trashVaultEntry } from '@/shared/file-removal';
 const log = createLogger('FanficReviewModal');
 
 const REQUIRED_CHECKS = [
@@ -370,7 +371,7 @@ export class FanficReviewModal extends Modal {
 
             const pending = this.app.vault.getAbstractFileByPath(this.filePath);
             if (pending instanceof TFile && pending.path !== approvedPath) {
-                await this.app.vault.delete(pending);
+                await trashVaultEntry(this.app, pending);
             }
             showSuccessNotice(`已通过审核并绑定：${approvedPath}`, { timeout: 6000 });
             this.onApproved?.(approvedPath);

@@ -47,7 +47,8 @@
 | 8 | `no-redundant-type-constituents` 31 → 0 + `no-control-regex` 12 → 0 + `obsidianmd/no-global-this` 12 → 0（接口属性名 `global` 是规则误判，加引号规避；谨慎写法见 DEVELOPMENT） | ✅ 1f8f3d23 | 913 → 859 |
 | 8b | `no-restricted-globals` 19 → 1：16 处 vault 级 `localStorage` 迁 `App#loadLocalStorage` / `saveLocalStorage`（统一入口 `shared/local-storage.ts`，含旧键一次性迁移），2 处旧全局键清理改 `window.localStorage.removeItem`。**代价：`minAppVersion` 1.4.4 → 1.8.7**（App 存储 API 自 1.8.7 提供，`no-unsupported-api` 不允许特性检测绕过）。保留 1 处：`shared/http-transport.ts` 桌面端 `fetch`（有意例外） | ✅ 本批 | 834 → 816 |
 | 9 | 剩余机械项：`no-this-alias` 5、`await-thenable` 4、`no-empty-object-type` 2、`no-case-declarations` 2、`no-useless-catch` 2、`no-irregular-whitespace` 1、`no-misleading-character-class` 6、`no-require-imports` 2、`hardcoded-config-path` 1 | ✅ b7aeebe4 | 859 → 834 |
-| 10 | 产品决策项：`sentence-case` 51（i18n 文案）、`prefer-file-manager-trash-file` 25（删除改回收站语义） | 待用户确认 | — |
+| 10 | 删除语义统一：`prefer-file-manager-trash-file` 25 → 0。新增 `shared/file-removal.ts`（`trashVaultEntry` 走 `FileManager.trashFile` 尊重用户删除偏好；`hardDeleteVaultPath` 只给「显式永久删除」与内部临时文件）。**行为变化**：模板/封面/实体/版本快照/备份等删除改为进回收站（可恢复），事务日志与结算日志仍硬删不进回收站 | ✅ 本批 | 816 → 790 |
+| 10b | `sentence-case` 51：**判定为误报，不追**。规则把中文界面里的品牌名/缩写当英文句子大小写处理（`MCP`→`mcp`、`PNG`→`png`、`DeepSeek`→`deepseek`、`HTTP://`→`http://`、`SK-...` 占位符、`#4Caf50` 色值），照改会降低界面质量。已逐条核对，保留在基线里 | ⏸ 不追（文档化） | 51 保留 |
 | 11 | StyleFingerprint V1 → V2 迁移（≈230 条 + `ai-chapter-helpers.ts` 旧提示词） | 独立重构切片 | — |
 | 不追 | `no-unnecessary-type-assertion` 357 | 规则在本项目类型判定下不可靠，逐条人工成本高；保留为 review 信号 | — |
 
@@ -71,3 +72,4 @@
 | 2026-11-21 | 8 | 913 → 859（`no-redundant-type-constituents` / `no-control-regex` / `no-global-this` 清零） | 1f8f3d23 |
 | 2026-11-21 | 9 | 859 → 834（剩余机械项清零） | b7aeebe4 |
 | 2026-11-21 | 8b | 834 → 816（localStorage → App 存储，minAppVersion 提到 1.8.7） | 本批 |
+| 2026-11-21 | 10 | 816 → 790（删除统一走 FileManager.trashFile） | 本批 |

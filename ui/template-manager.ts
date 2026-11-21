@@ -20,6 +20,7 @@ const log = createLogger('TemplateManager');
 export type { TemplateCategory } from '@/shared/prompt-template-catalog';
 export { ALL_TEMPLATE_DEFS } from '@/shared/prompt-template-catalog';
 import { ALL_TEMPLATE_DEFS, type TemplateCategory, type TemplateCatalogEntry } from '@/shared/prompt-template-catalog';
+import { trashVaultEntry } from '@/shared/file-removal';
 
 /**
  * 获取模板分类的中文名（UI 筛选器复用）。
@@ -332,14 +333,14 @@ export class TemplateManager {
             if (template.hasSystem) {
                 const file = this.app.vault.getAbstractFileByPath(template.systemPath);
                 if (file instanceof TFile) {
-                    await this.app.vault.delete(file);
+                    await trashVaultEntry(this.app, file);
                     count++;
                 }
             }
             if (template.hasUser) {
                 const file = this.app.vault.getAbstractFileByPath(template.userPath);
                 if (file instanceof TFile) {
-                    await this.app.vault.delete(file);
+                    await trashVaultEntry(this.app, file);
                     count++;
                 }
             }
@@ -374,14 +375,14 @@ export class TemplateManager {
                 if (template.hasSystem) {
                     const file = this.app.vault.getAbstractFileByPath(template.systemPath);
                     if (file instanceof TFile) {
-                        await this.app.vault.delete(file);
+                        await trashVaultEntry(this.app, file);
                         count++;
                     }
                 }
                 if (template.hasUser) {
                     const file = this.app.vault.getAbstractFileByPath(template.userPath);
                     if (file instanceof TFile) {
-                        await this.app.vault.delete(file);
+                        await trashVaultEntry(this.app, file);
                         count++;
                     }
                 }
@@ -508,7 +509,7 @@ class TemplateEditModal extends Modal {
                     await this.app.vault.create(systemPath, systemContent);
                 }
             } else if (existingSystem instanceof TFile) {
-                await this.app.vault.delete(existingSystem, true);
+                await trashVaultEntry(this.app, existingSystem);
             }
 
             // 保存 User Prompt
@@ -521,7 +522,7 @@ class TemplateEditModal extends Modal {
                     await this.app.vault.create(userPath, userContent);
                 }
             } else if (existingUser instanceof TFile) {
-                await this.app.vault.delete(existingUser, true);
+                await trashVaultEntry(this.app, existingUser);
             }
 
             this.dirtyGuard.markClean();
@@ -550,14 +551,14 @@ class TemplateEditModal extends Modal {
             if (this.template.hasSystem) {
                 const file = this.app.vault.getAbstractFileByPath(this.template.systemPath);
                 if (file instanceof TFile) {
-                    await this.app.vault.delete(file);
+                    await trashVaultEntry(this.app, file);
                     count++;
                 }
             }
             if (this.template.hasUser) {
                 const file = this.app.vault.getAbstractFileByPath(this.template.userPath);
                 if (file instanceof TFile) {
-                    await this.app.vault.delete(file);
+                    await trashVaultEntry(this.app, file);
                     count++;
                 }
             }

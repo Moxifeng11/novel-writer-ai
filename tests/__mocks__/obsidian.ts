@@ -331,6 +331,8 @@ export class MetadataCache {
 
 export class FileManager {
     async processFrontMatter(_file: TFile, _fn: (fm: any) => void): Promise<void> {}
+    /** 删除偏好入口：单测按 no-op 处理；要断言删除行为请直接 spy 该方法 */
+    async trashFile(_file: TAbstractFile): Promise<void> {}
 }
 
 /** U11：step-result-viewer 等按平台分流 UI 的模块依赖 Platform 判定 */

@@ -13,6 +13,7 @@ import {
     StyleDistillInput,
     StyleSourceMode,
 } from '@/engine/style/style-distill-service';
+import { trashVaultEntry } from '@/shared/file-removal';
 
 const DISTILL_STEPS = [
     '读取样本与预处理',
@@ -432,7 +433,7 @@ ${analysis}
                 const dateStr = new Date().toISOString().slice(0, 10);
                 const backupPath = getWritingStyleBackupPath(projectName, dateStr);
                 const bakFile = this.app.vault.getAbstractFileByPath(backupPath);
-                if (bakFile) await this.app.vault.delete(bakFile);
+                if (bakFile) await trashVaultEntry(this.app, bakFile);
                 const oldContent = await this.app.vault.read(existingFile);
                 await this.app.vault.create(backupPath, oldContent);
                 if (existingFile.path === wsPath) {

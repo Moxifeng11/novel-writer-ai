@@ -42,6 +42,7 @@ import { applyTextPatch } from '@/shared/text-patch';
 import { MemoryGraphService } from '@/services/memory-graph-service';
 import { ProjectIndexService } from '@/services/project-index-service';
 import { FileTxService } from '@/services/file-tx';
+import { hardDeleteVaultPath, trashVaultEntry } from '@/shared/file-removal';
 const log = createLogger('AgentPort');
 
 /**
@@ -620,8 +621,8 @@ export function createAgentPort(app: App, plugin: NovelWriterPlugin, options?: A
             if (!guard.ok) throw new Error(guard.reason);
             const file = app.vault.getAbstractFileByPath(guard.path);
             if (file instanceof TFile) {
-                if (options?.permanent) await app.vault.delete(file, true);
-                else await app.vault.trash(file, true);
+                if (options?.permanent) await hardDeleteVaultPath(app, file.path);
+                else await trashVaultEntry(app, file);
                 return { path: guard.path, deleted: true, trashed: !options?.permanent };
             }
             if (await app.vault.adapter.exists(guard.path)) {

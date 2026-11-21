@@ -4,13 +4,14 @@
 
 ## 4.97.4（2026-11-21）
 
-破坏性变更：**最低 Obsidian 版本从 1.4.4 提到 1.8.7**。原因见下，功能与界面不变。
+破坏性变更：**最低 Obsidian 版本从 1.4.4 提到 1.8.7**；文件删除改走回收站（尊重用户的删除偏好）。
 
 - 存储迁移：16 处直接读写 `localStorage` 的代码改走 `App#loadLocalStorage` / `App#saveLocalStorage`（Obsidian 1.8.7 起提供），数据按 vault 隔离，不再让同一台机器上的多个 vault 共用一份草稿/偏好命名空间。涉及向导结果、创作流程导出标记、灵感激荡收藏、侧栏折叠状态、操作确认「不再提示」、时长估算历史。
 - 兼容迁移：首次读取某个键时，若 vault 存储为空而旧全局键有值，会自动把旧值写入 vault 存储并照常返回；旧键保留，回滚到旧版仍可读。统一入口 `shared/local-storage.ts`（`vaultLoad` / `vaultSave` / `vaultClear`）。
 - 旧版遗留键清理仍走 `window.localStorage.removeItem`（App 存储没有删除他人命名空间键的 API），社区审核规则不命中成员访问形态。
 - 门禁：`minAppVersion` 相关断言与 `check-obsidian-api` 文案同步到 1.8.7；新增 `tests/unit/shared/local-storage.test.ts`（6 例：App 读写、旧键迁移、无宿主回退、非字符串序列化、清理、写入抛错回退）。
-- 扫描器 warn：859 → 816（`no-restricted-globals` 19 → 1，仅剩 `shared/http-transport.ts` 桌面端 `fetch` 的有意例外）。
+- 删除语义：模板、封面、实体卡、章节版本快照、风格备份等用户可见文件的删除统一走 `FileManager.trashFile`（`shared/file-removal.ts` 的 `trashVaultEntry`），按用户在「文件与链接 → 删除文件」里的偏好处理，默认进回收站、可恢复；事务日志、结算日志、派生记忆历史等内部临时文件仍直接删除（`hardDeleteVaultPath`），不进回收站。
+- 扫描器 warn：859 → 790（`no-restricted-globals` 19 → 1，仅剩 `shared/http-transport.ts` 桌面端 `fetch` 的有意例外；`prefer-file-manager-trash-file` 25 → 0）。
 - 文档：`docs/releases/4.97.4.md`；`docs/handbook/11-dependency-and-platform-compatibility.md` 等兼容性口径同步。
 
 ## 4.97.3（2026-11-20）

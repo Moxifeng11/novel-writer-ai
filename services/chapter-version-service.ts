@@ -31,6 +31,7 @@ import {
 } from '@/shared/diff-utils';
 import { withWriteLock } from '@/shared/write-lock';
 import type { FileTxService } from './file-tx';
+import { trashVaultEntry } from '@/shared/file-removal';
 
 /**
  * 保存版本选项列表结构定义。
@@ -749,7 +750,7 @@ export class ChapterVersionService {
     private async deleteFile(path: string): Promise<void> {
         const file = this.app.vault.getAbstractFileByPath(path);
         if (file) {
-            await this.app.vault.delete(file);
+            await trashVaultEntry(this.app, file);
         }
     }
 }

@@ -13,6 +13,8 @@ const DATA_DIR = '.obsidian/plugins/novel-writer-ai/data/knowledge-vectors';
 
 interface Harness {
     fs: ObsidianFileSystem;
+    app: any;
+    fileManager: any;
     vault: any;
     adapter: any;
     disk: Map<string, string>;
@@ -86,8 +88,10 @@ function makeHarness(): Harness {
         }),
     };
 
-    const app = { vault } as any;
-    return { fs: new ObsidianFileSystem(app), vault, adapter, disk, dirs, indexed };
+    // 4.97.4 起删除走 FileManager.trashFile（尊重用户删除偏好）：假实现按「永久删除」偏好落回 vault.delete
+    const fileManager = { trashFile: vi.fn(async (target: any) => { await (vault as any).delete(target, true); }) };
+    const app = { vault, fileManager } as any;
+    return { fs: new ObsidianFileSystem(app), app, vault, fileManager, adapter, disk, dirs, indexed };
 }
 
 describe('ObsidianFileSystem · 插件数据目录（索引外路径）', () => {
@@ -192,7 +196,7 @@ describe('ObsidianFileSystem · 索引外/索引内分支加固', () => {
         h.indexed.set('正文', folder);
 
         await h.fs.delete('正文');
-        expect(h.vault.delete).toHaveBeenCalledWith(folder, true);
+        expect(h.fileManager.trashFile).toHaveBeenCalledWith(folder);
 
         h.dirs.add(`${DATA_DIR}/old`);
         await h.fs.delete(`${DATA_DIR}/old`);

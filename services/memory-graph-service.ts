@@ -30,6 +30,7 @@ import {
     type MemoryHistorySnapshot,
 } from '@/domains/memory/history';
 import { applyMemoryPatch, validateMemoryPatch } from '@/domains/memory/patch';
+import { hardDeleteVaultPath } from '@/shared/file-removal';
 
 const log = createLogger('MemoryGraph');
 
@@ -188,7 +189,7 @@ export class MemoryGraphService {
         const expired = expiredSnapshotIds(all);
         for (const id of expired) {
             const file = this.app.vault.getAbstractFileByPath(`${pjMemoryHistoryDir(project)}/${id}.json`);
-            if (file && 'stat' in file) await this.app.vault.delete(file as never);
+            if (file && 'stat' in file) await hardDeleteVaultPath(this.app, file.path);
         }
     }
 

@@ -37,6 +37,7 @@ import {
 } from './cross-volume-outline-validator';
 import { CrossVolumeIntegrator, type CrossVolumeSnapshot } from './cross-volume-integration';
 import { createLogger } from '@/shared/logger';
+import { trashVaultEntry } from '@/shared/file-removal';
 
 const log = createLogger('AiOutlineGenerator');
 
@@ -325,7 +326,7 @@ ${await this.plugin.app.vault.read(file)}`);
                         // 而备份只含大纲文件——非大纲文件会被永久删除且无备份。
                         for (const child of volumesDir.children) {
                             if (child instanceof TFile && isVolumeOutlineFileName(child.name)) {
-                                await this.plugin.app.vault.delete(child, true);
+                                await trashVaultEntry(this.plugin.app, child);
                             }
                         }
                     }

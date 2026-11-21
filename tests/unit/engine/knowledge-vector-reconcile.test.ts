@@ -99,7 +99,7 @@ describe('DSH-20261112-15：单锁化与磁盘孤儿', () => {
     beforeEach(async () => {
         vault = new Vault();
         await vault.createFolder('写作知识库');
-        const writer = new KnowledgeVectorStore({ vault } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
+        const writer = new KnowledgeVectorStore({ vault, fileManager: { trashFile: (f: any) => vault.delete(f) } } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
         await writer.init();
         await writer.replaceBookSamples('kb_live', '存活书', [
             { dimension: 'original', category: '原文片段', sample: '晨星在雾里升起来', position: 0 },
@@ -113,7 +113,7 @@ describe('DSH-20261112-15：单锁化与磁盘孤儿', () => {
     });
 
     function makeReader(): KnowledgeVectorStore {
-        return new KnowledgeVectorStore({ vault } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
+        return new KnowledgeVectorStore({ vault, fileManager: { trashFile: (f: any) => vault.delete(f) } } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
     }
 
     it('审计 #A4：两本书的清理只写一次索引（N 次 saveIndex 合并为 1 次）', async () => {
@@ -161,7 +161,7 @@ describe('DSH-20261112-15：单锁化与磁盘孤儿', () => {
         );
 
         // isBookAlive 对 kb_diskonly 返回 false → loadIndex 跳过该文件（不进 samples）
-        const reader = new KnowledgeVectorStore({ vault } as never, new MockEmbeddingProvider(), undefined, {
+        const reader = new KnowledgeVectorStore({ vault, fileManager: { trashFile: (f: any) => vault.delete(f) } } as never, new MockEmbeddingProvider(), undefined, {
             isBookAlive: id => id !== 'kb_diskonly',
         });
         await reader.init();
@@ -194,7 +194,7 @@ describe('DSH-20261112-15：单锁化与磁盘孤儿', () => {
         const diskJson = JSON.stringify({ bookId: 'kb_diskonly', bookName: '磁盘孤儿', samples: [] });
         const path = '.obsidian/plugins/novel-writer-ai/data/knowledge-vectors/kb_diskonly.json';
         (vault as unknown as { _seedFile: (p: string, c: string) => unknown })._seedFile(path, diskJson);
-        const store = new KnowledgeVectorStore({ vault } as never, new MockEmbeddingProvider(), undefined, {
+        const store = new KnowledgeVectorStore({ vault, fileManager: { trashFile: (f: any) => vault.delete(f) } } as never, new MockEmbeddingProvider(), undefined, {
             isBookAlive: id => id !== 'kb_diskonly',
         });
         await store.init();
@@ -211,7 +211,7 @@ describe('审计修复回归（对抗审计 #A2/#A5/#B9）', () => {
     beforeEach(async () => {
         vault = new Vault();
         await vault.createFolder('写作知识库');
-        const writer = new KnowledgeVectorStore({ vault } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
+        const writer = new KnowledgeVectorStore({ vault, fileManager: { trashFile: (f: any) => vault.delete(f) } } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
         await writer.init();
         await writer.replaceBookSamples('kb_live', '存活书', [
             { dimension: 'original', category: '原文片段', sample: '晨星在雾里升起来', position: 0 },
@@ -222,7 +222,7 @@ describe('审计修复回归（对抗审计 #A2/#A5/#B9）', () => {
     });
 
     it('审计 #A2：confirmed:true 但候选里混入已在索引的 id → store 拒绝删除（计入 skipped）', async () => {
-        const store = new KnowledgeVectorStore({ vault } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
+        const store = new KnowledgeVectorStore({ vault, fileManager: { trashFile: (f: any) => vault.delete(f) } } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
         await store.init();
         const result = await store.removeOrphanVectors(['kb_ghost', 'kb_live'], {
             confirmed: true,
@@ -234,7 +234,7 @@ describe('审计修复回归（对抗审计 #A2/#A5/#B9）', () => {
     });
 
     it('审计 #A2：不传 kbBookIds 保持旧行为（向后兼容），候选里的正常书也会被删', async () => {
-        const store = new KnowledgeVectorStore({ vault } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
+        const store = new KnowledgeVectorStore({ vault, fileManager: { trashFile: (f: any) => vault.delete(f) } } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
         await store.init();
         const result = await store.removeOrphanVectors(['kb_live'], { confirmed: true });
         expect(result.removed).toEqual(['kb_live']);
@@ -258,7 +258,7 @@ describe('KnowledgeVectorStore 对账与显式清理', () => {
         vault = new Vault();
         await vault.createFolder('写作知识库');
         // 书名目录未在 mock vault 里建：注入存活判定，避免 loadIndex 按 orphanByDir 跳过
-        const writer = new KnowledgeVectorStore({ vault } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
+        const writer = new KnowledgeVectorStore({ vault, fileManager: { trashFile: (f: any) => vault.delete(f) } } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
         await writer.init();
         await writer.replaceBookSamples('kb_live', '存活书', [
             { dimension: 'original', category: '原文片段', sample: '晨星在雾里升起来', position: 0 },
@@ -269,7 +269,7 @@ describe('KnowledgeVectorStore 对账与显式清理', () => {
     });
 
     function makeReader(): KnowledgeVectorStore {
-        return new KnowledgeVectorStore({ vault } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
+        return new KnowledgeVectorStore({ vault, fileManager: { trashFile: (f: any) => vault.delete(f) } } as never, new MockEmbeddingProvider(), undefined, { isBookAlive: () => true });
     }
 
     it('store.reconcileWithIndex：列出孤儿与正常（存活判定不注入，按 id 对账）', async () => {

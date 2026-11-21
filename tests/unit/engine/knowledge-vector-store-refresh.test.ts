@@ -32,7 +32,7 @@ class MockEmbeddingProvider implements EmbeddingProvider {
 }
 
 function makeStore(vault: Vault): KnowledgeVectorStore {
-    return new KnowledgeVectorStore({ vault } as any, new MockEmbeddingProvider());
+    return new KnowledgeVectorStore({ vault, fileManager: { trashFile: (f: any) => vault.delete(f) } } as any, new MockEmbeddingProvider());
 }
 
 describe('KnowledgeVectorStore — 跨实例刷新', () => {

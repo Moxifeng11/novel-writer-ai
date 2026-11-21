@@ -5,6 +5,7 @@ import { createLogger } from '@/shared/logger';
 import { OperationConfirmModal } from './components/progress';
 import { isImeComposing } from '@/shared/keyboard';
 import { setSanitizedHtml } from '@/ui/rendering/safe-html';
+import { trashVaultEntry } from '@/shared/file-removal';
 
 
 const log = createLogger('ExistingEntityManager');
@@ -505,7 +506,7 @@ export class ExistingEntityManagerModal extends Modal {
             const file = this.app.vault.getAbstractFileByPath(path);
             if (!(file instanceof TFile)) { failed++; continue; }
             try {
-                await this.app.vault.trash(file, true);  // 移到系统回收站
+                await trashVaultEntry(this.app, file);  // 移到系统回收站
                 deleted++;
             } catch (e) {
                 log.error(`[小说工坊] 删除 ${path} 失败:`, e);

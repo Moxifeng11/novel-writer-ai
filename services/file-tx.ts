@@ -23,6 +23,7 @@ import {
     type FileTxJournalFile,
     type FileTxOp,
 } from '@/shared/file-tx-model';
+import { hardDeleteVaultPath } from '@/shared/file-removal';
 
 const log = createLogger('FileTx');
 
@@ -98,7 +99,7 @@ export class FileTxService {
                 await this.rollback(journal);
                 recovered += 1;
             }
-            await this.app.vault.delete(child);
+            await hardDeleteVaultPath(this.app, child.path);
         }
         return recovered;
     }
@@ -162,7 +163,7 @@ export class FileTxService {
             }
             const file = this.app.vault.getAbstractFileByPath(step.path);
             if (step.content === null) {
-                if (file instanceof TFile) await this.app.vault.delete(file);
+                if (file instanceof TFile) await hardDeleteVaultPath(this.app, file.path);
                 continue;
             }
             if (file instanceof TFile) {
@@ -184,6 +185,6 @@ export class FileTxService {
     /** 删除事务日志（失败不阻断：下次 recover 会当 staged 回滚） */
     private async removeJournal(project: string, journal: FileTxJournal): Promise<void> {
         const file = this.app.vault.getAbstractFileByPath(`${pjTxDir(project)}/${journal.id}.json`);
-        if (file instanceof TFile) await this.app.vault.delete(file);
+        if (file instanceof TFile) await hardDeleteVaultPath(this.app, file.path);
     }
 }

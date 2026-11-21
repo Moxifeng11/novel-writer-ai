@@ -9,6 +9,7 @@ import { App, Notice } from 'obsidian';
 import { getProjectCover } from '@/ui/project-utils';
 import { createLogger } from '@/shared/logger';
 import { progressHandle } from '@/utils/helpers';
+import { trashVaultEntry } from '@/shared/file-removal';
 
 
 const log = createLogger('CoverPickerController');
@@ -107,7 +108,7 @@ export class CoverPickerController {
                 /^cover\.(png|jpe?g|webp)$/i.test(f.name)
             );
             for (const ef of existingCovers) {
-                await this.app.vault.delete(ef);
+                await trashVaultEntry(this.app, ef);
             }
 
             // 后端层：读取文件内容并写入 vault

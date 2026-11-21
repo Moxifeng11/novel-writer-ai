@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 355 | 146872 | 1953 | 1547 | 79% |
-| `services/` | 65 | 19530 | 296 | 204 | 69% |
-| `shared/` | 266 | 53099 | 2251 | 1761 | 78% |
+| `engine/` | 355 | 146873 | 1953 | 1547 | 79% |
+| `services/` | 65 | 19535 | 296 | 204 | 69% |
+| `shared/` | 267 | 53146 | 2255 | 1763 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 307 | 113878 | 1182 | 945 | 80% |
+| `ui/` | 307 | 113884 | 1182 | 945 | 80% |
 
 ## 文件清单
 
@@ -78,7 +78,7 @@
 | `engine/ai-engine.ts` | 765 | 4 | 2 |
 | `engine/ai-entity-generator.ts` | 227 | 1 | 1 |
 | `engine/ai-lexicon.ts` | 97 | 3 | 3 |
-| `engine/ai-outline-generator.ts` | 1415 | 1 | 1 |
+| `engine/ai-outline-generator.ts` | 1416 | 1 | 1 |
 | `engine/ai-prompt-builder.ts` | 227 | 5 | 5 |
 | `engine/ai-scene-expander.ts` | 286 | 2 | 2 |
 | `engine/ai-scene-generator.ts` | 302 | 2 | 2 |
@@ -401,7 +401,7 @@
 | `services/baseline-probe-service.ts` | 226 | 4 | 1 |
 | `services/canon-research-service.ts` | 876 | 12 | 10 |
 | `services/chapter-recognizer.ts` | 294 | 5 | 5 |
-| `services/chapter-version-service.ts` | 756 | 4 | 4 |
+| `services/chapter-version-service.ts` | 757 | 4 | 4 |
 | `services/checkpoint-manager.ts` | 345 | 4 | 4 |
 | `services/constraint-block-service.ts` | 172 | 5 | 2 |
 | `services/context-metrics-service.ts` | 179 | 2 | 1 |
@@ -409,7 +409,7 @@
 | `services/cowrite-snapshot-service.ts` | 86 | 2 | 1 |
 | `services/execution-ledger.ts` | 325 | 10 | 7 |
 | `services/fanfic-knowledge-draft.ts` | 226 | 10 | 7 |
-| `services/file-tx.ts` | 190 | 2 | 1 |
+| `services/file-tx.ts` | 191 | 2 | 1 |
 | `services/font-manager.ts` | 248 | 15 | 13 |
 | `services/genre-classifier.ts` | 858 | 2 | 2 |
 | `services/genre-preference-memory.ts` | 376 | 3 | 3 |
@@ -422,7 +422,7 @@
 | `services/knowledge-original-chunker.ts` | 119 | 3 | 3 |
 | `services/ledger-migration-service.ts` | 248 | 4 | 1 |
 | `services/local-model-probe.ts` | 185 | 6 | 5 |
-| `services/memory-graph-service.ts` | 245 | 2 | 2 |
+| `services/memory-graph-service.ts` | 246 | 2 | 2 |
 | `services/model-discovery.ts` | 437 | 5 | 5 |
 | `services/performance-monitor.ts` | 819 | 9 | 9 |
 | `services/plan-spec-service.ts` | 147 | 3 | 2 |
@@ -438,12 +438,12 @@
 | `services/quality-panel-service.ts` | 113 | 2 | 1 |
 | `services/relation-graph-sync-service.ts` | 141 | 6 | 1 |
 | `services/rules-registry.ts` | 146 | 7 | 5 |
-| `services/rules-service.ts` | 280 | 3 | 2 |
+| `services/rules-service.ts` | 281 | 3 | 2 |
 | `services/scene-context-service.ts` | 126 | 2 | 1 |
 | `services/scene-loop-body-service.ts` | 201 | 3 | 1 |
 | `services/scene-retrieval-service.ts` | 157 | 4 | 1 |
 | `services/session-preset-service.ts` | 85 | 2 | 1 |
-| `services/settlement-journal-store.ts` | 111 | 2 | 1 |
+| `services/settlement-journal-store.ts` | 112 | 2 | 1 |
 | `services/setup-readiness-service.ts` | 287 | 5 | 1 |
 | `services/skill-service.ts` | 74 | 1 | 1 |
 | `services/synopsis-store.ts` | 364 | 5 | 5 |
@@ -475,7 +475,7 @@
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 375 | 21 | 20 |
-| `shared/changelog-data.ts` | 232 | 3 | 3 |
+| `shared/changelog-data.ts` | 233 | 3 | 3 |
 | `shared/chapter-progress.ts` | 142 | 7 | 6 |
 | `shared/chapter-ref.ts` | 205 | 7 | 5 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
@@ -535,7 +535,8 @@
 | `shared/file-cache.ts` | 492 | 3 | 3 |
 | `shared/file-mention.ts` | 211 | 10 | 10 |
 | `shared/file-path-guard.ts` | 237 | 12 | 12 |
-| `shared/file-system-port.ts` | 797 | 8 | 8 |
+| `shared/file-removal.ts` | 45 | 4 | 2 |
+| `shared/file-system-port.ts` | 798 | 8 | 8 |
 | `shared/file-tx-model.ts` | 138 | 12 | 7 |
 | `shared/first-run-guide.ts` | 43 | 2 | 1 |
 | `shared/foreshadow-config.ts` | 112 | 4 | 4 |
@@ -820,14 +821,14 @@
 | `ui/cross-volume-state-modal.ts` | 235 | 1 | 1 |
 | `ui/diagnose-writer-modal.ts` | 363 | 1 | 1 |
 | `ui/draggable-panel.ts` | 379 | 2 | 2 |
-| `ui/existing-entity-manager.ts` | 555 | 1 | 1 |
+| `ui/existing-entity-manager.ts` | 556 | 1 | 1 |
 | `ui/expand-text-modal.ts` | 226 | 1 | 1 |
 | `ui/export-manuscript-modal.ts` | 694 | 4 | 4 |
 | `ui/fact-store-edit.ts` | 153 | 9 | 8 |
 | `ui/fact-store-format.ts` | 121 | 8 | 7 |
 | `ui/fact-store-modal.ts` | 247 | 1 | 1 |
 | `ui/fanfic-prompt-notice.ts` | 20 | 1 | 1 |
-| `ui/fanfic-review-modal.ts` | 419 | 1 | 1 |
+| `ui/fanfic-review-modal.ts` | 420 | 1 | 1 |
 | `ui/fingerprint-blend-modal.ts` | 615 | 2 | 2 |
 | `ui/fingerprint-detail-modal.ts` | 577 | 1 | 1 |
 | `ui/fingerprint-embedding.ts` | 32 | 1 | 1 |
@@ -842,7 +843,7 @@
 | `ui/full-writer/chapter-orchestrator.ts` | 505 | 10 | 9 |
 | `ui/full-writer/checkup-bar-controller.ts` | 327 | 3 | 3 |
 | `ui/full-writer/context-loader-controller.ts` | 275 | 2 | 2 |
-| `ui/full-writer/cover-picker-controller.ts` | 147 | 1 | 1 |
+| `ui/full-writer/cover-picker-controller.ts` | 148 | 1 | 1 |
 | `ui/full-writer/creation-flow-state.ts` | 260 | 5 | 4 |
 | `ui/full-writer/entity-state-controller.ts` | 136 | 2 | 2 |
 | `ui/full-writer/execution-panels.ts` | 391 | 4 | 4 |
@@ -941,7 +942,7 @@
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
 | `ui/services/agent-attachment-store.ts` | 171 | 10 | 6 |
-| `ui/services/agent-port.ts` | 775 | 3 | 3 |
+| `ui/services/agent-port.ts` | 776 | 3 | 3 |
 | `ui/services/agent-session-store.ts` | 211 | 5 | 5 |
 | `ui/services/agent-spill-store.ts` | 142 | 4 | 3 |
 | `ui/services/co-write-facade.ts` | 907 | 2 | 2 |
@@ -976,10 +977,10 @@
 | `ui/story-linkage-modal.ts` | 390 | 1 | 1 |
 | `ui/story-settings-form.ts` | 274 | 2 | 2 |
 | `ui/story-settings-modal.ts` | 117 | 1 | 1 |
-| `ui/style-distiller-modal.ts` | 495 | 1 | 1 |
+| `ui/style-distiller-modal.ts` | 496 | 1 | 1 |
 | `ui/support-author-modal.ts` | 43 | 1 | 0 |
 | `ui/svg-charts.ts` | 2359 | 49 | 49 |
-| `ui/template-manager.ts` | 720 | 5 | 2 |
+| `ui/template-manager.ts` | 721 | 5 | 2 |
 | `ui/tomato-rank-modal.ts` | 132 | 1 | 1 |
 | `ui/tts/tts-player.ts` | 428 | 4 | 2 |
 | `ui/tts/tts-speech.ts` | 164 | 5 | 1 |

@@ -4323,3 +4323,16 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 待用户确认：tag `4.97.4` 与 GitHub Release；之后 `npm run check:published -- --expect 4.97.4` 复核上架。
 
 下一步：第 10 批（`sentence-case` 51 / `prefer-file-manager-trash-file` 25，产品决策口径需先定）。
+
+## 第一百五十轮：warn 第 10 批 —— 删除统一走回收站（816 → 790）
+
+- 目标：`prefer-file-manager-trash-file` 25 条（`vault.delete` / `vault.trash` 已废弃，且绕开用户「删除文件」偏好）。`obsidianmd/*` 规则禁止 disable，只能真迁。
+- 新增 `shared/file-removal.ts`：`trashVaultEntry(app, entry)`（`FileManager.trashFile`，尊重偏好、默认回收站可恢复）与 `hardDeleteVaultPath(app, path)`（`vault.adapter.remove`，只给「显式永久删除」与内部临时文件）。
+- 回收站（用户可见、误删可恢复）：`ui/template-manager.ts` 8 处、`ui/full-writer/cover-picker-controller.ts`、`ui/existing-entity-manager.ts`、`ui/fanfic-review-modal.ts`、`ui/style-distiller-modal.ts`、`services/chapter-version-service.ts`、`services/rules-service.ts`、`utils/helpers.ts`、`engine/ai-outline-generator.ts`、`shared/file-system-port.ts` 2 处、`ui/services/agent-port.ts` 的非永久分支。
+- 硬删（内部临时文件/显式永久）：`services/file-tx.ts` 3 处、`services/settlement-journal-store.ts`、`services/memory-graph-service.ts`、`ui/services/agent-port.ts` 的 `permanent` 分支。
+- 质量把关：没有照单全改——把「用户删错了能找回」的文件改回收站，把「每步重建的日志」保持硬删，避免回收站被插件噪声刷满；`agent-port` 的 `permanent` 参数语义保留。
+- 测试：新增 `tests/unit/shared/file-removal.test.ts` 4 例（走 trashFile、不碰 delete/trash、adapter 直删、失败冒泡）；`tests/__mocks__/obsidian.ts` 的 `FileManager` 补 `trashFile` no-op；定向 81 文件 / 650 用例通过。
+- 结果：warn **816 → 790**，`prefer-file-manager-trash-file` 25 → 0，error 0；tsc 0 错。
+- `sentence-case` 51 条逐条核对后判定为**误报、不追**：规则把中文界面里的品牌名/缩写按英文句子大小写处理（`MCP`→`mcp`、`PNG`→`png`、`DeepSeek`→`deepseek`、`HTTP://`→`http://`、`SK-...` 占位符、`#4Caf50` 色值），照改会降低界面质量；已写进路线图第 10b 行。
+
+下一步：4.97.4 发版条件（等用户确认打 tag + Release，再跑 `check:published --expect 4.97.4`）。

@@ -6,6 +6,7 @@ import { resolveProjectMode } from '@/shared/project-mode';
 import type { CreationMode } from '@/shared/creation-mode';
 import { createLogger } from '@/shared/logger';
 import { withWriteLock } from '@/shared/write-lock';
+import { trashVaultEntry } from '@/shared/file-removal';
 
 const log = createLogger('RulesService');
 
@@ -261,7 +262,7 @@ export class RulesService {
             const match = file.path.match(copyPattern);
             if (!match || match[1] === '元文件') continue;
             try {
-                await this.app.vault.delete(file, true);
+                await trashVaultEntry(this.app, file);
                 result.removedProjectCopies += 1;
             } catch (e) {
                 log.warn('[RulesService] 删除项目规则副本失败:', file.path, e);

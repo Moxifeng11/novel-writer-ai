@@ -3,6 +3,7 @@ import { isVolumeOutlineFileName, pjVolumeOutlineDir, pjVolumeOutlineFile, volum
 import { ObsidianFileSystem, ObsidianVaultMeta } from '../shared/file-system-port';
 import type { FileSystemPort, VaultMetaPort } from '../shared/file-system-port';
 import { createLogger } from '../shared/logger';
+import { trashVaultEntry } from '@/shared/file-removal';
 
 
 const log = createLogger('Helpers');
@@ -320,7 +321,7 @@ export async function writeVolumeOutlines(app: App, project: string, outlineBody
                 const oldVolN = parseInt(volMatch[1]);
                 if (!newVolNumbers.has(oldVolN)) {
                     try {
-                        await app.vault.delete(child, true);
+                        await trashVaultEntry(app, child);
                         log.info(`[小说工坊] 清理残留旧卷文件: ${child.name}`);
                     } catch (e) {
                         log.warn(`[小说工坊] 删除旧卷文件失败: ${child.name}`, e);
