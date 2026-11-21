@@ -4192,3 +4192,15 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 现象：community-plugins.json（3.3MB）默认超时下偶发 `terminated`，导致「未收录」被误报成「读取失败」。
 - 修法：getText 统一 60s 超时 + 3 次重试（1.5s / 3s 退避），失败才降级为错误行；
   实测重跑三项判据均为确定值（页面 4.97.1、未收录、RSS 4.97.1）。
+
+## 第一百三十九轮：4.97.3 上架成功（目标完成）
+
+- 复核：node scripts/check-published 三项判据全部通过 —— 插件页 Current version = 4.97.3、
+  community-plugins.json 已收录（条目 id novel-writer-ai / name Novel Writer AI / author 南柯一梦 /
+  repo moxifeng11/novel-writer-ai）、RSS 最新 4.97.3。
+- 清单条目 description 尾部被目录追加 “- This plugin has not been manually reviewed by Obsidian staff.”，
+  即自动审核通过、未人工复核，属正常状态。
+- 时间线：4.97.2 修阻断项（两条 eslint 指令缺描述）→ 4.97.3 修构建不可复现（fflate + mtime:0）→
+  目录周期扫描覆盖 4.97.3 后放行。此前「页面停在 4.97.1」是目录尚未扫描（Last updated 早于发版），非被拒。
+- 文档：docs/releases/community-submission.md 顶部改「〇、结果：4.97.3 已上架」；docs/releases/4.97.3.md
+  新增「上架结果（2026-11-21）」并把「未完成」收敛为长期清理项。

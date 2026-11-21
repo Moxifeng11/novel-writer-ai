@@ -1,8 +1,30 @@
 # 上架 Obsidian 社区插件目录
 
-> 目标版本 4.97.3 · 记录时间 2026-11-20 · 维护：DSH
+> 已上架版本 4.97.3 · 记录时间 2026-11-21 · 维护：DSH
 
-## 一、当前状态：每版审核都是 Failed（2026-11-20 定位并修复）
+## 〇、结果：4.97.3 已上架（2026-11-21 复核通过）
+
+`npm run check:published` 三项判据全部通过：
+
+```text
+[check:published] novel-writer-ai（manifest 4.97.3）
+  ✓ 插件页 Current version = 4.97.3 —— 实际 4.97.3
+  ✓ 客户端市场清单包含 novel-writer-ai —— 已收录
+  ✓ RSS 出现 4.97.3 —— 最新 4.97.3
+[check:published] 已上架：4.97.3 可通过 Obsidian 客户端安装
+```
+
+市场清单里的条目（`community-plugins.json`）：
+
+```json
+{ "id": "novel-writer-ai", "name": "Novel Writer AI", "author": "南柯一梦", "repo": "moxifeng11/novel-writer-ai" }
+```
+
+注意其 `description` 尾部被目录追加了一句 `- This plugin has not been manually reviewed by Obsidian staff.` —— 这是**自动审核通过、未人工复核**的标注，属正常状态（自动扫描的阻断项已清零即可上架），不是被打回。
+
+关键时间线：4.97.2 修掉唯一阻断项（两条 eslint 指令缺描述）→ 4.97.3 修掉构建不可复现（fflate + mtime:0）→ 目录周期扫描覆盖 4.97.3 后放行。此前「页面停在 4.97.1」是目录尚未扫描（`Last updated` 早于发版），并非被拒。
+
+## 一、历史：每版审核都是 Failed（2026-11-20 定位并修复）
 
 插件条目：<https://community.obsidian.md/plugins/novel-writer-ai>（2026-11-20 复核：`62 downloads`、有 4.93–4.96 的版本历史、作者本人认领）。
 
