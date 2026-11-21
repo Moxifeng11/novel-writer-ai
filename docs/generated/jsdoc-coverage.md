@@ -9,7 +9,7 @@
 | `engine/` | 338 | 1927 | 1926 | 100% | 1254 | 1254 | 100% | 0 |
 | `services/` | 65 | 295 | 295 | 100% | 310 | 310 | 100% | 0 |
 | `shared/` | 265 | 2259 | 2258 | 100% | 163 | 163 | 100% | 0 |
-| `ui/` | 305 | 1172 | 1172 | 100% | 682 | 681 | 100% | 0 |
+| `ui/` | 306 | 1173 | 1173 | 100% | 682 | 681 | 100% | 0 |
 
 ## 缺口最大的文件（按未注释导出数）
 
@@ -68,6 +68,7 @@
 | `shared/versioned-registry.ts` | 7 | 7 | 100% | — |
 | `ui/components/ai-detection-report.ts` | 1 | 1 | 100% | — |
 | `ui/components/analysis-report-panel.ts` | 1 | 1 | 100% | — |
+| `ui/components/button-compat.ts` | 1 | 1 | 100% | — |
 | `ui/components/categorization-review-panel.ts` | 1 | 1 | 100% | — |
 | `ui/components/character-review-panel.ts` | 1 | 1 | 100% | — |
 | `ui/components/chart-toolbar.ts` | 1 | 1 | 100% | — |

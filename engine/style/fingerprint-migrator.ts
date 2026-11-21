@@ -50,7 +50,7 @@ import { calculateRhythmStats, calculatePerspectiveStats } from './v2-quantitati
 
 /**
  * V1 风格指纹特征（7 维字符串描述）
- * @deprecated V1 类型，仅供迁移使用。新代码应使用 StyleFingerprintFeaturesV2
+ * @legacy 仅迁移入口使用：本文件就是旧数据（V1）的读取侧，不计划移除
  */
 export interface V1StyleFingerprintFeatures {
     sentenceRhythm: string;
@@ -64,7 +64,7 @@ export interface V1StyleFingerprintFeatures {
 
 /**
  * V1 风格指纹（兼容旧数据格式）
- * @deprecated V1 类型，仅供迁移使用。新代码应使用 V2Fingerprint
+ * @legacy 仅迁移入口使用：本文件就是旧数据（V1）的读取侧，不计划移除
  */
 export interface V1StyleFingerprint {
     id: string;

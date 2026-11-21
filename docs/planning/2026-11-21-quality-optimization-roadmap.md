@@ -42,14 +42,14 @@
 | 3 | `no-empty` 18 → 0、`unbound-method` 9 → 0 | ✅ 8d6fbf83 | 1,420 → 1,393 |
 | 4 | `no-tfile-tfolder-cast` 38 → 4（`instanceof TFile` 收窄；`shared/file-system-port.ts` 适配层 4 处保留） | ✅ 1ae2b9a0 | 1,393 → 1,343 |
 | 5 | `no-explicit-any` 93 → 0（用真实类型 / `unknown` + 收窄；`types/obsidian-augment.d.ts` 同步收口；`check:any` AST 口径 74 → 0） | ✅ 5a709171 | 1,343 → 1,259 |
-| 6 | `no-deprecated` 非 V1 部分 258 → 232（`setDynamicTooltip` 11、`execCommand` 4、`substr` 3、`SettingsTab.display` 1、preset 兼容入口 4、`keyCode`/`createElement` 各 1）。**保留例外**：V1 类型 193（第 10 批）、旧提示词常量 13 与旧模板路径 22（只读兼容，无替代 API）、`setWarning` 7（替代 `setDestructive()` 需 Obsidian 1.13，而 minAppVersion 为 1.4.4） | ✅ 76ea34ec | 1,259 → 1,232 |
+| 6 | `no-deprecated` 非 V1 部分 258 → 232（`setDynamicTooltip` 11、`execCommand` 4、`substr` 3、`SettingsTab.display` 1、preset 兼容入口 4、`keyCode`/`createElement` 各 1）。**保留例外**：V1 类型 193（第 10 批）、旧提示词常量 13 与旧模板路径 22（只读兼容，无替代 API）、`setWarning` 7（替代 `setDestructive()` 需 Obsidian 1.13，而 minAppVersion 为 1.8.7 → 第 11 批走兼容层） | ✅ 76ea34ec | 1,259 → 1,232 |
 | 7 | Promise 语义 319 → 0（`no-floating-promises` 144 前置 `void`；`no-misused-promises` 163 用 AST 定位回调改 `() => { void (async () => {...})(); }`；`Modal.onClose` / `Plugin.onunload` 的 void 契约拆私有异步体） | ✅ f6933f2b | 1,232 → 913 |
 | 8 | `no-redundant-type-constituents` 31 → 0 + `no-control-regex` 12 → 0 + `obsidianmd/no-global-this` 12 → 0（接口属性名 `global` 是规则误判，加引号规避；谨慎写法见 DEVELOPMENT） | ✅ 1f8f3d23 | 913 → 859 |
 | 8b | `no-restricted-globals` 19 → 1：16 处 vault 级 `localStorage` 迁 `App#loadLocalStorage` / `saveLocalStorage`（统一入口 `shared/local-storage.ts`，含旧键一次性迁移），2 处旧全局键清理改 `window.localStorage.removeItem`。**代价：`minAppVersion` 1.4.4 → 1.8.7**（App 存储 API 自 1.8.7 提供，`no-unsupported-api` 不允许特性检测绕过）。保留 1 处：`shared/http-transport.ts` 桌面端 `fetch`（有意例外） | ✅ 本批 | 834 → 816 |
 | 9 | 剩余机械项：`no-this-alias` 5、`await-thenable` 4、`no-empty-object-type` 2、`no-case-declarations` 2、`no-useless-catch` 2、`no-irregular-whitespace` 1、`no-misleading-character-class` 6、`no-require-imports` 2、`hardcoded-config-path` 1 | ✅ b7aeebe4 | 859 → 834 |
 | 10 | 删除语义统一：`prefer-file-manager-trash-file` 25 → 0。新增 `shared/file-removal.ts`（`trashVaultEntry` 走 `FileManager.trashFile` 尊重用户删除偏好；`hardDeleteVaultPath` 只给「显式永久删除」与内部临时文件）。**行为变化**：模板/封面/实体/版本快照/备份等删除改为进回收站（可恢复），事务日志与结算日志仍硬删不进回收站 | ✅ 本批 | 816 → 790 |
 | 10b | `sentence-case` 51：**判定为误报，不追**。规则把中文界面里的品牌名/缩写当英文句子大小写处理（`MCP`→`mcp`、`PNG`→`png`、`DeepSeek`→`deepseek`、`HTTP://`→`http://`、`SK-...` 占位符、`#4Caf50` 色值），照改会降低界面质量。已逐条核对，保留在基线里 | ⏸ 不追（文档化） | 51 保留 |
-| 11 | StyleFingerprint V1 → V2 迁移（≈230 条 + `ai-chapter-helpers.ts` 旧提示词） | 独立重构切片 | — |
+| 11 | `no-deprecated` 232 → 0：**不做数据模型迁移**（V1/V2 是并存投影，见 DEVELOPMENT 第 11 批口径）。7 处 `setWarning` 抽 `ui/components/button-compat.ts` 兼容层；`StyleFingerprint` / `StyleFingerprintFeatures` / V1 迁移类型 / 旧提示词常量 / `pj*Template` 的标注由 `@deprecated` 改 `@legacy` 并写明保留理由。全量 V2 规范模型列为 backlog（前置：提示词与 UI 一起改的产品决策） | ✅ 本批 | 790 → 558 |
 | 不追 | `no-unnecessary-type-assertion` 357 | 规则在本项目类型判定下不可靠，逐条人工成本高；保留为 review 信号 | — |
 
 ## 五、验收与停止条件
@@ -73,3 +73,4 @@
 | 2026-11-21 | 9 | 859 → 834（剩余机械项清零） | b7aeebe4 |
 | 2026-11-21 | 8b | 834 → 816（localStorage → App 存储，minAppVersion 提到 1.8.7） | 本批 |
 | 2026-11-21 | 10 | 816 → 790（删除统一走 FileManager.trashFile） | 本批 |
+| 2026-11-21 | 11 | 790 → 558（`no-deprecated` 232 → 0；弃用标注改 `@legacy` + `setWarning` 兼容层） | 本批 |

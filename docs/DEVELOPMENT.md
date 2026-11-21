@@ -1269,7 +1269,7 @@ npm run check:release  # 发布前资产与版本一致性校验
 
 单测环境是 node（`vitest.config.ts` 的 `environment: 'node'`），而代码改用了 Obsidian 注入的全局 `createEl/createDiv/createSpan` 与 `window.setTimeout`。`tests/setup.ts` 负责垫片：`window` 缺省指向 `globalThis`；`createEl/createDiv/createSpan/createFragment` 缺省用 `tests/unit/ui/support/fake-dom.ts` 的 `FakeEl`，若测试已用 `stubDocument()` 注入 `document.createElement` 则优先用该工厂（保证断言拿到的元素类型一致）。新增垫片时不要覆盖测试已有的定义。
 
-当前存量（2026-11-21，`eslint.obsidian-review.mjs` 口径）：warn 2,732 → **790**，error 0。`npm run check:review-warn` 用 `.review-warn-baseline.json` 按规则设预算，任何一类上涨即失败（已在 preflight 里）。`no-explicit-any` 已清零；剩余大头 `no-unnecessary-type-assertion` 346（规则不可靠，不追）、`no-deprecated` 232（StyleFingerprint V1 类型 193 + 旧提示词/模板路径 31 + `setWarning` 7 等兼容保留）、`no-restricted-globals` 19（全是 `localStorage`，迁移 `App#saveLocalStorage` 属行为变更，单列第 8b 批）、`no-unused-vars` 148（全部是 assigned-but-never-used 的 DOM 创建，有副作用，暂不动）、`ui/sentence-case` 51（产品决策项，第 10 批）；`no-misused-promises` 与 `no-floating-promises` 已全部清零（第七批）；`no-tfile-tfolder-cast` 已从 38 降到 4（只剩 `shared/file-system-port.ts` 适配层的假对象，故意保留）。
+当前存量（2026-11-21，`eslint.obsidian-review.mjs` 口径）：warn 2,732 → **558**，error 0。`npm run check:review-warn` 用 `.review-warn-baseline.json` 按规则设预算，任何一类上涨即失败（已在 preflight 里）。`no-explicit-any`、`no-deprecated`、`no-misused-promises`、`no-floating-promises`、`no-restricted-globals`（剩 1 处桌面端 `fetch`）均已清零或收口；剩余大头 `no-unnecessary-type-assertion` 345（规则不可靠，不追）、`no-unused-vars` 149（全部是 assigned-but-never-used 的 DOM 创建，有副作用，暂不动）、`ui/sentence-case` 51（判定误报，第 10b 批不追）、`no-tfile-tfolder-cast` 4（`shared/file-system-port.ts` 适配层假对象）、其余 `rule-custom-message` 3 / `hardcoded-config-path` 2 / 其余各 1；`no-misused-promises` 与 `no-floating-promises` 已全部清零（第七批）；`no-tfile-tfolder-cast` 已从 38 降到 4（只剩 `shared/file-system-port.ts` 适配层的假对象，故意保留）。
 
 批次排期、风险分级与验收口径见 `docs/planning/2026-11-21-quality-optimization-roadmap.md`；新增批次先在那里登记，再按本节的约束执行。
 
@@ -1304,11 +1304,11 @@ npm run check:release  # 发布前资产与版本一致性校验
 第六批（2026-11-21）落地手法：
 
 - `no-deprecated` 先分「可机械替换」与「兼容保留」：`setDynamicTooltip()` 直接删（Obsidian 新版已把数值内联显示）、`substr(2, 9)` → `slice(2, 11)`、`SettingsTab.display()` 的内部调用抽成私有 `renderAll()` 让 `reopen()` 不再碰废弃方法。
-- `setWarning()` **不要**换 `setDestructive()`：后者要求 Obsidian 1.13，而 manifest 的 `minAppVersion` 是 1.4.4，`obsidianmd/no-unsupported-api` 会直接报 error（实测 7 条全变 error）。这类「废弃但仍是唯一兼容 API」的点位保留 warn。
+- `setWarning()` **不要**换 `setDestructive()`：后者要求 Obsidian 1.13，而 manifest 的 `minAppVersion` 是 1.8.7，`obsidianmd/no-unsupported-api` 会直接报 error（实测 7 条全变 error）。第 11 批起统一走 `ui/components/button-compat.ts` 的 `withWarningStyle(btn)`（结构化类型调用旧接口），等最低版本提到 1.13 只需改这一个文件。
 - `document.execCommand` 分两种处理：剪贴板降级（`shared/clipboard.ts`）用结构类型 `document as unknown as { execCommand?: ... }` 保留老上下文通道；协同编辑器替换文本改用 `textarea.setRangeText(text, 0, len, 'end')`，既保留原生撤销栈又不碰废弃 API。
 - IME 的 `keyCode === 229` 仍要保留（部分输入法 compositionend 后只给 229），同样用结构类型读取，避免规则告警。
 - `main.ts` 里的 `hidePreset/restorePreset/restoreAllPresets/savePresetOverride` 是 plugin-api 的兼容入口，方法名不动、实现改走 `setHidden` / `restoreDefaultProviders` / `updateProvider`。
-- 旧提示词常量（`SELF_CHECK_PROMPTS` 等）与 `shared/paths.ts` 的 `pj*Template` 只读兼容路径没有替代 API，不强行去掉 `@deprecated`，保留在预算里。
+- 旧提示词常量（`SELF_CHECK_PROMPTS` 等）与 `shared/paths.ts` 的 `pj*Template` 没有替代 API，但仍在运行期被引用（旧项目模板读写、`engine/template-service.ts` 的 `TEMPLATE_PATH_MAP`）。第 11 批起口径改为 **`@legacy`**：`@deprecated` 只给「有替代且计划移除」的符号，长期兼容的写 `@legacy` 并说明为什么保留 —— 这样规则预算才是真信号。
 
 第七批（2026-11-21）落地手法：
 
@@ -1350,6 +1350,13 @@ npm run check:release  # 发布前资产与版本一致性校验
 - 清理**旧版遗留的全局键**时只能用 `window.localStorage.removeItem(key)`：App 存储没有删除其他命名空间的 API；`window.localStorage` 属成员访问，不会被 `no-restricted-globals` 命中。
 - `minAppVersion` 现在是 **1.8.7**（`App` 存储 API 的 `@since`）。新的 API 若晚于 1.8.7，`obsidianmd/no-unsupported-api` 会作为 error 报出，且**不认特性检测**——要么不用，要么再提 `minAppVersion` 并走发版流程。
 - 同理，`no-restricted-globals` 禁止 disable（`eslint-comments/no-restricted-disable` 会报 error），遇到它只能迁移或接受 warn 进基线。
+第 11 批（2026-11-21）弃用标注与兼容层口径：
+
+- **`@deprecated` 只给「有替代且计划移除」的符号**。长期并存/兼容的写 `@legacy`，并在 JSDoc 里说明为什么保留（V1/V2 双格式、旧项目提示词、内置模板路径都属这类）。否则仓库里三分之一的高频类型全挂着弃用标记，规则预算就失去信号意义了。
+- **别把「版本不同步」误判成迁移任务**：`StyleFingerprint`（V1，7 维字符串、直接拼进提示词）与 `V2Fingerprint`（12 维定量、按 id 另存）是**并存投影**——`engine/style-fingerprint-library.ts` 的 `toPersistedFingerprint` 只在两份一致时回写 V2，内存与全部消费方仍是 V1。要换成 V2 规范模型得连提示词与 UI 一起改（产品决策 + 额外 AI 成本），不是清 warn 能覆盖的。
+- **替代 API 的 `@since` 晚于 `minAppVersion` 时不要直接换**（`setWarning` → `setDestructive` 要求 1.13，我们下限 1.8.7，`no-unsupported-api` 是 error 级且不认特性检测）：抽一个窄接口兼容层，用结构化类型调旧成员，调用点只碰新函数。本批新增 `ui/components/button-compat.ts` 的 `withWarningStyle(btn)`，链式写法是 `withWarningStyle(btn.setButtonText(...)).setDisabled(...)`，等下限提到 1.13 只改这一个文件。
+- 顺手核对「旧」路径是不是真没人用：`shared/paths.ts` 的 `pj*Template` 看着像遗留，实际由 `engine/template-service.ts` 的 `TEMPLATE_PATH_MAP` 定位全部内置模板，删了会静默退回默认模板。
+
 
 ### 异步等待原语（2026-10-31 批次 14）
 

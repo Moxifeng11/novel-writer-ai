@@ -8,6 +8,7 @@
 import { FuzzySuggestModal, Notice, Setting, TFile } from 'obsidian';
 import { t } from '@/i18n';
 import type NovelWriterPlugin from '@/main';
+import { withWarningStyle } from '@/ui/components/button-compat';
 import {
     describePetImageConfig,
     detectPetGrid,
@@ -131,9 +132,8 @@ export function renderPetImageSettings(
                     void applyVaultImage(plugin, file.path, current, rerender);
                 }).open();
             }))
-        .addButton(button => button
-            .setButtonText(t('fullwriter.pet.clearBtn'))
-            .setWarning()
+        .addButton(button => withWarningStyle(button
+            .setButtonText(t('fullwriter.pet.clearBtn')))
             .onClick(() => void applyPetImage(plugin, null, rerender)));
 
     new Setting(container)

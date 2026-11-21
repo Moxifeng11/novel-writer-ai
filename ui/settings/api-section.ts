@@ -21,6 +21,7 @@ import {
     thinkingBudgetFromLevel,
 } from '@/shared/provider-ui-model';
 import { ModelEditorModal } from '@/ui/model-editor-modal';
+import { withWarningStyle } from '@/ui/components/button-compat';
 import { CanonResearchService, PROVIDER_LABELS } from '@/services/canon-research-service';
 import { normalizeMcpServers } from '@/shared/mcp-config';
 import { API_FORMAT_OPTIONS, normalizeApiFormat, resolveEffectiveRequestUrl, type ApiFormat } from '@/shared/api-format';
@@ -1103,9 +1104,8 @@ export class ApiSection extends SettingsSection {
                 showSuccessNotice(t('settings.api.keyEnabled'));
             }));
 
-        row.addButton(btn => btn
-            .setButtonText(t('settings.api.keyReset'))
-            .setWarning()
+        row.addButton(btn => withWarningStyle(btn
+            .setButtonText(t('settings.api.keyReset')))
             .onClick(async () => {
                 const confirmed = await OperationConfirmModal.confirm(this.app, {
                     title: t('settings.api.keyResetConfirmTitle'),

@@ -712,28 +712,36 @@ export const PJ_FANFIC_DIR = '元文件/05-同人设定库';
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjCharTemplate() { return `${PJ_TEMPLATE_DIR}/人物模板.md`; }
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjLocTemplate() { return `${PJ_TEMPLATE_DIR}/地点模板.md`; }
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjFactionTemplate() { return `${PJ_TEMPLATE_DIR}/势力模板.md`; }
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjWritingStyleTemplate() { return `${PJ_TEMPLATE_DIR}/文笔风格模板.md`; }
@@ -742,63 +750,81 @@ export function pjWritingStyleTemplate() { return `${PJ_TEMPLATE_DIR}/文笔风�
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjBodyTemplate() { return `${PJ_TEMPLATE_DIR}/正文模板.md`; }
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjInfoPlanTemplate() { return `${PJ_TEMPLATE_DIR}/信息规划模板.md`; }
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjPlotDistillTemplate() { return `${PJ_TEMPLATE_DIR}/情节蒸馏模板.md`; }
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjOutlineTemplate() { return `${PJ_TEMPLATE_DIR}/大纲摘要模板.md`; }
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjAnalysisTemplate() { return `${PJ_TEMPLATE_DIR}/分析报告模板.md`; }
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjSettlementTemplate() { return `${PJ_TEMPLATE_DIR}/结算表模板.md`; }
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjVolumeOutlineTemplate() { return `${PJ_TEMPLATE_DIR}/分卷大纲模板.md`; }
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjWorldviewTemplate() { return `${PJ_TEMPLATE_DIR}/世界观模板.md`; }
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjItemTemplate() { return `${PJ_TEMPLATE_DIR}/物品模板.md`; }
@@ -807,56 +833,72 @@ export function pjItemTemplate() { return `${PJ_TEMPLATE_DIR}/物品模板.md`; 
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjContinuityReviewTemplate() { return `${PJ_TEMPLATE_DIR}/连贯性审查模板.md`; }
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjSelfCheckTemplate() { return `${PJ_TEMPLATE_DIR}/自检报告模板.md`; }
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjFixTemplate() { return `${PJ_TEMPLATE_DIR}/修正记录模板.md`; }
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjFinalFixTemplate() { return `${PJ_TEMPLATE_DIR}/最终修正模板.md`; }
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjQualityControlTemplate() { return `${PJ_TEMPLATE_DIR}/质量控制模板.md`; }
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjEmotionPlanTemplate() { return `${PJ_TEMPLATE_DIR}/情绪规划模板.md`; }
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjSceneExpandTemplate() { return `${PJ_TEMPLATE_DIR}/Scene展开模板.md`; }
 /**
  * 旧版模板路径（兼容保留）。
  *
- * @deprecated
+ * @legacy 内置模板仍用这些路径定位系统模板文件（见 engine/template-service.ts 的
+ * TEMPLATE_PATH_MAP），只是命名沿用旧称，不计划移除。
+ *
  * @returns 模板文件路径
  */
 export function pjCharacterSoulTemplate() { return `${PJ_TEMPLATE_DIR}/角色灵魂模板.md`; }

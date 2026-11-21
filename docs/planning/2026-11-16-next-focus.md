@@ -4360,3 +4360,30 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 站点回应：「A scan has already been run for this release and results are available on your dashboard.」——Reviews 第一行当时已是 `4.97.4 … Pending`（commit `1c49c03`），说明扫描已自动排队，不必反复触发。
 - 结果（22:55）：`npm run check:published -- --expect 4.97.4` 三项全绿——页面 `Current version = 4.97.4`（目录检查 2 hours ago · 下载 78）、清单已收录、RSS 最新 4.97.4。4.97.4 可在客户端直接安装（破坏性：最低 Obsidian 1.8.7、删除改走回收站，`versions.json` 已卡住老客户端）。
 - 结论：审核触发链路、上架判据、触发手法三者都已固化；`Pending` ≠ 未触发，判据只看 `check:published` 三项。
+
+## 第一百五十四轮：warn 第 11 批 —— `no-deprecated` 232 → 0（V1/V2 标注分层 + `setWarning` 兼容层）
+
+**判据**：`StyleFingerprint`（V1，7 维字符串、直接拼进提示词）与 `V2Fingerprint`（12 维定量、按 id 另存）不是替代关系，
+而是并存投影 —— `engine/style-fingerprint-library.ts` 的 `toPersistedFingerprint` 只在两份一致时回写 V2，内存与全部消费方仍是 V1。
+把 V2 变成规范模型必须连提示词与 UI 一起改（产品决策 + AI 成本），不属于清 warn 的范围。
+
+**改动**
+
+- 新增 `ui/components/button-compat.ts`：`withWarningStyle(button)` 用结构化类型调 `setWarning()`（`setDestructive` 的 `@since` 是 1.13，
+  而 `minAppVersion` 是 1.8.7，`obsidianmd/no-unsupported-api` 是 error 级且不认特性检测）。
+- 7 处 `setWarning()` 全部改走兼容层：`ui/advanced-maintenance-modal.ts`、`ui/appearance-settings.ts`、`ui/chapter-version-modal.ts`、
+  `ui/pet-image-settings.ts`、`ui/settings/api-section.ts`（重置密钥）、`ui/settings/writing-sections.ts`（清空/恢复全部）。
+- 弃用标注分层：`StyleFingerprint` / `StyleFingerprintFeatures`（`engine/style-fingerprint-library.ts`）、V1 迁移类型
+  （`engine/style/fingerprint-migrator.ts`）、旧提示词常量（`engine/prompts/chapter-pipeline-prompts.ts` 的 SELF_CHECK / FIX / CONTINUITY）
+  与 `shared/paths.ts` 的 21 处 `pj*Template` 全部由 `@deprecated` 改 `@legacy`，并在 JSDoc 写明「为什么长期保留」；
+  `shared/paths.ts` 只留 1 处真弃用（`sync 判断目录存在`，有替代 `isProjectDirectory`）。
+- 口径确认：`pj*Template` 不是死代码 —— `engine/template-service.ts` 的 `TEMPLATE_PATH_MAP` 用它们定位全部内置模板。
+
+**数字**：warn 790 → **558**（`no-deprecated` 232 → 0，其余仅 `no-unnecessary-type-assertion` 345 因标注变化少 1 条）；error 0；tsc 0 错；
+`check:review-warn` 基线收紧到 558 条 / 10 类；`.bundle-baseline.json` main.js 6,241,885（+40）；preflight EXIT=0（1,015 文件 / 10,513 通过 + 3 跳过）。
+
+**文档**：`docs/DEVELOPMENT.md` 存量改 558 + 「第 11 批：弃用标注与兼容层口径」四条；
+`docs/planning/2026-11-21-quality-optimization-roadmap.md` 第 11 批改为「标注分层、不做模型迁移」并记 790 → 558；
+`docs/modules/writing-fingerprint.md` backlog 新增 V1/V2 并存边界（不要按「清弃用」去删 V1 类型）。
+
+**backlog**：V2 规范模型（提示词 + 详情/编辑弹窗 + 迁移脚本一起改），前置是产品决策。

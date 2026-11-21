@@ -351,8 +351,8 @@ export const BODY_GENERATION_DESC = '✍️ 正文生成 — 你就是主角本�
 /**
  * 自检步骤提示词（旧流水线兼容）。
  *
- * @deprecated v6.0 起 `selfCheck` 步骤已合并入 `qualityControl`（见 engine/step-definitions.ts
- * 的 STEP_INDEX_MIGRATION_MAP）。本提示词仅为旧项目只读兼容保留，新流水线不再引用。
+ * @legacy v6.0 起 `selfCheck` 步骤已合并入 `qualityControl`（见 engine/step-definitions.ts
+ * 的 STEP_INDEX_MIGRATION_MAP），但旧项目仍会读取并展示这份提示词，故长期保留。
  */
 export const SELF_CHECK_PROMPTS = {
     description: '🔍 AI自检 — 写作质量评估（开篇吸引力/冲突推进/情绪表达/AI味），不涉及人设/世界观/连贯性',
@@ -378,8 +378,8 @@ export const SELF_CHECK_PROMPTS = {
 /**
  * 修正步骤提示词（旧流水线兼容）。
  *
- * @deprecated v6.0 起 `fix` / `finalFix` 步骤已合并入 `qualityControl`。本提示词仅为旧项目
- * 只读兼容保留；新流水线的修正能力由质量控制步骤与反 AI 改写通道承担。
+ * @legacy v6.0 起 `fix` / `finalFix` 步骤已合并入 `qualityControl`；旧项目的模板读写仍引用它，
+ * 故长期保留（新流水线的修正能力由质量控制步骤与反 AI 改写通道承担）。
  */
 export const FIX_PROMPTS = {
     description: '🔧 AI修正 — 根据审计发现的问题修正正文，打破AI味',
@@ -413,8 +413,8 @@ export const FIX_PROMPTS = {
 /**
  * 连贯性检查提示词（旧流水线兼容）。
  *
- * @deprecated v6.0 起 `continuityCheck` 步骤已合并入 `qualityControl`；连贯性审查现由
- * ReviewAgent.reviewChapter 按需执行。本提示词仅为旧项目只读兼容保留。
+ * @legacy v6.0 起 `continuityCheck` 步骤已合并入 `qualityControl`；连贯性审查现由
+ * ReviewAgent.reviewChapter 按需执行，但旧项目的模板读写仍引用它，故长期保留。
  */
 export const CONTINUITY_CHECK_PROMPTS = {
     description: '🛡️ 连贯性审查 — 四维度检查（设定冲突/人物OOC/连贯性/伏笔逻辑）',

@@ -10,6 +10,7 @@ import { Setting, Notice, type DropdownComponent } from 'obsidian';
 import { renderAppearanceSettings } from '@/ui/appearance-settings';
 import { renderWritingStatsAndPetSettings } from '@/ui/writing-stats-settings';
 import { TemplateManager } from '@/ui/template-manager';
+import { withWarningStyle } from '@/ui/components/button-compat';
 import { getOllamaModelsWithFallback } from '@/engine/co-writer-engine';
 import { ProjectMigrationService } from '@/engine/project-migration-service';
 import { AntiAIDetector } from '@/engine/anti-ai-detector';
@@ -747,9 +748,8 @@ export class LayoutSection extends SettingsSection {
         new Setting(section)
             .setName(t('settings.writing.clearSavedName'))
             .setDesc(t('settings.writing.clearSavedDesc', { count: savedCount }))
-            .addButton(btn => btn
-                .setButtonText(t('settings.writing.clearSavedButton'))
-                .setWarning()
+            .addButton(btn => withWarningStyle(btn
+                .setButtonText(t('settings.writing.clearSavedButton')))
                 .onClick(async () => {
                     if (!this.plugin.settings.panelLayout) {
                         this.plugin.settings.panelLayout = { panels: [], autoRestore: true, lastWorkspaceOpen: false };
@@ -833,9 +833,8 @@ export class LayoutSection extends SettingsSection {
         new Setting(section)
             .setName(t('settings.writing.restoreAllName'))
             .setDesc(t('settings.writing.restoreAllDesc'))
-            .addButton(btn => btn
-                .setButtonText(t('settings.writing.restoreAllButton'))
-                .setWarning()
+            .addButton(btn => withWarningStyle(btn
+                .setButtonText(t('settings.writing.restoreAllButton')))
                 .onClick(async () => {
                     await persist(() => {
                         this.plugin.settings.panelSizes = {};

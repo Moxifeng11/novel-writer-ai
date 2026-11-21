@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-11-19T23:18:27.648Z",
+  "generatedAt": "2026-11-21T15:26:42.859Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
-      "files": 337,
-      "exports": 1925,
-      "documented": 1924,
-      "methods": 1253,
-      "methodsDocumented": 1253,
+      "files": 338,
+      "exports": 1927,
+      "documented": 1926,
+      "methods": 1254,
+      "methodsDocumented": 1254,
       "incomplete": 0
     },
     "services": {
@@ -19,9 +19,9 @@
       "incomplete": 0
     },
     "shared": {
-      "files": 262,
-      "exports": 2247,
-      "documented": 2246,
+      "files": 265,
+      "exports": 2259,
+      "documented": 2258,
       "methods": 163,
       "methodsDocumented": 163,
       "incomplete": 0
@@ -43,9 +43,9 @@
       "incomplete": 0
     },
     "ui": {
-      "files": 304,
-      "exports": 1169,
-      "documented": 1169,
+      "files": 306,
+      "exports": 1173,
+      "documented": 1173,
       "methods": 682,
       "methodsDocumented": 681,
       "incomplete": 0
@@ -1036,8 +1036,8 @@
     "engine/ending-traction-engine.ts": {
       "exports": 6,
       "documented": 6,
-      "methods": 4,
-      "methodsDocumented": 4,
+      "methods": 5,
+      "methodsDocumented": 5,
       "incomplete": 0
     },
     "engine/engine-registry.ts": {
@@ -2375,8 +2375,8 @@
       "incomplete": 0
     },
     "engine/types/analysis-suggestion.ts": {
-      "exports": 8,
-      "documented": 8,
+      "exports": 9,
+      "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2384,6 +2384,13 @@
     "engine/types/chart-config.ts": {
       "exports": 6,
       "documented": 6,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "engine/types/vector-enhancer-port.ts": {
+      "exports": 1,
+      "documented": 1,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3416,6 +3423,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "shared/file-removal.ts": {
+      "exports": 4,
+      "documented": 4,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "shared/file-system-port.ts": {
       "exports": 8,
       "documented": 8,
@@ -3496,6 +3510,13 @@
     "shared/goal-model.ts": {
       "exports": 12,
       "documented": 12,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "shared/host-timers.ts": {
+      "exports": 3,
+      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3643,6 +3664,13 @@
     "shared/local-ai-queue.ts": {
       "exports": 2,
       "documented": 2,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "shared/local-storage.ts": {
+      "exports": 5,
+      "documented": 5,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -5310,6 +5338,15 @@
       "exampleTargets": 1,
       "examplesDocumented": 1
     },
+    "ui/components/button-compat.ts": {
+      "exports": 1,
+      "documented": 1,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
+    },
     "ui/components/categorization-review-panel.ts": {
       "exports": 2,
       "documented": 2,
@@ -5705,8 +5742,8 @@
       "incomplete": 0
     },
     "ui/full-writer/checkup-bar-controller.ts": {
-      "exports": 2,
-      "documented": 2,
+      "exports": 3,
+      "documented": 3,
       "methods": 3,
       "methodsDocumented": 3,
       "incomplete": 0
@@ -6738,6 +6775,13 @@
     "ui/vector-rebuild-action.ts": {
       "exports": 1,
       "documented": 1,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "ui/view-tab-titles.ts": {
+      "exports": 2,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0

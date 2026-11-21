@@ -1,10 +1,9 @@
 {
   "updatedAt": "2026-11-21",
-  "note": "",
-  "total": 790,
+  "note": "第 11 批（StyleFingerprint V1/V2 并存澄清 + setWarning 兼容层）",
+  "total": 558,
   "byRule": {
     "@typescript-eslint/no-unnecessary-type-assertion": 345,
-    "@typescript-eslint/no-deprecated": 232,
     "@typescript-eslint/no-unused-vars": 149,
     "obsidianmd/ui/sentence-case": 51,
     "obsidianmd/no-tfile-tfolder-cast": 4,

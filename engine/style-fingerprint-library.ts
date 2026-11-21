@@ -86,7 +86,8 @@ export interface StyleFingerprintStats {
 
 /**
  * V1 风格指纹特征（7 维字符串描述）
- * @deprecated V1 类型，保留向后兼容。新代码应使用 V2 的 StyleFingerprintFeaturesV2（12 维结构化）。
+ * @legacy 与 V2 并存：V1 是跨模块互操作投影（7 维字符串，直接拼进提示词），
+ * 不计划移除；12 维定量数据按 id 另存一份，见 StyleFingerprintFeaturesV2。
  * @see {@link import('./style/style-dimensions-v2').StyleFingerprintFeaturesV2}
  */
 export interface StyleFingerprintFeatures {
@@ -101,7 +102,8 @@ export interface StyleFingerprintFeatures {
 
 /**
  * V1 风格指纹（7 维特征）
- * @deprecated V1 类型，保留向后兼容。新代码应使用 V2Fingerprint（12 维结构化）。
+ * @legacy 与 V2 并存：内存与消费方用的是这份 V1 投影，磁盘上另有 V2 定量版本
+ * （按 id 缓存，见 getV2Fingerprint），两者不是替代关系，V1 不计划移除。
  * @see {@link import('./style/style-dimensions-v2').V2Fingerprint}
  */
 export interface StyleFingerprint {

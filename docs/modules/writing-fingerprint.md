@@ -115,7 +115,11 @@ view-project-nosample（无样本 → 黄条 + 空态）、modal-detail、modal-
 - [ ] 视图类仍留在 `writing-fingerprint-view.ts` 内（1703/1819/1972 三个 Modal），文件已 2037 行，可拆分为
   `ui/fingerprint/edit-modal.ts` 等；拆分时注意 `ExtractFromChaptersModal` 被命令面板直接引用。
 - [ ] `nw-fingerprint-*` 外壳类与 `nw-fp-*` 内构件两套前缀并存，后续可统一（E2E 选择器需同步）。
-- [ ] 列表与详情的空态文案仍是硬编码中文，未走 i18n（全仓同现状）。
+- [ ] 列表与详情的空态文案仍是硬编码中文，未走 i18n（全仓同现状）。- [ ] **V2 不是 V1 的替代品，是并存投影**：内存与全部消费方（`PromptBuilder` 的指纹段、本项目弹窗）用的仍是 V1 七维字符串，
+  V2 的 12 维定量数据按 id 另存（`toPersistedFingerprint` 只在两份一致时回写 V2）。若要改成 V2 规范模型，必须同时改提示词拼装、
+  详情/编辑弹窗与迁移脚本，属产品决策（还会抬高 AI 成本）；相关类型标注已由 `@deprecated` 改为 `@legacy`（warn 第 11 批），
+  不要再按「清弃用」的思路去删 V1 类型。
+
 
 ## 8. 交接备注
 

@@ -13,6 +13,7 @@
 import { Modal, Notice, Setting } from 'obsidian';
 import type NovelWriterPlugin from '@/main';
 import { getChaptersForProject } from '@/ui/project-utils';
+import { withWarningStyle } from '@/ui/components/button-compat';
 import { listProjectIds } from '@/shared/project-catalog';
 import { describeMissingChapter, summarizeMaintenanceResult } from '@/shared/maintenance-model';
 import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
@@ -190,9 +191,8 @@ export class AdvancedMaintenanceModal extends Modal {
                     }
                     void this.run('scene', () => this.plugin.generateChapterBySceneLoop(this.project, this.chapter, true));
                 }))
-            .addButton(button => button
-                .setButtonText('执行并落盘')
-                .setWarning()
+            .addButton(button => withWarningStyle(button
+                .setButtonText('执行并落盘'))
                 .setDisabled(disabled)
                 .onClick(async () => {
                     const missing = describeMissingChapter('场景循环生成', this.chapter);

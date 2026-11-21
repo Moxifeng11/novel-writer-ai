@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 355 | 146873 | 1953 | 1547 | 79% |
+| `engine/` | 355 | 146875 | 1953 | 1547 | 79% |
 | `services/` | 65 | 19535 | 296 | 204 | 69% |
-| `shared/` | 267 | 53146 | 2255 | 1763 | 78% |
+| `shared/` | 267 | 53188 | 2255 | 1763 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 307 | 113884 | 1182 | 945 | 80% |
+| `ui/` | 308 | 113922 | 1183 | 946 | 80% |
 
 ## 文件清单
 
@@ -366,7 +366,7 @@
 | `engine/stream-text-reader.ts` | 320 | 3 | 3 |
 | `engine/streaming/simulated-stream.ts` | 183 | 2 | 2 |
 | `engine/streaming/stream-parser.ts` | 367 | 8 | 8 |
-| `engine/style-fingerprint-library.ts` | 2733 | 7 | 7 |
+| `engine/style-fingerprint-library.ts` | 2735 | 7 | 7 |
 | `engine/style-learner.ts` | 346 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 193 | 2 | 2 |
 | `engine/style-vector-store.ts` | 705 | 11 | 10 |
@@ -591,7 +591,7 @@
 | `shared/obsidian-internal-bridge.ts` | 86 | 3 | 3 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1888 | 224 | 218 |
+| `shared/paths.ts` | 1930 | 224 | 218 |
 | `shared/pet-activity.ts` | 131 | 8 | 5 |
 | `shared/pet-geometry.ts` | 118 | 9 | 3 |
 | `shared/pet-image-model.ts` | 192 | 11 | 7 |
@@ -731,7 +731,7 @@
 | `ui/agent-workbench-view.ts` | 1846 | 1 | 1 |
 | `ui/agent-workbench/stage-panel.ts` | 140 | 6 | 6 |
 | `ui/ai-builder-modal.ts` | 1147 | 1 | 1 |
-| `ui/appearance-settings.ts` | 604 | 3 | 3 |
+| `ui/appearance-settings.ts` | 605 | 3 | 3 |
 | `ui/asset-registry-modal.ts` | 154 | 1 | 1 |
 | `ui/backup-center-modal.ts` | 248 | 1 | 1 |
 | `ui/backup-yuan-modal.ts` | 134 | 1 | 1 |
@@ -787,6 +787,7 @@
 | `ui/command-ui-executor.ts` | 756 | 2 | 2 |
 | `ui/components/ai-detection-report.ts` | 105 | 1 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
+| `ui/components/button-compat.ts` | 38 | 1 | 1 |
 | `ui/components/categorization-review-panel.ts` | 449 | 2 | 2 |
 | `ui/components/character-review-panel.ts` | 579 | 2 | 2 |
 | `ui/components/chart-toolbar.ts` | 111 | 2 | 2 |
@@ -969,7 +970,7 @@
 | `ui/settings/section-factory.ts` | 125 | 4 | 1 |
 | `ui/settings/settings-search.ts` | 289 | 10 | 6 |
 | `ui/settings/setup-section.ts` | 136 | 1 | 1 |
-| `ui/settings/writing-sections.ts` | 851 | 6 | 6 |
+| `ui/settings/writing-sections.ts` | 850 | 6 | 6 |
 | `ui/settlement-recovery-modal.ts` | 149 | 1 | 1 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 403 | 1 | 1 |

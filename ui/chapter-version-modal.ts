@@ -13,6 +13,7 @@ import { Modal, Setting, Notice } from 'obsidian';
 import type { App } from 'obsidian';
 import { ChapterVersionService } from '@/services/chapter-version-service';
 import { ENGINE_NAMES } from '@/shared/engine-names';
+import { withWarningStyle } from '@/ui/components/button-compat';
 import type { EngineRegistry } from '@/engine/engine-registry';
 import type { VersionMeta, ContentType, DiffStats, LineDiff } from '@/shared/version-types';
 import { formatVersionTime, VERSION_TYPE_LABELS, lineDiff, computeDiffStats, charDiff } from '@/shared/diff-utils';
@@ -633,9 +634,8 @@ class RollbackConfirmModal extends Modal {
                     });
             })
             .addButton(btn => {
-                btn
-                    .setButtonText('✅ 确认回滚')
-                    .setWarning()
+                withWarningStyle(btn
+                    .setButtonText('✅ 确认回滚'))
                     .onClick(() => {
                         this.close();
                         this.onConfirm(true);

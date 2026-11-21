@@ -1,6 +1,7 @@
 import { Setting, Notice, Modal } from 'obsidian';
 import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
 import { t } from '@/i18n';
+import { withWarningStyle } from '@/ui/components/button-compat';
 import NovelWriterPlugin from '@/main';
 import {
     capturePreset,
@@ -236,7 +237,7 @@ export function renderAppearanceSettings(
                 rerender();
                 showSuccessNotice(t('settings.appearance.resetDone'));
             });
-            if (!compact) btn.setWarning();
+            if (!compact) withWarningStyle(btn);
         });
 }
 
